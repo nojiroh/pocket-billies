@@ -47,7 +47,7 @@ function migrate(o){if(!o||typeof o!=='object')return null;const f=fresh();const
  if(s.started&&!s.team.length&&!s.box.length)return fresh();s.v=4;return s}
 /* alpha 0.4.1: one save per player. Without an account the save lives in this browser (the original key); a player who
    signs in with Google (js/account.js) gets their own save, kept online and copied in this browser under their id */
-const LS_BASE='networth-save-v1',LS_ACC='pb-account';
+const LS_BASE=window.PB_PROTOTYPE?'pocketbillies-prototype-save-v1':'networth-save-v1',LS_ACC=window.PB_PROTOTYPE?'pb-prototype-account':'pb-account';
 const ACC_ID=(()=>{try{return localStorage.getItem(LS_ACC)||''}catch(e){return ''}})();
 const LS=ACC_ID?LS_BASE+'-u-'+ACC_ID:LS_BASE;
 function lsGet(){try{return JSON.parse(localStorage.getItem(LS)||'null')}catch(e){return null}}
@@ -64,6 +64,7 @@ async function flush(){if(typeof accFlush==='function'&&accFlush())return;if(!DB
  try{await DB.doc('data/users/'+USERID+'/save').set({json:JSON.stringify(S),savedAt:S.savedAt})}catch(e){if(e&&e.code==='invalid_argument')DB=null}
  saving=false;if(again){again=false;flush()}}
 async function initCloud(){
+ if(window.PB_PROTOTYPE)return;
  try{if(!window.claude||typeof window.claude.use!=='function')return;
   const [db,user]=await Promise.all([window.claude.use('db'),window.claude.use('user')]);if(!db||!user)return;
   const id=await user.id();if(!id)return;DB=db;USERID=id;
