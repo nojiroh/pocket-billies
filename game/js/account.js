@@ -7,7 +7,7 @@
    The Firebase project is set in js/account-config.js; without it there is no sign-in button. */
 const ACC={cfg:window.PB_FIREBASE||null,ready:false,user:null,auth:null,db:null,t:null,busy:false,err:''};
 const ACC_SDK='https://cdn.jsdelivr.net/npm/firebase@10.12.5/';
-function accOn(){return !!(ACC.cfg&&ACC.cfg.apiKey&&ACC.cfg.projectId)&&!window.NW_ARTIFACT&&!(typeof NW_TEST!=='undefined'&&NW_TEST)&&location.protocol!=='file:'}
+function accOn(){return !window.PB_PROTOTYPE&&!!(ACC.cfg&&ACC.cfg.apiKey&&ACC.cfg.projectId)&&!window.NW_ARTIFACT&&!(typeof NW_TEST!=='undefined'&&NW_TEST)&&location.protocol!=='file:'}
 function accScript(src){return new Promise((res,rej)=>{const s=document.createElement('script');s.src=src;s.onload=res;s.onerror=()=>rej(new Error('could not load '+src));document.head.appendChild(s)})}
 async function accInit(){if(!accOn())return;
  try{for(const f of ['firebase-app-compat.js','firebase-auth-compat.js','firebase-firestore-compat.js'])await accScript(ACC_SDK+f);
