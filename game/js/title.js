@@ -14,7 +14,7 @@ function titleFrame(){if(!TITLE.on||!DIO.sc)return null;const sc=DIO.sc,now=perf
 function titlePlayTime(){const m=Math.floor((S.playMs||0)/60000);return m<1?'just started':m<60?`${m} min`:`${Math.floor(m/60)} h ${String(m%60).padStart(2,'0')} min`}
 function renderTitle(){const cont=S.started&&S.avatar,place=cont&&ROUTE[S.route.node]?ROUTE[S.route.node].name:'',nm=cont?(S.avatar.name||'Trainer'):'';
  return `<div class="ttl${cont?' can-tap':''}" data-a="${cont?'ttltap':''}"><div class="ttl-bg" aria-hidden="true"></div>
-  <div class="ttl-top"><h1 class="ttl-logo" aria-label="Pocket Billies"><span>POCKET</span><span>BILLIES</span></h1><p class="ttl-tag">Gotta tax 'em all!</p></div>
+  <div class="ttl-acc">${typeof accChipHTML==='function'?accChipHTML():''}</div><div class="ttl-top"><h1 class="ttl-logo" aria-label="Pocket Billies"><span>POCKET</span><span>BILLIES</span></h1><p class="ttl-tag">Gotta tax 'em all!</p></div>
   <div class="ttl-bottom">
    ${cont?`<button class="ttl-cont" data-a="ttlgo"><span class="ttl-face">${humanHTML('me',56)}</span><span class="ttl-ct"><b>Continue</b><small>${esc(nm)} · ${esc(place)}</small><small>${titlePlayTime()} played</small></span></button>`:''}
    <div class="ttl-btns">${cont?`<button class="pb quiet" data-a="ttlnew">New game</button>`:`<button class="pb gold big wide" data-a="intro">New game</button>`}<button class="pb quiet" data-a="ttlset">${uiIco('gear',14)} Settings</button></div>
@@ -28,7 +28,7 @@ async function titleMount(){if(TITLE.mounted||!TITLE.on)return;TITLE.mounted=tru
  if(!TITLE.on||run!==TITLE.run)return;if(!DGL.on||!DIO.ready){document.body.classList.add('ttl-flat');return}DIO.cv.classList.add('in');
  /* the painted landscape stays in front until the town's ground is laid and drawn, then fades away */
  const t0=performance.now(),poll=()=>{if(!TITLE.on||run!==TITLE.run)return;if(DGL.gtex&&DGL.frames>3||performance.now()-t0>20000){document.body.classList.add('ttl-live');return}setTimeout(poll,200)};poll()}
-function titleStart(){TITLE.on=true;TITLE.mounted=false;U.title=true;document.body.classList.add('in-title')}
+function titleStart(){if(TITLE.on)return;TITLE.on=true;TITLE.mounted=false;U.title=true;document.body.classList.add('in-title')}
 function titleEnd(){if(!TITLE.on)return;TITLE.on=false;TITLE.run++;U.title=false;document.body.classList.remove('in-title','ttl-live','ttl-flat');if(DIO.director&&DIO.director.frame===titleFrame){DIO.director=null;DGL.camT=null;DGL.focus=null}if(DIO.cv)dioStop()}
 function titleNew(){if(!S.started){titleEnd();if(typeof csWanted==='function'&&csWanted())csStart();else{U.intro=1;render()}return}
  modal({title:'Start a new game?',html:'<p>This replaces the game in this save slot: your team, Field Guide and money. (Settings → Save slots can keep a copy first.)</p>',btns:[

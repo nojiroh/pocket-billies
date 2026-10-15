@@ -81,7 +81,7 @@ void main(){float d0=texture(uDep,vUV).r;vec4 wp=uIVP*vec4(vUV*2.-1.,min(d0,.999
   for(int l=0;l<6;l++){if(l>=uNL)break;vec4 Lp=uLP[l];vec3 d=Lp.xyz-p;float r=abs(Lp.w),ll=length(d);float f=max(0.,1.-ll/(r*1.3));lamps+=uLC[l].rgb*f*f/(1.+ll*ll*.35)*dt;}}
  /* lit air brightens a little; air in the shadow of a canopy or a roof darkens what is behind it (alpha), so the beams
     show as light and dark columns, on any graphics chip (no negative light needed) */
- float pk=(ph*.6+.55)*uDens;o=vec4(uSunCol*min(sun.x*pk*.4,1.2)*uK+lamps*uLK*.18,clamp((sun.y-sun.x)*pk*1.1*uK,0.,.6));}`],
+ float pk=(ph*.6+.55)*uDens*step(d0,.9999)*(1.-smoothstep(26.,46.,length(ray)));/* not in the sky, and fading out with distance: the beams are a near thing */o=vec4(uSunCol*min(sun.x*pk*.4,1.2)*uK+lamps*uLK*.18,clamp((sun.y-sun.x)*pk*1.1*uK,0.,.6));}`],
  grade:[`#version 300 es
 precision highp float;in vec2 aC;out vec2 vUV;void main(){vUV=aC;gl_Position=vec4(aC*2.-1.,0.,1.);}`,
  `#version 300 es

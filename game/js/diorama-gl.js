@@ -1111,6 +1111,15 @@ function dglGrass(C,X){const gl=EGL.gl,p=dglUse('grass',C,X),U=p.U,sc=DIO.sc,P=D
   DGL.grassDrawn=drawn}
  gl.bindVertexArray(null)}
 const DGL_IMID=new WeakMap();let DGL_IMN=0;function dglImId(im){let n=DGL_IMID.get(im);if(n===undefined){n=++DGL_IMN;DGL_IMID.set(im,n)}return n}
+/* alpha 0.4.1: the title's town springs up out of the loading screen (dglRiseStart from js/boot.js) */
+function dglRiseStart(load){if(RM||typeof DIO==='undefined')return;DGL.rise={t0:performance.now(),c:null,load:!!load,seen:new WeakMap()}}
+/* how far up a thing has grown (0 to a little over 1). While the game loads, a ring round the middle of the view widens
+   with the loading and each thing starts to grow when the ring reaches it */
+function dglRiseK(it){const R=DGL.rise,now=performance.now();if(!R.c){let c=null;try{const fr=DIO.director&&DIO.director.frame?DIO.director.frame():null;c=fr&&fr.center}catch(e){}R.c=c||[DIO.pl.x,DIO.pl.z]}
+ const f=typeof LD!=='undefined'&&LD.el?LD.f:1,key=it.p||it.f||it,d=Math.hypot(it.x-R.c[0],it.z-R.c[1]);let t0=R.seen.get(key);
+ if(t0==null){if(R.load&&d>4+f*48)return 0;t0=now+(R.load?0:d*50);R.seen.set(key,t0)}
+ if(f>=1&&!R.done)R.done=now;if(R.done&&now-R.done>3500){DGL.rise=null;return 1}
+ const t=(now-t0)/1000;if(t<=0)return 0;if(t>=.55)return 1;const k=t/.55,c=1.7;return 1+(c+1)*Math.pow(k-1,3)+c*Math.pow(k-1,2)}
 function dglSprites(C,items,X,hits,labels,PPU){const gl=EGL.gl,p=dglUse('sprite',C,X),U=p.U,P=DIO.pl,sc=DIO.sc,sun=X.sun;eglBindQuad();if(U.uWave)gl.uniform3f(U.uWave,0,0,0);if(U.uSelOut)gl.uniform1f(U.uSelOut,DIO.opt.lite?0:(eng('color','outlines')??1));
  const sh=v3n([sun.dir[0],0,sun.dir[2]]);gl.uniform3fv(U.uRight,C.right);gl.uniform3fv(U.uBack,C.back);gl.uniform3fv(U.uFwd,C.fwd);gl.uniform1f(U.uDZ,0);gl.uniform3fv(U.uSunH,sh);gl.uniform1i(U.uTex,0);gl.uniform1i(U.uNrm,1);gl.uniform1f(U.uAlpha,1);gl.uniform1f(U.uCurveOn,1);gl.uniform1f(U.uEmit,0);gl.uniform1f(U.uFlipN,1);gl.uniform1f(U.uFixed,0);
  const me=dioProj(C,P.x,.9,P.z);DGL.bfade=new Map();const sd=sun.dir,sl=Math.hypot(sd[0]*C.right[0]+sd[2]*C.right[2],sd[1])||1,selfD=[(sd[0]*C.right[0]+sd[2]*C.right[2])/sl,-sd[1]/sl],selfK=sd[1]>.05&&(eng('shadows','selfShade')??.7)>0?(eng('shadows','selfShade')??.7)*eng('shadows','strength')*Math.min(1,sd[1]*4):0;gl.enable(gl.DEPTH_TEST);gl.depthMask(true);gl.disable(gl.BLEND);
@@ -1118,12 +1127,13 @@ function dglSprites(C,items,X,hits,labels,PPU){const gl=EGL.gl,p=dglUse('sprite'
  const L=[];for(const it of items)if(!(it.flat||it.vol||it.vis===false))L.push(it);L.sort((a,b)=>dglImId(a.im)-dglImId(b.im));
  for(const it of L){if(it.vox){if(!it.far)dglHit(it,C,hits,labels,PPU);continue}const T=eglImg(it.im);if(!T)continue;const s=it.mpp,hM=-it.oy*s;
   let fade=it.fade??1;if(me&&!DGL.bt&&!it.person&&it.k==='prop'&&hM>1.6){const q=dioProj(C,it.x,0,it.z);if(q&&q.d<me.d-.3){const half=it.w*s*.5*q.s,top=q.y-hM*q.s;if(me.x>q.x-half&&me.x<q.x+half&&me.y>top&&me.y<q.y)fade=.4}}
-  if(it.bld3){DGL.bfade.set(it,fade);dglHit(it,C,hits,labels,PPU);continue}
+  const rk=DGL.rise?dglRiseK(it):1;if(rk<.002&&!it.person)continue;
+  if(it.bld3){DGL.bfade.set(it,fade*Math.min(1,rk));dglHit(it,C,hits,labels,PPU);continue}
   {const ro=it.fixed&&it.lk&&it.lk.rot&&!it.M.box&&!it.bld3?it.lk.rot*.6:0,cr=Math.cos(ro),sr=Math.sin(ro);gl.uniform3fv(U.uRight,it.fixed?(ro?[cr,0,sr]:DGL_FIXED):C.right);gl.uniform3fv(U.uBack,it.fixed?(ro?[sr,0,-cr]:DGL_FIXED_BACK):C.back)}gl.uniform1f(U.uFixed,it.fixed&&it.plane?1:0);gl.uniform1f(U.uFlipN,it.flip||1);dglLookU(U,it.lk);
   const mt=EGL_MATS[it.mat]||EGL_MATS[it.person?'cloth':'plain'];gl.uniform4f(U.uMat,mt.spec,mt.shin,mt.transl,mt.wrap);if(U.uFol){const f=dglFol(it);gl.uniform2f(U.uFol,f[0],f[1])}
   if(U.uSelf){const k=selfK>0&&it.k==='prop'&&!it.fixed&&!it.far&&hM>1.2&&dglFol(it)[0]>0?selfK:0;gl.uniform3f(U.uSelf,k,selfD[0]*(it.flip||1),selfD[1])}
   gl.uniform1f(U.uEmit,it.glow?it.glow*1.6:0);gl.uniform1f(U.uFade,fade);gl.uniform1f(U.uRim,it.person?.4:.12);gl.uniform1f(U.uLit,it.glow?Math.max(0,1-it.glow):it.far?.75:1);gl.uniform1f(U.uShade,it.person?.45:it.far?.3:.55);gl.uniform3f(U.uBaseP,it.x,it.y,it.z);
-  gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,T.t);gl.activeTexture(gl.TEXTURE1);gl.bindTexture(gl.TEXTURE_2D,T.n);dglSprU(p,it);
+  gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,T.t);gl.activeTexture(gl.TEXTURE1);gl.bindTexture(gl.TEXTURE_2D,T.n);dglSprU(p,rk!==1?Object.assign({},it,{oy:it.oy*rk,h:it.h*rk}):it);
   if(it.wave){gl.uniform3fv(U.uWave,it.wave);eglBindGrid();gl.drawArrays(gl.TRIANGLES,0,EGL.gridN);gl.uniform3f(U.uWave,0,0,0);eglBindQuad();continue}
   gl.drawArrays(gl.TRIANGLES,0,6);
   /* trees get a second picture crossing the first, so a turned camera sees a crown, not a cut-out's edge */

@@ -1,0 +1,4 @@
+{
+ "about": "GitHub usernames that may sign in to Pocket Billies Studio on the game's GitHub Pages site (the repository's owner always may). Each also needs to be a collaborator on the repository. What they save becomes a pull request for the owner to merge.",
+ "admins": ["nojiroh"]
+}

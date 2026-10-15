@@ -45,17 +45,11 @@ function migrate(o){if(!o||typeof o!=='object')return null;const f=fresh();const
  s.route.plan=(Array.isArray(s.route.plan)?s.route.plan:[]).filter(x=>ROUTE[x]);if(s.route.plan.length&&!linkCost(s.route.node,s.route.plan[0])){s.route.plan=[];s.route.prog=0}s.route.hold=!!s.route.hold;
  if(!s.visited||typeof s.visited!=='object')s.visited={};s.visited[s.route.node]=1;
  if(s.started&&!s.team.length&&!s.box.length)return fresh();s.v=4;return s}
-/* v30: three save slots. Slot 1 keeps the original storage key, so existing saves are slot 1 */
-const NW_SLOTS=3,LS_BASE='networth-save-v1',LS_SLOT='networth-slot';
-const slotKey=n=>n>1?LS_BASE+'-s'+n:LS_BASE;
-const SLOT=(()=>{let n=1;try{n=Math.max(1,Math.min(NW_SLOTS,+localStorage.getItem(LS_SLOT)||1))}catch(e){}return n})();
-const LS=slotKey(SLOT);
-/* what's in each slot, for the Settings list */
-function slotInfo(n){let s=null;try{s=JSON.parse(localStorage.getItem(slotKey(n))||'null')}catch(e){}if(!s||!s.started)return {n,empty:true};
- const look=s.avatar||{};return {n,name:look.name||'Trainer',steps:s.totalSteps||0,badges:(s.seats||[]).length,caught:Object.keys(s.caught||{}).length,savedAt:s.savedAt||0,where:(ROUTE[(s.route||{}).node]||{}).name||''}}
-function slotUse(n){if(n===SLOT)return;save();try{localStorage.setItem(LS_SLOT,String(n))}catch(e){}location.reload()}
-function slotClear(n){if(n===SLOT)return;try{localStorage.removeItem(slotKey(n))}catch(e){}}
-function slotCopyHere(n){try{localStorage.setItem(slotKey(n),JSON.stringify(S))}catch(e){}}
+/* alpha 0.4.1: one save per player. Without an account the save lives in this browser (the original key); a player who
+   signs in with Google (js/account.js) gets their own save, kept online and copied in this browser under their id */
+const LS_BASE='networth-save-v1',LS_ACC='pb-account';
+const ACC_ID=(()=>{try{return localStorage.getItem(LS_ACC)||''}catch(e){return ''}})();
+const LS=ACC_ID?LS_BASE+'-u-'+ACC_ID:LS_BASE;
 function lsGet(){try{return JSON.parse(localStorage.getItem(LS)||'null')}catch(e){return null}}
 function lsSet(o){try{localStorage.setItem(LS,JSON.stringify(o))}catch(e){if(typeof U!=='undefined'&&!U.saveWarning){U.saveWarning=true;setTimeout(()=>toast('Browser storage is full or unavailable. Export a save backup from Settings.'),0)}}}
 let S=migrate(lsGet())||fresh();
@@ -66,14 +60,14 @@ const U={tab:'walk',lastTab:null,intro:0,modal:null,mq:[],learnQ:[],walking:fals
 let DB=null,USERID=null,saveT=null,saving=false,again=false;
 function save(){S.savedAt=Date.now();lsSet(S);if(!saveT)saveT=setTimeout(()=>{saveT=null;flush()},4000)}
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&saveT){clearTimeout(saveT);saveT=null;flush()}});
-async function flush(){if(!DB||!USERID)return;if(saving){again=true;return}saving=true;
- try{await DB.doc('data/users/'+USERID+'/save'+(SLOT>1?'-s'+SLOT:'')).set({json:JSON.stringify(S),savedAt:S.savedAt})}catch(e){if(e&&e.code==='invalid_argument')DB=null}
+async function flush(){if(typeof accFlush==='function'&&accFlush())return;if(!DB||!USERID)return;if(saving){again=true;return}saving=true;
+ try{await DB.doc('data/users/'+USERID+'/save').set({json:JSON.stringify(S),savedAt:S.savedAt})}catch(e){if(e&&e.code==='invalid_argument')DB=null}
  saving=false;if(again){again=false;flush()}}
 async function initCloud(){
  try{if(!window.claude||typeof window.claude.use!=='function')return;
   const [db,user]=await Promise.all([window.claude.use('db'),window.claude.use('user')]);if(!db||!user)return;
   const id=await user.id();if(!id)return;DB=db;USERID=id;
-  const snap=await db.doc('data/users/'+id+'/save'+(SLOT>1?'-s'+SLOT:'')).get();
+  const snap=await db.doc('data/users/'+id+'/save').get();
   if(snap.exists){const d=snap.data();let remote=null;try{remote=migrate(JSON.parse(d.json))}catch(e){}
    if(remote&&remote.started&&(!S.started||(remote.savedAt||0)>(S.savedAt||0))&&!B){S=remote;S.avatar=cleanTrainer(S.avatar,S.gender);applyPreferences();lsSet(S);render();toast('Your progress is synced.');setTimeout(postProcess,200)}
    else if(S.started)flush()}

@@ -1,0 +1,228 @@
+'use strict';
+/* ================= POCKET BILLIES STUDIO · skeleton builder =================
+   A billionaire is a tree of parts (bones). Each part has a picture cut from the sprite sheet, a pivot it turns
+   around, a parent it hangs from, a draw layer and an animation role (which motion of its body plan it follows).
+   Front and back views have their own skeletons and sheets; the Gold-Plated sheets share the same layout. */
+const SK={sp:null,view:'front',sel:null,zoom:2.5,anim:false,act:null,t0:0,drag:null,raf:0,alpha:new WeakMap(),both:true,grid12:false,paused:false,tick:0,onion:false};
+const PLAN_INFO={bird:'Two legs, two wings, a crest and a tail; hops',insect:'Six legs, antennae, wings and an abdomen',crab:'Sideways legs and two claws',hopper:'Big hind legs, long ears; crouches and jumps',plant:'A stem that sways, leaves that lift',biped:'Two legs, two arms, a head',quad:'Four legs and a long body',flyer:'Hovers and beats its wings',fish:'Floats and swims through the air',serpent:'A coil with a long neck',worm:'A row of rippling segments',octo:'Six three-part tentacles',blob:'A wobbling body with small arms',shell:'A shell with a soft body and little legs'};
+const Q_FIELDS={bird:[['per','Wing beat (ms)',60,900,10],['hop','Hop height',0,6,.2]],biped:[['lift','Hover height',0,40,.5],['flapMs','Wing flap time, if it has wings (ms)',60,900,10]],flyer:[['lift','Hover height',0,60,.5],['per','Wing beat (ms)',30,900,5],['flapAmp','Flap size (0 = automatic)',0,1.5,.05]],fish:[['lift','Float height',0,40,.5],['bh','Body height',1,30,.5]],serpent:[['n','Neck segments (n0, n1…)',1,8,1]],worm:[['n','Segments (s0, s1…)',2,10,1]],octo:[['tl','Tentacle length',1,12,.2]]};
+const ROLE_HELP={neck:'turns with the head',crest:'lifts with the head',abdomen:'sways',antL:'antenna',antR:'antenna',clawL:'claw',clawR:'claw',thighL:'hind leg',thighR:'hind leg',footL:'foot',footR:'foot',earL:'ear',earR:'ear',leafL:'leaf',leafR:'leaf',torso:'body sway',body:'body sway',head:'nods, looks around, reacts',armL:'front arm swing',armR:'back arm swing',legL:'leg',legR:'leg',legFN:'near front leg',legFF:'far front leg',legBN:'near back leg',legBF:'far back leg',tail:'wags',wingL:'flaps',wingR:'flaps',wing2L:'second wing pair',wing2R:'second wing pair',
+ fly:'hover bob (whole body)',hover:'floating bits',mane:'counter-sways with the head',neckS:'neck sway',coil:'breathing coil',hood:'flares when attacking',shell:'shell bounce',foot:'foot squash',l1:'little leg',l2:'little leg',l3:'little leg',puddle:'still'};
+function planRoles(plan,q){try{return Object.keys(ANIM[plan](skNeutral(),q||{})).sort()}catch(e){return []}}
+function skMeta(view=SK.view){return ST.rigs[SK.sp]&&ST.rigs[SK.sp][view]}
+function skNeutral(){const P=rigPose(null,0,0,0);Object.assign(P,{sy:1,sx:1,head:0,hdy:0,hdx:0,aL:0,aR:0,tail:0,face:'idle',hov:{dx:0,dy:0,r:0}});return P}
+function skPose(ts,tickOff=0){if(!SK.anim)return skNeutral();let tau=ts-SK.t0;if(SK.paused)tau=SK.tick*1000/12;if(SK.grid12||SK.paused)tau=Math.floor(tau/(1000/12))*(1000/12);tau+=tickOff*1000/12;const t2=SK.paused||SK.grid12?SK.t0+tau:ts;
+ const act=SK.act&&(SK.act==='faint'?tau<1600:tau<1100)?SK.act:null;if(SK.act&&!act&&!SK.paused)SK.t0=ts;return rigPose(act,Math.max(0,tau),t2,1)}
+const mInv=m=>{const d=m[0]*m[3]-m[1]*m[2];return [m[3]/d,-m[1]/d,-m[2]/d,m[0]/d]};
+const mApplyL=(inv,x,y)=>[inv[0]*x+inv[2]*y,inv[1]*x+inv[3]*y];
+const imgUsers=(meta,i)=>meta.bones.filter(b=>b.i===i).map(b=>b.n);
+const uniqBone=(meta,base)=>{if(!meta.bones.some(b=>b.n===base))return base;let n=2;while(meta.bones.some(b=>b.n===base+n))n++;return base+n};
+/* ---------- sheet space: new parts get a strip at the bottom of both the normal and gold sheets ---------- */
+function allocRect(sp,view,w,h){const pN=atlasPath(sp,view,false),pG=atlasPath(sp,view,true),N=atlasNow(pN),G=atlasNow(pG);if(!N)throw new Error('Sheet not loaded');
+ const x=1,y=N.height+1,W=Math.max(N.width,w+2),Hh=N.height+h+2;const grow=c=>{const n=cnv(W,Hh);if(c)n.getContext('2d').drawImage(c,0,0);return n};
+ markArt(pN,grow(N));markArt(pG,grow(G||N));const meta=ST.rigs[sp][view];meta.size=[W,Hh];return [x,y,w,h]}
+/* paint pixels into a rect of the normal sheet, and a gold version into the gold sheet */
+function putPart(sp,view,rect,src){const pN=atlasPath(sp,view,false),pG=atlasPath(sp,view,true);for(const [p,gold] of [[pN,0],[pG,1]]){const c=atlasNow(p);if(!c)continue;const x=c.getContext('2d');x.clearRect(rect[0],rect[1],rect[2],rect[3]);x.drawImage(gold?goldFrom(src,.6):src,rect[0],rect[1]);markArt(p,c)}}
+function cutRect(sp,view,rect,gold=false){const c=atlasNow(atlasPath(sp,view,gold)),o=cnv(rect[2],rect[3]);if(c)o.getContext('2d').drawImage(c,rect[0],rect[1],rect[2],rect[3],0,0,rect[2],rect[3]);return o}
+function scaled(src,k){const o=cnv(Math.max(1,Math.round(src.width*k)),Math.max(1,Math.round(src.height*k))),x=o.getContext('2d');x.imageSmoothingEnabled=false;x.drawImage(src,0,0,o.width,o.height);return o}
+function flipped(src){const o=cnv(src.width,src.height),x=o.getContext('2d');x.translate(src.width,0);x.scale(-1,1);x.drawImage(src,0,0);return o}
+/* keep parents ahead of their children in the list (the game assembles bones in order) */
+function skTopo(meta){const out=[],seen=new Set(),byPar={};meta.bones.forEach(b=>{const p=b.par&&b.par!=='root'&&meta.bones.some(x=>x.n===b.par)?b.par:'root';(byPar[p]=byPar[p]||[]).push(b)});
+ const walk=p=>(byPar[p]||[]).forEach(b=>{if(seen.has(b))return;seen.add(b);out.push(b);walk(b.n)});walk('root');meta.bones.forEach(b=>{if(!seen.has(b)){b.par='root';out.push(b)}});meta.bones=out}
+/* shadow width, body center and top for battle framing */
+function skGeo(sp){for(const view of ['front','back']){const meta=ST.rigs[sp]&&ST.rigs[sp][view];if(!meta)continue;const R=rigFor(sp,view,false);if(!R)continue;const {list}=rigMatrices(R,skNeutral(),view);
+  let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9;for(const [z,m,img] of list){const c=img.c,w=c.width,h=c.height;for(const [px,py] of [[img.ox,img.oy],[img.ox+w,img.oy],[img.ox,img.oy+h],[img.ox+w,img.oy+h]]){const X=m[0]*px+m[2]*py+m[4],Y=m[1]*px+m[3]*py+m[5];x0=Math.min(x0,X);x1=Math.max(x1,X);y0=Math.min(y0,Y);y1=Math.max(y1,Y)}}
+  if(x0>x1)continue;const g=meta.geo=meta.geo||{};const lift=(meta.q&&meta.q.lift||0)*meta.k;Object.assign(g,{cx:meta.cx,base:meta.base,k:meta.k,top:+y0.toFixed(2),mid:+((y0+y1)/2).toFixed(2),hw:+((x1-x0)/2).toFixed(2),lift:+lift.toFixed(2),cy:+((y0+y1)/2).toFixed(2)})}}
+/* ---------- open ---------- */
+async function openSkeleton(sp,view='front'){SK.sp=sp;SK.view=view;SK.sel=null;SK.anim=false;SK.act=null;
+ try{await Promise.all(['front','back'].flatMap(v=>[atlasGet(atlasPath(sp,v,false)),atlasGet(atlasPath(sp,v,true)).catch(()=>null)]))}catch(e){toast(e.message,'err');return}
+ if(!ST.rigs[sp]){toast('This Billie has no skeleton yet.','err');return}
+ const m=$('#modal');m.innerHTML=`<div class="pxed skel" role="dialog" aria-modal="true" aria-label="Skeleton builder">
+ <header class="px-top"><b>${esc(spName(sp))}</b><span class="px-tabs">${['front','back'].map(v=>`<button class="seg" data-sk="view" data-v="${v}">${v==='front'?'Front view':'Back view'}</button>`).join('')}</span>
+  <span class="px-tools"><button class="seg" data-sk="anim" title="Play the body plan’s motion">Animate</button>${['attack','cast','hurt','cheer','faint'].map(a=>`<button class="seg sm" data-sk="act" data-a="${a}">${a}</button>`).join('')}</span>
+  <span class="px-tools sk-scrub" title="v35: step the pose on the 12 fps clock. Pause, then scrub a tick at a time; Onion shows the two ticks before as ghosts"><button class="seg" data-sk="grid12">12 fps</button><button class="seg" data-sk="pause">Pause</button><button class="seg sm" data-sk="tick" data-d="-1">◀</button><input type="range" id="skScrub" min="0" max="23" value="0" step="1"><span id="skTick">tick 0</span><button class="seg sm" data-sk="tick" data-d="1">▶</button><button class="seg" data-sk="onion">Onion</button></span>
+  <span class="px-tools"><button class="seg" data-sk="zoom" data-z="-.5">−</button><span id="skZoom"></span><button class="seg" data-sk="zoom" data-z=".5">+</button></span>
+  <span class="grow"></span><button class="btn" data-sk="paint">Paint pixels</button><button class="btn primary" data-sk="close">Done</button></header>
+ <div class="sk-body"><aside class="sk-tree"><div class="sk-tree-head"><b>Parts</b><small>Drag a part to move it. Drag its dot to move only the pivot. Shift-drag to tilt.</small></div><div id="skTree"></div>
+  <div class="sk-adds"><button class="btn" data-sk="add">+ Blank part</button><button class="btn" data-sk="addPng">+ Part from PNG</button><button class="btn" data-sk="importSheet" title="v35: a piece sheet (one PNG) with its layout JSON: every piece becomes a part">Import piece sheet</button><label class="fld chk"><input type="checkbox" id="skBoth" ${SK.both?'checked':''}><span>Also add to the other view</span></label></div></aside>
+  <div class="px-stage sk-stage" id="skStage"><canvas id="skCv"></canvas></div>
+  <aside class="px-side" id="skSide"></aside></div></div>`;
+ $('#skBoth').addEventListener('change',e=>SK.both=e.target.checked);$('#skScrub').addEventListener('input',e=>{SK.paused=true;$('[data-sk=pause]').classList.add('on');SK.anim=true;$('[data-sk=anim]').classList.add('on');SK.tick=+e.target.value;skDraw()});
+ m.querySelector('.skel').addEventListener('click',skClick);skBindCanvas();skLoadView();cancelAnimationFrame(SK.raf);SK.raf=requestAnimationFrame(skLoop)}
+function skLoadView(){$$('[data-sk=view]').forEach(b=>b.classList.toggle('on',b.dataset.v===SK.view));const meta=skMeta();if(SK.sel&&!meta.bones.some(b=>b.n===SK.sel))SK.sel=null;skTree();skSide();skDraw(performance.now())}
+function skLoop(ts){if(!$('.skel'))return;if((SK.anim&&!SK.paused)||SK.drag)skDraw(ts);SK.raf=requestAnimationFrame(skLoop)}
+/* ---------- canvas ---------- */
+function skDraw(ts){const c=$('#skCv');if(!c)return;const R=rigFor(SK.sp,SK.view,false);if(!R)return;const Z=SK.zoom,W=R.BW*Z,Hh=R.BH*Z;if(c.width!==W||c.height!==Hh){c.width=W;c.height=Hh}$('#skZoom').textContent=Z+'×';
+ const buf=SK.buf||(SK.buf=cnv(1,1));if(buf.width!==R.BW||buf.height!==R.BH){buf.width=R.BW;buf.height=R.BH}const bx=buf.getContext('2d');bx.setTransform(1,0,0,1,0,0);bx.clearRect(0,0,R.BW,R.BH);bx.imageSmoothingEnabled=false;
+ const now=ts||performance.now(),x=c.getContext('2d');x.setTransform(1,0,0,1,0,0);x.clearRect(0,0,W,Hh);x.imageSmoothingEnabled=false;
+ if(SK.onion&&SK.anim){for(const [off,al] of [[-2,.18],[-1,.32]]){bx.clearRect(0,0,R.BW,R.BH);drawRig(bx,R,skPose(now,off),SK.view);bx.save();bx.globalCompositeOperation='source-atop';bx.fillStyle=off===-1?'#C8323C':'#1F6E6F';bx.fillRect(0,0,R.BW,R.BH);bx.restore();x.globalAlpha=al;x.drawImage(buf,0,0,W,Hh);x.globalAlpha=1}bx.clearRect(0,0,R.BW,R.BH)}
+ const P=skPose(now);drawRig(bx,R,P,SK.view);x.drawImage(buf,0,0,W,Hh);const tk=$('#skTick');if(tk)tk.textContent='tick '+(SK.paused?SK.tick:Math.floor(((now-SK.t0)/(1000/12))%24));if(SK.paused&&$('#skScrub'))$('#skScrub').value=SK.tick;
+ x.strokeStyle='rgba(31,110,111,.5)';x.setLineDash([6,4]);x.strokeRect(.5,.5,W-1,Hh-1);x.beginPath();x.moveTo(0,R.base*Z+.5);x.lineTo(W,R.base*Z+.5);x.stroke();x.setLineDash([]);
+ const {W:Wm,list}=rigMatrices(R,P,SK.view),meta=skMeta();
+ if(SK.sel){const e=list.find(l=>l[5].n===SK.sel);if(e){const [z,m,img]=e,w=img.c.width,h=img.c.height;x.strokeStyle='#C8323C';x.lineWidth=2;x.beginPath();[[img.ox,img.oy],[img.ox+w,img.oy],[img.ox+w,img.oy+h],[img.ox,img.oy+h]].forEach(([px,py],i)=>{const X=(m[0]*px+m[2]*py+m[4])*Z,Y=(m[1]*px+m[3]*py+m[5])*Z;i?x.lineTo(X,Y):x.moveTo(X,Y)});x.closePath();x.stroke();x.lineWidth=1}}
+ for(const b of meta.bones){const m=Wm[b.n];if(!m)continue;const pm=Wm[b.par||'root']||Wm.root,X=m[4]*Z,Y=m[5]*Z;x.strokeStyle='rgba(31,46,54,.45)';x.beginPath();x.moveTo(pm[4]*Z,pm[5]*Z);x.lineTo(X,Y);x.stroke();
+  const on=b.n===SK.sel;x.fillStyle=on?'#C8323C':b.i<0?'#9C8CD8':'#F2C14E';x.strokeStyle='#1F2E36';x.beginPath();x.arc(X,Y,on?6:4.5,0,7);x.fill();x.stroke();if(on){x.font='600 12px Chakra Petch, sans-serif';x.fillStyle='#1F2E36';x.fillText(b.n,X+9,Y-8)}}
+ const rm=Wm.root;x.strokeStyle='#1F6E6F';x.beginPath();x.moveTo(rm[4]*Z-8,rm[5]*Z);x.lineTo(rm[4]*Z+8,rm[5]*Z);x.moveTo(rm[4]*Z,rm[5]*Z-8);x.lineTo(rm[4]*Z,rm[5]*Z+8);x.stroke()}
+function skAlphaAt(c,x,y){let d=SK.alpha.get(c);if(!d){d=c.getContext('2d').getImageData(0,0,c.width,c.height).data;SK.alpha.set(c,d)}x=Math.floor(x);y=Math.floor(y);if(x<0||y<0||x>=c.width||y>=c.height)return 0;return d[(y*c.width+x)*4+3]}
+function skHit(bx,by){const R=rigFor(SK.sp,SK.view,false),{W,list}=rigMatrices(R,skNeutral(),SK.view),meta=skMeta();
+ for(const b of meta.bones){const m=W[b.n];if(m&&Math.hypot(m[4]-bx,m[5]-by)*SK.zoom<9)return {b,mode:'pivot'}}
+ for(let i=list.length-1;i>=0;i--){const [z,m,img,v,al,b]=list[i],inv=mInv(m),[lx,ly]=mApplyL(inv,bx-m[4],by-m[5]);const c=img.c;if(lx>=img.ox&&ly>=img.oy&&lx<img.ox+c.width&&ly<img.oy+c.height&&skAlphaAt(c,lx-img.ox,ly-img.oy)>20)return {b:meta.bones.find(x=>x.n===b.n)||b,mode:'part'}}return null}
+function skBindCanvas(){const c=$('#skCv');const pos=ev=>{const r=c.getBoundingClientRect();return [(ev.clientX-r.left)/r.width*c.width/SK.zoom,(ev.clientY-r.top)/r.height*c.height/SK.zoom]};
+ c.addEventListener('pointerdown',ev=>{const [x,y]=pos(ev),h=skHit(x,y);if(!h){SK.sel=null;skTree();skSide();skDraw();return}c.setPointerCapture(ev.pointerId);SK.sel=h.b.n;
+  let mode=ev.shiftKey?'rotate':h.mode;const meta=skMeta();if(mode==='pivot'&&h.b.i>=0&&imgUsers(meta,h.b.i).length>1){meta.imgs.push(clone(meta.imgs[h.b.i]));h.b.i=meta.imgs.length-1;ST.rigVer=(ST.rigVer||0)+1}
+  SK.drag={b:h.b,mode,last:[x,y],ang:null,moved:false};skTree();skSide();skDraw()});
+ c.addEventListener('pointermove',ev=>{const D=SK.drag;if(!D)return;const [x,y]=pos(ev),dx=x-D.last[0],dy=y-D.last[1];if(!dx&&!dy)return;D.last=[x,y];D.moved=true;const meta=skMeta(),b=D.b,k=meta.k,R=rigFor(SK.sp,SK.view,false),{W}=rigMatrices(R,skNeutral(),SK.view);
+  const pm=W[b.par||'root']||W.root,pinv=mInv(pm),[pdx,pdy]=mApplyL(pinv,dx,dy);
+  if(D.mode==='part'){b.at=[+(b.at[0]+pdx/k).toFixed(3),+(b.at[1]+pdy/k).toFixed(3)]}
+  else if(D.mode==='pivot'){const m=W[b.n],[ldx,ldy]=mApplyL(mInv(m),dx,dy);b.at=[+(b.at[0]+pdx/k).toFixed(3),+(b.at[1]+pdy/k).toFixed(3)];const im=meta.imgs[b.i];if(im){im.ox=Math.round((im.ox-ldx)*100)/100;im.oy=Math.round((im.oy-ldy)*100)/100}
+   meta.bones.filter(ch=>ch.par===b.n).forEach(ch=>{ch.at=[+(ch.at[0]-ldx/k).toFixed(3),+(ch.at[1]-ldy/k).toFixed(3)]})}
+  else{const m=W[b.n],cx=m[4],cy=m[5],a0=Math.atan2(y-dy-cy,x-dx-cx),a1=Math.atan2(y-cy,x-cx);let d=a1-a0;if(d>Math.PI)d-=2*Math.PI;if(d<-Math.PI)d+=2*Math.PI;const det=pm[0]*pm[3]-pm[1]*pm[2];b.rr=+(((b.rr||0)+(det<0?-d:d))).toFixed(4)}
+  ST.rigVer=(ST.rigVer||0)+1;ST.rigsDirty=true});
+ const up=()=>{const D=SK.drag;SK.drag=null;if(D&&D.moved){skGeo(SK.sp);changed(true);commit(true);skSide()}skDraw()};c.addEventListener('pointerup',up);c.addEventListener('pointercancel',up);
+ $('#skStage').addEventListener('wheel',ev=>{if(!ev.ctrlKey&&!ev.metaKey)return;ev.preventDefault();SK.zoom=clamp(SK.zoom+(ev.deltaY<0?.5:-.5),1,8);skDraw()},{passive:false})}
+/* ---------- part list ---------- */
+function skTree(){const meta=skMeta(),roles=planRoles(meta.plan,meta.q),kids={};meta.bones.forEach(b=>{const p=b.par&&b.par!=='root'?b.par:'root';(kids[p]=kids[p]||[]).push(b)});
+ const row=(b,d)=>{const role=b.a||b.n,anim=roles.includes(role);return `<button class="sk-row ${b.n===SK.sel?'on':''}" data-sk="sel" data-n="${esc(b.n)}" style="padding-left:${8+d*14}px"><span class="sk-dot ${b.i<0?'piv':''}"></span><b>${esc(b.n)}</b>${b.a&&b.a!==b.n?`<small>moves as ${esc(b.a)}</small>`:anim?'':'<small>still</small>'}${SK.view==='back'&&b.hideB?'<small>hidden</small>':''}</button>`+(kids[b.n]||[]).map(c=>row(c,d+1)).join('')};
+ $('#skTree').innerHTML=(kids.root||[]).map(b=>row(b,0)).join('')}
+/* ---------- properties ---------- */
+function skSide(){const meta=skMeta(),base=`@rigs.${SK.sp}.${SK.view}`,roles=planRoles(meta.plan,meta.q),side=$('#skSide');if(!side)return;let h='';
+ if(SK.sel){const bi=meta.bones.findIndex(b=>b.n===SK.sel),b=meta.bones[bi],p=`${base}.bones.${bi}`,desc=new Set();const addD=n=>meta.bones.filter(x=>x.par===n).forEach(x=>{desc.add(x.n);addD(x.n)});addD(b.n);
+  const parents=[['root','Ground (root)'],...meta.bones.filter(x=>x!==b&&!desc.has(x.n)).map(x=>[x.n,x.n])],img=meta.imgs[b.i],users=b.i>=0?imgUsers(meta,b.i):[];
+  const variants=img?Object.keys(img.f):[];
+  h+=`<div class="px-sec"><h4>Part “${esc(b.n)}”</h4>
+   <label class="fld"><span>Name</span><input type="text" id="skName" value="${esc(b.n)}" maxlength="16"></label>
+   <label class="fld"><span>Hangs from</span><select id="skPar">${parents.map(([v,n])=>`<option value="${esc(v)}" ${(b.par||'root')===v?'selected':''}>${esc(n)}</option>`).join('')}</select></label>
+   <label class="fld"><span>Moves like</span><select id="skRole"><option value="">${roles.includes(b.n)?`Its own name (${esc(b.n)})`:'Nothing: follows its parent'}</option>${roles.filter(r=>r!==b.n).map(r=>`<option value="${r}" ${b.a===r?'selected':''}>${r}${ROLE_HELP[r.replace(/\d+$/,'')]?' · '+ROLE_HELP[r.replace(/\d+$/,'')]:''}</option>`).join('')}<option value="-" ${b.a==='-'?'selected':''}>Nothing: stays still</option></select><small class="help">Each body plan animates parts by role. Pick one to borrow a motion.</small></label>
+   <div class="grid sk-grid">${fNum('Across',`${p}.at.0`,{step:.25})}${fNum('Up / down',`${p}.at.1`,{step:.25})}${fNum('Tilt',`${p}.rr`,{step:.02,opt:1,ph:'0'})}${fNum(SK.view==='back'?'Layer (back)':'Layer',`${p}.${SK.view==='back'?'zb':'z'}`,{step:.5,help:'Higher draws on top.'})}</div>
+   ${SK.view==='back'?fChk('Hidden in the back view',`${p}.hideB`,{num:1}):''}
+   <div class="seg-row"><button class="btn sm" data-sk="dup">Duplicate</button><button class="btn sm" data-sk="mirror">Mirror copy</button><button class="btn sm" data-sk="child">+ Child part</button><button class="btn sm danger" data-sk="del">Delete</button></div></div>`;
+  if(b.i>=0&&img){const r=img.f.idle||img.f.main||Object.values(img.f)[0];h+=`<div class="px-sec"><h4>Picture</h4><div class="sk-pic"><canvas id="skPic"></canvas><div><small class="mono">${r[2]}×${r[3]} px · ${variants.length>1?variants.length+' expressions':'one picture'}</small>${users.length>1?`<p class="help">Shared with ${esc(users.filter(n=>n!==b.n).join(', '))}. Repainting changes all of them.</p><button class="btn sm" data-sk="unshare">Give it its own copy</button>`:''}</div></div>
+   <div class="grid sk-grid">${fNum('Picture offset X',`${base}.imgs.${b.i}.ox`,{step:1})}${fNum('Picture offset Y',`${base}.imgs.${b.i}.oy`,{step:1})}</div>
+   <div class="seg-row"><button class="btn sm primary" data-sk="paintPart">Paint this part</button><button class="btn sm" data-sk="replace">Replace from PNG…</button><button class="btn sm" data-sk="resize">Resize…</button></div>
+   ${fChk('Has expressions (blink, happy, hurt, shout)',`${p}.face`,{num:1})}${b.face&&variants.length<5?`<button class="btn sm" data-sk="faces">Add the missing expression pictures</button>`:''}</div>`}
+  else h+=`<div class="px-sec"><h4>Picture</h4><p class="help">A pivot without a picture. Other parts hang from it (flyers use one called “fly” to hover).</p><button class="btn sm" data-sk="givePic">Give it a picture</button></div>`}
+ else h+=`<div class="px-sec"><h4>No part selected</h4><p class="help">Click a part or a dot on the creature, or pick one from the list.</p></div>`;
+ try{const au=typeof rigAudit==='function'?rigAudit(SK.sp,SK.view):null;if(au){const top=Object.entries(au.poses).map(([a,m])=>`<li><b>${a}</b> ${Object.entries(m).filter(([k,v])=>v>.5).sort((x,y)=>y[1]-x[1]).slice(0,5).map(([k,v])=>k).join(', ')||'<i>nothing moves</i>'}</li>`).join('');
+  h+=`<div class="px-sec"><h4>Motion check</h4><p class="help">${au.still.length?`<b>Never moves:</b> ${esc(au.still.join(', '))}. Give each a role below, or hang it from a part that moves.`:'Every part moves in at least one pose.'}</p><ul class="sk-audit">${top}</ul></div>`}}catch(e){}
+ h+=`<div class="px-sec"><h4>Body plan</h4><label class="fld"><span>How it moves</span><select id="skPlan">${Object.keys(ANIM).map(k=>`<option value="${k}" ${meta.plan===k?'selected':''}>${k} · ${PLAN_INFO[k]||''}</option>`).join('')}</select></label>
+  ${(Q_FIELDS[meta.plan]||[]).map(([k,l,mn,mx,st])=>fNum(l,`${base}.q.${k}`,{min:mn,max:mx,step:st})).join('')}
+  <p class="help">Parts animate when their name or “Moves like” matches one of: ${roles.map(esc).join(', ')}.</p>
+  <button class="btn sm" data-sk="copyView">Copy this layout to the ${SK.view==='front'?'back':'front'} view</button></div>`;
+ side.innerHTML=h;const pc=$('#skPic');if(pc&&SK.sel){const b=meta.bones.find(x=>x.n===SK.sel),img=meta.imgs[b.i],r=img.f.idle||img.f.main||Object.values(img.f)[0],src=cutRect(SK.sp,SK.view,r);pc.width=src.width;pc.height=src.height;pc.getContext('2d').drawImage(src,0,0)}
+ const nm=$('#skName');if(nm)nm.addEventListener('change',()=>skRename(nm.value));const par=$('#skPar');if(par)par.addEventListener('change',()=>skReparent(par.value));
+ const ro=$('#skRole');if(ro)ro.addEventListener('change',()=>{const b=skMeta().bones.find(x=>x.n===SK.sel);if(ro.value)b.a=ro.value;else delete b.a;skDone()});
+ $('#skPlan').addEventListener('change',e=>skSetPlan(e.target.value))}
+ST.hooks._skel=null;
+function skDone(){ST.rigVer=(ST.rigVer||0)+1;skGeo(SK.sp);changed(true);commit(true);skTree();skSide();skDraw();previewsDirty()}
+/* field edits inside the builder go through the normal data binding; refresh the drawing after them */
+document.addEventListener('input',ev=>{if(ev.target.closest('.skel')&&ev.target.dataset.p){ST.rigVer=(ST.rigVer||0)+1;skDraw()}});
+document.addEventListener('change',ev=>{if(ev.target.closest('.skel')&&ev.target.dataset.p){skGeo(SK.sp);skTree();if(ev.target.type==='checkbox')skSide();skDraw()}});
+/* undo and redo work inside the builder too */
+document.addEventListener('keydown',ev=>{if(!$('.skel')||$('#dlg').innerHTML||ev.target.closest('input,select,textarea'))return;const k=ev.key.toLowerCase(),mod=ev.ctrlKey||ev.metaKey;
+ if(mod&&(k==='z'||k==='y')){ev.preventDefault();ev.stopImmediatePropagation();(k==='y'||ev.shiftKey)?redo():undo();skLoadView()}
+ else if(!mod&&(k==='delete'||k==='backspace')&&SK.sel){ev.preventDefault();$('[data-sk=del]')&&$('[data-sk=del]').click()}},true);
+/* ---------- edits ---------- */
+function skRename(n){n=n.trim().replace(/[^A-Za-z0-9_]/g,'');const meta=skMeta(),b=meta.bones.find(x=>x.n===SK.sel);if(!n||n===b.n)return;if(meta.bones.some(x=>x.n===n))return toast('Another part already has that name.','err');
+ const roles=planRoles(meta.plan,meta.q);if(!b.a&&roles.includes(b.n)&&!roles.includes(n))b.a=b.n;meta.bones.forEach(x=>{if(x.par===b.n)x.par=n});b.n=n;SK.sel=n;skDone()}
+function skReparent(p){const meta=skMeta(),b=meta.bones.find(x=>x.n===SK.sel),R=rigFor(SK.sp,SK.view,false),{W}=rigMatrices(R,skNeutral(),SK.view),me=W[b.n],np=W[p]||W.root;
+ const inv=mInv(np),[lx,ly]=mApplyL(inv,me[4]-np[4],me[5]-np[5]);b.par=p==='root'?'root':p;b.at=[+(lx/meta.k).toFixed(3),+(ly/meta.k).toFixed(3)];skTopo(meta);skDone()}
+function skSetPlan(plan){const meta=skMeta();meta.plan=plan;meta.q=meta.q||{};(Q_FIELDS[plan]||[]).forEach(([k,l,mn,mx])=>{if(meta.q[k]==null)meta.q[k]=k==='n'?3:k==='per'?300:k==='flapMs'?300:mn});
+ const other=ST.rigs[SK.sp][SK.view==='front'?'back':'front'];if(other){other.plan=plan;other.q=clone(meta.q)}skDone();toast('Body plan changed for both views. Parts move when their names match the plan’s roles.')}
+/* mirror a part and everything hanging from it: left/right names swap, pictures flip, positions and tilts reflect */
+const swapLR=n=>n.replace(/L(\d*)$/,'\u0000$1').replace(/R(\d*)$/,'L$1').replace('\u0000','R');
+function skMirror(meta,b,par,orig){const roles=planRoles(meta.plan,meta.q),sw=swapLR(b.n),n=clone(b),role0=b.a||b.n,roleM=roles.includes(swapLR(role0))?swapLR(role0):role0;
+ n.n=uniqBone(meta,sw!==b.n?sw:b.n+'M');n.par=par;delete n.a;if(b.a==='-')n.a='-';else if(!(roles.includes(n.n)&&n.n===roleM)&&roles.includes(roleM))n.a=roleM;
+ n.at=[-b.at[0],b.at[1]];if(b.rr)n.rr=-b.rr;
+ if(b.i>=0){const img=meta.imgs[b.i],f={};for(const [v,r] of Object.entries(img.f)){const src=flipped(cutRect(SK.sp,SK.view,r)),nr=allocRect(SK.sp,SK.view,r[2],r[3]);putPart(SK.sp,SK.view,nr,src);f[v]=nr}
+  const r0=img.f.idle||img.f.main||Object.values(img.f)[0];meta.imgs.push({ox:-(img.ox+r0[2]),oy:img.oy,f});n.i=meta.imgs.length-1}
+ meta.bones.push(n);[...orig].filter(c=>c.par===b.n).forEach(c=>skMirror(meta,c,n.n,orig));return n}
+function skPartFor(meta,i){const img=meta.imgs[i];return img?(img.f.idle||img.f.main||Object.values(img.f)[0]):null}
+function skPlaceholder(w,h,col='#B8A8E0'){const c=cnv(w,h),x=c.getContext('2d');x.fillStyle=col;x.beginPath();x.ellipse(w/2,h/2,Math.max(1,w/2-1),Math.max(1,h/2-1),0,0,7);x.fill();x.strokeStyle='#2A1E2E';x.lineWidth=1;x.stroke();
+ const d=x.getImageData(0,0,w,h);for(let i=3;i<d.data.length;i+=4)d.data[i]=d.data[i]>110?255:0;x.putImageData(d,0,0);return c}
+/* add a part: a new picture strip, a new bone, optionally mirrored into the other view */
+function skAddPart(src,opts={}){const meta=skMeta(),sp=SK.sp,view=SK.view,k=meta.k;const par=opts.par||(SK.sel||'root'),name=uniqBone(meta,opts.name||'part');
+ const rect=allocRect(sp,view,src.width,src.height);putPart(sp,view,rect,src);const img={ox:opts.ox??-Math.round(src.width/2),oy:opts.oy??-Math.round(src.height/2),f:{main:rect}};
+ if(opts.faces){img.f={idle:rect};for(const [fk,fc] of Object.entries(opts.faces)){const fr=allocRect(sp,view,fc.width,fc.height);putPart(sp,view,fr,fc);img.f[fk]=fr}}meta.imgs.push(img);
+ let at=opts.at||[0,-6];if(opts.abs){try{const R=rigFor(sp,view,false),{W}=rigMatrices(R,skNeutral(),view),pm=W[par]||W.root;at=[(at[0]-pm[4])/k,(at[1]-pm[5])/k]}catch(e){at=[0,-6]}}
+ const z=Math.max(0,...meta.bones.map(b=>b.z||0))+1,zb=Math.max(0,...meta.bones.map(b=>b.zb??b.z??0))+1;
+ const b={n:name,par,at,z,zb,i:meta.imgs.length-1};if(opts.faces)b.face=true;meta.bones.push(b);skTopo(meta);
+ if(SK.both&&!opts.abs){const ov=view==='front'?'back':'front',om=ST.rigs[sp][ov];if(om&&!om.bones.some(x=>x.n===name)){const s2=scaled(src,om.k/k),r2=allocRect(sp,ov,s2.width,s2.height);putPart(sp,ov,r2,s2);om.imgs.push({ox:-Math.round(s2.width/2),oy:-Math.round(s2.height/2),f:{main:r2}});
+  om.bones.push({n:name,par:om.bones.some(x=>x.n===par)?par:'root',at:b.at.slice(),z,zb,i:om.imgs.length-1});skTopo(om)}}
+ SK.sel=name;skDone();return b}
+function skClick(ev){const el=ev.target.closest('[data-sk]');if(!el)return;const a=el.dataset.sk,meta=skMeta(),b=SK.sel&&meta.bones.find(x=>x.n===SK.sel);
+ const run={view:()=>{SK.view=el.dataset.v;skLoadView()},anim:()=>{SK.anim=!SK.anim;el.classList.toggle('on',SK.anim);SK.t0=performance.now();skDraw()},act:()=>{SK.anim=true;$('[data-sk=anim]').classList.add('on');SK.act=el.dataset.a;SK.t0=performance.now()},
+  grid12:()=>{SK.grid12=!SK.grid12;el.classList.toggle('on',SK.grid12);skDraw()},
+  pause:()=>{SK.paused=!SK.paused;el.classList.toggle('on',SK.paused);if(SK.paused){SK.anim=true;$('[data-sk=anim]').classList.add('on');SK.tick=Math.floor(((performance.now()-SK.t0)/(1000/12))%24)}else SK.t0=performance.now()-SK.tick*1000/12;skDraw()},
+  tick:()=>{SK.paused=true;$('[data-sk=pause]').classList.add('on');SK.anim=true;$('[data-sk=anim]').classList.add('on');SK.tick=(SK.tick+(+el.dataset.d)+24)%24;skDraw()},
+  onion:()=>{SK.onion=!SK.onion;el.classList.toggle('on',SK.onion);skDraw()},
+  importSheet:()=>skImportSheet(),
+  zoom:()=>{SK.zoom=clamp(SK.zoom+(+el.dataset.z),1,8);skDraw()},sel:()=>{SK.sel=el.dataset.n;skTree();skSide();skDraw()},
+  close:()=>{cancelAnimationFrame(SK.raf);$('#modal').innerHTML='';previewsDirty();render()},
+  paint:()=>{const sp=SK.sp,v=SK.view;openPixelEditor(sp,v,false).then(()=>{PX_ED.back=()=>openSkeleton(sp,v)})},
+  paintPart:()=>{const sp=SK.sp,v=SK.view;openPixelEditor(sp,v,false,{i:b.i,v:b.face?'idle':null}).then(()=>{PX_ED.back=()=>{openSkeleton(sp,v).then(()=>{SK.sel=b.n;skLoadView()})}})},
+  add:async()=>{const r=await dialog('New blank part',`<div class="grid"><label class="fld"><span>Name</span><input id="npName" value="part" maxlength="16"></label><label class="fld"><span>Width (px)</span><input id="npW" type="number" value="${Math.round(10*meta.k)}" min="2" max="200"></label><label class="fld"><span>Height (px)</span><input id="npH" type="number" value="${Math.round(10*meta.k)}" min="2" max="200"></label></div><p class="help">It hangs from ${esc(SK.sel||'the ground')}. You’ll paint it next.</p>`,[{l:'Cancel',v:false},{l:'Add',c:'primary',f:()=>({n:$('#npName').value,w:clamp(+$('#npW').value||20,2,200),h:clamp(+$('#npH').value||20,2,200)})}]);
+   if(!r)return;skAddPart(skPlaceholder(r.w,r.h),{name:r.n.replace(/[^A-Za-z0-9_]/g,'')||'part'});toast('Part added. Click “Paint this part” to draw it.')},
+  addPng:async()=>{const f=await pickFile('image/png');if(!f)return;const c=await fileToCanvas(f);if(c.width>256||c.height>256)return toast('Keep parts under 256×256 pixels.','err');skAddPart(c,{name:f.name.replace(/\.png$/i,'').replace(/[^A-Za-z0-9_]/g,'').slice(0,16)||'part'})},
+  child:()=>{if(!b)return;skAddPart(skPlaceholder(Math.round(8*meta.k),Math.round(8*meta.k)),{par:b.n,at:[0,-4],name:b.n+'Tip'})},
+  dup:()=>{if(!b)return;const n=clone(b);n.n=uniqBone(meta,b.n.replace(/\d+$/,''));delete n.a;if(planRoles(meta.plan,meta.q).includes(b.a||b.n))n.a=b.a||b.n;n.at=[+(b.at[0]+3).toFixed(3),b.at[1]];meta.bones.push(n);skTopo(meta);SK.sel=n.n;skDone()},
+  mirror:()=>{if(!b)return;const n=skMirror(meta,b,b.par||'root',new Set(meta.bones));skTopo(meta);SK.sel=n.n;skDone();toast('Mirrored copy added'+(meta.bones.some(x=>x.par===n.n)?' with its child parts':'')+'.')},
+  del:async()=>{if(!b)return;if(!(await ask(`Delete “${esc(b.n)}”? Parts hanging from it move up to ${esc(b.par||'the ground')}.`,'Delete')))return;meta.bones.filter(x=>x.par===b.n).forEach(x=>{x.par=b.par||'root';x.at=[+(x.at[0]+b.at[0]).toFixed(3),+(x.at[1]+b.at[1]).toFixed(3)]});meta.bones=meta.bones.filter(x=>x!==b);SK.sel=null;skDone()},
+  unshare:()=>{if(!b)return;const img=meta.imgs[b.i],f={};for(const [v,r] of Object.entries(img.f)){const nr=allocRect(SK.sp,SK.view,r[2],r[3]);putPart(SK.sp,SK.view,nr,cutRect(SK.sp,SK.view,r));f[v]=nr}meta.imgs.push({ox:img.ox,oy:img.oy,f});b.i=meta.imgs.length-1;skDone();toast('It has its own picture now.')},
+  givePic:()=>{if(!b)return;const src=skPlaceholder(Math.round(10*meta.k),Math.round(10*meta.k)),r=allocRect(SK.sp,SK.view,src.width,src.height);putPart(SK.sp,SK.view,r,src);meta.imgs.push({ox:-src.width/2,oy:-src.height/2,f:{main:r}});b.i=meta.imgs.length-1;skDone()},
+  replace:async()=>{if(!b)return;const f=await pickFile('image/png');if(!f)return;const c=await fileToCanvas(f),img=meta.imgs[b.i],v=b.face?'idle':Object.keys(img.f)[0],r=img.f[v];
+   if(c.width<=r[2]&&c.height<=r[3]){const t=cnv(r[2],r[3]);t.getContext('2d').drawImage(c,0,0);putPart(SK.sp,SK.view,r,t)}else{const nr=allocRect(SK.sp,SK.view,c.width,c.height);putPart(SK.sp,SK.view,nr,c);img.f[v]=nr}skDone();toast('Picture replaced'+(b.face?' (the open-eyes expression)':'')+'.')},
+  resize:async()=>{if(!b)return;const img=meta.imgs[b.i],r0=img.f.idle||img.f.main||Object.values(img.f)[0];const r=await dialog('Resize the picture',`<p class="help">The pixels stay where they are; new space is added on the right and bottom.</p><div class="grid"><label class="fld"><span>Width</span><input id="rzW" type="number" value="${r0[2]}" min="2" max="256"></label><label class="fld"><span>Height</span><input id="rzH" type="number" value="${r0[3]}" min="2" max="256"></label></div>`,[{l:'Cancel',v:false},{l:'Resize',c:'primary',f:()=>({w:clamp(+$('#rzW').value||r0[2],2,256),h:clamp(+$('#rzH').value||r0[3],2,256)})}]);
+   if(!r)return;for(const [v,rr] of Object.entries(img.f)){const src=cutRect(SK.sp,SK.view,rr),nr=allocRect(SK.sp,SK.view,r.w,r.h),t=cnv(r.w,r.h);t.getContext('2d').drawImage(src,0,0);putPart(SK.sp,SK.view,nr,t);img.f[v]=nr}skDone()},
+  faces:()=>{if(!b)return;const img=meta.imgs[b.i];if(img.f.main&&!img.f.idle){img.f.idle=img.f.main;delete img.f.main}const r0=img.f.idle;for(const v of ['blink','happy','hurt','shout'])if(!img.f[v]){const nr=allocRect(SK.sp,SK.view,r0[2],r0[3]);putPart(SK.sp,SK.view,nr,cutRect(SK.sp,SK.view,r0));img.f[v]=nr}
+   b.face=1;skDone();toast('Expression pictures added as copies. Paint the eyes and mouth for each one.')},
+  copyView:async()=>{const ov=SK.view==='front'?'back':'front',om=ST.rigs[SK.sp][ov];if(!(await ask(`Copy part positions, parents and tilts to the ${ov} view? Parts it doesn’t have yet are added with scaled copies of these pictures.`,'Copy')))return;
+   for(const b2 of meta.bones){let t=om.bones.find(x=>x.n===b2.n);if(!t){let i=-1;if(b2.i>=0){const img=meta.imgs[b2.i],f={};for(const [v,r] of Object.entries(img.f)){const s2=scaled(cutRect(SK.sp,SK.view,r),om.k/meta.k),nr=allocRect(SK.sp,ov,s2.width,s2.height);putPart(SK.sp,ov,nr,s2);f[v]=nr}om.imgs.push({ox:Math.round(img.ox*om.k/meta.k),oy:Math.round(img.oy*om.k/meta.k),f});i=om.imgs.length-1}t={n:b2.n,i,z:b2.z,zb:b2.zb};om.bones.push(t)}
+    t.par=b2.par;t.at=b2.at.slice();if(b2.rr)t.rr=b2.rr;else delete t.rr;if(b2.a)t.a=b2.a;else delete t.a;if(b2.face)t.face=1}
+   skTopo(om);om.plan=meta.plan;om.q=clone(meta.q||{});skDone();toast(`Copied to the ${ov} view.`)}};
+ const f=run[a];if(f)f()}
+/* ================= BLANK BODIES (new billionaires that don’t copy anyone) ================= */
+const BODY_TPL={
+ biped:{q:{lift:0,flapMs:300},parts:[['legR','root',[4,-8],[9,10],[.5,.15],1,2,'dark'],['legL','root',[-4,-8],[9,10],[.5,.15],2,1,'dark'],['torso','root',[0,-5],[26,24],[.5,.92],4,4,'main'],['armR','torso',[9,-14],[7,13],[.5,.12],1.5,3,'main',-.2],['armL','torso',[-9,-14],[7,13],[.5,.12],6,3.1,'main',.2],['tail','torso',[10,-4],[12,6],[.1,.5],0,9,'accent'],['head','torso',[0,-19],[24,20],[.5,.9],7,7,'main',0,1]]},
+ quad:{q:{},parts:[['body','root',[0,-13],[34,18],[.5,.5],4,4,'main'],['legBF','body',[9,4],[7,12],[.5,.1],1,1,'dark'],['legFF','body',[-9,4],[7,12],[.5,.1],1.5,1.5,'dark'],['legBN','body',[11,5],[7,12],[.5,.1],5,5,'main'],['legFN','body',[-11,5],[7,12],[.5,.1],5.5,5.5,'main'],['tail','body',[16,-4],[12,6],[.05,.5],3,9,'accent'],['head','body',[-15,-7],[20,18],[.6,.7],7,7,'main',0,1]]},
+ flyer:{q:{lift:16,per:300,flapAmp:0},parts:[['fly','root',[0,-16],null],['legR','fly',[2,-1],[5,8],[.5,.1],1,1,'dark'],['legL','fly',[-2,-1],[5,8],[.5,.1],2,2,'dark'],['torso','fly',[0,0],[20,22],[.5,.9],4,4,'main'],['wingL','torso',[-3,-12],[22,12],[.95,.6],.5,8,'accent'],['wingR','torso',[3,-12],[22,12],[.05,.6],.4,8,'accent'],['head','torso',[-1,-17],[18,16],[.5,.85],7,7,'main',0,1]]},
+ fish:{q:{lift:12,bh:8},parts:[['fly','root',[0,-12],null],['torso','fly',[0,0],[30,18],[.5,.5],4,4,'main',0,1],['tail','torso',[13,0],[12,14],[.05,.5],3,5,'accent'],['wingL','torso',[-2,4],[8,7],[.5,.1],5,3,'accent'],['wingR','torso',[3,4],[8,7],[.5,.1],2,6,'accent']]},
+ blob:{q:{},parts:[['head','root',[0,0],[34,28],[.5,.96],4,4,'main',0,1],['armL','head',[-15,-8],[7,10],[.5,.1],6,2,'main',.4],['armR','head',[15,-8],[7,10],[.5,.1],6,2,'main',-.4]]},
+ worm:{q:{n:5},parts:[['s4','root',[16,-5],[10,10],[.5,.5],1,5,'main'],['s3','root',[10,-5],[11,11],[.5,.5],2,4,'accent'],['s2','root',[4,-6],[12,12],[.5,.5],3,3,'main'],['s1','root',[-2,-6],[12,12],[.5,.5],4,2,'accent'],['s0','root',[-8,-7],[13,13],[.5,.5],5,1,'main'],['head','s0',[-5,-6],[16,15],[.5,.6],7,7,'main',0,1]]}};
+function blobPart(w,h,col,face,back){const c=cnv(w,h),x=c.getContext('2d'),d=x.createImageData(w,h),a=d.data,base=hexA(col),dark=hexA(shadeHex(col,.62)),lite=hexA(shadeHex(col,1.25)),ink=[42,30,46];
+ const inside=(i,j)=>{const u=(i+.5-w/2)/(w/2-.5),v=(j+.5-h/2)/(h/2-.5);return u*u+v*v<=1};
+ for(let j=0;j<h;j++)for(let i=0;i<w;i++){if(!inside(i,j))continue;const edge=!inside(i-1,j)||!inside(i+1,j)||!inside(i,j-1)||!inside(i,j+1);const t=j/h;const c=edge?ink:t<.3&&i<w*.65?lite:t>.72?dark:base;const o=(j*w+i)*4;a[o]=c[0];a[o+1]=c[1];a[o+2]=c[2];a[o+3]=255}
+ x.putImageData(d,0,0);
+ if(face&&!back){const ex=[Math.round(w*.26),Math.round(w*.52)],ey=Math.round(h*.42),s=Math.max(2,Math.round(w/12));x.fillStyle='#2A1E2E';
+  if(face==='blink')ex.forEach(e=>x.fillRect(e-s,ey,s*2,1));else if(face==='happy')ex.forEach(e=>{x.fillRect(e-s,ey,1,1);x.fillRect(e-s+1,ey-1,s*2-2,1);x.fillRect(e+s-1,ey,1,1)});
+  else if(face==='hurt')ex.forEach((e,k)=>{for(let q=0;q<s;q++){x.fillRect(e-s+q,ey-s/2+(k?s-q:q)*.6,1,1)}});
+  else ex.forEach(e=>{x.fillStyle='#FFFFFF';x.fillRect(e-s/2,ey-s,s+1,s+2);x.fillStyle='#2A1E2E';x.fillRect(e-s/2+1,ey-s+1,Math.max(1,s-1),s);x.fillStyle='#FFFFFF';x.fillRect(e-s/2+1,ey-s+1,1,1)});
+  x.fillStyle='#2A1E2E';if(face==='shout'){x.fillRect(Math.round(w*.36),Math.round(h*.64),Math.max(2,Math.round(w*.14)),Math.max(2,Math.round(h*.14)))}else x.fillRect(Math.round(w*.36),Math.round(h*.68),Math.max(2,Math.round(w*.12)),1)}
+ return c}
+/* build both views and all four sheets for a blank body; scale grows with evolution stage */
+function makeBlankBody(id,plan,col,scale=1){const T=BODY_TPL[plan]||BODY_TPL.biped,cols={main:col,dark:shadeHex(col,.6),accent:shadeHex(col,1.3)},gcols={main:'#D6A23A',dark:'#8E6420',accent:'#F2CE6E'},rig={};
+ for(const [view,k,BW,BH,cx,base] of [['front',2,224,208,112,200],['back',2.8,314,291,157,280]]){const parts=[],imgs=[],bones=[];let pk=[];
+  for(const [n,par,at,box,piv,z,zb,colK,rr,face] of T.parts){if(!box){bones.push({n,par,at:at.map(v=>+(v*scale).toFixed(3)),i:-1});continue}
+   const w=Math.max(3,Math.round(box[0]*k*scale)),h=Math.max(3,Math.round(box[1]*k*scale)),vs=face?['idle','blink','happy','hurt','shout']:['main'];const f={};
+   vs.forEach(v=>{const c=blobPart(w,h,cols[colK]||col,face?v:null,view==='back'),g=blobPart(w,h,gcols[colK]||gcols.main,face?v:null,view==='back');pk.push({c,g,w,h,ref:[f,v]})});imgs.push({ox:-Math.round(piv[0]*w),oy:-Math.round(piv[1]*h),f});
+   const b={n,par,at:at.map(v=>+(v*scale).toFixed(3)),z,zb,i:imgs.length-1};if(rr)b.rr=rr;if(face)b.face=1;bones.push(b)}
+  let x=1,y=1,rowH=0;const W=256;pk.forEach(p=>{if(x+p.w+1>W){x=1;y+=rowH+1;rowH=0}p.x=x;p.y=y;x+=p.w+1;rowH=Math.max(rowH,p.h)});const Hh=y+rowH+1,sheet=cnv(W,Hh),sx=sheet.getContext('2d'),gold=cnv(W,Hh),gx=gold.getContext('2d');
+  pk.forEach(p=>{sx.drawImage(p.c,p.x,p.y);gx.drawImage(p.g,p.x,p.y);p.ref[0][p.ref[1]]=[p.x,p.y,p.w,p.h]});
+  rig[view]={k,BW,BH,cx,base,tipX:0,plan,q:clone(T.q),geo:{},size:[W,Hh],imgs,bones};markArt(atlasPath(id,view,false),sheet);markArt(atlasPath(id,view,true),gold)}
+ ST.rigs[id]=rig;ST.rigVer=(ST.rigVer||0)+1;skGeo(id)}
+
+/* ---------- v35: a piece sheet in, as parts ----------
+   One PNG with every piece of a billionaire and a layout JSON beside it:
+   {"w":96,"h":96,"pieces":[{"n":"head","x":0,"y":0,"w":40,"h":36,"px":28,"py":4,"par":"torso","group":"front"|"back",
+     "face":"idle"|"blink"|"happy"|"hurt" (face pieces go onto the head as its face variants), "pivot":[20,34]}]}
+   px,py = where the piece sits on the canvas at rest (so the rig can be built from it); par = the part it hangs from. */
+async function skImportSheet(){const png=await pickFile('image/png');if(!png)return;const json=await pickFile('application/json,.json');if(!json)return;
+ let lay;try{lay=JSON.parse(await json.text())}catch(e){toast('The layout file is not JSON.','err');return}
+ const im=await loadImage(URL.createObjectURL(png));const view=SK.view,group=view;const L=(lay.pieces||[]).filter(p=>(p.group||'front')===group&&!p.face);if(!L.length){toast('No pieces for the '+view+' view in that layout.','err');return}
+ const meta=skMeta();if(meta.bones.length&&!(await ask(`Replace the ${meta.bones.length} parts of the ${view} view with the ${L.length} pieces from the sheet?`,'Replace','Keep')))return;
+ meta.bones=[];meta.imgs=[];SK.sel=null;const faces=(lay.pieces||[]).filter(p=>p.face&&(p.group||'front')===group);
+ const order=[];const seen=new Set();const put=p=>{if(seen.has(p.n))return;const par=L.find(q=>q.n===p.par);if(par)put(par);seen.add(p.n);order.push(p)};L.forEach(put);
+ for(const p of order){const c=cnv(p.w,p.h);c.getContext('2d').drawImage(im,p.x,p.y,p.w,p.h,0,0,p.w,p.h);const opts={name:p.n,par:p.par&&seen.has(p.par)?p.par:'root',at:[(p.px??0)+(p.pivot?p.pivot[0]:p.w/2),(p.py??0)+(p.pivot?p.pivot[1]:p.h/2)],ox:-(p.pivot?p.pivot[0]:p.w/2),oy:-(p.pivot?p.pivot[1]:p.h/2)};
+  const vars={};if(p.n==='head')for(const f of faces){const fc=cnv(p.w,p.h),fx=fc.getContext('2d');fx.drawImage(c,0,0);fx.drawImage(im,f.x,f.y,f.w,f.h,(f.px??p.px??0)-(p.px??0),(f.py??p.py??0)-(p.py??0),f.w,f.h);vars[f.face]=fc}
+  SK.sel=opts.par==='root'?null:opts.par;opts.abs=true;spriteCacheClear();skAddPart(c,Object.assign(opts,Object.keys(vars).length?{faces:vars}:{}))}
+ if(lay.w&&lay.h){meta.BW=lay.w;meta.BH=lay.h;meta.cx=lay.cx??lay.w/2;meta.base=lay.base??lay.h-2}
+ skDone();toast(`${order.length} pieces imported as parts${faces.length?' with '+faces.length+' face pieces':''}.`)}

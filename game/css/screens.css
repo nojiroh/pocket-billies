@@ -520,7 +520,7 @@ body.in-title #app{padding:0}
 .ttl{position:fixed;inset:0;z-index:5;display:flex;flex-direction:column;justify-content:space-between;align-items:center;padding:max(28px,env(safe-area-inset-top)) 18px max(22px,env(safe-area-inset-bottom));text-align:center;color:#fff7e6;
  background:linear-gradient(180deg,rgba(20,14,40,.55) 0%,rgba(20,14,40,0) 34%,rgba(20,14,40,0) 58%,rgba(20,14,40,.62) 100%)}
 .ttl.can-tap{cursor:pointer}
-.ttl-bg{position:absolute;inset:0;z-index:-1;background:url('../art/background/sundown.webp') center/cover;opacity:1;transition:opacity 1.2s}
+.ttl-bg{position:absolute;inset:0;z-index:-1;background:radial-gradient(120% 80% at 50% 110%,#f6c56a 0%,#e8875c 22%,#7b4f8f 52%,#28264f 82%,#1a1838 100%);opacity:1;transition:opacity 1.2s}/* alpha 0.4.1: no painted picture any more; the town shows as soon as it is drawn */
 body.ttl-live .ttl-bg{opacity:0}
 .ttl-top{margin-top:4vh;animation:ldIn .9s cubic-bezier(.2,1.4,.4,1) both}
 .ttl-logo{margin:0;font-family:'Tiny5',monospace;font-weight:400;font-size:clamp(56px,17vw,96px);line-height:.86;letter-spacing:.02em;display:flex;flex-direction:column;align-items:center;
@@ -558,3 +558,30 @@ body.cs-dazed #dio,body.cs-dazed #dio.gl{filter:blur(8px) brightness(1.12) satur
 .intro-still{justify-content:center}
 .intro-still .still{display:block;align-self:center;width:min(100%,560px);height:auto;aspect-ratio:200/124;image-rendering:pixelated;image-rendering:crisp-edges;border-radius:14px;box-shadow:0 10px 26px var(--shadow,rgba(0,0,0,.3));animation:nwFadeUp .4s ease backwards}
 @media (prefers-reduced-motion:reduce){.intro-still .still{animation:none}}
+/* alpha 0.4.1: the title comes out of the loading screen (css/loader.css, js/boot.js). While the loader is up the title
+   keeps its logo hidden (the loader's stands in the same place) and its buttons back; the town opens in a circle */
+body.ld-on .ttl-top{visibility:hidden;animation:none}
+body.ld-on .ttl-bottom{opacity:0;animation:none}
+body.ld-on .ttl-bg{display:none}
+body.ttl-reveal{background:radial-gradient(120% 80% at 50% 110%,#f6c56a 0%,#e8875c 22%,#7b4f8f 52%,#28264f 82%,#1a1838 100%)}
+body.ttl-reveal #dio{animation:ttlReveal 2s cubic-bezier(.35,0,.2,1) both}
+@keyframes ttlReveal{from{clip-path:circle(0% at 50% 56%)}12%{clip-path:circle(9% at 50% 56%)}to{clip-path:circle(120% at 50% 56%)}}
+[data-motion=reduced] body.ttl-reveal #dio{animation:none}
+/* the title and the loading town fill the screen: on a wide screen the app's panel column mustn't stand over them */
+body.in-title #app,body.ld-on #app{background:transparent!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;border-color:transparent!important;max-width:none;margin:0;min-height:0}
+/* alpha 0.4.1: accounts (js/account.js) */
+.ttl-acc{position:absolute;top:max(12px,env(safe-area-inset-top));right:12px;z-index:2}
+.acc-chip{display:inline-flex;align-items:center;gap:8px;padding:6px 12px 6px 6px;border:0;border-radius:999px;background:rgba(20,14,40,.55);color:#fff7e6;font:600 13px var(--body);cursor:pointer;backdrop-filter:blur(4px)}
+.acc-chip.google{background:#fff;color:#2A2238;padding:7px 14px 7px 10px;box-shadow:0 2px 0 rgba(20,14,40,.35)}
+.acc-chip.quiet{opacity:.75;padding:6px 12px;cursor:default}
+.acc-g{width:18px;height:18px;flex:none}
+.acc-ph{width:28px;height:28px;border-radius:50%;object-fit:cover;flex:none;display:inline-grid;place-items:center;background:#7b4f8f;color:#fff;font-weight:700}
+.acc-box{display:flex;align-items:center;gap:12px;padding:12px;margin:0 0 12px;border-radius:14px;background:var(--panel2,rgba(0,0,0,.04));flex-wrap:wrap}
+.acc-box .acc-ph{width:40px;height:40px}
+.acc-t{flex:1 1 180px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.acc-gbtn{display:inline-flex;align-items:center;gap:8px;background:#fff!important;color:#2A2238!important}
+.note.warn{color:#b9541c}
+/* after the loader the logo is already in place; the buttons come in without holding back (no fill), so they show
+   even where animations stall on a busy first frame */
+body.from-ld .ttl-top{animation:none}
+body.from-ld .ttl-bottom{animation:ldIn .7s cubic-bezier(.2,1.4,.4,1)}

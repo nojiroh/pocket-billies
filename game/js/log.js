@@ -71,7 +71,7 @@ NWLOG.state=()=>{const s={};try{const p=(S.preferences)||{};s.preferences={theme
    how long frames take, and the GPU's extensions */
 NWLOG.long={n:0,total:0,max:0,last:[]};try{new PerformanceObserver(l=>{for(const e of l.getEntries()){const L=NWLOG.long;L.n++;L.total+=e.duration;L.max=Math.max(L.max,e.duration);const why=NWLOG.blame(e.startTime,e.startTime+e.duration)||'unknown (script or layout outside the marked jobs)';L.last.push([Math.round(e.startTime-NWLOG.t0),Math.round(e.duration),why]);if(L.last.length>40)L.last.shift()}}).observe({type:'longtask',buffered:true})}catch(e){}
 NWLOG.more=()=>{const o={};const t=(k,f)=>{try{o[k]=f()}catch(e){o[k]='error: '+String(e.message||e).slice(0,80)}};
- t('slot',()=>typeof SLOT!=='undefined'?SLOT:1);t('preferences',()=>Object.assign({},S.preferences||{}));t('saveBytes',()=>JSON.stringify(S).length);
+ t('account',()=>typeof ACC!=='undefined'&&ACC.user?'signed in':'this browser');t('preferences',()=>Object.assign({},S.preferences||{}));t('saveBytes',()=>JSON.stringify(S).length);
  t('time',()=>typeof ENV!=='undefined'?{on:ENV.on,hour:+ENV.tod.toFixed(2),weather:ENV.weather,season:ENV.season,climate:ENV.climate,night:+(ENV.night||0).toFixed(2),lamps:+(ENV.lampK||0).toFixed(2),forced:ENV.force||null}:null);
  t('scene',()=>{if(typeof DIO==='undefined'||!DIO.sc)return null;const sc=DIO.sc;return {id:DIO.id,size:[sc.w,sc.h],props:(sc.props||[]).length,life:typeof LIFE!=='undefined'?LIFE.list.map(c=>c.k).join(' '):'',folk:(DIO.folk||[]).length,water:(DIO.water||[]).length,
   ladders:(sc.props||[]).filter(p=>p.act==='climb').length,resolution:DIO.R,inside:U.inside?U.inside.id:null,room:!!sc.room}});

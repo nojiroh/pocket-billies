@@ -142,6 +142,29 @@ menu.
 - **Moving about** moved to the Controls tab; the help text describes the joystick and D-pad.
 - Saves only need to work with this version: old save formats are no longer converted (the old species table is gone).
 
+### The title and the loading screen are one
+- The logo stands where it will stay; behind it the first town is laid out and **builds itself as the game loads**:
+  the view opens out from the middle, and trees, houses and lamps spring up from the ground as the loading reaches
+  them. Then the buttons come in under the logo. No painted picture any more.
+- (Without 3D graphics, a little pixel island builds itself instead.)
+
+### Accounts: everyone plays on their own save
+- The three save slots are gone: one save per player.
+- **Sign in with Google** (top right of the title, or Settings → Save): your game is kept online and follows you to any
+  device; everyone who signs in has their own save. Signing out loads this browser's own game. The first time you sign
+  in on a browser that already has a game, you're asked whether to bring it along.
+- It runs on Firebase. Until a Firebase project is filled into `game/js/account-config.js`, there is no sign-in button
+  and the game keeps one save in the browser.
+
+### Play it on GitHub, edit it on GitHub
+- The game runs from GitHub Pages: https://nojiroh.github.io/pocket-billies/ (the repository's Settings → Pages →
+  Deploy from a branch → main, / (root)).
+- **The Studio runs there too**, at …/pocket-billies/studio/. Admins sign in with a GitHub token (the sign-in page walks
+  you through making one). Only the repository's owner and the people listed in `studio/admins.json` get in, and they
+  must be collaborators on the repository. **Propose changes** (the Save button) sends everything you changed as one
+  pull request; nothing in the game changes until the owner merges it.
+- On your own computer `start-studio.py` works as before and saves straight into the game folder.
+
 ### Pocket Billies Studio
 - **Find (Ctrl+K or /)**: one search box for every engine dial, every setting on the Rules, Types, Items and Jobs pages,
   every section and every Billy, move, item, trainer, shop, place, route stop and prop. Pick a result: the Studio

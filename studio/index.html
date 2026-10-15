@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pocket Billies Studio</title>
+<link rel="icon" href="../game/art/app/icon-192.png">
+<link rel="stylesheet" href="studio.css">
+</head>
+<body>
+<div id="studio">
+ <header class="top">
+  <div class="brand"><img src="../game/art/coins/penny_32.png" width="28" height="28" alt=""><b>Pocket Billies Studio</b><span class="dirty" id="dirty" hidden title="You have changes that aren’t saved to the game yet">Unsaved changes</span></div>
+  <div class="top-acts">
+   <button class="tb" data-act="undo" title="Undo (Ctrl+Z)" id="undoBtn">↶ Undo</button>
+   <button class="tb" data-act="redo" title="Redo (Ctrl+Shift+Z)" id="redoBtn">↷ Redo</button>
+   <button class="tb" data-act="goCheck" id="checkBtn" title="Check the game data for problems">Check <span class="badge" id="checkCount">0</span></button>
+   <button class="tb" data-act="play" title="Open the game in a new tab with the debug menu">▶ Play test</button>
+   <button class="tb primary" data-act="save" id="saveBtn" title="Save everything into the game folder (Ctrl+S)">Save to game</button>
+  </div>
+ </header>
+ <nav class="side" id="side"></nav>
+ <main id="main"><div class="loading">Loading game data…</div></main>
+</div>
+<div id="modal"></div>
+<div id="dlg"></div>
+<div id="toasts" aria-live="polite"></div>
+<script>window.STUDIO_KEY='__STUDIO_KEY__';window.NW_ARTDIR='../game/art/';</script>
+<!-- shims so the game's renderers can run inside the Studio -->
+<script>
+var S={preferences:{},gender:'boy',avatar:null},U={},B=null,RM=false;
+const rnd=Math.random,clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),$=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>Array.from(r.querySelectorAll(s));
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+/* the game's tables, read live from the Studio's unsaved data (ST is declared in js/core.js) */
+const liveMap=f=>new Proxy({},{get:(t,k)=>{const o=typeof ST!=='undefined'&&ST.D?f(ST.D):null;return o?o[k]:undefined},
+ has:(t,k)=>{const o=typeof ST!=='undefined'&&ST.D?f(ST.D):null;return !!o&&k in o},ownKeys:()=>{const o=typeof ST!=='undefined'&&ST.D?f(ST.D):null;return o?Reflect.ownKeys(o):[]},
+ getOwnPropertyDescriptor:(t,k)=>{const o=typeof ST!=='undefined'&&ST.D?f(ST.D):null;if(o&&k in o)return {value:o[k],enumerable:true,configurable:true,writable:true}}});
+const BACKDROPS=liveMap(D=>D.backdrops),MOVES=liveMap(D=>D.moves),PEOPLE=liveMap(D=>D.people);
+const TC=liveMap(D=>{const o=Object.fromEntries(D.types.map(t=>[t.id,[t.color,t.text||'#fff']]));o.None=[(D.untyped||{}).color||'#9a9a9a',(D.untyped||{}).text||'#fff'];return o});
+const TYPEFX=liveMap(D=>{const o=Object.fromEntries(D.types.map(t=>[t.id,t.fx&&t.fx.length?t.fx:['pow','star']]));o.None=(D.untyped||{}).fx||['pow','star'];return o});
+</script>
+<script src="../game/art/manifest.js"></script>
+<script src="../game/art/next/rigs-next.js"></script>
+<script src="../game/js/frame.js"></script>
+<script src="../game/js/art.js"></script>
+<script src="../game/js/anim.js"></script>
+<script src="../game/js/rig.js"></script>
+<script src="../game/js/trainer.js"></script>
+<script src="../game/js/scene.js"></script>
+<script src="../game/js/diorama.js"></script>
+<script src="../game/js/engine/settings.js"></script>
+<script src="../game/js/engine/core.js"></script>
+<script src="../game/js/engine/light.js"></script>
+<script src="../game/js/engine/post.js"></script>
+<script src="../game/js/env.js"></script>
+<script src="../game/js/diorama-gl.js"></script>
+<script src="../game/js/buildings.js"></script>
+<script src="../game/js/structures.js"></script>
+<script src="../game/js/props3d.js"></script>
+<script src="../game/js/vox.js"></script>
+<script src="../game/js/life.js"></script>
+<script src="../game/js/battle-gl.js"></script>
+<script src="js/core.js"></script>
+<script src="js/sprites.js"></script>
+<script src="js/sections.js"></script>
+<script src="js/world.js"></script>
+<script src="js/check.js"></script>
+<script src="js/skeleton.js"></script>
+<script src="js/preview.js"></script>
+<script src="js/mappaint.js"></script>
+<script src="js/scenes.js"></script>
+<script src="js/scenetools.js"></script>
+<script src="js/propedit.js"></script>
+<script src="js/voxedit.js"></script>
+<script src="js/wardrobe.js"></script>
+<script src="js/engine.js"></script>
+<script src="js/roster.js"></script>
+<script src="js/lore.js"></script>
+<script src="js/viewport.js"></script>
+<script src="js/find.js"></script>
+<script src="js/links.js"></script>
+<script src="js/github.js"></script>
+</body>
+</html>
