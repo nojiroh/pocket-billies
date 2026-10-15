@@ -758533,6 +758533,429 @@ window.GAMEDATA={
      "label": "row-1-east"
     }
    ]
+  },
+  "gallery": {
+   "name": "Graphics gallery",
+   "kind": "test",
+   "test": true,
+   "w": 52,
+   "h": 40,
+   "edge": "G",
+   "far": "hills",
+   "farH": 1,
+   "folk": 0,
+   "hub": [
+    26,
+    4
+   ],
+   "exits": [],
+   "tiles": [
+    "GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG",
+    "GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG",
+    "GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG",
+    "GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG",
+    "GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG",
+    "GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG",
+    "GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG",
+    "GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG",
+    "GGGGGGvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvGGGGGG",
+    "GGGGGGvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvGGGGGG",
+    "GGGGGGvvGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGvvGGGGGG",
+    "GGGGGGvvGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGvvGGGGGG",
+    "GGGGGGvvGGGGGGGGGGGGGGGGGGGGGGEttEttEttEtGGGvvGGGGGG",
+    "GGGGGGvvGGGGGGGGGGGGGGGGGGGGGGtEttEttEttEGGGvvGGGGGG",
+    "GGGGGGvvGGGGGGGGGGGGGGGGGGGGGGttEttEttEttGGGvvGGGGGG",
+    "GGGGGGvvGGGGGGGGGGGGGGGGGGGGGGEttEttEttEtGGGvvGGGGGG",
+    "GGGGGGvvGGGGGGGGGGGGGGGGGGGGGGtEttEttEttEGGGvvGGGGGG",
+    "GGGGGGvvGGGGGGGGGGGGGGGGGGGGGGttEttEttEttGGGvvGGGGGG",
+    "GGGGGGvvGGGGGGGGGGGGGGGGGGGGGGEttEttEttEtGGGvvGGGGGG",
+    "GGGGGGvvGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGvvGGGGGG",
+    "GGGGGGvvGGGGGGGGGGGGGGGGGGGGGGGGwwwwwwwGGGGGvvGGGGGG",
+    "GGGGGGvvGGGGGGGGGGGGGGGGGGGGGGGwwwwwwwwwGGGGvvGGGGGG",
+    "GGGGGGvvGGllllllllllGGGGGGGGGGwwwwwwwwwwGGGGvvGGGGGG",
+    "GGGGGGvvGGllllllllllGGGGGGGGGGwwwwwwwwwwGGGGvvGGGGGG",
+    "GGGGGGvvGGllllllllllGGGGGGGGGGGwwwwwwwwwGGGGvvGGGGGG",
+    "GGGGGGvvGGllllllllllGGGGGGGGGGGGwwwwwwwGGGGGvvGGGGGG",
+    "GGGGGGvvGGllllllllllGGGGGGGGGGGGGGwwwGGGGGGGvvGGGGGG",
+    "GGGGGGvvGGllllllllllGGGGGGGGGGGGGGGGGGGGGGGGvvGGGGGG",
+    "GGGGGGvvGGllllllllllGGGGGGGGGGGGGGGGGGGGGGGGvvGGGGGG",
+    "GGGGGGvvGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGvvGGGGGG",
+    "GGGGGGvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvGGGGGG",
+    "GGGGGGvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvGGGGGG",
+    "GGGGGGGGGGGGGGGGGGGGGGGGGvvGGGGGGGGGGGGGGGGGGGGGGGGG",
+    "GGGGGGGGGGGGGGGGGGGGGGGGGvvGGGGGGGGGGGGGGGGGGGGGGGGG",
+    "GGGGGGGGGGGGGGGGGGGGGGGGGvvGGGGGGGGGGGGGGGGGGGGGGGGG",
+    "GGGGGGGGGGGGGGGGGGGGGGGGGvvGGGGGGGGGGGGGGGGGGGGGGGGG",
+    "GGGGGGGGGGGGGGGGGGGGGGGGGvvGGGGGGGGGGGGGGGGGGGGGGGGG",
+    "GGGGGGGGGGGGGGGGGGGGGGGGGvvGGGGGGGGGGGGGGGGGGGGGGGGG",
+    "GGGGGGGGGGGGGGGGGGGGGGGGGvvGGGGGGGGGGGGGGGGGGGGGGGGG",
+    "GGGGGGGGGGGGGGGGGGGGGGGGGvvGGGGGGGGGGGGGGGGGGGGGGGGG"
+   ],
+   "props": [
+    {
+     "k": "tree_birch",
+     "x": 13.83,
+     "z": 23.1,
+     "s": 1.0,
+     "f": 1
+    },
+    {
+     "k": "tree_pine",
+     "x": 11.67,
+     "z": 27.71,
+     "s": 1.15,
+     "f": 1
+    },
+    {
+     "k": "tree_oak",
+     "x": 19.21,
+     "z": 26.89,
+     "s": 1.19
+    },
+    {
+     "k": "tree_birch",
+     "x": 12.34,
+     "z": 23.07,
+     "s": 0.94,
+     "f": 1
+    },
+    {
+     "k": "tree_oak",
+     "x": 19.48,
+     "z": 27.84,
+     "s": 1.16
+    },
+    {
+     "k": "tree_oak",
+     "x": 15.2,
+     "z": 26.57,
+     "s": 1.15,
+     "f": 1
+    },
+    {
+     "k": "tree_birch",
+     "x": 15.02,
+     "z": 24.87,
+     "s": 1.01
+    },
+    {
+     "k": "tree_oak",
+     "x": 15.43,
+     "z": 23.61,
+     "s": 0.9,
+     "f": 1
+    },
+    {
+     "k": "tree_pine",
+     "x": 15.61,
+     "z": 27.78,
+     "s": 0.9
+    },
+    {
+     "k": "tree_pine",
+     "x": 17.82,
+     "z": 25.48,
+     "s": 0.92,
+     "f": 1
+    },
+    {
+     "k": "tree_oak",
+     "x": 16.69,
+     "z": 27.95,
+     "s": 1.09,
+     "f": 1
+    },
+    {
+     "k": "tree_pine",
+     "x": 21.79,
+     "z": 27.52,
+     "s": 1.07,
+     "f": 1
+    },
+    {
+     "k": "tree_oak",
+     "x": 16.59,
+     "z": 25.47,
+     "s": 1.11
+    },
+    {
+     "k": "tree_oak",
+     "x": 19.87,
+     "z": 22.26,
+     "s": 0.98
+    },
+    {
+     "k": "house_cottage",
+     "x": 15,
+     "z": 12.5
+    },
+    {
+     "k": "streetlamp",
+     "x": 11,
+     "z": 10.5
+    },
+    {
+     "k": "streetlamp",
+     "x": 19.5,
+     "z": 10.5
+    },
+    {
+     "k": "lantern",
+     "x": 13,
+     "z": 10.2
+    },
+    {
+     "k": "bench_wood",
+     "x": 17,
+     "z": 10.3
+    },
+    {
+     "k": "lily_flowers",
+     "x": 33,
+     "z": 15.5
+    },
+    {
+     "k": "lily_flowers",
+     "x": 37,
+     "z": 17
+    },
+    {
+     "k": "bush_flower",
+     "x": 29,
+     "z": 13
+    },
+    {
+     "k": "bush_flower",
+     "x": 41,
+     "z": 14
+    },
+    {
+     "k": "bush_flower",
+     "x": 40,
+     "z": 19
+    },
+    {
+     "k": "sunflowers",
+     "x": 31.85,
+     "z": 24.49
+    },
+    {
+     "k": "cornflowers",
+     "x": 35.37,
+     "z": 22.61
+    },
+    {
+     "k": "cornflowers",
+     "x": 32.57,
+     "z": 22.56
+    },
+    {
+     "k": "sunflowers",
+     "x": 31.51,
+     "z": 24.41
+    },
+    {
+     "k": "flowers_mixed",
+     "x": 39.4,
+     "z": 25.8
+    },
+    {
+     "k": "flowers_meadow",
+     "x": 31.73,
+     "z": 26.44
+    },
+    {
+     "k": "flowers_mixed",
+     "x": 39.32,
+     "z": 24.52
+    },
+    {
+     "k": "cornflowers",
+     "x": 31.58,
+     "z": 24.79
+    },
+    {
+     "k": "flowers_meadow",
+     "x": 39.13,
+     "z": 25.14
+    },
+    {
+     "k": "flowers_meadow",
+     "x": 37.16,
+     "z": 24.72
+    },
+    {
+     "k": "tree_birch",
+     "x": 2.15,
+     "z": 37.49,
+     "s": 1.1
+    },
+    {
+     "k": "tree_pine",
+     "x": 5.28,
+     "z": 36.99,
+     "s": 1.1
+    },
+    {
+     "k": "tree_pine",
+     "x": 8.23,
+     "z": 38.06,
+     "s": 1.1
+    },
+    {
+     "k": "tree_pine",
+     "x": 12.25,
+     "z": 37.96,
+     "s": 1.1
+    },
+    {
+     "k": "tree_birch",
+     "x": 14.71,
+     "z": 36.71,
+     "s": 1.1
+    },
+    {
+     "k": "tree_birch",
+     "x": 18.03,
+     "z": 36.18,
+     "s": 1.1
+    },
+    {
+     "k": "tree_pine",
+     "x": 20.76,
+     "z": 36.85,
+     "s": 1.1
+    },
+    {
+     "k": "tree_pine",
+     "x": 24.44,
+     "z": 37.92,
+     "s": 1.1
+    },
+    {
+     "k": "tree_birch",
+     "x": 26.95,
+     "z": 37.02,
+     "s": 1.1
+    },
+    {
+     "k": "tree_birch",
+     "x": 30.3,
+     "z": 38.47,
+     "s": 1.1
+    },
+    {
+     "k": "tree_pine",
+     "x": 33.03,
+     "z": 36.6,
+     "s": 1.1
+    },
+    {
+     "k": "tree_pine",
+     "x": 36.86,
+     "z": 38.33,
+     "s": 1.1
+    },
+    {
+     "k": "tree_pine",
+     "x": 39.65,
+     "z": 36.52,
+     "s": 1.1
+    },
+    {
+     "k": "tree_pine",
+     "x": 42.62,
+     "z": 38.23,
+     "s": 1.1
+    },
+    {
+     "k": "tree_birch",
+     "x": 45.51,
+     "z": 37.43,
+     "s": 1.1
+    },
+    {
+     "k": "tree_birch",
+     "x": 49.01,
+     "z": 36.64,
+     "s": 1.1
+    },
+    {
+     "k": "signpost",
+     "x": 22.5,
+     "z": 20.5,
+     "act": "sign",
+     "label": "The grove",
+     "say": "The grove: shadows, trees that shade themselves, god rays and light shafts"
+    },
+    {
+     "k": "signpost",
+     "x": 21.5,
+     "z": 11,
+     "act": "sign",
+     "label": "The cottage",
+     "say": "The cottage: lamps and their glow (come back at night)"
+    },
+    {
+     "k": "signpost",
+     "x": 29,
+     "z": 17,
+     "act": "sign",
+     "label": "The pond",
+     "say": "The pond: water reflections"
+    },
+    {
+     "k": "signpost",
+     "x": 29,
+     "z": 25,
+     "act": "sign",
+     "label": "The meadow",
+     "say": "The meadow: grass, flowers, particles in the air"
+    },
+    {
+     "k": "signpost",
+     "x": 8.5,
+     "z": 28.5,
+     "act": "sign",
+     "label": "The open field",
+     "say": "The open field: clouds, cloud shadows and low mist"
+    },
+    {
+     "k": "signpost",
+     "x": 25.5,
+     "z": 31.5,
+     "act": "sign",
+     "label": "The long view",
+     "say": "The long view: depth of field and far trees and hills"
+    }
+   ],
+   "stations": {
+    "grove": [
+     22.5,
+     18.3
+    ],
+    "cottage": [
+     21.5,
+     8.8
+    ],
+    "pond": [
+     29,
+     14.8
+    ],
+    "meadow": [
+     29,
+     22.8
+    ],
+    "sky": [
+     8.5,
+     26.3
+    ],
+    "view": [
+     25.5,
+     29.3
+    ]
+   },
+   "blurb": "A small place built to show each graphics setting. Walk to a signpost and switch the dial it names."
   }
  },
  "links": [

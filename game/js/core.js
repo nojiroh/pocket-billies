@@ -81,7 +81,8 @@ function stat(m,k){const b=SP[m.sp].base[STATK.indexOf(k)];let v=k==='hp'?Math.f
  if(m.boss)v=Math.floor(v*(k==='hp'?m.boss.hp:m.boss.st));else if(m.alpha)v=Math.floor(v*((RULES.battle&&RULES.battle.alphaKeep)??1.08));return v}
 const maxHp=m=>stat(m,'hp');
 function movesAt(lid,lvl){const out=[];for(const [lv,mv] of LN[lid].learn)if(lv<=lvl&&!out.includes(mv))out.push(mv);return out.slice(-SLOTS())}
-function makeMon(sp,lvl,o={}){const m={uid:uid(),sp,lvl,xp:xpFor(lvl),hp:0,status:null,sTurns:0,moves:movesAt(SP[sp].line,lvl),gold:!!o.gold,nick:''};m.hp=maxHp(m);return m}
+/* alpha 0.5: a Billie remembers where and when it joined you (shown in its details) */
+function makeMon(sp,lvl,o={}){const m={uid:uid(),sp,lvl,xp:xpFor(lvl),hp:0,status:null,sTurns:0,moves:movesAt(SP[sp].line,lvl),gold:!!o.gold,nick:''};m.hp=maxHp(m);try{if(typeof S!=='undefined'&&S&&S.route&&ROUTE[S.route.node])m.met={n:ROUTE[S.route.node].id||S.route.node,t:Date.now()}}catch(e){}return m}
 const N=m=>m.nick||SP[m.sp].name;
 const allMons=()=>S.team.concat(S.box);
 const findMon=id=>allMons().find(m=>m.uid===id);

@@ -46,7 +46,9 @@ function engLook(){if(typeof ENG_CTX!=='undefined'&&ENG_CTX.look)return ENG_CTX.
 let ENG_CTX={look:null,bypass:false,env:false};
 let engSource=()=>typeof GD!=='undefined'?GD.engine:null;/* the Studio points this at its unsaved data */
 function engGame(){const d=engSource();return d&&d.defaults||null}
-function eng(group,key){if(ENG_CTX.bypass)return ENGINE_DEFAULTS[group][key];const L=engLook(),G=engGame();let v=L&&L[group]?L[group][key]:undefined;if(v===undefined&&G&&G[group])v=G[group][key];if(v===undefined)v=ENGINE_DEFAULTS[group][key];
+/* alpha 0.5: a player's own expert dials (Settings → Graphics → Expert) come first */
+function engPlayer(){const p=typeof S!=='undefined'&&S&&S.preferences;return p&&p.expert&&p.eng?p.eng:null}
+function eng(group,key){if(ENG_CTX.bypass)return ENGINE_DEFAULTS[group][key];const L=engLook(),G=engGame(),P=engPlayer();let v=P&&P[group]?P[group][key]:undefined;if(v===undefined&&L&&L[group])v=L[group][key];if(v===undefined&&G&&G[group])v=G[group][key];if(v===undefined)v=ENGINE_DEFAULTS[group][key];
  /* v26: the time of day and the weather lean on some dials while a walk scene draws (env.js) */
  if(ENG_CTX.env&&typeof ENV_MOD!=='undefined'){const m=ENV_MOD[group];if(m&&m[key]&&typeof v==='number')v=m[key](v)}return v}
 function engHex(group,key,fb){const v=eng(group,key)||fb;if(typeof v==='string'&&/^#[0-9a-f]{6}$/i.test(v))return hexA(v).map(x=>x/255);if(Array.isArray(fb))return fb;/* v43: a fallback given as 0..1 numbers is used as it is (it was divided by 255, which left the ambient light at nothing) */return hexA(fb||'#ffffff').map(x=>x/255)}

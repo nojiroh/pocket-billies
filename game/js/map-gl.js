@@ -172,6 +172,9 @@ function mglPins(){const host=$('#maplabels');if(!host||!MAP.cam)return;if(!MGL.
  const plan=[S.route.node,...S.route.plan],onPlan=new Set();for(let k=0;k<plan.length-1;k++)onPlan.add(Math.min(plan[k],plan[k+1])+'-'+Math.max(plan[k],plan[k+1]));
  LINKS.forEach(([a,b,c],i)=>{const show=typeof sel==='number'&&(a===sel||b===sel)||onPlan.has(Math.min(a,b)+'-'+Math.max(a,b));const q=show?mglProj(edgePos(a,b,.5)):null;
   put('L'+i,q,`${fmt(c)} steps`,'mchip'+(onPlan.has(Math.min(a,b)+'-'+Math.max(a,b))?' trip':''))});
+ /* 0.5: friends, at the place they were last */
+ if(typeof FR!=='undefined')for(const u of FR.list){const d=FR.data[u],a=d&&d.at;if(!a||a.node==null||!MNV[a.node]){put('fr'+u,null);continue}const tv=mglMiniTop(a.node);let q=mglProj(tv||MNV[a.node]);if(q&&q.z>.92&&!MGL.flat)q=null;if(q)q={x:q.x+22,y:q.y-6,z:q.z};
+  put('fr'+u,q,`<span class="mp-face">${typeof portraitHTML==='function'?portraitHTML('friend:'+u,26):''}</span><span class="mp-n">${esc(d.name||'Friend')}</span>`,'mpin friend',{'data-a':'fr-pin','data-u':u,'aria-label':(d.name||'Friend')+' was here'})}
  for(const [k,e] of E)if(!seen.has(k))e.hidden=true}
 function mglPick(ev){const r=MAP.cv.getBoundingClientRect(),x=ev.clientX-r.left,y=ev.clientY-r.top;let best=null,bd=30;
  ROUTE.forEach((n,i)=>{const q=mglProj(MNV[i]);if(!q)return;const d=Math.hypot(q.x-x,q.y-y);if(d<bd){bd=d;best=i}});

@@ -20,7 +20,7 @@ function accState(u){ACC.ready=true;ACC.user=u?{uid:u.uid,name:u.displayName||u.
  if(want!==ACC_ID){/* a different player: keep what's here, then load theirs */
   try{lsSet(S)}catch(e){}try{if(want){localStorage.setItem(LS_ACC,want);if(!ACC_ID&&S.started)localStorage.setItem('pb-offer-guest','1')}else localStorage.removeItem(LS_ACC)}catch(e){}
   location.reload();return}
- if(u)accPull();accRefresh()}
+ if(u){accPull();if(typeof frInit==='function')frInit()}accRefresh()}
 /* the save online against the one here: the newer one wins */
 async function accPull(){if(!ACC.user||!ACC.db)return;let snap=null;try{snap=await ACC.db.collection('saves').doc(ACC.user.uid).get()}catch(e){accErr(e);return}
  const offer=(()=>{try{const v=localStorage.getItem('pb-offer-guest');localStorage.removeItem('pb-offer-guest');return v==='1'}catch(e){return false}})();

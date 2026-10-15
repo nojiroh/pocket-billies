@@ -320,8 +320,8 @@ const itemIcon=(k,size=30)=>{const I=ITEMS[k]||{};return I.img?`<img class="pxi"
 function paintActions(){const el=$('#acts');if(!el||!B)return;const ph=B.phase,wild=B.kind==='wild';let h='';el.dataset.ph=ph;
  if(ph==='choose'){const m=A(B.cur),first=!B.plan.length,coins=Object.keys(COINS).reduce((a,k)=>a+(S.coins[k]||0),0),items=Object.keys(ITEMS).filter(k=>S.items[k]>0&&!ITEMS[k].evoItem).reduce((a,k)=>a+S.items[k],0),crew=S.team.filter(x=>x.job==null),alive=crew.filter(x=>x.hp>0).length;
   h=`<div class="c-choose"><button class="bt fight" data-a="bfight"><span class="bt-i">${uiIco('fight',24)}</span><span class="bt-t"><b>Fight</b><small>${plural(m.moves.length,'move')}</small></span><kbd>F</kbd></button>
-  <div class="bt-row"><button class="bt coin" data-a="bcoins" ${wild&&first?'':'disabled'}>${uiIco('coin',18)}<b>Tax!</b><small>${wild?(first?coins+' left':'First pick only'):'Wild only'}</small><kbd>X</kbd></button>
-  <button class="bt items" data-a="bitems">${uiIco('bag',18)}<b>Items</b><small>${items}</small><kbd>I</kbd></button>
+  <div class="bt-row"><button class="bt coin" data-a="bcoins" ${wild&&first?'':'disabled'}>${uiIco('coin',18)}<b>Tax it</b><small>${wild?(first?coins+' left':'First pick only'):'Wild only'}</small><kbd>X</kbd></button>
+  <button class="bt items" data-a="bitems">${uiIco('bag',18)}<b>Bag</b><small>${items}</small><kbd>I</kbd></button>
   <button class="bt team" data-a="bteam">${uiIco('team',18)}<b>Team</b><small>${alive}/${crew.length}</small><kbd>T</kbd></button>
   <button class="bt run" data-a="brun" ${wild?'':'disabled'}>${uiIco('run',18)}<b>Run</b><small>${wild?'Walk away':'No exit'}</small><kbd>R</kbd></button></div>${first?'':`<button class="bt back wide" data-a="bback">${uiIco('back',16)}<b>Back to ${esc(N(A(B.plan[B.plan.length-1].who)))}</b><kbd>Esc</kbd></button>`}</div>`}
  else if(ph==='fight'){const m=A(B.cur);h=`<div class="moves">${m.moves.map((id,n)=>{const M=MOVES[id],c=TC[M.t],P=M.p?M.p:M.fx&&M.fx.vary?'Varies':'Status',stab=M.t!=='None'&&types(B.cur).includes(M.t);

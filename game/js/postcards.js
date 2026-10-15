@@ -13,7 +13,11 @@ function pcFlag(i){const sc=typeof dioScene==='function'?dioScene(sceneIdAt(i)):
 function pcHere(){if(typeof DIO==='undefined'||!DIO.ready||!DIO.sc||!DIO.pl)return null;const sc=DIO.sc,P=DIO.pl,parts=sc.parts||[{id:DIO.id,ox:0,oz:0}];
  for(const q of parts){const s=dioScene(q.id);if(!s||s.kind==='room')continue;const x=P.x-(q.ox||0),z=P.z-(q.oz||0);if(x>=0&&z>=0&&x<s.w&&z<s.h){const n=ROUTE.findIndex(r=>r.scene===q.id);return n>=0?n:null}}return null}
 /* every second and a half (ui.js): a new town under your feet brings its postcard, or its stamp if you have it */
-function postcardCheck(){if(!S.started||(typeof B!=='undefined'&&B)||U.modal||U.title||U.tab!=='walk'||U.inside||U.bench||PC.on||(typeof TALK!=='undefined'&&TALK.on)||(typeof CS!=='undefined'&&CS.on)||(typeof STEST!=='undefined'&&STEST.on)||(typeof FLY!=='undefined'&&FLY.on))return;
+/* 0.5: only once you are free to walk: never while the opening, a story scene or an unmet rival or blocker here is still to come, and only after a calm moment of walking */
+function pcFree(){const F=typeof storyFlags==='function'?storyFlags():{};if(TRAINERS.blake0&&!F.rival0&&!F.met_blake0)return false;if(typeof STORY!=='undefined'&&(STORY.pending||STORY.rivalTalk))return false;
+ if(trainersAt(S.route.node).some(T=>!S.flags[T.id]&&T.intro&&T.intro.length&&!F['met_'+T.id]))return false;if(typeof DIO!=='undefined'&&!DIO.ready)return false;return true}
+function postcardCheck(){if(!pcFree()){PC.calm=0;return}if(!S.started||(typeof B!=='undefined'&&B)||U.modal||U.title||U.tab!=='walk'||U.inside||U.bench||PC.on||(typeof TALK!=='undefined'&&TALK.on)||(typeof CS!=='undefined'&&CS.on)||(typeof STEST!=='undefined'&&STEST.on)||(typeof FLY!=='undefined'&&FLY.on)){PC.calm=0;return}
+ if(!PC.calm){PC.calm=performance.now();return}if(performance.now()-PC.calm<3000)return;
  const n=pcHere();if(n==null||n===PC.last)return;PC.last=n;if(!isTown(n))return;if(!pcCards()[ROUTE[n].id])postcardShow(n,true);else postcardStamp(n)}
 function postcardShow(n,first){const r=ROUTE[n];if(!r)return;if(first){pcCards()[r.id]=S.day||Date.now();save();if(typeof NWLOG!=='undefined')NWLOG.add('scene','postcard '+r.id)}PC.on=true;
  const old=document.querySelector('.pcard-wrap');if(old)old.remove();

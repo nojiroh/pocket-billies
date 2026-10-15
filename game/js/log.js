@@ -5,7 +5,7 @@
    seconds. Settings → Export debug log saves it as one JSON file (or shares it on phones). Settings → Run the full
    test (selftest.js) plays through everything for about two minutes, stress-tests the device and adds the results.
    Nothing here leaves the device unless the player exports it. No save data, names or step history are included. */
-const NW_BUILD='alpha-0.4.1';
+const NW_BUILD='alpha-0.5';
 const NWLOG={t0:performance.now(),ev:[],err:[],samples:[],acc:new Map(),secT:0,shot:null,shotT:0,load:null,bench:null,hooked:false,max:{ev:400,err:120,samples:900}};
 NWLOG.now=()=>Math.round(performance.now()-NWLOG.t0);
 NWLOG.add=(kind,msg,data)=>{const L=NWLOG.ev;L.push(Object.assign({t:NWLOG.now(),kind,msg:String(msg).slice(0,300)},data||{}));if(L.length>NWLOG.max.ev)L.splice(0,L.length-NWLOG.max.ev)};

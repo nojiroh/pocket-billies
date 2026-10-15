@@ -1,4 +1,4 @@
-# Pocket Billies: Gotta tax 'em all! — alpha 0.4.1
+# Pocket Billies: Gotta tax 'em all! — alpha 0.5
 
 A walking RPG inside the Hollow Earth, where the Billies are the wildlife. This is the game that was called
 **Net Worth**: alpha 0.1 is the first release under its new name, and releases are numbered afresh from here (Net
@@ -99,6 +99,67 @@ The Studio only listens on your own computer, only writes inside `game/data` and
 You can also edit `game/data/gamedata.js` by hand: it is JSON after `window.GAMEDATA=`.
 The game tolerates mistakes. It skips anything it can't use and lists it in the debug
 menu.
+
+## What changed in alpha 0.5 (a new look, a Bag, friends)
+
+### The look
+- Clean and modern with a pixel-art flair: glass panels with depth, rounded corners, light and warm colours, and
+  Pixelify Sans (a very readable pixel font) everywhere. Dark mode follows your phone.
+- **Top bar**: the place you're in, your portrait in the middle (opens your Trainer card), coins and Settings. The
+  step counter is gone for now.
+- **Bottom bar**: Walk, Map, Team, Guide, Bag, each with its own colour; the open one lifts up.
+- **Wide screens** (a laptop, a tablet on its side): the world stays in view and Team, Guide, Bag and your Trainer
+  card open in a glass panel at the side.
+
+### Bag, Team, details, battle
+- **Bag**: pockets by what things are for (Healing, Coins, Special, Eggs). Pick a potion and Use it straight from here.
+- **Team**: cards with your Billies moving. **Details** open on a Summary with a stat chart and where you taxed it.
+- **Battle**: the same layout in the new style. Moves in a 2×2 grid; Tax it, Bag, Team, Run.
+
+### Settings and the Graphics gallery
+- Settings in tabs: Sound (one master volume, and mute lives here now), Graphics, Game, Save, Help.
+- **Graphics**: Saver, Balanced or Best, a frame rate, and an **Expert** switch with every dial, grouped, each saying
+  what it costs. **See it** takes you to the Graphics gallery: a small place built to show each dial (a grove, a
+  lamp-lit cottage, a pond, a meadow, the open sky and a long view), with the dial right there and day or night at a tap.
+
+### Friends
+- Signed in, you get a **friend code** (Trainer card → Friends). Add a friend by their code; when they accept, you see
+  where each of you was last, with your partner Billie: standing in the world when you're in the same place, and as a
+  pin on the map.
+- It needs one change in Firebase: **Firestore Database → Rules**, replace everything with this and press Publish:
+
+```
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /saves/{uid} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+    match /users/{uid} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == uid;
+    }
+    match /codes/{code} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null && request.resource.data.uid == request.auth.uid;
+    }
+    match /requests/{id} {
+      allow read, delete: if request.auth != null
+        && (resource.data.from == request.auth.uid || resource.data.to == request.auth.uid);
+      allow create: if request.auth != null && request.resource.data.from == request.auth.uid
+        && id == request.auth.uid + '_' + request.resource.data.to;
+      allow update: if request.auth != null
+        && (resource.data.from == request.auth.uid || resource.data.to == request.auth.uid)
+        && request.resource.data.from == resource.data.from && request.resource.data.to == resource.data.to;
+    }
+  }
+}
+```
+
+### Fixes
+- Postcards wait until you're free to walk: never during the opening, Blake's first battle, a talk or a scene.
+- Walking from place to place stays seamless: when the next place's view wasn't ready yet, where you stood was kept
+  against the wrong place, so the view opened fresh and put you in the middle of town. Now you carry on from your spot.
 
 ## What changed in alpha 0.4.1 (walk it yourself, and a Studio that's easier to find your way in)
 

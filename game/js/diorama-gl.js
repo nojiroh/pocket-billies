@@ -917,7 +917,7 @@ function dglItems(st,C,PPU,C0){const sc=DIO.sc,P=DIO.pl,t=DIO.t,out=[],hub=dioHu
    else if(n.exit){const dx=hub[0]-n.exit[0],dz=hub[1]-n.exit[1],l=Math.hypot(dx,dz)||1;pos=dioFreePt(n.exit[0]+dx/l*2.2,n.exit[1]+dz/l*2.2)}else if(sc.npcSpots&&sc.npcSpots[i])pos=sc.npcSpots[i].slice();else{const a=i*2.3+.6,r=3.4+i*.9;pos=dioFreePt(hub[0]+Math.cos(a)*r,hub[1]+Math.sin(a)*r*.7)}DIO.npcAt[n.id]=pos}
   const fr=typeof owFrames==='function'?owFrames(n.who):null;if(!fr)return;trWarm(n.who);const dir=Math.hypot(P.x-pos[0],P.z-pos[1])<4.5?dioDirOf(P.x-pos[0],P.z-pos[1]):(n.dir||'down');
   const nset=fr[dir]||fr.down,nim=typeof trPick==='function'?trPick(nset,false,0):nset[0];if(nim)out.push(dglPerson('npc',nim,pos[0],pos[1],C0,{n}));npcPos.push([n,pos])});
- if(ow){owPetItems(out,t,npcPos);owBuddyItems(out,t,odt)}
+ if(ow){owPetItems(out,t,npcPos);owBuddyItems(out,t,odt);if(typeof frWorldItems==='function')try{frWorldItems(out,t,C0)}catch(e){}}
  const used=[];DGL.encPos=[];(st.enc||[]).forEach(e=>{let s=DIO.enc[e.id];if(!s||s.sc!==DIO.id){const sp=dioEncSpot(sc,e.id,used);s=DIO.enc[e.id]={x:sp[0],z:sp[1],tx:sp[0],tz:sp[1],sc:DIO.id}}
   /* v46: they keep their spot in the tall grass until you battle them: no wandering. They stay alive in place (a bob,
      the grass swaying round them, a peek now and then, see owEncItem) and rustle when you come close */

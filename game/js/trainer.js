@@ -37,7 +37,7 @@ function lookFromOld(o,gender){if(o&&o.wear)return cleanLook(o);o=o||{};const gi
  if(o.pack){w.bag='backpack';c.backpack=[o.pack,'#8A5A2A']}else w.bag=null;
  return cleanLook({name:o.name,body:girl?{chest:.5,hips:1.06,shoulders:.95}:{chest:.03,shoulders:1.05},skin:o.skin,hair:o.hair,eyes:o.eyes,wear:w,colors:c})}
 /* who → look: 'boy'/'girl'/'me' is the player, 'folk:<seed>' a townsperson, anything else a person in game data */
-function trainerLook(who){if(who==='boy'||who==='girl'||who==='me')return cleanLook(U.trainerDraft||S.avatar,TR_PRESETS[0]);
+function trainerLook(who){if(typeof who==='string'&&who.startsWith('friend:')){const f=typeof FR!=='undefined'&&FR.data[who.slice(7)];return cleanLook(f&&f.avatar,TR_PRESETS[1]||TR_PRESETS[0])}if(who==='boy'||who==='girl'||who==='me')return cleanLook(U.trainerDraft||S.avatar,TR_PRESETS[0]);
  if(typeof who==='string'&&who.startsWith('folk:'))return folkLook(+who.slice(5));
  const p=(typeof PEOPLE!=='undefined'&&(PEOPLE[who]||PEOPLE.gini))||{};return p.look?cleanLook(p.look):lookFromOld(p)}
 const trainerDesign=trainerLook;

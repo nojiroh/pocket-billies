@@ -15,7 +15,8 @@ function audInit(){if(AUD.ctx)return true;const AC=window.AudioContext||window.w
  const n=c.createBuffer(1,c.sampleRate,c.sampleRate),nd=n.getChannelData(0);for(let i=0;i<nd.length;i++)nd[i]=Math.random()*2-1;AUD.noise=n;
  const pw=duty=>{const N=32,re=new Float32Array(N),im=new Float32Array(N);for(let k=1;k<N;k++)im[k]=2/(k*Math.PI)*Math.sin(k*Math.PI*duty);return c.createPeriodicWave(re,im)};
  AUD.waves.p25=pw(.25);AUD.waves.p12=pw(.125);AUD.waves.p50=pw(.5);if(typeof NWLOG!=='undefined')NWLOG.add('audio','ready '+c.sampleRate+' Hz');return true}catch(e){AUD.ctx=null;return false}}
-function audApply(){if(!AUD.ctx)return;const m=audPref('music',.55),f=audPref('sfx',.8),t=AUD.ctx.currentTime;AUD.mus.gain.setTargetAtTime(m*m,t,.05);AUD.fx.gain.setTargetAtTime(f*f,t,.05)}
+/* alpha 0.5: a master volume and mute over everything (music, effects, world sounds, ambience all go through the master) */
+function audApply(){if(!AUD.ctx)return;const m=audPref('music',.55),f=audPref('sfx',.8),t=AUD.ctx.currentTime,mv=S.preferences&&S.preferences.mute?0:audPref('master',1);AUD.master.gain.setTargetAtTime(.9*mv*mv,t,.05);AUD.mus.gain.setTargetAtTime(m*m,t,.05);AUD.fx.gain.setTargetAtTime(f*f,t,.05)}
 /* the first touch unlocks sound; the song that was asked for starts then */
 function audUnlock(){if(!audInit())return;if(AUD.ctx.state==='suspended')AUD.ctx.resume();if(AUD.want&&!AUD.song)music(AUD.want)}
 ['pointerdown','keydown','touchend'].forEach(e=>addEventListener(e,audUnlock,{capture:true,passive:true}));

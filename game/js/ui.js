@@ -41,20 +41,21 @@ function hatchModal(e){modal({title:`A ${e.tier} km egg is hatching`,top:`<div c
   if(RM||!box){done();return}box.innerHTML=eggHTML(e.tier,96,'shake');$$('.sheet .btns button').forEach(b=>b.disabled=true);setTimeout(()=>{box.classList.add('flash')},1500);setTimeout(done,1900)}}]})}
 
 /* ---------- screens ---------- */
-const TABS=['walk','map','team','ledger','profile'];
-function topbar(){rollDay();const shut=!!(S.preferences&&S.preferences.cardClosed),walk=U.tab==='walk';return `<div class="topbar glass" role="status">${walk?`<button class="tb-where ${shut?'shut':''}" data-a="card-open" aria-expanded="${!shut}" aria-label="${shut?'Show':'Hide'} the card for ${esc(ROUTE[S.route.node].name)}">${esc(U.inside&&!U.bench&&typeof roomState==='function'&&roomState()?(U.inside.name||ROUTE[S.route.node].name):ROUTE[S.route.node].name)}${uiIco('chev',12)}</button>`:`<span class="tb-where">${esc(ROUTE[S.route.node].name)}</span>`}<span class="tb-chip tnum" title="Money">${coinHTML('penny',16)}<small>$</small><b data-count="tse" data-to="${S.se}">${fmt(S.se)}</b></span><span class="tb-chip tnum" title="Steps today">${uiIco('walk',14)}<b>${fmt(S.day.steps)}</b></span><button class="tb-btn" data-a="settings" aria-label="Settings and help">${uiIco('gear',18)}</button></div>`}
+/* alpha 0.5: the bar holds Walk, Map, Team, Guide and Bag; your Trainer card opens from the portrait in the top bar */
+const TABS=['walk','map','team','ledger','bag'],SCREENS=[...TABS,'profile'];
+function topbar(){rollDay();const shut=!!(S.preferences&&S.preferences.cardClosed),walk=U.tab==='walk';return `<div class="topbar glass" role="status">${walk?`<button class="tb-where ${shut?'shut':''}" data-a="card-open" aria-expanded="${!shut}" aria-label="${shut?'Show':'Hide'} the card for ${esc(ROUTE[S.route.node].name)}">${esc(U.inside&&!U.bench&&typeof roomState==='function'&&roomState()?(U.inside.name||ROUTE[S.route.node].name):ROUTE[S.route.node].name)}${uiIco('chev',12)}</button>`:`<span class="tb-where">${esc(ROUTE[S.route.node].name)}</span>`}<span class="tb-chip tnum" title="Money">${coinHTML('penny',16)}<small>$</small><b data-count="tse" data-to="${S.se}">${fmt(S.se)}</b></span><button class="tb-btn" data-a="settings" aria-label="Settings and help">${uiIco('gear',18)}</button><button class="tb-me" data-a="tab" data-t="profile" aria-label="Your trainer card" ${U.tab==='profile'?'aria-current="page"':''}>${typeof portraitHTML==='function'?portraitHTML('me',84):''}</button></div>`}
 function render(){const app=$('#app');
  if(U.title&&typeof renderTitle==='function'){app.innerHTML=renderTitle();U.lastTab=null;updateNav(false);document.body.classList.remove('on-map');titleMount();return}
  if(!S.started){if(typeof CS!=='undefined'&&CS.on){app.innerHTML='';updateNav(false);return}app.innerHTML=renderIntro();U.lastTab=null;updateNav(false);document.body.classList.remove('on-map');walkSceneSync();return}
  if(B){app.innerHTML=battleShell();updateNav(false);document.body.classList.remove('on-map');walkSceneSync();return}
- if(!TABS.includes(U.tab))U.tab='walk';
- const T=U.tab,body=T==='team'?renderTeam():T==='ledger'?renderLedger():T==='profile'?renderProfile():T==='map'?renderMap():renderWalk();
- const enter=U.lastTab!==T,dir=U.lastTab&&enter?(TABS.indexOf(T)>TABS.indexOf(U.lastTab)?' fromR':' fromL'):'';U.lastTab=T;
+ if(!SCREENS.includes(U.tab))U.tab='walk';
+ const T=U.tab,body=T==='team'?renderTeam():T==='ledger'?renderLedger():T==='profile'?renderProfile():T==='bag'?renderBag():T==='map'?renderMap():renderWalk();
+ const enter=U.lastTab!==T,dir=U.lastTab&&enter?(SCREENS.indexOf(T)>SCREENS.indexOf(U.lastTab)?' fromR':' fromL'):'';U.lastTab=T;
  app.innerHTML=`${topbar()}<main class="screen s-${T}${enter?' enter'+dir:''}">${body}</main>`;updateNav(true);walkSceneSync();
  document.body.classList.toggle('on-map',T==='map');if(T==='map')mapMount();
  $$('[data-count]').forEach(el=>{const k=el.dataset.count,to=+el.dataset.to,from=U.disp[k];U.disp[k]=to;if(from==null||from===to||RM){el.textContent=fmt(to);return}
   const t0=performance.now(),dur=700;const st=()=>{const q=Math.min(1,(performance.now()-t0)/dur),v=from+(to-from)*EASE.out(q);el.textContent=fmt(v);if(q<1&&el.isConnected)requestAnimationFrame(st)};st()})}
-function updateNav(show){let n=$('#nav');const t=[['walk','Walk'],['map','Map'],['team','Team'],['ledger','Guide'],['profile','Trainer']];
+function updateNav(show){let n=$('#nav');const t=[['walk','Walk'],['map','Map'],['team','Team'],['ledger','Guide'],['bag','Bag']];
  if(!n){n=document.createElement('nav');n.id='nav';n.setAttribute('aria-label','Main');n.innerHTML=`<div class="in px glass"><span class="ind"></span>${t.map(([k,l])=>`<button data-a="tab" data-t="${k}">${uiIco(k)}<span>${l}</span></button>`).join('')}</div>`;document.body.appendChild(n)}
  n.hidden=!show;n.querySelector('.ind').style.setProperty('--i',TABS.indexOf(U.tab));n.querySelectorAll('button').forEach(b=>{if(b.dataset.t===U.tab)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current')})}
 /* v47: Lite's opening, in pictures (opening.js draws them): the fall, Hazel, your trainer, your starter, then Blake */
@@ -133,7 +134,7 @@ function whCard(sub,name,mid,btns){if(S.preferences&&S.preferences.cardClosed)re
  return `<div class="wh-card glass compact"><div class="wh-top"><div class="sub">${sub}</div><button class="wh-x" data-a="card-close" aria-label="Hide this card"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></button></div><h1 class="where">${name}</h1>${mid}<div class="wh-acts">${main}${more?`<details class="wh-more"><summary>More</summary><div class="wh-more-b">${more}</div></details>`:''}</div></div>`}
 function envLine(){if(typeof envLabel!=='function'||!ENV.on)return '';const t=envLabel();if(!t)return '';const h=envHint();return `<p class="wh-env">${uiIco(envIcon(),12)} ${esc(t)}${h?`<span> · ${esc(h)}</span>`:''}</p>`}
 function walkHero(){if(U.inside&&!U.bench&&roomState())return roomHero();if(U.bench&&U.bench.test&&dioScene(U.bench.id)){/* v20: a test scene from the debug menu */const sc=dioScene(U.bench.id);
-  return `<div class="walk-hero" id="walkHero"><div class="wh-card glass"><div class="sub">Test scene</div><h1 class="where">${esc((sc.name||U.bench.id).replace(/^Test: /,''))}</h1><p class="wh-gate">${(sc.checks||[]).length} walking checks. Debug menu → Test scenes runs them.</p><div class="wh-acts"><button class="pb small gold" data-a="dbg" data-x="untest">Back to the game</button></div></div></div>`}
+  return `<div class="walk-hero" id="walkHero"><div class="wh-card glass">${U.bench.id==='gallery'?`<div class="sub">Settings</div><h1 class="where">Graphics gallery</h1><p class="wh-gate">Walk to a signpost, then move the dial below and watch what changes.</p>`:`<div class="sub">Test scene</div><h1 class="where">${esc((sc.name||U.bench.id).replace(/^Test: /,''))}</h1><p class="wh-gate">${(sc.checks||[]).length} walking checks. Debug menu → Test scenes runs them.</p>`}<div class="wh-acts"><button class="pb small gold" ${U.bench.id==='gallery'?'data-a="gal-leave"':'data-a="dbg" data-x="untest"'}>${U.bench.id==='gallery'?'Back to Settings':'Back to the game'}</button></div></div></div>`}
  const node=S.route.node,here=ROUTE[node],q=S.queue,st=tripStatus(),nx=nextStop();let next='';
  if(st.k==='go')next=`<div class="wh-next"><span>${esc(st.t)}</span><span class="tnum">${fmt(st.left)} steps</span>${bar(S.route.prog/linkCost(node,nx),'trailbar live')}</div>`;
  else next=`<p class="wh-gate">${esc(st.t)}</p>`;
@@ -222,7 +223,7 @@ function walkState(){const rs=!U.bench&&roomState();if(rs)return rs;if(U.bench&&
  else if(nx!=null&&r.prog>0&&f>=.5){const id=sceneIdAt(nx),sc=dioScene(id)||{},hub=sc.w?dioHubOf(sc):[0,0],k=sceneExits(nx)[node];v={id,node:nx,mode:'path',from:sc.exits&&k!=null?sc.exits[k]:hub,to:hub,t:(f-.5)/.5}}
  else{const id=sceneIdAt(node),sc=dioScene(id)||{},hub=sc.w?dioHubOf(sc):[0,0],bk=U.backAt,pos=bk&&bk.node===node&&bk.id===id?[bk.x,bk.z]:U.roam&&U.roam.node===node&&U.roam.id===id?[U.roam.x,U.roam.z]:hub;
   if(nx!=null&&r.prog>0){const k=sceneExits(node)[nx];v={id,node,mode:'path',from:pos,to:sc.exits&&k!=null?sc.exits[k]:hub,t:f/.5}}
-  else{/* v43: near an exit the road leaving it is part of the view (positions are kept in the scene's own metres) */const live=DIO.ready&&DIO.sc&&(DIO.sc.baseId||DIO.id)===id&&DIO.pl&&!DIO.pl.fresh,lo=live?(DIO.sc.baseOff||[0,0]):null,wv=typeof wrRoamView==='function'?wrRoamView(node,live?[DIO.pl.x-lo[0],DIO.pl.z-lo[1]]:pos):null;
+  else{/* v43: near an exit the road leaving it is part of the view (positions are kept in the scene's own metres) */const wo=DIO.ready&&DIO.pl&&!DIO.pl.fresh?walkOff(id):null,live=!!wo,lo=wo,wv=typeof wrRoamView==='function'?wrRoamView(node,live?[DIO.pl.x-lo[0],DIO.pl.z-lo[1]]:pos):null;
    if(wv){const o=wv.sc.baseOff;v={id:wv.id,node,mode:'roam',pos:[pos[0]+o[0],pos[1]+o[1]],roam:true}}else v={id,node,mode:'roam',pos,roam:true}
    /* v43: arriving: you stand at the exit the road came in by and walk to the hub; if the road left you outside the scene, you start at that exit */
    if(live&&sc.w&&U.arrive===node){const P=DIO.pl,lx=P.x-lo[0],lz=P.z-lo[1],out=lx<0||lz<0||lx>sc.w||lz>sc.h;U.arrive=null;
@@ -268,6 +269,8 @@ setInterval(()=>{try{if(typeof storyCheck==='function')storyCheck();if(typeof le
 /* alpha 0.4.1: walking yourself, from one place into the next. The view holds a place and the edges of its neighbours;
    once you are a metre into a neighbour, that place is where you are (its view takes over without a cut). A closed way
    (a gate you haven't the badge for, a trainer blocking the road) turns you back at the edge. */
+/* 0.5: where a place's own ground sits in the view on screen (the view may be a neighbour's, holding this place as a part) */
+function walkOff(id){const sc=DIO.sc;if(!sc||!id)return null;if((sc.baseId||DIO.id)===id)return sc.baseOff||[0,0];const q=(sc.parts||[]).find(q=>q.id===id);return q?[q.ox||0,q.oz||0]:null}
 function walkCross(){if(!walkMode()||!S.started||!DIO.ready||!DIO.sc||!DIO.pl||U.inside||U.bench||(typeof B!=='undefined'&&B)||(typeof CS!=='undefined'&&CS.on))return;
  const sc=DIO.sc,P=DIO.pl,node=S.route.node,parts=sc.parts;if(!parts)return;
  for(const q of parts){const s=dioScene(q.id);if(!s||s.kind==='room')continue;const x=P.x-(q.ox||0),z=P.z-(q.oz||0);if(x<0||z<0||x>s.w||z>s.h)continue;
@@ -296,7 +299,7 @@ function walkSceneSync(){
   const walking=!d||ws.mode==='road'||!ws.pos||!DIO.pl||Math.hypot(DIO.pl.x+d[0]-ws.pos[0],DIO.pl.z+d[1]-ws.pos[1])<25;
   if(d&&walking&&dioShift(id,d[0],d[1])){artLoad(dioPaths(DIO.sc)).catch(()=>{});return}}
  if(DIO.id!==id||!DIO.cv||!!DIO.opt.lite!==lite){if(DIO.id&&DIO.id!==id){cv.classList.remove('in');void cv.offsetWidth}
-  dioMount(cv,id,{state:walkState,onPick:walkPick,onAim:roomAim,onMove:(x,z)=>{if(typeof walkCross==='function')walkCross();/* after leaving a room you stand at its door: nothing in between moves that */if(!U.inside&&/^int_/.test(DIO.id||''))return;const o=(DIO.sc&&DIO.sc.baseOff)||[0,0],bk=U.backAt;if(bk){if(((DIO.sc&&DIO.sc.baseId)||DIO.id)===bk.id&&Math.hypot(x-o[0]-bk.x,z-o[1]-bk.z)<.6)U.backAt=null;else return}U.roam={id:DIO.sc&&DIO.sc.baseId||DIO.id,node:S.route.node,x:x-o[0],z:z-o[1]}},keys:()=>!U.modal&&U.tab==='walk'&&scrollY<innerHeight*.3,active:()=>U.tab==='walk'&&!U.modal,safe:()=>{const a=$('.wh-card'),b=$('.wh-foot'),H=innerHeight;return [a?clamp(a.getBoundingClientRect().bottom/H,0,.5):.1,b?clamp(b.getBoundingClientRect().top/H,.5,1):.88]},lite:(S.preferences||{}).effects==='lite',
+  dioMount(cv,id,{state:walkState,onPick:walkPick,onAim:roomAim,onMove:(x,z)=>{if(typeof walkCross==='function')walkCross();/* after leaving a room you stand at its door: nothing in between moves that */if(!U.inside&&/^int_/.test(DIO.id||''))return;const sid=sceneIdAt(S.route.node),po=walkOff(sid),o=po||(DIO.sc&&DIO.sc.baseOff)||[0,0],bk=U.backAt;if(bk){if(walkOff(bk.id)&&Math.hypot(x-walkOff(bk.id)[0]-bk.x,z-walkOff(bk.id)[1]-bk.z)<.6)U.backAt=null;else return}U.roam={id:po?sid:(DIO.sc&&DIO.sc.baseId||DIO.id),node:S.route.node,x:x-o[0],z:z-o[1]}},keys:()=>!U.modal&&U.tab==='walk'&&scrollY<innerHeight*.3,active:()=>U.tab==='walk'&&!U.modal,safe:()=>{const a=$('.wh-card'),b=$('.wh-foot'),H=innerHeight;return [a?clamp(a.getBoundingClientRect().bottom/H,0,.5):.1,b?clamp(b.getBoundingClientRect().top/H,.5,1):.88]},lite:(S.preferences||{}).effects==='lite',
   cap:()=>{const w=document.hidden?'hidden':DIO.battle?'':U.modal?'window':U.tab!=='walk'?'screen':scrollY>innerHeight*.7?'scrolled':'';DIO.held=w;return w==='hidden'?1:w==='window'?10:w==='screen'?24:w==='scrolled'?4:userFps()}}).then(()=>cv.classList.add('in'))}}
 function renderMap(){return `<div class="map-full"><canvas id="mapcv" width="${MW}" height="${MH}" aria-label="World map. Drag to look around, tap a place."></canvas><div id="maplabels"></div>
  <div class="map-head glass"><div class="sub">The Hollow Earth</div><h1 class="where">World map</h1><p class="map-trip ${tripStatus().k}">${esc(tripStatus().t)}</p></div>
@@ -411,7 +414,7 @@ function renderProfile(){const name=cleanTrainer(S.avatar,S.gender).name,seen=DE
  <section class="tpanel pf-bag"><div class="sec-h"><h2>Bag</h2></div>
   <div class="pf-coins">${Object.keys(COINS).map(k=>`<span class="pf-coin${S.coins[k]?'':' none'}" title="${esc(COINS[k].n)}">${coinHTML(k,22,32)}<small>${esc(COINS[k].n.replace(/ Coins?$/,''))}</small><b class="tnum">${fmt(S.coins[k]||0)}</b></span>`).join('')}</div>
   ${items.length?`<ul class="pf-items">${items.map(k=>`<li>${itemIcon(k,24)}<span>${esc(ITEMS[k].n)}</span><b class="tnum">×${fmt(S.items[k])}</b></li>`).join('')}</ul>`:'<p class="note">No items yet.</p>'}
-  <p class="note">Buy coins and items at a town shop.</p></section></div>`}
+  <p class="note">Buy coins and items at a town shop.</p></section></div>${typeof friendsHTML==='function'?friendsHTML():''}`}
 function donateItem(){const k=Object.keys(ITEMS).filter(k=>!ITEMS[k].evoItem&&S.items[k]>0).sort((a,b)=>S.items[b]-S.items[a])[0];return k||null}
 function monSheet(m){const s=SP[m.sp],inTeam=S.team.includes(m),e=s.evo,mx=maxHp(m),lead=S.team[0]===m,bud=S.buddy===m.uid,acts=[];
  const nick={f:()=>{const nn=($('#nick').value||'').trim().slice(0,16),changed=nn&&nn!==m.nick;m.nick=nn;save();
@@ -427,16 +430,27 @@ function monSheet(m){const s=SP[m.sp],inTeam=S.team.includes(m),e=s.evo,mx=maxHp
  if(e&&e.k==='merge'&&m.lvl>=e.min){const other=allMons().filter(o=>o!==m&&o.sp===m.sp&&o.job==null).sort((x,y)=>x.lvl-y.lvl)[0];
   acts.push({c:'gold',ic:'spark',l:other?`Combine with another ${s.name}`:`Combine (needs another ${s.name})`,dis:!other,f:()=>{U.modal=null;modal({title:`Combine two ${s.name}s?`,html:`<p>${esc(N(other))} (Lv ${other.lvl}) will join with ${esc(N(m))}. This can’t be undone.</p>`,
    btns:[{l:'Combine them',c:'dark',f:()=>{S.team=S.team.filter(x=>x!==other);S.box=S.box.filter(x=>x!==other);if(S.buddy===other.uid)S.buddy=m.uid;evoRun(m,'The two became one.')}},{l:'Cancel',c:'quiet',f:closeModal}]})}})}
- const st=STATK.map(k=>`<div class="ms-st"><span>${STATN[k]}</span><b class="tnum">${k==='hp'?mx:stat(m,k)}</b></div>`).join('');
+ /* alpha 0.5: the details open on a summary (meters, a stat chart, where it joined you, what it's like), with tabs
+    for the exact stats, the moves and how it evolves */
+ const base=s.base||[],st=STATK.map((k,i)=>{const v=k==='hp'?mx:stat(m,k),b=base[i]||0;return `<div class="ms-bar"><span>${STATN[k]}</span><i><b style="width:${Math.round(Math.min(1,b/150)*100)}%;--c:${['#4E9A4A','#D9532F','#E3A12F','#3478C8','#7D52C2','#2BA7A0'][i]||'#888'}"></b></i><em class="tnum">${v}</em></div>`}).join('');
+ const nums=STATK.map((k,i)=>`<div class="ms-st"><span>${STATN[k]}</span><b class="tnum">${k==='hp'?mx:stat(m,k)}</b><small class="tnum">base ${base[i]??'?'}</small></div>`).join('');
+ const metR=m.met?(()=>{const r=ROUTE.find(x=>(x.id||'')===m.met.n)||ROUTE[m.met.n];return `<div class="ms-met">${uiIco('flag',14)}<span>Joined you in <b>${esc(r?r.name:'a place that’s gone')}</b> · ${new Date(m.met.t).toLocaleDateString(undefined,{day:'numeric',month:'short',year:'numeric'})}</span></div>`})():'';
+ const line=LN[s.line],evo=line?line.names.map((n,i)=>{const id=s.line+i;if(!SP[id])return '';const seen=S.seen[id]||S.caught[id]||id===m.sp;return `<div class="ms-evo ${id===m.sp?'on':''}">${seen?sprHTML(id,64,{}):'<span class="ms-q">?</span>'}<b>${seen?esc(SP[id].name):'???'}</b></div>`}).join('<span class="ms-arr" aria-hidden="true">›</span>'):'';
+ const tabs=[['sum','Summary'],['stats','Stats'],['moves','Moves'],['evo','Evolves']];
  modal({title:esc(N(m)),cls:'mon-sheet',acts,top:`<div class="ms-plate" style="${plateVars(m)}">${lead?'<span class="tm-ribbon">Lead</span>':''}${bud?`<span class="tm-ribbon bud">${uiIco('heart',11)} Buddy</span>`:''}${m.gold?'<span class="tm-ribbon gold">Golden</span>':''}${sprHTML(m.sp,128,{gold:m.gold})}</div>`,
   html:`<p class="row ms-chips">${s.types.map(chip).join('')}${monState(m)}<b class="lv tnum">Lv ${m.lvl}</b>${m.nick?`<span class="ms-sp">${esc(s.name)}</span>`:''}</p>
-  <div class="ms-meters">${meter('HP',hpBar(m.hp,mx),`${m.hp}/${mx}`)}${meter('XP',bar(xpPart(m),'xpb'),xpLeft(m))}</div>
-  <p class="note">${esc(evoHint(m))}</p>${m.job!=null?`<p class="note ms-job">${uiIco('bag',14)} Working as a ${esc(JOBS[S.jobs[m.job].job].n.toLowerCase())} right now. End the shift from Day jobs to bring it back.</p>`:''}
-  ${acts.length?`<div class="ms-acts">${acts.map((b,i)=>`<button class="pb small ${b.c||''}" data-a="mact" data-i="${i}" ${b.dis?'disabled':''}>${b.ic?uiIco(b.ic,15):''}<span>${b.l}</span></button>`).join('')}</div>`:''}
-  <h3>Moves</h3><div class="mvlist">${m.moves.map(id=>{const M=MOVES[id];return `<div class="mvi"><div class="mh"><span>${M.n}</span>${chip(M.t)}</div><div class="md">${M.p?`${M.p} power, ${M.a}% accuracy. `:''}${M.d}</div></div>`}).join('')}</div>
-  <h3>Stats</h3><div class="ms-stats">${st}</div>
-  <h3>About</h3><p class="note">${esc(s.blurb)}</p>
-  <div class="ms-nick"><label class="field-l">Nickname<input id="nick" maxlength="16" value="${esc(m.nick)}" placeholder="${esc(s.name)}" autocomplete="off" enterkeyhint="done"></label><button class="pb small" data-a="mnick">Save</button></div>`,nick,btns:[{l:'Close',c:'quiet',f:closeModal}]})}
+  <div class="ms-tabs" role="tablist" aria-label="About ${esc(N(m))}" data-on="sum">${tabs.map(([k,l])=>`<button role="tab" data-a="ms-tab" data-k="${k}" aria-selected="${k==='sum'}">${l}</button>`).join('')}</div>
+  <div class="ms-pane" data-k="sum"><div class="ms-meters">${meter('HP',hpBar(m.hp,mx),`${m.hp}/${mx}`)}${meter('XP',bar(xpPart(m),'xpb'),xpLeft(m))}</div>
+   <div class="ms-chart">${st}</div>${metR}
+   ${m.job!=null?`<p class="note ms-job">${uiIco('bag',14)} Working as a ${esc(JOBS[S.jobs[m.job].job].n.toLowerCase())} right now. End the shift from Day jobs to bring it back.</p>`:''}
+   ${acts.length?`<div class="ms-acts">${acts.map((b,i)=>`<button class="pb small ${b.c||''}" data-a="mact" data-i="${i}" ${b.dis?'disabled':''}>${b.ic?uiIco(b.ic,15):''}<span>${b.l}</span></button>`).join('')}</div>`:''}
+   <p class="note ms-about">${esc(s.blurb)}</p>
+   <div class="ms-nick"><label class="field-l">Nickname<input id="nick" maxlength="16" value="${esc(m.nick)}" placeholder="${esc(s.name)}" autocomplete="off" enterkeyhint="done"></label><button class="pb small" data-a="mnick">Save</button></div></div>
+  <div class="ms-pane" data-k="stats" hidden><div class="ms-stats">${nums}</div><p class="note">The bars on the summary show what its kind is good at; the numbers grow as it levels up.</p></div>
+  <div class="ms-pane" data-k="moves" hidden><div class="mvlist">${m.moves.map(id=>{const M=MOVES[id];return `<div class="mvi"><div class="mh"><span>${M.n}</span>${chip(M.t)}</div><div class="md">${M.p?`${M.p} power, ${M.a}% accuracy. `:''}${M.d}</div></div>`}).join('')}</div></div>
+  <div class="ms-pane" data-k="evo" hidden>${evo?`<div class="ms-line">${evo}</div>`:''}<p class="note">${esc(evoHint(m))}</p></div>`,nick,btns:[{l:'Close',c:'quiet',f:closeModal}]})}
+document.addEventListener('click',ev=>{const b=ev.target.closest&&ev.target.closest('[data-a="ms-tab"]');if(!b)return;const box=b.closest('.sheet')||document;const k=b.dataset.k;
+ box.querySelectorAll('[data-a="ms-tab"]').forEach(x=>x.setAttribute('aria-selected',String(x.dataset.k===k)));box.querySelectorAll('.ms-pane').forEach(p=>p.hidden=p.dataset.k!==k)});
 /* pick an item to heal one billionaire; back=true returns to its sheet afterwards */
 function healPick(m,back){const its=Object.keys(ITEMS).filter(k=>canUse(k,m));
  modal({title:`Heal ${esc(N(m))}`,html:`<div class="ms-meters">${meter('HP',hpBar(m.hp,maxHp(m)),`${m.hp}/${maxHp(m)}`)}</div>${its.length?`<div class="list">${its.map(k=>`<button class="pickrow" data-a="mhealuse" data-u="${m.uid}" data-it="${k}"${back?' data-b="1"':''}>${itemIcon(k,34)}<span class="pr-t"><b>${esc(ITEMS[k].n)}</b><small>${esc(ITEMS[k].d)}</small></span><span class="pr-n tnum">×${S.items[k]}</span></button>`).join('')}</div>`
