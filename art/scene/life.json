@@ -1,0 +1,18 @@
+{
+  "duck": {"name": "Duck", "img": "scene/life/duck.png", "w": 28, "h": 22, "frames": 4, "where": "water"},
+  "pigeon": {"name": "Pigeon", "img": "scene/life/pigeon.png", "w": 24, "h": 22, "frames": 5, "where": "city"},
+  "chicken": {"name": "Chicken", "img": "scene/life/chicken.png", "w": 26, "h": 28, "frames": 3, "where": "farm"},
+  "sheep": {"name": "Sheep", "img": "scene/life/sheep.png", "w": 46, "h": 34, "frames": 3, "where": "farm"},
+  "car_red": {"name": "Car", "img": "scene/life/car_red.png", "w": 124, "h": 60, "frames": 3, "where": "city"},
+  "car_blue": {"name": "Car", "img": "scene/life/car_blue.png", "w": 124, "h": 60, "frames": 3, "where": "city"},
+  "car_yellow": {"name": "Car", "img": "scene/life/car_yellow.png", "w": 124, "h": 60, "frames": 3, "where": "city"},
+  "car_mint": {"name": "Car", "img": "scene/life/car_mint.png", "w": 124, "h": 60, "frames": 3, "where": "city"},
+  "rabbit": {"name": "Rabbit", "img": "scene/life/rabbit.png", "w": 26, "h": 24, "frames": 4, "where": "meadow"},
+  "squirrel": {"name": "Squirrel", "img": "scene/life/squirrel.png", "w": 26, "h": 24, "frames": 4, "where": "forest"},
+  "frog": {"name": "Frog", "img": "scene/life/frog.png", "w": 22, "h": 16, "frames": 3, "where": "water"},
+  "gull": {"name": "Seagull", "img": "scene/life/gull.png", "w": 32, "h": 26, "frames": 4, "where": "coast"},
+  "goat": {"name": "Mountain goat", "img": "scene/life/goat.png", "w": 42, "h": 36, "frames": 4, "where": "mountains"},
+  "cat": {"name": "Cat", "img": "scene/life/cat.png", "w": 32, "h": 26, "frames": 4, "where": "town"},
+  "crab": {"name": "Crab", "img": "scene/life/crab.png", "w": 24, "h": 16, "frames": 3, "where": "coast"},
+  "lizard": {"name": "Lizard", "img": "scene/life/lizard.png", "w": 30, "h": 12, "frames": 3, "where": "volcano"}
+}

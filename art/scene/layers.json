@@ -1,0 +1,310 @@
+{
+ "tree_pine": [
+  {
+   "img": "scene/props/layers/tree_pine_lb.png",
+   "dz": 0.53,
+   "sway": 0.7,
+   "shadow": 0
+  },
+  {
+   "img": "scene/props/layers/tree_pine_lf.png",
+   "dz": -0.37,
+   "sway": 1.4,
+   "shadow": 0
+  }
+ ],
+ "tree_oak": [
+  {
+   "img": "scene/props/layers/tree_oak_lb.png",
+   "dz": 0.6,
+   "sway": 0.7,
+   "shadow": 0
+  },
+  {
+   "img": "scene/props/layers/tree_oak_lf.png",
+   "dz": -0.45,
+   "sway": 1.4,
+   "shadow": 0
+  }
+ ],
+ "tree_fruit": [
+  {
+   "img": "scene/props/layers/tree_fruit_lb.png",
+   "dz": 0.6,
+   "sway": 0.7,
+   "shadow": 0
+  },
+  {
+   "img": "scene/props/layers/tree_fruit_lf.png",
+   "dz": -0.42,
+   "sway": 1.4,
+   "shadow": 0
+  }
+ ],
+ "tree_birch": [
+  {
+   "img": "scene/props/layers/tree_birch_lb.png",
+   "dz": 0.37,
+   "sway": 0.7,
+   "shadow": 0
+  },
+  {
+   "img": "scene/props/layers/tree_birch_lf.png",
+   "dz": -0.26,
+   "sway": 1.4,
+   "shadow": 0
+  }
+ ],
+ "bush_round": [
+  {
+   "img": "scene/props/layers/bush_round_lb.png",
+   "dz": 0.23,
+   "sway": 0.7,
+   "shadow": 0
+  },
+  {
+   "img": "scene/props/layers/bush_round_lf.png",
+   "dz": -0.17,
+   "sway": 1.4,
+   "shadow": 0
+  }
+ ],
+ "bush_berry": [
+  {
+   "img": "scene/props/layers/bush_berry_lb.png",
+   "dz": 0.27,
+   "sway": 0.7,
+   "shadow": 0
+  },
+  {
+   "img": "scene/props/layers/bush_berry_lf.png",
+   "dz": -0.2,
+   "sway": 1.4,
+   "shadow": 0
+  }
+ ],
+ "hedge": [
+  {
+   "img": "scene/props/layers/hedge_lb.png",
+   "dz": 0.3,
+   "sway": 0.7,
+   "shadow": 0
+  },
+  {
+   "img": "scene/props/layers/hedge_lf.png",
+   "dz": -0.22,
+   "sway": 1.4,
+   "shadow": 0
+  }
+ ],
+ "tree_oak_b": [
+  {
+   "img": "scene/props/layers/tree_oak_b_lb.png",
+   "dz": 0.6,
+   "sway": 0.7,
+   "shadow": 0
+  },
+  {
+   "img": "scene/props/layers/tree_oak_b_lf.png",
+   "dz": -0.45,
+   "sway": 1.4,
+   "shadow": 0
+  }
+ ],
+ "tree_oak_autumn": [
+  {
+   "img": "scene/props/layers/tree_oak_autumn_lb.png",
+   "dz": 0.6,
+   "sway": 0.7,
+   "shadow": 0
+  },
+  {
+   "img": "scene/props/layers/tree_oak_autumn_lf.png",
+   "dz": -0.45,
+   "sway": 1.4,
+   "shadow": 0
+  }
+ ],
+ "tree_oak_small": [
+  {
+   "img": "scene/props/layers/tree_oak_small_lb.png",
+   "dz": 0.54,
+   "sway": 0.7,
+   "shadow": 0
+  },
+  {
+   "img": "scene/props/layers/tree_oak_small_lf.png",
+   "dz": -0.37,
+   "sway": 1.4,
+   "shadow": 0
+  }
+ ],
+ "tree_pine_b": [
+  {
+   "img": "scene/props/layers/tree_pine_b_lb.png",
+   "dz": 0.46,
+   "sway": 0.7,
+   "shadow": 0
+  },
+  {
+   "img": "scene/props/layers/tree_pine_b_lf.png",
+   "dz": -0.32,
+   "sway": 1.4,
+   "shadow": 0
+  }
+ ],
+ "tree_pine_small": [
+  {
+   "img": "scene/props/layers/tree_pine_small_lb.png",
+   "dz": 0.35,
+   "sway": 0.7,
+   "shadow": 0
+  },
+  {
+   "img": "scene/props/layers/tree_pine_small_lf.png",
+   "dz": -0.24,
+   "sway": 1.4,
+   "shadow": 0
+  }
+ ],
+ "tree_birch_b": [
+  {
+   "img": "scene/props/layers/tree_birch_b_lb.png",
+   "dz": 0.44,
+   "sway": 0.7,
+   "shadow": 0
+  },
+  {
+   "img": "scene/props/layers/tree_birch_b_lf.png",
+   "dz": -0.3,
+   "sway": 1.4,
+   "shadow": 0
+  }
+ ],
+ "tree_fruit_b": [
+  {
+   "img": "scene/props/layers/tree_fruit_b_lb.png",
+   "dz": 0.6,
+   "sway": 0.7,
+   "shadow": 0
+  },
+  {
+   "img": "scene/props/layers/tree_fruit_b_lf.png",
+   "dz": -0.45,
+   "sway": 1.4,
+   "shadow": 0
+  }
+ ],
+ "tree_blossom": [
+  {
+   "img": "scene/props/layers/tree_blossom_lb.png",
+   "dz": 0.6,
+   "sway": 0.7,
+   "shadow": 0
+  },
+  {
+   "img": "scene/props/layers/tree_blossom_lf.png",
+   "dz": -0.45,
+   "sway": 1.4,
+   "shadow": 0
+  }
+ ],
+ "bush_round_b": [
+  {
+   "img": "scene/props/layers/bush_round_b_lb.png",
+   "dz": 0.3,
+   "sway": 0.7,
+   "shadow": 0
+  },
+  {
+   "img": "scene/props/layers/bush_round_b_lf.png",
+   "dz": -0.22,
+   "sway": 1.4,
+   "shadow": 0
+  }
+ ],
+ "bush_round_c": [
+  {
+   "img": "scene/props/layers/bush_round_c_lb.png",
+   "dz": 0.26,
+   "sway": 0.7,
+   "shadow": 0
+  },
+  {
+   "img": "scene/props/layers/bush_round_c_lf.png",
+   "dz": -0.19,
+   "sway": 1.4,
+   "shadow": 0
+  }
+ ],
+ "bush_flower": [
+  {
+   "img": "scene/props/layers/bush_flower_lb.png",
+   "dz": 0.27,
+   "sway": 0.7,
+   "shadow": 0
+  },
+  {
+   "img": "scene/props/layers/bush_flower_lf.png",
+   "dz": -0.2,
+   "sway": 1.4,
+   "shadow": 0
+  }
+ ],
+ "dry_bush": [
+  {
+   "img": "scene/props/layers/dry_bush_lb.png",
+   "dz": 0.18,
+   "sway": 0.7,
+   "shadow": 0
+  },
+  {
+   "img": "scene/props/layers/dry_bush_lf.png",
+   "dz": -0.13,
+   "sway": 1.4,
+   "shadow": 0
+  }
+ ],
+ "street_tree": [
+  {
+   "img": "scene/props/layers/street_tree_lb.png",
+   "dz": 0.51,
+   "sway": 0.7,
+   "shadow": 0
+  },
+  {
+   "img": "scene/props/layers/street_tree_lf.png",
+   "dz": -0.35,
+   "sway": 1.4,
+   "shadow": 0
+  }
+ ],
+ "tree_willow": [
+  {
+   "img": "scene/props/layers/tree_willow_lb.png",
+   "dz": 0.6,
+   "sway": 0.7,
+   "shadow": 0
+  },
+  {
+   "img": "scene/props/layers/tree_willow_lf.png",
+   "dz": -0.45,
+   "sway": 1.4,
+   "shadow": 0
+  }
+ ],
+ "tree_maple": [
+  {
+   "img": "scene/props/layers/tree_maple_lb.png",
+   "dz": 0.6,
+   "sway": 0.7,
+   "shadow": 0
+  },
+  {
+   "img": "scene/props/layers/tree_maple_lf.png",
+   "dz": -0.45,
+   "sway": 1.4,
+   "shadow": 0
+  }
+ ]
+}

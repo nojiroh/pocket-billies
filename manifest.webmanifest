@@ -1,0 +1,14 @@
+{
+ "name": "Pocket Billies",
+ "short_name": "Pocket Billies",
+ "description": "A walking RPG inside the Hollow Earth, where the Billies are the wildlife. Gotta tax 'em all!",
+ "start_url": "./index.html",
+ "display": "standalone",
+ "orientation": "any",
+ "background_color": "#142735",
+ "theme_color": "#275c60",
+ "icons": [
+  {"src": "art/app/icon-192.png", "sizes": "192x192", "type": "image/png"},
+  {"src": "art/app/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable"}
+ ]
+}

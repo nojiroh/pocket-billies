@@ -1,0 +1,25 @@
+'use strict';
+/* ================= TOWN SHOPS =================
+   Shops live in data (GAMEDATA.shops) and are attached to route stops (route[].shop).
+   Each shop has a keeper (drawn by the trainer renderer from PEOPLE), a greeting and a stock list. */
+const SHOP_THANKS=['Pleasure doing business.','Come back any time. It’s always noon.','Receipt’s in the bag. Probably.','That’s a solid pick.','No refunds, but lots of goodwill.'];
+const wareInfo=w=>{if(w.coin){const c=COINS[w.coin];return c?{kind:'coin',key:w.coin,n:c.n,d:c.d,base:c.price,need:c.need||0,have:S.coins[w.coin]||0}:null}
+ const I=ITEMS[w.item];return I?{kind:'item',key:w.item,n:I.n,d:I.d,base:I.price,need:0,have:S.items[w.item]||0}:null};
+function shopHTML(id){const sh=SHOPS[id],q=U.shopQty||(U.shopQty={}),seats=S.seats.length;
+ const rows=(sh.stock||[]).map((w,ix)=>{const it=wareInfo(w);if(!it)return '';const k=ix+':'+it.kind+':'+it.key,n=q[k]||1,price=w.price??it.base,locked=it.need&&seats<it.need,cost=price*n,deal=price<it.base;
+  return `<div class="ware2${locked?' locked':''}"><span class="w-ic">${it.kind==='coin'?coinHTML(it.key,36):itemIcon(it.key,36)}</span><span class="w-t"><b>${esc(it.n)}</b><small>${esc(it.d)}</small><small class="w-own tnum">You have ${it.have}${deal?` · <em>Shop price $${fmt(it.base)}</em>`:''}</small></span>
+  <span class="w-buy">${locked?`<span class="note">Needs ${plural(it.need,'badge')}</span>`:`<span class="qty"><button class="qb" data-a="shopq" data-k="${k}" data-d="-1" aria-label="One fewer" ${n<=1?'disabled':''}>${uiIco('minus',10)}</button><b class="tnum">${n}</b><button class="qb" data-a="shopq" data-k="${k}" data-d="1" aria-label="One more" ${n>=99?'disabled':''}>${uiIco('plus',10)}</button></span>
+  <button class="pb small ${S.se>=cost?'gold':''}" data-a="shopbuy" data-s="${id}" data-k="${k}" ${S.se>=cost?'':'disabled'}>$${fmt(cost)}</button>`}</span></div>`}).join('');
+ return `<div class="shop-head"><div class="shop-keeper">${portraitHTML(sh.who||'clerk',78,'happy')}</div><div class="shop-say"><b>${esc(sh.keeper||'Shopkeeper')}</b><p id="shopLine">${esc(U.shopLine||sh.greeting||'Welcome in.')}</p></div></div>
+ <div class="shop-bal"><span>${uiIco('coin',14)} Money</span><b class="tnum" data-count="shopse" data-to="${S.se}">${fmt(S.se)}</b></div>
+ <div class="shop-bag"><span>In your bag</span>${Object.keys(COINS).map(k=>`<span class="sb-c${S.coins[k]?'':' none'}" role="img" title="${esc(COINS[k].n)}" aria-label="${esc(COINS[k].n)}: ${fmt(S.coins[k]||0)}">${coinHTML(k,18,32)}<b class="tnum">${fmt(S.coins[k]||0)}</b></span>`).join('')}</div><div class="wares2">${rows||'<p class="note">The shelves are empty today.</p>'}</div>`}
+function openShop(id){const sh=SHOPS[id];if(!sh)return;if(sh.kind==='wardrobe'&&typeof openDressing==='function'){if(U.modal)closeModal();openDressing({shop:id});return}U.shopLine=null;U.shopQty={};const m={title:esc(sh.name),shop:id,cls:'shop-sheet',html:shopHTML(id),btns:[{l:'Leave the shop',c:'quiet',f:closeModal}]};modal(m)}
+function shopRefresh(){const M=U.modal;if(!M||!M.shop)return;M.html=shopHTML(M.shop);renderOv()}
+function shopBuy(id,k){const sh=SHOPS[id],[ix,kind,key]=k.split(':'),w=(sh.stock||[])[+ix];if(!w)return;const it=wareInfo(w);if(!it)return;const n=(U.shopQty||{})[k]||1,price=w.price??it.base,cost=price*n;
+ if(it.need&&S.seats.length<it.need)return;if(S.se<cost){toast('Not enough money. Walk a little first.');return}
+ S.se-=cost;if(typeof sfx==='function')sfx('buy');if(kind==='coin')S.coins[key]=(S.coins[key]||0)+n;else S.items[key]=(S.items[key]||0)+n;save();buzz&&buzz(10);
+ const lines=sh.thanks&&sh.thanks.length?sh.thanks:SHOP_THANKS;U.shopLine=lines[Math.floor(rnd()*lines.length)];U.shopQty[k]=1;shopRefresh();toast(`Bought ${n} × ${it.n}.`)}
+document.addEventListener('click',ev=>{const el=ev.target.closest('[data-a]');if(!el)return;const d=el.dataset;
+ if(d.a==='shop')openShop(d.s);
+ else if(d.a==='shopq'){const q=U.shopQty||(U.shopQty={});q[d.k]=clamp((q[d.k]||1)+(+d.d),1,99);shopRefresh()}
+ else if(d.a==='shopbuy')shopBuy(d.s,d.k)});

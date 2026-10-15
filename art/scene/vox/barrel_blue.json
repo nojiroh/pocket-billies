@@ -1,0 +1,1 @@
+{"vpm":8,"layers":[{"k":"barrel","x":0,"y":0,"z":0,"r":0.32,"h":0.95,"bulge":0.05,"col":"#466EBE","tex":"plain","name":"drum"},{"k":"cyl","x":0,"y":0,"z":0.3,"r":0.34,"h":0.06,"col":"#3E4363","tex":"plain","name":"rib"},{"k":"cyl","x":0,"y":0,"z":0.6,"r":0.34,"h":0.06,"col":"#3E4363","tex":"plain","name":"rib"}]}

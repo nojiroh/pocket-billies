@@ -1,0 +1,1 @@
+{"vpm":8,"layers":[{"k":"cyl","x":0,"y":0,"z":0,"r":0.25,"h":0.12,"col":"#807990","tex":"stone","name":"foot"},{"k":"cyl","x":0,"y":0,"z":0.12,"r":0.04,"h":4.58,"col":"#F0F0E0","tex":"plain","name":"mast"},{"k":"sphere","x":0,"y":0,"z":4.68,"r":0.07,"col":"#FBE4A4","tex":"plain","name":"finial"}]}

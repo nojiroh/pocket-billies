@@ -1,0 +1,1 @@
+{"vpm":8,"layers":[{"k":"box","x":0.0,"y":0.0,"z":0,"w":0.9,"d":0.7,"h":1.9,"col":"#466EBE","tex":"plain","name":"machine"},{"k":"box","x":0.0,"y":-0.35,"z":0.9,"w":0.7,"d":0.02,"h":0.8,"col":"#9BD2DA","tex":"plain","name":"window"},{"k":"box","x":0.0,"y":-0.35,"z":0.3,"w":0.7,"d":0.02,"h":0.4,"col":"#3C3846","tex":"plain","name":"tray"}]}

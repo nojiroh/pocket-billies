@@ -1,0 +1,9 @@
+{
+  "butterfly": {"w": 8, "h": 7, "frames": 2},
+  "bird": {"w": 10, "h": 6, "frames": 2},
+  "leaf": {"w": 5, "h": 5, "frames": 3},
+  "smoke": {"w": 12, "h": 12, "frames": 4},
+  "spray": {"w": 6, "h": 6, "frames": 4},
+  "sparkle": {"w": 7, "h": 7, "frames": 4},
+  "print": {"w": 6, "h": 8, "frames": 2}
+}

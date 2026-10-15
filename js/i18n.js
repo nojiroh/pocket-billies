@@ -1,0 +1,184 @@
+'use strict';
+/* ================= LANGUAGES (v30) =================
+   Menus, buttons, headings and settings in Dutch, German, Spanish or French (Settings → Language). Stories, names
+   and descriptions stay in English. It works on what's on screen: any text that exactly matches an entry below is
+   shown translated (and switched back when you choose English again), so nothing else in the game has to change.
+   To add a language, add a column: a code in I18N_LANGS and one more string in each row. */
+const I18N_LANGS=[['en','English'],['nl','Nederlands'],['de','Deutsch'],['es','Español'],['fr','Français']];
+/* English | Nederlands | Deutsch | Español | Français */
+const I18N_ROWS=`
+Walk|Lopen|Gehen|Caminar|Marcher
+Map|Kaart|Karte|Mapa|Carte
+Team|Team|Team|Equipo|Équipe
+Guide|Gids|Führer|Guía|Guide
+Trainer|Trainer|Trainer|Entrenador|Dresseur
+Actions|Acties|Aktionen|Acciones|Actions
+Settings|Instellingen|Einstellungen|Ajustes|Réglages
+Open map|Kaart openen|Karte öffnen|Abrir mapa|Ouvrir la carte
+World map|Wereldkaart|Weltkarte|Mapa del mundo|Carte du monde
+The Hollow Earth|De Holle Aarde|Die Hohle Erde|La Tierra Hueca|La Terre creuse
+Start walking|Begin met lopen|Losgehen|Empezar a caminar|Se mettre en marche
+Keep walking|Blijf lopen|Weitergehen|Sigue caminando|Continuer
+Stop walking|Stop met lopen|Anhalten|Dejar de caminar|S’arrêter
+Turn back|Keer terug|Umkehren|Volver|Faire demi-tour
+Change plans|Plannen wijzigen|Pläne ändern|Cambiar de planes|Changer de plan
+Stay here|Hier blijven|Hierbleiben|Quedarse aquí|Rester ici
+Not now|Niet nu|Nicht jetzt|Ahora no|Pas maintenant
+Done|Klaar|Fertig|Hecho|Terminé
+Close|Sluiten|Schließen|Cerrar|Fermer
+Back|Terug|Zurück|Atrás|Retour
+Next|Volgende|Weiter|Siguiente|Suivant
+Start|Start|Start|Empezar|Commencer
+Save|Opslaan|Speichern|Guardar|Enregistrer
+Clear|Wissen|Leeren|Borrar|Effacer
+Claim|Ophalen|Abholen|Reclamar|Réclamer
+Claimed|Opgehaald|Abgeholt|Reclamado|Réclamé
+Details|Details|Details|Detalles|Détails
+Fight|Vechten|Kämpfen|Luchar|Combattre
+Tax!|Belasten!|Besteuern!|¡Gravar!|Taxer !
+Bag|Tas|Tasche|Bolsa|Sac
+Run|Vluchten|Fliehen|Huir|Fuir
+Heal|Genezen|Heilen|Curar|Soigner
+Fish|Vissen|Angeln|Pescar|Pêcher
+Strike!|Aanslaan!|Anschlagen!|¡Tira!|Ferrez !
+Stop fishing|Stop met vissen|Angeln beenden|Dejar de pescar|Arrêter de pêcher
+Decorate|Inrichten|Einrichten|Decorar|Décorer
+Go outside|Naar buiten|Nach draußen|Salir|Sortir
+Labels|Labels|Beschriftung|Etiquetas|Étiquettes
+Take photo|Foto maken|Foto machen|Hacer foto|Prendre une photo
+Today’s challenges|Uitdagingen van vandaag|Heutige Herausforderungen|Retos de hoy|Défis du jour
+New challenges every day.|Elke dag nieuwe uitdagingen.|Jeden Tag neue Herausforderungen.|Retos nuevos cada día.|De nouveaux défis chaque jour.
+Requests you’re helping with|Verzoeken waar je mee helpt|Bitten, bei denen du hilfst|Peticiones en las que ayudas|Demandes en cours
+Encounters|Ontmoetingen|Begegnungen|Encuentros|Rencontres
+Eggs|Eieren|Eier|Huevos|Œufs
+Empty incubator|Lege broedmachine|Leerer Brutkasten|Incubadora vacía|Couveuse vide
+Win battles to find eggs.|Win gevechten om eieren te vinden.|Gewinne Kämpfe, um Eier zu finden.|Gana combates para encontrar huevos.|Gagnez des combats pour trouver des œufs.
+Buddy|Maatje|Kumpel|Compañero|Compagnon
+steps today|stappen vandaag|Schritte heute|pasos hoy|pas aujourd’hui
+Money|Geld|Geld|Dinero|Argent
+Your team|Jouw team|Dein Team|Tu equipo|Ton équipe
+Party|Groep|Gruppe|Grupo|Groupe
+Storage|Opslag|Lager|Almacén|Stockage
+Storage is empty.|De opslag is leeg.|Das Lager ist leer.|El almacén está vacío.|Le stockage est vide.
+Add from storage|Toevoegen uit opslag|Aus dem Lager holen|Añadir del almacén|Ajouter depuis le stockage
+Make lead|Voorop zetten|Anführen lassen|Poner en cabeza|Mettre en tête
+Lead|Voorop|Anführer|Líder|En tête
+Fainted|Flauwgevallen|Besiegt|Debilitado|K.O.
+Day jobs|Bijbaantjes|Nebenjobs|Trabajos|Petits boulots
+Hire|Aannemen|Einstellen|Contratar|Embaucher
+End shift|Dienst beëindigen|Schicht beenden|Terminar turno|Fin de service
+Items|Spullen|Gegenstände|Objetos|Objets
+In your bag|In je tas|In deiner Tasche|En tu bolsa|Dans ton sac
+No items yet.|Nog geen spullen.|Noch keine Gegenstände.|Aún no hay objetos.|Pas encore d’objets.
+Field Guide|Veldgids|Feldführer|Guía de campo|Guide de terrain
+All types|Alle typen|Alle Typen|Todos los tipos|Tous les types
+Seen|Gezien|Gesehen|Vistos|Vus
+Taxed|Belast|Besteuert|Gravados|Taxés
+Unknown|Onbekend|Unbekannt|Desconocido|Inconnu
+Tax one to see its stats.|Belast er een om zijn statistieken te zien.|Besteuere eins, um seine Werte zu sehen.|Grava uno para ver sus estadísticas.|Taxez-en un pour voir ses stats.
+Your profile|Jouw profiel|Dein Profil|Tu perfil|Ton profil
+Trainer card|Trainerkaart|Trainerkarte|Tarjeta de entrenador|Carte de dresseur
+Records|Records|Rekorde|Récords|Records
+Badges|Badges|Orden|Medallas|Badges
+Edit look|Uiterlijk aanpassen|Aussehen ändern|Cambiar aspecto|Modifier l’apparence
+Customize trainer|Trainer aanpassen|Trainer anpassen|Personalizar entrenador|Personnaliser le dresseur
+Steps today|Stappen vandaag|Schritte heute|Pasos hoy|Pas aujourd’hui
+Total steps|Totaal aantal stappen|Schritte insgesamt|Pasos totales|Pas au total
+Distance walked|Afgelegde afstand|Zurückgelegte Strecke|Distancia recorrida|Distance parcourue
+Places visited|Bezochte plekken|Besuchte Orte|Lugares visitados|Lieux visités
+Trainers beaten|Verslagen trainers|Besiegte Trainer|Entrenadores vencidos|Dresseurs battus
+Eggs hatched|Uitgekomen eieren|Geschlüpfte Eier|Huevos eclosionados|Œufs éclos
+Gold stamps|Gouden zegels|Goldmarken|Sellos de oro|Timbres d’or
+Theme|Thema|Design|Tema|Thème
+Animation|Animatie|Animation|Animación|Animation
+Scene tilt|Kantelen|Neigung|Inclinación|Inclinaison
+Battle stage|Gevechtsplek|Kampfbühne|Escenario de combate|Scène de combat
+Frame rate|Beeldsnelheid|Bildrate|Fotogramas|Images par seconde
+Sharp or smooth|Scherp of vloeiend|Scharf oder flüssig|Nítido o fluido|Net ou fluide
+Sharpest|Scherpst|Am schärfsten|Más nítido|Plus net
+Smoothest|Vloeiendst|Am flüssigsten|Más fluido|Plus fluide
+Music|Muziek|Musik|Música|Musique
+Sound effects|Geluidseffecten|Soundeffekte|Efectos de sonido|Effets sonores
+World sounds|Geluiden van de wereld|Weltgeräusche|Sonidos del mundo|Sons du monde
+Visual effects|Visuele effecten|Visuelle Effekte|Efectos visuales|Effets visuels
+Vibration|Trillen|Vibration|Vibración|Vibration
+Time of day|Tijd van de dag|Tageszeit|Hora del día|Moment de la journée
+Weather|Weer|Wetter|Tiempo|Météo
+Season|Seizoen|Jahreszeit|Estación|Saison
+Shops and houses|Winkels en huizen|Läden und Häuser|Tiendas y casas|Boutiques et maisons
+Text size|Tekstgrootte|Textgröße|Tamaño del texto|Taille du texte
+Contrast|Contrast|Kontrast|Contraste|Contraste
+Flashes|Flitsen|Blitze|Destellos|Flashs
+Buttons|Knoppen|Knöpfe|Botones|Boutons
+Language|Taal|Sprache|Idioma|Langue
+Save slots|Opslagplaatsen|Speicherplätze|Ranuras de guardado|Emplacements de sauvegarde
+Export save|Opslag exporteren|Spielstand exportieren|Exportar partida|Exporter la sauvegarde
+Import save|Opslag importeren|Spielstand importieren|Importar partida|Importer une sauvegarde
+How to play|Hoe speel je|Spielanleitung|Cómo jugar|Comment jouer
+Run the full test|De volledige test uitvoeren|Den vollständigen Test starten|Ejecutar la prueba completa|Lancer le test complet
+Export debug log|Foutlogboek exporteren|Debug-Protokoll exportieren|Exportar registro|Exporter le journal
+Debug menu|Debugmenu|Debug-Menü|Menú de depuración|Menu de débogage
+Play this one|Deze spelen|Diesen spielen|Jugar esta|Jouer celle-ci
+New game here|Nieuw spel hier|Neues Spiel hier|Partida nueva aquí|Nouvelle partie ici
+Copy mine here|Kopieer de mijne hierheen|Meinen hierher kopieren|Copiar la mía aquí|Copier la mienne ici
+Empty|Leeg|Leer|Vacío|Vide
+Normal|Normaal|Normal|Normal|Normal
+Large|Groot|Groß|Grande|Grand
+Larger|Groter|Größer|Más grande|Plus grand
+High contrast|Hoog contrast|Hoher Kontrast|Alto contraste|Contraste élevé
+No flashing|Geen flitsen|Kein Blinken|Sin destellos|Pas de flash
+Normal size|Normale grootte|Normale Größe|Tamaño normal|Taille normale
+Bigger, easier to tap|Groter, makkelijker aan te tikken|Größer, leichter zu tippen|Más grandes, más fáciles de pulsar|Plus grands, plus faciles à toucher
+Follow my clock|Volg mijn klok|Meiner Uhr folgen|Seguir mi reloj|Suivre mon horloge
+Always morning|Altijd ochtend|Immer Morgen|Siempre mañana|Toujours le matin
+Always midday|Altijd middag|Immer Mittag|Siempre mediodía|Toujours midi
+Always evening|Altijd avond|Immer Abend|Siempre tarde|Toujours le soir
+Always night|Altijd nacht|Immer Nacht|Siempre noche|Toujours la nuit
+Changes with the place and the hour|Wisselt met de plek en het uur|Wechselt mit Ort und Stunde|Cambia con el lugar y la hora|Change selon le lieu et l’heure
+Always fair|Altijd mooi weer|Immer schön|Siempre buen tiempo|Toujours beau
+Always rain|Altijd regen|Immer Regen|Siempre lluvia|Toujours la pluie
+Always snow|Altijd sneeuw|Immer Schnee|Siempre nieve|Toujours la neige
+Always fog|Altijd mist|Immer Nebel|Siempre niebla|Toujours le brouillard
+Follow the calendar|Volg de kalender|Dem Kalender folgen|Seguir el calendario|Suivre le calendrier
+Spring|Lente|Frühling|Primavera|Printemps
+Summer|Zomer|Sommer|Verano|Été
+Autumn|Herfst|Herbst|Otoño|Automne
+Winter|Winter|Winter|Invierno|Hiver
+Walk inside|Naar binnen lopen|Hineingehen|Entrar|Entrer
+Open the counter right away|Meteen de toonbank openen|Sofort die Theke öffnen|Abrir el mostrador directamente|Ouvrir le comptoir tout de suite
+Match device|Zoals het apparaat|Wie das Gerät|Como el dispositivo|Comme l’appareil
+Daylight|Daglicht|Tageslicht|Luz de día|Jour
+Moonlight|Maanlicht|Mondlicht|Luz de luna|Nuit
+Full animation|Volledige animatie|Volle Animation|Animación completa|Animation complète
+Reduced motion|Minder beweging|Weniger Bewegung|Movimiento reducido|Mouvements réduits
+Tilt with my phone|Kantelen met mijn telefoon|Mit dem Handy neigen|Inclinar con el móvil|Incliner avec le téléphone
+Keep the scene still|Houd de scène stil|Szene ruhig halten|Mantener la escena quieta|Garder la scène fixe
+On|Aan|An|Sí|Oui
+Off|Uit|Aus|No|Non
+Super effective|Supereffectief|Sehr effektiv|Muy eficaz|Super efficace
+Not very effective|Niet erg effectief|Nicht sehr effektiv|Poco eficaz|Peu efficace
+Back to the game|Terug naar het spel|Zurück zum Spiel|Volver al juego|Retour au jeu
+Back to walking|Terug naar het lopen|Zurück zum Gehen|Volver a caminar|Reprendre la marche
+Let’s go|Daar gaan we|Los geht’s|¡Vamos!|C’est parti
+Leave the shop|De winkel verlaten|Laden verlassen|Salir de la tienda|Quitter la boutique
+I’ll do it|Ik doe het|Mach ich|Lo haré|Je m’en occupe
+Save picture|Foto bewaren|Bild speichern|Guardar imagen|Enregistrer l’image
+Keep shooting|Verder fotograferen|Weiter fotografieren|Seguir haciendo fotos|Continuer
+Your photo|Jouw foto|Dein Foto|Tu foto|Ta photo
+Decorate your room|Richt je kamer in|Richte dein Zimmer ein|Decora tu habitación|Décore ta chambre
+Nothing|Niets|Nichts|Nada|Rien
+`;
+const I18N=(()=>{const M={};I18N_LANGS.forEach(([c],i)=>{if(i)M[c]=new Map()});for(const line of I18N_ROWS.trim().split('\n')){const p=line.split('|');if(p.length<I18N_LANGS.length)continue;I18N_LANGS.forEach(([c],i)=>{if(i&&p[i])M[c].set(p[0],p[i])})}return M})();
+let I18N_LANG='en',I18N_OBS=null;
+const I18N_ORIG=new WeakMap(),I18N_ATTR=['aria-label','title','placeholder'];
+/* translate (or restore) one text node / element's attributes */
+function i18nNode(n){if(n.nodeType===3){let O=I18N_ORIG.get(n);if(O&&n.nodeValue!==O.out){I18N_ORIG.delete(n);O=null}/* the game changed it since */const raw=O?O.raw:n.nodeValue,t=raw.trim();if(!t||t.length>80)return;
+  const tr=I18N_LANG==='en'?null:I18N[I18N_LANG]&&I18N[I18N_LANG].get(t);if(tr){const v=raw.replace(t,tr);I18N_ORIG.set(n,{raw,out:v});if(n.nodeValue!==v)n.nodeValue=v}else if(O){n.nodeValue=O.raw;I18N_ORIG.delete(n)}return}
+ if(n.nodeType!==1||n.closest('canvas,script,style,[data-noi18n]'))return;
+ for(const a of I18N_ATTR){if(!n.hasAttribute(a))continue;const key='data-en-'+a,raw=n.getAttribute(key)??n.getAttribute(a),tr=I18N_LANG==='en'?null:I18N[I18N_LANG]&&I18N[I18N_LANG].get(raw.trim());
+  if(tr){if(!n.hasAttribute(key))n.setAttribute(key,raw);n.setAttribute(a,tr)}else if(n.hasAttribute(key)){n.setAttribute(a,n.getAttribute(key));n.removeAttribute(key)}}
+ const w=document.createTreeWalker(n,NodeFilter.SHOW_TEXT|NodeFilter.SHOW_ELEMENT);let c;while((c=w.nextNode())){if(c.nodeType===3){if(c.parentElement&&!c.parentElement.closest('script,style,[data-noi18n]'))i18nNode(c)}else for(const a of I18N_ATTR)if(c.hasAttribute&&c.hasAttribute(a)){i18nAttr(c,a)}}}
+function i18nAttr(el,a){const key='data-en-'+a,raw=el.getAttribute(key)??el.getAttribute(a),tr=I18N_LANG==='en'?null:I18N[I18N_LANG]&&I18N[I18N_LANG].get(raw.trim());if(tr){if(!el.hasAttribute(key))el.setAttribute(key,raw);if(el.getAttribute(a)!==tr)el.setAttribute(a,tr)}else if(el.hasAttribute(key)){el.setAttribute(a,el.getAttribute(key));el.removeAttribute(key)}}
+function i18nSet(lang){lang=I18N_LANGS.some(l=>l[0]===lang)?lang:'en';if(lang===I18N_LANG&&I18N_OBS)return;I18N_LANG=lang;document.documentElement.lang=lang;
+ if(!I18N_OBS&&lang!=='en'){I18N_OBS=new MutationObserver(ms=>{if(I18N_LANG==='en')return;for(const m of ms){if(m.type==='characterData')i18nNode(m.target);else for(const n of m.addedNodes)i18nNode(n)}});I18N_OBS.observe(document.body,{childList:true,subtree:true,characterData:true})}
+ i18nNode(document.body)}

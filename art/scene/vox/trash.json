@@ -1,0 +1,1 @@
+{"vpm":8,"layers":[{"k":"cyl","x":0,"y":0,"z":0,"r":0.28,"h":0.85,"col":"#AAA6B4","tex":"stone","name":"bin"},{"k":"cyl","x":0,"y":0,"z":0.85,"r":0.3,"h":0.07,"col":"#C4BDB9","tex":"plain","name":"rim"},{"k":"cyl","x":0,"y":0,"z":0.92,"r":0.22,"h":0.08,"col":"#373147","tex":"plain","name":"lid"}]}
