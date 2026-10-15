@@ -14,7 +14,7 @@ async function accInit(){if(!accOn())return;
   firebase.initializeApp(ACC.cfg);ACC.auth=firebase.auth();ACC.db=firebase.firestore();
   try{await ACC.auth.getRedirectResult()}catch(e){accErr(e)}
   ACC.auth.onAuthStateChanged(u=>accState(u))}
- catch(e){console.error(e);ACC.err='Sign-in isn’t reachable right now.';ACC.ready=true;accRefresh()}}
+ catch(e){console.warn(e);ACC.err='Sign-in isn’t reachable right now.';ACC.ready=true;accRefresh()}}
 function accState(u){ACC.ready=true;ACC.user=u?{uid:u.uid,name:u.displayName||u.email||'Player',email:u.email||'',photo:u.photoURL||''}:null;
  const want=u?u.uid:'';
  if(want!==ACC_ID){/* a different player: keep what's here, then load theirs */
