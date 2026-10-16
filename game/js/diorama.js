@@ -36,13 +36,13 @@ const dioOk=im=>!!(im&&(im.naturalWidth||im.width));
 /* a prop's extra layer as a prop of its own: same base point unless it says otherwise, shifted dx right and dy up (pixels),
    dz meters back (negative: in front). Effects, glows, labels and shadows stay with the main picture. */
 function dioLayerM(M,l){return {img:l.img,ox:(l.ox??M.ox)+(l.dx||0),oy:(l.oy??M.oy)-(l.dy||0),sway:(M.sway||0)*(l.sway??1),shadow:0,flat:l.face==='flat'?1:0}}
-/* v36: the new 32 px tiles (art/next/tiles, six variants each) when the Next ground dial is on */
+/* the 32 px ground tiles, twelve per kind (art/next/tiles47; the v46 set in art/next/tiles is on the legacy branch) */
 /* v47: the 32 px ground is the only full-mode ground (the 16 px tiles stay for Lite mode and the Studio's tile editor) */
 const dioNextOn=()=>true;
 function dioNextTiles(path,set){const b=(path||'').replace(/^.*\//,'').replace(/\.png$/,'').replace(/_\d+$/,''),f=set||dioTileFolder();return [1,2,3,4,5,6,7,8,9,10,11,12].map(i=>`next/${f}/${b}_${i}.png`)}/* v46: twelve per kind (tools/build-terrain.py) */
 /* v47: which set of twelve: the catalogue's tileSet ('tiles47', tools/build-terrain-v47.py), else the v46 set. With the
    v47 set the painter lays the soft patches itself, in world metres, picks the plain tiles evenly and never mirrors */
-function dioTileFolder(){const C=typeof dioData==='function'&&dioData();return (C&&C.sc&&C.sc.tileSet)||'tiles'}
+function dioTileFolder(){const C=typeof dioData==='function'&&dioData();return (C&&C.sc&&C.sc.tileSet)||'tiles47'}
 function dioT47(){return dioNextOn()&&dioTileFolder()==='tiles47'}
 /* v43: which flag a scene flies: its own (scene/flags/<id>.png) unless it names another */
 function dioFlagPath(sc){const D=dioData(),own=sc.baseId||Object.keys(D.scenes).find(k=>D.scenes[k]===sc),id=sc.flag||((D.sc.flags||[]).includes(own)?own:'default');return `scene/flags/${id}.png`}

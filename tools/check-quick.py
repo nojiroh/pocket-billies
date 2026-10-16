@@ -399,7 +399,7 @@ def check_ground():
     another kind (v46 stamped the same grey smudge onto one tile of every kind)"""
     from PIL import Image
     import hashlib
-    D = gamedata(); SY = D['scenery']; folder = GAME / 'art' / 'next' / SY.get('tileSet', 'tiles'); bad = []; seen = {}; masks = {}
+    D = gamedata(); SY = D['scenery']; folder = GAME / 'art' / 'next' / SY.get('tileSet', 'tiles47'); bad = []; seen = {}; masks = {}
     for ch, T in SY['terrains'].items():
         name = T['tile'].rsplit('/', 1)[-1][:-4]; hs = []
         for i in range(1, 13):
