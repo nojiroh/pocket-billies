@@ -1767,7 +1767,8 @@ def desktop_steps(b, base, R):
         Guide's Postcards page (it slides away by itself or on a tap); coming back shows just the stamp"""
         if not pg.evaluate("typeof postcardCheck==='function'"): return 'not in this build'
         sd = pg.evaluate("PLACE.sundown.node")
-        pg.evaluate("U.modal=null;U.mq=[];renderOv();U.bench=null;S.cards={};PC.last=null;PC.on=false;0")
+        # alpha 0.5: no postcard before Blake's first battle (pcFree); the checks skip the opening, so mark it as played
+        pg.evaluate("U.modal=null;U.mq=[];renderOv();U.bench=null;S.cards={};PC.last=null;PC.on=false;Object.assign(storyFlags(),{rival0:'win',met_blake0:1});0")
         go_scene(pg, sd)
         if not until(pg, "!!document.querySelector('.pcard-wrap.in')", 12, "postcardCheck()"): raise Exception('no postcard came on walking into Marigold Town')
         time.sleep(1.2)
