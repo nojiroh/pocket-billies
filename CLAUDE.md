@@ -1,0 +1,33 @@
+# Pocket Billies (fresh base, version 0.1.0 alpha)
+
+This is a FRESH NEW BASE for the game, not a continuation of the old numbering. The old build (Net Worth v47.x / alpha 0.5) is "legacy": it is kept on a `legacy` branch and tag for reference only. Version numbering starts over at **0.1.0 alpha**. Old saves, old cloud saves, migration code and legacy compatibility do NOT matter and can be deleted.
+
+The game vision is in docs/VISION.md. Read it before any design or art work.
+
+## Ground rules
+- Keep the custom WebGL2 renderer. Reuse existing code and art wherever it fits the new design. No engine swap.
+- Fixed art commitments: terrain textures and the airship style (low-poly models textured at 32 px/m) are the visual targets. Trainer portraits are 32-bit pixel art. Props that read better flat stay flat on purpose.
+- Real-world step tracking is REMOVED (the game becomes a classic RPG). In-game walking with a joystick, the seamless maps and the rooms STAY. See docs/phases/08.
+- One rename per commit. Never mix a rename with a behavior change, so a failed check points at one cause.
+- "Renaming" means internal names only (files, functions, variables, data keys, ids). Player-facing words stay unless a phase says otherwise.
+- Follow docs/NAMING.md for vocabulary and conventions.
+- Do not break: Start-Game, phone mode, the Studio, the in-game full test and the exported debug log. I test on my phone and send you debug logs.
+- The version number lives in ONE place and is read everywhere (phase 03). Release numbering and the changelog follow the new scheme.
+
+## Workflow
+- Start every session in Plan Mode. Reply with a plan and wait for my approval before editing anything.
+- One phase per session. Read docs/ROADMAP.md, docs/VISION.md, docs/HANDOFF.md, then only the phase file I name (docs/phases/).
+- Run the quick check (tools/check-quick.py) after every change. Verify the exact command and requirements on first use; it drives a headless browser (Python + Playwright) and compares screenshots to validation/quick-baseline. After the scope reset (phase 03) the baseline is regenerated and tests for removed systems are replaced.
+- Test speed: after each change run lint, type-check and unit tests (seconds), then the smoke subset once it exists (phase 01); run the full quick check at the end of a phase. Tiers and budgets are in docs/phases/13.
+- Commit often. Tag the end of each phase (phase-NN-done). Never start a phase from an untagged, unfinished state.
+- Anything marked "Ask me before" in a phase file is a decision I want to make myself. Offer options and a recommendation, then wait.
+- End each phase by updating docs/HANDOFF.md: what changed, what is risky, what was verified, what is next.
+
+## Treat figures as claims
+Numbers and file names in docs/phases/ come from an outside review of the alpha 0.4.1 build (README, file layout, partial code reads), not a full read of the code. The current legacy build is alpha 0.5 with a new UI look. Verify each claim against the real code, tell me where it is wrong, and push back on any idea you think is bad.
+
+## Known gotchas (verify)
+- Duplicate global functions silently override each other (camTo in scene.js, dioTileHalf in diorama.js). Check for name clashes before and after any move.
+- Many source lines exceed 300 characters. Reformat only in separate no-op commits.
+- gamedata.js is a ~13 MB `window.GAMEDATA=` file, ~8 MB of it `scenes`. Never open it whole; search it or read the schema.
+- Debug and self-test code must never send save data, names or step history anywhere.

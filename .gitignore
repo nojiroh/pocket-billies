@@ -1,0 +1,30 @@
+# OS and editor junk
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*~
+.vscode/
+.idea/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Node (phase 04)
+node_modules/
+
+# Quick check output: generated on every run, uploaded by CI as artifacts
+validation/out/
+validation/quick-baseline/
+results.json
+test-results/
+playwright-report/
+
+# Local secrets: never commit tokens or keys
+.env
+.env.*
+*.pem
+*.key
