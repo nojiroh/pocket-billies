@@ -1353,7 +1353,7 @@ def desktop_steps(b, base, R):
             return res
         # GL draw calls that WebGL refuses (a sampler fed the wrong kind of texture) show as nothing drawn; count them
         pg.evaluate("""(()=>{const gl=EGL.gl;if(gl.__chk)return;gl.__chk={n:0,last:''};const proto=Object.getPrototypeOf(gl),ge=proto.getError;let cur=null;const ou=proto.useProgram;gl.useProgram=function(p){cur=p;return ou.call(gl,p)};
-         for(const k of ['drawArrays','drawElements','drawArraysInstanced','drawElementsInstanced']){const f=proto[k];gl[k]=function(...a){const r=f.apply(gl,a);const e=ge.call(gl);if(e){gl.__chk.n++;gl.__chk.last=k+' '+e+' '+(Object.keys(EGL.P).find(n=>EGL.P[n].p===cur)||'?')}return r}}})()""")
+         for(const k of ['drawArrays','drawElements','drawArraysInstanced','drawElementsInstanced']){const f=proto[k];gl[k]=function(...a){const e0=ge.call(gl),r=f.apply(gl,a);const e=ge.call(gl);if(e0||e){const pn=Object.keys(EGL.P).find(n=>EGL.P[n].p===cur)||'?',va=gl.getParameter(gl.VERTEX_ARRAY_BINDING);gl.__chk.n++;gl.__chk.last=(e0?'error '+e0+' pending before '+k+' (from an earlier call)':k+' '+e)+' '+pn+(va&&!gl.isVertexArray(va)?' (deleted vertex array bound)':'')}return r}}})()""")
         unwrap = "(()=>{const gl=EGL.gl;for(const k of ['useProgram','drawArrays','drawElements','drawArraysInstanced','drawElementsInstanced'])delete gl[k];delete gl.__chk})()"   # the error check after every draw stalls software drawing: only for this step
         try:
             # 1. the land: the normal map, the slope toward the sun, the shadow of a block (the sun in the west at 17:00)
