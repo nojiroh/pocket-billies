@@ -15,6 +15,11 @@ on:
   schedule:
     - cron: '17 3 * * *'
   workflow_dispatch:
+    inputs:
+      args:
+        description: 'Extra arguments for the full check, e.g. --steps=v44 (empty: everything)'
+        required: false
+        default: ''
 
 permissions:
   contents: read
@@ -117,7 +122,9 @@ jobs:
       - name: No game data text that could become HTML
         run: python tools/check-data-text.py
       - name: Quick check, full
-        run: python tools/check-quick.py
+        run: python tools/check-quick.py $EXTRA
+        env:
+          EXTRA: ${{ github.event.inputs.args }}
       - name: Upload pictures and results
         if: always()
         uses: actions/upload-artifact@v4
