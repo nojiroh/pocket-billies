@@ -155,9 +155,6 @@ menu.
 - The game's own **full test** (the debug menu: Settings → Debug, or Ctrl+Shift+D → Full test) measures frame rates and stress-tests
   the renderer, which only means something on real hardware, so neither script runs it: run it on
   your phone or computer and send the debug log.
-- `tools/build-art.*`, `tools/src/`: the procedural art generator from earlier versions.
-  **Running it regenerates the art and overwrites your hand-edited sheets.** Use the
-  Studio for art changes.
 
 ## Notes and limits
 
