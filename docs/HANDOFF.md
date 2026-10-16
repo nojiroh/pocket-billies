@@ -30,7 +30,7 @@ Newest entry on top. Every phase session ends by adding an entry here and taggin
   2. Regenerate validation/quick-baseline from alpha 0.5 so picture comparisons mean something again.
   3. Walking camera: the owner's walk-crossing-test.log shows Hedgerow Lane -> Sundown crossed but "the view followed: False" (held for w:sundown*). Reproduce.
 - Decisions I made (and why): kept the check's WebGL run rather than Lite mode, because the baseline and the phone both use WebGL; Lite mode is proposed for the phase 01 `--smoke` set. Did not commit tools/ or validation/ (about 50 MB with pictures) because repo layout and Git LFS are the owner's call in phase 01.
-- Questions waiting for the owner: regenerate the picture baseline from alpha 0.5 now (recommended), or at phase 03? How tools/ and validation/ should live in the repo (phase 01).
+- Owner decided: regenerate the picture baseline at phase 03, not now. Still open: how tools/ and validation/ should live in the repo (phase 01).
 - Next session starts with: phase 01. Fix the stale tests first so the check is green, then --smoke (Lite mode for the flows), CI, .gitignore, duplicate functions.
 
 ---
