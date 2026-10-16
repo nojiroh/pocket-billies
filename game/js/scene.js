@@ -356,7 +356,6 @@ function hitFx(ti,an){const T=sideCenter(ti),s=SC.s[ti],ts=SIDEOF(ti),w=hitWeigh
  if(an.crit){scFlash('#FFF2A8',.6,300);hitStop(90);speedLines(T);punch(an.te>1?.12:.09,320,ts===1?.014:-.014)}
  if(an.crit||an.te>1)handheld(520,an.crit&&an.te>1?1.3:1)
  burst(T,an.t||'None',an.te>1?16:10,an.te>1?3.2:2.2,1);if(typeof hudHit==='function')hudHit(ti,an)}
-function camTo(c,d=260,e='io',delay=0){for(const k in c)if(k in SC.cam)tw(SC.cam,k,c[k],d,e,delay)}
 function camHome(d=420,delay=0){camTo(HOMECAM,d,'io',delay);if(!RM)tw(SC.css,'r',0,d,'io',delay)}
 /* push in toward a side. Under reduced motion the camera stays on the wide shot */
 const camAt=(i,amt=.45,z=.14,rr=0,d=260,e='io')=>{if(RM)return;const F=FOCAM[SIDEOF(i)],k=clamp(amt*2.1,0,1),c={};for(const key in HOMECAM)c[key]=HOMECAM[key]+(F[key]-HOMECAM[key])*k;
