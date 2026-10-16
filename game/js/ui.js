@@ -140,14 +140,14 @@ function walkHero(){if(U.inside&&!U.bench&&roomState())return roomHero();if(U.be
  else next=`<p class="wh-gate">${esc(st.t)}</p>`;
  return `<div class="walk-hero" id="walkHero">${whCard(esc(placeSub(here)),esc(here.name),envLine()+next,tripButtons())}
  <div class="wh-foot">${q.length?`<p class="wh-hint glass">${uiIco('spark',12)} ${plural(q.length,'Billie')} hiding nearby. Tap a <b>?</b> to battle.</p>`:S.route.prog===0?`<p class="wh-hint glass">${uiIco('walk',12)} Tap the ground to walk around. Tap buildings, people and signs.</p>`:''}
-  <div class="wh-row"><button class="pb small glass fish-btn" data-a="fish" hidden>${uiIco('fish',14)} Fish</button><button class="pb small glass" data-a="photo" aria-label="Photo mode">${uiIco('camera',14)}</button><button class="pb small glass" data-a="test" data-n="500">+500 steps</button><button class="wh-down glass" data-a="walkdown" aria-label="Show actions">${uiIco('chev',18)}<span>Actions</span></button><span class="wh-steps glass tnum">${uiIco('walk',14)} ${fmt(S.day.steps)}</span></div></div></div>`}
+  <div class="wh-row"><button class="pb small glass fish-btn" data-a="fish" hidden>${uiIco('fish',14)} Fish</button><button class="pb small glass" data-a="photo" aria-label="Photo mode">${uiIco('camera',14)}</button><button class="wh-down glass" data-a="walkdown" aria-label="Show actions">${uiIco('chev',18)}<span>Actions</span></button><span class="wh-steps glass tnum">${uiIco('walk',14)} ${fmt(S.day.steps)}</span></div></div></div>`}
 function renderWalk(){rollDay();const st=S.day.steps,r=rate(st),q=S.queue;
  return `${walkHero()}<div class="walk-sheet"><span class="ws-grip" aria-hidden="true"></span>
  <div class="cols"><div class="col">
  <div class="today px glass"><div class="today-top"><div><div class="big tnum" data-count="steps" data-to="${st}">${fmt(st)}</div><div class="lbl">steps today</div></div><div class="se"><div class="mid tnum">$<span data-count="se" data-to="${S.se}">${fmt(S.se)}</span></div><div class="lbl">Money</div></div></div>
   <div class="brackets" role="img" aria-label="Earning $${r} per step">${bracketBars(st)}</div><div class="brk-l">${bracketLabels()}</div>
   <p class="note">${bracketNote(st)}</p></div>
- ${walkMode()?`<section class="walkbtns"><p class="note">Walk with the joystick (drag anywhere on the scene) or tap where you want to go. The arrows at the edges lead on to the next place; the steps you take count here.</p></section>`:`<section class="walkbtns"><div class="two"><button class="pb" data-a="test" data-n="500">Demo +500 steps</button><button class="pb" data-a="test" data-n="2000">Demo +2,000 steps</button></div><p class="note demo-note">Demo buttons add simulated steps immediately.</p></section>`}
+ ${walkMode()?`<section class="walkbtns"><p class="note">Walk with the joystick (drag anywhere on the scene) or tap where you want to go. The arrows at the edges lead on to the next place; the steps you take count here.</p></section>`:''}
  ${typeof chalCard==='function'?chalCard():''}${typeof reqList==='function'&&reqList()?`<section class="chal px glass"><div class="sec-h"><h2>Requests you’re helping with</h2></div>${reqList()}</section>`:''}${hereCard()}</div><div class="col">
  <section class="pending"><div class="sec-h"><h2>Encounters</h2><span class="count tnum">${q.length}/${RULES.steps.maxEncounters}</span></div>
   <p class="note">${q.length>=RULES.steps.maxEncounters?'Your area is full. Battle or tax a few to make room.':`Next one in about ${fmt(Math.ceil((RULES.steps.encounterEverySE-S.meter)/r))} steps.`} You only see their level until the battle starts.</p>
@@ -486,7 +486,6 @@ document.addEventListener('click',ev=>{const el=ev.target.closest('[data-a]');if
   case 'setgender':S.gender=d.g;save();closeModal();render();break;
   case 'pick':startGame(d.l,{rival:true,talkFirst:true});break;
   case 'tab':if(U.tab!==d.t){if(d.t==='map')U.mglFrom=U.tab;U.tab=d.t;if(d.t!=='map')U.mapSel=null;render();scrollTo(0,0)}else if(d.t==='ledger'&&U.dex){U.dex=null;render();scrollTo(0,0)}break;
-  case 'test':addSteps(+d.n);break;
   case 'fish':if(typeof fishStart==='function')fishStart();break;
   case 'leaveroom':leaveRoom();break;
   case 'walkdown':{const w=$('.walk-sheet');if(w)scrollTo({top:w.getBoundingClientRect().top+scrollY-70,behavior:RM?'auto':'smooth'});break}
