@@ -32,10 +32,22 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+          cache: pip
+          cache-dependency-path: tools/requirements-check.txt
       - name: Install Playwright and Pillow
-        run: |
-          pip install playwright==1.56.0 pillow
-          python -m playwright install --with-deps chromium
+        run: pip install -r tools/requirements-check.txt
+      - name: Cache Chromium
+        id: chromium
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: chromium-${{ runner.os }}-${{ hashFiles('tools/requirements-check.txt') }}
+      - name: Install Chromium
+        if: steps.chromium.outputs.cache-hit != 'true'
+        run: python -m playwright install --with-deps chromium
+      - name: Install Chromium's system libraries
+        if: steps.chromium.outputs.cache-hit == 'true'
+        run: python -m playwright install-deps chromium
       - name: No global name defined twice
         run: python tools/check-globals.py
       - name: Quick check, smoke set
@@ -58,10 +70,22 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+          cache: pip
+          cache-dependency-path: tools/requirements-check.txt
       - name: Install Playwright and Pillow
-        run: |
-          pip install playwright==1.56.0 pillow
-          python -m playwright install --with-deps chromium
+        run: pip install -r tools/requirements-check.txt
+      - name: Cache Chromium
+        id: chromium
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: chromium-${{ runner.os }}-${{ hashFiles('tools/requirements-check.txt') }}
+      - name: Install Chromium
+        if: steps.chromium.outputs.cache-hit != 'true'
+        run: python -m playwright install --with-deps chromium
+      - name: Install Chromium's system libraries
+        if: steps.chromium.outputs.cache-hit == 'true'
+        run: python -m playwright install-deps chromium
       - name: No global name defined twice
         run: python tools/check-globals.py
       - name: Quick check, full
