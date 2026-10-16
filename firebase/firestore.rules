@@ -1,0 +1,66 @@
+rules_version = '2';
+// Pocket Billies: Firestore rules. This file is the one copy; paste it into Firebase → Firestore Database → Rules and
+// press Publish. Tested by firebase/test/rules.test.mjs on the emulator (cd firebase && npm ci && npm test).
+//
+// What each collection holds (js/account.js, js/friends.js):
+//   saves/<uid>             one player's save, private
+//   users/<uid>             what friends see of a player: name, look, partner, last place, friend list, code
+//   codes/<CODE>            { uid }: a friend code finds a player, and nothing else does
+//   requests/<from>_<to>    a friend request: { from, to, fromName, status, t }
+// Nobody can list users/ or codes/, so a player is found by their code only, and only their friends see them.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function me() { return request.auth.uid; }
+    function shortText(v, n) { return v is string && v.size() <= n; }
+
+    match /saves/{uid} {
+      allow read, delete: if signedIn() && me() == uid;
+      allow create, update: if signedIn() && me() == uid
+        && request.resource.data.json is string && request.resource.data.json.size() < 1000000;
+    }
+
+    // users/<uid>.friends is the owner's own list: being on it lets that friend read this document. A player can
+    // only add people to their own list, so it never gives them a way into someone else's.
+    match /users/{uid} {
+      allow get: if signedIn() && (me() == uid || me() in resource.data.get('friends', []));
+      allow create, update: if signedIn() && me() == uid && validUser(request.resource.data);
+      allow delete: if signedIn() && me() == uid;
+    }
+    function validUser(d) {
+      return d.keys().hasOnly(['name', 'avatar', 'partner', 'at', 'v', 'friends', 'code'])
+        && (!('name' in d) || shortText(d.name, 40))
+        && (!('friends' in d) || (d.friends is list && d.friends.size() <= 50))
+        && (!('code' in d) || shortText(d.code, 8))
+        && (!('partner' in d) || d.partner == null || d.partner is map)
+        && (!('avatar' in d) || d.avatar == null || d.avatar is map)
+        && (!('at' in d) || d.at is map);
+    }
+
+    match /codes/{code} {
+      allow get: if signedIn();
+      allow create: if signedIn() && code.matches('^[A-HJ-NP-Z2-9]{6}$')
+        && request.resource.data.keys().hasOnly(['uid']) && request.resource.data.uid == me();
+    }
+
+    // The sender asks (pending) or takes it back (removed); only the receiver accepts or declines.
+    match /requests/{id} {
+      function party(d) { return d.from == me() || d.to == me(); }
+      allow get: if signedIn() && (resource == null || party(resource.data));
+      allow list: if signedIn() && party(resource.data);
+      allow delete: if signedIn() && party(resource.data);
+      allow create: if signedIn() && validRequest(request.resource.data)
+        && request.resource.data.from == me() && request.resource.data.to != me()
+        && id == me() + '_' + request.resource.data.to
+        && request.resource.data.status == 'pending';
+      allow update: if signedIn() && party(resource.data) && validRequest(request.resource.data)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 't', 'fromName'])
+        && ((me() == resource.data.to && request.resource.data.status in ['accepted', 'declined', 'removed'])
+          || (me() == resource.data.from && request.resource.data.status in ['pending', 'removed']));
+    }
+    function validRequest(d) {
+      return d.keys().hasOnly(['from', 'to', 'fromName', 'status', 't'])
+        && d.from is string && d.to is string && shortText(d.fromName, 40) && d.t is number;
+    }
+  }
+}

@@ -2,6 +2,7 @@
 # - Every push and pull request (the Studio's "Save to game" opens one): the duplicate-name guard and the smoke set
 #   (tools/check-quick.py --smoke, about two minutes of checks).
 # - Nightly, by hand (Actions -> Check -> Run workflow) and on phase-* tags: the full quick check (about 40 minutes).
+# - Phase 02: the Firestore rules tests (firebase/, on the emulator) on every push and pull request, about a minute.
 # Pictures and results.json are uploaded as an artifact on every run. Picture differences are notes, never failures,
 # until phase 03 makes a baseline on this runner.
 name: Check
@@ -50,6 +51,8 @@ jobs:
         run: python -m playwright install-deps chromium
       - name: No global name defined twice
         run: python tools/check-globals.py
+      - name: No game data text that could become HTML
+        run: python tools/check-data-text.py
       - name: Quick check, smoke set
         run: python tools/check-quick.py --smoke
       - name: Upload pictures and results
@@ -60,6 +63,29 @@ jobs:
           path: validation/quick/
           if-no-files-found: ignore
           retention-days: 14
+
+  rules:
+    if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref_type == 'branch')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: firebase
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: firebase/package-lock.json
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Install the emulator and the test tools
+        run: npm ci
+      - name: Firestore rules tests
+        run: npm test
 
   full:
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref_type == 'tag')
@@ -88,6 +114,8 @@ jobs:
         run: python -m playwright install-deps chromium
       - name: No global name defined twice
         run: python tools/check-globals.py
+      - name: No game data text that could become HTML
+        run: python tools/check-data-text.py
       - name: Quick check, full
         run: python tools/check-quick.py
       - name: Upload pictures and results

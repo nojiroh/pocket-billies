@@ -19,7 +19,7 @@ const TR_PRESETS=[
  {name:'Trainer',body:{chest:.35},skin:'#7A4A34',hair:'#5A3A2A',eyes:'#3F8A63',wear:{hair:'hair_long',top:'sweater',bottom:'chinos',shoes:'boots',bag:'backpack'},colors:{sweater:['#C8323C']}}];
 function trSliders(){return (WD()||{}).sliders||[]}
 function cleanLook(L,fallback){const W=WD(),I=W?W.items:{},given=!!(L&&typeof L==='object'),base=given?{wear:{},colors:{},body:{}}:(fallback||TR_PRESETS[0]),fb=fallback||TR_PRESETS[0],out={name:'Trainer',body:{},skin:fb.skin,hair:fb.hair,eyes:fb.eyes,wear:{},colors:{}};if(!given)L=fb;
- out.name=typeof L.name==='string'&&L.name.trim()?L.name.trim().slice(0,18):'Trainer';
+ out.name=typeof L.name==='string'&&L.name.trim()?(typeof cleanName==='function'?cleanName(L.name,18):L.name.trim().slice(0,18))||'Trainer':'Trainer';
  for(const s of trSliders()){const v=+(L.body||{})[s.k];out.body[s.k]=Number.isFinite(v)?clamp(v,s.min,s.max):(base.body&&base.body[s.k]!=null?base.body[s.k]:s.def)}
  for(const k of ['skin','hair','eyes'])if(TR_HEX.test(L[k]||''))out[k]=L[k];
  for(const s of TR_SLOTS()){let id=L.wear&&s.id in L.wear?L.wear[s.id]:(base.wear&&s.id in base.wear?base.wear[s.id]:TR_DEFAULT_WEAR[s.id]);

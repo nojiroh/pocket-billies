@@ -1,0 +1,14 @@
+{
+  "name": "pocket-billies-firestore-rules",
+  "private": true,
+  "description": "Tests for firestore.rules on the Firestore emulator. Run: npm ci && npm test",
+  "type": "module",
+  "scripts": {
+    "test": "firebase emulators:exec --only firestore --project demo-pocket-billies \"node --test test/*.test.mjs\""
+  },
+  "devDependencies": {
+    "@firebase/rules-unit-testing": "^5.0.0",
+    "firebase": "^12.0.0",
+    "firebase-tools": "^15.34.0"
+  }
+}
