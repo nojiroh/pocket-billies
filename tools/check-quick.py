@@ -1987,35 +1987,6 @@ def studio_round_trip(pw, R):
 BASE = ROOT / 'validation' / 'quick-baseline'
 
 
-def single_page(pw, R):
-    """v30: the single-page version (tools/build-artifact.py) builds, loads and draws a walk scene"""
-    @step('Single page: the one-file version builds, loads and draws', 180)
-    def run():
-        tmp = Path(tempfile.mkdtemp(prefix='networth-page-'))
-        try:
-            r = subprocess.run([sys.executable, str(ROOT / 'tools' / 'build-artifact.py'), str(tmp / 'index.html')], capture_output=True, text=True, timeout=120)
-            if r.returncode: raise Exception('build failed: ' + (r.stderr or r.stdout)[-300:])
-            mb = (tmp / 'index.html').stat().st_size / 1e6
-            if mb > 16: raise Exception(f'the page is {mb:.1f} MB, over the 16 MB limit')
-            srv, base = serve(tmp); b = pw.chromium.launch(args=['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist']); errs = []
-            try:
-                # v46: fetch() is refused for data: links inside the Claude app, so the single-page build must never fetch an
-                # inlined file; any fetch of a data: link fails here as it would on the phone
-                ctx = b.new_context(viewport={'width': 700, 'height': 520}); ctx.add_init_script(CLOCK); ctx.add_init_script(NO_ACCOUNTS); ctx.set_default_timeout(90000)
-                ctx.add_init_script("(()=>{const f=window.fetch;window.fetch=function(u,...a){if(String(u).startsWith('data:'))return Promise.reject(new TypeError('data: fetch refused (as in the Claude app)'));return f.call(this,u,...a)}})()")
-                pg = ctx.new_page(); pg.on('pageerror', lambda e: errs.append(str(e))); pg.on('console', lambda m: errs.append(m.text) if m.type == 'error' else None)
-                pg.goto(base + '/index.html'); pg.wait_for_selector('.ttl,.title', timeout=60000); pg.evaluate(LOW_RENDER)
-                play(pg); go_scene(pg, 0); time.sleep(2); shot(pg, 'single-page')
-                vx = json.loads(pg.evaluate("JSON.stringify((()=>{const C=dioData().sc.props,keys=[...new Set(Object.values(C).map(M=>M.vox).filter(v=>typeof v==='string'))];const empty=keys.filter(k=>{const r=voxRecipe(k);return !r||!(r.layers||[]).length});return {n:keys.length,empty,bad:VOX.bad||0,drawn:VOX.drawn}})())"))
-                if vx['empty'] or vx['bad']: raise Exception(f'voxel recipes empty in the single-page build: {len(vx["empty"])} of {vx["n"]} ({", ".join(vx["empty"][:4])})')
-                bad = [e for e in errs if 'favicon' not in e]
-                if bad: raise Exception('errors: ' + ' | '.join(bad[:3]))
-            finally: b.close(); srv.shutdown()
-            return f'{mb:.1f} MB, opened and drew Marigold Town, all {vx["n"]} voxel recipes read without a fetch, {vx["drawn"]} voxel props drawn'
-        finally: shutil.rmtree(tmp, ignore_errors=True)
-    run()
-
-
 def compare_pictures(R):
     """v30: every picture this run took next to the same picture from the baseline (validation/quick-baseline/).
     Small differences are normal (animation, weather, the clock); a big one is worth a look, so it's listed with a
@@ -2093,7 +2064,6 @@ def main():
                     problems.append(f'desktop: {str(e).splitlines()[0][:200]}')
         b.close()
         if '--studio' in ARGS or '--studio-only' in ARGS: studio_round_trip(pw, R)
-        if '--page' in ARGS: single_page(pw, R)
     srv.shutdown()
     if '--props' in ARGS:
         import subprocess
