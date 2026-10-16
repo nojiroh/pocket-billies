@@ -1406,7 +1406,7 @@ def desktop_steps(b, base, R):
         short = [L[0] for L in tiles if len(L) < 12]
         if miss or short: raise Exception(f'ground tiles: {len(miss)} missing (e.g. {miss[:3]}), {len(short)} kinds with fewer than 12')
         out.append(f'{len(tiles)} ground kinds × 12 tiles')
-        b = json.loads(pg.evaluate("""(()=>{const C=dioData().sc.props,K=['bakery','inn','market_hall','bank','library','school','station','fire_station','mansion','barn','greenhouse','ski_lodge'],imgs=[];let plans=0,vars=0;
+        b = json.loads(pg.evaluate("""(()=>{const C=dioData().sc.props,K=['bakery','inn','market_hall','bank','library','school','fire_station','mansion','barn','greenhouse','ski_lodge'],imgs=[];let plans=0,vars=0;
           for(const [k,M] of Object.entries(C)){if(!M.build)continue;plans++;for(const v of M.build.variants||[]){vars++;imgs.push(v.img)}}
           return JSON.stringify({missing:K.filter(k=>!C[k]||!C[k].build),plans,vars,imgs,rooms:K.filter(k=>!GD.scenes['int_'+k]),v2:dioPropM({v:2},C.bakery).img})})()"""))
         if b['missing'] or b['rooms']: raise Exception(f'buildings without a plan: {b["missing"]}; kinds without a room: {b["rooms"]}')
