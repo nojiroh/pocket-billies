@@ -3,10 +3,10 @@
    (every Firebase website carries them); the database rules decide who may read and write which save.
    Left as null, the game has no accounts: one save in this browser, as before. */
 window.PB_FIREBASE = {
-  apiKey: "AIzaSyAWb8Z6hZWj5dBzcK3lcBnN2JoZNijzgLw",
-  authDomain: "pocket-billies-121c0.firebaseapp.com",
-  projectId: "pocket-billies-121c0",
-  storageBucket: "pocket-billies-121c0.firebasestorage.app",
-  messagingSenderId: "584909397467",
-  appId: "1:584909397467:web:706a2107ddbc6d095f5bfe"
+  apiKey: 'AIzaSyAWb8Z6hZWj5dBzcK3lcBnN2JoZNijzgLw',
+  authDomain: 'pocket-billies-121c0.firebaseapp.com',
+  projectId: 'pocket-billies-121c0',
+  storageBucket: 'pocket-billies-121c0.firebasestorage.app',
+  messagingSenderId: '584909397467',
+  appId: '1:584909397467:web:706a2107ddbc6d095f5bfe',
 };

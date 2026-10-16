@@ -2,69 +2,380 @@
 /* ================= POCKET BILLIES STUDIO · battle preview =================
    Runs the game's own battle stage (game/js/scene.js) inside the Studio, fed by the Studio's unsaved data and art,
    so moves, backdrops and new billionaires can be checked without starting the game. */
-rigParts=(sp,gold,k)=>rigFor(sp,k===1?'front':'back',!!gold);
-const BP={stage:'backdrop',area:null,me:null,foe:null,meGold:false,foeGold:false,move:null,res:'hit',who:'chad',started:false,shock:false};
-function battleFreeArea(vw,vh){return {x:0,y:0,w:vw,h:vh}}
-function battleLayoutChanged(L){const bl=$('#bloom');if(bl){const s=70*L.u;bl.style.width=bl.style.height=s+'px';bl.style.left=(L.fx+162*L.u-s/2)+'px';bl.style.top=(L.fy+34*L.u-s/2)+'px';bl.hidden=!!AREAS[SC.area].indoor}}
-function hudPop(si,text,kind){const L=$('#pops');if(!L||!SC.L)return;const q=scToCss(sideTop(si));if(!q)return;const e=document.createElement('div');e.className='pop '+kind;e.textContent=text;e.style.left=q.x+'px';e.style.top=q.y+'px';L.appendChild(e);setTimeout(()=>e.remove(),1400)}
-function hudHit(ti,an){if(an.dmg)hudPop(ti,'−'+an.dmg,'dmg'+(an.te>1?' se':'')+(an.crit?' crit':''))}
-function bpDefaults(){const D=ST.D,ids=D.lines.flatMap(L=>L.names.map((n,i)=>L.id+i)).filter(id=>ST.rigs[id]);if(!BP.area||!D.backdrops[BP.area])BP.area=D.route[0].area||Object.keys(D.backdrops)[0];
- if(!BP.me||!ST.rigs[BP.me])BP.me=(D.rules.start.starters[0]||D.lines[0].id)+'0';if(!BP.foe||!ST.rigs[BP.foe])BP.foe=ids[3]||ids[0];if(!BP.move||!D.moves[BP.move])BP.move=Object.keys(D.moves)[1]}
-const bpEv=()=>({s:[{sp:BP.me,gold:BP.meGold,st:null},{sp:BP.foe,gold:BP.foeGold,st:null}]});
-SECTIONS.preview=()=>{const D=ST.D;bpDefaults();const A=D.backdrops[BP.area],p=`backdrops.${BP.area}`;after(bpStart);
- const opt=(arr,v)=>arr.map(([k,n])=>`<option value="${esc(k)}" ${k===v?'selected':''}>${esc(n)}</option>`).join('');
- return `<div class="ed-col solo bp"><div class="ed-head"><div><h2>Battle preview</h2><p class="sub">The game’s real battle stage, using your unsaved changes. Art you replaced under Art files appears here after you save.</p></div></div>
+rigParts = (sp, gold, k) => rigFor(sp, k === 1 ? 'front' : 'back', !!gold);
+const BP = {
+  stage: 'backdrop',
+  area: null,
+  me: null,
+  foe: null,
+  meGold: false,
+  foeGold: false,
+  move: null,
+  res: 'hit',
+  who: 'chad',
+  started: false,
+  shock: false,
+};
+function battleFreeArea(vw, vh) {
+  return { x: 0, y: 0, w: vw, h: vh };
+}
+function battleLayoutChanged(L) {
+  const bl = $('#bloom');
+  if (bl) {
+    const s = 70 * L.u;
+    bl.style.width = bl.style.height = s + 'px';
+    bl.style.left = L.fx + 162 * L.u - s / 2 + 'px';
+    bl.style.top = L.fy + 34 * L.u - s / 2 + 'px';
+    bl.hidden = !!AREAS[SC.area].indoor;
+  }
+}
+function hudPop(si, text, kind) {
+  const L = $('#pops');
+  if (!L || !SC.L) return;
+  const q = scToCss(sideTop(si));
+  if (!q) return;
+  const e = document.createElement('div');
+  e.className = 'pop ' + kind;
+  e.textContent = text;
+  e.style.left = q.x + 'px';
+  e.style.top = q.y + 'px';
+  L.appendChild(e);
+  setTimeout(() => e.remove(), 1400);
+}
+function hudHit(ti, an) {
+  if (an.dmg) hudPop(ti, '−' + an.dmg, 'dmg' + (an.te > 1 ? ' se' : '') + (an.crit ? ' crit' : ''));
+}
+function bpDefaults() {
+  const D = ST.D,
+    ids = D.lines.flatMap(L => L.names.map((n, i) => L.id + i)).filter(id => ST.rigs[id]);
+  if (!BP.area || !D.backdrops[BP.area]) BP.area = D.route[0].area || Object.keys(D.backdrops)[0];
+  if (!BP.me || !ST.rigs[BP.me]) BP.me = (D.rules.start.starters[0] || D.lines[0].id) + '0';
+  if (!BP.foe || !ST.rigs[BP.foe]) BP.foe = ids[3] || ids[0];
+  if (!BP.move || !D.moves[BP.move]) BP.move = Object.keys(D.moves)[1];
+}
+const bpEv = () => ({
+  s: [
+    { sp: BP.me, gold: BP.meGold, st: null },
+    { sp: BP.foe, gold: BP.foeGold, st: null },
+  ],
+});
+SECTIONS.preview = () => {
+  const D = ST.D;
+  bpDefaults();
+  const A = D.backdrops[BP.area],
+    p = `backdrops.${BP.area}`;
+  after(bpStart);
+  const opt = (arr, v) =>
+    arr.map(([k, n]) => `<option value="${esc(k)}" ${k === v ? 'selected' : ''}>${esc(n)}</option>`).join('');
+  return `<div class="ed-col solo bp"><div class="ed-head"><div><h2>Battle preview</h2><p class="sub">The game’s real battle stage, using your unsaved changes. Art you replaced under Art files appears here after you save.</p></div></div>
  <div class="bp-wrap"><div class="bp-stage" id="battle" data-layout="landscape"><div class="bstage" id="stage"><div class="cam" id="camWorld"><canvas id="cvWorld"></canvas></div><div class="cam" id="camFg"><canvas id="cvFg"></canvas></div><div class="bloom" id="bloom"></div><div class="vign"></div><div class="flash" id="flash"></div><div class="pops" id="pops"></div></div><div class="bp-loading" id="bpLoad">Loading the stage…</div></div>
  <aside class="bp-ctl">
-  ${card('Who’s fighting',`<label class="fld"><span>Your Billie (back view)</span><select data-bp="me">${opt(spOpts(),BP.me)}</select></label><label class="fld chk"><input type="checkbox" data-bp="meGold" ${BP.meGold?'checked':''}><span>Golden</span></label>
-   <label class="fld"><span>Opponent (front view)</span><select data-bp="foe">${opt(spOpts(),BP.foe)}</select></label><label class="fld chk"><input type="checkbox" data-bp="foeGold" ${BP.foeGold?'checked':''}><span>Golden</span></label>
-   <div class="seg-row"><button class="btn sm" data-act="bp" data-x="wild">Wild appears</button><button class="btn sm" data-act="bp" data-x="trainer">Trainer intro</button><select data-bp="who" class="sm">${opt(peopleOpts(),BP.who)}</select></div>
-   <div class="seg-row"><button class="btn sm" data-act="bp" data-x="enter0">Send yours out</button><button class="btn sm" data-act="bp" data-x="enter1">Send theirs out</button><button class="btn sm" data-act="bp" data-x="recall">Recall</button></div>`)}
-  ${card('Moves',`<label class="fld"><span>Move</span><select data-bp="move">${opt(moveOpts(),BP.move)}</select></label><label class="fld"><span>Outcome</span><select data-bp="res">${opt([['hit','Normal hit'],['se','Super effective'],['nve','Not very effective'],['crit','Critical hit'],['miss','Miss'],['blocked','Blocked by Guard']],BP.res)}</select></label>
-   <div class="seg-row"><button class="btn sm primary" data-act="bp" data-x="move0">You use it</button><button class="btn sm primary" data-act="bp" data-x="move1">They use it</button></div>`)}
-  ${card('Effects',`<div class="seg-row">${[['heal','Heal'],['statup','Stat up'],['statdn','Stat down'],['aud','Paralyzed'],['sub','Asleep'],['scn','Burned'],['hype','Confusion'],['hurt','Status damage'],['lvl','Level up'],['shock','Sandstorm'],['faint1','They faint'],['faint0','Yours faints']].map(([k,n])=>`<button class="btn sm" data-act="bp" data-x="${k}">${n}</button>`).join('')}</div>
+  ${card(
+    'Who’s fighting',
+    `<label class="fld"><span>Your Billie (back view)</span><select data-bp="me">${opt(spOpts(), BP.me)}</select></label><label class="fld chk"><input type="checkbox" data-bp="meGold" ${BP.meGold ? 'checked' : ''}><span>Golden</span></label>
+   <label class="fld"><span>Opponent (front view)</span><select data-bp="foe">${opt(spOpts(), BP.foe)}</select></label><label class="fld chk"><input type="checkbox" data-bp="foeGold" ${BP.foeGold ? 'checked' : ''}><span>Golden</span></label>
+   <div class="seg-row"><button class="btn sm" data-act="bp" data-x="wild">Wild appears</button><button class="btn sm" data-act="bp" data-x="trainer">Trainer intro</button><select data-bp="who" class="sm">${opt(peopleOpts(), BP.who)}</select></div>
+   <div class="seg-row"><button class="btn sm" data-act="bp" data-x="enter0">Send yours out</button><button class="btn sm" data-act="bp" data-x="enter1">Send theirs out</button><button class="btn sm" data-act="bp" data-x="recall">Recall</button></div>`
+  )}
+  ${card(
+    'Moves',
+    `<label class="fld"><span>Move</span><select data-bp="move">${opt(moveOpts(), BP.move)}</select></label><label class="fld"><span>Outcome</span><select data-bp="res">${opt(
+      [
+        ['hit', 'Normal hit'],
+        ['se', 'Super effective'],
+        ['nve', 'Not very effective'],
+        ['crit', 'Critical hit'],
+        ['miss', 'Miss'],
+        ['blocked', 'Blocked by Guard'],
+      ],
+      BP.res
+    )}</select></label>
+   <div class="seg-row"><button class="btn sm primary" data-act="bp" data-x="move0">You use it</button><button class="btn sm primary" data-act="bp" data-x="move1">They use it</button></div>`
+  )}
+  ${card(
+    'Effects',
+    `<div class="seg-row">${[
+      ['heal', 'Heal'],
+      ['statup', 'Stat up'],
+      ['statdn', 'Stat down'],
+      ['aud', 'Paralyzed'],
+      ['sub', 'Asleep'],
+      ['scn', 'Burned'],
+      ['hype', 'Confusion'],
+      ['hurt', 'Status damage'],
+      ['lvl', 'Level up'],
+      ['shock', 'Sandstorm'],
+      ['faint1', 'They faint'],
+      ['faint0', 'Yours faints'],
+    ]
+      .map(([k, n]) => `<button class="btn sm" data-act="bp" data-x="${k}">${n}</button>`)
+      .join('')}</div>
    <div class="seg-row"><button class="btn sm" data-act="bp" data-x="catch">Throw: taxed</button><button class="btn sm" data-act="bp" data-x="escape">Throw: breaks free</button></div>
-   <div class="seg-row"><span class="help">Camera</span>${['wide','foe','me'].map(f=>`<button class="seg sm" data-act="bp" data-x="cam-${f}">${f}</button>`).join('')}<span class="help">Speed</span>${[.5,1,2].map(v=>`<button class="seg sm ${SC.speed===v?'on':''}" data-act="bp" data-x="speed-${v}">${v}×</button>`).join('')}</div>`)}
-  ${card('Stage',`<label class="fld"><span>Where the battle happens</span><select data-bp="stage"><option value="backdrop" ${BP.stage==='backdrop'?'selected':''}>A painted backdrop (classic)</option>${Object.entries(D.scenes||{}).map(([k,s])=>`<option value="${esc(k)}" ${BP.stage===k?'selected':''}>Walk scene: ${esc(s.name||k)}</option>`).join('')}</select></label><p class="help">In the game, battles happen in the walk scene where you stand; the painted backdrops are used when players choose the classic stage.</p>`)}
-  ${card('Backdrop',`<label class="fld"><span>Battle backdrop</span><select data-bp="area">${opt(Object.entries(D.backdrops).map(([k,v])=>[k,v.name||k]),BP.area)}</select></label>
-   <div class="grid colors">${fColor('Sky top',`${p}.sky.0`)}${fColor('Sky middle',`${p}.sky.1`)}${fColor('Sky horizon',`${p}.sky.2`)}${fColor('Haze',`${p}.fog`)}</div>${fRange('Haze distance',`${p}.fogD`,{min:10,max:300,step:5})}${fSel('In the air',`${p}.amb`,AMBS)}
-   <p class="help">Changes apply live. Ground, walls and far land are picked under World & encounters → Battle backdrops.</p>`)}
- </aside></div></div>`};
-async function bpStart(){const D=ST.D;if(!$('#cvWorld'))return;const load=$('#bpLoad');if(load)load.hidden=false;
- try{const art=D.backdrops[BP.area];if(BP._art!==(BP.area+(art.art||'')+(art.wall||'')+(art.far||'')+(art.indoor||''))){delete STAGEART[BP.area];BP._art=BP.area+(art.art||'')+(art.wall||'')+(art.far||'')+(art.indoor||'')}
-  await Promise.all([scPrepare(BP.area),artLoad(COIN_ART),atlasGet(atlasPath(BP.me,'back',BP.meGold)),atlasGet(atlasPath(BP.foe,'front',BP.foeGold))])}catch(e){if(load)load.textContent='Couldn’t load this stage: '+e.message;return}
- if(!$('#cvWorld'))return;SC.lockQ=true;SC.q.lvl=0;if(SC.gl&&typeof battleGLStop==='function'){battleGLStop();SC.gl=false}scStart(BP.area);
- if(BP.stage!=='backdrop'&&ST.D.scenes&&ST.D.scenes[BP.stage]&&typeof battleGLAttach==='function'){await bpScene();}if(load)load.hidden=true;
- if(!BP.ro)BP.ro=new ResizeObserver(()=>{if(SC.on&&ST.sec==='preview'&&$('#battle'))scResize()});BP.ro.disconnect();BP.ro.observe($('#battle'));
- Object.assign(SC.s[0],{sp:BP.me,gold:BP.meGold,show:true,sc:1,a:1});Object.assign(SC.s[1],{sp:BP.foe,gold:BP.foeGold,show:true,sc:1,a:1});SC.oil=BP.shock}
+   <div class="seg-row"><span class="help">Camera</span>${['wide', 'foe', 'me'].map(f => `<button class="seg sm" data-act="bp" data-x="cam-${f}">${f}</button>`).join('')}<span class="help">Speed</span>${[0.5, 1, 2].map(v => `<button class="seg sm ${SC.speed === v ? 'on' : ''}" data-act="bp" data-x="speed-${v}">${v}×</button>`).join('')}</div>`
+  )}
+  ${card(
+    'Stage',
+    `<label class="fld"><span>Where the battle happens</span><select data-bp="stage"><option value="backdrop" ${BP.stage === 'backdrop' ? 'selected' : ''}>A painted backdrop (classic)</option>${Object.entries(
+      D.scenes || {}
+    )
+      .map(
+        ([k, s]) =>
+          `<option value="${esc(k)}" ${BP.stage === k ? 'selected' : ''}>Walk scene: ${esc(s.name || k)}</option>`
+      )
+      .join(
+        ''
+      )}</select></label><p class="help">In the game, battles happen in the walk scene where you stand; the painted backdrops are used when players choose the classic stage.</p>`
+  )}
+  ${card(
+    'Backdrop',
+    `<label class="fld"><span>Battle backdrop</span><select data-bp="area">${opt(
+      Object.entries(D.backdrops).map(([k, v]) => [k, v.name || k]),
+      BP.area
+    )}</select></label>
+   <div class="grid colors">${fColor('Sky top', `${p}.sky.0`)}${fColor('Sky middle', `${p}.sky.1`)}${fColor('Sky horizon', `${p}.sky.2`)}${fColor('Haze', `${p}.fog`)}</div>${fRange('Haze distance', `${p}.fogD`, { min: 10, max: 300, step: 5 })}${fSel('In the air', `${p}.amb`, AMBS)}
+   <p class="help">Changes apply live. Ground, walls and far land are picked under World & encounters → Battle backdrops.</p>`
+  )}
+ </aside></div></div>`;
+};
+async function bpStart() {
+  const D = ST.D;
+  if (!$('#cvWorld')) return;
+  const load = $('#bpLoad');
+  if (load) load.hidden = false;
+  try {
+    const art = D.backdrops[BP.area];
+    if (BP._art !== BP.area + (art.art || '') + (art.wall || '') + (art.far || '') + (art.indoor || '')) {
+      delete STAGEART[BP.area];
+      BP._art = BP.area + (art.art || '') + (art.wall || '') + (art.far || '') + (art.indoor || '');
+    }
+    await Promise.all([
+      scPrepare(BP.area),
+      artLoad(COIN_ART),
+      atlasGet(atlasPath(BP.me, 'back', BP.meGold)),
+      atlasGet(atlasPath(BP.foe, 'front', BP.foeGold)),
+    ]);
+  } catch (e) {
+    if (load) load.textContent = 'Couldn’t load this stage: ' + e.message;
+    return;
+  }
+  if (!$('#cvWorld')) return;
+  SC.lockQ = true;
+  SC.q.lvl = 0;
+  if (SC.gl && typeof battleGLStop === 'function') {
+    battleGLStop();
+    SC.gl = false;
+  }
+  scStart(BP.area);
+  if (BP.stage !== 'backdrop' && ST.D.scenes && ST.D.scenes[BP.stage] && typeof battleGLAttach === 'function') {
+    await bpScene();
+  }
+  if (load) load.hidden = true;
+  if (!BP.ro)
+    BP.ro = new ResizeObserver(() => {
+      if (SC.on && ST.sec === 'preview' && $('#battle')) scResize();
+    });
+  BP.ro.disconnect();
+  BP.ro.observe($('#battle'));
+  Object.assign(SC.s[0], { sp: BP.me, gold: BP.meGold, show: true, sc: 1, a: 1 });
+  Object.assign(SC.s[1], { sp: BP.foe, gold: BP.foeGold, show: true, sc: 1, a: 1 });
+  SC.oil = BP.shock;
+}
 /* the engine stage: the chosen walk scene, mounted on its own canvas inside the battle stage */
-async function bpScene(){const id=BP.stage,sc=ST.D.scenes[id],C=scD();await Promise.all(scArt(C).map(p=>atlasGet('art/'+p).catch(()=>null)));
- const host=$('#camWorld');if(!host)return;let cv=document.createElement('canvas');cv.id='bpDio';host.insertBefore(cv,host.firstChild);
- await dioMount(cv,id,{state:()=>({mode:'roam',roam:true,pos:dioHubOf(sc),who:null,enc:[],npcs:[],exits:[]}),keys:()=>false,onPick:()=>{},cap:()=>ST.sec==='preview'?60:0});
- if(!DIO.cv||!$('#camWorld'))return;const hb=dioHubOf(sc);DIO.pl.x=hb[0];DIO.pl.z=hb[1];SC.gl=battleGLAttach({detach:true});document.body.classList.toggle('battle-3d',!!SC.gl);scResize();fgDraw()}
-function bpApplyBackdrop(){if(!SC.L||SC.area!==BP.area)return;const A=ST.D.backdrops[BP.area];SC.skyC=A.sky.map(hexA);SC.fogC=hexA(A.fog);SC.floorKey=''}
-ST.hooks.preview=(path)=>{if(path.startsWith('backdrops.'))bpApplyBackdrop()};
-document.addEventListener('change',ev=>{const el=ev.target,k=el.dataset&&el.dataset.bp;if(!k)return;BP[k]=el.type==='checkbox'?el.checked:el.value;if(['area','stage'].includes(k)){render();return}if(['me','foe','meGold','foeGold'].includes(k))bpStart()});
-function bpMove(si){const D=ST.D,M=D.moves[BP.move],fx=M.fx||{},onFoe=M.c!=='X'||fx.status||fx.tgtStage||fx.hype||fx.spin||fx.wipe,an={k:'move',si,mid:BP.move};
- if(fx.protect)an.protect=true;else if(!onFoe)an.self=true;else if(BP.res==='miss')an.miss=true;else if(BP.res==='blocked')an.blocked=true;else if(M.c!=='X'){an.dmg=BP.res==='crit'?48:BP.res==='se'?56:BP.res==='nve'?11:24;an.te=BP.res==='se'?2:BP.res==='nve'?.5:1;an.crit=BP.res==='crit'}
- scPlay(an,bpEv());if(onFoe&&!an.miss&&!an.blocked&&fx.status)setTimeout(()=>scPlay({k:'status',si:1-si,st:fx.status},bpEv()),1100/SC.speed)}
-ACTS.bp=d=>{if(!SC.L)return;const x=d.x,ev=bpEv(),later=(ms,f)=>setTimeout(f,ms/SC.speed);
- const reset=()=>{Object.assign(SC.s[0],{sp:BP.me,gold:BP.meGold,show:true,sc:1,a:1,white:0,dark:0,oy:0,ox:0,act:null});Object.assign(SC.s[1],{sp:BP.foe,gold:BP.foeGold,show:true,sc:1,a:1,white:0,dark:0,oy:0,ox:0,act:null})};
- if(x.startsWith('cam-')){scFocus(x.slice(4));if(x==='cam-wide')camHome(400);else camAt(x==='cam-foe'?1:0,.45,.15,0,400);return}
- if(x.startsWith('speed-')){SC.speed=+x.slice(6);$$('[data-x^="speed-"]').forEach(b=>b.classList.toggle('on',b.dataset.x===x));return}
- switch(x){
-  case 'wild':reset();SC.s[0].show=false;scPlay({k:'wild'},ev);later(1350,()=>scPlay({k:'enter',si:0},ev));break;
-  case 'trainer':reset();SC.s[0].show=SC.s[1].show=false;scPlay({k:'trainerIn',who:BP.who},ev);later(1250,()=>scPlay({k:'enter',si:1},ev));later(2300,()=>scPlay({k:'enter',si:0},ev));break;
-  case 'enter0':scPlay({k:'enter',si:0},ev);break;case 'enter1':scPlay({k:'enter',si:1},ev);break;
-  case 'recall':scPlay({k:'recall',si:0},ev);later(900,()=>scPlay({k:'enter',si:0},ev));break;
-  case 'move0':reset();bpMove(0);break;case 'move1':reset();bpMove(1);break;
-  case 'heal':scPlay({k:'heal',si:0,amt:18},ev);break;case 'statup':scPlay({k:'stat',si:0,up:true},ev);break;case 'statdn':scPlay({k:'stat',si:1,up:false},ev);break;
-  case 'aud':case 'sub':case 'scn':scPlay({k:'status',si:1,st:x},ev);break;case 'hype':scPlay({k:'hype',si:1},ev);break;
-  case 'hurt':scPlay({k:'hurt',si:1,fx:'scn',dmg:7},ev);break;case 'lvl':scPlay({k:'lvl'},ev);break;
-  case 'shock':BP.shock=!SC.oil;if(BP.shock)scPlay({k:'market'},ev);else scPlay({k:'marketEnd'},ev);break;
-  case 'faint1':scPlay({k:'faint',si:1},ev);later(1600,reset);break;case 'faint0':scPlay({k:'faint',si:0},ev);later(1600,reset);break;
-  case 'catch':case 'escape':reset();scCatch('penny',{caught:x==='catch',w:x==='catch'?3:1},false,ok=>{if(ok)later(600,reset)});break}};
+async function bpScene() {
+  const id = BP.stage,
+    sc = ST.D.scenes[id],
+    C = scD();
+  await Promise.all(scArt(C).map(p => atlasGet('art/' + p).catch(() => null)));
+  const host = $('#camWorld');
+  if (!host) return;
+  let cv = document.createElement('canvas');
+  cv.id = 'bpDio';
+  host.insertBefore(cv, host.firstChild);
+  await dioMount(cv, id, {
+    state: () => ({ mode: 'roam', roam: true, pos: dioHubOf(sc), who: null, enc: [], npcs: [], exits: [] }),
+    keys: () => false,
+    onPick: () => {},
+    cap: () => (ST.sec === 'preview' ? 60 : 0),
+  });
+  if (!DIO.cv || !$('#camWorld')) return;
+  const hb = dioHubOf(sc);
+  DIO.pl.x = hb[0];
+  DIO.pl.z = hb[1];
+  SC.gl = battleGLAttach({ detach: true });
+  document.body.classList.toggle('battle-3d', !!SC.gl);
+  scResize();
+  fgDraw();
+}
+function bpApplyBackdrop() {
+  if (!SC.L || SC.area !== BP.area) return;
+  const A = ST.D.backdrops[BP.area];
+  SC.skyC = A.sky.map(hexA);
+  SC.fogC = hexA(A.fog);
+  SC.floorKey = '';
+}
+ST.hooks.preview = path => {
+  if (path.startsWith('backdrops.')) bpApplyBackdrop();
+};
+document.addEventListener('change', ev => {
+  const el = ev.target,
+    k = el.dataset && el.dataset.bp;
+  if (!k) return;
+  BP[k] = el.type === 'checkbox' ? el.checked : el.value;
+  if (['area', 'stage'].includes(k)) {
+    render();
+    return;
+  }
+  if (['me', 'foe', 'meGold', 'foeGold'].includes(k)) bpStart();
+});
+function bpMove(si) {
+  const D = ST.D,
+    M = D.moves[BP.move],
+    fx = M.fx || {},
+    onFoe = M.c !== 'X' || fx.status || fx.tgtStage || fx.hype || fx.spin || fx.wipe,
+    an = { k: 'move', si, mid: BP.move };
+  if (fx.protect) an.protect = true;
+  else if (!onFoe) an.self = true;
+  else if (BP.res === 'miss') an.miss = true;
+  else if (BP.res === 'blocked') an.blocked = true;
+  else if (M.c !== 'X') {
+    an.dmg = BP.res === 'crit' ? 48 : BP.res === 'se' ? 56 : BP.res === 'nve' ? 11 : 24;
+    an.te = BP.res === 'se' ? 2 : BP.res === 'nve' ? 0.5 : 1;
+    an.crit = BP.res === 'crit';
+  }
+  scPlay(an, bpEv());
+  if (onFoe && !an.miss && !an.blocked && fx.status)
+    setTimeout(() => scPlay({ k: 'status', si: 1 - si, st: fx.status }, bpEv()), 1100 / SC.speed);
+}
+ACTS.bp = d => {
+  if (!SC.L) return;
+  const x = d.x,
+    ev = bpEv(),
+    later = (ms, f) => setTimeout(f, ms / SC.speed);
+  const reset = () => {
+    Object.assign(SC.s[0], {
+      sp: BP.me,
+      gold: BP.meGold,
+      show: true,
+      sc: 1,
+      a: 1,
+      white: 0,
+      dark: 0,
+      oy: 0,
+      ox: 0,
+      act: null,
+    });
+    Object.assign(SC.s[1], {
+      sp: BP.foe,
+      gold: BP.foeGold,
+      show: true,
+      sc: 1,
+      a: 1,
+      white: 0,
+      dark: 0,
+      oy: 0,
+      ox: 0,
+      act: null,
+    });
+  };
+  if (x.startsWith('cam-')) {
+    scFocus(x.slice(4));
+    if (x === 'cam-wide') camHome(400);
+    else camAt(x === 'cam-foe' ? 1 : 0, 0.45, 0.15, 0, 400);
+    return;
+  }
+  if (x.startsWith('speed-')) {
+    SC.speed = +x.slice(6);
+    $$('[data-x^="speed-"]').forEach(b => b.classList.toggle('on', b.dataset.x === x));
+    return;
+  }
+  switch (x) {
+    case 'wild':
+      reset();
+      SC.s[0].show = false;
+      scPlay({ k: 'wild' }, ev);
+      later(1350, () => scPlay({ k: 'enter', si: 0 }, ev));
+      break;
+    case 'trainer':
+      reset();
+      SC.s[0].show = SC.s[1].show = false;
+      scPlay({ k: 'trainerIn', who: BP.who }, ev);
+      later(1250, () => scPlay({ k: 'enter', si: 1 }, ev));
+      later(2300, () => scPlay({ k: 'enter', si: 0 }, ev));
+      break;
+    case 'enter0':
+      scPlay({ k: 'enter', si: 0 }, ev);
+      break;
+    case 'enter1':
+      scPlay({ k: 'enter', si: 1 }, ev);
+      break;
+    case 'recall':
+      scPlay({ k: 'recall', si: 0 }, ev);
+      later(900, () => scPlay({ k: 'enter', si: 0 }, ev));
+      break;
+    case 'move0':
+      reset();
+      bpMove(0);
+      break;
+    case 'move1':
+      reset();
+      bpMove(1);
+      break;
+    case 'heal':
+      scPlay({ k: 'heal', si: 0, amt: 18 }, ev);
+      break;
+    case 'statup':
+      scPlay({ k: 'stat', si: 0, up: true }, ev);
+      break;
+    case 'statdn':
+      scPlay({ k: 'stat', si: 1, up: false }, ev);
+      break;
+    case 'aud':
+    case 'sub':
+    case 'scn':
+      scPlay({ k: 'status', si: 1, st: x }, ev);
+      break;
+    case 'hype':
+      scPlay({ k: 'hype', si: 1 }, ev);
+      break;
+    case 'hurt':
+      scPlay({ k: 'hurt', si: 1, fx: 'scn', dmg: 7 }, ev);
+      break;
+    case 'lvl':
+      scPlay({ k: 'lvl' }, ev);
+      break;
+    case 'shock':
+      BP.shock = !SC.oil;
+      if (BP.shock) scPlay({ k: 'market' }, ev);
+      else scPlay({ k: 'marketEnd' }, ev);
+      break;
+    case 'faint1':
+      scPlay({ k: 'faint', si: 1 }, ev);
+      later(1600, reset);
+      break;
+    case 'faint0':
+      scPlay({ k: 'faint', si: 0 }, ev);
+      later(1600, reset);
+      break;
+    case 'catch':
+    case 'escape':
+      reset();
+      scCatch('penny', { caught: x === 'catch', w: x === 'catch' ? 3 : 1 }, false, ok => {
+        if (ok) later(600, reset);
+      });
+      break;
+  }
+};
 /* shortcuts from other sections */
-ACTS.bpFoe=d=>{BP.foe=d.sp;go('preview')};
-ACTS.bpMove=d=>{BP.move=d.id;go('preview');setTimeout(()=>ACTS.bp({x:'move0'}),900)};
-ACTS.bpArea=d=>{BP.area=d.k;go('preview')};
+ACTS.bpFoe = d => {
+  BP.foe = d.sp;
+  go('preview');
+};
+ACTS.bpMove = d => {
+  BP.move = d.id;
+  go('preview');
+  setTimeout(() => ACTS.bp({ x: 'move0' }), 900);
+};
+ACTS.bpArea = d => {
+  BP.area = d.k;
+  go('preview');
+};

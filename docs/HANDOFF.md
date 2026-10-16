@@ -11,6 +11,52 @@ Newest entry on top. Every phase session ends by adding an entry here and taggin
 - Questions waiting for the owner: 
 - Next session starts with: 
 
+### Phase 04a - Modernize: tooling - 2026-10-16
+Phase 04 is split into four sessions (04a tooling, 04b data split, 04c ES modules, 04d TypeScript and boundaries);
+`phase-04-done` is tagged after 04d. Started without `phase-03-done` on the owner's go-ahead ("Start 04a").
+- Changed:
+  - package.json (no version: game/version.js stays the only place), package-lock.json, Node 22+. Tools pinned to
+    releases at least two weeks old: Vite 8.3.2, ESLint 10.12.0, Prettier 3.9.9.
+  - Vite (vite.config.js): `npm run dev` serves the repo with the classic scripts exactly as on disk (Vite's own
+    transform turned gamedata.js into 75 MB with an inline source map); `npm run build` copies index.html, game/ and
+    studio/ into dist/ unchanged; `npm run preview` serves it. Nothing is bundled until 04c.
+  - Prettier (.prettierrc.json: width 120, single quotes, template strings untouched) over game/ and studio/ JS and
+    CSS; game/data, game/art and HTML are left alone. The reformat is its own commit (adb27c9), listed in
+    .git-blame-ignore-revs.
+  - ESLint (eslint.config.js): each script is linted with the top-level names of the other scripts of its page as
+    globals (parsed from index.html's order, inline scripts and window./self. assignments included), so no-undef and
+    no-redeclare work across files. Plus the recommended bug rules. It replaces tools/check-globals.py (deleted).
+  - Lint findings fixed, each its own no-behaviour-change commit: 16 duplicate keys in props3d.js P3D_AUTO (the later
+    'lathe' entries always won; resulting object identical), the dead `STR_SH` shader warm-up entry in diorama-gl.js.
+    Two commented exceptions (cleanName's control-character regex, the Studio wrapping pedDraw).
+  - CI: new `lint` job on every push and PR (npm ci, lint, format:check, build). The full job's version step used a sed
+    that the reformat broke (`self.PB_VERSION = '...'` now has spaces); it now runs version.js in Node.
+  - README rewritten for GitHub (play on Pages, npm scripts, Studio, contribute, layout). The Studio's section guide
+    moved to docs/STUDIO.md.
+- Risky or unfinished:
+  - The reformat touched every JS and CSS file (75k lines). Proven no-op: syntax trees identical for all 77 JS files
+    (empty statements and a||(b||c) regrouping aside), the CSS minifies the same (whitespace in custom properties and
+    calc() aside), smoke pictures differ only by animation timing. The full quick check has not run on it; its
+    source-reading steps are in smoke and gave the same results.
+  - Open branches made before the reformat (e.g. a Studio "Save to game" PR) touch only data and art, so they merge
+    cleanly; any branch that edits game/js or studio/js will conflict everywhere. Re-apply such edits on the new base.
+  - `format:check` in CI fails if JS or CSS is pushed unformatted: run `npm run format` first.
+  - Leftover hooks ESLint flagged as optional on purpose: dioArtVer (Studio), wrHubScene (game), firebase (CDN).
+- Verified: smoke 14/14 before (121 s) and after the reformat and at the end; `npm run lint`, `format:check`,
+  `build` clean; dist/ identical to game/ and studio/; the game and the Studio boot headless from `npm run dev` and
+  from `npm run preview` with no errors; ESLint catches a planted cross-file duplicate function, a duplicate const, a
+  same-file duplicate and a typo.
+- Decisions I made (and why): the build is a copy for now (Vite can't bundle classic scripts; hashing the CSS would
+  have downloaded the fonts twice next to the preloads). ESLint over check-globals (a parser, not line patterns; the
+  line check missed a second declarator on a line). Dead stores, unused variables and error causes are off: noise
+  until modules. Markdown and HTML are not formatted.
+- Questions waiting for the owner: tag `phase-03-done` (2b1f86f); the phase 04 questions still open: data-split layout
+  (A: a file per map, species, trainer and person, one file per small table; or B: a file per entity everywhere),
+  Pages from an Actions deploy of dist/ (needs Settings → Pages → Source: GitHub Actions), Studio local mode
+  (upload start-studio.py or drop it), module conversion order (backwards from boot.js, or one generated conversion).
+- Next session starts with: 04b, the data split, once the layout question is answered. First measure the phone load
+  (gzip transfer of gamedata.js on Pages).
+
 ### Phase 03 - Fresh base and scope reset - 2026-10-16
 - Changed:
   - Legacy: branch `legacy` pushed at 0314a22 (alpha 0.5 + phases 01-02). The tag `legacy-final` (same commit) was

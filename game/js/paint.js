@@ -6,11 +6,30 @@
    asks for rectangles and gets the pixels back, the near ring's with their smaller sizes (mipmaps) made there too.
    Where workers aren't allowed (or one fails), painting stays on the main thread, a slice at a time, as before.
    A generator waiting on the worker yields PW_WAIT (diorama.js): the loops that step it stop for the frame. */
-const PW={w:null,bad:false,why:'',id:0,jobs:new Map(),ids:new Map(),ctxN:0,sent:new Map(),tiles:new Map(),gen:'',sync:0,done:0,local:0,fails:0,ms:0,waiters:[],last:''};
-const PW_KEEP=4,PW_KINDS=new WeakMap();
+const PW = {
+  w: null,
+  bad: false,
+  why: '',
+  id: 0,
+  jobs: new Map(),
+  ids: new Map(),
+  ctxN: 0,
+  sent: new Map(),
+  tiles: new Map(),
+  gen: '',
+  sync: 0,
+  done: 0,
+  local: 0,
+  fails: 0,
+  ms: 0,
+  waiters: [],
+  last: '',
+};
+const PW_KEEP = 4,
+  PW_KINDS = new WeakMap();
 /* the helper's own part: the views it holds, the tile pictures, a queue (nearest square first; one dropped before it
    starts is skipped) and the small sizes of a picture */
-const PW_MAIN=`var DGL_TERRAIN_MAT;let CTX=null;const CTXS=new Map(),TILES=new Map(),Q=[],GONE=new Set();let busy=false;
+const PW_MAIN = `var DGL_TERRAIN_MAT;let CTX=null;const CTXS=new Map(),TILES=new Map(),Q=[],GONE=new Set();let busy=false;
 /* (stand-ins for diorama.js's own, from what the main thread handed over) */
 var dioData=()=>({sc:CTX.C}),dioNextOn=()=>!!CTX.next,dioT47=()=>!!CTX.t47,dioSteps=sc=>CTX.E,dioBridges=()=>null,
  dioTileSet=(T,TP)=>TILES.get(TP+'|'+T.tile+'|'+(T.vars||[]).join(','))||[null];
@@ -32,43 +51,277 @@ onmessage=ev=>{const m=ev.data;
  if(m.t==='prio'){for(const q of Q)if(q.id===m.id)q.pr=m.pr;return}
  if(m.t==='paint'){Q.push(m);if(!busy){busy=true;setTimeout(run,0)}}};`;
 /* the worker's source: the painter and everything it calls, as written in diorama.js (and wrNear, world.js) */
-function pwSource(){const fns=[dioHash,dioNoise,dioToneAt,dioTonePx,dioShade,dioPlain47,dioStableCells,dioWearLines,dioClipSeg,dioWearAmtFn,dioWearFn,dioStepCorners,dioStepCH,dioStepJoined,dioPaintGen,wrNear];
- const consts={DIO_PAD,DIO_TC,DIO_TD,DIO_TL,DIO_TA,DIO_T0};
- return ['const clamp='+clamp.toString()+';','const hexA='+hexA.toString()+';','const pk='+pk.toString()+';','const pkh='+pkh.toString()+';',
-  ...Object.entries(consts).map(([k,v])=>`const ${k}=${JSON.stringify(v)};`),...fns.map(f=>f.toString()),PW_MAIN].join('\n')}
-function pwOn(){return !!pwWorker()}
-function pwWorker(){if(PW.w||PW.bad)return PW.w;if(typeof Worker==='undefined'||(typeof eng==='function'&&eng('quality','paintWorker')===false)){PW.bad=true;PW.why=typeof Worker==='undefined'?'no workers here':'turned off';return null}
- try{const u=URL.createObjectURL(new Blob([pwSource()],{type:'text/javascript'})),W=new Worker(u);
-  W.onmessage=ev=>{const m=ev.data,j=PW.jobs.get(m.id);PW.jobs.delete(m.id);if(j){j.done=true;if(m.r){j.r=m.r;j.r.mips=m.mips;j.r.nmips=m.nmips;PW.done++;PW.ms+=m.ms||0}else if(m.miss){j.miss=1}else if(m.err){j.err=m.err;PW.fails++;PW.last=m.err}}pwWake()};
-  W.onerror=e=>{PW.bad=true;PW.why='the helper stopped: '+((e&&e.message)||'error');PW.w=null;for(const j of PW.jobs.values()){j.done=true;j.err='worker'}PW.jobs.clear();pwWake();if(typeof NWLOG!=='undefined')NWLOG.add('webgl','ground painter helper: '+PW.why)};
-  PW.w=W;PW.gen=''}catch(e){PW.bad=true;PW.why='not allowed here ('+String(e&&e.message||e).slice(0,80)+')'}return PW.w}
-function pwWake(){const L=PW.waiters;PW.waiters=[];for(const f of L)f()}
+function pwSource() {
+  const fns = [
+    dioHash,
+    dioNoise,
+    dioToneAt,
+    dioTonePx,
+    dioShade,
+    dioPlain47,
+    dioStableCells,
+    dioWearLines,
+    dioClipSeg,
+    dioWearAmtFn,
+    dioWearFn,
+    dioStepCorners,
+    dioStepCH,
+    dioStepJoined,
+    dioPaintGen,
+    wrNear,
+  ];
+  const consts = { DIO_PAD, DIO_TC, DIO_TD, DIO_TL, DIO_TA, DIO_T0 };
+  return [
+    'const clamp=' + clamp.toString() + ';',
+    'const hexA=' + hexA.toString() + ';',
+    'const pk=' + pk.toString() + ';',
+    'const pkh=' + pkh.toString() + ';',
+    ...Object.entries(consts).map(([k, v]) => `const ${k}=${JSON.stringify(v)};`),
+    ...fns.map(f => f.toString()),
+    PW_MAIN,
+  ].join('\n');
+}
+function pwOn() {
+  return !!pwWorker();
+}
+function pwWorker() {
+  if (PW.w || PW.bad) return PW.w;
+  if (typeof Worker === 'undefined' || (typeof eng === 'function' && eng('quality', 'paintWorker') === false)) {
+    PW.bad = true;
+    PW.why = typeof Worker === 'undefined' ? 'no workers here' : 'turned off';
+    return null;
+  }
+  try {
+    const u = URL.createObjectURL(new Blob([pwSource()], { type: 'text/javascript' })),
+      W = new Worker(u);
+    W.onmessage = ev => {
+      const m = ev.data,
+        j = PW.jobs.get(m.id);
+      PW.jobs.delete(m.id);
+      if (j) {
+        j.done = true;
+        if (m.r) {
+          j.r = m.r;
+          j.r.mips = m.mips;
+          j.r.nmips = m.nmips;
+          PW.done++;
+          PW.ms += m.ms || 0;
+        } else if (m.miss) {
+          j.miss = 1;
+        } else if (m.err) {
+          j.err = m.err;
+          PW.fails++;
+          PW.last = m.err;
+        }
+      }
+      pwWake();
+    };
+    W.onerror = e => {
+      PW.bad = true;
+      PW.why = 'the helper stopped: ' + ((e && e.message) || 'error');
+      PW.w = null;
+      for (const j of PW.jobs.values()) {
+        j.done = true;
+        j.err = 'worker';
+      }
+      PW.jobs.clear();
+      pwWake();
+      if (typeof NWLOG !== 'undefined') NWLOG.add('webgl', 'ground painter helper: ' + PW.why);
+    };
+    PW.w = W;
+    PW.gen = '';
+  } catch (e) {
+    PW.bad = true;
+    PW.why = 'not allowed here (' + String((e && e.message) || e).slice(0, 80) + ')';
+  }
+  return PW.w;
+}
+function pwWake() {
+  const L = PW.waiters;
+  PW.waiters = [];
+  for (const f of L) f();
+}
 /* for async callers (dioGroundAsync): wait for the helper's next answer (or a tenth of a second) */
-function pwSettle(){return new Promise(res=>{PW.waiters.push(res);setTimeout(res,100)})}
+function pwSettle() {
+  return new Promise(res => {
+    PW.waiters.push(res);
+    setTimeout(res, 100);
+  });
+}
 /* a view's id with the helper: its ground key (tiles, sizes, heights, art) and its own id */
-function pwCtxId(sc){const key=(sc.id||'')+'|'+(sc===DIO.sc&&DIO.gkey?DIO.gkey:dioGroundKey(sc));let id=PW.ids.get(key);if(id==null){id=++PW.ctxN;PW.ids.set(key,id);if(PW.ids.size>64)PW.ids.delete(PW.ids.keys().next().value)}return id}
-function pwSendCtx(id,sc){if(PW.sent.has(id)){PW.sent.delete(id);PW.sent.set(id,1);return}const C=dioData().sc,E=dioSteps(sc);
- const S=sc.stable?{scenes:sc.stable.scenes.map(r=>({id:r.id,x:r.x,z:r.z,w:r.w,h:r.h,clip:r.clip,salt:r.salt,hub:r.hub,exits:r.exits,worn:r.worn})),roads:(sc.stable.roads||[]).map(q=>({o:q.o,salt:q.salt,R:{legs:(q.R&&q.R.legs||[]).map(s=>({a:s.a,b:s.b,u0:s.u0}))}}))}:null;
- const ctx={C:{terrains:C.terrains,tile:C.tile},sc:{w:sc.w,h:sc.h,tiles:sc.tiles,edge:sc.edge,hub:sc.hub||null,exits:sc.exits||[],worn:sc.worn||null,stable:S},
-  E:E?{s:'w',m0:'w',w:E.w,h:E.h,H:E.H,M:E.M}:null,t47:dioT47(),next:dioNextOn(),mat:typeof DGL_TERRAIN_MAT!=='undefined'?DGL_TERRAIN_MAT:null};
- PW.w.postMessage({t:'ctx',id,ctx});PW.sent.set(id,1);while(PW.sent.size>PW_KEEP)PW.sent.delete(PW.sent.keys().next().value)}
+function pwCtxId(sc) {
+  const key = (sc.id || '') + '|' + (sc === DIO.sc && DIO.gkey ? DIO.gkey : dioGroundKey(sc));
+  let id = PW.ids.get(key);
+  if (id == null) {
+    id = ++PW.ctxN;
+    PW.ids.set(key, id);
+    if (PW.ids.size > 64) PW.ids.delete(PW.ids.keys().next().value);
+  }
+  return id;
+}
+function pwSendCtx(id, sc) {
+  if (PW.sent.has(id)) {
+    PW.sent.delete(id);
+    PW.sent.set(id, 1);
+    return;
+  }
+  const C = dioData().sc,
+    E = dioSteps(sc);
+  const S = sc.stable
+    ? {
+        scenes: sc.stable.scenes.map(r => ({
+          id: r.id,
+          x: r.x,
+          z: r.z,
+          w: r.w,
+          h: r.h,
+          clip: r.clip,
+          salt: r.salt,
+          hub: r.hub,
+          exits: r.exits,
+          worn: r.worn,
+        })),
+        roads: (sc.stable.roads || []).map(q => ({
+          o: q.o,
+          salt: q.salt,
+          R: { legs: ((q.R && q.R.legs) || []).map(s => ({ a: s.a, b: s.b, u0: s.u0 })) },
+        })),
+      }
+    : null;
+  const ctx = {
+    C: { terrains: C.terrains, tile: C.tile },
+    sc: {
+      w: sc.w,
+      h: sc.h,
+      tiles: sc.tiles,
+      edge: sc.edge,
+      hub: sc.hub || null,
+      exits: sc.exits || [],
+      worn: sc.worn || null,
+      stable: S,
+    },
+    E: E ? { s: 'w', m0: 'w', w: E.w, h: E.h, H: E.H, M: E.M } : null,
+    t47: dioT47(),
+    next: dioNextOn(),
+    mat: typeof DGL_TERRAIN_MAT !== 'undefined' ? DGL_TERRAIN_MAT : null,
+  };
+  PW.w.postMessage({ t: 'ctx', id, ctx });
+  PW.sent.set(id, 1);
+  while (PW.sent.size > PW_KEEP) PW.sent.delete(PW.sent.keys().next().value);
+}
 /* the tile pictures of every kind the view shows, at TP pixels a metre (sent once; again when the art changes).
    false while a picture hasn't loaded: that rectangle is painted here meanwhile, as before */
-function pwSendTiles(sc,TP){const C=dioData().sc,gen=(typeof dioArtVer==='function'?dioArtVer():0)+'|'+dioTileFolder()+'|'+(dioNextOn()?1:0);if(gen!==PW.gen){PW.gen=gen;PW.tiles.clear()}
- let kinds=PW_KINDS.get(sc.tiles);if(!kinds){kinds=new Set();for(const row of sc.tiles||[])for(let i=0;i<row.length;i++)kinds.add(row[i]);PW_KINDS.set(sc.tiles,kinds)}kinds=new Set(kinds).add(sc.edge);const L=[];let ok=true;
- for(const ch of kinds){const T=C.terrains[ch];if(!T)continue;const k=TP+'|'+T.tile+'|'+(T.vars||[]).join(',');if(PW.tiles.get(k)===2)continue;const set=dioTileSet(T,TP),full=set.every(Boolean);
-  if(!full){ok=false;continue}L.push([k,set]);PW.tiles.set(k,2)}
- if(L.length)PW.w.postMessage({t:'tiles',gen,L});return ok}
+function pwSendTiles(sc, TP) {
+  const C = dioData().sc,
+    gen = (typeof dioArtVer === 'function' ? dioArtVer() : 0) + '|' + dioTileFolder() + '|' + (dioNextOn() ? 1 : 0);
+  if (gen !== PW.gen) {
+    PW.gen = gen;
+    PW.tiles.clear();
+  }
+  let kinds = PW_KINDS.get(sc.tiles);
+  if (!kinds) {
+    kinds = new Set();
+    for (const row of sc.tiles || []) for (let i = 0; i < row.length; i++) kinds.add(row[i]);
+    PW_KINDS.set(sc.tiles, kinds);
+  }
+  kinds = new Set(kinds).add(sc.edge);
+  const L = [];
+  let ok = true;
+  for (const ch of kinds) {
+    const T = C.terrains[ch];
+    if (!T) continue;
+    const k = TP + '|' + T.tile + '|' + (T.vars || []).join(',');
+    if (PW.tiles.get(k) === 2) continue;
+    const set = dioTileSet(T, TP),
+      full = set.every(Boolean);
+    if (!full) {
+      ok = false;
+      continue;
+    }
+    L.push([k, set]);
+    PW.tiles.set(k, 2);
+  }
+  if (L.length) PW.w.postMessage({ t: 'tiles', gen, L });
+  return ok;
+}
 /* paint a rectangle of a view's ground (the options of dioPaintGen): on the helper when it can, here otherwise */
-function* pwPaint(sc,o){for(let attempt=0;attempt<2;attempt++){const W=PW.sync?null:pwWorker();if(!W||!sc||!sc.tiles)break;let id,job,cid;
-  try{cid=pwCtxId(sc);pwSendCtx(cid,sc);if(!pwSendTiles(sc,o.TP))break;id=++PW.id;job={done:false};PW.jobs.set(id,job);if(o.rec){o.rec.id=id;o.pr=o.rec.pr}
-   W.postMessage({t:'paint',id,ctx:cid,pr:o.pr||0,mips:!!o.mips,o:{TP:o.TP,rect:o.rect,margin:o.margin,nhalf:!!o.nhalf,normals:o.normals}})}
-  catch(e){PW.fails++;PW.last=String(e&&e.message||e);break}
-  try{while(!job.done)yield PW_WAIT}finally{if(!job.done){PW.jobs.delete(id);if(PW.w)PW.w.postMessage({t:'cancel',id})}}
-  if(job.r)return job.r;if(job.miss){PW.sent.delete(cid);continue}/* the helper had let the view go: hand it over again */break}
- PW.local++;return yield* dioPaintGen(sc,o)}
+function* pwPaint(sc, o) {
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const W = PW.sync ? null : pwWorker();
+    if (!W || !sc || !sc.tiles) break;
+    let id, job, cid;
+    try {
+      cid = pwCtxId(sc);
+      pwSendCtx(cid, sc);
+      if (!pwSendTiles(sc, o.TP)) break;
+      id = ++PW.id;
+      job = { done: false };
+      PW.jobs.set(id, job);
+      if (o.rec) {
+        o.rec.id = id;
+        o.pr = o.rec.pr;
+      }
+      W.postMessage({
+        t: 'paint',
+        id,
+        ctx: cid,
+        pr: o.pr || 0,
+        mips: !!o.mips,
+        o: { TP: o.TP, rect: o.rect, margin: o.margin, nhalf: !!o.nhalf, normals: o.normals },
+      });
+    } catch (e) {
+      PW.fails++;
+      PW.last = String((e && e.message) || e);
+      break;
+    }
+    try {
+      while (!job.done) yield PW_WAIT;
+    } finally {
+      if (!job.done) {
+        PW.jobs.delete(id);
+        if (PW.w) PW.w.postMessage({ t: 'cancel', id });
+      }
+    }
+    if (job.r) return job.r;
+    if (job.miss) {
+      PW.sent.delete(cid);
+      continue;
+    }
+    /* the helper had let the view go: hand it over again */ break;
+  }
+  PW.local++;
+  return yield* dioPaintGen(sc, o);
+}
 /* several paintings at once (the squares round where you will come in): all are queued on the helper together */
-function* pwAll(G){const L=G.slice();try{while(L.length){let moved=false;for(let k=L.length-1;k>=0;k--){const r=L[k].next();if(r.done){L.splice(k,1);moved=true}else if(r.value!==PW_WAIT)moved=true}if(L.length)yield moved?undefined:PW_WAIT}}
- finally{for(const g of L)try{g.return()}catch(e){}}}
+function* pwAll(G) {
+  const L = G.slice();
+  try {
+    while (L.length) {
+      let moved = false;
+      for (let k = L.length - 1; k >= 0; k--) {
+        const r = L[k].next();
+        if (r.done) {
+          L.splice(k, 1);
+          moved = true;
+        } else if (r.value !== PW_WAIT) moved = true;
+      }
+      if (L.length) yield moved ? undefined : PW_WAIT;
+    }
+  } finally {
+    for (const g of L)
+      try {
+        g.return();
+      } catch (e) {}
+  }
+}
 /* for the debug log */
-function pwState(){return {helper:PW.w?'on':PW.bad?'off: '+PW.why:'not started',painted:PW.done,here:PW.local,failed:PW.fails,avgMs:PW.done?Math.round(PW.ms/PW.done):0,last:PW.last||undefined}}
+function pwState() {
+  return {
+    helper: PW.w ? 'on' : PW.bad ? 'off: ' + PW.why : 'not started',
+    painted: PW.done,
+    here: PW.local,
+    failed: PW.fails,
+    avgMs: PW.done ? Math.round(PW.ms / PW.done) : 0,
+    last: PW.last || undefined,
+  };
+}
