@@ -126,35 +126,9 @@ menu.
 - Signed in, you get a **friend code** (Trainer card → Friends). Add a friend by their code; when they accept, you see
   where each of you was last, with your partner Billie: standing in the world when you're in the same place, and as a
   pin on the map.
-- It needs one change in Firebase: **Firestore Database → Rules**, replace everything with this and press Publish:
-
-```
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    match /saves/{uid} {
-      allow read, write: if request.auth != null && request.auth.uid == uid;
-    }
-    match /users/{uid} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && request.auth.uid == uid;
-    }
-    match /codes/{code} {
-      allow read: if request.auth != null;
-      allow create: if request.auth != null && request.resource.data.uid == request.auth.uid;
-    }
-    match /requests/{id} {
-      allow read, delete: if request.auth != null
-        && (resource.data.from == request.auth.uid || resource.data.to == request.auth.uid);
-      allow create: if request.auth != null && request.resource.data.from == request.auth.uid
-        && id == request.auth.uid + '_' + request.resource.data.to;
-      allow update: if request.auth != null
-        && (resource.data.from == request.auth.uid || resource.data.to == request.auth.uid)
-        && request.resource.data.from == resource.data.from && request.resource.data.to == resource.data.to;
-    }
-  }
-}
-```
+- It needs one change in Firebase: **Firestore Database → Rules**, replace everything with the contents of
+  [firebase/firestore.rules](firebase/firestore.rules) and press Publish. That file is the only copy of the rules; its
+  tests run on every push (`cd firebase && npm ci && npm test`).
 
 ### Fixes
 - Postcards wait until you're free to walk: never during the opening, Blake's first battle, a talk or a scene.
