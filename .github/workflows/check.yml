@@ -51,6 +51,8 @@ jobs:
         run: python -m playwright install-deps chromium
       - name: No global name defined twice
         run: python tools/check-globals.py
+      - name: No game data text that could become HTML
+        run: python tools/check-data-text.py
       - name: Quick check, smoke set
         run: python tools/check-quick.py --smoke
       - name: Upload pictures and results
@@ -112,6 +114,8 @@ jobs:
         run: python -m playwright install-deps chromium
       - name: No global name defined twice
         run: python tools/check-globals.py
+      - name: No game data text that could become HTML
+        run: python tools/check-data-text.py
       - name: Quick check, full
         run: python tools/check-quick.py
       - name: Upload pictures and results
