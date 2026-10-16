@@ -3,8 +3,11 @@
 #   (tools/check-quick.py --smoke, about two minutes of checks).
 # - Nightly, by hand (Actions -> Check -> Run workflow) and on phase-* tags: the full quick check (about 40 minutes).
 # - Phase 02: the Firestore rules tests (firebase/, on the emulator) on every push and pull request, about a minute.
-# Pictures and results.json are uploaded as an artifact on every run. Picture differences are notes, never failures,
-# until phase 03 makes a baseline on this runner.
+# Pictures and results.json are uploaded as an artifact on every run. Picture differences are notes, never failures.
+# - Phase 03: the picture baseline is made on this runner (the pictures depend on the renderer) and kept as the asset
+#   quick-baseline.zip of the release baseline-<version> (version from game/version.js, e.g. baseline-0.1.0-alpha).
+#   It is made on phase-* tags and by hand (Run workflow with "Make the picture baseline"); every other full run
+#   downloads it and compares its pictures with it.
 name: Check
 
 on:
@@ -15,6 +18,11 @@ on:
   schedule:
     - cron: '17 3 * * *'
   workflow_dispatch:
+    inputs:
+      baseline:
+        description: Make the picture baseline from this run
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -91,8 +99,15 @@ jobs:
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref_type == 'tag')
     runs-on: ubuntu-latest
     timeout-minutes: 120
+    permissions:
+      contents: write   # the baseline release (gh release); nothing else is written
+    env:
+      GH_TOKEN: ${{ github.token }}
+      MAKE_BASELINE: ${{ (github.event_name == 'workflow_dispatch' && inputs.baseline) || (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/phase-')) }}
     steps:
       - uses: actions/checkout@v4
+      - name: Which version
+        run: echo "PB_VERSION_ID=$(sed -n "s/^self.PB_VERSION='\(.*\)';$/\1/p" game/version.js | tr ' ' '-')" >> "$GITHUB_ENV"
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -116,8 +131,22 @@ jobs:
         run: python tools/check-globals.py
       - name: No game data text that could become HTML
         run: python tools/check-data-text.py
+      - name: Get the picture baseline
+        if: env.MAKE_BASELINE != 'true'
+        run: |
+          if gh release download "baseline-$PB_VERSION_ID" -p quick-baseline.zip -D "$RUNNER_TEMP"; then
+            mkdir -p validation && unzip -q "$RUNNER_TEMP/quick-baseline.zip" -d validation
+          else
+            echo "No baseline for $PB_VERSION_ID yet: pictures are not compared"
+          fi
       - name: Quick check, full
-        run: python tools/check-quick.py
+        run: python tools/check-quick.py ${{ env.MAKE_BASELINE == 'true' && '--baseline' || '' }}
+      - name: Save the picture baseline
+        if: env.MAKE_BASELINE == 'true'
+        run: |
+          (cd validation && zip -qr "$RUNNER_TEMP/quick-baseline.zip" quick-baseline)
+          gh release view "baseline-$PB_VERSION_ID" >/dev/null 2>&1 || gh release create "baseline-$PB_VERSION_ID" --target "$GITHUB_SHA" --prerelease --title "Picture baseline $PB_VERSION_ID" --notes "Quick-check pictures from $GITHUB_REF_NAME ($GITHUB_SHA), made on the CI runner. Replaced by the next phase tag or a run with Make the picture baseline."
+          gh release upload "baseline-$PB_VERSION_ID" "$RUNNER_TEMP/quick-baseline.zip" --clobber
       - name: Upload pictures and results
         if: always()
         uses: actions/upload-artifact@v4
