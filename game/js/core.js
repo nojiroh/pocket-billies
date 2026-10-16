@@ -33,7 +33,7 @@ function freshKeep(){const p=typeof S!=='undefined'&&S&&S.preferences,f=fresh();
 function migrate(o){if(!o||typeof o!=='object')return null;const f=fresh();const s=Object.assign(f,o);
  const zero=obj=>Object.fromEntries(Object.keys(obj).map(k=>[k,0]));
  s.coins=Object.assign(zero(COINS),o.coins||{});s.items=Object.assign(zero(ITEMS),o.items||{});s.flags=o.flags||{};
- const p=s.preferences=Object.assign({theme:'system',motion:'system',fps:60,effects:'full'},o.preferences||{});if(![30,60,90,120].includes(+p.fps))p.fps=60;if(p.aim!=='smooth')p.aim='sharp';p.fps=+p.fps;
+ const p=s.preferences=Object.assign({theme:'system',motion:'system',fps:60,effects:'full'},o.preferences||{});if(![30,60,90,120].includes(+p.fps))p.fps=60;if(p.aim!=='smooth')p.aim='sharp';p.effects='full';p.fps=+p.fps;
  if(!Array.isArray(s.eggs))s.eggs=[];if(!Array.isArray(s.jobs))s.jobs=[];
  while(s.jobs.length<JOB_SLOTS())s.jobs.push(emptyJob());
  while(s.jobs.length>JOB_SLOTS()){const j=s.jobs.pop();const m=[...(s.team||[]),...(s.box||[])].find(x=>x.uid===j.uid);if(m){m.job=null;m.boxedAt=Date.now()}}
