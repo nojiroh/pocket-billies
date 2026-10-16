@@ -6,6 +6,9 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
+    "lint": "eslint .",
+    "format": "prettier --write \"game/**/*.{js,css}\" \"studio/**/*.{js,css}\" \"*.js\"",
+    "format:check": "prettier --check \"game/**/*.{js,css}\" \"studio/**/*.{js,css}\" \"*.js\"",
     "check:smoke": "python3 tools/check-quick.py --smoke",
     "check:quick": "python3 tools/check-quick.py"
   },

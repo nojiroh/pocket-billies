@@ -1,0 +1,7 @@
+# Generated data: written by the Studio and the build tools in their own format
+game/data/
+game/art/
+# Not source
+node_modules/
+dist/
+validation/
