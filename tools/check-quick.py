@@ -116,7 +116,8 @@ def shot(pg, name):
     from PIL import Image
     im = Image.open(io.BytesIO(pg.screenshot())).convert('RGB')
     if max(im.size) > 1400: im.thumbnail((1400, 1400))
-    im.save(OUT / f'{name}.webp', 'WEBP', quality=78)
+    # phase 01: no : * ? " < > | in names (view ids such as w:ath* are); GitHub's artifact upload refuses them
+    im.save(OUT / (re.sub(r'[:*?"<>|]', '_', name) + '.webp'), 'WEBP', quality=78)
 
 
 def free_port():
