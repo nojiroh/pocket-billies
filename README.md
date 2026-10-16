@@ -118,8 +118,8 @@ menu.
   pins, step counts, Places list and flat view.
 - `game/js/diorama-gl.js`: the walk scene on the engine: heights, ground, grass, water, props,
   people, camera and effects. It reuses the walking and scene logic in `diorama.js`.
-- `game/js/diorama.js`: the canvas walk scene renderer (used for Lite), walking (a half-meter grid with path finding),
-  townsfolk, shadows and effects. Scenes, the prop catalog and the roads (`links`) are in
+- `game/js/diorama.js`: the walk scene's data and logic: the ground pictures, walking (a half-meter grid with path
+  finding), townsfolk and labels; `diorama-gl.js` draws it with WebGL 2 (the game needs WebGL 2). Scenes, the prop catalog and the roads (`links`) are in
   `data/gamedata.js` (`scenes`, `scenery`, `links`); pictures in `art/scene/props`,
   `art/scene/tiles`, `art/scene/far` and `art/scene/fx`.
 - `tools/build-scene-props.py`, `tools/build-scene-tiles.py`, `tools/build-scenes.py`: the
@@ -167,8 +167,8 @@ menu.
   color areas; touch up with the brush or clone tool where needed.
 - New parts make sheets taller. They are never packed tighter automatically, so a
   heavily edited billionaire's sheet can grow a little each time you add parts.
-- Checked in Chromium at phone, tablet, desktop and phone-landscape sizes, in light,
-  dark and Lite modes. The checks covered every screen, every battle backdrop, trainer
+- Checked in Chromium at phone, tablet, desktop and phone-landscape sizes, in light
+  and dark modes. The checks covered every screen, every battle backdrop, trainer
   battles, shops, evolution, hatching, broken game data and a full Studio save
   round trip. Version 8 adds checks of the skeleton builder (moving, tilting, renaming,
   adding, mirroring, deleting, undo), blank bodies in every body plan, the battle
