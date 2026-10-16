@@ -1,9 +1,11 @@
 # Phase 01: the quick check on GitHub.
-# - Every push and pull request (the Studio's "Save to game" opens one): the duplicate-name guard and the smoke set
+# - Every push and pull request (the Studio's "Save to game" opens one): the data text guard and the smoke set
 #   (tools/check-quick.py --smoke, about two minutes of checks).
 # - Nightly, by hand (Actions -> Check -> Run workflow) and on phase-* tags: the full quick check (about 40 minutes).
 # - Phase 02: the Firestore rules tests (firebase/, on the emulator) on every push and pull request, about a minute.
 # Pictures and results.json are uploaded as an artifact on every run. Picture differences are notes, never failures.
+# - Phase 04a: lint (ESLint: undefined names, names defined twice across scripts, recommended bug rules), the Prettier
+#   format check and the Vite build on every push and pull request, about a minute. ESLint replaces check-globals.py.
 # - Phase 03: the picture baseline is made on this runner (the pictures depend on the renderer) and kept as the asset
 #   quick-baseline.zip of the release baseline-<version> (version from game/version.js, e.g. baseline-0.1.0-alpha).
 #   It is made on phase-* tags and by hand (Run workflow with "Make the picture baseline"); every other full run
@@ -57,8 +59,6 @@ jobs:
       - name: Install Chromium's system libraries
         if: steps.chromium.outputs.cache-hit == 'true'
         run: python -m playwright install-deps chromium
-      - name: No global name defined twice
-        run: python tools/check-globals.py
       - name: No game data text that could become HTML
         run: python tools/check-data-text.py
       - name: Quick check, smoke set
@@ -71,6 +71,25 @@ jobs:
           path: validation/quick/
           if-no-files-found: ignore
           retention-days: 14
+
+  lint:
+    if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref_type == 'branch')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install the tools
+        run: npm ci
+      - name: Lint
+        run: npm run lint
+      - name: Formatting
+        run: npm run format:check
+      - name: Build
+        run: npm run build
 
   rules:
     if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref_type == 'branch')
@@ -107,7 +126,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Which version
-        run: echo "PB_VERSION_ID=$(sed -n "s/^self.PB_VERSION='\(.*\)';$/\1/p" game/version.js | tr ' ' '-')" >> "$GITHUB_ENV"
+        # runs version.js itself, so the formatting of that file doesn't matter
+        run: echo "PB_VERSION_ID=$(node -e "const self={};eval(require('fs').readFileSync('game/version.js','utf8'));console.log(self.PB_VERSION_ID)")" >> "$GITHUB_ENV"
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -127,8 +147,6 @@ jobs:
       - name: Install Chromium's system libraries
         if: steps.chromium.outputs.cache-hit == 'true'
         run: python -m playwright install-deps chromium
-      - name: No global name defined twice
-        run: python tools/check-globals.py
       - name: No game data text that could become HTML
         run: python tools/check-data-text.py
       - name: Get the picture baseline
