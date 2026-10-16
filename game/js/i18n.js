@@ -4,9 +4,15 @@
    and descriptions stay in English. It works on what's on screen: any text that exactly matches an entry below is
    shown translated (and switched back when you choose English again), so nothing else in the game has to change.
    To add a language, add a column: a code in I18N_LANGS and one more string in each row. */
-const I18N_LANGS=[['en','English'],['nl','Nederlands'],['de','Deutsch'],['es','Español'],['fr','Français']];
+const I18N_LANGS = [
+  ['en', 'English'],
+  ['nl', 'Nederlands'],
+  ['de', 'Deutsch'],
+  ['es', 'Español'],
+  ['fr', 'Français'],
+];
 /* English | Nederlands | Deutsch | Español | Français */
-const I18N_ROWS=`
+const I18N_ROWS = `
 Walk|Lopen|Gehen|Caminar|Marcher
 Map|Kaart|Karte|Mapa|Carte
 Team|Team|Team|Equipo|Équipe
@@ -168,17 +174,98 @@ Your photo|Jouw foto|Dein Foto|Tu foto|Ta photo
 Decorate your room|Richt je kamer in|Richte dein Zimmer ein|Decora tu habitación|Décore ta chambre
 Nothing|Niets|Nichts|Nada|Rien
 `;
-const I18N=(()=>{const M={};I18N_LANGS.forEach(([c],i)=>{if(i)M[c]=new Map()});for(const line of I18N_ROWS.trim().split('\n')){const p=line.split('|');if(p.length<I18N_LANGS.length)continue;I18N_LANGS.forEach(([c],i)=>{if(i&&p[i])M[c].set(p[0],p[i])})}return M})();
-let I18N_LANG='en',I18N_OBS=null;
-const I18N_ORIG=new WeakMap(),I18N_ATTR=['aria-label','title','placeholder'];
+const I18N = (() => {
+  const M = {};
+  I18N_LANGS.forEach(([c], i) => {
+    if (i) M[c] = new Map();
+  });
+  for (const line of I18N_ROWS.trim().split('\n')) {
+    const p = line.split('|');
+    if (p.length < I18N_LANGS.length) continue;
+    I18N_LANGS.forEach(([c], i) => {
+      if (i && p[i]) M[c].set(p[0], p[i]);
+    });
+  }
+  return M;
+})();
+let I18N_LANG = 'en',
+  I18N_OBS = null;
+const I18N_ORIG = new WeakMap(),
+  I18N_ATTR = ['aria-label', 'title', 'placeholder'];
 /* translate (or restore) one text node / element's attributes */
-function i18nNode(n){if(n.nodeType===3){let O=I18N_ORIG.get(n);if(O&&n.nodeValue!==O.out){I18N_ORIG.delete(n);O=null}/* the game changed it since */const raw=O?O.raw:n.nodeValue,t=raw.trim();if(!t||t.length>80)return;
-  const tr=I18N_LANG==='en'?null:I18N[I18N_LANG]&&I18N[I18N_LANG].get(t);if(tr){const v=raw.replace(t,tr);I18N_ORIG.set(n,{raw,out:v});if(n.nodeValue!==v)n.nodeValue=v}else if(O){n.nodeValue=O.raw;I18N_ORIG.delete(n)}return}
- if(n.nodeType!==1||n.closest('canvas,script,style,[data-noi18n]'))return;
- for(const a of I18N_ATTR){if(!n.hasAttribute(a))continue;const key='data-en-'+a,raw=n.getAttribute(key)??n.getAttribute(a),tr=I18N_LANG==='en'?null:I18N[I18N_LANG]&&I18N[I18N_LANG].get(raw.trim());
-  if(tr){if(!n.hasAttribute(key))n.setAttribute(key,raw);n.setAttribute(a,tr)}else if(n.hasAttribute(key)){n.setAttribute(a,n.getAttribute(key));n.removeAttribute(key)}}
- const w=document.createTreeWalker(n,NodeFilter.SHOW_TEXT|NodeFilter.SHOW_ELEMENT);let c;while((c=w.nextNode())){if(c.nodeType===3){if(c.parentElement&&!c.parentElement.closest('script,style,[data-noi18n]'))i18nNode(c)}else for(const a of I18N_ATTR)if(c.hasAttribute&&c.hasAttribute(a)){i18nAttr(c,a)}}}
-function i18nAttr(el,a){const key='data-en-'+a,raw=el.getAttribute(key)??el.getAttribute(a),tr=I18N_LANG==='en'?null:I18N[I18N_LANG]&&I18N[I18N_LANG].get(raw.trim());if(tr){if(!el.hasAttribute(key))el.setAttribute(key,raw);if(el.getAttribute(a)!==tr)el.setAttribute(a,tr)}else if(el.hasAttribute(key)){el.setAttribute(a,el.getAttribute(key));el.removeAttribute(key)}}
-function i18nSet(lang){lang=I18N_LANGS.some(l=>l[0]===lang)?lang:'en';if(lang===I18N_LANG&&I18N_OBS)return;I18N_LANG=lang;document.documentElement.lang=lang;
- if(!I18N_OBS&&lang!=='en'){I18N_OBS=new MutationObserver(ms=>{if(I18N_LANG==='en')return;for(const m of ms){if(m.type==='characterData')i18nNode(m.target);else for(const n of m.addedNodes)i18nNode(n)}});I18N_OBS.observe(document.body,{childList:true,subtree:true,characterData:true})}
- i18nNode(document.body)}
+function i18nNode(n) {
+  if (n.nodeType === 3) {
+    let O = I18N_ORIG.get(n);
+    if (O && n.nodeValue !== O.out) {
+      I18N_ORIG.delete(n);
+      O = null;
+    }
+    /* the game changed it since */ const raw = O ? O.raw : n.nodeValue,
+      t = raw.trim();
+    if (!t || t.length > 80) return;
+    const tr = I18N_LANG === 'en' ? null : I18N[I18N_LANG] && I18N[I18N_LANG].get(t);
+    if (tr) {
+      const v = raw.replace(t, tr);
+      I18N_ORIG.set(n, { raw, out: v });
+      if (n.nodeValue !== v) n.nodeValue = v;
+    } else if (O) {
+      n.nodeValue = O.raw;
+      I18N_ORIG.delete(n);
+    }
+    return;
+  }
+  if (n.nodeType !== 1 || n.closest('canvas,script,style,[data-noi18n]')) return;
+  for (const a of I18N_ATTR) {
+    if (!n.hasAttribute(a)) continue;
+    const key = 'data-en-' + a,
+      raw = n.getAttribute(key) ?? n.getAttribute(a),
+      tr = I18N_LANG === 'en' ? null : I18N[I18N_LANG] && I18N[I18N_LANG].get(raw.trim());
+    if (tr) {
+      if (!n.hasAttribute(key)) n.setAttribute(key, raw);
+      n.setAttribute(a, tr);
+    } else if (n.hasAttribute(key)) {
+      n.setAttribute(a, n.getAttribute(key));
+      n.removeAttribute(key);
+    }
+  }
+  const w = document.createTreeWalker(n, NodeFilter.SHOW_TEXT | NodeFilter.SHOW_ELEMENT);
+  let c;
+  while ((c = w.nextNode())) {
+    if (c.nodeType === 3) {
+      if (c.parentElement && !c.parentElement.closest('script,style,[data-noi18n]')) i18nNode(c);
+    } else
+      for (const a of I18N_ATTR)
+        if (c.hasAttribute && c.hasAttribute(a)) {
+          i18nAttr(c, a);
+        }
+  }
+}
+function i18nAttr(el, a) {
+  const key = 'data-en-' + a,
+    raw = el.getAttribute(key) ?? el.getAttribute(a),
+    tr = I18N_LANG === 'en' ? null : I18N[I18N_LANG] && I18N[I18N_LANG].get(raw.trim());
+  if (tr) {
+    if (!el.hasAttribute(key)) el.setAttribute(key, raw);
+    if (el.getAttribute(a) !== tr) el.setAttribute(a, tr);
+  } else if (el.hasAttribute(key)) {
+    el.setAttribute(a, el.getAttribute(key));
+    el.removeAttribute(key);
+  }
+}
+function i18nSet(lang) {
+  lang = I18N_LANGS.some(l => l[0] === lang) ? lang : 'en';
+  if (lang === I18N_LANG && I18N_OBS) return;
+  I18N_LANG = lang;
+  document.documentElement.lang = lang;
+  if (!I18N_OBS && lang !== 'en') {
+    I18N_OBS = new MutationObserver(ms => {
+      if (I18N_LANG === 'en') return;
+      for (const m of ms) {
+        if (m.type === 'characterData') i18nNode(m.target);
+        else for (const n of m.addedNodes) i18nNode(n);
+      }
+    });
+    I18N_OBS.observe(document.body, { childList: true, subtree: true, characterData: true });
+  }
+  i18nNode(document.body);
+}
