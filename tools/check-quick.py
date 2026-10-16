@@ -3,6 +3,7 @@
 3D scenes in software and slowly). It is the check Claude runs while building a version; it takes a few minutes.
 
     python3 tools/check-quick.py                 # data, code, shaders, every scene once, the main flows
+    python3 tools/check-quick.py --smoke         # the fast subset: data and code, Start-Game on a phone, debug log, Studio opens
     python3 tools/check-quick.py --studio        # also the Studio round trip on a temporary copy
     python3 tools/check-quick.py --closeups      # also close-up pictures of cliffs, stairs, bridges and water
     python3 tools/check-quick.py --scenes=city,pond   # only these walk scenes (by id), for a change to one place
@@ -37,6 +38,9 @@ CLOCK = """(()=>{const D=Date,off=new D(2026,5,15,12,30,0).getTime()-D.now();cla
 NO_ACCOUNTS = "Object.defineProperty(window,'PB_FIREBASE',{get(){return null},set(){},configurable:false})"   # alpha 0.4.1: no Google sign-in during the checks
 LOW_RENDER = "GD.engine=GD.engine||{};GD.engine.defaults=Object.assign({},GD.engine.defaults||{},{quality:{resolution:.34,shadowMap:1024,auto:false}});0"
 ARGS = sys.argv[1:]
+# phase 01: --smoke is the fast subset run after every change and on every push (about two minutes): the data and code
+# checks, Start-Game on a phone, the debug log export and the Studio opening. The full check runs nightly and per phase
+SMOKE = '--smoke' in ARGS
 # where a point of the walk scene is on screen (the same projection the renderer uses)
 PROJ = "(([x,z])=>{const C=DIO.C,r=DIO.cv.getBoundingClientRect(),y=dioH(x,z)+(typeof dglCurve==='function'?dglCurve(x,z):0);if(C.vp){const m=C.vp,cx=m[0]*x+m[4]*y+m[8]*z+m[12],cy=m[1]*x+m[5]*y+m[9]*z+m[13],w=m[3]*x+m[7]*y+m[11]*z+m[15];return [r.left+(cx/w*.5+.5)*r.width,r.top+(1-(cy/w*.5+.5))*r.height]}const q=dioProj(C,x,y,z);return [r.left+q.x/DIO.cv.width*r.width,r.top+q.y/DIO.cv.height*r.height]})(%s)"
 ONLY = next((a.split('=', 1)[1].split(',') for a in ARGS if a.startswith('--scenes=')), None)
@@ -2019,6 +2023,50 @@ def compare_pictures(R):
     elif diffs: notes.append(f'{len(diffs)} pictures match the baseline closely')
 
 
+@step('Debug log: the export builds a log and saves it', 120)
+def debug_log(b, base):
+    """phase 01: the owner tests on a phone and sends the exported debug log, so the export must keep working.
+    On a desktop page the game saves it as a download (nothing is sent anywhere); the file must be a JSON log"""
+    errs = []; ctx, pg = open_game(b, base, 1100, 700, False, errs)
+    try:
+        play(pg); time.sleep(2)
+        with pg.expect_download(timeout=60000) as dl:
+            pg.evaluate("exportDebugLog();0")
+        d = dl.value; log_ = json.loads(Path(d.path()).read_text(encoding='utf-8'))
+        if not isinstance(log_, dict) or not log_: raise Exception('the debug log is empty')
+        if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
+        return f'{d.suggested_filename}: {len(json.dumps(log_)) // 1024} KB ({", ".join(list(log_)[:6])}, …)'
+    finally:
+        ctx.close()
+
+
+@step('Studio: every script loads and the sign-in shows (GitHub mode)', 60)
+def studio_opens(b):
+    """phase 01: the Studio as GitHub Pages serves it (no Studio server): all its scripts run and it asks for a token.
+    The full round trip (--studio) needs start-studio.py"""
+    srv, base = serve(ROOT); errs = []
+    ctx = b.new_context(viewport={'width': 1280, 'height': 860}); ctx.add_init_script(CLOCK); ctx.add_init_script(NO_ACCOUNTS); pg = ctx.new_page()
+    pg.on('pageerror', lambda e: errs.append(str(e))); pg.on('console', lambda m: errs.append(console_text(m)) if m.type == 'error' else None)
+    try:
+        pg.goto(base + '/studio/index.html'); pg.wait_for_selector('#ghTok', timeout=60000)
+        ok = pg.evaluate("[typeof go==='function',typeof GH==='object',typeof dglLookOf==='function']")
+        if not all(ok): raise Exception(f'Studio scripts missing (go, GH, the shared renderer): {ok}')
+        shot(pg, 'studio-sign-in')
+        if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
+        return 'the Studio and the shared game scripts loaded; the GitHub sign-in is showing'
+    finally:
+        ctx.close(); srv.shutdown()
+
+
+def timing_report(R):
+    """phase 01: the total and the slowest steps, so the time a check costs stays visible"""
+    done = [s for s in steps if s.get('seconds')]
+    slow = sorted(done, key=lambda s: -s['seconds'])[:10]
+    R['slowest'] = [[s['step'], s['seconds']] for s in slow]
+    print(f'\nTime: {round(time.time() - T0)} s in all, {len(steps)} steps ({sum(1 for s in steps if s["ok"])} passed). Slowest:')
+    for s in slow: print(f'  {s["seconds"]:7.1f} s  {s["step"][:100]}')
+
+
 def main():
     try:
         from playwright.sync_api import sync_playwright
@@ -2033,10 +2081,13 @@ def main():
         b = pw.chromium.launch(args=['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'])
         if '--studio-only' not in ARGS:
             phone_flow(b, base, R)
-            try:
-                desktop_steps(b, base, R)
-            except Exception as e:
-                problems.append(f'desktop: {str(e).splitlines()[0][:200]}')
+            if SMOKE:
+                debug_log(b, base); studio_opens(b)
+            else:
+                try:
+                    desktop_steps(b, base, R)
+                except Exception as e:
+                    problems.append(f'desktop: {str(e).splitlines()[0][:200]}')
         b.close()
         if '--studio' in ARGS or '--studio-only' in ARGS: studio_round_trip(pw, R)
         if '--page' in ARGS: single_page(pw, R)
@@ -2047,8 +2098,9 @@ def main():
         r = subprocess.run([sys.executable, str(ROOT / 'tools' / 'prop-sheet.py')], capture_output=True, text=True)
         steps.append({'step': 'Props: contact sheets', 'ok': r.returncode == 0, 'seconds': 0, 'note': (r.stdout.strip().splitlines() or [''])[-1][:200]})
         if r.returncode: problems.append('Props: ' + (r.stderr.strip().splitlines() or ['failed'])[-1][:200])
-    compare_pictures(R)
-    R.update({'steps': steps, 'problems': problems, 'notes': notes, 'seconds': round(time.time() - T0)})
+    if not SMOKE: compare_pictures(R)
+    timing_report(R)
+    R.update({'steps': steps, 'problems': problems, 'notes': notes, 'seconds': round(time.time() - T0), 'smoke': SMOKE})
     (OUT / 'results.json').write_text(json.dumps(R, indent=2, ensure_ascii=False))
     log(f'done in {R["seconds"]}s: ' + ('no problems' if not problems else f'{len(problems)} problem(s)'))
     for p in problems: print('  PROBLEM', p)
