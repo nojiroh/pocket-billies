@@ -22,7 +22,7 @@ const MAXLV=()=>RULES.progression.maxLevel,SLOTS=()=>RULES.progression.moveSlots
 const JOB_SLOTS=()=>Math.max(1,RULES.jobs.positions||3);
 const emptyJob=()=>({uid:null,job:null,acc:0,pend:0});
 function fresh(){const R=RULES.start,coins={},items={};Object.keys(COINS).forEach(k=>coins[k]=0);Object.keys(ITEMS).forEach(k=>items[k]=0);Object.assign(coins,R.coins);Object.assign(items,R.items);
- return{v:4,saveVersion:SAVE_VERSION,avatar:null,preferences:{theme:'system',motion:'system',fps:60,effects:'full'},started:false,gender:null,starter:null,team:[],box:[],seen:{},caught:{},se:R.se,seFrac:0,coins,items,day:{date:today(),steps:0},totalSteps:0,route:{node:START_NODE,prog:0,plan:[],hold:false},mapSeen:null,meter:0,queue:[],
+ return{v:4,saveVersion:SAVE_VERSION,gameVersion:PB_VERSION,avatar:null,preferences:{theme:'system',motion:'system',fps:60,effects:'full'},started:false,gender:null,starter:null,team:[],box:[],seen:{},caught:{},se:R.se,seFrac:0,coins,items,day:{date:today(),steps:0},totalSteps:0,route:{node:START_NODE,prog:0,plan:[],hold:false},mapSeen:null,meter:0,queue:[],
  buddy:null,buddyRem:0,flags:{},seats:[],visited:{[START_NODE]:1},serial:300,eggs:[],jobs:Array.from({length:JOB_SLOTS()},emptyJob),savedAt:0,
  /* trainer card: ID number, start date (0 = unknown, older saves) and eggs hatched */
  tid:10000+Math.floor(rnd()*90000),since:0,hatched:0}}
@@ -48,7 +48,7 @@ function migrate(o){if(!o||typeof o!=='object')return null;const f=fresh();const
  if(!s.route||!ROUTE[s.route.node])s.route={node:START_NODE,prog:0,plan:[]};
  s.route.plan=(Array.isArray(s.route.plan)?s.route.plan:[]).filter(x=>ROUTE[x]);if(s.route.plan.length&&!linkCost(s.route.node,s.route.plan[0])){s.route.plan=[];s.route.prog=0}s.route.hold=!!s.route.hold;
  if(!s.visited||typeof s.visited!=='object')s.visited={};s.visited[s.route.node]=1;
- if(s.started&&!s.team.length&&!s.box.length)return fresh();s.v=4;s.saveVersion=SAVE_VERSION;return s}
+ if(s.started&&!s.team.length&&!s.box.length)return fresh();s.v=4;s.saveVersion=SAVE_VERSION;s.gameVersion=PB_VERSION;return s}
 /* phase 02: every save says which save format it is (saveVersion; raise it when old saves can't be read any more).
    A save without one (alpha 0.5 and earlier) or from a newer format is not loaded: the game says so and starts fresh.
    saveAge: null (no save), 'ok', 'old' or 'new'. A newer save is never written over (SAVE_HOLD) */
