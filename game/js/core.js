@@ -22,7 +22,7 @@ const MAXLV=()=>RULES.progression.maxLevel,SLOTS=()=>RULES.progression.moveSlots
 const JOB_SLOTS=()=>Math.max(1,RULES.jobs.positions||3);
 const emptyJob=()=>({uid:null,job:null,acc:0,pend:0});
 function fresh(){const R=RULES.start,coins={},items={};Object.keys(COINS).forEach(k=>coins[k]=0);Object.keys(ITEMS).forEach(k=>items[k]=0);Object.assign(coins,R.coins);Object.assign(items,R.items);
- return{v:4,saveVersion:SAVE_VERSION,avatar:null,preferences:{theme:'system',motion:'system',fps:60,effects:'full'},started:false,gender:null,starter:null,team:[],box:[],seen:{},caught:{},se:R.se,seFrac:0,coins,items,day:{date:today(),steps:0},totalSteps:0,route:{node:START_NODE,prog:0,plan:[],hold:false},mapSeen:null,meter:0,queue:[],
+ return{v:4,saveVersion:SAVE_VERSION,gameVersion:PB_VERSION,avatar:null,preferences:{theme:'system',motion:'system',fps:60,effects:'full'},started:false,gender:null,starter:null,team:[],box:[],seen:{},caught:{},se:R.se,seFrac:0,coins,items,day:{date:today(),steps:0},totalSteps:0,route:{node:START_NODE,prog:0,plan:[],hold:false},mapSeen:null,meter:0,queue:[],
  buddy:null,buddyRem:0,flags:{},seats:[],visited:{[START_NODE]:1},serial:300,eggs:[],jobs:Array.from({length:JOB_SLOTS()},emptyJob),savedAt:0,
  /* trainer card: ID number, start date (0 = unknown, older saves) and eggs hatched */
  tid:10000+Math.floor(rnd()*90000),since:0,hatched:0}}
@@ -33,7 +33,7 @@ function freshKeep(){const p=typeof S!=='undefined'&&S&&S.preferences,f=fresh();
 function migrate(o){if(!o||typeof o!=='object')return null;const f=fresh();const s=Object.assign(f,o);
  const zero=obj=>Object.fromEntries(Object.keys(obj).map(k=>[k,0]));
  s.coins=Object.assign(zero(COINS),o.coins||{});s.items=Object.assign(zero(ITEMS),o.items||{});s.flags=o.flags||{};
- const p=s.preferences=Object.assign({theme:'system',motion:'system',fps:60,effects:'full'},o.preferences||{});if(![30,60,90,120].includes(+p.fps))p.fps=60;if(p.aim!=='smooth')p.aim='sharp';p.fps=+p.fps;
+ const p=s.preferences=Object.assign({theme:'system',motion:'system',fps:60,effects:'full'},o.preferences||{});if(![30,60,90,120].includes(+p.fps))p.fps=60;if(p.aim!=='smooth')p.aim='sharp';p.effects='full';p.fps=+p.fps;
  if(!Array.isArray(s.eggs))s.eggs=[];if(!Array.isArray(s.jobs))s.jobs=[];
  while(s.jobs.length<JOB_SLOTS())s.jobs.push(emptyJob());
  while(s.jobs.length>JOB_SLOTS()){const j=s.jobs.pop();const m=[...(s.team||[]),...(s.box||[])].find(x=>x.uid===j.uid);if(m){m.job=null;m.boxedAt=Date.now()}}
@@ -48,7 +48,7 @@ function migrate(o){if(!o||typeof o!=='object')return null;const f=fresh();const
  if(!s.route||!ROUTE[s.route.node])s.route={node:START_NODE,prog:0,plan:[]};
  s.route.plan=(Array.isArray(s.route.plan)?s.route.plan:[]).filter(x=>ROUTE[x]);if(s.route.plan.length&&!linkCost(s.route.node,s.route.plan[0])){s.route.plan=[];s.route.prog=0}s.route.hold=!!s.route.hold;
  if(!s.visited||typeof s.visited!=='object')s.visited={};s.visited[s.route.node]=1;
- if(s.started&&!s.team.length&&!s.box.length)return fresh();s.v=4;s.saveVersion=SAVE_VERSION;return s}
+ if(s.started&&!s.team.length&&!s.box.length)return fresh();s.v=4;s.saveVersion=SAVE_VERSION;s.gameVersion=PB_VERSION;return s}
 /* phase 02: every save says which save format it is (saveVersion; raise it when old saves can't be read any more).
    A save without one (alpha 0.5 and earlier) or from a newer format is not loaded: the game says so and starts fresh.
    saveAge: null (no save), 'ok', 'old' or 'new'. A newer save is never written over (SAVE_HOLD) */
@@ -70,26 +70,13 @@ if(SAVE_FOUND==='old'||SAVE_FOUND==='new')try{const k=LS+'-set-aside';if(localSt
 if(SAVE_FOUND==='new')SAVE_HOLD=true;
 let S=loadSave(lsGet())||fresh();
 let B=null;
-const U={tab:'walk',lastTab:null,intro:0,modal:null,mq:[],learnQ:[],walking:false,motionMsg:'',toastQ:[],toastOn:false,evT:null,throwing:false,disp:{steps:null,se:null},seenEnc:new Set(),mapSel:null};
+const U={tab:'walk',lastTab:null,intro:0,modal:null,mq:[],learnQ:[],toastQ:[],toastOn:false,evT:null,throwing:false,disp:{steps:null,se:null},seenEnc:new Set(),mapSel:null};
 
-/* ---------- cloud save (per-person, private) ---------- */
-let DB=null,USERID=null,saveT=null,saving=false,again=false;
+/* ---------- saving: in this browser, and on the account when signed in (account.js) ---------- */
+let saveT=null;
 function save(){S.savedAt=Date.now();lsSet(S);if(!saveT)saveT=setTimeout(()=>{saveT=null;flush()},4000)}
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&saveT){clearTimeout(saveT);saveT=null;flush()}});
-async function flush(){if(SAVE_HOLD)return;if(typeof accFlush==='function'&&accFlush())return;if(!DB||!USERID)return;if(saving){again=true;return}saving=true;
- try{await DB.doc('data/users/'+USERID+'/save').set({json:JSON.stringify(S),savedAt:S.savedAt})}catch(e){if(e&&e.code==='invalid_argument')DB=null}
- saving=false;if(again){again=false;flush()}}
-async function initCloud(){
- try{if(!window.claude||typeof window.claude.use!=='function')return;
-  const [db,user]=await Promise.all([window.claude.use('db'),window.claude.use('user')]);if(!db||!user)return;
-  const id=await user.id();if(!id)return;DB=db;USERID=id;
-  const snap=await db.doc('data/users/'+id+'/save').get();
-  if(snap.exists){const d=snap.data();let remote=null;try{remote=JSON.parse(d.json);if(saveAge(remote)==='new')SAVE_HOLD=true;remote=loadSave(remote)}catch(e){}if(SAVE_HOLD)return;
-   if(remote&&remote.started&&(!S.started||(remote.savedAt||0)>(S.savedAt||0))&&!B){S=remote;S.avatar=cleanTrainer(S.avatar,S.gender);applyPreferences();lsSet(S);render();toast('Your progress is synced.');setTimeout(postProcess,200)}
-   else if(S.started)flush()}
-  else if(S.started)flush();
- }catch(e){}
-}
+function flush(){if(SAVE_HOLD)return;if(typeof accFlush==='function')accFlush()}
 
 /* ---------- billionaires ---------- */
 function stat(m,k){const b=SP[m.sp].base[STATK.indexOf(k)];let v=k==='hp'?Math.floor(2*b*m.lvl/100)+m.lvl+10:Math.floor(2*b*m.lvl/100)+5;

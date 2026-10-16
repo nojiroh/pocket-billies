@@ -13,7 +13,7 @@ code,.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12p
 .pix,canvas{image-rendering:pixelated}
 #studio{display:grid;grid-template-columns:232px 1fr;grid-template-rows:56px 1fr;height:100vh}
 .top{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 14px;background:var(--panel);border-bottom:1px solid var(--line);z-index:3}
-.brand{display:flex;align-items:center;gap:10px}.brand b{font:400 20px var(--disp)}
+.brand{display:flex;align-items:center;gap:10px}.brand b{font:400 20px var(--disp)}.brand .ver{font:600 11px var(--body);opacity:.65}
 .dirty{font:600 12px var(--body);color:var(--warn);background:color-mix(in srgb,var(--gold) 22%,transparent);padding:3px 8px;border-radius:999px}
 .top-acts{display:flex;gap:6px;align-items:center}
 .tb{border:1px solid var(--line);background:var(--panel2);border-radius:8px;padding:7px 12px;cursor:pointer;font-weight:600;display:inline-flex;gap:6px;align-items:center}.tb:hover{border-color:var(--line2)}.tb:disabled{opacity:.4;cursor:default}

@@ -11,6 +11,51 @@ Newest entry on top. Every phase session ends by adding an entry here and taggin
 - Questions waiting for the owner: 
 - Next session starts with: 
 
+### Phase 03 - Fresh base and scope reset - 2026-10-16
+- Changed:
+  - Legacy: branch `legacy` pushed at 0314a22 (alpha 0.5 + phases 01-02). The tag `legacy-final` (same commit) was
+    refused like every tag push from this session: the owner adds it, and attaches a `git archive` zip of it to a release
+    if a zip is wanted.
+  - Version 0.1.0 alpha in one file, game/version.js (`PB_VERSION`, `PB_VERSION_ID`). Read by the game (title screen
+    corner), the Studio (top bar), sw.js (cache `pocketbillies-0.1.0-alpha-*`), the debug log and diagnostics (`build`),
+    saves (`gameVersion`; `SAVE_VERSION` stays 1). check-quick step "Version" compares README.md and CHANGELOG.md.
+    Scheme: 0.MINOR.PATCH alpha (owner approved).
+  - CHANGELOG.md started; the old changelog (2160 lines) is docs/archive/LEGACY-CHANGELOG.md; README is 180 lines.
+  - Deleted (each its own commit): pedometer and demo step buttons; Lite mode (Battery saver, every lite branch, the 2D
+    walk painter in diorama.js, the Lite clue timer, the 16 px canvas ground, art/next/tiles); the Claude-artifact cloud
+    mode and tools/build-artifact.py with check-quick's --page step; the `station` prop and its 4 pictures; dioTileHalf;
+    the 19 `*@v45` scenes (1.5 MB) and the Studio's "Open its v45 layout"; the 'Net Worth' backup import; the v36 save
+    migration check; tools/retired; the tools/src toolchain (build-art.cjs, runtime.cjs, export.js, vendor/); 16 one-off
+    tools nothing imports.
+  - New: without WebGL 2 the game shows "This device can't run Pocket Billies" (Try again, Export debug log), at start and
+    when the walk view's WebGL fails for good. The Studio says there is no preview.
+  - CI: the picture baseline is the release asset `baseline-<version>/quick-baseline.zip`, made on phase-* tags or by hand
+    (Run workflow, "Make the picture baseline"); other full runs download it and compare. The full job gets
+    `contents: write` for that.
+- Not deleted, though the audit listed them (the audit was wrong): background/sundown.png (the Studio's "rebuild the web
+  picture" reads it), scene/build/detail-a04.png (tools/build-airship.py's source), the `airship_mast` prop (the mast
+  check and build-airship use it), migrate() (fills defaults; not a format converter), lookFromOld (NPC looks).
+- Kept on purpose: the picture intro (it is also the cutscene's fallback on abort and reduced motion); `RULES.travel =
+  'steps'` and the joystick step pipeline (phase 08); the debug step buttons; tapdebug.js; art/scene/tiles (Studio
+  tile editor); map.js's 2D map (only after a lost WebGL context; phase 10 rewrites the map).
+- Risky or unfinished:
+  - The owner skipped the full quick check for this phase. The partial run passed 16 steps, none failed (phone flow,
+    shaders, paths, test scenes, all data checks); "Scenes" and everything after it did not run. No picture baseline
+    yet: the first phase-* tag (or Run workflow with "Make the picture baseline") makes it.
+  - The 2D painter removal was found by a call-graph script; one name it got wrong (DIO_FX) broke the opening and was
+    caught by smoke. The full Scenes/walking steps are the real proof and have not run.
+  - Leftovers for later rewrites: `effects` preference field (always 'full'), `.demo-note` and other step CSS, `_dioProj2D`
+    fallback in diorama-gl.js, build-tiles.py/build-terrain.py still write art/next/tiles if run.
+- Verified: smoke 14/14 after every change (about 110 s), CI smoke green on every push; check-globals 0 duplicates;
+  headless probes: version shown on the title, Studio, cache names, log and save; the no-WebGL screen and its debug log
+  download.
+- Decisions I made (and why): the version also shows on screen (title corner, Studio top bar) so a phone screenshot
+  says which build it is; the baseline is a release asset (persists, no repo bloat) rather than an artifact (expires).
+- Questions waiting for the owner: add the tags `legacy-final` (0314a22), `phase-01-done`, `phase-02-done`; OK that an
+  old account save is replaced once the player plays on (from phase 02)?
+- Next session starts with: phase 04. Tag `phase-03-done` on this phase's last commit first (the tag's full run also
+  makes the picture baseline); if that run finds problems in Scenes or walking, fix them before phase 04 work.
+
 ### Phase 02 - Security - 2026-10-16
 - Changed:
   - Firestore rules moved out of the README into firebase/firestore.rules (the only copy) with 13 emulator tests

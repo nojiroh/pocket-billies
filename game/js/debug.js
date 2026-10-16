@@ -74,7 +74,7 @@ function dbgAct(x){const v=id=>{const e=$('#'+id);return e?e.value:null},sp=v('d
   case 'export':exportSave();return;
   case 'wipe':U.modal=null;settingsReset();return;
  }save();dbgRefresh('Done.')}
-function settingsReset(){modal({title:'Start over?',html:'<p>This erases your team, Field Guide and money.</p>',btns:[{l:'Erase and start over',c:'red',f:()=>{if(U.walking)stopMotion();if(B){stopTimers();B=null;scStop()}S=freshKeep();S.savedAt=Date.now();lsSet(S);flush();U.intro=0;U.pg=null;U.avatarDraft=null;U.trainerDraft=null;U.tab='walk';applyPreferences();closeModal();render()}},{l:'Keep my progress',c:'quiet',f:closeModal}]})}
+function settingsReset(){modal({title:'Start over?',html:'<p>This erases your team, Field Guide and money.</p>',btns:[{l:'Erase and start over',c:'red',f:()=>{if(B){stopTimers();B=null;scStop()}S=freshKeep();S.savedAt=Date.now();lsSet(S);flush();U.intro=0;U.pg=null;U.avatarDraft=null;U.trainerDraft=null;U.tab='walk';applyPreferences();closeModal();render()}},{l:'Keep my progress',c:'quiet',f:closeModal}]})}
 document.addEventListener('click',ev=>{const el=ev.target.closest('[data-a]');if(!el)return;if(el.dataset.a==='dbg')dbgAct(el.dataset.x);else if(el.dataset.a==='debug')openDebug()});
 document.addEventListener('keydown',ev=>{if(ev.ctrlKey&&ev.shiftKey&&(ev.key==='D'||ev.key==='d')){ev.preventDefault();if(U.modal&&U.modal.dbg)closeModal();else openDebug()}});
 if(DBG.on)addEventListener('load',()=>{const b=document.createElement('button');b.className='dbg-fab';b.dataset.a='debug';b.setAttribute('aria-label','Debug menu');b.innerHTML=uiIco('bug',20);document.body.appendChild(b)});

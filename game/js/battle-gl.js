@@ -4,11 +4,11 @@
    world through the battle camera (scene.js keeps directing it: SC.V, focus, punches and shakes). The billionaires and
    trainers become lit sprites in that world, with sun shadows and contact shadows; props standing in the way are
    hidden; glowing move effects light the ground. scene.js still draws the move effects themselves on its canvas
-   above. The classic painted stage is used when WebGL isn't running, in Lite mode, when the stop has no walk scene,
+   above. The classic painted stage is used when WebGL isn't running, when the stop has no walk scene,
    or when the player picks it in Settings. */
 const BGL={on:false,off:[0,0],gy:0,hide:null,items:[],lights:[]};
 function battleGLWanted(){if(typeof DGL==='undefined'||!DGL.on||!DIO.cv||!DIO.ready||(typeof EGL!=='undefined'&&EGL.lost))return false;const p=S.preferences||{};
- if(p.effects==='lite'||p.battleStage==='classic')return false;/* v43: whatever walk scene is on screen and ready is the stage (it used to have to be the stop's own scene, so a battle on the second half of a road, or one started before the scene had opened, fell back to the painted stage) */return !!DIO.id&&!!DIO.sc&&!(DIO.sc.room)}
+ if(p.battleStage==='classic')return false;/* v43: whatever walk scene is on screen and ready is the stage (it used to have to be the stop's own scene, so a battle on the second half of a road, or one started before the scene had opened, fell back to the painted stage) */return !!DIO.id&&!!DIO.sc&&!(DIO.sc.room)}
 function battleGLStart(){if(!battleGLWanted())return false;return battleGLAttach()}
 /* the walk scene that's running (DIO) becomes the stage; o.detach removes its canvas afterwards (the Studio preview) */
 function battleGLAttach(o={}){const cv=DIO.cv,host=$('#camWorld');if(!host||!cv)return false;BGL.detach=!!o.detach;

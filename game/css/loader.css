@@ -61,3 +61,10 @@
 #loader.town .ld-stars{opacity:.25}
 body.ld-on{background:radial-gradient(120% 80% at 50% 110%,#f6c56a 0%,#e8875c 22%,#7b4f8f 52%,#28264f 82%,#1a1838 100%)}
 body.ld-on #dio{transition:clip-path .6s ease-out}
+/* 0.1.0 alpha: no WebGL 2, no game (boot.js noWebGL) */
+#nogl{position:fixed;inset:0;z-index:2147483000;display:grid;place-items:center;padding:20px;background:#1b1430;color:#fff3e2;font:500 15px/1.45 'Chakra Petch',system-ui,sans-serif}
+#nogl .nogl-card{max-width:420px;padding:20px;border-radius:16px;background:rgba(20,14,40,.85);border:2px solid rgba(255,190,150,.5)}
+#nogl h1{margin:0 0 10px;font-size:20px;line-height:1.2;color:#ffd36b}
+#nogl .nogl-btns{display:flex;gap:10px;margin-top:16px}
+#nogl button{flex:1;font:600 15px 'Chakra Petch',system-ui,sans-serif;padding:10px;border-radius:12px;border:2px solid #2b1d33;background:#ffd36b;color:#2b1d33;cursor:pointer;box-shadow:0 3px 0 #2b1d33}
+#nogl button.q{background:#fff3e2}

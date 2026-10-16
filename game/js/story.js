@@ -60,7 +60,7 @@ function storyMovedCheck(){if(!S.started||B||U.modal||U.title||TALK.on||(typeof 
 
 /* ================= v47: BLAKE'S FIRST BATTLE, AND WHAT COMES AFTER =================
    The opening ends with Blake wanting a battle (cutscene.js); it starts as soon as Sundown is back on screen. */
-/* what Blake says when he runs in (the opening's scene, or Lite's conversation before the battle) */
+/* what Blake says when he runs in (the opening's scene, or the step-by-step intro's conversation before the battle) */
 function blakeHello(l){const T=TRAINERS.blake0||{},who=T.who||'chad',sp=SP[l+'0'],rv=RULES.start.rival&&RULES.start.rival[l],rs=rv&&SP[rv];
  return [[who,'[surprised] Professor! Professor! Did another one fall in?'],[who,'[happy] I’m Blake. Blake Sterling. My father is Sterling Sterling the Third. Sterling Capital? You’ve heard of it. Everyone’s heard of it.'],
   ...(rs&&sp?[[who,`And I picked ${rs.name}. It beats ${sp.name}. No offence. Well, a little offence.`]]:[]),['gini','Blake. They fell out of the sky ten minutes ago.'],

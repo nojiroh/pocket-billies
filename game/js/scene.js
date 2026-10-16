@@ -65,13 +65,12 @@ function scStart(area){SC.area=AREAS[area]?area:'grass';const A=AREAS[SC.area],G
  SC.near=G.near;SC.far=G.far;SC.wall=G.wall;SC.fg=G.fg;SC.skyC=A.sky.map(hexA);SC.fogC=hexA(A.fog);SC.props=G.props;SC.leafy=A.indoor?[]:G.props.filter(p=>/tree|mushroom_giant/.test(p.kind)&&p.z<24);SC.glint=G.props.filter(p=>/crystal|fountain/.test(p.kind));
  SC.clouds=G.clouds.map((img,i)=>({img,soft:{},x:-14+i*6+rnd()*4,y:7+rnd()*5,z:10+i*7+rnd()*5,v:.12+rnd()*.12}));
  SC.small=cnv(10,10);scFormat(typeof B!=='undefined'&&B&&B.fmt||'single');SC.tr=[{who:null,show:false,x:0,a:1},{who:null,show:false,x:0,a:1}];SC.tws=[];SC.evs=[];SC.parts=[];SC.cam=Object.assign({},HOMECAM);Object.assign(SC.V,HOMECAM);Object.assign(SC.drift,{w:0,tq:-1,x:0,y:0,z:0,yaw:0,hz:0});SC.hand.a=0;SC.camT=0;SC.css={r:0,z:0};SC.oil=false;SC.ring=null;SC.coin=null;SC.shk=0;SC.hold=0;SC.focusK=null;
- SC.q.lvl=Math.max(SC.q.lvl,effectsLite()?1:0);SC.q.since=performance.now();
+ SC.q.since=performance.now();
  SC.gl=typeof battleGLStart==='function'&&battleGLStart();document.body.classList.toggle('battle-3d',!!SC.gl);
  if(!SC.gl&&typeof DIO!=='undefined'&&DIO.cv&&typeof B!=='undefined'&&B){const cv=DIO.cv;dioStop();cv.hidden=true}
  scResize();scFocus('wide',true);if(SC.gl)fgDraw();
  if(!SC.on){SC.on=true;frameTask('scene',scFrame)}}
 function scStop(){SC.on=false;frameStop('scene');if(SC.gl&&typeof battleGLStop==='function')battleGLStop();SC.gl=false;document.body.classList.remove('battle-3d')}
-const effectsLite=()=>((S.preferences||{}).effects==='lite');
 function tw(o,p,to,dur,ease='out',delay=0){SC.tws.push({o,p,to,dur:Math.max(1,dur),ease:EASE[ease]||EASE.out,st:SC.t+delay,from:null})}
 function at(ms,fn){SC.evs.push({t:SC.t+ms,fn})}
 /* skip to the end of whatever is still playing. Camera, lens and zoom glide to where they were headed instead of cutting there */
@@ -86,7 +85,7 @@ function scFocus(f,now){if(SC.focusK===f&&!now)return;SC.focusK=f;const F=FOCUS[
 const DOFK=4.6;
 function blurAt(z){const d=SC.dof;if(d.ap<=0||SC.q.lvl>=3)return 0;return Math.min(4,d.ap*DOFK*Math.abs(1/Math.max(.3,z)-1/d.zf))}
 function scFlash(col,a,dur){const f=$('#flash');if(!f)return;f.style.transition='none';f.style.background=col;f.style.opacity=a;void f.offsetWidth;f.style.transition=`opacity ${dur}ms ease-out`;f.style.opacity=0}
-function scCA(ms=160){const w=$('#camWorld');if(!w||RM||effectsLite())return;w.classList.add('ca');setTimeout(()=>w.classList.remove('ca'),ms)}
+function scCA(ms=160){const w=$('#camWorld');if(!w||RM)return;w.classList.add('ca');setTimeout(()=>w.classList.remove('ca'),ms)}
 function hitStop(ms){if(!RM)SC.hold=performance.now()+ms}
 function buzz(p){try{if((S.preferences||{}).haptics!==false&&navigator.vibrate)navigator.vibrate(p)}catch(e){}}
 /* ---------- projection ---------- */
@@ -116,24 +115,24 @@ function ambient(dt){const A=AREAS[SC.area];if(SC.parts.length>220)return;
   else if(am==='drip'){if(rnd()<.5)part({x,y:4.2,z,vy:-6,life:900,col:'#6A5446',size:1})}else if(am==='sand')part({x:x-5,y:.2+rnd()*2,z,vx:2.5+rnd(),life:3000,col:'#F2D2A0',size:1});
   else if(am!=='none')part({x,y:.5+rnd()*3,z,vy:.1,life:3000,col:'#FFFFFF',glow:1,size:1,twinkle:1})}
  /* leaves let go of the trees now and then; crystals and fountains catch the light */
- if(SC.leafy.length&&!effectsLite()&&rnd()<dt/650){const p=SC.leafy[Math.floor(rnd()*SC.leafy.length)],y=p.h*(.45+rnd()*.4);
+ if(SC.leafy.length&&rnd()<dt/650){const p=SC.leafy[Math.floor(rnd()*SC.leafy.length)],y=p.h*(.45+rnd()*.4);
   part({x:p.x+(rnd()-.5)*p.h*.4,y,z:p.z+(rnd()-.5)*.6,vx:.35+rnd()*.5,vy:-.25,ax:.05,ay:-.08,vz:-.1,life:2600+y*500,col:LEAF[Math.floor(rnd()*LEAF.length)],size:1+(rnd()<.4?1:0),floor:1})}
  if(SC.glint.length&&rnd()<dt/420){const p=SC.glint[Math.floor(rnd()*SC.glint.length)];part({x:p.x+(rnd()-.5)*p.h*.5,y:p.h*(.3+rnd()*.6),z:p.z,life:700,spr:'spark',k:.6,glow:1,twinkle:1})}
  SC.stT+=dt;if(SC.stT>700){SC.stT=0;for(let i=0;i<SC.s.length;i++){const sd=SC.s[i];if(!sd.show||!sd.st||sd.a<.5)continue;const T=sideTop(i);
   const sp=sd.st==='aud'?'bolt':sd.st==='sub'?'zz':sd.st==='scn'?'flame':'spark';part({x:T.x+(rnd()-.5)*.6,y:T.y+.2,z:T.z,vx:(rnd()-.5)*.3,vy:sd.st==='aud'?-.6:.7,life:900,spr:sp,k:.9})}}
- for(let i=0;i<SC.s.length;i++){const sd=SC.s[i];if(sd.boss&&sd.show&&sd.a>.5&&!effectsLite()&&rnd()<dt/90){const w=sideWorld(i),R=sd.sp?rigParts(sd.sp,sd.gold,KB[i]):null,hw=R?R.geo.hw*UPP[i]*sd.big*(sd.fs||1)/R.k:1,a=rnd()*6.283;
+ for(let i=0;i<SC.s.length;i++){const sd=SC.s[i];if(sd.boss&&sd.show&&sd.a>.5&&rnd()<dt/90){const w=sideWorld(i),R=sd.sp?rigParts(sd.sp,sd.gold,KB[i]):null,hw=R?R.geo.hw*UPP[i]*sd.big*(sd.fs||1)/R.k:1,a=rnd()*6.283;
   part({x:w.x+Math.cos(a)*hw,y:.1+rnd()*.4,z:w.z+Math.sin(a)*hw*.6,vx:Math.cos(a)*.15,vy:.9+rnd()*.8,life:1300,col:rnd()<.5?'#FF5A7A':'#B03CFF',glow:1,size:2})}}
  SC.goldT+=dt;if(SC.goldT>260){SC.goldT=0;for(let i=0;i<SC.s.length;i++){const sd=SC.s[i];if(!sd.show||!sd.gold||sd.a<.5)continue;const c=sideCenter(i);part({x:c.x+(rnd()-.5)*1.4,y:c.y+(rnd()-.4)*1.6,z:c.z,vy:.3,life:700,spr:'spark',k:.8,glow:1,twinkle:1})}}}
 /* adaptive quality: drop render detail if frames run long, restore when there's headroom */
 function governor(work){const Q=SC.q,now=performance.now(),target=Math.min(userFps(),FRAME.hz||60),budget=1000/target,fps=FRAME.meter.fps;if(now-Q.since<1500||!fps||SC.lockQ)return;
  const slow=fps<target*.82||work>budget*.85,fast=fps>=target*.95&&work<budget*.32;
- Q.lowT=slow?Q.lowT+1:0;Q.highT=fast?Q.highT+1:0;const floor=effectsLite()?1:0;
+ Q.lowT=slow?Q.lowT+1:0;Q.highT=fast?Q.highT+1:0;
  if(Q.lowT>Math.max(20,target*.6)&&Q.lvl<3){Q.lvl++;Q.lowT=0;Q.since=now;Q.dropped=(Q.dropped||0)+1;if(Q.lvl===2)scResize();SC.floorKey=''}
- else if(Q.highT>target*6&&Q.lvl>floor&&(Q.dropped||0)<4){Q.lvl--;Q.highT=0;Q.since=now;if(Q.lvl===1)scResize();SC.floorKey=''}}
+ else if(Q.highT>target*6&&Q.lvl>0&&(Q.dropped||0)<4){Q.lvl--;Q.highT=0;Q.since=now;if(Q.lvl===1)scResize();SC.floorKey=''}}
 /* the 2D part of the camera: zoom punches, roll, shake and a handheld wobble, applied as CSS transforms (no re-render needed).
    The near foreground layer moves a little more than the world, which reads as parallax. */
 function camApply(){const t=SC.t,L=SC.L,u=L.u,el=SC.el,still=RM;let sx=0,sy=0;if(SC.shk>.3&&!still){sx=(rnd()-.5)*SC.shk;sy=(rnd()-.5)*SC.shk}
- const ha=still||effectsLite()?0:SC.hand.a;if(ha>.01){sx+=ha*(Math.sin(t*.0113)*1.1+Math.sin(t*.0271+1.7)*.55);sy+=ha*(Math.sin(t*.0097+.6)*.8+Math.sin(t*.0233+2.9)*.45)}
+ const ha=still?0:SC.hand.a;if(ha>.01){sx+=ha*(Math.sin(t*.0113)*1.1+Math.sin(t*.0271+1.7)*.55);sy+=ha*(Math.sin(t*.0097+.6)*.8+Math.sin(t*.0233+2.9)*.45)}
  const breathe=still?0:.006*Math.sin(t/3100),z=1+(still?0:SC.css.z)+breathe,r=(still?0:SC.css.r+.004*Math.sin(t/4700)+ha*.0035*Math.sin(t*.0079+.3));
  const V=SC.V,key=z.toFixed(4)+r.toFixed(4)+sx.toFixed(2)+sy.toFixed(2)+V.yaw.toFixed(4)+V.x.toFixed(3)+V.hz.toFixed(2);if(key===SC.camKey)return;SC.camKey=key;
  if(el.w)el.w.style.transform=`scale(${z.toFixed(4)}) rotate(${r.toFixed(4)}rad) translate(${(-sx*u).toFixed(2)}px,${(-sy*u).toFixed(2)}px)`;
@@ -153,7 +152,7 @@ function camOver(C){const L=SC.L,fr=L.free,x0=L.M+fr.x/L.u+2,x1=L.M+(fr.x+fr.w)/
   o+=Math.max(0,x0-tol-(m.x-half))+Math.max(0,m.x+half-x1-tol)+Math.max(0,y0-tol-top)+Math.max(0,g.y-y1-tol)}return o}
 const camBusy=()=>{for(const w of SC.tws)if(w.o===SC.cam)return true;return false};
 function camUpdate(dt){const C=SC.cam,V=SC.V,D=SC.drift,busy=camBusy();if(busy)SC.camT=SC.t;
- const want=!RM&&!effectsLite()&&!busy&&SC.t-SC.camT>650&&SC.s[0].show&&SC.s[1].show?1:0;
+ const want=!RM&&!busy&&SC.t-SC.camT>650&&SC.s[0].show&&SC.s[1].show?1:0;
  D.w+=(want-D.w)*Math.min(1,dt/(want>D.w?1600:260));if(D.w<.002&&!want)D.w=0;
  /* the slow orbit only advances in 50 ms steps while the directed camera rests, so the ground is re-cast ~20×/s instead of every frame */
  const q=Math.floor(SC.t/50);if(busy||q!==D.tq){D.tq=q;const ts=q*.05,k=D.w;
@@ -166,9 +165,9 @@ function camUpdate(dt){const C=SC.cam,V=SC.V,D=SC.drift,busy=camBusy();if(busy)S
 const GB={x:0,y:0,z:0,yaw:0,hz:0};
 function camTo(c,d=260,e='io',delay=0){if(RM){at(delay,()=>{for(const k in c)if(k in SC.cam)SC.cam[k]=c[k]});return}for(const k in c)if(k in SC.cam)tw(SC.cam,k,c[k],d,e,delay)}
 /* handheld feel for big moves: the wobble fades in fast and settles out */
-function handheld(ms,amt=1){if(RM||effectsLite())return;tw(SC.hand,'a',amt,90,'out');tw(SC.hand,'a',0,420,'io',Math.max(0,ms-200))}
+function handheld(ms,amt=1){if(RM)return;tw(SC.hand,'a',amt,90,'out');tw(SC.hand,'a',0,420,'io',Math.max(0,ms-200))}
 /* a quick zoom punch (and optional roll kick) from the CSS layer */
-function punch(z,ms=260,roll=0){if(RM)return;if(effectsLite()){z*=.5;roll=0}tw(SC.css,'z',z,60,'out');tw(SC.css,'z',0,ms,'io',70);if(roll){tw(SC.css,'r',SC.css.r+roll,60,'out');tw(SC.css,'r',0,ms+80,'io',70)}}
+function punch(z,ms=260,roll=0){if(RM)return;tw(SC.css,'z',z,60,'out');tw(SC.css,'z',0,ms,'io',70);if(roll){tw(SC.css,'r',SC.css.r+roll,60,'out');tw(SC.css,'r',0,ms+80,'io',70)}}
 /* ---------- the ground: cast once per camera/focus change ---------- */
 function floorBuffers(){const L=SC.L,W=L.LW,H=L.LH;if(SC.F&&SC.F.W===W&&SC.F.H===H)return SC.F;const W2=Math.ceil(W/2),H2=Math.ceil(H/2);
  const mk=(w,h)=>{const c=cnv(w,h),x=c.getContext('2d');return {c,x,img:x.createImageData(w,h)}};
@@ -229,7 +228,7 @@ function vBox(S,D,W,H,rr,pre){const RW=W*3;for(let i=0;i<RW;i++)pre[i]=0;for(let
   const a=j-r,b=j+1+r,ka=Math.floor(a),fa=a-ka,kb=Math.floor(b),fb=b-kb,n=1/(2*r+1),pa=ka*RW,pb=kb*RW,lowA=ka<0,highB=kb>=H,eb=b-H;
   for(let k=0;k<RW;k++){const A=lowA?a*S[k]:pre[pa+k]+fa*S[pa+k],Bv=highB?pre[endRow+k]+eb*S[lastRow+k]:pre[pb+k]+fb*S[pb+k];D[o+k]=(Bv-A)*n}}}
 function floorKey(){const C=SC.V,d=SC.dof,L=SC.L;return [C.x,C.y,C.z,C.yaw,C.hz].map(v=>v.toFixed(4)).join(',')+'|'+d.zf.toFixed(2)+','+d.ap.toFixed(2)+'|'+L.ver+'|'+SC.q.lvl}
-function floorUpdate(){const k=floorKey();if(k===SC.floorKey&&SC.F)return false;SC.floorKey=k;SC.lowFrom=floorLowFrom();castFloor();if(SC.q.lvl<1&&!effectsLite())dofFloor();else SC.F.blurred=false;fgDraw();return true}
+function floorUpdate(){const k=floorKey();if(k===SC.floorKey&&SC.F)return false;SC.floorKey=k;SC.lowFrom=floorLowFrom();castFloor();if(SC.q.lvl<1)dofFloor();else SC.F.blurred=false;fgDraw();return true}
 /* ---------- drawing helpers ---------- */
 function drawShadow(c,X,Z,r,a){const p=proj(X,0,Z);if(!p)return;const w=Math.max(2,r*p.s),hh=Math.max(1.5,w*clamp(SC.V.y/p.z,.18,.55));
  const ring=(k,al)=>{c.fillStyle=`rgba(14,8,28,${al.toFixed(3)})`;const H=hh*k,Wd=w*k;for(let j=-Math.ceil(H);j<=Math.ceil(H);j++){const half=Math.round(Wd*Math.sqrt(Math.max(0,1-(j/H)**2)));if(half>0)c.fillRect(Math.round(p.x-half),Math.round(p.y+j),half*2,1)}};
@@ -256,7 +255,7 @@ function drawSide(c,i){const B=sideBuf(i);if(!B)return;const {s,k,R,P,ak,buf}=B;
  const w=sideWorld(i),p=proj(w.x,w.y,w.z);if(!p)return;const sc=p.s*UPP[i]*s.sc*(s.big||1)*(s.fs||1)/R.k,lift=Math.max(0,-P.y)+Math.max(0,-s.oy);
  if(s.a>.5&&ak!=='faint')drawShadow(c,w.x,w.z,R.geo.hw*UPP[i]*.8/R.k,.34*(1-Math.min(.6,(lift+R.geo.lift/(k*2))/60)));
  const x=Math.round(p.x-R.geo.cx*sc),y=Math.round(p.y-R.geo.base*sc),W=Math.round(R.BW*sc),H=Math.round(R.BH*sc),bl=blurAt(p.z);
- if(AREAS[SC.area].indoor&&s.a>.5&&ak!=='faint'&&!effectsLite()){const gy=Math.round(proj(w.x,0,w.z).y);c.save();c.globalAlpha=s.a*.14;c.translate(0,gy*2);c.scale(1,-1);c.drawImage(buf,x,y,W,H);c.restore()}
+ if(AREAS[SC.area].indoor&&s.a>.5&&ak!=='faint'){const gy=Math.round(proj(w.x,0,w.z).y);c.save();c.globalAlpha=s.a*.14;c.translate(0,gy*2);c.scale(1,-1);c.drawImage(buf,x,y,W,H);c.restore()}
  c.globalAlpha=s.a;softDraw(c,buf,x,y,W,H,bl);c.globalAlpha=1}
 /* the trainers: you from behind (left), the rival facing you (right); they throw coins and cheer */
 const trainerMpp=i=>(i===0?1.42:1.7)/((typeof WD==='function'&&WD()&&WD().figure)||74);
@@ -273,7 +272,7 @@ function drawBill(c,img,X,Y,Z,wk,al,slot){const p=proj(X,Y,Z);if(!p)return;const
 function drawProp(c,p){const q=p.q,sc=q.s/30*p.k,I=p.img;if(sc>8)return;const x=Math.round(q.x+I.ox*sc),y=Math.round(q.y+I.oy*sc),w=Math.max(1,Math.round(I.W*sc)),h=Math.max(1,Math.round(I.H*sc)),L=SC.L;
  if(x>L.LW||x+w<0||y>L.LH||y+h<0)return;
  if(p.sh>0&&q.z<34)drawShadow(c,p.x,p.z,p.sh,.2);
- const sw=p.sway&&!RM&&!effectsLite()?p.sway*.05*(Math.sin(SC.t/1300+p.ph)*.7+Math.sin(SC.t/530+p.ph*1.7)*.3):0;
+ const sw=p.sway&&!RM?p.sway*.05*(Math.sin(SC.t/1300+p.ph)*.7+Math.sin(SC.t/530+p.ph*1.7)*.3):0;
  if(Math.abs(sw)*h<.35){softDraw(c,I.c,x,y,w,h,blurAt(q.z),p.soft);return}
  c.save();c.translate(q.x,q.y);c.transform(1,0,-sw,1,0,0);c.translate(-q.x,-q.y);softDraw(c,I.c,x,y,w,h,blurAt(q.z),p.soft);c.restore()}
 function pixRing(c,cx,cy,rx,ry,col,th=1){c.fillStyle=col;const n=Math.max(24,Math.round((rx+ry)*2));for(let k=0;k<n;k++){const a=k/n*Math.PI*2;for(let q=0;q<th;q++)c.fillRect(Math.round(cx+Math.cos(a)*(rx-q)),Math.round(cy+Math.sin(a)*(ry-q)),1,1)}}
@@ -287,10 +286,10 @@ function drawParts(c,layer){const L=[];SC.parts.forEach(p=>{if((p.layer||2)!==la
   else if(p.lines){const n=p.n||18,a0=p.age/p.life;c.strokeStyle=p.col;c.lineWidth=1;for(let i=0;i<n;i++){const a=i/n*Math.PI*2+p.seed,r0=(14+a0*26)*k,r1=r0+(22+((i*37)%17))*k;c.beginPath();c.moveTo(q.x+Math.cos(a)*r0,q.y+Math.sin(a)*r0*.8);c.lineTo(q.x+Math.cos(a)*r1,q.y+Math.sin(a)*r1*.8);c.stroke()}}
   else{c.fillStyle=p.col;const sz=Math.max(1,Math.round((p.size||2)*k*.6));c.fillRect(Math.round(q.x),Math.round(q.y),sz,sz)}c.globalCompositeOperation='source-over'});c.globalAlpha=1}
 /* soft cloud shadows sliding across the ground (drawn over the cached floor, so the floor needn't be recast) */
-function cloudShadows(c){if(AREAS[SC.area].indoor||effectsLite())return;c.save();c.fillStyle='rgba(30,16,60,.16)';
+function cloudShadows(c){if(AREAS[SC.area].indoor)return;c.save();c.fillStyle='rgba(30,16,60,.16)';
  for(const cl of SC.clouds){const p=proj(cl.x,0,cl.z);if(!p||p.z>70)continue;const r=2.6*p.s,ry=r*clamp(SC.V.y/p.z,.12,.55);if(r<1)continue;
   c.globalAlpha=clamp(1-p.z/70,0,1);c.beginPath();c.ellipse(p.x,p.y,r,ry,0,0,Math.PI*2);c.fill()}c.restore()}
-function lightShafts(c){if(AREAS[SC.area].indoor||effectsLite())return;const L=SC.L,t=SC.t,bot=L.h0+20;const g=c.createLinearGradient(0,0,0,bot);g.addColorStop(0,'rgba(255,246,214,.55)');g.addColorStop(1,'rgba(255,246,214,0)');
+function lightShafts(c){if(AREAS[SC.area].indoor)return;const L=SC.L,t=SC.t,bot=L.h0+20;const g=c.createLinearGradient(0,0,0,bot);g.addColorStop(0,'rgba(255,246,214,.55)');g.addColorStop(1,'rgba(255,246,214,0)');
  c.save();c.globalCompositeOperation='lighter';c.fillStyle=g;const n=Math.max(4,Math.round(L.LW/60));for(let k=0;k<n;k++){const x=L.LW*(.08+k/n)-SC.V.yaw*300+Math.sin(t/3000+k)*6;c.globalAlpha=.14+.06*Math.sin(t/1700+k*2);c.beginPath();c.moveTo(x-6,0);c.lineTo(x+8,0);c.lineTo(x+30,bot);c.lineTo(x+4,bot);c.fill()}c.restore()}
 /* foreground: the area's grass or railings, split to the two edges of the open stage and blurred like a near lens element */
 function fgDraw(){const c=SC.fx,L=SC.L;if(!c)return;if(SC.gl){if(SC.fgKey!=='gl'){SC.fgKey='gl';c.setTransform(1,0,0,1,0,0);c.clearRect(0,0,SC.fgc.width,SC.fgc.height)}return}const R=L.R,bl=blurAt(1.05),key=L.ver+'|'+bl.toFixed(2)+'|'+R;if(key===SC.fgKey)return;SC.fgKey=key;

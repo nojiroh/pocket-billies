@@ -313,7 +313,7 @@ Props are still 34 px a metre (`scenery.ppu`); the building sheet and everything
   solar-shingle roof textures, cells 16 and 17 of `scene/build/detail-a04.png`.
 - **The airship** (`tools/build-airship.py`): the mast and its airship as a low-poly model, `scene/models/airship_mast.json`
   (positions, normals, texture coordinates, the sheet's cell and the colour of every corner, packed; the two propellers
-  as parts that turn). Its picture for Lite `scene/props/airship_mast.png` and the map's `map/airship.png` are rendered
+  as parts that turn). Its picture `scene/props/airship_mast.png` and the map's `map/airship.png` are rendered
   from the model by the tool. `scene/build/detail-a04b.png` is the building sheet with four more cells: balloon cloth
   (18), rivets (19), stripes (20) and a cut log's rings (21). `--views out.png` draws the model from four sides.
 - **Props made of shapes** (the voxel recipes in `scene/vox/`) are drawn low-poly in the game, painted from that sheet:
@@ -345,7 +345,7 @@ the metre for props and 32 px to the metre for the ground.
   (the v46 set in `art/next/tiles/` is untouched). `_1`, `_7`, `_8` plain; `_2`–`_6` and `_10` details; `_9` the damp
   patch in the kind's own colours; `_11`, `_12` worn (fewer details: the painter lays the trodden track itself). The
   soft light and shade are laid by the painter in world metres, not drawn in the tiles. The new kinds also get 16 px
-  tiles (`scene/tiles/<name>.png` and `_1`–`_5`) for Lite mode and the Studio. `--preview --sheet out.png` shows them.
+  tiles (`scene/tiles/<name>.png` and `_1`–`_5`) for the Studio. `--preview --sheet out.png` shows them.
 
 ### Part 2: the opening
 - **The loading screen** (`tools/build-loader-v47.py`): the runner and the coins, as data in `css/loader.css` and as

@@ -12,8 +12,8 @@ const PW_KEEP=4,PW_KINDS=new WeakMap();
    starts is skipped) and the small sizes of a picture */
 const PW_MAIN=`var DGL_TERRAIN_MAT;let CTX=null;const CTXS=new Map(),TILES=new Map(),Q=[],GONE=new Set();let busy=false;
 /* (stand-ins for diorama.js's own, from what the main thread handed over) */
-var dioData=()=>({sc:CTX.C}),dioNextOn=()=>!!CTX.next,dioT47=lite=>!lite&&!!CTX.t47,dioSteps=sc=>CTX.E,dioBridges=()=>null,
- dioTileSet=(T,TP,lite)=>TILES.get(TP+'|'+T.tile+'|'+(T.vars||[]).join(','))||[null];
+var dioData=()=>({sc:CTX.C}),dioNextOn=()=>!!CTX.next,dioT47=()=>!!CTX.t47,dioSteps=sc=>CTX.E,dioBridges=()=>null,
+ dioTileSet=(T,TP)=>TILES.get(TP+'|'+T.tile+'|'+(T.vars||[]).join(','))||[null];
 function pwMips(s,W,H,n){const out=[];for(let k=0;k<n&&W>1&&H>1;k++){const w=W>>1,h=H>>1,d=new Uint8Array(w*h*4);
  for(let y=0;y<h;y++){const r0=(y*2)*W*4,r1=r0+W*4;for(let x=0;x<w;x++){const a=r0+x*8,c=r1+x*8,o=(y*w+x)*4;
   d[o]=(s[a]+s[a+4]+s[c]+s[c+4]+2)>>2;d[o+1]=(s[a+1]+s[a+5]+s[c+1]+s[c+5]+2)>>2;d[o+2]=(s[a+2]+s[a+6]+s[c+2]+s[c+6]+2)>>2;d[o+3]=(s[a+3]+s[a+7]+s[c+3]+s[c+7]+2)>>2}}
@@ -50,17 +50,17 @@ function pwCtxId(sc){const key=(sc.id||'')+'|'+(sc===DIO.sc&&DIO.gkey?DIO.gkey:d
 function pwSendCtx(id,sc){if(PW.sent.has(id)){PW.sent.delete(id);PW.sent.set(id,1);return}const C=dioData().sc,E=dioSteps(sc);
  const S=sc.stable?{scenes:sc.stable.scenes.map(r=>({id:r.id,x:r.x,z:r.z,w:r.w,h:r.h,clip:r.clip,salt:r.salt,hub:r.hub,exits:r.exits,worn:r.worn})),roads:(sc.stable.roads||[]).map(q=>({o:q.o,salt:q.salt,R:{legs:(q.R&&q.R.legs||[]).map(s=>({a:s.a,b:s.b,u0:s.u0}))}}))}:null;
  const ctx={C:{terrains:C.terrains,tile:C.tile},sc:{w:sc.w,h:sc.h,tiles:sc.tiles,edge:sc.edge,hub:sc.hub||null,exits:sc.exits||[],worn:sc.worn||null,stable:S},
-  E:E?{s:'w',m0:'w',w:E.w,h:E.h,H:E.H,M:E.M}:null,t47:dioT47(false),next:dioNextOn(),mat:typeof DGL_TERRAIN_MAT!=='undefined'?DGL_TERRAIN_MAT:null};
+  E:E?{s:'w',m0:'w',w:E.w,h:E.h,H:E.H,M:E.M}:null,t47:dioT47(),next:dioNextOn(),mat:typeof DGL_TERRAIN_MAT!=='undefined'?DGL_TERRAIN_MAT:null};
  PW.w.postMessage({t:'ctx',id,ctx});PW.sent.set(id,1);while(PW.sent.size>PW_KEEP)PW.sent.delete(PW.sent.keys().next().value)}
 /* the tile pictures of every kind the view shows, at TP pixels a metre (sent once; again when the art changes).
    false while a picture hasn't loaded: that rectangle is painted here meanwhile, as before */
 function pwSendTiles(sc,TP){const C=dioData().sc,gen=(typeof dioArtVer==='function'?dioArtVer():0)+'|'+dioTileFolder()+'|'+(dioNextOn()?1:0);if(gen!==PW.gen){PW.gen=gen;PW.tiles.clear()}
  let kinds=PW_KINDS.get(sc.tiles);if(!kinds){kinds=new Set();for(const row of sc.tiles||[])for(let i=0;i<row.length;i++)kinds.add(row[i]);PW_KINDS.set(sc.tiles,kinds)}kinds=new Set(kinds).add(sc.edge);const L=[];let ok=true;
- for(const ch of kinds){const T=C.terrains[ch];if(!T)continue;const k=TP+'|'+T.tile+'|'+(T.vars||[]).join(',');if(PW.tiles.get(k)===2)continue;const set=dioTileSet(T,TP,false),full=set.every(Boolean);
+ for(const ch of kinds){const T=C.terrains[ch];if(!T)continue;const k=TP+'|'+T.tile+'|'+(T.vars||[]).join(',');if(PW.tiles.get(k)===2)continue;const set=dioTileSet(T,TP),full=set.every(Boolean);
   if(!full){ok=false;continue}L.push([k,set]);PW.tiles.set(k,2)}
  if(L.length)PW.w.postMessage({t:'tiles',gen,L});return ok}
 /* paint a rectangle of a view's ground (the options of dioPaintGen): on the helper when it can, here otherwise */
-function* pwPaint(sc,o){for(let attempt=0;attempt<2;attempt++){const W=PW.sync||o.lite?null:pwWorker();if(!W||!sc||!sc.tiles)break;let id,job,cid;
+function* pwPaint(sc,o){for(let attempt=0;attempt<2;attempt++){const W=PW.sync?null:pwWorker();if(!W||!sc||!sc.tiles)break;let id,job,cid;
   try{cid=pwCtxId(sc);pwSendCtx(cid,sc);if(!pwSendTiles(sc,o.TP))break;id=++PW.id;job={done:false};PW.jobs.set(id,job);if(o.rec){o.rec.id=id;o.pr=o.rec.pr}
    W.postMessage({t:'paint',id,ctx:cid,pr:o.pr||0,mips:!!o.mips,o:{TP:o.TP,rect:o.rect,margin:o.margin,nhalf:!!o.nhalf,normals:o.normals}})}
   catch(e){PW.fails++;PW.last=String(e&&e.message||e);break}

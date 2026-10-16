@@ -36,14 +36,14 @@ const dioOk=im=>!!(im&&(im.naturalWidth||im.width));
 /* a prop's extra layer as a prop of its own: same base point unless it says otherwise, shifted dx right and dy up (pixels),
    dz meters back (negative: in front). Effects, glows, labels and shadows stay with the main picture. */
 function dioLayerM(M,l){return {img:l.img,ox:(l.ox??M.ox)+(l.dx||0),oy:(l.oy??M.oy)-(l.dy||0),sway:(M.sway||0)*(l.sway??1),shadow:0,flat:l.face==='flat'?1:0}}
-/* v36: the new 32 px tiles (art/next/tiles, six variants each) when the Next ground dial is on */
+/* the 32 px ground tiles, twelve per kind (art/next/tiles47; the v46 set in art/next/tiles is on the legacy branch) */
 /* v47: the 32 px ground is the only full-mode ground (the 16 px tiles stay for Lite mode and the Studio's tile editor) */
-const dioNextOn=()=>!(typeof DIO!=='undefined'&&DIO.lite);
+const dioNextOn=()=>true;
 function dioNextTiles(path,set){const b=(path||'').replace(/^.*\//,'').replace(/\.png$/,'').replace(/_\d+$/,''),f=set||dioTileFolder();return [1,2,3,4,5,6,7,8,9,10,11,12].map(i=>`next/${f}/${b}_${i}.png`)}/* v46: twelve per kind (tools/build-terrain.py) */
 /* v47: which set of twelve: the catalogue's tileSet ('tiles47', tools/build-terrain-v47.py), else the v46 set. With the
    v47 set the painter lays the soft patches itself, in world metres, picks the plain tiles evenly and never mirrors */
-function dioTileFolder(){const C=typeof dioData==='function'&&dioData();return (C&&C.sc&&C.sc.tileSet)||'tiles'}
-function dioT47(lite){return !lite&&dioNextOn()&&dioTileFolder()==='tiles47'}
+function dioTileFolder(){const C=typeof dioData==='function'&&dioData();return (C&&C.sc&&C.sc.tileSet)||'tiles47'}
+function dioT47(){return dioNextOn()&&dioTileFolder()==='tiles47'}
 /* v43: which flag a scene flies: its own (scene/flags/<id>.png) unless it names another */
 function dioFlagPath(sc){const D=dioData(),own=sc.baseId||Object.keys(D.scenes).find(k=>D.scenes[k]===sc),id=sc.flag||((D.sc.flags||[]).includes(own)?own:'default');return `scene/flags/${id}.png`}
 /* v46: a building's colour variant (p.v = 1..n): the same plan with the variant's picture and colours; the plain
@@ -98,7 +98,7 @@ function dioNoise(x,y){const xi=Math.floor(x),yi=Math.floor(y),fx=x-xi,fy=y-yi,s
  return a+(b-a)*s(fx)+(c-a)*s(fy)+(a-b-c+d)*s(fx)*s(fy)}
 function dioTilePix(path){let im=dioImg(path);if(!dioOk(im))return null;const w=im.naturalWidth||im.width,h=im.naturalHeight||im.height,c=cnv(w,h),x=c.getContext('2d',{willReadFrequently:true});x.drawImage(im,0,0);
  return {w,h,d:new Uint32Array(x.getImageData(0,0,w,h).data.buffer)}}
-function dioGroundKey(sc){const C=dioData().sc;return JSON.stringify([sc.w,sc.h,sc.edge,sc.tiles,dioWearLines(sc).length,(sc.steps||'').length,(sc.stepm||'').length,sc.stepsV||0,DIO.lite?1:0,dioNextOn()?'nx'+dioTileFolder():'',Object.entries(C.terrains).map(([k,t])=>[k,t.tile,t.z,t.edge,t.vars,t.flip,t.paved,t.tone]),typeof dioArtVer==='function'?dioArtVer():0])}
+function dioGroundKey(sc){const C=dioData().sc;return JSON.stringify([sc.w,sc.h,sc.edge,sc.tiles,dioWearLines(sc).length,(sc.steps||'').length,(sc.stepm||'').length,sc.stepsV||0,0,dioNextOn()?'nx'+dioTileFolder():'',Object.entries(C.terrains).map(([k,t])=>[k,t.tile,t.z,t.edge,t.vars,t.flip,t.paved,t.tone]),typeof dioArtVer==='function'?dioArtVer():0])}
 /* The ground picture: every tile drawn from its terrain's picture or one of its variants (picked per tile, the plain
    picture most often), mirrored now and then where the terrain allows it, so big fields don't repeat. Natural ground
    meets its neighbours along a wobbly line; paved ground keeps crisp edges. A higher terrain draws its edge colour onto
@@ -150,9 +150,8 @@ function dioShade(c,k){return (c&0xff000000)|(Math.min(255,((c>>16)&255)*k)<<16)
 function dioPlain47(sx,sz,sa){const h=(x,z)=>Math.floor(dioHash(x*3+11+sa*7919,z*7+5)*3),p=h(sx,sz),L=h(sx-1,sz),U=h(sx,sz-1);for(let k=0;k<3;k++){const c=(p+k)%3;if(c!==L&&c!==U)return [0,6,7][c]}return [0,6,7][p]}
 /* v46: tile pictures at a smaller size (each f x f block averaged), for a view's distant ground */
 function dioTileScale(t,f){if(!t||f<=1)return t;const w=Math.max(1,t.w/f|0),h=Math.max(1,t.h/f|0),d=new Uint32Array(w*h),n=f*f;for(let y=0;y<h;y++)for(let x=0;x<w;x++){let r=0,g=0,b=0;for(let c=0;c<f;c++)for(let a=0;a<f;a++){const v=t.d[(y*f+c)*t.w+x*f+a];r+=v&255;g+=(v>>8)&255;b+=(v>>16)&255}d[y*w+x]=0xff000000|((b/n|0)<<16)|((g/n|0)<<8)|(r/n|0)}return {w,h,d}}
-function dioTileHalf(t){return dioTileScale(t,2)}
 const DIO_TILECACHE=new Map();
-function dioTileSet(T,TP,lite){const C=dioData().sc,nxOn=!lite&&dioNextOn(),key=TP+'|'+(nxOn?dioTileFolder():0)+'|'+T.tile+'|'+(T.vars||[]).join(',')+'|'+(typeof dioArtVer==='function'?dioArtVer():0);let L=DIO_TILECACHE.get(key);if(L)return L;
+function dioTileSet(T,TP){const C=dioData().sc,nxOn=dioNextOn(),key=TP+'|'+(nxOn?dioTileFolder():0)+'|'+T.tile+'|'+(T.vars||[]).join(',')+'|'+(typeof dioArtVer==='function'?dioArtVer():0);let L=DIO_TILECACHE.get(key);if(L)return L;
  if(nxOn){const src=dioNextTiles(T.tile).map(q=>dioTilePix(q)).filter(Boolean);if(src.length)L=src.map(t=>dioTileScale(t,Math.round(t.w/TP)))}
  if(!L){const src=[dioTilePix(T.tile),...(T.vars||[]).map(q=>dioTilePix(q))].filter(Boolean),bw=C.tile||16;L=src.length?src.map(t=>TP>=t.w?t:dioTileScale(t,Math.round(t.w/TP))):[null]}
  if(L.every(Boolean))DIO_TILECACHE.set(key,L);return L}
@@ -165,7 +164,7 @@ function dioTileSet(T,TP,lite){const C=dioData().sc,nxOn=!lite&&dioNextOn(),key=
    v46: any rectangle of the scene's picture (canvas cells, padding included; row 0 the far edge) at any size: TP pixels
    a metre. The 3D renderer paints a view's whole ground small (its distance) and the 16 m squares round you at full
    size (diorama-gl.js, the near ring). Patterns and noise come from each cell's own scene or road metres. */
-function* dioPaintGen(sc,o){const C=dioData().sc,W=sc.w,H=sc.h,P=DIO_PAD,lite=!!o.lite,TP=o.TP,rows=sc.tiles||[],CWf=W+2*P,CHf=H+2*P;
+function* dioPaintGen(sc,o){const C=dioData().sc,W=sc.w,H=sc.h,P=DIO_PAD,TP=o.TP,rows=sc.tiles||[],CWf=W+2*P,CHf=H+2*P;
  const R0=o.rect||[0,0,CWf,CHf],M=o.margin??2,Mp=Math.min(1,M),wx0=R0[0]-M,wy0=R0[1]-M,ww=R0[2]+2*M,wh=R0[3]+2*M,PXO=(M-Mp)*TP,TW=(R0[2]+2*Mp)*TP,TH=(R0[3]+2*Mp)*TP,THf=CHf*TP;/* v46: cells with a margin of M (the edge wobble reaches 1.6 m), pixels with a margin of Mp (the relief blur and edges need less) */
  const chars=Object.keys(C.terrains),idx=Object.fromEntries(chars.map((c,i)=>[c,i])),T=chars.map(c=>C.terrains[c]),edge=T.map(t=>pkh(t.edge||'#000000')),zz=T.map(t=>t.z||0);
  /* v47: tile sets only for the kinds this rectangle shows (78 kinds now: decoding all of them held up the first paint of a place) */
@@ -173,7 +172,7 @@ function* dioPaintGen(sc,o){const C=dioData().sc,W=sc.w,H=sc.h,P=DIO_PAD,lite=!!
  /* alpha 0.4: paving that breaks where it meets natural ground (a kind's `break` in the data: 'stones' stone by stone,
     'crumble' pixel by pixel for asphalt and concrete); the soil that shows round it is the Dirt kind's */
  const brk=T.map(t=>TP>=8?(t.break==='stones'?1:t.break==='crumble'?2:0):0),brkOn=brk.some((b,i)=>b&&used[i]),soilK=brkOn?idx.u:null;if(soilK!=null)used[soilK]=1;
- const pix=T.map((t,i)=>used[i]?dioTileSet(t,TP,lite):[]),pav=T.map((t,i)=>t.paved!=null?!!t.paved:'mbaqhe'.includes(chars[i])),t47=dioT47(lite),flip=T.map(t=>!!t.flip&&!t47);
+ const pix=T.map((t,i)=>used[i]?dioTileSet(t,TP):[]),pav=T.map((t,i)=>t.paved!=null?!!t.paved:'mbaqhe'.includes(chars[i])),t47=dioT47(),flip=T.map(t=>!!t.flip&&!t47);
  const toneK=T.map((t,i)=>t47&&TP>=16&&pix[i].length>=12?(t.tone!=null?+t.tone:pav[i]?0:1):0),toneOn=toneK.some(k=>k>0);
  const lumK=pix.map(L=>{const t=L&&L[0];if(!t)return 128;let s=0;for(let j=0;j<t.d.length;j+=7){const c=t.d[j];s+=(c&255)*.3+((c>>8)&255)*.59+((c>>16)&255)*.11}return s/Math.ceil(t.d.length/7)});
  const eI=idx[sc.edge]??0,cellAt=(i,j)=>{if(i<0||j<0||i>=W||j>=H)return eI;const ch=(rows[j]||'')[i];const k=idx[ch];return k==null?eI:k};
@@ -298,21 +297,11 @@ function* dioPaintGen(sc,o){const C=dioData().sc,W=sc.w,H=sc.h,P=DIO_PAD,lite=!!
    /* neighbours: toward the camera (j-1), away (j+1), left, right; a higher cell gets a lip, a lower one a shadow at the foot */
    for(const [di,dj,side] of [[0,-1,'s'],[0,1,'n'],[-1,0,'w'],[1,0,'e']]){const d=h-hAt(i+di,j+dj);if(Math.abs(d)<.12)continue;if(E.sl&&dioStepJoined(E,i,j,di,dj))continue;
     for(let t=0;t<half;t++){const px=side==='s'||side==='n'?x0+t:side==='w'?x0:x0+half-1,py=side==='s'?y0+half-1:side==='n'?y0:y0+t;
-     if(d>0)sh(px,py,1.22);else{const depth=Math.min(4,1+Math.round(-d*2*TP/32)),dpx=Math.max(1,Math.round(TP/32));for(let k=0;k<depth;k++){const ox=side==='w'?k:side==='e'?-k:0,oy=side==='s'?-k:side==='n'?k:0;sh(px+ox,py+oy,.62+k*.09)}}}}}if(j%32===31)yield}
-  if(lite){/* the Lite renderer has no 3D walls: a terrace front is painted on the ground below it, as tall as it would look */
-   const mc=[[118,112,106],[118,112,106],[196,146,98],[92,86,108],[170,96,78],[170,164,154],[74,128,70],[146,102,70],[160,156,146],[106,120,92],[158,158,154],[82,84,98]];
-   for(let j=1;j<E.h;j++)for(let i=0;i<E.w;i++){const d=hAt(i,j)-hAt(i,j-1);if(d<.25||E.sl&&dioStepJoined(E,i,j,0,-1))continue;const m=mc[(E.M[j*E.w+i]&15)]||mc[0],x0=(i+P*2)*half,yTop=THf-(j+P*2)*half,hgt=Math.round(d*TP*1.35);
-    for(let y=0;y<hgt;y++){const fy=y/hgt,band=(Math.floor((y+i*3)/5)%2?.94:1)*(1.05-fy*.35);for(let x=0;x<half;x++){const X=x0+x-X0,Y=yTop+y-Y0;if(X<0||Y<0||X>=TW||Y>=TH)continue;const n=dioHash(X,Y)*.12+.94,kk=band*n*(y<2?1.25:1);
-     out[Y*TW+X]=0xff000000|(Math.min(255,m[2]*kk)<<16)|(Math.min(255,m[1]*kk)<<8)|Math.min(255,m[0]*kk)}}}}
-  if(lite){/* and bridges are painted as decks over the water or the drop */
-   for(const b of dioBridges(sc)||[]){const col=b.kind==='stone'?[170,164,152]:[150,104,66],n=Math.ceil(b.len*TP),m=Math.ceil(b.w*TP);
-    for(let t=0;t<=n;t++)for(let k=0;k<=m;k++){const along=t/TP,across=k/TP-b.w/2,x=b.a[0]+b.ux*along-b.uz*across,z=b.a[1]+b.uz*along+b.ux*across,X=Math.round((x+P)*TP)-X0,Y=Math.round(THf-(z+P)*TP)-Y0;if(X<0||Y<0||X>=TW||Y>=TH)continue;
-     const edge=Math.abs(across)>b.w/2-.12,plank=b.kind==='stone'?(Math.floor(along*4)%2?.96:1):(Math.floor(along*TP)%5===0?.72:1),kk=(edge?.7:plank)*(dioHash(X,Y)*.1+.95);
-     out[Y*TW+X]=0xff000000|(Math.min(255,col[2]*kk)<<16)|(Math.min(255,col[1]*kk)<<8)|Math.min(255,col[0]*kk)}}}}
+     if(d>0)sh(px,py,1.22);else{const depth=Math.min(4,1+Math.round(-d*2*TP/32)),dpx=Math.max(1,Math.round(TP/32));for(let k=0;k<depth;k++){const ox=side==='w'?k:side==='e'?-k:0,oy=side==='s'?-k:side==='n'?k:0;sh(px+ox,py+oy,.62+k*.09)}}}}}if(j%32===31)yield}}
  /* the 3D renderer's ground normal map and shine (brighter pixels stand proud, by how bumpy each terrain is), made here
     in slices too; the material per pixel follows the tile it came from */
  const NS=o.nhalf?2:1,NW=TW/NS|0,NH=TH/NS|0;/* v46: the near ring's normal map is half size: worked out at every other pixel */
- let nrm=null;if(!lite&&o.normals!==false&&typeof DGL_TERRAIN_MAT!=='undefined'){yield;nrm=new Uint8Array(NW*NH*4);const Lm=new Float32Array(TW*TH);for(let i=0;i<TW*TH;i++){const c=out[i];Lm[i]=((c&255)*.3+((c>>8)&255)*.59+((c>>16)&255)*.11)/255}
+ let nrm=null;if(o.normals!==false&&typeof DGL_TERRAIN_MAT!=='undefined'){yield;nrm=new Uint8Array(NW*NH*4);const Lm=new Float32Array(TW*TH);for(let i=0;i<TW*TH;i++){const c=out[i];Lm[i]=((c&255)*.3+((c>>8)&255)*.59+((c>>16)&255)*.11)/255}
   const matK=T.map((t,i)=>DGL_TERRAIN_MAT[chars[i]]||[1,.05]),ps=TP/32;/* the fine grain is per pixel; at small sizes it is gentler */
   /* v44: a coarser relief under the fine grain: the picture's brightness, blurred over about half a metre */
   const cs=Math.max(1,TP>>3),RW=Math.ceil(TW/cs),RH=Math.ceil(TH/cs),Lc=new Float32Array(RW*RH),Lb=new Float32Array(RW*RH);
@@ -335,12 +324,12 @@ function* dioPaintGen(sc,o){const C=dioData().sc,W=sc.w,H=sc.h,P=DIO_PAD,lite=!!
  return {w:OW,h:OH,px,nrm:nr,nw:ow,nh:oh,TP,avg:n?`rgb(${r/n|0},${gg/n|0},${b/n|0})`:'#6CBA59'}}
 /* the whole picture of a scene: the Lite renderer's canvas (32 px a metre when it fits, else 16), or for the 3D
    renderer the distant picture (8 px a metre; the near ring paints the 16 m squares round you at full size) */
-function* dioGroundGen(sc,lite,pr=0,rec=null){const C=dioData().sc,W=sc.w,H=sc.h,P=DIO_PAD,full=lite?((W+2*P)*32<=4096&&(H+2*P)*32<=4096&&dioNextOn()?32:(C.tile||16)):DIO_FAR_TP;
- const r=yield* (typeof pwPaint==='function'?pwPaint(sc,{lite,TP:full,margin:0,pr,rec}):dioPaintGen(sc,{lite,TP:full,margin:0}));let g;
- if(lite){g=cnv(r.w,r.h);const x=g.getContext('2d'),img=x.createImageData(r.w,r.h);new Uint32Array(img.data.buffer).set(r.px);x.putImageData(img,0,0)}else g={width:r.w,height:r.h,_px:new Uint8Array(r.px.buffer)};
+function* dioGroundGen(sc,pr=0,rec=null){const full=DIO_FAR_TP;
+ const r=yield* (typeof pwPaint==='function'?pwPaint(sc,{TP:full,margin:0,pr,rec}):dioPaintGen(sc,{TP:full,margin:0}));
+ const g={width:r.w,height:r.h,_px:new Uint8Array(r.px.buffer)};
  g._nrm=r.nrm;g._avg=r.avg;g._TP=full;return g}
 const DIO_FAR_TP=8;
-function dioBuildGround(sc,lite=!!DIO.lite){const pw=typeof PW!=='undefined'?PW:null;if(pw)pw.sync++;/* (all here, now: no waiting on the helper) */try{const it=dioGroundGen(sc,lite);let r=it.next();while(!r.done)r=it.next();return r.value}finally{if(pw)pw.sync--}}
+function dioBuildGround(sc){const pw=typeof PW!=='undefined'?PW:null;if(pw)pw.sync++;/* (all here, now: no waiting on the helper) */try{const it=dioGroundGen(sc);let r=it.next();while(!r.done)r=it.next();return r.value}finally{if(pw)pw.sync--}}
 /* built pictures, newest last; a scene you come back to opens at once */
 const DIO_GCACHE=new Map();
 function dioGroundCached(key){const g=DIO_GCACHE.get(key);if(g){DIO_GCACHE.delete(key);DIO_GCACHE.set(key,g)}return g||null}
@@ -354,7 +343,7 @@ function dioGroundKeep(key,g){DIO_GCACHE.set(key,g);while(DIO_GCACHE.size>DIO_GK
 const DIO_GPEND=new Map();
 async function dioGroundAsync(sc,pr=0){const key=dioGroundKey(sc);if(dioGroundCached(key))return;const pend=DIO_GPEND.get(key);
  if(pend){if(pr<pend.rec.pr){pend.rec.pr=pr;if(pend.rec.id&&typeof PW!=='undefined'&&PW.w)PW.w.postMessage({t:'prio',id:pend.rec.id,pr})}return pend.p}
- const rec={pr,id:0},p=(async()=>{const it=dioGroundGen(sc,!!DIO.lite,pr,rec);let r,t0=performance.now();
+ const rec={pr,id:0},p=(async()=>{const it=dioGroundGen(sc,pr,rec);let r,t0=performance.now();
   for(;;){r=it.next();if(r.done)break;if(r.value===PW_WAIT){await pwSettle();t0=performance.now();continue}if(performance.now()-t0>8){await new Promise(res=>setTimeout(res,0));t0=performance.now()}}dioGroundKeep(key,r.value)})();
  DIO_GPEND.set(key,{rec,p});try{await p}finally{DIO_GPEND.delete(key)}}
 /* v27: the water cells belong to the scene (a ground picture from the cache used to leave the last scene's here) */
@@ -368,10 +357,7 @@ function dioPolyAt(P,d){const p=P.p;if(p.length<2)return {x:p[0][0],z:p[0][1],dx
  for(let i=0;i<p.length-1;i++){const s=P.seg[i],e=i+1<P.seg.length?P.seg[i+1]:P.L;if(d<=e||i===p.length-2){const l=e-s,k=l?clamp((d-s)/l,0,1):0,a=p[i],b=p[i+1];return {x:a[0]+(b[0]-a[0])*k,z:a[1]+(b[1]-a[1])*k,dx:b[0]-a[0],dz:b[1]-a[1]}}}}
 function dioPolyNear(P,x,z){let best=0,bd=1e9;const p=P.p;for(let i=0;i<p.length-1;i++){const a=p[i],b=p[i+1],vx=b[0]-a[0],vz=b[1]-a[1],l2=vx*vx+vz*vz||1e-9,k=clamp(((x-a[0])*vx+(z-a[1])*vz)/l2,0,1),px=a[0]+vx*k,pz=a[1]+vz*k,d=Math.hypot(px-x,pz-z);
  if(d<bd){bd=d;best=P.seg[i]+Math.sqrt(l2)*k}}return best}
-/* legacy: the scene's drawn path, used by the Studio preview and as a fallback */
-function dioPath(sc){const p=sc.path&&sc.path.length>1?sc.path:[[0,sc.h*.4],[sc.w,sc.h*.4]];const P=dioPoly(p);return {p,seg:P.seg.map((s,i)=>[s,(i+1<P.seg.length?P.seg[i+1]:P.L)-s]),L:P.L}}
 function dioAlong(sc,t){const P=dioPoly(sc.path&&sc.path.length>1?sc.path:[[0,sc.h*.4],[sc.w,sc.h*.4]]);return dioPolyAt(P,clamp(t,0,1)*P.L)}
-function dioHAt2D(L){return typeof dioH==='function'?dioH(L.x,L.z):L.y}
 function dioHubOf(sc){if(sc.hub)return sc.hub;const a=dioAlong(sc,sc.start??.42);return [a.x,a.z]}
 /* ---------- steps (v18): terraces, cliffs, stairs and ledges on a half-metre grid ----------
    scene.steps: the raise of each half-metre cell above the smooth ground, in 5 cm units (Int16, base64, row 0 at the near
@@ -536,12 +522,6 @@ function dioCandidates(sc){/* alpha 0.2: on a trip through a place's view, round
  return DIO.cand=out}
 function dioEncSpot(sc,id,used){const C=dioCandidates(sc);let h=0;for(const ch of String(id))h=(h*31+ch.charCodeAt(0))>>>0;const tot=C.reduce((a,c)=>a+c[2],0);
  for(let tries=0;tries<12;tries++){let r=((h+tries*7919)%9973)/9973*tot,pick=C[0];for(const c of C){r-=c[2];if(r<=0){pick=c;break}}if(!used.some(u=>Math.hypot(u[0]-pick[0],u[1]-pick[1])<1.6))return pick}return C[h%C.length]}
-/* ---------- mount ---------- */
-function dioMount(cv,id,opt={}){DIO.cv=cv;DIO.x=cv.getContext('2d',{alpha:false});DIO.opt=opt;DIO.lite=true;
- if(DIO.id!==id){DIO.id=id;DIO.cam=null;Object.assign(DIO.pl,{t:-1,fresh:true,pk:'',route:null,goal:null,line:null,walk:0});DIO.gkey='';DIO.cand=null;DIO.nav=null;DIO.npcAt={};DIO.folk=[];DIO.folkAll=[];DIO.folkId='';DIO.parts=[];DIO.tap=null}
- DIO.sc=dioScene(id);DIO.ready=false;DIO.err=null;
- if(!cv._dioBound){cv._dioBound=1;cv.addEventListener('click',dioClick);cv.addEventListener('pointermove',ev=>{const h=dioHitAt(ev);cv.style.cursor=h?'pointer':DIO.st.roam?'crosshair':''})}
- return dioPrepare(id).then(sc=>{if(DIO.id!==id)return;DIO.sc=sc;dioEnsureGround();DIO.ready=true;frameTask('dio',dioFrame,()=>DIO.opt.cap?DIO.opt.cap():userFps())}).catch(e=>{DIO.err=e;console.error(e)})}
 function dioStop(){frameStop('dio');DIO.cv=null;DIO.ready=false;DIO.keys={}}
 function dioCanvasXY(ev){const r=DIO.cv.getBoundingClientRect();return [(ev.clientX-r.left)/r.width*DIO.cv.width,(ev.clientY-r.top)/r.height*DIO.cv.height]}
 function dioHitAt(ev){if(!DIO.cv)return null;const [x,y]=dioCanvasXY(ev);let best=null;
@@ -564,18 +544,7 @@ addEventListener('keydown',ev=>{const k=DIO_KEYS[ev.key];if(!k||!DIO.cv||!DIO.re
  DIO.keys[k]=1;DIO.pl.route=null;DIO.pl.goal=null;ev.preventDefault()});
 addEventListener('keyup',ev=>{const k=DIO_KEYS[ev.key];if(k)delete DIO.keys[k]});
 addEventListener('blur',()=>{DIO.keys={}});
-/* ---------- camera ---------- */
-function dioCamera(rw,rh,focus){const sc=DIO.sc,c=sc.cam||{},p=(c.pitch||38)*Math.PI/180,ch=c.h||8.5,sp=Math.sin(p),cp=Math.cos(p);
- const visW=Math.min(sc.w*.95,Math.max(11,rw/rh*15))/(c.fov||1),df=ch/sp,F=rw*df/visW,half=visW/2;
- let tx=focus.x;tx=sc.w>visW?clamp(tx,half-1,sc.w-half+1):sc.w/2;const tz=clamp(focus.z,1,sc.h-3)+(rw>rh?2.4:1.4);
- if(!DIO.cam)DIO.cam={x:tx,z:tz};const k=DIO.opt.instant?1:.06;DIO.cam.x+=(tx-DIO.cam.x)*k;DIO.cam.z+=(tz-DIO.cam.z)*k;
- return {p,sp,cp,ch,F,cx:DIO.cam.x,cz:DIO.cam.z-ch*cp/sp,rw,rh,df}}
 function dioProj(C,x,y,z){const ry=y-C.ch,rz=z-C.cz,d=-ry*C.sp+rz*C.cp;if(d<.2)return null;const v=ry*C.cp+rz*C.sp,s=C.F/d;return {x:C.rw/2+(x-C.cx)*s,y:C.rh/2-v*s,s,d}}
-function dioFogA(C,d){return clamp(1-Math.exp(-Math.max(0,d-C.df*.9)/(DIO.sc.hazeD||34)*1.6),0,1)}
-/* ---------- silhouettes for shadows and haze ---------- */
-const DIO_SIL=new WeakMap();
-function dioSil(im,col='#000'){let m=DIO_SIL.get(im);if(!m){m=new Map();DIO_SIL.set(im,m)}let c=m.get(col);if(c)return c;const w=im.naturalWidth||im.width,h=im.naturalHeight||im.height;
- c=cnv(w,h);const x=c.getContext('2d');x.drawImage(im,0,0);x.globalCompositeOperation='source-in';x.fillStyle=col;x.fillRect(0,0,w,h);m.set(col,c);return c}
 /* ---------- the player ---------- */
 function dioPlayer(st,dt){if(DIO.pl.climb){dioClimbStep(dt);return}dioPlayer0(st,dt);dioPlayerY(dt)}
 /* v28: ladders up the cliffs. A ladder prop stands at the foot of a cliff with "to" (the landing on top); tapping it
@@ -710,119 +679,10 @@ function dioFolkStep(dt){const P=DIO.pl,h=folkHour(),all=DIO.folkAll||DIO.folk;l
 /* v47: on market day (scene "market": {days, folk}) more people come to town, to the stalls */
 function dioFolkCount(sc,n){const M=sc.market||(sc.baseId&&(dioScene(sc.baseId)||{}).market);if(!M||!M.days)return n;const T=dioClock(),h=T.h;return M.days.includes(T.day)&&h>=7&&h<18?n+(M.folk||0):n}
 function dioFolkTick(n,dt){n=dioFolkCount(DIO.sc,n);if(DIO.folkId!==DIO.id||(DIO.folkAll||DIO.folk).length!==n)dioFolkInit(n);dioFolkStep(dt)}
-/* ---------- frame ---------- */
-function dioFrame(ts,dtm){const cv=DIO.cv;if(!cv||!cv.isConnected){dioStop();return}if(!DIO.ready)return;if(typeof wrLookTick==='function')wrLookTick();const w0=performance.now();
- const cssW=cv.clientWidth,cssH=cv.clientHeight;if(!cssW||!cssH)return;const R=Math.min(devicePixelRatio||1,1.5)*DIO.R,rw=Math.min(1400,Math.round(cssW*R)),rh=Math.round(cssH*rw/cssW);
- if(cv.width!==rw||cv.height!==rh){cv.width=rw;cv.height=rh}
- const dms=RM?Math.min(dtm,60):Math.min(dtm,60);DIO.t+=dms;const dt=dms/1000,t=DIO.t,sc=DIO.sc,x=DIO.x,C0=dioData().sc,PPU=C0.ppu||34,lite=!!DIO.opt.lite;dioEnsureGround();dioNav();
- const st=DIO.opt.state?DIO.opt.state():{t:0};DIO.st=st;dioPlayer(st,dt);const P=DIO.pl,here={x:P.x,z:P.z};
- if(sc.folk&&st.mode&&st.mode!=='line')dioFolkTick(sc.folk,dt);else{DIO.folk=[];DIO.folkAll=[]}if(typeof lifeStep==='function')lifeStep(dt);
- const C=dioCamera(rw,rh,st.focus||here);DIO.C=C;
- /* sky */
- const hy=C.rh/2-C.F*(C.sp/C.cp),sky=sc.sky||['#8CC6E6','#BFE3EE','#F4E8C8'],skyB=Math.max(0,Math.min(rh,hy+rh*.08));
- if(skyB>0){const gr=x.createLinearGradient(0,Math.min(0,hy-rh*.6),0,skyB);gr.addColorStop(0,sky[0]);gr.addColorStop(.6,sky[1]);gr.addColorStop(1,sky[2]);x.fillStyle=gr;x.fillRect(0,0,rw,skyB+1);dioSkyDeco(C,hy,t)}
- /* ground rows */
- const G=DIO.ground,TP=G._TP,PD=DIO_PAD,y0=Math.max(0,Math.ceil(hy+1));x.fillStyle=G._avg;x.fillRect(0,y0,rw,rh-y0);x.imageSmoothingEnabled=false;
- for(let sy=y0;sy<rh;sy++){const k=(rh/2-sy-.5)/C.F,den=C.sp-k*C.cp;if(den<=1e-4)continue;const rz=C.ch*(C.cp+k*C.sp)/den,d=C.ch*C.sp+rz*C.cp;if(d<=0)continue;
-  const z=C.cz+rz,s=C.F/d,xl=C.cx-(rw/2)/s,ty=clamp((PD+sc.h-z)*TP,0,G.height-1),sx=(PD+xl)*TP,sw=rw/s*TP;x.drawImage(G,sx,ty,sw,1,0,sy,rw,1)}
- /* haze over the ground by distance */
- const hz=sc.haze||sky[2],hRGB=hexA(hz),fog=x.createLinearGradient(0,Math.max(0,hy),0,rh);
- const fa=sy=>{const k=(rh/2-sy)/C.F,den=C.sp-k*C.cp;if(den<=1e-4)return 1;const rz=C.ch*(C.cp+k*C.sp)/den,d=C.ch*C.sp+rz*C.cp;return dioFogA(C,d)};
- for(let i=0;i<=8;i++){const sy=Math.max(0,hy)+(rh-Math.max(0,hy))*i/8;fog.addColorStop(i/8,`rgba(${hRGB[0]},${hRGB[1]},${hRGB[2]},${fa(sy).toFixed(3)})`)}x.fillStyle=fog;x.fillRect(0,Math.max(0,hy),rw,rh);
- /* distant hills behind the scene */
- dioFar(C,hz);
- /* water glints, cloud shadows, exits and the tap marker on the ground */
- dioGlints(C,t);if(!sc.indoor)dioCloudShadows(C,t);dioExitMarks(C,st,t);dioTapMark(C,t);
- /* sprites */
- const items=[],hits=[],labels=[],fx=[];DIO.hits=hits;
- for(const p of sc.props||[]){const M=dioPropM(p,C0.props[p.k]);if(!M||!dioPropOn(p))continue;items.push({k:'prop',p,M,x:p.x,z:p.z});for(const l of M.layers||[]){if(!l.img)continue;const lp={k:p.k,x:p.x,z:p.z+(l.dz||0)*(p.s||1),s:p.s,f:p.f};items.push({k:'prop',p:lp,M:dioLayerM(M,l),x:lp.x,z:lp.z,layer:l})}}
- const hub=dioHubOf(sc);
- (st.npcs||[]).forEach((n,i)=>{let pos=DIO.npcAt[n.id];if(!pos&&n.at)pos=DIO.npcAt[n.id]=dioFreePt(n.at[0],n.at[1]);if(!pos){if(!st.mode||st.mode==='line'){const a=dioAlong(sc,n.t??(.7+i*.08));pos=[a.x+(n.dx||0),a.z+(n.dz??1.5)]}
-   else if(n.exit){const dx=hub[0]-n.exit[0],dz=hub[1]-n.exit[1],l=Math.hypot(dx,dz)||1;pos=dioFreePt(n.exit[0]+dx/l*2.2,n.exit[1]+dz/l*2.2)}
-   else if(sc.npcSpots&&sc.npcSpots[i])pos=sc.npcSpots[i].slice();else{const a=i*2.3+.6,r=3.4+i*.9;pos=dioFreePt(hub[0]+Math.cos(a)*r,hub[1]+Math.sin(a)*r*.7)}DIO.npcAt[n.id]=pos}
-  items.push({k:'npc',n,x:pos[0],z:pos[1]})});
- const used=[];(st.enc||[]).forEach(e=>{let s=DIO.enc[e.id];if(!s||s.sc!==DIO.id){const sp=dioEncSpot(sc,e.id,used);s=DIO.enc[e.id]={x:sp[0],z:sp[1],sc:DIO.id}}used.push([s.x,s.z]);items.push({k:'enc',e,x:s.x,z:s.z})});
- for(const f of DIO.folk)items.push({k:'folk',f,x:f.x,z:f.z});
- if(typeof lifeSprites==='function')for(const L of lifeSprites())items.push({k:'life',L,x:L.x,z:L.z});
- if(st.who!==null)items.push({k:'me',x:here.x,z:here.z});
- for(const it of items)it.q=dioProj(C,it.x,0,it.z);
- const vis=items.filter(it=>it.q&&it.q.x>-rw*.6&&it.q.x<rw*1.6&&it.q.y>-40&&it.q.y<rh*1.6).sort((a,b)=>b.q.d-a.q.d);
- /* resolve each sprite's image and transform once */
- const sw=t/1000,tg=dioGrassImgs(C0);
- for(const it of vis){const q=it.q,u=q.s/PPU;
-  if(it.k==='prop'){const M=it.M,im=dioImg(M.img);if(!dioOk(im))continue;const k=u*(it.p.s||1)*(it.p.grow!=null?dioGrowK(it.p):1),f=it.p.f?-1:1;it.im=im;it.f=f;it.k2=k;it.ox=M.ox;it.oy=M.oy;it.sh=(M.shadow||0)*(it.p.s||1);
-   it.shear=(M.sway||0)*(typeof dglWindAt==='function'?dglWindAt(it.p.x,it.p.z,t,DIO.sc,1):.06*Math.sin(t/900+it.p.x*1.7+it.p.z))}
-  else if(it.k==='me'||it.k==='npc'||it.k==='folk'){let fr,dir,walking;
-   if(it.k==='folk'){fr=dioFolkFrames(it.f.seed);dir=it.f.dir;walking=it.f.walk;if(it.f.waveT>0&&typeof humanPose==='function'){const im=humanPose('folk:'+it.f.seed,'front','cheer',0,(1.4-it.f.waveT)*1000);if(im)fr={down:[im]};dir='down';walking=0}}else{fr=typeof owFrames==='function'?owFrames(it.k==='me'?st.who:it.n.who):null;
-    if(it.k==='me'){dir=P.dir;walking=P.walk}else{dir=Math.hypot(P.x-it.x,P.z-it.z)<4.5?dioDirOf(P.x-it.x,P.z-it.z):(it.n.dir||'down');walking=0}}
-   if(!fr)continue;const set=fr[dir]||fr.down;it.im=walking?(set.cyc?set.cyc[Math.floor(t/110)%6]:set[1+Math.floor(t/150)%2]):set[0];it.k2=q.s*(C0.person||1.75)/1.75/(it.im.ppm||42);it.f=1;it.ox=-(it.im.ax||16);it.oy=-(it.im.ay||40);it.sh=.38;it.shear=0}
-  else if(it.k==='life'){const L=it.L;it.im=L.im;it.k2=q.s*L.mpp;it.f=L.flip;it.ox=-L.im.width/2;it.oy=-L.im.height-(L.y-dioHAt2D(L))/L.mpp;it.sh=L.sh;it.shear=0}
-  else if(it.k==='enc'){const g=tg[Math.abs(Math.round(it.x*7+it.z*3))%tg.length];if(!g)continue;it.im=dioImg(g.img);if(!dioOk(it.im))continue;it.k2=u*1.25;it.f=1;it.ox=g.ox;it.oy=g.oy;it.sh=.5;
-   it.shake=Math.sin(t/70+it.x)*(.5+.5*Math.sin(t/600+it.z))*1.6;it.shear=typeof dglWindAt==='function'?dglWindAt(it.x,it.z,t,DIO.sc,1)+.03*Math.sin(t/90+it.x):.04*Math.sin(t/90+it.x)}}
- const draw=vis.filter(it=>it.im&&!(it.M&&it.M.flat));
- /* flat decals */
- for(const it of vis)if(it.M&&it.M.flat)dioDrawFlat(it,C,it.q.s/PPU);
- /* soft sun shadows (one layer so overlaps don't double up) */
- dioShadows(C,draw,lite);
- /* upright sprites, back to front, with distance haze */
- for(const it of draw){const q=it.q,k=it.k2,dx=it.shake||0;x.imageSmoothingEnabled=k<.98;x.setTransform(k*it.f,0,k*it.shear,k,q.x+dx,q.y);x.drawImage(it.im,it.ox,it.oy);
-  if(it.k==='enc'){x.setTransform(-k,0,0,k,q.x+dx*.6+k*8,q.y+1);x.drawImage(it.im,it.ox,it.oy)}
-  const a=dioFogA(C,q.d)*.9;if(a>.03&&!lite){x.globalAlpha=a;x.setTransform(k*it.f,0,k*it.shear,k,q.x+dx,q.y);x.drawImage(dioSil(it.im,hz),it.ox,it.oy);x.globalAlpha=1}
-  if(it.k==='prop'){const M=it.M;
-   if(M.blades){const b=M.blades,bi=dioImg(b.img);if(dioOk(bi)){x.setTransform(1,0,0,1,0,0);x.save();x.translate(q.x+b.x*k*it.f,q.y+b.y*k);x.rotate((RM?0:t/1100)*(sc.wind||1)*-it.f);x.scale(k,k);x.imageSmoothingEnabled=true;x.drawImage(bi,-b.px,-b.py);
-    if(a>.03&&!lite){x.globalAlpha=a;x.drawImage(dioSil(bi,hz),-b.px,-b.py);x.globalAlpha=1}x.restore()}}
-   /* v47: a clock's hands, turned to the device's own clock (dglHands) */
-   if(M.hands){const d=new Date(),sec=d.getHours()*3600+d.getMinutes()*60+d.getSeconds();for(const h of M.hands){const hi=dioImg(h.img);if(!dioOk(hi))continue;x.setTransform(1,0,0,1,0,0);x.save();x.translate(q.x+h.x*k*it.f,q.y+h.y*k);x.rotate((sec%h.per)/h.per*Math.PI*2);x.scale(k,k);x.imageSmoothingEnabled=k<.98;x.drawImage(hi,-h.px,-h.py);x.restore()}}
-   if(M.glow)fx.push({k:'oldglow',g:M.glow,x:q.x,y:q.y,u:q.s*(it.p.s||1)});
-   (M.fx||[]).forEach((e,i)=>{if(e.k!=='spin')fx.push({k:e.k,x:q.x+e.x*k*it.f,y:q.y+e.y*k,u:q.s*(it.p.s||1),seed:it.p.x*13.1+it.p.z*7.7+i})});
-   if(it.p.act){const box={x0:q.x+Math.min(it.ox*k*it.f,(it.ox+it.im.width)*k*it.f),x1:q.x+Math.max(it.ox*k*it.f,(it.ox+it.im.width)*k*it.f),y0:q.y+it.oy*k,y1:q.y+4};
-    const go=it.p.act==='climb'?dioClimbGo(it.p):dioActSpot(it.p,M,PPU);hits.push({k:'act',act:it.p.act,p:it.p,...box,z:q.d,go,look:[it.p.x,it.p.z]});
-    const lb=dioActLabel(it.p,M);if(lb)labels.push({k:'act',x:q.x,y:q.y+it.oy*k-4,t:lb,act:lb==='Closed'?'closed':it.p.act})}}
-  else if(it.k==='npc'){const n=it.n;hits.push({k:'npc',n,x0:q.x-18*k,x1:q.x+18*k,y0:q.y-44*k,y1:q.y+4,z:q.d,go:dioApproach(it.x,it.z),look:[it.x,it.z]});if(!n.done)labels.push({k:'bang',x:q.x,y:q.y-44*k,col:n.col||'#D9434B'})}
-  else if(it.k==='folk'){hits.push({k:'folk',f:it.f,x0:q.x-16*k,x1:q.x+16*k,y0:q.y-42*k,y1:q.y+4,z:q.d});if(it.f.sayT>0)labels.push({k:'say',x:q.x,y:q.y-44*k,t:it.f.say,a:Math.min(1,it.f.sayT*3)})}
-  else if(it.k==='enc'){const by=q.y-34*k-8-Math.abs(Math.sin(t/380+it.x))*4;hits.push({k:'enc',e:it.e,x0:q.x-30*k-14,x1:q.x+30*k+14,y0:by-22,y1:q.y+4,z:q.d,go:dioApproach(it.x,it.z),look:[it.x,it.z]});labels.push({k:'enc',x:q.x,y:by,e:it.e})}}
- x.setTransform(1,0,0,1,0,0);x.imageSmoothingEnabled=true;
- /* life: smoke, spray, sparks, butterflies, leaves, birds */
- if(!lite)dioFx(C,fx,t,false);dioLife(C,t,dt,lite);
- /* light: indoor/cave tint, sun, then glows */
- const tint=sc.tint&&sc.tint!=='#000000'?sc.tint:null,dark=tint?1:sc.indoor?.7:0;
- if(tint){x.globalCompositeOperation='multiply';x.globalAlpha=.42;x.fillStyle=tint;x.fillRect(0,0,rw,rh);x.globalAlpha=1;x.globalCompositeOperation='source-over'}
- if(!sc.indoor&&!lite)dioSunLight(C,t);
- dioFx(C,fx,t,true,dark);
- dioAmbient(C,t);
- /* tilt-shift */
- const me=dioProj(C,here.x,0,here.z),fy=st.focusY!=null?st.focusY*rh:me?me.y-rh*.05:rh*.6;dioTiltShift(fy,(sc.blur??1)*(DIO.opt.blur??1));
- if(!lite)dioVignette(rw,rh);
- /* labels stay sharp */
- for(const l of labels){if(l.k==='enc')dioTag(x,l.x,l.y,l.e);else if(l.k==='bang')dioBubble(x,l.x,l.y,'!',l.col);else if(l.k==='say')dioSpeech(x,l.x,l.y,l.t,l.a);else if(l.k==='act'&&l.y>rh*.1)dioPill(x,l.x,l.y,l.t,l.act==='clinic'?'#E8607A':l.act==='shop'?'#4E9BE0':l.act==='closed'?'#7E7888':'#8E6CCB')}
- dioExitLabels(C,st,hits,hub);
- const work=performance.now()-w0;DIO.slow=DIO.slow*.9+work*.1;if(DIO.slow>14&&DIO.R>.6){DIO.R-=.15;DIO.slow=8}else if(DIO.slow<5&&DIO.R<1){DIO.R=Math.min(1,DIO.R+.05)}
- if(typeof frameCount==='function'&&DIO.opt.meter)frameCount(work)}
 function dioGrassImgs(C0){const out=[];for(const [k,P] of Object.entries(C0.props))if(k==='tallgrass'||(P.group==='tallgrass'&&!P.flat))out.push(P);return out.length?out:[C0.props.tallgrass].filter(Boolean)}
 /* stand next to a thing, on the side you're coming from */
 function dioApproach(x,z){const P=DIO.pl,dx=P.x-x,dz=P.z-z,l=Math.hypot(dx,dz)||1;return dioFreePt(x+dx/l*1.1,z+dz/l*1.1)}
 function dioActSpot(p,M,PPU){const s=p.s||1,f=p.f?-1:1;if(M.door)return dioFreePt(p.x+(M.door.x||0)/PPU*s*f,p.z-.55);return dioApproach(p.x,p.z-.3)}
-function dioDrawFlat(it,C,u){const im=dioImg(it.M.img);if(!dioOk(im))return;const x=DIO.x,k=u*(it.p.s||1),q=it.q;x.save();x.imageSmoothingEnabled=k<.98;x.setTransform(k*(it.p.f?-1:1),0,0,k*C.sp*.95,q.x,q.y);x.drawImage(im,it.M.ox,it.M.oy);x.restore()}
-/* each upright sprite is laid on the ground away from the sun as a sheared silhouette, then the layer is blurred
-   (drawn at half size and scaled back up) and darkened in one go */
-function dioShadows(C,draw,lite){const x=DIO.x,sc=DIO.sc,rw=C.rw,rh=C.rh,A=sc.shadowA??(sc.indoor?.3:.36);let sun=sc.sun||(sc.indoor?[0,.16]:[-.62,.5]),L=sun[1],ux=sun[0],uz=sc.indoor?1:.62;
- /* follow the engine's sun (top left by default, so shadows fall back and to the right) */
- if(!sc.sun&&typeof eglSun==='function'){const tr=eglSun(sc.indoor).travel,hl=Math.hypot(tr[0],tr[2])||1;ux=tr[0]/hl;uz=-tr[2]/hl;L=sc.indoor?.16:clamp(hl/Math.max(.2,-tr[1])*.6,.15,1.2)}
- if(lite){x.fillStyle='rgba(30,26,52,.26)';for(const it of draw){if(it.sh<=0)continue;const q=it.q;x.beginPath();x.ellipse(q.x,q.y,it.sh*q.s,it.sh*q.s*C.sp*.9,0,0,7);x.fill()}return}
- const W=Math.max(8,rw>>1),H=Math.max(8,rh>>1);if(!DIO.sh||DIO.sh.width!==W||DIO.sh.height!==H)DIO.sh=cnv(W,H);const S=DIO.sh,s=S.getContext('2d');s.setTransform(1,0,0,1,0,0);s.clearRect(0,0,W,H);s.fillStyle='#000';
- for(const it of draw){if(it.sh<=0&&it.k!=='me')continue;const q=it.q,k=it.k2*.5,sil=dioSil(it.im);
-  s.setTransform(k*it.f,0,-k*L*ux,-k*L*uz*C.sp,q.x*.5+(it.shake||0)*.5,q.y*.5);s.imageSmoothingEnabled=true;s.drawImage(sil,it.ox,it.oy);
-  /* contact shadow where it touches the ground */
-  s.setTransform(1,0,0,1,0,0);const r=Math.max(.25,it.sh*.55)*q.s*.5;s.beginPath();s.ellipse(q.x*.5,q.y*.5,r,r*C.sp*.75,0,0,7);s.fill()}
- s.setTransform(1,0,0,1,0,0);x.save();x.globalAlpha=A;x.imageSmoothingEnabled=true;
- if('filter' in x&&DIO.R>=.9){x.filter=`blur(${Math.max(1,rw/700).toFixed(1)}px)`}x.drawImage(S,0,0,rw,rh);x.filter='none';x.restore()}
-/* distant hills: two upright layers standing behind the scene, the far one hazier */
-function dioFar(C,hz){const sc=DIO.sc;if(!sc.far)return;const im=dioImg(`scene/far/${sc.far}.png`);if(!dioOk(im))return;const x=DIO.x,iw=im.naturalWidth||im.width,ih=im.naturalHeight||im.height,tint=dioSil(im,hz);
- for(const [dz,hs,ha,off] of [[20,2.3,.62,.37],[3.5,1,.22,0]]){const Z=sc.h+dz,q=dioProj(C,C.cx,0,Z);if(!q)continue;const Hm=(sc.farH||8)*hs,k=q.s*Hm/ih,w=iw*k,h=ih*k;if(w<4)continue;
-  const x0=q.x-C.cx*q.s+off*w;let sx=((x0%w)+w)%w-w;const y=q.y+.6*q.s-h;if(y>C.rh)continue;x.imageSmoothingEnabled=k<1;
-  for(;sx<C.rw;sx+=w){x.drawImage(im,sx,y,w+1,h);x.globalAlpha=ha;x.drawImage(tint,sx,y,w+1,h);x.globalAlpha=1}
-  /* fade the foot of the layer into the ground haze */
-  const hr=hexA(hz),g=x.createLinearGradient(0,y+h-q.s*1.4,0,y+h+2);g.addColorStop(0,`rgba(${hr[0]},${hr[1]},${hr[2]},0)`);g.addColorStop(1,`rgba(${hr[0]},${hr[1]},${hr[2]},${ha*.8})`);x.fillStyle=g;x.fillRect(0,y+h-q.s*1.4,C.rw,q.s*1.4+2)}}
 function dioExitMarks(C,st,t){const sc=DIO.sc,ex=sc.exits||[];if(!st.exits||!st.exits.length)return;const x=DIO.x,hub=dioHubOf(sc);x.save();x.lineCap='round';x.lineJoin='round';
  for(const e of st.exits){const pt=ex[e.i];if(!pt)continue;const dx=pt[0]-hub[0],dz=pt[1]-hub[1],l=Math.hypot(dx,dz)||1,ux=dx/l,uz=dz/l,px=-uz,pz=ux,col=e.locked?'255,120,110':e.dest?'255,212,71':'255,255,255';
   for(let c=0;c<3;c++){const f=((RM?0:t/1100)+c/3)%1,cx=pt[0]-ux*(2.2-f*1.9),cz=pt[1]-uz*(2.2-f*1.9),a=Math.sin(f*Math.PI)*.9;
@@ -837,48 +697,6 @@ function dioExitLabels(C,st,hits,hub){const sc=DIO.sc,ex=sc.exits||[];if(!st.exi
   hits.push({k:'exit',e,x0:r[0]-6,x1:r[2]+6,y0:r[1]-6,y1:r[3]+6,z:-1,go:dioFreePt(pt[0],pt[1])})}}
 function dioTapMark(C,t){const T=DIO.tap;if(!T)return;const age=(t-T.t)/700;if(age>1||!DIO.pl.route&&age>.6){if(age>1)DIO.tap=null;return}const q=dioProj(C,T.x,0,T.z);if(!q)return;const x=DIO.x,r=q.s*(.25+age*.35);
  x.save();x.strokeStyle=`rgba(255,255,255,${(1-age)*.9})`;x.lineWidth=Math.max(2,q.s*.06);x.beginPath();x.ellipse(q.x,q.y,r,r*C.sp*.8,0,0,7);x.stroke();x.restore()}
-/* ---------- effects drawn from fx points on props; all stateless, driven by time ---------- */
-function dioFxFrame(k,i){const im=dioImg(`scene/fx/${k}.png`),m=DIO_FXM[k];if(!dioOk(im))return null;return [im,i%m[2]*m[0],0,m[0],m[1]]}
-function dioFx(C,list,t,light,dark=0){const x=DIO.x,rm=RM?0:1;x.save();x.imageSmoothingEnabled=false;
- if(light)x.globalCompositeOperation='lighter';
- for(const e of list){const u=e.u,X=e.x,Y=e.y,sd=e.seed||0;
-  if(!light){
-   if(e.k==='smoke'){for(let i=0;i<5;i++){const p=((t*rm/3200)+i/5+sd*.13)%1,f=dioFxFrame('smoke',Math.floor(p*4));if(!f)break;const sz=(.35+.8*p)*u,a=.55*(1-p)*Math.min(1,p*6);
-     x.globalAlpha=a*(DIO.sc.indoor?.6:1);x.drawImage(f[0],f[1],f[2],f[3],f[4],X+(p*.9+.15*Math.sin(p*6+i+sd))*u*(DIO.sc.wind||1)-sz/2,Y-p*2.4*u-sz/2,sz,sz)}}
-   else if(e.k==='spray'){x.fillStyle='rgba(225,242,255,.9)';for(let i=0;i<18;i++){const p=((t*rm/1100)+i/18)%1,ang=i*2.4+sd,r=p*.75*u,yy=Y-4*1.05*p*(1-p)*u+p*.15*u,s=Math.max(1.5,u*.07);x.globalAlpha=(1-p)*.85;x.fillRect(X+Math.cos(ang)*r-s/2,yy+Math.sin(ang)*r*.25,s,s)}
-    const f=dioFxFrame('spray',Math.floor(t*rm/120));if(f){const sz=u*.5;x.globalAlpha=.8;x.drawImage(f[0],f[1],f[2],f[3],f[4],X-sz/2,Y-u*.5-sz/2,sz,sz)}}
-   else if(e.k==='sparkle'){for(let i=0;i<3;i++){const p=((t*rm/1400)+i/3+sd*.31)%1,f=dioFxFrame('sparkle',Math.floor(p*4));if(!f)break;const sz=u*.32;x.globalAlpha=Math.sin(p*Math.PI);x.drawImage(f[0],f[1],f[2],f[3],f[4],X+Math.sin(i*2.1+sd)*.4*u-sz/2,Y+Math.cos(i*1.7+sd)*.3*u-sz/2,sz,sz)}}
-   else if(e.k==='fire'){x.fillStyle='#FFD27A';for(let i=0;i<7;i++){const p=((t*rm/800)+i/7+sd*.2)%1,s=Math.max(1.5,u*.06);x.globalAlpha=1-p;x.fillRect(X+Math.sin(i*2.7+t/300+sd)*.2*u-s/2,Y-p*1.5*u,s,s)}}}
-  else{
-   const glow=(gx,gy,R,c,a)=>{const g=x.createRadialGradient(gx,gy,0,gx,gy,R);g.addColorStop(0,`rgba(${c},${a})`);g.addColorStop(1,`rgba(${c},0)`);x.fillStyle=g;x.globalAlpha=1;x.fillRect(gx-R,gy-R,R*2,R*2)};
-   const fl=.85+.15*Math.sin(t*rm/170+sd*3)*Math.sin(t*rm/97+sd);
-   if(e.k==='fire')glow(X,Y,u*1.1*fl,'255,150,70',.42+dark*.25);
-   else if(e.k==='window')glow(X,Y,u*.55,'255,205,120',(.12+dark*.55)*fl);
-   else if(e.k==='glow')glow(X,Y,u*1.1,'255,227,160',(.16+dark*.4)*fl);
-   else if(e.k==='oldglow'){const g=e.g,c=hexA(g.c),gy=Y-g.y*u*.98,R=g.r*u*(1+.05*Math.sin(t/240+X));glow(X,gy,R,`${c[0]},${c[1]},${c[2]}`,dark?.55:.28)}}}
- x.restore()}
-/* butterflies over flowers, leaves drifting from trees, birds overhead, and grass kicked up while walking */
-function dioLife(C,t,dt,lite){const x=DIO.x,sc=DIO.sc,C0=dioData().sc,rm=RM?0:1;x.save();x.imageSmoothingEnabled=false;
- if(!DIO.life||DIO.life.id!==DIO.id){const fl=[],tr=[];for(const p of sc.props||[]){const M=C0.props[p.k];if(!M)continue;const g=M.group||p.k;if(/flower/.test(g)||/flower/.test(p.k))fl.push(p);if(/tree_(oak|fruit|birch)|^tree$/.test(g)||p.k==='tree_oak_autumn')tr.push(p)}
-  DIO.life={id:DIO.id,fl:fl.filter((_,i)=>i%2===0).slice(0,6),tr:tr.filter((_,i)=>i%2===0).slice(0,7)}}
- const L=DIO.life,PPU=C0.ppu||34;
- if(!sc.indoor&&!lite){L.fl.forEach((p,i)=>{const bx=p.x+Math.sin(t*rm/1500+i*1.7)*1.1+Math.sin(t*rm/610+i)*.25,bz=p.z+Math.cos(t*rm/1900+i*2)*.7,by=.55+.35*Math.sin(t*rm/480+i*3),q=dioProj(C,bx,by,bz);if(!q)return;
-   const f=dioFxFrame('butterfly',Math.floor(t*rm/110+i)%2);if(!f)return;const k=q.s/PPU*1.3;x.globalAlpha=1-dioFogA(C,q.d)*.7;x.drawImage(f[0],f[1],f[2],f[3],f[4],q.x-4*k,q.y-3.5*k,8*k,7*k)});
-  L.tr.forEach((p,i)=>{const per=6500+i*700,ph=((t*rm/per)+i*.37)%1,M=C0.props[p.k],top=M?Math.min(4,-M.oy/PPU*(p.s||1)*.75):3,by=top*(1-ph),bx=p.x+Math.sin(ph*9+i)*.55+ph*.9*(sc.wind||1),bz=p.z-.4-ph*.6,q=dioProj(C,bx,by,bz);if(!q)return;
-   const f=dioFxFrame('leaf',Math.floor(t*rm/220+i)%3);if(!f)return;const k=q.s/PPU*1.4;x.globalAlpha=Math.min(1,(1-ph)*4)*Math.min(1,ph*8);x.drawImage(f[0],f[1],f[2],f[3],f[4],q.x-2.5*k,q.y-2.5*k,5*k,5*k)});
-  const hy=C.rh/2-C.F*(C.sp/C.cp);for(let i=0;i<3;i++){const f=dioFxFrame('bird',Math.floor(t*rm/140+i*3)%2);if(!f)break;const k=Math.max(1,Math.round(C.rw/420)),span=C.rw+400,bx=((t*rm*.032*(1+i*.25)+i*530)%span)-200,
-   by=Math.max(C.rh*.05,Math.min(C.rh*.22,hy-30*k))+i*14*k+Math.sin(t/700+i)*5*k;x.globalAlpha=.85;x.drawImage(f[0],f[1],f[2],f[3],f[4],bx,by,10*k,6*k)}}
- /* particles */
- const PS=DIO.parts;for(let i=PS.length-1;i>=0;i--){const p=PS[i];p.life+=dt;if(p.life>=p.max){PS.splice(i,1);continue}p.x+=p.vx*dt;p.z+=p.vz*dt;p.vy-=p.g*dt;p.y=Math.max(0,p.y+p.vy*dt);
-  const q=dioProj(C,p.x,p.y,p.z);if(!q)continue;const a=1-p.life/p.max;
-  if(p.k==='leaf'){const f=dioFxFrame('leaf',p.fr);if(!f)continue;const k=q.s/PPU*1.3;x.globalAlpha=a;x.drawImage(f[0],f[1],f[2],f[3],f[4],q.x-2.5*k,q.y-2.5*k,5*k,5*k)}
-  else{const r=q.s*(.12+p.life*.35);x.globalAlpha=a*.35;x.fillStyle='#E8DCC0';x.beginPath();x.ellipse(q.x,q.y,r,r*.6,0,0,7);x.fill()}}
- if(PS.length>80)PS.splice(0,PS.length-80);x.restore()}
-function dioSunLight(C,t){const x=DIO.x,rw=C.rw,rh=C.rh,sx=rw*.92,sy=-rh*.15;x.save();x.globalCompositeOperation='soft-light';const g=x.createRadialGradient(sx,sy,0,sx,sy,Math.max(rw,rh)*1.1);
- g.addColorStop(0,'rgba(255,226,170,.55)');g.addColorStop(.5,'rgba(255,226,170,.15)');g.addColorStop(1,'rgba(40,40,90,.18)');x.fillStyle=g;x.fillRect(0,0,rw,rh);
- if(DIO.sc.rays){x.globalCompositeOperation='lighter';for(let i=0;i<4;i++){const a=.035+.025*Math.sin(t/2300+i*1.9),x0=rw*(.15+i*.24)+Math.sin(t/4000+i)*rw*.03;x.fillStyle=`rgba(255,240,200,${Math.max(0,a)})`;
-  x.beginPath();x.moveTo(x0,0);x.lineTo(x0+rw*.07,0);x.lineTo(x0-rw*.12,rh);x.lineTo(x0-rw*.24,rh);x.closePath();x.fill()}}x.restore()}
-function dioVignette(rw,rh){const x=DIO.x,g=x.createRadialGradient(rw/2,rh*.55,Math.min(rw,rh)*.35,rw/2,rh*.55,Math.hypot(rw,rh)*.62);g.addColorStop(0,'rgba(20,14,40,0)');g.addColorStop(1,'rgba(20,14,40,.32)');x.fillStyle=g;x.fillRect(0,0,rw,rh)}
 /* v47: labels in the world in the game's pixel style: framed panels (square corners notched by one pixel, a dark
    outline, light along the top, shade along the bottom, a drop shadow) and the pixel font (Tiny5, 8 px to the em, so
    it is drawn at whole multiples of 8), all on a whole-pixel grid. Speech keeps the reading font inside a pixel frame */
@@ -905,22 +723,3 @@ function dioBubble(x,cx,cy,txt,col){x.save();x.setTransform(1,0,0,1,0,0);const u
 function dioTag(x,cx,cy,e){const u=dioPx(),txt=`Lv ${e.lvl}`;x.save();x.font=dioPxFont(u);const tw=Math.ceil(x.measureText(txt).width/u)*u,qw=Math.ceil(x.measureText('?').width/u)*u,w=tw+qw+u*12,h=u*11,x0=Math.round(cx-w/2),y0=Math.round(cy-h-2*u);
  dioPanel(x,x0,y0,w,h,u,'#251C3E','#3A2E5C','#18122A','#0E0A18');dioPxTail(x,Math.round(cx),y0+h-u,u,'#251C3E','#0E0A18');
  x.textAlign='left';x.textBaseline='alphabetic';x.fillStyle='#FFE27A';x.fillText('?',x0+u*5,y0+u*8);x.fillStyle='#FFFFFF';x.fillText(txt,x0+u*7+qw,y0+u*8);x.restore()}
-function dioSkyDeco(C,hy,t){const x=DIO.x,sc=DIO.sc,rw=C.rw;if(sc.indoor){x.fillStyle='rgba(255,240,200,.5)';for(let i=0;i<14;i++){const px=(i*137%rw),py=(i*53%Math.max(10,hy));x.fillRect(px,py,2,2)}return}
- const sx=rw*.8,sy=Math.min(hy*.35,C.rh*.12),g=x.createRadialGradient(sx,sy,0,sx,sy,rw*.25);g.addColorStop(0,'rgba(255,250,220,.9)');g.addColorStop(.12,'rgba(255,240,190,.55)');g.addColorStop(1,'rgba(255,240,190,0)');x.fillStyle=g;x.fillRect(0,0,rw,Math.max(0,hy+40));
- for(let i=0;i<3;i++){const im=dioImg(`battle/cloud_${i}.png`);if(!dioOk(im))continue;const k=Math.max(1,Math.round(rw/360)),w=im.naturalWidth*k,xx=((i*rw*.53+t*.012*(i+1))%(rw+w))-w,yy=hy-(20+i*30)*k;if(yy<-im.naturalHeight*k)continue;x.drawImage(im,xx,yy,w,im.naturalHeight*k)}}
-function dioCloudShadows(C,t){const x=DIO.x,sc=DIO.sc;x.save();x.fillStyle='rgba(40,40,80,.09)';for(let i=0;i<3;i++){const wx=((t*.0006*(1+i*.3)+i*11)%(sc.w+16))-8,wz=sc.h*(.25+i*.27),q=dioProj(C,wx,0,wz);if(!q)continue;x.beginPath();x.ellipse(q.x,q.y,5*q.s,5*q.s*C.sp*.6,0,0,7);x.fill()}x.restore()}
-function dioGlints(C,t){if(!DIO.water.length)return;const x=DIO.x;x.save();x.fillStyle='rgba(255,255,255,.85)';const n=Math.min(DIO.water.length,48);
- for(let i=0;i<n;i++){const w=DIO.water[(i*7919+Math.floor(t/700)*13)%DIO.water.length],ph=(t/700+i*.37)%1;if(ph>.5)continue;const q=dioProj(C,w[0]+Math.sin(i)*.3,0,w[1]+Math.cos(i)*.3);if(!q)continue;const L=Math.max(2,q.s*.25*(1-Math.abs(ph-.25)*4));x.fillRect(q.x-L/2,q.y,L,Math.max(1,q.s*.04))}x.restore()}
-const DIO_AMB={pollen:['#FFF4B0',.3],spore:['#C8F4D0',.25],drip:['#BFE0FF',-2],dust:['#FFFFFF',.15],sand:['#F2D6A0',0]};
-function dioAmbient(C,t){if(RM)return;const a=DIO_AMB[DIO.sc.amb];if(!a)return;const x=DIO.x,rw=C.rw,rh=C.rh;x.save();x.fillStyle=a[0];
- for(let i=0;i<34;i++){const sd=dioHash(i,7),px=((sd*rw+t*.02*(a[1]>0?1:0)+(DIO.sc.amb==='sand'?t*.12*(1+sd):0))%rw),py=a[1]<0?((dioHash(i,3)*rh+t*.18*(1+sd))%rh):((dioHash(i,5)*rh-t*.01*(1+sd)*rh/400)%rh+rh)%rh;
-  const tw=.5+.5*Math.sin(t/400+i);if(tw<.3)continue;x.globalAlpha=tw*.9;const s=Math.max(1.5,rw/400);x.fillRect(px,py,s,a[1]<0?s*3:s)}x.restore()}
-/* tilt-shift: a blurred copy (downscaled twice, smooth upscale) masked so the band around the player stays sharp */
-function dioTiltShift(fy,k){if(k<=0||DIO.opt.lite)return;const cv=DIO.cv,x=DIO.x,rw=cv.width,rh=cv.height,B=DIO.blur,sw=Math.max(16,Math.round(rw/4)),sh=Math.max(16,Math.round(rh/4));
- if(!B.a||B.a.width!==sw||B.a.height!==sh){B.a=cnv(sw,sh);B.c=cnv(Math.max(8,sw>>1),Math.max(8,sh>>1))}if(!B.b||B.b.width!==rw||B.b.height!==rh)B.b=cnv(rw,rh);
- const a=B.a.getContext('2d'),c=B.c.getContext('2d'),b=B.b.getContext('2d');a.imageSmoothingEnabled=c.imageSmoothingEnabled=b.imageSmoothingEnabled=true;a.imageSmoothingQuality=c.imageSmoothingQuality=b.imageSmoothingQuality='high';
- a.globalCompositeOperation='copy';a.drawImage(cv,0,0,sw,sh);c.globalCompositeOperation='copy';c.drawImage(B.a,0,0,B.c.width,B.c.height);a.drawImage(B.c,0,0,sw,sh);
- b.globalCompositeOperation='copy';b.drawImage(B.a,0,0,rw,rh);b.globalCompositeOperation='destination-in';
- const band=rh*.1,ramp=rh*.32,g=b.createLinearGradient(0,0,0,rh),st=(y,al)=>g.addColorStop(clamp(y/rh,0,1),`rgba(0,0,0,${clamp(al*k,0,1)})`);
- st(0,1);st(fy-band-ramp,1);st(fy-band,0);st(fy+band,0);st(fy+band+ramp*.8,1);st(rh,1);b.fillStyle=g;b.fillRect(0,0,rw,rh);b.globalCompositeOperation='source-over';
- x.drawImage(B.b,0,0)}

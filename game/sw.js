@@ -1,6 +1,7 @@
 /* Pocket Billies service worker: art and fonts come from the cache instantly and refresh in the background;
    code and game data always try the network first, so edits from Pocket Billies Studio show up on the next load. */
-const V='pocketbillies-alpha-0.5';
+importScripts('version.js');
+const V='pocketbillies-'+PB_VERSION_ID;
 self.addEventListener('install',()=>self.skipWaiting());
 self.addEventListener('activate',e=>e.waitUntil((async()=>{const keys=await caches.keys();await Promise.all(keys.filter(k=>!k.startsWith(V)).map(k=>caches.delete(k)));await self.clients.claim()})()));
 self.addEventListener('fetch',e=>{const r=e.request,u=new URL(r.url);if(r.method!=='GET'||u.origin!==location.origin)return;

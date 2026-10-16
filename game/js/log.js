@@ -5,7 +5,7 @@
    seconds. Settings → Export debug log saves it as one JSON file (or shares it on phones). Settings → Run the full
    test (selftest.js) plays through everything for about two minutes, stress-tests the device and adds the results.
    Nothing here leaves the device unless the player exports it. No save data, names or step history are included. */
-const NW_BUILD='alpha-0.5';
+const NW_BUILD=PB_VERSION;
 const NWLOG={t0:performance.now(),ev:[],err:[],samples:[],acc:new Map(),secT:0,shot:null,shotT:0,load:null,bench:null,hooked:false,max:{ev:400,err:120,samples:900}};
 NWLOG.now=()=>Math.round(performance.now()-NWLOG.t0);
 NWLOG.add=(kind,msg,data)=>{const L=NWLOG.ev;L.push(Object.assign({t:NWLOG.now(),kind,msg:String(msg).slice(0,300)},data||{}));if(L.length>NWLOG.max.ev)L.splice(0,L.length-NWLOG.max.ev)};
@@ -95,7 +95,6 @@ async function exportDebugLog(){/* take a current picture first: the WebGL scene
  const d=new Date(),pad=n=>String(n).padStart(2,'0'),name=`pocket-billies-debug-${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}.json`;
  NWLOG.add('export',name);
  try{const f=new File([data],name,{type:'application/json'});if(navigator.canShare&&navigator.canShare({files:[f]})&&/Mobi|Android|iPhone|iPad/.test(navigator.userAgent)){await navigator.share({files:[f],title:'Pocket Billies debug log'});toast('Debug log shared.');return}}catch(e){if(e&&e.name==='AbortError')return}
- if(window.claude&&typeof window.claude.use==='function'){let dl=null;try{dl=await window.claude.use('downloads')}catch(e){}if(dl){try{await dl.save({filename:name,data});toast('Debug log saved.');return}catch(e){}}}
  try{const url=URL.createObjectURL(new Blob([data],{type:'application/json'})),a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),4000);toast('Debug log saved to your downloads.');return}catch(e){}
  try{await navigator.clipboard.writeText(data);toast('The debug log was copied. Paste it into a text file.')}catch(e){toast('This browser can’t save files here.')}}
 /* hooks into the game, installed once everything has loaded */
@@ -103,7 +102,7 @@ NWLOG.hook=()=>{if(NWLOG.hooked)return;NWLOG.hooked=true;const wrap=(name,fn)=>{
  let lastTab=null;wrap('render',()=>{const v=typeof B!=='undefined'&&B?'battle':U.tab;if(v!==lastTab){lastTab=v;NWLOG.add('screen',v)}});
  wrap('newBattle',(kind)=>NWLOG.add('battle',`start ${kind}${typeof areaKey==='function'?' at '+areaKey():''}`));
  wrap('endBattle',()=>NWLOG.add('battle','end '+(B&&B.over||'')));
- wrap('dioMount',(cv,id,opt)=>NWLOG.add('scene',`mount ${id}${opt&&opt.lite?' (lite)':''}`));
+ wrap('dioMount',(cv,id,opt)=>NWLOG.add('scene',`mount ${id}`));
  wrap('setTrip',j=>NWLOG.add('travel',`trip to ${typeof ROUTE!=='undefined'&&ROUTE[j]?ROUTE[j].name:j}`));
  wrap('openShop',id=>NWLOG.add('shop',id));
  wrap('mapMount',()=>NWLOG.add('map','open'));

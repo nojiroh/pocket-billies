@@ -8,7 +8,7 @@
       to Sundown, filmed with the world map's renderer, the real Hollow Earth (map-gl.js).
    4. A white flash, and the walk scene takes over (cutscene.js): you wake in the dust outside Hazel's lab, the papers
       that fell with you still fluttering down.
-   Skip ends the fall at once; Lite has no fall (the step-by-step intro tells it in words). */
+   Skip ends the fall at once; without the fall, the step-by-step intro tells it in words. */
 const FALL={cv:null,x:null,raf:0,run:0,W:0,H:0};
 const fallRnd=(a,b)=>{let h=(a*374761393+b*668265263)^0x5bd1e995;h=Math.imul(h^(h>>>13),1274126177);return ((h^(h>>>16))>>>0)/4294967296};
 function fallCanvas(){let cv=$('#csFall');if(!cv){cv=document.createElement('canvas');cv.id='csFall';cv.className='cs-fall';const cs=$('#cs');(cs||document.body).prepend(cv)}
@@ -85,7 +85,7 @@ function fallCrust(t){const x=FALL.x,W=FALL.W,H=FALL.H,sp=H*1.7,off=t*sp,BH=26,n
  /* the light below */
  if(t>1.9){const kk=clamp((t-1.9)/.9,0,1),lg=x.createLinearGradient(0,H,0,H*(1-kk));lg.addColorStop(0,`rgba(255,248,226,${kk})`);lg.addColorStop(1,'rgba(255,248,226,0)');x.fillStyle=lg;x.fillRect(0,0,W,H);if(kk>=1){x.fillStyle='#FFF8EC';x.fillRect(0,0,W,H)}}}
 /* ---- 3 (still). the inner sky as pixels: the far side of the world on every side, the Inner Sun in the middle.
-   For Lite's pictures, and when the 3D map can't be shown (reduced motion, no WebGL). ---- */
+   For the opening's pictures, and when the 3D map can't be shown (reduced motion, no WebGL). ---- */
 function fallSky(t){const x=FALL.x,W=FALL.W,H=FALL.H,cx=Math.round(W/2),cy=Math.round(H*.44);x.fillStyle='#4E7CC8';x.fillRect(0,0,W,H);
  const land=['#6FA060','#86AE6C','#B4A676','#5E8E58','#9CB878'];
  for(let i=0;i<46;i++){const bx=fallRnd(i,1)*(W+40)-20,by=fallRnd(i,2)*(H+40)-20,rx=6+fallRnd(i,3)*Math.min(W,H)*.16,ry=rx*(.45+fallRnd(i,4)*.5);x.fillStyle=land[i%land.length];

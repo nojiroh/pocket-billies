@@ -3,7 +3,7 @@
    v47: after loading, a slow camera over Sundown from above the rooftops (the real scene, drawn by the game, at your
    local time of day), the Pocket Billies logo in pixel lettering, title music, and three choices: Continue (your trainer,
    where you are and how long you've played), New game, Settings. On a phone one tap anywhere continues.
-   Without WebGL (or in Lite mode) the title stands on the painted landscape instead. */
+   Without the 3D scene the title stands on the painted landscape instead. */
 const TITLE={on:false,t0:0,run:0,mounted:false};
 function titleWanted(){return !(typeof NW_TEST!=='undefined'&&NW_TEST)&&!(S.preferences&&S.preferences.skipTitle)}
 /* the camera: a slow drift along the front of the town, high above the rooftops, looking up the main street */
@@ -14,7 +14,7 @@ function titleFrame(){if(!TITLE.on||!DIO.sc)return null;const sc=DIO.sc,now=perf
 function titlePlayTime(){const m=Math.floor((S.playMs||0)/60000);return m<1?'just started':m<60?`${m} min`:`${Math.floor(m/60)} h ${String(m%60).padStart(2,'0')} min`}
 function renderTitle(){const cont=S.started&&S.avatar,place=cont&&ROUTE[S.route.node]?ROUTE[S.route.node].name:'',nm=cont?(S.avatar.name||'Trainer'):'';
  return `<div class="ttl${cont?' can-tap':''}" data-a="${cont?'ttltap':''}"><div class="ttl-bg" aria-hidden="true"></div>
-  <div class="ttl-acc">${typeof accChipHTML==='function'?accChipHTML():''}</div><div class="ttl-top"><h1 class="ttl-logo" aria-label="Pocket Billies"><span>POCKET</span><span>BILLIES</span></h1><p class="ttl-tag">Gotta tax 'em all!</p></div>
+  <div class="ttl-acc">${typeof accChipHTML==='function'?accChipHTML():''}</div><div class="ttl-top"><h1 class="ttl-logo" aria-label="Pocket Billies"><span>POCKET</span><span>BILLIES</span></h1><p class="ttl-tag">Gotta tax 'em all!</p></div><p class="ttl-ver">${esc(PB_VERSION)}</p>
   <div class="ttl-bottom">
    ${cont?`<button class="ttl-cont" data-a="ttlgo"><span class="ttl-face">${humanHTML('me',56)}</span><span class="ttl-ct"><b>Continue</b><small>${esc(nm)} · ${esc(place)}</small><small>${titlePlayTime()} played</small></span></button>`:''}
    <div class="ttl-btns">${cont?`<button class="pb quiet" data-a="ttlnew">New game</button>`:`<button class="pb gold big wide" data-a="intro">New game</button>`}<button class="pb quiet" data-a="ttlset">${uiIco('gear',14)} Settings</button></div>

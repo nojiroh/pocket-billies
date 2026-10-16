@@ -138,6 +138,27 @@ def gamedata():
 
 
 # ------------------------------------------------------------------ 1. without a browser
+@step('Version: one source, the same in README.md and CHANGELOG.md', 5)
+def check_version():
+    """phase 03: game/version.js is the only place the version is written; the game, the Studio, the service worker,
+    the debug log and saves read it. The README title and the newest CHANGELOG entry can't read it, so compare them."""
+    m = re.search(r"PB_VERSION\s*=\s*'([^']+)'", (GAME / 'version.js').read_text(encoding='utf-8'))
+    if not m: raise Exception('game/version.js has no PB_VERSION')
+    v = m.group(1); bad = []
+    if not re.match(r'^\d+\.\d+\.\d+ (alpha|beta)$', v): bad.append(f'"{v}" is not 0.MINOR.PATCH alpha/beta')
+    readme = (ROOT / 'README.md').read_text(encoding='utf-8').splitlines()[0]
+    if not readme.endswith(' ' + v): bad.append(f'README.md title says "{readme}"')
+    ch = re.search(r'^## (\S+ \S+)', (ROOT / 'CHANGELOG.md').read_text(encoding='utf-8'), re.M)
+    if not ch or ch.group(1) != v: bad.append(f'the newest CHANGELOG.md entry is {ch.group(1) if ch else "missing"}')
+    for f in ['game/index.html', 'studio/index.html']:
+        if 'version.js"' not in (ROOT / f).read_text(encoding='utf-8'): bad.append(f'{f} does not load version.js')
+    if "importScripts('version.js')" not in (GAME / 'sw.js').read_text(encoding='utf-8'): bad.append('sw.js does not read version.js')
+    old = [str(f.relative_to(ROOT)) for f in list((GAME / 'js').rglob('*.js')) + [GAME / 'sw.js'] if re.search(r"'(?:pocketbillies-)?alpha-0\.\d", f.read_text(encoding='utf-8'))]
+    if old: bad.append('an old version string is left in ' + ', '.join(old))
+    if bad: raise Exception('; '.join(bad))
+    return f'{v}: README.md, CHANGELOG.md, the game, the Studio and the service worker agree'
+
+
 @step('Code: every script parses', 20)
 def check_code():
     node = shutil.which('node')
@@ -378,7 +399,7 @@ def check_ground():
     another kind (v46 stamped the same grey smudge onto one tile of every kind)"""
     from PIL import Image
     import hashlib
-    D = gamedata(); SY = D['scenery']; folder = GAME / 'art' / 'next' / SY.get('tileSet', 'tiles'); bad = []; seen = {}; masks = {}
+    D = gamedata(); SY = D['scenery']; folder = GAME / 'art' / 'next' / SY.get('tileSet', 'tiles47'); bad = []; seen = {}; masks = {}
     for ch, T in SY['terrains'].items():
         name = T['tile'].rsplit('/', 1)[-1][:-4]; hs = []
         for i in range(1, 13):
@@ -1185,15 +1206,6 @@ def desktop_steps(b, base, R):
         if [x for x in sig if x not in ('musk', 'bezos', 'gates')]: raise Exception(f'lines without a signature move: {sig[:6]}')
         nsig = pg.evaluate("Object.values(MOVES).filter(m=>m.sig).length")
         out.append(f'{nsig} signature moves, one per new line; every pool, egg and fishing list names a living species')
-        # a v36 save: old starters, old team, old Guide marks come through. Fresh base: old saves don't matter and the
-        # migration is deleted in phase 03, so this runs only with --legacy-saves (it fails on alpha 0.5).
-        if '--legacy-saves' not in ARGS:
-            out.append('v36 save migration skipped (legacy, removed in phase 03)')
-        else:
-            m = json.loads(pg.evaluate("""JSON.stringify((()=>{const s=migrate({started:true,starter:'hood',team:[{uid:'a',sp:'hood2',lvl:40,moves:[]},{uid:'b',sp:'goss1',lvl:22,moves:[]},{uid:'c',sp:'myth0',lvl:50,moves:[]}],box:[{uid:'d',sp:'carp0',lvl:3,moves:[]}],seen:{hood0:1,hood2:1,goss1:1,carp0:1},caught:{hood2:1,carp0:1},queue:[{id:'q',sp:'short0',lvl:5}]});
-              return {starter:s.starter,team:s.team.map(x=>[x.sp,x.lvl]),box:s.box.map(x=>x.sp),seen:Object.keys(s.seen),caught:Object.keys(s.caught),q:s.queue.map(q=>q.sp)}})())"""))
-            if m['starter'] != 'musk' or m['team'][0] != ['musk2', 40] or m['team'][2][0] != 'mansa0' or any(x not in ids for x in m['box'] + m['seen'] + m['caught'] + m['q']): raise Exception(f'v36 save migration: {m}')
-            out.append(f"a v36 save comes through: Hoodini's line → Emberox's at the same levels, the mythical → Aurumansa, {len(m['seen'])} Guide marks kept")
         # the legendary at the volcano
         node = pg.evaluate("ROUTE.findIndex(r=>r.scene==='volcano')")
         if node >= 0:
@@ -1975,35 +1987,6 @@ def studio_round_trip(pw, R):
 BASE = ROOT / 'validation' / 'quick-baseline'
 
 
-def single_page(pw, R):
-    """v30: the single-page version (tools/build-artifact.py) builds, loads and draws a walk scene"""
-    @step('Single page: the one-file version builds, loads and draws', 180)
-    def run():
-        tmp = Path(tempfile.mkdtemp(prefix='networth-page-'))
-        try:
-            r = subprocess.run([sys.executable, str(ROOT / 'tools' / 'build-artifact.py'), str(tmp / 'index.html')], capture_output=True, text=True, timeout=120)
-            if r.returncode: raise Exception('build failed: ' + (r.stderr or r.stdout)[-300:])
-            mb = (tmp / 'index.html').stat().st_size / 1e6
-            if mb > 16: raise Exception(f'the page is {mb:.1f} MB, over the 16 MB limit')
-            srv, base = serve(tmp); b = pw.chromium.launch(args=['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist']); errs = []
-            try:
-                # v46: fetch() is refused for data: links inside the Claude app, so the single-page build must never fetch an
-                # inlined file; any fetch of a data: link fails here as it would on the phone
-                ctx = b.new_context(viewport={'width': 700, 'height': 520}); ctx.add_init_script(CLOCK); ctx.add_init_script(NO_ACCOUNTS); ctx.set_default_timeout(90000)
-                ctx.add_init_script("(()=>{const f=window.fetch;window.fetch=function(u,...a){if(String(u).startsWith('data:'))return Promise.reject(new TypeError('data: fetch refused (as in the Claude app)'));return f.call(this,u,...a)}})()")
-                pg = ctx.new_page(); pg.on('pageerror', lambda e: errs.append(str(e))); pg.on('console', lambda m: errs.append(m.text) if m.type == 'error' else None)
-                pg.goto(base + '/index.html'); pg.wait_for_selector('.ttl,.title', timeout=60000); pg.evaluate(LOW_RENDER)
-                play(pg); go_scene(pg, 0); time.sleep(2); shot(pg, 'single-page')
-                vx = json.loads(pg.evaluate("JSON.stringify((()=>{const C=dioData().sc.props,keys=[...new Set(Object.values(C).map(M=>M.vox).filter(v=>typeof v==='string'))];const empty=keys.filter(k=>{const r=voxRecipe(k);return !r||!(r.layers||[]).length});return {n:keys.length,empty,bad:VOX.bad||0,drawn:VOX.drawn}})())"))
-                if vx['empty'] or vx['bad']: raise Exception(f'voxel recipes empty in the single-page build: {len(vx["empty"])} of {vx["n"]} ({", ".join(vx["empty"][:4])})')
-                bad = [e for e in errs if 'favicon' not in e]
-                if bad: raise Exception('errors: ' + ' | '.join(bad[:3]))
-            finally: b.close(); srv.shutdown()
-            return f'{mb:.1f} MB, opened and drew Marigold Town, all {vx["n"]} voxel recipes read without a fetch, {vx["drawn"]} voxel props drawn'
-        finally: shutil.rmtree(tmp, ignore_errors=True)
-    run()
-
-
 def compare_pictures(R):
     """v30: every picture this run took next to the same picture from the baseline (validation/quick-baseline/).
     Small differences are normal (animation, weather, the clock); a big one is worth a look, so it's listed with a
@@ -2066,7 +2049,7 @@ def main():
     if OUT.exists(): shutil.rmtree(OUT)
     OUT.mkdir(parents=True)
     R = {'when': time.strftime('%Y-%m-%d %H:%M'), 'render': 'software, a third of the resolution, 1024 shadow map'}
-    check_code(); check_data(); old_names(); copperleaf_data(); check_water(); check_masts(); check_postcards(); check_rooms(); check_windows(); check_ground(); report_unused()
+    check_version(); check_code(); check_data(); old_names(); copperleaf_data(); check_water(); check_masts(); check_postcards(); check_rooms(); check_windows(); check_ground(); report_unused()
     srv, base = serve(GAME)
     with sync_playwright() as pw:
         b = pw.chromium.launch(args=['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'])
@@ -2081,7 +2064,6 @@ def main():
                     problems.append(f'desktop: {str(e).splitlines()[0][:200]}')
         b.close()
         if '--studio' in ARGS or '--studio-only' in ARGS: studio_round_trip(pw, R)
-        if '--page' in ARGS: single_page(pw, R)
     srv.shutdown()
     if '--props' in ARGS:
         import subprocess

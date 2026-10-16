@@ -168,7 +168,7 @@ async function runFullTest(mode){const diag=mode==='diag';if(STEST.on)return;if(
   await phase('Alpha battle: your team against one','scene',()=>teamBattle('alpha'),8,150);
   /* v47: the opening's fall across the Hollow Earth (the world map's renderer, flying past the Inner Sun), timed */
   if(typeof fallMap==='function'&&!STEST.stop)await phase('Opening: falling across the Hollow Earth','map',async()=>{U.bench=null;U.inside=null;if(typeof DIO!=='undefined'&&DIO.cv)dioStop();
-   const cv=fallGL();if(!cv){U.tab='walk';render();return 'no 3D here: Lite shows the fall as pictures'}cv.hidden=false;cv.classList.add('in');CS.on=true;CS.run++;const run=CS.run,fr=[],mr=mglRender;let last=performance.now();
+   const cv=fallGL();if(!cv){U.tab='walk';render();return 'no 3D here: the opening shows the fall as pictures'}cv.hidden=false;cv.classList.add('in');CS.on=true;CS.run++;const run=CS.run,fr=[],mr=mglRender;let last=performance.now();
    mglRender=t=>{const n=performance.now();fr.push(n-last);last=n;mr(t)};try{await fallMap(run,6000)}finally{mglRender=mr;CS.on=false;CS.run++}
    U.tab='walk';render();await stSleep(1200);if(fr.length<3)throw new Error(`the fall drew ${fr.length} frames`);const a=fr.slice(2),avg=a.reduce((x,y)=>x+y,0)/a.length;
    return `${fr.length} frames, ${Math.round(1000/avg)} fps, worst frame ${Math.round(Math.max(...a))} ms`},6,40);
@@ -270,6 +270,5 @@ function diagReport(){const R=NWLOG.bench&&NWLOG.bench.result;if(!R)return null;
 async function exportDiagReport(){const r=diagReport();if(!r){toast('Run the diagnostics test first.');return}const data=JSON.stringify(r,null,1),d=new Date(),pad=n=>String(n).padStart(2,'0'),name=`pocket-billies-diagnostics-${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}.json`;
  if(typeof NWLOG!=='undefined')NWLOG.add('export',name);
  try{const f=new File([data],name,{type:'application/json'});if(navigator.canShare&&navigator.canShare({files:[f]})&&/Mobi|Android|iPhone|iPad/.test(navigator.userAgent)){await navigator.share({files:[f],title:'Pocket Billies diagnostics'});toast('Report shared.');return}}catch(e){if(e&&e.name==='AbortError')return}
- if(window.claude&&typeof window.claude.use==='function'){let dl=null;try{dl=await window.claude.use('downloads')}catch(e){}if(dl){try{await dl.save({filename:name,data});toast('Report saved.');return}catch(e){}}}
  try{const url=URL.createObjectURL(new Blob([data],{type:'application/json'})),a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),4000);toast('Report saved to your downloads.');return}catch(e){}
  try{await navigator.clipboard.writeText(data);toast('The report was copied. Paste it into a text file.')}catch(e){toast('This browser can’t save files here.')}}

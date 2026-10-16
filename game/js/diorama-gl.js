@@ -5,7 +5,7 @@
    (buildings cast solid shadows, people and trees their cut-out shape), contact shadows, lamps and windows that light
    the ground in front of them and glow through bloom, ponds that reflect, grass that sways and bends away from you,
    mist, cloud shadows, and a lens with depth of field. Every dial is an engine setting (Studio → Engine).
-   Same scenes, walking and taps as js/diorama.js, which stays as the Lite renderer. */
+   Same scenes, walking and taps as js/diorama.js (scene data, paths, the player); this file draws them. */
 const DGL={on:false,ui:null,gkey:'',hkey:'',mesh:null,water:null,grass:null,yaw:0,yawT:0,zoom:1,zoomT:1,tiltX:0,tiltY:0,lead:[0,0],focus:null,focusT:null,frames:0,
  farProps:[],orient:null,drag:null,snapReq:0,int:0,adaptT:0,fail:0,lost:0};
 /* v46: how long a frame may spend getting the next view ready (ms) */
@@ -61,9 +61,11 @@ dioNav=function(){const sc=DIO.sc,fresh=!(DIO.nav&&DIO.navSc===sc&&DIO.navG===DI
 /* ---------- canvas plumbing: the WebGL canvas plus a 2D layer on top for labels ---------- */
 function dglCanvasFor(cv,type){if(!cv._ctx){cv._ctx=type;return cv}if(cv._ctx===type)return cv;const n=document.createElement('canvas');n.id=cv.id;n.className=cv.className;n.hidden=cv.hidden;const al=cv.getAttribute('aria-label');if(al)n.setAttribute('aria-label',al);n._ctx=type;cv.replaceWith(n);return n}
 function dglUI(cv){let u=DGL.ui;if(!u||!u.isConnected){u=document.getElementById('dioui')||document.createElement('canvas');u.id='dioui';u.setAttribute('aria-hidden','true');DGL.ui=u}if(u.previousElementSibling!==cv)cv.after(u);u.hidden=false;return u}
-const _dioMount2D=dioMount,_dioStop2D=dioStop,_dioProj2D=dioProj,_dioUnproject2D=dioUnproject;
-dioMount=function(cv,id,opt={}){const useGL=!opt.lite&&!opt.noGL&&!EGL.fail&&eglOK();cv=dglCanvasFor(cv,useGL?'gl':'2d');DIO.lite=!useGL;
- if(!useGL){DGL.on=false;if(DGL.ui)DGL.ui.hidden=true;cv.classList.remove('gl');return _dioMount2D(cv,id,opt).then(()=>cv.classList.add('in'))}
+const _dioStop2D=dioStop,_dioProj2D=dioProj,_dioUnproject2D=dioUnproject;
+/* 0.1.0 alpha: the walk view is WebGL only (the Lite 2D painter is gone). Without it the game says this device can't
+   run it (boot.js noWebGL); the Studio shows its own message (engine.js) */
+function dioMount(cv,id,opt={}){const useGL=!EGL.fail&&eglOK();cv=dglCanvasFor(cv,'gl');
+ if(!useGL){DGL.on=false;if(DGL.ui)DGL.ui.hidden=true;DIO.ready=false;DIO.err=new Error('WebGL 2 is not available');if(typeof noWebGL==='function')noWebGL(EGL.fail?'failed':'');return Promise.resolve()}
  DIO.cv=cv;DIO.opt=opt;if(DIO.id!==id){DIO.id=id;DIO.cam=null;Object.assign(DIO.pl,{t:-1,fresh:true,pk:'',route:null,goal:null,line:null,walk:0});DIO.gkey='';DIO.cand=null;DIO.nav=null;DIO.npcAt={};DIO.folk=[];DIO.folkAll=[];DIO.folkId='';DIO.parts=[];DIO.tap=null;DGL.gkey='';DGL.focus=null;DGL.camT=null;DGL.farKey=''}
  DIO.sc=dioScene(id);DIO.ready=false;DIO.err=null;cv.classList.add('gl');
  if(!dglGL(cv))return dioMount(cv,id,opt);
@@ -486,14 +488,14 @@ function* dglRingChunk(R,sc,ci,cj,pr){const s=dglRingSlot(ci,cj);R.C[s*2]=-9999;
  R.C[s*2]=ci;R.C[s*2+1]=cj;R.n++}
 /* each frame: keep the ring round the camera's focus, painting what is missing a few ms at a time (more while the
    squares right round you are still missing, so a scene never opens blurred for long) */
-function dglRingUpdate(sc,fx,fz,budget){if(!DGL.on||DIO.lite||!sc)return;let R=DGL.ring;if(!R){if(!DGL.gtex)return;R=DGL.ring=dglRingNew()}const W=dglRingWant(R,sc,fx,fz);const t0=performance.now();
+function dglRingUpdate(sc,fx,fz,budget){if(!DGL.on||!sc)return;let R=DGL.ring;if(!R){if(!DGL.gtex)return;R=DGL.ring=dglRingNew()}const W=dglRingWant(R,sc,fx,fz);const t0=performance.now();
  const near=W.slice(0,4).some(([i,j])=>!dglRingHas(R,i,j));if(near)budget=Math.max(budget,R.n===0?30:12);
  /* alpha 0.4: with the helper thread painting, a few squares are asked for at once (nearest first) and this frame only
     puts the finished ones on the card; without it, one square at a time, painted here a slice at a time */
  const K=typeof pwOn==='function'&&pwOn()?3:1;R.jobs=(R.jobs||[]).filter(J=>{if(W.some(([i,j])=>i===J.ci&&j===J.cj))return true;try{J.it.return()}catch(e){}return false});/* (squares that left the ring before they were done) */
  while(performance.now()-t0<budget){for(;R.jobs.length<K;){const nx=W.find(([i,j])=>!dglRingHas(R,i,j)&&!R.jobs.some(J=>J.ci===i&&J.cj===j));if(!nx)break;R.jobs.push({ci:nx[0],cj:nx[1],it:dglRingChunk(R,sc,nx[0],nx[1],nx[2])})}
   if(!R.jobs.length)break;let moved=false;for(let k=R.jobs.length-1;k>=0;k--){const r=R.jobs[k].it.next();if(r.done){R.jobs.splice(k,1);moved=true}else if(r.value!==PW_WAIT)moved=true}if(!moved)break}}
-function dglRingU(U,sc){if(!U.uRing)return;const gl=EGL.gl,R=DGL.ring,on=!!(R&&R.tex&&!DIO.lite);gl.activeTexture(gl.TEXTURE9);gl.bindTexture(gl.TEXTURE_2D,on?R.tex:EGL.white);gl.bindSampler(9,null);gl.uniform1i(U.uRing,9);
+function dglRingU(U,sc){if(!U.uRing)return;const gl=EGL.gl,R=DGL.ring,on=!!(R&&R.tex);gl.activeTexture(gl.TEXTURE9);gl.bindTexture(gl.TEXTURE_2D,on?R.tex:EGL.white);gl.bindSampler(9,null);gl.uniform1i(U.uRing,9);
  gl.activeTexture(gl.TEXTURE14);gl.bindTexture(gl.TEXTURE_2D,on?R.ntex:EGL.flatN);gl.bindSampler(14,null);gl.uniform1i(U.uRingN,14);gl.activeTexture(gl.TEXTURE0);
  const P=DGL_PAD;gl.uniform3f(U.uCanvas,sc.w+2*P,sc.h+2*P,on?1:0);if(on){gl.uniform2fv(U.uRingC,R.C);gl.uniform4f(U.uRingBox,R.box[0],R.box[1],R.box[2],R.box[3])}}
 function dglGaoTex(r){const gl=EGL.gl,{FW,FH,d}=r,t=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,t);gl.pixelStorei(gl.UNPACK_ALIGNMENT,1);gl.texImage2D(gl.TEXTURE_2D,0,gl.R8,FW,FH,0,gl.RED,gl.UNSIGNED_BYTE,d);gl.pixelStorei(gl.UNPACK_ALIGNMENT,4);eglTexParams({linear:true});return t}
@@ -503,7 +505,7 @@ function dglHK(id,sc,gkey){return id+'|'+gkey+'|'+(sc.props||[]).length+'|'+(sc.
    left (DGL.sceneCache), so the switch to it is a swap of a few references. Returns true when it is ready. */
 function dglPrepared(id,sc,gkey){const M=DGL.sceneCache;return !!(M&&M.has(dglHK(id,sc,gkey||dioGroundKey(sc))))}
 function dglPrepare(id,sc,G,urgent,focus){if(!DGL.on||!G)return false;const gkey=dioGroundKey(sc),hk=dglHK(id,sc,gkey);if(DGL.sceneCache&&DGL.sceneCache.has(hk))return true;if(DGL.hkey===hk)return true;
- if(DGL.prep){if(DGL.prep.hk===hk){if(urgent)DGL.prep.urgent=1;return false}if(!urgent||DGL.prep.urgent)return false;dglPrepAbort()}/* a view needed now goes first; one only looked ahead to waits its turn */const T={prepared:1,grass:null,grassKey:null};DGL.prep={hk,id,T,it:(function*(){yield* dglGroundSteps(sc,G,T);/* v46: and the squares round where you will come in */if(focus&&!DIO.lite){T.ring=dglRingNew();const W=dglRingWant(T.ring,sc,focus[0],focus[1]),Q=W.slice(0,9).map(([i,j,d])=>dglRingChunk(T.ring,sc,i,j,6+d));
+ if(DGL.prep){if(DGL.prep.hk===hk){if(urgent)DGL.prep.urgent=1;return false}if(!urgent||DGL.prep.urgent)return false;dglPrepAbort()}/* a view needed now goes first; one only looked ahead to waits its turn */const T={prepared:1,grass:null,grassKey:null};DGL.prep={hk,id,T,it:(function*(){yield* dglGroundSteps(sc,G,T);/* v46: and the squares round where you will come in */if(focus){T.ring=dglRingNew();const W=dglRingWant(T.ring,sc,focus[0],focus[1]),Q=W.slice(0,9).map(([i,j,d])=>dglRingChunk(T.ring,sc,i,j,6+d));
   /* alpha 0.4: all nine on the helper together; painted here, one after another */if(typeof pwOn==='function'&&pwOn())yield* pwAll(Q);else for(const g of Q)yield* g}})(),t0:performance.now(),ms:0,urgent:urgent?1:0};return false}
 function dglPrepAbort(){const J=DGL.prep;if(!J)return;DGL.prep=null;try{J.it.return()}catch(e){}dglSceneFree(J.T)}
 function dglPrepWork(budget){const J=DGL.prep;if(!J)return;if(DGL.hkey===J.hk){dglPrepAbort();return}if(J.urgent&&budget)budget*=2*(DGL.prepBoost||1);const t0=performance.now();
@@ -715,7 +717,7 @@ function dglFrameIn(ts,dt,dtm,t,C0,PPU,rw,rh,w0){if(typeof wrLookTick==='functio
  const fy=dioH(fx,fz)+.8,v=[fx-C.eye[0],fy-C.eye[1],fz-C.eye[2]],dir=v3n([C.tgt[0]-C.eye[0],C.tgt[1]-C.eye[1],C.tgt[2]-C.eye[2]]),fd=v[0]*dir[0]+v[1]*dir[1]+v[2]*dir[2];
  DGL.focus=BT?BT.focus:DGL.focus==null?fd:DGL.focus+(fd-DGL.focus)*.12;
  if(D.noPost){gl.bindFramebuffer(gl.READ_FRAMEBUFFER,S.f);gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER,null);gl.blitFramebuffer(0,0,rw,rh,0,0,rw,rh,gl.COLOR_BUFFER_BIT,gl.NEAREST)}
- else eglPost(S,C,DGL.focus,rw,rh,{blur:BT?BT.blur:(sc.blur??1)*(DIO.opt.blur??1)*(st.focusY!=null?.6:1),lite:DIO.opt.lite,fast:DIO.R<.75||QE>=1,noAO:QE>=1,noRays:QE>=3,bloomN:QE>=3?3:5,noDof:QE>=4,heat:dglHeat(sc),heatS:dglHeatSrc(C),mood:dglMood(sc),sun:sc.indoor?null:eglSunScreen(C,sun.dir,300),X,ivp:C.ivp,noVol:QE>=3||!!sc.indoor&&!dark,volDens:sc.indoor?.5:1+(ENG_CTX.env?ENV.fog*1.5+ENV.rain*.4:0)});
+ else eglPost(S,C,DGL.focus,rw,rh,{blur:BT?BT.blur:(sc.blur??1)*(DIO.opt.blur??1)*(st.focusY!=null?.6:1),fast:DIO.R<.75||QE>=1,noAO:QE>=1,noRays:QE>=3,bloomN:QE>=3?3:5,noDof:QE>=4,heat:dglHeat(sc),heatS:dglHeatSrc(C),mood:dglMood(sc),sun:sc.indoor?null:eglSunScreen(C,sun.dir,300),X,ivp:C.ivp,noVol:QE>=3||!!sc.indoor&&!dark,volDens:sc.indoor?.5:1+(ENG_CTX.env?ENV.fog*1.5+ENV.rain*.4:0)});
  /* labels and markers stay sharp on the layer above */
  const x=DIO.x;x.setTransform(1,0,0,1,0,0);x.clearRect(0,0,rw,rh);
  if(!BT&&!(DIO.opt.active&&!DIO.opt.active())){dioExitMarks(C,st,t);dioTapMark(C,t);
@@ -763,9 +765,9 @@ function dglBudget(){return performance.now()-(DGL.budT||0)<(DGL.budMs??7)}
 /* v32: how much heat shimmer: over lava always, over desert sand and canyons in the heat of the day */
 /* v47: a mood per place (warm late afternoon in Sundown, cool and misty in the Thicket, hazy heat in the canyon...):
    saturation, contrast, warmth and tints for the darks and the lights, from the data's presets (moods). It eases over
-   about two seconds when you walk from one place into the next, and is off in Lite mode and with the setting off */
+   about two seconds when you walk from one place into the next, and is off with the setting off */
 const DGL_MOOD0={sat:1,con:1,warm:0,lift:[0,0,0],gain:[0,0,0],sh:[0,0,0],hi:[0,0,0]};
-function dglMood(sc){const on=(eng('world','moods')??1)>0&&!DIO.opt.lite,Mo=(typeof GD!=='undefined'&&GD.moods)||{},T0=on&&sc?Mo[sc.mood||dioMoodOf(sc)]:null,k=eng('world','moods')??1;
+function dglMood(sc){const on=(eng('world','moods')??1)>0,Mo=(typeof GD!=='undefined'&&GD.moods)||{},T0=on&&sc?Mo[sc.mood||dioMoodOf(sc)]:null,k=eng('world','moods')??1;
  const T=Object.assign({},DGL_MOOD0);if(T0)for(const f of ['sat','con','warm'])if(T0[f]!=null)T[f]=f==='warm'?T0[f]*k:1+(T0[f]-1)*k;if(T0)for(const f of ['lift','gain','sh','hi'])if(T0[f])T[f]=T0[f].map(v=>v*k);
  const M=DGL.mood||(DGL.mood=JSON.parse(JSON.stringify(T))),now=performance.now(),dt=Math.min(.1,(now-(DGL.moodT||now))/1000);DGL.moodT=now;const e=1-Math.exp(-dt*1.6);
  for(const f of ['sat','con','warm'])M[f]+=(T[f]-M[f])*e;for(const f of ['lift','gain','sh','hi'])for(let i=0;i<3;i++)M[f][i]+=(T[f][i]-M[f][i])*e;return M}
@@ -1120,7 +1122,7 @@ function dglRiseK(it){const R=DGL.rise,now=performance.now();if(!R.c){let c=null
  if(t0==null){if(R.load&&d>4+f*48)return 0;t0=now+(R.load?0:d*50);R.seen.set(key,t0)}
  if(f>=1&&!R.done)R.done=now;if(R.done&&now-R.done>3500){DGL.rise=null;return 1}
  const t=(now-t0)/1000;if(t<=0)return 0;if(t>=.55)return 1;const k=t/.55,c=1.7;return 1+(c+1)*Math.pow(k-1,3)+c*Math.pow(k-1,2)}
-function dglSprites(C,items,X,hits,labels,PPU){const gl=EGL.gl,p=dglUse('sprite',C,X),U=p.U,P=DIO.pl,sc=DIO.sc,sun=X.sun;eglBindQuad();if(U.uWave)gl.uniform3f(U.uWave,0,0,0);if(U.uSelOut)gl.uniform1f(U.uSelOut,DIO.opt.lite?0:(eng('color','outlines')??1));
+function dglSprites(C,items,X,hits,labels,PPU){const gl=EGL.gl,p=dglUse('sprite',C,X),U=p.U,P=DIO.pl,sc=DIO.sc,sun=X.sun;eglBindQuad();if(U.uWave)gl.uniform3f(U.uWave,0,0,0);if(U.uSelOut)gl.uniform1f(U.uSelOut,eng('color','outlines')??1);
  const sh=v3n([sun.dir[0],0,sun.dir[2]]);gl.uniform3fv(U.uRight,C.right);gl.uniform3fv(U.uBack,C.back);gl.uniform3fv(U.uFwd,C.fwd);gl.uniform1f(U.uDZ,0);gl.uniform3fv(U.uSunH,sh);gl.uniform1i(U.uTex,0);gl.uniform1i(U.uNrm,1);gl.uniform1f(U.uAlpha,1);gl.uniform1f(U.uCurveOn,1);gl.uniform1f(U.uEmit,0);gl.uniform1f(U.uFlipN,1);gl.uniform1f(U.uFixed,0);
  const me=dioProj(C,P.x,.9,P.z);DGL.bfade=new Map();const sd=sun.dir,sl=Math.hypot(sd[0]*C.right[0]+sd[2]*C.right[2],sd[1])||1,selfD=[(sd[0]*C.right[0]+sd[2]*C.right[2])/sl,-sd[1]/sl],selfK=sd[1]>.05&&(eng('shadows','selfShade')??.7)>0?(eng('shadows','selfShade')??.7)*eng('shadows','strength')*Math.min(1,sd[1]*4):0;gl.enable(gl.DEPTH_TEST);gl.depthMask(true);gl.disable(gl.BLEND);
  /* v32: drawn grouped by picture (fewer texture switches); depth decides what is in front, so order doesn't matter */
@@ -1355,7 +1357,7 @@ function dglFountainFx(quad,t,rm,dt){const L=DGL.basinL;if(!L||!L.length)return;
 /* smoke, spray, sparks, sparkles, butterflies, leaves, kicked-up grass; lamps, windows and fires as small bright cores
    (the bloom turns them into glows) */
 /* v26: rain, snow and falling ash around you (env.js says how much); drops splash on the ground and ring the water */
-function dglWeather(quad,glows,U,R,Up,dt,rm){const gl=EGL.gl,E=ENV,BT=DGL.bt,P=BT?{x:BT.center[0],z:BT.center[1]}:DIO.pl,k=eng('air','weather')*(DIO.R<.75?.5:1)*(DIO.opt.lite?.5:1);
+function dglWeather(quad,glows,U,R,Up,dt,rm){const gl=EGL.gl,E=ENV,BT=DGL.bt,P=BT?{x:BT.center[0],z:BT.center[1]}:DIO.pl,k=eng('air','weather')*(DIO.R<.75?.5:1);
  /* alpha 0.4: while a front passes, the rain is as heavy as it will be (or was) but only on its side of the curtain */
  const Cu=E.curtain,inC=x=>!Cu||(Cu.into?Cu.dir*(x-P.x)<Cu.e*11:Cu.dir*(x-P.x)>Cu.e*11);
  const rain=Math.min(1.6,Cu?Cu.rain:E.rain)*k,snow=(Cu?Cu.snow:E.snow)*k,ash=(Cu?Cu.ash:E.ash)*k;if(rain+snow+ash<.03){if(DGL.wx)DGL.wx.p.length=0;return}

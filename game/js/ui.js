@@ -58,7 +58,7 @@ function render(){const app=$('#app');
 function updateNav(show){let n=$('#nav');const t=[['walk','Walk'],['map','Map'],['team','Team'],['ledger','Guide'],['bag','Bag']];
  if(!n){n=document.createElement('nav');n.id='nav';n.setAttribute('aria-label','Main');n.innerHTML=`<div class="in px glass"><span class="ind"></span>${t.map(([k,l])=>`<button data-a="tab" data-t="${k}">${uiIco(k)}<span>${l}</span></button>`).join('')}</div>`;document.body.appendChild(n)}
  n.hidden=!show;n.querySelector('.ind').style.setProperty('--i',TABS.indexOf(U.tab));n.querySelectorAll('button').forEach(b=>{if(b.dataset.t===U.tab)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current')})}
-/* v47: Lite's opening, in pictures (opening.js draws them): the fall, Hazel, your trainer, your starter, then Blake */
+/* v47: the opening in pictures, when the cutscene can't run or stops (opening.js draws them): the fall, Hazel, your trainer, your starter, then Blake */
 const INTRO_STILLS=[['street',3.2,'The surface, late, after the show. You were walking home, a lanyard round your neck, your phone in your hand.'],
  ['street',6.35,'Then the pavement opened.'],
  ['crust',1.05,'Down through the crust: soil, rock, old pipes, a crate stamped LEGACY. Then light.'],
@@ -140,15 +140,14 @@ function walkHero(){if(U.inside&&!U.bench&&roomState())return roomHero();if(U.be
  else next=`<p class="wh-gate">${esc(st.t)}</p>`;
  return `<div class="walk-hero" id="walkHero">${whCard(esc(placeSub(here)),esc(here.name),envLine()+next,tripButtons())}
  <div class="wh-foot">${q.length?`<p class="wh-hint glass">${uiIco('spark',12)} ${plural(q.length,'Billie')} hiding nearby. Tap a <b>?</b> to battle.</p>`:S.route.prog===0?`<p class="wh-hint glass">${uiIco('walk',12)} Tap the ground to walk around. Tap buildings, people and signs.</p>`:''}
-  <div class="wh-row"><button class="pb small glass fish-btn" data-a="fish" hidden>${uiIco('fish',14)} Fish</button><button class="pb small glass" data-a="photo" aria-label="Photo mode">${uiIco('camera',14)}</button><button class="pb small glass" data-a="test" data-n="500">+500 steps</button><button class="wh-down glass" data-a="walkdown" aria-label="Show actions">${uiIco('chev',18)}<span>Actions</span></button><span class="wh-steps glass tnum">${uiIco('walk',14)} ${fmt(S.day.steps)}</span></div></div></div>`}
+  <div class="wh-row"><button class="pb small glass fish-btn" data-a="fish" hidden>${uiIco('fish',14)} Fish</button><button class="pb small glass" data-a="photo" aria-label="Photo mode">${uiIco('camera',14)}</button><button class="wh-down glass" data-a="walkdown" aria-label="Show actions">${uiIco('chev',18)}<span>Actions</span></button><span class="wh-steps glass tnum">${uiIco('walk',14)} ${fmt(S.day.steps)}</span></div></div></div>`}
 function renderWalk(){rollDay();const st=S.day.steps,r=rate(st),q=S.queue;
  return `${walkHero()}<div class="walk-sheet"><span class="ws-grip" aria-hidden="true"></span>
  <div class="cols"><div class="col">
  <div class="today px glass"><div class="today-top"><div><div class="big tnum" data-count="steps" data-to="${st}">${fmt(st)}</div><div class="lbl">steps today</div></div><div class="se"><div class="mid tnum">$<span data-count="se" data-to="${S.se}">${fmt(S.se)}</span></div><div class="lbl">Money</div></div></div>
   <div class="brackets" role="img" aria-label="Earning $${r} per step">${bracketBars(st)}</div><div class="brk-l">${bracketLabels()}</div>
   <p class="note">${bracketNote(st)}</p></div>
- ${walkMode()?`<section class="walkbtns"><p class="note">Walk with the joystick (drag anywhere on the scene) or tap where you want to go. The arrows at the edges lead on to the next place; the steps you take count here.</p></section>`:`<section class="walkbtns">${window.NW_ARTIFACT?'':`<button class="pb ${U.walking?'quiet':'dark'} wide" data-a="motion">${U.walking?'Stop counting steps':'Count my steps with motion'}</button>${U.walking?`<p class="note">${U.motionMsg}</p>`:''}`}
-  <div class="two"><button class="pb" data-a="test" data-n="500">Demo +500 steps</button><button class="pb" data-a="test" data-n="2000">Demo +2,000 steps</button></div><p class="note demo-note">${window.NW_ARTIFACT?'This version can’t read your phone’s motion, so these buttons stand in for walking.':'Demo buttons add simulated steps immediately.'}</p></section>`}
+ ${walkMode()?`<section class="walkbtns"><p class="note">Walk with the joystick (drag anywhere on the scene) or tap where you want to go. The arrows at the edges lead on to the next place; the steps you take count here.</p></section>`:''}
  ${typeof chalCard==='function'?chalCard():''}${typeof reqList==='function'&&reqList()?`<section class="chal px glass"><div class="sec-h"><h2>Requests you’re helping with</h2></div>${reqList()}</section>`:''}${hereCard()}</div><div class="col">
  <section class="pending"><div class="sec-h"><h2>Encounters</h2><span class="count tnum">${q.length}/${RULES.steps.maxEncounters}</span></div>
   <p class="note">${q.length>=RULES.steps.maxEncounters?'Your area is full. Battle or tax a few to make room.':`Next one in about ${fmt(Math.ceil((RULES.steps.encounterEverySE-S.meter)/r))} steps.`} You only see their level until the battle starts.</p>
@@ -181,7 +180,7 @@ function enterRoom(a,p){const id=roomFor(a,p);if(!id||!DIO.pl)return false;const
 /* v46: seamless rooms (world.js wrRoomScene). The room's view is the place's own view with the room laid in at the
    building's door, so going in and out is a shift of nothing. roomLayIn makes (and starts preparing) that view;
    it is also called when you tap a building, so the room is usually ready by the time you reach the door. */
-function roomLayIn(id,p,fresh){if(typeof wrRoomScene!=='function'||!wrOn()||!DIO.ready||!DIO.sc||!DIO.sc.parts||DIO.sc.roomRect||DIO.lite||typeof DGL==='undefined'||!DGL.on||!DIO.pl||!p)return null;
+function roomLayIn(id,p,fresh){if(typeof wrRoomScene!=='function'||!wrOn()||!DIO.ready||!DIO.sc||!DIO.sc.parts||DIO.sc.roomRect||typeof DGL==='undefined'||!DGL.on||!DIO.pl||!p)return null;
  if(eng('world','seamlessRooms')===false)return null;const C=dioData().sc,M=C.props[p.k];if(!M||!M.box)return null;const s=p.s||1,f=p.f?-1:1,dx=((M.door&&M.door.x)||0)/(C.ppu||34)*s*f,door=[+(p.x+dx).toFixed(1),+(+p.z).toFixed(1),+(+p.x).toFixed(1)];/* the door, and the building's middle */
  if(fresh)WORLD.cache.delete(wrRoomId(DIO.id,id,door)+'|'+WORLD.gen);/* the room as it is now (your room's decorations) */
  const sc=wrRoomScene(DIO.id,id,door);if(!sc)return null;wrGetReady(sc.id,true,door);return {view:sc.id,door,base:DIO.id}}
@@ -292,14 +291,14 @@ function walkSceneSync(){
  const on=S.started&&U.tab!=='map'&&!!sceneIdAt(S.route.node),walk=on&&U.tab==='walk';let cv=$('#dio');document.body.classList.toggle('on-walk',walk);document.body.classList.toggle('on-scene',on&&!walk);
  if(!on){if(DIO.cv)dioStop();if(U.tab==='map'&&S.started&&typeof mapGLWanted==='function'&&mapGLWanted()){if(cv){cv.hidden=false;cv.classList.add('in')}return}if(cv)cv.hidden=true;return}
  if(!cv){cv=document.createElement('canvas');cv.id='dio';cv.setAttribute('aria-label','Your surroundings. Tap the ground to walk, tap people and buildings to visit, tap a question mark to battle.');document.body.prepend(cv)}cv.hidden=false;
- const ws=walkState(),id=ws.id,lite=(S.preferences||{}).effects==='lite';
- if(DIO.id!==id&&DIO.cv&&DIO.ready&&!!DIO.opt.lite===lite&&typeof wrDelta==='function'){const d=wrDelta(DIO.id,id);
+ const ws=walkState(),id=ws.id;
+ if(DIO.id!==id&&DIO.cv&&DIO.ready&&typeof wrDelta==='function'){const d=wrDelta(DIO.id,id);
   /* alpha 0.2: neighbouring places share their edges, so most views share a part; a walk carries on into the next view,
      a jump somewhere else (not where you are walking to) opens it fresh */
   const walking=!d||ws.mode==='road'||!ws.pos||!DIO.pl||Math.hypot(DIO.pl.x+d[0]-ws.pos[0],DIO.pl.z+d[1]-ws.pos[1])<25;
   if(d&&walking&&dioShift(id,d[0],d[1])){artLoad(dioPaths(DIO.sc)).catch(()=>{});return}}
- if(DIO.id!==id||!DIO.cv||!!DIO.opt.lite!==lite){if(DIO.id&&DIO.id!==id){cv.classList.remove('in');void cv.offsetWidth}
-  dioMount(cv,id,{state:walkState,onPick:walkPick,onAim:roomAim,onMove:(x,z)=>{if(typeof walkCross==='function')walkCross();/* after leaving a room you stand at its door: nothing in between moves that */if(!U.inside&&/^int_/.test(DIO.id||''))return;const sid=sceneIdAt(S.route.node),po=walkOff(sid),o=po||(DIO.sc&&DIO.sc.baseOff)||[0,0],bk=U.backAt;if(bk){if(walkOff(bk.id)&&Math.hypot(x-walkOff(bk.id)[0]-bk.x,z-walkOff(bk.id)[1]-bk.z)<.6)U.backAt=null;else return}U.roam={id:po?sid:(DIO.sc&&DIO.sc.baseId||DIO.id),node:S.route.node,x:x-o[0],z:z-o[1]}},keys:()=>!U.modal&&U.tab==='walk'&&scrollY<innerHeight*.3,active:()=>U.tab==='walk'&&!U.modal,safe:()=>{const a=$('.wh-card'),b=$('.wh-foot'),H=innerHeight;return [a?clamp(a.getBoundingClientRect().bottom/H,0,.5):.1,b?clamp(b.getBoundingClientRect().top/H,.5,1):.88]},lite:(S.preferences||{}).effects==='lite',
+ if(DIO.id!==id||!DIO.cv){if(DIO.id&&DIO.id!==id){cv.classList.remove('in');void cv.offsetWidth}
+  dioMount(cv,id,{state:walkState,onPick:walkPick,onAim:roomAim,onMove:(x,z)=>{if(typeof walkCross==='function')walkCross();/* after leaving a room you stand at its door: nothing in between moves that */if(!U.inside&&/^int_/.test(DIO.id||''))return;const sid=sceneIdAt(S.route.node),po=walkOff(sid),o=po||(DIO.sc&&DIO.sc.baseOff)||[0,0],bk=U.backAt;if(bk){if(walkOff(bk.id)&&Math.hypot(x-walkOff(bk.id)[0]-bk.x,z-walkOff(bk.id)[1]-bk.z)<.6)U.backAt=null;else return}U.roam={id:po?sid:(DIO.sc&&DIO.sc.baseId||DIO.id),node:S.route.node,x:x-o[0],z:z-o[1]}},keys:()=>!U.modal&&U.tab==='walk'&&scrollY<innerHeight*.3,active:()=>U.tab==='walk'&&!U.modal,safe:()=>{const a=$('.wh-card'),b=$('.wh-foot'),H=innerHeight;return [a?clamp(a.getBoundingClientRect().bottom/H,0,.5):.1,b?clamp(b.getBoundingClientRect().top/H,.5,1):.88]},
   cap:()=>{const w=document.hidden?'hidden':DIO.battle?'':U.modal?'window':U.tab!=='walk'?'screen':scrollY>innerHeight*.7?'scrolled':'';DIO.held=w;return w==='hidden'?1:w==='window'?10:w==='screen'?24:w==='scrolled'?4:userFps()}}).then(()=>cv.classList.add('in'))}}
 function renderMap(){return `<div class="map-full"><canvas id="mapcv" width="${MW}" height="${MH}" aria-label="World map. Drag to look around, tap a place."></canvas><div id="maplabels"></div>
  <div class="map-head glass"><div class="sub">The Hollow Earth</div><h1 class="where">World map</h1><p class="map-trip ${tripStatus().k}">${esc(tripStatus().t)}</p></div>
@@ -464,7 +463,7 @@ function hireFlow(slot){modal({title:'Pick a job',html:`<p class="note">Each job
 function hirePick(slot,job){const free=allMons().filter(m=>m.job==null),canTeam=S.team.filter(x=>x.job==null).length>1;
  const list=free.filter(m=>!S.team.includes(m)||canTeam);
  modal({title:`Who becomes the ${JOBS[job].n.toLowerCase()}?`,html:list.length?`<div class="list">${list.map(m=>`<button class="pickrow px" data-a="hireon" data-s="${slot}" data-j="${job}" data-u="${m.uid}">${sprHTML(m.sp,40,{gold:m.gold})}<span class="pr-t"><b>${esc(N(m))}</b><small>${S.team.includes(m)?'On your team':'In storage'}, Lv ${m.lvl}</small></span></button>`).join('')}</div>`:'<p>Tax another Billie first. Your last one has to stay on the team.</p>',btns:[{l:'Cancel',c:'quiet',f:closeModal}]})}
-function settings(tab){if(tab)U.setTab=tab;modal({title:'Settings',settings:true,cls:'set-sheet',html:settingsHTML(),btns:[{l:'Done',c:'dark',f:closeModal},{l:'Start over',c:'quiet',f:()=>{U.modal=null;modal({title:'Start over?',html:'<p>This erases your team, Field Guide and money.</p>',btns:[{l:'Erase and start over',c:'red',f:()=>{if(U.walking)stopMotion();S=freshKeep();S.savedAt=Date.now();lsSet(S);flush();U.intro=0;U.pg=null;U.avatarDraft=null;U.trainerDraft=null;U.tab='walk';applyPreferences();closeModal();render()}},{l:'Keep my progress',c:'quiet',f:closeModal}]})}}]})}
+function settings(tab){if(tab)U.setTab=tab;modal({title:'Settings',settings:true,cls:'set-sheet',html:settingsHTML(),btns:[{l:'Done',c:'dark',f:closeModal},{l:'Start over',c:'quiet',f:()=>{U.modal=null;modal({title:'Start over?',html:'<p>This erases your team, Field Guide and money.</p>',btns:[{l:'Erase and start over',c:'red',f:()=>{S=freshKeep();S.savedAt=Date.now();lsSet(S);flush();U.intro=0;U.pg=null;U.avatarDraft=null;U.trainerDraft=null;U.tab='walk';applyPreferences();closeModal();render()}},{l:'Keep my progress',c:'quiet',f:closeModal}]})}}]})}
 /* o.rival (v47, from the opening): Blake's battle comes first; the welcome sheet waits until the talk after it */
 function startGame(l,o={}){const avatar=cleanLook(U.avatarDraft||U.trainerDraft||TR_PRESETS[0]);S=freshKeep();S.avatar=avatar;U.trainerDraft=null;S.started=true;S.gender='me';S.wardrobe={owned:{},outfits:[null,null,null]};S.starter=l;const R=RULES.start,m=makeMon(l+'0',R.starterLevel);S.team=[m];S.buddy=m.uid;S.caught[m.sp]=1;S.seen[m.sp]=1;S.since=Date.now();
  S.route={node:START_NODE,prog:0,plan:[],hold:false};S.visited={[START_NODE]:1};S.mapSeen=null;if(typeof storyFlags==='function')storyFlags().copperleafNote=1;for(let i=0;i<R.starterEncounters;i++)spawn(true);const egg=R.starterEgg&&EGGS[R.starterEgg]?addEgg(R.starterEgg):false;save();flush();U.tab='walk';render();
@@ -472,20 +471,6 @@ function startGame(l,o={}){const avatar=cleanLook(U.avatarDraft||U.trainerDraft|
  const W={title:`${SP[m.sp].name} joined your team`,top:`<div class="sheet-art">${sprHTML(m.sp,128)}</div>`,html:`${nE?`<p>${words[nE]||nE} Billie${nE===1?' is':'s are'} already rustling in the grass. Tap one to battle it, then flick a coin.</p>`:''}${egg?`<p>Professor Hazel also gave you a ${R.starterEgg} km egg. It’s warming up in an incubator, and every step you walk helps it hatch.</p>`:''}`,btns:[{l:'Let’s go',c:'dark',f:closeModal}]};
  if(o.rival&&TRAINERS.blake0&&typeof storyRivalBattle==='function'){U.welcome=W;storyRivalBattle(o);return}
  modal(W)}
-
-/* ---------- motion pedometer ---------- */
-const mot={avg:9.8,sm:9.8,up:false,last:0,pend:0,seen:false,timer:null};
-function onMotion(e){const a=e.accelerationIncludingGravity;if(!a||a.x==null)return;mot.seen=true;const mag=Math.hypot(a.x,a.y,a.z);
- mot.avg=mot.avg*.98+mag*.02;mot.sm=mot.sm*.7+mag*.3;const now=performance.now();
- if(!mot.up&&mot.sm>mot.avg+1.3&&now-mot.last>280){mot.up=true;mot.last=now;mot.pend++}else if(mot.up&&mot.sm<mot.avg+.3)mot.up=false}
-async function toggleMotion(){if(U.walking){stopMotion();return}
- try{if(typeof DeviceMotionEvent==='undefined'){toast('Motion sensors aren’t available here. Use test steps instead.');return}
-  if(typeof DeviceMotionEvent.requestPermission==='function'){const r=await DeviceMotionEvent.requestPermission();if(r!=='granted'){toast('Motion access was declined. Use test steps instead.');return}}}
- catch(e){toast('Motion sensors aren’t available here. Use test steps instead.');return}
- window.addEventListener('devicemotion',onMotion);U.walking=true;mot.seen=false;U.motionMsg='Counting steps while this page is open. Walk with your phone in hand.';
- mot.timer=setInterval(()=>{if(mot.pend>0){const n=mot.pend;mot.pend=0;addSteps(n,true)}},2000);
- setTimeout(()=>{if(U.walking&&!mot.seen){U.motionMsg='No motion data is reaching this page. Your browser may block sensors here, so use test steps instead.';if(!B)render()}},3500);render()}
-function stopMotion(){window.removeEventListener('devicemotion',onMotion);clearInterval(mot.timer);U.walking=false;if(mot.pend){const n=mot.pend;mot.pend=0;addSteps(n,true)}else render()}
 
 /* ---------- input ---------- */
 document.addEventListener('click',ev=>{const el=ev.target.closest('[data-a]');if(!el)return;const a=el.dataset.a,d=el.dataset;
@@ -501,11 +486,9 @@ document.addEventListener('click',ev=>{const el=ev.target.closest('[data-a]');if
   case 'setgender':S.gender=d.g;save();closeModal();render();break;
   case 'pick':startGame(d.l,{rival:true,talkFirst:true});break;
   case 'tab':if(U.tab!==d.t){if(d.t==='map')U.mglFrom=U.tab;U.tab=d.t;if(d.t!=='map')U.mapSel=null;render();scrollTo(0,0)}else if(d.t==='ledger'&&U.dex){U.dex=null;render();scrollTo(0,0)}break;
-  case 'test':addSteps(+d.n);break;
   case 'fish':if(typeof fishStart==='function')fishStart();break;
   case 'leaveroom':leaveRoom();break;
   case 'walkdown':{const w=$('.walk-sheet');if(w)scrollTo({top:w.getBoundingClientRect().top+scrollY-70,behavior:RM?'auto':'smooth'});break}
-  case 'motion':toggleMotion();break;
   case 'settings':settings();break;
   case 'card-close':S.preferences=S.preferences||{};S.preferences.cardClosed=true;save();render();requestAnimationFrame(()=>{const t=$('.tb-where');if(t)t.focus({preventScroll:true})});break;
   case 'card-open':S.preferences=S.preferences||{};S.preferences.cardClosed=!S.preferences.cardClosed;save();render();break;
