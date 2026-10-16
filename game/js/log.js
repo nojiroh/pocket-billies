@@ -95,7 +95,6 @@ async function exportDebugLog(){/* take a current picture first: the WebGL scene
  const d=new Date(),pad=n=>String(n).padStart(2,'0'),name=`pocket-billies-debug-${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}.json`;
  NWLOG.add('export',name);
  try{const f=new File([data],name,{type:'application/json'});if(navigator.canShare&&navigator.canShare({files:[f]})&&/Mobi|Android|iPhone|iPad/.test(navigator.userAgent)){await navigator.share({files:[f],title:'Pocket Billies debug log'});toast('Debug log shared.');return}}catch(e){if(e&&e.name==='AbortError')return}
- if(window.claude&&typeof window.claude.use==='function'){let dl=null;try{dl=await window.claude.use('downloads')}catch(e){}if(dl){try{await dl.save({filename:name,data});toast('Debug log saved.');return}catch(e){}}}
  try{const url=URL.createObjectURL(new Blob([data],{type:'application/json'})),a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),4000);toast('Debug log saved to your downloads.');return}catch(e){}
  try{await navigator.clipboard.writeText(data);toast('The debug log was copied. Paste it into a text file.')}catch(e){toast('This browser can’t save files here.')}}
 /* hooks into the game, installed once everything has loaded */

@@ -7,12 +7,7 @@ function applyPreferences(){const p=S.preferences||{},root=document.documentElem
  /* v30: accessibility: text size, high contrast, no flashing, bigger buttons */root.dataset.text=p.textSize||'normal';root.dataset.contrast=p.contrast==='high'?'high':'normal';root.dataset.flash=p.flashes==='off'?'off':'on';root.dataset.targets=p.bigTargets?'big':'normal';if(typeof i18nSet==='function')i18nSet(p.lang||'en')}
 function customizeTrainer(){openDressing()}
 async function exportSave(){const json=JSON.stringify({game:'Pocket Billies',format:1,save:S},null,2),name='pocket-billies-save-'+today()+'.json';
- /* inside a Claude artifact, files go through the viewer's download prompt */
- if(window.claude&&typeof window.claude.use==='function'){let dl=null;try{dl=await window.claude.use('downloads')}catch(e){}
-  if(dl){try{await dl.save({filename:name,data:json});toast('Save backup downloaded.')}catch(e){if(e&&e.code!=='declined')copySave(json)}return}
-  if(window.NW_ARTIFACT){copySave(json);return}}
  const blob=new Blob([json],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);toast('Save backup downloaded.');}
-function copySave(json){try{navigator.clipboard.writeText(json).then(()=>toast('Downloads are off here, so the save was copied as text. Paste it into a .json file to keep it.'),()=>toast('This view can’t download or copy files. Your progress is still saved in this browser.'))}catch(e){toast('This view can’t download or copy files. Your progress is still saved in this browser.')}}
 function validSave(o){if(!o||typeof o!=='object'||!o.started||typeof o.starter!=='string')return false;
  const num=(v,min,max)=>Number.isFinite(v)&&v>=min&&v<=max;
  if(!Array.isArray(o.team)||!Array.isArray(o.box)||!o.team.length||o.team.length>Math.max(6,TEAM_MAX())||o.box.length>5000)return false;

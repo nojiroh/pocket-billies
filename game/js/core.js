@@ -72,24 +72,11 @@ let S=loadSave(lsGet())||fresh();
 let B=null;
 const U={tab:'walk',lastTab:null,intro:0,modal:null,mq:[],learnQ:[],walking:false,motionMsg:'',toastQ:[],toastOn:false,evT:null,throwing:false,disp:{steps:null,se:null},seenEnc:new Set(),mapSel:null};
 
-/* ---------- cloud save (per-person, private) ---------- */
-let DB=null,USERID=null,saveT=null,saving=false,again=false;
+/* ---------- saving: in this browser, and on the account when signed in (account.js) ---------- */
+let saveT=null;
 function save(){S.savedAt=Date.now();lsSet(S);if(!saveT)saveT=setTimeout(()=>{saveT=null;flush()},4000)}
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&saveT){clearTimeout(saveT);saveT=null;flush()}});
-async function flush(){if(SAVE_HOLD)return;if(typeof accFlush==='function'&&accFlush())return;if(!DB||!USERID)return;if(saving){again=true;return}saving=true;
- try{await DB.doc('data/users/'+USERID+'/save').set({json:JSON.stringify(S),savedAt:S.savedAt})}catch(e){if(e&&e.code==='invalid_argument')DB=null}
- saving=false;if(again){again=false;flush()}}
-async function initCloud(){
- try{if(!window.claude||typeof window.claude.use!=='function')return;
-  const [db,user]=await Promise.all([window.claude.use('db'),window.claude.use('user')]);if(!db||!user)return;
-  const id=await user.id();if(!id)return;DB=db;USERID=id;
-  const snap=await db.doc('data/users/'+id+'/save').get();
-  if(snap.exists){const d=snap.data();let remote=null;try{remote=JSON.parse(d.json);if(saveAge(remote)==='new')SAVE_HOLD=true;remote=loadSave(remote)}catch(e){}if(SAVE_HOLD)return;
-   if(remote&&remote.started&&(!S.started||(remote.savedAt||0)>(S.savedAt||0))&&!B){S=remote;S.avatar=cleanTrainer(S.avatar,S.gender);applyPreferences();lsSet(S);render();toast('Your progress is synced.');setTimeout(postProcess,200)}
-   else if(S.started)flush()}
-  else if(S.started)flush();
- }catch(e){}
-}
+function flush(){if(SAVE_HOLD)return;if(typeof accFlush==='function')accFlush()}
 
 /* ---------- billionaires ---------- */
 function stat(m,k){const b=SP[m.sp].base[STATK.indexOf(k)];let v=k==='hp'?Math.floor(2*b*m.lvl/100)+m.lvl+10:Math.floor(2*b*m.lvl/100)+5;
