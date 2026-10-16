@@ -150,7 +150,6 @@ function dioShade(c,k){return (c&0xff000000)|(Math.min(255,((c>>16)&255)*k)<<16)
 function dioPlain47(sx,sz,sa){const h=(x,z)=>Math.floor(dioHash(x*3+11+sa*7919,z*7+5)*3),p=h(sx,sz),L=h(sx-1,sz),U=h(sx,sz-1);for(let k=0;k<3;k++){const c=(p+k)%3;if(c!==L&&c!==U)return [0,6,7][c]}return [0,6,7][p]}
 /* v46: tile pictures at a smaller size (each f x f block averaged), for a view's distant ground */
 function dioTileScale(t,f){if(!t||f<=1)return t;const w=Math.max(1,t.w/f|0),h=Math.max(1,t.h/f|0),d=new Uint32Array(w*h),n=f*f;for(let y=0;y<h;y++)for(let x=0;x<w;x++){let r=0,g=0,b=0;for(let c=0;c<f;c++)for(let a=0;a<f;a++){const v=t.d[(y*f+c)*t.w+x*f+a];r+=v&255;g+=(v>>8)&255;b+=(v>>16)&255}d[y*w+x]=0xff000000|((b/n|0)<<16)|((g/n|0)<<8)|(r/n|0)}return {w,h,d}}
-function dioTileHalf(t){return dioTileScale(t,2)}
 const DIO_TILECACHE=new Map();
 function dioTileSet(T,TP,lite){const C=dioData().sc,nxOn=!lite&&dioNextOn(),key=TP+'|'+(nxOn?dioTileFolder():0)+'|'+T.tile+'|'+(T.vars||[]).join(',')+'|'+(typeof dioArtVer==='function'?dioArtVer():0);let L=DIO_TILECACHE.get(key);if(L)return L;
  if(nxOn){const src=dioNextTiles(T.tile).map(q=>dioTilePix(q)).filter(Boolean);if(src.length)L=src.map(t=>dioTileScale(t,Math.round(t.w/TP)))}
