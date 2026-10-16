@@ -27,6 +27,9 @@ from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import gamedata as GAMEDATA  # noqa: E402
+
 ROOT = Path(__file__).resolve().parent.parent
 GAME = ROOT / 'game'
 OUT = ROOT / 'validation' / 'quick'
@@ -133,8 +136,7 @@ def serve(directory):
 
 
 def gamedata():
-    src = (GAME / 'data' / 'gamedata.js').read_text(encoding='utf-8')
-    return json.JSONDecoder().raw_decode(src[src.index('window.GAMEDATA=') + len('window.GAMEDATA='):])[0]
+    return GAMEDATA.load()  # phase 04b: from the data files (tools/gamedata.py)
 
 
 # ------------------------------------------------------------------ 1. without a browser

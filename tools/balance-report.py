@@ -5,11 +5,11 @@ offence, bulk and speed the way a 1-v-1 does. Lines far from their stage's media
 needs its profile or its learn set looked at shows up. Writes validation/v40-balance.md.
 
     python3 tools/balance-report.py"""
-import json, statistics
+import statistics, sys
 from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
-def load():
-    s = (ROOT / 'game' / 'data' / 'gamedata.js').read_text(); i = s.index('{'); j = s.rindex('}'); return json.loads(s[i:j + 1])
+sys.path.insert(0, str(ROOT / 'tools'))
+from gamedata import load  # noqa: E402  phase 04b: the data files
 def main():
     GD = load(); M = GD['moves']; TOT = {k: v['totals'] for k, v in GD['rarities'].items()}
     rows = []

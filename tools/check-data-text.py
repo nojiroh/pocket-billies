@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Check that no text in the game data could become HTML.
 
-The game and the Studio put names and lines from game/data/gamedata.js into
+The game and the Studio put names and lines from the game data (game/data/*.json) into
 pages without escaping them (place names, Billie names, moves, scene names...).
 That data changes through Studio pull requests, which are too big to read line
 by line, so this guards it instead:
@@ -13,22 +13,16 @@ Exit code 1 if anything is found, with the path of each value.
 
 Usage: python3 tools/check-data-text.py
 """
-import json
 import os
 import re
 import sys
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DATA = 'game/data/gamedata.js'
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import gamedata  # noqa: E402
+
+DATA = 'game/data'
 ANY = re.compile(r'[<>`]')
 NAME_KEYS = {'id', 'name', 'n', 'names', 'title', 'place'}
-
-
-def load(path):
-    with open(os.path.join(ROOT, path), encoding='utf-8') as f:
-        text = f.read()
-    m = re.search(r'window\.GAMEDATA\s*=', text)
-    return json.loads(text[m.end():].strip().rstrip(';'))
 
 
 def walk(v, path, key, out):
@@ -45,7 +39,7 @@ def walk(v, path, key, out):
 
 def main():
     bad = []
-    walk(load(DATA), 'GAMEDATA', '', bad)
+    walk(gamedata.load(), 'GAMEDATA', '', bad)
     for path, v in bad[:50]:
         print(f'  {path}: {v!r}')
     if bad:
