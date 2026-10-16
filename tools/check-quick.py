@@ -812,16 +812,18 @@ def desktop_steps(b, base, R):
         out.append(f'room: daylight {day[0]:.2f}, {day[2]} lamps lit at night')
         # settings in tabs, every tab fits the phone width; a switch flips
         pg.evaluate("U.tab='walk';render();settings('game');0"); time.sleep(.6); tabs = []
-        for t in ['game', 'look', 'sound', 'controls', 'save', 'help']:
+        # alpha 0.5: the tabs are whatever the game lists (sound, graphics, game, save, help); contrast is under Game
+        names = pg.evaluate("SET_TABS.map(t=>t[0])")
+        for t in names:
             pg.evaluate(f"document.querySelector('[data-a=set-tab][data-k={t}]').click();0"); time.sleep(.3)
             tabs.append(pg.evaluate("[document.querySelectorAll('.set-body .set-row,.set-body .settings-profile,.set-body details').length,(()=>{const b=document.querySelector('.sheet .body');return b.scrollWidth-b.clientWidth})()]"))
-            if t == 'look': shot(pg, 'settings-look')
-        if any(n == 0 for n, _ in tabs) or any(o > 4 for _, o in tabs): raise Exception(f'settings tabs: {tabs}')
-        pg.evaluate("document.querySelector('[data-a=set-tab][data-k=look]').click();0"); time.sleep(.2)
+            if t == 'graphics': shot(pg, 'settings-graphics')
+        if len(names) < 5 or any(n == 0 for n, _ in tabs) or any(o > 4 for _, o in tabs): raise Exception(f'settings tabs {names}: {tabs}')
+        pg.evaluate("document.querySelector('[data-a=set-tab][data-k=game]').click();0"); time.sleep(.2)
         c0 = pg.evaluate("S.preferences.contrast||'normal'"); pg.evaluate("document.querySelector('[data-pref-set=contrast]').click();0"); time.sleep(.2); c1 = pg.evaluate("S.preferences.contrast")
         pg.evaluate("document.querySelector('[data-pref-set=contrast]').click();U.modal=null;U.mq=[];renderOv();0")
         if c0 == c1: raise Exception('the High contrast switch did nothing')
-        out.append('6 settings tabs, switches work')
+        out.append(f'{len(names)} settings tabs, switches work')
         # the place card closes with x and opens again from the name in the top bar
         pg.evaluate("render();0"); time.sleep(.4); pg.evaluate("document.querySelector('.wh-x').click();0"); time.sleep(.3)
         gone = pg.evaluate("!document.querySelector('.wh-card')"); pg.evaluate("document.querySelector('button.tb-where').click();0"); time.sleep(.3); back = pg.evaluate("!!document.querySelector('.wh-card')")
