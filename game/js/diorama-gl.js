@@ -63,6 +63,8 @@ function dglCanvasFor(cv,type){if(!cv._ctx){cv._ctx=type;return cv}if(cv._ctx===
 function dglUI(cv){let u=DGL.ui;if(!u||!u.isConnected){u=document.getElementById('dioui')||document.createElement('canvas');u.id='dioui';u.setAttribute('aria-hidden','true');DGL.ui=u}if(u.previousElementSibling!==cv)cv.after(u);u.hidden=false;return u}
 const _dioMount2D=dioMount,_dioStop2D=dioStop,_dioProj2D=dioProj,_dioUnproject2D=dioUnproject;
 dioMount=function(cv,id,opt={}){const useGL=!opt.lite&&!opt.noGL&&!EGL.fail&&eglOK();cv=dglCanvasFor(cv,useGL?'gl':'2d');DIO.lite=!useGL;
+ /* 0.1.0 alpha: no 2D fallback (Lite is gone): the game says this device can't run it. The Studio keeps its own message */
+ if(!useGL&&typeof noWebGL==='function'&&!opt.noGL){DGL.on=false;if(DGL.ui)DGL.ui.hidden=true;noWebGL(EGL.fail?'failed':'');return Promise.resolve()}
  if(!useGL){DGL.on=false;if(DGL.ui)DGL.ui.hidden=true;cv.classList.remove('gl');return _dioMount2D(cv,id,opt).then(()=>cv.classList.add('in'))}
  DIO.cv=cv;DIO.opt=opt;if(DIO.id!==id){DIO.id=id;DIO.cam=null;Object.assign(DIO.pl,{t:-1,fresh:true,pk:'',route:null,goal:null,line:null,walk:0});DIO.gkey='';DIO.cand=null;DIO.nav=null;DIO.npcAt={};DIO.folk=[];DIO.folkAll=[];DIO.folkId='';DIO.parts=[];DIO.tap=null;DGL.gkey='';DGL.focus=null;DGL.camT=null;DGL.farKey=''}
  DIO.sc=dioScene(id);DIO.ready=false;DIO.err=null;cv.classList.add('gl');
