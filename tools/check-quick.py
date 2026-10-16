@@ -860,10 +860,10 @@ def desktop_steps(b, base, R):
         b1 = pg.evaluate("DGL.builds||0")
         if node >= 0 and b1 - b0 > 1: raise Exception(f'the ground was rebuilt {b1 - b0} times going there and back')
         out.append(f'there and back: {b1 - b0} ground build(s)')
-        # wear and variety
+        # wear and variety (with the dial at 0, ask dglLookOf2: dglLookOf keeps a look for the rest of the frame, the game sees the dial on the next one)
         r = pg.evaluate("""(()=>{const sc=DIO.sc,C0=dioData().sc,P=sc.props||[],b=P.find(p=>{const M=C0.props[p.k];return M&&M.box&&M.door}),tr=P.filter(p=>/tree/.test(p.k)).slice(0,6);
          const L=b?dglLookOf(b,C0.props[b.k],sc):null,T=tr.map(p=>dglLookOf(p,C0.props[p.k],sc)),sizes=new Set(T.map(l=>l.size.toFixed(3))),hues=new Set(T.map(l=>l.hsv[0].toFixed(4)));
-         GD.engine.defaults.world=Object.assign(GD.engine.defaults.world||{},{wear:0});const L0=b?dglLookOf(b,C0.props[b.k],sc):null;delete GD.engine.defaults.world.wear;
+         GD.engine.defaults.world=Object.assign(GD.engine.defaults.world||{},{wear:0});const L0=b?dglLookOf2(b,C0.props[b.k],sc):null;delete GD.engine.defaults.world.wear;
          return {w:L?L.wear.reduce((x,y)=>x+y,0):-1,w0:L0?L0.wear.reduce((x,y)=>x+y,0):-1,sizes:sizes.size,hues:hues.size,n:T.length}})()""")
         if r['w'] <= 0: raise Exception(f'buildings have no wear ({r})')
         if r['w0'] != 0: raise Exception(f'Wear and tear at 0 still leaves wear ({r})')
