@@ -43,7 +43,7 @@ function dioNextTiles(path,set){const b=(path||'').replace(/^.*\//,'').replace(/
 /* v47: which set of twelve: the catalogue's tileSet ('tiles47', tools/build-terrain-v47.py), else the v46 set. With the
    v47 set the painter lays the soft patches itself, in world metres, picks the plain tiles evenly and never mirrors */
 function dioTileFolder(){const C=typeof dioData==='function'&&dioData();return (C&&C.sc&&C.sc.tileSet)||'tiles'}
-function dioT47(lite){return !lite&&dioNextOn()&&dioTileFolder()==='tiles47'}
+function dioT47(){return dioNextOn()&&dioTileFolder()==='tiles47'}
 /* v43: which flag a scene flies: its own (scene/flags/<id>.png) unless it names another */
 function dioFlagPath(sc){const D=dioData(),own=sc.baseId||Object.keys(D.scenes).find(k=>D.scenes[k]===sc),id=sc.flag||((D.sc.flags||[]).includes(own)?own:'default');return `scene/flags/${id}.png`}
 /* v46: a building's colour variant (p.v = 1..n): the same plan with the variant's picture and colours; the plain
@@ -151,7 +151,7 @@ function dioPlain47(sx,sz,sa){const h=(x,z)=>Math.floor(dioHash(x*3+11+sa*7919,z
 /* v46: tile pictures at a smaller size (each f x f block averaged), for a view's distant ground */
 function dioTileScale(t,f){if(!t||f<=1)return t;const w=Math.max(1,t.w/f|0),h=Math.max(1,t.h/f|0),d=new Uint32Array(w*h),n=f*f;for(let y=0;y<h;y++)for(let x=0;x<w;x++){let r=0,g=0,b=0;for(let c=0;c<f;c++)for(let a=0;a<f;a++){const v=t.d[(y*f+c)*t.w+x*f+a];r+=v&255;g+=(v>>8)&255;b+=(v>>16)&255}d[y*w+x]=0xff000000|((b/n|0)<<16)|((g/n|0)<<8)|(r/n|0)}return {w,h,d}}
 const DIO_TILECACHE=new Map();
-function dioTileSet(T,TP,lite){const C=dioData().sc,nxOn=!lite&&dioNextOn(),key=TP+'|'+(nxOn?dioTileFolder():0)+'|'+T.tile+'|'+(T.vars||[]).join(',')+'|'+(typeof dioArtVer==='function'?dioArtVer():0);let L=DIO_TILECACHE.get(key);if(L)return L;
+function dioTileSet(T,TP){const C=dioData().sc,nxOn=dioNextOn(),key=TP+'|'+(nxOn?dioTileFolder():0)+'|'+T.tile+'|'+(T.vars||[]).join(',')+'|'+(typeof dioArtVer==='function'?dioArtVer():0);let L=DIO_TILECACHE.get(key);if(L)return L;
  if(nxOn){const src=dioNextTiles(T.tile).map(q=>dioTilePix(q)).filter(Boolean);if(src.length)L=src.map(t=>dioTileScale(t,Math.round(t.w/TP)))}
  if(!L){const src=[dioTilePix(T.tile),...(T.vars||[]).map(q=>dioTilePix(q))].filter(Boolean),bw=C.tile||16;L=src.length?src.map(t=>TP>=t.w?t:dioTileScale(t,Math.round(t.w/TP))):[null]}
  if(L.every(Boolean))DIO_TILECACHE.set(key,L);return L}
@@ -164,7 +164,7 @@ function dioTileSet(T,TP,lite){const C=dioData().sc,nxOn=!lite&&dioNextOn(),key=
    v46: any rectangle of the scene's picture (canvas cells, padding included; row 0 the far edge) at any size: TP pixels
    a metre. The 3D renderer paints a view's whole ground small (its distance) and the 16 m squares round you at full
    size (diorama-gl.js, the near ring). Patterns and noise come from each cell's own scene or road metres. */
-function* dioPaintGen(sc,o){const C=dioData().sc,W=sc.w,H=sc.h,P=DIO_PAD,lite=!!o.lite,TP=o.TP,rows=sc.tiles||[],CWf=W+2*P,CHf=H+2*P;
+function* dioPaintGen(sc,o){const C=dioData().sc,W=sc.w,H=sc.h,P=DIO_PAD,TP=o.TP,rows=sc.tiles||[],CWf=W+2*P,CHf=H+2*P;
  const R0=o.rect||[0,0,CWf,CHf],M=o.margin??2,Mp=Math.min(1,M),wx0=R0[0]-M,wy0=R0[1]-M,ww=R0[2]+2*M,wh=R0[3]+2*M,PXO=(M-Mp)*TP,TW=(R0[2]+2*Mp)*TP,TH=(R0[3]+2*Mp)*TP,THf=CHf*TP;/* v46: cells with a margin of M (the edge wobble reaches 1.6 m), pixels with a margin of Mp (the relief blur and edges need less) */
  const chars=Object.keys(C.terrains),idx=Object.fromEntries(chars.map((c,i)=>[c,i])),T=chars.map(c=>C.terrains[c]),edge=T.map(t=>pkh(t.edge||'#000000')),zz=T.map(t=>t.z||0);
  /* v47: tile sets only for the kinds this rectangle shows (78 kinds now: decoding all of them held up the first paint of a place) */
@@ -172,7 +172,7 @@ function* dioPaintGen(sc,o){const C=dioData().sc,W=sc.w,H=sc.h,P=DIO_PAD,lite=!!
  /* alpha 0.4: paving that breaks where it meets natural ground (a kind's `break` in the data: 'stones' stone by stone,
     'crumble' pixel by pixel for asphalt and concrete); the soil that shows round it is the Dirt kind's */
  const brk=T.map(t=>TP>=8?(t.break==='stones'?1:t.break==='crumble'?2:0):0),brkOn=brk.some((b,i)=>b&&used[i]),soilK=brkOn?idx.u:null;if(soilK!=null)used[soilK]=1;
- const pix=T.map((t,i)=>used[i]?dioTileSet(t,TP,lite):[]),pav=T.map((t,i)=>t.paved!=null?!!t.paved:'mbaqhe'.includes(chars[i])),t47=dioT47(lite),flip=T.map(t=>!!t.flip&&!t47);
+ const pix=T.map((t,i)=>used[i]?dioTileSet(t,TP):[]),pav=T.map((t,i)=>t.paved!=null?!!t.paved:'mbaqhe'.includes(chars[i])),t47=dioT47(),flip=T.map(t=>!!t.flip&&!t47);
  const toneK=T.map((t,i)=>t47&&TP>=16&&pix[i].length>=12?(t.tone!=null?+t.tone:pav[i]?0:1):0),toneOn=toneK.some(k=>k>0);
  const lumK=pix.map(L=>{const t=L&&L[0];if(!t)return 128;let s=0;for(let j=0;j<t.d.length;j+=7){const c=t.d[j];s+=(c&255)*.3+((c>>8)&255)*.59+((c>>16)&255)*.11}return s/Math.ceil(t.d.length/7)});
  const eI=idx[sc.edge]??0,cellAt=(i,j)=>{if(i<0||j<0||i>=W||j>=H)return eI;const ch=(rows[j]||'')[i];const k=idx[ch];return k==null?eI:k};
@@ -297,21 +297,11 @@ function* dioPaintGen(sc,o){const C=dioData().sc,W=sc.w,H=sc.h,P=DIO_PAD,lite=!!
    /* neighbours: toward the camera (j-1), away (j+1), left, right; a higher cell gets a lip, a lower one a shadow at the foot */
    for(const [di,dj,side] of [[0,-1,'s'],[0,1,'n'],[-1,0,'w'],[1,0,'e']]){const d=h-hAt(i+di,j+dj);if(Math.abs(d)<.12)continue;if(E.sl&&dioStepJoined(E,i,j,di,dj))continue;
     for(let t=0;t<half;t++){const px=side==='s'||side==='n'?x0+t:side==='w'?x0:x0+half-1,py=side==='s'?y0+half-1:side==='n'?y0:y0+t;
-     if(d>0)sh(px,py,1.22);else{const depth=Math.min(4,1+Math.round(-d*2*TP/32)),dpx=Math.max(1,Math.round(TP/32));for(let k=0;k<depth;k++){const ox=side==='w'?k:side==='e'?-k:0,oy=side==='s'?-k:side==='n'?k:0;sh(px+ox,py+oy,.62+k*.09)}}}}}if(j%32===31)yield}
-  if(lite){/* the Lite renderer has no 3D walls: a terrace front is painted on the ground below it, as tall as it would look */
-   const mc=[[118,112,106],[118,112,106],[196,146,98],[92,86,108],[170,96,78],[170,164,154],[74,128,70],[146,102,70],[160,156,146],[106,120,92],[158,158,154],[82,84,98]];
-   for(let j=1;j<E.h;j++)for(let i=0;i<E.w;i++){const d=hAt(i,j)-hAt(i,j-1);if(d<.25||E.sl&&dioStepJoined(E,i,j,0,-1))continue;const m=mc[(E.M[j*E.w+i]&15)]||mc[0],x0=(i+P*2)*half,yTop=THf-(j+P*2)*half,hgt=Math.round(d*TP*1.35);
-    for(let y=0;y<hgt;y++){const fy=y/hgt,band=(Math.floor((y+i*3)/5)%2?.94:1)*(1.05-fy*.35);for(let x=0;x<half;x++){const X=x0+x-X0,Y=yTop+y-Y0;if(X<0||Y<0||X>=TW||Y>=TH)continue;const n=dioHash(X,Y)*.12+.94,kk=band*n*(y<2?1.25:1);
-     out[Y*TW+X]=0xff000000|(Math.min(255,m[2]*kk)<<16)|(Math.min(255,m[1]*kk)<<8)|Math.min(255,m[0]*kk)}}}}
-  if(lite){/* and bridges are painted as decks over the water or the drop */
-   for(const b of dioBridges(sc)||[]){const col=b.kind==='stone'?[170,164,152]:[150,104,66],n=Math.ceil(b.len*TP),m=Math.ceil(b.w*TP);
-    for(let t=0;t<=n;t++)for(let k=0;k<=m;k++){const along=t/TP,across=k/TP-b.w/2,x=b.a[0]+b.ux*along-b.uz*across,z=b.a[1]+b.uz*along+b.ux*across,X=Math.round((x+P)*TP)-X0,Y=Math.round(THf-(z+P)*TP)-Y0;if(X<0||Y<0||X>=TW||Y>=TH)continue;
-     const edge=Math.abs(across)>b.w/2-.12,plank=b.kind==='stone'?(Math.floor(along*4)%2?.96:1):(Math.floor(along*TP)%5===0?.72:1),kk=(edge?.7:plank)*(dioHash(X,Y)*.1+.95);
-     out[Y*TW+X]=0xff000000|(Math.min(255,col[2]*kk)<<16)|(Math.min(255,col[1]*kk)<<8)|Math.min(255,col[0]*kk)}}}}
+     if(d>0)sh(px,py,1.22);else{const depth=Math.min(4,1+Math.round(-d*2*TP/32)),dpx=Math.max(1,Math.round(TP/32));for(let k=0;k<depth;k++){const ox=side==='w'?k:side==='e'?-k:0,oy=side==='s'?-k:side==='n'?k:0;sh(px+ox,py+oy,.62+k*.09)}}}}}if(j%32===31)yield}}
  /* the 3D renderer's ground normal map and shine (brighter pixels stand proud, by how bumpy each terrain is), made here
     in slices too; the material per pixel follows the tile it came from */
  const NS=o.nhalf?2:1,NW=TW/NS|0,NH=TH/NS|0;/* v46: the near ring's normal map is half size: worked out at every other pixel */
- let nrm=null;if(!lite&&o.normals!==false&&typeof DGL_TERRAIN_MAT!=='undefined'){yield;nrm=new Uint8Array(NW*NH*4);const Lm=new Float32Array(TW*TH);for(let i=0;i<TW*TH;i++){const c=out[i];Lm[i]=((c&255)*.3+((c>>8)&255)*.59+((c>>16)&255)*.11)/255}
+ let nrm=null;if(o.normals!==false&&typeof DGL_TERRAIN_MAT!=='undefined'){yield;nrm=new Uint8Array(NW*NH*4);const Lm=new Float32Array(TW*TH);for(let i=0;i<TW*TH;i++){const c=out[i];Lm[i]=((c&255)*.3+((c>>8)&255)*.59+((c>>16)&255)*.11)/255}
   const matK=T.map((t,i)=>DGL_TERRAIN_MAT[chars[i]]||[1,.05]),ps=TP/32;/* the fine grain is per pixel; at small sizes it is gentler */
   /* v44: a coarser relief under the fine grain: the picture's brightness, blurred over about half a metre */
   const cs=Math.max(1,TP>>3),RW=Math.ceil(TW/cs),RH=Math.ceil(TH/cs),Lc=new Float32Array(RW*RH),Lb=new Float32Array(RW*RH);
@@ -334,12 +324,12 @@ function* dioPaintGen(sc,o){const C=dioData().sc,W=sc.w,H=sc.h,P=DIO_PAD,lite=!!
  return {w:OW,h:OH,px,nrm:nr,nw:ow,nh:oh,TP,avg:n?`rgb(${r/n|0},${gg/n|0},${b/n|0})`:'#6CBA59'}}
 /* the whole picture of a scene: the Lite renderer's canvas (32 px a metre when it fits, else 16), or for the 3D
    renderer the distant picture (8 px a metre; the near ring paints the 16 m squares round you at full size) */
-function* dioGroundGen(sc,lite,pr=0,rec=null){const C=dioData().sc,W=sc.w,H=sc.h,P=DIO_PAD,full=lite?((W+2*P)*32<=4096&&(H+2*P)*32<=4096&&dioNextOn()?32:(C.tile||16)):DIO_FAR_TP;
- const r=yield* (typeof pwPaint==='function'?pwPaint(sc,{lite,TP:full,margin:0,pr,rec}):dioPaintGen(sc,{lite,TP:full,margin:0}));let g;
- if(lite){g=cnv(r.w,r.h);const x=g.getContext('2d'),img=x.createImageData(r.w,r.h);new Uint32Array(img.data.buffer).set(r.px);x.putImageData(img,0,0)}else g={width:r.w,height:r.h,_px:new Uint8Array(r.px.buffer)};
+function* dioGroundGen(sc,pr=0,rec=null){const full=DIO_FAR_TP;
+ const r=yield* (typeof pwPaint==='function'?pwPaint(sc,{TP:full,margin:0,pr,rec}):dioPaintGen(sc,{TP:full,margin:0}));
+ const g={width:r.w,height:r.h,_px:new Uint8Array(r.px.buffer)};
  g._nrm=r.nrm;g._avg=r.avg;g._TP=full;return g}
 const DIO_FAR_TP=8;
-function dioBuildGround(sc,lite=false){const pw=typeof PW!=='undefined'?PW:null;if(pw)pw.sync++;/* (all here, now: no waiting on the helper) */try{const it=dioGroundGen(sc,lite);let r=it.next();while(!r.done)r=it.next();return r.value}finally{if(pw)pw.sync--}}
+function dioBuildGround(sc){const pw=typeof PW!=='undefined'?PW:null;if(pw)pw.sync++;/* (all here, now: no waiting on the helper) */try{const it=dioGroundGen(sc);let r=it.next();while(!r.done)r=it.next();return r.value}finally{if(pw)pw.sync--}}
 /* built pictures, newest last; a scene you come back to opens at once */
 const DIO_GCACHE=new Map();
 function dioGroundCached(key){const g=DIO_GCACHE.get(key);if(g){DIO_GCACHE.delete(key);DIO_GCACHE.set(key,g)}return g||null}
@@ -353,7 +343,7 @@ function dioGroundKeep(key,g){DIO_GCACHE.set(key,g);while(DIO_GCACHE.size>DIO_GK
 const DIO_GPEND=new Map();
 async function dioGroundAsync(sc,pr=0){const key=dioGroundKey(sc);if(dioGroundCached(key))return;const pend=DIO_GPEND.get(key);
  if(pend){if(pr<pend.rec.pr){pend.rec.pr=pr;if(pend.rec.id&&typeof PW!=='undefined'&&PW.w)PW.w.postMessage({t:'prio',id:pend.rec.id,pr})}return pend.p}
- const rec={pr,id:0},p=(async()=>{const it=dioGroundGen(sc,false,pr,rec);let r,t0=performance.now();
+ const rec={pr,id:0},p=(async()=>{const it=dioGroundGen(sc,pr,rec);let r,t0=performance.now();
   for(;;){r=it.next();if(r.done)break;if(r.value===PW_WAIT){await pwSettle();t0=performance.now();continue}if(performance.now()-t0>8){await new Promise(res=>setTimeout(res,0));t0=performance.now()}}dioGroundKeep(key,r.value)})();
  DIO_GPEND.set(key,{rec,p});try{await p}finally{DIO_GPEND.delete(key)}}
 /* v27: the water cells belong to the scene (a ground picture from the cache used to leave the last scene's here) */
