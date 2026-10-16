@@ -50,7 +50,96 @@ followed by "Project layout" (2263-2335) and "Notes and limits" (2336-2356).
 
 ## 2. Step tracking and Lite mode
 
-(pending: added when the audit finishes)
+### The finding that changes the plan
+**Joystick walking is a step source.** diorama.js:639: in walk mode, every metre walked adds 14.1 to `P.stepAcc`, and
+every 300 it calls `addSteps(n, true)`. `addSteps` (core.js ~182-195) is the hub for money, wild encounters (the only
+`spawn()` source apart from the starter, debug and tests), egg hatching, jobs, buddy XP and the step dailies. So
+"delete step tracking" in phase 03 would also remove income, encounters and hatching from joystick walking, and
+phase 08 is where the owner decides what replaces each one.
+
+**Suggestion:** phase 03 deletes only the real-world parts: the pedometer, the "Demo +N steps" buttons and the step
+counters in the UI. It keeps the internal "distance walked" pipeline that joystick walking feeds until phase 08
+replaces each mechanic. Ask the owner.
+
+### Real-world machinery (deletable in phase 03)
+- Pedometer: ui.js ~476-488 (`mot`, `onMotion` on devicemotion, `toggleMotion` with the iOS permission and timers,
+  `stopMotion`), `U.walking`, `U.motionMsg`. Actions `'motion'` and `'test'` (`addSteps(+d.n)`, ui.js ~504-508).
+  `stopMotion` is also called from ui.js:467, debug.js:77 and profile.js:31.
+- `RULES.travel = 'steps'` (legacy: real steps move you along roads) vs `'walk'` (the default): `walkMode()` and
+  `traveling()` at core.js ~152-156, plus `tripTo`/`setTrip`/`stopTrip`/`gateMsg`, `tripLeft`/`tripStatus`/`stepsTo`
+  (ui.js ~94-107), the 'turnback' action, `mePos` (map.js:18), `onStepsAdded` (map.js:89), owmon.js:92.
+
+### Mechanics fed by steps (phase 08 decides the replacements)
+- Money: `S.se += taxed(...)` with the daily brackets `BR` (8k / 15k steps; core.js ~136-140, `rollDay`).
+- Encounters: `S.meter` up to `encounterEverySE`, then `spawn()`.
+- Eggs: `e.prog` up to `EGGS[tier].need`. Jobs: `j.acc` with `JOB_STEPS`. Buddy XP: `buddyRem`, `buddyStepsPerXp`;
+  `bsteps`/`psteps` feed `splitPath` and the 'buddy' evolution kind (no data uses `k:'buddy'`; 3 lines use `split`).
+- Dailies: challenge `k:'steps'` and the "letter walk" request (extras.js ~18-62). Rest stop: `RULES.steps.restCost`.
+  Airship fares are money, which today comes from steps.
+- Game data: `rules.steps` {stepsPerKm, brackets, encounterEverySE, maxEncounters, goldOdds, restCost, alphaOdds},
+  `rules.progression.buddyStepsPerXp`, `rules.jobs.stepsPerPay`, `rules.travel`, `eggs` (3 tiers with `need`),
+  `links` (56, `[a,b,cost,…]`), `route` (49 nodes, 43 with `cost`), trainer `egg` drops, and lore and tips that mention
+  steps. **The 67 `"steps"` keys inside `scenes` are terrain step grids (cliffs, stairs): keep them.**
+- Studio: world.js (brackets, steps per km, steps to hatch, link km), sections.js:41,227, check.js:33.
+
+### Couplings that must survive
+1. `linkCost` is also road length (world.js `wrRoadLen`: 40 m per 500 cost) and path weight (`routeDists`, core.js
+   ~164, used by the gold arrows and the map). Keep it as a distance.
+2. `RULES.steps.goldOdds`, `alphaOdds` and `maxEncounters` are used by battles, spawning, owmon, the UI and the save
+   check. Move them out of `steps`; don't delete them.
+3. The backup check `validSave` (profile.js ~20-27) requires `day.steps`, `totalSteps`, `seFrac`, `buddyRem`, `meter`
+   and `route.prog`. Removing those fields breaks every restore unless it changes too.
+4. Airship fares and rest stops need a money source once steps stop paying.
+
+### Step UI
+- The 'walk' tab is the main world screen: keep it. Inside, `renderWalk` (ui.js ~144-155) shows steps today, the
+  bracket bars, the motion button, "Demo +500 / +2,000 steps" and "next one in N steps". There is also a "+500 steps"
+  footer button and the `.wh-steps` counter (ui.js ~130,143).
+- Cards: hereCard, eggSlots, buddyCard, exitPrompt, mapCardHTML, jobSlots, hireFlow, evoMethod, bag eggs.
+- Trainer card (ui.js ~408-413): steps today, total, distance, buddy km. Also profile.js:77, account.js:35 (the merge
+  prompt) and profile.js:20,31 (restore).
+- Debug: `'st1'`, `'st10'` (debug.js:15,41), plus `'newday'`, `'hatch'`, `'fillq'`.
+- Text: the startGame egg text, boot tips, Gini's "Every step counts" (cutscene.js:164, story.js:87), talk.js:34-35,
+  profile.js:79, battle.js:371, i18n.js:57,85-86, airship.js:17.
+
+### Tests touching steps
+- check-quick.py: `play()` (~478-484) calls `addSteps(2400)` and then sets `RULES.travel='steps'`, so every browser
+  step after it runs in the legacy steps mode (also line ~1860).
+- Steps that travel by `addSteps`: "Walking: tap to walk, then a trip along two roads" (~657), v36 split evolution
+  (~1074, bsteps), v37 party steps (~1107), "v43: the seamless world" (~1290), "alpha 0.4: Copperleaf … Route 1"
+  (~1702), "alpha 0.4.1: walk the world yourself" (~1828-1860). The seamless-road and Route 1 checks need rewriting to
+  walk across edges (`walkCross`).
+- check-game.py:111,164 use the same patterns.
+- selftest.js: "Road: Marigold Town to Tallgrass Meadow on the ground" (~124-129) uses `setTrip` + `addSteps` without
+  setting `RULES.travel='steps'`; in walk mode `addSteps` doesn't move the route. **It may already be failing: check
+  the in-game full test.**
+
+### Lite mode
+- On when `S.preferences.effects==='lite'` (Settings → Graphics → "Battery saver", profile.js ~72-84), and forced when
+  WebGL fails (`EGL.fail`, `eglOK()`). **That fallback matters: without Lite, a phone without WebGL2 gets no game.**
+- What it changes:
+  - Walking uses the 2D canvas painter in diorama.js (`DIO.lite`) with 16 px tiles from art/scene/tiles.
+  - Battles use the painted classic stage.
+  - There is no 3D map.
+  - The intro is pictures instead of the cutscene.
+  - It drops moods, the ring, outlines, weather and the lore glint.
+  - It sets `data-fx=lite` on the page.
+- Art only Lite needs: art/scene/tiles (1.9M, also used by the Studio tile editor), probably art/next/tiles (1.9M). The
+  painted battle stage (art/battle, art/background) is also the `battleStage:'classic'` preference, so it isn't
+  Lite-only.
+- Tests: none turn Lite on. Several use `battleStage='classic'`. selftest.js:171 has the "Lite shows the fall as
+  pictures" fallback.
+- Options for the owner: (a) remove Lite and show a clear "this phone can't run the game" screen when WebGL2 fails;
+  (b) keep it as a fallback only (no setting), frozen; (c) keep it as is. Recommendation: (a). The new art targets
+  (low-poly 32 px/m, the bowl map) can't be done in the 2D painter, so Lite would drift further from the game every
+  phase.
+
+### Legacy save code
+- core.js `migrate()` fills in defaults and drops unknown ids. It is not a format converter: keep it, it is also the
+  data-change safety net. No v36/v38 converters exist, only test names.
+- trainer.js `lookFromOld` is **not** only for old saves: `cleanTrainer` and NPC looks (9 of 34 people have no `look`)
+  depend on it. Rename it, don't delete it.
+- tools/src/core.js has its own `addSteps` copy (used by build-art.cjs, the toolchain marked DELETE above).
 
 ## 3. Inventory: KEEP / REWRITE / DELETE suggestions
 
