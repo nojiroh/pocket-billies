@@ -29,8 +29,8 @@ opens like an app.
 2. The window shows an address like `http://192.168.1.23:8000`. Open it on your phone, which must
    be on the same Wi-Fi. If the computer asks whether to allow incoming connections, allow it on
    private networks.
-3. Over this local address, phones block motion sensors, so step counting and tilting the scene are
-   off; use the demo step buttons. Everything else works.
+3. Over this local address, phones block motion sensors, so tilting the scene is off. Everything else
+   works.
 
 ## Sending a debug log
 
@@ -158,8 +158,6 @@ menu.
 
 ## Notes and limits
 
-- Step counting uses motion sensors while the page is open. Apple Health and Health
-  Connect are not connected.
 - Moving a stop under Route stops moves only its marker and the walking path. Move it
   under Map art to carry its painted patch along, then repaint the trail. Patch moving
   keeps the colors that stand out from the ring around the stop, so a patch larger than

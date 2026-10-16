@@ -70,7 +70,7 @@ if(SAVE_FOUND==='old'||SAVE_FOUND==='new')try{const k=LS+'-set-aside';if(localSt
 if(SAVE_FOUND==='new')SAVE_HOLD=true;
 let S=loadSave(lsGet())||fresh();
 let B=null;
-const U={tab:'walk',lastTab:null,intro:0,modal:null,mq:[],learnQ:[],walking:false,motionMsg:'',toastQ:[],toastOn:false,evT:null,throwing:false,disp:{steps:null,se:null},seenEnc:new Set(),mapSel:null};
+const U={tab:'walk',lastTab:null,intro:0,modal:null,mq:[],learnQ:[],toastQ:[],toastOn:false,evT:null,throwing:false,disp:{steps:null,se:null},seenEnc:new Set(),mapSel:null};
 
 /* ---------- saving: in this browser, and on the account when signed in (account.js) ---------- */
 let saveT=null;

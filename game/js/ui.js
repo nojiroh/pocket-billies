@@ -147,8 +147,7 @@ function renderWalk(){rollDay();const st=S.day.steps,r=rate(st),q=S.queue;
  <div class="today px glass"><div class="today-top"><div><div class="big tnum" data-count="steps" data-to="${st}">${fmt(st)}</div><div class="lbl">steps today</div></div><div class="se"><div class="mid tnum">$<span data-count="se" data-to="${S.se}">${fmt(S.se)}</span></div><div class="lbl">Money</div></div></div>
   <div class="brackets" role="img" aria-label="Earning $${r} per step">${bracketBars(st)}</div><div class="brk-l">${bracketLabels()}</div>
   <p class="note">${bracketNote(st)}</p></div>
- ${walkMode()?`<section class="walkbtns"><p class="note">Walk with the joystick (drag anywhere on the scene) or tap where you want to go. The arrows at the edges lead on to the next place; the steps you take count here.</p></section>`:`<section class="walkbtns"><button class="pb ${U.walking?'quiet':'dark'} wide" data-a="motion">${U.walking?'Stop counting steps':'Count my steps with motion'}</button>${U.walking?`<p class="note">${U.motionMsg}</p>`:''}
-  <div class="two"><button class="pb" data-a="test" data-n="500">Demo +500 steps</button><button class="pb" data-a="test" data-n="2000">Demo +2,000 steps</button></div><p class="note demo-note">Demo buttons add simulated steps immediately.</p></section>`}
+ ${walkMode()?`<section class="walkbtns"><p class="note">Walk with the joystick (drag anywhere on the scene) or tap where you want to go. The arrows at the edges lead on to the next place; the steps you take count here.</p></section>`:`<section class="walkbtns"><div class="two"><button class="pb" data-a="test" data-n="500">Demo +500 steps</button><button class="pb" data-a="test" data-n="2000">Demo +2,000 steps</button></div><p class="note demo-note">Demo buttons add simulated steps immediately.</p></section>`}
  ${typeof chalCard==='function'?chalCard():''}${typeof reqList==='function'&&reqList()?`<section class="chal px glass"><div class="sec-h"><h2>Requests you’re helping with</h2></div>${reqList()}</section>`:''}${hereCard()}</div><div class="col">
  <section class="pending"><div class="sec-h"><h2>Encounters</h2><span class="count tnum">${q.length}/${RULES.steps.maxEncounters}</span></div>
   <p class="note">${q.length>=RULES.steps.maxEncounters?'Your area is full. Battle or tax a few to make room.':`Next one in about ${fmt(Math.ceil((RULES.steps.encounterEverySE-S.meter)/r))} steps.`} You only see their level until the battle starts.</p>
@@ -464,7 +463,7 @@ function hireFlow(slot){modal({title:'Pick a job',html:`<p class="note">Each job
 function hirePick(slot,job){const free=allMons().filter(m=>m.job==null),canTeam=S.team.filter(x=>x.job==null).length>1;
  const list=free.filter(m=>!S.team.includes(m)||canTeam);
  modal({title:`Who becomes the ${JOBS[job].n.toLowerCase()}?`,html:list.length?`<div class="list">${list.map(m=>`<button class="pickrow px" data-a="hireon" data-s="${slot}" data-j="${job}" data-u="${m.uid}">${sprHTML(m.sp,40,{gold:m.gold})}<span class="pr-t"><b>${esc(N(m))}</b><small>${S.team.includes(m)?'On your team':'In storage'}, Lv ${m.lvl}</small></span></button>`).join('')}</div>`:'<p>Tax another Billie first. Your last one has to stay on the team.</p>',btns:[{l:'Cancel',c:'quiet',f:closeModal}]})}
-function settings(tab){if(tab)U.setTab=tab;modal({title:'Settings',settings:true,cls:'set-sheet',html:settingsHTML(),btns:[{l:'Done',c:'dark',f:closeModal},{l:'Start over',c:'quiet',f:()=>{U.modal=null;modal({title:'Start over?',html:'<p>This erases your team, Field Guide and money.</p>',btns:[{l:'Erase and start over',c:'red',f:()=>{if(U.walking)stopMotion();S=freshKeep();S.savedAt=Date.now();lsSet(S);flush();U.intro=0;U.pg=null;U.avatarDraft=null;U.trainerDraft=null;U.tab='walk';applyPreferences();closeModal();render()}},{l:'Keep my progress',c:'quiet',f:closeModal}]})}}]})}
+function settings(tab){if(tab)U.setTab=tab;modal({title:'Settings',settings:true,cls:'set-sheet',html:settingsHTML(),btns:[{l:'Done',c:'dark',f:closeModal},{l:'Start over',c:'quiet',f:()=>{U.modal=null;modal({title:'Start over?',html:'<p>This erases your team, Field Guide and money.</p>',btns:[{l:'Erase and start over',c:'red',f:()=>{S=freshKeep();S.savedAt=Date.now();lsSet(S);flush();U.intro=0;U.pg=null;U.avatarDraft=null;U.trainerDraft=null;U.tab='walk';applyPreferences();closeModal();render()}},{l:'Keep my progress',c:'quiet',f:closeModal}]})}}]})}
 /* o.rival (v47, from the opening): Blake's battle comes first; the welcome sheet waits until the talk after it */
 function startGame(l,o={}){const avatar=cleanLook(U.avatarDraft||U.trainerDraft||TR_PRESETS[0]);S=freshKeep();S.avatar=avatar;U.trainerDraft=null;S.started=true;S.gender='me';S.wardrobe={owned:{},outfits:[null,null,null]};S.starter=l;const R=RULES.start,m=makeMon(l+'0',R.starterLevel);S.team=[m];S.buddy=m.uid;S.caught[m.sp]=1;S.seen[m.sp]=1;S.since=Date.now();
  S.route={node:START_NODE,prog:0,plan:[],hold:false};S.visited={[START_NODE]:1};S.mapSeen=null;if(typeof storyFlags==='function')storyFlags().copperleafNote=1;for(let i=0;i<R.starterEncounters;i++)spawn(true);const egg=R.starterEgg&&EGGS[R.starterEgg]?addEgg(R.starterEgg):false;save();flush();U.tab='walk';render();
@@ -472,20 +471,6 @@ function startGame(l,o={}){const avatar=cleanLook(U.avatarDraft||U.trainerDraft|
  const W={title:`${SP[m.sp].name} joined your team`,top:`<div class="sheet-art">${sprHTML(m.sp,128)}</div>`,html:`${nE?`<p>${words[nE]||nE} Billie${nE===1?' is':'s are'} already rustling in the grass. Tap one to battle it, then flick a coin.</p>`:''}${egg?`<p>Professor Hazel also gave you a ${R.starterEgg} km egg. It’s warming up in an incubator, and every step you walk helps it hatch.</p>`:''}`,btns:[{l:'Let’s go',c:'dark',f:closeModal}]};
  if(o.rival&&TRAINERS.blake0&&typeof storyRivalBattle==='function'){U.welcome=W;storyRivalBattle(o);return}
  modal(W)}
-
-/* ---------- motion pedometer ---------- */
-const mot={avg:9.8,sm:9.8,up:false,last:0,pend:0,seen:false,timer:null};
-function onMotion(e){const a=e.accelerationIncludingGravity;if(!a||a.x==null)return;mot.seen=true;const mag=Math.hypot(a.x,a.y,a.z);
- mot.avg=mot.avg*.98+mag*.02;mot.sm=mot.sm*.7+mag*.3;const now=performance.now();
- if(!mot.up&&mot.sm>mot.avg+1.3&&now-mot.last>280){mot.up=true;mot.last=now;mot.pend++}else if(mot.up&&mot.sm<mot.avg+.3)mot.up=false}
-async function toggleMotion(){if(U.walking){stopMotion();return}
- try{if(typeof DeviceMotionEvent==='undefined'){toast('Motion sensors aren’t available here. Use test steps instead.');return}
-  if(typeof DeviceMotionEvent.requestPermission==='function'){const r=await DeviceMotionEvent.requestPermission();if(r!=='granted'){toast('Motion access was declined. Use test steps instead.');return}}}
- catch(e){toast('Motion sensors aren’t available here. Use test steps instead.');return}
- window.addEventListener('devicemotion',onMotion);U.walking=true;mot.seen=false;U.motionMsg='Counting steps while this page is open. Walk with your phone in hand.';
- mot.timer=setInterval(()=>{if(mot.pend>0){const n=mot.pend;mot.pend=0;addSteps(n,true)}},2000);
- setTimeout(()=>{if(U.walking&&!mot.seen){U.motionMsg='No motion data is reaching this page. Your browser may block sensors here, so use test steps instead.';if(!B)render()}},3500);render()}
-function stopMotion(){window.removeEventListener('devicemotion',onMotion);clearInterval(mot.timer);U.walking=false;if(mot.pend){const n=mot.pend;mot.pend=0;addSteps(n,true)}else render()}
 
 /* ---------- input ---------- */
 document.addEventListener('click',ev=>{const el=ev.target.closest('[data-a]');if(!el)return;const a=el.dataset.a,d=el.dataset;
@@ -505,7 +490,6 @@ document.addEventListener('click',ev=>{const el=ev.target.closest('[data-a]');if
   case 'fish':if(typeof fishStart==='function')fishStart();break;
   case 'leaveroom':leaveRoom();break;
   case 'walkdown':{const w=$('.walk-sheet');if(w)scrollTo({top:w.getBoundingClientRect().top+scrollY-70,behavior:RM?'auto':'smooth'});break}
-  case 'motion':toggleMotion();break;
   case 'settings':settings();break;
   case 'card-close':S.preferences=S.preferences||{};S.preferences.cardClosed=true;save();render();requestAnimationFrame(()=>{const t=$('.tb-where');if(t)t.focus({preventScroll:true})});break;
   case 'card-open':S.preferences=S.preferences||{};S.preferences.cardClosed=!S.preferences.cardClosed;save();render();break;
