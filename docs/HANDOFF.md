@@ -38,7 +38,7 @@ Newest entry on top. Every phase session ends by adding an entry here and taggin
   - Rules tests: 13/13 on the new rules; 8 of 13 fail on the old README rules (the tests catch what was open).
   - Headless probes on the real page: cleanName/frClean/migrate strip markup and keep apostrophes; no save, an old save,
     a current save and a newer save each start, keep aside, load or hold as intended, with the message showing.
-  - check-globals: 0 duplicates. check-data-text: clean. `--smoke`: 13/13 (114 s). Full check: running at the time of writing (result added when it finishes).
+  - check-globals: 0 duplicates. check-data-text: clean. `--smoke`: 13/13 (114 s). Full check: not run for phase 02 (owner: run it once at the end of phase 03).
 - Decisions I made (and why): rules live in firebase/ (testable, one copy) and the README points there; names are
   cleaned at the way in rather than escaping 60 templates now (phase 06 replaces the rendering); saveVersion is a save
   FORMAT number (1), not the game version: it should only change when old saves can't be read, which is rarer than
