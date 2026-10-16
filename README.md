@@ -132,17 +132,14 @@ menu.
 - v47 tools (the top of each file says what it writes and what it leaves alone):
   `tools/build-terrain-v47.py` the ground (twelve tiles per kind in `art/next/tiles47/`, the 22 new kinds and the 12
   room floors), `tools/room-floors-v47.py` a floor of its own for every room (`--dry` says what would change),
-  `tools/build-lore-v47.py` the story text (`lore`), `tools/build-story-v47.py` the opening's trainers and story
-  data, `tools/build-loader-v47.py` the loading screen's runner and coins, `tools/build-moods-v47.py` a mood per
-  place, `tools/build-landmarks-v47.py` the landmarks, `tools/build-life-v47.py` signs of people,
+  `tools/build-loader-v47.py` the loading screen's runner and coins, `tools/build-landmarks-v47.py` the landmarks, `tools/build-life-v47.py` signs of people,
   `tools/build-fx-v47.py` bees, fish and moths, `tools/build-regions-v47.py` the 27 places of the seven regions and
   `tools/build-region-props-v47.py` their props, `tools/build-map-minis.py` the map's miniatures (`--all` redraws
-  them). `tools/v47-cleanup.py` was the one-time clean-up.
+  them).
 - alpha 0.1 tools: `tools/clear-windows.py` finds the props that stand in front of a window (on a building's front
   or a room's wall) as the walk camera sees them, and `--fix` moves them aside; the place builders run it on every
   place they make.
-- `retired/`: kept for reference, not used by the game (the v46 map miniatures). `tools/retired/` holds one-time
-  migration tools that already ran.
+- One-time migration tools that already ran, and `retired/`, are on the `legacy` branch only.
 - `studio/`: Pocket Billies Studio (web app). `js/skeleton.js` is the skeleton builder,
   `js/preview.js` the battle preview (it loads the game's `scene.js`), `js/mappaint.js`
   the map painter, `js/engine.js` the Engine section, `js/propedit.js` the prop editor, `js/wardrobe.js` the Wardrobe section. `start-studio.py`: its local server.
