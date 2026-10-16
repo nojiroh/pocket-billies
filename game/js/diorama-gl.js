@@ -372,7 +372,6 @@ function dglGL(cv) {
     for (const d of [
       typeof BLD_SH !== 'undefined' && BLD_SH,
       typeof P3D_SH !== 'undefined' && P3D_SH,
-      typeof STR_SH !== 'undefined' && STR_SH,
       typeof voxShaders === 'function' && voxShaders(),
     ])
       if (d)
