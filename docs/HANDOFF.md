@@ -11,6 +11,44 @@ Newest entry on top. Every phase session ends by adding an entry here and taggin
 - Questions waiting for the owner: 
 - Next session starts with: 
 
+### Phase 02 - Security - 2026-10-16
+- Changed:
+  - Firestore rules moved out of the README into firebase/firestore.rules (the only copy) with 13 emulator tests
+    (firebase/test/rules.test.mjs; `cd firebase && npm ci && npm test`; CI job `rules` on every push). Friends are found
+    by code only: users/ and codes/ can't be listed (the old `allow read` let any signed-in player download everyone's
+    page and place), a page is readable by its owner and the friends on the owner's own list, only the receiver accepts
+    a request (the old rules let a sender accept their own), writes are checked for shape and size.
+  - friends.js: a friend's page that isn't shared back yet is retried every minute (no error); friend pages and request
+    names are cleaned before drawing (frClean).
+  - Names: cleanName() strips < > " & ` and control characters where names enter (nickname box, cleanLook, migrate), so
+    the ~60 templates that put N(m) into HTML unescaped are safe. tools/check-data-text.py (CI) guards game data text.
+  - saveVersion (core.js SAVE_VERSION = 1): saves without it are refused with "This save is from an older version of
+    the game and can't be loaded in this one", a new game starts, the old save is kept aside in the browser
+    (`<key>-set-aside`, `-cloud-set-aside`). A newer save is never written over (SAVE_HOLD). Backups from other versions
+    are refused. Account saves carry saveVersion.
+  - docs/SECURITY.md: the review (claims, rules, API key, App Check, Studio token options, innerHTML table, phase 18
+    data design, one friends bug found).
+- Risky or unfinished:
+  - The new rules are NOT live until the owner publishes them (Firebase console). The game works with old and new rules.
+  - Old account saves are replaced on the account once the player plays on in this version (a copy stays in that
+    browser). That is a cloud-data wipe in slow motion: owner to confirm (question below).
+  - phase-01-done and phase-02-done tags: this session can't push tags (the push is refused); the owner adds them.
+  - Friends: making friends again "the other way round" after a removal fails (pre-existing, not security; SECURITY.md).
+- Verified (what ran, what passed):
+  - Rules tests: 13/13 on the new rules; 8 of 13 fail on the old README rules (the tests catch what was open).
+  - Headless probes on the real page: cleanName/frClean/migrate strip markup and keep apostrophes; no save, an old save,
+    a current save and a newer save each start, keep aside, load or hold as intended, with the message showing.
+  - check-globals: 0 duplicates. check-data-text: clean. `--smoke`: 13/13 (114 s). Full check: running at the time of writing (result added when it finishes).
+- Decisions I made (and why): rules live in firebase/ (testable, one copy) and the README points there; names are
+  cleaned at the way in rather than escaping 60 templates now (phase 06 replaces the rendering); saveVersion is a save
+  FORMAT number (1), not the game version: it should only change when old saves can't be read, which is rarer than
+  releases (phase 03 reads it from the version file next to the game version); a newer save is held, never overwritten.
+- Questions waiting for the owner: OK that an old account save is replaced once the player plays on (or keep it under
+  another document)? Studio sign-in: apply options A (fine-grained token for this repo) and B (session-only by
+  default)? Publish the rules and restrict the API key (steps in SECURITY.md)? Tag phase-01-done (8b03829) and
+  phase-02-done.
+- Next session starts with: phase 03 (first reply: claims, KEEP / REWRITE / DELETE list, version scheme and name).
+
 ### Phase 01 - Baseline and bug fixes - 2026-10-16
 - Changed:
   - Game: two duplicate globals removed. `camTo` (scene.js) keeps the first copy, the one that honours reduced motion (`RM`); the later copy won before and ignored it, so with Motion = reduced the camera now snaps instead of gliding. `dioTileHalf` (diorama.js) keeps the later copy (`dioTileScale(t,2)`, same result); nothing calls it, so the function goes on the phase 03 delete list.
