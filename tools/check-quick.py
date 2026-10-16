@@ -3,7 +3,7 @@
 3D scenes in software and slowly). It is the check Claude runs while building a version; it takes a few minutes.
 
     python3 tools/check-quick.py                 # data, code, shaders, every scene once, the main flows
-    python3 tools/check-quick.py --smoke         # the fast subset: data and code, Start-Game on a phone, debug log, Studio opens
+    python3 tools/check-quick.py --smoke         # the fast subset: data and code, Start-Game on a phone + debug log, Studio opens
     python3 tools/check-quick.py --studio        # also the Studio round trip on a temporary copy
     python3 tools/check-quick.py --closeups      # also close-up pictures of cliffs, stairs, bridges and water
     python3 tools/check-quick.py --scenes=city,pond   # only these walk scenes (by id), for a change to one place
@@ -39,7 +39,7 @@ NO_ACCOUNTS = "Object.defineProperty(window,'PB_FIREBASE',{get(){return null},se
 LOW_RENDER = "GD.engine=GD.engine||{};GD.engine.defaults=Object.assign({},GD.engine.defaults||{},{quality:{resolution:.34,shadowMap:1024,auto:false}});0"
 ARGS = sys.argv[1:]
 # phase 01: --smoke is the fast subset run after every change and on every push (about two minutes): the data and code
-# checks, Start-Game on a phone, the debug log export and the Studio opening. The full check runs nightly and per phase
+# checks, Start-Game on a phone (with the debug log export) and the Studio opening. The full check runs nightly and per phase
 SMOKE = '--smoke' in ARGS
 # where a point of the walk scene is on screen (the same projection the renderer uses)
 PROJ = "(([x,z])=>{const C=DIO.C,r=DIO.cv.getBoundingClientRect(),y=dioH(x,z)+(typeof dglCurve==='function'?dglCurve(x,z):0);if(C.vp){const m=C.vp,cx=m[0]*x+m[4]*y+m[8]*z+m[12],cy=m[1]*x+m[5]*y+m[9]*z+m[13],w=m[3]*x+m[7]*y+m[11]*z+m[15];return [r.left+(cx/w*.5+.5)*r.width,r.top+(1-(cy/w*.5+.5))*r.height]}const q=dioProj(C,x,y,z);return [r.left+q.x/DIO.cv.width*r.width,r.top+q.y/DIO.cv.height*r.height]})(%s)"
@@ -527,8 +527,14 @@ def phone_flow(b, base, R):
         if wait_phase(pg) != 'choose': raise Exception('a wild battle never reached the move menu')
         shot(pg, 'phone-battle')
         pg.evaluate("stopTimers();B=null;scStop();render();0")
+        # phase 01: the owner tests on a phone and sends the exported debug log, so the export must keep working. Here the
+        # game saves it as a download (nothing is sent anywhere); the file must be a JSON log
+        with pg.expect_download(timeout=60000) as dl:
+            pg.evaluate("exportDebugLog();0")
+        d = dl.value; dlog = json.loads(Path(d.path()).read_text(encoding='utf-8'))
+        if not isinstance(dlog, dict) or not dlog: raise Exception('the exported debug log is empty')
         if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
-        return 'the fall, Hazel, dressing room, starter, Blake’s first battle and the talk after, five screens, shop, battle'
+        return f'the fall, Hazel, dressing room, starter, Blake’s first battle and the talk after, five screens, shop, battle, debug log ({len(json.dumps(dlog)) // 1024} KB)'
     finally:
         R['phoneErrors'] = errs[:10]; ctx.close()
 
@@ -2025,23 +2031,6 @@ def compare_pictures(R):
     elif diffs: notes.append(f'{len(diffs)} pictures match the baseline closely')
 
 
-@step('Debug log: the export builds a log and saves it', 120)
-def debug_log(b, base):
-    """phase 01: the owner tests on a phone and sends the exported debug log, so the export must keep working.
-    On a desktop page the game saves it as a download (nothing is sent anywhere); the file must be a JSON log"""
-    errs = []; ctx, pg = open_game(b, base, 1100, 700, False, errs)
-    try:
-        play(pg); time.sleep(2)
-        with pg.expect_download(timeout=60000) as dl:
-            pg.evaluate("exportDebugLog();0")
-        d = dl.value; log_ = json.loads(Path(d.path()).read_text(encoding='utf-8'))
-        if not isinstance(log_, dict) or not log_: raise Exception('the debug log is empty')
-        if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
-        return f'{d.suggested_filename}: {len(json.dumps(log_)) // 1024} KB ({", ".join(list(log_)[:6])}, …)'
-    finally:
-        ctx.close()
-
-
 @step('Studio: every script loads and the sign-in shows (GitHub mode)', 60)
 def studio_opens(b):
     """phase 01: the Studio as GitHub Pages serves it (no Studio server): all its scripts run and it asks for a token.
@@ -2084,7 +2073,7 @@ def main():
         if '--studio-only' not in ARGS:
             phone_flow(b, base, R)
             if SMOKE:
-                debug_log(b, base); studio_opens(b)
+                studio_opens(b)
             else:
                 try:
                     desktop_steps(b, base, R)
