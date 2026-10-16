@@ -417,7 +417,7 @@ function renderProfile(){const name=cleanTrainer(S.avatar,S.gender).name,seen=DE
   <p class="note">Buy coins and items at a town shop.</p></section></div>${typeof friendsHTML==='function'?friendsHTML():''}`}
 function donateItem(){const k=Object.keys(ITEMS).filter(k=>!ITEMS[k].evoItem&&S.items[k]>0).sort((a,b)=>S.items[b]-S.items[a])[0];return k||null}
 function monSheet(m){const s=SP[m.sp],inTeam=S.team.includes(m),e=s.evo,mx=maxHp(m),lead=S.team[0]===m,bud=S.buddy===m.uid,acts=[];
- const nick={f:()=>{const nn=($('#nick').value||'').trim().slice(0,16),changed=nn&&nn!==m.nick;m.nick=nn;save();
+ const nick={f:()=>{const nn=cleanName($('#nick').value,16),changed=nn&&nn!==m.nick;m.nick=nn;save();
   if(changed&&e&&e.k==='rename'&&m.lvl>=e.min){evoRun(m,'It loves its new name.');return}closeModal();render();toast(nn?`Nickname saved: ${nn}.`:'Nickname cleared.')}};
  if(inTeam&&!lead)acts.push({ic:'spark',l:m.hp>0?'Make lead':'Fainted, can’t lead',dis:m.hp<=0,f:()=>{S.team.splice(S.team.indexOf(m),1);S.team.unshift(m);save();closeModal();render();toast(`${N(m)} leads the team now.`)}});
  if(!bud)acts.push({ic:'walk',l:'Make buddy',f:()=>{S.buddy=m.uid;save();closeModal();render();toast(`${N(m)} is your buddy now.`)}});

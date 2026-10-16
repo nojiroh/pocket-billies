@@ -5,6 +5,9 @@ const $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
 const rnd=Math.random;
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+/* phase 02: a name the player typed, or that came from a backup file or a friend, loses the characters that could
+   end a piece of HTML (< > " & `) and control characters, so it is safe in any page text or attribute */
+const cleanName=(s,max)=>String(s==null?'':s).replace(/[\u0000-\u001f\u007f<>"&`]/g,'').trim().slice(0,max);
 const fmt=n=>Math.floor(n).toLocaleString('en-US');
 const km=st=>(st/STEPS_PER_KM).toFixed(1);
 let RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -36,6 +39,7 @@ function migrate(o){if(!o||typeof o!=='object')return null;const f=fresh();const
  while(s.jobs.length>JOB_SLOTS()){const j=s.jobs.pop();const m=[...(s.team||[]),...(s.box||[])].find(x=>x.uid===j.uid);if(m){m.job=null;m.boxedAt=Date.now()}}
  if(!SP[s.starter+'0']&&s.started)s.starter=RULES.start.starters.find(l=>SP[l+'0'])||LINES[0].id;
  s.team=(s.team||[]).filter(m=>SP[m.sp]);s.box=(s.box||[]).filter(m=>SP[m.sp]);
+ [...s.team,...s.box].forEach(m=>{if(m.nick!=null)m.nick=cleanName(m.nick,16)});if(s.avatar&&typeof s.avatar==='object'&&'name' in s.avatar)s.avatar.name=cleanName(s.avatar.name,18)||'Trainer';
  [...s.team,...s.box].forEach(m=>{m.moves=(m.moves||[]).filter(k=>MOVES[k]);if(!m.moves.length)m.moves=movesAt(SP[m.sp].line,m.lvl)});
  for(const key of ['seen','caught'])if(s[key]&&typeof s[key]==='object')for(const id of Object.keys(s[key]))if(!SP[id])delete s[key][id];
  s.queue=(s.queue||[]).filter(q=>SP[q.sp]);
