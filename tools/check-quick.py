@@ -815,7 +815,8 @@ def desktop_steps(b, base, R):
         if not day[3] or not day[0] or day[0] < .2 or night[1] < .9 or day[2] < 1: raise Exception(f'room light: day {day}, night {night}')
         out.append(f'room: daylight {day[0]:.2f}, {day[2]} lamps lit at night')
         # settings in tabs, every tab fits the phone width; a switch flips
-        pg.evaluate("U.tab='walk';render();settings('game');0"); time.sleep(.6); tabs = []
+        # a message waiting on screen (an egg hatching, in steps mode) would queue Settings behind it
+        pg.evaluate("U.modal=null;U.mq=[];renderOv();U.tab='walk';render();settings('game');0"); time.sleep(.6); tabs = []
         # alpha 0.5: the tabs are whatever the game lists (sound, graphics, game, save, help); contrast is under Game
         names = pg.evaluate("SET_TABS.map(t=>t[0])")
         for t in names:
