@@ -18,7 +18,7 @@ async function frInit(){if(!frOn()||FR.on)return;FR.on=true;FR.uid=ACC.user.uid;
     const ex=await cr.get();if(ex.exists)continue;await cr.set({uid:FR.uid});FR.code=c}
    await ref.set({code:FR.code},{merge:true})}
   frPublish(true);frWatchAll();
-  FR.unsub.push(db.collection('requests').where('to','==',FR.uid).onSnapshot(q=>{FR.inc=q.docs.map(d=>Object.assign({id:d.id},d.data()));frSync()},frErr));
+  FR.unsub.push(db.collection('requests').where('to','==',FR.uid).onSnapshot(q=>{FR.inc=q.docs.map(d=>Object.assign({id:d.id},d.data(),{fromName:cleanName(d.data().fromName,40)}));frSync()},frErr));
   FR.unsub.push(db.collection('requests').where('from','==',FR.uid).onSnapshot(q=>{FR.out=q.docs.map(d=>Object.assign({id:d.id},d.data()));frSync()},frErr));
  }catch(e){frErr(e)}frRefresh()}
 function frErr(e){console.warn('friends:',e&&e.message||e);FR.err=e&&e.code==='permission-denied'?'Friends need the updated database rules (see README → Friends).':'Friends are offline right now.';frRefresh()}
@@ -29,7 +29,13 @@ function frSync(){let L=new Set(FR.list);
  const nl=[...L].filter(u=>u&&u!==FR.uid).slice(0,50);if(nl.join()!==FR.list.join()){FR.list=nl;frDb().collection('users').doc(FR.uid).set({friends:nl},{merge:true}).catch(frErr)}
  frWatchAll();frRefresh()}
 function frWatchAll(){const db=frDb();for(const [u,un] of FR.watch)if(!FR.list.includes(u)){un();FR.watch.delete(u);delete FR.data[u]}
- for(const u of FR.list)if(!FR.watch.has(u))FR.watch.set(u,db.collection('users').doc(u).onSnapshot(s=>{if(s.exists)FR.data[u]=s.data();frRefresh();if(typeof MAP!=='undefined')MAP.dirty=true},e=>frWatchErr(u,e)))}
+ for(const u of FR.list)if(!FR.watch.has(u))FR.watch.set(u,db.collection('users').doc(u).onSnapshot(s=>{if(s.exists)FR.data[u]=frClean(s.data());frRefresh();if(typeof MAP!=='undefined')MAP.dirty=true},e=>frWatchErr(u,e)))}
+/* a friend's page is written by their game, or by anyone with their sign-in: take only what is drawn, in the shape
+   it is drawn in (the look goes through cleanLook when it is drawn) */
+function frClean(d){d=d&&typeof d==='object'?d:{};const a=d.at&&typeof d.at==='object'?d.at:null,p=d.partner&&typeof d.partner==='object'?d.partner:null,num=v=>v!=null&&Number.isFinite(+v)?+v:null;
+ return {name:cleanName(d.name,40)||'Friend',avatar:d.avatar&&typeof d.avatar==='object'?d.avatar:null,
+  partner:p&&typeof p.sp==='string'?{sp:p.sp,gold:!!p.gold,name:cleanName(p.name,16),lvl:Math.max(1,Math.min(100,Math.round(num(p.lvl)||1)))}:null,
+  at:a?{node:Number.isInteger(a.node)?a.node:null,place:cleanName(a.place,60),sid:typeof a.sid==='string'?cleanName(a.sid,60):null,x:num(a.x),z:num(a.z),t:num(a.t)||0}:null}}
 /* a friend's page opens to you once their game has put you on their list too (firebase/firestore.rules): until then,
    look again every minute instead of showing an error */
 function frWatchErr(u,e){FR.watch.delete(u);if(!(e&&e.code==='permission-denied'))return frErr(e);clearTimeout(FR.retryT);FR.retryT=setTimeout(()=>{if(FR.on)frWatchAll()},60000)}
