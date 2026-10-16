@@ -1,0 +1,22 @@
+{
+  "name": "pocket-billies",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "check:smoke": "python3 tools/check-quick.py --smoke",
+    "check:quick": "python3 tools/check-quick.py"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "eslint": "10.12.0",
+    "globals": "17.13.0",
+    "prettier": "3.9.9",
+    "vite": "8.3.2"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

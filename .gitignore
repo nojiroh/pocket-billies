@@ -28,3 +28,6 @@ playwright-report/
 .env.*
 *.pem
 *.key
+
+# Vite build output (phase 04)
+dist/
