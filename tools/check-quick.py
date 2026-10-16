@@ -1206,15 +1206,6 @@ def desktop_steps(b, base, R):
         if [x for x in sig if x not in ('musk', 'bezos', 'gates')]: raise Exception(f'lines without a signature move: {sig[:6]}')
         nsig = pg.evaluate("Object.values(MOVES).filter(m=>m.sig).length")
         out.append(f'{nsig} signature moves, one per new line; every pool, egg and fishing list names a living species')
-        # a v36 save: old starters, old team, old Guide marks come through. Fresh base: old saves don't matter and the
-        # migration is deleted in phase 03, so this runs only with --legacy-saves (it fails on alpha 0.5).
-        if '--legacy-saves' not in ARGS:
-            out.append('v36 save migration skipped (legacy, removed in phase 03)')
-        else:
-            m = json.loads(pg.evaluate("""JSON.stringify((()=>{const s=migrate({started:true,starter:'hood',team:[{uid:'a',sp:'hood2',lvl:40,moves:[]},{uid:'b',sp:'goss1',lvl:22,moves:[]},{uid:'c',sp:'myth0',lvl:50,moves:[]}],box:[{uid:'d',sp:'carp0',lvl:3,moves:[]}],seen:{hood0:1,hood2:1,goss1:1,carp0:1},caught:{hood2:1,carp0:1},queue:[{id:'q',sp:'short0',lvl:5}]});
-              return {starter:s.starter,team:s.team.map(x=>[x.sp,x.lvl]),box:s.box.map(x=>x.sp),seen:Object.keys(s.seen),caught:Object.keys(s.caught),q:s.queue.map(q=>q.sp)}})())"""))
-            if m['starter'] != 'musk' or m['team'][0] != ['musk2', 40] or m['team'][2][0] != 'mansa0' or any(x not in ids for x in m['box'] + m['seen'] + m['caught'] + m['q']): raise Exception(f'v36 save migration: {m}')
-            out.append(f"a v36 save comes through: Hoodini's line → Emberox's at the same levels, the mythical → Aurumansa, {len(m['seen'])} Guide marks kept")
         # the legendary at the volcano
         node = pg.evaluate("ROUTE.findIndex(r=>r.scene==='volcano')")
         if node >= 0:
