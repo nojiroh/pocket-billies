@@ -1,0 +1,35 @@
+{
+ "id": "saylor",
+ "names": ["Hodlcalf","Saylorbull"],
+ "types": [["Steel"],["Steel","Water"]],
+ "prof": [1.1,1.05,1.2,0.9,1.05,0.7],
+ "rar": "uncommon",
+ "learn": [
+  [1,"handshake"],
+  [1,"bulk"],
+  [5,"gentrify"],
+  [9,"markdown"],
+  [15,"interest"],
+  [21,"buyhold"],
+  [27,"dynamic"],
+  [30,"buythedip"],
+  [33,"rerecord"],
+  [39,"headline"],
+  [40,"subpoena"],
+  [40,"lawsuit"]
+ ],
+ "cat": ["Hodl Billie","Dip Billie"],
+ "ht": [0.8,2.2],
+ "wt": [50,900],
+ "hab": ["A paddock with one orange stone in it","A storm, buying"],
+ "diet": ["One orange coin","The dip"],
+ "bio": [
+  "A calf with a blaze of orange on its forehead that clutches one orange pebble and will not, under any circumstances, let it go.",
+  "A navy bull with glowing orange eyes and curled horns. It buys the dip in a storm, and then the next dip, and keeps every pebble it has ever bought."
+ ],
+ "note": ["Has never sold anything.","There is no second best, it says, holding the first."],
+ "evo": [
+  {"k":"lvl","at":26}
+ ],
+ "parody": "Michael Saylor"
+}

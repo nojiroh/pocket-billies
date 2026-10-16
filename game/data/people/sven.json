@@ -1,0 +1,20 @@
+{
+ "look": {
+  "name": "Sven",
+  "body": {"chest":0,"shoulders":1.12,"body":1.08},
+  "skin": "#F3C79C",
+  "hair": "#C9A24A",
+  "eyes": "#4A7BBB",
+  "wear": {
+   "hair": "hair_short",
+   "facial": "facial_beard",
+   "top": "sweater",
+   "outer": "apron",
+   "bottom": "work_pants",
+   "shoes": "boots",
+   "hat": "hat_beanie",
+   "mouth": "mouth_grin"
+  },
+  "colors": {"sweater":["#C8323C"],"apron":["#6E4B2E","#48301C"],"hat_beanie":["#F4F2EC"]}
+ }
+}

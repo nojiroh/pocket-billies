@@ -1,0 +1,19 @@
+{
+ "name": "Variant No. 1",
+ "who": "variant",
+ "area": "volcano",
+ "node": 45,
+ "blocks": false,
+ "team": [
+  {"sp":"son1","lvl":63},
+  {"sp":"jayz1","lvl":63},
+  {"sp":"ek1","lvl":64}
+ ],
+ "reward": 2600,
+ "market": null,
+ "lines": ["“Number one. Not the first fan; the first variant. She made me before she made the record.”"],
+ "win": "“One of a kind. Still.”",
+ "lose": "“Number one!”",
+ "hint": "",
+ "v47region": 1
+}

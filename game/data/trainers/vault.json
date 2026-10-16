@@ -1,0 +1,33 @@
+{
+ "name": "Baron Vault",
+ "who": "vault",
+ "area": "esc",
+ "node": 24,
+ "blocks": false,
+ "team": [
+  {"sp":"ma1","lvl":41},
+  {"sp":"mittal0","lvl":41},
+  {"sp":"kroc2","lvl":42},
+  {"sp":"ma2","lvl":43}
+ ],
+ "reward": 4200,
+ "egg": 10,
+ "market": null,
+ "lines": [
+  "“Welcome to Goldvine Town. Everything you can see is mine, and everything you can’t see is in a vault, and also mine.”",
+  "“I rented the vaults to a pop star. And myself, as it turns out. Read the small print, child.”"
+ ],
+ "win": "“Burned. Take the Fire Badge. I’ll invoice you for it later.”",
+ "lose": "“Money talks. Mine just won the argument.”",
+ "hint": "Baron Vault’s Fire team is level 41–43. Water and Ground moves put Fire Billies out.",
+ "seat": {
+  "id": "vault",
+  "title": "Fire Badge · 6 of 8",
+  "coin": "gold",
+  "coins": {"gold":4,"tbtf":2},
+  "items": {"parachute":1},
+  "rewardText": "a Golden Parachute, 4 Gold Coins and 2 Platinum Coins",
+  "unlockText": "The Grizzle Badlands, east of Goldvine Town, are open."
+ },
+ "v47region": 1
+}

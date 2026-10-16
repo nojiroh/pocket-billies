@@ -1,0 +1,18 @@
+{
+ "name": "Variant VIP",
+ "who": "variant",
+ "area": "clear",
+ "node": 40,
+ "blocks": false,
+ "team": [
+  {"sp":"kashing1","lvl":55},
+  {"sp":"jayz1","lvl":56}
+ ],
+ "reward": 2000,
+ "market": null,
+ "lines": ["“VIP means Very Important Purchaser. I have every variant. Even the ones that don’t exist yet.”"],
+ "win": "“Access revoked.”",
+ "lose": "“Backstage!”",
+ "hint": "",
+ "v47region": 1
+}

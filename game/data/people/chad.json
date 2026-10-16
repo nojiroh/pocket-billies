@@ -1,0 +1,35 @@
+{
+ "hair": "#F2D35E",
+ "style": "spiky",
+ "top": "#F07F2E",
+ "top2": "#C05A15",
+ "bottom": "#8A939C",
+ "shoe": "#222",
+ "skin": "#E8B48A",
+ "tank": 1,
+ "headset": 1,
+ "look": {
+  "name": "Blake",
+  "body": {"height":1.04,"legs":1.06,"shoulders":1.1,"chest":0},
+  "skin": "#E8B48A",
+  "hair": "#F2D35E",
+  "eyes": "#4A7BBB",
+  "wear": {
+   "hair": "hair_spiky",
+   "eyes": "eyes_sharp",
+   "brows": "brows_stern",
+   "mouth": "mouth_smirk",
+   "top": "tank",
+   "outer": "track_top",
+   "bottom": "track_pants",
+   "shoes": "runners",
+   "glasses": "headset"
+  },
+  "colors": {
+   "tank": ["#F07F2E"],
+   "track_top": ["#C05A15","#F2EEE4"],
+   "track_pants": ["#5A6270","#F2EEE4"],
+   "runners": ["#F07F2E","#F2EEE4"]
+  }
+ }
+}

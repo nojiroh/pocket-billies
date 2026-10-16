@@ -1,0 +1,79 @@
+{
+ "grass": {"name":"Long grass","sky":["#5E7AD8","#9AB8F0","#E8E2F2"],"fog":"#D8DCEE","fogD":80,"amb":"pollen","far":"fields"},
+ "golf": {"name":"Golf course","sky":["#5E7AD8","#A0C0F2","#ECE6F4"],"fog":"#DCE2EE","fogD":85,"amb":"pollen","far":"fields"},
+ "shell": {"name":"Bramble thicket","sky":["#3A3E7A","#6A70A8","#B8B0C8"],"fog":"#9A98B4","fogD":55,"amb":"spore","far":"woods"},
+ "grotto": {"name":"Bubbling grotto","sky":["#2A1E28","#5A3A3A","#9A6A50"],"fog":"#7A5A48","fogD":45,"amb":"drip","far":"badlands"},
+ "esc": {"name":"Stairstep canyon","sky":["#C86A5A","#F0A070","#F8DCB0"],"fog":"#F2D2A8","fogD":70,"amb":"sand","far":"desert"},
+ "clear": {
+  "name": "Scrap yard (indoor)",
+  "indoor": 1,
+  "sky": ["#1E1A28","#2E2A3C","#4A4458"],
+  "fog": "#5A5468",
+  "fogD": 60,
+  "wall": "clear",
+  "amb": "dust"
+ },
+ "food": {
+  "name": "Food court (indoor)",
+  "indoor": 1,
+  "sky": ["#1E1A2E","#2E2A44","#4A4062"],
+  "fog": "#5A4E6E",
+  "fogD": 60,
+  "wall": "food",
+  "amb": "dust"
+ },
+ "mall": {
+  "name": "Lanternhall City (indoor)",
+  "indoor": 1,
+  "sky": ["#14122A","#22204A","#3A3670"],
+  "fog": "#3A3670",
+  "fogD": 70,
+  "wall": "mall",
+  "amb": "dust"
+ },
+ "sea": {
+  "name": "Open sea",
+  "art": "beach",
+  "sky": ["#4A86D8","#8EC4F0","#E4F0F6"],
+  "fog": "#D4E6F2",
+  "fogD": 90,
+  "amb": "pollen",
+  "far": "sea"
+ },
+ "beach": {
+  "name": "Island beach",
+  "art": "beach",
+  "sky": ["#4A8ADC","#92C8F2","#F2EEDC"],
+  "fog": "#E6EAE0",
+  "fogD": 85,
+  "amb": "pollen",
+  "far": "sea"
+ },
+ "volcano": {
+  "name": "Volcano",
+  "art": "volcano",
+  "sky": ["#3A1E2A","#8A3A32","#E08A50"],
+  "fog": "#A0584A",
+  "fogD": 55,
+  "amb": "sand",
+  "far": "volcano"
+ },
+ "snow": {
+  "name": "Snowy peaks",
+  "art": "snow",
+  "sky": ["#5A7EC8","#A2C2EC","#EEF2F8"],
+  "fog": "#DCE6F2",
+  "fogD": 75,
+  "amb": "pollen",
+  "far": "snow"
+ },
+ "lake": {
+  "name": "Lake",
+  "art": "golf",
+  "sky": ["#5A86D6","#9CC6F0","#ECF0F2"],
+  "fog": "#D8E4EE",
+  "fogD": 85,
+  "amb": "pollen",
+  "far": "fields"
+ }
+}

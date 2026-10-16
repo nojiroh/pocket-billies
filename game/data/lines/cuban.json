@@ -1,0 +1,35 @@
+{
+ "id": "cuban",
+ "names": ["Pupfin","Sharktank"],
+ "types": [["Water"],["Water","Electric"]],
+ "prof": [0.95,1.1,0.9,1.1,0.9,1.15],
+ "rar": "common",
+ "learn": [
+  [1,"handshake"],
+  [1,"interest"],
+  [5,"buyhold"],
+  [9,"spin"],
+  [15,"rerecord"],
+  [21,"headline"],
+  [27,"compound"],
+  [33,"imout"],
+  [39,"exclusive"],
+  [40,"subpoena"],
+  [40,"lawsuit"],
+  [44,"pump"]
+ ],
+ "cat": ["Pup Billie","Tank Billie"],
+ "ht": [0.5,2.4],
+ "wt": [8,300],
+ "hab": ["Reefs by the arena","A tank with a chair in it"],
+ "diet": ["Small fish","Pitches"],
+ "bio": [
+  "A shark pup with a stripe of blue down its flank and a lot to say about the game last night.",
+  "A shark that sits in a tank and listens to pitches. It says \"I'm out\", waits a beat, and invests anyway."
+ ],
+ "note": ["Sold its first business before it could swim.","Owns the team and argues with the referee."],
+ "evo": [
+  {"k":"lvl","at":24}
+ ],
+ "parody": "Mark Cuban"
+}

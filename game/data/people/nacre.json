@@ -1,0 +1,29 @@
+{
+ "look": {
+  "name": "Curator Nacre",
+  "body": {"height":1.04,"body":0.96,"chest":0.5,"hips":1,"shoulders":1},
+  "skin": "#C98E6A",
+  "hair": "#EDEFF2",
+  "eyes": "#3F8C9C",
+  "wear": {
+   "hair": "hair_bun",
+   "eyes": "eyes_sleepy",
+   "brows": "brows_arched",
+   "mouth": "mouth_smile",
+   "top": "sweater",
+   "outer": "apron",
+   "bottom": "skirt",
+   "shoes": "boots",
+   "glasses": "glasses_round",
+   "neck": "scarf"
+  },
+  "colors": {
+   "sweater": ["#3F8C9C"],
+   "apron": ["#ECEEF2","#96B0C4"],
+   "skirt": ["#2A4A6A"],
+   "boots": ["#2A3448","#1A2232"],
+   "scarf": ["#F2E2C8"],
+   "glasses_round": ["#C8A24A"]
+  }
+ }
+}

@@ -1,0 +1,29 @@
+{
+ "name": "Leader Alta",
+ "who": "alta",
+ "area": "snow",
+ "node": 17,
+ "blocks": false,
+ "team": [
+  {"sp":"knight1","lvl":36},
+  {"sp":"woods0","lvl":36},
+  {"sp":"lauren1","lvl":37},
+  {"sp":"mateschitz1","lvl":37}
+ ],
+ "reward": 3000,
+ "egg": 10,
+ "market": null,
+ "lines": ["“Welcome to the top. The air is thin and so is my patience.”","“My Flying team has never once looked down.”"],
+ "win": "“You climbed higher than I thought. The Flying Badge is yours.”",
+ "lose": "“Gravity always wins. Come back when you can fly.”",
+ "hint": "Leader Alta’s Flying team is level 36–37. Electric and Steel moves knock Flying Billies out of the sky.",
+ "seat": {
+  "id": "peak",
+  "title": "Flying Badge · 4 of 8",
+  "coin": "gold",
+  "coins": {"gold":3,"tbtf":1},
+  "items": {"bailout":2},
+  "rewardText": "2 Bailouts, 3 Gold Coins and a Platinum Coin",
+  "unlockText": "Your team can now take on the island leader in Palmhaven Town, across the sea from Marigold Town."
+ }
+}

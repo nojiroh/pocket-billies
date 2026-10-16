@@ -1,0 +1,30 @@
+{
+ "id": "ronaldo",
+ "names": ["Siucock"],
+ "types": [["Fire","Flying"]],
+ "prof": [0.9,1.25,0.9,1,0.9,1.3],
+ "rar": "rare",
+ "learn": [
+  [1,"handshake"],
+  [1,"spill"],
+  [5,"hottake"],
+  [9,"lobby"],
+  [15,"pipeline"],
+  [27,"smear"],
+  [34,"gusher"],
+  [34,"siu"],
+  [39,"post3am"],
+  [40,"subpoena"],
+  [40,"lawsuit"]
+ ],
+ "cat": ["Siu Billie"],
+ "ht": [1.6],
+ "wt": [30],
+ "hab": ["The penalty spot"],
+ "diet": ["Chicken, plain, no sauce"],
+ "bio": [
+  "A peacock that jumps, turns in the air, lands with its tail fanned and shouts. It has done this nine hundred times and will do it again."
+ ],
+ "note": ["Does not drink the fizzy stuff. Moves it off the table."],
+ "parody": "Cristiano Ronaldo"
+}

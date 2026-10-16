@@ -1,0 +1,30 @@
+{
+ "id": "federer",
+ "names": ["Federswan"],
+ "types": [["Water","Flying"]],
+ "prof": [0.9,1.1,0.95,1.05,1,1.3],
+ "rar": "rare",
+ "learn": [
+  [1,"handshake"],
+  [1,"interest"],
+  [5,"buyhold"],
+  [9,"spin"],
+  [15,"rerecord"],
+  [21,"headline"],
+  [27,"compound"],
+  [30,"onehandedbackhand"],
+  [34,"exclusive"],
+  [39,"liftoff"],
+  [40,"subpoena"],
+  [40,"lawsuit"],
+  [44,"escvel"]
+ ],
+ "cat": ["Backhand Billie"],
+ "ht": [1.5],
+ "wt": [30],
+ "hab": ["Grass courts"],
+ "diet": ["Strawberries and cream"],
+ "bio": ["A swan with a stripe of orange over its eyes and a one-handed backhand off one wing that nobody has returned."],
+ "note": ["Twenty majors, no sweat."],
+ "parody": "Roger Federer"
+}

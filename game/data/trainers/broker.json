@@ -1,0 +1,20 @@
+{
+ "name": "Broker Bea",
+ "who": "broker",
+ "area": "food",
+ "node": 12,
+ "blocks": false,
+ "team": [
+  {"sp":"bloomberg0","lvl":22},
+  {"sp":"cuban0","lvl":23},
+  {"sp":"dalio0","lvl":24}
+ ],
+ "reward": 900,
+ "egg": 5,
+ "market": null,
+ "lines": ["“Buy low, battle high!”","“My team is fully diversified.”"],
+ "win": "“A correction. Happens to the best of us.”",
+ "lose": "“Ka-ching. Better luck next quarter.”",
+ "hint": "Broker Bea waits on the city plaza with a level 22–24 team.",
+ "double": true
+}

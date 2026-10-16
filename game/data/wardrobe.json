@@ -1,0 +1,1776 @@
+{
+ "version": 2,
+ "figure": 116.4,
+ "ppm": 66.5,
+ "legs": {"hip":3,"thigh":21.75,"shin":19.5,"sole":3.9000000000000004},
+ "crops": {
+  "head": [-23.4,-131.4,23.4,-76.8],
+  "face": [-16.6,-111.9,16.6,-79.7],
+  "body": [-19.5,-81.2,19.5,-36.2],
+  "legs": [-13.5,-49.7,13.5,2],
+  "feet": [-12,-9,12,2],
+  "bust": [-31.2,-133.3,31.2,-57.3],
+  "all": [-22.5,-126.4,22.5,2]
+ },
+ "skeleton": {
+  "front": [
+   {"n":"pelvis","par":null,"at":[0,-48.15],"z":14},
+   {"n":"torso","par":"pelvis","at":[0,0],"z":20},
+   {"n":"chest","par":"torso","at":[0,-19.5],"z":21},
+   {"n":"neck","par":"torso","at":[0,-30],"z":19},
+   {"n":"head","par":"neck","at":[0,-4.5],"z":30},
+   {"n":"armUL","par":"torso","at":[-12,-27],"z":25},
+   {"n":"armLL","par":"armUL","at":[0,16.5],"z":25.3},
+   {"n":"handL","par":"armLL","at":[0,14.25],"z":25.6},
+   {"n":"armUR","par":"torso","at":[12,-27],"z":25},
+   {"n":"armLR","par":"armUR","at":[0,16.5],"z":25.3},
+   {"n":"handR","par":"armLR","at":[0,14.25],"z":25.6},
+   {"n":"thighL","par":"pelvis","at":[-5.25,3],"z":10},
+   {"n":"shinL","par":"thighL","at":[0,21.75],"z":10.3},
+   {"n":"footL","par":"shinL","at":[0,19.5],"z":10.6},
+   {"n":"thighR","par":"pelvis","at":[5.25,3],"z":10},
+   {"n":"shinR","par":"thighR","at":[0,21.75],"z":10.3},
+   {"n":"footR","par":"shinR","at":[0,19.5],"z":10.6}
+  ],
+  "back": [
+   {"n":"pelvis","par":null,"at":[0,-48.15],"z":14},
+   {"n":"torso","par":"pelvis","at":[0,0],"z":20},
+   {"n":"chest","par":"torso","at":[0,-19.5],"z":21},
+   {"n":"neck","par":"torso","at":[0,-30],"z":19},
+   {"n":"head","par":"neck","at":[0,-4.5],"z":30},
+   {"n":"armUL","par":"torso","at":[-12,-27],"z":25},
+   {"n":"armLL","par":"armUL","at":[0,16.5],"z":25.3},
+   {"n":"handL","par":"armLL","at":[0,14.25],"z":25.6},
+   {"n":"armUR","par":"torso","at":[12,-27],"z":25},
+   {"n":"armLR","par":"armUR","at":[0,16.5],"z":25.3},
+   {"n":"handR","par":"armLR","at":[0,14.25],"z":25.6},
+   {"n":"thighL","par":"pelvis","at":[-5.25,3],"z":10},
+   {"n":"shinL","par":"thighL","at":[0,21.75],"z":10.3},
+   {"n":"footL","par":"shinL","at":[0,19.5],"z":10.6},
+   {"n":"thighR","par":"pelvis","at":[5.25,3],"z":10},
+   {"n":"shinR","par":"thighR","at":[0,21.75],"z":10.3},
+   {"n":"footR","par":"shinR","at":[0,19.5],"z":10.6}
+  ],
+  "side": [
+   {"n":"pelvis","par":null,"at":[0,-48.15],"z":14},
+   {"n":"torso","par":"pelvis","at":[0,0],"z":20},
+   {"n":"chest","par":"torso","at":[1.5,-19.5],"z":21},
+   {"n":"neck","par":"torso","at":[1.5,-30],"z":19},
+   {"n":"head","par":"neck","at":[0,-4.5],"z":30},
+   {"n":"armUN","par":"torso","at":[0,-27],"z":25},
+   {"n":"armLN","par":"armUN","at":[0,16.5],"z":25.3},
+   {"n":"handN","par":"armLN","at":[0,14.25],"z":25.6},
+   {"n":"armUF","par":"torso","at":[0,-27],"z":3},
+   {"n":"armLF","par":"armUF","at":[0,16.5],"z":3.3},
+   {"n":"handF","par":"armLF","at":[0,14.25],"z":3.6},
+   {"n":"thighN","par":"pelvis","at":[0,3],"z":11},
+   {"n":"shinN","par":"thighN","at":[0,21.75],"z":11.3},
+   {"n":"footN","par":"shinN","at":[0,19.5],"z":11.6},
+   {"n":"thighF","par":"pelvis","at":[0,3],"z":6},
+   {"n":"shinF","par":"thighF","at":[0,21.75],"z":6.3},
+   {"n":"footF","par":"shinF","at":[0,19.5],"z":6.6}
+  ]
+ },
+ "body": {
+  "img": "trainer/body.png",
+  "mask": "trainer/body_m.png",
+  "colors": [["Skin","#E6B08A"]],
+  "pieces": [
+   {"v":"front","b":"pelvis","r":[105,37,21,14],"o":[-11,-3]},
+   {"v":"front","b":"torso","r":[29,1,27,34],"o":[-14,-32]},
+   {"v":"front","b":"chest","r":[188,37,19,8],"o":[-9,-2]},
+   {"v":"front","b":"neck","r":[166,37,6,9],"o":[-3,-7]},
+   {"v":"front","b":"head","r":[57,1,31,34],"o":[-15,-33]},
+   {"v":"front","b":"armUL","r":[303,1,9,25],"o":[-5,-5]},
+   {"v":"front","b":"armLL","r":[51,37,8,21],"o":[-4,-4]},
+   {"v":"front","b":"handL","r":[208,37,8,8],"o":[-3,0]},
+   {"v":"front","b":"armUR","r":[1,37,9,25],"o":[-5,-5]},
+   {"v":"front","b":"armLR","r":[60,37,8,21],"o":[-4,-4]},
+   {"v":"front","b":"handR","r":[217,37,8,8],"o":[-3,0]},
+   {"v":"front","b":"thighL","r":[165,1,12,32],"o":[-6,-6]},
+   {"v":"front","b":"shinL","r":[243,1,9,27],"o":[-5,-4]},
+   {"v":"front","b":"footL","r":[296,37,11,6],"o":[-6,-2]},
+   {"v":"front","b":"thighR","r":[178,1,12,32],"o":[-6,-6]},
+   {"v":"front","b":"shinR","r":[253,1,9,27],"o":[-5,-4]},
+   {"v":"front","b":"footR","r":[308,37,11,6],"o":[-6,-2]},
+   {"v":"back","b":"pelvis","r":[127,37,21,14],"o":[-11,-3]},
+   {"v":"back","b":"torso","r":[89,1,27,34],"o":[-14,-32]},
+   {"v":"back","b":"neck","r":[173,37,6,9],"o":[-3,-7]},
+   {"v":"back","b":"head","r":[117,1,31,34],"o":[-15,-33]},
+   {"v":"back","b":"armUL","r":[11,37,9,25],"o":[-5,-5]},
+   {"v":"back","b":"armLL","r":[69,37,8,21],"o":[-4,-4]},
+   {"v":"back","b":"handL","r":[226,37,7,8],"o":[-3,0]},
+   {"v":"back","b":"armUR","r":[21,37,9,25],"o":[-5,-5]},
+   {"v":"back","b":"armLR","r":[78,37,8,21],"o":[-4,-4]},
+   {"v":"back","b":"handR","r":[234,37,7,8],"o":[-3,0]},
+   {"v":"back","b":"thighL","r":[191,1,12,32],"o":[-6,-6]},
+   {"v":"back","b":"shinL","r":[263,1,9,27],"o":[-5,-4]},
+   {"v":"back","b":"footL","r":[1,63,11,6],"o":[-6,-2]},
+   {"v":"back","b":"thighR","r":[204,1,12,32],"o":[-6,-6]},
+   {"v":"back","b":"shinR","r":[273,1,9,27],"o":[-5,-4]},
+   {"v":"back","b":"footR","r":[13,63,11,6],"o":[-6,-2]},
+   {"v":"side","b":"pelvis","r":[149,37,16,14],"o":[-9,-3]},
+   {"v":"side","b":"torso","r":[149,1,15,34],"o":[-8,-32]},
+   {"v":"side","b":"chest","r":[242,37,7,8],"o":[1,-1]},
+   {"v":"side","b":"neck","r":[180,37,7,9],"o":[-3,-7]},
+   {"v":"side","b":"head","r":[1,1,27,35],"o":[-12,-34]},
+   {"v":"side","b":"armUN","r":[31,37,9,25],"o":[-5,-5]},
+   {"v":"side","b":"armLN","r":[87,37,8,21],"o":[-4,-4]},
+   {"v":"side","b":"handN","r":[250,37,7,8],"o":[-3,0]},
+   {"v":"side","b":"armUF","r":[41,37,9,25],"o":[-5,-5]},
+   {"v":"side","b":"armLF","r":[96,37,8,21],"o":[-4,-4]},
+   {"v":"side","b":"handF","r":[258,37,7,8],"o":[-3,0]},
+   {"v":"side","b":"thighN","r":[217,1,12,32],"o":[-6,-6]},
+   {"v":"side","b":"shinN","r":[283,1,9,27],"o":[-5,-4]},
+   {"v":"side","b":"footN","r":[266,37,14,7],"o":[-5,-3]},
+   {"v":"side","b":"thighF","r":[230,1,12,32],"o":[-6,-6]},
+   {"v":"side","b":"shinF","r":[293,1,9,27],"o":[-5,-4]},
+   {"v":"side","b":"footF","r":[281,37,14,7],"o":[-5,-3]}
+  ]
+ },
+ "slots": [
+  {"id":"hair","name":"Hair","tab":"hair","layer":0.7,"empty":true},
+  {"id":"eyes","name":"Eyes","tab":"face","layer":0.55,"empty":false},
+  {"id":"brows","name":"Brows","tab":"face","layer":0.72,"empty":true},
+  {"id":"mouth","name":"Mouth","tab":"face","layer":0.55,"empty":false},
+  {"id":"facial","name":"Facial hair & freckles","tab":"face","layer":0.57,"empty":true},
+  {"id":"top","name":"Top","tab":"top","layer":0.3,"empty":false},
+  {"id":"outer","name":"Jacket & coat","tab":"top","layer":0.4,"empty":true},
+  {"id":"bottom","name":"Bottoms","tab":"bottom","layer":0.1,"empty":false},
+  {"id":"shoes","name":"Shoes","tab":"shoes","layer":0.2,"empty":true},
+  {"id":"hat","name":"Hat","tab":"hat","layer":0.8,"empty":true},
+  {"id":"glasses","name":"Glasses","tab":"extras","layer":0.75,"empty":true},
+  {"id":"neck","name":"Neck","tab":"extras","layer":0.45,"empty":true},
+  {"id":"bag","name":"Bag","tab":"extras","layer":0.5,"empty":true}
+ ],
+ "sliders": [
+  {"k":"height","name":"Height","min":0.88,"max":1.12,"def":1},
+  {"k":"legs","name":"Leg length","min":0.86,"max":1.16,"def":1},
+  {"k":"arms","name":"Arm length","min":0.88,"max":1.14,"def":1},
+  {"k":"body","name":"Body size","min":0.82,"max":1.35,"def":1},
+  {"k":"shoulders","name":"Shoulders","min":0.86,"max":1.18,"def":1},
+  {"k":"hips","name":"Hips","min":0.86,"max":1.22,"def":1},
+  {"k":"chest","name":"Chest","min":0,"max":1,"def":0.2},
+  {"k":"head","name":"Head size","min":0.9,"max":1.12,"def":1}
+ ],
+ "palettes": {
+  "skin": ["#F7D9C4","#F0C3A0","#E6B08A","#D49A6E","#B97D58","#9A6446","#7A4A34","#5A3628"],
+  "hair": [
+   "#1E1A22",
+   "#3B2A22",
+   "#6A3A24",
+   "#8C4A2A",
+   "#C46A3A",
+   "#E2B84A",
+   "#F2E2B0",
+   "#B9BFC4",
+   "#D97AA8",
+   "#5A7BD0",
+   "#4FA58A",
+   "#9A5BD0"
+  ],
+  "eyes": ["#5A3A24","#4A7BBB","#3F8A63","#7A5AAE","#8A8A94","#C88A2A"],
+  "cloth": [
+   "#F2EEE4",
+   "#1E1A22",
+   "#2E3A6A",
+   "#3E8FB0",
+   "#3F8A63",
+   "#C8323C",
+   "#D9A441",
+   "#E07AA4",
+   "#8B4F9E",
+   "#7C7058",
+   "#C2A574",
+   "#E0703A"
+  ]
+ },
+ "items": {
+  "tee": {
+   "name": "T-shirt",
+   "slot": "top",
+   "img": "trainer/items/tee.png",
+   "mask": "trainer/items/tee_m.png",
+   "colors": [["Shirt","#3E8FB0"]],
+   "pieces": [
+    {"v":"front","b":"torso","r":[1,1,29,35],"o":[-15,-33]},
+    {"v":"front","b":"chest","r":[153,1,23,11],"o":[-11,-3]},
+    {"v":"front","b":"armUL","r":[81,1,11,14],"o":[-6,-6]},
+    {"v":"front","b":"armUR","r":[93,1,11,14],"o":[-6,-6]},
+    {"v":"back","b":"torso","r":[31,1,29,35],"o":[-15,-33]},
+    {"v":"back","b":"armUL","r":[105,1,11,14],"o":[-6,-6]},
+    {"v":"back","b":"armUR","r":[117,1,11,14],"o":[-6,-6]},
+    {"v":"side","b":"torso","r":[61,1,19,35],"o":[-10,-33]},
+    {"v":"side","b":"chest","r":[177,1,11,11],"o":[0,-3]},
+    {"v":"side","b":"armUN","r":[129,1,11,14],"o":[-6,-6]},
+    {"v":"side","b":"armUF","r":[141,1,11,14],"o":[-6,-6]}
+   ],
+   "starter": true,
+   "tags": ["basics"]
+  },
+  "tee_stripe": {
+   "name": "Striped tee",
+   "slot": "top",
+   "img": "trainer/items/tee_stripe.png",
+   "mask": "trainer/items/tee_stripe_m.png",
+   "colors": [["Shirt","#F2EEE4"],["Stripes","#2E4E8C"]],
+   "pieces": [
+    {"v":"front","b":"torso","r":[1,1,29,35],"o":[-15,-33]},
+    {"v":"front","b":"chest","r":[153,1,23,11],"o":[-11,-3]},
+    {"v":"front","b":"armUL","r":[81,1,11,14],"o":[-6,-6]},
+    {"v":"front","b":"armUR","r":[93,1,11,14],"o":[-6,-6]},
+    {"v":"back","b":"torso","r":[31,1,29,35],"o":[-15,-33]},
+    {"v":"back","b":"armUL","r":[105,1,11,14],"o":[-6,-6]},
+    {"v":"back","b":"armUR","r":[117,1,11,14],"o":[-6,-6]},
+    {"v":"side","b":"torso","r":[61,1,19,35],"o":[-10,-33]},
+    {"v":"side","b":"chest","r":[177,1,11,11],"o":[0,-3]},
+    {"v":"side","b":"armUN","r":[129,1,11,14],"o":[-6,-6]},
+    {"v":"side","b":"armUF","r":[141,1,11,14],"o":[-6,-6]}
+   ],
+   "price": 420,
+   "shop": "thrift"
+  },
+  "tank": {
+   "name": "Tank top",
+   "slot": "top",
+   "img": "trainer/items/tank.png",
+   "mask": "trainer/items/tank_m.png",
+   "colors": [["Top","#E8E2D4"]],
+   "pieces": [
+    {"v":"front","b":"torso","r":[1,1,29,35],"o":[-15,-33]},
+    {"v":"front","b":"chest","r":[81,1,23,11],"o":[-11,-3]},
+    {"v":"back","b":"torso","r":[31,1,29,35],"o":[-15,-33]},
+    {"v":"side","b":"torso","r":[61,1,19,35],"o":[-10,-33]},
+    {"v":"side","b":"chest","r":[105,1,11,11],"o":[0,-3]}
+   ],
+   "price": 180,
+   "shop": "sports"
+  },
+  "longsleeve": {
+   "name": "Long-sleeve shirt",
+   "slot": "top",
+   "img": "trainer/items/longsleeve.png",
+   "mask": "trainer/items/longsleeve_m.png",
+   "colors": [["Shirt","#C9584A"]],
+   "pieces": [
+    {"v":"front","b":"torso","r":[1,1,29,35],"o":[-15,-33]},
+    {"v":"front","b":"chest","r":[219,1,23,11],"o":[-11,-3]},
+    {"v":"front","b":"armUL","r":[81,1,11,27],"o":[-6,-6]},
+    {"v":"front","b":"armLL","r":[153,1,10,17],"o":[-5,-4]},
+    {"v":"front","b":"armUR","r":[93,1,11,27],"o":[-6,-6]},
+    {"v":"front","b":"armLR","r":[164,1,10,17],"o":[-5,-4]},
+    {"v":"back","b":"torso","r":[31,1,29,35],"o":[-15,-33]},
+    {"v":"back","b":"armUL","r":[105,1,11,27],"o":[-6,-6]},
+    {"v":"back","b":"armLL","r":[175,1,10,17],"o":[-5,-4]},
+    {"v":"back","b":"armUR","r":[117,1,11,27],"o":[-6,-6]},
+    {"v":"back","b":"armLR","r":[186,1,10,17],"o":[-5,-4]},
+    {"v":"side","b":"torso","r":[61,1,19,35],"o":[-10,-33]},
+    {"v":"side","b":"chest","r":[243,1,11,11],"o":[0,-3]},
+    {"v":"side","b":"armUN","r":[129,1,11,27],"o":[-6,-6]},
+    {"v":"side","b":"armLN","r":[197,1,10,17],"o":[-5,-4]},
+    {"v":"side","b":"armUF","r":[141,1,11,27],"o":[-6,-6]},
+    {"v":"side","b":"armLF","r":[208,1,10,17],"o":[-5,-4]}
+   ],
+   "starter": true
+  },
+  "hoodie": {
+   "name": "Hoodie",
+   "slot": "top",
+   "img": "trainer/items/hoodie.png",
+   "mask": "trainer/items/hoodie_m.png",
+   "colors": [["Hoodie","#6F5BA8"],["Strings","#EDE7DC"]],
+   "pieces": [
+    {"v":"front","b":"torso","r":[1,1,29,38],"o":[-15,-36]},
+    {"v":"front","b":"chest","r":[250,1,23,11],"o":[-11,-3]},
+    {"v":"front","b":"pelvis","r":[286,1,25,8],"o":[-13,-3]},
+    {"v":"front","b":"armUL","r":[81,1,11,27],"o":[-6,-6]},
+    {"v":"front","b":"armLL","r":[153,1,10,17],"o":[-5,-4]},
+    {"v":"front","b":"armUR","r":[93,1,11,27],"o":[-6,-6]},
+    {"v":"front","b":"armLR","r":[164,1,10,17],"o":[-5,-4]},
+    {"v":"back","b":"torso","r":[31,1,29,35],"o":[-15,-33]},
+    {"v":"back","b":"torso","r":[219,1,19,13],"o":[-10,-37],"z":20.8},
+    {"v":"back","b":"pelvis","r":[1,40,25,8],"o":[-13,-3]},
+    {"v":"back","b":"armUL","r":[105,1,11,27],"o":[-6,-6]},
+    {"v":"back","b":"armLL","r":[175,1,10,17],"o":[-5,-4]},
+    {"v":"back","b":"armUR","r":[117,1,11,27],"o":[-6,-6]},
+    {"v":"back","b":"armLR","r":[186,1,10,17],"o":[-5,-4]},
+    {"v":"side","b":"torso","r":[61,1,19,35],"o":[-10,-33]},
+    {"v":"side","b":"torso","r":[239,1,10,12],"o":[-11,-37],"z":20.8},
+    {"v":"side","b":"chest","r":[274,1,11,11],"o":[0,-3]},
+    {"v":"side","b":"pelvis","r":[27,40,18,8],"o":[-10,-3]},
+    {"v":"side","b":"armUN","r":[129,1,11,27],"o":[-6,-6]},
+    {"v":"side","b":"armLN","r":[197,1,10,17],"o":[-5,-4]},
+    {"v":"side","b":"armUF","r":[141,1,11,27],"o":[-6,-6]},
+    {"v":"side","b":"armLF","r":[208,1,10,17],"o":[-5,-4]}
+   ],
+   "price": 650,
+   "shop": "sports"
+  },
+  "sweater": {
+   "name": "Knit sweater",
+   "slot": "top",
+   "img": "trainer/items/sweater.png",
+   "mask": "trainer/items/sweater_m.png",
+   "colors": [["Knit","#D9A441"]],
+   "pieces": [
+    {"v":"front","b":"torso","r":[1,1,29,35],"o":[-15,-33]},
+    {"v":"front","b":"chest","r":[219,1,23,11],"o":[-11,-3]},
+    {"v":"front","b":"pelvis","r":[255,1,25,8],"o":[-13,-3]},
+    {"v":"front","b":"armUL","r":[81,1,11,27],"o":[-6,-6]},
+    {"v":"front","b":"armLL","r":[153,1,10,17],"o":[-5,-4]},
+    {"v":"front","b":"armUR","r":[93,1,11,27],"o":[-6,-6]},
+    {"v":"front","b":"armLR","r":[164,1,10,17],"o":[-5,-4]},
+    {"v":"back","b":"torso","r":[31,1,29,35],"o":[-15,-33]},
+    {"v":"back","b":"pelvis","r":[281,1,25,8],"o":[-13,-3]},
+    {"v":"back","b":"armUL","r":[105,1,11,27],"o":[-6,-6]},
+    {"v":"back","b":"armLL","r":[175,1,10,17],"o":[-5,-4]},
+    {"v":"back","b":"armUR","r":[117,1,11,27],"o":[-6,-6]},
+    {"v":"back","b":"armLR","r":[186,1,10,17],"o":[-5,-4]},
+    {"v":"side","b":"torso","r":[61,1,19,35],"o":[-10,-33]},
+    {"v":"side","b":"chest","r":[243,1,11,11],"o":[0,-3]},
+    {"v":"side","b":"pelvis","r":[1,37,18,8],"o":[-10,-3]},
+    {"v":"side","b":"armUN","r":[129,1,11,27],"o":[-6,-6]},
+    {"v":"side","b":"armLN","r":[197,1,10,17],"o":[-5,-4]},
+    {"v":"side","b":"armUF","r":[141,1,11,27],"o":[-6,-6]},
+    {"v":"side","b":"armLF","r":[208,1,10,17],"o":[-5,-4]}
+   ],
+   "price": 520,
+   "shop": "thrift"
+  },
+  "polo": {
+   "name": "Polo shirt",
+   "slot": "top",
+   "img": "trainer/items/polo.png",
+   "mask": "trainer/items/polo_m.png",
+   "colors": [["Shirt","#3F8A63"],["Collar","#F2EEE4"]],
+   "pieces": [
+    {"v":"front","b":"torso","r":[1,1,29,35],"o":[-15,-33]},
+    {"v":"front","b":"chest","r":[153,1,23,11],"o":[-11,-3]},
+    {"v":"front","b":"armUL","r":[81,1,11,14],"o":[-6,-6]},
+    {"v":"front","b":"armUR","r":[93,1,11,14],"o":[-6,-6]},
+    {"v":"back","b":"torso","r":[31,1,29,35],"o":[-15,-33]},
+    {"v":"back","b":"armUL","r":[105,1,11,14],"o":[-6,-6]},
+    {"v":"back","b":"armUR","r":[117,1,11,14],"o":[-6,-6]},
+    {"v":"side","b":"torso","r":[61,1,19,35],"o":[-10,-33]},
+    {"v":"side","b":"chest","r":[177,1,11,11],"o":[0,-3]},
+    {"v":"side","b":"armUN","r":[129,1,11,14],"o":[-6,-6]},
+    {"v":"side","b":"armUF","r":[141,1,11,14],"o":[-6,-6]}
+   ],
+   "price": 380,
+   "shop": "sports"
+  },
+  "dress_shirt": {
+   "name": "Dress shirt",
+   "slot": "top",
+   "img": "trainer/items/dress_shirt.png",
+   "mask": "trainer/items/dress_shirt_m.png",
+   "colors": [["Shirt","#F1F2F4"],["Collar","#F1F2F4"]],
+   "pieces": [
+    {"v":"front","b":"torso","r":[1,1,29,35],"o":[-15,-33]},
+    {"v":"front","b":"chest","r":[219,1,23,11],"o":[-11,-3]},
+    {"v":"front","b":"armUL","r":[81,1,11,27],"o":[-6,-6]},
+    {"v":"front","b":"armLL","r":[153,1,10,17],"o":[-5,-4]},
+    {"v":"front","b":"armUR","r":[93,1,11,27],"o":[-6,-6]},
+    {"v":"front","b":"armLR","r":[164,1,10,17],"o":[-5,-4]},
+    {"v":"back","b":"torso","r":[31,1,29,35],"o":[-15,-33]},
+    {"v":"back","b":"armUL","r":[105,1,11,27],"o":[-6,-6]},
+    {"v":"back","b":"armLL","r":[175,1,10,17],"o":[-5,-4]},
+    {"v":"back","b":"armUR","r":[117,1,11,27],"o":[-6,-6]},
+    {"v":"back","b":"armLR","r":[186,1,10,17],"o":[-5,-4]},
+    {"v":"side","b":"torso","r":[61,1,19,35],"o":[-10,-33]},
+    {"v":"side","b":"chest","r":[243,1,11,11],"o":[0,-3]},
+    {"v":"side","b":"armUN","r":[129,1,11,27],"o":[-6,-6]},
+    {"v":"side","b":"armLN","r":[197,1,10,17],"o":[-5,-4]},
+    {"v":"side","b":"armUF","r":[141,1,11,27],"o":[-6,-6]},
+    {"v":"side","b":"armLF","r":[208,1,10,17],"o":[-5,-4]}
+   ],
+   "price": 900,
+   "shop": "designer"
+  },
+  "jersey": {
+   "name": "Sports jersey",
+   "slot": "top",
+   "img": "trainer/items/jersey.png",
+   "mask": "trainer/items/jersey_m.png",
+   "colors": [["Jersey","#D13B3B"],["Number","#F4F1EA"]],
+   "pieces": [
+    {"v":"front","b":"torso","r":[1,1,29,35],"o":[-15,-33]},
+    {"v":"front","b":"chest","r":[153,1,23,11],"o":[-11,-3]},
+    {"v":"front","b":"armUL","r":[81,1,11,14],"o":[-6,-6]},
+    {"v":"front","b":"armUR","r":[93,1,11,14],"o":[-6,-6]},
+    {"v":"back","b":"torso","r":[31,1,29,35],"o":[-15,-33]},
+    {"v":"back","b":"armUL","r":[105,1,11,14],"o":[-6,-6]},
+    {"v":"back","b":"armUR","r":[117,1,11,14],"o":[-6,-6]},
+    {"v":"side","b":"torso","r":[61,1,19,35],"o":[-10,-33]},
+    {"v":"side","b":"chest","r":[177,1,11,11],"o":[0,-3]},
+    {"v":"side","b":"armUN","r":[129,1,11,14],"o":[-6,-6]},
+    {"v":"side","b":"armUF","r":[141,1,11,14],"o":[-6,-6]}
+   ],
+   "price": 560,
+   "shop": "sports"
+  },
+  "track_top": {
+   "name": "Track jacket",
+   "slot": "top",
+   "img": "trainer/items/track_top.png",
+   "mask": "trainer/items/track_top_m.png",
+   "colors": [["Jacket","#2A4E8F"],["Stripes","#F4F1EA"]],
+   "pieces": [
+    {"v":"front","b":"torso","r":[1,1,29,35],"o":[-15,-33]},
+    {"v":"front","b":"chest","r":[219,1,23,11],"o":[-11,-3]},
+    {"v":"front","b":"pelvis","r":[255,1,25,8],"o":[-13,-3]},
+    {"v":"front","b":"armUL","r":[81,1,11,27],"o":[-6,-6]},
+    {"v":"front","b":"armLL","r":[153,1,10,17],"o":[-5,-4]},
+    {"v":"front","b":"armUR","r":[93,1,11,27],"o":[-6,-6]},
+    {"v":"front","b":"armLR","r":[164,1,10,17],"o":[-5,-4]},
+    {"v":"back","b":"torso","r":[31,1,29,35],"o":[-15,-33]},
+    {"v":"back","b":"pelvis","r":[281,1,25,8],"o":[-13,-3]},
+    {"v":"back","b":"armUL","r":[105,1,11,27],"o":[-6,-6]},
+    {"v":"back","b":"armLL","r":[175,1,10,17],"o":[-5,-4]},
+    {"v":"back","b":"armUR","r":[117,1,11,27],"o":[-6,-6]},
+    {"v":"back","b":"armLR","r":[186,1,10,17],"o":[-5,-4]},
+    {"v":"side","b":"torso","r":[61,1,19,35],"o":[-10,-33]},
+    {"v":"side","b":"chest","r":[243,1,11,11],"o":[0,-3]},
+    {"v":"side","b":"pelvis","r":[1,37,18,8],"o":[-10,-3]},
+    {"v":"side","b":"armUN","r":[129,1,11,27],"o":[-6,-6]},
+    {"v":"side","b":"armLN","r":[197,1,10,17],"o":[-5,-4]},
+    {"v":"side","b":"armUF","r":[141,1,11,27],"o":[-6,-6]},
+    {"v":"side","b":"armLF","r":[208,1,10,17],"o":[-5,-4]}
+   ],
+   "price": 720,
+   "shop": "sports"
+  },
+  "tunic": {
+   "name": "Tunic",
+   "slot": "top",
+   "img": "trainer/items/tunic.png",
+   "mask": "trainer/items/tunic_m.png",
+   "colors": [["Tunic","#7DB6A0"]],
+   "pieces": [
+    {"v":"front","b":"torso","r":[1,1,29,35],"o":[-15,-33]},
+    {"v":"front","b":"chest","r":[224,1,23,11],"o":[-11,-3]},
+    {"v":"front","b":"pelvis","r":[153,1,25,15],"o":[-13,-3]},
+    {"v":"front","b":"armUL","r":[81,1,11,20],"o":[-6,-6]},
+    {"v":"front","b":"armUR","r":[93,1,11,20],"o":[-6,-6]},
+    {"v":"back","b":"torso","r":[31,1,29,35],"o":[-15,-33]},
+    {"v":"back","b":"pelvis","r":[179,1,25,15],"o":[-13,-3]},
+    {"v":"back","b":"armUL","r":[105,1,11,20],"o":[-6,-6]},
+    {"v":"back","b":"armUR","r":[117,1,11,20],"o":[-6,-6]},
+    {"v":"side","b":"torso","r":[61,1,19,35],"o":[-10,-33]},
+    {"v":"side","b":"chest","r":[248,1,11,11],"o":[0,-3]},
+    {"v":"side","b":"pelvis","r":[205,1,18,15],"o":[-10,-3]},
+    {"v":"side","b":"armUN","r":[129,1,11,20],"o":[-6,-6]},
+    {"v":"side","b":"armUF","r":[141,1,11,20],"o":[-6,-6]}
+   ],
+   "price": 480,
+   "shop": "thrift"
+  },
+  "crop": {
+   "name": "Crop top",
+   "slot": "top",
+   "img": "trainer/items/crop.png",
+   "mask": "trainer/items/crop_m.png",
+   "colors": [["Top","#E07AA4"]],
+   "pieces": [
+    {"v":"front","b":"torso","r":[1,1,29,21],"o":[-15,-33]},
+    {"v":"front","b":"chest","r":[153,1,23,11],"o":[-11,-3]},
+    {"v":"front","b":"armUL","r":[81,1,11,13],"o":[-6,-6]},
+    {"v":"front","b":"armUR","r":[93,1,11,13],"o":[-6,-6]},
+    {"v":"back","b":"torso","r":[31,1,29,21],"o":[-15,-33]},
+    {"v":"back","b":"armUL","r":[105,1,11,13],"o":[-6,-6]},
+    {"v":"back","b":"armUR","r":[117,1,11,13],"o":[-6,-6]},
+    {"v":"side","b":"torso","r":[61,1,19,21],"o":[-10,-33]},
+    {"v":"side","b":"chest","r":[177,1,11,11],"o":[0,-3]},
+    {"v":"side","b":"armUN","r":[129,1,11,13],"o":[-6,-6]},
+    {"v":"side","b":"armUF","r":[141,1,11,13],"o":[-6,-6]}
+   ],
+   "price": 300,
+   "shop": "thrift"
+  },
+  "labcoat": {
+   "name": "Lab coat",
+   "slot": "outer",
+   "img": "trainer/items/labcoat.png",
+   "mask": "trainer/items/labcoat_m.png",
+   "colors": [["Coat","#F2F4F3"]],
+   "pieces": [
+    {"v":"front","b":"torso","r":[57,1,33,36],"o":[-17,-34]},
+    {"v":"front","b":"chest","r":[46,39,25,14],"o":[-12,-5]},
+    {"v":"front","b":"pelvis","r":[187,1,31,20],"o":[-16,-3],"z":15.5},
+    {"v":"front","b":"armUL","r":[91,1,15,29],"o":[-8,-6]},
+    {"v":"front","b":"armLL","r":[275,1,14,17],"o":[-7,-4]},
+    {"v":"front","b":"armUR","r":[107,1,15,29],"o":[-8,-6]},
+    {"v":"front","b":"armLR","r":[290,1,14,17],"o":[-7,-4]},
+    {"v":"back","b":"torso","r":[1,1,33,37],"o":[-17,-35]},
+    {"v":"back","b":"pelvis","r":[219,1,31,20],"o":[-16,-3],"z":15.5},
+    {"v":"back","b":"armUL","r":[123,1,15,29],"o":[-8,-6]},
+    {"v":"back","b":"armLL","r":[305,1,14,17],"o":[-7,-4]},
+    {"v":"back","b":"armUR","r":[139,1,15,29],"o":[-8,-6]},
+    {"v":"back","b":"armLR","r":[1,39,14,17],"o":[-7,-4]},
+    {"v":"side","b":"torso","r":[35,1,21,37],"o":[-11,-35]},
+    {"v":"side","b":"chest","r":[72,39,14,14],"o":[0,-4]},
+    {"v":"side","b":"pelvis","r":[251,1,23,20],"o":[-13,-3],"z":15.5},
+    {"v":"side","b":"armUN","r":[155,1,15,29],"o":[-8,-6]},
+    {"v":"side","b":"armLN","r":[16,39,14,17],"o":[-7,-4]},
+    {"v":"side","b":"armUF","r":[171,1,15,29],"o":[-8,-6]},
+    {"v":"side","b":"armLF","r":[31,39,14,17],"o":[-7,-4]}
+   ],
+   "price": 1100,
+   "shop": "designer"
+  },
+  "blazer": {
+   "name": "Blazer",
+   "slot": "outer",
+   "img": "trainer/items/blazer.png",
+   "mask": "trainer/items/blazer_m.png",
+   "colors": [["Blazer","#2E3A6A"],["Lapels","#24305A"]],
+   "pieces": [
+    {"v":"front","b":"torso","r":[57,1,33,36],"o":[-17,-34]},
+    {"v":"front","b":"chest","r":[277,1,25,14],"o":[-12,-5]},
+    {"v":"front","b":"pelvis","r":[1,39,27,10],"o":[-14,-3]},
+    {"v":"front","b":"armUL","r":[91,1,15,29],"o":[-8,-6]},
+    {"v":"front","b":"armLL","r":[187,1,14,17],"o":[-7,-4]},
+    {"v":"front","b":"armUR","r":[107,1,15,29],"o":[-8,-6]},
+    {"v":"front","b":"armLR","r":[202,1,14,17],"o":[-7,-4]},
+    {"v":"back","b":"torso","r":[1,1,33,37],"o":[-17,-35]},
+    {"v":"back","b":"pelvis","r":[29,39,27,10],"o":[-14,-3]},
+    {"v":"back","b":"armUL","r":[123,1,15,29],"o":[-8,-6]},
+    {"v":"back","b":"armLL","r":[217,1,14,17],"o":[-7,-4]},
+    {"v":"back","b":"armUR","r":[139,1,15,29],"o":[-8,-6]},
+    {"v":"back","b":"armLR","r":[232,1,14,17],"o":[-7,-4]},
+    {"v":"side","b":"torso","r":[35,1,21,37],"o":[-11,-35]},
+    {"v":"side","b":"chest","r":[303,1,14,14],"o":[0,-4]},
+    {"v":"side","b":"pelvis","r":[57,39,20,10],"o":[-11,-3]},
+    {"v":"side","b":"armUN","r":[155,1,15,29],"o":[-8,-6]},
+    {"v":"side","b":"armLN","r":[247,1,14,17],"o":[-7,-4]},
+    {"v":"side","b":"armUF","r":[171,1,15,29],"o":[-8,-6]},
+    {"v":"side","b":"armLF","r":[262,1,14,17],"o":[-7,-4]}
+   ],
+   "price": 1800,
+   "shop": "designer"
+  },
+  "puffer": {
+   "name": "Puffer jacket",
+   "slot": "outer",
+   "img": "trainer/items/puffer.png",
+   "mask": "trainer/items/puffer_m.png",
+   "colors": [["Jacket","#E0703A"]],
+   "pieces": [
+    {"v":"front","b":"torso","r":[1,1,33,37],"o":[-17,-35]},
+    {"v":"front","b":"chest","r":[277,1,25,14],"o":[-12,-5]},
+    {"v":"front","b":"pelvis","r":[1,39,27,7],"o":[-14,-3]},
+    {"v":"front","b":"armUL","r":[91,1,15,29],"o":[-8,-6]},
+    {"v":"front","b":"armLL","r":[187,1,14,17],"o":[-7,-4]},
+    {"v":"front","b":"armUR","r":[107,1,15,29],"o":[-8,-6]},
+    {"v":"front","b":"armLR","r":[202,1,14,17],"o":[-7,-4]},
+    {"v":"back","b":"torso","r":[35,1,33,37],"o":[-17,-35]},
+    {"v":"back","b":"pelvis","r":[29,39,27,7],"o":[-14,-3]},
+    {"v":"back","b":"armUL","r":[123,1,15,29],"o":[-8,-6]},
+    {"v":"back","b":"armLL","r":[217,1,14,17],"o":[-7,-4]},
+    {"v":"back","b":"armUR","r":[139,1,15,29],"o":[-8,-6]},
+    {"v":"back","b":"armLR","r":[232,1,14,17],"o":[-7,-4]},
+    {"v":"side","b":"torso","r":[69,1,21,37],"o":[-11,-35]},
+    {"v":"side","b":"chest","r":[303,1,14,14],"o":[0,-4]},
+    {"v":"side","b":"pelvis","r":[57,39,19,7],"o":[-11,-3]},
+    {"v":"side","b":"armUN","r":[155,1,15,29],"o":[-8,-6]},
+    {"v":"side","b":"armLN","r":[247,1,14,17],"o":[-7,-4]},
+    {"v":"side","b":"armUF","r":[171,1,15,29],"o":[-8,-6]},
+    {"v":"side","b":"armLF","r":[262,1,14,17],"o":[-7,-4]}
+   ],
+   "price": 1300,
+   "shop": "sports"
+  },
+  "trench": {
+   "name": "Trench coat",
+   "slot": "outer",
+   "img": "trainer/items/trench.png",
+   "mask": "trainer/items/trench_m.png",
+   "colors": [["Coat","#B48A58"],["Belt","#7A5A34"]],
+   "pieces": [
+    {"v":"front","b":"torso","r":[57,1,33,36],"o":[-17,-34]},
+    {"v":"front","b":"chest","r":[61,39,25,14],"o":[-12,-5]},
+    {"v":"front","b":"pelvis","r":[187,1,33,20],"o":[-17,-3],"z":15.5},
+    {"v":"front","b":"armUL","r":[91,1,15,29],"o":[-8,-6]},
+    {"v":"front","b":"armLL","r":[280,1,14,17],"o":[-7,-4]},
+    {"v":"front","b":"armUR","r":[107,1,15,29],"o":[-8,-6]},
+    {"v":"front","b":"armLR","r":[295,1,14,17],"o":[-7,-4]},
+    {"v":"back","b":"torso","r":[1,1,33,37],"o":[-17,-35]},
+    {"v":"back","b":"pelvis","r":[221,1,33,20],"o":[-17,-3],"z":15.5},
+    {"v":"back","b":"armUL","r":[123,1,15,29],"o":[-8,-6]},
+    {"v":"back","b":"armLL","r":[1,39,14,17],"o":[-7,-4]},
+    {"v":"back","b":"armUR","r":[139,1,15,29],"o":[-8,-6]},
+    {"v":"back","b":"armLR","r":[16,39,14,17],"o":[-7,-4]},
+    {"v":"side","b":"torso","r":[35,1,21,37],"o":[-11,-35]},
+    {"v":"side","b":"chest","r":[87,39,14,14],"o":[0,-4]},
+    {"v":"side","b":"pelvis","r":[255,1,24,20],"o":[-14,-3],"z":15.5},
+    {"v":"side","b":"armUN","r":[155,1,15,29],"o":[-8,-6]},
+    {"v":"side","b":"armLN","r":[31,39,14,17],"o":[-7,-4]},
+    {"v":"side","b":"armUF","r":[171,1,15,29],"o":[-8,-6]},
+    {"v":"side","b":"armLF","r":[46,39,14,17],"o":[-7,-4]}
+   ],
+   "price": 2400,
+   "shop": "designer"
+  },
+  "denim_jacket": {
+   "name": "Denim jacket",
+   "slot": "outer",
+   "img": "trainer/items/denim_jacket.png",
+   "mask": "trainer/items/denim_jacket_m.png",
+   "colors": [["Denim","#4D6E9C"]],
+   "pieces": [
+    {"v":"front","b":"torso","r":[57,1,33,36],"o":[-17,-34]},
+    {"v":"front","b":"chest","r":[277,1,25,14],"o":[-12,-5]},
+    {"v":"front","b":"pelvis","r":[1,39,27,5],"o":[-14,-3]},
+    {"v":"front","b":"armUL","r":[91,1,15,29],"o":[-8,-6]},
+    {"v":"front","b":"armLL","r":[187,1,14,17],"o":[-7,-4]},
+    {"v":"front","b":"armUR","r":[107,1,15,29],"o":[-8,-6]},
+    {"v":"front","b":"armLR","r":[202,1,14,17],"o":[-7,-4]},
+    {"v":"back","b":"torso","r":[1,1,33,37],"o":[-17,-35]},
+    {"v":"back","b":"pelvis","r":[29,39,27,5],"o":[-14,-3]},
+    {"v":"back","b":"armUL","r":[123,1,15,29],"o":[-8,-6]},
+    {"v":"back","b":"armLL","r":[217,1,14,17],"o":[-7,-4]},
+    {"v":"back","b":"armUR","r":[139,1,15,29],"o":[-8,-6]},
+    {"v":"back","b":"armLR","r":[232,1,14,17],"o":[-7,-4]},
+    {"v":"side","b":"torso","r":[35,1,21,37],"o":[-11,-35]},
+    {"v":"side","b":"chest","r":[303,1,14,14],"o":[0,-4]},
+    {"v":"side","b":"pelvis","r":[57,39,19,5],"o":[-11,-3]},
+    {"v":"side","b":"armUN","r":[155,1,15,29],"o":[-8,-6]},
+    {"v":"side","b":"armLN","r":[247,1,14,17],"o":[-7,-4]},
+    {"v":"side","b":"armUF","r":[171,1,15,29],"o":[-8,-6]},
+    {"v":"side","b":"armLF","r":[262,1,14,17],"o":[-7,-4]}
+   ],
+   "price": 760,
+   "shop": "thrift"
+  },
+  "apron": {
+   "name": "Apron",
+   "slot": "outer",
+   "img": "trainer/items/apron.png",
+   "mask": "trainer/items/apron_m.png",
+   "colors": [["Apron","#3E8A6E"],["Straps","#2A6450"]],
+   "pieces": [
+    {"v":"front","b":"torso","r":[1,1,23,36],"o":[-12,-33]},
+    {"v":"front","b":"pelvis","r":[42,1,23,20],"o":[-12,-3],"z":15.5},
+    {"v":"back","b":"torso","r":[73,1,20,4],"o":[-10,-10]},
+    {"v":"side","b":"torso","r":[25,1,16,29],"o":[-7,-26]},
+    {"v":"side","b":"pelvis","r":[66,1,6,20],"o":[4,-3],"z":15.5}
+   ],
+   "price": 240,
+   "shop": "thrift"
+  },
+  "jeans": {
+   "name": "Jeans",
+   "slot": "bottom",
+   "img": "trainer/items/jeans.png",
+   "mask": "trainer/items/jeans_m.png",
+   "colors": [["Denim","#3F5F94"]],
+   "pieces": [
+    {"v":"front","b":"pelvis","r":[169,1,25,15],"o":[-13,-3]},
+    {"v":"front","b":"thighL","r":[1,1,14,33],"o":[-7,-6]},
+    {"v":"front","b":"shinL","r":[91,1,12,24],"o":[-6,-4]},
+    {"v":"front","b":"thighR","r":[16,1,14,33],"o":[-7,-6]},
+    {"v":"front","b":"shinR","r":[104,1,12,24],"o":[-6,-4]},
+    {"v":"back","b":"pelvis","r":[195,1,25,15],"o":[-13,-3]},
+    {"v":"back","b":"thighL","r":[31,1,14,33],"o":[-7,-6]},
+    {"v":"back","b":"shinL","r":[117,1,12,24],"o":[-6,-4]},
+    {"v":"back","b":"thighR","r":[46,1,14,33],"o":[-7,-6]},
+    {"v":"back","b":"shinR","r":[130,1,12,24],"o":[-6,-4]},
+    {"v":"side","b":"pelvis","r":[221,1,18,15],"o":[-10,-3]},
+    {"v":"side","b":"thighN","r":[61,1,14,33],"o":[-7,-6]},
+    {"v":"side","b":"shinN","r":[143,1,12,24],"o":[-6,-4]},
+    {"v":"side","b":"thighF","r":[76,1,14,33],"o":[-7,-6]},
+    {"v":"side","b":"shinF","r":[156,1,12,24],"o":[-6,-4]}
+   ],
+   "starter": true
+  },
+  "chinos": {
+   "name": "Chinos",
+   "slot": "bottom",
+   "img": "trainer/items/chinos.png",
+   "mask": "trainer/items/chinos_m.png",
+   "colors": [["Chinos","#C2A574"]],
+   "pieces": [
+    {"v":"front","b":"pelvis","r":[169,1,25,15],"o":[-13,-3]},
+    {"v":"front","b":"thighL","r":[1,1,14,33],"o":[-7,-6]},
+    {"v":"front","b":"shinL","r":[91,1,12,24],"o":[-6,-4]},
+    {"v":"front","b":"thighR","r":[16,1,14,33],"o":[-7,-6]},
+    {"v":"front","b":"shinR","r":[104,1,12,24],"o":[-6,-4]},
+    {"v":"back","b":"pelvis","r":[195,1,25,15],"o":[-13,-3]},
+    {"v":"back","b":"thighL","r":[31,1,14,33],"o":[-7,-6]},
+    {"v":"back","b":"shinL","r":[117,1,12,24],"o":[-6,-4]},
+    {"v":"back","b":"thighR","r":[46,1,14,33],"o":[-7,-6]},
+    {"v":"back","b":"shinR","r":[130,1,12,24],"o":[-6,-4]},
+    {"v":"side","b":"pelvis","r":[221,1,18,15],"o":[-10,-3]},
+    {"v":"side","b":"thighN","r":[61,1,14,33],"o":[-7,-6]},
+    {"v":"side","b":"shinN","r":[143,1,12,24],"o":[-6,-4]},
+    {"v":"side","b":"thighF","r":[76,1,14,33],"o":[-7,-6]},
+    {"v":"side","b":"shinF","r":[156,1,12,24],"o":[-6,-4]}
+   ],
+   "price": 380,
+   "shop": "thrift"
+  },
+  "shorts": {
+   "name": "Shorts",
+   "slot": "bottom",
+   "img": "trainer/items/shorts.png",
+   "mask": "trainer/items/shorts_m.png",
+   "colors": [["Shorts","#5F7F4E"]],
+   "pieces": [
+    {"v":"front","b":"pelvis","r":[91,1,25,15],"o":[-13,-3]},
+    {"v":"front","b":"thighL","r":[1,1,14,19],"o":[-7,-6]},
+    {"v":"front","b":"thighR","r":[16,1,14,19],"o":[-7,-6]},
+    {"v":"back","b":"pelvis","r":[117,1,25,15],"o":[-13,-3]},
+    {"v":"back","b":"thighL","r":[31,1,14,19],"o":[-7,-6]},
+    {"v":"back","b":"thighR","r":[46,1,14,19],"o":[-7,-6]},
+    {"v":"side","b":"pelvis","r":[143,1,18,15],"o":[-10,-3]},
+    {"v":"side","b":"thighN","r":[61,1,14,19],"o":[-7,-6]},
+    {"v":"side","b":"thighF","r":[76,1,14,19],"o":[-7,-6]}
+   ],
+   "starter": true
+  },
+  "cargo": {
+   "name": "Cargo shorts",
+   "slot": "bottom",
+   "img": "trainer/items/cargo.png",
+   "mask": "trainer/items/cargo_m.png",
+   "colors": [["Cargo","#7C7058"]],
+   "pieces": [
+    {"v":"front","b":"pelvis","r":[91,1,25,15],"o":[-13,-3]},
+    {"v":"front","b":"thighL","r":[1,1,14,25],"o":[-7,-6]},
+    {"v":"front","b":"thighR","r":[16,1,14,25],"o":[-7,-6]},
+    {"v":"back","b":"pelvis","r":[117,1,25,15],"o":[-13,-3]},
+    {"v":"back","b":"thighL","r":[31,1,14,25],"o":[-7,-6]},
+    {"v":"back","b":"thighR","r":[46,1,14,25],"o":[-7,-6]},
+    {"v":"side","b":"pelvis","r":[143,1,18,15],"o":[-10,-3]},
+    {"v":"side","b":"thighN","r":[61,1,14,25],"o":[-7,-6]},
+    {"v":"side","b":"thighF","r":[76,1,14,25],"o":[-7,-6]}
+   ],
+   "price": 340,
+   "shop": "thrift"
+  },
+  "skirt": {
+   "name": "Skirt",
+   "slot": "bottom",
+   "img": "trainer/items/skirt.png",
+   "mask": "trainer/items/skirt_m.png",
+   "colors": [["Skirt","#8B4F9E"]],
+   "pieces": [
+    {"v":"front","b":"pelvis","r":[1,1,27,20],"o":[-14,-3],"z":15},
+    {"v":"back","b":"pelvis","r":[29,1,27,20],"o":[-14,-3],"z":15},
+    {"v":"side","b":"pelvis","r":[57,1,20,20],"o":[-11,-3],"z":15}
+   ],
+   "starter": true
+  },
+  "trousers": {
+   "name": "Suit trousers",
+   "slot": "bottom",
+   "img": "trainer/items/trousers.png",
+   "mask": "trainer/items/trousers_m.png",
+   "colors": [["Trousers","#2E3346"],["Belt","#1E1A22"]],
+   "pieces": [
+    {"v":"front","b":"pelvis","r":[169,1,25,15],"o":[-13,-3]},
+    {"v":"front","b":"thighL","r":[1,1,14,33],"o":[-7,-6]},
+    {"v":"front","b":"shinL","r":[91,1,12,24],"o":[-6,-4]},
+    {"v":"front","b":"thighR","r":[16,1,14,33],"o":[-7,-6]},
+    {"v":"front","b":"shinR","r":[104,1,12,24],"o":[-6,-4]},
+    {"v":"back","b":"pelvis","r":[195,1,25,15],"o":[-13,-3]},
+    {"v":"back","b":"thighL","r":[31,1,14,33],"o":[-7,-6]},
+    {"v":"back","b":"shinL","r":[117,1,12,24],"o":[-6,-4]},
+    {"v":"back","b":"thighR","r":[46,1,14,33],"o":[-7,-6]},
+    {"v":"back","b":"shinR","r":[130,1,12,24],"o":[-6,-4]},
+    {"v":"side","b":"pelvis","r":[221,1,18,15],"o":[-10,-3]},
+    {"v":"side","b":"thighN","r":[61,1,14,33],"o":[-7,-6]},
+    {"v":"side","b":"shinN","r":[143,1,12,24],"o":[-6,-4]},
+    {"v":"side","b":"thighF","r":[76,1,14,33],"o":[-7,-6]},
+    {"v":"side","b":"shinF","r":[156,1,12,24],"o":[-6,-4]}
+   ],
+   "price": 1100,
+   "shop": "designer"
+  },
+  "track_pants": {
+   "name": "Track pants",
+   "slot": "bottom",
+   "img": "trainer/items/track_pants.png",
+   "mask": "trainer/items/track_pants_m.png",
+   "colors": [["Pants","#2A2F3E"]],
+   "pieces": [
+    {"v":"front","b":"pelvis","r":[169,1,25,15],"o":[-13,-3]},
+    {"v":"front","b":"thighL","r":[1,1,14,33],"o":[-7,-6]},
+    {"v":"front","b":"shinL","r":[91,1,12,24],"o":[-6,-4]},
+    {"v":"front","b":"thighR","r":[16,1,14,33],"o":[-7,-6]},
+    {"v":"front","b":"shinR","r":[104,1,12,24],"o":[-6,-4]},
+    {"v":"back","b":"pelvis","r":[195,1,25,15],"o":[-13,-3]},
+    {"v":"back","b":"thighL","r":[31,1,14,33],"o":[-7,-6]},
+    {"v":"back","b":"shinL","r":[117,1,12,24],"o":[-6,-4]},
+    {"v":"back","b":"thighR","r":[46,1,14,33],"o":[-7,-6]},
+    {"v":"back","b":"shinR","r":[130,1,12,24],"o":[-6,-4]},
+    {"v":"side","b":"pelvis","r":[221,1,18,15],"o":[-10,-3]},
+    {"v":"side","b":"thighN","r":[61,1,14,33],"o":[-7,-6]},
+    {"v":"side","b":"shinN","r":[143,1,12,24],"o":[-6,-4]},
+    {"v":"side","b":"thighF","r":[76,1,14,33],"o":[-7,-6]},
+    {"v":"side","b":"shinF","r":[156,1,12,24],"o":[-6,-4]}
+   ],
+   "price": 420,
+   "shop": "sports"
+  },
+  "leggings": {
+   "name": "Leggings",
+   "slot": "bottom",
+   "img": "trainer/items/leggings.png",
+   "mask": "trainer/items/leggings_m.png",
+   "colors": [["Leggings","#2B2B38"]],
+   "pieces": [
+    {"v":"front","b":"pelvis","r":[139,1,21,14],"o":[-11,-3]},
+    {"v":"front","b":"thighL","r":[1,1,12,32],"o":[-6,-6]},
+    {"v":"front","b":"shinL","r":[79,1,9,22],"o":[-5,-4]},
+    {"v":"front","b":"thighR","r":[14,1,12,32],"o":[-6,-6]},
+    {"v":"front","b":"shinR","r":[89,1,9,22],"o":[-5,-4]},
+    {"v":"back","b":"pelvis","r":[161,1,21,14],"o":[-11,-3]},
+    {"v":"back","b":"thighL","r":[27,1,12,32],"o":[-6,-6]},
+    {"v":"back","b":"shinL","r":[99,1,9,22],"o":[-5,-4]},
+    {"v":"back","b":"thighR","r":[40,1,12,32],"o":[-6,-6]},
+    {"v":"back","b":"shinR","r":[109,1,9,22],"o":[-5,-4]},
+    {"v":"side","b":"pelvis","r":[183,1,16,14],"o":[-9,-3]},
+    {"v":"side","b":"thighN","r":[53,1,12,32],"o":[-6,-6]},
+    {"v":"side","b":"shinN","r":[119,1,9,22],"o":[-5,-4]},
+    {"v":"side","b":"thighF","r":[66,1,12,32],"o":[-6,-6]},
+    {"v":"side","b":"shinF","r":[129,1,9,22],"o":[-5,-4]}
+   ],
+   "price": 300,
+   "shop": "sports"
+  },
+  "work_pants": {
+   "name": "Work pants",
+   "slot": "bottom",
+   "img": "trainer/items/work_pants.png",
+   "mask": "trainer/items/work_pants_m.png",
+   "colors": [["Pants","#4A4E5A"]],
+   "pieces": [
+    {"v":"front","b":"pelvis","r":[169,1,25,15],"o":[-13,-3]},
+    {"v":"front","b":"thighL","r":[1,1,14,33],"o":[-7,-6]},
+    {"v":"front","b":"shinL","r":[91,1,12,24],"o":[-6,-4]},
+    {"v":"front","b":"thighR","r":[16,1,14,33],"o":[-7,-6]},
+    {"v":"front","b":"shinR","r":[104,1,12,24],"o":[-6,-4]},
+    {"v":"back","b":"pelvis","r":[195,1,25,15],"o":[-13,-3]},
+    {"v":"back","b":"thighL","r":[31,1,14,33],"o":[-7,-6]},
+    {"v":"back","b":"shinL","r":[117,1,12,24],"o":[-6,-4]},
+    {"v":"back","b":"thighR","r":[46,1,14,33],"o":[-7,-6]},
+    {"v":"back","b":"shinR","r":[130,1,12,24],"o":[-6,-4]},
+    {"v":"side","b":"pelvis","r":[221,1,18,15],"o":[-10,-3]},
+    {"v":"side","b":"thighN","r":[61,1,14,33],"o":[-7,-6]},
+    {"v":"side","b":"shinN","r":[143,1,12,24],"o":[-6,-4]},
+    {"v":"side","b":"thighF","r":[76,1,14,33],"o":[-7,-6]},
+    {"v":"side","b":"shinF","r":[156,1,12,24],"o":[-6,-4]}
+   ],
+   "price": 260,
+   "shop": "thrift"
+  },
+  "sneakers": {
+   "name": "Sneakers",
+   "slot": "shoes",
+   "img": "trainer/items/sneakers.png",
+   "mask": "trainer/items/sneakers_m.png",
+   "colors": [["Shoes","#D94B4B"],["Soles","#F2F0EA"]],
+   "pieces": [
+    {"v":"front","b":"footL","r":[35,1,13,7],"o":[-7,-2]},
+    {"v":"front","b":"footR","r":[49,1,13,7],"o":[-7,-2]},
+    {"v":"back","b":"footL","r":[63,1,13,7],"o":[-7,-2]},
+    {"v":"back","b":"footR","r":[77,1,13,7],"o":[-7,-2]},
+    {"v":"side","b":"footN","r":[1,1,16,9],"o":[-6,-4]},
+    {"v":"side","b":"footF","r":[18,1,16,9],"o":[-6,-4]}
+   ],
+   "starter": true
+  },
+  "hightops": {
+   "name": "High-tops",
+   "slot": "shoes",
+   "img": "trainer/items/hightops.png",
+   "mask": "trainer/items/hightops_m.png",
+   "colors": [["Shoes","#2E2E3A"],["Soles","#F2F0EA"]],
+   "pieces": [
+    {"v":"front","b":"footL","r":[95,1,13,7],"o":[-7,-2]},
+    {"v":"front","b":"shinL","r":[35,1,9,8],"o":[-5,15]},
+    {"v":"front","b":"footR","r":[109,1,13,7],"o":[-7,-2]},
+    {"v":"front","b":"shinR","r":[45,1,9,8],"o":[-5,15]},
+    {"v":"back","b":"footL","r":[123,1,13,7],"o":[-7,-2]},
+    {"v":"back","b":"shinL","r":[55,1,9,8],"o":[-5,15]},
+    {"v":"back","b":"footR","r":[137,1,13,7],"o":[-7,-2]},
+    {"v":"back","b":"shinR","r":[65,1,9,8],"o":[-5,15]},
+    {"v":"side","b":"footN","r":[1,1,16,9],"o":[-6,-4]},
+    {"v":"side","b":"shinN","r":[75,1,9,8],"o":[-5,15]},
+    {"v":"side","b":"footF","r":[18,1,16,9],"o":[-6,-4]},
+    {"v":"side","b":"shinF","r":[85,1,9,8],"o":[-5,15]}
+   ],
+   "price": 680,
+   "shop": "sports"
+  },
+  "boots": {
+   "name": "Boots",
+   "slot": "shoes",
+   "img": "trainer/items/boots.png",
+   "mask": "trainer/items/boots_m.png",
+   "colors": [["Leather","#6A4428"],["Soles","#2A1E16"]],
+   "pieces": [
+    {"v":"front","b":"footL","r":[95,1,13,7],"o":[-7,-2]},
+    {"v":"front","b":"shinL","r":[1,1,9,12],"o":[-5,11]},
+    {"v":"front","b":"footR","r":[109,1,13,7],"o":[-7,-2]},
+    {"v":"front","b":"shinR","r":[11,1,9,12],"o":[-5,11]},
+    {"v":"back","b":"footL","r":[123,1,13,7],"o":[-7,-2]},
+    {"v":"back","b":"shinL","r":[21,1,9,12],"o":[-5,11]},
+    {"v":"back","b":"footR","r":[137,1,13,7],"o":[-7,-2]},
+    {"v":"back","b":"shinR","r":[31,1,9,12],"o":[-5,11]},
+    {"v":"side","b":"footN","r":[61,1,16,9],"o":[-6,-4]},
+    {"v":"side","b":"shinN","r":[41,1,9,12],"o":[-5,11]},
+    {"v":"side","b":"footF","r":[78,1,16,9],"o":[-6,-4]},
+    {"v":"side","b":"shinF","r":[51,1,9,12],"o":[-5,11]}
+   ],
+   "price": 560,
+   "shop": "thrift"
+  },
+  "oxfords": {
+   "name": "Dress shoes",
+   "slot": "shoes",
+   "img": "trainer/items/oxfords.png",
+   "mask": "trainer/items/oxfords_m.png",
+   "colors": [["Leather","#2A1E1A"],["Soles","#18120F"]],
+   "pieces": [
+    {"v":"front","b":"footL","r":[35,1,13,7],"o":[-7,-2]},
+    {"v":"front","b":"footR","r":[49,1,13,7],"o":[-7,-2]},
+    {"v":"back","b":"footL","r":[63,1,13,7],"o":[-7,-2]},
+    {"v":"back","b":"footR","r":[77,1,13,7],"o":[-7,-2]},
+    {"v":"side","b":"footN","r":[1,1,16,9],"o":[-6,-4]},
+    {"v":"side","b":"footF","r":[18,1,16,9],"o":[-6,-4]}
+   ],
+   "price": 1500,
+   "shop": "designer"
+  },
+  "sandals": {
+   "name": "Sandals",
+   "slot": "shoes",
+   "img": "trainer/items/sandals.png",
+   "mask": "trainer/items/sandals_m.png",
+   "colors": [["Straps","#B07A48"]],
+   "pieces": [
+    {"v":"front","b":"footL","r":[1,1,11,6],"o":[-6,-2]},
+    {"v":"front","b":"footR","r":[13,1,11,6],"o":[-6,-2]},
+    {"v":"back","b":"footL","r":[25,1,11,6],"o":[-6,-2]},
+    {"v":"back","b":"footR","r":[37,1,11,6],"o":[-6,-2]},
+    {"v":"side","b":"footN","r":[49,1,14,6],"o":[-5,-2]},
+    {"v":"side","b":"footF","r":[64,1,14,6],"o":[-5,-2]}
+   ],
+   "price": 160,
+   "shop": "thrift"
+  },
+  "runners": {
+   "name": "Running shoes",
+   "slot": "shoes",
+   "img": "trainer/items/runners.png",
+   "mask": "trainer/items/runners_m.png",
+   "colors": [["Shoes","#3FB0C8"],["Soles","#F6E04A"]],
+   "pieces": [
+    {"v":"front","b":"footL","r":[35,1,13,7],"o":[-7,-2]},
+    {"v":"front","b":"footR","r":[49,1,13,7],"o":[-7,-2]},
+    {"v":"back","b":"footL","r":[63,1,13,7],"o":[-7,-2]},
+    {"v":"back","b":"footR","r":[77,1,13,7],"o":[-7,-2]},
+    {"v":"side","b":"footN","r":[1,1,16,9],"o":[-6,-4]},
+    {"v":"side","b":"footF","r":[18,1,16,9],"o":[-6,-4]}
+   ],
+   "price": 820,
+   "shop": "sports"
+  },
+  "hair_short": {
+   "name": "Short swept",
+   "slot": "hair",
+   "img": "trainer/items/hair_short.png",
+   "mask": "trainer/items/hair_short_m.png",
+   "colors": [["Hair","#3B2A22"]],
+   "pieces": [
+    {"v":"front","b":"head","r":[62,1,31,19],"o":[-15,-37]},
+    {"v":"back","b":"head","r":[1,1,31,30],"o":[-15,-37]},
+    {"v":"side","b":"head","r":[33,1,28,30],"o":[-14,-37]}
+   ],
+   "starter": true
+  },
+  "hair_spiky": {
+   "name": "Spiky",
+   "slot": "hair",
+   "img": "trainer/items/hair_spiky.png",
+   "mask": "trainer/items/hair_spiky_m.png",
+   "colors": [["Hair","#E2B84A"]],
+   "pieces": [
+    {"v":"front","b":"head","r":[62,1,31,26],"o":[-15,-44]},
+    {"v":"back","b":"head","r":[1,1,31,37],"o":[-15,-44]},
+    {"v":"side","b":"head","r":[33,1,28,37],"o":[-14,-44]}
+   ],
+   "starter": true
+  },
+  "hair_buzz": {
+   "name": "Buzz cut",
+   "slot": "hair",
+   "img": "trainer/items/hair_buzz.png",
+   "mask": "trainer/items/hair_buzz_m.png",
+   "colors": [["Hair","#2C2420"]],
+   "pieces": [
+    {"v":"front","b":"head","r":[57,1,28,16],"o":[-14,-34]},
+    {"v":"back","b":"head","r":[28,1,28,25],"o":[-14,-34]},
+    {"v":"side","b":"head","r":[1,1,26,26],"o":[-13,-35]}
+   ],
+   "starter": true
+  },
+  "hair_bob": {
+   "name": "Bob",
+   "slot": "hair",
+   "img": "trainer/items/hair_bob.png",
+   "mask": "trainer/items/hair_bob_m.png",
+   "colors": [["Hair","#1E1A22"]],
+   "pieces": [
+    {"v":"front","b":"head","r":[65,1,33,35],"o":[-16,-38]},
+    {"v":"back","b":"head","r":[1,1,32,38],"o":[-16,-38]},
+    {"v":"side","b":"head","r":[34,1,30,38],"o":[-15,-38]}
+   ],
+   "starter": true
+  },
+  "hair_long": {
+   "name": "Long",
+   "slot": "hair",
+   "img": "trainer/items/hair_long.png",
+   "mask": "trainer/items/hair_long_m.png",
+   "colors": [["Hair","#8C4A2A"]],
+   "pieces": [
+    {"v":"front","b":"head","r":[1,1,35,56],"o":[-17,-38]},
+    {"v":"front","b":"head","r":[37,1,31,53],"o":[-15,-25],"z":1},
+    {"v":"back","b":"head","r":[111,1,31,42],"o":[-15,-38]},
+    {"v":"back","b":"head","r":[143,1,34,40],"o":[-17,-12],"z":30.65},
+    {"v":"side","b":"head","r":[69,1,29,43],"o":[-15,-38]},
+    {"v":"side","b":"head","r":[99,1,11,43],"o":[-15,-15],"z":22}
+   ],
+   "starter": true
+  },
+  "hair_pony": {
+   "name": "Ponytail",
+   "slot": "hair",
+   "img": "trainer/items/hair_pony.png",
+   "mask": "trainer/items/hair_pony_m.png",
+   "colors": [["Hair","#6A3A24"],["Tie","#D9434B"]],
+   "pieces": [
+    {"v":"front","b":"head","r":[88,1,31,19],"o":[-15,-37]},
+    {"v":"back","b":"head","r":[27,1,31,30],"o":[-15,-37]},
+    {"v":"back","b":"head","r":[1,1,11,42],"o":[-5,-26],"z":30.75},
+    {"v":"side","b":"head","r":[59,1,28,30],"o":[-14,-37]},
+    {"v":"side","b":"head","r":[13,1,13,42],"o":[-20,-27],"z":29.5}
+   ],
+   "starter": true
+  },
+  "hair_bun": {
+   "name": "Bun",
+   "slot": "hair",
+   "img": "trainer/items/hair_bun.png",
+   "mask": "trainer/items/hair_bun_m.png",
+   "colors": [["Hair","#B9BFC4"]],
+   "pieces": [
+    {"v":"front","b":"head","r":[62,1,31,18],"o":[-15,-36]},
+    {"v":"front","b":"head","r":[94,1,14,12],"o":[-6,-41],"z":29.5},
+    {"v":"back","b":"head","r":[1,1,31,27],"o":[-15,-36]},
+    {"v":"back","b":"head","r":[109,1,14,12],"o":[-6,-36]},
+    {"v":"side","b":"head","r":[33,1,28,27],"o":[-14,-36]},
+    {"v":"side","b":"head","r":[124,1,14,11],"o":[-15,-37]}
+   ],
+   "price": 320,
+   "shop": "thrift"
+  },
+  "hair_curly": {
+   "name": "Curly",
+   "slot": "hair",
+   "img": "trainer/items/hair_curly.png",
+   "mask": "trainer/items/hair_curly_m.png",
+   "colors": [["Hair","#2A1E1A"]],
+   "pieces": [
+    {"v":"front","b":"head","r":[91,1,44,42],"o":[-21,-47]},
+    {"v":"back","b":"head","r":[1,1,44,44],"o":[-21,-47]},
+    {"v":"side","b":"head","r":[46,1,44,44],"o":[-21,-47]}
+   ],
+   "starter": true
+  },
+  "hair_sidepart": {
+   "name": "Side part",
+   "slot": "hair",
+   "img": "trainer/items/hair_sidepart.png",
+   "mask": "trainer/items/hair_sidepart_m.png",
+   "colors": [["Hair","#C46A3A"]],
+   "pieces": [
+    {"v":"front","b":"head","r":[62,1,31,20],"o":[-15,-38]},
+    {"v":"back","b":"head","r":[1,1,31,31],"o":[-15,-38]},
+    {"v":"side","b":"head","r":[33,1,28,31],"o":[-14,-38]}
+   ],
+   "price": 280,
+   "shop": "thrift"
+  },
+  "hair_twin": {
+   "name": "Twin tails",
+   "slot": "hair",
+   "img": "trainer/items/hair_twin.png",
+   "mask": "trainer/items/hair_twin_m.png",
+   "colors": [["Hair","#D97AA8"]],
+   "pieces": [
+    {"v":"front","b":"head","r":[127,1,31,24],"o":[-15,-37]},
+    {"v":"front","b":"head","r":[1,1,12,44],"o":[-21,-28],"z":29},
+    {"v":"front","b":"head","r":[14,1,12,44],"o":[9,-28],"z":29},
+    {"v":"back","b":"head","r":[66,1,31,30],"o":[-15,-37]},
+    {"v":"back","b":"head","r":[27,1,12,44],"o":[-21,-28],"z":30.75},
+    {"v":"back","b":"head","r":[40,1,12,44],"o":[9,-28],"z":30.75},
+    {"v":"side","b":"head","r":[98,1,28,30],"o":[-14,-37]},
+    {"v":"side","b":"head","r":[53,1,12,44],"o":[-16,-28],"z":29.5}
+   ],
+   "price": 380,
+   "shop": "sports"
+  },
+  "eyes_round": {
+   "name": "Round eyes",
+   "slot": "eyes",
+   "img": "trainer/items/eyes_round.png",
+   "mask": "trainer/items/eyes_round_m.png",
+   "colors": [["Eyes","#4A7BBB"]],
+   "pieces": [
+    {"v":"front","b":"head","r":[1,1,16,7],"o":[-7,-19]},
+    {"v":"side","b":"head","r":[18,1,3,6],"o":[6,-18]},
+    {"v":"front","b":"head","r":[98,1,16,1],"o":[-7,-15],"x":"blink"},
+    {"v":"side","b":"head","r":[115,1,3,1],"o":[6,-15],"x":"blink"},
+    {"v":"front","b":"head","r":[77,1,16,2],"o":[-7,-16],"x":"happy"},
+    {"v":"side","b":"head","r":[94,1,3,2],"o":[6,-16],"x":"happy"},
+    {"v":"front","b":"head","r":[22,1,16,6],"o":[-7,-18],"x":"surprised"},
+    {"v":"side","b":"head","r":[73,1,3,5],"o":[6,-18],"x":"surprised"},
+    {"v":"front","b":"head","r":[39,1,16,6],"o":[-7,-18],"x":"angry"},
+    {"v":"front","b":"head","r":[56,1,16,6],"o":[-7,-18],"x":"sad"}
+   ],
+   "starter": true
+  },
+  "eyes_wide": {
+   "name": "Wide eyes",
+   "slot": "eyes",
+   "img": "trainer/items/eyes_wide.png",
+   "mask": "trainer/items/eyes_wide_m.png",
+   "colors": [["Eyes","#4A7BBB"]],
+   "pieces": [
+    {"v":"front","b":"head","r":[52,1,18,5],"o":[-8,-18]},
+    {"v":"side","b":"head","r":[71,1,3,5],"o":[6,-18]},
+    {"v":"front","b":"head","r":[100,1,16,1],"o":[-7,-15],"x":"blink"},
+    {"v":"side","b":"head","r":[117,1,3,1],"o":[6,-15],"x":"blink"},
+    {"v":"front","b":"head","r":[79,1,16,2],"o":[-7,-16],"x":"happy"},
+    {"v":"side","b":"head","r":[96,1,3,2],"o":[6,-16],"x":"happy"},
+    {"v":"front","b":"head","r":[1,1,16,6],"o":[-7,-18],"x":"surprised"},
+    {"v":"side","b":"head","r":[75,1,3,5],"o":[6,-18],"x":"surprised"},
+    {"v":"front","b":"head","r":[18,1,16,6],"o":[-7,-18],"x":"angry"},
+    {"v":"front","b":"head","r":[35,1,16,6],"o":[-7,-18],"x":"sad"}
+   ],
+   "starter": true
+  },
+  "eyes_sleepy": {
+   "name": "Sleepy eyes",
+   "slot": "eyes",
+   "img": "trainer/items/eyes_sleepy.png",
+   "mask": "trainer/items/eyes_sleepy_m.png",
+   "colors": [["Eyes","#4A7BBB"]],
+   "pieces": [
+    {"v":"front","b":"head","r":[56,1,16,4],"o":[-7,-17]},
+    {"v":"side","b":"head","r":[73,1,3,4],"o":[6,-17]},
+    {"v":"front","b":"head","r":[98,1,16,1],"o":[-7,-15],"x":"blink"},
+    {"v":"side","b":"head","r":[115,1,3,1],"o":[6,-15],"x":"blink"},
+    {"v":"front","b":"head","r":[77,1,16,2],"o":[-7,-16],"x":"happy"},
+    {"v":"side","b":"head","r":[94,1,3,2],"o":[6,-16],"x":"happy"},
+    {"v":"front","b":"head","r":[1,1,16,6],"o":[-7,-18],"x":"surprised"},
+    {"v":"side","b":"head","r":[52,1,3,5],"o":[6,-18],"x":"surprised"},
+    {"v":"front","b":"head","r":[18,1,16,6],"o":[-7,-18],"x":"angry"},
+    {"v":"front","b":"head","r":[35,1,16,6],"o":[-7,-18],"x":"sad"}
+   ],
+   "starter": true
+  },
+  "eyes_sharp": {
+   "name": "Sharp eyes",
+   "slot": "eyes",
+   "img": "trainer/items/eyes_sharp.png",
+   "mask": "trainer/items/eyes_sharp_m.png",
+   "colors": [["Eyes","#4A7BBB"]],
+   "pieces": [
+    {"v":"front","b":"head","r":[52,1,16,5],"o":[-7,-18]},
+    {"v":"side","b":"head","r":[73,1,3,4],"o":[6,-17]},
+    {"v":"front","b":"head","r":[98,1,16,1],"o":[-7,-15],"x":"blink"},
+    {"v":"side","b":"head","r":[115,1,3,1],"o":[6,-15],"x":"blink"},
+    {"v":"front","b":"head","r":[77,1,16,2],"o":[-7,-16],"x":"happy"},
+    {"v":"side","b":"head","r":[94,1,3,2],"o":[6,-16],"x":"happy"},
+    {"v":"front","b":"head","r":[1,1,16,6],"o":[-7,-18],"x":"surprised"},
+    {"v":"side","b":"head","r":[69,1,3,5],"o":[6,-18],"x":"surprised"},
+    {"v":"front","b":"head","r":[18,1,16,6],"o":[-7,-18],"x":"angry"},
+    {"v":"front","b":"head","r":[35,1,16,6],"o":[-7,-18],"x":"sad"}
+   ],
+   "starter": true
+  },
+  "eyes_lashes": {
+   "name": "Lashes",
+   "slot": "eyes",
+   "img": "trainer/items/eyes_lashes.png",
+   "mask": "trainer/items/eyes_lashes_m.png",
+   "colors": [["Eyes","#4A7BBB"]],
+   "pieces": [
+    {"v":"front","b":"head","r":[1,1,16,7],"o":[-7,-19]},
+    {"v":"side","b":"head","r":[18,1,3,6],"o":[6,-18]},
+    {"v":"front","b":"head","r":[98,1,16,1],"o":[-7,-15],"x":"blink"},
+    {"v":"side","b":"head","r":[115,1,3,1],"o":[6,-15],"x":"blink"},
+    {"v":"front","b":"head","r":[77,1,16,2],"o":[-7,-16],"x":"happy"},
+    {"v":"side","b":"head","r":[94,1,3,2],"o":[6,-16],"x":"happy"},
+    {"v":"front","b":"head","r":[22,1,16,6],"o":[-7,-18],"x":"surprised"},
+    {"v":"side","b":"head","r":[73,1,3,5],"o":[6,-18],"x":"surprised"},
+    {"v":"front","b":"head","r":[39,1,16,6],"o":[-7,-18],"x":"angry"},
+    {"v":"front","b":"head","r":[56,1,16,6],"o":[-7,-18],"x":"sad"}
+   ],
+   "starter": true
+  },
+  "brows_soft": {
+   "name": "Soft brows",
+   "slot": "brows",
+   "img": "trainer/items/brows_soft.png",
+   "mask": "trainer/items/brows_soft_m.png",
+   "colors": [["Brows","#3B2A22"]],
+   "pieces": [
+    {"v":"front","b":"head","r":[39,1,14,1],"o":[-6,-23]},
+    {"v":"side","b":"head","r":[54,1,2,1],"o":[6,-23]},
+    {"v":"front","b":"head","r":[1,1,16,2],"o":[-7,-23],"x":"angry"},
+    {"v":"side","b":"head","r":[18,1,3,2],"o":[6,-23],"x":"angry"},
+    {"v":"front","b":"head","r":[22,1,16,2],"o":[-7,-23],"x":"sad"},
+    {"v":"side","b":"head","r":[57,1,3,1],"o":[6,-22],"x":"sad"},
+    {"v":"front","b":"head","r":[61,1,14,1],"o":[-6,-25],"x":"surprised"},
+    {"v":"side","b":"head","r":[76,1,2,1],"o":[6,-25],"x":"surprised"}
+   ],
+   "link": {"1":"hair"},
+   "starter": true
+  },
+  "brows_straight": {
+   "name": "Straight brows",
+   "slot": "brows",
+   "img": "trainer/items/brows_straight.png",
+   "mask": "trainer/items/brows_straight_m.png",
+   "colors": [["Brows","#3B2A22"]],
+   "pieces": [
+    {"v":"front","b":"head","r":[39,1,16,1],"o":[-7,-23]},
+    {"v":"side","b":"head","r":[56,1,3,1],"o":[6,-23]},
+    {"v":"front","b":"head","r":[1,1,16,2],"o":[-7,-23],"x":"angry"},
+    {"v":"side","b":"head","r":[18,1,3,2],"o":[6,-23],"x":"angry"},
+    {"v":"front","b":"head","r":[22,1,16,2],"o":[-7,-23],"x":"sad"},
+    {"v":"side","b":"head","r":[60,1,3,1],"o":[6,-22],"x":"sad"},
+    {"v":"front","b":"head","r":[64,1,16,1],"o":[-7,-25],"x":"surprised"},
+    {"v":"side","b":"head","r":[81,1,3,1],"o":[6,-25],"x":"surprised"}
+   ],
+   "link": {"1":"hair"},
+   "starter": true
+  },
+  "brows_thick": {
+   "name": "Thick brows",
+   "slot": "brows",
+   "img": "trainer/items/brows_thick.png",
+   "mask": "trainer/items/brows_thick_m.png",
+   "colors": [["Brows","#3B2A22"]],
+   "pieces": [
+    {"v":"front","b":"head","r":[1,1,16,2],"o":[-7,-23]},
+    {"v":"side","b":"head","r":[18,1,3,2],"o":[6,-23]},
+    {"v":"front","b":"head","r":[22,1,16,2],"o":[-7,-23],"x":"angry"},
+    {"v":"side","b":"head","r":[39,1,3,2],"o":[6,-23],"x":"angry"},
+    {"v":"front","b":"head","r":[43,1,16,2],"o":[-7,-23],"x":"sad"},
+    {"v":"side","b":"head","r":[81,1,3,1],"o":[6,-22],"x":"sad"},
+    {"v":"front","b":"head","r":[60,1,16,2],"o":[-7,-25],"x":"surprised"},
+    {"v":"side","b":"head","r":[77,1,3,2],"o":[6,-25],"x":"surprised"}
+   ],
+   "link": {"1":"hair"},
+   "starter": true
+  },
+  "brows_arched": {
+   "name": "Arched brows",
+   "slot": "brows",
+   "img": "trainer/items/brows_arched.png",
+   "mask": "trainer/items/brows_arched_m.png",
+   "colors": [["Brows","#3B2A22"]],
+   "pieces": [
+    {"v":"front","b":"head","r":[1,1,16,2],"o":[-7,-23]},
+    {"v":"side","b":"head","r":[18,1,3,2],"o":[6,-23]},
+    {"v":"front","b":"head","r":[22,1,16,2],"o":[-7,-23],"x":"angry"},
+    {"v":"side","b":"head","r":[39,1,3,2],"o":[6,-23],"x":"angry"},
+    {"v":"front","b":"head","r":[43,1,16,2],"o":[-7,-23],"x":"sad"},
+    {"v":"side","b":"head","r":[81,1,3,1],"o":[6,-22],"x":"sad"},
+    {"v":"front","b":"head","r":[60,1,16,2],"o":[-7,-25],"x":"surprised"},
+    {"v":"side","b":"head","r":[77,1,3,2],"o":[6,-25],"x":"surprised"}
+   ],
+   "link": {"1":"hair"},
+   "starter": true
+  },
+  "brows_stern": {
+   "name": "Stern brows",
+   "slot": "brows",
+   "img": "trainer/items/brows_stern.png",
+   "mask": "trainer/items/brows_stern_m.png",
+   "colors": [["Brows","#3B2A22"]],
+   "pieces": [
+    {"v":"front","b":"head","r":[1,1,16,2],"o":[-7,-23]},
+    {"v":"side","b":"head","r":[18,1,3,2],"o":[6,-23]},
+    {"v":"front","b":"head","r":[22,1,16,2],"o":[-7,-23],"x":"angry"},
+    {"v":"side","b":"head","r":[39,1,3,2],"o":[6,-23],"x":"angry"},
+    {"v":"front","b":"head","r":[43,1,16,2],"o":[-7,-23],"x":"sad"},
+    {"v":"side","b":"head","r":[81,1,3,1],"o":[6,-22],"x":"sad"},
+    {"v":"front","b":"head","r":[60,1,16,2],"o":[-7,-25],"x":"surprised"},
+    {"v":"side","b":"head","r":[77,1,3,2],"o":[6,-25],"x":"surprised"}
+   ],
+   "link": {"1":"hair"},
+   "starter": true
+  },
+  "mouth_smile": {
+   "name": "Smile",
+   "slot": "mouth",
+   "img": "trainer/items/mouth_smile.png",
+   "mask": "trainer/items/mouth_smile_m.png",
+   "colors": [["Lips","#8E4A40"]],
+   "pieces": [
+    {"v":"front","b":"head","r":[30,1,6,2],"o":[-2,-7]},
+    {"v":"side","b":"head","r":[37,1,2,2],"o":[9,-7]},
+    {"v":"front","b":"head","r":[6,1,6,3],"o":[-2,-7],"x":"talk"},
+    {"v":"side","b":"head","r":[40,1,2,2],"o":[9,-7],"x":"talk"},
+    {"v":"front","b":"head","r":[13,1,6,3],"o":[-2,-7],"x":"happy"},
+    {"v":"side","b":"head","r":[43,1,2,2],"o":[9,-7],"x":"happy"},
+    {"v":"front","b":"head","r":[1,1,4,4],"o":[-1,-8],"x":"surprised"},
+    {"v":"side","b":"head","r":[20,1,2,3],"o":[9,-7],"x":"surprised"},
+    {"v":"front","b":"head","r":[46,1,6,2],"o":[-2,-7],"x":"sad"},
+    {"v":"side","b":"head","r":[53,1,2,2],"o":[9,-7],"x":"sad"},
+    {"v":"front","b":"head","r":[23,1,6,3],"o":[-2,-7],"x":"angry"}
+   ],
+   "starter": true
+  },
+  "mouth_neutral": {
+   "name": "Neutral",
+   "slot": "mouth",
+   "img": "trainer/items/mouth_neutral.png",
+   "mask": "trainer/items/mouth_neutral_m.png",
+   "colors": [["Lips","#8E4A40"]],
+   "pieces": [
+    {"v":"front","b":"head","r":[46,1,4,1],"o":[-1,-6]},
+    {"v":"side","b":"head","r":[51,1,2,1],"o":[9,-6]},
+    {"v":"front","b":"head","r":[6,1,6,3],"o":[-2,-7],"x":"talk"},
+    {"v":"side","b":"head","r":[30,1,2,2],"o":[9,-7],"x":"talk"},
+    {"v":"front","b":"head","r":[13,1,6,3],"o":[-2,-7],"x":"happy"},
+    {"v":"side","b":"head","r":[33,1,2,2],"o":[9,-7],"x":"happy"},
+    {"v":"front","b":"head","r":[1,1,4,4],"o":[-1,-8],"x":"surprised"},
+    {"v":"side","b":"head","r":[20,1,2,3],"o":[9,-7],"x":"surprised"},
+    {"v":"front","b":"head","r":[36,1,6,2],"o":[-2,-7],"x":"sad"},
+    {"v":"side","b":"head","r":[43,1,2,2],"o":[9,-7],"x":"sad"},
+    {"v":"front","b":"head","r":[23,1,6,3],"o":[-2,-7],"x":"angry"}
+   ],
+   "starter": true
+  },
+  "mouth_grin": {
+   "name": "Grin",
+   "slot": "mouth",
+   "img": "trainer/items/mouth_grin.png",
+   "mask": "trainer/items/mouth_grin_m.png",
+   "colors": [["Lips","#8E4A40"]],
+   "pieces": [
+    {"v":"front","b":"head","r":[6,1,6,3],"o":[-2,-7]},
+    {"v":"side","b":"head","r":[37,1,2,2],"o":[9,-7]},
+    {"v":"front","b":"head","r":[13,1,6,3],"o":[-2,-7],"x":"talk"},
+    {"v":"side","b":"head","r":[40,1,2,2],"o":[9,-7],"x":"talk"},
+    {"v":"front","b":"head","r":[20,1,6,3],"o":[-2,-7],"x":"happy"},
+    {"v":"side","b":"head","r":[43,1,2,2],"o":[9,-7],"x":"happy"},
+    {"v":"front","b":"head","r":[1,1,4,4],"o":[-1,-8],"x":"surprised"},
+    {"v":"side","b":"head","r":[27,1,2,3],"o":[9,-7],"x":"surprised"},
+    {"v":"front","b":"head","r":[46,1,6,2],"o":[-2,-7],"x":"sad"},
+    {"v":"side","b":"head","r":[53,1,2,2],"o":[9,-7],"x":"sad"},
+    {"v":"front","b":"head","r":[30,1,6,3],"o":[-2,-7],"x":"angry"}
+   ],
+   "starter": true
+  },
+  "mouth_smirk": {
+   "name": "Smirk",
+   "slot": "mouth",
+   "img": "trainer/items/mouth_smirk.png",
+   "mask": "trainer/items/mouth_smirk_m.png",
+   "colors": [["Lips","#8E4A40"]],
+   "pieces": [
+    {"v":"front","b":"head","r":[30,1,6,2],"o":[-2,-7]},
+    {"v":"side","b":"head","r":[37,1,2,2],"o":[9,-7]},
+    {"v":"front","b":"head","r":[6,1,6,3],"o":[-2,-7],"x":"talk"},
+    {"v":"side","b":"head","r":[40,1,2,2],"o":[9,-7],"x":"talk"},
+    {"v":"front","b":"head","r":[13,1,6,3],"o":[-2,-7],"x":"happy"},
+    {"v":"side","b":"head","r":[43,1,2,2],"o":[9,-7],"x":"happy"},
+    {"v":"front","b":"head","r":[1,1,4,4],"o":[-1,-8],"x":"surprised"},
+    {"v":"side","b":"head","r":[20,1,2,3],"o":[9,-7],"x":"surprised"},
+    {"v":"front","b":"head","r":[46,1,6,2],"o":[-2,-7],"x":"sad"},
+    {"v":"side","b":"head","r":[53,1,2,2],"o":[9,-7],"x":"sad"},
+    {"v":"front","b":"head","r":[23,1,6,3],"o":[-2,-7],"x":"angry"}
+   ],
+   "starter": true
+  },
+  "mouth_open": {
+   "name": "Surprised",
+   "slot": "mouth",
+   "img": "trainer/items/mouth_open.png",
+   "mask": "trainer/items/mouth_open_m.png",
+   "colors": [["Lips","#8E4A40"]],
+   "pieces": [
+    {"v":"front","b":"head","r":[6,1,4,3],"o":[-1,-7]},
+    {"v":"side","b":"head","r":[35,1,2,2],"o":[9,-7]},
+    {"v":"front","b":"head","r":[11,1,6,3],"o":[-2,-7],"x":"talk"},
+    {"v":"side","b":"head","r":[38,1,2,2],"o":[9,-7],"x":"talk"},
+    {"v":"front","b":"head","r":[18,1,6,3],"o":[-2,-7],"x":"happy"},
+    {"v":"side","b":"head","r":[41,1,2,2],"o":[9,-7],"x":"happy"},
+    {"v":"front","b":"head","r":[1,1,4,4],"o":[-1,-8],"x":"surprised"},
+    {"v":"side","b":"head","r":[25,1,2,3],"o":[9,-7],"x":"surprised"},
+    {"v":"front","b":"head","r":[44,1,6,2],"o":[-2,-7],"x":"sad"},
+    {"v":"side","b":"head","r":[51,1,2,2],"o":[9,-7],"x":"sad"},
+    {"v":"front","b":"head","r":[28,1,6,3],"o":[-2,-7],"x":"angry"}
+   ],
+   "starter": true
+  },
+  "facial_stache": {
+   "name": "Moustache",
+   "slot": "facial",
+   "img": "trainer/items/facial_stache.png",
+   "mask": "trainer/items/facial_stache_m.png",
+   "colors": [["Hair","#3B2A22"]],
+   "pieces": [
+    {"v":"front","b":"head","r":[1,1,14,3],"o":[-7,-9]},
+    {"v":"side","b":"head","r":[16,1,6,3],"o":[6,-9]}
+   ],
+   "link": {"1":"hair"},
+   "starter": true
+  },
+  "facial_beard": {
+   "name": "Beard",
+   "slot": "facial",
+   "img": "trainer/items/facial_beard.png",
+   "mask": "trainer/items/facial_beard_m.png",
+   "colors": [["Hair","#3B2A22"]],
+   "pieces": [
+    {"v":"front","b":"head","r":[1,1,25,13],"o":[-12,-12]},
+    {"v":"side","b":"head","r":[27,1,15,13],"o":[-2,-12]}
+   ],
+   "link": {"1":"hair"},
+   "starter": true
+  },
+  "facial_goatee": {
+   "name": "Goatee",
+   "slot": "facial",
+   "img": "trainer/items/facial_goatee.png",
+   "mask": "trainer/items/facial_goatee_m.png",
+   "colors": [["Hair","#3B2A22"]],
+   "pieces": [
+    {"v":"front","b":"head","r":[1,1,10,12],"o":[-4,-9]},
+    {"v":"side","b":"head","r":[12,1,6,7],"o":[5,-5]}
+   ],
+   "link": {"1":"hair"},
+   "starter": true
+  },
+  "facial_stubble": {
+   "name": "Stubble",
+   "slot": "facial",
+   "img": "trainer/items/facial_stubble.png",
+   "mask": "trainer/items/facial_stubble_m.png",
+   "colors": [["Hair","#3B2A22"]],
+   "pieces": [
+    {"v":"front","b":"head","r":[1,1,25,12],"o":[-12,-11]},
+    {"v":"side","b":"head","r":[27,1,24,11],"o":[-11,-11]}
+   ],
+   "link": {"1":"hair"},
+   "starter": true
+  },
+  "facial_freckles": {
+   "name": "Freckles",
+   "slot": "facial",
+   "img": "trainer/items/facial_freckles.png",
+   "mask": "trainer/items/facial_freckles_m.png",
+   "colors": [["Freckles","#B86A4E"]],
+   "pieces": [
+    {"v":"front","b":"head","r":[1,1,18,3],"o":[-8,-11]},
+    {"v":"side","b":"head","r":[20,1,4,2],"o":[3,-10]}
+   ],
+   "starter": true
+  },
+  "hat_cap": {
+   "name": "Baseball cap",
+   "slot": "hat",
+   "img": "trainer/items/hat_cap.png",
+   "mask": "trainer/items/hat_cap_m.png",
+   "colors": [["Cap","#2F6FB8"],["Brim","#24518A"]],
+   "pieces": [
+    {"v":"front","b":"head","r":[1,1,30,21],"o":[-14,-38]},
+    {"v":"back","b":"head","r":[69,1,30,18],"o":[-14,-38]},
+    {"v":"side","b":"head","r":[32,1,36,19],"o":[-15,-38]}
+   ],
+   "starter": true
+  },
+  "hat_beanie": {
+   "name": "Beanie",
+   "slot": "hat",
+   "img": "trainer/items/hat_beanie.png",
+   "mask": "trainer/items/hat_beanie_m.png",
+   "colors": [["Beanie","#2A9D8F"],["Fold","#1D6F66"]],
+   "pieces": [
+    {"v":"front","b":"head","r":[1,1,30,21],"o":[-14,-40]},
+    {"v":"back","b":"head","r":[32,1,30,21],"o":[-14,-40]},
+    {"v":"side","b":"head","r":[63,1,30,21],"o":[-15,-40]}
+   ],
+   "price": 220,
+   "shop": "thrift"
+  },
+  "hat_cowboy": {
+   "name": "Cowboy hat",
+   "slot": "hat",
+   "img": "trainer/items/hat_cowboy.png",
+   "mask": "trainer/items/hat_cowboy_m.png",
+   "colors": [["Hat","#8A5A30"],["Band","#3E2414"]],
+   "pieces": [
+    {"v":"front","b":"head","r":[1,1,43,20],"o":[-21,-41]},
+    {"v":"back","b":"head","r":[45,1,43,20],"o":[-21,-41]},
+    {"v":"side","b":"head","r":[89,1,41,19],"o":[-21,-41]}
+   ],
+   "price": 780,
+   "shop": "thrift"
+  },
+  "hat_hardhat": {
+   "name": "Hard hat",
+   "slot": "hat",
+   "img": "trainer/items/hat_hardhat.png",
+   "mask": "trainer/items/hat_hardhat_m.png",
+   "colors": [["Hat","#F4C542"]],
+   "pieces": [
+    {"v":"front","b":"head","r":[1,1,34,19],"o":[-16,-38]},
+    {"v":"back","b":"head","r":[36,1,34,19],"o":[-16,-38]},
+    {"v":"side","b":"head","r":[71,1,35,19],"o":[-16,-38]}
+   ],
+   "price": 300,
+   "shop": "thrift"
+  },
+  "hat_tophat": {
+   "name": "Top hat",
+   "slot": "hat",
+   "img": "trainer/items/hat_tophat.png",
+   "mask": "trainer/items/hat_tophat_m.png",
+   "colors": [["Hat","#1E1A22"],["Band","#8E2A3A"]],
+   "pieces": [
+    {"v":"front","b":"head","r":[1,1,32,27],"o":[-15,-50]},
+    {"v":"back","b":"head","r":[34,1,32,27],"o":[-15,-50]},
+    {"v":"side","b":"head","r":[67,1,32,27],"o":[-16,-50]}
+   ],
+   "price": 2600,
+   "shop": "designer"
+  },
+  "hat_chef": {
+   "name": "Chef hat",
+   "slot": "hat",
+   "img": "trainer/items/hat_chef.png",
+   "mask": "trainer/items/hat_chef_m.png",
+   "colors": [["Hat","#F6F4EE"]],
+   "pieces": [
+    {"v":"front","b":"head","r":[1,1,26,25],"o":[-12,-49]},
+    {"v":"back","b":"head","r":[28,1,26,25],"o":[-12,-49]},
+    {"v":"side","b":"head","r":[55,1,26,25],"o":[-13,-49]}
+   ],
+   "price": 400,
+   "shop": "thrift"
+  },
+  "hat_crown": {
+   "name": "Crown",
+   "slot": "hat",
+   "img": "trainer/items/hat_crown.png",
+   "mask": "trainer/items/hat_crown_m.png",
+   "colors": [["Gold","#F2C14E"],["Jewel","#D9434B"]],
+   "pieces": [
+    {"v":"front","b":"head","r":[1,1,23,15],"o":[-11,-43]},
+    {"v":"back","b":"head","r":[25,1,23,15],"o":[-11,-43]},
+    {"v":"side","b":"head","r":[49,1,24,15],"o":[-13,-43]}
+   ],
+   "price": 9800,
+   "shop": "designer"
+  },
+  "hat_bucket": {
+   "name": "Bucket hat",
+   "slot": "hat",
+   "img": "trainer/items/hat_bucket.png",
+   "mask": "trainer/items/hat_bucket_m.png",
+   "colors": [["Hat","#C9B98A"],["Band","#7C6A44"]],
+   "pieces": [
+    {"v":"front","b":"head","r":[1,1,33,18],"o":[-16,-36]},
+    {"v":"back","b":"head","r":[35,1,33,18],"o":[-16,-36]},
+    {"v":"side","b":"head","r":[69,1,33,18],"o":[-17,-36]}
+   ],
+   "price": 360,
+   "shop": "sports"
+  },
+  "glasses_round": {
+   "name": "Round glasses",
+   "slot": "glasses",
+   "img": "trainer/items/glasses_round.png",
+   "mask": "trainer/items/glasses_round_m.png",
+   "colors": [["Frames","#3A2E2A"]],
+   "pieces": [
+    {"v":"front","b":"head","r":[1,1,22,10],"o":[-10,-20]},
+    {"v":"side","b":"head","r":[24,1,16,10],"o":[-2,-20]}
+   ],
+   "starter": true
+  },
+  "glasses_square": {
+   "name": "Square glasses",
+   "slot": "glasses",
+   "img": "trainer/items/glasses_square.png",
+   "mask": "trainer/items/glasses_square_m.png",
+   "colors": [["Frames","#22242E"]],
+   "pieces": [
+    {"v":"front","b":"head","r":[1,1,18,7],"o":[-8,-19]},
+    {"v":"side","b":"head","r":[20,1,14,7],"o":[-2,-19]}
+   ],
+   "starter": true
+  },
+  "glasses_sun": {
+   "name": "Sunglasses",
+   "slot": "glasses",
+   "img": "trainer/items/glasses_sun.png",
+   "mask": "trainer/items/glasses_sun_m.png",
+   "colors": [["Frames","#1E1A22"],["Lenses","#2A3550"]],
+   "pieces": [
+    {"v":"front","b":"head","r":[1,1,20,8],"o":[-9,-19]},
+    {"v":"side","b":"head","r":[22,1,15,8],"o":[-2,-19]}
+   ],
+   "price": 450,
+   "shop": "sports"
+  },
+  "glasses_monocle": {
+   "name": "Monocle",
+   "slot": "glasses",
+   "img": "trainer/items/glasses_monocle.png",
+   "mask": "trainer/items/glasses_monocle_m.png",
+   "colors": [["Gold","#E2B13C"]],
+   "pieces": [
+    {"v":"front","b":"head","r":[1,1,11,20],"o":[1,-19]},
+    {"v":"side","b":"head","r":[13,1,11,20],"o":[3,-19]}
+   ],
+   "price": 3200,
+   "shop": "designer"
+  },
+  "headset": {
+   "name": "Headset",
+   "slot": "glasses",
+   "img": "trainer/items/headset.png",
+   "mask": "trainer/items/headset_m.png",
+   "colors": [["Headset","#2A2E3A"],["Mic","#7A808C"]],
+   "pieces": [
+    {"v":"front","b":"head","r":[1,1,34,32],"o":[-16,-37]},
+    {"v":"side","b":"head","r":[36,1,16,29],"o":[-5,-34]},
+    {"v":"back","b":"head","r":[53,1,34,27],"o":[-16,-37]}
+   ],
+   "price": 520,
+   "shop": "sports"
+  },
+  "tie": {
+   "name": "Tie",
+   "slot": "neck",
+   "img": "trainer/items/tie.png",
+   "mask": "trainer/items/tie_m.png",
+   "colors": [["Tie","#C8323C"]],
+   "pieces": [
+    {"v":"front","b":"torso","r":[1,1,5,20],"o":[-3,-32],"z":21.6},
+    {"v":"side","b":"torso","r":[7,1,4,18],"o":[4,-31],"z":21.6}
+   ],
+   "price": 420,
+   "shop": "designer"
+  },
+  "bowtie": {
+   "name": "Bow tie",
+   "slot": "neck",
+   "img": "trainer/items/bowtie.png",
+   "mask": "trainer/items/bowtie_m.png",
+   "colors": [["Bow","#2A2E5A"]],
+   "pieces": [
+    {"v":"front","b":"torso","r":[1,1,10,5],"o":[-5,-33],"z":21.6},
+    {"v":"side","b":"torso","r":[12,1,3,4],"o":[5,-32],"z":21.6}
+   ],
+   "price": 380,
+   "shop": "designer"
+  },
+  "scarf": {
+   "name": "Scarf",
+   "slot": "neck",
+   "img": "trainer/items/scarf.png",
+   "mask": "trainer/items/scarf_m.png",
+   "colors": [["Scarf","#D9434B"],["Stripes","#F4F1EA"]],
+   "pieces": [
+    {"v":"front","b":"torso","r":[1,1,16,17],"o":[-8,-34],"z":21.7},
+    {"v":"back","b":"torso","r":[18,1,16,15],"o":[-8,-34],"z":21.7},
+    {"v":"side","b":"torso","r":[35,1,13,6],"o":[-5,-34],"z":21.7}
+   ],
+   "price": 300,
+   "shop": "thrift"
+  },
+  "chain": {
+   "name": "Gold chain",
+   "slot": "neck",
+   "img": "trainer/items/chain.png",
+   "mask": "trainer/items/chain_m.png",
+   "colors": [["Gold","#F2C14E"]],
+   "pieces": [
+    {"v":"front","b":"torso","r":[1,1,12,10],"o":[-6,-32],"z":21.7},
+    {"v":"side","b":"torso","r":[14,1,2,5],"o":[5,-31],"z":21.7}
+   ],
+   "price": 5200,
+   "shop": "designer"
+  },
+  "nametag": {
+   "name": "Name tag",
+   "slot": "neck",
+   "img": "trainer/items/nametag.png",
+   "mask": "trainer/items/nametag_m.png",
+   "colors": [["Tag","#F4F1EA"],["Stripe","#D9434B"]],
+   "pieces": [
+    {"v":"front","b":"torso","r":[1,1,6,5],"o":[-9,-24],"z":21.7}
+   ],
+   "price": 60,
+   "shop": "thrift"
+  },
+  "backpack": {
+   "name": "Backpack",
+   "slot": "bag",
+   "img": "trainer/items/backpack.png",
+   "mask": "trainer/items/backpack_m.png",
+   "colors": [["Pack","#D49C46"],["Straps","#8A5A2A"]],
+   "pieces": [
+    {"v":"front","b":"torso","r":[43,1,16,19],"o":[-8,-31],"z":21.75},
+    {"v":"back","b":"torso","r":[1,1,18,28],"o":[-9,-33],"z":21.75},
+    {"v":"side","b":"torso","r":[20,1,22,23],"o":[-16,-31],"z":21.75}
+   ],
+   "starter": true
+  },
+  "satchel": {
+   "name": "Satchel",
+   "slot": "bag",
+   "img": "trainer/items/satchel.png",
+   "mask": "trainer/items/satchel_m.png",
+   "colors": [["Bag","#8A5A34"],["Strap","#5A3A20"]],
+   "pieces": [
+    {"v":"front","b":"torso","r":[1,1,21,30],"o":[-10,-31],"z":21.75},
+    {"v":"front","b":"pelvis","r":[58,1,10,11],"o":[6,-3],"z":26},
+    {"v":"back","b":"torso","r":[23,1,20,30],"o":[-9,-31],"z":21.75},
+    {"v":"back","b":"pelvis","r":[69,1,10,11],"o":[-17,-3],"z":26},
+    {"v":"side","b":"torso","r":[44,1,13,23],"o":[-6,-31],"z":21.75},
+    {"v":"side","b":"pelvis","r":[80,1,11,11],"o":[-1,-3],"z":26}
+   ],
+   "price": 640,
+   "shop": "thrift"
+  },
+  "fannypack": {
+   "name": "Fanny pack",
+   "slot": "bag",
+   "img": "trainer/items/fannypack.png",
+   "mask": "trainer/items/fannypack_m.png",
+   "colors": [["Pack","#3FB0C8"],["Strap","#1E1A22"]],
+   "pieces": [
+    {"v":"front","b":"pelvis","r":[1,1,21,7],"o":[-11,-3],"z":21.9},
+    {"v":"back","b":"pelvis","r":[43,1,21,2],"o":[-11,-2],"z":21.9},
+    {"v":"side","b":"pelvis","r":[23,1,19,7],"o":[-9,-3],"z":21.9}
+   ],
+   "price": 280,
+   "shop": "sports"
+  }
+ }
+}

@@ -1,0 +1,19 @@
+{
+ "look": {
+  "name": "Coral",
+  "body": {"chest":0.5,"hips":1.04},
+  "skin": "#F0C3A0",
+  "hair": "#C85A3A",
+  "eyes": "#3F8A63",
+  "wear": {
+   "hair": "hair_bob",
+   "top": "polo",
+   "bottom": "chinos",
+   "shoes": "sandals",
+   "mouth": "mouth_smile",
+   "neck": "nametag",
+   "hat": "hat_bucket"
+  },
+  "colors": {"polo":["#E86A5A"],"chinos":["#F2EEDC"],"hat_bucket":["#F4F2EC"]}
+ }
+}

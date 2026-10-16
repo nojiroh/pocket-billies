@@ -1,0 +1,35 @@
+{
+ "id": "kamprad",
+ "names": ["Flatpackrat","Kamprat"],
+ "types": [["Steel"],["Steel","Grass"]],
+ "prof": [1,0.9,1.1,1,1.1,0.95],
+ "rar": "common",
+ "learn": [
+  [1,"handshake"],
+  [1,"bulk"],
+  [5,"flatpack"],
+  [9,"markdown"],
+  [15,"gentrify"],
+  [21,"snub"],
+  [27,"dynamic"],
+  [33,"harvest"],
+  [39,"oldmoney"],
+  [40,"subpoena"],
+  [40,"lawsuit"],
+  [44,"flashsale"]
+ ],
+ "cat": ["Flatpack Billie","Assembly Billie"],
+ "ht": [0.4,1.5],
+ "wt": [6,60],
+ "hab": ["Flat boxes","A warehouse with a one-way path"],
+ "diet": ["Meatballs","Allen keys"],
+ "bio": [
+  "A rat that arrived in a flat box with the instructions missing. It has one screw left over and it is fine.",
+  "It assembles itself every morning with one screw to spare. Its cheeks are full of meatballs and its heart is in the car park."
+ ],
+ "note": ["Some assembly required.","Never throws the extra screw away."],
+ "evo": [
+  {"k":"lvl","at":24}
+ ],
+ "parody": "Ingvar Kamprad"
+}

@@ -1,0 +1,27 @@
+{
+ "taxbreak": {"n":"Potion","price":150,"hp":20,"d":"Restores 20 HP.","icon":"potion"},
+ "loophole": {"n":"Hi-Potion","price":400,"hp":60,"d":"Restores 60 HP.","icon":"hipotion"},
+ "apology": {"n":"Burn Salve","price":200,"cure":"scn","d":"Heals a burn.","icon":"salve"},
+ "settlement": {"n":"Nerve Tonic","price":200,"cure":"aud","d":"Cures paralysis.","icon":"tonic"},
+ "appeal": {"n":"Wake-Up Tea","price":200,"cure":"sub","d":"Wakes up a sleeping Billie.","icon":"tea"},
+ "bailout": {"n":"Revive","price":600,"revive":0.5,"d":"Revives a fainted Billie with half its HP.","icon":"revive"},
+ "bell": {
+  "n": "Shining Stone",
+  "price": 2500,
+  "evoItem": 1,
+  "d": "A glittering stone that makes certain Billies evolve.",
+  "icon": "stone"
+ },
+ "trailmix": {"n":"Trail Mix","price":260,"hpAll":25,"d":"Restores 25 HP to everyone on your team.","mint":false,"icon":"trailmix"},
+ "pretzel": {"n":"Pretzel","price":60,"hp":35,"d":"Restores 35 HP.","mint":false,"icon":"pretzel"},
+ "spillkit": {
+  "n": "Full Remedy",
+  "price": 320,
+  "cure": "any",
+  "hp": 15,
+  "d": "Cures any status and restores 15 HP.",
+  "mint": false,
+  "icon": "remedy"
+ },
+ "parachute": {"n":"Max Revive","price":1600,"revive":1,"d":"Revives a fainted Billie with full HP.","mint":false,"icon":"maxrevive"}
+}

@@ -1,0 +1,18 @@
+{
+ "name": "Gardener Gus",
+ "who": "hiker",
+ "area": "grass",
+ "node": 21,
+ "blocks": false,
+ "team": [
+  {"sp":"jobs1","lvl":37},
+  {"sp":"woods1","lvl":37}
+ ],
+ "reward": 800,
+ "market": null,
+ "lines": ["“I sweep the petals every morning. They fall again by lunch. I think that’s the job.”"],
+ "win": "“Blown away. Like the petals.”",
+ "lose": "“Back to sweeping, then.”",
+ "hint": "",
+ "v47region": 1
+}

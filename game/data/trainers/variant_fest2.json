@@ -1,0 +1,19 @@
+{
+ "name": "Variant No. 0007",
+ "who": "variant",
+ "area": "grass",
+ "node": 19,
+ "blocks": false,
+ "team": [
+  {"sp":"son1","lvl":35},
+  {"sp":"bloomberg1","lvl":35},
+  {"sp":"ek1","lvl":36}
+ ],
+ "reward": 1100,
+ "market": null,
+ "lines": ["“Low number, see? I was a fan before it was limited.”"],
+ "win": "“You don’t get it. Scarcity is the point.”",
+ "lose": "“Sold out. Like you.”",
+ "hint": "",
+ "v47region": 1
+}

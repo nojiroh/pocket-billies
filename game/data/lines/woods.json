@@ -1,0 +1,35 @@
+{
+ "id": "woods",
+ "names": ["Cublet","Tigerwoods"],
+ "types": [["Ground"],["Ground","Grass"]],
+ "prof": [0.95,1.2,0.9,1,0.9,1.05],
+ "rar": "uncommon",
+ "learn": [
+  [1,"handshake"],
+  [1,"eviction"],
+  [5,"lobbygusher"],
+  [9,"renthike"],
+  [15,"foreclose"],
+  [21,"deepdrill"],
+  [27,"allowance"],
+  [30,"sundayred"],
+  [39,"snub"],
+  [40,"margincall"],
+  [40,"subpoena"],
+  [40,"lawsuit"]
+ ],
+ "cat": ["Cub Billie","Green Billie"],
+ "ht": [0.6,1.6],
+ "wt": [12,220],
+ "hab": ["Driving ranges","The eighteenth green on Sunday"],
+ "diet": ["Range balls","Majors"],
+ "bio": [
+  "A tiger cub with dark stripes and a golden tip to its tail that it uses as a tee.",
+  "A red-coated tiger that stalks a green and sinks everything. The fist-pump is its taunt and it has fifteen of them."
+ ],
+ "note": ["Could putt before it could walk.","Sunday red, always."],
+ "evo": [
+  {"k":"lvl","at":26}
+ ],
+ "parody": "Tiger Woods"
+}

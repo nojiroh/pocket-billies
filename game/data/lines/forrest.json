@@ -1,0 +1,28 @@
+{
+ "id": "forrest",
+ "names": ["Forrestick"],
+ "types": [["Grass","Steel"]],
+ "prof": [1,0.9,1.3,1.05,1.2,0.75],
+ "rar": "uncommon",
+ "learn": [
+  [1,"handshake"],
+  [1,"snub"],
+  [5,"harvest"],
+  [9,"allowance"],
+  [15,"oldmoney"],
+  [21,"familyoffice"],
+  [27,"markdown"],
+  [33,"greenhydrogen"],
+  [39,"bulk"],
+  [40,"subpoena"],
+  [40,"lawsuit"]
+ ],
+ "cat": ["Hydrogen Billie"],
+ "ht": [1.8],
+ "wt": [200],
+ "hab": ["Iron ore country"],
+ "diet": ["Ore now, hydrogen later"],
+ "bio": ["A stick insect made of iron ore with green leaves for wings. It promises green hydrogen by a date that keeps moving."],
+ "note": ["Half mine, half promise."],
+ "parody": "Andrew Forrest"
+}

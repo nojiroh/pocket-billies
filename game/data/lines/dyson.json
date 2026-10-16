@@ -1,0 +1,34 @@
+{
+ "id": "dyson",
+ "names": ["Snufflet","Dysonteater"],
+ "types": [["Electric"],["Electric","Steel"]],
+ "prof": [0.9,0.9,1,1.25,1,1.1],
+ "rar": "uncommon",
+ "learn": [
+  [1,"handshake"],
+  [1,"movefast"],
+  [5,"zoning"],
+  [9,"tos"],
+  [15,"disrupt"],
+  [21,"cyclone"],
+  [27,"rebrand"],
+  [34,"overload"],
+  [39,"bulk"],
+  [40,"subpoena"],
+  [40,"lawsuit"]
+ ],
+ "cat": ["Snuffle Billie","Cyclone Billie"],
+ "ht": [0.6,1.8],
+ "wt": [10,90],
+ "hab": ["Dusty corners","Workshops full of prototypes"],
+ "diet": ["Dust","Everything on the floor"],
+ "bio": [
+  "An anteater pup whose snout hums. It never loses suction, and it never stops.",
+  "Its ringed body is a cyclone with no bag. Five thousand prototypes stand behind it and it is still not happy with this one."
+ ],
+ "note": ["Hums in B flat.","Has never once lost suction."],
+ "evo": [
+  {"k":"lvl","at":26}
+ ],
+ "parody": "James Dyson"
+}

@@ -1,0 +1,19 @@
+{
+ "name": "Ice Fisher Ivy",
+ "who": "girl",
+ "area": "snow",
+ "node": 34,
+ "blocks": false,
+ "team": [
+  {"sp":"newell0","lvl":50},
+  {"sp":"walton2","lvl":51},
+  {"sp":"ford1","lvl":51}
+ ],
+ "reward": 1600,
+ "market": null,
+ "lines": ["“I fish for coins through the ice. The safe is frozen solid, but sometimes the interest leaks out.”"],
+ "win": "“Cold.”",
+ "lose": "“Liquid at last!”",
+ "hint": "",
+ "v47region": 1
+}

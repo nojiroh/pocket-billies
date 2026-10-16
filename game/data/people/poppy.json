@@ -1,0 +1,28 @@
+{
+ "look": {
+  "name": "Poppy",
+  "body": {"height":0.98,"legs":1,"shoulders":0.96,"chest":0.4},
+  "skin": "#E9B897",
+  "hair": "#E25C3A",
+  "eyes": "#3E8A5A",
+  "wear": {
+   "hair": "hair_bun",
+   "eyes": "eyes_round",
+   "brows": "brows_soft",
+   "mouth": "mouth_smile",
+   "facial": "facial_freckles",
+   "top": "tee",
+   "outer": "apron",
+   "bottom": "jeans",
+   "shoes": "boots",
+   "hat": "hat_bucket"
+  },
+  "colors": {
+   "tee": ["#F4D6E4"],
+   "apron": ["#5FAE6E","#F2EEE4"],
+   "jeans": ["#4F6FA8","#3A5280"],
+   "boots": ["#6A4A32","#4A3220"],
+   "hat_bucket": ["#E9C46A","#E25C3A"]
+  }
+ }
+}

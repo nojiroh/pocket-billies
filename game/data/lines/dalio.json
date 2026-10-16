@@ -1,0 +1,32 @@
+{
+ "id": "dalio",
+ "names": ["Dalhog"],
+ "types": [["Ground","Psychic"]],
+ "prof": [1,0.9,1.25,1.1,1.25,0.8],
+ "rar": "uncommon",
+ "learn": [
+  [1,"handshake"],
+  [1,"eviction"],
+  [5,"lobbygusher"],
+  [9,"renthike"],
+  [15,"foreclose"],
+  [21,"deepdrill"],
+  [27,"fud"],
+  [30,"principle"],
+  [39,"rugpull"],
+  [40,"margincall"],
+  [40,"subpoena"],
+  [40,"lawsuit"],
+  [44,"hedge"]
+ ],
+ "cat": ["Principle Billie"],
+ "ht": [0.7],
+ "wt": [25],
+ "hab": ["Hedgerows, obviously"],
+ "diet": ["Principles, one a day"],
+ "bio": [
+  "A hedgehog whose spines are principles, numbered. It hedges every bet and rolls up in a storm, which is also a principle."
+ ],
+ "note": ["Has 212 principles and counting."],
+ "parody": "Ray Dalio"
+}

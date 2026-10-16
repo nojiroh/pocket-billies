@@ -1,0 +1,30 @@
+{
+ "id": "yiming",
+ "names": ["Tiktokferret"],
+ "types": [["Electric","Psychic"]],
+ "prof": [0.85,0.95,0.85,1.2,0.95,1.4],
+ "rar": "uncommon",
+ "learn": [
+  [1,"handshake"],
+  [1,"movefast"],
+  [5,"zoning"],
+  [9,"tos"],
+  [15,"disrupt"],
+  [21,"fifteensec"],
+  [27,"rebrand"],
+  [34,"overload"],
+  [39,"rugpull"],
+  [40,"subpoena"],
+  [40,"lawsuit"]
+ ],
+ "cat": ["Loop Billie"],
+ "ht": [0.8],
+ "wt": [9],
+ "hab": ["Phone screens"],
+ "diet": ["Fifteen seconds of you"],
+ "bio": [
+  "A ferret with a clock-face patch on its chest that dances in fifteen-second loops and knows exactly what you want to see next."
+ ],
+ "note": ["Every loop is a little different, on purpose."],
+ "parody": "Zhang Yiming"
+}

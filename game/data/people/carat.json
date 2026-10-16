@@ -1,0 +1,31 @@
+{
+ "look": {
+  "name": "Leader Carat",
+  "body": {"height":1,"legs":1,"shoulders":1.02,"chest":0.3},
+  "skin": "#C98E6A",
+  "hair": "#2A2232",
+  "eyes": "#3A8AA8",
+  "wear": {
+   "hair": "hair_bob",
+   "eyes": "eyes_sharp",
+   "brows": "brows_straight",
+   "mouth": "mouth_smirk",
+   "top": "tank",
+   "outer": "puffer",
+   "bottom": "work_pants",
+   "shoes": "boots",
+   "hat": "hat_hardhat",
+   "glasses": "glasses_square",
+   "neck": "chain"
+  },
+  "colors": {
+   "tank": ["#2A2434"],
+   "puffer": ["#5CC8DE","#2E7A9A"],
+   "work_pants": ["#3A3A48","#2A2A36"],
+   "boots": ["#4A3A2E","#2E241C"],
+   "hat_hardhat": ["#9ADCEA","#5AA8C8"],
+   "glasses_square": ["#1E2A36"],
+   "chain": ["#BDEAF2"]
+  }
+ }
+}

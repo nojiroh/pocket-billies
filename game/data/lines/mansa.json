@@ -1,0 +1,31 @@
+{
+ "id": "mansa",
+ "names": ["Aurumansa"],
+ "types": [["Ground","Dragon"]],
+ "prof": [1.2,1.2,1.1,1.3,1.2,1],
+ "rar": "mythical",
+ "learn": [
+  [1,"handshake"],
+  [1,"eviction"],
+  [5,"lobbygusher"],
+  [9,"renthike"],
+  [15,"foreclose"],
+  [21,"deepdrill"],
+  [33,"wyrmbreath"],
+  [39,"joyride"],
+  [40,"margincall"],
+  [40,"subpoena"],
+  [40,"lawsuit"],
+  [50,"goldencaravan"]
+ ],
+ "cat": ["Caravan Billie"],
+ "ht": [6],
+ "wt": [9000],
+ "hab": ["The summit, on a cushion of gold"],
+ "diet": ["Gold, which it gives away"],
+ "bio": [
+  "A golden camel-dragon with a caravan's worth of gold in its hump and wings. It drops so much of it wherever it walks that prices fall for a decade."
+ ],
+ "note": ["The richest thing that ever lived, and the most generous."],
+ "parody": "Mansa Musa"
+}

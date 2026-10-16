@@ -1,0 +1,29 @@
+{
+ "id": "newell",
+ "names": ["Gabenwalrus"],
+ "types": [["Water","Steel"]],
+ "prof": [1.3,1,1.25,0.95,1.15,0.55],
+ "rar": "uncommon",
+ "learn": [
+  [1,"handshake"],
+  [1,"interest"],
+  [5,"buyhold"],
+  [9,"spin"],
+  [15,"rerecord"],
+  [21,"headline"],
+  [27,"compound"],
+  [33,"countstotwo"],
+  [39,"exclusive"],
+  [40,"subpoena"],
+  [40,"lawsuit"],
+  [44,"allowance"]
+ ],
+ "cat": ["Valve Billie"],
+ "ht": [2],
+ "wt": [1200],
+ "hab": ["A warm rock by a steam vent"],
+ "diet": ["Whatever is on sale, in a bundle"],
+ "bio": ["A walrus asleep on a steam valve. It counts to two and never, ever to three."],
+ "note": ["Sells everyone's games and makes a few of its own, slowly."],
+ "parody": "Gabe Newell"
+}

@@ -1,0 +1,19 @@
+{
+ "name": "Bell Ringer Bea",
+ "who": "hiker",
+ "area": "volcano",
+ "node": 44,
+ "blocks": false,
+ "team": [
+  {"sp":"mittal0","lvl":61},
+  {"sp":"ford2","lvl":62},
+  {"sp":"ronaldo0","lvl":62}
+ ],
+ "reward": 2600,
+ "market": null,
+ "lines": ["“I ring the bell when the day is done. The sun never sets here, so I just ring it when I’m tired.”"],
+ "win": "“Ding.”",
+ "lose": "“Dong!”",
+ "hint": "",
+ "v47region": 1
+}

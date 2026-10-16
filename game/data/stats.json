@@ -1,0 +1,8 @@
+[
+ {"id":"hp","name":"HP"},
+ {"id":"lev","name":"Attack"},
+ {"id":"law","name":"Defense"},
+ {"id":"lob","name":"Sp. Atk"},
+ {"id":"pr","name":"Sp. Def"},
+ {"id":"hus","name":"Speed"}
+]

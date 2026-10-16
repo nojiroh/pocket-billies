@@ -1,0 +1,18 @@
+{
+ "name": "Spelunker Stan",
+ "who": "miner",
+ "area": "lake",
+ "node": 33,
+ "blocks": false,
+ "team": [
+  {"sp":"cuban1","lvl":48},
+  {"sp":"rinehart1","lvl":49}
+ ],
+ "reward": 1400,
+ "market": null,
+ "lines": ["“Don’t look into the pool too long. It looks back, and it’s doing your accounts.”"],
+ "win": "“Lights out.”",
+ "lose": "“Deep, isn’t it?”",
+ "hint": "",
+ "v47region": 1
+}

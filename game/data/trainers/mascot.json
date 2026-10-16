@@ -1,0 +1,19 @@
+{
+ "name": "Mascot Max",
+ "who": "boy",
+ "area": "clear",
+ "node": 41,
+ "blocks": false,
+ "team": [
+  {"sp":"son1","lvl":57},
+  {"sp":"hastings0","lvl":58},
+  {"sp":"dorsey1","lvl":58}
+ ],
+ "reward": 2000,
+ "market": null,
+ "lines": ["“I was Bubbles the Bubble for nine years. They never told me it burst. I found out from the newspaper.”"],
+ "win": "“Pop.”",
+ "lose": "“Bubbly!”",
+ "hint": "",
+ "v47region": 1
+}

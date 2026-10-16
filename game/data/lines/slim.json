@@ -1,0 +1,38 @@
+{
+ "id": "slim",
+ "names": ["Cordlet","Telmexnake","Slimboa"],
+ "types": [["Electric"],["Electric"],["Electric","Steel"]],
+ "prof": [0.9,0.9,0.95,1.2,1.05,1.1],
+ "rar": "uncommon",
+ "learn": [
+  [1,"handshake"],
+  [1,"movefast"],
+  [5,"zoning"],
+  [9,"tos"],
+  [15,"disrupt"],
+  [27,"rebrand"],
+  [33,"bulk"],
+  [34,"overload"],
+  [39,"gentrify"],
+  [40,"subpoena"],
+  [40,"lawsuit"],
+  [40,"perminute"],
+  [44,"interest"]
+ ],
+ "cat": ["Cord Billie","Line Billie","Signal Billie"],
+ "ht": [0.5,2.5,8],
+ "wt": [1,30,500],
+ "hab": ["Behind the desk","Telephone poles","Every line in the country"],
+ "diet": ["Static","Minutes","Whole countries' minutes"],
+ "bio": [
+  "A thin snake made of blue telephone cord. It hums a dial tone when it is content.",
+  "It coils round every phone line in town and listens, politely, to all of them.",
+  "It wraps a whole country's signal in its coils and charges by the minute. The minutes are long."
+ ],
+ "note": ["Still uses a landline.","Owns the line, the pole and the call.","Keeps its money in a paper notebook."],
+ "evo": [
+  {"k":"lvl","at":16},
+  {"k":"lvl","at":36}
+ ],
+ "parody": "Carlos Slim"
+}

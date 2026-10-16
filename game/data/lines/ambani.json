@@ -1,0 +1,40 @@
+{
+ "id": "ambani",
+ "names": ["Tuskling","Reliancephant","Antiliaphant"],
+ "types": [["Ground"],["Ground","Steel"],["Ground","Steel"]],
+ "prof": [1.25,1.1,1.2,0.8,1,0.7],
+ "rar": "uncommon",
+ "learn": [
+  [1,"handshake"],
+  [1,"eviction"],
+  [5,"lobbygusher"],
+  [9,"renthike"],
+  [15,"foreclose"],
+  [21,"deepdrill"],
+  [27,"markdown"],
+  [34,"towerdrop"],
+  [40,"margincall"],
+  [40,"subpoena"],
+  [40,"lawsuit"]
+ ],
+ "cat": ["Tusk Billie","Pipeline Billie","Tower Billie"],
+ "ht": [0.8,2.4,5],
+ "wt": [90,2000,9000],
+ "hab": ["Telecom towers","Refineries","A 27-storey house"],
+ "diet": ["Signal","Crude oil","Cities"],
+ "bio": [
+  "An elephant calf with a glowing tip to its trunk that picks up every signal in town.",
+  "Steel tusks like refinery pipes and a crimson tent of a back. It carries a wedding for a thousand guests without noticing.",
+  "It carries a house of twenty-seven storeys on its back, with a helipad on top. The house has a floor just for the snow."
+ ],
+ "note": [
+  "Its trunk gets five bars anywhere.",
+  "Its weddings have a dress code for the elephants.",
+  "The house has a floor for the cars."
+ ],
+ "evo": [
+  {"k":"lvl","at":18},
+  {"k":"lvl","at":38}
+ ],
+ "parody": "Mukesh Ambani"
+}

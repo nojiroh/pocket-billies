@@ -1,0 +1,35 @@
+{
+ "id": "dorsey",
+ "names": ["Tweetfinch","Blockfinch"],
+ "types": [["Flying"],["Flying","Electric"]],
+ "prof": [0.85,0.95,0.85,1.15,1,1.25],
+ "rar": "common",
+ "learn": [
+  [1,"handshake"],
+  [1,"liftoff"],
+  [5,"charlimit"],
+  [9,"escvel"],
+  [15,"orbit"],
+  [27,"tos"],
+  [33,"movefast"],
+  [34,"launch"],
+  [39,"zoning"],
+  [40,"subpoena"],
+  [40,"lawsuit"],
+  [44,"post3am"]
+ ],
+ "cat": ["Finch Billie","Block Billie"],
+ "ht": [0.2,1.2],
+ "wt": [1,20],
+ "hab": ["Short branches","Mountain tops, in silence"],
+ "diet": ["Seeds, 140 of them","Nothing, for ten days"],
+ "bio": [
+  "A bearded finch that only ever says a hundred and forty characters, and says them to everyone.",
+  "It left its nest to the owls and now sits very still on a square stone, meditating and taking a small cut of every payment in town."
+ ],
+ "note": ["Says less, more often.","Eats one meal a day and talks about it."],
+ "evo": [
+  {"k":"lvl","at":22}
+ ],
+ "parody": "Jack Dorsey"
+}

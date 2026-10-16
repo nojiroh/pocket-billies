@@ -1,0 +1,20 @@
+{
+ "look": {
+  "name": "Hal",
+  "body": {"chest":0,"height":1.02},
+  "skin": "#C98E66",
+  "hair": "#3A2A22",
+  "eyes": "#5A3A24",
+  "wear": {
+   "hair": "hair_short",
+   "facial": "facial_stubble",
+   "top": "tee",
+   "outer": "puffer",
+   "bottom": "cargo",
+   "shoes": "boots",
+   "hat": "hat_beanie",
+   "bag": "backpack"
+  },
+  "colors": {"puffer":["#E8702A","#B85512"],"cargo":["#5A6270"],"hat_beanie":["#2A9D8F"],"backpack":["#3E8A6E"]}
+ }
+}

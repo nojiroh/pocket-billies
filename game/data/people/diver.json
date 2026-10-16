@@ -1,0 +1,11 @@
+{
+ "look": {
+  "name": "Dee",
+  "body": {"chest":0.45},
+  "skin": "#D9A07A",
+  "hair": "#1E1A22",
+  "eyes": "#3A2A1A",
+  "wear": {"hair":"hair_pony","top":"tank","bottom":"shorts","shoes":"sandals","glasses":"glasses_sun","mouth":"mouth_grin"},
+  "colors": {"tank":["#2A9DC8"],"shorts":["#1E2A4E"]}
+ }
+}

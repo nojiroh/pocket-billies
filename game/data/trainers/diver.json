@@ -1,0 +1,18 @@
+{
+ "name": "Diver Dee",
+ "who": "diver",
+ "area": "sea",
+ "node": 13,
+ "blocks": false,
+ "team": [
+  {"sp":"yanai1","lvl":25},
+  {"sp":"chesky0","lvl":26}
+ ],
+ "reward": 1300,
+ "egg": 5,
+ "market": null,
+ "lines": ["“Ahoy! Fancy a dip?”","“My team found this sandbar. Finders keepers!”"],
+ "win": "“Sunk! Nice riding.”",
+ "lose": "“Splash! Maybe stick to the shallows.”",
+ "hint": "Diver Dee suns herself on the sandbar with a level 25–26 team."
+}

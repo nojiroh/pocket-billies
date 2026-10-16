@@ -1,0 +1,30 @@
+{
+ "id": "ponyma",
+ "names": ["Tencentaur"],
+ "types": [["Water","Psychic"]],
+ "prof": [1,0.9,1.1,1.2,1.15,0.85],
+ "rar": "rare",
+ "learn": [
+  [1,"handshake"],
+  [1,"interest"],
+  [5,"buyhold"],
+  [9,"spin"],
+  [15,"rerecord"],
+  [21,"headline"],
+  [27,"compound"],
+  [33,"stakeineverything"],
+  [39,"exclusive"],
+  [40,"subpoena"],
+  [40,"lawsuit"]
+ ],
+ "cat": ["Penguin Billie"],
+ "ht": [1.4],
+ "wt": [60],
+ "hab": ["A nest with a stake in every other nest"],
+ "diet": ["A little of everything"],
+ "bio": [
+  "A penguin-pony with a ruff of white and a pebble of gold. It owns a bit of every other Billie and sends them all a message at once."
+ ],
+ "note": ["Has a stake in your stake."],
+ "parody": "Pony Ma"
+}

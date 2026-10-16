@@ -1,0 +1,31 @@
+{
+ "look": {
+  "name": "Granny Juniper",
+  "body": {"height":0.93,"body":1.12,"chest":0.55,"hips":1.12,"shoulders":0.96},
+  "skin": "#E9B897",
+  "hair": "#E8E4DC",
+  "eyes": "#6A8A4A",
+  "wear": {
+   "hair": "hair_bun",
+   "eyes": "eyes_sleepy",
+   "brows": "brows_arched",
+   "mouth": "mouth_smile",
+   "top": "sweater",
+   "outer": "apron",
+   "bottom": "skirt",
+   "shoes": "boots",
+   "hat": "hat_bucket",
+   "glasses": "glasses_round",
+   "neck": "scarf"
+  },
+  "colors": {
+   "sweater": ["#7A9A5A"],
+   "apron": ["#E9B83C","#8A5A2A"],
+   "skirt": ["#8A5A3A"],
+   "boots": ["#6A4A32","#4A3220"],
+   "hat_bucket": ["#F2E8C8","#E9B83C"],
+   "scarf": ["#CE7C4C"],
+   "glasses_round": ["#8A6A3A"]
+  }
+ }
+}

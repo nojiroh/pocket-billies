@@ -1,0 +1,33 @@
+{
+ "name": "Leader Poppy",
+ "who": "poppy",
+ "area": "grass",
+ "node": 20,
+ "blocks": false,
+ "team": [
+  {"sp":"bloomberg1","lvl":36},
+  {"sp":"jobs1","lvl":36},
+  {"sp":"forrest0","lvl":37},
+  {"sp":"ortega2","lvl":38}
+ ],
+ "reward": 3600,
+ "egg": 10,
+ "market": null,
+ "lines": [
+  "“Everything here grows back twice as fast. Including my temper, since the merch stalls arrived.”",
+  "“Let’s see if your team blooms under pressure.”"
+ ],
+ "win": "“You grew on me. Twice as fast. The Grass Badge is yours.”",
+ "lose": "“Pull yourself up and plant again. Everything here grows back.”",
+ "hint": "Leader Poppy’s Grass team is level 36–38. Fire and Flying moves wilt Grass Billies.",
+ "seat": {
+  "id": "bloom",
+  "title": "Grass Badge · 5 of 8",
+  "coin": "gold",
+  "coins": {"gold":3,"tbtf":2},
+  "items": {"bailout":2},
+  "rewardText": "2 Bailouts, 3 Gold Coins and 2 Platinum Coins",
+  "unlockText": "The boardwalks of Rootwater Marsh, south-east of Twinpetal Town, are open."
+ },
+ "v47region": 1
+}

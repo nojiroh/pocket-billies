@@ -1,0 +1,35 @@
+{
+ "id": "ek",
+ "names": ["Shufflet","Spotifrog"],
+ "types": [["Water"],["Water","Electric"]],
+ "prof": [0.9,0.9,0.9,1.2,1,1.15],
+ "rar": "common",
+ "learn": [
+  [1,"handshake"],
+  [1,"interest"],
+  [5,"buyhold"],
+  [9,"spin"],
+  [15,"rerecord"],
+  [21,"headline"],
+  [26,"shuffleplay"],
+  [27,"compound"],
+  [34,"exclusive"],
+  [39,"movefast"],
+  [40,"subpoena"],
+  [40,"lawsuit"]
+ ],
+ "cat": ["Shuffle Billie","Playlist Billie"],
+ "ht": [0.2,0.8],
+ "wt": [1,9],
+ "hab": ["Pond edges with good acoustics","Lily pads with a speaker on them"],
+ "diet": ["Algae","Flies, paid to artists"],
+ "bio": [
+  "A green tadpole with pale spots that hums the next song before you have finished the last.",
+  "A frog whose croak is a playlist. It pays the artists in flies, a fraction of a fly at a time."
+ ],
+ "note": ["Knows what you listened to last year.","The flies are divided fairly, it says."],
+ "evo": [
+  {"k":"lvl","at":22}
+ ],
+ "parody": "Daniel Ek"
+}

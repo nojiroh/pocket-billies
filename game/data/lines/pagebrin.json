@@ -1,0 +1,34 @@
+{
+ "id": "pagebrin",
+ "names": ["Sniffpup","Pagebrin Hound"],
+ "types": [["Psychic"],["Psychic","Electric"]],
+ "prof": [0.9,0.85,0.9,1.35,1.05,1.1],
+ "rar": "uncommon",
+ "learn": [
+  [1,"handshake"],
+  [1,"rugpull"],
+  [5,"pump"],
+  [9,"fud"],
+  [15,"feelinglucky"],
+  [27,"hype"],
+  [34,"moon"],
+  [39,"movefast"],
+  [40,"twoday"],
+  [40,"subpoena"],
+  [40,"lawsuit"]
+ ],
+ "cat": ["Sniff Billie","Index Billie"],
+ "ht": [0.5,1.8],
+ "wt": [10,120],
+ "hab": ["Dorm rooms","A campus with slides in it"],
+ "diet": ["Everything, once","Everything, indexed"],
+ "bio": [
+  "A two-headed puppy with blue-spotted fur that can find anything you have lost, and several things you have not.",
+  "One head indexes the world and the other builds moonshots. Its long ears hear every question anyone asks."
+ ],
+ "note": ["Two heads, one answer, in a quarter of a second.","Don't be evil, it says, and then checks."],
+ "evo": [
+  {"k":"lvl","at":26}
+ ],
+ "parody": "Larry Page & Sergey Brin"
+}

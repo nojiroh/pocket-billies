@@ -1,0 +1,21 @@
+{
+ "look": {
+  "name": "Rhonda",
+  "body": {"chest":0.45,"shoulders":1.08,"body":1.02,"legs":1.06},
+  "skin": "#9A6446",
+  "hair": "#1E1A22",
+  "eyes": "#5A3A24",
+  "wear": {
+   "hair": "hair_pony",
+   "eyes": "eyes_sharp",
+   "brows": "brows_straight",
+   "mouth": "mouth_grin",
+   "top": "track_top",
+   "bottom": "track_pants",
+   "shoes": "runners",
+   "hat": "hat_cap",
+   "neck": null
+  },
+  "colors": {"track_top":["#D13B3B","#F4F1EA"],"track_pants":["#2A2F3E"],"hat_cap":["#F4F1EA","#D13B3B"]}
+ }
+}

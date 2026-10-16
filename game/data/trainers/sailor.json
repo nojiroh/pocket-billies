@@ -1,0 +1,19 @@
+{
+ "name": "Sailor Sal",
+ "who": "skipper",
+ "area": "beach",
+ "node": 35,
+ "blocks": false,
+ "team": [
+  {"sp":"winklevoss1","lvl":51},
+  {"sp":"yanai1","lvl":51},
+  {"sp":"chesky0","lvl":52}
+ ],
+ "reward": 1600,
+ "market": null,
+ "lines": ["“See that shell? Four hundred companies live in it. None of them have ever been seen.”"],
+ "win": "“Run aground.”",
+ "lose": "“Plain sailing.”",
+ "hint": "",
+ "v47region": 1
+}

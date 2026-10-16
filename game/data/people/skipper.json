@@ -1,0 +1,19 @@
+{
+ "look": {
+  "name": "Sam",
+  "body": {"chest":0,"body":1.1},
+  "skin": "#E8B48A",
+  "hair": "#E8E4DA",
+  "eyes": "#4A7BBB",
+  "wear": {
+   "hair": "hair_short",
+   "facial": "facial_beard",
+   "top": "tee_stripe",
+   "bottom": "chinos",
+   "shoes": "boots",
+   "hat": "hat_cap",
+   "mouth": "mouth_grin"
+  },
+  "colors": {"tee_stripe":["#F4F2EC","#2E3A6A"],"chinos":["#2E3A6A"],"hat_cap":["#F4F2EC","#2E3A6A"]}
+ }
+}

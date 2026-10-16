@@ -1,0 +1,21 @@
+{
+ "look": {
+  "name": "Dolly",
+  "body": {"chest":0.6,"hips":1.12,"height":0.94,"body":1.1},
+  "skin": "#F0C3A0",
+  "hair": "#C9CCCF",
+  "eyes": "#4A7BBB",
+  "wear": {
+   "hair": "hair_bun",
+   "eyes": "eyes_sleepy",
+   "brows": "brows_arched",
+   "mouth": "mouth_smile",
+   "top": "sweater",
+   "bottom": "skirt",
+   "shoes": "oxfords",
+   "glasses": "glasses_round",
+   "neck": "nametag"
+  },
+  "colors": {"sweater":["#B5527A"],"skirt":["#4A4E7A"],"oxfords":["#6A4428","#2A1E16"]}
+ }
+}

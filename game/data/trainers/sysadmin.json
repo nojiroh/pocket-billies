@@ -1,0 +1,19 @@
+{
+ "name": "Sysadmin Sam",
+ "who": "intern",
+ "area": "clear",
+ "node": 39,
+ "blocks": false,
+ "team": [
+  {"sp":"dyson1","lvl":56},
+  {"sp":"yiming0","lvl":57},
+  {"sp":"altman0","lvl":57}
+ ],
+ "reward": 2000,
+ "market": null,
+ "lines": ["“Have you tried turning the Cloud off and on again? I have. It rained for a week.”"],
+ "win": "“Connection lost.”",
+ "lose": "“Uptime!”",
+ "hint": "",
+ "v47region": 1
+}

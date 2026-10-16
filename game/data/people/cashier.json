@@ -1,0 +1,27 @@
+{
+ "hair": "#3A2A22",
+ "style": "pony",
+ "top": "#3E8A4E",
+ "top2": "#2A6436",
+ "bottom": "#3A3E4A",
+ "shoe": "#2A2220",
+ "skin": "#D9A07A",
+ "apron": 1,
+ "look": {
+  "name": "Penny",
+  "body": {"chest":0.5,"hips":1.04},
+  "skin": "#D9A07A",
+  "hair": "#3A2A22",
+  "eyes": "#4A3A24",
+  "wear": {
+   "hair": "hair_bun",
+   "top": "dress_shirt",
+   "outer": "apron",
+   "bottom": "trousers",
+   "shoes": "oxfords",
+   "mouth": "mouth_smile",
+   "neck": "nametag"
+  },
+  "colors": {"apron":["#3E8A4E","#2A6436"]}
+ }
+}

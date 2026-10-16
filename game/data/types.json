@@ -1,0 +1,83 @@
+[
+ {
+  "id": "Fire",
+  "color": "#E0603A",
+  "text": "#fff",
+  "strong": ["Grass","Steel"],
+  "weak": ["Fire","Water","Ground","Dragon"],
+  "passive": "ramp",
+  "fx": ["flame","spark"]
+ },
+ {
+  "id": "Water",
+  "color": "#3A86D6",
+  "text": "#fff",
+  "strong": ["Fire","Ground"],
+  "weak": ["Water","Grass","Dragon"],
+  "passive": "",
+  "fx": ["drop","bubble"]
+ },
+ {
+  "id": "Grass",
+  "color": "#4E9E42",
+  "text": "#fff",
+  "strong": ["Water","Ground"],
+  "weak": ["Fire","Grass","Flying","Steel","Dragon"],
+  "passive": "subsidy",
+  "fx": ["leaf","leaf","spark"]
+ },
+ {
+  "id": "Electric",
+  "color": "#E2B92C",
+  "text": "#2A1D05",
+  "strong": ["Water","Flying"],
+  "weak": ["Electric","Grass","Ground","Dragon"],
+  "passive": "sharp",
+  "fx": ["bolt","spark"]
+ },
+ {
+  "id": "Ground",
+  "color": "#B4844A",
+  "text": "#fff",
+  "strong": ["Fire","Electric","Steel"],
+  "weak": ["Grass","Flying"],
+  "passive": "landlord",
+  "fx": ["pebble","pebble","pow"]
+ },
+ {
+  "id": "Flying",
+  "color": "#7F9BE0",
+  "text": "#fff",
+  "strong": ["Grass"],
+  "weak": ["Electric","Steel"],
+  "passive": "pivot",
+  "fx": ["feather","up"]
+ },
+ {
+  "id": "Psychic",
+  "color": "#CF4F88",
+  "text": "#fff",
+  "strong": ["Electric","Dragon"],
+  "weak": ["Psychic","Steel"],
+  "passive": "volatile",
+  "fx": ["orb","star"]
+ },
+ {
+  "id": "Steel",
+  "color": "#7E8C9C",
+  "text": "#fff",
+  "strong": ["Psychic","Flying"],
+  "weak": ["Fire","Water","Electric","Steel"],
+  "passive": "synergy",
+  "fx": ["cog","spark"]
+ },
+ {
+  "id": "Dragon",
+  "color": "#6550C8",
+  "text": "#fff",
+  "strong": ["Dragon"],
+  "weak": ["Steel"],
+  "passive": "inherit",
+  "fx": ["scale","flame"]
+ }
+]

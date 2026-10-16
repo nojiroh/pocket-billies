@@ -1,0 +1,31 @@
+{
+ "look": {
+  "name": "Baron Vault",
+  "body": {"height":1.08,"legs":0.96,"shoulders":1.08,"chest":0,"body":1.2},
+  "skin": "#E9B897",
+  "hair": "#D8D4CC",
+  "eyes": "#6A4A2A",
+  "wear": {
+   "hair": "hair_sidepart",
+   "eyes": "eyes_sleepy",
+   "brows": "brows_thick",
+   "mouth": "mouth_smirk",
+   "facial": "facial_stache",
+   "top": "dress_shirt",
+   "outer": "blazer",
+   "bottom": "trousers",
+   "shoes": "oxfords",
+   "hat": "hat_tophat",
+   "glasses": "glasses_monocle",
+   "neck": "chain"
+  },
+  "colors": {
+   "dress_shirt": ["#F4F0E4"],
+   "blazer": ["#7A2A3A","#E8B83C"],
+   "trousers": ["#2A2430"],
+   "oxfords": ["#3A2418"],
+   "hat_tophat": ["#1E1A24","#E8B83C"],
+   "chain": ["#E8B83C"]
+  }
+ }
+}

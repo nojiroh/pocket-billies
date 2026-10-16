@@ -1,0 +1,30 @@
+{
+ "id": "altman",
+ "names": ["Altmowl"],
+ "types": [["Psychic","Electric"]],
+ "prof": [0.85,0.85,0.9,1.4,1.1,1.05],
+ "rar": "rare",
+ "learn": [
+  [1,"handshake"],
+  [1,"rugpull"],
+  [5,"pump"],
+  [9,"fud"],
+  [27,"hype"],
+  [34,"moon"],
+  [34,"hallucinate"],
+  [39,"movefast"],
+  [40,"twoday"],
+  [40,"subpoena"],
+  [40,"lawsuit"]
+ ],
+ "cat": ["Oracle Billie"],
+ "ht": [1],
+ "wt": [15],
+ "hab": ["A cloud above the lab"],
+ "diet": ["Every book ever written"],
+ "bio": [
+  "An owl with a cloud for a brain. It answers everything, at length, and is wrong about one thing in ten with great confidence."
+ ],
+ "note": ["Was fired on a Friday and back by Tuesday."],
+ "parody": "Sam Altman"
+}

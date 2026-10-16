@@ -1,0 +1,30 @@
+{
+ "look": {
+  "name": "Mother Morel",
+  "body": {"height":0.96,"legs":0.98,"shoulders":0.96,"chest":0.4,"body":1.1},
+  "skin": "#D9A07C",
+  "hair": "#B8C4B4",
+  "eyes": "#6A4A8A",
+  "wear": {
+   "hair": "hair_long",
+   "eyes": "eyes_sleepy",
+   "brows": "brows_arched",
+   "mouth": "mouth_smile",
+   "top": "tunic",
+   "outer": "trench",
+   "bottom": "skirt",
+   "shoes": "sandals",
+   "hat": "hat_bucket",
+   "glasses": "glasses_round",
+   "neck": "scarf"
+  },
+  "colors": {
+   "tunic": ["#7A5A9A"],
+   "trench": ["#5A4A3A","#3A2A1E"],
+   "skirt": ["#4A6A4A"],
+   "sandals": ["#6A4A32"],
+   "hat_bucket": ["#C64A56","#F2E8DC"],
+   "scarf": ["#B8E0C8"]
+  }
+ }
+}

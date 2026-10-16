@@ -1,0 +1,36 @@
+{
+ "id": "carnegie",
+ "names": ["Rivetle","Girderbeetle","Carnegiant"],
+ "types": [["Steel"],["Steel"],["Steel","Ground"]],
+ "prof": [1.05,1.15,1.3,0.8,1,0.7],
+ "rar": "common",
+ "learn": [
+  [1,"handshake"],
+  [1,"bulk"],
+  [5,"gentrify"],
+  [9,"markdown"],
+  [21,"eviction"],
+  [27,"dynamic"],
+  [33,"lobbygusher"],
+  [34,"libraryslam"],
+  [39,"foreclose"],
+  [40,"subpoena"],
+  [40,"lawsuit"]
+ ],
+ "cat": ["Rivet Billie","Girder Billie","Library Billie"],
+ "ht": [0.2,1.2,3.8],
+ "wt": [3,200,4000],
+ "hab": ["Steel mills","Bridges","Libraries it built itself"],
+ "diet": ["Iron filings","Steel","Books, by the tonne"],
+ "bio": [
+  "A beetle larva made of rivets. It is very small and very hard and it is saving up.",
+  "Its horns are I-beams. It builds bridges with its jaws and charges for the crossing.",
+  "A giant beetle carrying a library on its back for every town it stomps through. The towns are grateful and a little flattened."
+ ],
+ "note": ["Started as a bobbin boy.","Owns the bridge and the river under it.","Gives away the money with its name on the door."],
+ "evo": [
+  {"k":"lvl","at":16},
+  {"k":"lvl","at":36}
+ ],
+ "parody": "Andrew Carnegie"
+}

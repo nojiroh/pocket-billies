@@ -1,0 +1,28 @@
+{
+ "name": "Cass Flow",
+ "who": "cass",
+ "area": "sea",
+ "node": 38,
+ "blocks": false,
+ "clue": "face",
+ "team": [
+  {"sp":"federer0","lvl":55},
+  {"sp":"scott0","lvl":55},
+  {"sp":"vanderbilt0","lvl":56},
+  {"sp":"ronaldo0","lvl":57}
+ ],
+ "reward": 6000,
+ "egg": 10,
+ "market": null,
+ "intro": [
+  "[angry] Stop right there. This is a closed set.",
+  "Wait. You? We dropped you. Down a hole. On the surface.",
+  "[sad] You were the best sound engineer the tour ever had. Then you read the plans.",
+  "[angry] It doesn’t matter. The press is nearly done, and you’re not on the guest list."
+ ],
+ "lines": ["“Nothing personal. It’s just the bottom line.”"],
+ "win": "“Fine. Go up the Spire, then. She’ll be delighted. She loves a comeback.”",
+ "lose": "“Back down the hole with you.”",
+ "hint": "Cass Flow waits at the pressing plant with a team around level 55–57.",
+ "v47region": 1
+}

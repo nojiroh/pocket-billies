@@ -1,0 +1,18 @@
+{
+ "name": "Variant No. 0001",
+ "who": "variant",
+ "area": "clear",
+ "node": 42,
+ "blocks": false,
+ "team": [
+  {"sp":"knight2","lvl":59},
+  {"sp":"hughes2","lvl":60}
+ ],
+ "reward": 2200,
+ "market": null,
+ "lines": ["“Number one. The first fan. I was here before the tower. I watched them build it round me.”"],
+ "win": "“...I’ll always be first.”",
+ "lose": "“Number one!”",
+ "hint": "",
+ "v47region": 1
+}
