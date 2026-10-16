@@ -55,7 +55,7 @@ async function engMount(){const cv=$('#engPv'),id=engScene();if(!cv||!id)return;
  $('#engScene').onchange=e=>{ENS.scene=e.target.value;render()};
  const b=$('#engCmp'),on=v=>{ENG_CTX.bypass=v;b.classList.toggle('on',v)};b.onpointerdown=()=>on(true);['pointerup','pointerleave','pointercancel'].forEach(t=>b.addEventListener(t,()=>on(false)));
  clearInterval(ENS.meterT);ENS.meterT=setInterval(()=>{const m=$('#engMeter');if(!m||ST.sec!=='engine'){clearInterval(ENS.meterT);return}
-  if(typeof DGL==='undefined'||!DGL.on){m.textContent=typeof EGL!=='undefined'&&EGL.fail?'WebGL isn’t available in this browser, so the preview uses the simple renderer.':'Starting…';return}
+  if(typeof DGL==='undefined'||!DGL.on){m.textContent=typeof EGL!=='undefined'&&(EGL.fail||!eglOK())?'WebGL 2 isn’t available in this browser, so there is no preview.':'Starting…';return}
   const fps=DGL.int?Math.round(1000/DGL.int):0;m.innerHTML=`<b>${fps}</b> fps · <b>${(DIO.slow||0).toFixed(1)}</b> ms of work per frame · resolution <b>${Math.round((DIO.R||1)*eng('quality','resolution')*100)}%</b>${EGL.hdr?'':' · no HDR on this GPU'}`},500)}
 /* edits */
 ST.hooks.engine=p=>{const el=document.querySelector(`.eng-f[data-path="${p}"]`);if(el&&!el.classList.contains('own')){el.classList.add('own')}

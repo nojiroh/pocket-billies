@@ -5,7 +5,7 @@
    (buildings cast solid shadows, people and trees their cut-out shape), contact shadows, lamps and windows that light
    the ground in front of them and glow through bloom, ponds that reflect, grass that sways and bends away from you,
    mist, cloud shadows, and a lens with depth of field. Every dial is an engine setting (Studio → Engine).
-   Same scenes, walking and taps as js/diorama.js, which stays as the Lite renderer. */
+   Same scenes, walking and taps as js/diorama.js (scene data, paths, the player); this file draws them. */
 const DGL={on:false,ui:null,gkey:'',hkey:'',mesh:null,water:null,grass:null,yaw:0,yawT:0,zoom:1,zoomT:1,tiltX:0,tiltY:0,lead:[0,0],focus:null,focusT:null,frames:0,
  farProps:[],orient:null,drag:null,snapReq:0,int:0,adaptT:0,fail:0,lost:0};
 /* v46: how long a frame may spend getting the next view ready (ms) */
@@ -61,11 +61,11 @@ dioNav=function(){const sc=DIO.sc,fresh=!(DIO.nav&&DIO.navSc===sc&&DIO.navG===DI
 /* ---------- canvas plumbing: the WebGL canvas plus a 2D layer on top for labels ---------- */
 function dglCanvasFor(cv,type){if(!cv._ctx){cv._ctx=type;return cv}if(cv._ctx===type)return cv;const n=document.createElement('canvas');n.id=cv.id;n.className=cv.className;n.hidden=cv.hidden;const al=cv.getAttribute('aria-label');if(al)n.setAttribute('aria-label',al);n._ctx=type;cv.replaceWith(n);return n}
 function dglUI(cv){let u=DGL.ui;if(!u||!u.isConnected){u=document.getElementById('dioui')||document.createElement('canvas');u.id='dioui';u.setAttribute('aria-hidden','true');DGL.ui=u}if(u.previousElementSibling!==cv)cv.after(u);u.hidden=false;return u}
-const _dioMount2D=dioMount,_dioStop2D=dioStop,_dioProj2D=dioProj,_dioUnproject2D=dioUnproject;
-dioMount=function(cv,id,opt={}){const useGL=!opt.lite&&!opt.noGL&&!EGL.fail&&eglOK();cv=dglCanvasFor(cv,useGL?'gl':'2d');DIO.lite=!useGL;
- /* 0.1.0 alpha: no 2D fallback (Lite is gone): the game says this device can't run it. The Studio keeps its own message */
- if(!useGL&&typeof noWebGL==='function'&&!opt.noGL){DGL.on=false;if(DGL.ui)DGL.ui.hidden=true;noWebGL(EGL.fail?'failed':'');return Promise.resolve()}
- if(!useGL){DGL.on=false;if(DGL.ui)DGL.ui.hidden=true;cv.classList.remove('gl');return _dioMount2D(cv,id,opt).then(()=>cv.classList.add('in'))}
+const _dioStop2D=dioStop,_dioProj2D=dioProj,_dioUnproject2D=dioUnproject;
+/* 0.1.0 alpha: the walk view is WebGL only (the Lite 2D painter is gone). Without it the game says this device can't
+   run it (boot.js noWebGL); the Studio shows its own message (engine.js) */
+function dioMount(cv,id,opt={}){const useGL=!EGL.fail&&eglOK();cv=dglCanvasFor(cv,'gl');
+ if(!useGL){DGL.on=false;if(DGL.ui)DGL.ui.hidden=true;DIO.ready=false;DIO.err=new Error('WebGL 2 is not available');if(typeof noWebGL==='function')noWebGL(EGL.fail?'failed':'');return Promise.resolve()}
  DIO.cv=cv;DIO.opt=opt;if(DIO.id!==id){DIO.id=id;DIO.cam=null;Object.assign(DIO.pl,{t:-1,fresh:true,pk:'',route:null,goal:null,line:null,walk:0});DIO.gkey='';DIO.cand=null;DIO.nav=null;DIO.npcAt={};DIO.folk=[];DIO.folkAll=[];DIO.folkId='';DIO.parts=[];DIO.tap=null;DGL.gkey='';DGL.focus=null;DGL.camT=null;DGL.farKey=''}
  DIO.sc=dioScene(id);DIO.ready=false;DIO.err=null;cv.classList.add('gl');
  if(!dglGL(cv))return dioMount(cv,id,opt);
