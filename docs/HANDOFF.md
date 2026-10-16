@@ -11,7 +11,7 @@ Newest entry on top. Every phase session ends by adding an entry here and taggin
 - Questions waiting for the owner: 
 - Next session starts with: 
 
-### Phase 03 - Fresh base and scope reset - 2026-10-16 (not finished: full check and baseline pending)
+### Phase 03 - Fresh base and scope reset - 2026-10-16
 - Changed:
   - Legacy: branch `legacy` pushed at 0314a22 (alpha 0.5 + phases 01-02). The tag `legacy-final` (same commit) was
     refused like every tag push from this session: the owner adds it, and attaches a `git archive` zip of it to a release
@@ -39,8 +39,9 @@ Newest entry on top. Every phase session ends by adding an entry here and taggin
   'steps'` and the joystick step pipeline (phase 08); the debug step buttons; tapdebug.js; art/scene/tiles (Studio
   tile editor); map.js's 2D map (only after a lost WebGL context; phase 10 rewrites the map).
 - Risky or unfinished:
-  - The full quick check was stopped partway: 16 steps passed, none failed (phone flow, shaders, paths, test scenes,
-    all data checks); "Scenes" and everything after it did not run. No baseline has been made yet.
+  - The owner skipped the full quick check for this phase. The partial run passed 16 steps, none failed (phone flow,
+    shaders, paths, test scenes, all data checks); "Scenes" and everything after it did not run. No picture baseline
+    yet: the first phase-* tag (or Run workflow with "Make the picture baseline") makes it.
   - The 2D painter removal was found by a call-graph script; one name it got wrong (DIO_FX) broke the opening and was
     caught by smoke. The full Scenes/walking steps are the real proof and have not run.
   - Leftovers for later rewrites: `effects` preference field (always 'full'), `.demo-note` and other step CSS, `_dioProj2D`
@@ -52,8 +53,8 @@ Newest entry on top. Every phase session ends by adding an entry here and taggin
   says which build it is; the baseline is a release asset (persists, no repo bloat) rather than an artifact (expires).
 - Questions waiting for the owner: add the tags `legacy-final` (0314a22), `phase-01-done`, `phase-02-done`; OK that an
   old account save is replaced once the player plays on (from phase 02)?
-- Next session starts with: run the full check (Actions -> Check -> Run workflow on this branch, tick "Make the picture
-  baseline" once it's on main, or locally), fix anything it finds, then tag `phase-03-done`. Then phase 04.
+- Next session starts with: phase 04. Tag `phase-03-done` on this phase's last commit first (the tag's full run also
+  makes the picture baseline); if that run finds problems in Scenes or walking, fix them before phase 04 work.
 
 ### Phase 02 - Security - 2026-10-16
 - Changed:
