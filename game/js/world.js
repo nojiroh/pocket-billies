@@ -383,14 +383,14 @@ function wrPrefetchView(v,R){if(v.id===DIO.id)return;wrScene(v,R);wrGetReady(v.i
 /* v46: is a view ready to be shown at once (its ground painted and, in 3D, built on the card)? wrGetReady also starts
    whatever is missing: the painting in slices of about 8 ms, then the building on the card a few ms a frame (dglPrepare) */
 function wrReady(id){if(id===DIO.id)return true;const sc=dioScene(id);if(!sc)return false;const key=dioGroundKey(sc);if(!DIO_GCACHE.has(key))return false;
- return DIO.lite||typeof DGL==='undefined'||!DGL.on||typeof dglPrepared!=='function'||dglPrepared(id,sc,key)}
+ return typeof DGL==='undefined'||!DGL.on||typeof dglPrepared!=='function'||dglPrepared(id,sc,key)}
 function wrGetReady(id,urgent,focus){if(wrReady(id))return true;const sc=dioScene(id);if(!sc)return false;const key=dioGroundKey(sc),G=DIO_GCACHE.get(key);
  if(!G){if(!WORLD.busy){WORLD.busy=true;WORLD.busyId=id;const t0=performance.now();artLoad(dioPaths(sc)).then(()=>dioGroundAsync(sc,urgent?-5:10)).catch(()=>{}).then(()=>{WORLD.busy=false;if(typeof NWLOG!=='undefined')NWLOG.add('scene',`painted ${id} ahead (${Math.round(performance.now()-t0)} ms in the background)`)})}return false}
- if(!DIO.lite&&typeof dglPrepare==='function')dglPrepare(id,sc,G,urgent,focus||sc.hub||[sc.w/2,sc.h/2]);return false}
+ if(typeof dglPrepare==='function')dglPrepare(id,sc,G,urgent,focus||sc.hub||[sc.w/2,sc.h/2]);return false}
 /* v46: show a view only when it is ready; until then stay in the one on screen, as long as where you stand is still
    well inside it (on a road the views overlap by 40 m, so there is time). If you would walk off its edge the switch
    happens anyway, built on the spot as before. */
-function wrGate(v){if(!wrOn()||!v||v.id===DIO.id||!DIO.ready||!DIO.sc||!DIO.pl||DIO.pl.fresh||DIO.opt&&DIO.opt.lite)return v;if(wrGetReady(v.id,true,v.pos)){WORLD.heldFor=null;if(typeof DGL!=='undefined')DGL.prepBoost=1;return v}
+function wrGate(v){if(!wrOn()||!v||v.id===DIO.id||!DIO.ready||!DIO.sc||!DIO.pl||DIO.pl.fresh)return v;if(wrGetReady(v.id,true,v.pos)){WORLD.heldFor=null;if(typeof DGL!=='undefined')DGL.prepBoost=1;return v}
  const d=wrDelta(DIO.id,v.id);if(!d)return v;const x=v.pos[0]-d[0],z=v.pos[1]-d[1],sc=DIO.sc,m=3,room=Math.min(x-m,z-m,sc.w-m-x,sc.h-m-z);
  /* alpha 0.2: neighbours share their edges, so a jump to the next place lands inside this view too; only a walk (a trip,
     or a few steps) waits here for the next view, a jump opens it at once */if(v.mode!=='road'&&Math.hypot(x-DIO.pl.x,z-DIO.pl.z)>25)return v;if(typeof DGL!=='undefined')DGL.prepBoost=room<6?4:room<12?2:1;/* closer to the edge, bigger slices */if(room<0){if(typeof NWLOG!=='undefined')NWLOG.add('scene',`${v.id} wasn't ready in time; built on the spot`);return v}

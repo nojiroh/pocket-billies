@@ -10,7 +10,6 @@
  background:color-mix(in srgb,var(--panel-s) 92%,transparent);
  box-shadow:0 0 0 2px var(--line),inset 0 2px 0 var(--hi),0 4px 0 0 color-mix(in srgb,var(--line) 55%,transparent),0 18px 34px -20px var(--shadow);
  -webkit-backdrop-filter:blur(14px) saturate(1.2);backdrop-filter:blur(14px) saturate(1.2)}
-:root[data-fx="lite"] .tpanel{background:var(--panel-s);-webkit-backdrop-filter:none;backdrop-filter:none}
 .tpanel>.sec-h{margin:0}.tpanel>.sec-h h2{font-size:22px}
 .tpanel>.note{margin-top:4px}
 .tpanel .sec-h>h2,.tpanel .sec-h .count,.tpanel>.note{text-shadow:none}
@@ -21,7 +20,6 @@ body.on-scene .screen>.bar>div:first-child:has(>.where){padding:10px 16px 12px;b
  -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
 body.on-scene .screen>.bar .where,body.on-scene .screen>.bar .sub{text-shadow:none}
 body.on-scene .screen>.bar .where{text-shadow:2px 2px 0 var(--glow)}
-:root[data-fx="lite"] body.on-scene .screen>.bar>div:first-child{background:var(--panel-s);-webkit-backdrop-filter:none;backdrop-filter:none}
 /* loose notes on scene screens (Field Guide) sit on a small glass strip */
 body.on-scene .screen>p.note{padding:6px 12px;border-radius:10px;background:color-mix(in srgb,var(--panel-s) 88%,transparent);box-shadow:0 0 0 2px var(--line);text-shadow:none}
 
@@ -554,7 +552,7 @@ body.cs-dazed #dio,body.cs-dazed #dio.gl{filter:blur(8px) brightness(1.12) satur
 .btip-t{font-size:14.5px;line-height:1.4}.btip-t b{display:block;font:400 16px/1.1 var(--disp);color:var(--gold2);margin-bottom:2px}
 @media (prefers-reduced-motion:reduce){.btip,.cs-bars i{transition:none}body.cs-waking #dio{transition:none}}
 .btip-b{display:inline-flex;margin-top:6px}
-/* Lite's opening, in pictures */
+/* the opening in pictures (when the cutscene can't run) */
 .intro-still{justify-content:center}
 .intro-still .still{display:block;align-self:center;width:min(100%,560px);height:auto;aspect-ratio:200/124;image-rendering:pixelated;image-rendering:crisp-edges;border-radius:14px;box-shadow:0 10px 26px var(--shadow,rgba(0,0,0,.3));animation:nwFadeUp .4s ease backwards}
 @media (prefers-reduced-motion:reduce){.intro-still .still{animation:none}}

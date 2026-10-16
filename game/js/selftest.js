@@ -168,7 +168,7 @@ async function runFullTest(mode){const diag=mode==='diag';if(STEST.on)return;if(
   await phase('Alpha battle: your team against one','scene',()=>teamBattle('alpha'),8,150);
   /* v47: the opening's fall across the Hollow Earth (the world map's renderer, flying past the Inner Sun), timed */
   if(typeof fallMap==='function'&&!STEST.stop)await phase('Opening: falling across the Hollow Earth','map',async()=>{U.bench=null;U.inside=null;if(typeof DIO!=='undefined'&&DIO.cv)dioStop();
-   const cv=fallGL();if(!cv){U.tab='walk';render();return 'no 3D here: Lite shows the fall as pictures'}cv.hidden=false;cv.classList.add('in');CS.on=true;CS.run++;const run=CS.run,fr=[],mr=mglRender;let last=performance.now();
+   const cv=fallGL();if(!cv){U.tab='walk';render();return 'no 3D here: the opening shows the fall as pictures'}cv.hidden=false;cv.classList.add('in');CS.on=true;CS.run++;const run=CS.run,fr=[],mr=mglRender;let last=performance.now();
    mglRender=t=>{const n=performance.now();fr.push(n-last);last=n;mr(t)};try{await fallMap(run,6000)}finally{mglRender=mr;CS.on=false;CS.run++}
    U.tab='walk';render();await stSleep(1200);if(fr.length<3)throw new Error(`the fall drew ${fr.length} frames`);const a=fr.slice(2),avg=a.reduce((x,y)=>x+y,0)/a.length;
    return `${fr.length} frames, ${Math.round(1000/avg)} fps, worst frame ${Math.round(Math.max(...a))} ms`},6,40);

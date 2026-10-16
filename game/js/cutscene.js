@@ -6,7 +6,7 @@
    make yourself up in the dressing room; she tells you about billionaires and throws three coins that pop open into
    the starters. Pick one, and her other student Blake runs in, takes the one that beats yours and battles you on the
    spot (opening.js battleTutor, story.js storyAfterRival).
-   Without WebGL, or in Lite mode, the older step-by-step intro in ui.js runs instead. */
+   If the cutscene can't run or stops, the older step-by-step intro in ui.js runs instead. */
 const CS={on:false,run:0,skip:false,waits:[],cam:null,actors:{},stars:[],coins:[],fx:[],lights:[],items:[],parts:[],hide:null,sel:0,choosing:false,
  say:null,por:{who:null,expr:null,t:0},flashes:[],center:[10.1,12.3],ui:null};
 const CS_SPOT={door:[7.4,15.4],hazel:[9.3,13.25],me:[11.05,12.95],meFrom:[14.6,12.4],stars:[[8.8,11.55],[10.15,11.2],[11.5,11.55]],blake:[12.55,12.7],blakeFrom:[16.4,12.1]};
@@ -21,7 +21,7 @@ const csEase=k=>k<.5?4*k*k*k:1-Math.pow(-2*k+2,3)/2;
    with the first stretch of each road. So nothing is built again between the title, the opening, Blake's battle
    and your first steps (it was a pause of most of a second as the battle began) */
 function csSceneId(){const id=sceneIdAt(START_NODE);try{const v=typeof wrRoamView==='function'?wrRoamView(START_NODE,null):null;if(v&&v.id&&dioScene(v.id))return v.id}catch(e){console.error(e)}return id}
-function csWanted(){const p=(typeof S!=='undefined'&&S&&S.preferences)||{};return typeof eglOK==='function'&&!EGL.fail&&eglOK()&&p.effects!=='lite'&&typeof sceneIdAt==='function'&&!!dioScene(sceneIdAt(START_NODE))}
+function csWanted(){return typeof eglOK==='function'&&!EGL.fail&&eglOK()&&typeof sceneIdAt==='function'&&!!dioScene(sceneIdAt(START_NODE))}
 /* alpha 0.4: the start's name, for the opening's caption (Copperleaf Town) */
 const csStartName=()=>typeof placeFull==='function'&&ROUTE[START_NODE]?placeFull(ROUTE[START_NODE]):'the Hollow Earth';
 

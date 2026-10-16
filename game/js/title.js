@@ -3,7 +3,7 @@
    v47: after loading, a slow camera over Sundown from above the rooftops (the real scene, drawn by the game, at your
    local time of day), the Pocket Billies logo in pixel lettering, title music, and three choices: Continue (your trainer,
    where you are and how long you've played), New game, Settings. On a phone one tap anywhere continues.
-   Without WebGL (or in Lite mode) the title stands on the painted landscape instead. */
+   Without the 3D scene the title stands on the painted landscape instead. */
 const TITLE={on:false,t0:0,run:0,mounted:false};
 function titleWanted(){return !(typeof NW_TEST!=='undefined'&&NW_TEST)&&!(S.preferences&&S.preferences.skipTitle)}
 /* the camera: a slow drift along the front of the town, high above the rooftops, looking up the main street */

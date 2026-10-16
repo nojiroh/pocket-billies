@@ -8,7 +8,7 @@
      boards, a ridge cap and a tiled roof texture; a chimney where the picture has one (the smoke comes out of it)
    - windows you can look into: behind every pane a simple room (back wall with furniture, side walls, floor and
      ceiling) drawn with "interior mapping", so it shifts with your view like a real room; lit at night
-   The models cast and receive sun shadows like everything else. The Lite renderer and the Studio's prop pictures still
+   The models cast and receive sun shadows like everything else. The Studio's prop pictures still
    use the picture, so a repainted picture changes the front of the 3D building too. Engine setting world.buildings3d
    turns the models off (the pictures stand in as before). */
 const BLD={mesh:new WeakMap(),fac:new WeakMap(),vao:null};

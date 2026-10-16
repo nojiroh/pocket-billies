@@ -102,7 +102,7 @@ NWLOG.hook=()=>{if(NWLOG.hooked)return;NWLOG.hooked=true;const wrap=(name,fn)=>{
  let lastTab=null;wrap('render',()=>{const v=typeof B!=='undefined'&&B?'battle':U.tab;if(v!==lastTab){lastTab=v;NWLOG.add('screen',v)}});
  wrap('newBattle',(kind)=>NWLOG.add('battle',`start ${kind}${typeof areaKey==='function'?' at '+areaKey():''}`));
  wrap('endBattle',()=>NWLOG.add('battle','end '+(B&&B.over||'')));
- wrap('dioMount',(cv,id,opt)=>NWLOG.add('scene',`mount ${id}${opt&&opt.lite?' (lite)':''}`));
+ wrap('dioMount',(cv,id,opt)=>NWLOG.add('scene',`mount ${id}`));
  wrap('setTrip',j=>NWLOG.add('travel',`trip to ${typeof ROUTE!=='undefined'&&ROUTE[j]?ROUTE[j].name:j}`));
  wrap('openShop',id=>NWLOG.add('shop',id));
  wrap('mapMount',()=>NWLOG.add('map','open'));

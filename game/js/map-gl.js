@@ -6,7 +6,7 @@
    route to the place you picked, step counts on the roads around it, and pins with icons for every stop (here,
    destination, visited, new, locked). A Places list finds any stop by name, and Flat shows the whole world unrolled.
    map.js keeps the camera, the walking animation and the picking, and still draws the map itself where WebGL isn't
-   available or Lite is on. */
+   available (a lost context). */
 const MGL={flat:false,fv:{u:.5,v:.5,s:1},pins:null,ov:null,dpr:1,list:false,altT:null,lastT:0,fd:null};
 const MGL_N=.002,MGL_F=3;
 const MGL_SH={
@@ -48,7 +48,7 @@ void main(){vec3 p=uP+uRt*(aC.x-.5)*uS.x+uUp*aC.y*uS.y;vW=p;vUV=vec2(aC.x,1.-aC.
 precision highp float;in vec2 vUV;in vec3 vW;out vec4 o;uniform sampler2D uTex;uniform vec3 uC,uHaze;
 void main(){vec4 c=texture(uTex,vUV);if(c.a<.5)discard;float d=length(vW-uC),fk=1.-exp(-max(0.,d-.3)*.72);o=vec4(mix(c.rgb*.97,uHaze,clamp(fk,0.,.86)),1.);}`]};
 /* ---------- when it runs ---------- */
-function mapGLWanted(){return typeof EGL!=='undefined'&&!EGL.fail&&!EGL.lost&&(S.preferences||{}).effects!=='lite'&&eglOK()}
+function mapGLWanted(){return typeof EGL!=='undefined'&&!EGL.fail&&!EGL.lost&&eglOK()}
 function mapGLCanvas(){let cv=$('#dio');if(!cv){cv=document.createElement('canvas');cv.id='dio';document.body.prepend(cv)}return cv}
 function mapGLReady(){if(!mapGLWanted())return false;const cv=mapGLCanvas();
  if(EGL.cv!==cv){if(DIO.cv&&DIO.cv!==cv)return false;if(!eglInit(cv)){EGL.fail=1;return false}if(typeof DGL!=='undefined'){DGL.gkey='';DGL.farKey='';DGL.wtex=null}}

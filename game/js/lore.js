@@ -39,10 +39,6 @@ function clueDraw(quad,glows,t){if(typeof S==='undefined'||!S.started||DGL.bt||U
   quad('sparkle',Math.floor(t/110)%4,c.x,y+.34+b,c.z,.72,.72,1,[.86,.96,1]);quad('sparkle',(Math.floor(t/110)+2)%4,c.x+.12,y+.62+b*1.5,c.z,.34,.34,.8*pulse,[1,1,1]);
   glows.push([c.x,y+.3+b,c.z,.48,[.6,.85,1],1.6+pulse*1.4]);
   if(P&&Math.hypot(P.x-c.x,P.z-c.z)<.75){if(typeof sfx==='function')sfx('coin');loreClue(c.id);return}}}
-/* Lite (no 3D scene, so no glint): a clue in this place turns up a few seconds after you arrive */
-function clueCheck(){if(typeof S==='undefined'||!S.started||B||U.modal||U.tab!=='walk'||U.inside||TALK.on||typeof DIO==='undefined'||!DIO.ready||(typeof DGL!=='undefined'&&DGL.on)||(typeof STEST!=='undefined'&&STEST.on)||U.bench)return;
- if(S.route.prog!==0)return;const c=clueSpots()[0];if(!c){LORE_CLUE.at=null;return}if(LORE_CLUE.at!==c.id){LORE_CLUE.at=c.id;LORE_CLUE.t=Date.now();return}if(Date.now()-LORE_CLUE.t>4000){LORE_CLUE.at=null;loreClue(c.id)}}
-const LORE_CLUE={at:null,t:0};setInterval(()=>{try{clueCheck()}catch(e){console.error(e)}},1500);
 /* the Lore page of the Guide */
 function loreCard(title,text,open,sub){return open?`<article class="lore-card"><h3>${esc(title)}</h3>${sub?`<small>${esc(sub)}</small>`:''}<p>${esc(text)}</p></article>`:`<article class="lore-card locked"><h3>???</h3><p>Keep walking.</p></article>`}
 function renderLore(){const L=LORE(),st=loreStage(),F=loreFlags(),sec=U.loreSec||'story';

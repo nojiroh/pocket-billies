@@ -58,7 +58,7 @@ function render(){const app=$('#app');
 function updateNav(show){let n=$('#nav');const t=[['walk','Walk'],['map','Map'],['team','Team'],['ledger','Guide'],['bag','Bag']];
  if(!n){n=document.createElement('nav');n.id='nav';n.setAttribute('aria-label','Main');n.innerHTML=`<div class="in px glass"><span class="ind"></span>${t.map(([k,l])=>`<button data-a="tab" data-t="${k}">${uiIco(k)}<span>${l}</span></button>`).join('')}</div>`;document.body.appendChild(n)}
  n.hidden=!show;n.querySelector('.ind').style.setProperty('--i',TABS.indexOf(U.tab));n.querySelectorAll('button').forEach(b=>{if(b.dataset.t===U.tab)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current')})}
-/* v47: Lite's opening, in pictures (opening.js draws them): the fall, Hazel, your trainer, your starter, then Blake */
+/* v47: the opening in pictures, when the cutscene can't run or stops (opening.js draws them): the fall, Hazel, your trainer, your starter, then Blake */
 const INTRO_STILLS=[['street',3.2,'The surface, late, after the show. You were walking home, a lanyard round your neck, your phone in your hand.'],
  ['street',6.35,'Then the pavement opened.'],
  ['crust',1.05,'Down through the crust: soil, rock, old pipes, a crate stamped LEGACY. Then light.'],
@@ -180,7 +180,7 @@ function enterRoom(a,p){const id=roomFor(a,p);if(!id||!DIO.pl)return false;const
 /* v46: seamless rooms (world.js wrRoomScene). The room's view is the place's own view with the room laid in at the
    building's door, so going in and out is a shift of nothing. roomLayIn makes (and starts preparing) that view;
    it is also called when you tap a building, so the room is usually ready by the time you reach the door. */
-function roomLayIn(id,p,fresh){if(typeof wrRoomScene!=='function'||!wrOn()||!DIO.ready||!DIO.sc||!DIO.sc.parts||DIO.sc.roomRect||DIO.lite||typeof DGL==='undefined'||!DGL.on||!DIO.pl||!p)return null;
+function roomLayIn(id,p,fresh){if(typeof wrRoomScene!=='function'||!wrOn()||!DIO.ready||!DIO.sc||!DIO.sc.parts||DIO.sc.roomRect||typeof DGL==='undefined'||!DGL.on||!DIO.pl||!p)return null;
  if(eng('world','seamlessRooms')===false)return null;const C=dioData().sc,M=C.props[p.k];if(!M||!M.box)return null;const s=p.s||1,f=p.f?-1:1,dx=((M.door&&M.door.x)||0)/(C.ppu||34)*s*f,door=[+(p.x+dx).toFixed(1),+(+p.z).toFixed(1),+(+p.x).toFixed(1)];/* the door, and the building's middle */
  if(fresh)WORLD.cache.delete(wrRoomId(DIO.id,id,door)+'|'+WORLD.gen);/* the room as it is now (your room's decorations) */
  const sc=wrRoomScene(DIO.id,id,door);if(!sc)return null;wrGetReady(sc.id,true,door);return {view:sc.id,door,base:DIO.id}}
@@ -291,14 +291,14 @@ function walkSceneSync(){
  const on=S.started&&U.tab!=='map'&&!!sceneIdAt(S.route.node),walk=on&&U.tab==='walk';let cv=$('#dio');document.body.classList.toggle('on-walk',walk);document.body.classList.toggle('on-scene',on&&!walk);
  if(!on){if(DIO.cv)dioStop();if(U.tab==='map'&&S.started&&typeof mapGLWanted==='function'&&mapGLWanted()){if(cv){cv.hidden=false;cv.classList.add('in')}return}if(cv)cv.hidden=true;return}
  if(!cv){cv=document.createElement('canvas');cv.id='dio';cv.setAttribute('aria-label','Your surroundings. Tap the ground to walk, tap people and buildings to visit, tap a question mark to battle.');document.body.prepend(cv)}cv.hidden=false;
- const ws=walkState(),id=ws.id,lite=(S.preferences||{}).effects==='lite';
- if(DIO.id!==id&&DIO.cv&&DIO.ready&&!!DIO.opt.lite===lite&&typeof wrDelta==='function'){const d=wrDelta(DIO.id,id);
+ const ws=walkState(),id=ws.id;
+ if(DIO.id!==id&&DIO.cv&&DIO.ready&&typeof wrDelta==='function'){const d=wrDelta(DIO.id,id);
   /* alpha 0.2: neighbouring places share their edges, so most views share a part; a walk carries on into the next view,
      a jump somewhere else (not where you are walking to) opens it fresh */
   const walking=!d||ws.mode==='road'||!ws.pos||!DIO.pl||Math.hypot(DIO.pl.x+d[0]-ws.pos[0],DIO.pl.z+d[1]-ws.pos[1])<25;
   if(d&&walking&&dioShift(id,d[0],d[1])){artLoad(dioPaths(DIO.sc)).catch(()=>{});return}}
- if(DIO.id!==id||!DIO.cv||!!DIO.opt.lite!==lite){if(DIO.id&&DIO.id!==id){cv.classList.remove('in');void cv.offsetWidth}
-  dioMount(cv,id,{state:walkState,onPick:walkPick,onAim:roomAim,onMove:(x,z)=>{if(typeof walkCross==='function')walkCross();/* after leaving a room you stand at its door: nothing in between moves that */if(!U.inside&&/^int_/.test(DIO.id||''))return;const sid=sceneIdAt(S.route.node),po=walkOff(sid),o=po||(DIO.sc&&DIO.sc.baseOff)||[0,0],bk=U.backAt;if(bk){if(walkOff(bk.id)&&Math.hypot(x-walkOff(bk.id)[0]-bk.x,z-walkOff(bk.id)[1]-bk.z)<.6)U.backAt=null;else return}U.roam={id:po?sid:(DIO.sc&&DIO.sc.baseId||DIO.id),node:S.route.node,x:x-o[0],z:z-o[1]}},keys:()=>!U.modal&&U.tab==='walk'&&scrollY<innerHeight*.3,active:()=>U.tab==='walk'&&!U.modal,safe:()=>{const a=$('.wh-card'),b=$('.wh-foot'),H=innerHeight;return [a?clamp(a.getBoundingClientRect().bottom/H,0,.5):.1,b?clamp(b.getBoundingClientRect().top/H,.5,1):.88]},lite:(S.preferences||{}).effects==='lite',
+ if(DIO.id!==id||!DIO.cv){if(DIO.id&&DIO.id!==id){cv.classList.remove('in');void cv.offsetWidth}
+  dioMount(cv,id,{state:walkState,onPick:walkPick,onAim:roomAim,onMove:(x,z)=>{if(typeof walkCross==='function')walkCross();/* after leaving a room you stand at its door: nothing in between moves that */if(!U.inside&&/^int_/.test(DIO.id||''))return;const sid=sceneIdAt(S.route.node),po=walkOff(sid),o=po||(DIO.sc&&DIO.sc.baseOff)||[0,0],bk=U.backAt;if(bk){if(walkOff(bk.id)&&Math.hypot(x-walkOff(bk.id)[0]-bk.x,z-walkOff(bk.id)[1]-bk.z)<.6)U.backAt=null;else return}U.roam={id:po?sid:(DIO.sc&&DIO.sc.baseId||DIO.id),node:S.route.node,x:x-o[0],z:z-o[1]}},keys:()=>!U.modal&&U.tab==='walk'&&scrollY<innerHeight*.3,active:()=>U.tab==='walk'&&!U.modal,safe:()=>{const a=$('.wh-card'),b=$('.wh-foot'),H=innerHeight;return [a?clamp(a.getBoundingClientRect().bottom/H,0,.5):.1,b?clamp(b.getBoundingClientRect().top/H,.5,1):.88]},
   cap:()=>{const w=document.hidden?'hidden':DIO.battle?'':U.modal?'window':U.tab!=='walk'?'screen':scrollY>innerHeight*.7?'scrolled':'';DIO.held=w;return w==='hidden'?1:w==='window'?10:w==='screen'?24:w==='scrolled'?4:userFps()}}).then(()=>cv.classList.add('in'))}}
 function renderMap(){return `<div class="map-full"><canvas id="mapcv" width="${MW}" height="${MH}" aria-label="World map. Drag to look around, tap a place."></canvas><div id="maplabels"></div>
  <div class="map-head glass"><div class="sub">The Hollow Earth</div><h1 class="where">World map</h1><p class="map-trip ${tripStatus().k}">${esc(tripStatus().t)}</p></div>

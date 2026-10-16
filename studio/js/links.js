@@ -18,7 +18,7 @@ const ENG_NEEDS={'lens.bokeh':['lens.blur'],'lens.focusBand':['lens.blur'],'lens
  'grass.height':['grass.density'],'grass.wind':['grass.density'],'grass.gusts':['grass.wind'],'grass.bend':['grass.density'],'water.foam':['water.ripples'],'water.rings':['water.ripples'],'camera.zoomMin':['camera.zoomMax']};
 const ENG_QOFF={'shadows.ao':'step 1','shadows.aoRadius':'step 1','shadows.aoKind':'step 1','lens.blur':'step 4 (and step 1 makes it rougher)','lens.bokeh':'step 4','lens.focusBand':'step 4','lens.blurFar':'step 4','lens.blurNear':'step 4',
  'sun.shafts':'step 3 (kept on when the processor, not the graphics chip, is the slow part)','sun.shaftLength':'step 3','air.godRays':'step 3 (kept on when the processor is the slow part)','air.lightsInAir':'step 3',
- 'color.bloom':'step 3 makes it smaller','quality.shadowMap':'step 2 halves it','shadows.cascades':'battles on slow devices','lens.vignette':'Lite effects','lens.aberration':'Lite effects','lens.grain':'Reduced animation'};
+ 'color.bloom':'step 3 makes it smaller','quality.shadowMap':'step 2 halves it','shadows.cascades':'battles on slow devices','lens.grain':'Reduced animation'};
 const engLabel=gk=>{const [g,k]=gk.split('.');const G=(typeof ENGINE_SPEC!=='undefined'?ENGINE_SPEC:[]).find(x=>x[0]===g),f=G&&G[2].find(x=>x[0]===k);return f?`${f[1]} (${G[1]})`:gk};
 /* ---- what is selected ---- */
 function linkCur(){const D=ST.D,s=ST.sec,f=LNK.field;
