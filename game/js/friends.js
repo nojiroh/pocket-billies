@@ -29,7 +29,10 @@ function frSync(){let L=new Set(FR.list);
  const nl=[...L].filter(u=>u&&u!==FR.uid).slice(0,50);if(nl.join()!==FR.list.join()){FR.list=nl;frDb().collection('users').doc(FR.uid).set({friends:nl},{merge:true}).catch(frErr)}
  frWatchAll();frRefresh()}
 function frWatchAll(){const db=frDb();for(const [u,un] of FR.watch)if(!FR.list.includes(u)){un();FR.watch.delete(u);delete FR.data[u]}
- for(const u of FR.list)if(!FR.watch.has(u))FR.watch.set(u,db.collection('users').doc(u).onSnapshot(s=>{if(s.exists)FR.data[u]=s.data();frRefresh();if(typeof MAP!=='undefined')MAP.dirty=true},frErr))}
+ for(const u of FR.list)if(!FR.watch.has(u))FR.watch.set(u,db.collection('users').doc(u).onSnapshot(s=>{if(s.exists)FR.data[u]=s.data();frRefresh();if(typeof MAP!=='undefined')MAP.dirty=true},e=>frWatchErr(u,e)))}
+/* a friend's page opens to you once their game has put you on their list too (firebase/firestore.rules): until then,
+   look again every minute instead of showing an error */
+function frWatchErr(u,e){FR.watch.delete(u);if(!(e&&e.code==='permission-denied'))return frErr(e);clearTimeout(FR.retryT);FR.retryT=setTimeout(()=>{if(FR.on)frWatchAll()},60000)}
 /* what friends see of you: written when it changes, at most every 20 s (where you stand, every 60 s) */
 function frPublish(now){if(!FR.on||!S.started)return;const t=Date.now(),node=S.route&&S.route.node,r=ROUTE[node]||{},sid=typeof sceneIdAt==='function'?sceneIdAt(node):null;
  let x=null,z=null;if(U.roam&&U.roam.node===node&&U.roam.id===sid){x=+U.roam.x.toFixed(1);z=+U.roam.z.toFixed(1)}
