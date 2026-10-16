@@ -98,7 +98,6 @@ function dioNoise(x,y){const xi=Math.floor(x),yi=Math.floor(y),fx=x-xi,fy=y-yi,s
  return a+(b-a)*s(fx)+(c-a)*s(fy)+(a-b-c+d)*s(fx)*s(fy)}
 function dioTilePix(path){let im=dioImg(path);if(!dioOk(im))return null;const w=im.naturalWidth||im.width,h=im.naturalHeight||im.height,c=cnv(w,h),x=c.getContext('2d',{willReadFrequently:true});x.drawImage(im,0,0);
  return {w,h,d:new Uint32Array(x.getImageData(0,0,w,h).data.buffer)}}
-function dioTileHalf(t){if(!t)return null;const w=t.w>>1,h=t.h>>1,d=new Uint32Array(w*h);for(let y=0;y<h;y++)for(let x=0;x<w;x++){let r=0,g=0,b=0;for(const [a,c] of [[0,0],[1,0],[0,1],[1,1]]){const v=t.d[(y*2+c)*t.w+x*2+a];r+=v&255;g+=(v>>8)&255;b+=(v>>16)&255}d[y*w+x]=0xff000000|((b>>2)<<16)|((g>>2)<<8)|(r>>2)}return {w,h,d}}
 function dioGroundKey(sc){const C=dioData().sc;return JSON.stringify([sc.w,sc.h,sc.edge,sc.tiles,dioWearLines(sc).length,(sc.steps||'').length,(sc.stepm||'').length,sc.stepsV||0,DIO.lite?1:0,dioNextOn()?'nx'+dioTileFolder():'',Object.entries(C.terrains).map(([k,t])=>[k,t.tile,t.z,t.edge,t.vars,t.flip,t.paved,t.tone]),typeof dioArtVer==='function'?dioArtVer():0])}
 /* The ground picture: every tile drawn from its terrain's picture or one of its variants (picked per tile, the plain
    picture most often), mirrored now and then where the terrain allows it, so big fields don't repeat. Natural ground
