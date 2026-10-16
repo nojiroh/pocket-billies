@@ -851,6 +851,7 @@ ACTS.pedPartDel = d => {
 /* the parts' rectangles on the picture */
 {
   const _pd = pedDraw;
+  // eslint-disable-next-line no-func-assign -- adds a layer to the drawing on purpose
   pedDraw = function () {
     _pd();
     const M = pedM(),
@@ -972,6 +973,7 @@ ACTS.pedBuildRooms = () => {
 /* guides for the plan on the picture */
 {
   const _pd = pedDraw;
+  // eslint-disable-next-line no-func-assign -- adds a layer to the drawing on purpose
   pedDraw = function () {
     _pd();
     const M = pedM(),

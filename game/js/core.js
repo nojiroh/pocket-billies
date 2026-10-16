@@ -10,6 +10,7 @@ const esc = s =>
    end a piece of HTML (< > " & `) and control characters, so it is safe in any page text or attribute */
 const cleanName = (s, max) =>
   String(s == null ? '' : s)
+    // eslint-disable-next-line no-control-regex -- stripping control characters is the point
     .replace(/[\u0000-\u001f\u007f<>"&`]/g, '')
     .trim()
     .slice(0, max);
