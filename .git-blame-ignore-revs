@@ -1,0 +1,5 @@
+# Commits git blame skips: pure formatting.
+# Use: git config blame.ignoreRevsFile .git-blame-ignore-revs (GitHub reads it on its own)
+
+# Prettier reformat of game/ and studio/ JS and CSS (phase 04a)
+adb27c9d6e88fa993da51c4fe145bba83fa0fc04
