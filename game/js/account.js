@@ -24,21 +24,24 @@ function accState(u){ACC.ready=true;ACC.user=u?{uid:u.uid,name:u.displayName||u.
 /* the save online against the one here: the newer one wins */
 async function accPull(){if(!ACC.user||!ACC.db)return;let snap=null;try{snap=await ACC.db.collection('saves').doc(ACC.user.uid).get()}catch(e){accErr(e);return}
  const offer=(()=>{try{const v=localStorage.getItem('pb-offer-guest');localStorage.removeItem('pb-offer-guest');return v==='1'}catch(e){return false}})();
- if(snap&&snap.exists){let remote=null;try{remote=migrate(JSON.parse(snap.data().json))}catch(e){}
+ if(snap&&snap.exists){let remote=null,age=null;try{remote=JSON.parse(snap.data().json);age=saveAge(remote);remote=loadSave(remote)}catch(e){}
+  if(age==='new'){SAVE_HOLD=true;modal({title:'Your account’s save is newer',html:`<p>${SAVE_NEW_MSG}</p>`,btns:[{l:'OK',c:'gold',f:closeModal}]});return}
+  if(age==='old'){try{const k=LS+'-cloud-set-aside';if(localStorage.getItem(k)==null)localStorage.setItem(k,snap.data().json)}catch(e){}
+   toast('Your account’s save is from an older version of the game, so this is a new game. Playing on replaces it.')}
   if(remote&&remote.started&&(!S.started||(remote.savedAt||0)>(S.savedAt||0))&&!B){S=remote;S.avatar=cleanTrainer(S.avatar,S.gender);applyPreferences();lsSet(S);render();toast('Your game is loaded from your account.');return}
   if(S.started)accFlush(true);return}
  /* nothing online yet: a game from this browser can come along */
- let guest=null;try{guest=migrate(JSON.parse(localStorage.getItem(LS_BASE)||'null'))}catch(e){}
+ let guest=null;try{guest=loadSave(JSON.parse(localStorage.getItem(LS_BASE)||'null'))}catch(e){}
  if(offer&&guest&&guest.started&&!S.started){modal({title:'Bring your game along?',html:`<p>This browser has a game with ${esc((guest.avatar&&guest.avatar.name)||'your trainer')} (${fmt(guest.totalSteps||0)} steps). Use it as the game on your account, ${esc(ACC.user.name)}?</p>`,btns:[
    {l:'Yes, use it',c:'gold',f:()=>{S=guest;S.savedAt=Date.now();lsSet(S);closeModal();accFlush(true);if(typeof TITLE!=='undefined'&&TITLE.on){TITLE.on=false;titleStart()}render();toast('Your game is on your account now.')}},
    {l:'No, start fresh',c:'quiet',f:closeModal}]})}
  else if(S.started)accFlush(true)}
 /* called by save()'s flush: writes to the account (a moment later, so a burst of saves is one write) */
-function accFlush(now){if(!ACC.user||!ACC.db)return false;clearTimeout(ACC.t);const go=()=>{if(!ACC.user)return;ACC.db.collection('saves').doc(ACC.user.uid).set({json:JSON.stringify(S),savedAt:S.savedAt||Date.now(),name:(S.avatar&&S.avatar.name)||'',game:'Pocket Billies'}).catch(accErr)};if(now)go();else ACC.t=setTimeout(go,1500);return true}
+function accFlush(now){if(!ACC.user||!ACC.db)return false;if(SAVE_HOLD)return true;clearTimeout(ACC.t);const go=()=>{if(!ACC.user)return;ACC.db.collection('saves').doc(ACC.user.uid).set({json:JSON.stringify(S),savedAt:S.savedAt||Date.now(),saveVersion:SAVE_VERSION,name:(S.avatar&&S.avatar.name)||'',game:'Pocket Billies'}).catch(accErr)};if(now)go();else ACC.t=setTimeout(go,1500);return true}
 async function accSignIn(){if(!ACC.auth){toast(accOn()?'Sign-in is still starting. Try again in a moment.':'Accounts aren’t set up in this copy of the game.');return}if(ACC.busy)return;ACC.busy=true;
  const p=new firebase.auth.GoogleAuthProvider();p.setCustomParameters({prompt:'select_account'});
  try{await ACC.auth.signInWithPopup(p)}catch(e){if(e&&/popup-blocked|operation-not-supported|popup-closed-by-browser/.test(e.code||''))try{await ACC.auth.signInWithRedirect(p)}catch(e2){accErr(e2)}else if(!(e&&/popup-closed-by-user|cancelled-popup/.test(e.code||'')))accErr(e)}finally{ACC.busy=false}}
-async function accSignOut(){if(!ACC.auth)return;try{save();await new Promise(r=>{ACC.db.collection('saves').doc(ACC.user.uid).set({json:JSON.stringify(S),savedAt:S.savedAt||Date.now(),name:(S.avatar&&S.avatar.name)||'',game:'Pocket Billies'}).then(r,r)});await ACC.auth.signOut()}catch(e){accErr(e)}}
+async function accSignOut(){if(!ACC.auth)return;try{save();if(!SAVE_HOLD)await new Promise(r=>{ACC.db.collection('saves').doc(ACC.user.uid).set({json:JSON.stringify(S),savedAt:S.savedAt||Date.now(),saveVersion:SAVE_VERSION,name:(S.avatar&&S.avatar.name)||'',game:'Pocket Billies'}).then(r,r)});await ACC.auth.signOut()}catch(e){accErr(e)}}
 function accErr(e){console.error(e);const c=(e&&e.code)||'';ACC.err=c==='auth/unauthorized-domain'?'This web address isn’t allowed to sign in yet (Firebase → Authentication → Settings → Authorized domains).':c==='permission-denied'?'Your save couldn’t be stored (the database rules don’t allow it).':/network/.test(c)?'No connection: your game is kept in this browser and goes online later.':'Sign-in didn’t work: '+(e&&e.message||c);toast(ACC.err);accRefresh()}
 /* ---------- what shows ---------- */
 const accFace=u=>u.photo?`<img class="acc-ph" src="${esc(u.photo)}" alt="" referrerpolicy="no-referrer">`:`<span class="acc-ph acc-ini">${esc((u.name||'?')[0].toUpperCase())}</span>`;
