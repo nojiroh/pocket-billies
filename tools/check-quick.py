@@ -1227,8 +1227,9 @@ def desktop_steps(b, base, R):
             if not (ROOT / 'game' / 'art' / img).exists(): raise Exception(f'{k}: {img} is missing')
         if len(nat) < 70: raise Exception(f'{len(nat)} nature props (want 70)')
         out.append(f'{len(nat)} nature props in {len(fams)} families (' + ', '.join(f'{f} {n}' for f, n in sorted(fams.items())) + ')')
-        # the wild growth: every outdoor scene grown, nothing it added stands on a path or in the sea
-        bad = json.loads(pg.evaluate("""JSON.stringify((()=>{const C=dioData().sc.props,out=[];for(const [id,sc] of Object.entries(GD.scenes)){if(/^(test_|int_)/.test(id)||sc.indoor||sc.room)continue;const g=(sc.props||[]).filter(p=>p.w===42);if(sc.wild!==42||!g.length){out.push(id+': not grown');continue}
+        # the wild growth: every outdoor scene grown, nothing it added stands on a path or in the sea (test scenes such as
+        # alpha 0.5's Graphics gallery, test: true, are laid out by hand)
+        bad = json.loads(pg.evaluate("""JSON.stringify((()=>{const C=dioData().sc.props,out=[];for(const [id,sc] of Object.entries(GD.scenes)){if(/^(test_|int_)/.test(id)||sc.test||sc.indoor||sc.room)continue;const g=(sc.props||[]).filter(p=>p.w===42);if(sc.wild!==42||!g.length){out.push(id+': not grown');continue}
          for(const p of g){const ch=(sc.tiles[sc.h-1-Math.floor(p.z)]||'')[Math.floor(p.x)],M=C[p.k];if(!M){out.push(id+': '+p.k+' unknown');break}if('pcmbaqheo'.includes(ch)){out.push(id+': '+p.k+' on paved ground');break}if('wd'.includes(ch)&&!(M.grow||'').includes(ch)){out.push(id+': '+p.k+' in water');break}}}return out})())"""))
         if bad: raise Exception('wild growth: ' + '; '.join(bad[:4]))
         grown = pg.evaluate("Object.values(GD.scenes).reduce((n,sc)=>n+(sc.props||[]).filter(p=>p.w===42).length,0)")
