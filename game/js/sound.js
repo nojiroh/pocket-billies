@@ -5,6 +5,52 @@
    song is the same every time), over a bass line, arpeggios or pads and drums. Sound effects are short synth
    recipes. Browsers only allow sound after the player touches the page, so nothing plays until the first tap.
    Settings → Music and Sound effects set the volumes (0 mutes). */
+/* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
+import { expose } from './bridge.js';
+/* eslint-disable no-func-assign */
+expose({
+  AMB: [() => AMB],
+  AMB_BIRDS: [() => AMB_BIRDS],
+  AMB_RARE: [() => AMB_RARE],
+  AUD: [() => AUD],
+  JINGLES: [() => JINGLES],
+  SCALES: [() => SCALES],
+  SONGS: [() => SONGS],
+  ambApply: [() => ambApply, v => (ambApply = v)],
+  ambBird: [() => ambBird, v => (ambBird = v)],
+  ambClank: [() => ambClank, v => (ambClank = v)],
+  ambFade: [() => ambFade, v => (ambFade = v)],
+  ambInit: [() => ambInit, v => (ambInit = v)],
+  ambLife: [() => ambLife, v => (ambLife = v)],
+  ambNearest: [() => ambNearest, v => (ambNearest = v)],
+  ambOut: [() => ambOut, v => (ambOut = v)],
+  ambOwl: [() => ambOwl, v => (ambOwl = v)],
+  ambTick: [() => ambTick, v => (ambTick = v)],
+  ambUpdate: [() => ambUpdate, v => (ambUpdate = v)],
+  ambWhere: [() => ambWhere, v => (ambWhere = v)],
+  audApply: [() => audApply, v => (audApply = v)],
+  audCompose: [() => audCompose, v => (audCompose = v)],
+  audInit: [() => audInit, v => (audInit = v)],
+  audKick: [() => audKick, v => (audKick = v)],
+  audNoise: [() => audNoise, v => (audNoise = v)],
+  audPref: [() => audPref, v => (audPref = v)],
+  audRng: [() => audRng, v => (audRng = v)],
+  audTest: [() => audTest, v => (audTest = v)],
+  audTick: [() => audTick, v => (audTick = v)],
+  audUnlock: [() => audUnlock, v => (audUnlock = v)],
+  audVoice: [() => audVoice, v => (audVoice = v)],
+  jingle: [() => jingle, v => (jingle = v)],
+  mtof: [() => mtof],
+  music: [() => music, v => (music = v)],
+  musicFor: [() => musicFor, v => (musicFor = v)],
+  musicStop: [() => musicStop, v => (musicStop = v)],
+  musicSync: [() => musicSync, v => (musicSync = v)],
+  sfx: [() => sfx, v => (sfx = v)],
+  sfxAt: [() => sfxAt, v => (sfxAt = v)],
+  sfxBattle: [() => sfxBattle, v => (sfxBattle = v)],
+});
+/* eslint-enable no-func-assign */
+/* to-module: end */
 const AUD = {
   ctx: null,
   master: null,
@@ -534,7 +580,7 @@ function audCompose(name) {
   }
   return Object.assign(D, { notes: lead, steps, deg });
 }
-function music(name) {
+export function music(name) {
   AUD.want = name;
   if (!AUD.ctx || AUD.ctx.state !== 'running') {
     return;
@@ -687,7 +733,7 @@ function audTick() {
   }
 }
 /* the music that fits where you are */
-function musicFor() {
+export function musicFor() {
   if (typeof S === 'undefined' || !S || !S.started) return 'hazel';
   if (typeof B !== 'undefined' && B)
     return B.kind === 'trainer' ? (B.T && B.T.who === 'chad' ? 'rival' : 'trainer') : 'wild';
@@ -712,7 +758,7 @@ setInterval(() => {
   } catch (e) {}
 }, 1000);
 /* a short tune that plays once (victory, level up, evolution), after which the place's music comes back */
-function jingle(notes, bpm = 150, type = 'p25') {
+export function jingle(notes, bpm = 150, type = 'p25') {
   if (!audInit() || AUD.ctx.state !== 'running') return;
   const c = AUD.ctx,
     spb = 60 / bpm / 4,
@@ -738,7 +784,7 @@ function jingle(notes, bpm = 150, type = 'p25') {
     g.linearRampToValueAtTime(1, t + 0.8);
   }
 }
-const JINGLES = {
+export const JINGLES = {
   victory: [
     [72, 2],
     [76, 2],
@@ -775,7 +821,7 @@ const JINGLES = {
   ],
 };
 /* ---------- sound effects ---------- */
-function sfx(name, o = {}) {
+export function sfx(name, o = {}) {
   if (!AUD.ctx || AUD.ctx.state !== 'running') return;
   const c = AUD.ctx,
     t = c.currentTime + 0.005,

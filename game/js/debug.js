@@ -2,6 +2,23 @@
 /* ================= DEBUG MENU =================
    Open it from Settings, with Ctrl+Shift+D, or by adding ?debug to the address.
    Everything here edits the current save directly; use Export first if you want a way back. */
+/* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
+import { expose } from './bridge.js';
+/* eslint-disable no-func-assign */
+expose({
+  DBG: [() => DBG],
+  dbgAct: [() => dbgAct, v => (dbgAct = v)],
+  dbgBtn: [() => dbgBtn],
+  dbgRefresh: [() => dbgRefresh, v => (dbgRefresh = v)],
+  dbgSel: [() => dbgSel],
+  dbgSpecies: [() => dbgSpecies, v => (dbgSpecies = v)],
+  debugFps: [() => debugFps, v => (debugFps = v)],
+  debugHTML: [() => debugHTML, v => (debugHTML = v)],
+  openDebug: [() => openDebug, v => (openDebug = v)],
+  settingsReset: [() => settingsReset, v => (settingsReset = v)],
+});
+/* eslint-enable no-func-assign */
+/* to-module: end */
 const DBG = { fps: false, on: /[?&]debug\b/.test(location.search) };
 const dbgSel = (id, opts, val) =>
   `<select id="${id}">${opts.map(([v, n]) => `<option value="${esc(v)}" ${String(v) === String(val) ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select>`;

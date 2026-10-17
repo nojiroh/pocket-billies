@@ -7,6 +7,33 @@
    and measures how far the device keeps up. Your save is not changed: saving is paused and everything is put back
    afterwards. The results go into the debug log. If the app goes to the background (the screen locks), the test waits
    for you and runs that step again. */
+/* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
+import { expose } from './bridge.js';
+import { TALK, talkHide } from './talk.js';
+import { CS, csTeardown } from './cutscene.js';
+import { battleTipHide, fallGL, fallMap } from './opening.js';
+import { closeModal, leaveRoom, modal, render, renderOv, sceneIdAt, toast, walkPick } from './ui.js';
+/* eslint-disable no-func-assign */
+expose({
+  DIAGR: [() => DIAGR, v => (DIAGR = v)],
+  DIAG_PASSES: [() => DIAG_PASSES],
+  STD_EMPTY: [() => STD_EMPTY],
+  STEST: [() => STEST],
+  diagReport: [() => diagReport, v => (diagReport = v)],
+  diagTimersOff: [() => diagTimersOff, v => (diagTimersOff = v)],
+  diagTimersOn: [() => diagTimersOn, v => (diagTimersOn = v)],
+  exportDiagReport: [() => exportDiagReport, v => (exportDiagReport = v)],
+  runDiagTest: [() => runDiagTest, v => (runDiagTest = v)],
+  runFullTest: [() => runFullTest, v => (runFullTest = v)],
+  runQuickTest: [() => runQuickTest],
+  stDiagScenes: [() => stDiagScenes, v => (stDiagScenes = v)],
+  stSceneChecks: [() => stSceneChecks, v => (stSceneChecks = v)],
+  stSleep: [() => stSleep, v => (stSleep = v)],
+  stStats: [() => stStats, v => (stStats = v)],
+  testScenes: [() => testScenes, v => (testScenes = v)],
+});
+/* eslint-enable no-func-assign */
+/* to-module: end */
 const STEST = { on: false, stop: false };
 function stSleep(ms) {
   return new Promise(r => setTimeout(r, ms));

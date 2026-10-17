@@ -9,6 +9,42 @@
    4. A white flash, and the walk scene takes over (cutscene.js): you wake in the dust outside Hazel's lab, the papers
       that fell with you still fluttering down.
    Skip ends the fall at once; without the fall, the step-by-step intro tells it in words. */
+/* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
+import { expose } from './bridge.js';
+import { music, sfx } from './sound.js';
+import { CS, csCaption } from './cutscene.js';
+/* eslint-disable no-func-assign */
+expose({
+  FALL: [() => FALL],
+  FALL_BANDS: [() => FALL_BANDS],
+  FALL_LEGS: [() => FALL_LEGS],
+  FALL_ME: [() => FALL_ME],
+  FALL_PAL: [() => FALL_PAL],
+  FALL_STILLS: [() => FALL_STILLS],
+  LAND: [() => LAND],
+  TUTOR_TIPS: [() => TUTOR_TIPS],
+  battleTip: [() => battleTip, v => (battleTip = v)],
+  battleTipHide: [() => battleTipHide, v => (battleTipHide = v)],
+  battleTutor: [() => battleTutor, v => (battleTutor = v)],
+  fallCam: [() => fallCam, v => (fallCam = v)],
+  fallCanvas: [() => fallCanvas, v => (fallCanvas = v)],
+  fallCrust: [() => fallCrust, v => (fallCrust = v)],
+  fallFont: [() => fallFont, v => (fallFont = v)],
+  fallGL: [() => fallGL, v => (fallGL = v)],
+  fallMap: [() => fallMap, v => (fallMap = v)],
+  fallMe: [() => fallMe, v => (fallMe = v)],
+  fallPlay: [() => fallPlay, v => (fallPlay = v)],
+  fallRnd: [() => fallRnd],
+  fallSky: [() => fallSky, v => (fallSky = v)],
+  fallStill: [() => fallStill, v => (fallStill = v)],
+  fallStreet: [() => fallStreet, v => (fallStreet = v)],
+  landBurst: [() => landBurst, v => (landBurst = v)],
+  landFrame: [() => landFrame, v => (landFrame = v)],
+  tutorSkip: [() => tutorSkip, v => (tutorSkip = v)],
+  tutorTypesTip: [() => tutorTypesTip, v => (tutorTypesTip = v)],
+});
+/* eslint-enable no-func-assign */
+/* to-module: end */
 const FALL = { cv: null, x: null, raf: 0, run: 0, W: 0, H: 0 };
 const fallRnd = (a, b) => {
   let h = (a * 374761393 + b * 668265263) ^ 0x5bd1e995;
@@ -40,7 +76,7 @@ function fallCanvas() {
   return cv;
 }
 /* the walk scene's canvas, ready for the world map's renderer (the map is drawn on it before Sundown is mounted) */
-function fallGL() {
+export function fallGL() {
   if (typeof mglRender !== 'function' || typeof dglGL !== 'function' || EGL.fail || EGL.lost) return null;
   let cv = $('#dio');
   if (!cv) {
@@ -522,7 +558,7 @@ function fallSky(t) {
 }
 /* one still picture of the fall, as an image (cached): 'street', 'crust' or 'sky' at time t */
 const FALL_STILLS = {};
-function fallStill(kind, t, w = 200, h = 124) {
+export function fallStill(kind, t, w = 200, h = 124) {
   const key = kind + '|' + t + '|' + w + 'x' + h;
   if (FALL_STILLS[key]) return FALL_STILLS[key];
   const keep = { cv: FALL.cv, x: FALL.x, W: FALL.W, H: FALL.H },
@@ -578,7 +614,7 @@ function fallCam(k) {
     up = v3.cross(rt, look);
   return { C, fw: look, rt, up, P: S0, foc: Math.min(MW * 0.55, MH * 0.42) };
 }
-function fallMap(run, ms) {
+export function fallMap(run, ms) {
   return new Promise(res0 => {
     const flat = MGL.flat,
       focus = MAP.focus,
@@ -865,7 +901,7 @@ function battleTip(who, text, btn) {
     el.classList.add('off');
   };
 }
-function battleTipHide() {
+export function battleTipHide() {
   const el = $('#btip');
   if (el) {
     clearTimeout(el._t);

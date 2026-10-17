@@ -4,11 +4,40 @@
    your rival Blake runs up the first time you reach him and talks before the battle; trainers talk with their
    portrait before a fight. A trainer's "intro" lines (game data) make the scene; "lines" are what they say in
    battle. S.story remembers which scenes you have seen. */
-function storyFlags() {
+/* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
+import { expose } from './bridge.js';
+import { music } from './sound.js';
+import { TALK, talk, talkHide, talkLine } from './talk.js';
+import { CS, csActor, csFlush, csFrame, csHideDlg, csNow, csSay, csShot, csWait, csWalk } from './cutscene.js';
+import { LORE, loreClue, loreFlags } from './lore.js';
+/* eslint-disable no-func-assign */
+expose({
+  STORY: [() => STORY],
+  blakeHello: [() => blakeHello, v => (blakeHello = v)],
+  csWorldBegin: [() => csWorldBegin, v => (csWorldBegin = v)],
+  csWorldEnd: [() => csWorldEnd, v => (csWorldEnd = v)],
+  legendCheck: [() => legendCheck, v => (legendCheck = v)],
+  openingDone: [() => openingDone, v => (openingDone = v)],
+  openingMark: [() => openingMark, v => (openingMark = v)],
+  personTalk: [() => personTalk, v => (personTalk = v)],
+  rivalScene: [() => rivalScene, v => (rivalScene = v)],
+  storyAfterRival: [() => storyAfterRival, v => (storyAfterRival = v)],
+  storyAfterWin: [() => storyAfterWin, v => (storyAfterWin = v)],
+  storyCheck: [() => storyCheck, v => (storyCheck = v)],
+  storyEnding: [() => storyEnding, v => (storyEnding = v)],
+  storyFlags: [() => storyFlags, v => (storyFlags = v)],
+  storyMovedCheck: [() => storyMovedCheck, v => (storyMovedCheck = v)],
+  storyRivalBattle: [() => storyRivalBattle, v => (storyRivalBattle = v)],
+  storyWorldOK: [() => storyWorldOK, v => (storyWorldOK = v)],
+  trainerTalk: [() => trainerTalk, v => (trainerTalk = v)],
+});
+/* eslint-enable no-func-assign */
+/* to-module: end */
+export function storyFlags() {
   return S.story || (S.story = {});
 }
 /* tap a trainer in the scene, or their Battle button: they talk first, then the battle starts */
-async function trainerTalk(id) {
+export async function trainerTalk(id) {
   const T = TRAINERS[id];
   if (!T) return;
   if (TALK.on || (typeof CS !== 'undefined' && CS.on)) return;
@@ -128,7 +157,7 @@ async function rivalScene(T) {
   startTrainer(T.id, { talked: true });
 }
 /* when you arrive somewhere a story trainer waits, the scene starts by itself */
-function storyCheck() {
+export function storyCheck() {
   if (
     (typeof STEST !== 'undefined' && STEST.on) ||
     U.bench ||
@@ -154,7 +183,7 @@ function storyCheck() {
   }, 1400);
 }
 /* v39: the legendary encounters (rules.legends): one per scene, met when you arrive, once a day until caught */
-function legendCheck() {
+export function legendCheck() {
   if (
     !S.started ||
     B ||
@@ -200,7 +229,7 @@ function legendCheck() {
 }
 const STORY = { pending: null };
 /* alpha 0.4: someone who only talks (scene.people: Granny Juniper): what they say the first time, then a line or two */
-async function personTalk(P) {
+export async function personTalk(P) {
   if (!P || TALK.on || (typeof CS !== 'undefined' && CS.on)) return;
   const F = storyFlags(),
     k = 'met_' + P.id,
@@ -218,7 +247,7 @@ async function personTalk(P) {
   if (lines.length && typeof talk === 'function') await talk(lines.map(l => [P.who, l]));
 }
 /* alpha 0.4: a game begun before Copperleaf: the lab and your room have moved, and you are told once */
-function storyMovedCheck() {
+export function storyMovedCheck() {
   if (
     !S.started ||
     B ||
@@ -275,7 +304,7 @@ function openingMark() {
     localStorage.setItem('nw-opening-done', '1');
   } catch (e) {}
 }
-function storyRivalBattle(o = {}) {
+export function storyRivalBattle(o = {}) {
   const t0 = performance.now(),
     go = async () => {
       if (B || !S.started) return;

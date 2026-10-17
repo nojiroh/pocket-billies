@@ -3,6 +3,54 @@
    Daily challenges, townsfolk with requests, two gold stamps hidden in every place, your own room (in Copperleaf since alpha 0.4) to
    decorate, photo mode, and battles that feel the weather. Everything lives in S.x, which an older save gets the
    first time it's needed. */
+/* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
+import { expose } from './bridge.js';
+import { sfx } from './sound.js';
+import { TALK, talk } from './talk.js';
+/* eslint-disable no-func-assign */
+expose({
+  FURN: [() => FURN],
+  HOME_SLOTS: [() => HOME_SLOTS],
+  PHOTO_FILTERS: [() => PHOTO_FILTERS],
+  STAMP_SPOTS: [() => STAMP_SPOTS],
+  X28_BWX: [() => X28_BWX],
+  X28_BWX_TEXT: [() => X28_BWX_TEXT],
+  X28_CH: [() => X28_CH],
+  X28_REQ: [() => X28_REQ],
+  _homeApply: [() => _homeApply, v => (_homeApply = v)],
+  battleWeatherMult: [() => battleWeatherMult, v => (battleWeatherMult = v)],
+  battleWx: [() => battleWx, v => (battleWx = v)],
+  chalCard: [() => chalCard, v => (chalCard = v)],
+  chalClaim: [() => chalClaim, v => (chalClaim = v)],
+  chalHave: [() => chalHave],
+  chalText: [() => chalText],
+  chalToday: [() => chalToday, v => (chalToday = v)],
+  furnFits: [() => furnFits],
+  homeApply: [() => homeApply, v => (homeApply = v)],
+  homeDecorate: [() => homeDecorate, v => (homeDecorate = v)],
+  photoEnd: [() => photoEnd, v => (photoEnd = v)],
+  photoFilter: [() => photoFilter, v => (photoFilter = v)],
+  photoShot: [() => photoShot, v => (photoShot = v)],
+  photoStart: [() => photoStart, v => (photoStart = v)],
+  reqAsker: [() => reqAsker, v => (reqAsker = v)],
+  reqHere: [() => reqHere, v => (reqHere = v)],
+  reqList: [() => reqList, v => (reqList = v)],
+  reqTalk: [() => reqTalk, v => (reqTalk = v)],
+  stampCount: [() => stampCount],
+  stampDraw: [() => stampDraw, v => (stampDraw = v)],
+  stampScenes: [() => stampScenes, v => (stampScenes = v)],
+  stampSpots: [() => stampSpots, v => (stampSpots = v)],
+  stampTile: [() => stampTile, v => (stampTile = v)],
+  stampTotal: [() => stampTotal],
+  x28: [() => x28, v => (x28 = v)],
+  x28Event: [() => x28Event, v => (x28Event = v)],
+  x28Reward: [() => x28Reward, v => (x28Reward = v)],
+  x28Rnd: [() => x28Rnd, v => (x28Rnd = v)],
+  x28TeamOf: [() => x28TeamOf],
+  x28Types: [() => x28Types],
+});
+/* eslint-enable no-func-assign */
+/* to-module: end */
 function x28() {
   const X = S.x || (S.x = {});
   X.stamps = X.stamps || {};
@@ -110,7 +158,7 @@ function x28Event(k, o = {}) {
       }
   if (ch) save();
 }
-function chalCard() {
+export function chalCard() {
   if (!S.started) return '';
   const C = chalToday();
   return `<section class="chal px glass"><div class="sec-h"><h2>Today’s challenges</h2><span class="count tnum">${C.list.filter(c => c.claimed).length}/${C.list.length}</span></div>${C.list
@@ -251,7 +299,7 @@ async function reqTalk(f) {
   f.wait = 2;
 }
 /* requests you've taken on, wherever you are */
-function reqList() {
+export function reqList() {
   const X = x28();
   return Object.entries(X.reqs)
     .filter(([, q]) => q.state === 'accepted')
@@ -338,7 +386,7 @@ function stampDraw(quad, glows, t) {
     }
   });
 }
-function stampTile(tile) {
+export function stampTile(tile) {
   return tile(
     uiIco('spark', 14),
     'Gold stamps',
@@ -382,7 +430,7 @@ const HOME_SLOTS = [
   { x: 7, z: 3.9, n: 'Floor (rug)', rug: 1 },
 ];
 const furnFits = (k, s) => (s.wall ? /^wall_/.test(k) : s.rug ? /^rug_/.test(k) : !/^wall_|^rug_/.test(k));
-function homeApply() {
+export function homeApply() {
   _homeApply();
   if (typeof roomRefresh === 'function') roomRefresh();
 }
@@ -398,7 +446,7 @@ function _homeApply() {
     }).filter(Boolean)
   );
 }
-function homeDecorate() {
+export function homeDecorate() {
   const X = x28(),
     own = X.home.own;
   const row = (s, i) => {

@@ -4,6 +4,28 @@
    made by tools/build-postcards.py from the game's own renderer), "Greetings from" in a hand and the town's name in
    big letters, a stamp with the town's flag. It goes into the Guide, on its Postcards page, the moment it comes; tap it or wait and it slides away. On later visits
    a small stamp shows in the corner for a moment. S.cards keeps them: {town id: the day you got it}. */
+/* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
+import { expose } from './bridge.js';
+import { sfx } from './sound.js';
+import { TALK } from './talk.js';
+import { CS } from './cutscene.js';
+import { FLY } from './airship.js';
+/* eslint-disable no-func-assign */
+expose({
+  PC: [() => PC],
+  pcCards: [() => pcCards, v => (pcCards = v)],
+  pcFlag: [() => pcFlag, v => (pcFlag = v)],
+  pcFree: [() => pcFree, v => (pcFree = v)],
+  pcHere: [() => pcHere, v => (pcHere = v)],
+  pcImg: [() => pcImg, v => (pcImg = v)],
+  pcTowns: [() => pcTowns, v => (pcTowns = v)],
+  postcardCheck: [() => postcardCheck, v => (postcardCheck = v)],
+  postcardShow: [() => postcardShow, v => (postcardShow = v)],
+  postcardStamp: [() => postcardStamp, v => (postcardStamp = v)],
+  renderPostcards: [() => renderPostcards, v => (renderPostcards = v)],
+});
+/* eslint-enable no-func-assign */
+/* to-module: end */
 const PC = { last: null, on: false };
 function pcCards() {
   return S.cards || (S.cards = {});
@@ -47,7 +69,7 @@ function pcFree() {
   if (typeof DIO !== 'undefined' && !DIO.ready) return false;
   return true;
 }
-function postcardCheck() {
+export function postcardCheck() {
   if (!pcFree()) {
     PC.calm = 0;
     return;
@@ -133,7 +155,7 @@ function postcardStamp(n) {
   }, 2600);
 }
 /* the Guide's Postcards page */
-function renderPostcards() {
+export function renderPostcards() {
   const T = pcTowns(),
     C = pcCards(),
     got = T.filter(i => C[ROUTE[i].id]).length;

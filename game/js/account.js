@@ -5,6 +5,31 @@
    Signing in or out switches whose save is loaded (the page reloads once; js/core.js picks the save by account).
    The first time someone signs in on a browser that already has a game, they are asked whether to bring it along.
    The Firebase project is set in js/account-config.js; without it there is no sign-in button. */
+/* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
+import { expose } from './bridge.js';
+import { TITLE, titleStart } from './title.js';
+import { frInit } from './friends.js';
+/* eslint-disable no-func-assign */
+expose({
+  ACC: [() => ACC],
+  ACC_SDK: [() => ACC_SDK],
+  accChipHTML: [() => accChipHTML, v => (accChipHTML = v)],
+  accErr: [() => accErr, v => (accErr = v)],
+  accFace: [() => accFace],
+  accFlush: [() => accFlush, v => (accFlush = v)],
+  accG: [() => accG],
+  accInit: [() => accInit, v => (accInit = v)],
+  accOn: [() => accOn, v => (accOn = v)],
+  accPull: [() => accPull, v => (accPull = v)],
+  accRefresh: [() => accRefresh, v => (accRefresh = v)],
+  accScript: [() => accScript, v => (accScript = v)],
+  accSettingsHTML: [() => accSettingsHTML, v => (accSettingsHTML = v)],
+  accSignIn: [() => accSignIn, v => (accSignIn = v)],
+  accSignOut: [() => accSignOut, v => (accSignOut = v)],
+  accState: [() => accState, v => (accState = v)],
+});
+/* eslint-enable no-func-assign */
+/* to-module: end */
 const ACC = {
   cfg: window.PB_FIREBASE || null,
   ready: false,
@@ -32,7 +57,7 @@ function accScript(src) {
     document.head.appendChild(s);
   });
 }
-async function accInit() {
+export async function accInit() {
   if (!accOn()) return;
   try {
     for (const f of ['firebase-app-compat.js', 'firebase-auth-compat.js', 'firebase-firestore-compat.js'])

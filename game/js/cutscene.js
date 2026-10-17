@@ -7,7 +7,52 @@
    the starters. Pick one, and her other student Blake runs in, takes the one that beats yours and battles you on the
    spot (opening.js battleTutor, story.js storyAfterRival).
    If the cutscene can't run or stops, the older step-by-step intro in ui.js runs instead. */
-const CS = {
+/* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
+import { expose } from './bridge.js';
+import { music, sfx } from './sound.js';
+import { TALK, talkHide, talkLine } from './talk.js';
+/* eslint-disable no-func-assign */
+expose({
+  CS: [() => CS],
+  CS_SPOT: [() => CS_SPOT],
+  csAbort: [() => csAbort, v => (csAbort = v)],
+  csAct: [() => csAct, v => (csAct = v)],
+  csActor: [() => csActor, v => (csActor = v)],
+  csBlink: [() => csBlink, v => (csBlink = v)],
+  csCamNow: [() => csCamNow, v => (csCamNow = v)],
+  csCaption: [() => csCaption, v => (csCaption = v)],
+  csChoose: [() => csChoose, v => (csChoose = v)],
+  csEase: [() => csEase],
+  csEnd: [() => csEnd, v => (csEnd = v)],
+  csFlush: [() => csFlush, v => (csFlush = v)],
+  csFrame: [() => csFrame, v => (csFrame = v)],
+  csHTML: [() => csHTML, v => (csHTML = v)],
+  csHideDlg: [() => csHideDlg, v => (csHideDlg = v)],
+  csNow: [() => csNow],
+  csPersonItem: [() => csPersonItem, v => (csPersonItem = v)],
+  csPickFocus: [() => csPickFocus, v => (csPickFocus = v)],
+  csPickHTML: [() => csPickHTML, v => (csPickHTML = v)],
+  csPickSel: [() => csPickSel, v => (csPickSel = v)],
+  csPlace: [() => csPlace, v => (csPlace = v)],
+  csPortraitTick: [() => csPortraitTick, v => (csPortraitTick = v)],
+  csSay: [() => csSay, v => (csSay = v)],
+  csSceneId: [() => csSceneId, v => (csSceneId = v)],
+  csScript: [() => csScript, v => (csScript = v)],
+  csShot: [() => csShot, v => (csShot = v)],
+  csSkip: [() => csSkip, v => (csSkip = v)],
+  csSparkle: [() => csSparkle, v => (csSparkle = v)],
+  csStarItem: [() => csStarItem, v => (csStarItem = v)],
+  csStart: [() => csStart, v => (csStart = v)],
+  csStartName: [() => csStartName],
+  csTap: [() => csTap, v => (csTap = v)],
+  csTeardown: [() => csTeardown, v => (csTeardown = v)],
+  csWait: [() => csWait, v => (csWait = v)],
+  csWalk: [() => csWalk, v => (csWalk = v)],
+  csWanted: [() => csWanted, v => (csWanted = v)],
+});
+/* eslint-enable no-func-assign */
+/* to-module: end */
+export const CS = {
   on: false,
   run: 0,
   skip: false,
@@ -42,7 +87,7 @@ const CS_SPOT = {
   blake: [12.55, 12.7],
   blakeFrom: [16.4, 12.1],
 };
-const csNow = () => performance.now();
+export const csNow = () => performance.now();
 /* v46: where the opening scene is filmed: in front of the lab's door, wherever the lab stands in Sundown */
 function csPlace(sc) {
   let o = [0, 0];
@@ -74,7 +119,7 @@ const csEase = k => (k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2);
 /* v47b: the opening (and the title behind it) is filmed in the same view of Sundown the game then walks in: the town
    with the first stretch of each road. So nothing is built again between the title, the opening, Blake's battle
    and your first steps (it was a pause of most of a second as the battle began) */
-function csSceneId() {
+export function csSceneId() {
   const id = sceneIdAt(START_NODE);
   try {
     const v = typeof wrRoamView === 'function' ? wrRoamView(START_NODE, null) : null;
@@ -84,7 +129,7 @@ function csSceneId() {
   }
   return id;
 }
-function csWanted() {
+export function csWanted() {
   return (
     typeof eglOK === 'function' &&
     !EGL.fail &&
@@ -94,11 +139,11 @@ function csWanted() {
   );
 }
 /* alpha 0.4: the start's name, for the opening's caption (Copperleaf Town) */
-const csStartName = () =>
+export const csStartName = () =>
   typeof placeFull === 'function' && ROUTE[START_NODE] ? placeFull(ROUTE[START_NODE]) : 'the Hollow Earth';
 
 /* ---------- timing helpers: everything resolves at once while skipping ---------- */
-function csWait(ms) {
+export function csWait(ms) {
   if (CS.skip || !CS.on) return Promise.resolve();
   return new Promise(r => {
     const id = setTimeout(done, ms);
@@ -110,7 +155,7 @@ function csWait(ms) {
     CS.waits.push(done);
   });
 }
-function csFlush() {
+export function csFlush() {
   const w = CS.waits.slice();
   CS.waits = [];
   w.forEach(f => f());
@@ -134,7 +179,7 @@ function csCamNow() {
     w: (c.a.w || 0) + ((c.b.w || 0) - (c.a.w || 0)) * k,
   };
 }
-function csShot(K, ms = 0) {
+export function csShot(K, ms = 0) {
   K = Object.assign({ fov: 40, w: 0 }, K);
   /* v46: the shots were framed for the lab's door at CS_SPOT.door; they move with the lab (csPlace) */ if (
     !K.abs &&
@@ -150,11 +195,11 @@ function csShot(K, ms = 0) {
   return csWait(ms);
 }
 /* ---------- actors ---------- */
-function csActor(id, who, at, dir) {
+export function csActor(id, who, at, dir) {
   CS.actors[id] = { id, who, x: at[0], z: at[1], dir: dir || 'down', walk: null, act: null, actT: 0 };
   return CS.actors[id];
 }
-function csWalk(id, to, ms) {
+export function csWalk(id, to, ms) {
   const a = CS.actors[id];
   a.walk = { x0: a.x, z0: a.z, x1: to[0], z1: to[1], t0: csNow(), dur: ms };
   a.dir = dioDirOf(to[0] - a.x, to[1] - a.z);
@@ -228,7 +273,7 @@ function csStarItem(s, t) {
   };
 }
 /* ---------- what the engine draws: DIO.director.frame ---------- */
-function csFrame() {
+export function csFrame() {
   if (!CS.on) return null;
   const t = DIO.t,
     C0 = dioData().sc,
@@ -342,7 +387,7 @@ function csHTML() {
  <div class="cs-pick px" id="csPick" hidden></div>
  <div class="cs-fade" id="csFade"></div>`;
 }
-function csCaption(sub, title, ms = 3200) {
+export function csCaption(sub, title, ms = 3200) {
   const c = $('#csCap');
   if (!c || CS.skip) return;
   c.querySelector('small').textContent = sub;
@@ -351,7 +396,7 @@ function csCaption(sub, title, ms = 3200) {
   setTimeout(() => c.classList.remove('on'), ms);
 }
 /* one line of dialogue in the shared dialogue box (talk.js) */
-function csSay(who, text, expr) {
+export function csSay(who, text, expr) {
   if (CS.skip || !CS.on) return Promise.resolve();
   const pr = talkLine(who, text, expr, { cs: true });
   CS.say = TALK.cur;
@@ -359,7 +404,7 @@ function csSay(who, text, expr) {
     if (CS.say && !CS.say.typing) CS.say = null;
   });
 }
-function csHideDlg() {
+export function csHideDlg() {
   talkHide();
   CS.say = null;
 }
@@ -439,7 +484,7 @@ function csPickSel(d) {
 }
 
 /* ---------- the script ---------- */
-async function csStart() {
+export async function csStart() {
   if (CS.on) return;
   const id = csSceneId();
   CS.on = true;
@@ -786,7 +831,7 @@ async function csScript(run) {
   if (!alive()) return;
   csEnd(l);
 }
-function csTeardown() {
+export function csTeardown() {
   talkHide();
   CS.on = false;
   CS.run++;

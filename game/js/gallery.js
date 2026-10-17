@@ -3,6 +3,18 @@
    Settings → Graphics → Expert → "See it" takes you to a small place built to show each dial (made by tools/build-gallery.py, now on the legacy branch):
    you stand at the station for that dial, and a panel over the scene holds the dial itself, so you can switch it and
    watch what changes. Day and night swap at a tap (lamps need the dark). "Leave" brings you back to your settings. */
+/* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
+import { expose } from './bridge.js';
+/* eslint-disable no-func-assign */
+expose({
+  GAL: [() => GAL],
+  GALLERY_AT: [() => GALLERY_AT],
+  galleryClose: [() => galleryClose, v => (galleryClose = v)],
+  galleryOpen: [() => galleryOpen, v => (galleryOpen = v)],
+  galleryPanel: [() => galleryPanel, v => (galleryPanel = v)],
+});
+/* eslint-enable no-func-assign */
+/* to-module: end */
 const GALLERY_AT = {
   'shadows.strength': 'grove',
   'shadows.selfShade': 'grove',
