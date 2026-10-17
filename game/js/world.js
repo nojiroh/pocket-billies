@@ -151,7 +151,7 @@ function wrRoad(i) {
 }
 /* ---------- alpha 0.2: places joined edge to edge ----------
    Two linked places meet at their exits: B's edge lies against A's, B placed so that its exit is exactly across from
-   A's (tools/join-places.py makes every link's two exits face each other, east to west or north to south). A place's
+   A's (tools/join-places.py, now on the legacy branch, made every link's two exits face each other, east to west or north to south). A place's
    view is the place itself with a band of each neighbour where they meet (WR_JD deep, WR_JW either side of the exit,
    never past the place's own edge, two neighbours on one side sharing it half and half); around that lies
    countryside you can't walk into. The ground eases across every seam (heights over 8 m each side, a ragged line

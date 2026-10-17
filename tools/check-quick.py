@@ -1268,7 +1268,7 @@ def desktop_steps(b, base, R):
          sc.edgeExits.forEach((e,k)=>{const p=dioExitPoint(sc,e),q=sc.exits[k];if(!e.id||!'NSEW'.includes(e.side)||Math.hypot(p[0]-q[0],p[1]-q[1])>.02)out.push(id+' '+(e.id||k)+': '+JSON.stringify(p)+' vs '+JSON.stringify(q))})}return out})())"""))
         if ex: raise Exception('edge exits: ' + '; '.join(ex[:4]))
         n_ex = pg.evaluate("Object.values(GD.scenes).reduce((n,sc)=>n+((sc.edgeExits||[]).length),0)")
-        # the join table: every road's ends name an exit of their place (alpha 0.2: the names decide; tools/join-places.py
+        # the join table: every road's ends name an exit of their place (alpha 0.2: the names decide; tools/join-places.py on the legacy branch
         # moved exits so the two ends of a road face each other, so the old compass match no longer has a say)
         diff = json.loads(pg.evaluate("""JSON.stringify((()=>{const out=[];let joined=0;for(let n=0;n<ROUTE.length;n++){const sc=dioScene(sceneIdAt(n));if(!sc||!(sc.exits||[]).length)continue;const a=sceneExits(n);for(const e of ADJ[n]){const L=LINKS[e.i],id=L[3]&&(L[0]===n?L[3].a:L[3].b);if(id&&(sc.edgeExits||[]).some(q=>q.id===id))joined++;else out.push(ROUTE[n].name+' -> '+ROUTE[e.to].name+': no exit named '+id);if(a[e.to]==null)out.push(ROUTE[n].name+' -> '+ROUTE[e.to].name+': no exit')}}return {out,joined}})())"""))
         if diff['out']: raise Exception('join table: ' + '; '.join(diff['out'][:4]))
