@@ -292,6 +292,7 @@ function wrAdj(S, sid) {
   return wrFix('adj' + sid, () => {
     const L = [];
     for (let i = 0; i < LINKS.length; i++) {
+      if (sceneIdAt(LINKS[i][0]) !== sid && sceneIdAt(LINKS[i][1]) !== sid) continue; /* only this place's seams */
       const Q = wrSeamOf(i);
       if (!Q) continue;
       if (Q.aId === sid) L.push([Q, 1]);
