@@ -1,5 +1,59 @@
 'use strict';
 /* ================= POCKET BILLIES STUDIO · world, rules, art ================= */
+/* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
+import { expose } from '../../game/js/bridge.js';
+import {
+  ACTS,
+  SECTIONS,
+  ST,
+  after,
+  api,
+  ask,
+  card,
+  changed,
+  clone,
+  commit,
+  fChk,
+  fColor,
+  fNum,
+  fSel,
+  fText,
+  fmtN,
+  getP,
+  grid,
+  render,
+  spName,
+  spOpts,
+  toast,
+  typeOpts,
+  uidKey,
+} from './core.js';
+import { fileToCanvas, loadImage, markArt, mountPreviews, pickFile, prevCanvas } from './sprites.js';
+import { RAR_NAMES } from './sections.js';
+/* eslint-disable no-func-assign */
+expose({
+  AMBS: [() => AMBS],
+  ART_GROUPS: [() => ART_GROUPS],
+  FISH_KN: [() => FISH_KN],
+  STOP_KINDS: [() => STOP_KINDS],
+  WORLD_IMG: [() => WORLD_IMG, v => (WORLD_IMG = v)],
+  bindWorldMap: [() => bindWorldMap, v => (bindWorldMap = v)],
+  drawWorldMarkers: [() => drawWorldMarkers, v => (drawWorldMarkers = v)],
+  lonlatXY: [() => lonlatXY, v => (lonlatXY = v)],
+  roadsHTML: [() => roadsHTML, v => (roadsHTML = v)],
+  stopRoads: [() => stopRoads, v => (stopRoads = v)],
+  weightTable: [() => weightTable, v => (weightTable = v)],
+  worldBackdrops: [() => worldBackdrops, v => (worldBackdrops = v)],
+  worldEggs: [() => worldEggs, v => (worldEggs = v)],
+  worldFishing: [() => worldFishing, v => (worldFishing = v)],
+  worldMapHTML: [() => worldMapHTML, v => (worldMapHTML = v)],
+  worldPools: [() => worldPools, v => (worldPools = v)],
+  worldRegions: [() => worldRegions, v => (worldRegions = v)],
+  worldRoute: [() => worldRoute, v => (worldRoute = v)],
+  xpLine: [() => xpLine, v => (xpLine = v)],
+});
+/* eslint-enable no-func-assign */
+/* to-module: end */
 const STOP_KINDS = [
   'city',
   'town',
@@ -543,7 +597,7 @@ function worldRegions() {
     )
   );
 }
-const AMBS = [
+export const AMBS = [
   ['pollen', 'Pollen'],
   ['spore', 'Spores'],
   ['drip', 'Drips'],

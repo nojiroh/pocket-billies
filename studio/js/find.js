@@ -4,6 +4,31 @@
    numbered setting on the Rules, Types, Items and Jobs pages, every section, and the things you edit: Billies, moves,
    items, coins, trainers, shops, people, places, route stops and props. Pick a result and the Studio opens it, scrolls
    to the setting and makes it blink. */
+/* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
+import { expose } from '../../game/js/bridge.js';
+import { ACTS, NAV, SECTIONS, ST, clone, go, toast } from './core.js';
+import { ENS, engRefresh } from './engine.js';
+/* eslint-disable no-func-assign */
+expose({
+  FIND: [() => FIND],
+  FIND_KIND: [() => FIND_KIND],
+  findBuild: [() => findBuild, v => (findBuild = v)],
+  findClose: [() => findClose, v => (findClose = v)],
+  findEngine: [() => findEngine, v => (findEngine = v)],
+  findField: [() => findField, v => (findField = v)],
+  findFlash: [() => findFlash, v => (findFlash = v)],
+  findIdx: [() => findIdx, v => (findIdx = v)],
+  findMark: [() => findMark, v => (findMark = v)],
+  findNorm: [() => findNorm],
+  findOpen: [() => findOpen, v => (findOpen = v)],
+  findPageFields: [() => findPageFields, v => (findPageFields = v)],
+  findPick: [() => findPick, v => (findPick = v)],
+  findRun: [() => findRun, v => (findRun = v)],
+  findSel: [() => findSel],
+  findShow: [() => findShow, v => (findShow = v)],
+});
+/* eslint-enable no-func-assign */
+/* to-module: end */
 const FIND = { idx: null, key: '', res: [], at: 0, q: '' };
 const findNorm = s =>
   String(s || '')
@@ -11,7 +36,7 @@ const findNorm = s =>
     .normalize('NFD')
     .replace(/[̀-ͯ]/g, '');
 /* ---- going to things ---- */
-function findFlash(sel, tries = 0) {
+export function findFlash(sel, tries = 0) {
   const el = typeof sel === 'string' ? document.querySelector(sel) : sel;
   if (!el) {
     if (tries < 25) setTimeout(() => findFlash(sel, tries + 1), 80);
@@ -34,12 +59,12 @@ function findFlash(sel, tries = 0) {
     }, 350);
   if (typeof linkNote === 'function') linkNote(el.dataset.p || el.dataset.path || '');
 }
-const findSel = p => `[data-p="${CSS.escape(p)}"],[data-path="${CSS.escape(p)}"]`;
-function findField(sec, p, sel) {
+export const findSel = p => `[data-p="${CSS.escape(p)}"],[data-path="${CSS.escape(p)}"]`;
+export function findField(sec, p, sel) {
   if (ST.sec !== sec || sel) go(sec, sel);
   findFlash(findSel(p));
 }
-function findEngine(g, k) {
+export function findEngine(g, k) {
   ENS.scope = 'game';
   ENS.open[g] = 1;
   if (ST.sec === 'engine') engRefresh();

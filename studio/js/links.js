@@ -7,6 +7,37 @@
      its id, both ways
    - an engine dial: where its value comes from (built in, the whole game, a scene's own look, presets), which dials
      it needs to do anything, which dials only matter when it is on, and when the game's automatic quality turns it off */
+/* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
+import { expose } from '../../game/js/bridge.js';
+import { ACTS, ST, go, spName } from './core.js';
+import { curLine } from './sections.js';
+import { SCN, scId } from './scenes.js';
+import { ENS, engD, engFmt } from './engine.js';
+import { findEngine, findField, findFlash, findSel } from './find.js';
+/* eslint-disable no-func-assign */
+expose({
+  ENG_NEEDS: [() => ENG_NEEDS],
+  ENG_QOFF: [() => ENG_QOFF],
+  LNK: [() => LNK],
+  LNK_TEXT: [() => LNK_TEXT],
+  engLabel: [() => engLabel],
+  linkCur: [() => linkCur, v => (linkCur = v)],
+  linkNote: [() => linkNote, v => (linkNote = v)],
+  linkRefresh: [() => linkRefresh, v => (linkRefresh = v)],
+  lnkBox: [() => lnkBox],
+  lnkDial: [() => lnkDial, v => (lnkDial = v)],
+  lnkGraph: [() => lnkGraph, v => (lnkGraph = v)],
+  lnkHTML: [() => lnkHTML, v => (lnkHTML = v)],
+  lnkIds: [() => lnkIds, v => (lnkIds = v)],
+  lnkLines: [() => lnkLines, v => (lnkLines = v)],
+  lnkMap: [() => lnkMap, v => (lnkMap = v)],
+  lnkNode: [() => lnkNode, v => (lnkNode = v)],
+  lnkOwner: [() => lnkOwner, v => (lnkOwner = v)],
+  lnkRecord: [() => lnkRecord, v => (lnkRecord = v)],
+  lnkWalk: [() => lnkWalk, v => (lnkWalk = v)],
+});
+/* eslint-enable no-func-assign */
+/* to-module: end */
 const LNK = { open: false, field: '' };
 /* engine dials that need another one to be on; and the quality step (or device) that turns them off */
 const ENG_NEEDS = {

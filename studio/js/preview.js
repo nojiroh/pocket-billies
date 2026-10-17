@@ -2,6 +2,41 @@
 /* ================= POCKET BILLIES STUDIO · battle preview =================
    Runs the game's own battle stage (game/js/scene.js) inside the Studio, fed by the Studio's unsaved data and art,
    so moves, backdrops and new billionaires can be checked without starting the game. */
+/* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
+import { expose } from '../../game/js/bridge.js';
+import {
+  ACTS,
+  SECTIONS,
+  ST,
+  after,
+  card,
+  fColor,
+  fRange,
+  fSel,
+  go,
+  moveOpts,
+  peopleOpts,
+  render,
+  spOpts,
+} from './core.js';
+import { atlasGet, atlasPath, rigFor } from './sprites.js';
+import { AMBS } from './world.js';
+/* eslint-disable no-func-assign */
+expose({
+  BP: [() => BP],
+  battleFreeArea: [() => battleFreeArea, v => (battleFreeArea = v)],
+  battleLayoutChanged: [() => battleLayoutChanged, v => (battleLayoutChanged = v)],
+  bpApplyBackdrop: [() => bpApplyBackdrop, v => (bpApplyBackdrop = v)],
+  bpDefaults: [() => bpDefaults, v => (bpDefaults = v)],
+  bpEv: [() => bpEv],
+  bpMove: [() => bpMove, v => (bpMove = v)],
+  bpScene: [() => bpScene, v => (bpScene = v)],
+  bpStart: [() => bpStart, v => (bpStart = v)],
+  hudHit: [() => hudHit, v => (hudHit = v)],
+  hudPop: [() => hudPop, v => (hudPop = v)],
+});
+/* eslint-enable no-func-assign */
+/* to-module: end */
 rigParts = (sp, gold, k) => rigFor(sp, k === 1 ? 'front' : 'back', !!gold);
 const BP = {
   stage: 'backdrop',

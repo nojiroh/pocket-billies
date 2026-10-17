@@ -3,6 +3,54 @@
    art/map/world.png is the inside of the sphere, unrolled (longitude across, latitude down).
    Paint it directly, repaint the trail along the route stops (the same path the game walks), and move a stop's painted
    patch along with the stop. Holes are filled from the surrounding terrain. */
+/* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
+import { expose } from '../../game/js/bridge.js';
+import { ST, after, ask, card, changed, commit, fmtN, render, toast } from './core.js';
+import { atlasGet, atlasNow, markArt } from './sprites.js';
+/* eslint-disable no-func-assign */
+expose({
+  D2R_: [() => D2R_],
+  MP: [() => MP],
+  MPW: [() => MPW],
+  WORLD_PATH: [() => WORLD_PATH],
+  c32hex: [() => c32hex],
+  carryPatch: [() => carryPatch, v => (carryPatch = v)],
+  dirOf: [() => dirOf, v => (dirOf = v)],
+  eraseTrailAll: [() => eraseTrailAll, v => (eraseTrailAll = v)],
+  gamePath: [() => gamePath, v => (gamePath = v)],
+  hex32: [() => hex32],
+  inpaint: [() => inpaint, v => (inpaint = v)],
+  llv_: [() => llv_],
+  mpBind: [() => mpBind, v => (mpBind = v)],
+  mpCenter: [() => mpCenter, v => (mpCenter = v)],
+  mpCommitPixels: [() => mpCommitPixels, v => (mpCommitPixels = v)],
+  mpData: [() => mpData, v => (mpData = v)],
+  mpDisp: [() => mpDisp],
+  mpDraw: [() => mpDraw, v => (mpDraw = v)],
+  mpFill: [() => mpFill, v => (mpFill = v)],
+  mpGlobe: [() => mpGlobe, v => (mpGlobe = v)],
+  mpHint: [() => mpHint, v => (mpHint = v)],
+  mpMarkers: [() => mpMarkers, v => (mpMarkers = v)],
+  mpMount: [() => mpMount, v => (mpMount = v)],
+  mpPalette: [() => mpPalette, v => (mpPalette = v)],
+  mpPush: [() => mpPush, v => (mpPush = v)],
+  mpRedo: [() => mpRedo, v => (mpRedo = v)],
+  mpScrollTo: [() => mpScrollTo, v => (mpScrollTo = v)],
+  mpSetColor: [() => mpSetColor, v => (mpSetColor = v)],
+  mpStamp: [() => mpStamp, v => (mpStamp = v)],
+  mpUndo: [() => mpUndo, v => (mpUndo = v)],
+  mpView: [() => mpView, v => (mpView = v)],
+  paintTrail: [() => paintTrail, v => (paintTrail = v)],
+  plotDisc: [() => plotDisc, v => (plotDisc = v)],
+  slerp_: [() => slerp_, v => (slerp_ = v)],
+  trailSet: [() => trailSet, v => (trailSet = v)],
+  uvOf: [() => uvOf, v => (uvOf = v)],
+  v3s: [() => v3s],
+  worldPaint: [() => worldPaint, v => (worldPaint = v)],
+  wrapU: [() => wrapU],
+});
+/* eslint-enable no-func-assign */
+/* to-module: end */
 const MP = {
   off: null,
   tool: 'brush',

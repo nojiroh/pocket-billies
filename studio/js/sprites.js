@@ -3,20 +3,81 @@
    Billionaire art lives in four atlases per species (front, back, and their Gold-Plated versions), cut into
    parts by art/rigs.js. The Studio loads those atlases into editable canvases, assembles the skeleton exactly like
    the game does, animates previews, and provides the pixel editor, gold regeneration and recoloring. */
-const ATL = new Map(); /* path -> canvas */
+/* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
+import { expose } from '../../game/js/bridge.js';
+import { ST, ask, render, spName, toast, updTop } from './core.js';
+/* eslint-disable no-func-assign */
+expose({
+  ATL: [() => ATL],
+  ATL_VER: [() => ATL_VER, v => (ATL_VER = v)],
+  ATL_WAIT: [() => ATL_WAIT],
+  FACE_N: [() => FACE_N],
+  GOLD_RAMP: [() => GOLD_RAMP],
+  PREV: [() => PREV],
+  PX_ED: [() => PX_ED],
+  RIGB: [() => RIGB],
+  atlasGet: [() => atlasGet, v => (atlasGet = v)],
+  atlasNow: [() => atlasNow],
+  atlasPath: [() => atlasPath],
+  canvasCopy: [() => canvasCopy, v => (canvasCopy = v)],
+  downloadCanvas: [() => downloadCanvas, v => (downloadCanvas = v)],
+  drawPrev: [() => drawPrev, v => (drawPrev = v)],
+  fileToCanvas: [() => fileToCanvas, v => (fileToCanvas = v)],
+  goldFrom: [() => goldFrom, v => (goldFrom = v)],
+  hsv2rgb: [() => hsv2rgb, v => (hsv2rgb = v)],
+  hueShift: [() => hueShift, v => (hueShift = v)],
+  loadImage: [() => loadImage, v => (loadImage = v)],
+  lumOf: [() => lumOf],
+  markArt: [() => markArt, v => (markArt = v)],
+  mountPreviews: [() => mountPreviews, v => (mountPreviews = v)],
+  openPixelEditor: [() => openPixelEditor, v => (openPixelEditor = v)],
+  partsOf: [() => partsOf, v => (partsOf = v)],
+  pickFile: [() => pickFile, v => (pickFile = v)],
+  prevAct: [() => prevAct, v => (prevAct = v)],
+  prevCanvas: [() => prevCanvas, v => (prevCanvas = v)],
+  prevLoop: [() => prevLoop, v => (prevLoop = v)],
+  prevOn: [() => prevOn, v => (prevOn = v)],
+  previewsDirty: [() => previewsDirty, v => (previewsDirty = v)],
+  pxBind: [() => pxBind, v => (pxBind = v)],
+  pxBindCanvas: [() => pxBindCanvas, v => (pxBindCanvas = v)],
+  pxBones: [() => pxBones, v => (pxBones = v)],
+  pxCanvas: [() => pxCanvas, v => (pxCanvas = v)],
+  pxChanged: [() => pxChanged, v => (pxChanged = v)],
+  pxDraw: [() => pxDraw, v => (pxDraw = v)],
+  pxFill: [() => pxFill, v => (pxFill = v)],
+  pxKeys: [() => pxKeys, v => (pxKeys = v)],
+  pxLine: [() => pxLine, v => (pxLine = v)],
+  pxLoad: [() => pxLoad, v => (pxLoad = v)],
+  pxLoadTools: [() => pxLoadTools, v => (pxLoadTools = v)],
+  pxPalette: [() => pxPalette, v => (pxPalette = v)],
+  pxPath: [() => pxPath, v => (pxPath = v)],
+  pxPlot: [() => pxPlot, v => (pxPlot = v)],
+  pxPos: [() => pxPos, v => (pxPos = v)],
+  pxPush: [() => pxPush, v => (pxPush = v)],
+  pxRedo: [() => pxRedo, v => (pxRedo = v)],
+  pxSetColor: [() => pxSetColor, v => (pxSetColor = v)],
+  pxUndo: [() => pxUndo, v => (pxUndo = v)],
+  rampAt: [() => rampAt, v => (rampAt = v)],
+  rgb2hsv: [() => rgb2hsv, v => (rgb2hsv = v)],
+  rigFor: [() => rigFor, v => (rigFor = v)],
+  spriteCacheClear: [() => spriteCacheClear, v => (spriteCacheClear = v)],
+});
+/* eslint-enable no-func-assign */
+/* to-module: end */
+export const ATL = new Map(); /* path -> canvas */
 const ATL_WAIT = new Map();
 const RIGB = new Map(); /* key -> {ver,R} */
-let ATL_VER = 0;
-const atlasPath = (sp, view, gold) => {
+export let ATL_VER = 0;
+export const atlasPath = (sp, view, gold) => {
   const m = ST.rigs && ST.rigs[sp] && ST.rigs[sp][view];
   if (m && m.sheet) return 'art/' + (gold ? m.sheet.replace(/\.png$/, '_gold.png') : m.sheet);
   return `art/billionaires/${sp}${view === 'back' ? '_back' : ''}${gold ? '_gold' : ''}.png`;
 };
-function spriteCacheClear() {
+export function spriteCacheClear() {
   RIGB.clear();
   ATL_VER++;
 }
-function loadImage(src) {
+export function loadImage(src) {
   return new Promise((res, rej) => {
     const im = new Image();
     im.onload = () => res(im);
@@ -24,7 +85,7 @@ function loadImage(src) {
     im.src = src;
   });
 }
-function atlasGet(path) {
+export function atlasGet(path) {
   if (ST.artDirty.has(path)) return Promise.resolve(ST.artDirty.get(path));
   if (ATL.has(path)) return Promise.resolve(ATL.get(path));
   if (ATL_WAIT.has(path)) return ATL_WAIT.get(path);
@@ -43,9 +104,9 @@ function atlasGet(path) {
   ATL_WAIT.set(path, p);
   return p;
 }
-const atlasNow = path => ST.artDirty.get(path) || ATL.get(path) || null;
+export const atlasNow = path => ST.artDirty.get(path) || ATL.get(path) || null;
 /* assemble a skeleton like rig.js rigParts(), but from the Studio's editable atlas */
-function rigFor(sp, view, gold) {
+export function rigFor(sp, view, gold) {
   const path = atlasPath(sp, view, gold),
     atlas = atlasNow(path);
   if (!atlas) {
@@ -89,10 +150,10 @@ function rigFor(sp, view, gold) {
 /* ---------- previews ---------- */
 const PREV = new Set();
 let prevOn = false;
-function prevCanvas(o) {
+export function prevCanvas(o) {
   return `<canvas class="spr-prev ${o.cls || ''}" data-prev='${esc(JSON.stringify(o))}' width="10" height="10"></canvas>`;
 }
-function mountPreviews(root = document) {
+export function mountPreviews(root = document) {
   $$('canvas[data-prev]', root).forEach(c => {
     if (c._p) return;
     const o = JSON.parse(c.dataset.prev);
@@ -105,7 +166,7 @@ function mountPreviews(root = document) {
     requestAnimationFrame(prevLoop);
   }
 }
-function prevAct(c, act) {
+export function prevAct(c, act) {
   if (c && c._p) {
     c._p.act = act;
     c._p.t0 = performance.now();
@@ -158,7 +219,7 @@ function prevLoop(ts) {
   if (any) requestAnimationFrame(prevLoop);
   else prevOn = false;
 }
-function previewsDirty() {
+export function previewsDirty() {
   for (const c of PREV) c._p.dirty = 1;
 }
 /* ---------- color tools ---------- */
@@ -182,7 +243,7 @@ function rampAt(L) {
   return GOLD_RAMP[GOLD_RAMP.length - 1][1];
 }
 /* Gold-Plated version from the normal art: tint toward a gold ramp by brightness; outlines, eyes and highlights keep most of their color */
-function goldFrom(src, strength = 0.6) {
+export function goldFrom(src, strength = 0.6) {
   const c = cnv(src.width, src.height),
     x = c.getContext('2d');
   x.drawImage(src, 0, 0);
@@ -242,7 +303,7 @@ function hsv2rgb(h, s, v) {
   return [(r + m) * 255, (g + m) * 255, (b + m) * 255];
 }
 /* recolor: rotate the hue of colorful pixels (skin-ish and grey pixels are left alone when protectSkin is on) */
-function hueShift(src, deg, satK = 1, protectSkin = true) {
+export function hueShift(src, deg, satK = 1, protectSkin = true) {
   const c = cnv(src.width, src.height),
     x = c.getContext('2d');
   x.drawImage(src, 0, 0);
@@ -267,7 +328,7 @@ function canvasCopy(src) {
   c.getContext('2d').drawImage(src, 0, 0);
   return c;
 }
-function markArt(path, c) {
+export function markArt(path, c) {
   c._ver = (c._ver || 0) + 1;
   ATL_VER++;
   ST.artDirty.set(path, c);
@@ -275,7 +336,7 @@ function markArt(path, c) {
   updTop();
   previewsDirty();
 }
-function downloadCanvas(c, name) {
+export function downloadCanvas(c, name) {
   c.toBlob(b => {
     const a = document.createElement('a');
     a.href = URL.createObjectURL(b);
@@ -284,7 +345,7 @@ function downloadCanvas(c, name) {
     setTimeout(() => URL.revokeObjectURL(a.href), 2000);
   }, 'image/png');
 }
-function pickFile(accept) {
+export function pickFile(accept) {
   return new Promise(res => {
     const i = document.createElement('input');
     i.type = 'file';
@@ -293,7 +354,7 @@ function pickFile(accept) {
     i.click();
   });
 }
-async function fileToCanvas(f) {
+export async function fileToCanvas(f) {
   const url = URL.createObjectURL(f);
   try {
     const im = await loadImage(url);
@@ -305,7 +366,7 @@ async function fileToCanvas(f) {
   }
 }
 /* ================= PIXEL EDITOR ================= */
-const PX_ED = {};
+export const PX_ED = {};
 const FACE_N = { idle: 'face', blink: 'blink', happy: 'happy', hurt: 'hurt', shout: 'shout', main: '' };
 function partsOf(sp, view) {
   const meta = ST.rigs[sp] && ST.rigs[sp][view];
@@ -319,7 +380,7 @@ function partsOf(sp, view) {
   });
   return out;
 }
-async function openPixelEditor(sp, view = 'front', gold = false, focus = null) {
+export async function openPixelEditor(sp, view = 'front', gold = false, focus = null) {
   const E = PX_ED;
   Object.assign(E, {
     sp,

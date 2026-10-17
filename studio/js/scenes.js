@@ -3,12 +3,98 @@
    Each route stop shows a tilt-shift diorama on the Walk screen (game/js/diorama.js). A scene is a grid of ground
    tiles (one character per tile), a list of props, a walking path and a camera. Props and ground tiles are PNG files
    in art/scene/ that can be painted here. The live preview runs the game's own renderer on your unsaved changes. */
+/* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
+import { expose } from '../../game/js/bridge.js';
+import {
+  ACTS,
+  SECTIONS,
+  ST,
+  after,
+  ask,
+  card,
+  changed,
+  clone,
+  commit,
+  dialog,
+  fChk,
+  fColor,
+  fNum,
+  fRange,
+  fSel,
+  fText,
+  grid,
+  peopleOpts,
+  render,
+  toast,
+  uidKey,
+} from './core.js';
+import { ATL_VER, atlasGet, atlasNow, fileToCanvas, markArt, pickFile } from './sprites.js';
+/* eslint-disable no-func-assign */
+expose({
+  SCN: [() => SCN],
+  SC_TER_KEYS: [() => SC_TER_KEYS],
+  SC_WK: [() => SC_WK],
+  blankScene: [() => blankScene, v => (blankScene = v)],
+  dioArtVer: [() => dioArtVer, v => (dioArtVer = v)],
+  scAddProp: [() => scAddProp, v => (scAddProp = v)],
+  scArt: [() => scArt, v => (scArt = v)],
+  scBindMap: [() => scBindMap, v => (scBindMap = v)],
+  scCur: [() => scCur],
+  scD: [() => scD],
+  scDrawSteps: [() => scDrawSteps, v => (scDrawSteps = v)],
+  scDrawWaters: [() => scDrawWaters, v => (scDrawWaters = v)],
+  scEnvApply: [() => scEnvApply, v => (scEnvApply = v)],
+  scExitChecks: [() => scExitChecks, v => (scExitChecks = v)],
+  scExitId: [() => scExitId, v => (scExitId = v)],
+  scExitJoinsDrop: [() => scExitJoinsDrop, v => (scExitJoinsDrop = v)],
+  scExitName: [() => scExitName, v => (scExitName = v)],
+  scExitNames: [() => scExitNames, v => (scExitNames = v)],
+  scExitSync: [() => scExitSync, v => (scExitSync = v)],
+  scFlood: [() => scFlood, v => (scFlood = v)],
+  scHGrid: [() => scHGrid, v => (scHGrid = v)],
+  scHeightAt: [() => scHeightAt, v => (scHeightAt = v)],
+  scHint: [() => scHint, v => (scHint = v)],
+  scId: [() => scId],
+  scLifeParse: [() => scLifeParse, v => (scLifeParse = v)],
+  scLifeText: [() => scLifeText, v => (scLifeText = v)],
+  scMapDraw: [() => scMapDraw, v => (scMapDraw = v)],
+  scMount: [() => scMount, v => (scMount = v)],
+  scOpenPe: [() => scOpenPe, v => (scOpenPe = v)],
+  scPeDone: [() => scPeDone, v => (scPeDone = v)],
+  scPeDraw: [() => scPeDraw, v => (scPeDraw = v)],
+  scPeFill: [() => scPeFill, v => (scPeFill = v)],
+  scPeMount: [() => scPeMount, v => (scPeMount = v)],
+  scPePalette: [() => scPePalette, v => (scPePalette = v)],
+  scPePlot: [() => scPePlot, v => (scPePlot = v)],
+  scPixelCard: [() => scPixelCard, v => (scPixelCard = v)],
+  scPos: [() => scPos, v => (scPos = v)],
+  scPreview: [() => scPreview, v => (scPreview = v)],
+  scPropAt: [() => scPropAt, v => (scPropAt = v)],
+  scPropSettings: [() => scPropSettings, v => (scPropSettings = v)],
+  scResizeReport: [() => scResizeReport, v => (scResizeReport = v)],
+  scSetTile: [() => scSetTile, v => (scSetTile = v)],
+  scStepsBar: [() => scStepsBar, v => (scStepsBar = v)],
+  scStepsDown: [() => scStepsDown, v => (scStepsDown = v)],
+  scStepsPaint: [() => scStepsPaint, v => (scStepsPaint = v)],
+  scStepsUp: [() => scStepsUp, v => (scStepsUp = v)],
+  scStepsWork: [() => scStepsWork, v => (scStepsWork = v)],
+  scTerKeyOk: [() => scTerKeyOk],
+  scThumbs: [() => scThumbs, v => (scThumbs = v)],
+  scUsers: [() => scUsers],
+  scWaterAt: [() => scWaterAt, v => (scWaterAt = v)],
+  scWaterBar: [() => scWaterBar, v => (scWaterBar = v)],
+  scWaterChanged: [() => scWaterChanged, v => (scWaterChanged = v)],
+  scWaterUp: [() => scWaterUp, v => (scWaterUp = v)],
+  segDist: [() => segDist, v => (segDist = v)],
+});
+/* eslint-enable no-func-assign */
+/* to-module: end */
 dioData = () => ({ scenes: (ST.D && ST.D.scenes) || {}, sc: (ST.D && ST.D.scenery) || { terrains: {}, props: {} } });
 dioImg = path => atlasNow('art/' + path) || ART.img[path];
 function dioArtVer() {
   return ATL_VER;
 }
-const SCN = {
+export const SCN = {
   smode: 'cliff',
   sh: 1.5,
   smat: 0,
@@ -38,7 +124,7 @@ const SCN = {
   peUndo: [],
 };
 /* every picture a scene can use: ground tiles and their variants, props and their layers, 3D building textures, life */
-function scArt(C) {
+export function scArt(C) {
   C = C || scD();
   const L = new Set();
   for (const t of Object.values(C.terrains)) {
@@ -57,13 +143,13 @@ function scArt(C) {
   for (const m of Object.values(C.life || {})) L.add(m.img);
   return [...L].filter(Boolean);
 }
-const scD = () => ST.D.scenery || (ST.D.scenery = { ppu: 34, tile: 16, terrains: {}, props: {}, person: 1.75 });
-const scId = () => {
+export const scD = () => ST.D.scenery || (ST.D.scenery = { ppu: 34, tile: 16, terrains: {}, props: {}, person: 1.75 });
+export const scId = () => {
   const S = ST.D.scenes || (ST.D.scenes = {});
   if (!S[ST.sel.scene]) ST.sel.scene = Object.keys(S)[0] || null;
   return ST.sel.scene;
 };
-const scCur = () => {
+export const scCur = () => {
   const id = scId();
   return id ? ST.D.scenes[id] : null;
 };
@@ -660,7 +746,7 @@ function scThumbs() {
     s.appendChild(c);
   });
 }
-function scExitNames(id) {
+export function scExitNames(id) {
   const D = ST.D,
     sc = D.scenes[id],
     ex = (sc && sc.exits) || [],
@@ -841,7 +927,7 @@ ACTS.scPvHub = () => {
   DIO.pl.route = null;
 };
 /* ---------- map ---------- */
-function scMapDraw() {
+export function scMapDraw() {
   const cv = $('#scMap'),
     sc = scCur();
   if (!cv || !sc) return;
@@ -1051,14 +1137,14 @@ function scPos(ev) {
     j: Math.floor(my / SCN.zoom),
   };
 }
-function scSetTile(sc, i, j, ch) {
+export function scSetTile(sc, i, j, ch) {
   if (i < 0 || j < 0 || i >= sc.w || j >= sc.h) return false;
   const row = sc.tiles[j] || ''.padEnd(sc.w, sc.edge);
   if (row[i] === ch) return false;
   sc.tiles[j] = row.slice(0, i) + ch + row.slice(i + 1);
   return true;
 }
-function scPropAt(m) {
+export function scPropAt(m) {
   const L = SCN.boxes || [];
   for (let k = L.length - 1; k >= 0; k--) {
     const b = L[k];
@@ -1937,7 +2023,7 @@ function scAddProp(name, c) {
   scOpenPe('art/' + path, { kind: 'prop', k });
 }
 /* ---------- a small pixel editor for props and ground tiles ---------- */
-async function scOpenPe(path, o) {
+export async function scOpenPe(path, o) {
   const c = await atlasGet(path).catch(() => null);
   if (!c) return toast('Could not open ' + path, 'err');
   SCN.pe = { path, ...o };

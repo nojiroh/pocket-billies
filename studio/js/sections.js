@@ -1,9 +1,97 @@
 'use strict';
 /* ================= POCKET BILLIES STUDIO · editors ================= */
+/* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
+import { expose } from '../../game/js/bridge.js';
+import {
+  ACTS,
+  SECTIONS,
+  ST,
+  after,
+  ask,
+  card,
+  changed,
+  chipT,
+  clone,
+  coinOpts,
+  dialog,
+  fChk,
+  fColor,
+  fNum,
+  fRange,
+  fSel,
+  fText,
+  fmtN,
+  go,
+  grid,
+  itemOpts,
+  moveOpts,
+  peopleOpts,
+  render,
+  spName,
+  spOpts,
+  statOpts,
+  statusOpts,
+  toast,
+  typeOpts,
+  uidKey,
+  updTop,
+} from './core.js';
+import {
+  ATL,
+  atlasGet,
+  atlasNow,
+  atlasPath,
+  fileToCanvas,
+  hueShift,
+  markArt,
+  mountPreviews,
+  openPixelEditor,
+  pickFile,
+  prevAct,
+  prevCanvas,
+  rigFor,
+} from './sprites.js';
+/* eslint-disable no-func-assign */
+expose({
+  CAT: [() => CAT],
+  EVO_KINDS: [() => EVO_KINDS],
+  FX_ICONS: [() => FX_ICONS],
+  ITEM_ICONS: [() => ITEM_ICONS],
+  LISTS: [() => LISTS],
+  PASSIVES: [() => PASSIVES],
+  RAR_NAMES: [() => RAR_NAMES],
+  STAGE_LABEL: [() => STAGE_LABEL],
+  _getP: [() => _getP],
+  _getP2: [() => _getP2],
+  _setP: [() => _setP],
+  _setP2: [() => _setP2],
+  baseStats: [() => baseStats, v => (baseStats = v)],
+  cloneSpeciesArt: [() => cloneSpeciesArt, v => (cloneSpeciesArt = v)],
+  curLine: [() => curLine],
+  evoRow: [() => evoRow, v => (evoRow = v)],
+  lineIdx: [() => lineIdx],
+  personLook: [() => personLook, v => (personLook = v)],
+  personPrev: [() => personPrev, v => (personPrev = v)],
+  poolName: [() => poolName],
+  poolPct: [() => poolPct],
+  refsTo: [() => refsTo, v => (refsTo = v)],
+  removeRefs: [() => removeRefs, v => (removeRefs = v)],
+  renameType: [() => renameType, v => (renameType = v)],
+  statsCard: [() => statsCard, v => (statsCard = v)],
+  whereCard: [() => whereCard, v => (whereCard = v)],
+});
+/* eslint-enable no-func-assign */
+/* to-module: end */
 const STAGE_LABEL = ['Stage 1', 'Stage 2', 'Stage 3', 'Stage 4'];
-const RAR_NAMES = { starter: 'Starter', common: 'Common', uncommon: 'Uncommon', rare: 'Rare', mythical: 'Mythical' };
+export const RAR_NAMES = {
+  starter: 'Starter',
+  common: 'Common',
+  uncommon: 'Uncommon',
+  rare: 'Rare',
+  mythical: 'Mythical',
+};
 const lineIdx = id => ST.D.lines.findIndex(l => l.id === id);
-const curLine = () => {
+export const curLine = () => {
   const D = ST.D;
   let i = lineIdx(ST.sel.line);
   if (i < 0) {

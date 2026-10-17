@@ -187,13 +187,14 @@ export async function run(args) {
     const im = [...imports.get(f)].sort((a, b) => order.indexOf(a[0]) - order.indexOf(b[0]));
     for (const [g, names] of im) lines.push(`import { ${[...names].sort().join(', ')} } from '${spec(f, g)}';`);
     const names = [...own.keys()].sort();
+    const fns = names.some(n => own.get(n).kind === 'function');
     if (names.length) {
       // the setters replace functions on purpose: the debug log and the Studio wrap or swap them through window
-      lines.push('/* eslint-disable no-func-assign */');
+      if (fns) lines.push('/* eslint-disable no-func-assign */');
       lines.push(
         `expose({ ${names.map(n => (own.get(n).kind === 'const' ? `${n}: [() => ${n}]` : `${n}: [() => ${n}, v => (${n} = v)]`)).join(', ')} });`
       );
-      lines.push('/* eslint-enable no-func-assign */');
+      if (fns) lines.push('/* eslint-enable no-func-assign */');
     }
     lines.push(END);
     // export keywords, last to first so the offsets hold

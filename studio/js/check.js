@@ -1,6 +1,20 @@
 'use strict';
 /* ================= POCKET BILLIES STUDIO · checks and backups =================
    The game repairs or skips anything broken when it loads, but these checks point at it first. */
+/* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
+import { expose } from '../../game/js/bridge.js';
+import { ACTS, SECTIONS, ST, after, api, ask, card, changed, go, render, toast } from './core.js';
+import { atlasPath, pickFile } from './sprites.js';
+/* eslint-disable no-func-assign */
+expose({
+  checkT: [() => checkT, v => (checkT = v)],
+  loadBackups: [() => loadBackups, v => (loadBackups = v)],
+  renderCheckList: [() => renderCheckList, v => (renderCheckList = v)],
+  runCheck: [() => runCheck, v => (runCheck = v)],
+  scheduleCheck: [() => scheduleCheck, v => (scheduleCheck = v)],
+});
+/* eslint-enable no-func-assign */
+/* to-module: end */
 function runCheck() {
   const D = ST.D,
     P = [],
