@@ -1,0 +1,14 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "person.schema.json",
+ "title": "game/data/people/<id>.json: how a person looks (colours as #RGB or #RRGGBB, a hair style, or a full look)",
+ "type": "object",
+ "minProperties": 1,
+ "properties": {
+  "look": {"type": "object"},
+  "style": {"type": "string"}
+ },
+ "patternProperties": {
+  "^(hair|hat|hat2|top|top2|bottom|shoe|pack|skin|tie)$": {"type": "string", "pattern": "^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$"}
+ }
+}

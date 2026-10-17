@@ -1,0 +1,24 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "index.schema.json",
+ "title": "game/data/index.json: which data files there are, in which order",
+ "type": "object",
+ "required": ["keys", "split"],
+ "additionalProperties": false,
+ "properties": {
+  "keys": {"description": "the top-level sections in order; a section not in split is <section>.json", "type": "array", "items": {"type": "string", "pattern": "^[a-z][a-zA-Z0-9]*$"}, "uniqueItems": true},
+  "split": {
+   "description": "sections with a file per entry: <section>/<id>.json, in the order of ids",
+   "type": "object",
+   "additionalProperties": {
+    "type": "object",
+    "required": ["ids"],
+    "additionalProperties": false,
+    "properties": {
+     "array": {"description": "the section is a list (each entry has its id); otherwise an object keyed by id", "const": true},
+     "ids": {"type": "array", "items": {"type": "string", "pattern": "^[a-z0-9_]+$"}, "uniqueItems": true}
+    }
+   }
+  }
+ }
+}

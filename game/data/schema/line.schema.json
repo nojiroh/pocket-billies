@@ -1,0 +1,18 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "line.schema.json",
+ "title": "game/data/lines/<id>.json: a Billie line (a species and its evolutions; species ids are <line id><stage>)",
+ "type": "object",
+ "required": ["id", "names", "types", "prof", "rar", "learn"],
+ "properties": {
+  "id": {"type": "string", "pattern": "^[a-z0-9_]+$"},
+  "names": {"description": "a name per stage", "type": "array", "items": {"type": "string", "minLength": 1}, "minItems": 1},
+  "types": {"description": "the types of each stage", "type": "array", "items": {"type": "array", "items": {"type": "string"}, "minItems": 1}, "minItems": 1},
+  "prof": {"description": "the six stat weights (hp, then the others in stats.json order)", "type": "array", "items": {"type": "number", "exclusiveMinimum": 0}, "minItems": 6, "maxItems": 6},
+  "rar": {"type": "string"},
+  "learn": {"description": "[level, move id] pairs", "type": "array", "items": {"type": "array", "prefixItems": [{"type": "integer", "minimum": 1}, {"type": "string"}], "minItems": 2, "maxItems": 2}},
+  "evo": {"type": "array"},
+  "split": {"type": "boolean"},
+  "parody": {"type": "string"}
+ }
+}
