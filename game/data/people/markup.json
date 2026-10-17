@@ -1,0 +1,23 @@
+{
+ "look": {
+  "name": "Markup",
+  "body": {"chest":0,"height":1.08,"body":0.9,"shoulders":1.02},
+  "skin": "#F7D9C4",
+  "hair": "#1E1A22",
+  "eyes": "#5A3A24",
+  "wear": {
+   "hair": "hair_sidepart",
+   "eyes": "eyes_sharp",
+   "brows": "brows_stern",
+   "mouth": "mouth_smirk",
+   "facial": "facial_stache",
+   "top": "dress_shirt",
+   "outer": "blazer",
+   "bottom": "trousers",
+   "shoes": "oxfords",
+   "glasses": "glasses_monocle",
+   "neck": "bowtie"
+  },
+  "colors": {"blazer":["#3A1E3E","#2A1430"],"bowtie":["#C8A23A"]}
+ }
+}

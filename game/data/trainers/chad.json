@@ -1,0 +1,33 @@
+{
+ "name": "Blake",
+ "who": "chad",
+ "area": "golf",
+ "node": 2,
+ "blocks": true,
+ "team": [
+  {"sp":"@rival","lvl":8},
+  {"sp":"saylor0","lvl":7}
+ ],
+ "reward": 400,
+ "egg": 5,
+ "market": null,
+ "lines": ["“Hey! I’ve been waiting for you.”","“I picked the starter that beats yours. Let’s see what you’ve got.”"],
+ "win": "“Huh. Okay, you’re good. I’ll train harder.”",
+ "lose": "“Ha! Better luck next time.”",
+ "blockTitle": "Your rival Blake is blocking the fairway",
+ "blockText": "He picked the starter that beats yours and wants to prove it.",
+ "hint": "",
+ "seat": null,
+ "intro": [
+  "[angry] Hey! Surface stray! Wait up!",
+  "[happy] I’ve been training out here all morning. Mine knows a lot more than Tackle now.",
+  "What happened outside the lab doesn’t count. This one counts.",
+  "[angry] Nobody plays through this course until we settle it. Let’s go!"
+ ],
+ "intro0": [
+  "[angry] Hey! Wait up!",
+  "[happy] So you’re Hazel’s other student. I’m Blake. I got my starter a whole hour before you.",
+  "I picked the one that beats yours. No offense. Well, a little offense.",
+  "[angry] Nobody plays through this course until we settle it. Let’s go!"
+ ]
+}

@@ -10,6 +10,7 @@ looks down at about 31 degrees outside (43 in a room), so a prop a few metres in
 on it: a bush under a window is fine, a tree in front of it is not. Moving tries small steps sideways first, then
 towards the camera, and only to ground of the same kind, clear of doors and of buildings. The builders call
 clear_scene() when they make a place (tools/build_places), so new places start clear."""
+import gamedata  # phase 04b: the data files in game/data
 import json, math, sys
 from pathlib import Path
 from PIL import Image
@@ -23,13 +24,13 @@ PITCH_OUT, PITCH_ADD, PITCH_IN = 34, -3, 12
 
 
 def load():
-    src = DATA.read_text(encoding='utf-8')
+    src = gamedata.js_text()
     head, body = src.split('window.GAMEDATA=', 1)
     return head, json.loads(body.rstrip().rstrip(';'))
 
 
 def save(head, D):
-    DATA.write_text(head + 'window.GAMEDATA=' + json.dumps(D, ensure_ascii=False, indent=1) + ';\n', encoding='utf-8')
+    gamedata.save_js(head + 'window.GAMEDATA=' + json.dumps(D, ensure_ascii=False, indent=1) + ';\n')
 
 
 _A = {}

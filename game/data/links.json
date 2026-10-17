@@ -1,0 +1,338 @@
+[
+ [
+  0,
+  1,
+  2040,
+  {"a":"east","b":"south","id":"road:sundown-longgrass","from":"sundown","to":"longgrass","name":"Route 2"}
+ ],
+ [
+  1,
+  2,
+  1960,
+  {"a":"south2","b":"west","id":"road:longgrass-golf","from":"longgrass","to":"golf","name":"Route 3"}
+ ],
+ [
+  2,
+  3,
+  1490,
+  {"a":"north","b":"south","id":"road:golf-thicket","from":"golf","to":"thicket","name":"Route 4"}
+ ],
+ [
+  3,
+  4,
+  1800,
+  {"a":"south2","b":"west","id":"road:thicket-grotto","from":"thicket","to":"grotto","name":"Route 4"}
+ ],
+ [
+  4,
+  5,
+  1540,
+  {"a":"south","b":"west","id":"road:grotto-canyon","from":"grotto","to":"canyon","name":"Route 5"}
+ ],
+ [
+  5,
+  6,
+  1510,
+  {"a":"north","b":"south","id":"road:canyon-scrapyard","from":"canyon","to":"scrapyard","name":"Route 6"}
+ ],
+ [
+  6,
+  7,
+  1620,
+  {"a":"east","b":"south","id":"road:scrapyard-foodcourt","from":"scrapyard","to":"foodcourt","name":"Route 6"}
+ ],
+ [
+  7,
+  8,
+  1580,
+  {"a":"south2","b":"west","id":"road:foodcourt-mall","from":"foodcourt","to":"mall","name":"Lanternhall City"}
+ ],
+ [
+  1,
+  9,
+  1380,
+  {"a":"north","b":"south","id":"road:longgrass-pond","from":"longgrass","to":"pond","name":"Route 7"}
+ ],
+ [
+  9,
+  2,
+  1530,
+  {"a":"south2","b":"north2","id":"road:pond-golf","from":"pond","to":"golf","name":"Route 3"}
+ ],
+ [
+  3,
+  10,
+  1480,
+  {"a":"north","b":"south","id":"road:thicket-farm","from":"thicket","to":"farm","name":"Route 4"}
+ ],
+ [
+  10,
+  4,
+  2010,
+  {"a":"south2","b":"north","id":"road:farm-grotto","from":"farm","to":"grotto","name":"Fizzwell Town"}
+ ],
+ [
+  5,
+  11,
+  1230,
+  {"a":"south","b":"north","id":"road:canyon-ridge","from":"canyon","to":"ridge","name":"Route 8"}
+ ],
+ [
+  10,
+  12,
+  2160,
+  {"a":"east","b":"west","id":"road:farm-city","from":"farm","to":"city","name":"Verdigris City"}
+ ],
+ [
+  4,
+  12,
+  1640,
+  {"a":"north2","b":"south","id":"road:grotto-city","from":"grotto","to":"city","name":"Verdigris City"}
+ ],
+ [
+  12,
+  6,
+  1670,
+  {"a":"south2","b":"north","id":"road:city-scrapyard","from":"city","to":"scrapyard","name":"Route 6"}
+ ],
+ [
+  0,
+  13,
+  1890,
+  {"a":"west","b":"east","id":"road:sundown-offshore","from":"sundown","to":"offshore","name":"Route 9"}
+ ],
+ [
+  13,
+  14,
+  1860,
+  {"a":"south","b":"east","id":"road:offshore-taxhaven","from":"offshore","to":"taxhaven","name":"Route 9"}
+ ],
+ [
+  14,
+  15,
+  1290,
+  {"a":"north","b":"south","id":"road:taxhaven-volcano","from":"taxhaven","to":"volcano","name":"Route 10"}
+ ],
+ [
+  12,
+  16,
+  1830,
+  {"a":"north","b":"south","id":"road:city-pass","from":"city","to":"pass","name":"Route 11"}
+ ],
+ [
+  16,
+  17,
+  1360,
+  {"a":"north","b":"south","id":"road:pass-summit","from":"pass","to":"summit","name":"Route 11"}
+ ],
+ [
+  10,
+  18,
+  1540,
+  {"a":"north","b":"south","id":"road:farm-lake","from":"farm","to":"lake","name":"Route 12"}
+ ],
+ [
+  18,
+  17,
+  1790,
+  {"a":"east","b":"west","id":"road:lake-summit","from":"lake","to":"summit","name":"Route 12"}
+ ],
+ [
+  8,
+  19,
+  1710,
+  {"a":"east","b":"south","id":"road:mall-festival","from":"mall","to":"festival","name":"Route 13"}
+ ],
+ [
+  19,
+  20,
+  1510,
+  {"a":"east","b":"south","id":"road:festival-twofold","from":"festival","to":"twofold","name":"Route 13"}
+ ],
+ [
+  20,
+  21,
+  1560,
+  {"a":"north","b":"south","id":"road:twofold-blossom","from":"twofold","to":"blossom","name":"Route 14"}
+ ],
+ [
+  21,
+  19,
+  1510,
+  {"a":"south2","b":"north","id":"road:blossom-festival","from":"blossom","to":"festival","name":"Route 13"}
+ ],
+ [
+  20,
+  22,
+  1640,
+  {"a":"south2","b":"north","id":"road:twofold-margins","from":"twofold","to":"margins","name":"Route 15"}
+ ],
+ [
+  22,
+  23,
+  2130,
+  {"a":"east","b":"south","id":"road:margins-vintage","from":"margins","to":"vintage","name":"Route 16"}
+ ],
+ [
+  23,
+  24,
+  1810,
+  {"a":"east","b":"west","id":"road:vintage-bullion","from":"vintage","to":"bullion","name":"Route 16"}
+ ],
+ [
+  24,
+  25,
+  1350,
+  {"a":"south","b":"north","id":"road:bullion-flattax","from":"bullion","to":"flattax","name":"Route 17"}
+ ],
+ [
+  25,
+  23,
+  1310,
+  {"a":"north2","b":"south2","id":"road:flattax-vintage","from":"flattax","to":"vintage","name":"Route 16"}
+ ],
+ [
+  24,
+  26,
+  1790,
+  {"a":"east","b":"west","id":"road:bullion-badlands","from":"bullion","to":"badlands","name":"Route 18"}
+ ],
+ [
+  26,
+  27,
+  1900,
+  {"a":"east","b":"west","id":"road:badlands-sporewood","from":"badlands","to":"sporewood","name":"Route 19"}
+ ],
+ [
+  27,
+  28,
+  1480,
+  {"a":"east","b":"south","id":"road:sporewood-marketcap","from":"sporewood","to":"marketcap","name":"Route 19"}
+ ],
+ [
+  28,
+  29,
+  1450,
+  {"a":"north","b":"south","id":"road:marketcap-fallquarter","from":"marketcap","to":"fallquarter","name":"Route 20"}
+ ],
+ [
+  29,
+  27,
+  1620,
+  {"a":"south2","b":"north","id":"road:fallquarter-sporewood","from":"fallquarter","to":"sporewood","name":"Route 19"}
+ ],
+ [
+  28,
+  30,
+  1600,
+  {"a":"south2","b":"north","id":"road:marketcap-hypergrowth","from":"marketcap","to":"hypergrowth","name":"Route 21"}
+ ],
+ [
+  30,
+  31,
+  2030,
+  {"a":"south","b":"west","id":"road:hypergrowth-spread","from":"hypergrowth","to":"spread","name":"Route 22"}
+ ],
+ [
+  31,
+  32,
+  1470,
+  {"a":"east","b":"south","id":"road:spread-mintshaft","from":"spread","to":"mintshaft","name":"Route 22"}
+ ],
+ [
+  32,
+  33,
+  1490,
+  {"a":"north","b":"south","id":"road:mintshaft-darkpool","from":"mintshaft","to":"darkpool","name":"Route 23"}
+ ],
+ [
+  33,
+  31,
+  1760,
+  {"a":"south2","b":"north","id":"road:darkpool-spread","from":"darkpool","to":"spread","name":"Route 22"}
+ ],
+ [
+  32,
+  34,
+  1440,
+  {"a":"south2","b":"west","id":"road:mintshaft-frozen","from":"mintshaft","to":"frozen","name":"Route 24"}
+ ],
+ [
+  34,
+  35,
+  2010,
+  {"a":"south","b":"west","id":"road:frozen-shoals","from":"frozen","to":"shoals","name":"Route 25"}
+ ],
+ [
+  35,
+  36,
+  1440,
+  {"a":"north","b":"south","id":"road:shoals-portfolio","from":"shoals","to":"portfolio","name":"Route 25"}
+ ],
+ [
+  36,
+  37,
+  1700,
+  {"a":"south2","b":"north","id":"road:portfolio-bottomline","from":"portfolio","to":"bottomline","name":"Route 26"}
+ ],
+ [
+  37,
+  38,
+  1150,
+  {"a":"south","b":"north","id":"road:bottomline-pressing","from":"bottomline","to":"pressing","name":"Route 27"}
+ ],
+ [
+  38,
+  39,
+  2030,
+  {"a":"south","b":"west","id":"road:pressing-serverfarm","from":"pressing","to":"serverfarm","name":"Route 28"}
+ ],
+ [
+  39,
+  40,
+  1440,
+  {"a":"north","b":"south","id":"road:serverfarm-upside","from":"serverfarm","to":"upside","name":"Route 28"}
+ ],
+ [
+  40,
+  41,
+  1470,
+  {"a":"south2","b":"north","id":"road:upside-bubbleland","from":"upside","to":"bubbleland","name":"Route 29"}
+ ],
+ [
+  40,
+  42,
+  1580,
+  {"a":"north","b":"south","id":"road:upside-bracket","from":"upside","to":"bracket","name":"Route 30"}
+ ],
+ [
+  42,
+  43,
+  2040,
+  {"a":"south2","b":"west","id":"road:bracket-ath","from":"bracket","to":"ath","name":"Route 31"}
+ ],
+ [
+  43,
+  44,
+  2150,
+  {"a":"south","b":"west","id":"road:ath-closingbell","from":"ath","to":"closingbell","name":"Route 32"}
+ ],
+ [
+  44,
+  45,
+  2020,
+  {"a":"east","b":"south","id":"road:closingbell-innersun","from":"closingbell","to":"innersun","name":"Route 32"}
+ ],
+ [
+  0,
+  47,
+  1530,
+  {"a":"north","b":"south","id":"road:sundown-hedgerow","from":"sundown","to":"hedgerow","name":"Route 1"}
+ ],
+ [
+  47,
+  46,
+  1330,
+  {"a":"north","b":"south","id":"road:hedgerow-copperleaf","from":"hedgerow","to":"copperleaf","name":"Route 1"}
+ ]
+]

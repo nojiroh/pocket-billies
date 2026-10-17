@@ -5,6 +5,7 @@
 
 A ladder goes where a cliff face 1.4 to 4.2 m high looks toward the camera, with open, dry ground at its foot and
 on top, not far from where you arrive. Only adds what is missing, so anything you changed in the Studio stays."""
+import gamedata  # phase 04b: the data files in game/data
 import base64, json, math, struct
 from pathlib import Path
 
@@ -69,7 +70,7 @@ def ladders(sc, want):
 
 
 def main():
-    s = DATA.read_text(encoding='utf-8'); i = s.index('window.GAMEDATA=')
+    s = gamedata.js_text(); i = s.index('window.GAMEDATA=')
     head, D = s[:i], json.JSONDecoder().raw_decode(s[i + 16:])[0]
     for sid, want in SCENES.items():
         sc = D['scenes'].get(sid)
@@ -86,7 +87,7 @@ def main():
         if hs:
             p = min(hs, key=lambda p: math.hypot(p['x'] - hub[0], p['z'] - hub[1])); p['act'] = 'home'; p['label'] = 'Your house'; p.pop('say', None)
             print('sundown: your house at', p['x'], p['z'])
-    DATA.write_text(head + 'window.GAMEDATA=' + json.dumps(D, ensure_ascii=False, indent=1) + ';\n', encoding='utf-8')
+    gamedata.save_js(head + 'window.GAMEDATA=' + json.dumps(D, ensure_ascii=False, indent=1) + ';\n')
 
 
 if __name__ == '__main__':

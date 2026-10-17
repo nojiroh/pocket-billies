@@ -6,6 +6,7 @@
 # Pictures and results.json are uploaded as an artifact on every run. Picture differences are notes, never failures.
 # - Phase 04a: lint (ESLint: undefined names, names defined twice across scripts, recommended bug rules), the Prettier
 #   format check and the Vite build on every push and pull request, about a minute. ESLint replaces check-globals.py.
+#   Phase 04b: the game data check (tools/check-data.mjs: the files index.json lists, their schemas, references).
 # - Phase 03: the picture baseline is made on this runner (the pictures depend on the renderer) and kept as the asset
 #   quick-baseline.zip of the release baseline-<version> (version from game/version.js, e.g. baseline-0.1.0-alpha).
 #   It is made on phase-* tags and by hand (Run workflow with "Make the picture baseline"); every other full run
@@ -40,6 +41,9 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4   # tools/build-data.mjs makes data/gamedata.js from the data files
+        with:
+          node-version: '22'
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -86,6 +90,8 @@ jobs:
         run: npm ci
       - name: Lint
         run: npm run lint
+      - name: Game data (files, schemas, references)
+        run: npm run check:data
       - name: Formatting
         run: npm run format:check
       - name: Build
@@ -125,6 +131,9 @@ jobs:
       MAKE_BASELINE: ${{ (github.event_name == 'workflow_dispatch' && inputs.baseline) || (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/phase-')) }}
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4   # tools/build-data.mjs makes data/gamedata.js from the data files
+        with:
+          node-version: '22'
       - name: Which version
         # runs version.js itself, so the formatting of that file doesn't matter
         run: echo "PB_VERSION_ID=$(node -e "const self={};eval(require('fs').readFileSync('game/version.js','utf8'));console.log(self.PB_VERSION_ID)")" >> "$GITHUB_ENV"

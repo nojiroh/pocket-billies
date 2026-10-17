@@ -1,0 +1,19 @@
+{
+ "name": "Variant No. 7777",
+ "who": "variant",
+ "area": "sea",
+ "node": 38,
+ "blocks": false,
+ "team": [
+  {"sp":"jayz1","lvl":54},
+  {"sp":"son1","lvl":54},
+  {"sp":"schultz0","lvl":55}
+ ],
+ "reward": 1900,
+ "market": null,
+ "lines": ["“Lucky number! I got to stand by the press. I can feel it in my teeth.”"],
+ "win": "“Off the record.”",
+ "lose": "“Pressed!”",
+ "hint": "",
+ "v47region": 1
+}

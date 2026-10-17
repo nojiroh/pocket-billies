@@ -1,0 +1,34 @@
+{
+ "id": "dangote",
+ "names": ["Sacklet","Dangoterhino"],
+ "types": [["Ground"],["Ground","Steel"]],
+ "prof": [1.2,1.15,1.25,0.8,0.95,0.65],
+ "rar": "uncommon",
+ "learn": [
+  [1,"handshake"],
+  [1,"eviction"],
+  [5,"lobbygusher"],
+  [9,"renthike"],
+  [15,"foreclose"],
+  [21,"deepdrill"],
+  [27,"markdown"],
+  [34,"concretepour"],
+  [40,"margincall"],
+  [40,"subpoena"],
+  [40,"lawsuit"]
+ ],
+ "cat": ["Sack Billie","Concrete Billie"],
+ "ht": [0.8,2.6],
+ "wt": [80,2400],
+ "hab": ["Building sites","A refinery the size of a town"],
+ "diet": ["Cement","Sugar cane"],
+ "bio": [
+  "A rhino calf with a stubby horn that carries a sack of cement everywhere, in case.",
+  "A concrete-horned rhino with a sugar-cane tail and a refinery on its back. Half the towers in the Hollow Earth are poured from it."
+ ],
+ "note": ["Started with a loan from an uncle. Paid it back in concrete.","The refinery runs on its own sugar."],
+ "evo": [
+  {"k":"lvl","at":26}
+ ],
+ "parody": "Aliko Dangote"
+}

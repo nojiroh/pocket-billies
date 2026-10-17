@@ -76,6 +76,7 @@ async function runFullTest(mode) {
   }
   STEST.on = true;
   STEST.stop = false;
+  await scenesAll(); /* phase 04b: every map whole before the test opens them */
   const keep = JSON.stringify(S),
     back = { tab: U.tab, roam: U.roam, node: S.route.node },
     realSave = save,

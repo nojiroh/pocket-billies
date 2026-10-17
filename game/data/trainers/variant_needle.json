@@ -1,0 +1,18 @@
+{
+ "name": "Variant No. 3301",
+ "who": "variant",
+ "area": "grotto",
+ "node": 31,
+ "blocks": false,
+ "team": [
+  {"sp":"buterin0","lvl":47},
+  {"sp":"son1","lvl":48}
+ ],
+ "reward": 1500,
+ "market": null,
+ "lines": ["“The needle has to be perfect. One scratch and the sun skips.”"],
+ "win": "“That’s a scratch.”",
+ "lose": "“Flawless. Like the edition.”",
+ "hint": "",
+ "v47region": 1
+}

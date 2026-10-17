@@ -1,0 +1,31 @@
+{
+ "look": {
+  "name": "Vinylla",
+  "body": {"height":1.04,"legs":1.06,"shoulders":0.94,"chest":0.45},
+  "skin": "#F0C8A8",
+  "hair": "#F4E6C8",
+  "eyes": "#B46AC8",
+  "wear": {
+   "hair": "hair_long",
+   "eyes": "eyes_lashes",
+   "brows": "brows_arched",
+   "mouth": "mouth_smirk",
+   "top": "crop",
+   "outer": "trench",
+   "bottom": "leggings",
+   "shoes": "boots",
+   "hat": "hat_crown",
+   "glasses": "glasses_sun",
+   "neck": "chain"
+  },
+  "colors": {
+   "crop": ["#1E1A26"],
+   "trench": ["#E9B83C","#F6DC84"],
+   "leggings": ["#1E1A26","#E85AA8"],
+   "boots": ["#E9B83C","#1E1A26"],
+   "hat_crown": ["#F6DC84","#E85AA8"],
+   "glasses_sun": ["#E85AA8"],
+   "chain": ["#F6DC84"]
+  }
+ }
+}

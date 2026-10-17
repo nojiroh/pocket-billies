@@ -1,0 +1,35 @@
+{
+ "id": "lebron",
+ "names": ["Cubron","Lebrion"],
+ "types": [["Fire"],["Fire","Ground"]],
+ "prof": [1.15,1.2,1,0.9,0.9,1],
+ "rar": "rare",
+ "learn": [
+  [1,"handshake"],
+  [1,"spill"],
+  [5,"hottake"],
+  [9,"lobby"],
+  [15,"pipeline"],
+  [27,"smear"],
+  [34,"gusher"],
+  [34,"thedecision"],
+  [39,"post3am"],
+  [40,"subpoena"],
+  [40,"lawsuit"],
+  [44,"pump"]
+ ],
+ "cat": ["Cub Billie","King Billie"],
+ "ht": [0.7,2.1],
+ "wt": [20,260],
+ "hab": ["Courtside","Wherever it takes its talents next"],
+ "diet": ["Chalk dust","Rings"],
+ "bio": [
+  "A lion cub with a blaze on its brow and a cloud of chalk that follows it around. It is already the best in the room.",
+  "A crowned lion with a dark mane and the word on everyone's lips. It takes its talents elsewhere and the city follows."
+ ],
+ "note": ["Chosen before it was born.","Built a school. Built a team. Built a brand."],
+ "evo": [
+  {"k":"lvl","at":26}
+ ],
+ "parody": "LeBron James"
+}

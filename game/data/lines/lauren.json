@@ -1,0 +1,38 @@
+{
+ "id": "lauren",
+ "names": ["Polofoal","Laurenpony","Ralphorse"],
+ "types": [["Ground"],["Ground"],["Ground","Psychic"]],
+ "prof": [0.95,1,0.95,1.1,1.05,1.05],
+ "rar": "uncommon",
+ "learn": [
+  [1,"handshake"],
+  [1,"eviction"],
+  [5,"lobbygusher"],
+  [9,"renthike"],
+  [15,"foreclose"],
+  [21,"deepdrill"],
+  [27,"fud"],
+  [39,"rugpull"],
+  [40,"margincall"],
+  [40,"subpoena"],
+  [40,"lawsuit"],
+  [41,"popthecollar"],
+  [44,"oldmoney"]
+ ],
+ "cat": ["Foal Billie","Pony Billie","Dream Billie"],
+ "ht": [0.9,1.6,2.4],
+ "wt": [60,300,600],
+ "hab": ["Paddocks with white fences","Prep schools","A ranch the size of a county"],
+ "diet": ["Clover","Polo","The dream, not the shirt"],
+ "bio": [
+  "A foal with a small blue polo patch on its chest. It stands very straight for its age.",
+  "A pony with a navy mane that falls just so and a chest patch everyone copies. It plays polo and wins quietly.",
+  "A horse so well dressed in its own coat that it sells the dream of being it. The shirt is the least of it."
+ ],
+ "note": ["Born in the Bronx, raised in a catalogue.","The collar is natural.","Sells a life, with a horse in it."],
+ "evo": [
+  {"k":"lvl","at":17},
+  {"k":"lvl","at":37}
+ ],
+ "parody": "Ralph Lauren"
+}

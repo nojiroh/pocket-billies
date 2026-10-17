@@ -1,0 +1,19 @@
+{
+ "look": {
+  "name": "Gail",
+  "body": {"chest":0.45,"height":0.98},
+  "skin": "#F0BE94",
+  "hair": "#6A3A22",
+  "eyes": "#3F8A63",
+  "wear": {
+   "hair": "hair_bun",
+   "top": "longsleeve",
+   "outer": "labcoat",
+   "bottom": "work_pants",
+   "shoes": "boots",
+   "hat": "hat_hardhat",
+   "glasses": "glasses_square"
+  },
+  "colors": {"longsleeve":["#C85A3A"],"work_pants":["#4A5260"],"hat_hardhat":["#F4C542","#B9801C"]}
+ }
+}

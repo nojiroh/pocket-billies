@@ -30,7 +30,7 @@ decisions left open. Newest facts win: update this file when the rules, the sign
   nickname box, `cleanLook()` (the trainer name) and `migrate()` (every load and every imported backup). This makes the
   ~60 places that put `N(m)` or a trainer name into HTML without `esc()` safe as they are. There is no single-quoted
   attribute with a value in it anywhere, so the apostrophe stays (D'Angelo).
-- **Game data**: `tools/check-data-text.py` (CI, under a second) fails when any text in gamedata.js has `< > `` ` or a
+- **Game data**: `tools/check-data-text.py` (CI, under a second) fails when any text in the game data (game/data/*.json) has `< > `` ` or a
   name or id has `"`. The game and the Studio put place, Billie, move and scene names into HTML unescaped, and that
   data changes through Studio pull requests too big to read. Nothing in today's data trips it.
 - **saveVersion**: every save carries `saveVersion` (core.js `SAVE_VERSION = 1`). A save without it (alpha 0.5 and

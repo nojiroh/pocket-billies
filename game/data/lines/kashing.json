@@ -1,0 +1,35 @@
+{
+ "id": "kashing",
+ "names": ["Portcrane","Kashingcrane"],
+ "types": [["Flying"],["Flying","Steel"]],
+ "prof": [0.95,1,1,1.1,1.05,1.1],
+ "rar": "uncommon",
+ "learn": [
+  [1,"handshake"],
+  [1,"liftoff"],
+  [5,"orbit"],
+  [9,"escvel"],
+  [21,"bulk"],
+  [27,"markdown"],
+  [33,"harbourfee"],
+  [34,"launch"],
+  [39,"gentrify"],
+  [40,"subpoena"],
+  [40,"lawsuit"],
+  [44,"renthike"]
+ ],
+ "cat": ["Flower Billie","Harbour Billie"],
+ "ht": [0.4,2.4],
+ "wt": [2,300],
+ "hab": ["Flower stalls on the pier","Every dock in the harbour"],
+ "diet": ["Nectar","Harbour fees"],
+ "bio": [
+  "A crane chick with a crimson blaze that started out selling plastic flowers on the pier and has not stopped.",
+  "A harbour-crane of a crane. It owns the docks it stands on, the ships that come in, and the water, if anyone asks."
+ ],
+ "note": ["Sold flowers at twelve.","Owns the pier it was born on."],
+ "evo": [
+  {"k":"lvl","at":26}
+ ],
+ "parody": "Li Ka-shing"
+}

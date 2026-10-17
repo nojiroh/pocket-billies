@@ -1,0 +1,29 @@
+{
+ "look": {
+  "name": "Cass Flow",
+  "body": {"height":1.02,"legs":1.02,"shoulders":0.98,"chest":0.2},
+  "skin": "#E2B08C",
+  "hair": "#3A2A22",
+  "eyes": "#4A6A4A",
+  "wear": {
+   "hair": "hair_pony",
+   "eyes": "eyes_sharp",
+   "brows": "brows_stern",
+   "mouth": "mouth_neutral",
+   "top": "dress_shirt",
+   "outer": "blazer",
+   "bottom": "trousers",
+   "shoes": "oxfords",
+   "glasses": "headset",
+   "neck": "nametag"
+  },
+  "colors": {
+   "dress_shirt": ["#F2EEE8"],
+   "blazer": ["#2A2434","#E9B83C"],
+   "trousers": ["#2A2434"],
+   "oxfords": ["#1E1A22"],
+   "headset": ["#1E1A22"],
+   "nametag": ["#E9B83C"]
+  }
+ }
+}

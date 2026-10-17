@@ -11,6 +11,7 @@ appear on the route. Each has
     python3 tools/build-interiors.py          # adds the rooms that are missing
     python3 tools/build-interiors.py --force  # rebuilds all four (anything you changed in them in the Studio is lost)
 """
+import gamedata  # phase 04b: the data files in game/data
 import importlib.util, json, sys
 from pathlib import Path
 
@@ -312,7 +313,7 @@ def repair_corners(D):
 
 def main():
     force = '--force' in sys.argv
-    src = DATA.read_text(encoding='utf-8'); head = src[:src.index('window.GAMEDATA=')]
+    src = gamedata.js_text(); head = src[:src.index('window.GAMEDATA=')]
     D = json.JSONDecoder().raw_decode(src[src.index('window.GAMEDATA=') + len('window.GAMEDATA='):])[0]
     for f in BUILD:
         sid = f.__name__
@@ -321,7 +322,7 @@ def main():
         print(f'  {sid}: {sc["w"]}x{sc["h"]}, {len(sc.get("props", []))} props')
     fx = repair_corners(D)
     if fx: print('  corners brought down to the wall height:', ', '.join(fx))
-    DATA.write_text(head + 'window.GAMEDATA=' + json.dumps(D, ensure_ascii=False, indent=1) + ';\n', encoding='utf-8')
+    gamedata.save_js(head + 'window.GAMEDATA=' + json.dumps(D, ensure_ascii=False, indent=1) + ';\n')
 
 
 if __name__ == '__main__':

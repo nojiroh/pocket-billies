@@ -29,6 +29,8 @@ function scriptsOf(html) {
 // every name a script puts in the shared scope: top-level function, class, var, let and const, and
 // window.X = / self.X = at the top level (version.js, the art manifests)
 function topLevelNames(script) {
+  // generated from the data files (tools/build-data.mjs), maybe not made yet: it only sets window.GAMEDATA
+  if (script === 'game/data/gamedata.js') return new Set(['GAMEDATA']);
   const text = typeof script === 'string' ? readFileSync(join(ROOT, script), 'utf8') : script.inline;
   const ast = espree.parse(text, { ecmaVersion: 'latest', sourceType: 'script' });
   const names = new Set();

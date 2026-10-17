@@ -1,0 +1,30 @@
+{
+ "id": "rockefeller",
+ "names": ["Oilympus"],
+ "types": [["Fire","Ground"]],
+ "prof": [1.3,1.25,1.25,1.2,1.1,0.7],
+ "rar": "mythical",
+ "learn": [
+  [1,"handshake"],
+  [1,"spill"],
+  [5,"hottake"],
+  [9,"lobby"],
+  [15,"pipeline"],
+  [27,"smear"],
+  [34,"gusher"],
+  [34,"post3am"],
+  [39,"standardoil"],
+  [40,"subpoena"],
+  [40,"lawsuit"]
+ ],
+ "cat": ["Derrick Billie"],
+ "ht": [8],
+ "wt": [40000],
+ "hab": ["Under the volcano, where the black gold is"],
+ "diet": ["Crude, by the barrel"],
+ "bio": [
+  "A titan of stone and iron with a golden ring round one eye and black gold leaking from every joint. The ground it stands on is already its own; the ground you stand on is next."
+ ],
+ "note": ["Every Fire move it makes leaves a slick behind."],
+ "parody": "John D. Rockefeller"
+}

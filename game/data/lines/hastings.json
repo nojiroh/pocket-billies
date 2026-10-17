@@ -1,0 +1,28 @@
+{
+ "id": "hastings",
+ "names": ["Bingebat"],
+ "types": [["Psychic","Flying"]],
+ "prof": [0.9,0.95,0.85,1.25,1,1.2],
+ "rar": "uncommon",
+ "learn": [
+  [1,"handshake"],
+  [1,"rugpull"],
+  [5,"pump"],
+  [9,"fud"],
+  [15,"autoplay"],
+  [27,"hype"],
+  [34,"moon"],
+  [39,"liftoff"],
+  [40,"twoday"],
+  [40,"subpoena"],
+  [40,"lawsuit"]
+ ],
+ "cat": ["Binge Billie"],
+ "ht": [1.2],
+ "wt": [20],
+ "hab": ["Dark living rooms"],
+ "diet": ["Attention, one more episode at a time"],
+ "bio": ["A red bat that asks \"still watching?\" every third turn and starts the next one before you answer."],
+ "note": ["Mailed discs once. Nobody believes it."],
+ "parody": "Reed Hastings"
+}

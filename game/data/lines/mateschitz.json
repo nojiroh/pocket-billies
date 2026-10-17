@@ -1,0 +1,35 @@
+{
+ "id": "mateschitz",
+ "names": ["Canlet","Redbullwing"],
+ "types": [["Fire"],["Fire","Flying"]],
+ "prof": [0.9,1.1,0.85,1.1,0.85,1.35],
+ "rar": "uncommon",
+ "learn": [
+  [1,"handshake"],
+  [1,"spill"],
+  [5,"hottake"],
+  [9,"lobby"],
+  [15,"pipeline"],
+  [27,"smear"],
+  [30,"giveswings"],
+  [34,"gusher"],
+  [34,"post3am"],
+  [39,"liftoff"],
+  [40,"subpoena"],
+  [40,"lawsuit"]
+ ],
+ "cat": ["Can Billie","Wing Billie"],
+ "ht": [0.5,1.9],
+ "wt": [10,260],
+ "hab": ["Pit lanes","The edge of space, sponsored"],
+ "diet": ["Taurine","Stunts"],
+ "bio": [
+  "A little blue-and-silver bull that fizzes when shaken. It is awake.",
+  "It gave itself wings and now sponsors every stunt it does, including the fall."
+ ],
+ "note": ["Gives you wings.","Jumped from space for the footage."],
+ "evo": [
+  {"k":"lvl","at":26}
+ ],
+ "parody": "Dietrich Mateschitz"
+}

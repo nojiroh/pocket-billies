@@ -1,0 +1,38 @@
+{
+ "id": "bloomberg",
+ "names": ["Tickerbud","Bloomburst","Terminalia"],
+ "types": [["Grass"],["Grass","Electric"],["Grass","Electric"]],
+ "prof": [0.9,0.8,1,1.3,1.1,0.9],
+ "rar": "uncommon",
+ "learn": [
+  [1,"handshake"],
+  [1,"snub"],
+  [5,"harvest"],
+  [9,"allowance"],
+  [15,"oldmoney"],
+  [21,"familyoffice"],
+  [27,"tos"],
+  [33,"movefast"],
+  [39,"zoning"],
+  [40,"subpoena"],
+  [40,"lawsuit"],
+  [40,"terminalfee"],
+  [44,"headline"]
+ ],
+ "cat": ["Bud Billie","Screen Billie","Terminal Billie"],
+ "ht": [0.3,1,2.8],
+ "wt": [1,15,300],
+ "hab": ["Window boxes in the financial district","Trading floors","City halls"],
+ "diet": ["Morning light","Numbers","Rent from anyone reading its numbers"],
+ "bio": [
+  "A flower bud with a pale stripe down its face. One leaf flutters like ticker tape; it knows the price of everything.",
+  "When it bloomed, its petals came out orange on black and full of numbers. People pay to look at it.",
+  "A tree of glowing petals that has run a city once and would like to again. Reading it costs a fortune a month."
+ ],
+ "note": ["Its leaf shows yesterday's close.","Nobody has ever seen it switched off.","Charges rent to the bees."],
+ "evo": [
+  {"k":"lvl","at":17},
+  {"k":"lvl","at":36}
+ ],
+ "parody": "Michael Bloomberg"
+}

@@ -1,0 +1,34 @@
+{
+ "id": "rinehart",
+ "names": ["Orelet","Rinewombat"],
+ "types": [["Ground"],["Ground","Steel"]],
+ "prof": [1.2,1.1,1.2,0.8,1,0.7],
+ "rar": "common",
+ "learn": [
+  [1,"handshake"],
+  [1,"eviction"],
+  [5,"lobbygusher"],
+  [9,"renthike"],
+  [15,"foreclose"],
+  [21,"deepdrill"],
+  [27,"markdown"],
+  [34,"statesizedpit"],
+  [40,"margincall"],
+  [40,"subpoena"],
+  [40,"lawsuit"]
+ ],
+ "cat": ["Ore Billie","Pit Billie"],
+ "ht": [0.5,1.6],
+ "wt": [20,400],
+ "hab": ["Red dirt","A hole the size of a state"],
+ "diet": ["Iron ore","Whole hills"],
+ "bio": [
+  "A wombat with an iron-ore nugget it will not share. It digs faster than you can watch.",
+  "It has dug a hole the size of a state and wears a golden crest of ore as a crown. The hole is for sale, by the tonne."
+ ],
+ "note": ["Inherited the hole and made it bigger.","Pays the diggers in advice."],
+ "evo": [
+  {"k":"lvl","at":24}
+ ],
+ "parody": "Gina Rinehart"
+}

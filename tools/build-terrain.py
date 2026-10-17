@@ -18,6 +18,7 @@ made from the 32 px ones.
     python3 tools/build-terrain.py --force NAME   # redraws one kind's generated tiles
     python3 tools/build-terrain.py --sheet out.png
 """
+import gamedata  # phase 04b: the data files in game/data
 import argparse, importlib.util, json, random
 from pathlib import Path
 import numpy as np
@@ -151,7 +152,7 @@ def small(im):
 
 
 def load_data():
-    src = DATA.read_text(encoding='utf-8'); i = src.index('window.GAMEDATA=')
+    src = gamedata.js_text(); i = src.index('window.GAMEDATA=')
     return src[:i], json.JSONDecoder().raw_decode(src[i + len('window.GAMEDATA='):])[0]
 
 
@@ -178,7 +179,7 @@ def main():
             terr[ch] = {'name': NAMES[name], 'tile': f'scene/tiles/{name}.png', 'z': z, 'edge': edge, 'vars': [f'scene/tiles/{name}_{k}.png' for k in range(1, 6)]}
             if paved: terr[ch]['paved'] = True
             added.append(ch)
-    if added: DATA.write_text(head + 'window.GAMEDATA=' + json.dumps(D, ensure_ascii=False, indent=1) + ';\n', encoding='utf-8')
+    if added: gamedata.save_js(head + 'window.GAMEDATA=' + json.dumps(D, ensure_ascii=False, indent=1) + ';\n')
     print(f'{n} tiles written; new kinds in the catalogue: {", ".join(added) or "none (all there)"}; {len(terr)} kinds in all')
     if a.sheet:
         kinds = list(dict.fromkeys(names)); z = 2; cell = T * z + 4

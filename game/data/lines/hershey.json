@@ -1,0 +1,31 @@
+{
+ "id": "hershey",
+ "names": ["Hersheymoose"],
+ "types": [["Ground","Fire"]],
+ "prof": [1.25,1.05,1.15,0.9,1.05,0.7],
+ "rar": "uncommon",
+ "learn": [
+  [1,"handshake"],
+  [1,"eviction"],
+  [5,"lobbygusher"],
+  [9,"renthike"],
+  [15,"foreclose"],
+  [21,"deepdrill"],
+  [27,"lobby"],
+  [33,"kisses"],
+  [40,"margincall"],
+  [40,"subpoena"],
+  [40,"lawsuit"],
+  [44,"oldmoney"]
+ ],
+ "cat": ["Cocoa Billie"],
+ "ht": [2.4],
+ "wt": [700],
+ "hab": ["A town it built, with a school"],
+ "diet": ["Cocoa and milk"],
+ "bio": [
+  "A chocolate-brown moose whose antlers are pale kisses. It built a whole town for its workers and a school for their children."
+ ],
+ "note": ["The town still smells of chocolate."],
+ "parody": "Milton Hershey"
+}

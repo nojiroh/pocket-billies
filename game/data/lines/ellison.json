@@ -1,0 +1,40 @@
+{
+ "id": "ellison",
+ "names": ["Ternlet","Regatern","Islatern"],
+ "types": [["Water"],["Water","Flying"],["Water","Flying"]],
+ "prof": [0.95,1,0.9,1.1,0.95,1.1],
+ "rar": "uncommon",
+ "learn": [
+  [1,"handshake"],
+  [1,"interest"],
+  [5,"buyhold"],
+  [9,"spin"],
+  [15,"rerecord"],
+  [21,"headline"],
+  [27,"compound"],
+  [33,"yachtrace"],
+  [39,"exclusive"],
+  [40,"subpoena"],
+  [40,"lawsuit"]
+ ],
+ "cat": ["Chick Billie","Regatta Billie","Island Billie"],
+ "ht": [0.2,0.9,2.6],
+ "wt": [1,12,400],
+ "hab": ["Harbour walls","Open water on race day","Its own island"],
+ "diet": ["Small fish","Trophies","Whole databases"],
+ "bio": [
+  "A sea-tern chick that paddles about on a scrap of driftwood and shouts at bigger boats.",
+  "A tern that wins every race on the lake and tells everyone about its database afterwards.",
+  "A tern that carries an island on its back, with a house on top. It bought the island to have somewhere to keep the trophies."
+ ],
+ "note": [
+  "Already thinks the harbour is too small.",
+  "Changes the rules of the regatta between heats.",
+  "The sixth-largest thing in the sky by net worth."
+ ],
+ "evo": [
+  {"k":"lvl","at":18},
+  {"k":"lvl","at":38}
+ ],
+ "parody": "Larry Ellison"
+}

@@ -1,0 +1,18 @@
+{
+ "name": "Leaf Peeper Lou",
+ "who": "hiker",
+ "area": "shell",
+ "node": 29,
+ "blocks": false,
+ "team": [
+  {"sp":"woods1","lvl":45},
+  {"sp":"kamprad1","lvl":45}
+ ],
+ "reward": 1200,
+ "market": null,
+ "lines": ["“The leaves turn every quarter. I’ve been here forty quarters. I am leaving next quarter.”"],
+ "win": "“Turned over.”",
+ "lose": "“Fell for it.”",
+ "hint": "",
+ "v47region": 1
+}

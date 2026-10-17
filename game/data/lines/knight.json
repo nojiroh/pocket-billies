@@ -1,0 +1,36 @@
+{
+ "id": "knight",
+ "names": ["Laceling","Swooshare","Nikeknight"],
+ "types": [["Flying"],["Flying"],["Flying","Steel"]],
+ "prof": [0.9,1.05,0.85,0.95,0.9,1.35],
+ "rar": "common",
+ "learn": [
+  [1,"handshake"],
+  [1,"liftoff"],
+  [5,"orbit"],
+  [9,"escvel"],
+  [15,"justdoit"],
+  [27,"markdown"],
+  [33,"bulk"],
+  [34,"launch"],
+  [39,"gentrify"],
+  [40,"subpoena"],
+  [40,"lawsuit"]
+ ],
+ "cat": ["Lace Billie","Swoosh Billie","Victory Billie"],
+ "ht": [0.3,1,2.4],
+ "wt": [2,20,160],
+ "hab": ["Running tracks","Stadiums","Billboards"],
+ "diet": ["Laces","Sponsorship","Records"],
+ "bio": [
+  "A hare kit with a red lace of a tail. It just does it, whatever it is, before anyone has asked.",
+  "A winged hare with a red swoosh across its flank. It has never finished second and will not discuss it.",
+  "A hare in steel-grey fur with wings of feathers and a stripe of red. Every athlete in the Hollow Earth wears its mark."
+ ],
+ "note": ["Started in the boot of a car.","Just does it.","Pays the fastest to run in its colours."],
+ "evo": [
+  {"k":"lvl","at":16},
+  {"k":"lvl","at":36}
+ ],
+ "parody": "Phil Knight"
+}

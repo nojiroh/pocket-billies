@@ -1,0 +1,26 @@
+{
+ "hair": "#1E1A22",
+ "style": "bob",
+ "top": "#F4F2EC",
+ "top2": "#C8CED3",
+ "bottom": "#2B2B33",
+ "shoe": "#1E1A22",
+ "skin": "#8A5A3A",
+ "look": {
+  "name": "Nadia",
+  "body": {"chest":0.5,"hips":1.06},
+  "skin": "#8A5A3A",
+  "hair": "#1E1A22",
+  "eyes": "#5A3A24",
+  "wear": {
+   "hair": "hair_bob",
+   "top": "dress_shirt",
+   "outer": "apron",
+   "bottom": "trousers",
+   "shoes": "oxfords",
+   "hat": "hat_chef",
+   "mouth": "mouth_grin"
+  },
+  "colors": {"apron":["#F4F2EC","#C8CED3"]}
+ }
+}

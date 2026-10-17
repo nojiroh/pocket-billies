@@ -1,0 +1,22 @@
+{
+ "look": {
+  "name": "Alta",
+  "body": {"chest":0.45,"height":1.06,"legs":1.06},
+  "skin": "#F0C3A0",
+  "hair": "#E8E4DA",
+  "eyes": "#4A7BBB",
+  "wear": {
+   "hair": "hair_long",
+   "eyes": "eyes_sharp",
+   "brows": "brows_straight",
+   "mouth": "mouth_smirk",
+   "top": "longsleeve",
+   "outer": "puffer",
+   "bottom": "leggings",
+   "shoes": "boots",
+   "glasses": "glasses_sun",
+   "neck": "scarf"
+  },
+  "colors": {"puffer":["#3E6FD6","#2A4EA0"],"leggings":["#2A2F3E"],"boots":["#5A3A24","#2A1E16"],"scarf":["#F2C14E"]}
+ }
+}

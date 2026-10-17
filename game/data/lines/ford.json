@@ -1,0 +1,37 @@
+{
+ "id": "ford",
+ "names": ["Foalt","Model Tee","Fordhorse"],
+ "types": [["Ground"],["Steel"],["Steel","Fire"]],
+ "prof": [1.05,1.1,1.1,0.85,0.9,1.05],
+ "rar": "common",
+ "learn": [
+  [1,"handshake"],
+  [1,"eviction"],
+  [5,"lobbygusher"],
+  [9,"renthike"],
+  [15,"foreclose"],
+  [21,"deepdrill"],
+  [27,"markdown"],
+  [39,"bulk"],
+  [40,"margincall"],
+  [40,"subpoena"],
+  [40,"lawsuit"],
+  [40,"assemblyline"]
+ ],
+ "cat": ["Crank Billie","Model Billie","Assembly Billie"],
+ "ht": [0.9,1.7,2.8],
+ "wt": [70,800,2500],
+ "hab": ["Farm lanes","Factory floors","A line that never stops"],
+ "diet": ["Oats","Oil","Copies of itself"],
+ "bio": [
+  "A foal with a crank handle of a tail. Turn it and the foal starts, usually.",
+  "Half horse, half black car. It comes in any colour as long as it is black, and it is black.",
+  "An assembly line runs down its back and new horses roll off the end. They are all black and all the same."
+ ],
+ "note": ["Wanted a faster horse. Became one.","Black is quickest to dry.","Doubled the pay and halved the day."],
+ "evo": [
+  {"k":"lvl","at":16},
+  {"k":"lvl","at":36}
+ ],
+ "parody": "Henry Ford"
+}

@@ -7,6 +7,7 @@ mansion, a barn, a greenhouse, a ski lodge, a market hall), drawn with the scene
     python3 tools/build-furniture-v46.py --sheet out.png
     python3 tools/build-furniture-v46.py piano --force   # redraws one
 """
+import gamedata  # phase 04b: the data files in game/data
 import os, sys, json, math, random, zlib, importlib.util
 from PIL import Image
 HERE = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.dirname(HERE)
@@ -312,12 +313,12 @@ def p_fire_pole(rng):
 
 
 def load_data():
-    src = open(DATA, encoding='utf-8').read(); i = src.index('window.GAMEDATA=')
+    src = gamedata.js_text(); i = src.index('window.GAMEDATA=')
     return src[:i], json.JSONDecoder().raw_decode(src[i + len('window.GAMEDATA='):])[0]
 
 
 def save_data(head, D):
-    open(DATA, 'w', encoding='utf-8').write(head + 'window.GAMEDATA=' + json.dumps(D, ensure_ascii=False, indent=1) + ';\n')
+    gamedata.save_js(head + 'window.GAMEDATA=' + json.dumps(D, ensure_ascii=False, indent=1) + ';\n')
 
 
 def main():

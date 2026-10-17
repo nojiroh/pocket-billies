@@ -1,0 +1,19 @@
+{
+ "name": "Birdwatcher Bo",
+ "who": "skipper",
+ "area": "golf",
+ "node": 22,
+ "blocks": false,
+ "team": [
+  {"sp":"hughes1","lvl":38},
+  {"sp":"ellison1","lvl":38},
+  {"sp":"kashing1","lvl":39}
+ ],
+ "reward": 1000,
+ "market": null,
+ "lines": ["“Shh. A Kashingcrane. They only nest where the harbour fees are low.”"],
+ "win": "“Flew the coop.”",
+ "lose": "“Spotted you a mile off.”",
+ "hint": "",
+ "v47region": 1
+}

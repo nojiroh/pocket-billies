@@ -1,0 +1,37 @@
+{
+ "id": "ortega",
+ "names": ["Spoolspider","Zaraknid","Ortegaweaver"],
+ "types": [["Grass"],["Grass","Steel"],["Grass","Steel"]],
+ "prof": [0.9,1,0.95,1.1,1,1.1],
+ "rar": "common",
+ "learn": [
+  [1,"handshake"],
+  [1,"snub"],
+  [5,"harvest"],
+  [9,"allowance"],
+  [15,"oldmoney"],
+  [21,"fastfashion"],
+  [27,"markdown"],
+  [33,"familyoffice"],
+  [39,"bulk"],
+  [40,"subpoena"],
+  [40,"lawsuit"],
+  [44,"flashsale"]
+ ],
+ "cat": ["Spool Billie","Weaver Billie","Window Billie"],
+ "ht": [0.2,0.9,2.6],
+ "wt": [1,10,120],
+ "hab": ["Sewing baskets","High streets","Shop windows on every high street"],
+ "diet": ["Thread","Last fortnight's fashion","Mannequins"],
+ "bio": [
+  "A spiderling that lives on a spool of thread and has already spun one outfit this morning.",
+  "It weaves a whole new look every two weeks and throws the old one away without looking at it.",
+  "Its web is a shop window and the flies caught in it are dressed better than you. Nobody has ever seen it; it never gives interviews."
+ ],
+ "note": ["Spins faster than anyone can wear.","Fast fashion with eight legs.","Has never once been photographed."],
+ "evo": [
+  {"k":"lvl","at":16},
+  {"k":"lvl","at":36}
+ ],
+ "parody": "Amancio Ortega"
+}

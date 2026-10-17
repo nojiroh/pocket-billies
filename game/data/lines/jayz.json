@@ -1,0 +1,35 @@
+{
+ "id": "jayz",
+ "names": ["Jaylet","Hovajay"],
+ "types": [["Flying"],["Flying","Psychic"]],
+ "prof": [0.9,1,0.9,1.2,0.95,1.15],
+ "rar": "uncommon",
+ "learn": [
+  [1,"handshake"],
+  [1,"liftoff"],
+  [5,"orbit"],
+  [9,"escvel"],
+  [15,"empirestate"],
+  [27,"fud"],
+  [33,"rugpull"],
+  [34,"launch"],
+  [39,"pump"],
+  [40,"subpoena"],
+  [40,"lawsuit"],
+  [44,"exclusive"]
+ ],
+ "cat": ["Jay Billie","Hova Billie"],
+ "ht": [0.2,1.4],
+ "wt": [1,25],
+ "hab": ["Fire escapes","Penthouses"],
+ "diet": ["Seeds and 99 problems","Champagne, its own label"],
+ "bio": [
+  "A blue jay chick with a dark mask and a mixtape of calls. It has ninety-nine problems and a song about each.",
+  "A crowned jay whose every feather is a record label. Its tail fans out like a glass of champagne; it owns the champagne."
+ ],
+ "note": ["Not a businessman. A business, man.","Sold out the garden thrice."],
+ "evo": [
+  {"k":"lvl","at":24}
+ ],
+ "parody": "Jay-Z"
+}

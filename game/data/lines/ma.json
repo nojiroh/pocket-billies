@@ -1,0 +1,41 @@
+{
+ "id": "ma",
+ "names": ["Sesamander","Taobaomander","Alibabamander"],
+ "types": [["Fire"],["Fire"],["Fire","Dragon"]],
+ "prof": [1,1,0.85,1.2,0.9,1.15],
+ "rar": "common",
+ "learn": [
+  [1,"handshake"],
+  [1,"spill"],
+  [5,"hottake"],
+  [9,"lobby"],
+  [15,"pipeline"],
+  [21,"opensesame"],
+  [27,"smear"],
+  [34,"gusher"],
+  [39,"post3am"],
+  [40,"subpoena"],
+  [40,"lawsuit"],
+  [44,"flashsale"]
+ ],
+ "cat": ["Seed Billie","Bazaar Billie","Cave Billie"],
+ "ht": [0.3,1.2,3],
+ "wt": [3,45,700],
+ "hab": ["Sesame fields","Crowded markets","Mountain caves with forty doors"],
+ "diet": ["Sesame seeds","Haggling","Everything on sale"],
+ "bio": [
+  "A salamander that hatched out of a sesame seed. Say \"open\" and it will come out; it never quite closes again.",
+  "Stalls have grown along its tail like scales, and it haggles with everyone who walks by, including itself.",
+  "Forty cave doors run down its back and all of them are open for business. It lies in the river like a crocodile and lets the customers come to it."
+ ],
+ "note": [
+  "Its first word was \"open\".",
+  "Will sell you the thing you are already holding.",
+  "Was asked to stop talking by someone bigger, and did, for a while."
+ ],
+ "evo": [
+  {"k":"lvl","at":16},
+  {"k":"lvl","at":36}
+ ],
+ "parody": "Jack Ma"
+}

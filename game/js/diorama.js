@@ -140,6 +140,8 @@ function dioBaseId() {
 function dioScene(id) {
   if (id && id.charCodeAt(0) === 119 && id[1] === ':' && typeof wrSceneById === 'function') return wrSceneById(id);
   /* v43: a window onto the seamless world */ const S = dioData().scenes;
+  /* phase 04b: a map whose own file hasn't come yet (js/scene-files.js) */
+  if (S[id] && S[id]._lite && typeof SCENE_FILES !== 'undefined') SCENE_FILES.touched.add(id);
   return S[id] ? dioExitsSync(S[id]) : null;
 }
 const dioOk = im => !!(im && (im.naturalWidth || im.width));
@@ -327,7 +329,8 @@ function dioPaths(sc) {
       'battle/cloud_2.png',
       ...DIO_FX.map(k => `scene/fx/${k}.png`),
     ]);
-  for (const ch of new Set((sc.tiles || []).join('') + (sc.edge || 'g'))) {
+  const lite = sc._lite || {}; /* phase 04b: what a map uses, before its own file has come */
+  for (const ch of new Set((sc.tiles ? sc.tiles.join('') : lite.tiles || '') + (sc.edge || 'g'))) {
     const T = C.terrains[ch];
     if (T) {
       L.add(T.tile);
@@ -335,7 +338,7 @@ function dioPaths(sc) {
       if (dioNextOn()) for (const q of dioNextTiles(T.tile)) L.add(q);
     }
   }
-  for (const p of sc.props || []) {
+  for (const p of sc.props || lite.props || []) {
     const P = dioPropM(p, C.props[p.k]);
     if (P) {
       L.add(P.img);
@@ -363,6 +366,8 @@ function dioPaths(sc) {
   return [...L];
 }
 async function dioPrepare(id) {
+  /* phase 04b: the maps this view is put together from, whole */
+  if (typeof scenesNeed === 'function') await scenesNeed(scenesFor(id));
   const sc = dioScene(id);
   if (!sc) throw new Error('No scene ' + id);
   await artLoad(dioPaths(sc));

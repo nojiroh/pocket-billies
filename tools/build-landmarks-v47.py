@@ -26,6 +26,7 @@ previous run's away; a place marked "keep" in the Studio is left alone.
     python3 tools/build-landmarks-v47.py --force             # draw them all again
     python3 tools/build-landmarks-v47.py --no-place          # pictures and catalogue only
 """
+import gamedata  # phase 04b: the data files in game/data
 import os, sys, json, math, random, importlib.util
 from PIL import Image
 HERE = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.dirname(HERE)
@@ -899,12 +900,12 @@ def render_all():
 
 
 def load_data():
-    src = open(DATA, encoding='utf-8').read(); i = src.index('window.GAMEDATA=')
+    src = gamedata.js_text(); i = src.index('window.GAMEDATA=')
     return src[:i], json.JSONDecoder().raw_decode(src[i + len('window.GAMEDATA='):])[0]
 
 
 def save_data(head, D):
-    open(DATA, 'w', encoding='utf-8').write(head + 'window.GAMEDATA=' + json.dumps(D, ensure_ascii=False, indent=1) + ';\n')
+    gamedata.save_js(head + 'window.GAMEDATA=' + json.dumps(D, ensure_ascii=False, indent=1) + ';\n')
 
 
 # ============================================================================= placing them

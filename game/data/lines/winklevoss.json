@@ -1,0 +1,34 @@
+{
+ "id": "winklevoss",
+ "names": ["Scullet","Winklevossel"],
+ "types": [["Water"],["Water","Steel"]],
+ "prof": [1,1.1,1,0.9,0.9,1.1],
+ "rar": "common",
+ "learn": [
+  [1,"handshake"],
+  [1,"interest"],
+  [5,"buyhold"],
+  [9,"spin"],
+  [15,"rerecord"],
+  [21,"headline"],
+  [27,"compound"],
+  [33,"insync"],
+  [39,"exclusive"],
+  [40,"subpoena"],
+  [40,"lawsuit"]
+ ],
+ "cat": ["Scull Billie","Vossel Billie"],
+ "ht": [0.5,2.2],
+ "wt": [8,180],
+ "hab": ["Boathouses","The river at dawn, in sync"],
+ "diet": ["Fish, two at a time","Settlements"],
+ "bio": [
+  "A two-headed otter pup that rows a scrap of bark with both heads calling the stroke.",
+  "A sculling boat of an otter with two identical heads that row in perfect time and agree on everything, especially who had the idea first."
+ ],
+ "note": ["Both heads claim the idea.","Still waiting on a settlement."],
+ "evo": [
+  {"k":"lvl","at":24}
+ ],
+ "parody": "the Winklevoss twins"
+}

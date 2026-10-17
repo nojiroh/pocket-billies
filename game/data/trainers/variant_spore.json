@@ -1,0 +1,20 @@
+{
+ "name": "Variant No. 2048",
+ "who": "variant",
+ "area": "shell",
+ "node": 27,
+ "blocks": false,
+ "team": [
+  {"sp":"son1","lvl":43},
+  {"sp":"hastings0","lvl":44}
+ ],
+ "reward": 1300,
+ "market": null,
+ "lines": [
+  "“Every spore we grind makes the record shine a little brighter. The forest doesn’t mind. We asked it. It didn’t answer.”"
+ ],
+ "win": "“Ground down.”",
+ "lose": "“Polished off.”",
+ "hint": "",
+ "v47region": 1
+}

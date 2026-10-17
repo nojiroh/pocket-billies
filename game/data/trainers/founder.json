@@ -1,0 +1,18 @@
+{
+ "name": "Founder Finn",
+ "who": "intern",
+ "area": "shell",
+ "node": 30,
+ "blocks": false,
+ "team": [
+  {"sp":"yiming0","lvl":46},
+  {"sp":"bloomberg2","lvl":47}
+ ],
+ "reward": 1400,
+ "market": null,
+ "lines": ["“We’re pre-revenue. Pre-product. Pre-office, now the jungle has it. But the vision is huge.”"],
+ "win": "“That’s a pivot.”",
+ "lose": "“Disrupted!”",
+ "hint": "",
+ "v47region": 1
+}

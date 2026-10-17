@@ -1,0 +1,36 @@
+{
+ "id": "walton",
+ "names": ["Pupcart","Vestbull","Waltonbull"],
+ "types": [["Steel"],["Steel"],["Steel","Ground"]],
+ "prof": [1.15,1.05,1.1,0.8,1,0.85],
+ "rar": "common",
+ "learn": [
+  [1,"handshake"],
+  [1,"bulk"],
+  [5,"rollback"],
+  [9,"markdown"],
+  [15,"gentrify"],
+  [21,"eviction"],
+  [27,"dynamic"],
+  [33,"lobbygusher"],
+  [39,"foreclose"],
+  [40,"subpoena"],
+  [40,"lawsuit"]
+ ],
+ "cat": ["Cart Billie","Vest Billie","Supercenter Billie"],
+ "ht": [0.4,1.1,4],
+ "wt": [8,50,2000],
+ "hab": ["Car parks","Shop aisles","The edge of every town"],
+ "diet": ["Whatever is on the bottom shelf","Rollbacks","Small shops"],
+ "bio": [
+  "A bulldog puppy that rides around in a shopping cart and will not get out. It knows where everything is.",
+  "A bulldog with a blue patch on its chest and a smile for everyone. It rolls prices back with one paw and the competition over with the other.",
+  "A bulldog the size of a supercenter. Its shadow is a car park. Towns build themselves around wherever it decides to sit."
+ ],
+ "note": ["Greets everyone at the door.","Always the lowest price. Always.","The whole family lives in it."],
+ "evo": [
+  {"k":"lvl","at":15},
+  {"k":"lvl","at":34}
+ ],
+ "parody": "Sam Walton"
+}

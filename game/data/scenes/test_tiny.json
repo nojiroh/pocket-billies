@@ -1,0 +1,35 @@
+{
+ "name": "Test: a tiny scene",
+ "w": 10,
+ "h": 8,
+ "edge": "g",
+ "sky": ["#8CC6E6","#BFE3EE","#F4E8C8"],
+ "haze": "#EAD9C0",
+ "hazeD": 34,
+ "cam": {"pitch":34,"h":9,"fov":1},
+ "blur": 1,
+ "amb": "pollen",
+ "tint": null,
+ "indoor": 0,
+ "far": "hills",
+ "farH": 8,
+ "folk": 0,
+ "test": 1,
+ "exits": [],
+ "checks": [
+  {"from":[5,3],"to":[1,1],"reach":true,"what":"to the corner (1, 1)"},
+  {"from":[5,3],"to":[9,1],"reach":true,"what":"to the corner (9, 1)"},
+  {"from":[5,3],"to":[1,7],"reach":true,"what":"to the corner (1, 7)"},
+  {"from":[5,3],"to":[9,7],"reach":true,"what":"to the corner (9, 7)"}
+ ],
+ "shots": [
+  {"x":5,"z":3,"yaw":0,"label":"tiny"}
+ ],
+ "hub": [5,3],
+ "tiles": ["gggggggggg","gggggggggg","gggggggggg","gggggggggg","gggggggggg","gggggggggg","gggggggggg","gggggggggg"],
+ "props": [
+  {"k":"bench_wood","x":3,"z":6},
+  {"k":"streetlamp","x":8,"z":5}
+ ],
+ "kind": "test"
+}

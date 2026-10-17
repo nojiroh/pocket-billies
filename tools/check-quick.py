@@ -27,6 +27,9 @@ from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import gamedata as GAMEDATA  # noqa: E402
+
 ROOT = Path(__file__).resolve().parent.parent
 GAME = ROOT / 'game'
 OUT = ROOT / 'validation' / 'quick'
@@ -133,8 +136,7 @@ def serve(directory):
 
 
 def gamedata():
-    src = (GAME / 'data' / 'gamedata.js').read_text(encoding='utf-8')
-    return json.JSONDecoder().raw_decode(src[src.index('window.GAMEDATA=') + len('window.GAMEDATA='):])[0]
+    return GAMEDATA.load()  # phase 04b: from the data files (tools/gamedata.py)
 
 
 # ------------------------------------------------------------------ 1. without a browser
@@ -560,9 +562,16 @@ def phone_flow(b, base, R):
         R['phoneErrors'] = errs[:10]; ctx.close()
 
 
+def all_maps(pg, sec=180):
+    # phase 04b: the game fetches each map's ground and props when it is needed and the rest in the background; the
+    # steps below read every map at once, so wait until all of them are whole
+    if not until(pg, "typeof scenesAll!=='function'||(scenesAll(),Object.keys(GD.scenes).every(id=>!sceneLite(id)))", sec):
+        raise Exception('the maps didn’t all load in %ds: %s' % (sec, pg.evaluate("Object.keys(GD.scenes).filter(sceneLite).join(', ')")))
+
+
 def desktop_steps(b, base, R):
     errs = []; ctx, pg = open_game(b, base, 1100, 700, False, errs)
-    play(pg); pg.evaluate("U.tab='team';render();0"); time.sleep(1)
+    play(pg); pg.evaluate("U.tab='team';render();0"); time.sleep(1); all_maps(pg)
     D = gamedata(); ids = [r.get('scene') for r in D['route']]
     nodes = [i for i, s in enumerate(ids) if s and (not ONLY or s in ONLY)]
 
@@ -1266,7 +1275,7 @@ def desktop_steps(b, base, R):
          sc.edgeExits.forEach((e,k)=>{const p=dioExitPoint(sc,e),q=sc.exits[k];if(!e.id||!'NSEW'.includes(e.side)||Math.hypot(p[0]-q[0],p[1]-q[1])>.02)out.push(id+' '+(e.id||k)+': '+JSON.stringify(p)+' vs '+JSON.stringify(q))})}return out})())"""))
         if ex: raise Exception('edge exits: ' + '; '.join(ex[:4]))
         n_ex = pg.evaluate("Object.values(GD.scenes).reduce((n,sc)=>n+((sc.edgeExits||[]).length),0)")
-        # the join table: every road's ends name an exit of their place (alpha 0.2: the names decide; tools/join-places.py
+        # the join table: every road's ends name an exit of their place (alpha 0.2: the names decide; tools/join-places.py on the legacy branch
         # moved exits so the two ends of a road face each other, so the old compass match no longer has a say)
         diff = json.loads(pg.evaluate("""JSON.stringify((()=>{const out=[];let joined=0;for(let n=0;n<ROUTE.length;n++){const sc=dioScene(sceneIdAt(n));if(!sc||!(sc.exits||[]).length)continue;const a=sceneExits(n);for(const e of ADJ[n]){const L=LINKS[e.i],id=L[3]&&(L[0]===n?L[3].a:L[3].b);if(id&&(sc.edgeExits||[]).some(q=>q.id===id))joined++;else out.push(ROUTE[n].name+' -> '+ROUTE[e.to].name+': no exit named '+id);if(a[e.to]==null)out.push(ROUTE[n].name+' -> '+ROUTE[e.to].name+': no exit')}}return {out,joined}})())"""))
         if diff['out']: raise Exception('join table: ' + '; '.join(diff['out'][:4]))
@@ -2049,6 +2058,8 @@ def main():
     if OUT.exists(): shutil.rmtree(OUT)
     OUT.mkdir(parents=True)
     R = {'when': time.strftime('%Y-%m-%d %H:%M'), 'render': 'software, a third of the resolution, 1024 shadow map'}
+    # phase 04b: data/gamedata.js is generated from the data files; make it from the files as they are now
+    subprocess.run(['node', str(ROOT / 'tools' / 'build-data.mjs')], check=True)
     check_version(); check_code(); check_data(); old_names(); copperleaf_data(); check_water(); check_masts(); check_postcards(); check_rooms(); check_windows(); check_ground(); report_unused()
     srv, base = serve(GAME)
     with sync_playwright() as pw:
@@ -2066,7 +2077,6 @@ def main():
         if '--studio' in ARGS or '--studio-only' in ARGS: studio_round_trip(pw, R)
     srv.shutdown()
     if '--props' in ARGS:
-        import subprocess
         log('Props: every prop on contact sheets (validation/props/)')
         r = subprocess.run([sys.executable, str(ROOT / 'tools' / 'prop-sheet.py')], capture_output=True, text=True)
         steps.append({'step': 'Props: contact sheets', 'ok': r.returncode == 0, 'seconds': 0, 'note': (r.stdout.strip().splitlines() or [''])[-1][:200]})

@@ -1,0 +1,30 @@
+{
+ "id": "ballmer",
+ "names": ["Ballmerilla"],
+ "types": [["Fire","Ground"]],
+ "prof": [1.2,1.3,1,0.9,0.9,0.95],
+ "rar": "uncommon",
+ "learn": [
+  [1,"handshake"],
+  [1,"spill"],
+  [5,"hottake"],
+  [9,"lobby"],
+  [15,"pipeline"],
+  [27,"smear"],
+  [34,"gusher"],
+  [34,"developers"],
+  [39,"post3am"],
+  [40,"subpoena"],
+  [40,"lawsuit"]
+ ],
+ "cat": ["Developer Billie"],
+ "ht": [2.2],
+ "wt": [400],
+ "hab": ["Courtside, standing"],
+ "diet": ["Developers, developers, developers"],
+ "bio": [
+  "A gorilla with a red glow in its eyes that bounces courtside and shouts one word, many times. The word is developers."
+ ],
+ "note": ["Sweats through a shirt a minute."],
+ "parody": "Steve Ballmer"
+}

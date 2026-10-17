@@ -1,0 +1,37 @@
+{
+ "id": "kroc",
+ "names": ["Frylet","Patticroc","Krocodile"],
+ "types": [["Fire"],["Fire"],["Fire","Ground"]],
+ "prof": [1.1,1.1,1,0.9,0.9,1],
+ "rar": "common",
+ "learn": [
+  [1,"handshake"],
+  [1,"spill"],
+  [5,"hottake"],
+  [9,"lobby"],
+  [15,"pipeline"],
+  [21,"billionsserved"],
+  [27,"smear"],
+  [34,"gusher"],
+  [39,"post3am"],
+  [40,"subpoena"],
+  [40,"lawsuit"],
+  [44,"bulk"]
+ ],
+ "cat": ["Fry Billie","Patty Billie","Arches Billie"],
+ "ht": [0.3,1.4,3.6],
+ "wt": [2,60,1200],
+ "hab": ["Drive-throughs","Roadside grills","Every roadside, everywhere"],
+ "diet": ["Fries","Billions of patties","Real estate, mostly"],
+ "bio": [
+  "A crocodile hatchling striped yellow like a fry carton. It has already served four.",
+  "Grill marks run along its back and a bun of a hump sits on its shoulders. It has served billions and is counting.",
+  "Golden arches for jaws and a drive-through for a body. It is not in the food business, it says; it is in the land business."
+ ],
+ "note": ["Counts every customer.","The same in every town, on purpose.","Owns the ground under every grill."],
+ "evo": [
+  {"k":"lvl","at":16},
+  {"k":"lvl","at":36}
+ ],
+ "parody": "Ray Kroc"
+}

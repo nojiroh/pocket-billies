@@ -1,0 +1,29 @@
+{
+ "id": "dell",
+ "names": ["Delldeer"],
+ "types": [["Electric","Grass"]],
+ "prof": [0.95,1,1,1.15,1.05,1.1],
+ "rar": "common",
+ "learn": [
+  [1,"handshake"],
+  [1,"movefast"],
+  [5,"zoning"],
+  [9,"tos"],
+  [15,"disrupt"],
+  [21,"shipdirect"],
+  [27,"rebrand"],
+  [34,"overload"],
+  [39,"snub"],
+  [40,"subpoena"],
+  [40,"lawsuit"],
+  [44,"bulk"]
+ ],
+ "cat": ["Direct Billie"],
+ "ht": [1.6],
+ "wt": [120],
+ "hab": ["Dorm rooms, then warehouses"],
+ "diet": ["Spare parts"],
+ "bio": ["A deer whose steel antlers are server racks. It ships itself direct and skips the shop entirely."],
+ "note": ["Built to order since the dorm."],
+ "parody": "Michael Dell"
+}

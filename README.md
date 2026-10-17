@@ -34,15 +34,20 @@ All three are also in the debug menu (add `?debug` to the address).
 You need [Node.js](https://nodejs.org/) 22 or newer.
 
 ```sh
-npm install        # once: Vite, ESLint, Prettier
+npm install        # once: Vite, ESLint, Prettier, Ajv
 npm run dev        # the game at http://localhost:5173/game/, the Studio at /studio/
 npm run build      # the site in dist/ (game/, studio/ and the start page)
 npm run preview    # serve dist/ to try the build
+npm run data       # make game/data/gamedata.js from the data files (dev, build and the quick check do it too)
 ```
 
 Don't open `game/index.html` straight from disk: the game needs a web server. Any static server of the repository
-root works too (`python3 -m http.server`, then open `/game/`). To try it on a phone on the same Wi-Fi, run
-`npm run dev -- --host` and open the address it prints.
+root works too (`python3 -m http.server`, then open `/game/`); run `npm run data` first, or the game reads the data
+files one by one (slower). To try it on a phone on the same Wi-Fi, run `npm run dev -- --host` and open the address
+it prints.
+
+GitHub Pages is deployed from the build by `.github/workflows/pages.yml` (repository Settings → Pages → Source:
+GitHub Actions).
 
 ## Pocket Billies Studio
 
@@ -60,13 +65,15 @@ Before you push:
 ```sh
 npm run lint            # ESLint: undefined names, a name defined in two scripts, likely bugs
 npm run format          # Prettier (npm run format:check only checks)
+npm run check:data      # the game data: files, schemas, what refers to what (a second)
 npm run check:smoke     # the quick check's smoke set, about two minutes
 ```
 
 The quick check drives the game in headless Chromium. It needs Python 3 and
 `pip install -r tools/requirements-check.txt && python3 -m playwright install chromium`. `npm run check:quick` is
 the full check (about 40 minutes); results and pictures go to `validation/quick/`. GitHub runs lint, the format
-check, the build, smoke and the Firestore rules tests on every push and pull request, and the full check nightly.
+check, the data check, the build, smoke and the Firestore rules tests on every push and pull request, and the full
+check nightly.
 
 Conventions: one rename per commit and never mixed with a behaviour change; reformatting only in separate no-op
 commits (listed in `.git-blame-ignore-revs`); names follow [docs/NAMING.md](docs/NAMING.md). The plan of work is in
@@ -77,8 +84,11 @@ stands.
 
 - `game/`: the game. `index.html` (the script order), `version.js` (the version, the only place it is written),
   `sw.js` (offline cache), `css/`, `fonts/` (SIL Open Font License).
-  - `data/gamedata.js`: all game data and rules (JSON after `window.GAMEDATA=`), edited by the Studio. Very large:
-    search it, don't open it whole.
+  - `data/`: all game data and rules as JSON files, edited by the Studio (or by hand). `index.json` lists them;
+    a file per map (`scenes/`), Billie line (`lines/`), trainer (`trainers/`) and person (`people/`), and one file
+    per other section (`moves.json`, `rules.json`, `route.json`, `scenery.json`...). `schema/` has their JSON
+    schemas. `gamedata.js` is generated from them (not in git): everything but the maps' ground and props, which the
+    game fetches from each map's file when it needs it (`js/scene-files.js`).
   - `art/`: pictures, `manifest.js` (atlas rectangles), `next/rigs-next.js` (skeletons).
   - `js/`: the code. `data.js` builds everything from the data file; `boot.js` loading; `ui.js` the screens;
     `battle.js` battle rules and HUD; `world.js` walking from one place into the next; `diorama.js` the walk scene's data and logic and
@@ -87,6 +97,7 @@ stands.
     3D buildings and props; `log.js` the debug log; `selftest.js` the full test; `debug.js` the debug menu.
 - `studio/`: Pocket Billies Studio. It loads the game's renderer scripts from `../game/js/`.
 - `firebase/`: the Firestore security rules and their tests (`cd firebase && npm ci && npm test`).
-- `tools/`: `check-quick.py` (the quick check), `check-data-text.py`, and the Python scripts that drew the art and
-  built the scenes (the top of each says what it writes).
+- `tools/`: `check-quick.py` (the quick check), `check-data.mjs` and `check-data-text.py` (the data checks),
+  `build-data.mjs` (makes `gamedata.js`), `gamedata.py` (the data for Python tools), and the Python scripts that drew
+  the art and built the scenes (the top of each says what it writes).
 - `docs/`: vision, roadmap, phases, naming, security review, handoff log, the Studio guide.

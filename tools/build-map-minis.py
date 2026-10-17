@@ -8,6 +8,7 @@ and saved as game/art/map/mini/<scene>.png. The map stands them on the globe whe
     python3 tools/build-map-minis.py city sundown    # just these scenes
 
 Needs Playwright with Chromium (software WebGL is fine, just slow: about half a minute a scene)."""
+import gamedata  # phase 04b: the data files in game/data
 import functools, http.server, json, socketserver, sys, threading, time
 from pathlib import Path
 import numpy as np
@@ -20,7 +21,7 @@ WMINI = 220            # width of the saved miniature in pixels
 
 
 def gamedata():
-    s = (GAME / 'data' / 'gamedata.js').read_text(encoding='utf-8')
+    s = gamedata.js_text()
     return json.JSONDecoder().raw_decode(s[s.index('window.GAMEDATA=') + 16:])[0]
 
 

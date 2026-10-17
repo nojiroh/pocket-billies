@@ -4,6 +4,7 @@
 // docs/, firebase/ or validation/). Phase 04c turns the scripts into ES modules and lets Vite bundle them.
 import { cpSync, createReadStream, existsSync, rmSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { buildData } from './tools/build-data.mjs';
 
 const ROOT = import.meta.dirname;
 const SITE = ['index.html', 'game', 'studio'];
@@ -29,6 +30,7 @@ function copySite() {
     closeBundle() {
       for (const p of SITE) cpSync(resolve(ROOT, p), resolve(outDir, p), { recursive: true });
       rmSync(resolve(outDir, 'assets'), { recursive: true, force: true });
+      buildData(resolve(outDir, 'game', 'data'));
     },
   };
 }
@@ -53,6 +55,29 @@ function serveClassicScripts() {
   };
 }
 
+// Phase 04b: data/gamedata.js is generated from the data files (game/data/*.json); made when the server starts and
+// again whenever a data file changes (the Studio or an editor saving one).
+function generateGameData() {
+  return {
+    name: 'pb-game-data',
+    apply: 'serve',
+    configureServer(server) {
+      buildData();
+      const data = resolve(ROOT, 'game', 'data') + '/';
+      const again = f => {
+        if (!f.startsWith(data) || !f.endsWith('.json')) return;
+        try {
+          buildData();
+        } catch (e) {
+          server.config.logger.error('game data: ' + e.message);
+        }
+      };
+      server.watcher.add(data);
+      for (const ev of ['add', 'change', 'unlink']) server.watcher.on(ev, again);
+    },
+  };
+}
+
 export default {
   root: ROOT,
   appType: 'mpa',
@@ -60,5 +85,5 @@ export default {
   preview: { open: '/game/' },
   optimizeDeps: { noDiscovery: true },
   build: { outDir: 'dist', emptyOutDir: true, rollupOptions: { input: EMPTY } },
-  plugins: [serveClassicScripts(), copySite()],
+  plugins: [generateGameData(), serveClassicScripts(), copySite()],
 };

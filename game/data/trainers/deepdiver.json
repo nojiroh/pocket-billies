@@ -1,0 +1,18 @@
+{
+ "name": "Deep Diver Dom",
+ "who": "diver",
+ "area": "sea",
+ "node": 37,
+ "blocks": false,
+ "team": [
+  {"sp":"ellison2","lvl":53},
+  {"sp":"spielberg1","lvl":54}
+ ],
+ "reward": 1700,
+ "market": null,
+ "lines": ["“I’ve dived for the bottom line twenty times. It keeps moving down.”"],
+ "win": "“Out of air.”",
+ "lose": "“Deep dive!”",
+ "hint": "",
+ "v47region": 1
+}

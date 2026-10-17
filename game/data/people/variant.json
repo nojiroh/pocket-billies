@@ -1,0 +1,29 @@
+{
+ "look": {
+  "name": "Variant",
+  "body": {"height":1,"legs":1,"shoulders":1,"chest":0},
+  "skin": "#E2B08C",
+  "hair": "#2A2230",
+  "eyes": "#5A4A3A",
+  "wear": {
+   "hair": "hair_short",
+   "eyes": "eyes_round",
+   "brows": "brows_soft",
+   "mouth": "mouth_grin",
+   "top": "tee",
+   "outer": "denim_jacket",
+   "bottom": "jeans",
+   "shoes": "runners",
+   "glasses": "glasses_sun",
+   "neck": "nametag"
+  },
+  "colors": {
+   "tee": ["#2A2434"],
+   "denim_jacket": ["#E9B83C","#B88A1E"],
+   "jeans": ["#2E3240","#1E2230"],
+   "runners": ["#E9B83C","#F2EEE4"],
+   "glasses_sun": ["#1E1A26"],
+   "nametag": ["#E9B83C"]
+  }
+ }
+}

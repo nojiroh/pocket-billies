@@ -1235,7 +1235,7 @@ function voxShadow(SH, items) {
 function voxPaths(sc, C) {
   const L = [];
   let any = false;
-  for (const p of sc.props || []) {
+  for (const p of sc.props || (sc._lite && sc._lite.props) || []) {
     const M = C.props[p.k];
     if (!M || !M.vox) continue;
     any = true;

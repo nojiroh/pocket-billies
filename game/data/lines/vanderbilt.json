@@ -1,0 +1,31 @@
+{
+ "id": "vanderbilt",
+ "names": ["Vanderbolt"],
+ "types": [["Electric","Steel"]],
+ "prof": [1,1.15,1.1,1,0.95,1.1],
+ "rar": "rare",
+ "learn": [
+  [1,"handshake"],
+  [1,"movefast"],
+  [5,"zoning"],
+  [9,"tos"],
+  [15,"disrupt"],
+  [27,"rebrand"],
+  [34,"overload"],
+  [34,"fullsteam"],
+  [39,"bulk"],
+  [40,"subpoena"],
+  [40,"lawsuit"],
+  [44,"margincall"]
+ ],
+ "cat": ["Railroad Billie"],
+ "ht": [6],
+ "wt": [900],
+ "hab": ["Every rail there is"],
+ "diet": ["Coal"],
+ "bio": [
+  "A steam-train of a snake with a glowing furnace down its length and a plume of smoke it never lets go of. It owns every rail it rides and most it does not."
+ ],
+ "note": ["Built a university with the spare change."],
+ "parody": "Cornelius Vanderbilt"
+}

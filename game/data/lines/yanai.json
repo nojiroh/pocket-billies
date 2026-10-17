@@ -1,0 +1,36 @@
+{
+ "id": "yanai",
+ "names": ["Clawlet","Uniqlobster"],
+ "types": [["Water"],["Water","Steel"]],
+ "prof": [0.95,1,1.15,0.95,1.1,0.9],
+ "rar": "common",
+ "learn": [
+  [1,"handshake"],
+  [1,"interest"],
+  [5,"buyhold"],
+  [9,"spin"],
+  [15,"rerecord"],
+  [21,"headline"],
+  [27,"compound"],
+  [28,"perfectfold"],
+  [34,"exclusive"],
+  [39,"bulk"],
+  [40,"subpoena"],
+  [40,"lawsuit"],
+  [44,"markdown"]
+ ],
+ "cat": ["Claw Billie","Basics Billie"],
+ "ht": [0.2,1.1],
+ "wt": [1,30],
+ "hab": ["Tide pools, folded neatly","Shop floors with everything in its place"],
+ "diet": ["Plankton","Fleece, by the mile"],
+ "bio": [
+  "A lobster larva folded as neatly as a T-shirt. It unfolds to say hello and folds back.",
+  "A navy lobster in its own neat basics. It folds anything perfectly in one move and has never worn a logo."
+ ],
+ "note": ["Folds in one motion.","No logo. Never a logo."],
+ "evo": [
+  {"k":"lvl","at":24}
+ ],
+ "parody": "Tadashi Yanai"
+}

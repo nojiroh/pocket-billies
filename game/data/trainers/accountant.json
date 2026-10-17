@@ -1,0 +1,19 @@
+{
+ "name": "Accountant Al",
+ "who": "broker",
+ "area": "esc",
+ "node": 25,
+ "blocks": false,
+ "team": [
+  {"sp":"dalio0","lvl":40},
+  {"sp":"saylor1","lvl":40},
+  {"sp":"griffin0","lvl":41}
+ ],
+ "reward": 1300,
+ "market": null,
+ "lines": ["“Flat tax! Everyone pays the same. I have a form explaining why that’s fair. It’s very long.”"],
+ "win": "“I’ll claim that as a loss.”",
+ "lose": "“Deducted.”",
+ "hint": "",
+ "v47region": 1
+}

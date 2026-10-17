@@ -411,7 +411,9 @@ ACTS.restore = async d => {
   }
 };
 ACTS.exportData = () => {
-  const b = new Blob([JSON.stringify(ST.D, (k, v) => (k[0] === '_' ? undefined : v), 1)], { type: 'application/json' }),
+  const b = new Blob([JSON.stringify(ST.D, (k, v) => (k[0] === '_' && k.length > 1 ? undefined : v), 1)], {
+      type: 'application/json',
+    }),
     a = document.createElement('a');
   a.href = URL.createObjectURL(b);
   a.download = 'pocket-billies-gamedata.json';

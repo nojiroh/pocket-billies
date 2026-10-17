@@ -1,0 +1,42 @@
+{
+ "id": "bezos",
+ "split": true,
+ "names": ["Cartotter","Primotter","Orbitotter","Everyotter"],
+ "types": [["Water"],["Water"],["Water","Flying"],["Water","Steel"]],
+ "prof": [1,1.05,1,1.05,1,1.1],
+ "rar": "starter",
+ "learn": [
+  [1,"handshake"],
+  [1,"interest"],
+  [5,"flashsale"],
+  [9,"buyhold"],
+  [13,"headline"],
+  [18,"bulk"],
+  [24,"exclusive"],
+  [30,"orbit"],
+  [36,"markdown"],
+  [42,"launch"]
+ ],
+ "cat": ["Delivery Billie","Two-Day Billie","Blue Sky Billie","Everything Billie"],
+ "ht": [0.7,1.2,2.6,2.8],
+ "wt": [12,40,300,900],
+ "hab": ["Riverbanks with a lot of boxes","Loading docks","Launch sites with a cowboy hat","Everywhere, at once"],
+ "diet": ["Whatever's in the box","Two-day anything","Rocket fuel, river water","Every other business"],
+ "bio": [
+  "A river otter that carries everything it owns in one cardboard box. The box has a smile on it. The otter does not, until you order something.",
+  "Boxes stacked three high on its back, delivered in two days whether you asked or not. Its laugh carries across the river.",
+  "A blue rocket shell, a cowboy hat and a river current for exhaust. It went up, saw the edge, and came back with a story.",
+  "A warehouse on legs with a conveyor-belt tail and drones circling its head. It sells everything, including the shelf it stands on."
+ ],
+ "note": [
+  "Started selling books. Nobody remembers that.",
+  "Its dens are the biggest buildings in every town.",
+  "Eleven minutes in orbit, ten years of telling people about it.",
+  "Charges rent to the other Billies for standing near it."
+ ],
+ "evo": [
+  {"k":"lvl","at":16},
+  {"k":"split","at":32}
+ ],
+ "parody": "Jeff Bezos"
+}

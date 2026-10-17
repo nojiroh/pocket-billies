@@ -1,0 +1,36 @@
+{
+ "id": "hughes",
+ "names": ["Gosling","Sprucegoose","Aviatorgoose"],
+ "types": [["Flying"],["Flying","Steel"],["Flying","Steel"]],
+ "prof": [0.95,1,0.9,1.1,0.9,1.2],
+ "rar": "uncommon",
+ "learn": [
+  [1,"handshake"],
+  [1,"liftoff"],
+  [5,"orbit"],
+  [9,"escvel"],
+  [27,"markdown"],
+  [33,"bulk"],
+  [34,"sprucedive"],
+  [34,"launch"],
+  [39,"gentrify"],
+  [40,"subpoena"],
+  [40,"lawsuit"]
+ ],
+ "cat": ["Gosling Billie","Spruce Billie","Aviator Billie"],
+ "ht": [0.3,1.6,3.4],
+ "wt": [2,120,900],
+ "hab": ["Airfields","Hangars too big for the plane","A hotel room with the curtains shut"],
+ "diet": ["Grass","Spruce","Film reels"],
+ "bio": [
+  "A gosling with dark rings round its eyes like flying goggles. It wants to go faster than anything has gone.",
+  "Its wings grew out of spruce. It is too big to fly more than once, and the once was enough to make the papers.",
+  "Its tail is a film reel and it keeps a studio under one wing and an airline under the other. It has not come out of the hangar in years."
+ ],
+ "note": ["Wants to be the fastest thing alive.","Flew for one mile, once.","Washes its wings forty times a day."],
+ "evo": [
+  {"k":"lvl","at":16},
+  {"k":"lvl","at":36}
+ ],
+ "parody": "Howard Hughes"
+}

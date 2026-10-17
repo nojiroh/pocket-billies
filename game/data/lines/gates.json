@@ -1,0 +1,42 @@
+{
+ "id": "gates",
+ "split": true,
+ "names": ["Kidling","Billgoat","Windowgoat","Harvestgoat"],
+ "types": [["Grass"],["Grass"],["Grass","Electric"],["Grass","Ground"]],
+ "prof": [1.05,0.9,1.05,1.15,1.05,0.85],
+ "rar": "starter",
+ "learn": [
+  [1,"handshake"],
+  [1,"snub"],
+  [5,"harvest"],
+  [9,"tos"],
+  [13,"allowance"],
+  [18,"disrupt"],
+  [24,"oldmoney"],
+  [34,"familyoffice"],
+  [36,"overload"],
+  [42,"gentrify"]
+ ],
+ "cat": ["Floppy Billie","Window Billie","Startup Billie","Farmland Billie"],
+ "ht": [0.6,1.1,1.9,2.2],
+ "wt": [10,36,150,520],
+ "hab": ["Dorm rooms","Office parks","Every desk in the world","Every field in the country"],
+ "diet": ["Floppy disks","Licences","Updates","Whole counties"],
+ "bio": [
+  "A goat kid in a sweater holding a floppy disk like a leaf. It jumped over a chair once and has been dining out on it since.",
+  "A window on its flank shows whatever it wants you to see. It bleats a startup chime and asks you to restart.",
+  "Its horns are screens, and the bleat is a chime everyone on earth has heard. It sells the same window to every desk, every three years.",
+  "It owns the field it stands in, and the next one. Furrows for fur, a tractor tyre for a collar, and a plan for the whole county."
+ ],
+ "note": [
+  "Reads a book a week and tells you about it.",
+  "Its windows freeze now and then. It calls this an opportunity.",
+  "Gives away more than most Billies make, and keeps the receipts.",
+  "Nobody has counted its acres. It has."
+ ],
+ "evo": [
+  {"k":"lvl","at":16},
+  {"k":"split","at":32}
+ ],
+ "parody": "Bill Gates"
+}

@@ -1,0 +1,30 @@
+{
+ "id": "schultz",
+ "names": ["Sirenbucks"],
+ "types": [["Water","Fire"]],
+ "prof": [0.95,0.9,0.95,1.2,1.1,1],
+ "rar": "uncommon",
+ "learn": [
+  [1,"handshake"],
+  [1,"interest"],
+  [5,"buyhold"],
+  [9,"spin"],
+  [15,"rerecord"],
+  [21,"wrongname"],
+  [27,"compound"],
+  [33,"headline"],
+  [39,"exclusive"],
+  [40,"subpoena"],
+  [40,"lawsuit"]
+ ],
+ "cat": ["Siren Billie"],
+ "ht": [1.5],
+ "wt": [60],
+ "hab": ["Every corner, in pairs"],
+ "diet": ["Beans, dark roast"],
+ "bio": [
+  "A green two-tailed siren with a mane of kelp and a pebble it holds like a cup. It will get your name wrong and charge you for the extra shot."
+ ],
+ "note": ["Calls you by a name that is almost yours."],
+ "parody": "Howard Schultz"
+}

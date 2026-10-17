@@ -10,6 +10,7 @@ lane to the townhouses over its new course. Nothing else in the town moves.
     python3 tools/fix-marigold-stream.py --dry    # draw before and after maps into the scratch folder, change nothing
     python3 tools/fix-marigold-stream.py --map out.png
 """
+import gamedata  # phase 04b: the data files in game/data
 import json, math, sys, random
 from pathlib import Path
 
@@ -23,12 +24,12 @@ LAND = 'gGflCKpuqhv'
 
 
 def load():
-    src = DATA.read_text(encoding='utf-8'); i = src.index('window.GAMEDATA=')
+    src = gamedata.js_text(); i = src.index('window.GAMEDATA=')
     return src[:i], json.JSONDecoder().raw_decode(src[i + len('window.GAMEDATA='):])[0]
 
 
 def save(head, D):
-    DATA.write_text(head + 'window.GAMEDATA=' + json.dumps(D, ensure_ascii=False, indent=1) + ';\n', encoding='utf-8')
+    gamedata.save_js(head + 'window.GAMEDATA=' + json.dumps(D, ensure_ascii=False, indent=1) + ';\n')
 
 
 def seg_d(px, pz, a, b):

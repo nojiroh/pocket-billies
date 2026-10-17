@@ -193,7 +193,10 @@ async function saveAll() {
       n++;
     }
     if (ST.dirty) {
-      await api('gamedata', { method: 'POST', body: JSON.stringify(ST.D, (k, v) => (k[0] === '_' ? undefined : v)) });
+      await api('gamedata', {
+        method: 'POST',
+        body: JSON.stringify(ST.D, (k, v) => (k[0] === '_' && k.length > 1 ? undefined : v)),
+      });
       ST.dirty = false;
       n++;
     }

@@ -1,0 +1,28 @@
+{
+ "hair": "#1E1A22",
+ "style": "bob",
+ "top": "#2A2A34",
+ "top2": "#1A1A22",
+ "bottom": "#7A3A5A",
+ "shoe": "#1E1A22",
+ "skin": "#8A5A3A",
+ "look": {
+  "name": "Vera",
+  "body": {"chest":0.6,"hips":1.08,"height":1.04},
+  "skin": "#8A5A3A",
+  "hair": "#1E1A22",
+  "eyes": "#3A2A1A",
+  "wear": {
+   "hair": "hair_bob",
+   "eyes": "eyes_sharp",
+   "brows": "brows_arched",
+   "mouth": "mouth_smirk",
+   "top": "dress_shirt",
+   "outer": "blazer",
+   "bottom": "skirt",
+   "shoes": "oxfords",
+   "glasses": "glasses_round"
+  },
+  "colors": {"blazer":["#7A3A5A","#5A2440"],"skirt":["#2A2A34"]}
+ }
+}

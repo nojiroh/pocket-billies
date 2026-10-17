@@ -1,0 +1,29 @@
+{
+ "id": "mittal",
+ "names": ["Mittalion"],
+ "types": [["Steel","Fire"]],
+ "prof": [1.05,1.3,1.2,0.9,0.9,0.85],
+ "rar": "rare",
+ "learn": [
+  [1,"handshake"],
+  [1,"bulk"],
+  [5,"gentrify"],
+  [9,"markdown"],
+  [15,"spill"],
+  [21,"hottake"],
+  [27,"dynamic"],
+  [30,"blastfurnace"],
+  [33,"pipeline"],
+  [39,"gusher"],
+  [40,"subpoena"],
+  [40,"lawsuit"]
+ ],
+ "cat": ["Furnace Billie"],
+ "ht": [2.4],
+ "wt": [1800],
+ "hab": ["Blast furnaces"],
+ "diet": ["Scrap steel"],
+ "bio": ["A lion poured from steel with a furnace for a mane. It buys every mill that goes cold and lights it again."],
+ "note": ["Its roar is a blast furnace."],
+ "parody": "Lakshmi Mittal"
+}

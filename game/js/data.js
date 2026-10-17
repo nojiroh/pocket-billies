@@ -1,11 +1,12 @@
 'use strict';
 /* ================= DATA =================
-   Everything here is built from data/gamedata.js, which Pocket Billies Studio edits.
+   Everything here is built from the game data (data/*.json, put together as data/gamedata.js), which Pocket Billies
+   Studio edits.
    The rest of the game reads these globals, so the file format can change without touching game code. */
 const GD = window.GAMEDATA;
 if (!GD)
   throw new Error(
-    'data/gamedata.js is missing or broken. Restore it from data/backups or re-save it in Pocket Billies Studio.'
+    'The game data did not load: data/gamedata.js is missing and the data files in data/ could not be read (npm run check:data says what is wrong).'
   );
 const DATA_WARN = [];
 const warnData = m => {

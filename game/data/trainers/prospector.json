@@ -1,0 +1,18 @@
+{
+ "name": "Prospector Pete",
+ "who": "miner",
+ "area": "esc",
+ "node": 26,
+ "blocks": false,
+ "team": [
+  {"sp":"rinehart1","lvl":42},
+  {"sp":"ford2","lvl":43}
+ ],
+ "reward": 1300,
+ "market": null,
+ "lines": ["“Struck gold in ’98. Struck it again in ’99. It was the same gold. I keep losing it.”"],
+ "win": "“Bust!”",
+ "lose": "“Pay dirt.”",
+ "hint": "",
+ "v47region": 1
+}

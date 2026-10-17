@@ -1,0 +1,22 @@
+{
+ "look": {
+  "name": "Marina",
+  "body": {"chest":0.55,"hips":1.06},
+  "skin": "#8A5A3A",
+  "hair": "#1E1A22",
+  "eyes": "#3A2A1A",
+  "wear": {
+   "hair": "hair_curly",
+   "eyes": "eyes_lashes",
+   "brows": "brows_arched",
+   "mouth": "mouth_smile",
+   "top": "crop",
+   "outer": "denim_jacket",
+   "bottom": "shorts",
+   "shoes": "sandals",
+   "glasses": "glasses_sun",
+   "neck": "chain"
+  },
+  "colors": {"crop":["#3AA8C8"],"denim_jacket":["#F4F2EC","#C8CED3"],"shorts":["#F2C14E"],"chain":["#E8C24A"]}
+ }
+}

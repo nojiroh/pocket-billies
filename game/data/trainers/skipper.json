@@ -1,0 +1,18 @@
+{
+ "name": "Skipper Sam",
+ "who": "skipper",
+ "area": "lake",
+ "node": 18,
+ "blocks": false,
+ "team": [
+  {"sp":"ellison1","lvl":33},
+  {"sp":"spielberg1","lvl":34}
+ ],
+ "reward": 1100,
+ "egg": 5,
+ "market": null,
+ "lines": ["“Welcome aboard! Er, I mean, a-lake.”","“This lake is so liquid you can ride right across it.”"],
+ "win": "“Man overboard! Well played.”",
+ "lose": "“Ship shape! Better luck next voyage.”",
+ "hint": "Skipper Sam runs the floating market with a level 33–34 team."
+}

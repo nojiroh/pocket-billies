@@ -1,0 +1,30 @@
+{
+ "id": "scott",
+ "names": ["Scottelican"],
+ "types": [["Water","Psychic"]],
+ "prof": [1,0.85,1,1.25,1.2,1],
+ "rar": "rare",
+ "learn": [
+  [1,"handshake"],
+  [1,"interest"],
+  [5,"buyhold"],
+  [9,"spin"],
+  [15,"rerecord"],
+  [21,"headline"],
+  [27,"compound"],
+  [30,"quietgift"],
+  [34,"exclusive"],
+  [39,"rugpull"],
+  [40,"subpoena"],
+  [40,"lawsuit"],
+  [44,"giveaway"]
+ ],
+ "cat": ["Giving Billie"],
+ "ht": [1.7],
+ "wt": [40],
+ "hab": ["Above charities, briefly"],
+ "diet": ["Fish; gives the rest away"],
+ "bio": ["A pelican with a golden pouch that quietly drops gold on charities and flies off before the photo."],
+ "note": ["No press release. Ever."],
+ "parody": "MacKenzie Scott"
+}

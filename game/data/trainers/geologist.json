@@ -1,0 +1,19 @@
+{
+ "name": "Geologist Garnet",
+ "who": "geo",
+ "area": "grotto",
+ "node": 31,
+ "blocks": false,
+ "team": [
+  {"sp":"ambani1","lvl":47},
+  {"sp":"carnegie1","lvl":47},
+  {"sp":"slim1","lvl":48}
+ ],
+ "reward": 1400,
+ "market": null,
+ "lines": ["“These crystals grew a millimetre a century. The Variants are cutting a metre a day.”"],
+ "win": "“Eroded.”",
+ "lose": "“Solid as rock.”",
+ "hint": "",
+ "v47region": 1
+}

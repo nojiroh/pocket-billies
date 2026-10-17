@@ -1,0 +1,29 @@
+{
+ "id": "chesky",
+ "names": ["Cheskycrab"],
+ "types": [["Water","Ground"]],
+ "prof": [0.9,0.95,1.2,1,1.15,0.9],
+ "rar": "common",
+ "learn": [
+  [1,"handshake"],
+  [1,"interest"],
+  [5,"buyhold"],
+  [9,"spin"],
+  [15,"cleaningfee"],
+  [21,"rerecord"],
+  [27,"compound"],
+  [33,"headline"],
+  [39,"exclusive"],
+  [40,"subpoena"],
+  [40,"lawsuit"],
+  [44,"renthike"]
+ ],
+ "cat": ["Rental Billie"],
+ "ht": [0.6],
+ "wt": [12],
+ "hab": ["Other crabs' shells"],
+ "diet": ["Cleaning fees"],
+ "bio": ["A hermit crab that rents out shells it does not live in. The shell on its back is listed on three sites."],
+ "note": ["The shell has a two-night minimum."],
+ "parody": "Brian Chesky"
+}

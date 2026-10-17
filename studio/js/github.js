@@ -18,10 +18,10 @@ const GH = {
   login: '',
   batch: null,
   tree: null,
+  data: {}, // the text of each data file as read, to send only the ones that change
 };
 const GH_KEY = 'pb-studio-gh-token';
 const GH_HEAD = {
-  data: '/* Pocket Billies game data. Generated and edited by Pocket Billies Studio (start-studio.py).\n   You can also edit this file by hand: it is plain JSON after the "=". */\n',
   rigs: '/* Billionaire skeletons (bones, pivots, draw order) for art/billionaires/*.png. Edited by Pocket Billies Studio. */\n',
   next: '/* v36: rigs for the new piece sheets (art/next/billionaires), made by tools/build-starter-sheets.py and edited by Pocket Billies Studio. k=1: pieces at the final scale. */\n',
 };
@@ -175,17 +175,48 @@ ACTS.ghOut = async () => {
   } catch (e) {}
   location.reload();
 };
+/* ---------- the game data: many files in game/data (phase 04b, layout in game/js/data-files.js) ----------
+   Read: index.json, then every file it lists, a few at a time. Their text is kept, so a proposal sends only the files
+   that changed (and removes the files of entries that were deleted). */
+async function ghReadData() {
+  const read = path => gh(ghRepo(`contents/${ghPath('data/' + path)}?ref=${GH_CFG.branch}`), {}, true);
+  const index = JSON.parse(await read('index.json')),
+    list = PB_DATA.files(index),
+    texts = { 'index.json': PB_DATA.text(index) };
+  let next = 0;
+  const worker = async () => {
+    while (next < list.length) {
+      const f = list[next++];
+      texts[f.path] = await read(f.path);
+    }
+  };
+  await Promise.all(Array.from({ length: 12 }, worker));
+  GH.data = {};
+  const D = PB_DATA.assemble(index, path => {
+    const v = JSON.parse(texts[path]);
+    GH.data[path] = PB_DATA.text(v);
+    return v;
+  });
+  GH.data['index.json'] = texts['index.json'];
+  return D;
+}
+function ghDataChanges(D) {
+  const { index, files } = PB_DATA.split(D),
+    now = { 'index.json': PB_DATA.text(index) },
+    out = [];
+  for (const [path, v] of Object.entries(files)) now[path] = PB_DATA.text(v);
+  for (const [path, text] of Object.entries(now))
+    if (GH.data[path] !== text) out.push({ path: ghPath('data/' + path), text });
+  for (const path of Object.keys(GH.data)) if (!(path in now)) out.push({ path: ghPath('data/' + path), gone: true });
+  return out;
+}
 /* ---------- the Studio's server calls, answered from GitHub ---------- */
 async function ghApi(path, opt = {}) {
   const [p, qs] = path.split('?'),
     q = new URLSearchParams(qs || ''),
     post = (opt.method || 'GET') === 'POST';
   if (!post) {
-    if (p === 'gamedata')
-      return ghJsJson(
-        await gh(ghRepo(`contents/${ghPath('data/gamedata.js')}?ref=${GH_CFG.branch}`), {}, true),
-        'window.GAMEDATA'
-      );
+    if (p === 'gamedata') return ghReadData();
     if (p === 'rigs') {
       const R = ghJsJson(
         await gh(ghRepo(`contents/${ghPath('art/rigs.js')}?ref=${GH_CFG.branch}`), {}, true),
@@ -211,10 +242,7 @@ async function ghApi(path, opt = {}) {
   }
   if (!GH.batch) throw new Error('Saving goes through “Propose changes”.');
   if (p === 'gamedata') {
-    GH.batch.push({
-      path: ghPath('data/gamedata.js'),
-      text: GH_HEAD.data + 'window.GAMEDATA=' + JSON.stringify(JSON.parse(opt.body), null, 1) + ';\n',
-    });
+    GH.batch.push(...ghDataChanges(JSON.parse(opt.body)));
     return { ok: true };
   }
   if (p === 'rigs') {
@@ -254,6 +282,10 @@ async function ghPropose(summary) {
     baseCommit = await gh(ghRepo(`git/commits/${baseSha}`));
   const tree = [];
   for (const f of files) {
+    if (f.gone) {
+      tree.push({ path: f.path, mode: '100644', type: 'blob', sha: null });
+      continue;
+    }
     const blob = await gh(ghRepo('git/blobs'), {
       method: 'POST',
       body: JSON.stringify({ content: f.blob ? b64(f.blob) : b64text(f.text), encoding: 'base64' }),

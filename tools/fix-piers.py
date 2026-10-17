@@ -8,6 +8,7 @@ deck turn back into water; boards on dry land (the walk up to a jetty, a boardwa
     python3 tools/fix-piers.py          # every place
     python3 tools/fix-piers.py --dry    # say what would change
 """
+import gamedata  # phase 04b: the data files in game/data
 import json, math, sys
 from pathlib import Path
 
@@ -18,12 +19,12 @@ TAG = 'a04pier'
 
 
 def load():
-    src = DATA.read_text(encoding='utf-8'); i = src.index('window.GAMEDATA=')
+    src = gamedata.js_text(); i = src.index('window.GAMEDATA=')
     return src[:i], json.JSONDecoder().raw_decode(src[i + len('window.GAMEDATA='):])[0]
 
 
 def save(head, D):
-    DATA.write_text(head + 'window.GAMEDATA=' + json.dumps(D, ensure_ascii=False, indent=1) + ';\n', encoding='utf-8')
+    gamedata.save_js(head + 'window.GAMEDATA=' + json.dumps(D, ensure_ascii=False, indent=1) + ';\n')
 
 
 def piers_of(sc):

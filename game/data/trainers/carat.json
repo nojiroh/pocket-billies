@@ -1,0 +1,33 @@
+{
+ "name": "Leader Carat",
+ "who": "carat",
+ "area": "grotto",
+ "node": 32,
+ "blocks": false,
+ "team": [
+  {"sp":"slim2","lvl":51},
+  {"sp":"buterin1","lvl":51},
+  {"sp":"dyson1","lvl":52},
+  {"sp":"huang2","lvl":53}
+ ],
+ "reward": 5000,
+ "egg": 10,
+ "market": null,
+ "lines": [
+  "“The Variants want one perfect needle, long enough to play the sun. I’m cutting it. I didn’t ask what for.”",
+  "“I’m asking now. Show me what you’re made of.”"
+ ],
+ "win": "“Not a flaw on you. The Electric Badge is yours. And the needle? It cracked in the cold. Funny, that.”",
+ "lose": "“Rough cut. Polish it and come back.”",
+ "hint": "Leader Carat’s Electric team is level 51–53. Ground Billies don’t care how much it hums.",
+ "seat": {
+  "id": "carat",
+  "title": "Electric Badge · 8 of 8",
+  "coin": "gold",
+  "coins": {"gold":5,"tbtf":3},
+  "items": {"parachute":1},
+  "rewardText": "a Golden Parachute, 5 Gold Coins and 3 Platinum Coins",
+  "unlockText": "The Rimefrost Caves, east of Glimmershaft Town, are open. Beyond them, the inner sea."
+ },
+ "v47region": 1
+}

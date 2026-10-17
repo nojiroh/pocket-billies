@@ -1,0 +1,34 @@
+{
+ "id": "son",
+ "names": ["Softpup","Visionhound"],
+ "types": [["Psychic"],["Psychic","Electric"]],
+ "prof": [0.95,0.9,0.9,1.3,1,1.05],
+ "rar": "uncommon",
+ "learn": [
+  [1,"handshake"],
+  [1,"rugpull"],
+  [5,"pump"],
+  [9,"fud"],
+  [27,"hype"],
+  [34,"moon"],
+  [34,"visionfund"],
+  [39,"movefast"],
+  [40,"twoday"],
+  [40,"subpoena"],
+  [40,"lawsuit"]
+ ],
+ "cat": ["Soft Billie","Vision Billie"],
+ "ht": [0.5,1.9],
+ "wt": [9,110],
+ "hab": ["Under the desk","The future, apparently"],
+ "diet": ["Whatever is next","Whatever is after that"],
+ "bio": [
+  "A white puppy with sky-blue eyes that plans three hundred years ahead and forgets dinner.",
+  "A hound with a ruff of white fur and eyes like fund charts. It bets everything on whatever comes next, and most of it on one thing."
+ ],
+ "note": ["Has a three-hundred-year plan on the fridge.","Lost more in a day than most towns are worth. Smiled."],
+ "evo": [
+  {"k":"lvl","at":26}
+ ],
+ "parody": "Masayoshi Son"
+}

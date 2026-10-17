@@ -17,6 +17,7 @@ their record
     python3 tools/migrate-places.py           # fills what is missing; never changes a value that is already set
     python3 tools/migrate-places.py --check   # only reports what is missing or inconsistent
 """
+import gamedata  # phase 04b: the data files in game/data
 import json, sys
 from pathlib import Path
 
@@ -25,7 +26,7 @@ DATA = ROOT / 'game' / 'data' / 'gamedata.js'
 
 
 def load():
-    src = DATA.read_text(encoding='utf-8'); i = src.index('window.GAMEDATA=')
+    src = gamedata.js_text(); i = src.index('window.GAMEDATA=')
     return src[:i], json.JSONDecoder().raw_decode(src[i + len('window.GAMEDATA='):])[0]
 
 
@@ -74,7 +75,7 @@ def main():
                  'name': b.get('routeName') if b['kind'] == 'route' else a.get('routeName') or b.get('route') or a.get('route')}
         for k, v in named.items():
             if J.get(k) is None: J[k] = v; n += 1
-    DATA.write_text(head + 'window.GAMEDATA=' + json.dumps(D, ensure_ascii=False, indent=1) + ';\n', encoding='utf-8')
+    gamedata.save_js(head + 'window.GAMEDATA=' + json.dumps(D, ensure_ascii=False, indent=1) + ';\n')
     p = problems(D)
     print(f'{n} fields filled; ' + ('all consistent' if not p else f'{len(p)} problems:\n  ' + '\n  '.join(p)))
 

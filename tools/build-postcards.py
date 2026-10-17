@@ -10,6 +10,7 @@ as game/art/postcards/<scene>.webp (480 x 320). The game lays the "Greetings fro
     python3 tools/build-postcards.py city sundown # just these
 
 Needs Playwright with Chromium (software WebGL is fine, just slow: about half a minute a town)."""
+import gamedata  # phase 04b: the data files in game/data
 import functools, http.server, json, socketserver, sys, threading, time
 from pathlib import Path
 from PIL import Image, ImageEnhance
@@ -56,7 +57,7 @@ def clear_view(D, sid, v):
 
 
 def gamedata():
-    s = (GAME / 'data' / 'gamedata.js').read_text(encoding='utf-8')
+    s = gamedata.js_text()
     return json.JSONDecoder().raw_decode(s[s.index('window.GAMEDATA=') + 16:])[0]
 
 

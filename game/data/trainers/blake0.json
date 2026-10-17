@@ -1,0 +1,18 @@
+{
+ "name": "Blake",
+ "who": "chad",
+ "area": "grass",
+ "node": 0,
+ "blocks": false,
+ "tutorial": true,
+ "team": [
+  {"sp":"@rival","lvl":4,"moves":["handshake"]}
+ ],
+ "reward": 0,
+ "market": null,
+ "lines": ["“Mine beats yours. Watch.”"],
+ "win": "“What? It only knows Tackle! That’s my excuse and I’m sticking to it.”",
+ "lose": "“Ha! Told you. Mine beats yours.”",
+ "hint": "",
+ "seat": null
+}

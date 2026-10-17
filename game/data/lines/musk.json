@@ -1,0 +1,42 @@
+{
+ "id": "musk",
+ "split": true,
+ "names": ["Emberox","Boostox","Marsox","Memeox"],
+ "types": [["Fire"],["Fire"],["Fire","Dragon"],["Fire","Psychic"]],
+ "prof": [0.95,1.2,0.9,1,0.85,1.1],
+ "rar": "starter",
+ "learn": [
+  [1,"handshake"],
+  [1,"spill"],
+  [5,"movefast"],
+  [9,"hottake"],
+  [13,"liftoff"],
+  [18,"pipeline"],
+  [24,"post3am"],
+  [30,"launch"],
+  [36,"gusher"],
+  [42,"joyride"]
+ ],
+ "cat": ["Spark Billie","Booster Billie","Lander Billie","Timeline Billie"],
+ "ht": [0.7,1.3,2.4,2.1],
+ "wt": [18,70,420,160],
+ "hab": ["Garages with a rocket poster","Launch pads","Red dust plains","Wherever people are arguing"],
+ "diet": ["Toy rockets","Rocket fuel, deadlines","Red dust, ambition","Attention"],
+ "bio": [
+  "A muskox calf whose tail sparks when it gets excited. It chews on a toy rocket and announces the launch date every day; the date keeps moving.",
+  "Boosters strapped to its flanks, fur scorched at the edges. It launches at anything, lands on most things, and calls the rest a rapid unscheduled disassembly.",
+  "A muskox the size of a lander, red with dust it brought back itself. Its horns fold out into landing legs. It wants to go somewhere nobody has been and build a shed there.",
+  "It floats on a cloud of posts and never quite lands. One eye is always on a phone. Its horns are a little bird's wings; it bought the bird."
+ ],
+ "note": [
+  "Counts down from ten whenever something is about to happen. Nothing happens.",
+  "Its boosters come back and land on their own. It takes the credit.",
+  "Names every rock it finds.",
+  "Replies to itself."
+ ],
+ "evo": [
+  {"k":"lvl","at":16},
+  {"k":"split","at":32}
+ ],
+ "parody": "Elon Musk"
+}

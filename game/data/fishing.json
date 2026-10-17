@@ -1,0 +1,34 @@
+{
+ "pond": {
+  "lv": [0,2],
+  "list": [["ek0",40],["cuban0",30],["winklevoss0",20],["ellison0",15],["yanai0",10],["ek1",4]]
+ },
+ "stream": {
+  "lv": [0,2],
+  "list": [["ek0",40],["winklevoss0",30],["ellison0",20],["cuban0",10],["winklevoss1",4]]
+ },
+ "lake": {
+  "lv": [1,3],
+  "list": [["cuban0",30],["winklevoss0",25],["spielberg0",20],["schultz0",15],["cuban1",8],["newell0",6],["spielberg1",2]]
+ },
+ "sea": {
+  "lv": [1,3],
+  "list": [["yanai0",30],["ellison0",25],["cuban0",20],["chesky0",20],["yanai1",8],["ellison1",6],["scott0",3]]
+ },
+ "canal": {
+  "lv": [0,2],
+  "list": [["ek0",40],["chesky0",30],["yanai0",15],["ek1",6]]
+ },
+ "swamp": {
+  "lv": [0,2],
+  "list": [["ek0",40],["ma0",30],["kroc0",20],["ek1",5]]
+ },
+ "spring": {
+  "lv": [1,3],
+  "list": [["winklevoss0",40],["ek0",25],["winklevoss1",10],["federer0",5]]
+ },
+ "ice": {
+  "lv": [1,3],
+  "list": [["ponyma0",35],["winklevoss0",30],["newell0",10],["ponyma0",6]]
+ }
+}

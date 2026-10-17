@@ -1,0 +1,35 @@
+{
+ "id": "spielberg",
+ "names": ["Clapperbeaver","Spielbeaver"],
+ "types": [["Water"],["Water","Psychic"]],
+ "prof": [0.95,0.9,0.95,1.25,1.05,0.9],
+ "rar": "uncommon",
+ "learn": [
+  [1,"handshake"],
+  [1,"interest"],
+  [5,"buyhold"],
+  [9,"spin"],
+  [15,"rerecord"],
+  [21,"headline"],
+  [27,"compound"],
+  [30,"cutto"],
+  [34,"exclusive"],
+  [39,"rugpull"],
+  [40,"subpoena"],
+  [40,"lawsuit"]
+ ],
+ "cat": ["Clapper Billie","Director Billie"],
+ "ht": [0.5,1.5],
+ "wt": [10,80],
+ "hab": ["Creeks with a good angle","Dams that are film sets"],
+ "diet": ["Bark","Popcorn"],
+ "bio": [
+  "A beaver kit whose flat tail claps like a clapperboard. Action, it says, and then does not say cut.",
+  "It builds dams that are film sets, with a moon behind them and a bicycle flying past it. Two birds always circle in the shot."
+ ],
+ "note": ["Shot its first film at twelve.","The shark never worked, so it stayed off screen."],
+ "evo": [
+  {"k":"lvl","at":26}
+ ],
+ "parody": "Steven Spielberg"
+}

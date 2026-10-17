@@ -750,7 +750,8 @@ function noWebGL(why) {
 }
 if (!eglOK()) noWebGL();
 else
-  artCacheCheck()
+  /* phase 04b: the maps round where you are come with the art check; the others after the loader (js/scene-files.js) */
+  Promise.all([artCacheCheck(), scenesAhead(S.route ? S.route.node : START_NODE)])
     .then(() => bootLoad())
     .then(async () => {
       if (typeof NWLOG !== 'undefined') NWLOG.hook();
@@ -764,6 +765,8 @@ else
         } catch (e) {}
       await sceneWarm();
       loaderHide();
+      sceneWatch();
+      scenesAll();
       if (SAVE_FOUND === 'old' || SAVE_FOUND === 'new')
         setTimeout(
           () =>

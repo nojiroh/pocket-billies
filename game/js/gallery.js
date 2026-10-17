@@ -1,6 +1,6 @@
 'use strict';
 /* ================= GRAPHICS GALLERY (alpha 0.5) =================
-   Settings → Graphics → Expert → "See it" takes you to a small place built to show each dial (tools/build-gallery.py):
+   Settings → Graphics → Expert → "See it" takes you to a small place built to show each dial (made by tools/build-gallery.py, now on the legacy branch):
    you stand at the station for that dial, and a panel over the scene holds the dial itself, so you can switch it and
    watch what changes. Day and night swap at a tap (lamps need the dark). "Leave" brings you back to your settings. */
 const GALLERY_AT = {
