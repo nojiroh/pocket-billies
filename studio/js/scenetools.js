@@ -10,6 +10,7 @@
    Hooks: scenes.js calls scxDown / scxMove / scxUp from the map's pointer events and scxDraw after drawing. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/bridge.js';
+import { $ } from '../../game/js/util.js';
 import { DIO } from '../../game/js/diorama.js';
 import { ACTS, ST, ask, changed, clone, commit, dialog, render, toast, uidKey } from './core.js';
 import { SCN, scCur, scD, scMapDraw, scPropAt, scSetTile } from './scenes.js';

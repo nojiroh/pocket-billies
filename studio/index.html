@@ -29,7 +29,6 @@
 <!-- shims so the game's renderers can run inside the Studio -->
 <script>
 var S={preferences:{},gender:'boy',avatar:null},U={},B=null,RM=false;
-const rnd=Math.random,clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),$=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>Array.from(r.querySelectorAll(s));
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 /* the game's tables, read live from the Studio's unsaved data (ST is declared in js/core.js) */
 const liveMap=f=>new Proxy({},{get:(t,k)=>{const o=typeof ST!=='undefined'&&ST.D?f(ST.D):null;return o?o[k]:undefined},
@@ -44,6 +43,7 @@ const TYPEFX=liveMap(D=>{const o=Object.fromEntries(D.types.map(t=>[t.id,t.fx&&t
 <script>document.getElementById('ver').textContent=PB_VERSION;</script>
 <script src="../game/art/manifest.js"></script>
 <script src="../game/art/next/rigs-next.js"></script>
+<script type="module" src="../game/js/util.js"></script>
 <script type="module" src="../game/js/frame.js"></script>
 <script type="module" src="../game/js/art.js"></script>
 <script type="module" src="../game/js/anim.js"></script>

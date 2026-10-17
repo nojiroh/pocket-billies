@@ -5,6 +5,7 @@
    painted from, so shadows fall back and to the right. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../bridge.js';
+import { clamp } from '../util.js';
 import { DIO } from '../diorama.js';
 import { ENG_CTX, eng, engHex } from './settings.js';
 import { EGL, M4, eglTarget, v3c, v3n } from './core.js';

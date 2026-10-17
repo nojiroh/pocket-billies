@@ -5,8 +5,9 @@
    first time it's needed. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './bridge.js';
+import { clamp } from './util.js';
 import { COINS, GD, ITEMS, ROUTE, RULES, SP } from './data.js';
-import { B, N, S, U, clamp, esc, fmt, save, today } from './core.js';
+import { B, N, S, U, esc, fmt, save, today } from './core.js';
 import { cnv, uiIco } from './art.js';
 import { DIO, dioBaseId, dioFace, dioFind, dioFreePt, dioHubOf, dioScene, dioTer } from './diorama.js';
 import { eng } from './engine/settings.js';

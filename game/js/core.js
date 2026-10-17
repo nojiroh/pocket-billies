@@ -2,6 +2,7 @@
 /* ================= CORE ================= */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './bridge.js';
+import { rnd } from './util.js';
 import {
   ADJ,
   COINS,
@@ -27,8 +28,6 @@ import {
 } from './data.js';
 /* eslint-disable no-func-assign */
 expose({
-  $: [() => $],
-  $$: [() => $$],
   ACC_ID: [() => ACC_ID],
   B: [() => B, v => (B = v)],
   BR: [() => BR],
@@ -60,7 +59,6 @@ expose({
   canEnter: [() => canEnter],
   canLeave: [() => canLeave],
   canRide: [() => canRide],
-  clamp: [() => clamp],
   cleanName: [() => cleanName],
   collectJob: [() => collectJob, v => (collectJob = v)],
   emptyJob: [() => emptyJob],
@@ -100,7 +98,6 @@ expose({
   resumeTrip: [() => resumeTrip, v => (resumeTrip = v)],
   riderName: [() => riderName],
   riderOf: [() => riderOf, v => (riderOf = v)],
-  rnd: [() => rnd],
   rollDay: [() => rollDay, v => (rollDay = v)],
   routeDists: [() => routeDists, v => (routeDists = v)],
   save: [() => save, v => (save = v)],
@@ -123,10 +120,6 @@ expose({
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
-export const $ = (s, r = document) => r.querySelector(s);
-export const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
-export const rnd = Math.random;
-export const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 export const esc = s =>
   String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 /* phase 02: a name the player typed, or that came from a backup file or a friend, loses the characters that could

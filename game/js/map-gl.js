@@ -9,8 +9,9 @@
    available (a lost context). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './bridge.js';
+import { $, clamp } from './util.js';
 import { FUTURE, LINKS, ROUTE, linkCost, placeSub } from './data.js';
-import { $, RM, S, U, canEnter, clamp, esc, fmt, nextStop, tripTo } from './core.js';
+import { RM, S, U, canEnter, esc, fmt, nextStop, tripTo } from './core.js';
 import { frameCount, frameStop, frameTask, userFps } from './frame.js';
 import { artLoad, artPixels, cnv, hexA, mstamp, uiIco } from './art.js';
 import { owFrames, portraitHTML } from './trainer.js';

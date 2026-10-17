@@ -8,6 +8,7 @@
    or when the player picks it in Settings. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './bridge.js';
+import { $, clamp } from './util.js';
 import { hexA } from './art.js';
 import { ACT, FOC, POS, SC, UPP, partSpr, sideBuf, sideWorld, trainerBattleFrame, trainerMpp } from './scene.js';
 import { DIO, dioData, dioStop } from './diorama.js';

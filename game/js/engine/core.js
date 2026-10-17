@@ -5,6 +5,7 @@
    One engine state object, EGL, is shared by every view. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../bridge.js';
+import { clamp } from '../util.js';
 import { cnv } from '../art.js';
 import { dioOk } from '../diorama.js';
 import { eng } from './settings.js';

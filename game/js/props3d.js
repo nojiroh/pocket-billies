@@ -12,6 +12,7 @@
    flat picture. "lathe" turns the outline round, like a pot on a potter's wheel. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './bridge.js';
+import { clamp } from './util.js';
 import { cnv } from './art.js';
 import { DIO, dioHash, dioImg, dioProj } from './diorama.js';
 import { eng } from './engine/settings.js';

@@ -6,6 +6,7 @@
    turntable that shows the result in the game's renderer while you work. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/bridge.js';
+import { $, $$, clamp } from '../../game/js/util.js';
 import { frameStop, frameTask } from '../../game/js/frame.js';
 import { cnv } from '../../game/js/art.js';
 import { DIO, dioImg, dioLayerM, dioOk } from '../../game/js/diorama.js';

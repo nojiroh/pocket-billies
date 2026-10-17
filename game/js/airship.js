@@ -9,9 +9,10 @@
    money, so your steps stay for walking new ground. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './bridge.js';
+import { $, clamp } from './util.js';
 import { PLACE, ROUTE, isTown, placeFull } from './data.js';
 import { sceneLite, sceneLoad, scenesAhead } from './scene-files.js';
-import { $, RM, S, U, canEnter, clamp, esc, fmt, save } from './core.js';
+import { RM, S, U, canEnter, esc, fmt, save } from './core.js';
 import { artLoad, uiIco } from './art.js';
 import { dioData, dioImg, dioOk, dioPrepare, dioScene } from './diorama.js';
 import { wrHubScene } from './world.js';

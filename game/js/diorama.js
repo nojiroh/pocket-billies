@@ -9,6 +9,7 @@
    Scenes and the prop catalog live in game data (scenes, scenery) and are edited in Pocket Billies Studio. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './bridge.js';
+import { clamp } from './util.js';
 import { frameStop } from './frame.js';
 import { ART, artLoad, cnv, pkh } from './art.js';
 /* eslint-disable no-func-assign */

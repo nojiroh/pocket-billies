@@ -10,6 +10,7 @@
    and is guarded so the two billionaires never leave the free frame. Reduced motion keeps it on the home shot. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './bridge.js';
+import { $, clamp, rnd } from './util.js';
 import { FRAME, frameCount, frameStop, frameTask, userFps } from './frame.js';
 import { ART, artLoad, artPixels, cnv, coinCanvas, d44, hexA, iconCanvas, mixA, pk, whiteOf } from './art.js';
 import { WD, humanFrames, humanPose } from './trainer.js';

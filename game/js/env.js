@@ -9,6 +9,7 @@
    The renderer reads ENV through envFrame() once a frame; nothing here touches WebGL. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './bridge.js';
+import { clamp } from './util.js';
 import { hexA } from './art.js';
 import { DIO, dioScene } from './diorama.js';
 /* eslint-disable no-func-assign */

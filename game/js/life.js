@@ -10,6 +10,7 @@
    pigeon, frames 2-3), shore (lives at the water's edge), side (walks sideways). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './bridge.js';
+import { clamp } from './util.js';
 import { cnv } from './art.js';
 import { DIO, dioData, dioFree, dioHash, dioImg, dioOk, dioPoly, dioPolyAt, dioStepOK } from './diorama.js';
 import { dglRing, dioGroundH, dioH, dioHRaw } from './diorama-gl.js';

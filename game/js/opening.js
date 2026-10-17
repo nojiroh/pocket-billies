@@ -11,8 +11,9 @@
    Skip ends the fall at once; without the fall, the step-by-step intro tells it in words. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './bridge.js';
+import { $, clamp } from './util.js';
 import { MOVES, SP, START_NODE, eff } from './data.js';
-import { $, B, RM, clamp, esc, maxHp } from './core.js';
+import { B, RM, esc, maxHp } from './core.js';
 import { artLoad } from './art.js';
 import { portraitHTML } from './trainer.js';
 import { partSpr } from './scene.js';

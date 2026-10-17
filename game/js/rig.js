@@ -3,6 +3,7 @@
 /* ---- matrices ---- */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './bridge.js';
+import { clamp, rnd } from './util.js';
 import { frameTask, userFps } from './frame.js';
 import { ART, artImg, artLoad, artReady, artURL, cnv } from './art.js';
 import { animFor } from './anim.js';

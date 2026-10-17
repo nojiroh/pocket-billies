@@ -2,6 +2,7 @@
 /* ================= UI ================= */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './bridge.js';
+import { $, $$, clamp, rnd } from './util.js';
 import {
   ADJ,
   COINS,
@@ -34,8 +35,6 @@ import {
   trainersAt,
 } from './data.js';
 import {
-  $,
-  $$,
   B,
   BR,
   EGG_SLOTS,
@@ -51,7 +50,6 @@ import {
   blockerAt,
   canEnter,
   canRide,
-  clamp,
   cleanName,
   collectJob,
   endShift,
@@ -79,7 +77,6 @@ import {
   rate,
   resumeTrip,
   riderName,
-  rnd,
   rollDay,
   save,
   setTrip,

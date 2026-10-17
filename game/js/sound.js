@@ -7,8 +7,9 @@
    Settings → Music and Sound effects set the volumes (0 mutes). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './bridge.js';
+import { clamp } from './util.js';
 import { ROUTE } from './data.js';
-import { B, S, U, clamp } from './core.js';
+import { B, S, U } from './core.js';
 import { SC } from './scene.js';
 import { DIO, dioBaseId, dioBridgeAt, dioBridges, dioData, dioScene, dioStepM, dioTer } from './diorama.js';
 import { ENV, envHour, envState } from './env.js';

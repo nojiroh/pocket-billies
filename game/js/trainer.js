@@ -7,6 +7,7 @@
    A look: {name, body:{…sliders}, skin, hair, eyes, wear:{slot:itemId|null}, colors:{itemId:[hex,…]}}. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './bridge.js';
+import { clamp } from './util.js';
 import { frameStop, frameTask } from './frame.js';
 import { ART, artImg, cnv, hexA } from './art.js';
 /* eslint-disable no-func-assign */

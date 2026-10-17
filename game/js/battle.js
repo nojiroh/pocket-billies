@@ -6,6 +6,7 @@
    second, 4 = your third. Doubles (some trainers) are 0+2 against 1+3; an Alpha is fought by 0, 2 and 4 against 1. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './bridge.js';
+import { $, $$, clamp, rnd } from './util.js';
 import {
   BACKDROPS,
   COINS,
@@ -26,15 +27,12 @@ import {
   trainerTeam,
 } from './data.js';
 import {
-  $,
-  $$,
   N,
   RM,
   S,
   U,
   addEgg,
   addMon,
-  clamp,
   esc,
   findMon,
   fmt,
@@ -45,7 +43,6 @@ import {
   maxHp,
   pickW,
   plural,
-  rnd,
   save,
   stat,
   xpFor,
