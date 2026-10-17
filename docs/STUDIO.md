@@ -35,7 +35,7 @@ Double-click `Start-Studio.bat` / `Start-Studio.command`, or run
 
 ## Saving in local mode
 
-**Save to game** (Ctrl+S) writes into `game/data/gamedata.js`, `game/art/rigs.js` and the
+**Save to game** (Ctrl+S) writes the game data, `game/art/rigs.js` and the
 changed images. Each save keeps the previous file in `backups/`. Undo/redo cover every
 edit in the session. **Play test** opens the game with the debug menu at
 `localhost:8001`, which keeps a separate save from your normal game. Reload the game tab
@@ -44,9 +44,15 @@ to see saved changes.
 The Studio only listens on your own computer, only writes inside `game/data` and
 `game/art`, and only accepts requests carrying the key it puts into its own page.
 
-You can also edit `game/data/gamedata.js` by hand: it is JSON after `window.GAMEDATA=`.
+The game data is JSON files in `game/data/` (a file per map, line, trainer and person, one per
+other section; `index.json` lists them). On GitHub, **Propose changes** sends only the files
+you changed. You can also edit them by hand; `npm run check:data` checks them (and
+`node tools/check-data.mjs --fix` lays a hand-edited file out the way the Studio writes it).
 The game tolerates mistakes. It skips anything it can't use and lists it in the debug
 menu.
+
+Local mode needs `start-studio.py`, which is not in the repository; it still reads and writes
+the old single `gamedata.js` and would have to be changed to the data files (phase 04b).
 
 
 ## Notes and limits
