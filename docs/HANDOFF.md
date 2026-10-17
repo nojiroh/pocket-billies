@@ -64,8 +64,8 @@ minifying.
   - Phone load, emulated (CPU ×4, gzip, 4G 9 Mbit/40 ms), three runs each, before (04b build) → after: scripts done
     1.10 s → 1.13-1.22 s; loader done 28.5/32.9/29.2 s → 29.5/29.1/28.4 s; JS 62 files 751 KB → 10 files 643 KB.
     Slow 4G (1.6 Mbit/150 ms): scripts 5.1 → 4.5-4.9 s. Steady state on the title view: no bridge getter shows.
-  - Full quick check on the final code: NOT run end to end. It was stopped after 16 steps (all passed), inside
-    Scenes. Run it once before tagging.
+  - Full quick check on the final code: NOT run end to end; the owner skipped it. It was stopped after 16 steps
+    (all passed), inside Scenes. The nightly CI run on main covers it once this is merged.
 - Decisions I made (and why): kept the seven classic scripts above (reasons listed); explicit setters for the
   cross-file writes were not needed for 04c (the bridge setter does it) and go to 04d with the other globals; each
   page is bundled alone (a shared chunk could change the run order); helpers moved to util.js only where both copies
