@@ -7,7 +7,79 @@
    destination, visited, new, locked). A Places list finds any stop by name, and Flat shows the whole world unrolled.
    map.js keeps the camera, the walking animation and the picking, and still draws the map itself where WebGL isn't
    available (a lost context). */
-const MGL = {
+/* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
+import { expose } from './bridge.js';
+import {
+  D2R,
+  MAP,
+  MCL,
+  MLAND,
+  MNV,
+  REGV,
+  edgePos,
+  mapCam,
+  mapSelect,
+  mapWalk,
+  mePos,
+  mproj,
+  slerp,
+  sunBlocks,
+  v3,
+} from './map.js';
+/* eslint-disable no-func-assign */
+expose({
+  MGL: [() => MGL],
+  MGL_ALT: [() => MGL_ALT],
+  MGL_F: [() => MGL_F],
+  MGL_N: [() => MGL_N],
+  MGL_SH: [() => MGL_SH],
+  MGL_TILT: [() => MGL_TILT],
+  MINI_K: [() => MINI_K],
+  MM: [() => MM],
+  WORLD_RELIEF: [() => WORLD_RELIEF],
+  _mapLabelsCPU: [() => _mapLabelsCPU],
+  _mapMountCPU: [() => _mapMountCPU],
+  _mapResetCPU: [() => _mapResetCPU],
+  _mapZoomCPU: [() => _mapZoomCPU],
+  mapGLAction: [() => mapGLAction, v => (mapGLAction = v)],
+  mapGLCanvas: [() => mapGLCanvas, v => (mapGLCanvas = v)],
+  mapGLLoop: [() => mapGLLoop, v => (mapGLLoop = v)],
+  mapGLReady: [() => mapGLReady, v => (mapGLReady = v)],
+  mapGLWanted: [() => mapGLWanted, v => (mapGLWanted = v)],
+  mglChrome: [() => mglChrome, v => (mglChrome = v)],
+  mglEase: [() => mglEase, v => (mglEase = v)],
+  mglFlatMin: [() => mglFlatMin],
+  mglHeightTex: [() => mglHeightTex, v => (mglHeightTex = v)],
+  mglLL: [() => mglLL],
+  mglLift: [() => mglLift, v => (mglLift = v)],
+  mglLine: [() => mglLine, v => (mglLine = v)],
+  mglMat: [() => mglMat, v => (mglMat = v)],
+  mglMiniImg: [() => mglMiniImg, v => (mglMiniImg = v)],
+  mglMiniTop: [() => mglMiniTop, v => (mglMiniTop = v)],
+  mglMiniUp: [() => mglMiniUp, v => (mglMiniUp = v)],
+  mglMinis: [() => mglMinis, v => (mglMinis = v)],
+  mglOverlay: [() => mglOverlay, v => (mglOverlay = v)],
+  mglPanTo: [() => mglPanTo, v => (mglPanTo = v)],
+  mglPath: [() => mglPath, v => (mglPath = v)],
+  mglPick: [() => mglPick, v => (mglPick = v)],
+  mglPinState: [() => mglPinState, v => (mglPinState = v)],
+  mglPinch: [() => mglPinch],
+  mglPins: [() => mglPins, v => (mglPins = v)],
+  mglPlacesHTML: [() => mglPlacesHTML, v => (mglPlacesHTML = v)],
+  mglProj: [() => mglProj, v => (mglProj = v)],
+  mglRender: [() => mglRender, v => (mglRender = v)],
+  mglSize: [() => mglSize, v => (mglSize = v)],
+  mglUV: [() => mglUV, v => (mglUV = v)],
+  mmBuild: [() => mmBuild, v => (mmBuild = v)],
+  mmCols: [() => mmCols, v => (mmCols = v)],
+  mmDraw: [() => mmDraw, v => (mmDraw = v)],
+  mmGet: [() => mmGet, v => (mmGet = v)],
+  mmKey: [() => mmKey, v => (mmKey = v)],
+  mmOn: [() => mmOn, v => (mmOn = v)],
+});
+/* eslint-enable no-func-assign */
+/* to-module: end */
+export const MGL = {
   flat: false,
   fv: { u: 0.5, v: 0.5, s: 1 },
   pins: null,
@@ -20,7 +92,7 @@ const MGL = {
 };
 const MGL_N = 0.002,
   MGL_F = 3;
-const MGL_SH = {
+export const MGL_SH = {
   mglobe: [
     `#version 300 es
 precision highp float;in vec2 aC;void main(){gl_Position=vec4(aC*2.-1.,.5,1.);}`,
@@ -64,7 +136,7 @@ void main(){vec4 c=texture(uTex,vUV);if(c.a<.5)discard;float d=length(vW-uC),fk=
   ],
 };
 /* ---------- when it runs ---------- */
-function mapGLWanted() {
+export function mapGLWanted() {
   return typeof EGL !== 'undefined' && !EGL.fail && !EGL.lost && eglOK();
 }
 function mapGLCanvas() {
@@ -355,7 +427,7 @@ function mglPanTo(D, dx, dy) {
   MAP.fT = null;
 }
 const mglFlatMin = () => Math.max(MW, MH * 2) * 0.9;
-function mglSize() {
+export function mglSize() {
   const cv = MAP.cv,
     r = cv && cv.isConnected ? cv.getBoundingClientRect() : null,
     w = Math.round(r && r.width > 20 ? r.width : innerWidth),
@@ -430,7 +502,7 @@ function mapGLLoop(ts) {
   frameCount(performance.now() - w0);
 }
 /* the land's height (art/map/world_h.png, made by tools/build-world-relief.py) */
-const WORLD_RELIEF = 'map/world_h.png';
+export const WORLD_RELIEF = 'map/world_h.png';
 function mglHeightTex() {
   if (MGL.htex !== undefined && MGL.htex) return MGL.htex;
   const im = typeof dioImg === 'function' ? dioImg(WORLD_RELIEF) : null;
@@ -455,7 +527,7 @@ function mglHeightTex() {
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
   return (MGL.htex = t);
 }
-function mglRender(t) {
+export function mglRender(t) {
   const es = typeof engSource === 'function' ? engSource() : null;
   ENG_CTX.look = (es && es.map) || null;
   const gl = EGL.gl,
@@ -999,7 +1071,7 @@ function mglPlacesHTML() {
   }
   return h + '</div>';
 }
-function mapGLAction(a, d) {
+export function mapGLAction(a, d) {
   if (a === 'mturn' && !MGL.flat) {
     mglEase('yaw', MAP.yaw + ((+d.k || 1) * Math.PI) / 4);
     return true;
@@ -1042,14 +1114,14 @@ function mapGLAction(a, d) {
    or rounded crowns on a trunk; big rocks as stones. The light is worked into the colours once (from above, as the
    sun in the middle of the world shines, a little from the side so the shapes read). Built when first seen and
    rebuilt when the scene changes (Studio edits, new districts). */
-const MM = { cache: new Map(), col: new WeakMap(), on: true };
+export const MM = { cache: new Map(), col: new WeakMap(), on: true };
 MGL_SH.mmini = [
   `#version 300 es
 precision highp float;in vec3 aPos;in vec3 aUV;uniform mat4 uVP;out vec3 vW;out vec3 vC;void main(){vW=aPos;vC=aUV;gl_Position=uVP*vec4(aPos,1.);}`,
   `#version 300 es
 precision highp float;in vec3 vW;in vec3 vC;out vec4 o;uniform vec3 uC,uHaze;void main(){float d=length(vW-uC),fk=1.-exp(-max(0.,d-.3)*.72);o=vec4(mix(vC,uHaze,clamp(fk,0.,.86)),1.);}`,
 ];
-function mmOn() {
+export function mmOn() {
   return MM.on && (eng('world', 'mini3d') ?? true) !== false;
 }
 /* average colours of a picture's upper and lower parts (roof and walls of a building, crown and trunk of a tree) */

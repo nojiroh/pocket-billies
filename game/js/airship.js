@@ -9,6 +9,9 @@
    money, so your steps stay for walking new ground. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './bridge.js';
+import { wrHubScene } from './world.js';
+import { D2R, MAP, MNV, slerp, v3 } from './map.js';
+import { MGL } from './map-gl.js';
 import { sfx } from './sound.js';
 /* eslint-disable no-func-assign */
 expose({

@@ -4,6 +4,8 @@
    Everything here edits the current save directly; use Export first if you want a way back. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './bridge.js';
+import { A, checkFaints, paintBoxes, play, say, snapAll, startTrainer, startWild, stopTimers } from './battle.js';
+import { MAP } from './map.js';
 /* eslint-disable no-func-assign */
 expose({
   DBG: [() => DBG],

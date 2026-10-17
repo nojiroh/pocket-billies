@@ -5,6 +5,7 @@
    Tap a thing to choose it; healing is used straight from here on a Billie you pick. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './bridge.js';
+import { applyItem, canUse, itemIcon, teamNeedsHp } from './battle.js';
 /* eslint-disable no-func-assign */
 expose({
   BAG_POCKETS: [() => BAG_POCKETS],

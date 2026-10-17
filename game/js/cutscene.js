@@ -9,6 +9,7 @@
    If the cutscene can't run or stops, the older step-by-step intro in ui.js runs instead. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './bridge.js';
+import { wrRoamView } from './world.js';
 import { music, sfx } from './sound.js';
 import { TALK, talkHide, talkLine } from './talk.js';
 /* eslint-disable no-func-assign */

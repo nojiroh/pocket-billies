@@ -10,6 +10,8 @@
    Each player only ever writes their own users/ document; a friendship is made from the two sides of a request. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './bridge.js';
+import { owBuddyMon, owItem } from './owmon.js';
+import { MAP, mapSelect } from './map.js';
 /* eslint-disable no-func-assign */
 expose({
   FR: [() => FR],

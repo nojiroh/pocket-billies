@@ -2,6 +2,48 @@
 /* ================= UI ================= */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './bridge.js';
+import { fishStart } from './fishing.js';
+import {
+  WORLD,
+  dioShift,
+  wrDelta,
+  wrGate,
+  wrGetReady,
+  wrOn,
+  wrPrefetch,
+  wrRoamView,
+  wrRoomId,
+  wrRoomScene,
+  wrTripView,
+} from './world.js';
+import {
+  A,
+  RC,
+  applyItem,
+  battleResize,
+  battleShell,
+  canUse,
+  checkFaints,
+  chooseMsg,
+  doSwitch,
+  doThrow,
+  endBattle,
+  enemyOnly,
+  itemIcon,
+  paintActions,
+  pickMove,
+  pickTarget,
+  planBack,
+  planNext,
+  play,
+  runTurn,
+  say,
+  showAim,
+  startWild,
+  tapMsg,
+} from './battle.js';
+import { MH, MW, mapFit, mapMount, mapReset, mapSelect, mapZoom } from './map.js';
+import { mapGLAction, mapGLWanted } from './map-gl.js';
 import { openShop } from './shop.js';
 import { sfx } from './sound.js';
 import { talkHazel } from './talk.js';

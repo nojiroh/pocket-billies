@@ -5,6 +5,10 @@
    later and a missing file shows up right away. Then draw the game. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './bridge.js';
+import { WORLD } from './world.js';
+import { areaKey } from './battle.js';
+import { WORLD_ART, mapPrepare } from './map.js';
+import { WORLD_RELIEF } from './map-gl.js';
 import { csWanted } from './cutscene.js';
 import { TITLE, titleMount, titleStart, titleWanted } from './title.js';
 import { loreLoadingLines } from './lore.js';

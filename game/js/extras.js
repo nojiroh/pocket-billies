@@ -5,6 +5,7 @@
    first time it's needed. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './bridge.js';
+import { say } from './battle.js';
 import { sfx } from './sound.js';
 import { TALK, talk } from './talk.js';
 /* eslint-disable no-func-assign */

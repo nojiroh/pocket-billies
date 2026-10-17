@@ -5,6 +5,27 @@
    the line is full. What bites depends on the kind of water (pond, stream, lake, sea, canal, swamp, spring, ice; lava
    has nothing in it) and the place: game data "fishing" lists the billionaires and their weights, and the levels are
    the place's own plus the kind's bonus. A catch starts a wild battle like any other encounter. */
+/* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
+import { expose } from './bridge.js';
+/* eslint-disable no-func-assign */
+expose({
+  FISH: [() => FISH],
+  FISH_KINDS: [() => FISH_KINDS],
+  fishCaught: [() => fishCaught, v => (fishCaught = v)],
+  fishDraw: [() => fishDraw, v => (fishDraw = v)],
+  fishEnd: [() => fishEnd, v => (fishEnd = v)],
+  fishKindAt: [() => fishKindAt, v => (fishKindAt = v)],
+  fishLoop: [() => fishLoop, v => (fishLoop = v)],
+  fishMsg: [() => fishMsg, v => (fishMsg = v)],
+  fishPick: [() => fishPick, v => (fishPick = v)],
+  fishPoll: [() => fishPoll, v => (fishPoll = v)],
+  fishRules: [() => fishRules, v => (fishRules = v)],
+  fishSpot: [() => fishSpot, v => (fishSpot = v)],
+  fishStart: [() => fishStart, v => (fishStart = v)],
+  fishTap: [() => fishTap, v => (fishTap = v)],
+});
+/* eslint-enable no-func-assign */
+/* to-module: end */
 const FISH = {
   on: false,
   phase: null,
@@ -94,7 +115,7 @@ setInterval(() => {
     fishPoll();
   } catch (e) {}
 }, 450);
-function fishStart() {
+export function fishStart() {
   if (FISH.on) return;
   const sp = fishSpot();
   if (!sp) {

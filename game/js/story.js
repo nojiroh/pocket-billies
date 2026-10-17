@@ -6,6 +6,7 @@
    battle. S.story remembers which scenes you have seen. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './bridge.js';
+import { startTrainer, startWild } from './battle.js';
 import { music } from './sound.js';
 import { TALK, talk, talkHide, talkLine } from './talk.js';
 import { CS, csActor, csFlush, csFrame, csHideDlg, csNow, csSay, csShot, csWait, csWalk } from './cutscene.js';

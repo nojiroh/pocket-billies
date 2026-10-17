@@ -8,7 +8,31 @@
    - world trainers' companions: some trainers have their lead billionaire standing beside them.
    Frames are drawn once into small canvases and kept (an idle loop of 8, a reaction of 9), so nothing is redrawn per
    frame. A species' rig art is loaded the first time it's needed; until then it simply isn't shown. */
-const OWM = {
+/* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
+import { expose } from './bridge.js';
+/* eslint-disable no-func-assign */
+expose({
+  OWM: [() => OWM],
+  OW_MAX: [() => OW_MAX],
+  OW_PREP: [() => OW_PREP],
+  owBuddyItems: [() => owBuddyItems, v => (owBuddyItems = v)],
+  owBuddyMon: [() => owBuddyMon, v => (owBuddyMon = v)],
+  owBuddyTap: [() => owBuddyTap, v => (owBuddyTap = v)],
+  owEncItem: [() => owEncItem, v => (owEncItem = v)],
+  owFrame: [() => owFrame, v => (owFrame = v)],
+  owFx: [() => owFx, v => (owFx = v)],
+  owItem: [() => owItem, v => (owItem = v)],
+  owLabels: [() => owLabels, v => (owLabels = v)],
+  owMpp: [() => owMpp, v => (owMpp = v)],
+  owPetItems: [() => owPetItems, v => (owPetItems = v)],
+  owPetSp: [() => owPetSp, v => (owPetSp = v)],
+  owRig: [() => owRig, v => (owRig = v)],
+  owShift: [() => owShift, v => (owShift = v)],
+  owWarm: [() => owWarm, v => (owWarm = v)],
+});
+/* eslint-enable no-func-assign */
+/* to-module: end */
+export const OWM = {
   cache: new Map(),
   req: new Set(),
   trail: [],
@@ -85,7 +109,7 @@ function owMpp(sp, R, big = 1) {
     mq = 1 / (rq * 68);
   return Math.abs(mq / m - 1) <= 0.06 ? mq : m;
 }
-function owItem(k, sp, gold, view, pose, t, seed, x, z, o = {}) {
+export function owItem(k, sp, gold, view, pose, t, seed, x, z, o = {}) {
   const im = owFrame(sp, gold, view, pose, t, seed);
   if (!im) return null;
   const R = im.__R,
@@ -115,13 +139,13 @@ function owItem(k, sp, gold, view, pose, t, seed, x, z, o = {}) {
 }
 /* ---------- the buddy ---------- */
 /* your buddy (the one you made buddy on its sheet; it earns XP as you walk), or your lead if you haven't picked one */
-function owBuddyMon() {
+export function owBuddyMon() {
   if ((S.preferences || {}).buddyWalk === 'off' || !S.team) return null;
   let m = S.buddy && typeof findMon === 'function' ? findMon(S.buddy) : null;
   if (!m) m = S.team[0] || null;
   return m && m.job == null ? m : null;
 }
-function owShift(dx, dz) {
+export function owShift(dx, dz) {
   const b = OWM.bud;
   if (b) {
     b.x += dx;
@@ -252,7 +276,7 @@ function owBuddyItems(out, t, dt) {
   if (OWM.sayT > 0) OWM.sayT = Math.max(0, OWM.sayT - dt);
 }
 /* tapping your buddy: it reacts, and says how it's doing */
-function owBuddyTap() {
+export function owBuddyTap() {
   const m = owBuddyMon();
   if (!m) return;
   const now = performance.now();
@@ -302,7 +326,7 @@ function owBuddyTap() {
   save();
 }
 /* ---------- world trainers' companions ---------- */
-function owPetSp(T) {
+export function owPetSp(T) {
   const pet = T && (T.pet === 'true' ? true : T.pet === 'false' ? false : T.pet);
   if (!T || !T.team || !T.team.length || pet === false) return null;
   const h =

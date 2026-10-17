@@ -11,6 +11,9 @@
    Skip ends the fall at once; without the fall, the step-by-step intro tells it in words. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './bridge.js';
+import { A, endBattle, stopTimers, types } from './battle.js';
+import { MAP, MH, MNV, MW, WORLD_ART, v3 } from './map.js';
+import { MGL, MGL_SH, mglRender, mglSize } from './map-gl.js';
 import { music, sfx } from './sound.js';
 import { CS, csCaption } from './cutscene.js';
 /* eslint-disable no-func-assign */

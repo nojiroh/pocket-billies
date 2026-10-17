@@ -9,6 +9,11 @@
    for you and runs that step again. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './bridge.js';
+import { OWM, owBuddyTap, owPetSp } from './owmon.js';
+import { WORLD, wrRoomScene, wrTripView } from './world.js';
+import { A, endBattle, liveK, pickMove, pickTarget, startTrainer, startWild, stopTimers, tapMsg } from './battle.js';
+import { MAP } from './map.js';
+import { MGL, MGL_SH, MM, mmOn } from './map-gl.js';
 import { TALK, talkHide } from './talk.js';
 import { CS, csTeardown } from './cutscene.js';
 import { battleTipHide, fallGL, fallMap } from './opening.js';
