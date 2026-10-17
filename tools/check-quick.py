@@ -173,10 +173,10 @@ def check_code():
     # v47: a function declared in two of the page's scripts: the later one silently replaces the other everywhere
     # (diorama.js's placeKind(act, prop) for shop hours hid data.js's placeKind(id))
     where = {}
-    for src in re.findall(r'<script src="(js/[^"]+)"', (GAME / 'index.html').read_text(encoding='utf-8')):
+    for src in re.findall(r'<script (?:type="module" )?src="(js/[^"]+)"', (GAME / 'index.html').read_text(encoding='utf-8')):
         f = GAME / src
         if not f.exists(): continue
-        for m in re.finditer(r'^(?:async\s+)?function\s+([A-Za-z_$][\w$]*)\s*\(', f.read_text(encoding='utf-8'), re.M):
+        for m in re.finditer(r'^(?:export\s+)?(?:async\s+)?function\s+([A-Za-z_$][\w$]*)\s*\(', f.read_text(encoding='utf-8'), re.M):
             where.setdefault(m.group(1), set()).add(src)
     twice = {k: sorted(v) for k, v in where.items() if len(v) > 1}
     bad += [f'{k}() is declared in {" and ".join(v)}' for k, v in twice.items()]
