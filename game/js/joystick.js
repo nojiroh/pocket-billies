@@ -9,6 +9,8 @@
    Both set DIO.stick {x right, y up, length 0-1}; diorama.js walks along the camera's own right and forward. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './bridge.js';
+import { DIO } from './diorama.js';
+import { DGL } from './diorama-gl.js';
 import { TALK } from './talk.js';
 import { CS } from './cutscene.js';
 import { FLY, LIFT } from './airship.js';

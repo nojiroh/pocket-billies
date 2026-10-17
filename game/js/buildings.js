@@ -11,8 +11,59 @@
    The models cast and receive sun shadows like everything else. The Studio's prop pictures still
    use the picture, so a repainted picture changes the front of the 3D building too. Engine setting world.buildings3d
    turns the models off (the pictures stand in as before). */
-const BLD = { mesh: new WeakMap(), fac: new WeakMap(), vao: null };
-const BLD_TEX_NAMES = [
+/* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
+import { expose } from './bridge.js';
+import { cnv, hexA } from './art.js';
+import { DIO, dioData, dioHash, dioImg } from './diorama.js';
+import { ENG_CTX, eng } from './engine/settings.js';
+import {
+  EGL,
+  EGL_GLSL_COMMON,
+  EGL_GLSL_LIGHT,
+  EGL_GLSL_LOOK,
+  eglBindQuad,
+  eglImg,
+  eglPrograms,
+  v3n,
+} from './engine/core.js';
+import { ENV, envLitFrac } from './env.js';
+import { DGL, dglCurveArgs, dglLookU, dglUse, dioH } from './diorama-gl.js';
+/* eslint-disable no-func-assign */
+expose({
+  BLD: [() => BLD],
+  BLD_GLSL_RAMP: [() => BLD_GLSL_RAMP],
+  BLD_ROOM_NAMES: [() => BLD_ROOM_NAMES],
+  BLD_SH: [() => BLD_SH],
+  BLD_SIGF: [() => BLD_SIGF],
+  BLD_TEX: [() => BLD_TEX],
+  BLD_TEX_NAMES: [() => BLD_TEX_NAMES],
+  bldArt: [() => bldArt, v => (bldArt = v)],
+  bldAtlas: [() => bldAtlas, v => (bldAtlas = v)],
+  bldBudget: [() => bldBudget, v => (bldBudget = v)],
+  bldDraw: [() => bldDraw, v => (bldDraw = v)],
+  bldDraw0: [() => bldDraw0, v => (bldDraw0 = v)],
+  bldFacade: [() => bldFacade, v => (bldFacade = v)],
+  bldFree: [() => bldFree, v => (bldFree = v)],
+  bldGuard: [() => bldGuard, v => (bldGuard = v)],
+  bldHex: [() => bldHex, v => (bldHex = v)],
+  bldHexSet: [() => bldHexSet, v => (bldHexSet = v)],
+  bldItems: [() => bldItems, v => (bldItems = v)],
+  bldLitF: [() => bldLitF, v => (bldLitF = v)],
+  bldMake: [() => bldMake, v => (bldMake = v)],
+  bldMeshFor: [() => bldMeshFor, v => (bldMeshFor = v)],
+  bldOn: [() => bldOn],
+  bldRot: [() => bldRot, v => (bldRot = v)],
+  bldShadow: [() => bldShadow, v => (bldShadow = v)],
+  bldShadow0: [() => bldShadow0, v => (bldShadow0 = v)],
+  bldSig: [() => bldSig],
+  bldSigF: [() => bldSigF, v => (bldSigF = v)],
+  bldSmoke: [() => bldSmoke, v => (bldSmoke = v)],
+  bldWinLit: [() => bldWinLit, v => (bldWinLit = v)],
+});
+/* eslint-enable no-func-assign */
+/* to-module: end */
+export const BLD = { mesh: new WeakMap(), fac: new WeakMap(), vao: null };
+export const BLD_TEX_NAMES = [
   'Plaster',
   'Siding',
   'Brick',
@@ -36,7 +87,7 @@ const BLD_TEX_NAMES = [
   'Stripes',
   'Rings',
 ];
-const BLD_ROOM_NAMES = ['Living room', 'Kitchen', 'Bedroom', 'Shop', 'Office', 'Clinic', 'Lab', 'Stairs'];
+export const BLD_ROOM_NAMES = ['Living room', 'Kitchen', 'Bedroom', 'Shop', 'Office', 'Clinic', 'Lab', 'Stairs'];
 const bldSig = B =>
   [
     B.kind,
@@ -59,7 +110,7 @@ const bldSig = B =>
   ].join('|');
 const bldOn = () => !BLD.fail && eng('world', 'buildings3d') !== false;
 /* if this device can't build or draw the models, the pictures stand in from then on (and the debug log says why) */
-function bldGuard(fn) {
+export function bldGuard(fn) {
   if (BLD.fail) return;
   try {
     fn();
@@ -76,12 +127,12 @@ function bldGuard(fn) {
     } catch (e2) {}
   }
 }
-function bldArt() {
+export function bldArt() {
   const C = dioData().sc;
   return C.buildArt || { detail: 'scene/build/detail.png', rooms: 'scene/build/rooms.png' };
 }
 /* alpha 0.4: the texture sheet is 8 cells across and as many rows as it has (16 textures were 2 rows; the moss and solar roofs start a third) */
-function bldAtlas(A) {
+export function bldAtlas(A) {
   const im = dioImg(A.detail),
     w = im && (im.naturalWidth || im.width),
     h = im && (im.naturalHeight || im.height);
@@ -89,7 +140,7 @@ function bldAtlas(A) {
 }
 const BLD_GLSL_RAMP = `vec3 rampC(vec3 b,float t){vec3 d0=mix(b*.55,vec3(.235,.165,.439),.30),d1=mix(b*.79,vec3(.376,.29,.596),.17),l3=mix(b,vec3(1.,.957,.769),.30),l4=mix(b,vec3(1.,.988,.918),.60);return t<.5?d0:t<1.5?d1:t<2.5?b:t<3.5?l3:l4;}
 float bayer4(vec2 p){ivec2 i=ivec2(mod(p,4.));int b[16]=int[16](0,8,2,10,12,4,14,6,3,11,1,9,15,7,13,5);return (float(b[i.y*4+i.x])+.5)/16.;}`;
-const BLD_SH = {
+export const BLD_SH = {
   bld: [
     `#version 300 es
 precision highp float;layout(location=0) in vec3 bPosIn;layout(location=1) in vec3 bNrmIn;layout(location=2) in vec2 bUVIn;layout(location=3) in vec3 bTexIn;layout(location=4) in vec3 bColIn;

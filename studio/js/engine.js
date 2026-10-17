@@ -5,6 +5,10 @@
    scene. The live preview runs the game's renderer on your unsaved values, so every change shows immediately. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/bridge.js';
+import { DIO, dioHubOf } from '../../game/js/diorama.js';
+import { ENGINE_DEFAULTS, ENGINE_PRESETS, ENGINE_SPEC, ENG_CTX, eng } from '../../game/js/engine/settings.js';
+import { EGL, eglOK } from '../../game/js/engine/core.js';
+import { DGL, dglRebuild, dioMount } from '../../game/js/diorama-gl.js';
 import {
   ACTS,
   SECTIONS,

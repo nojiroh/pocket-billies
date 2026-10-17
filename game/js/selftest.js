@@ -9,6 +9,36 @@
    for you and runs that step again. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './bridge.js';
+import { FRAME } from './frame.js';
+import { TR_CACHE } from './trainer.js';
+import { DR, closeDressing } from './dressing.js';
+import { SC, scStop } from './scene.js';
+import {
+  DIO,
+  DIO_CLK,
+  DIO_GCACHE,
+  dioActSpot,
+  dioBridges,
+  dioCell,
+  dioClimbEnds,
+  dioData,
+  dioFind,
+  dioHubOf,
+  dioNav,
+  dioScene,
+  dioSteps,
+  dioStop,
+  dioWalkTo,
+} from './diorama.js';
+import { eng } from './engine/settings.js';
+import { EGL, eglAttrClashes } from './engine/core.js';
+import { EGL_POST_SH } from './engine/post.js';
+import { ENV } from './env.js';
+import { DGL, DGL_SH, dglRoomDim, dioH } from './diorama-gl.js';
+import { BLD, BLD_SH } from './buildings.js';
+import { STR, strHas } from './structures.js';
+import { P3D, P3D_SH } from './props3d.js';
+import { VOX } from './vox.js';
 import { OWM, owBuddyTap, owPetSp } from './owmon.js';
 import { WORLD, wrRoomScene, wrTripView } from './world.js';
 import { A, endBattle, liveK, pickMove, pickTarget, startTrainer, startWild, stopTimers, tapMsg } from './battle.js';

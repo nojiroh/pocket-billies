@@ -10,9 +10,43 @@
    the shadow map (so its shadow has the real shape) and receives shadows. A prop's "vol" in the scenery catalog
    ("slab"|"block"|"puff"|"lathe"|"card") and "volDepth" (metres) override the automatic choice below; "card" keeps the
    flat picture. "lathe" turns the outline round, like a pot on a potter's wheel. */
-const P3D = { meshes: new WeakMap(), fail: '', drawn: 0 };
+/* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
+import { expose } from './bridge.js';
+import { cnv } from './art.js';
+import { DIO, dioHash, dioImg, dioProj } from './diorama.js';
+import { eng } from './engine/settings.js';
+import { EGL, EGL_GLSL_COMMON, EGL_GLSL_LIGHT, EGL_GLSL_LOOK, EGL_MATS, eglImg, eglPrograms } from './engine/core.js';
+import { DGL, dglBlades, dglBudget, dglCurveArgs, dglFol, dglHit, dglLookU, dglUse } from './diorama-gl.js';
+/* eslint-disable no-func-assign */
+expose({
+  P3D: [() => P3D],
+  P3D_AUTO: [() => P3D_AUTO],
+  P3D_GLSL_V: [() => P3D_GLSL_V],
+  P3D_KINDS: [() => P3D_KINDS],
+  P3D_MATID: [() => P3D_MATID],
+  P3D_PARTS: [() => P3D_PARTS],
+  P3D_SH: [() => P3D_SH],
+  p3dBuild: [() => p3dBuild, v => (p3dBuild = v)],
+  p3dDraw: [() => p3dDraw, v => (p3dDraw = v)],
+  p3dGuard: [() => p3dGuard, v => (p3dGuard = v)],
+  p3dKind: [() => p3dKind, v => (p3dKind = v)],
+  p3dLod: [() => p3dLod, v => (p3dLod = v)],
+  p3dMesh: [() => p3dMesh, v => (p3dMesh = v)],
+  p3dOn: [() => p3dOn, v => (p3dOn = v)],
+  p3dShadow: [() => p3dShadow, v => (p3dShadow = v)],
+  p3dSpec: [() => p3dSpec, v => (p3dSpec = v)],
+  p3dTag: [() => p3dTag, v => (p3dTag = v)],
+  p3dTex: [() => p3dTex, v => (p3dTex = v)],
+  p3dTreeBuild: [() => p3dTreeBuild, v => (p3dTreeBuild = v)],
+  p3dTreeKind: [() => p3dTreeKind, v => (p3dTreeKind = v)],
+  p3dU: [() => p3dU, v => (p3dU = v)],
+  p3dUpload: [() => p3dUpload, v => (p3dUpload = v)],
+});
+/* eslint-enable no-func-assign */
+/* to-module: end */
+export const P3D = { meshes: new WeakMap(), fail: '', drawn: 0 };
 /* by prop group (or key): the kind of body and its depth at scale 1, in metres */
-const P3D_AUTO = {
+export const P3D_AUTO = {
   crate: ['block', 0.9],
   crates: ['block', 1],
   bin: ['block', 1],
@@ -111,7 +145,7 @@ const P3D_AUTO = {
   lava_vent: ['lathe', 0],
 };
 const P3D_MATID = { plain: 0, foliage: 1, wood: 2, stone: 3, metal: 4, building: 5, cloth: 6, crystal: 7 };
-const P3D_KINDS = [
+export const P3D_KINDS = [
   ['', 'Automatic'],
   ['card', 'Flat picture'],
   ['slab', 'Thin slab'],
@@ -127,7 +161,7 @@ function p3dOn() {
    part stay a flat picture. parts: [{r:[x0,y0,x1,y1] in picture pixels, k:'lathe'|'flat'|'slab'|'block'|'puff'|'card',
    d: depth in metres (flat: front-to-back size, default as wide as the band), y: the row a flat part lies at (default
    its bottom row), open: a turned part without a lid}] */
-const P3D_PARTS = {
+export const P3D_PARTS = {
   fountain: [
     { r: [52, 0, 66, 26], k: 'lathe' },
     { r: [34, 31, 85, 41], k: 'lathe', open: 1 },
@@ -670,7 +704,7 @@ function p3dUpload(V, extra) {
    camera sees a full crown. Each clump sways on its own in the wind. Seen from the front the pieces show the picture
    exactly. A copy of the picture carries each pixel's piece in its alpha (128 + piece), so a clump never shows its
    neighbours' pixels. Pines are turned whole: their tiers become a cone. */
-function p3dTreeKind(k, M) {
+export function p3dTreeKind(k, M) {
   const g = M.group || k;
   if (/^tree_pine/.test(g)) return 'pine';
   if (/^(tree|tree_oak|tree_birch|tree_blossom|tree_fruit|tree_maple|tree_street|tree_willow)$/.test(g)) return 'tree';
@@ -1001,7 +1035,7 @@ vec3 p3dPos(out vec3 nOut){float h=-(uOff.y+qPos.y)*uS;vec2 lp=vec2((uOff.x+qPos
  if(qId>.5&&uWob>0.){float hm=max(.5,-uOff.y*uS),k=clamp(h/hm,0.,1.),ph=uT*.0016+qId*1.9,wb=windBend(uBase.xz,uT,1.)*4.6;lp+=vec2(wb+sin(ph)*.22,cos(ph*.8+qId)*.1+wb*.18)*uWob*k;}
  float cr=cos(uRot),sr=sin(uRot);lp=vec2(lp.x*cr-lp.y*sr,lp.x*sr+lp.y*cr);vec3 n=vec3(qNrm.x*uFlip,-qNrm.y,qNrm.z);nOut=vec3(n.x*cr-n.z*sr,n.y,n.x*sr+n.z*cr);
  vec3 p=uBase+vec3(lp.x,h+dot(lp,uTilt),lp.y);p.y+=curveY(uBase.xz);return p;}`;
-const P3D_SH = {
+export const P3D_SH = {
   p3d: [
     `#version 300 es
 precision highp float;${EGL_GLSL_COMMON}${P3D_GLSL_V}out vec3 vW;out vec3 vN;out vec2 vUV;out float vFace;out float vId;

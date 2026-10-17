@@ -4,6 +4,12 @@
    Everything here edits the current save directly; use Export first if you want a way back. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './bridge.js';
+import { FRAME, frameCount, frameTask, userFps } from './frame.js';
+import { uiIco } from './art.js';
+import { applyPreferences, exportSave } from './profile.js';
+import { SC, scResize, scStop } from './scene.js';
+import { dioScene } from './diorama.js';
+import { EGL } from './engine/core.js';
 import { A, checkFaints, paintBoxes, play, say, snapAll, startTrainer, startWild, stopTimers } from './battle.js';
 import { MAP } from './map.js';
 /* eslint-disable no-func-assign */

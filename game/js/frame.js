@@ -2,7 +2,21 @@
 /* ================= FRAME SCHEDULER =================
    One requestAnimationFrame loop drives everything that animates (battle, world map, sprites, sky).
    Each task has its own cap; the battle and map follow the 30 / 60 / 120 FPS setting. */
-const FRAME = {
+/* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
+import { expose } from './bridge.js';
+/* eslint-disable no-func-assign */
+expose({
+  FRAME: [() => FRAME],
+  frameCount: [() => frameCount, v => (frameCount = v)],
+  frameLoop: [() => frameLoop, v => (frameLoop = v)],
+  framePace: [() => framePace, v => (framePace = v)],
+  frameStop: [() => frameStop, v => (frameStop = v)],
+  frameTask: [() => frameTask, v => (frameTask = v)],
+  userFps: [() => userFps, v => (userFps = v)],
+});
+/* eslint-enable no-func-assign */
+/* to-module: end */
+export const FRAME = {
   tasks: new Map(),
   on: false,
   hz: 60,
@@ -11,7 +25,7 @@ const FRAME = {
   lastWork: 0,
   meter: { t0: 0, n: 0, fps: 0, work: 0, workAvg: 0 },
 };
-function userFps() {
+export function userFps() {
   const p = (typeof S !== 'undefined' && S && S.preferences) || {};
   const f = +p.fps;
   return f === 30 || f === 90 || f === 120 ? f : 60;
@@ -26,14 +40,14 @@ function framePace(cap) {
   return hz / k;
 }
 /* add or replace a task; cap() returns the frames per second it wants right now */
-function frameTask(name, fn, cap) {
+export function frameTask(name, fn, cap) {
   FRAME.tasks.set(name, { fn, cap: cap || userFps, next: 0, last: 0 });
   if (!FRAME.on) {
     FRAME.on = true;
     requestAnimationFrame(frameLoop);
   }
 }
-function frameStop(name) {
+export function frameStop(name) {
   FRAME.tasks.delete(name);
 }
 function frameLoop(ts) {
@@ -79,7 +93,7 @@ function frameLoop(ts) {
   FRAME.lastWork = performance.now() - w0;
 }
 /* frame-rate meter for the debug overlay (counts battle or map frames) */
-function frameCount(work) {
+export function frameCount(work) {
   const m = FRAME.meter,
     now = performance.now();
   m.n++;

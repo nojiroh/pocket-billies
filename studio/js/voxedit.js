@@ -8,6 +8,9 @@
    and the game reads either. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/bridge.js';
+import { cnv } from '../../game/js/art.js';
+import { dioImg } from '../../game/js/diorama.js';
+import { VOX_TEXTURES, voxInvalidate, voxRecipe } from '../../game/js/vox.js';
 import {
   ACTS,
   ST,

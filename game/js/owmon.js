@@ -10,6 +10,12 @@
    frame. A species' rig art is loaded the first time it's needed; until then it simply isn't shown. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './bridge.js';
+import { cnv } from './art.js';
+import { KBACK, drawRig, rigFrame, rigParts, rigPreload } from './rig.js';
+import { scPrepare } from './scene.js';
+import { DIO, dioFreePt, dioPrepare, dioProj } from './diorama.js';
+import { ENV } from './env.js';
+import { dioH } from './diorama-gl.js';
 /* eslint-disable no-func-assign */
 expose({
   OWM: [() => OWM],

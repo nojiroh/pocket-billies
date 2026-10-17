@@ -4,6 +4,26 @@
    so moves, backdrops and new billionaires can be checked without starting the game. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/bridge.js';
+import { COIN_ART, artLoad, hexA } from '../../game/js/art.js';
+import {
+  AREAS,
+  SC,
+  STAGEART,
+  camAt,
+  camHome,
+  fgDraw,
+  scCatch,
+  scFocus,
+  scPlay,
+  scPrepare,
+  scResize,
+  scStart,
+  scToCss,
+  sideTop,
+} from '../../game/js/scene.js';
+import { DIO, dioHubOf } from '../../game/js/diorama.js';
+import { dioMount } from '../../game/js/diorama-gl.js';
+import { battleGLAttach, battleGLStop } from '../../game/js/battle-gl.js';
 import {
   ACTS,
   SECTIONS,

@@ -3,7 +3,56 @@
    Change your look: body, face, hair and every piece of clothing, with a live preview you can turn around, walk or
    pose. Items you own can be worn; the rest show their price and the boutique that sells them. Inside a boutique
    the same room has a till: try things on and buy what you're wearing. Also the "Create your trainer" step. */
-const DR = {
+/* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
+import { expose } from './bridge.js';
+import { frameStop, frameTask } from './frame.js';
+import { cnv, uiIco } from './art.js';
+import { TR_PRESETS, WD, cleanLook, portraitHTML, trBox, trColorsOf, trFrame, trSliders } from './trainer.js';
+/* eslint-disable no-func-assign */
+expose({
+  DR: [() => DR],
+  DR_BUILDS: [() => DR_BUILDS],
+  DR_CROP: [() => DR_CROP],
+  DR_FACES: [() => DR_FACES],
+  DR_OUTFITS: [() => DR_OUTFITS],
+  DR_TABS: [() => DR_TABS],
+  DR_VIEWS: [() => DR_VIEWS],
+  closeDressing: [() => closeDressing, v => (closeDressing = v)],
+  drBind: [() => drBind, v => (drBind = v)],
+  drBuildIs: [() => drBuildIs, v => (drBuildIs = v)],
+  drBuy: [() => drBuy, v => (drBuy = v)],
+  drColor: [() => drColor, v => (drColor = v)],
+  drColors: [() => drColors, v => (drColors = v)],
+  drFaceIs: [() => drFaceIs, v => (drFaceIs = v)],
+  drFootHTML: [() => drFootHTML, v => (drFootHTML = v)],
+  drGrid: [() => drGrid, v => (drGrid = v)],
+  drHTML: [() => drHTML, v => (drHTML = v)],
+  drItems: [() => drItems],
+  drLoop: [() => drLoop, v => (drLoop = v)],
+  drMore: [() => drMore, v => (drMore = v)],
+  drOutfitIs: [() => drOutfitIs, v => (drOutfitIs = v)],
+  drOutfitLook: [() => drOutfitLook, v => (drOutfitLook = v)],
+  drPortrait: [() => drPortrait, v => (drPortrait = v)],
+  drPush: [() => drPush, v => (drPush = v)],
+  drRandom: [() => drRandom, v => (drRandom = v)],
+  drRefresh: [() => drRefresh, v => (drRefresh = v)],
+  drSave: [() => drSave, v => (drSave = v)],
+  drSection: [() => drSection, v => (drSection = v)],
+  drSells: [() => drSells],
+  drSet: [() => drSet, v => (drSet = v)],
+  drSwatches: [() => drSwatches, v => (drSwatches = v)],
+  drTabHTML: [() => drTabHTML, v => (drTabHTML = v)],
+  drThumb: [() => drThumb, v => (drThumb = v)],
+  drThumbLook: [() => drThumbLook, v => (drThumbLook = v)],
+  drUnowned: [() => drUnowned, v => (drUnowned = v)],
+  openDressing: [() => openDressing, v => (openDressing = v)],
+  owns: [() => owns, v => (owns = v)],
+  shopName: [() => shopName],
+  wardrobeState: [() => wardrobeState],
+});
+/* eslint-enable no-func-assign */
+/* to-module: end */
+export const DR = {
   on: false,
   mode: 'edit',
   shop: null,
@@ -218,7 +267,7 @@ const shopName = id => (SHOPS[id] && SHOPS[id].name) || 'a boutique';
 /* does the open boutique sell this item? its own stock, or (an outlet) the stock of the shops it lists in "sells" */
 const drSells = it =>
   !!(DR.shop && it && (it.shop === DR.shop || ((SHOPS[DR.shop] || {}).sells || []).includes(it.shop)));
-function openDressing(o = {}) {
+export function openDressing(o = {}) {
   DR.on = true;
   DR.mode = o.mode || 'edit';
   DR.shop = o.shop || null;
@@ -251,7 +300,7 @@ function openDressing(o = {}) {
   drBind();
   frameTask('dress', drLoop);
 }
-function closeDressing() {
+export function closeDressing() {
   DR.on = false;
   frameStop('dress');
   const el = $('#dressing');
@@ -537,7 +586,7 @@ function drThumb(slot, id, crop) {
   DR.thumbs.set(key, u);
   return u;
 }
-function drPortrait(look) {
+export function drPortrait(look) {
   const L = cleanLook(look),
     f = trFrame(L, 'front', 'idle', 0, 0),
     b = trBox(f),
@@ -648,7 +697,7 @@ function drRandom() {
     }
   });
 }
-function drSave() {
+export function drSave() {
   const un = drUnowned();
   if (un.length && DR.mode !== 'intro') {
     toast('Buy the pieces you’re trying on first.');

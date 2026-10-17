@@ -6,6 +6,10 @@
    battle. S.story remembers which scenes you have seen. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './bridge.js';
+import { DR } from './dressing.js';
+import { DIO, dioBaseId, dioFreePt } from './diorama.js';
+import { EGL } from './engine/core.js';
+import { DGL, dioH } from './diorama-gl.js';
 import { startTrainer, startWild } from './battle.js';
 import { music } from './sound.js';
 import { TALK, talk, talkHide, talkLine } from './talk.js';

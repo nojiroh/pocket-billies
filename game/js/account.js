@@ -7,6 +7,8 @@
    The Firebase project is set in js/account-config.js; without it there is no sign-in button. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './bridge.js';
+import { cleanTrainer } from './trainer.js';
+import { applyPreferences, settingsRefresh } from './profile.js';
 import { TITLE, titleStart } from './title.js';
 import { frInit } from './friends.js';
 /* eslint-disable no-func-assign */

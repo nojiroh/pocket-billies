@@ -4,6 +4,10 @@
    Tap a place to see it; travel there, stay, stop or turn back from the card. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './bridge.js';
+import { frameCount, frameStop, frameTask, userFps } from './frame.js';
+import { artPixels, d44, mixA, mstamp, pk, seeded } from './art.js';
+import { owFrames } from './trainer.js';
+import { EASE } from './scene.js';
 /* eslint-disable no-func-assign */
 expose({
   D2R: [() => D2R],

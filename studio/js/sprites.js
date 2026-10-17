@@ -5,6 +5,9 @@
    the game does, animates previews, and provides the pixel editor, gold regeneration and recoloring. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/bridge.js';
+import { cnv } from '../../game/js/art.js';
+import { animFor } from '../../game/js/anim.js';
+import { drawRig, rigPose } from '../../game/js/rig.js';
 import { ST, ask, render, spName, toast, updTop } from './core.js';
 /* eslint-disable no-func-assign */
 expose({

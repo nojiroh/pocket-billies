@@ -9,6 +9,15 @@
    If the cutscene can't run or stops, the older step-by-step intro in ui.js runs instead. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './bridge.js';
+import { userFps } from './frame.js';
+import { artLoad, cnv } from './art.js';
+import { TR_PRESETS, cleanLook, humanPose, owFrames, trainerLook } from './trainer.js';
+import { DR, drSave, openDressing } from './dressing.js';
+import { drawRig, rigFrame, rigParts, rigPreload, rigTint } from './rig.js';
+import { buzz, partSpr } from './scene.js';
+import { DIO, dioData, dioDirOf, dioImg, dioOk, dioPrepare, dioProj, dioScene, dioStop } from './diorama.js';
+import { EGL, eglOK } from './engine/core.js';
+import { DGL, dglPerson, dioH, dioMount } from './diorama-gl.js';
 import { wrRoamView } from './world.js';
 import { music, sfx } from './sound.js';
 import { TALK, talkHide, talkLine } from './talk.js';

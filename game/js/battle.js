@@ -6,6 +6,33 @@
    second, 4 = your third. Doubles (some trainers) are 0+2 against 1+3; an Alpha is fought by 0, 2 and 4 against 1. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './bridge.js';
+import { artURL, coinHTML, eggHTML, iconURL, uiIco } from './art.js';
+import { portraitHTML } from './trainer.js';
+import { KBACK, bustHTML, rigPreload } from './rig.js';
+import {
+  AREAS,
+  EASE,
+  SC,
+  camAt,
+  scCatch,
+  scFocus,
+  scPlay,
+  scPrepare,
+  scResize,
+  scRingPhase,
+  scSelect,
+  scStart,
+  scStop,
+  scTargets,
+  scToCss,
+  sideCenter,
+  sideTop,
+  sideWorld,
+} from './scene.js';
+import { DIO } from './diorama.js';
+import { ENV, ENV_NAMES, envHere, envState } from './env.js';
+import { DGL, dglRing, dglWgAt } from './diorama-gl.js';
+import { BGL, battleGLWanted } from './battle-gl.js';
 /* eslint-disable no-func-assign */
 expose({
   A: [() => A],

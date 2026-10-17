@@ -2,8 +2,19 @@
 /* ================= BODY-PLAN ANIMATION (shared by the art tool and the game) =================
    Each function maps the shared pose channels P (from rigPose) to per-bone offsets for one body plan.
    q holds the few per-species numbers the motion needs (hover height, flap speed and so on). */
+/* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
+import { expose } from './bridge.js';
+/* eslint-disable no-func-assign */
+expose({
+  ANIM: [() => ANIM],
+  OCTO_XS: [() => OCTO_XS],
+  WALK: [() => WALK],
+  animFor: [() => animFor, v => (animFor = v)],
+});
+/* eslint-enable no-func-assign */
+/* to-module: end */
 const OCTO_XS = [-0.78, -0.48, -0.16, 0.16, 0.48, 0.78];
-const ANIM = {
+export const ANIM = {
   biped(P, q) {
     const lift = q.lift || 0,
       A = {
@@ -353,7 +364,7 @@ const WALK = {
     if (A.shell) A.shell.dy = (A.shell.dy || 0) - Math.abs(Math.sin(P.wk * 2)) * 0.8;
   },
 };
-function animFor(plan, q) {
+export function animFor(plan, q) {
   const f = ANIM[plan],
     w = WALK[plan];
   return (P, back) => {

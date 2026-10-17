@@ -5,6 +5,11 @@
    first time it's needed. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './bridge.js';
+import { cnv, uiIco } from './art.js';
+import { DIO, dioBaseId, dioFace, dioFind, dioFreePt, dioHubOf, dioScene, dioTer } from './diorama.js';
+import { eng } from './engine/settings.js';
+import { ENV, envHere, envState } from './env.js';
+import { DGL, dioH } from './diorama-gl.js';
 import { say } from './battle.js';
 import { sfx } from './sound.js';
 import { TALK, talk } from './talk.js';

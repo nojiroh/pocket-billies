@@ -6,6 +6,8 @@
    a small stamp shows in the corner for a moment. S.cards keeps them: {town id: the day you got it}. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './bridge.js';
+import { artURL } from './art.js';
+import { DIO, dioFlagPath, dioScene } from './diorama.js';
 import { sfx } from './sound.js';
 import { TALK } from './talk.js';
 import { CS } from './cutscene.js';

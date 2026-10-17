@@ -8,13 +8,147 @@
    Ground, walls, far land, props, clouds and foregrounds come from art/battle/*.png; props can also be scene props (art/scene/props).
    The camera is directed (pushes and pans with the action, intro dollies, a pull-back on faints), drifts in a slow orbit while idle,
    and is guarded so the two billionaires never leave the free frame. Reduced motion keeps it on the home shot. */
-const FW = 224,
+/* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
+import { expose } from './bridge.js';
+import { FRAME, frameCount, frameStop, frameTask, userFps } from './frame.js';
+import { ART, artLoad, artPixels, cnv, coinCanvas, d44, hexA, iconCanvas, mixA, pk, whiteOf } from './art.js';
+import { WD, humanFrames, humanPose } from './trainer.js';
+import { drawRig, rigFrame, rigParts, rigTint } from './rig.js';
+/* eslint-disable no-func-assign */
+expose({
+  ACT: [() => ACT],
+  AREAS: [() => AREAS],
+  BSWAY: [() => BSWAY],
+  CAMK: [() => CAMK],
+  CAMPOS: [() => CAMPOS],
+  CANFILTER: [() => CANFILTER],
+  CX0: [() => CX0],
+  CZ0: [() => CZ0],
+  DOFG: [() => DOFG],
+  DOFK: [() => DOFK],
+  DRAWL: [() => DRAWL],
+  DUE: [() => DUE],
+  EASE: [() => EASE],
+  FH: [() => FH],
+  FOC: [() => FOC],
+  FOCAM: [() => FOCAM],
+  FOCUS: [() => FOCUS],
+  FORMS: [() => FORMS],
+  FSCALE: [() => FSCALE],
+  FW: [() => FW],
+  GB: [() => GB],
+  GLOWY: [() => GLOWY],
+  HOMECAM: [() => HOMECAM],
+  HZ_IN_FRAME: [() => HZ_IN_FRAME],
+  KB: [() => KB],
+  LEAF: [() => LEAF],
+  NIT: [() => NIT, v => (NIT = v)],
+  POS: [() => POS],
+  PULLCAM: [() => PULLCAM],
+  RCURV: [() => RCURV],
+  SC: [() => SC],
+  SIDEOF: [() => SIDEOF],
+  SOFTPAD: [() => SOFTPAD],
+  STAGEART: [() => STAGEART],
+  TEXN: [() => TEXN],
+  TEXS: [() => TEXS],
+  TFX: [() => TFX],
+  UPP: [() => UPP],
+  ZMAX: [() => ZMAX],
+  act: [() => act, v => (act = v)],
+  ambient: [() => ambient, v => (ambient = v)],
+  artKey: [() => artKey],
+  at: [() => at, v => (at = v)],
+  blinkSide: [() => blinkSide, v => (blinkSide = v)],
+  blurAt: [() => blurAt, v => (blurAt = v)],
+  burst: [() => burst, v => (burst = v)],
+  buzz: [() => buzz, v => (buzz = v)],
+  camApply: [() => camApply, v => (camApply = v)],
+  camAt: [() => camAt],
+  camBusy: [() => camBusy],
+  camHome: [() => camHome, v => (camHome = v)],
+  camOver: [() => camOver, v => (camOver = v)],
+  camTo: [() => camTo, v => (camTo = v)],
+  camUpdate: [() => camUpdate, v => (camUpdate = v)],
+  castFloor: [() => castFloor, v => (castFloor = v)],
+  cloudShadows: [() => cloudShadows, v => (cloudShadows = v)],
+  coinArc: [() => coinArc, v => (coinArc = v)],
+  dofFloor: [() => dofFloor, v => (dofFloor = v)],
+  drawBill: [() => drawBill, v => (drawBill = v)],
+  drawParts: [() => drawParts, v => (drawParts = v)],
+  drawProp: [() => drawProp, v => (drawProp = v)],
+  drawShadow: [() => drawShadow, v => (drawShadow = v)],
+  drawSide: [() => drawSide, v => (drawSide = v)],
+  drawTrainer: [() => drawTrainer, v => (drawTrainer = v)],
+  fgDraw: [() => fgDraw, v => (fgDraw = v)],
+  floorBuffers: [() => floorBuffers, v => (floorBuffers = v)],
+  floorKey: [() => floorKey, v => (floorKey = v)],
+  floorLowFrom: [() => floorLowFrom, v => (floorLowFrom = v)],
+  floorUpdate: [() => floorUpdate, v => (floorUpdate = v)],
+  governor: [() => governor, v => (governor = v)],
+  groundRing: [() => groundRing, v => (groundRing = v)],
+  hBox: [() => hBox, v => (hBox = v)],
+  handheld: [() => handheld, v => (handheld = v)],
+  hitFx: [() => hitFx, v => (hitFx = v)],
+  hitStop: [() => hitStop, v => (hitStop = v)],
+  hitWeight: [() => hitWeight, v => (hitWeight = v)],
+  itemAdd: [() => itemAdd, v => (itemAdd = v)],
+  lightShafts: [() => lightShafts, v => (lightShafts = v)],
+  mkSide: [() => mkSide],
+  part: [() => part, v => (part = v)],
+  partSpr: [() => partSpr, v => (partSpr = v)],
+  pixRing: [() => pixRing, v => (pixRing = v)],
+  proj: [() => proj],
+  projC: [() => projC, v => (projC = v)],
+  projTo: [() => projTo, v => (projTo = v)],
+  propDef: [() => propDef, v => (propDef = v)],
+  punch: [() => punch, v => (punch = v)],
+  ringFx: [() => ringFx, v => (ringFx = v)],
+  scCA: [() => scCA, v => (scCA = v)],
+  scCatch: [() => scCatch, v => (scCatch = v)],
+  scDraw: [() => scDraw, v => (scDraw = v)],
+  scDrawFx: [() => scDrawFx, v => (scDrawFx = v)],
+  scFlash: [() => scFlash, v => (scFlash = v)],
+  scFlush: [() => scFlush, v => (scFlush = v)],
+  scFocus: [() => scFocus, v => (scFocus = v)],
+  scFormat: [() => scFormat, v => (scFormat = v)],
+  scFrame: [() => scFrame, v => (scFrame = v)],
+  scLayout: [() => scLayout, v => (scLayout = v)],
+  scPlay: [() => scPlay, v => (scPlay = v)],
+  scPrepare: [() => scPrepare, v => (scPrepare = v)],
+  scQualityR: [() => scQualityR, v => (scQualityR = v)],
+  scResize: [() => scResize, v => (scResize = v)],
+  scRingPhase: [() => scRingPhase],
+  scSelect: [() => scSelect, v => (scSelect = v)],
+  scStart: [() => scStart, v => (scStart = v)],
+  scStop: [() => scStop, v => (scStop = v)],
+  scTargets: [() => scTargets, v => (scTargets = v)],
+  scToCss: [() => scToCss, v => (scToCss = v)],
+  selRing: [() => selRing, v => (selRing = v)],
+  sideBuf: [() => sideBuf, v => (sideBuf = v)],
+  sideCenter: [() => sideCenter, v => (sideCenter = v)],
+  sideTop: [() => sideTop, v => (sideTop = v)],
+  sideWorld: [() => sideWorld, v => (sideWorld = v)],
+  softDraw: [() => softDraw, v => (softDraw = v)],
+  softSmall: [() => softSmall, v => (softSmall = v)],
+  speedLines: [() => speedLines, v => (speedLines = v)],
+  stageArt: [() => stageArt, v => (stageArt = v)],
+  trainerAct: [() => trainerAct, v => (trainerAct = v)],
+  trainerBattleFrame: [() => trainerBattleFrame, v => (trainerBattleFrame = v)],
+  trainerMpp: [() => trainerMpp],
+  tspr: [() => tspr],
+  tw: [() => tw, v => (tw = v)],
+  vBox: [() => vBox, v => (vBox = v)],
+});
+/* eslint-enable no-func-assign */
+/* to-module: end */
+export const FW = 224,
   FH = 168,
   FOC = 170,
   RCURV = 300,
   ZMAX = 330,
   HZ_IN_FRAME = 51;
-const POS = [
+export const POS = [
     { x: -0.88, z: 2.6 },
     { x: 1.72, z: 5.7 },
   ],
@@ -73,13 +207,13 @@ const FOCAM = [
   { x: -0.5, y: 1.78, z: -0.55, yaw: -0.11, hz: -8 },
   { x: 0.8, y: 1.4, z: 1.1, yaw: 0.09, hz: 8 },
 ];
-const AREAS = BACKDROPS;
+export const AREAS = BACKDROPS;
 const CX0 = 0.55,
   CZ0 = 3.9,
   TEXN = 512,
   TEXS = 16;
 /* ---------- scene state ---------- */
-const EASE = {
+export const EASE = {
   lin: t => t,
   out: t => 1 - (1 - t) * (1 - t),
   in: t => t * t,
@@ -107,7 +241,7 @@ const mkSide = () => ({
   big: 1,
   boss: false,
 });
-const SC = {
+export const SC = {
   on: false,
   t: 0,
   last: 0,
@@ -159,7 +293,7 @@ const SC = {
   goldT: 0,
   speed: 1,
 };
-const STAGEART = {};
+export const STAGEART = {};
 const artKey = area => (AREAS[area] && AREAS[area].art) || area;
 /* a prop kind is either a battle prop (art/battle/props, 30 px per meter) or one of the scene props of the walking world
    (GD.scenery.props, art/scene/props, 34 px per meter). Foliage sways a little in the wind. */
@@ -190,7 +324,7 @@ function propDef(kind) {
     shadow: G.shadow == null ? null : G.shadow,
   };
 }
-function stageArt(area) {
+export function stageArt(area) {
   const A = AREAS[area],
     k = artKey(area),
     M = ARTMAN.battle,
@@ -205,7 +339,7 @@ function stageArt(area) {
   return [...new Set(L)];
 }
 /* load (once) everything a stage needs; pixel arrays for ground, far land and walls */
-async function scPrepare(area) {
+export async function scPrepare(area) {
   area = AREAS[area] ? area : 'grass';
   if (STAGEART[area]) return STAGEART[area];
   const A = AREAS[area],
@@ -286,7 +420,7 @@ function scLayout() {
     ver: (SC.L ? SC.L.ver : 0) + 1,
   };
 }
-function scResize() {
+export function scResize() {
   if (!SC.cv) return;
   const L = scLayout();
   if (!L) return;
@@ -320,7 +454,7 @@ function scResize() {
   if (typeof battleLayoutChanged === 'function') battleLayoutChanged(L);
   if (SC.gl && typeof battleGLLayout === 'function') battleGLLayout();
 }
-function scStart(area) {
+export function scStart(area) {
   SC.area = AREAS[area] ? area : 'grass';
   const A = AREAS[SC.area],
     G = STAGEART[SC.area];
@@ -380,7 +514,7 @@ function scStart(area) {
     frameTask('scene', scFrame);
   }
 }
-function scStop() {
+export function scStop() {
   SC.on = false;
   frameStop('scene');
   if (SC.gl && typeof battleGLStop === 'function') battleGLStop();
@@ -424,7 +558,7 @@ const FOCUS = {
   me: { zf: POS[0].z, ap: 1.35 },
   none: { zf: 4, ap: 0 },
 };
-function scFocus(f, now) {
+export function scFocus(f, now) {
   if (SC.focusK === f && !now) return;
   SC.focusK = f;
   const F = FOCUS[f] || FOCUS.none,
@@ -462,7 +596,7 @@ function scCA(ms = 160) {
 function hitStop(ms) {
   if (!RM) SC.hold = performance.now() + ms;
 }
-function buzz(p) {
+export function buzz(p) {
   try {
     if ((S.preferences || {}).haptics !== false && navigator.vibrate) navigator.vibrate(p);
   } catch (e) {}
@@ -470,7 +604,7 @@ function buzz(p) {
 /* ---------- projection ---------- */
 const proj = (X, Y, Z) => projC(SC.V, X, Y, Z);
 /* stage point to CSS pixels inside #battle (for HUD pop-ups) */
-function scToCss(P) {
+export function scToCss(P) {
   if (!SC.L) return null;
   const q = proj(P.x, P.y, P.z);
   if (!q) return null;
@@ -482,7 +616,7 @@ function scToCss(P) {
     y = (q.y - L.M) * L.u;
   return { x: cx + (x - cx) * z, y: cy + (y - cy) * z };
 }
-function sideWorld(i) {
+export function sideWorld(i) {
   const s = SC.s[i] || mkSide(),
     p = POS[i] || POS[SIDEOF(i)],
     V = [POS[1].x - POS[0].x, POS[1].z - POS[0].z],
@@ -490,7 +624,7 @@ function sideWorld(i) {
     u = UPP[i];
   return { x: p.x + (s.ox * u * V[0]) / L, z: p.z + (s.ox * u * V[1]) / L, y: -s.oy * u };
 }
-function sideCenter(i) {
+export function sideCenter(i) {
   const w = sideWorld(i),
     s = SC.s[i];
   let h = 1.4;
@@ -500,7 +634,7 @@ function sideCenter(i) {
   }
   return { x: w.x, y: w.y + h, z: w.z };
 }
-function sideTop(i) {
+export function sideTop(i) {
   const c = sideCenter(i),
     w = sideWorld(i);
   return { x: c.x, y: w.y + (c.y - w.y) * (SIDEOF(i) === 0 ? 1.55 : 1.9), z: c.z };
@@ -777,7 +911,7 @@ function camApply() {
 /* ---------- camera life ----------
    SC.cam is the directed camera (camTo/camAt/camHome tween it); SC.V is the one rendered: the directed camera plus a slow idle orbit
    around the middle of the action while nothing happens. A guard keeps both billionaires inside the free frame. */
-const CAMK = ['x', 'y', 'z', 'yaw', 'hz'],
+export const CAMK = ['x', 'y', 'z', 'yaw', 'hz'],
   ACT = { x: (POS[0].x + POS[1].x) / 2, z: (POS[0].z + POS[1].z) / 2 };
 function projC(C, X, Y, Z) {
   const L = SC.L,
@@ -1342,7 +1476,7 @@ function softDraw(c, img, x, y, w, h, blur, slot) {
   c.imageSmoothingEnabled = prev;
 }
 /* one billionaire's current frame, drawn into its buffer (the 2D stage draws the buffer; the 3D stage uploads it) */
-function sideBuf(i) {
+export function sideBuf(i) {
   const s = SC.s[i];
   if (!s.show || !s.sp || s.a <= 0.01 || s.sc <= 0.01) return null;
   if (SC.t < s.blinkUntil && Math.floor(SC.t / 60) % 2) return null;
@@ -1405,8 +1539,8 @@ function drawSide(c, i) {
   c.globalAlpha = 1;
 }
 /* the trainers: you from behind (left), the rival facing you (right); they throw coins and cheer */
-const trainerMpp = i => (i === 0 ? 1.42 : 1.7) / ((typeof WD === 'function' && WD() && WD().figure) || 74);
-function trainerBattleFrame(i) {
+export const trainerMpp = i => (i === 0 ? 1.42 : 1.7) / ((typeof WD === 'function' && WD() && WD().figure) || 74);
+export function trainerBattleFrame(i) {
   const T = SC.tr[i];
   if (!T || !T.who) return null;
   const view = i === 0 ? 'back' : 'front';
@@ -1495,7 +1629,7 @@ function pixRing(c, cx, cy, rx, ry, col, th = 1) {
       c.fillRect(Math.round(cx + Math.cos(a) * (rx - q)), Math.round(cy + Math.sin(a) * (ry - q)), 1, 1);
   }
 }
-function partSpr(key) {
+export function partSpr(key) {
   return iconCanvas(key);
 }
 function drawParts(c, layer) {
@@ -1614,7 +1748,7 @@ function lightShafts(c) {
   c.restore();
 }
 /* foreground: the area's grass or railings, split to the two edges of the open stage and blurred like a near lens element */
-function fgDraw() {
+export function fgDraw() {
   const c = SC.fx,
     L = SC.L;
   if (!c) return;
@@ -1765,10 +1899,10 @@ function scDraw() {
   scDrawFx(c, 1);
 }
 /* v33: the fighter choosing stands in a gold ring; while aiming, the foes you can pick pulse */
-function scSelect(k) {
+export function scSelect(k) {
   SC.sel = k;
 }
-function scTargets(L) {
+export function scTargets(L) {
   SC.tg = L && L.length ? L.slice() : null;
 }
 function selRing(c, i, col, pulse) {
@@ -1842,7 +1976,7 @@ function scDrawFx(c, skip0) {
   drawParts(c, 1);
   drawParts(c, 2);
 }
-const scRingPhase = () => (SC.ring ? ((SC.t - SC.ring.t0) % 1300) / 1300 : 0);
+export const scRingPhase = () => (SC.ring ? ((SC.t - SC.ring.t0) % 1300) / 1300 : 0);
 /* ---------- effects (world space, y up) ---------- */
 function part(o) {
   SC.parts.push(Object.assign({ vx: 0, vy: 0, vz: 0, ax: 0, ay: 0, az: 0, age: 0, life: 600, layer: 2 }, o));
@@ -1936,12 +2070,12 @@ function hitFx(ti, an) {
   burst(T, an.t || 'None', an.te > 1 ? 16 : 10, an.te > 1 ? 3.2 : 2.2, 1);
   if (typeof hudHit === 'function') hudHit(ti, an);
 }
-function camHome(d = 420, delay = 0) {
+export function camHome(d = 420, delay = 0) {
   camTo(HOMECAM, d, 'io', delay);
   if (!RM) tw(SC.css, 'r', 0, d, 'io', delay);
 }
 /* push in toward a side. Under reduced motion the camera stays on the wide shot */
-const camAt = (i, amt = 0.45, z = 0.14, rr = 0, d = 260, e = 'io') => {
+export const camAt = (i, amt = 0.45, z = 0.14, rr = 0, d = 260, e = 'io') => {
   if (RM) return;
   const F = FOCAM[SIDEOF(i)],
     k = clamp(amt * 2.1, 0, 1),
@@ -1978,7 +2112,7 @@ function coinArc(from, to, dur, kind, onLand, spin) {
 }
 const PULLCAM = { x: 0.15, y: 1.82, z: -0.75, yaw: 0, hz: -3 };
 const CAMPOS = () => ({ x: SC.V.x - 0.9, y: SC.V.y - 0.6, z: SC.V.z + 0.6 });
-function scPlay(an, ev) {
+export function scPlay(an, ev) {
   scFlush();
   const s0 = SC.s[0],
     s1 = SC.s[1];
@@ -2556,7 +2690,7 @@ function scPlay(an, ev) {
   }
   return { dur: 0, hit: 0 };
 }
-function scCatch(kind, res, spin, done) {
+export function scCatch(kind, res, spin, done) {
   scFlush();
   const s1 = SC.s[1],
     o = sideCenter(1),

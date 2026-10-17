@@ -16,6 +16,27 @@
    trees and flowers come from a seed (the link's index), never stored. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './bridge.js';
+import { artLoad, hexA } from './art.js';
+import {
+  DIO,
+  DIO_GCACHE,
+  DIO_STEPS,
+  dioData,
+  dioExitEdge,
+  dioGroundAsync,
+  dioGroundKey,
+  dioHubOf,
+  dioMoodOf,
+  dioPaths,
+  dioPoly,
+  dioScene,
+  dioStepCell,
+  dioSteps,
+} from './diorama.js';
+import { eng } from './engine/settings.js';
+import { smooth01 } from './engine/core.js';
+import { DGL, dglPrepare, dglPrepared } from './diorama-gl.js';
+import { lifeShift } from './life.js';
 import { owShift } from './owmon.js';
 /* eslint-disable no-func-assign */
 expose({

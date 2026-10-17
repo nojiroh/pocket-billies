@@ -9,6 +9,8 @@
    money, so your steps stay for walking new ground. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './bridge.js';
+import { artLoad, uiIco } from './art.js';
+import { dioData, dioImg, dioOk, dioPrepare, dioScene } from './diorama.js';
 import { wrHubScene } from './world.js';
 import { D2R, MAP, MNV, slerp, v3 } from './map.js';
 import { MGL } from './map-gl.js';

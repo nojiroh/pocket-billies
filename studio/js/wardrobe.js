@@ -6,6 +6,10 @@
    walk and pose with it. The body section edits the skin pieces, the skeleton and the body sliders. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/bridge.js';
+import { frameStop, frameTask } from '../../game/js/frame.js';
+import { cnv } from '../../game/js/art.js';
+import { TR_CACHE, TR_PRESETS, cleanLook, trFrame, trRig, trSliders } from '../../game/js/trainer.js';
+import { rigMatrices } from '../../game/js/rig.js';
 import {
   ACTS,
   SECTIONS,

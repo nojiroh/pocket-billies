@@ -5,6 +5,23 @@
    in art/scene/ that can be painted here. The live preview runs the game's own renderer on your unsaved changes. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/bridge.js';
+import { ART, cnv } from '../../game/js/art.js';
+import {
+  DIO,
+  DIO_RISE,
+  dioAlong,
+  dioExitEdge,
+  dioExitPoint,
+  dioFind,
+  dioHubOf,
+  dioNav,
+  dioPass,
+  dioSteps,
+  dioStepsNew,
+  dioStepsStore,
+} from '../../game/js/diorama.js';
+import { ENV } from '../../game/js/env.js';
+import { DGL, DGL_WALL_MATS, dioHRaw, dioMount } from '../../game/js/diorama-gl.js';
 import {
   ACTS,
   SECTIONS,

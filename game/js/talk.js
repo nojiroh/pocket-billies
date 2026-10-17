@@ -6,6 +6,10 @@
    "[happy] Nice to meet you!" (happy, surprised, sad, angry, blink, talk). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './bridge.js';
+import { frameStop, frameTask } from './frame.js';
+import { trPortrait, trainerLook } from './trainer.js';
+import { DIO, dioFace } from './diorama.js';
+import { DGL } from './diorama-gl.js';
 import { sfx } from './sound.js';
 /* eslint-disable no-func-assign */
 expose({

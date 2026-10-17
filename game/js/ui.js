@@ -2,6 +2,31 @@
 /* ================= UI ================= */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './bridge.js';
+import { frameTask, userFps } from './frame.js';
+import { ART, artLoad, artURL, cnv, coinHTML, coinURL, eggHTML, uiIco } from './art.js';
+import { TR_PRESETS, cleanLook, cleanTrainer, humanHTML, owHTMLsheet, portraitHTML, trainerLook } from './trainer.js';
+import { applyPreferences, settingsHTML } from './profile.js';
+import { drPortrait, openDressing } from './dressing.js';
+import { bustHTML, sprHTML } from './rig.js';
+import { EASE, SC, camHome, scFocus, scTargets } from './scene.js';
+import {
+  DIO,
+  dioClimb,
+  dioData,
+  dioFind,
+  dioFreePt,
+  dioHubOf,
+  dioPaths,
+  dioScene,
+  dioStop,
+  dioWalkTo,
+  openKind,
+  placeClosedText,
+  placeOpen,
+} from './diorama.js';
+import { eng } from './engine/settings.js';
+import { ENV, envHint, envIcon, envLabel } from './env.js';
+import { DGL, dioMount } from './diorama-gl.js';
 import { fishStart } from './fishing.js';
 import {
   WORLD,
@@ -16,6 +41,7 @@ import {
   wrRoomScene,
   wrTripView,
 } from './world.js';
+import { battleGLLayout, battleGLWanted } from './battle-gl.js';
 import {
   A,
   RC,

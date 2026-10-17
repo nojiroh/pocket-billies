@@ -3,7 +3,26 @@
    The sun (direction, color, clouds), the per-frame light context every lit shader reads, the sun shadow map, the
    contact-shadow list and the point lights. The sun comes from the top left by default, the same side the pixel art is
    painted from, so shadows fall back and to the right. */
-function eglSun(indoor) {
+/* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
+import { expose } from '../bridge.js';
+import { DIO } from '../diorama.js';
+import { ENG_CTX, eng, engHex } from './settings.js';
+import { EGL, M4, eglTarget, v3c, v3n } from './core.js';
+/* eslint-disable no-func-assign */
+expose({
+  EGL_SH_DIRS: [() => EGL_SH_DIRS],
+  eglLampShadowBegin: [() => eglLampShadowBegin, v => (eglLampShadowBegin = v)],
+  eglLightCtx: [() => eglLightCtx, v => (eglLightCtx = v)],
+  eglLightU: [() => eglLightU, v => (eglLightU = v)],
+  eglPickLights: [() => eglPickLights, v => (eglPickLights = v)],
+  eglSH: [() => eglSH, v => (eglSH = v)],
+  eglShadowBegin: [() => eglShadowBegin, v => (eglShadowBegin = v)],
+  eglShadowEnd: [() => eglShadowEnd, v => (eglShadowEnd = v)],
+  eglSun: [() => eglSun, v => (eglSun = v)],
+});
+/* eslint-enable no-func-assign */
+/* to-module: end */
+export function eglSun(indoor) {
   const deg = Math.PI / 180;
   let a = eng('sun', 'angle'),
     h = eng('sun', 'height'),
@@ -91,7 +110,7 @@ function eglSH(top, hor, gnd, sun, lobe = 1) {
   return f;
 }
 /* everything the lit shaders need this frame; built by a view, then handed to eglLightU for each program */
-function eglLightCtx(o) {
+export function eglLightCtx(o) {
   const hz = o.haze,
     tint = o.tint;
   const shT = engHex('shadows', 'tint', '#40507E'),
@@ -140,7 +159,7 @@ function eglLightCtx(o) {
     season: o.season || [0, 0, 0, 0],
   };
 }
-function eglLightU(p, X) {
+export function eglLightU(p, X) {
   const gl = EGL.gl,
     U = p.U;
   if (!U.uEye && !U.uCurve) return;
@@ -268,7 +287,7 @@ function eglLightU(p, X) {
   }
 }
 /* a sun shadow map covering a rectangle of the world; returns what eglLightCtx needs */
-function eglShadowBegin(cx, cz, radius, sun, res, name = 'shadow') {
+export function eglShadowBegin(cx, cz, radius, sun, res, name = 'shadow') {
   const gl = EGL.gl,
     S = eglTarget(name, res, res, { depthOnly: true }),
     tr = sun.travel,
@@ -314,7 +333,7 @@ function eglShadowBegin(cx, cz, radius, sun, res, name = 'shadow') {
 }
 /* v43: a lamp's shadow map: a wide-angled camera at the lamp looking straight down; what stands under the lamp throws
    its shadow outward on the ground. Perspective, so the texel is finest right under the lamp. */
-function eglLampShadowBegin(pos, res, name) {
+export function eglLampShadowBegin(pos, res, name) {
   const gl = EGL.gl,
     S = eglTarget(name, res, res, { depthOnly: true }),
     view = M4.look(pos, [pos[0], pos[1] - 1, pos[2]], [0, 0, 1]),
@@ -333,13 +352,13 @@ function eglLampShadowBegin(pos, res, name) {
   gl.polygonOffset(1.5, 3);
   return { d: S.d, vp, size: res, pen: 0, radius: 12, p: pos, lamp: true };
 }
-function eglShadowEnd() {
+export function eglShadowEnd() {
   const gl = EGL.gl;
   gl.disable(gl.POLYGON_OFFSET_FILL);
   gl.colorMask(true, true, true, true);
 }
 /* point lights: the nearest few, faded in and out at the limit so they never pop */
-function eglPickLights(L, cx, cz, max = 16) {
+export function eglPickLights(L, cx, cz, max = 16) {
   L.forEach(l => (l.d = Math.hypot(l.p[0] - cx, l.p[2] - cz) * (l.front ? 1.5 : 1)));
   /* alpha 0.4: a window's soft light counts as farther off than a lamp, so the lamps round you are always lit */ L.sort(
     (a, b) => a.d - b.d

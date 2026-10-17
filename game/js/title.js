@@ -6,6 +6,12 @@
    Without the 3D scene the title stands on the painted landscape instead. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './bridge.js';
+import { userFps } from './frame.js';
+import { uiIco } from './art.js';
+import { humanHTML } from './trainer.js';
+import { applyPreferences } from './profile.js';
+import { DIO, dioScene, dioStop } from './diorama.js';
+import { DGL, dioH, dioMount } from './diorama-gl.js';
 import { music, musicFor } from './sound.js';
 import { csSceneId, csStart, csStartName, csWanted } from './cutscene.js';
 /* eslint-disable no-func-assign */

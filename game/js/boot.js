@@ -5,6 +5,14 @@
    later and a missing file shows up right away. Then draw the game. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './bridge.js';
+import { ART, BG_ART, COIN_ART, EGG_ART, ICON_ATLAS, UIURL, artBoot, artImg } from './art.js';
+import { trainerArtPaths } from './trainer.js';
+import { rigAtlas } from './rig.js';
+import { AREAS, scPrepare, stageArt } from './scene.js';
+import { DIO, dioData, dioPaths, dioScene } from './diorama.js';
+import { EGL, eglOK } from './engine/core.js';
+import { ENV } from './env.js';
+import { DGL, dglRiseStart } from './diorama-gl.js';
 import { WORLD } from './world.js';
 import { areaKey } from './battle.js';
 import { WORLD_ART, mapPrepare } from './map.js';

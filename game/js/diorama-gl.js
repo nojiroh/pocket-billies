@@ -6,7 +6,303 @@
    the ground in front of them and glow through bloom, ponds that reflect, grass that sways and bends away from you,
    mist, cloud shadows, and a lens with depth of field. Every dial is an engine setting (Studio → Engine).
    Same scenes, walking and taps as js/diorama.js (scene data, paths, the player); this file draws them. */
-const DGL = {
+/* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
+import { expose } from './bridge.js';
+import { FRAME, frameCount, frameTask, userFps } from './frame.js';
+import { cnv, hexA } from './art.js';
+import { dioFolkFrames, humanPose, owFrames, trPick, trWarm } from './trainer.js';
+import { drawRig, rigFrame, rigParts, rigPreload } from './rig.js';
+import {
+  DIO,
+  DIO_FXM,
+  DIO_GCACHE,
+  DIO_PAD,
+  PW_WAIT,
+  dioActLabel,
+  dioActSpot,
+  dioAlong,
+  dioApproach,
+  dioBridgeAt,
+  dioBubble,
+  dioCanvasXY,
+  dioClick,
+  dioClimbGo,
+  dioData,
+  dioDirOf,
+  dioEncSpot,
+  dioEnsureGround,
+  dioExitLabels,
+  dioExitMarks,
+  dioFlagPath,
+  dioFolkTick,
+  dioFree,
+  dioFreePt,
+  dioGrassImgs,
+  dioGroundKey,
+  dioGrowK,
+  dioHash,
+  dioHitAt,
+  dioHubOf,
+  dioImg,
+  dioLayerM,
+  dioMoodOf,
+  dioNextOn,
+  dioNextTiles,
+  dioNoise,
+  dioOk,
+  dioPaintGen,
+  dioPill,
+  dioPlayer,
+  dioPrepare,
+  dioPropM,
+  dioPropOn,
+  dioScene,
+  dioShape,
+  dioSpeech,
+  dioStep,
+  dioStepCHS,
+  dioStepCell,
+  dioStepCorners,
+  dioStepLevel,
+  dioSteps,
+  dioTag,
+  dioTapMark,
+  dioTer,
+} from './diorama.js';
+import { ENG_CTX, eng, engHex } from './engine/settings.js';
+import {
+  EGL,
+  EGL_GLSL_COMMON,
+  EGL_GLSL_LIGHT,
+  EGL_GLSL_LOOK,
+  EGL_MATS,
+  M4,
+  eglBindGrid,
+  eglBindQuad,
+  eglFree,
+  eglGpuBegin,
+  eglGpuEnd,
+  eglImg,
+  eglInit,
+  eglMesh,
+  eglNormWork,
+  eglOK,
+  eglPendPoll,
+  eglPrecompile,
+  eglPrograms,
+  eglTarget,
+  eglTexParams,
+  eglTexTrim,
+  eglWind,
+  eglWindBend,
+  smooth01,
+  v3n,
+} from './engine/core.js';
+import {
+  eglLampShadowBegin,
+  eglLightCtx,
+  eglLightU,
+  eglPickLights,
+  eglShadowBegin,
+  eglShadowEnd,
+  eglSun,
+} from './engine/light.js';
+import { EGL_POST_SH, eglPost, eglSnapshot, eglSunScreen } from './engine/post.js';
+import { ENV, ENV_WX, envFrame, envHere, envSky, envState, envWinLit } from './env.js';
+/* eslint-disable no-func-assign */
+expose({
+  DGL: [() => DGL],
+  DGL_ALT: [() => DGL_ALT],
+  DGL_BOB: [() => DGL_BOB],
+  DGL_BOX: [() => DGL_BOX],
+  DGL_EVER: [() => DGL_EVER],
+  DGL_FIXED: [() => DGL_FIXED],
+  DGL_FIXED_BACK: [() => DGL_FIXED_BACK],
+  DGL_FLAG: [() => DGL_FLAG],
+  DGL_FLW: [() => DGL_FLW],
+  DGL_FLW_OF: [() => DGL_FLW_OF],
+  DGL_FOL: [() => DGL_FOL],
+  DGL_FR: [() => DGL_FR],
+  DGL_GKIND: [() => DGL_GKIND],
+  DGL_HUG: [() => DGL_HUG],
+  DGL_HUGC: [() => DGL_HUGC],
+  DGL_IMID: [() => DGL_IMID],
+  DGL_IMN: [() => DGL_IMN, v => (DGL_IMN = v)],
+  DGL_KEEP: [() => DGL_KEEP],
+  DGL_LK0: [() => DGL_LK0],
+  DGL_LOOK: [() => DGL_LOOK],
+  DGL_MATS: [() => DGL_MATS],
+  DGL_MOOD0: [() => DGL_MOOD0],
+  DGL_PAD: [() => DGL_PAD],
+  DGL_PREP_MS: [() => DGL_PREP_MS],
+  DGL_PRINT_COL: [() => DGL_PRINT_COL],
+  DGL_PUSH: [() => DGL_PUSH],
+  DGL_SH: [() => DGL_SH],
+  DGL_SINK_BOX: [() => DGL_SINK_BOX],
+  DGL_STILL: [() => DGL_STILL],
+  DGL_TERRAIN_MAT: [() => DGL_TERRAIN_MAT],
+  DGL_VARY_ANY: [() => DGL_VARY_ANY],
+  DGL_VARY_DEF: [() => DGL_VARY_DEF],
+  DGL_WALL_COL: [() => DGL_WALL_COL],
+  DGL_WALL_MATS: [() => DGL_WALL_MATS],
+  DGL_WKID: [() => DGL_WKID],
+  DGL_WKIND: [() => DGL_WKIND],
+  DGL_WKU: [() => DGL_WKU],
+  DIO_PAD_SKIP: [() => DIO_PAD_SKIP],
+  RING_CS: [() => RING_CS],
+  RING_N: [() => RING_N],
+  _dioNavFlat: [() => _dioNavFlat],
+  _dioProj2D: [() => _dioProj2D],
+  _dioStop2D: [() => _dioStop2D],
+  _dioUnproject2D: [() => _dioUnproject2D],
+  dglAdapt: [() => dglAdapt, v => (dglAdapt = v)],
+  dglAltImg: [() => dglAltImg, v => (dglAltImg = v)],
+  dglBasinSet: [() => dglBasinSet, v => (dglBasinSet = v)],
+  dglBasins: [() => dglBasins, v => (dglBasins = v)],
+  dglBattleCamera: [() => dglBattleCamera, v => (dglBattleCamera = v)],
+  dglBlades: [() => dglBlades, v => (dglBlades = v)],
+  dglBoxFaces: [() => dglBoxFaces, v => (dglBoxFaces = v)],
+  dglBoxInfo: [() => dglBoxInfo, v => (dglBoxInfo = v)],
+  dglBudget: [() => dglBudget, v => (dglBudget = v)],
+  dglBuildFar: [() => dglBuildFar, v => (dglBuildFar = v)],
+  dglBuildGrass: [() => dglBuildGrass, v => (dglBuildGrass = v)],
+  dglBuildGround: [() => dglBuildGround, v => (dglBuildGround = v)],
+  dglCamera: [() => dglCamera, v => (dglCamera = v)],
+  dglCanvasFor: [() => dglCanvasFor, v => (dglCanvasFor = v)],
+  dglClick: [() => dglClick, v => (dglClick = v)],
+  dglCull: [() => dglCull, v => (dglCull = v)],
+  dglCurve: [() => dglCurve, v => (dglCurve = v)],
+  dglCurveArgs: [() => dglCurveArgs, v => (dglCurveArgs = v)],
+  dglFlat: [() => dglFlat, v => (dglFlat = v)],
+  dglFlowField: [() => dglFlowField, v => (dglFlowField = v)],
+  dglFlowers: [() => dglFlowers, v => (dglFlowers = v)],
+  dglFol: [() => dglFol, v => (dglFol = v)],
+  dglFountainFx: [() => dglFountainFx, v => (dglFountainFx = v)],
+  dglFrame: [() => dglFrame, v => (dglFrame = v)],
+  dglFrameIn: [() => dglFrameIn, v => (dglFrameIn = v)],
+  dglFree: [() => dglFree],
+  dglFrustum: [() => dglFrustum, v => (dglFrustum = v)],
+  dglFxPass: [() => dglFxPass, v => (dglFxPass = v)],
+  dglGL: [() => dglGL, v => (dglGL = v)],
+  dglGaoSteps: [() => dglGaoSteps, v => (dglGaoSteps = v)],
+  dglGaoTex: [() => dglGaoTex, v => (dglGaoTex = v)],
+  dglGaoWork: [() => dglGaoWork, v => (dglGaoWork = v)],
+  dglGestures: [() => dglGestures, v => (dglGestures = v)],
+  dglGrass: [() => dglGrass, v => (dglGrass = v)],
+  dglGrassWork: [() => dglGrassWork, v => (dglGrassWork = v)],
+  dglGround: [() => dglGround, v => (dglGround = v)],
+  dglGroundAO: [() => dglGroundAO, v => (dglGroundAO = v)],
+  dglGroundNormals: [() => dglGroundNormals, v => (dglGroundNormals = v)],
+  dglGroundSteps: [() => dglGroundSteps, v => (dglGroundSteps = v)],
+  dglHK: [() => dglHK, v => (dglHK = v)],
+  dglHands: [() => dglHands, v => (dglHands = v)],
+  dglHeat: [() => dglHeat, v => (dglHeat = v)],
+  dglHeatSrc: [() => dglHeatSrc, v => (dglHeatSrc = v)],
+  dglHit: [() => dglHit, v => (dglHit = v)],
+  dglHug: [() => dglHug, v => (dglHug = v)],
+  dglImId: [() => dglImId, v => (dglImId = v)],
+  dglImgRepeat: [() => dglImgRepeat, v => (dglImgRepeat = v)],
+  dglInView: [() => dglInView, v => (dglInView = v)],
+  dglItems: [() => dglItems, v => (dglItems = v)],
+  dglLampOn: [() => dglLampOn, v => (dglLampOn = v)],
+  dglLampShadows: [() => dglLampShadows, v => (dglLampShadows = v)],
+  dglLampTex: [() => dglLampTex, v => (dglLampTex = v)],
+  dglLandmarkTilt: [() => dglLandmarkTilt, v => (dglLandmarkTilt = v)],
+  dglLifeFx: [() => dglLifeFx, v => (dglLifeFx = v)],
+  dglLightCtx: [() => dglLightCtx, v => (dglLightCtx = v)],
+  dglLookCamera: [() => dglLookCamera, v => (dglLookCamera = v)],
+  dglLookOf: [() => dglLookOf, v => (dglLookOf = v)],
+  dglLookOf2: [() => dglLookOf2, v => (dglLookOf2 = v)],
+  dglLookSig: [() => dglLookSig, v => (dglLookSig = v)],
+  dglLookU: [() => dglLookU, v => (dglLookU = v)],
+  dglMatOf: [() => dglMatOf, v => (dglMatOf = v)],
+  dglMirrorInView: [() => dglMirrorInView, v => (dglMirrorInView = v)],
+  dglMood: [() => dglMood, v => (dglMood = v)],
+  dglMount: [() => dglMount, v => (dglMount = v)],
+  dglNrm: [() => dglNrm, v => (dglNrm = v)],
+  dglPerson: [() => dglPerson, v => (dglPerson = v)],
+  dglPrepAbort: [() => dglPrepAbort, v => (dglPrepAbort = v)],
+  dglPrepWork: [() => dglPrepWork, v => (dglPrepWork = v)],
+  dglPrepare: [() => dglPrepare, v => (dglPrepare = v)],
+  dglPrepared: [() => dglPrepared, v => (dglPrepared = v)],
+  dglPrintAt: [() => dglPrintAt, v => (dglPrintAt = v)],
+  dglPrints: [() => dglPrints, v => (dglPrints = v)],
+  dglPropGrid: [() => dglPropGrid, v => (dglPropGrid = v)],
+  dglPropY: [() => dglPropY, v => (dglPropY = v)],
+  dglPushers: [() => dglPushers, v => (dglPushers = v)],
+  dglRay: [() => dglRay, v => (dglRay = v)],
+  dglRebuild: [() => dglRebuild, v => (dglRebuild = v)],
+  dglReflLevel: [() => dglReflLevel, v => (dglReflLevel = v)],
+  dglReflPass: [() => dglReflPass, v => (dglReflPass = v)],
+  dglRing: [() => dglRing, v => (dglRing = v)],
+  dglRingChunk: [() => dglRingChunk, v => (dglRingChunk = v)],
+  dglRingFree: [() => dglRingFree, v => (dglRingFree = v)],
+  dglRingHas: [() => dglRingHas, v => (dglRingHas = v)],
+  dglRingMissing: [() => dglRingMissing, v => (dglRingMissing = v)],
+  dglRingNew: [() => dglRingNew, v => (dglRingNew = v)],
+  dglRingSlot: [() => dglRingSlot],
+  dglRingU: [() => dglRingU, v => (dglRingU = v)],
+  dglRingUpdate: [() => dglRingUpdate, v => (dglRingUpdate = v)],
+  dglRingWant: [() => dglRingWant, v => (dglRingWant = v)],
+  dglRiseK: [() => dglRiseK, v => (dglRiseK = v)],
+  dglRiseStart: [() => dglRiseStart, v => (dglRiseStart = v)],
+  dglRoomBox: [() => dglRoomBox, v => (dglRoomBox = v)],
+  dglRoomDim: [() => dglRoomDim, v => (dglRoomDim = v)],
+  dglRoomFront: [() => dglRoomFront, v => (dglRoomFront = v)],
+  dglRoomFx: [() => dglRoomFx, v => (dglRoomFx = v)],
+  dglRoomLamps: [() => dglRoomLamps, v => (dglRoomLamps = v)],
+  dglRoomLights: [() => dglRoomLights, v => (dglRoomLights = v)],
+  dglRoomSky: [() => dglRoomSky, v => (dglRoomSky = v)],
+  dglRoomTex: [() => dglRoomTex, v => (dglRoomTex = v)],
+  dglSceneFree: [() => dglSceneFree, v => (dglSceneFree = v)],
+  dglSceneSun: [() => dglSceneSun, v => (dglSceneSun = v)],
+  dglSceneSwap: [() => dglSceneSwap, v => (dglSceneSwap = v)],
+  dglShadowPass: [() => dglShadowPass, v => (dglShadowPass = v)],
+  dglShadowPassFit: [() => dglShadowPassFit, v => (dglShadowPassFit = v)],
+  dglShadowRect: [() => dglShadowRect, v => (dglShadowRect = v)],
+  dglShadowSprites: [() => dglShadowSprites, v => (dglShadowSprites = v)],
+  dglShoreAt: [() => dglShoreAt, v => (dglShoreAt = v)],
+  dglShoreField: [() => dglShoreField, v => (dglShoreField = v)],
+  dglShoreU: [() => dglShoreU, v => (dglShoreU = v)],
+  dglSky: [() => dglSky, v => (dglSky = v)],
+  dglSkyCols: [() => dglSkyCols, v => (dglSkyCols = v)],
+  dglSprU: [() => dglSprU, v => (dglSprU = v)],
+  dglSprites: [() => dglSprites, v => (dglSprites = v)],
+  dglStill: [() => dglStill, v => (dglStill = v)],
+  dglTexMip: [() => dglTexMip, v => (dglTexMip = v)],
+  dglTexStrips: [() => dglTexStrips, v => (dglTexStrips = v)],
+  dglTiltAsk: [() => dglTiltAsk, v => (dglTiltAsk = v)],
+  dglTiltListen: [() => dglTiltListen, v => (dglTiltListen = v)],
+  dglTrail: [() => dglTrail, v => (dglTrail = v)],
+  dglTurn: [() => dglTurn],
+  dglUI: [() => dglUI, v => (dglUI = v)],
+  dglUse: [() => dglUse, v => (dglUse = v)],
+  dglVaryOf: [() => dglVaryOf, v => (dglVaryOf = v)],
+  dglWallDefault: [() => dglWallDefault, v => (dglWallDefault = v)],
+  dglWater: [() => dglWater, v => (dglWater = v)],
+  dglWaterKinds: [() => dglWaterKinds, v => (dglWaterKinds = v)],
+  dglWaterLife: [() => dglWaterLife, v => (dglWaterLife = v)],
+  dglWaterNear: [() => dglWaterNear, v => (dglWaterNear = v)],
+  dglWaterU: [() => dglWaterU, v => (dglWaterU = v)],
+  dglWeather: [() => dglWeather, v => (dglWeather = v)],
+  dglWgAt: [() => dglWgAt, v => (dglWgAt = v)],
+  dglWinBlocked: [() => dglWinBlocked, v => (dglWinBlocked = v)],
+  dglWinOn: [() => dglWinOn, v => (dglWinOn = v)],
+  dglWinShare: [() => dglWinShare, v => (dglWinShare = v)],
+  dglWindAt: [() => dglWindAt, v => (dglWindAt = v)],
+  dglWorldTex: [() => dglWorldTex, v => (dglWorldTex = v)],
+  dglZoomLim: [() => dglZoomLim],
+  dioGroundH: [() => dioGroundH, v => (dioGroundH = v)],
+  dioH: [() => dioH, v => (dioH = v)],
+  dioHGrid: [() => dioHGrid, v => (dioHGrid = v)],
+  dioHRaw: [() => dioHRaw, v => (dioHRaw = v)],
+  dioMount: [() => dioMount, v => (dioMount = v)],
+  dioPads: [() => dioPads, v => (dioPads = v)],
+  eglRestored: [() => eglRestored, v => (eglRestored = v)],
+});
+/* eslint-enable no-func-assign */
+/* to-module: end */
+export const DGL = {
   on: false,
   ui: null,
   gkey: '',
@@ -39,8 +335,8 @@ const DGL_PAD = DIO_PAD,
   DGL_FIXED = [1, 0, 0],
   DGL_FIXED_BACK = [0, 0, -1];
 /* which material a prop is made of: its own "mat", else guessed from its name */
-const DGL_MATS = EGL_MATS;
-function dglMatOf(k, M) {
+export const DGL_MATS = EGL_MATS;
+export function dglMatOf(k, M) {
   if (M && M.mat && EGL_MATS[M.mat]) return M.mat;
   const n = ((M && M.group) || '') + ' ' + k;
   if (/house|shop|clinic|lab|bunker|tent|stall|windmill|busstop|kiosk/.test(n)) return 'building';
@@ -151,7 +447,7 @@ function dioHGrid(sc) {
   }
   return (sc._hg = { H, sig, t: now, G, W, Hh });
 }
-function dioHRaw(sc, x, z) {
+export function dioHRaw(sc, x, z) {
   const Q = dioHGrid(sc);
   if (!Q) return 0;
   const W = Q.W,
@@ -178,12 +474,12 @@ function dioHRaw(sc, x, z) {
 }
 /* the visible ground (smooth land plus the terrace, cliff or stair raise of its half-metre cell) and the height you
    stand at (a bridge deck where there is one; a little lower in water) */
-function dioGroundH(x, z) {
+export function dioGroundH(x, z) {
   const sc = DIO.sc;
   if (!sc) return 0;
   return dioHRaw(sc, x, z) + dioStep(x, z, sc);
 }
-function dioH(x, z) {
+export function dioH(x, z) {
   const sc = DIO.sc;
   if (!sc) return 0;
   if (sc.bridges) {
@@ -196,7 +492,7 @@ function dioH(x, z) {
   return h;
 }
 /* the scene's wall materials (index → colour; 0 means the scene's own rock) */
-const DGL_WALL_MATS = [
+export const DGL_WALL_MATS = [
   'Scene rock',
   'Rock',
   'Layered sandstone',
@@ -210,7 +506,7 @@ const DGL_WALL_MATS = [
   'Concrete',
   'Dark slate',
 ];
-const DGL_WALL_COL = [
+export const DGL_WALL_COL = [
   [0.47, 0.45, 0.42],
   [0.5, 0.48, 0.45],
   [0.8, 0.58, 0.38],
@@ -224,7 +520,7 @@ const DGL_WALL_COL = [
   [0.62, 0.62, 0.6],
   [0.32, 0.33, 0.38],
 ];
-function dglWallDefault(sc) {
+export function dglWallDefault(sc) {
   if (sc.cliffMat) return sc.cliffMat;
   if (sc.far === 'canyon') return 2;
   if (sc.indoor && sc.far === 'cave') return 3;
@@ -253,7 +549,7 @@ dioNav = function () {
   return n;
 };
 /* ---------- canvas plumbing: the WebGL canvas plus a 2D layer on top for labels ---------- */
-function dglCanvasFor(cv, type) {
+export function dglCanvasFor(cv, type) {
   if (!cv._ctx) {
     cv._ctx = type;
     return cv;
@@ -286,7 +582,7 @@ const _dioStop2D = dioStop,
   _dioUnproject2D = dioUnproject;
 /* 0.1.0 alpha: the walk view is WebGL only (the Lite 2D painter is gone). Without it the game says this device can't
    run it (boot.js noWebGL); the Studio shows its own message (engine.js) */
-function dioMount(cv, id, opt = {}) {
+export function dioMount(cv, id, opt = {}) {
   const useGL = !EGL.fail && eglOK();
   cv = dglCanvasFor(cv, 'gl');
   if (!useGL) {
@@ -350,7 +646,7 @@ function dioMount(cv, id, opt = {}) {
 }
 /* the GL context on this canvas, with the walk scene's programs (v47: also used by the opening's fall, which draws the
    world map on the same canvas before Sundown is mounted; a context made by the map alone gets the walk programs here) */
-function dglGL(cv) {
+export function dglGL(cv) {
   if (EGL.cv === cv && EGL.gl) {
     if (!EGL.lost)
       try {
@@ -461,11 +757,11 @@ function dglRay(C, sx, sy) {
     l = Math.hypot(...d);
   return { o: p0, d: d.map(v => v / l) };
 }
-function dglCurveArgs() {
+export function dglCurveArgs() {
   const sc = DIO.sc;
   return [sc.w / 2, sc.h / 2, eng('world', 'curve'), Math.max(sc.w, sc.h) * 0.55 + 4];
 }
-function dglCurve(x, z) {
+export function dglCurve(x, z) {
   const sc = DIO.sc;
   if (!sc) return 0;
   const c = dglCurveArgs(),
@@ -591,7 +887,7 @@ function dglTiltAsk() {
   } catch (e) {}
 }
 /* ---------- shaders ---------- */
-const DGL_SH = {
+export const DGL_SH = {
   ground: [
     `#version 300 es
 precision highp float;in vec3 aPos;in vec3 aNrm;layout(location=2) in vec3 aWall;uniform mat4 uVP;out vec3 vW;out vec3 vN;out vec3 vWall;out vec4 vClip;${EGL_GLSL_COMMON}
@@ -1937,11 +2233,11 @@ function dglHK(id, sc, gkey) {
 }
 /* v46: get a view's ground ready before it is shown: built a few ms a frame (dglPrepWork) and kept with the scenes you
    left (DGL.sceneCache), so the switch to it is a swap of a few references. Returns true when it is ready. */
-function dglPrepared(id, sc, gkey) {
+export function dglPrepared(id, sc, gkey) {
   const M = DGL.sceneCache;
   return !!(M && M.has(dglHK(id, sc, gkey || dioGroundKey(sc))));
 }
-function dglPrepare(id, sc, G, urgent, focus) {
+export function dglPrepare(id, sc, G, urgent, focus) {
   if (!DGL.on || !G) return false;
   const gkey = dioGroundKey(sc),
     hk = dglHK(id, sc, gkey);
@@ -2039,7 +2335,7 @@ function dglPrepWork(budget) {
 /* which way water flows: along the scene's streams (sc.streams: [{pts:[[x,z],…]}]), still everywhere else */
 /* v22: kinds of water. r = how quickly it deepens away from the shore (m), top = how deep the middle gets; colours multiply
    the Look's water colours; clarity = how much bed shows in the shallows; caus = light patterns on the bed */
-const DGL_WKIND = [
+export const DGL_WKIND = [
   {
     k: 'pond',
     r: 1.6,
@@ -2446,7 +2742,7 @@ function dglFlowField(sc) {
 /* [bumpiness, shine, built]: a built surface (boards, floors, slabs, bricks, steps, asphalt) is flat; only its seams
    catch the light (v31: planks used to look rounded, because the shading painted on each plank became a curve) */
 /* v46: the twelve new kinds: clover, moss, mud, wet sand, pebbles, cobblestone, leaf litter, heather, marsh, marble, ice, crystal */
-const DGL_TERRAIN_MAT = {
+export const DGL_TERRAIN_MAT = {
   C: [0.7, 0.02],
   M: [0.6, 0.06],
   D: [0.5, 0.35],
@@ -3358,7 +3654,7 @@ const DGL_KEEP = [
 ];
 /* alpha 0.4.1: everything built from the settings once (the ground and its relief, the grass, far props, solid props and
    trees) made again, for a dial changed in the Studio (or Settings) that those depend on */
-function dglRebuild() {
+export function dglRebuild() {
   if (typeof DGL === 'undefined' || !DGL.on) return;
   try {
     if (DGL.sceneCache) {
@@ -3514,7 +3810,7 @@ function dglCull(items, C) {
 }
 /* v32: a per-frame time budget for one-off work (solid bodies, outlines of buildings): past it, things stay pictures
    for a frame or two instead of freezing the scene while they are worked out */
-function dglBudget() {
+export function dglBudget() {
   return performance.now() - (DGL.budT || 0) < (DGL.budMs ?? 7);
 }
 /* v32: how much heat shimmer: over lava always, over desert sand and canyons in the heat of the day */
@@ -3643,7 +3939,7 @@ const DGL_HUG =
 const DGL_FOL =
     /tree_(oak|fruit|birch|maple|willow|blossom)|street_tree|^tree$|bush|hedge|tallgrass|reeds|cattail|flowers|fern|crops|vine|ivy|lily|grass/,
   DGL_EVER = /pine|palm|cactus|dead|snow/;
-function dglFol(it) {
+export function dglFol(it) {
   if (!it || it.k !== 'prop' || it.person || !it.M) return [0, 0];
   const M = it.M;
   if (M._fol) return M._fol;
@@ -3835,7 +4131,7 @@ const DGL_VARY_DEF = [
   ],
 ];
 const DGL_VARY_ANY = { size: 0.06, hue: 7, sat: 0.06, val: 0.06, rot: 5, lean: 1, mask: null, wear: { dirt: 0.12 } };
-function dglVaryOf(k, M) {
+export function dglVaryOf(k, M) {
   const mk =
     M && M.vary ? JSON.stringify(M.vary) + JSON.stringify(M.wear || 0) : M && M.wear ? JSON.stringify(M.wear) : '';
   if (M && M._vy && M._vyk === mk) return M._vy;
@@ -4061,7 +4357,7 @@ function dglLookOf2(p, M, sc) {
   return L;
 }
 const DGL_LK0 = { hsv: [0, 0, 0, 0], wear: [0, 0, 0, 0], tint: [1, 1, 1, 0], mask: [0, 0] };
-function dglLookU(U, L, bp) {
+export function dglLookU(U, L, bp) {
   const gl = EGL.gl;
   if (!U.uWear) return;
   L = L || DGL_LK0;
@@ -4075,7 +4371,7 @@ const DGL_BOB = /sailboat|rowboat|buoy/,
   DGL_FLAG = /banner|laundry|beach_umbrella|ski_sign/;
 /* v43: one wind for every plant: a slow lean that drifts across the scene, a faster flutter, and the gust bands
    (eglWind) that travel over the grass; the result is a lean of the top of the sprite as a fraction of its height */
-function dglWindAt(x, z, t, sc, wind) {
+export function dglWindAt(x, z, t, sc, wind) {
   const k = (sc.wind || 1) * (wind == null ? eng('grass', 'wind') : wind);
   return eglWindBend(x, z, t, eng('grass', 'gusts')) * k;
 }
@@ -4469,7 +4765,7 @@ function dglPropY(p, M) {
   const g = (M.group || '') + ' ' + p.k;
   return y - (M.sink ?? (/rock|boulder|stone_|pebble|stalag/.test(g) ? 0.07 : 0));
 }
-function dglPerson(k, im, x, z, C0, extra) {
+export function dglPerson(k, im, x, z, C0, extra) {
   const mpp = (C0.person || 1.75) / 1.75 / (im.ppm || 42);
   return Object.assign(
     {
@@ -4508,7 +4804,7 @@ function dglSceneSun(sc, sun) {
 }
 /* v46: inside a building laid into the place (world.js wrRoomScene) the town around the room dims over 0.6 s; walking
    out it brightens again over 0.7 s, as your eyes adjust */
-function dglRoomDim(sc) {
+export function dglRoomDim(sc) {
   const now = performance.now(),
     k0 = eng('world', 'roomDim') ?? 0.68;
   let R = sc.roomRect,
@@ -4739,7 +5035,7 @@ function dglLightCtx(C, sun, dark, items, shadow, BT) {
   });
 }
 /* ---------- passes ---------- */
-function dglUse(name, C, X) {
+export function dglUse(name, C, X) {
   const gl = EGL.gl,
     p = EGL.P[name];
   gl.useProgram(p.p);
@@ -5120,7 +5416,7 @@ function dglSky(C, sun, mirror) {
   gl.depthMask(true);
   gl.enable(gl.DEPTH_TEST);
 }
-function dglWorldTex() {
+export function dglWorldTex() {
   if (DGL.wtex) return DGL.wtex;
   const im = dioImg(typeof WORLD_ART !== 'undefined' ? WORLD_ART : 'map/world.png');
   if (!dioOk(im)) return EGL.white;
@@ -5365,7 +5661,7 @@ function dglImId(im) {
   return n;
 }
 /* alpha 0.4.1: the title's town springs up out of the loading screen (dglRiseStart from js/boot.js) */
-function dglRiseStart(load) {
+export function dglRiseStart(load) {
   if (RM || typeof DIO === 'undefined') return;
   DGL.rise = { t0: performance.now(), c: null, load: !!load, seen: new WeakMap() };
 }
@@ -5709,7 +6005,7 @@ function dglBoxFaces(C, items, X) {
     gl.drawArrays(gl.TRIANGLES, 0, 6);
   }
 }
-function dglBlades(p, it, b, BT, rot, C, X, lift) {
+export function dglBlades(p, it, b, BT, rot, C, X, lift) {
   const gl = EGL.gl,
     s = it.mpp,
     lf = lift || 0,
@@ -5802,7 +6098,7 @@ function dglFlat(it, T, C, X) {
   gl.drawArrays(gl.TRIANGLES, 0, 6);
   gl.useProgram(EGL.P.sprite.p);
 }
-function dglHit(it, C, hits, labels, PPU) {
+export function dglHit(it, C, hits, labels, PPU) {
   const q = dioProj(C, it.x, 0, it.z);
   if (!q) return;
   const s = it.mpp,
@@ -5979,7 +6275,7 @@ DGL_WKIND.forEach((k, i) => {
   DGL_WKU.A.set([k.clar, k.caus, k.foam, k.rip], i * 4);
   DGL_WKU.B.set([k.glow, k.murk, k.weed, k.mode || 0], i * 4);
 });
-function dglWgAt(x, z) {
+export function dglWgAt(x, z) {
   const G = DGL.wgrid;
   if (!G) return null;
   const i = Math.floor(x * 2),
@@ -6062,7 +6358,7 @@ function dglWaterLife() {
   DGL.rings.slice(-8).forEach((r, i) => rings.set(r, i * 4));
   return { fish, rings };
 }
-function dglRing(x, z, k) {
+export function dglRing(x, z, k) {
   (DGL.rings = DGL.rings || []).push([x, z, 0, k]);
   if (DGL.rings.length > 16) DGL.rings.shift();
 }

@@ -7,6 +7,9 @@
    the place's own plus the kind's bonus. A catch starts a wild battle like any other encounter. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './bridge.js';
+import { uiIco } from './art.js';
+import { DIO, dioTer } from './diorama.js';
+import { DGL, DGL_WKIND, dglCurve, dglRing, dglWgAt, dioH } from './diorama-gl.js';
 /* eslint-disable no-func-assign */
 expose({
   FISH: [() => FISH],

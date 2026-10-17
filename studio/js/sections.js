@@ -2,6 +2,9 @@
 /* ================= POCKET BILLIES STUDIO · editors ================= */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/bridge.js';
+import { cnv, iconURL } from '../../game/js/art.js';
+import { TR_CACHE, cleanLook, humanSheet, lookFromOld, trColorsOf, trSliders } from '../../game/js/trainer.js';
+import { drawRig, rigPose } from '../../game/js/rig.js';
 import {
   ACTS,
   SECTIONS,

@@ -4,7 +4,26 @@
    spots), bloom from bright pixels (this is what makes lamps and windows glow; there are no halo discs), then exposure,
    a soft highlight roll-off instead of clipping, contrast, saturation, warmth, vignette, chromatic aberration, grain
    and a light sharpen. Also takes a small screenshot for the debug log when asked. */
-const EGL_POST_SH = {
+/* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
+import { expose } from '../bridge.js';
+import { cnv } from '../art.js';
+import { DIO } from '../diorama.js';
+import { eng, engHex } from './settings.js';
+import { EGL, EGL_GLSL_LIGHT, eglBindQuad, eglPrograms, eglTarget } from './core.js';
+import { eglLightU } from './light.js';
+/* eslint-disable no-func-assign */
+expose({
+  EGL_GRADES: [() => EGL_GRADES],
+  EGL_POST_SH: [() => EGL_POST_SH],
+  eglGrade: [() => eglGrade, v => (eglGrade = v)],
+  eglPost: [() => eglPost, v => (eglPost = v)],
+  eglScreenOf: [() => eglScreenOf, v => (eglScreenOf = v)],
+  eglSnapshot: [() => eglSnapshot, v => (eglSnapshot = v)],
+  eglSunScreen: [() => eglSunScreen, v => (eglSunScreen = v)],
+});
+/* eslint-enable no-func-assign */
+/* to-module: end */
+export const EGL_POST_SH = {
   dof: [
     `#version 300 es
 precision highp float;in vec2 aC;out vec2 vUV;void main(){vUV=aC;gl_Position=vec4(aC*2.-1.,0.,1.);}`,
@@ -130,7 +149,7 @@ void main(){vec2 uv=vUV;/* v32: heat shimmer above hot ground (lava, desert noon
   ],
 };
 /* draws the post chain from scene target S (color + depth) to the screen */
-function eglPost(S, C, focusDist, rw, rh, o = {}) {
+export function eglPost(S, C, focusDist, rw, rh, o = {}) {
   const gl = EGL.gl;
   eglPrograms(EGL_POST_SH);
   gl.disable(gl.DEPTH_TEST);
@@ -417,7 +436,7 @@ function eglGrade() {
 /* alpha 0.4.1: the sun's place on screen. When it is off the picture (as it nearly always is, looking down on the
    world), a stand-in point far out on the side the sun shines from: [u,v,strength,1]. Light shafts then stream from
    bright places toward it and the glare becomes a soft light leak on that edge, so both dials do something from above */
-function eglSunScreen(C, dir, far) {
+export function eglSunScreen(C, dir, far) {
   const r = eglScreenOf(C.vp, [C.eye[0] + dir[0] * far, C.eye[1] + dir[1] * far, C.eye[2] + dir[2] * far]);
   if (r && r[2] > 0.02) return r;
   const hl = Math.hypot(dir[0], dir[2]);
@@ -440,7 +459,7 @@ function eglSunScreen(C, dir, far) {
     1,
   ];
 }
-function eglScreenOf(m, p) {
+export function eglScreenOf(m, p) {
   const x = m[0] * p[0] + m[4] * p[1] + m[8] * p[2] + m[12],
     y = m[1] * p[0] + m[5] * p[1] + m[9] * p[2] + m[13],
     w = m[3] * p[0] + m[7] * p[1] + m[11] * p[2] + m[15];
@@ -451,7 +470,7 @@ function eglScreenOf(m, p) {
   return [u, v, clamp(1 - off / 1.2, 0, 1)];
 }
 /* a small picture of what's on screen: copied out of the frame that drew it (works where drawImage of a WebGL canvas doesn't) */
-function eglSnapshot(rw, rh, over, max = 480) {
+export function eglSnapshot(rw, rh, over, max = 480) {
   const gl = EGL.gl,
     k = Math.min(1, max / Math.max(rw, rh)),
     w = Math.max(1, Math.round(rw * k)),

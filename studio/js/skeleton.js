@@ -5,6 +5,9 @@
    Front and back views have their own skeletons and sheets; the Gold-Plated sheets share the same layout. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/bridge.js';
+import { cnv, hexA, shadeHex } from '../../game/js/art.js';
+import { ANIM } from '../../game/js/anim.js';
+import { drawRig, rigAudit, rigMatrices, rigPose } from '../../game/js/rig.js';
 import { ST, ask, changed, clone, commit, dialog, fChk, fNum, redo, render, spName, toast, undo } from './core.js';
 import {
   PX_ED,
