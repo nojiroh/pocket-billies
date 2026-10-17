@@ -2051,6 +2051,8 @@ def main():
     if OUT.exists(): shutil.rmtree(OUT)
     OUT.mkdir(parents=True)
     R = {'when': time.strftime('%Y-%m-%d %H:%M'), 'render': 'software, a third of the resolution, 1024 shadow map'}
+    # phase 04b: data/gamedata.js is generated from the data files; make it from the files as they are now
+    subprocess.run(['node', str(ROOT / 'tools' / 'build-data.mjs')], check=True)
     check_version(); check_code(); check_data(); old_names(); copperleaf_data(); check_water(); check_masts(); check_postcards(); check_rooms(); check_windows(); check_ground(); report_unused()
     srv, base = serve(GAME)
     with sync_playwright() as pw:
@@ -2068,7 +2070,6 @@ def main():
         if '--studio' in ARGS or '--studio-only' in ARGS: studio_round_trip(pw, R)
     srv.shutdown()
     if '--props' in ARGS:
-        import subprocess
         log('Props: every prop on contact sheets (validation/props/)')
         r = subprocess.run([sys.executable, str(ROOT / 'tools' / 'prop-sheet.py')], capture_output=True, text=True)
         steps.append({'step': 'Props: contact sheets', 'ok': r.returncode == 0, 'seconds': 0, 'note': (r.stdout.strip().splitlines() or [''])[-1][:200]})

@@ -31,3 +31,6 @@ playwright-report/
 
 # Vite build output (phase 04)
 dist/
+
+# Game data for the game, generated from game/data/*.json by tools/build-data.mjs (phase 04b)
+game/data/gamedata.js

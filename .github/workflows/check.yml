@@ -40,6 +40,9 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4   # tools/build-data.mjs makes data/gamedata.js from the data files
+        with:
+          node-version: '22'
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -125,6 +128,9 @@ jobs:
       MAKE_BASELINE: ${{ (github.event_name == 'workflow_dispatch' && inputs.baseline) || (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/phase-')) }}
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4   # tools/build-data.mjs makes data/gamedata.js from the data files
+        with:
+          node-version: '22'
       - name: Which version
         # runs version.js itself, so the formatting of that file doesn't matter
         run: echo "PB_VERSION_ID=$(node -e "const self={};eval(require('fs').readFileSync('game/version.js','utf8'));console.log(self.PB_VERSION_ID)")" >> "$GITHUB_ENV"
