@@ -12,6 +12,7 @@ import { expose } from '../../game/js/bridge.js';
 import { provide } from '../../game/js/hooks.js';
 import { $ } from '../../game/js/util.js';
 import { ENGINE_DEFAULTS, ENGINE_PRESETS, ENGINE_SPEC } from '../../game/js/engine/settings.js';
+import { esc } from './shims.js';
 import { ACTS, ST, go, spName } from './core.js';
 import { curLine } from './sections.js';
 import { SCN, scId } from './scenes.js';

@@ -14,6 +14,7 @@ import { DIO, dioImg, dioLayerM, dioOk } from '../../game/js/diorama.js';
 import { DGL, DGL_MATS, dglMatOf, dglVaryOf, dioMount } from '../../game/js/diorama-gl.js';
 import { BLD_ROOM_NAMES, BLD_TEX_NAMES } from '../../game/js/buildings.js';
 import { P3D_AUTO, P3D_KINDS, P3D_PARTS, p3dTreeKind } from '../../game/js/props3d.js';
+import { esc } from './shims.js';
 import {
   ACTS,
   ST,

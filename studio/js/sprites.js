@@ -10,6 +10,7 @@ import { $, $$, clamp } from '../../game/js/util.js';
 import { cnv } from '../../game/js/art.js';
 import { animFor } from '../../game/js/anim.js';
 import { drawRig, rigPose } from '../../game/js/rig.js';
+import { esc } from './shims.js';
 import { ST, ask, render, spName, toast, updTop } from './core.js';
 /* eslint-disable no-func-assign */
 expose({

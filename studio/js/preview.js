@@ -26,6 +26,7 @@ import {
 import { DIO, dioHubOf } from '../../game/js/diorama.js';
 import { dioMount } from '../../game/js/diorama-gl.js';
 import { battleGLAttach, battleGLStop } from '../../game/js/battle-gl.js';
+import { esc } from './shims.js';
 import {
   ACTS,
   SECTIONS,

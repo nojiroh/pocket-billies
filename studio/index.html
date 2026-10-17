@@ -26,24 +26,13 @@
 <div id="dlg"></div>
 <div id="toasts" aria-live="polite"></div>
 <script>window.STUDIO_KEY='__STUDIO_KEY__';window.NW_ARTDIR='../game/art/';</script>
-<!-- shims so the game's renderers can run inside the Studio -->
-<script>
-var S={preferences:{},gender:'boy',avatar:null},U={},B=null,RM=false;
-const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-/* the game's tables, read live from the Studio's unsaved data (ST is declared in js/core.js) */
-const liveMap=f=>new Proxy({},{get:(t,k)=>{const o=typeof ST!=='undefined'&&ST.D?f(ST.D):null;return o?o[k]:undefined},
- has:(t,k)=>{const o=typeof ST!=='undefined'&&ST.D?f(ST.D):null;return !!o&&k in o},ownKeys:()=>{const o=typeof ST!=='undefined'&&ST.D?f(ST.D):null;return o?Reflect.ownKeys(o):[]},
- getOwnPropertyDescriptor:(t,k)=>{const o=typeof ST!=='undefined'&&ST.D?f(ST.D):null;if(o&&k in o)return {value:o[k],enumerable:true,configurable:true,writable:true}}});
-const BACKDROPS=liveMap(D=>D.backdrops),MOVES=liveMap(D=>D.moves),PEOPLE=liveMap(D=>D.people);
-const TC=liveMap(D=>{const o=Object.fromEntries(D.types.map(t=>[t.id,[t.color,t.text||'#fff']]));o.None=[(D.untyped||{}).color||'#9a9a9a',(D.untyped||{}).text||'#fff'];return o});
-const TYPEFX=liveMap(D=>{const o=Object.fromEntries(D.types.map(t=>[t.id,t.fx&&t.fx.length?t.fx:['pow','star']]));o.None=(D.untyped||{}).fx||['pow','star'];return o});
-</script>
 <script src="../game/version.js"></script>
 <script src="../game/js/data-files.js"></script>
 <script>document.getElementById('ver').textContent=PB_VERSION;</script>
 <script src="../game/art/manifest.js"></script>
 <script src="../game/art/next/rigs-next.js"></script>
 <script type="module" src="../game/js/util.js"></script>
+<script type="module" src="js/shims.js"></script>
 <script type="module" src="../game/js/frame.js"></script>
 <script type="module" src="../game/js/art.js"></script>
 <script type="module" src="../game/js/anim.js"></script>

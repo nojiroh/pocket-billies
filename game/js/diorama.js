@@ -17,6 +17,7 @@ import {
   PW,
   ROOM_KIND,
   SCENE_FILES,
+  U,
   addSteps,
   bldSigF,
   dglWallDefault,

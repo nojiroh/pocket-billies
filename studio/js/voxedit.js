@@ -12,6 +12,7 @@ import { provide } from '../../game/js/hooks.js';
 import { cnv } from '../../game/js/art.js';
 import { dioImg } from '../../game/js/diorama.js';
 import { VOX_TEXTURES, voxInvalidate, voxRecipe } from '../../game/js/vox.js';
+import { esc } from './shims.js';
 import {
   ACTS,
   ST,

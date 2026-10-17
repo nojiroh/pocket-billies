@@ -345,6 +345,7 @@ export const U = {
   seenEnc: new Set(),
   mapSel: null,
 };
+provide({ U }); /* to-module */
 
 /* ---------- saving: in this browser, and on the account when signed in (account.js) ---------- */
 let saveT = null;

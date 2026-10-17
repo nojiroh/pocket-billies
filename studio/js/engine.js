@@ -10,6 +10,7 @@ import { DIO, dioHubOf } from '../../game/js/diorama.js';
 import { ENGINE_DEFAULTS, ENGINE_PRESETS, ENGINE_SPEC, ENG_CTX, eng } from '../../game/js/engine/settings.js';
 import { EGL, eglOK } from '../../game/js/engine/core.js';
 import { DGL, dglRebuild, dioMount } from '../../game/js/diorama-gl.js';
+import { esc } from './shims.js';
 import {
   ACTS,
   SECTIONS,

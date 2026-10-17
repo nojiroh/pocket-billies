@@ -12,6 +12,7 @@ import { frameStop, frameTask } from '../../game/js/frame.js';
 import { cnv } from '../../game/js/art.js';
 import { TR_CACHE, TR_PRESETS, cleanLook, trFrame, trRig, trSliders } from '../../game/js/trainer.js';
 import { rigMatrices } from '../../game/js/rig.js';
+import { esc } from './shims.js';
 import {
   ACTS,
   SECTIONS,

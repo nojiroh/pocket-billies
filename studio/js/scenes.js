@@ -38,6 +38,7 @@ import {
 } from '../../game/js/diorama.js';
 import { ENV } from '../../game/js/env.js';
 import { DGL, DGL_WALL_MATS, dioHRaw, dioMount } from '../../game/js/diorama-gl.js';
+import { esc } from './shims.js';
 import {
   ACTS,
   SECTIONS,

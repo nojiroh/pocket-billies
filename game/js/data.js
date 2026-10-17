@@ -80,11 +80,13 @@ provide({ RULES }); /* to-module */
 /* ---------- types ---------- */
 export const TYPES = GD.types.map(t => t.id);
 export const TC = Object.fromEntries(GD.types.map(t => [t.id, [t.color, t.text || '#fff']]));
+provide({ TC }); /* to-module */
 TC.None = [GD.untyped.color, GD.untyped.text || '#fff'];
 const SEm = Object.fromEntries(GD.types.map(t => [t.id, (t.strong || []).filter(x => TC[x])]));
 const RESm = Object.fromEntries(GD.types.map(t => [t.id, (t.weak || []).filter(x => TC[x])]));
 export const PASSIVE = Object.fromEntries(GD.types.map(t => [t.id, t.passive || '']));
 const TYPEFX = Object.fromEntries(GD.types.map(t => [t.id, t.fx && t.fx.length ? t.fx : ['pow', 'star']]));
+provide({ TYPEFX }); /* to-module */
 TYPEFX.None = GD.untyped.fx || ['pow', 'star'];
 const typesWith = p => TYPES.filter(t => PASSIVE[t] === p);
 export const hasPassive = (types, p) => types.some(t => PASSIVE[t] === p);
@@ -102,6 +104,7 @@ export const STATN = Object.fromEntries(GD.stats.map(s => [s.id, s.name]));
 export const STATUSN = Object.fromEntries(GD.statuses.map(s => [s.id, s.name]));
 /* ---------- moves ---------- */
 export const MOVES = GD.moves;
+provide({ MOVES }); /* to-module */
 for (const k in MOVES) {
   const M = MOVES[k];
   if (!TC[M.t]) {
@@ -189,6 +192,7 @@ for (const k in GD.pools) {
   if (!POOLS[k].list.length) POOLS[k].list = [[DEX[0], 1]];
 }
 export const BACKDROPS = GD.backdrops;
+provide({ BACKDROPS }); /* to-module */
 ROUTE.forEach((r, i) => {
   if (!POOLS[r.pool]) {
     warnData(`${r.name} uses unknown pool ${r.pool}.`);
@@ -273,6 +277,7 @@ export const ITEMS = GD.items;
 export const JOBS = GD.jobs;
 export const JOB_STEPS = RULES.jobs.stepsPerPay;
 export const PEOPLE = GD.people;
+provide({ PEOPLE }); /* to-module */
 export const SHOPS = GD.shops || {};
 /* ---------- trainers: plain data, turned into teams when a battle starts ---------- */
 export const TRAINERS = GD.trainers || {};

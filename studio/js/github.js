@@ -11,6 +11,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/bridge.js';
 import { $ } from '../../game/js/util.js';
+import { esc } from './shims.js';
 import { ACTS, ST, ask, boot, dialog, updTop } from './core.js';
 /* eslint-disable no-func-assign */
 expose({

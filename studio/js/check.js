@@ -6,6 +6,7 @@ import { expose } from '../../game/js/bridge.js';
 import { provide } from '../../game/js/hooks.js';
 import { $ } from '../../game/js/util.js';
 import { dioB64 } from '../../game/js/diorama.js';
+import { esc } from './shims.js';
 import { ACTS, SECTIONS, ST, after, api, ask, card, changed, go, render, toast } from './core.js';
 import { atlasPath, pickFile } from './sprites.js';
 /* eslint-disable no-func-assign */
