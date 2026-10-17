@@ -12,10 +12,13 @@
 import { expose } from './bridge.js';
 import {
   A,
+  B,
   BACKDROPS,
   DIO,
   GD,
   MOVES,
+  RM,
+  S,
   TC,
   TYPEFX,
   battleFreeArea,

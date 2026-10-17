@@ -30,7 +30,7 @@ import {
 /* eslint-disable no-func-assign */
 expose({
   ACC_ID: [() => ACC_ID],
-  B: [() => B, v => (B = v)],
+  B: [() => B, v => setB(v)],
   BR: [() => BR],
   EGG_SLOTS: [() => EGG_SLOTS],
   JOB_SLOTS: [() => JOB_SLOTS],
@@ -39,8 +39,8 @@ expose({
   LS_BASE: [() => LS_BASE],
   MAXLV: [() => MAXLV],
   N: [() => N],
-  RM: [() => RM, v => (RM = v)],
-  S: [() => S, v => (S = v)],
+  RM: [() => RM, v => setRM(v)],
+  S: [() => S, v => setS(v)],
   SAVE_FOUND: [() => SAVE_FOUND],
   SAVE_HOLD: [() => SAVE_HOLD, v => (SAVE_HOLD = v)],
   SAVE_NEW_MSG: [() => SAVE_NEW_MSG],
@@ -104,6 +104,11 @@ expose({
   save: [() => save, v => (save = v)],
   saveAge: [() => saveAge, v => (saveAge = v)],
   saveT: [() => saveT, v => (saveT = v)],
+  setB: [() => setB, v => (setB = v)],
+  setNoSaving: [() => setNoSaving, v => (setNoSaving = v)],
+  setRM: [() => setRM, v => (setRM = v)],
+  setS: [() => setS, v => (setS = v)],
+  setSaveHold: [() => setSaveHold, v => (setSaveHold = v)],
   setTrip: [() => setTrip, v => (setTrip = v)],
   spawn: [() => spawn, v => (spawn = v)],
   splitPath: [() => splitPath, v => (splitPath = v)],
@@ -136,6 +141,7 @@ provide({ cleanName }); /* to-module */
 export const fmt = n => Math.floor(n).toLocaleString('en-US');
 export const km = st => (st / STEPS_PER_KM).toFixed(1);
 export let RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
+provide({ RM }); /* to-module */
 export const uid = () => 'm' + Date.now().toString(36) + Math.floor(rnd() * 1e8).toString(36);
 export const today = () => {
   const d = new Date();
@@ -279,7 +285,7 @@ export function migrate(o) {
    A save without one (alpha 0.5 and earlier) or from a newer format is not loaded: the game says so and starts fresh.
    saveAge: null (no save), 'ok', 'old' or 'new'. A newer save is never written over (SAVE_HOLD) */
 export const SAVE_VERSION = 1;
-let SAVE_HOLD = false;
+export let SAVE_HOLD = false;
 export function saveAge(o) {
   if (!o || typeof o !== 'object') return null;
   const v = o.saveVersion;
@@ -329,7 +335,35 @@ if (SAVE_FOUND === 'old' || SAVE_FOUND === 'new')
   } catch (e) {}
 if (SAVE_FOUND === 'new') SAVE_HOLD = true;
 export let S = loadSave(lsGet()) || fresh();
+provide({ S }); /* to-module */
 export let B = null;
+provide({ B }); /* to-module */
+/* phase 04d: other modules change the save, the battle, reduced motion and the save hold through these (an imported
+   name can't be assigned); each hands the new value to hooks.js for the modules that read it from there */
+export function setS(v) {
+  S = v;
+  provide({ S });
+}
+export function setB(v) {
+  B = v;
+  provide({ B });
+}
+export function setRM(v) {
+  RM = v;
+  provide({ RM });
+}
+export function setSaveHold(v) {
+  SAVE_HOLD = v;
+  provide({ SAVE_HOLD });
+}
+/* test mode (?test, boot.js): nothing the checks do reaches the save */
+export function setNoSaving() {
+  /* eslint-disable no-func-assign */
+  lsSet = function () {};
+  flush = async function () {};
+  /* eslint-enable no-func-assign */
+  provide({ lsSet, flush });
+}
 export const U = {
   tab: 'walk',
   lastTab: null,

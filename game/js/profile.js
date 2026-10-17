@@ -20,7 +20,22 @@ import {
   runQuickTest,
 } from './hooks.js';
 import { JOBS, MOVES, ROUTE, RULES, SP, STATUSN } from './data.js';
-import { SAVE_NEW_MSG, SAVE_OLD_MSG, TEAM_MAX, U, esc, fmt, migrate, save, saveAge, today } from './core.js';
+import {
+  RM,
+  S,
+  SAVE_NEW_MSG,
+  SAVE_OLD_MSG,
+  TEAM_MAX,
+  U,
+  esc,
+  fmt,
+  migrate,
+  save,
+  saveAge,
+  setRM,
+  setS,
+  today,
+} from './core.js';
 import { I18N_LANGS, i18nSet } from './i18n.js';
 import { FRAME } from './frame.js';
 import { uiIco } from './art.js';
@@ -60,7 +75,7 @@ export function applyPreferences() {
     else delete root.dataset.theme;
     themeOwned = false;
   }
-  RM = p.motion === 'reduced' || (p.motion !== 'full' && matchMedia('(prefers-reduced-motion: reduce)').matches);
+  setRM(p.motion === 'reduced' || (p.motion !== 'full' && matchMedia('(prefers-reduced-motion: reduce)').matches));
   document.documentElement.dataset.motion = RM ? 'reduced' : 'full';
   /* v30: accessibility: text size, high contrast, no flashing, bigger buttons */ root.dataset.text =
     p.textSize || 'normal';
@@ -191,7 +206,7 @@ function importSave() {
             l: 'Restore backup',
             c: 'dark',
             f: () => {
-              S = next;
+              setS(next);
               S.avatar = cleanTrainer(S.avatar, S.gender);
               U.trainerDraft = null;
               U.tab = 'walk';

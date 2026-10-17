@@ -9,7 +9,7 @@
    before. Picture layers are drawn by the sprite pipeline (dglItems gives them as extra items). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './bridge.js';
-import { GD, provide } from './hooks.js';
+import { GD, RM, provide } from './hooks.js';
 import { artImg, artURL, hexA } from './art.js';
 import { DIO, dioImg } from './diorama.js';
 import { eng } from './engine/settings.js';

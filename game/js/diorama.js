@@ -15,6 +15,7 @@ import {
   ENV,
   GD,
   PW,
+  RM,
   ROOM_KIND,
   SCENE_FILES,
   U,

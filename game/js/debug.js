@@ -8,7 +8,9 @@ import { closeModal, evoRun, modal, provide, stSceneChecks, testScenes } from '.
 import { $, $$, clamp } from './util.js';
 import { COINS, DATA_WARN, DEX, EGGS, EGG_TIERS, ITEMS, ROUTE, RULES, SP, TRAINERS } from './data.js';
 import {
+  B,
   MAXLV,
+  S,
   U,
   addEgg,
   addMon,
@@ -21,6 +23,8 @@ import {
   lsSet,
   makeMon,
   save,
+  setB,
+  setS,
   spawn,
   today,
   uid,
@@ -384,10 +388,10 @@ function settingsReset() {
         f: () => {
           if (B) {
             stopTimers();
-            B = null;
+            setB(null);
             scStop();
           }
-          S = freshKeep();
+          setS(freshKeep());
           S.savedAt = Date.now();
           lsSet(S);
           flush();

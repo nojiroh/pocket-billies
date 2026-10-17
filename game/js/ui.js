@@ -42,6 +42,7 @@ import {
   MAXLV,
   N,
   RM,
+  S,
   SLOTS,
   TEAM_MAX,
   U,
@@ -80,6 +81,7 @@ import {
   riderName,
   rollDay,
   save,
+  setS,
   setTrip,
   spawn,
   splitPath,
@@ -2437,7 +2439,7 @@ function settings(tab) {
                 l: 'Erase and start over',
                 c: 'red',
                 f: () => {
-                  S = freshKeep();
+                  setS(freshKeep());
                   S.savedAt = Date.now();
                   lsSet(S);
                   flush();
@@ -2462,7 +2464,7 @@ function settings(tab) {
 /* o.rival (v47, from the opening): Blake's battle comes first; the welcome sheet waits until the talk after it */
 export function startGame(l, o = {}) {
   const avatar = cleanLook(U.avatarDraft || U.trainerDraft || TR_PRESETS[0]);
-  S = freshKeep();
+  setS(freshKeep());
   S.avatar = avatar;
   U.trainerDraft = null;
   S.started = true;

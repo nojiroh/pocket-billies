@@ -4,6 +4,7 @@
 // else once it has loaded. A slot no module of the page fills stays undefined (typeof checks still work).
 export let A,
   ACC,
+  B,
   BACKDROPS,
   BG,
   BLD,
@@ -35,8 +36,10 @@ export let A,
   PEOPLE,
   PLAN_INFO,
   PW,
+  RM,
   ROOM_KIND,
   RULES,
+  S,
   SCENE_FILES,
   SP,
   ST,
@@ -203,6 +206,7 @@ export let A,
 const set = {
   A: v => (A = v),
   ACC: v => (ACC = v),
+  B: v => (B = v),
   BACKDROPS: v => (BACKDROPS = v),
   BG: v => (BG = v),
   BLD: v => (BLD = v),
@@ -234,8 +238,10 @@ const set = {
   PEOPLE: v => (PEOPLE = v),
   PLAN_INFO: v => (PLAN_INFO = v),
   PW: v => (PW = v),
+  RM: v => (RM = v),
   ROOM_KIND: v => (ROOM_KIND = v),
   RULES: v => (RULES = v),
+  S: v => (S = v),
   SCENE_FILES: v => (SCENE_FILES = v),
   SP: v => (SP = v),
   ST: v => (ST = v),
@@ -400,6 +406,7 @@ const set = {
   wrSceneById: v => (wrSceneById = v),
   x28Event: v => (x28Event = v),
 };
+// a setter hands its new value over whether or not another module reads it through here
 export function provide(names) {
-  for (const k in names) set[k](names[k]);
+  for (const k in names) if (set[k]) set[k](names[k]);
 }

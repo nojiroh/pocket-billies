@@ -79,8 +79,17 @@ function analyse(text) {
     const d = v.defs[0];
     const kind = d.type === 'Variable' ? d.parent.kind : d.type === 'FunctionName' ? 'function' : 'class';
     const node = ast.body.find(s => s === d.parent || s === d.node) || null;
-    // assigned after its declaration (a copy handed to hooks.js would go stale)
-    const late = v.references.some(r => r.isWrite() && !r.init);
+    // assigned after its declaration (a copy handed to hooks.js would go stale), except in a setter of the module
+    // that hands the new value over itself: function setX() { X = v; provide({ X }); }
+    const setter = r => {
+      const b = r.from.variableScope.block;
+      return (
+        b.type === 'FunctionDeclaration' &&
+        /^set[A-Z_$]/.test(b.id.name) &&
+        r.from.variableScope.through.some(t => t.identifier.name === 'provide')
+      );
+    };
+    const late = v.references.some(r => r.isWrite() && !r.init && !setter(r));
     own.set(v.name, { kind, node, late });
   }
   const reads = new Set(),
@@ -302,17 +311,22 @@ export async function run(args) {
     const lines = [START, `import { expose } from '${spec(f, BRIDGE)}';`];
     const im = [...imports.get(f)].sort((a, b) => order.indexOf(a[0]) - order.indexOf(b[0]));
     const fromHooks = [...(imports.get(f).get(HOOKS) || [])];
-    if (gives.length) fromHooks.push('provide');
+    if (gives.length || info.get(f).reads.has('provide')) fromHooks.push('provide');
     if (fromHooks.length) lines.push(`import { ${fromHooks.sort().join(', ')} } from '${spec(f, HOOKS)}';`);
     for (const [g, names] of im)
       if (g !== HOOKS) lines.push(`import { ${[...names].sort().join(', ')} } from '${spec(f, g)}';`);
     const names = [...own.keys()].sort();
     const fns = names.some(n => own.get(n).kind === 'function');
+    // a module's own setter (setS for S) also hands the value to hooks.js, so the bridge uses it
+    const setterOf = n => {
+      const k = 'set' + n[0].toUpperCase() + n.slice(1);
+      return own.has(k) && own.get(k).kind === 'function' ? `v => ${k}(v)` : `v => (${n} = v)`;
+    };
     if (names.length) {
       // the setters replace functions on purpose: the debug log and the Studio wrap or swap them through window
       if (fns) lines.push('/* eslint-disable no-func-assign */');
       lines.push(
-        `expose({ ${names.map(n => (own.get(n).kind === 'const' ? `${n}: [() => ${n}]` : `${n}: [() => ${n}, v => (${n} = v)]`)).join(', ')} });`
+        `expose({ ${names.map(n => (own.get(n).kind === 'const' ? `${n}: [() => ${n}]` : `${n}: [() => ${n}, ${setterOf(n)}]`)).join(', ')} });`
       );
       if (fns) lines.push('/* eslint-enable no-func-assign */');
     }
@@ -345,8 +359,9 @@ export async function run(args) {
     '// else once it has loaded. A slot no module of the page fills stays undefined (typeof checks still work).',
     `export let ${slots.join(', ')};`,
     `const set = { ${slots.map(n => `${n}: v => (${n} = v)`).join(', ')} };`,
+    '// a setter hands its new value over whether or not another module reads it through here',
     'export function provide(names) {',
-    '  for (const k in names) set[k](names[k]);',
+    '  for (const k in names) if (set[k]) set[k](names[k]);',
     '}',
     '',
   ].join('\n');

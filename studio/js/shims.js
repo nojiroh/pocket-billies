@@ -23,7 +23,7 @@ var S = { preferences: {}, gender: 'boy', avatar: null },
   U = {},
   B = null,
   RM = false;
-provide({ U }); /* to-module */
+provide({ B, RM, S, U }); /* to-module */
 export const esc = s =>
   String(s == null ? '' : s).replace(
     /[&<>"']/g,

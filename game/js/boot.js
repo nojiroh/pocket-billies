@@ -8,7 +8,7 @@ import { expose } from './bridge.js';
 import { provide } from './hooks.js';
 import { DATA_WARN, GD, RULES, SP, START_NODE } from './data.js';
 import { sceneWatch, scenesAhead, scenesAll } from './scene-files.js';
-import { RM, SAVE_FOUND, SAVE_NEW_MSG, SAVE_OLD_MSG, U, esc, fresh } from './core.js';
+import { RM, S, SAVE_FOUND, SAVE_NEW_MSG, SAVE_OLD_MSG, U, esc, fresh, setNoSaving, setS } from './core.js';
 import { ART, BG_ART, COIN_ART, EGG_ART, ICON_ATLAS, UIURL, artBoot, artImg } from './art.js';
 import { trainerArtPaths } from './trainer.js';
 import { rigAtlas } from './rig.js';
@@ -732,9 +732,8 @@ const NW_TEST = (() => {
 })();
 provide({ NW_TEST }); /* to-module */
 if (NW_TEST) {
-  lsSet = function () {};
-  flush = async function () {};
-  S = fresh();
+  setNoSaving();
+  setS(fresh());
 }
 function studioTestStart() {
   if (!NW_TEST) return;

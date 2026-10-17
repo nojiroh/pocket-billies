@@ -14,6 +14,8 @@ import {
   LS,
   LS_ACC,
   LS_BASE,
+  S,
+  SAVE_HOLD,
   SAVE_NEW_MSG,
   SAVE_VERSION,
   esc,
@@ -22,6 +24,8 @@ import {
   lsSet,
   save,
   saveAge,
+  setS,
+  setSaveHold,
 } from './core.js';
 import { cleanTrainer } from './trainer.js';
 import { applyPreferences, settingsRefresh } from './profile.js';
@@ -152,7 +156,7 @@ async function accPull() {
       remote = loadSave(remote);
     } catch (e) {}
     if (age === 'new') {
-      SAVE_HOLD = true;
+      setSaveHold(true);
       modal({
         title: 'Your account’s save is newer',
         html: `<p>${SAVE_NEW_MSG}</p>`,
@@ -168,7 +172,7 @@ async function accPull() {
       toast('Your account’s save is from an older version of the game, so this is a new game. Playing on replaces it.');
     }
     if (remote && remote.started && (!S.started || (remote.savedAt || 0) > (S.savedAt || 0)) && !B) {
-      S = remote;
+      setS(remote);
       S.avatar = cleanTrainer(S.avatar, S.gender);
       applyPreferences();
       lsSet(S);
@@ -193,7 +197,7 @@ async function accPull() {
           l: 'Yes, use it',
           c: 'gold',
           f: () => {
-            S = guest;
+            setS(guest);
             S.savedAt = Date.now();
             lsSet(S);
             closeModal();

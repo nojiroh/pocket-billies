@@ -13,7 +13,7 @@ import { provide } from './hooks.js';
 import { clamp } from './util.js';
 import { GD, MOVES, ROUTE, RULES, SP, TRAINERS, linkCost, placeKind } from './data.js';
 import { scenesAll } from './scene-files.js';
-import { U, addSteps, esc, makeMon, maxHp, setTrip, spawn } from './core.js';
+import { B, S, U, addSteps, esc, makeMon, maxHp, setB, setS, setTrip, spawn } from './core.js';
 import { FRAME } from './frame.js';
 import { TR_CACHE } from './trainer.js';
 import { DR, closeDressing } from './dressing.js';
@@ -677,7 +677,7 @@ async function runFullTest(mode) {
         if (!ok) why = 'a move never finished playing';
       }
       stopTimers();
-      B = null;
+      setB(null);
       scStop();
       S.preferences.battleStage = pref;
       render();
@@ -753,7 +753,7 @@ async function runFullTest(mode) {
       const turnMs = Math.round(performance.now() - tt),
         lines = B.events.length;
       stopTimers();
-      B = null;
+      setB(null);
       scStop();
       render();
       await stSleep(600);
@@ -1100,7 +1100,7 @@ async function runFullTest(mode) {
           } finally {
             if (B) {
               stopTimers();
-              B = null;
+              setB(null);
               scStop();
             }
             talkHide();
@@ -1366,7 +1366,7 @@ async function runFullTest(mode) {
     }
     if (B) {
       stopTimers();
-      B = null;
+      setB(null);
       scStop();
     }
     if (typeof CS !== 'undefined' && CS.on) {
@@ -1379,7 +1379,7 @@ async function runFullTest(mode) {
       STEST.offVis = null;
     }
     if (engKeep) GD.engine = JSON.parse(engKeep);
-    S = JSON.parse(keep);
+    setS(JSON.parse(keep));
     save = realSave;
     U.bench = null;
     U.roam = back.roam;

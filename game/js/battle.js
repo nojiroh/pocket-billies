@@ -43,6 +43,7 @@ import {
   trainerTeam,
 } from './data.js';
 import {
+  B,
   N,
   RM,
   S,
@@ -60,6 +61,7 @@ import {
   pickW,
   plural,
   save,
+  setB,
   stat,
   xpFor,
 } from './core.js';
@@ -828,40 +830,42 @@ function newBattle(kind, foe, extra) {
     n1 = fmt === 'double' ? Math.min(2, foe.length) : 1;
   const fighters = (n, list) =>
     Array.from({ length: n }, (_, sl) => ({ act: list[sl], on: list[sl] != null, v: freshV(), down: false }));
-  B = Object.assign(
-    {
-      kind,
-      fmt,
-      events: [],
-      ev: 0,
-      phase: 'playing',
-      market: null,
-      integrity: 1,
-      over: null,
-      needSwitch: [],
-      offer: null,
-      foeName: '',
-      lead: S.team[able[0]].uid,
-      turn: 0,
-      plan: [],
-      cur: 0,
-      sides: [
-        { team: S.team, f: fighters(n0, able), rent: false, pivot: false, mail: [], inh: null },
-        {
-          team: foe,
-          f: fighters(
-            n1,
-            foe.map((m, i) => i)
-          ),
-          rent: false,
-          pivot: false,
-          mail: [],
-          inh: null,
-        },
-      ],
-    },
-    extra,
-    { fmt }
+  setB(
+    Object.assign(
+      {
+        kind,
+        fmt,
+        events: [],
+        ev: 0,
+        phase: 'playing',
+        market: null,
+        integrity: 1,
+        over: null,
+        needSwitch: [],
+        offer: null,
+        foeName: '',
+        lead: S.team[able[0]].uid,
+        turn: 0,
+        plan: [],
+        cur: 0,
+        sides: [
+          { team: S.team, f: fighters(n0, able), rent: false, pivot: false, mail: [], inh: null },
+          {
+            team: foe,
+            f: fighters(
+              n1,
+              foe.map((m, i) => i)
+            ),
+            rent: false,
+            pivot: false,
+            mail: [],
+            inh: null,
+          },
+        ],
+      },
+      extra,
+      { fmt }
+    )
   );
   Object.defineProperty(B.sides[0], 'act', {
     get() {
@@ -1960,7 +1964,7 @@ export function endBattle() {
     if (o === 'lose') for (const m of S.team) m.hp = Math.max(1, m.hp);
     save();
     battleLeave(() => {
-      B = null;
+      setB(null);
       scStop();
       document.body.classList.remove('in-battle');
       U.tab = 'walk';
@@ -2040,7 +2044,7 @@ export function endBattle() {
   }
   save();
   battleLeave(() => {
-    B = null;
+    setB(null);
     scStop();
     document.body.classList.remove('in-battle');
     U.tab = 'walk';
