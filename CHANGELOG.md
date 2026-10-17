@@ -20,3 +20,5 @@ kept aside in the browser).
 - Removed: the single-file Claude-artifact version, the old train station prop, the v45 backup scenes in the game data
   (1.5 MB), importing a legacy Net Worth backup.
 - Fixes: with Motion set to reduced, the camera snaps instead of gliding.
+- Under the hood: the game's and the Studio's code are ES modules, and the published game loads them as one file.
+  The game needs a web server (opening index.html from disk no longer works at all).
