@@ -5,6 +5,7 @@
    One engine state object, EGL, is shared by every view. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../bridge.js';
+import { DGL, dioArtVer, eglRestored, provide } from '../hooks.js';
 import { clamp } from '../util.js';
 import { cnv } from '../art.js';
 import { dioOk } from '../diorama.js';
@@ -179,6 +180,7 @@ export const smooth01 = t => {
   t = clamp(t, 0, 1);
   return t * t * (3 - 2 * t);
 };
+provide({ smooth01 }); /* to-module */
 /* ---------- shared GLSL ---------- */
 export const EGL_GLSL_COMMON = `
 uniform vec3 uCurve;uniform float uCurveD0;

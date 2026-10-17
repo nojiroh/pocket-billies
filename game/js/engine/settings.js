@@ -6,6 +6,7 @@
    A value of null means "use the scene's own field" (its haze, sky, camera…). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../bridge.js';
+import { ENV_MOD, GD, provide } from '../hooks.js';
 import { hexA } from '../art.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -21,6 +22,7 @@ expose({
   engSource: [() => engSource, v => (engSource = v)],
 });
 /* eslint-enable no-func-assign */
+provide({ eng });
 /* to-module: end */
 export const ENGINE_DEFAULTS = {
   lens: {

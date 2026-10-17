@@ -5,6 +5,7 @@
    the game does, animates previews, and provides the pixel editor, gold regeneration and recoloring. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/bridge.js';
+import { openSkeleton, provide } from '../../game/js/hooks.js';
 import { $, $$, clamp } from '../../game/js/util.js';
 import { cnv } from '../../game/js/art.js';
 import { animFor } from '../../game/js/anim.js';
@@ -67,6 +68,7 @@ expose({
   spriteCacheClear: [() => spriteCacheClear, v => (spriteCacheClear = v)],
 });
 /* eslint-enable no-func-assign */
+provide({ mountPreviews, spriteCacheClear });
 /* to-module: end */
 export const ATL = new Map(); /* path -> canvas */
 const ATL_WAIT = new Map();

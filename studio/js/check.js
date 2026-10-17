@@ -3,6 +3,7 @@
    The game repairs or skips anything broken when it loads, but these checks point at it first. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/bridge.js';
+import { provide } from '../../game/js/hooks.js';
 import { $ } from '../../game/js/util.js';
 import { dioB64 } from '../../game/js/diorama.js';
 import { ACTS, SECTIONS, ST, after, api, ask, card, changed, go, render, toast } from './core.js';
@@ -16,6 +17,7 @@ expose({
   scheduleCheck: [() => scheduleCheck, v => (scheduleCheck = v)],
 });
 /* eslint-enable no-func-assign */
+provide({ runCheck, scheduleCheck });
 /* to-module: end */
 function runCheck() {
   const D = ST.D,

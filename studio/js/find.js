@@ -6,6 +6,7 @@
    to the setting and makes it blink. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/bridge.js';
+import { linkNote } from '../../game/js/hooks.js';
 import { $, $$ } from '../../game/js/util.js';
 import { ENGINE_SPEC } from '../../game/js/engine/settings.js';
 import { ACTS, NAV, SECTIONS, ST, clone, go, toast } from './core.js';

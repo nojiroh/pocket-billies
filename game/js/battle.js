@@ -6,6 +6,22 @@
    second, 4 = your third. Doubles (some trainers) are 0+2 against 1+3; an Alpha is fought by 0, 2 and 4 against 1. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './bridge.js';
+import {
+  JINGLES,
+  battleTipHide,
+  battleTutor,
+  battleWeatherMult,
+  chip,
+  closeModal,
+  jingle,
+  modal,
+  postProcess,
+  provide,
+  sfxBattle,
+  stBadge,
+  storyAfterRival,
+  storyAfterWin,
+} from './hooks.js';
 import { $, $$, clamp, rnd } from './util.js';
 import {
   BACKDROPS,
@@ -186,6 +202,7 @@ expose({
   wipe: [() => wipe, v => (wipe = v)],
 });
 /* eslint-enable no-func-assign */
+provide({ areaKey, battleFreeArea, battleLayoutChanged, hudHit, hudPop, platesTick, startWild });
 /* to-module: end */
 export const RB = RULES.battle,
   RC = RULES.catching;
@@ -215,7 +232,9 @@ export const A = k => {
   const f = FT(k);
   return f && f.on ? B.sides[ASIDE[k]].team[f.act] : undefined;
 };
+provide({ A }); /* to-module */
 const FV = k => FT(k).v;
+provide({ FV }); /* to-module */
 /* every actor on the field, the live ones, and those of one side */
 const allK = () => {
   const o = [];

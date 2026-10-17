@@ -5,6 +5,7 @@
    the same room has a till: try things on and buy what you're wearing. Also the "Create your trainer" step. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './bridge.js';
+import { buzz, sfx } from './hooks.js';
 import { $, $$, rnd } from './util.js';
 import { SHOPS } from './data.js';
 import { S, U, esc, fmt, save } from './core.js';

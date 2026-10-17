@@ -5,6 +5,7 @@
    later and a missing file shows up right away. Then draw the game. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './bridge.js';
+import { provide } from './hooks.js';
 import { DATA_WARN, GD, RULES, SP, START_NODE } from './data.js';
 import { sceneWatch, scenesAhead, scenesAll } from './scene-files.js';
 import { RM, SAVE_FOUND, SAVE_NEW_MSG, SAVE_OLD_MSG, U, esc, fresh } from './core.js';
@@ -60,6 +61,7 @@ expose({
   townUp: [() => townUp, v => (townUp = v)],
 });
 /* eslint-enable no-func-assign */
+provide({ noWebGL });
 /* to-module: end */
 const ART_VER_KEY = 'networth-artv';
 async function artCacheCheck() {
@@ -183,6 +185,7 @@ function loadList() {
   return L;
 }
 const LD = { el: null, tipI: 0, tipT: null, shown: 0, f: 0 };
+provide({ LD }); /* to-module */
 function loaderSet(done, total, phase) {
   const el = LD.el;
   if (!el) return;
@@ -727,6 +730,7 @@ const NW_TEST = (() => {
     return null;
   }
 })();
+provide({ NW_TEST }); /* to-module */
 if (NW_TEST) {
   lsSet = function () {};
   flush = async function () {};

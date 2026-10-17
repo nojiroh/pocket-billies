@@ -9,6 +9,7 @@
    for you and runs that step again. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './bridge.js';
+import { provide } from './hooks.js';
 import { clamp } from './util.js';
 import { GD, MOVES, ROUTE, RULES, SP, TRAINERS, linkCost, placeKind } from './data.js';
 import { scenesAll } from './scene-files.js';
@@ -72,8 +73,10 @@ expose({
   testScenes: [() => testScenes, v => (testScenes = v)],
 });
 /* eslint-enable no-func-assign */
+provide({ runDiagTest, stSceneChecks, testScenes });
 /* to-module: end */
 const STEST = { on: false, stop: false };
+provide({ STEST }); /* to-module */
 function stSleep(ms) {
   return new Promise(r => setTimeout(r, ms));
 }
@@ -1469,6 +1472,7 @@ async function runFullTest(mode) {
   });
 }
 const runQuickTest = runFullTest;
+provide({ runQuickTest }); /* to-module */
 
 /* ================= DIAGNOSTICS TEST (alpha 0.4) =================
    Next to the full test in Settings, about two minutes: the device and how the automatic quality chose its level, six

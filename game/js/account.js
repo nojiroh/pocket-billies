@@ -7,6 +7,7 @@
    The Firebase project is set in js/account-config.js; without it there is no sign-in button. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './bridge.js';
+import { NW_TEST, closeModal, modal, provide } from './hooks.js';
 import {
   ACC_ID,
   B,
@@ -46,6 +47,7 @@ expose({
   accState: [() => accState, v => (accState = v)],
 });
 /* eslint-enable no-func-assign */
+provide({ accChipHTML, accFlush, accOn, accSettingsHTML });
 /* to-module: end */
 const ACC = {
   cfg: window.PB_FIREBASE || null,
@@ -57,6 +59,7 @@ const ACC = {
   busy: false,
   err: '',
 };
+provide({ ACC }); /* to-module */
 const ACC_SDK = 'https://cdn.jsdelivr.net/npm/firebase@10.12.5/';
 function accOn() {
   return (

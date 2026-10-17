@@ -9,6 +9,7 @@
    scene.escalators [{a:[x,z], b:[x,z], w}]                                 moving steps over a stair (bottom a, top b) */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './bridge.js';
+import { provide } from './hooks.js';
 import { clamp } from './util.js';
 import { hexA } from './art.js';
 import { DIO, dioBridges, dioImg } from './diorama.js';
@@ -29,6 +30,7 @@ expose({
   strShadow: [() => strShadow, v => (strShadow = v)],
 });
 /* eslint-enable no-func-assign */
+provide({ strDraw, strShadow });
 /* to-module: end */
 export const STR = { key: '', mesh: null, parts: [] };
 const STR_KIND = {

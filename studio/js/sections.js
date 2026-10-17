@@ -2,6 +2,7 @@
 /* ================= POCKET BILLIES STUDIO · editors ================= */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/bridge.js';
+import { BODY_TPL, PLAN_INFO, WDS, makeBlankBody, openSkeleton, skNeutral, wdLoad } from '../../game/js/hooks.js';
 import { $, $$ } from '../../game/js/util.js';
 import { cnv, iconURL } from '../../game/js/art.js';
 import { TR_CACHE, cleanLook, humanSheet, lookFromOld, trColorsOf, trSliders } from '../../game/js/trainer.js';

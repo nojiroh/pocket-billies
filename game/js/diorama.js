@@ -9,6 +9,41 @@
    Scenes and the prop catalog live in game data (scenes, scenery) and are edited in Pocket Billies Studio. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './bridge.js';
+import {
+  DGL_ALT,
+  DGL_TERRAIN_MAT,
+  ENV,
+  GD,
+  PW,
+  ROOM_KIND,
+  SCENE_FILES,
+  addSteps,
+  bldSigF,
+  dglWallDefault,
+  dioArtVer,
+  dioChatLines,
+  dioGroundH,
+  dioH,
+  dioHRaw,
+  envHere,
+  envSeason,
+  envState,
+  lifePaths,
+  loreFlags,
+  owBuddyTap,
+  provide,
+  pwPaint,
+  pwSettle,
+  scenesFor,
+  scenesNeed,
+  sfx,
+  sfxAt,
+  smooth01,
+  voxPaths,
+  walkMode,
+  wrNear,
+  wrSceneById,
+} from './hooks.js';
 import { clamp } from './util.js';
 import { frameStop } from './frame.js';
 import { ART, artLoad, cnv, pkh } from './art.js';
@@ -229,6 +264,7 @@ export const DIO = {
   chat: 0,
   ff: new Map(),
 };
+provide({ DIO }); /* to-module */
 const dioUIpx = n => {
   const c = DIO.cv;
   if (!c || !c.clientWidth) return n;

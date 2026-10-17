@@ -10,6 +10,7 @@
    frame. A species' rig art is loaded the first time it's needed; until then it simply isn't shown. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './bridge.js';
+import { areaKey, provide, sceneIdAt, sfx } from './hooks.js';
 import { clamp } from './util.js';
 import { SP, STATUSN, TRAINERS, rivalSp, trainersAt } from './data.js';
 import { N, S, U, findMon, maxHp, nextStop, save } from './core.js';
@@ -40,6 +41,7 @@ expose({
   owWarm: [() => owWarm, v => (owWarm = v)],
 });
 /* eslint-enable no-func-assign */
+provide({ owBuddyItems, owBuddyTap, owEncItem, owFx, owItem, owLabels, owPetItems, owWarm });
 /* to-module: end */
 export const OWM = {
   cache: new Map(),
@@ -53,6 +55,7 @@ export const OWM = {
   mons: {},
   fx: [],
 };
+provide({ OWM }); /* to-module */
 const OW_MAX = 320;
 function owRig(sp, gold, view) {
   if (!SP[sp] || typeof rigParts !== 'function') return null;

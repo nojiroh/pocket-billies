@@ -2,6 +2,7 @@
 /* ================= CORE ================= */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './bridge.js';
+import { JINGLES, accFlush, envOdds, jingle, onStepsAdded, postProcess, provide, sfx } from './hooks.js';
 import { rnd } from './util.js';
 import {
   ADJ,
@@ -119,6 +120,7 @@ expose({
   xpFor: [() => xpFor],
 });
 /* eslint-enable no-func-assign */
+provide({ addSteps, makeMon, riderOf });
 /* to-module: end */
 export const esc = s =>
   String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
@@ -130,6 +132,7 @@ export const cleanName = (s, max) =>
     .replace(/[\u0000-\u001f\u007f<>"&`]/g, '')
     .trim()
     .slice(0, max);
+provide({ cleanName }); /* to-module */
 export const fmt = n => Math.floor(n).toLocaleString('en-US');
 export const km = st => (st / STEPS_PER_KM).toFixed(1);
 export let RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -376,6 +379,7 @@ export function stat(m, k) {
   return v;
 }
 export const maxHp = m => stat(m, 'hp');
+provide({ maxHp }); /* to-module */
 function movesAt(lid, lvl) {
   const out = [];
   for (const [lv, mv] of LN[lid].learn) if (lv <= lvl && !out.includes(mv)) out.push(mv);
@@ -587,6 +591,7 @@ export const nextStop = () => (S.route.plan.length ? S.route.plan[0] : null);
    place to place across their edges, like a classic RPG; the steps you take in the game count as steps (encounters,
    challenges, your buddy). 'steps': your real steps carry you along the roads (the game until 0.4). */
 export const walkMode = () => ((typeof RULES !== 'undefined' && RULES.travel) || 'walk') === 'walk';
+provide({ walkMode }); /* to-module */
 const traveling = () => !walkMode() && nextStop() != null && !S.route.hold && !gateMsg();
 /* why travel can't continue right now (null when it can, or when you're staying) */
 export function gateMsg() {

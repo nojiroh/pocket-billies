@@ -8,6 +8,7 @@
    A generator waiting on the worker yields PW_WAIT (diorama.js): the loops that step it stop for the frame. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './bridge.js';
+import { provide } from './hooks.js';
 import { clamp } from './util.js';
 import { hexA, pk, pkh } from './art.js';
 import {
@@ -64,6 +65,7 @@ expose({
   pwWorker: [() => pwWorker, v => (pwWorker = v)],
 });
 /* eslint-enable no-func-assign */
+provide({ pwAll, pwOn, pwPaint, pwSettle });
 /* to-module: end */
 const PW = {
   w: null,
@@ -84,6 +86,7 @@ const PW = {
   waiters: [],
   last: '',
 };
+provide({ PW }); /* to-module */
 const PW_KEEP = 4,
   PW_KINDS = new WeakMap();
 /* the helper's own part: the views it holds, the tile pictures, a queue (nearest square first; one dropped before it

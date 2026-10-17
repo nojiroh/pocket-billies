@@ -2,6 +2,7 @@
 /* ================= POCKET BILLIES STUDIO · world, rules, art ================= */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/bridge.js';
+import { worldPaint } from '../../game/js/hooks.js';
 import { $, clamp } from '../../game/js/util.js';
 import { cnv } from '../../game/js/art.js';
 import { ENV_LIKES } from '../../game/js/env.js';

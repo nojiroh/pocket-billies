@@ -13,6 +13,7 @@
    turns the models off (the pictures stand in as before). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './bridge.js';
+import { dioArtVer, provide } from './hooks.js';
 import { cnv, hexA } from './art.js';
 import { DIO, dioData, dioHash, dioImg } from './diorama.js';
 import { ENG_CTX, eng } from './engine/settings.js';
@@ -61,8 +62,10 @@ expose({
   bldWinLit: [() => bldWinLit, v => (bldWinLit = v)],
 });
 /* eslint-enable no-func-assign */
+provide({ bldFacade, bldGuard, bldLitF, bldMeshFor, bldShadow, bldSigF, bldSmoke, bldWinLit });
 /* to-module: end */
 export const BLD = { mesh: new WeakMap(), fac: new WeakMap(), vao: null };
+provide({ BLD }); /* to-module */
 export const BLD_TEX_NAMES = [
   'Plaster',
   'Siding',
@@ -109,6 +112,7 @@ const bldSig = B =>
     B.base && [B.base.col, B.base.h],
   ].join('|');
 const bldOn = () => !BLD.fail && eng('world', 'buildings3d') !== false;
+provide({ bldOn }); /* to-module */
 /* if this device can't build or draw the models, the pictures stand in from then on (and the debug log says why) */
 export function bldGuard(fn) {
   if (BLD.fail) return;
@@ -218,6 +222,7 @@ void main(){vec3 p=bPosIn;p.y+=curveY(uLift);gl_Position=uVP*vec4(p,1.);}`,
 precision highp float;out vec4 o;void main(){o=vec4(1.);}`,
   ],
 };
+provide({ BLD_SH }); /* to-module */
 /* ---------- the front picture: roof cut away, glass see-through ---------- */
 function bldHexSet(L) {
   return new Set((L || []).map(h => parseInt(h.slice(1, 7), 16)));

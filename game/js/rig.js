@@ -3,6 +3,7 @@
 /* ---- matrices ---- */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './bridge.js';
+import { SP, provide } from './hooks.js';
 import { clamp, rnd } from './util.js';
 import { frameTask, userFps } from './frame.js';
 import { ART, artImg, artLoad, artReady, artURL, cnv } from './art.js';
@@ -34,6 +35,7 @@ expose({
   sprHTML: [() => sprHTML, v => (sprHTML = v)],
 });
 /* eslint-enable no-func-assign */
+provide({ drawRig });
 /* to-module: end */
 const mMul = (m, n) => [
   m[0] * n[0] + m[2] * n[1],

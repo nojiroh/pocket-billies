@@ -9,6 +9,7 @@
    before. Picture layers are drawn by the sprite pipeline (dglItems gives them as extra items). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './bridge.js';
+import { GD, provide } from './hooks.js';
 import { artImg, artURL, hexA } from './art.js';
 import { DIO, dioImg } from './diorama.js';
 import { eng } from './engine/settings.js';
@@ -59,6 +60,7 @@ expose({
   voxelise: [() => voxelise, v => (voxelise = v)],
 });
 /* eslint-enable no-func-assign */
+provide({ voxDraw, voxFlush, voxImageItems, voxPaths, voxShaders, voxShadow, voxTag });
 /* to-module: end */
 export const VOX = { recipes: new Map(), meshes: new Map(), fail: '', drawn: 0, VPM: 32, res: 0, fr: -1, bt: 0 };
 const VOX_TEX = {

@@ -9,6 +9,7 @@
    available (a lost context). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './bridge.js';
+import { FR, flyDraw, flyTick } from './hooks.js';
 import { $, clamp } from './util.js';
 import { FUTURE, LINKS, ROUTE, linkCost, placeSub } from './data.js';
 import { RM, S, U, canEnter, esc, fmt, nextStop, tripTo } from './core.js';

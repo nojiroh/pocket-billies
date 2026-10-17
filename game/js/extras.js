@@ -5,6 +5,7 @@
    first time it's needed. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './bridge.js';
+import { bar, closeModal, modal, provide, roomRefresh } from './hooks.js';
 import { clamp } from './util.js';
 import { COINS, GD, ITEMS, ROUTE, RULES, SP } from './data.js';
 import { B, N, S, U, esc, fmt, save, today } from './core.js';
@@ -59,6 +60,7 @@ expose({
   x28Types: [() => x28Types],
 });
 /* eslint-enable no-func-assign */
+provide({ battleWeatherMult, reqAsker, stampDraw, x28Event });
 /* to-module: end */
 function x28() {
   const X = S.x || (S.x = {});

@@ -5,6 +5,7 @@
    patch along with the stop. Holes are filled from the surrounding terrain. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/bridge.js';
+import { provide } from '../../game/js/hooks.js';
 import { $, $$, clamp } from '../../game/js/util.js';
 import { cnv } from '../../game/js/art.js';
 import { ST, after, ask, card, changed, commit, fmtN, render, toast } from './core.js';
@@ -52,6 +53,7 @@ expose({
   wrapU: [() => wrapU],
 });
 /* eslint-enable no-func-assign */
+provide({ worldPaint });
 /* to-module: end */
 const MP = {
   off: null,

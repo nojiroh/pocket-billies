@@ -5,6 +5,7 @@
    W A S D or the arrow keys walk while the pointer is over the preview. Keys over the preview never reach the map tools. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/bridge.js';
+import { provide } from '../../game/js/hooks.js';
 import { $, $$, clamp } from '../../game/js/util.js';
 import { DGL } from '../../game/js/diorama-gl.js';
 /* eslint-disable no-func-assign */
@@ -19,6 +20,7 @@ expose({
 /* eslint-enable no-func-assign */
 /* to-module: end */
 const VP = { hover: false, big: null };
+provide({ VP }); /* to-module */
 if (typeof dioMount === 'function') {
   const _dm = dioMount;
   dioMount = function (cv, id, o = {}) {

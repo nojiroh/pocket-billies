@@ -8,6 +8,7 @@
    and the game reads either. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/bridge.js';
+import { provide } from '../../game/js/hooks.js';
 import { cnv } from '../../game/js/art.js';
 import { dioImg } from '../../game/js/diorama.js';
 import { VOX_TEXTURES, voxInvalidate, voxRecipe } from '../../game/js/vox.js';
@@ -41,6 +42,7 @@ expose({
   vxeRec: [() => vxeRec, v => (vxeRec = v)],
 });
 /* eslint-enable no-func-assign */
+provide({ pedVoxHTML });
 /* to-module: end */
 const VXE = { sel: null };
 const VXE_KINDS = [

@@ -9,6 +9,7 @@
    money, so your steps stay for walking new ground. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './bridge.js';
+import { closeModal, modal, provide, sceneIdAt, storyFlags } from './hooks.js';
 import { $, clamp } from './util.js';
 import { PLACE, ROUTE, isTown, placeFull } from './data.js';
 import { sceneLite, sceneLoad, scenesAhead } from './scene-files.js';
@@ -34,6 +35,7 @@ expose({
   liftGo: [() => liftGo, v => (liftGo = v)],
 });
 /* eslint-enable no-func-assign */
+provide({ flyDraw, flyTick });
 /* to-module: end */
 export const FLY = { on: false, a: -1, b: -1, t0: 0, dur: 0, lastX: null, dir: 1 };
 /* where the airships go from here: the towns you've been to (and may enter), nearest first */

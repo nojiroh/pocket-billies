@@ -12,6 +12,7 @@
    flat picture. "lathe" turns the outline round, like a pot on a potter's wheel. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './bridge.js';
+import { provide } from './hooks.js';
 import { clamp } from './util.js';
 import { cnv } from './art.js';
 import { DIO, dioHash, dioImg, dioProj } from './diorama.js';
@@ -44,8 +45,10 @@ expose({
   p3dUpload: [() => p3dUpload, v => (p3dUpload = v)],
 });
 /* eslint-enable no-func-assign */
+provide({ p3dLod, p3dShadow, p3dTag });
 /* to-module: end */
 export const P3D = { meshes: new WeakMap(), fail: '', drawn: 0 };
+provide({ P3D }); /* to-module */
 /* by prop group (or key): the kind of body and its depth at scale 1, in metres */
 export const P3D_AUTO = {
   crate: ['block', 0.9],
@@ -188,6 +191,7 @@ export const P3D_PARTS = {
     { r: [10, 72, 71, 100], k: 'lathe', open: 1 },
   ],
 };
+provide({ P3D_PARTS }); /* to-module */
 /* what body a prop gets: {key, parts (depths in picture pixels at scale 1)} or null for a flat picture */
 function p3dSpec(k, M, PPU) {
   if (!M) return null;
@@ -1074,6 +1078,7 @@ void main(){vec3 n;vec3 p=p3dPos(n);vUV=qUV;vId=qId;gl_Position=uVP*vec4(p,1.);}
 precision highp float;in vec2 vUV;in float vId;uniform sampler2D uTex;uniform float uClump;out vec4 o;void main(){vec4 c=textureLod(uTex,vUV,0.);if(c.a<.5)discard;if(uClump>.5){float id=floor(c.a*255.+.5)-128.;if(vId<-.5){if(id<.5)discard;}else if(abs(id-vId)>.5)discard;}o=vec4(1.);}`,
   ],
 };
+provide({ P3D_SH }); /* to-module */
 function p3dGuard(fn) {
   if (P3D.fail) return;
   try {

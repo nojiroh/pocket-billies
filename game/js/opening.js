@@ -11,6 +11,7 @@
    Skip ends the fall at once; without the fall, the step-by-step intro tells it in words. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './bridge.js';
+import { openingDone, provide } from './hooks.js';
 import { $, clamp } from './util.js';
 import { MOVES, SP, START_NODE, eff } from './data.js';
 import { B, RM, esc, maxHp } from './core.js';
@@ -57,8 +58,10 @@ expose({
   tutorTypesTip: [() => tutorTypesTip, v => (tutorTypesTip = v)],
 });
 /* eslint-enable no-func-assign */
+provide({ battleTipHide, battleTutor, fallPlay, landBurst, landFrame });
 /* to-module: end */
 const FALL = { cv: null, x: null, raf: 0, run: 0, W: 0, H: 0 };
+provide({ FALL }); /* to-module */
 const fallRnd = (a, b) => {
   let h = (a * 374761393 + b * 668265263) ^ 0x5bd1e995;
   h = Math.imul(h ^ (h >>> 13), 1274126177);
@@ -764,6 +767,7 @@ async function fallPlay(run) {
 
 /* ---- 4. the landing: dust, and the papers that fell with you, settling round you (drawn by csFrame) ---- */
 const LAND = { bits: [] };
+provide({ LAND }); /* to-module */
 function landBurst(x, z) {
   if (typeof DIO === 'undefined' || !DIO.parts) return;
   for (let i = 0; i < 30; i++) {

@@ -9,6 +9,7 @@
      it needs to do anything, which dials only matter when it is on, and when the game's automatic quality turns it off */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/bridge.js';
+import { provide } from '../../game/js/hooks.js';
 import { $ } from '../../game/js/util.js';
 import { ENGINE_DEFAULTS, ENGINE_PRESETS, ENGINE_SPEC } from '../../game/js/engine/settings.js';
 import { ACTS, ST, go, spName } from './core.js';
@@ -39,6 +40,7 @@ expose({
   lnkWalk: [() => lnkWalk, v => (lnkWalk = v)],
 });
 /* eslint-enable no-func-assign */
+provide({ linkNote });
 /* to-module: end */
 const LNK = { open: false, field: '' };
 /* engine dials that need another one to be on; and the quality step (or device) that turns them off */

@@ -16,6 +16,7 @@
    trees and flowers come from a seed (the link's index), never stored. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './bridge.js';
+import { provide, sceneExits, sceneIdAt } from './hooks.js';
 import { clamp } from './util.js';
 import { ADJ, LINKS, ROUTE } from './data.js';
 import { U } from './core.js';
@@ -113,8 +114,10 @@ expose({
   wrViewFor: [() => wrViewFor, v => (wrViewFor = v)],
 });
 /* eslint-enable no-func-assign */
+provide({ wrLookTick, wrNear, wrSceneById });
 /* to-module: end */
 export const WORLD = { cache: new Map(), max: 5, gen: 0, LW: 40, MID: 64, BAND: 12, on: true };
+provide({ WORLD }); /* to-module */
 export const wrOn = () => WORLD.on && !(typeof eng === 'function' && eng('world', 'seamless') === false);
 function wrRoadLen(steps) {
   return Math.max(24, Math.round((40 * steps) / 500));

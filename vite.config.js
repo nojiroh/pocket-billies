@@ -85,7 +85,7 @@ function copySite() {
       for (const p of SITE) cpSync(resolve(ROOT, p), resolve(outDir, p), { recursive: true });
       rmSync(resolve(outDir, 'assets'), { recursive: true, force: true });
       buildData(resolve(outDir, 'game', 'data'));
-      const sources = new Set(['game/js/bridge.js']);
+      const sources = new Set(['game/js/bridge.js', 'game/js/hooks.js']);
       for (const page of PAGES) for (const f of await bundlePage(outDir, page)) sources.add(f);
       for (const f of sources) rmSync(resolve(outDir, f));
       // the folder the engine's modules came from, now empty

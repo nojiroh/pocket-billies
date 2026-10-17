@@ -2,6 +2,7 @@
 /* ================= UI ================= */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './bridge.js';
+import { provide } from './hooks.js';
 import { $, $$, clamp, rnd } from './util.js';
 import {
   ADJ,
@@ -290,9 +291,26 @@ expose({
   xpPart: [() => xpPart],
 });
 /* eslint-enable no-func-assign */
+provide({
+  bar,
+  closeModal,
+  evoRun,
+  modal,
+  paintMapCard,
+  postProcess,
+  roomRefresh,
+  sceneExits,
+  sceneIdAt,
+  settings,
+  startGame,
+  updateNav,
+  walkOff,
+});
 /* to-module: end */
 const chip = t => `<span class="chip" style="--tc:${TC[t][0]};--tf:${TC[t][1]}">${t === 'None' ? 'Normal' : t}</span>`;
+provide({ chip }); /* to-module */
 const stBadge = st => (st ? `<span class="stb st-${st}">${STATUSN[st]}</span>` : '');
+provide({ stBadge }); /* to-module */
 function bar(p, cls = '') {
   return `<div class="pbar ${cls}"><i style="width:${clamp(p, 0, 1) * 100}%"></i></div>`;
 }
@@ -990,6 +1008,7 @@ const ROOM_KIND = {
   ski_lodge: 'int_ski_lodge',
   market_hall: 'int_market_hall',
 };
+provide({ ROOM_KIND }); /* to-module */
 function roomFor(a, p) {
   if ((S.preferences || {}).rooms === 'quick' && a !== 'home') return null;
   if (a !== 'home' && p) {
@@ -3049,6 +3068,7 @@ document.addEventListener(
 
 /* ---------- animated pixel sky behind the app ---------- */
 const BG = { cv: null, x: null, last: 0, w: 160, h: 300, dark: null, base: null, isl: [], cl: [], sp: [] };
+provide({ BG }); /* to-module */
 const isDark = () => {
   const t = document.documentElement.dataset.theme;
   return t === 'dark' || (t !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches);

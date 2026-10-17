@@ -6,6 +6,7 @@
    a small stamp shows in the corner for a moment. S.cards keeps them: {town id: the day you got it}. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './bridge.js';
+import { STEST, STORY, sceneIdAt, storyFlags } from './hooks.js';
 import { ROUTE, TRAINERS, isTown, trainersAt } from './data.js';
 import { B, S, U, esc, save } from './core.js';
 import { artURL } from './art.js';

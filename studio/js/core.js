@@ -3,6 +3,7 @@
    State, server calls, undo, form fields bound to paths in the game data, navigation, toasts and dialogs. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/bridge.js';
+import { mountPreviews, provide, runCheck, scheduleCheck, spriteCacheClear } from '../../game/js/hooks.js';
 import { $, $$ } from '../../game/js/util.js';
 import { ICON_ATLAS, artLoad } from '../../game/js/art.js';
 import { scStop } from '../../game/js/scene.js';
@@ -83,6 +84,7 @@ export const ST = {
   hooks: {},
   after: [],
 };
+provide({ ST }); /* to-module */
 const KEY = window.STUDIO_KEY;
 export async function api(path, opt = {}) {
   const r = await fetch('/api/' + path, { ...opt, headers: { 'X-Studio-Key': KEY, ...(opt.headers || {}) } });

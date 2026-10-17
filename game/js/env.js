@@ -9,6 +9,7 @@
    The renderer reads ENV through envFrame() once a frame; nothing here touches WebGL. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './bridge.js';
+import { RULES, SP, provide, sceneIdAt } from './hooks.js';
 import { clamp } from './util.js';
 import { hexA } from './art.js';
 import { DIO, dioScene } from './diorama.js';
@@ -51,6 +52,7 @@ expose({
   envWinLit: [() => envWinLit, v => (envWinLit = v)],
 });
 /* eslint-enable no-func-assign */
+provide({ envHere, envOdds, envSeason, envState, envSun });
 /* to-module: end */
 export const ENV = {
   on: false,
@@ -76,6 +78,7 @@ export const ENV = {
   lampK: 0,
   t: 0,
 };
+provide({ ENV }); /* to-module */
 const ENV_SEASONS = [
   'winter',
   'winter',
@@ -466,6 +469,7 @@ const ENV_MOD = {
   world: { groundShine: v => v * (1 + ENV.wet * 1.6) },
   water: { ripples: v => v * (1 + ENV.rain * 0.7 + ENV.storm * 0.8) },
 };
+provide({ ENV_MOD }); /* to-module */
 /* the light of the moment: a low warm sun at dusk, the moon at night */
 function envSun(a, h, col) {
   const day = 1 - ENV.night,

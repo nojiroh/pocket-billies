@@ -8,6 +8,59 @@
    Same scenes, walking and taps as js/diorama.js (scene data, paths, the player); this file draws them. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './bridge.js';
+import {
+  BLD,
+  BLD_SH,
+  GD,
+  LD,
+  LIFE,
+  LIFE_KIND,
+  OWM,
+  P3D,
+  P3D_PARTS,
+  P3D_SH,
+  SP,
+  WORLD_ART,
+  bldFacade,
+  bldGuard,
+  bldLitF,
+  bldMeshFor,
+  bldOn,
+  bldShadow,
+  bldSmoke,
+  bldWinLit,
+  clueDraw,
+  frWorldItems,
+  lifeSprites,
+  noWebGL,
+  owBuddyItems,
+  owEncItem,
+  owFx,
+  owItem,
+  owLabels,
+  owPetItems,
+  owWarm,
+  p3dLod,
+  p3dShadow,
+  p3dTag,
+  provide,
+  pwAll,
+  pwOn,
+  pwPaint,
+  reqAsker,
+  riderOf,
+  sfxAt,
+  stampDraw,
+  strDraw,
+  strShadow,
+  voxDraw,
+  voxFlush,
+  voxImageItems,
+  voxShaders,
+  voxShadow,
+  voxTag,
+  wrLookTick,
+} from './hooks.js';
 import { clamp } from './util.js';
 import { FRAME, frameCount, frameTask, userFps } from './frame.js';
 import { cnv, hexA } from './art.js';
@@ -302,6 +355,7 @@ expose({
   eglRestored: [() => eglRestored, v => (eglRestored = v)],
 });
 /* eslint-enable no-func-assign */
+provide({ dglBudget, dglRebuild, dglWallDefault, dioGroundH, dioH, dioHRaw, eglRestored });
 /* to-module: end */
 export const DGL = {
   on: false,
@@ -330,6 +384,7 @@ export const DGL = {
   fail: 0,
   lost: 0,
 };
+provide({ DGL }); /* to-module */
 /* v46: how long a frame may spend getting the next view ready (ms) */
 const DGL_PREP_MS = /Android|iPhone|iPad/.test(navigator.userAgent) ? 4 : 6;
 const DGL_PAD = DIO_PAD,
@@ -2804,6 +2859,7 @@ export const DGL_TERRAIN_MAT = {
   9: [0.35, 0.5, 1],
   0: [0.4, 0.3, 1],
 };
+provide({ DGL_TERRAIN_MAT }); /* to-module */
 /* the tilt one ground pixel gets from the brightness around it */
 function dglNrm(gx, gy, m) {
   if (m[2]) {
@@ -4154,6 +4210,7 @@ export function dglVaryOf(k, M) {
 /* v32: a stump or log here and there is drawn with its mossy twin (same size and footprint), so a wood isn't a row of
    copies. Prop variety at 0, "Exactly as drawn" on the prop, or alt:0 on it keeps the picture as placed. */
 const DGL_ALT = { stump: ['stump_mossy'], log: ['log_mossy'] };
+provide({ DGL_ALT }); /* to-module */
 function dglAltImg(p, M, C0, sc) {
   const L = DGL_ALT[p.k];
   if (!L || p.v || p.plain || p.alt === 0 || !((eng('world', 'variety') ?? 1) > 0) || (sc && sc.variety === 0))

@@ -4,6 +4,7 @@
    Tap a place to see it; travel there, stay, stop or turn back from the card. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './bridge.js';
+import { flyDraw, flyTick, paintMapCard, provide } from './hooks.js';
 import { $, clamp } from './util.js';
 import { FUTURE, LINKS, ROUTE, linkCost } from './data.js';
 import { RM, S, U, canEnter, esc, nextStop } from './core.js';
@@ -52,6 +53,7 @@ expose({
   v3: [() => v3],
 });
 /* eslint-enable no-func-assign */
+provide({ onStepsAdded });
 /* to-module: end */
 export let MW = 176,
   MH = 232;
@@ -127,6 +129,7 @@ export function mePos() {
 }
 /* the inner surface of the world, read from art/map/world.png */
 export const WORLD_ART = 'map/world.png';
+provide({ WORLD_ART }); /* to-module */
 let WTEX = null;
 export function mapPrepare() {
   return WTEX

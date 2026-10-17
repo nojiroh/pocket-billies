@@ -8,6 +8,7 @@
    or when the player picks it in Settings. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './bridge.js';
+import { FV, provide } from './hooks.js';
 import { $, clamp } from './util.js';
 import { hexA } from './art.js';
 import { ACT, FOC, POS, SC, UPP, partSpr, sideBuf, sideWorld, trainerBattleFrame, trainerMpp } from './scene.js';
@@ -25,6 +26,7 @@ expose({
   battleGLWanted: [() => battleGLWanted, v => (battleGLWanted = v)],
 });
 /* eslint-enable no-func-assign */
+provide({ battleGLLayout, battleGLStart, battleGLStop });
 /* to-module: end */
 export const BGL = { on: false, off: [0, 0], gy: 0, hide: null, items: [], lights: [] };
 export function battleGLWanted() {

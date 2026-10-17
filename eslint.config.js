@@ -127,7 +127,7 @@ export default [
     rules: bugRules,
   })),
   {
-    files: ['game/js/bridge.js'],
+    files: ['game/js/bridge.js', 'game/js/hooks.js'],
     languageOptions: { ecmaVersion: 'latest', sourceType: 'module', globals: globals.browser },
     rules: bugRules,
   },

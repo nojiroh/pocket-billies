@@ -5,6 +5,7 @@
    Front and back views have their own skeletons and sheets; the Gold-Plated sheets share the same layout. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/bridge.js';
+import { provide } from '../../game/js/hooks.js';
 import { $, $$, clamp } from '../../game/js/util.js';
 import { cnv, hexA, shadeHex } from '../../game/js/art.js';
 import { ANIM } from '../../game/js/anim.js';
@@ -71,6 +72,7 @@ expose({
   uniqBone: [() => uniqBone],
 });
 /* eslint-enable no-func-assign */
+provide({ makeBlankBody, openSkeleton, skNeutral });
 /* to-module: end */
 const SK = {
   sp: null,
@@ -105,6 +107,7 @@ const PLAN_INFO = {
   blob: 'A wobbling body with small arms',
   shell: 'A shell with a soft body and little legs',
 };
+provide({ PLAN_INFO }); /* to-module */
 const Q_FIELDS = {
   bird: [
     ['per', 'Wing beat (ms)', 60, 900, 10],
@@ -1371,6 +1374,7 @@ const BODY_TPL = {
     ],
   },
 };
+provide({ BODY_TPL }); /* to-module */
 function blobPart(w, h, col, face, back) {
   const c = cnv(w, h),
     x = c.getContext('2d'),

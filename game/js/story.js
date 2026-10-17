@@ -6,6 +6,7 @@
    battle. S.story remembers which scenes you have seen. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './bridge.js';
+import { STEST, closeModal, modal, postProcess, provide } from './hooks.js';
 import { $, clamp } from './util.js';
 import { PLACE, RULES, SP, TRAINERS, trainersAt } from './data.js';
 import { B, RM, S, U, esc, healAll, save, today } from './core.js';
@@ -40,6 +41,7 @@ expose({
   trainerTalk: [() => trainerTalk, v => (trainerTalk = v)],
 });
 /* eslint-enable no-func-assign */
+provide({ blakeHello, openingDone, storyAfterRival, storyAfterWin, storyFlags });
 /* to-module: end */
 export function storyFlags() {
   return S.story || (S.story = {});
@@ -236,6 +238,7 @@ export function legendCheck() {
   }, 1200);
 }
 const STORY = { pending: null };
+provide({ STORY }); /* to-module */
 /* alpha 0.4: someone who only talks (scene.people: Granny Juniper): what they say the first time, then a line or two */
 export async function personTalk(P) {
   if (!P || TALK.on || (typeof CS !== 'undefined' && CS.on)) return;

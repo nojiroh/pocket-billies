@@ -7,6 +7,7 @@
    Settings → Music and Sound effects set the volumes (0 mutes). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './bridge.js';
+import { CS, provide, sceneIdAt } from './hooks.js';
 import { clamp } from './util.js';
 import { ROUTE } from './data.js';
 import { B, S, U } from './core.js';
@@ -57,6 +58,7 @@ expose({
   sfxBattle: [() => sfxBattle, v => (sfxBattle = v)],
 });
 /* eslint-enable no-func-assign */
+provide({ ambApply, audApply, audTest, jingle, sfx, sfxAt, sfxBattle });
 /* to-module: end */
 const AUD = {
   ctx: null,
@@ -827,6 +829,7 @@ export const JINGLES = {
     [84, 4],
   ],
 };
+provide({ JINGLES }); /* to-module */
 /* ---------- sound effects ---------- */
 export function sfx(name, o = {}) {
   if (!AUD.ctx || AUD.ctx.state !== 'running') return;

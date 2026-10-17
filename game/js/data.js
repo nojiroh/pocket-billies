@@ -5,6 +5,7 @@
    The rest of the game reads these globals, so the file format can change without touching game code. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './bridge.js';
+import { makeMon, provide } from './hooks.js';
 /* eslint-disable no-func-assign */
 expose({
   ADJ: [() => ADJ],
@@ -64,6 +65,7 @@ expose({
 /* eslint-enable no-func-assign */
 /* to-module: end */
 export const GD = window.GAMEDATA;
+provide({ GD }); /* to-module */
 if (!GD)
   throw new Error(
     'The game data did not load: data/gamedata.js is missing and the data files in data/ could not be read (npm run check:data says what is wrong).'
@@ -74,6 +76,7 @@ const warnData = m => {
   console.warn('[gamedata] ' + m);
 };
 export const RULES = GD.rules;
+provide({ RULES }); /* to-module */
 /* ---------- types ---------- */
 export const TYPES = GD.types.map(t => t.id);
 export const TC = Object.fromEntries(GD.types.map(t => [t.id, [t.color, t.text || '#fff']]));
@@ -116,6 +119,7 @@ export const LINES = GD.lines;
 export const LN = Object.fromEntries(LINES.map(l => [l.id, l]));
 export const SP = {},
   DEX = [];
+provide({ SP }); /* to-module */
 const TOT = Object.fromEntries(Object.entries(GD.rarities).map(([k, v]) => [k, v.totals]));
 const pickI = (a, i) => a[Math.min(i, a.length - 1)];
 LINES.forEach(L => {
@@ -264,6 +268,7 @@ export const EGG_TIERS = Object.keys(EGGS)
   .map(Number)
   .sort((a, b) => a - b);
 export const COINS = GD.coins;
+provide({ COINS }); /* to-module */
 export const ITEMS = GD.items;
 export const JOBS = GD.jobs;
 export const JOB_STEPS = RULES.jobs.stepsPerPay;

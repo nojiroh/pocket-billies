@@ -6,6 +6,7 @@
    Without the 3D scene the title stands on the painted landscape instead. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './bridge.js';
+import { NW_TEST, accChipHTML, closeModal, modal, postProcess, sceneIdAt, settings } from './hooks.js';
 import { $, clamp } from './util.js';
 import { ROUTE, START_NODE } from './data.js';
 import { RM, U, esc, flush, freshKeep, lsSet } from './core.js';

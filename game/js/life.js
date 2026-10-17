@@ -10,6 +10,7 @@
    pigeon, frames 2-3), shore (lives at the water's edge), side (walks sideways). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './bridge.js';
+import { provide, sfxAt } from './hooks.js';
 import { clamp } from './util.js';
 import { cnv } from './art.js';
 import { DIO, dioData, dioFree, dioHash, dioImg, dioOk, dioPoly, dioPolyAt, dioStepOK } from './diorama.js';
@@ -33,8 +34,10 @@ expose({
   lifeTarget: [() => lifeTarget, v => (lifeTarget = v)],
 });
 /* eslint-enable no-func-assign */
+provide({ lifePaths, lifeSprites });
 /* to-module: end */
 const LIFE = { id: null, key: '', list: [], cut: new Map() };
+provide({ LIFE }); /* to-module */
 const LIFE_KIND = {
   duck: { s: 0.62, speed: 0.35, sh: 0.22 },
   pigeon: { s: 0.62, speed: 0.7, sh: 0.16 },
@@ -56,6 +59,7 @@ const LIFE_KIND = {
     flee: 2.6,
   },
 };
+provide({ LIFE_KIND }); /* to-module */
 const LIFE_FRAMES = k => {
   const m = lifeMeta(k);
   return m ? m.frames || 1 : 1;

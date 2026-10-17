@@ -9,6 +9,19 @@
    If the cutscene can't run or stops, the older step-by-step intro in ui.js runs instead. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './bridge.js';
+import {
+  FALL,
+  LAND,
+  blakeHello,
+  chip,
+  fallPlay,
+  landBurst,
+  landFrame,
+  provide,
+  sceneIdAt,
+  startGame,
+  updateNav,
+} from './hooks.js';
 import { $, clamp } from './util.js';
 import { ROUTE, RULES, SP, START_NODE, TRAINERS, TYPES, eff, placeFull } from './data.js';
 import { RM, U, esc } from './core.js';
@@ -87,6 +100,7 @@ export const CS = {
   center: [10.1, 12.3],
   ui: null,
 };
+provide({ CS }); /* to-module */
 const CS_SPOT = {
   door: [7.4, 15.4],
   hazel: [9.3, 13.25],

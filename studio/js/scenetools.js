@@ -10,6 +10,7 @@
    Hooks: scenes.js calls scxDown / scxMove / scxUp from the map's pointer events and scxDraw after drawing. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/bridge.js';
+import { VP, provide } from '../../game/js/hooks.js';
 import { $ } from '../../game/js/util.js';
 import { DIO } from '../../game/js/diorama.js';
 import { ACTS, ST, ask, changed, clone, commit, dialog, render, toast, uidKey } from './core.js';
@@ -39,6 +40,7 @@ expose({
   scxUp: [() => scxUp, v => (scxUp = v)],
 });
 /* eslint-enable no-func-assign */
+provide({ scxBlocksBar, scxDown, scxDraw, scxHint, scxMove, scxMultiCard, scxScatterBar, scxTools, scxUp });
 /* to-module: end */
 SCN.multi = SCN.multi || new Set();
 SCN.scat = SCN.scat || { dens: 0.5, mix: true, vary: 0.18 };
