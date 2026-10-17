@@ -11,6 +11,52 @@ Newest entry on top. Every phase session ends by adding an entry here and taggin
 - Questions waiting for the owner: 
 - Next session starts with: 
 
+### Phase 04b - Modernize: data split - 2026-10-17
+Owner's choices: layout A, the build makes the start file and Pages deploys it from Actions, lazy maps this session,
+delete the one-off scripts.
+- Changed:
+  - The game data is 257 JSON files in game/data: index.json (the order of everything), a file per map (scenes/, 91),
+    Billie line (lines/, 58), trainer (trainers/, 48) and person (people/, 34), one file per other section. Same data,
+    same order (checked when splitting). Layout and format in game/js/data-files.js, shared by the build, the game and
+    the Studio: one-space JSON, lists of numbers and short values on one line (7.7 MB instead of 11.9 MB).
+  - gamedata.js is generated (tools/build-data.mjs, `npm run data`; dev, build and check-quick make it) and not in git.
+    Without it (the repository served as it is) js/data-fallback.js reads the files one by one and says so in the log.
+  - Lazy maps: gamedata.js has every map except rooms without its ground and props (`_lite` lists what it uses).
+    js/scene-files.js fetches data/scenes/<id>.json when needed: the maps two roads round you at start, the rest in the
+    background after the loader, two roads ahead wherever you go. dioPrepare waits for a view's maps; the airship and
+    the glass lift wait for the destination's; the full test waits for all of them.
+  - world.js wrAdj looks only at its own place's seams (it worked out every link's; same result, checked for all 49).
+  - Studio on GitHub reads the files (262 requests) and a proposal sends only changed files (deletes removed ones).
+  - Bug found and fixed: every Studio save dropped the terrain `_` (the greenhouse floor), because the save strips
+    keys starting with `_`. A key that is only `_` is kept now.
+  - Schemas (game/data/schema) and tools/check-data.mjs (`npm run check:data`, CI lint job): files listed, layout,
+    schemas (Ajv 8.17.1), references, map sizes.
+  - Python tools: tools/gamedata.py load()/save() (save goes through tools/write-data.mjs, same format as the Studio);
+    every build and fix script ported. Deleted only room-floors-v47, join-places and build-gallery: the other "one-off"
+    scripts draw art or are imported by other scripts or check-quick (my count of ~32 in the plan was wrong).
+  - .github/workflows/pages.yml deploys dist/ from main.
+- Risky or unfinished:
+  - Pages: until Settings → Pages → Source is "GitHub Actions", Pages serves the repository: no gamedata.js, so the
+    game uses the slow fallback (one request per file, a 404 in the console), and the Pages workflow fails on main.
+  - Studio local mode: start-studio.py (not in the repo) still reads and writes the single gamedata.js.
+  - Lazy maps change load timing: code that reads a far map's ground synchronously sees a lite map until it loads
+    (the world map's miniatures fill in when it does). Rare on a phone; the full quick check has not run on it.
+  - build-test-scenes.py is out of date with the data (it would drop the gallery and test_windows scenes).
+  - A pre-existing order-dependent failure: "walk the world yourself" fails with "no D-pad when the D-pad is chosen"
+    after the earlier desktop steps, on the base commit too; it passes alone.
+- Verified: smoke 14/14 after each stage (131-134 s); targeted full steps (Paths, Walking, Time/weather/rooms, Things
+  to do, v43, alpha 0.2 terraces and seams, airship, lamps) all pass except the D-pad one above; in-game diagnostics
+  test passed (12/12, no errors); Studio GitHub mode against a stand-in for the API (load, propose, delete); fallback
+  boots; lint, format, build, check:data clean. Phone load, emulated (CPU ×4, gzip), original → now: data before start
+  1006 KB → 191 KB; scripts done 3.0 s → 1.75 s on 4G, 10.6 s → 5.1 s on slow 4G; loader done 52 s → 33 s (slow 4G).
+- Decisions I made (and why): rooms stay whole in the start file (laid into a place's view at once); the touched/stale
+  rule rebuilds views only when a map was used before its file came (no hitches in the normal case); Python saves go
+  through Node so there is one formatter.
+- Questions waiting for the owner: switch Pages to GitHub Actions; keep or drop Studio local mode (start-studio.py);
+  tags phase-03-done, legacy-final, phase-01-done, phase-02-done still not pushed.
+- Next session starts with: 04c (ES modules). Ask the module conversion order first. Run the full quick check and the
+  in-game full test on the phone once.
+
 ### Phase 04a - Modernize: tooling - 2026-10-16
 Phase 04 is split into four sessions (04a tooling, 04b data split, 04c ES modules, 04d TypeScript and boundaries);
 `phase-04-done` is tagged after 04d. Started without `phase-03-done` on the owner's go-ahead ("Start 04a").
