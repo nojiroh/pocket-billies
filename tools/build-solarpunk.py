@@ -23,6 +23,7 @@ Pictures are written only where missing (--force writes them again). What this t
     python3 tools/build-solarpunk.py --dry      # say what it would place
     python3 tools/build-solarpunk.py --sheet out.png
 """
+import gamedata  # phase 04b: the data files in game/data
 import os, sys, json, math, random, importlib.util
 from PIL import Image
 
@@ -279,12 +280,12 @@ def p_light_pipe(rng):
 
 # ============================================================================= the catalogue
 def load():
-    src = open(DATA, encoding='utf-8').read(); i = src.index('window.GAMEDATA=')
+    src = gamedata.js_text(); i = src.index('window.GAMEDATA=')
     return src[:i], json.JSONDecoder().raw_decode(src[i + len('window.GAMEDATA='):])[0]
 
 
 def save(head, D):
-    open(DATA, 'w', encoding='utf-8').write(head + 'window.GAMEDATA=' + json.dumps(D, ensure_ascii=False, indent=1) + ';\n')
+    gamedata.save_js(head + 'window.GAMEDATA=' + json.dumps(D, ensure_ascii=False, indent=1) + ';\n')
 
 
 def pictures(D, force=False, keys=None):

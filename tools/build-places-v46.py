@@ -21,6 +21,7 @@ fountain in Sundown, the look of each place (sky, haze, music, weather, folk, wh
     python3 tools/build-places-v46.py --dry         # build and report, write nothing
     python3 tools/build-places-v46.py --map out/    # also draw a top-down map of each place
 """
+import gamedata  # phase 04b: the data files in game/data
 import copy, importlib.util, json, math, random, sys
 from pathlib import Path
 
@@ -47,12 +48,12 @@ ROUTE_SIZE = (112, 64)
 
 
 def load():
-    src = DATA.read_text(encoding='utf-8'); i = src.index('window.GAMEDATA=')
+    src = gamedata.js_text(); i = src.index('window.GAMEDATA=')
     return src[:i], json.JSONDecoder().raw_decode(src[i + len('window.GAMEDATA='):])[0]
 
 
 def save(head, D):
-    DATA.write_text(head + 'window.GAMEDATA=' + json.dumps(D, ensure_ascii=False, indent=1) + ';\n', encoding='utf-8')
+    gamedata.save_js(head + 'window.GAMEDATA=' + json.dumps(D, ensure_ascii=False, indent=1) + ';\n')
 
 
 def seg_d(px, pz, a, b): return B.seg_dist(px, pz, a, b)

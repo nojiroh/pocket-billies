@@ -17,7 +17,9 @@ def free(terrains, n=1):
 if __name__ == '__main__':
     import json, sys
     from pathlib import Path
-    src = (Path(__file__).resolve().parent.parent / 'game' / 'data' / 'gamedata.js').read_text(encoding='utf-8')
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    import gamedata  # phase 04b: the data files in game/data
+    src = gamedata.js_text()
     D, _ = json.JSONDecoder().raw_decode(src, src.index('window.GAMEDATA=') + len('window.GAMEDATA='))
     T = D['scenery']['terrains']
     print(f'{len(T)} ground kinds use {len(T)} of {len(KEYS)} keys; next free: {"".join(free(T, 8))}')

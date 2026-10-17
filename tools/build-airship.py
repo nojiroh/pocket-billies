@@ -23,6 +23,7 @@ and points the catalogue's airship_mast at the model.
     python3 tools/build-airship.py --force    # all of it again
     python3 tools/build-airship.py --views out.png   # the model from a few sides, for checking
 """
+import gamedata  # phase 04b: the data files in game/data
 import json, math, os, sys, base64, struct, random, importlib.util
 from PIL import Image
 
@@ -649,7 +650,7 @@ def main():
                 if c is not None: q[x, y] = tuple(c[:3]) + (255,)
         mi = mi.crop(mi.getbbox()); mi.save(ms); done.append(f'map/airship.png ({mi.width}x{mi.height})')
     # the catalogue: the prop draws as the model; its picture's foot and the beacon's glow from the picture
-    src = open(DATA, encoding='utf-8').read(); i = src.index('window.GAMEDATA=')
+    src = gamedata.js_text(); i = src.index('window.GAMEDATA=')
     D = json.JSONDecoder().raw_decode(src[i + len('window.GAMEDATA='):])[0]
     BA = D['scenery'].setdefault('buildArt', {'detail': 'scene/build/detail.png', 'rooms': 'scene/build/rooms.png'})
     if BA.get('detail') in (ATLAS_FROM, 'scene/build/detail.png'): BA['detail'] = ATLAS_REL
@@ -698,7 +699,7 @@ def main():
                     if m.get('f'): s['f'] = m['f']
                     P.append(s); n += 1
         if n: done.append(f'{n} airships moored at their masts')
-    open(DATA, 'w', encoding='utf-8').write(src[:i] + 'window.GAMEDATA=' + json.dumps(D, ensure_ascii=False, indent=1) + ';\n')
+    gamedata.save_js(src[:i] + 'window.GAMEDATA=' + json.dumps(D, ensure_ascii=False, indent=1) + ';\n')
     print('\n'.join(done) or 'nothing missing'); print('catalogue: airship_mast draws as', MODEL_REL)
 
 

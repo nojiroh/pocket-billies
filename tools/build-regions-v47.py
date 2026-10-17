@@ -32,6 +32,7 @@ as it is unless you pass --force (which rebuilds this tool's own places and rewr
     python3 tools/build-regions-v47.py --map out/         # also draw a top-down map of each new place
     python3 tools/build-regions-v47.py --force            # rebuild this tool's places and rewrite its entries
 """
+import gamedata  # phase 04b: the data files in game/data
 import copy, importlib.util, json, math, random, sys
 from pathlib import Path
 
@@ -615,12 +616,12 @@ REGIONS = {'meadowlands': MEADOWLANDS, 'goldenhills': GOLDEN_HILLS, 'sporeforest
 
 # ================================================================================================ helpers
 def load():
-    src = BP.DATA.read_text(encoding='utf-8'); i = src.index('window.GAMEDATA=')
+    src = gamedata.js_text(); i = src.index('window.GAMEDATA=')
     return src[:i], json.JSONDecoder().raw_decode(src[i + len('window.GAMEDATA='):])[0]
 
 
 def save(head, D):
-    BP.DATA.write_text(head + 'window.GAMEDATA=' + json.dumps(D, ensure_ascii=False, indent=1) + ';\n', encoding='utf-8')
+    gamedata.save_js(head + 'window.GAMEDATA=' + json.dumps(D, ensure_ascii=False, indent=1) + ';\n')
 
 
 def node_index(D, nid):

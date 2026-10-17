@@ -10,6 +10,7 @@ can import a MagicaVoxel .vox as a raw layer. A recipe that exists on disk is ke
     python3 tools/build-vox-props.py                      # write the missing recipes, point the catalogue at them
     python3 tools/build-vox-props.py --sheet validation/v43-vox.png   # isometric previews
     python3 tools/build-vox-props.py --force"""
+import gamedata  # phase 04b: the data files in game/data
 import os, sys, json, math, random, importlib.util
 from PIL import Image, ImageDraw
 HERE = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.dirname(HERE)
@@ -359,7 +360,7 @@ def main():
         path = os.path.join(OUT, key + '.json')
         if os.path.exists(path) and not force: continue
         v = Vox(); P_['fn'](v); json.dump(dict(vpm=VPM, layers=v.L), open(path, 'w'), separators=(',', ':')); made.append(key)
-    P = json.load(open(META)); src = open(DATA, encoding='utf-8').read(); i = src.index('window.GAMEDATA='); head = src[:i]; D = json.JSONDecoder().raw_decode(src[i + len('window.GAMEDATA='):])[0]
+    P = json.load(open(META)); src = gamedata.js_text(); i = src.index('window.GAMEDATA='); head = src[:i]; D = json.JSONDecoder().raw_decode(src[i + len('window.GAMEDATA='):])[0]
     cat = D['scenery']['props']; n = 0
     # these keep their pictures in the game (water effects, wood grain and characters read better painted); their recipes stay for the Studio to start from
     # the street lights keep their pictures too (the painted lamps are the town's look)
@@ -373,7 +374,7 @@ def main():
             if key not in T: continue
             if key in SKIP: T[key].pop('vox', None); T[key].pop('voxV', None)
             else: T[key]['vox'] = 'scene/vox/%s.json' % key; n += 1
-    bsp.write_json(META, P); open(DATA, 'w', encoding='utf-8').write(head + 'window.GAMEDATA=' + json.dumps(D, ensure_ascii=False, indent=1) + ';\n')
+    bsp.write_json(META, P); gamedata.save_js(head + 'window.GAMEDATA=' + json.dumps(D, ensure_ascii=False, indent=1) + ';\n')
     print('%d voxel recipes; written now: %s; %d catalogue entries point at a recipe' % (len(PROPS), ', '.join(made) or 'none (all there)', n // 2))
     if sp:
         keys = list(PROPS); imgs = [iso_preview(voxelise(json.load(open(os.path.join(OUT, k + '.json')))['layers'])) for k in keys]; cols = 10; cw = max(i.width for i in imgs) + 8; ch = max(i.height for i in imgs) + 18

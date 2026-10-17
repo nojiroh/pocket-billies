@@ -18,6 +18,7 @@ Rules: their rings, the line between them and the view from the camera to each s
 edges; trees and other tall things go to the back and the sides; small ground cover fills the middle distance; nothing sits on the
 dirt paths painted into the ground texture; indoor props stay inside the round room.
 """
+import gamedata  # phase 04b: the data files in game/data
 import json, math, os, random, re, sys
 from PIL import Image
 
@@ -116,7 +117,7 @@ def catalog(man):
         bb = im.getbbox() or (0, 0, im.width, im.height)
         cat[k] = {'w': (bb[2] - bb[0]) / 30, 'h': o['h'], 'flat': o.get('flat', 0)}
     meta = json.load(open(SCENE_META, encoding='utf-8')) if os.path.exists(SCENE_META) else {}
-    gd = open(GAMEDATA, encoding='utf-8').read()
+    gd = gamedata.js_text()
     m = re.search(r'"scenery"\s*:\s*\{', gd)
     gds = gd[m.end():] if m else ''
     for k, o in meta.items():
@@ -306,7 +307,7 @@ def main():
     global CAT
     src, man = load_manifest()
     CAT = catalog(man)
-    gd = open(GAMEDATA, encoding='utf-8').read()
+    gd = gamedata.js_text()
     gdj = json.loads(gd[gd.index('window.GAMEDATA=') + len('window.GAMEDATA='):].rstrip().rstrip(';'))
     backs = gdj['backdrops']
     out = src

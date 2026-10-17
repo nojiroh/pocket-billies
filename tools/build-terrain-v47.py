@@ -28,6 +28,7 @@ are made from the 32 px ones, with the soft patches baked in (Lite has no painte
     python3 tools/build-terrain-v47.py --force NAME[,NAME]   # redraws those kinds (their tiles47 files only)
     python3 tools/build-terrain-v47.py --preview --sheet out.png   # only the tiles47 files and the sheets
 """
+import gamedata  # phase 04b: the data files in game/data
 import argparse, importlib.util, json, math, random, zlib
 from pathlib import Path
 import numpy as np
@@ -1257,7 +1258,7 @@ def main():
         print(f'{n} tiles written to {OUT} (preview: the catalogue and the 16 px tiles are left alone)')
         if a.sheet: sheet(a.sheet)
         return
-    src = DATA.read_text(encoding='utf-8'); k0 = src.index('window.GAMEDATA='); head = src[:k0]; D = json.JSONDecoder().raw_decode(src[k0 + 16:])[0]
+    src = gamedata.js_text(); k0 = src.index('window.GAMEDATA='); head = src[:k0]; D = json.JSONDecoder().raw_decode(src[k0 + 16:])[0]
     terr = D['scenery']['terrains']; added = []
     for ch, (name, label, z, edge, paved, walk) in NEW47.items():
         base = OLD / f'{name}.png'
@@ -1279,7 +1280,7 @@ def main():
         if name in WEAR: T_['wear'] = WEAR[name]
         if name in GROW: T_['grow'] = GROW[name]
     D['scenery']['tileSet'] = 'tiles47'
-    DATA.write_text(head + 'window.GAMEDATA=' + json.dumps(D, ensure_ascii=False, indent=1) + ';\n', encoding='utf-8')
+    gamedata.save_js(head + 'window.GAMEDATA=' + json.dumps(D, ensure_ascii=False, indent=1) + ';\n')
     print(f'{n} tiles written; new kinds in the catalogue: {", ".join(added) or "none (all there)"}; {len(terr)} kinds in all')
     if a.sheet: sheet(a.sheet)
 

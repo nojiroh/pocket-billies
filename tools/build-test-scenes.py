@@ -11,6 +11,7 @@ Each test scene can carry
             game's full test, tools/check-quick.py --tests and the Studio's check
   "shots":  [{"x": .., "z": .., "yaw": .., "label": ".."}]                            where to stand for pictures
 """
+import gamedata  # phase 04b: the data files in game/data
 import importlib.util, json, math, sys
 from pathlib import Path
 
@@ -150,7 +151,7 @@ def t_shadows():
 
 # ---------------------------------------------------------------- every prop
 def t_props():
-    src = DATA.read_text(encoding='utf-8'); D = json.JSONDecoder().raw_decode(src[src.index('window.GAMEDATA=') + len('window.GAMEDATA='):])[0]
+    src = gamedata.js_text(); D = json.JSONDecoder().raw_decode(src[src.index('window.GAMEDATA=') + len('window.GAMEDATA='):])[0]
     keys = sorted((k for k, M in D['scenery']['props'].items() if not M.get('build') and 'battle' not in M.get('tags', [])), key=lambda k: (D['scenery']['props'][k].get('group', k), k))
     W = 56; rows = []; row = []; x = 1
     for k in keys:
@@ -367,13 +368,13 @@ BUILD = [t_stairs, t_ledges, t_bridges, t_water, t_shadows, t_props, t_slopes, t
 
 
 def main():
-    src = DATA.read_text(encoding='utf-8'); head = src[:src.index('window.GAMEDATA=')]
+    src = gamedata.js_text(); head = src[:src.index('window.GAMEDATA=')]
     D = json.JSONDecoder().raw_decode(src[src.index('window.GAMEDATA=') + len('window.GAMEDATA='):])[0]
     for k in [k for k, v in D['scenes'].items() if v.get('test')]: del D['scenes'][k]
     for f in BUILD:
         sc = f(); D['scenes'][sc_id(sc, f)] = sc
         print(f'  {sc_id(sc, f)}: {sc["w"]}x{sc["h"]}, {len(sc.get("props", []))} props, {len(sc.get("checks", []))} checks, {len(sc.get("shots", []))} shots')
-    DATA.write_text(head + 'window.GAMEDATA=' + json.dumps(D, ensure_ascii=False, indent=1) + ';\n', encoding='utf-8')
+    gamedata.save_js(head + 'window.GAMEDATA=' + json.dumps(D, ensure_ascii=False, indent=1) + ';\n')
 
 
 def sc_id(sc, f):

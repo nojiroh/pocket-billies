@@ -11,6 +11,7 @@ another with "flag": "<name>" in the Studio (Walk scenes -> Look). Existing pict
     python3 tools/build-flags.py            # draw what is missing, point the catalogue's flag_pole at the mast
     python3 tools/build-flags.py --sheet validation/v43-flags.png
     python3 tools/build-flags.py --force    # redraw the flags (never the mast's hand edits: use --force-mast)"""
+import gamedata  # phase 04b: the data files in game/data
 import os, sys, json, math, importlib.util
 from PIL import Image, ImageDraw
 HERE = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.dirname(HERE)
@@ -170,11 +171,11 @@ def main():
     m = prop_meta('flag_pole', cv, bx, disk); m['img'] = 'scene/props/flag_mast.png'; m['sway'] = 0
     m['flag'] = dict(dx=round(2 / 34, 3), h=round(156 / 34, 2), w=round(48 / 34, 2), fh=round(32 / 34, 2))
     P = json.load(open(META)); P['flag_pole'] = dict(P.get('flag_pole', {}), **m); write_json(META, P)
-    src = open(DATA, encoding='utf-8').read(); i = src.index('window.GAMEDATA='); head = src[:i]
+    src = gamedata.js_text(); i = src.index('window.GAMEDATA='); head = src[:i]
     D = json.JSONDecoder().raw_decode(src[i + len('window.GAMEDATA='):])[0]
     e = D['scenery']['props']['flag_pole']; e.update(img=m['img'], ox=m['ox'], oy=m['oy'], sway=0, flag=m['flag'])
     D['scenery']['flags'] = [k for k in TOWNS if k != 'default']      # the scenes that have a flag of their own
-    open(DATA, 'w', encoding='utf-8').write(head + 'window.GAMEDATA=' + json.dumps(D, ensure_ascii=False, indent=1) + ';\n')
+    gamedata.save_js(head + 'window.GAMEDATA=' + json.dumps(D, ensure_ascii=False, indent=1) + ';\n')
     print('flags:', len(TOWNS), 'drawn now:', ', '.join(made) or 'none (all there)', '; catalogue: flag_pole -> flag_mast.png with a flag of %s x %s m at %s m' % (m['flag']['w'], m['flag']['fh'], m['flag']['h']))
     if sp:
         names = list(TOWNS); S = 3; cols = 5; rows = (len(names) + cols - 1) // cols

@@ -12,6 +12,7 @@ the exits (two metres), doors (a strip in front of every building), and every pr
     python3 tools/grow-wild.py --regrow        # take out what an earlier pass added and grow again
     python3 tools/grow-wild.py --density 1.5   # thicker (1 = about one plant per 30 square metres)
     python3 tools/grow-wild.py --dry           # report only"""
+import gamedata  # phase 04b: the data files in game/data
 import sys, json, math, random, zlib
 from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
@@ -24,12 +25,12 @@ DENSITY = 0.8
 
 
 def load():
-    src = DATA.read_text(encoding='utf-8'); i = src.index('window.GAMEDATA='); head = src[:i]
+    src = gamedata.js_text(); i = src.index('window.GAMEDATA='); head = src[:i]
     return head, json.JSONDecoder().raw_decode(src[i + len('window.GAMEDATA='):])[0]
 
 
 def save(head, D):
-    DATA.write_text(head + 'window.GAMEDATA=' + json.dumps(D, ensure_ascii=False, indent=1) + ';\n', encoding='utf-8')
+    gamedata.save_js(head + 'window.GAMEDATA=' + json.dumps(D, ensure_ascii=False, indent=1) + ';\n')
 
 
 def radius(M, s=1.0):

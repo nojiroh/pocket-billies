@@ -22,6 +22,7 @@ redraw one on purpose.
     python3 tools/build-props-a04.py --sheet out.png  # also a contact sheet of everything this tool makes
     python3 tools/build-props-a04.py --force cottage_moss
 """
+import gamedata  # phase 04b: the data files in game/data
 import os, sys, json, math, random, zlib, importlib.util
 from PIL import Image
 
@@ -573,12 +574,12 @@ def write_atlas(D):
 
 # ============================================================================= the data
 def load_data():
-    src = open(DATA, encoding='utf-8').read(); i = src.index('window.GAMEDATA=')
+    src = gamedata.js_text(); i = src.index('window.GAMEDATA=')
     return src[:i], json.JSONDecoder().raw_decode(src[i + len('window.GAMEDATA='):])[0]
 
 
 def save_data(head, D):
-    open(DATA, 'w', encoding='utf-8').write(head + 'window.GAMEDATA=' + json.dumps(D, ensure_ascii=False, indent=1) + ';\n')
+    gamedata.save_js(head + 'window.GAMEDATA=' + json.dumps(D, ensure_ascii=False, indent=1) + ';\n')
 
 
 VARIANTS = {   # (wall, trim) colour sets for the cottages' variants; the roofs stay moss or solar

@@ -11,6 +11,7 @@ Ids, save keys and art paths stay as they are, so saves carry over; only what yo
     python3 tools/rename-places.py --dry     # show what would change (every changed text, before and after)
 
 Texts that need more than a swap of names are rewritten by hand in REWRITE (by their path in the data)."""
+import gamedata  # phase 04b: the data files in game/data
 import json, re, sys
 from pathlib import Path
 
@@ -78,13 +79,13 @@ FIXES = [('Alta on the Summit', 'Alta in Frostcrown Town'), ('lives in the bins 
 
 
 def load():
-    s = DATA.read_text(encoding='utf-8'); i = s.index('window.GAMEDATA=') + len('window.GAMEDATA=')
+    s = gamedata.js_text(); i = s.index('window.GAMEDATA=') + len('window.GAMEDATA=')
     D, end = json.JSONDecoder().raw_decode(s, i)
     return s[:i - len('window.GAMEDATA=')], D
 
 
 def save(head, D):
-    DATA.write_text(head + 'window.GAMEDATA=' + json.dumps(D, ensure_ascii=False, indent=1) + ';\n', encoding='utf-8')
+    gamedata.save_js(head + 'window.GAMEDATA=' + json.dumps(D, ensure_ascii=False, indent=1) + ';\n')
 
 
 def full(pid):

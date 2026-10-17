@@ -15,6 +15,7 @@ v10 scenes are places you walk around in: each has a hub (where you stand when y
 with doors you can walk up to (shop, clinic, lab, houses), signposts at the exits, townsfolk in towns, distant
 hills behind, and plenty of prop variants scattered in natural clumps.
 Edit scenes afterwards in Pocket Billies Studio (World & encounters → Scenes)."""
+import gamedata  # phase 04b: the data files in game/data
 import base64, json, math, random, sys
 from pathlib import Path
 
@@ -1366,7 +1367,7 @@ BUILD = [('sundown', town_sundown), ('longgrass', route_grass), ('golf', route_g
 def main():
     force = '--force' in sys.argv
     rescene = force or '--scenes' in sys.argv     # v18: rebuild the scenes but keep the catalog you have
-    src = DATA.read_text(encoding='utf-8')
+    src = gamedata.js_text()
     head = src[:src.index('window.GAMEDATA=')]
     D = json.JSONDecoder().raw_decode(src[src.index('window.GAMEDATA=') + len('window.GAMEDATA='):])[0]
     cat = scenery()
@@ -1394,7 +1395,7 @@ def main():
                 D['scenes'][sid] = f(D, i)
             if force or not D['route'][i].get('scene'):
                 D['route'][i]['scene'] = sid
-    DATA.write_text(head + 'window.GAMEDATA=' + json.dumps(D, ensure_ascii=False, indent=1) + ';\n', encoding='utf-8')
+    gamedata.save_js(head + 'window.GAMEDATA=' + json.dumps(D, ensure_ascii=False, indent=1) + ';\n')
     print('scenes:', ', '.join(D['scenes']), '| props:', len(D['scenery']['props']))
     for sid in D['scenes']:
         sc = D['scenes'][sid]; print(f"  {sid}: {len(sc.get('props', []))} props, exits {sc.get('exits')}, hub {sc.get('hub')}")

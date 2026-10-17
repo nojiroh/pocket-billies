@@ -21,6 +21,7 @@ marked "keep" in the Studio is left alone.
     python3 tools/build-life-v47.py --dry      # report, write nothing
     python3 tools/build-life-v47.py --map out/ # draw a top-down map of each place (worn lines in orange)
 """
+import gamedata  # phase 04b: the data files in game/data
 import json, math, random, sys
 from pathlib import Path
 
@@ -34,12 +35,12 @@ TAG = 'v47life'
 
 
 def load():
-    src = DATA.read_text(encoding='utf-8'); i = src.index('window.GAMEDATA=')
+    src = gamedata.js_text(); i = src.index('window.GAMEDATA=')
     return src[:i], json.JSONDecoder().raw_decode(src[i + len('window.GAMEDATA='):])[0]
 
 
 def save(head, D):
-    DATA.write_text(head + 'window.GAMEDATA=' + json.dumps(D, ensure_ascii=False, indent=1) + ';\n', encoding='utf-8')
+    gamedata.save_js(head + 'window.GAMEDATA=' + json.dumps(D, ensure_ascii=False, indent=1) + ';\n')
 
 
 class Place:

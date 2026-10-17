@@ -7,6 +7,7 @@ with the wardrobe data in game/data/gamedata.js under "wardrobe".
 
 Each item becomes two images: the picture in its default colours, and a colour-area mask (red, green and blue mark
 the areas the game recolours)."""
+import gamedata  # phase 04b: the data files in game/data
 import json, sys
 from pathlib import Path
 import numpy as np
@@ -98,13 +99,13 @@ def main():
         if it.starter: d['starter'] = True
         if it.tags: d['tags'] = it.tags
         W['items'][it.id] = d
-    s = DATA.read_text(encoding='utf-8'); i = s.index('window.GAMEDATA='); head = s[:i]; D = json.loads(s[i + len('window.GAMEDATA='):].rstrip().rstrip(';'))
+    s = gamedata.js_text(); i = s.index('window.GAMEDATA='); head = s[:i]; D = json.loads(s[i + len('window.GAMEDATA='):].rstrip().rstrip(';'))
     if 'wardrobe' in D and not FORCE:
         old = D['wardrobe']; added = [k for k in W['items'] if k not in old.get('items', {})]
         for k in added + [k for k in (ONLY or []) if k in W['items']]: old['items'][k] = W['items'][k]
         print(f'wardrobe exists; added {len(added)} new items'); W = old
     D['wardrobe'] = W
-    DATA.write_text(head + 'window.GAMEDATA=' + json.dumps(D, ensure_ascii=False, indent=1) + ';\n', encoding='utf-8')
+    gamedata.save_js(head + 'window.GAMEDATA=' + json.dumps(D, ensure_ascii=False, indent=1) + ';\n')
     print(f'{len(ITEMS)} items, body {"written" if wrote else "kept"}')
 
 

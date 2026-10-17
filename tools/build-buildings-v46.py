@@ -15,6 +15,7 @@ extra}); a placed building picks one with "v" (1, 2, ...; none or 0 = the pictur
 original picture with its wall, roof and trim tones moved to the new colours, plus now and then shutters, window boxes
 or an awning painted on; the 3D walls and roof take the same colours.
 """
+import gamedata  # phase 04b: the data files in game/data
 import os, sys, json, math, random, zlib, importlib.util
 from PIL import Image
 HERE = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.dirname(HERE)
@@ -468,12 +469,12 @@ def make_variant(key, M, k, rng):
 
 # ----------------------------------------------------------------------------- the data
 def load_data():
-    src = open(DATA, encoding='utf-8').read(); i = src.index('window.GAMEDATA=')
+    src = gamedata.js_text(); i = src.index('window.GAMEDATA=')
     return src[:i], json.JSONDecoder().raw_decode(src[i + len('window.GAMEDATA='):])[0]
 
 
 def save_data(head, D):
-    open(DATA, 'w', encoding='utf-8').write(head + 'window.GAMEDATA=' + json.dumps(D, ensure_ascii=False, indent=1) + ';\n')
+    gamedata.save_js(head + 'window.GAMEDATA=' + json.dumps(D, ensure_ascii=False, indent=1) + ';\n')
 
 
 def main():
