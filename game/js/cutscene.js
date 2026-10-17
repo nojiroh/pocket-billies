@@ -9,6 +9,8 @@
    If the cutscene can't run or stops, the older step-by-step intro in ui.js runs instead. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './bridge.js';
+import { ROUTE, RULES, SP, START_NODE, TRAINERS, TYPES, eff, placeFull } from './data.js';
+import { $, RM, U, clamp, esc } from './core.js';
 import { userFps } from './frame.js';
 import { artLoad, cnv } from './art.js';
 import { TR_PRESETS, cleanLook, humanPose, owFrames, trainerLook } from './trainer.js';

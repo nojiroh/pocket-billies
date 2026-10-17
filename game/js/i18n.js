@@ -4,7 +4,24 @@
    and descriptions stay in English. It works on what's on screen: any text that exactly matches an entry below is
    shown translated (and switched back when you choose English again), so nothing else in the game has to change.
    To add a language, add a column: a code in I18N_LANGS and one more string in each row. */
-const I18N_LANGS = [
+/* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
+import { expose } from './bridge.js';
+/* eslint-disable no-func-assign */
+expose({
+  I18N: [() => I18N],
+  I18N_ATTR: [() => I18N_ATTR],
+  I18N_LANG: [() => I18N_LANG, v => (I18N_LANG = v)],
+  I18N_LANGS: [() => I18N_LANGS],
+  I18N_OBS: [() => I18N_OBS, v => (I18N_OBS = v)],
+  I18N_ORIG: [() => I18N_ORIG],
+  I18N_ROWS: [() => I18N_ROWS],
+  i18nAttr: [() => i18nAttr, v => (i18nAttr = v)],
+  i18nNode: [() => i18nNode, v => (i18nNode = v)],
+  i18nSet: [() => i18nSet, v => (i18nSet = v)],
+});
+/* eslint-enable no-func-assign */
+/* to-module: end */
+export const I18N_LANGS = [
   ['en', 'English'],
   ['nl', 'Nederlands'],
   ['de', 'Deutsch'],
@@ -252,7 +269,7 @@ function i18nAttr(el, a) {
     el.removeAttribute(key);
   }
 }
-function i18nSet(lang) {
+export function i18nSet(lang) {
   lang = I18N_LANGS.some(l => l[0] === lang) ? lang : 'en';
   if (lang === I18N_LANG && I18N_OBS) return;
   I18N_LANG = lang;

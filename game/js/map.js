@@ -4,6 +4,8 @@
    Tap a place to see it; travel there, stay, stop or turn back from the card. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './bridge.js';
+import { FUTURE, LINKS, ROUTE, linkCost } from './data.js';
+import { $, RM, S, U, canEnter, clamp, esc, nextStop } from './core.js';
 import { frameCount, frameStop, frameTask, userFps } from './frame.js';
 import { artPixels, d44, mixA, mstamp, pk, seeded } from './art.js';
 import { owFrames } from './trainer.js';

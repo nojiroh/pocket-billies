@@ -3,6 +3,9 @@
 /* the host page (an artifact viewer, for example) may set its own light/dark attribute; "Match device" leaves it alone */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './bridge.js';
+import { JOBS, MOVES, ROUTE, RULES, SP, STATUSN } from './data.js';
+import { SAVE_NEW_MSG, SAVE_OLD_MSG, TEAM_MAX, U, esc, fmt, migrate, save, saveAge, today } from './core.js';
+import { I18N_LANGS, i18nSet } from './i18n.js';
 import { FRAME } from './frame.js';
 import { uiIco } from './art.js';
 import { cleanLook, cleanTrainer, humanHTML, lookFromOld } from './trainer.js';

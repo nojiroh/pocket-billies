@@ -16,6 +16,8 @@
    trees and flowers come from a seed (the link's index), never stored. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './bridge.js';
+import { ADJ, LINKS, ROUTE } from './data.js';
+import { U, clamp } from './core.js';
 import { artLoad, hexA } from './art.js';
 import {
   DIO,

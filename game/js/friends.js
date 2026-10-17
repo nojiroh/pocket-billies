@@ -10,6 +10,8 @@
    Each player only ever writes their own users/ document; a friendship is made from the two sides of a request. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './bridge.js';
+import { ROUTE, SP } from './data.js';
+import { N, S, U, cleanName, esc, plural } from './core.js';
 import { owFrames, portraitHTML, trWarm } from './trainer.js';
 import { sprHTML } from './rig.js';
 import { DIO, dioDirOf } from './diorama.js';

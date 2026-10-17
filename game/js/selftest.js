@@ -9,6 +9,9 @@
    for you and runs that step again. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './bridge.js';
+import { GD, MOVES, ROUTE, RULES, SP, TRAINERS, linkCost, placeKind } from './data.js';
+import { scenesAll } from './scene-files.js';
+import { U, addSteps, clamp, esc, makeMon, maxHp, setTrip, spawn } from './core.js';
 import { FRAME } from './frame.js';
 import { TR_CACHE } from './trainer.js';
 import { DR, closeDressing } from './dressing.js';

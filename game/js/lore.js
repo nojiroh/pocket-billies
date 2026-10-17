@@ -7,6 +7,8 @@
    'badges:<n>'. The stage of the story is the number of badges (9 after the ending). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './bridge.js';
+import { GD, ROUTE, TRAINERS } from './data.js';
+import { S, U, clamp, esc, save } from './core.js';
 import { humanHTML } from './trainer.js';
 import { DIO, dioBaseId, dioFind, dioFreePt, dioHubOf, dioScene } from './diorama.js';
 import { DGL, dioH } from './diorama-gl.js';

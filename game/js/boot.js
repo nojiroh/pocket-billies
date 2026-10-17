@@ -5,6 +5,9 @@
    later and a missing file shows up right away. Then draw the game. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './bridge.js';
+import { DATA_WARN, GD, RULES, SP, START_NODE } from './data.js';
+import { sceneWatch, scenesAhead, scenesAll } from './scene-files.js';
+import { RM, SAVE_FOUND, SAVE_NEW_MSG, SAVE_OLD_MSG, U, esc, fresh } from './core.js';
 import { ART, BG_ART, COIN_ART, EGG_ART, ICON_ATLAS, UIURL, artBoot, artImg } from './art.js';
 import { trainerArtPaths } from './trainer.js';
 import { rigAtlas } from './rig.js';

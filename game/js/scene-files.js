@@ -9,10 +9,30 @@
    The view a player can walk into next is fetched ahead (scenesAhead, on arriving at a place), and dioPrepare waits
    for a view's maps, so nothing is drawn from half a map. If anything was put together from a map before its file came
    (the world map's miniatures, say), the views are made again once it has (WORLD.gen). */
+/* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
+import { expose } from './bridge.js';
+import { ADJ, GD, LINKS, ROUTE, START_NODE } from './data.js';
+/* eslint-disable no-func-assign */
+expose({
+  MAP_FIELDS: [() => MAP_FIELDS],
+  SCENE_FILES: [() => SCENE_FILES],
+  sceneLite: [() => sceneLite],
+  sceneLoad: [() => sceneLoad, v => (sceneLoad = v)],
+  sceneNode: [() => sceneNode],
+  sceneRing: [() => sceneRing, v => (sceneRing = v)],
+  sceneStale: [() => sceneStale, v => (sceneStale = v)],
+  sceneWatch: [() => sceneWatch, v => (sceneWatch = v)],
+  scenesAhead: [() => scenesAhead, v => (scenesAhead = v)],
+  scenesAll: [() => scenesAll, v => (scenesAll = v)],
+  scenesFor: [() => scenesFor, v => (scenesFor = v)],
+  scenesNeed: [() => scenesNeed],
+});
+/* eslint-enable no-func-assign */
+/* to-module: end */
 const SCENE_FILES = { busy: new Map(), touched: new Set(), all: null, ms: 0, n: 0, failed: [] };
 const MAP_FIELDS = ['heights', 'steps', 'stepm', 'tiles', 'props'];
-const sceneLite = id => !!(GD.scenes[id] && GD.scenes[id]._lite);
-function sceneLoad(id) {
+export const sceneLite = id => !!(GD.scenes[id] && GD.scenes[id]._lite);
+export function sceneLoad(id) {
   if (!sceneLite(id)) return Promise.resolve();
   if (SCENE_FILES.busy.has(id)) return SCENE_FILES.busy.get(id);
   const t0 = performance.now(),
@@ -88,11 +108,11 @@ function scenesFor(id) {
   return node >= 0 ? out.concat(sceneRing(node, 1)) : out;
 }
 /* on arriving at a place: the maps two roads out, so the next place's view is whole before you get there */
-function scenesAhead(node) {
+export function scenesAhead(node) {
   return scenesNeed(sceneRing(node, 2));
 }
 /* wherever you go (walking, the airship, a loaded game, the debug menu), the maps ahead follow */
-function sceneWatch() {
+export function sceneWatch() {
   let at = null;
   setInterval(() => {
     const n = typeof S !== 'undefined' && S && S.route ? S.route.node : null;
@@ -101,7 +121,7 @@ function sceneWatch() {
     scenesAhead(n);
   }, 1000);
 }
-function scenesAll() {
+export function scenesAll() {
   if (SCENE_FILES.all) return SCENE_FILES.all;
   const t0 = performance.now(),
     here = typeof S !== 'undefined' && S && S.route ? S.route.node : START_NODE,

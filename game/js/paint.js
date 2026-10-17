@@ -8,6 +8,7 @@
    A generator waiting on the worker yields PW_WAIT (diorama.js): the loops that step it stop for the frame. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './bridge.js';
+import { clamp } from './core.js';
 import { hexA, pk, pkh } from './art.js';
 import {
   DIO,
