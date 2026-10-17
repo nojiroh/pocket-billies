@@ -1026,7 +1026,7 @@ def desktop_steps(b, base, R):
         return '; '.join(out)
     v34()
 
-    @step('v35: roster, palette, master tiles, starter studies, pixel-grid camera', 120)
+    @step('v35: roster, palette, starter studies, pixel-grid camera', 120)
     def v35():
         out = []
         n = pg.evaluate("(GD.roster||[]).length")
@@ -1042,23 +1042,15 @@ def desktop_steps(b, base, R):
         nx = ROOT / 'game' / 'art' / 'next'
         for f in ('palette.png', 'palette.js'):
             if not (nx / f).exists(): raise Exception(f'missing {f} under art/next')
-        tiles = len(list((nx / 'tiles').glob('*_[1-6].png')))
-        if tiles < 26 * 6: raise Exception(f'tiles: {tiles} variants')
+        # phase 03 deleted the v35 master tiles (art/next/tiles, Lite mode's ground); the ground the game draws is
+        # art/next/tiles47, checked by 'Ground: every kind has twelve tiles of its own'
         studies = len(list((nx / 'starters').glob('*_sil.png')))
         if studies < 12: raise Exception(f'only {studies} starter silhouettes')
-        out.append(f'art/next: palette, {tiles} ground tiles, {studies} starter silhouettes')
-        # every palette colour is distinct; every tile is 32x32 and keeps to a small set of colours (v37: the world's
-        # own colours, not the billionaire palette)
+        out.append(f'art/next: palette, {studies} starter silhouettes')
+        # every palette colour is distinct
         from PIL import Image
         pal = {tuple(c) for c in pixels(Image.open(nx / 'palette.png').convert('RGB'))}
         if len(pal) < 150: raise Exception(f'palette has {len(pal)} distinct colours')
-        bad = []
-        for f in sorted((nx / 'tiles').glob('*_[1-6].png')):
-            im = Image.open(f)
-            if im.size != (32, 32): bad.append(f'{f.stem} is {im.size}')
-            elif len({tuple(c) for c in pixels(im.convert('RGB'))}) > 40: bad.append(f'{f.stem} has too many colours')
-        if bad: raise Exception(f'tiles: {bad[:5]}')
-        out.append('every tile is 32x32 with 40 colours or fewer')
         # the pixel-grid camera dial: off by default, and turning it on keeps the scene drawing
         if pg.evaluate("eng('camera','pixelGrid')!==false"): raise Exception('pixelGrid should be off by default')
         pg.evaluate("GD.engine.defaults.camera=Object.assign({},GD.engine.defaults.camera||{},{pixelGrid:true});0"); time.sleep(2)
