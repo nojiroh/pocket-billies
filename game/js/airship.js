@@ -185,7 +185,15 @@ function flyDraw(c, t, proj) {
 }
 /* landing: the walk screen in the new town, standing by its mast */
 function flyLand() {
-  if (!FLY.on) return;
+  if (!FLY.on || FLY.wait) return;
+  /* phase 04b: you land by the mast, which is in the town's own map file */
+  if (typeof sceneLite === 'function' && sceneLite(sceneIdAt(FLY.b))) {
+    FLY.wait = sceneLoad(sceneIdAt(FLY.b)).then(() => {
+      FLY.wait = null;
+      flyLand();
+    });
+    return;
+  }
   const b = FLY.b;
   FLY.on = false;
   MAP.fly = null;
@@ -261,8 +269,11 @@ function liftGo(p) {
   document.body.appendChild(cv);
   requestAnimationFrame(() => requestAnimationFrame(() => cv.classList.add('in')));
   if (typeof sfx === 'function') sfx('throw');
+  const ready =
+    typeof scenesAhead === 'function' ? scenesAhead(i) : null; /* phase 04b: the lift is in the map's file */
   setTimeout(
-    () => {
+    async () => {
+      await ready;
       S.route = { node: i, prog: 0, plan: [], hold: false };
       S.visited[i] = 1;
       U.inside = null;

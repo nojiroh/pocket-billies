@@ -562,9 +562,16 @@ def phone_flow(b, base, R):
         R['phoneErrors'] = errs[:10]; ctx.close()
 
 
+def all_maps(pg, sec=180):
+    # phase 04b: the game fetches each map's ground and props when it is needed and the rest in the background; the
+    # steps below read every map at once, so wait until all of them are whole
+    if not until(pg, "typeof scenesAll!=='function'||(scenesAll(),Object.keys(GD.scenes).every(id=>!sceneLite(id)))", sec):
+        raise Exception('the maps didn’t all load in %ds: %s' % (sec, pg.evaluate("Object.keys(GD.scenes).filter(sceneLite).join(', ')")))
+
+
 def desktop_steps(b, base, R):
     errs = []; ctx, pg = open_game(b, base, 1100, 700, False, errs)
-    play(pg); pg.evaluate("U.tab='team';render();0"); time.sleep(1)
+    play(pg); pg.evaluate("U.tab='team';render();0"); time.sleep(1); all_maps(pg)
     D = gamedata(); ids = [r.get('scene') for r in D['route']]
     nodes = [i for i, s in enumerate(ids) if s and (not ONLY or s in ONLY)]
 
