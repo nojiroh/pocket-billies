@@ -1,0 +1,51 @@
+# Phase 04b: GitHub Pages serves the Vite build (dist/: the game, the Studio and the root page; not tools/, docs/,
+# firebase/ or validation/), deployed from main. The build generates data/gamedata.js from the data files.
+# Needs repository Settings -> Pages -> Build and deployment -> Source: "GitHub Actions" (until then Pages serves the
+# repository as it is, and the game reads the data files itself, more slowly: game/js/data-fallback.js).
+name: Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write      # publish the site
+  id-token: write   # prove the deployment comes from this workflow
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install the tools
+        run: npm ci
+      - name: Game data check
+        run: npm run check:data
+      - name: Build
+        run: npm run build
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
