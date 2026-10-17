@@ -40,6 +40,7 @@ const TC=liveMap(D=>{const o=Object.fromEntries(D.types.map(t=>[t.id,[t.color,t.
 const TYPEFX=liveMap(D=>{const o=Object.fromEntries(D.types.map(t=>[t.id,t.fx&&t.fx.length?t.fx:['pow','star']]));o.None=(D.untyped||{}).fx||['pow','star'];return o});
 </script>
 <script src="../game/version.js"></script>
+<script src="../game/js/data-files.js"></script>
 <script>document.getElementById('ver').textContent=PB_VERSION;</script>
 <script src="../game/art/manifest.js"></script>
 <script src="../game/art/next/rigs-next.js"></script>
