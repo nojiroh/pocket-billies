@@ -8,6 +8,39 @@
      codes/<CODE>     { uid } so a code finds the player
      requests/<from>_<to>  { from, to, fromName, toName, status: pending | accepted | declined | removed, t }
    Each player only ever writes their own users/ document; a friendship is made from the two sides of a request. */
+/* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
+import { expose } from './bridge.js';
+import { ROUTE, SP } from './data.js';
+import { N, S, U, cleanName, esc, plural } from './core.js';
+import { owFrames, portraitHTML, trWarm } from './trainer.js';
+import { sprHTML } from './rig.js';
+import { DIO, dioDirOf } from './diorama.js';
+import { dglPerson } from './diorama-gl.js';
+import { owBuddyMon, owItem } from './owmon.js';
+import { MAP, mapSelect } from './map.js';
+/* eslint-disable no-func-assign */
+expose({
+  FR: [() => FR],
+  FR_ABC: [() => FR_ABC],
+  frAdd: [() => frAdd, v => (frAdd = v)],
+  frAgo: [() => frAgo, v => (frAgo = v)],
+  frAnswer: [() => frAnswer, v => (frAnswer = v)],
+  frClean: [() => frClean, v => (frClean = v)],
+  frDb: [() => frDb, v => (frDb = v)],
+  frErr: [() => frErr, v => (frErr = v)],
+  frInit: [() => frInit, v => (frInit = v)],
+  frOn: [() => frOn, v => (frOn = v)],
+  frPublish: [() => frPublish, v => (frPublish = v)],
+  frRefresh: [() => frRefresh, v => (frRefresh = v)],
+  frRemove: [() => frRemove, v => (frRemove = v)],
+  frSync: [() => frSync, v => (frSync = v)],
+  frWatchAll: [() => frWatchAll, v => (frWatchAll = v)],
+  frWatchErr: [() => frWatchErr, v => (frWatchErr = v)],
+  frWorldItems: [() => frWorldItems, v => (frWorldItems = v)],
+  friendsHTML: [() => friendsHTML, v => (friendsHTML = v)],
+});
+/* eslint-enable no-func-assign */
+/* to-module: end */
 const FR = {
   on: false,
   uid: null,
@@ -30,7 +63,7 @@ function frOn() {
 function frDb() {
   return ACC.db;
 }
-async function frInit() {
+export async function frInit() {
   if (!frOn() || FR.on) return;
   FR.on = true;
   FR.uid = ACC.user.uid;
@@ -297,7 +330,7 @@ function frAgo(t) {
         : Math.round(s / 86400) + ' days ago';
 }
 /* ---------- the Trainer screen ---------- */
-function friendsHTML() {
+export function friendsHTML() {
   const head = `<div class="sec-h"><h2>Friends</h2>${FR.code ? `<span class="fr-code">Your code <b class="tnum">${FR.code}</b></span>` : ''}</div>`;
   if (typeof accOn !== 'function' || !accOn())
     return `<section class="tpanel pf-friends">${head}<p class="note">Friends work when you’re signed in, and this copy of the game has no accounts.</p></section>`;

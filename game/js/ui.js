@@ -1,5 +1,296 @@
 'use strict';
 /* ================= UI ================= */
+/* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
+import { expose } from './bridge.js';
+import { $, $$, clamp, rnd } from './util.js';
+import {
+  ADJ,
+  COINS,
+  DEX,
+  EGGS,
+  FUTURE,
+  GD,
+  ITEMS,
+  JOBS,
+  JOB_STEPS,
+  LINKS,
+  LN,
+  MOVES,
+  PEOPLE,
+  POOLS,
+  ROUTE,
+  RULES,
+  SHOPS,
+  SP,
+  START_NODE,
+  STATK,
+  STATN,
+  STATUSN,
+  TC,
+  TRAINERS,
+  TYPES,
+  eff,
+  linkCost,
+  placeSub,
+  trainersAt,
+} from './data.js';
+import {
+  B,
+  BR,
+  EGG_SLOTS,
+  MAXLV,
+  N,
+  RM,
+  SLOTS,
+  TEAM_MAX,
+  U,
+  addEgg,
+  allMons,
+  assignJob,
+  blockerAt,
+  canEnter,
+  canRide,
+  cleanName,
+  collectJob,
+  endShift,
+  esc,
+  evoHint,
+  evoItemName,
+  evoReady,
+  evolve,
+  findMon,
+  flush,
+  fmt,
+  freshKeep,
+  gateMsg,
+  gateText,
+  hatchEgg,
+  hatchable,
+  healAll,
+  km,
+  lsSet,
+  makeMon,
+  maxHp,
+  nextBracket,
+  nextStop,
+  plural,
+  rate,
+  resumeTrip,
+  riderName,
+  rollDay,
+  save,
+  setTrip,
+  spawn,
+  splitPath,
+  stat,
+  stopTrip,
+  toBox,
+  toTeam,
+  tripTo,
+  walkMode,
+  xpFor,
+} from './core.js';
+import { frameTask, userFps } from './frame.js';
+import { ART, artLoad, artURL, cnv, coinHTML, coinURL, eggHTML, uiIco } from './art.js';
+import { TR_PRESETS, cleanLook, cleanTrainer, humanHTML, owHTMLsheet, portraitHTML, trainerLook } from './trainer.js';
+import { applyPreferences, settingsHTML } from './profile.js';
+import { drPortrait, openDressing } from './dressing.js';
+import { bustHTML, sprHTML } from './rig.js';
+import { EASE, SC, camHome, scFocus, scTargets } from './scene.js';
+import {
+  DIO,
+  dioClimb,
+  dioData,
+  dioFind,
+  dioFreePt,
+  dioHubOf,
+  dioPaths,
+  dioScene,
+  dioStop,
+  dioWalkTo,
+  openKind,
+  placeClosedText,
+  placeOpen,
+} from './diorama.js';
+import { eng } from './engine/settings.js';
+import { ENV, envHint, envIcon, envLabel } from './env.js';
+import { DGL, dioMount } from './diorama-gl.js';
+import { fishStart } from './fishing.js';
+import {
+  WORLD,
+  dioShift,
+  wrDelta,
+  wrGate,
+  wrGetReady,
+  wrOn,
+  wrPrefetch,
+  wrRoamView,
+  wrRoomId,
+  wrRoomScene,
+  wrTripView,
+} from './world.js';
+import { battleGLLayout, battleGLWanted } from './battle-gl.js';
+import {
+  A,
+  RC,
+  applyItem,
+  battleResize,
+  battleShell,
+  canUse,
+  checkFaints,
+  chooseMsg,
+  doSwitch,
+  doThrow,
+  endBattle,
+  enemyOnly,
+  itemIcon,
+  paintActions,
+  pickMove,
+  pickTarget,
+  planBack,
+  planNext,
+  play,
+  runTurn,
+  say,
+  showAim,
+  startWild,
+  tapMsg,
+} from './battle.js';
+import { MH, MW, mapFit, mapMount, mapReset, mapSelect, mapZoom } from './map.js';
+import { mapGLAction, mapGLWanted } from './map-gl.js';
+import { openShop } from './shop.js';
+import { sfx } from './sound.js';
+import { talkHazel } from './talk.js';
+import { CS, csStart, csWanted } from './cutscene.js';
+import { fallStill } from './opening.js';
+import { renderTitle, titleMount } from './title.js';
+import { loreBook, renderLore } from './lore.js';
+import { flyMenu, liftGo } from './airship.js';
+import { postcardCheck, renderPostcards } from './postcards.js';
+import { renderBag } from './bag.js';
+import { friendsHTML } from './friends.js';
+import {
+  legendCheck,
+  personTalk,
+  storyCheck,
+  storyFlags,
+  storyMovedCheck,
+  storyRivalBattle,
+  trainerTalk,
+} from './story.js';
+import { chalCard, homeApply, homeDecorate, reqList, stampTile } from './extras.js';
+/* eslint-disable no-func-assign */
+expose({
+  BG: [() => BG],
+  BOXSORT: [() => BOXSORT],
+  BRCOL: [() => BRCOL],
+  GINI: [() => GINI],
+  INTRO_STILLS: [() => INTRO_STILLS],
+  RARN: [() => RARN],
+  ROOM_KIND: [() => ROOM_KIND],
+  ROOM_OF: [() => ROOM_OF],
+  SCREENS: [() => SCREENS],
+  TABS: [() => TABS],
+  TRACKS: [() => TRACKS],
+  addPick: [() => addPick, v => (addPick = v)],
+  badgeSlots: [() => badgeSlots, v => (badgeSlots = v)],
+  bar: [() => bar, v => (bar = v)],
+  bgBuild: [() => bgBuild, v => (bgBuild = v)],
+  bgInit: [() => bgInit, v => (bgInit = v)],
+  bgResize: [() => bgResize, v => (bgResize = v)],
+  bgTick: [() => bgTick, v => (bgTick = v)],
+  boardNote: [() => boardNote, v => (boardNote = v)],
+  boxSection: [() => boxSection, v => (boxSection = v)],
+  bracketBars: [() => bracketBars, v => (bracketBars = v)],
+  bracketLabels: [() => bracketLabels, v => (bracketLabels = v)],
+  bracketNote: [() => bracketNote, v => (bracketNote = v)],
+  bracketSpans: [() => bracketSpans, v => (bracketSpans = v)],
+  buddyCard: [() => buddyCard, v => (buddyCard = v)],
+  chip: [() => chip],
+  closeModal: [() => closeModal, v => (closeModal = v)],
+  dexStatus: [() => dexStatus, v => (dexStatus = v)],
+  donateItem: [() => donateItem, v => (donateItem = v)],
+  eggSlots: [() => eggSlots, v => (eggSlots = v)],
+  encCard: [() => encCard, v => (encCard = v)],
+  enterRoom: [() => enterRoom, v => (enterRoom = v)],
+  envLine: [() => envLine, v => (envLine = v)],
+  evoMethod: [() => evoMethod, v => (evoMethod = v)],
+  evoModal: [() => evoModal, v => (evoModal = v)],
+  evoRun: [() => evoRun, v => (evoRun = v)],
+  exitPrompt: [() => exitPrompt, v => (exitPrompt = v)],
+  genderModal: [() => genderModal, v => (genderModal = v)],
+  guideTabs: [() => guideTabs, v => (guideTabs = v)],
+  hatchModal: [() => hatchModal, v => (hatchModal = v)],
+  healPick: [() => healPick, v => (healPick = v)],
+  hereCard: [() => hereCard, v => (hereCard = v)],
+  hireFlow: [() => hireFlow, v => (hireFlow = v)],
+  hirePick: [() => hirePick, v => (hirePick = v)],
+  hpBar: [() => hpBar, v => (hpBar = v)],
+  introSteps: [() => introSteps, v => (introSteps = v)],
+  isDark: [() => isDark],
+  jobSlots: [() => jobSlots, v => (jobSlots = v)],
+  learnModal: [() => learnModal, v => (learnModal = v)],
+  leaveRoom: [() => leaveRoom, v => (leaveRoom = v)],
+  mapCardHTML: [() => mapCardHTML, v => (mapCardHTML = v)],
+  meter: [() => meter],
+  modal: [() => modal, v => (modal = v)],
+  monSheet: [() => monSheet, v => (monSheet = v)],
+  monState: [() => monState],
+  needsCare: [() => needsCare],
+  nextModal: [() => nextModal, v => (nextModal = v)],
+  nextToast: [() => nextToast, v => (nextToast = v)],
+  nodeActions: [() => nodeActions, v => (nodeActions = v)],
+  owHTML: [() => owHTML, v => (owHTML = v)],
+  paintMapCard: [() => paintMapCard, v => (paintMapCard = v)],
+  plateVars: [() => plateVars],
+  poolStrip: [() => poolStrip, v => (poolStrip = v)],
+  postProcess: [() => postProcess, v => (postProcess = v)],
+  render: [() => render, v => (render = v)],
+  renderDexEntry: [() => renderDexEntry, v => (renderDexEntry = v)],
+  renderIntro: [() => renderIntro, v => (renderIntro = v)],
+  renderLedger: [() => renderLedger, v => (renderLedger = v)],
+  renderMap: [() => renderMap, v => (renderMap = v)],
+  renderOv: [() => renderOv, v => (renderOv = v)],
+  renderProfile: [() => renderProfile, v => (renderProfile = v)],
+  renderTeam: [() => renderTeam, v => (renderTeam = v)],
+  renderWalk: [() => renderWalk, v => (renderWalk = v)],
+  roomAct: [() => roomAct, v => (roomAct = v)],
+  roomAim: [() => roomAim, v => (roomAim = v)],
+  roomFor: [() => roomFor, v => (roomFor = v)],
+  roomHero: [() => roomHero, v => (roomHero = v)],
+  roomLayIn: [() => roomLayIn, v => (roomLayIn = v)],
+  roomRefresh: [() => roomRefresh, v => (roomRefresh = v)],
+  roomState: [() => roomState, v => (roomState = v)],
+  roomStepIn: [() => roomStepIn, v => (roomStepIn = v)],
+  sceneExits: [() => sceneExits, v => (sceneExits = v)],
+  sceneExitsByBearing: [() => sceneExitsByBearing, v => (sceneExitsByBearing = v)],
+  sceneIdAt: [() => sceneIdAt, v => (sceneIdAt = v)],
+  settings: [() => settings, v => (settings = v)],
+  stBadge: [() => stBadge],
+  startGame: [() => startGame, v => (startGame = v)],
+  stepsTo: [() => stepsTo, v => (stepsTo = v)],
+  swapPick: [() => swapPick, v => (swapPick = v)],
+  teamCard: [() => teamCard, v => (teamCard = v)],
+  teamHero: [() => teamHero, v => (teamHero = v)],
+  toast: [() => toast, v => (toast = v)],
+  topbar: [() => topbar, v => (topbar = v)],
+  tripButtons: [() => tripButtons, v => (tripButtons = v)],
+  tripDest: [() => tripDest],
+  tripLeft: [() => tripLeft, v => (tripLeft = v)],
+  tripStatus: [() => tripStatus, v => (tripStatus = v)],
+  updateNav: [() => updateNav, v => (updateNav = v)],
+  walkCross: [() => walkCross, v => (walkCross = v)],
+  walkHero: [() => walkHero, v => (walkHero = v)],
+  walkOff: [() => walkOff, v => (walkOff = v)],
+  walkPick: [() => walkPick, v => (walkPick = v)],
+  walkSceneSync: [() => walkSceneSync, v => (walkSceneSync = v)],
+  walkState: [() => walkState, v => (walkState = v)],
+  whCard: [() => whCard, v => (whCard = v)],
+  xpLeft: [() => xpLeft],
+  xpPart: [() => xpPart],
+});
+/* eslint-enable no-func-assign */
+/* to-module: end */
 const chip = t => `<span class="chip" style="--tc:${TC[t][0]};--tf:${TC[t][1]}">${t === 'None' ? 'Normal' : t}</span>`;
 const stBadge = st => (st ? `<span class="stb st-${st}">${STATUSN[st]}</span>` : '');
 function bar(p, cls = '') {
@@ -11,7 +302,7 @@ function hpBar(hp, max) {
 }
 
 /* ---------- toasts & modals ---------- */
-function toast(t) {
+export function toast(t) {
   U.toastQ.push(t);
   if (!U.toastOn) nextToast();
 }
@@ -26,7 +317,7 @@ function nextToast() {
   renderOv();
   setTimeout(nextToast, U.toastQ.length > 2 ? 1300 : 2300);
 }
-function modal(o) {
+export function modal(o) {
   U.mq.push(o);
   if (!U.modal) nextModal();
 }
@@ -34,12 +325,12 @@ function nextModal() {
   U.modal = U.mq.shift() || null;
   renderOv();
 }
-function closeModal() {
+export function closeModal() {
   U.modal = null;
   nextModal();
   if (!U.modal) postProcess();
 }
-function renderOv() {
+export function renderOv() {
   const ov = $('#ov');
   let h = '';
   const M = U.modal;
@@ -69,7 +360,7 @@ function renderOv() {
 }
 
 /* ---------- post-step events ---------- */
-function postProcess() {
+export function postProcess() {
   if (B || U.modal || !S.started || U.title) return;
   const eg = hatchable()[0];
   if (eg) {
@@ -239,7 +530,7 @@ function topbar() {
     walk = U.tab === 'walk';
   return `<div class="topbar glass" role="status">${walk ? `<button class="tb-where ${shut ? 'shut' : ''}" data-a="card-open" aria-expanded="${!shut}" aria-label="${shut ? 'Show' : 'Hide'} the card for ${esc(ROUTE[S.route.node].name)}">${esc(U.inside && !U.bench && typeof roomState === 'function' && roomState() ? U.inside.name || ROUTE[S.route.node].name : ROUTE[S.route.node].name)}${uiIco('chev', 12)}</button>` : `<span class="tb-where">${esc(ROUTE[S.route.node].name)}</span>`}<span class="tb-chip tnum" title="Money">${coinHTML('penny', 16)}<small>$</small><b data-count="tse" data-to="${S.se}">${fmt(S.se)}</b></span><button class="tb-btn" data-a="settings" aria-label="Settings and help">${uiIco('gear', 18)}</button><button class="tb-me" data-a="tab" data-t="profile" aria-label="Your trainer card" ${U.tab === 'profile' ? 'aria-current="page"' : ''}>${typeof portraitHTML === 'function' ? portraitHTML('me', 84) : ''}</button></div>`;
 }
-function render() {
+export function render() {
   const app = $('#app');
   if (U.title && typeof renderTitle === 'function') {
     app.innerHTML = renderTitle();
@@ -631,7 +922,7 @@ function renderWalk() {
  ${eggSlots()}${buddyCard()}</div></div></div>`;
 }
 /* ---------- the walk scene behind the Walk tab ---------- */
-function sceneIdAt(i) {
+export function sceneIdAt(i) {
   const S0 = GD.scenes || {},
     r = ROUTE[i];
   if (r && r.scene && S0[r.scene]) return r.scene;
@@ -826,7 +1117,7 @@ function roomStepIn(info, n = 0) {
       if (U.inside === info && DIO.id === info.view && DIO.pl && DIO.sc) dioWalkTo(dioHubOf(DIO.sc));
     }, 80);
 }
-function leaveRoom() {
+export function leaveRoom() {
   const I = U.inside;
   if (!I) return;
   U.inside = null;
@@ -1081,7 +1372,7 @@ function walkState() {
   v.enc = S.queue.map(q => ({ id: q.id, lvl: q.lvl, sp: q.sp, gold: q.gold, alpha: !!q.alpha }));
   return v;
 }
-function walkPick(h) {
+export function walkPick(h) {
   const node = S.route.node,
     here = ROUTE[node];
   if (U.inside) {
@@ -2150,7 +2441,7 @@ function settings(tab) {
   });
 }
 /* o.rival (v47, from the opening): Blake's battle comes first; the welcome sheet waits until the talk after it */
-function startGame(l, o = {}) {
+export function startGame(l, o = {}) {
   const avatar = cleanLook(U.avatarDraft || U.trainerDraft || TR_PRESETS[0]);
   S = freshKeep();
   S.avatar = avatar;
@@ -2781,7 +3072,7 @@ function bgBuild() {
   }));
   BG.sp = Array.from({ length: dk ? 40 : 14 }, () => ({ x: rnd() * W, y: rnd() * H * 0.8, p: rnd() * 6 }));
 }
-function bgInit() {
+export function bgInit() {
   const c = document.createElement('canvas');
   c.id = 'bgfx';
   c.setAttribute('aria-hidden', 'true');

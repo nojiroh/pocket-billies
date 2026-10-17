@@ -3,6 +3,22 @@
    Your inventory, in pockets by what things are for: Healing (potions, salves, revives, snacks), Coins (for taxing
    a Billie in battle), Special (stones that make some Billies evolve) and Eggs (with how far each still has to go).
    Tap a thing to choose it; healing is used straight from here on a Billie you pick. */
+/* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
+import { expose } from './bridge.js';
+import { COINS, EGGS, ITEMS, STATUSN } from './data.js';
+import { N, S, U, esc, fmt, maxHp } from './core.js';
+import { coinHTML, eggHTML, uiIco } from './art.js';
+import { bustHTML } from './rig.js';
+import { applyItem, canUse, itemIcon, teamNeedsHp } from './battle.js';
+/* eslint-disable no-func-assign */
+expose({
+  BAG_POCKETS: [() => BAG_POCKETS],
+  bagHeal: [() => bagHeal],
+  bagList: [() => bagList, v => (bagList = v)],
+  renderBag: [() => renderBag, v => (renderBag = v)],
+});
+/* eslint-enable no-func-assign */
+/* to-module: end */
 const BAG_POCKETS = [
   ['heal', 'Healing', 'heart'],
   ['coins', 'Coins', 'coin'],
@@ -19,7 +35,7 @@ function bagList(p) {
   if (p === 'coins') return Object.keys(COINS).filter(k => S.coins[k] > 0);
   return [];
 }
-function renderBag() {
+export function renderBag() {
   const p = U.bagP || 'heal',
     sel = U.bagSel;
   const tabs = `<div class="bag-pockets glass px" role="tablist" aria-label="Pockets">${BAG_POCKETS.map(

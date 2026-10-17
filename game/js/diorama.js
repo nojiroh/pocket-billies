@@ -7,7 +7,179 @@
    v10: the player walks around freely (tap the ground, a building, a trainer, a road sign), townsfolk wander,
    chimneys smoke, fountains splash, windmills turn, butterflies and leaves drift by.
    Scenes and the prop catalog live in game data (scenes, scenery) and are edited in Pocket Billies Studio. */
-const DIO = {
+/* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
+import { expose } from './bridge.js';
+import { clamp } from './util.js';
+import { frameStop } from './frame.js';
+import { ART, artLoad, cnv, pkh } from './art.js';
+/* eslint-disable no-func-assign */
+expose({
+  DIO: [() => DIO],
+  DIO_BRIDGE_ARC: [() => DIO_BRIDGE_ARC],
+  DIO_CHAT: [() => DIO_CHAT],
+  DIO_CLK: [() => DIO_CLK],
+  DIO_FAR_TP: [() => DIO_FAR_TP],
+  DIO_FX: [() => DIO_FX],
+  DIO_FXM: [() => DIO_FXM],
+  DIO_GCACHE: [() => DIO_GCACHE],
+  DIO_GKEEP: [() => DIO_GKEEP],
+  DIO_GPEND: [() => DIO_GPEND],
+  DIO_HOP: [() => DIO_HOP],
+  DIO_KEYS: [() => DIO_KEYS],
+  DIO_N: [() => DIO_N],
+  DIO_NATW: [() => DIO_NATW],
+  DIO_PAD: [() => DIO_PAD],
+  DIO_RISE: [() => DIO_RISE],
+  DIO_ROOF: [() => DIO_ROOF],
+  DIO_SPEED: [() => DIO_SPEED],
+  DIO_STEPS: [() => DIO_STEPS],
+  DIO_T0: [() => DIO_T0],
+  DIO_TA: [() => DIO_TA],
+  DIO_TC: [() => DIO_TC],
+  DIO_TD: [() => DIO_TD],
+  DIO_TILECACHE: [() => DIO_TILECACHE],
+  DIO_TL: [() => DIO_TL],
+  DIO_VAR: [() => DIO_VAR],
+  FOLK_HOME: [() => FOLK_HOME],
+  FOLK_WORK: [() => FOLK_WORK],
+  OPEN_HOURS: [() => OPEN_HOURS],
+  OPEN_NAMES: [() => OPEN_NAMES],
+  PW_WAIT: [() => PW_WAIT],
+  dioActLabel: [() => dioActLabel, v => (dioActLabel = v)],
+  dioActSpot: [() => dioActSpot, v => (dioActSpot = v)],
+  dioAlong: [() => dioAlong, v => (dioAlong = v)],
+  dioApproach: [() => dioApproach, v => (dioApproach = v)],
+  dioB64: [() => dioB64, v => (dioB64 = v)],
+  dioB64Out: [() => dioB64Out, v => (dioB64Out = v)],
+  dioBaseId: [() => dioBaseId, v => (dioBaseId = v)],
+  dioBridgeAt: [() => dioBridgeAt, v => (dioBridgeAt = v)],
+  dioBridges: [() => dioBridges, v => (dioBridges = v)],
+  dioBubble: [() => dioBubble, v => (dioBubble = v)],
+  dioBuildGround: [() => dioBuildGround, v => (dioBuildGround = v)],
+  dioCandidates: [() => dioCandidates, v => (dioCandidates = v)],
+  dioCanvasXY: [() => dioCanvasXY, v => (dioCanvasXY = v)],
+  dioCell: [() => dioCell, v => (dioCell = v)],
+  dioClick: [() => dioClick, v => (dioClick = v)],
+  dioClimb: [() => dioClimb, v => (dioClimb = v)],
+  dioClimbEnds: [() => dioClimbEnds, v => (dioClimbEnds = v)],
+  dioClimbGo: [() => dioClimbGo, v => (dioClimbGo = v)],
+  dioClimbStep: [() => dioClimbStep, v => (dioClimbStep = v)],
+  dioClipSeg: [() => dioClipSeg, v => (dioClipSeg = v)],
+  dioClock: [() => dioClock, v => (dioClock = v)],
+  dioCostAt: [() => dioCostAt, v => (dioCostAt = v)],
+  dioData: [() => dioData, v => (dioData = v)],
+  dioDirOf: [() => dioDirOf, v => (dioDirOf = v)],
+  dioEncSpot: [() => dioEncSpot, v => (dioEncSpot = v)],
+  dioEnsureGround: [() => dioEnsureGround, v => (dioEnsureGround = v)],
+  dioExitEdge: [() => dioExitEdge, v => (dioExitEdge = v)],
+  dioExitLabels: [() => dioExitLabels, v => (dioExitLabels = v)],
+  dioExitMarks: [() => dioExitMarks, v => (dioExitMarks = v)],
+  dioExitPoint: [() => dioExitPoint, v => (dioExitPoint = v)],
+  dioExitsSync: [() => dioExitsSync, v => (dioExitsSync = v)],
+  dioFace: [() => dioFace, v => (dioFace = v)],
+  dioFind: [() => dioFind, v => (dioFind = v)],
+  dioFlagPath: [() => dioFlagPath, v => (dioFlagPath = v)],
+  dioFolkAnchors: [() => dioFolkAnchors, v => (dioFolkAnchors = v)],
+  dioFolkCount: [() => dioFolkCount, v => (dioFolkCount = v)],
+  dioFolkGo: [() => dioFolkGo, v => (dioFolkGo = v)],
+  dioFolkInit: [() => dioFolkInit, v => (dioFolkInit = v)],
+  dioFolkStep: [() => dioFolkStep, v => (dioFolkStep = v)],
+  dioFolkStreet: [() => dioFolkStreet, v => (dioFolkStreet = v)],
+  dioFolkTick: [() => dioFolkTick, v => (dioFolkTick = v)],
+  dioFree: [() => dioFree, v => (dioFree = v)],
+  dioFreePt: [() => dioFreePt, v => (dioFreePt = v)],
+  dioGradeK: [() => dioGradeK, v => (dioGradeK = v)],
+  dioGrassImgs: [() => dioGrassImgs, v => (dioGrassImgs = v)],
+  dioGroundAsync: [() => dioGroundAsync, v => (dioGroundAsync = v)],
+  dioGroundCached: [() => dioGroundCached, v => (dioGroundCached = v)],
+  dioGroundGen: [() => dioGroundGen, v => (dioGroundGen = v)],
+  dioGroundKeep: [() => dioGroundKeep, v => (dioGroundKeep = v)],
+  dioGroundKey: [() => dioGroundKey, v => (dioGroundKey = v)],
+  dioGrowK: [() => dioGrowK, v => (dioGrowK = v)],
+  dioHash: [() => dioHash, v => (dioHash = v)],
+  dioHitAt: [() => dioHitAt, v => (dioHitAt = v)],
+  dioHubOf: [() => dioHubOf, v => (dioHubOf = v)],
+  dioImg: [() => dioImg, v => (dioImg = v)],
+  dioLOS: [() => dioLOS, v => (dioLOS = v)],
+  dioLayerM: [() => dioLayerM, v => (dioLayerM = v)],
+  dioMix: [() => dioMix, v => (dioMix = v)],
+  dioMoodOf: [() => dioMoodOf, v => (dioMoodOf = v)],
+  dioNav: [() => dioNav, v => (dioNav = v)],
+  dioNearFree: [() => dioNearFree, v => (dioNearFree = v)],
+  dioNextOn: [() => dioNextOn],
+  dioNextTiles: [() => dioNextTiles, v => (dioNextTiles = v)],
+  dioNoise: [() => dioNoise, v => (dioNoise = v)],
+  dioOk: [() => dioOk],
+  dioPaintGen: [() => dioPaintGen, v => (dioPaintGen = v)],
+  dioPanel: [() => dioPanel, v => (dioPanel = v)],
+  dioPass: [() => dioPass, v => (dioPass = v)],
+  dioPaths: [() => dioPaths, v => (dioPaths = v)],
+  dioPick: [() => dioPick, v => (dioPick = v)],
+  dioPill: [() => dioPill, v => (dioPill = v)],
+  dioPillSize: [() => dioPillSize, v => (dioPillSize = v)],
+  dioPlain47: [() => dioPlain47, v => (dioPlain47 = v)],
+  dioPlayer: [() => dioPlayer, v => (dioPlayer = v)],
+  dioPlayer0: [() => dioPlayer0, v => (dioPlayer0 = v)],
+  dioPlayerY: [() => dioPlayerY, v => (dioPlayerY = v)],
+  dioPoly: [() => dioPoly, v => (dioPoly = v)],
+  dioPolyAt: [() => dioPolyAt, v => (dioPolyAt = v)],
+  dioPolyNear: [() => dioPolyNear, v => (dioPolyNear = v)],
+  dioPrepare: [() => dioPrepare, v => (dioPrepare = v)],
+  dioProj: [() => dioProj, v => (dioProj = v)],
+  dioPropM: [() => dioPropM, v => (dioPropM = v)],
+  dioPropOn: [() => dioPropOn, v => (dioPropOn = v)],
+  dioPx: [() => dioPx, v => (dioPx = v)],
+  dioPxArrow: [() => dioPxArrow, v => (dioPxArrow = v)],
+  dioPxFont: [() => dioPxFont, v => (dioPxFont = v)],
+  dioPxTail: [() => dioPxTail, v => (dioPxTail = v)],
+  dioSay: [() => dioSay, v => (dioSay = v)],
+  dioScene: [() => dioScene, v => (dioScene = v)],
+  dioShade: [() => dioShade, v => (dioShade = v)],
+  dioShape: [() => dioShape, v => (dioShape = v)],
+  dioSpeech: [() => dioSpeech, v => (dioSpeech = v)],
+  dioStableCells: [() => dioStableCells, v => (dioStableCells = v)],
+  dioStep: [() => dioStep, v => (dioStep = v)],
+  dioStepCH: [() => dioStepCH, v => (dioStepCH = v)],
+  dioStepCHS: [() => dioStepCHS, v => (dioStepCHS = v)],
+  dioStepCell: [() => dioStepCell, v => (dioStepCell = v)],
+  dioStepCorners: [() => dioStepCorners, v => (dioStepCorners = v)],
+  dioStepJoined: [() => dioStepJoined, v => (dioStepJoined = v)],
+  dioStepLevel: [() => dioStepLevel, v => (dioStepLevel = v)],
+  dioStepM: [() => dioStepM, v => (dioStepM = v)],
+  dioStepOK: [() => dioStepOK, v => (dioStepOK = v)],
+  dioSteps: [() => dioSteps, v => (dioSteps = v)],
+  dioStepsNew: [() => dioStepsNew, v => (dioStepsNew = v)],
+  dioStepsStore: [() => dioStepsStore, v => (dioStepsStore = v)],
+  dioStop: [() => dioStop, v => (dioStop = v)],
+  dioT47: [() => dioT47, v => (dioT47 = v)],
+  dioTag: [() => dioTag, v => (dioTag = v)],
+  dioTapMark: [() => dioTapMark, v => (dioTapMark = v)],
+  dioTer: [() => dioTer, v => (dioTer = v)],
+  dioTileFolder: [() => dioTileFolder, v => (dioTileFolder = v)],
+  dioTilePix: [() => dioTilePix, v => (dioTilePix = v)],
+  dioTileScale: [() => dioTileScale, v => (dioTileScale = v)],
+  dioTileSet: [() => dioTileSet, v => (dioTileSet = v)],
+  dioTimedKey: [() => dioTimedKey, v => (dioTimedKey = v)],
+  dioToneAt: [() => dioToneAt, v => (dioToneAt = v)],
+  dioTonePx: [() => dioTonePx, v => (dioTonePx = v)],
+  dioUIpx: [() => dioUIpx],
+  dioUnproject: [() => dioUnproject, v => (dioUnproject = v)],
+  dioWalkTo: [() => dioWalkTo, v => (dioWalkTo = v)],
+  dioWaterOf: [() => dioWaterOf, v => (dioWaterOf = v)],
+  dioWearAmtFn: [() => dioWearAmtFn, v => (dioWearAmtFn = v)],
+  dioWearFn: [() => dioWearFn, v => (dioWearFn = v)],
+  dioWearLines: [() => dioWearLines, v => (dioWearLines = v)],
+  folkHello: [() => folkHello, v => (folkHello = v)],
+  folkHour: [() => folkHour, v => (folkHour = v)],
+  folkPhase: [() => folkPhase, v => (folkPhase = v)],
+  folkTown: [() => folkTown, v => (folkTown = v)],
+  openKind: [() => openKind, v => (openKind = v)],
+  placeClosedText: [() => placeClosedText, v => (placeClosedText = v)],
+  placeOpen: [() => placeOpen, v => (placeOpen = v)],
+});
+/* eslint-enable no-func-assign */
+/* to-module: end */
+export const DIO = {
   cv: null,
   x: null,
   id: null,
@@ -63,14 +235,14 @@ const dioUIpx = n => {
   const k = c.width / c.clientWidth;
   return Math.round(n * k);
 };
-const DIO_PAD = 8,
+export const DIO_PAD = 8,
   DIO_N = 2,
   DIO_SPEED = 3.4;
 /* alpha 0.4: what a painting generator yields while the ground painter's helper thread works (paint.js): whatever
    steps it stops for now and comes back later */
-const PW_WAIT = { pw: 1 };
+export const PW_WAIT = { pw: 1 };
 const DIO_FX = ['butterfly', 'bird', 'leaf', 'smoke', 'spray', 'sparkle', 'bee', 'fish', 'moth', 'flame'];
-const DIO_FXM = {
+export const DIO_FXM = {
   flame: [12, 18, 4],
   butterfly: [8, 7, 2],
   bird: [10, 6, 2],
@@ -95,12 +267,12 @@ const DIO_CHAT = [
   'Watch out, trainers like to battle anyone who looks at them.',
 ];
 /* hooks the Studio replaces to show unsaved art and data */
-let dioData = () => ({ scenes: GD.scenes || {}, sc: GD.scenery || { terrains: {}, props: {} } });
-let dioImg = path => ART.img[path];
+export let dioData = () => ({ scenes: GD.scenes || {}, sc: GD.scenery || { terrains: {}, props: {} } });
+export let dioImg = path => ART.img[path];
 /* v42: exits are kept edge-relative (edgeExits: {id, side N/S/E/W, t along that side 0..1, in metres from the edge, width})
    so a scene can change size and its exits stay on the same edge; sc.exits (the points everything else reads) is
    rebuilt from them whenever the size or the count changes. The Studio keeps both in step while you drag. */
-function dioExitPoint(sc, e) {
+export function dioExitPoint(sc, e) {
   const w = sc.w,
     h = sc.h,
     n = e.in == null ? 1.1 : e.in,
@@ -113,7 +285,7 @@ function dioExitPoint(sc, e) {
         ? [r(w - n), r(e.t * h)]
         : [r(n), r(e.t * h)];
 }
-function dioExitEdge(sc, p, old) {
+export function dioExitEdge(sc, p, old) {
   const w = sc.w,
     h = sc.h,
     x = p[0],
@@ -134,20 +306,20 @@ function dioExitsSync(sc) {
   return sc;
 }
 /* v43: the scene a view belongs to (a composite's base), for things that go by scene: legends, stamps, ambience */
-function dioBaseId() {
+export function dioBaseId() {
   return (DIO.sc && DIO.sc.baseId) || DIO.id;
 }
-function dioScene(id) {
+export function dioScene(id) {
   if (id && id.charCodeAt(0) === 119 && id[1] === ':' && typeof wrSceneById === 'function') return wrSceneById(id);
   /* v43: a window onto the seamless world */ const S = dioData().scenes;
   /* phase 04b: a map whose own file hasn't come yet (js/scene-files.js) */
   if (S[id] && S[id]._lite && typeof SCENE_FILES !== 'undefined') SCENE_FILES.touched.add(id);
   return S[id] ? dioExitsSync(S[id]) : null;
 }
-const dioOk = im => !!(im && (im.naturalWidth || im.width));
+export const dioOk = im => !!(im && (im.naturalWidth || im.width));
 /* a prop's extra layer as a prop of its own: same base point unless it says otherwise, shifted dx right and dy up (pixels),
    dz meters back (negative: in front). Effects, glows, labels and shadows stay with the main picture. */
-function dioLayerM(M, l) {
+export function dioLayerM(M, l) {
   return {
     img: l.img,
     ox: (l.ox ?? M.ox) + (l.dx || 0),
@@ -159,8 +331,8 @@ function dioLayerM(M, l) {
 }
 /* the 32 px ground tiles, twelve per kind (art/next/tiles47; the v46 set in art/next/tiles is on the legacy branch) */
 /* v47: the 32 px ground is the only full-mode ground (the 16 px tiles stay for Lite mode and the Studio's tile editor) */
-const dioNextOn = () => true;
-function dioNextTiles(path, set) {
+export const dioNextOn = () => true;
+export function dioNextTiles(path, set) {
   const b = (path || '')
       .replace(/^.*\//, '')
       .replace(/\.png$/, '')
@@ -170,15 +342,15 @@ function dioNextTiles(path, set) {
 } /* v46: twelve per kind (tools/build-terrain.py) */
 /* v47: which set of twelve: the catalogue's tileSet ('tiles47', tools/build-terrain-v47.py), else the v46 set. With the
    v47 set the painter lays the soft patches itself, in world metres, picks the plain tiles evenly and never mirrors */
-function dioTileFolder() {
+export function dioTileFolder() {
   const C = typeof dioData === 'function' && dioData();
   return (C && C.sc && C.sc.tileSet) || 'tiles47';
 }
-function dioT47() {
+export function dioT47() {
   return dioNextOn() && dioTileFolder() === 'tiles47';
 }
 /* v43: which flag a scene flies: its own (scene/flags/<id>.png) unless it names another */
-function dioFlagPath(sc) {
+export function dioFlagPath(sc) {
   const D = dioData(),
     own = sc.baseId || Object.keys(D.scenes).find(k => D.scenes[k] === sc),
     id = sc.flag || ((D.sc.flags || []).includes(own) ? own : 'default');
@@ -195,7 +367,7 @@ const DIO_ROOF = {
   solar: { roofTex: 17, roofCol: '#3A4C7E' },
   chrome: { roofTex: 12, roofCol: '#8FC4CE' },
 };
-function dioPropM(p, M) {
+export function dioPropM(p, M) {
   const n = p && p.v | 0,
     rf = M && M.build && p && p.roof ? DIO_ROOF[p.roof] : null;
   if (!M || !M.build || (!rf && (!n || !M.build.variants))) return M;
@@ -217,7 +389,7 @@ function dioPropM(p, M) {
 /* v47: things that are only out at some hours, on some days or in some seasons. A prop may say hours:[from,to]
    (e.g. [6,12]; [21,4] runs past midnight), days:[0-6] (0 is Sunday) and season:'autumn' or a list. The clock is
    the game's (env.js: real time, or the time set in Settings), checked once a second. */
-const DIO_CLK = { t: -1e9, h: 13, day: 0, ss: 'summer' };
+export const DIO_CLK = { t: -1e9, h: 13, day: 0, ss: 'summer' };
 function dioClock() {
   const n = performance.now();
   if (n - DIO_CLK.t < 1000) return DIO_CLK;
@@ -230,14 +402,14 @@ function dioClock() {
 }
 /* v47: crops grow between your visits: each field (a prop's "grow", from tools/build-life-v47.py) is sown, grows for
    a week and is harvested, on a nine-day round of its own */
-function dioGrowK(p) {
+export function dioGrowK(p) {
   if (!p || p.grow == null) return 1;
   const d = new Date(),
     day = Math.floor((d.getTime() - d.getTimezoneOffset() * 6e4) / 864e5),
     st = (day + p.grow * 4) % 9;
   return st === 0 ? 0 : Math.min(1, 0.3 + st * 0.14);
 }
-function dioPropOn(p) {
+export function dioPropOn(p) {
   if (!p || (!p.hours && !p.days && !p.season && p.grow == null && !p.dry)) return true;
   if (p.grow != null && !dioGrowK(p)) return false;
   /* v47: "dry": only while the ground is dry and clear (chalk drawings wash away in the rain and come back after) */
@@ -294,25 +466,25 @@ const OPEN_NAMES = {
   barn: 'The barn',
 };
 /* v47: the kind a door keeps hours as (not data.js placeKind(id), the kind of a place) */
-function openKind(a, p) {
+export function openKind(a, p) {
   const C = dioData().sc,
     M = p && C.props[p.k],
     RK = typeof ROOM_KIND !== 'undefined' ? ROOM_KIND : {};
   return p && RK[p.k] ? p.k : M && RK[M.group] ? M.group : a;
 }
-function placeOpen(kind) {
+export function placeOpen(kind) {
   const H = OPEN_HOURS[kind];
   if (!H) return true;
   const h = dioClock().h;
   return h >= H[0] && h < H[1];
 }
-function placeClosedText(kind) {
+export function placeClosedText(kind) {
   const H = OPEN_HOURS[kind],
     f = v => `${Math.floor(v)}:${String(Math.round((v % 1) * 60)).padStart(2, '0')}`;
   return `${OPEN_NAMES[kind] || 'It'} is closed for the night. It opens at ${H ? f(H[0]) : 'morning'}.${kind === 'shop' ? ' You can still order from the town card.' : ''}`;
 }
 /* the label over something you can use: what it is, Read for a book you haven't read, Closed after hours */
-function dioActLabel(p, M) {
+export function dioActLabel(p, M) {
   if (p.label) return p.label;
   if (p.act === 'read') return typeof loreFlags === 'function' && !loreFlags()['read_' + p.book] ? 'Read' : null;
   if (!(M && (M.door || M.box))) return null;
@@ -320,7 +492,7 @@ function dioActLabel(p, M) {
   if (!b) return null;
   return placeOpen(openKind(p.act, p)) ? b : 'Closed';
 }
-function dioPaths(sc) {
+export function dioPaths(sc) {
   const C = dioData().sc,
     L = new Set([
       C.wallArt || 'scene/build/walls.png',
@@ -365,7 +537,7 @@ function dioPaths(sc) {
   if (typeof voxPaths === 'function') for (const q of voxPaths(sc, C)) L.add(q);
   return [...L];
 }
-async function dioPrepare(id) {
+export async function dioPrepare(id) {
   /* phase 04b: the maps this view is put together from, whole */
   if (typeof scenesNeed === 'function') await scenesNeed(scenesFor(id));
   const sc = dioScene(id);
@@ -379,12 +551,12 @@ async function dioPrepare(id) {
   return sc;
 }
 /* ---------- ground texture ---------- */
-function dioHash(x, y) {
+export function dioHash(x, y) {
   let h = (x * 374761393 + y * 668265263) ^ 0x5bd1e995;
   h = Math.imul(h ^ (h >>> 13), 1274126177);
   return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
 }
-function dioNoise(x, y) {
+export function dioNoise(x, y) {
   const xi = Math.floor(x),
     yi = Math.floor(y),
     fx = x - xi,
@@ -406,7 +578,7 @@ function dioTilePix(path) {
   x.drawImage(im, 0, 0);
   return { w, h, d: new Uint32Array(x.getImageData(0, 0, w, h).data.buffer) };
 }
-function dioGroundKey(sc) {
+export function dioGroundKey(sc) {
   const C = dioData().sc;
   return JSON.stringify([
     sc.w,
@@ -433,7 +605,7 @@ function dioGroundKey(sc) {
    sampled on a coarse grid (several times faster), and keeps the last few scenes' pictures for instant revisits. */
 /* v46: which ground pattern each cell takes. Inside a scene its own metres, on a road the road's frame, so a spot
    looks the same in every view it appears in (sc.stable, set by world.js); a plain scene uses its own metres. */
-function dioStableCells(sc, cx0, cy0, cw, ch) {
+export function dioStableCells(sc, cx0, cy0, cw, ch) {
   const P = DIO_PAD,
     H = sc.h,
     S = sc.stable,
@@ -488,7 +660,7 @@ function dioStableCells(sc, cx0, cy0, cw, ch) {
 /* v46: worn ground: within about 0.7 m of the straight lines from a scene's hub to each of its exits, wobbling a
    little, natural ground shows its trodden tiles. Each scene's lines are in its own metres (sc.stable), so every view
    of it wears the same. (x, z) are view metres; (sx, sz) the cell's stable metres */
-function dioWearLines(sc) {
+export function dioWearLines(sc) {
   const S = sc.stable,
     L = [];
   const add = (hub, exits, ox, oz, worn, clip) => {
@@ -510,7 +682,7 @@ function dioWearLines(sc) {
   return L;
 }
 /* the part of segment (x0, z0)-(x1, z1) inside rect k = [x0, z0, x1, z1], or null */
-function dioClipSeg(x0, z0, x1, z1, k) {
+export function dioClipSeg(x0, z0, x1, z1, k) {
   let t0 = 0,
     t1 = 1;
   const dx = x1 - x0,
@@ -538,7 +710,7 @@ function dioClipSeg(x0, z0, x1, z1, k) {
 }
 /* v47: how worn the ground is at (x, z) (view metres; sx, sz its stable metres): 1 along the middle of a line people
    walk, fading to 0 at its edge, about 0.45 to 0.95 m out (the same reach as the worn tiles) */
-function dioWearAmtFn(sc) {
+export function dioWearAmtFn(sc) {
   const L = dioWearLines(sc);
   if (!L.length) return null;
   /* v47b: the lines as a flat table with their boxes (1 m round each), and nothing further than a metre worked out */
@@ -585,7 +757,7 @@ function dioWearAmtFn(sc) {
     return q * q * (3 - 2 * q);
   };
 }
-function dioWearFn(sc, wx0, wy0) {
+export function dioWearFn(sc, wx0, wy0) {
   const L = dioWearLines(sc);
   if (!L.length) return () => false;
   return (x, z, sx, sz) => {
@@ -604,12 +776,12 @@ function dioWearFn(sc, wx0, wy0) {
    cut at every tile's edge and repeated with the tile): a quarter of natural ground half a step darker and a touch
    richer, a fifth lighter and a touch paler, a checker where they meet. A kind's `tone` scales them (paved: none).
    The same sums as tools/build-terrain-v47.py (tone_at, tone_px), so its sheets show what the game lays */
-const DIO_TC = [Math.cos(0.52), Math.sin(0.52), Math.cos(-0.35), Math.sin(-0.35)],
+export const DIO_TC = [Math.cos(0.52), Math.sin(0.52), Math.cos(-0.35), Math.sin(-0.35)],
   DIO_TD = [0.895, 0.905, 0.935],
   DIO_TL = [1.05, 1.05, 1.04],
   DIO_TA = [5, 4, 1],
   DIO_T0 = [0, 0, 0];
-function dioToneAt(x, z) {
+export function dioToneAt(x, z) {
   const C = DIO_TC,
     u = x * C[0] - z * C[1],
     w = x * C[1] + z * C[0],
@@ -617,7 +789,7 @@ function dioToneAt(x, z) {
     w2 = x * C[3] + z * C[2];
   return 0.62 * dioNoise(u * 3.1, w * 3.1) + 0.38 * dioNoise(u2 * 6.3 + 17.3, w2 * 6.3 + 4.1);
 }
-function dioTonePx(c, v, odd, k) {
+export function dioTonePx(c, v, odd, k) {
   const dark = v < 0.372 || (v < 0.408 && !odd);
   if (!dark && !(v > 0.653 || (v > 0.617 && !odd))) return c;
   /* (written out without a small function per pixel: this runs for about half the natural ground) */
@@ -639,13 +811,13 @@ function dioTonePx(c, v, odd, k) {
 /* v47: the plain tile of a metre: the three equally often, and not the one the metre to the left or behind would pick
    on its own (two of the same side by side showed as a repeat) */
 /* v47: a scene's mood: its own (sc.mood), else its place's (route entry .mood); the presets are in the data (moods) */
-function dioMoodOf(S) {
+export function dioMoodOf(S) {
   if (!S) return null;
   if (S.mood) return S.mood;
   const R = ((typeof GD !== 'undefined' && GD.route) || []).find(r => r.id === S.place);
   return (R && R.mood) || null;
 }
-function dioShade(c, k) {
+export function dioShade(c, k) {
   return (
     (c & 0xff000000) |
     (Math.min(255, ((c >> 16) & 255) * k) << 16) |
@@ -653,7 +825,7 @@ function dioShade(c, k) {
     Math.min(255, (c & 255) * k)
   );
 }
-function dioPlain47(sx, sz, sa) {
+export function dioPlain47(sx, sz, sa) {
   const h = (x, z) => Math.floor(dioHash(x * 3 + 11 + sa * 7919, z * 7 + 5) * 3),
     p = h(sx, sz),
     L = h(sx - 1, sz),
@@ -688,7 +860,7 @@ function dioTileScale(t, f) {
   return { w, h, d };
 }
 const DIO_TILECACHE = new Map();
-function dioTileSet(T, TP) {
+export function dioTileSet(T, TP) {
   const C = dioData().sc,
     nxOn = dioNextOn(),
     key =
@@ -726,7 +898,7 @@ function dioTileSet(T, TP) {
    v46: any rectangle of the scene's picture (canvas cells, padding included; row 0 the far edge) at any size: TP pixels
    a metre. The 3D renderer paints a view's whole ground small (its distance) and the 16 m squares round you at full
    size (diorama-gl.js, the near ring). Patterns and noise come from each cell's own scene or road metres. */
-function* dioPaintGen(sc, o) {
+export function* dioPaintGen(sc, o) {
   const C = dioData().sc,
     W = sc.w,
     H = sc.h,
@@ -1778,7 +1950,7 @@ function dioBuildGround(sc) {
   }
 }
 /* built pictures, newest last; a scene you come back to opens at once */
-const DIO_GCACHE = new Map();
+export const DIO_GCACHE = new Map();
 function dioGroundCached(key) {
   const g = DIO_GCACHE.get(key);
   if (g) {
@@ -1806,7 +1978,7 @@ function dioGroundKeep(key, g) {
    soon -5, one only looked ahead to 10; the squares round you 0 to 3 */
 /* (one build per ground at a time: a second asker waits for the first, moving it up the queue if it is needed sooner) */
 const DIO_GPEND = new Map();
-async function dioGroundAsync(sc, pr = 0) {
+export async function dioGroundAsync(sc, pr = 0) {
   const key = dioGroundKey(sc);
   if (dioGroundCached(key)) return;
   const pend = DIO_GPEND.get(key);
@@ -1861,7 +2033,7 @@ function dioWaterOf(sc) {
   Object.defineProperty(sc, '_wKey', { value: rows.join(''), writable: true, configurable: true, enumerable: false });
   return out;
 }
-function dioEnsureGround() {
+export function dioEnsureGround() {
   const sc = DIO.sc,
     key = dioGroundKey(sc);
   if (key !== DIO.gkey || !DIO.ground) {
@@ -1875,14 +2047,14 @@ function dioEnsureGround() {
   }
   return DIO.ground;
 }
-function dioTer(x, z) {
+export function dioTer(x, z) {
   const sc = DIO.sc,
     i = Math.floor(x),
     j = sc.h - 1 - Math.floor(z);
   return i < 0 || j < 0 || i >= sc.w || j >= sc.h ? sc.edge : ((sc.tiles || [])[j] || '')[i] || sc.edge;
 }
 /* ---------- polylines ---------- */
-function dioPoly(pts) {
+export function dioPoly(pts) {
   let L = 0;
   const seg = [];
   for (let i = 0; i < pts.length - 1; i++) {
@@ -1891,7 +2063,7 @@ function dioPoly(pts) {
   }
   return { p: pts, seg, L };
 }
-function dioPolyAt(P, d) {
+export function dioPolyAt(P, d) {
   const p = P.p;
   if (p.length < 2) return { x: p[0][0], z: p[0][1], dx: 0, dz: 0 };
   d = clamp(d, 0, P.L);
@@ -1928,7 +2100,7 @@ function dioPolyNear(P, x, z) {
   }
   return best;
 }
-function dioAlong(sc, t) {
+export function dioAlong(sc, t) {
   const P = dioPoly(
     sc.path && sc.path.length > 1
       ? sc.path
@@ -1939,7 +2111,7 @@ function dioAlong(sc, t) {
   );
   return dioPolyAt(P, clamp(t, 0, 1) * P.L);
 }
-function dioHubOf(sc) {
+export function dioHubOf(sc) {
   if (sc.hub) return sc.hub;
   const a = dioAlong(sc, sc.start ?? 0.42);
   return [a.x, a.z];
@@ -1949,10 +2121,10 @@ function dioHubOf(sc) {
    edge, x across). Neighbouring cells at different raises meet in a vertical wall: a cliff, a terrace front, a stair riser.
    scene.stepm: per cell (Uint8, base64) the wall material in the low 4 bits (0 = the scene's own rock) and flag 16 = a
    ledge: you can hop down from this cell, never climb up. Stairs are cells that rise a little at a time. */
-const DIO_STEPS = new WeakMap(),
+export const DIO_STEPS = new WeakMap(),
   DIO_RISE = 0.34,
   DIO_HOP = 1.8;
-function dioB64(s, Type) {
+export function dioB64(s, Type) {
   if (!s) return null;
   try {
     const b = atob(s),
@@ -1969,7 +2141,7 @@ function dioB64Out(a) {
   for (let i = 0; i < u.length; i += 8192) s += String.fromCharCode.apply(null, u.subarray(i, i + 8192));
   return btoa(s);
 }
-function dioSteps(sc) {
+export function dioSteps(sc) {
   if (!sc || !sc.steps) return null;
   let E = DIO_STEPS.get(sc);
   if (E && E.s === sc.steps && E.m0 === sc.stepm && E.w === sc.w * 2) return E;
@@ -1984,13 +2156,13 @@ function dioSteps(sc) {
   return E;
 }
 /* an empty step grid for a scene (the Studio paints into it) and storing an edited one back */
-function dioStepsNew(sc) {
+export function dioStepsNew(sc) {
   const w = sc.w * 2,
     h = sc.h * 2,
     E = { s: null, m0: null, w, h, H: new Float32Array(w * h), M: new Uint8Array(w * h) };
   return E;
 }
-function dioStepsStore(sc, E) {
+export function dioStepsStore(sc, E) {
   const raw = new Int16Array(E.w * E.h);
   let any = false;
   for (let i = 0; i < raw.length; i++) {
@@ -2011,7 +2183,7 @@ function dioStepsStore(sc, E) {
   sc.stepsV = (sc.stepsV || 0) + 1;
 }
 /* two neighbouring cells meet without a step when their corners on the shared edge agree (a slope) */
-function dioStepJoined(E, i, j, di, dj) {
+export function dioStepJoined(E, i, j, di, dj) {
   const ii = i + di,
     jj = j + dj;
   if (ii < 0 || jj < 0 || ii >= E.w || jj >= E.h) return false;
@@ -2032,14 +2204,14 @@ function dioStepJoined(E, i, j, di, dj) {
   }
   return true;
 }
-function dioStepCell(x, z, E) {
+export function dioStepCell(x, z, E) {
   return clamp(Math.floor(z * 2), 0, E.h - 1) * E.w + clamp(Math.floor(x * 2), 0, E.w - 1);
 }
 /* v23: slopes. A step cell flagged 32 is a ramp: instead of lying flat at its own height it leans between its
    neighbours. Each corner touching a ramp cell takes the average height of the cells around it that are within a
    step of the ramp, and those cells use that corner height too, so a ramp meets the ground above and below it with
    no riser. dioStepCorners caches the corners (NaN where a corner is ordinary). */
-function dioStepCorners(E) {
+export function dioStepCorners(E) {
   if (E.cs === E.s && E.cm === E.m0 && E.C && E.cs != null) return E.C;
   const w = E.w,
     h = E.h,
@@ -2086,7 +2258,7 @@ function dioStepCorners(E) {
   return C;
 }
 /* the height of cell q's corner (ci,cj in 0/1): the shared ramp height when the corner is part of a slope, else the cell's own */
-function dioStepCH(E, q, ci, cj) {
+export function dioStepCH(E, q, ci, cj) {
   const C = dioStepCorners(E);
   if (!E.sl) return E.H[q];
   const i = q % E.w,
@@ -2102,7 +2274,7 @@ function dioStepCH(E, q, ci, cj) {
    edge and the foot of a ladder keep their shape. dioShape holds an offset for each corner of each half-metre cell,
    the same for every cell of one level that shares the corner, so the ground stays joined. */
 const DIO_NATW = new Set([1, 2, 3, 9, 11]);
-function dioShape(sc, E) {
+export function dioShape(sc, E) {
   if (!E || DIO.noShape) return null;
   if (E.shS === E.s && E.shM === E.m0 && E.shD) return E.SH;
   E.shS = E.s;
@@ -2329,10 +2501,10 @@ function dioShape(sc, E) {
   return (E.SH = SN);
 }
 /* a cell corner's height above the smooth land: its raise (or the shared ramp height), shaped at natural edges */
-function dioStepCHS(E, q, ci, cj, SH) {
+export function dioStepCHS(E, q, ci, cj, SH) {
   return dioStepCH(E, q, ci, cj) + (SH ? SH[q * 4 + ci + cj * 2] : 0);
 }
-function dioStep(x, z, sc = DIO.sc) {
+export function dioStep(x, z, sc = DIO.sc) {
   const E = dioSteps(sc);
   if (!E) return 0;
   const q = dioStepCell(x, z, E);
@@ -2348,18 +2520,18 @@ function dioStep(x, z, sc = DIO.sc) {
   return (a * (1 - fx) + b * fx) * (1 - fz) + (c * (1 - fx) + d * fx) * fz;
 }
 /* alpha 0.2: the terrace level a point is on (its cell's raise, not shaped): which samples belong to one level */
-function dioStepLevel(x, z, sc = DIO.sc) {
+export function dioStepLevel(x, z, sc = DIO.sc) {
   const E = dioSteps(sc);
   return E ? E.H[dioStepCell(x, z, E)] : 0;
 }
-function dioStepM(x, z, sc = DIO.sc) {
+export function dioStepM(x, z, sc = DIO.sc) {
   const E = dioSteps(sc);
   return E ? E.M[dioStepCell(x, z, E)] : 0;
 }
 /* bridges: a deck from end a to end b, w wide; its height runs from the ground at one end to the other, with a hump
    (stone), a slight crown (wood) or a sag (rope) */
 const DIO_BRIDGE_ARC = { stone: 0.5, wood: 0.12, rope: -0.32 };
-function dioBridges(sc = DIO.sc) {
+export function dioBridges(sc = DIO.sc) {
   const L = sc && sc.bridges;
   if (!L || !L.length) return null;
   let E = DIO_STEPS.get(L);
@@ -2392,7 +2564,7 @@ function dioBridges(sc = DIO.sc) {
   DIO_STEPS.set(L, { v: JSON.stringify(L) + (sc.stepsV || 0), list });
   return list;
 }
-function dioBridgeAt(x, z, sc = DIO.sc) {
+export function dioBridgeAt(x, z, sc = DIO.sc) {
   const L = dioBridges(sc);
   if (!L) return null;
   for (const b of L) {
@@ -2405,7 +2577,7 @@ function dioBridgeAt(x, z, sc = DIO.sc) {
   return null;
 }
 /* ---------- where you can walk: a half-meter grid from the terrain and the props' footprints ---------- */
-function dioNav() {
+export function dioNav() {
   const sc = DIO.sc,
     tk = dioTimedKey(sc);
   if (DIO.nav && DIO.navSc === sc && DIO.navG === DIO.gkey && DIO.navP === (sc.props || []).length && DIO.navT === tk)
@@ -2555,14 +2727,14 @@ function dioNav() {
   return (DIO.nav = { N, gw, gh, blk, cost, lv, hop });
 }
 /* may you step from nav cell c to its neighbour q? Up to DIO_RISE up or down; further down only off a ledge */
-function dioPass(G, c, q, noHop) {
+export function dioPass(G, c, q, noHop) {
   const d = G.lv[q] - G.lv[c];
   if (d > DIO_RISE) return false;
   if (d < -DIO_RISE) return !noHop && !!G.hop[c] && d > -DIO_HOP;
   return true;
 }
 /* a straight step from a to b (keyboard walking, animals): free at b and no wall in between */
-function dioStepOK(ax, az, bx, bz, noHop) {
+export function dioStepOK(ax, az, bx, bz, noHop) {
   const G = dioNav(),
     c = dioCell(ax, az),
     q = dioCell(bx, bz);
@@ -2570,13 +2742,13 @@ function dioStepOK(ax, az, bx, bz, noHop) {
   if (c < 0 || c === q) return true;
   return dioPass(G, c, q, noHop);
 }
-function dioCell(x, z) {
+export function dioCell(x, z) {
   const G = dioNav(),
     i = Math.floor(x * G.N),
     j = Math.floor(z * G.N);
   return i < 0 || j < 0 || i >= G.gw || j >= G.gh ? -1 : j * G.gw + i;
 }
-function dioFree(x, z) {
+export function dioFree(x, z) {
   const c = dioCell(x, z);
   return c >= 0 && !DIO.nav.blk[c];
 }
@@ -2605,7 +2777,7 @@ function dioNearFree(x, z) {
   }
   return null;
 }
-function dioFreePt(x, z) {
+export function dioFreePt(x, z) {
   const c = dioNearFree(x, z);
   if (!c) return [x, z];
   if (dioFree(x, z)) return [x, z];
@@ -2629,7 +2801,7 @@ function dioCostAt(p) {
   return c < 0 ? 1 : DIO.nav.cost[c];
 }
 /* A* on the grid (8 directions, no corner cutting), then string-pulled so people walk in straight lines */
-function dioFind(ax, az, bx, bz, o = {}) {
+export function dioFind(ax, az, bx, bz, o = {}) {
   const G = dioNav(),
     { N, gw, gh, blk, cost } = G,
     a = dioNearFree(ax, az),
@@ -2792,7 +2964,7 @@ function dioCandidates(sc) {
     }
   return (DIO.cand = out);
 }
-function dioEncSpot(sc, id, used) {
+export function dioEncSpot(sc, id, used) {
   const C = dioCandidates(sc);
   let h = 0;
   for (const ch of String(id)) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
@@ -2811,17 +2983,17 @@ function dioEncSpot(sc, id, used) {
   }
   return C[h % C.length];
 }
-function dioStop() {
+export function dioStop() {
   frameStop('dio');
   DIO.cv = null;
   DIO.ready = false;
   DIO.keys = {};
 }
-function dioCanvasXY(ev) {
+export function dioCanvasXY(ev) {
   const r = DIO.cv.getBoundingClientRect();
   return [((ev.clientX - r.left) / r.width) * DIO.cv.width, ((ev.clientY - r.top) / r.height) * DIO.cv.height];
 }
-function dioHitAt(ev) {
+export function dioHitAt(ev) {
   if (!DIO.cv) return null;
   const [x, y] = dioCanvasXY(ev);
   let best = null;
@@ -2847,7 +3019,7 @@ function dioUnproject(sx, sy) {
 function dioPick(h) {
   if (DIO.opt.onPick) DIO.opt.onPick(h);
 }
-function dioClick(ev) {
+export function dioClick(ev) {
   if (!DIO.ready || (DIO.opt.active && !DIO.opt.active())) return;
   const h = dioHitAt(ev),
     st = DIO.st || {},
@@ -2896,7 +3068,7 @@ function dioClick(ev) {
   if (st.roam) dioWalkTo([g.x, g.z]);
   else dioPick({ k: 'ground', x: g.x, z: g.z });
 }
-function dioWalkTo(pt, cb) {
+export function dioWalkTo(pt, cb) {
   const P = DIO.pl,
     r = dioFind(P.x, P.z, pt[0], pt[1]);
   if (!r) {
@@ -2909,10 +3081,10 @@ function dioWalkTo(pt, cb) {
   P.rush = 1;
   /* v46: a walk you start goes at walking pace */ DIO.tap = { x: r[r.length - 1][0], z: r[r.length - 1][1], t: DIO.t };
 }
-function dioDirOf(mx, mz) {
+export function dioDirOf(mx, mz) {
   return Math.abs(mx) > Math.abs(mz) * 1.1 ? (mx > 0 ? 'sideR' : 'side') : mz > 0 ? 'up' : 'down';
 }
-function dioFace(f) {
+export function dioFace(f) {
   const P = DIO.pl;
   f.dir = dioDirOf(P.x - f.x, P.z - f.z);
   f.wait = Math.max(f.wait, 3);
@@ -2950,7 +3122,7 @@ addEventListener('keyup', ev => {
 addEventListener('blur', () => {
   DIO.keys = {};
 });
-function dioProj(C, x, y, z) {
+export function dioProj(C, x, y, z) {
   const ry = y - C.ch,
     rz = z - C.cz,
     d = -ry * C.sp + rz * C.cp;
@@ -2960,7 +3132,7 @@ function dioProj(C, x, y, z) {
   return { x: C.rw / 2 + (x - C.cx) * s, y: C.rh / 2 - v * s, s, d };
 }
 /* ---------- the player ---------- */
-function dioPlayer(st, dt) {
+export function dioPlayer(st, dt) {
   if (DIO.pl.climb) {
     dioClimbStep(dt);
     return;
@@ -2970,7 +3142,7 @@ function dioPlayer(st, dt) {
 }
 /* v28: ladders up the cliffs. A ladder prop stands at the foot of a cliff with "to" (the landing on top); tapping it
    walks you to whichever end is on your level, then you climb, hand over hand, to the other */
-function dioClimbEnds(p) {
+export function dioClimbEnds(p) {
   if (p._ce && p._ce.id === DIO.id && p._ce.k === DIO.gkey) return p._ce.v;
   const t = p.to || [p.x, p.z + 0.9],
     yt = dioH(t[0], t[1]);
@@ -2996,13 +3168,13 @@ function dioClimbEnds(p) {
   });
   return v;
 }
-function dioClimbGo(p) {
+export function dioClimbGo(p) {
   const P = DIO.pl,
     E = dioClimbEnds(p),
     y = P.yv ?? dioH(P.x, P.z);
   return Math.abs(y - dioH(E.top[0], E.top[1])) < Math.abs(y - dioH(E.bot[0], E.bot[1])) ? E.top : E.bot;
 }
-function dioClimb(p) {
+export function dioClimb(p) {
   const P = DIO.pl,
     E = dioClimbEnds(p),
     yb = dioH(E.bot[0], E.bot[1]),
@@ -3637,32 +3809,32 @@ function dioFolkCount(sc, n) {
     h = T.h;
   return M.days.includes(T.day) && h >= 7 && h < 18 ? n + (M.folk || 0) : n;
 }
-function dioFolkTick(n, dt) {
+export function dioFolkTick(n, dt) {
   n = dioFolkCount(DIO.sc, n);
   if (DIO.folkId !== DIO.id || (DIO.folkAll || DIO.folk).length !== n) dioFolkInit(n);
   dioFolkStep(dt);
 }
-function dioGrassImgs(C0) {
+export function dioGrassImgs(C0) {
   const out = [];
   for (const [k, P] of Object.entries(C0.props))
     if (k === 'tallgrass' || (P.group === 'tallgrass' && !P.flat)) out.push(P);
   return out.length ? out : [C0.props.tallgrass].filter(Boolean);
 }
 /* stand next to a thing, on the side you're coming from */
-function dioApproach(x, z) {
+export function dioApproach(x, z) {
   const P = DIO.pl,
     dx = P.x - x,
     dz = P.z - z,
     l = Math.hypot(dx, dz) || 1;
   return dioFreePt(x + (dx / l) * 1.1, z + (dz / l) * 1.1);
 }
-function dioActSpot(p, M, PPU) {
+export function dioActSpot(p, M, PPU) {
   const s = p.s || 1,
     f = p.f ? -1 : 1;
   if (M.door) return dioFreePt(p.x + ((M.door.x || 0) / PPU) * s * f, p.z - 0.55);
   return dioApproach(p.x, p.z - 0.3);
 }
-function dioExitMarks(C, st, t) {
+export function dioExitMarks(C, st, t) {
   const sc = DIO.sc,
     ex = sc.exits || [];
   if (!st.exits || !st.exits.length) return;
@@ -3709,7 +3881,7 @@ function dioExitMarks(C, st, t) {
   }
   x.restore();
 }
-function dioExitLabels(C, st, hits, hub) {
+export function dioExitLabels(C, st, hits, hub) {
   const sc = DIO.sc,
     ex = sc.exits || [];
   if (!st.exits) return;
@@ -3744,7 +3916,7 @@ function dioExitLabels(C, st, hits, hub) {
     });
   }
 }
-function dioTapMark(C, t) {
+export function dioTapMark(C, t) {
   const T = DIO.tap;
   if (!T) return;
   const age = (t - T.t) / 700;
@@ -3819,7 +3991,7 @@ function dioPillSize(x, txt, ico) {
     tw = Math.ceil(x.measureText(t).width / u) * u;
   return { u, t, tw, ar, w: tw + u * (ar ? 17 : 10), h: u * 11 };
 }
-function dioPill(x, cx, cy, txt, col, ico) {
+export function dioPill(x, cx, cy, txt, col, ico) {
   x.save();
   x.setTransform(1, 0, 0, 1, 0, 0);
   const S = dioPillSize(x, txt, ico),
@@ -3852,7 +4024,7 @@ function dioPxTail(x, cx, y, u, fill, line) {
   x.fillRect(cx - 2 * u, y - u, 4 * u, u);
   x.fillRect(cx - u, y, 2 * u, u);
 }
-function dioSpeech(x, cx, cy, txt, a) {
+export function dioSpeech(x, cx, cy, txt, a) {
   if (!txt) return;
   const s = dioUIpx(12),
     u = dioPx();
@@ -3884,7 +4056,7 @@ function dioSpeech(x, cx, cy, txt, a) {
   lines.forEach((l, i) => x.fillText(l, x0 + s * 0.6, y0 + s * 0.45 + i * s * 1.25));
   x.restore();
 }
-function dioBubble(x, cx, cy, txt, col) {
+export function dioBubble(x, cx, cy, txt, col) {
   x.save();
   x.setTransform(1, 0, 0, 1, 0, 0);
   const u = dioPx(),
@@ -3902,7 +4074,7 @@ function dioBubble(x, cx, cy, txt, col) {
   x.fillText(txt, x0 + w / 2, y0 + u * 8);
   x.restore();
 }
-function dioTag(x, cx, cy, e) {
+export function dioTag(x, cx, cy, e) {
   const u = dioPx(),
     txt = `Lv ${e.lvl}`;
   x.save();

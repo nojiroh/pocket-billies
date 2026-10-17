@@ -4,6 +4,58 @@
    fires, smoke, spray, sparkles), door and footprint drawn on it and editable by clicking and dragging; extra picture
    layers placed in front of or behind the main one for depth; which way each layer faces; glowing layers; and a 3D
    turntable that shows the result in the game's renderer while you work. */
+/* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
+import { expose } from '../../game/js/bridge.js';
+import { $, $$, clamp } from '../../game/js/util.js';
+import { frameStop, frameTask } from '../../game/js/frame.js';
+import { cnv } from '../../game/js/art.js';
+import { DIO, dioImg, dioLayerM, dioOk } from '../../game/js/diorama.js';
+import { DGL, DGL_MATS, dglMatOf, dglVaryOf, dioMount } from '../../game/js/diorama-gl.js';
+import { BLD_ROOM_NAMES, BLD_TEX_NAMES } from '../../game/js/buildings.js';
+import { P3D_AUTO, P3D_KINDS, P3D_PARTS, p3dTreeKind } from '../../game/js/props3d.js';
+import {
+  ACTS,
+  ST,
+  ask,
+  card,
+  changed,
+  clone,
+  commit,
+  fChk,
+  fColor,
+  fNum,
+  fRange,
+  fSel,
+  fText,
+  grid,
+  render,
+  toast,
+} from './core.js';
+import { atlasGet, fileToCanvas, markArt, pickFile } from './sprites.js';
+import { SCN, scArt, scD, scOpenPe } from './scenes.js';
+/* eslint-disable no-func-assign */
+expose({
+  PED: [() => PED],
+  PED_FX: [() => PED_FX],
+  PED_KINDS: [() => PED_KINDS],
+  PED_PART_COL: [() => PED_PART_COL],
+  pedAt: [() => pedAt, v => (pedAt = v)],
+  pedBind: [() => pedBind, v => (pedBind = v)],
+  pedBounds: [() => pedBounds, v => (pedBounds = v)],
+  pedBuildHTML: [() => pedBuildHTML, v => (pedBuildHTML = v)],
+  pedCard: [() => pedCard, v => (pedCard = v)],
+  pedDraw: [() => pedDraw, v => (pedDraw = v)],
+  pedHit: [() => pedHit, v => (pedHit = v)],
+  pedM: [() => pedM],
+  pedMount: [() => pedMount, v => (pedMount = v)],
+  pedScene: [() => pedScene, v => (pedScene = v)],
+  pedSetBase: [() => pedSetBase, v => (pedSetBase = v)],
+  pedSplit: [() => pedSplit, v => (pedSplit = v)],
+  pedVaryHTML: [() => pedVaryHTML, v => (pedVaryHTML = v)],
+  pedVolHTML: [() => pedVolHTML, v => (pedVolHTML = v)],
+});
+/* eslint-enable no-func-assign */
+/* to-module: end */
 const PED = { tool: 'move', fxk: 'glow', zoom: 0, spin: true, sel: null, drag: null, sc: null, id: null };
 const PED_FX = [
   ['glow', 'Lamp glow', '#FFC94A'],
@@ -13,7 +65,7 @@ const PED_FX = [
   ['spray', 'Water spray', '#62C6F0'],
   ['sparkle', 'Sparkle', '#F6F0FF'],
 ];
-const pedM = () => (SCN.ped ? scD().props[SCN.ped] : null);
+export const pedM = () => (SCN.ped ? scD().props[SCN.ped] : null);
 /* the turntable scene: a patch of grass with the prop in the middle */
 function pedScene(k) {
   const C = scD(),

@@ -7,7 +7,60 @@
    in the scene's light: the sun in three tones, the sky-shaped ambient, the shadow maps, the lamps. It sits in the
    shadow maps too, so its shadow has its real shape. When the Voxel props dial is off, the prop's picture draws as
    before. Picture layers are drawn by the sprite pipeline (dglItems gives them as extra items). */
-const VOX = { recipes: new Map(), meshes: new Map(), fail: '', drawn: 0, VPM: 32, res: 0, fr: -1, bt: 0 };
+/* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
+import { expose } from './bridge.js';
+import { artImg, artURL, hexA } from './art.js';
+import { DIO, dioImg } from './diorama.js';
+import { eng } from './engine/settings.js';
+import { EGL, EGL_GLSL_COMMON, EGL_GLSL_LIGHT, eglImg, eglPrograms } from './engine/core.js';
+import { DGL, dglCurveArgs, dglHit, dglLookU, dglUse, dglWindAt } from './diorama-gl.js';
+import { BLD_SH, bldArt, bldAtlas } from './buildings.js';
+/* eslint-disable no-func-assign */
+expose({
+  VOX: [() => VOX],
+  VOX_GLSL_SPIN: [() => VOX_GLSL_SPIN],
+  VOX_K: [() => VOX_K],
+  VOX_LP_TEX: [() => VOX_LP_TEX],
+  VOX_MDL_VS: [() => VOX_MDL_VS],
+  VOX_O: [() => VOX_O],
+  VOX_SH: [() => VOX_SH],
+  VOX_SHAPES: [() => VOX_SHAPES],
+  VOX_TEX: [() => VOX_TEX],
+  VOX_TEXTURES: [() => VOX_TEXTURES],
+  voxBob: [() => voxBob, v => (voxBob = v)],
+  voxDraw: [() => voxDraw, v => (voxDraw = v)],
+  voxEl: [() => voxEl, v => (voxEl = v)],
+  voxFlush: [() => voxFlush, v => (voxFlush = v)],
+  voxGuard: [() => voxGuard, v => (voxGuard = v)],
+  voxHash: [() => voxHash, v => (voxHash = v)],
+  voxImageItems: [() => voxImageItems, v => (voxImageItems = v)],
+  voxInvalidate: [() => voxInvalidate, v => (voxInvalidate = v)],
+  voxKey: [() => voxKey, v => (voxKey = v)],
+  voxLowPoly: [() => voxLowPoly, v => (voxLowPoly = v)],
+  voxLowPolyOn: [() => voxLowPolyOn, v => (voxLowPolyOn = v)],
+  voxMdlFS: [() => voxMdlFS, v => (voxMdlFS = v)],
+  voxMesh: [() => voxMesh, v => (voxMesh = v)],
+  voxMeshFor: [() => voxMeshFor, v => (voxMeshFor = v)],
+  voxModelMesh: [() => voxModelMesh, v => (voxModelMesh = v)],
+  voxModels: [() => voxModels, v => (voxModels = v)],
+  voxOn: [() => voxOn, v => (voxOn = v)],
+  voxPaths: [() => voxPaths, v => (voxPaths = v)],
+  voxRawDecode: [() => voxRawDecode, v => (voxRawDecode = v)],
+  voxRawInto: [() => voxRawInto, v => (voxRawInto = v)],
+  voxRecipe: [() => voxRecipe, v => (voxRecipe = v)],
+  voxRes: [() => voxRes, v => (voxRes = v)],
+  voxShaders: [() => voxShaders, v => (voxShaders = v)],
+  voxShadow: [() => voxShadow, v => (voxShadow = v)],
+  voxSpins: [() => voxSpins, v => (voxSpins = v)],
+  voxTag: [() => voxTag, v => (voxTag = v)],
+  voxU: [() => voxU, v => (voxU = v)],
+  voxUnkey: [() => voxUnkey, v => (voxUnkey = v)],
+  voxUpModel: [() => voxUpModel, v => (voxUpModel = v)],
+  voxelise: [() => voxelise, v => (voxelise = v)],
+});
+/* eslint-enable no-func-assign */
+/* to-module: end */
+export const VOX = { recipes: new Map(), meshes: new Map(), fail: '', drawn: 0, VPM: 32, res: 0, fr: -1, bt: 0 };
 const VOX_TEX = {
   plain: 0,
   grain: 0.1,
@@ -21,7 +74,7 @@ const VOX_TEX = {
   stripes: 0,
   rings: 0,
 };
-const VOX_TEXTURES = [
+export const VOX_TEXTURES = [
   ['plain', 'Plain'],
   ['grain', 'Grain'],
   ['wood', 'Wood'],
@@ -55,7 +108,7 @@ function voxGuard(fn) {
   }
 }
 /* the recipe of a prop: fetched once (inline in a single-file build), null while it loads */
-function voxRecipe(path) {
+export function voxRecipe(path) {
   if (VOX.recipes.has(path)) return VOX.recipes.get(path);
   VOX.recipes.set(path, null);
   const url = typeof artURL === 'function' ? artURL(path) : 'art/' + path;
@@ -560,7 +613,7 @@ function voxSpins(p, m) {
 function voxFlush() {
   for (const k of [...VOX.meshes.keys()]) voxInvalidate(k, true);
 }
-function voxInvalidate(path, keep) {
+export function voxInvalidate(path, keep) {
   const m = VOX.meshes.get(path);
   if (m && m.vao && typeof EGL !== 'undefined' && EGL.gl) {
     const gl = EGL.gl;

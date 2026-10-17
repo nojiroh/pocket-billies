@@ -5,6 +5,29 @@
    gamedata.roster; the game ignores it until v38 when the new species replace the old ones.
    The board also opens the silhouette check: the new piece sheet (art/next/billionaires/<id>.png), else a study
    (art/next/starters/<id>.png), else the current rig, drawn black at 24 px beside its neighbours. */
+/* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
+import { expose } from '../../game/js/bridge.js';
+import { $, $$ } from '../../game/js/util.js';
+import { cnv } from '../../game/js/art.js';
+import { drawRig } from '../../game/js/rig.js';
+import { ACTS, SECTIONS, ST, after, changed, commit, render } from './core.js';
+import { downloadCanvas, loadImage, rigFor } from './sprites.js';
+import { skNeutral } from './skeleton.js';
+/* eslint-disable no-func-assign */
+expose({
+  RO: [() => RO],
+  RO_KINDS: [() => RO_KINDS],
+  RO_SIL: [() => RO_SIL],
+  roCard: [() => roCard, v => (roCard = v)],
+  roList: [() => roList, v => (roList = v)],
+  roMountSil: [() => roMountSil, v => (roMountSil = v)],
+  roSheetSil: [() => roSheetSil, v => (roSheetSil = v)],
+  roSilSheet: [() => roSilSheet, v => (roSilSheet = v)],
+  roSilhouette: [() => roSilhouette, v => (roSilhouette = v)],
+  roSpId: [() => roSpId, v => (roSpId = v)],
+});
+/* eslint-enable no-func-assign */
+/* to-module: end */
 const RO = { filter: 'all', q: '', kind: '' };
 const RO_KINDS = {
   starter: 'Starter',

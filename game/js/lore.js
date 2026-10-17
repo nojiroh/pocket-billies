@@ -5,8 +5,39 @@
    the clues to who you were, the Lore page of the Guide and the loading screen's lines.
    An entry's `unlock`: 'start', 'place:<id>' (been there), 'meet:<who>' (met them), 'flag:<name>' (a story flag),
    'badges:<n>'. The stage of the story is the number of badges (9 after the ending). */
-const LORE = () => (typeof GD !== 'undefined' && GD.lore) || {};
-function loreFlags() {
+/* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
+import { expose } from './bridge.js';
+import { clamp } from './util.js';
+import { GD, ROUTE, TRAINERS } from './data.js';
+import { S, U, esc, save } from './core.js';
+import { humanHTML } from './trainer.js';
+import { DIO, dioBaseId, dioFind, dioFreePt, dioHubOf, dioScene } from './diorama.js';
+import { DGL, dioH } from './diorama-gl.js';
+import { JINGLES, jingle, sfx } from './sound.js';
+/* eslint-disable no-func-assign */
+expose({
+  CLUE_SPOTS: [() => CLUE_SPOTS],
+  LORE: [() => LORE],
+  clueDraw: [() => clueDraw, v => (clueDraw = v)],
+  clueSpotFind: [() => clueSpotFind, v => (clueSpotFind = v)],
+  clueSpots: [() => clueSpots, v => (clueSpots = v)],
+  dioChatLines: [() => dioChatLines, v => (dioChatLines = v)],
+  loreBook: [() => loreBook, v => (loreBook = v)],
+  loreCard: [() => loreCard, v => (loreCard = v)],
+  loreChat: [() => loreChat, v => (loreChat = v)],
+  loreClue: [() => loreClue, v => (loreClue = v)],
+  loreFlags: [() => loreFlags, v => (loreFlags = v)],
+  loreLoadingLines: [() => loreLoadingLines, v => (loreLoadingLines = v)],
+  loreMet: [() => loreMet, v => (loreMet = v)],
+  loreNode: [() => loreNode, v => (loreNode = v)],
+  loreOpen: [() => loreOpen, v => (loreOpen = v)],
+  loreStage: [() => loreStage, v => (loreStage = v)],
+  renderLore: [() => renderLore, v => (renderLore = v)],
+});
+/* eslint-enable no-func-assign */
+/* to-module: end */
+export const LORE = () => (typeof GD !== 'undefined' && GD.lore) || {};
+export function loreFlags() {
   return typeof storyFlags === 'function' ? storyFlags() : S.story || (S.story = {});
 }
 function loreStage() {
@@ -53,7 +84,7 @@ function dioChatLines(fallback) {
   return L.length ? L.concat(own) : own;
 }
 /* a book or paper in a room: its pages one at a time; the Guide keeps the ones you've read */
-function loreBook(id, page = 0) {
+export function loreBook(id, page = 0) {
   const B = (LORE().books || {})[id];
   if (!B) return;
   const F = loreFlags();
@@ -78,7 +109,7 @@ function loreBook(id, page = 0) {
   });
 }
 /* something of yours, found along the way */
-function loreClue(id) {
+export function loreClue(id) {
   const C = (LORE().clues || []).find(c => c.id === id);
   if (!C) return;
   const F = loreFlags(),
@@ -183,7 +214,7 @@ function loreCard(title, text, open, sub) {
     ? `<article class="lore-card"><h3>${esc(title)}</h3>${sub ? `<small>${esc(sub)}</small>` : ''}<p>${esc(text)}</p></article>`
     : `<article class="lore-card locked"><h3>???</h3><p>Keep walking.</p></article>`;
 }
-function renderLore() {
+export function renderLore() {
   const L = LORE(),
     st = loreStage(),
     F = loreFlags(),
@@ -240,7 +271,7 @@ function renderLore() {
   return `<div class="seg lore-tabs">${tabs.map(([k, n]) => `<button class="${k === sec ? 'on' : ''}" data-a="loresec" data-k="${k}">${n}</button>`).join('')}</div><section class="lore">${body}</section>`;
 }
 /* the loading screen's lines, shuffled once a session */
-function loreLoadingLines() {
+export function loreLoadingLines() {
   const L = (LORE().loading || []).slice();
   for (let i = L.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));

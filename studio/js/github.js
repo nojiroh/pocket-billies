@@ -8,6 +8,33 @@
    - Save to game: everything you changed goes on a new branch as one commit, and a pull request is opened. Nothing in
      the game changes until the repository's owner merges it (GitHub → Pull requests).
    Started from start-studio.py on your own computer, none of this is used: saves go straight into the game folder. */
+/* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
+import { expose } from '../../game/js/bridge.js';
+import { $ } from '../../game/js/util.js';
+import { ACTS, ST, ask, boot, dialog, updTop } from './core.js';
+/* eslint-disable no-func-assign */
+expose({
+  GH: [() => GH],
+  GH_CFG: [() => GH_CFG],
+  GH_HEAD: [() => GH_HEAD],
+  GH_KEY: [() => GH_KEY],
+  b64: [() => b64],
+  b64text: [() => b64text],
+  gh: [() => gh, v => (gh = v)],
+  ghApi: [() => ghApi, v => (ghApi = v)],
+  ghCheck: [() => ghCheck, v => (ghCheck = v)],
+  ghDataChanges: [() => ghDataChanges, v => (ghDataChanges = v)],
+  ghJsJson: [() => ghJsJson],
+  ghLogin: [() => ghLogin, v => (ghLogin = v)],
+  ghLoginHTML: [() => ghLoginHTML, v => (ghLoginHTML = v)],
+  ghPath: [() => ghPath],
+  ghPropose: [() => ghPropose, v => (ghPropose = v)],
+  ghReadData: [() => ghReadData, v => (ghReadData = v)],
+  ghRepo: [() => ghRepo],
+  ghStart: [() => ghStart, v => (ghStart = v)],
+});
+/* eslint-enable no-func-assign */
+/* to-module: end */
 const GH_CFG = Object.assign(
   { owner: 'nojiroh', repo: 'pocket-billies', branch: 'main', game: 'game' },
   window.PB_STUDIO_GITHUB || {}

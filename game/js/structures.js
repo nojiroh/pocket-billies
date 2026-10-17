@@ -7,7 +7,30 @@
    scene.arches     [{x, z, w, d, h, dir:'z'|'x', kind:'stone'|'rock'|'brick'}] an arch you walk under; a long one set
                     into a cliff is a tunnel
    scene.escalators [{a:[x,z], b:[x,z], w}]                                 moving steps over a stair (bottom a, top b) */
-const STR = { key: '', mesh: null, parts: [] };
+/* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
+import { expose } from './bridge.js';
+import { clamp } from './util.js';
+import { hexA } from './art.js';
+import { DIO, dioBridges, dioImg } from './diorama.js';
+import { EGL, eglImg, eglPrograms } from './engine/core.js';
+import { DGL_WALL_COL, dglCurveArgs, dglUse, dglWallDefault, dioGroundH, dioH } from './diorama-gl.js';
+import { BLD_SH, bldArt, bldGuard } from './buildings.js';
+/* eslint-disable no-func-assign */
+expose({
+  STR: [() => STR],
+  STR_KIND: [() => STR_KIND],
+  strBuild: [() => strBuild, v => (strBuild = v)],
+  strDraw: [() => strDraw, v => (strDraw = v)],
+  strEnsure: [() => strEnsure, v => (strEnsure = v)],
+  strFree: [() => strFree, v => (strFree = v)],
+  strHas: [() => strHas, v => (strHas = v)],
+  strKey: [() => strKey, v => (strKey = v)],
+  strN: [() => strN, v => (strN = v)],
+  strShadow: [() => strShadow, v => (strShadow = v)],
+});
+/* eslint-enable no-func-assign */
+/* to-module: end */
+export const STR = { key: '', mesh: null, parts: [] };
 const STR_KIND = {
   iron: { tex: 15, col: [0.27, 0.3, 0.38] },
   wood: { tex: 14, col: [0.6, 0.42, 0.28] },
@@ -31,7 +54,7 @@ function strKey(sc) {
     (sc.heights || []).length
   );
 }
-function strHas(sc) {
+export function strHas(sc) {
   return !!(
     (sc.bridges && sc.bridges.length) ||
     (sc.rails && sc.rails.length) ||

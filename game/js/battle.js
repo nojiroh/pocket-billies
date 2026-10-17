@@ -4,7 +4,190 @@
    v33: a side fields one, two or three fighters at once. Each fighter on the field is an actor, numbered so a classic
    one-on-one battle is still 0 (yours) against 1 (theirs): 0 = your first, 1 = their first, 2 = your second, 3 = their
    second, 4 = your third. Doubles (some trainers) are 0+2 against 1+3; an Alpha is fought by 0, 2 and 4 against 1. */
-const RB = RULES.battle,
+/* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
+import { expose } from './bridge.js';
+import { $, $$, clamp, rnd } from './util.js';
+import {
+  BACKDROPS,
+  COINS,
+  EGGS,
+  EGG_TIERS,
+  ITEMS,
+  MOVES,
+  PASSIVE,
+  RULES,
+  SP,
+  STATK,
+  STATN,
+  STATUSN,
+  TC,
+  TRAINERS,
+  eff,
+  hasPassive,
+  trainerTeam,
+} from './data.js';
+import {
+  N,
+  RM,
+  S,
+  U,
+  addEgg,
+  addMon,
+  esc,
+  findMon,
+  fmt,
+  gainXp,
+  healAll,
+  hereStop,
+  makeMon,
+  maxHp,
+  pickW,
+  plural,
+  save,
+  stat,
+  xpFor,
+} from './core.js';
+import { artURL, coinHTML, eggHTML, iconURL, uiIco } from './art.js';
+import { portraitHTML } from './trainer.js';
+import { KBACK, bustHTML, rigPreload } from './rig.js';
+import {
+  AREAS,
+  EASE,
+  SC,
+  camAt,
+  scCatch,
+  scFocus,
+  scPlay,
+  scPrepare,
+  scResize,
+  scRingPhase,
+  scSelect,
+  scStart,
+  scStop,
+  scTargets,
+  scToCss,
+  sideCenter,
+  sideTop,
+  sideWorld,
+} from './scene.js';
+import { DIO } from './diorama.js';
+import { ENV, ENV_NAMES, envHere, envState } from './env.js';
+import { DGL, dglRing, dglWgAt } from './diorama-gl.js';
+import { BGL, battleGLWanted } from './battle-gl.js';
+/* eslint-disable no-func-assign */
+expose({
+  A: [() => A],
+  AK: [() => AK],
+  AKS: [() => AKS],
+  ASIDE: [() => ASIDE],
+  ASL: [() => ASL],
+  FT: [() => FT],
+  FV: [() => FV],
+  RB: [() => RB],
+  RC: [() => RC],
+  STG: [() => STG],
+  TKL: [() => TKL],
+  adv: [() => adv, v => (adv = v)],
+  afterEvents: [() => afterEvents, v => (afterEvents = v)],
+  aiDmg: [() => aiDmg, v => (aiDmg = v)],
+  aiScore: [() => aiScore, v => (aiScore = v)],
+  allK: [() => allK],
+  alphaPhase: [() => alphaPhase, v => (alphaPhase = v)],
+  applyItem: [() => applyItem, v => (applyItem = v)],
+  areaKey: [() => areaKey, v => (areaKey = v)],
+  award: [() => award, v => (award = v)],
+  backBtn: [() => backBtn],
+  battleFreeArea: [() => battleFreeArea, v => (battleFreeArea = v)],
+  battleLayoutChanged: [() => battleLayoutChanged, v => (battleLayoutChanged = v)],
+  battleLeave: [() => battleLeave, v => (battleLeave = v)],
+  battleMode: [() => battleMode, v => (battleMode = v)],
+  battleResize: [() => battleResize, v => (battleResize = v)],
+  battleRise: [() => battleRise, v => (battleRise = v)],
+  battleSeamless: [() => battleSeamless, v => (battleSeamless = v)],
+  battleShell: [() => battleShell, v => (battleShell = v)],
+  battleSwoop: [() => battleSwoop, v => (battleSwoop = v)],
+  bench: [() => bench, v => (bench = v)],
+  bindAim: [() => bindAim, v => (bindAim = v)],
+  boxAnims: [() => boxAnims, v => (boxAnims = v)],
+  boxShow: [() => boxShow, v => (boxShow = v)],
+  canUse: [() => canUse],
+  catchOdds: [() => catchOdds, v => (catchOdds = v)],
+  catchRoll: [() => catchRoll, v => (catchRoll = v)],
+  checkFaints: [() => checkFaints, v => (checkFaints = v)],
+  chooseAI: [() => chooseAI, v => (chooseAI = v)],
+  chooseMsg: [() => chooseMsg, v => (chooseMsg = v)],
+  countTo: [() => countTo, v => (countTo = v)],
+  dmgCalc: [() => dmgCalc, v => (dmgCalc = v)],
+  doSwitch: [() => doSwitch, v => (doSwitch = v)],
+  doThrow: [() => doThrow, v => (doThrow = v)],
+  effLabel: [() => effLabel, v => (effLabel = v)],
+  endBattle: [() => endBattle, v => (endBattle = v)],
+  endTurn: [() => endTurn, v => (endTurn = v)],
+  enemyOnly: [() => enemyOnly, v => (enemyOnly = v)],
+  finishThrow: [() => finishThrow, v => (finishThrow = v)],
+  foeSide: [() => foeSide],
+  freshV: [() => freshV],
+  goNames: [() => goNames],
+  hcard: [() => hcard, v => (hcard = v)],
+  hpMini: [() => hpMini, v => (hpMini = v)],
+  hudHit: [() => hudHit, v => (hudHit = v)],
+  hudPop: [() => hudPop, v => (hudPop = v)],
+  hudScene: [() => hudScene],
+  inflict: [() => inflict, v => (inflict = v)],
+  inherit: [() => inherit, v => (inherit = v)],
+  isMulti: [() => isMulti],
+  itemIcon: [() => itemIcon],
+  liveK: [() => liveK],
+  logLine: [() => logLine, v => (logLine = v)],
+  makeAlpha: [() => makeAlpha, v => (makeAlpha = v)],
+  monPick: [() => monPick, v => (monPick = v)],
+  movePower: [() => movePower, v => (movePower = v)],
+  msgFace: [() => msgFace, v => (msgFace = v)],
+  needsTarget: [() => needsTarget, v => (needsTarget = v)],
+  newBattle: [() => newBattle, v => (newBattle = v)],
+  openBattle: [() => openBattle, v => (openBattle = v)],
+  paintActions: [() => paintActions, v => (paintActions = v)],
+  paintBoxes: [() => paintBoxes, v => (paintBoxes = v)],
+  paintParty: [() => paintParty, v => (paintParty = v)],
+  paintPlates: [() => paintPlates, v => (paintPlates = v)],
+  paintSide: [() => paintSide, v => (paintSide = v)],
+  pickMove: [() => pickMove, v => (pickMove = v)],
+  pickTarget: [() => pickTarget, v => (pickTarget = v)],
+  planBack: [() => planBack, v => (planBack = v)],
+  planNext: [() => planNext, v => (planNext = v)],
+  plateEl: [() => plateEl, v => (plateEl = v)],
+  platesTick: [() => platesTick, v => (platesTick = v)],
+  play: [() => play, v => (play = v)],
+  retarget: [() => retarget, v => (retarget = v)],
+  runTurn: [() => runTurn, v => (runTurn = v)],
+  say: [() => say, v => (say = v)],
+  scAfter: [() => scAfter, v => (scAfter = v)],
+  shockName: [() => shockName],
+  showAim: [() => showAim, v => (showAim = v)],
+  snapAll: [() => snapAll],
+  snapK: [() => snapK, v => (snapK = v)],
+  snapSide: [() => snapSide],
+  stage: [() => stage, v => (stage = v)],
+  stageTap: [() => stageTap, v => (stageTap = v)],
+  startTrainer: [() => startTrainer, v => (startTrainer = v)],
+  startWild: [() => startWild, v => (startWild = v)],
+  statE: [() => statE, v => (statE = v)],
+  stepEv: [() => stepEv, v => (stepEv = v)],
+  stopTimers: [() => stopTimers, v => (stopTimers = v)],
+  tapMsg: [() => tapMsg, v => (tapMsg = v)],
+  teamNeedsHp: [() => teamNeedsHp],
+  teamPick: [() => teamPick, v => (teamPick = v)],
+  tickerUpdate: [() => tickerUpdate, v => (tickerUpdate = v)],
+  turnBar: [() => turnBar, v => (turnBar = v)],
+  typeText: [() => typeText, v => (typeText = v)],
+  types: [() => types],
+  upd: [() => upd, v => (upd = v)],
+  useMove: [() => useMove, v => (useMove = v)],
+  wipe: [() => wipe, v => (wipe = v)],
+});
+/* eslint-enable no-func-assign */
+/* to-module: end */
+export const RB = RULES.battle,
   RC = RULES.catching;
 const freshV = () => ({
   st: Object.fromEntries(STATK.filter(k => k !== 'hp').map(k => [k, 0])),
@@ -28,7 +211,7 @@ const FT = k => {
   const sd = B && B.sides[ASIDE[k]];
   return sd ? sd.f[ASL[k]] : null;
 };
-const A = k => {
+export const A = k => {
   const f = FT(k);
   return f && f.on ? B.sides[ASIDE[k]].team[f.act] : undefined;
 };
@@ -40,9 +223,9 @@ const allK = () => {
   B.sides.forEach((sd, si) => sd.f.forEach((f, sl) => o.push(AK(si, sl))));
   return o;
 };
-const liveK = si => allK().filter(k => (si == null || ASIDE[k] === si) && A(k) && A(k).hp > 0);
+export const liveK = si => allK().filter(k => (si == null || ASIDE[k] === si) && A(k) && A(k).hp > 0);
 const foeSide = k => 1 - ASIDE[k];
-const types = k => FV(k).ov || SP[A(k).sp].types;
+export const types = k => FV(k).ov || SP[A(k).sp].types;
 const shockName = () => RB.shockName || `${RB.shockType} storm`;
 const isMulti = () => !!B && (B.sides[0].f.length > 1 || B.sides[1].f.length > 1);
 function statE(k, s2) {
@@ -82,10 +265,10 @@ function snapK(k) {
     stg: { ...f.v.st },
   };
 }
-const snapAll = () => [0, 1, 2, 3, 4].map(k => (FT(k) ? snapK(k) : null));
+export const snapAll = () => [0, 1, 2, 3, 4].map(k => (FT(k) ? snapK(k) : null));
 /* kept for older callers: the first fighter of a side */
 const snapSide = si => snapK(si);
-function say(t, an) {
+export function say(t, an) {
   const ev = { t, an: an || null, s: snapAll(), mk: B.market ? { ...B.market } : null };
   B.events.push(ev);
   return ev;
@@ -461,7 +644,7 @@ function bench(si, also = []) {
       return m.hp > 0 && m.job == null && !on.includes(i) && !also.includes(i);
     });
 }
-function doSwitch(k, idx) {
+export function doSwitch(k, idx) {
   const sd = B.sides[ASIDE[k]],
     f = FT(k);
   f.act = idx;
@@ -483,7 +666,7 @@ function doSwitch(k, idx) {
     say(`${N(m)} took up its teammate’s boosts.`, { k: 'stat', si: k, up: true });
   }
 }
-function checkFaints() {
+export function checkFaints() {
   let any = false;
   for (const k of allK().filter(k => ASIDE[k] === 1)) {
     const e = A(k),
@@ -693,7 +876,7 @@ function makeAlpha(sp, lvl, o = {}) {
   m.hp = maxHp(m);
   return m;
 }
-function startWild(q) {
+export function startWild(q) {
   const foe = q.alpha ? makeAlpha(q.sp, q.lvl, { gold: q.gold }) : makeMon(q.sp, q.lvl, { gold: q.gold });
   if (!newBattle('wild', [foe], { qid: q.id, area: areaKey(), fmt: q.alpha ? 'alpha' : 'single' })) return;
   const nm = SP[q.sp].name;
@@ -712,7 +895,7 @@ function startWild(q) {
   K.forEach((k, n) => say(n ? '' : `Go, ${goNames(K)}!`, { k: 'enter', si: k, quiet: n > 0 }));
   openBattle();
 }
-function startTrainer(id, o = {}) {
+export function startTrainer(id, o = {}) {
   const T = TRAINERS[id];
   if (!T) return;
   const team = trainerTeam(T);
@@ -746,12 +929,12 @@ function startTrainer(id, o = {}) {
   K.forEach((k, n) => say(n ? '' : `Go, ${goNames(K)}!`, { k: 'enter', si: k, quiet: n > 0 }));
   openBattle();
 }
-function areaKey() {
+export function areaKey() {
   return hereStop().area;
 }
 /* one turn. plan: what each of your fighters does ({who,k:'move',mid,tk} | {who,k:'switch',i} | {who,k:'item',item,uid})
    or a single {k:'run'}. An older single action ({k:'move',mid}) is your first fighter's. */
-function runTurn(plan) {
+export function runTurn(plan) {
   B.events = [];
   B.ev = 0;
   B.needSwitch = [];
@@ -807,7 +990,7 @@ function runTurn(plan) {
   }
   play();
 }
-function enemyOnly() {
+export function enemyOnly() {
   B.aiPlan = {};
   for (const k of liveK(1)) {
     const n = A(k).boss ? (RB.alphaActs ?? 2) : 1;
@@ -852,8 +1035,8 @@ function catchRoll(id, T, spin) {
   while (w < 3 && rnd() < q) w++;
   return { caught: w === 3, w, edge: false, P };
 }
-const teamNeedsHp = () => S.team.some(m => m.hp > 0 && m.hp < maxHp(m) && m.job == null);
-const canUse = (it, m) => {
+export const teamNeedsHp = () => S.team.some(m => m.hp > 0 && m.hp < maxHp(m) && m.job == null);
+export const canUse = (it, m) => {
   const I = ITEMS[it];
   if (!I || !S.items[it] || I.evoItem) return false;
   if (I.revive) return m.hp <= 0;
@@ -864,7 +1047,7 @@ const canUse = (it, m) => {
   if (I.hp) return hurt;
   return false;
 };
-function applyItem(it, id, inB) {
+export function applyItem(it, id, inB) {
   const I = ITEMS[it],
     m = findMon(id);
   if (!m || !canUse(it, m)) return false;
@@ -931,7 +1114,7 @@ function hcard(i) {
  <div class="hpbar"><span class="hpl">HP</span><div class="hpt"><i class="ghost" id="g${i}"></i><i class="fill" id="h${i}"></i></div></div>
  <div class="hc-row3">${i === 0 ? '<span class="hc-num tnum" id="hn0"></span>' : ''}<span class="hc-pips" id="pips${i}"></span></div>${i === 0 ? '<div class="xpbar"><i id="x0"></i></div>' : ''}`;
 }
-function battleShell() {
+export function battleShell() {
   return `<div class="battle" id="battle" data-layout="${battleMode()}">
  <div class="bstage" id="stage">
   <div class="cam" id="camWorld"><canvas id="cvWorld"></canvas></div>
@@ -979,7 +1162,7 @@ function battleLayoutChanged(L) {
     bl.hidden = !!AREAS[SC.area].indoor;
   }
 }
-function battleResize() {
+export function battleResize() {
   const el = $('#battle');
   if (!el) return;
   const m = battleMode();
@@ -1091,7 +1274,7 @@ function wipe(mid) {
     }, 460);
   }, 520);
 }
-function stopTimers() {
+export function stopTimers() {
   clearTimeout(U.evT);
   clearTimeout(U.hpT);
   clearInterval(U.typeT);
@@ -1120,7 +1303,7 @@ function typeText(t) {
   U.typeFull = t;
   return Math.ceil(t.length / sp) * 16;
 }
-function play() {
+export function play() {
   if (!B) return;
   B.phase = 'playing';
   B.ev = 0;
@@ -1209,7 +1392,7 @@ function msgFace(f) {
   el.innerHTML = portraitHTML(f.who, 46, f.expr);
   m.classList.add('has-face');
 }
-function tapMsg() {
+export function tapMsg() {
   if (!B || B.phase !== 'playing' || !$('#msg')) return;
   if (U.typing) {
     clearInterval(U.typeT);
@@ -1326,7 +1509,7 @@ function paintParty() {
   const b = $('#pips1');
   if (b) b.innerHTML = B.kind === 'trainer' ? B.sides[1].team.map(pip).join('') : '';
 }
-function paintBoxes(s, mk, anim) {
+export function paintBoxes(s, mk, anim) {
   paintSide(0, s[0], anim);
   paintSide(1, s[1], anim);
   paintPlates(s, anim);
@@ -1437,7 +1620,7 @@ function afterEvents() {
     battleTutor(); /* v47: Hazel's tips in Blake's first battle */
 }
 /* v33: with two or three of yours out, each picks in turn; the one choosing stands in a ring */
-function chooseMsg() {
+export function chooseMsg() {
   const m = A(B.cur);
   if (!m) return;
   const L = liveK(0),
@@ -1445,7 +1628,7 @@ function chooseMsg() {
   $('#msgT').textContent = L.length > 1 ? `What will ${N(m)} do? (${n + 1} of ${L.length})` : `What will ${N(m)} do?`;
   if (typeof scSelect === 'function') scSelect(B.cur);
 }
-function planNext(p) {
+export function planNext(p) {
   B.plan.push(p);
   const L = liveK(0).filter(k => !B.plan.some(q => q.who === k));
   if (L.length && !B.plan.some(q => q.k === 'run')) {
@@ -1458,7 +1641,7 @@ function planNext(p) {
   if (typeof scSelect === 'function') scSelect(null);
   runTurn(B.plan);
 }
-function planBack() {
+export function planBack() {
   const p = B.plan.pop();
   if (!p) return false;
   B.cur = p.who;
@@ -1474,7 +1657,7 @@ function needsTarget(mid) {
   const onFoe = M.c !== 'X' || fx.status || fx.tgtStage || fx.hype || fx.spin || fx.wipe;
   return onFoe && !fx.spread && liveK(1).length > 1;
 }
-function pickMove(mid) {
+export function pickMove(mid) {
   if (needsTarget(mid)) {
     B.mv = mid;
     B.phase = 'target';
@@ -1485,7 +1668,7 @@ function pickMove(mid) {
   }
   planNext({ who: B.cur, k: 'move', mid, tk: liveK(1)[0] });
 }
-function pickTarget(tk) {
+export function pickTarget(tk) {
   if (!B || B.phase !== 'target') return;
   if (typeof scTargets === 'function') scTargets(null);
   planNext({ who: B.cur, k: 'move', mid: B.mv, tk });
@@ -1541,13 +1724,13 @@ function teamPick(back) {
 }
 const backBtn = () =>
   `<button class="bt back wide" data-a="bback">${uiIco('back', 16)}<b>Back</b><kbd>Esc</kbd></button>`;
-const itemIcon = (k, size = 30) => {
+export const itemIcon = (k, size = 30) => {
   const I = ITEMS[k] || {};
   return I.img
     ? `<img class="pxi" src="${artURL(I.img)}" width="${size}" height="${size}" alt="">`
     : `<img class="pxi" src="${iconURL('i_' + (I.icon || k))}" width="${size}" height="${size}" alt="">`;
 };
-function paintActions() {
+export function paintActions() {
   const el = $('#acts');
   if (!el || !B) return;
   const ph = B.phase,
@@ -1682,14 +1865,14 @@ function bindAim() {
     c.classList.remove('held');
   });
 }
-function showAim() {
+export function showAim() {
   SC.ring = { t0: SC.t };
   camAt(1, 0.45, 0.16, 0.015, 320);
   scFocus('foe');
   $('#msgT').textContent =
     B.integrity > 1 ? `Focus Bonus ×${+B.integrity.toFixed(2)} is active.` : 'Line up your throw.';
 }
-function doThrow(spin) {
+export function doThrow(spin) {
   if (U.throwing || !B || B.phase !== 'aim') return;
   U.throwing = true;
   const ph = scRingPhase(),
@@ -1736,7 +1919,7 @@ function finishThrow(res, id, lab, spin) {
   enemyOnly();
   play();
 }
-function endBattle() {
+export function endBattle() {
   stopTimers();
   const o = B.over,
     kind = B.kind,

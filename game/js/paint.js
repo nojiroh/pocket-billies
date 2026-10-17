@@ -6,6 +6,65 @@
    asks for rectangles and gets the pixels back, the near ring's with their smaller sizes (mipmaps) made there too.
    Where workers aren't allowed (or one fails), painting stays on the main thread, a slice at a time, as before.
    A generator waiting on the worker yields PW_WAIT (diorama.js): the loops that step it stop for the frame. */
+/* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
+import { expose } from './bridge.js';
+import { clamp } from './util.js';
+import { hexA, pk, pkh } from './art.js';
+import {
+  DIO,
+  DIO_PAD,
+  DIO_T0,
+  DIO_TA,
+  DIO_TC,
+  DIO_TD,
+  DIO_TL,
+  PW_WAIT,
+  dioClipSeg,
+  dioData,
+  dioGroundKey,
+  dioHash,
+  dioNextOn,
+  dioNoise,
+  dioPaintGen,
+  dioPlain47,
+  dioShade,
+  dioStableCells,
+  dioStepCH,
+  dioStepCorners,
+  dioStepJoined,
+  dioSteps,
+  dioT47,
+  dioTileFolder,
+  dioTileSet,
+  dioToneAt,
+  dioTonePx,
+  dioWearAmtFn,
+  dioWearFn,
+  dioWearLines,
+} from './diorama.js';
+import { eng } from './engine/settings.js';
+import { DGL_TERRAIN_MAT } from './diorama-gl.js';
+import { wrNear } from './world.js';
+/* eslint-disable no-func-assign */
+expose({
+  PW: [() => PW],
+  PW_KEEP: [() => PW_KEEP],
+  PW_KINDS: [() => PW_KINDS],
+  PW_MAIN: [() => PW_MAIN],
+  pwAll: [() => pwAll, v => (pwAll = v)],
+  pwCtxId: [() => pwCtxId, v => (pwCtxId = v)],
+  pwOn: [() => pwOn, v => (pwOn = v)],
+  pwPaint: [() => pwPaint, v => (pwPaint = v)],
+  pwSendCtx: [() => pwSendCtx, v => (pwSendCtx = v)],
+  pwSendTiles: [() => pwSendTiles, v => (pwSendTiles = v)],
+  pwSettle: [() => pwSettle, v => (pwSettle = v)],
+  pwSource: [() => pwSource, v => (pwSource = v)],
+  pwState: [() => pwState, v => (pwState = v)],
+  pwWake: [() => pwWake, v => (pwWake = v)],
+  pwWorker: [() => pwWorker, v => (pwWorker = v)],
+});
+/* eslint-enable no-func-assign */
+/* to-module: end */
 const PW = {
   w: null,
   bad: false,

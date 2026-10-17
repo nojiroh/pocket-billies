@@ -7,7 +7,52 @@
    Settings → Time of day / Weather / Season can pin any of them. Billionaires notice too: some come out at night,
    others in the rain (rules.env in the game data, editable in the Studio).
    The renderer reads ENV through envFrame() once a frame; nothing here touches WebGL. */
-const ENV = {
+/* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
+import { expose } from './bridge.js';
+import { clamp } from './util.js';
+import { hexA } from './art.js';
+import { DIO, dioScene } from './diorama.js';
+/* eslint-disable no-func-assign */
+expose({
+  ENV: [() => ENV],
+  ENV_CLIMATE: [() => ENV_CLIMATE],
+  ENV_HIST: [() => ENV_HIST],
+  ENV_LIKES: [() => ENV_LIKES],
+  ENV_MOD: [() => ENV_MOD],
+  ENV_NAMES: [() => ENV_NAMES],
+  ENV_PAL: [() => ENV_PAL],
+  ENV_SEASONS: [() => ENV_SEASONS],
+  ENV_TIMES: [() => ENV_TIMES],
+  ENV_TIME_H: [() => ENV_TIME_H],
+  ENV_WX: [() => ENV_WX],
+  envClimate: [() => envClimate, v => (envClimate = v)],
+  envFactors: [() => envFactors, v => (envFactors = v)],
+  envForecast: [() => envForecast, v => (envForecast = v)],
+  envFrame: [() => envFrame, v => (envFrame = v)],
+  envHash: [() => envHash, v => (envHash = v)],
+  envHere: [() => envHere, v => (envHere = v)],
+  envHint: [() => envHint, v => (envHint = v)],
+  envHistory: [() => envHistory, v => (envHistory = v)],
+  envHour: [() => envHour, v => (envHour = v)],
+  envIcon: [() => envIcon, v => (envIcon = v)],
+  envLabel: [() => envLabel, v => (envLabel = v)],
+  envLikes: [() => envLikes, v => (envLikes = v)],
+  envLitFrac: [() => envLitFrac, v => (envLitFrac = v)],
+  envMixHex: [() => envMixHex, v => (envMixHex = v)],
+  envOdds: [() => envOdds, v => (envOdds = v)],
+  envPrefs: [() => envPrefs, v => (envPrefs = v)],
+  envRules: [() => envRules, v => (envRules = v)],
+  envSeason: [() => envSeason, v => (envSeason = v)],
+  envSky: [() => envSky, v => (envSky = v)],
+  envSmooth: [() => envSmooth],
+  envState: [() => envState, v => (envState = v)],
+  envSun: [() => envSun, v => (envSun = v)],
+  envWeatherFor: [() => envWeatherFor, v => (envWeatherFor = v)],
+  envWinLit: [() => envWinLit, v => (envWinLit = v)],
+});
+/* eslint-enable no-func-assign */
+/* to-module: end */
+export const ENV = {
   on: false,
   force: null,
   id: null,
@@ -54,7 +99,7 @@ const ENV_PAL = {
   ash: ['#6A5C58', '#8A7C74', '#A69284'],
 };
 /* how each weather looks: cloud cover, how grey the sky turns, rain, snow, fog, ash */
-const ENV_WX = {
+export const ENV_WX = {
   clear: { cloud: 0.35 },
   cloudy: { cloud: 0.85, grey: 0.5 },
   rain: { cloud: 0.95, grey: 0.72, rain: 1, fog: 0.15 },
@@ -72,7 +117,7 @@ const ENV_CLIMATE = {
   dry: { clear: 80, cloudy: 20 },
   none: { clear: 100 },
 };
-const ENV_NAMES = {
+export const ENV_NAMES = {
   clear: 'Clear',
   cloudy: 'Cloudy',
   rain: 'Rain',
@@ -90,7 +135,7 @@ const ENV_TIMES = [
 ];
 const ENV_TIME_H = { morning: 8.2, day: 13, evening: 19.6, night: 23.4 };
 /* who comes out when (multiplies a billionaire's odds in the wild by its types) */
-const ENV_LIKES = {
+export const ENV_LIKES = {
   night: { Psychic: 2, Dragon: 1.6, Steel: 1.2, Grass: 0.8 },
   dusk: { Flying: 1.4, Psychic: 1.2 },
   sunny: { Grass: 1.25, Fire: 1.2 },
@@ -126,7 +171,7 @@ function envSeason(d) {
   if (p && p !== 'auto') return p;
   return ENV_SEASONS[(d || new Date()).getMonth()];
 }
-function envHour(d) {
+export function envHour(d) {
   const f = ENV.force && ENV.force.time,
     p = f != null ? f : ENV.on ? envPrefs().time || 'real' : 'day';
   if (typeof p === 'number') return p;
@@ -172,7 +217,7 @@ function envWeatherFor(climate, d) {
 }
 /* everything the renderer needs, eased so weather drifts in and out; a new scene snaps */
 /* the hour, the season and the weather for a scene right now (no easing): used for the odds in the wild and the walk card too */
-function envState(sc, d) {
+export function envState(sc, d) {
   d = d || new Date();
   const h = envHour(d),
     ss = envSeason(d),
@@ -189,7 +234,7 @@ function envState(sc, d) {
 }
 /* v47: the share of windows lit at hour h. They come on one at a time from late afternoon and go off one at a time
    late at night (each window has its own moment, from its position), with a few early risers before dawn */
-function envLitFrac(h) {
+export function envLitFrac(h) {
   h = ((h % 24) + 24) % 24;
   const sm = (a, b, x) => {
     const t = Math.min(1, Math.max(0, (x - a) / (b - a)));
@@ -204,11 +249,11 @@ function envLitFrac(h) {
   if (h < 19.5) return 0.18 + 0.62 * sm(16, 19.5, h);
   return 0.8;
 }
-function envWinLit(x, z, h) {
+export function envWinLit(x, z, h) {
   const v = Math.sin(x * 12.9898 + z * 78.233) * 43758.5453;
   return v - Math.floor(v) < envLitFrac(h);
 }
-function envHere() {
+export function envHere() {
   try {
     return typeof sceneIdAt === 'function' && typeof dioScene === 'function' && typeof S !== 'undefined' && S.route
       ? dioScene(sceneIdAt(S.route.node))
@@ -245,7 +290,7 @@ function envHistory(clim, d) {
   return ENV_HIST;
 }
 /* everything the renderer needs, eased so weather drifts in and out; a new scene (or a changed setting) snaps */
-function envFrame(sc, dt) {
+export function envFrame(sc, dt) {
   const p = envPrefs(),
     F = ENV.force || {},
     f =
@@ -371,7 +416,7 @@ function envFrame(sc, dt) {
 function envMixHex(a, b, t) {
   return a.map((v, i) => v + (b[i] - v) * t);
 }
-function envSky(sky, indoor) {
+export function envSky(sky, indoor) {
   const c = sky.map(s => s.slice());
   if (indoor) return c;
   const P = k => ENV_PAL[k].map(h => hexA(h).map(v => v / 255));
@@ -472,7 +517,7 @@ function envOdds(list, sc) {
   });
 }
 /* a short line for the walk card: “Evening · Rain · Autumn”, its icon, and who is about */
-function envLabel(sc) {
+export function envLabel(sc) {
   if (!ENV.on) return '';
   const st = envState(sc || envHere()),
     t =
@@ -516,7 +561,7 @@ function envForecast(sc) {
   }
   return '';
 }
-function envIcon(sc) {
+export function envIcon(sc) {
   const st = envState(sc || envHere()),
     w = st.wx;
   return w === 'rain' || w === 'storm'
@@ -533,7 +578,7 @@ function envIcon(sc) {
               ? 'moon'
               : 'sun';
 }
-function envHint(sc) {
+export function envHint(sc) {
   if (!ENV.on || envRules().off) return '';
   const s = sc || envHere();
   if (s && s.indoor) return '';

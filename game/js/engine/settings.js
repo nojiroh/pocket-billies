@@ -4,7 +4,25 @@
    (GD.engine.defaults), per walk scene (scenes[id].look; battles use the scene they happen in) and for the map
    (GD.engine.map). Pocket Billies Studio edits all three in its Engine section.
    A value of null means "use the scene's own field" (its haze, sky, camera…). */
-const ENGINE_DEFAULTS = {
+/* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
+import { expose } from '../bridge.js';
+import { hexA } from '../art.js';
+/* eslint-disable no-func-assign */
+expose({
+  ENGINE_DEFAULTS: [() => ENGINE_DEFAULTS],
+  ENGINE_PRESETS: [() => ENGINE_PRESETS],
+  ENGINE_SPEC: [() => ENGINE_SPEC],
+  ENG_CTX: [() => ENG_CTX, v => (ENG_CTX = v)],
+  eng: [() => eng, v => (eng = v)],
+  engGame: [() => engGame, v => (engGame = v)],
+  engHex: [() => engHex, v => (engHex = v)],
+  engLook: [() => engLook, v => (engLook = v)],
+  engPlayer: [() => engPlayer, v => (engPlayer = v)],
+  engSource: [() => engSource, v => (engSource = v)],
+});
+/* eslint-enable no-func-assign */
+/* to-module: end */
+export const ENGINE_DEFAULTS = {
   lens: {
     focusBand: 0.3,
     blurFar: 1.5,
@@ -157,7 +175,7 @@ const ENGINE_DEFAULTS = {
   },
 };
 /* labels, ranges and help for the Studio, in display order */
-const ENGINE_SPEC = [
+export const ENGINE_SPEC = [
   [
     'lens',
     'Lens',
@@ -699,7 +717,7 @@ const ENGINE_SPEC = [
   ],
 ];
 /* ready-made looks; a preset only lists what it changes */
-const ENGINE_PRESETS = {
+export const ENGINE_PRESETS = {
   sunny: {
     name: 'Sunny',
     v: {
@@ -751,8 +769,9 @@ function engLook() {
   if (typeof ENG_CTX !== 'undefined' && ENG_CTX.look) return ENG_CTX.look;
   return null;
 }
-let ENG_CTX = { look: null, bypass: false, env: false };
-let engSource = () => (typeof GD !== 'undefined' ? GD.engine : null); /* the Studio points this at its unsaved data */
+export let ENG_CTX = { look: null, bypass: false, env: false };
+export let engSource = () =>
+  typeof GD !== 'undefined' ? GD.engine : null; /* the Studio points this at its unsaved data */
 function engGame() {
   const d = engSource();
   return (d && d.defaults) || null;
@@ -762,7 +781,7 @@ function engPlayer() {
   const p = typeof S !== 'undefined' && S && S.preferences;
   return p && p.expert && p.eng ? p.eng : null;
 }
-function eng(group, key) {
+export function eng(group, key) {
   if (ENG_CTX.bypass) return ENGINE_DEFAULTS[group][key];
   const L = engLook(),
     G = engGame(),
@@ -778,7 +797,7 @@ function eng(group, key) {
   }
   return v;
 }
-function engHex(group, key, fb) {
+export function engHex(group, key, fb) {
   const v = eng(group, key) || fb;
   if (typeof v === 'string' && /^#[0-9a-f]{6}$/i.test(v)) return hexA(v).map(x => x / 255);
   if (Array.isArray(fb)) return fb;

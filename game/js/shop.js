@@ -2,6 +2,27 @@
 /* ================= TOWN SHOPS =================
    Shops live in data (GAMEDATA.shops) and are attached to route stops (route[].shop).
    Each shop has a keeper (drawn by the trainer renderer from PEOPLE), a greeting and a stock list. */
+/* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
+import { expose } from './bridge.js';
+import { clamp, rnd } from './util.js';
+import { COINS, ITEMS, SHOPS } from './data.js';
+import { S, U, esc, fmt, plural, save } from './core.js';
+import { coinHTML, uiIco } from './art.js';
+import { portraitHTML } from './trainer.js';
+import { openDressing } from './dressing.js';
+import { buzz } from './scene.js';
+import { itemIcon } from './battle.js';
+/* eslint-disable no-func-assign */
+expose({
+  SHOP_THANKS: [() => SHOP_THANKS],
+  openShop: [() => openShop, v => (openShop = v)],
+  shopBuy: [() => shopBuy, v => (shopBuy = v)],
+  shopHTML: [() => shopHTML, v => (shopHTML = v)],
+  shopRefresh: [() => shopRefresh, v => (shopRefresh = v)],
+  wareInfo: [() => wareInfo],
+});
+/* eslint-enable no-func-assign */
+/* to-module: end */
 const SHOP_THANKS = [
   'Pleasure doing business.',
   'Come back any time. It’s always noon.',
@@ -51,7 +72,7 @@ function shopHTML(id) {
    )
    .join('')}</div><div class="wares2">${rows || '<p class="note">The shelves are empty today.</p>'}</div>`;
 }
-function openShop(id) {
+export function openShop(id) {
   const sh = SHOPS[id];
   if (!sh) return;
   if (sh.kind === 'wardrobe' && typeof openDressing === 'function') {

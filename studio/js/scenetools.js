@@ -8,6 +8,38 @@
    - Curved road: click points, double-click (or Enter) to lay the chosen ground along a smooth curve.
    - Smooth the path: turns the walker's path into a gentle curve.
    Hooks: scenes.js calls scxDown / scxMove / scxUp from the map's pointer events and scxDraw after drawing. */
+/* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
+import { expose } from '../../game/js/bridge.js';
+import { $ } from '../../game/js/util.js';
+import { DIO } from '../../game/js/diorama.js';
+import { ACTS, ST, ask, changed, clone, commit, dialog, render, toast, uidKey } from './core.js';
+import { SCN, scCur, scD, scMapDraw, scPropAt, scSetTile } from './scenes.js';
+/* eslint-disable no-func-assign */
+expose({
+  scxBlocks: [() => scxBlocks],
+  scxBlocksBar: [() => scxBlocksBar, v => (scxBlocksBar = v)],
+  scxCopy: [() => scxCopy, v => (scxCopy = v)],
+  scxCurve: [() => scxCurve, v => (scxCurve = v)],
+  scxDeleteMulti: [() => scxDeleteMulti, v => (scxDeleteMulti = v)],
+  scxDown: [() => scxDown, v => (scxDown = v)],
+  scxDraw: [() => scxDraw, v => (scxDraw = v)],
+  scxHint: [() => scxHint, v => (scxHint = v)],
+  scxMove: [() => scxMove, v => (scxMove = v)],
+  scxMultiCard: [() => scxMultiCard, v => (scxMultiCard = v)],
+  scxPaste: [() => scxPaste, v => (scxPaste = v)],
+  scxPickKind: [() => scxPickKind, v => (scxPickKind = v)],
+  scxR: [() => scxR],
+  scxRoadLay: [() => scxRoadLay, v => (scxRoadLay = v)],
+  scxScatter: [() => scxScatter, v => (scxScatter = v)],
+  scxScatterBar: [() => scxScatterBar, v => (scxScatterBar = v)],
+  scxScatterKinds: [() => scxScatterKinds, v => (scxScatterKinds = v)],
+  scxSelBoxes: [() => scxSelBoxes, v => (scxSelBoxes = v)],
+  scxStampAt: [() => scxStampAt, v => (scxStampAt = v)],
+  scxTools: [() => scxTools, v => (scxTools = v)],
+  scxUp: [() => scxUp, v => (scxUp = v)],
+});
+/* eslint-enable no-func-assign */
+/* to-module: end */
 SCN.multi = SCN.multi || new Set();
 SCN.scat = SCN.scat || { dens: 0.5, mix: true, vary: 0.18 };
 SCN.road = null;

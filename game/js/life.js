@@ -8,6 +8,32 @@
    that wheel overhead, mountain goats, cats sunning themselves in town, crabs scuttling sideways on the beach and
    lizards on warm rock. Flags on a kind: flee (how close you may come), hop (bounds along), fly (takes off like a
    pigeon, frames 2-3), shore (lives at the water's edge), side (walks sideways). */
+/* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
+import { expose } from './bridge.js';
+import { clamp } from './util.js';
+import { cnv } from './art.js';
+import { DIO, dioData, dioFree, dioHash, dioImg, dioOk, dioPoly, dioPolyAt, dioStepOK } from './diorama.js';
+import { dglRing, dioGroundH, dioH, dioHRaw } from './diorama-gl.js';
+/* eslint-disable no-func-assign */
+expose({
+  LIFE: [() => LIFE],
+  LIFE_FRAMES: [() => LIFE_FRAMES],
+  LIFE_KIND: [() => LIFE_KIND],
+  dioHRawSafe: [() => dioHRawSafe, v => (dioHRawSafe = v)],
+  lifeFrame: [() => lifeFrame, v => (lifeFrame = v)],
+  lifeInit: [() => lifeInit, v => (lifeInit = v)],
+  lifeKey: [() => lifeKey, v => (lifeKey = v)],
+  lifeMeta: [() => lifeMeta, v => (lifeMeta = v)],
+  lifePaths: [() => lifePaths, v => (lifePaths = v)],
+  lifeRnd: [() => lifeRnd, v => (lifeRnd = v)],
+  lifeShift: [() => lifeShift, v => (lifeShift = v)],
+  lifeShore: [() => lifeShore, v => (lifeShore = v)],
+  lifeSprites: [() => lifeSprites, v => (lifeSprites = v)],
+  lifeStep: [() => lifeStep, v => (lifeStep = v)],
+  lifeTarget: [() => lifeTarget, v => (lifeTarget = v)],
+});
+/* eslint-enable no-func-assign */
+/* to-module: end */
 const LIFE = { id: null, key: '', list: [], cut: new Map() };
 const LIFE_KIND = {
   duck: { s: 0.62, speed: 0.35, sh: 0.22 },
@@ -197,7 +223,7 @@ function lifeTarget(c) {
   }
 }
 /* v43: a seamless shift between composites moves the animals along instead of starting them over */
-function lifeShift(dx, dz, id) {
+export function lifeShift(dx, dz, id) {
   for (const a of LIFE.list) {
     a.x += dx;
     a.z += dz;

@@ -11,6 +11,73 @@ Newest entry on top. Every phase session ends by adding an entry here and taggin
 - Questions waiting for the owner: 
 - Next session starts with: 
 
+### Phase 04c - Modernize: ES modules - 2026-10-17
+Owner's choices: conversion tool applied backwards from boot.js in batches; keep a window bridge through 04c; no
+minifying.
+- Changed:
+  - Every game and Studio script is an ES module (74, plus game/js/bridge.js), except the classic ones on purpose:
+    version.js (sw.js importScripts it), the art manifests and gamedata.js (generated data), data-files.js (the Node
+    tools run it too), data-fallback.js (the synchronous data read), log.js and tapdebug.js (they catch errors before
+    the modules run, and still work if a module fails to load on a phone).
+  - tools/to-module.mjs (`npm run modules`; `npm run check:modules` in CI) writes the top of each module between the
+    to-module markers: imports of what it reads from EARLIER modules of its page(s), `export` on what others import,
+    and expose({...}). It imports a name only if every page loading the file loads the same module earlier, and the
+    file never assigns it. Imports only point back, so modules run in the page's order, as the scripts did.
+  - The window bridge (game/js/bridge.js): every module's top-level names are on window as a getter and a setter of
+    the module's own variable. That is how a module reaches a LATER file's names (the cycles), names it assigns (S, B,
+    RM, SAVE_HOLD, map-gl.js replacing map.js's functions, diorama-gl.js replacing dioNav/dioStop/dioProj/dioUnproject,
+    extras.js wrapping openBattle/endBattle/talkFolk, the Studio's swaps) and names each page defines its own way
+    (S, U, B, RM, esc, the Studio's live tables, the battle HUD hooks). The debug log's and the diagnostics' wrappers
+    (`window.render = wrapped`) change the module's own variable, so calls inside and between modules are still timed.
+    198 game names and 107 Studio names are still reached this way (the bundle renames their module variable, e.g.
+    `DIO$1`); everything else is imported (569 import lines).
+  - `$`, `$$`, `rnd`, `clamp` moved to game/js/util.js, loaded first by both pages (they were in core.js and the
+    Studio's inline stand-ins). Reached through the bridge, `clamp` couldn't be inlined into the ground height code:
+    the loader took ~5 s (17%) longer on an emulated phone. Now on par.
+  - `npm run build` bundles each page's modules into one file (dist/game/js/game-<hash>.js, 1.5 MB, 470 KB gzipped;
+    dist/studio/js/studio-<hash>.js), not minified, with a source map; one file per page so the
+    order is the page's. The module sources are left out of dist/. The dev server serves every script as on disk.
+  - ESLint lints module scripts as modules and refuses a name a module shares with another script of its page (in a
+    module, no-redeclare can't see that). check-quick's duplicate-function check reads module tags and `export`.
+  - check-quick v35 no longer counts art/next/tiles (deleted in phase 03; it failed "tiles: 0 variants" on the base).
+  - tools/check-studio-github.py: the Studio in GitHub mode against a local stand-in for the API (sign-in, the data
+    files, every section, an edit proposed as a pull request). Not in CI yet.
+- Risky or unfinished:
+  - Opening game/index.html from disk (file://) no longer works at all (modules need a server); before, only battles
+    and the map failed. boot.js's file:// hint can't show any more.
+  - Old phones: module scripts need Safari 11+ / Chrome 61+; WebGL 2 already needed more.
+  - Script errors in a debug log now point into the bundle (line numbers differ from the sources; names are the same,
+    sometimes with `$1`). The source map is next to the bundle for desktop devtools.
+  - Strict mode: paint.js, world.js and account-config.js weren't strict before (every other file was). No scope
+    differences found (all references resolve the same in script and module mode); smoke and the full check passed.
+  - A bridge name a module assigns before the defining module has run would throw (strict); none found.
+  - Pre-existing, found by testing dist: the old-name check reads game/js/*.js but not engine/; engine/settings.js
+    still says "Sundown" in a setting description the Studio's Engine section shows.
+- Verified:
+  - Base commit, full quick check: 47 of 48 (v35 tiles, fixed above). After each batch: lint, check:modules, smoke
+    14/14, a headless boot. Batch 2: Battles, v31, v33, airships, Walking: all pass but "walk the world yourself"
+    (the known order-dependent D-pad failure, also on base). Batch 4: Shaders, Scenes, v32, v35, v43, v44, props made
+    of shapes, Crowd: all pass. Studio (check-studio-github.py) after batches 3, 4, 5 and on dist: 18 sections, an
+    edit proposed, no errors. dist/ with check-quick's smoke: the phone flow and debug log export pass (only the
+    old-name note above, from reading the bundle).
+  - Debug log: NWLOG.hook wraps `render` and the renderer timers inside modules (checked render.__nwT, dglGround.__nwP).
+  - Phone load, emulated (CPU ×4, gzip, 4G 9 Mbit/40 ms), three runs each, before (04b build) → after: scripts done
+    1.10 s → 1.13-1.22 s; loader done 28.5/32.9/29.2 s → 29.5/29.1/28.4 s; JS 62 files 751 KB → 10 files 643 KB.
+    Slow 4G (1.6 Mbit/150 ms): scripts 5.1 → 4.5-4.9 s. Steady state on the title view: no bridge getter shows.
+  - Full quick check on the final code: NOT run end to end; the owner skipped it. It was stopped after 16 steps
+    (all passed), inside Scenes. The nightly CI run on main covers it once this is merged.
+- Decisions I made (and why): kept the seven classic scripts above (reasons listed); explicit setters for the
+  cross-file writes were not needed for 04c (the bridge setter does it) and go to 04d with the other globals; each
+  page is bundled alone (a shared chunk could change the run order); helpers moved to util.js only where both copies
+  were identical (esc differs: the Studio's turns null into '').
+- Questions waiting for the owner: run tools/check-studio-github.py in CI (about a minute)? Fix the "Sundown" text and
+  widen the old-name check to engine/ (phase 05)? Still open from before: Pages → GitHub Actions; Studio local mode
+  (start-studio.py); tags phase-01/02/03-done and legacy-final.
+- Next session starts with: 04d (TypeScript and boundaries). On your phone first: the in-game full test and a debug
+  log from this build. 04d's first job is the bridge: replace the 198 bridge names with imports, setters and explicit
+  hooks (the debug log's wrappers, the Studio's swaps, map-gl/diorama-gl/extras' overrides), then remove bridge.js
+  (the quick check's page.evaluate calls need a test hook in its place).
+
 ### Phase 04b - Modernize: data split - 2026-10-17
 Owner's choices: layout A, the build makes the start file and Pages deploys it from Actions, lazy maps this session,
 delete the one-off scripts.

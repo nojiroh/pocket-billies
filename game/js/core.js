@@ -1,29 +1,145 @@
 'use strict';
 /* ================= CORE ================= */
-const $ = (s, r = document) => r.querySelector(s);
-const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
-const rnd = Math.random;
-const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
-const esc = s =>
+/* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
+import { expose } from './bridge.js';
+import { rnd } from './util.js';
+import {
+  ADJ,
+  COINS,
+  EGGS,
+  EGG_TIERS,
+  ITEMS,
+  JOBS,
+  JOB_STEPS,
+  LINES,
+  LN,
+  MOVES,
+  POOLS,
+  ROUTE,
+  RULES,
+  SP,
+  START_NODE,
+  STATK,
+  STEPS_PER_KM,
+  TRAINERS,
+  eff,
+  linkCost,
+  trainersAt,
+} from './data.js';
+/* eslint-disable no-func-assign */
+expose({
+  ACC_ID: [() => ACC_ID],
+  B: [() => B, v => (B = v)],
+  BR: [() => BR],
+  EGG_SLOTS: [() => EGG_SLOTS],
+  JOB_SLOTS: [() => JOB_SLOTS],
+  LS: [() => LS],
+  LS_ACC: [() => LS_ACC],
+  LS_BASE: [() => LS_BASE],
+  MAXLV: [() => MAXLV],
+  N: [() => N],
+  RM: [() => RM, v => (RM = v)],
+  S: [() => S, v => (S = v)],
+  SAVE_FOUND: [() => SAVE_FOUND],
+  SAVE_HOLD: [() => SAVE_HOLD, v => (SAVE_HOLD = v)],
+  SAVE_NEW_MSG: [() => SAVE_NEW_MSG],
+  SAVE_OLD_MSG: [() => SAVE_OLD_MSG],
+  SAVE_VERSION: [() => SAVE_VERSION],
+  SLOTS: [() => SLOTS],
+  TEAM_MAX: [() => TEAM_MAX],
+  U: [() => U],
+  addEgg: [() => addEgg, v => (addEgg = v)],
+  addMon: [() => addMon, v => (addMon = v)],
+  addSteps: [() => addSteps, v => (addSteps = v)],
+  allMons: [() => allMons],
+  areaPool: [() => areaPool, v => (areaPool = v)],
+  assignJob: [() => assignJob, v => (assignJob = v)],
+  autoSlot: [() => autoSlot, v => (autoSlot = v)],
+  blockerAt: [() => blockerAt, v => (blockerAt = v)],
+  canEnter: [() => canEnter],
+  canLeave: [() => canLeave],
+  canRide: [() => canRide],
+  cleanName: [() => cleanName],
+  collectJob: [() => collectJob, v => (collectJob = v)],
+  emptyJob: [() => emptyJob],
+  endShift: [() => endShift, v => (endShift = v)],
+  esc: [() => esc],
+  evoHint: [() => evoHint, v => (evoHint = v)],
+  evoItemName: [() => evoItemName],
+  evoReady: [() => evoReady, v => (evoReady = v)],
+  evolve: [() => evolve, v => (evolve = v)],
+  findMon: [() => findMon],
+  flush: [() => flush, v => (flush = v)],
+  fmt: [() => fmt],
+  fresh: [() => fresh, v => (fresh = v)],
+  freshKeep: [() => freshKeep, v => (freshKeep = v)],
+  gainXp: [() => gainXp, v => (gainXp = v)],
+  gateMsg: [() => gateMsg, v => (gateMsg = v)],
+  gateOwner: [() => gateOwner, v => (gateOwner = v)],
+  gateText: [() => gateText, v => (gateText = v)],
+  hatchEgg: [() => hatchEgg, v => (hatchEgg = v)],
+  hatchable: [() => hatchable],
+  healAll: [() => healAll, v => (healAll = v)],
+  hereStop: [() => hereStop],
+  km: [() => km],
+  loadSave: [() => loadSave, v => (loadSave = v)],
+  lsGet: [() => lsGet, v => (lsGet = v)],
+  lsSet: [() => lsSet, v => (lsSet = v)],
+  makeMon: [() => makeMon, v => (makeMon = v)],
+  maxHp: [() => maxHp],
+  migrate: [() => migrate, v => (migrate = v)],
+  movesAt: [() => movesAt, v => (movesAt = v)],
+  nextBracket: [() => nextBracket],
+  nextStop: [() => nextStop],
+  pathFrom: [() => pathFrom],
+  pickW: [() => pickW, v => (pickW = v)],
+  plural: [() => plural],
+  rate: [() => rate],
+  resumeTrip: [() => resumeTrip, v => (resumeTrip = v)],
+  riderName: [() => riderName],
+  riderOf: [() => riderOf, v => (riderOf = v)],
+  rollDay: [() => rollDay, v => (rollDay = v)],
+  routeDists: [() => routeDists, v => (routeDists = v)],
+  save: [() => save, v => (save = v)],
+  saveAge: [() => saveAge, v => (saveAge = v)],
+  saveT: [() => saveT, v => (saveT = v)],
+  setTrip: [() => setTrip, v => (setTrip = v)],
+  spawn: [() => spawn, v => (spawn = v)],
+  splitPath: [() => splitPath, v => (splitPath = v)],
+  stat: [() => stat, v => (stat = v)],
+  stopTrip: [() => stopTrip, v => (stopTrip = v)],
+  taxed: [() => taxed, v => (taxed = v)],
+  toBox: [() => toBox, v => (toBox = v)],
+  toTeam: [() => toTeam, v => (toTeam = v)],
+  today: [() => today],
+  traveling: [() => traveling],
+  tripTo: [() => tripTo, v => (tripTo = v)],
+  uid: [() => uid],
+  walkMode: [() => walkMode],
+  xpFor: [() => xpFor],
+});
+/* eslint-enable no-func-assign */
+/* to-module: end */
+export const esc = s =>
   String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 /* phase 02: a name the player typed, or that came from a backup file or a friend, loses the characters that could
    end a piece of HTML (< > " & `) and control characters, so it is safe in any page text or attribute */
-const cleanName = (s, max) =>
+export const cleanName = (s, max) =>
   String(s == null ? '' : s)
     // eslint-disable-next-line no-control-regex -- stripping control characters is the point
     .replace(/[\u0000-\u001f\u007f<>"&`]/g, '')
     .trim()
     .slice(0, max);
-const fmt = n => Math.floor(n).toLocaleString('en-US');
-const km = st => (st / STEPS_PER_KM).toFixed(1);
-let RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
-const uid = () => 'm' + Date.now().toString(36) + Math.floor(rnd() * 1e8).toString(36);
-const today = () => {
+export const fmt = n => Math.floor(n).toLocaleString('en-US');
+export const km = st => (st / STEPS_PER_KM).toFixed(1);
+export let RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
+export const uid = () => 'm' + Date.now().toString(36) + Math.floor(rnd() * 1e8).toString(36);
+export const today = () => {
   const d = new Date();
   return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 };
-const plural = (n, w) => `${fmt(n)} ${w}${n === 1 ? '' : 's'}`;
-function pickW(list) {
+export const plural = (n, w) => `${fmt(n)} ${w}${n === 1 ? '' : 's'}`;
+export function pickW(list) {
   const tot = list.reduce((a, b) => a + b[1], 0);
   let r = rnd() * tot;
   for (const [id, w] of list) {
@@ -34,13 +150,13 @@ function pickW(list) {
 }
 
 /* ---------- state ---------- */
-const xpFor = L => Math.floor(RULES.progression.xpFactor * L * L * L);
-const MAXLV = () => RULES.progression.maxLevel,
+export const xpFor = L => Math.floor(RULES.progression.xpFactor * L * L * L);
+export const MAXLV = () => RULES.progression.maxLevel,
   SLOTS = () => RULES.progression.moveSlots,
   TEAM_MAX = () => RULES.progression.teamSize;
 const JOB_SLOTS = () => Math.max(1, RULES.jobs.positions || 3);
 const emptyJob = () => ({ uid: null, job: null, acc: 0, pend: 0 });
-function fresh() {
+export function fresh() {
   const R = RULES.start,
     coins = {},
     items = {};
@@ -87,7 +203,7 @@ function fresh() {
   };
 }
 /* a new game on the same device keeps its settings (theme, motion, effects, sound…) */
-function freshKeep() {
+export function freshKeep() {
   const p = typeof S !== 'undefined' && S && S.preferences,
     f = fresh();
   if (p) f.preferences = Object.assign(f.preferences, JSON.parse(JSON.stringify(p)));
@@ -95,7 +211,7 @@ function freshKeep() {
 }
 /* alpha 0.4.1: saves only need to work with this version. A save is filled out with anything new and checked against
    the game data (things the Studio may have removed are dropped), but old formats are no longer converted */
-function migrate(o) {
+export function migrate(o) {
   if (!o || typeof o !== 'object') return null;
   const f = fresh();
   const s = Object.assign(f, o);
@@ -159,30 +275,30 @@ function migrate(o) {
 /* phase 02: every save says which save format it is (saveVersion; raise it when old saves can't be read any more).
    A save without one (alpha 0.5 and earlier) or from a newer format is not loaded: the game says so and starts fresh.
    saveAge: null (no save), 'ok', 'old' or 'new'. A newer save is never written over (SAVE_HOLD) */
-const SAVE_VERSION = 1;
+export const SAVE_VERSION = 1;
 let SAVE_HOLD = false;
-function saveAge(o) {
+export function saveAge(o) {
   if (!o || typeof o !== 'object') return null;
   const v = o.saveVersion;
   return v === SAVE_VERSION ? 'ok' : Number.isInteger(v) && v > SAVE_VERSION ? 'new' : 'old';
 }
-function loadSave(o) {
+export function loadSave(o) {
   return saveAge(o) === 'ok' ? migrate(o) : null;
 }
-const SAVE_OLD_MSG = 'This save is from an older version of the game and can’t be loaded in this one.',
+export const SAVE_OLD_MSG = 'This save is from an older version of the game and can’t be loaded in this one.',
   SAVE_NEW_MSG = 'This save is from a newer version of the game. Reload the page to get the newest version.';
 /* alpha 0.4.1: one save per player. Without an account the save lives in this browser (the original key); a player who
    signs in with Google (js/account.js) gets their own save, kept online and copied in this browser under their id */
-const LS_BASE = 'networth-save-v1',
+export const LS_BASE = 'networth-save-v1',
   LS_ACC = 'pb-account';
-const ACC_ID = (() => {
+export const ACC_ID = (() => {
   try {
     return localStorage.getItem(LS_ACC) || '';
   } catch (e) {
     return '';
   }
 })();
-const LS = ACC_ID ? LS_BASE + '-u-' + ACC_ID : LS_BASE;
+export const LS = ACC_ID ? LS_BASE + '-u-' + ACC_ID : LS_BASE;
 function lsGet() {
   try {
     return JSON.parse(localStorage.getItem(LS) || 'null');
@@ -190,7 +306,7 @@ function lsGet() {
     return null;
   }
 }
-function lsSet(o) {
+export function lsSet(o) {
   if (SAVE_HOLD) return;
   try {
     localStorage.setItem(LS, JSON.stringify(o));
@@ -202,16 +318,16 @@ function lsSet(o) {
   }
 }
 /* a save here that this version can't load is kept aside in this browser (once), and the title says why it's a new game */
-const SAVE_FOUND = saveAge(lsGet());
+export const SAVE_FOUND = saveAge(lsGet());
 if (SAVE_FOUND === 'old' || SAVE_FOUND === 'new')
   try {
     const k = LS + '-set-aside';
     if (localStorage.getItem(k) == null) localStorage.setItem(k, localStorage.getItem(LS));
   } catch (e) {}
 if (SAVE_FOUND === 'new') SAVE_HOLD = true;
-let S = loadSave(lsGet()) || fresh();
-let B = null;
-const U = {
+export let S = loadSave(lsGet()) || fresh();
+export let B = null;
+export const U = {
   tab: 'walk',
   lastTab: null,
   intro: 0,
@@ -229,7 +345,7 @@ const U = {
 
 /* ---------- saving: in this browser, and on the account when signed in (account.js) ---------- */
 let saveT = null;
-function save() {
+export function save() {
   S.savedAt = Date.now();
   lsSet(S);
   if (!saveT)
@@ -245,13 +361,13 @@ document.addEventListener('visibilitychange', () => {
     flush();
   }
 });
-function flush() {
+export function flush() {
   if (SAVE_HOLD) return;
   if (typeof accFlush === 'function') accFlush();
 }
 
 /* ---------- billionaires ---------- */
-function stat(m, k) {
+export function stat(m, k) {
   const b = SP[m.sp].base[STATK.indexOf(k)];
   let v = k === 'hp' ? Math.floor((2 * b * m.lvl) / 100) + m.lvl + 10 : Math.floor((2 * b * m.lvl) / 100) + 5;
   /* v33: an Alpha in battle is much tougher (m.boss); one you caught keeps a little of it (m.alpha) */
@@ -259,14 +375,14 @@ function stat(m, k) {
   else if (m.alpha) v = Math.floor(v * ((RULES.battle && RULES.battle.alphaKeep) ?? 1.08));
   return v;
 }
-const maxHp = m => stat(m, 'hp');
+export const maxHp = m => stat(m, 'hp');
 function movesAt(lid, lvl) {
   const out = [];
   for (const [lv, mv] of LN[lid].learn) if (lv <= lvl && !out.includes(mv)) out.push(mv);
   return out.slice(-SLOTS());
 }
 /* alpha 0.5: a Billie remembers where and when it joined you (shown in its details) */
-function makeMon(sp, lvl, o = {}) {
+export function makeMon(sp, lvl, o = {}) {
   const m = {
     uid: uid(),
     sp,
@@ -286,10 +402,10 @@ function makeMon(sp, lvl, o = {}) {
   } catch (e) {}
   return m;
 }
-const N = m => m.nick || SP[m.sp].name;
-const allMons = () => S.team.concat(S.box);
-const findMon = id => allMons().find(m => m.uid === id);
-function gainXp(m, amt, say) {
+export const N = m => m.nick || SP[m.sp].name;
+export const allMons = () => S.team.concat(S.box);
+export const findMon = id => allMons().find(m => m.uid === id);
+export function gainXp(m, amt, say) {
   if (m.lvl >= MAXLV() || amt <= 0) return;
   m.xp += amt;
   while (m.lvl < MAXLV() && m.xp >= xpFor(m.lvl + 1)) {
@@ -306,7 +422,7 @@ function gainXp(m, amt, say) {
     }
   }
 }
-function evoReady(m) {
+export function evoReady(m) {
   const e = SP[m.sp].evo;
   if (!e) return false;
   if (m.evoNo != null && m.lvl <= m.evoNo) return false;
@@ -324,8 +440,8 @@ function evoReady(m) {
       return false;
   }
 }
-const evoItemName = e => (ITEMS[e.item || 'bell'] ? ITEMS[e.item || 'bell'].n : 'Shining Stone');
-function evoHint(m) {
+export const evoItemName = e => (ITEMS[e.item || 'bell'] ? ITEMS[e.item || 'bell'].n : 'Shining Stone');
+export function evoHint(m) {
   const s = SP[m.sp],
     e = s.evo;
   if (!e) return s.rar === 'mythical' ? 'Does not evolve.' : 'Fully evolved.';
@@ -358,12 +474,12 @@ function evoHint(m) {
 }
 /* v36: which final a split line takes: Build (A) when the kilometres it walked as your buddy outweigh the battles it won
    (1 km counts as one win), Hype (B) otherwise. A tie goes to Build. */
-function splitPath(m) {
+export function splitPath(m) {
   const wins = m.wins || 0,
     kmW = ((m.bsteps || 0) + (m.psteps || 0) / 2) / STEPS_PER_KM;
   return wins > kmW ? 'B' : 'A';
 }
-function evolve(m) {
+export function evolve(m) {
   if (typeof jingle === 'function') jingle(JINGLES.evolve, 140);
   const old = maxHp(m),
     from = N(m),
@@ -377,7 +493,7 @@ function evolve(m) {
   m.donated = 0;
   return from;
 }
-function healAll() {
+export function healAll() {
   if (typeof sfx === 'function') sfx('heal');
   for (const m of allMons()) {
     m.hp = maxHp(m);
@@ -385,19 +501,19 @@ function healAll() {
     m.sTurns = 0;
   }
 }
-function toBox(m) {
+export function toBox(m) {
   const i = S.team.indexOf(m);
   if (i >= 0) S.team.splice(i, 1);
   if (!S.box.includes(m)) S.box.push(m);
   m.boxedAt = Date.now();
 }
-function toTeam(m) {
+export function toTeam(m) {
   const i = S.box.indexOf(m);
   if (i >= 0) S.box.splice(i, 1);
   if (!S.team.includes(m)) S.team.push(m);
   m.boxedAt = null;
 }
-function addMon(m) {
+export function addMon(m) {
   S.caught[m.sp] = 1;
   S.seen[m.sp] = 1;
   if (S.team.length < TEAM_MAX()) {
@@ -410,7 +526,7 @@ function addMon(m) {
 }
 
 /* ---------- steps ---------- */
-const BR = RULES.steps.brackets.map(b => [b.upTo > 0 ? b.upTo : Infinity, b.rate]).sort((a, b) => a[0] - b[0]);
+export const BR = RULES.steps.brackets.map(b => [b.upTo > 0 ? b.upTo : Infinity, b.rate]).sort((a, b) => a[0] - b[0]);
 if (!BR.length || BR[BR.length - 1][0] !== Infinity) BR.push([Infinity, BR.length ? BR[BR.length - 1][1] : 1]);
 function taxed(a, b) {
   let se = 0,
@@ -423,18 +539,18 @@ function taxed(a, b) {
   }
   return se;
 }
-const rate = st => {
+export const rate = st => {
   for (const [hi, r] of BR) if (st < hi) return r;
   return BR[BR.length - 1][1];
 };
-const nextBracket = st => BR.find(([hi]) => st < hi);
-function rollDay() {
+export const nextBracket = st => BR.find(([hi]) => st < hi);
+export function rollDay() {
   if (S.day.date !== today()) S.day = { date: today(), steps: 0 };
 }
 function gateOwner(seat) {
   return Object.values(TRAINERS).find(T => T.seat && T.seat.id === seat);
 }
-function gateText(n) {
+export function gateText(n) {
   if (n.gate && !S.seats.includes(n.gate) && n.gateText) return n.gateText;
   if (n.ride && !canRide()) {
     const R = RULES.ride || { minHeight: 1.5 };
@@ -444,7 +560,7 @@ function gateText(n) {
   const T = gateOwner(n.gate);
   return `${n.name} opens once you earn ${T ? T.name + '’s' : 'another'} badge.`;
 }
-function blockerAt(i) {
+export function blockerAt(i) {
   return trainersAt(i).find(T => T.blocks && !S.flags[T.id]) || null;
 }
 /* ---------- travel: a plan of stops to walk to, one link at a time; an empty plan means staying put ---------- */
@@ -459,21 +575,21 @@ function riderOf() {
   }
   return best;
 }
-const canRide = () => !!riderOf();
-const riderName = () => {
+export const canRide = () => !!riderOf();
+export const riderName = () => {
   const m = riderOf();
   return m ? m.nick || SP[m.sp].name : '';
 };
-const canEnter = n => (!ROUTE[n].gate || S.seats.includes(ROUTE[n].gate)) && (!ROUTE[n].ride || canRide());
+export const canEnter = n => (!ROUTE[n].gate || S.seats.includes(ROUTE[n].gate)) && (!ROUTE[n].ride || canRide());
 const canLeave = (from, to) => !blockerAt(from) || !!S.visited[to];
-const nextStop = () => (S.route.plan.length ? S.route.plan[0] : null);
+export const nextStop = () => (S.route.plan.length ? S.route.plan[0] : null);
 /* alpha 0.4.1: how you get about (rules.travel). 'walk': you walk yourself, with the joystick, the d-pad or a tap, from
    place to place across their edges, like a classic RPG; the steps you take in the game count as steps (encounters,
    challenges, your buddy). 'steps': your real steps carry you along the roads (the game until 0.4). */
-const walkMode = () => ((typeof RULES !== 'undefined' && RULES.travel) || 'walk') === 'walk';
+export const walkMode = () => ((typeof RULES !== 'undefined' && RULES.travel) || 'walk') === 'walk';
 const traveling = () => !walkMode() && nextStop() != null && !S.route.hold && !gateMsg();
 /* why travel can't continue right now (null when it can, or when you're staying) */
-function gateMsg() {
+export function gateMsg() {
   const node = S.route.node,
     nx = nextStop();
   if (nx == null) return null;
@@ -514,7 +630,7 @@ const pathFrom = (prev, to) => {
   return out;
 };
 /* steps from where you stand to stop j, and the plan that gets there (turning back on the current link if shorter) */
-function tripTo(j) {
+export function tripTo(j) {
   const r = S.route,
     node = r.node,
     nx = nextStop();
@@ -534,7 +650,7 @@ function tripTo(j) {
     ? { steps: fwd, plan: [nx, ...pathFrom(A.prev, j)], back: false }
     : { steps: back, plan: [node, ...pathFrom(Bk.prev, j)], back: true };
 }
-function setTrip(j) {
+export function setTrip(j) {
   const t = tripTo(j);
   if (!t) return false;
   const r = S.route;
@@ -551,7 +667,7 @@ function setTrip(j) {
   save();
   return true;
 }
-function stopTrip() {
+export function stopTrip() {
   const r = S.route;
   if (r.prog > 0) {
     r.hold = true;
@@ -561,19 +677,19 @@ function stopTrip() {
   }
   save();
 }
-function resumeTrip() {
+export function resumeTrip() {
   S.route.hold = false;
   save();
 }
 /* encounters come from where you're headed while you walk, otherwise from where you are */
-const hereStop = () => {
+export const hereStop = () => {
   const nx = nextStop();
   return ROUTE[nx != null && S.route.prog > 0 && !S.route.hold ? nx : S.route.node];
 };
-function areaPool() {
+export function areaPool() {
   return POOLS[hereStop().pool] || POOLS[Object.keys(POOLS)[0]];
 }
-function spawn(gentle, force) {
+export function spawn(gentle, force) {
   const P = areaPool();
   let list = typeof envOdds === 'function' ? envOdds(P.list) : P.list;
   if (gentle) {
@@ -595,7 +711,7 @@ function spawn(gentle, force) {
   S.queue.push(q);
   return q;
 }
-function addSteps(n, quiet) {
+export function addSteps(n, quiet) {
   n = Math.floor(Number(n));
   if (!S.started || !Number.isFinite(n) || n <= 0 || n > 100000) return;
   rollDay();
@@ -666,7 +782,7 @@ function addSteps(n, quiet) {
 }
 
 /* ---------- Seed Rounds ---------- */
-const EGG_SLOTS = () => Math.max(1, RULES.eggs.slots);
+export const EGG_SLOTS = () => Math.max(1, RULES.eggs.slots);
 function autoSlot() {
   for (let sl = 0; sl < EGG_SLOTS(); sl++) {
     if (S.eggs.some(e => e.slot === sl)) continue;
@@ -674,7 +790,7 @@ function autoSlot() {
     if (e) e.slot = sl;
   }
 }
-function addEgg(tier) {
+export function addEgg(tier) {
   if (!EGGS[tier]) return false;
   if (S.eggs.length >= RULES.eggs.capacity) {
     toast('You’re carrying too many eggs. Hatch a few first.');
@@ -684,8 +800,8 @@ function addEgg(tier) {
   autoSlot();
   return true;
 }
-const hatchable = () => S.eggs.filter(e => e.slot != null && e.prog >= EGGS[e.tier].need);
-function hatchEgg(e) {
+export const hatchable = () => S.eggs.filter(e => e.slot != null && e.prog >= EGGS[e.tier].need);
+export function hatchEgg(e) {
   if (typeof jingle === 'function') jingle(JINGLES.hatch);
   const T = EGGS[e.tier],
     R = RULES.eggs,
@@ -706,7 +822,7 @@ function hatchEgg(e) {
 }
 
 /* ---------- Day Jobs ---------- */
-function assignJob(slot, job, id) {
+export function assignJob(slot, job, id) {
   const m = findMon(id);
   if (!m || m.job != null) return false;
   if (S.team.includes(m) && S.team.filter(x => x.job == null).length <= 1) return false;
@@ -717,7 +833,7 @@ function assignJob(slot, job, id) {
   save();
   return true;
 }
-function collectJob(slot) {
+export function collectJob(slot) {
   const j = S.jobs[slot];
   if (!j.uid || !j.pend) return null;
   const J = JOBS[j.job],
@@ -731,7 +847,7 @@ function collectJob(slot) {
   const m = findMon(j.uid);
   return `${m ? N(m) : 'Your Billie'} ${J.quip} You collected ${kind === 'se' ? '$' + fmt(amt * n) : `${amt * n} × ${kind === 'item' ? ITEMS[key].n : COINS[key].n}`}.`;
 }
-function endShift(slot) {
+export function endShift(slot) {
   const j = S.jobs[slot];
   const msg = collectJob(slot);
   const m = findMon(j.uid);

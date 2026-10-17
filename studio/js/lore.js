@@ -5,6 +5,31 @@
    the loading screen's lines and what people say in each place at each stage of the story.
    "When it shows" (unlock): start · place:<stop id> · meet:<look id> · flag:<story flag> · badges:<number>.
    The stage of the story is the number of badges you have (9 after the ending). */
+/* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
+import { expose } from '../../game/js/bridge.js';
+import {
+  ACTS,
+  SECTIONS,
+  ST,
+  ask,
+  card,
+  changed,
+  dialog,
+  fNum,
+  fSel,
+  fText,
+  grid,
+  peopleOpts,
+  render,
+  uidKey,
+} from './core.js';
+expose({
+  LORE_TABS: [() => LORE_TABS],
+  LORE_UNLOCK: [() => LORE_UNLOCK],
+  loreDelBtn: [() => loreDelBtn],
+  loreSceneOpts: [() => loreSceneOpts],
+});
+/* to-module: end */
 const LORE_TABS = [
   ['world', 'World'],
   ['story', 'Story'],

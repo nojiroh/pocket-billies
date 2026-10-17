@@ -1,9 +1,39 @@
 'use strict';
 /* Focused additions to the existing UI and save system. */
 /* the host page (an artifact viewer, for example) may set its own light/dark attribute; "Match device" leaves it alone */
+/* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
+import { expose } from './bridge.js';
+import { JOBS, MOVES, ROUTE, RULES, SP, STATUSN } from './data.js';
+import { SAVE_NEW_MSG, SAVE_OLD_MSG, TEAM_MAX, U, esc, fmt, migrate, save, saveAge, today } from './core.js';
+import { I18N_LANGS, i18nSet } from './i18n.js';
+import { FRAME } from './frame.js';
+import { uiIco } from './art.js';
+import { cleanLook, cleanTrainer, humanHTML, lookFromOld } from './trainer.js';
+/* eslint-disable no-func-assign */
+expose({
+  GFX_DIALS: [() => GFX_DIALS],
+  HOST_THEME: [() => HOST_THEME],
+  SET_TABS: [() => SET_TABS],
+  applyPreferences: [() => applyPreferences, v => (applyPreferences = v)],
+  customizeTrainer: [() => customizeTrainer, v => (customizeTrainer = v)],
+  exportSave: [() => exportSave, v => (exportSave = v)],
+  gfxDial: [() => gfxDial, v => (gfxDial = v)],
+  importSave: [() => importSave, v => (importSave = v)],
+  setPref: [() => setPref, v => (setPref = v)],
+  setRow: [() => setRow, v => (setRow = v)],
+  setSeg: [() => setSeg, v => (setSeg = v)],
+  setSw: [() => setSw, v => (setSw = v)],
+  setVol: [() => setVol, v => (setVol = v)],
+  settingsHTML: [() => settingsHTML, v => (settingsHTML = v)],
+  settingsRefresh: [() => settingsRefresh, v => (settingsRefresh = v)],
+  themeOwned: [() => themeOwned, v => (themeOwned = v)],
+  validSave: [() => validSave, v => (validSave = v)],
+});
+/* eslint-enable no-func-assign */
+/* to-module: end */
 const HOST_THEME = document.documentElement.dataset.theme;
 let themeOwned = false;
-function applyPreferences() {
+export function applyPreferences() {
   const p = S.preferences || {},
     root = document.documentElement;
   if (['light', 'dark'].includes(p.theme)) {
@@ -26,7 +56,7 @@ function applyPreferences() {
 function customizeTrainer() {
   openDressing();
 }
-async function exportSave() {
+export async function exportSave() {
   const json = JSON.stringify({ game: 'Pocket Billies', format: 1, save: S }, null, 2),
     name = 'pocket-billies-save-' + today() + '.json';
   const blob = new Blob([json], { type: 'application/json' }),
@@ -179,7 +209,7 @@ const SET_TABS = [
   ['help', 'Help'],
 ];
 /* the expert graphics dials: [group.key, label, what it does, cost, min, max, step, rebuild]. Each overrides the game's own value for this player */
-const GFX_DIALS = [
+export const GFX_DIALS = [
   [
     'Light and shadow',
     [
@@ -226,7 +256,7 @@ const GFX_DIALS = [
   ],
   ['Performance', [['quality.resolution', 'Sharpness', 'Fewer pixels draw faster', 'high', 0.4, 1, 0.05]]],
 ];
-function gfxDial([gk, label, help, cost, min, max, step]) {
+export function gfxDial([gk, label, help, cost, min, max, step]) {
   const [g, k] = gk.split('.'),
     own = ((S.preferences.eng || {})[g] || {})[k],
     v = own != null ? own : eng(g, k);
@@ -251,7 +281,7 @@ function setVol(k, label, hint, def) {
     `<div class="vol"><input type="range" min="0" max="100" step="5" data-preference="${k}" value="${v}" aria-label="${esc(label)} volume"><span class="vol-n">${v}</span><button type="button" class="pb small quiet" data-a="aud-test" data-k="${k}">Test</button></div>`
   );
 }
-function settingsHTML() {
+export function settingsHTML() {
   const p = S.preferences || {},
     tab = SET_TABS.some(t => t[0] === U.setTab) ? U.setTab : 'game',
     hz = FRAME.hz || 60;
@@ -499,7 +529,7 @@ function setPref(k, v) {
     } catch (e) {}
   if ((k === 'world' || k === 'amb') && typeof ambApply === 'function') ambApply();
 }
-function settingsRefresh() {
+export function settingsRefresh() {
   if (!U.modal || !U.modal.settings) return;
   const b = document.querySelector('.sheet .body'),
     y = b ? b.scrollTop : 0;

@@ -1,7 +1,73 @@
 'use strict';
 /* ================= POCKET BILLIES STUDIO · core =================
    State, server calls, undo, form fields bound to paths in the game data, navigation, toasts and dialogs. */
-const ST = {
+/* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
+import { expose } from '../../game/js/bridge.js';
+import { $, $$ } from '../../game/js/util.js';
+import { ICON_ATLAS, artLoad } from '../../game/js/art.js';
+import { scStop } from '../../game/js/scene.js';
+import { ENG_CTX } from '../../game/js/engine/settings.js';
+/* eslint-disable no-func-assign */
+expose({
+  ACTS: [() => ACTS],
+  H: [() => H],
+  KEY: [() => KEY],
+  NAV: [() => NAV],
+  NAV_GROUPS: [() => NAV_GROUPS],
+  SECTIONS: [() => SECTIONS],
+  SHOW: [() => SHOW],
+  SLINK: [() => SLINK],
+  ST: [() => ST],
+  after: [() => after],
+  api: [() => api, v => (api = v)],
+  ask: [() => ask],
+  blurField: [() => blurField],
+  boot: [() => boot, v => (boot = v)],
+  card: [() => card],
+  changed: [() => changed, v => (changed = v)],
+  chipT: [() => chipT],
+  clone: [() => clone],
+  coinOpts: [() => coinOpts],
+  commit: [() => commit, v => (commit = v)],
+  dialog: [() => dialog, v => (dialog = v)],
+  fChk: [() => fChk, v => (fChk = v)],
+  fColor: [() => fColor, v => (fColor = v)],
+  fNum: [() => fNum, v => (fNum = v)],
+  fRange: [() => fRange, v => (fRange = v)],
+  fSel: [() => fSel, v => (fSel = v)],
+  fText: [() => fText, v => (fText = v)],
+  fid: [() => fid],
+  fmtN: [() => fmtN],
+  getP: [() => getP, v => (getP = v)],
+  go: [() => go, v => (go = v)],
+  grid: [() => grid],
+  itemOpts: [() => itemOpts],
+  moveOpts: [() => moveOpts],
+  navFold: [() => navFold],
+  onField: [() => onField, v => (onField = v)],
+  peopleOpts: [() => peopleOpts],
+  readField: [() => readField, v => (readField = v)],
+  redo: [() => redo, v => (redo = v)],
+  render: [() => render, v => (render = v)],
+  renderSide: [() => renderSide, v => (renderSide = v)],
+  restore: [() => restore, v => (restore = v)],
+  saveAll: [() => saveAll, v => (saveAll = v)],
+  setP: [() => setP, v => (setP = v)],
+  snapshot: [() => snapshot],
+  spName: [() => spName],
+  spOpts: [() => spOpts],
+  statOpts: [() => statOpts],
+  statusOpts: [() => statusOpts],
+  studioBroadcast: [() => studioBroadcast, v => (studioBroadcast = v)],
+  toast: [() => toast, v => (toast = v)],
+  typeOpts: [() => typeOpts],
+  uidKey: [() => uidKey],
+  undo: [() => undo, v => (undo = v)],
+  updTop: [() => updTop, v => (updTop = v)],
+});
+/* eslint-enable no-func-assign */
+/* to-module: end */
+export const ST = {
   D: null,
   rigs: null,
   files: [],
@@ -18,7 +84,7 @@ const ST = {
   after: [],
 };
 const KEY = window.STUDIO_KEY;
-async function api(path, opt = {}) {
+export async function api(path, opt = {}) {
   const r = await fetch('/api/' + path, { ...opt, headers: { 'X-Studio-Key': KEY, ...(opt.headers || {}) } });
   let j = null;
   try {
@@ -27,9 +93,9 @@ async function api(path, opt = {}) {
   if (!r.ok) throw new Error((j && j.error) || r.statusText);
   return j;
 }
-const clone = o => JSON.parse(JSON.stringify(o));
-const fmtN = n => Number(n).toLocaleString('en-US');
-const uidKey = (base, taken) => {
+export const clone = o => JSON.parse(JSON.stringify(o));
+export const fmtN = n => Number(n).toLocaleString('en-US');
+export const uidKey = (base, taken) => {
   let k =
     base
       .toLowerCase()
@@ -41,7 +107,7 @@ const uidKey = (base, taken) => {
   return k + i;
 };
 /* ---------- paths ---------- */
-function getP(path, o) {
+export function getP(path, o) {
   if (o === undefined) {
     if (path.startsWith('@rigs.')) {
       o = ST.rigs;
@@ -51,7 +117,7 @@ function getP(path, o) {
   if (path === '') return o;
   return path.split('.').reduce((a, k) => (a == null ? undefined : a[k]), o);
 }
-function setP(path, val, o) {
+export function setP(path, val, o) {
   if (o === undefined) {
     if (path.startsWith('@rigs.')) {
       o = ST.rigs;
@@ -73,7 +139,7 @@ function setP(path, val, o) {
 }
 /* ---------- undo / dirty ---------- */
 const snapshot = () => JSON.stringify({ D: ST.D, R: ST.rigs });
-function commit(now) {
+export function commit(now) {
   clearTimeout(ST.snapT);
   const go = () => {
     const s = snapshot();
@@ -87,7 +153,7 @@ function commit(now) {
   if (now) go();
   else ST.snapT = setTimeout(go, 450);
 }
-function changed(rigs) {
+export function changed(rigs) {
   if (rigs) {
     ST.rigsDirty = true;
     ST.rigVer = (ST.rigVer || 0) + 1;
@@ -123,7 +189,7 @@ const blurField = () => {
   const a = document.activeElement;
   if (a && a !== document.body && a.blur) a.blur();
 }; /* lets a half-typed field commit before the data is swapped */
-function undo() {
+export function undo() {
   blurField();
   commit(true);
   if (!ST.undo.length) return toast('Nothing to undo.');
@@ -132,7 +198,7 @@ function undo() {
   restore(ST.last);
   toast('Undone.');
 }
-function redo() {
+export function redo() {
   blurField();
   if (!ST.redo.length) return toast('Nothing to redo.');
   ST.undo.push(ST.last);
@@ -152,7 +218,7 @@ function restore(s) {
   updTop();
   scheduleCheck();
 }
-function updTop() {
+export function updTop() {
   $('#dirty').hidden = !(ST.dirty || ST.rigsDirty || ST.artDirty.size);
   $('#undoBtn').disabled = !ST.undo.length && ST.last === snapshot();
   $('#redoBtn').disabled = !ST.redo.length;
@@ -210,7 +276,7 @@ async function saveAll() {
   }
 }
 /* ---------- toasts & dialogs ---------- */
-function toast(t, k = '') {
+export function toast(t, k = '') {
   const el = document.createElement('div');
   el.className = 'toast ' + k;
   el.textContent = t;
@@ -218,7 +284,7 @@ function toast(t, k = '') {
   setTimeout(() => el.classList.add('out'), 2600);
   setTimeout(() => el.remove(), 3000);
 }
-function dialog(title, html, btns, cls = '') {
+export function dialog(title, html, btns, cls = '') {
   return new Promise(res => {
     const m = $('#dlg');
     m.innerHTML = `<div class="scrim"><div class="dlg ${cls}" role="dialog" aria-modal="true"><h2>${title}</h2><div class="dlg-body">${html}</div><div class="dlg-btns">${btns.map((b, i) => `<button class="btn ${b.c || ''}" data-dlg="${i}">${b.l}</button>`).join('')}</div></div></div>`;
@@ -244,44 +310,44 @@ function dialog(title, html, btns, cls = '') {
     if (f) f.focus();
   });
 }
-const ask = (msg, yes = 'OK', no = 'Cancel', title = 'Are you sure?') =>
+export const ask = (msg, yes = 'OK', no = 'Cancel', title = 'Are you sure?') =>
   dialog(title, `<p>${msg}</p>`, [
     { l: no, v: false },
     { l: yes, c: 'primary', v: true },
   ]);
 /* ---------- fields bound to the data ---------- */
 const H = s => (s ? `<small class="help">${s}</small>` : '');
-const fid = p => 'f_' + p.replace(/[^a-z0-9]/gi, '_');
-function fNum(label, p, o = {}) {
+export const fid = p => 'f_' + p.replace(/[^a-z0-9]/gi, '_');
+export function fNum(label, p, o = {}) {
   let v = getP(p);
   if (v != null && o.scale) v = +(v / o.scale).toFixed(4);
   return `<label class="fld ${o.cls || ''}"><span>${label}</span><span class="numw"><input type="number" data-p="${p}" data-k="num" ${o.scale ? `data-scale="${o.scale}"` : ''} ${o.opt ? 'data-opt="1"' : ''} value="${v == null ? '' : v}" ${o.min != null ? `min="${o.min}"` : ''} ${o.max != null ? `max="${o.max}"` : ''} step="${o.step || 'any'}" placeholder="${o.ph || ''}">${o.unit ? `<em>${o.unit}</em>` : ''}</span>${H(o.help)}</label>`;
 }
-function fRange(label, p, o = {}) {
+export function fRange(label, p, o = {}) {
   const v = getP(p) ?? o.def ?? 0;
   return `<label class="fld range ${o.cls || ''}"><span>${label} <output id="${fid(p)}">${o.show ? o.show(v) : v}</output></span><input type="range" data-p="${p}" data-k="num" data-show="${o.showKey || ''}" value="${v}" min="${o.min}" max="${o.max}" step="${o.step || 1}">${H(o.help)}</label>`;
 }
-function fText(label, p, o = {}) {
+export function fText(label, p, o = {}) {
   const v = getP(p) ?? '';
   return o.area
     ? `<label class="fld wide ${o.cls || ''}"><span>${label}</span><textarea data-p="${p}" data-k="text" rows="${o.rows || 3}" ${o.opt ? 'data-opt="1"' : ''} placeholder="${esc(o.ph || '')}">${esc(v)}</textarea>${H(o.help)}</label>`
     : `<label class="fld ${o.cls || ''}"><span>${label}</span><input type="text" data-p="${p}" data-k="text" ${o.opt ? 'data-opt="1"' : ''} value="${esc(v)}" placeholder="${esc(o.ph || '')}" ${o.max ? `maxlength="${o.max}"` : ''}>${H(o.help)}</label>`;
 }
-function fSel(label, p, opts, o = {}) {
+export function fSel(label, p, opts, o = {}) {
   const v = getP(p);
   return `<label class="fld ${o.cls || ''}"><span>${label}</span><select data-p="${p}" data-k="${o.num ? 'num' : 'sel'}" ${o.opt ? 'data-opt="1"' : ''} ${o.rr ? 'data-rr="1"' : ''}>${o.none ? `<option value="">${o.none}</option>` : ''}${opts.map(([k, n]) => `<option value="${esc(k)}" ${String(v) === String(k) ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select>${H(o.help)}</label>`;
 }
-function fChk(label, p, o = {}) {
+export function fChk(label, p, o = {}) {
   const v = getP(p);
   return `<label class="fld chk ${o.cls || ''}"><input type="checkbox" data-p="${p}" data-k="bool" ${o.num ? 'data-num="1"' : ''} ${o.rr ? 'data-rr="1"' : ''} ${v ? 'checked' : ''}><span>${label}</span>${H(o.help)}</label>`;
 }
-function fColor(label, p, o = {}) {
+export function fColor(label, p, o = {}) {
   const v = getP(p) || '#000000';
   return `<label class="fld color ${o.cls || ''}"><span>${label}</span><span class="colw"><input type="color" data-p="${p}" data-k="color" value="${/^#[0-9a-f]{6}$/i.test(v) ? v : '#000000'}"><input type="text" data-p="${p}" data-k="color" value="${esc(v)}" maxlength="7" class="hex"></span>${H(o.help)}</label>`;
 }
-const card = (title, body, o = {}) =>
+export const card = (title, body, o = {}) =>
   `<section class="card ${o.cls || ''}" ${o.id ? `id="${o.id}"` : ''}><header><h3>${title}</h3>${o.acts || ''}</header>${o.sub ? `<p class="sub">${o.sub}</p>` : ''}<div class="card-b">${body}</div></section>`;
-const grid = (...f) => `<div class="grid">${f.join('')}</div>`;
+export const grid = (...f) => `<div class="grid">${f.join('')}</div>`;
 /* input → data */
 function readField(el) {
   const k = el.dataset.k;
@@ -319,7 +385,7 @@ function onField(ev) {
 }
 const SHOW = { pct: v => Math.round(v * 100) + '%', x: v => '×' + (+v).toFixed(2), mul: v => (+v).toFixed(2) };
 /* ---------- navigation ---------- */
-const NAV = [
+export const NAV = [
   ['billionaires', 'Billies', 'The creatures: names, stats, moves, evolution, sprite art'],
   ['roster', 'Roster board', 'The 117 new Billies of the big art update and how far each is'],
   ['moves', 'Moves', 'Attacks and their effects'],
@@ -376,7 +442,7 @@ function renderSide() {
     }).join('') +
     `<div class="side-foot"><small><kbd>Ctrl K</kbd> finds any setting · <kbd>Ctrl L</kbd> shows connections · <kbd>Ctrl S</kbd> saves.<br>Saves go to <code>game/data</code> and <code>game/art</code>, with backups in <code>backups/</code>.</small></div>`;
 }
-function go(s, sel) {
+export function go(s, sel) {
   if (ST.sec === 'preview' && s !== 'preview' && typeof scStop === 'function') scStop();
   if (typeof ENG_CTX !== 'undefined') ENG_CTX.bypass = false;
   ST.sec = s;
@@ -388,8 +454,8 @@ function go(s, sel) {
     history.replaceState(null, '', '#' + s);
   } catch (e) {}
 }
-const SECTIONS = {};
-const ACTS = {};
+export const SECTIONS = {};
+export const ACTS = {};
 ACTS.navFold = d => {
   navFold[d.g] = !navFold[d.g];
   try {
@@ -397,7 +463,7 @@ ACTS.navFold = d => {
   } catch (e) {}
   renderSide();
 };
-function render() {
+export function render() {
   const S = SECTIONS[ST.sec];
   if (!S) return;
   ST.after = [];
@@ -406,7 +472,7 @@ function render() {
   ST.after.forEach(f => f());
   mountPreviews(m);
 }
-const after = f => {
+export const after = f => {
   ST.after.push(f);
 };
 /* ---------- events ---------- */
@@ -460,28 +526,28 @@ addEventListener('beforeunload', e => {
   }
 });
 /* ---------- helpers for lists of things ---------- */
-const typeOpts = none => (none ? [['None', 'Normal']] : []).concat(ST.D.types.map(t => [t.id, t.id]));
-const spOpts = () => ST.D.lines.flatMap(L => L.names.map((n, i) => [L.id + i, `${n} (${L.id}${i})`]));
-const moveOpts = () =>
+export const typeOpts = none => (none ? [['None', 'Normal']] : []).concat(ST.D.types.map(t => [t.id, t.id]));
+export const spOpts = () => ST.D.lines.flatMap(L => L.names.map((n, i) => [L.id + i, `${n} (${L.id}${i})`]));
+export const moveOpts = () =>
   Object.keys(ST.D.moves)
     .sort((a, b) => ST.D.moves[a].n.localeCompare(ST.D.moves[b].n))
     .map(k => [k, `${ST.D.moves[k].n} · ${ST.D.moves[k].t}`]);
-const itemOpts = () => Object.keys(ST.D.items).map(k => [k, ST.D.items[k].n]);
-const coinOpts = () => Object.keys(ST.D.coins).map(k => [k, ST.D.coins[k].n]);
-const peopleOpts = () => Object.keys(ST.D.people).map(k => [k, k]);
-const statusOpts = () => ST.D.statuses.map(s => [s.id, s.name]);
-const statOpts = () => ST.D.stats.filter(s => s.id !== 'hp').map(s => [s.id, s.name]);
-const spName = id => {
+export const itemOpts = () => Object.keys(ST.D.items).map(k => [k, ST.D.items[k].n]);
+export const coinOpts = () => Object.keys(ST.D.coins).map(k => [k, ST.D.coins[k].n]);
+export const peopleOpts = () => Object.keys(ST.D.people).map(k => [k, k]);
+export const statusOpts = () => ST.D.statuses.map(s => [s.id, s.name]);
+export const statOpts = () => ST.D.stats.filter(s => s.id !== 'hp').map(s => [s.id, s.name]);
+export const spName = id => {
   const L = ST.D.lines.find(l => id && id.startsWith(l.id) && /^\d+$/.test(id.slice(l.id.length)));
   return L ? L.names[+id.slice(L.id.length)] || id : id;
 };
-const chipT = t => {
+export const chipT = t => {
   const T = ST.D.types.find(x => x.id === t);
   const c = T ? [T.color, T.text] : [ST.D.untyped.color, ST.D.untyped.text];
   return `<span class="chip" style="background:${c[0]};color:${c[1]}">${t === 'None' ? 'Normal' : esc(t)}</span>`;
 };
 /* ---------- boot ---------- */
-async function boot() {
+export async function boot() {
   try {
     const [D, R, F] = await Promise.all([api('gamedata'), api('rigs'), api('files?dir='), artLoad([ICON_ATLAS])]);
     ST.D = D;

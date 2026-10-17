@@ -3,6 +3,75 @@
    A billionaire is a tree of parts (bones). Each part has a picture cut from the sprite sheet, a pivot it turns
    around, a parent it hangs from, a draw layer and an animation role (which motion of its body plan it follows).
    Front and back views have their own skeletons and sheets; the Gold-Plated sheets share the same layout. */
+/* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
+import { expose } from '../../game/js/bridge.js';
+import { $, $$, clamp } from '../../game/js/util.js';
+import { cnv, hexA, shadeHex } from '../../game/js/art.js';
+import { ANIM } from '../../game/js/anim.js';
+import { drawRig, rigAudit, rigMatrices, rigPose } from '../../game/js/rig.js';
+import { ST, ask, changed, clone, commit, dialog, fChk, fNum, redo, render, spName, toast, undo } from './core.js';
+import {
+  PX_ED,
+  atlasGet,
+  atlasNow,
+  atlasPath,
+  fileToCanvas,
+  goldFrom,
+  loadImage,
+  markArt,
+  openPixelEditor,
+  pickFile,
+  previewsDirty,
+  rigFor,
+  spriteCacheClear,
+} from './sprites.js';
+/* eslint-disable no-func-assign */
+expose({
+  BODY_TPL: [() => BODY_TPL],
+  PLAN_INFO: [() => PLAN_INFO],
+  Q_FIELDS: [() => Q_FIELDS],
+  ROLE_HELP: [() => ROLE_HELP],
+  SK: [() => SK],
+  allocRect: [() => allocRect, v => (allocRect = v)],
+  blobPart: [() => blobPart, v => (blobPart = v)],
+  cutRect: [() => cutRect, v => (cutRect = v)],
+  flipped: [() => flipped, v => (flipped = v)],
+  imgUsers: [() => imgUsers],
+  mApplyL: [() => mApplyL],
+  mInv: [() => mInv],
+  makeBlankBody: [() => makeBlankBody, v => (makeBlankBody = v)],
+  openSkeleton: [() => openSkeleton, v => (openSkeleton = v)],
+  planRoles: [() => planRoles, v => (planRoles = v)],
+  putPart: [() => putPart, v => (putPart = v)],
+  scaled: [() => scaled, v => (scaled = v)],
+  skAddPart: [() => skAddPart, v => (skAddPart = v)],
+  skAlphaAt: [() => skAlphaAt, v => (skAlphaAt = v)],
+  skBindCanvas: [() => skBindCanvas, v => (skBindCanvas = v)],
+  skClick: [() => skClick, v => (skClick = v)],
+  skDone: [() => skDone, v => (skDone = v)],
+  skDraw: [() => skDraw, v => (skDraw = v)],
+  skGeo: [() => skGeo, v => (skGeo = v)],
+  skHit: [() => skHit, v => (skHit = v)],
+  skImportSheet: [() => skImportSheet, v => (skImportSheet = v)],
+  skLoadView: [() => skLoadView, v => (skLoadView = v)],
+  skLoop: [() => skLoop, v => (skLoop = v)],
+  skMeta: [() => skMeta, v => (skMeta = v)],
+  skMirror: [() => skMirror, v => (skMirror = v)],
+  skNeutral: [() => skNeutral, v => (skNeutral = v)],
+  skPartFor: [() => skPartFor, v => (skPartFor = v)],
+  skPlaceholder: [() => skPlaceholder, v => (skPlaceholder = v)],
+  skPose: [() => skPose, v => (skPose = v)],
+  skRename: [() => skRename, v => (skRename = v)],
+  skReparent: [() => skReparent, v => (skReparent = v)],
+  skSetPlan: [() => skSetPlan, v => (skSetPlan = v)],
+  skSide: [() => skSide, v => (skSide = v)],
+  skTopo: [() => skTopo, v => (skTopo = v)],
+  skTree: [() => skTree, v => (skTree = v)],
+  swapLR: [() => swapLR],
+  uniqBone: [() => uniqBone],
+});
+/* eslint-enable no-func-assign */
+/* to-module: end */
 const SK = {
   sp: null,
   view: 'front',
@@ -113,7 +182,7 @@ function planRoles(plan, q) {
 function skMeta(view = SK.view) {
   return ST.rigs[SK.sp] && ST.rigs[SK.sp][view];
 }
-function skNeutral() {
+export function skNeutral() {
   const P = rigPose(null, 0, 0, 0);
   Object.assign(P, {
     sy: 1,

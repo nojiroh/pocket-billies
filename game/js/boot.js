@@ -3,6 +3,64 @@
    Clear stale art if Pocket Billies Studio changed any (meta.artVersion), then load and check every piece of art the game
    uses (billionaires, battle stages, walk scenes, the world map, icons) behind the loading screen, so nothing pops in
    later and a missing file shows up right away. Then draw the game. */
+/* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
+import { expose } from './bridge.js';
+import { DATA_WARN, GD, RULES, SP, START_NODE } from './data.js';
+import { sceneWatch, scenesAhead, scenesAll } from './scene-files.js';
+import { RM, SAVE_FOUND, SAVE_NEW_MSG, SAVE_OLD_MSG, U, esc, fresh } from './core.js';
+import { ART, BG_ART, COIN_ART, EGG_ART, ICON_ATLAS, UIURL, artBoot, artImg } from './art.js';
+import { trainerArtPaths } from './trainer.js';
+import { rigAtlas } from './rig.js';
+import { AREAS, scPrepare, stageArt } from './scene.js';
+import { DIO, dioData, dioPaths, dioScene } from './diorama.js';
+import { EGL, eglOK } from './engine/core.js';
+import { ENV } from './env.js';
+import { DGL, dglRiseStart } from './diorama-gl.js';
+import { WORLD } from './world.js';
+import { areaKey } from './battle.js';
+import { WORLD_ART, mapPrepare } from './map.js';
+import { WORLD_RELIEF } from './map-gl.js';
+import { csWanted } from './cutscene.js';
+import { TITLE, titleMount, titleStart, titleWanted } from './title.js';
+import { loreLoadingLines } from './lore.js';
+import { accInit } from './account.js';
+import { bgInit, closeModal, modal, postProcess, render, renderOv, sceneIdAt, startGame, toast } from './ui.js';
+/* eslint-disable no-func-assign */
+expose({
+  ART_VER_KEY: [() => ART_VER_KEY],
+  LD: [() => LD],
+  LDW: [() => LDW],
+  LDW_C: [() => LDW_C],
+  LOAD_PHASES: [() => LOAD_PHASES],
+  LOAD_TIPS: [() => LOAD_TIPS],
+  NW_LINK: [() => NW_LINK, v => (NW_LINK = v)],
+  NW_TEST: [() => NW_TEST],
+  UI_SVG: [() => UI_SVG],
+  artCacheCheck: [() => artCacheCheck, v => (artCacheCheck = v)],
+  bootLoad: [() => bootLoad, v => (bootLoad = v)],
+  idle: [() => idle],
+  ldwDraw: [() => ldwDraw, v => (ldwDraw = v)],
+  ldwInit: [() => ldwInit, v => (ldwInit = v)],
+  ldwLoop: [() => ldwLoop, v => (ldwLoop = v)],
+  ldwRnd: [() => ldwRnd, v => (ldwRnd = v)],
+  ldwThing: [() => ldwThing, v => (ldwThing = v)],
+  loadList: [() => loadList, v => (loadList = v)],
+  loadOne: [() => loadOne, v => (loadOne = v)],
+  loadSvg: [() => loadSvg, v => (loadSvg = v)],
+  loaderHide: [() => loaderHide, v => (loaderHide = v)],
+  loaderLines: [() => loaderLines, v => (loaderLines = v)],
+  loaderSet: [() => loaderSet, v => (loaderSet = v)],
+  loaderTip: [() => loaderTip, v => (loaderTip = v)],
+  noWebGL: [() => noWebGL, v => (noWebGL = v)],
+  preloadAll: [() => preloadAll, v => (preloadAll = v)],
+  sceneWarm: [() => sceneWarm, v => (sceneWarm = v)],
+  studioLive: [() => studioLive, v => (studioLive = v)],
+  studioTestStart: [() => studioTestStart, v => (studioTestStart = v)],
+  townPaths: [() => townPaths, v => (townPaths = v)],
+  townUp: [() => townUp, v => (townUp = v)],
+});
+/* eslint-enable no-func-assign */
+/* to-module: end */
 const ART_VER_KEY = 'networth-artv';
 async function artCacheCheck() {
   const v = String(GD.meta.artVersion || 0);

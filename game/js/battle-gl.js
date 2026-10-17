@@ -6,8 +6,28 @@
    hidden; glowing move effects light the ground. scene.js still draws the move effects themselves on its canvas
    above. The classic painted stage is used when WebGL isn't running, when the stop has no walk scene,
    or when the player picks it in Settings. */
-const BGL = { on: false, off: [0, 0], gy: 0, hide: null, items: [], lights: [] };
-function battleGLWanted() {
+/* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
+import { expose } from './bridge.js';
+import { $, clamp } from './util.js';
+import { hexA } from './art.js';
+import { ACT, FOC, POS, SC, UPP, partSpr, sideBuf, sideWorld, trainerBattleFrame, trainerMpp } from './scene.js';
+import { DIO, dioData, dioStop } from './diorama.js';
+import { EGL } from './engine/core.js';
+import { DGL, dioH } from './diorama-gl.js';
+/* eslint-disable no-func-assign */
+expose({
+  BGL: [() => BGL],
+  battleGLAttach: [() => battleGLAttach, v => (battleGLAttach = v)],
+  battleGLFrame: [() => battleGLFrame, v => (battleGLFrame = v)],
+  battleGLLayout: [() => battleGLLayout, v => (battleGLLayout = v)],
+  battleGLStart: [() => battleGLStart, v => (battleGLStart = v)],
+  battleGLStop: [() => battleGLStop, v => (battleGLStop = v)],
+  battleGLWanted: [() => battleGLWanted, v => (battleGLWanted = v)],
+});
+/* eslint-enable no-func-assign */
+/* to-module: end */
+export const BGL = { on: false, off: [0, 0], gy: 0, hide: null, items: [], lights: [] };
+export function battleGLWanted() {
   if (typeof DGL === 'undefined' || !DGL.on || !DIO.cv || !DIO.ready || (typeof EGL !== 'undefined' && EGL.lost))
     return false;
   const p = S.preferences || {};
@@ -21,7 +41,7 @@ function battleGLStart() {
   return battleGLAttach();
 }
 /* the walk scene that's running (DIO) becomes the stage; o.detach removes its canvas afterwards (the Studio preview) */
-function battleGLAttach(o = {}) {
+export function battleGLAttach(o = {}) {
   const cv = DIO.cv,
     host = $('#camWorld');
   if (!host || !cv) return false;
@@ -59,13 +79,13 @@ function battleGLAttach(o = {}) {
   if (typeof NWLOG !== 'undefined') NWLOG.add('battle', '3D stage in ' + DIO.id);
   return true;
 }
-function battleGLLayout() {
+export function battleGLLayout() {
   const cv = DIO.cv,
     ref = SC.cv;
   if (!BGL.on || !cv || !ref) return;
   for (const k of ['left', 'top', 'width', 'height']) cv.style[k] = ref.style[k];
 }
-function battleGLStop() {
+export function battleGLStop() {
   if (!BGL.on) return;
   BGL.on = false;
   DIO.battle = null;

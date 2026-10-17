@@ -7,6 +7,26 @@
    - D-pad: a fixed eight-way pad in the lower left corner.
    - Tap only: neither; tap where to go.
    Both set DIO.stick {x right, y up, length 0-1}; diorama.js walks along the camera's own right and forward. */
+/* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
+import { expose } from './bridge.js';
+import { B, S, U } from './core.js';
+import { DIO } from './diorama.js';
+import { DGL } from './diorama-gl.js';
+import { TALK } from './talk.js';
+import { CS } from './cutscene.js';
+import { FLY, LIFT } from './airship.js';
+/* eslint-disable no-func-assign */
+expose({
+  JOY: [() => JOY],
+  joyAllowed: [() => joyAllowed, v => (joyAllowed = v)],
+  joyEl: [() => joyEl, v => (joyEl = v)],
+  joyEnd: [() => joyEnd, v => (joyEnd = v)],
+  joyPad: [() => joyPad, v => (joyPad = v)],
+  joyPref: [() => joyPref, v => (joyPref = v)],
+  joySet: [() => joySet, v => (joySet = v)],
+});
+/* eslint-enable no-func-assign */
+/* to-module: end */
 const JOY = { id: null, x0: 0, y0: 0, on: false, el: null, knob: null, pad: null, padId: null, quiet: 0 };
 function joyPref() {
   return (typeof S !== 'undefined' && S.preferences && S.preferences.control) || 'stick';

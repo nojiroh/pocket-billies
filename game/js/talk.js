@@ -4,7 +4,33 @@
    A portrait that blinks and moves its mouth while the line types out, the speaker's name, a voice blip per few
    letters (sound.js), tap or Enter to finish the line or go on. Lines may start with an expression in brackets:
    "[happy] Nice to meet you!" (happy, surprised, sad, angry, blink, talk). */
-const TALK = { on: false, cur: null, por: { who: null, expr: null, t: 0 }, el: null };
+/* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
+import { expose } from './bridge.js';
+import { PEOPLE, TRAINERS } from './data.js';
+import { RM, S } from './core.js';
+import { frameStop, frameTask } from './frame.js';
+import { trPortrait, trainerLook } from './trainer.js';
+import { DIO, dioFace } from './diorama.js';
+import { DGL } from './diorama-gl.js';
+import { sfx } from './sound.js';
+/* eslint-disable no-func-assign */
+expose({
+  FOLK_NAMES: [() => FOLK_NAMES],
+  FOLK_TALK: [() => FOLK_TALK],
+  TALK: [() => TALK],
+  TALK_NAMES: [() => TALK_NAMES],
+  talk: [() => talk, v => (talk = v)],
+  talkEl: [() => talkEl, v => (talkEl = v)],
+  talkFolk: [() => talkFolk, v => (talkFolk = v)],
+  talkHazel: [() => talkHazel, v => (talkHazel = v)],
+  talkHide: [() => talkHide, v => (talkHide = v)],
+  talkLine: [() => talkLine, v => (talkLine = v)],
+  talkName: [() => talkName, v => (talkName = v)],
+  talkTick: [() => talkTick, v => (talkTick = v)],
+});
+/* eslint-enable no-func-assign */
+/* to-module: end */
+export const TALK = { on: false, cur: null, por: { who: null, expr: null, t: 0 }, el: null };
 const TALK_NAMES = { gini: 'Professor Hazel' };
 const FOLK_NAMES = [
   'Ada',
@@ -63,7 +89,7 @@ function talkEl() {
   return el;
 }
 /* one line; the box stays open for the next one until talkHide() */
-function talkLine(who, text, expr, o = {}) {
+export function talkLine(who, text, expr, o = {}) {
   const el = talkEl();
   let m = /^\[(\w+)\]\s*/.exec(text || '');
   if (m) {
@@ -121,7 +147,7 @@ function talkLine(who, text, expr, o = {}) {
     };
   });
 }
-function talkHide() {
+export function talkHide() {
   const el = TALK.el;
   if (el) el.hidden = true;
   TALK.cur = null;
@@ -129,7 +155,7 @@ function talkHide() {
   document.body.classList.remove('talking');
 }
 /* a whole conversation: [[who,text,expr],…] or [{who,text,expr}] */
-async function talk(lines, o = {}) {
+export async function talk(lines, o = {}) {
   for (const l of lines) {
     const [who, text, expr] = Array.isArray(l) ? l : [l.who, l.text, l.expr];
     await talkLine(who, text, expr, o);
@@ -190,7 +216,7 @@ async function talkFolk(f) {
   ]);
   f.wait = 2;
 }
-async function talkHazel(p) {
+export async function talkHazel(p) {
   if (TALK.on) return;
   const caught = Object.keys(S.caught).length,
     badges = (S.seats || []).length,

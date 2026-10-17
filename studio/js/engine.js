@@ -3,6 +3,51 @@
    Every dial of the 3D renderer (game/js/engine/settings.js): lens blur, chromatic aberration, bloom, the sun,
    shadows, lights, haze, grass, water, camera and quality. Set them for the whole game, or override them for one walk
    scene. The live preview runs the game's renderer on your unsaved values, so every change shows immediately. */
+/* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
+import { expose } from '../../game/js/bridge.js';
+import { $ } from '../../game/js/util.js';
+import { DIO, dioHubOf } from '../../game/js/diorama.js';
+import { ENGINE_DEFAULTS, ENGINE_PRESETS, ENGINE_SPEC, ENG_CTX, eng } from '../../game/js/engine/settings.js';
+import { EGL, eglOK } from '../../game/js/engine/core.js';
+import { DGL, dglRebuild, dioMount } from '../../game/js/diorama-gl.js';
+import {
+  ACTS,
+  SECTIONS,
+  ST,
+  after,
+  ask,
+  changed,
+  clone,
+  commit,
+  dialog,
+  fid,
+  getP,
+  render,
+  setP,
+  toast,
+  uidKey,
+} from './core.js';
+import { atlasGet } from './sprites.js';
+import { scArt, scD, scExitNames } from './scenes.js';
+/* eslint-disable no-func-assign */
+expose({
+  ENS: [() => ENS],
+  engBase: [() => engBase],
+  engD: [() => engD],
+  engField: [() => engField, v => (engField = v)],
+  engFmt: [() => engFmt],
+  engGrab: [() => engGrab, v => (engGrab = v)],
+  engGroup: [() => engGroup, v => (engGroup = v)],
+  engInherited: [() => engInherited, v => (engInherited = v)],
+  engMount: [() => engMount, v => (engMount = v)],
+  engPresets: [() => engPresets, v => (engPresets = v)],
+  engPrune: [() => engPrune],
+  engRefresh: [() => engRefresh],
+  engScene: [() => engScene],
+  engSettingsHTML: [() => engSettingsHTML, v => (engSettingsHTML = v)],
+});
+/* eslint-enable no-func-assign */
+/* to-module: end */
 engSource = () => (ST.D ? ST.D.engine : null);
 /* alpha 0.4.1: the Studio's previews show every setting at full effect. The game's automatic quality would step god
    rays, bloom, depth of field and ambient shading off (and lower the resolution) when the preview ran slowly, so a dial
@@ -12,8 +57,8 @@ if (typeof dglAdapt === 'function')
     if (typeof DGL !== 'undefined') DGL.q = 0;
     if (typeof DIO !== 'undefined') DIO.R = 1;
   };
-const ENS = { scope: 'game', scene: null, open: { lens: 1, color: 1, sun: 1, shadows: 1 }, meterT: null };
-const engD = () => ST.D.engine || (ST.D.engine = { defaults: {}, presets: {} });
+export const ENS = { scope: 'game', scene: null, open: { lens: 1, color: 1, sun: 1, shadows: 1 }, meterT: null };
+export const engD = () => ST.D.engine || (ST.D.engine = { defaults: {}, presets: {} });
 const engScene = () => {
   const S = ST.D.scenes || {};
   if (!S[ENS.scene]) ENS.scene = ST.sel.scene && S[ST.sel.scene] ? ST.sel.scene : Object.keys(S)[0] || null;
@@ -29,7 +74,7 @@ function engInherited(g, k) {
   }
   return ENGINE_DEFAULTS[g][k];
 }
-const engFmt = (v, step) => {
+export const engFmt = (v, step) => {
   if (v == null) return '—';
   if (typeof v === 'boolean') return v ? 'on' : 'off';
   if (typeof v !== 'number') return String(v);
@@ -182,7 +227,7 @@ ST.hooks.engine = p => {
     }, 350);
   }
 };
-const engRefresh = () => {
+export const engRefresh = () => {
   const s = $('#engSet');
   if (s) {
     const y = $('#main').scrollTop;

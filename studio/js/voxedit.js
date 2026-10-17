@@ -6,6 +6,42 @@
    prop editor's turntable, drawn by the game's own renderer. The model lives in the prop's catalogue entry
    (scenery.props.<key>.vox), so it saves with the game data; tools/build-vox-props.py wrote the first sixty as files
    and the game reads either. */
+/* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
+import { expose } from '../../game/js/bridge.js';
+import { cnv } from '../../game/js/art.js';
+import { dioImg } from '../../game/js/diorama.js';
+import { VOX_TEXTURES, voxInvalidate, voxRecipe } from '../../game/js/vox.js';
+import {
+  ACTS,
+  ST,
+  ask,
+  changed,
+  commit,
+  fChk,
+  fColor,
+  fNum,
+  fRange,
+  fSel,
+  fText,
+  grid,
+  render,
+  toast,
+} from './core.js';
+import { fileToCanvas, markArt, pickFile } from './sprites.js';
+import { SCN, scD } from './scenes.js';
+import { pedM } from './propedit.js';
+/* eslint-disable no-func-assign */
+expose({
+  VXE: [() => VXE],
+  VXE_KINDS: [() => VXE_KINDS],
+  pedVoxHTML: [() => pedVoxHTML, v => (pedVoxHTML = v)],
+  vxeBump: [() => vxeBump, v => (vxeBump = v)],
+  vxeMainColour: [() => vxeMainColour, v => (vxeMainColour = v)],
+  vxeOwn: [() => vxeOwn, v => (vxeOwn = v)],
+  vxeRec: [() => vxeRec, v => (vxeRec = v)],
+});
+/* eslint-enable no-func-assign */
+/* to-module: end */
 const VXE = { sel: null };
 const VXE_KINDS = [
   ['box', 'Box'],

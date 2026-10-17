@@ -7,6 +7,72 @@
    and measures how far the device keeps up. Your save is not changed: saving is paused and everything is put back
    afterwards. The results go into the debug log. If the app goes to the background (the screen locks), the test waits
    for you and runs that step again. */
+/* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
+import { expose } from './bridge.js';
+import { clamp } from './util.js';
+import { GD, MOVES, ROUTE, RULES, SP, TRAINERS, linkCost, placeKind } from './data.js';
+import { scenesAll } from './scene-files.js';
+import { U, addSteps, esc, makeMon, maxHp, setTrip, spawn } from './core.js';
+import { FRAME } from './frame.js';
+import { TR_CACHE } from './trainer.js';
+import { DR, closeDressing } from './dressing.js';
+import { SC, scStop } from './scene.js';
+import {
+  DIO,
+  DIO_CLK,
+  DIO_GCACHE,
+  dioActSpot,
+  dioBridges,
+  dioCell,
+  dioClimbEnds,
+  dioData,
+  dioFind,
+  dioHubOf,
+  dioNav,
+  dioScene,
+  dioSteps,
+  dioStop,
+  dioWalkTo,
+} from './diorama.js';
+import { eng } from './engine/settings.js';
+import { EGL, eglAttrClashes } from './engine/core.js';
+import { EGL_POST_SH } from './engine/post.js';
+import { ENV } from './env.js';
+import { DGL, DGL_SH, dglRoomDim, dioH } from './diorama-gl.js';
+import { BLD, BLD_SH } from './buildings.js';
+import { STR, strHas } from './structures.js';
+import { P3D, P3D_SH } from './props3d.js';
+import { VOX } from './vox.js';
+import { OWM, owBuddyTap, owPetSp } from './owmon.js';
+import { WORLD, wrRoomScene, wrTripView } from './world.js';
+import { A, endBattle, liveK, pickMove, pickTarget, startTrainer, startWild, stopTimers, tapMsg } from './battle.js';
+import { MAP } from './map.js';
+import { MGL, MGL_SH, MM, mmOn } from './map-gl.js';
+import { TALK, talkHide } from './talk.js';
+import { CS, csTeardown } from './cutscene.js';
+import { battleTipHide, fallGL, fallMap } from './opening.js';
+import { closeModal, leaveRoom, modal, render, renderOv, sceneIdAt, toast, walkPick } from './ui.js';
+/* eslint-disable no-func-assign */
+expose({
+  DIAGR: [() => DIAGR, v => (DIAGR = v)],
+  DIAG_PASSES: [() => DIAG_PASSES],
+  STD_EMPTY: [() => STD_EMPTY],
+  STEST: [() => STEST],
+  diagReport: [() => diagReport, v => (diagReport = v)],
+  diagTimersOff: [() => diagTimersOff, v => (diagTimersOff = v)],
+  diagTimersOn: [() => diagTimersOn, v => (diagTimersOn = v)],
+  exportDiagReport: [() => exportDiagReport, v => (exportDiagReport = v)],
+  runDiagTest: [() => runDiagTest, v => (runDiagTest = v)],
+  runFullTest: [() => runFullTest, v => (runFullTest = v)],
+  runQuickTest: [() => runQuickTest],
+  stDiagScenes: [() => stDiagScenes, v => (stDiagScenes = v)],
+  stSceneChecks: [() => stSceneChecks, v => (stSceneChecks = v)],
+  stSleep: [() => stSleep, v => (stSleep = v)],
+  stStats: [() => stStats, v => (stStats = v)],
+  testScenes: [() => testScenes, v => (testScenes = v)],
+});
+/* eslint-enable no-func-assign */
+/* to-module: end */
 const STEST = { on: false, stop: false };
 function stSleep(ms) {
   return new Promise(r => setTimeout(r, ms));

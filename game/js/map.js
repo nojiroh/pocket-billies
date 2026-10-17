@@ -2,9 +2,60 @@
 /* ================= WORLD MAP: the inside of a sphere, raycast in pixels; surface texture from art/map/world.png =================
    Fills the screen. The trails painted on the texture follow the links between stops (the walking network).
    Tap a place to see it; travel there, stay, stop or turn back from the card. */
-let MW = 176,
+/* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
+import { expose } from './bridge.js';
+import { $, clamp } from './util.js';
+import { FUTURE, LINKS, ROUTE, linkCost } from './data.js';
+import { RM, S, U, canEnter, esc, nextStop } from './core.js';
+import { frameCount, frameStop, frameTask, userFps } from './frame.js';
+import { artPixels, d44, mixA, mstamp, pk, seeded } from './art.js';
+import { owFrames } from './trainer.js';
+import { EASE } from './scene.js';
+/* eslint-disable no-func-assign */
+expose({
+  D2R: [() => D2R],
+  ESEG: [() => ESEG],
+  MAP: [() => MAP],
+  MCL: [() => MCL],
+  MH: [() => MH, v => (MH = v)],
+  MLAND: [() => MLAND],
+  MNV: [() => MNV],
+  MREG: [() => MREG],
+  MW: [() => MW, v => (MW = v)],
+  REGV: [() => REGV],
+  TH: [() => TH],
+  TW: [() => TW],
+  WORLD_ART: [() => WORLD_ART],
+  WTEX: [() => WTEX, v => (WTEX = v)],
+  edgePos: [() => edgePos, v => (edgePos = v)],
+  llv: [() => llv],
+  mapCam: [() => mapCam, v => (mapCam = v)],
+  mapFit: [() => mapFit, v => (mapFit = v)],
+  mapFocus: [() => mapFocus, v => (mapFocus = v)],
+  mapLabels: [() => mapLabels, v => (mapLabels = v)],
+  mapLoop: [() => mapLoop, v => (mapLoop = v)],
+  mapMount: [() => mapMount, v => (mapMount = v)],
+  mapPick: [() => mapPick, v => (mapPick = v)],
+  mapPrepare: [() => mapPrepare, v => (mapPrepare = v)],
+  mapRender: [() => mapRender, v => (mapRender = v)],
+  mapReset: [() => mapReset, v => (mapReset = v)],
+  mapSelect: [() => mapSelect, v => (mapSelect = v)],
+  mapSize: [() => mapSize, v => (mapSize = v)],
+  mapWalk: [() => mapWalk, v => (mapWalk = v)],
+  mapZoom: [() => mapZoom, v => (mapZoom = v)],
+  mePos: [() => mePos, v => (mePos = v)],
+  mproj: [() => mproj, v => (mproj = v)],
+  onStepsAdded: [() => onStepsAdded, v => (onStepsAdded = v)],
+  pixRingM: [() => pixRingM, v => (pixRingM = v)],
+  slerp: [() => slerp, v => (slerp = v)],
+  sunBlocks: [() => sunBlocks, v => (sunBlocks = v)],
+  v3: [() => v3],
+});
+/* eslint-enable no-func-assign */
+/* to-module: end */
+export let MW = 176,
   MH = 232;
-const TW = 1536,
+export const TW = 1536,
   TH = 768,
   D2R = Math.PI / 180;
 const llv = (lon, lat) => {
@@ -12,7 +63,7 @@ const llv = (lon, lat) => {
   lat *= D2R;
   return [Math.cos(lat) * Math.cos(lon), Math.sin(lat), Math.cos(lat) * Math.sin(lon)];
 };
-const v3 = {
+export const v3 = {
   add: (a, b) => [a[0] + b[0], a[1] + b[1], a[2] + b[2]],
   sub: (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]],
   mul: (a, k) => [a[0] * k, a[1] * k, a[2] * k],
@@ -24,15 +75,15 @@ const v3 = {
     return [a[0] / l, a[1] / l, a[2] / l];
   },
 };
-function slerp(a, b, t) {
+export function slerp(a, b, t) {
   const d = clamp(v3.dot(a, b), -1, 1),
     w = Math.acos(d);
   if (w < 1e-5) return a;
   const s = Math.sin(w);
   return v3.add(v3.mul(a, Math.sin((1 - t) * w) / s), v3.mul(b, Math.sin(t * w) / s));
 }
-const MNV = ROUTE.map(r => llv(r.lon || 0, r.lat || 0));
-const REGV = FUTURE.map(f => (f.t === 'sun' || f.lon == null ? [0, 0, 0] : llv(f.lon, f.lat || 0)));
+export const MNV = ROUTE.map(r => llv(r.lon || 0, r.lat || 0));
+export const REGV = FUTURE.map(f => (f.t === 'sun' || f.lon == null ? [0, 0, 0] : llv(f.lon, f.lat || 0)));
 const MREG = ROUTE.map((r, i) => ({ t: r.t, v: MNV[i], r: r.town ? 4.6 : 5.6 })).concat(
   FUTURE.map((f, i) => ({ f, i }))
     .filter(o => o.f.t !== 'sun' && o.f.lon != null)
@@ -56,7 +107,7 @@ const ESEG = LINKS.map(([a, b], i) => {
   }
   return { a, b, pts, len };
 });
-function edgePos(a, b, f) {
+export function edgePos(a, b, f) {
   const i = LINKS.findIndex(l => (l[0] === a && l[1] === b) || (l[0] === b && l[1] === a));
   if (i < 0) return MNV[a];
   const s = ESEG[i],
@@ -68,16 +119,16 @@ function edgePos(a, b, f) {
     u = (g - p0.l) / (p1.l - p0.l || 1);
   return v3.norm(v3.add(v3.mul(p0.p, 1 - u), v3.mul(p1.p, u)));
 }
-function mePos() {
+export function mePos() {
   const r = S.route,
     nx = nextStop();
   if (nx == null || !r.prog) return MNV[r.node];
   return edgePos(r.node, nx, clamp(r.prog / linkCost(r.node, nx), 0, 1));
 }
 /* the inner surface of the world, read from art/map/world.png */
-const WORLD_ART = 'map/world.png';
+export const WORLD_ART = 'map/world.png';
 let WTEX = null;
-function mapPrepare() {
+export function mapPrepare() {
   return WTEX
     ? Promise.resolve(WTEX)
     : artPixels(WORLD_ART).then(t => {
@@ -87,7 +138,7 @@ function mapPrepare() {
       });
 }
 /* clouds floating inside the sphere */
-const MCL = [];
+export const MCL = [];
 (function () {
   const R = seeded(812);
   for (let i = 0; i < 16; i++) {
@@ -99,7 +150,7 @@ const MCL = [];
   }
 })();
 /* landmark billboards standing on the surface (stamps live in the icon atlas as map_*) */
-const MLAND = [];
+export const MLAND = [];
 (function () {
   const KIND = {
     city: ['tower', 'house', 'tower', 'house', 'mall', 'tree', 'house'],
@@ -141,7 +192,7 @@ const MLAND = [];
   });
 })();
 /* ---------- state & camera ---------- */
-const MAP = {
+export const MAP = {
   on: false,
   cv: null,
   ctx: null,
@@ -184,12 +235,12 @@ function mapSize() {
   MAP.s = w / MW;
   MAP.dirty = true;
 }
-function mapFit() {
+export function mapFit() {
   if (!MAP.cv || !MAP.cv.isConnected) return;
   mapSize();
   mapLabels();
 }
-function mapCam() {
+export function mapCam() {
   const P = MAP.focus || mePos(),
     U = v3.mul(P, -1),
     east = v3.norm(v3.cross(P, [0, 1, 0]));
@@ -211,7 +262,7 @@ function mapCam() {
     up = v3.cross(rt, fw);
   return { C, fw, rt, up, P, foc: Math.min(MW * 0.62, MH * 0.47) };
 }
-function mproj(cam, p) {
+export function mproj(cam, p) {
   const d = v3.sub(p, cam.C),
     z = v3.dot(d, cam.fw);
   if (z < 0.004) return null;
@@ -472,7 +523,7 @@ function mapRender(t, lo) {
     );
   }
 }
-function sunBlocks(cam, p) {
+export function sunBlocks(cam, p) {
   const d = v3.sub(p, cam.C),
     L = v3.len(d),
     u = v3.mul(d, 1 / L),
@@ -489,7 +540,7 @@ function pixRingM(c, cx, cy, r, col) {
     c.fillRect(Math.round(cx + Math.cos(rad) * r), Math.round(cy + Math.sin(rad) * r), 1, 1);
   }
 }
-function mapMount() {
+export function mapMount() {
   const cv = $('#mapcv');
   if (!cv) return;
   if (!WTEX) {
@@ -552,11 +603,11 @@ function mapMount() {
     frameTask('map', mapLoop);
   }
 }
-function mapZoom(k) {
+export function mapZoom(k) {
   MAP.alt = clamp(MAP.alt * k, 0.08, 0.7);
   MAP.dirty = true;
 }
-function mapReset() {
+export function mapReset() {
   MAP.yaw = 0;
   MAP.pitch = 0;
   MAP.alt = 0.32;
@@ -568,7 +619,7 @@ function mapReset() {
 function mapFocus(v) {
   MAP.fT = { from: MAP.focus || v, to: v, t0: performance.now(), dur: RM ? 1 : 700 };
 }
-function mapWalk(from, to) {
+export function mapWalk(from, to) {
   MAP.anim = {
     from,
     to,
@@ -670,7 +721,7 @@ function mapLabels() {
     L._h = h;
   }
 }
-function mapSelect(n) {
+export function mapSelect(n) {
   U.mapSel = n;
   paintMapCard();
   mapLabels();

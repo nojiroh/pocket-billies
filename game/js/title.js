@@ -4,8 +4,35 @@
    local time of day), the Pocket Billies logo in pixel lettering, title music, and three choices: Continue (your trainer,
    where you are and how long you've played), New game, Settings. On a phone one tap anywhere continues.
    Without the 3D scene the title stands on the painted landscape instead. */
-const TITLE = { on: false, t0: 0, run: 0, mounted: false };
-function titleWanted() {
+/* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
+import { expose } from './bridge.js';
+import { $, clamp } from './util.js';
+import { ROUTE, START_NODE } from './data.js';
+import { RM, U, esc, flush, freshKeep, lsSet } from './core.js';
+import { userFps } from './frame.js';
+import { uiIco } from './art.js';
+import { humanHTML } from './trainer.js';
+import { applyPreferences } from './profile.js';
+import { DIO, dioScene, dioStop } from './diorama.js';
+import { DGL, dioH, dioMount } from './diorama-gl.js';
+import { music, musicFor } from './sound.js';
+import { csSceneId, csStart, csStartName, csWanted } from './cutscene.js';
+/* eslint-disable no-func-assign */
+expose({
+  TITLE: [() => TITLE],
+  renderTitle: [() => renderTitle, v => (renderTitle = v)],
+  titleEnd: [() => titleEnd, v => (titleEnd = v)],
+  titleFrame: [() => titleFrame, v => (titleFrame = v)],
+  titleMount: [() => titleMount, v => (titleMount = v)],
+  titleNew: [() => titleNew, v => (titleNew = v)],
+  titlePlayTime: [() => titlePlayTime, v => (titlePlayTime = v)],
+  titleStart: [() => titleStart, v => (titleStart = v)],
+  titleWanted: [() => titleWanted, v => (titleWanted = v)],
+});
+/* eslint-enable no-func-assign */
+/* to-module: end */
+export const TITLE = { on: false, t0: 0, run: 0, mounted: false };
+export function titleWanted() {
   return !(typeof NW_TEST !== 'undefined' && NW_TEST) && !(S.preferences && S.preferences.skipTitle);
 }
 /* the camera: a slow drift along the front of the town, high above the rooftops, looking up the main street */
@@ -43,7 +70,7 @@ function titlePlayTime() {
       ? `${m} min`
       : `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, '0')} min`;
 }
-function renderTitle() {
+export function renderTitle() {
   const cont = S.started && S.avatar,
     place = cont && ROUTE[S.route.node] ? ROUTE[S.route.node].name : '',
     nm = cont ? S.avatar.name || 'Trainer' : '';
@@ -55,7 +82,7 @@ function renderTitle() {
    ${cont ? '<p class="ttl-hint">Tap anywhere to continue</p>' : ''}</div></div>`;
 }
 /* the scene behind the title: Sundown, drawn by the walk renderer with the title camera */
-async function titleMount() {
+export async function titleMount() {
   if (TITLE.mounted || !TITLE.on) return;
   TITLE.mounted = true;
   if (typeof music === 'function') music('title');
@@ -106,7 +133,7 @@ async function titleMount() {
     };
   poll();
 }
-function titleStart() {
+export function titleStart() {
   if (TITLE.on) return;
   TITLE.on = true;
   TITLE.mounted = false;

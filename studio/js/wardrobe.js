@@ -4,6 +4,70 @@
    views) in one picture, plus a colour-area mask: red, green and blue mark the parts the game recolours.
    Paint pieces right on the body, add pieces to any bone, set colour areas, prices and shops, and watch the trainer
    walk and pose with it. The body section edits the skin pieces, the skeleton and the body sliders. */
+/* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
+import { expose } from '../../game/js/bridge.js';
+import { $, $$, clamp } from '../../game/js/util.js';
+import { frameStop, frameTask } from '../../game/js/frame.js';
+import { cnv } from '../../game/js/art.js';
+import { TR_CACHE, TR_PRESETS, cleanLook, trFrame, trRig, trSliders } from '../../game/js/trainer.js';
+import { rigMatrices } from '../../game/js/rig.js';
+import {
+  ACTS,
+  SECTIONS,
+  ST,
+  after,
+  ask,
+  card,
+  changed,
+  clone,
+  commit,
+  dialog,
+  fChk,
+  fColor,
+  fNum,
+  fSel,
+  fText,
+  fmtN,
+  grid,
+  render,
+  toast,
+  uidKey,
+} from './core.js';
+import { atlasGet, atlasNow, markArt } from './sprites.js';
+/* eslint-disable no-func-assign */
+expose({
+  WDS: [() => WDS],
+  WD_AREA_COL: [() => WD_AREA_COL],
+  WD_CROP: [() => WD_CROP],
+  WD_EXPR: [() => WD_EXPR],
+  WD_VIEWS: [() => WD_VIEWS],
+  wdAddRegion: [() => wdAddRegion, v => (wdAddRegion = v)],
+  wdBind: [() => wdBind, v => (wdBind = v)],
+  wdBodyHTML: [() => wdBodyHTML, v => (wdBodyHTML = v)],
+  wdCopySheets: [() => wdCopySheets, v => (wdCopySheets = v)],
+  wdCur: [() => wdCur],
+  wdDraw: [() => wdDraw, v => (wdDraw = v)],
+  wdEditorHTML: [() => wdEditorHTML, v => (wdEditorHTML = v)],
+  wdFill: [() => wdFill, v => (wdFill = v)],
+  wdGrow: [() => wdGrow, v => (wdGrow = v)],
+  wdItemHTML: [() => wdItemHTML, v => (wdItemHTML = v)],
+  wdJoints: [() => wdJoints, v => (wdJoints = v)],
+  wdLoad: [() => wdLoad, v => (wdLoad = v)],
+  wdLocal: [() => wdLocal, v => (wdLocal = v)],
+  wdMount: [() => wdMount, v => (wdMount = v)],
+  wdPick: [() => wdPick, v => (wdPick = v)],
+  wdPlot: [() => wdPlot, v => (wdPlot = v)],
+  wdPreviewHTML: [() => wdPreviewHTML, v => (wdPreviewHTML = v)],
+  wdPvLoop: [() => wdPvLoop, v => (wdPvLoop = v)],
+  wdSheets: [() => wdSheets, v => (wdSheets = v)],
+  wdSnap: [() => wdSnap, v => (wdSnap = v)],
+  wdTestLook: [() => wdTestLook, v => (wdTestLook = v)],
+  wdThumbs: [() => wdThumbs, v => (wdThumbs = v)],
+  wdTouched: [() => wdTouched, v => (wdTouched = v)],
+  wdW: [() => wdW],
+});
+/* eslint-enable no-func-assign */
+/* to-module: end */
 const WDS = {
   sel: null,
   view: 'front',

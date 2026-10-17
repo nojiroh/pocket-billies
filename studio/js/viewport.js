@@ -3,6 +3,21 @@
    alpha 0.4.1: every 3D preview (Walk scenes, Engine, Battle preview) gets the same controls: a bar with zoom, turn,
    reset and a bigger view, the plain mouse wheel zooms, the right mouse button (or Q/E) turns all the way round, and
    W A S D or the arrow keys walk while the pointer is over the preview. Keys over the preview never reach the map tools. */
+/* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
+import { expose } from '../../game/js/bridge.js';
+import { $, $$, clamp } from '../../game/js/util.js';
+import { DGL } from '../../game/js/diorama-gl.js';
+/* eslint-disable no-func-assign */
+expose({
+  VP: [() => VP],
+  vpAttach: [() => vpAttach, v => (vpAttach = v)],
+  vpBig: [() => vpBig, v => (vpBig = v)],
+  vpScan: [() => vpScan, v => (vpScan = v)],
+  vpTurn: [() => vpTurn],
+  vpZoom: [() => vpZoom],
+});
+/* eslint-enable no-func-assign */
+/* to-module: end */
 const VP = { hover: false, big: null };
 if (typeof dioMount === 'function') {
   const _dm = dioMount;

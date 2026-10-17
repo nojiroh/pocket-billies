@@ -7,7 +7,35 @@
    window inside. Any prop with act 'fly' does it. Once you have been to a town you can fly back to it from any mast:
    the flight is shown over the world map, the airship carrying you along an arc above the land, and a ticket costs
    money, so your steps stay for walking new ground. */
-const FLY = { on: false, a: -1, b: -1, t0: 0, dur: 0, lastX: null, dir: 1 };
+/* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
+import { expose } from './bridge.js';
+import { $, clamp } from './util.js';
+import { PLACE, ROUTE, isTown, placeFull } from './data.js';
+import { sceneLite, sceneLoad, scenesAhead } from './scene-files.js';
+import { RM, S, U, canEnter, esc, fmt, save } from './core.js';
+import { artLoad, uiIco } from './art.js';
+import { dioData, dioImg, dioOk, dioPrepare, dioScene } from './diorama.js';
+import { wrHubScene } from './world.js';
+import { D2R, MAP, MNV, slerp, v3 } from './map.js';
+import { MGL } from './map-gl.js';
+import { sfx } from './sound.js';
+/* eslint-disable no-func-assign */
+expose({
+  FLY: [() => FLY],
+  LIFT: [() => LIFT],
+  flyDraw: [() => flyDraw, v => (flyDraw = v)],
+  flyFare: [() => flyFare, v => (flyFare = v)],
+  flyGo: [() => flyGo, v => (flyGo = v)],
+  flyLand: [() => flyLand, v => (flyLand = v)],
+  flyMenu: [() => flyMenu, v => (flyMenu = v)],
+  flySkip: [() => flySkip, v => (flySkip = v)],
+  flyTick: [() => flyTick, v => (flyTick = v)],
+  flyTowns: [() => flyTowns, v => (flyTowns = v)],
+  liftGo: [() => liftGo, v => (liftGo = v)],
+});
+/* eslint-enable no-func-assign */
+/* to-module: end */
+export const FLY = { on: false, a: -1, b: -1, t0: 0, dur: 0, lastX: null, dir: 1 };
 /* where the airships go from here: the towns you've been to (and may enter), nearest first */
 function flyTowns() {
   const here = S.route.node;
@@ -28,7 +56,7 @@ function flyFare(a, b) {
   const d = Math.acos(clamp(v3.dot(MNV[a], MNV[b]), -1, 1)) / D2R;
   return Math.max(60, Math.round((60 + d * 6) / 10) * 10);
 }
-function flyMenu(p) {
+export function flyMenu(p) {
   if (FLY.on || !S.started) return;
   const L = flyTowns(),
     here = S.route.node;
@@ -251,8 +279,8 @@ document.addEventListener(
    Kelpport's harbour and Pearlantis City, at the bottom of the trench, are joined by a glass lift and nothing else (no
    road, no airship). A prop with act 'lift' and to: '<place id>' takes you there: the screen sinks into blue water (or
    rises into the light), and you step out beside the lift at the other end. Free, as lifts should be. */
-const LIFT = { on: false };
-function liftGo(p) {
+export const LIFT = { on: false };
+export function liftGo(p) {
   if (LIFT.on || !S.started || !p) return;
   const to = PLACE[p.to];
   if (!to) {

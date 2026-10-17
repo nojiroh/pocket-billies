@@ -1,6 +1,40 @@
 'use strict';
 /* ================= RIG: billionaires assembled from atlas images (art/billionaires/*.png) and skeletons (art/rigs.js) ================= */
 /* ---- matrices ---- */
+/* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
+import { expose } from './bridge.js';
+import { clamp, rnd } from './util.js';
+import { frameTask, userFps } from './frame.js';
+import { ART, artImg, artLoad, artReady, artURL, cnv } from './art.js';
+import { animFor } from './anim.js';
+/* eslint-disable no-func-assign */
+expose({
+  KBACK: [() => KBACK],
+  RIGBOX: [() => RIGBOX],
+  RIGC: [() => RIGC],
+  RIGDOM: [() => RIGDOM],
+  RIG_POSES: [() => RIG_POSES],
+  bustHTML: [() => bustHTML, v => (bustHTML = v)],
+  drawDomRig: [() => drawDomRig, v => (drawDomRig = v)],
+  drawRig: [() => drawRig, v => (drawRig = v)],
+  mMul: [() => mMul],
+  mR: [() => mR],
+  mS: [() => mS],
+  mT: [() => mT],
+  rigAtlas: [() => rigAtlas, v => (rigAtlas = v)],
+  rigAudit: [() => rigAudit, v => (rigAudit = v)],
+  rigFrame: [() => rigFrame, v => (rigFrame = v)],
+  rigMatrices: [() => rigMatrices, v => (rigMatrices = v)],
+  rigParts: [() => rigParts, v => (rigParts = v)],
+  rigPose: [() => rigPose, v => (rigPose = v)],
+  rigPreload: [() => rigPreload, v => (rigPreload = v)],
+  rigTick: [() => rigTick, v => (rigTick = v)],
+  rigTint: [() => rigTint, v => (rigTint = v)],
+  sm: [() => sm],
+  sprHTML: [() => sprHTML, v => (sprHTML = v)],
+});
+/* eslint-enable no-func-assign */
+/* to-module: end */
 const mMul = (m, n) => [
   m[0] * n[0] + m[2] * n[1],
   m[1] * n[0] + m[3] * n[1],
@@ -18,7 +52,7 @@ const mT = (x, y) => [1, 0, 0, 1, x, y],
   mS = (x, y) => [x, 0, 0, y, 0, 0];
 /* ---- skeleton drawing ---- */
 /* bone world matrices for a pose; a bone animates by its role (b.a) or, by default, its name */
-function rigMatrices(R, P, view) {
+export function rigMatrices(R, P, view) {
   const back = view === 'back',
     k = R.k,
     A = R.anim(P, back) || {},
@@ -57,7 +91,7 @@ function rigMatrices(R, P, view) {
   list.sort((p, q) => p[0] - q[0]);
   return { W, list };
 }
-function drawRig(ctx, R, P, view) {
+export function drawRig(ctx, R, P, view) {
   const { list } = rigMatrices(R, P, view);
   for (const [z, m, img, v, al] of list) {
     const c = v && img.v ? img.v[v] || img.v.idle || img.c : img.c;
@@ -68,7 +102,7 @@ function drawRig(ctx, R, P, view) {
   }
   ctx.setTransform(1, 0, 0, 1, 0, 0);
 }
-function rigTint(ctx, w, h, col, a) {
+export function rigTint(ctx, w, h, col, a) {
   if (a <= 0) return;
   ctx.save();
   ctx.globalCompositeOperation = 'source-atop';
@@ -79,7 +113,7 @@ function rigTint(ctx, w, h, col, a) {
 }
 const sm = x => x * x * (3 - 2 * x);
 /* ---- shared pose channels (design space faces left: forward is -x) ---- */
-function rigPose(act, tau, t, seed) {
+export function rigPose(act, tau, t, seed) {
   const P = {
     act,
     tau,
@@ -276,7 +310,7 @@ function rigPose(act, tau, t, seed) {
 /* v36: the pose for a rig on its clock. A rig with clock:12 (the new piece sheets) steps on a 12 fps grid: calm poses
    hold on twos, impacts snap on ones; the face cycles at 4 fps; lagging pieces (tail, hair, cape) get the pose one tick
    earlier through P.prev. A rig without a clock gets the plain 60 fps pose, as before. */
-function rigFrame(R, act, tau, t, seed) {
+export function rigFrame(R, act, tau, t, seed) {
   if (!R || !R.clock) return rigPose(act, tau, t, seed);
   const tk = 1000 / R.clock,
     snap = act === 'attack' || act === 'hurt',
@@ -293,7 +327,7 @@ function rigFrame(R, act, tau, t, seed) {
    rotation in pixels at the piece's size) over its run. The Studio shows it beside the skeleton; the quick check
    fails a species whose legs, head or tail never move. */
 const RIG_POSES = ['idle', 'walk', 'attack', 'cast', 'hurt', 'faint', 'cheer', 'buff', 'dizzy'];
-function rigAudit(sp, view = 'front') {
+export function rigAudit(sp, view = 'front') {
   const R = rigParts(sp, false, view === 'back' ? KBACK : 1);
   if (!R) return null;
   const out = {};
@@ -326,7 +360,7 @@ function rigAudit(sp, view = 'front') {
     still = bones.filter(b => RIG_POSES.every(a => !(out[a][b] > 0.5)));
   return { plan: R.plan, clock: R.clock || 0, bones, poses: out, still };
 } /* v38: a bone without a picture (the hover bone of fish and fliers) is not audited */
-const RIGBOX = { w: 112, h: 104 },
+export const RIGBOX = { w: 112, h: 104 },
   KBACK = 1.4;
 const RIGC = {};
 /* v36: the new piece sheets (art/next/billionaires, rigs in art/next/rigs-next.js) hold both views on one picture */
@@ -334,12 +368,12 @@ if (typeof window !== 'undefined' && window.RIGS_NEXT) {
   window.RIGS = window.RIGS || {};
   for (const k in window.RIGS_NEXT) if (!window.RIGS[k]) window.RIGS[k] = window.RIGS_NEXT[k];
 }
-function rigAtlas(sp, gold, view) {
+export function rigAtlas(sp, gold, view) {
   const m = typeof RIGS !== 'undefined' && RIGS[sp] && RIGS[sp][view];
   if (m && m.sheet) return gold ? m.sheet.replace(/\.png$/, '_gold.png') : m.sheet;
   return `billionaires/${sp}${view === 'back' ? '_back' : ''}${gold ? '_gold' : ''}.png`;
 }
-function rigParts(sp, gold, k = 1) {
+export function rigParts(sp, gold, k = 1) {
   const view = k === 1 ? 'front' : 'back',
     key = sp + (gold ? 'g' : '') + view;
   if (RIGC[key]) return RIGC[key];
@@ -377,12 +411,12 @@ function rigParts(sp, gold, k = 1) {
     lag: bones.some(b => b.lag),
   });
 }
-function rigPreload(list) {
+export function rigPreload(list) {
   return artLoad(list.map(([sp, gold, k]) => rigAtlas(sp, gold, k === 1 ? 'front' : 'back')));
 }
 /* ---- DOM animator: every <canvas class="rig"> on screen ---- */
 const RIGDOM = { vis: new Set(), nodes: new Set(), io: null, mo: null, last: 0 };
-function sprHTML(sp, size, o = {}) {
+export function sprHTML(sp, size, o = {}) {
   const w = Math.round(size * 1.25),
     h = Math.round((w * RIGBOX.h) / RIGBOX.w),
     st = SP[sp] ? (SP[sp].rar === 'mythical' ? 2 : SP[sp].stage) : 2,
@@ -391,7 +425,7 @@ function sprHTML(sp, size, o = {}) {
 }
 /* v39: the 64x64 bust from a species' piece sheet (rig meta "portrait"), as an <img> cropped by CSS; falls back to the
    rest-pose rig for a species without one */
-function bustHTML(sp, size, o = {}) {
+export function bustHTML(sp, size, o = {}) {
   const R = RIGS[sp] && RIGS[sp].front,
     pr = R && R.portrait,
     sh = R && R.sheet;

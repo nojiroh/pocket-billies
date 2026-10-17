@@ -14,8 +14,108 @@
    A road's length is 40 m per 500 steps of its cost; where you stand on it is your progress along the link, so steps
    stay the currency: the road is the walk you were already doing, now with ground under it. The road's ground, verges,
    trees and flowers come from a seed (the link's index), never stored. */
-const WORLD = { cache: new Map(), max: 5, gen: 0, LW: 40, MID: 64, BAND: 12, on: true };
-const wrOn = () => WORLD.on && !(typeof eng === 'function' && eng('world', 'seamless') === false);
+/* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
+import { expose } from './bridge.js';
+import { clamp } from './util.js';
+import { ADJ, LINKS, ROUTE } from './data.js';
+import { U } from './core.js';
+import { artLoad, hexA } from './art.js';
+import {
+  DIO,
+  DIO_GCACHE,
+  DIO_STEPS,
+  dioData,
+  dioExitEdge,
+  dioGroundAsync,
+  dioGroundKey,
+  dioHubOf,
+  dioMoodOf,
+  dioPaths,
+  dioPoly,
+  dioScene,
+  dioStepCell,
+  dioSteps,
+} from './diorama.js';
+import { eng } from './engine/settings.js';
+import { smooth01 } from './engine/core.js';
+import { DGL, dglPrepare, dglPrepared } from './diorama-gl.js';
+import { lifeShift } from './life.js';
+import { owShift } from './owmon.js';
+/* eslint-disable no-func-assign */
+expose({
+  WORLD: [() => WORLD],
+  WR_DECO: [() => WR_DECO],
+  WR_DIR: [() => WR_DIR],
+  WR_HUBL: [() => WR_HUBL],
+  WR_JD: [() => WR_JD],
+  WR_JW: [() => WR_JW],
+  WR_LOOK: [() => WR_LOOK],
+  WR_LR: [() => WR_LR],
+  WR_MIX: [() => WR_MIX],
+  WR_OPP: [() => WR_OPP],
+  WR_ROCK: [() => WR_ROCK],
+  WR_ROOM_GAP: [() => WR_ROOM_GAP],
+  WR_SR: [() => WR_SR],
+  WR_ST: [() => WR_ST],
+  WR_TUN: [() => WR_TUN],
+  WR_WIN: [() => WR_WIN],
+  dioShift: [() => dioShift, v => (dioShift = v)],
+  wrAdj: [() => wrAdj, v => (wrAdj = v)],
+  wrAlongPts: [() => wrAlongPts, v => (wrAlongPts = v)],
+  wrAt: [() => wrAt, v => (wrAt = v)],
+  wrBldWindows: [() => wrBldWindows, v => (wrBldWindows = v)],
+  wrCompose: [() => wrCompose, v => (wrCompose = v)],
+  wrComposeMulti: [() => wrComposeMulti, v => (wrComposeMulti = v)],
+  wrCornerH: [() => wrCornerH, v => (wrCornerH = v)],
+  wrDelta: [() => wrDelta, v => (wrDelta = v)],
+  wrExitOf: [() => wrExitOf, v => (wrExitOf = v)],
+  wrExitPath: [() => wrExitPath, v => (wrExitPath = v)],
+  wrFix: [() => wrFix, v => (wrFix = v)],
+  wrGate: [() => wrGate, v => (wrGate = v)],
+  wrGetReady: [() => wrGetReady, v => (wrGetReady = v)],
+  wrHash: [() => wrHash, v => (wrHash = v)],
+  wrHeight: [() => wrHeight, v => (wrHeight = v)],
+  wrHubParts: [() => wrHubParts, v => (wrHubParts = v)],
+  wrHubScene: [() => wrHubScene, v => (wrHubScene = v)],
+  wrInRect: [() => wrInRect],
+  wrJoin: [() => wrJoin, v => (wrJoin = v)],
+  wrJoinTrip: [() => wrJoinTrip, v => (wrJoinTrip = v)],
+  wrLinkIndex: [() => wrLinkIndex, v => (wrLinkIndex = v)],
+  wrLook: [() => wrLook, v => (wrLook = v)],
+  wrLookMix: [() => wrLookMix, v => (wrLookMix = v)],
+  wrLookOf: [() => wrLookOf, v => (wrLookOf = v)],
+  wrLookTick: [() => wrLookTick, v => (wrLookTick = v)],
+  wrMixHex: [() => wrMixHex, v => (wrMixHex = v)],
+  wrNear: [() => wrNear, v => (wrNear = v)],
+  wrNoise: [() => wrNoise, v => (wrNoise = v)],
+  wrOn: [() => wrOn],
+  wrPrefetch: [() => wrPrefetch, v => (wrPrefetch = v)],
+  wrPrefetchView: [() => wrPrefetchView, v => (wrPrefetchView = v)],
+  wrProps: [() => wrProps, v => (wrProps = v)],
+  wrRaiseAt: [() => wrRaiseAt, v => (wrRaiseAt = v)],
+  wrReady: [() => wrReady, v => (wrReady = v)],
+  wrRoad: [() => wrRoad, v => (wrRoad = v)],
+  wrRoadLen: [() => wrRoadLen, v => (wrRoadLen = v)],
+  wrRoamView: [() => wrRoamView, v => (wrRoamView = v)],
+  wrRoomId: [() => wrRoomId, v => (wrRoomId = v)],
+  wrRoomPlace: [() => wrRoomPlace, v => (wrRoomPlace = v)],
+  wrRoomScene: [() => wrRoomScene, v => (wrRoomScene = v)],
+  wrRoomWindows: [() => wrRoomWindows, v => (wrRoomWindows = v)],
+  wrSalt: [() => wrSalt, v => (wrSalt = v)],
+  wrScene: [() => wrScene, v => (wrScene = v)],
+  wrSceneById: [() => wrSceneById, v => (wrSceneById = v)],
+  wrSeamOf: [() => wrSeamOf, v => (wrSeamOf = v)],
+  wrStartU: [() => wrStartU, v => (wrStartU = v)],
+  wrTile: [() => wrTile, v => (wrTile = v)],
+  wrTrim: [() => wrTrim, v => (wrTrim = v)],
+  wrTripView: [() => wrTripView, v => (wrTripView = v)],
+  wrVeil: [() => wrVeil, v => (wrVeil = v)],
+  wrViewFor: [() => wrViewFor, v => (wrViewFor = v)],
+});
+/* eslint-enable no-func-assign */
+/* to-module: end */
+export const WORLD = { cache: new Map(), max: 5, gen: 0, LW: 40, MID: 64, BAND: 12, on: true };
+export const wrOn = () => WORLD.on && !(typeof eng === 'function' && eng('world', 'seamless') === false);
 function wrRoadLen(steps) {
   return Math.max(24, Math.round((40 * steps) / 500));
 }
@@ -402,7 +502,7 @@ function wrAt(R, u) {
       return { x: s.a[0] + (s.b[0] - s.a[0]) * k, z: s.a[1] + (s.b[1] - s.a[1]) * k, d: s.d };
     }
 }
-function wrNear(R, x, z) {
+export function wrNear(R, x, z) {
   let best = null;
   for (const s of R.legs) {
     const vx = s.b[0] - s.a[0],
@@ -1346,7 +1446,7 @@ function wrHubParts(node) {
     bz = Math.floor(z0 - M); /* (the camera stops 2 m past a view's edge: 6 m of countryside round it is enough) */
   return { box: [bx, bz, Math.ceil(x1 + M) - bx, Math.ceil(z1 + M) - bz], scenes, roads, base: S, hubOf: node };
 }
-function wrHubScene(node) {
+export function wrHubScene(node) {
   const sid = sceneIdAt(node),
     id = 'w:' + sid + '*',
     key = id + '|' + WORLD.gen;
@@ -1595,10 +1695,10 @@ function wrRoomPlace(B, R, door) {
   oz = clamp(oz, 0, Math.max(0, B.h - R.h));
   return [ox, oz];
 }
-function wrRoomId(baseId, roomId, door) {
+export function wrRoomId(baseId, roomId, door) {
   return baseId + '#' + roomId + '@' + door.map(v => (+v).toFixed(1)).join(',');
 }
-function wrRoomScene(baseId, roomId, door) {
+export function wrRoomScene(baseId, roomId, door) {
   const id = wrRoomId(baseId, roomId, door),
     key = id + '|' + WORLD.gen;
   let sc = WORLD.cache.get(key);
@@ -1777,7 +1877,7 @@ function wrRoomScene(baseId, roomId, door) {
   return sc;
 }
 /* where a point of one composite lands in another (both hold a scene or the road): null when they share nothing */
-function wrDelta(fromId, toId) {
+export function wrDelta(fromId, toId) {
   const a = dioScene(fromId),
     b = dioScene(toId);
   if (!a || !b) return null;
@@ -1792,7 +1892,7 @@ function wrDelta(fromId, toId) {
 /* --- what the walk shows (called by walkState in ui.js) --- */
 /* roaming at a stop: v46: always the place's hub view (the scene with the first stretch of each road), so walking
    round a place and up to its exits never switches views */
-function wrRoamView(node, pos) {
+export function wrRoamView(node, pos) {
   if (!wrOn()) return null;
   const id = sceneIdAt(node),
     sc = dioScene(id);
@@ -1811,7 +1911,7 @@ function wrRoamView(node, pos) {
   return { id: hs.id, sc: hs, R: null };
 }
 /* on a road: the view for your progress, and where you stand on it (in that view's metres) */
-function wrTripView(node, nx, f) {
+export function wrTripView(node, nx, f) {
   if (!wrOn()) return null;
   const i = wrLinkIndex(node, nx);
   if (i < 0) return null;
@@ -1903,7 +2003,7 @@ function wrStartU(xn, P) {
   return best ? Math.max(0, best.u - 1) : 0;
 }
 /* paint the ground of the view that comes next while this one is on screen (so the shift to it is instant) */
-function wrPrefetch(R, u, fwd, tv) {
+export function wrPrefetch(R, u, fwd, tv) {
   if (!R) return;
   if (R.join) {
     /* the next place's view, from 40 m before the seam */ if (tv && tv.inX && tv.PX.len - u < 40) {
@@ -1944,7 +2044,7 @@ function wrReady(id) {
   if (!DIO_GCACHE.has(key)) return false;
   return typeof DGL === 'undefined' || !DGL.on || typeof dglPrepared !== 'function' || dglPrepared(id, sc, key);
 }
-function wrGetReady(id, urgent, focus) {
+export function wrGetReady(id, urgent, focus) {
   if (wrReady(id)) return true;
   const sc = dioScene(id);
   if (!sc) return false;
@@ -1972,7 +2072,7 @@ function wrGetReady(id, urgent, focus) {
 /* v46: show a view only when it is ready; until then stay in the one on screen, as long as where you stand is still
    well inside it (on a road the views overlap by 40 m, so there is time). If you would walk off its edge the switch
    happens anyway, built on the spot as before. */
-function wrGate(v) {
+export function wrGate(v) {
   if (!wrOn() || !v || v.id === DIO.id || !DIO.ready || !DIO.sc || !DIO.pl || DIO.pl.fresh) return v;
   if (wrGetReady(v.id, true, v.pos)) {
     WORLD.heldFor = null;
@@ -2028,7 +2128,7 @@ function wrVeil() {
   v.style.transition = 'opacity .6s ease-in';
   v.style.opacity = '0';
 }
-function dioShift(id, dx, dz) {
+export function dioShift(id, dx, dz) {
   const sc = dioScene(id);
   if (!sc) return false;
   const P = DIO.pl;
