@@ -6,7 +6,7 @@
    to the setting and makes it blink. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
-import { linkNote } from '../../game/js/hooks.js';
+import { noteConnectionsField } from '../../game/js/hooks.js';
 import { $, $$ } from '../../game/js/util.js';
 import { ENGINE_SPEC } from '../../game/js/engine/settings.js';
 import { esc } from './game-stand-ins.js';
@@ -61,7 +61,7 @@ export function findFlash(sel, tries = 0) {
         f.focus({ preventScroll: true });
       } catch (e) {}
     }, 350);
-  if (typeof linkNote === 'function') linkNote(el.dataset.p || el.dataset.path || '');
+  if (typeof noteConnectionsField === 'function') noteConnectionsField(el.dataset.p || el.dataset.path || '');
 }
 export const fieldSelector = p => `[data-p="${CSS.escape(p)}"],[data-path="${CSS.escape(p)}"]`;
 export function findField(sec, p, sel) {

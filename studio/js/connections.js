@@ -20,32 +20,35 @@ import { engineData, engineEditor, formatDialValue } from './engine-editor.js';
 import { fieldSelector, findEngine, findField, findFlash } from './find.js';
 /* eslint-disable no-func-assign */
 expose({
-  ENG_NEEDS: [() => ENG_NEEDS],
-  ENG_QOFF: [() => ENG_QOFF],
-  LNK: [() => LNK],
-  LNK_TEXT: [() => LNK_TEXT],
-  engLabel: [() => engLabel],
-  linkCur: [() => linkCur, v => (linkCur = v)],
-  linkNote: [() => linkNote, v => ((linkNote = v), provide({ linkNote }))],
-  linkRefresh: [() => linkRefresh, v => (linkRefresh = v)],
-  lnkBox: [() => lnkBox],
-  lnkDial: [() => lnkDial, v => (lnkDial = v)],
-  lnkGraph: [() => lnkGraph, v => (lnkGraph = v)],
-  lnkHTML: [() => lnkHTML, v => (lnkHTML = v)],
-  lnkIds: [() => lnkIds, v => (lnkIds = v)],
-  lnkLines: [() => lnkLines, v => (lnkLines = v)],
-  lnkMap: [() => lnkMap, v => (lnkMap = v)],
-  lnkNode: [() => lnkNode, v => (lnkNode = v)],
-  lnkOwner: [() => lnkOwner, v => (lnkOwner = v)],
-  lnkRecord: [() => lnkRecord, v => (lnkRecord = v)],
-  lnkWalk: [() => lnkWalk, v => (lnkWalk = v)],
+  DIALS_OFF_BY_QUALITY: [() => DIALS_OFF_BY_QUALITY],
+  DIAL_NEEDS: [() => DIAL_NEEDS],
+  PROSE_KEYS: [() => PROSE_KEYS],
+  allDataIds: [() => allDataIds, v => (allDataIds = v)],
+  connectionGraph: [() => connectionGraph, v => (connectionGraph = v)],
+  connectionMapHTML: [() => connectionMapHTML, v => (connectionMapHTML = v)],
+  connectionNode: [() => connectionNode, v => (connectionNode = v)],
+  connectionNodeHTML: [() => connectionNodeHTML],
+  connectionsDrawer: [() => connectionsDrawer],
+  connectionsHTML: [() => connectionsHTML, v => (connectionsHTML = v)],
+  connectionsTarget: [() => connectionsTarget, v => (connectionsTarget = v)],
+  dialConnections: [() => dialConnections, v => (dialConnections = v)],
+  dialLabel: [() => dialLabel],
+  drawConnectionLines: [() => drawConnectionLines, v => (drawConnectionLines = v)],
+  noteConnectionsField: [
+    () => noteConnectionsField,
+    v => ((noteConnectionsField = v), provide({ noteConnectionsField })),
+  ],
+  recordOwningPath: [() => recordOwningPath, v => (recordOwningPath = v)],
+  recordPath: [() => recordPath, v => (recordPath = v)],
+  refreshConnections: [() => refreshConnections, v => (refreshConnections = v)],
+  walkDataStrings: [() => walkDataStrings, v => (walkDataStrings = v)],
 });
 /* eslint-enable no-func-assign */
-provide({ linkNote });
+provide({ noteConnectionsField });
 /* to-module: end */
-const LNK = { open: false, field: '' };
+const connectionsDrawer = { open: false, field: '' };
 /* engine dials that need another one to be on; and the quality step (or device) that turns them off */
-const ENG_NEEDS = {
+const DIAL_NEEDS = {
   'lens.bokeh': ['lens.blur'],
   'lens.focusBand': ['lens.blur'],
   'lens.blurFar': ['lens.blur'],
@@ -87,7 +90,7 @@ const ENG_NEEDS = {
   'water.rings': ['water.ripples'],
   'camera.zoomMin': ['camera.zoomMax'],
 };
-const ENG_QOFF = {
+const DIALS_OFF_BY_QUALITY = {
   'shadows.ao': 'step 1',
   'shadows.aoRadius': 'step 1',
   'shadows.aoKind': 'step 1',
@@ -105,17 +108,17 @@ const ENG_QOFF = {
   'shadows.cascades': 'battles on slow devices',
   'lens.grain': 'Reduced animation',
 };
-const engLabel = gk => {
+const dialLabel = gk => {
   const [g, k] = gk.split('.');
   const G = (typeof ENGINE_SPEC !== 'undefined' ? ENGINE_SPEC : []).find(x => x[0] === g),
     f = G && G[2].find(x => x[0] === k);
   return f ? `${f[1]} (${G[1]})` : gk;
 };
 /* ---- what is selected ---- */
-function linkCur() {
+function connectionsTarget() {
   const D = studioState.D,
     s = studioState.sec,
-    f = LNK.field;
+    f = connectionsDrawer.field;
   if (s === 'engine' && /\.(defaults|map)\.|^scenes\.[^.]+\.look\./.test(f)) {
     const m = f.match(/(?:defaults|map|look)\.([^.]+)\.([^.]+)$/);
     if (m) return { kind: 'dial', id: m[1] + '.' + m[2] };
@@ -148,7 +151,7 @@ function linkCur() {
   return null;
 }
 /* ---- names and ways to go to things ---- */
-function lnkNode(kind, id) {
+function connectionNode(kind, id) {
   const D = studioState.D;
   switch (kind) {
     case 'billy': {
@@ -241,7 +244,7 @@ function lnkNode(kind, id) {
       return {
         kind,
         id,
-        label: engLabel(id),
+        label: dialLabel(id),
         sub: 'Engine dial',
         go: () => {
           const [g, k] = id.split('.');
@@ -253,7 +256,7 @@ function lnkNode(kind, id) {
   }
 }
 /* every id the data knows, by kind */
-function lnkIds() {
+function allDataIds() {
   const D = studioState.D,
     m = new Map(),
     put = (id, kind) => {
@@ -270,9 +273,9 @@ function lnkIds() {
   Object.keys((D.scenery || {}).props || {}).forEach(k => put(k, 'prop'));
   return m;
 }
-const LNK_TEXT = /^(n|name|d|desc|say|text|lines|win|lose|greeting|blurb|label|note|help|title|story|body|q|a)$/;
+const PROSE_KEYS = /^(n|name|d|desc|say|text|lines|win|lose|greeting|blurb|label|note|help|title|story|body|q|a)$/;
 /* where a path in the data belongs: the record that holds it */
-function lnkOwner(path) {
+function recordOwningPath(path) {
   const p = path.split('.');
   switch (p[0]) {
     case 'lines': {
@@ -305,21 +308,21 @@ function lnkOwner(path) {
       return null;
   }
 }
-function lnkWalk(o, path, f) {
+function walkDataStrings(o, path, f) {
   if (o == null) return;
   if (typeof o === 'string') {
     f(o, path);
     return;
   }
   if (typeof o !== 'object') return;
-  if (Array.isArray(o)) o.forEach((v, i) => lnkWalk(v, path + '.' + i, f));
+  if (Array.isArray(o)) o.forEach((v, i) => walkDataStrings(v, path + '.' + i, f));
   else
     for (const k in o) {
-      if (k[0] === '_' || LNK_TEXT.test(k)) continue;
-      lnkWalk(o[k], path ? path + '.' + k : k, f);
+      if (k[0] === '_' || PROSE_KEYS.test(k)) continue;
+      walkDataStrings(o[k], path ? path + '.' + k : k, f);
     }
 }
-function lnkRecord(kind, id) {
+function recordPath(kind, id) {
   const D = studioState.D;
   switch (kind) {
     case 'billy': {
@@ -351,9 +354,9 @@ function lnkRecord(kind, id) {
       return null;
   }
 }
-function lnkGraph(cur) {
+function connectionGraph(cur) {
   const D = studioState.D,
-    ids = lnkIds(),
+    ids = allDataIds(),
     uses = new Map(),
     usedBy = new Map(),
     key = (k, i) => k + ':' + i;
@@ -362,9 +365,9 @@ function lnkGraph(cur) {
     const L = D.lines.find(l => cur.id.startsWith(l.id));
     if (L) L.names.forEach((n, i) => ownIds.add(L.id + i));
   }
-  const R = lnkRecord(cur.kind, cur.id);
+  const R = recordPath(cur.kind, cur.id);
   if (R)
-    lnkWalk(R[1], R[0], v => {
+    walkDataStrings(R[1], R[0], v => {
       const k = ids.get(v);
       if (k && !ownIds.has(v)) uses.set(key(k, v), [k, v]);
     });
@@ -379,9 +382,9 @@ function lnkGraph(cur) {
   }
   const self = R ? R[0] : '';
   for (const root of ['lines', 'moves', 'items', 'coins', 'trainers', 'shops', 'scenes', 'route', 'pools', 'rules']) {
-    lnkWalk(D[root], root, (v, path) => {
+    walkDataStrings(D[root], root, (v, path) => {
       if (!ownIds.has(v) || (self && (path === self || path.startsWith(self + '.')))) return;
-      const o = lnkOwner(path);
+      const o = recordOwningPath(path);
       if (o && !(o[0] === cur.kind && String(o[1]) === String(cur.id))) usedBy.set(key(o[0], o[1]), [o[0], o[1]]);
     });
   }
@@ -415,11 +418,11 @@ function lnkGraph(cur) {
     });
   }
   return {
-    uses: [...uses.values()].map(([k, i]) => lnkNode(k, i)),
-    usedBy: [...usedBy.values()].map(([k, i]) => lnkNode(k, i)),
+    uses: [...uses.values()].map(([k, i]) => connectionNode(k, i)),
+    usedBy: [...usedBy.values()].map(([k, i]) => connectionNode(k, i)),
   };
 }
-function lnkDial(gk) {
+function dialConnections(gk) {
   const [g, k] = gk.split('.'),
     D = engineData(),
     built = (ENGINE_DEFAULTS[g] || {})[k],
@@ -475,47 +478,47 @@ function lnkDial(gk) {
         openSection('engine');
       },
     });
-  const needs = (ENG_NEEDS[gk] || []).map(x => lnkNode('dial', x)),
-    feeds = Object.entries(ENG_NEEDS)
+  const needs = (DIAL_NEEDS[gk] || []).map(x => connectionNode('dial', x)),
+    feeds = Object.entries(DIAL_NEEDS)
       .filter(([a, L]) => L.includes(gk))
-      .map(([a]) => lnkNode('dial', a));
-  return { chain, scenes, pre, needs, feeds, qoff: ENG_QOFF[gk] || null };
+      .map(([a]) => connectionNode('dial', a));
+  return { chain, scenes, pre, needs, feeds, qoff: DIALS_OFF_BY_QUALITY[gk] || null };
 }
 /* ---- drawing ---- */
-const lnkBox = (n, cls = '') =>
+const connectionNodeHTML = (n, cls = '') =>
   `<button class="lk-n k-${n.kind} ${cls} ${n.on ? 'on' : ''}" ${n.go ? '' : 'disabled'} data-lk="${esc(n.kind + ':' + n.id)}"><b>${esc(n.label)}</b>${n.sub ? `<small>${esc(n.sub)}</small>` : ''}</button>`;
-function lnkMap(left, mid, right, lt, rt) {
-  return `<div class="lk-map"><svg class="lk-svg"></svg><div class="lk-col lk-l"><h5>${lt}</h5>${left.length ? left.map(n => lnkBox(n)).join('') : '<p class="help">Nothing</p>'}</div><div class="lk-col lk-m">${lnkBox(mid, 'lk-me')}</div><div class="lk-col lk-r"><h5>${rt}</h5>${right.length ? right.map(n => lnkBox(n)).join('') : '<p class="help">Nothing</p>'}</div></div>`;
+function connectionMapHTML(left, mid, right, lt, rt) {
+  return `<div class="lk-map"><svg class="lk-svg"></svg><div class="lk-col lk-l"><h5>${lt}</h5>${left.length ? left.map(n => connectionNodeHTML(n)).join('') : '<p class="help">Nothing</p>'}</div><div class="lk-col lk-m">${connectionNodeHTML(mid, 'lk-me')}</div><div class="lk-col lk-r"><h5>${rt}</h5>${right.length ? right.map(n => connectionNodeHTML(n)).join('') : '<p class="help">Nothing</p>'}</div></div>`;
 }
-function lnkHTML() {
-  const cur = linkCur();
-  LNK.nodes = new Map();
+function connectionsHTML() {
+  const cur = connectionsTarget();
+  connectionsDrawer.nodes = new Map();
   const keep = L => {
-    L.forEach(n => LNK.nodes.set(n.kind + ':' + n.id, n));
+    L.forEach(n => connectionsDrawer.nodes.set(n.kind + ':' + n.id, n));
     return L;
   };
   if (!cur)
     return `<p class="help">Pick something to edit (a Billy, a move, a place, a prop…) or click into a setting, and its connections show here.</p>`;
   if (cur.kind === 'dial') {
-    const I = lnkDial(cur.id),
-      me = lnkNode('dial', cur.id);
+    const I = dialConnections(cur.id),
+      me = connectionNode('dial', cur.id);
     keep([...I.chain, ...I.scenes, ...I.pre, ...I.needs, ...I.feeds]);
     return `<h4>${esc(me.label)}</h4><p class="help">Where its value comes from. The last one that sets it wins: a place’s own look beats the whole game, which beats the built-in value.</p>
-  <div class="lk-chain">${I.chain.map(n => lnkBox(n)).join('<span class="lk-arrow">→</span>')}${I.scenes.length ? `<span class="lk-arrow">→</span><div class="lk-stack">${I.scenes.map(n => lnkBox(n)).join('')}</div>` : ''}</div>
-  ${I.pre.length ? `<h5>Looks that change it</h5><div class="lk-row">${I.pre.map(n => lnkBox(n)).join('')}</div>` : ''}
-  ${lnkMap(I.needs, me, I.feeds, 'It needs', 'Only matters when it’s on')}
+  <div class="lk-chain">${I.chain.map(n => connectionNodeHTML(n)).join('<span class="lk-arrow">→</span>')}${I.scenes.length ? `<span class="lk-arrow">→</span><div class="lk-stack">${I.scenes.map(n => connectionNodeHTML(n)).join('')}</div>` : ''}</div>
+  ${I.pre.length ? `<h5>Looks that change it</h5><div class="lk-row">${I.pre.map(n => connectionNodeHTML(n)).join('')}</div>` : ''}
+  ${connectionMapHTML(I.needs, me, I.feeds, 'It needs', 'Only matters when it’s on')}
   ${I.qoff ? `<p class="lk-q"><b>Automatic quality</b> turns this off on slow devices: ${esc(I.qoff)}. Your Studio preview always shows it at full quality.</p>` : ''}`;
   }
   if (cur.kind === 'field') {
-    const o = lnkOwner(cur.id);
-    return `<h4>${esc(cur.id)}</h4><p class="help">This setting belongs to ${o ? esc(lnkNode(o[0], o[1]).label) : 'the game'}. Pick a whole thing (a Billy, a move, a place) to see what it is connected to, or use Find (Ctrl+K).</p>`;
+    const o = recordOwningPath(cur.id);
+    return `<h4>${esc(cur.id)}</h4><p class="help">This setting belongs to ${o ? esc(connectionNode(o[0], o[1]).label) : 'the game'}. Pick a whole thing (a Billy, a move, a place) to see what it is connected to, or use Find (Ctrl+K).</p>`;
   }
-  const me = lnkNode(cur.kind, cur.id),
-    G = lnkGraph(cur);
+  const me = connectionNode(cur.kind, cur.id),
+    G = connectionGraph(cur);
   keep([me, ...G.uses, ...G.usedBy]);
-  return `<h4>${esc(me.label)}</h4>${lnkMap(G.uses, me, G.usedBy, 'It uses', 'Used by')}<p class="help">Found by looking for its id everywhere in the game data. Click a box to open it.</p>`;
+  return `<h4>${esc(me.label)}</h4>${connectionMapHTML(G.uses, me, G.usedBy, 'It uses', 'Used by')}<p class="help">Found by looking for its id everywhere in the game data. Click a box to open it.</p>`;
 }
-function lnkLines() {
+function drawConnectionLines() {
   const map = $('#lnkB .lk-map');
   if (!map) return;
   const svg = map.querySelector('.lk-svg'),
@@ -544,8 +547,8 @@ function lnkLines() {
   });
   svg.innerHTML = d;
 }
-function linkRefresh() {
-  if (!LNK.open) return;
+function refreshConnections() {
+  if (!connectionsDrawer.open) return;
   let d = $('#lnk');
   if (!d) {
     d = document.createElement('aside');
@@ -555,31 +558,31 @@ function linkRefresh() {
     d.addEventListener('click', ev => {
       const b = ev.target.closest('[data-lk]');
       if (!b) return;
-      const n = LNK.nodes && LNK.nodes.get(b.dataset.lk);
+      const n = connectionsDrawer.nodes && connectionsDrawer.nodes.get(b.dataset.lk);
       if (n && n.go) {
         n.go();
-        setTimeout(linkRefresh, 60);
+        setTimeout(refreshConnections, 60);
       }
     });
   }
   $('#lnkB').innerHTML = (() => {
     try {
-      return lnkHTML();
+      return connectionsHTML();
     } catch (e) {
       return `<p class="help">Couldn’t work out the connections: ${esc(e.message)}</p>`;
     }
   })();
-  requestAnimationFrame(lnkLines);
+  requestAnimationFrame(drawConnectionLines);
 }
-function linkNote(p) {
-  if (p) LNK.field = p;
-  clearTimeout(LNK.t);
-  LNK.t = setTimeout(linkRefresh, 120);
+function noteConnectionsField(p) {
+  if (p) connectionsDrawer.field = p;
+  clearTimeout(connectionsDrawer.t);
+  connectionsDrawer.t = setTimeout(refreshConnections, 120);
 }
 ACTIONS.links = () => {
-  LNK.open = !LNK.open;
-  document.body.classList.toggle('lnk-open', LNK.open);
-  if (LNK.open) linkRefresh();
+  connectionsDrawer.open = !connectionsDrawer.open;
+  document.body.classList.toggle('lnk-open', connectionsDrawer.open);
+  if (connectionsDrawer.open) refreshConnections();
   else {
     const d = $('#lnk');
     if (d) d.remove();
@@ -588,7 +591,7 @@ ACTIONS.links = () => {
 document.addEventListener('focusin', ev => {
   const el = ev.target.closest && ev.target.closest('[data-p],[data-path]');
   if (el && ev.target.closest('#main'))
-    linkNote(el.dataset.p || (el.closest('[data-path]') && el.closest('[data-path]').dataset.path));
+    noteConnectionsField(el.dataset.p || (el.closest('[data-path]') && el.closest('[data-path]').dataset.path));
 });
 document.addEventListener('keydown', ev => {
   if ((ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === 'l') {
@@ -597,7 +600,7 @@ document.addEventListener('keydown', ev => {
   }
 });
 addEventListener('resize', () => {
-  if (LNK.open) lnkLines();
+  if (connectionsDrawer.open) drawConnectionLines();
 });
 addEventListener('load', () => {
   const a = $('.top-acts');
@@ -612,6 +615,6 @@ addEventListener('load', () => {
   const r0 = render;
   setRender(function () {
     r0.apply(this, arguments);
-    if (LNK.open) linkNote();
+    if (connectionsDrawer.open) noteConnectionsField();
   });
 });
