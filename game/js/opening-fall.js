@@ -43,13 +43,13 @@ expose({
   fallCanvas: [() => fallCanvas, v => (fallCanvas = v)],
   fallCrust: [() => fallCrust, v => (fallCrust = v)],
   fallFont: [() => fallFont, v => (fallFont = v)],
-  fallMap: [() => fallMap, v => (fallMap = v)],
-  fallMapCanvas: [() => fallMapCanvas, v => (fallMapCanvas = v)],
+  fallOverWorldMap: [() => fallOverWorldMap, v => (fallOverWorldMap = v)],
   fallPlay: [() => fallPlay, v => ((fallPlay = v), provide({ fallPlay }))],
   fallRandom: [() => fallRandom],
   fallSky: [() => fallSky, v => (fallSky = v)],
   fallStill: [() => fallStill, v => (fallStill = v)],
   fallStreet: [() => fallStreet, v => (fallStreet = v)],
+  fallWorldMapCanvas: [() => fallWorldMapCanvas, v => (fallWorldMapCanvas = v)],
   landing: [() => landing],
   landingBurst: [() => landingBurst, v => ((landingBurst = v), provide({ landingBurst }))],
   landingFrame: [() => landingFrame, v => ((landingFrame = v), provide({ landingFrame }))],
@@ -92,7 +92,7 @@ function fallCanvas() {
   return cv;
 }
 /* the walk scene's canvas, ready for the world map's renderer (the map is drawn on it before Sundown is mounted) */
-export function fallMapCanvas() {
+export function fallWorldMapCanvas() {
   if (typeof worldMapGlRender !== 'function' || typeof ensureWalkGl !== 'function' || gpuState.fail || gpuState.lost)
     return null;
   let cv = $('#dio');
@@ -634,7 +634,7 @@ function fallCamera(k) {
     up = vector3.cross(rt, look);
   return { C, fw: look, rt, up, P: S0, foc: Math.min(worldMapWidth * 0.55, worldMapHeight * 0.42) };
 }
-export function fallMap(run, ms) {
+export function fallOverWorldMap(run, ms) {
   return new Promise(res0 => {
     const flat = worldMapGl.flat,
       focus = worldMap.focus,
@@ -743,7 +743,7 @@ async function fallPlay(run) {
     }
   }, 7600);
   if (alive()) await anim(t => fallCrust(t), 2900);
-  const gcv = alive() && !reducedMotion ? fallMapCanvas() : null;
+  const gcv = alive() && !reducedMotion ? fallWorldMapCanvas() : null;
   if (!gcv && alive()) {
     cutsceneCaption('At the centre of everything', 'The Inner Sun', 2600);
     await anim(t => fallSky(t), reducedMotion ? 2600 : 3400);
@@ -756,7 +756,7 @@ async function fallPlay(run) {
     if (openingFall.cv) openingFall.cv.hidden = true;
     if (fade) fade.classList.remove('on');
     if (typeof soundEffect === 'function') soundEffect('whoosh', { dur: 3 });
-    await fallMap(run, 9000);
+    await fallOverWorldMap(run, 9000);
   }
   cancelAnimationFrame(openingFall.raf);
   if (fade) fade.classList.add('on');

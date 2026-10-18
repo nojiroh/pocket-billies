@@ -82,7 +82,7 @@ import {
 } from './world-map-gl.js';
 import { talkBox, talkHide } from './talk.js';
 import { cutscene, cutsceneTeardown } from './cutscene.js';
-import { battleTipHide, fallMap, fallMapCanvas } from './opening-fall.js';
+import { battleTipHide, fallOverWorldMap, fallWorldMapCanvas } from './opening-fall.js';
 import { closeModal, leaveRoom, mapIdAt, modal, render, renderOverlay, toast, walkPick } from './ui.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -1057,7 +1057,7 @@ async function runFullTest(mode) {
     await phase('Double battle with a trainer', 'scene', () => teamBattle('double'), 8, 150);
     await phase('Alpha battle: your team against one', 'scene', () => teamBattle('alpha'), 8, 150);
     /* v47: the opening's fall across the Hollow Earth (the world map's renderer, flying past the Inner Sun), timed */
-    if (typeof fallMap === 'function' && !selfTest.stop)
+    if (typeof fallOverWorldMap === 'function' && !selfTest.stop)
       await phase(
         'Opening: falling across the Hollow Earth',
         'map',
@@ -1065,7 +1065,7 @@ async function runFullTest(mode) {
           uiState.bench = null;
           uiState.inside = null;
           if (typeof walkView !== 'undefined' && walkView.cv) stopWalkView();
-          const cv = fallMapCanvas();
+          const cv = fallWorldMapCanvas();
           if (!cv) {
             uiState.tab = 'walk';
             render();
@@ -1086,7 +1086,7 @@ async function runFullTest(mode) {
             mr(t);
           });
           try {
-            await fallMap(run, 6000);
+            await fallOverWorldMap(run, 6000);
           } finally {
             setWorldMapGlRender(mr);
             cutscene.on = false;
