@@ -208,7 +208,10 @@ function drawSpritePreview(c, ts) {
   const tau = ts - o.t0,
     act = o.act && (o.act === 'faint' || tau < 1100) ? o.act : null;
   if (o.act && !act && o.loop) o.t0 = ts;
-  drawRig(x, R, rigPose(act, tau, o.still ? 0 : ts, o.seed), o.view || 'front');
+  const P = rigPose(act, tau, o.still ? 0 : ts, o.seed);
+  /* phase 16: a preview can show a build (part sizes) */
+  if (o.build) P.build = o.build;
+  drawRig(x, R, P, o.view || 'front');
   o.drawn = 1;
 }
 function spritePreviewLoop(ts) {

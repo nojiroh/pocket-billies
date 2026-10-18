@@ -3111,3 +3111,47 @@ body.vp-has-big::after {
   background: color-mix(in srgb, var(--red) 12%, transparent);
   color: var(--red);
 }
+/* phase 16: Parts (studio/js/parts-editor.js) */
+.parts-slots {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 8px;
+  margin: 10px 0;
+}
+.parts-slot small {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.parts-slot .seg {
+  display: flex;
+  gap: 4px;
+}
+.parts-prev {
+  display: flex;
+  gap: 12px;
+  align-items: end;
+  margin: 10px 0;
+  min-height: 190px;
+}
+.parts-read p {
+  margin: 4px 0;
+}
+.parts-prime {
+  color: var(--warn);
+}
+.parts-size {
+  border-top: 1px solid var(--line);
+  padding-top: 8px;
+  margin-top: 8px;
+}
+.parts-size:first-child {
+  border-top: 0;
+  margin-top: 0;
+  padding-top: 0;
+}
+.parts-warn p {
+  color: var(--warn);
+  margin: 6px 0;
+  font-weight: 600;
+}

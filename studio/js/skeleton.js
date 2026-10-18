@@ -9,7 +9,7 @@ import { provide } from '../../game/js/hooks.js';
 import { $, $$, clamp } from '../../game/js/util.js';
 import { hexToRgb, makeCanvas, shadeHex } from '../../game/js/art.js';
 import { POSES_BY_PLAN } from '../../game/js/body-plan-animation.js';
-import { drawRig, rigAudit, rigMatrices, rigPose } from '../../game/js/skeleton-rig.js';
+import { boneSlot, drawRig, rigAudit, rigMatrices, rigPose } from '../../game/js/skeleton-rig.js';
 import { escapeHtml } from './game-stand-ins.js';
 import {
   ask,
@@ -44,6 +44,7 @@ import {
 /* eslint-disable no-func-assign */
 expose({
   BODY_TEMPLATES: [() => BODY_TEMPLATES],
+  PART_SLOT_LABELS: [() => PART_SLOT_LABELS],
   PLAN_INFO: [() => PLAN_INFO],
   PLAN_MOTION_FIELDS: [() => PLAN_MOTION_FIELDS],
   ROLE_HELP: [() => ROLE_HELP],
@@ -53,6 +54,7 @@ expose({
   applyLinear2x2: [() => applyLinear2x2],
   bindSkeletonCanvas: [() => bindSkeletonCanvas, v => (bindSkeletonCanvas = v)],
   blobPart: [() => blobPart, v => (blobPart = v)],
+  boneSlotFieldHTML: [() => boneSlotFieldHTML, v => (boneSlotFieldHTML = v)],
   bonesUsingImage: [() => bonesUsingImage],
   cutRect: [() => cutRect, v => (cutRect = v)],
   drawSkeleton: [() => drawSkeleton, v => (drawSkeleton = v)],
@@ -750,6 +752,7 @@ function skeletonSidePanel() {
      .join(
        ''
      )}<option value="-" ${b.a === '-' ? 'selected' : ''}>Nothing: stays still</option></select><small class="help">Each body plan animates parts by role. Pick one to borrow a motion.</small></label>
+   ${boneSlotFieldHTML(b)}
    <div class="grid sk-grid">${numberField('Across', `${p}.at.0`, { step: 0.25 })}${numberField('Up / down', `${p}.at.1`, { step: 0.25 })}${numberField('Tilt', `${p}.rr`, { step: 0.02, opt: 1, ph: '0' })}${numberField(skeletonEditor.view === 'back' ? 'Layer (back)' : 'Layer', `${p}.${skeletonEditor.view === 'back' ? 'zb' : 'z'}`, { step: 0.5, help: 'Higher draws on top.' })}</div>
    ${skeletonEditor.view === 'back' ? checkboxField('Hidden in the back view', `${p}.hideB`, { num: 1 }) : ''}
    <div class="seg-row"><button class="btn sm" data-sk="dup">Duplicate</button><button class="btn sm" data-sk="mirror">Mirror copy</button><button class="btn sm" data-sk="child">+ Child part</button><button class="btn sm danger" data-sk="del">Delete</button></div></div>`;
@@ -805,6 +808,14 @@ function skeletonSidePanel() {
   if (nm) nm.addEventListener('change', () => renameBone(nm.value));
   const par = $('#skPar');
   if (par) par.addEventListener('change', () => reparentBone(par.value));
+  const sl = $('#skSlot');
+  if (sl)
+    sl.addEventListener('change', () => {
+      const b = skeletonMeta().bones.find(x => x.n === skeletonEditor.sel);
+      if (sl.value === '') delete b.slot;
+      else b.slot = sl.value === '-' ? '' : sl.value;
+      skeletonChanged();
+    });
   const ro = $('#skRole');
   if (ro)
     ro.addEventListener('change', () => {
@@ -814,6 +825,18 @@ function skeletonSidePanel() {
       skeletonChanged();
     });
   $('#skPlan').addEventListener('change', e => applyBodyPlan(e.target.value));
+}
+/* phase 16: which part slot a bone is (its size follows the Billie's build); automatic goes by its name */
+const PART_SLOT_LABELS = { head: 'Head', body: 'Body', front: 'Front', back: 'Back', sig: 'Signature' };
+function boneSlotFieldHTML(b) {
+  const auto = boneSlot({ n: b.n }),
+    cur = b.slot === undefined ? '' : b.slot === '' ? '-' : b.slot;
+  const opts = [
+    ['', `Automatic (${auto ? PART_SLOT_LABELS[auto] : 'none: takes its parent’s size'})`],
+    ...Object.entries(PART_SLOT_LABELS),
+    ['-', 'None: takes its parent’s size'],
+  ];
+  return `<label class="fld"><span>Part slot</span><select id="skSlot">${opts.map(([v, l]) => `<option value="${v}" ${cur === v ? 'selected' : ''}>${escapeHtml(l)}</option>`).join('')}</select><small class="help">Its size comes from this slot of each Billie’s parts (Billies → Parts). The slot’s weight share counts towards the Billie’s weight.</small></label>`;
 }
 studioState.hooks._skel = null;
 function skeletonChanged() {
