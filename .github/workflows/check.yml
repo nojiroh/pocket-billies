@@ -1,6 +1,6 @@
 # Phase 01: the quick check on GitHub.
-# - Every push and pull request (the Studio's "Save to game" opens one): the data text guard and the smoke set
-#   (tools/check-quick.py --smoke, about two minutes of checks).
+# - Every push and pull request (the Studio's "Save to game" opens one): the data text guard and the fast check
+#   (tools/check-fast.py: only what must never break, one to three minutes).
 # - Nightly, by hand (Actions -> Check -> Run workflow) and on phase-* tags: the full quick check (about 40 minutes).
 # - Phase 02: the Firestore rules tests (firebase/, on the emulator) on every push and pull request, about a minute.
 # Pictures and results.json are uploaded as an artifact on every run. Picture differences are notes, never failures.
@@ -48,9 +48,12 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4   # tools/build-data.mjs makes data/gamedata.js from the data files
+      - uses: actions/setup-node@v4   # tools/build-data.mjs makes data/gamedata.js; tools/check-data.mjs checks the files
         with:
           node-version: '22'
+          cache: npm
+      - name: Install the tools
+        run: npm ci
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -72,14 +75,14 @@ jobs:
         run: python -m playwright install-deps chromium
       - name: No game data text that could become HTML
         run: python tools/check-data-text.py
-      - name: Quick check, smoke set
-        run: python tools/check-quick.py --smoke
-      - name: Upload pictures and results
+      - name: Fast check
+        run: python tools/check-fast.py
+      - name: Upload the results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: smoke-${{ github.run_number }}
-          path: validation/quick/
+          name: fast-${{ github.run_number }}
+          path: validation/fast/
           if-no-files-found: ignore
           retention-days: 14
 

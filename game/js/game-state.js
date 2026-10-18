@@ -10,6 +10,7 @@ import { loadSave, newSave, saveAge } from './logic/saves.js';
 expose({
   ACCOUNT_ID: [() => ACCOUNT_ID],
   ACCOUNT_KEY: [() => ACCOUNT_KEY],
+  FIXTURE: [() => FIXTURE],
   SAVE_FOUND: [() => SAVE_FOUND],
   SAVE_KEY: [() => SAVE_KEY],
   SAVE_KEY_BASE: [() => SAVE_KEY_BASE],
@@ -57,14 +58,28 @@ export let saveHold = false;
    signs in with Google (js/account.js) gets their own save, kept online and copied in this browser under their id */
 export const SAVE_KEY_BASE = 'networth-save-v1',
   ACCOUNT_KEY = 'pb-account';
+/* the fast check's fixture (?fixture=<name>, js/fixture.js): a ready-made game with a save of its own in this browser
+   and no account, so a player's save is never touched */
+export const FIXTURE = (() => {
+  try {
+    return new URLSearchParams(location.search).get('fixture') || '';
+  } catch (e) {
+    return '';
+  }
+})();
 export const ACCOUNT_ID = (() => {
+  if (FIXTURE) return '';
   try {
     return localStorage.getItem(ACCOUNT_KEY) || '';
   } catch (e) {
     return '';
   }
 })();
-export const SAVE_KEY = ACCOUNT_ID ? SAVE_KEY_BASE + '-u-' + ACCOUNT_ID : SAVE_KEY_BASE;
+export const SAVE_KEY = FIXTURE
+  ? SAVE_KEY_BASE + '-fixture'
+  : ACCOUNT_ID
+    ? SAVE_KEY_BASE + '-u-' + ACCOUNT_ID
+    : SAVE_KEY_BASE;
 /** @returns {any} what this browser has under SAVE_KEY, parsed (null when nothing or unreadable) */
 function readStoredSave() {
   try {
