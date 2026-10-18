@@ -18,7 +18,9 @@ test('saves: a new save, load checks, migrate, backup check', () => {
   const started = startedSave('sparky0', 10);
   started.box.push({ ...fn('makeBilly')('sprout0', 3), sp: 'gone0' }); // a species the Studio removed
   started.team[0].moves = ['tackle', 'nosuchmove'];
+  Object.assign(started.trip, { prog: 40, hold: true }); // phase 08: how far a save's steps had carried it along a road
   const m = fn('migrate')(JSON.parse(JSON.stringify(started)));
+  assert.deepEqual(Object.keys(m.trip).sort(), ['node', 'plan']);
   assert.equal(m.box.length, 0);
   assert.deepEqual(m.team[0].moves, ['tackle']);
   assert.equal(m.saveVersion, logic.SAVE_VERSION);

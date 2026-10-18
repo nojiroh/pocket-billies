@@ -14,8 +14,7 @@
 
 The game's own **full test** (Settings → Help, or the debug menu) runs here one step at a time (smoke and full) and
 whole with --selftest (nightly), stretched for software drawing (phase 13); its frame rates and the stress test only
-mean something on a real phone or computer with a graphics chip, so those come from you as a debug log. `tools/check-game.py` is the long play-test
-at four screen sizes (best run on a real computer too).
+mean something on a real phone or computer with a graphics chip, so those come from you as a debug log.
 
 How it stays quick in software: the frames are drawn at a third of the resolution with a small shadow map, scene
 logic (walkable paths, doors, bridges, stairs) is checked directly from the data without drawing, each scene is drawn
@@ -502,23 +501,57 @@ def wait_phase(pg, want=('choose',), sec=60):
 
 
 def play(pg):
-    pg.evaluate("if(typeof titleEnd==='function')titleEnd();uiState.pg='girl';startGame(SPECIES.scoop0?'scoop':RULES.start.starters[0]);saveData.story={met_chad:1,met_chad2:1,copperleafNote:1};Object.values(TRAINERS).forEach(T=>{if(T.intro)saveData.story['met_'+T.id]=1});uiState.modal=null;uiState.mq=[];renderOverlay();saveData.team.push(makeBilly('ek1',18));addSteps(2400,true);uiState.toastQ=[];uiState.toastOn=false;uiState.modal=null;uiState.mq=[];renderOverlay();render();0")
+    pg.evaluate("if(typeof titleEnd==='function')titleEnd();uiState.pg='girl';startGame(SPECIES.scoop0?'scoop':RULES.start.starters[0]);saveData.story={met_chad:1,met_chad2:1,copperleafNote:1};Object.values(TRAINERS).forEach(T=>{if(T.intro)saveData.story['met_'+T.id]=1});uiState.modal=null;uiState.mq=[];renderOverlay();saveData.team.push(makeBilly('swift1',18));addSteps(2400,true);uiState.toastQ=[];uiState.toastOn=false;uiState.modal=null;uiState.mq=[];renderOverlay();render();0")
     # alpha 0.2: the legendaries count as met today, so passing through their places doesn't leave one waiting in a later
     # step (the v39 step brings the volcano's back on purpose)
     pg.evaluate("for(const l of (RULES.legends||[]))saveData.story['legend_'+l.sp]=today();0")
-    # alpha 0.4.1: the game walks by default now (RULES.travel 'walk'); the older steps test trips made with real steps, so
-    # they run in 'steps' mode. The walking step (a041_walk) switches back
-    pg.evaluate("RULES.travel='steps';0")
 
 
 def go_scene(pg, node, sec=40):
     # alpha 0.4: a jump, not a walk: a neighbour whose middle is near this view's would otherwise wait for its view to be
     # prepared a few milliseconds a frame (seamless-world.js seamlessGate), which at a frame every few seconds here takes minutes
-    pg.evaluate(f"uiState.inside=null;uiState.tab='walk';saveData.trip={{node:{node},prog:0,plan:[],hold:false}};saveData.visited[{node}]=1;uiState.roam=null;if(typeof walkView!=='undefined'&&walkView.pl)walkView.pl.fresh=true;render();0")
+    pg.evaluate(f"uiState.inside=null;uiState.tab='walk';saveData.trip={{node:{node},plan:[]}};saveData.visited[{node}]=1;uiState.roam=null;if(typeof walkView!=='undefined'&&walkView.pl)walkView.pl.fresh=true;render();0")
     if not until(pg, f'!!(walkView.ready&&(walkView.id===LOCATIONS[{node}].mapId||(walkView.sc&&walkView.sc.baseId===LOCATIONS[{node}].mapId)))', sec):   # v43: the hub may sit near an exit, so the view may be the scene with its road
         raise Exception(f'{pg.evaluate(f"LOCATIONS[{node}].mapId")} didn’t open in {sec}s')
     f0 = pg.evaluate("typeof walkRenderer!=='undefined'&&walkRenderer.on?walkRenderer.frames:-1")
     if f0 >= 0 and not until(pg, f'walkRenderer.frames>={f0 + 2}', 30): raise Exception(f'{pg.evaluate("walkView.id")} isn’t drawing (black screen)')
+
+
+
+# phase 08: travel is walking. cross() walks from where you stand over the edge into the neighbour n1 the way a player
+# does: a path to 6 m past the exit (no search limit: a route view is long), the player put along it at most 0.8 m at a time, walkCross() after each (the a041
+# way: game time is too slow here to walk it for real). Returns the metres walked, the views seen on the way and how
+# often the view was not ready (a remount instead of a shift)
+def cross(pg, n1, sec=90):
+    if not until(pg, 'walkView.ready', sec): raise Exception(f'the view {pg.evaluate("walkView.id")} never got ready to walk from')
+    r = pg.evaluate(f"""(()=>{{const v=walkState(),e=(v.exits||[]).find(e=>e.to==={n1});if(!e)return 'no exit to '+LOCATIONS[{n1}].name+' from '+LOCATIONS[saveData.trip.node].name;const sc=walkView.sc,pt=sc.exits[e.i],hub=mapHub(sc),dx=pt[0]-hub[0],dz=pt[1]-hub[1],l=Math.hypot(dx,dz)||1,tg=[pt[0]+dx/l*6,pt[1]+dz/l*6];
+      const P=walkView.pl,R=findPath(P.x,P.z,tg[0],tg[1],{{max:1e6}});return R?{{R}}:'no path to the exit to '+LOCATIONS[{n1}].name}})()""")
+    if isinstance(r, str): raise Exception(r)
+    R = r['R']; walked = 0; views = [pg.evaluate('walkView.id')]; unready = 0
+    for a, bb in zip(R, R[1:]):
+        d = ((bb[0] - a[0]) ** 2 + (bb[1] - a[1]) ** 2) ** .5; k = max(1, int(d / .8))
+        for j in range(1, k + 1):
+            x = a[0] + (bb[0] - a[0]) * j / k; z = a[1] + (bb[1] - a[1]) * j / k; walked += d / k
+            if not pg.evaluate('walkView.ready'): unready += 1
+            if not until(pg, 'walkView.ready', sec): raise Exception(f'the view went unready on the way ({views})')
+            st = pg.evaluate(f"(()=>{{walkView.pl.x={x};walkView.pl.z={z};walkView.pl.route=null;walkCross();return [saveData.trip.node==={n1},walkView.id]}})()")
+            if st[1] != views[-1]: views.append(st[1])
+            if st[0]:
+                if not until(pg, f"walkView.ready&&(walkView.id===LOCATIONS[{n1}].mapId||(walkView.sc&&walkView.sc.baseId===LOCATIONS[{n1}].mapId))", sec): raise Exception(f'crossed into {pg.evaluate(f"LOCATIONS[{n1}].name")} but its view never showed (still {pg.evaluate("walkView.id")})')
+                v = pg.evaluate('walkView.id')
+                if v != views[-1]: views.append(v)
+                return walked, views, unready
+    raise Exception(f'walked {walked:.0f} m toward {pg.evaluate(f"LOCATIONS[{n1}].name")} and never crossed ({views})')
+
+
+# phase 08: a trip of several roads, walked: the guide is set to n, then each place on its plan is crossed into in turn
+def cross_to(pg, n):
+    plan = pg.evaluate(f"(()=>{{setTrip({n});return saveData.trip.plan.slice()}})()")
+    if not plan: raise Exception(f'no way to {pg.evaluate(f"LOCATIONS[{n}].name")}')
+    walked = 0; views = []; unready = 0
+    for n1 in plan:
+        w, v, u = cross(pg, n1); walked += w; unready += u; views += v if not views else [x for x in v if x != views[-1]]
+    return walked, views, unready
 
 
 def debug_picture_privacy(pg):
@@ -551,11 +584,10 @@ def debug_picture_privacy(pg):
 # phase 13: the game's own full test (self-test.js, Settings → Help), which the owner runs on a phone, runs here too, so a
 # change that breaks it shows before the phone does. Software drawing is slow: selfTest.slow = 3 stretches its waits
 # and limits, and its frame rates mean nothing here. A step that ran out of time is a note; any other failure is a
-# problem. The game's own travel rules, not play()'s steps mode
+# problem
 def start_for_in_game_test(pg):
-    travel = pg.evaluate('RULES.travel')
     play(pg)
-    pg.evaluate(f"RULES.travel={json.dumps(travel)};uiState.mq=[];uiState.modal=null;renderOverlay();0")
+    pg.evaluate("uiState.mq=[];uiState.modal=null;renderOverlay();0")
 
 
 def run_in_game_test(pg, only, diag, sec):
@@ -642,7 +674,7 @@ def phone_flow(b, base, R):
         for tab in ['walk', 'map', 'team', 'ledger', 'profile']:
             pg.evaluate(f"uiState.tab='{tab}';render();scrollTo(0,0);0"); time.sleep(2.5 if tab in ('walk', 'map') else .6); shot(pg, f'phone-{tab}')
         pg.evaluate("uiState.tab='walk';saveData.trip.node=0;render();openShop('marigold');0"); time.sleep(.6); shot(pg, 'phone-shop')
-        pg.evaluate("closeModal();screenWipe=f=>f();saveData.preferences.battleStage='classic';activeBattle=null;const q={id:'tq',sp:'knight1',lvl:12,gold:false,no:1};saveData.queue=[q];saveData.team.forEach(m=>{m.hp=maxHp(m)});startWild(q);0")
+        pg.evaluate("closeModal();screenWipe=f=>f();saveData.preferences.battleStage='classic';activeBattle=null;const q={id:'tq',sp:'swift1',lvl:12,gold:false,no:1};saveData.queue=[q];saveData.team.forEach(m=>{m.hp=maxHp(m)});startWild(q);0")
         if wait_phase(pg) != 'choose': raise Exception('a wild battle never reached the move menu')
         shot(pg, 'phone-battle')
         pg.evaluate("stopTimers();activeBattle=null;battleStageStop();render();0")
@@ -786,10 +818,11 @@ def desktop_steps(b, base, R):
         roam = pg.evaluate("[+walkView.pl.x.toFixed(1),+walkView.pl.z.toFixed(1)]")
         pg.evaluate("if(typeof talkBox!=='undefined'&&talkBox.on&&typeof talkHide==='function')talkHide();0")
         if abs(roam[0] - tgt[0]) > .8 or abs(roam[1] - tgt[1]) > .8: raise Exception(f'tapped {tgt}, ended at {roam} ({pg.evaluate("JSON.stringify({mode:walkView.opt.state&&walkView.opt.state().mode,route:saveData.trip,battle:!!activeBattle,modal:uiState.modal&&uiState.modal.title,talk:talkBox.on,cs:typeof cutscene!==\"undefined\"&&cutscene.on,climb:!!walkView.pl.climb,keys:Object.keys(walkView.keys||{})})")})')
-        pg.evaluate("(()=>{const n=tripTo(9).steps;setTrip(9);addSteps(n,true)})();uiState.toastQ=[];uiState.modal=null;uiState.mq=[];renderOverlay();render();0")   # alpha 0.2: the steps a trip costs follow the walk
-        if not until(pg, "saveData.trip.node===9&&!saveData.trip.plan.length&&(walkView.id==='willowmere'||(walkView.sc&&walkView.sc.baseId==='willowmere'))", 30): raise Exception('the trip to Willowmere didn’t arrive (' + pg.evaluate("JSON.stringify([saveData.trip,walkView.id])") + ')')   # v43: you arrive at the exit, with the road still in view
+        # phase 08: the trip is walked, over each road's edge in turn (it used to be paid for with steps)
+        pg.evaluate("uiState.toastQ=[];uiState.modal=null;uiState.mq=[];renderOverlay();0"); walked, views, _ = cross_to(pg, 9)
+        if not pg.evaluate("saveData.trip.node===9&&!saveData.trip.plan.length"): raise Exception('the trip to Willowmere didn’t arrive (' + pg.evaluate("JSON.stringify([saveData.trip,walkView.id])") + ')')
         shot(pg, 'arrived')
-        return f'walked to {roam}, arrived at Willowmere'
+        return f'walked to {roam}, then {walked:.0f} m over two roads to Willowmere ({" → ".join(views)})'
     walking()
 
     @step('Crowd: forty people in town draw about as fast as a few', 90)
@@ -913,7 +946,7 @@ def desktop_steps(b, base, R):
             if at[3] or abs(at[0] - r[0]) > .4 or abs(at[1] - r[1]) > .4 or abs(at[2] - r[2]) > .3: raise Exception(f'climbing the ladder ended at {[round(v, 2) for v in at[:3]]}, not on top at {[round(v, 2) for v in r[:3]]}')
             out.append(f'climbed a {r[3]} m ladder')
         # rain in battle
-        go_scene(pg, 0); pg.evaluate("environment.force={time:15,weather:'rain'};saveData.preferences.battleStage='classic';const q={id:'twx',sp:'knight1',lvl:8,gold:false,no:1};saveData.queue=[q];saveData.team.forEach(m=>{m.hp=maxHp(m)});startWild(q);0")
+        go_scene(pg, 0); pg.evaluate("environment.force={time:15,weather:'rain'};saveData.preferences.battleStage='classic';const q={id:'twx',sp:'swift1',lvl:8,gold:false,no:1};saveData.queue=[q];saveData.team.forEach(m=>{m.hp=maxHp(m)});startWild(q);0")
         wait_phase(pg, sec=60); bw = pg.evaluate("(()=>{const w=battleWeather();return w?[w.k,battleWeatherMultiplier('Water'),battleWeatherMultiplier('Fire'),document.getElementById('camWorld')?document.getElementById('camWorld').dataset.wx:''] :null})()")
         time.sleep(1); shot(pg, 'battle-rain'); pg.evaluate("stopTimers();activeBattle=null;battleStageStop();saveData.preferences.battleStage='scene';environment.force=null;render();0")
         if not bw or bw[0] != 'rain' or bw[1] <= 1 or bw[2] >= 1: raise Exception(f'rain didn’t change the battle ({bw})')
@@ -1255,7 +1288,7 @@ def desktop_steps(b, base, R):
         if len(new_pools) < 12: raise Exception(f'only {len(new_pools)} pools filled with the new roster')
         out.append(f'{len(new_pools)} regions filled with the new roster, {len(pools) - len(new_pools)} still old, none mixed')
         # a wild battle with a new species on the 3D stage
-        pg.evaluate("(()=>{const q={id:'cq38',sp:'kroc0',lvl:8,gold:false,no:1};saveData.queue.push(q);saveData.team.forEach(m=>{m.hp=maxHp(m);m.status=null});startWild(q)})()")
+        pg.evaluate("(()=>{const q={id:'cq38',sp:'swift0',lvl:8,gold:false,no:1};saveData.queue.push(q);saveData.team.forEach(m=>{m.hp=maxHp(m);m.status=null});startWild(q)})()")
         until(pg, "(()=>{const a=actorBuffer(0),b=actorBuffer(1);return !!(a&&b)})()", 15); time.sleep(2)
         px = json.loads(pg.evaluate("(()=>{const o={};for(const i of [0,1]){const Bf=actorBuffer(i);if(!Bf){o[i]=0;continue}const d=Bf.buf.getContext('2d').getImageData(0,0,Bf.buf.width,Bf.buf.height).data;let n=0;for(let k=3;k<d.length;k+=4)if(d[k]>0)n++;o[i]=n}return JSON.stringify(o)})()"))
         shot(pg, 'v38-battle')
@@ -1377,15 +1410,12 @@ def desktop_steps(b, base, R):
         # a trip seen on the ground: leave Marigold Town, cross the road, arrive at Tallgrass Meadow without a remount
         go_scene(pg, 0); pg.evaluate("(()=>{const h=mapHub(mapById('marigold'));uiState.roam={id:'marigold',node:0,x:h[0],z:h[1]}})();render();0")   # alpha 0.2: places grew; start at the hub
         if not until(pg, "walkView.id==='w:marigold*'&&walkView.ready", 30): raise Exception('Marigold Town is not shown with its roads (' + pg.evaluate('walkView.id') + ')')   # v46: a place is always shown with the first stretch of its roads
-        pg.evaluate("saveData.queue=[];setTrip(1);render();0"); time.sleep(1); ids = []
-        per = pg.evaluate("Math.ceil(roadCost(0,1)/6)+5")   # alpha 0.2: a road's steps follow its walk
-        for n in range(6):
-            pg.evaluate(f"addSteps({per},true);uiState.modal=null;uiState.mq=[];renderOverlay();render();0"); time.sleep(2.5); ids.append(pg.evaluate("walkView.id"))
-            if pg.evaluate("!walkView.ready"): raise Exception('the view went unready mid-road (a remount instead of a shift)')
-        if not until(pg, "saveData.trip.node===1&&saveData.trip.prog===0&&walkView.id.startsWith('w:tallgrass_meadow')", 20): raise Exception(f'the walk to Tallgrass Meadow did not end on its ground ({ids})')
+        pg.evaluate("saveData.queue=[];uiState.modal=null;uiState.mq=[];renderOverlay();0"); time.sleep(1)   # phase 08: walked over the edge, no steps
+        walked, views, unready = cross_to(pg, 1)
+        if unready: raise Exception(f'the view went unready {unready} time(s) on the way (a remount instead of a shift): {views}')
+        if not views[-1].startswith('w:tallgrass_meadow'): raise Exception(f'the walk to Tallgrass Meadow did not end on its ground ({views})')
         shot(pg, 'v43-road')
-        views = [i for k, i in enumerate(ids) if k == 0 or ids[k - 1] != i]
-        out.append('walked Marigold Town → Tallgrass Meadow on the ground: ' + ' → '.join(views + [pg.evaluate("walkView.id")]))
+        out.append(f'walked Marigold Town → Tallgrass Meadow on the ground ({walked:.0f} m): ' + ' → '.join(views))
         # the flags: only towns have one; a flag pole flies its town's and is rigid
         fl = json.loads(pg.evaluate("JSON.stringify({towns:gameData.scenery.flags,pole:gameData.scenery.props.flag_pole,ridge:(gameData.maps.kitewind.props||[]).filter(p=>p.k==='flag_pole').length,path:flagPicturePath(gameData.maps.marigold),pathRoute:flagPicturePath(gameData.maps.tallgrass_meadow)})"))
         for t in fl['towns'] + ['default']:
@@ -1732,7 +1762,6 @@ def desktop_steps(b, base, R):
         if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
         return f'{len(R2)} places: the same cells and exits reachable with natural terraces as without, no prop more than 15 cm off the ground'
     a02_ground()
-    a02_ground()
 
     @step('alpha 0.2: places joined edge to edge — every seam walks straight across and both views agree there', 600)
     def a02_joins():
@@ -1788,13 +1817,13 @@ def desktop_steps(b, base, R):
         if not until(pg, "walkView.ready&&(walkView.id==='int_lab'||(walkView.sc&&walkView.sc.roomOf==='int_lab'))||talkBox.on", 60): raise Exception('the lab didn’t open')
         pg.evaluate("talkHide&&talkHide();if(uiState.inside)leaveRoom();0"); until(pg, "walkView.ready&&!walkView.sc.roomRect", 30)
         out.append('the lab opens')
-        # down Route 1 to Marigold Town, on foot
-        pg.evaluate(f"saveData.trip={{node:{node},prog:0,plan:[LOCATION_BY_ID.hedgerow.node,LOCATION_BY_ID.marigold.node],hold:false}};uiState.roam=null;render();0")
-        cost = pg.evaluate(f"roadCost({node},LOCATION_BY_ID.hedgerow.node)+roadCost(LOCATION_BY_ID.hedgerow.node,LOCATION_BY_ID.marigold.node)")
-        pg.evaluate(f"addSteps({cost + 10},true);render();0"); time.sleep(1)
+        # down Route 1 to Marigold Town, on foot: over Copperleaf's edge onto Route 1, then over Route 1's into Marigold
+        pg.evaluate(f"saveData.trip={{node:{node},plan:[LOCATION_BY_ID.hedgerow.node,LOCATION_BY_ID.marigold.node]}};render();0")
+        walked = 0
+        for n1 in pg.evaluate('[LOCATION_BY_ID.hedgerow.node,LOCATION_BY_ID.marigold.node]'): walked += cross(pg, n1)[0]
         at = pg.evaluate("LOCATIONS[saveData.trip.node].id")
-        if at != 'marigold': raise Exception(f'the trip down Route 1 ended at {at}')
-        out.append(f'Copperleaf to Marigold Town is {cost} steps on foot')
+        if at != 'marigold' or pg.evaluate('saveData.trip.plan.length'): raise Exception(f'the trip down Route 1 ended at {at} (plan {pg.evaluate("saveData.trip.plan")})')
+        out.append(f'Copperleaf to Marigold Town is {walked:.0f} m on foot')
         pg.evaluate("environment.force=null;uiState.modal=null;uiState.mq=[];renderOverlay();0")
         if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
         return '; '.join(out)
@@ -1917,11 +1946,10 @@ def desktop_steps(b, base, R):
 
     @step('alpha 0.4.1: walk the world yourself — the joystick, the D-pad, walking over the edge from Copperleaf onto Route 1, steps counted', 300)
     def a041_walk():
-        """the classic way: RULES.travel 'walk'. The joystick moves you along the camera, the D-pad shows when chosen, and
+        """the classic way (the only way since phase 08). The joystick moves you along the camera, the D-pad shows when chosen, and
         walking out of Copperleaf over its edge makes Route 1 where you are (the trip is only a guide now)"""
-        pg.evaluate("RULES.travel='walk';uiState.modal=null;uiState.mq=[];uiState.toastQ=[];renderOverlay();environment.force={time:12,weather:'clear',season:'summer'};0")
+        pg.evaluate("uiState.modal=null;uiState.mq=[];uiState.toastQ=[];renderOverlay();environment.force={time:12,weather:'clear',season:'summer'};0")
         try:
-            if pg.evaluate("walkMode()") is not True or pg.evaluate("traveling()") is not False: raise Exception('walk mode is not on')
             n0 = pg.evaluate("LOCATIONS.findIndex(r=>r.mapId==='copperleaf')"); n1 = pg.evaluate("LOCATIONS.findIndex(r=>r.mapId==='hedgerow')")
             if n0 < 0 or n1 < 0: return 'no Copperleaf or Hedgerow Lane in this build'
             go_scene(pg, n0, 150); time.sleep(2)
@@ -1931,23 +1959,12 @@ def desktop_steps(b, base, R):
             pg.evaluate("saveData.preferences.control='dpad';renderOverlay();render();0"); time.sleep(.8)
             dp = pg.evaluate("!!document.querySelector('.dpad')"); pg.evaluate("saveData.preferences.control='stick';renderOverlay();render();0")
             if not dp: raise Exception('no D-pad when the D-pad is chosen')
-            st0 = pg.evaluate("saveData.totalSteps")
-            r = pg.evaluate(f"""(()=>{{const v=walkState(),e=(v.exits||[]).find(e=>e.to==={n1});if(!e)return 'no exit to Route 1';const sc=walkView.sc,pt=sc.exits[e.i],hub=mapHub(sc),dx=pt[0]-hub[0],dz=pt[1]-hub[1],l=Math.hypot(dx,dz)||1,tg=[pt[0]+dx/l*6,pt[1]+dz/l*6];
-              const P=walkView.pl,R=findPath(P.x,P.z,tg[0],tg[1])||[[P.x,P.z],tg];return {{R}}}})()""")
-            if isinstance(r, str): raise Exception(r)
-            crossed = False; R = r['R']; walked = 0
-            for a, bb in zip(R, R[1:]):
-                d = ((bb[0] - a[0]) ** 2 + (bb[1] - a[1]) ** 2) ** .5; k = max(1, int(d / .8))
-                for j in range(1, k + 1):
-                    x = a[0] + (bb[0] - a[0]) * j / k; z = a[1] + (bb[1] - a[1]) * j / k; walked += d / k
-                    if pg.evaluate(f"(()=>{{walkView.pl.x={x};walkView.pl.z={z};walkView.pl.route=null;walkCross();return saveData.trip.node==={n1}}})()"): crossed = True; break
-                if crossed: break
-            if not crossed: raise Exception(f'walked {walked:.0f} m toward Route 1 and never crossed onto it')
+            walked = cross(pg, n1)[0]
             shot(pg, 'a041-walked-to-route1')
             if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
             return f'the joystick moved the player {moved:.1f} m, the D-pad shows when chosen, {walked:.0f} m of walking crossed from Copperleaf onto Route 1'
         finally:
-            pg.evaluate("RULES.travel='steps';environment.force=null;0")
+            pg.evaluate("environment.force=null;0")
     a041_walk()
 
     @step('Settings: one save and the account box, languages, text size, contrast', 90)
@@ -1977,12 +1994,12 @@ def desktop_steps(b, base, R):
     @step('Battles: on the 3D stage, and a trainer battle played to the end', 330)
     def battles():
         pg.evaluate("saveData.preferences.battleStage='scene';screenWipe=f=>f();saveData.trip={node:0,prog:0,plan:[],hold:false};uiState.tab='walk';render();0"); time.sleep(2)
-        pg.evaluate("const q={id:'t3d',sp:'knight1',lvl:12,gold:false,no:1};saveData.queue=[q];saveData.team.forEach(m=>{m.hp=maxHp(m)});startWild(q);0")
+        pg.evaluate("const q={id:'t3d',sp:'swift1',lvl:12,gold:false,no:1};saveData.queue=[q];saveData.team.forEach(m=>{m.hp=maxHp(m)});startWild(q);0")
         if wait_phase(pg, sec=60) != 'choose': raise Exception('the 3D-stage battle never reached the move menu')
         shot(pg, 'battle-3d'); stage = pg.evaluate("!!battleStage.gl")
         pg.evaluate("stopTimers();activeBattle=null;battleStageStop();saveData.preferences.battleStage='classic';render();0")
         # battle animations at four times the speed (the Debug panel's speed setting), so the result comes quickly
-        pg.evaluate("battleStage.speed=4;saveData.team=[makeBilly('musk2',45),makeBilly('ek1',30)];saveData.trip.node=4;startTrainer('crude');0")
+        pg.evaluate("battleStage.speed=4;saveData.team=[makeBilly('musk2',45),makeBilly('swift1',30)];saveData.trip.node=4;startTrainer('crude');0")
         end = time.time() + 300; won = None
         while time.time() < end:
             ph = wait_phase(pg, ('choose', 'switch', 'end'), 30)

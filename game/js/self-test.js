@@ -12,8 +12,8 @@
 import { expose } from './test-globals.js';
 import { provide } from './hooks.js';
 import { clamp } from './util.js';
-import { LOCATIONS, MOVES, RULES, SPECIES, TRAINERS, gameData, locationKind, roadCost } from './game-data.js';
-import { addSteps, makeBilly, maxHp, setTrip, spawn } from './logic/rules.js';
+import { LOCATIONS, MOVES, RULES, SPECIES, TRAINERS, gameData, locationKind } from './game-data.js';
+import { makeBilly, maxHp, setTrip, spawn } from './logic/rules.js';
 import { fighter, liveActors, startTrainer, startWild } from './logic/battle-engine.js';
 import { loadAllMaps } from './map-files.js';
 import {
@@ -59,7 +59,7 @@ import { hasStructures, structureState } from './structures.js';
 import { SOLID_PROP_SHADERS, solidPropState } from './solid-props.js';
 import { propModelState } from './prop-models.js';
 import { buddyTap, companionSpecies, worldBillies } from './world-billies.js';
-import { seamlessRoomMap, seamlessTripView, seamlessWorld } from './seamless-world.js';
+import { seamlessRoomMap, seamlessWorld } from './seamless-world.js';
 import { endBattle, pickMove, pickTarget, stopTimers, tapMessage } from './battle.js';
 import { worldMap } from './world-map.js';
 import {
@@ -73,7 +73,18 @@ import {
 import { talkBox, talkHide } from './talk.js';
 import { cutscene, cutsceneTeardown } from './cutscene.js';
 import { battleTipHide, fallOverWorldMap, fallWorldMapCanvas } from './opening-fall.js';
-import { closeModal, leaveRoom, mapIdAt, modal, render, renderOverlay, toast, walkPick } from './ui.js';
+import {
+  closeModal,
+  leaveRoom,
+  mapIdAt,
+  modal,
+  render,
+  renderOverlay,
+  toast,
+  walkCross,
+  walkPick,
+  walkState,
+} from './ui.js';
 /* eslint-disable no-func-assign */
 expose({
   DIAGNOSTICS_PASSES: [() => DIAGNOSTICS_PASSES],
@@ -103,19 +114,23 @@ provide({ selfTest }); /* to-module */
 function selfTestSleep(ms) {
   return new Promise(r => setTimeout(r, ms * (selfTest.slow || 1)));
 }
-/* frame rate of one scheduler task between two moments of the debug log */
-function selfTestFrameStats(t0, t1, task) {
-  const f = [],
-    m = [];
-  let slow = 0;
+/* frame rate of one scheduler task between two moments of the debug log; whole: only the seconds that start after t0;
+   trim: drop the task's first and last second (it starts and stops partway through them, so they read low) */
+function selfTestFrameStats(t0, t1, task, o) {
+  const whole = o && o.whole,
+    S = [];
   for (const s of debugLog.samples) {
     if (s.t < t0 || s.t > t1) continue;
-    const v = s.tasks[task];
-    if (!v) continue;
-    f.push(v.fps);
-    m.push(v.ms);
-    slow += v.long;
+    if (whole && s.t - (s.dt || 1000) < t0) continue;
+    if (s.tasks[task]) S.push(s.tasks[task]);
   }
+  if (o && o.trim && S.length >= 3) {
+    S.pop();
+    S.shift();
+  }
+  const f = S.map(v => v.fps),
+    m = S.map(v => v.ms),
+    slow = S.reduce((a, v) => a + v.long, 0);
   if (!f.length) return { fpsAvg: null, fpsWorst: null, cpuMs: null, slow: 0, seconds: 0 };
   const avg = a => Math.round((a.reduce((x, y) => x + y, 0) / a.length) * 10) / 10;
   return { fpsAvg: avg(f), fpsWorst: Math.min(...f), cpuMs: avg(m), slow, seconds: f.length };
@@ -168,13 +183,20 @@ async function runFullTest(mode) {
   }
   selfTest.on = true;
   selfTest.stop = false;
-  await loadAllMaps(); /* phase 04b: every map whole before the test opens them */
+  /* held before the maps load, not after: the friends list publishes every 5 s and could write while they loaded */
+  pauseSaving();
+  try {
+    await loadAllMaps(); /* phase 04b: every map whole before the test opens them */
+  } catch (e) {
+    selfTest.on = false;
+    resumeSaving();
+    throw e;
+  }
   const keep = JSON.stringify(saveData),
     back = { tab: uiState.tab, roam: uiState.roam, node: saveData.trip.node },
     realSave = save,
     engKeep = gameData.engine ? JSON.stringify(gameData.engine) : null;
-  setSave(() => {}); /* nothing the test does reaches your save */
-  pauseSaving(); /* phase 13: nor the account or your friends (game-state.js) */
+  setSave(() => {}); /* nothing the test does reaches your save; phase 13: nor the account or your friends (above) */
   const box = document.createElement('div');
   box.className = 'nw-bench px glass';
   box.innerHTML =
@@ -260,6 +282,12 @@ async function runFullTest(mode) {
   /* v44b: selfTest.only=['light'] runs only the steps whose names hold one of those words (for diagnosis); phase 13:
      the stress test at the end too, as 'Stress test' */
   const wanted = name => !selfTest.only || selfTest.only.some(w => name.toLowerCase().includes(w.toLowerCase()));
+  /* a step that opens a place calls measureFromHere() once it is open: the frame rate and slow frames count from there,
+     and the slow frames before it are its opening hitch */
+  let measureFrom = 0;
+  const measureFromHere = () => {
+    measureFrom = debugLog.now();
+  };
   const phase = async (name, task, fn, sec, maxSec) => {
     if (selfTest.stop) return;
     if (!wanted(name)) return;
@@ -267,6 +295,7 @@ async function runFullTest(mode) {
       await awake();
       if (selfTest.stop) return;
       const h0 = hid;
+      measureFrom = 0;
       stepEl.textContent = name;
       debugLog.bench.step = name;
       const t0 = debugLog.now(),
@@ -311,7 +340,8 @@ async function runFullTest(mode) {
       }
       const bg = hid !== h0; /* still interrupted after three tries: not measured */
       if (err && !bg) debugLog.error('test', name + ': ' + why, err && err.stack);
-      const st = selfTestFrameStats(t0, debugLog.now(), task),
+      const m0 = Math.max(t0, measureFrom),
+        st = selfTestFrameStats(m0, debugLog.now(), task, measureFrom ? { whole: true } : { trim: true }),
         ne = debugLog.err.slice(e0).filter(x => x.kind !== 'test');
       if (ne.length && !bg) {
         ok = false;
@@ -319,7 +349,9 @@ async function runFullTest(mode) {
         note = note || ne[0].msg.slice(0, 140);
       }
       const D = debugLog.diag(t0),
-        slow = debugLog.slow.filter(x => x.t >= t0),
+        slow = debugLog.slow.filter(x => x.t >= m0),
+        hitch = debugLog.slow.filter(x => x.t >= t0 && x.t < m0),
+        openHitchMs = hitch.reduce((a, x) => Math.max(a, x.ms), 0),
         by = {};
       for (const x of slow) {
         const k = x.why.replace(/ \d+ ms.*$/, '');
@@ -334,6 +366,7 @@ async function runFullTest(mode) {
       const detail = [
         `${((performance.now() - w0) / 1000).toFixed(1)} s`,
         st.fpsAvg != null ? `${st.fpsAvg} fps (worst ${st.fpsWorst})` : null,
+        openHitchMs ? `opening hitch ${openHitchMs} ms` : null,
         slow.length
           ? `${slow.length} slow frame${slow.length > 1 ? 's' : ''} up to ${worst} ms${top ? ': ' + top : ''}`
           : 'no slow frames',
@@ -363,6 +396,10 @@ async function runFullTest(mode) {
             ctx: ok ? undefined : D,
             slowCauses: by,
             worstFrameMs: worst || undefined,
+            openHitchMs: openHitchMs || undefined,
+            openHitchCause: hitch.length
+              ? hitch.reduce((a, x) => (x.ms > a.ms ? x : a)).why.replace(/ \d+ ms.*$/, '')
+              : undefined,
             ms: Math.round(performance.now() - w0),
             retries: attempt || undefined,
             notMeasured: bg || undefined,
@@ -468,7 +505,8 @@ async function runFullTest(mode) {
           let open = null;
           for (let i = 0; i < 60 && !(walkView.ready && walkView.id === id); i++) await selfTestSleep(50);
           open = walkView.ready && walkView.id === id ? Math.round(performance.now() - tm) : null;
-          await selfTestSleep(Math.max(0, 900 - (performance.now() - tm)));
+          await selfTestSleep(Math.max(500, 900 - (performance.now() - tm)));
+          measureFromHere();
           const f0 = typeof walkRenderer !== 'undefined' ? walkRenderer.frames : 0;
           await walkAbout(3);
           if (!walkView.ready || walkView.id !== id)
@@ -803,15 +841,17 @@ async function runFullTest(mode) {
       await selfTestSleep(600);
       return `${mine} against ${theirs} (${fmt}); ${plates} nameplates; ${picks} picks, ${aimed} aimed; the turn played ${lines} lines in ${(turnMs / 1000).toFixed(1)} s`;
     };
-    /* v43: the seamless world: out of Sundown along its road and into the Long Grass, measuring every view change */
-    if (typeof seamlessTripView === 'function' && gameData.maps.marigold && !selfTest.stop)
+    /* v43: the seamless world: out of Marigold Town over its edge and into Tallgrass Meadow, measuring every view change.
+       Phase 08: walked, the way a player crosses (it was paid for with steps): along a path to just past the exit, at most
+       0.8 m every 100 ms (about a run), the crossing checked after each */
+    if (typeof walkCross === 'function' && gameData.maps.marigold && !selfTest.stop)
       await phase(
         'Road: Marigold Town to Tallgrass Meadow on the ground',
         'dio',
         async () => {
           uiState.bench = null;
           uiState.tab = 'walk';
-          saveData.trip = { node: 0, prog: 0, plan: [], hold: false };
+          saveData.trip = { node: 0, plan: [] };
           {
             const h = mapHub(gameData.maps.marigold);
             uiState.roam = { id: 'marigold', node: 0, x: h[0], z: h[1] };
@@ -821,46 +861,77 @@ async function runFullTest(mode) {
           if (walkView.id !== 'w:marigold*')
             throw new Error('Marigold Town is not shown with its neighbours (still ' + walkView.id + ')');
           const q0 = saveData.queue,
-            t00 = performance.now() - (debugLog.t0 || 0),
-            travel0 = RULES.travel;
+            t00 = performance.now() - (debugLog.t0 || 0);
           saveData.queue = [];
-          /* phase 13: the trip is driven by steps, which only move you along a road when travel goes by steps (the
-             game walks by default since alpha 0.4.1: without this the step never arrived). Phase 08 replaces it */
-          RULES.travel = 'steps';
           try {
             setTrip(1);
             render();
             await selfTestSleep(600);
+            const e = (walkState().exits || []).find(x => x.to === 1);
+            if (!e) throw new Error('Marigold Town has no exit to Tallgrass Meadow');
+            const sc = walkView.sc,
+              pt = sc.exits[e.i],
+              hub = mapHub(sc),
+              l = Math.hypot(pt[0] - hub[0], pt[1] - hub[1]) || 1,
+              P = walkView.pl,
+              R = findPath(P.x, P.z, pt[0] + ((pt[0] - hub[0]) / l) * 6, pt[1] + ((pt[1] - hub[1]) / l) * 6, {
+                max: 1e6,
+              });
+            if (!R) throw new Error('no path from the square to the exit to Tallgrass Meadow');
             const views = [walkView.id];
             let unready = 0,
               shifts = 0,
-              worst = 0;
+              worst = 0,
+              walked = 0,
+              f0 = walkRenderer.frames,
+              t0 = performance.now();
             const L0 = debugLog.ev.length;
-            const per = Math.ceil(roadCost(0, 1) / 7) + 5;
-            /* alpha 0.2: a road's steps follow its walk */ for (let n = 0; n < 7; n++) {
-              addSteps(per, true);
-              uiState.modal = null;
-              uiState.mq = [];
-              renderOverlay();
-              render();
-              const f0 = walkRenderer.frames,
-                t0 = performance.now();
-              for (let i = 0; i < 14; i++) {
+            walk: for (let k = 1; k < R.length; k++) {
+              const [ax, az] = R[k - 1],
+                [bx, bz] = R[k],
+                d = Math.hypot(bx - ax, bz - az),
+                n = Math.max(1, Math.ceil(d / 0.8));
+              for (let j = 1; j <= n; j++) {
                 await selfTestSleep(100);
-                if (!walkView.ready) unready++;
+                if (!walkView.ready) {
+                  unready++;
+                  j--;
+                  continue;
+                }
+                P.route = null;
+                P.x = ax + ((bx - ax) * j) / n;
+                P.z = az + ((bz - az) * j) / n;
+                walked += d / n;
+                walkCross();
                 if (walkView.id !== views[views.length - 1]) {
                   views.push(walkView.id);
                   shifts++;
                 }
+                /* the slowest stretch: the frame time over each 1.4 s, as when a road was paid for in seven batches */
+                if (performance.now() - t0 > 1400 * (selfTest.slow || 1)) {
+                  worst = Math.max(worst, (performance.now() - t0) / Math.max(1, walkRenderer.frames - f0));
+                  f0 = walkRenderer.frames;
+                  t0 = performance.now();
+                }
+                if (saveData.trip.node === 1) break walk;
               }
-              const ms = (performance.now() - t0) / Math.max(1, walkRenderer.frames - f0);
-              worst = Math.max(worst, ms);
             }
-            for (let i = 0; i < 40 && !(saveData.trip.node === 1 && saveData.trip.prog === 0); i++)
+            for (let i = 0; i < 200 && !(walkView.ready && /^w:tallgrass_meadow/.test(walkView.id)); i++) {
               await selfTestSleep(100);
-            saveData.queue = q0;
+              if (walkView.id !== views[views.length - 1]) {
+                views.push(walkView.id);
+                shifts++;
+              }
+            }
+            worst = Math.max(worst, (performance.now() - t0) / Math.max(1, walkRenderer.frames - f0));
             if (saveData.trip.node !== 1)
-              throw new Error('never arrived at Tallgrass Meadow (' + JSON.stringify(saveData.trip) + ')');
+              throw new Error(
+                `walked ${walked.toFixed(0)} m and never arrived at Tallgrass Meadow (` +
+                  JSON.stringify(saveData.trip) +
+                  ')'
+              );
+            if (!/^w:tallgrass_meadow/.test(walkView.id))
+              throw new Error('arrived at Tallgrass Meadow, but its view never showed (' + views.join(' → ') + ')');
             const ev = debugLog.ev.slice(L0),
               builds = ev.filter(e => /seamless to/.test(e.msg || '')).length,
               onSpot = ev.filter(e => /built on the spot/.test(e.msg || '')).length,
@@ -872,9 +943,9 @@ async function runFullTest(mode) {
                     ...sm.map(x => (x.tasks && x.tasks.dio ? Math.max(x.tasks.dio.max || 0, x.tasks.dio.gap || 0) : 0))
                   )
                 : 0;
-            return `${views.join(' → ')}; ${shifts} view changes (${builds} logged, ${held} prepared ahead, ${onSpot} built on the spot), ${unready ? unready + ' unready frames' : 'never unready'}, slowest stretch ${worst.toFixed(0)} ms a frame${wf ? ', worst frame ' + Math.round(wf) + ' ms' : ''}`;
+            return `${views.join(' → ')} (${walked.toFixed(0)} m); ${shifts} view changes (${builds} logged, ${held} prepared ahead, ${onSpot} built on the spot), ${unready ? unready + ' unready frames' : 'never unready'}, slowest stretch ${worst.toFixed(0)} ms a frame${wf ? ', worst frame ' + Math.round(wf) + ' ms' : ''}`;
           } finally {
-            RULES.travel = travel0;
+            saveData.queue = q0;
           }
         },
         8,
@@ -897,7 +968,7 @@ async function runFullTest(mode) {
             uiState.inside = null;
             uiState.goingIn = null;
             uiState.tab = 'walk';
-            saveData.trip = { node: 0, prog: 0, plan: [], hold: false };
+            saveData.trip = { node: 0, plan: [] };
             uiState.roam = null;
             render();
             for (let i = 0; i < 60 && !(walkView.ready && walkView.id === 'w:marigold*'); i++) await selfTestSleep(100);
@@ -1675,18 +1746,32 @@ function diagnosticsSummary() {
     fps: p.fpsAvg,
     worstFps: p.fpsWorst,
     worstFrameMs: p.worstFrameMs || null,
+    openHitchMs: p.openHitchMs || null,
+    openHitchCause: p.openHitchCause || null,
     slow: p.slowCauses,
     ok: p.ok,
     why: p.why,
   }));
   const one = n => {
     const p = P.find(q => q.name.startsWith(n));
-    return p ? { note: p.note, detail: p.detail, ok: p.ok, why: p.why, fps: p.fpsAvg } : null;
+    return p
+      ? {
+          note: p.note,
+          detail: p.detail,
+          ok: p.ok,
+          why: p.why,
+          fps: p.fpsAvg,
+          worstFps: p.fpsWorst,
+          worstFrameMs: p.worstFrameMs || null,
+        }
+      : null;
   };
   return {
     game: 'Pocket Billies',
     kind: 'diagnostics',
-    format: 1,
+    /* format 2: a place's fps and slow frames count from once it is open, its opening hitch is apart; the first and
+       last second of the other steps are left out */
+    format: 2,
     build: typeof BUILD_VERSION !== 'undefined' ? BUILD_VERSION : null,
     created: new Date().toISOString(),
     seconds: R.seconds,

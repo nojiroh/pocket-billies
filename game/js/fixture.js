@@ -51,7 +51,7 @@ function fixtureSave() {
   s.starter = sp;
   s.avatar = cleanLook(Object.assign({}, LOOK_PRESETS[0], { name: FIXTURE_NAMES.trainer }));
   s.wardrobe = { owned: {}, outfits: [null, null, null] };
-  s.trip = { node, prog: 0, plan: [], hold: false };
+  s.trip = { node, plan: [] };
   s.visited = { [START_NODE]: 1, [node]: 1 };
   s.since = Date.now();
   const lead = makeBilly(SPECIES[sp + '2'] ? sp + '2' : sp + '0', 45),

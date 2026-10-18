@@ -62,6 +62,101 @@ Two parts, plans approved by the owner. Part 1 on branch ccr-5f324dee-5mgqdn (me
   about the player than a graphics report needs.
 - Questions waiting for the owner: the first run on a phone, and the report it saves.
 - Next session starts with: the report from that run; then the rest of phase 13 (13b, 13c).
+### Phase 08a-1 - tests off the steps mode, the dead steps travel mode deleted - 2026-10-18
+Plan approved at the start (docs/phases/08a-plan.md, section 08a-1, now marked done with the corrections found).
+- Changed (15 commits on c3b5de9):
+  - Smoke was red on the base since phase 16: check-quick named species now in legacy (`ek1` in play(), `knight1`
+    in three wild battles). Fixed first, two commits (Versewift, a Bezos line one).
+  - Bug fixed: phantom metres. A fresh view put you at its spawn point after movePlayer had saved your old position,
+    so every start, Continue, airship landing and debug jump counted 650-940 steps as walked (measured headless).
+    That jump is not counted now; a real walk still is (14.1 a metre, until 08a-2).
+  - Tests walk instead of paying steps: `cross()` / `cross_to()` in check-quick (a path to just past the exit, the
+    player put along it 0.8 m at a time, walkCross after each, unready frames counted). Walking (two roads to
+    Willowmere, 218 m), v43 (Marigold -> Tallgrass Meadow, 78 m, never unready), Copperleaf -> Marigold (141 m),
+    a041 use it. The in-game full test's Road phase walks the same way in JS and now also fails when the meadow's
+    view never shows. play() no longer switches to the steps mode or pays 2,400 steps: it gives the money, four
+    encounters, egg progress and buddy XP directly. The whole quick check now runs in walk mode.
+  - tools/check-game.py deleted (stale, not in CI). The duplicate a02_ground() call removed.
+  - Deleted (deletion only): rules.travel and the Studio select, walkMode/traveling, gateMsg, canLeave, resumeTrip,
+    the trip part of addSteps, uiState.arrive and the arrival hurry, the 'road'/'path' walk modes and their hurry
+    and teleports, seamlessTripView/seamlessJoinTrip/seamlessPrefetch(+View), the go/hold/blocked trip status and
+    bars, the walker icon, the stay/resume/turn-back actions, exitPrompt's steps modal, tripLeft, stepsTo,
+    onStepsAdded, the steps-only "prepare the next stop" timer, trip.prog and trip.hold everywhere (save, check,
+    type, literals in game, fixture, debug menu, tests), the debug log's tripProgress, four i18n rows, the CSS.
+    Kept: trip.node and trip.plan (the gold arrows, "Stop guiding me").
+- Visible changes: the place card says "In X" (not "Staying in X"); the walk sheet always shows the "Walk with the
+  joystick" note; the trip card's text is unchanged ("Steps still earn money...": 08a-3 rewrites the text).
+- Risky or unfinished:
+  - No save format change: migrate drops trip.prog/hold from an older save (a unit test checks it). SAVE_VERSION 3
+    comes once, in 08a-2.
+  - The full quick check has known red steps that are NOT from this phase: v35, v38, v39 (they count the old roster,
+    phase 16 moved it to legacy); the Studio round trip (--studio, not run) names checko0, also legacy. They need
+    the phase 16 rework.
+  - The Walking step now walks 218 m over two roads: 107-116 s alone, 220 s inside the full run (a note against its
+    150 s budget, not a failure).
+  - Intermittent, seen once each, both passed on re-run: "Things to do: standing on a gold stamp didn't pick it up"
+    (full run), and the in-game test step's "written while the test ran: account ['users']" (a friends presence
+    write racing the test; smoke). Worth a look if they come back.
+  - trainers' blockTitle/blockText are shown nowhere now (they were only shown by the steps mode's blocked card;
+    walking shows "X is blocking the way. Beat them first."). Data kept; 08a-3 or phase 15 decides.
+  - The roads' step costs (tripTo, the map card's "N steps to go") stay until 08a-2 step 10 (metres).
+- Verified:
+  - Every commit: lint, typecheck, unit tests (npm test, 32 + one new assertion), check:data, check:modules,
+    format:check. check-fast 11/11 and smoke green after each batch (smoke on the base: 2 red, see above).
+  - Targeted full-check steps on the final deletion: Walking, Things to do, v43, Copperleaf, airships, a041: all ok.
+  - The in-game Road phase headless: Marigold -> Tallgrass Meadow, 1 view change, prepared ahead, never unready.
+  - The full quick check ran once on c3bff8f (tests in walk mode, before the deletions): only the problems listed
+    above. Not re-run on the final commit (the plan keeps the full run for the end of 08a-3).
+  - A debug log built headless at the base and now: same sections and event kinds, same errors (all phase 16
+    stand-in warnings); only state.tripProgress is gone.
+- Questions waiting for the owner:
+  - Tags: `phase-05-done` (0c62318) and `phase-04-done` (12a3b58) recreated locally; my push was refused again
+    (the remote hangs up on tag pushes). Please push them from your machine.
+  - On your phone: the in-game full test (its Road phase now walks) and a debug log from this build.
+- Next session starts with: "start 08a-2" (docs/phases/08a-plan.md, section 08a-2: encounters first).
+### Debug session - the two diagnostics logs of 18 Oct (PC 19:43, phone 19:47) - 2026-10-18
+Not a phase; plan approved at the start. Both runs passed with no errors; the phone (Adreno 750) ran Clovercrest at 24 fps.
+- Changed (6 commits, each passes lint, typecheck, check:modules, unit tests and format on its own):
+  - tools/check-quick.py names current Billies (swift0/swift1) where it named legacy ek1/knight1/kroc0. Smoke had been
+    failing since phase 16 ("reading 'line'").
+  - Diagnostics format 2 (self-test.js, debug-log.js):
+    - A place's fps, worst fps and slow frames count whole seconds from 0.5 s after it opened.
+    - The opening hitch is apart: openHitchMs, openHitchCause.
+    - The other steps drop their first and last second. The old battle "worst 5 fps" was a partial second.
+    - battle and memory also export worstFps and worstFrameMs. Samples carry dt.
+  - walk-view-gl.js: stillPropState and propLook rechecked every prop in the same frame every 500 ms. Each prop now
+    rechecks on its own half-second beat (propCheckedAt).
+    - Measured headless on Clovercrest: 452 props in one frame (+8 ms on this CPU, 3.7 -> 12 ms) became about 15 a frame.
+  - propGrid no longer rebuilds every 2 s. It rebuilds on a prop signature change (now every prop) or on itemGen.
+    - itemGen now also goes up when the ground's height key changes, so Studio height edits still refresh the props.
+  - self-test.js: pauseSaving() before loadAllMaps(), not after. The friends timer could write 'users' while the maps
+    loaded (seen once in 4 smoke runs).
+  - debug-log.js: new marks "setting up the ground", "building the ground mesh", "working out where you can walk" and
+    "reading the picture back"; module glue regenerated.
+    - A headless CPU profile put the per-place opening hitch ("outside the marked steps") in swapMapCache ->
+      buildGroundMesh, about 0.8-1.2 s in software.
+- Risky:
+  - propGrid now trusts its signature. A Studio edit that moves terrain under props without changing the height key
+    (a bridge edit, say) keeps old cell heights. The cull has 8 m of slack.
+  - The 500 ms freshness is unchanged, only spread.
+  - Auto quality was not touched. The phone sat at level 4 and 80% resolution because of these spikes; it should settle
+    lower on its own, which needs a phone log to confirm.
+- Verified: lint, typecheck, check:modules, 32 unit tests and format at every commit; smoke after each code change (the
+  full-test step 4 times after the save fix); headless counts and timings of gatherFrameItems before and after; a CPU
+  profile of a place opening.
+  - The full quick check: 46 of 49 steps passed. The 3 failures are the old roster-count steps (v35, v38, v39/v40 want
+    117 species and the data has 24 after phase 16). They come from phase 16, not from this session, and need
+    replacing.
+  - There is no validation/quick-baseline, so no screenshots were compared.
+- Not verified: real-device frame rates (headless draws in software at 1-3 fps).
+- Next:
+  - The owner re-runs Diagnostics on the phone and the PC and sends both logs. Look at openHitchCause, Clovercrest fps
+    and the auto level.
+  - If the ground build is the hitch, spread buildGroundMesh over frames (it already has a steps version,
+    buildGroundMeshSteps) or prepare it before the door opens (prepareMapGround).
+  - If the phone is still slow, the next renderer work is: reuse per-frame item objects, instance static sprites,
+    group solid props by mesh. That is a phase of its own.
+
 ### Phase 16 prep - Billies rework plan, part kits, test boot - 2026-10-18
 - Changed: docs/phases/16 rewritten (7-line roster, parts, sizes, weight, Prime, decisions and open questions);
   placeholder part kits (beasts, birds, fish; 120 parts) sliced by tools/slice-part-kit.py into game/art/next/parts

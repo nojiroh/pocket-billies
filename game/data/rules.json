@@ -1,5 +1,4 @@
 {
- "travel": "walk",
  "start": {
   "se": 600,
   "coins": {"penny":5,"silver":0,"gold":0,"tbtf":0},

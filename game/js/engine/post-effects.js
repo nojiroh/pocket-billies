@@ -20,13 +20,17 @@ expose({
   colorGrade: [() => colorGrade, v => (colorGrade = v)],
   drawPostEffects: [() => drawPostEffects, v => setDrawPostEffects(v)],
   projectToScreenUv: [() => projectToScreenUv, v => (projectToScreenUv = v)],
-  screenSnapshot: [() => screenSnapshot, v => (screenSnapshot = v)],
+  screenSnapshot: [() => screenSnapshot, v => setScreenSnapshot(v)],
   sunScreenPosition: [() => sunScreenPosition, v => (sunScreenPosition = v)],
 });
 /* eslint-enable no-func-assign */
 export function setDrawPostEffects(v) {
   drawPostEffects = v; // eslint-disable-line no-func-assign
   provide({ drawPostEffects });
+}
+export function setScreenSnapshot(v) {
+  screenSnapshot = v; // eslint-disable-line no-func-assign
+  provide({ screenSnapshot });
 }
 /* to-module: end */
 export const POST_EFFECT_SHADERS = {

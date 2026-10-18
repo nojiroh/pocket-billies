@@ -19,7 +19,6 @@ export { LOGIC_DIR, reseed, ROOT } from './load-logic.mjs';
 // three locations on two roads, one pool, one trainer
 export const FIXTURE = {
   rules: {
-    travel: 'walk',
     start: {
       se: 600,
       coins: { penny: 5 },
