@@ -4588,7 +4588,7 @@ export function dglItems(st, C, PPU, C0) {
         if (!E || !E.walls || !F) bi.bld3 = false;
       }
     }
-    /* v43: a prop with a voxel recipe draws as a solid (vox.js); its picture layers come along as sprites */
+    /* v43: a prop with a voxel recipe draws as a solid (prop-models.js); its picture layers come along as sprites */
     if (!far && M.vox && typeof voxTag === 'function') {
       const vi = out[out.length - 1];
       voxTag(vi);

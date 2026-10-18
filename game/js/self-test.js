@@ -43,7 +43,7 @@ import { DGL, DGL_SH, dglRoomDim, dioH } from './walk-view-gl.js';
 import { BLD, BLD_SH } from './buildings.js';
 import { STR, strHas } from './structures.js';
 import { P3D, P3D_SH } from './solid-props.js';
-import { VOX } from './vox.js';
+import { VOX } from './prop-models.js';
 import { OWM, owBuddyTap, owPetSp } from './world-billies.js';
 import { WORLD, wrRoomScene, wrTripView } from './seamless-world.js';
 import { A, endBattle, liveK, pickMove, pickTarget, startTrainer, startWild, stopTimers, tapMsg } from './battle.js';
