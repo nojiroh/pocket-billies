@@ -8,7 +8,7 @@
 import { expose } from './test-globals.js';
 import { STEST, STORY, sceneIdAt, storyFlags, toast } from './hooks.js';
 import { ROUTE, TRAINERS, isTown, trainersAt } from './game-data.js';
-import { B, U, esc, save, saveData } from './game-state.js';
+import { B, esc, save, saveData, uiState } from './game-state.js';
 import { artURL } from './art.js';
 import { flagPicturePath, mapById, walkView } from './walk-view.js';
 import { sfx } from './sound.js';
@@ -84,11 +84,11 @@ export function postcardCheck() {
   if (
     !saveData.started ||
     (typeof B !== 'undefined' && B) ||
-    U.modal ||
-    U.title ||
-    U.tab !== 'walk' ||
-    U.inside ||
-    U.bench ||
+    uiState.modal ||
+    uiState.title ||
+    uiState.tab !== 'walk' ||
+    uiState.inside ||
+    uiState.bench ||
     PC.on ||
     (typeof TALK !== 'undefined' && TALK.on) ||
     (typeof CS !== 'undefined' && CS.on) ||

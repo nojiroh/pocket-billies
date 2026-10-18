@@ -6,7 +6,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { closeModal, provide, render, renderOv, settings, toast } from './hooks.js';
-import { U } from './game-state.js';
+import { uiState } from './game-state.js';
 import { GFX_DIALS, gfxDial } from './settings-screen.js';
 import { mapById, walkView } from './walk-view.js';
 import { environment } from './environment.js';
@@ -51,15 +51,15 @@ function galleryOpen(gk) {
   GAL.key = gk;
   GAL.night = gk === 'lights.brightness' || gk === 'color.bloom';
   closeModal();
-  U.modal = null;
-  U.mq = [];
+  uiState.modal = null;
+  uiState.mq = [];
   renderOv();
   if (typeof environment !== 'undefined')
     environment.force = GAL.night
       ? { time: 22, weather: 'clear', season: 'summer' }
       : { time: 15, weather: 'clear', season: 'summer' };
-  U.bench = { id: 'gallery', test: 1 };
-  U.tab = 'walk';
+  uiState.bench = { id: 'gallery', test: 1 };
+  uiState.tab = 'walk';
   render();
   const st = (sc.stations || {})[GALLERY_AT[gk] || 'grove'] || sc.hub,
     t0 = performance.now();
@@ -104,9 +104,9 @@ function galleryClose() {
   const el = document.getElementById('gfxPanel');
   if (el) el.remove();
   if (typeof environment !== 'undefined') environment.force = null;
-  U.bench = null;
+  uiState.bench = null;
   render();
-  U.setTab = 'graphics';
+  uiState.setTab = 'graphics';
   settings();
 }
 document.addEventListener('click', ev => {

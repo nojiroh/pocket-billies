@@ -58,7 +58,6 @@ expose({
   SAVE_VERSION: [() => SAVE_VERSION],
   SLOTS: [() => SLOTS],
   TEAM_MAX: [() => TEAM_MAX],
-  U: [() => U],
   addEgg: [() => addEgg, v => (addEgg = v)],
   addMon: [() => addMon, v => (addMon = v)],
   addSteps: [() => addSteps, v => ((addSteps = v), provide({ addSteps }))],
@@ -132,6 +131,7 @@ expose({
   today: [() => today],
   traveling: [() => traveling],
   tripTo: [() => tripTo, v => (tripTo = v)],
+  uiState: [() => uiState],
   uid: [() => uid],
   walkMode: [() => walkMode],
   xpFor: [() => xpFor],
@@ -336,8 +336,8 @@ export function lsSet(o) {
   try {
     localStorage.setItem(LS, JSON.stringify(o));
   } catch (e) {
-    if (typeof U !== 'undefined' && !U.saveWarning) {
-      U.saveWarning = true;
+    if (typeof uiState !== 'undefined' && !uiState.saveWarning) {
+      uiState.saveWarning = true;
       setTimeout(() => toast('Browser storage is full or unavailable. Export a save backup from Settings.'), 0);
     }
   }
@@ -380,7 +380,7 @@ export function setNoSaving() {
   /* eslint-enable no-func-assign */
   provide({ lsSet, flush });
 }
-export const U = {
+export const uiState = {
   tab: 'walk',
   lastTab: null,
   intro: 0,
@@ -395,7 +395,7 @@ export const U = {
   seenEnc: new Set(),
   mapSel: null,
 };
-provide({ U }); /* to-module */
+provide({ uiState }); /* to-module */
 
 /* ---------- saving: in this browser, and on the account when signed in (account.js) ---------- */
 let saveT = null;
@@ -478,7 +478,7 @@ export function gainXp(m, amt, say) {
       if (m.moves.length < SLOTS()) {
         m.moves.push(mv);
         say(`${N(m)} learned ${MOVES[mv].n}.`);
-      } else U.learnQ.push({ uid: m.uid, mv });
+      } else uiState.learnQ.push({ uid: m.uid, mv });
     }
   }
 }
@@ -794,7 +794,7 @@ export function addSteps(n, quiet) {
       r.node = r.plan.shift();
       saveData.visited[r.node] = 1;
       msgs.push(r.plan.length ? `You passed through ${ROUTE[r.node].name}.` : `You arrived at ${ROUTE[r.node].name}.`);
-      if (typeof U !== 'undefined') U.arrive = r.node;
+      if (typeof uiState !== 'undefined') uiState.arrive = r.node;
       /* v43: the walk screen walks you in from the exit */ if (!r.plan.length || gateMsg()) {
         r.prog = 0;
         break;

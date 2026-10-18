@@ -15,7 +15,6 @@ import { GD, MOVES, ROUTE, RULES, SP, TRAINERS, linkCost, placeKind } from './ga
 import { loadAllMaps } from './map-files.js';
 import {
   B,
-  U,
   addSteps,
   esc,
   makeMon,
@@ -27,6 +26,7 @@ import {
   setSaveData,
   setTrip,
   spawn,
+  uiState,
 } from './game-state.js';
 import { FRAME } from './frame-scheduler.js';
 import { TR_CACHE } from './person-art.js';
@@ -159,16 +159,16 @@ async function runFullTest(mode) {
     toast('Start a game first.');
     return;
   }
-  if (U.modal) {
-    U.modal = null;
-    U.mq = [];
+  if (uiState.modal) {
+    uiState.modal = null;
+    uiState.mq = [];
     renderOv();
   }
   STEST.on = true;
   STEST.stop = false;
   await loadAllMaps(); /* phase 04b: every map whole before the test opens them */
   const keep = JSON.stringify(saveData),
-    back = { tab: U.tab, roam: U.roam, node: saveData.route.node },
+    back = { tab: uiState.tab, roam: uiState.roam, node: saveData.route.node },
     realSave = save,
     engKeep = GD.engine ? JSON.stringify(GD.engine) : null;
   setSave(() => {}); /* nothing the test does reaches your save */
@@ -366,9 +366,9 @@ async function runFullTest(mode) {
   };
   /* v31: anything that pops up (a level-up, a request) is closed first: an open window holds the scene at 10 fps, which used to show up as a false 10 fps */
   const unblock = () => {
-    if (U.modal || U.mq.length) {
-      U.modal = null;
-      U.mq = [];
+    if (uiState.modal || uiState.mq.length) {
+      uiState.modal = null;
+      uiState.mq = [];
       renderOv();
     }
     if (typeof TALK !== 'undefined' && TALK.on && typeof talkHide === 'function') talkHide();
@@ -452,8 +452,8 @@ async function runFullTest(mode) {
         'dio',
         async () => {
           const tm = performance.now();
-          U.tab = 'walk';
-          U.bench = { id };
+          uiState.tab = 'walk';
+          uiState.bench = { id };
           render();
           let open = null;
           for (let i = 0; i < 60 && !(walkView.ready && walkView.id === id); i++) await stSleep(50);
@@ -503,8 +503,8 @@ async function runFullTest(mode) {
         'dio',
         async () => {
           const sid = DIAGR.busiest;
-          U.bench = { id: sid };
-          U.tab = 'walk';
+          uiState.bench = { id: sid };
+          uiState.tab = 'walk';
           render();
           for (let i = 0; i < 80 && !(walkView.ready && walkView.id === sid); i++) await stSleep(100);
           await stSleep(900);
@@ -623,8 +623,8 @@ async function runFullTest(mode) {
             f0 = environment.force,
             out = [];
           try {
-            U.tab = 'walk';
-            U.bench = { id: sid };
+            uiState.tab = 'walk';
+            uiState.bench = { id: sid };
             render();
             await stSleep(900);
             for (const [n, f] of [
@@ -646,7 +646,7 @@ async function runFullTest(mode) {
           }
           for (const id of ['int_shop', 'grotto']) {
             if (!GD.scenes[id] || STEST.stop) continue;
-            U.bench = { id };
+            uiState.bench = { id };
             render();
             await stSleep(1400);
             if (!walkView.ready || walkView.id !== id) throw new Error((GD.scenes[id].name || id) + ' didn’t open');
@@ -665,8 +665,8 @@ async function runFullTest(mode) {
       Object.keys(SP).find(k => SP[k].stage === 0 && SP[k].rar !== 'mythical') ||
       Object.keys(SP)[0];
     const battle = async classic => {
-      U.bench = null;
-      U.tab = 'walk';
+      uiState.bench = null;
+      uiState.tab = 'walk';
       saveData.route.node = back.node;
       render();
       await stSleep(600);
@@ -718,8 +718,8 @@ async function runFullTest(mode) {
     };
     /* v33: team battles: a trainer's double battle and an Alpha in the grass, each played for a turn with every fighter choosing */
     const teamBattle = async kind => {
-      U.bench = null;
-      U.tab = 'walk';
+      uiState.bench = null;
+      uiState.tab = 'walk';
       saveData.route.node = back.node;
       render();
       await stSleep(1200);
@@ -796,12 +796,12 @@ async function runFullTest(mode) {
         'Road: Marigold Town to Tallgrass Meadow on the ground',
         'dio',
         async () => {
-          U.bench = null;
-          U.tab = 'walk';
+          uiState.bench = null;
+          uiState.tab = 'walk';
           saveData.route = { node: 0, prog: 0, plan: [], hold: false };
           {
             const h = mapHub(GD.scenes.sundown);
-            U.roam = { id: 'sundown', node: 0, x: h[0], z: h[1] };
+            uiState.roam = { id: 'sundown', node: 0, x: h[0], z: h[1] };
           }
           render();
           for (let i = 0; i < 60 && !(walkView.ready && walkView.id === 'w:sundown*'); i++) await stSleep(100);
@@ -821,8 +821,8 @@ async function runFullTest(mode) {
           const per = Math.ceil(linkCost(0, 1) / 7) + 5;
           /* alpha 0.2: a road's steps follow its walk */ for (let n = 0; n < 7; n++) {
             addSteps(per, true);
-            U.modal = null;
-            U.mq = [];
+            uiState.modal = null;
+            uiState.mq = [];
             renderOv();
             render();
             const f0 = walkRenderer.frames,
@@ -871,12 +871,12 @@ async function runFullTest(mode) {
             if (typeof PROP_CLOCK !== 'undefined') PROP_CLOCK.t = 0;
           }
           try {
-            U.bench = null;
-            U.inside = null;
-            U.goingIn = null;
-            U.tab = 'walk';
+            uiState.bench = null;
+            uiState.inside = null;
+            uiState.goingIn = null;
+            uiState.tab = 'walk';
             saveData.route = { node: 0, prog: 0, plan: [], hold: false };
-            U.roam = null;
+            uiState.roam = null;
             render();
             for (let i = 0; i < 60 && !(walkView.ready && walkView.id === 'w:sundown*'); i++) await stSleep(100);
             if (walkView.id !== 'w:sundown*') throw new Error('Marigold Town is not shown (still ' + walkView.id + ')');
@@ -906,7 +906,7 @@ async function runFullTest(mode) {
             await stSleep(1200);
             const sc = walkView.sc,
               c = sc.roomCut,
-              I = U.inside,
+              I = uiState.inside,
               ex = [sc.exits[0][0] + c[0], sc.exits[0][1] + c[1]],
               off = I && I.door ? Math.hypot(ex[0] - I.door[0], ex[1] - I.door[1]) : 9,
               RD = roomDimming(sc);
@@ -964,8 +964,8 @@ async function runFullTest(mode) {
               if (STEST.stop) break;
               if (typeof environment !== 'undefined')
                 environment.force = { time: t, weather: 'clear', season: 'summer' };
-              U.tab = 'walk';
-              U.bench = { id, test: 1 };
+              uiState.tab = 'walk';
+              uiState.bench = { id, test: 1 };
               render();
               for (let i = 0; i < 60 && !(walkView.ready && walkView.id === id); i++) await stSleep(100);
               if (walkView.id !== id) throw new Error(id + ' did not open');
@@ -1020,7 +1020,7 @@ async function runFullTest(mode) {
           } finally {
             for (const k in O) gl[k] = O[k];
             if (typeof environment !== 'undefined') environment.force = null;
-            U.bench = null;
+            uiState.bench = null;
             render();
           }
           if (refused) throw new Error(refused + ' draw calls refused by WebGL (last: ' + last + ')');
@@ -1039,12 +1039,12 @@ async function runFullTest(mode) {
         'Opening: falling across the Hollow Earth',
         'map',
         async () => {
-          U.bench = null;
-          U.inside = null;
+          uiState.bench = null;
+          uiState.inside = null;
           if (typeof walkView !== 'undefined' && walkView.cv) stopWalkView();
           const cv = fallGL();
           if (!cv) {
-            U.tab = 'walk';
+            uiState.tab = 'walk';
             render();
             return 'no 3D here: the opening shows the fall as pictures';
           }
@@ -1069,7 +1069,7 @@ async function runFullTest(mode) {
             CS.on = false;
             CS.run++;
           }
-          U.tab = 'walk';
+          uiState.tab = 'walk';
           render();
           await stSleep(1200);
           if (fr.length < 3) throw new Error(`the fall drew ${fr.length} frames`);
@@ -1086,9 +1086,9 @@ async function runFullTest(mode) {
         'Opening: Blake’s first battle',
         'scene',
         async () => {
-          U.bench = null;
-          U.inside = null;
-          U.tab = 'walk';
+          uiState.bench = null;
+          uiState.inside = null;
+          uiState.tab = 'walk';
           saveData.route.node = back.node;
           render();
           await stSleep(1200);
@@ -1150,9 +1150,9 @@ async function runFullTest(mode) {
             talkHide();
             if (typeof battleTipHide === 'function') battleTipHide();
             saveData.story = JSON.parse(story0);
-            U.welcome = null;
-            U.modal = null;
-            U.mq = [];
+            uiState.welcome = null;
+            uiState.modal = null;
+            uiState.mq = [];
             renderOv();
             try {
               if (od == null) localStorage.removeItem('nw-opening-done');
@@ -1174,8 +1174,8 @@ async function runFullTest(mode) {
           const gid = GD.scenes.longgrass ? 'longgrass' : scenes[0];
           saveData.queue = (saveData.queue || []).slice(0, 0);
           for (let i = 0; i < 3; i++) spawn(false);
-          U.tab = 'walk';
-          U.bench = null;
+          uiState.tab = 'walk';
+          uiState.bench = null;
           const node = ROUTE.findIndex(r => r.scene === gid);
           if (node >= 0) saveData.route.node = node;
           render();
@@ -1208,7 +1208,7 @@ async function runFullTest(mode) {
       'World map',
       'map',
       async () => {
-        U.tab = 'map';
+        uiState.tab = 'map';
         render();
         await stSleep(3500);
         const fl = document.querySelector('[data-a=mflat]');
@@ -1218,7 +1218,7 @@ async function runFullTest(mode) {
           fl.click();
         }
         await stSleep(1500);
-        U.tab = 'walk';
+        uiState.tab = 'walk';
         render();
         await stSleep(500);
       },
@@ -1230,11 +1230,11 @@ async function runFullTest(mode) {
       'map',
       async () => {
         if (typeof worldMapMinisOn !== 'function' || !worldMapMinisOn()) return 'switched off';
-        U.tab = 'map';
+        uiState.tab = 'map';
         render();
         await stSleep(2500);
         if (!worldMap.gl) {
-          U.tab = 'walk';
+          uiState.tab = 'walk';
           render();
           return 'the map is in its simple mode here';
         }
@@ -1248,7 +1248,7 @@ async function runFullTest(mode) {
         worldMap.alt = a0;
         worldMap.tilt = 0.5733;
         worldMap.dirty = true;
-        U.tab = 'walk';
+        uiState.tab = 'walk';
         render();
         await stSleep(500);
         return n ? `${n} miniatures built` : false;
@@ -1298,8 +1298,8 @@ async function runFullTest(mode) {
         props0 = sc.props,
         eng0 = GD.engine ? GD.engine.defaults : null;
       unblock();
-      U.tab = 'walk';
-      U.bench = { id: sid };
+      uiState.tab = 'walk';
+      uiState.bench = { id: sid };
       render();
       await stSleep(1200);
       unblock();
@@ -1428,11 +1428,11 @@ async function runFullTest(mode) {
     if (engKeep) GD.engine = JSON.parse(engKeep);
     setSaveData(JSON.parse(keep));
     setSave(realSave);
-    U.bench = null;
-    U.roam = back.roam;
-    U.tab = back.tab;
-    U.modal = null;
-    U.mq = [];
+    uiState.bench = null;
+    uiState.roam = back.roam;
+    uiState.tab = back.tab;
+    uiState.modal = null;
+    uiState.mq = [];
     renderOv();
     render();
     STEST.on = false;

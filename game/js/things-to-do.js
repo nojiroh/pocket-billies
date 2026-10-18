@@ -8,7 +8,7 @@ import { expose } from './test-globals.js';
 import { bar, closeModal, modal, provide, render, roomRefresh, toast } from './hooks.js';
 import { clamp } from './util.js';
 import { COINS, GD, ITEMS, ROUTE, RULES, SP } from './game-data.js';
-import { B, N, U, esc, fmt, save, saveData, today } from './game-state.js';
+import { B, N, esc, fmt, save, saveData, today, uiState } from './game-state.js';
 import { makeCanvas, uiIconHTML } from './art.js';
 import {
   baseMapId,
@@ -228,7 +228,8 @@ function reqHere(node = saveData.route.node) {
 }
 /* the first townsperson in a town has the request; a gold ! floats over them until it's done */
 function reqAsker() {
-  if (typeof walkView === 'undefined' || !walkView.folk || !walkView.folk.length || U.inside || U.bench) return null;
+  if (typeof walkView === 'undefined' || !walkView.folk || !walkView.folk.length || uiState.inside || uiState.bench)
+    return null;
   const q = reqHere();
   if (!q || q.state === 'done') return null;
   return walkView.folk[0];
@@ -348,7 +349,7 @@ const stampTotal = () => stampScenes().length * 2;
 export const stampCount = () => Object.keys(x28().stamps).length;
 /* where they lie: worked out once per place, on open ground you can walk to, away from where you arrive */
 function stampSpots() {
-  if (typeof U !== 'undefined' && U.inside) return [];
+  if (typeof uiState !== 'undefined' && uiState.inside) return [];
   const id = baseMapId(),
     sc0 = walkView.sc,
     sc = sc0 && sc0.baseId ? mapById(sc0.baseId) : sc0,
@@ -378,7 +379,7 @@ function stampSpots() {
 }
 /* drawn by the walk scene's effects pass: a gold glint you pick up by walking over it */
 function stampDraw(quad, glows, t) {
-  if (!saveData || !saveData.started || walkRenderer.bt || U.bench) return;
+  if (!saveData || !saveData.started || walkRenderer.bt || uiState.bench) return;
   const X = x28(),
     P = walkView.pl,
     sp = stampSpots();
@@ -513,8 +514,8 @@ function photoStart() {
     toast('Photo mode needs the 3D scene (Settings → Visual effects → Full).');
     return;
   }
-  if (U.photo) return;
-  U.photo = { f: 'none' };
+  if (uiState.photo) return;
+  uiState.photo = { f: 'none' };
   document.body.classList.add('photo');
   if (walkRenderer.ui) walkRenderer.ui.style.visibility = 'hidden';
   const el = document.createElement('div');
@@ -527,14 +528,14 @@ function photoStart() {
   photoFilter('none');
 }
 function photoFilter(k) {
-  if (!U.photo) return;
-  U.photo.f = k;
+  if (!uiState.photo) return;
+  uiState.photo.f = k;
   const F = PHOTO_FILTERS.find(f => f[0] === k);
   if (walkView.cv) walkView.cv.style.filter = F ? F[2] : '';
   document.querySelectorAll('[data-a=photoF]').forEach(b => b.classList.toggle('on', b.dataset.k === k));
 }
 function photoEnd() {
-  U.photo = null;
+  uiState.photo = null;
   document.body.classList.remove('photo');
   const el = document.getElementById('photoUI');
   if (el) el.remove();
@@ -546,14 +547,14 @@ function photoEnd() {
   }
 }
 function photoShot() {
-  if (!U.photo || typeof walkRenderer === 'undefined') return;
+  if (!uiState.photo || typeof walkRenderer === 'undefined') return;
   if (typeof sfx === 'function') sfx('pop');
   walkRenderer.photoReq = c => {
     if (!c) {
       toast('The picture couldn’t be taken on this device.');
       return;
     }
-    const F = PHOTO_FILTERS.find(f => f[0] === U.photo.f),
+    const F = PHOTO_FILTERS.find(f => f[0] === uiState.photo.f),
       o = makeCanvas(c.width, c.height),
       x = o.getContext('2d');
     if (F && F[2]) x.filter = F[2];

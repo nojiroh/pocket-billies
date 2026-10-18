@@ -94,14 +94,14 @@ def check_game(pw, base, results):
                 pg.screenshot(path=str(OUT / f'{name}-opening-rival.png'))
                 pg.evaluate("if(B){B.over='win';stopTimers();endBattle()}0")
                 for _ in range(80):
-                    if pg.evaluate("!TALK.on&&!!U.modal&&!B"): break
+                    if pg.evaluate("!TALK.on&&!!uiState.modal&&!B"): break
                     pg.evaluate('TALK.cur&&TALK.cur.tap()'); time.sleep(.8)
                 opening['afterRival'] = pg.evaluate("(saveData.story||{}).rival0||null")
                 opening['ok'] = opening['ok'] and bool(opening['rivalBattle']) and opening['afterRival'] == 'win'
             results.setdefault('opening', {})[name] = opening
             if opening.get('ok'):
                 # the rival's scene at the golf course, then his battle
-                pg.evaluate("U.modal=null;U.mq=[];renderOv();saveData.route={node:2,prog:0,plan:[],hold:false};saveData.visited[2]=1;U.roam=null;U.tab='walk';render();0")
+                pg.evaluate("uiState.modal=null;uiState.mq=[];renderOv();saveData.route={node:2,prog:0,plan:[],hold:false};saveData.visited[2]=1;uiState.roam=null;uiState.tab='walk';render();0")
                 rival = {'scene': False, 'battle': False}; log(f'{name}: rival scene')
                 for _ in range(40):
                     if pg.evaluate('CS.on'): rival['scene'] = True; break
@@ -112,12 +112,12 @@ def check_game(pw, base, results):
                     pg.evaluate('TALK.cur&&TALK.cur.tap()'); time.sleep(.8)
                 results.setdefault('rival', {})[name] = rival
                 pg.evaluate("if(B){stopTimers();B=null;battleStageStop()}render();0")
-        pg.evaluate("if(typeof titleEnd==='function')titleEnd();U.pg='girl';startGame('scoop');saveData.story={met_chad:1,met_chad2:1};U.modal=null;U.mq=[];renderOv();saveData.team.push(makeMon('box1',18));addSteps(2400,true);U.toastQ=[];U.toastOn=false;U.modal=null;U.mq=[];renderOv();render();0")
+        pg.evaluate("if(typeof titleEnd==='function')titleEnd();uiState.pg='girl';startGame('scoop');saveData.story={met_chad:1,met_chad2:1};uiState.modal=null;uiState.mq=[];renderOv();saveData.team.push(makeMon('box1',18));addSteps(2400,true);uiState.toastQ=[];uiState.toastOn=false;uiState.modal=null;uiState.mq=[];renderOv();render();0")
         log(f'{name}: screens and battles')
         for tab in ['walk', 'map', 'team', 'ledger', 'profile']:
-            pg.evaluate(f"U.tab='{tab}';render();scrollTo(0,0);0"); time.sleep(1.4 if tab == 'map' else .5)
+            pg.evaluate(f"uiState.tab='{tab}';render();scrollTo(0,0);0"); time.sleep(1.4 if tab == 'map' else .5)
             pg.screenshot(path=str(OUT / f'{name}-{tab}.png'))
-        pg.evaluate("U.tab='walk';saveData.route.node=0;render();openShop('sundown');0"); time.sleep(.5); pg.screenshot(path=str(OUT / f'{name}-shop.png'))
+        pg.evaluate("uiState.tab='walk';saveData.route.node=0;render();openShop('sundown');0"); time.sleep(.5); pg.screenshot(path=str(OUT / f'{name}-shop.png'))
         pg.evaluate("closeModal();wipe=f=>f();0")
         areas = pg.evaluate('Object.keys(BACKDROPS)') if name == 'phone' else ['grass', 'mall']
         pg.evaluate("saveData.preferences.battleStage='classic';0")  # the painted backdrops first
@@ -127,7 +127,7 @@ def check_game(pw, base, results):
             pg.screenshot(path=str(OUT / f'{name}-battle-{area}.png'))
             pg.evaluate("stopTimers();B=null;battleStageStop();render();0")
         # then a battle on the 3D stage, where you stand in the walk scene
-        pg.evaluate("saveData.preferences.battleStage='scene';U.tab='walk';saveData.route={node:0,prog:0,plan:[],hold:false};render();0"); time.sleep(2)
+        pg.evaluate("saveData.preferences.battleStage='scene';uiState.tab='walk';saveData.route={node:0,prog:0,plan:[],hold:false};render();0"); time.sleep(2)
         pg.evaluate("const q={id:'t3d',sp:'tweet1',lvl:12,gold:false,no:1};saveData.queue=[q];startWild(q);0")
         wait_phase(pg); time.sleep(1)
         pg.screenshot(path=str(OUT / f'{name}-battle-3d.png'))
@@ -145,19 +145,19 @@ def check_game(pw, base, results):
         if name in ('phone', 'desktop'):
             # every walk scene, walking around in a town, and a trip along two roads
             log(f'{name}: every walk scene')
-            pg.evaluate("stopTimers&&stopTimers();B=null;battleStageStop();saveData.queue=[];U.tab='walk';0")
+            pg.evaluate("stopTimers&&stopTimers();B=null;battleStageStop();saveData.queue=[];uiState.tab='walk';0")
             for i in range(pg.evaluate('ROUTE.length')):
-                pg.evaluate(f"saveData.route={{node:{i},prog:0,plan:[],hold:false}};saveData.visited[{i}]=1;U.roam=null;render();0"); time.sleep(2.6)
+                pg.evaluate(f"saveData.route={{node:{i},prog:0,plan:[],hold:false}};saveData.visited[{i}]=1;uiState.roam=null;render();0"); time.sleep(2.6)
                 if name == 'phone' or i in (0, 10, 12): pg.screenshot(path=str(OUT / f'{name}-scene-{pg.evaluate("walkView.id")}.png'))
             if name == 'desktop':
                 # v18: cliffs, stairs, bridges, waterfalls, arches and escalators up close
                 for node, x, z, label in ((0, 23.2, 17.6, 'sundown-stairs'), (12, 32.5, 9.6, 'city-canal'), (12, 32.5, 30.5, 'city-stairs'), (11, 22, 25.6, 'ridge-bridge'),
                                           (9, 27, 21, 'pond-falls'), (8, 31, 18.5, 'mall-escalators'), (4, 11.2, 14.2, 'grotto-cascade'), (5, 19.3, 7.4, 'canyon-arch')):
                     if node >= pg.evaluate('ROUTE.length'): continue
-                    pg.evaluate(f"saveData.route={{node:{node},prog:0,plan:[],hold:false}};saveData.visited[{node}]=1;U.roam=null;render();0"); time.sleep(2.6)
+                    pg.evaluate(f"saveData.route={{node:{node},prog:0,plan:[],hold:false}};saveData.visited[{node}]=1;uiState.roam=null;render();0"); time.sleep(2.6)
                     pg.evaluate(f"walkView.pl.x={x};walkView.pl.z={z};walkView.pl.route=null;0"); time.sleep(2.2)
                     pg.screenshot(path=str(OUT / f'desktop-geo-{label}.png'))
-            pg.evaluate("saveData.route={node:0,prog:0,plan:[],hold:false};U.roam=null;render();0"); time.sleep(1.5)
+            pg.evaluate("saveData.route={node:0,prog:0,plan:[],hold:false};uiState.roam=null;render();0"); time.sleep(1.5)
             tgt = pg.evaluate("walkablePointNear(20.5,13.4)")
             pt = pg.evaluate("(([x,z])=>{const q=worldToScreen(walkView.C,x,0,z),r=walkView.cv.getBoundingClientRect();return [r.left+q.x/walkView.cv.width*r.width,r.top+q.y/walkView.cv.height*r.height]})(%s)" % json.dumps(tgt))
             pg.mouse.click(pt[0], pt[1]); time.sleep(.5)
@@ -165,7 +165,7 @@ def check_game(pw, base, results):
                 if pg.evaluate("!walkView.pl.route"): break
                 time.sleep(.25)
             roam = pg.evaluate("[+walkView.pl.x.toFixed(1),+walkView.pl.z.toFixed(1)]")
-            pg.evaluate("(()=>{const n=tripTo(9).steps;setTrip(9);addSteps(n,true)})();U.toastQ=[];U.modal=null;U.mq=[];renderOv();render();0"); time.sleep(3)
+            pg.evaluate("(()=>{const n=tripTo(9).steps;setTrip(9);addSteps(n,true)})();uiState.toastQ=[];uiState.modal=null;uiState.mq=[];renderOv();render();0"); time.sleep(3)
             trip = pg.evaluate("[saveData.route.node,saveData.route.plan.length,walkView.id,!!saveData.visited[9]]")
             pg.screenshot(path=str(OUT / f'{name}-arrived.png'))
             results.setdefault('walk', {})[name] = {'walkedTo': roam, 'tripEnd': trip, 'ok': abs(roam[0] - tgt[0]) < .8 and abs(roam[1] - tgt[1]) < .8 and trip[0] == 9 and trip[1] == 0 and trip[2] == 'pond'}
@@ -216,7 +216,7 @@ def check_studio(pw, results):
         if not seen[1]:
             results['studio'] = {'errors': (errs + gerrs + ['the new billionaire did not reach the game'])[:10], 'movePowerSaved': seen[0] == 77, 'newBillionaireInGame': False, 'builderPartInGame': seen[2]}
             b.close(); return
-        g.evaluate("if(typeof titleEnd==='function')titleEnd();U.pg='girl';startGame('scoop');U.modal=null;U.mq=[];renderOv();wipe=f=>f();B=null;const q={id:'tc',sp:'checko0',lvl:9,gold:false,no:1};saveData.queue=[q];startWild(q);0")
+        g.evaluate("if(typeof titleEnd==='function')titleEnd();uiState.pg='girl';startGame('scoop');uiState.modal=null;uiState.mq=[];renderOv();wipe=f=>f();B=null;const q={id:'tc',sp:'checko0',lvl:9,gold:false,no:1};saveData.queue=[q];startWild(q);0")
         wait_phase(g); time.sleep(.6); g.screenshot(path=str(OUT / 'studio-new-in-game.png'))
         results['studio'] = {'errors': (errs + gerrs)[:10], 'movePowerSaved': seen[0] == 77, 'newBillionaireInGame': seen[1], 'builderPartInGame': seen[2]}
         b.close()

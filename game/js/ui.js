@@ -44,7 +44,6 @@ import {
   RM,
   SLOTS,
   TEAM_MAX,
-  U,
   addEgg,
   allMons,
   assignJob,
@@ -90,6 +89,7 @@ import {
   toBox,
   toTeam,
   tripTo,
+  uiState,
   walkMode,
   xpFor,
 } from './game-state.js';
@@ -350,71 +350,71 @@ function hpBar(hp, max) {
 
 /* ---------- toasts & modals ---------- */
 export function toast(t) {
-  U.toastQ.push(t);
-  if (!U.toastOn) nextToast();
+  uiState.toastQ.push(t);
+  if (!uiState.toastOn) nextToast();
 }
 function nextToast() {
-  const t = U.toastQ.shift();
+  const t = uiState.toastQ.shift();
   if (!t) {
-    U.toastOn = false;
+    uiState.toastOn = false;
     renderOv();
     return;
   }
-  U.toastOn = t;
+  uiState.toastOn = t;
   renderOv();
-  setTimeout(nextToast, U.toastQ.length > 2 ? 1300 : 2300);
+  setTimeout(nextToast, uiState.toastQ.length > 2 ? 1300 : 2300);
 }
 export function modal(o) {
-  U.mq.push(o);
-  if (!U.modal) nextModal();
+  uiState.mq.push(o);
+  if (!uiState.modal) nextModal();
 }
 function nextModal() {
-  U.modal = U.mq.shift() || null;
+  uiState.modal = uiState.mq.shift() || null;
   renderOv();
 }
 export function closeModal() {
-  U.modal = null;
+  uiState.modal = null;
   nextModal();
-  if (!U.modal) postProcess();
+  if (!uiState.modal) postProcess();
 }
 export function renderOv() {
   const ov = $('#ov');
   let h = '';
-  const M = U.modal;
+  const M = uiState.modal;
   if (M)
     h += `<div class="scrim" data-a="scrim"><div class="sheet px ${M.cls || ''}" role="dialog" aria-modal="true" aria-labelledby="mt">${M.top || ''}<h2 id="mt">${M.title}</h2><div class="body">${M.html || ''}</div><div class="btns">${(M.btns || []).map((b, i) => `<button class="pb ${b.c || ''} wide" data-a="mb" data-i="${i}" ${b.dis ? 'disabled' : ''}>${b.l}</button>`).join('')}</div></div></div>`;
-  if (U.toastOn) h += `<div class="toast px glass" role="status">${esc(U.toastOn)}</div>`;
+  if (uiState.toastOn) h += `<div class="toast px glass" role="status">${esc(uiState.toastOn)}</div>`;
   const keep = ov.querySelector('.scrim');
   ov.innerHTML = h;
   const sc = ov.querySelector('.scrim');
-  if (sc && keep && M && M === U._lastM) sc.classList.add('still');
-  U._lastM = M;
+  if (sc && keep && M && M === uiState._lastM) sc.classList.add('still');
+  uiState._lastM = M;
   if (M && M.after && !M._afterRan) {
     M._afterRan = true;
     M.after();
   }
-  if (M && M !== U._focusedModal) {
-    U._focusedModal = M;
-    U._returnFocus = document.activeElement;
+  if (M && M !== uiState._focusedModal) {
+    uiState._focusedModal = M;
+    uiState._returnFocus = document.activeElement;
     requestAnimationFrame(() => {
       const e = $('.sheet button,.sheet input,.sheet select');
       if (e) e.focus({ preventScroll: true });
     });
-  } else if (!M && U._focusedModal) {
-    U._focusedModal = null;
-    if (U._returnFocus && U._returnFocus.isConnected) U._returnFocus.focus({ preventScroll: true });
+  } else if (!M && uiState._focusedModal) {
+    uiState._focusedModal = null;
+    if (uiState._returnFocus && uiState._returnFocus.isConnected) uiState._returnFocus.focus({ preventScroll: true });
   }
 }
 
 /* ---------- post-step events ---------- */
 export function postProcess() {
-  if (B || U.modal || !saveData.started || U.title) return;
+  if (B || uiState.modal || !saveData.started || uiState.title) return;
   const eg = hatchable()[0];
   if (eg) {
     hatchModal(eg);
     return;
   }
-  const lq = U.learnQ.shift();
+  const lq = uiState.learnQ.shift();
   if (lq) {
     const m = findMon(lq.uid);
     if (m && !m.moves.includes(lq.mv)) {
@@ -486,7 +486,7 @@ function evoRun(m, note) {
   const from = SP[m.sp],
     to = SP[from.evo && from.evo.k === 'split' && from.alt && splitPath(m) === 'B' ? from.alt : from.next],
     fromName = N(m);
-  U.modal = null;
+  uiState.modal = null;
   modal({
     title: `What? ${esc(fromName)} is evolving!`,
     top: `<div class="evo run" id="evoBox"><span class="ea">${rigCanvasHTML(from.id, 128, { gold: m.gold, still: 1 })}</span><span class="eb">${rigCanvasHTML(to.id, 128, { gold: m.gold, still: 1 })}</span></div>`,
@@ -512,7 +512,7 @@ function evoRun(m, note) {
         save();
         setTimeout(
           () => {
-            U.modal = null;
+            uiState.modal = null;
             modal({
               title: `${esc(fromName)} became ${esc(to.name)}`,
               top: `<div class="evo done">${rigCanvasHTML(m.sp, 128, { gold: m.gold })}</div>`,
@@ -542,7 +542,7 @@ function hatchModal(e) {
           const m = res.m,
             s = SP[m.sp];
           const done = () => {
-            U.modal = null;
+            uiState.modal = null;
             modal({
               title: `It’s ${/^[AEIOU]/.test(s.name) ? 'an' : 'a'} ${m.gold ? 'Golden ' : ''}${esc(s.name)}`,
               top: `<div class="hatch done">${rigCanvasHTML(m.sp, 128, { gold: m.gold })}</div>`,
@@ -574,14 +574,14 @@ const TABS = ['walk', 'map', 'team', 'ledger', 'bag'],
 function topbar() {
   rollDay();
   const shut = !!(saveData.preferences && saveData.preferences.cardClosed),
-    walk = U.tab === 'walk';
-  return `<div class="topbar glass" role="status">${walk ? `<button class="tb-where ${shut ? 'shut' : ''}" data-a="card-open" aria-expanded="${!shut}" aria-label="${shut ? 'Show' : 'Hide'} the card for ${esc(ROUTE[saveData.route.node].name)}">${esc(U.inside && !U.bench && typeof roomState === 'function' && roomState() ? U.inside.name || ROUTE[saveData.route.node].name : ROUTE[saveData.route.node].name)}${uiIconHTML('chev', 12)}</button>` : `<span class="tb-where">${esc(ROUTE[saveData.route.node].name)}</span>`}<span class="tb-chip tnum" title="Money">${coinHTML('penny', 16)}<small>$</small><b data-count="tse" data-to="${saveData.se}">${fmt(saveData.se)}</b></span><button class="tb-btn" data-a="settings" aria-label="Settings and help">${uiIconHTML('gear', 18)}</button><button class="tb-me" data-a="tab" data-t="profile" aria-label="Your trainer card" ${U.tab === 'profile' ? 'aria-current="page"' : ''}>${typeof portraitHTML === 'function' ? portraitHTML('me', 84) : ''}</button></div>`;
+    walk = uiState.tab === 'walk';
+  return `<div class="topbar glass" role="status">${walk ? `<button class="tb-where ${shut ? 'shut' : ''}" data-a="card-open" aria-expanded="${!shut}" aria-label="${shut ? 'Show' : 'Hide'} the card for ${esc(ROUTE[saveData.route.node].name)}">${esc(uiState.inside && !uiState.bench && typeof roomState === 'function' && roomState() ? uiState.inside.name || ROUTE[saveData.route.node].name : ROUTE[saveData.route.node].name)}${uiIconHTML('chev', 12)}</button>` : `<span class="tb-where">${esc(ROUTE[saveData.route.node].name)}</span>`}<span class="tb-chip tnum" title="Money">${coinHTML('penny', 16)}<small>$</small><b data-count="tse" data-to="${saveData.se}">${fmt(saveData.se)}</b></span><button class="tb-btn" data-a="settings" aria-label="Settings and help">${uiIconHTML('gear', 18)}</button><button class="tb-me" data-a="tab" data-t="profile" aria-label="Your trainer card" ${uiState.tab === 'profile' ? 'aria-current="page"' : ''}>${typeof portraitHTML === 'function' ? portraitHTML('me', 84) : ''}</button></div>`;
 }
 export function render() {
   const app = $('#app');
-  if (U.title && typeof renderTitle === 'function') {
+  if (uiState.title && typeof renderTitle === 'function') {
     app.innerHTML = renderTitle();
-    U.lastTab = null;
+    uiState.lastTab = null;
     updateNav(false);
     document.body.classList.remove('on-map');
     titleMount();
@@ -594,7 +594,7 @@ export function render() {
       return;
     }
     app.innerHTML = renderIntro();
-    U.lastTab = null;
+    uiState.lastTab = null;
     updateNav(false);
     document.body.classList.remove('on-map');
     walkSceneSync();
@@ -607,8 +607,8 @@ export function render() {
     walkSceneSync();
     return;
   }
-  if (!SCREENS.includes(U.tab)) U.tab = 'walk';
-  const T = U.tab,
+  if (!SCREENS.includes(uiState.tab)) uiState.tab = 'walk';
+  const T = uiState.tab,
     body =
       T === 'team'
         ? renderTeam()
@@ -621,9 +621,9 @@ export function render() {
               : T === 'map'
                 ? renderMap()
                 : renderWalk();
-  const enter = U.lastTab !== T,
-    dir = U.lastTab && enter ? (SCREENS.indexOf(T) > SCREENS.indexOf(U.lastTab) ? ' fromR' : ' fromL') : '';
-  U.lastTab = T;
+  const enter = uiState.lastTab !== T,
+    dir = uiState.lastTab && enter ? (SCREENS.indexOf(T) > SCREENS.indexOf(uiState.lastTab) ? ' fromR' : ' fromL') : '';
+  uiState.lastTab = T;
   app.innerHTML = `${topbar()}<main class="screen s-${T}${enter ? ' enter' + dir : ''}">${body}</main>`;
   updateNav(true);
   walkSceneSync();
@@ -632,8 +632,8 @@ export function render() {
   $$('[data-count]').forEach(el => {
     const k = el.dataset.count,
       to = +el.dataset.to,
-      from = U.disp[k];
-    U.disp[k] = to;
+      from = uiState.disp[k];
+    uiState.disp[k] = to;
     if (from == null || from === to || RM) {
       el.textContent = fmt(to);
       return;
@@ -666,9 +666,9 @@ function updateNav(show) {
     document.body.appendChild(n);
   }
   n.hidden = !show;
-  n.querySelector('.ind').style.setProperty('--i', TABS.indexOf(U.tab));
+  n.querySelector('.ind').style.setProperty('--i', TABS.indexOf(uiState.tab));
   n.querySelectorAll('button').forEach(b => {
-    if (b.dataset.t === U.tab) b.setAttribute('aria-current', 'page');
+    if (b.dataset.t === uiState.tab) b.setAttribute('aria-current', 'page');
     else b.removeAttribute('aria-current');
   });
 }
@@ -703,7 +703,7 @@ function introSteps() {
   ];
 }
 function renderIntro() {
-  const i = U.intro,
+  const i = uiState.intro,
     L = introSteps(),
     st = i > 0 ? L[Math.min(i, L.length) - 1] : null;
   if (st && st.k === 'still') {
@@ -721,7 +721,7 @@ function renderIntro() {
   if (i <= GINI.length)
     return `<div class="talk"><div class="talk-art">${humanHTML('gini', 96)}</div><div class="dlg px"><p class="speaker">Professor Hazel</p><p class="line" id="dlgLine">${GINI[i - 1]}</p><button class="pb dark wide" data-a="intro">Next</button></div></div>`;
   if (st && st.k === 'trainer') {
-    const cur = JSON.stringify(cleanLook(U.trainerDraft || TR_PRESETS[0]));
+    const cur = JSON.stringify(cleanLook(uiState.trainerDraft || TR_PRESETS[0]));
     return `<header class="bar"><div><div class="sub">Your adventure, your style</div><h1 class="where">Create your trainer</h1></div></header>
   <p class="note">Pick a starting look, then make it yours: body, face, hair and clothes. You can change it any time from your Trainer card.</p>
   <div class="tr-presets">${TR_PRESETS.map((p, j) => `<button class="tr-pre px" data-a="tr-preset" data-i="${j}" aria-pressed="${JSON.stringify(cleanLook(p)) === cur}"><img src="${lookPortrait(p)}" alt="Look ${j + 1}"></button>`).join('')}</div>
@@ -779,8 +779,8 @@ function bracketNote(st) {
   return `Busy day! Steps now earn $${r} each until ${fmt(nb[0])}.`;
 }
 function encCard(q) {
-  const nu = !U.seenEnc.has(q.id);
-  U.seenEnc.add(q.id);
+  const nu = !uiState.seenEnc.has(q.id);
+  uiState.seenEnc.add(q.id);
   return `<button class="enc px hidden-enc${nu ? ' pop' : ''}" data-a="enc" data-id="${q.id}" aria-label="Unknown Billie, level ${q.lvl}"><span class="no tnum">No. ${q.no}</span><span class="denom tnum">Lv ${q.lvl}</span><span class="stage-glow"></span><span class="enc-hide"><img class="pxi" src="${artURL('scene/props/tallgrass.png')}" alt=""><i>?</i></span><b>Unknown</b></button>`;
 }
 function stepsTo(j) {
@@ -902,7 +902,7 @@ function buddyCard() {
   return `<section><div class="sec-h"><h2>Buddy</h2></div><div class="buddy px" data-a="mon" data-u="${m.uid}" role="button" tabindex="0">${rigCanvasHTML(m.sp, 80, { gold: m.gold })}<div class="bd"><div class="bn">${esc(N(m))} <span class="lv tnum">Lv ${m.lvl}</span></div><div class="note">Earns 1 XP for every ${plural(RULES.progression.buddyStepsPerXp, 'step')}. ${fmt(Math.ceil((b - m.xp) * RULES.progression.buddyStepsPerXp))} more steps to level ${m.lvl + 1}.</div>${bar((m.xp - a) / (b - a), 'xpb')}${ev}</div></div></section>`;
 }
 function roomHero() {
-  const I = U.inside,
+  const I = uiState.inside,
     sc = mapById(I.id) || {},
     here = ROUTE[saveData.route.node],
     what =
@@ -933,10 +933,10 @@ function envLine() {
   return `<p class="wh-env">${uiIconHTML(environmentIcon(), 12)} ${esc(t)}${h ? `<span> · ${esc(h)}</span>` : ''}</p>`;
 }
 function walkHero() {
-  if (U.inside && !U.bench && roomState()) return roomHero();
-  if (U.bench && U.bench.test && mapById(U.bench.id)) {
-    /* v20: a test scene from the debug menu */ const sc = mapById(U.bench.id);
-    return `<div class="walk-hero" id="walkHero"><div class="wh-card glass">${U.bench.id === 'gallery' ? `<div class="sub">Settings</div><h1 class="where">Graphics gallery</h1><p class="wh-gate">Walk to a signpost, then move the dial below and watch what changes.</p>` : `<div class="sub">Test scene</div><h1 class="where">${esc((sc.name || U.bench.id).replace(/^Test: /, ''))}</h1><p class="wh-gate">${(sc.checks || []).length} walking checks. Debug menu → Test scenes runs them.</p>`}<div class="wh-acts"><button class="pb small gold" ${U.bench.id === 'gallery' ? 'data-a="gal-leave"' : 'data-a="dbg" data-x="untest"'}>${U.bench.id === 'gallery' ? 'Back to Settings' : 'Back to the game'}</button></div></div></div>`;
+  if (uiState.inside && !uiState.bench && roomState()) return roomHero();
+  if (uiState.bench && uiState.bench.test && mapById(uiState.bench.id)) {
+    /* v20: a test scene from the debug menu */ const sc = mapById(uiState.bench.id);
+    return `<div class="walk-hero" id="walkHero"><div class="wh-card glass">${uiState.bench.id === 'gallery' ? `<div class="sub">Settings</div><h1 class="where">Graphics gallery</h1><p class="wh-gate">Walk to a signpost, then move the dial below and watch what changes.</p>` : `<div class="sub">Test scene</div><h1 class="where">${esc((sc.name || uiState.bench.id).replace(/^Test: /, ''))}</h1><p class="wh-gate">${(sc.checks || []).length} walking checks. Debug menu → Test scenes runs them.</p>`}<div class="wh-acts"><button class="pb small gold" ${uiState.bench.id === 'gallery' ? 'data-a="gal-leave"' : 'data-a="dbg" data-x="untest"'}>${uiState.bench.id === 'gallery' ? 'Back to Settings' : 'Back to the game'}</button></div></div></div>`;
   }
   const node = saveData.route.node,
     here = ROUTE[node],
@@ -1020,7 +1020,7 @@ function sceneExitsByBearing(node, sc, ex, out) {
 }
 /* what the walk scene shows: the stop you're at (walk around freely), or you walking out toward the next stop
    (first half of a road) and in from the far end (second half) */
-/* v26: walking into shops, the clinic, the lab and houses. U.inside remembers the room and where you came in */
+/* v26: walking into shops, the clinic, the lab and houses. uiState.inside remembers the room and where you came in */
 const ROOM_OF = { shop: 'int_shop', clinic: 'int_clinic', lab: 'int_lab', house: 'int_house', home: 'int_home' };
 /* v46: a building's own room: one set on it in the Studio ("room"), else the room made for its kind of building
    (a bakery, an inn, a bank...), else the room for what it does (shop, clinic, lab, house) */
@@ -1074,15 +1074,15 @@ function enterRoom(a, p) {
   const lay = roomLayIn(id, p, true);
   if (lay) {
     Object.assign(info, lay);
-    U.goingIn = info;
+    uiState.goingIn = info;
     const P = walkView.pl,
       fr = [lay.door[0], lay.door[1] - 0.45];
     if (Math.hypot(P.x - fr[0], P.z - fr[1]) > 1.6) walkTo(walkablePointNear(fr[0], fr[1]), () => roomStepIn(info));
     else roomStepIn(info);
     return true;
   }
-  U.inside = info;
-  U.roam = null;
+  uiState.inside = info;
+  uiState.roam = null;
   if (typeof sfx === 'function') sfx('door');
   if (typeof NWLOG !== 'undefined') NWLOG.add('scene', 'inside ' + id);
   render();
@@ -1124,7 +1124,7 @@ function roomLayIn(id, p, fresh) {
 }
 /* the room's things changed while you're in it (your room's decorations): lay it in again */
 function roomRefresh() {
-  const I = U.inside;
+  const I = uiState.inside;
   if (!I || !I.view || walkView.id !== I.view || !walkView.sc) return;
   seamlessWorld.cache.delete(I.view + '|' + seamlessWorld.gen);
   const n = seamlessRoomMap(I.base, I.id, I.door);
@@ -1134,31 +1134,31 @@ function roomRefresh() {
   walkView.nav = null;
 }
 function roomAim(h) {
-  if (!h || h.k !== 'act' || !ROOM_OF[h.act] || U.inside) return;
+  if (!h || h.k !== 'act' || !ROOM_OF[h.act] || uiState.inside) return;
   if (typeof isOpenNow === 'function' && !isOpenNow(openingHoursKind(h.act, h.p))) return;
   const id = roomFor(h.act, h.p);
   if (id) roomLayIn(id, h.p);
 }
 function roomStepIn(info, n = 0) {
-  if (U.goingIn !== info) return;
+  if (uiState.goingIn !== info) return;
   const P = walkView.pl,
     fr = [info.door[0], info.door[1] - 0.45];
   if (!P || walkView.id !== info.base || Math.hypot(P.x - fr[0], P.z - fr[1]) > 2.2) {
-    U.goingIn = null;
+    uiState.goingIn = null;
     return;
   } /* you walked off, or the view moved on */
   if (!seamlessGetReady(info.view, true, info.door)) {
     if (typeof walkRenderer !== 'undefined') walkRenderer.prepBoost = Math.max(walkRenderer.prepBoost || 1, 3);
-    /* you're standing at the door: bigger slices */ if (n < (U.roomWait || 90)) {
+    /* you're standing at the door: bigger slices */ if (n < (uiState.roomWait || 90)) {
       setTimeout(() => roomStepIn(info, n + 1), 100);
       return;
     }
     info.view = null;
     if (typeof NWLOG !== 'undefined') NWLOG.add('scene', `room ${info.id} wasn't ready in 9 s; shown on its own`);
   }
-  U.goingIn = null;
-  U.inside = info;
-  U.roam = null;
+  uiState.goingIn = null;
+  uiState.inside = info;
+  uiState.roam = null;
   if (typeof walkRenderer !== 'undefined') walkRenderer.prepBoost = 1;
   if (typeof sfx === 'function') sfx('door');
   if (typeof NWLOG !== 'undefined')
@@ -1166,13 +1166,14 @@ function roomStepIn(info, n = 0) {
   render();
   if (info.view)
     setTimeout(() => {
-      if (U.inside === info && walkView.id === info.view && walkView.pl && walkView.sc) walkTo(mapHub(walkView.sc));
+      if (uiState.inside === info && walkView.id === info.view && walkView.pl && walkView.sc)
+        walkTo(mapHub(walkView.sc));
     }, 80);
 }
 export function leaveRoom() {
-  const I = U.inside;
+  const I = uiState.inside;
   if (!I) return;
-  U.inside = null;
+  uiState.inside = null;
   if (I.view) {
     /* out through the door: you stand in front of it, where you came in */ const P = walkView.pl,
       fr = [I.door[0], I.door[1] - 0.6],
@@ -1186,18 +1187,18 @@ export function leaveRoom() {
     }
     const B = mapById(I.base),
       o = (B && B.baseOff) || [0, 0];
-    U.roam = { id: (B && B.baseId) || I.back.id, node: I.node, x: fr[0] - o[0], z: fr[1] - o[1] };
-    U.backAt = null;
+    uiState.roam = { id: (B && B.baseId) || I.back.id, node: I.node, x: fr[0] - o[0], z: fr[1] - o[1] };
+    uiState.backAt = null;
     if (typeof sfx === 'function') sfx('door');
     render();
     return;
   }
-  U.roam = U.backAt = { id: I.back.id, node: I.node, x: I.back.x, z: I.back.z };
+  uiState.roam = uiState.backAt = { id: I.back.id, node: I.node, x: I.back.x, z: I.back.z };
   if (typeof sfx === 'function') sfx('door');
   render();
 }
 function roomAct(h) {
-  const I = U.inside;
+  const I = uiState.inside;
   if (!I) return;
   const pa = h && h.k === 'act' && h.p ? h.p.act : null;
   /* v47: a book or a paper to read (lore.books) */
@@ -1244,16 +1245,16 @@ function roomAct(h) {
   }
 }
 function roomState() {
-  const I = U.inside;
+  const I = uiState.inside;
   if (!I) return null;
   if (I.node !== saveData.route.node) {
-    U.inside = null;
+    uiState.inside = null;
     return null;
   }
   if (I.view) {
     const sc = mapById(I.view);
     if (!sc) {
-      U.inside = null;
+      uiState.inside = null;
       return null;
     }
     const dr = sc.roomDoor || I.door,
@@ -1272,10 +1273,10 @@ function roomState() {
   }
   const sc = mapById(I.id);
   if (!sc) {
-    U.inside = null;
+    uiState.inside = null;
     return null;
   }
-  const pos = U.roam && U.roam.id === I.id ? [U.roam.x, U.roam.z] : mapHub(sc);
+  const pos = uiState.roam && uiState.roam.id === I.id ? [uiState.roam.x, uiState.roam.z] : mapHub(sc);
   return {
     id: I.id,
     node: saveData.route.node,
@@ -1289,12 +1290,12 @@ function roomState() {
   };
 }
 function walkState() {
-  const rs = !U.bench && roomState();
+  const rs = !uiState.bench && roomState();
   if (rs) return rs;
-  if (U.bench && U.bench.id && mapById(U.bench.id)) {
-    const sc = mapById(U.bench.id);
+  if (uiState.bench && uiState.bench.id && mapById(uiState.bench.id)) {
+    const sc = mapById(uiState.bench.id);
     return {
-      id: U.bench.id,
+      id: uiState.bench.id,
       node: saveData.route.node,
       mode: 'roam',
       pos: mapHub(sc),
@@ -1330,12 +1331,12 @@ function walkState() {
     const id = sceneIdAt(node),
       sc = mapById(id) || {},
       hub = sc.w ? mapHub(sc) : [0, 0],
-      bk = U.backAt,
+      bk = uiState.backAt,
       pos =
         bk && bk.node === node && bk.id === id
           ? [bk.x, bk.z]
-          : U.roam && U.roam.node === node && U.roam.id === id
-            ? [U.roam.x, U.roam.z]
+          : uiState.roam && uiState.roam.node === node && uiState.roam.id === id
+            ? [uiState.roam.x, uiState.roam.z]
             : hub;
     if (nx != null && r.prog > 0) {
       const k = sceneExits(node)[nx];
@@ -1354,12 +1355,12 @@ function walkState() {
         v = { id: wv.id, node, mode: 'roam', pos: [pos[0] + o[0], pos[1] + o[1]], roam: true };
       } else v = { id, node, mode: 'roam', pos, roam: true };
       /* v43: arriving: you stand at the exit the road came in by and walk to the hub; if the road left you outside the scene, you start at that exit */
-      if (live && sc.w && U.arrive === node) {
+      if (live && sc.w && uiState.arrive === node) {
         const P = walkView.pl,
           lx = P.x - lo[0],
           lz = P.z - lo[1],
           out = lx < 0 || lz < 0 || lx > sc.w || lz > sc.h;
-        U.arrive = null;
+        uiState.arrive = null;
         if (out && !(walkView.sc && walkView.sc.parts)) {
           /* v46: with the road in view you simply walk in from where you are; the snap is only for a scene shown alone */ const ex =
             (sc.exits || [])
@@ -1432,7 +1433,7 @@ function walkState() {
 export function walkPick(h) {
   const node = saveData.route.node,
     here = ROUTE[node];
-  if (U.inside) {
+  if (uiState.inside) {
     if (h.k === 'exit') {
       leaveRoom();
       return;
@@ -1445,7 +1446,7 @@ export function walkPick(h) {
   if (h.k === 'enc') {
     const q = saveData.queue.find(x => x.id === h.e.id);
     if (q) {
-      U.encAt = h.look || null;
+      uiState.encAt = h.look || null;
       startWild(q);
     }
   } else if (h.k === 'npc') {
@@ -1501,8 +1502,8 @@ export function walkPick(h) {
   } else if (h.k === 'exit') exitPrompt(h.e);
   else if (h.k === 'ground') {
     const st = tripStatus();
-    if (Date.now() - (U.groundTip || 0) > 6000) {
-      U.groundTip = Date.now();
+    if (Date.now() - (uiState.groundTip || 0) > 6000) {
+      uiState.groundTip = Date.now();
       toast(
         st.k === 'go'
           ? `You’re on your way to ${ROUTE[tripDest()].name}. Tap “Stop walking” to look around.`
@@ -1594,8 +1595,8 @@ function walkCross() {
     !walkView.ready ||
     !walkView.sc ||
     !walkView.pl ||
-    U.inside ||
-    U.bench ||
+    uiState.inside ||
+    uiState.bench ||
     (typeof B !== 'undefined' && B) ||
     (typeof CS !== 'undefined' && CS.on)
   )
@@ -1613,7 +1614,7 @@ function walkCross() {
     if (x < 0 || z < 0 || x > s.w || z > s.h) continue;
     const n = ROUTE.findIndex(r => r.scene === q.id);
     if (n < 0 || n === node) {
-      U.walkOk = [P.x, P.z, walkView.id];
+      uiState.walkOk = [P.x, P.z, walkView.id];
       return;
     }
     if (Math.min(x, z, s.w - x, s.h - z) < 1 || !ADJ[node].some(e => e.to === n)) return;
@@ -1624,15 +1625,15 @@ function walkCross() {
           ? `${bl.name} is blocking the way. Beat them first.`
           : null;
     if (why) {
-      const w = U.walkOk;
+      const w = uiState.walkOk;
       if (w && w[2] === walkView.id) {
         P.x = w[0];
         P.z = w[1];
       }
       P.route = null;
       P.goal = null;
-      if (Date.now() - (U.walkBounceT || 0) > 3500) {
-        U.walkBounceT = Date.now();
+      if (Date.now() - (uiState.walkBounceT || 0) > 3500) {
+        uiState.walkBounceT = Date.now();
         toast(why);
       }
       return;
@@ -1641,9 +1642,9 @@ function walkCross() {
       plan = r.plan && r.plan[0] === n ? r.plan.slice(1) : [];
     saveData.route = { node: n, prog: 0, plan, hold: false };
     saveData.visited[n] = 1;
-    U.roam = { id: q.id, node: n, x, z };
-    U.arrive = null;
-    U.backAt = null;
+    uiState.roam = { id: q.id, node: n, x, z };
+    uiState.arrive = null;
+    uiState.backAt = null;
     if (typeof NWLOG !== 'undefined') NWLOG.add('travel', 'walked into ' + ROUTE[n].name);
     save();
     render();
@@ -1656,7 +1657,7 @@ setInterval(() => {
   try {
     if (
       !saveData.started ||
-      U.tab !== 'walk' ||
+      uiState.tab !== 'walk' ||
       (typeof B !== 'undefined' && B) ||
       (typeof CS !== 'undefined' && CS.on) ||
       typeof walkView === 'undefined' ||
@@ -1688,14 +1689,14 @@ function walkSceneSync() {
     if (walkView.cv) stopWalkView();
     return;
   }
-  const on = saveData.started && U.tab !== 'map' && !!sceneIdAt(saveData.route.node),
-    walk = on && U.tab === 'walk';
+  const on = saveData.started && uiState.tab !== 'map' && !!sceneIdAt(saveData.route.node),
+    walk = on && uiState.tab === 'walk';
   let cv = $('#dio');
   document.body.classList.toggle('on-walk', walk);
   document.body.classList.toggle('on-scene', on && !walk);
   if (!on) {
     if (walkView.cv) stopWalkView();
-    if (U.tab === 'map' && saveData.started && typeof worldMapGlWanted === 'function' && worldMapGlWanted()) {
+    if (uiState.tab === 'map' && saveData.started && typeof worldMapGlWanted === 'function' && worldMapGlWanted()) {
       if (cv) {
         cv.hidden = false;
         cv.classList.add('in');
@@ -1744,28 +1745,28 @@ function walkSceneSync() {
       onMove: (x, z) => {
         if (typeof walkCross === 'function') walkCross();
         /* after leaving a room you stand at its door: nothing in between moves that */ if (
-          !U.inside &&
+          !uiState.inside &&
           /^int_/.test(walkView.id || '')
         )
           return;
         const sid = sceneIdAt(saveData.route.node),
           po = walkOff(sid),
           o = po || (walkView.sc && walkView.sc.baseOff) || [0, 0],
-          bk = U.backAt;
+          bk = uiState.backAt;
         if (bk) {
           if (walkOff(bk.id) && Math.hypot(x - walkOff(bk.id)[0] - bk.x, z - walkOff(bk.id)[1] - bk.z) < 0.6)
-            U.backAt = null;
+            uiState.backAt = null;
           else return;
         }
-        U.roam = {
+        uiState.roam = {
           id: po ? sid : (walkView.sc && walkView.sc.baseId) || walkView.id,
           node: saveData.route.node,
           x: x - o[0],
           z: z - o[1],
         };
       },
-      keys: () => !U.modal && U.tab === 'walk' && scrollY < innerHeight * 0.3,
-      active: () => U.tab === 'walk' && !U.modal,
+      keys: () => !uiState.modal && uiState.tab === 'walk' && scrollY < innerHeight * 0.3,
+      active: () => uiState.tab === 'walk' && !uiState.modal,
       safe: () => {
         const a = $('.wh-card'),
           b = $('.wh-foot'),
@@ -1780,9 +1781,9 @@ function walkSceneSync() {
           ? 'hidden'
           : walkView.battle
             ? ''
-            : U.modal
+            : uiState.modal
               ? 'window'
-              : U.tab !== 'walk'
+              : uiState.tab !== 'walk'
                 ? 'screen'
                 : scrollY > innerHeight * 0.7
                   ? 'scrolled'
@@ -1805,7 +1806,7 @@ function poolStrip(pool) {
   return `<div class="poolstrip">${P.list.map(([id]) => (saveData.seen[id] ? rigCanvasHTML(id, 36) : rigCanvasHTML(id, 36, { sil: 1, still: 1 }))).join('')}</div>`;
 }
 function mapCardHTML() {
-  const sel = U.mapSel == null ? saveData.route.node : U.mapSel;
+  const sel = uiState.mapSel == null ? saveData.route.node : uiState.mapSel;
   if (typeof sel === 'string') {
     const f = FUTURE[+sel.slice(1)];
     return `<div class="mc-top"><h2>${esc(f.name)}</h2><span class="sub">${f.t === 'sun' ? 'Center of the world' : 'Unexplored'}</span></div><p>${esc(f.blurb || '')}</p><p class="note">${f.t === 'sun' ? 'Visible from everywhere in the Hollow Earth.' : 'No trainer from Marigold Town has walked this far yet. The road opens in a later version.'}</p>`;
@@ -1902,9 +1903,9 @@ const BOXSORT = [
 ];
 function boxSection() {
   const all = saveData.box.filter(m => m.job == null),
-    so = U.boxSort || 'new',
+    so = uiState.boxSort || 'new',
     types = [...new Set(all.flatMap(m => SP[m.sp].types))].sort();
-  let f = U.boxF || 'all';
+  let f = uiState.boxF || 'all';
   if (f !== 'all' && !types.includes(f)) f = 'all';
   let L = all.filter(m => f === 'all' || SP[m.sp].types.includes(f));
   L =
@@ -1955,7 +1956,7 @@ function dexStatus(id) {
   return saveData.caught[id] ? 'got' : saveData.seen[id] ? 'seen' : 'none';
 }
 function guideTabs() {
-  const t = U.guideTab || 'dex';
+  const t = uiState.guideTab || 'dex';
   return `<div class="seg guide-tabs">${[
     ['dex', 'Billies'],
     ['lore', 'Lore'],
@@ -1965,14 +1966,14 @@ function guideTabs() {
     .join('')}</div>`;
 }
 function renderLedger() {
-  if (U.dex && SP[U.dex] && saveData.seen[U.dex]) return renderDexEntry(U.dex);
-  if (U.guideTab === 'cards' && typeof renderPostcards === 'function')
+  if (uiState.dex && SP[uiState.dex] && saveData.seen[uiState.dex]) return renderDexEntry(uiState.dex);
+  if (uiState.guideTab === 'cards' && typeof renderPostcards === 'function')
     return `<header class="bar"><div><div class="sub">Greetings from every town you’ve walked into</div><h1 class="where">Postcards</h1></div></header>${guideTabs()}${renderPostcards()}`;
-  if (U.guideTab === 'lore' && typeof renderLore === 'function')
+  if (uiState.guideTab === 'lore' && typeof renderLore === 'function')
     return `<header class="bar"><div><div class="sub">The world, the story, the people</div><h1 class="where">Lore</h1></div></header>${guideTabs()}${renderLore()}`;
   const seen = DEX.filter(id => saveData.seen[id]).length,
     got = DEX.filter(id => saveData.caught[id]).length,
-    f = U.dexF || 'all';
+    f = uiState.dexF || 'all';
   const list = DEX.filter(id => {
     const st = dexStatus(id);
     if (f === 'got') return st === 'got';
@@ -2217,7 +2218,7 @@ function monSheet(m) {
       l: 'Heal',
       c: 'green',
       f: () => {
-        U.modal = null;
+        uiState.modal = null;
         healPick(m, true);
       },
     });
@@ -2251,7 +2252,7 @@ function monSheet(m) {
             ic: 'team',
             l: 'Swap into team',
             f: () => {
-              U.modal = null;
+              uiState.modal = null;
               swapPick(m);
             },
           }
@@ -2302,7 +2303,7 @@ function monSheet(m) {
       l: other ? `Combine with another ${s.name}` : `Combine (needs another ${s.name})`,
       dis: !other,
       f: () => {
-        U.modal = null;
+        uiState.modal = null;
         modal({
           title: `Combine two ${s.name}s?`,
           html: `<p>${esc(N(other))} (Lv ${other.lvl}) will join with ${esc(N(m))}. This can’t be undone.</p>`,
@@ -2407,7 +2408,7 @@ function healPick(m, back) {
         c: 'quiet',
         f: () => {
           if (back) {
-            U.modal = null;
+            uiState.modal = null;
             monSheet(m);
           } else closeModal();
         },
@@ -2439,7 +2440,7 @@ function hireFlow(slot) {
       .map(k => ({
         l: `${JOBS[k].n}, ${JOBS[k].where}: ${JOBS[k].pay}`,
         f: () => {
-          U.modal = null;
+          uiState.modal = null;
           hirePick(slot, k);
         },
       }))
@@ -2459,7 +2460,7 @@ function hirePick(slot, job) {
   });
 }
 function settings(tab) {
-  if (tab) U.setTab = tab;
+  if (tab) uiState.setTab = tab;
   modal({
     title: 'Settings',
     settings: true,
@@ -2471,7 +2472,7 @@ function settings(tab) {
         l: 'Start over',
         c: 'quiet',
         f: () => {
-          U.modal = null;
+          uiState.modal = null;
           modal({
             title: 'Start over?',
             html: '<p>This erases your team, Field Guide and money.</p>',
@@ -2484,11 +2485,11 @@ function settings(tab) {
                   saveData.savedAt = Date.now();
                   lsSet(saveData);
                   flush();
-                  U.intro = 0;
-                  U.pg = null;
-                  U.avatarDraft = null;
-                  U.trainerDraft = null;
-                  U.tab = 'walk';
+                  uiState.intro = 0;
+                  uiState.pg = null;
+                  uiState.avatarDraft = null;
+                  uiState.trainerDraft = null;
+                  uiState.tab = 'walk';
                   applyPreferences();
                   closeModal();
                   render();
@@ -2504,10 +2505,10 @@ function settings(tab) {
 }
 /* o.rival (v47, from the opening): Blake's battle comes first; the welcome sheet waits until the talk after it */
 export function startGame(l, o = {}) {
-  const avatar = cleanLook(U.avatarDraft || U.trainerDraft || TR_PRESETS[0]);
+  const avatar = cleanLook(uiState.avatarDraft || uiState.trainerDraft || TR_PRESETS[0]);
   setSaveData(freshKeep());
   saveData.avatar = avatar;
-  U.trainerDraft = null;
+  uiState.trainerDraft = null;
   saveData.started = true;
   saveData.gender = 'me';
   saveData.wardrobe = { owned: {}, outfits: [null, null, null] };
@@ -2527,7 +2528,7 @@ export function startGame(l, o = {}) {
   const egg = R.starterEgg && EGGS[R.starterEgg] ? addEgg(R.starterEgg) : false;
   save();
   flush();
-  U.tab = 'walk';
+  uiState.tab = 'walk';
   render();
   const nE = R.starterEncounters,
     words = ['No', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten'];
@@ -2538,7 +2539,7 @@ export function startGame(l, o = {}) {
     btns: [{ l: 'Let’s go', c: 'dark', f: closeModal }],
   };
   if (o.rival && TRAINERS.blake0 && typeof storyRivalBattle === 'function') {
-    U.welcome = W;
+    uiState.welcome = W;
     storyRivalBattle(o);
     return;
   }
@@ -2552,43 +2553,44 @@ document.addEventListener('click', ev => {
   const a = el.dataset.a,
     d = el.dataset;
   if (a === 'scrim') {
-    if (ev.target === el && U.modal && !U.modal.lock) {
-      const c = U.modal.btns && U.modal.btns.find(b => b.l === 'Close' || b.l === 'Done' || b.c === 'quiet');
+    if (ev.target === el && uiState.modal && !uiState.modal.lock) {
+      const c =
+        uiState.modal.btns && uiState.modal.btns.find(b => b.l === 'Close' || b.l === 'Done' || b.c === 'quiet');
       if (c) c.f();
     }
     return;
   }
   if (a === 'mb') {
-    const b = U.modal && U.modal.btns[+d.i];
+    const b = uiState.modal && uiState.modal.btns[+d.i];
     if (b && !b.dis) b.f();
     return;
   }
   if (typeof worldMapGlAction === 'function' && worldMapGlAction(a, d)) return;
   switch (a) {
     case 'intro':
-      if (U.intro === 0 && typeof csWanted === 'function' && csWanted()) {
+      if (uiState.intro === 0 && typeof csWanted === 'function' && csWanted()) {
         csStart();
         break;
       }
-      U.intro++;
+      uiState.intro++;
       render();
       break;
     case 'pickgender':
-      U.pg = d.g;
-      U.intro++;
+      uiState.pg = d.g;
+      uiState.intro++;
       render();
       break;
     case 'tr-preset':
-      U.trainerDraft = cleanLook(TR_PRESETS[+d.i]);
+      uiState.trainerDraft = cleanLook(TR_PRESETS[+d.i]);
       render();
       break;
     case 'tr-custom':
       openDressingRoom({ mode: 'intro', done: () => render() });
       break;
     case 'tr-next':
-      U.avatarDraft = cleanLook(U.trainerDraft || TR_PRESETS[0]);
-      U.trainerDraft = U.avatarDraft;
-      U.intro++;
+      uiState.avatarDraft = cleanLook(uiState.trainerDraft || TR_PRESETS[0]);
+      uiState.trainerDraft = uiState.avatarDraft;
+      uiState.intro++;
       render();
       scrollTo(0, 0);
       break;
@@ -2602,14 +2604,14 @@ document.addEventListener('click', ev => {
       startGame(d.l, { rival: true, talkFirst: true });
       break;
     case 'tab':
-      if (U.tab !== d.t) {
-        if (d.t === 'map') U.mglFrom = U.tab;
-        U.tab = d.t;
-        if (d.t !== 'map') U.mapSel = null;
+      if (uiState.tab !== d.t) {
+        if (d.t === 'map') uiState.mglFrom = uiState.tab;
+        uiState.tab = d.t;
+        if (d.t !== 'map') uiState.mapSel = null;
         render();
         scrollTo(0, 0);
-      } else if (d.t === 'ledger' && U.dex) {
-        U.dex = null;
+      } else if (d.t === 'ledger' && uiState.dex) {
+        uiState.dex = null;
         render();
         scrollTo(0, 0);
       }
@@ -2677,12 +2679,12 @@ document.addEventListener('click', ev => {
       break;
     }
     case 'mact': {
-      const b = U.modal && U.modal.acts && U.modal.acts[+d.i];
+      const b = uiState.modal && uiState.modal.acts && uiState.modal.acts[+d.i];
       if (b && !b.dis) b.f();
       break;
     }
     case 'mnick':
-      if (U.modal && U.modal.nick) U.modal.nick.f();
+      if (uiState.modal && uiState.modal.nick) uiState.modal.nick.f();
       break;
     case 'mlead': {
       const m = findMon(d.u);
@@ -2713,7 +2715,7 @@ document.addEventListener('click', ev => {
     case 'mhealuse': {
       const m = findMon(d.u);
       if (m && applyItem(d.it, d.u, false)) {
-        U.modal = null;
+        uiState.modal = null;
         render();
         if (d.b) monSheet(m);
         else nextModal();
@@ -2761,11 +2763,11 @@ document.addEventListener('click', ev => {
       break;
     }
     case 'boxsort':
-      U.boxSort = d.k;
+      uiState.boxSort = d.k;
       render();
       break;
     case 'boxf':
-      U.boxF = d.f;
+      uiState.boxF = d.f;
       render();
       break;
     case 'msel':
@@ -2857,28 +2859,28 @@ document.addEventListener('click', ev => {
         toast('Not seen yet. Keep walking.');
         break;
       }
-      U.dex = d.s;
-      U.lastTab = 'ledger';
+      uiState.dex = d.s;
+      uiState.lastTab = 'ledger';
       render();
       scrollTo(0, 0);
       break;
     }
     case 'dexback':
-      U.dex = null;
+      uiState.dex = null;
       render();
       scrollTo(0, 0);
       break;
     case 'dexf':
-      U.dexF = d.f;
+      uiState.dexF = d.f;
       render();
       break;
     case 'guidetab':
-      U.guideTab = d.k;
+      uiState.guideTab = d.k;
       render();
       scrollTo(0, 0);
       break;
     case 'loresec':
-      U.loreSec = d.k;
+      uiState.loreSec = d.k;
       render();
       break;
     case 'lorebook':
@@ -2941,7 +2943,7 @@ document.addEventListener('click', ev => {
       }
       break;
     case 'baimback':
-      if (B && !U.throwing) {
+      if (B && !uiState.throwing) {
         battleStage.ring = null;
         camHome(300);
         battleStageFocus('wide');
@@ -3004,7 +3006,8 @@ document.addEventListener('click', ev => {
 });
 /* keyboard play in battle: F fight, 1–4 moves, X tax (or C), I items, T team, R run, Esc back, Space/Enter advance */
 document.addEventListener('keydown', ev => {
-  if (!B || U.modal || ev.ctrlKey || ev.metaKey || ev.altKey || /INPUT|SELECT|TEXTAREA/.test(ev.target.tagName)) return;
+  if (!B || uiState.modal || ev.ctrlKey || ev.metaKey || ev.altKey || /INPUT|SELECT|TEXTAREA/.test(ev.target.tagName))
+    return;
   const k = ev.key.toLowerCase(),
     ph = B.phase,
     click = s => {
@@ -3057,8 +3060,8 @@ document.addEventListener('pointerdown', ev => {
   if (B && B.phase === 'playing' && ev.target.closest('.bstage')) tapMsg();
 });
 document.addEventListener('keydown', ev => {
-  if (ev.key === 'Escape' && U.modal && !U.modal.lock) {
-    const c = U.modal.btns && U.modal.btns.find(b => b.l === 'Close' || b.l === 'Done' || b.l === 'Cancel');
+  if (ev.key === 'Escape' && uiState.modal && !uiState.modal.lock) {
+    const c = uiState.modal.btns && uiState.modal.btns.find(b => b.l === 'Close' || b.l === 'Done' || b.l === 'Cancel');
     if (c) c.f();
   }
   if ((ev.key === 'Enter' || ev.key === ' ') && ev.target.matches('[role=button][data-a]')) {
@@ -3068,7 +3071,7 @@ document.addEventListener('keydown', ev => {
 });
 window.addEventListener('resize', () => {
   if (B) battleResize();
-  else if (U.tab === 'map' && saveData.started) worldMapFit();
+  else if (uiState.tab === 'map' && saveData.started) worldMapFit();
 });
 
 /* ---------- tilt ---------- */
@@ -3205,7 +3208,7 @@ function bgTick(ts) {
 
 // Keep keyboard navigation inside an open dialog.
 document.addEventListener('keydown', ev => {
-  if (ev.key !== 'Tab' || !U.modal) return;
+  if (ev.key !== 'Tab' || !uiState.modal) return;
   const els = $$(
     '.sheet button:not(:disabled),.sheet input,.sheet select,.sheet summary,[tabindex="0"]',
     $('#ov')
@@ -3223,8 +3226,8 @@ document.addEventListener('keydown', ev => {
 });
 // Enter in the nickname field saves it.
 document.addEventListener('keydown', ev => {
-  if (ev.key === 'Enter' && ev.target.id === 'nick' && U.modal && U.modal.nick) {
+  if (ev.key === 'Enter' && ev.target.id === 'nick' && uiState.modal && uiState.modal.nick) {
     ev.preventDefault();
-    U.modal.nick.f();
+    uiState.modal.nick.f();
   }
 });

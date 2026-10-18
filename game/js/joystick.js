@@ -9,7 +9,7 @@
    Both set walkView.stick {x right, y up, length 0-1}; walk-view.js walks along the camera's own right and forward. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { B, U, saveData } from './game-state.js';
+import { B, saveData, uiState } from './game-state.js';
 import { walkView } from './walk-view.js';
 import { walkRenderer } from './walk-view-gl.js';
 import { TALK } from './talk.js';
@@ -35,10 +35,10 @@ function joyAllowed() {
   return (
     typeof saveData !== 'undefined' &&
     saveData.started &&
-    typeof U !== 'undefined' &&
-    U.tab === 'walk' &&
-    !U.modal &&
-    !U.title &&
+    typeof uiState !== 'undefined' &&
+    uiState.tab === 'walk' &&
+    !uiState.modal &&
+    !uiState.title &&
     !(typeof B !== 'undefined' && B) &&
     !(typeof CS !== 'undefined' && CS.on) &&
     typeof walkView !== 'undefined' &&

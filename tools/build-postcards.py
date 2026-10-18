@@ -85,12 +85,12 @@ def main():
         pg.add_init_script('window.PB_TEST_GLOBALS=true')  # phase 04d: the modules' names on window, for evaluate()
         pg.goto(f'http://127.0.0.1:{port}/index.html'); pg.wait_for_selector('.ttl,.title', timeout=60000)
         pg.evaluate("GD.engine=GD.engine||{};GD.engine.defaults=Object.assign({},GD.engine.defaults||{},{quality:{resolution:1,shadowMap:2048,auto:false},lens:{blur:0,vignette:.25,grain:0,aberration:0}});0")
-        pg.evaluate("if(typeof titleEnd==='function')titleEnd();U.pg='girl';startGame(SP.scoop0?'scoop':RULES.start.starters[0]);U.modal=null;U.mq=[];renderOv();U.toastQ=[];U.toastOn=false;render();0")
+        pg.evaluate("if(typeof titleEnd==='function')titleEnd();uiState.pg='girl';startGame(SP.scoop0?'scoop':RULES.start.starters[0]);uiState.modal=null;uiState.mq=[];renderOv();uiState.toastQ=[];uiState.toastOn=false;render();0")
         pg.add_style_tag(content='body *:not(#dio){visibility:hidden!important} #dio{visibility:visible!important}')
         for sid in want:
             t0 = time.time(); v = dict(VIEW.get(sid, {})); v['id'] = sid; v['at'] = clear_view(D, sid, v); v.pop('dx', None); v.pop('dz', None)
             pg.evaluate("((v)=>{environment.on=true;environment.force={time:v.time||16,season:v.season||'summer',weather:'clear'}})(%s);0" % json.dumps(v))
-            pg.evaluate(f"U.tab='walk';U.bench={{id:'{sid}',test:1}};render();0")
+            pg.evaluate(f"uiState.tab='walk';uiState.bench={{id:'{sid}',test:1}};render();0")
             for _ in range(160):
                 if pg.evaluate(f"!!(walkView.ready&&walkView.id==='{sid}'&&walkRenderer.frames>2)"): break
                 time.sleep(.5)

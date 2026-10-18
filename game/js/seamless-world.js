@@ -19,7 +19,7 @@ import { expose } from './test-globals.js';
 import { provide, sceneExits, sceneIdAt } from './hooks.js';
 import { clamp } from './util.js';
 import { ADJ, LINKS, ROUTE } from './game-data.js';
-import { U } from './game-state.js';
+import { uiState } from './game-state.js';
 import { artLoad, hexToRgb } from './art.js';
 import {
   GROUND_CACHE,
@@ -2150,7 +2150,7 @@ export function seamlessGate(v) {
 /* alpha 0.2: going into or out of an underground place the picture dips to dark for a moment (you step into a cave) */
 function seamlessUndergroundVeil() {
   const cv = walkView.cv;
-  if (!cv || !cv.isConnected || (typeof U !== 'undefined' && U.photo)) return;
+  if (!cv || !cv.isConnected || (typeof uiState !== 'undefined' && uiState.photo)) return;
   let v = document.getElementById('wrVeil');
   if (!v) {
     v = document.createElement('div');

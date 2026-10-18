@@ -8,7 +8,7 @@ import { expose } from './test-globals.js';
 import { buzz, provide, render, sfx, toast } from './hooks.js';
 import { $, $$, rnd } from './util.js';
 import { SHOPS } from './game-data.js';
-import { U, esc, fmt, save, saveData } from './game-state.js';
+import { esc, fmt, save, saveData, uiState } from './game-state.js';
 import { frameStop, frameTask } from './frame-scheduler.js';
 import { makeCanvas, uiIconHTML } from './art.js';
 import { TR_PRESETS, WD, cleanLook, portraitHTML, trBox, trColorsOf, trFrame, trSliders } from './person-art.js';
@@ -286,7 +286,7 @@ export function openDressingRoom(o = {}) {
   dressingRoom.shop = o.shop || null;
   dressingRoom.done = o.done || null;
   dressingRoom.noBack = !!o.noBack;
-  const base = o.look || (dressingRoom.mode === 'intro' ? U.trainerDraft || TR_PRESETS[0] : saveData.avatar);
+  const base = o.look || (dressingRoom.mode === 'intro' ? uiState.trainerDraft || TR_PRESETS[0] : saveData.avatar);
   dressingRoom.look = cleanLook(JSON.parse(JSON.stringify(base)));
   dressingRoom.orig = JSON.stringify(dressingRoom.look);
   dressingRoom.undo = [];
@@ -322,7 +322,7 @@ export function closeDressingRoom() {
     el.innerHTML = '';
   }
   document.body.classList.remove('dressing');
-  U.trainerDraft = null;
+  uiState.trainerDraft = null;
 }
 /* ---------- markup ---------- */
 function dressingRoomHTML() {
@@ -725,8 +725,8 @@ export function saveDressingLook() {
     return;
   }
   if (dressingRoom.mode === 'intro') {
-    U.trainerDraft = cleanLook(dressingRoom.look);
-    U.avatarDraft = U.trainerDraft;
+    uiState.trainerDraft = cleanLook(dressingRoom.look);
+    uiState.avatarDraft = uiState.trainerDraft;
     const done = dressingRoom.done;
     dressingRoom.on = false;
     frameStop('dress');
@@ -980,7 +980,7 @@ document.addEventListener('click', ev => {
       break;
     case 'dr-cancel':
       if (dressingRoom.mode === 'intro') {
-        U.trainerDraft = cleanLook(dressingRoom.look);
+        uiState.trainerDraft = cleanLook(dressingRoom.look);
         dressingRoom.on = false;
         frameStop('dress');
         const e2 = $('#dressing');

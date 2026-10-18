@@ -13,12 +13,12 @@ import {
   SAVE_FOUND,
   SAVE_NEW_MSG,
   SAVE_OLD_MSG,
-  U,
   esc,
   fresh,
   saveData,
   setNoSaving,
   setSaveData,
+  uiState,
 } from './game-state.js';
 import { ART_CACHE, COIN_ART, EGG_ART, ICON_ATLAS, MENU_BACKGROUND_ART, artBoot, artImg, uiIconURL } from './art.js';
 import { trainerArtPaths } from './person-art.js';
@@ -748,14 +748,14 @@ if (NW_TEST) {
 }
 function studioTestStart() {
   if (!NW_TEST) return;
-  U.pg = 'girl';
+  uiState.pg = 'girl';
   startGame((RULES.start.starters || [])[0]);
   saveData.story = { met_chad: 1, met_chad2: 1 };
-  U.modal = null;
-  U.mq = [];
+  uiState.modal = null;
+  uiState.mq = [];
   renderOv();
-  if (NW_TEST.scene && mapById(NW_TEST.scene)) U.bench = { id: NW_TEST.scene };
-  U.tab = 'walk';
+  if (NW_TEST.scene && mapById(NW_TEST.scene)) uiState.bench = { id: NW_TEST.scene };
+  uiState.tab = 'walk';
   render();
   toast(
     `Test run${NW_TEST.scene && mapById(NW_TEST.scene) ? ' of ' + (mapById(NW_TEST.scene).name || NW_TEST.scene) : ''}. Nothing here is saved.`

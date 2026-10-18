@@ -9,7 +9,7 @@ import { expose } from './test-globals.js';
 import { NW_TEST, accChipHTML, closeModal, modal, postProcess, render, sceneIdAt, settings } from './hooks.js';
 import { $, clamp } from './util.js';
 import { ROUTE, START_NODE } from './game-data.js';
-import { RM, U, esc, flush, freshKeep, lsSet, saveData, setSaveData } from './game-state.js';
+import { RM, esc, flush, freshKeep, lsSet, saveData, setSaveData, uiState } from './game-state.js';
 import { userFps } from './frame-scheduler.js';
 import { uiIconHTML } from './art.js';
 import { humanHTML } from './person-art.js';
@@ -138,14 +138,14 @@ export function titleStart() {
   if (TITLE.on) return;
   TITLE.on = true;
   TITLE.mounted = false;
-  U.title = true;
+  uiState.title = true;
   document.body.classList.add('in-title');
 }
 function titleEnd() {
   if (!TITLE.on) return;
   TITLE.on = false;
   TITLE.run++;
-  U.title = false;
+  uiState.title = false;
   document.body.classList.remove('in-title', 'ttl-live', 'ttl-flat');
   if (walkView.director && walkView.director.frame === titleFrame) {
     walkView.director = null;
@@ -159,7 +159,7 @@ function titleNew() {
     titleEnd();
     if (typeof csWanted === 'function' && csWanted()) csStart();
     else {
-      U.intro = 1;
+      uiState.intro = 1;
       render();
     }
     return;
@@ -176,17 +176,17 @@ function titleNew() {
           saveData.savedAt = Date.now();
           lsSet(saveData);
           flush();
-          U.intro = 0;
-          U.pg = null;
-          U.avatarDraft = null;
-          U.trainerDraft = null;
-          U.tab = 'walk';
+          uiState.intro = 0;
+          uiState.pg = null;
+          uiState.avatarDraft = null;
+          uiState.trainerDraft = null;
+          uiState.tab = 'walk';
           applyPreferences();
           closeModal();
           titleEnd();
           if (typeof csWanted === 'function' && csWanted()) csStart();
           else {
-            U.intro = 1;
+            uiState.intro = 1;
             render();
           }
         },
@@ -197,7 +197,7 @@ function titleNew() {
 }
 /* play time: counted while the game is open and in view */
 setInterval(() => {
-  if (typeof saveData !== 'undefined' && saveData && saveData.started && !document.hidden && !U.title)
+  if (typeof saveData !== 'undefined' && saveData && saveData.started && !document.hidden && !uiState.title)
     saveData.playMs = (saveData.playMs || 0) + 15000;
 }, 15000);
 document.addEventListener(
@@ -233,7 +233,7 @@ document.addEventListener(
   true
 );
 document.addEventListener('keydown', ev => {
-  if (!TITLE.on || U.modal) return;
+  if (!TITLE.on || uiState.modal) return;
   if ((ev.key === 'Enter' || ev.key === ' ') && saveData.started) {
     ev.preventDefault();
     titleEnd();

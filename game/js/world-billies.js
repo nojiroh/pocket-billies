@@ -13,7 +13,7 @@ import { expose } from './test-globals.js';
 import { areaKey, provide, sceneIdAt, sfx } from './hooks.js';
 import { clamp } from './util.js';
 import { SP, STATUSN, TRAINERS, rivalSp, trainersAt } from './game-data.js';
-import { N, U, findMon, maxHp, nextStop, save, saveData } from './game-state.js';
+import { N, findMon, maxHp, nextStop, save, saveData, uiState } from './game-state.js';
 import { makeCanvas } from './art.js';
 import { RIG_BACK_VIEW, drawRig, rigFrame, rigParts, rigPreload } from './skeleton-rig.js';
 import { battleStagePrepare } from './battle-stage.js';
@@ -184,7 +184,7 @@ export function shiftWorldBillies(dx, dz) {
 function buddyItems(out, t, dt) {
   const P = walkView.pl,
     m = buddyBilly();
-  if (!m || U.inside || U.bench || (walkView.st && walkView.st.battle) || !walkView.sc) {
+  if (!m || uiState.inside || uiState.bench || (walkView.st && walkView.st.battle) || !walkView.sc) {
     worldBillies.bud = null;
     return;
   }

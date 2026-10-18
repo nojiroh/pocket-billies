@@ -15,7 +15,6 @@ import {
   RM,
   ROOM_KIND,
   TERRAIN_MATERIALS,
-  U,
   addSteps,
   artCacheVersion,
   buddyTap,
@@ -44,6 +43,7 @@ import {
   smooth01,
   standingHeightAt,
   talkFolk,
+  uiState,
   waitForPaintWorker,
   walkMode,
 } from './hooks.js';
@@ -3579,7 +3579,7 @@ function movePlayer(st, dt) {
       typeof walkMode === 'function' &&
       walkMode() &&
       typeof addSteps === 'function' &&
-      !(typeof U !== 'undefined' && U.bench)
+      !(typeof uiState !== 'undefined' && uiState.bench)
     ) {
       P.stepAcc = (P.stepAcc || 0) + Math.hypot(P.x - ox, P.z - oz) * 14.1;
       if (P.stepAcc >= 300) {

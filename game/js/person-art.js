@@ -11,7 +11,6 @@ import {
   FR,
   GD,
   PEOPLE,
-  U,
   artCacheVersion,
   artImage,
   cleanName,
@@ -20,6 +19,7 @@ import {
   provide,
   saveData,
   studioState,
+  uiState,
 } from './hooks.js';
 import { clamp } from './util.js';
 import { frameStop, frameTask } from './frame-scheduler.js';
@@ -296,7 +296,7 @@ export function trainerLook(who) {
     return cleanLook(f && f.avatar, TR_PRESETS[1] || TR_PRESETS[0]);
   }
   if (who === 'boy' || who === 'girl' || who === 'me')
-    return cleanLook(U.trainerDraft || saveData.avatar, TR_PRESETS[0]);
+    return cleanLook(uiState.trainerDraft || saveData.avatar, TR_PRESETS[0]);
   if (typeof who === 'string' && who.startsWith('folk:')) return folkLook(+who.slice(5));
   const p = (typeof PEOPLE !== 'undefined' && (PEOPLE[who] || PEOPLE.gini)) || {};
   return p.look ? cleanLook(p.look) : lookFromOld(p);

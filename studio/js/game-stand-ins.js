@@ -13,17 +13,17 @@ expose({
   RM: [() => RM, v => ((RM = v), provide({ RM }))],
   TC: [() => TC],
   TYPEFX: [() => TYPEFX],
-  U: [() => U, v => ((U = v), provide({ U }))],
   esc: [() => esc],
   liveMap: [() => liveMap],
   saveData: [() => saveData, v => ((saveData = v), provide({ saveData }))],
+  uiState: [() => uiState, v => ((uiState = v), provide({ uiState }))],
 });
 /* to-module: end */
 var saveData = { preferences: {}, gender: 'boy', avatar: null },
-  U = {},
+  uiState = {},
   B = null,
   RM = false;
-provide({ B, RM, U, saveData }); /* to-module */
+provide({ B, RM, saveData, uiState }); /* to-module */
 export const esc = s =>
   String(s == null ? '' : s).replace(
     /[&<>"']/g,

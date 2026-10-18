@@ -12,7 +12,7 @@ import { expose } from './test-globals.js';
 import { FR, flyDraw, flyTick, provide } from './hooks.js';
 import { $, clamp } from './util.js';
 import { FUTURE, LINKS, ROUTE, linkCost, placeSub } from './game-data.js';
-import { RM, U, canEnter, esc, fmt, nextStop, saveData, tripTo } from './game-state.js';
+import { RM, canEnter, esc, fmt, nextStop, saveData, tripTo, uiState } from './game-state.js';
 import { frameCount, frameStop, frameTask, userFps } from './frame-scheduler.js';
 import { artLoad, artPixels, hexToRgb, makeCanvas, uiIconHTML, worldMapStamp } from './art.js';
 import { owFrames, portraitHTML } from './person-art.js';
@@ -291,11 +291,11 @@ setWorldMapMount(function () {
   else if (vector3.dot(worldMap.me, to) < 0.999999) worldMapWalk(worldMap.me, to);
   if (!worldMap.focus) worldMap.focus = to;
   /* arriving from the walk screen: start close to you and pull back */
-  if (U.mglFrom === 'walk' && !RM && !worldMapGl.flat) {
+  if (uiState.mglFrom === 'walk' && !RM && !worldMapGl.flat) {
     worldMap.alt = 0.11;
     worldMapGl.altT = 0.32;
   }
-  U.mglFrom = null;
+  uiState.mglFrom = null;
   /* v31: a free camera. One finger (or the left mouse button) drags the land; two fingers pinch to zoom, twist to turn
     and slide up or down to tilt; the right mouse button (or Shift with the left) turns and tilts; the wheel zooms
     (Shift + wheel turns). Zoom goes right down to the miniatures. "Back to you" puts everything back. */
@@ -525,7 +525,7 @@ function worldMapGlLoop(ts) {
       worldMapGl.fv.u = u;
       worldMapGl.fv.v = v;
     }
-  } else if (U.mapSel == null && worldMap.me && !worldMapGl.flat && !worldMap.free) worldMap.focus = worldMap.me;
+  } else if (uiState.mapSel == null && worldMap.me && !worldMapGl.flat && !worldMap.free) worldMap.focus = worldMap.me;
   if (worldMapGl.altT != null) {
     worldMap.alt += (worldMapGl.altT - worldMap.alt) * Math.min(1, (ts - (worldMapGl.lastT || ts)) / 260);
     if (Math.abs(worldMapGl.altT - worldMap.alt) < 0.002) {
@@ -839,7 +839,7 @@ function worldMapGlOverlay(t) {
     worldMapGlLine(c, pts, 'rgba(255,214,90,.35)', 9);
     worldMapGlLine(c, pts, r.hold ? 'rgba(255,255,255,.9)' : '#FFE27A', 3.5, [10, 8], -t / 40);
   }
-  const sel = U.mapSel;
+  const sel = uiState.mapSel;
   if (typeof sel === 'number' && sel !== r.node && sel !== (r.plan.length ? r.plan[r.plan.length - 1] : null)) {
     const tr = tripTo(sel);
     if (tr && tr.plan.length) {
@@ -891,7 +891,7 @@ function worldMapGlPinState(i) {
     cls:
       'mpin' +
       (i === saveData.route.node ? ' here' : '') +
-      (U.mapSel === i ? ' sel' : '') +
+      (uiState.mapSel === i ? ' sel' : '') +
       (i === dest ? ' dest' : '') +
       (!saveData.visited[i] && !locked ? ' new' : '') +
       (locked ? ' locked' : '') +
@@ -934,10 +934,10 @@ function worldMapGlPins() {
       e.style.transform = tf;
     }
   };
-  const sel = U.mapSel == null ? saveData.route.node : U.mapSel,
+  const sel = uiState.mapSel == null ? saveData.route.node : uiState.mapSel,
     dest = saveData.route.plan.length ? saveData.route.plan[saveData.route.plan.length - 1] : null;
   const placed = [],
-    pr = i => (i === saveData.route.node ? 0 : i === U.mapSel ? 1 : i === dest ? 2 : saveData.visited[i] ? 3 : 4),
+    pr = i => (i === saveData.route.node ? 0 : i === uiState.mapSel ? 1 : i === dest ? 2 : saveData.visited[i] ? 3 : 4),
     order = ROUTE.map((n, i) => i).sort((a, b) => pr(a) - pr(b));
   for (const i of order) {
     const n = ROUTE[i],
@@ -971,8 +971,8 @@ function worldMapGlPins() {
           ? null
           : worldMapProject(worldMap.cam, [0, 0, 0])
         : worldMapGlProject(REGION_VECTORS[i]);
-    if (q && q.z > 0.95 && U.mapSel !== 'f' + i && !worldMapGl.flat) return put('f' + i, null);
-    if (q && U.mapSel !== 'f' + i) {
+    if (q && q.z > 0.95 && uiState.mapSel !== 'f' + i && !worldMapGl.flat) return put('f' + i, null);
+    if (q && uiState.mapSel !== 'f' + i) {
       const w = f.name.length * 7 + 20,
         r = [q.x - w / 2, q.y - 12, q.x + w / 2, q.y + 12];
       if (placed.some(o => r[0] < o[2] && r[2] > o[0] && r[1] < o[3] && r[3] > o[1])) q = null;
@@ -982,7 +982,7 @@ function worldMapGlPins() {
       'f' + i,
       q,
       `<span class="mp-n">${esc(f.name)}</span>`,
-      'mpin fog' + (f.t === 'sun' ? ' sun' : '') + (U.mapSel === 'f' + i ? ' sel' : ''),
+      'mpin fog' + (f.t === 'sun' ? ' sun' : '') + (uiState.mapSel === 'f' + i ? ' sel' : ''),
       { 'data-a': 'msel', 'data-n': 'f' + i, 'aria-label': f.name }
     );
   });

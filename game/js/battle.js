@@ -48,7 +48,6 @@ import {
   B,
   N,
   RM,
-  U,
   addEgg,
   addMon,
   esc,
@@ -65,6 +64,7 @@ import {
   saveData,
   setB,
   stat,
+  uiState,
   xpFor,
 } from './game-state.js';
 import { artURL, coinHTML, eggHTML, iconURL, uiIconHTML } from './art.js';
@@ -1062,7 +1062,7 @@ function catchOdds(id, T, spin) {
   );
 }
 function catchRoll(id, T, spin) {
-  if (U.dbgCatch) return { caught: true, w: 3, edge: false, P: 1 };
+  if (uiState.dbgCatch) return { caught: true, w: 3, edge: false, P: 1 };
   if (COINS[id].m === 0) return { caught: true, w: 3, edge: false, P: 1 };
   if (rnd() < RC.edge) return { caught: true, w: 1, edge: true, P: 1 };
   const P = catchOdds(id, T, spin);
@@ -1210,7 +1210,7 @@ export function battleResize() {
 }
 export function openBattle() {
   const bs = (saveData.preferences || {}).battleSpeed;
-  if (bs && !U.dbgSpeed) battleStage.speed = bs === 'fast' ? 1.6 : bs === 'faster' ? 2.2 : 1;
+  if (bs && !uiState.dbgSpeed) battleStage.speed = bs === 'fast' ? 1.6 : bs === 'faster' ? 2.2 : 1;
   const area = B.area || 'grass',
     list = saveData.team.map(m => [m.sp, m.gold, RIG_BACK_VIEW]).concat(B.sides[1].team.map(m => [m.sp, m.gold, 1]));
   const b = B;
@@ -1243,12 +1243,19 @@ export function setOpenBattle(v) {
    billionaire bursts out of the grass in a spray of leaves, then the battle's panels slide up over the same picture.
    When it's over they slide away and the camera pulls back out. The painted stage keeps the wipe. */
 function battleSeamless() {
-  return !RM && typeof battleGLWanted === 'function' && battleGLWanted() && U.tab === 'walk' && !U.inside && !U.bench;
+  return (
+    !RM &&
+    typeof battleGLWanted === 'function' &&
+    battleGLWanted() &&
+    uiState.tab === 'walk' &&
+    !uiState.inside &&
+    !uiState.bench
+  );
 }
 function battleSwoop(go) {
   const P = walkView.pl,
-    e = U.encAt;
-  U.encAt = null;
+    e = uiState.encAt;
+  uiState.encAt = null;
   const fx = e ? P.x * 0.6 + e[0] * 0.4 : P.x,
     fz = e ? P.z * 0.6 + e[1] * 0.4 : P.z;
   walkRenderer.swoop = { x: fx, z: fz, z0: walkRenderer.zoomT };
@@ -1317,32 +1324,32 @@ function wipe(mid) {
   }, 520);
 }
 export function stopTimers() {
-  clearTimeout(U.evT);
-  clearTimeout(U.hpT);
-  clearInterval(U.typeT);
+  clearTimeout(uiState.evT);
+  clearTimeout(uiState.hpT);
+  clearInterval(uiState.typeT);
 }
 function typeText(t) {
   const el = $('#msgT');
-  clearInterval(U.typeT);
+  clearInterval(uiState.typeT);
   if (!el) return 0;
   if (RM) {
     el.textContent = t;
-    U.typing = false;
+    uiState.typing = false;
     return 0;
   }
   el.textContent = '';
   let i = 0;
-  U.typing = true;
+  uiState.typing = true;
   const sp = Math.max(1, Math.round(2 * battleStage.speed));
-  U.typeT = setInterval(() => {
+  uiState.typeT = setInterval(() => {
     i += sp;
     el.textContent = t.slice(0, i);
     if (i >= t.length) {
-      clearInterval(U.typeT);
-      U.typing = false;
+      clearInterval(uiState.typeT);
+      uiState.typing = false;
     }
   }, 16);
-  U.typeFull = t;
+  uiState.typeFull = t;
   return Math.ceil(t.length / sp) * 16;
 }
 export function play() {
@@ -1385,13 +1392,13 @@ function stepEv() {
   const k = 1 / battleStage.speed;
   scAfter('hpT', r.hit >= 999 ? 0 : r.hit, 0, () => paintBoxes(ev.s, ev.mk, true));
   $('#msg').classList.remove('ready');
-  U.evReady = false;
+  uiState.evReady = false;
   /* the next line waits for the animation on the scene's own clock (a slow device draws fewer frames, so it takes
     longer in real time) as well as for the text to finish typing */
   scAfter('evT', r.dur + 120, tt + 120 * k, () => {
-    U.evReady = true;
+    uiState.evReady = true;
     $('#msg') && $('#msg').classList.add('ready');
-    U.evT = setTimeout(adv, (RM ? 1300 : 820) * k);
+    uiState.evT = setTimeout(adv, (RM ? 1300 : 820) * k);
   });
 }
 function scAfter(slot, sceneMs, realMs, fn) {
@@ -1409,9 +1416,9 @@ function scAfter(slot, sceneMs, realMs, fn) {
       fn();
       return;
     }
-    U[slot] = setTimeout(tick, 30);
+    uiState[slot] = setTimeout(tick, 30);
   };
-  U[slot] = setTimeout(tick, Math.max(0, Math.min(realMs, sceneMs / battleStage.speed)));
+  uiState[slot] = setTimeout(tick, Math.max(0, Math.min(realMs, sceneMs / battleStage.speed)));
 }
 function adv() {
   if (!B || B.phase !== 'playing') return;
@@ -1438,13 +1445,13 @@ function msgFace(f) {
 }
 export function tapMsg() {
   if (!B || B.phase !== 'playing' || !$('#msg')) return;
-  if (U.typing) {
-    clearInterval(U.typeT);
-    U.typing = false;
-    $('#msgT').textContent = U.typeFull || '';
+  if (uiState.typing) {
+    clearInterval(uiState.typeT);
+    uiState.typing = false;
+    $('#msgT').textContent = uiState.typeFull || '';
     return;
   }
-  if (U.evReady) adv();
+  if (uiState.evReady) adv();
 }
 function boxShow(i, on) {
   const b = $('#hb' + i);
@@ -1883,7 +1890,7 @@ function bindAim() {
     sy = 0,
     on = false;
   c.addEventListener('pointerdown', ev => {
-    if (U.throwing) return;
+    if (uiState.throwing) return;
     on = true;
     sx = ev.clientX;
     sy = ev.clientY;
@@ -1917,8 +1924,8 @@ export function showAim() {
     B.integrity > 1 ? `Focus Bonus ×${+B.integrity.toFixed(2)} is active.` : 'Line up your throw.';
 }
 export function doThrow(spin) {
-  if (U.throwing || !B || B.phase !== 'aim') return;
-  U.throwing = true;
+  if (uiState.throwing || !B || B.phase !== 'aim') return;
+  uiState.throwing = true;
   const ph = battleStageRingPhase(),
     T = 1 + RC.ring * ph,
     id = B.coin;
@@ -1933,7 +1940,7 @@ export function doThrow(spin) {
   battleStageCatch(id, res, spin, caught => finishThrow(res, id, lab, spin));
 }
 function finishThrow(res, id, lab, spin) {
-  U.throwing = false;
+  uiState.throwing = false;
   if (!B) return;
   const e = A(1);
   B.events = [];
@@ -1989,7 +1996,7 @@ export function endBattle() {
       setB(null);
       battleStageStop();
       document.body.classList.remove('in-battle');
-      U.tab = 'walk';
+      uiState.tab = 'walk';
       render();
       if (typeof storyAfterRival === 'function') storyAfterRival(o, T);
       else {
@@ -2069,7 +2076,7 @@ export function endBattle() {
     setB(null);
     battleStageStop();
     document.body.classList.remove('in-battle');
-    U.tab = 'walk';
+    uiState.tab = 'walk';
     render();
     after.forEach(m => modal(m));
     if (!after.length) postProcess();

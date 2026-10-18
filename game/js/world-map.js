@@ -7,7 +7,7 @@ import { expose } from './test-globals.js';
 import { flyDraw, flyTick, paintMapCard, provide, toast } from './hooks.js';
 import { $, clamp } from './util.js';
 import { FUTURE, LINKS, ROUTE, linkCost } from './game-data.js';
-import { RM, U, canEnter, esc, nextStop, saveData } from './game-state.js';
+import { RM, canEnter, esc, nextStop, saveData, uiState } from './game-state.js';
 import { frameCount, frameStop, frameTask, userFps } from './frame-scheduler.js';
 import { artPixels, bayerThreshold, makeSeededRandom, mixRgb, packPixel, worldMapStamp } from './art.js';
 import { owFrames } from './person-art.js';
@@ -505,9 +505,9 @@ function worldMapRender(t, lo) {
         c.fillStyle = n.board ? (saveData.flags[n.board] ? '#F4C542' : '#D9434B') : '#5DD6A0';
         c.fillRect(x + r + 1, y - r * 4 - 2, Math.max(2, r + 1), Math.max(2, r));
       }
-      if (U.mapSel === i || i === dest) {
+      if (uiState.mapSel === i || i === dest) {
         const rr = Math.round(5 * s + Math.sin(t / 200) * 1.5);
-        worldMapPixelRing(c, x, y - r * 2, rr, i === dest && U.mapSel !== i ? '#FFE27A' : '#FFFFFF');
+        worldMapPixelRing(c, x, y - r * 2, rr, i === dest && uiState.mapSel !== i ? '#FFE27A' : '#FFFFFF');
       }
     } else {
       const x = Math.round(q.x),
@@ -516,12 +516,13 @@ function worldMapRender(t, lo) {
       c.fillRect(x - 1, y - 1, 3, 3);
       c.fillStyle = '#5A5080';
       c.fillRect(x, y, 1, 1);
-      if (U.mapSel === 'f' + i) worldMapPixelRing(c, x, y, Math.round(5 * s + Math.sin(t / 200) * 1.5), '#FFFFFF');
+      if (uiState.mapSel === 'f' + i)
+        worldMapPixelRing(c, x, y, Math.round(5 * s + Math.sin(t / 200) * 1.5), '#FFFFFF');
     }
   });
   const sq2 = worldMapProject(cam, [0, 0, 0]);
   const sunI = FUTURE.findIndex(f => f.t === 'sun');
-  if (sq2 && sunI >= 0 && U.mapSel === 'f' + sunI)
+  if (sq2 && sunI >= 0 && uiState.mapSel === 'f' + sunI)
     worldMapPixelRing(c, Math.round(sq2.x), Math.round(sq2.y), Math.round(12 + Math.sin(t / 200) * 2), '#FFFFFF');
   const LS = [];
   WORLD_MAP_LANDMARKS.forEach(l => {
@@ -678,7 +679,7 @@ export function worldMapReset() {
   worldMap.pitch = 0;
   worldMap.alt = 0.32;
   worldMapFocus(worldMapPlayerPosition());
-  U.mapSel = null;
+  uiState.mapSel = null;
   paintMapCard();
   worldMap.dirty = true;
 }
@@ -699,11 +700,11 @@ export function worldMapWalk(from, to) {
   };
 }
 function onStepsAdded() {
-  if (U.tab !== 'map' || !worldMap.cv || !worldMap.cv.isConnected || worldMap.fly) return;
+  if (uiState.tab !== 'map' || !worldMap.cv || !worldMap.cv.isConnected || worldMap.fly) return;
   const to = worldMapPlayerPosition();
   if (worldMap.me && vector3.dot(worldMap.me, to) < 0.999999) {
     worldMapWalk(worldMap.me, to);
-    if (U.mapSel == null) worldMapFocus(to);
+    if (uiState.mapSel == null) worldMapFocus(to);
   }
   paintMapCard();
 }
@@ -734,7 +735,7 @@ function worldMapLoop(ts) {
     worldMap.focus = vector3.norm(slerp(a.from, a.to, EASE.io(k)));
     panning = k < 1;
     if (k >= 1) worldMap.fT = null;
-  } else if (U.mapSel == null && worldMap.me) worldMap.focus = worldMap.me;
+  } else if (uiState.mapSel == null && worldMap.me) worldMap.focus = worldMap.me;
   const busy = !!(worldMap.drag || moving || panning || worldMap.zt);
   if (ts - worldMap.lastDraw < (busy ? 1000 / userFps() - 2 : 400) && !worldMap.dirty) return;
   worldMap.lastDraw = ts;
@@ -765,22 +766,22 @@ export function worldMapLabels() {
       cls = '';
     if (kind === 'r') {
       if (isBehindSun(worldMap.cam, LOCATION_VECTORS[i])) return;
-      const far = q.z > 0.85 && i !== saveData.route.node && U.mapSel !== i && i !== dest;
+      const far = q.z > 0.85 && i !== saveData.route.node && uiState.mapSel !== i && i !== dest;
       if (far) return;
       name = ROUTE[i].name;
       cls =
         (i === saveData.route.node ? ' here' : '') +
-        (U.mapSel === i ? ' sel' : '') +
+        (uiState.mapSel === i ? ' sel' : '') +
         (i === dest ? ' dest' : '') +
         (!saveData.visited[i] ? ' new' : '');
     } else if (kind === 'f') {
       if (isBehindSun(worldMap.cam, REGION_VECTORS[i])) return;
-      if (q.z > 0.9 && U.mapSel !== 'f' + i) return;
+      if (q.z > 0.9 && uiState.mapSel !== 'f' + i) return;
       name = FUTURE[i].name;
-      cls = ' fog' + (U.mapSel === 'f' + i ? ' sel' : '');
+      cls = ' fog' + (uiState.mapSel === 'f' + i ? ' sel' : '');
     } else {
       name = FUTURE[i].name;
-      cls = ' sun' + (U.mapSel === 'f' + i ? ' sel' : '');
+      cls = ' sun' + (uiState.mapSel === 'f' + i ? ' sel' : '');
     }
     const n = kind === 'r' ? i : 'f' + i,
       estW = name.length * 7.2 + 14,
@@ -798,7 +799,7 @@ export function setWorldMapLabels(v) {
   provide({ worldMapLabels });
 }
 export function worldMapSelect(n) {
-  U.mapSel = n;
+  uiState.mapSel = n;
   paintMapCard();
   worldMapLabels();
   const v =

@@ -9,7 +9,7 @@ import { expose } from './test-globals.js';
 import { STEST, closeModal, modal, postProcess, provide, render } from './hooks.js';
 import { $, clamp } from './util.js';
 import { PLACE, RULES, SP, TRAINERS, trainersAt } from './game-data.js';
-import { B, RM, U, esc, healAll, save, saveData, today } from './game-state.js';
+import { B, RM, esc, healAll, save, saveData, today, uiState } from './game-state.js';
 import { dressingRoom } from './dressing-room.js';
 import { baseMapId, walkView, walkablePointNear } from './walk-view.js';
 import { gpuState } from './engine/webgl.js';
@@ -177,11 +177,11 @@ async function rivalScene(T) {
 export function storyCheck() {
   if (
     (typeof STEST !== 'undefined' && STEST.on) ||
-    U.bench ||
+    uiState.bench ||
     !saveData.started ||
     B ||
-    U.modal ||
-    U.tab !== 'walk' ||
+    uiState.modal ||
+    uiState.tab !== 'walk' ||
     TALK.on ||
     (typeof CS !== 'undefined' && CS.on) ||
     (typeof dressingRoom !== 'undefined' && dressingRoom.on) ||
@@ -198,7 +198,7 @@ export function storyCheck() {
   STORY.pending = T.id;
   setTimeout(() => {
     STORY.pending = null;
-    if (walkView.ready && !B && U.tab === 'walk' && !U.modal && !TALK.on && !CS.on) rivalScene(T);
+    if (walkView.ready && !B && uiState.tab === 'walk' && !uiState.modal && !TALK.on && !CS.on) rivalScene(T);
   }, 1400);
 }
 /* v39: the legendary encounters (rules.legends): one per scene, met when you arrive, once a day until caught */
@@ -206,13 +206,13 @@ export function legendCheck() {
   if (
     !saveData.started ||
     B ||
-    U.modal ||
-    U.tab !== 'walk' ||
+    uiState.modal ||
+    uiState.tab !== 'walk' ||
     TALK.on ||
     (typeof CS !== 'undefined' && CS.on) ||
     !walkView.ready ||
     (typeof STEST !== 'undefined' && STEST.on) ||
-    U.bench
+    uiState.bench
   )
     return;
   if (saveData.route.prog !== 0 || (saveData.route.plan && saveData.route.plan.length)) return;
@@ -224,7 +224,8 @@ export function legendCheck() {
   STORY.pending = 'legend';
   setTimeout(() => {
     STORY.pending = null;
-    if (!walkView.ready || B || U.tab !== 'walk' || U.modal || TALK.on || CS.on || baseMapId() !== L.scene) return;
+    if (!walkView.ready || B || uiState.tab !== 'walk' || uiState.modal || TALK.on || CS.on || baseMapId() !== L.scene)
+      return;
     F['legend_' + L.sp] = today();
     save();
     modal({
@@ -271,12 +272,12 @@ export function storyMovedCheck() {
   if (
     !saveData.started ||
     B ||
-    U.modal ||
-    U.title ||
+    uiState.modal ||
+    uiState.title ||
     TALK.on ||
     (typeof CS !== 'undefined' && CS.on) ||
     (typeof STEST !== 'undefined' && STEST.on) ||
-    U.bench
+    uiState.bench
   )
     return;
   const F = storyFlags();
@@ -328,7 +329,7 @@ export function storyRivalBattle(o = {}) {
   const t0 = performance.now(),
     go = async () => {
       if (B || !saveData.started) return;
-      U.modal = null;
+      uiState.modal = null;
       if (o.talkFirst && typeof talk === 'function' && !TALK.on) {
         STORY.rivalTalk = 1;
         try {
@@ -371,8 +372,8 @@ async function storyAfterRival(o, T) {
   if (o) openingMark();
   T = T || TRAINERS.blake0 || {};
   const who = T.who || 'chad';
-  const W = U.welcome;
-  U.welcome = null;
+  const W = uiState.welcome;
+  uiState.welcome = null;
   const lines = [];
   if (o === 'win')
     lines.push(

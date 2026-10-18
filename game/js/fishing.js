@@ -10,7 +10,7 @@ import { expose } from './test-globals.js';
 import { sfx, startWild, toast, x28Event } from './hooks.js';
 import { clamp, rnd } from './util.js';
 import { GD, RULES, SP } from './game-data.js';
-import { B, RM, U, areaPool, pickW, save, saveData, uid } from './game-state.js';
+import { B, RM, areaPool, pickW, save, saveData, uiState, uid } from './game-state.js';
 import { uiIconHTML } from './art.js';
 import { terrainAt, walkView } from './walk-view.js';
 import {
@@ -128,7 +128,7 @@ function fishPick(kind) {
 function fishPoll() {
   const b = document.querySelector('[data-a=fish]');
   if (!b) return;
-  const ok = !FISH.on && U.tab === 'walk' && !U.bench && !!fishSpot();
+  const ok = !FISH.on && uiState.tab === 'walk' && !uiState.bench && !!fishSpot();
   if (b.hidden === ok) b.hidden = !ok;
 }
 setInterval(() => {

@@ -10,7 +10,6 @@ import { COINS, DATA_WARN, DEX, EGGS, EGG_TIERS, ITEMS, ROUTE, RULES, SP, TRAINE
 import {
   B,
   MAXLV,
-  U,
   addEgg,
   addMon,
   addSteps,
@@ -27,6 +26,7 @@ import {
   setSaveData,
   spawn,
   today,
+  uiState,
   uid,
   xpFor,
 } from './game-state.js';
@@ -77,7 +77,7 @@ function debugHTML() {
   }</details>
  <details><summary>Wallet and steps</summary><div class="dbg-row">${dbgBtn('se1', '+$1,000')}${dbgBtn('se10', '+$10,000')}${dbgBtn('st1', '+1,000 steps')}${dbgBtn('st10', '+10,000 steps')}</div>
   <div class="dbg-row">${dbgBtn('coins', '+10 of every coin')}${dbgBtn('items', '+5 of every item')}${dbgBtn('newday', 'Start a new day')}</div></details>
- <details><summary>Billies</summary><div class="dbg-row">${dbgSel('dbgSp', dbgSpecies(), U.dbgSp || DEX[0])}<input id="dbgLv" type="number" min="1" max="${MAXLV()}" value="${U.dbgLv || 10}" aria-label="Level"><label class="dbg-ck"><input id="dbgGold" type="checkbox"> Golden</label></div>
+ <details><summary>Billies</summary><div class="dbg-row">${dbgSel('dbgSp', dbgSpecies(), uiState.dbgSp || DEX[0])}<input id="dbgLv" type="number" min="1" max="${MAXLV()}" value="${uiState.dbgLv || 10}" aria-label="Level"><label class="dbg-ck"><input id="dbgGold" type="checkbox"> Golden</label></div>
   <div class="dbg-row">${dbgBtn('give', 'Give it to me', 'gold')}${dbgBtn('enc', 'Add as encounter')}${dbgBtn('wild', 'Battle it now', 'red')}${dbgBtn('alpha', 'As an Alpha', 'red')}</div>
   <div class="dbg-row">${dbgBtn('heal', 'Heal everyone')}${dbgBtn('lv5', 'Team +5 levels')}${dbgBtn('evo', 'Lead evolves now')}${dbgBtn('dex', 'Fill the Field Guide')}</div></details>
  <details><summary>Trainers and world</summary><div class="dbg-row">${dbgSel(
@@ -91,27 +91,27 @@ function debugHTML() {
     node
   )}${dbgBtn('jump', 'Go there')}</div>
   <div class="dbg-row">${dbgBtn('seats', 'Earn every badge')}${dbgBtn('flags', 'Reset trainer wins')}${dbgBtn('fillq', 'Fill encounter queue')}${dbgBtn('clearq', 'Clear queue')}</div></details>
- <details ${U.bench && U.bench.test ? 'open' : ''}><summary>Test scenes</summary><p class="note">Small places that each show one tricky situation: stairs, ledges at the limits, bridges, water, shadows, every prop, slopes, the camera in tight spots, night lights, a dense forest, tiny and huge maps, traffic, and the light lab (v44: light on the land, in a room, on props, in the air — the places the quick check measures the lighting in). Checks test the walking rules there (what should and shouldn't be reachable).</p>
+ <details ${uiState.bench && uiState.bench.test ? 'open' : ''}><summary>Test scenes</summary><p class="note">Small places that each show one tricky situation: stairs, ledges at the limits, bridges, water, shadows, every prop, slopes, the camera in tight spots, night lights, a dense forest, tiny and huge maps, traffic, and the light lab (v44: light on the land, in a room, on props, in the air — the places the quick check measures the lighting in). Checks test the walking rules there (what should and shouldn't be reachable).</p>
   <div class="dbg-row">${dbgSel(
     'dbgTest',
     testScenes().map(k => [k, (mapById(k).name || k).replace(/^Test: /, '')]),
-    U.dbgTest || testScenes()[0] || ''
-  )}${dbgBtn('test', 'Go there')}${dbgBtn('testchk', 'Run its checks')}${U.bench && U.bench.test ? dbgBtn('untest', 'Back to the game', 'gold') : ''}</div>
-  ${U.testRes ? `<ul class="dbg-warn">${U.testRes.map(r => `<li>${r.ok ? '✓' : '✗'} ${esc(r.what)}${r.ok ? '' : ` (expected ${r.reach ? 'reachable' : 'not reachable'})`}</li>`).join('')}</ul>` : ''}</details>
+    uiState.dbgTest || testScenes()[0] || ''
+  )}${dbgBtn('test', 'Go there')}${dbgBtn('testchk', 'Run its checks')}${uiState.bench && uiState.bench.test ? dbgBtn('untest', 'Back to the game', 'gold') : ''}</div>
+  ${uiState.testRes ? `<ul class="dbg-warn">${uiState.testRes.map(r => `<li>${r.ok ? '✓' : '✗'} ${esc(r.what)}${r.ok ? '' : ` (expected ${r.reach ? 'reachable' : 'not reachable'})`}</li>`).join('')}</ul>` : ''}</details>
  <details><summary>Eggs and jobs</summary><div class="dbg-row">${dbgSel(
    'dbgEgg',
    EGG_TIERS.map(t => [t, t + ' km']),
    EGG_TIERS[0]
  )}${dbgBtn('egg', 'Add egg')}${dbgBtn('hatch', 'Finish all incubators')}${dbgBtn('pay', 'Pay all jobs')}</div>
   <div class="dbg-row">${dbgBtn('idle', 'Age storage by a day')}${dbgBtn('streak', 'Lead +3 win streak')}</div></details>
- <details ${inB ? 'open' : ''}><summary>Battle${inB ? '' : ' (start one first)'}</summary><div class="dbg-row">${dbgBtn('win', 'Win now', 'gold')}${dbgBtn('lose', 'Lose now')}${dbgBtn('foe1', 'Foe to 1 HP')}${dbgBtn('catch', U.dbgCatch ? 'Taxing works as normal' : 'Every throw taxes')}</div>
+ <details ${inB ? 'open' : ''}><summary>Battle${inB ? '' : ' (start one first)'}</summary><div class="dbg-row">${dbgBtn('win', 'Win now', 'gold')}${dbgBtn('lose', 'Lose now')}${dbgBtn('foe1', 'Foe to 1 HP')}${dbgBtn('catch', uiState.dbgCatch ? 'Taxing works as normal' : 'Every throw taxes')}</div>
   <div class="dbg-row">${[1, 2, 4].map(x => dbgBtn('speed' + x, `${x}× speed`, battleStage.speed === x ? 'dark' : '')).join('')}</div></details>
  <details><summary>Save</summary><div class="dbg-row">${dbgBtn('copy', 'Copy save as text')}${dbgBtn('export', 'Download backup')}${dbgBtn('wipe', 'Erase save', 'red')}</div></details>
  </div>`;
 }
 function openDebug() {
-  U.modal = null;
-  U.mq = U.mq.filter(m => !m.dbg);
+  uiState.modal = null;
+  uiState.mq = uiState.mq.filter(m => !m.dbg);
   modal({
     title: 'Debug menu',
     dbg: 1,
@@ -123,7 +123,7 @@ function openDebug() {
 function dbgRefresh(msg) {
   if (msg) toast(msg);
   if (!B) render();
-  const M = U.modal;
+  const M = uiState.modal;
   if (M && M.dbg) {
     const open = $$('.dbg details').map(d => d.open);
     M.html = debugHTML();
@@ -152,8 +152,8 @@ function dbgAct(x) {
     sp = v('dbgSp'),
     lv = clamp(+v('dbgLv') || 10, 1, MAXLV());
   if (sp) {
-    U.dbgSp = sp;
-    U.dbgLv = lv;
+    uiState.dbgSp = sp;
+    uiState.dbgLv = lv;
   }
   switch (x) {
     case 'fps':
@@ -260,26 +260,26 @@ function dbgAct(x) {
     case 'test': {
       const id = v('dbgTest');
       if (!id || !mapById(id)) break;
-      U.dbgTest = id;
-      U.testRes = null;
-      U.bench = { id, test: 1 };
-      U.tab = 'walk';
+      uiState.dbgTest = id;
+      uiState.testRes = null;
+      uiState.bench = { id, test: 1 };
+      uiState.tab = 'walk';
       closeModal();
       render();
       toast((mapById(id).name || id) + '. Open the debug menu to leave.');
       return;
     }
     case 'untest': {
-      U.bench = null;
-      U.testRes = null;
+      uiState.bench = null;
+      uiState.testRes = null;
       closeModal();
       render();
       return;
     }
     case 'testchk': {
-      const id = v('dbgTest') || U.dbgTest;
-      U.dbgTest = id;
-      U.testRes = stSceneChecks(id);
+      const id = v('dbgTest') || uiState.dbgTest;
+      uiState.dbgTest = id;
+      uiState.testRes = stSceneChecks(id);
       break;
     }
     case 'jump': {
@@ -351,13 +351,13 @@ function dbgAct(x) {
       paintBoxes(snapAll(), B.market);
       break;
     case 'catch':
-      U.dbgCatch = !U.dbgCatch;
-      return dbgRefresh(U.dbgCatch ? 'Every throw taxes until you turn it off.' : 'Taxing is back to normal.');
+      uiState.dbgCatch = !uiState.dbgCatch;
+      return dbgRefresh(uiState.dbgCatch ? 'Every throw taxes until you turn it off.' : 'Taxing is back to normal.');
     case 'speed1':
     case 'speed2':
     case 'speed4':
       battleStage.speed = +x.slice(5);
-      U.dbgSpeed = battleStage.speed !== 1;
+      uiState.dbgSpeed = battleStage.speed !== 1;
       return dbgRefresh(`Battle speed ${battleStage.speed}×.`);
     case 'copy':
       navigator.clipboard &&
@@ -370,7 +370,7 @@ function dbgAct(x) {
       exportSave();
       return;
     case 'wipe':
-      U.modal = null;
+      uiState.modal = null;
       settingsReset();
       return;
   }
@@ -395,11 +395,11 @@ function settingsReset() {
           saveData.savedAt = Date.now();
           lsSet(saveData);
           flush();
-          U.intro = 0;
-          U.pg = null;
-          U.avatarDraft = null;
-          U.trainerDraft = null;
-          U.tab = 'walk';
+          uiState.intro = 0;
+          uiState.pg = null;
+          uiState.avatarDraft = null;
+          uiState.trainerDraft = null;
+          uiState.tab = 'walk';
           applyPreferences();
           closeModal();
           render();
@@ -418,7 +418,7 @@ document.addEventListener('click', ev => {
 document.addEventListener('keydown', ev => {
   if (ev.ctrlKey && ev.shiftKey && (ev.key === 'D' || ev.key === 'd')) {
     ev.preventDefault();
-    if (U.modal && U.modal.dbg) closeModal();
+    if (uiState.modal && uiState.modal.dbg) closeModal();
     else openDebug();
   }
 });

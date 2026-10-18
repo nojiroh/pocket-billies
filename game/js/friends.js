@@ -12,7 +12,7 @@
 import { expose } from './test-globals.js';
 import { ACC, accOn, closeModal, modal, provide, render, sceneIdAt, toast, walkOff } from './hooks.js';
 import { ROUTE, SP } from './game-data.js';
-import { N, U, cleanName, esc, plural, saveData } from './game-state.js';
+import { N, cleanName, esc, plural, saveData, uiState } from './game-state.js';
 import { owFrames, portraitHTML, trWarm } from './person-art.js';
 import { rigCanvasHTML } from './skeleton-rig.js';
 import { directionOf, walkView } from './walk-view.js';
@@ -217,9 +217,9 @@ function frPublish(now) {
     sid = typeof sceneIdAt === 'function' ? sceneIdAt(node) : null;
   let x = null,
     z = null;
-  if (U.roam && U.roam.node === node && U.roam.id === sid) {
-    x = +U.roam.x.toFixed(1);
-    z = +U.roam.z.toFixed(1);
+  if (uiState.roam && uiState.roam.node === node && uiState.roam.id === sid) {
+    x = +uiState.roam.x.toFixed(1);
+    z = +uiState.roam.z.toFixed(1);
   }
   const m = typeof buddyBilly === 'function' ? buddyBilly() : saveData.team && saveData.team[0],
     pt = m ? { sp: m.sp, gold: !!m.gold, name: N(m), lvl: m.lvl } : null;
@@ -362,8 +362,8 @@ export function friendsHTML() {
 }
 function frRefresh() {
   if (
-    typeof U !== 'undefined' &&
-    U.tab === 'profile' &&
+    typeof uiState !== 'undefined' &&
+    uiState.tab === 'profile' &&
     !document.activeElement?.closest?.('.fr-add') &&
     typeof render === 'function'
   )
@@ -402,7 +402,7 @@ document.addEventListener('click', ev => {
       ],
     });
   } else if (d.a === 'fr-map') {
-    U.tab = 'map';
+    uiState.tab = 'map';
     render();
     setTimeout(() => {
       if (typeof worldMapSelect === 'function') worldMapSelect(+d.n);
@@ -417,8 +417,8 @@ function frWorldItems(out, t, C0) {
   if (
     !FR.list.length ||
     !walkView.sc ||
-    U.inside ||
-    U.bench ||
+    uiState.inside ||
+    uiState.bench ||
     typeof owFrames !== 'function' ||
     typeof walkOff !== 'function'
   )

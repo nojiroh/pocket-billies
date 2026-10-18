@@ -10,7 +10,7 @@ import { expose } from './test-globals.js';
 import { closeModal, modal, provide, storyFlags } from './hooks.js';
 import { clamp } from './util.js';
 import { GD, ROUTE, TRAINERS } from './game-data.js';
-import { U, esc, save, saveData } from './game-state.js';
+import { esc, save, saveData, uiState } from './game-state.js';
 import { humanHTML } from './person-art.js';
 import { baseMapId, findPath, mapById, mapHub, walkView, walkablePointNear } from './walk-view.js';
 import { standingHeightAt, walkRenderer } from './walk-view-gl.js';
@@ -96,7 +96,7 @@ export function loreBook(id, page = 0) {
   }
   const n = B.pages.length,
     p = clamp(page, 0, n - 1);
-  U.modal = null;
+  uiState.modal = null;
   modal({
     title: esc(B.title),
     cls: 'book-sheet',
@@ -132,7 +132,7 @@ export function loreClue(id) {
    open ground you can walk to, beside the matching prop nearest a short walk from where you arrive */
 const CLUE_SPOTS = {};
 function clueSpots() {
-  if ((typeof U !== 'undefined' && U.inside) || typeof walkView === 'undefined' || !walkView.sc) return [];
+  if ((typeof uiState !== 'undefined' && uiState.inside) || typeof walkView === 'undefined' || !walkView.sc) return [];
   const id = baseMapId(),
     sc0 = walkView.sc,
     sc = sc0.baseId ? mapById(sc0.baseId) : sc0,
@@ -184,7 +184,7 @@ function clueSpotFind(sc, at) {
 }
 /* drawn by the walk scene's effects pass, like the gold stamps but cool white: walk over it to pick it up */
 function clueDraw(quad, glows, t) {
-  if (typeof saveData === 'undefined' || !saveData.started || walkRenderer.bt || U.bench || U.modal) return;
+  if (typeof saveData === 'undefined' || !saveData.started || walkRenderer.bt || uiState.bench || uiState.modal) return;
   const P = walkView.pl;
   for (const c of clueSpots()) {
     const y = standingHeightAt(c.x, c.z),
@@ -220,7 +220,7 @@ export function renderLore() {
   const L = LORE(),
     st = loreStage(),
     F = loreFlags(),
-    sec = U.loreSec || 'story';
+    sec = uiState.loreSec || 'story';
   const tabs = [
     ['story', 'Story'],
     ['world', 'World'],

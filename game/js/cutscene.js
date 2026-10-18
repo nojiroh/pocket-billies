@@ -25,7 +25,7 @@ import {
 } from './hooks.js';
 import { $, clamp } from './util.js';
 import { ROUTE, RULES, SP, START_NODE, TRAINERS, TYPES, eff, placeFull } from './game-data.js';
-import { RM, U, esc } from './game-state.js';
+import { RM, esc, uiState } from './game-state.js';
 import { userFps } from './frame-scheduler.js';
 import { artLoad, makeCanvas } from './art.js';
 import { TR_PRESETS, cleanLook, humanPose, owFrames, trainerLook } from './person-art.js';
@@ -708,7 +708,7 @@ async function csScript(run) {
     openDressingRoom({
       mode: 'intro',
       noBack: true,
-      look: U.trainerDraft || TR_PRESETS[Math.floor(Math.random() * TR_PRESETS.length)],
+      look: uiState.trainerDraft || TR_PRESETS[Math.floor(Math.random() * TR_PRESETS.length)],
       done: r,
     });
     if (CS.test)
@@ -719,8 +719,8 @@ async function csScript(run) {
   CS.dressing = false;
   body.classList.remove('cs-dress', 'cs-waking');
   if (!alive()) return;
-  U.avatarDraft = cleanLook(U.trainerDraft || TR_PRESETS[0]);
-  U.trainerDraft = U.avatarDraft;
+  uiState.avatarDraft = cleanLook(uiState.trainerDraft || TR_PRESETS[0]);
+  uiState.trainerDraft = uiState.avatarDraft;
   /* 4. on your feet */
   csActor('me', 'me', M, 'side');
   CS.actors.gini.dir = 'sideR';
@@ -922,7 +922,7 @@ function csEnd(l) {
 /* no WebGL after all: the step-by-step intro */
 function csAbort() {
   csTeardown();
-  U.intro = 1;
+  uiState.intro = 1;
   render();
 }
 

@@ -7,7 +7,7 @@ import { expose } from './test-globals.js';
 import { closeModal, modal, provide, renderOv, sfx, toast } from './hooks.js';
 import { clamp, rnd } from './util.js';
 import { COINS, ITEMS, SHOPS } from './game-data.js';
-import { U, esc, fmt, plural, save, saveData } from './game-state.js';
+import { esc, fmt, plural, save, saveData, uiState } from './game-state.js';
 import { coinHTML, uiIconHTML } from './art.js';
 import { portraitHTML } from './person-art.js';
 import { openDressingRoom } from './dressing-room.js';
@@ -57,7 +57,7 @@ const wareInfo = w => {
 };
 function shopHTML(id) {
   const sh = SHOPS[id],
-    q = U.shopQty || (U.shopQty = {}),
+    q = uiState.shopQty || (uiState.shopQty = {}),
     seats = saveData.seats.length;
   const rows = (sh.stock || [])
     .map((w, ix) => {
@@ -78,7 +78,7 @@ function shopHTML(id) {
   }</span></div>`;
     })
     .join('');
-  return `<div class="shop-head"><div class="shop-keeper">${portraitHTML(sh.who || 'clerk', 78, 'happy')}</div><div class="shop-say"><b>${esc(sh.keeper || 'Shopkeeper')}</b><p id="shopLine">${esc(U.shopLine || sh.greeting || 'Welcome in.')}</p></div></div>
+  return `<div class="shop-head"><div class="shop-keeper">${portraitHTML(sh.who || 'clerk', 78, 'happy')}</div><div class="shop-say"><b>${esc(sh.keeper || 'Shopkeeper')}</b><p id="shopLine">${esc(uiState.shopLine || sh.greeting || 'Welcome in.')}</p></div></div>
  <div class="shop-bal"><span>${uiIconHTML('coin', 14)} Money</span><b class="tnum" data-count="shopse" data-to="${saveData.se}">${fmt(saveData.se)}</b></div>
  <div class="shop-bag"><span>In your bag</span>${Object.keys(COINS)
    .map(
@@ -91,12 +91,12 @@ export function openShop(id) {
   const sh = SHOPS[id];
   if (!sh) return;
   if (sh.kind === 'wardrobe' && typeof openDressingRoom === 'function') {
-    if (U.modal) closeModal();
+    if (uiState.modal) closeModal();
     openDressingRoom({ shop: id });
     return;
   }
-  U.shopLine = null;
-  U.shopQty = {};
+  uiState.shopLine = null;
+  uiState.shopQty = {};
   const m = {
     title: esc(sh.name),
     shop: id,
@@ -107,7 +107,7 @@ export function openShop(id) {
   modal(m);
 }
 function shopRefresh() {
-  const M = U.modal;
+  const M = uiState.modal;
   if (!M || !M.shop) return;
   M.html = shopHTML(M.shop);
   renderOv();
@@ -119,7 +119,7 @@ function shopBuy(id, k) {
   if (!w) return;
   const it = wareInfo(w);
   if (!it) return;
-  const n = (U.shopQty || {})[k] || 1,
+  const n = (uiState.shopQty || {})[k] || 1,
     price = w.price ?? it.base,
     cost = price * n;
   if (it.need && saveData.seats.length < it.need) return;
@@ -134,8 +134,8 @@ function shopBuy(id, k) {
   save();
   buzz && buzz(10);
   const lines = sh.thanks && sh.thanks.length ? sh.thanks : SHOP_THANKS;
-  U.shopLine = lines[Math.floor(rnd() * lines.length)];
-  U.shopQty[k] = 1;
+  uiState.shopLine = lines[Math.floor(rnd() * lines.length)];
+  uiState.shopQty[k] = 1;
   shopRefresh();
   toast(`Bought ${n} × ${it.n}.`);
 }
@@ -145,7 +145,7 @@ document.addEventListener('click', ev => {
   const d = el.dataset;
   if (d.a === 'shop') openShop(d.s);
   else if (d.a === 'shopq') {
-    const q = U.shopQty || (U.shopQty = {});
+    const q = uiState.shopQty || (uiState.shopQty = {});
     q[d.k] = clamp((q[d.k] || 1) + +d.d, 1, 99);
     shopRefresh();
   } else if (d.a === 'shopbuy') shopBuy(d.s, d.k);

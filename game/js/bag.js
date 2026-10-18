@@ -7,7 +7,7 @@
 import { expose } from './test-globals.js';
 import { closeModal, modal, render, toast } from './hooks.js';
 import { COINS, EGGS, ITEMS, STATUSN } from './game-data.js';
-import { N, U, esc, fmt, maxHp, saveData } from './game-state.js';
+import { N, esc, fmt, maxHp, saveData, uiState } from './game-state.js';
 import { coinHTML, eggHTML, uiIconHTML } from './art.js';
 import { bustHTML } from './skeleton-rig.js';
 import { applyItem, canUse, itemIcon, teamNeedsHp } from './battle.js';
@@ -37,8 +37,8 @@ function bagList(p) {
   return [];
 }
 export function renderBag() {
-  const p = U.bagP || 'heal',
-    sel = U.bagSel;
+  const p = uiState.bagP || 'heal',
+    sel = uiState.bagSel;
   const tabs = `<div class="bag-pockets glass px" role="tablist" aria-label="Pockets">${BAG_POCKETS.map(
     ([k, l, ic]) => {
       const n = k === 'eggs' ? saveData.eggs.length : bagList(k).length;
@@ -87,13 +87,13 @@ document.addEventListener('click', ev => {
   if (!el) return;
   const d = el.dataset;
   if (d.a === 'bag-p') {
-    U.bagP = d.p;
-    U.bagSel = null;
+    uiState.bagP = d.p;
+    uiState.bagSel = null;
     render();
     return;
   }
   if (d.a === 'bag-sel') {
-    U.bagSel = U.bagSel === d.k ? null : d.k;
+    uiState.bagSel = uiState.bagSel === d.k ? null : d.k;
     render();
     return;
   }
@@ -104,7 +104,7 @@ document.addEventListener('click', ev => {
     if (I.hpAll) {
       const m = saveData.team.find(x => x.hp > 0 && x.job == null);
       if (m && applyItem(k, m.uid, false)) {
-        if (!saveData.items[k]) U.bagSel = null;
+        if (!saveData.items[k]) uiState.bagSel = null;
         render();
       }
       return;
@@ -124,7 +124,7 @@ document.addEventListener('click', ev => {
   if (d.a === 'bag-on') {
     closeModal();
     if (applyItem(d.k, d.u, false)) {
-      if (!saveData.items[d.k]) U.bagSel = null;
+      if (!saveData.items[d.k]) uiState.bagSel = null;
       render();
     }
   }

@@ -29,7 +29,6 @@ import {
   SAVE_NEW_MSG,
   SAVE_OLD_MSG,
   TEAM_MAX,
-  U,
   esc,
   fmt,
   migrate,
@@ -39,6 +38,7 @@ import {
   setRM,
   setSaveData,
   today,
+  uiState,
 } from './game-state.js';
 import { I18N_LANGS, i18nSet } from './i18n.js';
 import { FRAME } from './frame-scheduler.js';
@@ -201,7 +201,7 @@ function importSave() {
       }
       if (!validSave(candidate)) throw new Error();
       const next = migrate(candidate);
-      U.modal = null;
+      uiState.modal = null;
       modal({
         title: 'Restore this backup?',
         html: `<p>Restore ${next.team.length} team members, ${next.box.length} in storage and ${fmt(next.totalSteps)} steps. This replaces your current progress.</p>`,
@@ -212,11 +212,11 @@ function importSave() {
             f: () => {
               setSaveData(next);
               saveData.avatar = cleanTrainer(saveData.avatar, saveData.gender);
-              U.trainerDraft = null;
-              U.tab = 'walk';
-              U.dex = null;
-              U.mq = [];
-              U.learnQ = [];
+              uiState.trainerDraft = null;
+              uiState.tab = 'walk';
+              uiState.dex = null;
+              uiState.mq = [];
+              uiState.learnQ = [];
               save();
               applyPreferences();
               closeModal();
@@ -318,7 +318,7 @@ function setVol(k, label, hint, def) {
 }
 export function settingsHTML() {
   const p = saveData.preferences || {},
-    tab = SET_TABS.some(t => t[0] === U.setTab) ? U.setTab : 'game',
+    tab = SET_TABS.some(t => t[0] === uiState.setTab) ? uiState.setTab : 'game',
     hz = FRAME.hz || 60;
   let body = '';
   if (tab === 'game')
@@ -565,10 +565,10 @@ function setPref(k, v) {
   if ((k === 'world' || k === 'amb') && typeof ambApply === 'function') ambApply();
 }
 export function settingsRefresh() {
-  if (!U.modal || !U.modal.settings) return;
+  if (!uiState.modal || !uiState.modal.settings) return;
   const b = document.querySelector('.sheet .body'),
     y = b ? b.scrollTop : 0;
-  U.modal.html = settingsHTML();
+  uiState.modal.html = settingsHTML();
   renderOv();
   const b2 = document.querySelector('.sheet .body');
   if (b2) b2.scrollTop = y;
@@ -585,7 +585,7 @@ document.addEventListener('click', ev => {
   if (!el) return;
   const d = el.dataset;
   if (d.a === 'set-tab') {
-    U.setTab = d.k;
+    uiState.setTab = d.k;
     settingsRefresh();
     requestAnimationFrame(() => {
       const t = document.querySelector('.set-tabs .on');
@@ -627,14 +627,14 @@ document.addEventListener('click', ev => {
       exportDebugLog();
       break;
     case 'quicktest':
-      U.modal = null;
-      U.mq = [];
+      uiState.modal = null;
+      uiState.mq = [];
       renderOv();
       runQuickTest();
       break;
     case 'diagtest':
-      U.modal = null;
-      U.mq = [];
+      uiState.modal = null;
+      uiState.mq = [];
       renderOv();
       runDiagTest();
       break;

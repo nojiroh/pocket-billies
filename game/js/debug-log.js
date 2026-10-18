@@ -162,7 +162,12 @@ NWLOG.task = (name, work, ts) => {
       task: name,
       ms: Math.round(work),
       why,
-      view: typeof GAME.B !== 'undefined' && GAME.B ? 'battle' : typeof GAME.U !== 'undefined' ? GAME.U.tab : '-',
+      view:
+        typeof GAME.B !== 'undefined' && GAME.B
+          ? 'battle'
+          : typeof GAME.uiState !== 'undefined'
+            ? GAME.uiState.tab
+            : '-',
       scene: typeof GAME.walkView !== 'undefined' ? GAME.walkView.id : null,
     });
     if (L.length > 60) L.shift();
@@ -179,7 +184,8 @@ NWLOG.task = (name, work, ts) => {
 NWLOG.ctx = () => {
   const c = {};
   try {
-    c.view = typeof GAME.B !== 'undefined' && GAME.B ? 'battle' : typeof GAME.U !== 'undefined' ? GAME.U.tab : '-';
+    c.view =
+      typeof GAME.B !== 'undefined' && GAME.B ? 'battle' : typeof GAME.uiState !== 'undefined' ? GAME.uiState.tab : '-';
     if (typeof GAME.walkView !== 'undefined' && GAME.walkView.id) c.scene = GAME.walkView.id;
     if (typeof GAME.walkRenderer !== 'undefined') c.gl = GAME.walkRenderer.on ? 1 : 0;
     if (typeof GAME.walkView !== 'undefined') c.res = Math.round((GAME.walkView.R || 1) * 100) / 100;
@@ -394,7 +400,7 @@ NWLOG.state = () => {
       tilt: p.tilt !== false,
     };
     s.started = !!GAME.saveData.started;
-    s.tab = GAME.U.tab;
+    s.tab = GAME.uiState.tab;
     s.battle = !!GAME.B;
     s.stop = GAME.saveData.route ? GAME.saveData.route.node : null;
     s.trip = GAME.saveData.route ? GAME.saveData.route.plan.slice() : [];
@@ -466,7 +472,7 @@ NWLOG.more = () => {
       water: (GAME.walkView.water || []).length,
       ladders: (sc.props || []).filter(p => p.act === 'climb').length,
       resolution: GAME.walkView.R,
-      inside: GAME.U.inside ? GAME.U.inside.id : null,
+      inside: GAME.uiState.inside ? GAME.uiState.inside.id : null,
       room: !!sc.room,
     };
   });
@@ -632,7 +638,7 @@ NWLOG.hook = () => {
   };
   let lastTab = null;
   wrap('render', () => {
-    const v = typeof GAME.B !== 'undefined' && GAME.B ? 'battle' : GAME.U.tab;
+    const v = typeof GAME.B !== 'undefined' && GAME.B ? 'battle' : GAME.uiState.tab;
     if (v !== lastTab) {
       lastTab = v;
       NWLOG.add('screen', v);
@@ -744,8 +750,8 @@ NWLOG.diag = (since = 0) => {
   t('view', () =>
     typeof GAME.B !== 'undefined' && GAME.B
       ? `battle ${GAME.B.kind}/${GAME.B.fmt || 'single'} (${GAME.B.phase})`
-      : typeof GAME.U !== 'undefined'
-        ? GAME.U.tab
+      : typeof GAME.uiState !== 'undefined'
+        ? GAME.uiState.tab
         : '-'
   );
   t('scene', () =>

@@ -10,7 +10,7 @@ import { expose } from './test-globals.js';
 import { CS, provide, sceneIdAt } from './hooks.js';
 import { clamp } from './util.js';
 import { ROUTE } from './game-data.js';
-import { B, U, saveData } from './game-state.js';
+import { B, saveData, uiState } from './game-state.js';
 import { battleStage } from './battle-stage.js';
 import { baseMapId, bridgeAt, mapBridges, mapById, stepWallAt, terrainAt, walkData, walkView } from './walk-view.js';
 import { environment, environmentHour, environmentState } from './environment.js';
@@ -746,7 +746,7 @@ export function musicFor() {
   if (typeof saveData === 'undefined' || !saveData || !saveData.started) return 'hazel';
   if (typeof B !== 'undefined' && B)
     return B.kind === 'trainer' ? (B.T && B.T.who === 'chad' ? 'rival' : 'trainer') : 'wild';
-  if (U.tab === 'map') return 'map';
+  if (uiState.tab === 'map') return 'map';
   const id = typeof sceneIdAt === 'function' ? sceneIdAt(saveData.route.node) : null,
     sc = id && mapById(id),
     r = ROUTE[saveData.route.node];
@@ -1355,8 +1355,8 @@ function ambUpdate() {
     walkView.ready &&
     walkView.sc &&
     !document.hidden &&
-    typeof U !== 'undefined' &&
-    (U.tab === 'walk' || (typeof B !== 'undefined' && B));
+    typeof uiState !== 'undefined' &&
+    (uiState.tab === 'walk' || (typeof B !== 'undefined' && B));
   const E = typeof environment !== 'undefined' && environment.on ? environment : null,
     sc = walk ? walkView.sc : null;
   let pans = {};

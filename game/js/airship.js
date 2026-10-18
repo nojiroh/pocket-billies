@@ -13,7 +13,7 @@ import { closeModal, modal, provide, render, sceneIdAt, storyFlags, toast } from
 import { $, clamp } from './util.js';
 import { PLACE, ROUTE, isTown, placeFull } from './game-data.js';
 import { isLiteMap, loadMapFile, loadMapsAhead } from './map-files.js';
-import { RM, U, canEnter, esc, fmt, save, saveData } from './game-state.js';
+import { RM, canEnter, esc, fmt, save, saveData, uiState } from './game-state.js';
 import { artLoad, uiIconHTML } from './art.js';
 import { artImage, imageReady, mapById, prepareMap, walkData } from './walk-view.js';
 import { seamlessHubMap } from './seamless-world.js';
@@ -89,12 +89,12 @@ function startAirshipFlight(i) {
   saveData.se -= f;
   saveData.route = { node: i, prog: 0, plan: [], hold: false };
   saveData.visited[i] = 1;
-  U.inside = null;
-  U.goingIn = null;
-  U.backAt = null;
-  U.arrive = null;
-  U.roam = null;
-  U.mapSel = null;
+  uiState.inside = null;
+  uiState.goingIn = null;
+  uiState.backAt = null;
+  uiState.arrive = null;
+  uiState.roam = null;
+  uiState.mapSel = null;
   if (typeof storyFlags === 'function') {
     const F = storyFlags();
     F.flights = (F.flights || 0) + 1;
@@ -120,8 +120,8 @@ function startAirshipFlight(i) {
     } catch (e) {}
   }
   document.body.classList.add('flying');
-  U.mglFrom = null;
-  U.tab = 'map';
+  uiState.mglFrom = null;
+  uiState.tab = 'map';
   render();
   worldMap.anim = null;
   worldMap.fT = null;
@@ -243,9 +243,9 @@ function flyLand() {
       s = m.s || 1,
       f = m.f ? -1 : 1,
       bx = M.box ? M.box[0] * s : 1.2;
-    U.roam = { id: sid, node: b, x: m.x + (bx / 2 + 0.9) * f, z: m.z - 0.9 };
+    uiState.roam = { id: sid, node: b, x: m.x + (bx / 2 + 0.9) * f, z: m.z - 0.9 };
   }
-  U.tab = 'walk';
+  uiState.tab = 'walk';
   if (typeof worldMapGl !== 'undefined') worldMapGl.altT = null;
   save();
   render();
@@ -307,11 +307,11 @@ export function rideGlassLift(p) {
       await ready;
       saveData.route = { node: i, prog: 0, plan: [], hold: false };
       saveData.visited[i] = 1;
-      U.inside = null;
-      U.goingIn = null;
-      U.backAt = null;
-      U.arrive = null;
-      U.mapSel = null;
+      uiState.inside = null;
+      uiState.goingIn = null;
+      uiState.backAt = null;
+      uiState.arrive = null;
+      uiState.mapSel = null;
       const sid = sceneIdAt(i),
         sc = typeof mapById === 'function' ? mapById(sid) : null,
         m = sc && (sc.props || []).find(q => q.act === 'lift');
@@ -321,10 +321,10 @@ export function rideGlassLift(p) {
           s = m.s || 1,
           f = m.f ? -1 : 1,
           bx = M.box ? M.box[0] * s : 1.2;
-        U.roam = { id: sid, node: i, x: m.x + (bx / 2 + 0.9) * f, z: m.z - 0.9 };
-      } else U.roam = null;
+        uiState.roam = { id: sid, node: i, x: m.x + (bx / 2 + 0.9) * f, z: m.z - 0.9 };
+      } else uiState.roam = null;
       if (typeof NWLOG !== 'undefined') NWLOG.add('scene', `lift ${ROUTE[a].id} to ${ROUTE[i].id}`);
-      U.tab = 'walk';
+      uiState.tab = 'walk';
       save();
       render();
     },
