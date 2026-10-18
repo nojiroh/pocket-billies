@@ -35,7 +35,7 @@ expose({
   initWebgl: [() => initWebgl, v => (initWebgl = v)],
   makeNormalMap: [() => makeNormalMap, v => setMakeNormalMap(v)],
   matrix4: [() => matrix4],
-  normalMapWorker: [() => normalMapWorker],
+  normalMapWorkerState: [() => normalMapWorkerState],
   normalize3: [() => normalize3],
   pollGpuTimers: [() => pollGpuTimers, v => (pollGpuTimers = v)],
   pollPendingPrograms: [() => pollPendingPrograms, v => (pollPendingPrograms = v)],
@@ -493,9 +493,9 @@ export function initWebgl(cv) {
     gpuState.gpuOpen = false;
     gpuState.pend = new Map();
     gpuState.pcx = undefined;
-    if (typeof normalMapWorker !== 'undefined') {
-      normalMapWorker.jobs.clear();
-      normalMapWorker.fly = 0;
+    if (typeof normalMapWorkerState !== 'undefined') {
+      normalMapWorkerState.jobs.clear();
+      normalMapWorkerState.fly = 0;
     }
     gpuState.fb = {};
     gpuState.tex = new WeakMap();
@@ -658,7 +658,7 @@ export const SURFACE_MATERIALS = {
 };
 /* v32: normal maps are worked out on a helper thread (a big picture took seconds and froze the game when a scene
    opened); only reading the pixels and uploading the result happen here. Without workers it falls back to here. */
-export const normalMapWorker = { w: null, bad: false, id: 0, jobs: new Map(), fly: 0 };
+export const normalMapWorkerState = { w: null, bad: false, id: 0, jobs: new Map(), fly: 0 };
 const NORMAL_MAP_WORKER_SOURCE = `const clamp=(v,a,b)=>v<a?a:v>b?b:v;onmessage=ev=>{const {id,w,h,pillow,detail,bm}=ev.data;let d=ev.data.d;
 /* v33: the picture can come as a bitmap and be read here, so the main thread never waits for its pixels */
 if(!d&&bm){if(typeof OffscreenCanvas==='undefined'){postMessage({id,retry:1});return}try{const oc=new OffscreenCanvas(w,h),ox=oc.getContext('2d');ox.drawImage(bm,0,0);d=ox.getImageData(0,0,w,h).data;bm.close&&bm.close()}catch(e){postMessage({id,retry:1});return}}const A=new Float32Array(w*h),Lm=new Float32Array(w*h);for(let i=0;i<w*h;i++){A[i]=d[i*4+3]>127?1:0;Lm[i]=(d[i*4]*.3+d[i*4+1]*.59+d[i*4+2]*.11)/255}
@@ -675,21 +675,21 @@ for(let pass=0;pass<4;pass++){const nk=ok.slice();for(let y=0;y<h;y++)for(let X=
 if(an)for(let i=0;i<w*h;i++)if(!ok[i]){col[i*4]=ar/an;col[i*4+1]=ag/an;col[i*4+2]=ab/an}
 postMessage({id,out,col},[out.buffer,col.buffer])}`;
 function ensureNormalMapWorker() {
-  if (normalMapWorker.w || normalMapWorker.bad) return normalMapWorker.w;
+  if (normalMapWorkerState.w || normalMapWorkerState.bad) return normalMapWorkerState.w;
   try {
     const u = URL.createObjectURL(new Blob([NORMAL_MAP_WORKER_SOURCE], { type: 'text/javascript' }));
     const W = new Worker(u);
     W.onmessage = ev => {
       const { id, out, col } = ev.data,
-        j = normalMapWorker.jobs.get(id);
-      normalMapWorker.jobs.delete(id);
-      normalMapWorker.fly = Math.max(0, normalMapWorker.fly - 1);
+        j = normalMapWorkerState.jobs.get(id);
+      normalMapWorkerState.jobs.delete(id);
+      normalMapWorkerState.fly = Math.max(0, normalMapWorkerState.fly - 1);
       if (!j || j.gl !== gpuState.gl || gpuState.lost) return;
       const e = j.e,
         gl = gpuState.gl;
       if (e.im && gpuState.tex.get(e.im) !== e) return;
       if (ev.data.retry) {
-        normalMapWorker.osc = false;
+        normalMapWorkerState.osc = false;
         gpuState.normQ.unshift(e);
         return;
       }
@@ -711,29 +711,29 @@ function ensureNormalMapWorker() {
       if (typeof NWLOG !== 'undefined') NWLOG.mark('uploading bump maps', tU, performance.now());
     };
     W.onerror = () => {
-      normalMapWorker.bad = true;
-      normalMapWorker.w = null;
-      for (const j of normalMapWorker.jobs.values()) gpuState.normQ.unshift(j.e);
-      normalMapWorker.jobs.clear();
-      normalMapWorker.fly = 0;
+      normalMapWorkerState.bad = true;
+      normalMapWorkerState.w = null;
+      for (const j of normalMapWorkerState.jobs.values()) gpuState.normQ.unshift(j.e);
+      normalMapWorkerState.jobs.clear();
+      normalMapWorkerState.fly = 0;
     };
-    normalMapWorker.w = W;
+    normalMapWorkerState.w = W;
   } catch (e) {
-    normalMapWorker.bad = true;
+    normalMapWorkerState.bad = true;
   }
-  return normalMapWorker.w;
+  return normalMapWorkerState.w;
 }
 export function runNormalMapJobs(budget) {
   const t0 = performance.now(),
     W = ensureNormalMapWorker();
-  while (gpuState.normQ.length && performance.now() - t0 < budget && (!W || normalMapWorker.fly < 10)) {
+  while (gpuState.normQ.length && performance.now() - t0 < budget && (!W || normalMapWorkerState.fly < 10)) {
     const e = gpuState.normQ.shift();
     if (!e || e.nDone || (e.im && gpuState.tex.get(e.im) !== e)) continue;
     if (e.src && e.src !== e.im) e.src.__mat = e.im.__mat;
     try {
       if (
         W &&
-        normalMapWorker.osc !== false &&
+        normalMapWorkerState.osc !== false &&
         typeof createImageBitmap === 'function' &&
         !(e.im instanceof HTMLCanvasElement && e.im.__v !== undefined)
       ) {
@@ -741,23 +741,24 @@ export function runNormalMapJobs(budget) {
           w = e.sw || e.w,
           h = e.sh || e.h,
           M = SURFACE_MATERIALS[e.im.__mat] || SURFACE_MATERIALS.plain,
-          id = ++normalMapWorker.id,
+          id = ++normalMapWorkerState.id,
           gl0 = gpuState.gl;
-        normalMapWorker.jobs.set(id, { e, w, h, gl: gl0 });
-        normalMapWorker.fly++;
+        normalMapWorkerState.jobs.set(id, { e, w, h, gl: gl0 });
+        normalMapWorkerState.fly++;
         createImageBitmap(im)
           .then(bm => {
-            if (gpuState.gl !== gl0 || !normalMapWorker.jobs.has(id)) {
+            if (gpuState.gl !== gl0 || !normalMapWorkerState.jobs.has(id)) {
               bm.close && bm.close();
-              if (normalMapWorker.jobs.delete(id)) normalMapWorker.fly = Math.max(0, normalMapWorker.fly - 1);
+              if (normalMapWorkerState.jobs.delete(id))
+                normalMapWorkerState.fly = Math.max(0, normalMapWorkerState.fly - 1);
               return;
             }
             W.postMessage({ id, w, h, bm, pillow: M.pillow, detail: M.detail }, [bm]);
           })
           .catch(() => {
-            normalMapWorker.jobs.delete(id);
-            normalMapWorker.fly = Math.max(0, normalMapWorker.fly - 1);
-            normalMapWorker.osc = false;
+            normalMapWorkerState.jobs.delete(id);
+            normalMapWorkerState.fly = Math.max(0, normalMapWorkerState.fly - 1);
+            normalMapWorkerState.osc = false;
             gpuState.normQ.unshift(e);
           });
       } else if (W) {
@@ -769,9 +770,9 @@ export function runNormalMapJobs(budget) {
         x.drawImage(im, 0, 0, w, h);
         const d = x.getImageData(0, 0, w, h).data,
           M = SURFACE_MATERIALS[e.im.__mat] || SURFACE_MATERIALS.plain,
-          id = ++normalMapWorker.id;
-        normalMapWorker.jobs.set(id, { e, w, h, gl: gpuState.gl });
-        normalMapWorker.fly++;
+          id = ++normalMapWorkerState.id;
+        normalMapWorkerState.jobs.set(id, { e, w, h, gl: gpuState.gl });
+        normalMapWorkerState.fly++;
         W.postMessage({ id, w, h, d, pillow: M.pillow, detail: M.detail }, [d.buffer]);
       } else {
         e.n = makeNormalMap(e.src || e.im, e.sw || e.w, e.sh || e.h, e.n);
