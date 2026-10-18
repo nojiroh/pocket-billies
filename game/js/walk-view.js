@@ -123,7 +123,6 @@ expose({
   ensureGround: [() => ensureGround, v => (ensureGround = v)],
   exitEdge: [() => exitEdge, v => (exitEdge = v)],
   exitPoint: [() => exitPoint, v => (exitPoint = v)],
-  farGroundSteps: [() => farGroundSteps, v => (farGroundSteps = v)],
   findPath: [() => findPath, v => (findPath = v)],
   flagPicturePath: [() => flagPicturePath, v => (flagPicturePath = v)],
   folkAnchors: [() => folkAnchors, v => (folkAnchors = v)],
@@ -161,6 +160,7 @@ expose({
   nearestWalkableCell: [() => nearestWalkableCell, v => (nearestWalkableCell = v)],
   newStepGrid: [() => newStepGrid, v => (newStepGrid = v)],
   openKind: [() => openKind, v => (openKind = v)],
+  paintFarGroundSteps: [() => paintFarGroundSteps, v => (paintFarGroundSteps = v)],
   paintGroundSteps: [() => paintGroundSteps, v => (paintGroundSteps = v)],
   pathWearAmountFn: [() => pathWearAmountFn, v => (pathWearAmountFn = v)],
   pathWearFn: [() => pathWearFn, v => (pathWearFn = v)],
@@ -2006,7 +2006,7 @@ export function* paintGroundSteps(sc, o) {
 }
 /* the whole picture of a scene: the Lite renderer's canvas (32 px a metre when it fits, else 16), or for the 3D
    renderer the distant picture (8 px a metre; the near ring paints the 16 m squares round you at full size) */
-function* farGroundSteps(sc, pr = 0, rec = null) {
+function* paintFarGroundSteps(sc, pr = 0, rec = null) {
   const full = FAR_GROUND_PX_PER_M;
   const r = yield* typeof paintGroundOnWorker === 'function'
     ? paintGroundOnWorker(sc, { TP: full, margin: 0, pr, rec })
@@ -2022,7 +2022,7 @@ function buildGroundPicture(sc) {
   const pw = typeof paintWorkerState !== 'undefined' ? paintWorkerState : null;
   if (pw) pw.sync++;
   /* (all here, now: no waiting on the helper) */ try {
-    const it = farGroundSteps(sc);
+    const it = paintFarGroundSteps(sc);
     let r = it.next();
     while (!r.done) r = it.next();
     return r.value;
@@ -2073,7 +2073,7 @@ export async function buildGroundAsync(sc, pr = 0) {
   }
   const rec = { pr, id: 0 },
     p = (async () => {
-      const it = farGroundSteps(sc, pr, rec);
+      const it = paintFarGroundSteps(sc, pr, rec);
       let r,
         t0 = performance.now();
       for (;;) {

@@ -239,7 +239,7 @@ expose({
   buildFarProps: [() => buildFarProps, v => (buildFarProps = v)],
   buildGrass: [() => buildGrass, v => setBuildGrass(v)],
   buildGroundMesh: [() => buildGroundMesh, v => (buildGroundMesh = v)],
-  buildGroundSteps: [() => buildGroundSteps, v => (buildGroundSteps = v)],
+  buildGroundMeshSteps: [() => buildGroundMeshSteps, v => (buildGroundMeshSteps = v)],
   buildingPads: [() => buildingPads, v => (buildingPads = v)],
   cameraTurnLimit: [() => cameraTurnLimit],
   canvasForContext: [() => canvasForContext, v => (canvasForContext = v)],
@@ -1286,7 +1286,7 @@ void main(){vec4 c;if(uGlow>.5){vec2 q=vUV*2.-1.;float d=dot(q,q);if(d>1.)discar
 /* v46: the ground of a scene, built a slice at a time into T. With T = walkRenderer it runs to the end at once (opening a scene);
    with a fresh T it runs a few milliseconds a frame for the view that comes next (prepareMapGround), so walking from one view
    to the next finds everything ready: the textures go up to the card in strips, the mesh and water are built in slices */
-function* buildGroundSteps(sc, G, T) {
+function* buildGroundMeshSteps(sc, G, T) {
   const gl = gpuState.gl,
     W = sc.w,
     H = sc.h,
@@ -2108,7 +2108,7 @@ function* buildGroundSteps(sc, G, T) {
   }
 }
 function buildGroundMesh() {
-  const it = buildGroundSteps(walkView.sc, walkView.ground, walkRenderer);
+  const it = buildGroundMeshSteps(walkView.sc, walkView.ground, walkRenderer);
   let r = it.next();
   while (!r.done) r = it.next();
 }
@@ -2431,7 +2431,7 @@ export function prepareMapGround(id, sc, G, urgent, focus) {
     id,
     T,
     it: (function* () {
-      yield* buildGroundSteps(sc, G, T);
+      yield* buildGroundMeshSteps(sc, G, T);
       /* v46: and the squares round where you will come in */ if (focus) {
         T.ring = newNearRing();
         const W = wantedNearRingChunks(T.ring, sc, focus[0], focus[1]),
