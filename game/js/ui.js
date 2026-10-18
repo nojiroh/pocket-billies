@@ -184,7 +184,7 @@ import { CS, csStart, csWanted } from './cutscene.js';
 import { fallStill } from './opening-fall.js';
 import { renderTitle, titleMount } from './title.js';
 import { loreBook, renderLore } from './lore.js';
-import { flyMenu, rideSkyLift } from './airship.js';
+import { flyMenu, rideGlassLift } from './airship.js';
 import { postcardCheck, renderPostcards } from './postcards.js';
 import { renderBag } from './bag.js';
 import { friendsHTML } from './friends.js';
@@ -1209,8 +1209,8 @@ function roomAct(h) {
     flyMenu(h.p);
     return;
   }
-  if (pa === 'lift' && typeof rideSkyLift === 'function') {
-    rideSkyLift(h.p);
+  if (pa === 'lift' && typeof rideGlassLift === 'function') {
+    rideGlassLift(h.p);
     return;
   }
   /* v46: things in a room that do something of their own: a bed or a bar to rest at, a counter that sells */
@@ -1466,8 +1466,8 @@ export function walkPick(h) {
       flyMenu(p);
       return;
     }
-    if (a === 'lift' && typeof rideSkyLift === 'function') {
-      rideSkyLift(p);
+    if (a === 'lift' && typeof rideGlassLift === 'function') {
+      rideGlassLift(p);
       return;
     }
     /* v47: shops and the like keep opening hours */

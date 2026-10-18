@@ -14,7 +14,7 @@ import { walkView } from './walk-view.js';
 import { walkRenderer } from './walk-view-gl.js';
 import { TALK } from './talk.js';
 import { CS } from './cutscene.js';
-import { airshipFlight, skyLift } from './airship.js';
+import { airshipFlight, glassLift } from './airship.js';
 /* eslint-disable no-func-assign */
 expose({
   JOY: [() => JOY],
@@ -47,7 +47,7 @@ function joyAllowed() {
     !walkView.battle &&
     !walkView.director &&
     !(typeof airshipFlight !== 'undefined' && airshipFlight.on) &&
-    !(typeof skyLift !== 'undefined' && skyLift.on) &&
+    !(typeof glassLift !== 'undefined' && glassLift.on) &&
     !(typeof TALK !== 'undefined' && TALK.on)
   );
 }

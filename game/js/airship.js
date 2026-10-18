@@ -31,8 +31,8 @@ expose({
   flySkip: [() => flySkip, v => (flySkip = v)],
   flyTick: [() => flyTick, v => ((flyTick = v), provide({ flyTick }))],
   flyTowns: [() => flyTowns, v => (flyTowns = v)],
-  rideSkyLift: [() => rideSkyLift, v => (rideSkyLift = v)],
-  skyLift: [() => skyLift],
+  glassLift: [() => glassLift],
+  rideGlassLift: [() => rideGlassLift, v => (rideGlassLift = v)],
 });
 /* eslint-enable no-func-assign */
 provide({ flyDraw, flyTick });
@@ -282,9 +282,9 @@ document.addEventListener(
    Kelpport's harbour and Pearlantis City, at the bottom of the trench, are joined by a glass lift and nothing else (no
    road, no airship). A prop with act 'lift' and to: '<place id>' takes you there: the screen sinks into blue water (or
    rises into the light), and you step out beside the lift at the other end. Free, as lifts should be. */
-export const skyLift = { on: false };
-export function rideSkyLift(p) {
-  if (skyLift.on || !S.started || !p) return;
+export const glassLift = { on: false };
+export function rideGlassLift(p) {
+  if (glassLift.on || !S.started || !p) return;
   const to = PLACE[p.to];
   if (!to) {
     toast('The lift isn’t working.');
@@ -293,7 +293,7 @@ export function rideSkyLift(p) {
   const i = to.node,
     a = S.route.node,
     down = !!ROUTE[i].noFly;
-  skyLift.on = true;
+  glassLift.on = true;
   const cv = document.createElement('div');
   cv.className = 'lift-veil' + (down ? ' down' : ' up');
   cv.innerHTML = `<div class="lift-cap glass"><small>Glass lift</small><b>${down ? 'Down to' : 'Up to'} ${esc(ROUTE[i].name)}</b><span class="note">${down ? 'Kelp, then dark water, then the lights of the dome.' : 'Up past the kelp, into the light.'}</span></div>`;
@@ -335,7 +335,7 @@ export function rideSkyLift(p) {
       cv.classList.remove('in');
       setTimeout(() => {
         cv.remove();
-        skyLift.on = false;
+        glassLift.on = false;
       }, 700);
       toast(`${ROUTE[i].name}.`);
       if (typeof sfx === 'function') sfx('pop');
