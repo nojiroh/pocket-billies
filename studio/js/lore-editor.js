@@ -185,7 +185,7 @@ SECTIONS.lore = () => {
           textField('Id', p + '.id'),
           selectField(
             'Place',
-            p + '.place',
+            p + '.locationId',
             (D.locations || []).filter(r => r.id).map(r => [r.id, r.name]),
             { none: 'Anywhere', opt: 1 }
           ),

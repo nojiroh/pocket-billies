@@ -544,35 +544,35 @@
   {
    "id": "filing",
    "title": "The first thing to fall",
-   "place": "sundown",
+   "locationId": "sundown",
    "unlock": "place:sundown",
    "text": "Marigold’s town hall is built round a filing cabinet that fell from the surface long ago. Its drawers are locked. Every mayor promises to open them; every mayor finds a reason not to."
   },
   {
    "id": "oilympus",
    "title": "The bill under the mountain",
-   "place": "volcano",
+   "locationId": "volcano",
    "unlock": "place:volcano",
    "text": "Oilympus has slept under Mt. Cinderpeak since before the Hollow Earth was found, leaking black gold from every joint. People say it is not asleep at all: it is waiting for interest to accrue."
   },
   {
    "id": "aurumansa",
    "title": "The golden caravan",
-   "place": "summit",
+   "locationId": "summit",
    "unlock": "place:summit",
    "text": "The richest thing that ever lived, and the most generous. Wherever Aurumansa walks it drops so much gold that prices fall for a decade. The banks call it a disaster. Everyone else calls it Tuesday."
   },
   {
    "id": "sterling",
    "title": "Mr Sterling",
-   "place": "foodcourt",
+   "locationId": "foodcourt",
    "unlock": "place:foodcourt",
    "text": "A clone in a tattered tie lives in the bins behind the food stalls of Pepperpot Town. If you call him Mr Sterling with enough respect, he will give you a business card. It is a napkin."
   },
   {
    "id": "sinkholes",
    "title": "Where the sinkholes come from",
-   "place": "longgrass",
+   "locationId": "longgrass",
    "unlock": "place:longgrass",
    "text": "The surface keeps digging, and the Hollow Earth keeps catching what falls. Hazel thinks the sinkholes open wherever someone digs too greedily. She has a map of them; it looks a lot like a map of banks."
   }
