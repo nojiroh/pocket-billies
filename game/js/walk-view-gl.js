@@ -1287,6 +1287,7 @@ precision highp float;in vec2 vUV;in vec3 vW;out vec4 o;uniform sampler2D uTex;u
 void main(){vec4 c;if(uGlow>.5){vec2 q=vUV*2.-1.;float d=dot(q,q);if(d>1.)discard;float f=(1.-d);c=vec4(uCol.rgb*f*f*f*uCol.a,1.);}else{c=texture(uTex,vUV)*uCol;if(c.a<.02)discard;if(uLitFx>.5)c.rgb*=mix(uAmbTop,vec3(1.),.5)+uSunCol*.4;c.rgb=fogit(c.rgb,vW);}o=c;}`,
   ],
 };
+provide({ WALK_SHADERS }); /* to-module */
 /* ---------- ground mesh: the scene at half-meter resolution, then a coarse ring of distant land curving up ---------- */
 /* v46: the ground of a scene, built a slice at a time into T. With T = walkRenderer it runs to the end at once (opening a scene);
    with a fresh T it runs a few milliseconds a frame for the view that comes next (prepareMapGround), so walking from one view

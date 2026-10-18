@@ -190,6 +190,12 @@ export default [
     languageOptions: { ecmaVersion: 'latest', sourceType: 'module', globals: globals.browser },
     rules: bugRules,
   },
+  // phase 13: the graphics test is on no page: settings-screen.js loads it when it starts and hands it what it reads
+  {
+    files: ['game/js/graphics-test.js'],
+    languageOptions: { ecmaVersion: 'latest', sourceType: 'module', globals: globals.browser },
+    rules: bugRules,
+  },
   {
     files: ['game/sw.js'],
     languageOptions: {
