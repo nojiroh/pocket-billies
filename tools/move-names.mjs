@@ -154,12 +154,19 @@ export async function move(from, to, names, { after, header, withHeader, dry } =
   if (exists) {
     if (header || withHeader) throw new Error(`${to} exists: --header and --with-header are for a new module`);
     target = stripped(read(to)).replace(/\s*$/, '\n') + movedText.replace(/^\s*\n/, '');
-  } else target = "'use strict';\n" + (header ? `/* ${header} */\n` : '') + head + movedText.replace(/^\s*\n/, '');
+  }
+  // a new module: a blank line after its header, where tools/to-module.mjs puts the generated part (above the comments
+  // that came with the first moved declaration)
+  else target = "'use strict';\n" + (header ? `/* ${header} */\n` : '') + head + '\n' + movedText.replace(/^\s*\n/, '');
   const pages = exists ? [] : pageTagsAdd(from, to, after && normalize(after), true);
   // what runs at load in the new place, and what stays and uses a moved name
   const fn = d => d.init && /^(Arrow)?FunctionExpression$/.test(d.init.type);
   const atLoad = moved
-    .filter(s => s.node.type !== 'FunctionDeclaration' && !(s.node.declarations || []).every(fn))
+    .filter(
+      s =>
+        s.node.type !== 'FunctionDeclaration' &&
+        !(s.node.type === 'VariableDeclaration' && s.node.declarations.every(fn))
+    )
     .map(
       s =>
         s.names.join(', ') ||

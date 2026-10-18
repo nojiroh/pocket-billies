@@ -185,6 +185,8 @@ export function headerEnd(text) {
   for (;;) {
     const ws = text.slice(i).match(/^\s*/)[0].length;
     const j = i + ws;
+    // phase 04e: a blank line ends the header (a moved declaration's comment at the top of a new module stays with it)
+    if (i > 0 && /\n[^\S\n]*\n/.test(text.slice(i, j))) return i;
     if (text.startsWith('//', j)) i = text.indexOf('\n', j) < 0 ? text.length : text.indexOf('\n', j) + 1;
     else if (text.startsWith('/*', j)) i = text.indexOf('*/', j) + 2;
     else if (/^(['"])use strict\1;?/.test(text.slice(j)))
