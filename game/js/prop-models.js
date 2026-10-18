@@ -16,6 +16,7 @@ import { engineSetting } from './engine/settings.js';
 import { COMMON_GLSL, LIGHT_GLSL, ensurePrograms, gpuState, imageTexture } from './engine/webgl.js';
 import {
   addHitTarget,
+  lampLit,
   setPropLookUniforms,
   useWalkProgram,
   walkRenderer,
@@ -25,11 +26,13 @@ import {
 import { BUILDING_SHADERS, buildingArt, buildingTextureGrid } from './buildings.js';
 /* eslint-disable no-func-assign */
 expose({
+  LAYER_PROPS: [() => LAYER_PROPS],
   LOW_POLY_TEXTURE_CELLS: [() => LOW_POLY_TEXTURE_CELLS],
   PROP_MODEL_SHADERS: [() => PROP_MODEL_SHADERS],
   PROP_MODEL_SHAPES: [() => PROP_MODEL_SHAPES],
   PROP_MODEL_TEXTURES: [() => PROP_MODEL_TEXTURES],
   SPIN_GLSL: [() => SPIN_GLSL],
+  SWAPPED_RECIPES: [() => SWAPPED_RECIPES],
   VOXEL_KEY_OFFSET: [() => VOXEL_KEY_OFFSET],
   VOXEL_KEY_SPAN: [() => VOXEL_KEY_SPAN],
   VOXEL_TEXTURE_GRAIN: [() => VOXEL_TEXTURE_GRAIN],
@@ -49,6 +52,7 @@ expose({
   ],
   greedyVoxelMesh: [() => greedyVoxelMesh, v => (greedyVoxelMesh = v)],
   invalidatePropModel: [() => invalidatePropModel, v => (invalidatePropModel = v)],
+  layerProp: [() => layerProp, v => (layerProp = v)],
   loadPropModelRecipe: [() => loadPropModelRecipe, v => (loadPropModelRecipe = v)],
   lowPolyFragmentShader: [() => lowPolyFragmentShader, v => (lowPolyFragmentShader = v)],
   lowPolyFromRecipe: [() => lowPolyFromRecipe, v => (lowPolyFromRecipe = v)],
@@ -63,6 +67,7 @@ expose({
   propModelState: [() => propModelState],
   propModelsOn: [() => propModelsOn, v => (propModelsOn = v)],
   setPropModelUniforms: [() => setPropModelUniforms, v => (setPropModelUniforms = v)],
+  swappedRecipe: [() => swappedRecipe, v => (swappedRecipe = v)],
   tagPropModel: [() => tagPropModel, v => ((tagPropModel = v), provide({ tagPropModel }))],
   uploadLowPolyMesh: [() => uploadLowPolyMesh, v => (uploadLowPolyMesh = v)],
   uploadPrebuiltModel: [() => uploadPrebuiltModel, v => (uploadPrebuiltModel = v)],
@@ -105,6 +110,8 @@ const VOXEL_TEXTURE_GRAIN = {
   rust: 0.16,
   stripes: 0,
   rings: 0,
+  bark: 0.16,
+  rock: 0.2,
 };
 export const PROP_MODEL_TEXTURES = [
   ['plain', 'Plain'],
@@ -118,6 +125,8 @@ export const PROP_MODEL_TEXTURES = [
   ['rust', 'Rust'],
   ['stripes', 'Stripes'],
   ['rings', 'Rings'],
+  ['bark', 'Bark'],
+  ['rock', 'Rock'],
 ];
 const PROP_MODEL_SHAPES = [
   ['box', 'Box'],
@@ -125,6 +134,8 @@ const PROP_MODEL_SHAPES = [
   ['sphere', 'Sphere'],
   ['cone', 'Cone'],
   ['barrel', 'Barrel'],
+  ['limb', 'Limb (from x, y, z to x2, y2, z2)'],
+  ['dome', 'Dome'],
 ];
 function propModelsOn() {
   return typeof engineSetting === 'function' && (engineSetting('world', 'voxelProps') ?? true) && !propModelState.fail;
@@ -242,6 +253,41 @@ function voxelise(rec, R) {
       B = [xa, xb, ya, yb, za, zb];
       inside = (x, y, z) => x >= xa && x < xb && y >= ya && y < yb && z >= za && z < zb;
       along = L.h >= Math.max(L.w, L.d) ? 2 : L.w >= L.d ? 0 : 1;
+    } else if (L.k === 'limb') {
+      /* a tapered branch: inside where the distance to the segment is under the radius there */
+      const ax = x0,
+        ay = y0,
+        az = Math.max(0, z0),
+        bx = L.x2 ?? x0,
+        by = L.y2 ?? y0,
+        bz = Math.max(0, L.z2 ?? z0 + 1),
+        r0 = Math.max(L.r || 0.1, 0.5 / R),
+        r1 = Math.max(L.r1 ?? r0 * 0.7, 0.5 / R),
+        dx = bx - ax,
+        dy = by - ay,
+        dz = bz - az,
+        ll = dx * dx + dy * dy + dz * dz || 1e-9,
+        mr = Math.max(r0, r1);
+      inside = (x, y, z) => {
+        const px = (x + 0.5) / R - ax,
+          py = (y + 0.5) / R - ay,
+          pz = (z + 0.5) / R - az,
+          k = Math.max(0, Math.min(1, (px * dx + py * dy + pz * dz) / ll)),
+          ex = px - dx * k,
+          ey = py - dy * k,
+          ez = pz - dz * k,
+          rr = r0 + (r1 - r0) * k;
+        return ex * ex + ey * ey + ez * ez <= rr * rr;
+      };
+      B = [
+        fl((Math.min(ax, bx) - mr) * R) - 1,
+        fl((Math.max(ax, bx) + mr) * R) + 2,
+        fl((Math.min(ay, by) - mr) * R) - 1,
+        fl((Math.max(ay, by) + mr) * R) + 2,
+        Math.max(0, fl((Math.min(az, bz) - mr) * R) - 1),
+        fl((Math.max(az, bz) + mr) * R) + 2,
+      ];
+      along = Math.abs(dz) >= Math.max(Math.abs(dx), Math.abs(dy)) ? 2 : Math.abs(dx) >= Math.abs(dy) ? 0 : 1;
     } else {
       const r = Math.max(L.r || 0.1, 0.5 / R),
         ry = Math.max(L.ry || r, 0.5 / R),
@@ -256,6 +302,7 @@ function voxelise(rec, R) {
         const k = ((z + 0.5) / R - z0) / Math.max(h, 1e-6);
         let f = 1;
         if (L.k === 'sphere') f = Math.sqrt(Math.max(0, 1 - (2 * k - 1) * (2 * k - 1)));
+        else if (L.k === 'dome') f = Math.sqrt(Math.max(0, 1 - k * k));
         else if (L.k === 'cone') f = 1 - k + (k * (L.r1 || 0)) / r;
         else if (L.k === 'barrel') f = 1 - bu + bu * Math.sin(k * Math.PI) * 2 - bu;
         RR.push(r * f);
@@ -285,8 +332,8 @@ function voxelise(rec, R) {
       bl = Math.max(1, Math.round((2 * R) / 32)),
       sw = Math.max(1, (R / 4) | 0),
       rw = Math.max(1, (R / 8) | 0),
-      streak = t === 'wood' || t === 'grain' || t === 'hay',
-      blot = t === 'stone' || t === 'rust' || t === 'leaves',
+      streak = t === 'wood' || t === 'grain' || t === 'hay' || t === 'bark',
+      blot = t === 'stone' || t === 'rust' || t === 'leaves' || t === 'rock',
       c0 = pk(c);
     for (let z = Math.max(0, za); z < zb; z++)
       for (let x = xa; x < xb; x++)
@@ -719,7 +766,11 @@ function uploadPrebuiltModel(rec) {
    with a few sides, a sphere is a small globe. Each recipe texture has its cell on the building sheet: wood is planks
    (along a board, up a post or a stave), stone is stone blocks (rough plaster on round stones), metal is metal seams,
    cloth is cloth, hay is thatch, leaves are moss, rust is rivets, stripes are stripes, rings are a cut log's rings
-   (on the top). Recipes with imported voxels stay voxels. */
+   (on the top), bark is bark (fissures along a trunk or branch), rock is rough rock. Recipes with imported voxels stay
+   voxels. Phase 09 batch 1: a limb is a tapered branch from one point to another (x, y, z to x2, y2, z2; r at the
+   start, r1 at the end), a dome is the top half of a sphere (a mossy roof); any round shape can take sides (how many
+   faces round it), rings (a sphere's or dome's bands), lump (how uneven it is, as a leafy globe is) and facet (flat
+   faces, for rocks). */
 const LOW_POLY_TEXTURE_CELLS = {
   plain: 15,
   wood: 14,
@@ -732,6 +783,8 @@ const LOW_POLY_TEXTURE_CELLS = {
   rust: 19,
   stripes: 20,
   rings: 15,
+  bark: 22,
+  rock: 23,
 };
 function lowPolyFromRecipe(rec) {
   const V = [],
@@ -851,6 +904,70 @@ function lowPolyFromRecipe(rec) {
       );
       continue;
     }
+    /* phase 09 batch 1: a limb, a tapered branch between two points (up is the model's y here), with a few sides */
+    if (L.k === 'limb') {
+      const A = [x0, z0, y0],
+        Bp = [L.x2 ?? x0, Math.max(0, L.z2 ?? z0 + 1), L.y2 ?? y0],
+        r0 = Math.max(L.r || 0.1, 0.01),
+        r1 = Math.max(L.r1 ?? r0 * 0.7, 0.005),
+        d = [Bp[0] - A[0], Bp[1] - A[1], Bp[2] - A[2]],
+        len = Math.hypot(d[0], d[1], d[2]);
+      if (len < 1e-4) continue;
+      const a = d.map(v => v / len),
+        ref = Math.abs(a[1]) < 0.9 ? [0, 1, 0] : [1, 0, 0],
+        cr = (p, q) => [p[1] * q[2] - p[2] * q[1], p[2] * q[0] - p[0] * q[2], p[0] * q[1] - p[1] * q[0]],
+        nz = v => {
+          const l = Math.hypot(v[0], v[1], v[2]) || 1;
+          return [v[0] / l, v[1] / l, v[2] / l];
+        },
+        u = nz(cr(a, ref)),
+        v = cr(a, u),
+        n = L.sides
+          ? Math.max(3, Math.min(24, L.sides | 0))
+          : Math.max(5, Math.min(10, Math.round((2 * Math.PI * r0 * 32) / 6))),
+        tx = T(t, 1),
+        arc = (2 * Math.PI * r0) / n,
+        ring = (C, r) => {
+          const out = [];
+          for (let j = 0; j <= n; j++) {
+            const an = (2 * Math.PI * (j % n)) / n,
+              c = Math.cos(an),
+              sn = Math.sin(an),
+              nr = [u[0] * c + v[0] * sn, u[1] * c + v[1] * sn, u[2] * c + v[2] * sn];
+            out.push([[C[0] + nr[0] * r, C[1] + nr[1] * r, C[2] + nr[2] * r], nr]);
+          }
+          return out;
+        },
+        G0 = ring(A, r0),
+        G1 = ring(Bp, r1);
+      for (let j = 0; j < n; j++)
+        poly(
+          [G0[j][0], G1[j][0], G1[j + 1][0], G0[j + 1][0]],
+          [G0[j][1], G1[j][1], G1[j + 1][1], G0[j + 1][1]],
+          [
+            [j * arc, 0],
+            [j * arc, len],
+            [(j + 1) * arc, len],
+            [(j + 1) * arc, 0],
+          ],
+          tx,
+          c
+        );
+      /* the end cap (the cut end of a branch shows rings when the texture is bark) */
+      for (let j = 0; j < n; j++)
+        poly(
+          [Bp, G1[j + 1][0], G1[j][0]],
+          a,
+          [
+            [1, 1],
+            [1 + Math.cos((2 * Math.PI * (j + 1)) / n) * r1, 1 + Math.sin((2 * Math.PI * (j + 1)) / n) * r1],
+            [1 + Math.cos((2 * Math.PI * j) / n) * r1, 1 + Math.sin((2 * Math.PI * j) / n) * r1],
+          ],
+          tx,
+          c
+        );
+      continue;
+    }
     /* round shapes: rings up the shape, each its radius across (r) and in depth (ry) */
     const r = Math.max(L.r || 0.1, 0.01),
       ry = Math.max(L.ry || r, 0.01),
@@ -864,13 +981,24 @@ function lowPolyFromRecipe(rec) {
         const k = i / 6;
         R.push([k, 1 - bu + bu * Math.sin(k * Math.PI) * 2 - bu]);
       }
-    else
-      for (let i = 0; i <= 8; i++) {
-        const k = (1 - Math.cos((Math.PI * i) / 8)) / 2;
+    else if (L.k === 'dome') {
+      const nb = Math.max(2, Math.min(12, L.rings || 5));
+      for (let i = 0; i <= nb; i++) {
+        const an = ((Math.PI / 2) * i) / nb;
+        R.push([Math.sin(an), Math.cos(an)]);
+      }
+    } else {
+      const nb = Math.max(2, Math.min(16, L.rings || 8));
+      for (let i = 0; i <= nb; i++) {
+        const k = (1 - Math.cos((Math.PI * i) / nb)) / 2;
         R.push([k, Math.sqrt(Math.max(0, 1 - (2 * k - 1) * (2 * k - 1)))]);
       }
-    const lumpy = t === 'leaves' && L.k === 'sphere',
-      n = Math.max(6, Math.min(lumpy ? 16 : 20, Math.round((2 * Math.PI * Math.max(r, ry) * 32) / 5))),
+    }
+    const la = L.lump != null ? +L.lump : t === 'leaves' && L.k === 'sphere' ? 0.22 : 0,
+      lumpy = la > 0,
+      n = L.sides
+        ? Math.max(3, Math.min(32, L.sides | 0))
+        : Math.max(6, Math.min(lumpy ? 16 : 20, Math.round((2 * Math.PI * Math.max(r, ry) * 32) / 5))),
       tx = T(t, 1),
       stave = t === 'wood' || t === 'grain',
       NR = R.length;
@@ -884,7 +1012,7 @@ function lowPolyFromRecipe(rec) {
         const a = (2 * Math.PI * (j % n)) / n,
           lu =
             lumpy && i > 0 && i < NR - 1
-              ? 1 + 0.22 * (voxelHash(i * 7 + li3, j % n, 13) - 0.5) + 0.12 * Math.sin(a * 3 + i)
+              ? 1 + la * (voxelHash(i * 7 + li3, j % n, 13) - 0.5) + la * 0.545 * Math.sin(a * 3 + i)
               : 1;
         row.push([x0 + Math.cos(a) * r * f * lu, y, y0 + Math.sin(a) * ry * f * lu]);
       }
@@ -944,9 +1072,21 @@ function lowPolyFromRecipe(rec) {
           stave
             ? [yy, jj * arc]
             : [jj * arc, yy]; /* round by the angle: stripes run out from the middle, staves stay straight */
+        const Q = [G[i][j], G[i + 1][j], G[i + 1][j + 1], G[i][j + 1]];
+        let FN = null;
+        if (L.facet) {
+          /* flat faces (rocks): each quad lit by its own normal, pointing away from the shape's middle */
+          const e1 = [Q[2][0] - Q[0][0], Q[2][1] - Q[0][1], Q[2][2] - Q[0][2]],
+            e2 = [Q[3][0] - Q[1][0], Q[3][1] - Q[1][1], Q[3][2] - Q[1][2]];
+          FN = [e1[1] * e2[2] - e1[2] * e2[1], e1[2] * e2[0] - e1[0] * e2[2], e1[0] * e2[1] - e1[1] * e2[0]];
+          const mx = (Q[0][0] + Q[2][0]) / 2 - x0,
+            my = (Q[0][1] + Q[2][1]) / 2 - ((L.z || 0) + h / 2),
+            mz = (Q[0][2] + Q[2][2]) / 2 - y0;
+          if (FN[0] * mx + FN[1] * my + FN[2] * mz < 0) FN = [-FN[0], -FN[1], -FN[2]];
+        }
         poly(
-          [G[i][j], G[i + 1][j], G[i + 1][j + 1], G[i][j + 1]],
-          [NM[i][j], NM[i + 1][j], NM[i + 1][j + 1], NM[i][j + 1]],
+          Q,
+          FN || [NM[i][j], NM[i + 1][j], NM[i + 1][j + 1], NM[i][j + 1]],
           [uv(j, y0r), uv(j, y1r), uv(j + 1, y1r), uv(j + 1, y0r)],
           tx,
           c
@@ -1138,6 +1278,26 @@ void main(){float cr=cos(uRot),sr=sin(uRot);vec3 q0=voxSpin(qPos*uQ-uSpinC)+uSpi
 precision highp float;out vec4 o;void main(){o=vec4(1.);}`,
   ],
 };
+/* phase 09 batch 1: a recipe with some colours and pictures swapped (swap: {"#old": "#new", "old/path.png": "new/path.png"}),
+   made once per variant: a palette swap for the solid parts, a picture swap for the picture layers */
+const SWAPPED_RECIPES = new Map();
+function swappedRecipe(path, rec, swap) {
+  const c = SWAPPED_RECIPES.get(path);
+  if (c && c.src === rec) return c.rec;
+  const up = v => (typeof v === 'string' ? v.toUpperCase() : v),
+    S = new Map(Object.entries(swap || {}).map(([a, b]) => [up(a), b])),
+    out = {
+      ...rec,
+      layers: (rec.layers || []).map(L => {
+        const n = { ...L };
+        if (n.col && S.has(up(n.col))) n.col = S.get(up(n.col));
+        if (n.img && S.has(up(n.img))) n.img = S.get(up(n.img));
+        return n;
+      }),
+    };
+  SWAPPED_RECIPES.set(path, { src: rec, rec: out });
+  return out;
+}
 /* tag an item that draws as voxels (gatherFrameItems calls this): the sprite and the solid-prop body stand aside */
 function tagPropModel(it) {
   if (
@@ -1158,6 +1318,11 @@ function tagPropModel(it) {
   } else {
     rec = loadPropModelRecipe(spec);
     path = spec;
+  }
+  /* phase 09 batch 1: a variant that swaps colours or pictures (an autumn oak: the same trunk, other leaves) */
+  if (rec && it.M.swap) {
+    path += '#' + (it.M._vk ?? JSON.stringify(it.M.swap));
+    rec = swappedRecipe(path, rec, it.M.swap);
   }
   const R = voxelResolution() + (engineSetting('world', 'voxelLowPoly') ? 1000 : 0);
   if (propModelState.res !== R) {
@@ -1187,7 +1352,11 @@ function tagPropModel(it) {
   it.vox = rec;
   it.voxPath = path;
 }
-/* picture layers of a voxel prop as sprite items of their own (set in the model, metres from its base) */
+/* picture layers of a voxel prop as sprite items of their own (set in the model, metres from its base). Phase 09
+   batch 1, for trees with a modelled trunk and drawn leaf clumps: a layer may say shadow (1: it casts its cut-out
+   shadow), recv (0: it takes no shadows from the shadow map, for a crown that would shade its own clumps in stripes),
+   sway (how much the wind moves it, times the prop's sway; the model itself stays still), glow (it lights up
+   when the lamps come on, a lantern's glass), and the recipe its art's scale (ppm: pixels to the metre; else the scenery's) */
 function propModelImageItems(it, out) {
   const rec = it.vox;
   if (!rec) return;
@@ -1207,11 +1376,12 @@ function propModelImageItems(it, out) {
       lz = (L.y || 0) * s,
       w = im.naturalWidth || im.width,
       h = im.naturalHeight || im.height,
-      mpp = (L.s || 1) / ((typeof gameData !== 'undefined' && gameData.scenery && gameData.scenery.ppu) || 34);
+      mpp =
+        (L.s || 1) / (rec.ppm || (typeof gameData !== 'undefined' && gameData.scenery && gameData.scenery.ppu) || 34);
     out.push({
       k: 'prop',
       p: it.p,
-      M: it.M,
+      M: layerProp(it.M),
       im,
       x: it.x + lx * cr - lz * sr,
       z: it.z + lx * sr + lz * cr,
@@ -1222,8 +1392,10 @@ function propModelImageItems(it, out) {
       w,
       h,
       flip: L.flip ? -f : f,
-      shear: it.shear || 0,
-      sh: 0,
+      shear: (it.shear || 0) * (L.sway ?? 1),
+      sh: L.shadow ? (it.M && it.M.shadow ? it.M.shadow : 1) * s : 0,
+      glow: L.glow ? L.glow * (typeof lampLit === 'function' ? lampLit(it.x, it.z, 0) : 1) : 0,
+      noRecv: L.recv === 0,
       fixed: L.face === 'fixed',
       plane: L.face === 'fixed',
       mat: it.mat,
@@ -1232,6 +1404,19 @@ function propModelImageItems(it, out) {
       voxImg: 1,
     });
   }
+}
+/* phase 09 batch 1: a picture layer of a model with a footprint (a cottage's door and windows) is a plain picture: the
+   footprint (box) would draw it as a building front pushed back through the house, inside its own walls */
+const LAYER_PROPS = new WeakMap();
+function layerProp(M) {
+  if (!M || !M.box) return M;
+  let o = LAYER_PROPS.get(M);
+  if (!o) {
+    o = { ...M };
+    delete o.box;
+    LAYER_PROPS.set(M, o);
+  }
+  return o;
 }
 /* alpha 0.4.1: a moored airship (catalogue bob: metres) rides the air: it rises and settles, a little more in a stronger
    wind, and swings a few degrees round its mast (it turns about its base point, the mast's foot) */

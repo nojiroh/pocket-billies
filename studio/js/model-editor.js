@@ -52,6 +52,8 @@ const MODEL_LAYER_KINDS = [
   ['sphere', 'Sphere'],
   ['cone', 'Cone'],
   ['barrel', 'Barrel'],
+  ['limb', 'Limb (a branch)'],
+  ['dome', 'Dome'],
   ['img', 'Picture'],
   ['raw', 'Imported voxels'],
 ];
@@ -120,17 +122,32 @@ function modelEditorHTML(k) {
           ],
           { opt: 1 }
         ),
-        checkboxField('Mirrored', `${p}.flip`, { num: 1 })
+        checkboxField('Mirrored', `${p}.flip`, { num: 1 }),
+        /* phase 09 batch 1: a tree's leaf clumps, a lantern's glass */
+        checkboxField('Casts its shadow', `${p}.shadow`, { num: 1 }),
+        selectField(
+          'Shadows on it',
+          `${p}.recv`,
+          [
+            ['', 'From everything'],
+            ['0', 'None (leaf clumps: the crown shades itself)'],
+          ],
+          { opt: 1, num: 1 }
+        ),
+        rangeField('Sways in the wind', `${p}.sway`, { min: 0, max: 2, step: 0.05, def: 1 }),
+        rangeField('Glows when the lamps are on', `${p}.glow`, { min: 0, max: 1, step: 0.05, def: 0 })
       )}<div class="grid">${pos}</div><div class="seg-row"><button class="btn sm subtle" data-act="vxeImgPick" data-i="${i}">Pick a PNG…</button></div>`;
     else if (kind === 'raw')
       body = `<p class="help">${escapeHtml(String(l.n || '?'))} voxels imported from ${escapeHtml(l.src || 'a .vox')}. Move it with the sliders; its colours are its own.</p><div class="grid">${pos}</div>`;
     else {
       const size =
-        kind === 'box'
-          ? `${rangeField('Width (m)', `${p}.w`, { min: 0.05, max: 6, step: 0.02, def: 0.5 })}${rangeField('Depth (m)', `${p}.d`, { min: 0.05, max: 6, step: 0.02, def: 0.5 })}${rangeField('Height (m)', `${p}.h`, { min: 0.05, max: 6, step: 0.02, def: 0.5 })}`
-          : kind === 'sphere'
-            ? rangeField('Radius (m)', `${p}.r`, { min: 0.05, max: 3, step: 0.02, def: 0.3 })
-            : `${rangeField('Radius (m)', `${p}.r`, { min: 0.03, max: 3, step: 0.01, def: 0.3 })}${numberField('Depth radius (m)', `${p}.ry`, { opt: 1, min: 0.03, max: 3, step: 0.01, help: 'Empty: round. Set it for an oval, or a wheel seen from the side.' })}${rangeField('Height (m)', `${p}.h`, { min: 0.05, max: 6, step: 0.02, def: 0.5 })}${kind === 'cone' ? rangeField('Radius at the top (m)', `${p}.r1`, { min: 0, max: 3, step: 0.01, def: 0 }) : ''}${kind === 'barrel' ? rangeField('Bulge', `${p}.bulge`, { min: 0, max: 0.4, step: 0.01, def: 0.15 }) : ''}`;
+        kind === 'limb'
+          ? `${rangeField('To across (m)', `${p}.x2`, { min: -3, max: 3, step: 0.02, def: 0 })}${rangeField('To depth (m)', `${p}.y2`, { min: -3, max: 3, step: 0.02, def: 0 })}${rangeField('To up (m)', `${p}.z2`, { min: 0, max: 8, step: 0.02, def: 1 })}${rangeField('Radius at the start (m)', `${p}.r`, { min: 0.005, max: 1, step: 0.005, def: 0.1 })}${rangeField('Radius at the end (m)', `${p}.r1`, { min: 0.005, max: 1, step: 0.005, def: 0.07 })}`
+          : kind === 'box'
+            ? `${rangeField('Width (m)', `${p}.w`, { min: 0.05, max: 6, step: 0.02, def: 0.5 })}${rangeField('Depth (m)', `${p}.d`, { min: 0.05, max: 6, step: 0.02, def: 0.5 })}${rangeField('Height (m)', `${p}.h`, { min: 0.05, max: 6, step: 0.02, def: 0.5 })}`
+            : kind === 'sphere'
+              ? rangeField('Radius (m)', `${p}.r`, { min: 0.05, max: 3, step: 0.02, def: 0.3 })
+              : `${rangeField('Radius (m)', `${p}.r`, { min: 0.03, max: 3, step: 0.01, def: 0.3 })}${numberField('Depth radius (m)', `${p}.ry`, { opt: 1, min: 0.03, max: 3, step: 0.01, help: 'Empty: round. Set it for an oval, or a wheel seen from the side.' })}${rangeField('Height (m)', `${p}.h`, { min: 0.05, max: 6, step: 0.02, def: 0.5 })}${kind === 'cone' ? rangeField('Radius at the top (m)', `${p}.r1`, { min: 0, max: 3, step: 0.01, def: 0 }) : ''}${kind === 'barrel' ? rangeField('Bulge', `${p}.bulge`, { min: 0, max: 0.4, step: 0.01, def: 0.15 }) : ''}${numberField('Sides', `${p}.sides`, { opt: 1, min: 3, max: 32, step: 1, help: 'Empty: as many as its size needs. Few for a faceted rock.' })}${kind === 'sphere' || kind === 'dome' ? numberField('Bands', `${p}.rings`, { opt: 1, min: 2, max: 16, step: 1 }) : ''}${rangeField('Lumpy', `${p}.lump`, { min: 0, max: 0.6, step: 0.01, def: 0 })}${checkboxField('Flat faces', `${p}.facet`, { num: 1 })}`;
       body = `<div class="grid">${selectField(
         'Shape',
         `${p}.k`,
@@ -153,7 +170,7 @@ function modelEditorHTML(k) {
     return `<div class="vxe-layer on ${l.hide ? 'off' : ''}">${title}${body}</div>`;
   }).join('');
   return `${head}<p class="help">${L.length} layer${L.length === 1 ? '' : 's'}: low-poly with the buildings’ 32 px textures (wood is planks, stone is stone blocks, hay is thatch…), or voxels one to a pixel of the art with Props as low-poly off. Across is left–right, depth is toward the back, up is from the ground at the prop's base point. Everything shows on the turntable as you drag.</p>
-  ${rows}<div class="seg-row vxe-add"><span class="help">Add:</span>${['box', 'cyl', 'sphere', 'cone', 'barrel'].map(q => `<button class="btn sm" data-act="vxeAdd" data-k="${q}">+ ${names[q]}</button>`).join('')}<button class="btn sm" data-act="vxeAdd" data-k="img">+ Picture</button><button class="btn sm subtle" data-act="vxeImport">Import a .vox…</button></div>
+  ${rows}<div class="seg-row vxe-add"><span class="help">Add:</span>${['box', 'cyl', 'sphere', 'cone', 'barrel', 'limb', 'dome'].map(q => `<button class="btn sm" data-act="vxeAdd" data-k="${q}">+ ${names[q]}</button>`).join('')}<button class="btn sm" data-act="vxeAdd" data-k="img">+ Picture</button><button class="btn sm subtle" data-act="vxeImport">Import a .vox…</button></div>
   <div class="seg-row"><button class="btn sm subtle" data-act="vxeExport">Download as .json</button><button class="btn sm subtle danger" data-act="vxeOff">Remove the model</button></div>`;
 }
 /* a first model: a box the size of the picture, a third as deep */
@@ -227,6 +244,8 @@ ACTIONS.vxeAdd = d => {
     sphere: { k: 'sphere', x: 0, y: 0, z: top, r: 0.25 },
     cone: { k: 'cone', x: 0, y: 0, z: top, r: 0.3, r1: 0, h: 0.5 },
     barrel: { k: 'barrel', x: 0, y: 0, z: top, r: 0.3, h: 0.8, bulge: 0.15 },
+    limb: { k: 'limb', x: 0, y: 0, z: top, x2: 0.4, y2: 0, z2: top + 1, r: 0.1, r1: 0.06 },
+    dome: { k: 'dome', x: 0, y: 0, z: top, r: 0.6, h: 0.5 },
     img: { k: 'img', img: M.img, x: 0, y: -0.01, z: 0, s: 1, face: 'fixed' },
   }[k];
   if (!base) return;
