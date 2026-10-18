@@ -1,5 +1,8 @@
 # Phase 04e plan: TypeScript and a boundary for the logic
 
+Done (2026-10-18, phase 04e session): applied and finished as below, except that the artCacheVersion branches were
+checked before deletion and the logic-only tsconfig went in. See the phase 04e entry in docs/HANDOFF.md.
+
 Prepared during the phase 05 session (2026-10-18), alongside the renames. You asked me to make the recommended
 choices, and the work to start in a new session once phase 05 is closed. The phase itself is
 [04-modernize-codebase.md](04-modernize-codebase.md) (tasks 4 and 6). This file says what is ready, how to land it,

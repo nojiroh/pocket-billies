@@ -11,6 +11,57 @@ Newest entry on top. Every phase session ends by adding an entry here and taggin
 - Questions waiting for the owner: 
 - Next session starts with: 
 
+### Phase 04e - Modernize: TypeScript and the logic boundary - 2026-10-18
+Owner's choices (from phase 05): the recommended 04e choices made for you; no full quick check. Plan approved at the start.
+- Changed (33 commits on top of phase 05, this entry included):
+  - The 22 prepared commits (docs/phases/04e/patches), applied with `git am`, no conflict: TypeScript 7.0.2
+    (`npm run typecheck`, JSDoc and game/types/*.d.ts, no compile step), data-files.js, game-data.js, map-files.js and
+    game-state.js checked, the type check in CI, dist/ without game/types, tools/move-names.mjs, and the four moves into
+    game/js/logic/ (rules.js, saves.js, battle-engine.js; game-state.js 930 -> 172 lines, battle.js 2320 -> 1299).
+  - tools/check-logic.mjs (`npm run check:logic`, 7 tests, 0.2 s, in the CI lint job): the logic loads and runs in
+    plain Node with a data set of its own.
+  - `// @ts-check` on the three logic modules (one commit each). 14 errors, all fixed with JSDoc only: the type imports
+    that stayed behind in game-state.js, three optional battle rules the code reads with a fallback (alphaShieldMult,
+    alphaPhaseAt, alphaShieldTurns, set by no data), and two casts with their reason.
+  - tsconfig.logic.json: the logic checked again with no DOM lib (in `npm run typecheck`, 0.6 s for both). A planted
+    document.title and localStorage in rules.js fail there.
+  - Deleted: roadsOf() (always returned []); the always-false artCacheVersion branches in ground-paint-worker.js and
+    world-map-gl.js; the Studio's hidden "With its neighbours" preview (seamlessHubMap); both names left eslint.config.js's
+    OPTIONAL list (only firebase is left).
+  - `npm run lint` caches ESLint's results by content (.eslintcache, ignored): 2.4 s warm instead of 7.3 s cold.
+  - Docs: README (typecheck, check:logic, game/js/logic/), NAMING.md (a line for game/js/logic/), CHANGELOG.
+- Risky or unfinished:
+  - The known risks in docs/phases/04e-plan.md still hold: hooks.js's slots are untyped (any), noImplicitAny is off,
+    the .d.ts types repeat the JSON schemas (a field added in the Studio needs both), TypeScript 7 is a native binary per
+    platform (an optional dependency), and a stored trip plan is only checked for its first hop.
+  - The no-DOM check covers the checked files only: util.js, hooks.js and test-globals.js are read, not checked. ESLint's
+    no-browser-globals rule for game/js/logic/ still covers the rest.
+  - The Studio has no joined-neighbours preview now (it had none in practice since 04d). Bringing it back means loading
+    seamless-world.js in the Studio: phase 14.
+  - The ESLint cache is safe for this config (it hashes the computed config per file; a planted undefined name was
+    still caught warm). If lint ever looks wrong, delete .eslintcache.
+- Verified:
+  - Every commit: typecheck, lint, check:modules, format:check, build; from the check-logic commit on, check:logic.
+    The two intermediate ts-check commits also pass on their own.
+  - Smoke 14/14 after each move on its own (0019, 0020, 0021, 0022) and at the end; check-studio-github.py (18
+    sections, a change proposed) after the moves and at the end.
+  - A planted `newSave().route.plan` in saves.js is refused (TS2339: 'route' does not exist on 'SaveData').
+  - A debug log exported headless on `?test=1&scene=marigold` has the same keys and sections (two levels deep) and
+    event kinds as at the end of phase 05, with no page errors.
+  - Not done: the full quick check (your call), the in-game full test on a phone.
+- Decisions I made (and why):
+  - I first thought the artCacheVersion branches were a 04d regression to fix by importing the name from hooks.js.
+    Wrong: the Studio, the only page that defines it, loads neither file, so deleting them (the prepared plan) was right.
+  - The logic-only tsconfig was cheap (one small .d.ts for console), so it went in.
+  - Python Playwright here needed the version that matches the preinstalled Chromium (1.56.0); tools/requirements-check.txt
+    is unchanged.
+- Questions waiting for the owner:
+  - Push the tags `phase-05-done` (on 0c62318) and `phase-04-done` (on the commit that adds this entry): my tag push is
+    refused again (HTTP 403). Both exist locally only in this container. The tag push also makes the CI picture baseline.
+  - Still open: check-studio-github.py in CI? Studio local mode; tags phase-01/02/03-done and legacy-final.
+- Next session starts with: on your phone, a new game, the in-game full test and a debug log from this build; then the
+  look at the game the roadmap asks for before phase 06, and phase 06 (or 08/13, your call).
+
 ### Phase 05 - Internal renaming - 2026-10-18
 Owner's choices: phase 05 first, then 04e; "one rename" means one rename rule per commit (one name, one prefix family,
 one file, one data key or section); no confirmations, so I made the "Ask me before" calls myself (listed under

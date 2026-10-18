@@ -31,3 +31,7 @@ kept aside in the browser).
   The save format is 2: a save from an earlier 0.1.0 build doesn't load (a new game starts and the old save is kept
   aside, as with legacy saves). No text changed, but the 43 places with a new id look a little different: the
   pattern of their ground, their countryside, townsfolk and stamps are picked from the id.
+- Under the hood: the rules, the save format and the battle engine are in game/js/logic/, which runs without a
+  browser (the page reaches it only through hooks.js; `npm run check:logic` runs it in plain Node). TypeScript checks
+  the data, the save and the logic from JSDoc comments (`npm run typecheck`); nothing is compiled.
+- Studio: the hidden "With its neighbours" preview button is gone (it hadn't shown since the modules change).
