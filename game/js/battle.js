@@ -34,7 +34,7 @@ import {
   TYPE_COLORS,
   typeEffectiveness,
 } from './game-data.js';
-import { speciesOf } from './logic/fighters.js';
+import { ROBOT_LIMBS, ROBOT_SLOT_NAMES, isRobot, robotPartDef, speciesOf } from './logic/fighters.js';
 import {
   addBilly,
   addEgg,
@@ -43,6 +43,10 @@ import {
   formatNumber,
   healAll,
   maxHp,
+  moveUsable,
+  partBroken,
+  partHpLeft,
+  partMaxHp,
   pickWeighted,
   plural,
 } from './logic/rules.js';
@@ -95,6 +99,7 @@ import { addRipple, walkRenderer, waterAt } from './walk-view-gl.js';
 import { battle3d, battle3dWanted } from './battle-3d.js';
 /* eslint-disable no-func-assign */
 expose({
+  ROBOT_PART_SHORT: [() => ROBOT_PART_SHORT],
   TICKER_LAST: [() => TICKER_LAST],
   afterEvents: [() => afterEvents, v => (afterEvents = v)],
   afterStageTime: [() => afterStageTime, v => (afterStageTime = v)],
@@ -124,6 +129,7 @@ expose({
   hudPop: [() => hudPop, v => ((hudPop = v), provide({ hudPop }))],
   itemIcon: [() => itemIcon],
   logLine: [() => logLine, v => (logLine = v)],
+  needsPart: [() => needsPart, v => (needsPart = v)],
   needsTarget: [() => needsTarget, v => (needsTarget = v)],
   nextEvent: [() => nextEvent, v => (nextEvent = v)],
   openBattle: [() => openBattle, v => setOpenBattle(v)],
@@ -133,12 +139,15 @@ expose({
   paintPlates: [() => paintPlates, v => (paintPlates = v)],
   paintSide: [() => paintSide, v => (paintSide = v)],
   pickMove: [() => pickMove, v => (pickMove = v)],
+  pickPart: [() => pickPart, v => (pickPart = v)],
   pickTarget: [() => pickTarget, v => (pickTarget = v)],
+  pickTargetOrPart: [() => pickTargetOrPart, v => (pickTargetOrPart = v)],
   planBack: [() => planBack, v => (planBack = v)],
   planNext: [() => planNext, v => (planNext = v)],
   plateElement: [() => plateElement, v => (plateElement = v)],
   platesTick: [() => platesTick, v => ((platesTick = v), provide({ platesTick }))],
   playTurnEvents: [() => playTurnEvents, v => ((playTurnEvents = v), provide({ playTurnEvents }))],
+  robotPartsHTML: [() => robotPartsHTML, v => (robotPartsHTML = v)],
   screenWipe: [() => screenWipe, v => (screenWipe = v)],
   setEndBattle: [() => setEndBattle, v => (setEndBattle = v)],
   setOpenBattle: [() => setOpenBattle, v => (setOpenBattle = v)],
@@ -171,6 +180,7 @@ function hudCardHTML(i) {
   return `<div class="hc-row"><b class="hc-n" id="n${i}"></b><span class="hc-gp" id="gp${i}" hidden>${uiIconHTML('spark', 12)}</span><span class="hc-lv tnum" id="l${i}"></span></div>
  <div class="hc-row2"><span class="hc-t" id="t${i}"></span><span class="hc-st" id="st${i}"></span><span class="hc-sg" id="sg${i}"></span></div>
  <div class="hpbar"><span class="hpl">HP</span><div class="hpt"><i class="ghost" id="g${i}"></i><i class="fill" id="h${i}"></i></div></div>
+ <div class="hc-parts" id="pp${i}" hidden></div>
  <div class="hc-row3">${i === 0 ? '<span class="hc-num tnum" id="hn0"></span>' : ''}<span class="hc-pips" id="pips${i}"></span></div>${i === 0 ? '<div class="xpbar"><i id="x0"></i></div>' : ''}`;
 }
 export function battleShell() {
@@ -560,6 +570,12 @@ function paintSide(i, s, anim) {
     c.classList.add('hit');
   }
   if (battleStage.s[i] && battleStage.s[i].sp === s.sp) battleStage.s[i].st = s.hp > 0 ? s.st : null;
+  /* phase 17: a robot's limbs, each with its own small HP bar */
+  const pp = $('#pp' + i);
+  if (pp) {
+    pp.hidden = !s.bot;
+    pp.innerHTML = s.bot ? robotPartsHTML(s.bot) : '';
+  }
   if (i === 0) {
     const hn = $('#hn0');
     hn.dataset.fmt = `#/${s.max}`;
@@ -737,6 +753,7 @@ function needsTarget(mid) {
   return onFoe && !fx.spread && liveActors(1).length > 1;
 }
 export function pickMove(mid) {
+  if (!moveUsable(fighter(activeBattle.cur), mid)) return;
   if (needsTarget(mid)) {
     activeBattle.mv = mid;
     activeBattle.phase = 'target';
@@ -745,12 +762,28 @@ export function pickMove(mid) {
     if (typeof battleStageTargets === 'function') battleStageTargets(liveActors(1));
     return;
   }
-  planNext({ who: activeBattle.cur, k: 'move', mid, tk: liveActors(1)[0] });
+  pickTargetOrPart(mid, liveActors(1)[0]);
 }
 export function pickTarget(tk) {
   if (!activeBattle || activeBattle.phase !== 'target') return;
   if (typeof battleStageTargets === 'function') battleStageTargets(null);
-  planNext({ who: activeBattle.cur, k: 'move', mid: activeBattle.mv, tk });
+  pickTargetOrPart(activeBattle.mv, tk);
+}
+/* phase 17: an aimed move at a robot asks which part next; anything else is planned now */
+function pickTargetOrPart(mid, tk) {
+  if (needsPart(mid, tk)) {
+    activeBattle.mv = mid;
+    activeBattle.tk = tk;
+    activeBattle.phase = 'part';
+    $('#msgT').textContent = `${MOVES[mid].n}: aim at which part of ${billyName(fighter(tk))}?`;
+    paintActions();
+    return;
+  }
+  planNext({ who: activeBattle.cur, k: 'move', mid, tk });
+}
+export function pickPart(part) {
+  if (!activeBattle || activeBattle.phase !== 'part') return;
+  planNext({ who: activeBattle.cur, k: 'move', mid: activeBattle.mv, tk: activeBattle.tk, part });
 }
 function effectivenessLabel(mid, tk) {
   const M = MOVES[mid];
@@ -768,6 +801,22 @@ function effectivenessLabel(mid, tk) {
     : nv.length === F.length
       ? '<em class="nve">Not very effective</em>'
       : '';
+}
+/* phase 17: a robot's three limbs as small bars (L arm, R arm, legs), a broken one crossed out */
+const ROBOT_PART_SHORT = { armL: 'L', armR: 'R', legs: 'Lg' };
+function robotPartsHTML(bot) {
+  return Object.entries(bot.ph)
+    .map(([q, f]) => {
+      const p = Math.max(0, Math.min(1, f)) * 100;
+      return `<span class="hp-part${f <= 0 ? ' broken' : ''}" title="${ROBOT_SLOT_NAMES[q]}${f <= 0 ? ' (broken)' : ''}"><b>${ROBOT_PART_SHORT[q]}</b><i><u class="${p < 34 ? 'low' : ''}" style="width:${p}%"></u></i></span>`;
+    })
+    .join('');
+}
+/* phase 17: does this move ask which robot part to go for? (an aimed move at a robot with a limb still standing) */
+function needsPart(mid, tk) {
+  const M = MOVES[mid],
+    t = fighter(tk);
+  return !!(M.fx && M.fx.aim && t && isRobot(t) && ROBOT_LIMBS.some(q => !partBroken(t, q)));
 }
 function hpMini(m) {
   const p = Math.max(0, m.hp / maxHp(m));
@@ -830,6 +879,14 @@ export function paintActions() {
   <button class="bt items" data-a="bitems">${uiIconHTML('bag', 18)}<b>Bag</b><small>${items}</small><kbd>I</kbd></button>
   <button class="bt team" data-a="bteam">${uiIconHTML('team', 18)}<b>Team</b><small>${alive}/${crew.length}</small><kbd>T</kbd></button>
   <button class="bt run" data-a="brun" ${wild ? '' : 'disabled'}>${uiIconHTML('run', 18)}<b>Run</b><small>${wild ? 'Walk away' : 'No exit'}</small><kbd>R</kbd></button></div>${first ? '' : `<button class="bt back wide" data-a="bback">${uiIconHTML('back', 16)}<b>Back to ${escapeHtml(billyName(fighter(activeBattle.plan[activeBattle.plan.length - 1].who)))}</b><kbd>Esc</kbd></button>`}</div>`;
+  } else if (ph === 'part') {
+    const t = fighter(activeBattle.tk);
+    h = `<div class="plist">${ROBOT_LIMBS.map(q => {
+      const left = partHpLeft(t, q),
+        mx = partMaxHp(t, q),
+        P = t.fit && robotPartDef(t.fit[q].id);
+      return `<button class="pick part-pick" data-a="bpart" data-p="${q}" ${left <= 0 ? 'disabled' : ''}><span class="pk-t"><b>${escapeHtml(ROBOT_SLOT_NAMES[q][0].toUpperCase() + ROBOT_SLOT_NAMES[q].slice(1))}</b><small>${escapeHtml(P ? P.name : '')}${P && P.move && MOVES[P.move] ? ` · gives ${escapeHtml(MOVES[P.move].n)}` : ''}</small><span class="hpmini"><i class="${left / mx < 0.34 ? 'low' : ''}" style="width:${(left / mx) * 100}%"></i></span></span><span class="pk-s tnum">${left <= 0 ? 'Broken' : `${left}/${mx}`}</span></button>`;
+    }).join('')}</div>${backButtonHTML()}`;
   } else if (ph === 'fight') {
     const m = fighter(activeBattle.cur);
     h = `<div class="moves">${m.moves
@@ -837,7 +894,11 @@ export function paintActions() {
         const M = MOVES[id],
           c = TYPE_COLORS[M.t],
           P = M.p ? M.p : M.fx && M.fx.vary ? 'Varies' : 'Status',
-          stab = M.t !== 'None' && actorTypes(activeBattle.cur).includes(M.t);
+          stab = M.t !== 'None' && actorTypes(activeBattle.cur).includes(M.t),
+          /* phase 17: a robot can't use the move of a broken part */
+          off = !moveUsable(m, id);
+        if (off)
+          return `<button class="mv off" style="--tc:${c[0]};--tf:${c[1]}" disabled data-tip="${escapeHtml(M.d)}"><span class="mv-top"><b>${escapeHtml(M.n)}</b><kbd>${n + 1}</kbd></span><span class="mv-meta"><span class="mv-ty">Part broken</span></span></button>`;
         return `<button class="mv" style="--tc:${c[0]};--tf:${c[1]}" data-a="bmove" data-m="${id}" data-tip="${escapeHtml(M.d)}"><span class="mv-top"><b>${escapeHtml(M.n)}</b><kbd>${n + 1}</kbd></span><span class="mv-meta"><span class="mv-ty">${M.t === 'None' ? 'Normal' : M.t}${stab ? ' ★' : ''}</span><span class="tnum">${P}${M.p ? ' pow' : ''}${M.p && typeof battleWeatherMultiplier === 'function' ? (battleWeatherMultiplier(M.t) > 1 ? ' ▲' : battleWeatherMultiplier(M.t) < 1 ? ' ▼' : '') : ''}${M.c !== 'X' || M.a < 100 ? ` · ${M.a || 100}%` : ''}</span></span>${effectivenessLabel(id)}</button>`;
       })
       .join('')}</div>${backButtonHTML()}`;

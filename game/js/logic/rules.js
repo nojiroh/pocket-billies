@@ -504,6 +504,7 @@ export function canEvolve(m) {
 }
 export const evolutionItemName = e => (ITEMS[e.item || 'bell'] ? ITEMS[e.item || 'bell'].n : 'Shining Stone');
 export function evolutionHint(m) {
+  if (isRobot(m)) return 'Robots don’t evolve. They grow with their gem’s level, and change with their parts.';
   const s = speciesOf(m),
     e = s.evo;
   if (!e) return s.rar === 'mythical' ? 'Does not evolve.' : 'Fully evolved.';

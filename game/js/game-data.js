@@ -144,6 +144,7 @@ for (const k in MOVES) {
 /* ---------- robots (phase 17): parts and gems, put together in logic/fighters.js ---------- */
 /** @type {import('../types/game-data').RobotData} */
 export const ROBOTS = gameData.robots || { parts: {}, gems: {} };
+provide({ ROBOTS }); /* to-module */
 /* ---------- billionaires ---------- */
 /** @type {Evolution[]} */
 export const DEFAULT_EVOLUTIONS = [

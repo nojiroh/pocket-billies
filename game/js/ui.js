@@ -35,7 +35,7 @@ import {
   typeEffectiveness,
 } from './game-data.js';
 import { weightClass } from './logic/parts.js';
-import { speciesOf } from './logic/fighters.js';
+import { isRobot, speciesOf } from './logic/fighters.js';
 import {
   STEP_BRACKETS,
   addEgg,
@@ -155,6 +155,7 @@ import {
   itemIcon,
   paintActions,
   pickMove,
+  pickPart,
   pickTarget,
   planBack,
   planNext,
@@ -193,6 +194,7 @@ import {
   trainerTalk,
 } from './story.js';
 import { challengeCardHTML, homeDecorate, refreshHomeFurniture, requestListHTML, stampTile } from './things-to-do.js';
+import { robotPartsPanelHTML, workshopAction, workshopSectionHTML } from './workshop.js';
 /* eslint-disable no-func-assign */
 expose({
   BOX_SORTS: [() => BOX_SORTS],
@@ -743,6 +745,8 @@ function renderIntro() {
 const PART_SLOT_NAMES = { head: 'Head', body: 'Body', front: 'Front', back: 'Back', sig: 'Signature' },
   PART_SIZE_NAMES = { S: 'Small', M: 'Normal', L: 'Large' };
 function billyPartsHTML(m) {
+  /* phase 17: a robot shows its fitted parts */
+  if (isRobot(m)) return robotPartsPanelHTML(m);
   const b = billyBuild(m),
     kg = billyWeight(m),
     prime = isPrime(b);
@@ -1729,6 +1733,7 @@ const plateVars = m => {
   const t = speciesOf(m).types;
   return `--c1:${TYPE_COLORS[t[0]][0]};--c2:${TYPE_COLORS[t[t.length - 1]][0]}`;
 };
+provide({ plateVars }); /* to-module */
 const billyConditionHTML = m => (m.hp <= 0 ? '<span class="stb st-down">Fainted</span>' : statusBadgeHTML(m.status));
 const xpProgress = m => {
   if (m.lvl >= maxLevel()) return 1;
@@ -1822,6 +1827,7 @@ function renderTeam() {
     : '';
   return `<header class="bar"><div><div class="sub">${saveData.team.length} of ${teamSize()} on your team</div><h1 class="where">Your team</h1></div></header>
  <div class="tm-top">${lead ? teamHero(lead) : ''}<section class="tpanel tm-party"><div class="sec-h"><h2>Party</h2><span class="count tnum">${saveData.team.length}/${teamSize()}</span></div><p class="note">Your lead goes first in battle. Tap a card for details.</p><div class="tm-grid">${rest.map(teamCard).join('')}${slots}</div></section></div>
+ ${workshopSectionHTML()}
  <section class="tpanel tm-jobs"><div class="sec-h"><h2>Day jobs</h2><span class="count tnum">${work}/${saveData.jobs.length}</span></div><p class="note">Billies at work leave your team and earn pay while you walk.</p>${jobSlots()}</section>
  ${boxSection()}`;
 }
@@ -2248,7 +2254,7 @@ function billySheet(m) {
     title: escapeHtml(billyName(m)),
     cls: 'mon-sheet',
     acts,
-    top: `<div class="ms-plate" style="${plateVars(m)}">${lead ? '<span class="tm-ribbon">Lead</span>' : ''}${bud ? `<span class="tm-ribbon bud">${uiIconHTML('heart', 11)} Buddy</span>` : ''}${m.gold ? '<span class="tm-ribbon gold">Golden</span>' : ''}${isPrime(billyBuild(m)) ? '<span class="tm-ribbon prime">Prime</span>' : ''}${rigCanvasHTML(m.sp, 128, { gold: m.gold, build: m.build })}</div>`,
+    top: `<div class="ms-plate" style="${plateVars(m)}">${lead ? '<span class="tm-ribbon">Lead</span>' : ''}${bud ? `<span class="tm-ribbon bud">${uiIconHTML('heart', 11)} Buddy</span>` : ''}${m.gold ? '<span class="tm-ribbon gold">Golden</span>' : ''}${!isRobot(m) && isPrime(billyBuild(m)) ? '<span class="tm-ribbon prime">Prime</span>' : ''}${rigCanvasHTML(m.sp, 128, { gold: m.gold, build: m.build })}</div>`,
     html: `<p class="row ms-chips">${s.types.map(typeBadgeHTML).join('')}${billyConditionHTML(m)}<b class="lv tnum">Lv ${m.lvl}</b>${m.nick ? `<span class="ms-sp">${escapeHtml(s.name)}</span>` : ''}</p>
   <div class="ms-tabs" role="tablist" aria-label="About ${escapeHtml(billyName(m))}" data-on="sum">${tabs.map(([k, l]) => `<button role="tab" data-a="ms-tab" data-k="${k}" aria-selected="${k === 'sum'}">${l}</button>`).join('')}</div>
   <div class="ms-pane" data-k="sum"><div class="ms-meters">${meter('HP', hpBar(m.hp, mx), `${m.hp}/${mx}`)}${meter('XP', progressBarHTML(xpProgress(m), 'xpb'), xpLeft(m))}</div>
@@ -2760,6 +2766,16 @@ document.addEventListener('click', ev => {
     case 'btarget':
       if (activeBattle && activeBattle.phase === 'target' && d.t != null) pickTarget(+d.t);
       break;
+    case 'wsopen':
+    case 'wsslot':
+    case 'wsfit':
+    case 'wsup':
+    case 'wsbuild':
+      workshopAction(a, d);
+      break;
+    case 'bpart':
+      if (activeBattle && activeBattle.phase === 'part' && d.p) pickPart(d.p);
+      break;
     case 'bcoins':
       if (activeBattle && activeBattle.phase === 'choose') {
         activeBattle.phase = 'coins';
@@ -2788,7 +2804,7 @@ document.addEventListener('click', ev => {
           planBack();
           break;
         }
-        activeBattle.phase = activeBattle.phase === 'target' ? 'fight' : 'choose';
+        activeBattle.phase = activeBattle.phase === 'target' || activeBattle.phase === 'part' ? 'fight' : 'choose';
         if (activeBattle.phase === 'choose') chooseMessage();
         paintActions();
       }
