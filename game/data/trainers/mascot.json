@@ -1,7 +1,7 @@
 {
  "name": "Mascot Max",
  "who": "boy",
- "area": "clear",
+ "battleStage": "clear",
  "node": 41,
  "blocks": false,
  "team": [

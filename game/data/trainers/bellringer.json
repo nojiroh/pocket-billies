@@ -1,7 +1,7 @@
 {
  "name": "Bell Ringer Bea",
  "who": "hiker",
- "area": "volcano",
+ "battleStage": "volcano",
  "node": 44,
  "blocks": false,
  "team": [

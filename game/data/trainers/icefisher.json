@@ -1,7 +1,7 @@
 {
  "name": "Ice Fisher Ivy",
  "who": "girl",
- "area": "snow",
+ "battleStage": "snow",
  "node": 34,
  "blocks": false,
  "team": [

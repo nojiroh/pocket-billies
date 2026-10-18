@@ -1,7 +1,7 @@
 {
  "name": "Mother Morel",
  "who": "morel",
- "area": "shell",
+ "battleStage": "shell",
  "node": 28,
  "blocks": false,
  "team": [

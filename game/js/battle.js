@@ -984,7 +984,7 @@ export function startTrainer(id, o = {}) {
       tid: id,
       foeName: T.name,
       T,
-      area: BATTLE_STAGES[T.area] ? T.area : battleStageKey(),
+      area: BATTLE_STAGES[T.battleStage] ? T.battleStage : battleStageKey(),
       fmt: dbl ? 'double' : 'single',
     })
   )

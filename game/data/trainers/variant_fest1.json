@@ -1,7 +1,7 @@
 {
  "name": "Variant No. 4471",
  "who": "variant",
- "area": "grass",
+ "battleStage": "grass",
  "node": 19,
  "blocks": false,
  "team": [

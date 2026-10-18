@@ -1,7 +1,7 @@
 {
  "name": "Geologist Gail",
  "who": "geo",
- "area": "volcano",
+ "battleStage": "volcano",
  "node": 15,
  "blocks": false,
  "team": [

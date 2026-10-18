@@ -1,7 +1,7 @@
 {
  "name": "Baron Vault",
  "who": "vault",
- "area": "esc",
+ "battleStage": "esc",
  "node": 24,
  "blocks": false,
  "team": [

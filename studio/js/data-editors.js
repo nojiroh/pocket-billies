@@ -1553,7 +1553,7 @@ SECTIONS.trainers = () => {
      ),
      selectField(
        'Battle backdrop',
-       `${p}.area`,
+       `${p}.battleStage`,
        Object.entries(D.battleStages).map(([b, v]) => [b, v.name || b])
      ),
      numberField('Reward ($)', `${p}.reward`, { min: 0, step: 50 }),
@@ -1699,7 +1699,7 @@ ACTIONS.trainerNew = () => {
   D.trainers[k] = {
     name: 'New Trainer',
     who: Object.keys(D.people).find(p => !['boy', 'girl'].includes(p)) || 'gini',
-    area: 'grass',
+    battleStage: 'grass',
     node: 1,
     blocks: false,
     team: [{ sp: D.lines[0].id + '0', lvl: 8 }],

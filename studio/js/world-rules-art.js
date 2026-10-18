@@ -670,7 +670,7 @@ function worldBackdrops() {
               .map(r => r.name)
               .concat(
                 Object.values(D.trainers || {})
-                  .filter(T => T.area === k)
+                  .filter(T => T.battleStage === k)
                   .map(T => T.name)
               )
               .join(', ') || 'nothing yet'

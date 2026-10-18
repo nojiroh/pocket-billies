@@ -1,7 +1,7 @@
 {
  "name": "Blake",
  "who": "chad",
- "area": "clear",
+ "battleStage": "clear",
  "node": 40,
  "blocks": false,
  "after": "chad2",

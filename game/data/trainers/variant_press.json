@@ -1,7 +1,7 @@
 {
  "name": "Variant No. 7777",
  "who": "variant",
- "area": "sea",
+ "battleStage": "sea",
  "node": 38,
  "blocks": false,
  "team": [

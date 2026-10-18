@@ -1,7 +1,7 @@
 {
  "name": "Leader Alta",
  "who": "alta",
- "area": "snow",
+ "battleStage": "snow",
  "node": 17,
  "blocks": false,
  "team": [

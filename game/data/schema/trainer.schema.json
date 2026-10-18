@@ -7,7 +7,7 @@
  "properties": {
   "name": {"type": "string", "minLength": 1},
   "who": {"description": "their look (a person id)", "type": "string"},
-  "area": {"type": "string"},
+  "battleStage": {"type": "string"},
   "node": {"description": "the route stop where they wait", "type": "integer", "minimum": 0},
   "blocks": {"type": "boolean"},
   "team": {

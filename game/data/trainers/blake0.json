@@ -1,7 +1,7 @@
 {
  "name": "Blake",
  "who": "chad",
- "area": "grass",
+ "battleStage": "grass",
  "node": 0,
  "blocks": false,
  "tutorial": true,

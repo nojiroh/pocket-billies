@@ -1,7 +1,7 @@
 {
  "name": "Founder Finn",
  "who": "intern",
- "area": "shell",
+ "battleStage": "shell",
  "node": 30,
  "blocks": false,
  "team": [

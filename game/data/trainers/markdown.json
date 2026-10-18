@@ -1,7 +1,7 @@
 {
  "name": "Leader Iris",
  "who": "markdown",
- "area": "mall",
+ "battleStage": "mall",
  "node": 8,
  "blocks": false,
  "team": [

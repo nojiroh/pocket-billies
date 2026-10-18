@@ -1,7 +1,7 @@
 {
  "name": "Vinylla",
  "who": "vinylla",
- "area": "volcano",
+ "battleStage": "volcano",
  "node": 45,
  "blocks": false,
  "after": "vinylla1",

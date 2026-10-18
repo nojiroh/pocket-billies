@@ -163,7 +163,7 @@ function buildSearchIndex() {
   Object.entries(D.trainers || {}).forEach(([k, T]) =>
     add(
       T.name || k,
-      'Trainer' + (T.area ? ' · ' + T.area : ''),
+      'Trainer' + (T.battleStage ? ' · ' + T.battleStage : ''),
       'trainer',
       () => openSection('trainers', { trainer: k }),
       k

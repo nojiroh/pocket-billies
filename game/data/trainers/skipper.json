@@ -1,7 +1,7 @@
 {
  "name": "Skipper Sam",
  "who": "skipper",
- "area": "lake",
+ "battleStage": "lake",
  "node": 18,
  "blocks": false,
  "team": [

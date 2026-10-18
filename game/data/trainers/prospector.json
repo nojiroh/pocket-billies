@@ -1,7 +1,7 @@
 {
  "name": "Prospector Pete",
  "who": "miner",
- "area": "esc",
+ "battleStage": "esc",
  "node": 26,
  "blocks": false,
  "team": [
