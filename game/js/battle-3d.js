@@ -13,7 +13,7 @@ import { $, clamp } from './util.js';
 import { hexA } from './art.js';
 import {
   ACT,
-  FOC,
+  FOCAL_LENGTH,
   actorMetersPerPixel,
   actorPositions,
   battleStage,
@@ -256,7 +256,7 @@ function battleGLFrame() {
     parts,
     cam: battleStage.V,
     L: battleStage.L,
-    foc: FOC,
+    foc: FOCAL_LENGTH,
     off: O,
     gy: BGL.gy,
     items,

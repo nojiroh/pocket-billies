@@ -47,33 +47,33 @@ expose({
   CAMK: [() => CAMK],
   CAMPOS: [() => CAMPOS],
   CANFILTER: [() => CANFILTER],
-  CX0: [() => CX0],
-  CZ0: [() => CZ0],
   DOFG: [() => DOFG],
   DOFK: [() => DOFK],
   DRAWL: [() => DRAWL],
   EASE: [() => EASE],
-  FH: [() => FH],
-  FOC: [() => FOC],
+  FOCAL_LENGTH: [() => FOCAL_LENGTH],
   FOCAM: [() => FOCAM],
   FOCUS: [() => FOCUS],
   FORMATIONS: [() => FORMATIONS],
   FORMATION_SCALES: [() => FORMATION_SCALES],
-  FW: [() => FW],
   GB: [() => GB],
   GLOWY: [() => GLOWY],
+  GROUND_CENTER_X: [() => GROUND_CENTER_X],
+  GROUND_CENTER_Z: [() => GROUND_CENTER_Z],
+  GROUND_MAX_DEPTH: [() => GROUND_MAX_DEPTH],
+  GROUND_SPHERE_RADIUS: [() => GROUND_SPHERE_RADIUS],
+  GROUND_TEXTURE_PX_PER_METER: [() => GROUND_TEXTURE_PX_PER_METER],
+  GROUND_TEXTURE_SIZE: [() => GROUND_TEXTURE_SIZE],
   HOMECAM: [() => HOMECAM],
-  HZ_IN_FRAME: [() => HZ_IN_FRAME],
+  HORIZON_IN_FRAME: [() => HORIZON_IN_FRAME],
   LEAF: [() => LEAF],
   NIT: [() => NIT, v => (NIT = v)],
   PULLCAM: [() => PULLCAM],
-  RCURV: [() => RCURV],
   SOFTPAD: [() => SOFTPAD],
   STAGEART: [() => STAGEART],
-  TEXN: [() => TEXN],
-  TEXS: [() => TEXS],
+  STAGE_FRAME_HEIGHT: [() => STAGE_FRAME_HEIGHT],
+  STAGE_FRAME_WIDTH: [() => STAGE_FRAME_WIDTH],
   TFX: [() => TFX],
-  ZMAX: [() => ZMAX],
   actorMetersPerPixel: [() => actorMetersPerPixel],
   actorPositions: [() => actorPositions],
   actorTeam: [() => actorTeam],
@@ -140,9 +140,6 @@ expose({
   part: [() => part, v => (part = v)],
   partSpr: [() => partSpr, v => (partSpr = v)],
   pixRing: [() => pixRing, v => (pixRing = v)],
-  proj: [() => proj],
-  projC: [() => projC, v => (projC = v)],
-  projTo: [() => projTo, v => (projTo = v)],
   propDef: [() => propDef, v => (propDef = v)],
   punch: [() => punch, v => (punch = v)],
   ringFx: [() => ringFx, v => (ringFx = v)],
@@ -157,6 +154,9 @@ expose({
   softSmall: [() => softSmall, v => (softSmall = v)],
   speedLines: [() => speedLines, v => (speedLines = v)],
   stageArt: [() => stageArt, v => (stageArt = v)],
+  stageProject: [() => stageProject],
+  stageProjectInto: [() => stageProjectInto, v => (stageProjectInto = v)],
+  stageProjectWith: [() => stageProjectWith, v => (stageProjectWith = v)],
   trainerAct: [() => trainerAct, v => (trainerAct = v)],
   trainerBattleFrame: [() => trainerBattleFrame, v => (trainerBattleFrame = v)],
   trainerMetersPerPixel: [() => trainerMetersPerPixel],
@@ -175,18 +175,18 @@ export function setBattleStageStart(v) {
   provide({ battleStageStart });
 }
 /* to-module: end */
-export const FW = 224,
-  FH = 168,
-  FOC = 170,
-  RCURV = 300,
-  ZMAX = 330,
-  HZ_IN_FRAME = 51;
+export const STAGE_FRAME_WIDTH = 224,
+  STAGE_FRAME_HEIGHT = 168,
+  FOCAL_LENGTH = 170,
+  GROUND_SPHERE_RADIUS = 300,
+  GROUND_MAX_DEPTH = 330,
+  HORIZON_IN_FRAME = 51;
 export const actorPositions = [
     { x: -0.88, z: 2.6 },
     { x: 1.72, z: 5.7 },
   ],
   ACTOR_RIG_SCALES = [1.4, 1, 1.4, 1, 1.4],
-  actorMetersPerPixel = actorPositions.map(p => p.z / FOC);
+  actorMetersPerPixel = actorPositions.map(p => p.z / FOCAL_LENGTH);
 /* v33: actors 0..4 (0 yours, 1 theirs, 2 your second, 3 their second, 4 your third). Where each stands, per battle format.
    Yours stay staggered in front so their backs don't hide each other; an Alpha stands back and alone. */
 const actorTeam = i => (i === 1 || i === 3 ? 1 : 0);
@@ -216,7 +216,7 @@ function battleStageFormat(f) {
   actorMetersPerPixel.length = 0;
   L.forEach((p, i) => {
     actorPositions[i] = { x: p.x, z: p.z };
-    actorMetersPerPixel[i] = p.z / FOC;
+    actorMetersPerPixel[i] = p.z / FOCAL_LENGTH;
   });
   battleStage.s = actorPositions.map((p, i) =>
     Object.assign(newActorState(), { fs: (FORMATION_SCALES[f] || FORMATION_SCALES.single)[i] || 1 })
@@ -243,10 +243,10 @@ const FOCAM = [
   { x: 0.8, y: 1.4, z: 1.1, yaw: 0.09, hz: 8 },
 ];
 export const AREAS = BACKDROPS;
-const CX0 = 0.55,
-  CZ0 = 3.9,
-  TEXN = 512,
-  TEXS = 16;
+const GROUND_CENTER_X = 0.55,
+  GROUND_CENTER_Z = 3.9,
+  GROUND_TEXTURE_SIZE = 512,
+  GROUND_TEXTURE_PX_PER_METER = 16;
 /* ---------- scene state ---------- */
 export const EASE = {
   lin: t => t,
@@ -423,11 +423,11 @@ function battleStageLayout() {
     vh = el.clientHeight,
     lay = el.dataset.layout;
   const free = battleFreeArea(vw, vh, lay); /* {x,y,w,h} in CSS px, left by the HUD */
-  let u = Math.min(free.w / FW, free.h / FH);
+  let u = Math.min(free.w / STAGE_FRAME_WIDTH, free.h / STAGE_FRAME_HEIGHT);
   if (u > 3) u = 3 + (u - 3) * 0.55;
   /* big screens show more world around the action instead of ever bigger pixels */ u = clamp(u, 1.35, 5.2);
-  const fw = FW * u,
-    fh = FH * u,
+  const fw = STAGE_FRAME_WIDTH * u,
+    fh = STAGE_FRAME_HEIGHT * u,
     fx = free.x + (free.w - fw) / 2,
     fy = free.y + Math.max(0, (free.h - fh) * (lay === 'landscape' ? 0.5 : 0.42));
   const M = 14,
@@ -443,7 +443,7 @@ function battleStageLayout() {
     LH,
     R,
     cx: M + (fx + fw / 2) / u,
-    h0: M + fy / u + HZ_IN_FRAME,
+    h0: M + fy / u + HORIZON_IN_FRAME,
     fx,
     fy,
     fw,
@@ -646,11 +646,11 @@ export function buzz(p) {
   } catch (e) {}
 }
 /* ---------- projection ---------- */
-const proj = (X, Y, Z) => projC(battleStage.V, X, Y, Z);
+const stageProject = (X, Y, Z) => stageProjectWith(battleStage.V, X, Y, Z);
 /* stage point to CSS pixels inside #battle (for HUD pop-ups) */
 export function battleStageToCss(P) {
   if (!battleStage.L) return null;
-  const q = proj(P.x, P.y, P.z);
+  const q = stageProject(P.x, P.y, P.z);
   if (!q) return null;
   const L = battleStage.L,
     z = 1 + battleStage.css.z,
@@ -765,9 +765,9 @@ function ambient(dt) {
   if (battleStage.parts.length > 220) return;
   if (battleStage.oil && rnd() < dt / 18)
     part({
-      x: CX0 - 7 + rnd() * 3,
+      x: GROUND_CENTER_X - 7 + rnd() * 3,
       y: 0.1 + rnd() * 2.6,
-      z: CZ0 + (rnd() - 0.3) * 7,
+      z: GROUND_CENTER_Z + (rnd() - 0.3) * 7,
       vx: 6 + rnd() * 4,
       vy: (rnd() - 0.4) * 0.6,
       life: 1500,
@@ -776,8 +776,8 @@ function ambient(dt) {
     });
   if (rnd() < dt / 150) {
     const am = A.amb,
-      x = CX0 + (rnd() - 0.5) * 12,
-      z = CZ0 + rnd() * 9 - 1.5;
+      x = GROUND_CENTER_X + (rnd() - 0.5) * 12,
+      z = GROUND_CENTER_Z + rnd() * 9 - 1.5;
     if (am === 'pollen' || am === 'spore')
       part({
         x,
@@ -957,7 +957,7 @@ function camApply() {
    around the middle of the action while nothing happens. A guard keeps both billionaires inside the free frame. */
 export const CAMK = ['x', 'y', 'z', 'yaw', 'hz'],
   ACT = { x: (actorPositions[0].x + actorPositions[1].x) / 2, z: (actorPositions[0].z + actorPositions[1].z) / 2 };
-function projC(C, X, Y, Z) {
+function stageProjectWith(C, X, Y, Z) {
   const L = battleStage.L,
     cs = Math.cos(C.yaw),
     sn = Math.sin(C.yaw),
@@ -967,10 +967,10 @@ function projC(C, X, Y, Z) {
     lz = dx * sn + dz * cs;
   if (lz < 0.25) return null;
   return {
-    x: L.cx + (FOC * lx) / lz,
-    y: L.h0 + C.hz - (FOC * (Y - C.y + (lz * lz) / (2 * RCURV))) / lz,
+    x: L.cx + (FOCAL_LENGTH * lx) / lz,
+    y: L.h0 + C.hz - (FOCAL_LENGTH * (Y - C.y + (lz * lz) / (2 * GROUND_SPHERE_RADIUS))) / lz,
     z: lz,
-    s: FOC / lz,
+    s: FOCAL_LENGTH / lz,
   };
 }
 /* how far (stage px) the shown billionaires' sprites stick out of the free area for camera C (10% grace) */
@@ -997,8 +997,8 @@ function camOver(C) {
             (s.fs || 1)) /
           2
         : 0.6;
-    const g = projC(C, w.x, 0, w.z),
-      m = projC(C, c.x, c.y, c.z);
+    const g = stageProjectWith(C, w.x, 0, w.z),
+      m = stageProjectWith(C, c.x, c.y, c.z);
     if (!g || !m) return 1e9;
     const half = hw * m.s,
       top = 2 * m.y - g.y,
@@ -1158,11 +1158,11 @@ function castFloor() {
     colLz = new Float32Array(W);
     const RW = 12.5;
     for (let i = 0; i < W; i++) {
-      const a = (i + 0.5 - cx) / FOC,
+      const a = (i + 0.5 - cx) / FOCAL_LENGTH,
         dx = a * cs + sn,
         dz = -a * sn + cs,
-        ox = C.x - CX0,
-        oz = C.z - (CZ0 + 2),
+        ox = C.x - GROUND_CENTER_X,
+        oz = C.z - (GROUND_CENTER_Z + 2),
         bq = 2 * (ox * dx + oz * dz),
         aq = dx * dx + dz * dz,
         cq = ox * ox + oz * oz - RW * RW,
@@ -1173,10 +1173,14 @@ function castFloor() {
   const wallMid = indoor ? colLz[Math.max(0, Math.min(W - 1, Math.round(cx)))] : 0,
     floorDark = pk(20, 16, 30);
   for (let j = 0; j < H; j++) {
-    const v = (j + 0.5 - h) / FOC;
-    const lz = indoor ? (v > 0 ? cy / v : 1e9) : RCURV * (-v + Math.sqrt(v * v + (2 * cy) / RCURV));
+    const v = (j + 0.5 - h) / FOCAL_LENGTH;
+    const lz = indoor
+      ? v > 0
+        ? cy / v
+        : 1e9
+      : GROUND_SPHERE_RADIUS * (-v + Math.sqrt(v * v + (2 * cy) / GROUND_SPHERE_RADIUS));
     const row = j * W;
-    if (!indoor && (lz > ZMAX || !(lz > 0))) {
+    if (!indoor && (lz > GROUND_MAX_DEPTH || !(lz > 0))) {
       const tt = clamp((h - j) / (h + 10), 0, 1),
         c = mixA(mixA(fog, skyC[1], Math.min(1, tt * 1.6)), skyC[0], Math.max(0, tt * 1.6 - 0.6)),
         pc = pk(c[0], c[1], c[2]);
@@ -1192,7 +1196,7 @@ function castFloor() {
       fb = fog[2] * fogk,
       useFog = fogk > 0.01;
     /* texture coordinates step linearly across a row */
-    const st = lz / FOC,
+    const st = lz / FOCAL_LENGTH,
       X0 = C.x + (0.5 - cx) * st * cs + lz * sn,
       Z0 = C.z - (0.5 - cx) * st * sn + lz * cs,
       dX = st * cs,
@@ -1202,25 +1206,25 @@ function castFloor() {
       farOn = FT && lz > 16,
       farAll = lz >= 26,
       farT = (lz - 16) / 10;
-    let U = (X0 - CX0) * TEXS + 256,
-      V = (Z0 - CZ0) * TEXS + 256,
+    let U = (X0 - GROUND_CENTER_X) * GROUND_TEXTURE_PX_PER_METER + 256,
+      V = (Z0 - GROUND_CENTER_Z) * GROUND_TEXTURE_PX_PER_METER + 256,
       FU = X0 * 0.5,
       FV = Z0 * 0.5;
-    const dU = dX * TEXS * step,
-      dV = dZ * TEXS * step,
+    const dU = dX * GROUND_TEXTURE_PX_PER_METER * step,
+      dV = dZ * GROUND_TEXTURE_PX_PER_METER * step,
       dFU = dX * 0.5 * step,
       dFV = dZ * 0.5 * step;
     for (let i = 0; i < W; i += step, U += dU, V += dV, FU += dFU, FV += dFV) {
       if (indoor) {
         const wl = colLz[i];
         if (lz > wl || v <= 0) {
-          const top = h - (FOC * (4.2 - cy)) / wl,
-            bot = h + (FOC * cy) / wl;
+          const top = h - (FOCAL_LENGTH * (4.2 - cy)) / wl,
+            bot = h + (FOCAL_LENGTH * cy) / wl;
           let pc;
           if (j >= top && j <= bot) {
-            const X = C.x + ((i + 0.5 - cx) / FOC) * wl * cs + wl * sn,
-              Z = C.z - ((i + 0.5 - cx) / FOC) * wl * sn + wl * cs,
-              ang = Math.atan2(Z - (CZ0 + 2), X - CX0),
+            const X = C.x + ((i + 0.5 - cx) / FOCAL_LENGTH) * wl * cs + wl * sn,
+              Z = C.z - ((i + 0.5 - cx) / FOCAL_LENGTH) * wl * sn + wl * cs,
+              ang = Math.atan2(Z - (GROUND_CENTER_Z + 2), X - GROUND_CENTER_X),
               u = ((Math.floor((ang / (Math.PI * 2) + 0.5) * 1024 * 1.5) % 1024) + 1024) % 1024,
               vv = Math.floor(((j - top) / (bot - top)) * 63);
             pc = WT ? WT[vv * 1024 + u] : pk(60, 50, 80);
@@ -1236,7 +1240,7 @@ function castFloor() {
         }
       }
       let pc = 0;
-      if (nearOn) pc = NT[(Math.floor(V) & 511) * TEXN + (Math.floor(U) & 511)];
+      if (nearOn) pc = NT[(Math.floor(V) & 511) * GROUND_TEXTURE_SIZE + (Math.floor(U) & 511)];
       if (farOn && (farAll || d44(i, j) < farT)) pc = FT[(Math.floor(FV) & 255) * 256 + (Math.floor(FU) & 255)];
       if (useFog)
         pc =
@@ -1277,7 +1281,7 @@ function dofFloor() {
     const z = F.rowZ[j];
     let r = blurAt(z);
     if (r > 0 && z < d.zf && z < actorPositions[0].z) {
-      const mag = FOC / Math.max(0.3, z) / TEXS;
+      const mag = FOCAL_LENGTH / Math.max(0.3, z) / GROUND_TEXTURE_PX_PER_METER;
       r = Math.max(
         r,
         Math.min(3.2, mag * 0.32 * clamp((actorPositions[0].z - z) / 1.2, 0, 1) * Math.min(1, d.ap / 0.5))
@@ -1456,7 +1460,7 @@ function floorUpdate() {
 }
 /* ---------- drawing helpers ---------- */
 function drawShadow(c, X, Z, r, a) {
-  const p = proj(X, 0, Z);
+  const p = stageProject(X, 0, Z);
   if (!p) return;
   const w = Math.max(2, r * p.s),
     hh = Math.max(1.5, w * clamp(battleStage.V.y / p.z, 0.18, 0.55));
@@ -1561,7 +1565,7 @@ function drawSide(c, i) {
   if (!B) return;
   const { s, k, R, P, ak, buf } = B;
   const w = sideWorld(i),
-    p = proj(w.x, w.y, w.z);
+    p = stageProject(w.x, w.y, w.z);
   if (!p) return;
   const sc = (p.s * actorMetersPerPixel[i] * s.sc * (s.big || 1) * (s.fs || 1)) / R.k,
     lift = Math.max(0, -P.y) + Math.max(0, -s.oy);
@@ -1579,7 +1583,7 @@ function drawSide(c, i) {
     H = Math.round(R.BH * sc),
     bl = blurAt(p.z);
   if (AREAS[battleStage.area].indoor && s.a > 0.5 && ak !== 'faint') {
-    const gy = Math.round(proj(w.x, 0, w.z).y);
+    const gy = Math.round(stageProject(w.x, 0, w.z).y);
     c.save();
     c.globalAlpha = s.a * 0.14;
     c.translate(0, gy * 2);
@@ -1618,7 +1622,7 @@ function drawTrainer(c, i) {
   if (!f) return;
   const X = actorPositions[i].x + (i === 0 ? -1.15 : 1.25) + T.x * actorMetersPerPixel[i],
     Z = actorPositions[i].z + (i === 0 ? 0.25 : 0.4),
-    p = proj(X, 0, Z);
+    p = stageProject(X, 0, Z);
   if (!p) return;
   const sc = p.s * trainerMetersPerPixel(i),
     w = f.width * sc,
@@ -1631,7 +1635,7 @@ function drawTrainer(c, i) {
   c.globalAlpha = 1;
 }
 function drawBill(c, img, X, Y, Z, wk, al, slot) {
-  const p = proj(X, Y, Z);
+  const p = stageProject(X, Y, Z);
   if (!p) return;
   const sc = (p.s / 30) * wk;
   if (sc > 8) return;
@@ -1692,7 +1696,7 @@ function drawParts(c, layer) {
   const L = [];
   battleStage.parts.forEach(p => {
     if ((p.layer || 2) !== layer) return;
-    const q = proj(p.x, p.y, p.z);
+    const q = stageProject(p.x, p.y, p.z);
     if (q) L.push([q, p]);
   });
   L.sort((a, b) => b[0].z - a[0].z);
@@ -1725,7 +1729,7 @@ function drawParts(c, layer) {
         Math.round(s.height * kk)
       );
     } else if (p.beam) {
-      const q2 = proj(p.x2, p.y2, p.z2);
+      const q2 = stageProject(p.x2, p.y2, p.z2);
       if (q2) {
         c.strokeStyle = p.col;
         c.lineWidth = Math.max(1, p.w * k);
@@ -1767,7 +1771,7 @@ function cloudShadows(c) {
   c.save();
   c.fillStyle = 'rgba(30,16,60,.16)';
   for (const cl of battleStage.clouds) {
-    const p = proj(cl.x, 0, cl.z);
+    const p = stageProject(cl.x, 0, cl.z);
     if (!p || p.z > 70) continue;
     const r = 2.6 * p.s,
       ry = r * clamp(battleStage.V.y / p.z, 0.12, 0.55);
@@ -1868,7 +1872,7 @@ function itemAdd(z, k, o, i) {
   it.i = i;
   NIT++;
 }
-function projTo(o, C, X, Y, Z) {
+function stageProjectInto(o, C, X, Y, Z) {
   const L = battleStage.L,
     cs = Math.cos(C.yaw),
     sn = Math.sin(C.yaw),
@@ -1877,10 +1881,10 @@ function projTo(o, C, X, Y, Z) {
     lx = dx * cs - dz * sn,
     lz = dx * sn + dz * cs;
   if (lz < 0.25) return false;
-  o.x = L.cx + (FOC * lx) / lz;
-  o.y = L.h0 + C.hz - (FOC * (Y - C.y + (lz * lz) / (2 * RCURV))) / lz;
+  o.x = L.cx + (FOCAL_LENGTH * lx) / lz;
+  o.y = L.h0 + C.hz - (FOCAL_LENGTH * (Y - C.y + (lz * lz) / (2 * GROUND_SPHERE_RADIUS))) / lz;
   o.z = lz;
-  o.s = FOC / lz;
+  o.s = FOCAL_LENGTH / lz;
   return true;
 }
 function battleStageDraw() {
@@ -1912,19 +1916,19 @@ function battleStageDraw() {
   NIT = 0;
   const V = battleStage.V;
   for (const p of battleStage.props) {
-    if (projTo(p.q || (p.q = { x: 0, y: 0, z: 0, s: 0 }), V, p.x, 0, p.z)) itemAdd(p.q.z, 0, p, 0);
+    if (stageProjectInto(p.q || (p.q = { x: 0, y: 0, z: 0, s: 0 }), V, p.x, 0, p.z)) itemAdd(p.q.z, 0, p, 0);
   }
   for (const cl of battleStage.clouds) {
-    const q = proj(cl.x, cl.y, cl.z);
+    const q = stageProject(cl.x, cl.y, cl.z);
     if (q) itemAdd(q.z + 1000, 1, cl, 0);
   }
   for (let i = battleStage.s.length - 1; i >= 0; i--) {
     const w = sideWorld(i),
-      q = proj(w.x, 0, w.z);
+      q = stageProject(w.x, 0, w.z);
     if (q) itemAdd(q.z - 0.01, 2, null, i);
     const T = battleStage.tr[i];
     if (i < 2 && T.show) {
-      const q2 = proj(actorPositions[i].x, 0, actorPositions[i].z + (i === 0 ? 0.25 : 0.4));
+      const q2 = stageProject(actorPositions[i].x, 0, actorPositions[i].z + (i === 0 ? 0.25 : 0.4));
       if (q2) itemAdd(q2.z + 0.02, 3, null, i);
     }
   }
@@ -1963,7 +1967,7 @@ export function battleStageTargets(L) {
 }
 function selRing(c, i, col, pulse) {
   const w = sideWorld(i),
-    g = proj(w.x, 0, w.z);
+    g = stageProject(w.x, 0, w.z);
   if (!g) return;
   const s = battleStage.s[i],
     R = s && s.sp ? rigParts(s.sp, s.gold, ACTOR_RIG_SCALES[i]) : null,
@@ -1985,7 +1989,7 @@ function battleStageDrawEffects(c, skip0) {
       if (battleStage.s[k] && battleStage.s[k].show) {
         selRing(c, k, Math.floor(battleStage.t / 220) % 2 ? '#FF6B6B' : '#FFFFFF', 3);
         const T = sideTop(k),
-          q = proj(T.x, T.y + 0.35 + 0.08 * Math.sin(battleStage.t / 140), T.z);
+          q = stageProject(T.x, T.y + 0.35 + 0.08 * Math.sin(battleStage.t / 140), T.z);
         if (q) {
           c.fillStyle = '#FF6B6B';
           const z = Math.max(3, Math.round((q.s / 30) * 4));
@@ -1995,7 +1999,7 @@ function battleStageDrawEffects(c, skip0) {
       }
   if (battleStage.coin && battleStage.coin.show) {
     const C = battleStage.coin,
-      q = proj(C.x, C.y, C.z);
+      q = stageProject(C.x, C.y, C.z);
     if (q) {
       const cc = coinCanvas(C.kind, 16),
         k = clamp((q.s / 30) * (C.k || 1), 0.6, 4);
@@ -2014,7 +2018,7 @@ function battleStageDrawEffects(c, skip0) {
   if (battleStage.ring) {
     const ph = battleStageRingPhase(),
       o = sideCenter(1),
-      q = proj(o.x, o.y, o.z);
+      q = stageProject(o.x, o.y, o.z);
     if (q) {
       const r = (1.15 - ph * 0.8) * q.s;
       const col = ph > 0.62 ? '#5DFF8A' : ph > 0.35 ? '#F4C542' : '#F2F2F2';
@@ -2022,7 +2026,7 @@ function battleStageDrawEffects(c, skip0) {
       c.globalAlpha = 0.35;
       pixRing(c, q.x, q.y, r + 3, r + 3, ph > 0.62 ? '#5DFF8A' : '#FFFFFF', 1);
       c.globalAlpha = 1;
-      const g = proj(o.x, 0, o.z);
+      const g = stageProject(o.x, 0, o.z);
       if (g) {
         c.globalAlpha = 0.5;
         pixRing(c, g.x, g.y, r * 0.9, r * 0.9 * clamp(battleStage.V.y / g.z, 0.2, 0.6), col, 1);
@@ -2649,9 +2653,9 @@ export function battleStagePlay(an, ev) {
       battleStage.oil = true;
       for (let i = 0; i < 40; i++)
         part({
-          x: CX0 - 8 + rnd() * 4,
+          x: GROUND_CENTER_X - 8 + rnd() * 4,
           y: 0.1 + rnd() * 3,
-          z: CZ0 + (rnd() - 0.4) * 7,
+          z: GROUND_CENTER_Z + (rnd() - 0.4) * 7,
           vx: 8 + rnd() * 5,
           vy: (rnd() - 0.3) * 0.8,
           life: 1300,
