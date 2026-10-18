@@ -8,7 +8,8 @@
    tables come from game-data.js; the save, the battle and the interface state (saveData, activeBattle, uiState), and
    what the rules tell the interface (save, toast, render), come through hooks.js, filled by game-state.js and ui.js on
    the page or by a test in Node. */
-/** @import { Billy, JobSlot } from '../../types/save-data' */
+/** @import { Billy, JobSlot, PartInstance, RobotFit } from '../../types/save-data' */
+/** @import { RobotSlot } from '../../types/game-data' */
 /** @import { Trainer } from '../../types/game-data' */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
@@ -48,7 +49,21 @@ import {
   typeEffectiveness,
 } from '../game-data.js';
 import { partsPrime, partsStatFactor, partsWeightRatio } from './parts.js';
-import { speciesOf } from './fighters.js';
+import {
+  ROBOT_LIMBS,
+  ROBOT_SLOTS,
+  isRobot,
+  moveSources,
+  newPart,
+  partFits,
+  robotGemDef,
+  robotMoves,
+  robotPartDef,
+  robotRules,
+  robotSp,
+  speciesOf,
+  validRobot,
+} from './fighters.js';
 /* eslint-disable no-func-assign */
 expose({
   STEP_BRACKETS: [() => STEP_BRACKETS],
@@ -56,6 +71,8 @@ expose({
   addBilly: [() => addBilly, v => (addBilly = v)],
   // @ts-expect-error -- replaced on purpose
   addEgg: [() => addEgg, v => (addEgg = v)],
+  // @ts-expect-error -- replaced on purpose
+  addPart: [() => addPart, v => (addPart = v)],
   // @ts-expect-error -- replaced on purpose
   addSteps: [() => addSteps, v => ((addSteps = v), provide({ addSteps }))],
   allBillies: [() => allBillies],
@@ -68,6 +85,9 @@ expose({
   billyWeight: [() => billyWeight],
   // @ts-expect-error -- replaced on purpose
   blockerAt: [() => blockerAt, v => (blockerAt = v)],
+  brokenParts: [() => brokenParts],
+  // @ts-expect-error -- replaced on purpose
+  buildRobot: [() => buildRobot, v => (buildRobot = v)],
   buildStatFactor: [() => buildStatFactor],
   buildWeightRatio: [() => buildWeightRatio],
   canEnter: [() => canEnter],
@@ -95,6 +115,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   evolve: [() => evolve, v => (evolve = v)],
   findBilly: [() => findBilly],
+  // @ts-expect-error -- replaced on purpose
+  fitPart: [() => fitPart, v => (fitPart = v)],
   formatNumber: [() => formatNumber],
   // @ts-expect-error -- replaced on purpose
   gainXp: [() => gainXp, v => (gainXp = v)],
@@ -112,25 +134,39 @@ expose({
   jobSlotCount: [() => jobSlotCount],
   // @ts-expect-error -- replaced on purpose
   makeBilly: [() => makeBilly, v => ((makeBilly = v), provide({ makeBilly }))],
+  // @ts-expect-error -- replaced on purpose
+  makeRobot: [() => makeRobot, v => ((makeRobot = v), provide({ makeRobot }))],
   maxHp: [() => maxHp],
   maxLevel: [() => maxLevel],
   moveSlotCount: [() => moveSlotCount],
+  // @ts-expect-error -- replaced on purpose
+  moveUsable: [() => moveUsable, v => (moveUsable = v)],
   // @ts-expect-error -- replaced on purpose
   movesAt: [() => movesAt, v => (movesAt = v)],
   newUid: [() => newUid],
   nextBracket: [() => nextBracket],
   nextTripNode: [() => nextTripNode],
+  partBroken: [() => partBroken],
+  partHpLeft: [() => partHpLeft],
+  // @ts-expect-error -- replaced on purpose
+  partMaxHp: [() => partMaxHp, v => (partMaxHp = v)],
   partRules: [() => partRules],
   partSlots: [() => partSlots],
+  partsDamaged: [() => partsDamaged],
   pathFrom: [() => pathFrom],
   // @ts-expect-error -- replaced on purpose
   pickWeighted: [() => pickWeighted, v => (pickWeighted = v)],
   plural: [() => plural],
   // @ts-expect-error -- replaced on purpose
   primeBuild: [() => primeBuild, v => (primeBuild = v)],
+  // @ts-expect-error -- replaced on purpose
+  refreshRobot: [() => refreshRobot, v => (refreshRobot = v)],
+  // @ts-expect-error -- replaced on purpose
+  repairParts: [() => repairParts, v => (repairParts = v)],
   riderName: [() => riderName],
   // @ts-expect-error -- replaced on purpose
   riderOf: [() => riderOf, v => ((riderOf = v), provide({ riderOf }))],
+  robotStartLevel: [() => robotStartLevel],
   // @ts-expect-error -- replaced on purpose
   rollBuild: [() => rollBuild, v => (rollBuild = v)],
   // @ts-expect-error -- replaced on purpose
@@ -157,11 +193,13 @@ expose({
   // @ts-expect-error -- replaced on purpose
   tripTo: [() => tripTo, v => (tripTo = v)],
   // @ts-expect-error -- replaced on purpose
+  upgradePart: [() => upgradePart, v => (upgradePart = v)],
+  // @ts-expect-error -- replaced on purpose
   walkDistances: [() => walkDistances, v => (walkDistances = v)],
   xpFor: [() => xpFor],
 });
 /* eslint-enable no-func-assign */
-provide({ addSteps, makeBilly, riderOf });
+provide({ addSteps, makeBilly, makeRobot, riderOf });
 export function setSetTrip(v) {
   // @ts-expect-error -- replaced on purpose
   setTrip = v; // eslint-disable-line no-func-assign
@@ -294,6 +332,136 @@ export function makeBilly(sp, lvl, o = {}) {
   } catch (e) {}
   return m;
 }
+/* ---------- robots (phase 17): a gem with four parts, a team member like a Billie (logic/fighters.js) ---------- */
+/** a robot, from its gem and fitted parts (part instances, or { id } for a trainer's)
+ * @param {string} gem @param {RobotFit} fit @param {number} lvl */
+export function makeRobot(gem, fit, lvl, o = {}) {
+  const f = /** @type {RobotFit} */ (
+    Object.fromEntries(
+      ROBOT_SLOTS.map(k => [k, { uid: fit[k].uid || newUid(), id: fit[k].id, up: Math.max(0, fit[k].up || 0) }])
+    )
+  );
+  const m = {
+    uid: newUid(),
+    kind: /** @type {'robot'} */ ('robot'),
+    gem,
+    fit: f,
+    sp: robotSp(gem, f),
+    lvl,
+    xp: xpFor(lvl),
+    hp: 0,
+    status: null,
+    sTurns: 0,
+    moves: robotMoves(gem, f),
+    gold: false,
+    nick: o.nick || '',
+    partDmg: {},
+  };
+  m.hp = maxHp(m);
+  return m;
+}
+/** after its parts change: its sp and moves follow them, and its HP stays the same share of the new max
+ * @param {Billy} m */
+export function refreshRobot(m) {
+  if (!isRobot(m) || !validRobot(m.gem, m.fit)) return;
+  const fit = /** @type {RobotFit} */ (m.fit),
+    gem = /** @type {string} */ (m.gem),
+    was = m.hp > 0 ? m.hp / Math.max(1, maxHp(m)) : 0;
+  m.sp = robotSp(gem, fit);
+  m.moves = robotMoves(gem, fit);
+  m.hp = m.hp > 0 ? Math.max(1, Math.round(maxHp(m) * was)) : 0;
+  m.partDmg = m.partDmg || {};
+}
+/** a limb's own HP when whole @param {Billy} m @param {'armL' | 'armR' | 'legs'} slot */
+export function partMaxHp(m, slot) {
+  const P = m.fit && robotPartDef(m.fit[slot].id);
+  return Math.max(1, Math.round(maxHp(m) * robotRules().partHpRatio * ((P && P.dur) ?? 1)));
+}
+/** @param {Billy} m @param {'armL' | 'armR' | 'legs'} slot */
+export const partHpLeft = (m, slot) => Math.max(0, partMaxHp(m, slot) - ((m.partDmg && m.partDmg[slot]) || 0));
+/** @param {Billy} m @param {'armL' | 'armR' | 'legs'} slot */
+export const partBroken = (m, slot) => isRobot(m) && partHpLeft(m, slot) <= 0;
+/** @param {Billy} m @returns {('armL' | 'armR' | 'legs')[]} */
+export const brokenParts = m => (isRobot(m) ? ROBOT_LIMBS.filter(k => partBroken(m, k)) : []);
+/** can it use this move now? A robot can't use a move whose every part giving it is broken (the gem's always works)
+ * @param {Billy} m @param {string} mid */
+export function moveUsable(m, mid) {
+  if (!isRobot(m)) return true;
+  const src = moveSources(/** @type {string} */ (m.gem), /** @type {RobotFit} */ (m.fit), mid);
+  return !src.length || src.some(k => k === 'gem' || !partBroken(m, /** @type {'armL' | 'armR' | 'legs'} */ (k)));
+}
+/** fixes a share (1 = all) of each limb's lost HP; a broken one comes back once it is above zero
+ * @param {Billy} m @param {number} share @returns {boolean} whether anything was fixed */
+export function repairParts(m, share = 1) {
+  if (!isRobot(m) || !m.partDmg) return false;
+  let any = false;
+  for (const k of ROBOT_LIMBS) {
+    const d = m.partDmg[k] || 0;
+    if (d <= 0) continue;
+    const fix = share >= 1 ? d : Math.ceil(partMaxHp(m, k) * share);
+    m.partDmg[k] = Math.max(0, d - fix);
+    any = true;
+  }
+  return any;
+}
+/** does it have damaged parts? @param {Billy} m */
+export const partsDamaged = m => isRobot(m) && ROBOT_LIMBS.some(k => ((m.partDmg && m.partDmg[k]) || 0) > 0);
+/** puts a part from your parts on a robot; the part it replaces goes back to your parts. A gem (slot 'gem') swaps the
+ * robot's gem the same way: the robot keeps its level, the old gem goes back as a spare.
+ * @param {Billy} m @param {RobotSlot | 'gem'} slot @param {string} uid a part in saveData.parts @returns {boolean} */
+export function fitPart(m, slot, uid) {
+  if (!isRobot(m)) return false;
+  const i = saveData.parts.findIndex(p => p.uid === uid);
+  if (i < 0) return false;
+  const p = saveData.parts[i];
+  if (slot === 'gem') {
+    if (!robotGemDef(p.id)) return false;
+    saveData.parts.splice(i, 1, { uid: newUid(), id: /** @type {string} */ (m.gem), up: 0 });
+    m.gem = p.id;
+  } else {
+    if (!partFits(p.id, slot)) return false;
+    const fit = /** @type {RobotFit} */ (m.fit),
+      old = fit[slot];
+    saveData.parts.splice(i, 1, old);
+    fit[slot] = p;
+    if (slot !== 'torso' && m.partDmg) delete m.partDmg[slot];
+  }
+  refreshRobot(m);
+  return true;
+}
+/** builds a new robot from a spare gem and four spare parts; it joins the team, or storage when the team is full
+ * @param {string} gemUid @param {Record<RobotSlot, string>} uids @returns {Billy | null} */
+export function buildRobot(gemUid, uids) {
+  const take = /** @param {string} u */ u => saveData.parts.find(p => p.uid === u);
+  const g = take(gemUid);
+  if (!g || !robotGemDef(g.id)) return null;
+  const fit = /** @type {RobotFit} */ ({});
+  for (const k of ROBOT_SLOTS) {
+    const p = take(uids[k]);
+    if (!p || !partFits(p.id, k) || Object.values(fit).includes(p)) return null;
+    fit[k] = p;
+  }
+  saveData.parts = saveData.parts.filter(p => p !== g && !Object.values(fit).includes(p));
+  const m = makeRobot(g.id, fit, robotStartLevel());
+  addBilly(m);
+  return m;
+}
+/** a new robot's level: the level of your strongest team member, at least 5 (prototype; ask the owner) */
+export const robotStartLevel = () => Math.max(5, ...saveData.team.map(m => m.lvl));
+/** adds a part (or a spare gem) to your parts @param {string} id */
+export function addPart(id) {
+  if (!robotPartDef(id) && !robotGemDef(id)) return null;
+  const p = newPart(id, newUid());
+  saveData.parts.push(p);
+  return p;
+}
+/** upgrades a part one level (prototype: free; crafting costs come with the workshop) @param {PartInstance} p */
+export function upgradePart(p) {
+  if (!p || (p.up || 0) >= robotRules().maxUpgrade || !robotPartDef(p.id)) return false;
+  p.up = (p.up || 0) + 1;
+  for (const m of allBillies()) if (isRobot(m) && m.fit && Object.values(m.fit).includes(p)) refreshRobot(m);
+  return true;
+}
 export const billyName = m => m.nick || speciesOf(m).name;
 export const allBillies = () => saveData.team.concat(saveData.box);
 export const findBilly = id => allBillies().find(m => m.uid === id);
@@ -305,6 +473,8 @@ export function gainXp(m, amt, say) {
     m.lvl++;
     if (m.hp > 0) m.hp = Math.min(maxHp(m), m.hp + maxHp(m) - old);
     say(`${billyName(m)} grew to level ${m.lvl}.`, { k: 'lvl', uid: m.uid });
+    /* phase 17: a robot's moves come from its parts, not from levels */
+    if (isRobot(m)) continue;
     for (const [lv, mv] of LINE_BY_ID[speciesOf(m).line].learn) {
       if (lv !== m.lvl || m.moves.includes(mv)) continue;
       if (m.moves.length < moveSlotCount()) {
@@ -393,6 +563,8 @@ export function healAll() {
     m.hp = maxHp(m);
     m.status = null;
     m.sTurns = 0;
+    /* phase 17: a robot's parts are fixed like its HP */
+    repairParts(m);
   }
 }
 export function toBox(m) {
@@ -408,8 +580,11 @@ export function toTeam(m) {
   m.boxedAt = null;
 }
 export function addBilly(m) {
-  saveData.caught[m.sp] = 1;
-  saveData.seen[m.sp] = 1;
+  /* phase 17: robots aren't in the Guide */
+  if (!isRobot(m)) {
+    saveData.caught[m.sp] = 1;
+    saveData.seen[m.sp] = 1;
+  }
   if (saveData.team.length < teamSize()) {
     saveData.team.push(m);
     return 'team';

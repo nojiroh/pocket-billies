@@ -23,8 +23,8 @@ import {
   STATUS_NAMES,
   roadCost,
 } from '../game-data.js';
-import { speciesOf } from './fighters.js';
-import { cleanName, emptyJob, jobSlotCount, movesAt, teamSize, today } from './rules.js';
+import { isRobot, robotGemDef, robotPartDef, robotRules, speciesOf } from './fighters.js';
+import { cleanName, emptyJob, jobSlotCount, movesAt, refreshRobot, teamSize, today } from './rules.js';
 /* eslint-disable no-func-assign */
 expose({
   SAVE_NEW_MSG: [() => SAVE_NEW_MSG],
@@ -65,6 +65,7 @@ export function newSave() {
     starter: null,
     team: [],
     box: [],
+    parts: [],
     seen: {},
     caught: {},
     se: R.se,
@@ -135,6 +136,13 @@ export function migrate(o) {
     s.starter = RULES.start.starters.find(l => SPECIES[l + '0']) || LINES[0].id;
   s.team = (s.team || []).filter(m => speciesOf(m));
   s.box = (s.box || []).filter(m => speciesOf(m));
+  /* phase 17: robot parts you own, and robots' sp and moves made again from their parts */
+  s.parts = (Array.isArray(o.parts) ? o.parts : [])
+    .filter(p => p && typeof p.uid === 'string' && (robotPartDef(p.id) || robotGemDef(p.id)))
+    .map(p => ({ uid: p.uid, id: p.id, up: Math.max(0, Math.min(robotRules().maxUpgrade, Math.floor(+p.up || 0))) }));
+  [...s.team, ...s.box].forEach(m => {
+    if (isRobot(m)) refreshRobot(m);
+  });
   [...s.team, ...s.box].forEach(m => {
     if (m.nick != null) m.nick = cleanName(m.nick, 16);
   });
@@ -142,7 +150,7 @@ export function migrate(o) {
     s.avatar.name = cleanName(s.avatar.name, 18) || 'Trainer';
   [...s.team, ...s.box].forEach(m => {
     m.moves = (m.moves || []).filter(k => MOVES[k]);
-    if (!m.moves.length) m.moves = movesAt(speciesOf(m).line, m.lvl);
+    if (!m.moves.length && !isRobot(m)) m.moves = movesAt(speciesOf(m).line, m.lvl);
   });
   for (const key of ['seen', 'caught'])
     if (s[key] && typeof s[key] === 'object') for (const id of Object.keys(s[key])) if (!SPECIES[id]) delete s[key][id];
@@ -240,6 +248,20 @@ export function validSave(o) {
     return false;
   for (const k of ['coins', 'items'])
     if (!o[k] || typeof o[k] !== 'object' || Object.values(o[k]).some(n => !num(n, 0, 1e12))) return false;
+  /* phase 17: robot parts you own (missing in a save from before robots) and robots' damaged parts */
+  if (
+    o.parts != null &&
+    (!Array.isArray(o.parts) ||
+      o.parts.length > 5000 ||
+      o.parts.some(p => !p || typeof p.uid !== 'string' || typeof p.id !== 'string' || !num(p.up || 0, 0, 99)))
+  )
+    return false;
+  for (const m of o.team.concat(o.box))
+    if (
+      m.kind === 'robot' &&
+      (!m.partDmg || typeof m.partDmg !== 'object' || Object.values(m.partDmg).some(n => !num(n, 0, 1e6)))
+    )
+      return false;
   const record = v => v && typeof v === 'object' && !Array.isArray(v) && !Object.hasOwn(v, '__proto__');
   if (
     !record(o.seen) ||
