@@ -16,19 +16,23 @@ import { ask, render, speciesName, studioState, toast, updateTopBar } from './st
 expose({
   ATLAS_CACHE: [() => ATLAS_CACHE],
   ATLAS_LOADS: [() => ATLAS_LOADS],
-  FACE_N: [() => FACE_N],
+  FACE_FRAMES: [() => FACE_FRAMES],
   GOLD_RAMP: [() => GOLD_RAMP],
-  PX_ED: [() => PX_ED],
   RIG_CACHE: [() => RIG_CACHE],
   SPRITE_PREVIEWS: [() => SPRITE_PREVIEWS],
   atlasGet: [() => atlasGet, v => (atlasGet = v)],
   atlasNow: [() => atlasNow],
   atlasPath: [() => atlasPath],
   atlasVersion: [() => atlasVersion, v => (atlasVersion = v)],
+  bindPixelCanvas: [() => bindPixelCanvas, v => (bindPixelCanvas = v)],
+  bindPixelEditor: [() => bindPixelEditor, v => (bindPixelEditor = v)],
   canvasCopy: [() => canvasCopy, v => (canvasCopy = v)],
+  choosePixelColor: [() => choosePixelColor, v => (choosePixelColor = v)],
   downloadCanvas: [() => downloadCanvas, v => (downloadCanvas = v)],
+  drawPixelEditor: [() => drawPixelEditor, v => (drawPixelEditor = v)],
   drawSpritePreview: [() => drawSpritePreview, v => (drawSpritePreview = v)],
   fileToCanvas: [() => fileToCanvas, v => (fileToCanvas = v)],
+  fillPixels: [() => fillPixels, v => (fillPixels = v)],
   goldFrom: [() => goldFrom, v => (goldFrom = v)],
   hsvToRgb: [() => hsvToRgb, v => (hsvToRgb = v)],
   hueShift: [() => hueShift, v => (hueShift = v)],
@@ -39,34 +43,30 @@ expose({
   openPixelEditor: [() => openPixelEditor, v => (openPixelEditor = v)],
   partsOf: [() => partsOf, v => (partsOf = v)],
   pickFile: [() => pickFile, v => (pickFile = v)],
+  pixelEditor: [() => pixelEditor],
+  pixelEditorAtlasPath: [() => pixelEditorAtlasPath, v => (pixelEditorAtlasPath = v)],
+  pixelEditorBones: [() => pixelEditorBones, v => (pixelEditorBones = v)],
+  pixelEditorCanvas: [() => pixelEditorCanvas, v => (pixelEditorCanvas = v)],
+  pixelEditorChanged: [() => pixelEditorChanged, v => (pixelEditorChanged = v)],
+  pixelEditorKeys: [() => pixelEditorKeys, v => (pixelEditorKeys = v)],
+  pixelEditorPalette: [() => pixelEditorPalette, v => (pixelEditorPalette = v)],
+  pixelEditorPoint: [() => pixelEditorPoint, v => (pixelEditorPoint = v)],
   playSpritePreviewAction: [() => playSpritePreviewAction, v => (playSpritePreviewAction = v)],
+  plotPixel: [() => plotPixel, v => (plotPixel = v)],
+  plotPixelLine: [() => plotPixelLine, v => (plotPixelLine = v)],
   previewsDirty: [() => previewsDirty, v => (previewsDirty = v)],
-  pxBind: [() => pxBind, v => (pxBind = v)],
-  pxBindCanvas: [() => pxBindCanvas, v => (pxBindCanvas = v)],
-  pxBones: [() => pxBones, v => (pxBones = v)],
-  pxCanvas: [() => pxCanvas, v => (pxCanvas = v)],
-  pxChanged: [() => pxChanged, v => (pxChanged = v)],
-  pxDraw: [() => pxDraw, v => (pxDraw = v)],
-  pxFill: [() => pxFill, v => (pxFill = v)],
-  pxKeys: [() => pxKeys, v => (pxKeys = v)],
-  pxLine: [() => pxLine, v => (pxLine = v)],
-  pxLoad: [() => pxLoad, v => (pxLoad = v)],
-  pxLoadTools: [() => pxLoadTools, v => (pxLoadTools = v)],
-  pxPalette: [() => pxPalette, v => (pxPalette = v)],
-  pxPath: [() => pxPath, v => (pxPath = v)],
-  pxPlot: [() => pxPlot, v => (pxPlot = v)],
-  pxPos: [() => pxPos, v => (pxPos = v)],
-  pxPush: [() => pxPush, v => (pxPush = v)],
-  pxRedo: [() => pxRedo, v => (pxRedo = v)],
-  pxSetColor: [() => pxSetColor, v => (pxSetColor = v)],
-  pxUndo: [() => pxUndo, v => (pxUndo = v)],
+  pushPixelUndo: [() => pushPixelUndo, v => (pushPixelUndo = v)],
   rampAt: [() => rampAt, v => (rampAt = v)],
+  redoPixels: [() => redoPixels, v => (redoPixels = v)],
+  refreshPixelEditor: [() => refreshPixelEditor, v => (refreshPixelEditor = v)],
+  refreshPixelTools: [() => refreshPixelTools, v => (refreshPixelTools = v)],
   rgbToHsv: [() => rgbToHsv, v => (rgbToHsv = v)],
   rigFor: [() => rigFor, v => (rigFor = v)],
   spriteCacheClear: [() => spriteCacheClear, v => ((spriteCacheClear = v), provide({ spriteCacheClear }))],
   spritePreviewHTML: [() => spritePreviewHTML, v => (spritePreviewHTML = v)],
   spritePreviewLoop: [() => spritePreviewLoop, v => (spritePreviewLoop = v)],
   spritePreviewsRunning: [() => spritePreviewsRunning, v => (spritePreviewsRunning = v)],
+  undoPixels: [() => undoPixels, v => (undoPixels = v)],
 });
 /* eslint-enable no-func-assign */
 provide({ mountPreviews, spriteCacheClear });
@@ -373,8 +373,8 @@ export async function fileToCanvas(f) {
   }
 }
 /* ================= PIXEL EDITOR ================= */
-export const PX_ED = {};
-const FACE_N = { idle: 'face', blink: 'blink', happy: 'happy', hurt: 'hurt', shout: 'shout', main: '' };
+export const pixelEditor = {};
+const FACE_FRAMES = { idle: 'face', blink: 'blink', happy: 'happy', hurt: 'hurt', shout: 'shout', main: '' };
 function partsOf(sp, view) {
   const meta = studioState.rigs[sp] && studioState.rigs[sp][view];
   if (!meta) return [];
@@ -382,13 +382,18 @@ function partsOf(sp, view) {
   meta.imgs.forEach((e, i) => {
     const bones = meta.bones.filter(b => b.i === i).map(b => b.n);
     Object.entries(e.f).forEach(([v, r]) =>
-      out.push({ i, v, r, label: (bones.join(', ') || 'part ' + i) + (v !== 'main' ? ` (${FACE_N[v] || v})` : '') })
+      out.push({
+        i,
+        v,
+        r,
+        label: (bones.join(', ') || 'part ' + i) + (v !== 'main' ? ` (${FACE_FRAMES[v] || v})` : ''),
+      })
     );
   });
   return out;
 }
 export async function openPixelEditor(sp, view = 'front', gold = false, focus = null) {
-  const E = PX_ED;
+  const E = pixelEditor;
   Object.assign(E, {
     sp,
     view,
@@ -446,18 +451,18 @@ export async function openPixelEditor(sp, view = 'front', gold = false, focus = 
   <div class="px-sec"><h4>Whole sheet</h4><p class="help">Edit in another app (Aseprite, Photoshop…): download, edit, upload. Keep the size and layout so the parts line up.</p><div class="seg-row"><button class="btn" data-pe="dl">Download PNG</button><button class="btn" data-pe="ul">Upload PNG</button></div><button class="btn subtle" data-pe="revert">Revert to the saved file</button></div>
   <div class="px-sec"><h4>Skeleton</h4><p class="help">Nudge where each part attaches and how parts stack. Changes animate live.</p><div id="pxBones"></div></div>
  </aside></div></div>`;
-  pxBind();
-  pxLoad();
+  bindPixelEditor();
+  refreshPixelEditor();
 }
-function pxPath() {
-  return atlasPath(PX_ED.sp, PX_ED.view, PX_ED.gold);
+function pixelEditorAtlasPath() {
+  return atlasPath(pixelEditor.sp, pixelEditor.view, pixelEditor.gold);
 }
-function pxCanvas() {
-  return atlasNow(pxPath());
+function pixelEditorCanvas() {
+  return atlasNow(pixelEditorAtlasPath());
 }
-function pxLoad() {
-  const E = PX_ED,
-    c = pxCanvas();
+function refreshPixelEditor() {
+  const E = pixelEditor,
+    c = pixelEditorCanvas();
   $$('.pxed [data-pe=atlas]').forEach(b =>
     b.classList.toggle('on', b.dataset.v === E.view && (+b.dataset.g === 1) === E.gold)
   );
@@ -471,7 +476,7 @@ function pxLoad() {
   if (!$('#pxCv')) {
     $('#pxStage').innerHTML =
       '<div class="px-wrap" id="pxWrap"><canvas id="pxCv"></canvas><div class="px-grid" id="pxGrid"></div><svg id="pxParts"></svg></div>';
-    pxBindCanvas();
+    bindPixelCanvas();
   }
   if (!E.zoom) {
     const st = $('#pxStage').getBoundingClientRect();
@@ -495,9 +500,9 @@ function pxLoad() {
       }, 30);
     }
   }
-  pxDraw();
-  pxPalette();
-  pxBones();
+  drawPixelEditor();
+  pixelEditorPalette();
+  pixelEditorBones();
   const pv = $('#pxPrev');
   pv.dataset.prev = JSON.stringify({
     sp: E.sp,
@@ -510,9 +515,9 @@ function pxLoad() {
   SPRITE_PREVIEWS.delete(pv);
   mountPreviews($('.pxed'));
 }
-function pxDraw() {
-  const E = PX_ED,
-    c = pxCanvas(),
+function drawPixelEditor() {
+  const E = pixelEditor,
+    c = pixelEditorCanvas(),
     v = $('#pxCv');
   if (!c || !v) return;
   v.width = c.width;
@@ -540,8 +545,8 @@ function pxDraw() {
   $$('.pxed [data-pe=grid]').forEach(b => b.classList.toggle('on', E.grid));
   $$('.pxed [data-pe=parts]').forEach(b => b.classList.toggle('on', E.parts));
 }
-function pxPalette() {
-  const c = pxCanvas();
+function pixelEditorPalette() {
+  const c = pixelEditorCanvas();
   if (!c) return;
   const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data,
     cnt = new Map();
@@ -558,8 +563,8 @@ function pxPalette() {
     .map(h => `<button class="sw" style="background:${h}" data-pe="sw" data-c="${h}" title="${h}"></button>`)
     .join('');
 }
-function pxBones() {
-  const E = PX_ED,
+function pixelEditorBones() {
+  const E = pixelEditor,
     meta = studioState.rigs[E.sp] && studioState.rigs[E.sp][E.view];
   if (!meta) {
     $('#pxBones').innerHTML = '';
@@ -575,30 +580,30 @@ function pxBones() {
       )
       .join('')}</tbody></table>`;
 }
-function pxPos(ev) {
+function pixelEditorPoint(ev) {
   const v = $('#pxCv'),
     r = v.getBoundingClientRect(),
-    c = pxCanvas();
+    c = pixelEditorCanvas();
   return [
     Math.floor(((ev.clientX - r.left) / r.width) * c.width),
     Math.floor(((ev.clientY - r.top) / r.height) * c.height),
   ];
 }
-function pxPush() {
-  const c = pxCanvas(),
-    E = PX_ED;
+function pushPixelUndo() {
+  const c = pixelEditorCanvas(),
+    E = pixelEditor;
   E.undo.push(c.getContext('2d').getImageData(0, 0, c.width, c.height));
   if (E.undo.length > 40) E.undo.shift();
   E.redo = [];
 }
-function pxChanged() {
-  const c = pxCanvas();
-  markArt(pxPath(), c);
-  pxDraw();
+function pixelEditorChanged() {
+  const c = pixelEditorCanvas();
+  markArt(pixelEditorAtlasPath(), c);
+  drawPixelEditor();
 }
-function pxPlot(x, y) {
-  const E = PX_ED,
-    c = pxCanvas(),
+function plotPixel(x, y) {
+  const E = pixelEditor,
+    c = pixelEditorCanvas(),
     cx = c.getContext('2d');
   if (x < 0 || y < 0 || x >= c.width || y >= c.height) return;
   if (E.tool === 'erase') cx.clearRect(x, y, 1, 1);
@@ -607,7 +612,7 @@ function pxPlot(x, y) {
     cx.fillRect(x, y, 1, 1);
   }
 }
-function pxLine(a, b) {
+function plotPixelLine(a, b) {
   let [x0, y0] = a;
   const [x1, y1] = b,
     dx = Math.abs(x1 - x0),
@@ -616,7 +621,7 @@ function pxLine(a, b) {
     sy = y0 < y1 ? 1 : -1;
   let e = dx + dy;
   for (;;) {
-    pxPlot(x0, y0);
+    plotPixel(x0, y0);
     if (x0 === x1 && y0 === y1) break;
     const e2 = 2 * e;
     if (e2 >= dy) {
@@ -629,9 +634,9 @@ function pxLine(a, b) {
     }
   }
 }
-function pxFill(x, y) {
-  const E = PX_ED,
-    c = pxCanvas(),
+function fillPixels(x, y) {
+  const E = pixelEditor,
+    c = pixelEditorCanvas(),
     cx = c.getContext('2d'),
     W = c.width,
     Hh = c.height,
@@ -656,54 +661,54 @@ function pxFill(x, y) {
   }
   cx.putImageData(im, 0, 0);
 }
-function pxSetColor(h) {
-  PX_ED.color = h.toUpperCase();
+function choosePixelColor(h) {
+  pixelEditor.color = h.toUpperCase();
   $('#pxColor').value = h;
-  $('#pxHex').textContent = PX_ED.color;
-  if (PX_ED.tool === 'erase' || PX_ED.tool === 'pick') {
-    PX_ED.tool = 'pen';
-    pxLoadTools();
+  $('#pxHex').textContent = pixelEditor.color;
+  if (pixelEditor.tool === 'erase' || pixelEditor.tool === 'pick') {
+    pixelEditor.tool = 'pen';
+    refreshPixelTools();
   }
 }
-function pxLoadTools() {
-  $$('.pxed [data-pe=tool]').forEach(b => b.classList.toggle('on', b.dataset.t === PX_ED.tool));
+function refreshPixelTools() {
+  $$('.pxed [data-pe=tool]').forEach(b => b.classList.toggle('on', b.dataset.t === pixelEditor.tool));
   const w = $('#pxWrap');
-  if (w) w.dataset.tool = PX_ED.tool;
+  if (w) w.dataset.tool = pixelEditor.tool;
 }
-function pxBindCanvas() {
+function bindPixelCanvas() {
   const w = $('#pxWrap');
   let down = false,
     last = null;
   w.addEventListener('pointerdown', ev => {
     if (ev.button !== 0) return;
-    const E = PX_ED,
-      p = pxPos(ev),
-      c = pxCanvas();
+    const E = pixelEditor,
+      p = pixelEditorPoint(ev),
+      c = pixelEditorCanvas();
     if (!c) return;
     w.setPointerCapture(ev.pointerId);
     if (E.tool === 'pick') {
       const d = c.getContext('2d').getImageData(p[0], p[1], 1, 1).data;
-      if (d[3]) pxSetColor('#' + [d[0], d[1], d[2]].map(v => v.toString(16).padStart(2, '0')).join(''));
+      if (d[3]) choosePixelColor('#' + [d[0], d[1], d[2]].map(v => v.toString(16).padStart(2, '0')).join(''));
       return;
     }
-    pxPush();
+    pushPixelUndo();
     if (E.tool === 'fill') {
-      pxFill(p[0], p[1]);
-      pxChanged();
+      fillPixels(p[0], p[1]);
+      pixelEditorChanged();
       return;
     }
     down = true;
     last = p;
-    pxPlot(p[0], p[1]);
-    pxDraw();
+    plotPixel(p[0], p[1]);
+    drawPixelEditor();
   });
   w.addEventListener('pointermove', ev => {
-    const E = PX_ED,
-      p = pxPos(ev);
+    const E = pixelEditor,
+      p = pixelEditorPoint(ev);
     if (down) {
-      pxLine(last, p);
+      plotPixelLine(last, p);
       last = p;
-      pxDraw();
+      drawPixelEditor();
       return;
     }
     const parts = partsOf(E.sp, E.view),
@@ -717,7 +722,7 @@ function pxBindCanvas() {
   const up = () => {
     if (down) {
       down = false;
-      pxChanged();
+      pixelEditorChanged();
     }
   };
   w.addEventListener('pointerup', up);
@@ -727,46 +732,46 @@ function pxBindCanvas() {
     ev => {
       if (!ev.ctrlKey && !ev.metaKey) return;
       ev.preventDefault();
-      PX_ED.zoom = clamp(PX_ED.zoom + (ev.deltaY < 0 ? 1 : -1), 1, 32);
-      pxDraw();
+      pixelEditor.zoom = clamp(pixelEditor.zoom + (ev.deltaY < 0 ? 1 : -1), 1, 32);
+      drawPixelEditor();
     },
     { passive: false }
   );
-  pxLoadTools();
+  refreshPixelTools();
 }
-function pxBind() {
+function bindPixelEditor() {
   const m = $('.pxed');
-  pxBindCanvas();
-  $('#pxColor').addEventListener('input', e => pxSetColor(e.target.value));
+  bindPixelCanvas();
+  $('#pxColor').addEventListener('input', e => choosePixelColor(e.target.value));
   $('#pxGoldK').addEventListener('input', e => ($('#pxGS').textContent = e.target.value + '%'));
   m.addEventListener('click', async ev => {
     const b = ev.target.closest('[data-pe]');
     if (!b) return;
-    const E = PX_ED,
+    const E = pixelEditor,
       k = b.dataset.pe;
     if (k === 'atlas') {
       E.view = b.dataset.v;
       E.gold = b.dataset.g === '1';
       E.zoom = 0;
       E.hover = null;
-      pxLoad();
+      refreshPixelEditor();
     } else if (k === 'tool') {
       E.tool = b.dataset.t;
-      pxLoadTools();
+      refreshPixelTools();
     } else if (k === 'zoom') {
       E.zoom = clamp(E.zoom + +b.dataset.z, 1, 32);
-      pxDraw();
+      drawPixelEditor();
     } else if (k === 'grid') {
       E.grid = !E.grid;
-      pxDraw();
+      drawPixelEditor();
     } else if (k === 'parts') {
       E.parts = !E.parts;
-      pxDraw();
+      drawPixelEditor();
     } else if (k === 'undo') {
-      pxUndo();
+      undoPixels();
     } else if (k === 'redo') {
-      pxRedo();
-    } else if (k === 'sw') pxSetColor(b.dataset.c);
+      redoPixels();
+    } else if (k === 'sw') choosePixelColor(b.dataset.c);
     else if (k === 'act') {
       E.act = b.dataset.a;
       playSpritePreviewAction($('#pxPrev'), E.act === 'idle' ? null : E.act);
@@ -775,18 +780,18 @@ function pxBind() {
       const src = atlasNow(atlasPath(E.sp, E.view, false));
       if (!src) return;
       const g = goldFrom(src, +$('#pxGoldK').value / 100);
-      if (pxCanvas()) pxPush();
-      markArt(pxPath(), g);
-      pxLoad();
+      if (pixelEditorCanvas()) pushPixelUndo();
+      markArt(pixelEditorAtlasPath(), g);
+      refreshPixelEditor();
       toast('Gold sheet rebuilt. Save to game to keep it.');
     } else if (k === 'dl') {
-      const c = pxCanvas();
-      if (c) downloadCanvas(c, pxPath().split('/').pop());
+      const c = pixelEditorCanvas();
+      if (c) downloadCanvas(c, pixelEditorAtlasPath().split('/').pop());
     } else if (k === 'ul') {
       const f = await pickFile('image/png');
       if (!f) return;
       const up = await fileToCanvas(f),
-        c = pxCanvas();
+        c = pixelEditorCanvas();
       if (
         c &&
         (up.width !== c.width || up.height !== c.height) &&
@@ -796,19 +801,19 @@ function pxBind() {
         ))
       )
         return;
-      if (c) pxPush();
-      markArt(pxPath(), up);
-      pxLoad();
+      if (c) pushPixelUndo();
+      markArt(pixelEditorAtlasPath(), up);
+      refreshPixelEditor();
       toast('Sheet replaced. Save to game to keep it.');
     } else if (k === 'revert') {
-      const p = pxPath();
+      const p = pixelEditorAtlasPath();
       if (!(await ask('Throw away unsaved edits to this sheet?', 'Revert'))) return;
       studioState.artDirty.delete(p);
       ATLAS_CACHE.delete(p);
       await atlasGet(p).catch(() => null);
       previewsDirty();
       updateTopBar();
-      pxLoad();
+      refreshPixelEditor();
     } else if (k === 'close') {
       const back = E.back;
       $('#modal').innerHTML = '';
@@ -819,29 +824,29 @@ function pxBind() {
       openSkeleton(E.sp, E.view);
     }
   });
-  document.addEventListener('keydown', pxKeys);
+  document.addEventListener('keydown', pixelEditorKeys);
 }
-function pxUndo() {
-  const E = PX_ED,
-    c = pxCanvas();
+function undoPixels() {
+  const E = pixelEditor,
+    c = pixelEditorCanvas();
   if (!E.undo.length || !c) return;
   const x = c.getContext('2d');
   E.redo.push(x.getImageData(0, 0, c.width, c.height));
   x.putImageData(E.undo.pop(), 0, 0);
-  pxChanged();
+  pixelEditorChanged();
 }
-function pxRedo() {
-  const E = PX_ED,
-    c = pxCanvas();
+function redoPixels() {
+  const E = pixelEditor,
+    c = pixelEditorCanvas();
   if (!E.redo.length || !c) return;
   const x = c.getContext('2d');
   E.undo.push(x.getImageData(0, 0, c.width, c.height));
   x.putImageData(E.redo.pop(), 0, 0);
-  pxChanged();
+  pixelEditorChanged();
 }
-function pxKeys(ev) {
+function pixelEditorKeys(ev) {
   if (!$('.pxed:not(.skel)')) {
-    document.removeEventListener('keydown', pxKeys);
+    document.removeEventListener('keydown', pixelEditorKeys);
     return;
   }
   if (ev.target.closest('input')) return;
@@ -849,25 +854,25 @@ function pxKeys(ev) {
     mod = ev.ctrlKey || ev.metaKey;
   if (mod && k === 'z') {
     ev.preventDefault();
-    ev.shiftKey ? pxRedo() : pxUndo();
+    ev.shiftKey ? redoPixels() : undoPixels();
     return;
   }
   if (mod && k === 'y') {
     ev.preventDefault();
-    pxRedo();
+    redoPixels();
     return;
   }
   if (mod) return;
   const T = { p: 'pen', b: 'pen', e: 'erase', f: 'fill', g: 'fill', i: 'pick' };
   if (T[k]) {
-    PX_ED.tool = T[k];
-    pxLoadTools();
+    pixelEditor.tool = T[k];
+    refreshPixelTools();
   } else if (k === '+' || k === '=') {
-    PX_ED.zoom = Math.min(32, PX_ED.zoom + 1);
-    pxDraw();
+    pixelEditor.zoom = Math.min(32, pixelEditor.zoom + 1);
+    drawPixelEditor();
   } else if (k === '-') {
-    PX_ED.zoom = Math.max(1, PX_ED.zoom - 1);
-    pxDraw();
+    pixelEditor.zoom = Math.max(1, pixelEditor.zoom - 1);
+    drawPixelEditor();
   } else if (k === 'escape') {
     $('#modal').innerHTML = '';
     render();

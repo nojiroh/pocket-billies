@@ -27,7 +27,6 @@ import {
   undo,
 } from './studio-app.js';
 import {
-  PX_ED,
   atlasGet,
   atlasNow,
   atlasPath,
@@ -37,6 +36,7 @@ import {
   markArt,
   openPixelEditor,
   pickFile,
+  pixelEditor,
   previewsDirty,
   rigFor,
   spriteCacheClear,
@@ -1093,14 +1093,14 @@ function skClick(ev) {
       const sp = SK.sp,
         v = SK.view;
       openPixelEditor(sp, v, false).then(() => {
-        PX_ED.back = () => openSkeleton(sp, v);
+        pixelEditor.back = () => openSkeleton(sp, v);
       });
     },
     paintPart: () => {
       const sp = SK.sp,
         v = SK.view;
       openPixelEditor(sp, v, false, { i: b.i, v: b.face ? 'idle' : null }).then(() => {
-        PX_ED.back = () => {
+        pixelEditor.back = () => {
           openSkeleton(sp, v).then(() => {
             SK.sel = b.n;
             skLoadView();
