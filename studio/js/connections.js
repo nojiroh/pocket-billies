@@ -15,7 +15,7 @@ import { ENGINE_DEFAULTS, ENGINE_PRESETS, ENGINE_SPEC } from '../../game/js/engi
 import { esc } from './game-stand-ins.js';
 import { ACTIONS, openSection, render, setRender, speciesName, studioState } from './studio-app.js';
 import { selectedLineIndex } from './data-editors.js';
-import { mapEditor, scId } from './map-editor.js';
+import { currentMapId, mapEditor } from './map-editor.js';
 import { ENS, engD, engFmt } from './engine-editor.js';
 import { findEngine, findField, findFlash, findSel } from './find.js';
 /* eslint-disable no-func-assign */
@@ -134,11 +134,11 @@ function linkCur() {
   if (s === 'people' && studioState.sel.person) return { kind: 'person', id: studioState.sel.person };
   if (s === 'scenes') {
     if (typeof mapEditor !== 'undefined' && mapEditor.sel != null) {
-      const sc = D.scenes[scId()],
+      const sc = D.scenes[currentMapId()],
         p = sc && sc.props[mapEditor.sel];
       if (p) return { kind: 'prop', id: p.k };
     }
-    return { kind: 'scene', id: scId() };
+    return { kind: 'scene', id: currentMapId() };
   }
   if (s === 'world' && studioState.sel.stop != null && D.route[studioState.sel.stop])
     return { kind: 'stop', id: studioState.sel.stop };

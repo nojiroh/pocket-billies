@@ -15,7 +15,7 @@ import { $ } from '../../game/js/util.js';
 import { walkView } from '../../game/js/walk-view.js';
 import { esc } from './game-stand-ins.js';
 import { ACTIONS, ask, changed, clone, commit, dialog, render, studioState, toast, uniqueKey } from './studio-app.js';
-import { mapEditor, scCur, scD, scMapDraw, scPropAt, scSetTile } from './map-editor.js';
+import { currentMap, mapEditor, scMapDraw, scPropAt, scSetTile, sceneryCatalog } from './map-editor.js';
 /* eslint-disable no-func-assign */
 expose({
   scxBlocks: [() => scxBlocks],
@@ -47,11 +47,11 @@ mapEditor.multi = mapEditor.multi || new Set();
 mapEditor.scat = mapEditor.scat || { dens: 0.5, mix: true, vary: 0.18 };
 mapEditor.road = null;
 const scxBlocks = () => {
-  const C = scD();
+  const C = sceneryCatalog();
   return C.blocks || (C.blocks = {});
 };
 const scxR = (k, s) => {
-  const M = scD().props[k] || {};
+  const M = sceneryCatalog().props[k] || {};
   if (M.box) return (Math.max(...M.box) / 2) * (s || 1);
   return Math.max(0.25, M.solid || M.shadow * 0.5 || 0.3) * (s || 1);
 };
@@ -198,7 +198,7 @@ function scxUp(sc, D) {
   return false;
 }
 function scxCopy() {
-  const sc = scCur();
+  const sc = currentMap();
   if (!sc) return;
   const L = [...mapEditor.multi].map(i => sc.props[i]).filter(Boolean);
   if (!L.length && mapEditor.sel != null && sc.props[mapEditor.sel]) L.push(sc.props[mapEditor.sel]);
@@ -209,7 +209,7 @@ function scxCopy() {
   toast(`Copied ${L.length} prop${L.length > 1 ? 's' : ''}.`);
 }
 function scxPaste() {
-  const sc = scCur();
+  const sc = currentMap();
   if (!sc || !mapEditor.clip || !mapEditor.clip.length) return;
   const at = mapEditor.mouse || [sc.w / 2, sc.h / 2],
     n0 = sc.props.length;
@@ -224,7 +224,7 @@ function scxPaste() {
   render();
 }
 function scxDeleteMulti() {
-  const sc = scCur();
+  const sc = currentMap();
   if (!sc || !mapEditor.multi.size) return;
   const del = mapEditor.multi;
   sc.props = sc.props.filter((_, i) => !del.has(i));
@@ -275,7 +275,7 @@ document.addEventListener(
       }
     }
     if (k === 'enter' && mapEditor.road && mapEditor.road.length > 1) {
-      scxRoadLay(scCur());
+      scxRoadLay(currentMap());
       ev.preventDefault();
     }
     if (!ev.ctrlKey && !ev.metaKey && !ev.altKey) {
@@ -289,7 +289,7 @@ document.addEventListener(
   true
 );
 function scxMultiCard() {
-  const sc = scCur(),
+  const sc = currentMap(),
     n = [...mapEditor.multi].filter(i => sc.props[i]).length;
   if (n < 2) return '';
   return `<div class="sc-sel"><b>${n} props selected</b><p class="help">Drag one of them to move them all. Ctrl/Cmd+C copies them, Ctrl/Cmd+V pastes where the mouse is, Delete removes them. Escape clears the selection.</p>
@@ -300,12 +300,12 @@ ACTIONS.scxPaste = () => scxPaste();
 ACTIONS.scxDelMulti = () => scxDeleteMulti();
 /* ---------- building blocks ---------- */
 ACTIONS.scxSaveBlock = async () => {
-  const sc = scCur(),
+  const sc = currentMap(),
     L = [...mapEditor.multi].map(i => sc.props[i]).filter(Boolean);
   if (L.length < 2) return;
   const r = await dialog(
     'Save a building block',
-    `<label class="fld"><span>Name</span><input id="blkName" value="${esc((scD().props[L[0].k] || {}).name || 'Block')} group"></label><p class="help">It keeps the props and where they stand relative to each other. Stamp it in any scene with “Stamp a block”.</p>`,
+    `<label class="fld"><span>Name</span><input id="blkName" value="${esc((sceneryCatalog().props[L[0].k] || {}).name || 'Block')} group"></label><p class="help">It keeps the props and where they stand relative to each other. Stamp it in any scene with “Stamp a block”.</p>`,
     'Save'
   );
   if (!r) return;
@@ -376,7 +376,7 @@ ACTIONS.scxBlockDel = async () => {
 };
 /* ---------- scatter brush ---------- */
 function scxScatterKinds() {
-  const C = scD(),
+  const C = sceneryCatalog(),
     k = mapEditor.prop;
   if (!k || !C.props[k]) return [];
   if (mapEditor.scat.fam && C.props[k].family) {
@@ -389,7 +389,7 @@ function scxScatterKinds() {
 }
 /* v42: a nature prop says which ground it grows on ("grow"); the brush only puts it there, weighted by how common it is */
 function scxPickKind(kinds, ch) {
-  const C = scD(),
+  const C = sceneryCatalog(),
     ok = kinds.filter(q => {
       const g = C.props[q].grow;
       return g ? g.includes(ch) : !(ch === 'w' || ch === 'd');
@@ -451,7 +451,7 @@ function scxScatter(sc, m, D) {
   }
 }
 function scxScatterBar() {
-  const C = scD(),
+  const C = sceneryCatalog(),
     k = mapEditor.prop,
     nm = k && C.props[k] ? C.props[k].name || k : null,
     kinds = scxScatterKinds();
@@ -524,7 +524,7 @@ function scxRoadLay(sc) {
   toast('Road laid.');
 }
 ACTIONS.scxSmoothPath = () => {
-  const sc = scCur();
+  const sc = currentMap();
   if (!sc || !sc.path || sc.path.length < 3) return toast('The path needs at least three points to curve.');
   sc.path = scxCurve(sc.path, 1.2).map(([a, b]) => [+a.toFixed(2), +b.toFixed(2)]);
   walkView.cand = null;

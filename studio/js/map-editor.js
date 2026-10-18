@@ -69,16 +69,19 @@ import {
 import { atlasGet, atlasNow, atlasVersion, fileToCanvas, markArt, pickFile } from './sprites.js';
 /* eslint-disable no-func-assign */
 expose({
-  SC_TER_KEYS: [() => SC_TER_KEYS],
+  GROUND_KEYS: [() => GROUND_KEYS],
   SC_WK: [() => SC_WK],
+  addSceneryProp: [() => addSceneryProp, v => (addSceneryProp = v)],
   artCacheVersion: [() => artCacheVersion, v => ((artCacheVersion = v), provide({ artCacheVersion }))],
-  blankScene: [() => blankScene, v => (blankScene = v)],
+  blankMap: [() => blankMap, v => (blankMap = v)],
+  currentMap: [() => currentMap],
+  currentMapId: [() => currentMapId],
+  isGroundKey: [() => isGroundKey],
+  locationsUsingMap: [() => locationsUsingMap],
   mapEditor: [() => mapEditor],
-  scAddProp: [() => scAddProp, v => (scAddProp = v)],
-  scArt: [() => scArt, v => ((scArt = v), provide({ scArt }))],
+  mapLifeText: [() => mapLifeText, v => (mapLifeText = v)],
+  parseMapLife: [() => parseMapLife, v => (parseMapLife = v)],
   scBindMap: [() => scBindMap, v => (scBindMap = v)],
-  scCur: [() => scCur],
-  scD: [() => scD],
   scDrawSteps: [() => scDrawSteps, v => (scDrawSteps = v)],
   scDrawWaters: [() => scDrawWaters, v => (scDrawWaters = v)],
   scEnvApply: [() => scEnvApply, v => (scEnvApply = v)],
@@ -92,9 +95,6 @@ expose({
   scHGrid: [() => scHGrid, v => (scHGrid = v)],
   scHeightAt: [() => scHeightAt, v => (scHeightAt = v)],
   scHint: [() => scHint, v => (scHint = v)],
-  scId: [() => scId],
-  scLifeParse: [() => scLifeParse, v => (scLifeParse = v)],
-  scLifeText: [() => scLifeText, v => (scLifeText = v)],
   scMapDraw: [() => scMapDraw, v => (scMapDraw = v)],
   scMount: [() => scMount, v => (scMount = v)],
   scOpenPe: [() => scOpenPe, v => (scOpenPe = v)],
@@ -116,17 +116,17 @@ expose({
   scStepsPaint: [() => scStepsPaint, v => (scStepsPaint = v)],
   scStepsUp: [() => scStepsUp, v => (scStepsUp = v)],
   scStepsWork: [() => scStepsWork, v => (scStepsWork = v)],
-  scTerKeyOk: [() => scTerKeyOk],
   scThumbs: [() => scThumbs, v => (scThumbs = v)],
-  scUsers: [() => scUsers],
   scWaterAt: [() => scWaterAt, v => (scWaterAt = v)],
   scWaterBar: [() => scWaterBar, v => (scWaterBar = v)],
   scWaterChanged: [() => scWaterChanged, v => (scWaterChanged = v)],
   scWaterUp: [() => scWaterUp, v => (scWaterUp = v)],
+  sceneryArtPaths: [() => sceneryArtPaths, v => ((sceneryArtPaths = v), provide({ sceneryArtPaths }))],
+  sceneryCatalog: [() => sceneryCatalog],
   segDist: [() => segDist, v => (segDist = v)],
 });
 /* eslint-enable no-func-assign */
-provide({ artCacheVersion, scArt });
+provide({ artCacheVersion, sceneryArtPaths });
 /* to-module: end */
 setWalkData(() => ({
   scenes: (studioState.D && studioState.D.scenes) || {},
@@ -166,8 +166,8 @@ export const mapEditor = {
   peUndo: [],
 };
 /* every picture a scene can use: ground tiles and their variants, props and their layers, 3D building textures, life */
-export function scArt(C) {
-  C = C || scD();
+export function sceneryArtPaths(C) {
+  C = C || sceneryCatalog();
   const L = new Set();
   for (const t of Object.values(C.terrains)) {
     L.add(t.tile);
@@ -185,28 +185,28 @@ export function scArt(C) {
   for (const m of Object.values(C.life || {})) L.add(m.img);
   return [...L].filter(Boolean);
 }
-export const scD = () =>
+export const sceneryCatalog = () =>
   studioState.D.scenery || (studioState.D.scenery = { ppu: 34, tile: 16, terrains: {}, props: {}, person: 1.75 });
-provide({ scD }); /* to-module */
-export const scId = () => {
+provide({ sceneryCatalog }); /* to-module */
+export const currentMapId = () => {
   const S = studioState.D.scenes || (studioState.D.scenes = {});
   if (!S[studioState.sel.scene]) studioState.sel.scene = Object.keys(S)[0] || null;
   return studioState.sel.scene;
 };
-export const scCur = () => {
-  const id = scId();
+export const currentMap = () => {
+  const id = currentMapId();
   return id ? studioState.D.scenes[id] : null;
 };
-const scUsers = id => studioState.D.route.map((r, i) => [r, i]).filter(([r]) => r.scene === id);
+const locationsUsingMap = id => studioState.D.route.map((r, i) => [r, i]).filter(([r]) => r.scene === id);
 /* ---------- section ---------- */
 SECTIONS.scenes = () => {
   const D = studioState.D,
-    id = scId(),
-    sc = scCur();
+    id = currentMapId(),
+    sc = currentMap();
   after(scMount);
   /* v46: each scene says what it is (kind: town, route, room, test); the list is grouped by kind and can be filtered */
   const kindOf = ([k, s]) =>
-      s.kind || (s.test ? 'test' : s.room ? 'room' : scUsers(k).some(([r]) => r.town) ? 'town' : 'route'),
+      s.kind || (s.test ? 'test' : s.room ? 'room' : locationsUsingMap(k).some(([r]) => r.town) ? 'town' : 'route'),
     KN = { town: 'Town', route: 'Route', room: 'Room', test: 'Test' };
   const row = ([k, s]) =>
       `<button class="lrow ${k === id ? 'on' : ''}" data-act="scPick" data-k="${esc(k)}"><b>${esc(s.name || k)} <span class="kind-badge k-${kindOf([k, s])}">${KN[kindOf([k, s])] || '?'}</span></b><small>${
@@ -214,7 +214,7 @@ SECTIONS.scenes = () => {
           ? `Test scene · ${(s.checks || []).length} checks`
           : s.room
             ? `Inside a ${esc(s.building || s.room)}`
-            : scUsers(k)
+            : locationsUsingMap(k)
                 .map(([r, i]) => `${i + 1}. ${esc(r.name)}`)
                 .join(', ') || 'Not used by a stop'
       }</small></button>`,
@@ -244,7 +244,7 @@ SECTIONS.scenes = () => {
   if (!sc)
     return `<div class="ed-col solo"><div class="ed-head"><h2>Walk scenes</h2><button class="btn primary" data-act="scNew">+ New scene</button></div><p class="help">No scenes yet.</p></div>`;
   const p = `scenes.${id}`,
-    T = scD().terrains;
+    T = sceneryCatalog().terrains;
   const terr = Object.entries(T)
     .map(
       ([ch, t]) =>
@@ -268,8 +268,8 @@ SECTIONS.scenes = () => {
         `<button class="seg ${mapEditor.tool === k ? 'on' : ''}" data-act="scTool" data-t="${k}" title="${n} (${s})">${n}</button>`
     )
     .join('');
-  const tags = [...new Set(Object.values(scD().props).flatMap(P => P.tags || []))].sort();
-  const props = Object.entries(scD().props)
+  const tags = [...new Set(Object.values(sceneryCatalog().props).flatMap(P => P.tags || []))].sort();
+  const props = Object.entries(sceneryCatalog().props)
     .filter(([k, P]) => !mapEditor.tag || (P.tags || []).includes(mapEditor.tag))
     .map(
       ([k, P]) =>
@@ -281,7 +281,7 @@ SECTIONS.scenes = () => {
       ? sc.props[mapEditor.sel]
       : null;
   const selCard = sel
-    ? `<div class="sc-sel"><b>${esc((scD().props[sel.k] || {}).name || sel.k)}</b>${grid(numberField('Across', `${p}.props.${mapEditor.sel}.x`, { step: 0.1 }), numberField('Depth', `${p}.props.${mapEditor.sel}.z`, { step: 0.1 }), numberField('Size', `${p}.props.${mapEditor.sel}.s`, { step: 0.05, min: 0.2, max: 4, opt: 1, ph: '1' }))}
+    ? `<div class="sc-sel"><b>${esc((sceneryCatalog().props[sel.k] || {}).name || sel.k)}</b>${grid(numberField('Across', `${p}.props.${mapEditor.sel}.x`, { step: 0.1 }), numberField('Depth', `${p}.props.${mapEditor.sel}.z`, { step: 0.1 }), numberField('Size', `${p}.props.${mapEditor.sel}.s`, { step: 0.05, min: 0.2, max: 4, opt: 1, ph: '1' }))}
   ${grid(
     selectField(
       'When tapped',
@@ -333,7 +333,7 @@ SECTIONS.scenes = () => {
   )}
   <details class="sc-look"><summary>Look: tint, wear and variety</summary>${grid(colorField('Tint', `${p}.props.${mapEditor.sel}.tint`, { help: 'Black for none. Tints the painted parts only (not outlines, windows or lights).' }), rangeField('Tint strength', `${p}.props.${mapEditor.sel}.tintAmt`, { min: 0, max: 1, step: 0.05, def: 0.6 }), rangeField('Wear and tear (× usual)', `${p}.props.${mapEditor.sel}.wear`, { min: 0, max: 3, step: 0.05, def: 1, help: 'Dirt, moss, faded paint and cracks. The kinds and amounts are set per prop in the prop editor.' }), checkboxField('Exactly as drawn (no size, colour or turn variety)', `${p}.props.${mapEditor.sel}.plain`, { num: 1 }))}</details>
   ${(() => {
-    const P0 = scD().props[sel.k] || {};
+    const P0 = sceneryCatalog().props[sel.k] || {};
     if (!P0.build) return '';
     return grid(
       selectField(
@@ -356,7 +356,7 @@ SECTIONS.scenes = () => {
     );
   })()}
   ${(() => {
-    const P0 = scD().props[sel.k] || {};
+    const P0 = sceneryCatalog().props[sel.k] || {};
     if (!P0.build && !P0.box) return '';
     const rooms = Object.entries(studioState.D.scenes)
       .filter(([k, v]) => v.kind === 'room' || /^int_/.test(k))
@@ -381,9 +381,9 @@ SECTIONS.scenes = () => {
     return `<div class="sc-room">${grid(selectField('Room inside', `${p}.props.${mapEditor.sel}.room`, rooms, { none: kindRoom ? 'The one for its kind (' + ((studioState.D.scenes[kindRoom] || {}).name || kindRoom) + ')' : 'None', opt: 1, rr: 1, help: 'Where you walk in when you tap it (it needs “When tapped” set). Rooms open in place, larger than the building, with the town dimmed around them.' }))}<div class="seg-row"><button class="btn sm" data-act="scOwnRoom">Give it a room of its own</button>${sel.room || kindRoom ? `<button class="btn sm subtle" data-act="scPick" data-k="${esc(sel.room || kindRoom)}">Open its room</button>` : ''}</div></div>`;
   })()}
   ${(() => {
-    const V = ((scD().props[sel.k] || {}).build || {}).variants;
+    const V = ((sceneryCatalog().props[sel.k] || {}).build || {}).variants;
     if (!V || !V.length) return '';
-    const P0 = scD().props[sel.k];
+    const P0 = sceneryCatalog().props[sel.k];
     return `<div class="fld sc-var"><span>Colours</span><div class="sc-var-row">${[{ img: P0.img, wallCol: P0.build.wallCol, roofCol: P0.build.roofCol }, ...V].map((v, i) => `<button class="sc-var-b ${(sel.v | 0) === i ? 'on' : ''}" data-act="scVar" data-v="${i}" title="${i ? 'Variant ' + i : 'As drawn'}"><span class="sc-thumb" data-img="${esc(v.img)}"></span><i style="background:${esc(v.roofCol || '#888')}"></i><i style="background:${esc(v.wallCol || '#ccc')}"></i></button>`).join('')}</div><small class="help">The same building in other colours. It keeps its shape, roof and rooms.</small></div>`;
   })()}
   <div class="seg-row">${checkboxField('Mirrored', `${p}.props.${mapEditor.sel}.f`, { num: 1 })}<button class="btn sm" data-act="scDupProp">Duplicate</button><button class="btn sm danger subtle" data-act="scDelProp">Remove</button><button class="btn sm subtle" data-act="scEditProp" data-k="${esc(sel.k)}">Edit this prop’s pixels</button></div></div>`
@@ -475,10 +475,10 @@ SECTIONS.scenes = () => {
  ${card(
    'Props',
    `<div class="seg-row"><button class="seg ${!mapEditor.tag ? 'on' : ''}" data-act="scTag" data-t="">All</button>${tags.map(t => `<button class="seg sm ${mapEditor.tag === t ? 'on' : ''}" data-act="scTag" data-t="${esc(t)}">${esc(t)}</button>`).join('')}</div>
-  <div class="sc-props">${props}</div><div class="seg-row"><button class="btn" data-act="scNewProp">+ New blank prop</button><button class="btn" data-act="scImportProp">+ Prop from PNG</button>${mapEditor.prop ? `<button class="btn subtle" data-act="scEditProp" data-k="${esc(mapEditor.prop)}">Edit ${esc((scD().props[mapEditor.prop] || {}).name || mapEditor.prop)}</button>` : ''}</div>
-  <p class="help">Pick a prop, then click the map with “Place & move props”. Prop pictures live in art/scene/props.</p>${mapEditor.prop && scD().props[mapEditor.prop] ? `<div class="seg-row"><button class="btn primary" data-act="pedOpen" data-k="${esc(mapEditor.prop)}">Open ${esc(scD().props[mapEditor.prop].name || mapEditor.prop)} in the prop editor</button><span class="help">Effects, door, layers for depth, facing, glow and a 3D turntable.</span></div>` : ''}`
+  <div class="sc-props">${props}</div><div class="seg-row"><button class="btn" data-act="scNewProp">+ New blank prop</button><button class="btn" data-act="scImportProp">+ Prop from PNG</button>${mapEditor.prop ? `<button class="btn subtle" data-act="scEditProp" data-k="${esc(mapEditor.prop)}">Edit ${esc((sceneryCatalog().props[mapEditor.prop] || {}).name || mapEditor.prop)}</button>` : ''}</div>
+  <p class="help">Pick a prop, then click the map with “Place & move props”. Prop pictures live in art/scene/props.</p>${mapEditor.prop && sceneryCatalog().props[mapEditor.prop] ? `<div class="seg-row"><button class="btn primary" data-act="pedOpen" data-k="${esc(mapEditor.prop)}">Open ${esc(sceneryCatalog().props[mapEditor.prop].name || mapEditor.prop)} in the prop editor</button><span class="help">Effects, door, layers for depth, facing, glow and a 3D turntable.</span></div>` : ''}`
  )}
- ${mapEditor.ped && scD().props[mapEditor.ped] ? pedCard(mapEditor.ped) : ''}
+ ${mapEditor.ped && sceneryCatalog().props[mapEditor.ped] ? pedCard(mapEditor.ped) : ''}
  ${mapEditor.pe ? scPixelCard() : ''}
  ${sc.kind === 'town' || sc.kind === 'route' ? `<div class="seg-row sc-keep">${checkboxField('Keep this layout: the v46 rework tool (tools/build-places-v46.py) never rebuilds it', `${p}.keep`, { num: 1 })}</div>` : ''}
  ${card(
@@ -559,7 +559,10 @@ SECTIONS.scenes = () => {
     selectField(
       'Town flag',
       `${p}.flag`,
-      [['default', 'The coin ring'], ...(scD().flags || []).map(k => [k, ((D.scenes[k] || {}).name || k) + '’s flag'])],
+      [
+        ['default', 'The coin ring'],
+        ...(sceneryCatalog().flags || []).map(k => [k, ((D.scenes[k] || {}).name || k) + '’s flag']),
+      ],
       {
         none: 'This town’s own',
         opt: 1,
@@ -593,7 +596,7 @@ SECTIONS.scenes = () => {
   <div class="grid colors">${colorField('Sky top', `${p}.sky.0`)}${colorField('Sky middle', `${p}.sky.1`)}${colorField('Horizon', `${p}.sky.2`)}${colorField('Haze', `${p}.haze`)}${colorField('Shade (caves, malls)', `${p}.tint`, { help: 'Leave black for none.' })}</div>
   ${grid(rangeField('Haze distance', `${p}.hazeD`, { min: 8, max: 80, step: 1 }), rangeField('Tilt-shift blur', `${p}.blur`, { min: 0, max: 1.5, step: 0.05, def: 1 }), rangeField('Camera tilt (degrees)', `${p}.cam.pitch`, { min: 20, max: 70, step: 1 }), rangeField('Camera height', `${p}.cam.h`, { min: 4, max: 20, step: 0.5 }), rangeField('Zoom', `${p}.cam.fov`, { min: 0.5, max: 2, step: 0.05, def: 1 }), rangeField('Where you arrive on the path', `${p}.start`, { min: 0, max: 0.95, step: 0.01, def: 0.42 }))}
   <div class="seg-row"><span class="help">Size</span><input type="number" id="scW" min="10" max="240" value="${sc.w}" class="sm-num"> × <input type="number" id="scH" min="8" max="200" value="${sc.h}" class="sm-num"><button class="btn sm" data-act="scResize">Resize the map</button><span class="help">Used by: ${
-    scUsers(id)
+    locationsUsingMap(id)
       .map(([r, i]) => `${i + 1}. ${esc(r.name)}`)
       .join(', ') || 'no stop yet (pick it under World & encounters → Route stops)'
   }</span></div>`
@@ -601,7 +604,7 @@ SECTIONS.scenes = () => {
  ${card(
    'Life',
    `<p class="help">Animals and traffic that move around this scene. One per line: <span class="mono">duck 4</span>, <span class="mono">pigeon 6 at 24 17 41 27</span> (an area: left, near, right, far), <span class="mono">chicken 5 at …</span>, <span class="mono">sheep 3 at …</span>, <span class="mono">car 3 along 20 13, 44 13, 44 31, 20 31</span> (a loop of points the cars drive round; they stop for you). Also <span class="mono">rabbit</span>, <span class="mono">squirrel</span>, <span class="mono">frog</span> (they live on the bank and leap in when you come close), <span class="mono">gull</span>, <span class="mono">goat</span>, <span class="mono">cat</span>, <span class="mono">crab</span> and <span class="mono">lizard</span>.</p>
-  <label class="fld wide"><span>What moves here</span><textarea id="scLife" rows="4" class="mono">${esc(scLifeText(sc))}</textarea></label>`
+  <label class="fld wide"><span>What moves here</span><textarea id="scLife" rows="4" class="mono">${esc(mapLifeText(sc))}</textarea></label>`
  )}
  ${card(
    'People who talk',
@@ -634,7 +637,7 @@ SECTIONS.scenes = () => {
  </div></div>`;
 };
 function scPropSettings(k) {
-  const P = scD().props[k],
+  const P = sceneryCatalog().props[k],
     b = `scenery.props.${k}`;
   return `<h4>${esc(P.name || k)} settings</h4>${grid(
     textField('Name', `${b}.name`),
@@ -703,15 +706,15 @@ function scHint() {
 }
 /* ---------- mount ---------- */
 async function scMount() {
-  const sc = scCur();
+  const sc = currentMap();
   if (!sc) return;
-  const C = scD();
-  const paths = scArt(C);
+  const C = sceneryCatalog();
+  const paths = sceneryArtPaths(C);
   await Promise.all(paths.map(p => atlasGet('art/' + p).catch(() => null)));
   scThumbs();
   scMapDraw();
   scBindMap();
-  if (mapEditor.ped && scD().props[mapEditor.ped] && typeof pedMount === 'function') {
+  if (mapEditor.ped && sceneryCatalog().props[mapEditor.ped] && typeof pedMount === 'function') {
     const l = $('#scPvLoad');
     if (l) {
       l.hidden = false;
@@ -743,8 +746,8 @@ async function scMount() {
   const lf = $('#scLife');
   if (lf)
     lf.addEventListener('change', () => {
-      const sc = scCur(),
-        L = scLifeParse(lf.value);
+      const sc = currentMap(),
+        L = parseMapLife(lf.value);
       if (L.length) sc.life = L;
       else delete sc.life;
       changed();
@@ -752,7 +755,7 @@ async function scMount() {
     });
   for (const ta of document.querySelectorAll('[data-scppl]'))
     ta.addEventListener('change', () => {
-      const sc = scCur(),
+      const sc = currentMap(),
         q = (sc.people || [])[+ta.dataset.scppl];
       if (!q) return;
       q[ta.dataset.f] = ta.value
@@ -765,7 +768,7 @@ async function scMount() {
   const ch = $('#scChat');
   if (ch)
     ch.addEventListener('change', () => {
-      const sc = scCur(),
+      const sc = currentMap(),
         L = ch.value
           .split('\n')
           .map(x => x.trim())
@@ -778,7 +781,7 @@ async function scMount() {
   if (mapEditor.pe) scPeMount();
 }
 function scThumbs() {
-  const C = scD();
+  const C = sceneryCatalog();
   $$('canvas[data-tile]').forEach(c => {
     const T = C.terrains[c.dataset.tile];
     const im = T && artImage(T.tile);
@@ -804,7 +807,7 @@ export function scExitNames(id) {
   const D = studioState.D,
     sc = D.scenes[id],
     ex = (sc && sc.exits) || [],
-    u = scUsers(id)[0];
+    u = locationsUsingMap(id)[0];
   if (!u) return ex.map((e, k) => ({ i: k, name: scExitId(sc, k) || `Exit ${k + 1}` }));
   const i = u[1],
     me = D.route[i],
@@ -883,7 +886,7 @@ function scExitSync(sc, k, removed) {
 function scExitJoinsDrop(sc) {
   const D = studioState.D,
     ids = new Set((sc.edgeExits || []).map(e => e.id)),
-    users = scUsers(scId()).map(([, i]) => i);
+    users = locationsUsingMap(currentMapId()).map(([, i]) => i);
   (D.links || []).forEach(l => {
     const J = l[3];
     if (!J) return;
@@ -894,7 +897,7 @@ function scExitJoinsDrop(sc) {
 }
 function scPreview() {
   const cv = $('#scPv'),
-    id0 = scId();
+    id0 = currentMapId();
   if (!cv || !id0) return;
   walkView.pl.t = -1;
   if (mapEditor.pvId !== id0) {
@@ -906,7 +909,7 @@ function scPreview() {
     off = [0, 0];
   if (mapEditor.joined && typeof seamlessHubMap === 'function') {
     try {
-      const u = scUsers(id0)[0],
+      const u = locationsUsingMap(id0)[0],
         h = u && seamlessHubMap(u[1]);
       if (h && h.id) {
         id = h.id;
@@ -924,7 +927,7 @@ function scPreview() {
       : [];
   mountWalkView(cv, id, {
     state: () => {
-      const sc = scCur();
+      const sc = currentMap();
       if (mapEditor.pv === 'path' || !sc)
         return {
           t: mapEditor.t,
@@ -985,10 +988,10 @@ ACTIONS.scPvHub = () => {
 /* ---------- map ---------- */
 export function scMapDraw() {
   const cv = $('#scMap'),
-    sc = scCur();
+    sc = currentMap();
   if (!cv || !sc) return;
   const Z = mapEditor.zoom,
-    C = scD(),
+    C = sceneryCatalog(),
     PPU = C.ppu || 34,
     W = sc.w,
     H = sc.h;
@@ -1181,7 +1184,7 @@ export function scMapDraw() {
 function scPos(ev) {
   const cv = $('#scMap'),
     r = cv.getBoundingClientRect(),
-    sc = scCur(),
+    sc = currentMap(),
     mx = ((ev.clientX - r.left) / r.width) * cv.width,
     my = ((ev.clientY - r.top) / r.height) * cv.height;
   return {
@@ -1214,7 +1217,7 @@ function scBindMap() {
   cv._b = 1;
   cv.addEventListener('contextmenu', e => e.preventDefault());
   const paint = m => {
-    const sc = scCur(),
+    const sc = currentMap(),
       r = mapEditor.brush - 1;
     let any = false;
     for (let a = -r; a <= r; a++)
@@ -1228,7 +1231,7 @@ function scBindMap() {
     }
   };
   cv.addEventListener('pointerdown', ev => {
-    const sc = scCur(),
+    const sc = currentMap(),
       m = scPos(ev);
     cv.setPointerCapture(ev.pointerId);
     if (typeof scxDown === 'function' && scxDown(sc, m, ev)) return;
@@ -1369,7 +1372,7 @@ function scBindMap() {
       }
       {
         const q = { k: mapEditor.prop, x: +m.x.toFixed(2), z: +m.z.toFixed(2) },
-          M0 = scD().props[mapEditor.prop] || {};
+          M0 = sceneryCatalog().props[mapEditor.prop] || {};
         if (M0.act) {
           q.act = M0.act;
           if (M0.name) q.label = M0.name;
@@ -1386,7 +1389,7 @@ function scBindMap() {
   });
   cv.addEventListener('pointermove', ev => {
     const D = mapEditor.drag,
-      sc = scCur(),
+      sc = currentMap(),
       m = scPos(ev);
     if (typeof scxMove === 'function' && scxMove(sc, m, D, ev)) return;
     if (!D) {
@@ -1440,13 +1443,13 @@ function scBindMap() {
     const D = mapEditor.drag;
     mapEditor.drag = null;
     if (!D) return;
-    if (typeof scxUp === 'function' && scxUp(scCur(), D)) return;
+    if (typeof scxUp === 'function' && scxUp(currentMap(), D)) return;
     if (D.k === 'steps' || D.k === 'stairs' || D.k === 'bridge') {
-      scStepsUp(scCur(), D);
+      scStepsUp(currentMap(), D);
       return;
     }
     if (D.k === 'wrect') {
-      scWaterUp(scCur(), D);
+      scWaterUp(currentMap(), D);
       return;
     }
     if (D.k === 'paint' || D.moved || D.k === 'exit' || D.k === 'height') {
@@ -1525,7 +1528,7 @@ ACTIONS.scHMode = d => {
   render();
 };
 ACTIONS.scHFlat = async () => {
-  const sc = scCur();
+  const sc = currentMap();
   if (!(await ask('Make the whole scene flat?', 'Flatten'))) return;
   delete sc.heights;
   walkView.nav = null;
@@ -1565,7 +1568,7 @@ document.addEventListener('keydown', ev => {
     ev.metaKey
   )
     return;
-  const sc = scCur();
+  const sc = currentMap();
   if (!sc) return;
   const k = ev.key;
   const T = {
@@ -1664,7 +1667,7 @@ ACTIONS.scZoom = d => {
   scMapDraw();
 };
 ACTIONS.scDupProp = () => {
-  const sc = scCur(),
+  const sc = currentMap(),
     p = sc.props[mapEditor.sel];
   if (!p) return;
   sc.props.push({ ...p, x: +(p.x + 1).toFixed(2) });
@@ -1675,8 +1678,8 @@ ACTIONS.scDupProp = () => {
 };
 ACTIONS.scOwnRoom = () => {
   const D = studioState.D,
-    id = scId(),
-    sc = scCur(),
+    id = currentMapId(),
+    sc = currentMap(),
     p = sc.props[mapEditor.sel];
   if (!p) return;
   const kr =
@@ -1709,7 +1712,7 @@ ACTIONS.scOwnRoom = () => {
   render();
 };
 ACTIONS.scVar = d => {
-  const sc = scCur(),
+  const sc = currentMap(),
     p = sc.props[mapEditor.sel];
   if (!p) return;
   const v = +d.v | 0;
@@ -1720,7 +1723,7 @@ ACTIONS.scVar = d => {
   render();
 };
 ACTIONS.scDelProp = () => {
-  const sc = scCur();
+  const sc = currentMap();
   if (mapEditor.sel == null) return;
   sc.props.splice(mapEditor.sel, 1);
   mapEditor.sel = null;
@@ -1728,7 +1731,7 @@ ACTIONS.scDelProp = () => {
   commit(true);
   render();
 };
-function blankScene(name) {
+function blankMap(name) {
   const w = 30,
     h = 22;
   return {
@@ -1791,7 +1794,7 @@ ACTIONS.scNew = async () => {
   if (!r) return;
   const id = uniqueKey(r.n, k => !!(D.scenes || {})[k]);
   D.scenes = D.scenes || {};
-  D.scenes[id] = r.from ? { ...clone(D.scenes[r.from]), name: r.n } : blankScene(r.n);
+  D.scenes[id] = r.from ? { ...clone(D.scenes[r.from]), name: r.n } : blankMap(r.n);
   D.scenes[id].kind = r.kind || 'route';
   if (r.kind === 'room') D.scenes[id].building = D.scenes[id].building || 'house';
   studioState.sel.scene = id;
@@ -1803,7 +1806,7 @@ ACTIONS.scNew = async () => {
 };
 ACTIONS.scDup = () => {
   const D = studioState.D,
-    id = scId(),
+    id = currentMapId(),
     k = uniqueKey(id + 'b', x => !!D.scenes[x]);
   D.scenes[k] = { ...clone(D.scenes[id]), name: (D.scenes[id].name || id) + ' (copy)' };
   studioState.sel.scene = k;
@@ -1813,8 +1816,8 @@ ACTIONS.scDup = () => {
 };
 ACTIONS.scDel = async () => {
   const D = studioState.D,
-    id = scId(),
-    u = scUsers(id);
+    id = currentMapId(),
+    u = locationsUsingMap(id);
   if (u.length)
     return toast(
       `${u.map(([r]) => r.name).join(', ')} still use this scene. Pick another scene for ${u.length > 1 ? 'them' : 'it'} first.`,
@@ -1828,7 +1831,7 @@ ACTIONS.scDel = async () => {
   render();
 };
 ACTIONS.scResize = () => {
-  const sc = scCur(),
+  const sc = currentMap(),
     w = clamp(+$('#scW').value || sc.w, 10, 240),
     h = clamp(+$('#scH').value || sc.h, 8, 200);
   if (w === sc.w && h === sc.h) return;
@@ -1886,12 +1889,12 @@ ACTIONS.scResize = () => {
    joined to on the far side faces this one. Problems are listed; the resize can be undone from the same dialog. */
 function scExitChecks(sc) {
   const D = studioState.D,
-    C = scD(),
+    C = sceneryCatalog(),
     out = [],
     E = sc.edgeExits || [],
     ex = sc.exits || [],
     hub = mapHub(sc),
-    users = scUsers(scId()).map(([, i]) => i),
+    users = locationsUsingMap(currentMapId()).map(([, i]) => i),
     opp = { N: 'S', S: 'N', E: 'W', W: 'E' };
   const walk = (x, z) => {
     const ch = (sc.tiles[sc.h - 1 - Math.floor(z)] || '')[Math.floor(x)],
@@ -1977,18 +1980,18 @@ async function scResizeReport(sc, before) {
 /* v47: every letter and digit is taken by now, so a ground type may also use a sign (not a space, quote, backslash or <>&);
    alpha 0.2: and then any of 190 accented letters (À to ſ), so there is room for many more kinds. A map row is a string
    with one character per square, so nothing else changes: the game looks every character up the same way. */
-const SC_TER_KEYS =
+const GROUND_KEYS =
   'qyzhjvuaeiQYZHJVUAEIbcdfgklmnoprstwxBCDFGKLMNOPRSTWX0123456789$()-./?@[]^{|}' +
   String.fromCharCode(
     ...Array.from({ length: 0x180 - 0xc0 }, (_, i) => 0xc0 + i).filter(c => c !== 0xd7 && c !== 0xf7)
   );
-const scTerKeyOk = k => k.length === 1 && SC_TER_KEYS.includes(k);
+const isGroundKey = k => k.length === 1 && GROUND_KEYS.includes(k);
 ACTIONS.scNewTer = async () => {
-  const C = scD(),
+  const C = sceneryCatalog(),
     used = Object.keys(C.terrains).join('');
   const r = await dialog(
     'New ground type',
-    `<div class="grid"><label class="fld"><span>Name</span><input id="ntName" value="Moss"></label><label class="fld"><span>Key (one character; a free one is filled in)</span><input id="ntKey" maxlength="1" value="${SC_TER_KEYS.split('').find(c => !used.includes(c)) || ''}"></label>
+    `<div class="grid"><label class="fld"><span>Name</span><input id="ntName" value="Moss"></label><label class="fld"><span>Key (one character; a free one is filled in)</span><input id="ntKey" maxlength="1" value="${GROUND_KEYS.split('').find(c => !used.includes(c)) || ''}"></label>
  <label class="fld"><span>Start from</span><select id="ntFrom">${Object.entries(C.terrains)
    .map(([c, t]) => `<option value="${esc(c)}">${esc(t.name)}</option>`)
    .join('')}</select></label></div>`,
@@ -1999,7 +2002,7 @@ ACTIONS.scNewTer = async () => {
         c: 'primary',
         f: () => {
           const k = $('#ntKey').value;
-          if (!k || used.includes(k) || !scTerKeyOk(k)) {
+          if (!k || used.includes(k) || !isGroundKey(k)) {
             toast('Pick an unused key: a letter, a digit, one of $()-./?@[]^{|} or an accented letter.');
             return false;
           }
@@ -2023,9 +2026,9 @@ ACTIONS.scNewTer = async () => {
   render();
   scOpenPe('art/' + path, { kind: 'tile', c: r.k });
 };
-ACTIONS.scEditTile = d => scOpenPe('art/' + scD().terrains[d.c].tile, { kind: 'tile', c: d.c });
+ACTIONS.scEditTile = d => scOpenPe('art/' + sceneryCatalog().terrains[d.c].tile, { kind: 'tile', c: d.c });
 ACTIONS.scEditProp = d => {
-  const M = scD().props[d.k];
+  const M = sceneryCatalog().props[d.k];
   if (M) scOpenPe('art/' + M.img, { kind: 'prop', k: d.k });
 };
 ACTIONS.scNewProp = async () => {
@@ -2050,17 +2053,17 @@ ACTIONS.scNewProp = async () => {
     x = c.getContext('2d');
   x.fillStyle = '#B8A8E0';
   x.fillRect(Math.round(r.w * 0.2), Math.round(r.h * 0.1), Math.round(r.w * 0.6), Math.round(r.h * 0.9));
-  scAddProp(r.n, c);
+  addSceneryProp(r.n, c);
 };
 ACTIONS.scImportProp = async () => {
   const f = await pickFile('image/png');
   if (!f) return;
   const c = await fileToCanvas(f);
   if (c.width > 400 || c.height > 400) return toast('Keep props under 400×400 pixels.', 'err');
-  scAddProp(f.name.replace(/\.png$/i, ''), c);
+  addSceneryProp(f.name.replace(/\.png$/i, ''), c);
 };
-function scAddProp(name, c) {
-  const C = scD(),
+function addSceneryProp(name, c) {
+  const C = sceneryCatalog(),
     k = uniqueKey(name, x => !!C.props[x]),
     path = `scene/props/${k}.png`;
   markArt('art/' + path, c);
@@ -2095,7 +2098,7 @@ export async function scOpenPe(path, o) {
 }
 function scPixelCard() {
   const pe = mapEditor.pe,
-    C = scD(),
+    C = sceneryCatalog(),
     M = pe.kind === 'prop' ? C.props[pe.k] : null,
     base = pe.kind === 'prop' ? `scenery.props.${pe.k}` : '';
   return card(
@@ -2145,7 +2148,7 @@ function scPeMount() {
   const tg = $('[data-p$=".tagsTxt"]');
   if (tg)
     tg.addEventListener('change', () => {
-      const M = scD().props[mapEditor.pe.k];
+      const M = sceneryCatalog().props[mapEditor.pe.k];
       M.tags = tg.value
         .split(',')
         .map(s => s.trim())
@@ -2182,7 +2185,7 @@ function scPeMount() {
       return;
     }
     if (mapEditor.peTool === 'anchor') {
-      const M = scD().props[mapEditor.pe.k];
+      const M = sceneryCatalog().props[mapEditor.pe.k];
       M.ox = -x;
       M.oy = -y;
       changed();
@@ -2287,7 +2290,7 @@ function scPeDraw() {
     }
   }
   if (mapEditor.pe.kind === 'prop') {
-    const M = scD().props[mapEditor.pe.k];
+    const M = sceneryCatalog().props[mapEditor.pe.k];
     if (M) {
       x.strokeStyle = '#C8323C';
       x.lineWidth = 2;
@@ -2357,7 +2360,7 @@ ACTIONS.scPeClose = () => {
   render();
 };
 ACTIONS.scGlowAdd = () => {
-  scD().props[mapEditor.pe.k].glow = { c: '#FFD27A', r: 1.4, y: 1.6 };
+  sceneryCatalog().props[mapEditor.pe.k].glow = { c: '#FFD27A', r: 1.4, y: 1.6 };
   changed();
   commit(true);
   render();
@@ -2381,7 +2384,7 @@ ACTIONS.scPeResize = async () => {
     dx = Math.round((r.w - c.width) / 2),
     dy = r.h - c.height;
   n.getContext('2d').drawImage(c, dx, dy);
-  const M = scD().props[mapEditor.pe.k];
+  const M = sceneryCatalog().props[mapEditor.pe.k];
   M.ox -= dx;
   M.oy -= dy;
   markArt(mapEditor.pe.path, n);
@@ -2393,7 +2396,7 @@ ACTIONS.scPeReplace = async () => {
   const f = await pickFile('image/png');
   if (!f) return;
   const c = await fileToCanvas(f),
-    M = scD().props[mapEditor.pe.k];
+    M = sceneryCatalog().props[mapEditor.pe.k];
   markArt(mapEditor.pe.path, c);
   M.ox = -Math.floor(c.width / 2);
   M.oy = -(c.height - 1);
@@ -2403,7 +2406,7 @@ ACTIONS.scPeReplace = async () => {
 };
 
 /* v17: the scene's life as text and back */
-function scLifeText(sc) {
+function mapLifeText(sc) {
   return (sc.life || [])
     .map(
       L =>
@@ -2413,7 +2416,7 @@ function scLifeText(sc) {
     )
     .join('\n');
 }
-function scLifeParse(t) {
+function parseMapLife(t) {
   const out = [];
   for (const line of t.split('\n')) {
     const m =
@@ -2772,7 +2775,7 @@ const SC_WK = [
   ['lake', 'Lake', '#2E6FB0'],
 ];
 function scWaterBar(p) {
-  const sc = scCur();
+  const sc = currentMap();
   mapEditor.wk = mapEditor.wk || 'pond';
   return `<div class="sc-hbar">${SC_WK.map(([k, n, c]) => `<button class="seg ${mapEditor.wk === k ? 'on' : ''}" data-act="scWK" data-k="${k}"><span class="sc-swatch" style="background:${c}"></span>${n}</button>`).join('')}<button class="seg ${mapEditor.wk === 'erase' ? 'on' : ''}" data-act="scWK" data-k="erase">Remove</button>
  <label class="mp-size"><span>The rest of the water</span><select id="scWDef">${[['', 'Guess (caves: spring, towns: canal, else pond)'], ...SC_WK.filter(w => w[0] !== 'stream').map(([k, n]) => [k, n])].map(([k, n]) => `<option value="${k}" ${(sc.waterKind || '') === k ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select></label>
@@ -2783,7 +2786,7 @@ ACTIONS.scWK = d => {
   render();
 };
 ACTIONS.scWClear = async () => {
-  const sc = scCur();
+  const sc = currentMap();
   if (!(await ask('Remove every water rectangle in this scene?', 'Remove'))) return;
   delete sc.waters;
   scWaterChanged();
@@ -2791,7 +2794,7 @@ ACTIONS.scWClear = async () => {
 };
 document.addEventListener('change', ev => {
   if (ev.target.id !== 'scWDef') return;
-  const sc = scCur();
+  const sc = currentMap();
   if (!sc) return;
   if (ev.target.value) sc.waterKind = ev.target.value;
   else delete sc.waterKind;
@@ -2871,7 +2874,7 @@ document.addEventListener('change', ev => {
   if (ev.target && ev.target.dataset && ev.target.dataset.actChange === 'scEnv') ACTIONS.scEnv();
 });
 ACTIONS.scTestRun = () => {
-  const id = scId();
+  const id = currentMapId();
   if (!id) return;
   window.open(`../game/index.html?test=1&scene=${encodeURIComponent(id)}`, '_blank');
   toast('Opening a test run. Edits here show up there as you make them.');
@@ -2879,7 +2882,7 @@ ACTIONS.scTestRun = () => {
 
 /* alpha 0.4: people who stand in a scene and talk (scene.people) */
 ACTIONS.scPplAdd = () => {
-  const sc = scCur(),
+  const sc = currentMap(),
     h = sc.hub || [sc.w / 2, sc.h / 2],
     ids = new Set((sc.people || []).map(q => q.id));
   let n = 1;
@@ -2899,7 +2902,7 @@ ACTIONS.scPplAdd = () => {
   render();
 };
 ACTIONS.scPplDel = d => {
-  const sc = scCur();
+  const sc = currentMap();
   if (!sc.people) return;
   sc.people.splice(+d.i, 1);
   if (!sc.people.length) delete sc.people;

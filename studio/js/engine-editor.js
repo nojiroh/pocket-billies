@@ -42,7 +42,7 @@ import {
   writePath,
 } from './studio-app.js';
 import { atlasGet } from './sprites.js';
-import { scArt, scD, scExitNames } from './map-editor.js';
+import { scExitNames, sceneryArtPaths, sceneryCatalog } from './map-editor.js';
 /* eslint-disable no-func-assign */
 expose({
   ENS: [() => ENS],
@@ -169,8 +169,8 @@ async function engMount() {
   const cv = $('#engPv'),
     id = engScene();
   if (!cv || !id) return;
-  const C = scD();
-  await Promise.all(scArt(C).map(p => atlasGet('art/' + p).catch(() => null)));
+  const C = sceneryCatalog();
+  await Promise.all(sceneryArtPaths(C).map(p => atlasGet('art/' + p).catch(() => null)));
   if (!$('#engPv')) return;
   walkView.pl.t = -1;
   mountWalkView(cv, id, {

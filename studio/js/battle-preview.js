@@ -4,7 +4,7 @@
    so moves, backdrops and new billionaires can be checked without starting the game. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
-import { provide, scArt, scD } from '../../game/js/hooks.js';
+import { provide, sceneryArtPaths, sceneryCatalog } from '../../game/js/hooks.js';
 import { $, $$ } from '../../game/js/util.js';
 import { COIN_ART, artLoad, hexToRgb } from '../../game/js/art.js';
 import { setRigParts } from '../../game/js/skeleton-rig.js';
@@ -255,8 +255,8 @@ async function startBattlePreview() {
 async function mountBattlePreviewMap() {
   const id = battlePreview.stage,
     sc = studioState.D.scenes[id],
-    C = scD();
-  await Promise.all(scArt(C).map(p => atlasGet('art/' + p).catch(() => null)));
+    C = sceneryCatalog();
+  await Promise.all(sceneryArtPaths(C).map(p => atlasGet('art/' + p).catch(() => null)));
   const host = $('#camWorld');
   if (!host) return;
   let cv = document.createElement('canvas');

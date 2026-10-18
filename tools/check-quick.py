@@ -1947,7 +1947,7 @@ def studio_round_trip(pw, R):
             extra = ''
             if pg.evaluate("typeof scxScatter==='function'"):
                 pg.evaluate("openSection('scenes');ACTIONS.scPick({k:'pond'});0"); time.sleep(2.5)
-                r = pg.evaluate("""(()=>{const sc=scCur(),n0=sc.props.length,t0=sc.tiles.join('');mapEditor.prop=Object.keys(scD().props).find(k=>/bush|flower/.test(k));mapEditor.scat.dens=1.5;mapEditor.brush=3;
+                r = pg.evaluate("""(()=>{const sc=currentMap(),n0=sc.props.length,t0=sc.tiles.join('');mapEditor.prop=Object.keys(sceneryCatalog().props).find(k=>/bush|flower/.test(k));mapEditor.scat.dens=1.5;mapEditor.brush=3;
                   const D={n:0};for(let i=0;i<4;i++)scxScatter(sc,{x:6+i,z:6},D);const n1=sc.props.length;mapEditor.multi=new Set([0,1]);scxCopy();mapEditor.mouse=[sc.w/2,sc.h/2];scxPaste();const n2=sc.props.length;
                   scxStampAt(sc,{name:'t',props:[{k:sc.props[0].k,x:0,z:0},{k:sc.props[1].k,x:1,z:0}]},4,4,false);const n3=sc.props.length;
                   mapEditor.ter='p';mapEditor.road=[[2,3],[sc.w/2,sc.h/2],[sc.w-3,4]];scxRoadLay(sc);const roadOk=sc.tiles.join('')!==t0;const p0=(sc.path||[]).length;ACTIONS.scxSmoothPath();changed();

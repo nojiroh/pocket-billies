@@ -30,7 +30,7 @@ import {
   toast,
 } from './studio-app.js';
 import { fileToCanvas, markArt, pickFile } from './sprites.js';
-import { mapEditor, scD } from './map-editor.js';
+import { mapEditor, sceneryCatalog } from './map-editor.js';
 import { pedM } from './prop-editor.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -78,7 +78,7 @@ function vxeBump(M) {
   commit(true);
 }
 function pedVoxHTML(k) {
-  const M = scD().props[k],
+  const M = sceneryCatalog().props[k],
     b = `scenery.props.${k}.vox`;
   if (!M || M.build) return '';
   const rec = vxeRec(M);
@@ -161,7 +161,7 @@ ACTIONS.vxeNew = () => {
   const M = pedM();
   if (!M) return;
   const im = artImage(M.img),
-    ppu = scD().ppu || 34,
+    ppu = sceneryCatalog().ppu || 34,
     w = im ? (im.naturalWidth || im.width) / ppu : 1,
     h = im ? (im.naturalHeight || im.height) / ppu : 1;
   M.vox = {
@@ -398,7 +398,7 @@ document.addEventListener('input', ev => {
 
 /* alpha 0.4: a layer that turns, or stops turning */
 ACTIONS.vxeSpin = d => {
-  const M = scD().props[mapEditor.ped],
+  const M = sceneryCatalog().props[mapEditor.ped],
     rec = M && vxeOwn(M);
   if (!rec) return;
   const l = rec.layers[+d.i];

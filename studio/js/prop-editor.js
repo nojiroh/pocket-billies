@@ -34,7 +34,7 @@ import {
   toast,
 } from './studio-app.js';
 import { atlasGet, fileToCanvas, markArt, pickFile } from './sprites.js';
-import { mapEditor, scArt, scD, scOpenPe } from './map-editor.js';
+import { mapEditor, scOpenPe, sceneryArtPaths, sceneryCatalog } from './map-editor.js';
 /* eslint-disable no-func-assign */
 expose({
   PED: [() => PED],
@@ -69,10 +69,10 @@ const PED_FX = [
   ['spray', 'Water spray', '#62C6F0'],
   ['sparkle', 'Sparkle', '#F6F0FF'],
 ];
-export const pedM = () => (mapEditor.ped ? scD().props[mapEditor.ped] : null);
+export const pedM = () => (mapEditor.ped ? sceneryCatalog().props[mapEditor.ped] : null);
 /* the turntable scene: a patch of grass with the prop in the middle */
 function pedScene(k) {
-  const C = scD(),
+  const C = sceneryCatalog(),
     M = C.props[k],
     T = C.terrains,
     ppu = C.ppu || 34,
@@ -111,7 +111,7 @@ function pedScene(k) {
 }
 /* ---------- the card ---------- */
 function pedCard(k) {
-  const C = scD(),
+  const C = sceneryCatalog(),
     M = C.props[k],
     b = `scenery.props.${k}`,
     L = M.layers || [];
@@ -234,7 +234,7 @@ function pedBounds(M) {
     x1 = Math.max(x1, ox + (im.naturalWidth || im.width));
     y1 = Math.max(y1, oy + (im.naturalHeight || im.height));
   }
-  const ppu = scD().ppu || 34;
+  const ppu = sceneryCatalog().ppu || 34;
   if (M.box) {
     x0 = Math.min(x0, (-M.box[0] * ppu) / 2);
     x1 = Math.max(x1, (M.box[0] * ppu) / 2);
@@ -250,7 +250,7 @@ function pedDraw() {
     H = B.y1 - B.y0;
   if (!PED.zoom) PED.zoom = clamp(Math.floor(440 / Math.max(W, H)), 2, 10);
   const Z = PED.zoom,
-    ppu = scD().ppu || 34;
+    ppu = sceneryCatalog().ppu || 34;
   cv.width = W * Z;
   cv.height = H * Z;
   const x = cv.getContext('2d');
@@ -381,7 +381,7 @@ function pedAt(ev) {
   };
 }
 function pedHit(M, p) {
-  const ppu = scD().ppu || 34,
+  const ppu = sceneryCatalog().ppu || 34,
     tol = 9 / p.k;
   let best = null,
     bd = tol;
@@ -476,7 +476,7 @@ function pedBind() {
     if (ev.button === 2) return;
     const M = pedM(),
       p = pedAt(ev),
-      ppu = scD().ppu || 34;
+      ppu = sceneryCatalog().ppu || 34;
     if (PED.tool === 'add') {
       (M.fx || (M.fx = [])).push({ k: PED.fxk, x: Math.round(p.x), y: Math.round(p.y) });
       PED.sel = M.fx.length - 1;
@@ -526,7 +526,7 @@ function pedBind() {
     if (!D) return;
     const M = pedM(),
       p = pedAt(ev),
-      ppu = scD().ppu || 34;
+      ppu = sceneryCatalog().ppu || 34;
     if (D.h.k === 'box') {
       PED.box.x1 = p.x;
       PED.box.y1 = p.y;
@@ -612,7 +612,7 @@ async function pedMount() {
     k = mapEditor.ped,
     M = pedM();
   if (!cv || !M) return;
-  const paths = scArt();
+  const paths = sceneryArtPaths();
   await Promise.all(paths.map(p => atlasGet('art/' + p).catch(() => null)));
   if (!$('#pedPv')) return;
   pedBind();
@@ -708,7 +708,7 @@ ACTIONS.pedVaryReset = () => {
 };
 ACTIONS.scGlowAdd2 = () => {
   const M = pedM();
-  const ppu = scD().ppu || 34,
+  const ppu = sceneryCatalog().ppu || 34,
     im = artImage(M.img);
   M.glow = { c: '#FFD27A', r: 1.4, y: +((im ? (im.naturalHeight || im.height) * 0.8 : 50) / ppu).toFixed(2) };
   changed();
@@ -789,7 +789,7 @@ ACTIONS.pedLayerPx = d => {
 /* v32: how each placed copy of this prop varies, and its wear and tear (the game's defaults for its kind show as the
    starting values; anything set here overrides them for this prop everywhere) */
 function pedVaryHTML(k) {
-  const M = scD().props[k],
+  const M = sceneryCatalog().props[k],
     b = `scenery.props.${k}`,
     D =
       typeof propVariety === 'function'
@@ -831,7 +831,7 @@ function pedVaryHTML(k) {
   );
 }
 function pedVolHTML(k) {
-  const M = scD().props[k],
+  const M = sceneryCatalog().props[k],
     b = `scenery.props.${k}`;
   if (!M || M.build || typeof SOLID_PROP_KINDS === 'undefined') return '';
   const auto = SOLID_PROP_BODIES[k] || SOLID_PROP_BODIES[M.group || k],
@@ -956,7 +956,7 @@ const PED_KINDS = [
   ['shed', 'Lean-to (one slope rising to the back)'],
 ];
 function pedBuildHTML(k) {
-  const M = scD().props[k],
+  const M = sceneryCatalog().props[k],
     b = `scenery.props.${k}.build`,
     B = M.build;
   if (!B)
@@ -990,7 +990,7 @@ ACTIONS.pedBuildOn = () => {
   if (!M || !im) return;
   const w = im.naturalWidth || im.width,
     h = im.naturalHeight || im.height,
-    ppu = scD().ppu || 34,
+    ppu = sceneryCatalog().ppu || 34,
     hw = Math.round(((M.box ? M.box[0] : w / ppu) * ppu) / 2);
   M.build = {
     kind: 'hip',
