@@ -26,9 +26,8 @@ expose({
   card: [() => card],
   changed: [() => changed, v => (changed = v)],
   checkboxField: [() => checkboxField, v => (checkboxField = v)],
-  chipT: [() => chipT],
   clone: [() => clone],
-  coinOpts: [() => coinOpts],
+  coinOptions: [() => coinOptions],
   colorField: [() => colorField, v => (colorField = v)],
   commit: [() => commit, v => (commit = v)],
   dialog: [() => dialog, v => (dialog = v)],
@@ -37,12 +36,12 @@ expose({
   go: [() => go, v => (go = v)],
   grid: [() => grid],
   helpHTML: [() => helpHTML],
-  itemOpts: [() => itemOpts],
-  moveOpts: [() => moveOpts],
+  itemOptions: [() => itemOptions],
+  moveOptions: [() => moveOptions],
   navFold: [() => navFold],
   numberField: [() => numberField, v => (numberField = v)],
   onField: [() => onField, v => (onField = v)],
-  peopleOpts: [() => peopleOpts],
+  peopleOptions: [() => peopleOptions],
   rangeField: [() => rangeField, v => (rangeField = v)],
   readField: [() => readField, v => (readField = v)],
   readPath: [() => readPath, v => setReadPath(v)],
@@ -59,15 +58,16 @@ expose({
   setToast: [() => setToast, v => (setToast = v)],
   setWritePath: [() => setWritePath, v => (setWritePath = v)],
   snapshot: [() => snapshot],
-  spName: [() => spName],
-  spOpts: [() => spOpts],
-  statOpts: [() => statOpts],
-  statusOpts: [() => statusOpts],
+  speciesName: [() => speciesName],
+  speciesOptions: [() => speciesOptions],
+  statOptions: [() => statOptions],
+  statusOptions: [() => statusOptions],
   studioBroadcast: [() => studioBroadcast, v => (studioBroadcast = v)],
   studioState: [() => studioState],
   textField: [() => textField, v => (textField = v)],
   toast: [() => toast, v => setToast(v)],
-  typeOpts: [() => typeOpts],
+  typeChipHTML: [() => typeChipHTML],
+  typeOptions: [() => typeOptions],
   uidKey: [() => uidKey],
   undo: [() => undo, v => (undo = v)],
   updTop: [() => updTop, v => (updTop = v)],
@@ -568,22 +568,24 @@ addEventListener('beforeunload', e => {
   }
 });
 /* ---------- helpers for lists of things ---------- */
-export const typeOpts = none => (none ? [['None', 'Normal']] : []).concat(studioState.D.types.map(t => [t.id, t.id]));
-export const spOpts = () => studioState.D.lines.flatMap(L => L.names.map((n, i) => [L.id + i, `${n} (${L.id}${i})`]));
-export const moveOpts = () =>
+export const typeOptions = none =>
+  (none ? [['None', 'Normal']] : []).concat(studioState.D.types.map(t => [t.id, t.id]));
+export const speciesOptions = () =>
+  studioState.D.lines.flatMap(L => L.names.map((n, i) => [L.id + i, `${n} (${L.id}${i})`]));
+export const moveOptions = () =>
   Object.keys(studioState.D.moves)
     .sort((a, b) => studioState.D.moves[a].n.localeCompare(studioState.D.moves[b].n))
     .map(k => [k, `${studioState.D.moves[k].n} · ${studioState.D.moves[k].t}`]);
-export const itemOpts = () => Object.keys(studioState.D.items).map(k => [k, studioState.D.items[k].n]);
-export const coinOpts = () => Object.keys(studioState.D.coins).map(k => [k, studioState.D.coins[k].n]);
-export const peopleOpts = () => Object.keys(studioState.D.people).map(k => [k, k]);
-export const statusOpts = () => studioState.D.statuses.map(s => [s.id, s.name]);
-export const statOpts = () => studioState.D.stats.filter(s => s.id !== 'hp').map(s => [s.id, s.name]);
-export const spName = id => {
+export const itemOptions = () => Object.keys(studioState.D.items).map(k => [k, studioState.D.items[k].n]);
+export const coinOptions = () => Object.keys(studioState.D.coins).map(k => [k, studioState.D.coins[k].n]);
+export const peopleOptions = () => Object.keys(studioState.D.people).map(k => [k, k]);
+export const statusOptions = () => studioState.D.statuses.map(s => [s.id, s.name]);
+export const statOptions = () => studioState.D.stats.filter(s => s.id !== 'hp').map(s => [s.id, s.name]);
+export const speciesName = id => {
   const L = studioState.D.lines.find(l => id && id.startsWith(l.id) && /^\d+$/.test(id.slice(l.id.length)));
   return L ? L.names[+id.slice(L.id.length)] || id : id;
 };
-export const chipT = t => {
+export const typeChipHTML = t => {
   const T = studioState.D.types.find(x => x.id === t);
   const c = T ? [T.color, T.text] : [studioState.D.untyped.color, studioState.D.untyped.text];
   return `<span class="chip" style="background:${c[0]};color:${c[1]}">${t === 'None' ? 'Normal' : esc(t)}</span>`;

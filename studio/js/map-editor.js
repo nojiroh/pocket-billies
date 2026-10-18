@@ -57,7 +57,7 @@ import {
   dialog,
   grid,
   numberField,
-  peopleOpts,
+  peopleOptions,
   rangeField,
   render,
   selectField,
@@ -601,7 +601,7 @@ SECTIONS.scenes = () => {
       (
         q,
         i
-      ) => `<div class="sc-person">${grid(selectField('Look', `${p}.people.${i}.who`, peopleOpts()), textField('Name', `${p}.people.${i}.name`), numberField('Across (m)', `${p}.people.${i}.x`, { step: 0.1 }), numberField('Depth (m)', `${p}.people.${i}.z`, { step: 0.1 }))}
+      ) => `<div class="sc-person">${grid(selectField('Look', `${p}.people.${i}.who`, peopleOptions()), textField('Name', `${p}.people.${i}.name`), numberField('Across (m)', `${p}.people.${i}.x`, { step: 0.1 }), numberField('Depth (m)', `${p}.people.${i}.z`, { step: 0.1 }))}
    <label class="fld wide"><span>The first time (one line each)</span><textarea data-scppl="${i}" data-f="first" rows="3">${esc((q.first || []).join('\n'))}</textarea></label>
    <label class="fld wide"><span>After that (one line each, one at a time)</span><textarea data-scppl="${i}" data-f="lines" rows="3">${esc((q.lines || []).join('\n'))}</textarea></label>
    <div class="seg-row"><button class="btn sm danger subtle" data-act="scPplDel" data-i="${i}">Remove</button></div></div>`

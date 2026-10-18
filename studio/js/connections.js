@@ -13,7 +13,7 @@ import { provide } from '../../game/js/hooks.js';
 import { $ } from '../../game/js/util.js';
 import { ENGINE_DEFAULTS, ENGINE_PRESETS, ENGINE_SPEC } from '../../game/js/engine/settings.js';
 import { esc } from './game-stand-ins.js';
-import { ACTS, go, render, setRender, spName, studioState } from './studio-app.js';
+import { ACTS, go, render, setRender, speciesName, studioState } from './studio-app.js';
 import { curLine } from './data-editors.js';
 import { SCN, scId } from './map-editor.js';
 import { ENS, engD, engFmt } from './engine-editor.js';
@@ -156,7 +156,7 @@ function lnkNode(kind, id) {
       return {
         kind,
         id,
-        label: spName(id),
+        label: speciesName(id),
         sub: 'Billy',
         go: () => go('billionaires', { line: L ? L.id : studioState.sel.line, stage: L ? +id.slice(L.id.length) : 0 }),
       };

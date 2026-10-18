@@ -16,32 +16,32 @@ import {
   card,
   changed,
   checkboxField,
-  chipT,
   clone,
-  coinOpts,
+  coinOptions,
   colorField,
   dialog,
   fmtN,
   go,
   grid,
-  itemOpts,
-  moveOpts,
+  itemOptions,
+  moveOptions,
   numberField,
-  peopleOpts,
+  peopleOptions,
   rangeField,
   readPath,
   render,
   selectField,
   setReadPath,
   setWritePath,
-  spName,
-  spOpts,
-  statOpts,
-  statusOpts,
+  speciesName,
+  speciesOptions,
+  statOptions,
+  statusOptions,
   studioState,
   textField,
   toast,
-  typeOpts,
+  typeChipHTML,
+  typeOptions,
   uidKey,
   updTop,
   writePath,
@@ -146,7 +146,7 @@ LISTS.lq = () => {
       )
       .map(
         ({ l, i }) =>
-          `<button class="lcard ${l.id === cur ? 'on' : ''}" data-act="pickLine" data-id="${l.id}"><span class="lno">${String(D.lines.slice(0, i).reduce((a, x) => a + x.names.length, 0) + 1).padStart(3, '0')}</span>${prevCanvas({ sp: l.id + '0', still: 1, cls: 'thumb' })}<span class="lt"><b>${esc(l.names[0])}</b><small>${esc(l.names.slice(1).join(' → ')) || 'Does not evolve'}</small><span class="row">${[...new Set(l.types.flat())].map(chipT).join('')}</span></span></button>`
+          `<button class="lcard ${l.id === cur ? 'on' : ''}" data-act="pickLine" data-id="${l.id}"><span class="lno">${String(D.lines.slice(0, i).reduce((a, x) => a + x.names.length, 0) + 1).padStart(3, '0')}</span>${prevCanvas({ sp: l.id + '0', still: 1, cls: 'thumb' })}<span class="lt"><b>${esc(l.names[0])}</b><small>${esc(l.names.slice(1).join(' → ')) || 'Does not evolve'}</small><span class="row">${[...new Set(l.types.flat())].map(typeChipHTML).join('')}</span></span></button>`
       )
       .join('') || '<p class="help">No matches.</p>'
   );
@@ -171,7 +171,7 @@ SECTIONS.billionaires = () => {
   <div class="seg-row"><button class="btn primary" data-act="pixels" data-sp="${sp}">Edit pixels and skeleton</button><button class="btn" data-act="skeleton" data-sp="${sp}">Skeleton builder</button><button class="btn" data-act="recolor" data-sp="${sp}">Recolor this stage…</button><button class="btn" data-act="bpFoe" data-sp="${sp}">See it in battle</button>${studioState.rigs[sp] ? '' : '<span class="warn">No skeleton for this stage: it can’t be drawn.</span>'}</div>`;
   const tsel = i => {
     const ts = L.types[st] || [];
-    return `<label class="fld"><span>${i ? 'Second type' : 'Type'}</span><select data-p="${p}.types.${st}.${i}" data-k="sel" ${i ? 'data-opt="1"' : ''} data-rr="1">${i ? '<option value="">None</option>' : ''}${typeOpts(
+    return `<label class="fld"><span>${i ? 'Second type' : 'Type'}</span><select data-p="${p}.types.${st}.${i}" data-k="sel" ${i ? 'data-opt="1"' : ''} data-rr="1">${i ? '<option value="">None</option>' : ''}${typeOptions(
       true
     )
       .map(([k, n]) => `<option value="${k}" ${ts[i] === k ? 'selected' : ''}>${n}</option>`)
@@ -201,11 +201,11 @@ SECTIONS.billionaires = () => {
   const learn = `<table class="tbl"><thead><tr><th>At Lv</th><th>Move</th><th></th><th></th></tr></thead><tbody>${L.learn
     .map(([lv, mv], i) => {
       const M = D.moves[mv];
-      return `<tr><td><input type="number" min="1" max="100" data-p="${p}.learn.${i}.0" data-k="num" value="${lv}"></td><td><select data-p="${p}.learn.${i}.1" data-k="sel" data-rr="1">${moveOpts()
+      return `<tr><td><input type="number" min="1" max="100" data-p="${p}.learn.${i}.0" data-k="num" value="${lv}"></td><td><select data-p="${p}.learn.${i}.1" data-k="sel" data-rr="1">${moveOptions()
         .map(([k, n]) => `<option value="${k}" ${k === mv ? 'selected' : ''}>${esc(n)}</option>`)
         .join(
           ''
-        )}</select></td><td>${M ? `${chipT(M.t)} <small>${M.p ? M.p + ' power' : 'status'}</small>` : '<span class="warn">missing move</span>'}</td><td><button class="x" data-act="learnDel" data-i="${i}" title="Remove">✕</button></td></tr>`;
+        )}</select></td><td>${M ? `${typeChipHTML(M.t)} <small>${M.p ? M.p + ' power' : 'status'}</small>` : '<span class="warn">missing move</span>'}</td><td><button class="x" data-act="learnDel" data-i="${i}" title="Remove">✕</button></td></tr>`;
     })
     .join('')}</tbody></table>
   <div class="seg-row"><button class="btn" data-act="learnAdd">Add a move</button><button class="btn subtle" data-act="learnSort">Sort by level</button></div>`;
@@ -302,7 +302,7 @@ function evoRow(L, li, i) {
         help: 'Walked while it is your buddy.',
       }),
     item: () =>
-      selectField('Item', `${p}.item`, itemOpts()) +
+      selectField('Item', `${p}.item`, itemOptions()) +
       numberField('Minimum level', `${p}.min`, { min: 1, max: 100, step: 1 }),
     donate: () =>
       numberField('Items to give away', `${p}.n`, { min: 1, max: 50, step: 1 }) +
@@ -326,14 +326,14 @@ function whereCard(L, li) {
     P.list.forEach(([id, w], j) => {
       if (ids.includes(id))
         rows.push(
-          `<tr><td>Wild · ${esc(poolName(pk))}</td><td>${esc(spName(id))}</td><td><input type="number" min="1" data-p="pools.${pk}.list.${j}.1" data-k="num" value="${w}"></td><td>${poolPct(P, j)}</td><td><button class="x" data-act="whereDel" data-kind="pools" data-k="${pk}" data-j="${j}">✕</button></td></tr>`
+          `<tr><td>Wild · ${esc(poolName(pk))}</td><td>${esc(speciesName(id))}</td><td><input type="number" min="1" data-p="pools.${pk}.list.${j}.1" data-k="num" value="${w}"></td><td>${poolPct(P, j)}</td><td><button class="x" data-act="whereDel" data-kind="pools" data-k="${pk}" data-j="${j}">✕</button></td></tr>`
         );
     });
   for (const [ek, E] of Object.entries(D.eggs))
     E.list.forEach(([id, w], j) => {
       if (ids.includes(id))
         rows.push(
-          `<tr><td>Egg · ${ek} km</td><td>${esc(spName(id))}</td><td><input type="number" min="1" data-p="eggs.${ek}.list.${j}.1" data-k="num" value="${w}"></td><td>${poolPct(E, j)}</td><td><button class="x" data-act="whereDel" data-kind="eggs" data-k="${ek}" data-j="${j}">✕</button></td></tr>`
+          `<tr><td>Egg · ${ek} km</td><td>${esc(speciesName(id))}</td><td><input type="number" min="1" data-p="eggs.${ek}.list.${j}.1" data-k="num" value="${w}"></td><td>${poolPct(E, j)}</td><td><button class="x" data-act="whereDel" data-kind="eggs" data-k="${ek}" data-j="${j}">✕</button></td></tr>`
         );
     });
   const add = `<div class="seg-row"><select id="whereTo">${Object.keys(D.pools)
@@ -590,7 +590,7 @@ ACTS.recolor = async d => {
     ['rcHue', 'rcSat', 'rcSkin'].forEach(id => $('#' + id).addEventListener('input', show));
     show();
   }, 30);
-  const ok = await dialog('Recolor ' + esc(spName(sp)), html, [
+  const ok = await dialog('Recolor ' + esc(speciesName(sp)), html, [
     { l: 'Cancel', v: false },
     {
       l: 'Apply',
@@ -610,7 +610,7 @@ ACTS.newLine = async () => {
   const blanks = Object.keys(BODY_TPL);
   const html = `<p class="help">Start from a <b>blank body</b> to design a new shape from scratch, or copy an existing Billie’s skeleton, animations and recolored art. Either way it works in the game right away.</p>
  <label class="fld"><span>Start from</span><select id="nwFrom"><optgroup label="Blank body (new shape)">${blanks.map(k => `<option value="blank:${k}">${k} · ${PLAN_INFO[k]}</option>`).join('')}</optgroup><optgroup label="Copy a Billie">${D.lines.map(l => `<option value="${l.id}">${esc(l.names.join(' → '))}</option>`).join('')}</optgroup></select></label><div class="prev-row"><canvas id="nwPrev" class="spr-prev big"></canvas></div>
- <div class="grid"><label class="fld"><span>Name of the first stage</span><input id="nwName" type="text" maxlength="24" placeholder="Venturo"></label><label class="fld"><span>Type</span><select id="nwType">${typeOpts()
+ <div class="grid"><label class="fld"><span>Name of the first stage</span><input id="nwName" type="text" maxlength="24" placeholder="Venturo"></label><label class="fld"><span>Type</span><select id="nwType">${typeOptions()
    .map(([k, n]) => `<option>${k}</option>`)
    .join('')}</select></label>
  <label class="fld"><span>Rarity</span><select id="nwRar">${Object.keys(D.rarities)
@@ -783,7 +783,7 @@ LISTS.mq = () => {
     .sort((a, b) => a[1].t.localeCompare(b[1].t) || a[1].n.localeCompare(b[1].n))
     .map(
       ([k, m]) =>
-        `<button class="lcard slim ${k === cur ? 'on' : ''}" data-act="pickMove" data-id="${k}">${chipT(m.t)}<span class="lt"><b>${esc(m.n)}</b><small>${m.c === 'X' ? 'Status' : (m.p || 'varies') + ' power'} · ${m.a || 100}%</small></span></button>`
+        `<button class="lcard slim ${k === cur ? 'on' : ''}" data-act="pickMove" data-id="${k}">${typeChipHTML(m.t)}<span class="lt"><b>${esc(m.n)}</b><small>${m.c === 'X' ? 'Status' : (m.p || 'varies') + ' power'} · ${m.a || 100}%</small></span></button>`
     )
     .join('');
 };
@@ -796,18 +796,18 @@ SECTIONS.moves = () => {
     fx = M.fx || {},
     users = D.lines.filter(L => L.learn.some(([, m]) => m === k));
   const st = (obj, base, label) =>
-    `<div class="stagebox"><b>${label}</b>${statOpts()
+    `<div class="stagebox"><b>${label}</b>${statOptions()
       .map(
         ([s, n]) =>
           `<label class="mini"><span>${esc(n)}</span><input type="number" min="-6" max="6" step="1" data-p="${base}.${s}" data-k="num" data-opt="1" value="${obj && obj[s] != null ? obj[s] : ''}" placeholder="0"></label>`
       )
       .join('')}</div>`;
   const fxB = `<div class="fxgrid">
-  ${selectField('Causes a status', `${p}.fx.status`, statusOpts(), { none: 'Nothing', opt: 1, help: 'Paralyzed: may lose turns, slower. Asleep: can’t act for 2–4 turns, easier to tax. Burned: loses HP each turn, weaker Attack.' })}
+  ${selectField('Causes a status', `${p}.fx.status`, statusOptions(), { none: 'Nothing', opt: 1, help: 'Paralyzed: may lose turns, slower. Asleep: can’t act for 2–4 turns, easier to tax. Burned: loses HP each turn, weaker Attack.' })}
   ${numberField('Status chance', `${p}.fx.chance`, { unit: '%', opt: 1, min: 1, max: 100, step: 1, help: 'For damaging moves. Leave empty for always.' })}
   ${st(fx.tgtStage, `${p}.fx.tgtStage`, 'Changes the target’s stats')}${st(fx.selfStage, `${p}.fx.selfStage`, 'Changes its own stats')}
   ${numberField('Self change chance', `${p}.fx.selfChance`, { unit: '%', opt: 1, min: 1, max: 100, step: 1, help: 'Chance for the self effects above and below.' })}
-  ${selectField('Causes its own status', `${p}.fx.selfStatus`, statusOpts(), { none: 'Nothing', opt: 1 })}
+  ${selectField('Causes its own status', `${p}.fx.selfStatus`, statusOptions(), { none: 'Nothing', opt: 1 })}
   ${checkboxField('Hits every foe in double and Alpha battles', `${p}.fx.spread`, { num: 1, help: 'A little weaker for it (Rules → Moves that hit every foe).' })}  ${numberField('Heals itself', `${p}.fx.heal`, { opt: 1, min: 0, max: 1, step: 0.05, help: 'Fraction of its max HP (0.5 = half).' })}${numberField('Drains', `${p}.fx.drain`, { opt: 1, min: 0, max: 1, step: 0.05, help: 'Heals this fraction of the damage dealt.' })}
   ${numberField('Extra critical stages', `${p}.fx.crit`, { opt: 1, min: 0, max: 3, step: 1 })}${numberField('Misses cost', `${p}.fx.missCost`, { opt: 1, min: 0, max: 1, step: 0.05, help: 'Fraction of its own max HP lost on a miss (crash).' })}
   ${selectField(
@@ -824,7 +824,7 @@ SECTIONS.moves = () => {
   ${checkboxField('Scatters sharp stones on the other side', `${p}.fx.rent`, { num: 1 })}${checkboxField(`Starts a sandstorm (${esc(D.rules.battle.shockType)} moves hit harder)`, `${p}.fx.market`, { num: 1 })}</div>`;
   return `<div class="split"><aside class="list-col"><div class="list-head"><input type="search" placeholder="Search moves" data-search="mq" data-list="moveList" value="${esc(studioState.sel.mq || '')}"><button class="btn primary" data-act="moveNew">+ New move</button></div><div class="llist" id="moveList">${LISTS.mq()}</div></aside>
  <div class="ed-col"><div class="ed-head"><div><small class="mono">${esc(k)}</small><h2>${esc(M.n)}</h2></div><div class="seg-row"><button class="btn" data-act="bpMove" data-id="${esc(k)}" title="Play this move on the battle stage">▶ Preview animation</button><button class="btn subtle" data-act="moveDup">Duplicate</button><button class="btn danger" data-act="moveDel">Delete</button></div></div>
- ${card('Basics', grid(textField('Name', `${p}.n`, { max: 28 }), selectField('Type', `${p}.t`, typeOpts(true), { rr: 1 }), selectField('Kind', `${p}.c`, CAT, { rr: 1 }), numberField('Power', `${p}.p`, { opt: 1, min: 0, max: 250, step: 5, help: M.c === 'X' ? 'Status moves usually have no power.' : '' }), numberField('Accuracy', `${p}.a`, { unit: '%', min: 0, max: 100, step: 5, help: '0 means it never misses.' }), numberField('Priority', `${p}.pr`, { opt: 1, min: -3, max: 5, step: 1, help: 'Higher goes first. Guard uses 4.' })) + textField('Description', `${p}.d`, { area: 1, rows: 2 }))}
+ ${card('Basics', grid(textField('Name', `${p}.n`, { max: 28 }), selectField('Type', `${p}.t`, typeOptions(true), { rr: 1 }), selectField('Kind', `${p}.c`, CAT, { rr: 1 }), numberField('Power', `${p}.p`, { opt: 1, min: 0, max: 250, step: 5, help: M.c === 'X' ? 'Status moves usually have no power.' : '' }), numberField('Accuracy', `${p}.a`, { unit: '%', min: 0, max: 100, step: 5, help: '0 means it never misses.' }), numberField('Priority', `${p}.pr`, { opt: 1, min: -3, max: 5, step: 1, help: 'Higher goes first. Guard uses 4.' })) + textField('Description', `${p}.d`, { area: 1, rows: 2 }))}
  ${card('Effects', fxB, { sub: 'Leave anything empty to switch it off.' })}
  ${card(
    'Learned by',
@@ -938,9 +938,9 @@ const FX_ICONS = [
 SECTIONS.types = () => {
   const D = studioState.D,
     T = D.types;
-  const matrix = `<div class="mx-wrap"><table class="mx"><thead><tr><th class="corner">Attack ↓ / Defend →</th>${T.map(t => `<th>${chipT(t.id)}</th>`).join('')}</tr></thead><tbody>${T.map(
+  const matrix = `<div class="mx-wrap"><table class="mx"><thead><tr><th class="corner">Attack ↓ / Defend →</th>${T.map(t => `<th>${typeChipHTML(t.id)}</th>`).join('')}</tr></thead><tbody>${T.map(
     (a, i) =>
-      `<tr><th>${chipT(a.id)}</th>${T.map(b => {
+      `<tr><th>${typeChipHTML(a.id)}</th>${T.map(b => {
         const s = a.strong.includes(b.id),
           w = a.weak.includes(b.id);
         return `<td><button class="mxc ${s ? 's' : w ? 'w' : ''}" data-act="mx" data-a="${i}" data-b="${esc(b.id)}" title="${a.id} → ${b.id}">${s ? '2×' : w ? '½' : '·'}</button></td>`;
@@ -952,10 +952,10 @@ SECTIONS.types = () => {
     (
       t,
       i
-    ) => `<div class="type-row">${chipT(t.id)}${grid(textField('Name', `types.${i}.id`, { max: 14, help: 'Renaming updates every move, Billie and rule that uses it.' }), colorField('Color', `types.${i}.color`), colorField('Text color', `types.${i}.text`), selectField('Ability', `types.${i}.passive`, PASSIVES))}
+    ) => `<div class="type-row">${typeChipHTML(t.id)}${grid(textField('Name', `types.${i}.id`, { max: 14, help: 'Renaming updates every move, Billie and rule that uses it.' }), colorField('Color', `types.${i}.color`), colorField('Text color', `types.${i}.text`), selectField('Ability', `types.${i}.passive`, PASSIVES))}
   <div class="fxpick"><span>Battle particles</span>${FX_ICONS.map(k => `<button class="icb ${(t.fx || []).includes(k) ? 'on' : ''}" data-act="typeFx" data-i="${i}" data-k="${k}" title="${k}"><img src="${iconURL(k, 2)}" alt="${k}"></button>`).join('')}</div><button class="btn danger subtle" data-act="typeDel" data-i="${i}">Delete type</button></div>`
   ).join('');
-  return `<div class="ed-col solo"><div class="ed-head"><h2>Types</h2><button class="btn primary" data-act="typeNew">+ New type</button></div>${card('Matchups', matrix)}${card('Types', rows + `<div class="type-row">${chipT('None')}${grid(colorField('Normal color', 'untyped.color'), colorField('Normal text', 'untyped.text'))}</div>`, { sub: 'Each type can have one ability. Abilities and their numbers are tuned under Rules → Battle.' })}</div>`;
+  return `<div class="ed-col solo"><div class="ed-head"><h2>Types</h2><button class="btn primary" data-act="typeNew">+ New type</button></div>${card('Matchups', matrix)}${card('Types', rows + `<div class="type-row">${typeChipHTML('None')}${grid(colorField('Normal color', 'untyped.color'), colorField('Normal text', 'untyped.text'))}</div>`, { sub: 'Each type can have one ability. Abilities and their numbers are tuned under Rules → Battle.' })}</div>`;
 };
 ACTS.mx = d => {
   const t = studioState.D.types[+d.a],
@@ -1072,7 +1072,7 @@ SECTIONS.items = () => {
       { rr: 1 }
     )
   )}
-  ${grid(numberField('Restores HP', `${p}.hp`, { opt: 1, min: 0, step: 5 }), numberField('Restores everyone', `${p}.hpAll`, { opt: 1, min: 0, step: 5, help: 'Heals the whole team at once.' }), selectField('Cures', `${p}.cure`, [['any', 'Any status'], ...statusOpts()], { none: 'Nothing', opt: 1 }), numberField('Revives at', `${p}.revive`, { opt: 1, min: 0, max: 1, step: 0.05, help: 'Fraction of max HP after fainting (1 = full).' }), checkboxField('Evolution item (not used in battle)', `${p}.evoItem`, { num: 1 }))}
+  ${grid(numberField('Restores HP', `${p}.hp`, { opt: 1, min: 0, step: 5 }), numberField('Restores everyone', `${p}.hpAll`, { opt: 1, min: 0, step: 5, help: 'Heals the whole team at once.' }), selectField('Cures', `${p}.cure`, [['any', 'Any status'], ...statusOptions()], { none: 'Nothing', opt: 1 }), numberField('Revives at', `${p}.revive`, { opt: 1, min: 0, max: 1, step: 0.05, help: 'Fraction of max HP after fainting (1 = full).' }), checkboxField('Evolution item (not used in battle)', `${p}.evoItem`, { num: 1 }))}
   ${textField('Description', `${p}.d`, { area: 1, rows: 2 })}<div class="seg-row"><button class="btn subtle" data-act="itemImg" data-k="${k}">Upload a custom icon</button>${I.img ? `<button class="btn subtle" data-act="itemImgOff" data-k="${k}">Use an atlas icon</button>` : ''}<span class="grow"></span><button class="btn danger subtle" data-act="itemDel" data-k="${k}">Delete</button></div></div></div>`;
     })
     .join('');
@@ -1151,13 +1151,13 @@ SECTIONS.shops = () => {
         ]
           .map(([v, n]) => `<option value="${v}" ${(isC ? 'coin' : 'item') === v ? 'selected' : ''}>${n}</option>`)
           .join('')}</select></td>
-  <td><select data-p="${p}.stock.${i}.${isC ? 'coin' : 'item'}" data-k="sel" data-rr="1">${(isC ? coinOpts() : itemOpts()).map(([v, n]) => `<option value="${v}" ${v === key ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select></td><td><input type="number" min="0" step="10" data-p="${p}.stock.${i}.price" data-k="num" data-opt="1" value="${w.price ?? ''}" placeholder="${base ?? ''}"></td><td><small>${base != null ? `Shop price: $${base}` : ''}</small></td>
+  <td><select data-p="${p}.stock.${i}.${isC ? 'coin' : 'item'}" data-k="sel" data-rr="1">${(isC ? coinOptions() : itemOptions()).map(([v, n]) => `<option value="${v}" ${v === key ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select></td><td><input type="number" min="0" step="10" data-p="${p}.stock.${i}.price" data-k="num" data-opt="1" value="${w.price ?? ''}" placeholder="${base ?? ''}"></td><td><small>${base != null ? `Shop price: $${base}` : ''}</small></td>
   <td><button class="x" data-act="stockMove" data-i="${i}" data-d="-1">↑</button><button class="x" data-act="stockDel" data-i="${i}">✕</button></td></tr>`;
       })
       .join('');
   return `<div class="split"><aside class="list-col"><div class="list-head"><button class="btn primary" data-act="shopNew">+ New shop</button><button class="btn" data-act="boutiqueNew">+ New boutique</button></div><div class="llist">${list}</div></aside>
  <div class="ed-col"><div class="ed-head"><div><small class="mono">${esc(k)}</small><h2>${esc(sh.name)}</h2></div><button class="btn danger" data-act="shopDel">Delete</button></div>
- ${card('Shop', `<div class="keeper"><div class="person-prev">${personPrev(sh.who)}</div><div>${grid(textField('Shop name', `${p}.name`), textField('Keeper', `${p}.keeper`), selectField('Keeper’s look', `${p}.who`, peopleOpts(), { rr: 1, help: 'Edit looks under People.' }))}${textField('Greeting', `${p}.greeting`, { area: 1, rows: 2 })}${textField('Thank-you lines (one per line)', '@lines.' + k, { area: 1, rows: 3, ph: 'Leave empty for the default lines.' })}</div></div>`)}
+ ${card('Shop', `<div class="keeper"><div class="person-prev">${personPrev(sh.who)}</div><div>${grid(textField('Shop name', `${p}.name`), textField('Keeper', `${p}.keeper`), selectField('Keeper’s look', `${p}.who`, peopleOptions(), { rr: 1, help: 'Edit looks under People.' }))}${textField('Greeting', `${p}.greeting`, { area: 1, rows: 2 })}${textField('Thank-you lines (one per line)', '@lines.' + k, { area: 1, rows: 3, ph: 'Leave empty for the default lines.' })}</div></div>`)}
  ${
    wardrobe
      ? card(
@@ -1438,7 +1438,7 @@ SECTIONS.jobs = () => {
         ]
           .map(([v, n]) => `<option value="${v}" ${kind === v ? 'selected' : ''}>${n}</option>`)
           .join('')}</select></label>`,
-        kind === 'se' ? '' : selectField('Which', `${p}.out.1`, kind === 'item' ? itemOpts() : coinOpts()),
+        kind === 'se' ? '' : selectField('Which', `${p}.out.1`, kind === 'item' ? itemOptions() : coinOptions()),
         numberField('Amount per pay', `${p}.out.2`, { min: 1, step: 1 }),
         textField('Pay label', `${p}.pay`, { help: 'Shown when hiring, like “1 Potion”.' })
       )}${textField('What it did (after the Billie’s name)', `${p}.quip`, { help: '“Hoodini made 40 lattes. Most were wrong.”' })}<button class="btn danger subtle" data-act="jobDel" data-k="${k}">Delete job</button></div></div>`;
@@ -1494,7 +1494,7 @@ SECTIONS.trainers = () => {
       ['@rival', 'Rival pick (beats the player’s starter)'],
       ['@rival1', 'Rival pick, evolved once'],
       ['@rival2', 'Rival pick, evolved twice'],
-      ...spOpts(),
+      ...speciesOptions(),
     ];
   const team = T.team
     .map(
@@ -1506,7 +1506,7 @@ SECTIONS.trainers = () => {
     ? grid(
         textField('Badge id', `${p}.seat.id`, { help: 'Route gates refer to this.' }),
         textField('Title', `${p}.seat.title`),
-        selectField('Coin shown', `${p}.seat.coin`, coinOpts())
+        selectField('Coin shown', `${p}.seat.coin`, coinOptions())
       ) +
       `<div class="grid">${Object.keys(D.coins)
         .map(c => numberField(`${D.coins[c].n} reward`, `${p}.seat.coins.${c}`, { opt: 1, min: 0, step: 1 }))
@@ -1523,7 +1523,7 @@ SECTIONS.trainers = () => {
    'Who and where',
    `<div class="keeper"><div class="person-prev">${personPrev(T.who)}</div><div>${grid(
      textField('Name', `${p}.name`),
-     selectField('Look', `${p}.who`, peopleOpts(), { rr: 1 }),
+     selectField('Look', `${p}.who`, peopleOptions(), { rr: 1 }),
      selectField(
        'Stands at',
        `${p}.node`,

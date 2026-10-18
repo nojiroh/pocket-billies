@@ -35,12 +35,12 @@ import {
   card,
   colorField,
   go,
-  moveOpts,
-  peopleOpts,
+  moveOptions,
+  peopleOptions,
   rangeField,
   render,
   selectField,
-  spOpts,
+  speciesOptions,
   studioState,
 } from './studio-app.js';
 import { atlasGet, atlasPath, rigFor } from './sprites.js';
@@ -132,14 +132,14 @@ SECTIONS.preview = () => {
  <aside class="bp-ctl">
   ${card(
     'Who’s fighting',
-    `<label class="fld"><span>Your Billie (back view)</span><select data-bp="me">${opt(spOpts(), BP.me)}</select></label><label class="fld chk"><input type="checkbox" data-bp="meGold" ${BP.meGold ? 'checked' : ''}><span>Golden</span></label>
-   <label class="fld"><span>Opponent (front view)</span><select data-bp="foe">${opt(spOpts(), BP.foe)}</select></label><label class="fld chk"><input type="checkbox" data-bp="foeGold" ${BP.foeGold ? 'checked' : ''}><span>Golden</span></label>
-   <div class="seg-row"><button class="btn sm" data-act="bp" data-x="wild">Wild appears</button><button class="btn sm" data-act="bp" data-x="trainer">Trainer intro</button><select data-bp="who" class="sm">${opt(peopleOpts(), BP.who)}</select></div>
+    `<label class="fld"><span>Your Billie (back view)</span><select data-bp="me">${opt(speciesOptions(), BP.me)}</select></label><label class="fld chk"><input type="checkbox" data-bp="meGold" ${BP.meGold ? 'checked' : ''}><span>Golden</span></label>
+   <label class="fld"><span>Opponent (front view)</span><select data-bp="foe">${opt(speciesOptions(), BP.foe)}</select></label><label class="fld chk"><input type="checkbox" data-bp="foeGold" ${BP.foeGold ? 'checked' : ''}><span>Golden</span></label>
+   <div class="seg-row"><button class="btn sm" data-act="bp" data-x="wild">Wild appears</button><button class="btn sm" data-act="bp" data-x="trainer">Trainer intro</button><select data-bp="who" class="sm">${opt(peopleOptions(), BP.who)}</select></div>
    <div class="seg-row"><button class="btn sm" data-act="bp" data-x="enter0">Send yours out</button><button class="btn sm" data-act="bp" data-x="enter1">Send theirs out</button><button class="btn sm" data-act="bp" data-x="recall">Recall</button></div>`
   )}
   ${card(
     'Moves',
-    `<label class="fld"><span>Move</span><select data-bp="move">${opt(moveOpts(), BP.move)}</select></label><label class="fld"><span>Outcome</span><select data-bp="res">${opt(
+    `<label class="fld"><span>Move</span><select data-bp="move">${opt(moveOptions(), BP.move)}</select></label><label class="fld"><span>Outcome</span><select data-bp="res">${opt(
       [
         ['hit', 'Normal hit'],
         ['se', 'Super effective'],

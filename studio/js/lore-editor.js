@@ -17,7 +17,7 @@ import {
   dialog,
   grid,
   numberField,
-  peopleOpts,
+  peopleOptions,
   readPath,
   render,
   selectField,
@@ -144,7 +144,7 @@ SECTIONS.lore = () => {
       p =>
         grid(
           textField('Name', p + '.name'),
-          selectField('Look', p + '.who', typeof peopleOpts === 'function' ? peopleOpts() : [], {
+          selectField('Look', p + '.who', typeof peopleOptions === 'function' ? peopleOptions() : [], {
             none: 'No portrait',
             opt: 1,
           }),

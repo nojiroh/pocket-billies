@@ -21,7 +21,7 @@ import {
   numberField,
   redo,
   render,
-  spName,
+  speciesName,
   studioState,
   toast,
   undo,
@@ -392,7 +392,7 @@ async function openSkeleton(sp, view = 'front') {
   }
   const m = $('#modal');
   m.innerHTML = `<div class="pxed skel" role="dialog" aria-modal="true" aria-label="Skeleton builder">
- <header class="px-top"><b>${esc(spName(sp))}</b><span class="px-tabs">${['front', 'back'].map(v => `<button class="seg" data-sk="view" data-v="${v}">${v === 'front' ? 'Front view' : 'Back view'}</button>`).join('')}</span>
+ <header class="px-top"><b>${esc(speciesName(sp))}</b><span class="px-tabs">${['front', 'back'].map(v => `<button class="seg" data-sk="view" data-v="${v}">${v === 'front' ? 'Front view' : 'Back view'}</button>`).join('')}</span>
   <span class="px-tools"><button class="seg" data-sk="anim" title="Play the body plan’s motion">Animate</button>${['attack', 'cast', 'hurt', 'cheer', 'faint'].map(a => `<button class="seg sm" data-sk="act" data-a="${a}">${a}</button>`).join('')}</span>
   <span class="px-tools sk-scrub" title="v35: step the pose on the 12 fps clock. Pause, then scrub a tick at a time; Onion shows the two ticks before as ghosts"><button class="seg" data-sk="grid12">12 fps</button><button class="seg" data-sk="pause">Pause</button><button class="seg sm" data-sk="tick" data-d="-1">◀</button><input type="range" id="skScrub" min="0" max="23" value="0" step="1"><span id="skTick">tick 0</span><button class="seg sm" data-sk="tick" data-d="1">▶</button><button class="seg" data-sk="onion">Onion</button></span>
   <span class="px-tools"><button class="seg" data-sk="zoom" data-z="-.5">−</button><span id="skZoom"></span><button class="seg" data-sk="zoom" data-z=".5">+</button></span>

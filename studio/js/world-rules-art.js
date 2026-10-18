@@ -25,12 +25,12 @@ import {
   readPath,
   render,
   selectField,
-  spName,
-  spOpts,
+  speciesName,
+  speciesOptions,
   studioState,
   textField,
   toast,
-  typeOpts,
+  typeOptions,
   uidKey,
 } from './studio-app.js';
 import { fileToCanvas, loadImage, markArt, mountPreviews, pickFile, prevCanvas } from './sprites.js';
@@ -440,7 +440,7 @@ function weightTable(base, P) {
   return `<table class="tbl"><thead><tr><th>Billie</th><th>Weight</th><th>Chance</th><th></th></tr></thead><tbody>${P.list
     .map(
       ([id, w], j) =>
-        `<tr><td>${prevCanvas({ sp: id, still: 1, cls: 'mini' })} <select data-p="${base}.list.${j}.0" data-k="sel" data-rr="1">${spOpts()
+        `<tr><td>${prevCanvas({ sp: id, still: 1, cls: 'mini' })} <select data-p="${base}.list.${j}.0" data-k="sel" data-rr="1">${speciesOptions()
           .map(([v, n]) => `<option value="${v}" ${v === id ? 'selected' : ''}>${esc(n)}</option>`)
           .join(
             ''
@@ -705,7 +705,9 @@ SECTIONS.rules = () => {
     ca = 'rules.catching';
   const starters = `<div class="chips">${D.lines.map(L => `<label class="chk-chip"><input type="checkbox" data-act-chk="starter" value="${L.id}" ${R.start.starters.includes(L.id) ? 'checked' : ''}> ${esc(L.names[0])}</label>`).join('')}</div>`;
   const rival = R.start.starters
-    .map(l => selectField(`Rival’s pick if you choose ${esc(spName(l + '0'))}`, `${s}.rival.${l}`, spOpts()))
+    .map(l =>
+      selectField(`Rival’s pick if you choose ${esc(speciesName(l + '0'))}`, `${s}.rival.${l}`, speciesOptions())
+    )
     .join('');
   const brackets = `<table class="tbl"><thead><tr><th>Steps today up to</th><th>Money per step</th><th></th></tr></thead><tbody>${R.steps.brackets.map((b, i) => `<tr><td><input type="number" min="0" step="500" data-p="${st}.brackets.${i}.upTo" data-k="num" value="${b.upTo}" ${i === R.steps.brackets.length - 1 ? 'title="0 means no limit"' : ''}></td><td><input type="number" min="0" max="5" step=".05" data-p="${st}.brackets.${i}.rate" data-k="num" value="${b.rate}"></td><td><button class="x" data-act="brDel" data-i="${i}">✕</button></td></tr>`).join('')}</tbody></table><button class="btn subtle" data-act="brAdd">Add a rate bracket</button><p class="help">Daily step rate: money earned per step drops after many steps in a day. Use 0 as the last limit for “and beyond”.</p>`;
   const xpPrev = `<p class="help" id="xpPrev">${xpLine()}</p>`;
@@ -822,7 +824,7 @@ SECTIONS.rules = () => {
      numberField('Golden odds: 1 in', `${eg}.goldOdds`, { min: 2, step: 1 }),
      numberField('Golden odds, biggest egg: 1 in', `${eg}.goldOdds10`, { min: 2, step: 1 }),
      numberField('Mythical odds, biggest egg: 1 in', `${eg}.mythOdds`, { min: 2, step: 1 }),
-     selectField('The mythical', `${eg}.mythSpecies`, spOpts()),
+     selectField('The mythical', `${eg}.mythSpecies`, speciesOptions()),
      numberField('Wild drop chance', `${eg}.dropChance`, { min: 0, max: 1, step: 0.01 })
    ) +
      `<div class="grid">${Object.keys(D.eggs)
@@ -895,10 +897,10 @@ SECTIONS.rules = () => {
        numberField('Kindling: Attack boost per turn', `${bt}.financeRamp`, { min: 0, max: 1, step: 0.01 }),
        numberField('Kindling turns', `${bt}.financeRampTurns`, { min: 1, max: 30, step: 1 }),
        numberField('Alloy bonus per teammate', `${bt}.retailSynergy`, { min: 0, max: 1, step: 0.01 }),
-       selectField('Sandstorm type', `${bt}.shockType`, typeOpts()),
+       selectField('Sandstorm type', `${bt}.shockType`, typeOptions()),
        numberField('Sandstorm boost', `${bt}.oilShockMult`, { unit: '×', min: 1, max: 3, step: 0.05 }),
        numberField('Sandstorm turns', `${bt}.shockTurns`, { min: 1, max: 20, step: 1 }),
-       selectField('Soak turns the target into', `${bt}.spinType`, typeOpts()),
+       selectField('Soak turns the target into', `${bt}.spinType`, typeOptions()),
        numberField('Soak turns', `${bt}.spinTurns`, { min: 1, max: 10, step: 1 })
      ) +
      '<h4>Alphas and team battles</h4>' +

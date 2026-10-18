@@ -11,7 +11,7 @@ import { makeCanvas } from '../../game/js/art.js';
 import { animFor } from '../../game/js/body-plan-animation.js';
 import { drawRig, rigPose } from '../../game/js/skeleton-rig.js';
 import { esc } from './game-stand-ins.js';
-import { ask, render, spName, studioState, toast, updTop } from './studio-app.js';
+import { ask, render, speciesName, studioState, toast, updTop } from './studio-app.js';
 /* eslint-disable no-func-assign */
 expose({
   ATL: [() => ATL],
@@ -418,7 +418,7 @@ export async function openPixelEditor(sp, view = 'front', gold = false, focus = 
   }
   const m = $('#modal');
   m.innerHTML = `<div class="pxed" role="dialog" aria-modal="true" aria-label="Pixel editor">
- <header class="px-top"><b>${esc(spName(sp))}</b><span class="px-tabs">${[
+ <header class="px-top"><b>${esc(speciesName(sp))}</b><span class="px-tabs">${[
    ['front', 0, 'Front'],
    ['back', 0, 'Back'],
    ['front', 1, 'Front · golden'],
