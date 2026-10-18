@@ -13,9 +13,9 @@
 import { expose } from './test-globals.js';
 import { openingDone, provide } from './hooks.js';
 import { $, clamp } from './util.js';
-import { MOVES, SPECIES, START_NODE, typeEffectiveness } from './game-data.js';
-import { maxHp } from './logic/rules.js';
-import { actorTypes, fighter } from './logic/battle-engine.js';
+import { START_NODE, typeEffectiveness } from './game-data.js';
+import { FAST_PICKS, FAST_PICK_MS, HAZEL, hazelTip, speedWatch } from './logic/hazel.js';
+import { actorTypes } from './logic/battle-engine.js';
 import { activeBattle, escapeHtml, reducedMotion } from './game-state.js';
 import { artLoad } from './art.js';
 import { portraitHTML } from './person-art.js';
@@ -35,7 +35,6 @@ expose({
   FALL_LEG_PIXELS: [() => FALL_LEG_PIXELS],
   FALL_PALETTE: [() => FALL_PALETTE],
   FALL_PLAYER_PIXELS: [() => FALL_PLAYER_PIXELS],
-  TUTOR_TIPS: [() => TUTOR_TIPS],
   battleTip: [() => battleTip, v => (battleTip = v)],
   battleTipHide: [() => battleTipHide, v => ((battleTipHide = v), provide({ battleTipHide }))],
   battleTutor: [() => battleTutor, v => ((battleTutor = v), provide({ battleTutor }))],
@@ -54,8 +53,9 @@ expose({
   landingBurst: [() => landingBurst, v => ((landingBurst = v), provide({ landingBurst }))],
   landingFrame: [() => landingFrame, v => ((landingFrame = v), provide({ landingFrame }))],
   openingFall: [() => openingFall],
+  tutorMatchup: [() => tutorMatchup, v => (tutorMatchup = v)],
+  tutorPicked: [() => tutorPicked, v => (tutorPicked = v)],
   tutorSkip: [() => tutorSkip, v => (tutorSkip = v)],
-  tutorTypesTip: [() => tutorTypesTip, v => (tutorTypesTip = v)],
 });
 /* eslint-enable no-func-assign */
 provide({ battleTipHide, battleTutor, fallPlay, landingBurst, landingFrame });
@@ -815,52 +815,35 @@ function landingFrame(now, parts) {
    (trainer blake0: tutorial). His billionaire is as new as yours and only knows Tackle. Hazel explains as it happens:
    moves and types, switching and items, and the coin you'd throw at a wild one. Win or lose the story goes on
    (story.js: storyAfterRival) with your team healed and no fee. The self-test's run of the opening stops before it. */
-function tutorTypesTip() {
-  const me = fighter(0),
-    foe = fighter(1);
-  if (!me || !foe) return null;
-  const ft = actorTypes(1);
-  const mine = me.moves.map(k => MOVES[k]).filter(m => m && m.p),
-    weak = mine.filter(m => m.t !== 'None' && typeEffectiveness(m.t, ft) < 1),
-    strong = mine.filter(m => m.t !== 'None' && typeEffectiveness(m.t, ft) > 1),
-    plain = mine.find(m => m.t === 'None');
-  const a = `Every move has a type, shown by its colour. ${ft.join('/')} Billies take double from some types and half from others.`;
-  if (strong.length)
-    return `${a} ${strong[0].n} is ${strong[0].t}: that one hits ${SPECIES[foe.sp].name} hard. Use it!`;
-  if (weak.length)
-    return `${a} Your ${weak.map(m => m.n).join(' and ')} only half hurt${weak.length > 1 ? '' : 's'} ${SPECIES[foe.sp].name}.${plain ? ` Plain ${plain.n} hits anything normally.` : ''}`;
-  return `${a} Watch for “Super effective” when you hit.`;
+/* phase 06-2b: no tutorial in Blake's battle. Hazel "helps": a meta line, then type tips that are wrong on purpose
+   (js/logic/hazel.js), one per turn, as a big HOT TIP that covers everything, the move buttons too, until tapped */
+/* the real matchup between the two out front: which type beats which (strong beats weak), or null */
+function tutorMatchup() {
+  const a = actorTypes(0),
+    b = actorTypes(1);
+  for (const x of a) for (const y of b) if (typeEffectiveness(x, [y]) > 1) return { strong: x, weak: y };
+  for (const y of b) for (const x of a) if (typeEffectiveness(y, [x]) > 1) return { strong: y, weak: x };
+  return null;
 }
-const TUTOR_TIPS = {
-  start: () => '[happy] A battle! Tap Fight and pick a move. Knock out Blake’s Billie before it knocks out yours.',
-  types: tutorTypesTip,
-  hurt: () =>
-    '[surprised] Getting hurt? You could use an item from your Bag, or swap in another Billie once you have one. Or keep swinging.',
-  coin: () =>
-    'Nearly there! In the wild you’d flick a coin now: a tired Billie can’t resist one. Not Blake’s, though. He’d sue.',
-};
 function battleTutor() {
   if (!activeBattle || !activeBattle.T || !activeBattle.T.tutorial || activeBattle.over) return;
-  const seen = activeBattle.tips || (activeBattle.tips = {}),
-    me = fighter(0),
-    foe = fighter(1),
-    fresh = k => !seen[k];
-  let k = null;
-  if (fresh('start')) k = 'start';
-  else if (fresh('types') && activeBattle.turn >= 1) k = 'types';
-  else if (fresh('hurt') && me && me.hp < maxHp(me) * 0.5) k = 'hurt';
-  else if (fresh('coin') && foe && foe.hp < maxHp(foe) * 0.45) k = 'coin';
-  if (!k) return;
-  seen[k] = 1;
-  const text = TUTOR_TIPS[k]();
-  if (text)
-    battleTip(
-      'gini',
-      text,
-      k === 'start' && typeof openingDone === 'function' && openingDone()
-        ? { l: 'Skip this battle', a: 'tutskip' }
-        : null
-    );
+  if (!activeBattle.pickWatch) activeBattle.pickWatch = speedWatch(FAST_PICK_MS, FAST_PICKS, HAZEL.tooFastPicks);
+  const i = activeBattle.tipN || 0,
+    text = hazelTip(i, tutorMatchup());
+  if (!text) return;
+  activeBattle.tipN = i + 1;
+  battleTip(
+    'gini',
+    text,
+    i === 0 && typeof openingDone === 'function' && openingDone() ? { l: 'Skip this battle', a: 'tutskip' } : null,
+    true
+  );
+}
+/* a move picked: in Blake's battle, picking instantly (twice in a row) gets a comment from Hazel */
+export function tutorPicked() {
+  if (!activeBattle || !activeBattle.T || !activeBattle.T.tutorial || !activeBattle.pickWatch) return;
+  const c = activeBattle.pickWatch.record(performance.now() - (activeBattle.menuT || 0));
+  if (c) battleTip('gini', c, null, true);
 }
 /* seen it all before: Blake's battle ends at once, and the story carries on */
 function tutorSkip() {
@@ -869,13 +852,13 @@ function tutorSkip() {
   activeBattle.over = 'skip';
   endBattle();
 }
-/* a word from someone at the top of the battle, without stopping it; it goes after a while, or with a tap */
-function battleTip(who, text, btn) {
+/* a word from someone at the top of the battle, without stopping it; it goes after a while, or with a tap.
+   phase 06-2b: hot = Hazel's HOT TIP: big, in the middle, over everything (the move buttons too), until tapped */
+function battleTip(who, text, btn, hot) {
   let el = $('#btip');
   if (!el) {
     el = document.createElement('div');
     el.id = 'btip';
-    el.className = 'btip';
     el.setAttribute('role', 'status');
     document.body.appendChild(el);
   }
@@ -885,20 +868,26 @@ function battleTip(who, text, btn) {
     ex = m[1];
     text = text.slice(m[0].length);
   }
-  el.innerHTML = `<span class="btip-face">${typeof portraitHTML === 'function' ? portraitHTML(who, 44, ex) : ''}</span><span class="btip-t"><b>${who === 'gini' ? 'Professor Hazel' : escapeHtml(who)}</b>${escapeHtml(text)}${btn ? `<button class="pb small quiet btip-b" data-a="${btn.a}">${escapeHtml(btn.l)}</button>` : ''}</span>`;
+  const name = who === 'gini' ? 'Professor Hazel' : escapeHtml(who),
+    face = typeof portraitHTML === 'function' ? portraitHTML(who, hot ? 72 : 44, ex) : '',
+    b = btn ? `<button class="pb small quiet btip-b" data-a="${btn.a}">${escapeHtml(btn.l)}</button>` : '';
+  el.className = hot ? 'btip hot' : 'btip';
+  el.innerHTML = hot
+    ? `<div class="btip-card m-pop"><span class="btip-hot" aria-hidden="true">HOT TIP!</span><span class="btip-face">${face}</span><span class="btip-t"><b>${name}</b>${escapeHtml(text)}</span>${b}<small class="btip-dismiss">Tap anywhere to close</small></div>`
+    : `<span class="btip-face">${face}</span><span class="btip-t"><b>${name}</b>${escapeHtml(text)}${b}</span>`;
   el.classList.remove('off');
+  void el.offsetWidth;
   el.classList.add('on');
   clearTimeout(el._t);
-  el._t = setTimeout(() => el.classList.add('off'), Math.max(btn ? 9000 : 6000, text.length * 65));
+  if (!hot) el._t = setTimeout(() => el.classList.add('off'), Math.max(btn ? 9000 : 6000, text.length * 65));
   el.onclick = ev => {
-    const b = ev.target.closest('[data-a]');
-    if (b && b.dataset.a === 'tutskip') {
-      ev.stopPropagation();
-      el.classList.add('off');
-      tutorSkip();
-      return;
-    }
+    const bt = ev.target.closest('[data-a]');
+    ev.stopPropagation();
     el.classList.add('off');
+    el.classList.remove('on');
+    /* the move menu counts as shown from when the tip is out of the way */
+    if (activeBattle) activeBattle.menuT = performance.now();
+    if (bt && bt.dataset.a === 'tutskip') tutorSkip();
   };
 }
 export function battleTipHide() {

@@ -182,6 +182,7 @@ import { openShop } from './shop.js';
 import { soundEffect } from './sound.js';
 import { talkHazel } from './talk.js';
 import { cutscene, cutsceneStart, cutsceneWanted } from './cutscene.js';
+import { tutorPicked } from './opening-fall.js';
 import { renderTitle, titleMount } from './title.js';
 import { loreBook, renderLore } from './lore.js';
 import { flyMenu, rideGlassLift } from './airship.js';
@@ -2889,7 +2890,10 @@ document.addEventListener('click', ev => {
       }
       break;
     case 'bmove':
-      if (activeBattle && activeBattle.phase === 'fight') pickMove(d.m);
+      if (activeBattle && activeBattle.phase === 'fight') {
+        if (typeof tutorPicked === 'function') tutorPicked();
+        pickMove(d.m);
+      }
       break;
     case 'btarget':
       if (activeBattle && activeBattle.phase === 'target' && d.t != null) pickTarget(+d.t);

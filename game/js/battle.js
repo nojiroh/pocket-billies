@@ -689,6 +689,7 @@ function afterEvents() {
   activeBattle.plan = [];
   activeBattle.cur = liveActors(0)[0];
   activeBattle.phase = 'choose';
+  activeBattle.menuT = performance.now(); /* phase 06-2b: for Hazel's "instant picks" comment (opening-fall.js) */
   chooseMessage();
   paintBoxes(allSnapshots(), activeBattle.market);
   boxShow(0, true);
