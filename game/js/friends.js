@@ -13,7 +13,7 @@ import { expose } from './test-globals.js';
 import { account, accountOn, closeModal, mapIdAt, mapOffsetInView, modal, provide, render, toast } from './hooks.js';
 import { LOCATIONS, SPECIES } from './game-data.js';
 import { billyName, cleanName, plural } from './logic/rules.js';
-import { escapeHtml, saveData, uiState } from './game-state.js';
+import { escapeHtml, saveData, saveHold, uiState } from './game-state.js';
 import { personWalkFrames, portraitHTML, warmPerson } from './person-art.js';
 import { rigCanvasHTML } from './skeleton-rig.js';
 import { directionOf, walkView } from './walk-view.js';
@@ -214,7 +214,7 @@ function friendWatchError(u, e) {
 }
 /* what friends see of you: written when it changes, at most every 20 s (where you stand, every 60 s) */
 function publishToFriends(now) {
-  if (!friends.on || !saveData.started) return;
+  if (!friends.on || !saveData.started || saveHold) return;
   const t = Date.now(),
     node = saveData.trip && saveData.trip.node,
     r = LOCATIONS[node] || {},

@@ -17,9 +17,14 @@ expose({
   escapeHtml: [() => escapeHtml],
   // @ts-expect-error -- replaced on purpose
   flushSave: [() => flushSave, v => (flushSave = v)],
+  holdBefore: [() => holdBefore, v => (holdBefore = v)],
+  // @ts-expect-error -- replaced on purpose
+  pauseSaving: [() => pauseSaving, v => (pauseSaving = v)],
   // @ts-expect-error -- replaced on purpose
   readStoredSave: [() => readStoredSave, v => (readStoredSave = v)],
   reducedMotion: [() => reducedMotion, v => setReducedMotion(v)],
+  // @ts-expect-error -- replaced on purpose
+  resumeSaving: [() => resumeSaving, v => (resumeSaving = v)],
   save: [() => save, v => setSave(v)],
   saveData: [() => saveData, v => setSaveData(v)],
   saveHold: [() => saveHold, v => setSaveHold(v)],
@@ -168,4 +173,24 @@ document.addEventListener('visibilitychange', () => {
 export function flushSave() {
   if (saveHold) return;
   if (typeof flushAccountSave === 'function') flushAccountSave();
+}
+/* phase 13: the in-game full test (self-test.js) changes the save while it runs, so nothing is written, in this browser,
+   to the account or to friends, until it has put your save back. The hold that was there before (a newer save kept
+   aside) comes back after; then your save goes to the account again, in case a write was waiting when the test began */
+/** @type {boolean | null} */
+let holdBefore = null;
+export function pauseSaving() {
+  if (holdBefore !== null) return;
+  holdBefore = saveHold;
+  setSaveHold(true);
+  if (saveTimer) {
+    clearTimeout(saveTimer);
+    saveTimer = null;
+  }
+}
+export function resumeSaving() {
+  if (holdBefore === null) return;
+  setSaveHold(holdBefore);
+  holdBefore = null;
+  flushSave();
 }

@@ -18,6 +18,8 @@ import { loadAllMaps } from './map-files.js';
 import {
   activeBattle,
   escapeHtml,
+  pauseSaving,
+  resumeSaving,
   save,
   saveData,
   setActiveBattle,
@@ -169,6 +171,7 @@ async function runFullTest(mode) {
     realSave = save,
     engKeep = gameData.engine ? JSON.stringify(gameData.engine) : null;
   setSave(() => {}); /* nothing the test does reaches your save */
+  pauseSaving(); /* phase 13: nor the account or your friends (game-state.js) */
   const box = document.createElement('div');
   box.className = 'nw-bench px glass';
   box.innerHTML =
@@ -1438,6 +1441,7 @@ async function runFullTest(mode) {
     if (engKeep) gameData.engine = JSON.parse(engKeep);
     setSaveData(JSON.parse(keep));
     setSave(realSave);
+    resumeSaving();
     uiState.bench = null;
     uiState.roam = back.roam;
     uiState.tab = back.tab;
