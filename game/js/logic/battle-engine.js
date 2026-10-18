@@ -895,7 +895,7 @@ export function startWild(q) {
     battleSay(`A wild ${q.gold ? 'Golden ' : ''}${nm} appeared.`, { k: 'wild' });
     battleSay(`“${nm}!”`, { k: 'cry', si: 1 });
   }
-  if (q.gold) battleSay(`It shimmers. Golden Billies turn up once in ${formatNumber(RULES.steps.goldOdds)}.`);
+  if (q.gold) battleSay(`It shimmers. Golden Billies turn up once in ${formatNumber(RULES.encounters.goldOdds)}.`);
   if (CATCH_RULES.luxury.includes(SPECIES[q.sp].line))
     battleSay(`It looks too picky for ${COINS.penny ? 'a ' + COINS.penny.n : 'cheap coins'}.`);
   const K = liveActors(0);

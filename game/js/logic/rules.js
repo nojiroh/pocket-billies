@@ -556,7 +556,7 @@ export function spawn(gentle, force, node = saveData.trip.node) {
     id: newUid(),
     sp,
     lvl,
-    gold: random() < 1 / RULES.steps.goldOdds,
+    gold: random() < 1 / RULES.encounters.goldOdds,
     no: ++saveData.serial,
     build: rollBuild(),
   };

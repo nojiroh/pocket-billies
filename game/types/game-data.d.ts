@@ -588,7 +588,6 @@ export interface Rules {
   };
   steps: {
     stepsPerKm: number;
-    goldOdds: number;
     restCost: number;
     alphaOdds: number;
   };
@@ -602,6 +601,8 @@ export interface Rules {
     refillMs: number;
     /** prize money for beating a wild Billie, per level */
     prizePerLevel: number;
+    /** a wild one is Golden once in this many */
+    goldOdds: number;
   };
   progression: {
     xpFactor: number;
