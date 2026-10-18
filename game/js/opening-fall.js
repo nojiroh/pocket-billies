@@ -29,40 +29,40 @@ import { music, sfx } from './sound.js';
 import { cutscene, cutsceneCaption } from './cutscene.js';
 /* eslint-disable no-func-assign */
 expose({
-  FALL: [() => FALL],
   FALL_BANDS: [() => FALL_BANDS],
-  FALL_LEGS: [() => FALL_LEGS],
-  FALL_ME: [() => FALL_ME],
-  FALL_PAL: [() => FALL_PAL],
+  FALL_LEG_PIXELS: [() => FALL_LEG_PIXELS],
+  FALL_PALETTE: [() => FALL_PALETTE],
+  FALL_PLAYER_PIXELS: [() => FALL_PLAYER_PIXELS],
   FALL_STILLS: [() => FALL_STILLS],
-  LAND: [() => LAND],
   TUTOR_TIPS: [() => TUTOR_TIPS],
   battleTip: [() => battleTip, v => (battleTip = v)],
   battleTipHide: [() => battleTipHide, v => ((battleTipHide = v), provide({ battleTipHide }))],
   battleTutor: [() => battleTutor, v => ((battleTutor = v), provide({ battleTutor }))],
-  fallCam: [() => fallCam, v => (fallCam = v)],
+  drawFallingPlayer: [() => drawFallingPlayer, v => (drawFallingPlayer = v)],
+  fallCamera: [() => fallCamera, v => (fallCamera = v)],
   fallCanvas: [() => fallCanvas, v => (fallCanvas = v)],
   fallCrust: [() => fallCrust, v => (fallCrust = v)],
   fallFont: [() => fallFont, v => (fallFont = v)],
-  fallGL: [() => fallGL, v => (fallGL = v)],
   fallMap: [() => fallMap, v => (fallMap = v)],
-  fallMe: [() => fallMe, v => (fallMe = v)],
+  fallMapCanvas: [() => fallMapCanvas, v => (fallMapCanvas = v)],
   fallPlay: [() => fallPlay, v => ((fallPlay = v), provide({ fallPlay }))],
-  fallRnd: [() => fallRnd],
+  fallRandom: [() => fallRandom],
   fallSky: [() => fallSky, v => (fallSky = v)],
   fallStill: [() => fallStill, v => (fallStill = v)],
   fallStreet: [() => fallStreet, v => (fallStreet = v)],
-  landBurst: [() => landBurst, v => ((landBurst = v), provide({ landBurst }))],
-  landFrame: [() => landFrame, v => ((landFrame = v), provide({ landFrame }))],
+  landing: [() => landing],
+  landingBurst: [() => landingBurst, v => ((landingBurst = v), provide({ landingBurst }))],
+  landingFrame: [() => landingFrame, v => ((landingFrame = v), provide({ landingFrame }))],
+  openingFall: [() => openingFall],
   tutorSkip: [() => tutorSkip, v => (tutorSkip = v)],
   tutorTypesTip: [() => tutorTypesTip, v => (tutorTypesTip = v)],
 });
 /* eslint-enable no-func-assign */
-provide({ battleTipHide, battleTutor, fallPlay, landBurst, landFrame });
+provide({ battleTipHide, battleTutor, fallPlay, landingBurst, landingFrame });
 /* to-module: end */
-const FALL = { cv: null, x: null, raf: 0, run: 0, W: 0, H: 0 };
-provide({ FALL }); /* to-module */
-const fallRnd = (a, b) => {
+const openingFall = { cv: null, x: null, raf: 0, run: 0, W: 0, H: 0 };
+provide({ openingFall }); /* to-module */
+const fallRandom = (a, b) => {
   let h = (a * 374761393 + b * 668265263) ^ 0x5bd1e995;
   h = Math.imul(h ^ (h >>> 13), 1274126177);
   return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
@@ -79,20 +79,20 @@ function fallCanvas() {
   const w = innerWidth,
     h = innerHeight,
     s = Math.min(w, h) / 140;
-  FALL.W = Math.round(w / s);
-  FALL.H = Math.round(h / s);
-  if (cv.width !== FALL.W || cv.height !== FALL.H) {
-    cv.width = FALL.W;
-    cv.height = FALL.H;
+  openingFall.W = Math.round(w / s);
+  openingFall.H = Math.round(h / s);
+  if (cv.width !== openingFall.W || cv.height !== openingFall.H) {
+    cv.width = openingFall.W;
+    cv.height = openingFall.H;
   }
-  FALL.cv = cv;
-  FALL.x = cv.getContext('2d');
-  FALL.x.imageSmoothingEnabled = false;
+  openingFall.cv = cv;
+  openingFall.x = cv.getContext('2d');
+  openingFall.x.imageSmoothingEnabled = false;
   cv.hidden = false;
   return cv;
 }
 /* the walk scene's canvas, ready for the world map's renderer (the map is drawn on it before Sundown is mounted) */
-export function fallGL() {
+export function fallMapCanvas() {
   if (typeof worldMapGlRender !== 'function' || typeof ensureWalkGl !== 'function' || gpuState.fail || gpuState.lost)
     return null;
   let cv = $('#dio');
@@ -117,7 +117,7 @@ function fallFont(px) {
   return `400 ${px}px Tiny5, ui-monospace, monospace`;
 }
 /* ---- you, as a few pixels: hair, face lit by your phone, a blue hoodie with the lanyard, jeans (7 x 16) ---- */
-const FALL_PAL = {
+const FALL_PALETTE = {
   h: '#3A2A20',
   s: '#F0C8A0',
   S: '#BFF4FF',
@@ -131,7 +131,7 @@ const FALL_PAL = {
   j: '#2A3048',
   e: '#E8E0D0',
 };
-const FALL_ME = [
+const FALL_PLAYER_PIXELS = [
   '..hhh..',
   '.hhhhh.',
   '.hSSs..',
@@ -144,31 +144,31 @@ const FALL_ME = [
   '.bbbB..',
   '.jjjj..',
 ];
-const FALL_LEGS = [
+const FALL_LEG_PIXELS = [
   ['.jj.jj.', '.jj..jj', 'jj...jj', 'ee...ee', '.......'],
   ['..jjj..', '..jjj..', '..jjj..', '..eee..', '.......'],
 ];
-function fallMe(x0, y0, frame, ph) {
-  const x = FALL.x,
-    rows = FALL_ME.concat(FALL_LEGS[frame || 0]);
+function drawFallingPlayer(x0, y0, frame, ph) {
+  const x = openingFall.x,
+    rows = FALL_PLAYER_PIXELS.concat(FALL_LEG_PIXELS[frame || 0]);
   for (let r = 0; r < rows.length; r++)
     for (let c = 0; c < 7; c++) {
       let ch = rows[r][c];
       if (ch === '.') continue;
       if (!ph && (ch === 'S' || ch === 'p')) ch = ch === 'S' ? 's' : 'P';
-      x.fillStyle = FALL_PAL[ch];
+      x.fillStyle = FALL_PALETTE[ch];
       x.fillRect(x0 + c, y0 + r, 1, 1);
     }
 }
 /* ---- 1. the surface ---- */
 function fallStreet(t) {
-  const x = FALL.x,
-    W = FALL.W,
-    H = FALL.H,
+  const x = openingFall.x,
+    W = openingFall.W,
+    H = openingFall.H,
     gY = Math.round(H - clamp(H * 0.2, 26, 64)),
     shake =
       !reducedMotion && t > 5 && t < 7.2
-        ? Math.round((fallRnd(Math.floor(t * 30), 3) - 0.5) * 2 * (t > 6.3 ? 2 : 1))
+        ? Math.round((fallRandom(Math.floor(t * 30), 3) - 0.5) * 2 * (t > 6.3 ? 2 : 1))
         : 0,
     drop = t > 6.9 ? Math.pow((t - 6.9) / 0.5, 2) * H * 0.6 : 0;
   x.fillStyle = '#050408';
@@ -183,10 +183,10 @@ function fallStreet(t) {
   x.fillStyle = g;
   x.fillRect(-4, -4, W + 8, gY + 4);
   for (let i = 0; i < 70; i++) {
-    const sx = Math.floor(fallRnd(i, 1) * W),
-      sy = Math.floor(fallRnd(i, 2) * gY * 0.55);
-    if (fallRnd(i, Math.floor(t * 2)) > 0.15) {
-      x.fillStyle = fallRnd(i, 9) > 0.8 ? '#FFE9A8' : '#C8C8F0';
+    const sx = Math.floor(fallRandom(i, 1) * W),
+      sy = Math.floor(fallRandom(i, 2) * gY * 0.55);
+    if (fallRandom(i, Math.floor(t * 2)) > 0.15) {
+      x.fillStyle = fallRandom(i, 9) > 0.8 ? '#FFE9A8' : '#C8C8F0';
       x.fillRect(sx, sy, 1, 1);
     }
   }
@@ -210,11 +210,11 @@ function fallStreet(t) {
   let bx = -4,
     k = 0;
   while (bx < W + 4) {
-    const bw = 12 + Math.floor(fallRnd(k, 14) * 14),
-      bh = 36 + Math.floor(fallRnd(k, 15) * Math.min(110, gY * 0.55));
+    const bw = 12 + Math.floor(fallRandom(k, 14) * 14),
+      bh = 36 + Math.floor(fallRandom(k, 15) * Math.min(110, gY * 0.55));
     x.fillStyle = '#2E2650';
     x.fillRect(bx, gY - bh, bw, bh);
-    if (fallRnd(k, 16) > 0.6) {
+    if (fallRandom(k, 16) > 0.6) {
       x.fillStyle = '#E25A5A';
       x.fillRect(bx + (bw >> 1), gY - bh - 3, 1, 3);
       if (Math.floor(t * 1.5 + k) % 2) x.fillRect(bx + (bw >> 1), gY - bh - 4, 1, 1);
@@ -225,8 +225,8 @@ function fallStreet(t) {
   bx = -6;
   k = 0;
   while (bx < W + 6) {
-    const bw = 10 + Math.floor(fallRnd(k, 4) * 16),
-      bh = 22 + Math.floor(fallRnd(k, 5) * Math.min(80, gY * 0.42)),
+    const bw = 10 + Math.floor(fallRandom(k, 4) * 16),
+      bh = 22 + Math.floor(fallRandom(k, 5) * Math.min(80, gY * 0.42)),
       top = gY - bh;
     x.fillStyle = k % 2 ? '#221C3C' : '#28214A';
     x.fillRect(bx, top, bw, bh);
@@ -234,8 +234,8 @@ function fallStreet(t) {
     x.fillRect(bx, top, bw, 1);
     for (let wy = top + 4; wy < gY - 14; wy += 5)
       for (let wx = bx + 2; wx < bx + bw - 2; wx += 4)
-        if (fallRnd(wx * 7 + k, wy) > 0.7) {
-          x.fillStyle = fallRnd(wx, wy * 3) > 0.5 ? '#FFD88A' : '#F2B65E';
+        if (fallRandom(wx * 7 + k, wy) > 0.7) {
+          x.fillStyle = fallRandom(wx, wy * 3) > 0.5 ? '#FFD88A' : '#F2B65E';
           x.fillRect(wx, wy, 2, 2);
         }
     bx += bw;
@@ -293,7 +293,7 @@ function fallStreet(t) {
   x.fillStyle = '#1A1530';
   x.fillRect(-4, gY - 12, W + 8, 12);
   for (let i = 0; i < W; i += 9) {
-    const lit = fallRnd(i, 21);
+    const lit = fallRandom(i, 21);
     if (lit > 0.45) {
       x.fillStyle = lit > 0.8 ? '#FFE4A0' : '#C99A5A';
       x.fillRect(i + 2, gY - 9, 5, 5);
@@ -334,8 +334,8 @@ function fallStreet(t) {
     const n = Math.min(1, (t - 5.5) / 0.8);
     x.fillStyle = '#0B0912';
     for (let i = 0; i < 14; i++) {
-      const a = fallRnd(i, 77) * 6.28,
-        L = Math.floor(n * (6 + fallRnd(i, 78) * 14));
+      const a = fallRandom(i, 77) * 6.28,
+        L = Math.floor(n * (6 + fallRandom(i, 78) * 14));
       for (let q = 0; q < L; q++) {
         const px = Math.round(cx + Math.cos(a) * q + Math.sin(q * 1.7 + i)),
           py = Math.round(gY + 1 + Math.abs(Math.sin(a)) * q * 0.25);
@@ -361,7 +361,7 @@ function fallStreet(t) {
       x.ellipse(cx, gY + 1, Math.max(1, hr), Math.max(1, hr * 0.32), 0, 0, 7);
       x.clip();
     }
-    fallMe(fx, fy, walking ? Math.floor(t * 6) % 2 : 1, t < 5.6);
+    drawFallingPlayer(fx, fy, walking ? Math.floor(t * 6) % 2 : 1, t < 5.6);
     x.restore();
     if (t < 5.6) {
       x.fillStyle = 'rgba(142,240,255,.22)';
@@ -388,9 +388,9 @@ const FALL_BANDS = [
   '#3A3440',
 ];
 function fallCrust(t) {
-  const x = FALL.x,
-    W = FALL.W,
-    H = FALL.H,
+  const x = openingFall.x,
+    W = openingFall.W,
+    H = openingFall.H,
     sp = H * 1.7,
     off = t * sp,
     BH = 26,
@@ -407,22 +407,22 @@ function fallCrust(t) {
     x.beginPath();
     x.moveTo(-2, y + BH + 8);
     for (let q = -2; q <= W + 4; q += 4)
-      x.lineTo(q, y + Math.round(Math.sin(q * 0.07 + seed) * 2 + fallRnd(seed, q >> 2) * 2));
+      x.lineTo(q, y + Math.round(Math.sin(q * 0.07 + seed) * 2 + fallRandom(seed, q >> 2) * 2));
     x.lineTo(W + 4, y + BH + 8);
     x.closePath();
     x.fill();
     for (let q = 0; q < W * 1.2; q++) {
-      const sx = Math.floor(fallRnd(seed, q) * W),
-        sy = y + 3 + Math.floor(fallRnd(q, seed) * (BH - 3));
-      x.fillStyle = fallRnd(seed * 3, q) > 0.5 ? 'rgba(255,255,255,.08)' : 'rgba(0,0,0,.18)';
+      const sx = Math.floor(fallRandom(seed, q) * W),
+        sy = y + 3 + Math.floor(fallRandom(q, seed) * (BH - 3));
+      x.fillStyle = fallRandom(seed * 3, q) > 0.5 ? 'rgba(255,255,255,.08)' : 'rgba(0,0,0,.18)';
       x.fillRect(sx, sy, 1, 1);
     }
     /* stones in the layer */
     for (let r = 0; r < 3; r++) {
-      if (fallRnd(seed, 40 + r) < 0.45) continue;
-      const rx = Math.floor(fallRnd(seed, 50 + r) * W),
-        ry = y + 7 + Math.floor(fallRnd(seed, 60 + r) * (BH - 13)),
-        rw = 2 + Math.floor(fallRnd(seed, 70 + r) * 5),
+      if (fallRandom(seed, 40 + r) < 0.45) continue;
+      const rx = Math.floor(fallRandom(seed, 50 + r) * W),
+        ry = y + 7 + Math.floor(fallRandom(seed, 60 + r) * (BH - 13)),
+        rw = 2 + Math.floor(fallRandom(seed, 70 + r) * 5),
         rh = Math.max(2, Math.round(rw * 0.6));
       for (let dy = -rh; dy <= rh; dy++) {
         const hw = Math.round(rw * Math.sqrt(Math.max(0, 1 - (dy / (rh + 0.5)) ** 2)));
@@ -494,9 +494,9 @@ function fallCrust(t) {
   }
   /* speed: streaks of grit rushing past */
   for (let q = 0; q < 16; q++) {
-    const sx = Math.floor(fallRnd(q, 5) * W),
-      len = 6 + Math.floor(fallRnd(q, 6) * 14),
-      sy = Math.round((((fallRnd(q, 7) * H - t * sp * 1.6) % (H + len)) + H + len) % (H + len)) - len;
+    const sx = Math.floor(fallRandom(q, 5) * W),
+      len = 6 + Math.floor(fallRandom(q, 6) * 14),
+      sy = Math.round((((fallRandom(q, 7) * H - t * sp * 1.6) % (H + len)) + H + len) % (H + len)) - len;
     x.fillStyle = 'rgba(255,236,210,.16)';
     x.fillRect(sx, sy, 1, len);
   }
@@ -507,7 +507,7 @@ function fallCrust(t) {
   x.save();
   x.translate(cx, cy);
   x.rotate((a * Math.PI) / 2);
-  fallMe(-3, -8, 1, false);
+  drawFallingPlayer(-3, -8, 1, false);
   x.restore();
   /* the light below */
   if (t > 1.9) {
@@ -526,19 +526,19 @@ function fallCrust(t) {
 /* ---- 3 (still). the inner sky as pixels: the far side of the world on every side, the Inner Sun in the middle.
    For the opening's pictures, and when the 3D map can't be shown (reduced motion, no WebGL). ---- */
 function fallSky(t) {
-  const x = FALL.x,
-    W = FALL.W,
-    H = FALL.H,
+  const x = openingFall.x,
+    W = openingFall.W,
+    H = openingFall.H,
     cx = Math.round(W / 2),
     cy = Math.round(H * 0.44);
   x.fillStyle = '#4E7CC8';
   x.fillRect(0, 0, W, H);
   const land = ['#6FA060', '#86AE6C', '#B4A676', '#5E8E58', '#9CB878'];
   for (let i = 0; i < 46; i++) {
-    const bx = fallRnd(i, 1) * (W + 40) - 20,
-      by = fallRnd(i, 2) * (H + 40) - 20,
-      rx = 6 + fallRnd(i, 3) * Math.min(W, H) * 0.16,
-      ry = rx * (0.45 + fallRnd(i, 4) * 0.5);
+    const bx = fallRandom(i, 1) * (W + 40) - 20,
+      by = fallRandom(i, 2) * (H + 40) - 20,
+      rx = 6 + fallRandom(i, 3) * Math.min(W, H) * 0.16,
+      ry = rx * (0.45 + fallRandom(i, 4) * 0.5);
     x.fillStyle = land[i % land.length];
     for (let dy = -Math.floor(ry); dy <= ry; dy++) {
       const hw = rx * Math.sqrt(Math.max(0, 1 - (dy / ry) ** 2)) * (0.82 + 0.18 * Math.sin(dy * 0.7 + i));
@@ -559,9 +559,9 @@ function fallSky(t) {
   x.arc(cx, cy, 9, 0, 7);
   x.fill();
   for (let i = 0; i < 7; i++) {
-    const px = Math.round(fallRnd(i, 11) * W),
-      py = Math.round(fallRnd(i, 12) * H),
-      r = 3 + Math.floor(fallRnd(i, 13) * 4);
+    const px = Math.round(fallRandom(i, 11) * W),
+      py = Math.round(fallRandom(i, 12) * H),
+      r = 3 + Math.floor(fallRandom(i, 13) * 4);
     if (Math.hypot(px - cx, py - cy) < 20) continue;
     x.fillStyle = 'rgba(255,255,255,.85)';
     for (let dy = -r; dy <= r; dy++) {
@@ -573,7 +573,7 @@ function fallSky(t) {
   x.save();
   x.translate(Math.round(W * 0.5), Math.round(H * 0.74 + Math.sin(t * 3) * 2));
   x.rotate(((Math.round(t * 2) % 4) * Math.PI) / 2);
-  fallMe(-3, -8, 1, false);
+  drawFallingPlayer(-3, -8, 1, false);
   x.restore();
 }
 /* one still picture of the fall, as an image (cached): 'street', 'crust' or 'sky' at time t */
@@ -581,12 +581,12 @@ const FALL_STILLS = {};
 export function fallStill(kind, t, w = 200, h = 124) {
   const key = kind + '|' + t + '|' + w + 'x' + h;
   if (FALL_STILLS[key]) return FALL_STILLS[key];
-  const keep = { cv: FALL.cv, x: FALL.x, W: FALL.W, H: FALL.H },
+  const keep = { cv: openingFall.cv, x: openingFall.x, W: openingFall.W, H: openingFall.H },
     cv = document.createElement('canvas');
   cv.width = w;
   cv.height = h;
-  Object.assign(FALL, { cv, x: cv.getContext('2d'), W: w, H: h });
-  FALL.x.imageSmoothingEnabled = false;
+  Object.assign(openingFall, { cv, x: cv.getContext('2d'), W: w, H: h });
+  openingFall.x.imageSmoothingEnabled = false;
   try {
     ({ street: fallStreet, crust: fallCrust, sky: fallSky })[kind](t);
     FALL_STILLS[key] = cv.toDataURL();
@@ -594,12 +594,12 @@ export function fallStill(kind, t, w = 200, h = 124) {
     console.error(e);
     FALL_STILLS[key] = '';
   } finally {
-    Object.assign(FALL, keep);
+    Object.assign(openingFall, keep);
   }
   return FALL_STILLS[key];
 }
 /* ---- 3. the inner sky: across the Hollow Earth, past the Inner Sun, down to Sundown ---- */
-function fallCam(k) {
+function fallCamera(k) {
   const S0 = LOCATION_VECTORS[START_NODE],
     e = vector3.norm(vector3.cross(S0, [0, 1, 0])),
     n = vector3.norm(vector3.cross(e, S0)),
@@ -670,7 +670,7 @@ export function fallMap(run, ms) {
       const k = Math.min(1, (performance.now() - t0) / ms);
       try {
         worldMapGlSize();
-        worldMap.cam = fallCam(k);
+        worldMap.cam = fallCamera(k);
         worldMapGlRender(ts);
       } catch (e) {
         console.error(e);
@@ -689,15 +689,15 @@ export function fallMap(run, ms) {
         res();
         return;
       }
-      FALL.raf = requestAnimationFrame(step);
+      openingFall.raf = requestAnimationFrame(step);
     };
-    FALL.raf = requestAnimationFrame(step);
+    openingFall.raf = requestAnimationFrame(step);
   });
 }
 /* the whole fall; resolves on a white screen, ready for Sundown */
 async function fallPlay(run) {
   const alive = () => cutscene.on && cutscene.run === run && !cutscene.skip;
-  FALL.run = run;
+  openingFall.run = run;
   if (typeof music === 'function') music('fall');
   if (typeof artLoad === 'function')
     artLoad([typeof WORLD_ART !== 'undefined' ? WORLD_ART : 'map/world.png', 'map/world_h.png']).catch(() => {});
@@ -719,7 +719,7 @@ async function fallPlay(run) {
           res();
           return;
         }
-        FALL.raf = requestAnimationFrame(tick);
+        openingFall.raf = requestAnimationFrame(tick);
       };
       tick();
     });
@@ -743,7 +743,7 @@ async function fallPlay(run) {
     }
   }, 7600);
   if (alive()) await anim(t => fallCrust(t), 2900);
-  const gcv = alive() && !reducedMotion ? fallGL() : null;
+  const gcv = alive() && !reducedMotion ? fallMapCanvas() : null;
   if (!gcv && alive()) {
     cutsceneCaption('At the centre of everything', 'The Inner Sun', 2600);
     await anim(t => fallSky(t), reducedMotion ? 2600 : 3400);
@@ -753,26 +753,26 @@ async function fallPlay(run) {
     await new Promise(r => setTimeout(r, 350));
     gcv.hidden = false;
     gcv.classList.add('in');
-    if (FALL.cv) FALL.cv.hidden = true;
+    if (openingFall.cv) openingFall.cv.hidden = true;
     if (fade) fade.classList.remove('on');
     if (typeof sfx === 'function') sfx('whoosh', { dur: 3 });
     await fallMap(run, 9000);
   }
-  cancelAnimationFrame(FALL.raf);
+  cancelAnimationFrame(openingFall.raf);
   if (fade) fade.classList.add('on');
   if (typeof sfx === 'function' && alive()) sfx('thud');
   await new Promise(r => setTimeout(r, reducedMotion || cutscene.skip ? 0 : 500));
-  if (FALL.cv) {
-    FALL.cv.remove();
-    FALL.cv = null;
+  if (openingFall.cv) {
+    openingFall.cv.remove();
+    openingFall.cv = null;
   }
   document.body.classList.remove('cs-falling');
 }
 
 /* ---- 4. the landing: dust, and the papers that fell with you, settling round you (drawn by cutsceneFrame) ---- */
-const LAND = { bits: [] };
-provide({ LAND }); /* to-module */
-function landBurst(x, z) {
+const landing = { bits: [] };
+provide({ landing }); /* to-module */
+function landingBurst(x, z) {
   if (typeof walkView === 'undefined' || !walkView.parts) return;
   for (let i = 0; i < 30; i++) {
     const a = Math.random() * 6.283,
@@ -793,9 +793,9 @@ function landBurst(x, z) {
   const now = performance.now(),
     y0 = standingHeightAt(x, z),
     ic = ['paper', 'paper', 'tag', 'paper', 'floppy', 'paper', 'paper', 'bit'];
-  LAND.bits = [];
+  landing.bits = [];
   for (let i = 0; i < 10; i++)
-    LAND.bits.push({
+    landing.bits.push({
       k: ic[i % ic.length],
       x: x + (Math.random() - 0.5) * 4.5,
       z: z + (Math.random() - 0.2) * 3.2,
@@ -807,10 +807,10 @@ function landBurst(x, z) {
       down: 0,
     });
 }
-function landFrame(now, parts) {
-  if (!LAND.bits.length) return;
-  LAND.bits = LAND.bits.filter(b => !b.down || now - b.down < 1600);
-  for (const b of LAND.bits) {
+function landingFrame(now, parts) {
+  if (!landing.bits.length) return;
+  landing.bits = landing.bits.filter(b => !b.down || now - b.down < 1600);
+  for (const b of landing.bits) {
     if (now < b.t0) continue;
     const dt = b.last ? Math.min(0.25, (now - b.last) / 1000) : 0;
     b.last = now;

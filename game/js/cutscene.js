@@ -10,13 +10,13 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import {
-  FALL,
-  LAND,
   blakeHello,
   fallPlay,
-  landBurst,
-  landFrame,
+  landing,
+  landingBurst,
+  landingFrame,
   mapIdAt,
+  openingFall,
   provide,
   render,
   startGame,
@@ -393,7 +393,7 @@ export function cutsceneFrame() {
     const k = 1 - (now - f.t0) / 500;
     lights.push({ p: f.p, r: 2.6, c: [1.4 * k, 1.2 * k, 0.7 * k] });
   }
-  if (typeof landFrame === 'function') landFrame(now, parts);
+  if (typeof landingFrame === 'function') landingFrame(now, parts);
   const K = cutsceneCameraNow() || { eye: [17, 14, -6], tgt: [17, 0, 12], fov: 42, w: 0 },
     sway = reducedMotion ? 0 : 1,
     look = {
@@ -554,7 +554,7 @@ export async function cutsceneStart() {
   cutscene.choosing = false;
   cutscene.hide = null;
   cutscene.rival = false;
-  if (typeof LAND !== 'undefined') LAND.bits = [];
+  if (typeof landing !== 'undefined') landing.bits = [];
   cutscene.pickList = RULES.start.starters.filter(l => SPECIES[l + '0']);
   let el = $('#cs');
   if (!el) {
@@ -674,7 +674,7 @@ async function cutsceneScript(run) {
     cutsceneShot({ eye: [M[0] + 0.06, gy + h, M[1] - 0.32], tgt, fov, w: 1.3, abs: 1 }, ms);
   /* 1. you wake in the dust outside the lab, the papers that fell with you still coming down */
   pov(0.4, [M[0] + 2.4, gy + 3.9, M[1] + 5.4], 58);
-  if (typeof landBurst === 'function') landBurst(M[0], M[1]);
+  if (typeof landingBurst === 'function') landingBurst(M[0], M[1]);
   if (cutscene.skip) body.classList.remove('cs-dazed');
   if (fade) fade.classList.remove('on');
   setTimeout(() => {
@@ -911,14 +911,14 @@ export function cutsceneTeardown() {
     el.hidden = true;
     el.innerHTML = '';
   }
-  if (typeof FALL !== 'undefined') {
-    cancelAnimationFrame(FALL.raf);
-    if (FALL.cv) {
-      FALL.cv.remove();
-      FALL.cv = null;
+  if (typeof openingFall !== 'undefined') {
+    cancelAnimationFrame(openingFall.raf);
+    if (openingFall.cv) {
+      openingFall.cv.remove();
+      openingFall.cv = null;
     }
   }
-  if (typeof LAND !== 'undefined') LAND.bits = [];
+  if (typeof landing !== 'undefined') landing.bits = [];
   document.body.classList.remove('in-cs', 'cs-choosing', 'cs-dress', 'cs-falling', 'cs-dazed', 'cs-waking', 'cs-blink');
   if (walkView.cv) stopWalkView();
 }

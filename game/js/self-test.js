@@ -82,7 +82,7 @@ import {
 } from './world-map-gl.js';
 import { TALK, talkHide } from './talk.js';
 import { cutscene, cutsceneTeardown } from './cutscene.js';
-import { battleTipHide, fallGL, fallMap } from './opening-fall.js';
+import { battleTipHide, fallMap, fallMapCanvas } from './opening-fall.js';
 import { closeModal, leaveRoom, mapIdAt, modal, render, renderOverlay, toast, walkPick } from './ui.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -1056,7 +1056,7 @@ async function runFullTest(mode) {
           uiState.bench = null;
           uiState.inside = null;
           if (typeof walkView !== 'undefined' && walkView.cv) stopWalkView();
-          const cv = fallGL();
+          const cv = fallMapCanvas();
           if (!cv) {
             uiState.tab = 'walk';
             render();
