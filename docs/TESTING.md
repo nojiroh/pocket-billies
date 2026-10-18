@@ -88,6 +88,13 @@ same phase:
   log's picture. Smoke plants a trainer name and a Billie nickname and fails if either reaches the exported log; a
   new field in the log must keep it passing. **(13c)** Opt-in error reports follow the same rules, from an allowlist.
 - **(13c)** The full test and the debug menu load on demand; the recording part of the debug log stays loaded.
+- The graphics test (Settings → Help → Run the graphics test, and the debug menu; `game/js/graphics-test.js`, loaded on
+  demand) is run only by a person, by hand, on their own device: never from Claude Code, CI, a headless browser or
+  a script, and no command-line runner, CI job or hook. It tries the shaders, each engine dial on its own (ENGINE_SPEC,
+  moved away from its default), Balanced, Beautiful and each engine preset, in one scene, and saves a short .json
+  report. A new dial in ENGINE_SPEC is tested with no change; a new kind of dial needs a value in
+  `graphicsDialValue`. Its rules (the dial values, the report's planted-name check) are unit tests in
+  `tools/test/graphics-test.test.mjs`.
 
 ## What each phase does
 

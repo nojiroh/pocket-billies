@@ -10,12 +10,13 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { gameData, provide, reducedMotion } from './hooks.js';
-import { artImg, artURL, hexToRgb } from './art.js';
+import { artImg, artURL, hexToRgb, makeCanvas } from './art.js';
 import { artImage, walkView } from './walk-view.js';
 import { engineSetting } from './engine/settings.js';
 import { COMMON_GLSL, LIGHT_GLSL, ensurePrograms, gpuState, imageTexture } from './engine/webgl.js';
 import {
   addHitTarget,
+  lampLit,
   setPropLookUniforms,
   useWalkProgram,
   walkRenderer,
@@ -25,11 +26,14 @@ import {
 import { BUILDING_SHADERS, buildingArt, buildingTextureGrid } from './buildings.js';
 /* eslint-disable no-func-assign */
 expose({
+  LAYER_PROPS: [() => LAYER_PROPS],
+  LEAF_CUTS: [() => LEAF_CUTS],
   LOW_POLY_TEXTURE_CELLS: [() => LOW_POLY_TEXTURE_CELLS],
   PROP_MODEL_SHADERS: [() => PROP_MODEL_SHADERS],
   PROP_MODEL_SHAPES: [() => PROP_MODEL_SHAPES],
   PROP_MODEL_TEXTURES: [() => PROP_MODEL_TEXTURES],
   SPIN_GLSL: [() => SPIN_GLSL],
+  SWAPPED_RECIPES: [() => SWAPPED_RECIPES],
   VOXEL_KEY_OFFSET: [() => VOXEL_KEY_OFFSET],
   VOXEL_KEY_SPAN: [() => VOXEL_KEY_SPAN],
   VOXEL_TEXTURE_GRAIN: [() => VOXEL_TEXTURE_GRAIN],
@@ -49,6 +53,10 @@ expose({
   ],
   greedyVoxelMesh: [() => greedyVoxelMesh, v => (greedyVoxelMesh = v)],
   invalidatePropModel: [() => invalidatePropModel, v => (invalidatePropModel = v)],
+  layerProp: [() => layerProp, v => (layerProp = v)],
+  leafCut: [() => leafCut, v => (leafCut = v)],
+  leafOutlineColour: [() => leafOutlineColour, v => (leafOutlineColour = v)],
+  limbPoints: [() => limbPoints, v => (limbPoints = v)],
   loadPropModelRecipe: [() => loadPropModelRecipe, v => (loadPropModelRecipe = v)],
   lowPolyFragmentShader: [() => lowPolyFragmentShader, v => (lowPolyFragmentShader = v)],
   lowPolyFromRecipe: [() => lowPolyFromRecipe, v => (lowPolyFromRecipe = v)],
@@ -63,6 +71,7 @@ expose({
   propModelState: [() => propModelState],
   propModelsOn: [() => propModelsOn, v => (propModelsOn = v)],
   setPropModelUniforms: [() => setPropModelUniforms, v => (setPropModelUniforms = v)],
+  swappedRecipe: [() => swappedRecipe, v => (swappedRecipe = v)],
   tagPropModel: [() => tagPropModel, v => ((tagPropModel = v), provide({ tagPropModel }))],
   uploadLowPolyMesh: [() => uploadLowPolyMesh, v => (uploadLowPolyMesh = v)],
   uploadPrebuiltModel: [() => uploadPrebuiltModel, v => (uploadPrebuiltModel = v)],
@@ -105,6 +114,8 @@ const VOXEL_TEXTURE_GRAIN = {
   rust: 0.16,
   stripes: 0,
   rings: 0,
+  bark: 0.16,
+  rock: 0.2,
 };
 export const PROP_MODEL_TEXTURES = [
   ['plain', 'Plain'],
@@ -118,6 +129,8 @@ export const PROP_MODEL_TEXTURES = [
   ['rust', 'Rust'],
   ['stripes', 'Stripes'],
   ['rings', 'Rings'],
+  ['bark', 'Bark'],
+  ['rock', 'Rock'],
 ];
 const PROP_MODEL_SHAPES = [
   ['box', 'Box'],
@@ -125,6 +138,8 @@ const PROP_MODEL_SHAPES = [
   ['sphere', 'Sphere'],
   ['cone', 'Cone'],
   ['barrel', 'Barrel'],
+  ['limb', 'Limb (from x, y, z to x2, y2, z2)'],
+  ['dome', 'Dome'],
 ];
 function propModelsOn() {
   return typeof engineSetting === 'function' && (engineSetting('world', 'voxelProps') ?? true) && !propModelState.fail;
@@ -205,6 +220,18 @@ function voxelFromKey(k) {
     y = r % VOXEL_KEY_SPAN;
   return [(r - y) / VOXEL_KEY_SPAN - VOXEL_KEY_OFFSET, y - VOXEL_KEY_OFFSET, z - VOXEL_KEY_OFFSET];
 }
+/* phase 09 batch 1: a limb's points as [x, y, z, radius] in metres (x across, y depth, z up): its own list (pts, for a
+   bent trunk or branch), else from (x, y, z) with radius r to (x2, y2, z2) with radius r1. A point may sit a little
+   under the ground (a root going in). */
+function limbPoints(L) {
+  if (Array.isArray(L.pts) && L.pts.length >= 2)
+    return L.pts.map(q => [+q[0] || 0, +q[1] || 0, Math.max(-0.3, +q[2] || 0), Math.max(0.002, +q[3] || 0.05)]);
+  const r0 = Math.max(L.r || 0.1, 0.002);
+  return [
+    [L.x || 0, L.y || 0, Math.max(-0.3, L.z || 0), r0],
+    [L.x2 ?? (L.x || 0), L.y2 ?? (L.y || 0), Math.max(-0.3, L.z2 ?? (L.z || 0) + 1), Math.max(L.r1 ?? r0 * 0.7, 0.002)],
+  ];
+}
 /* voxels from a recipe at R to the metre: Map key -> colour (x across, y depth, z up); V.ins: the shapes' insides */
 function voxelise(rec, R) {
   R = R || voxelResolution();
@@ -242,6 +269,56 @@ function voxelise(rec, R) {
       B = [xa, xb, ya, yb, za, zb];
       inside = (x, y, z) => x >= xa && x < xb && y >= ya && y < yb && z >= za && z < zb;
       along = L.h >= Math.max(L.w, L.d) ? 2 : L.w >= L.d ? 0 : 1;
+    } else if (L.k === 'limb') {
+      /* a tapered branch: inside where the distance to any of its segments is under the radius there */
+      const P = limbPoints(L),
+        S = [];
+      let mr = 0;
+      for (let i = 0; i < P.length - 1; i++) {
+        const A = P[i],
+          Bq = P[i + 1],
+          d = [Bq[0] - A[0], Bq[1] - A[1], Bq[2] - A[2]];
+        S.push([
+          A,
+          d,
+          d[0] * d[0] + d[1] * d[1] + d[2] * d[2] || 1e-9,
+          Math.max(A[3], 0.5 / R),
+          Math.max(Bq[3], 0.5 / R),
+        ]);
+        mr = Math.max(mr, A[3], Bq[3], 0.5 / R);
+      }
+      inside = (x, y, z) => {
+        const px = (x + 0.5) / R,
+          py = (y + 0.5) / R,
+          pz = (z + 0.5) / R;
+        for (const [A, d, ll, ra, rb] of S) {
+          const ax = px - A[0],
+            ay = py - A[1],
+            az = pz - A[2],
+            k = Math.max(0, Math.min(1, (ax * d[0] + ay * d[1] + az * d[2]) / ll)),
+            ex = ax - d[0] * k,
+            ey = ay - d[1] * k,
+            ez = az - d[2] * k,
+            rr = ra + (rb - ra) * k;
+          if (ex * ex + ey * ey + ez * ez <= rr * rr) return true;
+        }
+        return false;
+      };
+      const xs = P.map(q => q[0]),
+        ys = P.map(q => q[1]),
+        zs = P.map(q => q[2]);
+      B = [
+        fl((Math.min(...xs) - mr) * R) - 1,
+        fl((Math.max(...xs) + mr) * R) + 2,
+        fl((Math.min(...ys) - mr) * R) - 1,
+        fl((Math.max(...ys) + mr) * R) + 2,
+        Math.max(0, fl((Math.min(...zs) - mr) * R) - 1),
+        fl((Math.max(...zs) + mr) * R) + 2,
+      ];
+      const dz = Math.abs(zs[zs.length - 1] - zs[0]),
+        dx = Math.abs(xs[xs.length - 1] - xs[0]),
+        dy = Math.abs(ys[ys.length - 1] - ys[0]);
+      along = dz >= Math.max(dx, dy) ? 2 : dx >= dy ? 0 : 1;
     } else {
       const r = Math.max(L.r || 0.1, 0.5 / R),
         ry = Math.max(L.ry || r, 0.5 / R),
@@ -256,6 +333,7 @@ function voxelise(rec, R) {
         const k = ((z + 0.5) / R - z0) / Math.max(h, 1e-6);
         let f = 1;
         if (L.k === 'sphere') f = Math.sqrt(Math.max(0, 1 - (2 * k - 1) * (2 * k - 1)));
+        else if (L.k === 'dome') f = Math.sqrt(Math.max(0, 1 - k * k));
         else if (L.k === 'cone') f = 1 - k + (k * (L.r1 || 0)) / r;
         else if (L.k === 'barrel') f = 1 - bu + bu * Math.sin(k * Math.PI) * 2 - bu;
         RR.push(r * f);
@@ -285,8 +363,8 @@ function voxelise(rec, R) {
       bl = Math.max(1, Math.round((2 * R) / 32)),
       sw = Math.max(1, (R / 4) | 0),
       rw = Math.max(1, (R / 8) | 0),
-      streak = t === 'wood' || t === 'grain' || t === 'hay',
-      blot = t === 'stone' || t === 'rust' || t === 'leaves',
+      streak = t === 'wood' || t === 'grain' || t === 'hay' || t === 'bark',
+      blot = t === 'stone' || t === 'rust' || t === 'leaves' || t === 'rock',
       c0 = pk(c);
     for (let z = Math.max(0, za); z < zb; z++)
       for (let x = xa; x < xb; x++)
@@ -572,6 +650,7 @@ function propModelMesh(path, rec) {
               c: [l.spin.x || 0, l.spin.z || 0, l.spin.y || 0],
               a: a.map(v => v / al),
               rps: l.spin.rps ?? 1.5,
+              sw: +l.spin.swing || 0,
             });
         }
     propModelState.meshes.set(path, m);
@@ -626,6 +705,7 @@ function propModelMesh(path, rec) {
           c: [l.spin.x || 0, l.spin.z || 0, l.spin.y || 0],
           a: a.map(v => v / al),
           rps: l.spin.rps ?? 1.5,
+          sw: +l.spin.swing || 0,
         });
     }
   propModelState.meshes.set(path, m);
@@ -637,7 +717,11 @@ function drawSpinningParts(p, m) {
   const gl = gpuState.gl,
     t = (reducedMotion ? 0 : walkView.t || 0) / 1000;
   for (const s of m.spins) {
-    gl.uniform4f(p.U.uSpin, s.a[0], s.a[1], s.a[2], t * s.rps * Math.PI * 2);
+    /* phase 09 batch 1: a part may swing to and fro instead of turning round (spin.swing: how far, in radians; rps:
+       swings a second; a swing on its ropes) */
+    const ph = t * s.rps * Math.PI * 2,
+      an = s.sw ? Math.sin(ph) * s.sw : ph;
+    gl.uniform4f(p.U.uSpin, s.a[0], s.a[1], s.a[2], an);
     gl.uniform3fv(p.U.uSpinC, s.c);
     drawPropModelMesh(s);
   }
@@ -719,7 +803,11 @@ function uploadPrebuiltModel(rec) {
    with a few sides, a sphere is a small globe. Each recipe texture has its cell on the building sheet: wood is planks
    (along a board, up a post or a stave), stone is stone blocks (rough plaster on round stones), metal is metal seams,
    cloth is cloth, hay is thatch, leaves are moss, rust is rivets, stripes are stripes, rings are a cut log's rings
-   (on the top). Recipes with imported voxels stay voxels. */
+   (on the top), bark is bark (fissures along a trunk or branch), rock is rough rock. Recipes with imported voxels stay
+   voxels. Phase 09 batch 1: a limb is a tapered branch from one point to another (x, y, z to x2, y2, z2; r at the
+   start, r1 at the end), a dome is the top half of a sphere (a mossy roof); any round shape can take sides (how many
+   faces round it), rings (a sphere's or dome's bands), lump (how uneven it is, as a leafy globe is) and facet (flat
+   faces, for rocks). */
 const LOW_POLY_TEXTURE_CELLS = {
   plain: 15,
   wood: 14,
@@ -732,6 +820,8 @@ const LOW_POLY_TEXTURE_CELLS = {
   rust: 19,
   stripes: 20,
   rings: 15,
+  bark: 22,
+  rock: 23,
 };
 function lowPolyFromRecipe(rec) {
   const V = [],
@@ -851,6 +941,79 @@ function lowPolyFromRecipe(rec) {
       );
       continue;
     }
+    /* phase 09 batch 1: a limb, a tapered branch along a few points (up is the model's y here), with a few sides */
+    if (L.k === 'limb') {
+      const P = limbPoints(L).map(q => [q[0], q[2], q[1], q[3]]);
+      if (P.length < 2) continue;
+      const cr = (p, q) => [p[1] * q[2] - p[2] * q[1], p[2] * q[0] - p[0] * q[2], p[0] * q[1] - p[1] * q[0]],
+        nz = v => {
+          const l = Math.hypot(v[0], v[1], v[2]) || 1;
+          return [v[0] / l, v[1] / l, v[2] / l];
+        },
+        sub = (p, q) => [p[0] - q[0], p[1] - q[1], p[2] - q[2]],
+        r0 = Math.max(P[0][3], 0.01),
+        n = L.sides
+          ? Math.max(3, Math.min(24, L.sides | 0))
+          : Math.max(5, Math.min(10, Math.round((2 * Math.PI * r0 * 32) / 6))),
+        tx = T(t, 1),
+        arc = (2 * Math.PI * r0) / n;
+      /* the direction at each point (along the bend), and a frame carried along it so the sides don't twist */
+      const D = P.map((q, i) => nz(sub(P[Math.min(P.length - 1, i + 1)], P[Math.max(0, i - 1)]))),
+        a0 = D[0];
+      let u = nz(cr(a0, Math.abs(a0[1]) < 0.9 ? [0, 1, 0] : [1, 0, 0]));
+      const G = [];
+      let len = 0;
+      for (let i = 0; i < P.length; i++) {
+        const a = D[i];
+        if (i) {
+          len += Math.hypot(...sub(P[i], P[i - 1]));
+          const k = u[0] * a[0] + u[1] * a[1] + u[2] * a[2];
+          u = nz([u[0] - a[0] * k, u[1] - a[1] * k, u[2] - a[2] * k]);
+        }
+        const v = cr(a, u),
+          rr = Math.max(P[i][3], 0.004),
+          row = [];
+        for (let j = 0; j <= n; j++) {
+          const an = (2 * Math.PI * (j % n)) / n,
+            c0 = Math.cos(an),
+            sn = Math.sin(an),
+            nr = [u[0] * c0 + v[0] * sn, u[1] * c0 + v[1] * sn, u[2] * c0 + v[2] * sn];
+          row.push([[P[i][0] + nr[0] * rr, P[i][1] + nr[1] * rr, P[i][2] + nr[2] * rr], nr, len]);
+        }
+        G.push(row);
+      }
+      for (let i = 0; i < G.length - 1; i++)
+        for (let j = 0; j < n; j++)
+          poly(
+            [G[i][j][0], G[i + 1][j][0], G[i + 1][j + 1][0], G[i][j + 1][0]],
+            [G[i][j][1], G[i + 1][j][1], G[i + 1][j + 1][1], G[i][j + 1][1]],
+            [
+              [j * arc, G[i][j][2]],
+              [j * arc, G[i + 1][j][2]],
+              [(j + 1) * arc, G[i + 1][j][2]],
+              [(j + 1) * arc, G[i][j][2]],
+            ],
+            tx,
+            c
+          );
+      /* the end cap (the cut end of a branch shows rings when the texture is bark) */
+      const E = P[P.length - 1],
+        GE = G[G.length - 1],
+        r1 = Math.max(E[3], 0.004);
+      for (let j = 0; j < n; j++)
+        poly(
+          [E.slice(0, 3), GE[j + 1][0], GE[j][0]],
+          D[D.length - 1],
+          [
+            [1, 1],
+            [1 + Math.cos((2 * Math.PI * (j + 1)) / n) * r1, 1 + Math.sin((2 * Math.PI * (j + 1)) / n) * r1],
+            [1 + Math.cos((2 * Math.PI * j) / n) * r1, 1 + Math.sin((2 * Math.PI * j) / n) * r1],
+          ],
+          tx,
+          c
+        );
+      continue;
+    }
     /* round shapes: rings up the shape, each its radius across (r) and in depth (ry) */
     const r = Math.max(L.r || 0.1, 0.01),
       ry = Math.max(L.ry || r, 0.01),
@@ -864,13 +1027,24 @@ function lowPolyFromRecipe(rec) {
         const k = i / 6;
         R.push([k, 1 - bu + bu * Math.sin(k * Math.PI) * 2 - bu]);
       }
-    else
-      for (let i = 0; i <= 8; i++) {
-        const k = (1 - Math.cos((Math.PI * i) / 8)) / 2;
+    else if (L.k === 'dome') {
+      const nb = Math.max(2, Math.min(12, L.rings || 5));
+      for (let i = 0; i <= nb; i++) {
+        const an = ((Math.PI / 2) * i) / nb;
+        R.push([Math.sin(an), Math.cos(an)]);
+      }
+    } else {
+      const nb = Math.max(2, Math.min(16, L.rings || 8));
+      for (let i = 0; i <= nb; i++) {
+        const k = (1 - Math.cos((Math.PI * i) / nb)) / 2;
         R.push([k, Math.sqrt(Math.max(0, 1 - (2 * k - 1) * (2 * k - 1)))]);
       }
-    const lumpy = t === 'leaves' && L.k === 'sphere',
-      n = Math.max(6, Math.min(lumpy ? 16 : 20, Math.round((2 * Math.PI * Math.max(r, ry) * 32) / 5))),
+    }
+    const la = L.lump != null ? +L.lump : t === 'leaves' && L.k === 'sphere' ? 0.22 : 0,
+      lumpy = la > 0,
+      n = L.sides
+        ? Math.max(3, Math.min(32, L.sides | 0))
+        : Math.max(6, Math.min(lumpy ? 16 : 20, Math.round((2 * Math.PI * Math.max(r, ry) * 32) / 5))),
       tx = T(t, 1),
       stave = t === 'wood' || t === 'grain',
       NR = R.length;
@@ -884,7 +1058,7 @@ function lowPolyFromRecipe(rec) {
         const a = (2 * Math.PI * (j % n)) / n,
           lu =
             lumpy && i > 0 && i < NR - 1
-              ? 1 + 0.22 * (voxelHash(i * 7 + li3, j % n, 13) - 0.5) + 0.12 * Math.sin(a * 3 + i)
+              ? 1 + la * (voxelHash(i * 7 + li3, j % n, 13) - 0.5) + la * 0.545 * Math.sin(a * 3 + i)
               : 1;
         row.push([x0 + Math.cos(a) * r * f * lu, y, y0 + Math.sin(a) * ry * f * lu]);
       }
@@ -944,9 +1118,21 @@ function lowPolyFromRecipe(rec) {
           stave
             ? [yy, jj * arc]
             : [jj * arc, yy]; /* round by the angle: stripes run out from the middle, staves stay straight */
+        const Q = [G[i][j], G[i + 1][j], G[i + 1][j + 1], G[i][j + 1]];
+        let FN = null;
+        if (L.facet) {
+          /* flat faces (rocks): each quad lit by its own normal, pointing away from the shape's middle */
+          const e1 = [Q[2][0] - Q[0][0], Q[2][1] - Q[0][1], Q[2][2] - Q[0][2]],
+            e2 = [Q[3][0] - Q[1][0], Q[3][1] - Q[1][1], Q[3][2] - Q[1][2]];
+          FN = [e1[1] * e2[2] - e1[2] * e2[1], e1[2] * e2[0] - e1[0] * e2[2], e1[0] * e2[1] - e1[1] * e2[0]];
+          const mx = (Q[0][0] + Q[2][0]) / 2 - x0,
+            my = (Q[0][1] + Q[2][1]) / 2 - ((L.z || 0) + h / 2),
+            mz = (Q[0][2] + Q[2][2]) / 2 - y0;
+          if (FN[0] * mx + FN[1] * my + FN[2] * mz < 0) FN = [-FN[0], -FN[1], -FN[2]];
+        }
         poly(
-          [G[i][j], G[i + 1][j], G[i + 1][j + 1], G[i][j + 1]],
-          [NM[i][j], NM[i + 1][j], NM[i + 1][j + 1], NM[i][j + 1]],
+          Q,
+          FN || [NM[i][j], NM[i + 1][j], NM[i + 1][j + 1], NM[i][j + 1]],
           [uv(j, y0r), uv(j, y1r), uv(j + 1, y1r), uv(j + 1, y0r)],
           tx,
           c
@@ -1138,6 +1324,26 @@ void main(){float cr=cos(uRot),sr=sin(uRot);vec3 q0=voxSpin(qPos*uQ-uSpinC)+uSpi
 precision highp float;out vec4 o;void main(){o=vec4(1.);}`,
   ],
 };
+/* phase 09 batch 1: a recipe with some colours and pictures swapped (swap: {"#old": "#new", "old/path.png": "new/path.png"}),
+   made once per variant: a palette swap for the solid parts, a picture swap for the picture layers */
+const SWAPPED_RECIPES = new Map();
+function swappedRecipe(path, rec, swap) {
+  const c = SWAPPED_RECIPES.get(path);
+  if (c && c.src === rec) return c.rec;
+  const up = v => (typeof v === 'string' ? v.toUpperCase() : v),
+    S = new Map(Object.entries(swap || {}).map(([a, b]) => [up(a), b])),
+    out = {
+      ...rec,
+      layers: (rec.layers || []).map(L => {
+        const n = { ...L };
+        if (n.col && S.has(up(n.col))) n.col = S.get(up(n.col));
+        if (n.img && S.has(up(n.img))) n.img = S.get(up(n.img));
+        return n;
+      }),
+    };
+  SWAPPED_RECIPES.set(path, { src: rec, rec: out });
+  return out;
+}
 /* tag an item that draws as voxels (gatherFrameItems calls this): the sprite and the solid-prop body stand aside */
 function tagPropModel(it) {
   if (
@@ -1158,6 +1364,11 @@ function tagPropModel(it) {
   } else {
     rec = loadPropModelRecipe(spec);
     path = spec;
+  }
+  /* phase 09 batch 1: a variant that swaps colours or pictures (an autumn oak: the same trunk, other leaves) */
+  if (rec && it.M.swap) {
+    path += '#' + (it.M._vk ?? JSON.stringify(it.M.swap));
+    rec = swappedRecipe(path, rec, it.M.swap);
   }
   const R = voxelResolution() + (engineSetting('world', 'voxelLowPoly') ? 1000 : 0);
   if (propModelState.res !== R) {
@@ -1187,7 +1398,11 @@ function tagPropModel(it) {
   it.vox = rec;
   it.voxPath = path;
 }
-/* picture layers of a voxel prop as sprite items of their own (set in the model, metres from its base) */
+/* picture layers of a voxel prop as sprite items of their own (set in the model, metres from its base). Phase 09
+   batch 1, for trees with a modelled trunk and drawn leaf clumps: a layer may say shadow (1: it casts its cut-out
+   shadow), recv (0: it takes no shadows from the shadow map, for a crown that would shade its own clumps in stripes),
+   sway (how much the wind moves it, times the prop's sway; the model itself stays still), glow (it lights up
+   when the lamps come on, a lantern's glass), and the recipe its art's scale (ppm: pixels to the metre; else the scenery's) */
 function propModelImageItems(it, out) {
   const rec = it.vox;
   if (!rec) return;
@@ -1198,20 +1413,23 @@ function propModelImageItems(it, out) {
     sr = Math.sin(ro);
   for (const L of rec.layers || []) {
     if (L.k !== 'img' || L.hide) continue;
-    const im = typeof artImage === 'function' ? artImage(L.img) : null;
-    if (!im || !(im.naturalWidth || im.width)) {
+    const im0 = typeof artImage === 'function' ? artImage(L.img) : null;
+    if (!im0 || !(im0.naturalWidth || im0.width)) {
       if (typeof artImg === 'function' && L.img) artImg(L.img);
       continue;
     }
+    const im = L.clip || L.shade ? leafCut(im0, L) : im0;
+    if (!im) continue;
     const lx = (L.x || 0) * s * f,
       lz = (L.y || 0) * s,
       w = im.naturalWidth || im.width,
       h = im.naturalHeight || im.height,
-      mpp = (L.s || 1) / ((typeof gameData !== 'undefined' && gameData.scenery && gameData.scenery.ppu) || 34);
+      mpp =
+        (L.s || 1) / (rec.ppm || (typeof gameData !== 'undefined' && gameData.scenery && gameData.scenery.ppu) || 34);
     out.push({
       k: 'prop',
       p: it.p,
-      M: it.M,
+      M: layerProp(it.M),
       im,
       x: it.x + lx * cr - lz * sr,
       z: it.z + lx * sr + lz * cr,
@@ -1222,8 +1440,10 @@ function propModelImageItems(it, out) {
       w,
       h,
       flip: L.flip ? -f : f,
-      shear: it.shear || 0,
-      sh: 0,
+      shear: (it.shear || 0) * (L.sway ?? 1),
+      sh: L.shadow ? (it.M && it.M.shadow ? it.M.shadow : 1) * s : 0,
+      glow: L.glow ? L.glow * (typeof lampLit === 'function' ? lampLit(it.x, it.z, 0) : 1) : 0,
+      noRecv: L.recv === 0,
       fixed: L.face === 'fixed',
       plane: L.face === 'fixed',
       mat: it.mat,
@@ -1232,6 +1452,110 @@ function propModelImageItems(it, out) {
       voxImg: 1,
     });
   }
+}
+/* phase 09 batch 1: a tree's leaves are one picture, its crown as drawn (paint it in the Studio like any prop picture).
+   Each clump is cut from it at run time: clip [x, y, r] is a circle in that picture's pixels; the cut is a square
+   2r across with the circle's bottom at its base (where the clump stands), and the lower rim of the cut gets the
+   picture's darkest colour as an outline, as a drawn clump has. shade darkens the whole picture (the crown's core,
+   behind the clumps). Cuts are kept per picture and made again when the picture changes (the Studio's _ver). */
+const LEAF_CUTS = new WeakMap();
+function leafOutlineColour(d) {
+  const n = new Map();
+  for (let i = 0; i < d.length; i += 4)
+    if (d[i + 3] > 127) {
+      const k = (d[i] << 16) | (d[i + 1] << 8) | d[i + 2];
+      n.set(k, (n.get(k) || 0) + 1);
+    }
+  let best = 0,
+    bl = 1e9;
+  for (const [k, c] of n)
+    if (c > 15) {
+      const l = 0.299 * (k >> 16) + 0.587 * ((k >> 8) & 255) + 0.114 * (k & 255);
+      if (l < bl) {
+        bl = l;
+        best = k;
+      }
+    }
+  return [best >> 16, (best >> 8) & 255, best & 255];
+}
+function leafCut(im, L) {
+  const ver = im._ver || 0;
+  let C = LEAF_CUTS.get(im);
+  if (!C || C.ver !== ver) {
+    const W = im.naturalWidth || im.width,
+      H = im.naturalHeight || im.height,
+      src = makeCanvas(W, H),
+      x = src.getContext('2d');
+    x.drawImage(im, 0, 0);
+    const data = x.getImageData(0, 0, W, H).data;
+    C = { ver, W, H, data, outline: leafOutlineColour(data), cuts: new Map() };
+    LEAF_CUTS.set(im, C);
+  }
+  const key = (L.clip || []).join(',') + '|' + (L.shade || 1);
+  let out = C.cuts.get(key);
+  if (out) return out;
+  const { W, H, data } = C,
+    sh = L.shade || 1;
+  if (!L.clip) {
+    out = makeCanvas(W, H);
+    const X = out.getContext('2d'),
+      o = X.createImageData(W, H);
+    for (let i = 0; i < data.length; i += 4) {
+      o.data[i] = data[i] * sh;
+      o.data[i + 1] = data[i + 1] * sh;
+      o.data[i + 2] = data[i + 2] * sh;
+      o.data[i + 3] = data[i + 3];
+    }
+    X.putImageData(o, 0, 0);
+  } else {
+    const [cx, cy, r] = L.clip,
+      R = Math.max(1, Math.ceil(r)),
+      S = 2 * R,
+      x0 = Math.round(cx) - R,
+      y0 = Math.round(cy) - R,
+      inC = (px, py) => (px + 0.5 - cx) ** 2 + (py + 0.5 - cy) ** 2 <= r * r,
+      op = (px, py) => px >= 0 && py >= 0 && px < W && py < H && data[(py * W + px) * 4 + 3] > 127;
+    out = makeCanvas(S, S);
+    const X = out.getContext('2d'),
+      o = X.createImageData(S, S);
+    for (let y = 0; y < S; y++)
+      for (let x = 0; x < S; x++) {
+        const px = x0 + x,
+          py = y0 + y;
+        if (!op(px, py) || !inC(px, py)) continue;
+        const i = (py * W + px) * 4,
+          j = (y * S + x) * 4,
+          rim =
+            py > cy - r * 0.25 &&
+            [
+              [1, 0],
+              [-1, 0],
+              [0, 1],
+              [0, -1],
+            ].some(([a, b]) => op(px + a, py + b) && !inC(px + a, py + b));
+        const c = rim ? C.outline : [data[i], data[i + 1], data[i + 2]];
+        o.data[j] = c[0] * sh;
+        o.data[j + 1] = c[1] * sh;
+        o.data[j + 2] = c[2] * sh;
+        o.data[j + 3] = 255;
+      }
+    X.putImageData(o, 0, 0);
+  }
+  C.cuts.set(key, out);
+  return out;
+}
+/* phase 09 batch 1: a picture layer of a model with a footprint (a cottage's door and windows) is a plain picture: the
+   footprint (box) would draw it as a building front pushed back through the house, inside its own walls */
+const LAYER_PROPS = new WeakMap();
+function layerProp(M) {
+  if (!M || !M.box) return M;
+  let o = LAYER_PROPS.get(M);
+  if (!o) {
+    o = { ...M };
+    delete o.box;
+    LAYER_PROPS.set(M, o);
+  }
+  return o;
 }
 /* alpha 0.4.1: a moored airship (catalogue bob: metres) rides the air: it rises and settles, a little more in a stronger
    wind, and swings a few degrees round its mast (it turns about its base point, the mast's foot) */
@@ -1338,6 +1662,13 @@ function propModelArtPaths(sc, C) {
     any = true;
     const rec = propModelState.recipes.get(M.model);
     if (rec) for (const l of rec.layers || []) if (l.k === 'img' && l.img) L.push(l.img);
+    /* phase 09 batch 1: a variant's own model and swapped pictures (the autumn oak's leaves) load with the place too */
+    const V = p.v && M.variants ? M.variants[p.v - 1] : null;
+    if (V && V.swap) for (const v of Object.values(V.swap)) if (/\.png$/i.test(v)) L.push(v);
+    if (V && typeof V.model === 'string') {
+      const r2 = propModelState.recipes.get(V.model);
+      if (r2) for (const l of r2.layers || []) if (l.k === 'img' && l.img) L.push(l.img);
+    }
   }
   /* alpha 0.4: the low-poly props and models are painted from the building sheet */
   if (any) L.push((C.buildArt && C.buildArt.detail) || 'scene/build/detail.png');

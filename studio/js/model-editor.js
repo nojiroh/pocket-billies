@@ -30,11 +30,14 @@ import {
   toast,
 } from './studio-app.js';
 import { fileToCanvas, markArt, pickFile } from './sprites.js';
-import { mapEditor, sceneryCatalog } from './map-editor.js';
+import { mapEditor, openSceneryPixelEditor, sceneryCatalog } from './map-editor.js';
 import { editedProp } from './prop-editor.js';
 /* eslint-disable no-func-assign */
 expose({
   MODEL_LAYER_KINDS: [() => MODEL_LAYER_KINDS],
+  leafSheetSVG: [() => leafSheetSVG, v => (leafSheetSVG = v)],
+  leafSheets: [() => leafSheets, v => (leafSheets = v)],
+  leavesHTML: [() => leavesHTML, v => (leavesHTML = v)],
   mainPictureColor: [() => mainPictureColor, v => (mainPictureColor = v)],
   modelChanged: [() => modelChanged, v => (modelChanged = v)],
   modelEditor: [() => modelEditor],
@@ -52,6 +55,8 @@ const MODEL_LAYER_KINDS = [
   ['sphere', 'Sphere'],
   ['cone', 'Cone'],
   ['barrel', 'Barrel'],
+  ['limb', 'Limb (a branch)'],
+  ['dome', 'Dome'],
   ['img', 'Picture'],
   ['raw', 'Imported voxels'],
 ];
@@ -120,17 +125,37 @@ function modelEditorHTML(k) {
           ],
           { opt: 1 }
         ),
-        checkboxField('Mirrored', `${p}.flip`, { num: 1 })
-      )}<div class="grid">${pos}</div><div class="seg-row"><button class="btn sm subtle" data-act="vxeImgPick" data-i="${i}">Pick a PNG…</button></div>`;
+        checkboxField('Mirrored', `${p}.flip`, { num: 1 }),
+        /* phase 09 batch 1: a tree's leaf clumps, a lantern's glass */
+        checkboxField('Casts its shadow', `${p}.shadow`, { num: 1 }),
+        selectField(
+          'Shadows on it',
+          `${p}.recv`,
+          [
+            ['', 'From everything'],
+            ['0', 'None (leaf clumps: the crown shades itself)'],
+          ],
+          { opt: 1, num: 1 }
+        ),
+        rangeField('Sways in the wind', `${p}.sway`, { min: 0, max: 2, step: 0.05, def: 1 }),
+        rangeField('Glows when the lamps are on', `${p}.glow`, { min: 0, max: 1, step: 0.05, def: 0 }),
+        rangeField('Darker (a crown’s core)', `${p}.shade`, { min: 0.4, max: 1, step: 0.02, def: 1 })
+      )}${
+        l.clip
+          ? `<div class="grid">${numberField('Clump: across in the picture (px)', `${p}.clip.0`, { min: 0, max: 400, step: 0.5 })}${numberField('Clump: down in the picture (px)', `${p}.clip.1`, { min: 0, max: 400, step: 0.5 })}${numberField('Clump: radius (px)', `${p}.clip.2`, { min: 2, max: 200, step: 0.5 })}</div>`
+          : ''
+      }<div class="grid">${pos}</div><div class="seg-row"><button class="btn sm subtle" data-act="vxeImgPick" data-i="${i}">Pick a PNG…</button></div>`;
     else if (kind === 'raw')
       body = `<p class="help">${escapeHtml(String(l.n || '?'))} voxels imported from ${escapeHtml(l.src || 'a .vox')}. Move it with the sliders; its colours are its own.</p><div class="grid">${pos}</div>`;
     else {
       const size =
-        kind === 'box'
-          ? `${rangeField('Width (m)', `${p}.w`, { min: 0.05, max: 6, step: 0.02, def: 0.5 })}${rangeField('Depth (m)', `${p}.d`, { min: 0.05, max: 6, step: 0.02, def: 0.5 })}${rangeField('Height (m)', `${p}.h`, { min: 0.05, max: 6, step: 0.02, def: 0.5 })}`
-          : kind === 'sphere'
-            ? rangeField('Radius (m)', `${p}.r`, { min: 0.05, max: 3, step: 0.02, def: 0.3 })
-            : `${rangeField('Radius (m)', `${p}.r`, { min: 0.03, max: 3, step: 0.01, def: 0.3 })}${numberField('Depth radius (m)', `${p}.ry`, { opt: 1, min: 0.03, max: 3, step: 0.01, help: 'Empty: round. Set it for an oval, or a wheel seen from the side.' })}${rangeField('Height (m)', `${p}.h`, { min: 0.05, max: 6, step: 0.02, def: 0.5 })}${kind === 'cone' ? rangeField('Radius at the top (m)', `${p}.r1`, { min: 0, max: 3, step: 0.01, def: 0 }) : ''}${kind === 'barrel' ? rangeField('Bulge', `${p}.bulge`, { min: 0, max: 0.4, step: 0.01, def: 0.15 }) : ''}`;
+        kind === 'limb'
+          ? `${rangeField('To across (m)', `${p}.x2`, { min: -3, max: 3, step: 0.02, def: 0 })}${rangeField('To depth (m)', `${p}.y2`, { min: -3, max: 3, step: 0.02, def: 0 })}${rangeField('To up (m)', `${p}.z2`, { min: 0, max: 8, step: 0.02, def: 1 })}${rangeField('Radius at the start (m)', `${p}.r`, { min: 0.005, max: 1, step: 0.005, def: 0.1 })}${rangeField('Radius at the end (m)', `${p}.r1`, { min: 0.005, max: 1, step: 0.005, def: 0.07 })}`
+          : kind === 'box'
+            ? `${rangeField('Width (m)', `${p}.w`, { min: 0.05, max: 6, step: 0.02, def: 0.5 })}${rangeField('Depth (m)', `${p}.d`, { min: 0.05, max: 6, step: 0.02, def: 0.5 })}${rangeField('Height (m)', `${p}.h`, { min: 0.05, max: 6, step: 0.02, def: 0.5 })}`
+            : kind === 'sphere'
+              ? rangeField('Radius (m)', `${p}.r`, { min: 0.05, max: 3, step: 0.02, def: 0.3 })
+              : `${rangeField('Radius (m)', `${p}.r`, { min: 0.03, max: 3, step: 0.01, def: 0.3 })}${numberField('Depth radius (m)', `${p}.ry`, { opt: 1, min: 0.03, max: 3, step: 0.01, help: 'Empty: round. Set it for an oval, or a wheel seen from the side.' })}${rangeField('Height (m)', `${p}.h`, { min: 0.05, max: 6, step: 0.02, def: 0.5 })}${kind === 'cone' ? rangeField('Radius at the top (m)', `${p}.r1`, { min: 0, max: 3, step: 0.01, def: 0 }) : ''}${kind === 'barrel' ? rangeField('Bulge', `${p}.bulge`, { min: 0, max: 0.4, step: 0.01, def: 0.15 }) : ''}${numberField('Sides', `${p}.sides`, { opt: 1, min: 3, max: 32, step: 1, help: 'Empty: as many as its size needs. Few for a faceted rock.' })}${kind === 'sphere' || kind === 'dome' ? numberField('Bands', `${p}.rings`, { opt: 1, min: 2, max: 16, step: 1 }) : ''}${rangeField('Lumpy', `${p}.lump`, { min: 0, max: 0.6, step: 0.01, def: 0 })}${checkboxField('Flat faces', `${p}.facet`, { num: 1 })}`;
       body = `<div class="grid">${selectField(
         'Shape',
         `${p}.k`,
@@ -152,10 +177,63 @@ function modelEditorHTML(k) {
     }
     return `<div class="vxe-layer on ${l.hide ? 'off' : ''}">${title}${body}</div>`;
   }).join('');
-  return `${head}<p class="help">${L.length} layer${L.length === 1 ? '' : 's'}: low-poly with the buildings’ 32 px textures (wood is planks, stone is stone blocks, hay is thatch…), or voxels one to a pixel of the art with Props as low-poly off. Across is left–right, depth is toward the back, up is from the ground at the prop's base point. Everything shows on the turntable as you drag.</p>
-  ${rows}<div class="seg-row vxe-add"><span class="help">Add:</span>${['box', 'cyl', 'sphere', 'cone', 'barrel'].map(q => `<button class="btn sm" data-act="vxeAdd" data-k="${q}">+ ${names[q]}</button>`).join('')}<button class="btn sm" data-act="vxeAdd" data-k="img">+ Picture</button><button class="btn sm subtle" data-act="vxeImport">Import a .vox…</button></div>
+  return `${head}${leavesHTML(M, L)}<p class="help">${L.length} layer${L.length === 1 ? '' : 's'}: low-poly with the buildings’ 32 px textures (wood is planks, stone is stone blocks, hay is thatch…), or voxels one to a pixel of the art with Props as low-poly off. Across is left–right, depth is toward the back, up is from the ground at the prop's base point. Everything shows on the turntable as you drag.</p>
+  ${rows}<div class="seg-row vxe-add"><span class="help">Add:</span>${['box', 'cyl', 'sphere', 'cone', 'barrel', 'limb', 'dome'].map(q => `<button class="btn sm" data-act="vxeAdd" data-k="${q}">+ ${names[q]}</button>`).join('')}<button class="btn sm" data-act="vxeAdd" data-k="img">+ Picture</button><button class="btn sm subtle" data-act="vxeImport">Import a .vox…</button></div>
   <div class="seg-row"><button class="btn sm subtle" data-act="vxeExport">Download as .json</button><button class="btn sm subtle danger" data-act="vxeOff">Remove the model</button></div>`;
 }
+/* phase 09 batch 1: a tree's or bush's leaves are one picture, its crown as drawn; the clumps are circles cut from it
+   (picture layers with a clip) and the core is the whole picture a shade darker. This section shows each leaf
+   picture the model uses, and those its variants swap in (the autumn oak's), with the clumps drawn on it, and opens
+   it in the pixel editor or replaces it. Painting it changes every clump at once, on the turntable as you paint. */
+function leafSheets(M, L) {
+  const own = [...new Set(L.filter(l => l.k === 'img' && (l.clip || l.shade) && l.img).map(l => l.img))],
+    out = own.map(path => ({
+      path,
+      who: 'This prop',
+      clips: L.filter(l => l.img === path && l.clip).map(l => l.clip),
+    }));
+  for (const V of M.variants || [])
+    for (const [a, b] of Object.entries(V.swap || {}))
+      if (own.includes(a) && !out.some(o => o.path === b))
+        out.push({ path: b, who: V.name || 'A variant', clips: out.find(o => o.path === a).clips });
+  return out;
+}
+function leafSheetSVG(path, clips) {
+  const im = artImage(path);
+  if (!im || !(im.naturalWidth || im.width)) {
+    setTimeout(() => render(), 500);
+    return '<p class="help">Loading the picture…</p>';
+  }
+  const w = im.naturalWidth || im.width,
+    h = im.naturalHeight || im.height,
+    c = makeCanvas(w, h);
+  c.getContext('2d').drawImage(im, 0, 0);
+  const z = Math.max(1, Math.min(4, Math.floor(260 / Math.max(w, h))));
+  return `<svg class="leaf-sheet" width="${w * z}" height="${h * z}" viewBox="0 0 ${w} ${h}" style="image-rendering:pixelated;background:repeating-conic-gradient(#0001 0 25%,#0000 0 50%) 0 0/8px 8px"><image href="${c.toDataURL()}" width="${w}" height="${h}"/>${clips
+    .map(
+      q =>
+        `<circle cx="${q[0]}" cy="${q[1]}" r="${q[2]}" fill="none" stroke="#fff" stroke-width="${0.6}" stroke-dasharray="2 2" opacity=".85"/>`
+    )
+    .join('')}</svg>`;
+}
+function leavesHTML(M, L) {
+  const S = leafSheets(M, L);
+  if (!S.length) return '';
+  return `<div class="vxe-leaves"><h4>Leaves</h4><p class="help">The leaves are one picture per look: the crown as drawn. Each dashed circle is a clump cut from it; paint the picture and every clump changes with it. A clump's circle can be moved in its picture layer below.</p>${S.map(
+    o =>
+      `<div class="vxe-leaf"><b>${escapeHtml(o.who)}</b> <small>${escapeHtml(o.path)}</small><div>${leafSheetSVG(o.path, o.clips)}</div><div class="seg-row"><button class="btn sm" data-act="vxeLeafPaint" data-path="${escapeHtml(o.path)}">Paint the leaves</button><button class="btn sm subtle" data-act="vxeLeafReplace" data-path="${escapeHtml(o.path)}">Replace from PNG…</button></div></div>`
+  ).join('')}</div>`;
+}
+ACTIONS.vxeLeafPaint = d =>
+  openSceneryPixelEditor('art/' + d.path, { kind: 'prop', k: mapEditor.ped, layer: 'leaves' });
+ACTIONS.vxeLeafReplace = async d => {
+  const f = await pickFile('image/png');
+  if (!f) return;
+  const c = await fileToCanvas(f);
+  if (c.width > 400 || c.height > 400) return toast('Keep pictures under 400×400 pixels.', 'err');
+  markArt('art/' + d.path, c);
+  render();
+};
 /* a first model: a box the size of the picture, a third as deep */
 ACTIONS.vxeNew = () => {
   const M = editedProp();
@@ -227,6 +305,8 @@ ACTIONS.vxeAdd = d => {
     sphere: { k: 'sphere', x: 0, y: 0, z: top, r: 0.25 },
     cone: { k: 'cone', x: 0, y: 0, z: top, r: 0.3, r1: 0, h: 0.5 },
     barrel: { k: 'barrel', x: 0, y: 0, z: top, r: 0.3, h: 0.8, bulge: 0.15 },
+    limb: { k: 'limb', x: 0, y: 0, z: top, x2: 0.4, y2: 0, z2: top + 1, r: 0.1, r1: 0.06 },
+    dome: { k: 'dome', x: 0, y: 0, z: top, r: 0.6, h: 0.5 },
     img: { k: 'img', img: M.img, x: 0, y: -0.01, z: 0, s: 1, face: 'fixed' },
   }[k];
   if (!base) return;

@@ -136,7 +136,7 @@ import {
   walkablePointNear,
   worldToScreen,
 } from './walk-view.js';
-import { engineColor, engineContext, engineSetting } from './engine/settings.js';
+import { PLAIN_LOOK, engineColor, engineContext, engineSetting } from './engine/settings.js';
 import {
   COMMON_GLSL,
   LIGHT_GLSL,
@@ -1118,7 +1118,7 @@ void main(){vRip=0.;float px=(uOff.x+aC.x*uOff.z),py=(uOff.y+aC.y*uOff.w);float 
  if(uWave.x>0.){float ph=aC.x*6.5-uWave.y,a=uWave.x*aC.x;p+=vec3(0.,sin(ph+.8)*a*.45,0.)+uRight*(-(aC.x*aC.x)*uWave.x*.35*(.5+.5*sin(ph-1.2)))*uFlip+uFwd*sin(ph)*a*.5;vRip=cos(ph)*a*2.2;}
  p.y+=curveY(uBase.xz)*uCurveOn;vW=p;vPx=px*uFlip+sh;vH=clamp(h/max(.01,-uOff.y),0.,1.);vUV=vec2(uUV.x+aC.x*uUV.z,uUV.y+aC.y*uUV.w);gl_Position=uVP*vec4(p,1.);}`,
     `#version 300 es
-precision highp float;in vec2 vUV;in vec3 vW;in float vH;in float vPx;in float vRip;out vec4 o;uniform sampler2D uTex,uNrm;uniform vec3 uRight,uBack,uSunH,uBaseP;uniform float uFade,uRim,uLit,uAlpha,uShade,uEmit,uFlipN,uFixed,uSelOut;uniform vec4 uMat,uUV;uniform vec3 uSelf;${LIGHT_GLSL}${LOOK_GLSL}
+precision highp float;in vec2 vUV;in vec3 vW;in float vH;in float vPx;in float vRip;out vec4 o;uniform sampler2D uTex,uNrm;uniform vec3 uRight,uBack,uSunH,uBaseP;uniform float uFade,uRim,uLit,uAlpha,uShade,uEmit,uFlipN,uFixed,uSelOut,uNoRecv;uniform vec4 uMat,uUV;uniform vec3 uSelf;${LIGHT_GLSL}${LOOK_GLSL}
 float bayer(vec2 p){ivec2 i=ivec2(mod(p,4.));int b[16]=int[16](0,8,2,10,12,4,14,6,3,11,1,9,15,7,13,5);return (float(b[i.y*4+i.x])+.5)/16.;}
 void main(){vec4 c=texture(uTex,vUV);if(c.a<.5)discard;if(uFade<.99&&bayer(gl_FragCoord.xy)>uFade)discard;
  /* v47: one outline rule: a near-black texel on the picture's edge takes a deep shade of the colour beside it, so
@@ -1130,7 +1130,7 @@ void main(){vec4 c=texture(uTex,vUV);if(c.a<.5)discard;if(uFade<.99&&bayer(gl_Fr
  /* shadows from other things. A picture that stays put in the world is itself in the shadow map, so it is looked up
     just in front of its own plane; one that turns to face the camera is looked up a little toward the sun instead */
  vec3 sp=uFixed>.5?vW+uBack*.06+vec3(0.,.03,0.):vW+uSunH*(abs(vPx)*.9+.35)+vec3(0.,.05,0.);
- float sh=shadowAt(sp,uFixed>.5?.0009:.0015);
+ float sh=uNoRecv>.5?1.:shadowAt(sp,uFixed>.5?.0009:.0015);
  /* alpha 0.4.1: a tree shades itself. From each texel a short march toward the sun across its own picture: leaves
     above (or beside, when the sun is low) put the trunk and the lower and inner leaves in shade, the crown stays lit */
  if(uSelf.x>0.){vec2 tz=vec2(textureSize(uTex,0)),d=uSelf.yz*uUV.w*tz.y*.045/tz;vec2 q=vUV+d*1.5;float hit=0.,wt=0.;
@@ -1287,6 +1287,7 @@ precision highp float;in vec2 vUV;in vec3 vW;out vec4 o;uniform sampler2D uTex;u
 void main(){vec4 c;if(uGlow>.5){vec2 q=vUV*2.-1.;float d=dot(q,q);if(d>1.)discard;float f=(1.-d);c=vec4(uCol.rgb*f*f*f*uCol.a,1.);}else{c=texture(uTex,vUV)*uCol;if(c.a<.02)discard;if(uLitFx>.5)c.rgb*=mix(uAmbTop,vec3(1.),.5)+uSunCol*.4;c.rgb=fogit(c.rgb,vW);}o=c;}`,
   ],
 };
+provide({ WALK_SHADERS }); /* to-module */
 /* ---------- ground mesh: the scene at half-meter resolution, then a coarse ring of distant land curving up ---------- */
 /* v46: the ground of a scene, built a slice at a time into T. With T = walkRenderer it runs to the end at once (opening a scene);
    with a fresh T it runs a few milliseconds a frame for the view that comes next (prepareMapGround), so walking from one view
@@ -3596,7 +3597,7 @@ function drawWalkFrame(ts, dtm) {
   const w0 = performance.now(),
     gl = gpuState.gl,
     sc = walkView.sc;
-  engineContext.look = sc.look || null;
+  engineContext.look = sc.plain ? PLAIN_LOOK : sc.look || null;
   gpuState.fr = (gpuState.fr || 0) + 1;
   if (gpuState.fr % 120 === 0) trimTextures();
   runNormalMapJobs(walkView.warm ? 40 : 3);
@@ -3626,7 +3627,7 @@ function drawWalkFrame(ts, dtm) {
     C0 = walkData().sc,
     PPU = C0.ppu || 34;
   /* v26: the hour, the weather and the season (environment.js) lean on the engine dials while this frame draws */
-  engineContext.env = typeof environment !== 'undefined' && (environment.on || !!environment.force);
+  engineContext.env = !sc.plain && typeof environment !== 'undefined' && (environment.on || !!environment.force);
   if (engineContext.env) environmentFrame(sc, dt);
   const gq = beginGpuTimer();
   try {
@@ -3754,7 +3755,7 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
     gl.blitFramebuffer(0, 0, rw, rh, 0, 0, rw, rh, gl.COLOR_BUFFER_BIT, gl.NEAREST);
   } else
     drawPostEffects(S, C, walkRenderer.focus, rw, rh, {
-      blur: BT ? BT.blur : (sc.blur ?? 1) * (walkView.opt.blur ?? 1) * (st.focusY != null ? 0.6 : 1),
+      blur: BT ? BT.blur : sc.plain ? 0 : (sc.blur ?? 1) * (walkView.opt.blur ?? 1) * (st.focusY != null ? 0.6 : 1),
       fast: walkView.R < 0.75 || QE >= 1,
       noAO: QE >= 1,
       noRays: QE >= 3,
@@ -4638,7 +4639,8 @@ export function gatherFrameItems(st, C, PPU, C0) {
     const im = artImage(alternatePropImage(p, M, C0, sc));
     if (!imageReady(im)) return;
     const lk = far ? null : propLook(p, M, sc),
-      s = ((p.s || 1) / PPU) * (lk ? lk.size : 1) * (p.grow != null ? cropGrowth(p) : 1),
+      /* phase 09 batch 1: a prop drawn at its own scale (ppm: pixels to the metre, 32 for the new style) */
+      s = ((p.s || 1) / (M.ppm || PPU)) * (lk ? lk.size : 1) * (p.grow != null ? cropGrowth(p) : 1),
       w = im.naturalWidth || im.width,
       h = im.naturalHeight || im.height;
     const S = far ? null : stillPropState(p, M, im, sc);
@@ -5081,7 +5083,7 @@ export function roomDimming(sc) {
 }
 /* alpha 0.4: how far a lamp is on (0-1). Outdoors with the world's hours each lamp has its own moment as the light
    fails (environment.lampK: dusk, night, a grey storm, fog), so they come on one by one; in a dark place or a room, all on */
-function lampLit(x, z, dark) {
+export function lampLit(x, z, dark) {
   const sc = walkView.sc,
     E = typeof environment !== 'undefined' && engineContext.env && !sc.indoor ? environment : null;
   if (!E || (sc.tint && sc.tint !== '#000000')) return dark ? 1 : 0;
@@ -6030,6 +6032,9 @@ export function drawSprites(C, items, X, hits, labels, PPU) {
       gl.uniform3fv(U.uBack, it.fixed ? (ro ? [sr, 0, -cr] : FIXED_BACK) : C.back);
     }
     gl.uniform1f(U.uFixed, it.fixed && it.plane ? 1 : 0);
+    /* phase 09 batch 1: a tree's leaf clumps take no shadows from the shadow map (their crown's own shadow would
+       stripe them); the crown shades itself instead (uSelf) */
+    if (U.uNoRecv) gl.uniform1f(U.uNoRecv, it.noRecv ? 1 : 0);
     gl.uniform1f(U.uFlipN, it.flip || 1);
     setPropLookUniforms(U, it.lk);
     const mt = SURFACE_MATERIALS[it.mat] || SURFACE_MATERIALS[it.person ? 'cloth' : 'plain'];
