@@ -96,21 +96,22 @@ import { addRipple, walkRenderer, waterAt } from './walk-view-gl.js';
 import { BGL, battleGLWanted } from './battle-3d.js';
 /* eslint-disable no-func-assign */
 expose({
-  AK: [() => AK],
-  AKS: [() => AKS],
-  ASIDE: [() => ASIDE],
-  ASL: [() => ASL],
-  FT: [() => FT],
-  FV: [() => FV],
+  ACTOR_SIDE: [() => ACTOR_SIDE],
+  ACTOR_SLOT: [() => ACTOR_SLOT],
   RB: [() => RB],
   RC: [() => RC],
+  SIDE_ACTORS: [() => SIDE_ACTORS],
   STG: [() => STG],
   TKL: [() => TKL],
+  actorIndex: [() => actorIndex],
+  actorSnapshot: [() => actorSnapshot, v => (actorSnapshot = v)],
+  actorTypes: [() => actorTypes],
   adv: [() => adv, v => (adv = v)],
   afterEvents: [() => afterEvents, v => (afterEvents = v)],
   aiDmg: [() => aiDmg, v => (aiDmg = v)],
   aiScore: [() => aiScore, v => (aiScore = v)],
-  allK: [() => allK],
+  allActors: [() => allActors],
+  allSnapshots: [() => allSnapshots],
   alphaPhase: [() => alphaPhase, v => (alphaPhase = v)],
   applyItem: [() => applyItem, v => (applyItem = v)],
   areaKey: [() => areaKey, v => ((areaKey = v), provide({ areaKey }))],
@@ -141,13 +142,15 @@ expose({
   doSwitch: [() => doSwitch, v => (doSwitch = v)],
   doThrow: [() => doThrow, v => (doThrow = v)],
   effLabel: [() => effLabel, v => (effLabel = v)],
+  effectiveStat: [() => effectiveStat, v => (effectiveStat = v)],
   endBattle: [() => endBattle, v => setEndBattle(v)],
   endTurn: [() => endTurn, v => (endTurn = v)],
   enemyOnly: [() => enemyOnly, v => (enemyOnly = v)],
+  fieldSlot: [() => fieldSlot],
+  fieldState: [() => fieldState],
   fighter: [() => fighter],
   finishThrow: [() => finishThrow, v => (finishThrow = v)],
   foeSide: [() => foeSide],
-  freshV: [() => freshV],
   goNames: [() => goNames],
   hcard: [() => hcard, v => (hcard = v)],
   hpMini: [() => hpMini, v => (hpMini = v)],
@@ -158,13 +161,14 @@ expose({
   inherit: [() => inherit, v => (inherit = v)],
   isMulti: [() => isMulti],
   itemIcon: [() => itemIcon],
-  liveK: [() => liveK],
+  liveActors: [() => liveActors],
   logLine: [() => logLine, v => (logLine = v)],
   makeAlpha: [() => makeAlpha, v => (makeAlpha = v)],
   movePower: [() => movePower, v => (movePower = v)],
   msgFace: [() => msgFace, v => (msgFace = v)],
   needsTarget: [() => needsTarget, v => (needsTarget = v)],
   newBattle: [() => newBattle, v => setNewBattle(v)],
+  newFieldState: [() => newFieldState],
   openBattle: [() => openBattle, v => setOpenBattle(v)],
   paintActions: [() => paintActions, v => setPaintActions(v)],
   paintBoxes: [() => paintBoxes, v => (paintBoxes = v)],
@@ -186,14 +190,11 @@ expose({
   setOpenBattle: [() => setOpenBattle, v => (setOpenBattle = v)],
   shockName: [() => shockName],
   showAim: [() => showAim, v => (showAim = v)],
-  snapAll: [() => snapAll],
-  snapK: [() => snapK, v => (snapK = v)],
   snapSide: [() => snapSide],
   stage: [() => stage, v => (stage = v)],
   stageTap: [() => stageTap, v => (stageTap = v)],
   startTrainer: [() => startTrainer, v => (startTrainer = v)],
   startWild: [() => startWild, v => ((startWild = v), provide({ startWild }))],
-  statE: [() => statE, v => (statE = v)],
   stepEv: [() => stepEv, v => (stepEv = v)],
   stopTimers: [() => stopTimers, v => (stopTimers = v)],
   tapMsg: [() => tapMsg, v => (tapMsg = v)],
@@ -202,7 +203,6 @@ expose({
   tickerUpdate: [() => tickerUpdate, v => (tickerUpdate = v)],
   turnBar: [() => turnBar, v => (turnBar = v)],
   typeText: [() => typeText, v => (typeText = v)],
-  types: [() => types],
   upd: [() => upd, v => (upd = v)],
   useMove: [() => useMove, v => (useMove = v)],
   wipe: [() => wipe, v => (wipe = v)],
@@ -220,7 +220,7 @@ export function setPaintActions(v) {
 /* to-module: end */
 export const RB = RULES.battle,
   RC = RULES.catching;
-const freshV = () => ({
+const newFieldState = () => ({
   st: Object.fromEntries(STAT_IDS.filter(k => k !== 'hp').map(k => [k, 0])),
   turnsIn: 0,
   ov: null,
@@ -231,53 +231,54 @@ const freshV = () => ({
   hyped: 0,
   down: false,
 });
-const ASIDE = [0, 1, 0, 1, 0],
-  ASL = [0, 0, 1, 1, 2],
-  AKS = [
+const ACTOR_SIDE = [0, 1, 0, 1, 0],
+  ACTOR_SLOT = [0, 0, 1, 1, 2],
+  SIDE_ACTORS = [
     [0, 2, 4],
     [1, 3],
   ];
-const AK = (si, sl) => AKS[si][sl];
-const FT = k => {
-  const sd = activeBattle && activeBattle.sides[ASIDE[k]];
-  return sd ? sd.f[ASL[k]] : null;
+const actorIndex = (si, sl) => SIDE_ACTORS[si][sl];
+const fieldSlot = k => {
+  const sd = activeBattle && activeBattle.sides[ACTOR_SIDE[k]];
+  return sd ? sd.f[ACTOR_SLOT[k]] : null;
 };
 export const fighter = k => {
-  const f = FT(k);
-  return f && f.on ? activeBattle.sides[ASIDE[k]].team[f.act] : undefined;
+  const f = fieldSlot(k);
+  return f && f.on ? activeBattle.sides[ACTOR_SIDE[k]].team[f.act] : undefined;
 };
 provide({ fighter }); /* to-module */
-const FV = k => FT(k).v;
-provide({ FV }); /* to-module */
+const fieldState = k => fieldSlot(k).v;
+provide({ fieldState }); /* to-module */
 /* every actor on the field, the live ones, and those of one side */
-const allK = () => {
+const allActors = () => {
   const o = [];
   if (!activeBattle) return o;
-  activeBattle.sides.forEach((sd, si) => sd.f.forEach((f, sl) => o.push(AK(si, sl))));
+  activeBattle.sides.forEach((sd, si) => sd.f.forEach((f, sl) => o.push(actorIndex(si, sl))));
   return o;
 };
-export const liveK = si => allK().filter(k => (si == null || ASIDE[k] === si) && fighter(k) && fighter(k).hp > 0);
-const foeSide = k => 1 - ASIDE[k];
-export const types = k => FV(k).ov || SPECIES[fighter(k).sp].types;
+export const liveActors = si =>
+  allActors().filter(k => (si == null || ACTOR_SIDE[k] === si) && fighter(k) && fighter(k).hp > 0);
+const foeSide = k => 1 - ACTOR_SIDE[k];
+export const actorTypes = k => fieldState(k).ov || SPECIES[fighter(k).sp].types;
 const shockName = () => RB.shockName || `${RB.shockType} storm`;
 const isMulti = () => !!activeBattle && (activeBattle.sides[0].f.length > 1 || activeBattle.sides[1].f.length > 1);
-function statE(k, s2) {
+function effectiveStat(k, s2) {
   const m = fighter(k),
-    v = FV(k);
+    v = fieldState(k);
   let x = stat(m, s2);
   const s = v.st[s2] || 0;
   x *= s >= 0 ? (2 + s) / 2 : 2 / (2 - s);
   if (s2 === 'lev') {
     if (m.status === 'scn') x *= 0.5;
-    if (hasPassive(types(k), 'ramp')) x *= 1 + RB.financeRamp * Math.min(RB.financeRampTurns, v.turnsIn);
+    if (hasPassive(actorTypes(k), 'ramp')) x *= 1 + RB.financeRamp * Math.min(RB.financeRampTurns, v.turnsIn);
   }
   if (s2 === 'hus' && m.status === 'aud') x *= 0.5;
   return Math.max(1, x);
 }
-function snapK(k) {
-  const f = FT(k);
+function actorSnapshot(k) {
+  const f = fieldSlot(k);
   if (!f || !f.on) return null;
-  const m = activeBattle.sides[ASIDE[k]].team[f.act];
+  const m = activeBattle.sides[ACTOR_SIDE[k]].team[f.act];
   if (!m) return null;
   const a = xpFor(m.lvl),
     b = xpFor(m.lvl + 1);
@@ -293,23 +294,23 @@ function snapK(k) {
     gold: m.gold,
     alpha: !!(m.boss || m.alpha),
     boss: !!m.boss,
-    ty: types(k).slice(),
+    ty: actorTypes(k).slice(),
     xp: clamp((m.xp - a) / (b - a), 0, 1),
     stg: { ...f.v.st },
   };
 }
-export const snapAll = () => [0, 1, 2, 3, 4].map(k => (FT(k) ? snapK(k) : null));
+export const allSnapshots = () => [0, 1, 2, 3, 4].map(k => (fieldSlot(k) ? actorSnapshot(k) : null));
 /* kept for older callers: the first fighter of a side */
-const snapSide = si => snapK(si);
+const snapSide = si => actorSnapshot(si);
 export function say(t, an) {
-  const ev = { t, an: an || null, s: snapAll(), mk: activeBattle.market ? { ...activeBattle.market } : null };
+  const ev = { t, an: an || null, s: allSnapshots(), mk: activeBattle.market ? { ...activeBattle.market } : null };
   activeBattle.events.push(ev);
   return ev;
 }
 function upd() {
   const e = activeBattle.events[activeBattle.events.length - 1];
   if (e) {
-    e.s = snapAll();
+    e.s = allSnapshots();
     e.mk = activeBattle.market ? { ...activeBattle.market } : null;
   }
 }
@@ -319,7 +320,7 @@ function movePower(k, tk, M) {
   let P = M.p || 0;
   if (fx.vary === 'dyn') P = Math.round(40 + (60 * d.hp) / maxHp(d));
   if (fx.vary === 'short') P = Math.round(40 + 80 * (1 - d.hp / maxHp(d)));
-  if (fx.hold) P = Math.min(RB.holdCap, 40 * 2 ** Math.max(0, FV(k).holdN - 1));
+  if (fx.hold) P = Math.min(RB.holdCap, 40 * 2 ** Math.max(0, fieldState(k).holdN - 1));
   return P;
 }
 function dmgCalc(k, tk, mid, src) {
@@ -327,13 +328,13 @@ function dmgCalc(k, tk, mid, src) {
     fx = M.fx || {};
   const P = src ? M.p || 90 : movePower(k, tk, M);
   const phys = M.c === 'H',
-    At = src ? src.A : statE(k, phys ? 'lev' : 'lob'),
-    Dt = statE(tk, phys ? 'law' : 'pr'),
+    At = src ? src.A : effectiveStat(k, phys ? 'lev' : 'lob'),
+    Dt = effectiveStat(tk, phys ? 'law' : 'pr'),
     L = src ? src.lvl : fighter(k).lvl,
-    aty = src ? src.ty : types(k);
+    aty = src ? src.ty : actorTypes(k);
   const base = ((0.4 * L + 2) * P * At) / Dt / 50 + 2;
   const stab = M.t !== 'None' && aty.includes(M.t) ? RB.stab : 1,
-    te = typeEffectiveness(M.t, types(tk));
+    te = typeEffectiveness(M.t, actorTypes(tk));
   const cs = (fx.crit || 0) + (hasPassive(aty, 'sharp') ? RB.mediaCrit : 0);
   const crit = !src && random() < RB.critChances[clamp(cs, 0, RB.critChances.length - 1)];
   const roll = hasPassive(aty, 'volatile')
@@ -344,7 +345,7 @@ function dmgCalc(k, tk, mid, src) {
   if (!src) {
     const syn = aty.filter(t => PASSIVE[t] === 'synergy');
     if (syn.length) {
-      const sd = activeBattle.sides[ASIDE[k]],
+      const sd = activeBattle.sides[ACTOR_SIDE[k]],
         me = fighter(k);
       eco =
         1 +
@@ -358,7 +359,7 @@ function dmgCalc(k, tk, mid, src) {
   return { dmg: Math.max(1, Math.floor(base * stab * te * roll * (crit ? RB.critMult : 1) * mk * eco * wx)), te, crit };
 }
 function stage(k, obj) {
-  const v = FV(k),
+  const v = fieldState(k),
     m = fighter(k);
   for (const s2 in obj) {
     const d = obj[s2],
@@ -393,14 +394,14 @@ function inflict(tk, st, loud) {
 /* a move aimed at a fighter who has gone down turns to another fighter on that side */
 function retarget(k, tk) {
   const fs = foeSide(k);
-  if (tk != null && fighter(tk) && fighter(tk).hp > 0 && ASIDE[tk] === fs) return tk;
-  const L = liveK(fs);
+  if (tk != null && fighter(tk) && fighter(tk).hp > 0 && ACTOR_SIDE[tk] === fs) return tk;
+  const L = liveActors(fs);
   if (!L.length) return null;
   return L[Math.floor(random() * L.length)];
 }
 function useMove(k, mid, tk0) {
   const u = fighter(k),
-    v = FV(k),
+    v = fieldState(k),
     M = MOVES[mid],
     fx = M.fx || {};
   if (u.status === 'sub') {
@@ -419,7 +420,10 @@ function useMove(k, mid, tk0) {
   if (v.hyped > 0) {
     v.hyped--;
     if (random() < RB.hypeSelfHit) {
-      const dm = Math.max(1, Math.floor(((0.4 * u.lvl + 2) * 40 * statE(k, 'lev')) / statE(k, 'law') / 50 + 2));
+      const dm = Math.max(
+        1,
+        Math.floor(((0.4 * u.lvl + 2) * 40 * effectiveStat(k, 'lev')) / effectiveStat(k, 'law') / 50 + 2)
+      );
       u.hp = Math.max(0, u.hp - dm);
       say(`${billyName(u)} is confused and hurt itself.`, { k: 'hurt', si: k, dmg: dm });
       return;
@@ -430,9 +434,9 @@ function useMove(k, mid, tk0) {
   const tk = onFoe ? retarget(k, tk0) : k;
   if (onFoe && tk == null) return;
   const t = fighter(tk),
-    td = activeBattle.sides[ASIDE[tk]];
+    td = activeBattle.sides[ACTOR_SIDE[tk]];
   /* spread moves hit every fighter on the other side (a little weaker when there's more than one) */
-  const spread = onFoe && fx.spread && liveK(foeSide(k)).length > 1;
+  const spread = onFoe && fx.spread && liveActors(foeSide(k)).length > 1;
   const ev = say(`${billyName(u)} used ${M.n}${isMulti() && onFoe && !spread ? ` on ${billyName(t)}` : ''}.`, {
     k: 'move',
     si: k,
@@ -456,10 +460,10 @@ function useMove(k, mid, tk0) {
   }
   v.last = mid;
   if (!onFoe) ev.an.self = true;
-  const targets = spread ? liveK(foeSide(k)) : [tk];
+  const targets = spread ? liveActors(foeSide(k)) : [tk];
   for (const tk2 of targets) {
     const t2 = fighter(tk2),
-      fv2 = FV(tk2);
+      fv2 = fieldState(tk2);
     if (!t2 || t2.hp <= 0) continue;
     if (onFoe && fv2.protect) {
       if (tk2 === tk) ev.an.blocked = true;
@@ -482,14 +486,14 @@ function useMove(k, mid, tk0) {
     }
     if (fx.delay) {
       ev.an.self = true;
-      activeBattle.sides[ASIDE[tk2]].mail.push({
+      activeBattle.sides[ACTOR_SIDE[tk2]].mail.push({
         n: RB.mailTurns,
-        A: statE(k, 'lev'),
+        A: effectiveStat(k, 'lev'),
         lvl: u.lvl,
-        ty: types(k).slice(),
+        ty: actorTypes(k).slice(),
         from: billyName(u),
         mid,
-        side: ASIDE[k],
+        side: ACTOR_SIDE[k],
       });
       say(`${billyName(u)} foresaw an attack. It lands in ${plural(RB.mailTurns, 'turn')}.`);
       continue;
@@ -570,7 +574,7 @@ function useMove(k, mid, tk0) {
       if (M.c === 'X') say('Sharp stones are already scattered there.');
     } else {
       td.rent = true;
-      say(`Sharp stones are scattered around ${ASIDE[k] === 0 ? 'their' : 'your'} side.`);
+      say(`Sharp stones are scattered around ${ACTOR_SIDE[k] === 0 ? 'their' : 'your'} side.`);
     }
   }
   if (fx.market) {
@@ -580,11 +584,11 @@ function useMove(k, mid, tk0) {
 }
 function endTurn() {
   const fr = Math.max(2, RB.drainFraction);
-  for (const k of allK()) {
-    const f = FT(k),
+  for (const k of allActors()) {
+    const f = fieldSlot(k),
       m = fighter(k);
     if (!m || m.hp <= 0) continue;
-    const ty = types(k),
+    const ty = actorTypes(k),
       mx = maxHp(m);
     if (f.v && f.v.shield > 0) {
       f.v.shield--;
@@ -616,11 +620,11 @@ function endTurn() {
     const sd = activeBattle.sides[si];
     sd.mail = sd.mail.filter(h => {
       if (--h.n > 0) return true;
-      const L = liveK(si),
+      const L = liveActors(si),
         tk = L[0];
       const t = tk != null ? fighter(tk) : null;
       if (t && t.hp > 0) {
-        const r = dmgCalc(AK(1 - si, 0), tk, h.mid || 'twoday', h);
+        const r = dmgCalc(actorIndex(1 - si, 0), tk, h.mid || 'twoday', h);
         t.hp = Math.max(0, t.hp - r.dmg);
         say(`${h.from}’s ${(MOVES[h.mid] || MOVES.twoday || { n: 'attack' }).n} struck ${billyName(t)}.`, {
           k: 'hurt',
@@ -647,9 +651,9 @@ function award(e) {
         (activeBattle.kind === 'trainer' ? P.trainerXpMult : 1) *
         (e.boss ? (RB.alphaXp ?? 3) : 1)
     );
-  const on = liveK(0).map(k => fighter(k));
+  const on = liveActors(0).map(k => fighter(k));
   on.forEach(m => {
-    const k = allK().find(q => fighter(q) === m);
+    const k = allActors().find(q => fighter(q) === m);
     say(`${billyName(m)} gained ${formatNumber(amt)} XP.`, { k: 'xp', si: k });
     gainXp(m, amt, say);
   });
@@ -661,13 +665,13 @@ function award(e) {
   }
 }
 function inherit(k) {
-  const sd = activeBattle.sides[ASIDE[k]];
+  const sd = activeBattle.sides[ACTOR_SIDE[k]];
   if (!hasPassive(SPECIES[fighter(k).sp].types, 'inherit')) return;
   const st = {};
   let any = false;
-  for (const s2 in FV(k).st)
-    if (FV(k).st[s2] > 0) {
-      st[s2] = FV(k).st[s2];
+  for (const s2 in fieldState(k).st)
+    if (fieldState(k).st[s2] > 0) {
+      st[s2] = fieldState(k).st[s2];
       any = true;
     }
   if (any) sd.inh = st;
@@ -684,17 +688,19 @@ function bench(si, also = []) {
     });
 }
 export function doSwitch(k, idx) {
-  const sd = activeBattle.sides[ASIDE[k]],
-    f = FT(k);
+  const sd = activeBattle.sides[ACTOR_SIDE[k]],
+    f = fieldSlot(k);
   f.act = idx;
   f.on = true;
   f.down = false;
   const inh = sd.inh;
-  f.v = freshV();
+  f.v = newFieldState();
   sd.inh = null;
   const m = fighter(k);
   say(
-    ASIDE[k] === 0 ? `Go, ${billyName(m)}!` : `${activeBattle.foeName || 'The wild side'} sent out ${billyName(m)}.`,
+    ACTOR_SIDE[k] === 0
+      ? `Go, ${billyName(m)}!`
+      : `${activeBattle.foeName || 'The wild side'} sent out ${billyName(m)}.`,
     {
       k: 'enter',
       si: k,
@@ -713,9 +719,9 @@ export function doSwitch(k, idx) {
 }
 export function checkFaints() {
   let any = false;
-  for (const k of allK().filter(k => ASIDE[k] === 1)) {
+  for (const k of allActors().filter(k => ACTOR_SIDE[k] === 1)) {
     const e = fighter(k),
-      f = FT(k);
+      f = fieldSlot(k);
     if (!e || e.hp > 0 || f.down) continue;
     f.down = true;
     any = true;
@@ -727,10 +733,10 @@ export function checkFaints() {
     if (nx == null) f.on = false;
     else if (!activeBattle.over) doSwitch(k, nx);
   }
-  if (!liveK(1).length && !activeBattle.over) activeBattle.over = 'win';
-  for (const k of allK().filter(k => ASIDE[k] === 0)) {
+  if (!liveActors(1).length && !activeBattle.over) activeBattle.over = 'win';
+  for (const k of allActors().filter(k => ACTOR_SIDE[k] === 0)) {
     const p = fighter(k),
-      f = FT(k);
+      f = fieldSlot(k);
     if (!p || p.hp > 0 || f.down) continue;
     f.down = true;
     any = true;
@@ -743,8 +749,9 @@ export function checkFaints() {
       if (!activeBattle.over) (activeBattle.needSwitch || (activeBattle.needSwitch = [])).push(k);
     } else f.on = false;
   }
-  if (!activeBattle.over && !liveK(0).length && !(activeBattle.needSwitch || []).length) activeBattle.over = 'lose';
-  if (any && !activeBattle.over && liveK(1).some(k => fighter(k).hp <= 0)) checkFaints();
+  if (!activeBattle.over && !liveActors(0).length && !(activeBattle.needSwitch || []).length)
+    activeBattle.over = 'lose';
+  if (any && !activeBattle.over && liveActors(1).some(k => fighter(k).hp <= 0)) checkFaints();
   return any;
 }
 /* how much a move is worth against one target, for the computer's choices */
@@ -754,7 +761,7 @@ function alphaPhase(k) {
   const m = fighter(k);
   if (!m || !m.boss || m.hp <= 0 || m.boss.ph2 || m.hp > maxHp(m) * (RB.alphaPhaseAt ?? 0.5)) return;
   m.boss.ph2 = true;
-  const v = FV(k);
+  const v = fieldState(k);
   v.shield = RB.alphaShieldTurns ?? 2;
   say(`${billyName(m)} is furious! A golden shield rises around it.`, { k: 'alphaPhase', si: k });
   stage(k, { lev: 1, lob: 1 });
@@ -767,9 +774,9 @@ function aiDmg(k, id, tk) {
     L = fighter(k).lvl,
     P = M.p || 60;
   return (
-    (((0.4 * L + 2) * P * statE(k, phys ? 'lev' : 'lob')) / statE(tk, phys ? 'law' : 'pr') / 50 + 2) *
-    (M.t !== 'None' && types(k).includes(M.t) ? RB.stab : 1) *
-    typeEffectiveness(M.t, types(tk))
+    (((0.4 * L + 2) * P * effectiveStat(k, phys ? 'lev' : 'lob')) / effectiveStat(tk, phys ? 'law' : 'pr') / 50 + 2) *
+    (M.t !== 'None' && actorTypes(k).includes(M.t) ? RB.stab : 1) *
+    typeEffectiveness(M.t, actorTypes(tk))
   );
 }
 function aiScore(k, id, tk) {
@@ -788,30 +795,30 @@ function aiScore(k, id, tk) {
     const phys = M.c === 'H';
     s =
       (((P *
-        (M.t !== 'None' && types(k).includes(M.t) ? RB.stab : 1) *
-        typeEffectiveness(M.t, types(tk)) *
+        (M.t !== 'None' && actorTypes(k).includes(M.t) ? RB.stab : 1) *
+        typeEffectiveness(M.t, actorTypes(tk)) *
         (M.a || 100)) /
         100) *
-        statE(k, phys ? 'lev' : 'lob')) /
-      statE(tk, phys ? 'law' : 'pr');
+        effectiveStat(k, phys ? 'lev' : 'lob')) /
+      effectiveStat(tk, phys ? 'law' : 'pr');
     if (t.hp <= s * 0.6) s *= 1.4;
-    /* finish off a fighter that's nearly down */ if (fx.spread && liveK(ASIDE[tk]).length > 1) s *= 1.5;
+    /* finish off a fighter that's nearly down */ if (fx.spread && liveActors(ACTOR_SIDE[tk]).length > 1) s *= 1.5;
   } else if (fx.status) s = t.status ? 0 : 45;
-  else if (fx.hype) s = FV(tk).hyped ? 0 : 35;
+  else if (fx.hype) s = fieldState(tk).hyped ? 0 : 35;
   else if (fx.heal) s = m.hp < maxHp(m) * 0.5 ? 90 : 0;
-  else if (fx.protect) s = FV(k).last === id ? 0 : 12;
-  else if (fx.rent) s = activeBattle.sides[ASIDE[tk]].rent ? 0 : 30;
+  else if (fx.protect) s = fieldState(k).last === id ? 0 : 12;
+  else if (fx.rent) s = activeBattle.sides[ACTOR_SIDE[tk]].rent ? 0 : 30;
   else if (fx.market) s = activeBattle.market ? 0 : 40;
-  else if (fx.selfStage) s = Object.keys(fx.selfStage).some(q => FV(k).st[q] < 2) ? 28 : 0;
+  else if (fx.selfStage) s = Object.keys(fx.selfStage).some(q => fieldState(k).st[q] < 2) ? 28 : 0;
   else if (fx.tgtStage) s = 22;
-  else if (fx.spin) s = FV(tk).ov ? 0 : 20;
+  else if (fx.spin) s = fieldState(tk).ov ? 0 : 20;
   else s = 0;
   return s + 5;
 }
 function chooseAI(k = 1) {
   const m = fighter(k);
   if (!m || m.hp <= 0) return null;
-  const T = liveK(foeSide(k));
+  const T = liveActors(foeSide(k));
   if (!T.length) return null;
   const opts = [];
   for (const id of m.moves.filter(id => MOVES[id]))
@@ -840,7 +847,7 @@ function chooseAI(k = 1) {
   if (pick) {
     const M = MOVES[pick.mid];
     if (M.c !== 'X') {
-      const tg = (M.fx || {}).spread ? liveK(foeSide(k)) : [pick.tk];
+      const tg = (M.fx || {}).spread ? liveActors(foeSide(k)) : [pick.tk];
       for (const t of tg) PL[t] = (PL[t] || 0) + aiDmg(k, pick.mid, t);
     } else if ((M.fx || {}).status) PL['st' + pick.tk] = 1;
   }
@@ -857,7 +864,7 @@ export function newBattle(kind, foe, extra) {
     n0 = Math.min(able.length, fmt === 'double' ? 2 : fmt === 'alpha' ? (RB.alphaTeam ?? 3) : 1),
     n1 = fmt === 'double' ? Math.min(2, foe.length) : 1;
   const fighters = (n, list) =>
-    Array.from({ length: n }, (_, sl) => ({ act: list[sl], on: list[sl] != null, v: freshV(), down: false }));
+    Array.from({ length: n }, (_, sl) => ({ act: list[sl], on: list[sl] != null, v: newFieldState(), down: false }));
   setActiveBattle(
     Object.assign(
       {
@@ -942,7 +949,7 @@ export function startWild(q) {
   if (q.gold) say(`It shimmers. Golden Billies turn up once in ${formatNumber(RULES.steps.goldOdds)}.`);
   if (RC.luxury.includes(SPECIES[q.sp].line))
     say(`It looks too picky for ${COINS.penny ? 'a ' + COINS.penny.n : 'cheap coins'}.`);
-  const K = liveK(0);
+  const K = liveActors(0);
   K.forEach((k, n) => say(n ? '' : `Go, ${goNames(K)}!`, { k: 'enter', si: k, quiet: n > 0 }));
   openBattle();
 }
@@ -975,9 +982,9 @@ export function startTrainer(id, o = {}) {
     activeBattle.market = { k: 'sand', n: T.market.n || RB.shockTurns };
     say(T.marketText || `The battle opened in a ${shockName().toLowerCase()}.`, { k: 'market' });
   }
-  const F = liveK(1);
+  const F = liveActors(1);
   F.forEach((k, n) => say(n ? '' : `${T.name} sent out ${goNames(F)}.`, { k: 'enter', si: k, quiet: n > 0 }));
-  const K = liveK(0);
+  const K = liveActors(0);
   K.forEach((k, n) => say(n ? '' : `Go, ${goNames(K)}!`, { k: 'enter', si: k, quiet: n > 0 }));
   openBattle();
 }
@@ -1001,7 +1008,7 @@ export function runTurn(plan) {
   for (const p of plan.filter(p => p.k === 'switch')) {
     const out = fighter(p.who);
     if (!out) continue;
-    const free = hasPassive(types(p.who), 'pivot') && !activeBattle.sides[0].pivot;
+    const free = hasPassive(actorTypes(p.who), 'pivot') && !activeBattle.sides[0].pivot;
     if (free) activeBattle.sides[0].pivot = true;
     say(free ? `${billyName(out)} darted out without losing the turn.` : `${billyName(out)}, come back.`, {
       k: 'recall',
@@ -1016,7 +1023,7 @@ export function runTurn(plan) {
   for (const p of plan.filter(p => p.k === 'item')) applyItem(p.item, p.uid, true);
   const acts = [];
   for (const p of plan.filter(p => p.k === 'move')) acts.push({ who: p.who, mid: p.mid, tk: p.tk });
-  for (const k of liveK(1)) {
+  for (const k of liveActors(1)) {
     const n = fighter(k).boss ? (RB.alphaActs ?? 2) : 1;
     for (let i = 0; i < n; i++) {
       const c = chooseAI(k);
@@ -1028,14 +1035,14 @@ export function runTurn(plan) {
     (a, b) =>
       (MOVES[b.mid].pr || 0) - (MOVES[a.mid].pr || 0) ||
       (a.boss2 ? 1 : 0) - (b.boss2 ? 1 : 0) ||
-      statE(b.who, 'hus') - statE(a.who, 'hus') ||
+      effectiveStat(b.who, 'hus') - effectiveStat(a.who, 'hus') ||
       a.r - b.r
   );
   for (const a of acts) {
     if (activeBattle.over) break;
     const u = fighter(a.who);
-    if (!u || u.hp <= 0 || FT(a.who).down) continue;
-    if (!liveK(foeSide(a.who)).length) break;
+    if (!u || u.hp <= 0 || fieldSlot(a.who).down) continue;
+    if (!liveActors(foeSide(a.who)).length) break;
     useMove(a.who, a.mid, a.tk);
     checkFaints();
   }
@@ -1047,7 +1054,7 @@ export function runTurn(plan) {
 }
 export function enemyOnly() {
   activeBattle.aiPlan = {};
-  for (const k of liveK(1)) {
+  for (const k of liveActors(1)) {
     const n = fighter(k).boss ? (RB.alphaActs ?? 2) : 1;
     for (let i = 0; i < n && !activeBattle.over; i++) {
       const c = chooseAI(k);
@@ -1147,7 +1154,7 @@ export function applyItem(it, id, inB) {
   }
   if (inB) {
     say(`You used ${/^[AEIOU]/.test(I.n) ? 'an' : 'a'} ${I.n}.`, { k: 'item', it });
-    const kOn = allK().find(k => ASIDE[k] === 0 && fighter(k) === m),
+    const kOn = allActors().find(k => ACTOR_SIDE[k] === 0 && fighter(k) === m),
       onField = kOn != null || I.hpAll;
     t.forEach((x, i) => say(x, i === 0 && onField ? { k: 'heal', si: kOn ?? 0, amt: healed || undefined } : null));
   } else toast(t.join(' '));
@@ -1683,10 +1690,10 @@ function afterEvents() {
     return;
   }
   activeBattle.plan = [];
-  activeBattle.cur = liveK(0)[0];
+  activeBattle.cur = liveActors(0)[0];
   activeBattle.phase = 'choose';
   chooseMsg();
-  paintBoxes(snapAll(), activeBattle.market);
+  paintBoxes(allSnapshots(), activeBattle.market);
   boxShow(0, true);
   boxShow(1, true);
   paintActions();
@@ -1697,7 +1704,7 @@ function afterEvents() {
 export function chooseMsg() {
   const m = fighter(activeBattle.cur);
   if (!m) return;
-  const L = liveK(0),
+  const L = liveActors(0),
     n = L.indexOf(activeBattle.cur);
   $('#msgT').textContent =
     L.length > 1 ? `What will ${billyName(m)} do? (${n + 1} of ${L.length})` : `What will ${billyName(m)} do?`;
@@ -1705,7 +1712,7 @@ export function chooseMsg() {
 }
 export function planNext(p) {
   activeBattle.plan.push(p);
-  const L = liveK(0).filter(k => !activeBattle.plan.some(q => q.who === k));
+  const L = liveActors(0).filter(k => !activeBattle.plan.some(q => q.who === k));
   if (L.length && !activeBattle.plan.some(q => q.k === 'run')) {
     activeBattle.cur = L[0];
     activeBattle.phase = 'choose';
@@ -1730,7 +1737,7 @@ function needsTarget(mid) {
   const M = MOVES[mid],
     fx = M.fx || {};
   const onFoe = M.c !== 'X' || fx.status || fx.tgtStage || fx.hype || fx.spin || fx.wipe;
-  return onFoe && !fx.spread && liveK(1).length > 1;
+  return onFoe && !fx.spread && liveActors(1).length > 1;
 }
 export function pickMove(mid) {
   if (needsTarget(mid)) {
@@ -1738,10 +1745,10 @@ export function pickMove(mid) {
     activeBattle.phase = 'target';
     $('#msgT').textContent = `${MOVES[mid].n}: which one? Tap it.`;
     paintActions();
-    if (typeof battleStageTargets === 'function') battleStageTargets(liveK(1));
+    if (typeof battleStageTargets === 'function') battleStageTargets(liveActors(1));
     return;
   }
-  planNext({ who: activeBattle.cur, k: 'move', mid, tk: liveK(1)[0] });
+  planNext({ who: activeBattle.cur, k: 'move', mid, tk: liveActors(1)[0] });
 }
 export function pickTarget(tk) {
   if (!activeBattle || activeBattle.phase !== 'target') return;
@@ -1751,14 +1758,14 @@ export function pickTarget(tk) {
 function effLabel(mid, tk) {
   const M = MOVES[mid];
   if (!M.p && !(M.fx && M.fx.vary)) return '';
-  const F = tk != null ? [tk] : liveK(1);
+  const F = tk != null ? [tk] : liveActors(1);
   if (!F.length) return '';
   if (F.length === 1) {
-    const e = typeEffectiveness(M.t, types(F[0]));
+    const e = typeEffectiveness(M.t, actorTypes(F[0]));
     return e > 1 ? '<em class="se">Super effective</em>' : e < 1 ? '<em class="nve">Not very effective</em>' : '';
   }
-  const se = F.filter(k => typeEffectiveness(M.t, types(k)) > 1).map(k => billyName(fighter(k))),
-    nv = F.filter(k => typeEffectiveness(M.t, types(k)) < 1).map(k => billyName(fighter(k)));
+  const se = F.filter(k => typeEffectiveness(M.t, actorTypes(k)) > 1).map(k => billyName(fighter(k))),
+    nv = F.filter(k => typeEffectiveness(M.t, actorTypes(k)) < 1).map(k => billyName(fighter(k)));
   return se.length
     ? `<em class="se">Super effective on ${escapeHtml(se.join(', '))}</em>`
     : nv.length === F.length
@@ -1833,13 +1840,13 @@ export function paintActions() {
         const M = MOVES[id],
           c = TYPE_COLORS[M.t],
           P = M.p ? M.p : M.fx && M.fx.vary ? 'Varies' : 'Status',
-          stab = M.t !== 'None' && types(activeBattle.cur).includes(M.t);
+          stab = M.t !== 'None' && actorTypes(activeBattle.cur).includes(M.t);
         return `<button class="mv" style="--tc:${c[0]};--tf:${c[1]}" data-a="bmove" data-m="${id}" data-tip="${escapeHtml(M.d)}"><span class="mv-top"><b>${escapeHtml(M.n)}</b><kbd>${n + 1}</kbd></span><span class="mv-meta"><span class="mv-ty">${M.t === 'None' ? 'Normal' : M.t}${stab ? ' ★' : ''}</span><span class="tnum">${P}${M.p ? ' pow' : ''}${M.p && typeof battleWeatherMult === 'function' ? (battleWeatherMult(M.t) > 1 ? ' ▲' : battleWeatherMult(M.t) < 1 ? ' ▼' : '') : ''}${M.c !== 'X' || M.a < 100 ? ` · ${M.a || 100}%` : ''}</span></span>${effLabel(id)}</button>`;
       })
       .join('')}</div>${backBtn()}`;
   } else if (ph === 'target') {
     const mid = activeBattle.mv;
-    h = `<div class="plist">${liveK(1)
+    h = `<div class="plist">${liveActors(1)
       .map(k => {
         const m = fighter(k);
         return billyPickHTML(
@@ -2127,12 +2134,12 @@ function plateEl(k) {
   let e = L.querySelector(`.bplate[data-k="${k}"]`);
   if (e) return e;
   e = document.createElement('button');
-  e.className = 'bplate ' + (ASIDE[k] ? 'foe' : 'me');
+  e.className = 'bplate ' + (ACTOR_SIDE[k] ? 'foe' : 'me');
   e.dataset.k = k;
   e.dataset.a = 'btarget';
   e.dataset.t = k;
   e.tabIndex = -1;
-  e.innerHTML = `<span class="pl-top"><b class="pl-n"></b><span class="pl-cr" hidden>${uiIconHTML('spark', 11)}</span><span class="pl-lv tnum"></span></span><span class="pl-hp"><i class="ghost"></i><i class="fill"></i></span><span class="pl-bot"><span class="pl-st"></span><span class="pl-num tnum"></span></span>${ASIDE[k] ? '' : '<span class="pl-xp"><i></i></span>'}`;
+  e.innerHTML = `<span class="pl-top"><b class="pl-n"></b><span class="pl-cr" hidden>${uiIconHTML('spark', 11)}</span><span class="pl-lv tnum"></span></span><span class="pl-hp"><i class="ghost"></i><i class="fill"></i></span><span class="pl-bot"><span class="pl-st"></span><span class="pl-num tnum"></span></span>${ACTOR_SIDE[k] ? '' : '<span class="pl-xp"><i></i></span>'}`;
   L.appendChild(e);
   return e;
 }
@@ -2185,7 +2192,7 @@ function paintPlates(s, anim) {
       e.classList.add('hit');
     }
     const num = e.querySelector('.pl-num');
-    num.textContent = ASIDE[k] ? (x.boss ? Math.round(p) + '%' : '') : `${Math.max(0, x.hp)}/${x.max}`;
+    num.textContent = ACTOR_SIDE[k] ? (x.boss ? Math.round(p) + '%' : '') : `${Math.max(0, x.hp)}/${x.max}`;
     const xp = e.querySelector('.pl-xp i');
     if (xp) xp.style.width = x.xp * 100 + '%';
     if (battleStage.s[k] && battleStage.s[k].sp === x.sp) battleStage.s[k].st = x.hp > 0 ? x.st : null;
@@ -2198,7 +2205,7 @@ function turnBar() {
   const L = $('#plates');
   if (!L || !activeBattle) return;
   let e = L.querySelector('.turnbar');
-  const K = liveK(0).concat(liveK(1));
+  const K = liveActors(0).concat(liveActors(1));
   if (K.length < 3 || activeBattle.over) {
     if (e) e.remove();
     return;
@@ -2209,10 +2216,10 @@ function turnBar() {
     e.setAttribute('aria-label', 'Turn order');
     L.appendChild(e);
   }
-  const O = K.map(k => [k, statE(k, 'hus') * (fighter(k).boss ? 1 : 1)]).sort((a, b) => b[1] - a[1]);
+  const O = K.map(k => [k, effectiveStat(k, 'hus') * (fighter(k).boss ? 1 : 1)]).sort((a, b) => b[1] - a[1]);
   const html = O.map(([k]) => {
     const m = fighter(k),
-      mine = ASIDE[k] === 0,
+      mine = ACTOR_SIDE[k] === 0,
       n = fighter(k).boss ? (RB.alphaActs ?? 2) : 1;
     return `<span class="tb ${mine ? 'me' : 'foe'}${fighter(k).boss ? ' alpha' : ''}" title="${escapeHtml(billyName(m))}">${escapeHtml(billyName(m).split(' ')[0])}${n > 1 ? ' ×' + n : ''}</span>`;
   }).join('<i>›</i>');
@@ -2257,8 +2264,8 @@ function platesTick() {
       (activeBattle.phase === 'choose' && activeBattle.cur === k) ||
         (activeBattle.phase === 'fight' && activeBattle.cur === k)
     );
-    e.classList.toggle('aim', tgt && ASIDE[k] === 1);
-    e.disabled = !(tgt && ASIDE[k] === 1);
+    e.classList.toggle('aim', tgt && ACTOR_SIDE[k] === 1);
+    e.disabled = !(tgt && ACTOR_SIDE[k] === 1);
   }
 }
 /* tapping the picture while aiming picks the nearest foe */
@@ -2269,7 +2276,7 @@ function stageTap(ev) {
     y = ev.clientY - r.top;
   let best = null,
     bd = 1e9;
-  for (const k of liveK(1)) {
+  for (const k of liveActors(1)) {
     const c = battleStageToCss(actorCenter(k));
     if (!c) continue;
     const d = Math.hypot(c.x - x, (c.y - y) * 0.8);

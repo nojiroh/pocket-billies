@@ -8,7 +8,7 @@
    or when the player picks it in Settings. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { FV, activeBattle, provide, reducedMotion, saveData } from './hooks.js';
+import { activeBattle, fieldState, provide, reducedMotion, saveData } from './hooks.js';
 import { $, clamp } from './util.js';
 import { hexToRgb } from './art.js';
 import {
@@ -206,10 +206,10 @@ function battleGLFrame() {
       k = 0.55 + 0.2 * Math.sin(battleStage.t / 260);
     lights.push({ p: [w.x + O[0], BGL.gy + 0.5, w.z + O[1]], r: 3.2, c: [1.2 * k, 0.25 * k, 0.45 * k] });
     /* v34: its shield, while it holds: a gold light round it */ const fv =
-      typeof FV === 'function' && typeof activeBattle !== 'undefined' && activeBattle
+      typeof fieldState === 'function' && typeof activeBattle !== 'undefined' && activeBattle
         ? (() => {
             try {
-              return FV(i);
+              return fieldState(i);
             } catch (e) {
               return null;
             }

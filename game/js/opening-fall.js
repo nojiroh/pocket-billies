@@ -22,7 +22,7 @@ import { walkView } from './walk-view.js';
 import { ensurePrograms, gpuState } from './engine/webgl.js';
 import { POST_EFFECT_SHADERS } from './engine/post-effects.js';
 import { canvasForContext, ensureWalkGl, standingHeightAt } from './walk-view-gl.js';
-import { endBattle, fighter, stopTimers, types } from './battle.js';
+import { actorTypes, endBattle, fighter, stopTimers } from './battle.js';
 import { LOCATION_VECTORS, WORLD_ART, vector3, worldMap, worldMapHeight, worldMapWidth } from './world-map.js';
 import { WORLD_MAP_GL_SHADERS, worldMapGl, worldMapGlRender, worldMapGlSize } from './world-map-gl.js';
 import { music, sfx } from './sound.js';
@@ -841,7 +841,7 @@ function tutorTypesTip() {
   const me = fighter(0),
     foe = fighter(1);
   if (!me || !foe) return null;
-  const ft = types(1);
+  const ft = actorTypes(1);
   const mine = me.moves.map(k => MOVES[k]).filter(m => m && m.p),
     weak = mine.filter(m => m.t !== 'None' && typeEffectiveness(m.t, ft) < 1),
     strong = mine.filter(m => m.t !== 'None' && typeEffectiveness(m.t, ft) > 1),

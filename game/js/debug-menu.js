@@ -57,7 +57,17 @@ import { applyPreferences, exportSave } from './settings-screen.js';
 import { battleStage, battleStageResize, battleStageStop } from './battle-stage.js';
 import { mapById } from './walk-view.js';
 import { gpuState } from './engine/webgl.js';
-import { checkFaints, fighter, paintBoxes, play, say, snapAll, startTrainer, startWild, stopTimers } from './battle.js';
+import {
+  allSnapshots,
+  checkFaints,
+  fighter,
+  paintBoxes,
+  play,
+  say,
+  startTrainer,
+  startWild,
+  stopTimers,
+} from './battle.js';
 import { worldMap } from './world-map.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -371,7 +381,7 @@ function dbgAct(x) {
     case 'foe1':
       if (!activeBattle) return;
       fighter(1).hp = 1;
-      paintBoxes(snapAll(), activeBattle.market);
+      paintBoxes(allSnapshots(), activeBattle.market);
       break;
     case 'catch':
       uiState.dbgCatch = !uiState.dbgCatch;

@@ -63,7 +63,7 @@ import { seamlessRoomMap, seamlessTripView, seamlessWorld } from './seamless-wor
 import {
   endBattle,
   fighter,
-  liveK,
+  liveActors,
   pickMove,
   pickTarget,
   startTrainer,
@@ -767,8 +767,8 @@ async function runFullTest(mode) {
       if (!(await want(['choose'], 45000)))
         throw new Error(`never got to the menu (${activeBattle ? activeBattle.phase : 'no battle'})`);
       const fmt = activeBattle.fmt,
-        mine = liveK(0).length,
-        theirs = liveK(1).length;
+        mine = liveActors(0).length,
+        theirs = liveActors(1).length;
       let plates = 0;
       for (let i = 0; i < 40 && plates < mine + theirs; i++) {
         plates = document.querySelectorAll('#plates .bplate:not(.off)').length;
@@ -788,7 +788,7 @@ async function runFullTest(mode) {
         picks++;
         if (activeBattle.phase === 'target') {
           aimed++;
-          pickTarget(liveK(1)[0]);
+          pickTarget(liveActors(1)[0]);
         }
         await stSleep(80);
       }
