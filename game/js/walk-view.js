@@ -381,7 +381,7 @@ export function dioBaseId() {
 export function dioScene(id) {
   if (id && id.charCodeAt(0) === 119 && id[1] === ':' && typeof wrSceneById === 'function') return wrSceneById(id);
   /* v43: a window onto the seamless world */ const S = dioData().scenes;
-  /* phase 04b: a map whose own file hasn't come yet (js/scene-files.js) */
+  /* phase 04b: a map whose own file hasn't come yet (js/map-files.js) */
   if (S[id] && S[id]._lite && typeof SCENE_FILES !== 'undefined') SCENE_FILES.touched.add(id);
   return S[id] ? dioExitsSync(S[id]) : null;
 }

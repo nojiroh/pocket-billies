@@ -12,7 +12,7 @@ import { expose } from './test-globals.js';
 import { closeModal, modal, provide, render, sceneIdAt, storyFlags, toast } from './hooks.js';
 import { $, clamp } from './util.js';
 import { PLACE, ROUTE, isTown, placeFull } from './data.js';
-import { sceneLite, sceneLoad, scenesAhead } from './scene-files.js';
+import { sceneLite, sceneLoad, scenesAhead } from './map-files.js';
 import { RM, S, U, canEnter, esc, fmt, save } from './core.js';
 import { artLoad, uiIco } from './art.js';
 import { dioData, dioImg, dioOk, dioPrepare, dioScene } from './walk-view.js';
