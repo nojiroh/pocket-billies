@@ -572,7 +572,6 @@ export interface Seat {
 /** rules.json: the numbers the game plays by */
 export interface Rules {
   /** 'walk': you walk the roads yourself */
-  travel: string;
   start: {
     /** money */
     se: number;

@@ -19,11 +19,11 @@ expose({
   NORMAL_MAP_WORKER_SOURCE: [() => NORMAL_MAP_WORKER_SOURCE],
   SURFACE_MATERIALS: [() => SURFACE_MATERIALS],
   applyAnisotropy: [() => applyAnisotropy, v => (applyAnisotropy = v)],
-  attributeClashes: [() => attributeClashes, v => (attributeClashes = v)],
+  attributeClashes: [() => attributeClashes, v => ((attributeClashes = v), provide({ attributeClashes }))],
   beginGpuTimer: [() => beginGpuTimer, v => (beginGpuTimer = v)],
   bindGridQuad: [() => bindGridQuad, v => (bindGridQuad = v)],
   bindQuad: [() => bindQuad, v => (bindQuad = v)],
-  compileProgram: [() => compileProgram, v => (compileProgram = v)],
+  compileProgram: [() => compileProgram, v => ((compileProgram = v), provide({ compileProgram }))],
   cross3: [() => cross3],
   endGpuTimer: [() => endGpuTimer, v => (endGpuTimer = v)],
   ensureNormalMapWorker: [() => ensureNormalMapWorker, v => (ensureNormalMapWorker = v)],
@@ -54,6 +54,7 @@ expose({
   windGustAt: [() => windGustAt, v => (windGustAt = v)],
 });
 /* eslint-enable no-func-assign */
+provide({ attributeClashes, compileProgram });
 export function setEnsurePrograms(v) {
   ensurePrograms = v; // eslint-disable-line no-func-assign
   provide({ ensurePrograms });
@@ -87,6 +88,7 @@ export const gpuState = {
   lost: 0,
   fail: 0,
 };
+provide({ gpuState }); /* to-module */
 export function webgl2Supported() {
   if (gpuState.ok != null) return gpuState.ok;
   try {

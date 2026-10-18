@@ -23,7 +23,7 @@ test('rules: stats, levels, moves, evolution', () => {
 test('rules: steps, trips and gates, encounters', () => {
   const s = startedSave('sparky0', 10);
   assert.equal(fn('hereLocation')().id, 'meadow');
-  assert.deepEqual(fn('tripTo')(0), { steps: 100, plan: [0], back: false });
+  assert.deepEqual(fn('tripTo')(0), { steps: 100, plan: [0] });
   assert.equal(fn('canEnter')(2), false); // the lake needs a Water Billie big enough to ride
   assert.equal(fn('tripTo')(2), null);
   s.team.push(fn('makeBilly')('drip0', 10)); // 2 m tall

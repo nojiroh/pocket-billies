@@ -17,7 +17,6 @@ import {
   activeBattle,
   environmentOdds,
   jingle,
-  onStepsAdded,
   provide,
   render,
   save,
@@ -45,7 +44,6 @@ import {
   STAT_IDS,
   STEPS_PER_KM,
   TRAINERS,
-  roadCost,
   trainersAt,
   typeEffectiveness,
 } from '../game-data.js';
@@ -75,7 +73,6 @@ expose({
   canEnter: [() => canEnter],
   // @ts-expect-error -- replaced on purpose
   canEvolve: [() => canEvolve, v => (canEvolve = v)],
-  canLeave: [() => canLeave],
   canRide: [() => canRide],
   // @ts-expect-error -- replaced on purpose
   cleanBuild: [() => cleanBuild, v => (cleanBuild = v)],
@@ -101,8 +98,6 @@ expose({
   formatNumber: [() => formatNumber],
   // @ts-expect-error -- replaced on purpose
   gainXp: [() => gainXp, v => (gainXp = v)],
-  // @ts-expect-error -- replaced on purpose
-  gateMsg: [() => gateMsg, v => (gateMsg = v)],
   // @ts-expect-error -- replaced on purpose
   gateOwner: [() => gateOwner, v => (gateOwner = v)],
   // @ts-expect-error -- replaced on purpose
@@ -133,8 +128,6 @@ expose({
   plural: [() => plural],
   // @ts-expect-error -- replaced on purpose
   primeBuild: [() => primeBuild, v => (primeBuild = v)],
-  // @ts-expect-error -- replaced on purpose
-  resumeTrip: [() => resumeTrip, v => (resumeTrip = v)],
   riderName: [() => riderName],
   // @ts-expect-error -- replaced on purpose
   riderOf: [() => riderOf, v => ((riderOf = v), provide({ riderOf }))],
@@ -161,12 +154,10 @@ expose({
   // @ts-expect-error -- replaced on purpose
   toTeam: [() => toTeam, v => (toTeam = v)],
   today: [() => today],
-  traveling: [() => traveling],
   // @ts-expect-error -- replaced on purpose
   tripTo: [() => tripTo, v => (tripTo = v)],
   // @ts-expect-error -- replaced on purpose
   walkDistances: [() => walkDistances, v => (walkDistances = v)],
-  walkMode: [() => walkMode],
   xpFor: [() => xpFor],
 });
 /* eslint-enable no-func-assign */
@@ -491,27 +482,7 @@ export const riderName = () => {
 };
 export const canEnter = n =>
   (!LOCATIONS[n].gate || saveData.seats.includes(LOCATIONS[n].gate)) && (!LOCATIONS[n].ride || canRide());
-export const canLeave = (from, to) => !blockerAt(from) || !!saveData.visited[to];
 export const nextTripNode = () => (saveData.trip.plan.length ? saveData.trip.plan[0] : null);
-/* alpha 0.4.1: how you get about (rules.travel). 'walk': you walk yourself, with the joystick, the d-pad or a tap, from
-   place to place across their edges, like a classic RPG; the steps you take in the game count as steps (encounters,
-   challenges, your buddy). 'steps': your real steps carry you along the roads (the game until 0.4). */
-export const walkMode = () => ((typeof RULES !== 'undefined' && RULES.travel) || 'walk') === 'walk';
-provide({ walkMode }); /* to-module */
-export const traveling = () => !walkMode() && nextTripNode() != null && !saveData.trip.hold && !gateMsg();
-/* why travel can't continue right now (null when it can, or when you're staying) */
-export function gateMsg() {
-  const node = saveData.trip.node,
-    nx = nextTripNode();
-  if (nx == null) return null;
-  if (saveData.trip.prog === 0 && !canLeave(node, nx)) {
-    /* canLeave was false, so a trainer blocks this location */
-    const bl = /** @type {Trainer} */ (blockerAt(node));
-    return bl.blockTitle || `${bl.name} is blocking the way.`;
-  }
-  if (!canEnter(nx)) return gateText(LOCATIONS[nx]);
-  return null;
-}
 /* shortest walk (in steps) between stops, entering only stops you may enter; returns {d,prev} */
 export function walkDistances(from) {
   const N = LOCATIONS.length,
@@ -541,64 +512,27 @@ export const pathFrom = (prev, to) => {
   for (let x = to; x >= 0 && prev[x] >= 0; x = prev[x]) out.unshift(x);
   return out;
 };
-/* steps from where you stand to stop j, and the plan that gets there (turning back on the current link if shorter) */
+/* steps from where you stand to stop j, and the plan that gets there */
 export function tripTo(j) {
-  const r = saveData.trip,
-    node = r.node,
-    nx = nextTripNode();
-  if (nx == null || r.prog === 0) {
-    if (j === node && nx == null) return { steps: 0, plan: [], back: false };
-    const D = walkDistances(node);
-    if (D.d[j] === Infinity) return null;
-    return { steps: D.d[j], plan: pathFrom(D.prev, j), back: false };
-  }
-  /* the plan's next location is a road away (plans are made from the roads; migrate checks a loaded one) */
-  const c = /** @type {number} */ (roadCost(node, nx)),
-    A = walkDistances(nx),
-    Bk = walkDistances(node),
-    fwd = c - r.prog + A.d[j],
-    back = r.prog + Bk.d[j];
-  if (fwd === Infinity && back === Infinity) return null;
-  return fwd <= back
-    ? { steps: fwd, plan: [nx, ...pathFrom(A.prev, j)], back: false }
-    : { steps: back, plan: [node, ...pathFrom(Bk.prev, j)], back: true };
+  const node = saveData.trip.node;
+  if (j === node) return { steps: 0, plan: [] };
+  const D = walkDistances(node);
+  if (D.d[j] === Infinity) return null;
+  return { steps: D.d[j], plan: pathFrom(D.prev, j) };
 }
 export function setTrip(j) {
   const t = tripTo(j);
   if (!t) return false;
-  const r = saveData.trip;
-  if (t.back && nextTripNode() != null) {
-    const nx = /** @type {number} */ (nextTripNode()),
-      c = /** @type {number} */ (roadCost(r.node, nx));
-    r.node = nx;
-    r.prog = c - r.prog;
-    t.plan.shift();
-  }
-  r.plan = t.plan;
-  r.hold = false;
-  if (!r.plan.length) r.prog = 0;
+  saveData.trip.plan = t.plan;
   save();
   return true;
 }
 export function stopTrip() {
-  const r = saveData.trip;
-  if (r.prog > 0) {
-    r.hold = true;
-  } else {
-    r.plan = [];
-    r.hold = false;
-  }
+  saveData.trip.plan = [];
   save();
 }
-export function resumeTrip() {
-  saveData.trip.hold = false;
-  save();
-}
-/* encounters come from where you're headed while you walk, otherwise from where you are */
-export const hereLocation = () => {
-  const nx = nextTripNode();
-  return LOCATIONS[nx != null && saveData.trip.prog > 0 && !saveData.trip.hold ? nx : saveData.trip.node];
-};
+/* encounters come from where you are */
+export const hereLocation = () => LOCATIONS[saveData.trip.node];
 export function encounterPoolHere() {
   return POOLS[hereLocation().pool] || POOLS[Object.keys(POOLS)[0]];
 }
@@ -643,26 +577,6 @@ export function addSteps(n, quiet) {
   saveData.se += gi;
   saveData.day.steps = b;
   saveData.totalSteps += n;
-  const msgs = [];
-  if (traveling()) {
-    const r = saveData.trip;
-    r.prog += n;
-    /* each hop of a plan is a road (only the first is checked when a save loads) */
-    while (r.plan.length && r.prog >= /** @type {number} */ (roadCost(r.node, r.plan[0]))) {
-      r.prog -= /** @type {number} */ (roadCost(r.node, r.plan[0]));
-      r.node = /** @type {number} */ (r.plan.shift());
-      saveData.visited[r.node] = 1;
-      msgs.push(
-        r.plan.length ? `You passed through ${LOCATIONS[r.node].name}.` : `You arrived at ${LOCATIONS[r.node].name}.`
-      );
-      if (typeof uiState !== 'undefined') uiState.arrive = r.node;
-      /* v43: the walk screen walks you in from the exit */ if (!r.plan.length || gateMsg()) {
-        r.prog = 0;
-        break;
-      }
-    }
-    if (!r.plan.length) r.prog = 0;
-  }
   const every = Math.max(1, RULES.steps.encounterEverySE);
   saveData.meter += gi;
   let sp = 0;
@@ -696,11 +610,10 @@ export function addSteps(n, quiet) {
   });
   /* phase 06-2: the money earned rises from the money chip (ui.js pbFloat), so the toast leaves it out */
   if (!quiet || sp) toast(`+${formatNumber(n)} steps${sp ? `, ${plural(sp, 'new encounter')}` : ''}`);
-  msgs.concat(notes).forEach(t => toast(t));
+  notes.forEach(t => toast(t));
   save();
   if (!activeBattle) {
     render();
-    if (typeof onStepsAdded === 'function') onStepsAdded();
     showPendingWindows();
   }
 }

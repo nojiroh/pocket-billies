@@ -11,6 +11,170 @@ Newest entry on top. Every phase session ends by adding an entry here and taggin
 - Questions waiting for the owner: 
 - Next session starts with: 
 
+### Phase 09 batch 1, part 2 - natural trunks, editable leaves, the great oak, a Props section - 2026-10-19
+Owner's requests: stop the rest of the batch; rework the trees' trunks to look natural; leaves easy to edit in the
+Studio; redo the great oak with the swing (Copperleaf); a clear prop part in the Studio with all its tools; no graphic
+effects when looking at props.
+- Trunks: a `limb` can be a bent line of points (`pts`: [x, y, z, radius] each). The tool traces each trunk and arm
+  from the drawing (its lean, curve and taper), bends it a little in depth, flares the foot, adds five roots going into
+  the ground, lets the arms grow out of the trunk's narrowing top, and curves the branches up into the clumps.
+- Leaves: one picture per tree or bush (game/art/scene/next/leaves/<key>.png, the crown as drawn). Each clump is a
+  picture layer with `clip` [x, y, r] (a circle in that picture, cut at run time, outline on its lower rim), the core
+  is the same picture with `shade` 0.78. Painting it changes every clump. The autumn oak is one recoloured picture.
+- Great oak: next_tree_giant_swing (16 clumps, the knot hole as a picture on the trunk, the swing's branch modelled,
+  ropes and seat that swing together: a `spin` may have `swing`, radians to and fro). On the test map's last row.
+- Plain look: a scene with `plain: 1` draws without depth of field, bloom, grade, grain, vignette, haze, mist, clouds,
+  shafts, weather, time of day or season (engine/settings.js PLAIN_LOOK). The props test map and the Studio's prop
+  turntable use it.
+- Studio: a Props section (World & places → Props, studio/js/props-editor.js): every prop, searchable, filtered by
+  New style / Trees / Bushes & plants / Rocks / Buildings / Lamps & furniture / Flat, with 3D, 32 px/m and looks badges
+  and how often each is placed; for the picked prop: its looks (variants) on the turntable one by one, paint a look's
+  picture, add a look from another prop, remove one; where it stands (jump to the scene); the full prop editor; the
+  model editor with a Leaves part (each leaf picture with its clump circles drawn on it, Paint the leaves, Replace from
+  PNG) and per-layer clump circle, darker, shadow, sway and glow fields; the pixel editor.
+- Variants: a variant's swapped pictures load with the place (the autumn oak showed late).
+- Verified: lint, type-check, modules, format, data check, 32 unit tests; headless shots of the trees and great oak;
+  the Studio (GitHub stand-in): the Props list and filter, the Leaves part lists both oak pictures, painting a leaf
+  picture marks it changed and bumps its version. Not done: a screenshot of the Props section with the turntable
+  running (the software renderer is too slow for it), the smoke check after this part.
+- Variants count: the 11 new props have 22 looks in all: beech 1, oak 4 (oak, spreading, sapling, autumn), great oak
+  1, wild roses 1, round bush 3, rocks 5 (3 shapes, mossy, snowy), mushrooms 3, cottage 1, lantern 1, washing line 1,
+  tall grass 3.
+
+### Phase 09 batch 1 - ten props in the new style, test map - 2026-10-18
+Owner's choices: trees as a low-poly trunk and branches with flat leaf clumps, in one model; a first batch of ten props
+covering every technique, shown on a test map. Started straight from the owner's go-ahead in chat (no Plan Mode step).
+- Changed: prop-models.js: a `limb` shape (tapered branch, point to point) and a `dome`; round shapes take `sides`,
+  `rings`, `lump`, `facet`; textures `bark` and `rock` (cells 22 and 23 of detail-a04b.png, painted by the tool);
+  picture layers take `shadow`, `recv: 0` (no shadow-map lookup, so a crown's clumps don't stripe each other), `sway`
+  and `glow` (on with the lamps), the recipe takes `ppm`; picture layers no longer inherit the footprint `box` (it drew
+  a cottage's door pushed back inside its walls); a variant can `swap` colours and pictures. walk-view.js: plain prop
+  `variants` picked by a placement's `v`. walk-view-gl.js: a prop's own `ppm`; `lampLit` exported; the sprite shader
+  skips the shadow map for `noRecv` items. Studio model editor: Limb and Dome, their fields, sides/bands/lumpy/flat
+  faces, and a picture layer's shadow/shadows-on-it/sway/glow.
+- New: tools/build-props-batch1.py builds everything below from the old pictures, rerunnable: game/art/scene/next
+  (leaves, decals, models), the `next_*` catalogue entries in scenery.json and game/data/maps/test_props_next.json.
+  Props: next_beech; next_oak (variants: spreading, sapling, autumn = the oak with recoloured leaves); next_bush_roses;
+  next_bush_round (3 shapes); next_rocks (3 shapes, mossy, snowy = mossy with a colour swap); next_mushroom (red,
+  brown, blue by swap); next_cottage_juniper; next_lantern; next_laundry_line; next_tallgrass (stays flat, 32 px/m,
+  3 shapes). The test map has each old prop just left of its new version; debug menu > Test scenes, or
+  game/index.html?test=1&scene=test_props_next.
+- Risky or unfinished: no route uses the new props yet (swap-in waits for approval). Cottage pictures stand 0.16 m out
+  from the wall (a picture's depth is coarser than a model's; nearer, it hides), visible from a steep side angle.
+  tools/build-airship.py rewrites detail-a04b.png from detail-a04.png and would drop bark and rock: rerun
+  build-props-batch1.py after it. The new cottage keeps the old `door` (interior) and window fx. Trees cost about 10
+  sprites each (core + clumps); instancing is still to do. Not measured on a phone.
+- Verified: lint, type-check, module check, format check, data check, 32 unit tests, the smoke check (see the PR);
+  headless shots of every row by day, the trees turned, the lanterns and cottage at night.
+- Correction to my earlier count: 76 recipe files exist in scene/vox, but only 32 props link one (`model`); the
+  lantern, stump, beehive, signpost and others on the first routes still draw their picture.
+- Questions waiting for the owner: approve the batch (or which props to redo)? Then swap them in on Copperleaf,
+  Hedgerow Lane and Tallgrass Meadow, keyed as the old props (so placements keep working) or as next_* with
+  placements rewritten?
+- Next session starts with: the owner's notes on the batch.
+### Phase 13 (part) - The fast check and the in-game graphics test - 2026-10-18
+Two parts, plans approved by the owner. Part 1 on branch ccr-5f324dee-5mgqdn (merged as PR #16), Part 2 on top of it.
+- Changed:
+  - Part 1: `tools/check-fast.py` (`npm run check:fast`), the fast check, only what must never break: the data, the
+    world-map graph, a town, a route, a cave and a room open and draw, a save round-trips, a battle plays to the end,
+    the game boots with no errors, the Studio loads, and the exported debug log holds no names. `game/js/fixture.js`:
+    `?fixture=<name>` (title, town, route, cave, room, battle, stored) starts a ready-made game with its own save key,
+    never signed in, with the planted names in FIXTURE_NAMES (trainer "Quillonda", nickname "Zorblax"). The CI push
+    job runs check-fast.py instead of the smoke set.
+  - Part 2: `game/js/graphics-test.js`, the in-game graphics test. A button in Settings → Help ("Run the graphics
+    test", `data-a="gfxtest"`) and one in the debug menu's Performance row. settings-screen.js (`startGraphicsTest`)
+    loads it on demand (`import()` of `js/graphics-test.js` against the page's address, so the build leaves it as its
+    own file in dist/game/js/) and hands it what it reads, so the module has no imports. Steps, all in Marigold Town:
+    the shaders (the same check as check-quick.py's Shaders step, which is unchanged), the game defaults to compare
+    with, each of the 144 ENGINE_SPEC dials on its own (through the player's expert dials, which come before a scene's
+    look; a number at the top of its range or the bottom if that is its default, on/off flipped, a choice at another
+    option, a colour at #FF4080, the light dials at night), Balanced and Beautiful, and the five ENGINE_PRESETS. Each
+    step opens the scene from scratch and counts frames for 2 s: frame rate, longest frame, time to open, errors. An
+    OK/Problem table and "Save the report" (a .json file: steps, numbers, errors, the graphics chip, screen and cores;
+    not the browser, language or time zone). The last row is the planted-name check: the planted names, the trainer's
+    name and every nickname in the save; any found is taken out and the row is a Problem.
+  - Saving paused and the save put back as in self-test.js; the save copy also brings back the player's graphics
+    settings (aim, expert dials), and the scene is made again with them, when the test ends, is stopped or fails.
+    selfTest.on is set while it runs, so the story, postcards and the full test stay out of the way.
+  - `tools/test/graphics-test.test.mjs` (6 tests): every dial gets a step at a value other than its default, the
+    names list, a clean report passes, a planted name is taken out and fails the check, the report's fields.
+  - eslint.config.js: a block for graphics-test.js (it is on no page). to-module put ENGINE_*, FIXTURE_NAMES, the
+    shader sets, gpuState, compileProgram and attributeClashes through hooks.js for settings-screen.js.
+  - Docs: TESTING.md (the graphics test and its rules), CHANGELOG.
+- Risky or unfinished:
+  - **The graphics test has never run.** As the owner asked, Claude ran it in no browser at all, not even software
+    rendering. It must be run on a real device; the first run is the owner's. The likeliest trouble: a scene that
+    takes long to open from scratch on a phone (the step limit is 30 s), and the whole run's length (153 steps, about
+    3-4 s each: probably 8-10 minutes, not measured).
+  - The spec's "Saver" preset doesn't exist: the Graphics tab has Balanced and Beautiful only (Battery saver was
+    removed in phase 03). Both are tested; Beautiful is the same look as the game defaults row.
+  - Dials a scene doesn't use (water with no water in view, lamp shadows by day) show OK without showing much.
+  - The steps read the frame count of the walk view only; the battle stage and the world map aren't in it.
+- Verified (what ran, what passed): `npm run lint`, `npm run typecheck`, `npm test` (31 tests), `npm run
+  check:modules`, `npm run format:check`, `npm run check:data`, `npm run build` (graphics-test.js in dist/game/js,
+  the bundle keeps the import as written), and `python3 tools/check-fast.py`: 11 of 11 passed in 112 s on 2 browsers
+  in this container. A planted fault (the name check turned off) fails its unit test; a planted undefined name in
+  graphics-test.js fails lint. Part 1, from its session: check-fast takes about 85 s on 2 browsers (1 browser 94.5 s,
+  4 browsers 110.8 s), and all 11 planted faults were caught.
+- Decisions I made (and why): the dials go through the player's expert dials, because a scene's own look comes
+  before the game-wide defaults and would hide some dials. Each dial moves away from its default, so every step
+  changes something. Each step opens the scene from scratch, so dials read while a scene is made count. Device
+  details are cut to the graphics chip and the screen, because the user agent, language and time zone say more
+  about the player than a graphics report needs.
+- Questions waiting for the owner: the first run on a phone, and the report it saves.
+- Next session starts with: the report from that run; then the rest of phase 13 (13b, 13c).
+### Phase 08a-1 - tests off the steps mode, the dead steps travel mode deleted - 2026-10-18
+Plan approved at the start (docs/phases/08a-plan.md, section 08a-1, now marked done with the corrections found).
+- Changed (15 commits on c3b5de9):
+  - Smoke was red on the base since phase 16: check-quick named species now in legacy (`ek1` in play(), `knight1`
+    in three wild battles). Fixed first, two commits (Versewift, a Bezos line one).
+  - Bug fixed: phantom metres. A fresh view put you at its spawn point after movePlayer had saved your old position,
+    so every start, Continue, airship landing and debug jump counted 650-940 steps as walked (measured headless).
+    That jump is not counted now; a real walk still is (14.1 a metre, until 08a-2).
+  - Tests walk instead of paying steps: `cross()` / `cross_to()` in check-quick (a path to just past the exit, the
+    player put along it 0.8 m at a time, walkCross after each, unready frames counted). Walking (two roads to
+    Willowmere, 218 m), v43 (Marigold -> Tallgrass Meadow, 78 m, never unready), Copperleaf -> Marigold (141 m),
+    a041 use it. The in-game full test's Road phase walks the same way in JS and now also fails when the meadow's
+    view never shows. play() no longer switches to the steps mode or pays 2,400 steps: it gives the money, four
+    encounters, egg progress and buddy XP directly. The whole quick check now runs in walk mode.
+  - tools/check-game.py deleted (stale, not in CI). The duplicate a02_ground() call removed.
+  - Deleted (deletion only): rules.travel and the Studio select, walkMode/traveling, gateMsg, canLeave, resumeTrip,
+    the trip part of addSteps, uiState.arrive and the arrival hurry, the 'road'/'path' walk modes and their hurry
+    and teleports, seamlessTripView/seamlessJoinTrip/seamlessPrefetch(+View), the go/hold/blocked trip status and
+    bars, the walker icon, the stay/resume/turn-back actions, exitPrompt's steps modal, tripLeft, stepsTo,
+    onStepsAdded, the steps-only "prepare the next stop" timer, trip.prog and trip.hold everywhere (save, check,
+    type, literals in game, fixture, debug menu, tests), the debug log's tripProgress, four i18n rows, the CSS.
+    Kept: trip.node and trip.plan (the gold arrows, "Stop guiding me").
+- Visible changes: the place card says "In X" (not "Staying in X"); the walk sheet always shows the "Walk with the
+  joystick" note; the trip card's text is unchanged ("Steps still earn money...": 08a-3 rewrites the text).
+- Risky or unfinished:
+  - No save format change: migrate drops trip.prog/hold from an older save (a unit test checks it). SAVE_VERSION 3
+    comes once, in 08a-2.
+  - The full quick check has known red steps that are NOT from this phase: v35, v38, v39 (they count the old roster,
+    phase 16 moved it to legacy); the Studio round trip (--studio, not run) names checko0, also legacy. They need
+    the phase 16 rework.
+  - The Walking step now walks 218 m over two roads: 107-116 s alone, 220 s inside the full run (a note against its
+    150 s budget, not a failure).
+  - Intermittent, seen once each, both passed on re-run: "Things to do: standing on a gold stamp didn't pick it up"
+    (full run), and the in-game test step's "written while the test ran: account ['users']" (a friends presence
+    write racing the test; smoke). Worth a look if they come back.
+  - trainers' blockTitle/blockText are shown nowhere now (they were only shown by the steps mode's blocked card;
+    walking shows "X is blocking the way. Beat them first."). Data kept; 08a-3 or phase 15 decides.
+  - The roads' step costs (tripTo, the map card's "N steps to go") stay until 08a-2 step 10 (metres).
+- Verified:
+  - Every commit: lint, typecheck, unit tests (npm test, 32 + one new assertion), check:data, check:modules,
+    format:check. check-fast 11/11 and smoke green after each batch (smoke on the base: 2 red, see above).
+  - Targeted full-check steps on the final deletion: Walking, Things to do, v43, Copperleaf, airships, a041: all ok.
+  - The in-game Road phase headless: Marigold -> Tallgrass Meadow, 1 view change, prepared ahead, never unready.
+  - The full quick check ran once on c3bff8f (tests in walk mode, before the deletions): only the problems listed
+    above. Not re-run on the final commit (the plan keeps the full run for the end of 08a-3).
+  - A debug log built headless at the base and now: same sections and event kinds, same errors (all phase 16
+    stand-in warnings); only state.tripProgress is gone.
+- Questions waiting for the owner:
+  - Tags: `phase-05-done` (0c62318) and `phase-04-done` (12a3b58) recreated locally; my push was refused again
+    (the remote hangs up on tag pushes). Please push them from your machine.
+  - On your phone: the in-game full test (its Road phase now walks) and a debug log from this build.
+- Next session starts with: "start 08a-2" (docs/phases/08a-plan.md, section 08a-2: encounters first).
 ### Debug session - the two diagnostics logs of 18 Oct (PC 19:43, phone 19:47) - 2026-10-18
 Not a phase; plan approved at the start. Both runs passed with no errors; the phone (Adreno 750) ran Clovercrest at 24 fps.
 - Changed (6 commits, each passes lint, typecheck, check:modules, unit tests and format on its own):

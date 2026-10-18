@@ -11,8 +11,8 @@
 import { expose } from './test-globals.js';
 import { flyDraw, flyTick, friends, provide } from './hooks.js';
 import { $, clamp } from './util.js';
-import { LOCATIONS, REGIONS, ROADS, locationSubtitle, roadCost } from './game-data.js';
-import { canEnter, formatNumber, nextTripNode, tripTo } from './logic/rules.js';
+import { LOCATIONS, REGIONS, ROADS, locationSubtitle } from './game-data.js';
+import { canEnter, formatNumber, tripTo } from './logic/rules.js';
 import { escapeHtml, reducedMotion, saveData, uiState } from './game-state.js';
 import { frameCount, frameStop, frameTask, userFps } from './frame-scheduler.js';
 import { artLoad, artPixels, hexToRgb, makeCanvas, uiIconHTML, worldMapStamp } from './art.js';
@@ -178,6 +178,7 @@ precision highp float;in vec2 vUV;in vec3 vW;out vec4 o;uniform sampler2D uTex;u
 void main(){vec4 c=texture(uTex,vUV);if(c.a<.5)discard;float d=length(vW-uC),fk=1.-exp(-max(0.,d-.3)*.72);o=vec4(mix(c.rgb*.97,uHaze,clamp(fk,0.,.86)),1.);}`,
   ],
 };
+provide({ WORLD_MAP_GL_SHADERS }); /* to-module */
 /* ---------- when it runs ---------- */
 export function worldMapGlWanted() {
   return typeof gpuState !== 'undefined' && !gpuState.fail && !gpuState.lost && webgl2Supported();
@@ -836,24 +837,15 @@ function worldMapGlOverlay(t) {
   const r = saveData.trip,
     plan = [r.node, ...r.plan];
   if (plan.length > 1) {
-    const pts = worldMapGlPath(plan, r.prog / roadCost(plan[0], plan[1]));
+    const pts = worldMapGlPath(plan, 0);
     worldMapGlLine(c, pts, 'rgba(255,214,90,.35)', 9);
-    worldMapGlLine(c, pts, r.hold ? 'rgba(255,255,255,.9)' : '#FFE27A', 3.5, [10, 8], -t / 40);
+    worldMapGlLine(c, pts, '#FFE27A', 3.5, [10, 8], -t / 40);
   }
   const sel = uiState.mapSel;
   if (typeof sel === 'number' && sel !== r.node && sel !== (r.plan.length ? r.plan[r.plan.length - 1] : null)) {
     const tr = tripTo(sel);
     if (tr && tr.plan.length) {
-      const from = nextTripNode() != null && r.prog > 0 ? (tr.back ? r.node : nextTripNode()) : r.node;
-      const seq = [r.prog > 0 && !tr.back ? r.node : from, ...tr.plan.filter((x, i) => !(i === 0 && x === from))];
-      worldMapGlLine(
-        c,
-        worldMapGlPath(seq.length > 1 ? seq : [r.node, ...tr.plan], 0),
-        'rgba(255,255,255,.85)',
-        2.5,
-        [4, 7],
-        -t / 60
-      );
+      worldMapGlLine(c, worldMapGlPath([r.node, ...tr.plan], 0), 'rgba(255,255,255,.85)', 2.5, [4, 7], -t / 60);
     }
   }
   const pq = worldMapGlProject(worldMap.me || worldMapPlayerPosition());
