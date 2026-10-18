@@ -34,6 +34,7 @@ expose({
   bodySliders: [() => bodySliders, v => (bodySliders = v)],
   boneKind: [() => boneKind],
   boneScale: [() => boneScale, v => (boneScale = v)],
+  cachedPersonArt: [() => cachedPersonArt, v => (cachedPersonArt = v)],
   cleanLook: [() => cleanLook, v => (cleanLook = v)],
   cleanTrainer: [() => cleanTrainer, v => (cleanTrainer = v)],
   drawPortrait: [() => drawPortrait, v => (drawPortrait = v)],
@@ -48,7 +49,6 @@ expose({
   lookOf: [() => lookOf, v => (lookOf = v)],
   opaqueBox: [() => opaqueBox, v => (opaqueBox = v)],
   personAnimation: [() => personAnimation, v => (personAnimation = v)],
-  personArtCache: [() => personArtCache, v => (personArtCache = v)],
   personArtImage: [() => personArtImage, v => (personArtImage = v)],
   personArtPaths: [() => personArtPaths, v => (personArtPaths = v)],
   personArtPixels: [() => personArtPixels, v => (personArtPixels = v)],
@@ -358,7 +358,7 @@ export const PERSON_ART_CACHE = new Map();
 const PERSON_ART_CACHE_MAX = /Android|iPhone|iPad/.test(navigator.userAgent)
   ? 2000
   : 6000; /* v41: a people picture is ~20 KB; phones keep 2000 (~40 MB) */
-function personArtCache(key, build) {
+function cachedPersonArt(key, build) {
   if (PERSON_ART_CACHE.has(key)) {
     const v = PERSON_ART_CACHE.get(key);
     PERSON_ART_CACHE.delete(key);
@@ -382,7 +382,7 @@ function personArtImage(path) {
 }
 const imageLoaded = im => !!(im && (im.naturalWidth || im.width));
 function personArtPixels(path) {
-  return personArtCache('px|' + path + '|' + personArtVersion(), () => {
+  return cachedPersonArt('px|' + path + '|' + personArtVersion(), () => {
     const im = personArtImage(path);
     if (!imageLoaded(im)) return null;
     const w = im.naturalWidth || im.width,
@@ -423,7 +423,7 @@ function hslToRgb(h, s, l) {
 /* one piece of a sheet, its colour areas moved from the default colours to the wanted ones (shading kept) */
 function recolorPiece(src, p, defs, want) {
   const key = 'pc|' + src.img + '|' + p.r.join(',') + '|' + want.join(',') + '|' + personArtVersion();
-  return personArtCache(key, () => {
+  return cachedPersonArt(key, () => {
     const P = personArtPixels(src.img),
       M = personArtPixels(src.mask);
     if (!P) return null;
@@ -542,7 +542,7 @@ function lookKey(L) {
 }
 export function personRig(L, view, expr) {
   const W = wardrobeData();
-  return personArtCache('rig|' + view + '|' + (expr || '') + '|' + lookKey(L) + '|' + personArtVersion(), () => {
+  return cachedPersonArt('rig|' + view + '|' + (expr || '') + '|' + lookKey(L) + '|' + personArtVersion(), () => {
     const h = L.body.height,
       sk = W.skeleton[view],
       bones = [],
@@ -717,7 +717,7 @@ export function personFrame(L, view, act, ph, t, mirror, expr) {
 /* walk frames for the scene and map: {down,up,side(left),sideR}, each [stand, step A, step B] (+ cyc: 6 frames) */
 export function personWalkFrames(who) {
   const L = lookOf(who);
-  return personArtCache('walk|' + lookKey(L) + '|' + personArtVersion(), () => {
+  return cachedPersonArt('walk|' + lookKey(L) + '|' + personArtVersion(), () => {
     const out = {};
     /* every single frame is drawn the first time it's needed (and ahead of time by warmPerson), so a crowd appearing
     never has to draw hundreds of pictures in one frame */
@@ -819,7 +819,7 @@ export const folkFrames = seed => personWalkFrames('folk:' + seed);
 /* battle: 2 breathing frames ('back' for you, 'front' for rivals), plus poses */
 export function personBattleFrames(who, view) {
   const L = lookOf(who);
-  return personArtCache('bat|' + view + '|' + lookKey(L) + '|' + personArtVersion(), () => [
+  return cachedPersonArt('bat|' + view + '|' + lookKey(L) + '|' + personArtVersion(), () => [
     personFrame(L, view, 'idle', 0, 650 * Math.PI * 1.5),
     personFrame(L, view, 'idle', 0, 650 * Math.PI * 0.5),
   ]);
@@ -828,12 +828,12 @@ export function personBattlePose(who, view, act, ph, t) {
   const L = lookOf(who);
   if (act === 'throw') {
     const k = Math.round(clamp(ph, 0, 1) * 6) / 6;
-    return personArtCache('pose|' + view + '|throw|' + k + '|' + lookKey(L) + '|' + personArtVersion(), () =>
+    return cachedPersonArt('pose|' + view + '|throw|' + k + '|' + lookKey(L) + '|' + personArtVersion(), () =>
       personFrame(L, view, 'throw', k, 0)
     );
   }
   const k = Math.floor((t || 0) / 90) % 4;
-  return personArtCache('pose|' + view + '|' + act + '|' + k + '|' + lookKey(L) + '|' + personArtVersion(), () =>
+  return cachedPersonArt('pose|' + view + '|' + act + '|' + k + '|' + lookKey(L) + '|' + personArtVersion(), () =>
     personFrame(L, view, act, 0, k * 90)
   );
 }
@@ -856,7 +856,7 @@ export function opaqueBox(c) {
 }
 export function personSheet(who, view = 'front') {
   const L = lookOf(who);
-  return personArtCache('sheet|' + view + '|' + lookKey(L) + '|' + personArtVersion(), () => {
+  return cachedPersonArt('sheet|' + view + '|' + lookKey(L) + '|' + personArtVersion(), () => {
     const f = [
       personFrame(L, view, 'idle', 0, 650 * Math.PI * 1.5),
       personFrame(L, view, 'idle', 0, 650 * Math.PI * 0.5),
@@ -882,7 +882,7 @@ export function personHTML(who, size, view = 'front') {
   return `<span class="spr slow tr-por" style="width:${wid}px;height:${hgt}px"><img src="${s.url}" alt=""></span>`;
 }
 export function personWalkIconURL(who) {
-  return personArtCache('walkurl|' + lookKey(lookOf(who)) + '|' + personArtVersion(), () => {
+  return cachedPersonArt('walkurl|' + lookKey(lookOf(who)) + '|' + personArtVersion(), () => {
     const f = personWalkFrames(who).sideR,
       a = opaqueBox(f[1]),
       w = a[2] + 2,
@@ -943,7 +943,7 @@ export function drawPortrait(cv, who, expr, t) {
 }
 function portraitURL(who, expr) {
   const L = lookOf(who);
-  return personArtCache('porurl|' + (expr || '') + '|' + lookKey(L) + '|' + personArtVersion(), () => {
+  return cachedPersonArt('porurl|' + (expr || '') + '|' + lookKey(L) + '|' + personArtVersion(), () => {
     const c = makeCanvas(1, 1);
     drawPortrait(c, L, expr, 0);
     return c.toDataURL();
