@@ -176,7 +176,7 @@ All existing pictures are unchanged. One new file:
 
 ## Version 19
 
-No new image files. Props get solid bodies made at run time from their own pictures (`game/js/props3d.js`):
+No new image files. Props get solid bodies made at run time from their own pictures (`game/js/solid-props.js`):
 - The front (and the back, seen from behind) is the picture itself; the edges of slabs and blocks take the
   colour one pixel inside the outline, so keep the 1-pixel dark outline: it is what tells the body's edge
   colour apart. A shape only one pixel thick uses its outline colour.

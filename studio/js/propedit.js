@@ -13,7 +13,7 @@ import { artLoad, cnv, setArtLoad } from '../../game/js/art.js';
 import { DIO, dioData, dioImg, dioLayerM, dioOk, setDioData } from '../../game/js/walk-view.js';
 import { DGL, DGL_MATS, dglMatOf, dglVaryOf, dioMount } from '../../game/js/walk-view-gl.js';
 import { BLD_ROOM_NAMES, BLD_TEX_NAMES } from '../../game/js/buildings.js';
-import { P3D_AUTO, P3D_KINDS, P3D_PARTS, p3dTreeKind } from '../../game/js/props3d.js';
+import { P3D_AUTO, P3D_KINDS, P3D_PARTS, p3dTreeKind } from '../../game/js/solid-props.js';
 import { esc } from './shims.js';
 import {
   ACTS,
@@ -779,7 +779,7 @@ ACTS.pedLayerPx = d => {
   setArtLoad(paths => base(paths.filter(p => !(ST.artDirty && ST.artDirty.has('art/' + p)))));
 }
 
-/* ---------- v19: a solid body behind the picture (game/js/props3d.js) ---------- */
+/* ---------- v19: a solid body behind the picture (game/js/solid-props.js) ---------- */
 /* v32: how each placed copy of this prop varies, and its wear and tear (the game's defaults for its kind show as the
    starting values; anything set here overrides them for this prop everywhere) */
 function pedVaryHTML(k) {
