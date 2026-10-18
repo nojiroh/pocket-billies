@@ -179,7 +179,14 @@ globals) in the same commit. Smoke (`python3 tools/check-quick.py --smoke`) afte
 Not yet done: a review of this order against the code (it was started and stopped to save usage). Start 08a-1 with
 a short read of the files each commit touches.
 
-### 08a-1: tests off the steps mode, then delete the dead mode
+### 08a-1: tests off the steps mode, then delete the dead mode (DONE 2026-10-18, see HANDOFF "Phase 08a-1")
+Corrections found while doing it: the line numbers had drifted (phase 16 landed after the audit); the self-test Road
+phase did set `RULES.travel='steps'` itself (self-test.js:829, phase 13); `tools/check-logic.mjs` does not exist
+(`npm run check:logic` is `npm test`, the tripTo test is in tools/test/rules.test.mjs); tools/check-fast.py and
+game/js/fixture.js also wrote trip.prog/hold; story.js:203/231 read trip.prog (fixed with the plan check alone);
+world-billies.js had a steps-only "prepare the next stop" timer and world-map.js drew progress along a road (both
+deleted). Smoke had been red since phase 16 (legacy species in check-quick), fixed first.
+
 1. Setup: `pip install -r tools/requirements-check.txt` (Python Playwright 1.56.0, which matches
    /opt/pw-browsers/chromium-1194) and `npm ci`; fast checks and smoke on the base. Recreate the tags locally:
    `phase-05-done` on 0c62318, `phase-04-done` on 12a3b58 (you push them; my tag pushes were refused). No "before"
