@@ -54,6 +54,42 @@ Not a phase; plan approved at the start. Both runs passed with no errors; the ph
   - If the phone is still slow, the next renderer work is: reuse per-frame item objects, instance static sprites,
     group solid props by mesh. That is a phase of its own.
 
+### Phase 06, session 06-1 - UI foundation and calmer messages - 2026-10-18
+Plan: docs/phases/06-plan.md (PR #20). Owner's choices: Lit components, Chakra Petch for long text, an inbox dot for
+notices, delete the codex prototype branch, start 06-1 now.
+- Changed:
+  - **Lit**: `tools/vendor-lit.mjs` bundles the npm package (lit 3.3.3, devDependency) into `game/vendor/lit.js`, a
+    classic script that sets `self.PB_LIT` (14 KB minified). Classic, not an import, because tools/to-module.mjs only
+    allows imports between the game's own modules; it also keeps `python3 -m http.server` working. `--check` tells
+    when it doesn't match the installed version. Ignored by ESLint and Prettier.
+  - **Tokens and motion**: `game/css/tokens.css` (space, corners, depth, type sizes, timings; colours stay in v05.css),
+    `game/css/motion.css` (the eight motions as `m-*` classes; reduced motion from the phone or `[data-motion=reduced]`
+    becomes a short fade). Loaded last; nothing older uses them yet except the bottom bar.
+  - **Components** (`game/js/ui-kit.js`): `pb-panel`, `pb-pill`, `pb-button`, `pb-sheet`, `pb-toast`, plus `pbFloat`
+    and the inbox dot. Shadow DOM with slots; a `data-a` on a `pb-button` reaches the page's click handler as before.
+    Paths differ from the plan's `game/ui/`: new code sits in game/js and game/css so lint, type and module checks
+    cover it.
+  - **Messages** (`game/js/logic/messages.js`, ui.js): toasts are a `<pb-toast id="toast">` under the top bar,
+    2.5 s, tap or swipe up to dismiss; the same text again joins the one showing or waiting ("Saved ×2"). The checks'
+    `uiState.toastQ / toastOn / renderOverlay()` still work (plain strings too). `notice()` puts a notice behind a
+    dot on the portrait (`data-a="inbox"` opens them in one sheet): the boot's "A new game / A newer save" and the
+    Copperleaf Town note (its flag is now set when read). `whenWorldShows()` holds the boot's waiting choices
+    (hatch, learn a move, evolve) until the loader, title and opening are gone and the world has shown for 1.2 s.
+    Money earned rises as "+$120" from the money chip.
+  - **Bottom bar** on the tokens: 8 px padding, 44 px buttons, press .96, tokens for corners, depth and timing.
+- Not done, on purpose: the loader tips about real steps are still true (phase 08 Part A hasn't removed steps), so
+  they stay for phase 08. The codex branch: saved as `archive/codex-playable-ui-graphics-poc`; deleting branches and
+  pushing tags are refused from Claude's sessions, so **delete `codex/playable-ui-graphics-poc` on GitHub** yourself.
+- Verified: lint, type-check, module check, format, data check, build (vendor/lit.js ships before the bundle), unit
+  tests 36/36 (new `messages.test.mjs`, fault planted once), smoke 15/15 (187 s, unchanged). New full-check step
+  "Messages" (24.7 s, not in smoke) passes, and fails with a planted inbox fault. Components checked on a scratch page
+  in both themes at 390 px (screenshots sent in chat).
+- Risky: headless software rendering freezes the page's animation clock while the 3D town draws, so the checks can't
+  see entrance animations finish (the toast reads opacity 0 there); look on your phone. Toasts that announce money
+  (for example "+$1,571 steps…") still show alongside the new "+$" float; 06-2 can trim them.
+- Questions waiting for the owner: delete the codex branch on GitHub; merge PR #19 (test boot opening) and PR #20 (plan).
+- Next session starts with: 06-2 (Billie card, details sheet with parts, sizes, weight and Prime, Team, starter pick).
+
 ### Phase 16 prep - Billies rework plan, part kits, test boot - 2026-10-18
 - Changed: docs/phases/16 rewritten (7-line roster, parts, sizes, weight, Prime, decisions and open questions);
   placeholder part kits (beasts, birds, fish; 120 parts) sliced by tools/slice-part-kit.py into game/art/next/parts
