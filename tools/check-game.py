@@ -101,7 +101,7 @@ def check_game(pw, base, results):
             results.setdefault('opening', {})[name] = opening
             if opening.get('ok'):
                 # the rival's scene at the golf course, then his battle
-                pg.evaluate("uiState.modal=null;uiState.mq=[];renderOv();saveData.route={node:2,prog:0,plan:[],hold:false};saveData.visited[2]=1;uiState.roam=null;uiState.tab='walk';render();0")
+                pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();saveData.route={node:2,prog:0,plan:[],hold:false};saveData.visited[2]=1;uiState.roam=null;uiState.tab='walk';render();0")
                 rival = {'scene': False, 'battle': False}; log(f'{name}: rival scene')
                 for _ in range(40):
                     if pg.evaluate('CS.on'): rival['scene'] = True; break
@@ -112,7 +112,7 @@ def check_game(pw, base, results):
                     pg.evaluate('TALK.cur&&TALK.cur.tap()'); time.sleep(.8)
                 results.setdefault('rival', {})[name] = rival
                 pg.evaluate("if(activeBattle){stopTimers();activeBattle=null;battleStageStop()}render();0")
-        pg.evaluate("if(typeof titleEnd==='function')titleEnd();uiState.pg='girl';startGame('scoop');saveData.story={met_chad:1,met_chad2:1};uiState.modal=null;uiState.mq=[];renderOv();saveData.team.push(makeBilly('box1',18));addSteps(2400,true);uiState.toastQ=[];uiState.toastOn=false;uiState.modal=null;uiState.mq=[];renderOv();render();0")
+        pg.evaluate("if(typeof titleEnd==='function')titleEnd();uiState.pg='girl';startGame('scoop');saveData.story={met_chad:1,met_chad2:1};uiState.modal=null;uiState.mq=[];renderOverlay();saveData.team.push(makeBilly('box1',18));addSteps(2400,true);uiState.toastQ=[];uiState.toastOn=false;uiState.modal=null;uiState.mq=[];renderOverlay();render();0")
         log(f'{name}: screens and battles')
         for tab in ['walk', 'map', 'team', 'ledger', 'profile']:
             pg.evaluate(f"uiState.tab='{tab}';render();scrollTo(0,0);0"); time.sleep(1.4 if tab == 'map' else .5)
@@ -165,7 +165,7 @@ def check_game(pw, base, results):
                 if pg.evaluate("!walkView.pl.route"): break
                 time.sleep(.25)
             roam = pg.evaluate("[+walkView.pl.x.toFixed(1),+walkView.pl.z.toFixed(1)]")
-            pg.evaluate("(()=>{const n=tripTo(9).steps;setTrip(9);addSteps(n,true)})();uiState.toastQ=[];uiState.modal=null;uiState.mq=[];renderOv();render();0"); time.sleep(3)
+            pg.evaluate("(()=>{const n=tripTo(9).steps;setTrip(9);addSteps(n,true)})();uiState.toastQ=[];uiState.modal=null;uiState.mq=[];renderOverlay();render();0"); time.sleep(3)
             trip = pg.evaluate("[saveData.route.node,saveData.route.plan.length,walkView.id,!!saveData.visited[9]]")
             pg.screenshot(path=str(OUT / f'{name}-arrived.png'))
             results.setdefault('walk', {})[name] = {'walkedTo': roam, 'tripEnd': trip, 'ok': abs(roam[0] - tgt[0]) < .8 and abs(roam[1] - tgt[1]) < .8 and trip[0] == 9 and trip[1] == 0 and trip[2] == 'pond'}
@@ -216,7 +216,7 @@ def check_studio(pw, results):
         if not seen[1]:
             results['studio'] = {'errors': (errs + gerrs + ['the new billionaire did not reach the game'])[:10], 'movePowerSaved': seen[0] == 77, 'newBillionaireInGame': False, 'builderPartInGame': seen[2]}
             b.close(); return
-        g.evaluate("if(typeof titleEnd==='function')titleEnd();uiState.pg='girl';startGame('scoop');uiState.modal=null;uiState.mq=[];renderOv();wipe=f=>f();activeBattle=null;const q={id:'tc',sp:'checko0',lvl:9,gold:false,no:1};saveData.queue=[q];startWild(q);0")
+        g.evaluate("if(typeof titleEnd==='function')titleEnd();uiState.pg='girl';startGame('scoop');uiState.modal=null;uiState.mq=[];renderOverlay();wipe=f=>f();activeBattle=null;const q={id:'tc',sp:'checko0',lvl:9,gold:false,no:1};saveData.queue=[q];startWild(q);0")
         wait_phase(g); time.sleep(.6); g.screenshot(path=str(OUT / 'studio-new-in-game.png'))
         results['studio'] = {'errors': (errs + gerrs)[:10], 'movePowerSaved': seen[0] == 77, 'newBillionaireInGame': seen[1], 'builderPartInGame': seen[2]}
         b.close()

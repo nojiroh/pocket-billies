@@ -54,7 +54,7 @@ def main():
         pg.add_init_script('window.PB_TEST_GLOBALS=true')  # phase 04d: the modules' names on window, for evaluate()
         pg.goto(f'http://127.0.0.1:{port}/index.html'); pg.wait_for_selector('.ttl,.title', timeout=60000)
         pg.evaluate("gameData.engine=gameData.engine||{};gameData.engine.defaults=Object.assign({},gameData.engine.defaults||{},{quality:{resolution:1,shadowMap:2048,auto:false},lens:{blur:0,vignette:0,grain:0,aberration:0}});0")
-        pg.evaluate("if(typeof titleEnd==='function')titleEnd();uiState.pg='girl';startGame(SPECIES.scoop0?'scoop':RULES.start.starters[0]);uiState.modal=null;uiState.mq=[];renderOv();uiState.toastQ=[];uiState.toastOn=false;render();0")
+        pg.evaluate("if(typeof titleEnd==='function')titleEnd();uiState.pg='girl';startGame(SPECIES.scoop0?'scoop':RULES.start.starters[0]);uiState.modal=null;uiState.mq=[];renderOverlay();uiState.toastQ=[];uiState.toastOn=false;render();0")
         pg.add_style_tag(content='body *:not(#dio){visibility:hidden!important} #dio{visibility:visible!important}')
         # v47: always at noon on a clear spring day, whatever the clock says (the light follows the time of day now)
         pg.evaluate("if(typeof environment!=='undefined'){environment.on=true;environment.force={time:12.5,season:'spring',weather:'clear'}}0")

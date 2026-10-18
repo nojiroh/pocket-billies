@@ -268,7 +268,7 @@ expose({
   renderIntro: [() => renderIntro, v => (renderIntro = v)],
   renderLedger: [() => renderLedger, v => (renderLedger = v)],
   renderMap: [() => renderMap, v => (renderMap = v)],
-  renderOv: [() => renderOv, v => setRenderOv(v)],
+  renderOverlay: [() => renderOverlay, v => setRenderOverlay(v)],
   renderProfile: [() => renderProfile, v => (renderProfile = v)],
   renderTeam: [() => renderTeam, v => (renderTeam = v)],
   renderWalk: [() => renderWalk, v => (renderWalk = v)],
@@ -316,7 +316,7 @@ provide({
   paintMapCard,
   postProcess,
   render,
-  renderOv,
+  renderOverlay,
   roomRefresh,
   runEvolution,
   sceneExits,
@@ -331,9 +331,9 @@ export function setRender(v) {
   render = v; // eslint-disable-line no-func-assign
   provide({ render });
 }
-export function setRenderOv(v) {
-  renderOv = v; // eslint-disable-line no-func-assign
-  provide({ renderOv });
+export function setRenderOverlay(v) {
+  renderOverlay = v; // eslint-disable-line no-func-assign
+  provide({ renderOverlay });
 }
 /* to-module: end */
 const chip = t =>
@@ -358,11 +358,11 @@ function nextToast() {
   const t = uiState.toastQ.shift();
   if (!t) {
     uiState.toastOn = false;
-    renderOv();
+    renderOverlay();
     return;
   }
   uiState.toastOn = t;
-  renderOv();
+  renderOverlay();
   setTimeout(nextToast, uiState.toastQ.length > 2 ? 1300 : 2300);
 }
 export function modal(o) {
@@ -371,14 +371,14 @@ export function modal(o) {
 }
 function nextModal() {
   uiState.modal = uiState.mq.shift() || null;
-  renderOv();
+  renderOverlay();
 }
 export function closeModal() {
   uiState.modal = null;
   nextModal();
   if (!uiState.modal) postProcess();
 }
-export function renderOv() {
+export function renderOverlay() {
   const ov = $('#ov');
   let h = '';
   const M = uiState.modal;

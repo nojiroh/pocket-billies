@@ -686,7 +686,7 @@ NWLOG.hook = () => {
     ['mountWalkView', 'opening a scene'],
     ['prepareMap', 'preparing a scene'],
     ['render', 'drawing the menus'],
-    ['renderOv', 'drawing a window'],
+    ['renderOverlay', 'drawing a window'],
     ['save', 'saving'],
     ['buildSolidProp', 'building a solid prop'],
     ['buildSolidTree', 'building a 3D tree'],

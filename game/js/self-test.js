@@ -83,7 +83,7 @@ import {
 import { TALK, talkHide } from './talk.js';
 import { CS, csTeardown } from './cutscene.js';
 import { battleTipHide, fallGL, fallMap } from './opening-fall.js';
-import { closeModal, leaveRoom, modal, render, renderOv, sceneIdAt, toast, walkPick } from './ui.js';
+import { closeModal, leaveRoom, modal, render, renderOverlay, sceneIdAt, toast, walkPick } from './ui.js';
 /* eslint-disable no-func-assign */
 expose({
   DIAGR: [() => DIAGR, v => (DIAGR = v)],
@@ -172,7 +172,7 @@ async function runFullTest(mode) {
   if (uiState.modal) {
     uiState.modal = null;
     uiState.mq = [];
-    renderOv();
+    renderOverlay();
   }
   STEST.on = true;
   STEST.stop = false;
@@ -379,7 +379,7 @@ async function runFullTest(mode) {
     if (uiState.modal || uiState.mq.length) {
       uiState.modal = null;
       uiState.mq = [];
-      renderOv();
+      renderOverlay();
     }
     if (typeof TALK !== 'undefined' && TALK.on && typeof talkHide === 'function') talkHide();
   };
@@ -837,7 +837,7 @@ async function runFullTest(mode) {
             addSteps(per, true);
             uiState.modal = null;
             uiState.mq = [];
-            renderOv();
+            renderOverlay();
             render();
             const f0 = walkRenderer.frames,
               t0 = performance.now();
@@ -1167,7 +1167,7 @@ async function runFullTest(mode) {
             uiState.welcome = null;
             uiState.modal = null;
             uiState.mq = [];
-            renderOv();
+            renderOverlay();
             try {
               if (od == null) localStorage.removeItem('nw-opening-done');
               else localStorage.setItem('nw-opening-done', od);
@@ -1447,7 +1447,7 @@ async function runFullTest(mode) {
     uiState.tab = back.tab;
     uiState.modal = null;
     uiState.mq = [];
-    renderOv();
+    renderOverlay();
     render();
     STEST.on = false;
     box.remove();

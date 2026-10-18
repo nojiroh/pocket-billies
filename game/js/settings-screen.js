@@ -17,7 +17,7 @@ import {
   openDressingRoom,
   rebuildFromSettings,
   render,
-  renderOv,
+  renderOverlay,
   runDiagTest,
   runQuickTest,
   toast,
@@ -571,7 +571,7 @@ export function settingsRefresh() {
   const b = document.querySelector('.sheet .body'),
     y = b ? b.scrollTop : 0;
   uiState.modal.html = settingsHTML();
-  renderOv();
+  renderOverlay();
   const b2 = document.querySelector('.sheet .body');
   if (b2) b2.scrollTop = y;
 }
@@ -631,13 +631,13 @@ document.addEventListener('click', ev => {
     case 'quicktest':
       uiState.modal = null;
       uiState.mq = [];
-      renderOv();
+      renderOverlay();
       runQuickTest();
       break;
     case 'diagtest':
       uiState.modal = null;
       uiState.mq = [];
-      renderOv();
+      renderOverlay();
       runDiagTest();
       break;
     case 'import-save':

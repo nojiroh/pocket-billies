@@ -85,7 +85,7 @@ def main():
         pg.add_init_script('window.PB_TEST_GLOBALS=true')  # phase 04d: the modules' names on window, for evaluate()
         pg.goto(f'http://127.0.0.1:{port}/index.html'); pg.wait_for_selector('.ttl,.title', timeout=60000)
         pg.evaluate("gameData.engine=gameData.engine||{};gameData.engine.defaults=Object.assign({},gameData.engine.defaults||{},{quality:{resolution:1,shadowMap:2048,auto:false},lens:{blur:0,vignette:.25,grain:0,aberration:0}});0")
-        pg.evaluate("if(typeof titleEnd==='function')titleEnd();uiState.pg='girl';startGame(SPECIES.scoop0?'scoop':RULES.start.starters[0]);uiState.modal=null;uiState.mq=[];renderOv();uiState.toastQ=[];uiState.toastOn=false;render();0")
+        pg.evaluate("if(typeof titleEnd==='function')titleEnd();uiState.pg='girl';startGame(SPECIES.scoop0?'scoop':RULES.start.starters[0]);uiState.modal=null;uiState.mq=[];renderOverlay();uiState.toastQ=[];uiState.toastOn=false;render();0")
         pg.add_style_tag(content='body *:not(#dio){visibility:hidden!important} #dio{visibility:visible!important}')
         for sid in want:
             t0 = time.time(); v = dict(VIEW.get(sid, {})); v['id'] = sid; v['at'] = clear_view(D, sid, v); v.pop('dx', None); v.pop('dz', None)

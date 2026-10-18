@@ -9,7 +9,7 @@ import {
   modal,
   provide,
   render,
-  renderOv,
+  renderOverlay,
   runEvolution,
   stSceneChecks,
   testScenes,
@@ -158,7 +158,7 @@ function dbgRefresh(msg) {
   if (M && M.dbg) {
     const open = $$('.dbg details').map(d => d.open);
     M.html = debugHTML();
-    renderOv();
+    renderOverlay();
     $$('.dbg details').forEach((d, i) => {
       if (open[i] != null) d.open = open[i];
     });

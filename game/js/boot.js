@@ -36,7 +36,7 @@ import { csWanted } from './cutscene.js';
 import { TITLE, titleMount, titleStart, titleWanted } from './title.js';
 import { loreLoadingLines } from './lore.js';
 import { accInit } from './account.js';
-import { bgInit, closeModal, modal, postProcess, render, renderOv, sceneIdAt, startGame, toast } from './ui.js';
+import { bgInit, closeModal, modal, postProcess, render, renderOverlay, sceneIdAt, startGame, toast } from './ui.js';
 /* eslint-disable no-func-assign */
 expose({
   ART_VER_KEY: [() => ART_VER_KEY],
@@ -753,7 +753,7 @@ function studioTestStart() {
   saveData.story = { met_chad: 1, met_chad2: 1 };
   uiState.modal = null;
   uiState.mq = [];
-  renderOv();
+  renderOverlay();
   if (NW_TEST.scene && mapById(NW_TEST.scene)) uiState.bench = { id: NW_TEST.scene };
   uiState.tab = 'walk';
   render();

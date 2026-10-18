@@ -96,7 +96,7 @@ import { AMB, AUD } from './sound.js';
 import { csStart, setCsStart } from './cutscene.js';
 import { ACC } from './account.js';
 import { chalToday, stampCount } from './things-to-do.js';
-import { render, renderOv, setRender, setRenderOv, toast } from './ui.js';
+import { render, renderOverlay, setRender, setRenderOverlay, toast } from './ui.js';
 Object.defineProperties(GAME, {
   ACC: { get: () => ACC },
   AMB: { get: () => AMB },
@@ -149,7 +149,7 @@ Object.defineProperties(GAME, {
   prepareMap: { get: () => prepareMap, set: setPrepareMap },
   reflectionPass: { get: () => reflectionPass, set: setReflectionPass },
   render: { get: () => render, set: setRender },
-  renderOv: { get: () => renderOv, set: setRenderOv },
+  renderOverlay: { get: () => renderOverlay, set: setRenderOverlay },
   runNormalMapJobs: { get: () => runNormalMapJobs, set: setRunNormalMapJobs },
   save: { get: () => save, set: setSave },
   saveData: { get: () => saveData },
