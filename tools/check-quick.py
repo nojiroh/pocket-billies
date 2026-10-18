@@ -580,6 +580,9 @@ def phone_flow(b, base, R):
         if wait_phase(pg) != 'choose': raise Exception('a wild battle never reached the move menu')
         shot(pg, 'phone-battle')
         pg.evaluate("stopTimers();activeBattle=null;battleStageStop();render();0")
+        # phase 13: the debug log never holds names: the trainer is called Checker, and the buddy gets a nickname it
+        # then says out loud (debug_picture_privacy); neither may be in the exported log
+        pg.evaluate("(buddyBilly()||saveData.team[0]).nick='Zorblax';0")
         debug_picture_privacy(pg)
         # phase 01: the owner tests on a phone and sends the exported debug log, so the export must keep working. Here the
         # game saves it as a download (nothing is sent anywhere); the file must be a JSON log
@@ -587,8 +590,10 @@ def phone_flow(b, base, R):
             pg.evaluate("exportDebugLog();0")
         d = dl.value; dlog = json.loads(Path(d.path()).read_text(encoding='utf-8'))
         if not isinstance(dlog, dict) or not dlog: raise Exception('the exported debug log is empty')
+        names = [n for n in ('Checker', 'Zorblax') if n.lower() in Path(d.path()).read_text(encoding='utf-8').lower()]
+        if names: raise Exception(f'the exported debug log holds a name: {names}')
         if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
-        return f'the fall, Hazel, dressing room, starter, Blake’s first battle and the talk after, five screens, shop, battle, speech kept out of the debug picture, debug log ({len(json.dumps(dlog)) // 1024} KB)'
+        return f'the fall, Hazel, dressing room, starter, Blake’s first battle and the talk after, five screens, shop, battle, speech kept out of the debug picture, debug log ({len(json.dumps(dlog)) // 1024} KB, no names)'
     finally:
         R['phoneErrors'] = errs[:10]; ctx.close()
 
