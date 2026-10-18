@@ -64,12 +64,12 @@ provide({ onStepsAdded });
 /* to-module: end */
 export let MW = 176,
   MH = 232;
-/* phase 04d: map-gl.js puts the 3D map in place */
+/* phase 04d: world-map-gl.js puts the 3D map in place */
 export function setMH(v) {
   MH = v;
   provide({ MH });
 }
-/* phase 04d: map-gl.js puts the 3D map in place */
+/* phase 04d: world-map-gl.js puts the 3D map in place */
 export function setMW(v) {
   MW = v;
   provide({ MW });
@@ -201,7 +201,7 @@ export const MLAND = [];
   };
   MREG.forEach((r, ri) => {
     if (ri < ROUTE.length && ROUTE[ri].scene) return;
-    /* v24: stops have miniatures (map-gl.js) */ const L = KIND[r.t] || [],
+    /* v24: stops have miniatures (world-map-gl.js) */ const L = KIND[r.t] || [],
       R = seeded(ri * 131 + 9),
       n = r.t === 'mall' ? 1 : L.length ? 7 : 0;
     for (let k = 0; k < n; k++) {
@@ -260,7 +260,7 @@ export function mapFit() {
   mapSize();
   mapLabels();
 }
-/* phase 04d: map-gl.js puts the 3D map in place */
+/* phase 04d: world-map-gl.js puts the 3D map in place */
 export function setMapFit(v) {
   mapFit = v; // eslint-disable-line no-func-assign
   provide({ mapFit });
@@ -628,7 +628,7 @@ export function mapMount() {
     frameTask('map', mapLoop);
   }
 }
-/* phase 04d: map-gl.js puts the 3D map in place */
+/* phase 04d: world-map-gl.js puts the 3D map in place */
 export function setMapMount(v) {
   mapMount = v; // eslint-disable-line no-func-assign
   provide({ mapMount });
@@ -637,7 +637,7 @@ export function mapZoom(k) {
   MAP.alt = clamp(MAP.alt * k, 0.08, 0.7);
   MAP.dirty = true;
 }
-/* phase 04d: map-gl.js puts the 3D map in place */
+/* phase 04d: world-map-gl.js puts the 3D map in place */
 export function setMapZoom(v) {
   mapZoom = v; // eslint-disable-line no-func-assign
   provide({ mapZoom });
@@ -651,7 +651,7 @@ export function mapReset() {
   paintMapCard();
   MAP.dirty = true;
 }
-/* phase 04d: map-gl.js puts the 3D map in place */
+/* phase 04d: world-map-gl.js puts the 3D map in place */
 export function setMapReset(v) {
   mapReset = v; // eslint-disable-line no-func-assign
   provide({ mapReset });
@@ -761,7 +761,7 @@ export function mapLabels() {
     L._h = h;
   }
 }
-/* phase 04d: map-gl.js puts the 3D map in place */
+/* phase 04d: world-map-gl.js puts the 3D map in place */
 export function setMapLabels(v) {
   mapLabels = v; // eslint-disable-line no-func-assign
   provide({ mapLabels });

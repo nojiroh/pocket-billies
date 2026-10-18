@@ -5,7 +5,7 @@
       neck, looking at your phone; the pavement gives way. (pixel art on a small canvas, a few screen pixels to one)
    2. Through the crust: soil, rock, pipes, a crate from Legacy Labs, a seam of magma, tumbling, light below.
    3. The inner sky: you come out on the far side of the Hollow Earth and fall right across it, past the Inner Sun, down
-      to Sundown, filmed with the world map's renderer, the real Hollow Earth (map-gl.js).
+      to Sundown, filmed with the world map's renderer, the real Hollow Earth (world-map-gl.js).
    4. A white flash, and the walk scene takes over (cutscene.js): you wake in the dust outside Hazel's lab, the papers
       that fell with you still fluttering down.
    Skip ends the fall at once; without the fall, the step-by-step intro tells it in words. */
@@ -24,7 +24,7 @@ import { EGL_POST_SH } from './engine/post.js';
 import { dglCanvasFor, dglGL, dioH } from './walk-view-gl.js';
 import { A, endBattle, stopTimers, types } from './battle.js';
 import { MAP, MH, MNV, MW, WORLD_ART, v3 } from './world-map.js';
-import { MGL, MGL_SH, mglRender, mglSize } from './map-gl.js';
+import { MGL, MGL_SH, mglRender, mglSize } from './world-map-gl.js';
 import { music, sfx } from './sound.js';
 import { CS, csCaption } from './cutscene.js';
 /* eslint-disable no-func-assign */

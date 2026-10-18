@@ -85,7 +85,7 @@ Every `innerHTML` in game/js and studio/js was traced to where its text comes fr
 | Fixed markup, icons, numbers the game computes | most of them (joystick, loader, fishing, story, talk, debug button, battle plates, ticker, pips, map pins) | Safe. |
 | Text through `esc()` | toasts, battle log lines, postcards, airship captions, account chip, friends list, missing-art list, Studio sign-in | Safe. |
 | Player names: nicknames `N(m)` and the trainer name, unescaped in ~60 templates (battle.js, ui.js, core.js, buildings, structures, vox, extras, bag) | typed, loaded from a save, imported from a backup file | **Was unsafe** (a backup file could carry a nickname with markup, without any length limit). Fixed at the way in (`cleanName`). |
-| Friend data (name, partner, place, request names) | friends list, map pins, world | Already escaped in friends.js and map-gl.js; now also cleaned on arrival (`frClean`), and `data-n` gets a number only. |
+| Friend data (name, partner, place, request names) | friends list, map pins, world | Already escaped in friends.js and world-map-gl.js; now also cleaned on arrival (`frClean`), and `data-n` gets a number only. |
 | Firebase sign-in name, e-mail, photo URL | account chip, Settings → Save | Escaped. Safe. |
 | Game data: place, Billie, move, item, scene and trainer names (game and Studio, unescaped) | gamedata.js from the repo | Trusted source, but changed by Studio pull requests. Guarded by `tools/check-data-text.py` in CI. |
 | Studio: GitHub login, error messages | sign-in, top bar | Escaped. Safe. |
