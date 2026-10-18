@@ -8,7 +8,7 @@
 import { expose } from './test-globals.js';
 import { dioChatLines, provide } from './hooks.js';
 import { PEOPLE, TRAINERS } from './data.js';
-import { RM, S } from './core.js';
+import { RM, S } from './game-state.js';
 import { frameStop, frameTask } from './frame.js';
 import { trPortrait, trainerLook } from './trainer.js';
 import { DIO, dioFace } from './walk-view.js';

@@ -9,7 +9,7 @@ import { expose } from './test-globals.js';
 import { STEST, closeModal, modal, postProcess, provide, render } from './hooks.js';
 import { $, clamp } from './util.js';
 import { PLACE, RULES, SP, TRAINERS, trainersAt } from './data.js';
-import { B, RM, S, U, esc, healAll, save, today } from './core.js';
+import { B, RM, S, U, esc, healAll, save, today } from './game-state.js';
 import { DR } from './dressing.js';
 import { DIO, dioBaseId, dioFreePt } from './walk-view.js';
 import { EGL } from './engine/core.js';

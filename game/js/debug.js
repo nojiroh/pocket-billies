@@ -29,7 +29,7 @@ import {
   today,
   uid,
   xpFor,
-} from './core.js';
+} from './game-state.js';
 import { FRAME, frameCount, frameTask, userFps } from './frame.js';
 import { uiIco } from './art.js';
 import { applyPreferences, exportSave } from './profile.js';

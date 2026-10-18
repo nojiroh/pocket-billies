@@ -66,7 +66,7 @@ import {
   setB,
   stat,
   xpFor,
-} from './core.js';
+} from './game-state.js';
 import { artURL, coinHTML, eggHTML, iconURL, uiIco } from './art.js';
 import { portraitHTML } from './trainer.js';
 import { KBACK, bustHTML, rigPreload } from './rig.js';

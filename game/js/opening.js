@@ -14,7 +14,7 @@ import { expose } from './test-globals.js';
 import { openingDone, provide } from './hooks.js';
 import { $, clamp } from './util.js';
 import { MOVES, SP, START_NODE, eff } from './data.js';
-import { B, RM, esc, maxHp } from './core.js';
+import { B, RM, esc, maxHp } from './game-state.js';
 import { artLoad } from './art.js';
 import { portraitHTML } from './trainer.js';
 import { partSpr } from './battle-stage.js';

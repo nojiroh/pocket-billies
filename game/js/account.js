@@ -2,7 +2,7 @@
 /* ================= ACCOUNTS (alpha 0.4.1) =================
    "Sign in with Google": each player gets their own save, kept online (Firebase Firestore, saves/<their id>) and
    copied in this browser, so it follows them to any device. Without an account the game keeps one save in this browser.
-   Signing in or out switches whose save is loaded (the page reloads once; js/core.js picks the save by account).
+   Signing in or out switches whose save is loaded (the page reloads once; js/game-state.js picks the save by account).
    The first time someone signs in on a browser that already has a game, they are asked whether to bring it along.
    The Firebase project is set in js/account-config.js; without it there is no sign-in button. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
@@ -26,7 +26,7 @@ import {
   saveAge,
   setS,
   setSaveHold,
-} from './core.js';
+} from './game-state.js';
 import { cleanTrainer } from './trainer.js';
 import { applyPreferences, settingsRefresh } from './profile.js';
 import { TITLE, titleStart } from './title.js';

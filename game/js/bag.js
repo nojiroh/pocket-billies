@@ -7,7 +7,7 @@
 import { expose } from './test-globals.js';
 import { closeModal, modal, render, toast } from './hooks.js';
 import { COINS, EGGS, ITEMS, STATUSN } from './data.js';
-import { N, S, U, esc, fmt, maxHp } from './core.js';
+import { N, S, U, esc, fmt, maxHp } from './game-state.js';
 import { coinHTML, eggHTML, uiIco } from './art.js';
 import { bustHTML } from './rig.js';
 import { applyItem, canUse, itemIcon, teamNeedsHp } from './battle.js';

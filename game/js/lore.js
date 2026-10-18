@@ -10,7 +10,7 @@ import { expose } from './test-globals.js';
 import { closeModal, modal, provide, storyFlags } from './hooks.js';
 import { clamp } from './util.js';
 import { GD, ROUTE, TRAINERS } from './data.js';
-import { S, U, esc, save } from './core.js';
+import { S, U, esc, save } from './game-state.js';
 import { humanHTML } from './trainer.js';
 import { DIO, dioBaseId, dioFind, dioFreePt, dioHubOf, dioScene } from './walk-view.js';
 import { DGL, dioH } from './walk-view-gl.js';

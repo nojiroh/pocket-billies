@@ -2,7 +2,7 @@
 // script that runs before the modules) reads and wraps in the game's modules: a getter for each name in its GAME
 // object, and a setter (the module's own) for each function it wraps. The last module of the game's page.
 import { GD, ROUTE } from './data.js';
-import { B, S, U, save, setSave, setSetTrip, setTrip } from './core.js';
+import { B, S, U, save, setSave, setSetTrip, setTrip } from './game-state.js';
 import { FRAME, userFps } from './frame.js';
 import { artPixels, setArtPixels } from './art.js';
 import { TR_CACHE, humanFrames, setHumanFrames } from './trainer.js';

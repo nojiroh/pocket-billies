@@ -25,7 +25,7 @@ import {
 } from './hooks.js';
 import { $, clamp } from './util.js';
 import { ROUTE, RULES, SP, START_NODE, TRAINERS, TYPES, eff, placeFull } from './data.js';
-import { RM, U, esc } from './core.js';
+import { RM, U, esc } from './game-state.js';
 import { userFps } from './frame.js';
 import { artLoad, cnv } from './art.js';
 import { TR_PRESETS, cleanLook, humanPose, owFrames, trainerLook } from './trainer.js';

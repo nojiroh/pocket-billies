@@ -92,7 +92,7 @@ import {
   tripTo,
   walkMode,
   xpFor,
-} from './core.js';
+} from './game-state.js';
 import { frameTask, userFps } from './frame.js';
 import { ART, artLoad, artURL, cnv, coinHTML, coinURL, eggHTML, uiIco } from './art.js';
 import { TR_PRESETS, cleanLook, cleanTrainer, humanHTML, owHTMLsheet, portraitHTML, trainerLook } from './trainer.js';

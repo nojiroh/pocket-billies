@@ -39,7 +39,7 @@ import {
   setRM,
   setS,
   today,
-} from './core.js';
+} from './game-state.js';
 import { I18N_LANGS, i18nSet } from './i18n.js';
 import { FRAME } from './frame.js';
 import { uiIco } from './art.js';

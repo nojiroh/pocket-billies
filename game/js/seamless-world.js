@@ -19,7 +19,7 @@ import { expose } from './test-globals.js';
 import { provide, sceneExits, sceneIdAt } from './hooks.js';
 import { clamp } from './util.js';
 import { ADJ, LINKS, ROUTE } from './data.js';
-import { U } from './core.js';
+import { U } from './game-state.js';
 import { artLoad, hexA } from './art.js';
 import {
   DIO,

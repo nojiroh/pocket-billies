@@ -8,7 +8,7 @@ import { expose } from './test-globals.js';
 import { buzz, provide, render, sfx, toast } from './hooks.js';
 import { $, $$, rnd } from './util.js';
 import { SHOPS } from './data.js';
-import { S, U, esc, fmt, save } from './core.js';
+import { S, U, esc, fmt, save } from './game-state.js';
 import { frameStop, frameTask } from './frame.js';
 import { cnv, uiIco } from './art.js';
 import { TR_PRESETS, WD, cleanLook, portraitHTML, trBox, trColorsOf, trFrame, trSliders } from './trainer.js';

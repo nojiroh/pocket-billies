@@ -26,14 +26,14 @@ decisions left open. Newest facts win: update this file when the rules, the sign
 - **friends.js**: a friend's page can only be read once their game has put you on their list too, so a refused read is
   retried every minute instead of showing "Friends need the updated database rules". What a friend's page holds is
   cleaned before it is drawn (`frClean`): only the drawn fields, names without HTML characters, numbers as numbers.
-- **Names**: `cleanName()` (core.js) strips `< > " & `` ` and control characters where names enter the game: the
+- **Names**: `cleanName()` (game-state.js) strips `< > " & `` ` and control characters where names enter the game: the
   nickname box, `cleanLook()` (the trainer name) and `migrate()` (every load and every imported backup). This makes the
   ~60 places that put `N(m)` or a trainer name into HTML without `esc()` safe as they are. There is no single-quoted
   attribute with a value in it anywhere, so the apostrophe stays (D'Angelo).
 - **Game data**: `tools/check-data-text.py` (CI, under a second) fails when any text in the game data (game/data/*.json) has `< > `` ` or a
   name or id has `"`. The game and the Studio put place, Billie, move and scene names into HTML unescaped, and that
   data changes through Studio pull requests too big to read. Nothing in today's data trips it.
-- **saveVersion**: every save carries `saveVersion` (core.js `SAVE_VERSION = 1`). A save without it (alpha 0.5 and
+- **saveVersion**: every save carries `saveVersion` (game-state.js `SAVE_VERSION = 1`). A save without it (alpha 0.5 and
   earlier) is not loaded: the game says "This save is from an older version of the game and can't be loaded in this
   one", starts fresh, and keeps the old save in this browser under `<save key>-set-aside`. A save from a *newer* version
   is never written over (the game stops saving and asks for a reload). Backups from other versions are refused with the
@@ -84,7 +84,7 @@ Every `innerHTML` in game/js and studio/js was traced to where its text comes fr
 |---|---|---|
 | Fixed markup, icons, numbers the game computes | most of them (joystick, loader, fishing, story, talk, debug button, battle plates, ticker, pips, map pins) | Safe. |
 | Text through `esc()` | toasts, battle log lines, postcards, airship captions, account chip, friends list, missing-art list, Studio sign-in | Safe. |
-| Player names: nicknames `N(m)` and the trainer name, unescaped in ~60 templates (battle.js, ui.js, core.js, buildings, structures, vox, extras, bag) | typed, loaded from a save, imported from a backup file | **Was unsafe** (a backup file could carry a nickname with markup, without any length limit). Fixed at the way in (`cleanName`). |
+| Player names: nicknames `N(m)` and the trainer name, unescaped in ~60 templates (battle.js, ui.js, game-state.js, buildings, structures, vox, extras, bag) | typed, loaded from a save, imported from a backup file | **Was unsafe** (a backup file could carry a nickname with markup, without any length limit). Fixed at the way in (`cleanName`). |
 | Friend data (name, partner, place, request names) | friends list, map pins, world | Already escaped in friends.js and world-map-gl.js; now also cleaned on arrival (`frClean`), and `data-n` gets a number only. |
 | Firebase sign-in name, e-mail, photo URL | account chip, Settings → Save | Escaped. Safe. |
 | Game data: place, Billie, move, item, scene and trainer names (game and Studio, unescaped) | gamedata.js from the repo | Trusted source, but changed by Studio pull requests. Guarded by `tools/check-data-text.py` in CI. |

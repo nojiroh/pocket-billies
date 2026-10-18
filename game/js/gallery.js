@@ -6,7 +6,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { closeModal, provide, render, renderOv, settings, toast } from './hooks.js';
-import { U } from './core.js';
+import { U } from './game-state.js';
 import { GFX_DIALS, gfxDial } from './profile.js';
 import { DIO, dioScene } from './walk-view.js';
 import { ENV } from './env.js';

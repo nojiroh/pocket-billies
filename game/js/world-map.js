@@ -7,7 +7,7 @@ import { expose } from './test-globals.js';
 import { flyDraw, flyTick, paintMapCard, provide, toast } from './hooks.js';
 import { $, clamp } from './util.js';
 import { FUTURE, LINKS, ROUTE, linkCost } from './data.js';
-import { RM, S, U, canEnter, esc, nextStop } from './core.js';
+import { RM, S, U, canEnter, esc, nextStop } from './game-state.js';
 import { frameCount, frameStop, frameTask, userFps } from './frame.js';
 import { artPixels, d44, mixA, mstamp, pk, seeded } from './art.js';
 import { owFrames } from './trainer.js';

@@ -12,7 +12,7 @@ import { expose } from './test-globals.js';
 import { FR, flyDraw, flyTick, provide } from './hooks.js';
 import { $, clamp } from './util.js';
 import { FUTURE, LINKS, ROUTE, linkCost, placeSub } from './data.js';
-import { RM, S, U, canEnter, esc, fmt, nextStop, tripTo } from './core.js';
+import { RM, S, U, canEnter, esc, fmt, nextStop, tripTo } from './game-state.js';
 import { frameCount, frameStop, frameTask, userFps } from './frame.js';
 import { artLoad, artPixels, cnv, hexA, mstamp, uiIco } from './art.js';
 import { owFrames, portraitHTML } from './trainer.js';

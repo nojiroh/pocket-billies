@@ -7,7 +7,7 @@ import { expose } from './test-globals.js';
 import { closeModal, modal, provide, renderOv, sfx, toast } from './hooks.js';
 import { clamp, rnd } from './util.js';
 import { COINS, ITEMS, SHOPS } from './data.js';
-import { S, U, esc, fmt, plural, save } from './core.js';
+import { S, U, esc, fmt, plural, save } from './game-state.js';
 import { coinHTML, uiIco } from './art.js';
 import { portraitHTML } from './trainer.js';
 import { openDressing } from './dressing.js';

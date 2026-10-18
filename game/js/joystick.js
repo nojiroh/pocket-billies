@@ -9,7 +9,7 @@
    Both set DIO.stick {x right, y up, length 0-1}; walk-view.js walks along the camera's own right and forward. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { B, S, U } from './core.js';
+import { B, S, U } from './game-state.js';
 import { DIO } from './walk-view.js';
 import { DGL } from './walk-view-gl.js';
 import { TALK } from './talk.js';

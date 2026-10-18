@@ -10,7 +10,7 @@ import { expose } from './test-globals.js';
 import { CS, provide, sceneIdAt } from './hooks.js';
 import { clamp } from './util.js';
 import { ROUTE } from './data.js';
-import { B, S, U } from './core.js';
+import { B, S, U } from './game-state.js';
 import { SC } from './battle-stage.js';
 import { DIO, dioBaseId, dioBridgeAt, dioBridges, dioData, dioScene, dioStepM, dioTer } from './walk-view.js';
 import { ENV, envHour, envState } from './env.js';
