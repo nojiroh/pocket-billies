@@ -1,7 +1,7 @@
 # Phase 16 - Billies rework (design first, prototype before scaling)
 
 ## Goal
-Rework the Billies into a smaller, sharper system: each species is a parody billionaire built on a real animal and body plan, made of body parts that come in sizes. Size changes weight, and weight trades speed for attack. A Billie wearing all of its own fitting parts is a **Prime Billie**. Mixed parts give abominations (task 9). Phase 13's breeding unit tests and simulation must exist before the full build. Robots stay a separate system (phase 17).
+Rework the Billies into a smaller, sharper system: each species is a parody billionaire built on a real animal and body plan, made of body parts that come in sizes. Size changes weight, and weight trades speed for attack. A Billie wearing all of its own fitting parts is a **Prime Billie**. Mixed parts give abominations (task 9). The breeding simulation is written at the start of this phase against the prototype, on phase 13's harness (tools/test/sim), with bounds agreed before the full build (decided in phase 13a). Robots stay a separate system (phase 17).
 
 Items marked (ASK) are open questions; the full list is at the end, after the decisions already made. Everything else is a proposal I can change.
 
@@ -38,10 +38,10 @@ Why these seven: three starters with finished art, four new faces you named (plu
 | Trump | golden swept-over fur crest, orange-tan hide, a smug half-closed squint, a gold-flecked belly |
 | Zuckerberg | short curly fur crest, pale skin, wide unblinking eyes, a visor-shaped brow ridge |
 
-Existing starter art that breaks the rule (ASK 1.6): **Kidling** wears a sweater and **Orbitotter** a cowboy hat. Both need a small edit. Gear rather than clothing (Musk's boosters, Bezos's boxes, Harvestgoat's tractor-tyre collar) is kept unless you say otherwise.
+Existing starter art that breaks the rule: **Kidling** loses its sweater and **Orbitotter** its cowboy hat (decided). Whether gear counts too (Musk's boosters, Bezos's boxes, Harvestgoat's tractor-tyre collar) is still open (ASK 1.6).
 
 ### Starter split evolutions (decided: the body decides)
-The split happens at level 32 as today. Which branch you get depends on the **body part** the Billie has at that moment. Proposal for how (ASK 2.3):
+The split happens at level 32 as today. Which branch you get depends on the **body part** the Billie has at that moment (decided):
 - **L body → heavy branch**: Marsox (lander), Everyotter (warehouse), Harvestgoat (owns the field).
 - **S body → light branch**: Memeox (floats on posts), Orbitotter (rocket), Windowgoat (startup chime).
 - **M body → the player picks** at evolution, so a Prime-ready Billie never loses its Prime status by evolving.
@@ -116,8 +116,16 @@ Type advantages stay on the existing chart (`game/data/types.json`). Weight adds
 ### Reuse as is
 - All 12 starter sheets (`emberox` … `harvestgoat`), normal and gold, with rigs. Only new work: part-size scaling (code) and Prime rim-light (existing gold tool at low strength).
 
-### Placeholder part kit (from you, 2026-10-18)
-`tools/art-source/part-kit/kit-front.png` and `kit-back.png` (outside the game folder, so they never ship) hold 40 parts in front and back view: six animals (cat, rabbit, fox, bear, bird, reptile) with a head, ear or crest, torso, arm, leg and tail each, plus four extras (horn, spikes, mane, shell). `tools/slice-part-kit.py` cuts them into separate transparent pieces at game scale (1/4 of the source, so a full Billie fits the 128 px stage box) in `game/art/next/parts/front/` and `back/`, and writes `game/art/next/parts/parts.json` with each part's animal, slot, pivot and default size M.
+### Placeholder part kits (from you, 2026-10-18)
+Your part sheets come in kits. Each kit is a pair of sheets (front and back view) on a magenta background: six animals as columns, one slot per row, and a last row of extras. Sources live in `tools/art-source/part-kit/` (outside the game folder, so they never ship) and are listed in `tools/art-source/part-kit/kits.json`. `tools/slice-part-kit.py` cuts every kit into separate transparent pieces at game scale (1/4 of the source, so a full Billie fits the 128 px stage box) in `game/art/next/parts/front/` and `back/`, and writes `game/art/next/parts/parts.json` with each part's kit, animal, slot, pivot and default size M.
+
+| Kit | Animals (columns) | Rows | Extras |
+|-----|-------------------|------|--------|
+| beasts | cat, rabbit, fox, bear, bird, reptile | head, ear, torso, arm, leg, tail | horn, spikes, mane, shell |
+| birds | chick, duck, owl, sparrow, eagle, hawk | head, crest, torso, wing, foot, tail | ruff, horn, plume, crown |
+| fish | goldfish, carp, koi, piranha, betta, shark | head, dorsal fin, torso, front fin, back fin, tail fin | sail, spike, scales, lure |
+
+**Room to grow (decided):** a new kit is two PNGs plus one entry in `kits.json` (name, animal per column, slot per row, extras). Part ids are `<animal>_<row>` and `<kit>_<extra>`, so new kits never rename old parts. Planned next kits: octopus (Zuckerberg), slug (Trump), and ox, otter and goat (the starters).
 
 Front is the view facing the camera (the opponent's Billie), back is the view from behind (the player's Billie), the same as the existing sheets.
 
@@ -125,14 +133,14 @@ How the kit covers the new lines in the prototype:
 
 | Line | Head | Crest / extra | Body | Front | Back | Signature |
 |------|------|---------------|------|-------|------|-----------|
-| Swift | bird | bird crest | bird | bird wing | bird leg | bird tail fan |
+| Swift | sparrow (birds kit) | sparrow crest | sparrow | hawk wing (long, swift-like) | sparrow foot | duck tail (forked) or sparrow tail |
 | Kardashian | reptile | reptile spikes crest | reptile | reptile arm | reptile leg | reptile tail |
 | Trump (blob) | bear (recoloured gold-orange) | mane as the golden fur crest | bear body at L | bear arms at S | reptile tail as the slug tail | mane |
 | Zuckerberg | no kit part fits an octopus yet: Studio blank `octo` until the kit gets octopus parts | | | | | |
 
-Kit parts for the starters (cat, fox, bear, rabbit) are spare: the starters keep their own art, and the kit parts join the part library for swaps and abominations.
+The fish kit has no prototype line yet; it is ready for a fish Billie or abominations. Kit parts for the starters (cat, fox, bear, rabbit) are spare: the starters keep their own art, and the kit parts join the part library for swaps and abominations.
 
-Style difference (ASK 4.4): the kit is drawn straight-on, upright and with softer shading; the existing Billie sheets are side-on 3/4 views with harder 4-band shading. Mixing both in one battle will look uneven.
+Style difference: the kits are drawn straight-on, upright and with softer shading; the existing Billie sheets are side-on 3/4 views with harder 4-band shading. Both are allowed in the prototype (decided); pick one before the full build.
 
 ### Recolour placeholders
 `tools/build-rework-placeholders.py` recolours an existing sheet with the same body plan, keeps outlines, eyes and highlights, and copies the piece map, so the existing rig works unchanged. Files are in `game/art/next/placeholders/`. They are the fallback if the kit style is not used. Nothing in the game loads them or the kit yet.
@@ -150,6 +158,9 @@ Style difference (ASK 4.4): the kit is drawn straight-on, upright and with softe
 
 ### Old art that becomes free for parts and abominations
 The other 51 lines are cut from the prototype but their sheets stay. Their pieces become a **part library** (decided) for abominations and later species (wings from birds, horns from quads, claws from crabs), so nothing drawn is wasted. The elephant line is the obvious first source of heavy parts.
+
+## Testing (phase 13)
+Follow docs/TESTING.md: where new tests go, what must pass before the phase ends, and its section for phase 16.
 
 ## 5. Prototype scope (replaces old task 8)
 1. The 7 lines above in data, with parts, sizes, weight math and Prime check.
@@ -182,18 +193,23 @@ The 7-line roster; the weight formula and caps; the Prime bonus; how the split i
 - Part sizes are fixed for now; resizing may come later in the game.
 - Prototype part sizes are scaled pieces, not hand-drawn.
 - Cut lines become a part library.
-- The part kit you sent is the placeholder art for the new lines.
+- The part kits you sent are the placeholder art for the new lines; both art styles are allowed in the prototype.
+- Kidling loses its sweater and Orbitotter its cowboy hat.
+- Starter split: L body → heavy branch, S body → light branch, M body → the player picks.
+- The kits will grow; the slicer and data leave room for more kits.
+- The first column of the beasts kit is a cat.
+
+**Testing boot (2026-10-18):** for now the game boots straight into starter selection, with saves and accounts switched off. Nothing is removed; see docs/HANDOFF.md for the one switch that turns it off.
 
 ## Open questions (ASK)
 
 **1. Roster and looks**
 1.5 Are the names (Swiftlet, Kontourlet, Gildlet, Facelet and their evolutions) OK, or do you want to name them?
-1.6 Should Kidling lose its sweater and Orbitotter its cowboy hat? Does gear (boosters, boxes, tyre collar) count as clothing?
+1.6 Does gear (Musk's boosters, Bezos's boxes, Harvestgoat's tyre collar) count as clothing and go too?
 
 **2. Parts and Prime**
 2.1 Three sizes (S, M, L), or add XL for rare drops?
 2.2 Which extra weight effects do you want (knockback resistance, weight-based moves, shoulder carry)?
-2.3 Split by body: L → heavy branch, S → light branch, M → player picks. Is that what you meant?
 2.5 Is Prime +10% all stats plus a Prime move right, or should Prime be cosmetic plus move only?
 2.7 Do parts carry through evolution, grow with it, or get replaced by the next stage's native parts?
 2.8 Can a part be lost in battle (like robots in phase 17), or only swapped outside battle? Keeping them different from robots is my recommendation.
@@ -205,9 +221,7 @@ The 7-line roster; the weight formula and caps; the Prime bonus; how the split i
 
 **4. Art**
 4.2 Final art for the 4 new lines: drawn by you, made by me in the Studio, or generated and cleaned up?
-4.4 Which style wins: the kit's straight-on upright look for every Billie (the starters would be redrawn), the old 3/4 side look (the kit gets redrawn), or both for now (prototype only)?
-4.5 Does the kit grow with more animals (an octopus for Zuckerberg, a slug body for Trump, an ox, otter and goat for the starters)?
-4.6 Are the column names right: cat, rabbit, fox, bear, bird, reptile? The first column could also be a dog or a hamster.
+4.7 Are the bird and fish column names right (chick, duck, owl, sparrow, eagle, hawk; goldfish, carp, koi, piranha, betta, shark)?
 
 **5. Breeding**
 5.1 Deliberate (pick parents), partly random (ranch surprises), or both? I recommend both: you pick parents, the ranch picks which parts and sizes are passed on, with a small chance of a mutation.
