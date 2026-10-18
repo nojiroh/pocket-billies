@@ -98,7 +98,7 @@ stands.
     a file per map (`scenes/`), Billie line (`lines/`), trainer (`trainers/`) and person (`people/`), and one file
     per other section (`moves.json`, `rules.json`, `route.json`, `scenery.json`...). `schema/` has their JSON
     schemas. `gamedata.js` is generated from them (not in git): everything but the maps' ground and props, which the
-    game fetches from each map's file when it needs it (`js/scene-files.js`).
+    game fetches from each map's file when it needs it (`js/map-files.js`).
   - `art/`: pictures, `manifest.js` (atlas rectangles), `next/rigs-next.js` (skeletons).
   - `js/`: the code. `game-data.js` builds everything from the data file; `boot.js` loading; `ui.js` the screens;
     `battle.js` battle rules and HUD; `seamless-world.js` walking from one place into the next; `walk-view.js` the walk scene's data and logic and
