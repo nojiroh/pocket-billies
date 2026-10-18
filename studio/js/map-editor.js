@@ -66,7 +66,7 @@ import {
   toast,
   uniqueKey,
 } from './studio-app.js';
-import { ATL_VER, atlasGet, atlasNow, fileToCanvas, markArt, pickFile } from './sprites.js';
+import { atlasGet, atlasNow, atlasVersion, fileToCanvas, markArt, pickFile } from './sprites.js';
 /* eslint-disable no-func-assign */
 expose({
   SCN: [() => SCN],
@@ -134,7 +134,7 @@ setWalkData(() => ({
 }));
 setArtImage(path => atlasNow('art/' + path) || ART_CACHE.img[path]);
 function dioArtVer() {
-  return ATL_VER;
+  return atlasVersion;
 }
 export const SCN = {
   smode: 'cliff',

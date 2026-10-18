@@ -47,7 +47,7 @@ import {
   writePath,
 } from './studio-app.js';
 import {
-  ATL,
+  ATLAS_CACHE,
   atlasGet,
   atlasNow,
   atlasPath,
@@ -662,7 +662,7 @@ ACTIONS.newLine = async () => {
       for (const k of [...studioState.artDirty.keys()])
         if (k.includes(tmpId)) {
           studioState.artDirty.delete(k);
-          ATL.delete(k);
+          ATLAS_CACHE.delete(k);
         }
       updateTopBar();
       return;

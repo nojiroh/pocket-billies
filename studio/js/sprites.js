@@ -14,17 +14,17 @@ import { esc } from './game-stand-ins.js';
 import { ask, render, speciesName, studioState, toast, updateTopBar } from './studio-app.js';
 /* eslint-disable no-func-assign */
 expose({
-  ATL: [() => ATL],
-  ATL_VER: [() => ATL_VER, v => (ATL_VER = v)],
-  ATL_WAIT: [() => ATL_WAIT],
+  ATLAS_CACHE: [() => ATLAS_CACHE],
+  ATLAS_LOADS: [() => ATLAS_LOADS],
   FACE_N: [() => FACE_N],
   GOLD_RAMP: [() => GOLD_RAMP],
   PREV: [() => PREV],
   PX_ED: [() => PX_ED],
-  RIGB: [() => RIGB],
+  RIG_CACHE: [() => RIG_CACHE],
   atlasGet: [() => atlasGet, v => (atlasGet = v)],
   atlasNow: [() => atlasNow],
   atlasPath: [() => atlasPath],
+  atlasVersion: [() => atlasVersion, v => (atlasVersion = v)],
   canvasCopy: [() => canvasCopy, v => (canvasCopy = v)],
   downloadCanvas: [() => downloadCanvas, v => (downloadCanvas = v)],
   drawPrev: [() => drawPrev, v => (drawPrev = v)],
@@ -71,18 +71,18 @@ expose({
 /* eslint-enable no-func-assign */
 provide({ mountPreviews, spriteCacheClear });
 /* to-module: end */
-export const ATL = new Map(); /* path -> canvas */
-const ATL_WAIT = new Map();
-const RIGB = new Map(); /* key -> {ver,R} */
-export let ATL_VER = 0;
+export const ATLAS_CACHE = new Map(); /* path -> canvas */
+const ATLAS_LOADS = new Map();
+const RIG_CACHE = new Map(); /* key -> {ver,R} */
+export let atlasVersion = 0;
 export const atlasPath = (sp, view, gold) => {
   const m = studioState.rigs && studioState.rigs[sp] && studioState.rigs[sp][view];
   if (m && m.sheet) return 'art/' + (gold ? m.sheet.replace(/\.png$/, '_gold.png') : m.sheet);
   return `art/billionaires/${sp}${view === 'back' ? '_back' : ''}${gold ? '_gold' : ''}.png`;
 };
 export function spriteCacheClear() {
-  RIGB.clear();
-  ATL_VER++;
+  RIG_CACHE.clear();
+  atlasVersion++;
 }
 export function loadImage(src) {
   return new Promise((res, rej) => {
@@ -94,24 +94,24 @@ export function loadImage(src) {
 }
 export function atlasGet(path) {
   if (studioState.artDirty.has(path)) return Promise.resolve(studioState.artDirty.get(path));
-  if (ATL.has(path)) return Promise.resolve(ATL.get(path));
-  if (ATL_WAIT.has(path)) return ATL_WAIT.get(path);
+  if (ATLAS_CACHE.has(path)) return Promise.resolve(ATLAS_CACHE.get(path));
+  if (ATLAS_LOADS.has(path)) return ATLAS_LOADS.get(path);
   const p = loadImage('../game/' + path + '?v=' + Date.now())
     .then(im => {
       const c = makeCanvas(im.naturalWidth, im.naturalHeight);
       c.getContext('2d').drawImage(im, 0, 0);
-      ATL.set(path, c);
-      ATL_WAIT.delete(path);
+      ATLAS_CACHE.set(path, c);
+      ATLAS_LOADS.delete(path);
       return c;
     })
     .catch(e => {
-      ATL_WAIT.delete(path);
+      ATLAS_LOADS.delete(path);
       throw e;
     });
-  ATL_WAIT.set(path, p);
+  ATLAS_LOADS.set(path, p);
   return p;
 }
-export const atlasNow = path => studioState.artDirty.get(path) || ATL.get(path) || null;
+export const atlasNow = path => studioState.artDirty.get(path) || ATLAS_CACHE.get(path) || null;
 /* assemble a skeleton like skeleton-rig.js rigParts(), but from the Studio's editable atlas */
 export function rigFor(sp, view, gold) {
   const path = atlasPath(sp, view, gold),
@@ -123,8 +123,8 @@ export function rigFor(sp, view, gold) {
   const meta = studioState.rigs[sp] && studioState.rigs[sp][view];
   if (!meta) return null;
   const key = path,
-    ver = (studioState.rigVer || 0) + ':' + ATL_VER + ':' + (atlas._ver || 0),
-    hit = RIGB.get(key);
+    ver = (studioState.rigVer || 0) + ':' + atlasVersion + ':' + (atlas._ver || 0),
+    hit = RIG_CACHE.get(key);
   if (hit && hit.ver === ver) return hit.R;
   const cut = ([x, y, w, h]) => {
     const c = makeCanvas(Math.max(1, w), Math.max(1, h));
@@ -151,7 +151,7 @@ export function rigFor(sp, view, gold) {
     bones,
     anim: animFor(meta.plan, meta.q || {}),
   };
-  RIGB.set(key, { ver, R });
+  RIG_CACHE.set(key, { ver, R });
   return R;
 }
 /* ---------- previews ---------- */
@@ -337,9 +337,9 @@ function canvasCopy(src) {
 }
 export function markArt(path, c) {
   c._ver = (c._ver || 0) + 1;
-  ATL_VER++;
+  atlasVersion++;
   studioState.artDirty.set(path, c);
-  ATL.set(path, c);
+  ATLAS_CACHE.set(path, c);
   updateTopBar();
   previewsDirty();
 }
@@ -804,7 +804,7 @@ function pxBind() {
       const p = pxPath();
       if (!(await ask('Throw away unsaved edits to this sheet?', 'Revert'))) return;
       studioState.artDirty.delete(p);
-      ATL.delete(p);
+      ATLAS_CACHE.delete(p);
       await atlasGet(p).catch(() => null);
       previewsDirty();
       updateTopBar();
