@@ -79,11 +79,13 @@ expose({
   currentMap: [() => currentMap],
   currentMapId: [() => currentMapId],
   drawEditorMap: [() => drawEditorMap, v => (drawEditorMap = v)],
+  drawSceneryPixelEditor: [() => drawSceneryPixelEditor, v => (drawSceneryPixelEditor = v)],
   drawTileThumbs: [() => drawTileThumbs, v => (drawTileThumbs = v)],
   dropStaleExitJoins: [() => dropStaleExitJoins, v => (dropStaleExitJoins = v)],
   edgeExitId: [() => edgeExitId, v => (edgeExitId = v)],
   ensureHeightGrid: [() => ensureHeightGrid, v => (ensureHeightGrid = v)],
   exitChecks: [() => exitChecks, v => (exitChecks = v)],
+  fillSceneryPixels: [() => fillSceneryPixels, v => (fillSceneryPixels = v)],
   floodFillGround: [() => floodFillGround, v => (floodFillGround = v)],
   isGroundKey: [() => isGroundKey],
   locationsUsingMap: [() => locationsUsingMap],
@@ -94,21 +96,16 @@ expose({
   mapToolHint: [() => mapToolHint, v => (mapToolHint = v)],
   mountMapEditor: [() => mountMapEditor, v => (mountMapEditor = v)],
   mountMapPreview: [() => mountMapPreview, v => (mountMapPreview = v)],
+  mountSceneryPixelEditor: [() => mountSceneryPixelEditor, v => (mountSceneryPixelEditor = v)],
   newEdgeExitName: [() => newEdgeExitName, v => (newEdgeExitName = v)],
+  openSceneryPixelEditor: [() => openSceneryPixelEditor, v => (openSceneryPixelEditor = v)],
   paintMapTile: [() => paintMapTile, v => (paintMapTile = v)],
   parseMapLife: [() => parseMapLife, v => (parseMapLife = v)],
+  plotSceneryPixel: [() => plotSceneryPixel, v => (plotSceneryPixel = v)],
   propAtPointer: [() => propAtPointer, v => (propAtPointer = v)],
   resizeReport: [() => resizeReport, v => (resizeReport = v)],
   scDrawSteps: [() => scDrawSteps, v => (scDrawSteps = v)],
   scDrawWaters: [() => scDrawWaters, v => (scDrawWaters = v)],
-  scOpenPe: [() => scOpenPe, v => (scOpenPe = v)],
-  scPeDone: [() => scPeDone, v => (scPeDone = v)],
-  scPeDraw: [() => scPeDraw, v => (scPeDraw = v)],
-  scPeFill: [() => scPeFill, v => (scPeFill = v)],
-  scPeMount: [() => scPeMount, v => (scPeMount = v)],
-  scPePalette: [() => scPePalette, v => (scPePalette = v)],
-  scPePlot: [() => scPePlot, v => (scPePlot = v)],
-  scPixelCard: [() => scPixelCard, v => (scPixelCard = v)],
   scPropSettings: [() => scPropSettings, v => (scPropSettings = v)],
   scStepsBar: [() => scStepsBar, v => (scStepsBar = v)],
   scStepsDown: [() => scStepsDown, v => (scStepsDown = v)],
@@ -121,6 +118,9 @@ expose({
   scWaterUp: [() => scWaterUp, v => (scWaterUp = v)],
   sceneryArtPaths: [() => sceneryArtPaths, v => ((sceneryArtPaths = v), provide({ sceneryArtPaths }))],
   sceneryCatalog: [() => sceneryCatalog],
+  sceneryPixelCardHTML: [() => sceneryPixelCardHTML, v => (sceneryPixelCardHTML = v)],
+  sceneryPixelPalette: [() => sceneryPixelPalette, v => (sceneryPixelPalette = v)],
+  sceneryPixelsChanged: [() => sceneryPixelsChanged, v => (sceneryPixelsChanged = v)],
   sculptHeights: [() => sculptHeights, v => (sculptHeights = v)],
   segmentDistance: [() => segmentDistance, v => (segmentDistance = v)],
   syncEdgeExits: [() => syncEdgeExits, v => (syncEdgeExits = v)],
@@ -479,7 +479,7 @@ SECTIONS.scenes = () => {
   <p class="help">Pick a prop, then click the map with “Place & move props”. Prop pictures live in art/scene/props.</p>${mapEditor.prop && sceneryCatalog().props[mapEditor.prop] ? `<div class="seg-row"><button class="btn primary" data-act="pedOpen" data-k="${esc(mapEditor.prop)}">Open ${esc(sceneryCatalog().props[mapEditor.prop].name || mapEditor.prop)} in the prop editor</button><span class="help">Effects, door, layers for depth, facing, glow and a 3D turntable.</span></div>` : ''}`
  )}
  ${mapEditor.ped && sceneryCatalog().props[mapEditor.ped] ? pedCard(mapEditor.ped) : ''}
- ${mapEditor.pe ? scPixelCard() : ''}
+ ${mapEditor.pe ? sceneryPixelCardHTML() : ''}
  ${sc.kind === 'town' || sc.kind === 'route' ? `<div class="seg-row sc-keep">${checkboxField('Keep this layout: the v46 rework tool (tools/build-places-v46.py) never rebuilds it', `${p}.keep`, { num: 1 })}</div>` : ''}
  ${card(
    'Look and camera',
@@ -778,7 +778,7 @@ async function mountMapEditor() {
       changed();
       commit(true);
     });
-  if (mapEditor.pe) scPeMount();
+  if (mapEditor.pe) mountSceneryPixelEditor();
 }
 function drawTileThumbs() {
   const C = sceneryCatalog();
@@ -2024,12 +2024,13 @@ ACTIONS.scNewTer = async () => {
   changed();
   commit(true);
   render();
-  scOpenPe('art/' + path, { kind: 'tile', c: r.k });
+  openSceneryPixelEditor('art/' + path, { kind: 'tile', c: r.k });
 };
-ACTIONS.scEditTile = d => scOpenPe('art/' + sceneryCatalog().terrains[d.c].tile, { kind: 'tile', c: d.c });
+ACTIONS.scEditTile = d =>
+  openSceneryPixelEditor('art/' + sceneryCatalog().terrains[d.c].tile, { kind: 'tile', c: d.c });
 ACTIONS.scEditProp = d => {
   const M = sceneryCatalog().props[d.k];
-  if (M) scOpenPe('art/' + M.img, { kind: 'prop', k: d.k });
+  if (M) openSceneryPixelEditor('art/' + M.img, { kind: 'prop', k: d.k });
 };
 ACTIONS.scNewProp = async () => {
   const r = await dialog(
@@ -2081,10 +2082,10 @@ function addSceneryProp(name, c) {
   changed();
   commit(true);
   render();
-  scOpenPe('art/' + path, { kind: 'prop', k });
+  openSceneryPixelEditor('art/' + path, { kind: 'prop', k });
 }
 /* ---------- a small pixel editor for props and ground tiles ---------- */
-export async function scOpenPe(path, o) {
+export async function openSceneryPixelEditor(path, o) {
   const c = await atlasGet(path).catch(() => null);
   if (!c) return toast('Could not open ' + path, 'err');
   mapEditor.pe = { path, ...o };
@@ -2096,7 +2097,7 @@ export async function scOpenPe(path, o) {
     if (e) e.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }, 60);
 }
-function scPixelCard() {
+function sceneryPixelCardHTML() {
   const pe = mapEditor.pe,
     C = sceneryCatalog(),
     M = pe.kind === 'prop' ? C.props[pe.k] : null,
@@ -2138,11 +2139,11 @@ function scPixelCard() {
   }</div></div></div>`
   );
 }
-function scPeMount() {
+function mountSceneryPixelEditor() {
   const cv = $('#scPeCv');
   if (!cv) return;
-  scPeDraw();
-  scPePalette();
+  drawSceneryPixelEditor();
+  sceneryPixelPalette();
   const col = $('#scPeColor');
   col.addEventListener('input', () => (mapEditor.peColor = col.value.toUpperCase()));
   const tg = $('[data-p$=".tagsTxt"]');
@@ -2196,29 +2197,29 @@ function scPeMount() {
     mapEditor.peUndo.push(X.getImageData(0, 0, c.width, c.height));
     if (mapEditor.peUndo.length > 40) mapEditor.peUndo.shift();
     if (mapEditor.peTool === 'fill') {
-      scPeFill(c, x, y);
-      scPeDone();
+      fillSceneryPixels(c, x, y);
+      sceneryPixelsChanged();
       return;
     }
     down = true;
     cv.setPointerCapture(ev.pointerId);
-    scPePlot(x, y);
+    plotSceneryPixel(x, y);
   });
   cv.addEventListener('pointermove', ev => {
     if (!down) return;
     const [x, y] = pos(ev);
-    scPePlot(x, y);
+    plotSceneryPixel(x, y);
   });
   const up = () => {
     if (down) {
       down = false;
-      scPeDone();
+      sceneryPixelsChanged();
     }
   };
   cv.addEventListener('pointerup', up);
   cv.addEventListener('pointercancel', up);
 }
-function scPePlot(x, y) {
+function plotSceneryPixel(x, y) {
   const c = atlasNow(mapEditor.pe.path),
     X = c.getContext('2d');
   if (x < 0 || y < 0 || x >= c.width || y >= c.height) return;
@@ -2227,9 +2228,9 @@ function scPePlot(x, y) {
     X.fillStyle = mapEditor.peColor;
     X.fillRect(x, y, 1, 1);
   }
-  scPeDraw();
+  drawSceneryPixelEditor();
 }
-function scPeFill(c, x, y) {
+function fillSceneryPixels(c, x, y) {
   const X = c.getContext('2d'),
     im = X.getImageData(0, 0, c.width, c.height),
     d = new Uint32Array(im.data.buffer),
@@ -2247,18 +2248,18 @@ function scPeFill(c, x, y) {
     st.push([a + 1, b], [a - 1, b], [a, b + 1], [a, b - 1]);
   }
   X.putImageData(im, 0, 0);
-  scPeDraw();
+  drawSceneryPixelEditor();
 }
-function scPeDone() {
+function sceneryPixelsChanged() {
   const c = atlasNow(mapEditor.pe.path);
   markArt(mapEditor.pe.path, c);
   if (mapEditor.ped && typeof pedDraw === 'function') pedDraw();
   if (mapEditor.pe.kind === 'tile') walkView.gkey = '';
   drawTileThumbs();
   drawEditorMap();
-  scPePalette();
+  sceneryPixelPalette();
 }
-function scPeDraw() {
+function drawSceneryPixelEditor() {
   const cv = $('#scPeCv'),
     c = atlasNow(mapEditor.pe && mapEditor.pe.path);
   if (!cv || !c) return;
@@ -2309,7 +2310,7 @@ function scPeDraw() {
     cv._rep = 1;
   }
 }
-function scPePalette() {
+function sceneryPixelPalette() {
   const el = $('#scPePal'),
     c = atlasNow(mapEditor.pe && mapEditor.pe.path);
   if (!el || !c) return;
@@ -2345,15 +2346,15 @@ ACTIONS.scPeTool = d => {
 };
 ACTIONS.scPeZoom = d => {
   mapEditor.peZoom = clamp(mapEditor.peZoom + +d.z * (mapEditor.peZoom >= 8 ? 2 : 1), 1, 32);
-  scPeDraw();
+  drawSceneryPixelEditor();
 };
 ACTIONS.scPeUndo = () => {
   const c = atlasNow(mapEditor.pe.path),
     u = mapEditor.peUndo.pop();
   if (!u) return toast('Nothing to undo in this picture.');
   c.getContext('2d').putImageData(u, 0, 0);
-  scPeDone();
-  scPeDraw();
+  sceneryPixelsChanged();
+  drawSceneryPixelEditor();
 };
 ACTIONS.scPeClose = () => {
   mapEditor.pe = null;

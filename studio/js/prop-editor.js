@@ -34,7 +34,7 @@ import {
   toast,
 } from './studio-app.js';
 import { atlasGet, fileToCanvas, markArt, pickFile } from './sprites.js';
-import { mapEditor, scOpenPe, sceneryArtPaths, sceneryCatalog } from './map-editor.js';
+import { mapEditor, openSceneryPixelEditor, sceneryArtPaths, sceneryCatalog } from './map-editor.js';
 /* eslint-disable no-func-assign */
 expose({
   PED: [() => PED],
@@ -777,7 +777,7 @@ ACTIONS.pedLayerPx = d => {
   const M = pedM(),
     l = M.layers[+d.i];
   PED.layer = +d.i;
-  scOpenPe('art/' + l.img, { kind: 'prop', k: mapEditor.ped, layer: +d.i });
+  openSceneryPixelEditor('art/' + l.img, { kind: 'prop', k: mapEditor.ped, layer: +d.i });
 };
 /* pictures made here but not saved yet come from the Studio's own copies, not the server */
 {
