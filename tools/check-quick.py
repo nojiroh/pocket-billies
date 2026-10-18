@@ -624,9 +624,35 @@ def in_game_test_step(b, base, R):
         after = [w for w in st['w'] if w['c'] == 'saves']
         if not after or after[-1]['team'] != st['team']: raise Exception(f'the save wasn’t written back to the account as it was: {after}')
         if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
-        return f'{", ".join(p["name"] for p in r["phases"])} passed in {r["seconds"]} s; nothing written during it, the save written back after'
+        g = graphics_test_ready(pg)
+        return f'{", ".join(p["name"] for p in r["phases"])} passed in {r["seconds"]} s; nothing written during it, the save written back after; {g}'
     finally:
         ctx.close()
+
+
+def graphics_test_ready(pg):
+    """The graphics test is only run by players (docs/graphics-bench.md): here it is never started and nothing is
+    drawn. Its step list builds, every setting it steps is a real one, every station has a spot to stand on that is
+    open ground, and a report made from made-up numbers saves as a JSON file without the player's name."""
+    r = pg.evaluate("""(()=>{const sc=mapById(GRAPHICS_TEST_MAP),bad=[];if(!sc)return{bad:['no '+GRAPHICS_TEST_MAP]};
+      const plan=graphicsTestPlan();for(const p of plan)for(const gk of Object.keys(p.set||{})){const[g,k]=gk.split('.');
+        if(!ENGINE_DEFAULTS[g]||!(k in ENGINE_DEFAULTS[g]))bad.push('unknown setting '+gk)}
+      const keep=[walkView.sc,walkView.nav,walkView.gkey];walkView.sc=sc;walkView.nav=null;walkView.gkey='check-gfx';
+      try{const G=navGrid();for(const st of GRAPHICS_TEST_STATIONS){const at=(sc.bench||{})[st.id];
+        if(!at){bad.push(st.id+': no spot');continue}const c=navCellAt(at[0],at[1]);if(c<0||G.blk[c])bad.push(st.id+': spot blocked')}}
+      finally{[walkView.sc,walkView.nav,walkView.gkey]=keep}
+      const keys=new Set(plan.filter(p=>p.kind==='dial').map(p=>p.key));
+      graphicsTest.result={stopped:false,seconds:1,fpsCap:60,steps:plan.map((p,i)=>Object.assign({},p,{set:undefined,fps:60,cpuMs:4+i%5,gpuMs:null})),errors:[]};
+      graphicsTest.result.settings=graphicsTestCosts(graphicsTest.result.steps);graphicsTest.result.drift=graphicsTestDrift(graphicsTest.result.steps);
+      return{bad,steps:plan.length,settings:keys.size,name:saveData.avatar.name}})()""")
+    if r['bad']: raise Exception('graphics test: ' + '; '.join(r['bad'][:6]))
+    with pg.expect_download(timeout=30000) as dl:
+        pg.evaluate("exportGraphicsReport();0")
+    text = Path(dl.value.path()).read_text(encoding='utf-8'); rep = json.loads(text)
+    if rep.get('kind') != 'graphics' or len(rep.get('settings', [])) != r['settings']: raise Exception('graphics test: the report is incomplete')
+    if r['name'] and r['name'].lower() in text.lower(): raise Exception('graphics test: the report holds the player’s name')
+    pg.evaluate("graphicsTest.result=null;0")
+    return f'graphics test ready (not run): {r["steps"]} steps over {r["settings"]} settings, report saves without names'
 
 
 @step('In-game full test and diagnostics test, whole, headless', 5400)
