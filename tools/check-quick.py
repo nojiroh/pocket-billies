@@ -664,7 +664,7 @@ def desktop_steps(b, base, R):
         until(pg, "walkView.ready&&!!walkView.ground&&(!walkView.opt.active||walkView.opt.active())", 20); time.sleep(.5)
         # the camera eases toward you after a scene opens, slowly when drawing is slow: tap only once the target holds still on screen
         # (v47: and once it has finished looking up at a landmark nearby, the clock tower on Marigold's square)
-        until(pg, "Math.abs((walkRenderer.lmT||0)-(typeof dglLandmarkTilt==='function'?dglLandmarkTilt(walkView.pl,walkView.sc):0))<.1", 40)
+        until(pg, "Math.abs((walkRenderer.lmT||0)-(typeof landmarkTilt==='function'?landmarkTilt(walkView.pl,walkView.sc):0))<.1", 40)
         last = None
         for _ in range(20):
             pt = pg.evaluate(PROJ % json.dumps(tgt))
@@ -915,7 +915,7 @@ def desktop_steps(b, base, R):
         # the prop audit's fixes: new variants load, box props have a top from their picture, mossy twins, texture dials
         v = pg.evaluate("""(async()=>{const C0=walkData().sc,K=['barrels','haybale_stack','stump_mossy','log_mossy','mushroom_ring','flowers_meadow','rocks_c','crate_stack','cactus_pair','firewood_b'],miss=K.filter(k=>!C0.props[k]);
          await artLoad(K.filter(k=>C0.props[k]).map(k=>C0.props[k].img).concat([C0.props.sofa.img]));const bad=K.filter(k=>C0.props[k]&&!imageReady(artImage(C0.props[k].img)));
-         const B=dglBoxInfo(artImage(C0.props.sofa.img)),rc=B&&B.roof.getContext('2d').getImageData(0,0,B.roof.width,B.roof.height).data;let lum=0;if(rc){for(let i=0;i<rc.length;i+=4)lum+=rc[i]*.3+rc[i+1]*.59+rc[i+2]*.11;lum/=rc.length/4}
+         const B=boxInfo(artImage(C0.props.sofa.img)),rc=B&&B.roof.getContext('2d').getImageData(0,0,B.roof.width,B.roof.height).data;let lum=0;if(rc){for(let i=0;i<rc.length;i+=4)lum+=rc[i]*.3+rc[i+1]*.59+rc[i+2]*.11;lum/=rc.length/4}
          const sc={},alts=[];for(let i=0;i<40;i++){const p={k:'stump',x:i*3.1,z:i*1.7};alts.push(alternatePropImage(p,C0.props.stump,C0,sc))}const mossy=alts.filter(a=>a===C0.props.stump_mossy.img).length;
          const plain=alternatePropImage({k:'stump',x:0,z:0,plain:true},C0.props.stump,C0,sc)===C0.props.stump.img;
          return {miss,bad,lum:Math.round(lum),mossy,plain,det:eng('world','texDetail'),aniso:!!EGL.aniso}})()""")

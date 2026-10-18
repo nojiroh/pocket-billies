@@ -19,12 +19,12 @@ import { artImage, hash2d, walkView, worldToScreen } from './walk-view.js';
 import { eng } from './engine/settings.js';
 import { EGL, EGL_GLSL_COMMON, EGL_GLSL_LIGHT, EGL_GLSL_LOOK, EGL_MATS, eglImg, eglPrograms } from './engine/webgl.js';
 import {
-  dglBlades,
-  dglHit,
-  dglUse,
+  addHitTarget,
+  drawRotatingBlades,
   foliageAmount,
   frameBudgetLeft,
   setPropLookUniforms,
+  useWalkProgram,
   walkRenderer,
   worldCurveArgs,
 } from './walk-view-gl.js';
@@ -1110,7 +1110,7 @@ function p3dGuard(fn) {
     if (typeof NWLOG !== 'undefined') NWLOG.add('webgl', 'Solid props off: ' + P3D.fail);
   }
 }
-/* which items get a body this frame (filled in by dglItems) */
+/* which items get a body this frame (filled in by gatherFrameItems) */
 function p3dTag(it, PPU) {
   if (
     !p3dOn() ||
@@ -1227,7 +1227,7 @@ export function p3dDraw(C, items, X, hits, labels, PPU) {
       const T = p3dTex(it, M);
       if (!T) continue;
       if (!p) {
-        p = dglUse('p3d', C, X);
+        p = useWalkProgram('p3d', C, X);
         gl.uniform1i(p.U.uTex, 0);
         gl.uniform1i(p.U.uNrm, 1);
         gl.enable(gl.DEPTH_TEST);
@@ -1267,9 +1267,17 @@ export function p3dDraw(C, items, X, hits, labels, PPU) {
         const b = it.M.blades,
           BT = eglImg(artImage(b.img));
         if (BT)
-          dglBlades(p, it, b, BT, (RM ? 0 : walkView.t / 1100) * (walkView.sc.wind || 1) * eng('grass', 'wind'), C, X);
+          drawRotatingBlades(
+            p,
+            it,
+            b,
+            BT,
+            (RM ? 0 : walkView.t / 1100) * (walkView.sc.wind || 1) * eng('grass', 'wind'),
+            C,
+            X
+          );
       }
-      dglHit(it, C, hits, labels, PPU);
+      addHitTarget(it, C, hits, labels, PPU);
     }
   });
 }

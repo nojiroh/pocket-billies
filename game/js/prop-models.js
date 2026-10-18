@@ -6,7 +6,7 @@
    at the art's own scale (alpha 0.4: 32 to the metre, one voxel to a pixel), greedy-meshed into as few quads as possible and drawn as a cel-shaded, vertex-coloured solid
    in the scene's light: the sun in three tones, the sky-shaped ambient, the shadow maps, the lamps. It sits in the
    shadow maps too, so its shadow has its real shape. When the Voxel props dial is off, the prop's picture draws as
-   before. Picture layers are drawn by the sprite pipeline (dglItems gives them as extra items). */
+   before. Picture layers are drawn by the sprite pipeline (gatherFrameItems gives them as extra items). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { GD, RM, provide } from './hooks.js';
@@ -14,7 +14,14 @@ import { artImg, artURL, hexA } from './art.js';
 import { artImage, walkView } from './walk-view.js';
 import { eng } from './engine/settings.js';
 import { EGL, EGL_GLSL_COMMON, EGL_GLSL_LIGHT, eglImg, eglPrograms } from './engine/webgl.js';
-import { dglHit, dglUse, setPropLookUniforms, walkRenderer, windLeanAt, worldCurveArgs } from './walk-view-gl.js';
+import {
+  addHitTarget,
+  setPropLookUniforms,
+  useWalkProgram,
+  walkRenderer,
+  windLeanAt,
+  worldCurveArgs,
+} from './walk-view-gl.js';
 import { BLD_SH, bldArt, bldAtlas } from './buildings.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -1054,7 +1061,7 @@ function voxModels(C, X, L) {
   const A = bldArt(),
     det = eglImg(artImage(A.detail), { noNormal: true });
   if (!det) return;
-  const p = dglUse('mdl', C, X);
+  const p = useWalkProgram('mdl', C, X);
   gl.enable(gl.DEPTH_TEST);
   gl.depthMask(true);
   gl.disable(gl.BLEND);
@@ -1105,7 +1112,7 @@ void main(){float cr=cos(uRot),sr=sin(uRot);vec3 q0=voxSpin(qPos*uQ-uSpinC)+uSpi
 precision highp float;out vec4 o;void main(){o=vec4(1.);}`,
   ],
 };
-/* tag an item that draws as voxels (dglItems calls this): the sprite and the solid-prop body stand aside */
+/* tag an item that draws as voxels (gatherFrameItems calls this): the sprite and the solid-prop body stand aside */
 function voxTag(it) {
   if (!voxOn() || it.k !== 'prop' || it.far || it.layer || !it.M || !it.M.vox || (it.p && it.p.vox === 'card')) return;
   const spec = it.M.vox;
@@ -1234,7 +1241,7 @@ function voxDraw(C, items, X, hits, labels, PPU) {
         continue;
       }
       if (!p) {
-        p = dglUse('vox', C, X);
+        p = useWalkProgram('vox', C, X);
         gl.enable(gl.DEPTH_TEST);
         gl.depthMask(true);
         gl.disable(gl.BLEND);
@@ -1250,11 +1257,11 @@ function voxDraw(C, items, X, hits, labels, PPU) {
       voxEl(m);
       voxSpins(p, m);
       VOX.drawn++;
-      if (hits && !it.far) dglHit(it, C, hits, labels, PPU);
+      if (hits && !it.far) addHitTarget(it, C, hits, labels, PPU);
     }
     gl.bindVertexArray(null);
     voxModels(C, X, ML);
-    if (hits) for (const [it] of ML) if (!it.far) dglHit(it, C, hits, labels, PPU);
+    if (hits) for (const [it] of ML) if (!it.far) addHitTarget(it, C, hits, labels, PPU);
   });
 }
 function voxShadow(SH, items) {

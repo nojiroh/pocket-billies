@@ -28,7 +28,7 @@ import {
   v3n,
 } from './engine/webgl.js';
 import { ENV, envLitFrac } from './environment.js';
-import { dglUse, setPropLookUniforms, standingHeightAt, walkRenderer, worldCurveArgs } from './walk-view-gl.js';
+import { setPropLookUniforms, standingHeightAt, useWalkProgram, walkRenderer, worldCurveArgs } from './walk-view-gl.js';
 /* eslint-disable no-func-assign */
 expose({
   BLD: [() => BLD],
@@ -1547,7 +1547,7 @@ function bldDraw0(C, X, items, fades) {
   gl.enable(gl.DEPTH_TEST);
   gl.depthMask(true);
   gl.disable(gl.BLEND);
-  let p = dglUse('bld', C, X);
+  let p = useWalkProgram('bld', C, X);
   gl.activeTexture(gl.TEXTURE0);
   gl.bindTexture(gl.TEXTURE_2D, det.t);
   gl.uniform1i(p.U.uDet, 0);
@@ -1562,7 +1562,7 @@ function bldDraw0(C, X, items, fades) {
     gl.bindVertexArray(E.walls.vao);
     gl.drawElements(gl.TRIANGLES, E.walls.n, gl.UNSIGNED_INT, 0);
   }
-  p = dglUse('bwin', C, X);
+  p = useWalkProgram('bwin', C, X);
   gl.activeTexture(gl.TEXTURE0);
   gl.bindTexture(gl.TEXTURE_2D, rm.t);
   gl.uniform1i(p.U.uRooms, 0);
@@ -1592,7 +1592,7 @@ function bldDraw0(C, X, items, fades) {
   }
   gl.bindVertexArray(null);
   /* fronts last, blended, so the glass shows the rooms behind it */
-  p = dglUse('bfac', C, X);
+  p = useWalkProgram('bfac', C, X);
   eglBindQuad();
   gl.enable(gl.BLEND);
   if (p.U.uGlassN)

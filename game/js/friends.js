@@ -16,7 +16,7 @@ import { N, S, U, cleanName, esc, plural } from './game-state.js';
 import { owFrames, portraitHTML, trWarm } from './person-art.js';
 import { sprHTML } from './skeleton-rig.js';
 import { directionOf, walkView } from './walk-view.js';
-import { dglPerson } from './walk-view-gl.js';
+import { personItem } from './walk-view-gl.js';
 import { owBuddyMon, owItem } from './world-billies.js';
 import { MAP, mapSelect } from './world-map.js';
 /* eslint-disable no-func-assign */
@@ -443,7 +443,7 @@ function frWorldItems(out, t, C0) {
       dir = P && Math.hypot(P.x - x, P.z - z) < 5 ? directionOf(P.x - x, P.z - z) : 'down',
       set = fr[dir] || fr.down,
       im = set && set[0];
-    if (im) out.push(dglPerson('friend', im, x, z, C0, { fr: u }));
+    if (im) out.push(personItem('friend', im, x, z, C0, { fr: u }));
     const p = d.partner;
     if (p && SP[p.sp] && typeof owItem === 'function') {
       const seed = u.length * 13 + 7,

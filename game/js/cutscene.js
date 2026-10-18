@@ -44,7 +44,7 @@ import {
   worldToScreen,
 } from './walk-view.js';
 import { EGL, eglOK } from './engine/webgl.js';
-import { dglPerson, mountWalkView, standingHeightAt, walkRenderer } from './walk-view-gl.js';
+import { mountWalkView, personItem, standingHeightAt, walkRenderer } from './walk-view-gl.js';
 import { wrRoamView } from './seamless-world.js';
 import { music, sfx } from './sound.js';
 import { TALK, talkHide, talkLine } from './talk.js';
@@ -270,7 +270,7 @@ function csPersonItem(a, t, C0) {
   } else if (a.act === 'throw') im = humanPose(a.who, 'front', 'throw', clamp((now - a.actT) / 700, 0, 1));
   else if (a.act === 'cheer' || a.act === 'react') im = humanPose(a.who, 'front', a.act, 0, now - a.actT);
   else im = (owFrames(a.who)[a.dir] || owFrames(a.who).down)[0];
-  return dglPerson('actor', im, a.x, a.z, C0, {});
+  return personItem('actor', im, a.x, a.z, C0, {});
 }
 /* the starter billionaires, drawn with their rigs every frame */
 function csStarItem(s, t) {

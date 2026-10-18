@@ -367,7 +367,7 @@ function owPetItems(out, t, npcPos) {
   }
 }
 /* ---------- the wild ones in the grass ---------- */
-/* called per encounter from dglItems with its spot s (x, z): adds the billionaire, mostly sunk in the grass */
+/* called per encounter from gatherFrameItems with its spot s (x, z): adds the billionaire, mostly sunk in the grass */
 function owEncItem(out, e, s, t, dt) {
   if (!e.sp) return;
   const big = e.alpha ? 1.6 : 1;

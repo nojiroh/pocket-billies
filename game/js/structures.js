@@ -17,9 +17,9 @@ import { EGL, eglImg, eglPrograms } from './engine/webgl.js';
 import {
   WALL_COLORS,
   defaultWallMaterial,
-  dglUse,
   groundHeightAt,
   standingHeightAt,
+  useWalkProgram,
   worldCurveArgs,
 } from './walk-view-gl.js';
 import { BLD_SH, bldArt, bldGuard } from './buildings.js';
@@ -560,7 +560,7 @@ function strDraw(C, X) {
     const A = bldArt(),
       det = eglImg(artImage(A.detail), { noNormal: true });
     if (!det) return;
-    const p = dglUse('bld', C, X),
+    const p = useWalkProgram('bld', C, X),
       sc = walkView.sc,
       P = walkView.pl,
       t = RM ? 0 : walkView.t / 1000;

@@ -693,9 +693,9 @@ NWLOG.hook = () => {
     timed(n, l);
   /* the renderer's own sections, timed every frame */
   for (const [n, l, m] of [
-    ['dglItems', 'items'],
+    ['gatherFrameItems', 'items'],
     ['dglShadowPass', 'shadows'],
-    ['dglSprites', 'sprites'],
+    ['drawSprites', 'sprites'],
     ['drawGrass', 'grass'],
     ['p3dDraw', 'solid props'],
     ['bldDraw', 'buildings'],
