@@ -589,7 +589,6 @@ export interface Rules {
   steps: {
     stepsPerKm: number;
     restCost: number;
-    alphaOdds: number;
   };
   /** phase 08: wild Billies on each place's map (rules.js encountersHere) */
   encounters: {
@@ -603,6 +602,8 @@ export interface Rules {
     prizePerLevel: number;
     /** a wild one is Golden once in this many */
     goldOdds: number;
+    /** a wild one is an Alpha once in this many (with two Billies on your team) */
+    alphaOdds: number;
   };
   progression: {
     xpFactor: number;

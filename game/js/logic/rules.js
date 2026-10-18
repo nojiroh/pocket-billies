@@ -561,7 +561,7 @@ export function spawn(gentle, force, node = saveData.trip.node) {
     build: rollBuild(),
   };
   /* v33: now and then an Alpha (once you have two billionaires to stand with your lead) */
-  if (!gentle && !force && saveData.team.length >= 2 && random() < 1 / ((RULES.steps && RULES.steps.alphaOdds) || 45))
+  if (!gentle && !force && saveData.team.length >= 2 && random() < 1 / (RULES.encounters.alphaOdds || 45))
     q.alpha = true;
   wildList(node).push(q);
   return q;

@@ -775,7 +775,7 @@ SECTIONS.rules = () => {
        help: 'Of play time, until the place is full again.',
      }),
      numberField('Golden odds: 1 in', `rules.encounters.goldOdds`, { min: 2, step: 1 }),
-     numberField('Alpha odds: 1 in', `${st}.alphaOdds`, {
+     numberField('Alpha odds: 1 in', `rules.encounters.alphaOdds`, {
        min: 2,
        step: 1,
        ph: '45',
