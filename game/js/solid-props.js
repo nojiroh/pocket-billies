@@ -51,6 +51,10 @@ expose({
     v => ((drawSolidPropShadows = v), provide({ drawSolidPropShadows })),
   ],
   drawSolidProps: [() => drawSolidProps, v => setDrawSolidProps(v)],
+  flushSolidPropMeshes: [
+    () => flushSolidPropMeshes,
+    v => ((flushSolidPropMeshes = v), provide({ flushSolidPropMeshes })),
+  ],
   setSolidPropUniforms: [() => setSolidPropUniforms, v => (setSolidPropUniforms = v)],
   solidPropGuard: [() => solidPropGuard, v => (solidPropGuard = v)],
   solidPropKind: [() => solidPropKind, v => (solidPropKind = v)],
@@ -68,7 +72,7 @@ expose({
   uploadSolidPropMesh: [() => uploadSolidPropMesh, v => (uploadSolidPropMesh = v)],
 });
 /* eslint-enable no-func-assign */
-provide({ drawSolidPropShadows, drawSolidProps, solidPropLevelOfDetail, tagSolidProp });
+provide({ drawSolidPropShadows, drawSolidProps, flushSolidPropMeshes, solidPropLevelOfDetail, tagSolidProp });
 export function setBuildSolidProp(v) {
   buildSolidProp = v; // eslint-disable-line no-func-assign
   provide({ buildSolidProp });
@@ -82,8 +86,7 @@ export function setDrawSolidProps(v) {
   provide({ drawSolidProps });
 }
 /* to-module: end */
-export const solidPropState = { meshes: new WeakMap(), fail: '', drawn: 0 };
-provide({ solidPropState }); /* to-module */
+export const solidPropState = { meshes: new WeakMap(), live: new Map(), fail: '', drawn: 0 };
 /* by prop group (or key): the kind of body and its depth at scale 1, in metres */
 export const SOLID_PROP_BODIES = {
   crate: ['block', 0.9],
@@ -744,7 +747,22 @@ function uploadSolidPropMesh(V, extra) {
     gl.vertexAttribDivisor(l, 0);
   }
   gl.bindVertexArray(null);
-  return Object.assign({ vao, vb, n: V.length / 10 }, extra || {});
+  const m = Object.assign({ vao, vb, n: V.length / 10 }, extra || {});
+  solidPropState.live.set(m, gl);
+  return m;
+}
+/* drops every body built so far and frees its buffers (a rebuild from the settings builds them again; dropping the
+   cache alone left each rebuild's buffers on the graphics chip) */
+function flushSolidPropMeshes() {
+  const gl = typeof gpuState !== 'undefined' && gpuState.gl;
+  /* (only those of the context in use: a lost one's are gone already) */
+  for (const [m, g] of solidPropState.live)
+    if (g === gl) {
+      gl.deleteVertexArray(m.vao);
+      gl.deleteBuffer(m.vb);
+    }
+  solidPropState.live.clear();
+  solidPropState.meshes = new WeakMap();
 }
 /* ---------- v21: trees and bushes ----------
    A tree keeps its picture, cut into pieces: the trunk (the narrow part at the bottom) is turned round, and continues up
