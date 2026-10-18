@@ -298,8 +298,9 @@ export const TRAINERS = gameData.trainers || {};
 for (const id in TRAINERS) {
   const T = TRAINERS[id];
   T.id = id;
-  if (T.tutorial);
-  else if (LOCATIONS[T.node]) LOCATIONS[T.node].trainers.push(id);
+  if (T.tutorial) {
+    /* it waits on no location */
+  } else if (LOCATIONS[T.node]) LOCATIONS[T.node].trainers.push(id);
   else warnData(`Trainer ${id} stands on a stop that doesn’t exist.`);
   if (!PEOPLE[T.who]) T.who = 'gini';
   T.team = (T.team || []).filter(
