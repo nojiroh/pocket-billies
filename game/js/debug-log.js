@@ -610,9 +610,14 @@ async function exportDebugLog() {
 NWLOG.hook = () => {
   if (NWLOG.hooked) return;
   NWLOG.hooked = true;
+  /* phase 05: a function the log should wrap or time that is gone (renamed, say) is said, not skipped in silence */
+  const missing = name => {
+    NWLOG.add('log', `no function ${name} to wrap`);
+    console.error(`Pocket Billies debug log: no function ${name} to wrap`);
+  };
   const wrap = (name, fn) => {
     const o = GAME[name];
-    if (typeof o !== 'function') return;
+    if (typeof o !== 'function') return missing(name);
     GAME[name] = function (...a) {
       try {
         fn(...a);
@@ -641,7 +646,8 @@ NWLOG.hook = () => {
   /* v33: costly jobs leave marks (see NWLOG.blame) */
   const timed = (name, label) => {
     const o = GAME[name];
-    if (typeof o !== 'function' || o.__nwT) return;
+    if (typeof o !== 'function') return missing(name);
+    if (o.__nwT) return;
     const f = function (...a) {
       const t0 = performance.now();
       try {
@@ -701,7 +707,11 @@ NWLOG.hook = () => {
     ['lifeStep', 'animals', 'moving the animals'],
   ]) {
     const o = GAME[n];
-    if (typeof o !== 'function' || o.__nwP) continue;
+    if (typeof o !== 'function') {
+      missing(n);
+      continue;
+    }
+    if (o.__nwP) continue;
     const f = function (...a) {
       const t0 = performance.now();
       try {
