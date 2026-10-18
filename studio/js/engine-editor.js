@@ -6,7 +6,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
 import { $ } from '../../game/js/util.js';
-import { dioHubOf, walkView } from '../../game/js/walk-view.js';
+import { mapHub, walkView } from '../../game/js/walk-view.js';
 import {
   ENGINE_DEFAULTS,
   ENGINE_PRESETS,
@@ -170,7 +170,7 @@ async function engMount() {
     state: () => ({
       mode: 'roam',
       roam: true,
-      pos: ENS.pos && ENS.pos[0] === id ? ENS.pos[1] : dioHubOf(ST.D.scenes[id]),
+      pos: ENS.pos && ENS.pos[0] === id ? ENS.pos[1] : mapHub(ST.D.scenes[id]),
       who: 'boy',
       enc: [
         { id: 'pv1', lvl: 5 },

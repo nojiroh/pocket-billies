@@ -34,7 +34,7 @@ import { FRAME, frameCount, frameTask, userFps } from './frame-scheduler.js';
 import { uiIco } from './art.js';
 import { applyPreferences, exportSave } from './settings-screen.js';
 import { SC, scResize, scStop } from './battle-stage.js';
-import { dioScene } from './walk-view.js';
+import { mapById } from './walk-view.js';
 import { EGL } from './engine/webgl.js';
 import { A, checkFaints, paintBoxes, play, say, snapAll, startTrainer, startWild, stopTimers } from './battle.js';
 import { MAP } from './world-map.js';
@@ -94,7 +94,7 @@ function debugHTML() {
  <details ${U.bench && U.bench.test ? 'open' : ''}><summary>Test scenes</summary><p class="note">Small places that each show one tricky situation: stairs, ledges at the limits, bridges, water, shadows, every prop, slopes, the camera in tight spots, night lights, a dense forest, tiny and huge maps, traffic, and the light lab (v44: light on the land, in a room, on props, in the air — the places the quick check measures the lighting in). Checks test the walking rules there (what should and shouldn't be reachable).</p>
   <div class="dbg-row">${dbgSel(
     'dbgTest',
-    testScenes().map(k => [k, (dioScene(k).name || k).replace(/^Test: /, '')]),
+    testScenes().map(k => [k, (mapById(k).name || k).replace(/^Test: /, '')]),
     U.dbgTest || testScenes()[0] || ''
   )}${dbgBtn('test', 'Go there')}${dbgBtn('testchk', 'Run its checks')}${U.bench && U.bench.test ? dbgBtn('untest', 'Back to the game', 'gold') : ''}</div>
   ${U.testRes ? `<ul class="dbg-warn">${U.testRes.map(r => `<li>${r.ok ? '✓' : '✗'} ${esc(r.what)}${r.ok ? '' : ` (expected ${r.reach ? 'reachable' : 'not reachable'})`}</li>`).join('')}</ul>` : ''}</details>
@@ -259,14 +259,14 @@ function dbgAct(x) {
     }
     case 'test': {
       const id = v('dbgTest');
-      if (!id || !dioScene(id)) break;
+      if (!id || !mapById(id)) break;
       U.dbgTest = id;
       U.testRes = null;
       U.bench = { id, test: 1 };
       U.tab = 'walk';
       closeModal();
       render();
-      toast((dioScene(id).name || id) + '. Open the debug menu to leave.');
+      toast((mapById(id).name || id) + '. Open the debug menu to leave.');
       return;
     }
     case 'untest': {

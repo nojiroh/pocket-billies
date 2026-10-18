@@ -11,7 +11,7 @@ import { $, clamp } from './util.js';
 import { PLACE, RULES, SP, TRAINERS, trainersAt } from './game-data.js';
 import { B, RM, S, U, esc, healAll, save, today } from './game-state.js';
 import { DR } from './dressing-room.js';
-import { dioBaseId, dioFreePt, walkView } from './walk-view.js';
+import { baseMapId, dioFreePt, walkView } from './walk-view.js';
 import { EGL } from './engine/webgl.js';
 import { dioH, walkRenderer } from './walk-view-gl.js';
 import { startTrainer, startWild } from './battle.js';
@@ -216,13 +216,13 @@ export function legendCheck() {
   if (S.route.prog !== 0 || (S.route.plan && S.route.plan.length)) return;
   const F = storyFlags(),
     L = (RULES.legends || []).find(
-      l => l.scene === dioBaseId() && SP[l.sp] && !S.caught[l.sp] && F['legend_' + l.sp] !== today()
+      l => l.scene === baseMapId() && SP[l.sp] && !S.caught[l.sp] && F['legend_' + l.sp] !== today()
     );
   if (!L || STORY.pending === 'legend') return;
   STORY.pending = 'legend';
   setTimeout(() => {
     STORY.pending = null;
-    if (!walkView.ready || B || U.tab !== 'walk' || U.modal || TALK.on || CS.on || dioBaseId() !== L.scene) return;
+    if (!walkView.ready || B || U.tab !== 'walk' || U.modal || TALK.on || CS.on || baseMapId() !== L.scene) return;
     F['legend_' + L.sp] = today();
     save();
     modal({

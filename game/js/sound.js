@@ -12,7 +12,7 @@ import { clamp } from './util.js';
 import { ROUTE } from './game-data.js';
 import { B, S, U } from './game-state.js';
 import { SC } from './battle-stage.js';
-import { dioBaseId, dioBridgeAt, dioBridges, dioScene, dioStepM, dioTer, walkData, walkView } from './walk-view.js';
+import { baseMapId, dioBridgeAt, dioBridges, dioStepM, mapById, terrainAt, walkData, walkView } from './walk-view.js';
 import { ENV, envHour, envState } from './environment.js';
 import { walkRenderer } from './walk-view-gl.js';
 /* eslint-disable no-func-assign */
@@ -748,7 +748,7 @@ export function musicFor() {
     return B.kind === 'trainer' ? (B.T && B.T.who === 'chad' ? 'rival' : 'trainer') : 'wild';
   if (U.tab === 'map') return 'map';
   const id = typeof sceneIdAt === 'function' ? sceneIdAt(S.route.node) : null,
-    sc = id && dioScene(id),
+    sc = id && mapById(id),
     r = ROUTE[S.route.node];
   if (sc && sc.indoor) return /mall|food/.test(id) ? 'mall' : 'cave';
   if (r && r.music && SONGS[r.music]) return r.music;
@@ -1048,7 +1048,7 @@ setInterval(() => {
     )
       return;
     const P = walkView.pl;
-    let ter = typeof dioTer === 'function' ? dioTer(P.x, P.z) : 'g';
+    let ter = typeof terrainAt === 'function' ? terrainAt(P.x, P.z) : 'g';
     /* v18: hollow boards on wooden and rope bridges, stone on stone bridges and stairs */
     if (typeof dioBridgeAt === 'function' && dioBridgeAt(P.x, P.z) != null) {
       const b = (dioBridges() || []).find(b => {
@@ -1428,7 +1428,7 @@ function ambUpdate() {
     } else if (E && E.flash < 0.5) AMB.flash = 0;
   }
   /* arriving somewhere: everything fades in */
-  const sid = sc ? dioBaseId() : null;
+  const sid = sc ? baseMapId() : null;
   if (sid !== AMB.id) {
     AMB.id = sid;
     AMB.arrive = t;

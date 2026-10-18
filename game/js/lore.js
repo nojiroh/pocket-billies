@@ -12,7 +12,7 @@ import { clamp } from './util.js';
 import { GD, ROUTE, TRAINERS } from './game-data.js';
 import { S, U, esc, save } from './game-state.js';
 import { humanHTML } from './person-art.js';
-import { dioBaseId, dioFind, dioFreePt, dioHubOf, dioScene, walkView } from './walk-view.js';
+import { baseMapId, dioFind, dioFreePt, mapById, mapHub, walkView } from './walk-view.js';
 import { dioH, walkRenderer } from './walk-view-gl.js';
 import { JINGLES, jingle, sfx } from './sound.js';
 /* eslint-disable no-func-assign */
@@ -22,7 +22,6 @@ expose({
   clueDraw: [() => clueDraw, v => ((clueDraw = v), provide({ clueDraw }))],
   clueSpotFind: [() => clueSpotFind, v => (clueSpotFind = v)],
   clueSpots: [() => clueSpots, v => (clueSpots = v)],
-  dioChatLines: [() => dioChatLines, v => ((dioChatLines = v), provide({ dioChatLines }))],
   loreBook: [() => loreBook, v => (loreBook = v)],
   loreCard: [() => loreCard, v => (loreCard = v)],
   loreChat: [() => loreChat, v => (loreChat = v)],
@@ -33,10 +32,11 @@ expose({
   loreNode: [() => loreNode, v => (loreNode = v)],
   loreOpen: [() => loreOpen, v => (loreOpen = v)],
   loreStage: [() => loreStage, v => (loreStage = v)],
+  mapChatLines: [() => mapChatLines, v => ((mapChatLines = v), provide({ mapChatLines }))],
   renderLore: [() => renderLore, v => (renderLore = v)],
 });
 /* eslint-enable no-func-assign */
-provide({ clueDraw, dioChatLines, loreFlags });
+provide({ clueDraw, loreFlags, mapChatLines });
 /* to-module: end */
 export const LORE = () => (typeof GD !== 'undefined' && GD.lore) || {};
 export function loreFlags() {
@@ -79,7 +79,7 @@ function loreChat(place) {
       .sort((a, b) => b - a)[0];
   return k != null ? C[k] : [];
 }
-function dioChatLines(fallback) {
+function mapChatLines(fallback) {
   const sc = (typeof walkView !== 'undefined' && walkView.sc) || {},
     own = sc.chat && sc.chat.length ? sc.chat : fallback,
     L = loreChat(sc.placeId || sc.place);
@@ -133,9 +133,9 @@ export function loreClue(id) {
 const CLUE_SPOTS = {};
 function clueSpots() {
   if ((typeof U !== 'undefined' && U.inside) || typeof walkView === 'undefined' || !walkView.sc) return [];
-  const id = dioBaseId(),
+  const id = baseMapId(),
     sc0 = walkView.sc,
-    sc = sc0.baseId ? dioScene(sc0.baseId) : sc0,
+    sc = sc0.baseId ? mapById(sc0.baseId) : sc0,
     o = sc0.baseOff || [0, 0],
     F = loreFlags();
   if (!sc || !id) return [];
@@ -161,7 +161,7 @@ function clueSpotFind(sc, at) {
   } catch (e) {
     return null;
   }
-  const hub = dioHubOf(sc),
+  const hub = mapHub(sc),
     o = (walkView.sc && walkView.sc.baseOff) || [0, 0];
   const C = (sc.props || [])
     .filter(p => re.test(p.k))

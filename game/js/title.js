@@ -14,7 +14,7 @@ import { userFps } from './frame-scheduler.js';
 import { uiIco } from './art.js';
 import { humanHTML } from './person-art.js';
 import { applyPreferences } from './settings-screen.js';
-import { dioScene, dioStop, walkView } from './walk-view.js';
+import { dioStop, mapById, walkView } from './walk-view.js';
 import { dioH, dioMount, walkRenderer } from './walk-view-gl.js';
 import { music, musicFor } from './sound.js';
 import { csSceneId, csStart, csStartName, csWanted } from './cutscene.js';
@@ -43,7 +43,7 @@ function titleFrame() {
     now = performance.now(),
     k = RM ? 0.5 : 0.5 - 0.5 * Math.cos(((now - TITLE.t0) / 1000) * 0.05),
     /* (in the walk view the town is one part of a bigger picture: frame the town itself) */ b = sc.baseId
-      ? dioScene(sc.baseId) || sc
+      ? mapById(sc.baseId) || sc
       : sc,
     o = sc.baseOff || [0, 0],
     x = o[0] + b.w * (0.28 + 0.44 * k),

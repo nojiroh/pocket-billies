@@ -17,7 +17,7 @@ import { N, S, U, findMon, maxHp, nextStop, save } from './game-state.js';
 import { cnv } from './art.js';
 import { KBACK, drawRig, rigFrame, rigParts, rigPreload } from './skeleton-rig.js';
 import { scPrepare } from './battle-stage.js';
-import { dioFreePt, dioPrepare, dioProj, walkView } from './walk-view.js';
+import { dioFreePt, dioProj, prepareMap, walkView } from './walk-view.js';
 import { ENV } from './environment.js';
 import { dioH } from './walk-view-gl.js';
 /* eslint-disable no-func-assign */
@@ -521,7 +521,7 @@ setInterval(() => {
     OW_PREP.add(id);
     if (OW_PREP.size > 6) OW_PREP.delete(OW_PREP.values().next().value);
     const t0 = performance.now();
-    dioPrepare(id)
+    prepareMap(id)
       .then(() => {
         if (typeof NWLOG !== 'undefined')
           NWLOG.add('scene', `prepared ${id} ahead (${Math.round(performance.now() - t0)} ms in the background)`);

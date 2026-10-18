@@ -15,7 +15,7 @@ import { PLACE, ROUTE, isTown, placeFull } from './game-data.js';
 import { sceneLite, sceneLoad, scenesAhead } from './map-files.js';
 import { RM, S, U, canEnter, esc, fmt, save } from './game-state.js';
 import { artLoad, uiIco } from './art.js';
-import { artImage, dioPrepare, dioScene, imageReady, walkData } from './walk-view.js';
+import { artImage, imageReady, mapById, prepareMap, walkData } from './walk-view.js';
 import { wrHubScene } from './seamless-world.js';
 import { D2R, MAP, MNV, slerp, v3 } from './world-map.js';
 import { MGL } from './world-map-gl.js';
@@ -113,10 +113,10 @@ function flyGo(i) {
     dir: 1,
   });
   if (typeof artLoad === 'function') artLoad(['map/airship.png']).catch(() => {});
-  if (typeof dioPrepare === 'function' && typeof wrHubScene === 'function') {
+  if (typeof prepareMap === 'function' && typeof wrHubScene === 'function') {
     try {
       const h = wrHubScene(i);
-      if (h && h.id) dioPrepare(h.id);
+      if (h && h.id) prepareMap(h.id);
     } catch (e) {}
   }
   document.body.classList.add('flying');
@@ -233,7 +233,7 @@ function flyLand() {
   const cap = $('#flycap');
   if (cap) cap.remove();
   const sid = sceneIdAt(b),
-    sc = typeof dioScene === 'function' ? dioScene(sid) : null,
+    sc = typeof mapById === 'function' ? mapById(sid) : null,
     m = sc && (sc.props || []).find(p => p.act === 'fly');
   if (m && typeof walkData === 'function') {
     const C = walkData().sc,
@@ -312,7 +312,7 @@ export function liftGo(p) {
       U.arrive = null;
       U.mapSel = null;
       const sid = sceneIdAt(i),
-        sc = typeof dioScene === 'function' ? dioScene(sid) : null,
+        sc = typeof mapById === 'function' ? mapById(sid) : null,
         m = sc && (sc.props || []).find(q => q.act === 'lift');
       if (m && typeof walkData === 'function') {
         const C = walkData().sc,

@@ -13,7 +13,7 @@ import { ART, BG_ART, COIN_ART, EGG_ART, ICON_ATLAS, UIURL, artBoot, artImg } fr
 import { trainerArtPaths } from './person-art.js';
 import { rigAtlas } from './skeleton-rig.js';
 import { AREAS, scPrepare, stageArt } from './battle-stage.js';
-import { dioPaths, dioScene, walkData, walkView } from './walk-view.js';
+import { mapArtPaths, mapById, walkData, walkView } from './walk-view.js';
 import { EGL, eglOK } from './engine/webgl.js';
 import { ENV } from './environment.js';
 import { dglRiseStart, walkRenderer } from './walk-view-gl.js';
@@ -165,7 +165,7 @@ function loadList() {
   }
   try {
     const D = walkData();
-    for (const id of Object.keys(D.scenes)) dioPaths(D.scenes[id]).forEach(p => add(p, 3));
+    for (const id of Object.keys(D.scenes)) mapArtPaths(D.scenes[id]).forEach(p => add(p, 3));
     for (const P of Object.values(D.sc.props)) {
       add(P.img, 3);
       if (P.blades) add(P.blades.img, 3);
@@ -510,8 +510,8 @@ function townPaths() {
     if (!(typeof titleWanted === 'function' && titleWanted() && typeof csWanted === 'function' && csWanted()))
       return new Set();
     const id = sceneIdAt(START_NODE),
-      sc = dioScene(id);
-    return sc ? new Set(dioPaths(sc)) : new Set();
+      sc = mapById(id);
+    return sc ? new Set(mapArtPaths(sc)) : new Set();
   } catch (e) {
     console.error(e);
     return new Set();
@@ -743,11 +743,11 @@ function studioTestStart() {
   U.modal = null;
   U.mq = [];
   renderOv();
-  if (NW_TEST.scene && dioScene(NW_TEST.scene)) U.bench = { id: NW_TEST.scene };
+  if (NW_TEST.scene && mapById(NW_TEST.scene)) U.bench = { id: NW_TEST.scene };
   U.tab = 'walk';
   render();
   toast(
-    `Test run${NW_TEST.scene && dioScene(NW_TEST.scene) ? ' of ' + (dioScene(NW_TEST.scene).name || NW_TEST.scene) : ''}. Nothing here is saved.`
+    `Test run${NW_TEST.scene && mapById(NW_TEST.scene) ? ' of ' + (mapById(NW_TEST.scene).name || NW_TEST.scene) : ''}. Nothing here is saved.`
   );
 }
 function studioLive(D) {

@@ -17,7 +17,7 @@ import { frameCount, frameStop, frameTask, userFps } from './frame-scheduler.js'
 import { artLoad, artPixels, cnv, hexA, mstamp, uiIco } from './art.js';
 import { owFrames, portraitHTML } from './person-art.js';
 import { EASE } from './battle-stage.js';
-import { artImage, dioHash, dioScene, dioStep, imageReady, walkData, walkView } from './walk-view.js';
+import { artImage, dioHash, dioStep, imageReady, mapById, walkData, walkView } from './walk-view.js';
 import { ENG_CTX, eng, engSource } from './engine/settings.js';
 import { EGL, eglBindQuad, eglFree, eglImg, eglInit, eglMesh, eglOK, eglPrograms, eglTarget } from './engine/webgl.js';
 import { EGL_POST_SH, eglPost, eglScreenOf } from './engine/post-effects.js';
@@ -1210,7 +1210,7 @@ function mmKey(sc) {
 }
 export function mmBuild(i) {
   const r = ROUTE[i],
-    sc = r && r.scene && dioScene(r.scene);
+    sc = r && r.scene && mapById(r.scene);
   if (!sc || !sc.w) return null;
   const C0 = walkData().sc,
     W = sc.w,
@@ -1469,7 +1469,7 @@ export function mmBuild(i) {
 }
 function mmGet(i) {
   const r = ROUTE[i],
-    sc = r && r.scene && dioScene(r.scene);
+    sc = r && r.scene && mapById(r.scene);
   if (!sc) return null;
   const key = mmKey(sc) + '|' + (MGL.hpix ? 1 : 0),
     e = MM.cache.get(i);

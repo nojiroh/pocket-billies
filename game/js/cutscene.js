@@ -35,11 +35,11 @@ import { buzz, partSpr } from './battle-stage.js';
 import {
   artImage,
   dioDirOf,
-  dioPrepare,
   dioProj,
-  dioScene,
   dioStop,
   imageReady,
+  mapById,
+  prepareMap,
   walkData,
   walkView,
 } from './walk-view.js';
@@ -165,7 +165,7 @@ export function csSceneId() {
   const id = sceneIdAt(START_NODE);
   try {
     const v = typeof wrRoamView === 'function' ? wrRoamView(START_NODE, null) : null;
-    if (v && v.id && dioScene(v.id)) return v.id;
+    if (v && v.id && mapById(v.id)) return v.id;
   } catch (e) {
     console.error(e);
   }
@@ -177,7 +177,7 @@ export function csWanted() {
     !EGL.fail &&
     eglOK() &&
     typeof sceneIdAt === 'function' &&
-    !!dioScene(sceneIdAt(START_NODE))
+    !!mapById(sceneIdAt(START_NODE))
   );
 }
 /* alpha 0.4: the start's name, for the opening's caption (Copperleaf Town) */
@@ -560,7 +560,7 @@ export async function csStart() {
   const pre = Promise.all([
     rigPreload(CS.pickList.map(l => [l + '0', false, 1])),
     artLoad(['coins/penny_32.png']),
-    dioPrepare(id),
+    prepareMap(id),
   ]).catch(() => {});
   /* v47: the fall, from the surface down to Sundown (opening-fall.js); it ends on a white screen */
   if (typeof fallPlay === 'function' && !CS.test) {

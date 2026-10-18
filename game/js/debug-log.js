@@ -666,7 +666,7 @@ NWLOG.hook = () => {
   };
   for (const [n, l] of [
     ['dioMount', 'opening a scene'],
-    ['dioPrepare', 'preparing a scene'],
+    ['prepareMap', 'preparing a scene'],
     ['render', 'drawing the menus'],
     ['renderOv', 'drawing a window'],
     ['save', 'saving'],

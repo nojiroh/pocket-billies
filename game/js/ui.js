@@ -112,11 +112,11 @@ import {
   dioClimb,
   dioFind,
   dioFreePt,
-  dioHubOf,
-  dioPaths,
-  dioScene,
   dioStop,
   dioWalkTo,
+  mapArtPaths,
+  mapById,
+  mapHub,
   openKind,
   placeClosedText,
   placeOpen,
@@ -129,7 +129,7 @@ import { dioMount, walkRenderer } from './walk-view-gl.js';
 import { fishStart } from './fishing.js';
 import {
   WORLD,
-  dioShift,
+  shiftWalkView,
   wrDelta,
   wrGate,
   wrGetReady,
@@ -895,7 +895,7 @@ function buddyCard() {
 }
 function roomHero() {
   const I = U.inside,
-    sc = dioScene(I.id) || {},
+    sc = mapById(I.id) || {},
     here = ROUTE[S.route.node],
     what =
       {
@@ -926,8 +926,8 @@ function envLine() {
 }
 function walkHero() {
   if (U.inside && !U.bench && roomState()) return roomHero();
-  if (U.bench && U.bench.test && dioScene(U.bench.id)) {
-    /* v20: a test scene from the debug menu */ const sc = dioScene(U.bench.id);
+  if (U.bench && U.bench.test && mapById(U.bench.id)) {
+    /* v20: a test scene from the debug menu */ const sc = mapById(U.bench.id);
     return `<div class="walk-hero" id="walkHero"><div class="wh-card glass">${U.bench.id === 'gallery' ? `<div class="sub">Settings</div><h1 class="where">Graphics gallery</h1><p class="wh-gate">Walk to a signpost, then move the dial below and watch what changes.</p>` : `<div class="sub">Test scene</div><h1 class="where">${esc((sc.name || U.bench.id).replace(/^Test: /, ''))}</h1><p class="wh-gate">${(sc.checks || []).length} walking checks. Debug menu → Test scenes runs them.</p>`}<div class="wh-acts"><button class="pb small gold" ${U.bench.id === 'gallery' ? 'data-a="gal-leave"' : 'data-a="dbg" data-x="untest"'}>${U.bench.id === 'gallery' ? 'Back to Settings' : 'Back to the game'}</button></div></div></div>`;
   }
   const node = S.route.node,
@@ -970,7 +970,7 @@ export function sceneIdAt(i) {
 /* which road leaves a stop's scene through which exit: matched by compass direction on the world map */
 /* v42: the join table first (a road names the exit at each end, by id); roads without one fall back to the bearing */
 function sceneExits(node) {
-  const sc = dioScene(sceneIdAt(node)),
+  const sc = mapById(sceneIdAt(node)),
     ex = (sc && sc.exits) || [],
     out = {};
   if (!sc || !ex.length) return out;
@@ -987,7 +987,7 @@ function sceneExits(node) {
 }
 function sceneExitsByBearing(node, sc, ex, out) {
   out = out || {};
-  const hub = dioHubOf(sc),
+  const hub = mapHub(sc),
     me = ROUTE[node],
     pairs = [];
   for (const e of ADJ[node]) {
@@ -1033,13 +1033,13 @@ provide({ ROOM_KIND }); /* to-module */
 function roomFor(a, p) {
   if ((S.preferences || {}).rooms === 'quick' && a !== 'home') return null;
   if (a !== 'home' && p) {
-    if (p.room && dioScene(p.room)) return p.room;
+    if (p.room && mapById(p.room)) return p.room;
     const M = walkData().sc.props[p.k],
       k = ROOM_KIND[p.k] || (M && ROOM_KIND[M.group]);
-    if (k && dioScene(k)) return k;
+    if (k && mapById(k)) return k;
   }
   const id = ROOM_OF[a];
-  return id && dioScene(id) ? id : null;
+  return id && mapById(id) ? id : null;
 }
 function enterRoom(a, p) {
   const id = roomFor(a, p);
@@ -1158,8 +1158,7 @@ function roomStepIn(info, n = 0) {
   render();
   if (info.view)
     setTimeout(() => {
-      if (U.inside === info && walkView.id === info.view && walkView.pl && walkView.sc)
-        dioWalkTo(dioHubOf(walkView.sc));
+      if (U.inside === info && walkView.id === info.view && walkView.pl && walkView.sc) dioWalkTo(mapHub(walkView.sc));
     }, 80);
 }
 export function leaveRoom() {
@@ -1177,7 +1176,7 @@ export function leaveRoom() {
       P.goal = null;
       P.dir = 'down';
     }
-    const B = dioScene(I.base),
+    const B = mapById(I.base),
       o = (B && B.baseOff) || [0, 0];
     U.roam = { id: (B && B.baseId) || I.back.id, node: I.node, x: fr[0] - o[0], z: fr[1] - o[1] };
     U.backAt = null;
@@ -1232,7 +1231,7 @@ function roomAct(h) {
   } else if (I.kind === 'lab' && typeof talkHazel === 'function') talkHazel(I.p);
   else if (I.kind === 'home' && typeof homeDecorate === 'function') homeDecorate();
   else {
-    const c = (dioScene(I.id) || {}).chat || [];
+    const c = (mapById(I.id) || {}).chat || [];
     toast(c.length ? `“${c[Math.floor(Math.random() * c.length)]}”` : 'They wave hello.');
   }
 }
@@ -1244,7 +1243,7 @@ function roomState() {
     return null;
   }
   if (I.view) {
-    const sc = dioScene(I.view);
+    const sc = mapById(I.view);
     if (!sc) {
       U.inside = null;
       return null;
@@ -1263,12 +1262,12 @@ function roomState() {
       exits: [{ i: 0, to: -1, name: 'Outside', out: 1 }],
     };
   }
-  const sc = dioScene(I.id);
+  const sc = mapById(I.id);
   if (!sc) {
     U.inside = null;
     return null;
   }
-  const pos = U.roam && U.roam.id === I.id ? [U.roam.x, U.roam.z] : dioHubOf(sc);
+  const pos = U.roam && U.roam.id === I.id ? [U.roam.x, U.roam.z] : mapHub(sc);
   return {
     id: I.id,
     node: S.route.node,
@@ -1284,13 +1283,13 @@ function roomState() {
 function walkState() {
   const rs = !U.bench && roomState();
   if (rs) return rs;
-  if (U.bench && U.bench.id && dioScene(U.bench.id)) {
-    const sc = dioScene(U.bench.id);
+  if (U.bench && U.bench.id && mapById(U.bench.id)) {
+    const sc = mapById(U.bench.id);
     return {
       id: U.bench.id,
       node: S.route.node,
       mode: 'roam',
-      pos: dioHubOf(sc),
+      pos: mapHub(sc),
       roam: true,
       who: 'me',
       enc: [],
@@ -1312,14 +1311,14 @@ function walkState() {
     if (typeof wrPrefetch === 'function') wrPrefetch(tv.R, tv.u, tv.fwd, tv);
   } else if (nx != null && r.prog > 0 && f >= 0.5) {
     const id = sceneIdAt(nx),
-      sc = dioScene(id) || {},
-      hub = sc.w ? dioHubOf(sc) : [0, 0],
+      sc = mapById(id) || {},
+      hub = sc.w ? mapHub(sc) : [0, 0],
       k = sceneExits(nx)[node];
     v = { id, node: nx, mode: 'path', from: sc.exits && k != null ? sc.exits[k] : hub, to: hub, t: (f - 0.5) / 0.5 };
   } else {
     const id = sceneIdAt(node),
-      sc = dioScene(id) || {},
-      hub = sc.w ? dioHubOf(sc) : [0, 0],
+      sc = mapById(id) || {},
+      hub = sc.w ? mapHub(sc) : [0, 0],
       bk = U.backAt,
       pos =
         bk && bk.node === node && bk.id === id
@@ -1374,7 +1373,7 @@ function walkState() {
   }
   /* v46: a new view is shown only once its ground is ready on the card; until then you stay in the one on screen (seamless-world.js wrGate) */
   if (typeof wrGate === 'function' && v && v.pos && (v.mode === 'road' || v.roam)) v = wrGate(v);
-  const sc = dioScene(v.id) || {},
+  const sc = mapById(v.id) || {},
     ex = sceneExits(v.node),
     bl = blockerAt(v.node),
     dest = v.node === node ? (walkMode() ? (S.route.plan[0] ?? null) : nextStop()) : null;
@@ -1400,7 +1399,7 @@ function walkState() {
   /* alpha 0.4: people who only talk (Granny Juniper in her garden): the place's own (scene.people), in the view's metres */
   {
     const bid = sc.baseId || v.id,
-      base = dioScene(bid),
+      base = mapById(bid),
       o = sc.baseOff || [0, 0];
     if (base && bid === sceneIdAt(v.node))
       for (const P of base.people || [])
@@ -1520,7 +1519,7 @@ function exitPrompt(e) {
     const sc = walkView.sc,
       pt = sc && sc.exits && sc.exits[e.i];
     if (!pt || !walkView.pl) return;
-    const hub = dioHubOf(sc),
+    const hub = mapHub(sc),
       dx = pt[0] - hub[0],
       dz = pt[1] - hub[1],
       l = Math.hypot(dx, dz) || 1;
@@ -1596,7 +1595,7 @@ function walkCross() {
     parts = sc.parts;
   if (!parts) return;
   for (const q of parts) {
-    const s = dioScene(q.id);
+    const s = mapById(q.id);
     if (!s || s.kind === 'room') continue;
     const x = P.x - (q.ox || 0),
       z = P.z - (q.oz || 0);
@@ -1717,8 +1716,8 @@ function walkSceneSync() {
       !ws.pos ||
       !walkView.pl ||
       Math.hypot(walkView.pl.x + d[0] - ws.pos[0], walkView.pl.z + d[1] - ws.pos[1]) < 25;
-    if (d && walking && dioShift(id, d[0], d[1])) {
-      artLoad(dioPaths(walkView.sc)).catch(() => {});
+    if (d && walking && shiftWalkView(id, d[0], d[1])) {
+      artLoad(mapArtPaths(walkView.sc)).catch(() => {});
       return;
     }
   }

@@ -25,7 +25,7 @@ def gamedata():
     return json.JSONDecoder().raw_decode(s[s.index('window.GAMEDATA=') + 16:])[0]
 
 
-SHOT_JS = """(async(id)=>{const sc=dioScene(id);const W=sc.w,H=sc.h;
+SHOT_JS = """(async(id)=>{const sc=mapById(id);const W=sc.w,H=sc.h;
  const tgt=[W/2,0,H*.5],eye=[W/2,Math.max(W,H)*.6,-H*.66];walkView.director={frame:()=>({look:{eye,tgt,fov:30,w:W*1.08},items:[],parts:[],lights:[],hide:null,cut:0,center:[W/2,H/2]})};
  const f0=walkRenderer.frames;await new Promise(r=>{const t0=performance.now();const k=()=>{if(walkRenderer.frames>=f0+4||performance.now()-t0>40000)r();else setTimeout(k,100)};k()});
  const C=walkView.C,cv=walkView.cv,R=cv.getBoundingClientRect(),m=C.vp;

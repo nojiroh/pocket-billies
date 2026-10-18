@@ -24,7 +24,7 @@ import {
   scToCss,
   sideTop,
 } from '../../game/js/battle-stage.js';
-import { dioHubOf, walkView } from '../../game/js/walk-view.js';
+import { mapHub, walkView } from '../../game/js/walk-view.js';
 import { dioMount } from '../../game/js/walk-view-gl.js';
 import { battleGLAttach, battleGLStop } from '../../game/js/battle-3d.js';
 import { esc } from './game-stand-ins.js';
@@ -252,13 +252,13 @@ async function bpScene() {
   cv.id = 'bpDio';
   host.insertBefore(cv, host.firstChild);
   await dioMount(cv, id, {
-    state: () => ({ mode: 'roam', roam: true, pos: dioHubOf(sc), who: null, enc: [], npcs: [], exits: [] }),
+    state: () => ({ mode: 'roam', roam: true, pos: mapHub(sc), who: null, enc: [], npcs: [], exits: [] }),
     keys: () => false,
     onPick: () => {},
     cap: () => (ST.sec === 'preview' ? 60 : 0),
   });
   if (!walkView.cv || !$('#camWorld')) return;
-  const hb = dioHubOf(sc);
+  const hb = mapHub(sc);
   walkView.pl.x = hb[0];
   walkView.pl.z = hb[1];
   SC.gl = battleGLAttach({ detach: true });

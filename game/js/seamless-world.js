@@ -8,7 +8,7 @@
    into an ordinary scene object (tiles, heights, steps, props, water, rails...) on the fly — a "composite" — so the
    renderer, the navigation grid, the encounters and the folk need to know nothing about any of this. Moving from one
    composite to the next is a translation: the player, the camera and everything moving are shifted by the difference
-   of the two boxes' origins (dioShift), the ground of the next box is painted in the background before it is needed,
+   of the two boxes' origins (shiftWalkView), the ground of the next box is painted in the background before it is needed,
    and nothing fades or cuts.
 
    A road's length is 40 m per 500 steps of its cost; where you stand on it is your progress along the link, so steps
@@ -24,16 +24,16 @@ import { artLoad, hexA } from './art.js';
 import {
   DIO_GCACHE,
   DIO_STEPS,
-  dioExitEdge,
   dioGroundAsync,
   dioGroundKey,
-  dioHubOf,
-  dioMoodOf,
-  dioPaths,
   dioPoly,
-  dioScene,
   dioStepCell,
   dioSteps,
+  exitEdge,
+  mapArtPaths,
+  mapById,
+  mapHub,
+  mapMoodName,
   walkData,
   walkView,
 } from './walk-view.js';
@@ -60,7 +60,7 @@ expose({
   WR_ST: [() => WR_ST],
   WR_TUN: [() => WR_TUN],
   WR_WIN: [() => WR_WIN],
-  dioShift: [() => dioShift, v => (dioShift = v)],
+  shiftWalkView: [() => shiftWalkView, v => (shiftWalkView = v)],
   wrAdj: [() => wrAdj, v => (wrAdj = v)],
   wrAlongPts: [() => wrAlongPts, v => (wrAlongPts = v)],
   wrAt: [() => wrAt, v => (wrAt = v)],
@@ -149,7 +149,7 @@ function wrNoise(x, y, s) {
 const WR_DIR = { E: [1, 0], W: [-1, 0], N: [0, 1], S: [0, -1] };
 /* which exit of a stop's scene a link uses: the join table first, then the compass match (ui.js sceneExits) */
 function wrExitOf(node, i) {
-  const sc = dioScene(sceneIdAt(node));
+  const sc = mapById(sceneIdAt(node));
   if (!sc || !(sc.exits || []).length) return null;
   const L = LINKS[i],
     J = L[3],
@@ -161,7 +161,7 @@ function wrExitOf(node, i) {
     k = sceneExits(node)[to] ?? -1;
   }
   if (k < 0) return null;
-  const e = E[k] || dioExitEdge(sc, sc.exits[k]),
+  const e = E[k] || exitEdge(sc, sc.exits[k]),
     p = sc.exits[k];
   return { k, side: e.side, p, width: e.width || 2 };
 }
@@ -173,8 +173,8 @@ function wrRoad(i) {
   const L = LINKS[i],
     a = L[0],
     b = L[1],
-    A = dioScene(sceneIdAt(a)),
-    B = dioScene(sceneIdAt(b)),
+    A = mapById(sceneIdAt(a)),
+    B = mapById(sceneIdAt(b)),
     ea = wrExitOf(a, i),
     eb = wrExitOf(b, i);
   if (!A || !B || !ea || !eb) return null;
@@ -282,8 +282,8 @@ function wrJoin(i) {
     if (!L) return null;
     const a = L[0],
       b = L[1],
-      A = dioScene(sceneIdAt(a)),
-      B = dioScene(sceneIdAt(b)),
+      A = mapById(sceneIdAt(a)),
+      B = mapById(sceneIdAt(b)),
       ea = wrExitOf(a, i),
       eb = wrExitOf(b, i);
     if (!A || !B || !ea || !eb || WR_OPP[ea.side] !== eb.side || sceneIdAt(a) === sceneIdAt(b)) return null;
@@ -468,7 +468,7 @@ function wrAdj(S, sid) {
 function wrExitPath(S, k) {
   const e = (S.edgeExits || [])[k],
     p = (S.exits || [])[k],
-    hub = dioHubOf(S);
+    hub = mapHub(S);
   if (!p) return { pts: [hub, hub], len: 0 };
   let pts = e && e.path && e.path.length > 1 ? e.path.map(q => q.slice()) : [hub.slice(), p.slice()];
   const last = pts[pts.length - 1];
@@ -681,7 +681,7 @@ function wrLookOf(S) {
   const o = {};
   for (const k of WR_LOOK) o[k] = S[k];
   o.indoor = 0;
-  o.mood = dioMoodOf(S);
+  o.mood = mapMoodName(S);
   o.placeId = S.place;
   /* alpha 0.2: a cave stays dark in its own view (indoor was dropped for views in v46, and the darkness with it) */ if (
     o.dark == null &&
@@ -1358,7 +1358,7 @@ function wrCompose(id, R, box, base, t) {
 const WR_HUBL = 36;
 function wrHubParts(node) {
   const sid = sceneIdAt(node),
-    S = dioScene(sid);
+    S = mapById(sid);
   if (!S) return null;
   const scenes = [{ S, id: sid, off: [0, 0] }],
     roads = [],
@@ -1513,7 +1513,7 @@ function wrScene(view, R) {
   wrTrim();
   return sc;
 }
-/* a composite by id, for dioScene(): "w:<scene>*" (a place's hub), "w:road<link>@<k>" (a road's middle); the v43 ids
+/* a composite by id, for mapById(): "w:<scene>*" (a place's hub), "w:road<link>@<k>" (a road's middle); the v43 ids
    "w:<scene>><link>" and "w:<scene><<link>" now mean the hub */
 function wrSceneById(id) {
   if (!id || !id.startsWith('w:')) return null;
@@ -1706,8 +1706,8 @@ export function wrRoomScene(baseId, roomId, door) {
     key = id + '|' + WORLD.gen;
   let sc = WORLD.cache.get(key);
   if (sc) return sc;
-  const B0 = dioScene(baseId),
-    R = dioScene(roomId);
+  const B0 = mapById(baseId),
+    R = mapById(roomId);
   if (!B0 || !B0.w || !R || !R.w) return null;
   const C = walkData().sc,
     [rx, rz] = wrRoomPlace(B0, R, door);
@@ -1881,8 +1881,8 @@ export function wrRoomScene(baseId, roomId, door) {
 }
 /* where a point of one composite lands in another (both hold a scene or the road): null when they share nothing */
 export function wrDelta(fromId, toId) {
-  const a = dioScene(fromId),
-    b = dioScene(toId);
+  const a = mapById(fromId),
+    b = mapById(toId);
   if (!a || !b) return null;
   const pa = a.parts || [{ id: fromId, ox: 0, oz: 0 }],
     pb = b.parts || [{ id: toId, ox: 0, oz: 0 }];
@@ -1898,7 +1898,7 @@ export function wrDelta(fromId, toId) {
 export function wrRoamView(node, pos) {
   if (!wrOn()) return null;
   const id = sceneIdAt(node),
-    sc = dioScene(id);
+    sc = mapById(id);
   if (
     !sc ||
     !(sc.exits || []).length ||
@@ -2048,7 +2048,7 @@ function wrPrefetchView(v, R) {
    whatever is missing: the painting in slices of about 8 ms, then the building on the card a few ms a frame (dglPrepare) */
 function wrReady(id) {
   if (id === walkView.id) return true;
-  const sc = dioScene(id);
+  const sc = mapById(id);
   if (!sc) return false;
   const key = dioGroundKey(sc);
   if (!DIO_GCACHE.has(key)) return false;
@@ -2061,7 +2061,7 @@ function wrReady(id) {
 }
 export function wrGetReady(id, urgent, focus) {
   if (wrReady(id)) return true;
-  const sc = dioScene(id);
+  const sc = mapById(id);
   if (!sc) return false;
   const key = dioGroundKey(sc),
     G = DIO_GCACHE.get(key);
@@ -2070,7 +2070,7 @@ export function wrGetReady(id, urgent, focus) {
       WORLD.busy = true;
       WORLD.busyId = id;
       const t0 = performance.now();
-      artLoad(dioPaths(sc))
+      artLoad(mapArtPaths(sc))
         .then(() => dioGroundAsync(sc, urgent ? -5 : 10))
         .catch(() => {})
         .then(() => {
@@ -2144,8 +2144,8 @@ function wrVeil() {
   v.style.transition = 'opacity .6s ease-in';
   v.style.opacity = '0';
 }
-export function dioShift(id, dx, dz) {
-  const sc = dioScene(id);
+export function shiftWalkView(id, dx, dz) {
+  const sc = mapById(id);
   if (!sc) return false;
   const P = walkView.pl;
   if (!!(walkView.sc && walkView.sc.under) !== !!sc.under) wrVeil();

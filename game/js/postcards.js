@@ -10,7 +10,7 @@ import { STEST, STORY, sceneIdAt, storyFlags, toast } from './hooks.js';
 import { ROUTE, TRAINERS, isTown, trainersAt } from './game-data.js';
 import { B, S, U, esc, save } from './game-state.js';
 import { artURL } from './art.js';
-import { dioFlagPath, dioScene, walkView } from './walk-view.js';
+import { flagPicturePath, mapById, walkView } from './walk-view.js';
 import { sfx } from './sound.js';
 import { TALK } from './talk.js';
 import { CS } from './cutscene.js';
@@ -42,8 +42,8 @@ function pcImg(i) {
   return 'postcards/' + sceneIdAt(i) + '.webp';
 }
 function pcFlag(i) {
-  const sc = typeof dioScene === 'function' ? dioScene(sceneIdAt(i)) : null;
-  return sc && typeof dioFlagPath === 'function' ? dioFlagPath(sc) : 'scene/flags/default.png';
+  const sc = typeof mapById === 'function' ? mapById(sceneIdAt(i)) : null;
+  return sc && typeof flagPicturePath === 'function' ? flagPicturePath(sc) : 'scene/flags/default.png';
 }
 /* the town you are standing in (in the joined world, the place under your feet), or null */
 function pcHere() {
@@ -52,7 +52,7 @@ function pcHere() {
     P = walkView.pl,
     parts = sc.parts || [{ id: walkView.id, ox: 0, oz: 0 }];
   for (const q of parts) {
-    const s = dioScene(q.id);
+    const s = mapById(q.id);
     if (!s || s.kind === 'room') continue;
     const x = P.x - (q.ox || 0),
       z = P.z - (q.oz || 0);

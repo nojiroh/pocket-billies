@@ -79,7 +79,6 @@ import {
   artImage,
   dioActLabel,
   dioActSpot,
-  dioAlong,
   dioApproach,
   dioBridgeAt,
   dioBubble,
@@ -89,9 +88,6 @@ import {
   dioDirOf,
   dioEncSpot,
   dioEnsureGround,
-  dioExitLabels,
-  dioExitMarks,
-  dioFlagPath,
   dioFolkTick,
   dioFree,
   dioFreePt,
@@ -100,9 +96,7 @@ import {
   dioGrowK,
   dioHash,
   dioHitAt,
-  dioHubOf,
   dioLayerM,
-  dioMoodOf,
   dioNav,
   dioNextOn,
   dioNextTiles,
@@ -110,11 +104,9 @@ import {
   dioPaintGen,
   dioPill,
   dioPlayer,
-  dioPrepare,
   dioProj,
   dioPropM,
   dioPropOn,
-  dioScene,
   dioShape,
   dioSpeech,
   dioStep,
@@ -126,13 +118,21 @@ import {
   dioStop,
   dioTag,
   dioTapMark,
-  dioTer,
   dioUnproject,
+  drawExitLabels,
+  drawExitMarks,
+  flagPicturePath,
   imageReady,
+  mapById,
+  mapHub,
+  mapMoodName,
+  pointAlongMapPath,
+  prepareMap,
   setDioNav,
   setDioProj,
   setDioStop,
   setDioUnproject,
+  terrainAt,
   walkData,
   walkView,
 } from './walk-view.js';
@@ -606,7 +606,7 @@ export function dioH(x, z) {
     if (b != null) return b;
   }
   let h = dioGroundH(x, z);
-  const ch = dioTer(x, z);
+  const ch = terrainAt(x, z);
   if (ch === 'w' || ch === 'd') h -= 0.12;
   return h;
 }
@@ -737,7 +737,7 @@ export function dioMount(cv, id, opt = {}) {
     walkRenderer.camT = null;
     walkRenderer.farKey = '';
   }
-  walkView.sc = dioScene(id);
+  walkView.sc = mapById(id);
   walkView.ready = false;
   walkView.err = null;
   cv.classList.add('gl');
@@ -754,7 +754,7 @@ export function dioMount(cv, id, opt = {}) {
     });
     dglGestures(cv);
   }
-  return dioPrepare(id)
+  return prepareMap(id)
     .then(sc => {
       if (walkView.id !== id) return;
       walkView.sc = sc;
@@ -3730,7 +3730,7 @@ function dglFrameIn(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
   x.setTransform(1, 0, 0, 1, 0, 0);
   x.clearRect(0, 0, rw, rh);
   if (!BT && !(walkView.opt.active && !walkView.opt.active())) {
-    dioExitMarks(C, st, t);
+    drawExitMarks(C, st, t);
     dioTapMark(C, t);
     if (typeof owLabels === 'function' && !BT) owLabels(C, labels);
     for (const l of labels) {
@@ -3746,7 +3746,7 @@ function dglFrameIn(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
           l.act === 'clinic' ? '#E8607A' : l.act === 'shop' ? '#4E9BE0' : l.act === 'closed' ? '#7E7888' : '#8E6CCB'
         );
     }
-    dioExitLabels(C, st, hits, dioHubOf(sc));
+    drawExitLabels(C, st, hits, mapHub(sc));
   }
   /* v28: photo mode asks for the picture as it is drawn (before the browser clears it) */ if (walkRenderer.photoReq) {
     const cb = walkRenderer.photoReq;
@@ -3971,7 +3971,7 @@ const DGL_MOOD0 = { sat: 1, con: 1, warm: 0, lift: [0, 0, 0], gain: [0, 0, 0], s
 function dglMood(sc) {
   const on = (eng('world', 'moods') ?? 1) > 0,
     Mo = (typeof GD !== 'undefined' && GD.moods) || {},
-    T0 = on && sc ? Mo[sc.mood || dioMoodOf(sc)] : null,
+    T0 = on && sc ? Mo[sc.mood || mapMoodName(sc)] : null,
     k = eng('world', 'moods') ?? 1;
   const T = Object.assign({}, DGL_MOOD0);
   if (T0)
@@ -4152,7 +4152,7 @@ function dglHug(it, C) {
 function dglMount(P, t) {
   const sc = walkView.sc;
   if (!sc || !sc.ride || typeof riderOf !== 'function' || typeof S === 'undefined' || !S.team) return null;
-  const ch = dioTer(P.x, P.z);
+  const ch = terrainAt(P.x, P.z);
   if (ch !== 'w' && ch !== 'd') {
     walkRenderer.mountOn = false;
     return null;
@@ -4536,7 +4536,7 @@ export function dglItems(st, C, PPU, C0) {
     P = walkView.pl,
     t = walkView.t,
     out = [],
-    hub = dioHubOf(sc),
+    hub = mapHub(sc),
     tg = dioGrassImgs(C0),
     wind = eng('grass', 'wind'),
     odt = Math.min(0.1, Math.max(0, (t - (walkRenderer.owT ?? t)) / 1000)),
@@ -4622,7 +4622,7 @@ export function dglItems(st, C, PPU, C0) {
     /* v43: a flag pole is rigid; its cloth is a separate picture (the town's flag) draped from the top and waved by the wind */
     if (!far && M.flag) {
       const F = M.flag,
-        fi = artImage(dioFlagPath(sc)),
+        fi = artImage(flagPicturePath(sc)),
         fim = imageReady(fi) ? fi : artImage('scene/flags/default.png');
       if (imageReady(fim)) {
         const fl = p.f ? -1 : 1,
@@ -4714,7 +4714,7 @@ export function dglItems(st, C, PPU, C0) {
     if (!pos && n.at) pos = walkView.npcAt[n.id] = dioFreePt(n.at[0], n.at[1]);
     if (!pos) {
       if (!st.mode || st.mode === 'line') {
-        const a = dioAlong(sc, n.t ?? 0.7 + i * 0.08);
+        const a = pointAlongMapPath(sc, n.t ?? 0.7 + i * 0.08);
         pos = [a.x + (n.dx || 0), a.z + (n.dz ?? 1.5)];
       } else if (n.exit) {
         const dx = hub[0] - n.exit[0],
@@ -7356,7 +7356,7 @@ const DGL_PRINT_COL = {
 function dglPrintAt(x, z, a, paw) {
   const sc = walkView.sc;
   if (!sc || (sc.indoor && sc.far !== 'cave')) return;
-  let ch = dioTer(x, z),
+  let ch = terrainAt(x, z),
     col = DGL_PRINT_COL[ch];
   const E = typeof ENV !== 'undefined' && ENV.on ? ENV : null;
   if (!col && E && !sc.indoor && E.sk && E.sk[3] > 0.3 && !/[wdbe]/.test(ch)) col = DGL_PRINT_COL.n;
@@ -7507,7 +7507,7 @@ function dglLifeFx(quad, glows, t, rm, dt, sc, C0) {
   }
   /* v47: dust kicked up from dry ground as you walk (earth, paths, dirt, sand, gravel, scrap, ash), not when it is wet or snowy */
   {
-    const ch = typeof dioTer === 'function' ? dioTer(P.x, P.z) : 'g',
+    const ch = typeof terrainAt === 'function' ? terrainAt(P.x, P.z) : 'g',
       du = L.du || (L.du = []);
     if (P.walk && rm && /[ApusNvxzZ4]/.test(ch) && !(E && (E.wet > 0.35 || (E.sk && E.sk[3] > 0.3)))) {
       L.duT = (L.duT || 0) - dt;

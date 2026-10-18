@@ -12,7 +12,7 @@ import { expose } from './test-globals.js';
 import { RM, RULES, S, SP, provide, sceneIdAt } from './hooks.js';
 import { clamp } from './util.js';
 import { hexA } from './art.js';
-import { dioScene, walkView } from './walk-view.js';
+import { mapById, walkView } from './walk-view.js';
 /* eslint-disable no-func-assign */
 expose({
   ENV: [() => ENV],
@@ -258,8 +258,8 @@ export function envWinLit(x, z, h) {
 }
 export function envHere() {
   try {
-    return typeof sceneIdAt === 'function' && typeof dioScene === 'function' && typeof S !== 'undefined' && S.route
-      ? dioScene(sceneIdAt(S.route.node))
+    return typeof sceneIdAt === 'function' && typeof mapById === 'function' && typeof S !== 'undefined' && S.route
+      ? mapById(sceneIdAt(S.route.node))
       : null;
   } catch (e) {
     return null;

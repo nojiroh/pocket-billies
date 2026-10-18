@@ -1286,7 +1286,7 @@ function voxShadow(SH, items) {
     gl.bindVertexArray(null);
   });
 }
-/* art the scene needs for its voxel props' picture layers (dioPaths asks) */
+/* art the scene needs for its voxel props' picture layers (mapArtPaths asks) */
 function voxPaths(sc, C) {
   const L = [];
   let any = false;

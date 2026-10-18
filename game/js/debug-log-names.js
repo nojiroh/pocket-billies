@@ -11,10 +11,10 @@ import { SC, scResize, scStart, setScResize, setScStart } from './battle-stage.j
 import {
   dioFolkTick,
   dioPlayer,
-  dioPrepare,
+  prepareMap,
   setDioFolkTick,
   setDioPlayer,
-  setDioPrepare,
+  setPrepareMap,
   walkView,
 } from './walk-view.js';
 import {
@@ -122,7 +122,6 @@ Object.defineProperties(GAME, {
   dioFolkTick: { get: () => dioFolkTick, set: setDioFolkTick },
   dioMount: { get: () => dioMount, set: setDioMount },
   dioPlayer: { get: () => dioPlayer, set: setDioPlayer },
-  dioPrepare: { get: () => dioPrepare, set: setDioPrepare },
   eglFinish: { get: () => eglFinish, set: setEglFinish },
   eglNormWork: { get: () => eglNormWork, set: setEglNormWork },
   eglNormal: { get: () => eglNormal, set: setEglNormal },
@@ -142,6 +141,7 @@ Object.defineProperties(GAME, {
   p3dDraw: { get: () => p3dDraw, set: setP3dDraw },
   p3dTreeBuild: { get: () => p3dTreeBuild, set: setP3dTreeBuild },
   paintActions: { get: () => paintActions, set: setPaintActions },
+  prepareMap: { get: () => prepareMap, set: setPrepareMap },
   pwState: { get: () => pwState },
   render: { get: () => render, set: setRender },
   renderOv: { get: () => renderOv, set: setRenderOv },

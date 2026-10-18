@@ -26,16 +26,16 @@ import { ART, cnv } from '../../game/js/art.js';
 import {
   DIO_RISE,
   artImage,
-  dioAlong,
-  dioExitEdge,
-  dioExitPoint,
   dioFind,
-  dioHubOf,
   dioNav,
   dioPass,
   dioSteps,
   dioStepsNew,
   dioStepsStore,
+  exitEdge,
+  exitPoint,
+  mapHub,
+  pointAlongMapPath,
   setArtImage,
   setWalkData,
   walkView,
@@ -794,7 +794,7 @@ export function scExitNames(id) {
   if (!u) return ex.map((e, k) => ({ i: k, name: scExitId(sc, k) || `Exit ${k + 1}` }));
   const i = u[1],
     me = D.route[i],
-    hub = dioHubOf(sc),
+    hub = mapHub(sc),
     pairs = [],
     out = {},
     E = sc.edgeExits || [];
@@ -854,13 +854,13 @@ function scExitSync(sc, k, removed) {
   }
   if (k != null) {
     const old = E[k],
-      e = dioExitEdge(sc, sc.exits[k], old);
+      e = exitEdge(sc, sc.exits[k], old);
     if (!e.id || (old && old.side !== e.side && E.some((q, j) => j !== k && q.id === e.id)))
       e.id = scExitName(sc, e.side);
     E[k] = e;
   } else
     sc.exits.forEach((p, j) => {
-      const e = dioExitEdge(sc, p, E[j]);
+      const e = exitEdge(sc, p, E[j]);
       if (!e.id) e.id = scExitName(sc, e.side);
       E[j] = e;
     });
@@ -924,7 +924,7 @@ function scPreview() {
         pos:
           SCN.pvPos ||
           (() => {
-            const h = dioHubOf(sc);
+            const h = mapHub(sc);
             return [h[0] + off[0], h[1] + off[1]];
           })(),
         who: 'boy',
@@ -1108,7 +1108,7 @@ export function scMapDraw() {
       x.fill();
       x.stroke();
     });
-    const s0 = dioAlong(sc, sc.start ?? 0.42);
+    const s0 = pointAlongMapPath(sc, sc.start ?? 0.42);
     x.fillStyle = '#F2C14E';
     x.beginPath();
     x.arc(s0.x * Z, (H - s0.z) * Z, 6, 0, 7);
@@ -1116,7 +1116,7 @@ export function scMapDraw() {
     x.stroke();
   }
   if (sc.hub || SCN.tool === 'exits') {
-    const hb = dioHubOf(sc),
+    const hb = mapHub(sc),
       HX = hb[0] * Z,
       HY = (H - hb[1]) * Z,
       big = SCN.tool === 'exits';
@@ -1261,7 +1261,7 @@ function scBindMap() {
       return;
     }
     if (SCN.tool === 'exits') {
-      const hb = dioHubOf(sc),
+      const hb = mapHub(sc),
         E = sc.exits || (sc.exits = []),
         hit = k => Math.hypot(k[0] * SCN.zoom - m.mx, (sc.h - k[1]) * SCN.zoom - m.my) < 11;
       if (hit(hb)) {
@@ -1819,7 +1819,7 @@ ACTS.scResize = () => {
   /* v42: an exit on the north or east edge moves out with that edge (the rest of the map keeps its place); its id and width stay */
   if (sc.edgeExits && sc.exits)
     sc.exits = sc.edgeExits.map((e, k) => {
-      const p = sc.exits[k] || dioExitPoint(sc, e),
+      const p = sc.exits[k] || exitPoint(sc, e),
         n = e.in == null ? 1.1 : e.in;
       return e.side === 'N' ? [p[0], h - n] : e.side === 'E' ? [w - n, p[1]] : p;
     });
@@ -1872,7 +1872,7 @@ function scExitChecks(sc) {
     out = [],
     E = sc.edgeExits || [],
     ex = sc.exits || [],
-    hub = dioHubOf(sc),
+    hub = mapHub(sc),
     users = scUsers(scId()).map(([, i]) => i),
     opp = { N: 'S', S: 'N', E: 'W', W: 'E' };
   const walk = (x, z) => {

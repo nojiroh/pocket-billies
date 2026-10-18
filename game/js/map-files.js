@@ -6,7 +6,7 @@
    - scenesFor(viewId): the maps a walk view is put together from (a place's view also shows its neighbours).
    - sceneRing(node, hops): the place's map and its neighbours' maps, `hops` roads out.
    - scenesAll(): every map, a couple at a time, nearest first (started once the game has loaded).
-   The view a player can walk into next is fetched ahead (scenesAhead, on arriving at a place), and dioPrepare waits
+   The view a player can walk into next is fetched ahead (scenesAhead, on arriving at a place), and prepareMap waits
    for a view's maps, so nothing is drawn from half a map. If anything was put together from a map before its file came
    (the world map's miniatures, say), the views are made again once it has (WORLD.gen). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */

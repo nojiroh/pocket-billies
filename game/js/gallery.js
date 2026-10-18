@@ -8,7 +8,7 @@ import { expose } from './test-globals.js';
 import { closeModal, provide, render, renderOv, settings, toast } from './hooks.js';
 import { U } from './game-state.js';
 import { GFX_DIALS, gfxDial } from './settings-screen.js';
-import { dioScene, walkView } from './walk-view.js';
+import { mapById, walkView } from './walk-view.js';
 import { ENV } from './environment.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -42,7 +42,7 @@ const GALLERY_AT = {
 };
 const GAL = { on: false, key: null, night: false };
 function galleryOpen(gk) {
-  const sc = dioScene && dioScene('gallery');
+  const sc = mapById && mapById('gallery');
   if (!sc) {
     toast('The Graphics gallery isn’t in this build.');
     return;

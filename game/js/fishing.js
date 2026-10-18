@@ -12,7 +12,7 @@ import { clamp, rnd } from './util.js';
 import { GD, RULES, SP } from './game-data.js';
 import { B, RM, S, U, areaPool, pickW, save, uid } from './game-state.js';
 import { uiIco } from './art.js';
-import { dioTer, walkView } from './walk-view.js';
+import { terrainAt, walkView } from './walk-view.js';
 import { DGL_WKIND, dglCurve, dglRing, dglWgAt, dioH, walkRenderer } from './walk-view-gl.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -71,7 +71,7 @@ function fishSpot() {
     sc = walkView.sc;
   const wet = (x, z) => {
     if (x < 0 || z < 0 || x >= sc.w || z >= sc.h) return false;
-    const c = dioTer(x, z);
+    const c = terrainAt(x, z);
     return c === 'w' || c === 'd';
   };
   if (wet(P.x, P.z) && !(typeof walkRenderer !== 'undefined' && walkRenderer.mountOn)) return null;

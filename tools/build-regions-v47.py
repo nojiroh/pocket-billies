@@ -1499,7 +1499,7 @@ def prune_wild(sc):
     props: nothing placed by hand or by this tool's own builders)"""
     h, T = sc['h'], sc['tiles']
     def ch(x, z):
-        j, i = h - 1 - int(z), int(x)                # the game's rows run from the far edge (dioTer)
+        j, i = h - 1 - int(z), int(x)                # the game's rows run from the far edge (terrainAt)
         return T[j][i] if 0 <= j < h and 0 <= i < len(T[j]) else ''
     def ok(p):
         r = wild_rule(sc, ch(p['x'], p['z']))

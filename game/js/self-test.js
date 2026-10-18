@@ -26,12 +26,12 @@ import {
   dioCell,
   dioClimbEnds,
   dioFind,
-  dioHubOf,
   dioNav,
-  dioScene,
   dioSteps,
   dioStop,
   dioWalkTo,
+  mapById,
+  mapHub,
   walkData,
   walkView,
 } from './walk-view.js';
@@ -102,7 +102,7 @@ function testScenes() {
   return Object.keys(GD.scenes || {}).filter(k => GD.scenes[k].test);
 }
 function stSceneChecks(id) {
-  const sc = dioScene(id);
+  const sc = mapById(id);
   if (!sc) return [];
   const keep = [walkView.sc, walkView.nav, walkView.gkey],
     out = [];
@@ -114,7 +114,7 @@ function stSceneChecks(id) {
       const e = q && q[q.length - 1];
       return !q || Math.hypot(e[0] - p[0], e[1] - p[1]) > 0.9;
     };
-    const hub = dioHubOf(sc),
+    const hub = mapHub(sc),
       G = dioNav(),
       hc = dioCell(hub[0], hub[1]);
     out.push({ what: 'where you arrive is open ground', reach: true, ok: hc >= 0 && !G.blk[hc] });
@@ -164,7 +164,7 @@ async function runFullTest(mode) {
   const stepEl = box.querySelector('.nb-step'),
     bar = box.querySelector('.nb-bar i');
   const scenes = Object.keys(GD.scenes || {}).filter(
-      id => dioScene(id) && !GD.scenes[id].test && !GD.scenes[id].backup && !id.includes('@')
+      id => mapById(id) && !GD.scenes[id].test && !GD.scenes[id].backup && !id.includes('@')
     ),
     phases = [],
     stress = [],
@@ -361,7 +361,7 @@ async function runFullTest(mode) {
       unblock();
       if (walkView.ready && walkView.sc) {
         const sc = walkView.sc,
-          hb = dioHubOf(sc),
+          hb = mapHub(sc),
           a = k * 1.7,
           r = 3 + (k % 4);
         if (!walkView.pl.route)
@@ -427,7 +427,7 @@ async function runFullTest(mode) {
     for (const id of scenes) {
       if (STEST.stop) break;
       await phase(
-        'Walk: ' + ((dioScene(id) || {}).name || id),
+        'Walk: ' + ((mapById(id) || {}).name || id),
         'dio',
         async () => {
           const tm = performance.now();
@@ -533,7 +533,7 @@ async function runFullTest(mode) {
     function stGeometry() {
       const sc = walkView.sc;
       if (!sc || (!sc.steps && !sc.bridges)) return;
-      const hub = dioHubOf(sc),
+      const hub = mapHub(sc),
         C0 = walkData().sc,
         bad = [],
         far = (q, p) => {
@@ -769,7 +769,7 @@ async function runFullTest(mode) {
           U.tab = 'walk';
           S.route = { node: 0, prog: 0, plan: [], hold: false };
           {
-            const h = dioHubOf(GD.scenes.sundown);
+            const h = mapHub(GD.scenes.sundown);
             U.roam = { id: 'sundown', node: 0, x: h[0], z: h[1] };
           }
           render();
@@ -1153,7 +1153,7 @@ async function runFullTest(mode) {
             shown = Object.keys(OWM.mons).length;
           if (moved) throw new Error(moved + ' wild Billie(s) left their spot in 8 s (they should stand still)');
           const P = walkView.pl,
-            hb = dioHubOf(walkView.sc);
+            hb = mapHub(walkView.sc);
           dioWalkTo([clamp(hb[0] + 4, 1, walkView.sc.w - 1), clamp(hb[1] + 2, 1, walkView.sc.h - 1)]);
           await stSleep(3500);
           const b = OWM.bud,
@@ -1254,7 +1254,7 @@ async function runFullTest(mode) {
     /* 7. stress: more and more at once in Sundown, until the device can't keep up (not in the diagnostics test) */
     if (!diag) {
       const sid = GD.scenes.sundown ? 'sundown' : scenes[0],
-        sc = dioScene(sid),
+        sc = mapById(sid),
         folk0 = sc.folk,
         props0 = sc.props,
         eng0 = GD.engine ? GD.engine.defaults : null;
@@ -1495,7 +1495,7 @@ function runDiagTest() {
 }
 function stDiagScenes() {
   const sc = GD.scenes,
-    ids = Object.keys(sc).filter(id => dioScene(id) && !sc[id].test && !sc[id].backup && !id.includes('@')),
+    ids = Object.keys(sc).filter(id => mapById(id) && !sc[id].test && !sc[id].backup && !id.includes('@')),
     pick = [],
     add = id => {
       if (id && !pick.includes(id)) pick.push(id);

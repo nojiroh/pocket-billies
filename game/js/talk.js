@@ -6,7 +6,7 @@
    "[happy] Nice to meet you!" (happy, surprised, sad, angry, blink, talk). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { dioChatLines, provide } from './hooks.js';
+import { mapChatLines, provide } from './hooks.js';
 import { PEOPLE, TRAINERS } from './game-data.js';
 import { RM, S } from './game-state.js';
 import { frameStop, frameTask } from './frame-scheduler.js';
@@ -204,7 +204,7 @@ const FOLK_TALK = [
 export async function talkFolk(f) {
   if (TALK.on) return;
   const sc = walkView.sc,
-    L = typeof dioChatLines === 'function' ? dioChatLines(FOLK_TALK) : sc.chat && sc.chat.length ? sc.chat : FOLK_TALK,
+    L = typeof mapChatLines === 'function' ? mapChatLines(FOLK_TALK) : sc.chat && sc.chat.length ? sc.chat : FOLK_TALK,
     who = 'folk:' + f.seed,
     a = L[(f.line + (walkView.chat = (walkView.chat || 0) + 1)) % L.length],
     b = FOLK_TALK[(f.seed + walkView.chat) % FOLK_TALK.length];

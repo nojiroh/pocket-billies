@@ -10,7 +10,7 @@ import { clamp } from './util.js';
 import { COINS, GD, ITEMS, ROUTE, RULES, SP } from './game-data.js';
 import { B, N, S, U, esc, fmt, save, today } from './game-state.js';
 import { cnv, uiIco } from './art.js';
-import { dioBaseId, dioFace, dioFind, dioFreePt, dioHubOf, dioScene, dioTer, walkView } from './walk-view.js';
+import { baseMapId, dioFace, dioFind, dioFreePt, mapById, mapHub, terrainAt, walkView } from './walk-view.js';
 import { eng } from './engine/settings.js';
 import { ENV, envHere, envState } from './environment.js';
 import { dioH, walkRenderer } from './walk-view-gl.js';
@@ -339,15 +339,15 @@ export const stampCount = () => Object.keys(x28().stamps).length;
 /* where they lie: worked out once per place, on open ground you can walk to, away from where you arrive */
 function stampSpots() {
   if (typeof U !== 'undefined' && U.inside) return [];
-  const id = dioBaseId(),
+  const id = baseMapId(),
     sc0 = walkView.sc,
-    sc = sc0 && sc0.baseId ? dioScene(sc0.baseId) : sc0,
+    sc = sc0 && sc0.baseId ? mapById(sc0.baseId) : sc0,
     o = (sc0 && sc0.baseOff) || [0, 0];
   if (!sc || !id || sc.test || /^int_/.test(id) || !stampScenes().includes(id)) return [];
   if (STAMP_SPOTS[id])
     return o[0] || o[1] ? STAMP_SPOTS[id].map(p => [p[0] + o[0], p[1] + o[1], ...p.slice(2)]) : STAMP_SPOTS[id];
   const r = x28Rnd('stamp' + id),
-    hub = dioHubOf(sc),
+    hub = mapHub(sc),
     out = [];
   for (let k = 0; k < 80 && out.length < 2; k++) {
     const p = dioFreePt(o[0] + 1 + r() * (sc.w - 2), o[1] + 1 + r() * (sc.h - 2));
@@ -360,7 +360,7 @@ function stampSpots() {
     const q = dioFind(hub[0] + o[0], hub[1] + o[1], p[0], p[1]),
       e = q && q[q.length - 1];
     if (!e || Math.hypot(e[0] - p[0], e[1] - p[1]) > 0.6) continue;
-    if (/[wd]/.test(dioTer(p[0], p[1]))) continue;
+    if (/[wd]/.test(terrainAt(p[0], p[1]))) continue;
     out.push(p);
   }
   STAMP_SPOTS[id] = out.map(p => [p[0] - o[0], p[1] - o[1]]);
@@ -373,7 +373,7 @@ function stampDraw(quad, glows, t) {
     P = walkView.pl,
     sp = stampSpots();
   sp.forEach((p, i) => {
-    const key = dioBaseId() + ':' + i;
+    const key = baseMapId() + ':' + i;
     if (X.stamps[key]) return;
     const y = dioH(p[0], p[1]),
       b = 0.12 + Math.sin(t / 300 + i) * 0.04;
@@ -554,7 +554,7 @@ function photoShot() {
     x.textAlign = 'right';
     x.fillText(`${(walkView.sc && walkView.sc.name) || ''} · Pocket Billies`, o.width - 12, o.height - 12);
     const url = o.toDataURL('image/png'),
-      nm = `pocket-billies-${dioBaseId() || 'photo'}-${Date.now()}.png`;
+      nm = `pocket-billies-${baseMapId() || 'photo'}-${Date.now()}.png`;
     modal({
       title: 'Your photo',
       html: `<img class="photo-prev" src="${url}" alt="Your photo of ${esc((walkView.sc && walkView.sc.name) || 'the scene')}"><p class="note">Save it, or long-press the picture to share it.</p>`,
