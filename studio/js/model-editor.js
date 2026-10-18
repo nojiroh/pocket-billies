@@ -4,7 +4,7 @@
    colour and a texture, raw voxels imported from a MagicaVoxel .vox, and picture layers (a 2D sprite set in the
    model: a sign's face, a flag, a painted front). Everything is edited here with sliders and shows at once on the
    prop editor's turntable, drawn by the game's own renderer. The model lives in the prop's catalogue entry
-   (scenery.props.<key>.vox), so it saves with the game data; tools/build-vox-props.py wrote the first sixty as files
+   (scenery.props.<key>.model), so it saves with the game data; tools/build-vox-props.py wrote the first sixty as files
    and the game reads either. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
