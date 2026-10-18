@@ -7,7 +7,7 @@
    The stage of the story is the number of badges you have (9 after the ending). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
-import { esc } from './game-stand-ins.js';
+import { escapeHtml } from './game-stand-ins.js';
 import {
   ACTIONS,
   SECTIONS,
@@ -79,7 +79,7 @@ const loreMapOptions = () =>
     .sort()
     .map(k => [k, (studioState.D.scenes[k].name || k) + ' (' + k + ')']);
 const loreDeleteButton = (k, i) =>
-  `<button class="btn sm danger subtle" data-act="loreDel" data-k="${k}" data-i="${esc(String(i))}">Delete</button>`;
+  `<button class="btn sm danger subtle" data-act="loreDel" data-k="${k}" data-i="${escapeHtml(String(i))}">Delete</button>`;
 SECTIONS.lore = () => {
   const D = studioState.D,
     L = (D.lore = D.lore || {}),
@@ -89,7 +89,7 @@ SECTIONS.lore = () => {
     const A = Array.isArray(L[key]) ? L[key] : (L[key] = []);
     return (
       A.map((e, i) =>
-        card(esc(e.title || e.id || `Entry ${i + 1}`), fields(`lore.${key}.${i}`, e, i), {
+        card(escapeHtml(e.title || e.id || `Entry ${i + 1}`), fields(`lore.${key}.${i}`, e, i), {
           acts: loreDeleteButton(key, i),
         })
       ).join('') +
@@ -102,8 +102,8 @@ SECTIONS.lore = () => {
       Object.entries(O)
         .map(([k, e]) =>
           card(
-            esc(e.title || e.name || k),
-            `<small class="mono">${esc(k)}</small>` + fields(`lore.${key}.${k}`, e, k),
+            escapeHtml(e.title || e.name || k),
+            `<small class="mono">${escapeHtml(k)}</small>` + fields(`lore.${key}.${k}`, e, k),
             { acts: loreDeleteButton(key, k) }
           )
         )
@@ -165,7 +165,7 @@ SECTIONS.lore = () => {
       .filter(r => r.id)
       .map(r =>
         card(
-          esc(r.name),
+          escapeHtml(r.name),
           textField('History', `lore.places.${r.id}.history`, { area: 1, rows: 2 }) +
             textField('Known for', `lore.places.${r.id}.known`, { area: 1, rows: 2 }) +
             textField('Landmark', `lore.places.${r.id}.landmark`, { area: 1, rows: 2 }) +
@@ -225,7 +225,7 @@ SECTIONS.lore = () => {
       (p, e, k) =>
         grid(textField('Title', p + '.title'), textField('By', p + '.by')) +
         textField('Pages (one per line)', '@lines.' + p + '.pages', { area: 1, rows: 5 }) +
-        `<p class="help">${used[k] ? 'In: ' + esc(used[k].join(', ')) : 'Not placed in any room yet.'}</p>`,
+        `<p class="help">${used[k] ? 'In: ' + escapeHtml(used[k].join(', ')) : 'Not placed in any room yet.'}</p>`,
       'a book'
     );
   }
@@ -242,7 +242,7 @@ SECTIONS.lore = () => {
       .map(r => {
         const st = Object.keys(C[r.id] || {}).sort((a, b) => a - b);
         return card(
-          esc(r.name),
+          escapeHtml(r.name),
           st.map(s => textField(`From stage ${s}`, `@lines.lore.chat.${r.id}.${s}`, { area: 1, rows: 3 })).join('') +
             `<div class="seg-row"><button class="btn sm" data-act="loreChatAdd" data-k="${r.id}">+ Lines for a stage</button></div>`
         );

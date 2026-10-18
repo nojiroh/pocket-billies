@@ -24,7 +24,7 @@ import {
   storyAfterWin,
   toast,
 } from './hooks.js';
-import { $, $$, clamp, rnd } from './util.js';
+import { $, $$, clamp, random } from './util.js';
 import {
   BACKDROPS,
   COINS,
@@ -49,15 +49,15 @@ import {
   addEgg,
   addMon,
   billyName,
-  esc,
+  escapeHtml,
   findMon,
-  fmt,
+  formatNumber,
   gainXp,
   healAll,
   hereStop,
   makeMon,
   maxHp,
-  pickW,
+  pickWeighted,
   plural,
   reducedMotion,
   save,
@@ -335,10 +335,10 @@ function dmgCalc(k, tk, mid, src) {
   const stab = M.t !== 'None' && aty.includes(M.t) ? RB.stab : 1,
     te = eff(M.t, types(tk));
   const cs = (fx.crit || 0) + (hasPassive(aty, 'sharp') ? RB.mediaCrit : 0);
-  const crit = !src && rnd() < RB.critChances[clamp(cs, 0, RB.critChances.length - 1)];
+  const crit = !src && random() < RB.critChances[clamp(cs, 0, RB.critChances.length - 1)];
   const roll = hasPassive(aty, 'volatile')
-    ? RB.cryptoRollMin + rnd() * (RB.cryptoRollMax - RB.cryptoRollMin)
-    : RB.rollMin + rnd() * (1 - RB.rollMin);
+    ? RB.cryptoRollMin + random() * (RB.cryptoRollMax - RB.cryptoRollMin)
+    : RB.rollMin + random() * (1 - RB.rollMin);
   const mk = activeBattle.market && M.t === RB.shockType ? RB.oilShockMult : 1;
   let eco = 1;
   if (!src) {
@@ -379,12 +379,12 @@ function inflict(tk, st, loud) {
     if (loud) say(`But ${billyName(t)} is already ${(STATUSN[t.status] || 'affected').toLowerCase()}.`);
     return;
   }
-  if (t.boss && st === 'sub' && rnd() < (RB.alphaSleepResist ?? 0.5)) {
+  if (t.boss && st === 'sub' && random() < (RB.alphaSleepResist ?? 0.5)) {
     say(`${billyName(t)} shrugged it off. Alphas don’t nod off easily.`);
     return;
   }
   t.status = st;
-  if (st === 'sub') t.sTurns = RB.subpoenaMin + Math.floor(rnd() * (RB.subpoenaMax - RB.subpoenaMin + 1));
+  if (st === 'sub') t.sTurns = RB.subpoenaMin + Math.floor(random() * (RB.subpoenaMax - RB.subpoenaMin + 1));
   say(
     `${billyName(t)} ${st === 'aud' ? 'is paralyzed. It may be unable to move' : st === 'sub' ? 'fell asleep' : st === 'scn' ? 'was burned' : 'is ' + (STATUSN[st] || st)}.`,
     { k: 'status', si: tk, st }
@@ -396,7 +396,7 @@ function retarget(k, tk) {
   if (tk != null && A(tk) && A(tk).hp > 0 && ASIDE[tk] === fs) return tk;
   const L = liveK(fs);
   if (!L.length) return null;
-  return L[Math.floor(rnd() * L.length)];
+  return L[Math.floor(random() * L.length)];
 }
 function useMove(k, mid, tk0) {
   const u = A(k),
@@ -412,13 +412,13 @@ function useMove(k, mid, tk0) {
     u.status = null;
     say(`${billyName(u)} woke up.`);
   }
-  if (u.status === 'aud' && rnd() < RB.auditSkip) {
+  if (u.status === 'aud' && random() < RB.auditSkip) {
     say(`${billyName(u)} is paralyzed and can’t move.`, { k: 'status', si: k, st: 'aud' });
     return;
   }
   if (v.hyped > 0) {
     v.hyped--;
-    if (rnd() < RB.hypeSelfHit) {
+    if (random() < RB.hypeSelfHit) {
       const dm = Math.max(1, Math.floor(((0.4 * u.lvl + 2) * 40 * statE(k, 'lev')) / statE(k, 'law') / 50 + 2));
       u.hp = Math.max(0, u.hp - dm);
       say(`${billyName(u)} is confused and hurt itself.`, { k: 'hurt', si: k, dmg: dm });
@@ -466,7 +466,7 @@ function useMove(k, mid, tk0) {
       say(`${billyName(t2)} protected itself.`, tk2 === tk ? null : { k: 'hurt', si: tk2, dmg: 0, fx: 'block' });
       continue;
     }
-    if (onFoe && M.a && rnd() * 100 >= M.a) {
+    if (onFoe && M.a && random() * 100 >= M.a) {
       if (tk2 === tk) ev.an.miss = true;
       say(`${billyName(u)} missed${spread ? ' ' + billyName(t2) : ''}.`);
       if (fx.missCost && tk2 === targets[0]) {
@@ -522,7 +522,7 @@ function useMove(k, mid, tk0) {
       }
     }
     if (t2.hp > 0 && onFoe) {
-      if (fx.status && (M.c === 'X' || rnd() * 100 < (fx.chance || 100))) inflict(tk2, fx.status, M.c === 'X');
+      if (fx.status && (M.c === 'X' || random() * 100 < (fx.chance || 100))) inflict(tk2, fx.status, M.c === 'X');
       if (fx.tgtStage) stage(tk2, fx.tgtStage);
       if (fx.hype) {
         if (fv2.hyped > 0) say('But it failed.');
@@ -548,8 +548,8 @@ function useMove(k, mid, tk0) {
     }
   }
   if (fx.delay || (!spread && ev.an && (ev.an.miss || ev.an.blocked))) return;
-  if (fx.selfStage && (!fx.selfChance || rnd() * 100 < fx.selfChance)) stage(k, fx.selfStage);
-  if (fx.selfStatus && u.hp > 0 && !u.status && rnd() * 100 < (fx.selfChance || 100)) {
+  if (fx.selfStage && (!fx.selfChance || random() * 100 < fx.selfChance)) stage(k, fx.selfStage);
+  if (fx.selfStatus && u.hp > 0 && !u.status && random() * 100 < (fx.selfChance || 100)) {
     u.status = fx.selfStatus;
     say(`${billyName(u)} hurt itself and is now ${(STATUSN[fx.selfStatus] || 'troubled').toLowerCase()}.`, {
       k: 'status',
@@ -650,14 +650,14 @@ function award(e) {
   const on = liveK(0).map(k => A(k));
   on.forEach(m => {
     const k = allK().find(q => A(q) === m);
-    say(`${billyName(m)} gained ${fmt(amt)} XP.`, { k: 'xp', si: k });
+    say(`${billyName(m)} gained ${formatNumber(amt)} XP.`, { k: 'xp', si: k });
     gainXp(m, amt, say);
   });
   const share = Math.floor(amt * P.teamXpShare),
     rest = saveData.team.filter(m => !on.includes(m) && m.hp > 0 && m.job == null);
   if (rest.length && share > 0) {
     rest.forEach(m => gainXp(m, share, () => {}));
-    say(`The rest of the team gained ${fmt(share)} XP.`);
+    say(`The rest of the team gained ${formatNumber(share)} XP.`);
   }
 }
 function inherit(k) {
@@ -829,10 +829,10 @@ function chooseAI(k = 1) {
     }
   }
   let pick;
-  if ((activeBattle.kind === 'trainer' || m.boss) && rnd() < RB.aiSmart) {
+  if ((activeBattle.kind === 'trainer' || m.boss) && random() < RB.aiSmart) {
     opts.sort((a, b) => b[1] - a[1]);
     pick = opts[0][0];
-  } else pick = pickW(opts);
+  } else pick = pickWeighted(opts);
   if (pick) {
     const M = MOVES[pick.mid];
     if (M.c !== 'X') {
@@ -935,7 +935,7 @@ export function startWild(q) {
     say(`A wild ${q.gold ? 'Golden ' : ''}${nm} appeared.`, { k: 'wild' });
     say(`“${nm}!”`, { k: 'cry', si: 1 });
   }
-  if (q.gold) say(`It shimmers. Golden Billies turn up once in ${fmt(RULES.steps.goldOdds)}.`);
+  if (q.gold) say(`It shimmers. Golden Billies turn up once in ${formatNumber(RULES.steps.goldOdds)}.`);
   if (RC.luxury.includes(SP[q.sp].line))
     say(`It looks too picky for ${COINS.penny ? 'a ' + COINS.penny.n : 'cheap coins'}.`);
   const K = liveK(0);
@@ -1019,7 +1019,7 @@ export function runTurn(plan) {
       if (c) acts.push({ who: k, mid: c.mid, tk: c.tk, boss2: i > 0 });
     }
   }
-  acts.forEach(a => (a.r = rnd()));
+  acts.forEach(a => (a.r = random()));
   acts.sort(
     (a, b) =>
       (MOVES[b.mid].pr || 0) - (MOVES[a.mid].pr || 0) ||
@@ -1079,11 +1079,11 @@ function catchOdds(id, T, spin) {
 function catchRoll(id, T, spin) {
   if (uiState.dbgCatch) return { caught: true, w: 3, edge: false, P: 1 };
   if (COINS[id].m === 0) return { caught: true, w: 3, edge: false, P: 1 };
-  if (rnd() < RC.edge) return { caught: true, w: 1, edge: true, P: 1 };
+  if (random() < RC.edge) return { caught: true, w: 1, edge: true, P: 1 };
   const P = catchOdds(id, T, spin);
   const q = Math.cbrt(P);
   let w = 0;
-  while (w < 3 && rnd() < q) w++;
+  while (w < 3 && random() < q) w++;
   return { caught: w === 3, w, edge: false, P };
 }
 export const teamNeedsHp = () => saveData.team.some(m => m.hp > 0 && m.hp < maxHp(m) && m.job == null);
@@ -1387,7 +1387,7 @@ function logLine(i) {
   }
   const prev = activeBattle.events
     .slice(Math.max(0, i - 4), i)
-    .map(e => `<li>${esc(e.t)}</li>`)
+    .map(e => `<li>${escapeHtml(e.t)}</li>`)
     .join('');
   L.innerHTML =
     prev +
@@ -1585,7 +1585,7 @@ export function paintBoxes(s, mk, anim) {
   tickerUpdate(s, mk);
   const m = $('#mk');
   if (m) {
-    m.innerHTML = mk ? `${uiIconHTML('bolt', 14)} ${esc(shockName())} · ${plural(mk.n, 'turn')}` : '';
+    m.innerHTML = mk ? `${uiIconHTML('bolt', 14)} ${escapeHtml(shockName())} · ${plural(mk.n, 'turn')}` : '';
     m.classList.toggle('on', !!mk);
   }
 }
@@ -1603,11 +1603,13 @@ function tickerUpdate(s, mk) {
       d = prev == null ? 0 : p - prev;
     TKL[k] = p;
     items.push(
-      `<span class="tki"><b>${esc(x.name.toUpperCase())}</b> Lv ${x.lvl} <em class="${d < 0 ? 'dn' : d > 0 ? 'up' : ''}">HP ${p}%</em></span>`
+      `<span class="tki"><b>${escapeHtml(x.name.toUpperCase())}</b> Lv ${x.lvl} <em class="${d < 0 ? 'dn' : d > 0 ? 'up' : ''}">HP ${p}%</em></span>`
     );
   });
   if (mk)
-    items.push(`<span class="tki warn"><b>${esc(shockName().toUpperCase())}</b> ${plural(mk.n, 'turn')} left</span>`);
+    items.push(
+      `<span class="tki warn"><b>${escapeHtml(shockName().toUpperCase())}</b> ${plural(mk.n, 'turn')} left</span>`
+    );
   const sunTxt = (() => {
     if (typeof environmentState !== 'function' || !environment.on) return 'noon, steady';
     const st = environmentState(currentLocationMap());
@@ -1628,7 +1630,7 @@ function tickerUpdate(s, mk) {
   })();
   items.push(
     `<span class="tki"><b>INNER SUN</b> ${sunTxt}</span>`,
-    `<span class="tki"><b>MONEY</b> $${fmt(saveData.se)}</span>`
+    `<span class="tki"><b>MONEY</b> $${formatNumber(saveData.se)}</span>`
   );
   const h = items.join('<i>•</i>');
   el.innerHTML = h + '<i>•</i>' + h + '<i>•</i>';
@@ -1644,7 +1646,7 @@ function hudPop(si, text, kind) {
   e.textContent = text;
   e.style.left = clamp(q.x, 40, battleStage.L.vw - 40) + 'px';
   e.style.top = Math.max(30, q.y) + 'px';
-  e.style.setProperty('--dx', ((rnd() - 0.5) * 36).toFixed(0) + 'px');
+  e.style.setProperty('--dx', ((random() - 0.5) * 36).toFixed(0) + 'px');
   L.appendChild(e);
   setTimeout(() => e.remove(), 1500);
 }
@@ -1754,7 +1756,7 @@ function effLabel(mid, tk) {
   const se = F.filter(k => eff(M.t, types(k)) > 1).map(k => billyName(A(k))),
     nv = F.filter(k => eff(M.t, types(k)) < 1).map(k => billyName(A(k)));
   return se.length
-    ? `<em class="se">Super effective on ${esc(se.join(', '))}</em>`
+    ? `<em class="se">Super effective on ${escapeHtml(se.join(', '))}</em>`
     : nv.length === F.length
       ? '<em class="nve">Not very effective</em>'
       : '';
@@ -1764,7 +1766,7 @@ function hpMini(m) {
   return `<span class="hpmini"><i class="${p < 0.25 ? 'low' : p < 0.5 ? 'mid' : ''}" style="width:${p * 100}%"></i></span>`;
 }
 function monPick(m, act, attrs, dis, note) {
-  return `<button class="pick" ${attrs} ${dis ? 'disabled' : ''}>${bustHTML(m.sp, 40, { gold: m.gold })}<span class="pk-t"><b>${esc(billyName(m))}</b><span class="pk-m">${SP[m.sp].types.map(chip).join('')}<small class="tnum">Lv ${m.lvl}</small></span>${hpMini(m)}<small class="tnum">${Math.max(0, m.hp)}/${maxHp(m)}</small></span><span class="pk-s">${note || ''}</span></button>`;
+  return `<button class="pick" ${attrs} ${dis ? 'disabled' : ''}>${bustHTML(m.sp, 40, { gold: m.gold })}<span class="pk-t"><b>${escapeHtml(billyName(m))}</b><span class="pk-m">${SP[m.sp].types.map(chip).join('')}<small class="tnum">Lv ${m.lvl}</small></span>${hpMini(m)}<small class="tnum">${Math.max(0, m.hp)}/${maxHp(m)}</small></span><span class="pk-s">${note || ''}</span></button>`;
 }
 function teamPick(back) {
   const on = activeBattle.sides[0].f.filter(f => f.on).map(f => f.act),
@@ -1819,7 +1821,7 @@ export function paintActions() {
   <div class="bt-row"><button class="bt coin" data-a="bcoins" ${wild && first ? '' : 'disabled'}>${uiIconHTML('coin', 18)}<b>Tax it</b><small>${wild ? (first ? coins + ' left' : 'First pick only') : 'Wild only'}</small><kbd>X</kbd></button>
   <button class="bt items" data-a="bitems">${uiIconHTML('bag', 18)}<b>Bag</b><small>${items}</small><kbd>I</kbd></button>
   <button class="bt team" data-a="bteam">${uiIconHTML('team', 18)}<b>Team</b><small>${alive}/${crew.length}</small><kbd>T</kbd></button>
-  <button class="bt run" data-a="brun" ${wild ? '' : 'disabled'}>${uiIconHTML('run', 18)}<b>Run</b><small>${wild ? 'Walk away' : 'No exit'}</small><kbd>R</kbd></button></div>${first ? '' : `<button class="bt back wide" data-a="bback">${uiIconHTML('back', 16)}<b>Back to ${esc(billyName(A(activeBattle.plan[activeBattle.plan.length - 1].who)))}</b><kbd>Esc</kbd></button>`}</div>`;
+  <button class="bt run" data-a="brun" ${wild ? '' : 'disabled'}>${uiIconHTML('run', 18)}<b>Run</b><small>${wild ? 'Walk away' : 'No exit'}</small><kbd>R</kbd></button></div>${first ? '' : `<button class="bt back wide" data-a="bback">${uiIconHTML('back', 16)}<b>Back to ${escapeHtml(billyName(A(activeBattle.plan[activeBattle.plan.length - 1].who)))}</b><kbd>Esc</kbd></button>`}</div>`;
   } else if (ph === 'fight') {
     const m = A(activeBattle.cur);
     h = `<div class="moves">${m.moves
@@ -1828,7 +1830,7 @@ export function paintActions() {
           c = TC[M.t],
           P = M.p ? M.p : M.fx && M.fx.vary ? 'Varies' : 'Status',
           stab = M.t !== 'None' && types(activeBattle.cur).includes(M.t);
-        return `<button class="mv" style="--tc:${c[0]};--tf:${c[1]}" data-a="bmove" data-m="${id}" data-tip="${esc(M.d)}"><span class="mv-top"><b>${esc(M.n)}</b><kbd>${n + 1}</kbd></span><span class="mv-meta"><span class="mv-ty">${M.t === 'None' ? 'Normal' : M.t}${stab ? ' ★' : ''}</span><span class="tnum">${P}${M.p ? ' pow' : ''}${M.p && typeof battleWeatherMult === 'function' ? (battleWeatherMult(M.t) > 1 ? ' ▲' : battleWeatherMult(M.t) < 1 ? ' ▼' : '') : ''}${M.c !== 'X' || M.a < 100 ? ` · ${M.a || 100}%` : ''}</span></span>${effLabel(id)}</button>`;
+        return `<button class="mv" style="--tc:${c[0]};--tf:${c[1]}" data-a="bmove" data-m="${id}" data-tip="${escapeHtml(M.d)}"><span class="mv-top"><b>${escapeHtml(M.n)}</b><kbd>${n + 1}</kbd></span><span class="mv-meta"><span class="mv-ty">${M.t === 'None' ? 'Normal' : M.t}${stab ? ' ★' : ''}</span><span class="tnum">${P}${M.p ? ' pow' : ''}${M.p && typeof battleWeatherMult === 'function' ? (battleWeatherMult(M.t) > 1 ? ' ▲' : battleWeatherMult(M.t) < 1 ? ' ▼' : '') : ''}${M.c !== 'X' || M.a < 100 ? ` · ${M.a || 100}%` : ''}</span></span>${effLabel(id)}</button>`;
       })
       .join('')}</div>${backBtn()}`;
   } else if (ph === 'target') {
@@ -1851,7 +1853,7 @@ export function paintActions() {
         const c = COINS[k],
           have = saveData.coins[k] || 0,
           odds = Math.round(catchOdds(k, 1 + RC.ring * 0.5, false) * 100);
-        return `<button class="ccard" data-a="bcoin" data-c="${k}" ${have ? '' : 'disabled'}>${coinHTML(k, 34)}<span class="cc-t"><b>${esc(c.n)}</b><small class="tnum">${c.m === 0 ? 'Guaranteed' : `~${odds}% tax`} · ${have} left</small></span><span class="cc-bar"><i style="width:${c.m === 0 ? 100 : clamp(odds, 2, 100)}%"></i></span></button>`;
+        return `<button class="ccard" data-a="bcoin" data-c="${k}" ${have ? '' : 'disabled'}>${coinHTML(k, 34)}<span class="cc-t"><b>${escapeHtml(c.n)}</b><small class="tnum">${c.m === 0 ? 'Guaranteed' : `~${odds}% tax`} · ${have} left</small></span><span class="cc-bar"><i style="width:${c.m === 0 ? 100 : clamp(odds, 2, 100)}%"></i></span></button>`;
       })
       .join('')}</div>${backBtn()}`;
   } else if (ph === 'items') {
@@ -1862,21 +1864,21 @@ export function paintActions() {
             .map(k => {
               const I = ITEMS[k],
                 ok = I.hpAll ? teamNeedsHp() : saveData.team.some(m => canUse(k, m));
-              return `<button class="pick" data-a="bitem" data-it="${k}" ${ok ? '' : 'disabled'}>${itemIcon(k, 32)}<span class="pk-t"><b>${esc(I.n)}</b><small>${esc(I.d)}</small></span><span class="pk-s tnum">×${saveData.items[k]}</span></button>`;
+              return `<button class="pick" data-a="bitem" data-it="${k}" ${ok ? '' : 'disabled'}>${itemIcon(k, 32)}<span class="pk-t"><b>${escapeHtml(I.n)}</b><small>${escapeHtml(I.d)}</small></span><span class="pk-s tnum">×${saveData.items[k]}</span></button>`;
             })
             .join('')
         : '<p class="note">No items. Buy some at a town shop.</p>'
     }</div>${backBtn()}`;
   } else if (ph === 'itemTarget') {
     const it = activeBattle.item;
-    h = `<p class="note">Use ${esc(ITEMS[it].n)} on:</p><div class="plist">${saveData.team.map(m => monPick(m, false, `data-a="bitemon" data-u="${m.uid}"`, !canUse(it, m), m.hp <= 0 ? 'Fainted' : stBadge(m.status))).join('')}</div>${backBtn()}`;
+    h = `<p class="note">Use ${escapeHtml(ITEMS[it].n)} on:</p><div class="plist">${saveData.team.map(m => monPick(m, false, `data-a="bitemon" data-u="${m.uid}"`, !canUse(it, m), m.hp <= 0 ? 'Fainted' : stBadge(m.status))).join('')}</div>${backBtn()}`;
   } else if (ph === 'team') h = teamPick(true);
   else if (ph === 'switch') h = teamPick(false);
   else if (ph === 'aim') {
     h = `<div class="aim"><div class="aimcoin" id="aimCoin" role="button" tabindex="0" aria-label="Swipe up to throw">${coinHTML(activeBattle.coin, 96, 32)}<span class="aim-hint">${uiIconHTML('back', 14)}</span></div><p class="note">Swipe the coin up when the ring is small and green. A sideways swipe adds spin.</p><div class="two"><button class="bt coin" data-a="bthrow"><b>Flick it</b><kbd>Space</kbd></button><button class="bt back" data-a="baimback"><b>Put it away</b><kbd>Esc</kbd></button></div></div>`;
   } else if (ph === 'throwing') h = `<div class="aim"><p class="note">The coin is in the air…</p></div>`;
   else if (ph === 'offer') {
-    h = `<div class="offer"><p>${uiIconHTML('coin', 16)} ${esc(billyName(A(1)))} is offering you <b class="tnum">$${fmt(activeBattle.offer)}</b> to let it go. Refusing gives your next throw a Focus Bonus.</p><div class="two"><button class="bt coin" data-a="boffer" data-y="1"><b>Take it</b></button><button class="bt fightish" data-a="boffer" data-y="0"><b>Refuse</b></button></div></div>`;
+    h = `<div class="offer"><p>${uiIconHTML('coin', 16)} ${escapeHtml(billyName(A(1)))} is offering you <b class="tnum">$${formatNumber(activeBattle.offer)}</b> to let it go. Refusing gives your next throw a Focus Bonus.</p><div class="two"><button class="bt coin" data-a="boffer" data-y="1"><b>Take it</b></button><button class="bt fightish" data-a="boffer" data-y="0"><b>Refuse</b></button></div></div>`;
   } else if (ph === 'end') {
     const t = {
       win: 'You won.',
@@ -1982,8 +1984,8 @@ function finishThrow(res, id, lab, spin) {
     return play();
   }
   say(['It broke free right away.', 'It almost stayed in.', 'So close. It wobbled twice.'][res.w]);
-  if (rnd() < RC.offerChance) {
-    activeBattle.offer = Math.round((RC.offerMin + rnd() * (RC.offerMax - RC.offerMin)) / 10) * 10;
+  if (random() < RC.offerChance) {
+    activeBattle.offer = Math.round((RC.offerMin + random() * (RC.offerMax - RC.offerMin)) / 10) * 10;
     say(`${billyName(e)} is offering you money to let it go.`, { k: 'cry', si: 1 });
     return play();
   }
@@ -2033,16 +2035,16 @@ export function endBattle() {
     healAll();
     after.push({
       title: 'Your team fainted',
-      html: `<p>You hurried back to the clinic.</p><p>You paid $${fmt(fee)} for treatment, and the team is back at full HP.</p>${T ? `<p class="note">${esc(T.name)}: ${esc(T.lose || '')}</p>` : ''}`,
+      html: `<p>You hurried back to the clinic.</p><p>You paid $${formatNumber(fee)} for treatment, and the team is back at full HP.</p>${T ? `<p class="note">${escapeHtml(T.name)}: ${escapeHtml(T.lose || '')}</p>` : ''}`,
       btns: [{ l: 'Back to walking', c: 'dark', f: closeModal }],
     });
   }
   const E = RULES.eggs;
-  if (kind === 'wild' && o === 'win' && rnd() < E.dropChance) {
+  if (kind === 'wild' && o === 'win' && random() < E.dropChance) {
     const tiers = Object.entries(E.dropTiers)
       .filter(([t]) => EGGS[t])
       .map(([t, w]) => [+t, w]);
-    const tier = tiers.length ? pickW(tiers) : EGG_TIERS[0];
+    const tier = tiers.length ? pickWeighted(tiers) : EGG_TIERS[0];
     if (addEgg(tier))
       after.push({
         title: 'It dropped an egg',
@@ -2066,16 +2068,16 @@ export function endBattle() {
         for (const k in st.items || {}) saveData.items[k] = (saveData.items[k] || 0) + st.items[k];
       }
       after.push({
-        title: nu ? esc(st.title || 'Badge') : 'Rematch won',
+        title: nu ? escapeHtml(st.title || 'Badge') : 'Rematch won',
         top: `<div class="sheet-art">${coinHTML(st.coin || 'penny', 96, 32)}</div>`,
-        html: `<p>${esc(T.win || '')}</p><p>You earned $${fmt(T.reward || 0)}${nu && st.rewardText ? `, ${esc(st.rewardText)}` : ''}${extra}.</p>${nu && st.unlockText ? `<p class="note">${esc(st.unlockText)}</p>` : ''}`,
+        html: `<p>${escapeHtml(T.win || '')}</p><p>You earned $${formatNumber(T.reward || 0)}${nu && st.rewardText ? `, ${escapeHtml(st.rewardText)}` : ''}${extra}.</p>${nu && st.unlockText ? `<p class="note">${escapeHtml(st.unlockText)}</p>` : ''}`,
         btns: [{ l: 'Back to walking', c: 'dark', f: closeModal }],
       });
     } else
       after.push({
-        title: `You beat ${esc(T.name)}`,
+        title: `You beat ${escapeHtml(T.name)}`,
         top: `<div class="sheet-art">${portraitHTML(T.who, 96, 'sad')}</div>`,
-        html: `<p>${esc(T.win || '')}</p><p>You earned $${fmt(T.reward || 0)}${extra}.</p>`,
+        html: `<p>${escapeHtml(T.win || '')}</p><p>You earned $${formatNumber(T.reward || 0)}${extra}.</p>`,
         btns: [
           {
             l: 'Keep walking',
@@ -2208,7 +2210,7 @@ function turnBar() {
     const m = A(k),
       mine = ASIDE[k] === 0,
       n = A(k).boss ? (RB.alphaActs ?? 2) : 1;
-    return `<span class="tb ${mine ? 'me' : 'foe'}${A(k).boss ? ' alpha' : ''}" title="${esc(billyName(m))}">${esc(billyName(m).split(' ')[0])}${n > 1 ? ' ×' + n : ''}</span>`;
+    return `<span class="tb ${mine ? 'me' : 'foe'}${A(k).boss ? ' alpha' : ''}" title="${escapeHtml(billyName(m))}">${escapeHtml(billyName(m).split(' ')[0])}${n > 1 ? ' ×' + n : ''}</span>`;
   }).join('<i>›</i>');
   if (e.innerHTML !== html) e.innerHTML = '<b>Order</b>' + html;
 }

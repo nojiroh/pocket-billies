@@ -25,7 +25,7 @@ import {
 } from './hooks.js';
 import { $, clamp } from './util.js';
 import { ROUTE, RULES, SP, START_NODE, TRAINERS, TYPES, eff, placeFull } from './game-data.js';
-import { esc, reducedMotion, uiState } from './game-state.js';
+import { escapeHtml, reducedMotion, uiState } from './game-state.js';
 import { userFps } from './frame-scheduler.js';
 import { artLoad, makeCanvas } from './art.js';
 import { TR_PRESETS, cleanLook, humanPose, owFrames, trainerLook } from './person-art.js';
@@ -474,9 +474,9 @@ function csPickHTML() {
     t = s.types[0],
     st = TYPES.filter(x => eff(t, [x]) > 1),
     wk = TYPES.filter(x => eff(x, [t]) > 1);
-  return `<div class="cs-pk-top"><button class="mbtn" data-a="cs-prev" aria-label="Previous">‹</button><div class="cs-pk-name"><small>${CS.sel + 1} of ${pk.length}</small><b>${esc(s.name)}</b><span class="row">${chip(t)}</span></div><button class="mbtn" data-a="cs-next" aria-label="Next">›</button></div>
- <p class="sd">${esc(s.blurb)}</p><p class="sd">Strong against ${st.join(' and ') || 'nothing in particular'}. Weak to ${wk.join(' and ') || 'nothing in particular'}.</p>
- ${CS.confirm ? `<div class="racts"><button class="pb quiet" data-a="cs-no">Not yet</button><button class="pb gold" data-a="cs-yes">Yes, ${esc(s.name)}!</button></div>` : `<button class="pb gold wide" data-a="cs-choose">Choose ${esc(s.name)}</button>`}`;
+  return `<div class="cs-pk-top"><button class="mbtn" data-a="cs-prev" aria-label="Previous">‹</button><div class="cs-pk-name"><small>${CS.sel + 1} of ${pk.length}</small><b>${escapeHtml(s.name)}</b><span class="row">${chip(t)}</span></div><button class="mbtn" data-a="cs-next" aria-label="Next">›</button></div>
+ <p class="sd">${escapeHtml(s.blurb)}</p><p class="sd">Strong against ${st.join(' and ') || 'nothing in particular'}. Weak to ${wk.join(' and ') || 'nothing in particular'}.</p>
+ ${CS.confirm ? `<div class="racts"><button class="pb quiet" data-a="cs-no">Not yet</button><button class="pb gold" data-a="cs-yes">Yes, ${escapeHtml(s.name)}!</button></div>` : `<button class="pb gold wide" data-a="cs-choose">Choose ${escapeHtml(s.name)}</button>`}`;
 }
 function csPickFocus() {
   const s = CS.stars[CS.sel];

@@ -9,7 +9,7 @@ import { expose } from '../../game/js/test-globals.js';
 import { noteConnectionsField } from '../../game/js/hooks.js';
 import { $, $$ } from '../../game/js/util.js';
 import { ENGINE_SPEC } from '../../game/js/engine/settings.js';
-import { esc } from './game-stand-ins.js';
+import { escapeHtml } from './game-stand-ins.js';
 import { ACTIONS, SECTIONS, SECTION_LIST, clone, openSection, studioState, toast } from './studio-app.js';
 import { engineEditor, refreshEngineSettings } from './engine-editor.js';
 /* eslint-disable no-func-assign */
@@ -261,7 +261,7 @@ function findOpen() {
   if ($('#find')) return;
   const w = document.createElement('div');
   w.id = 'find';
-  w.innerHTML = `<div class="find-scrim"></div><div class="find-box" role="dialog" aria-label="Find"><input id="findQ" type="search" placeholder="Find a setting, a Billy, a move, a place… (try “shadow”, “god rays”, “step”)" autocomplete="off" value="${esc(findState.q)}"><div class="find-list" id="findL"></div><div class="find-foot"><kbd>↑</kbd><kbd>↓</kbd> choose · <kbd>Enter</kbd> open · <kbd>Esc</kbd> close</div></div>`;
+  w.innerHTML = `<div class="find-scrim"></div><div class="find-box" role="dialog" aria-label="Find"><input id="findQ" type="search" placeholder="Find a setting, a Billy, a move, a place… (try “shadow”, “god rays”, “step”)" autocomplete="off" value="${escapeHtml(findState.q)}"><div class="find-list" id="findL"></div><div class="find-foot"><kbd>↑</kbd><kbd>↓</kbd> choose · <kbd>Enter</kbd> open · <kbd>Esc</kbd> close</div></div>`;
   document.body.appendChild(w);
   const q = $('#findQ');
   q.focus();
@@ -308,7 +308,7 @@ function findShow() {
       ? findState.res
           .map(
             (e, i) =>
-              `<button class="find-r ${i === findState.at ? 'on' : ''}" data-i="${i}"><span class="find-k k-${e.kind}">${FIND_KIND_LABELS[e.kind] || e.kind}</span><b>${esc(e.label)}</b><small>${esc(e.where)}</small></button>`
+              `<button class="find-r ${i === findState.at ? 'on' : ''}" data-i="${i}"><span class="find-k k-${e.kind}">${FIND_KIND_LABELS[e.kind] || e.kind}</span><b>${escapeHtml(e.label)}</b><small>${escapeHtml(e.where)}</small></button>`
           )
           .join('')
       : '<p class="help find-none">Nothing found. Try another word.</p>'

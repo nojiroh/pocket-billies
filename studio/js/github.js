@@ -11,7 +11,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
 import { $ } from '../../game/js/util.js';
-import { esc } from './game-stand-ins.js';
+import { escapeHtml } from './game-stand-ins.js';
 import {
   ACTIONS,
   ask,
@@ -130,12 +130,12 @@ async function checkGithubToken(token) {
 function githubLoginHTML(err) {
   const tok = `https://github.com/settings/tokens/new?scopes=public_repo&description=${encodeURIComponent('Pocket Billies Studio')}`;
   return `<div class="gh-login"><div class="gh-card"><img src="../game/art/coins/penny_32.png" width="40" height="40" alt=""><h2>Pocket Billies Studio</h2>
- <p>Sign in with GitHub to edit the game. Only Studio admins get in, and what you save becomes a <b>pull request</b>: the game changes only when ${esc(GITHUB_CONFIG.owner)} approves it.</p>
+ <p>Sign in with GitHub to edit the game. Only Studio admins get in, and what you save becomes a <b>pull request</b>: the game changes only when ${escapeHtml(GITHUB_CONFIG.owner)} approves it.</p>
  <ol class="gh-steps"><li><a href="${tok}" target="_blank" rel="noopener">Open GitHub’s “new token” page</a> (signed in as yourself). The name and the <b>public_repo</b> box are filled in already.</li>
  <li>Pick how long it lasts (90 days is fine), scroll down and click <b>Generate token</b>.</li><li>Copy the token (it starts with <code>ghp_</code>) and paste it here.</li></ol>
  <label class="fld"><span>GitHub token</span><input type="password" id="ghTok" autocomplete="off" placeholder="ghp_…"></label>
  <label class="fld chk"><input type="checkbox" id="ghKeep" checked><span>Remember me on this computer</span></label>
- ${err ? `<p class="gh-err">${esc(err)}</p>` : ''}<button class="btn primary" id="ghGo">Sign in</button>
+ ${err ? `<p class="gh-err">${escapeHtml(err)}</p>` : ''}<button class="btn primary" id="ghGo">Sign in</button>
  <p class="help">The token stays in this browser and is only sent to GitHub. To sign out, use the button at the top; to cut it off for good, delete it on GitHub (Settings → Developer settings → Tokens).</p></div></div>`;
 }
 function githubLogin(err) {
@@ -198,7 +198,7 @@ async function startGithubMode() {
   if (a && !$('#ghWho'))
     a.insertAdjacentHTML(
       'afterbegin',
-      `<button class="tb" id="ghWho" data-act="ghOut" title="Signed in to GitHub as ${esc(githubMode.login)}. Click to sign out.">⎋ ${esc(githubMode.login)}</button>`
+      `<button class="tb" id="ghWho" data-act="ghOut" title="Signed in to GitHub as ${escapeHtml(githubMode.login)}. Click to sign out.">⎋ ${escapeHtml(githubMode.login)}</button>`
     );
   const sb = $('#saveBtn');
   if (sb) {
@@ -423,7 +423,7 @@ if (githubMode.on) {
     if (pr) {
       await dialog(
         'Sent for approval',
-        `<p>Your changes are pull request <b>#${pr.number}</b>. They go into the game when ${esc(GITHUB_CONFIG.owner)} merges it. Until then the Studio (and the game) show the game as it is now.</p><p><a href="${esc(pr.html_url)}" target="_blank" rel="noopener">Open the pull request on GitHub</a></p>`,
+        `<p>Your changes are pull request <b>#${pr.number}</b>. They go into the game when ${escapeHtml(GITHUB_CONFIG.owner)} merges it. Until then the Studio (and the game) show the game as it is now.</p><p><a href="${escapeHtml(pr.html_url)}" target="_blank" rel="noopener">Open the pull request on GitHub</a></p>`,
         [{ l: 'OK', c: 'primary', v: 1 }]
       );
     } else if (none && !(studioState.dirty || studioState.rigsDirty || studioState.artDirty.size))

@@ -14,7 +14,7 @@ import { artImage, imageReady, layerAsProp, setWalkData, walkData, walkView } fr
 import { PROP_MATERIALS, mountWalkView, propMaterial, propVariety, walkRenderer } from '../../game/js/walk-view-gl.js';
 import { BUILDING_ROOM_NAMES, BUILDING_TEXTURE_NAMES } from '../../game/js/buildings.js';
 import { SOLID_PROP_BODIES, SOLID_PROP_KINDS, SOLID_PROP_PARTS, solidTreeKind } from '../../game/js/solid-props.js';
-import { esc } from './game-stand-ins.js';
+import { escapeHtml } from './game-stand-ins.js';
 import {
   ACTIONS,
   ask,
@@ -135,7 +135,7 @@ function propEditorCardHTML(k) {
     fx = M.fx || [],
     selRow =
       typeof sel === 'number' && fx[sel]
-        ? `<div class="ped-selrow"><b>${esc((PROP_EFFECT_KINDS.find(f => f[0] === fx[sel].k) || [0, fx[sel].k])[1])}</b> at ${fx[sel].x}, ${fx[sel].y}<select id="pedFxK">${PROP_EFFECT_KINDS.map(([f, n]) => `<option value="${f}" ${fx[sel].k === f ? 'selected' : ''}>${n}</option>`).join('')}</select><button class="btn sm danger subtle" data-act="pedFxDel">Remove</button></div>`
+        ? `<div class="ped-selrow"><b>${escapeHtml((PROP_EFFECT_KINDS.find(f => f[0] === fx[sel].k) || [0, fx[sel].k])[1])}</b> at ${fx[sel].x}, ${fx[sel].y}<select id="pedFxK">${PROP_EFFECT_KINDS.map(([f, n]) => `<option value="${f}" ${fx[sel].k === f ? 'selected' : ''}>${n}</option>`).join('')}</select><button class="btn sm danger subtle" data-act="pedFxDel">Remove</button></div>`
         : '';
   const face = (p, v) =>
     `<select data-p="${p}" data-k="sel" data-opt="1">${[
@@ -147,8 +147,8 @@ function propEditorCardHTML(k) {
       .join('')}</select>`;
   const rows = L.map((l, i) => {
     const p = `${b}.layers.${i}`;
-    return `<div class="ped-layer ${propEditor.layer === i ? 'on' : ''}"><canvas class="ped-thumb" data-limg="${esc(l.img || '')}" width="40" height="40"></canvas>
-  <div class="ped-lf"><div class="ped-lh"><b>Layer ${i + 1}</b><small class="mono">${esc((l.img || '').split('/').pop())}</small><span class="grow"></span>
+    return `<div class="ped-layer ${propEditor.layer === i ? 'on' : ''}"><canvas class="ped-thumb" data-limg="${escapeHtml(l.img || '')}" width="40" height="40"></canvas>
+  <div class="ped-lf"><div class="ped-lh"><b>Layer ${i + 1}</b><small class="mono">${escapeHtml((l.img || '').split('/').pop())}</small><span class="grow"></span>
    <button class="btn sm subtle" data-act="pedLayerPx" data-i="${i}" title="Edit this layer's pixels">Pixels</button><button class="btn sm subtle" data-act="pedLayerMove" data-i="${i}" data-d="-1" title="Move up the list">↑</button><button class="btn sm subtle" data-act="pedLayerMove" data-i="${i}" data-d="1" title="Move down the list">↓</button><button class="btn sm danger subtle" data-act="pedLayerDel" data-i="${i}">Remove</button></div>
    <div class="grid ped-lg">${rangeField('Depth (m, + is behind)', `${p}.dz`, { min: -3, max: 3, step: 0.05, def: 0 })}${numberField('Across (px)', `${p}.dx`, { step: 1, opt: 1 })}${numberField('Up (px)', `${p}.dy`, { step: 1, opt: 1 })}
    <label class="fld"><span>Facing</span>${face(`${p}.face`, l.face)}</label>${rangeField('Glow (lights itself)', `${p}.glow`, { min: 0, max: 2, step: 0.05, def: 0 })}${rangeField('Sway with the main picture', `${p}.sway`, { min: 0, max: 2, step: 0.05, def: 1 })}</div></div></div>`;
@@ -202,7 +202,7 @@ function propEditorCardHTML(k) {
         ) + '<button class="btn sm subtle danger" data-act="pedGlowDel">Remove the glow</button>'
       : '<button class="btn sm subtle" data-act="scGlowAdd2">Add a light glow</button>');
   return card(
-    `Prop editor · ${esc(M.name || k)}`,
+    `Prop editor · ${escapeHtml(M.name || k)}`,
     `<div class="ped" id="ped">
   <div class="ped-l"><div class="ped-bar"><span class="px-tools">${tools}</span><span class="px-tools"><button class="seg" data-act="pedZoom" data-z="-1">−</button><button class="seg" data-act="pedZoom" data-z="1">+</button></span></div>${fxk}
    <div class="ped-stage"><canvas id="pedCv"></canvas></div>${selRow}
@@ -210,7 +210,7 @@ function propEditorCardHTML(k) {
    <div class="ped-tt"><div class="sc-pv ped-pv"><canvas id="pedPv"></canvas><div class="sc-pv-load" id="pedPvLoad">Loading…</div></div>
    <div class="seg-row"><button class="seg ${propEditor.spin ? 'on' : ''}" data-act="pedSpin">Turn slowly</button><span class="help">Drag the turntable to turn it yourself. It turns as far as the game camera can; layers show their depth.</span></div></div></div>
   <div class="ped-r"><h4>Layers</h4><p class="help">Extra pictures drawn in front of or behind the main one. Put a porch, a sign or leaves on their own layer and give them a little depth, and the prop gains real depth when the camera moves. A glowing layer lights itself (windows at night, crystals).</p>
-   ${rows || '<p class="help"><i>No extra layers yet.</i></p>'}<div class="seg-row"><button class="btn sm" data-act="pedLayerAdd" data-from="png">+ Layer from PNG</button><button class="btn sm" data-act="pedLayerAdd" data-from="copy">+ Copy of the main picture</button><button class="btn sm subtle" data-act="scEditProp" data-k="${esc(k)}">Edit the main picture’s pixels</button></div>
+   ${rows || '<p class="help"><i>No extra layers yet.</i></p>'}<div class="seg-row"><button class="btn sm" data-act="pedLayerAdd" data-from="png">+ Layer from PNG</button><button class="btn sm" data-act="pedLayerAdd" data-from="copy">+ Copy of the main picture</button><button class="btn sm subtle" data-act="scEditProp" data-k="${escapeHtml(k)}">Edit the main picture’s pixels</button></div>
    <h4>Settings</h4>${set}${propVaryHTML(k)}${typeof modelEditorHTML === 'function' ? modelEditorHTML(k) : ''}${solidBodyHTML(k)}${buildingPlanHTML(k)}</div></div>`,
     {
       acts: `<button class="btn sm primary" data-act="pedClose">Done</button>`,
@@ -863,7 +863,7 @@ function solidBodyHTML(k) {
    <div class="seg-row"><button class="btn sm" data-act="pedPartAdd">+ Part</button><button class="btn sm subtle" data-act="pedPartsOff">${preset ? 'Back to the built-in parts' : 'One shape for the whole picture'}</button></div>`;
   }
   const tk = typeof solidTreeKind === 'function' ? solidTreeKind(k, M) : null;
-  return `${head} Automatic here: ${tk === 'pine' ? 'turned whole (a cone of tiers)' : tk ? `a round trunk and a crown of leaf clumps${tk === 'bush' ? ' (no trunk)' : ''}` : preset ? `built-in parts (${preset.length})` : auto ? `${esc(names[auto[0]])}${auto[0] === 'lathe' ? '' : `, ${auto[1]} m deep`}` : 'flat picture'}.</p>
+  return `${head} Automatic here: ${tk === 'pine' ? 'turned whole (a cone of tiers)' : tk ? `a round trunk and a crown of leaf clumps${tk === 'bush' ? ' (no trunk)' : ''}` : preset ? `built-in parts (${preset.length})` : auto ? `${escapeHtml(names[auto[0]])}${auto[0] === 'lathe' ? '' : `, ${auto[1]} m deep`}` : 'flat picture'}.</p>
   ${grid(
     selectField(
       'Shape',

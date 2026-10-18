@@ -8,9 +8,9 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { sfx, startWild, toast, x28Event } from './hooks.js';
-import { clamp, rnd } from './util.js';
+import { clamp, random } from './util.js';
 import { GD, RULES, SP } from './game-data.js';
-import { activeBattle, areaPool, pickW, reducedMotion, save, saveData, uiState, uid } from './game-state.js';
+import { activeBattle, areaPool, newUid, pickWeighted, reducedMotion, save, saveData, uiState } from './game-state.js';
 import { uiIconHTML } from './art.js';
 import { terrainAt, walkView } from './walk-view.js';
 import {
@@ -109,17 +109,17 @@ function fishPick(kind) {
   if (!F || !F.list || !F.list.length) return null;
   const list = F.list.filter(([id]) => SP[id]);
   if (!list.length) return null;
-  const sp = pickW(list),
+  const sp = pickWeighted(list),
     P = areaPool(),
     lv =
       P.lv[0] +
       (F.lv ? F.lv[0] : 0) +
-      Math.floor(rnd() * (P.lv[1] + (F.lv ? F.lv[1] : 0) - (P.lv[0] + (F.lv ? F.lv[0] : 0)) + 1));
+      Math.floor(random() * (P.lv[1] + (F.lv ? F.lv[1] : 0) - (P.lv[0] + (F.lv ? F.lv[0] : 0)) + 1));
   return {
-    id: uid(),
+    id: newUid(),
     sp,
     lvl: Math.max(2, lv),
-    gold: rnd() < 1 / fishRules().goldOdds,
+    gold: random() < 1 / fishRules().goldOdds,
     no: ++saveData.serial,
     fished: 1,
   };
@@ -162,7 +162,7 @@ export function fishStart() {
   if (Math.abs(sp.dir[0]) > Math.abs(sp.dir[1])) P.dir = sp.dir[0] > 0 ? 'sideR' : 'side';
   else P.dir = sp.dir[1] > 0 ? 'up' : 'down';
   P.route = null;
-  FISH.bite = fishRules().biteMin + rnd() * (fishRules().biteMax - fishRules().biteMin);
+  FISH.bite = fishRules().biteMin + random() * (fishRules().biteMax - fishRules().biteMin);
   const el = (FISH.el = document.createElement('div'));
   el.className = 'fish-ui';
   el.innerHTML = `<canvas class="fish-cv"></canvas><div class="fish-msg glass" aria-live="polite">Casting…</div>
@@ -253,7 +253,7 @@ function fishLoop(ts) {
       fishMsg('A bite! Tap now!');
       if (typeof sfx === 'function') sfx('step', { hard: 1 });
       if (typeof addRipple === 'function') addRipple(FISH.spot.x, FISH.spot.z, 1);
-    } else if (rnd() < dt * 0.6) {
+    } else if (random() < dt * 0.6) {
       FISH.nib = 0.18;
       if (typeof addRipple === 'function') addRipple(FISH.spot.x, FISH.spot.z, 0.35);
     }

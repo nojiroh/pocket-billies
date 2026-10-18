@@ -10,7 +10,7 @@ import { expose } from './test-globals.js';
 import { closeModal, modal, provide, storyFlags } from './hooks.js';
 import { clamp } from './util.js';
 import { GD, ROUTE, TRAINERS } from './game-data.js';
-import { esc, save, saveData, uiState } from './game-state.js';
+import { escapeHtml, save, saveData, uiState } from './game-state.js';
 import { humanHTML } from './person-art.js';
 import { baseMapId, findPath, mapById, mapHub, walkView, walkablePointNear } from './walk-view.js';
 import { standingHeightAt, walkRenderer } from './walk-view-gl.js';
@@ -98,10 +98,10 @@ export function loreBook(id, page = 0) {
     p = clamp(page, 0, n - 1);
   uiState.modal = null;
   modal({
-    title: esc(B.title),
+    title: escapeHtml(B.title),
     cls: 'book-sheet',
-    top: `<div class="book-by">${esc(B.by || '')}</div>`,
-    html: `<div class="book-page paper px"><p>${esc(B.pages[p])}</p></div><p class="book-n tnum">${p + 1} / ${n}</p>`,
+    top: `<div class="book-by">${escapeHtml(B.by || '')}</div>`,
+    html: `<div class="book-page paper px"><p>${escapeHtml(B.pages[p])}</p></div><p class="book-n tnum">${p + 1} / ${n}</p>`,
     btns: [
       ...(p > 0 ? [{ l: '‹ Back', c: 'quiet', f: () => loreBook(id, p - 1) }] : []),
       ...(p < n - 1
@@ -123,8 +123,8 @@ export function loreClue(id) {
   modal({
     title: 'Something of yours',
     cls: 'clue-sheet',
-    top: `<div class="clue-k">${esc(C.title)}</div>`,
-    html: `<p>${esc(C.text)}</p><p class="note">It’s in the Guide, under Lore.</p>`,
+    top: `<div class="clue-k">${escapeHtml(C.title)}</div>`,
+    html: `<p>${escapeHtml(C.text)}</p><p class="note">It’s in the Guide, under Lore.</p>`,
     btns: [{ l: 'Keep it', c: 'dark', f: closeModal }],
   });
 }
@@ -213,7 +213,7 @@ function clueDraw(quad, glows, t) {
 /* the Lore page of the Guide */
 function loreCard(title, text, open, sub) {
   return open
-    ? `<article class="lore-card"><h3>${esc(title)}</h3>${sub ? `<small>${esc(sub)}</small>` : ''}<p>${esc(text)}</p></article>`
+    ? `<article class="lore-card"><h3>${escapeHtml(title)}</h3>${sub ? `<small>${escapeHtml(sub)}</small>` : ''}<p>${escapeHtml(text)}</p></article>`
     : `<article class="lore-card locked"><h3>???</h3><p>Keep walking.</p></article>`;
 }
 export function renderLore() {
@@ -246,7 +246,7 @@ export function renderLore() {
       .map(([k, p]) => {
         const o = loreOpen(p.unlock);
         return o
-          ? `<article class="lore-card person">${p.who ? `<span class="lore-face">${typeof humanHTML === 'function' ? humanHTML(p.who, 52) : ''}</span>` : ''}<div><h3>${esc(p.name)}</h3><small>${esc(p.role || '')}</small><p>${esc(p.text)}</p>${p.voice ? `<p class="hand">${esc(p.voice)}</p>` : ''}</div></article>`
+          ? `<article class="lore-card person">${p.who ? `<span class="lore-face">${typeof humanHTML === 'function' ? humanHTML(p.who, 52) : ''}</span>` : ''}<div><h3>${escapeHtml(p.name)}</h3><small>${escapeHtml(p.role || '')}</small><p>${escapeHtml(p.text)}</p>${p.voice ? `<p class="hand">${escapeHtml(p.voice)}</p>` : ''}</div></article>`
           : loreCard('', '', false);
       })
       .join('');
@@ -256,7 +256,7 @@ export function renderLore() {
       if (!P) return '';
       const o = !!saveData.visited[i];
       return o
-        ? `<article class="lore-card"><h3>${esc(r.name)}</h3><p>${esc(P.history)}</p><p><b>Known for</b> ${esc(P.known)}</p><p><b>Landmark</b> ${esc(P.landmark)}</p><p class="hand">${esc(P.legend)}</p></article>`
+        ? `<article class="lore-card"><h3>${escapeHtml(r.name)}</h3><p>${escapeHtml(P.history)}</p><p><b>Known for</b> ${escapeHtml(P.known)}</p><p><b>Landmark</b> ${escapeHtml(P.landmark)}</p><p class="hand">${escapeHtml(P.legend)}</p></article>`
         : loreCard('', '', false);
     }).join('');
   if (sec === 'legends') body = (L.legends || []).map(g => loreCard(g.title, g.text, loreOpen(g.unlock))).join('');
@@ -266,7 +266,7 @@ export function renderLore() {
     body = B.length
       ? B.map(
           ([k, b]) =>
-            `<button class="lore-card book" data-a="lorebook" data-k="${k}"><h3>${esc(b.title)}</h3><small>${esc(b.by || '')}</small></button>`
+            `<button class="lore-card book" data-a="lorebook" data-k="${k}"><h3>${escapeHtml(b.title)}</h3><small>${escapeHtml(b.by || '')}</small></button>`
         ).join('')
       : '<p class="hand lore-more">Books and papers you read in rooms collect here.</p>';
   }

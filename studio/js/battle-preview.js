@@ -27,7 +27,7 @@ import {
 import { mapHub, walkView } from '../../game/js/walk-view.js';
 import { mountWalkView } from '../../game/js/walk-view-gl.js';
 import { battleGLAttach, battleGLStop } from '../../game/js/battle-3d.js';
-import { esc } from './game-stand-ins.js';
+import { escapeHtml } from './game-stand-ins.js';
 import {
   ACTIONS,
   SECTIONS,
@@ -128,7 +128,9 @@ SECTIONS.preview = () => {
     p = `backdrops.${battlePreview.area}`;
   afterRender(startBattlePreview);
   const opt = (arr, v) =>
-    arr.map(([k, n]) => `<option value="${esc(k)}" ${k === v ? 'selected' : ''}>${esc(n)}</option>`).join('');
+    arr
+      .map(([k, n]) => `<option value="${escapeHtml(k)}" ${k === v ? 'selected' : ''}>${escapeHtml(n)}</option>`)
+      .join('');
   return `<div class="ed-col solo bp"><div class="ed-head"><div><h2>Battle preview</h2><p class="sub">The game’s real battle stage, using your unsaved changes. Art you replaced under Art files appears here after you save.</p></div></div>
  <div class="bp-wrap"><div class="bp-stage" id="battle" data-layout="landscape"><div class="bstage" id="stage"><div class="cam" id="camWorld"><canvas id="cvWorld"></canvas></div><div class="cam" id="camFg"><canvas id="cvFg"></canvas></div><div class="bloom" id="bloom"></div><div class="vign"></div><div class="flash" id="flash"></div><div class="pops" id="pops"></div></div><div class="bp-loading" id="bpLoad">Loading the stage…</div></div>
  <aside class="bp-ctl">
@@ -182,7 +184,7 @@ SECTIONS.preview = () => {
     )
       .map(
         ([k, s]) =>
-          `<option value="${esc(k)}" ${battlePreview.stage === k ? 'selected' : ''}>Walk scene: ${esc(s.name || k)}</option>`
+          `<option value="${escapeHtml(k)}" ${battlePreview.stage === k ? 'selected' : ''}>Walk scene: ${escapeHtml(s.name || k)}</option>`
       )
       .join(
         ''

@@ -12,7 +12,7 @@
 import { expose } from './test-globals.js';
 import { ACC, accOn, closeModal, modal, provide, render, sceneIdAt, toast, walkOff } from './hooks.js';
 import { ROUTE, SP } from './game-data.js';
-import { billyName, cleanName, esc, plural, saveData, uiState } from './game-state.js';
+import { billyName, cleanName, escapeHtml, plural, saveData, uiState } from './game-state.js';
 import { owFrames, portraitHTML, trWarm } from './person-art.js';
 import { rigCanvasHTML } from './skeleton-rig.js';
 import { directionOf, walkView } from './walk-view.js';
@@ -348,17 +348,17 @@ export function friendsHTML() {
         p = d.partner;
       return `<div class="fr-row">
   <span class="fr-face">${typeof portraitHTML === 'function' ? portraitHTML('friend:' + u, 44) : ''}</span>
-  <span class="fr-t"><b>${esc(d.name || 'Friend')}</b><small>${a.place ? `In ${esc(a.place)} · ${frAgo(a.t)}` : 'Not seen yet'}</small>${p && SP[p.sp] ? `<small class="fr-pt">with ${esc(p.name || SP[p.sp].n)} · Lv ${p.lvl || 1}</small>` : ''}</span>
+  <span class="fr-t"><b>${escapeHtml(d.name || 'Friend')}</b><small>${a.place ? `In ${escapeHtml(a.place)} · ${frAgo(a.t)}` : 'Not seen yet'}</small>${p && SP[p.sp] ? `<small class="fr-pt">with ${escapeHtml(p.name || SP[p.sp].n)} · Lv ${p.lvl || 1}</small>` : ''}</span>
   ${p && SP[p.sp] ? `<span class="fr-mon">${rigCanvasHTML(p.sp, 48, { gold: p.gold })}</span>` : ''}
-  <span class="fr-acts">${a.node != null && ROUTE[a.node] ? `<button class="pb small" data-a="fr-map" data-n="${a.node}">Map</button>` : ''}<button class="pb small quiet" data-a="fr-rm" data-u="${esc(u)}" aria-label="Remove ${esc(d.name || 'friend')}">✕</button></span></div>`;
+  <span class="fr-acts">${a.node != null && ROUTE[a.node] ? `<button class="pb small" data-a="fr-map" data-n="${a.node}">Map</button>` : ''}<button class="pb small quiet" data-a="fr-rm" data-u="${escapeHtml(u)}" aria-label="Remove ${escapeHtml(d.name || 'friend')}">✕</button></span></div>`;
     })
     .join('');
   return `<section class="tpanel pf-friends">${head}
-  ${inc.map(r => `<div class="fr-row fr-req"><span class="fr-t"><b>${esc(r.fromName || 'A player')}</b><small>wants to be friends</small></span><span class="fr-acts"><button class="pb small gold" data-a="fr-yes" data-id="${esc(r.id)}">Accept</button><button class="pb small quiet" data-a="fr-no" data-id="${esc(r.id)}">No</button></span></div>`).join('')}
+  ${inc.map(r => `<div class="fr-row fr-req"><span class="fr-t"><b>${escapeHtml(r.fromName || 'A player')}</b><small>wants to be friends</small></span><span class="fr-acts"><button class="pb small gold" data-a="fr-yes" data-id="${escapeHtml(r.id)}">Accept</button><button class="pb small quiet" data-a="fr-no" data-id="${escapeHtml(r.id)}">No</button></span></div>`).join('')}
   ${rows || '<p class="note">No friends yet. Swap codes with someone and add theirs here.</p>'}
   ${wait.length ? `<p class="note">${plural(wait.length, 'request')} waiting for an answer.</p>` : ''}
   <form class="fr-add" data-a="fr-add"><input name="code" maxlength="7" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Friend code" aria-label="Friend code"><button class="pb small gold" type="submit">Add</button></form>
-  ${FR.err ? `<p class="note warn">${esc(FR.err)}</p>` : ''}</section>`;
+  ${FR.err ? `<p class="note warn">${escapeHtml(FR.err)}</p>` : ''}</section>`;
 }
 function frRefresh() {
   if (
@@ -388,7 +388,7 @@ document.addEventListener('click', ev => {
     const nm = (FR.data[d.u] || {}).name || 'this friend';
     modal({
       title: 'Remove friend?',
-      html: `<p>Stop seeing ${esc(nm)} on your map? They won’t see you either.</p>`,
+      html: `<p>Stop seeing ${escapeHtml(nm)} on your map? They won’t see you either.</p>`,
       btns: [
         {
           l: 'Remove',

@@ -33,7 +33,7 @@ import {
   stopWalkView,
   walkView,
 } from './hooks.js';
-import { $, clamp, rnd } from './util.js';
+import { $, clamp, random } from './util.js';
 import { FRAME, frameCount, frameStop, frameTask, userFps } from './frame-scheduler.js';
 import {
   ART_CACHE,
@@ -282,7 +282,7 @@ const newActorState = () => ({
   white: 0,
   dark: 0,
   blinkUntil: 0,
-  seed: rnd() * 6,
+  seed: random() * 6,
   act: null,
   st: null,
   big: 1,
@@ -520,10 +520,10 @@ export function battleStageStart(area) {
   battleStage.clouds = G.clouds.map((img, i) => ({
     img,
     soft: {},
-    x: -14 + i * 6 + rnd() * 4,
-    y: 7 + rnd() * 5,
-    z: 10 + i * 7 + rnd() * 5,
-    v: 0.12 + rnd() * 0.12,
+    x: -14 + i * 6 + random() * 4,
+    y: 7 + random() * 5,
+    z: 10 + i * 7 + random() * 5,
+    v: 0.12 + random() * 0.12,
   }));
   battleStage.small = makeCanvas(10, 10);
   battleStageFormat((typeof activeBattle !== 'undefined' && activeBattle && activeBattle.fmt) || 'single');
@@ -781,27 +781,27 @@ const LEAF_COLORS = ['#6FAE3F', '#9CC850', '#D7B447', '#4E8A3A'];
 function spawnAmbientParticles(dt) {
   const A = AREAS[battleStage.area];
   if (battleStage.parts.length > 220) return;
-  if (battleStage.oil && rnd() < dt / 18)
+  if (battleStage.oil && random() < dt / 18)
     addParticle({
-      x: GROUND_CENTER_X - 7 + rnd() * 3,
-      y: 0.1 + rnd() * 2.6,
-      z: GROUND_CENTER_Z + (rnd() - 0.3) * 7,
-      vx: 6 + rnd() * 4,
-      vy: (rnd() - 0.4) * 0.6,
+      x: GROUND_CENTER_X - 7 + random() * 3,
+      y: 0.1 + random() * 2.6,
+      z: GROUND_CENTER_Z + (random() - 0.3) * 7,
+      vx: 6 + random() * 4,
+      vy: (random() - 0.4) * 0.6,
       life: 1500,
-      col: rnd() < 0.5 ? '#E8CF96' : '#C9A866',
+      col: random() < 0.5 ? '#E8CF96' : '#C9A866',
       size: 1,
     });
-  if (rnd() < dt / 150) {
+  if (random() < dt / 150) {
     const am = A.amb,
-      x = GROUND_CENTER_X + (rnd() - 0.5) * 12,
-      z = GROUND_CENTER_Z + rnd() * 9 - 1.5;
+      x = GROUND_CENTER_X + (random() - 0.5) * 12,
+      z = GROUND_CENTER_Z + random() * 9 - 1.5;
     if (am === 'pollen' || am === 'spore')
       addParticle({
         x,
-        y: 0.3 + rnd() * 2.5,
+        y: 0.3 + random() * 2.5,
         z,
-        vx: 0.3 + rnd() * 0.3,
+        vx: 0.3 + random() * 0.3,
         vy: 0.1,
         life: 4200,
         col: am === 'pollen' ? '#FFF2A8' : '#B8F0C8',
@@ -809,36 +809,36 @@ function spawnAmbientParticles(dt) {
         size: 1,
       });
     else if (am === 'drip') {
-      if (rnd() < 0.5) addParticle({ x, y: 4.2, z, vy: -6, life: 900, col: '#6A5446', size: 1 });
+      if (random() < 0.5) addParticle({ x, y: 4.2, z, vy: -6, life: 900, col: '#6A5446', size: 1 });
     } else if (am === 'sand')
-      addParticle({ x: x - 5, y: 0.2 + rnd() * 2, z, vx: 2.5 + rnd(), life: 3000, col: '#F2D2A0', size: 1 });
+      addParticle({ x: x - 5, y: 0.2 + random() * 2, z, vx: 2.5 + random(), life: 3000, col: '#F2D2A0', size: 1 });
     else if (am !== 'none')
-      addParticle({ x, y: 0.5 + rnd() * 3, z, vy: 0.1, life: 3000, col: '#FFFFFF', glow: 1, size: 1, twinkle: 1 });
+      addParticle({ x, y: 0.5 + random() * 3, z, vy: 0.1, life: 3000, col: '#FFFFFF', glow: 1, size: 1, twinkle: 1 });
   }
   /* leaves let go of the trees now and then; crystals and fountains catch the light */
-  if (battleStage.leafy.length && rnd() < dt / 650) {
-    const p = battleStage.leafy[Math.floor(rnd() * battleStage.leafy.length)],
-      y = p.h * (0.45 + rnd() * 0.4);
+  if (battleStage.leafy.length && random() < dt / 650) {
+    const p = battleStage.leafy[Math.floor(random() * battleStage.leafy.length)],
+      y = p.h * (0.45 + random() * 0.4);
     addParticle({
-      x: p.x + (rnd() - 0.5) * p.h * 0.4,
+      x: p.x + (random() - 0.5) * p.h * 0.4,
       y,
-      z: p.z + (rnd() - 0.5) * 0.6,
-      vx: 0.35 + rnd() * 0.5,
+      z: p.z + (random() - 0.5) * 0.6,
+      vx: 0.35 + random() * 0.5,
       vy: -0.25,
       ax: 0.05,
       ay: -0.08,
       vz: -0.1,
       life: 2600 + y * 500,
-      col: LEAF_COLORS[Math.floor(rnd() * LEAF_COLORS.length)],
-      size: 1 + (rnd() < 0.4 ? 1 : 0),
+      col: LEAF_COLORS[Math.floor(random() * LEAF_COLORS.length)],
+      size: 1 + (random() < 0.4 ? 1 : 0),
       floor: 1,
     });
   }
-  if (battleStage.glint.length && rnd() < dt / 420) {
-    const p = battleStage.glint[Math.floor(rnd() * battleStage.glint.length)];
+  if (battleStage.glint.length && random() < dt / 420) {
+    const p = battleStage.glint[Math.floor(random() * battleStage.glint.length)];
     addParticle({
-      x: p.x + (rnd() - 0.5) * p.h * 0.5,
-      y: p.h * (0.3 + rnd() * 0.6),
+      x: p.x + (random() - 0.5) * p.h * 0.5,
+      y: p.h * (0.3 + random() * 0.6),
       z: p.z,
       life: 700,
       spr: 'spark',
@@ -856,10 +856,10 @@ function spawnAmbientParticles(dt) {
       const T = actorTop(i);
       const sp = sd.st === 'aud' ? 'bolt' : sd.st === 'sub' ? 'zz' : sd.st === 'scn' ? 'flame' : 'spark';
       addParticle({
-        x: T.x + (rnd() - 0.5) * 0.6,
+        x: T.x + (random() - 0.5) * 0.6,
         y: T.y + 0.2,
         z: T.z,
-        vx: (rnd() - 0.5) * 0.3,
+        vx: (random() - 0.5) * 0.3,
         vy: sd.st === 'aud' ? -0.6 : 0.7,
         life: 900,
         spr: sp,
@@ -869,19 +869,19 @@ function spawnAmbientParticles(dt) {
   }
   for (let i = 0; i < battleStage.s.length; i++) {
     const sd = battleStage.s[i];
-    if (sd.boss && sd.show && sd.a > 0.5 && rnd() < dt / 90) {
+    if (sd.boss && sd.show && sd.a > 0.5 && random() < dt / 90) {
       const w = actorWorldPoint(i),
         R = sd.sp ? rigParts(sd.sp, sd.gold, ACTOR_RIG_SCALES[i]) : null,
         hw = R ? (R.geo.hw * actorMetersPerPixel[i] * sd.big * (sd.fs || 1)) / R.k : 1,
-        a = rnd() * 6.283;
+        a = random() * 6.283;
       addParticle({
         x: w.x + Math.cos(a) * hw,
-        y: 0.1 + rnd() * 0.4,
+        y: 0.1 + random() * 0.4,
         z: w.z + Math.sin(a) * hw * 0.6,
         vx: Math.cos(a) * 0.15,
-        vy: 0.9 + rnd() * 0.8,
+        vy: 0.9 + random() * 0.8,
         life: 1300,
-        col: rnd() < 0.5 ? '#FF5A7A' : '#B03CFF',
+        col: random() < 0.5 ? '#FF5A7A' : '#B03CFF',
         glow: 1,
         size: 2,
       });
@@ -895,8 +895,8 @@ function spawnAmbientParticles(dt) {
       if (!sd.show || !sd.gold || sd.a < 0.5) continue;
       const c = actorCenter(i);
       addParticle({
-        x: c.x + (rnd() - 0.5) * 1.4,
-        y: c.y + (rnd() - 0.4) * 1.6,
+        x: c.x + (random() - 0.5) * 1.4,
+        y: c.y + (random() - 0.4) * 1.6,
         z: c.z,
         vy: 0.3,
         life: 700,
@@ -946,8 +946,8 @@ function camApply() {
   let sx = 0,
     sy = 0;
   if (battleStage.shk > 0.3 && !still) {
-    sx = (rnd() - 0.5) * battleStage.shk;
-    sy = (rnd() - 0.5) * battleStage.shk;
+    sx = (random() - 0.5) * battleStage.shk;
+    sy = (random() - 0.5) * battleStage.shk;
   }
   const ha = still ? 0 : battleStage.hand.a;
   if (ha > 0.01) {
@@ -2075,9 +2075,9 @@ const typeSprite = (t, i) => {
 };
 function burst(P, t, n = 10, sp = 2.2, k = 1) {
   for (let i = 0; i < n; i++) {
-    const a = rnd() * Math.PI * 2,
-      b = (rnd() - 0.3) * Math.PI * 0.6,
-      v = sp * (0.5 + rnd()),
+    const a = random() * Math.PI * 2,
+      b = (random() - 0.3) * Math.PI * 0.6,
+      v = sp * (0.5 + random()),
       key = typeSprite(t, i);
     addParticle({
       x: P.x,
@@ -2087,7 +2087,7 @@ function burst(P, t, n = 10, sp = 2.2, k = 1) {
       vy: Math.sin(b) * v + 1.2,
       vz: Math.sin(a) * Math.cos(b) * v,
       ay: -5,
-      life: 460 + rnd() * 300,
+      life: 460 + random() * 300,
       spr: key,
       k,
       glow: GLOWING_PARTICLES[key],
@@ -2103,7 +2103,7 @@ function groundRing(i, col = '#FFFFFF', r1 = 1.6, life = 520) {
 }
 function speedLines(P, col = 'rgba(255,255,255,.85)') {
   if (reducedMotion) return;
-  addParticle({ x: P.x, y: P.y, z: P.z, lines: 1, col, life: 260, n: 22, seed: rnd() * 6 });
+  addParticle({ x: P.x, y: P.y, z: P.z, lines: 1, col, life: 260, n: 22, seed: random() * 6 });
 }
 function blinkActor(i, ms = 380) {
   battleStage.s[i].blinkUntil = battleStage.t + ms;
@@ -2224,14 +2224,14 @@ export function battleStagePlay(an, ev) {
           battleStage.shk = 9;
           handheld(900, 1.4);
           for (let i = 0; i < 26; i++) {
-            const a = rnd() * 6.283,
+            const a = random() * 6.283,
               c = actorCenter(1);
             addParticle({
               x: c.x + Math.cos(a) * 0.6,
               y: 0.2,
               z: c.z + Math.sin(a) * 0.4,
               vx: Math.cos(a) * 2.4,
-              vy: 1.5 + rnd() * 2,
+              vy: 1.5 + random() * 2,
               vz: Math.sin(a) * 1.6,
               ay: -3,
               life: 900,
@@ -2385,7 +2385,7 @@ export function battleStagePlay(an, ev) {
                 x: A.x,
                 y: A.y,
                 z: A.z,
-                vx: (T.x - A.x) * 3.2 + (rnd() - 0.5),
+                vx: (T.x - A.x) * 3.2 + (random() - 0.5),
                 vy: (T.y - A.y) * 3.2 + 1.5,
                 vz: (T.z - A.z) * 3.2 + 1.2,
                 life: 380,
@@ -2436,9 +2436,9 @@ export function battleStagePlay(an, ev) {
               x: A.x,
               y: 0.15,
               z: A.z,
-              vx: (rnd() - 0.5) * 1.2,
-              vy: 0.6 + rnd() * 0.6,
-              vz: (rnd() - 0.5) * 1.2,
+              vx: (random() - 0.5) * 1.2,
+              vy: 0.6 + random() * 0.6,
+              vz: (random() - 0.5) * 1.2,
               life: 420,
               col: '#E8DCC8',
               size: 2,
@@ -2481,8 +2481,8 @@ export function battleStagePlay(an, ev) {
             const v = 1 / 0.32,
               key = typeSprite(M.t, i);
             addParticle({
-              x: A.x + (rnd() - 0.5) * 0.2,
-              y: A.y + (rnd() - 0.5) * 0.2,
+              x: A.x + (random() - 0.5) * 0.2,
+              y: A.y + (random() - 0.5) * 0.2,
               z: A.z,
               vx: (T.x - A.x) * v,
               vy: (T.y - A.y) * v + 2.4,
@@ -2544,10 +2544,10 @@ export function battleStagePlay(an, ev) {
       if (an.fx === 'oil')
         for (let i = 0; i < 7; i++)
           addParticle({
-            x: T.x - 0.8 + rnd() * 0.4,
-            y: 0.2 + rnd() * 0.9,
-            z: T.z + (rnd() - 0.5) * 0.5,
-            vx: 4 + rnd() * 2,
+            x: T.x - 0.8 + random() * 0.4,
+            y: 0.2 + random() * 0.9,
+            z: T.z + (random() - 0.5) * 0.5,
+            vx: 4 + random() * 2,
             vy: 0.4,
             life: 520,
             spr: 'pebble',
@@ -2557,7 +2557,15 @@ export function battleStagePlay(an, ev) {
       if (an.fx === 'scn')
         for (let i = 0; i < 4; i++)
           scheduleAt(i * 70, () =>
-            addParticle({ x: T.x + (rnd() - 0.5) * 0.8, y: T.y + 0.6, z: T.z, vy: 1, life: 520, spr: 'flame', k: kk })
+            addParticle({
+              x: T.x + (random() - 0.5) * 0.8,
+              y: T.y + 0.6,
+              z: T.z,
+              vy: 1,
+              life: 520,
+              spr: 'flame',
+              k: kk,
+            })
           );
       if (an.fx === 'mail') {
         battleStageFocus(actorTeam(an.si) === 0 ? 'me' : 'foe');
@@ -2577,10 +2585,10 @@ export function battleStagePlay(an, ev) {
       for (let i = 0; i < 12; i++)
         scheduleAt(i * 45, () =>
           addParticle({
-            x: T.x + (rnd() - 0.5) * 1.2,
+            x: T.x + (random() - 0.5) * 1.2,
             y: 0.2,
-            z: T.z + (rnd() - 0.5) * 0.6,
-            vy: 2 + rnd(),
+            z: T.z + (random() - 0.5) * 0.6,
+            vy: 2 + random(),
             life: 650,
             spr: i % 3 ? 'plus' : 'spark',
             k: kk,
@@ -2600,9 +2608,9 @@ export function battleStagePlay(an, ev) {
       for (let i = 0; i < 9; i++)
         scheduleAt(i * 55, () =>
           addParticle({
-            x: T.x + (rnd() - 0.5) * 1.4,
+            x: T.x + (random() - 0.5) * 1.4,
             y: an.up ? 0.2 : T.y + 0.8,
-            z: T.z + (rnd() - 0.5) * 0.6,
+            z: T.z + (random() - 0.5) * 0.6,
             vy: an.up ? 2.6 : -2.6,
             life: 540,
             spr: an.up ? 'up' : 'down',
@@ -2623,10 +2631,10 @@ export function battleStagePlay(an, ev) {
       for (let i = 0; i < 8; i++)
         scheduleAt(i * 60, () =>
           addParticle({
-            x: T.x + (rnd() - 0.5) * 1.2,
+            x: T.x + (random() - 0.5) * 1.2,
             y: T.y + 0.9,
             z: T.z,
-            vx: (rnd() - 0.5) * 0.8,
+            vx: (random() - 0.5) * 0.8,
             vy: an.st === 'aud' ? -1.6 : 1.4,
             life: 620,
             spr: sp,
@@ -2677,14 +2685,14 @@ export function battleStagePlay(an, ev) {
       battleStage.oil = true;
       for (let i = 0; i < 40; i++)
         addParticle({
-          x: GROUND_CENTER_X - 8 + rnd() * 4,
-          y: 0.1 + rnd() * 3,
-          z: GROUND_CENTER_Z + (rnd() - 0.4) * 7,
-          vx: 8 + rnd() * 5,
-          vy: (rnd() - 0.3) * 0.8,
+          x: GROUND_CENTER_X - 8 + random() * 4,
+          y: 0.1 + random() * 3,
+          z: GROUND_CENTER_Z + (random() - 0.4) * 7,
+          vx: 8 + random() * 5,
+          vy: (random() - 0.3) * 0.8,
           life: 1300,
-          col: rnd() < 0.5 ? '#E8CF96' : '#C9A866',
-          size: 1 + (rnd() < 0.3 ? 1 : 0),
+          col: random() < 0.5 ? '#E8CF96' : '#C9A866',
+          size: 1 + (random() < 0.3 ? 1 : 0),
         });
       battleStageFlash('#C8A060', 0.35, 500);
       battleStage.shk = 3;
@@ -2710,7 +2718,7 @@ export function battleStagePlay(an, ev) {
           const a = (i / 24) * Math.PI * 2;
           addParticle({
             x: T.x + Math.cos(a) * 1.1,
-            y: 0.2 + rnd() * 1.4,
+            y: 0.2 + random() * 1.4,
             z: T.z + Math.sin(a) * 0.6,
             vy: 1.4,
             life: 700,
@@ -2750,9 +2758,9 @@ export function battleStagePlay(an, ev) {
       groundRing(li, '#F4C542', 2, 600);
       for (let i = 0; i < 10; i++)
         addParticle({
-          x: T.x + (rnd() - 0.5) * 1.4,
+          x: T.x + (random() - 0.5) * 1.4,
           y: 0.2,
-          z: T.z + (rnd() - 0.5) * 0.5,
+          z: T.z + (random() - 0.5) * 0.5,
           vy: 2.6,
           life: 620,
           spr: 'spark',
@@ -2824,9 +2832,9 @@ export function battleStageCatch(kind, res, spin, done) {
                 x: C.x,
                 y: C.y,
                 z: C.z,
-                vx: (rnd() - 0.5) * 3,
-                vy: 2 + rnd() * 2,
-                vz: (rnd() - 0.5) * 2,
+                vx: (random() - 0.5) * 3,
+                vy: 2 + random() * 2,
+                vz: (random() - 0.5) * 2,
                 ay: -5,
                 life: 720,
                 spr: 'star',

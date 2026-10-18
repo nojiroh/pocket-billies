@@ -10,7 +10,7 @@ import { expose } from '../../game/js/test-globals.js';
 import { $, $$ } from '../../game/js/util.js';
 import { makeCanvas } from '../../game/js/art.js';
 import { drawRig } from '../../game/js/skeleton-rig.js';
-import { esc } from './game-stand-ins.js';
+import { escapeHtml } from './game-stand-ins.js';
 import { ACTIONS, SECTIONS, afterRender, changed, commit, render, studioState } from './studio-app.js';
 import { downloadCanvas, loadImage, rigFor } from './sprites.js';
 import { neutralPose } from './skeleton.js';
@@ -58,13 +58,13 @@ function rosterCardHTML(e, i) {
     ty = (e.types || [])
       .map(t => {
         const T = (studioState.D.types || []).find(x => x.id === t);
-        return `<span class="ro-type" style="background:${T ? T.color : '#888'};color:${T ? T.text : '#fff'}">${esc(t)}</span>`;
+        return `<span class="ro-type" style="background:${T ? T.color : '#888'};color:${T ? T.text : '#fff'}">${escapeHtml(t)}</span>`;
       })
       .join('');
-  return `<div class="ro-card ${done === 4 ? 'done' : ''}" data-ro-id="${esc(e.id)}"><div class="ro-head"><span class="ro-no">#${e.no}</span><b>${esc(e.name)}</b><span class="ro-stage">${ROSTER_KINDS[e.kind] || e.kind}${e.kind === 'starter' || e.kind === 'line3' || e.kind === 'line2' ? ' · stage ' + e.stage + (e.split ? ' ' + e.split : '') : ''}</span></div>
-  <div class="ro-sil"><canvas class="ro-silc" data-sp="${esc(e.id)}" width="48" height="48"></canvas>${ty}</div>
-  <p class="ro-par">Parody of <b>${esc(e.parody)}</b> · line <code>${esc(e.line)}</code></p>
-  <p class="ro-des" contenteditable="plaintext-only" data-ro-des="${idx}" spellcheck="false">${esc(e.design)}</p>
+  return `<div class="ro-card ${done === 4 ? 'done' : ''}" data-ro-id="${escapeHtml(e.id)}"><div class="ro-head"><span class="ro-no">#${e.no}</span><b>${escapeHtml(e.name)}</b><span class="ro-stage">${ROSTER_KINDS[e.kind] || e.kind}${e.kind === 'starter' || e.kind === 'line3' || e.kind === 'line2' ? ' · stage ' + e.stage + (e.split ? ' ' + e.split : '') : ''}</span></div>
+  <div class="ro-sil"><canvas class="ro-silc" data-sp="${escapeHtml(e.id)}" width="48" height="48"></canvas>${ty}</div>
+  <p class="ro-par">Parody of <b>${escapeHtml(e.parody)}</b> · line <code>${escapeHtml(e.line)}</code></p>
+  <p class="ro-des" contenteditable="plaintext-only" data-ro-des="${idx}" spellcheck="false">${escapeHtml(e.design)}</p>
   <div class="ro-state">${['silhouette', 'sheet', 'rig', 'portrait'].map(k => `<label class="fld chk sm"><input type="checkbox" data-p="roster.${idx}.state.${k}" data-k="bool" ${st[k] ? 'checked' : ''}><span>${k}</span></label>`).join('')}</div></div>`;
 }
 SECTIONS.roster = () => {
@@ -80,7 +80,7 @@ SECTIONS.roster = () => {
   <select data-act="roKind" id="roKind"><option value="">Every kind</option>${Object.entries(ROSTER_KINDS)
     .map(([k, n]) => `<option value="${k}" ${rosterBoard.kind === k ? 'selected' : ''}>${n}</option>`)
     .join('')}</select>
-  <input id="roQ" placeholder="Search name, parody, line…" value="${esc(rosterBoard.q)}"><span class="grow"></span><button class="btn" data-act="roSheet">Silhouette sheet</button><button class="btn" data-act="roExport">Export CSV</button></div>
+  <input id="roQ" placeholder="Search name, parody, line…" value="${escapeHtml(rosterBoard.q)}"><span class="grow"></span><button class="btn" data-act="roSheet">Silhouette sheet</button><button class="btn" data-act="roExport">Export CSV</button></div>
   <p class="help">${all} Billies · ${sil} silhouettes approved · ${sheets} piece sheets drawn · ${done} complete. Tick a box when that step is done; the design line is editable. A piece sheet goes in <code>art/next/billionaires/&lt;id&gt;.png</code> with its layout <code>&lt;id&gt;.json</code> (Skeleton builder → Import piece sheet).</p>
   <div class="ro-grid">${filteredRoster().map(rosterCardHTML).join('')}</div></div>`;
 };

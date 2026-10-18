@@ -6,7 +6,7 @@ import { expose } from '../../game/js/test-globals.js';
 import { provide } from '../../game/js/hooks.js';
 import { $ } from '../../game/js/util.js';
 import { decodeBase64Array } from '../../game/js/walk-view.js';
-import { esc } from './game-stand-ins.js';
+import { escapeHtml } from './game-stand-ins.js';
 import {
   ACTIONS,
   SECTIONS,
@@ -387,7 +387,7 @@ function renderCheckList() {
   el.innerHTML = P.length
     ? P.map(
         (p, i) =>
-          `<li class="${p.lvl}"><span>${p.lvl === 'error' ? 'Problem' : 'Note'}</span><p>${esc(p.msg)}</p>${p.go ? `<button class="btn sm" data-act="fix" data-i="${i}">Show me</button>` : ''}</li>`
+          `<li class="${p.lvl}"><span>${p.lvl === 'error' ? 'Problem' : 'Note'}</span><p>${escapeHtml(p.msg)}</p>${p.go ? `<button class="btn sm" data-act="fix" data-i="${i}">Show me</button>` : ''}</li>`
       ).join('')
     : '<li class="ok"><span>All good</span><p>No problems found. The game will load every Billie, move and rule.</p></li>';
   studioState.lastCheck = P;
@@ -416,7 +416,7 @@ async function loadBackups() {
         )
           .map(
             b =>
-              `<tr><td>${groups[b.kind]}</td><td class="mono">${esc(b.name)}</td><td>${new Date(b.mtime * 1000).toLocaleString()}</td><td><button class="btn sm" data-act="restore" data-k="${b.kind}" data-n="${esc(b.name)}">Restore</button></td></tr>`
+              `<tr><td>${groups[b.kind]}</td><td class="mono">${escapeHtml(b.name)}</td><td>${new Date(b.mtime * 1000).toLocaleString()}</td><td><button class="btn sm" data-act="restore" data-k="${b.kind}" data-n="${escapeHtml(b.name)}">Restore</button></td></tr>`
           )
           .join('')}</tbody></table>`
       : '<p class="help">No backups yet. They appear after your first save.</p>';

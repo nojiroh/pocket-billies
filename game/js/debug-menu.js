@@ -13,12 +13,13 @@ import {
   addEgg,
   addMon,
   addSteps,
-  esc,
+  escapeHtml,
   flushSave,
   gainXp,
   healAll,
   makeMon,
   newSaveKeepingPreferences,
+  newUid,
   save,
   saveData,
   setActiveBattle,
@@ -26,7 +27,6 @@ import {
   spawn,
   today,
   uiState,
-  uid,
   writeStoredSave,
   xpFor,
 } from './game-state.js';
@@ -56,7 +56,7 @@ provide({ debugFps });
 /* to-module: end */
 const DBG = { fps: false, on: /[?&]debug\b/.test(location.search) };
 const dbgSel = (id, opts, val) =>
-  `<select id="${id}">${opts.map(([v, n]) => `<option value="${esc(v)}" ${String(v) === String(val) ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select>`;
+  `<select id="${id}">${opts.map(([v, n]) => `<option value="${escapeHtml(v)}" ${String(v) === String(val) ? 'selected' : ''}>${escapeHtml(n)}</option>`).join('')}</select>`;
 const dbgBtn = (x, l, c = '') => `<button class="pb small ${c}" data-a="dbg" data-x="${x}">${l}</button>`;
 function dbgSpecies() {
   return DEX.map(id => [id, `${String(SP[id].no).padStart(3, '0')} ${SP[id].name}`]);
@@ -71,7 +71,7 @@ function debugHTML() {
   ${
     DATA_WARN.length
       ? `<p class="note">Game data warnings (${DATA_WARN.length}):</p><ul class="dbg-warn">${DATA_WARN.slice(0, 30)
-          .map(w => `<li>${esc(w)}</li>`)
+          .map(w => `<li>${escapeHtml(w)}</li>`)
           .join('')}</ul>`
       : '<p class="note">Game data loaded with no warnings.</p>'
   }</details>
@@ -97,7 +97,7 @@ function debugHTML() {
     testScenes().map(k => [k, (mapById(k).name || k).replace(/^Test: /, '')]),
     uiState.dbgTest || testScenes()[0] || ''
   )}${dbgBtn('test', 'Go there')}${dbgBtn('testchk', 'Run its checks')}${uiState.bench && uiState.bench.test ? dbgBtn('untest', 'Back to the game', 'gold') : ''}</div>
-  ${uiState.testRes ? `<ul class="dbg-warn">${uiState.testRes.map(r => `<li>${r.ok ? '✓' : '✗'} ${esc(r.what)}${r.ok ? '' : ` (expected ${r.reach ? 'reachable' : 'not reachable'})`}</li>`).join('')}</ul>` : ''}</details>
+  ${uiState.testRes ? `<ul class="dbg-warn">${uiState.testRes.map(r => `<li>${r.ok ? '✓' : '✗'} ${escapeHtml(r.what)}${r.ok ? '' : ` (expected ${r.reach ? 'reachable' : 'not reachable'})`}</li>`).join('')}</ul>` : ''}</details>
  <details><summary>Eggs and jobs</summary><div class="dbg-row">${dbgSel(
    'dbgEgg',
    EGG_TIERS.map(t => [t, t + ' km']),
@@ -202,12 +202,12 @@ function dbgAct(x) {
       return dbgRefresh(`${SP[sp].name} joined your ${w === 'team' ? 'team' : 'storage'}.`);
     }
     case 'enc': {
-      saveData.queue.push({ id: uid(), sp, lvl: lv, gold: $('#dbgGold').checked, no: ++saveData.serial });
+      saveData.queue.push({ id: newUid(), sp, lvl: lv, gold: $('#dbgGold').checked, no: ++saveData.serial });
       break;
     }
     case 'alpha': {
       if (activeBattle) return toast('Finish the current battle first.');
-      const q = { id: uid(), sp, lvl: lv, gold: $('#dbgGold').checked, no: ++saveData.serial, alpha: true };
+      const q = { id: newUid(), sp, lvl: lv, gold: $('#dbgGold').checked, no: ++saveData.serial, alpha: true };
       saveData.queue.push(q);
       closeModal();
       startWild(q);
@@ -215,7 +215,7 @@ function dbgAct(x) {
     }
     case 'wild': {
       if (activeBattle) return toast('Finish the current battle first.');
-      const q = { id: uid(), sp, lvl: lv, gold: $('#dbgGold').checked, no: ++saveData.serial };
+      const q = { id: newUid(), sp, lvl: lv, gold: $('#dbgGold').checked, no: ++saveData.serial };
       saveData.queue.push(q);
       closeModal();
       startWild(q);

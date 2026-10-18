@@ -8,7 +8,7 @@ import { $, $$ } from '../../game/js/util.js';
 import { ICON_ATLAS, artLoad } from '../../game/js/art.js';
 import { battleStageStop } from '../../game/js/battle-stage.js';
 import { engineContext } from '../../game/js/engine/settings.js';
-import { esc } from './game-stand-ins.js';
+import { escapeHtml } from './game-stand-ins.js';
 /* eslint-disable no-func-assign */
 expose({
   ACTIONS: [() => ACTIONS],
@@ -370,12 +370,12 @@ export function rangeField(label, p, o = {}) {
 export function textField(label, p, o = {}) {
   const v = readPath(p) ?? '';
   return o.area
-    ? `<label class="fld wide ${o.cls || ''}"><span>${label}</span><textarea data-p="${p}" data-k="text" rows="${o.rows || 3}" ${o.opt ? 'data-opt="1"' : ''} placeholder="${esc(o.ph || '')}">${esc(v)}</textarea>${helpHTML(o.help)}</label>`
-    : `<label class="fld ${o.cls || ''}"><span>${label}</span><input type="text" data-p="${p}" data-k="text" ${o.opt ? 'data-opt="1"' : ''} value="${esc(v)}" placeholder="${esc(o.ph || '')}" ${o.max ? `maxlength="${o.max}"` : ''}>${helpHTML(o.help)}</label>`;
+    ? `<label class="fld wide ${o.cls || ''}"><span>${label}</span><textarea data-p="${p}" data-k="text" rows="${o.rows || 3}" ${o.opt ? 'data-opt="1"' : ''} placeholder="${escapeHtml(o.ph || '')}">${escapeHtml(v)}</textarea>${helpHTML(o.help)}</label>`
+    : `<label class="fld ${o.cls || ''}"><span>${label}</span><input type="text" data-p="${p}" data-k="text" ${o.opt ? 'data-opt="1"' : ''} value="${escapeHtml(v)}" placeholder="${escapeHtml(o.ph || '')}" ${o.max ? `maxlength="${o.max}"` : ''}>${helpHTML(o.help)}</label>`;
 }
 export function selectField(label, p, opts, o = {}) {
   const v = readPath(p);
-  return `<label class="fld ${o.cls || ''}"><span>${label}</span><select data-p="${p}" data-k="${o.num ? 'num' : 'sel'}" ${o.opt ? 'data-opt="1"' : ''} ${o.rr ? 'data-rr="1"' : ''}>${o.none ? `<option value="">${o.none}</option>` : ''}${opts.map(([k, n]) => `<option value="${esc(k)}" ${String(v) === String(k) ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select>${helpHTML(o.help)}</label>`;
+  return `<label class="fld ${o.cls || ''}"><span>${label}</span><select data-p="${p}" data-k="${o.num ? 'num' : 'sel'}" ${o.opt ? 'data-opt="1"' : ''} ${o.rr ? 'data-rr="1"' : ''}>${o.none ? `<option value="">${o.none}</option>` : ''}${opts.map(([k, n]) => `<option value="${escapeHtml(k)}" ${String(v) === String(k) ? 'selected' : ''}>${escapeHtml(n)}</option>`).join('')}</select>${helpHTML(o.help)}</label>`;
 }
 export function checkboxField(label, p, o = {}) {
   const v = readPath(p);
@@ -383,7 +383,7 @@ export function checkboxField(label, p, o = {}) {
 }
 export function colorField(label, p, o = {}) {
   const v = readPath(p) || '#000000';
-  return `<label class="fld color ${o.cls || ''}"><span>${label}</span><span class="colw"><input type="color" data-p="${p}" data-k="color" value="${/^#[0-9a-f]{6}$/i.test(v) ? v : '#000000'}"><input type="text" data-p="${p}" data-k="color" value="${esc(v)}" maxlength="7" class="hex"></span>${helpHTML(o.help)}</label>`;
+  return `<label class="fld color ${o.cls || ''}"><span>${label}</span><span class="colw"><input type="color" data-p="${p}" data-k="color" value="${/^#[0-9a-f]{6}$/i.test(v) ? v : '#000000'}"><input type="text" data-p="${p}" data-k="color" value="${escapeHtml(v)}" maxlength="7" class="hex"></span>${helpHTML(o.help)}</label>`;
 }
 export const card = (title, body, o = {}) =>
   `<section class="card ${o.cls || ''}" ${o.id ? `id="${o.id}"` : ''}><header><h3>${title}</h3>${o.acts || ''}</header>${o.sub ? `<p class="sub">${o.sub}</p>` : ''}<div class="card-b">${body}</div></section>`;
@@ -471,13 +471,13 @@ function renderSide() {
     G.map(([t, L]) => {
       const has = L.includes(studioState.sec),
         shut = foldedSectionGroups[t] && !has;
-      return `<div class="nav-g ${shut ? 'shut' : ''}"><button class="nav-gh" data-act="navFold" data-g="${esc(t)}" aria-expanded="${!shut}"><span>${shut ? '▸' : '▾'}</span>${esc(t)}</button>${
+      return `<div class="nav-g ${shut ? 'shut' : ''}"><button class="nav-gh" data-act="navFold" data-g="${escapeHtml(t)}" aria-expanded="${!shut}"><span>${shut ? '▸' : '▾'}</span>${escapeHtml(t)}</button>${
         shut
           ? ''
           : L.filter(k => N[k])
               .map(k => {
                 const [, n, d] = N[k];
-                return `<button class="nav ${studioState.sec === k ? 'on' : ''}" data-act="go" data-s="${k}" title="${esc(d)}"><b>${n}</b>${studioState.sec === k ? `<small>${d}</small>` : ''}</button>`;
+                return `<button class="nav ${studioState.sec === k ? 'on' : ''}" data-act="go" data-s="${k}" title="${escapeHtml(d)}"><b>${n}</b>${studioState.sec === k ? `<small>${d}</small>` : ''}</button>`;
               })
               .join('')
       }</div>`;
@@ -593,7 +593,7 @@ export const speciesName = id => {
 export const typeChipHTML = t => {
   const T = studioState.D.types.find(x => x.id === t);
   const c = T ? [T.color, T.text] : [studioState.D.untyped.color, studioState.D.untyped.text];
-  return `<span class="chip" style="background:${c[0]};color:${c[1]}">${t === 'None' ? 'Normal' : esc(t)}</span>`;
+  return `<span class="chip" style="background:${c[0]};color:${c[1]}">${t === 'None' ? 'Normal' : escapeHtml(t)}</span>`;
 };
 /* ---------- boot ---------- */
 export async function boot() {
@@ -613,7 +613,7 @@ export async function boot() {
     scheduleCheck(true);
   } catch (e) {
     $('#main').innerHTML =
-      `<div class="loading err"><h2>The Studio couldn’t load the game data</h2><p>${esc(e.message)}</p><p>Start the Studio with <b>Start-Studio</b> (or <code>python3 start-studio.py</code>) and keep that window open.</p></div>`;
+      `<div class="loading err"><h2>The Studio couldn’t load the game data</h2><p>${escapeHtml(e.message)}</p><p>Start the Studio with <b>Start-Studio</b> (or <code>python3 start-studio.py</code>) and keep that window open.</p></div>`;
   }
 }
 addEventListener('load', boot);

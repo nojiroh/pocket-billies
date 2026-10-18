@@ -15,7 +15,7 @@ import { $, $$ } from '../../game/js/util.js';
 import { iconURL, makeCanvas } from '../../game/js/art.js';
 import { TR_CACHE, cleanLook, humanSheet, lookFromOld, trColorsOf, trSliders } from '../../game/js/person-art.js';
 import { drawRig, rigPose } from '../../game/js/skeleton-rig.js';
-import { esc } from './game-stand-ins.js';
+import { escapeHtml } from './game-stand-ins.js';
 import {
   ACTIONS,
   SECTIONS,
@@ -154,7 +154,7 @@ SIDE_LIST_RENDERERS.lq = () => {
       )
       .map(
         ({ l, i }) =>
-          `<button class="lcard ${l.id === cur ? 'on' : ''}" data-act="pickLine" data-id="${l.id}"><span class="lno">${String(D.lines.slice(0, i).reduce((a, x) => a + x.names.length, 0) + 1).padStart(3, '0')}</span>${spritePreviewHTML({ sp: l.id + '0', still: 1, cls: 'thumb' })}<span class="lt"><b>${esc(l.names[0])}</b><small>${esc(l.names.slice(1).join(' → ')) || 'Does not evolve'}</small><span class="row">${[...new Set(l.types.flat())].map(typeChipHTML).join('')}</span></span></button>`
+          `<button class="lcard ${l.id === cur ? 'on' : ''}" data-act="pickLine" data-id="${l.id}"><span class="lno">${String(D.lines.slice(0, i).reduce((a, x) => a + x.names.length, 0) + 1).padStart(3, '0')}</span>${spritePreviewHTML({ sp: l.id + '0', still: 1, cls: 'thumb' })}<span class="lt"><b>${escapeHtml(l.names[0])}</b><small>${escapeHtml(l.names.slice(1).join(' → ')) || 'Does not evolve'}</small><span class="row">${[...new Set(l.types.flat())].map(typeChipHTML).join('')}</span></span></button>`
       )
       .join('') || '<p class="help">No matches.</p>'
   );
@@ -171,7 +171,7 @@ SECTIONS.billionaires = () => {
   const stageTabs = L.names
     .map(
       (n, i) =>
-        `<button class="seg ${i === st ? 'on' : ''}" data-act="stage" data-i="${i}">${STAGE_LABEL[i]}: ${esc(n)}</button>`
+        `<button class="seg ${i === st ? 'on' : ''}" data-act="stage" data-i="${i}">${STAGE_LABEL[i]}: ${escapeHtml(n)}</button>`
     )
     .join('');
   const prev = `<div class="prev-row"><figure>${spritePreviewHTML({ sp, view: 'front', gold, cls: 'big' })}<figcaption>Front (foes, Field Guide)</figcaption></figure><figure>${spritePreviewHTML({ sp, view: 'back', gold, cls: 'big' })}<figcaption>Back (your side in battle)</figcaption></figure></div>
@@ -210,7 +210,7 @@ SECTIONS.billionaires = () => {
     .map(([lv, mv], i) => {
       const M = D.moves[mv];
       return `<tr><td><input type="number" min="1" max="100" data-p="${p}.learn.${i}.0" data-k="num" value="${lv}"></td><td><select data-p="${p}.learn.${i}.1" data-k="sel" data-rr="1">${moveOptions()
-        .map(([k, n]) => `<option value="${k}" ${k === mv ? 'selected' : ''}>${esc(n)}</option>`)
+        .map(([k, n]) => `<option value="${k}" ${k === mv ? 'selected' : ''}>${escapeHtml(n)}</option>`)
         .join(
           ''
         )}</select></td><td>${M ? `${typeChipHTML(M.t)} <small>${M.p ? M.p + ' power' : 'status'}</small>` : '<span class="warn">missing move</span>'}</td><td><button class="x" data-act="learnDel" data-i="${i}" title="Remove">✕</button></td></tr>`;
@@ -225,8 +225,8 @@ SECTIONS.billionaires = () => {
           .map((n, i) => evolutionRowHTML(L, li, i))
           .join('');
   const where = whereCard(L, li);
-  return `<div class="split"><aside class="list-col"><div class="list-head"><input type="search" placeholder="Search name, id or type" data-search="lq" data-list="lineList" value="${esc(studioState.sel.lq || '')}"><button class="btn primary" data-act="newLine">+ New Billie</button></div><div class="llist" id="lineList">${SIDE_LIST_RENDERERS.lq()}</div></aside>
- <div class="ed-col"><div class="ed-head"><div><small class="mono">${esc(L.id)} · ${RARITY_LABELS[L.rar] || L.rar}</small><h2>${esc(L.names.join(' → '))}</h2></div><div class="seg-row"><button class="btn subtle" data-act="lineMove" data-d="-1" title="Earlier in the Field Guide">↑</button><button class="btn subtle" data-act="lineMove" data-d="1" title="Later in the Field Guide">↓</button><button class="btn subtle" data-act="lineDup">Duplicate</button><button class="btn danger" data-act="lineDel">Delete</button></div></div>
+  return `<div class="split"><aside class="list-col"><div class="list-head"><input type="search" placeholder="Search name, id or type" data-search="lq" data-list="lineList" value="${escapeHtml(studioState.sel.lq || '')}"><button class="btn primary" data-act="newLine">+ New Billie</button></div><div class="llist" id="lineList">${SIDE_LIST_RENDERERS.lq()}</div></aside>
+ <div class="ed-col"><div class="ed-head"><div><small class="mono">${escapeHtml(L.id)} · ${RARITY_LABELS[L.rar] || L.rar}</small><h2>${escapeHtml(L.names.join(' → '))}</h2></div><div class="seg-row"><button class="btn subtle" data-act="lineMove" data-d="-1" title="Earlier in the Field Guide">↑</button><button class="btn subtle" data-act="lineMove" data-d="1" title="Later in the Field Guide">↓</button><button class="btn subtle" data-act="lineDup">Duplicate</button><button class="btn danger" data-act="lineDel">Delete</button></div></div>
  <div class="seg-row tabs">${stageTabs}<button class="seg add" data-act="stageAdd" title="Add an evolution stage (copies the last stage’s art)">+ Stage</button>${L.names.length > 1 ? `<button class="seg" data-act="stageDel" title="Remove the last stage">− Last stage</button>` : ''}</div>
  ${card('Sprite', prev, { cls: 'sprite-card' })}${card(`${STAGE_LABEL[st]} details`, ident)}${stats}${card('Moves it learns', learn, { sub: 'Moves unlock when it reaches that level. It keeps the last ' + (D.rules.progression.moveSlots || 4) + ' it learned unless you choose.' })}
  ${card('Evolution', evo)}${where}</div></div>`;
@@ -238,12 +238,12 @@ function statsCard(L, li) {
     rows = L.names
       .map((n, st) => {
         const b = baseStats(L, st);
-        return `<tr><th>${esc(n)}</th>${b.map(v => `<td>${v}</td>`).join('')}<td><b>${b.reduce((a, c) => a + c, 0)}</b></td></tr>`;
+        return `<tr><th>${escapeHtml(n)}</th>${b.map(v => `<td>${v}</td>`).join('')}<td><b>${b.reduce((a, c) => a + c, 0)}</b></td></tr>`;
       })
       .join('');
-  const table = `<table class="tbl stats" id="statTable"><thead><tr><th></th>${stats.map(s => `<th>${esc(s.name)}</th>`).join('')}<th>Total</th></tr></thead><tbody>${rows}</tbody></table>`;
+  const table = `<table class="tbl stats" id="statTable"><thead><tr><th></th>${stats.map(s => `<th>${escapeHtml(s.name)}</th>`).join('')}<th>Total</th></tr></thead><tbody>${rows}</tbody></table>`;
   const body = L.base
-    ? `<p class="help">Exact numbers for each stage. Rarity and the profile below are ignored.</p><table class="tbl stats"><thead><tr><th></th>${stats.map(s => `<th>${esc(s.name)}</th>`).join('')}</tr></thead><tbody>${L.names.map((n, st) => `<tr><th>${esc(n)}</th>${stats.map((s, k) => `<td><input type="number" min="1" max="255" data-p="${p}.base.${st}.${k}" data-k="num" value="${(L.base[st] || [])[k] ?? ''}"></td>`).join('')}</tr>`).join('')}</tbody></table><button class="btn subtle" data-act="baseOff">Go back to a balanced profile</button>`
+    ? `<p class="help">Exact numbers for each stage. Rarity and the profile below are ignored.</p><table class="tbl stats"><thead><tr><th></th>${stats.map(s => `<th>${escapeHtml(s.name)}</th>`).join('')}</tr></thead><tbody>${L.names.map((n, st) => `<tr><th>${escapeHtml(n)}</th>${stats.map((s, k) => `<td><input type="number" min="1" max="255" data-p="${p}.base.${st}.${k}" data-k="num" value="${(L.base[st] || [])[k] ?? ''}"></td>`).join('')}</tr>`).join('')}</tbody></table><button class="btn subtle" data-act="baseOff">Go back to a balanced profile</button>`
     : grid(
         selectField(
           'Rarity',
@@ -324,7 +324,7 @@ function evolutionRowHTML(L, li, i) {
       numberField('Minimum level', `${p}.min`, { min: 1, max: 100, step: 1 }),
     rename: () => numberField('Minimum level', `${p}.min`, { min: 1, max: 100, step: 1 }),
   };
-  return `<div class="evo-row"><span class="evo-a">${esc(L.names[i])} <b>→</b> ${esc(L.names[i + 1])}</span>${grid(selectField('How', `${p}.k`, EVOLUTION_KINDS, { rr: 1 }), (f[k] || f.lvl)())}</div>`;
+  return `<div class="evo-row"><span class="evo-a">${escapeHtml(L.names[i])} <b>→</b> ${escapeHtml(L.names[i + 1])}</span>${grid(selectField('How', `${p}.k`, EVOLUTION_KINDS, { rr: 1 }), (f[k] || f.lvl)())}</div>`;
 }
 function whereCard(L, li) {
   const D = studioState.D,
@@ -334,23 +334,23 @@ function whereCard(L, li) {
     P.list.forEach(([id, w], j) => {
       if (ids.includes(id))
         rows.push(
-          `<tr><td>Wild · ${esc(poolName(pk))}</td><td>${esc(speciesName(id))}</td><td><input type="number" min="1" data-p="pools.${pk}.list.${j}.1" data-k="num" value="${w}"></td><td>${poolPercent(P, j)}</td><td><button class="x" data-act="whereDel" data-kind="pools" data-k="${pk}" data-j="${j}">✕</button></td></tr>`
+          `<tr><td>Wild · ${escapeHtml(poolName(pk))}</td><td>${escapeHtml(speciesName(id))}</td><td><input type="number" min="1" data-p="pools.${pk}.list.${j}.1" data-k="num" value="${w}"></td><td>${poolPercent(P, j)}</td><td><button class="x" data-act="whereDel" data-kind="pools" data-k="${pk}" data-j="${j}">✕</button></td></tr>`
         );
     });
   for (const [ek, E] of Object.entries(D.eggs))
     E.list.forEach(([id, w], j) => {
       if (ids.includes(id))
         rows.push(
-          `<tr><td>Egg · ${ek} km</td><td>${esc(speciesName(id))}</td><td><input type="number" min="1" data-p="eggs.${ek}.list.${j}.1" data-k="num" value="${w}"></td><td>${poolPercent(E, j)}</td><td><button class="x" data-act="whereDel" data-kind="eggs" data-k="${ek}" data-j="${j}">✕</button></td></tr>`
+          `<tr><td>Egg · ${ek} km</td><td>${escapeHtml(speciesName(id))}</td><td><input type="number" min="1" data-p="eggs.${ek}.list.${j}.1" data-k="num" value="${w}"></td><td>${poolPercent(E, j)}</td><td><button class="x" data-act="whereDel" data-kind="eggs" data-k="${ek}" data-j="${j}">✕</button></td></tr>`
         );
     });
   const add = `<div class="seg-row"><select id="whereTo">${Object.keys(D.pools)
-    .map(k => `<option value="pools:${k}">Wild · ${esc(poolName(k))}</option>`)
+    .map(k => `<option value="pools:${k}">Wild · ${escapeHtml(poolName(k))}</option>`)
     .join('')}${Object.keys(D.eggs)
     .map(k => `<option value="eggs:${k}">Egg · ${k} km</option>`)
     .join(
       ''
-    )}</select><select id="whereSp">${ids.map((id, i) => `<option value="${id}">${esc(L.names[i])}</option>`).join('')}</select><button class="btn" data-act="whereAdd">Add</button></div>`;
+    )}</select><select id="whereSp">${ids.map((id, i) => `<option value="${id}">${escapeHtml(L.names[i])}</option>`).join('')}</select><button class="btn" data-act="whereAdd">Add</button></div>`;
   return card(
     'Where to find it',
     `${rows.length ? `<table class="tbl"><thead><tr><th>Where</th><th>Stage</th><th>Weight</th><th>Chance</th><th></th></tr></thead><tbody>${rows.join('')}</tbody></table>` : '<p class="help">Not found in the wild or in eggs yet. Trainers can still use it.</p>'}${add}`,
@@ -444,7 +444,7 @@ ACTIONS.lineDel = async () => {
   const refs = refsTo(ids);
   if (
     !(await ask(
-      `Delete ${esc(L.names.join(' → '))}? ${refs.length ? `It’s used in ${refs.length} place${refs.length > 1 ? 's' : ''} (${esc(refs.slice(0, 4).join('; '))}${refs.length > 4 ? '…' : ''}); those entries are removed too. ` : ''}Its art files stay on disk.`,
+      `Delete ${escapeHtml(L.names.join(' → '))}? ${refs.length ? `It’s used in ${refs.length} place${refs.length > 1 ? 's' : ''} (${escapeHtml(refs.slice(0, 4).join('; '))}${refs.length > 4 ? '…' : ''}); those entries are removed too. ` : ''}Its art files stay on disk.`,
       'Delete'
     ))
   )
@@ -525,7 +525,7 @@ ACTIONS.stageDel = async () => {
     id = L.id + n;
   if (
     !(await ask(
-      `Remove ${esc(L.names[n])}? Anything that uses it is updated. Its art files stay on disk.`,
+      `Remove ${escapeHtml(L.names[n])}? Anything that uses it is updated. Its art files stay on disk.`,
       'Remove stage'
     ))
   )
@@ -598,7 +598,7 @@ ACTIONS.recolor = async d => {
     ['rcHue', 'rcSat', 'rcSkin'].forEach(id => $('#' + id).addEventListener('input', show));
     show();
   }, 30);
-  const ok = await dialog('Recolor ' + esc(speciesName(sp)), html, [
+  const ok = await dialog('Recolor ' + escapeHtml(speciesName(sp)), html, [
     { l: 'Cancel', v: false },
     {
       l: 'Apply',
@@ -617,7 +617,7 @@ ACTIONS.newLine = async () => {
   const D = studioState.D;
   const blanks = Object.keys(BODY_TEMPLATES);
   const html = `<p class="help">Start from a <b>blank body</b> to design a new shape from scratch, or copy an existing Billie’s skeleton, animations and recolored art. Either way it works in the game right away.</p>
- <label class="fld"><span>Start from</span><select id="nwFrom"><optgroup label="Blank body (new shape)">${blanks.map(k => `<option value="blank:${k}">${k} · ${PLAN_INFO[k]}</option>`).join('')}</optgroup><optgroup label="Copy a Billie">${D.lines.map(l => `<option value="${l.id}">${esc(l.names.join(' → '))}</option>`).join('')}</optgroup></select></label><div class="prev-row"><canvas id="nwPrev" class="spr-prev big"></canvas></div>
+ <label class="fld"><span>Start from</span><select id="nwFrom"><optgroup label="Blank body (new shape)">${blanks.map(k => `<option value="blank:${k}">${k} · ${PLAN_INFO[k]}</option>`).join('')}</optgroup><optgroup label="Copy a Billie">${D.lines.map(l => `<option value="${l.id}">${escapeHtml(l.names.join(' → '))}</option>`).join('')}</optgroup></select></label><div class="prev-row"><canvas id="nwPrev" class="spr-prev big"></canvas></div>
  <div class="grid"><label class="fld"><span>Name of the first stage</span><input id="nwName" type="text" maxlength="24" placeholder="Venturo"></label><label class="fld"><span>Type</span><select id="nwType">${typeOptions()
    .map(([k, n]) => `<option>${k}</option>`)
    .join('')}</select></label>
@@ -791,7 +791,7 @@ SIDE_LIST_RENDERERS.mq = () => {
     .sort((a, b) => a[1].t.localeCompare(b[1].t) || a[1].n.localeCompare(b[1].n))
     .map(
       ([k, m]) =>
-        `<button class="lcard slim ${k === cur ? 'on' : ''}" data-act="pickMove" data-id="${k}">${typeChipHTML(m.t)}<span class="lt"><b>${esc(m.n)}</b><small>${m.c === 'X' ? 'Status' : (m.p || 'varies') + ' power'} · ${m.a || 100}%</small></span></button>`
+        `<button class="lcard slim ${k === cur ? 'on' : ''}" data-act="pickMove" data-id="${k}">${typeChipHTML(m.t)}<span class="lt"><b>${escapeHtml(m.n)}</b><small>${m.c === 'X' ? 'Status' : (m.p || 'varies') + ' power'} · ${m.a || 100}%</small></span></button>`
     )
     .join('');
 };
@@ -807,7 +807,7 @@ SECTIONS.moves = () => {
     `<div class="stagebox"><b>${label}</b>${statOptions()
       .map(
         ([s, n]) =>
-          `<label class="mini"><span>${esc(n)}</span><input type="number" min="-6" max="6" step="1" data-p="${base}.${s}" data-k="num" data-opt="1" value="${obj && obj[s] != null ? obj[s] : ''}" placeholder="0"></label>`
+          `<label class="mini"><span>${escapeHtml(n)}</span><input type="number" min="-6" max="6" step="1" data-p="${base}.${s}" data-k="num" data-opt="1" value="${obj && obj[s] != null ? obj[s] : ''}" placeholder="0"></label>`
       )
       .join('')}</div>`;
   const fxB = `<div class="fxgrid">
@@ -828,10 +828,10 @@ SECTIONS.moves = () => {
     { none: 'Fixed power', opt: 1 }
   )}
   ${checkboxField('Blocks one attack (fails twice in a row)', `${p}.fx.protect`, { num: 1 })}${checkboxField('Delayed attack (lands a few turns later)', `${p}.fx.delay`, { num: 1 })}${checkboxField('Doubles each turn it’s used in a row', `${p}.fx.hold`, { num: 1 })}
-  ${checkboxField('Confuses the target (it may hit itself)', `${p}.fx.hype`, { num: 1 })}${checkboxField(`Soak: turns the target ${esc(D.rules.battle.spinType)} type`, `${p}.fx.spin`, { num: 1 })}${checkboxField('Removes the target’s stat boosts', `${p}.fx.wipe`, { num: 1 })}
-  ${checkboxField('Scatters sharp stones on the other side', `${p}.fx.rent`, { num: 1 })}${checkboxField(`Starts a sandstorm (${esc(D.rules.battle.shockType)} moves hit harder)`, `${p}.fx.market`, { num: 1 })}</div>`;
-  return `<div class="split"><aside class="list-col"><div class="list-head"><input type="search" placeholder="Search moves" data-search="mq" data-list="moveList" value="${esc(studioState.sel.mq || '')}"><button class="btn primary" data-act="moveNew">+ New move</button></div><div class="llist" id="moveList">${SIDE_LIST_RENDERERS.mq()}</div></aside>
- <div class="ed-col"><div class="ed-head"><div><small class="mono">${esc(k)}</small><h2>${esc(M.n)}</h2></div><div class="seg-row"><button class="btn" data-act="bpMove" data-id="${esc(k)}" title="Play this move on the battle stage">▶ Preview animation</button><button class="btn subtle" data-act="moveDup">Duplicate</button><button class="btn danger" data-act="moveDel">Delete</button></div></div>
+  ${checkboxField('Confuses the target (it may hit itself)', `${p}.fx.hype`, { num: 1 })}${checkboxField(`Soak: turns the target ${escapeHtml(D.rules.battle.spinType)} type`, `${p}.fx.spin`, { num: 1 })}${checkboxField('Removes the target’s stat boosts', `${p}.fx.wipe`, { num: 1 })}
+  ${checkboxField('Scatters sharp stones on the other side', `${p}.fx.rent`, { num: 1 })}${checkboxField(`Starts a sandstorm (${escapeHtml(D.rules.battle.shockType)} moves hit harder)`, `${p}.fx.market`, { num: 1 })}</div>`;
+  return `<div class="split"><aside class="list-col"><div class="list-head"><input type="search" placeholder="Search moves" data-search="mq" data-list="moveList" value="${escapeHtml(studioState.sel.mq || '')}"><button class="btn primary" data-act="moveNew">+ New move</button></div><div class="llist" id="moveList">${SIDE_LIST_RENDERERS.mq()}</div></aside>
+ <div class="ed-col"><div class="ed-head"><div><small class="mono">${escapeHtml(k)}</small><h2>${escapeHtml(M.n)}</h2></div><div class="seg-row"><button class="btn" data-act="bpMove" data-id="${escapeHtml(k)}" title="Play this move on the battle stage">▶ Preview animation</button><button class="btn subtle" data-act="moveDup">Duplicate</button><button class="btn danger" data-act="moveDel">Delete</button></div></div>
  ${card('Basics', grid(textField('Name', `${p}.n`, { max: 28 }), selectField('Type', `${p}.t`, typeOptions(true), { rr: 1 }), selectField('Kind', `${p}.c`, MOVE_CATEGORIES, { rr: 1 }), numberField('Power', `${p}.p`, { opt: 1, min: 0, max: 250, step: 5, help: M.c === 'X' ? 'Status moves usually have no power.' : '' }), numberField('Accuracy', `${p}.a`, { unit: '%', min: 0, max: 100, step: 5, help: '0 means it never misses.' }), numberField('Priority', `${p}.pr`, { opt: 1, min: -3, max: 5, step: 1, help: 'Higher goes first. Guard uses 4.' })) + textField('Description', `${p}.d`, { area: 1, rows: 2 }))}
  ${card('Effects', fxB, { sub: 'Leave anything empty to switch it off.' })}
  ${card(
@@ -840,7 +840,7 @@ SECTIONS.moves = () => {
      ? `<div class="chips">${users
          .map(
            L =>
-             `<button class="tag" data-act="gotoLine" data-id="${L.id}">${esc(L.names[0])} at Lv ${L.learn
+             `<button class="tag" data-act="gotoLine" data-id="${L.id}">${escapeHtml(L.names[0])} at Lv ${L.learn
                .filter(([, m]) => m === k)
                .map(([lv]) => lv)
                .join(', ')}</button>`
@@ -895,7 +895,7 @@ ACTIONS.moveDel = async () => {
     users = D.lines.filter(L => L.learn.some(([, m]) => m === k));
   if (
     !(await ask(
-      `Delete ${esc(D.moves[k].n)}?${users.length ? ` ${users.length} Billie${users.length > 1 ? 's' : ''} learn it; it’s removed from their lists.` : ''}`,
+      `Delete ${escapeHtml(D.moves[k].n)}?${users.length ? ` ${users.length} Billie${users.length > 1 ? 's' : ''} learn it; it’s removed from their lists.` : ''}`,
       'Delete'
     ))
   )
@@ -951,7 +951,7 @@ SECTIONS.types = () => {
       `<tr><th>${typeChipHTML(a.id)}</th>${T.map(b => {
         const s = a.strong.includes(b.id),
           w = a.weak.includes(b.id);
-        return `<td><button class="mxc ${s ? 's' : w ? 'w' : ''}" data-act="mx" data-a="${i}" data-b="${esc(b.id)}" title="${a.id} → ${b.id}">${s ? '2×' : w ? '½' : '·'}</button></td>`;
+        return `<td><button class="mxc ${s ? 's' : w ? 'w' : ''}" data-act="mx" data-a="${i}" data-b="${escapeHtml(b.id)}" title="${a.id} → ${b.id}">${s ? '2×' : w ? '½' : '·'}</button></td>`;
       }).join('')}</tr>`
   ).join(
     ''
@@ -1003,7 +1003,9 @@ ACTIONS.typeNew = () => {
 ACTIONS.typeDel = async d => {
   const D = studioState.D,
     t = D.types[+d.i];
-  if (!(await ask(`Delete the ${esc(t.id)} type? Moves of this type become Normal and Billies lose it.`, 'Delete')))
+  if (
+    !(await ask(`Delete the ${escapeHtml(t.id)} type? Moves of this type become Normal and Billies lose it.`, 'Delete'))
+  )
     return;
   renameType(t.id, null);
   D.types.splice(+d.i, 1);
@@ -1068,7 +1070,7 @@ SECTIONS.items = () => {
   const items = Object.entries(D.items)
     .map(([k, I]) => {
       const p = `items.${k}`;
-      return `<div class="item-row"><div class="item-ic">${I.img ? `<img src="../game/art/${esc(I.img)}" width="40" height="40" class="pix">` : `<img src="${iconURL('i_' + (I.icon || k), 3)}" class="pix" alt="">`}<small class="mono">${esc(k)}</small></div>
+      return `<div class="item-row"><div class="item-ic">${I.img ? `<img src="../game/art/${escapeHtml(I.img)}" width="40" height="40" class="pix">` : `<img src="${iconURL('i_' + (I.icon || k), 3)}" class="pix" alt="">`}<small class="mono">${escapeHtml(k)}</small></div>
   <div>${grid(
     textField('Name', `${p}.n`, { max: 24 }),
     numberField('Shop price ($)', `${p}.price`, { min: 0, step: 10 }),
@@ -1087,7 +1089,7 @@ SECTIONS.items = () => {
   const coins = Object.entries(D.coins)
     .map(([k, C]) => {
       const p = `coins.${k}`;
-      return `<div class="item-row"><div class="item-ic"><img src="../game/art/coins/${k}_32.png" width="40" height="40" class="pix" onerror="this.style.opacity=.2"><small class="mono">${esc(k)}</small></div><div>${grid(textField('Name', `${p}.n`), numberField('Tax multiplier', `${p}.m`, { min: 0, max: 10, step: 0.1, help: '0 means it always taxes.' }), numberField('Shop price ($)', `${p}.price`, { min: 0, step: 10, help: '0 means it can’t be bought.' }), numberField('Badges needed', `${p}.need`, { opt: 1, min: 0, max: 8, step: 1 }))}${textField('Description', `${p}.d`, { area: 1, rows: 2 })}</div></div>`;
+      return `<div class="item-row"><div class="item-ic"><img src="../game/art/coins/${k}_32.png" width="40" height="40" class="pix" onerror="this.style.opacity=.2"><small class="mono">${escapeHtml(k)}</small></div><div>${grid(textField('Name', `${p}.n`), numberField('Tax multiplier', `${p}.m`, { min: 0, max: 10, step: 0.1, help: '0 means it always taxes.' }), numberField('Shop price ($)', `${p}.price`, { min: 0, step: 10, help: '0 means it can’t be bought.' }), numberField('Badges needed', `${p}.need`, { opt: 1, min: 0, max: 8, step: 1 }))}${textField('Description', `${p}.d`, { area: 1, rows: 2 })}</div></div>`;
     })
     .join('');
   return `<div class="ed-col solo"><div class="ed-head"><h2>Items & coins</h2><button class="btn primary" data-act="itemNew">+ New item</button></div>${card('Items', items, { sub: 'An item can combine effects, like the Full Remedy (cure + heal).' })}${card('Tax coins', coins, { sub: 'Coin art is art/coins/<id>_16.png and _32.png. Replace it under Art files.' })}</div>`;
@@ -1101,7 +1103,8 @@ ACTIONS.itemNew = () => {
 };
 ACTIONS.itemDel = async d => {
   const D = studioState.D;
-  if (!(await ask(`Delete ${esc(D.items[d.k].n)}? It’s removed from shops and starting items.`, 'Delete'))) return;
+  if (!(await ask(`Delete ${escapeHtml(D.items[d.k].n)}? It’s removed from shops and starting items.`, 'Delete')))
+    return;
   delete D.items[d.k];
   Object.values(D.shops || {}).forEach(s => (s.stock = s.stock.filter(w => w.item !== d.k)));
   delete D.rules.start.items[d.k];
@@ -1136,7 +1139,7 @@ SECTIONS.shops = () => {
   const list = ks
     .map(
       x =>
-        `<button class="lcard slim ${x === k ? 'on' : ''}" data-act="pickShop" data-id="${x}"><span class="lt"><b>${esc(S[x].name)}</b><small>${S[x].kind === 'wardrobe' ? 'Boutique · ' : ''}${esc(
+        `<button class="lcard slim ${x === k ? 'on' : ''}" data-act="pickShop" data-id="${x}"><span class="lt"><b>${escapeHtml(S[x].name)}</b><small>${S[x].kind === 'wardrobe' ? 'Boutique · ' : ''}${escapeHtml(
           D.route
             .filter(r => r.shop === x || r.boutique === x)
             .map(r => r.name)
@@ -1159,12 +1162,12 @@ SECTIONS.shops = () => {
         ]
           .map(([v, n]) => `<option value="${v}" ${(isC ? 'coin' : 'item') === v ? 'selected' : ''}>${n}</option>`)
           .join('')}</select></td>
-  <td><select data-p="${p}.stock.${i}.${isC ? 'coin' : 'item'}" data-k="sel" data-rr="1">${(isC ? coinOptions() : itemOptions()).map(([v, n]) => `<option value="${v}" ${v === key ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select></td><td><input type="number" min="0" step="10" data-p="${p}.stock.${i}.price" data-k="num" data-opt="1" value="${w.price ?? ''}" placeholder="${base ?? ''}"></td><td><small>${base != null ? `Shop price: $${base}` : ''}</small></td>
+  <td><select data-p="${p}.stock.${i}.${isC ? 'coin' : 'item'}" data-k="sel" data-rr="1">${(isC ? coinOptions() : itemOptions()).map(([v, n]) => `<option value="${v}" ${v === key ? 'selected' : ''}>${escapeHtml(n)}</option>`).join('')}</select></td><td><input type="number" min="0" step="10" data-p="${p}.stock.${i}.price" data-k="num" data-opt="1" value="${w.price ?? ''}" placeholder="${base ?? ''}"></td><td><small>${base != null ? `Shop price: $${base}` : ''}</small></td>
   <td><button class="x" data-act="stockMove" data-i="${i}" data-d="-1">↑</button><button class="x" data-act="stockDel" data-i="${i}">✕</button></td></tr>`;
       })
       .join('');
   return `<div class="split"><aside class="list-col"><div class="list-head"><button class="btn primary" data-act="shopNew">+ New shop</button><button class="btn" data-act="boutiqueNew">+ New boutique</button></div><div class="llist">${list}</div></aside>
- <div class="ed-col"><div class="ed-head"><div><small class="mono">${esc(k)}</small><h2>${esc(sh.name)}</h2></div><button class="btn danger" data-act="shopDel">Delete</button></div>
+ <div class="ed-col"><div class="ed-head"><div><small class="mono">${escapeHtml(k)}</small><h2>${escapeHtml(sh.name)}</h2></div><button class="btn danger" data-act="shopDel">Delete</button></div>
  ${card('Shop', `<div class="keeper"><div class="person-prev">${personPreviewHTML(sh.who)}</div><div>${grid(textField('Shop name', `${p}.name`), textField('Keeper', `${p}.keeper`), selectField('Keeper’s look', `${p}.who`, peopleOptions(), { rr: 1, help: 'Edit looks under People.' }))}${textField('Greeting', `${p}.greeting`, { area: 1, rows: 2 })}${textField('Thank-you lines (one per line)', '@lines.' + k, { area: 1, rows: 3, ph: 'Leave empty for the default lines.' })}</div></div>`)}
  ${
    wardrobe
@@ -1175,7 +1178,7 @@ SECTIONS.shops = () => {
              .filter(([i, it]) => it.shop === k)
              .map(
                ([i, it]) =>
-                 `<button class="chk-chip" data-act="wdGo" data-k="${esc(i)}">${esc(it.name)} · $${formatThousands(it.price || 0)}</button>`
+                 `<button class="chk-chip" data-act="wdGo" data-k="${escapeHtml(i)}">${escapeHtml(it.name)} · $${formatThousands(it.price || 0)}</button>`
              )
              .join('') || '<span class="help">Nothing yet.</span>'
          }</div>`,
@@ -1191,7 +1194,7 @@ SECTIONS.shops = () => {
  }
  ${card(
    'Where it is',
-   `<p class="help">Open on: ${esc(
+   `<p class="help">Open on: ${escapeHtml(
      D.route
        .filter(r => r.shop === k || r.boutique === k)
        .map(r => r.name)
@@ -1294,7 +1297,8 @@ ACTIONS.shopNew = () => {
 ACTIONS.shopDel = async () => {
   const D = studioState.D,
     k = studioState.sel.shop;
-  if (!(await ask(`Delete ${esc(D.shops[k].name)}? Route stops that used it lose their shop.`, 'Delete'))) return;
+  if (!(await ask(`Delete ${escapeHtml(D.shops[k].name)}? Route stops that used it lose their shop.`, 'Delete')))
+    return;
   delete D.shops[k];
   D.route.forEach(r => {
     if (r.shop === k) delete r.shop;
@@ -1358,7 +1362,7 @@ SECTIONS.people = () => {
   const list = ks
     .map(
       x =>
-        `<button class="lcard slim ${x === k ? 'on' : ''}" data-act="pickPerson" data-id="${x}"><span class="lt"><b>${esc(x)}</b></span></button>`
+        `<button class="lcard slim ${x === k ? 'on' : ''}" data-act="pickPerson" data-id="${x}"><span class="lt"><b>${escapeHtml(x)}</b></span></button>`
     )
     .join('');
   const wear = W.slots
@@ -1377,7 +1381,7 @@ SECTIONS.people = () => {
     })
     .join('');
   return `<div class="split"><aside class="list-col"><div class="list-head"><button class="btn primary" data-act="personNew">+ New look</button></div><div class="llist">${list}</div></aside>
- <div class="ed-col"><div class="ed-head"><div><h2>${esc(k)}</h2><small>${used.length ? 'Used by ' + esc(used.join(', ')) : k === 'boy' || k === 'girl' ? 'Old default player look (players create their own now)' : 'Not used yet'}</small></div>${['boy', 'girl', 'gini'].includes(k) ? '' : '<button class="btn danger" data-act="personDel">Delete</button>'}</div>
+ <div class="ed-col"><div class="ed-head"><div><h2>${escapeHtml(k)}</h2><small>${used.length ? 'Used by ' + escapeHtml(used.join(', ')) : k === 'boy' || k === 'girl' ? 'Old default player look (players create their own now)' : 'Not used yet'}</small></div>${['boy', 'girl', 'gini'].includes(k) ? '' : '<button class="btn danger" data-act="personDel">Delete</button>'}</div>
  ${card(
    'Look',
    `<div class="keeper"><div class="person-prev" id="personPrev">${personPreviewHTML(k)}</div><div>${grid(colorField('Skin', `${p}.skin`), colorField('Hair', `${p}.hair`), colorField('Eyes', `${p}.eyes`))}
@@ -1418,7 +1422,9 @@ ACTIONS.personNew = () => {
 ACTIONS.personDel = async () => {
   const D = studioState.D,
     k = studioState.sel.person;
-  if (!(await ask(`Delete the look “${esc(k)}”? Anyone using it falls back to Professor Hazel’s look.`, 'Delete')))
+  if (
+    !(await ask(`Delete the look “${escapeHtml(k)}”? Anyone using it falls back to Professor Hazel’s look.`, 'Delete'))
+  )
     return;
   delete D.people[k];
   studioState.sel.person = null;
@@ -1436,7 +1442,7 @@ SECTIONS.jobs = () => {
     .map(([k, J]) => {
       const p = `jobs.${k}`,
         kind = J.out[0];
-      return `<div class="item-row"><div class="item-ic"><small class="mono">${esc(k)}</small></div><div>${grid(
+      return `<div class="item-row"><div class="item-ic"><small class="mono">${escapeHtml(k)}</small></div><div>${grid(
         textField('Job title', `${p}.n`),
         textField('Where', `${p}.where`),
         `<label class="fld"><span>Pays in</span><select data-act-sel="jobKind" data-k="${k}">${[
@@ -1492,7 +1498,7 @@ SECTIONS.trainers = () => {
   const list = ks
     .map(
       x =>
-        `<button class="lcard slim ${x === k ? 'on' : ''}" data-act="pickTrainer" data-id="${x}"><span class="lt"><b>${esc(TR[x].name)}</b><small>${TR[x].tutorial ? 'The opening' : esc((D.route[TR[x].node] || {}).name || '?')}${TR[x].seat ? ' · Badge' : ''}${TR[x].blocks ? ' · blocks the road' : ''}</small></span></button>`
+        `<button class="lcard slim ${x === k ? 'on' : ''}" data-act="pickTrainer" data-id="${x}"><span class="lt"><b>${escapeHtml(TR[x].name)}</b><small>${TR[x].tutorial ? 'The opening' : escapeHtml((D.route[TR[x].node] || {}).name || '?')}${TR[x].seat ? ' · Badge' : ''}${TR[x].blocks ? ' · blocks the road' : ''}</small></span></button>`
     )
     .join('');
   if (!T)
@@ -1507,7 +1513,7 @@ SECTIONS.trainers = () => {
   const team = T.team
     .map(
       (e, i) =>
-        `<tr><td><select data-p="${p}.team.${i}.sp" data-k="sel">${spo.map(([v, n]) => `<option value="${v}" ${v === e.sp ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select></td><td><input type="number" min="1" max="100" data-p="${p}.team.${i}.lvl" data-k="num" value="${e.lvl}"></td><td><button class="x" data-act="teamDel" data-i="${i}">✕</button></td></tr>`
+        `<tr><td><select data-p="${p}.team.${i}.sp" data-k="sel">${spo.map(([v, n]) => `<option value="${v}" ${v === e.sp ? 'selected' : ''}>${escapeHtml(n)}</option>`).join('')}</select></td><td><input type="number" min="1" max="100" data-p="${p}.team.${i}.lvl" data-k="num" value="${e.lvl}"></td><td><button class="x" data-act="teamDel" data-i="${i}">✕</button></td></tr>`
     )
     .join('');
   const seat = T.seat
@@ -1526,7 +1532,7 @@ SECTIONS.trainers = () => {
       `<button class="btn danger subtle" data-act="seatOff">Remove the badge</button>`
     : `<p class="help">Beating this trainer doesn’t award a badge.</p><button class="btn" data-act="seatOn">Award a badge</button>`;
   return `<div class="split"><aside class="list-col"><div class="list-head"><button class="btn primary" data-act="trainerNew">+ New trainer</button></div><div class="llist">${list}</div></aside>
- <div class="ed-col"><div class="ed-head"><div><small class="mono">${esc(k)}</small><h2>${esc(T.name)}</h2></div><button class="btn danger" data-act="trainerDel">Delete</button></div>
+ <div class="ed-col"><div class="ed-head"><div><small class="mono">${escapeHtml(k)}</small><h2>${escapeHtml(T.name)}</h2></div><button class="btn danger" data-act="trainerDel">Delete</button></div>
  ${card(
    'Who and where',
    `<div class="keeper"><div class="person-prev">${personPreviewHTML(T.who)}</div><div>${grid(
@@ -1709,7 +1715,7 @@ ACTIONS.trainerDel = async () => {
     T = D.trainers[k];
   if (
     !(await ask(
-      `Delete ${esc(T.name)}?${T.seat ? ' Route gates that need this badge would stay locked, so they are opened.' : ''}`,
+      `Delete ${escapeHtml(T.name)}?${T.seat ? ' Route gates that need this badge would stay locked, so they are opened.' : ''}`,
       'Delete'
     ))
   )

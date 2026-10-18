@@ -10,7 +10,7 @@ import { $, $$, clamp } from '../../game/js/util.js';
 import { hexToRgb, makeCanvas, shadeHex } from '../../game/js/art.js';
 import { ANIM } from '../../game/js/body-plan-animation.js';
 import { drawRig, rigAudit, rigMatrices, rigPose } from '../../game/js/skeleton-rig.js';
-import { esc } from './game-stand-ins.js';
+import { escapeHtml } from './game-stand-ins.js';
 import {
   ask,
   changed,
@@ -392,7 +392,7 @@ async function openSkeleton(sp, view = 'front') {
   }
   const m = $('#modal');
   m.innerHTML = `<div class="pxed skel" role="dialog" aria-modal="true" aria-label="Skeleton builder">
- <header class="px-top"><b>${esc(speciesName(sp))}</b><span class="px-tabs">${['front', 'back'].map(v => `<button class="seg" data-sk="view" data-v="${v}">${v === 'front' ? 'Front view' : 'Back view'}</button>`).join('')}</span>
+ <header class="px-top"><b>${escapeHtml(speciesName(sp))}</b><span class="px-tabs">${['front', 'back'].map(v => `<button class="seg" data-sk="view" data-v="${v}">${v === 'front' ? 'Front view' : 'Back view'}</button>`).join('')}</span>
   <span class="px-tools"><button class="seg" data-sk="anim" title="Play the body plan’s motion">Animate</button>${['attack', 'cast', 'hurt', 'cheer', 'faint'].map(a => `<button class="seg sm" data-sk="act" data-a="${a}">${a}</button>`).join('')}</span>
   <span class="px-tools sk-scrub" title="v35: step the pose on the 12 fps clock. Pause, then scrub a tick at a time; Onion shows the two ticks before as ghosts"><button class="seg" data-sk="grid12">12 fps</button><button class="seg" data-sk="pause">Pause</button><button class="seg sm" data-sk="tick" data-d="-1">◀</button><input type="range" id="skScrub" min="0" max="23" value="0" step="1"><span id="skTick">tick 0</span><button class="seg sm" data-sk="tick" data-d="1">▶</button><button class="seg" data-sk="onion">Onion</button></span>
   <span class="px-tools"><button class="seg" data-sk="zoom" data-z="-.5">−</button><span id="skZoom"></span><button class="seg" data-sk="zoom" data-z=".5">+</button></span>
@@ -704,7 +704,7 @@ function skeletonTree() {
     const role = b.a || b.n,
       anim = roles.includes(role);
     return (
-      `<button class="sk-row ${b.n === skeletonEditor.sel ? 'on' : ''}" data-sk="sel" data-n="${esc(b.n)}" style="padding-left:${8 + d * 14}px"><span class="sk-dot ${b.i < 0 ? 'piv' : ''}"></span><b>${esc(b.n)}</b>${b.a && b.a !== b.n ? `<small>moves as ${esc(b.a)}</small>` : anim ? '' : '<small>still</small>'}${skeletonEditor.view === 'back' && b.hideB ? '<small>hidden</small>' : ''}</button>` +
+      `<button class="sk-row ${b.n === skeletonEditor.sel ? 'on' : ''}" data-sk="sel" data-n="${escapeHtml(b.n)}" style="padding-left:${8 + d * 14}px"><span class="sk-dot ${b.i < 0 ? 'piv' : ''}"></span><b>${escapeHtml(b.n)}</b>${b.a && b.a !== b.n ? `<small>moves as ${escapeHtml(b.a)}</small>` : anim ? '' : '<small>still</small>'}${skeletonEditor.view === 'back' && b.hideB ? '<small>hidden</small>' : ''}</button>` +
       (kids[b.n] || []).map(c => row(c, d + 1)).join('')
     );
   };
@@ -738,10 +738,10 @@ function skeletonSidePanel() {
       img = meta.imgs[b.i],
       users = b.i >= 0 ? bonesUsingImage(meta, b.i) : [];
     const variants = img ? Object.keys(img.f) : [];
-    h += `<div class="px-sec"><h4>Part “${esc(b.n)}”</h4>
-   <label class="fld"><span>Name</span><input type="text" id="skName" value="${esc(b.n)}" maxlength="16"></label>
-   <label class="fld"><span>Hangs from</span><select id="skPar">${parents.map(([v, n]) => `<option value="${esc(v)}" ${(b.par || 'root') === v ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select></label>
-   <label class="fld"><span>Moves like</span><select id="skRole"><option value="">${roles.includes(b.n) ? `Its own name (${esc(b.n)})` : 'Nothing: follows its parent'}</option>${roles
+    h += `<div class="px-sec"><h4>Part “${escapeHtml(b.n)}”</h4>
+   <label class="fld"><span>Name</span><input type="text" id="skName" value="${escapeHtml(b.n)}" maxlength="16"></label>
+   <label class="fld"><span>Hangs from</span><select id="skPar">${parents.map(([v, n]) => `<option value="${escapeHtml(v)}" ${(b.par || 'root') === v ? 'selected' : ''}>${escapeHtml(n)}</option>`).join('')}</select></label>
+   <label class="fld"><span>Moves like</span><select id="skRole"><option value="">${roles.includes(b.n) ? `Its own name (${escapeHtml(b.n)})` : 'Nothing: follows its parent'}</option>${roles
      .filter(r => r !== b.n)
      .map(
        r =>
@@ -755,7 +755,7 @@ function skeletonSidePanel() {
    <div class="seg-row"><button class="btn sm" data-sk="dup">Duplicate</button><button class="btn sm" data-sk="mirror">Mirror copy</button><button class="btn sm" data-sk="child">+ Child part</button><button class="btn sm danger" data-sk="del">Delete</button></div></div>`;
     if (b.i >= 0 && img) {
       const r = img.f.idle || img.f.main || Object.values(img.f)[0];
-      h += `<div class="px-sec"><h4>Picture</h4><div class="sk-pic"><canvas id="skPic"></canvas><div><small class="mono">${r[2]}×${r[3]} px · ${variants.length > 1 ? variants.length + ' expressions' : 'one picture'}</small>${users.length > 1 ? `<p class="help">Shared with ${esc(users.filter(n => n !== b.n).join(', '))}. Repainting changes all of them.</p><button class="btn sm" data-sk="unshare">Give it its own copy</button>` : ''}</div></div>
+      h += `<div class="px-sec"><h4>Picture</h4><div class="sk-pic"><canvas id="skPic"></canvas><div><small class="mono">${r[2]}×${r[3]} px · ${variants.length > 1 ? variants.length + ' expressions' : 'one picture'}</small>${users.length > 1 ? `<p class="help">Shared with ${escapeHtml(users.filter(n => n !== b.n).join(', '))}. Repainting changes all of them.</p><button class="btn sm" data-sk="unshare">Give it its own copy</button>` : ''}</div></div>
    <div class="grid sk-grid">${numberField('Picture offset X', `${base}.imgs.${b.i}.ox`, { step: 1 })}${numberField('Picture offset Y', `${base}.imgs.${b.i}.oy`, { step: 1 })}</div>
    <div class="seg-row"><button class="btn sm primary" data-sk="paintPart">Paint this part</button><button class="btn sm" data-sk="replace">Replace from PNG…</button><button class="btn sm" data-sk="resize">Resize…</button></div>
    ${checkboxField('Has expressions (blink, happy, hurt, shout)', `${p}.face`, { num: 1 })}${b.face && variants.length < 5 ? `<button class="btn sm" data-sk="faces">Add the missing expression pictures</button>` : ''}</div>`;
@@ -779,7 +779,7 @@ function skeletonSidePanel() {
             }</li>`
         )
         .join('');
-      h += `<div class="px-sec"><h4>Motion check</h4><p class="help">${au.still.length ? `<b>Never moves:</b> ${esc(au.still.join(', '))}. Give each a role below, or hang it from a part that moves.` : 'Every part moves in at least one pose.'}</p><ul class="sk-audit">${top}</ul></div>`;
+      h += `<div class="px-sec"><h4>Motion check</h4><p class="help">${au.still.length ? `<b>Never moves:</b> ${escapeHtml(au.still.join(', '))}. Give each a role below, or hang it from a part that moves.` : 'Every part moves in at least one pose.'}</p><ul class="sk-audit">${top}</ul></div>`;
     }
   } catch (e) {}
   h += `<div class="px-sec"><h4>Body plan</h4><label class="fld"><span>How it moves</span><select id="skPlan">${Object.keys(
@@ -788,7 +788,7 @@ function skeletonSidePanel() {
     .map(k => `<option value="${k}" ${meta.plan === k ? 'selected' : ''}>${k} · ${PLAN_INFO[k] || ''}</option>`)
     .join('')}</select></label>
   ${(PLAN_MOTION_FIELDS[meta.plan] || []).map(([k, l, mn, mx, st]) => numberField(l, `${base}.q.${k}`, { min: mn, max: mx, step: st })).join('')}
-  <p class="help">Parts animate when their name or “Moves like” matches one of: ${roles.map(esc).join(', ')}.</p>
+  <p class="help">Parts animate when their name or “Moves like” matches one of: ${roles.map(escapeHtml).join(', ')}.</p>
   <button class="btn sm" data-sk="copyView">Copy this layout to the ${skeletonEditor.view === 'front' ? 'back' : 'front'} view</button></div>`;
   side.innerHTML = h;
   const pc = $('#skPic');
@@ -1110,7 +1110,7 @@ function skeletonClick(ev) {
     add: async () => {
       const r = await dialog(
         'New blank part',
-        `<div class="grid"><label class="fld"><span>Name</span><input id="npName" value="part" maxlength="16"></label><label class="fld"><span>Width (px)</span><input id="npW" type="number" value="${Math.round(10 * meta.k)}" min="2" max="200"></label><label class="fld"><span>Height (px)</span><input id="npH" type="number" value="${Math.round(10 * meta.k)}" min="2" max="200"></label></div><p class="help">It hangs from ${esc(skeletonEditor.sel || 'the ground')}. You’ll paint it next.</p>`,
+        `<div class="grid"><label class="fld"><span>Name</span><input id="npName" value="part" maxlength="16"></label><label class="fld"><span>Width (px)</span><input id="npW" type="number" value="${Math.round(10 * meta.k)}" min="2" max="200"></label><label class="fld"><span>Height (px)</span><input id="npH" type="number" value="${Math.round(10 * meta.k)}" min="2" max="200"></label></div><p class="help">It hangs from ${escapeHtml(skeletonEditor.sel || 'the ground')}. You’ll paint it next.</p>`,
         [
           { l: 'Cancel', v: false },
           {
@@ -1172,7 +1172,10 @@ function skeletonClick(ev) {
     del: async () => {
       if (!b) return;
       if (
-        !(await ask(`Delete “${esc(b.n)}”? Parts hanging from it move up to ${esc(b.par || 'the ground')}.`, 'Delete'))
+        !(await ask(
+          `Delete “${escapeHtml(b.n)}”? Parts hanging from it move up to ${escapeHtml(b.par || 'the ground')}.`,
+          'Delete'
+        ))
       )
         return;
       meta.bones

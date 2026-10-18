@@ -8,7 +8,7 @@
 import { expose } from './test-globals.js';
 import { STEST, STORY, sceneIdAt, storyFlags, toast } from './hooks.js';
 import { ROUTE, TRAINERS, isTown, trainersAt } from './game-data.js';
-import { activeBattle, esc, save, saveData, uiState } from './game-state.js';
+import { activeBattle, escapeHtml, save, saveData, uiState } from './game-state.js';
 import { artURL } from './art.js';
 import { flagPicturePath, mapById, walkView } from './walk-view.js';
 import { sfx } from './sound.js';
@@ -125,8 +125,8 @@ function postcardShow(n, first) {
   el.className = 'pcard-wrap' + (first ? ' first' : '');
   el.setAttribute('role', 'dialog');
   el.setAttribute('aria-label', 'Postcard from ' + r.name);
-  el.innerHTML = `<div class="pcard"><div class="pc-pic"><img alt="" src="${artURL(pcImg(n))}"><div class="pc-greet"><small>Greetings from</small><b>${esc(r.name)}</b></div></div>
-  <div class="pc-stamp"><img alt="" src="${artURL(pcFlag(n))}"><span>${esc(r.name.replace(/ (Town|City)$/, ''))}</span></div>${first ? '<p class="pc-note">A postcard for your Guide.</p>' : ''}</div>`;
+  el.innerHTML = `<div class="pcard"><div class="pc-pic"><img alt="" src="${artURL(pcImg(n))}"><div class="pc-greet"><small>Greetings from</small><b>${escapeHtml(r.name)}</b></div></div>
+  <div class="pc-stamp"><img alt="" src="${artURL(pcFlag(n))}"><span>${escapeHtml(r.name.replace(/ (Town|City)$/, ''))}</span></div>${first ? '<p class="pc-note">A postcard for your Guide.</p>' : ''}</div>`;
   document.body.appendChild(el);
   requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('in')));
   let done = false;
@@ -153,7 +153,7 @@ function postcardStamp(n) {
   if (old) old.remove();
   const el = document.createElement('div');
   el.className = 'pc-mini';
-  el.innerHTML = `<div class="pc-stamp sm"><img alt="" src="${artURL(pcFlag(n))}"></div><span>${esc(r.name)}</span>`;
+  el.innerHTML = `<div class="pc-stamp sm"><img alt="" src="${artURL(pcFlag(n))}"></div><span>${escapeHtml(r.name)}</span>`;
   document.body.appendChild(el);
   requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('in')));
   setTimeout(() => {
@@ -169,7 +169,7 @@ export function renderPostcards() {
   const cards = T.map(i => {
     const r = ROUTE[i];
     return C[r.id]
-      ? `<button class="pc-thumb" data-a="pcopen" data-n="${i}"><img alt="" loading="lazy" src="${artURL(pcImg(i))}"><span>${esc(r.name)}</span></button>`
+      ? `<button class="pc-thumb" data-a="pcopen" data-n="${i}"><img alt="" loading="lazy" src="${artURL(pcImg(i))}"><span>${escapeHtml(r.name)}</span></button>`
       : `<div class="pc-thumb none"><i>?</i><span>Not been yet</span></div>`;
   }).join('');
   return `<p class="note pc-count">${got} of ${T.length} postcards. Every town you walk into sends you one.</p><div class="pc-grid">${cards}</div>`;

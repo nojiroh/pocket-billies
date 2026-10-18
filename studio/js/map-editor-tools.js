@@ -13,7 +13,7 @@ import { expose } from '../../game/js/test-globals.js';
 import { previewViewport, provide } from '../../game/js/hooks.js';
 import { $ } from '../../game/js/util.js';
 import { walkView } from '../../game/js/walk-view.js';
-import { esc } from './game-stand-ins.js';
+import { escapeHtml } from './game-stand-ins.js';
 import { ACTIONS, ask, changed, clone, commit, dialog, render, studioState, toast, uniqueKey } from './studio-app.js';
 import { currentMap, drawEditorMap, mapEditor, paintMapTile, propAtPointer, sceneryCatalog } from './map-editor.js';
 /* eslint-disable no-func-assign */
@@ -321,7 +321,7 @@ ACTIONS.scxSaveBlock = async () => {
   if (L.length < 2) return;
   const r = await dialog(
     'Save a building block',
-    `<label class="fld"><span>Name</span><input id="blkName" value="${esc((sceneryCatalog().props[L[0].k] || {}).name || 'Block')} group"></label><p class="help">It keeps the props and where they stand relative to each other. Stamp it in any scene with “Stamp a block”.</p>`,
+    `<label class="fld"><span>Name</span><input id="blkName" value="${escapeHtml((sceneryCatalog().props[L[0].k] || {}).name || 'Block')} group"></label><p class="help">It keeps the props and where they stand relative to each other. Stamp it in any scene with “Stamp a block”.</p>`,
     'Save'
   );
   if (!r) return;
@@ -371,7 +371,7 @@ function stampBlockAt(sc, b, x, z, mirror) {
 function blocksToolBarHTML() {
   const B = sceneryBlocks(),
     ks = Object.keys(B);
-  return `<div class="sc-hbar">${ks.length ? ks.map(k => `<button class="seg ${mapEditor.block === k ? 'on' : ''}" data-act="scxBlock" data-k="${esc(k)}">${esc(B[k].name || k)} <small>(${B[k].props.length})</small></button>`).join('') : '<span class="help">No blocks yet. Select some props (shift-drag with “Place & move props”) and save them as a block.</span>'}${mapEditor.block && B[mapEditor.block] ? `<button class="btn sm danger subtle" data-act="scxBlockDel">Delete “${esc(B[mapEditor.block].name)}”</button>` : ''}</div>`;
+  return `<div class="sc-hbar">${ks.length ? ks.map(k => `<button class="seg ${mapEditor.block === k ? 'on' : ''}" data-act="scxBlock" data-k="${escapeHtml(k)}">${escapeHtml(B[k].name || k)} <small>(${B[k].props.length})</small></button>`).join('') : '<span class="help">No blocks yet. Select some props (shift-drag with “Place & move props”) and save them as a block.</span>'}${mapEditor.block && B[mapEditor.block] ? `<button class="btn sm danger subtle" data-act="scxBlockDel">Delete “${escapeHtml(B[mapEditor.block].name)}”</button>` : ''}</div>`;
 }
 ACTIONS.scxBlock = d => {
   mapEditor.block = d.k;
@@ -471,7 +471,7 @@ function scatterToolBarHTML() {
     k = mapEditor.prop,
     nm = k && C.props[k] ? C.props[k].name || k : null,
     kinds = scatterKinds();
-  return `<div class="sc-hbar"><span class="help">${nm ? `Scattering <b>${esc(nm)}</b>${(mapEditor.scat.mix || mapEditor.scat.fam) && kinds.length > 1 ? ` and ${kinds.length - 1} more like it` : ''}` : 'Pick a prop in the Props card'}</span><label class="fld chk"><input type="checkbox" id="scxMix" ${mapEditor.scat.mix ? 'checked' : ''}><span>Mix its whole group</span></label>${k && C.props[k] && C.props[k].family ? `<label class="fld chk" title="Every nature prop of this family that grows on the ground under the brush (flowers, ground cover, shrubs, trees, water plants, rocks, seasons)"><input type="checkbox" id="scxFam" ${mapEditor.scat.fam ? 'checked' : ''}><span>Whole ${esc(C.props[k].family)} family, by ground</span></label>` : ''}
+  return `<div class="sc-hbar"><span class="help">${nm ? `Scattering <b>${escapeHtml(nm)}</b>${(mapEditor.scat.mix || mapEditor.scat.fam) && kinds.length > 1 ? ` and ${kinds.length - 1} more like it` : ''}` : 'Pick a prop in the Props card'}</span><label class="fld chk"><input type="checkbox" id="scxMix" ${mapEditor.scat.mix ? 'checked' : ''}><span>Mix its whole group</span></label>${k && C.props[k] && C.props[k].family ? `<label class="fld chk" title="Every nature prop of this family that grows on the ground under the brush (flowers, ground cover, shrubs, trees, water plants, rocks, seasons)"><input type="checkbox" id="scxFam" ${mapEditor.scat.fam ? 'checked' : ''}><span>Whole ${escapeHtml(C.props[k].family)} family, by ground</span></label>` : ''}
   <label class="mp-size"><span>Density</span><input type="range" id="scxDens" min=".1" max="2" step=".1" value="${mapEditor.scat.dens}"></label><label class="mp-size"><span>Size variety</span><input type="range" id="scxVary" min="0" max=".5" step=".02" value="${mapEditor.scat.vary}"></label></div>`;
 }
 document.addEventListener('input', ev => {

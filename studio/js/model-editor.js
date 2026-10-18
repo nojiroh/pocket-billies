@@ -12,7 +12,7 @@ import { provide } from '../../game/js/hooks.js';
 import { makeCanvas } from '../../game/js/art.js';
 import { artImage } from '../../game/js/walk-view.js';
 import { PROP_MODEL_TEXTURES, invalidatePropModel, loadPropModelRecipe } from '../../game/js/prop-models.js';
-import { esc } from './game-stand-ins.js';
+import { escapeHtml } from './game-stand-ins.js';
 import {
   ACTIONS,
   ask,
@@ -90,10 +90,10 @@ function modelEditorHTML(k) {
     setTimeout(() => {
       if (mapEditor.ped === k && modelRecipeOf(M)) render();
     }, 400);
-    return `${head}<p class="help">Loading ${esc(String(M.vox))}…</p>`;
+    return `${head}<p class="help">Loading ${escapeHtml(String(M.vox))}…</p>`;
   }
   if (rec.kind === 'mesh')
-    return `<h4>3D model</h4><p class="help">A low-poly model painted with the buildings’ 32 px textures${rec.about ? ' (' + esc(rec.about) + ')' : ''}. A tool makes its shape, so it isn’t edited here; the turntable shows it as the game draws it.</p>`;
+    return `<h4>3D model</h4><p class="help">A low-poly model painted with the buildings’ 32 px textures${rec.about ? ' (' + escapeHtml(rec.about) + ')' : ''}. A tool makes its shape, so it isn’t edited here; the turntable shows it as the game draws it.</p>`;
   if (typeof M.vox === 'string') ownModelRecipe(M); /* edited in the catalogue entry from here on */
   const L = rec.layers || [],
     names = Object.fromEntries(MODEL_LAYER_KINDS),
@@ -102,7 +102,7 @@ function modelEditorHTML(k) {
     const p = `${b}.layers.${i}`,
       on = modelEditor.sel === i,
       kind = l.k || 'box';
-    const title = `<div class="vxe-lh"><b>${i + 1}. ${esc(l.name || names[kind] || kind)}</b><small>${esc(names[kind] || kind)}</small><span class="grow"></span>
+    const title = `<div class="vxe-lh"><b>${i + 1}. ${escapeHtml(l.name || names[kind] || kind)}</b><small>${escapeHtml(names[kind] || kind)}</small><span class="grow"></span>
    <button class="btn sm subtle" data-act="vxeSel" data-i="${i}">${on ? 'Close' : 'Edit'}</button><button class="btn sm subtle" data-act="vxeMove" data-i="${i}" data-d="-1" title="Up">↑</button><button class="btn sm subtle" data-act="vxeMove" data-i="${i}" data-d="1" title="Down">↓</button><button class="btn sm subtle" data-act="vxeDup" data-i="${i}" title="Duplicate">⧉</button><button class="btn sm danger subtle" data-act="vxeDel" data-i="${i}">Remove</button></div>`;
     if (!on) return `<div class="vxe-layer ${l.hide ? 'off' : ''}">${title}</div>`;
     const pos = `${rangeField('Across (m)', `${p}.x`, { min: -3, max: 3, step: 0.02, def: 0 })}${rangeField('Depth (m, + is behind)', `${p}.y`, { min: -3, max: 3, step: 0.02, def: 0 })}${rangeField('Up (m)', `${p}.z`, { min: 0, max: 6, step: 0.02, def: 0 })}`;
@@ -123,7 +123,7 @@ function modelEditorHTML(k) {
         checkboxField('Mirrored', `${p}.flip`, { num: 1 })
       )}<div class="grid">${pos}</div><div class="seg-row"><button class="btn sm subtle" data-act="vxeImgPick" data-i="${i}">Pick a PNG…</button></div>`;
     else if (kind === 'raw')
-      body = `<p class="help">${esc(String(l.n || '?'))} voxels imported from ${esc(l.src || 'a .vox')}. Move it with the sliders; its colours are its own.</p><div class="grid">${pos}</div>`;
+      body = `<p class="help">${escapeHtml(String(l.n || '?'))} voxels imported from ${escapeHtml(l.src || 'a .vox')}. Move it with the sliders; its colours are its own.</p><div class="grid">${pos}</div>`;
     else {
       const size =
         kind === 'box'

@@ -9,7 +9,7 @@ import { expose } from './test-globals.js';
 import { STEST, closeModal, modal, postProcess, provide, render } from './hooks.js';
 import { $, clamp } from './util.js';
 import { PLACE, RULES, SP, TRAINERS, trainersAt } from './game-data.js';
-import { activeBattle, esc, healAll, reducedMotion, save, saveData, today, uiState } from './game-state.js';
+import { activeBattle, escapeHtml, healAll, reducedMotion, save, saveData, today, uiState } from './game-state.js';
 import { dressingRoom } from './dressing-room.js';
 import { baseMapId, walkView, walkablePointNear } from './walk-view.js';
 import { gpuState } from './engine/webgl.js';
@@ -239,7 +239,7 @@ export function legendCheck() {
     save();
     modal({
       title: L.title,
-      html: `<p>${esc(L.text)}</p><p class="note">${esc(L.line)}</p>`,
+      html: `<p>${escapeHtml(L.text)}</p><p class="note">${escapeHtml(L.line)}</p>`,
       btns: [
         {
           l: 'Face it',
@@ -436,9 +436,9 @@ async function storyEnding(T) {
   }
   if (E)
     modal({
-      title: esc(E.title),
+      title: escapeHtml(E.title),
       cls: 'clue-sheet',
-      html: `<p>${esc(E.text)}</p><p class="note">Thank you for playing Pocket Billies. Every place, trainer and Billie is still out there: the road goes on.</p>`,
+      html: `<p>${escapeHtml(E.text)}</p><p class="note">Thank you for playing Pocket Billies. Every place, trainer and Billie is still out there: the road goes on.</p>`,
       btns: [{ l: 'Keep walking', c: 'dark', f: closeModal }],
     });
   save();

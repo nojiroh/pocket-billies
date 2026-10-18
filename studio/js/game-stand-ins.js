@@ -12,7 +12,7 @@ expose({
   TC: [() => TC],
   TYPEFX: [() => TYPEFX],
   activeBattle: [() => activeBattle, v => ((activeBattle = v), provide({ activeBattle }))],
-  esc: [() => esc],
+  escapeHtml: [() => escapeHtml],
   liveMap: [() => liveMap],
   reducedMotion: [() => reducedMotion, v => ((reducedMotion = v), provide({ reducedMotion }))],
   saveData: [() => saveData, v => ((saveData = v), provide({ saveData }))],
@@ -24,7 +24,7 @@ var saveData = { preferences: {}, gender: 'boy', avatar: null },
   activeBattle = null,
   reducedMotion = false;
 provide({ activeBattle, reducedMotion, saveData, uiState }); /* to-module */
-export const esc = s =>
+export const escapeHtml = s =>
   String(s == null ? '' : s).replace(
     /[&<>"']/g,
     c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]

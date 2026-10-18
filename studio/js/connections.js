@@ -12,7 +12,7 @@ import { expose } from '../../game/js/test-globals.js';
 import { provide } from '../../game/js/hooks.js';
 import { $ } from '../../game/js/util.js';
 import { ENGINE_DEFAULTS, ENGINE_PRESETS, ENGINE_SPEC } from '../../game/js/engine/settings.js';
-import { esc } from './game-stand-ins.js';
+import { escapeHtml } from './game-stand-ins.js';
 import { ACTIONS, openSection, render, setRender, speciesName, studioState } from './studio-app.js';
 import { selectedLineIndex } from './data-editors.js';
 import { currentMapId, mapEditor } from './map-editor.js';
@@ -486,7 +486,7 @@ function dialConnections(gk) {
 }
 /* ---- drawing ---- */
 const connectionNodeHTML = (n, cls = '') =>
-  `<button class="lk-n k-${n.kind} ${cls} ${n.on ? 'on' : ''}" ${n.go ? '' : 'disabled'} data-lk="${esc(n.kind + ':' + n.id)}"><b>${esc(n.label)}</b>${n.sub ? `<small>${esc(n.sub)}</small>` : ''}</button>`;
+  `<button class="lk-n k-${n.kind} ${cls} ${n.on ? 'on' : ''}" ${n.go ? '' : 'disabled'} data-lk="${escapeHtml(n.kind + ':' + n.id)}"><b>${escapeHtml(n.label)}</b>${n.sub ? `<small>${escapeHtml(n.sub)}</small>` : ''}</button>`;
 function connectionMapHTML(left, mid, right, lt, rt) {
   return `<div class="lk-map"><svg class="lk-svg"></svg><div class="lk-col lk-l"><h5>${lt}</h5>${left.length ? left.map(n => connectionNodeHTML(n)).join('') : '<p class="help">Nothing</p>'}</div><div class="lk-col lk-m">${connectionNodeHTML(mid, 'lk-me')}</div><div class="lk-col lk-r"><h5>${rt}</h5>${right.length ? right.map(n => connectionNodeHTML(n)).join('') : '<p class="help">Nothing</p>'}</div></div>`;
 }
@@ -503,20 +503,20 @@ function connectionsHTML() {
     const I = dialConnections(cur.id),
       me = connectionNode('dial', cur.id);
     keep([...I.chain, ...I.scenes, ...I.pre, ...I.needs, ...I.feeds]);
-    return `<h4>${esc(me.label)}</h4><p class="help">Where its value comes from. The last one that sets it wins: a place’s own look beats the whole game, which beats the built-in value.</p>
+    return `<h4>${escapeHtml(me.label)}</h4><p class="help">Where its value comes from. The last one that sets it wins: a place’s own look beats the whole game, which beats the built-in value.</p>
   <div class="lk-chain">${I.chain.map(n => connectionNodeHTML(n)).join('<span class="lk-arrow">→</span>')}${I.scenes.length ? `<span class="lk-arrow">→</span><div class="lk-stack">${I.scenes.map(n => connectionNodeHTML(n)).join('')}</div>` : ''}</div>
   ${I.pre.length ? `<h5>Looks that change it</h5><div class="lk-row">${I.pre.map(n => connectionNodeHTML(n)).join('')}</div>` : ''}
   ${connectionMapHTML(I.needs, me, I.feeds, 'It needs', 'Only matters when it’s on')}
-  ${I.qoff ? `<p class="lk-q"><b>Automatic quality</b> turns this off on slow devices: ${esc(I.qoff)}. Your Studio preview always shows it at full quality.</p>` : ''}`;
+  ${I.qoff ? `<p class="lk-q"><b>Automatic quality</b> turns this off on slow devices: ${escapeHtml(I.qoff)}. Your Studio preview always shows it at full quality.</p>` : ''}`;
   }
   if (cur.kind === 'field') {
     const o = recordOwningPath(cur.id);
-    return `<h4>${esc(cur.id)}</h4><p class="help">This setting belongs to ${o ? esc(connectionNode(o[0], o[1]).label) : 'the game'}. Pick a whole thing (a Billy, a move, a place) to see what it is connected to, or use Find (Ctrl+K).</p>`;
+    return `<h4>${escapeHtml(cur.id)}</h4><p class="help">This setting belongs to ${o ? escapeHtml(connectionNode(o[0], o[1]).label) : 'the game'}. Pick a whole thing (a Billy, a move, a place) to see what it is connected to, or use Find (Ctrl+K).</p>`;
   }
   const me = connectionNode(cur.kind, cur.id),
     G = connectionGraph(cur);
   keep([me, ...G.uses, ...G.usedBy]);
-  return `<h4>${esc(me.label)}</h4>${connectionMapHTML(G.uses, me, G.usedBy, 'It uses', 'Used by')}<p class="help">Found by looking for its id everywhere in the game data. Click a box to open it.</p>`;
+  return `<h4>${escapeHtml(me.label)}</h4>${connectionMapHTML(G.uses, me, G.usedBy, 'It uses', 'Used by')}<p class="help">Found by looking for its id everywhere in the game data. Click a box to open it.</p>`;
 }
 function drawConnectionLines() {
   const map = $('#lnkB .lk-map');
@@ -569,7 +569,7 @@ function refreshConnections() {
     try {
       return connectionsHTML();
     } catch (e) {
-      return `<p class="help">Couldn’t work out the connections: ${esc(e.message)}</p>`;
+      return `<p class="help">Couldn’t work out the connections: ${escapeHtml(e.message)}</p>`;
     }
   })();
   requestAnimationFrame(drawConnectionLines);

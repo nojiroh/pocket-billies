@@ -42,7 +42,7 @@ import {
 } from '../../game/js/walk-view.js';
 import { environment } from '../../game/js/environment.js';
 import { WALL_MATERIALS, mountWalkView, rawHeightAt, walkRenderer } from '../../game/js/walk-view-gl.js';
-import { esc } from './game-stand-ins.js';
+import { escapeHtml } from './game-stand-ins.js';
 import {
   ACTIONS,
   SECTIONS,
@@ -208,13 +208,13 @@ SECTIONS.scenes = () => {
       s.kind || (s.test ? 'test' : s.room ? 'room' : locationsUsingMap(k).some(([r]) => r.town) ? 'town' : 'route'),
     KN = { town: 'Town', route: 'Route', room: 'Room', test: 'Test' };
   const row = ([k, s]) =>
-      `<button class="lrow ${k === id ? 'on' : ''}" data-act="scPick" data-k="${esc(k)}"><b>${esc(s.name || k)} <span class="kind-badge k-${kindOf([k, s])}">${KN[kindOf([k, s])] || '?'}</span></b><small>${
+      `<button class="lrow ${k === id ? 'on' : ''}" data-act="scPick" data-k="${escapeHtml(k)}"><b>${escapeHtml(s.name || k)} <span class="kind-badge k-${kindOf([k, s])}">${KN[kindOf([k, s])] || '?'}</span></b><small>${
         s.test
           ? `Test scene · ${(s.checks || []).length} checks`
           : s.room
-            ? `Inside a ${esc(s.building || s.room)}`
+            ? `Inside a ${escapeHtml(s.building || s.room)}`
             : locationsUsingMap(k)
-                .map(([r, i]) => `${i + 1}. ${esc(r.name)}`)
+                .map(([r, i]) => `${i + 1}. ${escapeHtml(r.name)}`)
                 .join(', ') || 'Not used by a stop'
       }</small></button>`,
     all = Object.entries(D.scenes || {});
@@ -247,7 +247,7 @@ SECTIONS.scenes = () => {
   const terr = Object.entries(T)
     .map(
       ([ch, t]) =>
-        `<button class="sc-ter ${mapEditor.ter === ch ? 'on' : ''}" data-act="scTer" data-c="${esc(ch)}" title="${esc(t.name)} (${esc(ch)})"><canvas data-tile="${esc(ch)}" width="16" height="16"></canvas><small>${esc(t.name)}</small></button>`
+        `<button class="sc-ter ${mapEditor.ter === ch ? 'on' : ''}" data-act="scTer" data-c="${escapeHtml(ch)}" title="${escapeHtml(t.name)} (${escapeHtml(ch)})"><canvas data-tile="${escapeHtml(ch)}" width="16" height="16"></canvas><small>${escapeHtml(t.name)}</small></button>`
     )
     .join('');
   const tools = [
@@ -272,7 +272,7 @@ SECTIONS.scenes = () => {
     .filter(([k, P]) => !mapEditor.tag || (P.tags || []).includes(mapEditor.tag))
     .map(
       ([k, P]) =>
-        `<button class="sc-prop ${mapEditor.prop === k ? 'on' : ''}" data-act="scProp" data-k="${esc(k)}" title="${esc(P.name || k)}"><span class="sc-thumb" data-img="${esc(P.img)}"></span><small>${esc(P.name || k)}</small></button>`
+        `<button class="sc-prop ${mapEditor.prop === k ? 'on' : ''}" data-act="scProp" data-k="${escapeHtml(k)}" title="${escapeHtml(P.name || k)}"><span class="sc-thumb" data-img="${escapeHtml(P.img)}"></span><small>${escapeHtml(P.name || k)}</small></button>`
     )
     .join('');
   const sel =
@@ -280,7 +280,7 @@ SECTIONS.scenes = () => {
       ? sc.props[mapEditor.sel]
       : null;
   const selCard = sel
-    ? `<div class="sc-sel"><b>${esc((sceneryCatalog().props[sel.k] || {}).name || sel.k)}</b>${grid(numberField('Across', `${p}.props.${mapEditor.sel}.x`, { step: 0.1 }), numberField('Depth', `${p}.props.${mapEditor.sel}.z`, { step: 0.1 }), numberField('Size', `${p}.props.${mapEditor.sel}.s`, { step: 0.05, min: 0.2, max: 4, opt: 1, ph: '1' }))}
+    ? `<div class="sc-sel"><b>${escapeHtml((sceneryCatalog().props[sel.k] || {}).name || sel.k)}</b>${grid(numberField('Across', `${p}.props.${mapEditor.sel}.x`, { step: 0.1 }), numberField('Depth', `${p}.props.${mapEditor.sel}.z`, { step: 0.1 }), numberField('Size', `${p}.props.${mapEditor.sel}.s`, { step: 0.05, min: 0.2, max: 4, opt: 1, ph: '1' }))}
   ${grid(
     selectField(
       'When tapped',
@@ -377,20 +377,20 @@ SECTIONS.scenes = () => {
       }[sel.k] ||
       { shop: 'int_shop', clinic: 'int_clinic', lab: 'int_lab', house: 'int_house', home: 'int_home' }[sel.act] ||
       '';
-    return `<div class="sc-room">${grid(selectField('Room inside', `${p}.props.${mapEditor.sel}.room`, rooms, { none: kindRoom ? 'The one for its kind (' + ((studioState.D.scenes[kindRoom] || {}).name || kindRoom) + ')' : 'None', opt: 1, rr: 1, help: 'Where you walk in when you tap it (it needs “When tapped” set). Rooms open in place, larger than the building, with the town dimmed around them.' }))}<div class="seg-row"><button class="btn sm" data-act="scOwnRoom">Give it a room of its own</button>${sel.room || kindRoom ? `<button class="btn sm subtle" data-act="scPick" data-k="${esc(sel.room || kindRoom)}">Open its room</button>` : ''}</div></div>`;
+    return `<div class="sc-room">${grid(selectField('Room inside', `${p}.props.${mapEditor.sel}.room`, rooms, { none: kindRoom ? 'The one for its kind (' + ((studioState.D.scenes[kindRoom] || {}).name || kindRoom) + ')' : 'None', opt: 1, rr: 1, help: 'Where you walk in when you tap it (it needs “When tapped” set). Rooms open in place, larger than the building, with the town dimmed around them.' }))}<div class="seg-row"><button class="btn sm" data-act="scOwnRoom">Give it a room of its own</button>${sel.room || kindRoom ? `<button class="btn sm subtle" data-act="scPick" data-k="${escapeHtml(sel.room || kindRoom)}">Open its room</button>` : ''}</div></div>`;
   })()}
   ${(() => {
     const V = ((sceneryCatalog().props[sel.k] || {}).build || {}).variants;
     if (!V || !V.length) return '';
     const P0 = sceneryCatalog().props[sel.k];
-    return `<div class="fld sc-var"><span>Colours</span><div class="sc-var-row">${[{ img: P0.img, wallCol: P0.build.wallCol, roofCol: P0.build.roofCol }, ...V].map((v, i) => `<button class="sc-var-b ${(sel.v | 0) === i ? 'on' : ''}" data-act="scVar" data-v="${i}" title="${i ? 'Variant ' + i : 'As drawn'}"><span class="sc-thumb" data-img="${esc(v.img)}"></span><i style="background:${esc(v.roofCol || '#888')}"></i><i style="background:${esc(v.wallCol || '#ccc')}"></i></button>`).join('')}</div><small class="help">The same building in other colours. It keeps its shape, roof and rooms.</small></div>`;
+    return `<div class="fld sc-var"><span>Colours</span><div class="sc-var-row">${[{ img: P0.img, wallCol: P0.build.wallCol, roofCol: P0.build.roofCol }, ...V].map((v, i) => `<button class="sc-var-b ${(sel.v | 0) === i ? 'on' : ''}" data-act="scVar" data-v="${i}" title="${i ? 'Variant ' + i : 'As drawn'}"><span class="sc-thumb" data-img="${escapeHtml(v.img)}"></span><i style="background:${escapeHtml(v.roofCol || '#888')}"></i><i style="background:${escapeHtml(v.wallCol || '#ccc')}"></i></button>`).join('')}</div><small class="help">The same building in other colours. It keeps its shape, roof and rooms.</small></div>`;
   })()}
-  <div class="seg-row">${checkboxField('Mirrored', `${p}.props.${mapEditor.sel}.f`, { num: 1 })}<button class="btn sm" data-act="scDupProp">Duplicate</button><button class="btn sm danger subtle" data-act="scDelProp">Remove</button><button class="btn sm subtle" data-act="scEditProp" data-k="${esc(sel.k)}">Edit this prop’s pixels</button></div></div>`
+  <div class="seg-row">${checkboxField('Mirrored', `${p}.props.${mapEditor.sel}.f`, { num: 1 })}<button class="btn sm" data-act="scDupProp">Duplicate</button><button class="btn sm danger subtle" data-act="scDelProp">Remove</button><button class="btn sm subtle" data-act="scEditProp" data-k="${escapeHtml(sel.k)}">Edit this prop’s pixels</button></div></div>`
     : mapEditor.multi && mapEditor.multi.size > 1 && typeof multiSelectCardHTML === 'function'
       ? multiSelectCardHTML()
       : '<p class="help">Click a prop on the map to select it. Arrow keys nudge it, Delete removes it. Shift-drag a box (or shift-click) to select several.</p>';
   return `<div class="split sc-split"><aside class="list-col"><div class="list-head"><button class="btn primary" data-act="scNew">+ New scene</button></div><div class="llist">${list}</div></aside>
- <div class="ed-col"><div class="ed-head"><div><small class="mono">${esc(id)}</small><h2>${esc(sc.name || id)}</h2></div><div class="seg-row"><button class="btn subtle" data-act="scDup">Duplicate</button><button class="btn danger" data-act="scDel">Delete</button></div></div>
+ <div class="ed-col"><div class="ed-head"><div><small class="mono">${escapeHtml(id)}</small><h2>${escapeHtml(sc.name || id)}</h2></div><div class="seg-row"><button class="btn subtle" data-act="scDup">Duplicate</button><button class="btn danger" data-act="scDel">Delete</button></div></div>
  ${card(
    'Preview',
    `<div class="sc-pv"><canvas id="scPv"></canvas><div class="sc-pv-load" id="scPvLoad">Loading…</div></div>
@@ -473,9 +473,9 @@ SECTIONS.scenes = () => {
  )}
  ${card(
    'Props',
-   `<div class="seg-row"><button class="seg ${!mapEditor.tag ? 'on' : ''}" data-act="scTag" data-t="">All</button>${tags.map(t => `<button class="seg sm ${mapEditor.tag === t ? 'on' : ''}" data-act="scTag" data-t="${esc(t)}">${esc(t)}</button>`).join('')}</div>
-  <div class="sc-props">${props}</div><div class="seg-row"><button class="btn" data-act="scNewProp">+ New blank prop</button><button class="btn" data-act="scImportProp">+ Prop from PNG</button>${mapEditor.prop ? `<button class="btn subtle" data-act="scEditProp" data-k="${esc(mapEditor.prop)}">Edit ${esc((sceneryCatalog().props[mapEditor.prop] || {}).name || mapEditor.prop)}</button>` : ''}</div>
-  <p class="help">Pick a prop, then click the map with “Place & move props”. Prop pictures live in art/scene/props.</p>${mapEditor.prop && sceneryCatalog().props[mapEditor.prop] ? `<div class="seg-row"><button class="btn primary" data-act="pedOpen" data-k="${esc(mapEditor.prop)}">Open ${esc(sceneryCatalog().props[mapEditor.prop].name || mapEditor.prop)} in the prop editor</button><span class="help">Effects, door, layers for depth, facing, glow and a 3D turntable.</span></div>` : ''}`
+   `<div class="seg-row"><button class="seg ${!mapEditor.tag ? 'on' : ''}" data-act="scTag" data-t="">All</button>${tags.map(t => `<button class="seg sm ${mapEditor.tag === t ? 'on' : ''}" data-act="scTag" data-t="${escapeHtml(t)}">${escapeHtml(t)}</button>`).join('')}</div>
+  <div class="sc-props">${props}</div><div class="seg-row"><button class="btn" data-act="scNewProp">+ New blank prop</button><button class="btn" data-act="scImportProp">+ Prop from PNG</button>${mapEditor.prop ? `<button class="btn subtle" data-act="scEditProp" data-k="${escapeHtml(mapEditor.prop)}">Edit ${escapeHtml((sceneryCatalog().props[mapEditor.prop] || {}).name || mapEditor.prop)}</button>` : ''}</div>
+  <p class="help">Pick a prop, then click the map with “Place & move props”. Prop pictures live in art/scene/props.</p>${mapEditor.prop && sceneryCatalog().props[mapEditor.prop] ? `<div class="seg-row"><button class="btn primary" data-act="pedOpen" data-k="${escapeHtml(mapEditor.prop)}">Open ${escapeHtml(sceneryCatalog().props[mapEditor.prop].name || mapEditor.prop)} in the prop editor</button><span class="help">Effects, door, layers for depth, facing, glow and a 3D turntable.</span></div>` : ''}`
  )}
  ${mapEditor.ped && sceneryCatalog().props[mapEditor.ped] ? propEditorCardHTML(mapEditor.ped) : ''}
  ${mapEditor.pe ? sceneryPixelCardHTML() : ''}
@@ -531,7 +531,7 @@ SECTIONS.scenes = () => {
            textField('Who stands behind the counter', `${p}.keeper`, {
              help:
                'A person from People (their id), or folk:<number> for a townsperson. This is a room you walk into from a ' +
-               esc(sc.room) +
+               escapeHtml(sc.room) +
                '.',
            }),
          ]
@@ -591,19 +591,19 @@ SECTIONS.scenes = () => {
     }),
     checkboxField('Sun rays', `${p}.rays`, { num: 1 })
   )}
-  <label class="fld wide"><span>What townsfolk say (one line each)</span><textarea id="scChat" rows="3" placeholder="Lovely day for a walk.">${esc((sc.chat || []).join('\n'))}</textarea></label>
+  <label class="fld wide"><span>What townsfolk say (one line each)</span><textarea id="scChat" rows="3" placeholder="Lovely day for a walk.">${escapeHtml((sc.chat || []).join('\n'))}</textarea></label>
   <div class="grid colors">${colorField('Sky top', `${p}.sky.0`)}${colorField('Sky middle', `${p}.sky.1`)}${colorField('Horizon', `${p}.sky.2`)}${colorField('Haze', `${p}.haze`)}${colorField('Shade (caves, malls)', `${p}.tint`, { help: 'Leave black for none.' })}</div>
   ${grid(rangeField('Haze distance', `${p}.hazeD`, { min: 8, max: 80, step: 1 }), rangeField('Tilt-shift blur', `${p}.blur`, { min: 0, max: 1.5, step: 0.05, def: 1 }), rangeField('Camera tilt (degrees)', `${p}.cam.pitch`, { min: 20, max: 70, step: 1 }), rangeField('Camera height', `${p}.cam.h`, { min: 4, max: 20, step: 0.5 }), rangeField('Zoom', `${p}.cam.fov`, { min: 0.5, max: 2, step: 0.05, def: 1 }), rangeField('Where you arrive on the path', `${p}.start`, { min: 0, max: 0.95, step: 0.01, def: 0.42 }))}
   <div class="seg-row"><span class="help">Size</span><input type="number" id="scW" min="10" max="240" value="${sc.w}" class="sm-num"> × <input type="number" id="scH" min="8" max="200" value="${sc.h}" class="sm-num"><button class="btn sm" data-act="scResize">Resize the map</button><span class="help">Used by: ${
     locationsUsingMap(id)
-      .map(([r, i]) => `${i + 1}. ${esc(r.name)}`)
+      .map(([r, i]) => `${i + 1}. ${escapeHtml(r.name)}`)
       .join(', ') || 'no stop yet (pick it under World & encounters → Route stops)'
   }</span></div>`
  )}
  ${card(
    'Life',
    `<p class="help">Animals and traffic that move around this scene. One per line: <span class="mono">duck 4</span>, <span class="mono">pigeon 6 at 24 17 41 27</span> (an area: left, near, right, far), <span class="mono">chicken 5 at …</span>, <span class="mono">sheep 3 at …</span>, <span class="mono">car 3 along 20 13, 44 13, 44 31, 20 31</span> (a loop of points the cars drive round; they stop for you). Also <span class="mono">rabbit</span>, <span class="mono">squirrel</span>, <span class="mono">frog</span> (they live on the bank and leap in when you come close), <span class="mono">gull</span>, <span class="mono">goat</span>, <span class="mono">cat</span>, <span class="mono">crab</span> and <span class="mono">lizard</span>.</p>
-  <label class="fld wide"><span>What moves here</span><textarea id="scLife" rows="4" class="mono">${esc(mapLifeText(sc))}</textarea></label>`
+  <label class="fld wide"><span>What moves here</span><textarea id="scLife" rows="4" class="mono">${escapeHtml(mapLifeText(sc))}</textarea></label>`
  )}
  ${card(
    'People who talk',
@@ -614,8 +614,8 @@ SECTIONS.scenes = () => {
         q,
         i
       ) => `<div class="sc-person">${grid(selectField('Look', `${p}.people.${i}.who`, peopleOptions()), textField('Name', `${p}.people.${i}.name`), numberField('Across (m)', `${p}.people.${i}.x`, { step: 0.1 }), numberField('Depth (m)', `${p}.people.${i}.z`, { step: 0.1 }))}
-   <label class="fld wide"><span>The first time (one line each)</span><textarea data-scppl="${i}" data-f="first" rows="3">${esc((q.first || []).join('\n'))}</textarea></label>
-   <label class="fld wide"><span>After that (one line each, one at a time)</span><textarea data-scppl="${i}" data-f="lines" rows="3">${esc((q.lines || []).join('\n'))}</textarea></label>
+   <label class="fld wide"><span>The first time (one line each)</span><textarea data-scppl="${i}" data-f="first" rows="3">${escapeHtml((q.first || []).join('\n'))}</textarea></label>
+   <label class="fld wide"><span>After that (one line each, one at a time)</span><textarea data-scppl="${i}" data-f="lines" rows="3">${escapeHtml((q.lines || []).join('\n'))}</textarea></label>
    <div class="seg-row"><button class="btn sm danger subtle" data-act="scPplDel" data-i="${i}">Remove</button></div></div>`
     )
     .join('')}
@@ -628,7 +628,7 @@ SECTIONS.scenes = () => {
    )
      .map(
        ([c, t]) =>
-         `<tr><td><canvas data-tile="${esc(c)}" width="16" height="16" class="sc-tilebig"></canvas></td><td class="mono">${esc(c)}</td><td><input type="text" data-p="scenery.terrains.${c}.name" data-k="text" value="${esc(t.name)}"></td><td><input type="number" data-p="scenery.terrains.${c}.z" data-k="num" value="${t.z}" min="0" max="9" class="sm-num" title="Higher layers draw their edge line over lower ones"></td><td><span class="colw"><input type="color" data-p="scenery.terrains.${c}.edge" data-k="color" value="${t.edge}"></span></td><td><button class="btn sm" data-act="scEditTile" data-c="${esc(c)}">Edit pixels</button></td></tr>`
+         `<tr><td><canvas data-tile="${escapeHtml(c)}" width="16" height="16" class="sc-tilebig"></canvas></td><td class="mono">${escapeHtml(c)}</td><td><input type="text" data-p="scenery.terrains.${c}.name" data-k="text" value="${escapeHtml(t.name)}"></td><td><input type="number" data-p="scenery.terrains.${c}.z" data-k="num" value="${t.z}" min="0" max="9" class="sm-num" title="Higher layers draw their edge line over lower ones"></td><td><span class="colw"><input type="color" data-p="scenery.terrains.${c}.edge" data-k="color" value="${t.edge}"></span></td><td><button class="btn sm" data-act="scEditTile" data-c="${escapeHtml(c)}">Edit pixels</button></td></tr>`
      )
      .join('')}</tbody></table>
   <div class="seg-row"><button class="btn" data-act="scNewTer">+ New ground type</button></div><p class="help">Tiles are 16×16 and repeat seamlessly. Where two ground types meet, the higher layer draws a thin edge line in its edge color.</p>`
@@ -1734,7 +1734,7 @@ ACTIONS.scNew = async () => {
       `<label class="fld"><span>Name</span><input id="scnName" value="New place"></label><label class="fld"><span>Start from</span><select id="scnFrom"><option value="">A blank grass field</option>${Object.entries(
         D.scenes || {}
       )
-        .map(([k, s]) => `<option value="${esc(k)}">A copy of ${esc(s.name || k)}</option>`)
+        .map(([k, s]) => `<option value="${escapeHtml(k)}">A copy of ${escapeHtml(s.name || k)}</option>`)
         .join(
           ''
         )}</select></label><label class="fld"><span>What it is</span><select id="scnKind"><option value="route">A route (wild, with tall grass)</option><option value="town">A town</option><option value="room">A room inside a building</option><option value="test">A test scene</option></select></label>`,
@@ -1921,7 +1921,7 @@ function exitChecks(sc) {
 async function resizeReport(sc, before) {
   const r = exitChecks(sc),
     bad = r.filter(x => !x.ok).length;
-  const html = `<p class="help">${sc.w} × ${sc.h} m. ${bad ? `${bad} thing${bad > 1 ? 's' : ''} to look at:` : 'Every exit checks out.'}</p><ul class="exit-chk">${r.map(x => `<li class="${x.ok ? 'ok' : 'bad'}">${x.ok ? '✓' : '!'} ${esc(x.t)}</li>`).join('')}</ul>`;
+  const html = `<p class="help">${sc.w} × ${sc.h} m. ${bad ? `${bad} thing${bad > 1 ? 's' : ''} to look at:` : 'Every exit checks out.'}</p><ul class="exit-chk">${r.map(x => `<li class="${x.ok ? 'ok' : 'bad'}">${x.ok ? '✓' : '!'} ${escapeHtml(x.t)}</li>`).join('')}</ul>`;
   const keep = await dialog('Map resized', html, [
     { l: 'Undo the resize', v: false },
     { l: 'Keep it', c: 'primary', v: true },
@@ -1953,7 +1953,7 @@ ACTIONS.scNewTer = async () => {
     'New ground type',
     `<div class="grid"><label class="fld"><span>Name</span><input id="ntName" value="Moss"></label><label class="fld"><span>Key (one character; a free one is filled in)</span><input id="ntKey" maxlength="1" value="${GROUND_KEYS.split('').find(c => !used.includes(c)) || ''}"></label>
  <label class="fld"><span>Start from</span><select id="ntFrom">${Object.entries(C.terrains)
-   .map(([c, t]) => `<option value="${esc(c)}">${esc(t.name)}</option>`)
+   .map(([c, t]) => `<option value="${escapeHtml(c)}">${escapeHtml(t.name)}</option>`)
    .join('')}</select></label></div>`,
     [
       { l: 'Cancel', v: false },
@@ -2064,8 +2064,8 @@ function sceneryPixelCardHTML() {
     base = pe.kind === 'prop' ? `scenery.props.${pe.k}` : '';
   return card(
     pe.kind === 'prop'
-      ? `Prop: ${esc(M ? M.name : pe.k)}`
-      : `Ground tile: ${esc((C.terrains[pe.c] || {}).name || pe.c)}`,
+      ? `Prop: ${escapeHtml(M ? M.name : pe.k)}`
+      : `Ground tile: ${escapeHtml((C.terrains[pe.c] || {}).name || pe.c)}`,
     `<div class="sc-pe" id="scPe"><div class="sc-pe-bar"><span class="px-tools">${[
       ['pen', 'Pencil'],
       ['erase', 'Eraser'],
@@ -2408,7 +2408,7 @@ function stepsToolBarHTML() {
   const mats = (typeof WALL_MATERIALS !== 'undefined' ? WALL_MATERIALS : ['Scene rock'])
     .map(
       (n, i) =>
-        `<option value="${i}" ${mapEditor.smat === i ? 'selected' : ''}>${i ? esc(n) : 'The scene’s own rock'}</option>`
+        `<option value="${i}" ${mapEditor.smat === i ? 'selected' : ''}>${i ? escapeHtml(n) : 'The scene’s own rock'}</option>`
     )
     .join('');
   const modes = [
@@ -2739,7 +2739,7 @@ function waterToolBarHTML(p) {
   const sc = currentMap();
   mapEditor.wk = mapEditor.wk || 'pond';
   return `<div class="sc-hbar">${PAINTED_WATER_KINDS.map(([k, n, c]) => `<button class="seg ${mapEditor.wk === k ? 'on' : ''}" data-act="scWK" data-k="${k}"><span class="sc-swatch" style="background:${c}"></span>${n}</button>`).join('')}<button class="seg ${mapEditor.wk === 'erase' ? 'on' : ''}" data-act="scWK" data-k="erase">Remove</button>
- <label class="mp-size"><span>The rest of the water</span><select id="scWDef">${[['', 'Guess (caves: spring, towns: canal, else pond)'], ...PAINTED_WATER_KINDS.filter(w => w[0] !== 'stream').map(([k, n]) => [k, n])].map(([k, n]) => `<option value="${k}" ${(sc.waterKind || '') === k ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select></label>
+ <label class="mp-size"><span>The rest of the water</span><select id="scWDef">${[['', 'Guess (caves: spring, towns: canal, else pond)'], ...PAINTED_WATER_KINDS.filter(w => w[0] !== 'stream').map(([k, n]) => [k, n])].map(([k, n]) => `<option value="${k}" ${(sc.waterKind || '') === k ? 'selected' : ''}>${escapeHtml(n)}</option>`).join('')}</select></label>
  ${(sc.waters || []).length ? `<button class="btn sm subtle" data-act="scWClear">Remove all ${(sc.waters || []).length}</button>` : ''}</div>`;
 }
 ACTIONS.scWK = d => {

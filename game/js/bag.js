@@ -7,7 +7,7 @@
 import { expose } from './test-globals.js';
 import { closeModal, modal, render, toast } from './hooks.js';
 import { COINS, EGGS, ITEMS, STATUSN } from './game-data.js';
-import { billyName, esc, fmt, maxHp, saveData, uiState } from './game-state.js';
+import { billyName, escapeHtml, formatNumber, maxHp, saveData, uiState } from './game-state.js';
 import { coinHTML, eggHTML, uiIconHTML } from './art.js';
 import { bustHTML } from './skeleton-rig.js';
 import { applyItem, canUse, itemIcon, teamNeedsHp } from './battle.js';
@@ -53,7 +53,7 @@ export function renderBag() {
             const E = EGGS[e.tier] || { need: 1 },
               f = Math.min(1, (e.prog || 0) / E.need),
               left = Math.max(0, E.need - (e.prog || 0));
-            return `<div class="bag-row"><span class="bag-ic">${eggHTML(e.tier, 30)}</span><span class="bag-t"><b>${esc(e.tier)} km egg</b><small>${e.slot != null ? (left ? `${fmt(left)} steps to go` : 'Ready to hatch') : 'Waiting for a free incubator'}</small><span class="bag-prog"><i style="width:${Math.round(f * 100)}%"></i></span></span></div>`;
+            return `<div class="bag-row"><span class="bag-ic">${eggHTML(e.tier, 30)}</span><span class="bag-t"><b>${escapeHtml(e.tier)} km egg</b><small>${e.slot != null ? (left ? `${formatNumber(left)} steps to go` : 'Ready to hatch') : 'Waiting for a free incubator'}</small><span class="bag-prog"><i style="width:${Math.round(f * 100)}%"></i></span></span></div>`;
           })
           .join('')}</div>`
       : `<p class="note bag-empty">No eggs right now. Some trainers and shops give them; they hatch as you walk.</p>`;
@@ -64,7 +64,7 @@ export function renderBag() {
           const I = p === 'coins' ? COINS[k] : ITEMS[k],
             n = p === 'coins' ? saveData.coins[k] : saveData.items[k],
             on = sel === k;
-          return `<button class="bag-row ${on ? 'on' : ''}" data-a="bag-sel" data-k="${esc(k)}" aria-pressed="${on}"><span class="bag-ic">${p === 'coins' ? coinHTML(k, 30) : itemIcon(k, 30)}</span><span class="bag-t"><b>${esc(I.n)}</b><small>${esc(I.d || '')}</small></span><b class="bag-n tnum">×${fmt(n)}</b></button>`;
+          return `<button class="bag-row ${on ? 'on' : ''}" data-a="bag-sel" data-k="${escapeHtml(k)}" aria-pressed="${on}"><span class="bag-ic">${p === 'coins' ? coinHTML(k, 30) : itemIcon(k, 30)}</span><span class="bag-t"><b>${escapeHtml(I.n)}</b><small>${escapeHtml(I.d || '')}</small></span><b class="bag-n tnum">×${formatNumber(n)}</b></button>`;
         }).join('')}</div>`
       : `<p class="note bag-empty">${p === 'coins' ? 'No coins. Shops sell them.' : p === 'special' ? 'Nothing special yet.' : 'No healing items. Shops sell them.'}</p>`;
   }
@@ -74,11 +74,11 @@ export function renderBag() {
     if (p === 'heal') {
       const I = ITEMS[sel],
         ok = I.hpAll ? teamNeedsHp() : saveData.team.some(m => canUse(sel, m));
-      act = `<div class="bag-act px"><span class="bag-t"><b>${esc(I.n)}</b><small>${ok ? (I.hpAll ? 'Shares out over your whole team' : 'Choose a Billie to use it on') : 'Nobody on your team needs it right now'}</small></span><button class="pb gold" data-a="bag-use" data-k="${esc(sel)}" ${ok ? '' : 'disabled'}>Use</button></div>`;
+      act = `<div class="bag-act px"><span class="bag-t"><b>${escapeHtml(I.n)}</b><small>${ok ? (I.hpAll ? 'Shares out over your whole team' : 'Choose a Billie to use it on') : 'Nobody on your team needs it right now'}</small></span><button class="pb gold" data-a="bag-use" data-k="${escapeHtml(sel)}" ${ok ? '' : 'disabled'}>Use</button></div>`;
     } else if (p === 'coins')
-      act = `<div class="bag-act px"><span class="bag-t"><b>${esc(COINS[sel].n)}</b><small>Throw it in a battle to tax a tired Billie</small></span></div>`;
+      act = `<div class="bag-act px"><span class="bag-t"><b>${escapeHtml(COINS[sel].n)}</b><small>Throw it in a battle to tax a tired Billie</small></span></div>`;
     else
-      act = `<div class="bag-act px"><span class="bag-t"><b>${esc(ITEMS[sel].n)}</b><small>Open a Billie’s details on the Team screen to use it</small></span><button class="pb" data-a="tab" data-t="team">Team</button></div>`;
+      act = `<div class="bag-act px"><span class="bag-t"><b>${escapeHtml(ITEMS[sel].n)}</b><small>Open a Billie’s details on the Team screen to use it</small></span><button class="pb" data-a="tab" data-t="team">Team</button></div>`;
   }
   return `<div class="bag-head"><h1>Bag</h1></div>${tabs}${body}${act}`;
 }
@@ -115,8 +115,8 @@ document.addEventListener('click', ev => {
       return;
     }
     modal({
-      title: `Use ${esc(I.n)} on…`,
-      html: `<div class="list">${L.map(m => `<button class="pickrow" data-a="bag-on" data-k="${esc(k)}" data-u="${m.uid}">${bustHTML(m.sp, 40, { gold: m.gold })}<span><b>${esc(billyName(m))}</b><small class="tnum">HP ${m.hp}/${maxHp(m)}${m.status ? ' · ' + esc(STATUSN[m.status] || m.status) : ''}</small></span></button>`).join('')}</div>`,
+      title: `Use ${escapeHtml(I.n)} on…`,
+      html: `<div class="list">${L.map(m => `<button class="pickrow" data-a="bag-on" data-k="${escapeHtml(k)}" data-u="${m.uid}">${bustHTML(m.sp, 40, { gold: m.gold })}<span><b>${escapeHtml(billyName(m))}</b><small class="tnum">HP ${m.hp}/${maxHp(m)}${m.status ? ' · ' + escapeHtml(STATUSN[m.status] || m.status) : ''}</small></span></button>`).join('')}</div>`,
       btns: [{ l: 'Never mind', c: 'quiet', f: closeModal }],
     });
     return;

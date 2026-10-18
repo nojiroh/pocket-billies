@@ -5,9 +5,9 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { closeModal, modal, provide, renderOv, sfx, toast } from './hooks.js';
-import { clamp, rnd } from './util.js';
+import { clamp, random } from './util.js';
 import { COINS, ITEMS, SHOPS } from './game-data.js';
-import { esc, fmt, plural, save, saveData, uiState } from './game-state.js';
+import { escapeHtml, formatNumber, plural, save, saveData, uiState } from './game-state.js';
 import { coinHTML, uiIconHTML } from './art.js';
 import { portraitHTML } from './person-art.js';
 import { openDressingRoom } from './dressing-room.js';
@@ -69,21 +69,21 @@ function shopHTML(id) {
         locked = it.need && seats < it.need,
         cost = price * n,
         deal = price < it.base;
-      return `<div class="ware2${locked ? ' locked' : ''}"><span class="w-ic">${it.kind === 'coin' ? coinHTML(it.key, 36) : itemIcon(it.key, 36)}</span><span class="w-t"><b>${esc(it.n)}</b><small>${esc(it.d)}</small><small class="w-own tnum">You have ${it.have}${deal ? ` · <em>Shop price $${fmt(it.base)}</em>` : ''}</small></span>
+      return `<div class="ware2${locked ? ' locked' : ''}"><span class="w-ic">${it.kind === 'coin' ? coinHTML(it.key, 36) : itemIcon(it.key, 36)}</span><span class="w-t"><b>${escapeHtml(it.n)}</b><small>${escapeHtml(it.d)}</small><small class="w-own tnum">You have ${it.have}${deal ? ` · <em>Shop price $${formatNumber(it.base)}</em>` : ''}</small></span>
   <span class="w-buy">${
     locked
       ? `<span class="note">Needs ${plural(it.need, 'badge')}</span>`
       : `<span class="qty"><button class="qb" data-a="shopq" data-k="${k}" data-d="-1" aria-label="One fewer" ${n <= 1 ? 'disabled' : ''}>${uiIconHTML('minus', 10)}</button><b class="tnum">${n}</b><button class="qb" data-a="shopq" data-k="${k}" data-d="1" aria-label="One more" ${n >= 99 ? 'disabled' : ''}>${uiIconHTML('plus', 10)}</button></span>
-  <button class="pb small ${saveData.se >= cost ? 'gold' : ''}" data-a="shopbuy" data-s="${id}" data-k="${k}" ${saveData.se >= cost ? '' : 'disabled'}>$${fmt(cost)}</button>`
+  <button class="pb small ${saveData.se >= cost ? 'gold' : ''}" data-a="shopbuy" data-s="${id}" data-k="${k}" ${saveData.se >= cost ? '' : 'disabled'}>$${formatNumber(cost)}</button>`
   }</span></div>`;
     })
     .join('');
-  return `<div class="shop-head"><div class="shop-keeper">${portraitHTML(sh.who || 'clerk', 78, 'happy')}</div><div class="shop-say"><b>${esc(sh.keeper || 'Shopkeeper')}</b><p id="shopLine">${esc(uiState.shopLine || sh.greeting || 'Welcome in.')}</p></div></div>
- <div class="shop-bal"><span>${uiIconHTML('coin', 14)} Money</span><b class="tnum" data-count="shopse" data-to="${saveData.se}">${fmt(saveData.se)}</b></div>
+  return `<div class="shop-head"><div class="shop-keeper">${portraitHTML(sh.who || 'clerk', 78, 'happy')}</div><div class="shop-say"><b>${escapeHtml(sh.keeper || 'Shopkeeper')}</b><p id="shopLine">${escapeHtml(uiState.shopLine || sh.greeting || 'Welcome in.')}</p></div></div>
+ <div class="shop-bal"><span>${uiIconHTML('coin', 14)} Money</span><b class="tnum" data-count="shopse" data-to="${saveData.se}">${formatNumber(saveData.se)}</b></div>
  <div class="shop-bag"><span>In your bag</span>${Object.keys(COINS)
    .map(
      k =>
-       `<span class="sb-c${saveData.coins[k] ? '' : ' none'}" role="img" title="${esc(COINS[k].n)}" aria-label="${esc(COINS[k].n)}: ${fmt(saveData.coins[k] || 0)}">${coinHTML(k, 18, 32)}<b class="tnum">${fmt(saveData.coins[k] || 0)}</b></span>`
+       `<span class="sb-c${saveData.coins[k] ? '' : ' none'}" role="img" title="${escapeHtml(COINS[k].n)}" aria-label="${escapeHtml(COINS[k].n)}: ${formatNumber(saveData.coins[k] || 0)}">${coinHTML(k, 18, 32)}<b class="tnum">${formatNumber(saveData.coins[k] || 0)}</b></span>`
    )
    .join('')}</div><div class="wares2">${rows || '<p class="note">The shelves are empty today.</p>'}</div>`;
 }
@@ -98,7 +98,7 @@ export function openShop(id) {
   uiState.shopLine = null;
   uiState.shopQty = {};
   const m = {
-    title: esc(sh.name),
+    title: escapeHtml(sh.name),
     shop: id,
     cls: 'shop-sheet',
     html: shopHTML(id),
@@ -134,7 +134,7 @@ function shopBuy(id, k) {
   save();
   buzz && buzz(10);
   const lines = sh.thanks && sh.thanks.length ? sh.thanks : SHOP_THANKS;
-  uiState.shopLine = lines[Math.floor(rnd() * lines.length)];
+  uiState.shopLine = lines[Math.floor(random() * lines.length)];
   uiState.shopQty[k] = 1;
   shopRefresh();
   toast(`Bought ${n} × ${it.n}.`);

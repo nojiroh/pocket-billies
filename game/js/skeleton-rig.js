@@ -4,7 +4,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { SP, activeBattle, provide, reducedMotion } from './hooks.js';
-import { clamp, rnd } from './util.js';
+import { clamp, random } from './util.js';
 import { frameTask, userFps } from './frame-scheduler.js';
 import { ART_CACHE, artImg, artLoad, artReady, artURL, makeCanvas } from './art.js';
 import { animFor } from './body-plan-animation.js';
@@ -451,7 +451,7 @@ function drawDomRig(c, ts) {
   if (!R) return;
   const x = c.getContext('2d');
   if (c._seed == null) {
-    c._seed = rnd() * 6;
+    c._seed = random() * 6;
     if (c.dataset.act) c._act = { k: c.dataset.act, t0: ts };
   }
   x.imageSmoothingEnabled = false;

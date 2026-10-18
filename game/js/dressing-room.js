@@ -6,9 +6,9 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { buzz, provide, render, sfx, toast } from './hooks.js';
-import { $, $$, rnd } from './util.js';
+import { $, $$, random } from './util.js';
 import { SHOPS } from './game-data.js';
-import { esc, fmt, save, saveData, uiState } from './game-state.js';
+import { escapeHtml, formatNumber, save, saveData, uiState } from './game-state.js';
 import { frameStop, frameTask } from './frame-scheduler.js';
 import { makeCanvas, uiIconHTML } from './art.js';
 import { TR_PRESETS, WD, cleanLook, portraitHTML, trBox, trColorsOf, trFrame, trSliders } from './person-art.js';
@@ -328,10 +328,10 @@ export function closeDressingRoom() {
 function dressingRoomHTML() {
   const sh = dressingRoom.shop && SHOPS[dressingRoom.shop];
   return `<div class="dr-stage"><canvas id="drCv" aria-label="Your trainer. Drag to turn around."></canvas>
-  ${sh ? `<div class="dr-keeper glass">${portraitHTML(sh.who || 'clerk', 46, 'happy')}<div><b>${esc(sh.keeper || 'Shopkeeper')}</b><p id="drLine">${esc(sh.greeting || 'Try anything on.')}</p></div></div>` : ''}
+  ${sh ? `<div class="dr-keeper glass">${portraitHTML(sh.who || 'clerk', 46, 'happy')}<div><b>${escapeHtml(sh.keeper || 'Shopkeeper')}</b><p id="drLine">${escapeHtml(sh.greeting || 'Try anything on.')}</p></div></div>` : ''}
   <div class="dr-viewbar glass"><button class="mbtn" data-a="dr-turn" data-d="-1" aria-label="Turn left">‹</button><button class="mbtn" data-a="dr-turn" data-d="1" aria-label="Turn right">›</button>
    <button class="dr-tog" data-a="dr-walk" aria-pressed="false">${uiIconHTML('walk', 14)} Walk</button><button class="dr-tog" data-a="dr-pose" data-p="throw">Throw</button><button class="dr-tog" data-a="dr-pose" data-p="cheer">Cheer</button></div></div>
- <div class="dr-panel px"><div class="dr-top"><label class="dr-name"><span>Name</span><input id="drName" maxlength="18" autocomplete="nickname" value="${esc(dressingRoom.look.name)}"></label>
+ <div class="dr-panel px"><div class="dr-top"><label class="dr-name"><span>Name</span><input id="drName" maxlength="18" autocomplete="nickname" value="${escapeHtml(dressingRoom.look.name)}"></label>
    <button class="pb small quiet" data-a="dr-rand" title="A random look from what you own">Surprise me</button><button class="mbtn sm" data-a="dr-undo" aria-label="Undo" title="Undo">↶</button><button class="mbtn sm" data-a="dr-redo" aria-label="Redo" title="Redo">↷</button></div>
   <div class="dr-tabs" role="tablist">${DRESSING_TABS.filter(
     ([k]) => !(dressingRoom.mode === 'intro' && k === 'outfits')
@@ -362,8 +362,8 @@ function wardrobeGridHTML(slot, crop) {
     .map(([k, it]) => {
       const own = owns(k),
         here = boutiqueSells(it);
-      return `<button class="dr-it${own ? '' : ' locked'}${here && !own ? ' here' : ''}" data-a="dr-wear" data-s="${slot}" data-id="${k}" aria-pressed="${cur === k}" title="${esc(it.name)}${own ? '' : ` · $${fmt(it.price || 0)} at ${esc(shopName(it.shop))}`}">
-  <img class="dr-th" src="${wardrobeThumbnail(slot, k, crop)}" alt=""><b>${esc(it.name)}</b>${own ? '' : `<small>${here ? '' : uiIconHTML('lock', 10)} $${fmt(it.price || 0)}${here ? '' : ` · ${esc(shopName(it.shop))}`}</small>`}</button>`;
+      return `<button class="dr-it${own ? '' : ' locked'}${here && !own ? ' here' : ''}" data-a="dr-wear" data-s="${slot}" data-id="${k}" aria-pressed="${cur === k}" title="${escapeHtml(it.name)}${own ? '' : ` · $${formatNumber(it.price || 0)} at ${escapeHtml(shopName(it.shop))}`}">
+  <img class="dr-th" src="${wardrobeThumbnail(slot, k, crop)}" alt=""><b>${escapeHtml(it.name)}</b>${own ? '' : `<small>${here ? '' : uiIconHTML('lock', 10)} $${formatNumber(it.price || 0)}${here ? '' : ` · ${escapeHtml(shopName(it.shop))}`}</small>`}</button>`;
     })
     .join('')}</div>`;
 }
@@ -377,7 +377,7 @@ function wardrobeColorsHTML(slot) {
     .map((c, i) => {
       const ln = it.link && it.link[String(i + 1)];
       if (it.slot === 'hair' || it.slot === 'eyes' || ln) return '';
-      return `<div class="dr-row"><span class="dr-l">${esc(c[0])}</span>${colorSwatchesHTML('item:' + id, [c[1]].concat((P.cloth || []).filter(x => x.toLowerCase() !== c[1].toLowerCase())).slice(0, 12), cur[i], i)}</div>`;
+      return `<div class="dr-row"><span class="dr-l">${escapeHtml(c[0])}</span>${colorSwatchesHTML('item:' + id, [c[1]].concat((P.cloth || []).filter(x => x.toLowerCase() !== c[1].toLowerCase())).slice(0, 12), cur[i], i)}</div>`;
     })
     .join('');
 }
@@ -405,7 +405,7 @@ function dressingTabHTML() {
           trSliders()
             .map(
               s =>
-                `<label class="dr-sl"><span>${esc(s.name)}</span><input type="range" min="${s.min}" max="${s.max}" step="0.01" value="${L.body[s.k]}" data-dr-sl="${s.k}"><button class="dr-rs" data-a="dr-slreset" data-k="${s.k}" aria-label="Reset ${esc(s.name)}" title="Reset">↺</button></label>`
+                `<label class="dr-sl"><span>${escapeHtml(s.name)}</span><input type="range" min="${s.min}" max="${s.max}" step="0.01" value="${L.body[s.k]}" data-dr-sl="${s.k}"><button class="dr-rs" data-a="dr-slreset" data-k="${s.k}" aria-label="Reset ${escapeHtml(s.name)}" title="Reset">↺</button></label>`
             )
             .join('')
         )
@@ -453,8 +453,8 @@ function dressingTabHTML() {
                 cost = Object.values(o)
                   .filter(id => id && !owns(id))
                   .reduce((a, id) => a + (W[id].price || 0), 0);
-              return `<div class="dr-it dr-outfit${own ? '' : ' locked'}" aria-pressed="${wearsOutfit(o)}"><button class="dr-outmain" data-a="dr-outfit" data-n="${esc(n)}" data-w="0" title="${n}"><img class="dr-th" src="${lookThumbnail(lookWithOutfit(L, o, ways[0]), 'body')}" alt=""><b>${n}</b>${own ? '' : `<small>${uiIconHTML('lock', 10)} $${fmt(cost)}</small>`}</button>
-     <span class="dr-ways">${ways.map((w, k) => `<button class="swatch" style="--sw:${w[0]}" data-a="dr-outfit" data-n="${esc(n)}" data-w="${k}" aria-label="${n}, colourway ${k + 1}"><span>✓</span></button>`).join('')}</span></div>`;
+              return `<div class="dr-it dr-outfit${own ? '' : ' locked'}" aria-pressed="${wearsOutfit(o)}"><button class="dr-outmain" data-a="dr-outfit" data-n="${escapeHtml(n)}" data-w="0" title="${n}"><img class="dr-th" src="${lookThumbnail(lookWithOutfit(L, o, ways[0]), 'body')}" alt=""><b>${n}</b>${own ? '' : `<small>${uiIconHTML('lock', 10)} $${formatNumber(cost)}</small>`}</button>
+     <span class="dr-ways">${ways.map((w, k) => `<button class="swatch" style="--sw:${w[0]}" data-a="dr-outfit" data-n="${escapeHtml(n)}" data-w="${k}" aria-label="${n}, colourway ${k + 1}"><span>✓</span></button>`).join('')}</span></div>`;
             })
             .join('')}</div>`
         ) +
@@ -465,7 +465,7 @@ function dressingTabHTML() {
               `<div class="dr-outfits">${[0, 1, 2]
                 .map(i => {
                   const o = O[i];
-                  return `<div class="dr-out px">${o ? `<img src="${lookPortrait(o)}" alt="">` : '<span class="dr-empty">Empty</span>'}<b>${o ? esc(o.name || 'Outfit ' + (i + 1)) : 'Outfit ' + (i + 1)}</b><div class="racts"><button class="pb small" data-a="dr-osave" data-i="${i}">Save current here</button>${o ? `<button class="pb small gold" data-a="dr-owear" data-i="${i}">Wear</button>` : ''}</div></div>`;
+                  return `<div class="dr-out px">${o ? `<img src="${lookPortrait(o)}" alt="">` : '<span class="dr-empty">Empty</span>'}<b>${o ? escapeHtml(o.name || 'Outfit ' + (i + 1)) : 'Outfit ' + (i + 1)}</b><div class="racts"><button class="pb small" data-a="dr-osave" data-i="${i}">Save current here</button>${o ? `<button class="pb small gold" data-a="dr-owear" data-i="${i}">Wear</button>` : ''}</div></div>`;
                 })
                 .join('')}</div>`
             )) +
@@ -554,16 +554,16 @@ function dressingFootHTML() {
     btn = `<button class="pb gold" data-a="dr-save">This is me</button>`;
   } else if (dressingRoom.shop) {
     msg = elsewhere.length
-      ? `${esc(W[elsewhere[0]].name)} is sold at ${esc(shopName(W[elsewhere[0]].shop))}.`
+      ? `${escapeHtml(W[elsewhere[0]].name)} is sold at ${escapeHtml(shopName(W[elsewhere[0]].shop))}.`
       : cost
-        ? `You have $${fmt(saveData.se)}.`
+        ? `You have $${formatNumber(saveData.se)}.`
         : 'Pick anything to try it on.';
     btn = cost
-      ? `<button class="pb gold" data-a="dr-buy" ${saveData.se >= cost && !elsewhere.length ? '' : 'disabled'}>Buy and wear · $${fmt(cost)}</button>`
+      ? `<button class="pb gold" data-a="dr-buy" ${saveData.se >= cost && !elsewhere.length ? '' : 'disabled'}>Buy and wear · $${formatNumber(cost)}</button>`
       : `<button class="pb gold" data-a="dr-save" ${elsewhere.length ? 'disabled' : ''}>Wear this</button>`;
   } else {
     msg = un.length
-      ? `Trying on ${esc(W[un[0]].name)}${un.length > 1 ? ` and ${un.length - 1} more` : ''}. Buy ${un.length > 1 ? 'them' : 'it'} at ${esc(shopName(W[un[0]].shop))}.`
+      ? `Trying on ${escapeHtml(W[un[0]].name)}${un.length > 1 ? ` and ${un.length - 1} more` : ''}. Buy ${un.length > 1 ? 'them' : 'it'} at ${escapeHtml(shopName(W[un[0]].shop))}.`
       : '';
     btn = `<button class="pb gold" data-a="dr-save" ${un.length ? 'disabled' : ''}>Save look</button>`;
   }
@@ -692,7 +692,7 @@ function changeLook(fn, full) {
 }
 function randomizeLook() {
   const P = WD().palettes || {},
-    pk = a => a[Math.floor(rnd() * a.length)];
+    pk = a => a[Math.floor(random() * a.length)];
   changeLook(L => {
     for (const s of WD().slots) {
       const ids = wardrobeItemsInSlot(s.id)
@@ -700,7 +700,7 @@ function randomizeLook() {
         .filter(owns);
       if (
         s.empty &&
-        rnd() <
+        random() <
           (['hair', 'eyes', 'mouth'].includes(s.id)
             ? 0.05
             : ['facial', 'glasses', 'neck', 'hat', 'outer'].includes(s.id)
@@ -768,7 +768,7 @@ function buyDressingItems() {
         ? sh.thanks
         : ['Wear it well.', 'That suits you.', 'A classic. Well, a classic now.'];
   const l = $('#drLine');
-  if (l) l.textContent = lines[Math.floor(rnd() * lines.length)];
+  if (l) l.textContent = lines[Math.floor(random() * lines.length)];
   toast(`Bought ${mine.map(id => W[id].name).join(', ')}.`);
   saveData.avatar = cleanLook(dressingRoom.look);
   save();
@@ -856,7 +856,7 @@ document.addEventListener('click', ev => {
       });
       if (d.id && !owns(d.id) && boutiqueSells(WD().items[d.id])) {
         const l = $('#drLine');
-        if (l) l.textContent = `${WD().items[d.id].name}? Good eye. $${fmt(WD().items[d.id].price || 0)}.`;
+        if (l) l.textContent = `${WD().items[d.id].name}? Good eye. $${formatNumber(WD().items[d.id].price || 0)}.`;
       }
       break;
     case 'dr-col':
@@ -889,7 +889,7 @@ document.addEventListener('click', ev => {
           if (un.length) {
             const l = $('#drLine');
             if (l)
-              l.textContent = `${o[0]}? Good eye. $${fmt(un.reduce((a, id) => a + (WD().items[id].price || 0), 0))}.`;
+              l.textContent = `${o[0]}? Good eye. $${formatNumber(un.reduce((a, id) => a + (WD().items[id].price || 0), 0))}.`;
           }
         }
       }

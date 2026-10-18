@@ -16,8 +16,8 @@ import {
   SAVE_NEW_MSG,
   SAVE_VERSION,
   activeBattle,
-  esc,
-  fmt,
+  escapeHtml,
+  formatNumber,
   loadSave,
   save,
   saveAge,
@@ -196,7 +196,7 @@ async function accPull() {
   if (offer && guest && guest.started && !saveData.started) {
     modal({
       title: 'Bring your game along?',
-      html: `<p>This browser has a game with ${esc((guest.avatar && guest.avatar.name) || 'your trainer')} (${fmt(guest.totalSteps || 0)} steps). Use it as the game on your account, ${esc(ACC.user.name)}?</p>`,
+      html: `<p>This browser has a game with ${escapeHtml((guest.avatar && guest.avatar.name) || 'your trainer')} (${formatNumber(guest.totalSteps || 0)} steps). Use it as the game on your account, ${escapeHtml(ACC.user.name)}?</p>`,
       btns: [
         {
           l: 'Yes, use it',
@@ -308,8 +308,8 @@ function accErr(e) {
 /* ---------- what shows ---------- */
 const accFace = u =>
   u.photo
-    ? `<img class="acc-ph" src="${esc(u.photo)}" alt="" referrerpolicy="no-referrer">`
-    : `<span class="acc-ph acc-ini">${esc((u.name || '?')[0].toUpperCase())}</span>`;
+    ? `<img class="acc-ph" src="${escapeHtml(u.photo)}" alt="" referrerpolicy="no-referrer">`
+    : `<span class="acc-ph acc-ini">${escapeHtml((u.name || '?')[0].toUpperCase())}</span>`;
 const accG =
   '<svg class="acc-g" viewBox="0 0 18 18" aria-hidden="true"><path fill="#4285F4" d="M17.6 9.2c0-.6-.1-1.2-.2-1.7H9v3.3h4.8a4.1 4.1 0 0 1-1.8 2.7v2.2h2.9c1.7-1.6 2.7-3.9 2.7-6.5z"/><path fill="#34A853" d="M9 18c2.4 0 4.5-.8 5.9-2.2l-2.9-2.2c-.8.5-1.8.9-3 .9-2.3 0-4.3-1.6-5-3.7H1v2.3A9 9 0 0 0 9 18z"/><path fill="#FBBC05" d="M4 10.8a5.4 5.4 0 0 1 0-3.5V5H1a9 9 0 0 0 0 8.1l3-2.3z"/><path fill="#EA4335" d="M9 3.6c1.3 0 2.5.5 3.4 1.3l2.6-2.6A9 9 0 0 0 1 5l3 2.3c.7-2.1 2.7-3.7 5-3.7z"/></svg>';
 /* the corner of the title: who's playing, or a sign-in button */
@@ -317,7 +317,7 @@ function accChipHTML() {
   if (!accOn()) return '';
   if (!ACC.ready) return '<span class="acc-chip quiet">Signing in…</span>';
   if (ACC.user)
-    return `<button class="acc-chip" data-a="acc-menu" title="Signed in as ${esc(ACC.user.email || ACC.user.name)}">${accFace(ACC.user)}<span>${esc(ACC.user.name.split(' ')[0])}</span></button>`;
+    return `<button class="acc-chip" data-a="acc-menu" title="Signed in as ${escapeHtml(ACC.user.email || ACC.user.name)}">${accFace(ACC.user)}<span>${escapeHtml(ACC.user.name.split(' ')[0])}</span></button>`;
   return `<button class="acc-chip google" data-a="acc-in">${accG}<span>Sign in with Google</span></button>`;
 }
 /* Settings → Save */
@@ -325,8 +325,8 @@ function accSettingsHTML() {
   if (!accOn())
     return `<div class="acc-box"><b>Your account</b><p class="note">Accounts aren’t set up in this copy of the game, so your game is kept in this browser.</p></div>`;
   if (ACC.user)
-    return `<div class="acc-box">${accFace(ACC.user)}<div class="acc-t"><b>${esc(ACC.user.name)}</b><span class="note">${esc(ACC.user.email)} · your game is saved to this account</span></div><button class="pb small quiet" data-a="acc-out">Sign out</button></div>${ACC.err ? `<p class="note warn">${esc(ACC.err)}</p>` : ''}`;
-  return `<div class="acc-box"><div class="acc-t"><b>Play on your own save</b><span class="note">Sign in with Google and your game is kept online, so you can carry on from any device. Everyone who signs in gets their own save.</span></div><button class="pb small acc-gbtn" data-a="acc-in">${accG} Sign in with Google</button></div>${ACC.err ? `<p class="note warn">${esc(ACC.err)}</p>` : ''}`;
+    return `<div class="acc-box">${accFace(ACC.user)}<div class="acc-t"><b>${escapeHtml(ACC.user.name)}</b><span class="note">${escapeHtml(ACC.user.email)} · your game is saved to this account</span></div><button class="pb small quiet" data-a="acc-out">Sign out</button></div>${ACC.err ? `<p class="note warn">${escapeHtml(ACC.err)}</p>` : ''}`;
+  return `<div class="acc-box"><div class="acc-t"><b>Play on your own save</b><span class="note">Sign in with Google and your game is kept online, so you can carry on from any device. Everyone who signs in gets their own save.</span></div><button class="pb small acc-gbtn" data-a="acc-in">${accG} Sign in with Google</button></div>${ACC.err ? `<p class="note warn">${escapeHtml(ACC.err)}</p>` : ''}`;
 }
 function accRefresh() {
   const c = document.querySelector('.ttl-acc');
@@ -346,7 +346,7 @@ document.addEventListener(
     else
       modal({
         title: ACC.user ? ACC.user.name : 'Account',
-        html: `<p>${esc(ACC.user ? ACC.user.email : '')}</p><p class="note">Your game is saved to this account. Signing out loads this browser’s own game instead; sign in again any time to carry on.</p>`,
+        html: `<p>${escapeHtml(ACC.user ? ACC.user.email : '')}</p><p class="note">Your game is saved to this account. Signing out loads this browser’s own game instead; sign in again any time to carry on.</p>`,
         btns: [
           {
             l: 'Sign out',

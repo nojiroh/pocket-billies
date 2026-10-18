@@ -10,7 +10,7 @@ import { $, $$, clamp } from '../../game/js/util.js';
 import { makeCanvas } from '../../game/js/art.js';
 import { animFor } from '../../game/js/body-plan-animation.js';
 import { drawRig, rigPose } from '../../game/js/skeleton-rig.js';
-import { esc } from './game-stand-ins.js';
+import { escapeHtml } from './game-stand-ins.js';
 import { ask, render, speciesName, studioState, toast, updateTopBar } from './studio-app.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -158,7 +158,7 @@ export function rigFor(sp, view, gold) {
 const SPRITE_PREVIEWS = new Set();
 let spritePreviewsRunning = false;
 export function spritePreviewHTML(o) {
-  return `<canvas class="spr-prev ${o.cls || ''}" data-prev='${esc(JSON.stringify(o))}' width="10" height="10"></canvas>`;
+  return `<canvas class="spr-prev ${o.cls || ''}" data-prev='${escapeHtml(JSON.stringify(o))}' width="10" height="10"></canvas>`;
 }
 export function mountPreviews(root = document) {
   $$('canvas[data-prev]', root).forEach(c => {
@@ -423,7 +423,7 @@ export async function openPixelEditor(sp, view = 'front', gold = false, focus = 
   }
   const m = $('#modal');
   m.innerHTML = `<div class="pxed" role="dialog" aria-modal="true" aria-label="Pixel editor">
- <header class="px-top"><b>${esc(speciesName(sp))}</b><span class="px-tabs">${[
+ <header class="px-top"><b>${escapeHtml(speciesName(sp))}</b><span class="px-tabs">${[
    ['front', 0, 'Front'],
    ['back', 0, 'Back'],
    ['front', 1, 'Front · golden'],
@@ -574,7 +574,7 @@ function pixelEditorBones() {
   $('#pxBones').innerHTML =
     `<table class="bones"><thead><tr><th>Part</th><th>X</th><th>Y</th><th>${E.view === 'back' ? 'Layer (back)' : 'Layer'}</th><th>Tilt</th></tr></thead><tbody>${meta.bones
       .map(
-        (b, i) => `<tr><td title="attached to ${esc(b.par || 'body')}">${esc(b.n)}</td>
+        (b, i) => `<tr><td title="attached to ${escapeHtml(b.par || 'body')}">${escapeHtml(b.n)}</td>
   <td><input type="number" step="0.5" data-p="${base}.${i}.at.0" data-k="num" value="${b.at[0]}"></td><td><input type="number" step="0.5" data-p="${base}.${i}.at.1" data-k="num" value="${b.at[1]}"></td>
   <td><input type="number" step="1" data-p="${base}.${i}.${E.view === 'back' && b.zb != null ? 'zb' : 'z'}" data-k="num" value="${E.view === 'back' && b.zb != null ? b.zb : b.z}"></td><td><input type="number" step="0.02" data-p="${base}.${i}.rr" data-k="num" data-opt="1" value="${b.rr || ''}" placeholder="0"></td></tr>`
       )

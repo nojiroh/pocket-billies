@@ -8,7 +8,7 @@ import { expose } from './test-globals.js';
 import { bar, closeModal, modal, provide, render, roomRefresh, toast } from './hooks.js';
 import { clamp } from './util.js';
 import { COINS, GD, ITEMS, ROUTE, RULES, SP } from './game-data.js';
-import { activeBattle, billyName, esc, fmt, save, saveData, today, uiState } from './game-state.js';
+import { activeBattle, billyName, escapeHtml, formatNumber, save, saveData, today, uiState } from './game-state.js';
 import { makeCanvas, uiIconHTML } from './art.js';
 import {
   baseMapId,
@@ -97,7 +97,7 @@ function x28Reward(k = 1) {
   const R = [],
     m = Math.round(((150 + Math.random() * 350) * k) / 10) * 10;
   saveData.se += m;
-  R.push('$' + fmt(m));
+  R.push('$' + formatNumber(m));
   if (Math.random() < 0.6) {
     const it = Object.keys(ITEMS).filter(i => !['bell', 'parachute'].includes(i));
     const i = it[Math.floor(Math.random() * it.length)];
@@ -121,7 +121,7 @@ const X28_CH = [
   {
     k: 'steps',
     make: r => ({ need: [3000, 5000, 8000][Math.floor(r() * 3)] }),
-    text: c => `Walk ${fmt(c.need)} steps today`,
+    text: c => `Walk ${formatNumber(c.need)} steps today`,
   },
   { k: 'catch', make: r => ({ need: 2 + Math.floor(r() * 2) }), text: c => `Tax ${c.need} Billies` },
   {
@@ -185,7 +185,7 @@ export function chalCard() {
     .map((c, i) => {
       const h = Math.min(chalHave(c), c.need),
         done = h >= c.need;
-      return `<div class="ch-row ${c.claimed ? 'claimed' : ''}"><div class="ch-t"><b>${esc(chalText(c))}</b><span class="note tnum">${fmt(h)} / ${fmt(c.need)}</span>${bar(h / c.need, done ? 'gold' : 'live')}</div>${c.claimed ? `<span class="ch-ok">Claimed</span>` : done ? `<button class="pb small gold" data-a="chal" data-i="${i}">Claim</button>` : ''}</div>`;
+      return `<div class="ch-row ${c.claimed ? 'claimed' : ''}"><div class="ch-t"><b>${escapeHtml(chalText(c))}</b><span class="note tnum">${formatNumber(h)} / ${formatNumber(c.need)}</span>${bar(h / c.need, done ? 'gold' : 'live')}</div>${c.claimed ? `<span class="ch-ok">Claimed</span>` : done ? `<button class="pb small gold" data-a="chal" data-i="${i}">Claim</button>` : ''}</div>`;
     })
     .join('')}<p class="note">New challenges every day.</p></section>`;
 }
@@ -203,7 +203,7 @@ function chalClaim(i) {
 const X28_REQ = {
   show: q => `Do you have a ${q.t} Billie with you? I’ve always wanted to see one up close.`,
   steps: q =>
-    `Could you take my letter for a walk? It needs ${fmt(q.n)} steps of fresh air. Bring it back to me after.`,
+    `Could you take my letter for a walk? It needs ${formatNumber(q.n)} steps of fresh air. Bring it back to me after.`,
   catch: q => `I’d love to see a ${q.t} Billie. Tax one and come back to show me?`,
 };
 function reqHere(node = saveData.route.node) {
@@ -263,14 +263,14 @@ async function reqTalk(f) {
     if (q.k === 'show') {
       const m = x28TeamOf(q.t);
       modal({
-        title: m ? `Show ${esc(billyName(m))}?` : `No ${esc(q.t)} Billie with you`,
+        title: m ? `Show ${escapeHtml(billyName(m))}?` : `No ${escapeHtml(q.t)} Billie with you`,
         html: m
-          ? `<p>${esc(billyName(m))} is a ${esc(SP[m.sp].types.join('/'))} Billie.</p>`
+          ? `<p>${escapeHtml(billyName(m))} is a ${escapeHtml(SP[m.sp].types.join('/'))} Billie.</p>`
           : `<p class="note">Come back with one in your team.</p>`,
         btns: m
           ? [
               {
-                l: `Show ${esc(billyName(m))}`,
+                l: `Show ${escapeHtml(billyName(m))}`,
                 c: 'gold',
                 f: () => {
                   closeModal();
@@ -284,7 +284,7 @@ async function reqTalk(f) {
     } else
       modal({
         title: 'Help out?',
-        html: `<p>${esc(q.k === 'steps' ? `Walk ${fmt(q.n)} steps, then come back and talk to them.` : `Tax a ${q.t} Billie, then come back and talk to them.`)}</p>`,
+        html: `<p>${escapeHtml(q.k === 'steps' ? `Walk ${formatNumber(q.n)} steps, then come back and talk to them.` : `Tax a ${q.t} Billie, then come back and talk to them.`)}</p>`,
         btns: [
           {
             l: 'I’ll do it',
@@ -308,7 +308,7 @@ async function reqTalk(f) {
     if (q.k === 'steps') {
       const left = q.n - (saveData.totalSteps - (q.base || 0));
       if (left <= 0) return finish('The letter looks so refreshed! Thank you.');
-      await talk([[who, `Only ${fmt(left)} more steps for my letter. It’s enjoying the walk.`]]);
+      await talk([[who, `Only ${formatNumber(left)} more steps for my letter. It’s enjoying the walk.`]]);
     } else if (q.k === 'catch') {
       if ((q.have || 0) >= 1) return finish(`You taxed one! A real ${q.t} Billie. I’ll tell everyone.`);
       await talk([[who, `Still hoping you’ll tax a ${q.t} Billie for me.`]]);
@@ -329,13 +329,13 @@ export function reqList() {
       const where = ROUTE[+n] ? ROUTE[+n].name : '';
       const txt =
         q.k === 'steps'
-          ? `Walk ${fmt(Math.max(0, q.n - (saveData.totalSteps - (q.base || 0))))} more steps for a letter`
+          ? `Walk ${formatNumber(Math.max(0, q.n - (saveData.totalSteps - (q.base || 0))))} more steps for a letter`
           : q.k === 'catch'
             ? q.have
               ? `Show your ${q.t} Billie`
               : `Tax a ${q.t} Billie`
             : `Show a ${q.t} Billie`;
-      return `<div class="ch-row"><div class="ch-t"><b>${esc(txt)}</b><span class="note">For someone in ${esc(where)}</span></div></div>`;
+      return `<div class="ch-row"><div class="ch-t"><b>${escapeHtml(txt)}</b><span class="note">For someone in ${escapeHtml(where)}</span></div></div>`;
     })
     .join('');
 }
@@ -473,7 +473,7 @@ export function homeDecorate() {
     own = X.home.own;
   const row = (s, i) => {
     const opts = own.filter(k => furnFits(k, s));
-    return `<label class="fld"><span>${esc(s.n)}</span><select data-home="${i}"><option value="">Nothing</option>${opts.map(k => `<option value="${k}" ${X.home.slots[i] === k ? 'selected' : ''}>${esc((FURN.find(f => f[0] === k) || [k, k])[1])}</option>`).join('')}</select></label>`;
+    return `<label class="fld"><span>${escapeHtml(s.n)}</span><select data-home="${i}"><option value="">Nothing</option>${opts.map(k => `<option value="${k}" ${X.home.slots[i] === k ? 'selected' : ''}>${escapeHtml((FURN.find(f => f[0] === k) || [k, k])[1])}</option>`).join('')}</select></label>`;
   };
   modal({
     title: 'Decorate your room',
@@ -568,7 +568,7 @@ function photoShot() {
       nm = `pocket-billies-${baseMapId() || 'photo'}-${Date.now()}.png`;
     modal({
       title: 'Your photo',
-      html: `<img class="photo-prev" src="${url}" alt="Your photo of ${esc((walkView.sc && walkView.sc.name) || 'the scene')}"><p class="note">Save it, or long-press the picture to share it.</p>`,
+      html: `<img class="photo-prev" src="${url}" alt="Your photo of ${escapeHtml((walkView.sc && walkView.sc.name) || 'the scene')}"><p class="note">Save it, or long-press the picture to share it.</p>`,
       btns: [
         {
           l: 'Save picture',

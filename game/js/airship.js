@@ -13,7 +13,7 @@ import { closeModal, modal, provide, render, sceneIdAt, storyFlags, toast } from
 import { $, clamp } from './util.js';
 import { PLACE, ROUTE, isTown, placeFull } from './game-data.js';
 import { isLiteMap, loadMapFile, loadMapsAhead } from './map-files.js';
-import { canEnter, esc, fmt, reducedMotion, save, saveData, uiState } from './game-state.js';
+import { canEnter, escapeHtml, formatNumber, reducedMotion, save, saveData, uiState } from './game-state.js';
 import { artLoad, uiIconHTML } from './art.js';
 import { artImage, imageReady, mapById, prepareMap, walkData } from './walk-view.js';
 import { seamlessHubMap } from './seamless-world.js';
@@ -65,13 +65,13 @@ export function flyMenu(p) {
   const rows = L.map(i => {
     const f = flyFare(here, i),
       ok = saveData.se >= f;
-    return `<button class="pickrow fly-row${ok ? '' : ' off'}" data-a="flyto" data-n="${i}"${ok ? '' : ' aria-disabled="true"'}><span class="fly-ico">${uiIconHTML('house', 18)}</span><span class="pr-t"><b>${esc(placeFull(ROUTE[i]))}</b><small>${esc(ROUTE[i].blurb || '')}</small></span><span class="fly-fare tnum">$${fmt(f)}</span></button>`;
+    return `<button class="pickrow fly-row${ok ? '' : ' off'}" data-a="flyto" data-n="${i}"${ok ? '' : ' aria-disabled="true"'}><span class="fly-ico">${uiIconHTML('house', 18)}</span><span class="pr-t"><b>${escapeHtml(placeFull(ROUTE[i]))}</b><small>${escapeHtml(ROUTE[i].blurb || '')}</small></span><span class="fly-fare tnum">$${formatNumber(f)}</span></button>`;
   }).join('');
   modal({
-    title: esc((p && p.label) || 'Airship mast'),
+    title: escapeHtml((p && p.label) || 'Airship mast'),
     cls: 'fly-sheet',
     html: L.length
-      ? `<p class="note">The airships fly to the towns you’ve been to. A ticket is paid in money, so your steps stay for walking new ground. You have $${fmt(saveData.se)}.</p><div class="list">${rows}</div>`
+      ? `<p class="note">The airships fly to the towns you’ve been to. A ticket is paid in money, so your steps stay for walking new ground. You have $${formatNumber(saveData.se)}.</p><div class="list">${rows}</div>`
       : `<p>The airships fly to the towns you’ve already been to. Walk on to another town, and you can fly back here from its mast whenever you like.</p>`,
     btns: [{ l: 'Not now', c: 'quiet', f: closeModal }],
   });
@@ -83,7 +83,7 @@ function startAirshipFlight(i) {
   const a = saveData.route.node,
     f = flyFare(a, i);
   if (saveData.se < f) {
-    toast(`A ticket to ${ROUTE[i].name} costs $${fmt(f)}. You have $${fmt(saveData.se)}.`);
+    toast(`A ticket to ${ROUTE[i].name} costs $${formatNumber(f)}. You have $${formatNumber(saveData.se)}.`);
     return;
   }
   saveData.se -= f;
@@ -136,7 +136,7 @@ function startAirshipFlight(i) {
     const c = document.createElement('div');
     c.id = 'flycap';
     c.className = 'fly-cap glass';
-    c.innerHTML = `<small>Airship</small><b>${esc(placeFull(ROUTE[a]))} → ${esc(placeFull(ROUTE[i]))}</b><span class="note">Tap to skip</span>`;
+    c.innerHTML = `<small>Airship</small><b>${escapeHtml(placeFull(ROUTE[a]))} → ${escapeHtml(placeFull(ROUTE[i]))}</b><span class="note">Tap to skip</span>`;
     host.appendChild(c);
   }
   if (typeof sfx === 'function') sfx('throw');
@@ -266,7 +266,7 @@ document.addEventListener(
       ev.stopPropagation();
       ev.preventDefault();
       if (el.getAttribute('aria-disabled'))
-        toast(`You need $${fmt(flyFare(saveData.route.node, +el.dataset.n))} for that ticket.`);
+        toast(`You need $${formatNumber(flyFare(saveData.route.node, +el.dataset.n))} for that ticket.`);
       else startAirshipFlight(+el.dataset.n);
       return;
     }
@@ -296,7 +296,7 @@ export function rideGlassLift(p) {
   glassLift.on = true;
   const cv = document.createElement('div');
   cv.className = 'lift-veil' + (down ? ' down' : ' up');
-  cv.innerHTML = `<div class="lift-cap glass"><small>Glass lift</small><b>${down ? 'Down to' : 'Up to'} ${esc(ROUTE[i].name)}</b><span class="note">${down ? 'Kelp, then dark water, then the lights of the dome.' : 'Up past the kelp, into the light.'}</span></div>`;
+  cv.innerHTML = `<div class="lift-cap glass"><small>Glass lift</small><b>${down ? 'Down to' : 'Up to'} ${escapeHtml(ROUTE[i].name)}</b><span class="note">${down ? 'Kelp, then dark water, then the lights of the dome.' : 'Up past the kelp, into the light.'}</span></div>`;
   document.body.appendChild(cv);
   requestAnimationFrame(() => requestAnimationFrame(() => cv.classList.add('in')));
   if (typeof sfx === 'function') sfx('throw');

@@ -6,7 +6,7 @@ import { worldPaint } from '../../game/js/hooks.js';
 import { $, clamp } from '../../game/js/util.js';
 import { makeCanvas } from '../../game/js/art.js';
 import { WILD_TYPE_BOOSTS } from '../../game/js/environment.js';
-import { esc } from './game-stand-ins.js';
+import { escapeHtml } from './game-stand-ins.js';
 import {
   ACTIONS,
   SECTIONS,
@@ -104,11 +104,11 @@ function drawWorldMarkers() {
   D.regions.forEach((g, i) => {
     if (g.lon == null) return;
     const [x, y] = lonLatToWorldMapXY(g.lon, g.lat || 0);
-    h += `<g class="mk reg ${studioState.sel.stop === 'r' + i ? 'on' : ''}" data-mk="r${i}" transform="translate(${x},${y})"><circle r="3.2"/><text y="-5">${esc(g.name)}</text></g>`;
+    h += `<g class="mk reg ${studioState.sel.stop === 'r' + i ? 'on' : ''}" data-mk="r${i}" transform="translate(${x},${y})"><circle r="3.2"/><text y="-5">${escapeHtml(g.name)}</text></g>`;
   });
   D.route.forEach((r, i) => {
     const [x, y] = pts[i];
-    h += `<g class="mk ${r.town ? 'town' : ''} ${studioState.sel.stop === i ? 'on' : ''}" data-mk="${i}" transform="translate(${x},${y})"><circle r="${r.town ? 3.2 : 2.6}"/><text y="-5">${i + 1}. ${esc(r.name)}</text></g>`;
+    h += `<g class="mk ${r.town ? 'town' : ''} ${studioState.sel.stop === i ? 'on' : ''}" data-mk="${i}" transform="translate(${x},${y})"><circle r="${r.town ? 3.2 : 2.6}"/><text y="-5">${i + 1}. ${escapeHtml(r.name)}</text></g>`;
   });
   svg.innerHTML = h;
 }
@@ -202,15 +202,15 @@ function worldLocations() {
       (
         x,
         j
-      ) => `<tr class="${j === i ? 'on' : ''}"><td>${j + 1}</td><td><button class="linkish" data-act="pickStop" data-i="${j}">${esc(x.name)}</button>${x.town ? ' <small>town</small>' : ''}${x.gate ? ' <small class="warn">gated</small>' : ''}</td><td><small>${
+      ) => `<tr class="${j === i ? 'on' : ''}"><td>${j + 1}</td><td><button class="linkish" data-act="pickStop" data-i="${j}">${escapeHtml(x.name)}</button>${x.town ? ' <small>town</small>' : ''}${x.gate ? ' <small class="warn">gated</small>' : ''}</td><td><small>${
         locationRoads(j)
-          .map(([o, c]) => `${esc(D.route[o].name)} (${formatThousands(c)})`)
+          .map(([o, c]) => `${escapeHtml(D.route[o].name)} (${formatThousands(c)})`)
           .join(', ') || '<span class="warn">no roads</span>'
-      }</small></td><td>${x.shop && D.shops[x.shop] ? esc(D.shops[x.shop].name) : ''}</td><td>${Object.values(
+      }</small></td><td>${x.shop && D.shops[x.shop] ? escapeHtml(D.shops[x.shop].name) : ''}</td><td>${Object.values(
         D.trainers || {}
       )
         .filter(T => T.node === j)
-        .map(T => esc(T.name))
+        .map(T => escapeHtml(T.name))
         .join(', ')}</td>
   <td><button class="x" data-act="stopMove" data-i="${j}" data-d="-1" title="Move up">↑</button><button class="x" data-act="stopMove" data-i="${j}" data-d="1" title="Move down">↓</button></td></tr>`
     )
@@ -296,7 +296,7 @@ function worldLocations() {
     card('The route', list, {
       sub: 'Stops and the roads between them. Players pick where to walk on the world map. Trainers are placed on stops under Trainers.',
     }) +
-    card(`${i + 1}. ${esc(r.name)}`, ed) +
+    card(`${i + 1}. ${escapeHtml(r.name)}`, ed) +
     card('Roads from here', roadsHTML(i), {
       sub: 'Each road is walked in either direction. Steps are how far it is. In the stop’s walk scene, each road leaves through the exit named under “Leaves by”, or, when none is named, the exit that points the same way on the world map.',
     }) +
@@ -319,12 +319,12 @@ function roadsHTML(i) {
         J = D.links[k][3] || {},
         sc = D.scenes[(D.route[i] || {}).scene],
         ids = ((sc && sc.edgeExits) || []).map(e => e.id);
-      return `<tr><td><select data-p="links.${k}.${side}" data-k="num" data-rr="1">${opts.map(([j, n]) => `<option value="${j}" ${j === o ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select></td><td><input type="number" min="50" step="50" data-p="links.${k}.2" data-k="num" value="${c}" class="sm-num"></td><td><small>${(c / D.rules.steps.stepsPerKm).toFixed(1)} km</small></td><td><select data-join="${k}" data-end="${end}" title="Which exit of this stop’s scene the road uses (v42 join table); ‘by direction’ matches it by compass bearing as before"><option value="">by direction</option>${ids.map(id => `<option value="${esc(id)}" ${J[end] === id ? 'selected' : ''}>${esc(id)}</option>`).join('')}</select></td><td><button class="x" data-act="roadDel" data-k="${k}" title="Remove this road">×</button></td></tr>`;
+      return `<tr><td><select data-p="links.${k}.${side}" data-k="num" data-rr="1">${opts.map(([j, n]) => `<option value="${j}" ${j === o ? 'selected' : ''}>${escapeHtml(n)}</option>`).join('')}</select></td><td><input type="number" min="50" step="50" data-p="links.${k}.2" data-k="num" value="${c}" class="sm-num"></td><td><small>${(c / D.rules.steps.stepsPerKm).toFixed(1)} km</small></td><td><select data-join="${k}" data-end="${end}" title="Which exit of this stop’s scene the road uses (v42 join table); ‘by direction’ matches it by compass bearing as before"><option value="">by direction</option>${ids.map(id => `<option value="${escapeHtml(id)}" ${J[end] === id ? 'selected' : ''}>${escapeHtml(id)}</option>`).join('')}</select></td><td><button class="x" data-act="roadDel" data-k="${k}" title="Remove this road">×</button></td></tr>`;
     }
   ).join('')}</tbody></table>
  <div class="seg-row"><select id="roadTo">${opts
    .filter(([j]) => !R.some(x => x[0] === j))
-   .map(([j, n]) => `<option value="${j}">${esc(n)}</option>`)
+   .map(([j, n]) => `<option value="${j}">${escapeHtml(n)}</option>`)
    .join('')}</select><button class="btn" data-act="roadAdd" data-i="${i}">+ Add a road</button></div>`;
 }
 ACTIONS.roadAdd = d => {
@@ -417,7 +417,7 @@ ACTIONS.stopDel = async () => {
   const T = Object.values(D.trainers || {}).filter(t => t.node === i);
   if (
     !(await ask(
-      `Delete ${esc(D.route[i].name)}?${T.length ? ` ${T.map(t => esc(t.name)).join(', ')} move to the previous stop.` : ''}`,
+      `Delete ${escapeHtml(D.route[i].name)}?${T.length ? ` ${T.map(t => escapeHtml(t.name)).join(', ')} move to the previous stop.` : ''}`,
       'Delete'
     ))
   )
@@ -439,7 +439,7 @@ function weightTable(base, P) {
     .map(
       ([id, w], j) =>
         `<tr><td>${spritePreviewHTML({ sp: id, still: 1, cls: 'mini' })} <select data-p="${base}.list.${j}.0" data-k="sel" data-rr="1">${speciesOptions()
-          .map(([v, n]) => `<option value="${v}" ${v === id ? 'selected' : ''}>${esc(n)}</option>`)
+          .map(([v, n]) => `<option value="${v}" ${v === id ? 'selected' : ''}>${escapeHtml(n)}</option>`)
           .join(
             ''
           )}</select></td><td><input type="number" min="1" data-p="${base}.list.${j}.1" data-k="num" value="${w}"></td><td>${tot ? Math.round((w / tot) * 100) : 0}%</td><td><button class="x" data-act="wDel" data-b="${base}" data-j="${j}">✕</button></td></tr>`
@@ -463,13 +463,13 @@ function worldPools() {
     Object.entries(D.pools)
       .map(([k, P]) =>
         card(
-          `Pool “${esc(k)}”`,
+          `Pool “${escapeHtml(k)}”`,
           grid(
             numberField('Lowest level', `pools.${k}.lv.0`, { min: 1, max: 100, step: 1 }),
             numberField('Highest level', `pools.${k}.lv.1`, { min: 1, max: 100, step: 1 })
           ) + weightTable(`pools.${k}`, P),
           {
-            sub: `Used by: ${esc(
+            sub: `Used by: ${escapeHtml(
               D.route
                 .filter(r => r.pool === k)
                 .map(r => r.name)
@@ -506,7 +506,7 @@ function worldFishing() {
         if (!P)
           return card(
             n,
-            `<button class="btn" data-act="fishAdd" data-k="${k}">+ Fish in ${esc(n.toLowerCase())}</button>`
+            `<button class="btn" data-act="fishAdd" data-k="${k}">+ Fish in ${escapeHtml(n.toLowerCase())}</button>`
           );
         return card(
           n,
@@ -570,7 +570,7 @@ function worldRegions() {
       D.regions
         .map(
           (g, i) =>
-            `<div class="item-row"><div class="item-ic"><small class="mono">${esc(g.t)}</small></div><div>${grid(
+            `<div class="item-row"><div class="item-ic"><small class="mono">${escapeHtml(g.t)}</small></div><div>${grid(
               textField('Name', `regions.${i}.name`),
               selectField(
                 'Look',
@@ -636,7 +636,7 @@ function worldBackdrops() {
       const p = `backdrops.${k}`,
         art = b.art || k;
       return card(
-        esc(b.name || k),
+        escapeHtml(b.name || k),
         `<div class="bd-prev" style="background:linear-gradient(${b.sky.join(',')})"><span style="background:${b.fog}"></span><img src="../game/art/battle/${art}_ground.png" alt="" class="pix"></div>` +
           grid(
             textField('Name', `${p}.name`),
@@ -664,7 +664,7 @@ function worldBackdrops() {
           ) +
           `<div class="grid colors">${colorField('Sky top', `${p}.sky.0`)}${colorField('Sky middle', `${p}.sky.1`)}${colorField('Sky horizon', `${p}.sky.2`)}${colorField('Haze', `${p}.fog`)}${numberField('Haze distance', `${p}.fogD`, { min: 10, max: 300, step: 5, help: 'Smaller is hazier.' })}</div>`,
         {
-          sub: `id ${esc(k)} · used by ${esc(
+          sub: `id ${escapeHtml(k)} · used by ${escapeHtml(
             D.route
               .filter(r => r.area === k)
               .map(r => r.name)
@@ -701,10 +701,10 @@ SECTIONS.rules = () => {
     jb = 'rules.jobs',
     bt = 'rules.battle',
     ca = 'rules.catching';
-  const starters = `<div class="chips">${D.lines.map(L => `<label class="chk-chip"><input type="checkbox" data-act-chk="starter" value="${L.id}" ${R.start.starters.includes(L.id) ? 'checked' : ''}> ${esc(L.names[0])}</label>`).join('')}</div>`;
+  const starters = `<div class="chips">${D.lines.map(L => `<label class="chk-chip"><input type="checkbox" data-act-chk="starter" value="${L.id}" ${R.start.starters.includes(L.id) ? 'checked' : ''}> ${escapeHtml(L.names[0])}</label>`).join('')}</div>`;
   const rival = R.start.starters
     .map(l =>
-      selectField(`Rival’s pick if you choose ${esc(speciesName(l + '0'))}`, `${s}.rival.${l}`, speciesOptions())
+      selectField(`Rival’s pick if you choose ${escapeHtml(speciesName(l + '0'))}`, `${s}.rival.${l}`, speciesOptions())
     )
     .join('');
   const brackets = `<table class="tbl"><thead><tr><th>Steps today up to</th><th>Money per step</th><th></th></tr></thead><tbody>${R.steps.brackets.map((b, i) => `<tr><td><input type="number" min="0" step="500" data-p="${st}.brackets.${i}.upTo" data-k="num" value="${b.upTo}" ${i === R.steps.brackets.length - 1 ? 'title="0 means no limit"' : ''}></td><td><input type="number" min="0" max="5" step=".05" data-p="${st}.brackets.${i}.rate" data-k="num" value="${b.rate}"></td><td><button class="x" data-act="brDel" data-i="${i}">✕</button></td></tr>`).join('')}</tbody></table><button class="btn subtle" data-act="brAdd">Add a rate bracket</button><p class="help">Daily step rate: money earned per step drops after many steps in a day. Use 0 as the last limit for “and beyond”.</p>`;
@@ -844,7 +844,7 @@ SECTIONS.rules = () => {
      )
        .map(
          ([k, F]) =>
-           `<h4>${esc({ night: 'At night', dusk: 'At dusk and dawn', sunny: 'On a fair day', rain: 'In the rain', storm: 'In a thunderstorm', snow: 'In the snow', fog: 'In fog', ash: 'In falling ash' }[k] || k)}</h4><div class="grid">${D.types.map(t => numberField(t.id, `rules.env.likes.${k}.${t.id}`, { opt: 1, min: 0, max: 5, step: 0.05, unit: '×', ph: F[t.id] != null ? String(F[t.id]) : '1' })).join('')}</div>`
+           `<h4>${escapeHtml({ night: 'At night', dusk: 'At dusk and dawn', sunny: 'On a fair day', rain: 'In the rain', storm: 'In a thunderstorm', snow: 'In the snow', fog: 'In fog', ash: 'In falling ash' }[k] || k)}</h4><div class="grid">${D.types.map(t => numberField(t.id, `rules.env.likes.${k}.${t.id}`, { opt: 1, min: 0, max: 5, step: 0.05, unit: '×', ph: F[t.id] != null ? String(F[t.id]) : '1' })).join('')}</div>`
        )
        .join('')}</details>`
  )}
@@ -963,7 +963,7 @@ SECTIONS.rules = () => {
        numberField('Focus Bonus cap', `${ca}.integrityMax`, { unit: '×', min: 1, max: 5, step: 0.05 })
      ) +
      '<h4>Luxury lines (sneer at Copper Coins)</h4>' +
-     `<div class="chips">${D.lines.map(L => `<label class="chk-chip"><input type="checkbox" data-act-chk="luxury" value="${L.id}" ${R.catching.luxury.includes(L.id) ? 'checked' : ''}> ${esc(L.names[0])}</label>`).join('')}</div>`
+     `<div class="chips">${D.lines.map(L => `<label class="chk-chip"><input type="checkbox" data-act-chk="luxury" value="${L.id}" ${R.catching.luxury.includes(L.id) ? 'checked' : ''}> ${escapeHtml(L.names[0])}</label>`).join('')}</div>`
  )}</div>`;
 };
 function xpCurveText() {
@@ -1034,7 +1034,7 @@ SECTIONS.art = () => {
      files
        .map(f => {
          const dirty = studioState.artDirty.has(f.path);
-         return `<figure class="file"><div class="fthumb"><img src="../game/${f.path}?v=${f.mtime}${dirty ? '&d' : ''}" alt="" loading="lazy" class="pix"></div><figcaption><b title="${esc(f.path)}">${esc(f.path.split('/').slice(2).join('/'))}</b><small>${(f.size / 1024).toFixed(1)} KB${dirty ? ' · edited' : ''}</small></figcaption>
+         return `<figure class="file"><div class="fthumb"><img src="../game/${f.path}?v=${f.mtime}${dirty ? '&d' : ''}" alt="" loading="lazy" class="pix"></div><figcaption><b title="${escapeHtml(f.path)}">${escapeHtml(f.path.split('/').slice(2).join('/'))}</b><small>${(f.size / 1024).toFixed(1)} KB${dirty ? ' · edited' : ''}</small></figcaption>
   <div class="seg-row"><a class="btn sm" href="../game/${f.path}" download>Download</a>${f.path.endsWith('.svg') ? '' : `<button class="btn sm" data-act="artReplace" data-p="${f.path}">Replace…</button>`}</div></figure>`;
        })
        .join('') || '<p class="help">No files here yet.</p>'

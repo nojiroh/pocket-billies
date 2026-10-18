@@ -14,7 +14,7 @@ import {
   sfx,
   toast,
 } from './hooks.js';
-import { rnd } from './util.js';
+import { random } from './util.js';
 import {
   ADJ,
   COINS,
@@ -71,14 +71,14 @@ expose({
   collectJob: [() => collectJob, v => (collectJob = v)],
   emptyJob: [() => emptyJob],
   endShift: [() => endShift, v => (endShift = v)],
-  esc: [() => esc],
+  escapeHtml: [() => escapeHtml],
   evoHint: [() => evoHint, v => (evoHint = v)],
   evoItemName: [() => evoItemName],
   evoReady: [() => evoReady, v => (evoReady = v)],
   evolve: [() => evolve, v => (evolve = v)],
   findMon: [() => findMon],
   flushSave: [() => flushSave, v => (flushSave = v)],
-  fmt: [() => fmt],
+  formatNumber: [() => formatNumber],
   gainXp: [() => gainXp, v => (gainXp = v)],
   gateMsg: [() => gateMsg, v => (gateMsg = v)],
   gateOwner: [() => gateOwner, v => (gateOwner = v)],
@@ -87,7 +87,6 @@ expose({
   hatchable: [() => hatchable],
   healAll: [() => healAll, v => (healAll = v)],
   hereStop: [() => hereStop],
-  km: [() => km],
   loadSave: [() => loadSave, v => (loadSave = v)],
   makeMon: [() => makeMon, v => ((makeMon = v), provide({ makeMon }))],
   maxHp: [() => maxHp],
@@ -95,10 +94,11 @@ expose({
   movesAt: [() => movesAt, v => (movesAt = v)],
   newSave: [() => newSave, v => (newSave = v)],
   newSaveKeepingPreferences: [() => newSaveKeepingPreferences, v => (newSaveKeepingPreferences = v)],
+  newUid: [() => newUid],
   nextBracket: [() => nextBracket],
   nextStop: [() => nextStop],
   pathFrom: [() => pathFrom],
-  pickW: [() => pickW, v => (pickW = v)],
+  pickWeighted: [() => pickWeighted, v => (pickWeighted = v)],
   plural: [() => plural],
   rate: [() => rate],
   readStoredSave: [() => readStoredSave, v => (readStoredSave = v)],
@@ -123,6 +123,7 @@ expose({
   spawn: [() => spawn, v => (spawn = v)],
   splitPath: [() => splitPath, v => (splitPath = v)],
   stat: [() => stat, v => (stat = v)],
+  stepsToKm: [() => stepsToKm],
   stopTrip: [() => stopTrip, v => (stopTrip = v)],
   taxed: [() => taxed, v => (taxed = v)],
   toBox: [() => toBox, v => (toBox = v)],
@@ -131,7 +132,6 @@ expose({
   traveling: [() => traveling],
   tripTo: [() => tripTo, v => (tripTo = v)],
   uiState: [() => uiState],
-  uid: [() => uid],
   walkMode: [() => walkMode],
   writeStoredSave: [() => writeStoredSave, v => (writeStoredSave = v)],
   xpFor: [() => xpFor],
@@ -143,7 +143,7 @@ export function setSetTrip(v) {
   provide({ setTrip });
 }
 /* to-module: end */
-export const esc = s =>
+export const escapeHtml = s =>
   String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 /* phase 02: a name the player typed, or that came from a backup file or a friend, loses the characters that could
    end a piece of HTML (< > " & `) and control characters, so it is safe in any page text or attribute */
@@ -154,19 +154,19 @@ export const cleanName = (s, max) =>
     .trim()
     .slice(0, max);
 provide({ cleanName }); /* to-module */
-export const fmt = n => Math.floor(n).toLocaleString('en-US');
-export const km = st => (st / STEPS_PER_KM).toFixed(1);
+export const formatNumber = n => Math.floor(n).toLocaleString('en-US');
+export const stepsToKm = st => (st / STEPS_PER_KM).toFixed(1);
 export let reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 provide({ reducedMotion }); /* to-module */
-export const uid = () => 'm' + Date.now().toString(36) + Math.floor(rnd() * 1e8).toString(36);
+export const newUid = () => 'm' + Date.now().toString(36) + Math.floor(random() * 1e8).toString(36);
 export const today = () => {
   const d = new Date();
   return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 };
-export const plural = (n, w) => `${fmt(n)} ${w}${n === 1 ? '' : 's'}`;
-export function pickW(list) {
+export const plural = (n, w) => `${formatNumber(n)} ${w}${n === 1 ? '' : 's'}`;
+export function pickWeighted(list) {
   const tot = list.reduce((a, b) => a + b[1], 0);
-  let r = rnd() * tot;
+  let r = random() * tot;
   for (const [id, w] of list) {
     r -= w;
     if (r <= 0) return id;
@@ -222,7 +222,7 @@ export function newSave() {
     jobs: Array.from({ length: JOB_SLOTS() }, emptyJob),
     savedAt: 0,
     /* trainer card: ID number, start date (0 = unknown, older saves) and eggs hatched */
-    tid: 10000 + Math.floor(rnd() * 90000),
+    tid: 10000 + Math.floor(random() * 90000),
     since: 0,
     hatched: 0,
   };
@@ -444,7 +444,7 @@ function movesAt(lid, lvl) {
 /* alpha 0.5: a Billie remembers where and when it joined you (shown in its details) */
 export function makeMon(sp, lvl, o = {}) {
   const m = {
-    uid: uid(),
+    uid: newUid(),
     sp,
     lvl,
     xp: xpFor(lvl),
@@ -513,10 +513,10 @@ export function evoHint(m) {
     case 'split': {
       const alt = SP[s.alt],
         an = alt && saveData.seen[alt.id] ? alt.name : 'something else';
-      return `Evolves at level ${e.at} into ${nm} or ${an}: ${splitPath(m) === 'A' ? 'the Build path is ahead' : 'the Hype path is ahead'} (${m.wins || 0} battles won, ${km(m.bsteps || 0)} km walked as buddy${m.psteps ? ` + ${km((m.psteps || 0) / 2)} km in the party at half weight` : ''}).`;
+      return `Evolves at level ${e.at} into ${nm} or ${an}: ${splitPath(m) === 'A' ? 'the Build path is ahead' : 'the Hype path is ahead'} (${m.wins || 0} battles won, ${stepsToKm(m.bsteps || 0)} km walked as buddy${m.psteps ? ` + ${stepsToKm((m.psteps || 0) / 2)} km in the party at half weight` : ''}).`;
     }
     case 'buddy':
-      return `Evolves after you walk ${km(e.steps)} km with it as your buddy. ${km(m.bsteps || 0)} of ${km(e.steps)} km so far.`;
+      return `Evolves after you walk ${stepsToKm(e.steps)} km with it as your buddy. ${stepsToKm(m.bsteps || 0)} of ${stepsToKm(e.steps)} km so far.`;
     case 'item':
       return `Evolves when you use ${/^[AEIOU]/.test(evoItemName(e)) ? 'an' : 'a'} ${evoItemName(e)}, once it reaches level ${e.min}.`;
     case 'donate':
@@ -759,15 +759,15 @@ export function spawn(gentle, force) {
       g = list.filter(([id]) => !SP[id].types.some(t => eff(t, my) > 1));
     if (g.length) list = g;
   }
-  const sp = force || pickW(list),
-    lvl = P.lv[0] + Math.floor(rnd() * (P.lv[1] - P.lv[0] + 1));
-  const q = { id: uid(), sp, lvl, gold: rnd() < 1 / RULES.steps.goldOdds, no: ++saveData.serial };
+  const sp = force || pickWeighted(list),
+    lvl = P.lv[0] + Math.floor(random() * (P.lv[1] - P.lv[0] + 1));
+  const q = { id: newUid(), sp, lvl, gold: random() < 1 / RULES.steps.goldOdds, no: ++saveData.serial };
   /* v33: now and then an Alpha (once you have two billionaires to stand with your lead) */
   if (
     !gentle &&
     !force &&
     saveData.team.filter(m => m.job == null).length >= 2 &&
-    rnd() < 1 / ((RULES.steps && RULES.steps.alphaOdds) || 45)
+    random() < 1 / ((RULES.steps && RULES.steps.alphaOdds) || 45)
   )
     q.alpha = true;
   saveData.queue.push(q);
@@ -833,7 +833,8 @@ export function addSteps(n, quiet) {
       if (j.pend < RULES.jobs.maxPending) j.pend++;
     }
   });
-  if (!quiet || sp) toast(`+${fmt(n)} steps, +$${fmt(gi)}${sp ? `, ${plural(sp, 'new encounter')}` : ''}`);
+  if (!quiet || sp)
+    toast(`+${formatNumber(n)} steps, +$${formatNumber(gi)}${sp ? `, ${plural(sp, 'new encounter')}` : ''}`);
   msgs.concat(notes).forEach(t => toast(t));
   save();
   if (!activeBattle) {
@@ -858,7 +859,7 @@ export function addEgg(tier) {
     toast('You’re carrying too many eggs. Hatch a few first.');
     return false;
   }
-  saveData.eggs.push({ id: uid(), tier, prog: 0, slot: null });
+  saveData.eggs.push({ id: newUid(), tier, prog: 0, slot: null });
   autoSlot();
   return true;
 }
@@ -868,9 +869,9 @@ export function hatchEgg(e) {
   const T = EGGS[e.tier],
     R = RULES.eggs,
     top = e.tier === EGG_TIERS[EGG_TIERS.length - 1];
-  let sp = pickW(T.list),
-    gold = rnd() < 1 / (top ? R.goldOdds10 : R.goldOdds);
-  if (top && SP[R.mythSpecies] && rnd() < 1 / R.mythOdds) {
+  let sp = pickWeighted(T.list),
+    gold = random() < 1 / (top ? R.goldOdds10 : R.goldOdds);
+  if (top && SP[R.mythSpecies] && random() < 1 / R.mythOdds) {
     sp = R.mythSpecies;
     gold = false;
   }
@@ -907,7 +908,7 @@ export function collectJob(slot) {
   else saveData.se += amt * n;
   save();
   const m = findMon(j.uid);
-  return `${m ? billyName(m) : 'Your Billie'} ${J.quip} You collected ${kind === 'se' ? '$' + fmt(amt * n) : `${amt * n} × ${kind === 'item' ? ITEMS[key].n : COINS[key].n}`}.`;
+  return `${m ? billyName(m) : 'Your Billie'} ${J.quip} You collected ${kind === 'se' ? '$' + formatNumber(amt * n) : `${amt * n} × ${kind === 'item' ? ITEMS[key].n : COINS[key].n}`}.`;
 }
 export function endShift(slot) {
   const j = saveData.jobs[slot];

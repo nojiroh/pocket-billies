@@ -12,7 +12,7 @@ import { frameStop, frameTask } from '../../game/js/frame-scheduler.js';
 import { makeCanvas } from '../../game/js/art.js';
 import { TR_CACHE, TR_PRESETS, cleanLook, trFrame, trRig, trSliders } from '../../game/js/person-art.js';
 import { rigMatrices } from '../../game/js/skeleton-rig.js';
-import { esc } from './game-stand-ins.js';
+import { escapeHtml } from './game-stand-ins.js';
 import {
   ACTIONS,
   SECTIONS,
@@ -131,11 +131,11 @@ SECTIONS.wardrobe = () => {
   const rows = list
     .map(
       ([k, it]) =>
-        `<button class="lcard ${wardrobeEditor.sel === k ? 'on' : ''}" data-act="wdPick" data-k="${esc(k)}"><span class="wd-th" data-th="${esc(k)}"></span><span class="lt"><b>${esc(it.name)}</b><small>${esc((slots.find(s => s.id === it.slot) || {}).name || it.slot)}${it.starter ? ' · everyone has it' : it.price ? ` · $${formatThousands(it.price)}${it.shop && studioState.D.shops[it.shop] ? ' · ' + esc(studioState.D.shops[it.shop].name) : ''}` : ''}</small></span></button>`
+        `<button class="lcard ${wardrobeEditor.sel === k ? 'on' : ''}" data-act="wdPick" data-k="${escapeHtml(k)}"><span class="wd-th" data-th="${escapeHtml(k)}"></span><span class="lt"><b>${escapeHtml(it.name)}</b><small>${escapeHtml((slots.find(s => s.id === it.slot) || {}).name || it.slot)}${it.starter ? ' · everyone has it' : it.price ? ` · $${formatThousands(it.price)}${it.shop && studioState.D.shops[it.shop] ? ' · ' + escapeHtml(studioState.D.shops[it.shop].name) : ''}` : ''}</small></span></button>`
     )
     .join('');
   return `<div class="split"><aside class="list-col"><div class="list-head"><button class="btn primary" data-act="wdNew">+ New item</button>
-   <select id="wdFilter"><option value="all">All items (${Object.keys(W.items).length})</option>${slots.map(s => `<option value="${s.id}" ${wardrobeEditor.filter === s.id ? 'selected' : ''}>${esc(s.name)}</option>`).join('')}</select></div>
+   <select id="wdFilter"><option value="all">All items (${Object.keys(W.items).length})</option>${slots.map(s => `<option value="${s.id}" ${wardrobeEditor.filter === s.id ? 'selected' : ''}>${escapeHtml(s.name)}</option>`).join('')}</select></div>
   <div class="llist"><button class="lcard ${wardrobeEditor.sel === 'body' ? 'on' : ''}" data-act="wdPick" data-k="body"><span class="wd-th" data-th="body"></span><span class="lt"><b>Body &amp; skeleton</b><small>Skin pieces, bones, body sliders</small></span></button>${rows}</div></aside>
  <div class="ed-col">${wardrobeEditor.sel === 'body' ? wardrobeBodyHTML() : wardrobeItemHTML(wardrobeEditor.sel)}</div></div>`;
 };
@@ -168,7 +168,7 @@ function wardrobeItemHTML(k) {
         )}<span class="wd-swatch" style="background:${['#E23C3C', '#2EA84A', '#3A62E0'][i]}">${['red', 'green', 'blue'][i]} in the mask</span>${it.colors.length > 1 ? `<button class="btn sm subtle danger" data-act="wdColDel" data-i="${i}">Remove</button>` : ''}</div>`
     )
     .join('');
-  return `<div class="ed-head"><div><small class="mono">${esc(k)}</small><h2>${esc(it.name)}</h2>${used.length ? `<small>Worn by ${esc(used.join(', '))}</small>` : ''}</div><div class="seg-row"><button class="btn subtle" data-act="wdDup">Duplicate</button><button class="btn danger" data-act="wdDel">Delete</button></div></div>
+  return `<div class="ed-head"><div><small class="mono">${escapeHtml(k)}</small><h2>${escapeHtml(it.name)}</h2>${used.length ? `<small>Worn by ${escapeHtml(used.join(', '))}</small>` : ''}</div><div class="seg-row"><button class="btn subtle" data-act="wdDup">Duplicate</button><button class="btn danger" data-act="wdDel">Delete</button></div></div>
  ${card('Preview', wardrobePreviewHTML(), { sub: 'The trainer from the Studio’s test look wearing this item, drawn by the game’s own renderer.' })}
  ${card(
    'Details',
@@ -193,13 +193,13 @@ function wardrobeBodyHTML() {
   const sl = W.sliders
     .map(
       (s, i) =>
-        `<tr><td><input type="text" data-p="wardrobe.sliders.${i}.name" data-k="text" value="${esc(s.name)}"></td><td class="mono">${esc(s.k)}</td><td><input type="number" step=".01" data-p="wardrobe.sliders.${i}.min" data-k="num" value="${s.min}"></td><td><input type="number" step=".01" data-p="wardrobe.sliders.${i}.max" data-k="num" value="${s.max}"></td><td><input type="number" step=".01" data-p="wardrobe.sliders.${i}.def" data-k="num" value="${s.def}"></td></tr>`
+        `<tr><td><input type="text" data-p="wardrobe.sliders.${i}.name" data-k="text" value="${escapeHtml(s.name)}"></td><td class="mono">${escapeHtml(s.k)}</td><td><input type="number" step=".01" data-p="wardrobe.sliders.${i}.min" data-k="num" value="${s.min}"></td><td><input type="number" step=".01" data-p="wardrobe.sliders.${i}.max" data-k="num" value="${s.max}"></td><td><input type="number" step=".01" data-p="wardrobe.sliders.${i}.def" data-k="num" value="${s.def}"></td></tr>`
     )
     .join('');
   const sk = W.skeleton[wardrobeEditor.view]
     .map(
       (b, i) =>
-        `<tr><td class="mono">${esc(b.n)}</td><td class="mono">${esc(b.par || '—')}</td><td><input type="number" step=".5" data-p="wardrobe.skeleton.${wardrobeEditor.view}.${i}.at.0" data-k="num" value="${b.at[0]}"></td><td><input type="number" step=".5" data-p="wardrobe.skeleton.${wardrobeEditor.view}.${i}.at.1" data-k="num" value="${b.at[1]}"></td><td><input type="number" step=".1" data-p="wardrobe.skeleton.${wardrobeEditor.view}.${i}.z" data-k="num" value="${b.z}"></td></tr>`
+        `<tr><td class="mono">${escapeHtml(b.n)}</td><td class="mono">${escapeHtml(b.par || '—')}</td><td><input type="number" step=".5" data-p="wardrobe.skeleton.${wardrobeEditor.view}.${i}.at.0" data-k="num" value="${b.at[0]}"></td><td><input type="number" step=".5" data-p="wardrobe.skeleton.${wardrobeEditor.view}.${i}.at.1" data-k="num" value="${b.at[1]}"></td><td><input type="number" step=".1" data-p="wardrobe.skeleton.${wardrobeEditor.view}.${i}.z" data-k="num" value="${b.z}"></td></tr>`
     )
     .join('');
   return `<div class="ed-head"><div><h2>Body &amp; skeleton</h2><small>Shared by every trainer, rival, shopkeeper and townsperson.</small></div></div>
@@ -228,7 +228,7 @@ function wardrobePreviewHTML(body) {
   ${trSliders()
     .map(
       s =>
-        `<label class="fld range"><span>${esc(s.name)} <output>${(+L.body[s.k]).toFixed(2)}</output></span><input type="range" min="${s.min}" max="${s.max}" step=".01" value="${L.body[s.k]}" data-wd-test="${s.k}"></label>`
+        `<label class="fld range"><span>${escapeHtml(s.name)} <output>${(+L.body[s.k]).toFixed(2)}</output></span><input type="range" min="${s.min}" max="${s.max}" step=".01" value="${L.body[s.k]}" data-wd-test="${s.k}"></label>`
     )
     .join('')}
   <div class="seg-row"><span class="help">Skin</span>${((editedWardrobe().palettes || {}).skin || []).map(c => `<button class="wd-sw" style="background:${c}" data-act="wdSkin" data-c="${c}" aria-label="${c}"></button>`).join('')}</div></div></div>`;
@@ -267,11 +267,11 @@ function wardrobeEditorHTML(src) {
           .join('')}</span>`;
   const P = src.pieces[wardrobeEditor.piece];
   return `<div class="seg-row">${WARDROBE_VIEWS.map(([v, n]) => `<button class="seg ${wardrobeEditor.view === v ? 'on' : ''}" data-act="wdView" data-v="${v}">${n}</button>`).join('')}</div>
- <div class="wd-pieces">${ps.map(([p, i]) => `<button class="chk-chip ${i === wardrobeEditor.piece ? 'on' : ''}" data-act="wdPiece" data-i="${i}">${esc(p.b)}${p.x ? ' · ' + esc(p.x) : ''}${p.z != null ? ' · layer ' + p.z : ''}</button>`).join('') || '<span class="help">No pieces in this view yet.</span>'}</div>
+ <div class="wd-pieces">${ps.map(([p, i]) => `<button class="chk-chip ${i === wardrobeEditor.piece ? 'on' : ''}" data-act="wdPiece" data-i="${i}">${escapeHtml(p.b)}${p.x ? ' · ' + escapeHtml(p.x) : ''}${p.z != null ? ' · layer ' + p.z : ''}</button>`).join('') || '<span class="help">No pieces in this view yet.</span>'}</div>
  <div class="sc-bar"><span class="px-tools">${tools}</span><span class="colw"><input type="color" id="wdColor" value="${wardrobeEditor.color}"></span><span class="px-tools"><button class="seg" data-act="wdZoom" data-z="-1">−</button><button class="seg" data-act="wdZoom" data-z="1">+</button><button class="seg" data-act="wdUndo" title="Undo">↶</button></span></div>
  ${areas ? `<div class="sc-bar">${areas}<span class="help">Pencil and fill also mark the area you pick here.</span></div>` : ''}
  <div class="wd-stage"><canvas id="wdCv"></canvas></div>
- <div class="seg-row wd-pieceops">${P ? `<span class="help">Selected: <b>${esc(P.b)}</b>, ${P.r[2]}×${P.r[3]} px.</span><label class="fld wd-z"><span>Layer</span><input type="number" step=".05" data-p="${wardrobeEditor.sel === 'body' ? 'wardrobe.body' : 'wardrobe.items.' + wardrobeEditor.sel}.pieces.${wardrobeEditor.piece}.z" data-k="num" data-opt="1" value="${P.z ?? ''}" placeholder="auto"></label><label class="fld wd-z"><span>Shows when</span><select data-p="${wardrobeEditor.sel === 'body' ? 'wardrobe.body' : 'wardrobe.items.' + wardrobeEditor.sel}.pieces.${wardrobeEditor.piece}.x" data-k="sel" data-opt="1">${FACE_EXPRESSIONS.map(([k, n]) => `<option value="${k}" ${(P.x || '') === k ? 'selected' : ''}>${n}</option>`).join('')}</select></label><button class="btn sm subtle" data-act="wdPieceX" title="A copy of this piece that only shows with an expression; then repaint it">Copy for an expression</button><button class="btn sm subtle danger" data-act="wdPieceDel">Remove piece</button>` : ''}
+ <div class="seg-row wd-pieceops">${P ? `<span class="help">Selected: <b>${escapeHtml(P.b)}</b>, ${P.r[2]}×${P.r[3]} px.</span><label class="fld wd-z"><span>Layer</span><input type="number" step=".05" data-p="${wardrobeEditor.sel === 'body' ? 'wardrobe.body' : 'wardrobe.items.' + wardrobeEditor.sel}.pieces.${wardrobeEditor.piece}.z" data-k="num" data-opt="1" value="${P.z ?? ''}" placeholder="auto"></label><label class="fld wd-z"><span>Shows when</span><select data-p="${wardrobeEditor.sel === 'body' ? 'wardrobe.body' : 'wardrobe.items.' + wardrobeEditor.sel}.pieces.${wardrobeEditor.piece}.x" data-k="sel" data-opt="1">${FACE_EXPRESSIONS.map(([k, n]) => `<option value="${k}" ${(P.x || '') === k ? 'selected' : ''}>${n}</option>`).join('')}</select></label><button class="btn sm subtle" data-act="wdPieceX" title="A copy of this piece that only shows with an expression; then repaint it">Copy for an expression</button><button class="btn sm subtle danger" data-act="wdPieceDel">Remove piece</button>` : ''}
   <span class="grow"></span><label class="fld"><span>Add a piece on</span><select id="wdBone">${bones.map(b => `<option>${b}</option>`).join('')}</select></label>
   <button class="btn sm" data-act="wdAdd" data-from="body" title="Starts as the body's shape on that bone, filled with the first colour">Fitted to the body</button><button class="btn sm" data-act="wdAdd" data-from="blank">Blank</button>${wardrobeEditor.view !== 'front' ? `<button class="btn sm subtle" data-act="wdAdd" data-from="front">Copy from front</button>` : ''}</div>`;
 }
@@ -832,11 +832,11 @@ ACTIONS.wdNew = async () => {
   const W = editedWardrobe(),
     r = await dialog(
       'New wardrobe item',
-      `<div class="grid"><label class="fld"><span>Name</span><input id="wnN" value="New jacket"></label><label class="fld"><span>Slot</span><select id="wnS">${W.slots.map(s => `<option value="${s.id}">${esc(s.name)}</option>`).join('')}</select></label>
+      `<div class="grid"><label class="fld"><span>Name</span><input id="wnN" value="New jacket"></label><label class="fld"><span>Slot</span><select id="wnS">${W.slots.map(s => `<option value="${s.id}">${escapeHtml(s.name)}</option>`).join('')}</select></label>
   <label class="fld"><span>Start from</span><select id="wnF"><option value="">Nothing (paint it from scratch)</option>${Object.entries(
     W.items
   )
-    .map(([k, it]) => `<option value="${k}">A copy of ${esc(it.name)}</option>`)
+    .map(([k, it]) => `<option value="${k}">A copy of ${escapeHtml(it.name)}</option>`)
     .join(
       ''
     )}</select></label></div><p class="help">A copy keeps the original’s pieces and colour areas, so you only repaint what changes.</p>`,
@@ -891,7 +891,7 @@ ACTIONS.wdDel = async () => {
     k = wardrobeEditor.sel;
   if (
     !(await ask(
-      `Delete ${esc(W.items[k].name)}? People wearing it switch to the default for that slot. The picture files stay in art/trainer/items.`,
+      `Delete ${escapeHtml(W.items[k].name)}? People wearing it switch to the default for that slot. The picture files stay in art/trainer/items.`,
       'Delete'
     ))
   )

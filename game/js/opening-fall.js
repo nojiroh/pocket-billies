@@ -14,7 +14,7 @@ import { expose } from './test-globals.js';
 import { openingDone, provide } from './hooks.js';
 import { $, clamp } from './util.js';
 import { MOVES, SP, START_NODE, eff } from './game-data.js';
-import { activeBattle, esc, maxHp, reducedMotion } from './game-state.js';
+import { activeBattle, escapeHtml, maxHp, reducedMotion } from './game-state.js';
 import { artLoad } from './art.js';
 import { portraitHTML } from './person-art.js';
 import { particleSprite } from './battle-stage.js';
@@ -906,7 +906,7 @@ function battleTip(who, text, btn) {
     ex = m[1];
     text = text.slice(m[0].length);
   }
-  el.innerHTML = `<span class="btip-face">${typeof portraitHTML === 'function' ? portraitHTML(who, 44, ex) : ''}</span><span class="btip-t"><b>${who === 'gini' ? 'Professor Hazel' : esc(who)}</b>${esc(text)}${btn ? `<button class="pb small quiet btip-b" data-a="${btn.a}">${esc(btn.l)}</button>` : ''}</span>`;
+  el.innerHTML = `<span class="btip-face">${typeof portraitHTML === 'function' ? portraitHTML(who, 44, ex) : ''}</span><span class="btip-t"><b>${who === 'gini' ? 'Professor Hazel' : escapeHtml(who)}</b>${escapeHtml(text)}${btn ? `<button class="pb small quiet btip-b" data-a="${btn.a}">${escapeHtml(btn.l)}</button>` : ''}</span>`;
   el.classList.remove('off');
   el.classList.add('on');
   clearTimeout(el._t);

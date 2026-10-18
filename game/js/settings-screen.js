@@ -28,8 +28,8 @@ import {
   SAVE_NEW_MSG,
   SAVE_OLD_MSG,
   TEAM_MAX,
-  esc,
-  fmt,
+  escapeHtml,
+  formatNumber,
   migrate,
   reducedMotion,
   save,
@@ -206,7 +206,7 @@ function importSave() {
       uiState.modal = null;
       modal({
         title: 'Restore this backup?',
-        html: `<p>Restore ${next.team.length} team members, ${next.box.length} in storage and ${fmt(next.totalSteps)} steps. This replaces your current progress.</p>`,
+        html: `<p>Restore ${next.team.length} team members, ${next.box.length} in storage and ${formatNumber(next.totalSteps)} steps. This replaces your current progress.</p>`,
         btns: [
           {
             l: 'Restore backup',
@@ -298,16 +298,16 @@ export function gfxDial([gk, label, help, cost, min, max, step]) {
     own = ((saveData.preferences.eng || {})[g] || {})[k],
     v = own != null ? own : engineSetting(g, k);
   return `<div class="gfx-dial"><div class="gfx-h"><b>${label}</b><span class="gfx-cost c-${cost}">${cost === 'high' ? 'Costs a lot' : cost === 'medium' ? 'Costs some' : 'Costs little'}</span>${own != null ? `<button type="button" class="gfx-reset" data-a="gfx-reset" data-k="${gk}" aria-label="Back to the game’s value">↺</button>` : ''}<button type="button" class="gfx-see" data-a="gfx-see" data-k="${gk}">See it</button></div>
- <input type="range" min="${min}" max="${max}" step="${step}" value="${v}" data-eng="${gk}" aria-label="${esc(label)}"><small>${help}</small></div>`;
+ <input type="range" min="${min}" max="${max}" step="${step}" value="${v}" data-eng="${gk}" aria-label="${escapeHtml(label)}"><small>${help}</small></div>`;
 }
 function setRow(title, hint, ctl) {
   return `<div class="set-row"><div class="set-t"><b>${title}</b>${hint ? `<small>${hint}</small>` : ''}</div><div class="set-c">${ctl}</div></div>`;
 }
 function setSeg(k, cur, opts) {
-  return `<div class="seg" role="radiogroup" aria-label="${esc(k)}">${opts.map(([v, n]) => `<button type="button" role="radio" aria-checked="${String(cur) === String(v)}" class="${String(cur) === String(v) ? 'on' : ''}" data-pref-set="${k}" data-v="${esc(String(v))}">${n}</button>`).join('')}</div>`;
+  return `<div class="seg" role="radiogroup" aria-label="${escapeHtml(k)}">${opts.map(([v, n]) => `<button type="button" role="radio" aria-checked="${String(cur) === String(v)}" class="${String(cur) === String(v) ? 'on' : ''}" data-pref-set="${k}" data-v="${escapeHtml(String(v))}">${n}</button>`).join('')}</div>`;
 }
 function setSw(k, on, onV, offV) {
-  return `<button type="button" class="sw ${on ? 'on' : ''}" role="switch" aria-checked="${!!on}" aria-label="${esc(k)}" data-pref-set="${k}" data-v="${esc(String(on ? offV : onV))}"><i></i></button>`;
+  return `<button type="button" class="sw ${on ? 'on' : ''}" role="switch" aria-checked="${!!on}" aria-label="${escapeHtml(k)}" data-pref-set="${k}" data-v="${escapeHtml(String(on ? offV : onV))}"><i></i></button>`;
 }
 function setVol(k, label, hint, def) {
   const p = saveData.preferences || {},
@@ -315,7 +315,7 @@ function setVol(k, label, hint, def) {
   return setRow(
     label,
     hint,
-    `<div class="vol"><input type="range" min="0" max="100" step="5" data-preference="${k}" value="${v}" aria-label="${esc(label)} volume"><span class="vol-n">${v}</span><button type="button" class="pb small quiet" data-a="aud-test" data-k="${k}">Test</button></div>`
+    `<div class="vol"><input type="range" min="0" max="100" step="5" data-preference="${k}" value="${v}" aria-label="${escapeHtml(label)} volume"><span class="vol-n">${v}</span><button type="button" class="pb small quiet" data-a="aud-test" data-k="${k}">Test</button></div>`
   );
 }
 export function settingsHTML() {
@@ -507,7 +507,7 @@ export function settingsHTML() {
         : '');
   } else if (tab === 'save')
     body =
-      `<div class="settings-profile">${humanHTML('me', 52)}<div><b>${esc(cleanTrainer(saveData.avatar, saveData.gender).name)}</b><p class="note">${fmt(saveData.totalSteps)} steps · ${Object.keys(saveData.caught).length} taxed</p></div></div><button class="pb dark wide" data-a="open-customize">Customize trainer</button>` +
+      `<div class="settings-profile">${humanHTML('me', 52)}<div><b>${escapeHtml(cleanTrainer(saveData.avatar, saveData.gender).name)}</b><p class="note">${formatNumber(saveData.totalSteps)} steps · ${Object.keys(saveData.caught).length} taxed</p></div></div><button class="pb dark wide" data-a="open-customize">Customize trainer</button>` +
       (typeof accSettingsHTML === 'function' ? accSettingsHTML() : '') +
       `<p class="note">${typeof ACC !== 'undefined' && ACC.user ? 'Your progress is saved to your account, and in this browser.' : 'Your progress is saved in this browser. Sign in to keep it online, or download a backup before changing device or clearing browser data.'}</p><div class="two"><button class="pb small" data-a="export-save">Export save</button><button class="pb small" data-a="import-save">Import save</button></div>`;
   else

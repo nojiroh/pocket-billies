@@ -12,7 +12,7 @@ import {
   SAVE_FOUND,
   SAVE_NEW_MSG,
   SAVE_OLD_MSG,
-  esc,
+  escapeHtml,
   newSave,
   reducedMotion,
   saveData,
@@ -617,7 +617,7 @@ async function bootLoad() {
     box.hidden = false;
     box.innerHTML = `<b>Some art is missing or couldn’t be reached.</b><ul>${fails
       .slice(0, 30)
-      .map(f => `<li>${esc(f)}</li>`)
+      .map(f => `<li>${escapeHtml(f)}</li>`)
       .join(
         ''
       )}</ul><p>Check your connection, or that the game folder is complete. You can still play; missing pictures just won’t show.</p><div class="ld-btns"><button data-ld="retry">Try again</button><button class="q" data-ld="go">Play anyway</button></div>`;

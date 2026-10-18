@@ -23,7 +23,7 @@ import {
   setAdaptQuality,
   walkRenderer,
 } from '../../game/js/walk-view-gl.js';
-import { esc } from './game-stand-ins.js';
+import { escapeHtml } from './game-stand-ins.js';
 import {
   ACTIONS,
   SECTIONS,
@@ -114,36 +114,36 @@ function engineDialHTML(g, f) {
     inh = inheritedDialValue(g, k),
     v = own !== undefined ? own : inh;
   const help = typ === 'range' ? f[5] : typ === 'sel' ? null : f[3],
-    reset = `<button class="eng-reset" data-act="engReset" data-p="${p}" title="Back to ${engineEditor.scope === 'scene' ? 'the game default' : 'the built-in value'} (${esc(formatDialValue(inh, f[4] || 1))})">↺</button>`;
+    reset = `<button class="eng-reset" data-act="engReset" data-p="${p}" title="Back to ${engineEditor.scope === 'scene' ? 'the game default' : 'the built-in value'} (${escapeHtml(formatDialValue(inh, f[4] || 1))})">↺</button>`;
   let body = '';
   if (typ === 'range')
-    body = `<span class="eng-lab">${esc(label)} <output id="${fieldOutputId(p)}">${formatDialValue(v, f[4])}</output></span><input type="range" data-p="${p}" data-k="num" value="${v}" min="${f[2]}" max="${f[3]}" step="${f[4]}">`;
+    body = `<span class="eng-lab">${escapeHtml(label)} <output id="${fieldOutputId(p)}">${formatDialValue(v, f[4])}</output></span><input type="range" data-p="${p}" data-k="num" value="${v}" min="${f[2]}" max="${f[3]}" step="${f[4]}">`;
   else if (typ === 'bool')
-    body = `<label class="eng-chk"><input type="checkbox" data-p="${p}" data-k="bool" ${v ? 'checked' : ''}><span>${esc(label)}</span></label>`;
+    body = `<label class="eng-chk"><input type="checkbox" data-p="${p}" data-k="bool" ${v ? 'checked' : ''}><span>${escapeHtml(label)}</span></label>`;
   else if (typ === 'sel')
-    body = `<span class="eng-lab">${esc(label)}</span><select data-p="${p}" data-k="${typeof f[3][0][0] === 'number' ? 'num' : 'sel'}">${f[3].map(([a, n]) => `<option value="${a}" ${String(v) === String(a) ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select>`;
+    body = `<span class="eng-lab">${escapeHtml(label)}</span><select data-p="${p}" data-k="${typeof f[3][0][0] === 'number' ? 'num' : 'sel'}">${f[3].map(([a, n]) => `<option value="${a}" ${String(v) === String(a) ? 'selected' : ''}>${escapeHtml(n)}</option>`).join('')}</select>`;
   else if (typ === 'color' || typ === 'color?') {
     const ok = typeof v === 'string' && /^#[0-9a-f]{6}$/i.test(v);
-    body = `<span class="eng-lab">${esc(label)}${!ok ? ' <i class="eng-auto">from the scene</i>' : ''}</span><span class="colw"><input type="color" data-p="${p}" data-k="color" value="${ok ? v : '#888888'}"><input type="text" data-p="${p}" data-k="color" value="${ok ? esc(v) : ''}" placeholder="${typ === 'color?' ? 'scene’s own' : ''}" maxlength="7" class="hex"></span>`;
+    body = `<span class="eng-lab">${escapeHtml(label)}${!ok ? ' <i class="eng-auto">from the scene</i>' : ''}</span><span class="colw"><input type="color" data-p="${p}" data-k="color" value="${ok ? v : '#888888'}"><input type="text" data-p="${p}" data-k="color" value="${ok ? escapeHtml(v) : ''}" placeholder="${typ === 'color?' ? 'scene’s own' : ''}" maxlength="7" class="hex"></span>`;
   } else if (typ === 'num?')
-    body = `<span class="eng-lab">${esc(label)}</span><input type="number" data-p="${p}" data-k="num" data-opt="1" step="any" value="${v == null ? '' : v}" placeholder="scene’s own">`;
-  return `<div class="eng-f ${own !== undefined ? 'own' : ''}" data-path="${p}">${body}${reset}${help ? `<small class="help">${esc(help)}</small>` : ''}</div>`;
+    body = `<span class="eng-lab">${escapeHtml(label)}</span><input type="number" data-p="${p}" data-k="num" data-opt="1" step="any" value="${v == null ? '' : v}" placeholder="scene’s own">`;
+  return `<div class="eng-f ${own !== undefined ? 'own' : ''}" data-path="${p}">${body}${reset}${help ? `<small class="help">${escapeHtml(help)}</small>` : ''}</div>`;
 }
 function engineGroupHTML([g, title, fields]) {
   const set = fields.filter(f => readPath(`${engineScopePath()}.${g}.${f[0]}`) !== undefined).length,
     open = engineEditor.open[g];
-  return `<section class="card eng-g ${open ? 'open' : ''}"><header><button class="eng-gh" data-act="engOpen" data-g="${g}"><span class="eng-tw">${open ? '▾' : '▸'}</span><h3>${esc(title)}</h3>${set ? `<span class="badge">${set} set</span>` : ''}</button>${set ? `<button class="btn sm subtle" data-act="engResetG" data-g="${g}">Reset</button>` : ''}</header>
+  return `<section class="card eng-g ${open ? 'open' : ''}"><header><button class="eng-gh" data-act="engOpen" data-g="${g}"><span class="eng-tw">${open ? '▾' : '▸'}</span><h3>${escapeHtml(title)}</h3>${set ? `<span class="badge">${set} set</span>` : ''}</button>${set ? `<button class="btn sm subtle" data-act="engResetG" data-g="${g}">Reset</button>` : ''}</header>
  ${open ? `<div class="card-b eng-fields">${fields.map(f => engineDialHTML(g, f)).join('')}</div>` : ''}</section>`;
 }
 function enginePresetsHTML() {
   const own = engineData().presets || {};
   return `<div class="eng-pre">${Object.entries(ENGINE_PRESETS)
-    .map(([k, P]) => `<button class="seg" data-act="engPreset" data-k="${k}">${esc(P.name)}</button>`)
+    .map(([k, P]) => `<button class="seg" data-act="engPreset" data-k="${k}">${escapeHtml(P.name)}</button>`)
     .join('')}
  ${Object.entries(own)
    .map(
      ([k, P]) =>
-       `<span class="eng-own"><button class="seg" data-act="engPreset" data-k="${esc(k)}" data-own="1">${esc(P.name || k)}</button><button class="eng-x" data-act="engPresetDel" data-k="${esc(k)}" title="Delete this preset">×</button></span>`
+       `<span class="eng-own"><button class="seg" data-act="engPreset" data-k="${escapeHtml(k)}" data-own="1">${escapeHtml(P.name || k)}</button><button class="eng-x" data-act="engPresetDel" data-k="${escapeHtml(k)}" title="Delete this preset">×</button></span>`
    )
    .join('')}
  <button class="seg add" data-act="engPresetSave">+ Save as preset</button><button class="seg" data-act="engLookPreviews" title="Draws the preview once with each look and shows them side by side">Preview every look</button></div><p class="help">A preset only changes the dials it lists, on ${engineEditor.scope === 'scene' ? 'this scene' : engineEditor.scope === 'map' ? 'the map' : 'the whole game'}. Undo takes it back.</p>`;
@@ -154,7 +154,7 @@ function engineSettingsHTML() {
     nScene = sc && sc.look ? Object.values(sc.look).reduce((a, o) => a + Object.keys(o || {}).length, 0) : 0,
     nGame = Object.values(engineData().defaults || {}).reduce((a, o) => a + Object.keys(o || {}).length, 0),
     nMap = Object.values(engineData().map || {}).reduce((a, o) => a + Object.keys(o || {}).length, 0);
-  return `<div class="card eng-scope"><div class="card-b"><div class="seg-row"><button class="seg ${engineEditor.scope === 'game' ? 'on' : ''}" data-act="engScope" data-s="game">Whole game${nGame ? ` · ${nGame}` : ''}</button><button class="seg ${engineEditor.scope === 'scene' ? 'on' : ''}" data-act="engScope" data-s="scene">Only ${esc(sc ? sc.name || sid : 'this scene')}${nScene ? ` · ${nScene}` : ''}</button><button class="seg ${engineEditor.scope === 'map' ? 'on' : ''}" data-act="engScope" data-s="map">World map${nMap ? ` · ${nMap}` : ''}</button></div>
+  return `<div class="card eng-scope"><div class="card-b"><div class="seg-row"><button class="seg ${engineEditor.scope === 'game' ? 'on' : ''}" data-act="engScope" data-s="game">Whole game${nGame ? ` · ${nGame}` : ''}</button><button class="seg ${engineEditor.scope === 'scene' ? 'on' : ''}" data-act="engScope" data-s="scene">Only ${escapeHtml(sc ? sc.name || sid : 'this scene')}${nScene ? ` · ${nScene}` : ''}</button><button class="seg ${engineEditor.scope === 'map' ? 'on' : ''}" data-act="engScope" data-s="map">World map${nMap ? ` · ${nMap}` : ''}</button></div>
  <p class="help">${engineEditor.scope === 'map' ? 'These override the game-wide values on the Map tab (lens, color, bloom). The preview here shows a walk scene; open the game to see the map.' : engineEditor.scope === 'scene' ? 'These override the game-wide values for this one scene. A dial you haven’t touched follows the game.' : 'These apply to every walk scene unless a scene overrides them. A dial you haven’t touched uses the built-in value.'} Dials you’ve set show a ↺ to undo just that one.</p>
  <h4>Presets</h4>${enginePresetsHTML()}
  <div class="seg-row"><button class="btn sm subtle" data-act="engClear">Clear everything set here</button>${engineEditor.scope === 'scene' && nScene ? `<button class="btn sm subtle" data-act="engPromote">Use these for the whole game</button>` : ''}</div></div></div>
@@ -166,7 +166,9 @@ SECTIONS.engine = () => {
   if (!sid)
     return `<div class="ed-col solo"><h2>Engine</h2><p class="help">Add a walk scene first; the preview needs one.</p></div>`;
   const opts = Object.entries(studioState.D.scenes)
-    .map(([k, s]) => `<option value="${esc(k)}" ${k === sid ? 'selected' : ''}>${esc(s.name || k)}</option>`)
+    .map(
+      ([k, s]) => `<option value="${escapeHtml(k)}" ${k === sid ? 'selected' : ''}>${escapeHtml(s.name || k)}</option>`
+    )
     .join('');
   return `<div class="eng-split"><div class="eng-set" id="engSet">${engineSettingsHTML()}</div>
  <div class="eng-side"><div class="card"><div class="card-b"><div class="eng-pvbar"><label class="fld"><span>Preview scene</span><select id="engScene">${opts}</select></label>
@@ -407,7 +409,7 @@ ACTIONS.engLookPreviews = async () => {
   const cur = await captureLookPreview();
   await dialog(
     'Every look on this scene',
-    `<div class="eng-looks">${cur ? `<figure><img src="${cur}" alt="As it is now"><figcaption>As it is now</figcaption></figure>` : ''}${out.map(([k, P, o, u]) => `<figure class="eng-look" data-act="engPreset" data-k="${esc(k)}" ${o ? 'data-own="1"' : ''} role="button" tabindex="0">${u ? `<img src="${u}" alt="${esc(P.name || k)}">` : '<div class="help">No picture</div>'}<figcaption>${esc(P.name || k)}</figcaption></figure>`).join('')}</div><p class="help">Click a look to apply it (Undo takes it back).</p>`,
+    `<div class="eng-looks">${cur ? `<figure><img src="${cur}" alt="As it is now"><figcaption>As it is now</figcaption></figure>` : ''}${out.map(([k, P, o, u]) => `<figure class="eng-look" data-act="engPreset" data-k="${escapeHtml(k)}" ${o ? 'data-own="1"' : ''} role="button" tabindex="0">${u ? `<img src="${u}" alt="${escapeHtml(P.name || k)}">` : '<div class="help">No picture</div>'}<figcaption>${escapeHtml(P.name || k)}</figcaption></figure>`).join('')}</div><p class="help">Click a look to apply it (Undo takes it back).</p>`,
     [{ l: 'Close', v: null }]
   );
 };

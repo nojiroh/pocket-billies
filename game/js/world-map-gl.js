@@ -12,7 +12,16 @@ import { expose } from './test-globals.js';
 import { FR, flyDraw, flyTick, provide } from './hooks.js';
 import { $, clamp } from './util.js';
 import { FUTURE, LINKS, ROUTE, linkCost, placeSub } from './game-data.js';
-import { canEnter, esc, fmt, nextStop, reducedMotion, saveData, tripTo, uiState } from './game-state.js';
+import {
+  canEnter,
+  escapeHtml,
+  formatNumber,
+  nextStop,
+  reducedMotion,
+  saveData,
+  tripTo,
+  uiState,
+} from './game-state.js';
 import { frameCount, frameStop, frameTask, userFps } from './frame-scheduler.js';
 import { artLoad, artPixels, hexToRgb, makeCanvas, uiIconHTML, worldMapStamp } from './art.js';
 import { owFrames, portraitHTML } from './person-art.js';
@@ -959,7 +968,7 @@ function worldMapGlPins() {
     put(
       'r' + i,
       q,
-      `<span class="mp-i">${uiIconHTML(st.ico, 14)}</span><span class="mp-n">${esc(n.name)}</span>`,
+      `<span class="mp-i">${uiIconHTML(st.ico, 14)}</span><span class="mp-n">${escapeHtml(n.name)}</span>`,
       st.cls + (mini ? ' mini' : ''),
       { 'data-a': 'msel', 'data-n': String(i), 'aria-label': n.name }
     );
@@ -981,7 +990,7 @@ function worldMapGlPins() {
     put(
       'f' + i,
       q,
-      `<span class="mp-n">${esc(f.name)}</span>`,
+      `<span class="mp-n">${escapeHtml(f.name)}</span>`,
       'mpin fog' + (f.t === 'sun' ? ' sun' : '') + (uiState.mapSel === 'f' + i ? ' sel' : ''),
       { 'data-a': 'msel', 'data-n': 'f' + i, 'aria-label': f.name }
     );
@@ -995,7 +1004,12 @@ function worldMapGlPins() {
     const show =
       (typeof sel === 'number' && (a === sel || b === sel)) || onPlan.has(Math.min(a, b) + '-' + Math.max(a, b));
     const q = show ? worldMapGlProject(roadPosition(a, b, 0.5)) : null;
-    put('L' + i, q, `${fmt(c)} steps`, 'mchip' + (onPlan.has(Math.min(a, b) + '-' + Math.max(a, b)) ? ' trip' : ''));
+    put(
+      'L' + i,
+      q,
+      `${formatNumber(c)} steps`,
+      'mchip' + (onPlan.has(Math.min(a, b) + '-' + Math.max(a, b)) ? ' trip' : '')
+    );
   });
   /* 0.5: friends, at the place they were last */
   if (typeof FR !== 'undefined')
@@ -1013,7 +1027,7 @@ function worldMapGlPins() {
       put(
         'fr' + u,
         q,
-        `<span class="mp-face">${typeof portraitHTML === 'function' ? portraitHTML('friend:' + u, 26) : ''}</span><span class="mp-n">${esc(d.name || 'Friend')}</span>`,
+        `<span class="mp-face">${typeof portraitHTML === 'function' ? portraitHTML('friend:' + u, 26) : ''}</span><span class="mp-n">${escapeHtml(d.name || 'Friend')}</span>`,
         'mpin friend',
         { 'data-a': 'fr-pin', 'data-u': u, 'aria-label': (d.name || 'Friend') + ' was here' }
       );
@@ -1127,7 +1141,7 @@ function worldMapGlLocationListHTML() {
         : locked
           ? 'Locked'
           : t
-            ? `${fmt(t.steps)} steps${saveData.visited[i] ? '' : ' · new'}`
+            ? `${formatNumber(t.steps)} steps${saveData.visited[i] ? '' : ' · new'}`
             : 'No road yet';
     return {
       i,
@@ -1148,7 +1162,7 @@ function worldMapGlLocationListHTML() {
       g = r.g;
       h += `<div class="mpl-g">${G[g]}</div>`;
     }
-    h += `<button class="mpl-row ${r.st.cls.replace('mpin', '')}" data-a="msel" data-n="${r.i}"><span class="mp-i">${uiIconHTML(r.st.ico, 14)}</span><span class="mpl-n">${esc(r.n.name)}<small>${esc(placeSub(r.n))}</small></span><span class="mpl-s">${esc(r.sub)}</span></button>`;
+    h += `<button class="mpl-row ${r.st.cls.replace('mpin', '')}" data-a="msel" data-n="${r.i}"><span class="mp-i">${uiIconHTML(r.st.ico, 14)}</span><span class="mpl-n">${escapeHtml(r.n.name)}<small>${escapeHtml(placeSub(r.n))}</small></span><span class="mpl-s">${escapeHtml(r.sub)}</span></button>`;
   }
   return h + '</div>';
 }

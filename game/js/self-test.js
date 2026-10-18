@@ -16,7 +16,7 @@ import { loadAllMaps } from './map-files.js';
 import {
   activeBattle,
   addSteps,
-  esc,
+  escapeHtml,
   makeMon,
   maxHp,
   save,
@@ -1477,7 +1477,7 @@ async function runFullTest(mode) {
   const rows = phases
     .map(
       p =>
-        `<tr><td>${esc(p.name)}${p.note ? `<small>${esc(p.note)}</small>` : ''}${p.detail ? `<small class="nb-det">${esc(p.detail)}</small>` : ''}${!p.ok ? `<small class="nb-why">Why: ${esc(p.why || '')}${p.ctx ? `<br>Where: ${esc(ctxLine(p.ctx))}` : ''}</small>` : ''}</td><td class="tnum">${f(p.fpsAvg)}</td><td class="tnum">${f(p.fpsWorst)}</td><td class="${p.notMeasured ? 'nb-skip' : p.ok ? 'nb-ok' : 'nb-bad'}">${p.notMeasured ? 'Not measured' : p.ok ? 'OK' : 'Problem'}</td></tr>`
+        `<tr><td>${escapeHtml(p.name)}${p.note ? `<small>${escapeHtml(p.note)}</small>` : ''}${p.detail ? `<small class="nb-det">${escapeHtml(p.detail)}</small>` : ''}${!p.ok ? `<small class="nb-why">Why: ${escapeHtml(p.why || '')}${p.ctx ? `<br>Where: ${escapeHtml(ctxLine(p.ctx))}` : ''}</small>` : ''}</td><td class="tnum">${f(p.fpsAvg)}</td><td class="tnum">${f(p.fpsWorst)}</td><td class="${p.notMeasured ? 'nb-skip' : p.ok ? 'nb-ok' : 'nb-bad'}">${p.notMeasured ? 'Not measured' : p.ok ? 'OK' : 'Problem'}</td></tr>`
     )
     .join('');
   const causes = Object.entries(NWLOG.causes)
@@ -1486,16 +1486,16 @@ async function runFullTest(mode) {
   const srows = stress
     .map(
       s =>
-        `<tr><td>${esc(s.name)}</td><td class="tnum">${f(s.fpsAvg)}</td><td class="tnum">${f(s.fpsWorst)}</td><td class="tnum">${f(s.cpuMs)}</td></tr>`
+        `<tr><td>${escapeHtml(s.name)}</td><td class="tnum">${f(s.fpsAvg)}</td><td class="tnum">${f(s.fpsWorst)}</td><td class="tnum">${f(s.cpuMs)}</td></tr>`
     )
     .join('');
   modal({
     title: STEST.stop ? 'Test stopped' : okAll ? 'Everything works' : 'The test found problems',
     html: `<p class="note">Frames per second (higher is smoother; most screens show at most 60).</p>
   <table class="nb-table"><thead><tr><th>What</th><th>Average</th><th>Worst</th><th>Result</th></tr></thead><tbody>${rows || '<tr><td colspan="4">Nothing was measured.</td></tr>'}</tbody></table>
-  ${srows ? `<h3>Stress test</h3><p class="note">${keepUp ? `This device keeps up (28+ frames per second) up to: <b>${esc(keepUp.name)}</b>.` : 'This device struggled from the first step.'}</p><table class="nb-table"><thead><tr><th>Load</th><th>Average</th><th>Worst</th><th>ms per frame</th></tr></thead><tbody>${srows}</tbody></table>` : ''}
-  ${causes.length ? `<h3>What made frames slow</h3><p class="note">Every frame over 33 ms, put down to what the game was busy with at the time.</p><table class="nb-table"><thead><tr><th>Busy with</th><th>Frames</th><th>Worst</th></tr></thead><tbody>${causes.map(([k, v]) => `<tr><td>${esc(k)}</td><td class="tnum">${v.n}</td><td class="tnum">${Math.round(v.max)} ms</td></tr>`).join('')}</tbody></table>` : ''}
-  ${errors.length ? `<h3>Errors</h3><ul class="nb-errs">${errors.map(e => `<li>${esc(e)}</li>`).join('')}</ul>` : ''}<p class="note">Your save wasn't changed. Export the debug log to send these results with your device's details.</p>`,
+  ${srows ? `<h3>Stress test</h3><p class="note">${keepUp ? `This device keeps up (28+ frames per second) up to: <b>${escapeHtml(keepUp.name)}</b>.` : 'This device struggled from the first step.'}</p><table class="nb-table"><thead><tr><th>Load</th><th>Average</th><th>Worst</th><th>ms per frame</th></tr></thead><tbody>${srows}</tbody></table>` : ''}
+  ${causes.length ? `<h3>What made frames slow</h3><p class="note">Every frame over 33 ms, put down to what the game was busy with at the time.</p><table class="nb-table"><thead><tr><th>Busy with</th><th>Frames</th><th>Worst</th></tr></thead><tbody>${causes.map(([k, v]) => `<tr><td>${escapeHtml(k)}</td><td class="tnum">${v.n}</td><td class="tnum">${Math.round(v.max)} ms</td></tr>`).join('')}</tbody></table>` : ''}
+  ${errors.length ? `<h3>Errors</h3><ul class="nb-errs">${errors.map(e => `<li>${escapeHtml(e)}</li>`).join('')}</ul>` : ''}<p class="note">Your save wasn't changed. Export the debug log to send these results with your device's details.</p>`,
     btns: diag
       ? [
           {

@@ -7,7 +7,7 @@ import { expose } from './test-globals.js';
 import { flyDraw, flyTick, paintMapCard, provide, toast } from './hooks.js';
 import { $, clamp } from './util.js';
 import { FUTURE, LINKS, ROUTE, linkCost } from './game-data.js';
-import { canEnter, esc, nextStop, reducedMotion, saveData, uiState } from './game-state.js';
+import { canEnter, escapeHtml, nextStop, reducedMotion, saveData, uiState } from './game-state.js';
 import { frameCount, frameStop, frameTask, userFps } from './frame-scheduler.js';
 import { artPixels, bayerThreshold, makeSeededRandom, mixRgb, packPixel, worldMapStamp } from './art.js';
 import { owFrames } from './person-art.js';
@@ -786,7 +786,7 @@ export function worldMapLabels() {
     const n = kind === 'r' ? i : 'f' + i,
       estW = name.length * 7.2 + 14,
       right = q.x * s + 8 + estW < worldMapWidth * s || q.x < worldMapWidth * 0.35;
-    h += `<button class="mlab${cls}" data-a="msel" data-n="${n}" style="top:${((q.y - (kind === 'r' ? 6 : 0)) * sy).toFixed(1)}px;${right ? `left:${((q.x + 5) * s).toFixed(1)}px` : `right:${((worldMapWidth - q.x + 5) * s).toFixed(1)}px`}">${esc(name)}</button>`;
+    h += `<button class="mlab${cls}" data-a="msel" data-n="${n}" style="top:${((q.y - (kind === 'r' ? 6 : 0)) * sy).toFixed(1)}px;${right ? `left:${((q.x + 5) * s).toFixed(1)}px` : `right:${((worldMapWidth - q.x + 5) * s).toFixed(1)}px`}">${escapeHtml(name)}</button>`;
   });
   if (L._h !== h) {
     L.innerHTML = h;

@@ -8,7 +8,7 @@ import { expose } from '../../game/js/test-globals.js';
 import { provide } from '../../game/js/hooks.js';
 import { $, $$, clamp } from '../../game/js/util.js';
 import { makeCanvas } from '../../game/js/art.js';
-import { esc } from './game-stand-ins.js';
+import { escapeHtml } from './game-stand-ins.js';
 import { afterRender, ask, card, changed, commit, formatThousands, render, studioState, toast } from './studio-app.js';
 import { atlasGet, loadedAtlas, markArt } from './sprites.js';
 /* eslint-disable no-func-assign */
@@ -294,7 +294,7 @@ function drawPainterMarkers() {
     let [u, v] = directionToTexel(lonLatToDirection(lon, lat), W, H);
     u = painterDisplayX(u);
     const z = worldMapPainter.zoom;
-    return `<g class="mk ${cls}" data-mk="${id}" transform="translate(${u.toFixed(1)},${v.toFixed(1)})"><title>${esc(full)}</title><circle r="${(6 / z).toFixed(2)}" style="stroke-width:${(2 / z).toFixed(2)}"/><text y="${(-10 / z).toFixed(2)}" style="font-size:${(12 / z).toFixed(2)}px;stroke-width:${(3 / z).toFixed(2)}">${esc(label)}</text></g>`;
+    return `<g class="mk ${cls}" data-mk="${id}" transform="translate(${u.toFixed(1)},${v.toFixed(1)})"><title>${escapeHtml(full)}</title><circle r="${(6 / z).toFixed(2)}" style="stroke-width:${(2 / z).toFixed(2)}"/><text y="${(-10 / z).toFixed(2)}" style="font-size:${(12 / z).toFixed(2)}px;stroke-width:${(3 / z).toFixed(2)}">${escapeHtml(label)}</text></g>`;
   };
   D.regions.forEach((g, i) => {
     if (g.lon != null)
