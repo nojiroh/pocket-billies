@@ -11,7 +11,7 @@ import { $, clamp } from './util.js';
 import { PLACE, RULES, SP, TRAINERS, trainersAt } from './game-data.js';
 import { B, RM, S, U, esc, healAll, save, today } from './game-state.js';
 import { DR } from './dressing-room.js';
-import { baseMapId, dioFreePt, walkView } from './walk-view.js';
+import { baseMapId, walkView, walkablePointNear } from './walk-view.js';
 import { EGL } from './engine/webgl.js';
 import { dioH, walkRenderer } from './walk-view-gl.js';
 import { startTrainer, startWild } from './battle.js';
@@ -134,8 +134,8 @@ async function rivalScene(T) {
   try {
     /* where he comes from: the side of the scene away from the camera, a little to one side of you */
     const side = P.x < sc.w / 2 ? 1 : -1,
-      to = dioFreePt(P.x + side * 1.4, P.z + 0.3),
-      from = dioFreePt(clamp(P.x + side * 7, 1, sc.w - 1), clamp(P.z + 4.5, 1, sc.h - 1));
+      to = walkablePointNear(P.x + side * 1.4, P.z + 0.3),
+      from = walkablePointNear(clamp(P.x + side * 7, 1, sc.w - 1), clamp(P.z + 4.5, 1, sc.h - 1));
     csActor('me', 'me', [P.x, P.z], side > 0 ? 'sideR' : 'side');
     csActor('rival', T.who, from, 'down');
     CS.actors.rival.hidden = true;

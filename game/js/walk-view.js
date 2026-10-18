@@ -56,7 +56,6 @@ expose({
   BUILDING_VARIANT_CACHE: [() => BUILDING_VARIANT_CACHE],
   DIO_CHAT: [() => DIO_CHAT],
   DIO_KEYS: [() => DIO_KEYS],
-  DIO_N: [() => DIO_N],
   DIO_SPEED: [() => DIO_SPEED],
   EFFECT_FRAMES: [() => EFFECT_FRAMES],
   EFFECT_KINDS: [() => EFFECT_KINDS],
@@ -70,6 +69,7 @@ expose({
   MAX_HOP_DOWN: [() => MAX_HOP_DOWN],
   MAX_STEP_RISE: [() => MAX_STEP_RISE],
   NATURAL_EDGE_WALLS: [() => NATURAL_EDGE_WALLS],
+  NAV_CELLS_PER_M: [() => NAV_CELLS_PER_M],
   OPEN_HOURS: [() => OPEN_HOURS],
   OPEN_NAMES: [() => OPEN_NAMES],
   PAINT_WORKER_WAIT: [() => PAINT_WORKER_WAIT],
@@ -94,25 +94,21 @@ expose({
   buildGroundAsync: [() => buildGroundAsync, v => (buildGroundAsync = v)],
   buildGroundPicture: [() => buildGroundPicture, v => (buildGroundPicture = v)],
   cachedGround: [() => cachedGround, v => (cachedGround = v)],
+  canStepBetween: [() => canStepBetween, v => (canStepBetween = v)],
   canWalkStraight: [() => canWalkStraight, v => (canWalkStraight = v)],
   clipSegmentToRect: [() => clipSegmentToRect, v => (clipSegmentToRect = v)],
   closedText: [() => closedText, v => (closedText = v)],
   cropGrowth: [() => cropGrowth, v => (cropGrowth = v)],
   decodeBase64Array: [() => decodeBase64Array, v => (decodeBase64Array = v)],
   dioBubble: [() => dioBubble, v => (dioBubble = v)],
-  dioCandidates: [() => dioCandidates, v => (dioCandidates = v)],
   dioCanvasXY: [() => dioCanvasXY, v => (dioCanvasXY = v)],
-  dioCell: [() => dioCell, v => (dioCell = v)],
   dioClick: [() => dioClick, v => (dioClick = v)],
   dioClimb: [() => dioClimb, v => (dioClimb = v)],
   dioClimbEnds: [() => dioClimbEnds, v => (dioClimbEnds = v)],
   dioClimbGo: [() => dioClimbGo, v => (dioClimbGo = v)],
   dioClimbStep: [() => dioClimbStep, v => (dioClimbStep = v)],
-  dioCostAt: [() => dioCostAt, v => (dioCostAt = v)],
   dioDirOf: [() => dioDirOf, v => (dioDirOf = v)],
-  dioEncSpot: [() => dioEncSpot, v => (dioEncSpot = v)],
   dioFace: [() => dioFace, v => (dioFace = v)],
-  dioFind: [() => dioFind, v => (dioFind = v)],
   dioFolkAnchors: [() => dioFolkAnchors, v => (dioFolkAnchors = v)],
   dioFolkCount: [() => dioFolkCount, v => (dioFolkCount = v)],
   dioFolkGo: [() => dioFolkGo, v => (dioFolkGo = v)],
@@ -120,16 +116,10 @@ expose({
   dioFolkStep: [() => dioFolkStep, v => (dioFolkStep = v)],
   dioFolkStreet: [() => dioFolkStreet, v => (dioFolkStreet = v)],
   dioFolkTick: [() => dioFolkTick, v => setDioFolkTick(v)],
-  dioFree: [() => dioFree, v => (dioFree = v)],
-  dioFreePt: [() => dioFreePt, v => (dioFreePt = v)],
   dioGradeK: [() => dioGradeK, v => (dioGradeK = v)],
   dioHitAt: [() => dioHitAt, v => (dioHitAt = v)],
-  dioLOS: [() => dioLOS, v => (dioLOS = v)],
   dioMix: [() => dioMix, v => (dioMix = v)],
-  dioNav: [() => dioNav, v => setDioNav(v)],
-  dioNearFree: [() => dioNearFree, v => (dioNearFree = v)],
   dioPanel: [() => dioPanel, v => (dioPanel = v)],
-  dioPass: [() => dioPass, v => (dioPass = v)],
   dioPick: [() => dioPick, v => (dioPick = v)],
   dioPill: [() => dioPill, v => (dioPill = v)],
   dioPillSize: [() => dioPillSize, v => (dioPillSize = v)],
@@ -152,10 +142,13 @@ expose({
   drawExitLabels: [() => drawExitLabels, v => (drawExitLabels = v)],
   drawExitMarks: [() => drawExitMarks, v => (drawExitMarks = v)],
   encodeBase64Array: [() => encodeBase64Array, v => (encodeBase64Array = v)],
+  encounterCandidates: [() => encounterCandidates, v => (encounterCandidates = v)],
+  encounterSpot: [() => encounterSpot, v => (encounterSpot = v)],
   ensureGround: [() => ensureGround, v => (ensureGround = v)],
   exitEdge: [() => exitEdge, v => (exitEdge = v)],
   exitPoint: [() => exitPoint, v => (exitPoint = v)],
   farGroundSteps: [() => farGroundSteps, v => (farGroundSteps = v)],
+  findPath: [() => findPath, v => (findPath = v)],
   flagPicturePath: [() => flagPicturePath, v => (flagPicturePath = v)],
   folkHello: [() => folkHello, v => (folkHello = v)],
   folkHour: [() => folkHour, v => (folkHour = v)],
@@ -164,9 +157,11 @@ expose({
   groundKey: [() => groundKey, v => (groundKey = v)],
   groundTileFolder: [() => groundTileFolder, v => (groundTileFolder = v)],
   groundToneAt: [() => groundToneAt, v => (groundToneAt = v)],
+  hasLineOfSight: [() => hasLineOfSight, v => (hasLineOfSight = v)],
   hash2d: [() => hash2d, v => (hash2d = v)],
   imageReady: [() => imageReady],
   isOpenNow: [() => isOpenNow, v => (isOpenNow = v)],
+  isWalkable: [() => isWalkable, v => (isWalkable = v)],
   keepGround: [() => keepGround, v => (keepGround = v)],
   layerAsProp: [() => layerAsProp, v => (layerAsProp = v)],
   mapArtPaths: [() => mapArtPaths, v => (mapArtPaths = v)],
@@ -175,7 +170,11 @@ expose({
   mapHub: [() => mapHub, v => (mapHub = v)],
   mapMoodName: [() => mapMoodName, v => (mapMoodName = v)],
   mapWaterCells: [() => mapWaterCells, v => (mapWaterCells = v)],
+  navCellAt: [() => navCellAt, v => (navCellAt = v)],
+  navCostAt: [() => navCostAt, v => (navCostAt = v)],
+  navGrid: [() => navGrid, v => setNavGrid(v)],
   nearestOnPolyline: [() => nearestOnPolyline, v => (nearestOnPolyline = v)],
+  nearestWalkableCell: [() => nearestWalkableCell, v => (nearestWalkableCell = v)],
   newStepGrid: [() => newStepGrid, v => (newStepGrid = v)],
   openKind: [() => openKind, v => (openKind = v)],
   paintGroundSteps: [() => paintGroundSteps, v => (paintGroundSteps = v)],
@@ -193,10 +192,10 @@ expose({
   scaleColor: [() => scaleColor, v => (scaleColor = v)],
   scaledTilePixels: [() => scaledTilePixels, v => (scaledTilePixels = v)],
   setArtImage: [() => setArtImage, v => (setArtImage = v)],
-  setDioNav: [() => setDioNav, v => (setDioNav = v)],
   setDioProj: [() => setDioProj, v => (setDioProj = v)],
   setDioStop: [() => setDioStop, v => (setDioStop = v)],
   setDioUnproject: [() => setDioUnproject, v => (setDioUnproject = v)],
+  setNavGrid: [() => setNavGrid, v => (setNavGrid = v)],
   setWalkData: [() => setWalkData, v => (setWalkData = v)],
   shapedStepCornerHeight: [() => shapedStepCornerHeight, v => (shapedStepCornerHeight = v)],
   stableCells: [() => stableCells, v => (stableCells = v)],
@@ -219,6 +218,7 @@ expose({
   valueNoise2d: [() => valueNoise2d, v => (valueNoise2d = v)],
   walkData: [() => walkData, v => setWalkData(v)],
   walkView: [() => walkView],
+  walkablePointNear: [() => walkablePointNear, v => (walkablePointNear = v)],
   worldPatchTilesOn: [() => worldPatchTilesOn, v => (worldPatchTilesOn = v)],
 });
 /* eslint-enable no-func-assign */
@@ -294,7 +294,7 @@ const dioUIpx = n => {
   return Math.round(n * k);
 };
 export const GROUND_BORDER_M = 8,
-  DIO_N = 2,
+  NAV_CELLS_PER_M = 2,
   DIO_SPEED = 3.4;
 /* alpha 0.4: what a painting generator yields while the ground painter's helper thread works (ground-paint-worker.js): whatever
    steps it stops for now and comes back later */
@@ -502,7 +502,7 @@ function timedPropsKey(sc) {
     sc._timedN = (sc.props || []).length;
     sc._tkAt = -1e9;
   }
-  /* alpha 0.2: asked hundreds of times a frame (every dioNav); opening hours don't change within a fifth of a second */
+  /* alpha 0.2: asked hundreds of times a frame (every navGrid); opening hours don't change within a fifth of a second */
   const n = performance.now();
   if (n - sc._tkAt < 200 && sc._tkL === L) return sc._tk;
   let k = '';
@@ -2646,7 +2646,7 @@ export function bridgeAt(x, z, sc = walkView.sc) {
   return null;
 }
 /* ---------- where you can walk: a half-meter grid from the terrain and the props' footprints ---------- */
-export function dioNav() {
+export function navGrid() {
   const sc = walkView.sc,
     tk = timedPropsKey(sc);
   if (
@@ -2663,7 +2663,7 @@ export function dioNav() {
   walkView.navG = walkView.gkey;
   walkView.navP = (sc.props || []).length;
   walkView.navT = tk;
-  const N = DIO_N,
+  const N = NAV_CELLS_PER_M,
     gw = Math.max(1, Math.round(sc.w * N)),
     gh = Math.max(1, Math.round(sc.h * N)),
     rows = sc.tiles || [],
@@ -2802,12 +2802,12 @@ export function dioNav() {
   return (walkView.nav = { N, gw, gh, blk, cost, lv, hop });
 }
 /* phase 04d: walk-view-gl.js puts the 3D version in place */
-export function setDioNav(v) {
-  dioNav = v; // eslint-disable-line no-func-assign
-  provide({ dioNav });
+export function setNavGrid(v) {
+  navGrid = v; // eslint-disable-line no-func-assign
+  provide({ navGrid });
 }
 /* may you step from nav cell c to its neighbour q? Up to MAX_STEP_RISE up or down; further down only off a ledge */
-export function dioPass(G, c, q, noHop) {
+export function canStepBetween(G, c, q, noHop) {
   const d = G.lv[q] - G.lv[c];
   if (d > MAX_STEP_RISE) return false;
   if (d < -MAX_STEP_RISE) return !noHop && !!G.hop[c] && d > -MAX_HOP_DOWN;
@@ -2815,25 +2815,25 @@ export function dioPass(G, c, q, noHop) {
 }
 /* a straight step from a to b (keyboard walking, animals): free at b and no wall in between */
 export function canWalkStraight(ax, az, bx, bz, noHop) {
-  const G = dioNav(),
-    c = dioCell(ax, az),
-    q = dioCell(bx, bz);
+  const G = navGrid(),
+    c = navCellAt(ax, az),
+    q = navCellAt(bx, bz);
   if (q < 0 || G.blk[q]) return false;
   if (c < 0 || c === q) return true;
-  return dioPass(G, c, q, noHop);
+  return canStepBetween(G, c, q, noHop);
 }
-export function dioCell(x, z) {
-  const G = dioNav(),
+export function navCellAt(x, z) {
+  const G = navGrid(),
     i = Math.floor(x * G.N),
     j = Math.floor(z * G.N);
   return i < 0 || j < 0 || i >= G.gw || j >= G.gh ? -1 : j * G.gw + i;
 }
-export function dioFree(x, z) {
-  const c = dioCell(x, z);
+export function isWalkable(x, z) {
+  const c = navCellAt(x, z);
   return c >= 0 && !walkView.nav.blk[c];
 }
-function dioNearFree(x, z) {
-  const G = dioNav(),
+function nearestWalkableCell(x, z) {
+  const G = navGrid(),
     { N, gw, gh, blk } = G,
     ci = clamp(Math.floor(x * N), 0, gw - 1),
     cj = clamp(Math.floor(z * N), 0, gh - 1);
@@ -2857,18 +2857,18 @@ function dioNearFree(x, z) {
   }
   return null;
 }
-export function dioFreePt(x, z) {
-  const c = dioNearFree(x, z);
+export function walkablePointNear(x, z) {
+  const c = nearestWalkableCell(x, z);
   if (!c) return [x, z];
-  if (dioFree(x, z)) return [x, z];
-  return [(c.i + 0.5) / DIO_N, (c.j + 0.5) / DIO_N];
+  if (isWalkable(x, z)) return [x, z];
+  return [(c.i + 0.5) / NAV_CELLS_PER_M, (c.j + 0.5) / NAV_CELLS_PER_M];
 }
-function dioLOS(a, b, mc) {
-  const G = dioNav(),
+function hasLineOfSight(a, b, mc) {
+  const G = navGrid(),
     n = Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]) / 0.18) + 1;
   let pc = -1;
   for (let k = 0; k <= n; k++) {
-    const c = dioCell(a[0] + ((b[0] - a[0]) * k) / n, a[1] + ((b[1] - a[1]) * k) / n);
+    const c = navCellAt(a[0] + ((b[0] - a[0]) * k) / n, a[1] + ((b[1] - a[1]) * k) / n);
     if (c < 0 || G.blk[c]) return false;
     if (mc != null && G.cost[c] > mc + 0.01) return false;
     if (pc >= 0 && c !== pc && Math.abs(G.lv[c] - G.lv[pc]) > MAX_STEP_RISE) return false;
@@ -2876,23 +2876,23 @@ function dioLOS(a, b, mc) {
   }
   return true;
 }
-function dioCostAt(p) {
-  const c = dioCell(p[0], p[1]);
+function navCostAt(p) {
+  const c = navCellAt(p[0], p[1]);
   return c < 0 ? 1 : walkView.nav.cost[c];
 }
 /* A* on the grid (8 directions, no corner cutting), then string-pulled so people walk in straight lines */
-export function dioFind(ax, az, bx, bz, o = {}) {
-  const G = dioNav(),
+export function findPath(ax, az, bx, bz, o = {}) {
+  const G = navGrid(),
     { N, gw, gh, blk, cost } = G,
-    a = dioNearFree(ax, az),
-    b = dioNearFree(bx, bz);
+    a = nearestWalkableCell(ax, az),
+    b = nearestWalkableCell(bx, bz);
   if (!a || !b) return null;
   const noHop = !!o.noHop;
   const s = a.j * gw + a.i,
     e = b.j * gw + b.i,
-    start = dioFree(ax, az) ? [ax, az] : [(a.i + 0.5) / N, (a.j + 0.5) / N],
-    end = dioFree(bx, bz) ? [bx, bz] : [(b.i + 0.5) / N, (b.j + 0.5) / N];
-  if (s === e || dioLOS(start, end, Math.max(dioCostAt(start), dioCostAt(end)))) return [start, end];
+    start = isWalkable(ax, az) ? [ax, az] : [(a.i + 0.5) / N, (a.j + 0.5) / N],
+    end = isWalkable(bx, bz) ? [bx, bz] : [(b.i + 0.5) / N, (b.j + 0.5) / N];
+  if (s === e || hasLineOfSight(start, end, Math.max(navCostAt(start), navCostAt(end)))) return [start, end];
   const n = gw * gh;
   if (!walkView._g || walkView._g.length !== n) {
     walkView._g = new Float32Array(n);
@@ -2978,7 +2978,7 @@ export function dioFind(ax, az, bx, bz, o = {}) {
             Math.abs(G.lv[nj * gw + ci] - G.lv[c]) > MAX_STEP_RISE
           )
             continue;
-        } else if (!dioPass(G, c, q, noHop)) continue;
+        } else if (!canStepBetween(G, c, q, noHop)) continue;
         const ng = g[c] + (di && dj ? 1.414 : 1) * (cost[q] + cost[c]) * 0.5;
         if (ng < g[q]) {
           g[q] = ng;
@@ -2996,14 +2996,14 @@ export function dioFind(ax, az, bx, bz, o = {}) {
   let i = 0;
   while (i < pts.length - 1) {
     let j = pts.length - 1;
-    while (j > i + 1 && !dioLOS(pts[i], pts[j], Math.max(dioCostAt(pts[i]), dioCostAt(pts[j])))) j--;
+    while (j > i + 1 && !hasLineOfSight(pts[i], pts[j], Math.max(navCostAt(pts[i]), navCostAt(pts[j])))) j--;
     out.push(pts[j]);
     i = j;
   }
   return out;
 }
 /* ---------- encounter spots: tall grass first, around where you stand ---------- */
-function dioCandidates(sc) {
+function encounterCandidates(sc) {
   /* alpha 0.2: on a trip through a place's view, round where your steps have taken you (not the place's middle) */ const st =
       walkView.st,
     trip = st && st.mode === 'road' && st.pos && sc.comp && sc.comp.hubOf != null,
@@ -3015,14 +3015,14 @@ function dioCandidates(sc) {
     rows = sc.tiles || [],
     hub = trip ? st.pos : mapHub(sc),
     ex = sc.exits || [];
-  dioNav();
+  navGrid();
   for (let j = 0; j < sc.h; j++)
     for (let i = 1; i < sc.w - 1; i++) {
       const ch = (rows[j] || '')[i];
       if (!good.includes(ch)) continue;
       const x = i + 0.5,
         z = sc.h - j - 0.5;
-      if (!dioFree(x, z)) continue;
+      if (!isWalkable(x, z)) continue;
       const d = Math.hypot(x - hub[0], z - hub[1]);
       if (d < 2.2 || d > 13) continue;
       if (ex.some(e => Math.hypot(e[0] - x, e[1] - z) < 2.2)) continue;
@@ -3044,8 +3044,8 @@ function dioCandidates(sc) {
     }
   return (walkView.cand = out);
 }
-export function dioEncSpot(sc, id, used) {
-  const C = dioCandidates(sc);
+export function encounterSpot(sc, id, used) {
+  const C = encounterCandidates(sc);
   let h = 0;
   for (const ch of String(id)) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
   const tot = C.reduce((a, c) => a + c[2], 0);
@@ -3163,7 +3163,7 @@ export function dioClick(ev) {
 }
 export function dioWalkTo(pt, cb) {
   const P = walkView.pl,
-    r = dioFind(P.x, P.z, pt[0], pt[1]);
+    r = findPath(P.x, P.z, pt[0], pt[1]);
   if (!r) {
     if (cb) cb();
     return;
@@ -3255,14 +3255,14 @@ export function dioClimbEnds(p) {
     for (const dx of [0, -0.4, 0.4, -0.8, 0.8]) {
       const x = t[0] + dx,
         z = t[1] + dz;
-      if (dioFree(x, z) && Math.abs(dioH(x, z) - yt) < 0.35) {
+      if (isWalkable(x, z) && Math.abs(dioH(x, z) - yt) < 0.35) {
         top = [x, z];
         break;
       }
     }
     if (top) break;
   }
-  const v = { bot: dioFreePt(p.x, p.z - 0.5), top: top || t };
+  const v = { bot: walkablePointNear(p.x, p.z - 0.5), top: top || t };
   Object.defineProperty(p, '_ce', {
     value: { id: walkView.id, k: walkView.gkey, v },
     writable: true,
@@ -3419,7 +3419,7 @@ function dioPlayer0(st, dt) {
   } else if (mode === 'path') {
     const key = JSON.stringify([walkView.id, st.from, st.to]);
     if (P.pk !== key) {
-      const r = dioFind(st.from[0], st.from[1], st.to[0], st.to[1]) || [st.from, st.to];
+      const r = findPath(st.from[0], st.from[1], st.to[0], st.to[1]) || [st.from, st.to];
       P.line = polyline(r);
       P.d = P.fresh
         ? Math.max(0, clamp(st.t, 0, 1) * P.line.L - (walkView.opt.instant ? 0 : 4))
@@ -3445,7 +3445,7 @@ function dioPlayer0(st, dt) {
     /* roam; v43: on a road ('road') you roam too, pulled along to where your steps have taken you */
     if (mode !== 'road' && !P.route) P.rush = 1;
     if (P.fresh) {
-      const p = dioFreePt(...(st.pos || mapHub(sc)));
+      const p = walkablePointNear(...(st.pos || mapHub(sc)));
       P.x = p[0];
       P.z = p[1];
       P.fresh = false;
@@ -3458,13 +3458,13 @@ function dioPlayer0(st, dt) {
         P.rp = st.pos.slice();
         const d = Math.hypot(st.pos[0] - P.x, st.pos[1] - P.z);
         if (d > 90) {
-          const p = dioFreePt(st.pos[0], st.pos[1]);
+          const p = walkablePointNear(st.pos[0], st.pos[1]);
           P.x = p[0];
           P.z = p[1];
           P.route = null;
           P.rush = 1;
         } else if (d > 0.5) {
-          const r = dioFind(P.x, P.z, st.pos[0], st.pos[1]);
+          const r = findPath(P.x, P.z, st.pos[0], st.pos[1]);
           if (r) {
             P.route = r;
             P.ri = 1;
@@ -3473,7 +3473,7 @@ function dioPlayer0(st, dt) {
           /* alpha 0.2: a trip now runs through places, round their houses: a long way with no path found (a batch of steps came in at once) puts you there */ else if (
             d > 24
           ) {
-            const p = dioFreePt(st.pos[0], st.pos[1]);
+            const p = walkablePointNear(st.pos[0], st.pos[1]);
             P.x = p[0];
             P.z = p[1];
             P.route = null;
@@ -3663,22 +3663,22 @@ function dioFolkAnchors(sc) {
     const k = p.k + ' ' + (M.group || '') + ' ' + (p.act || '');
     if (p.days && /stall|market_cart/.test(p.k)) {
       if (propShown(p))
-        for (const dz of [-1.1, -1.5]) A.stalls.push(dioFreePt(p.x + (Math.random() - 0.5) * 2, p.z + dz));
+        for (const dz of [-1.1, -1.5]) A.stalls.push(walkablePointNear(p.x + (Math.random() - 0.5) * 2, p.z + dz));
       continue;
     }
     if (p.act === 'home') continue;
     if (M.door && (p.act === 'house' || FOLK_HOME.test(k)) && !FOLK_WORK.test(p.k)) A.home.push(actionSpot(p, M, PPU));
     else if ((M.door || /stall|kiosk/.test(p.k)) && FOLK_WORK.test(k)) A.work.push(actionSpot(p, M, PPU));
-    else if (/bench/.test(p.k)) A.hang.push(dioFreePt(p.x, p.z - 0.7));
+    else if (/bench/.test(p.k)) A.hang.push(walkablePointNear(p.x, p.z - 0.7));
     else if (/fountain|well\b|statue|clock/.test(p.k)) {
       for (let a = 0; a < 4; a++)
-        A.hang.push(dioFreePt(p.x + Math.cos(a * 1.57 + 0.4) * 2.4, p.z + Math.sin(a * 1.57 + 0.4) * 1.8));
+        A.hang.push(walkablePointNear(p.x + Math.cos(a * 1.57 + 0.4) * 2.4, p.z + Math.sin(a * 1.57 + 0.4) * 1.8));
     }
   }
-  for (const q of sc.npcSpots || []) if (Array.isArray(q)) A.hang.push(dioFreePt(q[0], q[1]));
+  for (const q of sc.npcSpots || []) if (Array.isArray(q)) A.hang.push(walkablePointNear(q[0], q[1]));
   if (A.hang.length < 4)
     for (let a = 0; a < 6; a++)
-      A.hang.push(dioFreePt(hub[0] + Math.cos(a * 1.05) * 3.2, hub[1] + Math.sin(a * 1.05) * 2.2));
+      A.hang.push(walkablePointNear(hub[0] + Math.cos(a * 1.05) * 3.2, hub[1] + Math.sin(a * 1.05) * 2.2));
   if (!A.work.length) A.work = A.hang.slice();
   if (!A.home.length) A.home = A.hang.slice();
   return A;
@@ -3697,7 +3697,7 @@ function dioFolkInit(n) {
   for (let i = 0; i < n; i++) {
     const a = i * 2.4 + 1,
       r = 2.5 + (i % 3) * 1.6,
-      p = dioFreePt(hub[0] + Math.cos(a) * r, hub[1] + Math.sin(a) * r * 0.7);
+      p = walkablePointNear(hub[0] + Math.cos(a) * r, hub[1] + Math.sin(a) * r * 0.7);
     const f = {
       x: p[0],
       z: p[1],
@@ -3739,7 +3739,7 @@ function dioFolkInit(n) {
                   : null;
       if (!at) f.in = true;
       else {
-        const q = dioFreePt(at[0] + (((i * 0.37) % 1) - 0.5) * 2.4, at[1] + (((i * 0.61) % 1) - 0.5) * 1.8);
+        const q = walkablePointNear(at[0] + (((i * 0.37) % 1) - 0.5) * 2.4, at[1] + (((i * 0.61) % 1) - 0.5) * 1.8);
         f.x = q[0];
         f.z = q[1];
       }
@@ -3759,7 +3759,7 @@ function dioFolkStreet(f) {
     o = all[Math.floor(Math.random() * all.length)] || f,
     L = o.A ? [o.A.home, o.A.work, o.A.hang] : [o.home],
     t = L[Math.floor(Math.random() * L.length)] || [f.x, f.z];
-  return dioFreePt(t[0] + (Math.random() - 0.5) * 3, t[1] + (Math.random() - 0.5) * 2);
+  return walkablePointNear(t[0] + (Math.random() - 0.5) * 3, t[1] + (Math.random() - 0.5) * 2);
 }
 function dioSay(f, force) {
   const L =
@@ -3772,7 +3772,7 @@ function dioSay(f, force) {
   f.sayT = force ? 4.2 : 3.2;
 }
 function dioFolkGo(f, to, then) {
-  const rt = dioFind(f.x, f.z, to[0], to[1], { noHop: true });
+  const rt = findPath(f.x, f.z, to[0], to[1], { noHop: true });
   if (rt && rt.length > 1) {
     f.route = rt;
     f.ri = 1;
@@ -3866,7 +3866,7 @@ function dioFolkStep(dt) {
           t = (() => {
             const a = Math.random() * 6.283,
               r = 1.5 + Math.random() * 4.5;
-            return dioFreePt(f.home[0] + Math.cos(a) * r, f.home[1] + Math.sin(a) * r * 0.8);
+            return walkablePointNear(f.home[0] + Math.cos(a) * r, f.home[1] + Math.sin(a) * r * 0.8);
           })();
         else if (f.ph === 'about' && Math.random() < 0.6) t = dioFolkStreet(f);
         else {
@@ -3880,7 +3880,7 @@ function dioFolkStep(dt) {
                     : f.A.hang,
             a = Math.random() * 6.283,
             r = 0.6 + Math.random() * (f.ph === 'noon' ? 1.6 : 2.4);
-          t = dioFreePt(c[0] + Math.cos(a) * r, c[1] + Math.sin(a) * r * 0.8);
+          t = walkablePointNear(c[0] + Math.cos(a) * r, c[1] + Math.sin(a) * r * 0.8);
         }
         if (!dioFolkGo(f, t)) f.wait = 2;
       }
@@ -3929,12 +3929,12 @@ export function approachPoint(x, z) {
     dx = P.x - x,
     dz = P.z - z,
     l = Math.hypot(dx, dz) || 1;
-  return dioFreePt(x + (dx / l) * 1.1, z + (dz / l) * 1.1);
+  return walkablePointNear(x + (dx / l) * 1.1, z + (dz / l) * 1.1);
 }
 export function actionSpot(p, M, PPU) {
   const s = p.s || 1,
     f = p.f ? -1 : 1;
-  if (M.door) return dioFreePt(p.x + ((M.door.x || 0) / PPU) * s * f, p.z - 0.55);
+  if (M.door) return walkablePointNear(p.x + ((M.door.x || 0) / PPU) * s * f, p.z - 0.55);
   return approachPoint(p.x, p.z - 0.3);
 }
 export function drawExitMarks(C, st, t) {
@@ -4015,7 +4015,7 @@ export function drawExitLabels(C, st, hits, hub) {
       y0: r[1] - 6,
       y1: r[3] + 6,
       z: -1,
-      go: dioFreePt(pt[0], pt[1]),
+      go: walkablePointNear(pt[0], pt[1]),
     });
   }
 }

@@ -158,7 +158,7 @@ def check_game(pw, base, results):
                     pg.evaluate(f"walkView.pl.x={x};walkView.pl.z={z};walkView.pl.route=null;0"); time.sleep(2.2)
                     pg.screenshot(path=str(OUT / f'desktop-geo-{label}.png'))
             pg.evaluate("S.route={node:0,prog:0,plan:[],hold:false};U.roam=null;render();0"); time.sleep(1.5)
-            tgt = pg.evaluate("dioFreePt(20.5,13.4)")
+            tgt = pg.evaluate("walkablePointNear(20.5,13.4)")
             pt = pg.evaluate("(([x,z])=>{const q=dioProj(walkView.C,x,0,z),r=walkView.cv.getBoundingClientRect();return [r.left+q.x/walkView.cv.width*r.width,r.top+q.y/walkView.cv.height*r.height]})(%s)" % json.dumps(tgt))
             pg.mouse.click(pt[0], pt[1]); time.sleep(.5)
             for _ in range(80):  # software rendering in a test browser can be slow; wait until the walk ends

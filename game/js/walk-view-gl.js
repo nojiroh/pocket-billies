@@ -89,12 +89,8 @@ import {
   dioClick,
   dioClimbGo,
   dioDirOf,
-  dioEncSpot,
   dioFolkTick,
-  dioFree,
-  dioFreePt,
   dioHitAt,
-  dioNav,
   dioPill,
   dioPlayer,
   dioProj,
@@ -105,24 +101,27 @@ import {
   dioUnproject,
   drawExitLabels,
   drawExitMarks,
+  encounterSpot,
   ensureGround,
   flagPicturePath,
   groundKey,
   hash2d,
   imageReady,
+  isWalkable,
   layerAsProp,
   mapById,
   mapHub,
   mapMoodName,
+  navGrid,
   paintGroundSteps,
   pointAlongMapPath,
   prepareMap,
   propShown,
   propWithVariant,
-  setDioNav,
   setDioProj,
   setDioStop,
   setDioUnproject,
+  setNavGrid,
   shapedStepCornerHeight,
   stepCellAt,
   stepEdgeShape,
@@ -135,6 +134,7 @@ import {
   valueNoise2d,
   walkData,
   walkView,
+  walkablePointNear,
 } from './walk-view.js';
 import { ENG_CTX, eng, engHex } from './engine/settings.js';
 import {
@@ -217,10 +217,10 @@ expose({
   DIO_PAD_SKIP: [() => DIO_PAD_SKIP],
   RING_CS: [() => RING_CS],
   RING_N: [() => RING_N],
-  _dioNavFlat: [() => _dioNavFlat],
   _dioProj2D: [() => _dioProj2D],
   _dioStop2D: [() => _dioStop2D],
   _dioUnproject2D: [() => _dioUnproject2D],
+  baseNavGrid: [() => baseNavGrid],
   dglAdapt: [() => dglAdapt, v => setDglAdapt(v)],
   dglAltImg: [() => dglAltImg, v => (dglAltImg = v)],
   dglBasinSet: [() => dglBasinSet, v => (dglBasinSet = v)],
@@ -648,8 +648,8 @@ export function dglWallDefault(sc) {
   return 1;
 }
 /* walking: too steep is blocked (worked out once per scene, with the rest of the walking grid) */
-const _dioNavFlat = dioNav;
-setDioNav(function () {
+const baseNavGrid = navGrid;
+setNavGrid(function () {
   const sc = walkView.sc,
     fresh = !(
       walkView.nav &&
@@ -657,7 +657,7 @@ setDioNav(function () {
       walkView.navG === walkView.gkey &&
       walkView.navP === (sc.props || []).length
     ),
-    n = _dioNavFlat();
+    n = baseNavGrid();
   if (!fresh || !sc.heights || !sc.heights.length || n._hk) return n;
   const { N, gw, gh, blk } = n;
   for (let j = 0; j < gh; j++)
@@ -3093,7 +3093,7 @@ export function dglBuildGrass() {
   const dk = eng('grass', 'density'),
     rnd = (a, b) => hash2d(a * 7 + 3, b * 13 + 5),
     dens = { t: 30, g: 4, G: 7, f: 5, l: 3, y: 2, C: 5, H: 6, R: 9, M: 1, L: 1, B: 6, E: 7, F: 1 };
-  dioNav();
+  navGrid();
   const J = { sc, j: 0, k: 0, I: new Float32Array(8 * 4096), n: 0 };
   const C0 = walkData().sc,
     rows = sc.tiles || [];
@@ -3172,7 +3172,7 @@ export function dglBuildGrass() {
             const x = i + rnd(J.k, 1),
               z = z0 + rnd(J.k, 2);
             if (!near(x, z, 0.35, 'gGflt')) continue;
-            if (!dioFree(x, z) || occ[Math.floor(z * 2) * W2 + Math.floor(x * 2)]) continue;
+            if (!isWalkable(x, z) || occ[Math.floor(z * 2) * W2 + Math.floor(x * 2)]) continue;
             add(x, z, 0.08 + rnd(J.k, 4) * 0.1, 0, (valueNoise2d(x * 0.18, z * 0.18) - 0.5) * 1.2);
           }
         }
@@ -3182,7 +3182,7 @@ export function dglBuildGrass() {
         J.k++;
         const x = i + rnd(J.k, 1),
           z = z0 + rnd(J.k, 2);
-        if (!dioFree(x, z) && ch !== 't') continue;
+        if (!isWalkable(x, z) && ch !== 't') continue;
         const q = Math.floor(z * 2) * W2 + Math.floor(x * 2);
         if (occ[q]) continue;
         const kind = pick(ch, rnd(J.k, 7));
@@ -3609,10 +3609,10 @@ function dglFrameIn(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
     walkRenderer.gkey = walkView.gkey;
     walkRenderer.hkey = hk;
     walkView.nav = null;
-    dioNav();
+    navGrid();
     dglSceneSwap(old, hk);
   }
-  dioNav();
+  navGrid();
   if (walkRenderer.grassKey !== eng('grass', 'density')) dglBuildGrass();
   else dglGrassWork(4);
   if (walkRenderer.farKey !== walkView.id + '|' + Math.round(eng('world', 'farProps'))) dglBuildFar();
@@ -4713,7 +4713,7 @@ export function dglItems(st, C, PPU, C0) {
   for (const p of walkRenderer.farProps) prop(p, 1);
   (st.npcs || []).forEach((n, i) => {
     let pos = walkView.npcAt[n.id];
-    if (!pos && n.at) pos = walkView.npcAt[n.id] = dioFreePt(n.at[0], n.at[1]);
+    if (!pos && n.at) pos = walkView.npcAt[n.id] = walkablePointNear(n.at[0], n.at[1]);
     if (!pos) {
       if (!st.mode || st.mode === 'line') {
         const a = pointAlongMapPath(sc, n.t ?? 0.7 + i * 0.08);
@@ -4722,12 +4722,12 @@ export function dglItems(st, C, PPU, C0) {
         const dx = hub[0] - n.exit[0],
           dz = hub[1] - n.exit[1],
           l = Math.hypot(dx, dz) || 1;
-        pos = dioFreePt(n.exit[0] + (dx / l) * 2.2, n.exit[1] + (dz / l) * 2.2);
+        pos = walkablePointNear(n.exit[0] + (dx / l) * 2.2, n.exit[1] + (dz / l) * 2.2);
       } else if (sc.npcSpots && sc.npcSpots[i]) pos = sc.npcSpots[i].slice();
       else {
         const a = i * 2.3 + 0.6,
           r = 3.4 + i * 0.9;
-        pos = dioFreePt(hub[0] + Math.cos(a) * r, hub[1] + Math.sin(a) * r * 0.7);
+        pos = walkablePointNear(hub[0] + Math.cos(a) * r, hub[1] + Math.sin(a) * r * 0.7);
       }
       walkView.npcAt[n.id] = pos;
     }
@@ -4753,7 +4753,7 @@ export function dglItems(st, C, PPU, C0) {
   (st.enc || []).forEach(e => {
     let s = walkView.enc[e.id];
     if (!s || s.sc !== walkView.id) {
-      const sp = dioEncSpot(sc, e.id, used);
+      const sp = encounterSpot(sc, e.id, used);
       s = walkView.enc[e.id] = { x: sp[0], z: sp[1], tx: sp[0], tz: sp[1], sc: walkView.id };
     }
     /* v46: they keep their spot in the tall grass until you battle them: no wandering. They stay alive in place (a bob,
@@ -7481,7 +7481,7 @@ function dglLifeFx(quad, glows, t, rm, dt, sc, C0) {
         r = 3 + Math.random() * 7,
         x = P.x + Math.cos(a) * r,
         z = P.z + Math.sin(a) * r * 0.7;
-      if (dioFree(x, z))
+      if (isWalkable(x, z))
         sk.push({
           x,
           z,

@@ -111,10 +111,9 @@ import { EASE, SC, camHome, scFocus, scTargets } from './battle-stage.js';
 import {
   closedText,
   dioClimb,
-  dioFind,
-  dioFreePt,
   dioStop,
   dioWalkTo,
+  findPath,
   isOpenNow,
   mapArtPaths,
   mapById,
@@ -122,6 +121,7 @@ import {
   openKind,
   walkData,
   walkView,
+  walkablePointNear,
 } from './walk-view.js';
 import { eng } from './engine/settings.js';
 import { ENV, envHint, envIcon, envLabel } from './environment.js';
@@ -1069,7 +1069,7 @@ function enterRoom(a, p) {
     U.goingIn = info;
     const P = walkView.pl,
       fr = [lay.door[0], lay.door[1] - 0.45];
-    if (Math.hypot(P.x - fr[0], P.z - fr[1]) > 1.6) dioWalkTo(dioFreePt(fr[0], fr[1]), () => roomStepIn(info));
+    if (Math.hypot(P.x - fr[0], P.z - fr[1]) > 1.6) dioWalkTo(walkablePointNear(fr[0], fr[1]), () => roomStepIn(info));
     else roomStepIn(info);
     return true;
   }
@@ -1355,12 +1355,12 @@ function walkState() {
               .slice()
               .sort((a, b) => Math.hypot(a[0] - lx, a[1] - lz) - Math.hypot(b[0] - lx, b[1] - lz))[0];
           if (ex) {
-            const q = dioFreePt(ex[0] + lo[0], ex[1] + lo[1]);
+            const q = walkablePointNear(ex[0] + lo[0], ex[1] + lo[1]);
             P.x = q[0];
             P.z = q[1];
           }
         }
-        const r = dioFind(P.x, P.z, hub[0] + lo[0], hub[1] + lo[1]);
+        const r = findPath(P.x, P.z, hub[0] + lo[0], hub[1] + lo[1]);
         if (r) {
           P.route = r;
           P.ri = 1;
@@ -1523,7 +1523,7 @@ function exitPrompt(e) {
       dx = pt[0] - hub[0],
       dz = pt[1] - hub[1],
       l = Math.hypot(dx, dz) || 1;
-    dioWalkTo(dioFreePt(pt[0] + (dx / l) * 3.5, pt[1] + (dz / l) * 3.5));
+    dioWalkTo(walkablePointNear(pt[0] + (dx / l) * 3.5, pt[1] + (dz / l) * 3.5));
     return;
   }
   if (tripDest() === to) {

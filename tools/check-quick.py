@@ -590,10 +590,10 @@ def desktop_steps(b, base, R):
     def paths():
         r = pg.evaluate("""((ids)=>{const out={},keep=[walkView.sc,walkView.nav,walkView.gkey];
          for(const id of ids){const sc=mapById(id);if(!sc)continue;walkView.sc=sc;walkView.nav=null;walkView.gkey='quick-'+id;const C0=walkData().sc,hub=mapHub(sc),bad=[],far=(q,p)=>{const e=q&&q[q.length-1];return !q||Math.hypot(e[0]-p[0],e[1]-p[1])>1.6};
-          for(const e of sc.exits||[])if(far(dioFind(hub[0],hub[1],e[0],e[1]),e))bad.push('exit '+e.map(v=>v.toFixed(1)));
-          for(const p of sc.props||[])if(p.act&&!(p.act==='climb'&&typeof dioClimbEnds==='function'&&[dioClimbEnds(p).bot,dioClimbEnds(p).top].some(g=>{const q=dioFind(hub[0],hub[1],g[0],g[1]),e=q&&q[q.length-1];return e&&Math.hypot(e[0]-g[0],e[1]-g[1])<=1.6}))){const g=actionSpot(p,C0.props[p.k],C0.ppu||34);if(g&&far(dioFind(hub[0],hub[1],g[0],g[1]),g))bad.push(p.k+' @'+p.x+','+p.z)}
-          for(const b of mapBridges(sc)||[]){const A=[b.a[0]-b.ux*.4,b.a[1]-b.uz*.4],B=b.pier?[b.b[0]-b.ux*.4,b.b[1]-b.uz*.4]:[b.b[0]+b.ux*.4,b.b[1]+b.uz*.4];if(far(dioFind(A[0],A[1],B[0],B[1]),B))bad.push((b.pier?'jetty ':'bridge ')+b.a)}
-          const G=dioNav(),hc=dioCell(hub[0],hub[1]);if(hc<0||G.blk[hc])bad.push('hub is blocked');out[id]=bad}
+          for(const e of sc.exits||[])if(far(findPath(hub[0],hub[1],e[0],e[1]),e))bad.push('exit '+e.map(v=>v.toFixed(1)));
+          for(const p of sc.props||[])if(p.act&&!(p.act==='climb'&&typeof dioClimbEnds==='function'&&[dioClimbEnds(p).bot,dioClimbEnds(p).top].some(g=>{const q=findPath(hub[0],hub[1],g[0],g[1]),e=q&&q[q.length-1];return e&&Math.hypot(e[0]-g[0],e[1]-g[1])<=1.6}))){const g=actionSpot(p,C0.props[p.k],C0.ppu||34);if(g&&far(findPath(hub[0],hub[1],g[0],g[1]),g))bad.push(p.k+' @'+p.x+','+p.z)}
+          for(const b of mapBridges(sc)||[]){const A=[b.a[0]-b.ux*.4,b.a[1]-b.uz*.4],B=b.pier?[b.b[0]-b.ux*.4,b.b[1]-b.uz*.4]:[b.b[0]+b.ux*.4,b.b[1]+b.uz*.4];if(far(findPath(A[0],A[1],B[0],B[1]),B))bad.push((b.pier?'jetty ':'bridge ')+b.a)}
+          const G=navGrid(),hc=navCellAt(hub[0],hub[1]);if(hc<0||G.blk[hc])bad.push('hub is blocked');out[id]=bad}
          [walkView.sc,walkView.nav,walkView.gkey]=keep;return out})(%s)""" % json.dumps([ids[n] for n in nodes]))
         bad = {k: v for k, v in r.items() if v}
         R['paths'] = r
@@ -652,14 +652,14 @@ def desktop_steps(b, base, R):
     @step('Walking: tap to walk, then a trip along two roads', 150)   # alpha 0.2: the walk between places is the places' own ground now, and longer
     def walking():
         go_scene(pg, 0)
-        tgt = pg.evaluate("(()=>{const h=mapHub(walkView.sc);return dioFreePt(h[0]-3.5,h[1]-1)})()")   # v46: a few steps from where you stand (the places are bigger now)   # v46: the hub view holds the scene at its baseOff; v40: a short walk; software drawing throttles game time, so a long one can outlast the wait
+        tgt = pg.evaluate("(()=>{const h=mapHub(walkView.sc);return walkablePointNear(h[0]-3.5,h[1]-1)})()")   # v46: a few steps from where you stand (the places are bigger now)   # v46: the hub view holds the scene at its baseOff; v40: a short walk; software drawing throttles game time, so a long one can outlast the wait
         # the camera eases in after a scene opens, and a story message can be up: let both settle, then tap (twice if the first missed)
         time.sleep(2.5); pg.evaluate("U.toastQ=[];U.modal=null;U.mq=[];renderOv();0")
         pg.evaluate("S.queue=[];if(B){B.over='ran';B.phase='end';endBattle()}U.modal=null;U.mq=[];renderOv();0"); time.sleep(.5)   # v40: no hidden encounters near the tap (a tap on one starts a battle)
         # townsfolk wander about: none may stand where the tap lands (a tap on a person starts a chat instead)
         pg.evaluate("(t=>{for(const f of walkView.folk||[])if(Math.hypot(f.x-t[0],f.z-t[1])<3.5){f.x=Math.min(walkView.sc.w-1,f.x+7);f.tx=f.x;f.tz=f.z}})(%s);0" % json.dumps(tgt)); time.sleep(.3)
         # v47: and no billionaire hiding in the open nearby (its marker and label are a big target, and a tap on it starts a battle)
-        pg.evaluate("(t=>{for(const k in walkView.enc||{}){const s=walkView.enc[k];if(s&&Math.hypot(s.x-t[0],s.z-t[1])<6){const q=dioFreePt(Math.min(walkView.sc.w-2,s.x+10),s.z);s.x=q[0];s.z=q[1]}}})(%s);0" % json.dumps(tgt)); time.sleep(.3)
+        pg.evaluate("(t=>{for(const k in walkView.enc||{}){const s=walkView.enc[k];if(s&&Math.hypot(s.x-t[0],s.z-t[1])<6){const q=walkablePointNear(Math.min(walkView.sc.w-2,s.x+10),s.z);s.x=q[0];s.z=q[1]}}})(%s);0" % json.dumps(tgt)); time.sleep(.3)
         # v40: after a long run the ground of a big scene may still be painting; wait for it, then tap up to five times
         until(pg, "walkView.ready&&!!walkView.ground&&(!walkView.opt.active||walkView.opt.active())", 20); time.sleep(.5)
         # the camera eases toward you after a scene opens, slowly when drawing is slow: tap only once the target holds still on screen
@@ -672,7 +672,7 @@ def desktop_steps(b, base, R):
             last = pt; time.sleep(1)
         # a sprite standing between the camera and the spot (a tree, a sign, a person) would take the tap instead: pick a spot nothing covers
         for dx, dz in ((0, 0), (.6, 0), (-.6, 0), (0, .6), (0, -.6), (1.2, 0), (-1.2, 0), (0, 1.2), (1.2, 1.2), (-1.2, -1.2)):
-            cand = pg.evaluate(f"dioFreePt({tgt[0] + dx},{tgt[1] + dz})"); pt = pg.evaluate(PROJ % json.dumps(cand))
+            cand = pg.evaluate(f"walkablePointNear({tgt[0] + dx},{tgt[1] + dz})"); pt = pg.evaluate(PROJ % json.dumps(cand))
             if not pg.evaluate("(p=>!!dioHitAt({clientX:p[0],clientY:p[1]}))(%s)" % json.dumps(pt)): tgt = cand; break
         whys = []
         for attempt in range(5):
@@ -753,7 +753,7 @@ def desktop_steps(b, base, R):
         kinds = pg.evaluate("[...new Set(LIFE.list.map(c=>c.k))]")
         for k in ('frog', 'rabbit'):
             if k not in kinds: raise Exception(f'no {k} at Willowmere (animals there: {", ".join(kinds)})')
-        pg.evaluate("(()=>{const f=LIFE.list.find(c=>c.k==='frog'&&!(c.hide>0));walkView.pl.route=null;const p=dioFreePt(f.x+.7,f.z-.4);walkView.pl.x=p[0];walkView.pl.z=p[1]})();0"); time.sleep(4)
+        pg.evaluate("(()=>{const f=LIFE.list.find(c=>c.k==='frog'&&!(c.hide>0));walkView.pl.route=null;const p=walkablePointNear(f.x+.7,f.z-.4);walkView.pl.x=p[0];walkView.pl.z=p[1]})();0"); time.sleep(4)
         leapt = pg.evaluate("LIFE.list.some(c=>c.k==='frog'&&(c.hide>0||c.dive||c.st==='run'))")
         if not leapt: raise Exception('a frog didn’t leap away when you stood next to it')
         shot(pg, 'life-pond')
@@ -835,12 +835,12 @@ def desktop_steps(b, base, R):
             go_scene(pg, node); time.sleep(1)
             sh = pg.evaluate("[!!walkRenderer.shoreF,!!walkRenderer.shoreTex,walkRenderer.shoreF?walkRenderer.shoreF.FW:0]")
             if not sh[0] or not sh[1]: raise Exception(f'no shoreline field at Willowmere ({sh})')
-            pg.evaluate("(()=>{const w=walkView.water[Math.floor(walkView.water.length*.3)];walkView.pl.route=null;const p=dioFreePt(w[0]-1.5,w[1]-1.5);walkView.pl.x=p[0];walkView.pl.z=p[1]})();0"); time.sleep(2); shot(pg, 'water-edge')
+            pg.evaluate("(()=>{const w=walkView.water[Math.floor(walkView.water.length*.3)];walkView.pl.route=null;const p=walkablePointNear(w[0]-1.5,w[1]-1.5);walkView.pl.x=p[0];walkView.pl.z=p[1]})();0"); time.sleep(2); shot(pg, 'water-edge')
             out.append(f'shoreline field {sh[2]} samples wide')
         go_scene(pg, 0); until(pg, "(walkRenderer.basinL||[]).some(b=>/^fountain/.test(b.p.k))", 90); time.sleep(.5)   # solids build one a frame at least, slowly in software
         bs = pg.evaluate("(walkRenderer.basinL||[]).map(b=>b.p.k+':'+b.B.length)")
         if not any(x.startswith('fountain') for x in bs): raise Exception(f'no fountain water in Marigold Town ({bs})')
-        pg.evaluate("(()=>{const f=walkView.sc.props.find(p=>p.k==='fountain');walkView.pl.route=null;const p=dioFreePt(f.x+.3,f.z-2.4);walkView.pl.x=p[0];walkView.pl.z=p[1]})();0"); time.sleep(2); shot(pg, 'fountain')
+        pg.evaluate("(()=>{const f=walkView.sc.props.find(p=>p.k==='fountain');walkView.pl.route=null;const p=walkablePointNear(f.x+.3,f.z-2.4);walkView.pl.x=p[0];walkView.pl.z=p[1]})();0"); time.sleep(2); shot(pg, 'fountain')
         out.append('basins: ' + ', '.join(bs))
         pg.evaluate("ENV.force={time:13,weather:'clear',season:'autumn'};0"); time.sleep(2); shot(pg, 'autumn'); pg.evaluate("ENV.force=null;0")
         # rooms: light through the window by day, lamps at night, the floor ends at the door
@@ -923,7 +923,7 @@ def desktop_steps(b, base, R):
         if v['lum'] < 45: raise Exception(f"the sofa's top is still dark (brightness {v['lum']})")
         if not (4 <= v['mossy'] <= 30) or not v['plain']: raise Exception(f'mossy twins: {v}')
         out.append(f"10 new prop variants load; a sofa's top {v['lum']} bright (was black); {v['mossy']} of 40 stumps mossy; surface detail {v['det']}, sharp-at-a-slant {'on' if v['aniso'] else 'not offered by this graphics chip'}")
-        pg.evaluate("(()=>{const sc=walkView.sc,C0=walkData().sc,b=(sc.props||[]).find(p=>{const M=C0.props[p.k];return M&&M.box&&M.door});if(!b)return;walkView.pl.route=null;const q=dioFreePt(b.x,b.z-2.5);walkView.pl.x=q[0];walkView.pl.z=q[1];walkRenderer.zoomT=walkRenderer.zoom=.7})();0"); time.sleep(2.5); shot(pg, 'wear-building')
+        pg.evaluate("(()=>{const sc=walkView.sc,C0=walkData().sc,b=(sc.props||[]).find(p=>{const M=C0.props[p.k];return M&&M.box&&M.door});if(!b)return;walkView.pl.route=null;const q=walkablePointNear(b.x,b.z-2.5);walkView.pl.x=q[0];walkView.pl.z=q[1];walkRenderer.zoomT=walkRenderer.zoom=.7})();0"); time.sleep(2.5); shot(pg, 'wear-building')
         # the map's 3D miniatures
         pg.evaluate("U.tab='map';render();0"); time.sleep(3)
         if pg.evaluate("MAP.gl&&typeof mmOn==='function'&&mmOn()"):
@@ -1455,7 +1455,7 @@ def desktop_steps(b, base, R):
             time.sleep(1)
         if not ok: raise Exception('the shop’s room didn’t open in place (' + pg.evaluate("walkView.id") + '; ' + ' | '.join(pg.evaluate("NWLOG.ev.slice(-4).map(e=>e.msg)")) + ')')
         time.sleep(2); until(pg, "(dglRoomDim(walkView.sc)||{dim:0}).dim>.6", 15)   # alpha 0.1: the dimming fades in over the first frames drawn inside (slow here)
-        r = json.loads(pg.evaluate("""JSON.stringify((()=>{const sc=walkView.sc,c=sc.roomCut,I=U.inside,RD=dglRoomDim(sc),n=dioNav(),N=DIO_N,R=sc.roomRect,blocked=(x,z)=>!!n.blk[Math.floor(z*N)*n.gw+Math.floor(x*N)];
+        r = json.loads(pg.evaluate("""JSON.stringify((()=>{const sc=walkView.sc,c=sc.roomCut,I=U.inside,RD=dglRoomDim(sc),n=navGrid(),N=NAV_CELLS_PER_M,R=sc.roomRect,blocked=(x,z)=>!!n.blk[Math.floor(z*N)*n.gw+Math.floor(x*N)];
           return {exit:[sc.exits[0][0]+c[0],sc.exits[0][1]+c[1]],door:I&&I.door,dim:RD?RD.dim:0,outBlocked:blocked(R[0]-2,R[1]+R[3]/2)&&blocked(R[0]+R[2]/2,R[1]-2),inFree:!blocked(R[0]+R[2]/2,R[1]+R[3]/2-1),shopGone:!sc.props.some(p=>p.act==='shop'&&p.k==='shop')}})())"""))
         shot(pg, 'v46-room-in-place')
         if not r['door'] or abs(r['exit'][0] - r['door'][0]) > .3 or abs(r['exit'][1] - r['door'][1]) > .7: raise Exception(f'the room’s doorway {r["exit"]} isn’t at the shop’s door {r["door"]}')
@@ -1635,9 +1635,9 @@ def desktop_steps(b, base, R):
         from every place's hub you reach exactly the same half-metre cells and exits as without that shaping, and no
         prop's base is more than 15 cm above the ground under its footprint (fences and the like follow the slope)"""
         R2 = pg.evaluate("""(()=>{const out=[],C=walkData().sc,keep=walkView.sc;
-          const reach=sc=>{walkView.nav=null;walkView.navSc=null;const G=dioNav(),gw=G.gw,gh=G.gh,h=sc.hub||[sc.w/2,sc.h/2],s=dioNearFree(h[0],h[1]);if(!s)return [0,0];const seen=new Uint8Array(gw*gh),Q=[s.j*gw+s.i];seen[Q[0]]=1;
-            while(Q.length){const c=Q.pop(),i=c%gw,j=(c-i)/gw;for(const [a,b] of [[1,0],[-1,0],[0,1],[0,-1]]){const ii=i+a,jj=j+b;if(ii<0||jj<0||ii>=gw||jj>=gh)continue;const q=jj*gw+ii;if(seen[q]||G.blk[q]||!dioPass(G,c,q))continue;seen[q]=1;Q.push(q)}}
-            let n=0;for(const v of seen)n+=v;let ex=0;for(const e of sc.exits||[]){const c=dioNearFree(e[0],e[1]);if(c&&seen[c.j*gw+c.i])ex++}return [n,ex]};
+          const reach=sc=>{walkView.nav=null;walkView.navSc=null;const G=navGrid(),gw=G.gw,gh=G.gh,h=sc.hub||[sc.w/2,sc.h/2],s=nearestWalkableCell(h[0],h[1]);if(!s)return [0,0];const seen=new Uint8Array(gw*gh),Q=[s.j*gw+s.i];seen[Q[0]]=1;
+            while(Q.length){const c=Q.pop(),i=c%gw,j=(c-i)/gw;for(const [a,b] of [[1,0],[-1,0],[0,1],[0,-1]]){const ii=i+a,jj=j+b;if(ii<0||jj<0||ii>=gw||jj>=gh)continue;const q=jj*gw+ii;if(seen[q]||G.blk[q]||!canStepBetween(G,c,q))continue;seen[q]=1;Q.push(q)}}
+            let n=0;for(const v of seen)n+=v;let ex=0;for(const e of sc.exits||[]){const c=nearestWalkableCell(e[0],e[1]);if(c&&seen[c.j*gw+c.i])ex++}return [n,ex]};
           for(const id of ROUTE.map(r=>r.scene).filter(Boolean)){const sc=mapById(id);if(!sc)continue;walkView.sc=sc;walkView.noShape=1;const a=reach(sc);walkView.noShape=0;const b=reach(sc);
             let fl=[];for(const p of sc.props||[]){const M=C.props[p.k];if(!M||M.flat||M.walk||M.build||M.door!=null||(typeof propShown==='function'&&!propShown(p)))continue;const g=(M.group||'')+' '+p.k;if(DGL_HUG.test(g)&&!/tree|lamp|post|sign|pole/.test(g))continue;
               const s=p.s||1,y=dglPropY(p,M),lv=stepLevelAt(p.x,p.z);let pts;if(M.box){const bw=M.box[0]*s/2,bd=M.box[1]*s;pts=[[p.x-bw,p.z-.05],[p.x+bw,p.z-.05],[p.x-bw,p.z+bd],[p.x+bw,p.z+bd]]}else{const r=Math.min(.45,(M.shadow||0)*.3*s);if(r<.08)continue;pts=[[p.x-r,p.z],[p.x+r,p.z],[p.x,p.z-r*.6],[p.x,p.z+r*.6]]}
@@ -1668,11 +1668,11 @@ def desktop_steps(b, base, R):
         round from inside; every exit has the walk from its hub stored (the trips follow it)"""
         r = json.loads(pg.evaluate("""JSON.stringify((()=>{const out=[],keep=walkView.sc,keepId=walkView.id;let slow=0,slowId='',n=0;
           for(let k=0;k<ROUTE.length;k++){const t0=performance.now();let sc=null;try{sc=wrHubScene(k)}catch(e){out.push(ROUTE[k].scene+': '+e)}const ms=performance.now()-t0;if(ms>slow){slow=ms;slowId=ROUTE[k].scene}if(sc&&!sc.comp.joined&&ADJ[k].length)out.push(ROUTE[k].scene+': not joined')}/* alpha 0.4: a place reached only by a lift (Pearlantis) has no neighbour to join */
-          const nav=sc=>{walkView.sc=sc;walkView.id=sc.id;walkView.nav=null;walkView.navSc=null;walkView.cand=null;return dioNav()};
+          const nav=sc=>{walkView.sc=sc;walkView.id=sc.id;walkView.nav=null;walkView.navSc=null;walkView.cand=null;return navGrid()};
           for(let i=0;i<LINKS.length;i++){const J=wrJoin(i);if(!J){out.push('link '+i+': not joined');continue}n++;
            for(const [vn,isA] of [[J.a,1],[J.b,0]]){const sc=wrHubScene(vn),o=sc.baseOff,d=WR_DIR[J.ea.side],p=isA?[J.ea.p[0]+o[0],J.ea.p[1]+o[1]]:[J.ea.p[0]+o[0]-J.off[0],J.ea.p[1]+o[1]-J.off[1]];
             const a=[p[0]-d[0]*4,p[1]-d[1]*4],b=[p[0]+d[0]*5.2,p[1]+d[1]*5.2],G=nav(sc),cb=Math.floor(b[1]*G.N)*G.gw+Math.floor(b[0]*G.N),ch=terrainAt(b[0],b[1]),ca=terrainAt(a[0],a[1]);
-            if('wd'.includes(ch)&&!sc.ride||'wd'.includes(ca)&&!sc.ride)continue;const rt=dioFind(a[0],a[1],b[0],b[1]);let L=0;if(rt)for(let q=1;q<rt.length;q++)L+=Math.hypot(rt[q][0]-rt[q-1][0],rt[q][1]-rt[q-1][1]);const e=rt&&rt[rt.length-1];
+            if('wd'.includes(ch)&&!sc.ride||'wd'.includes(ca)&&!sc.ride)continue;const rt=findPath(a[0],a[1],b[0],b[1]);let L=0;if(rt)for(let q=1;q<rt.length;q++)L+=Math.hypot(rt[q][0]-rt[q-1][0],rt[q][1]-rt[q-1][1]);const e=rt&&rt[rt.length-1];
             if(!rt||Math.hypot(e[0]-b[0],e[1]-b[1])>.6||L>11.5)out.push(ROUTE[J.a].scene+' → '+ROUTE[J.b].scene+' in '+ROUTE[vn].scene+'’s view: '+(rt?L.toFixed(1)+' m to cross':'no way across'))}
            const A=wrHubScene(J.a),B=wrHubScene(J.b),oA=A.baseOff,oB=B.baseOff,e=J.ea.p;if(A.under!==B.under)continue;let dh=0,dt=0;
            const who=(sc,x,z)=>{x+=.5;z+=.5;/* the cell's middle */for(const r of sc.stable.scenes){const k=r.clip||[r.x,r.z,r.x+r.w,r.z+r.h];if(x>=k[0]&&z>=k[1]&&x<k[2]&&z<k[3])return r.id}return null};
@@ -1858,7 +1858,7 @@ def desktop_steps(b, base, R):
             if not dp: raise Exception('no D-pad when the D-pad is chosen')
             st0 = pg.evaluate("S.totalSteps")
             r = pg.evaluate(f"""(()=>{{const v=walkState(),e=(v.exits||[]).find(e=>e.to==={n1});if(!e)return 'no exit to Route 1';const sc=walkView.sc,pt=sc.exits[e.i],hub=mapHub(sc),dx=pt[0]-hub[0],dz=pt[1]-hub[1],l=Math.hypot(dx,dz)||1,tg=[pt[0]+dx/l*6,pt[1]+dz/l*6];
-              const P=walkView.pl,R=dioFind(P.x,P.z,tg[0],tg[1])||[[P.x,P.z],tg];return {{R}}}})()""")
+              const P=walkView.pl,R=findPath(P.x,P.z,tg[0],tg[1])||[[P.x,P.z],tg];return {{R}}}})()""")
             if isinstance(r, str): raise Exception(r)
             crossed = False; R = r['R']; walked = 0
             for a, bb in zip(R, R[1:]):

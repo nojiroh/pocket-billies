@@ -10,7 +10,7 @@ import { clamp } from './util.js';
 import { COINS, GD, ITEMS, ROUTE, RULES, SP } from './game-data.js';
 import { B, N, S, U, esc, fmt, save, today } from './game-state.js';
 import { cnv, uiIco } from './art.js';
-import { baseMapId, dioFace, dioFind, dioFreePt, mapById, mapHub, terrainAt, walkView } from './walk-view.js';
+import { baseMapId, dioFace, findPath, mapById, mapHub, terrainAt, walkView, walkablePointNear } from './walk-view.js';
 import { eng } from './engine/settings.js';
 import { ENV, envHere, envState } from './environment.js';
 import { dioH, walkRenderer } from './walk-view-gl.js';
@@ -350,14 +350,14 @@ function stampSpots() {
     hub = mapHub(sc),
     out = [];
   for (let k = 0; k < 80 && out.length < 2; k++) {
-    const p = dioFreePt(o[0] + 1 + r() * (sc.w - 2), o[1] + 1 + r() * (sc.h - 2));
+    const p = walkablePointNear(o[0] + 1 + r() * (sc.w - 2), o[1] + 1 + r() * (sc.h - 2));
     if (!p) continue;
     if (
       Math.hypot(p[0] - o[0] - hub[0], p[1] - o[1] - hub[1]) < 5 ||
       out.some(q => Math.hypot(q[0] - p[0], q[1] - p[1]) < 7)
     )
       continue;
-    const q = dioFind(hub[0] + o[0], hub[1] + o[1], p[0], p[1]),
+    const q = findPath(hub[0] + o[0], hub[1] + o[1], p[0], p[1]),
       e = q && q[q.length - 1];
     if (!e || Math.hypot(e[0] - p[0], e[1] - p[1]) > 0.6) continue;
     if (/[wd]/.test(terrainAt(p[0], p[1]))) continue;

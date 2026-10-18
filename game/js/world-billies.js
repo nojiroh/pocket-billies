@@ -17,7 +17,7 @@ import { N, S, U, findMon, maxHp, nextStop, save } from './game-state.js';
 import { cnv } from './art.js';
 import { KBACK, drawRig, rigFrame, rigParts, rigPreload } from './skeleton-rig.js';
 import { scPrepare } from './battle-stage.js';
-import { dioFreePt, dioProj, prepareMap, walkView } from './walk-view.js';
+import { dioProj, prepareMap, walkView, walkablePointNear } from './walk-view.js';
 import { ENV } from './environment.js';
 import { dioH } from './walk-view-gl.js';
 /* eslint-disable no-func-assign */
@@ -223,8 +223,8 @@ function owBuddyItems(out, t, dt) {
       const a = Math.random() * 6.283,
         r = 0.6 + Math.random() * 0.7,
         c =
-          typeof dioFreePt === 'function'
-            ? dioFreePt(P.x + Math.cos(a) * r, P.z + Math.sin(a) * r * 0.7)
+          typeof walkablePointNear === 'function'
+            ? walkablePointNear(P.x + Math.cos(a) * r, P.z + Math.sin(a) * r * 0.7)
             : [P.x + Math.cos(a) * r, P.z + Math.sin(a) * r * 0.7];
       b.tx = c[0];
       b.tz = c[1];

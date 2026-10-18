@@ -12,7 +12,7 @@ import { clamp } from './util.js';
 import { GD, ROUTE, TRAINERS } from './game-data.js';
 import { S, U, esc, save } from './game-state.js';
 import { humanHTML } from './person-art.js';
-import { baseMapId, dioFind, dioFreePt, mapById, mapHub, walkView } from './walk-view.js';
+import { baseMapId, findPath, mapById, mapHub, walkView, walkablePointNear } from './walk-view.js';
 import { dioH, walkRenderer } from './walk-view-gl.js';
 import { JINGLES, jingle, sfx } from './sound.js';
 /* eslint-disable no-func-assign */
@@ -173,9 +173,9 @@ function clueSpotFind(sc, at) {
     const d = Math.hypot(hub[0] - pr.x, hub[1] - pr.z) || 1,
       ux = (hub[0] - pr.x) / d,
       uz = (hub[1] - pr.z) / d,
-      q = dioFreePt(o[0] + pr.x + ux * 1.1, o[1] + pr.z + uz * 1.1);
+      q = walkablePointNear(o[0] + pr.x + ux * 1.1, o[1] + pr.z + uz * 1.1);
     if (!q) continue;
-    const r = dioFind(o[0] + hub[0], o[1] + hub[1], q[0], q[1]),
+    const r = findPath(o[0] + hub[0], o[1] + hub[1], q[0], q[1]),
       e = r && r[r.length - 1];
     if (!e || Math.hypot(e[0] - q[0], e[1] - q[1]) > 0.6) continue;
     return [q[0] - o[0], q[1] - o[1]];

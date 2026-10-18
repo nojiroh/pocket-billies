@@ -22,15 +22,15 @@ import {
   GROUND_CACHE,
   PROP_CLOCK,
   actionSpot,
-  dioCell,
   dioClimbEnds,
-  dioFind,
-  dioNav,
   dioStop,
   dioWalkTo,
+  findPath,
   mapBridges,
   mapById,
   mapHub,
+  navCellAt,
+  navGrid,
   stepGrid,
   walkData,
   walkView,
@@ -115,11 +115,11 @@ function stSceneChecks(id) {
       return !q || Math.hypot(e[0] - p[0], e[1] - p[1]) > 0.9;
     };
     const hub = mapHub(sc),
-      G = dioNav(),
-      hc = dioCell(hub[0], hub[1]);
+      G = navGrid(),
+      hc = navCellAt(hub[0], hub[1]);
     out.push({ what: 'where you arrive is open ground', reach: true, ok: hc >= 0 && !G.blk[hc] });
     for (const c of sc.checks || []) {
-      const got = !far(dioFind(c.from[0], c.from[1], c.to[0], c.to[1], c.noHop ? { noHop: true } : {}), c.to);
+      const got = !far(findPath(c.from[0], c.from[1], c.to[0], c.to[1], c.noHop ? { noHop: true } : {}), c.to);
       out.push({ what: c.what, reach: c.reach, got, ok: got === !!c.reach });
     }
   } finally {
@@ -540,7 +540,7 @@ async function runFullTest(mode) {
           const end = q && q[q.length - 1];
           return !q || Math.hypot(end[0] - p[0], end[1] - p[1]) > 1.6;
         };
-      for (const e of sc.exits || []) if (far(dioFind(hub[0], hub[1], e[0], e[1]), e)) bad.push('an exit');
+      for (const e of sc.exits || []) if (far(findPath(hub[0], hub[1], e[0], e[1]), e)) bad.push('an exit');
       for (const p of sc.props || [])
         if (
           p.act &&
@@ -548,23 +548,23 @@ async function runFullTest(mode) {
             p.act === 'climb' &&
             typeof dioClimbEnds === 'function' &&
             [dioClimbEnds(p).bot, dioClimbEnds(p).top].some(g => {
-              const q = dioFind(hub[0], hub[1], g[0], g[1]),
+              const q = findPath(hub[0], hub[1], g[0], g[1]),
                 e = q && q[q.length - 1];
               return e && Math.hypot(e[0] - g[0], e[1] - g[1]) <= 1.6;
             })
           )
         ) {
           const g = actionSpot(p, C0.props[p.k], C0.ppu || 34);
-          if (g && far(dioFind(hub[0], hub[1], g[0], g[1]), g)) bad.push(p.k);
+          if (g && far(findPath(hub[0], hub[1], g[0], g[1]), g)) bad.push(p.k);
         }
       for (const b of mapBridges(sc) || []) {
         const A = [b.a[0] - b.ux * 0.4, b.a[1] - b.uz * 0.4],
           Bp = b.pier ? [b.b[0] - b.ux * 0.4, b.b[1] - b.uz * 0.4] : [b.b[0] + b.ux * 0.4, b.b[1] + b.uz * 0.4];
-        if (far(dioFind(A[0], A[1], Bp[0], Bp[1]), Bp)) bad.push('across a bridge');
+        if (far(findPath(A[0], A[1], Bp[0], Bp[1]), Bp)) bad.push('across a bridge');
       }
       if (bad.length) throw new Error('can’t walk to: ' + [...new Set(bad)].join(', '));
       const E = stepGrid(sc),
-        G = dioNav();
+        G = navGrid();
       let hops = 0;
       for (let q = 0; q < G.hop.length; q++) if (G.hop[q]) hops++;
       const gl = typeof walkRenderer !== 'undefined' && walkRenderer.on;

@@ -16,9 +16,9 @@ import { cnv } from './art.js';
 import {
   artImage,
   canWalkStraight,
-  dioFree,
   hash2d,
   imageReady,
+  isWalkable,
   pointAlongPolyline,
   polyline,
   walkData,
@@ -169,7 +169,7 @@ function lifeInit() {
         for (let k = 0; k < 30; k++) {
           x = A[0] + (A[2] - A[0]) * lifeRnd(n * 7 + k, 5);
           z = A[1] + (A[3] - A[1]) * lifeRnd(n * 11 + k, 9);
-          if (dioFree(x, z)) break;
+          if (isWalkable(x, z)) break;
         }
       }
       LIFE.list.push({
@@ -202,7 +202,7 @@ function lifeShore(a, b) {
         const an = (b + j / 8) * 6.283,
           x = w[0] + Math.cos(an) * r,
           z = w[1] + Math.sin(an) * r;
-        if (dioFree(x, z)) return [x, z];
+        if (isWalkable(x, z)) return [x, z];
       }
   }
   return null;
@@ -233,7 +233,7 @@ function lifeTarget(c) {
   for (let k = 0; k < 12; k++) {
     const x = clamp(c.x + (Math.random() - 0.5) * 4, A[0], A[2]),
       z = clamp(c.z + (Math.random() - 0.5) * 3, A[1], A[3]);
-    if (dioFree(x, z)) {
+    if (isWalkable(x, z)) {
       c.tx = x;
       c.tz = z;
       return;
@@ -409,10 +409,10 @@ export function lifeStep(dt) {
           c.tz = best[1];
           c.dive = 1;
         }
-      } else if (!dioFree(c.tx, c.tz)) {
+      } else if (!isWalkable(c.tx, c.tz)) {
         c.tx = c.x + Math.cos(a + 1.2) * far;
         c.tz = c.z + Math.sin(a + 1.2) * far;
-        if (!dioFree(c.tx, c.tz)) {
+        if (!isWalkable(c.tx, c.tz)) {
           c.tx = c.x;
           c.tz = c.z;
         }
@@ -453,7 +453,7 @@ export function lifeStep(dt) {
     if (
       c.k === 'duck' ||
       c.dive ||
-      (typeof canWalkStraight === 'function' ? canWalkStraight(c.x, c.z, nx, nz, true) : dioFree(nx, nz))
+      (typeof canWalkStraight === 'function' ? canWalkStraight(c.x, c.z, nx, nz, true) : isWalkable(nx, nz))
     ) {
       c.x = nx;
       c.z = nz;

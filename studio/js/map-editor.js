@@ -26,12 +26,12 @@ import { ART, cnv } from '../../game/js/art.js';
 import {
   MAX_STEP_RISE,
   artImage,
-  dioFind,
-  dioNav,
-  dioPass,
+  canStepBetween,
   exitEdge,
   exitPoint,
+  findPath,
   mapHub,
+  navGrid,
   newStepGrid,
   pointAlongMapPath,
   setArtImage,
@@ -1901,7 +1901,7 @@ function scExitChecks(sc) {
     try {
       if (walkView.sc === sc) {
         walkView.nav = null;
-        path = dioFind(hub[0], hub[1], p[0], p[1]);
+        path = findPath(hub[0], hub[1], p[0], p[1]);
       }
     } catch (err) {
       path = null;
@@ -2716,7 +2716,7 @@ function scDrawSteps(x, sc, Z) {
   }
   /* where you can walk: red where you can't, gold arrows where you can hop down */
   if (SCN.walkOv && SCN.tool === 'steps' && walkView.sc === sc && !SCN.stE) {
-    const G = dioNav(),
+    const G = navGrid(),
       k = Z / G.N;
     for (let j = 0; j < G.gh; j++)
       for (let i = 0; i < G.gw; i++) {
@@ -2734,7 +2734,7 @@ function scDrawSteps(x, sc, Z) {
           lf = i > 0 ? q - 1 : -1;
         for (const n of [up, dn, rt, lf]) {
           if (n < 0 || G.blk[n]) continue;
-          if (!dioPass(G, q, n) && !dioPass(G, n, q)) {
+          if (!canStepBetween(G, q, n) && !canStepBetween(G, n, q)) {
             x.fillStyle = 'rgba(200,40,50,.25)';
             x.fillRect(X + k * 0.3, Y + k * 0.3, k * 0.4, k * 0.4);
           }
