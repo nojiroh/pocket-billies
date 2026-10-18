@@ -254,7 +254,14 @@ function plan(all, pairs) {
             : [];
       for (const [s, t] of strs) {
         // the debug log names the functions it wraps and times
-        if (u.file === LOG && n.type === 'Literal' && pairs.has(n.value)) {
+        // (only where it names a function: wrap('name', ...) and the first element of a timing list ['name', ...];
+        // a plain value like 'on' elsewhere in the log stays)
+        const lp = u.parent.get(n);
+        const listed =
+          lp &&
+          ((lp.type === 'CallExpression' && lp.arguments[0] === n && /^(wrap|timed)$/.test(lp.callee.name || '')) ||
+            (lp.type === 'ArrayExpression' && lp.elements[0] === n));
+        if (u.file === LOG && n.type === 'Literal' && pairs.has(n.value) && listed) {
           put(s + 1, s + t.length - 1, pairs.get(n.value));
           strings.push(at(s, `${n.value} -> ${pairs.get(n.value)}`));
           continue;
