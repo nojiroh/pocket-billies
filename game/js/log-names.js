@@ -1,4 +1,4 @@
-// Phase 04d: made by tools/to-module.mjs (npm run modules), do not edit. What the debug log (log.js, a classic
+// Phase 04d: made by tools/to-module.mjs (npm run modules), do not edit. What the debug log (debug-log.js, a classic
 // script that runs before the modules) reads and wraps in the game's modules: a getter for each name in its GAME
 // object, and a setter (the module's own) for each function it wraps. The last module of the game's page.
 import { GD, ROUTE } from './game-data.js';

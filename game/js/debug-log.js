@@ -6,7 +6,7 @@
    test (selftest.js) plays through everything for about two minutes, stress-tests the device and adds the results.
    Nothing here leaves the device unless the player exports it. No save data, names or step history are included. */
 const NW_BUILD = PB_VERSION;
-/* phase 04d: what the log reads and wraps in the game's modules. log.js runs before them (it catches their errors),
+/* phase 04d: what the log reads and wraps in the game's modules. debug-log.js runs before them (it catches their errors),
    so js/log-names.js (made by tools/to-module.mjs, the last module of the page) fills this in once they have loaded:
    a getter for each name, and a setter (the module's own setX) for each function the log wraps. Until then it is
    empty, as the names were before the modules ran. */

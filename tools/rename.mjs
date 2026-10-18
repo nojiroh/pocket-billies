@@ -13,8 +13,8 @@
 //   --dry  print what would change, write nothing; --all  every place to check by hand, not a few per file
 //
 // name and prefix rename a declaration and every reference that resolves to it (a local of the same name is left
-// alone), window. self. globalThis. and GAME. (log.js) members, the debug log's lists of the functions it wraps and
-// times (strings in log.js), names that can only be code inside strings (dioMount, DGL_SH: the paint worker's source,
+// alone), window. self. globalThis. and GAME. (debug-log.js) members, the debug log's lists of the functions it wraps and
+// times (strings in debug-log.js), names that can only be code inside strings (dioMount, DGL_SH: the paint worker's source,
 // the self-test's list of passes), comments (names with a capital, digit, _ or $ and at least two characters; plain
 // words like `at` are only listed), and the JavaScript in the Python tools' strings (tools/rename-strings.py). A
 // shorthand property keeps its key ({ dioMount } -> { dioMount: walkViewMount }): changing a key is a separate
@@ -39,7 +39,7 @@ const ROOT = join(import.meta.dirname, '..');
 const read = f => readFileSync(join(ROOT, f), 'utf8');
 const git = (...a) => execFileSync('git', a, { cwd: ROOT, encoding: 'utf8', maxBuffer: 1 << 28 });
 const PARSE = { ecmaVersion: 'latest', range: true, loc: true, comment: true };
-// objects whose members are the pages' top-level names (GAME: log.js's view of the game's modules)
+// objects whose members are the pages' top-level names (GAME: debug-log.js's view of the game's modules)
 const WINDOWS = new Set(['window', 'self', 'globalThis', 'GAME']);
 const BROWSER = new Set([...Object.keys(globals.browser), ...Object.keys(globals.builtin)]);
 const GENERATED = new Set(['game/data/gamedata.js', HOOKS, LOG_NAMES]);
@@ -386,7 +386,7 @@ async function renameFile(o, n, dry) {
   }
   if (!dry) {
     git('mv', o, n);
-    // in a new process: to-module.mjs names some files itself (log.js), and this one has the old names loaded
+    // in a new process: to-module.mjs names some files itself (debug-log.js), and this one has the old names loaded
     execFileSync('node', [join(ROOT, 'tools/to-module.mjs')], { cwd: ROOT, stdio: 'ignore' });
   }
   return { files: changed.length, changed, notes };
