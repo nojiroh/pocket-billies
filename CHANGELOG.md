@@ -30,6 +30,9 @@ kept aside in the browser).
   (`openHitchMs`, `openHitchCause`), and the first and last second of the other steps are left out (they read low).
   The debug log now names the opening hitch (setting up the ground, building the ground mesh, the walk grid, reading
   the picture back) instead of "outside the marked steps".
+- New: the **graphics test** (Settings → Help, and the debug menu), about ten minutes on a new test place, the Graphics
+  bench. It measures what each graphics setting costs on your device: the 17 Expert dials and five hidden ones, five
+  steps each, then everything at its lowest and highest. It ends with a table, costliest first, and Save the report.
 - Fix: the full test could let the friends list publish your name and place while the maps loaded at its start.
 - Fixes: with Motion set to reduced, the camera snaps instead of gliding. Puffcap Woods and Russetwood get their own
   flower colours (they had the default ones).

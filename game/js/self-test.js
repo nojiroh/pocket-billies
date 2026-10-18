@@ -101,6 +101,7 @@ expose({
   selfTest: [() => selfTest],
   selfTestFrameStats: [() => selfTestFrameStats, v => (selfTestFrameStats = v)],
   selfTestSleep: [() => selfTestSleep, v => (selfTestSleep = v)],
+  shareReportFile: [() => shareReportFile, v => (shareReportFile = v)],
   testMapChecks: [() => testMapChecks, v => ((testMapChecks = v), provide({ testMapChecks }))],
   testMaps: [() => testMaps, v => ((testMaps = v), provide({ testMaps }))],
 });
@@ -109,14 +110,14 @@ provide({ runDiagnostics, testMapChecks, testMaps });
 /* to-module: end */
 /* phase 13: slow stretches every wait and time limit of the test, for a machine that draws a frame or two a second
    (the checks' headless browser draws in software: selfTest.slow = 3 there); 1 on a phone or a computer */
-const selfTest = { on: false, stop: false, slow: 1 };
+export const selfTest = { on: false, stop: false, slow: 1 };
 provide({ selfTest }); /* to-module */
-function selfTestSleep(ms) {
+export function selfTestSleep(ms) {
   return new Promise(r => setTimeout(r, ms * (selfTest.slow || 1)));
 }
 /* frame rate of one scheduler task between two moments of the debug log; whole: only the seconds that start after t0;
    trim: drop the task's first and last second (it starts and stops partway through them, so they read low) */
-function selfTestFrameStats(t0, t1, task, o) {
+export function selfTestFrameStats(t0, t1, task, o) {
   const whole = o && o.whole,
     S = [];
   for (const s of debugLog.samples) {
@@ -1662,7 +1663,7 @@ const DIAGNOSTICS_PASSES = {
   effects: ['effectsPass'],
   'final pass': ['drawPostEffects'],
 };
-function diagnosticsTimersOn() {
+export function diagnosticsTimersOn() {
   const gl = typeof gpuState !== 'undefined' ? gpuState.gl : null,
     ext = gl && gl.getExtension('EXT_disjoint_timer_query_webgl2'),
     T = {
@@ -1708,7 +1709,7 @@ function diagnosticsTimersOn() {
   }
   return T;
 }
-async function diagnosticsTimersOff(T) {
+export async function diagnosticsTimersOff(T) {
   for (const [n, o] of Object.entries(T.orig)) GAME[n] = o;
   const frames = Math.max(1, (typeof walkRenderer !== 'undefined' ? walkRenderer.frames : 0) - T.f0),
     cpu = {};
@@ -1790,10 +1791,16 @@ async function exportDiagnosticsReport() {
     toast('Run the diagnostics test first.');
     return;
   }
-  const data = JSON.stringify(r, null, 1),
-    d = new Date(),
-    pad = n => String(n).padStart(2, '0'),
-    name = `pocket-billies-diagnostics-${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}.json`;
+  const d = new Date(),
+    pad = n => String(n).padStart(2, '0');
+  return shareReportFile(
+    JSON.stringify(r, null, 1),
+    `pocket-billies-diagnostics-${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}.json`,
+    'Pocket Billies diagnostics'
+  );
+}
+/* a test's report: shared on a phone, saved to the downloads elsewhere, copied as the last resort */
+export async function shareReportFile(data, name, title) {
   if (typeof debugLog !== 'undefined') debugLog.add('export', name);
   try {
     const f = new File([data], name, { type: 'application/json' });
@@ -1802,7 +1809,7 @@ async function exportDiagnosticsReport() {
       navigator.canShare({ files: [f] }) &&
       /Mobi|Android|iPhone|iPad/.test(navigator.userAgent)
     ) {
-      await navigator.share({ files: [f], title: 'Pocket Billies diagnostics' });
+      await navigator.share({ files: [f], title });
       toast('Report shared.');
       return;
     }

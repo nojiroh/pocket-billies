@@ -209,6 +209,34 @@ Plan approved at the start (docs/phases/08a-plan.md, section 08a-1, now marked d
     (the remote hangs up on tag pushes). Please push them from your machine.
   - On your phone: the in-game full test (its Road phase now walks) and a debug log from this build.
 - Next session starts with: "start 08a-2" (docs/phases/08a-plan.md, section 08a-2: encounters first).
+### Graphics test and the Graphics bench - 2026-10-19
+Not a phase; plan approved in chat (5 steps per setting, Expert dials plus five hidden ones, a new place apart from the
+Graphics gallery, the frame cap kept and costs read in ms). Spec: docs/graphics-bench.md.
+- Changed (7 commits):
+  - New place test_graphics (tools/build-test-scenes.py t_graphics): nine stations with a spot each in `bench`.
+    build-test-scenes.py has --only=<ids>, which writes just those scenes (the full rebuild is still out of date).
+  - New game/js/graphics-test.js: runGraphicsTest, 125 steps (105 setting steps, two untouched looks per station for
+    drift, everything lowest and highest). Holds automatic quality off, resolution ×1, time and weather forced, the
+    camera on the spot; measures fps, processor ms (debug log) and graphics-chip ms (the diagnostics' pass timers).
+    Saves nothing and restores the save (as the full test). Report: pocket-billies-graphics-….json, format 1.
+  - self-test.js: report saving moved into shareReportFile (no change in behaviour), used by both reports.
+  - Buttons: Settings → Help "Run the graphics test (10 min)", debug menu "Graphics test".
+  - tools/check-quick.py graphics_test_ready (in the smoke's in-game test step): never runs or draws the test; builds the
+    step list, checks every setting key and station spot from the data, saves a report from made-up numbers and checks
+    it holds no name.
+- Risky:
+  - Not run on any real device yet, and never rendered here (the owner's rule: no headless drawing with graphics on).
+    The station spots, camera turns and zooms are untested by eye. The sun gap's "sun ahead" assumes angle -90 points
+    the sun along +z, toward where the camera looks; if the rays don't show there, change that station's `sun`.
+  - Shadow detail and the near shadow map change without a rebuild; if a change only shows after a rebuild, its curve
+    reads flat.
+  - Phones without EXT_disjoint_timer_query_webgl2 get processor ms only; the table then says to read the fps.
+- Verified: lint, typecheck, check:modules, 32 unit tests, format, check:data, build; smoke 15 of 15 (302 s).
+- Next:
+  - The owner runs the graphics test on the phone and the PC and sends both reports. Check the stations look right
+    (each one's effect is in view) and which settings cost most.
+  - If a station is wrong, adjust its spot (`bench` in t_graphics) and rebuild with --only=test_graphics.
+
 ### Debug session - the two diagnostics logs of 18 Oct (PC 19:43, phone 19:47) - 2026-10-18
 Not a phase; plan approved at the start. Both runs passed with no errors; the phone (Adreno 750) ran Clovercrest at 24 fps.
 - Changed (6 commits, each passes lint, typecheck, check:modules, unit tests and format on its own):

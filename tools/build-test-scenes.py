@@ -5,6 +5,7 @@ game/data/gamedata.js with the other scenes (ids starting with "test_", marked "
 route. Open them in the game from the debug menu (Test scenes) or in the Studio (Walk scenes, at the bottom).
 
     python3 tools/build-test-scenes.py          # (re)builds every test scene; route scenes are not touched
+    python3 tools/build-test-scenes.py --only=test_graphics   # (re)builds only these test scenes
 
 Each test scene can carry
   "checks": [{"from": [x, z], "to": [x, z], "reach": true|false, "what": "..."}]   walking expectations, run by the
@@ -364,10 +365,83 @@ def t_light_air():
     return s.out(8)
 
 
-BUILD = [t_stairs, t_ledges, t_bridges, t_water, t_shadows, t_props, t_slopes, t_hilltown, t_camera, t_night, t_forest, t_tiny, t_huge, t_life, t_light_terrain, t_light_room, t_light_props, t_light_air]
+# ---------------------------------------------------------------- the graphics bench
+def t_graphics():
+    """the Graphics test's place (docs/graphics-bench.md): nine stations, each built so one group of settings has
+    something to work on, and a fixed spot to stand and look from. The test (game/js/graphics-bench-test.js) reads `bench`."""
+    s = base('test_graphics', 'Test: graphics bench', 60, 46, 'g', 950, far='hills', look={'sun': {'angle': 35, 'height': 40}})
+    s.d['farH'] = 1
+    hub(s, 30, 3)
+    s.road((30, 1), (30, 45), 'p', 1.6, amp=0)
+    s.road((2, 18.5), (58, 18.5), 'p', 1.4, amp=0)
+    s.road((2, 31.5), (58, 31.5), 'p', 1.4, amp=0)
+    # A1 control pad: bare pavers, nothing on them, seen close up (what the full-screen passes cost)
+    s.rect(3, 4, 17, 15, 'q')
+    # A2 shadow court: casters of every kind on a plaza, houses behind, sun from the side
+    s.rect(21, 5, 39, 16, 'c')
+    for i, k in enumerate(['tree_oak', 'streetlamp', 'tree_pine', 'flag_pole', 'tree_birch', 'signpost', 'tree_oak']):
+        s.put(k, 22.5 + i * 2.5, 10)
+    for i, k in enumerate(['crate_stack', 'bench_wood', 'barrel', 'boulder', 'vending']):
+        s.put(k, 23 + i * 3.5, 7.6)
+    s.building('house_red', 24, 13.5, path=False); s.building('shop', 30.5, 13.5, path=False); s.building('clinic', 36.5, 13.5, path=False)
+    # A3 pond: still water with trees and a house on the far bank to mirror
+    s.pond(50, 10, 5.5, 3.2, reeds=6, lilies=4, ducks=0, rocks=2)
+    for i, k in enumerate(['tree_oak', 'tree_birch', 'tree_pine', 'tree_maple', 'tree_oak']):
+        s.put(k, 44.5 + i * 2.7, 15.2)
+    s.building('house_red', 55.5, 15.6, path=False)
+    # B1 sun gap: a tight grove with one gap and two roofs, low sun straight ahead (light shafts, god rays)
+    s.grove(10.5, 26.5, 7.5, 4, 34, ['tree_oak', 'tree_pine', 'tree_birch', 'tree_maple'], under=('fern', 'stump'))
+    s.rect(9, 21, 12, 31, 'p')
+    s.building('house_red', 6.5, 22.2, path=False); s.building('house_red', 14.5, 22.2, path=False, f=1)
+    # B2 lamp square: brick paving, lamps, fires and lit windows, measured at night (glow, lamps)
+    s.rect(21, 20, 39, 30, 'h')
+    for i in range(10):
+        s.put(['streetlamp', 'lantern_b', 'lamp', 'streetlamp_b'][i % 4], 22.5 + (i % 5) * 3.75, 22.5 + (i // 5) * 3.2)
+    s.put('campfire', 26, 24); s.put('campfire', 34, 24)
+    s.building('house_red', 24.5, 28.2, path=False); s.building('shop', 30.5, 28.2, path=False); s.building('house_red', 36.5, 28.2, path=False, f=1)
+    s.scatter(['crystal', 'crystal_pink'], 4, (22, 20.5, 38, 21.5), gap=1, road=0)
+    # B3 meadow: deep grass and flowers, open to the air (grass, particles, low mist)
+    s.rect(41, 20, 59, 30, 'G')
+    s.grass(50, 25, 7.5, 4.2, density=1.1)
+    s.patches('f', .55, 4, box=(41, 20, 59, 30), seed=3)
+    # C1 everything: a little of all of the above round one spot (all dials at their lowest, default, highest)
+    s.grove(10, 38.5, 6.5, 3.5, 14, ['tree_oak', 'tree_pine'], under=('fern',))
+    s.pond(7, 42.5, 3, 1.6, reeds=3, lilies=2, ducks=0, rocks=1)
+    s.grass(14.5, 35.5, 3, 1.8, density=1.0)
+    for x in (5, 9, 13, 17): s.put('streetlamp', x, 34)
+    s.building('house_red', 15.5, 42.2, path=False)
+    # C2 depth corridor: an avenue of trees from close by to the far hills past the edge (depth of field, far things)
+    for i in range(6):
+        z = 35 + i * 2
+        s.put('tree_oak' if i % 2 else 'tree_pine', 26.5, z); s.put('tree_birch' if i % 2 else 'tree_oak', 33.5, z + 1)
+    s.scatter(['bush_round', 'bush_flower', 'fern'], 10, (24, 34, 36, 45), gap=.6)
+    # C3 open sky: a wide, empty plain (clouds, cloud shadows)
+    s.rect(41, 33, 59, 45, 'G')
+    s.scatter(['flowers_meadow', 'flowers_mixed', 'bush_round'], 6, (42, 34, 58, 44), gap=2)
+    s.patches('G', .6, 6, seed=6)
+    # where the test stands: [x, z, camera turn, zoom]; the rest of the stations' setup lives with the test
+    st = {'control': [10, 6, 0, .6], 'shadows': [30, 5.5, 0, 1], 'pond': [50, 5, 0, 1],
+          'sun': [10.5, 20, 0, 1.1], 'lamps': [30, 20, 0, 1], 'meadow': [50, 20, 0, 1],
+          'everything': [10, 32.5, 0, 1.3], 'depth': [30, 33, 0, 1.6], 'sky': [50, 33, 0, 1.7]}
+    s.d['bench'] = st
+    for k, (x, z, y, _) in st.items(): shot(s, x, z, k, y)
+    check(s, (30, 3), (10, 32.5), True, 'from where you arrive to the far corner')
+    return s.out(8)
+
+
+BUILD = [t_stairs, t_ledges, t_bridges, t_water, t_shadows, t_props, t_slopes, t_hilltown, t_camera, t_night, t_forest, t_tiny, t_huge, t_life, t_light_terrain, t_light_room, t_light_props, t_light_air, t_graphics]
 
 
 def main():
+    only = [a.split('=', 1)[1] for a in sys.argv[1:] if a.startswith('--only=')]
+    if only:  # one test scene into the data files, nothing else touched (the full rebuild below is out of date, HANDOFF)
+        D = gamedata.load()
+        for f in BUILD:
+            if 'test_' + f.__name__[2:] not in only[0].split(','): continue
+            sc = f(); sid = sc_id(sc, f); D['maps'][sid] = sc
+            print(f'  {sid}: {sc["w"]}x{sc["h"]}, {len(sc.get("props", []))} props, {len(sc.get("shots", []))} shots')
+        gamedata.save(D)
+        return
     src = gamedata.js_text(); head = src[:src.index('window.GAMEDATA=')]
     D = json.JSONDecoder().raw_decode(src[src.index('window.GAMEDATA=') + len('window.GAMEDATA='):])[0]
     for k in [k for k, v in D['maps'].items() if v.get('test')]: del D['maps'][k]
