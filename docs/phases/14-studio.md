@@ -27,3 +27,6 @@ Measured improvements reported, new editors work with the new data formats, test
 
 ## First reply
 Same four items as phase 01.
+
+## Testing (phase 13)
+Follow docs/TESTING.md: where new tests go, what must pass before the phase ends, and its section for phase 14.

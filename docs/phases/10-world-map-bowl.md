@@ -27,3 +27,6 @@ The new map replaces the old, graph test passes, phone frame times reported, Stu
 
 ## First reply
 Same four items as phase 01, plus the two layout proposals.
+
+## Testing (phase 13)
+Follow docs/TESTING.md: where new tests go, what must pass before the phase ends, and its section for phase 10.

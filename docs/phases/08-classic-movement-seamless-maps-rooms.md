@@ -53,3 +53,6 @@ No step tracking remains anywhere (code, saves, UI, tests, logs), one connection
 
 ## First reply
 Same four items as phase 01, plus the table of mechanics that depended on steps with your proposed replacements.
+
+## Testing (phase 13)
+Follow docs/TESTING.md: where new tests go, what must pass before the phase ends, and its section for phase 08.

@@ -20,3 +20,6 @@ Async battles and atomic trades work between two test accounts, rules are tested
 
 ## First reply
 Same four items as phase 01, plus a proposed build order.
+
+## Testing (phase 13)
+Follow docs/TESTING.md: where new tests go, what must pass before the phase ends, and its section for phase 18.

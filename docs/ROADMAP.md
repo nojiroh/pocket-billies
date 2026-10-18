@@ -1,6 +1,6 @@
 # Roadmap
 
-Do the phases in order. Each phase is one session (or a few for the big ones). Work-time estimates are rough guesses of Claude's working time, not calendar time, and exclude my testing. The vision is in docs/VISION.md.
+Do the phases in order. Each phase is one session (or a few for the big ones). Every phase follows docs/TESTING.md (phase 13): where its tests go and what must pass before it ends. Work-time estimates are rough guesses of Claude's working time, not calendar time, and exclude my testing. The vision is in docs/VISION.md.
 
 | # | File | Goal | Rough work time | Depends on |
 |---|------|------|-----------------|------------|

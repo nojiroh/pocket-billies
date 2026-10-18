@@ -32,3 +32,6 @@ Dialogue, trainer cards and battles use the new portraits, old system removed, S
 
 ## First reply
 Same four items as phase 01, plus a proposed portrait size and a mock layer layout for one character.
+
+## Testing (phase 13)
+Follow docs/TESTING.md: where new tests go, what must pass before the phase ends, and its section for phase 07.

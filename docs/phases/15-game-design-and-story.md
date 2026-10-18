@@ -23,3 +23,6 @@ Design doc and story bible written and agreed, first-30-minutes changes listed, 
 
 ## First reply
 Same four items as phase 01, plus questions about what I want players to feel in the first 30 minutes.
+
+## Testing (phase 13)
+Follow docs/TESTING.md: where new tests go, what must pass before the phase ends, and its section for phase 15.

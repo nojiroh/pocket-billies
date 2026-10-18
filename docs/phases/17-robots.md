@@ -16,7 +16,7 @@ A second creature system: robots, similar in role to Billies but built by the pl
 4. Sourcing: found (exploring maps, chests and secrets), crafted (workshop and materials) and won (trainer battles). Trainers also use robots.
 5. Builder UI on a phone: slots for the five components, an inventory with comparison, a live 3D assembly preview, paint and colour options, saved loadouts.
 6. Art pipeline: modular low-poly parts (airship style, 32 px/m) attached at standard sockets on a skeleton, with palette variants from phase 09. Define the socket standard so any arm fits any torso.
-7. Balance: simulation tests that pit thousands of random builds against each other (phase 13) so no single build dominates.
+7. Balance: simulation tests that pit thousands of random builds against each other (on phase 13's harness, tools/test/sim) so no single build dominates; written against the prototype, before it is built out.
 8. Save format and Studio editor (parts, stats, gems, builds).
 9. PROTOTYPE FIRST: one chassis family with about 3 torsos, 3 left and 3 right arms, 3 legs and 3 gems, a builder screen and a 1v1 battle. If it is not fun, rethink before scaling.
 
@@ -28,3 +28,6 @@ Prototype approved, then the full system built with simulation tests inside agre
 
 ## First reply
 Same four items as phase 01, plus your 2-3 battle-model options.
+
+## Testing (phase 13)
+Follow docs/TESTING.md: where new tests go, what must pass before the phase ends, and its section for phase 17.
