@@ -37,7 +37,6 @@ import { atlasGet, fileToCanvas, markArt, pickFile } from './sprites.js';
 import { mapEditor, openSceneryPixelEditor, sceneryArtPaths, sceneryCatalog } from './map-editor.js';
 /* eslint-disable no-func-assign */
 expose({
-  PED: [() => PED],
   PED_FX: [() => PED_FX],
   PED_KINDS: [() => PED_KINDS],
   PED_PART_COL: [() => PED_PART_COL],
@@ -55,12 +54,13 @@ expose({
   pedSplit: [() => pedSplit, v => (pedSplit = v)],
   pedVaryHTML: [() => pedVaryHTML, v => (pedVaryHTML = v)],
   pedVolHTML: [() => pedVolHTML, v => (pedVolHTML = v)],
+  propEditor: [() => propEditor],
   setPedDraw: [() => setPedDraw, v => (setPedDraw = v)],
 });
 /* eslint-enable no-func-assign */
 provide({ pedCard, pedDraw, pedMount });
 /* to-module: end */
-const PED = { tool: 'move', fxk: 'glow', zoom: 0, spin: true, sel: null, drag: null, sc: null, id: null };
+const propEditor = { tool: 'move', fxk: 'glow', zoom: 0, spin: true, sel: null, drag: null, sc: null, id: null };
 const PED_FX = [
   ['glow', 'Lamp glow', '#FFC94A'],
   ['window', 'Lit window', '#FFB35C'],
@@ -105,7 +105,7 @@ function pedScene(k) {
   const base = walkData;
   setWalkData(() => {
     const d = base();
-    if (PED.sc) d.scenes = Object.assign({}, d.scenes, { __prop: PED.sc });
+    if (propEditor.sc) d.scenes = Object.assign({}, d.scenes, { __prop: propEditor.sc });
     return d;
   });
 }
@@ -122,13 +122,16 @@ function pedCard(k) {
     ['base', 'Set the base point'],
     ['split', 'Split off a layer'],
   ]
-    .map(([t, n]) => `<button class="seg ${PED.tool === t ? 'on' : ''}" data-act="pedTool" data-t="${t}">${n}</button>`)
+    .map(
+      ([t, n]) =>
+        `<button class="seg ${propEditor.tool === t ? 'on' : ''}" data-act="pedTool" data-t="${t}">${n}</button>`
+    )
     .join('');
   const fxk =
-    PED.tool === 'add'
-      ? `<span class="px-tools">${PED_FX.map(([f, n, c]) => `<button class="seg sm ${PED.fxk === f ? 'on' : ''}" data-act="pedFx" data-k="${f}"><i class="ped-dot" style="background:${c}"></i>${n}</button>`).join('')}</span>`
+    propEditor.tool === 'add'
+      ? `<span class="px-tools">${PED_FX.map(([f, n, c]) => `<button class="seg sm ${propEditor.fxk === f ? 'on' : ''}" data-act="pedFx" data-k="${f}"><i class="ped-dot" style="background:${c}"></i>${n}</button>`).join('')}</span>`
       : '';
-  const sel = PED.sel,
+  const sel = propEditor.sel,
     fx = M.fx || [],
     selRow =
       typeof sel === 'number' && fx[sel]
@@ -144,7 +147,7 @@ function pedCard(k) {
       .join('')}</select>`;
   const rows = L.map((l, i) => {
     const p = `${b}.layers.${i}`;
-    return `<div class="ped-layer ${PED.layer === i ? 'on' : ''}"><canvas class="ped-thumb" data-limg="${esc(l.img || '')}" width="40" height="40"></canvas>
+    return `<div class="ped-layer ${propEditor.layer === i ? 'on' : ''}"><canvas class="ped-thumb" data-limg="${esc(l.img || '')}" width="40" height="40"></canvas>
   <div class="ped-lf"><div class="ped-lh"><b>Layer ${i + 1}</b><small class="mono">${esc((l.img || '').split('/').pop())}</small><span class="grow"></span>
    <button class="btn sm subtle" data-act="pedLayerPx" data-i="${i}" title="Edit this layer's pixels">Pixels</button><button class="btn sm subtle" data-act="pedLayerMove" data-i="${i}" data-d="-1" title="Move up the list">↑</button><button class="btn sm subtle" data-act="pedLayerMove" data-i="${i}" data-d="1" title="Move down the list">↓</button><button class="btn sm danger subtle" data-act="pedLayerDel" data-i="${i}">Remove</button></div>
    <div class="grid ped-lg">${rangeField('Depth (m, + is behind)', `${p}.dz`, { min: -3, max: 3, step: 0.05, def: 0 })}${numberField('Across (px)', `${p}.dx`, { step: 1, opt: 1 })}${numberField('Up (px)', `${p}.dy`, { step: 1, opt: 1 })}
@@ -203,9 +206,9 @@ function pedCard(k) {
     `<div class="ped" id="ped">
   <div class="ped-l"><div class="ped-bar"><span class="px-tools">${tools}</span><span class="px-tools"><button class="seg" data-act="pedZoom" data-z="-1">−</button><button class="seg" data-act="pedZoom" data-z="1">+</button></span></div>${fxk}
    <div class="ped-stage"><canvas id="pedCv"></canvas></div>${selRow}
-   <p class="help">${{ move: 'Drag an effect, the door or the base point. Click an effect to select it; Delete removes it.', add: 'Click the picture to add the effect. It moves and flickers in the game exactly where you put it.', door: 'Click where people should walk to when the prop is tapped.', base: 'Click where the prop touches the ground. Effects and the door stay where they are on the picture.', split: 'Drag a box around a part (a roof, a porch, the top of a tree). It moves out of the main picture onto a new layer you can push back or bring forward.' }[PED.tool]}</p>
+   <p class="help">${{ move: 'Drag an effect, the door or the base point. Click an effect to select it; Delete removes it.', add: 'Click the picture to add the effect. It moves and flickers in the game exactly where you put it.', door: 'Click where people should walk to when the prop is tapped.', base: 'Click where the prop touches the ground. Effects and the door stay where they are on the picture.', split: 'Drag a box around a part (a roof, a porch, the top of a tree). It moves out of the main picture onto a new layer you can push back or bring forward.' }[propEditor.tool]}</p>
    <div class="ped-tt"><div class="sc-pv ped-pv"><canvas id="pedPv"></canvas><div class="sc-pv-load" id="pedPvLoad">Loading…</div></div>
-   <div class="seg-row"><button class="seg ${PED.spin ? 'on' : ''}" data-act="pedSpin">Turn slowly</button><span class="help">Drag the turntable to turn it yourself. It turns as far as the game camera can; layers show their depth.</span></div></div></div>
+   <div class="seg-row"><button class="seg ${propEditor.spin ? 'on' : ''}" data-act="pedSpin">Turn slowly</button><span class="help">Drag the turntable to turn it yourself. It turns as far as the game camera can; layers show their depth.</span></div></div></div>
   <div class="ped-r"><h4>Layers</h4><p class="help">Extra pictures drawn in front of or behind the main one. Put a porch, a sign or leaves on their own layer and give them a little depth, and the prop gains real depth when the camera moves. A glowing layer lights itself (windows at night, crystals).</p>
    ${rows || '<p class="help"><i>No extra layers yet.</i></p>'}<div class="seg-row"><button class="btn sm" data-act="pedLayerAdd" data-from="png">+ Layer from PNG</button><button class="btn sm" data-act="pedLayerAdd" data-from="copy">+ Copy of the main picture</button><button class="btn sm subtle" data-act="scEditProp" data-k="${esc(k)}">Edit the main picture’s pixels</button></div>
    <h4>Settings</h4>${set}${pedVaryHTML(k)}${typeof pedVoxHTML === 'function' ? pedVoxHTML(k) : ''}${pedVolHTML(k)}${pedBuildHTML(k)}</div></div>`,
@@ -248,8 +251,8 @@ function pedDraw() {
   const B = pedBounds(M),
     W = B.x1 - B.x0,
     H = B.y1 - B.y0;
-  if (!PED.zoom) PED.zoom = clamp(Math.floor(440 / Math.max(W, H)), 2, 10);
-  const Z = PED.zoom,
+  if (!propEditor.zoom) propEditor.zoom = clamp(Math.floor(440 / Math.max(W, H)), 2, 10);
+  const Z = propEditor.zoom,
     ppu = sceneryCatalog().ppu || 34;
   cv.width = W * Z;
   cv.height = H * Z;
@@ -268,9 +271,9 @@ function pedDraw() {
     .sort((a, b) => b.dz - a.dz);
   for (const o of list) {
     if (!imageReady(o.im)) continue;
-    x.globalAlpha = PED.layer != null && PED.layer !== o.i ? 0.55 : 1;
+    x.globalAlpha = propEditor.layer != null && propEditor.layer !== o.i ? 0.55 : 1;
     x.drawImage(o.im, X(o.ox), Y(o.oy), (o.im.naturalWidth || o.im.width) * Z, (o.im.naturalHeight || o.im.height) * Z);
-    if (PED.layer === o.i) {
+    if (propEditor.layer === o.i) {
       x.globalAlpha = 1;
       x.strokeStyle = '#1F6E6F';
       x.lineWidth = 2;
@@ -285,8 +288,8 @@ function pedDraw() {
     }
   }
   x.globalAlpha = 1;
-  if (PED.box) {
-    const b = PED.box;
+  if (propEditor.box) {
+    const b = propEditor.box;
     x.fillStyle = 'rgba(242,193,78,.25)';
     x.strokeStyle = '#C8862A';
     x.lineWidth = 2;
@@ -345,10 +348,10 @@ function pedDraw() {
       px = X(e.x) + Z / 2,
       py = Y(e.y) + Z / 2;
     x.fillStyle = c;
-    x.strokeStyle = PED.sel === i ? '#1F6E6F' : '#2A2238';
-    x.lineWidth = PED.sel === i ? 3 : 1.5;
+    x.strokeStyle = propEditor.sel === i ? '#1F6E6F' : '#2A2238';
+    x.lineWidth = propEditor.sel === i ? 3 : 1.5;
     x.beginPath();
-    x.arc(px, py, PED.sel === i ? 8 : 6, 0, 7);
+    x.arc(px, py, propEditor.sel === i ? 8 : 6, 0, 7);
     x.fill();
     x.stroke();
   });
@@ -373,7 +376,7 @@ function pedAt(ev) {
     M = pedM(),
     B = pedBounds(M),
     r = cv.getBoundingClientRect(),
-    Z = PED.zoom;
+    Z = propEditor.zoom;
   return {
     x: (((ev.clientX - r.left) / r.width) * cv.width) / Z + B.x0,
     y: (((ev.clientY - r.top) / r.height) * cv.height) / Z + B.y0,
@@ -434,7 +437,7 @@ async function pedSplit(b) {
   markArt('art/' + M.img, main);
   markArt('art/' + path, lay);
   L.push({ img: path, dz: y0 < src.height * 0.5 ? 0.3 : -0.3 });
-  PED.layer = L.length - 1;
+  propEditor.layer = L.length - 1;
   changed();
   commit(true);
   render();
@@ -466,7 +469,7 @@ function pedBind() {
       h = pedHit(M, pedAt(ev));
     if (h && h.k === 'fx') {
       M.fx.splice(h.i, 1);
-      PED.sel = null;
+      propEditor.sel = null;
       changed();
       commit(true);
       render();
@@ -477,59 +480,59 @@ function pedBind() {
     const M = pedM(),
       p = pedAt(ev),
       ppu = sceneryCatalog().ppu || 34;
-    if (PED.tool === 'add') {
-      (M.fx || (M.fx = [])).push({ k: PED.fxk, x: Math.round(p.x), y: Math.round(p.y) });
-      PED.sel = M.fx.length - 1;
+    if (propEditor.tool === 'add') {
+      (M.fx || (M.fx = [])).push({ k: propEditor.fxk, x: Math.round(p.x), y: Math.round(p.y) });
+      propEditor.sel = M.fx.length - 1;
       changed();
       commit(true);
       render();
       return;
     }
-    if (PED.tool === 'door') {
+    if (propEditor.tool === 'door') {
       M.door = Object.assign(M.door || {}, { x: Math.round(p.x) });
       changed();
       commit(true);
       pedDraw();
       return;
     }
-    if (PED.tool === 'base') {
+    if (propEditor.tool === 'base') {
       pedSetBase(M, p.x, p.y);
       changed();
       commit(true);
       pedDraw();
       return;
     }
-    if (PED.tool === 'split') {
-      PED.box = { x0: p.x, y0: p.y, x1: p.x, y1: p.y };
-      PED.drag = { h: { k: 'box' } };
+    if (propEditor.tool === 'split') {
+      propEditor.box = { x0: p.x, y0: p.y, x1: p.x, y1: p.y };
+      propEditor.drag = { h: { k: 'box' } };
       cv.setPointerCapture(ev.pointerId);
       return;
     }
     const h = pedHit(M, p);
     if (!h) {
-      if (PED.sel != null) {
-        PED.sel = null;
+      if (propEditor.sel != null) {
+        propEditor.sel = null;
         render();
       }
       return;
     }
-    if (h.k === 'fx' && PED.sel !== h.i) {
-      PED.sel = h.i;
+    if (h.k === 'fx' && propEditor.sel !== h.i) {
+      propEditor.sel = h.i;
       render();
       return;
     }
-    PED.drag = { h, x0: p.x, y0: p.y };
+    propEditor.drag = { h, x0: p.x, y0: p.y };
     cv.setPointerCapture(ev.pointerId);
   });
   cv.addEventListener('pointermove', ev => {
-    const D = PED.drag;
+    const D = propEditor.drag;
     if (!D) return;
     const M = pedM(),
       p = pedAt(ev),
       ppu = sceneryCatalog().ppu || 34;
     if (D.h.k === 'box') {
-      PED.box.x1 = p.x;
-      PED.box.y1 = p.y;
+      propEditor.box.x1 = p.x;
+      propEditor.box.y1 = p.y;
       pedDraw();
       return;
     }
@@ -547,15 +550,15 @@ function pedBind() {
     pedDraw();
   });
   cv.addEventListener('pointerup', () => {
-    if (PED.drag && PED.drag.h.k === 'box') {
-      PED.drag = null;
-      const b = PED.box;
-      PED.box = null;
+    if (propEditor.drag && propEditor.drag.h.k === 'box') {
+      propEditor.drag = null;
+      const b = propEditor.box;
+      propEditor.box = null;
       pedSplit(b);
       return;
     }
-    if (PED.drag) {
-      PED.drag = null;
+    if (propEditor.drag) {
+      propEditor.drag = null;
       changed();
       commit(true);
     }
@@ -564,7 +567,7 @@ function pedBind() {
   if (k)
     k.onchange = () => {
       const M = pedM();
-      M.fx[PED.sel].k = k.value;
+      M.fx[propEditor.sel].k = k.value;
       changed();
       commit(true);
       pedDraw();
@@ -572,8 +575,8 @@ function pedBind() {
   $$('.ped-layer').forEach((r, i) =>
     r.addEventListener('pointerdown', ev => {
       if (ev.target.closest('input,select,button')) return;
-      if (PED.layer !== i) {
-        PED.layer = i;
+      if (propEditor.layer !== i) {
+        propEditor.layer = i;
         $$('.ped-layer').forEach((o, j) => o.classList.toggle('on', j === i));
         pedDraw();
       }
@@ -593,13 +596,13 @@ function pedBind() {
   });
 }
 addEventListener('keydown', ev => {
-  if (!mapEditor.ped || PED.sel == null || ev.target.closest('input,textarea,select')) return;
+  if (!mapEditor.ped || propEditor.sel == null || ev.target.closest('input,textarea,select')) return;
   if (ev.key === 'Delete' || ev.key === 'Backspace') {
     const M = pedM();
-    if (M && M.fx && M.fx[PED.sel]) {
+    if (M && M.fx && M.fx[propEditor.sel]) {
       ev.preventDefault();
-      M.fx.splice(PED.sel, 1);
-      PED.sel = null;
+      M.fx.splice(propEditor.sel, 1);
+      propEditor.sel = null;
       changed();
       commit(true);
       render();
@@ -616,15 +619,15 @@ async function pedMount() {
   await Promise.all(paths.map(p => atlasGet('art/' + p).catch(() => null)));
   if (!$('#pedPv')) return;
   pedBind();
-  if (!PED.sc || PED.id !== k) {
-    PED.sc = pedScene(k);
-    PED.id = k;
+  if (!propEditor.sc || propEditor.id !== k) {
+    propEditor.sc = pedScene(k);
+    propEditor.id = k;
     walkView.id = null;
   } else {
-    PED.sc.props[0].k = k;
+    propEditor.sc.props[0].k = k;
   }
   mountWalkView(cv, '__prop', {
-    state: () => ({ mode: 'roam', roam: true, pos: PED.sc.hub, who: null, enc: [], npcs: [], exits: [] }),
+    state: () => ({ mode: 'roam', roam: true, pos: propEditor.sc.hub, who: null, enc: [], npcs: [], exits: [] }),
     keys: () => false,
     onPick: () => {},
     onMove: () => {},
@@ -638,17 +641,17 @@ async function pedMount() {
       frameStop('pedSpin');
       return;
     }
-    if (PED.spin && typeof walkRenderer !== 'undefined' && !walkRenderer.drag)
+    if (propEditor.spin && typeof walkRenderer !== 'undefined' && !walkRenderer.drag)
       walkRenderer.yawT = Math.sin(performance.now() / 2600) * 0.6;
   });
 }
 /* ---------- actions ---------- */
 ACTIONS.pedOpen = d => {
   mapEditor.ped = d.k;
-  PED.sel = null;
-  PED.layer = null;
-  PED.zoom = 0;
-  PED.tool = 'move';
+  propEditor.sel = null;
+  propEditor.layer = null;
+  propEditor.zoom = 0;
+  propEditor.tool = 'move';
   render();
   setTimeout(() => {
     const e = $('#ped');
@@ -657,7 +660,7 @@ ACTIONS.pedOpen = d => {
 };
 ACTIONS.pedClose = () => {
   mapEditor.ped = null;
-  PED.sel = null;
+  propEditor.sel = null;
   if (typeof walkRenderer !== 'undefined') {
     walkRenderer.yawT = 0;
   }
@@ -665,30 +668,30 @@ ACTIONS.pedClose = () => {
   render();
 };
 ACTIONS.pedTool = d => {
-  PED.tool = d.t;
+  propEditor.tool = d.t;
   render();
 };
 ACTIONS.pedFx = d => {
-  PED.fxk = d.k;
+  propEditor.fxk = d.k;
   render();
 };
 ACTIONS.pedFxDel = () => {
   const M = pedM();
-  if (M && M.fx && PED.sel != null) {
-    M.fx.splice(PED.sel, 1);
-    PED.sel = null;
+  if (M && M.fx && propEditor.sel != null) {
+    M.fx.splice(propEditor.sel, 1);
+    propEditor.sel = null;
     changed();
     commit(true);
     render();
   }
 };
 ACTIONS.pedZoom = d => {
-  PED.zoom = clamp((PED.zoom || 4) + +d.z, 1, 14);
+  propEditor.zoom = clamp((propEditor.zoom || 4) + +d.z, 1, 14);
   pedDraw();
 };
 ACTIONS.pedSpin = () => {
-  PED.spin = !PED.spin;
-  if (!PED.spin && typeof walkRenderer !== 'undefined') walkRenderer.yawT = 0;
+  propEditor.spin = !propEditor.spin;
+  if (!propEditor.spin && typeof walkRenderer !== 'undefined') walkRenderer.yawT = 0;
   render();
 };
 ACTIONS.pedGlowDel = () => {
@@ -743,7 +746,7 @@ ACTIONS.pedLayerAdd = async d => {
     l.oy = -(c.height - 1);
   }
   L.push(l);
-  PED.layer = L.length - 1;
+  propEditor.layer = L.length - 1;
   changed();
   commit(true);
   render();
@@ -757,7 +760,7 @@ ACTIONS.pedLayerDel = async d => {
   if (!(await ask('Remove this layer? Its picture file stays in art/scene/props.', 'Remove'))) return;
   M.layers.splice(+d.i, 1);
   if (!M.layers.length) delete M.layers;
-  PED.layer = null;
+  propEditor.layer = null;
   changed();
   commit(true);
   render();
@@ -768,7 +771,7 @@ ACTIONS.pedLayerMove = d => {
     j = i + +d.d;
   if (j < 0 || j >= M.layers.length) return;
   [M.layers[i], M.layers[j]] = [M.layers[j], M.layers[i]];
-  PED.layer = j;
+  propEditor.layer = j;
   changed();
   commit(true);
   render();
@@ -776,7 +779,7 @@ ACTIONS.pedLayerMove = d => {
 ACTIONS.pedLayerPx = d => {
   const M = pedM(),
     l = M.layers[+d.i];
-  PED.layer = +d.i;
+  propEditor.layer = +d.i;
   openSceneryPixelEditor('art/' + l.img, { kind: 'prop', k: mapEditor.ped, layer: +d.i });
 };
 /* pictures made here but not saved yet come from the Studio's own copies, not the server */
@@ -930,7 +933,7 @@ ACTIONS.pedPartDel = d => {
     const P = M.parts || SOLID_PROP_PARTS[mapEditor.ped];
     if (!P) return;
     const Bd = pedBounds(M),
-      Z = PED.zoom,
+      Z = propEditor.zoom,
       X = v => (v - Bd.x0) * Z,
       Y = v => (v - Bd.y0) * Z,
       x = cv.getContext('2d');
@@ -1051,7 +1054,7 @@ ACTIONS.pedBuildRooms = () => {
     if (!M || !M.build || !cv) return;
     const B = M.build,
       Bd = pedBounds(M),
-      Z = PED.zoom,
+      Z = propEditor.zoom,
       X = v => (v - Bd.x0) * Z,
       Y = v => (v - Bd.y0) * Z,
       x = cv.getContext('2d');
