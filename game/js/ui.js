@@ -167,7 +167,15 @@ import {
   startWild,
   tapMsg,
 } from './battle.js';
-import { MH, MW, worldMapFit, worldMapMount, worldMapReset, worldMapSelect, worldMapZoom } from './world-map.js';
+import {
+  worldMapFit,
+  worldMapHeight,
+  worldMapMount,
+  worldMapReset,
+  worldMapSelect,
+  worldMapWidth,
+  worldMapZoom,
+} from './world-map.js';
 import { mapGLAction, mapGLWanted } from './world-map-gl.js';
 import { openShop } from './shop.js';
 import { sfx } from './sound.js';
@@ -1783,7 +1791,7 @@ function walkSceneSync() {
   }
 }
 function renderMap() {
-  return `<div class="map-full"><canvas id="mapcv" width="${MW}" height="${MH}" aria-label="World map. Drag to look around, tap a place."></canvas><div id="maplabels"></div>
+  return `<div class="map-full"><canvas id="mapcv" width="${worldMapWidth}" height="${worldMapHeight}" aria-label="World map. Drag to look around, tap a place."></canvas><div id="maplabels"></div>
  <div class="map-head glass"><div class="sub">The Hollow Earth</div><h1 class="where">World map</h1><p class="map-trip ${tripStatus().k}">${esc(tripStatus().t)}</p></div>
  <div class="mapctl"><button class="mbtn" data-a="mzoom" data-k="in" aria-label="Zoom in">+</button><button class="mbtn" data-a="mzoom" data-k="out" aria-label="Zoom out">−</button><button class="mbtn" data-a="mreset" aria-label="Back to you">${uiIco('walk', 16)}</button></div>
  <div class="mapcard px glass" id="mapcard">${mapCardHTML()}</div></div>`;

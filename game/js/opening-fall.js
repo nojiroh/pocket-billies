@@ -23,7 +23,7 @@ import { EGL, eglPrograms } from './engine/webgl.js';
 import { EGL_POST_SH } from './engine/post-effects.js';
 import { canvasForContext, standingHeightAt, walkGlContext } from './walk-view-gl.js';
 import { A, endBattle, stopTimers, types } from './battle.js';
-import { MH, MNV, MW, WORLD_ART, v3, worldMap } from './world-map.js';
+import { LOCATION_VECTORS, WORLD_ART, vector3, worldMap, worldMapHeight, worldMapWidth } from './world-map.js';
 import { MGL, MGL_SH, mglRender, mglSize } from './world-map-gl.js';
 import { music, sfx } from './sound.js';
 import { CS, csCaption } from './cutscene.js';
@@ -596,39 +596,39 @@ export function fallStill(kind, t, w = 200, h = 124) {
 }
 /* ---- 3. the inner sky: across the Hollow Earth, past the Inner Sun, down to Sundown ---- */
 function fallCam(k) {
-  const S0 = MNV[START_NODE],
-    e = v3.norm(v3.cross(S0, [0, 1, 0])),
-    n = v3.norm(v3.cross(e, S0)),
-    L = (a, b, f) => v3.add(v3.mul(a, 1 - f), v3.mul(b, f)),
+  const S0 = LOCATION_VECTORS[START_NODE],
+    e = vector3.norm(vector3.cross(S0, [0, 1, 0])),
+    n = vector3.norm(vector3.cross(e, S0)),
+    L = (a, b, f) => vector3.add(vector3.mul(a, 1 - f), vector3.mul(b, f)),
     ease = f => f * f * (3 - 2 * f);
-  const P0 = v3.add(v3.mul(S0, -0.82), v3.mul(e, 0.16)),
-    P1 = v3.add(v3.mul(S0, -0.16), v3.mul(e, 0.14)),
-    P2 = v3.add(v3.add(v3.mul(S0, 0.3), v3.mul(e, 0.1)), v3.mul(n, 0.03)),
-    P3 = v3.add(v3.mul(S0, 0.962), v3.mul(n, 0.004));
+  const P0 = vector3.add(vector3.mul(S0, -0.82), vector3.mul(e, 0.16)),
+    P1 = vector3.add(vector3.mul(S0, -0.16), vector3.mul(e, 0.14)),
+    P2 = vector3.add(vector3.add(vector3.mul(S0, 0.3), vector3.mul(e, 0.1)), vector3.mul(n, 0.03)),
+    P3 = vector3.add(vector3.mul(S0, 0.962), vector3.mul(n, 0.004));
   let C, look;
   if (k < 0.36) {
     const f = ease(k / 0.36);
     C = L(P0, P1, f);
-    look = v3.norm(v3.mul(C, -1));
+    look = vector3.norm(vector3.mul(C, -1));
   } else if (k < 0.6) {
     const f = ease((k - 0.36) / 0.24);
     C = L(P1, P2, f);
-    look = v3.norm(L(v3.norm(v3.mul(C, -1)), v3.norm(v3.sub(S0, C)), f));
+    look = vector3.norm(L(vector3.norm(vector3.mul(C, -1)), vector3.norm(vector3.sub(S0, C)), f));
   } else {
     const f = (k - 0.6) / 0.4,
       g = f * f;
     C = L(P2, P3, g);
-    look = v3.norm(v3.add(v3.norm(v3.sub(S0, C)), v3.mul(n, 0.25 * (1 - f))));
+    look = vector3.norm(vector3.add(vector3.norm(vector3.sub(S0, C)), vector3.mul(n, 0.25 * (1 - f))));
   }
   const roll = (k > 0.55 ? (k - 0.55) * 5.5 : 0) + Math.sin(k * 9) * 0.12,
-    base = Math.abs(v3.dot(look, n)) > 0.95 ? e : n,
-    rt0 = v3.norm(v3.cross(look, base)),
-    up0 = v3.cross(rt0, look),
+    base = Math.abs(vector3.dot(look, n)) > 0.95 ? e : n,
+    rt0 = vector3.norm(vector3.cross(look, base)),
+    up0 = vector3.cross(rt0, look),
     cr = Math.cos(roll),
     sr = Math.sin(roll);
-  const rt = v3.norm(v3.add(v3.mul(rt0, cr), v3.mul(up0, sr))),
-    up = v3.cross(rt, look);
-  return { C, fw: look, rt, up, P: S0, foc: Math.min(MW * 0.55, MH * 0.42) };
+  const rt = vector3.norm(vector3.add(vector3.mul(rt0, cr), vector3.mul(up0, sr))),
+    up = vector3.cross(rt, look);
+  return { C, fw: look, rt, up, P: S0, foc: Math.min(worldMapWidth * 0.55, worldMapHeight * 0.42) };
 }
 export function fallMap(run, ms) {
   return new Promise(res0 => {
@@ -653,7 +653,7 @@ export function fallMap(run, ms) {
       return;
     }
     const t0 = performance.now();
-    worldMap.focus = MNV[START_NODE];
+    worldMap.focus = LOCATION_VECTORS[START_NODE];
     MGL.flat = false;
     MGL.noClouds = true;
     let capA = 0,

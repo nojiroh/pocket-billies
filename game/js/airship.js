@@ -17,7 +17,7 @@ import { RM, S, U, canEnter, esc, fmt, save } from './game-state.js';
 import { artLoad, uiIco } from './art.js';
 import { artImage, imageReady, mapById, prepareMap, walkData } from './walk-view.js';
 import { wrHubScene } from './seamless-world.js';
-import { D2R, MNV, slerp, v3, worldMap } from './world-map.js';
+import { LOCATION_VECTORS, RADIANS_PER_DEGREE, slerp, vector3, worldMap } from './world-map.js';
 import { MGL } from './world-map-gl.js';
 import { sfx } from './sound.js';
 /* eslint-disable no-func-assign */
@@ -55,7 +55,7 @@ function flyTowns() {
 }
 /* a ticket: by how far apart the two towns lie on the world */
 function flyFare(a, b) {
-  const d = Math.acos(clamp(v3.dot(MNV[a], MNV[b]), -1, 1)) / D2R;
+  const d = Math.acos(clamp(vector3.dot(LOCATION_VECTORS[a], LOCATION_VECTORS[b]), -1, 1)) / RADIANS_PER_DEGREE;
   return Math.max(60, Math.round((60 + d * 6) / 10) * 10);
 }
 export function flyMenu(p) {
@@ -102,7 +102,7 @@ function flyGo(i) {
   save();
   closeModal();
   if (typeof NWLOG !== 'undefined') NWLOG.add('scene', `airship ${ROUTE[a].id} to ${ROUTE[i].id} ($${f})`);
-  const d = Math.acos(clamp(v3.dot(MNV[a], MNV[i]), -1, 1)) / D2R;
+  const d = Math.acos(clamp(vector3.dot(LOCATION_VECTORS[a], LOCATION_VECTORS[i]), -1, 1)) / RADIANS_PER_DEGREE;
   Object.assign(FLY, {
     on: true,
     a,
@@ -126,9 +126,9 @@ function flyGo(i) {
   worldMap.anim = null;
   worldMap.fT = null;
   worldMap.free = false;
-  worldMap.me = MNV[a];
-  worldMap.focus = MNV[a];
-  worldMap.fly = { a: MNV[a], b: MNV[i] };
+  worldMap.me = LOCATION_VECTORS[a];
+  worldMap.focus = LOCATION_VECTORS[a];
+  worldMap.fly = { a: LOCATION_VECTORS[a], b: LOCATION_VECTORS[i] };
   worldMap.dirty = true;
   if (typeof MGL !== 'undefined' && !MGL.flat) MGL.altT = 0.42;
   const host = $('.map-full');
@@ -146,7 +146,7 @@ function flyTick(ts) {
   if (!FLY.on || !worldMap.fly) return false;
   const k = clamp((ts - FLY.t0) / FLY.dur, 0, 1),
     e = k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
-  worldMap.me = v3.norm(slerp(worldMap.fly.a, worldMap.fly.b, e));
+  worldMap.me = vector3.norm(slerp(worldMap.fly.a, worldMap.fly.b, e));
   worldMap.face = 'up';
   worldMap.dirty = true;
   FLY.k = k;
@@ -161,16 +161,16 @@ function flyDraw(c, t, proj) {
   const k = FLY.k || 0,
     g = worldMap.me,
     H = 0.05 * Math.sin(Math.PI * Math.min(1, k * 1.15)),
-    lift = v3.mul(g, 1 - H),
+    lift = vector3.mul(g, 1 - H),
     q = proj(lift),
     qg = proj(g);
   if (!q) return;
   const trail = [];
   for (let f = 0; f <= k + 1e-6; f += 0.02) {
     const e = f < 0.5 ? 2 * f * f : 1 - Math.pow(-2 * f + 2, 2) / 2,
-      p = v3.norm(slerp(worldMap.fly.a, worldMap.fly.b, e)),
+      p = vector3.norm(slerp(worldMap.fly.a, worldMap.fly.b, e)),
       h = 0.05 * Math.sin(Math.PI * Math.min(1, f * 1.15)),
-      qq = proj(v3.mul(p, 1 - h));
+      qq = proj(vector3.mul(p, 1 - h));
     if (qq) trail.push(qq);
   }
   if (trail.length > 1) {
@@ -227,7 +227,7 @@ function flyLand() {
   const b = FLY.b;
   FLY.on = false;
   worldMap.fly = null;
-  worldMap.me = MNV[b];
+  worldMap.me = LOCATION_VECTORS[b];
   worldMap.anim = null;
   document.body.classList.remove('flying');
   const cap = $('#flycap');

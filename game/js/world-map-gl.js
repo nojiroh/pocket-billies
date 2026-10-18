@@ -23,27 +23,26 @@ import { EGL, eglBindQuad, eglFree, eglImg, eglInit, eglMesh, eglOK, eglPrograms
 import { EGL_POST_SH, eglPost, eglScreenOf } from './engine/post-effects.js';
 import { rawHeightAt, walkRenderer, worldMapTexture } from './walk-view-gl.js';
 import {
-  D2R,
-  MCL,
-  MH,
-  MLAND,
-  MNV,
-  MW,
-  REGV,
-  edgePos,
-  setMH,
-  setMW,
+  LOCATION_VECTORS,
+  RADIANS_PER_DEGREE,
+  REGION_VECTORS,
+  WORLD_MAP_CLOUDS,
+  WORLD_MAP_LANDMARKS,
+  roadPosition,
   setWorldMapFit,
+  setWorldMapHeight,
   setWorldMapLabels,
   setWorldMapMount,
   setWorldMapReset,
+  setWorldMapWidth,
   setWorldMapZoom,
   slerp,
   sunBlocks,
-  v3,
+  vector3,
   worldMap,
   worldMapCamera,
   worldMapFit,
+  worldMapHeight,
   worldMapLabels,
   worldMapMount,
   worldMapPlayerPosition,
@@ -51,6 +50,7 @@ import {
   worldMapReset,
   worldMapSelect,
   worldMapWalk,
+  worldMapWidth,
   worldMapZoom,
 } from './world-map.js';
 /* eslint-disable no-func-assign */
@@ -223,11 +223,11 @@ function mglProj(v) {
     [u, vv] = mglUV(v);
   let du = u - F.u;
   du -= Math.round(du);
-  return { x: MW / 2 + du * F.s, y: MH / 2 + (vv - F.v) * F.s * 0.5, z: 0.5 };
+  return { x: worldMapWidth / 2 + du * F.s, y: worldMapHeight / 2 + (vv - F.v) * F.s * 0.5, z: 0.5 };
 }
 function mglMat(cam) {
-  const ax = (2 * cam.foc) / MW,
-    ay = (2 * cam.foc) / MH,
+  const ax = (2 * cam.foc) / worldMapWidth,
+    ay = (2 * cam.foc) / worldMapHeight,
     A = (MGL_F + MGL_N) / (MGL_F - MGL_N),
     B = (-2 * MGL_F * MGL_N) / (MGL_F - MGL_N),
     C = cam.C,
@@ -278,7 +278,7 @@ setWorldMapMount(function () {
   mglSize();
   const to = worldMapPlayerPosition();
   if (!worldMap.me) worldMap.me = to;
-  else if (v3.dot(worldMap.me, to) < 0.999999) worldMapWalk(worldMap.me, to);
+  else if (vector3.dot(worldMap.me, to) < 0.999999) worldMapWalk(worldMap.me, to);
   if (!worldMap.focus) worldMap.focus = to;
   /* arriving from the walk screen: start close to you and pull back */
   if (U.mglFrom === 'walk' && !RM && !MGL.flat) {
@@ -336,7 +336,7 @@ setWorldMapMount(function () {
           D.tilt = worldMap.tilt ?? 0.5733;
         }
         const k = D.g.d / Math.max(1, g.d);
-        if (MGL.flat) MGL.fv.s = clamp(D.s / k, mglFlatMin(), MW * 8);
+        if (MGL.flat) MGL.fv.s = clamp(D.s / k, mglFlatMin(), worldMapWidth * 8);
         else {
           worldMap.alt = clamp(D.alt * k, MGL_ALT[0], MGL_ALT[1]);
           let da = g.ang - D.g.ang;
@@ -386,7 +386,7 @@ setWorldMapMount(function () {
           return;
         }
         const k = e.deltaY > 0 ? 1.12 : 0.89;
-        if (MGL.flat) MGL.fv.s = clamp(MGL.fv.s / k, mglFlatMin(), MW * 8);
+        if (MGL.flat) MGL.fv.s = clamp(MGL.fv.s / k, mglFlatMin(), worldMapWidth * 8);
         else worldMap.alt = clamp(worldMap.alt * k, MGL_ALT[0], MGL_ALT[1]);
         MGL.altT = null;
         worldMap.dirty = true;
@@ -445,28 +445,28 @@ function mglPanTo(D, dx, dy) {
   const cam = D.cam || worldMap.cam;
   if (!cam) return;
   const P0 = D.focus,
-    n = v3.mul(P0, -1),
+    n = vector3.mul(P0, -1),
     tang = v => {
-      const t = v3.sub(v, v3.mul(n, v3.dot(v, n)));
-      return v3.len(t) > 1e-6 ? v3.norm(t) : null;
+      const t = vector3.sub(v, vector3.mul(n, vector3.dot(v, n)));
+      return vector3.len(t) > 1e-6 ? vector3.norm(t) : null;
     };
   const rt = tang(cam.rt),
-    fw = tang(cam.fw) || tang(v3.mul(cam.up, -1));
+    fw = tang(cam.fw) || tang(vector3.mul(cam.up, -1));
   if (!rt || !fw) return;
   const s = (worldMap.alt * 1.84) / cam.foc;
-  worldMap.focus = v3.norm(v3.add(P0, v3.add(v3.mul(rt, -dx * s), v3.mul(fw, dy * s))));
+  worldMap.focus = vector3.norm(vector3.add(P0, vector3.add(vector3.mul(rt, -dx * s), vector3.mul(fw, dy * s))));
   worldMap.free = true;
   worldMap.fT = null;
 }
-const mglFlatMin = () => Math.max(MW, MH * 2) * 0.9;
+const mglFlatMin = () => Math.max(worldMapWidth, worldMapHeight * 2) * 0.9;
 export function mglSize() {
   const cv = worldMap.cv,
     r = cv && cv.isConnected ? cv.getBoundingClientRect() : null,
     w = Math.round(r && r.width > 20 ? r.width : innerWidth),
     h = Math.round(r && r.height > 20 ? r.height : innerHeight);
-  if (w !== MW || h !== MH) {
-    setMW(w);
-    setMH(h);
+  if (w !== worldMapWidth || h !== worldMapHeight) {
+    setWorldMapWidth(w);
+    setWorldMapHeight(h);
     worldMap.dirty = true;
   }
   worldMap.s = 1;
@@ -490,7 +490,7 @@ function mapGLLoop(ts) {
   if (worldMap.anim) {
     const a = worldMap.anim,
       k = Math.min(1, (ts - a.t0) / a.dur);
-    worldMap.me = v3.norm(slerp(a.from, a.to, EASE.io(k)));
+    worldMap.me = vector3.norm(slerp(a.from, a.to, EASE.io(k)));
     moving = k < 1;
     worldMap.face = 'up';
     if (k >= 1) {
@@ -503,7 +503,7 @@ function mapGLLoop(ts) {
   if (worldMap.fT) {
     const a = worldMap.fT,
       k = Math.min(1, (ts - a.t0) / a.dur);
-    worldMap.focus = v3.norm(slerp(a.from, a.to, EASE.io(k)));
+    worldMap.focus = vector3.norm(slerp(a.from, a.to, EASE.io(k)));
     panning = k < 1;
     if (k >= 1) worldMap.fT = null;
     if (MGL.flat) {
@@ -565,12 +565,12 @@ export function mglRender(t) {
   const gl = EGL.gl,
     cv = EGL.cv,
     cam = worldMap.cam,
-    px = MW * MH,
+    px = worldMapWidth * worldMapHeight,
     R =
       Math.min(devicePixelRatio || 1, 1.75) *
       Math.min(1, Math.sqrt(1.4e6 / (px * Math.pow(Math.min(devicePixelRatio || 1, 1.75), 2)))),
-    rw = Math.max(64, Math.round(MW * R)),
-    rh = Math.max(64, Math.round(MH * R));
+    rw = Math.max(64, Math.round(worldMapWidth * R)),
+    rh = Math.max(64, Math.round(worldMapHeight * R));
   if (cv.width !== rw || cv.height !== rh) {
     cv.width = rw;
     cv.height = rh;
@@ -596,19 +596,19 @@ export function mglRender(t) {
   gl.uniform3fv(U2.uUp, cam.up);
   gl.uniform3fv(U2.uHaze, haze);
   gl.uniform1f(U2.uFoc, cam.foc);
-  gl.uniform1f(U2.uR, rw / MW);
+  gl.uniform1f(U2.uR, rw / worldMapWidth);
   gl.uniform1f(U2.uT, t);
-  gl.uniform2f(U2.uWH, MW, MH);
+  gl.uniform2f(U2.uWH, worldMapWidth, worldMapHeight);
   gl.uniform1f(U2.uFlat, MGL.flat ? 1 : 0);
   gl.uniform3f(U2.uFv, MGL.fv.u, MGL.fv.v, MGL.fv.s);
   const cl = new Float32Array(64);
-  MCL.forEach((k, i) => {
-    const a = (k.lon + (t / 1000) * k.sp) * D2R,
-      la = k.lat * D2R;
+  WORLD_MAP_CLOUDS.forEach((k, i) => {
+    const a = (k.lon + (t / 1000) * k.sp) * RADIANS_PER_DEGREE,
+      la = k.lat * RADIANS_PER_DEGREE;
     cl.set([Math.cos(la) * Math.cos(a) * k.alt, Math.sin(la) * k.alt, Math.cos(la) * Math.sin(a) * k.alt, k.r], i * 4);
   });
   gl.uniform4fv(U2.uCl, cl);
-  gl.uniform1i(U2.uNCl, MGL.noClouds ? 0 : Math.min(16, MCL.length));
+  gl.uniform1i(U2.uNCl, MGL.noClouds ? 0 : Math.min(16, WORLD_MAP_CLOUDS.length));
   gl.activeTexture(gl.TEXTURE0);
   gl.bindTexture(gl.TEXTURE_2D, typeof worldMapTexture === 'function' ? worldMapTexture() : EGL.white);
   gl.uniform1i(U2.uWorld, 0);
@@ -645,10 +645,12 @@ export function mglRender(t) {
       mglMinis(cam, (im, v, k) => {
         const T = eglImg(im, { noNormal: true });
         if (!T) return;
-        const n = v3.norm(v3.mul(v, -1)),
-          rt = v3.norm(v3.sub(cam.rt, v3.mul(n, v3.dot(cam.rt, n)))),
-          bk = v3.norm(v3.cross(rt, n)),
-          up = v3.norm(v3.add(v3.mul(n, 0.62), v3.mul(bk, -0.78))); /* laid back like a tabletop seen from above */
+        const n = vector3.norm(vector3.mul(v, -1)),
+          rt = vector3.norm(vector3.sub(cam.rt, vector3.mul(n, vector3.dot(cam.rt, n)))),
+          bk = vector3.norm(vector3.cross(rt, n)),
+          up = vector3.norm(
+            vector3.add(vector3.mul(n, 0.62), vector3.mul(bk, -0.78))
+          ); /* laid back like a tabletop seen from above */
         gl.uniform3fv(U2.uP, v);
         gl.uniform3fv(U2.uRt, rt);
         gl.uniform3fv(U2.uUp, up);
@@ -656,15 +658,15 @@ export function mglRender(t) {
         gl.bindTexture(gl.TEXTURE_2D, T.t);
         gl.drawArrays(gl.TRIANGLES, 0, 6);
       });
-    for (const l of MLAND) {
-      const d = v3.sub(l.v, cam.C),
-        z = v3.dot(d, cam.fw);
+    for (const l of WORLD_MAP_LANDMARKS) {
+      const d = vector3.sub(l.v, cam.C),
+        z = vector3.dot(d, cam.fw);
       if (z < 0.01 || z > 1.3) continue;
       const im = mstamp(l.k),
         T = eglImg(im, { noNormal: true });
       if (!T) continue;
-      const up = v3.mul(l.v, -1),
-        rt = v3.norm(v3.sub(cam.rt, v3.mul(up, v3.dot(cam.rt, up)))),
+      const up = vector3.mul(l.v, -1),
+        rt = vector3.norm(vector3.sub(cam.rt, vector3.mul(up, vector3.dot(cam.rt, up)))),
         k = 0.0011;
       gl.uniform3fv(U2.uP, l.v);
       gl.uniform3fv(U2.uRt, rt);
@@ -675,9 +677,9 @@ export function mglRender(t) {
     }
   }
   const P = worldMap.focus || worldMapPlayerPosition(),
-    fd = Math.max(0.02, v3.dot(v3.sub(P, cam.C), cam.fw));
+    fd = Math.max(0.02, vector3.dot(vector3.sub(P, cam.C), cam.fw));
   MGL.fd = MGL.fd == null ? fd : MGL.fd + (fd - MGL.fd) * 0.2;
-  eglPost(S, { near: MGL_N, far: MGL_F, df: MGL.fd * 1.6, F: (cam.foc * rw) / MW }, MGL.fd, rw, rh, {
+  eglPost(S, { near: MGL_N, far: MGL_F, df: MGL.fd * 1.6, F: (cam.foc * rw) / worldMapWidth }, MGL.fd, rw, rh, {
     blur: MGL.flat ? 0 : 0.5,
     fast: rw * rh > 1.2e6,
     noAO: true,
@@ -734,13 +736,13 @@ function mglLift(v) {
     x = Math.floor(u * W) % W,
     y = clamp(Math.floor(w * H), 0, H - 1),
     h = (MGL.hpix[y * W + x] & 255) / 255;
-  return v3.mul(v, 1 - h * R);
+  return vector3.mul(v, 1 - h * R);
 }
 function mglMinis(cam, draw) {
   ROUTE.forEach((r, i) => {
-    const v = mglLift(MNV[i]),
-      d = v3.sub(v, cam.C),
-      z = v3.dot(d, cam.fw);
+    const v = mglLift(LOCATION_VECTORS[i]),
+      d = vector3.sub(v, cam.C),
+      z = vector3.dot(d, cam.fw);
     if (z < 0.01 || z > 1.3) return;
     const im = mglMiniImg(i);
     if (im) draw(im, v, MINI_K * (r.town ? 1.15 : 1));
@@ -748,10 +750,10 @@ function mglMinis(cam, draw) {
 }
 /* how far above the stop a pin goes so it sits on top of the miniature */
 function mglMiniUp(v, cam) {
-  const n = v3.norm(v3.mul(v, -1)),
-    rt = v3.norm(v3.sub(cam.rt, v3.mul(n, v3.dot(cam.rt, n)))),
-    bk = v3.norm(v3.cross(rt, n));
-  return v3.norm(v3.add(v3.mul(n, 0.62), v3.mul(bk, -0.78)));
+  const n = vector3.norm(vector3.mul(v, -1)),
+    rt = vector3.norm(vector3.sub(cam.rt, vector3.mul(n, vector3.dot(cam.rt, n)))),
+    bk = vector3.norm(vector3.cross(rt, n));
+  return vector3.norm(vector3.add(vector3.mul(n, 0.62), vector3.mul(bk, -0.78)));
 }
 function mglMiniTop(i) {
   if (typeof mmOn === 'function' && mmOn() && !MGL.flat && worldMap.cam) {
@@ -761,8 +763,8 @@ function mglMiniTop(i) {
   const im = mglMiniImg(i);
   if (!im || MGL.flat || !worldMap.cam) return null;
   const r = ROUTE[i],
-    v = mglLift(MNV[i]);
-  return v3.add(v, v3.mul(mglMiniUp(v, worldMap.cam), im.height * MINI_K * (r.town ? 1.15 : 1) * 0.92));
+    v = mglLift(LOCATION_VECTORS[i]);
+  return vector3.add(v, vector3.mul(mglMiniUp(v, worldMap.cam), im.height * MINI_K * (r.town ? 1.15 : 1) * 0.92));
 }
 /* ---------- overlay: trip, route preview, player ---------- */
 function mglLine(c, pts, col, w, dash, off) {
@@ -780,7 +782,7 @@ function mglLine(c, pts, col, w, dash, off) {
       pen = false;
       continue;
     }
-    if (pen && last && Math.hypot(q.x - last.x, q.y - last.y) > MW * 0.4) pen = false;
+    if (pen && last && Math.hypot(q.x - last.x, q.y - last.y) > worldMapWidth * 0.4) pen = false;
     if (pen) c.lineTo(q.x, q.y);
     else c.moveTo(q.x, q.y);
     pen = true;
@@ -794,7 +796,7 @@ function mglPath(seq, startF) {
   for (let k = 0; k < seq.length - 1; k++) {
     const a = seq[k],
       b = seq[k + 1];
-    for (let f = k === 0 ? startF : 0; f <= 1.0001; f += 0.025) pts.push(mglProj(edgePos(a, b, Math.min(1, f))));
+    for (let f = k === 0 ? startF : 0; f <= 1.0001; f += 0.025) pts.push(mglProj(roadPosition(a, b, Math.min(1, f))));
   }
   return pts;
 }
@@ -881,7 +883,7 @@ function mglPins() {
   const E = MGL.pins.el,
     seen = new Set();
   const put = (key, q, html, cls, attrs, chip) => {
-    if (!q || q.x < -60 || q.x > MW + 60 || q.y < -30 || q.y > MH + 30) {
+    if (!q || q.x < -60 || q.x > worldMapWidth + 60 || q.y < -30 || q.y > worldMapHeight + 30) {
       const e = E.get(key);
       if (e) e.hidden = true;
       return;
@@ -915,7 +917,7 @@ function mglPins() {
   for (const i of order) {
     const n = ROUTE[i],
       tv = mglMiniTop(i);
-    let q = mglProj(tv || MNV[i]);
+    let q = mglProj(tv || LOCATION_VECTORS[i]);
     const far = q && q.z > 0.9 && i !== S.route.node && i !== sel && i !== dest && !MGL.flat;
     const st = mglPinState(i);
     if (far) q = null;
@@ -938,7 +940,7 @@ function mglPins() {
     );
   }
   FUTURE.forEach((f, i) => {
-    let q = f.t === 'sun' ? (MGL.flat ? null : worldMapProject(worldMap.cam, [0, 0, 0])) : mglProj(REGV[i]);
+    let q = f.t === 'sun' ? (MGL.flat ? null : worldMapProject(worldMap.cam, [0, 0, 0])) : mglProj(REGION_VECTORS[i]);
     if (q && q.z > 0.95 && U.mapSel !== 'f' + i && !MGL.flat) return put('f' + i, null);
     if (q && U.mapSel !== 'f' + i) {
       const w = f.name.length * 7 + 20,
@@ -962,7 +964,7 @@ function mglPins() {
   LINKS.forEach(([a, b, c], i) => {
     const show =
       (typeof sel === 'number' && (a === sel || b === sel)) || onPlan.has(Math.min(a, b) + '-' + Math.max(a, b));
-    const q = show ? mglProj(edgePos(a, b, 0.5)) : null;
+    const q = show ? mglProj(roadPosition(a, b, 0.5)) : null;
     put('L' + i, q, `${fmt(c)} steps`, 'mchip' + (onPlan.has(Math.min(a, b) + '-' + Math.max(a, b)) ? ' trip' : ''));
   });
   /* 0.5: friends, at the place they were last */
@@ -970,12 +972,12 @@ function mglPins() {
     for (const u of FR.list) {
       const d = FR.data[u],
         a = d && d.at;
-      if (!a || a.node == null || !MNV[a.node]) {
+      if (!a || a.node == null || !LOCATION_VECTORS[a.node]) {
         put('fr' + u, null);
         continue;
       }
       const tv = mglMiniTop(a.node);
-      let q = mglProj(tv || MNV[a.node]);
+      let q = mglProj(tv || LOCATION_VECTORS[a.node]);
       if (q && q.z > 0.92 && !MGL.flat) q = null;
       if (q) q = { x: q.x + 22, y: q.y - 6, z: q.z };
       put(
@@ -995,7 +997,7 @@ function mglPick(ev) {
   let best = null,
     bd = 30;
   ROUTE.forEach((n, i) => {
-    const q = mglProj(MNV[i]);
+    const q = mglProj(LOCATION_VECTORS[i]);
     if (!q) return;
     const d = Math.hypot(q.x - x, q.y - y);
     if (d < bd) {
@@ -1005,7 +1007,8 @@ function mglPick(ev) {
   });
   if (best === null)
     FUTURE.forEach((f, i) => {
-      const q = f.t === 'sun' ? (MGL.flat ? null : worldMapProject(worldMap.cam, [0, 0, 0])) : mglProj(REGV[i]);
+      const q =
+        f.t === 'sun' ? (MGL.flat ? null : worldMapProject(worldMap.cam, [0, 0, 0])) : mglProj(REGION_VECTORS[i]);
       if (!q) return;
       const d = Math.hypot(q.x - x, q.y - y);
       if (d < bd) {
@@ -1033,7 +1036,7 @@ setWorldMapLabels(function () {
 setWorldMapZoom(function (k) {
   if (!worldMap.gl) return cpuWorldMapZoom(k);
   MGL.altT = null;
-  if (MGL.flat) MGL.fv.s = clamp(MGL.fv.s / k, mglFlatMin(), MW * 8);
+  if (MGL.flat) MGL.fv.s = clamp(MGL.fv.s / k, mglFlatMin(), worldMapWidth * 8);
   else worldMap.alt = clamp(worldMap.alt * k, MGL_ALT[0], MGL_ALT[1]);
   worldMap.dirty = true;
 });
@@ -1216,15 +1219,15 @@ export function mmBuild(i) {
     W = sc.w,
     H = sc.h,
     town = !!r.town;
-  const v = mglLift(MNV[i]),
-    U = v3.norm(v3.mul(v, -1)),
-    E0 = v3.norm(v3.cross(v, [0, 1, 0])),
-    E = v3.len(E0) > 0.1 ? E0 : [1, 0, 0],
-    N = v3.norm(v3.cross(U, E)),
+  const v = mglLift(LOCATION_VECTORS[i]),
+    U = vector3.norm(vector3.mul(v, -1)),
+    E0 = vector3.norm(vector3.cross(v, [0, 1, 0])),
+    E = vector3.len(E0) > 0.1 ? E0 : [1, 0, 0],
+    N = vector3.norm(vector3.cross(U, E)),
     span = 0.088 * (town ? 1.15 : 1),
     k = span / Math.max(W, H),
     vex = 1.7;
-  const L = v3.norm(v3.add(v3.add(v3.mul(U, 0.82), v3.mul(E, -0.42)), v3.mul(N, -0.3)));
+  const L = vector3.norm(vector3.add(vector3.add(vector3.mul(U, 0.82), vector3.mul(E, -0.42)), vector3.mul(N, -0.3)));
   const V = [],
     I = [];
   let top = 0;
@@ -1235,10 +1238,10 @@ export function mmBuild(i) {
   ];
   /* a flat-shaded face: four corners in scene metres (x, height, z), a colour; the light is worked in here */
   const quad = (a, b, c, d, col, nl) => {
-    let n = nl || v3.norm(v3.cross(v3.sub(b, a), v3.sub(d, a)));
-    if (!nl && n[1] < 0) n = v3.mul(n, -1);
-    const wn = v3.norm(v3.add(v3.add(v3.mul(E, n[0]), v3.mul(U, n[1])), v3.mul(N, n[2]))),
-      lit = 0.58 + 0.52 * Math.max(0, v3.dot(wn, L));
+    let n = nl || vector3.norm(vector3.cross(vector3.sub(b, a), vector3.sub(d, a)));
+    if (!nl && n[1] < 0) n = vector3.mul(n, -1);
+    const wn = vector3.norm(vector3.add(vector3.add(vector3.mul(E, n[0]), vector3.mul(U, n[1])), vector3.mul(N, n[2]))),
+      lit = 0.58 + 0.52 * Math.max(0, vector3.dot(wn, L));
     const b0 = V.length / 6;
     for (const q of [a, b, c, d]) {
       const p = P(q[0], q[1], q[2]);
@@ -1463,7 +1466,7 @@ export function mmBuild(i) {
     ],
     24
   );
-  mesh.top = v3.add(v, v3.mul(U, (top + 0.6) * k * vex));
+  mesh.top = vector3.add(v, vector3.mul(U, (top + 0.6) * k * vex));
   mesh.v = v;
   return mesh;
 }
@@ -1500,8 +1503,8 @@ function mmDraw(cam) {
   gl.depthMask(true);
   MM.busy = 0;
   ROUTE.forEach((r, i) => {
-    const d = v3.sub(MNV[i], cam.C),
-      z = v3.dot(d, cam.fw);
+    const d = vector3.sub(LOCATION_VECTORS[i], cam.C),
+      z = vector3.dot(d, cam.fw);
     if (z < 0.005 || z > 1.3) return;
     const m = mmGet(i);
     if (!m) return;
