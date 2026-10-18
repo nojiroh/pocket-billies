@@ -166,13 +166,13 @@ import {
   v3n,
 } from './engine/webgl.js';
 import {
-  eglLampShadowBegin,
-  eglLightCtx,
-  eglLightU,
-  eglPickLights,
-  eglShadowBegin,
-  eglShadowEnd,
-  eglSun,
+  beginLampShadow,
+  beginSunShadow,
+  endShadow,
+  lightContext,
+  pickPointLights,
+  setLightUniforms,
+  sunLight,
 } from './engine/light.js';
 import { EGL_POST_SH, eglPost, eglSnapshot, eglSunScreen } from './engine/post-effects.js';
 import {
@@ -3661,7 +3661,7 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
   if (!BT && typeof lifeStep === 'function') lifeStep(dt);
   const C = BT ? (BT.look ? cutsceneCamera(rw, rh, BT.look) : battleCamera(rw, rh, BT)) : walkCamera(rw, rh, st, dt);
   walkView.C = C;
-  const sun = mapSun(sc, eglSun(!!sc.indoor));
+  const sun = mapSun(sc, sunLight(!!sc.indoor));
   walkRenderer.sun = sun;
   /* v46: the near ring follows the camera's focus (in a battle, the stage) */
   {
@@ -5180,7 +5180,7 @@ function walkLightContext(C, sun, dark, items, shadow, BT) {
     });
   }
   roomLights(sc, L, lb);
-  const lights = eglPickLights(L, P.x, P.z, 16),
+  const lights = pickPointLights(L, P.x, P.z, 16),
     sky = skyColors(sc);
   let hz = hexToRgb(engineSetting('air', 'haze') || sc.haze || (sc.sky || [])[2] || '#EAD9C0').map(v => v / 255);
   if (E && !sc.indoor) hz = environmentSky([hz, hz, hz], false)[2];
@@ -5222,7 +5222,7 @@ function walkLightContext(C, sun, dark, items, shadow, BT) {
           (v, i) => v * (E ? 1 - night * 0.5 : 1)
         ); /* v43: the horizon's colour for the sky-shaped ambient */
   const RD = BT ? null : roomDimming(sc);
-  return eglLightCtx({
+  return lightContext({
     roomB: RD ? RD.b : null,
     roomDim: RD ? RD.dim : 0,
     eye: C.eye,
@@ -5254,7 +5254,7 @@ export function useWalkProgram(name, C, X) {
     p = EGL.P[name];
   gl.useProgram(p.p);
   if (p.U.uVP && C) gl.uniformMatrix4fv(p.U.uVP, false, C.vp);
-  if (X) eglLightU(p, X);
+  if (X) setLightUniforms(p, X);
   return p;
 }
 function setSpriteUniforms(p, it, uv) {
@@ -5316,7 +5316,7 @@ export function shadowPass(items0, sun, C) {
     res = Math.min(1024, engineSetting('quality', 'shadowMap')),
     gl = EGL.gl,
     items = items0.filter(it => Math.hypot(it.x - P.x, it.z - P.z) < R + (it.w || 32) * (it.mpp || 0.03) + 3);
-  const SH = eglShadowBegin(P.x, P.z, R, sun, res, 'shadowN'),
+  const SH = beginSunShadow(P.x, P.z, R, sun, res, 'shadowN'),
     ca = worldCurveArgs();
   {
     const p = EGL.P.shadowG;
@@ -5333,7 +5333,7 @@ export function shadowPass(items0, sun, C) {
   if (typeof drawStructureShadows === 'function') drawStructureShadows(SH);
   if (typeof drawSolidPropShadows === 'function') drawSolidPropShadows(SH, items);
   if (typeof drawPropModelShadows === 'function') drawPropModelShadows(SH, items);
-  eglShadowEnd();
+  endShadow();
   SH.far = far;
   return SH;
 }
@@ -5356,7 +5356,7 @@ function lampShadowMaps(items, X, dark) {
   const gl = EGL.gl,
     ca = worldCurveArgs();
   cand.forEach((l, i) => {
-    const SH = eglLampShadowBegin([l.p[0], l.p[1] + 0.2, l.p[2]], 512, 'lamp' + i),
+    const SH = beginLampShadow([l.p[0], l.p[1] + 0.2, l.p[2]], 512, 'lamp' + i),
       near = items.filter(
         it =>
           Math.hypot(it.x - l.p[0], it.z - l.p[2]) < 13 &&
@@ -5377,7 +5377,7 @@ function lampShadowMaps(items, X, dark) {
     if (typeof drawBuildingShadows === 'function') drawBuildingShadows(SH, near);
     if (typeof drawSolidPropShadows === 'function') drawSolidPropShadows(SH, near);
     if (typeof drawPropModelShadows === 'function') drawPropModelShadows(SH, near);
-    eglShadowEnd();
+    endShadow();
     X.lampSh.push(SH);
   });
 }
@@ -5466,7 +5466,7 @@ function fittedShadowPass(items0, sun, C) {
   const items = items0.filter(
     it => Math.hypot(it.x - fit[0], it.z - fit[1]) < fit[2] + (it.w || 32) * (it.mpp || 0.03) + 4
   );
-  const SH = eglShadowBegin(fit[0], fit[1], fit[2], sun, res);
+  const SH = beginSunShadow(fit[0], fit[1], fit[2], sun, res);
   const ca = worldCurveArgs(),
     curve = P => {
       gl.uniform3f(P.U.uCurve, ca[0], ca[1], ca[2]);
@@ -5596,7 +5596,7 @@ function fittedShadowPass(items0, sun, C) {
     if (typeof drawPropModelShadows === 'function') drawPropModelShadows(SH, dyn);
   }
   if (typeof drawSolidPropShadows === 'function') drawSolidPropShadows(SH, items);
-  eglShadowEnd();
+  endShadow();
   return SH;
 }
 /* v26: the scene's sky colours after the hour and the weather (environment.js) */

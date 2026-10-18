@@ -12,7 +12,7 @@ import { makeCanvas } from '../art.js';
 import { walkView } from '../walk-view.js';
 import { engineColor, engineSetting } from './settings.js';
 import { EGL, EGL_GLSL_LIGHT, eglBindQuad, eglPrograms, eglTarget } from './webgl.js';
-import { eglLightU } from './light.js';
+import { setLightUniforms } from './light.js';
 /* eslint-disable no-func-assign */
 expose({
   EGL_GRADES: [() => EGL_GRADES],
@@ -275,7 +275,7 @@ export function eglPost(S, C, focusDist, rw, rh, o = {}) {
       V0 = eglTarget('vol0', qw, qh, { hdr: true });
     const U = use('vol', V0, qw, qh);
     const p = EGL.P.vol;
-    eglLightU(p, X);
+    setLightUniforms(p, X);
     tex(U, 'uDep', 0, S.d);
     gl.uniformMatrix4fv(U.uIVP, false, o.ivp);
     gl.uniform1f(U.uN, C.near);

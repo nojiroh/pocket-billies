@@ -255,13 +255,13 @@ float shadowAtN(vec3 p,vec3 n,float bias){if(uShadowOn<.5)return cloudShade(p);v
  return mix(1.,s,uShStr)*cloudShade(p);}
 float shadowAt(vec3 p,float bias){return shadowAtN(p,vec3(0.,1.,0.),bias);}
 float contactAO(vec3 p){float a=1.;for(int i=0;i<64;i++){if(i>=uNAO)break;vec4 b=uAO[i];vec2 d=(p.xz-b.xy)/b.zw;float e=dot(d,d);if(e<1.){float k=1.-e;a=min(a,1.-k*k*uContact);}}return a;}
-/* v43: the two nearest lamps have shadow maps of their own (light.js eglLampShadowBegin) */
+/* v43: the two nearest lamps have shadow maps of their own (light.js beginLampShadow) */
 float lampVis(int i,vec3 p){vec4 q=(i==0?uLampM0:uLampM1)*vec4(p,1.);if(q.w<=.01)return 1.;vec3 c=q.xyz/q.w*.5+.5;if(c.x<0.||c.y<0.||c.x>1.||c.y>1.||c.z>1.)return 1.;float s=i==0?texture(uLampSh0,vec3(c.xy,c.z-.0025)):texture(uLampSh1,vec3(c.xy,c.z-.0025));return .25+.75*s;}
 vec3 points(vec3 p,vec3 n){vec3 a=vec3(0.);for(int i=0;i<16;i++){if(i>=uNL)break;vec4 L=uLP[i];vec3 d=L.xyz-p;float l=length(d),r=abs(L.w),x=clamp(l/r,0.,1.);float f=1.-x*x;f=f*f/(1.+l*l*.6);
  if(L.w<0.&&p.z>L.z+.3)f=0.;if(i<uNLS&&f>0.)f*=lampVis(i,p);a+=uLC[i].rgb*f*(.3+.7*max(dot(n,d/max(l,.001)),0.));}return a;}
 /* in shadow the light takes the shadow colour, with a little coloured bounce so shade never turns to mud */
 /* v43: the ambient light as nine spherical-harmonic terms of the sky, the ground's bounce and a broad warm lobe on the
-   sun's side (light.js eglSH): a face turned to the sky is sky-coloured, one turned down takes the ground's bounce,
+   sun's side (light.js skyHarmonics): a face turned to the sky is sky-coloured, one turned down takes the ground's bounce,
    one turned toward the sun is warmer, even in shade */
 vec3 shAmb(vec3 n){float x=n.x,y=n.y,z=n.z;vec3 e=.429043*uSH[8]*(x*x-y*y)+.743125*uSH[6]*z*z+.886227*uSH[0]-.247708*uSH[6]+.858086*(uSH[4]*x*y+uSH[7]*x*z+uSH[5]*y*z)+1.023328*(uSH[3]*x+uSH[1]*y+uSH[2]*z);return max(e*.3183,vec3(0.));}
 vec3 ambient(vec3 n,float occ,float sh){vec3 a=mix(mix(uAmbBot,uAmbTop,n.y*.5+.5),shAmb(n),uSHK)*uAmbK*occ;return a*mix(uShTint,vec3(1.),sh)+uShLift*(1.-sh)*occ;}
