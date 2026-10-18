@@ -172,7 +172,6 @@ export interface MoveEffect {
     the code still knows the older kinds (game-state.js canEvolve, evolutionHint) */
 export type Evolution =
   | { k: 'lvl' | 'split'; at: number }
-  | { k: 'buddy'; steps: number }
   | { k: 'item'; item?: DataId; min: number }
   | { k: 'idle'; ms: number; min: number }
   | { k: 'streak' | 'donate'; n: number; min: number }

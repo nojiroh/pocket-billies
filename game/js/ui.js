@@ -453,7 +453,6 @@ function evolutionModal(m) {
   const why =
     {
       lvl: `It just reached level ${e.at}.`,
-      buddy: `You’ve walked ${stepsToKm(e.steps)} km together.`,
       idle: 'It rested in storage for a whole day.',
       streak: `${e.n} wins in a row made it stronger.`,
       split: `It just reached level ${e.at}. ${splitPath(m) === 'B' ? `It won ${m.wins || 0} battles: the Hype path.` : `It walked ${stepsToKm(m.bsteps || 0)} km with you: the Build path.`}`,
@@ -819,13 +818,8 @@ function buddyCard() {
   const m = findBilly(saveData.buddy);
   if (!m) return '';
   const a = xpFor(m.lvl),
-    b = xpFor(m.lvl + 1),
-    e = SPECIES[m.sp].evo;
-  const ev =
-    e && e.k === 'buddy'
-      ? `<div class="note">Buddy distance: ${stepsToKm(m.bsteps || 0)} of ${stepsToKm(e.steps)} km to evolve.</div>${progressBarHTML((m.bsteps || 0) / e.steps, 'gold')}`
-      : '';
-  return `<section><div class="sec-h"><h2>Buddy</h2></div><div class="buddy px" data-a="mon" data-u="${m.uid}" role="button" tabindex="0">${rigCanvasHTML(m.sp, 80, { gold: m.gold, build: m.build })}<div class="bd"><div class="bn">${escapeHtml(billyName(m))} <span class="lv tnum">Lv ${m.lvl}</span></div><div class="note">Gets the full XP of every battle you win, even when it sits one out. ${formatNumber(b - m.xp)} XP to level ${m.lvl + 1}.</div>${progressBarHTML((m.xp - a) / (b - a), 'xpb')}${ev}</div></div></section>`;
+    b = xpFor(m.lvl + 1);
+  return `<section><div class="sec-h"><h2>Buddy</h2></div><div class="buddy px" data-a="mon" data-u="${m.uid}" role="button" tabindex="0">${rigCanvasHTML(m.sp, 80, { gold: m.gold, build: m.build })}<div class="bd"><div class="bn">${escapeHtml(billyName(m))} <span class="lv tnum">Lv ${m.lvl}</span></div><div class="note">Gets the full XP of every battle you win, even when it sits one out. ${formatNumber(b - m.xp)} XP to level ${m.lvl + 1}.</div>${progressBarHTML((m.xp - a) / (b - a), 'xpb')}</div></div></section>`;
 }
 function roomHero() {
   const I = uiState.inside,
@@ -1851,8 +1845,6 @@ function evolutionMethod(e) {
       return `Lv ${e.at}`;
     case 'split':
       return `Lv ${e.at}, Build or Hype`;
-    case 'buddy':
-      return `Walk ${stepsToKm(e.steps)} km as buddy`;
     case 'item':
       return `${evolutionItemName(e)} at Lv ${e.min}`;
     case 'donate':

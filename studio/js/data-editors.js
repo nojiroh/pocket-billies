@@ -294,7 +294,6 @@ studioState.hooks.billionaires = path => {
 };
 const EVOLUTION_KINDS = [
   ['lvl', 'Reaches a level'],
-  ['buddy', 'Walk with it as your buddy'],
   ['item', 'Use an item on it'],
   ['donate', 'Give away items'],
   ['merge', 'Combine two'],
@@ -309,13 +308,6 @@ function evolutionRowHTML(L, li, i) {
   const D = studioState.D;
   const f = {
     lvl: () => numberField('At level', `${p}.at`, { min: 2, max: 100, step: 1 }),
-    buddy: () =>
-      numberField('Distance', `${p}.steps`, {
-        unit: 'km',
-        scale: D.rules.steps.stepsPerKm,
-        step: 0.5,
-        help: 'Walked while it is your buddy.',
-      }),
     item: () =>
       selectField('Item', `${p}.item`, itemOptions()) +
       numberField('Minimum level', `${p}.min`, { min: 1, max: 100, step: 1 }),

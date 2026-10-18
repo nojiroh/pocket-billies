@@ -326,8 +326,6 @@ export function canEvolve(m) {
     case 'lvl':
     case 'split':
       return m.lvl >= e.at;
-    case 'buddy':
-      return (m.bsteps || 0) >= e.steps;
     case 'idle':
       return !!m.boxedAt && !m.job && saveData.box.includes(m) && Date.now() - m.boxedAt >= e.ms && m.lvl >= e.min;
     case 'streak':
@@ -353,8 +351,6 @@ export function evolutionHint(m) {
         an = alt && saveData.seen[alt.id] ? alt.name : 'something else';
       return `Evolves at level ${e.at} into ${nm} or ${an}: ${splitPath(m) === 'A' ? 'the Build path is ahead' : 'the Hype path is ahead'} (${m.wins || 0} battles won, ${stepsToKm(m.bsteps || 0)} km walked as buddy${m.psteps ? ` + ${stepsToKm((m.psteps || 0) / 2)} km in the party at half weight` : ''}).`;
     }
-    case 'buddy':
-      return `Evolves after you walk ${stepsToKm(e.steps)} km with it as your buddy. ${stepsToKm(m.bsteps || 0)} of ${stepsToKm(e.steps)} km so far.`;
     case 'item':
       return `Evolves when you use ${/^[AEIOU]/.test(evolutionItemName(e)) ? 'an' : 'a'} ${evolutionItemName(e)}, once it reaches level ${e.min}.`;
     case 'donate':
