@@ -679,7 +679,7 @@ def main():
         for sc in D['maps'].values():
             for q in sc.get('props') or []:
                 if q.get('k') == 'airship_mast': q['k'] = 'airship_station'; q['act'] = 'fly'; q['label'] = 'Airship station'; conv += 1
-        city = D['maps'].get('city') or {}
+        city = D['maps'].get('verdigris') or {}
         old = [q for q in city.get('props', []) if q.get('k') == 'station']
         for q in old:
             city['props'].remove(q)

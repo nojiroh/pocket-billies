@@ -331,7 +331,7 @@
   {"k":"kelp_tall","x":10.11,"z":8.45,"s":0.94,"f":1},
   {"k":"pearl_lamp","x":51.1,"z":8.4},
   {"k":"kelp_tall","x":10.34,"z":8.04,"s":1.12,"f":1},
-  {"k":"glass_lift","x":48,"z":6.2,"act":"lift","to":"portfolio","label":"Glass lift to Kelpport"},
+  {"k":"glass_lift","x":48,"z":6.2,"act":"lift","to":"kelpport","label":"Glass lift to Kelpport"},
   {"k":"seaweed","x":32.02,"z":5.08,"s":0.98},
   {"k":"coral","x":55.06,"z":1.55,"s":0.95},
   {"k":"pearl_lamp","x":44.9,"z":0.4},

@@ -5,7 +5,7 @@ and saved as game/art/map/mini/<scene>.png. The map stands them on the globe whe
 
     python3 tools/build-map-minis.py                 # every stop's scene that has no miniature yet
     python3 tools/build-map-minis.py --all           # redraw all of them
-    python3 tools/build-map-minis.py city sundown    # just these scenes
+    python3 tools/build-map-minis.py verdigris marigold    # just these scenes
 
 Needs Playwright with Chromium (software WebGL is fine, just slow: about half a minute a scene)."""
 import gamedata  # phase 04b: the data files in game/data

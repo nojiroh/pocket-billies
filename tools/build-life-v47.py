@@ -17,7 +17,7 @@ Everything added carries "v47life": 1, so running this again first takes the pre
 marked "keep" in the Studio is left alone.
 
     python3 tools/build-life-v47.py            # all towns
-    python3 tools/build-life-v47.py sundown    # just these
+    python3 tools/build-life-v47.py marigold    # just these
     python3 tools/build-life-v47.py --dry      # report, write nothing
     python3 tools/build-life-v47.py --map out/ # draw a top-down map of each place (worn lines in orange)
 """
@@ -113,7 +113,7 @@ def is_work(p, M): return bool(M.get('door')) and any(w == p['k'] or w == (M.get
 def dress(P, rnd):
     """signs of people round the buildings"""
     sc, cat = P.sc, P.cat; n = {'washing': 0, 'crates': 0, 'bin': 0, 'bikes': 0, 'planters': 0, 'gnomes': 0, 'bread': 0}
-    city = P.sid in ('city', 'mall') or (sc.get('biome') == 'city')
+    city = P.sid in ('verdigris', 'lanternhall') or (sc.get('biome') == 'city')
     for p in list(sc['props']):
         M = cat.get(p['k']) or {}
         if not M.get('box') or not M.get('door') or p.get(TAG): continue
@@ -301,7 +301,7 @@ def main():
     if 'crow' not in life: life['crow'] = {'name': 'Crow', 'img': 'scene/life/crow.png', 'w': 24, 'h': 22, 'frames': 5, 'where': 'junk'}
     for sid, sc in S.items():
         if '@' in sid or sc.get('test'): continue
-        c = crops(sc); w = crows(sc) if sid == 'scrapyard' else 0
+        c = crops(sc); w = crows(sc) if sid == 'rustgear' else 0
         if c or w: print(f'{sid}: ' + ', '.join(x for x in (f'{c} crops on a round of their own' if c else '', f'{w} crows' if w else '') if x))
     towns = [r['mapId'] for r in D['locations'] if r.get('kind') == 'town' and r.get('mapId') in S]
     want = args or towns
@@ -313,7 +313,7 @@ def main():
         sc.pop('worn', None); sc.pop('market', None)
         if sc.get('keep'): print(f'{sid}: kept as it is (marked keep)'); continue
         rnd = random.Random(f'life47-{sid}'); P = Place(sid, sc, cat)
-        n = dress(P, rnd); mk = market(P, rnd) if sid == 'sundown' else 0; lv = leaves(P, rnd); ct = cats(P); wl = worn(P, rnd); n['chalk'] = chalk(P, random.Random(f'chalk47-{sid}'))
+        n = dress(P, rnd); mk = market(P, rnd) if sid == 'marigold' else 0; lv = leaves(P, rnd); ct = cats(P); wl = worn(P, rnd); n['chalk'] = chalk(P, random.Random(f'chalk47-{sid}'))
         sc['props'] = sc['props'] + P.added
         print(f'{sid}: ' + ', '.join(f'{v} {k}' for k, v in n.items() if v) + (f', {mk} market things' if mk else '') + f', {lv} leaf piles, {ct} cats, {wl} worn shortcuts')
         if mp: draw_map(sid, sc, cat, mp / f'{sid}.png')

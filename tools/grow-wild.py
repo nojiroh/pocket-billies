@@ -8,7 +8,7 @@ It keeps clear of: paved ground and paths (plus half a metre), water unless the 
 the exits (two metres), doors (a strip in front of every building), and every prop already there (by its footprint).
 
     python3 tools/grow-wild.py                 # grow every outdoor scene that has not been grown (marked "wild": 42)
-    python3 tools/grow-wild.py longgrass pond  # just these
+    python3 tools/grow-wild.py tallgrass_meadow willowmere  # just these
     python3 tools/grow-wild.py --regrow        # take out what an earlier pass added and grow again
     python3 tools/grow-wild.py --density 1.5   # thicker (1 = about one plant per 30 square metres)
     python3 tools/grow-wild.py --dry           # report only"""

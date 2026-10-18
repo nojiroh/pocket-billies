@@ -378,20 +378,20 @@ def seg_d(px, pz, a, b):
 # the touches, town by town: [(kind, how many, ground)], then (moss roofs, solar roofs)
 G_OPEN, G_ANY = OPEN | PAVED, OPEN | PAVED | set('kmuxsb')
 TOUCH = {
-    'sundown':   ([('solar_canopy', 2, G_OPEN), ('vertical_garden', 2, G_OPEN), ('solar_tree', 1, OPEN)], (6, 4)),
-    'grotto':    ([('light_pipe', 3, G_ANY), ('vertical_garden', 1, G_ANY)], (0, 0)),
-    'foodcourt': ([('vertical_garden', 3, G_ANY), ('solar_canopy', 1, G_ANY)], (3, 2)),
-    'mall':      ([('vertical_garden', 3, G_ANY), ('light_pipe', 2, G_ANY)], (0, 0)),
-    'farm':      ([('solar_tree', 4, OPEN | set('o')), ('solar_canopy', 1, G_OPEN)], (0, 4)),
-    'city':      ([('solar_canopy', 2, G_OPEN), ('vertical_garden', 2, G_OPEN), ('solar_tree', 1, OPEN)], (8, 8)),
-    'taxhaven':  ([('floating_solar', 3, WET), ('solar_canopy', 1, G_OPEN | set('sN'))], (2, 3)),
-    'summit':    ([('heat_dome', 2, G_OPEN | set('n')), ('solar_tree', 1, OPEN | set('n'))], (0, 5)),
-    'twofold':   ([('wind_sail_flower', 2, OPEN), ('banner_bunting', 2, G_OPEN), ('solar_tree', 1, OPEN)], (3, 3)),
-    'bullion':   ([('solar_canopy', 2, G_OPEN), ('vertical_garden', 1, G_OPEN), ('solar_tree', 1, OPEN)], (2, 3)),
-    'marketcap': ([('solar_tree', 2, OPEN | set('J')), ('vertical_garden', 1, G_ANY | set('J'))], (0, 0)),
-    'mintshaft': ([('light_pipe', 3, G_ANY | set('rX'))], (0, 0)),
-    'portfolio': ([('wind_sail_flower', 2, G_OPEN), ('solar_canopy', 1, G_OPEN), ('floating_solar', 2, WET)], (2, 3)),
-    'upside':    ([('solar_canopy', 2, G_OPEN | set('UV')), ('vertical_garden', 2, G_OPEN | set('UV')), ('solar_tree', 1, OPEN | set('UV'))], (0, 6)),
+    'marigold':   ([('solar_canopy', 2, G_OPEN), ('vertical_garden', 2, G_OPEN), ('solar_tree', 1, OPEN)], (6, 4)),
+    'fizzwell':    ([('light_pipe', 3, G_ANY), ('vertical_garden', 1, G_ANY)], (0, 0)),
+    'pepperpot': ([('vertical_garden', 3, G_ANY), ('solar_canopy', 1, G_ANY)], (3, 2)),
+    'lanternhall':      ([('vertical_garden', 3, G_ANY), ('light_pipe', 2, G_ANY)], (0, 0)),
+    'clovercrest':      ([('solar_tree', 4, OPEN | set('o')), ('solar_canopy', 1, G_OPEN)], (0, 4)),
+    'verdigris':      ([('solar_canopy', 2, G_OPEN), ('vertical_garden', 2, G_OPEN), ('solar_tree', 1, OPEN)], (8, 8)),
+    'palmhaven':  ([('floating_solar', 3, WET), ('solar_canopy', 1, G_OPEN | set('sN'))], (2, 3)),
+    'frostcrown':    ([('heat_dome', 2, G_OPEN | set('n')), ('solar_tree', 1, OPEN | set('n'))], (0, 5)),
+    'twinpetal':   ([('wind_sail_flower', 2, OPEN), ('banner_bunting', 2, G_OPEN), ('solar_tree', 1, OPEN)], (3, 3)),
+    'goldvine':   ([('solar_canopy', 2, G_OPEN), ('vertical_garden', 1, G_OPEN), ('solar_tree', 1, OPEN)], (2, 3)),
+    'capshade': ([('solar_tree', 2, OPEN | set('J')), ('vertical_garden', 1, G_ANY | set('J'))], (0, 0)),
+    'glimmershaft': ([('light_pipe', 3, G_ANY | set('rX'))], (0, 0)),
+    'kelpport': ([('wind_sail_flower', 2, G_OPEN), ('solar_canopy', 1, G_OPEN), ('floating_solar', 2, WET)], (2, 3)),
+    'nimbus':    ([('solar_canopy', 2, G_OPEN | set('UV')), ('vertical_garden', 2, G_OPEN | set('UV')), ('solar_tree', 1, OPEN | set('UV'))], (0, 6)),
 }
 
 
@@ -501,8 +501,8 @@ def main():
         sc['props'] = [p for p in sc['props'] if not p.get(TAG)]
         if sc.get('life'): sc['life'] = [l for l in sc['life'] if not l.get(TAG)]
         rng = random.Random('solar-' + sid); kinds, (nm, ns) = TOUCH[sid]; got = []; avoid = []
-        if sid == 'city':
-            if dry: rep.append('city: the park would go at x 11-58, z 26-39')
+        if sid == 'verdigris':
+            if dry: rep.append('verdigris: the park would go at x 11-58, z 26-39')
             else:
                 c = park(sc, C, rng, CW, PPU); avoid.append((c[0], c[1], 26)); got.append('Verdigris Park')
         for kind, n, ground in kinds:

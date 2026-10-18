@@ -117,7 +117,7 @@ def check_game(pw, base, results):
         for tab in ['walk', 'map', 'team', 'ledger', 'profile']:
             pg.evaluate(f"uiState.tab='{tab}';render();scrollTo(0,0);0"); time.sleep(1.4 if tab == 'map' else .5)
             pg.screenshot(path=str(OUT / f'{name}-{tab}.png'))
-        pg.evaluate("uiState.tab='walk';saveData.trip.node=0;render();openShop('sundown');0"); time.sleep(.5); pg.screenshot(path=str(OUT / f'{name}-shop.png'))
+        pg.evaluate("uiState.tab='walk';saveData.trip.node=0;render();openShop('marigold');0"); time.sleep(.5); pg.screenshot(path=str(OUT / f'{name}-shop.png'))
         pg.evaluate("closeModal();screenWipe=f=>f();0")
         areas = pg.evaluate('Object.keys(BATTLE_STAGES)') if name == 'phone' else ['grass', 'mall']
         pg.evaluate("saveData.preferences.battleStage='classic';0")  # the painted backdrops first
@@ -151,8 +151,8 @@ def check_game(pw, base, results):
                 if name == 'phone' or i in (0, 10, 12): pg.screenshot(path=str(OUT / f'{name}-scene-{pg.evaluate("walkView.id")}.png'))
             if name == 'desktop':
                 # v18: cliffs, stairs, bridges, waterfalls, arches and escalators up close
-                for node, x, z, label in ((0, 23.2, 17.6, 'sundown-stairs'), (12, 32.5, 9.6, 'city-canal'), (12, 32.5, 30.5, 'city-stairs'), (11, 22, 25.6, 'ridge-bridge'),
-                                          (9, 27, 21, 'pond-falls'), (8, 31, 18.5, 'mall-escalators'), (4, 11.2, 14.2, 'grotto-cascade'), (5, 19.3, 7.4, 'canyon-arch')):
+                for node, x, z, label in ((0, 23.2, 17.6, 'marigold-stairs'), (12, 32.5, 9.6, 'verdigris-canal'), (12, 32.5, 30.5, 'verdigris-stairs'), (11, 22, 25.6, 'kitewind-bridge'),
+                                          (9, 27, 21, 'willowmere-falls'), (8, 31, 18.5, 'lanternhall-escalators'), (4, 11.2, 14.2, 'fizzwell-cascade'), (5, 19.3, 7.4, 'stepstone_canyon-arch')):
                     if node >= pg.evaluate('LOCATIONS.length'): continue
                     pg.evaluate(f"saveData.trip={{node:{node},prog:0,plan:[],hold:false}};saveData.visited[{node}]=1;uiState.roam=null;render();0"); time.sleep(2.6)
                     pg.evaluate(f"walkView.pl.x={x};walkView.pl.z={z};walkView.pl.route=null;0"); time.sleep(2.2)
@@ -168,7 +168,7 @@ def check_game(pw, base, results):
             pg.evaluate("(()=>{const n=tripTo(9).steps;setTrip(9);addSteps(n,true)})();uiState.toastQ=[];uiState.modal=null;uiState.mq=[];renderOverlay();render();0"); time.sleep(3)
             trip = pg.evaluate("[saveData.trip.node,saveData.trip.plan.length,walkView.id,!!saveData.visited[9]]")
             pg.screenshot(path=str(OUT / f'{name}-arrived.png'))
-            results.setdefault('walk', {})[name] = {'walkedTo': roam, 'tripEnd': trip, 'ok': abs(roam[0] - tgt[0]) < .8 and abs(roam[1] - tgt[1]) < .8 and trip[0] == 9 and trip[1] == 0 and trip[2] == 'pond'}
+            results.setdefault('walk', {})[name] = {'walkedTo': roam, 'tripEnd': trip, 'ok': abs(roam[0] - tgt[0]) < .8 and abs(roam[1] - tgt[1]) < .8 and trip[0] == 9 and trip[1] == 0 and trip[2] == 'willowmere'}
         fps = pg.evaluate('[frameScheduler.meter.fps,frameScheduler.hz,battleStage.q.lvl]')
         results['viewports'][name] = {'bootSeconds': boot, 'errors': errs[:10], 'trainerBattleWon': won, 'battleFps': fps[0], 'displayHz': fps[1], 'qualityLevel': fps[2]}
         ctx.close()

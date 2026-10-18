@@ -22,8 +22,8 @@ W, H = 48, 32
 
 # only towns fly a flag: field colours (ramp keys) and the emblem for each; every other scene's pole flies the coin ring
 TOWNS = dict(
-    sundown=('coral', 'cream', 'sun'), foodcourt=('red', 'cream', 'fork'), mall=('lilac', 'marble', 'shell'),
-    city=('iron', 'gold', 'coin'), taxhaven=('mint', 'gold', 'palm'), summit=('plum', 'gold', 'star'), default=('teal', 'gold', 'coinring'))
+    marigold=('coral', 'cream', 'sun'), pepperpot=('red', 'cream', 'fork'), lanternhall=('lilac', 'marble', 'shell'),
+    verdigris=('iron', 'gold', 'coin'), palmhaven=('mint', 'gold', 'palm'), frostcrown=('plum', 'gold', 'star'), default=('teal', 'gold', 'coinring'))
 R.update({k: bsp.ramp(v) for k, v in dict(snowc=(238, 242, 248), plum=(120, 72, 140)).items()})
 
 
@@ -131,7 +131,7 @@ def flag(name):
     for y in range(H):
         for x in range(W):
             t = 2 if y < H * .5 else 1
-            if name in ('sundown', 'farm', 'lake') and y > H - 6: t = 3
+            if name in ('marigold', 'clovercrest', 'mirrormere') and y > H - 6: t = 3
             cv.px(x, y, Rb[t])
     for y in range(H): cv.px(0, y, Rb[0]); cv.px(1, y, Rb[1])      # the hoist edge
     emblem(cv, kind, Rf, Rb)

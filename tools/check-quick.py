@@ -6,7 +6,7 @@
     python3 tools/check-quick.py --smoke         # the fast subset: data and code, Start-Game on a phone + debug log, Studio opens
     python3 tools/check-quick.py --studio        # also the Studio round trip on a temporary copy
     python3 tools/check-quick.py --closeups      # also close-up pictures of cliffs, stairs, bridges and water
-    python3 tools/check-quick.py --scenes=city,pond   # only these walk scenes (by id), for a change to one place
+    python3 tools/check-quick.py --scenes=verdigris,willowmere   # only these walk scenes (by id), for a change to one place
     python3 tools/check-quick.py --steps=v34,battle   # only the steps whose names hold these words
     python3 tools/check-quick.py --tests         # also draw every test scene and take its pictures (the walking checks
                                                  # of the test scenes always run; they need no drawing)
@@ -262,7 +262,7 @@ def copperleaf_data():
     if start != 'copperleaf' or 'copperleaf' not in ix: raise Exception(f'a new game starts at {start!r}')
     if (R[ix.get('hedgerow', 0)] or {}).get('route') != 'Route 1': bad.append('Hedgerow Lane is not Route 1')
     S_ = D['maps']; C = D['scenery']['props']
-    for rid, a, b in (('road:sundown-hedgerow', 'sundown', 'hedgerow'), ('road:hedgerow-copperleaf', 'hedgerow', 'copperleaf')):
+    for rid, a, b in (('road:marigold-hedgerow', 'marigold', 'hedgerow'), ('road:hedgerow-copperleaf', 'hedgerow', 'copperleaf')):
         L = next((L for L in D['roads'] if len(L) > 3 and (L[3] or {}).get('id') == rid), None)
         if not L: bad.append(f'no road {rid}'); continue
         sa = next((e['side'] for e in S_[a].get('edgeExits') or [] if e['id'] == L[3].get('a')), None); sb = next((e['side'] for e in S_[b].get('edgeExits') or [] if e['id'] == L[3].get('b')), None)
@@ -279,7 +279,7 @@ def copperleaf_data():
     for k in ('copperleaf', 'hedgerow'):
         if k not in (LO.get('locations') or {}): bad.append(f'no lore for {k}')
     if 'juniper' not in (LO.get('people') or {}): bad.append('Granny Juniper has no page in the Lore')
-    sd = S_['sundown']; sign = [p.get('say') for p in sd['props'] if p.get('act') == 'sign']
+    sd = S_['marigold']; sign = [p.get('say') for p in sd['props'] if p.get('act') == 'sign']
     if 'Route 1 · Hedgerow Lane this way.' not in sign: bad.append(f'Marigold Town’s signposts: {sign}')
     # the opening's stage: east and south of the lab's door, as cutscene.js CUTSCENE_SPOTS has it (door [7.4, 15.4])
     lab = next(p for p in cl['props'] if p.get('act') == 'lab'); M = C[lab['k']]; dx = M['door']['x'] / 34 * lab.get('s', 1) * (-1 if lab.get('f') else 1)
@@ -358,7 +358,7 @@ def check_postcards():
         else: n += 1
         sc = D['maps'][sid]
         if sid != 'copperleaf' and not any(p['k'] in kit or p.get('roof') for p in sc['props']): bad.append(f'{r["id"]}: no solarpunk touch')
-    city = D['maps'].get('city') or {}
+    city = D['maps'].get('verdigris') or {}
     if not city.get('a04park') or not any(p.get('label') == 'Verdigris Park' for p in city.get('props', [])): bad.append('Verdigris City has no park')
     for k in kit:
         if k not in C: bad.append(f'{k} missing from the catalogue')
@@ -548,7 +548,7 @@ def phone_flow(b, base, R):
         play(pg)
         for tab in ['walk', 'map', 'team', 'ledger', 'profile']:
             pg.evaluate(f"uiState.tab='{tab}';render();scrollTo(0,0);0"); time.sleep(2.5 if tab in ('walk', 'map') else .6); shot(pg, f'phone-{tab}')
-        pg.evaluate("uiState.tab='walk';saveData.trip.node=0;render();openShop('sundown');0"); time.sleep(.6); shot(pg, 'phone-shop')
+        pg.evaluate("uiState.tab='walk';saveData.trip.node=0;render();openShop('marigold');0"); time.sleep(.6); shot(pg, 'phone-shop')
         pg.evaluate("closeModal();screenWipe=f=>f();saveData.preferences.battleStage='classic';activeBattle=null;const q={id:'tq',sp:'knight1',lvl:12,gold:false,no:1};saveData.queue=[q];saveData.team.forEach(m=>{m.hp=maxHp(m)});startWild(q);0")
         if wait_phase(pg) != 'choose': raise Exception('a wild battle never reached the move menu')
         shot(pg, 'phone-battle')
@@ -643,8 +643,8 @@ def desktop_steps(b, base, R):
     if '--closeups' in ARGS:
         @step('Close-ups of cliffs, stairs, bridges and water', 180)
         def closeups():
-            spots = [('sundown', 23.2, 17.6, 'sundown-stairs'), ('city', 32.5, 9.6, 'city-canal'), ('city', 32.5, 30.5, 'city-stairs'), ('ridge', 22, 25.6, 'ridge-bridge'),
-                     ('pond', 27, 21, 'pond-falls'), ('mall', 31, 18.5, 'mall-escalators'), ('grotto', 11.2, 14.2, 'grotto-cascade'), ('canyon', 19.3, 7.4, 'canyon-arch')]
+            spots = [('marigold', 23.2, 17.6, 'marigold-stairs'), ('verdigris', 32.5, 9.6, 'verdigris-canal'), ('verdigris', 32.5, 30.5, 'verdigris-stairs'), ('kitewind', 22, 25.6, 'kitewind-bridge'),
+                     ('willowmere', 27, 21, 'willowmere-falls'), ('lanternhall', 31, 18.5, 'lanternhall-escalators'), ('fizzwell', 11.2, 14.2, 'fizzwell-cascade'), ('stepstone_canyon', 19.3, 7.4, 'stepstone_canyon-arch')]
             for sid, x, z, label in spots:
                 if sid not in ids or (ONLY and sid not in ONLY): continue
                 go_scene(pg, ids.index(sid)); pg.evaluate(f"walkView.pl.x={x};walkView.pl.z={z};walkView.pl.route=null;0"); time.sleep(2.5); shot(pg, f'closeup-{label}')
@@ -688,7 +688,7 @@ def desktop_steps(b, base, R):
         pg.evaluate("if(typeof talkBox!=='undefined'&&talkBox.on&&typeof talkHide==='function')talkHide();0")
         if abs(roam[0] - tgt[0]) > .8 or abs(roam[1] - tgt[1]) > .8: raise Exception(f'tapped {tgt}, ended at {roam} ({pg.evaluate("JSON.stringify({mode:walkView.opt.state&&walkView.opt.state().mode,route:saveData.trip,battle:!!activeBattle,modal:uiState.modal&&uiState.modal.title,talk:talkBox.on,cs:typeof cutscene!==\"undefined\"&&cutscene.on,climb:!!walkView.pl.climb,keys:Object.keys(walkView.keys||{})})")})')
         pg.evaluate("(()=>{const n=tripTo(9).steps;setTrip(9);addSteps(n,true)})();uiState.toastQ=[];uiState.modal=null;uiState.mq=[];renderOverlay();render();0")   # alpha 0.2: the steps a trip costs follow the walk
-        if not until(pg, "saveData.trip.node===9&&!saveData.trip.plan.length&&(walkView.id==='pond'||(walkView.sc&&walkView.sc.baseId==='pond'))", 30): raise Exception('the trip to Willowmere didn’t arrive (' + pg.evaluate("JSON.stringify([saveData.trip,walkView.id])") + ')')   # v43: you arrive at the exit, with the road still in view
+        if not until(pg, "saveData.trip.node===9&&!saveData.trip.plan.length&&(walkView.id==='willowmere'||(walkView.sc&&walkView.sc.baseId==='willowmere'))", 30): raise Exception('the trip to Willowmere didn’t arrive (' + pg.evaluate("JSON.stringify([saveData.trip,walkView.id])") + ')')   # v43: you arrive at the exit, with the road still in view
         shot(pg, 'arrived')
         return f'walked to {roam}, arrived at Willowmere'
     walking()
@@ -722,7 +722,7 @@ def desktop_steps(b, base, R):
         odds = pg.evaluate("(()=>{const ps=Object.keys(SPECIES).find(k=>SPECIES[k].types.includes('Psychic'));if(!ps)return [10];return environmentOdds([[ps,10]]).map(x=>+x[1].toFixed(2))})()")
         out.append('brightness ' + ', '.join(f'{k} {v}' for k, v in bright.items()))
         # a dark cave: away from the lantern it's dim
-        node = pg.evaluate("LOCATIONS.findIndex(r=>r.mapId==='grotto')")
+        node = pg.evaluate("LOCATIONS.findIndex(r=>r.mapId==='fizzwell')")
         if node >= 0:
             pg.evaluate("environment.force=null;0"); go_scene(pg, node); time.sleep(2); shot(pg, 'env-dark-cave'); out.append('cave drawn')
         # walk into the shop and out again
@@ -750,14 +750,14 @@ def desktop_steps(b, base, R):
     def animals():
         if not pg.evaluate("typeof LIFE_KIND!=='undefined'&&!!LIFE_KIND.frog"): return 'no new animals in this build'
         pg.evaluate("environment.force={time:13,weather:'clear',season:'summer'};0")
-        node = pg.evaluate("LOCATIONS.findIndex(r=>r.mapId==='pond')"); go_scene(pg, node); time.sleep(3)
+        node = pg.evaluate("LOCATIONS.findIndex(r=>r.mapId==='willowmere')"); go_scene(pg, node); time.sleep(3)
         kinds = pg.evaluate("[...new Set(ambientLife.list.map(c=>c.k))]")
         for k in ('frog', 'rabbit'):
             if k not in kinds: raise Exception(f'no {k} at Willowmere (animals there: {", ".join(kinds)})')
         pg.evaluate("(()=>{const f=ambientLife.list.find(c=>c.k==='frog'&&!(c.hide>0));walkView.pl.route=null;const p=walkablePointNear(f.x+.7,f.z-.4);walkView.pl.x=p[0];walkView.pl.z=p[1]})();0"); time.sleep(4)
         leapt = pg.evaluate("ambientLife.list.some(c=>c.k==='frog'&&(c.hide>0||c.dive||c.st==='run'))")
         if not leapt: raise Exception('a frog didn’t leap away when you stood next to it')
-        shot(pg, 'life-pond')
+        shot(pg, 'life-willowmere')
         pg.evaluate("environment.force={time:11,weather:'snow',season:'winter'};0"); go_scene(pg, 0); time.sleep(1)
         end = pg.evaluate("(()=>{const e=[walkView.pl.x-6,walkView.pl.z-1.5];walkView.pl.route=[[walkView.pl.x,walkView.pl.z],[walkView.pl.x-4,walkView.pl.z+1],e];walkView.pl.ri=1;return e})()"); time.sleep(3)
         until(pg, f"Math.hypot(walkView.pl.x-({end[0]}),walkView.pl.z-({end[1]}))<.6", 25); time.sleep(1)     # alpha 0.1: walk to the end, however slowly frames come here
@@ -803,7 +803,7 @@ def desktop_steps(b, base, R):
         if not w: raise Exception('photo mode didn’t take a picture')
         out.append(f'photo {w}px wide')
         # up a ladder at Kitewind Ridge
-        node = pg.evaluate("LOCATIONS.findIndex(r=>r.mapId==='ridge')")
+        node = pg.evaluate("LOCATIONS.findIndex(r=>r.mapId==='kitewind')")
         if node >= 0:
             go_scene(pg, node); time.sleep(1.5)
             r = pg.evaluate("(()=>{const p=walkView.sc.props.find(p=>p.act==='climb');if(!p)return null;const E=climbEnds(p);walkView.pl.route=null;walkView.pl.x=E.bot[0];walkView.pl.z=E.bot[1];walkView.pl.yv=standingHeightAt(E.bot[0],E.bot[1]);return [E.top[0],E.top[1],standingHeightAt(E.top[0],E.top[1]),p.h]})()")
@@ -831,7 +831,7 @@ def desktop_steps(b, base, R):
         f = pg.evaluate("""(()=>{const fr=personWalkFrames('me'),a=fr.side[0],b=fr.sideR[0],px=c=>{const x=c.getContext('2d');return x.getImageData(0,0,c.width,c.height).data};const A=px(a),B=px(b);let same=0,n=0;for(let i=3;i<A.length;i+=4){if(A[i]>0||B[i]>0){n++;if(A[i]===B[i]&&A[i-1]===B[i-1]&&A[i-2]===B[i-2])same++}}return [n,same]})()""")
         if f[0] and f[1] / f[0] > .97: raise Exception('walking left and walking right show the same picture')
         out.append('left and right walking frames differ')
-        node = pg.evaluate("LOCATIONS.findIndex(r=>r.mapId==='pond')")
+        node = pg.evaluate("LOCATIONS.findIndex(r=>r.mapId==='willowmere')")
         if node >= 0:
             go_scene(pg, node); time.sleep(1)
             sh = pg.evaluate("[!!walkRenderer.shoreF,!!walkRenderer.shoreTex,walkRenderer.shoreF?walkRenderer.shoreF.FW:0]")
@@ -850,7 +850,7 @@ def desktop_steps(b, base, R):
         day = pg.evaluate("[walkRenderer.roomSky&&walkRenderer.roomSky.I,walkRenderer.roomSky&&walkRenderer.roomSky.lamp,(roomLamps(walkView.sc)||[]).length,!!walkRenderer.roomBox]")
         pg.evaluate("environment.force={time:23,weather:'clear',season:'summer'};walkRenderer.roomSkyT=0;0"); time.sleep(2); shot(pg, 'room-night')
         night = pg.evaluate("[walkRenderer.roomSky&&walkRenderer.roomSky.night,walkRenderer.roomSky&&walkRenderer.roomSky.lamp]")
-        pg.evaluate("environment.force=null;leaveRoom();0"); until(pg, "walkView.ready&&!walkView.sc.roomRect&&(walkView.id==='sundown'||(walkView.sc&&walkView.sc.baseId==='sundown'))", 30)
+        pg.evaluate("environment.force=null;leaveRoom();0"); until(pg, "walkView.ready&&!walkView.sc.roomRect&&(walkView.id==='marigold'||(walkView.sc&&walkView.sc.baseId==='marigold'))", 30)
         if not day[3] or not day[0] or day[0] < .2 or night[1] < .9 or day[2] < 1: raise Exception(f'room light: day {day}, night {night}')
         out.append(f'room: daylight {day[0]:.2f}, {day[2]} lamps lit at night')
         # settings in tabs, every tab fits the phone width; a switch flips
@@ -892,7 +892,7 @@ def desktop_steps(b, base, R):
         if not pg.evaluate("typeof cullItems==='function'"): return 'not in this build'
         out = []
         # what's off screen is skipped (Verdigris City is the biggest scene)
-        node = pg.evaluate("LOCATIONS.findIndex(r=>r.mapId==='city')")
+        node = pg.evaluate("LOCATIONS.findIndex(r=>r.mapId==='verdigris')")
         if node >= 0:
             go_scene(pg, node); until(pg, "!!walkRenderer.grass&&!walkRenderer.grassJob", 60); f0 = pg.evaluate("walkRenderer.frames"); until(pg, f"walkRenderer.frames>{f0 + 2}", 20)   # v46: the grass of a big view is still being planted for a while
             c = pg.evaluate("[walkRenderer.culled||0,walkRenderer.cullOf||0,walkRenderer.grassDrawn||0,walkRenderer.grass?walkRenderer.grass.n:0]")
@@ -975,7 +975,7 @@ def desktop_steps(b, base, R):
             pg.evaluate("if(activeBattle){activeBattle.over=activeBattle.over||'ran';activeBattle.phase='end';endBattle()};0"); time.sleep(2.5); pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();0")
         # the world: billionaires waiting in the grass (one an Alpha; v46: each keeps its spot), the buddy, a trainer's companion
         pg.evaluate("saveData.queue=[];for(let i=0;i<3;i++){const q=spawn(false);if(!i)q.alpha=true};saveData.buddy=saveData.team[1].uid;save();0")
-        node = pg.evaluate("LOCATIONS.findIndex(r=>r.mapId==='longgrass')")
+        node = pg.evaluate("LOCATIONS.findIndex(r=>r.mapId==='tallgrass_meadow')")
         go_scene(pg, node); time.sleep(4)
         w0 = pg.evaluate("JSON.stringify(Object.fromEntries(Object.entries(walkView.enc).map(([k,v])=>[k,[v.x,v.z]])))"); time.sleep(5)
         w = json.loads(pg.evaluate(f"(()=>{{const p0={w0};return JSON.stringify({{shown:(walkView.st.enc||[]).filter(e=>worldBillies.mons[e.id]).length,moved:Object.entries(walkView.enc).filter(([k,v])=>p0[k]&&Math.hypot(v.x-p0[k][0],v.z-p0[k][1])>.25).length,alpha:(walkView.st.enc||[]).some(e=>e.alpha),bud:!!worldBillies.bud}})}})()"))
@@ -997,11 +997,11 @@ def desktop_steps(b, base, R):
     def v34():
         out = []
         # (v37: the 2x "detailed art" of v34 is retired; the ground is the 32 px tiles of v37) open a scene and read the renderer's counters
-        node = pg.evaluate("LOCATIONS.findIndex(r=>r.mapId==='city')")
+        node = pg.evaluate("LOCATIONS.findIndex(r=>r.mapId==='verdigris')")
         if node >= 0: go_scene(pg, node); time.sleep(6)
         r = json.loads(pg.evaluate("JSON.stringify({tp:(walkRenderer.ring&&walkRenderer.ring.TP)||(walkView.ground&&walkView.ground._TP),mb:Math.round((gpuState.texB||0)/1048576),sh:[walkRenderer.shHit||0,walkRenderer.shMiss||0],grid:walkRenderer.gridSkip||0,gpu:gpuState.gpuX?'timer':'no timer'})"))
         if r['tp'] != 32: raise Exception(f'the ground isn’t painted from the 32 px tiles (tile {r["tp"]} px)')
-        shot(pg, 'v34-city')
+        shot(pg, 'v34-verdigris')
         out.append(f"ground {r['tp']} px a tile, {r['mb']} MB of pictures on the card; shadow cache {r['sh'][0]} kept / {r['sh'][1]} drawn; {r['grid']} props skipped by the grid; GPU {r['gpu']}")
         # walk cycles per body plan, front and back only
         w = pg.evaluate("""(()=>{const plans={};for(const sp of Object.keys(SPECIES)){const R=typeof rigParts==='function'?rigParts(sp,false,1):null;if(!R||plans[R.plan])continue;const a=worldBillyFrame(sp,false,'front','walk',0,1),b=worldBillyFrame(sp,false,'front','walk',280,1);if(!a||!b)continue;
@@ -1117,14 +1117,14 @@ def desktop_steps(b, base, R):
         out = []
         if pg.evaluate("typeof artHdOf==='function'||typeof dglHdAuto==='function'||!!window.NW_HD"): raise Exception('the v34 2x pipeline is still in the build')
         if (GAME / 'art' / 'hd').exists() or (GAME / 'data' / 'hdart.js').exists(): raise Exception('art/hd or data/hdart.js still shipped')
-        node = pg.evaluate("LOCATIONS.findIndex(r=>r.mapId==='sundown')")
+        node = pg.evaluate("LOCATIONS.findIndex(r=>r.mapId==='marigold')")
         if node < 0: raise Exception('no Marigold Town')
         go_scene(pg, node); time.sleep(8)
         tp = pg.evaluate("(walkRenderer.ring&&walkRenderer.ring.TP)||(walkView.ground&&walkView.ground._TP)")
         if tp != 32: raise Exception(f'Marigold Town ground painted at {tp} px a tile')
         r = json.loads(pg.evaluate("JSON.stringify({made:buildingState.made||0,drawn:buildingState.drawn||0,n:(walkView.sc.props||[]).filter(p=>{const M=gameData.scenery.props[p.k];return M&&M.build}).length})"))
         if r['made'] < 1: raise Exception('no 3D building model was built at Marigold Town')
-        shot(pg, 'v37-sundown')
+        shot(pg, 'v37-marigold')
         out.append(f"Marigold Town: ground {tp} px a tile; {r['made']} building models built over frames, {r['drawn']} drawn, {r['n']} buildings in the scene")
         # v47: the 16 px dial is gone; the 32 px ground is the only full-mode ground
         if pg.evaluate("engineSetting('world','nextArt')!==undefined"): raise Exception('the old 32 px ground dial is still in the settings')
@@ -1211,7 +1211,7 @@ def desktop_steps(b, base, R):
         nsig = pg.evaluate("Object.values(MOVES).filter(m=>m.sig).length")
         out.append(f'{nsig} signature moves, one per new line; every pool, egg and fishing list names a living species')
         # the legendary at the volcano
-        node = pg.evaluate("LOCATIONS.findIndex(r=>r.mapId==='volcano')")
+        node = pg.evaluate("LOCATIONS.findIndex(r=>r.mapId==='cinderpeak')")
         if node >= 0:
             pg.evaluate("delete saveData.story['legend_rockefeller0'];delete saveData.caught.rockefeller0;storyState.pending=null;uiState.modal=null;uiState.mq=[];if(talkBox.on&&typeof talkHide==='function')talkHide();renderOverlay();0"); go_scene(pg, node); time.sleep(3)
             if not until(pg, "!!uiState.modal&&/leaking/.test(uiState.modal.title||'')", 40): raise Exception(f"the legendary at the volcano did not show up ({pg.evaluate('JSON.stringify({ready:walkView.ready,id:walkView.id,tab:uiState.tab,modal:uiState.modal&&uiState.modal.title,talk:talkBox.on,cs:cutscene.on,pend:storyState.pending,flag:saveData.story.legend_rockefeller0,route:saveData.trip,b:!!activeBattle})')})")
@@ -1276,7 +1276,7 @@ def desktop_steps(b, base, R):
         if diff['out']: raise Exception('join table: ' + '; '.join(diff['out'][:4]))
         out.append(f'{n_ex} edge-relative exits, {diff["joined"]} road ends joined by name')
         # a resize keeps exits on their edge: grow a copy of Tallgrass Meadow by 6 m each way, then shrink it back
-        r = json.loads(pg.evaluate("""JSON.stringify((()=>{const sc=JSON.parse(JSON.stringify(mapById('longgrass')));delete sc._exk;const before=sc.exits.map(p=>p.slice());sc.w+=6;sc.h+=6;syncExits(sc);const after=sc.exits;
+        r = json.loads(pg.evaluate("""JSON.stringify((()=>{const sc=JSON.parse(JSON.stringify(mapById('tallgrass_meadow')));delete sc._exk;const before=sc.exits.map(p=>p.slice());sc.w+=6;sc.h+=6;syncExits(sc);const after=sc.exits;
          const ok=sc.edgeExits.every((e,k)=>{const p=after[k],q=before[k],n=e.in==null?1.1:e.in;return e.side==='N'?Math.abs(p[1]-(sc.h-n))<.02:e.side==='S'?Math.abs(p[1]-n)<.02:e.side==='E'?Math.abs(p[0]-(sc.w-n))<.02:Math.abs(p[0]-n)<.02});return {ok,before,after,E:sc.edgeExits}})())"""))
         if not r['ok']: raise Exception(f'after a resize the exits left their edge: {r}')
         out.append('a resized scene keeps its exits on their edges')
@@ -1298,22 +1298,22 @@ def desktop_steps(b, base, R):
         if r['out']: raise Exception('roads: ' + '; '.join(r['out']))
         out.append(f'{r["n"]} road views composed for {pg.evaluate("ROADS.length")} roads, the biggest {r["mx"]} m, scene tiles carried over exactly')
         # a trip seen on the ground: leave Marigold Town, cross the road, arrive at Tallgrass Meadow without a remount
-        go_scene(pg, 0); pg.evaluate("(()=>{const h=mapHub(mapById('sundown'));uiState.roam={id:'sundown',node:0,x:h[0],z:h[1]}})();render();0")   # alpha 0.2: places grew; start at the hub
-        if not until(pg, "walkView.id==='w:sundown*'&&walkView.ready", 30): raise Exception('Marigold Town is not shown with its roads (' + pg.evaluate('walkView.id') + ')')   # v46: a place is always shown with the first stretch of its roads
+        go_scene(pg, 0); pg.evaluate("(()=>{const h=mapHub(mapById('marigold'));uiState.roam={id:'marigold',node:0,x:h[0],z:h[1]}})();render();0")   # alpha 0.2: places grew; start at the hub
+        if not until(pg, "walkView.id==='w:marigold*'&&walkView.ready", 30): raise Exception('Marigold Town is not shown with its roads (' + pg.evaluate('walkView.id') + ')')   # v46: a place is always shown with the first stretch of its roads
         pg.evaluate("saveData.queue=[];setTrip(1);render();0"); time.sleep(1); ids = []
         per = pg.evaluate("Math.ceil(roadCost(0,1)/6)+5")   # alpha 0.2: a road's steps follow its walk
         for n in range(6):
             pg.evaluate(f"addSteps({per},true);uiState.modal=null;uiState.mq=[];renderOverlay();render();0"); time.sleep(2.5); ids.append(pg.evaluate("walkView.id"))
             if pg.evaluate("!walkView.ready"): raise Exception('the view went unready mid-road (a remount instead of a shift)')
-        if not until(pg, "saveData.trip.node===1&&saveData.trip.prog===0&&walkView.id.startsWith('w:longgrass')", 20): raise Exception(f'the walk to Tallgrass Meadow did not end on its ground ({ids})')
+        if not until(pg, "saveData.trip.node===1&&saveData.trip.prog===0&&walkView.id.startsWith('w:tallgrass_meadow')", 20): raise Exception(f'the walk to Tallgrass Meadow did not end on its ground ({ids})')
         shot(pg, 'v43-road')
         views = [i for k, i in enumerate(ids) if k == 0 or ids[k - 1] != i]
         out.append('walked Marigold Town → Tallgrass Meadow on the ground: ' + ' → '.join(views + [pg.evaluate("walkView.id")]))
         # the flags: only towns have one; a flag pole flies its town's and is rigid
-        fl = json.loads(pg.evaluate("JSON.stringify({towns:gameData.scenery.flags,pole:gameData.scenery.props.flag_pole,ridge:(gameData.maps.ridge.props||[]).filter(p=>p.k==='flag_pole').length,path:flagPicturePath(gameData.maps.sundown),pathRoute:flagPicturePath(gameData.maps.longgrass)})"))
+        fl = json.loads(pg.evaluate("JSON.stringify({towns:gameData.scenery.flags,pole:gameData.scenery.props.flag_pole,ridge:(gameData.maps.kitewind.props||[]).filter(p=>p.k==='flag_pole').length,path:flagPicturePath(gameData.maps.marigold),pathRoute:flagPicturePath(gameData.maps.tallgrass_meadow)})"))
         for t in fl['towns'] + ['default']:
             if not (ROOT / 'game' / 'art' / 'scene' / 'flags' / (t + '.png')).exists(): raise Exception(f'no flag picture for {t}')
-        if fl['pole']['sway'] or not fl['pole'].get('flag') or fl['ridge'] or fl['path'] != 'scene/flags/sundown.png' or fl['pathRoute'] != 'scene/flags/default.png': raise Exception(f'flags: {fl}')
+        if fl['pole']['sway'] or not fl['pole'].get('flag') or fl['ridge'] or fl['path'] != 'scene/flags/marigold.png' or fl['pathRoute'] != 'scene/flags/default.png': raise Exception(f'flags: {fl}')
         out.append(f'{len(fl["towns"])} town flags, poles rigid with a waving cloth, routes fly the coin ring')
         # wind: every plant sways
         still = json.loads(pg.evaluate("JSON.stringify(Object.entries(walkData().sc.props).filter(([k,M])=>/^(tree|bush|flower|tulip|daisy|fern|reed|cattail|grass|tallgrass|lavender|heather|sedge|bracken|nettle|iris|bulrush)/.test(k)&&!M.flat&&!/fallen|stump|log/.test(k)&&!(M.sway>0)).map(([k])=>k))"))
@@ -1465,7 +1465,7 @@ def desktop_steps(b, base, R):
         if not r['shopGone']: raise Exception('the shop’s outside is still standing in its own room')
         out.append(f'shop room laid in at its door (doorway {r["exit"][0]:.1f}, door {r["door"][0]:.1f}), town dimmed {r["dim"]:.2f}')
         pg.evaluate("leaveRoom();0")
-        if not until(pg, "walkView.ready&&!walkView.sc.roomRect&&walkView.id==='w:sundown*'", 30): raise Exception('walking out didn’t bring the town back (' + pg.evaluate("walkView.id") + ')')
+        if not until(pg, "walkView.ready&&!walkView.sc.roomRect&&walkView.id==='w:marigold*'", 30): raise Exception('walking out didn’t bring the town back (' + pg.evaluate("walkView.id") + ')')
         time.sleep(1.5); shot(pg, 'v46-room-out')
         back = pg.evaluate("(()=>{const d=uiState.roam;const s=walkView.sc.props.some(p=>p.act==='shop');return [Math.hypot(walkView.pl.x-window.__shop[0],walkView.pl.z-window.__shop[1]),s]})()")
         if back[0] > 3 or not back[1]: raise Exception(f'outside: {back[0]:.1f} m from the shop, shop standing {back[1]}')
@@ -1518,8 +1518,8 @@ def desktop_steps(b, base, R):
         keep = pg.evaluate("JSON.stringify({seats:saveData.seats,story:saveData.story,flags:saveData.flags,visited:saveData.visited,beaten:saveData.beaten||null})")
         try:
             g = pg.evaluate("""(()=>{const ix=id=>LOCATIONS.findIndex(r=>r.id===id),s0=saveData.seats,o={};
-              saveData.seats=['oil','retail','peak'];o.festShut=!canEnter(ix('festival'));saveData.seats=[...S.seats,'haven'];o.festOpen=canEnter(ix('festival'));
-              o.frozenShut=!canEnter(ix('frozen'));saveData.seats=[...S.seats,'bloom','vault','morel'];o.frozenStill=!canEnter(ix('frozen'));saveData.seats=[...S.seats,'carat'];o.frozenOpen=canEnter(ix('frozen'));
+              saveData.seats=['oil','retail','peak'];o.festShut=!canEnter(ix('fanfare_fields'));saveData.seats=[...S.seats,'haven'];o.festOpen=canEnter(ix('fanfare_fields'));
+              o.frozenShut=!canEnter(ix('rimefrost'));saveData.seats=[...S.seats,'bloom','vault','morel'];o.frozenStill=!canEnter(ix('rimefrost'));saveData.seats=[...S.seats,'carat'];o.frozenOpen=canEnter(ix('rimefrost'));
               saveData.seats=s0;o.songs=LOCATIONS.filter(r=>!r.music||!SONGS[r.music]).filter(r=>gameData.maps[r.mapId]&&gameData.maps[r.mapId].v47region).map(r=>r.id+':'+r.music);
               /* each new town's shop opens into its own room */
               o.rooms=LOCATIONS.filter(r=>gameData.maps[r.mapId]&&gameData.maps[r.mapId].v47region&&gameData.maps[r.mapId].kind==='town').map(r=>{const p=gameData.maps[r.mapId].props.find(p=>p.act==='shop');return [r.id,p&&roomFor('shop',p)]}).filter(([k,v])=>!v||!v.startsWith('int_')||['int_shop','int_bank','int_market_hall'].includes(v)).map(x=>x.join(' → '));return o})()""")
@@ -1649,11 +1649,11 @@ def desktop_steps(b, base, R):
         floating = [f"{r['id']}: {', '.join(r['fl'][:3])}" for r in R2 if r['fl']]
         if moved: raise Exception('shaped terraces change where you can walk: ' + '; '.join(moved[:5]))
         if floating: raise Exception('props in the air: ' + '; '.join(floating[:5]))
-        bench_pic = "uiState.modal=null;uiState.mq=[];renderOverlay();uiState.tab='walk';uiState.bench={id:'pass',test:1};render();0"
+        bench_pic = "uiState.modal=null;uiState.mq=[];renderOverlay();uiState.tab='walk';uiState.bench={id:'hornpass',test:1};render();0"
         pg.evaluate("environment.force={time:12.5,weather:'clear',season:'summer'};" + bench_pic)
-        if until(pg, "!!(walkView.ready&&walkView.id==='pass')", 60):
-            f0 = pg.evaluate("walkRenderer.frames"); until(pg, f'walkRenderer.frames>={f0 + 6}', 30); pg.evaluate("(()=>{const g=mapById('pass').grown2||{};walkView.pl.x=69.5+(g.W||0);walkView.pl.z=25+(g.S||0);walkView.pl.route=null})();0")   # alpha 0.2: the pass grew
-            f1 = pg.evaluate("walkRenderer.frames"); until(pg, f'walkRenderer.frames>={f1 + 8}', 60); time.sleep(.5); shot(pg, 'a02-terrace-pass')
+        if until(pg, "!!(walkView.ready&&walkView.id==='hornpass')", 60):
+            f0 = pg.evaluate("walkRenderer.frames"); until(pg, f'walkRenderer.frames>={f0 + 6}', 30); pg.evaluate("(()=>{const g=mapById('hornpass').grown2||{};walkView.pl.x=69.5+(g.W||0);walkView.pl.z=25+(g.S||0);walkView.pl.route=null})();0")   # alpha 0.2: the pass grew
+            f1 = pg.evaluate("walkRenderer.frames"); until(pg, f'walkRenderer.frames>={f1 + 8}', 60); time.sleep(.5); shot(pg, 'a02-terrace-hornpass')
         pg.evaluate("uiState.bench=null;environment.force=null;render();0")
         if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
         return f'{len(R2)} places: the same cells and exits reachable with natural terraces as without, no prop more than 15 cm off the ground'
@@ -1715,11 +1715,11 @@ def desktop_steps(b, base, R):
         pg.evaluate("talkHide&&talkHide();if(uiState.inside)leaveRoom();0"); until(pg, "walkView.ready&&!walkView.sc.roomRect", 30)
         out.append('the lab opens')
         # down Route 1 to Marigold Town, on foot
-        pg.evaluate(f"saveData.trip={{node:{node},prog:0,plan:[LOCATION_BY_ID.hedgerow.node,LOCATION_BY_ID.sundown.node],hold:false}};uiState.roam=null;render();0")
-        cost = pg.evaluate(f"roadCost({node},LOCATION_BY_ID.hedgerow.node)+roadCost(LOCATION_BY_ID.hedgerow.node,LOCATION_BY_ID.sundown.node)")
+        pg.evaluate(f"saveData.trip={{node:{node},prog:0,plan:[LOCATION_BY_ID.hedgerow.node,LOCATION_BY_ID.marigold.node],hold:false}};uiState.roam=null;render();0")
+        cost = pg.evaluate(f"roadCost({node},LOCATION_BY_ID.hedgerow.node)+roadCost(LOCATION_BY_ID.hedgerow.node,LOCATION_BY_ID.marigold.node)")
         pg.evaluate(f"addSteps({cost + 10},true);render();0"); time.sleep(1)
         at = pg.evaluate("LOCATIONS[saveData.trip.node].id")
-        if at != 'sundown': raise Exception(f'the trip down Route 1 ended at {at}')
+        if at != 'marigold': raise Exception(f'the trip down Route 1 ended at {at}')
         out.append(f'Copperleaf to Marigold Town is {cost} steps on foot')
         pg.evaluate("environment.force=null;uiState.modal=null;uiState.mq=[];renderOverlay();0")
         if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
@@ -1731,7 +1731,7 @@ def desktop_steps(b, base, R):
         """the mast's airship draws as a low-poly model, painted with the buildings' 32 px textures, its propellers turning; the mast's list holds the towns you've
         been to; a ticket is paid, the flight crosses the map, and you land by the next town's mast"""
         if not pg.evaluate("typeof flyMenu==='function'&&!!LOCATION_BY_ID.copperleaf"): return 'not in this build'
-        out = []; cl = pg.evaluate("LOCATION_BY_ID.copperleaf.node"); sd = pg.evaluate("LOCATION_BY_ID.sundown.node")
+        out = []; cl = pg.evaluate("LOCATION_BY_ID.copperleaf.node"); sd = pg.evaluate("LOCATION_BY_ID.marigold.node")
         pg.evaluate(f"uiState.inside=null;uiState.bench=null;uiState.modal=null;uiState.mq=[];renderOverlay();environment.force={{time:11,weather:'clear',season:'summer'}};saveData.visited[{sd}]=1;saveData.se=Math.max(saveData.se,2000);0")
         go_scene(pg, cl); time.sleep(1)
         pg.evaluate("(()=>{const p=walkView.sc.props.find(p=>p.act==='fly');walkView.pl.route=null;walkView.pl.x=p.x+2.2;walkView.pl.z=p.z-1.6})();0")
@@ -1749,7 +1749,7 @@ def desktop_steps(b, base, R):
         time.sleep(2.5); shot(pg, 'a04-airship-flight')
         if not until(pg, "!airshipFlight.on&&uiState.tab==='walk'", 30, "flySkip()"): raise Exception('the flight never landed')
         r = pg.evaluate("[LOCATIONS[saveData.trip.node].id,saveData.se]")
-        if r[0] != 'sundown' or se0 - r[1] != fare: raise Exception(f'landed at {r[0]}, paid {se0 - r[1]} (the fare is {fare})')
+        if r[0] != 'marigold' or se0 - r[1] != fare: raise Exception(f'landed at {r[0]}, paid {se0 - r[1]} (the fare is {fare})')
         if not until(pg, f"!!(walkView.ready&&(walkView.sc.baseId||walkView.id)===LOCATIONS[{sd}].mapId)", 60): raise Exception('Marigold Town didn’t open after landing')
         time.sleep(1.5); d = pg.evaluate("(()=>{const sc=walkView.sc,o=sc.baseOff||[0,0],p=mapById(baseMapId()).props.find(p=>p.act==='fly');return Math.hypot(walkView.pl.x-p.x-o[0],walkView.pl.z-p.z-o[1])})()")
         if d > 5: raise Exception(f'you landed {d:.1f} m from the mast')
@@ -1788,7 +1788,7 @@ def desktop_steps(b, base, R):
         """walking into a town you haven't had the postcard of: it slides in with the town's picture and is kept in the
         Guide's Postcards page (it slides away by itself or on a tap); coming back shows just the stamp"""
         if not pg.evaluate("typeof postcardCheck==='function'"): return 'not in this build'
-        sd = pg.evaluate("LOCATION_BY_ID.sundown.node")
+        sd = pg.evaluate("LOCATION_BY_ID.marigold.node")
         # alpha 0.5: no postcard before Blake's first battle (postcardAllowed); the checks skip the opening, so mark it as played
         pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();uiState.bench=null;saveData.cards={};postcardState.last=null;postcardState.on=false;Object.assign(storyFlags(),{rival0:'win',met_blake0:1});0")
         go_scene(pg, sd)
@@ -1799,7 +1799,7 @@ def desktop_steps(b, base, R):
         shot(pg, 'a04-postcard')
         pg.evaluate("(()=>{const w=document.querySelector('.pcard-wrap');if(w)w.click()})();0"); time.sleep(.8)   # it may have slid away by itself (9 s)
         got = pg.evaluate("Object.keys(saveData.cards||{})")
-        if got != ['sundown']: raise Exception(f'the Guide keeps {got}')
+        if got != ['marigold']: raise Exception(f'the Guide keeps {got}')
         pg.evaluate("uiState.tab='ledger';uiState.guideTab='cards';render();0"); time.sleep(.6)
         n = pg.evaluate("document.querySelectorAll('.pc-thumb:not(.none)').length")
         if n != 1: raise Exception(f'the Postcards page shows {n} cards')
@@ -1830,7 +1830,7 @@ def desktop_steps(b, base, R):
         if r['fw'] and not (0 < r['lit'] < r['fw']): raise Exception(f'{r["lit"]} of {r["fw"]} front windows lit at night')
         shot(pg, 'a04-windows-night')
         # a front: the weather changes while you're in a place, the curtain comes across
-        sd = pg.evaluate("LOCATION_BY_ID.sundown.node")
+        sd = pg.evaluate("LOCATION_BY_ID.marigold.node")
         pg.evaluate("uiState.bench=null;environment.force={time:13,weather:'clear',season:'summer',front:1};0"); go_scene(pg, sd); time.sleep(2)
         pg.evaluate("environment.force={time:13,weather:'rain',season:'summer',front:1};0")
         if not until(pg, "!!(environment.front&&environment.curtain)", 15): raise Exception('no front came in when the weather turned to rain')
@@ -1947,7 +1947,7 @@ def studio_round_trip(pw, R):
             # v29 scene tools: scatter, copy and paste, a block stamp, a curved road, a smooth path; then a test run that sees the edits live
             extra = ''
             if pg.evaluate("typeof scatterProps==='function'"):
-                pg.evaluate("openSection('scenes');ACTIONS.scPick({k:'pond'});0"); time.sleep(2.5)
+                pg.evaluate("openSection('scenes');ACTIONS.scPick({k:'willowmere'});0"); time.sleep(2.5)
                 r = pg.evaluate("""(()=>{const sc=currentMap(),n0=sc.props.length,t0=sc.tiles.join('');mapEditor.prop=Object.keys(sceneryCatalog().props).find(k=>/bush|flower/.test(k));mapEditor.scat.dens=1.5;mapEditor.brush=3;
                   const D={n:0};for(let i=0;i<4;i++)scatterProps(sc,{x:6+i,z:6},D);const n1=sc.props.length;mapEditor.multi=new Set([0,1]);copySelectedProps();mapEditor.mouse=[sc.w/2,sc.h/2];pasteProps();const n2=sc.props.length;
                   stampBlockAt(sc,{name:'t',props:[{k:sc.props[0].k,x:0,z:0},{k:sc.props[1].k,x:1,z:0}]},4,4,false);const n3=sc.props.length;
@@ -1955,11 +1955,11 @@ def studio_round_trip(pw, R):
                   return {scattered:n1-n0,pasted:n2-n1,stamped:n3-n2,road:roadOk,path:[p0,(sc.path||[]).length],n:sc.props.length}})()""")
                 if r['scattered'] < 3 or r['pasted'] != 2 or r['stamped'] != 2 or not r['road']: raise Exception(f'scene tools: {r}')
                 pg.evaluate("openSection('rules');0")          # the Studio's scene preview would otherwise share the software renderer with the test run
-                g = ctx.new_page(); g.goto(f'http://localhost:{port}/game/index.html?test=1&scene=pond'); g.wait_for_selector('#walkHero', timeout=240000)
+                g = ctx.new_page(); g.goto(f'http://localhost:{port}/game/index.html?test=1&scene=willowmere'); g.wait_for_selector('#walkHero', timeout=240000)
                 ok = False
                 for _ in range(120):
-                    st = g.evaluate("[typeof walkView!=='undefined'&&walkView.id,gameData.maps.pond.props.length,typeof TEST_RUN!=='undefined'&&!!TEST_RUN]")
-                    if st[0] == 'pond' and st[1] == r['n']: ok = True; break
+                    st = g.evaluate("[typeof walkView!=='undefined'&&walkView.id,gameData.maps.willowmere.props.length,typeof TEST_RUN!=='undefined'&&!!TEST_RUN]")
+                    if st[0] == 'willowmere' and st[1] == r['n']: ok = True; break
                     time.sleep(.5)
                 saved = g.evaluate("(()=>{try{return localStorage.getItem(SAVE_KEY)}catch(e){return 'x'}})()")
                 g.close()

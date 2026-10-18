@@ -7,7 +7,7 @@ as game/art/postcards/<scene>.webp (480 x 320). The game lays the "Greetings fro
 
     python3 tools/build-postcards.py              # every town that has no postcard yet
     python3 tools/build-postcards.py --all        # all of them again
-    python3 tools/build-postcards.py city sundown # just these
+    python3 tools/build-postcards.py verdigris marigold # just these
 
 Needs Playwright with Chromium (software WebGL is fine, just slow: about half a minute a town)."""
 import gamedata  # phase 04b: the data files in game/data
@@ -22,11 +22,11 @@ SIZE = (480, 320)
 # each town's hour, and where the camera looks (offset from the town's middle, metres), how far back and how high
 # (ty: how high the point it looks at is, for a tall landmark; 1 m when not given)
 VIEW = {
-    'copperleaf': dict(time=9.5, at=(38, 42)), 'sundown': dict(time=16.6, at=(57, 25)), 'grotto': dict(time=12, dz=4, back=14, up=10),
-    'foodcourt': dict(time=19.4, dz=6), 'mall': dict(time=12, dz=5, back=14, up=10), 'farm': dict(time=10.5, at=(56, 33)),
-    'city': dict(time=16, at=(36, 35), back=20, up=13), 'taxhaven': dict(time=12.5, at=(80, 16)), 'summit': dict(time=11, dz=8, season='winter'),
-    'twofold': dict(time=15, at=(48, 33)), 'bullion': dict(time=17.8, dz=6), 'marketcap': dict(time=19.6, at=(48, 40), back=24),
-    'mintshaft': dict(time=12, at=(48, 35), back=16, up=10), 'portfolio': dict(time=18.3, dz=8), 'upside': dict(time=21.5, at=(48, 50), back=24, up=10),
+    'copperleaf': dict(time=9.5, at=(38, 42)), 'marigold': dict(time=16.6, at=(57, 25)), 'fizzwell': dict(time=12, dz=4, back=14, up=10),
+    'pepperpot': dict(time=19.4, dz=6), 'lanternhall': dict(time=12, dz=5, back=14, up=10), 'clovercrest': dict(time=10.5, at=(56, 33)),
+    'verdigris': dict(time=16, at=(36, 35), back=20, up=13), 'palmhaven': dict(time=12.5, at=(80, 16)), 'frostcrown': dict(time=11, dz=8, season='winter'),
+    'twinpetal': dict(time=15, at=(48, 33)), 'goldvine': dict(time=17.8, dz=6), 'capshade': dict(time=19.6, at=(48, 40), back=24),
+    'glimmershaft': dict(time=12, at=(48, 35), back=16, up=10), 'kelpport': dict(time=18.3, dz=8), 'nimbus': dict(time=21.5, at=(48, 50), back=24, up=10),
     'pearlantis': dict(time=13, at=(44, 55.5), ty=4.5, back=25, up=8)}
 
 

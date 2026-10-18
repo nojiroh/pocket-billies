@@ -806,10 +806,10 @@ export function musicFor() {
   const id = typeof mapIdAt === 'function' ? mapIdAt(saveData.trip.node) : null,
     sc = id && mapById(id),
     r = LOCATIONS[saveData.trip.node];
-  if (sc && sc.indoor) return /mall|food/.test(id) ? 'mall' : 'cave';
+  if (sc && sc.indoor) return /lanternhall|pepperpot/.test(id) ? 'mall' : 'cave';
   if (r && r.music && SONGS[r.music]) return r.music;
-  /* v47: a place's own song */ if (/mall|food/.test(id || '')) return 'mall';
-  if (id === 'city' || (r && r.t === 'city')) return 'city';
+  /* v47: a place's own song */ if (/lanternhall|pepperpot/.test(id || '')) return 'mall';
+  if (id === 'verdigris' || (r && r.t === 'city')) return 'city';
   return r && r.town ? 'town' : 'route';
 }
 function musicSync() {

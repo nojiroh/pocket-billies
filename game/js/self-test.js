@@ -637,7 +637,7 @@ async function runFullTest(mode) {
         'Night, weather, seasons and rooms',
         'dio',
         async () => {
-          const sid = gameData.maps.sundown ? 'sundown' : scenes[0],
+          const sid = gameData.maps.marigold ? 'marigold' : scenes[0],
             f0 = environment.force,
             out = [];
           try {
@@ -662,13 +662,13 @@ async function runFullTest(mode) {
           } finally {
             environment.force = f0;
           }
-          for (const id of ['int_shop', 'grotto']) {
+          for (const id of ['int_shop', 'fizzwell']) {
             if (!gameData.maps[id] || selfTest.stop) continue;
             uiState.bench = { id };
             render();
             await selfTestSleep(1400);
             if (!walkView.ready || walkView.id !== id) throw new Error((gameData.maps[id].name || id) + ' didn’t open');
-            out.push(id === 'grotto' ? 'a dark cave' : 'a shop you walk into');
+            out.push(id === 'fizzwell' ? 'a dark cave' : 'a shop you walk into');
           }
           return out.join(', ');
         },
@@ -812,7 +812,7 @@ async function runFullTest(mode) {
       return `${mine} against ${theirs} (${fmt}); ${plates} nameplates; ${picks} picks, ${aimed} aimed; the turn played ${lines} lines in ${(turnMs / 1000).toFixed(1)} s`;
     };
     /* v43: the seamless world: out of Sundown along its road and into the Long Grass, measuring every view change */
-    if (typeof seamlessTripView === 'function' && gameData.maps.sundown && !selfTest.stop)
+    if (typeof seamlessTripView === 'function' && gameData.maps.marigold && !selfTest.stop)
       await phase(
         'Road: Marigold Town to Tallgrass Meadow on the ground',
         'dio',
@@ -821,12 +821,12 @@ async function runFullTest(mode) {
           uiState.tab = 'walk';
           saveData.trip = { node: 0, prog: 0, plan: [], hold: false };
           {
-            const h = mapHub(gameData.maps.sundown);
-            uiState.roam = { id: 'sundown', node: 0, x: h[0], z: h[1] };
+            const h = mapHub(gameData.maps.marigold);
+            uiState.roam = { id: 'marigold', node: 0, x: h[0], z: h[1] };
           }
           render();
-          for (let i = 0; i < 60 && !(walkView.ready && walkView.id === 'w:sundown*'); i++) await selfTestSleep(100);
-          if (walkView.id !== 'w:sundown*')
+          for (let i = 0; i < 60 && !(walkView.ready && walkView.id === 'w:marigold*'); i++) await selfTestSleep(100);
+          if (walkView.id !== 'w:marigold*')
             throw new Error('Marigold Town is not shown with its neighbours (still ' + walkView.id + ')');
           const q0 = saveData.queue,
             t00 = performance.now() - (debugLog.t0 || 0);
@@ -881,7 +881,7 @@ async function runFullTest(mode) {
         120
       );
     /* v46: a room that opens in place: into Sundown's shop and out again, without leaving the town */
-    if (typeof seamlessRoomMap === 'function' && gameData.maps.sundown && !selfTest.stop)
+    if (typeof seamlessRoomMap === 'function' && gameData.maps.marigold && !selfTest.stop)
       await phase(
         'A room that opens in place',
         'dio',
@@ -900,8 +900,9 @@ async function runFullTest(mode) {
             saveData.trip = { node: 0, prog: 0, plan: [], hold: false };
             uiState.roam = null;
             render();
-            for (let i = 0; i < 60 && !(walkView.ready && walkView.id === 'w:sundown*'); i++) await selfTestSleep(100);
-            if (walkView.id !== 'w:sundown*') throw new Error('Marigold Town is not shown (still ' + walkView.id + ')');
+            for (let i = 0; i < 60 && !(walkView.ready && walkView.id === 'w:marigold*'); i++) await selfTestSleep(100);
+            if (walkView.id !== 'w:marigold*')
+              throw new Error('Marigold Town is not shown (still ' + walkView.id + ')');
             const p = walkView.sc.props.find(p => p.act === 'shop' && p.k === 'shop');
             if (!p) throw new Error('no shop in Marigold Town');
             const C = walkData().sc,
@@ -934,8 +935,8 @@ async function runFullTest(mode) {
               RD = roomDimming(sc);
             if (off > 0.8) throw new Error(`the room’s doorway is ${off.toFixed(1)} m from the shop’s door`);
             leaveRoom();
-            for (let i = 0; i < 60 && !(walkView.ready && walkView.id === 'w:sundown*'); i++) await selfTestSleep(100);
-            if (walkView.id !== 'w:sundown*')
+            for (let i = 0; i < 60 && !(walkView.ready && walkView.id === 'w:marigold*'); i++) await selfTestSleep(100);
+            if (walkView.id !== 'w:marigold*')
               throw new Error('walking out didn’t bring the town back (' + walkView.id + ')');
             return `in ${(ms / 1000).toFixed(1)} s, doorway ${off.toFixed(2)} m from the door, town dimmed ${(RD ? RD.dim : 0).toFixed(2)}, back out at the door`;
           } finally {
@@ -1193,7 +1194,7 @@ async function runFullTest(mode) {
         'Billies in the world',
         'dio',
         async () => {
-          const gid = gameData.maps.longgrass ? 'longgrass' : scenes[0];
+          const gid = gameData.maps.tallgrass_meadow ? 'tallgrass_meadow' : scenes[0];
           saveData.queue = (saveData.queue || []).slice(0, 0);
           for (let i = 0; i < 3; i++) spawn(false);
           uiState.tab = 'walk';
@@ -1314,7 +1315,7 @@ async function runFullTest(mode) {
     );
     /* 7. stress: more and more at once in Sundown, until the device can't keep up (not in the diagnostics test) */
     if (!diag) {
-      const sid = gameData.maps.sundown ? 'sundown' : scenes[0],
+      const sid = gameData.maps.marigold ? 'marigold' : scenes[0],
         sc = mapById(sid),
         folk0 = sc.folk,
         props0 = sc.props,

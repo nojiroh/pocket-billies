@@ -245,19 +245,19 @@
   }
  },
  "locations": {
-  "sundown": {
+  "marigold": {
    "history": "A crossroads town that grew round the spot where things from the surface used to land, before they started coming down in Copperleaf instead. The first thing to fall here was a filing cabinet; the town hall is built round it.",
    "known": "The free clinic, the general store, and people who are very relaxed about strangers walking in from Copperleaf.",
    "landmark": "The clock tower on the square, which shows the time on the surface. Nobody knows why it is always right.",
    "legend": "Anyone who falls into Marigold Town and stays a year can never quite leave. Most people say this happily."
   },
-  "longgrass": {
+  "tallgrass_meadow": {
    "history": "The first grazing ground of the wild Billies, back when there were only a few hundred of them.",
    "known": "Grass up to your waist and young Billies playing hide-and-seek in it.",
    "landmark": "The giant tree on the rise, older than the sinkholes.",
    "legend": "The grass grows taller round anyone who is lost, so they can hide until they feel ready to be found."
   },
-  "golf": {
+  "old_fairway": {
    "history": "Built by the first owners of the Hollow Earth for a tournament that never happened. The Billies moved in before the opening ceremony.",
    "known": "Eighteen holes gone wild, sand traps that move, and a clubhouse with no members.",
    "landmark": "The eighteenth flag, still waiting for someone to finish the round.",
@@ -269,133 +269,133 @@
    "landmark": "The old footbridge over the stream, mended with a dozen different planks.",
    "legend": "If you whisper a secret on the bridge, the mist keeps it."
   },
-  "grotto": {
+  "fizzwell": {
    "history": "Hot springs found by the first miners, who promptly stopped mining.",
    "known": "Warm water, glowing caves, and Leader Rocco’s sandstorm arena.",
    "landmark": "The bubbling pool at the heart of the cave.",
    "legend": "The springs are the Hollow Earth breathing. Stay quiet and you can hear it."
   },
-  "canyon": {
+  "stepstone_canyon": {
    "history": "Cut by a river that has since moved somewhere quieter.",
    "known": "Stairstep cliffs, ladders, and heat that shimmers off the rock.",
    "landmark": "The broken bridge, which everyone uses anyway.",
    "legend": "The river left because the canyon talked too much. On hot days you can still hear it."
   },
-  "scrapyard": {
+  "rustgear": {
    "history": "Where things that fall from the surface end up if nobody claims them.",
    "known": "Rust, crows, and treasures if you dig.",
    "landmark": "The crane, which still moves when nobody is watching.",
    "legend": "Somewhere in the scrap is the receipt for the filing cabinet that fell on Marigold Town. Whoever finds it can return the cabinet."
   },
-  "foodcourt": {
+  "pepperpot": {
    "history": "Opened as a staff canteen for the mall and never closed.",
    "known": "Food from everywhere, bins behind it, and Mr Sterling in the bins.",
    "landmark": "The neon sign, missing one letter since the day it opened.",
    "legend": "The soup of the day has been the same soup since the Hollow Earth was found."
   },
-  "mall": {
+  "lanternhall": {
    "history": "A mall built so deep that it needed its own weather.",
    "known": "Polished floors, Leader Iris’s Steel arena, and an escalator nobody has seen move.",
    "landmark": "The fountain in the atrium, full of coins Billies have not found yet.",
    "legend": "There is a floor below the lowest floor. It is having a sale."
   },
-  "pond": {
+  "willowmere": {
    "history": "A quiet pond the willows found before people did.",
    "known": "Ducks with names, lily pads, frogs, and patient anglers.",
    "landmark": "The willow that leans so far it drinks from the pond.",
    "legend": "The ducks have names, and they will tell them to you if you are polite for long enough."
   },
-  "farm": {
+  "clovercrest": {
    "history": "Farmed by the same family since the first harvest under the Inner Sun.",
    "known": "Orchards, crops that grow between your visits, and bees that sting people who talk about interest rates.",
    "landmark": "The windmill on the hill.",
    "legend": "The orchard bees remember every promise made near the hives."
   },
-  "ridge": {
+  "kitewind": {
    "history": "The old lookout over the ring of the world, built when people still expected enemies.",
    "known": "Heather, wind, and a view all the way round the inside of the world.",
    "landmark": "The lookout tower.",
    "legend": "From the top of the tower, on a clear day, you can see the back of your own head across the world."
   },
-  "city": {
+  "verdigris": {
    "history": "Built in the middle of everything by people who wanted to be in the middle of everything.",
    "known": "Banks, towers, and Verdigris City’s famous traffic, which is mostly Billies.",
    "landmark": "The stock exchange, which trades in everything except steps.",
    "legend": "Every tower in Verdigris City is one floor taller than the plans say. Nobody admits to the extra floor."
   },
-  "offshore": {
+  "driftwreck": {
    "history": "Open sea between the shores, where the first ship that fell through the crust still lies.",
    "known": "Deep water you cross riding a Billie, sandbars, and wind.",
    "landmark": "The shipwreck on the sandbar.",
    "legend": "The shipwreck’s captain still has the receipt for the ship, and is waiting for a refund."
   },
-  "taxhaven": {
+  "palmhaven": {
    "history": "An island where the money of two worlds goes on holiday and never comes home.",
    "known": "Yachts, marble, Leader Marina, and nobody asking questions.",
    "landmark": "The marble pier, polished daily by people who are not allowed to say for whom.",
    "legend": "There is a vault under the island so secret that it is listed in the phone book as a bakery."
   },
-  "volcano": {
+  "cinderpeak": {
    "history": "The richest well in the world, and the hottest walk.",
    "known": "Ash, lava, basalt, and Oilympus, deep under the mountain.",
    "landmark": "The crater rim, where the ground hums.",
    "legend": "Oilympus owns the ground you stand on. It is only waiting to send the bill."
   },
-  "pass": {
+  "hornpass": {
    "history": "The high road through the snow, cut by runners who were late for something.",
    "known": "Snow, wind, and herds that run the pass like a market.",
    "landmark": "The waystone at the top of the pass.",
    "legend": "The herds run the pass every morning at the same time. If you join them, you are counted."
   },
-  "summit": {
+  "frostcrown": {
    "history": "A capital built at the top of the world to be closer to the sun, and further from everyone else.",
    "known": "Snow, thin air, Leader Alta, and a cushion of gold where Aurumansa rests.",
    "landmark": "The golden cushion on the peak.",
    "legend": "Aurumansa gives its gold away, and prices fall for ten years wherever it walks. The banks of Verdigris City have a team watching its every step."
   },
-  "lake": {
+  "mirrormere": {
    "history": "A lake that filled up from a sinkhole in reverse: water came up, not down.",
    "known": "Clear water, reeds, and boats you can rent by the step.",
    "landmark": "The pier and its little lighthouse.",
    "legend": "The lake is the surface’s rain, collected over a hundred years. Taste it: it still remembers being clouds."
   },
-  "festival": {
+  "fanfare_fields": {
    "history": "Pasture until last spring, when Vinylla’s people rented it for a weekend. The weekend has not ended.",
    "known": "The fan festival: the stage, the merch, the Variants in their gold jackets.",
    "landmark": "The stage, where Vinylla has never once appeared in person.",
    "legend": "They say the encore is scheduled for the day the Inner Sun goes out."
   },
-  "twofold": {
+  "twinpetal": {
    "history": "A market village since before the sinkholes. Everything here grows back twice as fast, which is how it got its name and its problems.",
    "known": "Its market, its flowers, and Leader Poppy’s greenhouse arena.",
    "landmark": "The sunflower that was cut down once and grew back twice as tall.",
    "legend": "Plant a coin in Twinpetal Town and two grow back. Nobody has managed it, but everyone has tried."
   },
-  "blossom": {
+  "petalfall": {
    "history": "A quiet valley of cherry trees that flower all year round.",
    "known": "The petals, the stream, and the man who sweeps them.",
    "landmark": "The great cherry by the stream, older than anyone has counted.",
    "legend": "If a petal lands in your hand, you will forget a debt. Nobody says whose."
   },
-  "margins": {
+  "rootwater": {
    "history": "The edge of the Meadowlands, where the pastures turn to mangroves and boardwalks.",
    "known": "Boardwalks, birdwatchers and very patient frogs.",
    "landmark": "The hut on stilts, where the warden lived before the warden was outsourced.",
    "legend": "The tide here only comes in on payday."
   },
-  "vintage": {
+  "grapevine_hills": {
    "history": "Vineyards since before the sinkholes, planted over vaults older than that.",
    "known": "Wine nobody can afford, and the round steel doors in the hillsides.",
    "landmark": "The vault door with a gold V on its wheel. Vinylla’s, now.",
    "legend": "One vault is said to hold the first coin ever spent in the Hollow Earth. It was spent again on the rent."
   },
-  "bullion": {
+  "goldvine": {
    "history": "Baron Vault’s estate, and the village that grew up to polish it.",
    "known": "The golden bull, the manor, and vaults under every hill.",
    "landmark": "The golden bull on the square, charging at nothing in particular.",
    "legend": "The bull is hollow. What is inside it is a matter for the Baron’s lawyers."
   },
-  "flattax": {
+  "saltpan_flats": {
    "history": "Salt flats where the Baron collects a toll from everyone who crosses, at the same rate, however much they have.",
    "known": "Salt, glare, and the tollbooth.",
    "landmark": "The tollbooth in the middle of the flats, its barrier across nothing at all.",
@@ -407,109 +407,109 @@
    "landmark": "Bear Rock, a red stone bear asleep on its paws.",
    "legend": "When Bear Rock wakes up, everything will be cheap again. Everyone is waiting."
   },
-  "sporewood": {
+  "puffcap": {
    "history": "An old wood of giant mushrooms, older than the trees above it.",
    "known": "Spores that glitter in the light, and the Variants’ mill.",
    "landmark": "The spore mill, where the forest is ground into the record’s shine.",
    "legend": "Breathe the spores and you will remember something that never happened to you. It will be a very good deal."
   },
-  "marketcap": {
+  "capshade": {
    "history": "A village built in and under the mushrooms, round the one with a door.",
    "known": "Mushroom houses, treehouses, and Mother Morel.",
    "landmark": "The colossal mushroom, whose cap shades the whole square.",
    "legend": "The great mushroom is one creature, and every mushroom in the forest is a piece of it. It knows what everything is worth."
   },
-  "fallquarter": {
+  "russetwood": {
    "history": "A wood where the year stopped in autumn.",
    "known": "Leaves, leaves, and the Ledger Oak.",
    "landmark": "The Ledger Oak, which drops one golden leaf for every coin spent in the Hollow Earth.",
    "legend": "Under the Ledger Oak the leaves are never raked. It would upset the books."
   },
-  "hypergrowth": {
+  "tanglewild": {
    "history": "A start-up campus, until the jungle grew over it in a single quarter.",
    "known": "Vines, heat, and a white statue nobody can quite see the point of.",
    "landmark": "The unicorn statue, worth a billion once, now a trellis.",
    "legend": "The founders are still in there somewhere, pivoting."
   },
-  "spread": {
+  "prism_chasm": {
    "history": "Natural chasms lined with crystal, bridged by the first miners with rope and nerve.",
    "known": "Rope bridges, the crystal spire, and the Variants’ needle works.",
    "landmark": "The crystal spire, taller than a house, humming a note just too low to hear.",
    "legend": "Drop a coin into Prism Chasm and it never lands. Somewhere below, it is still earning interest."
   },
-  "mintshaft": {
+  "glimmershaft": {
    "history": "A mining town since the Hollow Earth was found: the crystals pay for everything, including the lanterns to see them by.",
    "known": "The mine, the Great Geode on the square, and Leader Carat.",
    "landmark": "The Great Geode, split open on the square, so everyone can see what the town is worth.",
    "legend": "The first miner found the geode with one swing of a pick, and spent the rest of his life trying to find the second."
   },
-  "darkpool": {
+  "gloomwater": {
    "history": "An underground lake the miners crossed by boat, steering by the beacon on the point.",
    "known": "Black water, glowing shores, and very old boats.",
    "landmark": "The miners’ beacon, a great crystal caged at the top of a timber tower.",
    "legend": "Whatever falls into Gloomwater Pool is written off. Nobody has ever checked."
   },
-  "frozen": {
+  "rimefrost": {
    "history": "Ice caves where the cavern opens on to a frozen plain.",
    "known": "Ice spikes, snow, and the frozen assets.",
    "landmark": "A block of ice as big as a shed with a safe frozen inside it: assets, frozen.",
    "legend": "The safe belongs to whoever thaws it. The ice belongs to the Baron. Lawyers are on their way."
   },
-  "shoals": {
+  "conchshell": {
    "history": "Shallows on the inner sea, where the tide pools never quite drain.",
    "known": "Tide pools, the coral tower, and the Shell Company.",
    "landmark": "The coral tower, a reef taller than a house standing alone in the shallows.",
    "legend": "The Shell Company has four hundred directors. All of them are the same crab."
   },
-  "portfolio": {
+  "kelpport": {
    "history": "A fishing village that sold its boats for yachts, and its fish for funds.",
    "known": "Piers, yachts, and the superyacht Diversified.",
    "landmark": "The Diversified, the biggest yacht in the Hollow Earth, which has never once left the harbour.",
    "legend": "The Diversified owns a smaller yacht, which owns a smaller one, all the way down to a rubber duck."
   },
-  "bottomline": {
+  "abyssal_trench": {
    "history": "Open water over a trench nobody has found the bottom of.",
    "known": "Kelp, buoys, and the long ride to the pressing plant.",
    "landmark": "The buoy line, marking the way to the plant for those who must not be seen going there.",
    "legend": "Somewhere below, the bottom line. Everyone talks about it; nobody has reached it."
   },
-  "pressing": {
+  "vinyl_works": {
    "history": "Built in a season on piles driven into the trench’s rim, with money from the festival, the vaults and the spores.",
    "known": "Steam, the smell of hot vinyl, and Cass Flow’s clipboard.",
    "landmark": "The pressing plant, where the test copies of the record are made.",
    "legend": "Each test copy is played once, then broken. The first one ever pressed was a recording of you."
   },
-  "serverfarm": {
+  "circuit_terraces": {
    "history": "Farmland, until the servers proved a better crop.",
    "known": "Racks in rows, solar fields, and the Cloud.",
    "landmark": "The cooling tower where the Cloud is made, and from which it rains on Tuesdays.",
    "legend": "Everything you ever saved is up there somewhere. Nobody knows the password."
   },
-  "upside": {
+  "nimbus": {
    "history": "A city that grew at the foot of the Spire, to sell things to people going up it.",
    "known": "The Spire, the night market, and the shadow.",
    "landmark": "The Spire, one tower straight up through the clouds.",
    "legend": "The top of the Spire is above the Inner Sun’s light. Up there it is always night, and always sold out."
   },
-  "bubbleland": {
+  "fizzpop": {
    "history": "A theme park built on a bubble, closed the day it burst.",
    "known": "The stopped Ferris wheel, the carousel, and the gate with a letter missing.",
    "landmark": "The Ferris wheel, stopped with its riders’ money still at the top.",
    "legend": "On quiet nights the carousel turns by itself, and the horses come back worth less."
   },
-  "bracket": {
+  "skygarden": {
    "history": "Walkways of sky-stone up the outside of the Spire, through the clouds.",
    "known": "The view, the wind, and the door to the penthouse.",
    "landmark": "The penthouse door: a gold record in a marble frame.",
    "legend": "The Upper Bracket is where the money goes when it has nowhere left to go."
   },
-  "ath": {
+  "zenith_steps": {
    "history": "The desert under the Inner Sun, where everything was worth the most it would ever be worth.",
    "known": "Sun-baked stone, heat, and the ticker still running.",
    "landmark": "The column of the all-time high, broken off at the top, its ticker still showing the peak.",
    "legend": "The ticker will run until the price comes back. It is very patient."
   },
-  "closingbell": {
+  "bellwether_rise": {
    "history": "The old road to the Inner Sun, lined with the ruins of exchanges.",
    "known": "The great bell, and the long straight road.",
    "landmark": "The Closing Bell: when it rings, everything stops trading, even the wind.",
@@ -544,36 +544,36 @@
   {
    "id": "filing",
    "title": "The first thing to fall",
-   "locationId": "sundown",
-   "unlock": "location:sundown",
+   "locationId": "marigold",
+   "unlock": "location:marigold",
    "text": "Marigold’s town hall is built round a filing cabinet that fell from the surface long ago. Its drawers are locked. Every mayor promises to open them; every mayor finds a reason not to."
   },
   {
    "id": "oilympus",
    "title": "The bill under the mountain",
-   "locationId": "volcano",
-   "unlock": "location:volcano",
+   "locationId": "cinderpeak",
+   "unlock": "location:cinderpeak",
    "text": "Oilympus has slept under Mt. Cinderpeak since before the Hollow Earth was found, leaking black gold from every joint. People say it is not asleep at all: it is waiting for interest to accrue."
   },
   {
    "id": "aurumansa",
    "title": "The golden caravan",
-   "locationId": "summit",
-   "unlock": "location:summit",
+   "locationId": "frostcrown",
+   "unlock": "location:frostcrown",
    "text": "The richest thing that ever lived, and the most generous. Wherever Aurumansa walks it drops so much gold that prices fall for a decade. The banks call it a disaster. Everyone else calls it Tuesday."
   },
   {
    "id": "sterling",
    "title": "Mr Sterling",
-   "locationId": "foodcourt",
-   "unlock": "location:foodcourt",
+   "locationId": "pepperpot",
+   "unlock": "location:pepperpot",
    "text": "A clone in a tattered tie lives in the bins behind the food stalls of Pepperpot Town. If you call him Mr Sterling with enough respect, he will give you a business card. It is a napkin."
   },
   {
    "id": "sinkholes",
    "title": "Where the sinkholes come from",
-   "locationId": "longgrass",
-   "unlock": "location:longgrass",
+   "locationId": "tallgrass_meadow",
+   "unlock": "location:tallgrass_meadow",
    "text": "The surface keeps digging, and the Hollow Earth keeps catching what falls. Hazel thinks the sinkholes open wherever someone digs too greedily. She has a map of them; it looks a lot like a map of banks."
   }
  ],
@@ -589,14 +589,14 @@
    "title": "A lanyard",
    "unlock": "flag:clueLanyard",
    "text": "Found snagged on the brambles in Tallgrass Meadow, where the things that fell with you came down: ALL ACCESS — THE FOREVER TOUR — CREW. The name on it has worn away. The photo is yours.",
-   "at": {"scene":"longgrass","near":"bramble|bush_berry"}
+   "at": {"scene":"tallgrass_meadow","near":"bramble|bush_berry"}
   },
   {
    "id": "voicemail",
    "title": "A voice message",
    "unlock": "flag:clueVoice",
    "text": "An old phone in Lanternhall City’s lost and found, with one message on it, in your own voice: “If you’re hearing this, I found out what she’s pressing. It isn’t a record. It’s a lid. Don’t let her—” The message ends there.",
-   "at": {"scene":"mall","near":"fountain"}
+   "at": {"scene":"lanternhall","near":"fountain"}
   },
   {
    "id": "face",
@@ -712,7 +712,7 @@
   "Warming up the Inner Sun. Business hours only."
  ],
  "chat": {
-  "sundown": {
+  "marigold": {
    "0": [
     "You’re the one who fell into Copperleaf? Welcome! The last one was a filing cabinet.",
     "Hazel’s lab is up Hedgerow Lane in Copperleaf. She’s good with people who don’t remember things."
@@ -726,32 +726,32 @@
     "You’ve got four badges? The roads beyond the ring are open now. Bring snacks."
    ]
   },
-  "longgrass": {
+  "tallgrass_meadow": {
    "0": [
     "The hole you fell out of is somewhere round here. Things snag on the brambles near it.",
     "Young Billies hide in the tall grass. Walk slowly and they come to you."
    ]
   },
-  "city": {
+  "verdigris": {
    "0": [
     "The exchange trades everything except steps. They keep trying.",
     "Don’t feed the Billies in the square. They unionise."
    ],
    "2": ["A Variant just bought three rare Billies on the steps of the bank, cash, no receipt."]
   },
-  "mall": {
+  "lanternhall": {
    "0": [
     "Lost and found is by the fountain. People leave the strangest things.",
     "Has anyone ever seen that escalator move? No? Me neither."
    ]
   },
-  "foodcourt": {"0":["Don’t mind the clone in the bins. He used to run a bank. He still does, technically."]},
-  "taxhaven": {"0":["Nobody here asks questions. That was a question. Forget it."]},
-  "summit": {"0":["Aurumansa came by yesterday and dropped a bit of gold. Bread is cheaper now."]},
-  "volcano": {"2":["Gold jackets went up the mountain this morning with a lot of barrels. Odd thing to bring to a volcano."]},
-  "farm": {"0":["The bees sting anyone who talks about interest rates. They’ve never stung me."]},
-  "scrapyard": {"0":["Everything that falls from the surface ends up here eventually. Even people, nearly."]},
-  "twofold": {
+  "pepperpot": {"0":["Don’t mind the clone in the bins. He used to run a bank. He still does, technically."]},
+  "palmhaven": {"0":["Nobody here asks questions. That was a question. Forget it."]},
+  "frostcrown": {"0":["Aurumansa came by yesterday and dropped a bit of gold. Bread is cheaper now."]},
+  "cinderpeak": {"2":["Gold jackets went up the mountain this morning with a lot of barrels. Odd thing to bring to a volcano."]},
+  "clovercrest": {"0":["The bees sting anyone who talks about interest rates. They’ve never stung me."]},
+  "rustgear": {"0":["Everything that falls from the surface ends up here eventually. Even people, nearly."]},
+  "twinpetal": {
    "0": [
     "Everything grows back twice as fast here. Weeds included.",
     "Those merch stalls appeared overnight. Like mushrooms, but with prices.",
@@ -760,14 +760,14 @@
     "The Variants keep asking which of us is limited edition."
    ]
   },
-  "festival": {
+  "fanfare_fields": {
    "0": [
     "It’s been one long weekend for months.",
     "The stage lights never go off. Neither does the merch stall.",
     "Vinylla is on next! She has been on next since spring."
    ]
   },
-  "bullion": {
+  "goldvine": {
    "0": [
     "Don’t touch the bull. It’s insured for more than the village.",
     "The Baron rented out the vaults. Then the manor. Then himself.",
@@ -776,8 +776,8 @@
     "The Variants keep the vault doors shut. Something in there hums."
    ]
   },
-  "vintage": {"0":["Each row is a vintage. Each vintage is limited. You can see where this is going."]},
-  "marketcap": {
+  "grapevine_hills": {"0":["Each row is a vintage. Each vintage is limited. You can see where this is going."]},
+  "capshade": {
    "0": [
     "Don’t knock on the big mushroom. It knocks back.",
     "Our houses grow a room a year. Mine grew a cellar by mistake.",
@@ -786,8 +786,8 @@
     "Capshade’s market cap goes up when the spores do. Breathe out, then."
    ]
   },
-  "sporewood": {"0":["Hold your breath near the mill. The glitter gets everywhere."]},
-  "mintshaft": {
+  "puffcap": {"0":["Hold your breath near the mill. The glitter gets everywhere."]},
+  "glimmershaft": {
    "0": [
     "The Variants pay double for crystal now. Carat says it’s blood money. She takes it anyway, then gives it away.",
     "Mind the geode. It’s worth more than the town.",
@@ -796,8 +796,8 @@
     "Carat used to sing in the mine. She stopped when the Variants came."
    ]
   },
-  "spread": {"0":["Don’t look down. There isn’t one."]},
-  "portfolio": {
+  "prism_chasm": {"0":["Don’t look down. There isn’t one."]},
+  "kelpport": {
    "0": [
     "The Diversified has never left the harbour. It doesn’t need to; the harbour moved to it.",
     "Every boat here is registered in the Shell Company. So is the harbour.",
@@ -806,7 +806,7 @@
     "If you want to ride the trench, you’ll want a Water Billie. A big one."
    ]
   },
-  "upside": {
+  "nimbus": {
    "0": [
     "The Spire goes up through the clouds. Above them, they say, it’s always night and always sold out.",
     "The night market never closes. Neither does the shadow.",

@@ -720,7 +720,7 @@ def shoulders(s, ch='u', w=.5):
 
 
 def town_sundown(D, i):
-    s = Scene('sundown', 'Sundown', 'g', 1, 46, 34, far='hills', folk=6, chat=CHAT_SUNDOWN)
+    s = Scene('marigold', 'Sundown', 'g', 1, 46, 34, far='hills', folk=6, chat=CHAT_SUNDOWN)
     hub = (23, 9.5)
     s.blob(23, 11.6, 7.4, 3.8, 'c', .06)
     s.terrace(3, 22, 43, 34, 1.7, wobble=.15)
@@ -763,7 +763,7 @@ def town_sundown(D, i):
 
 
 def route_grass(D, i):
-    s = Scene('longgrass', 'The Long Grass', 'g', 2, 44, 34, far='hills')
+    s = Scene('tallgrass_meadow', 'The Long Grass', 'g', 2, 44, 34, far='hills')
     hub = (22, 11)
     s.terrace(30, 25, 46, 36, 1.9, wall=False)
     s.ledge(-1, 21.5, 18, 36, .8); s.ledge(26, 12.6, 45, 15.6, .7)
@@ -784,7 +784,7 @@ def route_grass(D, i):
 
 
 def route_golf(D, i):
-    s = Scene('golf', 'Overgrown Golf Course', 'G', 3, 44, 34, far='forest', amb='pollen')
+    s = Scene('old_fairway', 'Overgrown Golf Course', 'G', 3, 44, 34, far='forest', amb='pollen')
     hub = (22, 10)
     s.blob(22, 18, 13, 5, 'l', .12); s.blob(9, 25, 5.5, 3, 'l', .1); s.blob(34, 26, 5, 2.6, 'l', .1)
     for cx, cz, rx, rz in ((15, 21, 2.4, 1.3), (29, 15, 2, 1.1), (12, 28.2, 1.8, 1), (36.5, 23.8, 1.6, .9)): s.blob(cx, cz, rx, rz, 's', .15)
@@ -838,7 +838,7 @@ def route_thicket(D, i):
 
 
 def town_grotto(D, i):
-    s = Scene('grotto', 'Bubbling Grotto', 'k', 5, 46, 34, sky=['#2A2440', '#3E3658', '#5C5070'], haze='#4A4060', hazeD=26, amb='drip', tint='#2A2448', indoor=1, far='cave', farH=9, folk=4,
+    s = Scene('fizzwell', 'Bubbling Grotto', 'k', 5, 46, 34, sky=['#2A2440', '#3E3658', '#5C5070'], haze='#4A4060', hazeD=26, amb='drip', tint='#2A2448', indoor=1, far='cave', farH=9, folk=4,
               chat=['Mind the drips. They’re warm.', 'The crystals hum at night. Very relaxing.', 'Supply Co. has everything a spelunker needs.', 'Somebody built a hot tub in the spring. We don’t talk about it.',
                     'The upper ledge has the best view of the springs.'])
     hub = (23, 9.6)
@@ -874,7 +874,7 @@ def town_grotto(D, i):
 
 
 def route_canyon(D, i):
-    s = Scene('canyon', 'Stairstep Canyon', 's', 6, 44, 34, sky=['#8CC2E2', '#D6E6E4', '#F6E2BE'], haze='#F0D9B2', hazeD=42, amb='sand', far='canyon')
+    s = Scene('stepstone_canyon', 'Stairstep Canyon', 's', 6, 44, 34, sky=['#8CC2E2', '#D6E6E4', '#F6E2BE'], haze='#F0D9B2', hazeD=42, amb='sand', far='canyon')
     hub = (22, 8)
     for z0, h in ((14, 1.5), (20, 1.5), (26, 1.6)): s.terrace(-1, z0, 45, 36, h, wall=False, wobble=1.2)
     s.hub_exits(D, i, hub)
@@ -892,7 +892,7 @@ def route_canyon(D, i):
 
 
 def route_scrap(D, i):
-    s = Scene('scrapyard', 'Scrap Yard', 'x', 7, 44, 34, sky=['#8FB6CF', '#C9D9DE', '#E8DCC6'], haze='#D8CCB8', amb='dust', far='town')
+    s = Scene('rustgear', 'Scrap Yard', 'x', 7, 44, 34, sky=['#8FB6CF', '#C9D9DE', '#E8DCC6'], haze='#D8CCB8', amb='dust', far='town')
     hub = (22, 9.4)
     s.patches('v', .55, 5, seed=71); s.patches('u', .7, 3.5, seed=72)
     s.blob(29, 20, 7, 3.4, 'a', .25)
@@ -911,7 +911,7 @@ def route_scrap(D, i):
 
 
 def town_food(D, i):
-    s = Scene('foodcourt', 'The Food Court', 'g', 8, 46, 34, sky=['#8CC6E6', '#BFE3EE', '#F6E6C6'], haze='#F2DFC4', amb='pollen', far='town', folk=7,
+    s = Scene('pepperpot', 'The Food Court', 'g', 8, 46, 34, sky=['#8CC6E6', '#BFE3EE', '#F6E6C6'], haze='#F2DFC4', amb='pollen', far='town', folk=7,
               chat=['The pretzels here are legendary.', 'I come for the fountain. I stay for the fries.', 'They say the Mall of the Deep sells everything. Even rain.', 'Try the lemonade at the cart!',
                     'The food truck moves every day. Today it’s right here.'])
     hub = (23, 9)
@@ -945,7 +945,7 @@ def town_food(D, i):
 
 
 def town_mall(D, i):
-    s = Scene('mall', 'Mall of the Deep', 'm', 9, 46, 34, sky=['#1C1A34', '#2C2A50', '#4A4676'], haze='#3E3A68', hazeD=32, amb='dust', tint='#2A2850', indoor=1, far='mall', farH=9, folk=8, cliff='q',
+    s = Scene('lanternhall', 'Mall of the Deep', 'm', 9, 46, 34, sky=['#1C1A34', '#2C2A50', '#4A4676'], haze='#3E3A68', hazeD=32, amb='dust', tint='#2A2850', indoor=1, far='mall', farH=9, folk=8, cliff='q',
               chat=['I’ve been looking for the exit since Tuesday.', 'The escalators go up forever. I checked.', 'Everything’s on sale. Nobody knows what the original price was.', 'The Concierge Desk can get you anything. Anything.',
                     'Maison Margin is up on the mezzanine. Bring a wheelbarrow of money.'])
     hub = (23, 9)
@@ -975,7 +975,7 @@ def town_mall(D, i):
 
 
 def route_pond(D, i):
-    s = Scene('pond', 'Willow Pond', 'g', 10, 44, 34, sky=['#88C4E4', '#BEE2EC', '#F2EACB'], haze='#DCE6D0', far='forest', rays=1, amb='pollen')
+    s = Scene('willowmere', 'Willow Pond', 'g', 10, 44, 34, sky=['#88C4E4', '#BEE2EC', '#F2EACB'], haze='#DCE6D0', far='forest', rays=1, amb='pollen')
     hub = (22, 8.5)
     s.terrace(-1, 27.4, 45, 36, 1.4, wall=False, wobble=.8, mat=9)
     s.hub_exits(D, i, hub)
@@ -1000,7 +1000,7 @@ def route_pond(D, i):
 
 
 def town_farm(D, i):
-    s = Scene('farm', 'Hillside Farm', 'g', 11, 46, 34, sky=['#8CC8EA', '#C4E4EE', '#F6E8C4'], haze='#EADDC0', far='farm', folk=4, wind=1.2,
+    s = Scene('clovercrest', 'Hillside Farm', 'g', 11, 46, 34, sky=['#8CC8EA', '#C4E4EE', '#F6E8C4'], haze='#EADDC0', far='farm', folk=4, wind=1.2,
               chat=['The windmill grinds our flour. And sometimes our nerves.', 'Help yourself to an apple. Just one!', 'The hay bales are not for sitting. Fine, they are.', 'Our clinic is small but the nurse is very kind.',
                     'Don’t chase the chickens. They know where you live.', 'The sheep are called Wool, Wooler and Woolest.'])
     hub = (23, 9.4)
@@ -1042,7 +1042,7 @@ def town_farm(D, i):
 
 
 def route_ridge(D, i):
-    s = Scene('ridge', 'Lookout Ridge', 'r', 12, 44, 34, sky=['#7FBCE8', '#BFE0F0', '#EEF2EA'], haze='#DCE6EE', hazeD=48, far='mountains', farH=9, amb='dust', wind=1.6)
+    s = Scene('kitewind', 'Lookout Ridge', 'r', 12, 44, 34, sky=['#7FBCE8', '#BFE0F0', '#EEF2EA'], haze='#DCE6EE', hazeD=48, far='mountains', farH=9, amb='dust', wind=1.6)
     hub = (22, 9)
     s.terrace(-1, 15, 45, 36, 1.8, wall=False, wobble=1.4); s.terrace(-1, 24, 45, 36, 2.0, wall=False, wobble=1.6, mat=11)
     s.cliff(-1, 27.6, 45, 30.0, -3.2, mat=11, wobble=.45)
@@ -1071,7 +1071,7 @@ CHAT_CITY = ['Welcome to Capital Gains! Mind the traffic, the cars only stop for
 
 def city(D, i):
     W, H = 64, 48
-    s = Scene('city', 'Capital Gains', 'g', 13, W, H, far='town', folk=10, chat=CHAT_CITY, sky=['#86C0E6', '#BEDCEC', '#F2E6CE'], haze='#E6DACA', hazeD=44)
+    s = Scene('verdigris', 'Capital Gains', 'g', 13, W, H, far='town', folk=10, chat=CHAT_CITY, sky=['#86C0E6', '#BEDCEC', '#F2E6CE'], haze='#E6DACA', hazeD=44)
     AVE_A, AVE_B = (12, 15), (29, 32)          # asphalt bands (z from, to)
     STREETS = ((20, 23), (42, 45))             # north-south asphalt (x from, to)
     # park in front, lawns behind the blocks
@@ -1203,7 +1203,7 @@ def islet(s, cx, cz, rx, rz, shallow=1.6, palms=3, rocks=2, grass=True):
 
 
 def route_offshore(D, i):
-    s = Scene('offshore', 'The Offshore', 'd', 14, 48, 36, sky=['#5E9EE0', '#A6D2F2', '#F2F0E0'], haze='#D6E8F2', hazeD=46, far='sea', farH=5, amb='pollen',
+    s = Scene('driftwreck', 'The Offshore', 'd', 14, 48, 36, sky=['#5E9EE0', '#A6D2F2', '#F2F0E0'], haze='#D6E8F2', hazeD=46, far='sea', farH=5, amb='pollen',
               ride=1, waterKind='sea', flatFar=1, wind=1.4)
     hub = (24, 7.5)
     s.blob(24, 13, 22, 12, 'w', .5)                      # the shallows over a sunken bank
@@ -1222,7 +1222,7 @@ def route_offshore(D, i):
 
 
 def town_taxhaven(D, i):
-    s = Scene('taxhaven', 'Tax Haven', 's', 15, 46, 34, sky=['#5A9EE4', '#A8D4F4', '#F4F0DC'], haze='#E2ECEA', hazeD=44, far='sea', farH=6, folk=6, wind=1.2,
+    s = Scene('palmhaven', 'Tax Haven', 's', 15, 46, 34, sky=['#5A9EE4', '#A8D4F4', '#F4F0DC'], haze='#E2ECEA', hazeD=44, far='sea', farH=6, folk=6, wind=1.2,
               waterKind='sea', chat=['Welcome to Tax Haven, where the sun is free and so is everything else, on paper.', 'My yacht is parked behind my other yacht.',
                                     'The bank here has no windows and no doors. You just know.', 'Leader Marina trains her Water team in the lagoon every morning.',
                                     'Mount Margin Call grumbles when the market drops. Lately it grumbles a lot.', 'Try the coconut. It is the only thing here that pays tax.'])
@@ -1255,7 +1255,7 @@ def town_taxhaven(D, i):
 
 
 def route_volcano(D, i):
-    s = Scene('volcano', 'Mount Margin Call', 'z', 16, 44, 36, sky=['#3A2230', '#8A4A3A', '#E6A060'], haze='#B07060', hazeD=34, far='volcano', farH=10, amb='sand',
+    s = Scene('cinderpeak', 'Mount Margin Call', 'z', 16, 44, 36, sky=['#3A2230', '#8A4A3A', '#E6A060'], haze='#B07060', hazeD=34, far='volcano', farH=10, amb='sand',
               waterKind='lava', tint='#3A1A1A', rays=1, wind=.8, cliff='j')
     hub = (22, 6.5)
     s.terrace(-1, 13, 45, 37, 1.6, wall=False, wobble=.9, mat=11)
@@ -1280,7 +1280,7 @@ def route_volcano(D, i):
 
 
 def route_pass(D, i):
-    s = Scene('pass', 'Bull Run Pass', 'n', 17, 46, 36, sky=['#6E9AE0', '#B4D4F2', '#F2F4F6'], haze='#E2EAF4', hazeD=48, far='mountains', farH=12, amb='dust', wind=1.5,
+    s = Scene('hornpass', 'Bull Run Pass', 'n', 17, 46, 36, sky=['#6E9AE0', '#B4D4F2', '#F2F4F6'], haze='#E2EAF4', hazeD=48, far='mountains', farH=12, amb='dust', wind=1.5,
               waterKind='ice')
     hub = (23, 7)
     s.terrace(-1, 14, 47, 37, 1.6, wall=False, wobble=1.0, mat=1)
@@ -1302,7 +1302,7 @@ def route_pass(D, i):
 
 
 def town_summit(D, i):
-    s = Scene('summit', 'Summit Capital', 'n', 18, 46, 36, sky=['#6A98E2', '#B0D2F2', '#F4F4F2'], haze='#E4ECF4', hazeD=50, far='mountains', farH=12, folk=7, wind=1.3,
+    s = Scene('frostcrown', 'Summit Capital', 'n', 18, 46, 36, sky=['#6A98E2', '#B0D2F2', '#F4F4F2'], haze='#E4ECF4', hazeD=50, far='mountains', farH=12, folk=7, wind=1.3,
               waterKind='ice', chat=['Welcome to Summit Capital! The air is thin, the rent is not.', 'The higher you live here, the richer you are. I live on the bottom row.',
                                      'Leader Alta trains at the very top. Bring a scarf.', 'You can ride across Liquidity Lake to Hillside Farm, if your billionaire can swim.',
                                      'The snowman by the clinic is called Gerald. Do not touch Gerald.', 'Every chalet here has a view. Most of them are of other chalets.'])
@@ -1334,7 +1334,7 @@ def town_summit(D, i):
 
 
 def route_lake(D, i):
-    s = Scene('lake', 'Liquidity Lake', 'd', 19, 48, 36, sky=['#6A9EE0', '#ADD4F0', '#F0F2E6'], haze='#DAE8EC', hazeD=46, far='mountains', farH=8, amb='pollen',
+    s = Scene('mirrormere', 'Liquidity Lake', 'd', 19, 48, 36, sky=['#6A9EE0', '#ADD4F0', '#F0F2E6'], haze='#DAE8EC', hazeD=46, far='mountains', farH=8, amb='pollen',
               ride=1, waterKind='lake', flatFar=1, wind=1.0)
     hub = (24, 8)
     s.blob(24, 18, 24, 18, 'w', .4); s.blob(24, 20, 14, 9, 'd', .3)
@@ -1358,10 +1358,10 @@ def route_lake(D, i):
     return s.out(7, 'wood')
 
 
-BUILD = [('sundown', town_sundown), ('longgrass', route_grass), ('golf', route_golf), ('thicket', route_thicket), ('grotto', town_grotto),
-         ('canyon', route_canyon), ('scrapyard', route_scrap), ('foodcourt', town_food), ('mall', town_mall),
-         ('pond', route_pond), ('farm', town_farm), ('ridge', route_ridge), ('city', city),
-         ('offshore', route_offshore), ('taxhaven', town_taxhaven), ('volcano', route_volcano), ('pass', route_pass), ('summit', town_summit), ('lake', route_lake)]
+BUILD = [('marigold', town_sundown), ('tallgrass_meadow', route_grass), ('old_fairway', route_golf), ('thicket', route_thicket), ('fizzwell', town_grotto),
+         ('stepstone_canyon', route_canyon), ('rustgear', route_scrap), ('pepperpot', town_food), ('lanternhall', town_mall),
+         ('willowmere', route_pond), ('clovercrest', town_farm), ('kitewind', route_ridge), ('verdigris', city),
+         ('driftwreck', route_offshore), ('palmhaven', town_taxhaven), ('cinderpeak', route_volcano), ('hornpass', route_pass), ('frostcrown', town_summit), ('mirrormere', route_lake)]
 
 
 def main():

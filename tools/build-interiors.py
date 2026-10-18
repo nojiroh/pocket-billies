@@ -231,8 +231,8 @@ def own(s):
     return s
 
 
-def int_twofold_market():
-    s = own(room('int_twofold_market', 'Inside Twofold Market', '$', '#EAD8DC', 2631, 'market_hall', 'folk:141', (9, 7.8), [
+def int_twinpetal_market():
+    s = own(room('int_twinpetal_market', 'Inside Twofold Market', '$', '#EAD8DC', 2631, 'market_hall', 'folk:141', (9, 7.8), [
         'Tour shirts, two for the price of three.', 'Poppy never agreed to any of this. She still buys the badges.',
         'Records pressed at a plant out east. Don’t ask which one.'], w=18, h=12))
     s.put('stall_merch', 4.6, 9.4); s.put('stall_merch', 13.4, 9.4, 1, 1); s.put('shop_counter', 9, 7.0, act='shop', label='Market')
@@ -290,7 +290,7 @@ def int_night_market():
     s.put('plant_tall', 1.5, 1.8); hang(s, 'wall_clock', 7); return s.out(10)
 
 
-BUILD += [int_twofold_market, int_bullion_exchange, int_cap_market, int_assay_office, int_chandlery, int_night_market]
+BUILD += [int_twinpetal_market, int_bullion_exchange, int_cap_market, int_assay_office, int_chandlery, int_night_market]
 
 
 def repair_corners(D):

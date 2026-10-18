@@ -9633,6 +9633,6 @@
  },
  "buildArt": {"detail":"scene/build/detail-a04b.png","rooms":"scene/build/rooms.png"},
  "wallArt": "scene/build/walls.png",
- "flags": ["sundown","foodcourt","mall","city","taxhaven","summit"],
+ "flags": ["marigold","pepperpot","lanternhall","verdigris","palmhaven","frostcrown"],
  "tileSet": "tiles47"
 }

@@ -12,7 +12,7 @@ Scenes get
   building  on rooms: the kind of building they are the inside of (shop, clinic, lab, house, home)
 Roads (the `links` list; each entry stays [a, b, cost, {...}] so nothing that reads them by position changes) get in
 their record
-  id, name, from, to  e.g. 'road:sundown-longgrass', 'Route 1', 'sundown', 'longgrass'
+  id, name, from, to  e.g. 'road:marigold-tallgrass_meadow', 'Route 1', 'marigold', 'tallgrass_meadow'
 
     python3 tools/migrate-places.py           # fills what is missing; never changes a value that is already set
     python3 tools/migrate-places.py --check   # only reports what is missing or inconsistent

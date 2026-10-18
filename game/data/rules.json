@@ -107,7 +107,7 @@
  "legends": [
   {
    "sp": "rockefeller0",
-   "scene": "volcano",
+   "scene": "cinderpeak",
    "lvl": 42,
    "title": "The ground is leaking",
    "text": "Black gold wells up between the stones. Something enormous is standing in it, and it has noticed you.",
@@ -115,7 +115,7 @@
   },
   {
    "sp": "mansa0",
-   "scene": "summit",
+   "scene": "frostcrown",
    "lvl": 45,
    "title": "Gold on the wind",
    "text": "Coins drift down from the summit like leaves. A golden shape with wings lands in front of you and waits, as if it has all the time in the world.",

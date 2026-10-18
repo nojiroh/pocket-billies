@@ -910,18 +910,18 @@ def save_data(head, D):
 
 # ============================================================================= placing them
 # (scene, key, where to look first, how far to look, extra fields). Spots were picked from a map of each place.
-SPOTS = [('sundown', 'clock_tower', (44.6, 27.3), 1.5, {}),
-         ('longgrass', 'tree_giant', (84.0, 36.8), 4.0, {}),
-         ('pond', 'tree_willow_lean', (42.4, 37.0), 2.5, {}),
-         ('scrapyard', 'crane', (60.0, 41.0), 6.0, {'days': [0, 2, 4, 6]}),
-         ('scrapyard', 'crane', None, 0, {'days': [1, 3, 5], 'f': True}),
-         ('foodcourt', 'neon_sign', (51.6, 29.8), 1.5, {}),
-         ('ridge', 'lookout_tower', (94.0, 51.0), 4.0, {}),
-         ('offshore', 'shipwreck', (27.0, 29.8), 4.0, {}),
-         ('canyon', 'bridge_broken', (57.0, 45.5), .6, {}),
-         ('pass', 'waystone', (73.6, 57.5), 4.0, {}),
-         ('summit', 'golden_cushion', (47.6, 66.0), 3.0, {}),
-         ('lake', 'lighthouse_small', (80.6, 39.45), .6, {})]
+SPOTS = [('marigold', 'clock_tower', (44.6, 27.3), 1.5, {}),
+         ('tallgrass_meadow', 'tree_giant', (84.0, 36.8), 4.0, {}),
+         ('willowmere', 'tree_willow_lean', (42.4, 37.0), 2.5, {}),
+         ('rustgear', 'crane', (60.0, 41.0), 6.0, {'days': [0, 2, 4, 6]}),
+         ('rustgear', 'crane', None, 0, {'days': [1, 3, 5], 'f': True}),
+         ('pepperpot', 'neon_sign', (51.6, 29.8), 1.5, {}),
+         ('kitewind', 'lookout_tower', (94.0, 51.0), 4.0, {}),
+         ('driftwreck', 'shipwreck', (27.0, 29.8), 4.0, {}),
+         ('stepstone_canyon', 'bridge_broken', (57.0, 45.5), .6, {}),
+         ('hornpass', 'waystone', (73.6, 57.5), 4.0, {}),
+         ('frostcrown', 'golden_cushion', (47.6, 66.0), 3.0, {}),
+         ('mirrormere', 'lighthouse_small', (80.6, 39.45), .6, {})]
 
 
 def wet_ok(Pl, x, z):
