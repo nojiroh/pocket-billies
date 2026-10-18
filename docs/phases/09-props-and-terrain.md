@@ -8,6 +8,14 @@ My firm art commitments: terrain textures and the airship style (low-poly models
 - 12 "_deep" trees share a byte-identical main picture with their base tree (only back/front layers differ; ~70 placements). Colour families: house_*, townhouse_*, car_*, mailbox_*, lotus_*, iris_*, mushroom_*, crystal_*, tulips_*, flowers_*; seasonal: tree_pine_snow, tree_oak_autumn, tree_blossom. Shape-variant sets with different silhouettes: tallgrass, rocks, bush_round, boulder, apartment a/b/c, streetlamp_b, lantern_b, palm_tree_b, chalet_b and ~17 others. 145 building colour files (_vN) and 8 _pearl files.
 - `station` is placed nowhere. Pictures no prop entry names (clock_tower_hm, clock_tower_hh, flag_pole, windmill_blades, wind_sail_flower_blades) may be loaded by code directly.
 
+## Status (2026-10-18)
+- Checked: the game's catalogue (game/data/scenery.json `props`) has 429 props after phase 03 removed `station`
+  (game/art/scene/props.json is a separate art-side list of 395). Props are drawn at 34 px/m (`ppu`); the ground tiles
+  are already 32 px/m (16 px a cell, 2 cells a metre).
+- Batch 1 done, waiting for approval: ten props in the new style on the test map `test_props_next`, built by
+  tools/build-props-batch1.py (see HANDOFF.md). Trees are a low-poly trunk and branches with flat leaf clumps cut
+  from the old picture, in one model; the recipe format, variants and the Studio's model editor grew what that needed.
+
 ## Tasks: scope first
 1. List which props the maps, rooms, the opening, the ranch and the world map still use. Delete the unused ones.
 2. Define the style references (the airship and the terrain textures) and write a short art-direction note: low-poly shapes, 32 px/m, retro-futuristic solarpunk for the Hollow Earth, cyberpunk for the opening city.

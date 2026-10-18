@@ -3155,3 +3155,43 @@ body.vp-has-big::after {
   margin: 6px 0;
   font-weight: 600;
 }
+/* phase 09 batch 1: Props (studio/js/props-editor.js) */
+.props-sec {
+  display: grid;
+  grid-template-columns: minmax(240px, 300px) 1fr;
+  gap: 16px;
+  align-items: start;
+}
+.props-side {
+  position: sticky;
+  top: 0;
+  max-height: calc(100vh - 80px);
+  overflow: auto;
+}
+.props-q {
+  width: 100%;
+  margin-bottom: 8px;
+}
+.pr-b {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 0 6px;
+  border-radius: 8px;
+  background: var(--line);
+  margin-left: 4px;
+}
+.pr-3d {
+  background: #d8ecff;
+}
+.pr-new {
+  background: #e3f5d8;
+}
+.vxe-leaf {
+  margin: 8px 0 12px;
+}
+.vxe-leaf svg {
+  display: block;
+  margin: 6px 0;
+  border-radius: 6px;
+}

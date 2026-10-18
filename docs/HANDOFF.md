@@ -11,6 +11,67 @@ Newest entry on top. Every phase session ends by adding an entry here and taggin
 - Questions waiting for the owner: 
 - Next session starts with: 
 
+### Phase 09 batch 1, part 2 - natural trunks, editable leaves, the great oak, a Props section - 2026-10-19
+Owner's requests: stop the rest of the batch; rework the trees' trunks to look natural; leaves easy to edit in the
+Studio; redo the great oak with the swing (Copperleaf); a clear prop part in the Studio with all its tools; no graphic
+effects when looking at props.
+- Trunks: a `limb` can be a bent line of points (`pts`: [x, y, z, radius] each). The tool traces each trunk and arm
+  from the drawing (its lean, curve and taper), bends it a little in depth, flares the foot, adds five roots going into
+  the ground, lets the arms grow out of the trunk's narrowing top, and curves the branches up into the clumps.
+- Leaves: one picture per tree or bush (game/art/scene/next/leaves/<key>.png, the crown as drawn). Each clump is a
+  picture layer with `clip` [x, y, r] (a circle in that picture, cut at run time, outline on its lower rim), the core
+  is the same picture with `shade` 0.78. Painting it changes every clump. The autumn oak is one recoloured picture.
+- Great oak: next_tree_giant_swing (16 clumps, the knot hole as a picture on the trunk, the swing's branch modelled,
+  ropes and seat that swing together: a `spin` may have `swing`, radians to and fro). On the test map's last row.
+- Plain look: a scene with `plain: 1` draws without depth of field, bloom, grade, grain, vignette, haze, mist, clouds,
+  shafts, weather, time of day or season (engine/settings.js PLAIN_LOOK). The props test map and the Studio's prop
+  turntable use it.
+- Studio: a Props section (World & places → Props, studio/js/props-editor.js): every prop, searchable, filtered by
+  New style / Trees / Bushes & plants / Rocks / Buildings / Lamps & furniture / Flat, with 3D, 32 px/m and looks badges
+  and how often each is placed; for the picked prop: its looks (variants) on the turntable one by one, paint a look's
+  picture, add a look from another prop, remove one; where it stands (jump to the scene); the full prop editor; the
+  model editor with a Leaves part (each leaf picture with its clump circles drawn on it, Paint the leaves, Replace from
+  PNG) and per-layer clump circle, darker, shadow, sway and glow fields; the pixel editor.
+- Variants: a variant's swapped pictures load with the place (the autumn oak showed late).
+- Verified: lint, type-check, modules, format, data check, 32 unit tests; headless shots of the trees and great oak;
+  the Studio (GitHub stand-in): the Props list and filter, the Leaves part lists both oak pictures, painting a leaf
+  picture marks it changed and bumps its version. Not done: a screenshot of the Props section with the turntable
+  running (the software renderer is too slow for it), the smoke check after this part.
+- Variants count: the 11 new props have 22 looks in all: beech 1, oak 4 (oak, spreading, sapling, autumn), great oak
+  1, wild roses 1, round bush 3, rocks 5 (3 shapes, mossy, snowy), mushrooms 3, cottage 1, lantern 1, washing line 1,
+  tall grass 3.
+
+### Phase 09 batch 1 - ten props in the new style, test map - 2026-10-18
+Owner's choices: trees as a low-poly trunk and branches with flat leaf clumps, in one model; a first batch of ten props
+covering every technique, shown on a test map. Started straight from the owner's go-ahead in chat (no Plan Mode step).
+- Changed: prop-models.js: a `limb` shape (tapered branch, point to point) and a `dome`; round shapes take `sides`,
+  `rings`, `lump`, `facet`; textures `bark` and `rock` (cells 22 and 23 of detail-a04b.png, painted by the tool);
+  picture layers take `shadow`, `recv: 0` (no shadow-map lookup, so a crown's clumps don't stripe each other), `sway`
+  and `glow` (on with the lamps), the recipe takes `ppm`; picture layers no longer inherit the footprint `box` (it drew
+  a cottage's door pushed back inside its walls); a variant can `swap` colours and pictures. walk-view.js: plain prop
+  `variants` picked by a placement's `v`. walk-view-gl.js: a prop's own `ppm`; `lampLit` exported; the sprite shader
+  skips the shadow map for `noRecv` items. Studio model editor: Limb and Dome, their fields, sides/bands/lumpy/flat
+  faces, and a picture layer's shadow/shadows-on-it/sway/glow.
+- New: tools/build-props-batch1.py builds everything below from the old pictures, rerunnable: game/art/scene/next
+  (leaves, decals, models), the `next_*` catalogue entries in scenery.json and game/data/maps/test_props_next.json.
+  Props: next_beech; next_oak (variants: spreading, sapling, autumn = the oak with recoloured leaves); next_bush_roses;
+  next_bush_round (3 shapes); next_rocks (3 shapes, mossy, snowy = mossy with a colour swap); next_mushroom (red,
+  brown, blue by swap); next_cottage_juniper; next_lantern; next_laundry_line; next_tallgrass (stays flat, 32 px/m,
+  3 shapes). The test map has each old prop just left of its new version; debug menu > Test scenes, or
+  game/index.html?test=1&scene=test_props_next.
+- Risky or unfinished: no route uses the new props yet (swap-in waits for approval). Cottage pictures stand 0.16 m out
+  from the wall (a picture's depth is coarser than a model's; nearer, it hides), visible from a steep side angle.
+  tools/build-airship.py rewrites detail-a04b.png from detail-a04.png and would drop bark and rock: rerun
+  build-props-batch1.py after it. The new cottage keeps the old `door` (interior) and window fx. Trees cost about 10
+  sprites each (core + clumps); instancing is still to do. Not measured on a phone.
+- Verified: lint, type-check, module check, format check, data check, 32 unit tests, the smoke check (see the PR);
+  headless shots of every row by day, the trees turned, the lanterns and cottage at night.
+- Correction to my earlier count: 76 recipe files exist in scene/vox, but only 32 props link one (`model`); the
+  lantern, stump, beehive, signpost and others on the first routes still draw their picture.
+- Questions waiting for the owner: approve the batch (or which props to redo)? Then swap them in on Copperleaf,
+  Hedgerow Lane and Tallgrass Meadow, keyed as the old props (so placements keep working) or as next_* with
+  placements rewritten?
+- Next session starts with: the owner's notes on the batch.
 ### Phase 13 (part) - The fast check and the in-game graphics test - 2026-10-18
 Two parts, plans approved by the owner. Part 1 on branch ccr-5f324dee-5mgqdn (merged as PR #16), Part 2 on top of it.
 - Changed:

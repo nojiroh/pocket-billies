@@ -71,6 +71,7 @@ expose({
   OPEN_HOURS: [() => OPEN_HOURS],
   PAINT_WORKER_WAIT: [() => PAINT_WORKER_WAIT],
   PROP_CLOCK: [() => PROP_CLOCK],
+  PROP_VARIANT_CACHE: [() => PROP_VARIANT_CACHE],
   ROOF_STYLES: [() => ROOF_STYLES],
   STEP_GRID_CACHE: [() => STEP_GRID_CACHE],
   TILE_PIXEL_CACHE: [() => TILE_PIXEL_CACHE],
@@ -166,6 +167,7 @@ expose({
   pickHit: [() => pickHit, v => (pickHit = v)],
   pixelFont: [() => pixelFont, v => (pixelFont = v)],
   pixelUnit: [() => pixelUnit, v => (pixelUnit = v)],
+  plainPropVariant: [() => plainPropVariant, v => (plainPropVariant = v)],
   plainTileIndex: [() => plainTileIndex, v => (plainTileIndex = v)],
   pointAlongMapPath: [() => pointAlongMapPath, v => (pointAlongMapPath = v)],
   pointAlongPolyline: [() => pointAlongPolyline, v => (pointAlongPolyline = v)],
@@ -432,7 +434,25 @@ const ROOF_STYLES = {
   solar: { roofTex: 17, roofCol: '#3A4C7E' },
   chrome: { roofTex: 12, roofCol: '#8FC4CE' },
 };
+/* phase 09 batch 1: a plain prop's variants (not a building's): variants: [{...fields}], picked by a placement's v
+   (1 is the first; 0 or none is the prop as it is). A variant replaces any of the prop's fields: its picture and
+   size (img, w, h, ox, oy), its model, a swap of colours and pictures in that model (swap), its name. */
+const PROP_VARIANT_CACHE = new WeakMap();
+function plainPropVariant(n, M) {
+  const V = M.variants[n - 1];
+  if (!V) return M;
+  let c = PROP_VARIANT_CACHE.get(M);
+  if (!c) PROP_VARIANT_CACHE.set(M, (c = new Map()));
+  let out = c.get(n);
+  if (!out) {
+    out = Object.assign({}, M, V, { _vk: n });
+    delete out.variants;
+    c.set(n, out);
+  }
+  return out;
+}
 export function propWithVariant(p, M) {
+  if (M && !M.build && M.variants && p && p.v | 0) return plainPropVariant(p.v | 0, M);
   const n = p && p.v | 0,
     rf = M && M.build && p && p.roof ? ROOF_STYLES[p.roof] : null;
   if (!M || !M.build || (!rf && (!n || !M.build.variants))) return M;
