@@ -22,7 +22,7 @@ import {
   setEglPrograms,
 } from './engine/core.js';
 import { eglPost, setEglPost } from './engine/post.js';
-import { ENV } from './env.js';
+import { ENV } from './environment.js';
 import {
   DGL,
   dglBuildGrass,

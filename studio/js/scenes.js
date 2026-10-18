@@ -40,7 +40,7 @@ import {
   setDioData,
   setDioImg,
 } from '../../game/js/walk-view.js';
-import { ENV } from '../../game/js/env.js';
+import { ENV } from '../../game/js/environment.js';
 import { DGL, DGL_WALL_MATS, dioHRaw, dioMount } from '../../game/js/walk-view-gl.js';
 import { esc } from './shims.js';
 import {
@@ -1613,7 +1613,7 @@ ACTS.scTool = d => {
   SCN.tool = d.t;
   render();
 };
-/* v26: preview the scene at another hour, in other weather or season (env.js); nothing is saved */
+/* v26: preview the scene at another hour, in other weather or season (environment.js); nothing is saved */
 function scEnvApply() {
   if (typeof ENV === 'undefined') return;
   const e = SCN.env || {},

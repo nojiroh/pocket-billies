@@ -38,7 +38,7 @@ import {
 import { eng } from './engine/settings.js';
 import { EGL, eglAttrClashes } from './engine/core.js';
 import { EGL_POST_SH } from './engine/post.js';
-import { ENV } from './env.js';
+import { ENV } from './environment.js';
 import { DGL, DGL_SH, dglRoomDim, dioH } from './walk-view-gl.js';
 import { BLD, BLD_SH } from './buildings.js';
 import { STR, strHas } from './structures.js';

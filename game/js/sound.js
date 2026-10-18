@@ -13,7 +13,7 @@ import { ROUTE } from './game-data.js';
 import { B, S, U } from './game-state.js';
 import { SC } from './battle-stage.js';
 import { DIO, dioBaseId, dioBridgeAt, dioBridges, dioData, dioScene, dioStepM, dioTer } from './walk-view.js';
-import { ENV, envHour, envState } from './env.js';
+import { ENV, envHour, envState } from './environment.js';
 import { DGL } from './walk-view-gl.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -1089,7 +1089,7 @@ document.addEventListener(
 
 /* ================= v27: SOUNDS OF THE WORLD =================
    Beds of sound that swell as you walk near running water, waterfalls, the sea, ponds, fountains and fires, plus the
-   rain, the wind and thunder (env.js), each placed left or right of you; animals call and scurry from where they are.
+   rain, the wind and thunder (environment.js), each placed left or right of you; animals call and scurry from where they are.
    The music listens too: its drums soften while you stand still or at night, a pad hums under the night, and it
    sounds a little muffled in the rain. Settings → World sounds sets the volume (0 mutes). */
 /* v31: world sounds are half as loud by default and fade in over a few seconds when you arrive somewhere; a second

@@ -797,7 +797,7 @@ export function eng(group, key) {
   if (v === undefined && L && L[group]) v = L[group][key];
   if (v === undefined && G && G[group]) v = G[group][key];
   if (v === undefined) v = ENGINE_DEFAULTS[group][key];
-  /* v26: the time of day and the weather lean on some dials while a walk scene draws (env.js) */
+  /* v26: the time of day and the weather lean on some dials while a walk scene draws (environment.js) */
   if (ENG_CTX.env && typeof ENV_MOD !== 'undefined') {
     const m = ENV_MOD[group];
     if (m && m[key] && typeof v === 'number') v = m[key](v);

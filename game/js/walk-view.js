@@ -457,7 +457,7 @@ export function dioPropM(p, M) {
 }
 /* v47: things that are only out at some hours, on some days or in some seasons. A prop may say hours:[from,to]
    (e.g. [6,12]; [21,4] runs past midnight), days:[0-6] (0 is Sunday) and season:'autumn' or a list. The clock is
-   the game's (env.js: real time, or the time set in Settings), checked once a second. */
+   the game's (environment.js: real time, or the time set in Settings), checked once a second. */
 export const DIO_CLK = { t: -1e9, h: 13, day: 0, ss: 'summer' };
 function dioClock() {
   const n = performance.now();

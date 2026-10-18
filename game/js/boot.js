@@ -15,7 +15,7 @@ import { rigAtlas } from './rig.js';
 import { AREAS, scPrepare, stageArt } from './battle-stage.js';
 import { DIO, dioData, dioPaths, dioScene } from './walk-view.js';
 import { EGL, eglOK } from './engine/core.js';
-import { ENV } from './env.js';
+import { ENV } from './environment.js';
 import { DGL, dglRiseStart } from './walk-view-gl.js';
 import { WORLD } from './seamless-world.js';
 import { areaKey } from './battle.js';
@@ -126,7 +126,7 @@ const UI_SVG = [
   'ash',
   'door',
 ];
-/* v26: the walk scenes follow the real clock, the weather and the season (env.js; the Studio leaves this off) */
+/* v26: the walk scenes follow the real clock, the weather and the season (environment.js; the Studio leaves this off) */
 if (typeof ENV !== 'undefined') ENV.on = true;
 const LOAD_PHASES = [
   'Polishing the coins',

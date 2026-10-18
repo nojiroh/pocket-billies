@@ -27,7 +27,7 @@ import {
   eglPrograms,
   v3n,
 } from './engine/core.js';
-import { ENV, envLitFrac } from './env.js';
+import { ENV, envLitFrac } from './environment.js';
 import { DGL, dglCurveArgs, dglLookU, dglUse, dioH } from './walk-view-gl.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -1580,7 +1580,7 @@ function bldDraw0(C, X, items, fades) {
     gl.uniform1f(
       p.U.uLitF,
       bldLitF()
-    ); /* v47: windows come on one at a time in the evening and go off one at a time at night (env.js envLitFrac) */
+    ); /* v47: windows come on one at a time in the evening and go off one at a time at night (environment.js envLitFrac) */
   for (const it of L) {
     const E = BLD.mesh.get(it.p);
     if (!E || !E.wins) continue;

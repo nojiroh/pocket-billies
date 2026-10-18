@@ -9,7 +9,7 @@ import { closeModal, provide, render, renderOv, settings, toast } from './hooks.
 import { U } from './game-state.js';
 import { GFX_DIALS, gfxDial } from './settings-screen.js';
 import { DIO, dioScene } from './walk-view.js';
-import { ENV } from './env.js';
+import { ENV } from './environment.js';
 /* eslint-disable no-func-assign */
 expose({
   GAL: [() => GAL],

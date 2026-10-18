@@ -30,7 +30,7 @@ export function eglSun(indoor) {
     h = eng('sun', 'height'),
     warm = 0,
     col = engHex('sun', 'color', '#FFF0D8');
-  /* v26: the time of day and the moon (env.js), while a walk scene draws */
+  /* v26: the time of day and the moon (environment.js), while a walk scene draws */
   if (!indoor && typeof ENV !== 'undefined' && ENG_CTX.env && (ENV.on || ENV.force)) {
     const e = envSun(a, h, col);
     a = e.a;

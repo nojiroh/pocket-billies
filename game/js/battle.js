@@ -91,7 +91,7 @@ import {
   sideWorld,
 } from './battle-stage.js';
 import { DIO } from './walk-view.js';
-import { ENV, ENV_NAMES, envHere, envState } from './env.js';
+import { ENV, ENV_NAMES, envHere, envState } from './environment.js';
 import { DGL, dglRing, dglWgAt } from './walk-view-gl.js';
 import { BGL, battleGLWanted } from './battle-3d.js';
 /* eslint-disable no-func-assign */

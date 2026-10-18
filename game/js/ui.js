@@ -124,7 +124,7 @@ import {
   placeOpen,
 } from './walk-view.js';
 import { eng } from './engine/settings.js';
-import { ENV, envHint, envIcon, envLabel } from './env.js';
+import { ENV, envHint, envIcon, envLabel } from './environment.js';
 import { DGL, dioMount } from './walk-view-gl.js';
 import { fishStart } from './fishing.js';
 import {

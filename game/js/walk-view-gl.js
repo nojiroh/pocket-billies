@@ -175,7 +175,7 @@ import {
   eglSun,
 } from './engine/light.js';
 import { EGL_POST_SH, eglPost, eglSnapshot, eglSunScreen } from './engine/post.js';
-import { ENV, ENV_WX, envFrame, envHere, envSky, envState, envWinLit } from './env.js';
+import { ENV, ENV_WX, envFrame, envHere, envSky, envState, envWinLit } from './environment.js';
 /* eslint-disable no-func-assign */
 expose({
   DGL: [() => DGL],
@@ -3563,7 +3563,7 @@ function dglFrame(ts, dtm) {
     t = DIO.t,
     C0 = dioData().sc,
     PPU = C0.ppu || 34;
-  /* v26: the hour, the weather and the season (env.js) lean on the engine dials while this frame draws */
+  /* v26: the hour, the weather and the season (environment.js) lean on the engine dials while this frame draws */
   ENG_CTX.env = typeof ENV !== 'undefined' && (ENV.on || !!ENV.force);
   if (ENG_CTX.env) envFrame(sc, dt);
   const gq = eglGpuBegin();
@@ -4970,7 +4970,7 @@ function dglLampOn(x, z, dark) {
   const th = 0.16 + 0.3 * dioHash(Math.round(x * 7), Math.round(z * 11));
   return Math.min(1, Math.max(0, (E.lampK - th) / 0.07));
 }
-/* an old (picture-only) house's window: lit at this hour or not (env.js envWinLit) */
+/* an old (picture-only) house's window: lit at this hour or not (environment.js envWinLit) */
 function dglWinOn(x, z) {
   return typeof envWinLit === 'function' && typeof ENV !== 'undefined' && ENG_CTX.env ? envWinLit(x, z, ENV.tod) : true;
 }
@@ -5509,7 +5509,7 @@ function dglShadowPassFit(items0, sun, C) {
   eglShadowEnd();
   return SH;
 }
-/* v26: the scene's sky colours after the hour and the weather (env.js) */
+/* v26: the scene's sky colours after the hour and the weather (environment.js) */
 function dglSkyCols(sc) {
   const s = (sc.sky || ['#8CC6E6', '#BFE3EE', '#F4E8C8']).map(c => hexA(c).map(v => v / 255));
   return typeof envSky === 'function' && ENG_CTX.env ? envSky(s, !!sc.indoor) : s;
@@ -7209,7 +7209,7 @@ function dglFountainFx(quad, t, rm, dt) {
 }
 /* smoke, spray, sparks, sparkles, butterflies, leaves, kicked-up grass; lamps, windows and fires as small bright cores
    (the bloom turns them into glows) */
-/* v26: rain, snow and falling ash around you (env.js says how much); drops splash on the ground and ring the water */
+/* v26: rain, snow and falling ash around you (environment.js says how much); drops splash on the ground and ring the water */
 function dglWeather(quad, glows, U, R, Up, dt, rm) {
   const gl = EGL.gl,
     E = ENV,
