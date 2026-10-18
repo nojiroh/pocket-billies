@@ -33,7 +33,6 @@ expose({
   changedDataFiles: [() => changedDataFiles, v => (changedDataFiles = v)],
   checkGithubToken: [() => checkGithubToken, v => (checkGithubToken = v)],
   gameFilePath: [() => gameFilePath],
-  githubApi: [() => githubApi, v => (githubApi = v)],
   githubFetch: [() => githubFetch, v => (githubFetch = v)],
   githubLogin: [() => githubLogin, v => (githubLogin = v)],
   githubLoginHTML: [() => githubLoginHTML, v => (githubLoginHTML = v)],
@@ -43,6 +42,7 @@ expose({
   readGithubData: [() => readGithubData, v => (readGithubData = v)],
   repoApiPath: [() => repoApiPath],
   startGithubMode: [() => startGithubMode, v => (startGithubMode = v)],
+  studioApiViaGithub: [() => studioApiViaGithub, v => (studioApiViaGithub = v)],
   textToBase64: [() => textToBase64],
   toBase64: [() => toBase64],
 });
@@ -255,7 +255,7 @@ function changedDataFiles(D) {
   return out;
 }
 /* ---------- the Studio's server calls, answered from GitHub ---------- */
-async function githubApi(path, opt = {}) {
+async function studioApiViaGithub(path, opt = {}) {
   const [p, qs] = path.split('?'),
     q = new URLSearchParams(qs || ''),
     post = (opt.method || 'GET') === 'POST';
@@ -375,7 +375,7 @@ async function proposeOnGithub(summary) {
 }
 /* the Studio's own api() and saveAll() take this route when it runs from GitHub */
 if (githubMode.on) {
-  setApi(githubApi);
+  setApi(studioApiViaGithub);
   const save0 = saveAll;
   setSaveAll(async function () {
     if ($('#saveBtn').disabled) return;
