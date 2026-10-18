@@ -8,7 +8,8 @@ import { expose } from './test-globals.js';
 import { closeModal, modal, progressBarHTML, provide, render, roomRefresh, toast } from './hooks.js';
 import { clamp } from './util.js';
 import { COINS, ITEMS, LOCATIONS, RULES, SPECIES, gameData } from './game-data.js';
-import { activeBattle, billyName, escapeHtml, formatNumber, save, saveData, today, uiState } from './game-state.js';
+import { billyName, formatNumber, today } from './logic/rules.js';
+import { activeBattle, escapeHtml, save, saveData, uiState } from './game-state.js';
 import { makeCanvas, uiIconHTML } from './art.js';
 import {
   baseMapId,

@@ -8,7 +8,8 @@ import { expose } from './test-globals.js';
 import { buzz, provide, render, soundEffect, toast } from './hooks.js';
 import { $, $$, random } from './util.js';
 import { SHOPS } from './game-data.js';
-import { escapeHtml, formatNumber, save, saveData, uiState } from './game-state.js';
+import { formatNumber } from './logic/rules.js';
+import { escapeHtml, save, saveData, uiState } from './game-state.js';
 import { frameStop, frameTask } from './frame-scheduler.js';
 import { makeCanvas, uiIconHTML } from './art.js';
 import {

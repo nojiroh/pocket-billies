@@ -2,7 +2,8 @@
 // script that runs before the modules) reads and wraps in the game's modules: a getter for each name in its GAME
 // object, and a setter (the module's own) for each function it wraps. The last module of the game's page.
 import { LOCATIONS, gameData } from './game-data.js';
-import { activeBattle, save, saveData, setSave, setSetTrip, setTrip, uiState } from './game-state.js';
+import { setSetTrip, setTrip } from './logic/rules.js';
+import { activeBattle, save, saveData, setSave, uiState } from './game-state.js';
 import { frameScheduler, userFps } from './frame-scheduler.js';
 import { artPixels, setArtPixels } from './art.js';
 import { PERSON_ART_CACHE, personBattleFrames, setPersonBattleFrames } from './person-art.js';

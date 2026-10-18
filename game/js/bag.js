@@ -7,7 +7,8 @@
 import { expose } from './test-globals.js';
 import { closeModal, modal, render, toast } from './hooks.js';
 import { COINS, EGGS, ITEMS, STATUS_NAMES } from './game-data.js';
-import { billyName, escapeHtml, formatNumber, maxHp, saveData, uiState } from './game-state.js';
+import { billyName, formatNumber, maxHp } from './logic/rules.js';
+import { escapeHtml, saveData, uiState } from './game-state.js';
 import { coinHTML, eggHTML, uiIconHTML } from './art.js';
 import { bustHTML } from './skeleton-rig.js';
 import { applyItem, canUse, itemIcon, teamNeedsHp } from './battle.js';

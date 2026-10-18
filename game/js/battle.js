@@ -45,11 +45,9 @@ import {
   typeEffectiveness,
 } from './game-data.js';
 import {
-  activeBattle,
   addBilly,
   addEgg,
   billyName,
-  escapeHtml,
   findBilly,
   formatNumber,
   gainXp,
@@ -59,14 +57,10 @@ import {
   maxHp,
   pickWeighted,
   plural,
-  reducedMotion,
-  save,
-  saveData,
-  setActiveBattle,
   stat,
-  uiState,
   xpFor,
-} from './game-state.js';
+} from './logic/rules.js';
+import { activeBattle, escapeHtml, reducedMotion, save, saveData, setActiveBattle, uiState } from './game-state.js';
 import { artURL, coinHTML, eggHTML, iconURL, uiIconHTML } from './art.js';
 import { portraitHTML } from './person-art.js';
 import { RIG_BACK_VIEW, bustHTML, rigPreload } from './skeleton-rig.js';

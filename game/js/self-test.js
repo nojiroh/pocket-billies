@@ -12,20 +12,16 @@ import { expose } from './test-globals.js';
 import { provide } from './hooks.js';
 import { clamp } from './util.js';
 import { LOCATIONS, MOVES, RULES, SPECIES, TRAINERS, gameData, locationKind, roadCost } from './game-data.js';
+import { addSteps, makeBilly, maxHp, setTrip, spawn } from './logic/rules.js';
 import { loadAllMaps } from './map-files.js';
 import {
   activeBattle,
-  addSteps,
   escapeHtml,
-  makeBilly,
-  maxHp,
   save,
   saveData,
   setActiveBattle,
   setSave,
   setSaveData,
-  setTrip,
-  spawn,
   uiState,
 } from './game-state.js';
 import { frameScheduler } from './frame-scheduler.js';

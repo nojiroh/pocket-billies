@@ -12,7 +12,8 @@
 import { expose } from './test-globals.js';
 import { account, accountOn, closeModal, mapIdAt, mapOffsetInView, modal, provide, render, toast } from './hooks.js';
 import { LOCATIONS, SPECIES } from './game-data.js';
-import { billyName, cleanName, escapeHtml, plural, saveData, uiState } from './game-state.js';
+import { billyName, cleanName, plural } from './logic/rules.js';
+import { escapeHtml, saveData, uiState } from './game-state.js';
 import { personWalkFrames, portraitHTML, warmPerson } from './person-art.js';
 import { rigCanvasHTML } from './skeleton-rig.js';
 import { directionOf, walkView } from './walk-view.js';

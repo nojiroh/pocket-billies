@@ -24,11 +24,11 @@ import {
   walkRenderer,
 } from './hooks.js';
 import { JOBS, LOCATIONS, MOVES, RULES, SPECIES, STATUS_NAMES } from './game-data.js';
+import { formatNumber, teamSize, today } from './logic/rules.js';
 import {
   SAVE_NEW_MSG,
   SAVE_OLD_MSG,
   escapeHtml,
-  formatNumber,
   migrate,
   reducedMotion,
   save,
@@ -36,8 +36,6 @@ import {
   saveData,
   setReducedMotion,
   setSaveData,
-  teamSize,
-  today,
   uiState,
 } from './game-state.js';
 import { I18N_LANGS, i18nSet } from './i18n.js';

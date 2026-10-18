@@ -29,27 +29,29 @@ import {
   TRAINERS,
 } from './game-data.js';
 import {
-  activeBattle,
   addBilly,
   addEgg,
   addSteps,
-  escapeHtml,
-  flushSave,
   gainXp,
   healAll,
   makeBilly,
   maxLevel,
-  newSaveKeepingPreferences,
   newUid,
+  spawn,
+  today,
+  xpFor,
+} from './logic/rules.js';
+import {
+  activeBattle,
+  escapeHtml,
+  flushSave,
+  newSaveKeepingPreferences,
   save,
   saveData,
   setActiveBattle,
   setSaveData,
-  spawn,
-  today,
   uiState,
   writeStoredSave,
-  xpFor,
 } from './game-state.js';
 import { frameCount, frameScheduler, frameTask, userFps } from './frame-scheduler.js';
 import { uiIconHTML } from './art.js';
