@@ -4,7 +4,7 @@
    Everything here edits the current save directly; use Export first if you want a way back. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './bridge.js';
-import { closeModal, evoRun, modal, provide, stSceneChecks, testScenes } from './hooks.js';
+import { closeModal, evoRun, modal, provide, stSceneChecks, testScenes, toast } from './hooks.js';
 import { $, $$, clamp } from './util.js';
 import { COINS, DATA_WARN, DEX, EGGS, EGG_TIERS, ITEMS, ROUTE, RULES, SP, TRAINERS } from './data.js';
 import {

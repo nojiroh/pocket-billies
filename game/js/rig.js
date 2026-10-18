@@ -26,11 +26,12 @@ expose({
   rigAudit: [() => rigAudit, v => (rigAudit = v)],
   rigFrame: [() => rigFrame, v => (rigFrame = v)],
   rigMatrices: [() => rigMatrices, v => (rigMatrices = v)],
-  rigParts: [() => rigParts, v => (rigParts = v)],
+  rigParts: [() => rigParts, v => setRigParts(v)],
   rigPose: [() => rigPose, v => (rigPose = v)],
   rigPreload: [() => rigPreload, v => (rigPreload = v)],
   rigTick: [() => rigTick, v => (rigTick = v)],
   rigTint: [() => rigTint, v => (rigTint = v)],
+  setRigParts: [() => setRigParts, v => (setRigParts = v)],
   sm: [() => sm],
   sprHTML: [() => sprHTML, v => (sprHTML = v)],
 });
@@ -412,6 +413,11 @@ export function rigParts(sp, gold, k = 1) {
     clock: meta.clock || 0,
     lag: bones.some(b => b.lag),
   });
+}
+/* phase 04d: the Studio's battle preview draws its own billionaires (studio/js/preview.js) */
+export function setRigParts(v) {
+  rigParts = v; // eslint-disable-line no-func-assign
+  provide({ rigParts });
 }
 export function rigPreload(list) {
   return artLoad(list.map(([sp, gold, k]) => rigAtlas(sp, gold, k === 1 ? 'front' : 'back')));

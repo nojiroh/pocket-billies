@@ -7,6 +7,7 @@ import { expose } from '../../game/js/bridge.js';
 import { provide, scArt, scD } from '../../game/js/hooks.js';
 import { $, $$ } from '../../game/js/util.js';
 import { COIN_ART, artLoad, hexA } from '../../game/js/art.js';
+import { setRigParts } from '../../game/js/rig.js';
 import {
   AREAS,
   SC,
@@ -61,7 +62,7 @@ expose({
 /* eslint-enable no-func-assign */
 provide({ battleFreeArea, battleLayoutChanged, hudHit, hudPop });
 /* to-module: end */
-rigParts = (sp, gold, k) => rigFor(sp, k === 1 ? 'front' : 'back', !!gold);
+setRigParts((sp, gold, k) => rigFor(sp, k === 1 ? 'front' : 'back', !!gold));
 const BP = {
   stage: 'backdrop',
   area: null,

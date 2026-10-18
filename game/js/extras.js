@@ -5,7 +5,7 @@
    first time it's needed. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './bridge.js';
-import { bar, closeModal, modal, provide, roomRefresh } from './hooks.js';
+import { bar, closeModal, modal, provide, roomRefresh, toast } from './hooks.js';
 import { clamp } from './util.js';
 import { COINS, GD, ITEMS, ROUTE, RULES, SP } from './data.js';
 import { B, N, S, U, esc, fmt, save, today } from './core.js';
@@ -14,9 +14,9 @@ import { DIO, dioBaseId, dioFace, dioFind, dioFreePt, dioHubOf, dioScene, dioTer
 import { eng } from './engine/settings.js';
 import { ENV, envHere, envState } from './env.js';
 import { DGL, dioH } from './diorama-gl.js';
-import { say } from './battle.js';
+import { endBattle, openBattle, say, setEndBattle, setOpenBattle } from './battle.js';
 import { sfx } from './sound.js';
-import { TALK, talk } from './talk.js';
+import { TALK, setTalkFolk, talk, talkFolk } from './talk.js';
 /* eslint-disable no-func-assign */
 expose({
   FURN: [() => FURN],
@@ -633,17 +633,17 @@ function battleWeatherMult(t) {
 (function () {
   if (typeof openBattle === 'function') {
     const ob = openBattle;
-    openBattle = function () {
+    setOpenBattle(function () {
       try {
         const w = battleWx();
         if (w && X28_BWX_TEXT[w.k]) say(X28_BWX_TEXT[w.k]);
       } catch (e) {}
       return ob.apply(this, arguments);
-    };
+    });
   }
   if (typeof endBattle === 'function') {
     const eb = endBattle;
-    endBattle = function () {
+    setEndBattle(function () {
       let o = null,
         types = null;
       try {
@@ -658,14 +658,14 @@ function battleWeatherMult(t) {
         if (o === 'caught') x28Event('catch', { types: types || [] });
       } catch (e) {}
       return r;
-    };
+    });
   }
   if (typeof talkFolk === 'function') {
     const tf = talkFolk;
-    talkFolk = function (f) {
+    setTalkFolk(function (f) {
       if (f && f === reqAsker()) return reqTalk(f);
       return tf.apply(this, arguments);
-    };
+    });
   }
 })();
 /* the painted battle stage gets rain, snow, ash or the night drawn over it (the 3D stage has the real thing) */

@@ -21,7 +21,7 @@ expose({
   SLINK: [() => SLINK],
   ST: [() => ST],
   after: [() => after],
-  api: [() => api, v => (api = v)],
+  api: [() => api, v => setApi(v)],
   ask: [() => ask],
   blurField: [() => blurField],
   boot: [() => boot, v => (boot = v)],
@@ -40,7 +40,7 @@ expose({
   fText: [() => fText, v => (fText = v)],
   fid: [() => fid],
   fmtN: [() => fmtN],
-  getP: [() => getP, v => (getP = v)],
+  getP: [() => getP, v => setGetP(v)],
   go: [() => go, v => (go = v)],
   grid: [() => grid],
   itemOpts: [() => itemOpts],
@@ -50,18 +50,24 @@ expose({
   peopleOpts: [() => peopleOpts],
   readField: [() => readField, v => (readField = v)],
   redo: [() => redo, v => (redo = v)],
-  render: [() => render, v => (render = v)],
+  render: [() => render, v => setRender(v)],
   renderSide: [() => renderSide, v => (renderSide = v)],
   restore: [() => restore, v => (restore = v)],
-  saveAll: [() => saveAll, v => (saveAll = v)],
-  setP: [() => setP, v => (setP = v)],
+  saveAll: [() => saveAll, v => setSaveAll(v)],
+  setApi: [() => setApi, v => (setApi = v)],
+  setGetP: [() => setGetP, v => (setGetP = v)],
+  setP: [() => setP, v => setSetP(v)],
+  setRender: [() => setRender, v => (setRender = v)],
+  setSaveAll: [() => setSaveAll, v => (setSaveAll = v)],
+  setSetP: [() => setSetP, v => (setSetP = v)],
+  setToast: [() => setToast, v => (setToast = v)],
   snapshot: [() => snapshot],
   spName: [() => spName],
   spOpts: [() => spOpts],
   statOpts: [() => statOpts],
   statusOpts: [() => statusOpts],
   studioBroadcast: [() => studioBroadcast, v => (studioBroadcast = v)],
-  toast: [() => toast, v => (toast = v)],
+  toast: [() => toast, v => setToast(v)],
   typeOpts: [() => typeOpts],
   uidKey: [() => uidKey],
   undo: [() => undo, v => (undo = v)],
@@ -96,6 +102,11 @@ export async function api(path, opt = {}) {
   if (!r.ok) throw new Error((j && j.error) || r.statusText);
   return j;
 }
+/* phase 04d: github.js takes the GitHub route, links.js redraws the links */
+export function setApi(v) {
+  api = v; // eslint-disable-line no-func-assign
+  provide({ api });
+}
 export const clone = o => JSON.parse(JSON.stringify(o));
 export const fmtN = n => Number(n).toLocaleString('en-US');
 export const uidKey = (base, taken) => {
@@ -120,6 +131,11 @@ export function getP(path, o) {
   if (path === '') return o;
   return path.split('.').reduce((a, k) => (a == null ? undefined : a[k]), o);
 }
+/* phase 04d: sections.js and lore.js read and write fields their own way */
+export function setGetP(v) {
+  getP = v; // eslint-disable-line no-func-assign
+  provide({ getP });
+}
 export function setP(path, val, o) {
   if (o === undefined) {
     if (path.startsWith('@rigs.')) {
@@ -139,6 +155,11 @@ export function setP(path, val, o) {
     if (Array.isArray(a)) a[k] = undefined;
     else delete a[k];
   } else a[k] = val;
+}
+/* phase 04d: sections.js and lore.js read and write fields their own way */
+export function setSetP(v) {
+  setP = v; // eslint-disable-line no-func-assign
+  provide({ setP });
 }
 /* ---------- undo / dirty ---------- */
 const snapshot = () => JSON.stringify({ D: ST.D, R: ST.rigs });
@@ -227,7 +248,7 @@ export function updTop() {
   $('#redoBtn').disabled = !ST.redo.length;
 }
 /* ---------- save ---------- */
-async function saveAll() {
+export async function saveAll() {
   const btn = $('#saveBtn');
   if (btn.disabled) return;
   btn.disabled = true;
@@ -278,6 +299,11 @@ async function saveAll() {
     btn.textContent = 'Save to game';
   }
 }
+/* phase 04d: github.js takes the GitHub route, links.js redraws the links */
+export function setSaveAll(v) {
+  saveAll = v; // eslint-disable-line no-func-assign
+  provide({ saveAll });
+}
 /* ---------- toasts & dialogs ---------- */
 export function toast(t, k = '') {
   const el = document.createElement('div');
@@ -286,6 +312,11 @@ export function toast(t, k = '') {
   $('#toasts').appendChild(el);
   setTimeout(() => el.classList.add('out'), 2600);
   setTimeout(() => el.remove(), 3000);
+}
+/* phase 04d: github.js takes the GitHub route, links.js redraws the links */
+export function setToast(v) {
+  toast = v; // eslint-disable-line no-func-assign
+  provide({ toast });
 }
 export function dialog(title, html, btns, cls = '') {
   return new Promise(res => {
@@ -474,6 +505,11 @@ export function render() {
   m.innerHTML = S();
   ST.after.forEach(f => f());
   mountPreviews(m);
+}
+/* phase 04d: github.js takes the GitHub route, links.js redraws the links */
+export function setRender(v) {
+  render = v; // eslint-disable-line no-func-assign
+  provide({ render });
 }
 export const after = f => {
   ST.after.push(f);

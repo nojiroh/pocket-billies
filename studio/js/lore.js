@@ -19,9 +19,13 @@ import {
   fNum,
   fSel,
   fText,
+  getP,
   grid,
   peopleOpts,
   render,
+  setGetP,
+  setP,
+  setSetP,
   uidKey,
 } from './core.js';
 expose({
@@ -48,14 +52,14 @@ const LORE_UNLOCK =
 {
   const g = getP,
     st = setP;
-  getP = function (path, o) {
+  setGetP(function (path, o) {
     if (path && path.startsWith('@lines.')) {
       const v = g(path.slice(7));
       return Array.isArray(v) ? v.join('\n') : '';
     }
     return g(path, o);
-  };
-  setP = function (path, v, o) {
+  });
+  setSetP(function (path, v, o) {
     if (path && path.startsWith('@lines.')) {
       st(
         path.slice(7),
@@ -67,7 +71,7 @@ const LORE_UNLOCK =
       return;
     }
     return st(path, v, o);
-  };
+  });
 }
 const loreSceneOpts = () =>
   Object.keys(ST.D.scenes || {})

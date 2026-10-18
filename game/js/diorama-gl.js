@@ -102,6 +102,7 @@ import {
   dioImg,
   dioLayerM,
   dioMoodOf,
+  dioNav,
   dioNextOn,
   dioNextTiles,
   dioNoise,
@@ -110,6 +111,7 @@ import {
   dioPill,
   dioPlayer,
   dioPrepare,
+  dioProj,
   dioPropM,
   dioPropOn,
   dioScene,
@@ -121,9 +123,15 @@ import {
   dioStepCorners,
   dioStepLevel,
   dioSteps,
+  dioStop,
   dioTag,
   dioTapMark,
   dioTer,
+  dioUnproject,
+  setDioNav,
+  setDioProj,
+  setDioStop,
+  setDioUnproject,
 } from './diorama.js';
 import { ENG_CTX, eng, engHex } from './engine/settings.js';
 import {
@@ -211,7 +219,7 @@ expose({
   _dioProj2D: [() => _dioProj2D],
   _dioStop2D: [() => _dioStop2D],
   _dioUnproject2D: [() => _dioUnproject2D],
-  dglAdapt: [() => dglAdapt, v => (dglAdapt = v)],
+  dglAdapt: [() => dglAdapt, v => setDglAdapt(v)],
   dglAltImg: [() => dglAltImg, v => (dglAltImg = v)],
   dglBasinSet: [() => dglBasinSet, v => (dglBasinSet = v)],
   dglBasins: [() => dglBasins, v => (dglBasins = v)],
@@ -352,9 +360,11 @@ expose({
   dioH: [() => dioH, v => (dioH = v)],
   dioHGrid: [() => dioHGrid, v => (dioHGrid = v)],
   dioHRaw: [() => dioHRaw, v => (dioHRaw = v)],
-  dioMount: [() => dioMount, v => (dioMount = v)],
+  dioMount: [() => dioMount, v => setDioMount(v)],
   dioPads: [() => dioPads, v => (dioPads = v)],
   eglRestored: [() => eglRestored, v => (eglRestored = v)],
+  setDglAdapt: [() => setDglAdapt, v => (setDglAdapt = v)],
+  setDioMount: [() => setDioMount, v => (setDioMount = v)],
 });
 /* eslint-enable no-func-assign */
 provide({ dglBudget, dglRebuild, dglWallDefault, dioGroundH, dioH, dioHRaw, eglRestored });
@@ -588,7 +598,7 @@ export function dglWallDefault(sc) {
 }
 /* walking: too steep is blocked (worked out once per scene, with the rest of the walking grid) */
 const _dioNavFlat = dioNav;
-dioNav = function () {
+setDioNav(function () {
   const sc = DIO.sc,
     fresh = !(DIO.nav && DIO.navSc === sc && DIO.navG === DIO.gkey && DIO.navP === (sc.props || []).length),
     n = _dioNavFlat();
@@ -605,7 +615,7 @@ dioNav = function () {
     }
   n._hk = 1;
   return n;
-};
+});
 /* ---------- canvas plumbing: the WebGL canvas plus a 2D layer on top for labels ---------- */
 export function dglCanvasFor(cv, type) {
   if (!cv._ctx) {
@@ -702,6 +712,11 @@ export function dioMount(cv, id, opt = {}) {
       console.error(e);
     });
 }
+/* phase 04d: the Studio swaps in its own (studio/js/engine.js and viewport.js) */
+export function setDioMount(v) {
+  dioMount = v; // eslint-disable-line no-func-assign
+  provide({ dioMount });
+}
 /* the GL context on this canvas, with the walk scene's programs (v47: also used by the opening's fall, which draws the
    world map on the same canvas before Sundown is mounted; a context made by the map alone gets the walk programs here) */
 export function dglGL(cv) {
@@ -752,11 +767,11 @@ function eglRestored(cv) {
     dioMount(cv, id, DIO.opt);
   }
 }
-dioStop = function () {
+setDioStop(function () {
   _dioStop2D();
   if (DGL.ui) DGL.ui.hidden = true;
-};
-dioProj = function (C, x, y, z) {
+});
+setDioProj(function (C, x, y, z) {
   if (!C || !C.gl) return _dioProj2D(C, x, y, z);
   const wy = dioH(x, z) + y + dglCurve(x, z),
     m = C.vp,
@@ -765,8 +780,8 @@ dioProj = function (C, x, y, z) {
     w = m[3] * x + m[7] * wy + m[11] * z + m[15];
   if (w < 0.2) return null;
   return { x: ((cx / w) * 0.5 + 0.5) * C.rw, y: (1 - ((cy / w) * 0.5 + 0.5)) * C.rh, s: C.F / w, d: w };
-};
-dioUnproject = function (sx, sy) {
+});
+setDioUnproject(function (sx, sy) {
   const C = DIO.C;
   if (!C || !C.gl) return _dioUnproject2D(sx, sy);
   const r = dglRay(C, sx, sy);
@@ -797,7 +812,7 @@ dioUnproject = function (sx, sy) {
     prev = t;
   }
   return null;
-};
+});
 function dglRay(C, sx, sy) {
   const nx = (sx / C.rw) * 2 - 1,
     ny = 1 - (sy / C.rh) * 2,
@@ -3931,7 +3946,7 @@ function dglHeat(sc) {
    no ambient occlusion; 2: smaller shadow map, shadows and reflections every other frame; 3: fewer bloom levels, no
    light shafts, no grass far away; 4: no depth of field); only then the resolution drops. With room to spare it climbs
    back: resolution first, then the extras. Frames held back on purpose (a window open, another screen) don't count. */
-function dglAdapt(dtm, work) {
+export function dglAdapt(dtm, work) {
   if (!eng('quality', 'auto')) {
     DIO.R = 1;
     DGL.q = 0;
@@ -3987,6 +4002,11 @@ function dglAdapt(dtm, work) {
       DGL.raiseT = now;
     }
   }
+}
+/* phase 04d: the Studio swaps in its own (studio/js/engine.js and viewport.js) */
+export function setDglAdapt(v) {
+  dglAdapt = v; // eslint-disable-line no-func-assign
+  provide({ dglAdapt });
 }
 /* ---------- what stands in the scene this frame ---------- */
 /* v23: low, wide things (fences, benches, logs, rocks, hedges, planters) follow the slope they stand on: a picture's two

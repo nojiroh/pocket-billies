@@ -4,7 +4,7 @@
    Each shop has a keeper (drawn by the trainer renderer from PEOPLE), a greeting and a stock list. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './bridge.js';
-import { closeModal, modal, sfx } from './hooks.js';
+import { closeModal, modal, sfx, toast } from './hooks.js';
 import { clamp, rnd } from './util.js';
 import { COINS, ITEMS, SHOPS } from './data.js';
 import { S, U, esc, fmt, plural, save } from './core.js';

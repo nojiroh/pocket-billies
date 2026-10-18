@@ -41,6 +41,7 @@ import {
   sfx,
   sfxAt,
   smooth01,
+  talkFolk,
   voxPaths,
   walkMode,
   wrNear,
@@ -104,7 +105,7 @@ expose({
   dioClipSeg: [() => dioClipSeg, v => (dioClipSeg = v)],
   dioClock: [() => dioClock, v => (dioClock = v)],
   dioCostAt: [() => dioCostAt, v => (dioCostAt = v)],
-  dioData: [() => dioData, v => (dioData = v)],
+  dioData: [() => dioData, v => setDioData(v)],
   dioDirOf: [() => dioDirOf, v => (dioDirOf = v)],
   dioEncSpot: [() => dioEncSpot, v => (dioEncSpot = v)],
   dioEnsureGround: [() => dioEnsureGround, v => (dioEnsureGround = v)],
@@ -136,12 +137,12 @@ expose({
   dioHash: [() => dioHash, v => (dioHash = v)],
   dioHitAt: [() => dioHitAt, v => (dioHitAt = v)],
   dioHubOf: [() => dioHubOf, v => (dioHubOf = v)],
-  dioImg: [() => dioImg, v => (dioImg = v)],
+  dioImg: [() => dioImg, v => setDioImg(v)],
   dioLOS: [() => dioLOS, v => (dioLOS = v)],
   dioLayerM: [() => dioLayerM, v => (dioLayerM = v)],
   dioMix: [() => dioMix, v => (dioMix = v)],
   dioMoodOf: [() => dioMoodOf, v => (dioMoodOf = v)],
-  dioNav: [() => dioNav, v => (dioNav = v)],
+  dioNav: [() => dioNav, v => setDioNav(v)],
   dioNearFree: [() => dioNearFree, v => (dioNearFree = v)],
   dioNextOn: [() => dioNextOn],
   dioNextTiles: [() => dioNextTiles, v => (dioNextTiles = v)],
@@ -162,7 +163,7 @@ expose({
   dioPolyAt: [() => dioPolyAt, v => (dioPolyAt = v)],
   dioPolyNear: [() => dioPolyNear, v => (dioPolyNear = v)],
   dioPrepare: [() => dioPrepare, v => (dioPrepare = v)],
-  dioProj: [() => dioProj, v => (dioProj = v)],
+  dioProj: [() => dioProj, v => setDioProj(v)],
   dioPropM: [() => dioPropM, v => (dioPropM = v)],
   dioPropOn: [() => dioPropOn, v => (dioPropOn = v)],
   dioPx: [() => dioPx, v => (dioPx = v)],
@@ -187,7 +188,7 @@ expose({
   dioSteps: [() => dioSteps, v => (dioSteps = v)],
   dioStepsNew: [() => dioStepsNew, v => (dioStepsNew = v)],
   dioStepsStore: [() => dioStepsStore, v => (dioStepsStore = v)],
-  dioStop: [() => dioStop, v => (dioStop = v)],
+  dioStop: [() => dioStop, v => setDioStop(v)],
   dioT47: [() => dioT47, v => (dioT47 = v)],
   dioTag: [() => dioTag, v => (dioTag = v)],
   dioTapMark: [() => dioTapMark, v => (dioTapMark = v)],
@@ -200,7 +201,7 @@ expose({
   dioToneAt: [() => dioToneAt, v => (dioToneAt = v)],
   dioTonePx: [() => dioTonePx, v => (dioTonePx = v)],
   dioUIpx: [() => dioUIpx],
-  dioUnproject: [() => dioUnproject, v => (dioUnproject = v)],
+  dioUnproject: [() => dioUnproject, v => setDioUnproject(v)],
   dioWalkTo: [() => dioWalkTo, v => (dioWalkTo = v)],
   dioWaterOf: [() => dioWaterOf, v => (dioWaterOf = v)],
   dioWearAmtFn: [() => dioWearAmtFn, v => (dioWearAmtFn = v)],
@@ -213,8 +214,15 @@ expose({
   openKind: [() => openKind, v => (openKind = v)],
   placeClosedText: [() => placeClosedText, v => (placeClosedText = v)],
   placeOpen: [() => placeOpen, v => (placeOpen = v)],
+  setDioData: [() => setDioData, v => (setDioData = v)],
+  setDioImg: [() => setDioImg, v => (setDioImg = v)],
+  setDioNav: [() => setDioNav, v => (setDioNav = v)],
+  setDioProj: [() => setDioProj, v => (setDioProj = v)],
+  setDioStop: [() => setDioStop, v => (setDioStop = v)],
+  setDioUnproject: [() => setDioUnproject, v => (setDioUnproject = v)],
 });
 /* eslint-enable no-func-assign */
+provide({ dioStop });
 /* to-module: end */
 export const DIO = {
   cv: null,
@@ -306,7 +314,18 @@ const DIO_CHAT = [
 ];
 /* hooks the Studio replaces to show unsaved art and data */
 export let dioData = () => ({ scenes: GD.scenes || {}, sc: GD.scenery || { terrains: {}, props: {} } });
+/* phase 04d: the Studio feeds the renderer its unsaved scenes and art (studio/js/scenes.js, propedit.js) */
+export function setDioData(v) {
+  dioData = v;
+  provide({ dioData });
+}
 export let dioImg = path => ART.img[path];
+provide({ dioImg }); /* to-module */
+/* phase 04d: the Studio feeds the renderer its unsaved scenes and art (studio/js/scenes.js, propedit.js) */
+export function setDioImg(v) {
+  dioImg = v;
+  provide({ dioImg });
+}
 /* v42: exits are kept edge-relative (edgeExits: {id, side N/S/E/W, t along that side 0..1, in metres from the edge, width})
    so a scene can change size and its exits stay on the same edge; sc.exits (the points everything else reads) is
    rebuilt from them whenever the size or the count changes. The Studio keeps both in step while you drag. */
@@ -2764,6 +2783,11 @@ export function dioNav() {
   DIO.navKey = key;
   return (DIO.nav = { N, gw, gh, blk, cost, lv, hop });
 }
+/* phase 04d: diorama-gl.js puts the 3D version in place */
+export function setDioNav(v) {
+  dioNav = v; // eslint-disable-line no-func-assign
+  provide({ dioNav });
+}
 /* may you step from nav cell c to its neighbour q? Up to DIO_RISE up or down; further down only off a ledge */
 export function dioPass(G, c, q, noHop) {
   const d = G.lv[q] - G.lv[c];
@@ -3027,6 +3051,11 @@ export function dioStop() {
   DIO.ready = false;
   DIO.keys = {};
 }
+/* phase 04d: diorama-gl.js puts the 3D version in place */
+export function setDioStop(v) {
+  dioStop = v; // eslint-disable-line no-func-assign
+  provide({ dioStop });
+}
 export function dioCanvasXY(ev) {
   const r = DIO.cv.getBoundingClientRect();
   return [((ev.clientX - r.left) / r.width) * DIO.cv.width, ((ev.clientY - r.top) / r.height) * DIO.cv.height];
@@ -3042,7 +3071,7 @@ export function dioHitAt(ev) {
   }
   return best;
 }
-function dioUnproject(sx, sy) {
+export function dioUnproject(sx, sy) {
   const C = DIO.C;
   if (!C) return null;
   const k = (C.rh / 2 - sy) / C.F,
@@ -3053,6 +3082,11 @@ function dioUnproject(sx, sy) {
   if (d <= 0) return null;
   const s = C.F / d;
   return { x: C.cx + (sx - C.rw / 2) / s, z: C.cz + rz };
+}
+/* phase 04d: diorama-gl.js puts the 3D version in place */
+export function setDioUnproject(v) {
+  dioUnproject = v; // eslint-disable-line no-func-assign
+  provide({ dioUnproject });
 }
 function dioPick(h) {
   if (DIO.opt.onPick) DIO.opt.onPick(h);
@@ -3168,6 +3202,11 @@ export function dioProj(C, x, y, z) {
   const v = ry * C.cp + rz * C.sp,
     s = C.F / d;
   return { x: C.rw / 2 + (x - C.cx) * s, y: C.rh / 2 - v * s, s, d };
+}
+/* phase 04d: diorama-gl.js puts the 3D version in place */
+export function setDioProj(v) {
+  dioProj = v; // eslint-disable-line no-func-assign
+  provide({ dioProj });
 }
 /* ---------- the player ---------- */
 export function dioPlayer(st, dt) {

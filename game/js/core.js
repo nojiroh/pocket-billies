@@ -2,7 +2,7 @@
 /* ================= CORE ================= */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './bridge.js';
-import { JINGLES, accFlush, envOdds, jingle, onStepsAdded, postProcess, provide, sfx } from './hooks.js';
+import { JINGLES, accFlush, envOdds, jingle, onStepsAdded, postProcess, provide, sfx, toast } from './hooks.js';
 import { rnd } from './util.js';
 import {
   ADJ,
@@ -101,13 +101,14 @@ expose({
   riderOf: [() => riderOf, v => (riderOf = v)],
   rollDay: [() => rollDay, v => (rollDay = v)],
   routeDists: [() => routeDists, v => (routeDists = v)],
-  save: [() => save, v => (save = v)],
+  save: [() => save, v => setSave(v)],
   saveAge: [() => saveAge, v => (saveAge = v)],
   saveT: [() => saveT, v => (saveT = v)],
   setB: [() => setB, v => (setB = v)],
   setNoSaving: [() => setNoSaving, v => (setNoSaving = v)],
   setRM: [() => setRM, v => (setRM = v)],
   setS: [() => setS, v => (setS = v)],
+  setSave: [() => setSave, v => (setSave = v)],
   setSaveHold: [() => setSaveHold, v => (setSaveHold = v)],
   setTrip: [() => setTrip, v => (setTrip = v)],
   spawn: [() => spawn, v => (spawn = v)],
@@ -391,6 +392,11 @@ export function save() {
       saveT = null;
       flush();
     }, 4000);
+}
+/* phase 04d: the in-game full test (selftest.js) keeps your save out of it */
+export function setSave(v) {
+  save = v; // eslint-disable-line no-func-assign
+  provide({ save });
 }
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'hidden' && saveT) {

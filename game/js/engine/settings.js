@@ -19,7 +19,8 @@ expose({
   engHex: [() => engHex, v => (engHex = v)],
   engLook: [() => engLook, v => (engLook = v)],
   engPlayer: [() => engPlayer, v => (engPlayer = v)],
-  engSource: [() => engSource, v => (engSource = v)],
+  engSource: [() => engSource, v => setEngSource(v)],
+  setEngSource: [() => setEngSource, v => (setEngSource = v)],
 });
 /* eslint-enable no-func-assign */
 provide({ eng });
@@ -772,8 +773,12 @@ function engLook() {
   return null;
 }
 export let ENG_CTX = { look: null, bypass: false, env: false };
-export let engSource = () =>
-  typeof GD !== 'undefined' ? GD.engine : null; /* the Studio points this at its unsaved data */
+export let engSource = () => (typeof GD !== 'undefined' ? GD.engine : null);
+/* phase 04d: the Studio points it at its unsaved data (studio/js/engine.js) */
+export function setEngSource(v) {
+  engSource = v;
+  provide({ engSource });
+} /* the Studio points this at its unsaved data */
 function engGame() {
   const d = engSource();
   return (d && d.defaults) || null;

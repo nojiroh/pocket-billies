@@ -4,7 +4,7 @@
    Tap a place to see it; travel there, stay, stop or turn back from the card. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './bridge.js';
-import { flyDraw, flyTick, paintMapCard, provide } from './hooks.js';
+import { flyDraw, flyTick, paintMapCard, provide, toast } from './hooks.js';
 import { $, clamp } from './util.js';
 import { FUTURE, LINKS, ROUTE, linkCost } from './data.js';
 import { RM, S, U, canEnter, esc, nextStop } from './core.js';
@@ -18,11 +18,11 @@ expose({
   ESEG: [() => ESEG],
   MAP: [() => MAP],
   MCL: [() => MCL],
-  MH: [() => MH, v => (MH = v)],
+  MH: [() => MH, v => setMH(v)],
   MLAND: [() => MLAND],
   MNV: [() => MNV],
   MREG: [() => MREG],
-  MW: [() => MW, v => (MW = v)],
+  MW: [() => MW, v => setMW(v)],
   REGV: [() => REGV],
   TH: [() => TH],
   TW: [() => TW],
@@ -31,23 +31,30 @@ expose({
   edgePos: [() => edgePos, v => (edgePos = v)],
   llv: [() => llv],
   mapCam: [() => mapCam, v => (mapCam = v)],
-  mapFit: [() => mapFit, v => (mapFit = v)],
+  mapFit: [() => mapFit, v => setMapFit(v)],
   mapFocus: [() => mapFocus, v => (mapFocus = v)],
-  mapLabels: [() => mapLabels, v => (mapLabels = v)],
+  mapLabels: [() => mapLabels, v => setMapLabels(v)],
   mapLoop: [() => mapLoop, v => (mapLoop = v)],
-  mapMount: [() => mapMount, v => (mapMount = v)],
+  mapMount: [() => mapMount, v => setMapMount(v)],
   mapPick: [() => mapPick, v => (mapPick = v)],
   mapPrepare: [() => mapPrepare, v => (mapPrepare = v)],
   mapRender: [() => mapRender, v => (mapRender = v)],
-  mapReset: [() => mapReset, v => (mapReset = v)],
+  mapReset: [() => mapReset, v => setMapReset(v)],
   mapSelect: [() => mapSelect, v => (mapSelect = v)],
   mapSize: [() => mapSize, v => (mapSize = v)],
   mapWalk: [() => mapWalk, v => (mapWalk = v)],
-  mapZoom: [() => mapZoom, v => (mapZoom = v)],
+  mapZoom: [() => mapZoom, v => setMapZoom(v)],
   mePos: [() => mePos, v => (mePos = v)],
   mproj: [() => mproj, v => (mproj = v)],
   onStepsAdded: [() => onStepsAdded, v => (onStepsAdded = v)],
   pixRingM: [() => pixRingM, v => (pixRingM = v)],
+  setMH: [() => setMH, v => (setMH = v)],
+  setMW: [() => setMW, v => (setMW = v)],
+  setMapFit: [() => setMapFit, v => (setMapFit = v)],
+  setMapLabels: [() => setMapLabels, v => (setMapLabels = v)],
+  setMapMount: [() => setMapMount, v => (setMapMount = v)],
+  setMapReset: [() => setMapReset, v => (setMapReset = v)],
+  setMapZoom: [() => setMapZoom, v => (setMapZoom = v)],
   slerp: [() => slerp, v => (slerp = v)],
   sunBlocks: [() => sunBlocks, v => (sunBlocks = v)],
   v3: [() => v3],
@@ -57,6 +64,16 @@ provide({ onStepsAdded });
 /* to-module: end */
 export let MW = 176,
   MH = 232;
+/* phase 04d: map-gl.js puts the 3D map in place */
+export function setMH(v) {
+  MH = v;
+  provide({ MH });
+}
+/* phase 04d: map-gl.js puts the 3D map in place */
+export function setMW(v) {
+  MW = v;
+  provide({ MW });
+}
 export const TW = 1536,
   TH = 768,
   D2R = Math.PI / 180;
@@ -242,6 +259,11 @@ export function mapFit() {
   if (!MAP.cv || !MAP.cv.isConnected) return;
   mapSize();
   mapLabels();
+}
+/* phase 04d: map-gl.js puts the 3D map in place */
+export function setMapFit(v) {
+  mapFit = v; // eslint-disable-line no-func-assign
+  provide({ mapFit });
 }
 export function mapCam() {
   const P = MAP.focus || mePos(),
@@ -606,9 +628,19 @@ export function mapMount() {
     frameTask('map', mapLoop);
   }
 }
+/* phase 04d: map-gl.js puts the 3D map in place */
+export function setMapMount(v) {
+  mapMount = v; // eslint-disable-line no-func-assign
+  provide({ mapMount });
+}
 export function mapZoom(k) {
   MAP.alt = clamp(MAP.alt * k, 0.08, 0.7);
   MAP.dirty = true;
+}
+/* phase 04d: map-gl.js puts the 3D map in place */
+export function setMapZoom(v) {
+  mapZoom = v; // eslint-disable-line no-func-assign
+  provide({ mapZoom });
 }
 export function mapReset() {
   MAP.yaw = 0;
@@ -618,6 +650,11 @@ export function mapReset() {
   U.mapSel = null;
   paintMapCard();
   MAP.dirty = true;
+}
+/* phase 04d: map-gl.js puts the 3D map in place */
+export function setMapReset(v) {
+  mapReset = v; // eslint-disable-line no-func-assign
+  provide({ mapReset });
 }
 function mapFocus(v) {
   MAP.fT = { from: MAP.focus || v, to: v, t0: performance.now(), dur: RM ? 1 : 700 };
@@ -679,7 +716,7 @@ function mapLoop(ts) {
   if (MAP.wasBusy && !busy) MAP.dirty = true;
   MAP.wasBusy = busy;
 }
-function mapLabels() {
+export function mapLabels() {
   const L = $('#maplabels');
   if (!L || !MAP.cam) return;
   let cr = MAP.cv && MAP.cv.getBoundingClientRect();
@@ -723,6 +760,11 @@ function mapLabels() {
     L.innerHTML = h;
     L._h = h;
   }
+}
+/* phase 04d: map-gl.js puts the 3D map in place */
+export function setMapLabels(v) {
+  mapLabels = v; // eslint-disable-line no-func-assign
+  provide({ mapLabels });
 }
 export function mapSelect(n) {
   U.mapSel = n;

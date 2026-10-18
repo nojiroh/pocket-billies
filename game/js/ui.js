@@ -305,6 +305,7 @@ provide({
   sceneIdAt,
   settings,
   startGame,
+  toast,
   updateNav,
   walkOff,
 });

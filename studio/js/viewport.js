@@ -7,7 +7,7 @@
 import { expose } from '../../game/js/bridge.js';
 import { provide } from '../../game/js/hooks.js';
 import { $, $$, clamp } from '../../game/js/util.js';
-import { DGL } from '../../game/js/diorama-gl.js';
+import { DGL, dioMount, setDioMount } from '../../game/js/diorama-gl.js';
 /* eslint-disable no-func-assign */
 expose({
   VP: [() => VP],
@@ -23,11 +23,11 @@ const VP = { hover: false, big: null };
 provide({ VP }); /* to-module */
 if (typeof dioMount === 'function') {
   const _dm = dioMount;
-  dioMount = function (cv, id, o = {}) {
+  setDioMount(function (cv, id, o = {}) {
     const k0 = o.keys;
     o = Object.assign({}, o, { freeCam: true, keys: () => VP.hover || !!(k0 && k0()) });
     return _dm(cv, id, o);
-  };
+  });
 }
 const vpTurn = a => {
   if (typeof DGL === 'undefined') return;

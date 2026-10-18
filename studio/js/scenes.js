@@ -8,6 +8,7 @@ import { expose } from '../../game/js/bridge.js';
 import {
   VP,
   pedCard,
+  pedDraw,
   pedMount,
   provide,
   scxBlocksBar,
@@ -30,11 +31,14 @@ import {
   dioExitPoint,
   dioFind,
   dioHubOf,
+  dioImg,
   dioNav,
   dioPass,
   dioSteps,
   dioStepsNew,
   dioStepsStore,
+  setDioData,
+  setDioImg,
 } from '../../game/js/diorama.js';
 import { ENV } from '../../game/js/env.js';
 import { DGL, DGL_WALL_MATS, dioHRaw, dioMount } from '../../game/js/diorama-gl.js';
@@ -124,8 +128,8 @@ expose({
 /* eslint-enable no-func-assign */
 provide({ dioArtVer, scArt });
 /* to-module: end */
-dioData = () => ({ scenes: (ST.D && ST.D.scenes) || {}, sc: (ST.D && ST.D.scenery) || { terrains: {}, props: {} } });
-dioImg = path => atlasNow('art/' + path) || ART.img[path];
+setDioData(() => ({ scenes: (ST.D && ST.D.scenes) || {}, sc: (ST.D && ST.D.scenery) || { terrains: {}, props: {} } }));
+setDioImg(path => atlasNow('art/' + path) || ART.img[path]);
 function dioArtVer() {
   return ATL_VER;
 }

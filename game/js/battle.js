@@ -21,6 +21,7 @@ import {
   stBadge,
   storyAfterRival,
   storyAfterWin,
+  toast,
 } from './hooks.js';
 import { $, $$, clamp, rnd } from './util.js';
 import {
@@ -139,7 +140,7 @@ expose({
   doSwitch: [() => doSwitch, v => (doSwitch = v)],
   doThrow: [() => doThrow, v => (doThrow = v)],
   effLabel: [() => effLabel, v => (effLabel = v)],
-  endBattle: [() => endBattle, v => (endBattle = v)],
+  endBattle: [() => endBattle, v => setEndBattle(v)],
   endTurn: [() => endTurn, v => (endTurn = v)],
   enemyOnly: [() => enemyOnly, v => (enemyOnly = v)],
   finishThrow: [() => finishThrow, v => (finishThrow = v)],
@@ -163,7 +164,7 @@ expose({
   msgFace: [() => msgFace, v => (msgFace = v)],
   needsTarget: [() => needsTarget, v => (needsTarget = v)],
   newBattle: [() => newBattle, v => (newBattle = v)],
-  openBattle: [() => openBattle, v => (openBattle = v)],
+  openBattle: [() => openBattle, v => setOpenBattle(v)],
   paintActions: [() => paintActions, v => (paintActions = v)],
   paintBoxes: [() => paintBoxes, v => (paintBoxes = v)],
   paintParty: [() => paintParty, v => (paintParty = v)],
@@ -180,6 +181,8 @@ expose({
   runTurn: [() => runTurn, v => (runTurn = v)],
   say: [() => say, v => (say = v)],
   scAfter: [() => scAfter, v => (scAfter = v)],
+  setEndBattle: [() => setEndBattle, v => (setEndBattle = v)],
+  setOpenBattle: [() => setOpenBattle, v => (setOpenBattle = v)],
   shockName: [() => shockName],
   showAim: [() => showAim, v => (showAim = v)],
   snapAll: [() => snapAll],
@@ -1195,7 +1198,7 @@ export function battleResize() {
     if (B && B.phase !== 'playing') paintActions();
   });
 }
-function openBattle() {
+export function openBattle() {
   const bs = (S.preferences || {}).battleSpeed;
   if (bs && !U.dbgSpeed) SC.speed = bs === 'fast' ? 1.6 : bs === 'faster' ? 2.2 : 1;
   const area = B.area || 'grass',
@@ -1220,6 +1223,11 @@ function openBattle() {
       console.error(e);
       toast(e.message);
     });
+}
+/* phase 04d: extras.js adds the weather and its events around it */
+export function setOpenBattle(v) {
+  openBattle = v; // eslint-disable-line no-func-assign
+  provide({ openBattle });
 }
 /* v31: on the 3D stage a battle starts where you are, without a wipe: the camera swoops down toward the spot, the
    billionaire bursts out of the grass in a spray of leaves, then the battle's panels slide up over the same picture.
@@ -2052,6 +2060,11 @@ export function endBattle() {
     after.forEach(m => modal(m));
     if (!after.length) postProcess();
   });
+}
+/* phase 04d: extras.js adds the weather and its events around it */
+export function setEndBattle(v) {
+  endBattle = v; // eslint-disable-line no-func-assign
+  provide({ endBattle });
 }
 
 /* ================= v33: NAMEPLATES IN THE SCENE =================

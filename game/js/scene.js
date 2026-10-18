@@ -26,6 +26,7 @@ import {
   battleGLStart,
   battleGLStop,
   battleLayoutChanged,
+  dioStop,
   hudHit,
   hudPop,
   maxHp,

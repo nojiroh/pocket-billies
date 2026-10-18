@@ -7,9 +7,16 @@
 import { expose } from '../../game/js/bridge.js';
 import { $ } from '../../game/js/util.js';
 import { DIO, dioHubOf } from '../../game/js/diorama.js';
-import { ENGINE_DEFAULTS, ENGINE_PRESETS, ENGINE_SPEC, ENG_CTX, eng } from '../../game/js/engine/settings.js';
+import {
+  ENGINE_DEFAULTS,
+  ENGINE_PRESETS,
+  ENGINE_SPEC,
+  ENG_CTX,
+  eng,
+  setEngSource,
+} from '../../game/js/engine/settings.js';
 import { EGL, eglOK } from '../../game/js/engine/core.js';
-import { DGL, dglRebuild, dioMount } from '../../game/js/diorama-gl.js';
+import { DGL, dglAdapt, dglRebuild, dioMount, setDglAdapt } from '../../game/js/diorama-gl.js';
 import { esc } from './shims.js';
 import {
   ACTS,
@@ -49,15 +56,15 @@ expose({
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
-engSource = () => (ST.D ? ST.D.engine : null);
+setEngSource(() => (ST.D ? ST.D.engine : null));
 /* alpha 0.4.1: the Studio's previews show every setting at full effect. The game's automatic quality would step god
    rays, bloom, depth of field and ambient shading off (and lower the resolution) when the preview ran slowly, so a dial
    seemed to do nothing. Here it never steps down. */
 if (typeof dglAdapt === 'function')
-  dglAdapt = function () {
+  setDglAdapt(function () {
     if (typeof DGL !== 'undefined') DGL.q = 0;
     if (typeof DIO !== 'undefined') DIO.R = 1;
-  };
+  });
 export const ENS = { scope: 'game', scene: null, open: { lens: 1, color: 1, sun: 1, shadows: 1 }, meterT: null };
 export const engD = () => ST.D.engine || (ST.D.engine = { defaults: {}, presets: {} });
 const engScene = () => {

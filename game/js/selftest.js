@@ -13,7 +13,7 @@ import { provide } from './hooks.js';
 import { clamp } from './util.js';
 import { GD, MOVES, ROUTE, RULES, SP, TRAINERS, linkCost, placeKind } from './data.js';
 import { scenesAll } from './scene-files.js';
-import { B, S, U, addSteps, esc, makeMon, maxHp, setB, setS, setTrip, spawn } from './core.js';
+import { B, S, U, addSteps, esc, makeMon, maxHp, save, setB, setS, setSave, setTrip, spawn } from './core.js';
 import { FRAME } from './frame.js';
 import { TR_CACHE } from './trainer.js';
 import { DR, closeDressing } from './dressing.js';
@@ -48,7 +48,7 @@ import { OWM, owBuddyTap, owPetSp } from './owmon.js';
 import { WORLD, wrRoomScene, wrTripView } from './world.js';
 import { A, endBattle, liveK, pickMove, pickTarget, startTrainer, startWild, stopTimers, tapMsg } from './battle.js';
 import { MAP } from './map.js';
-import { MGL, MGL_SH, MM, mmOn } from './map-gl.js';
+import { MGL, MGL_SH, MM, mglRender, mmOn, setMglRender } from './map-gl.js';
 import { TALK, talkHide } from './talk.js';
 import { CS, csTeardown } from './cutscene.js';
 import { battleTipHide, fallGL, fallMap } from './opening.js';
@@ -150,7 +150,7 @@ async function runFullTest(mode) {
     back = { tab: U.tab, roam: U.roam, node: S.route.node },
     realSave = save,
     engKeep = GD.engine ? JSON.stringify(GD.engine) : null;
-  save = () => {}; /* nothing the test does reaches your save */
+  setSave(() => {}); /* nothing the test does reaches your save */
   const box = document.createElement('div');
   box.className = 'nw-bench px glass';
   box.innerHTML =
@@ -1012,16 +1012,16 @@ async function runFullTest(mode) {
             fr = [],
             mr = mglRender;
           let last = performance.now();
-          mglRender = t => {
+          setMglRender(t => {
             const n = performance.now();
             fr.push(n - last);
             last = n;
             mr(t);
-          };
+          });
           try {
             await fallMap(run, 6000);
           } finally {
-            mglRender = mr;
+            setMglRender(mr);
             CS.on = false;
             CS.run++;
           }
@@ -1380,7 +1380,7 @@ async function runFullTest(mode) {
     }
     if (engKeep) GD.engine = JSON.parse(engKeep);
     setS(JSON.parse(keep));
-    save = realSave;
+    setSave(realSave);
     U.bench = null;
     U.roam = back.roam;
     U.tab = back.tab;

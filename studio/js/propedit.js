@@ -9,8 +9,8 @@ import { expose } from '../../game/js/bridge.js';
 import { pedVoxHTML, provide } from '../../game/js/hooks.js';
 import { $, $$, clamp } from '../../game/js/util.js';
 import { frameStop, frameTask } from '../../game/js/frame.js';
-import { cnv } from '../../game/js/art.js';
-import { DIO, dioImg, dioLayerM, dioOk } from '../../game/js/diorama.js';
+import { artLoad, cnv, setArtLoad } from '../../game/js/art.js';
+import { DIO, dioData, dioImg, dioLayerM, dioOk, setDioData } from '../../game/js/diorama.js';
 import { DGL, DGL_MATS, dglMatOf, dglVaryOf, dioMount } from '../../game/js/diorama-gl.js';
 import { BLD_ROOM_NAMES, BLD_TEX_NAMES } from '../../game/js/buildings.js';
 import { P3D_AUTO, P3D_KINDS, P3D_PARTS, p3dTreeKind } from '../../game/js/props3d.js';
@@ -46,7 +46,7 @@ expose({
   pedBounds: [() => pedBounds, v => (pedBounds = v)],
   pedBuildHTML: [() => pedBuildHTML, v => (pedBuildHTML = v)],
   pedCard: [() => pedCard, v => (pedCard = v)],
-  pedDraw: [() => pedDraw, v => (pedDraw = v)],
+  pedDraw: [() => pedDraw, v => setPedDraw(v)],
   pedHit: [() => pedHit, v => (pedHit = v)],
   pedM: [() => pedM],
   pedMount: [() => pedMount, v => (pedMount = v)],
@@ -55,9 +55,10 @@ expose({
   pedSplit: [() => pedSplit, v => (pedSplit = v)],
   pedVaryHTML: [() => pedVaryHTML, v => (pedVaryHTML = v)],
   pedVolHTML: [() => pedVolHTML, v => (pedVolHTML = v)],
+  setPedDraw: [() => setPedDraw, v => (setPedDraw = v)],
 });
 /* eslint-enable no-func-assign */
-provide({ pedCard, pedMount });
+provide({ pedCard, pedDraw, pedMount });
 /* to-module: end */
 const PED = { tool: 'move', fxk: 'glow', zoom: 0, spin: true, sel: null, drag: null, sc: null, id: null };
 const PED_FX = [
@@ -102,11 +103,11 @@ function pedScene(k) {
 }
 {
   const base = dioData;
-  dioData = () => {
+  setDioData(() => {
     const d = base();
     if (PED.sc) d.scenes = Object.assign({}, d.scenes, { __prop: PED.sc });
     return d;
-  };
+  });
 }
 /* ---------- the card ---------- */
 function pedCard(k) {
@@ -356,6 +357,11 @@ function pedDraw() {
   x.moveTo(ax, ay - 9);
   x.lineTo(ax, ay + 9);
   x.stroke();
+}
+/* phase 04d: the prop editor swaps the preview's drawing while it is open */
+function setPedDraw(v) {
+  pedDraw = v; // eslint-disable-line no-func-assign
+  provide({ pedDraw });
 }
 function pedAt(ev) {
   const cv = $('#pedCv'),
@@ -770,7 +776,7 @@ ACTS.pedLayerPx = d => {
 /* pictures made here but not saved yet come from the Studio's own copies, not the server */
 {
   const base = artLoad;
-  artLoad = paths => base(paths.filter(p => !(ST.artDirty && ST.artDirty.has('art/' + p))));
+  setArtLoad(paths => base(paths.filter(p => !(ST.artDirty && ST.artDirty.has('art/' + p)))));
 }
 
 /* ---------- v19: a solid body behind the picture (game/js/props3d.js) ---------- */
@@ -906,8 +912,8 @@ ACTS.pedPartDel = d => {
 /* the parts' rectangles on the picture */
 {
   const _pd = pedDraw;
-  // eslint-disable-next-line no-func-assign -- adds a layer to the drawing on purpose
-  pedDraw = function () {
+  /* adds a layer to the drawing on purpose */
+  setPedDraw(function () {
     _pd();
     const M = pedM(),
       cv = $('#pedCv');
@@ -930,7 +936,7 @@ ACTS.pedPartDel = d => {
       x.fillText(String(i + 1), X(M.ox + q.r[0]) + 4, Y(M.oy + q.r[1]) + 13);
     });
     x.restore();
-  };
+  });
 }
 /* ---------- v17: the 3D building plan ---------- */
 const PED_KINDS = [
@@ -1028,8 +1034,8 @@ ACTS.pedBuildRooms = () => {
 /* guides for the plan on the picture */
 {
   const _pd = pedDraw;
-  // eslint-disable-next-line no-func-assign -- adds a layer to the drawing on purpose
-  pedDraw = function () {
+  /* adds a layer to the drawing on purpose */
+  setPedDraw(function () {
     _pd();
     const M = pedM(),
       cv = $('#pedCv');
@@ -1066,5 +1072,5 @@ ACTS.pedBuildRooms = () => {
     x.strokeStyle = '#3E8FE0';
     for (const r of B.win || []) x.strokeRect(X(r[0]), Y(r[1]), r[2] * Z, r[3] * Z);
     x.restore();
-  };
+  });
 }
