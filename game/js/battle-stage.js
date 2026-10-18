@@ -48,7 +48,7 @@ import {
   packPixel,
   whiteCopy,
 } from './art.js';
-import { WD, humanFrames, humanPose } from './person-art.js';
+import { humanFrames, humanPose, wardrobeData } from './person-art.js';
 import { drawRig, rigFrame, rigParts, rigTint } from './skeleton-rig.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -1622,7 +1622,7 @@ function drawActor(c, i) {
 }
 /* the trainers: you from behind (left), the rival facing you (right); they throw coins and cheer */
 export const trainerMetersPerPixel = i =>
-  (i === 0 ? 1.42 : 1.7) / ((typeof WD === 'function' && WD() && WD().figure) || 74);
+  (i === 0 ? 1.42 : 1.7) / ((typeof wardrobeData === 'function' && wardrobeData() && wardrobeData().figure) || 74);
 export function trainerBattleFrame(i) {
   const T = battleStage.tr[i];
   if (!T || !T.who) return null;

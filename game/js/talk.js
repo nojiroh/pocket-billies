@@ -10,7 +10,7 @@ import { mapChatLines, provide } from './hooks.js';
 import { PEOPLE, TRAINERS } from './game-data.js';
 import { reducedMotion, saveData } from './game-state.js';
 import { frameStop, frameTask } from './frame-scheduler.js';
-import { trPortrait, trainerLook } from './person-art.js';
+import { lookOf, trPortrait } from './person-art.js';
 import { turnToPlayer, walkView } from './walk-view.js';
 import { walkRenderer } from './walk-view-gl.js';
 import { soundEffect } from './sound.js';
@@ -63,7 +63,7 @@ const FOLK_NAMES = [
   'Zeb',
 ];
 function talkName(who) {
-  if (who === 'me') return trainerLook('me').name || 'You';
+  if (who === 'me') return lookOf('me').name || 'You';
   if (typeof who === 'string' && who.startsWith('folk:')) return FOLK_NAMES[+who.slice(5) % FOLK_NAMES.length];
   return (
     TALK_NAMES[who] ||
@@ -228,7 +228,7 @@ export async function talkHazel(p) {
   if (TALK.on) return;
   const caught = Object.keys(saveData.caught).length,
     badges = (saveData.seats || []).length,
-    nm = trainerLook('me').name || 'Trainer';
+    nm = lookOf('me').name || 'Trainer';
   const tips = [
     `[happy] ${nm}! How's your Index coming along? ${caught} taxed so far.`,
     caught < 5

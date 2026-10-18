@@ -37,7 +37,7 @@ import {
 import { escapeHtml, reducedMotion, uiState } from './game-state.js';
 import { userFps } from './frame-scheduler.js';
 import { artLoad, makeCanvas } from './art.js';
-import { TR_PRESETS, cleanLook, humanPose, owFrames, trainerLook } from './person-art.js';
+import { LOOK_PRESETS, cleanLook, humanPose, lookOf, owFrames } from './person-art.js';
 import { dressingRoom, openDressingRoom, saveDressingLook } from './dressing-room.js';
 import { drawRig, rigFrame, rigParts, rigPreload, rigTint } from './skeleton-rig.js';
 import { buzz, particleSprite } from './battle-stage.js';
@@ -724,7 +724,7 @@ async function cutsceneScript(run) {
     openDressingRoom({
       mode: 'intro',
       noBack: true,
-      look: uiState.trainerDraft || TR_PRESETS[Math.floor(Math.random() * TR_PRESETS.length)],
+      look: uiState.trainerDraft || LOOK_PRESETS[Math.floor(Math.random() * LOOK_PRESETS.length)],
       done: r,
     });
     if (cutscene.test)
@@ -735,7 +735,7 @@ async function cutsceneScript(run) {
   cutscene.dressing = false;
   body.classList.remove('cs-dress', 'cs-waking');
   if (!alive()) return;
-  uiState.avatarDraft = cleanLook(uiState.trainerDraft || TR_PRESETS[0]);
+  uiState.avatarDraft = cleanLook(uiState.trainerDraft || LOOK_PRESETS[0]);
   uiState.trainerDraft = uiState.avatarDraft;
   /* 4. on your feet */
   cutsceneActor('me', 'me', M, 'side');
@@ -743,7 +743,7 @@ async function cutsceneScript(run) {
   cutsceneShot({ eye: [10.4, 1.75, 8.0], tgt: [10.2, 1.05, 12.9], fov: 40, w: 3.8 });
   cutsceneAct('me', 'react', 900);
   if (!alive()) return;
-  const nm = trainerLook('me').name || 'Trainer';
+  const nm = lookOf('me').name || 'Trainer';
   await cutsceneSay('gini', `${nm}? It suits you. If it isn’t your name, it is now.`, 'happy');
   await cutsceneSay('gini', 'I’m Professor Hazel. I study Billies, the most common wildlife here in the Hollow Earth.');
   await cutsceneSay(

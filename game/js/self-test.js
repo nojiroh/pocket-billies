@@ -29,7 +29,7 @@ import {
   uiState,
 } from './game-state.js';
 import { FRAME } from './frame-scheduler.js';
-import { TR_CACHE } from './person-art.js';
+import { PERSON_ART_CACHE } from './person-art.js';
 import { closeDressingRoom, dressingRoom } from './dressing-room.js';
 import { battleStage, battleStageStop } from './battle-stage.js';
 import {
@@ -1304,7 +1304,7 @@ async function runFullTest(mode) {
             ? `${grounds} ground picture${grounds === 1 ? '' : 's'} kept (${Math.round(gw / 1048576)} MB)`
             : '',
           mb != null ? `JS heap ${mb} MB` : '',
-          typeof TR_CACHE !== 'undefined' ? `${TR_CACHE.size} people pictures` : '',
+          typeof PERSON_ART_CACHE !== 'undefined' ? `${PERSON_ART_CACHE.size} people pictures` : '',
           `${vxn} voxel meshes`,
           `${wn} road views kept`,
         ]

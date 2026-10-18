@@ -13,7 +13,14 @@ import {
 } from '../../game/js/hooks.js';
 import { $, $$ } from '../../game/js/util.js';
 import { iconURL, makeCanvas } from '../../game/js/art.js';
-import { TR_CACHE, cleanLook, humanSheet, lookFromOld, trColorsOf, trSliders } from '../../game/js/person-art.js';
+import {
+  PERSON_ART_CACHE,
+  bodySliders,
+  cleanLook,
+  humanSheet,
+  lookFromOld,
+  trColorsOf,
+} from '../../game/js/person-art.js';
 import { drawRig, rigPose } from '../../game/js/skeleton-rig.js';
 import { escapeHtml } from './game-stand-ins.js';
 import {
@@ -1346,7 +1353,7 @@ SECTIONS.people = () => {
   afterRender(() => {
     if (typeof loadWardrobe === 'function' && !wardrobeEditor.loaded)
       loadWardrobe().then(() => {
-        TR_CACHE.clear();
+        PERSON_ART_CACHE.clear();
         const b = $('#personPrev');
         if (b) b.innerHTML = personPreviewHTML(k);
       });
@@ -1385,7 +1392,7 @@ SECTIONS.people = () => {
  ${card(
    'Look',
    `<div class="keeper"><div class="person-prev" id="personPrev">${personPreviewHTML(k)}</div><div>${grid(colorField('Skin', `${p}.skin`), colorField('Hair', `${p}.hair`), colorField('Eyes', `${p}.eyes`))}
-   <div class="grid">${trSliders()
+   <div class="grid">${bodySliders()
      .map(s =>
        rangeField(s.name, `${p}.body.${s.k}`, {
          min: s.min,
@@ -1402,7 +1409,7 @@ SECTIONS.people = () => {
 };
 studioState.hooks.people = path => {
   if (/^people\./.test(path)) {
-    TR_CACHE.clear();
+    PERSON_ART_CACHE.clear();
     const b = $('#personPrev');
     if (b) b.innerHTML = personPreviewHTML(studioState.sel.person);
   }

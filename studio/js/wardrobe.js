@@ -10,7 +10,7 @@ import { provide } from '../../game/js/hooks.js';
 import { $, $$, clamp } from '../../game/js/util.js';
 import { frameStop, frameTask } from '../../game/js/frame-scheduler.js';
 import { makeCanvas } from '../../game/js/art.js';
-import { TR_CACHE, TR_PRESETS, cleanLook, trFrame, trRig, trSliders } from '../../game/js/person-art.js';
+import { LOOK_PRESETS, PERSON_ART_CACHE, bodySliders, cleanLook, trFrame, trRig } from '../../game/js/person-art.js';
 import { rigMatrices } from '../../game/js/skeleton-rig.js';
 import { escapeHtml } from './game-stand-ins.js';
 import {
@@ -98,7 +98,7 @@ const WARDROBE_VIEWS = [
   ['side', 'Side'],
 ];
 function wardrobeTestLook() {
-  const L = cleanLook(wardrobeEditor.test || TR_PRESETS[0]);
+  const L = cleanLook(wardrobeEditor.test || LOOK_PRESETS[0]);
   if (wardrobeEditor.sel && wardrobeEditor.sel !== 'body') {
     const it = editedWardrobe().items[wardrobeEditor.sel];
     if (it) L.wear[it.slot] = wardrobeEditor.sel;
@@ -225,7 +225,7 @@ function wardrobePreviewHTML(body) {
     .join('')}</div>
   <div class="seg-row">${FACE_EXPRESSIONS.map(([k, n]) => `<button class="seg sm ${(wardrobeEditor.pvExpr || '') === k ? 'on' : ''}" data-act="wdExpr" data-e="${k}">${k ? n : 'Normal face'}</button>`).join('')}</div>
   <div class="seg-row"><button class="seg sm" data-act="wdTurn" data-d="-1">‹ Turn</button><button class="seg sm" data-act="wdTurn" data-d="1">Turn ›</button></div>
-  ${trSliders()
+  ${bodySliders()
     .map(
       s =>
         `<label class="fld range"><span>${escapeHtml(s.name)} <output>${(+L.body[s.k]).toFixed(2)}</output></span><input type="range" min="${s.min}" max="${s.max}" step=".01" value="${L.body[s.k]}" data-wd-test="${s.k}"></label>`
@@ -307,7 +307,7 @@ async function mountWardrobe() {
 function drawWardrobeThumbs() {
   $$('[data-th]').forEach(el => {
     const k = el.dataset.th,
-      L = cleanLook(TR_PRESETS[0]);
+      L = cleanLook(LOOK_PRESETS[0]);
     let u = '';
     try {
       if (k !== 'body') {
@@ -386,8 +386,8 @@ function wardrobePreviewLoop(ts) {
 }
 /* where each joint sits in the standing pose with default sliders */
 function wardrobeJoints(view) {
-  const L = cleanLook(TR_PRESETS[0]);
-  for (const s of trSliders()) L.body[s.k] = s.def;
+  const L = cleanLook(LOOK_PRESETS[0]);
+  for (const s of bodySliders()) L.body[s.k] = s.def;
   L.body.chest = 1;
   const R = trRig(L, view),
     { W } = rigMatrices(R, { x: 0, y: 0, r: 0, sx: 1, sy: 1, act: 'idle', t: 0, ph: 0 }, 'front');
@@ -416,7 +416,7 @@ function drawWardrobeEditor() {
   x.imageSmoothingEnabled = false;
   /* the whole trainer, faint */
   const L = wardrobeTestLook();
-  for (const s of trSliders()) L.body[s.k] = s.def;
+  for (const s of bodySliders()) L.body[s.k] = s.def;
   L.body.chest = Math.max(0.6, L.body.chest);
   const ex = (src.pieces[wardrobeEditor.piece] || {}).x || '',
     hasX = !!ex && src.pieces.some(p => p.v === wardrobeEditor.view && p.x === ex);
@@ -565,7 +565,7 @@ function wardrobeArtChanged(src) {
   markArt('art/' + src.img, loadedAtlas('art/' + src.img));
   if (src.mask) markArt('art/' + src.mask, loadedAtlas('art/' + src.mask));
   changed();
-  TR_CACHE.clear();
+  PERSON_ART_CACHE.clear();
   drawWardrobeEditor();
 }
 function pickWardrobeColor(l) {
@@ -665,7 +665,7 @@ function bindWardrobeCanvas() {
         Math.round(wardrobeEditor.drag.o[0] + (ev.clientX - wardrobeEditor.drag.x) * k),
         Math.round(wardrobeEditor.drag.o[1] + (ev.clientY - wardrobeEditor.drag.y) * k),
       ];
-      TR_CACHE.clear();
+      PERSON_ART_CACHE.clear();
       drawWardrobeEditor();
       return;
     }
@@ -752,7 +752,7 @@ ACTIONS.wdAdd = d => {
   wardrobeEditor.piece = src.pieces.length - 1;
   changed();
   commit(true);
-  TR_CACHE.clear();
+  PERSON_ART_CACHE.clear();
   render();
 };
 const FACE_EXPRESSIONS = [
@@ -785,7 +785,7 @@ ACTIONS.wdPieceX = async () => {
   wardrobeEditor.piece = src.pieces.length - 1;
   changed();
   commit(true);
-  TR_CACHE.clear();
+  PERSON_ART_CACHE.clear();
   render();
   toast(`Added a ${free[0][1].toLowerCase()} copy. Repaint it, or change when it shows.`);
 };
@@ -797,7 +797,7 @@ ACTIONS.wdPieceDel = async () => {
   wardrobeEditor.piece = -1;
   changed();
   commit(true);
-  TR_CACHE.clear();
+  PERSON_ART_CACHE.clear();
   render();
 };
 ACTIONS.wdUndo = () => {
@@ -816,7 +816,7 @@ ACTIONS.wdUndo = () => {
   }
   src.pieces.splice(0, src.pieces.length, ...JSON.parse(u.pieces));
   changed();
-  TR_CACHE.clear();
+  PERSON_ART_CACHE.clear();
   render();
 };
 /* ---------- items ---------- */
@@ -964,6 +964,6 @@ ACTIONS.wdColDel = d => {
   render();
 };
 studioState.hooks.wardrobe = () => {
-  TR_CACHE.clear();
+  PERSON_ART_CACHE.clear();
   drawWardrobeEditor();
 };

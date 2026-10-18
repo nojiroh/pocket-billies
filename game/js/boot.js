@@ -21,7 +21,7 @@ import {
   uiState,
 } from './game-state.js';
 import { ART_CACHE, COIN_ART, EGG_ART, ICON_ATLAS, MENU_BACKGROUND_ART, artBoot, artImg, uiIconURL } from './art.js';
-import { trainerArtPaths } from './person-art.js';
+import { personArtPaths } from './person-art.js';
 import { rigAtlas } from './skeleton-rig.js';
 import { AREAS, battleStageArtFiles, battleStagePrepare } from './battle-stage.js';
 import { mapArtPaths, mapById, walkData, walkView } from './walk-view.js';
@@ -199,7 +199,7 @@ function loadList() {
   add(WORLD_ART, 4);
   if (typeof WORLD_RELIEF !== 'undefined') add(WORLD_RELIEF, 1);
   try {
-    trainerArtPaths().forEach(p => add(p, 0));
+    personArtPaths().forEach(p => add(p, 0));
   } catch (e) {
     console.error(e);
   }

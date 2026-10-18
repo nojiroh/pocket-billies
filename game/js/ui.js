@@ -95,15 +95,7 @@ import {
 } from './game-state.js';
 import { frameTask, userFps } from './frame-scheduler.js';
 import { ART_CACHE, artLoad, artURL, coinHTML, coinURL, eggHTML, makeCanvas, uiIconHTML } from './art.js';
-import {
-  TR_PRESETS,
-  cleanLook,
-  cleanTrainer,
-  humanHTML,
-  owHTMLsheet,
-  portraitHTML,
-  trainerLook,
-} from './person-art.js';
+import { LOOK_PRESETS, cleanLook, cleanTrainer, humanHTML, lookOf, owHTMLsheet, portraitHTML } from './person-art.js';
 import { applyPreferences, settingsHTML } from './settings-screen.js';
 import { lookPortrait, openDressingRoom } from './dressing-room.js';
 import { bustHTML, rigCanvasHTML } from './skeleton-rig.js';
@@ -722,14 +714,14 @@ function renderIntro() {
   if (i <= HAZEL_INTRO_LINES.length)
     return `<div class="talk"><div class="talk-art">${humanHTML('gini', 96)}</div><div class="dlg px"><p class="speaker">Professor Hazel</p><p class="line" id="dlgLine">${HAZEL_INTRO_LINES[i - 1]}</p><button class="pb dark wide" data-a="intro">Next</button></div></div>`;
   if (st && st.k === 'trainer') {
-    const cur = JSON.stringify(cleanLook(uiState.trainerDraft || TR_PRESETS[0]));
+    const cur = JSON.stringify(cleanLook(uiState.trainerDraft || LOOK_PRESETS[0]));
     return `<header class="bar"><div><div class="sub">Your adventure, your style</div><h1 class="where">Create your trainer</h1></div></header>
   <p class="note">Pick a starting look, then make it yours: body, face, hair and clothes. You can change it any time from your Trainer card.</p>
-  <div class="tr-presets">${TR_PRESETS.map((p, j) => `<button class="tr-pre px" data-a="tr-preset" data-i="${j}" aria-pressed="${JSON.stringify(cleanLook(p)) === cur}"><img src="${lookPortrait(p)}" alt="Look ${j + 1}"></button>`).join('')}</div>
+  <div class="tr-presets">${LOOK_PRESETS.map((p, j) => `<button class="tr-pre px" data-a="tr-preset" data-i="${j}" aria-pressed="${JSON.stringify(cleanLook(p)) === cur}"><img src="${lookPortrait(p)}" alt="Look ${j + 1}"></button>`).join('')}</div>
   <div class="tr-me px"><div class="tr-big">${humanHTML('me', 120)}</div><div class="racts"><button class="pb dark wide" data-a="tr-custom">${uiIconHTML('profile', 16)} Customize</button><button class="pb gold wide big" data-a="tr-next">Next</button></div></div>`;
   }
   if (st && st.k === 'named') {
-    const nm = trainerLook('me').name || 'Trainer';
+    const nm = lookOf('me').name || 'Trainer';
     return `<div class="talk"><div class="talk-art">${humanHTML('me', 96)}</div><div class="dlg px"><p class="speaker">Professor Hazel</p><p class="line">${escapeHtml(nm)}? It suits you. If it isn’t your name, it is now. Nobody should walk the Hollow Earth alone, so here: choose your very first Billie.</p><button class="pb dark wide" data-a="intro">Choose a starter</button></div></div>`;
   }
   const pk = RULES.start.starters.filter(l => SPECIES[l + '0']);
@@ -2510,7 +2502,7 @@ function openSettings(tab) {
 }
 /* o.rival (v47, from the opening): Blake's battle comes first; the welcome sheet waits until the talk after it */
 export function startGame(l, o = {}) {
-  const avatar = cleanLook(uiState.avatarDraft || uiState.trainerDraft || TR_PRESETS[0]);
+  const avatar = cleanLook(uiState.avatarDraft || uiState.trainerDraft || LOOK_PRESETS[0]);
   setSaveData(newSaveKeepingPreferences());
   saveData.avatar = avatar;
   uiState.trainerDraft = null;
@@ -2586,14 +2578,14 @@ document.addEventListener('click', ev => {
       render();
       break;
     case 'tr-preset':
-      uiState.trainerDraft = cleanLook(TR_PRESETS[+d.i]);
+      uiState.trainerDraft = cleanLook(LOOK_PRESETS[+d.i]);
       render();
       break;
     case 'tr-custom':
       openDressingRoom({ mode: 'intro', done: () => render() });
       break;
     case 'tr-next':
-      uiState.avatarDraft = cleanLook(uiState.trainerDraft || TR_PRESETS[0]);
+      uiState.avatarDraft = cleanLook(uiState.trainerDraft || LOOK_PRESETS[0]);
       uiState.trainerDraft = uiState.avatarDraft;
       uiState.intro++;
       render();

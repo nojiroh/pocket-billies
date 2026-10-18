@@ -5,7 +5,7 @@ import { LOCATIONS, gameData } from './game-data.js';
 import { activeBattle, save, saveData, setSave, setSetTrip, setTrip, uiState } from './game-state.js';
 import { FRAME, userFps } from './frame-scheduler.js';
 import { artPixels, setArtPixels } from './art.js';
-import { TR_CACHE, humanFrames, setHumanFrames } from './person-art.js';
+import { PERSON_ART_CACHE, humanFrames, setHumanFrames } from './person-art.js';
 import { openDressingRoom, setOpenDressingRoom } from './dressing-room.js';
 import {
   battleStage,
@@ -101,7 +101,7 @@ Object.defineProperties(GAME, {
   FRAME: { get: () => FRAME },
   LIFE: { get: () => LIFE },
   LOCATIONS: { get: () => LOCATIONS },
-  TR_CACHE: { get: () => TR_CACHE },
+  PERSON_ART_CACHE: { get: () => PERSON_ART_CACHE },
   account: { get: () => account },
   activeBattle: { get: () => activeBattle },
   ambience: { get: () => ambience },

@@ -484,7 +484,7 @@ debugLog.more = () => {
     };
   });
   t('caches', () => ({
-    people: typeof GAME.TR_CACHE !== 'undefined' ? GAME.TR_CACHE.size : null,
+    people: typeof GAME.PERSON_ART_CACHE !== 'undefined' ? GAME.PERSON_ART_CACHE.size : null,
     lifeFrames: typeof GAME.LIFE !== 'undefined' ? GAME.LIFE.cut.size : null,
     normalsWaiting: typeof GAME.gpuState !== 'undefined' && GAME.gpuState.normQ ? GAME.gpuState.normQ.length : null,
     targets: typeof GAME.gpuState !== 'undefined' ? Object.keys(GAME.gpuState.fb || {}).length : null,

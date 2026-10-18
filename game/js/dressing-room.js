@@ -11,7 +11,16 @@ import { SHOPS } from './game-data.js';
 import { escapeHtml, formatNumber, save, saveData, uiState } from './game-state.js';
 import { frameStop, frameTask } from './frame-scheduler.js';
 import { makeCanvas, uiIconHTML } from './art.js';
-import { TR_PRESETS, WD, cleanLook, portraitHTML, trBox, trColorsOf, trFrame, trSliders } from './person-art.js';
+import {
+  LOOK_PRESETS,
+  bodySliders,
+  cleanLook,
+  portraitHTML,
+  trBox,
+  trColorsOf,
+  trFrame,
+  wardrobeData,
+} from './person-art.js';
 /* eslint-disable no-func-assign */
 expose({
   BODY_BUILD_PRESETS: [() => BODY_BUILD_PRESETS],
@@ -268,10 +277,10 @@ const BODY_BUILD_PRESETS = [
 ];
 const wardrobeState = () => saveData.wardrobe || (saveData.wardrobe = { owned: {}, outfits: [null, null, null] });
 function owns(id) {
-  const it = WD().items[id];
+  const it = wardrobeData().items[id];
   return !!it && (!!it.starter || !!wardrobeState().owned[id]);
 }
-const wardrobeItemsInSlot = slot => Object.entries(WD().items).filter(([k, it]) => it.slot === slot);
+const wardrobeItemsInSlot = slot => Object.entries(wardrobeData().items).filter(([k, it]) => it.slot === slot);
 const shopName = id => (SHOPS[id] && SHOPS[id].name) || 'a boutique';
 /* does the open boutique sell this item? its own stock, or (an outlet) the stock of the shops it lists in "sells" */
 const boutiqueSells = it =>
@@ -286,7 +295,7 @@ export function openDressingRoom(o = {}) {
   dressingRoom.shop = o.shop || null;
   dressingRoom.done = o.done || null;
   dressingRoom.noBack = !!o.noBack;
-  const base = o.look || (dressingRoom.mode === 'intro' ? uiState.trainerDraft || TR_PRESETS[0] : saveData.avatar);
+  const base = o.look || (dressingRoom.mode === 'intro' ? uiState.trainerDraft || LOOK_PRESETS[0] : saveData.avatar);
   dressingRoom.look = cleanLook(JSON.parse(JSON.stringify(base)));
   dressingRoom.orig = JSON.stringify(dressingRoom.look);
   dressingRoom.undo = [];
@@ -348,7 +357,7 @@ function colorSwatchesHTML(key, list, cur, ch) {
   return `<div class="swatches">${list.map(c => `<button class="swatch" style="--sw:${c}" data-a="dr-col" data-k="${key}" data-c="${c}" ${ch != null ? `data-ch="${ch}"` : ''} aria-pressed="${String(cur).toLowerCase() === c.toLowerCase()}" aria-label="${c}"><span>✓</span></button>`).join('')}<label class="custom-color" title="Any colour">+<input type="color" data-dr-col="${key}" ${ch != null ? `data-ch="${ch}"` : ''} value="${cur}"></label></div>`;
 }
 function wardrobeGridHTML(slot, crop) {
-  const S0 = WD().slots.find(s => s.id === slot),
+  const S0 = wardrobeData().slots.find(s => s.id === slot),
     cur = dressingRoom.look.wear[slot];
   let list = wardrobeItemsInSlot(slot);
   if (dressingRoom.mode === 'intro') list = list.filter(([k]) => owns(k));
@@ -369,10 +378,10 @@ function wardrobeGridHTML(slot, crop) {
 }
 function wardrobeColorsHTML(slot) {
   const id = dressingRoom.look.wear[slot],
-    it = id && WD().items[id];
+    it = id && wardrobeData().items[id];
   if (!it) return '';
   const cur = trColorsOf(dressingRoom.look, id),
-    P = WD().palettes || {};
+    P = wardrobeData().palettes || {};
   return it.colors
     .map((c, i) => {
       const ln = it.link && it.link[String(i + 1)];
@@ -386,14 +395,14 @@ function dressingSectionHTML(title, html) {
 }
 function dressingTabHTML() {
   const L = dressingRoom.look,
-    P = WD().palettes || {};
+    P = wardrobeData().palettes || {};
   switch (dressingRoom.tab) {
     case 'body':
       return (
         (dressingRoom.mode === 'intro'
           ? dressingSectionHTML(
               'Ready-made looks',
-              `<div class="dr-presets">${TR_PRESETS.map((p, j) => `<button class="dr-pre px" data-a="dr-preset" data-i="${j}" aria-label="Look ${j + 1}"><img src="${lookPortrait(Object.assign({}, p, { name: dressingRoom.look.name }))}" alt=""></button>`).join('')}</div><p class="note">Start from one of these, then change anything you like.</p>`
+              `<div class="dr-presets">${LOOK_PRESETS.map((p, j) => `<button class="dr-pre px" data-a="dr-preset" data-i="${j}" aria-label="Look ${j + 1}"><img src="${lookPortrait(Object.assign({}, p, { name: dressingRoom.look.name }))}" alt=""></button>`).join('')}</div><p class="note">Start from one of these, then change anything you like.</p>`
             )
           : '') +
         dressingSectionHTML(
@@ -402,7 +411,7 @@ function dressingTabHTML() {
         ) +
         dressingSectionHTML('Skin', colorSwatchesHTML('skin', P.skin || [], L.skin)) +
         dressingMoreHTML('body', 'Fine-tune the shape', () =>
-          trSliders()
+          bodySliders()
             .map(
               s =>
                 `<label class="dr-sl"><span>${escapeHtml(s.name)}</span><input type="range" min="${s.min}" max="${s.max}" step="0.01" value="${L.body[s.k]}" data-dr-sl="${s.k}"><button class="dr-rs" data-a="dr-slreset" data-k="${s.k}" aria-label="Reset ${escapeHtml(s.name)}" title="Reset">↺</button></label>`
@@ -440,7 +449,7 @@ function dressingTabHTML() {
         )
       );
     case 'outfit': {
-      const W = WD().items,
+      const W = wardrobeData().items,
         O = wardrobeState().outfits;
       let list = OUTFIT_PRESETS.filter(([n, o]) => Object.values(o).every(id => !id || W[id]));
       if (dressingRoom.mode === 'intro') list = list.filter(([n, o]) => Object.values(o).every(id => !id || owns(id)));
@@ -497,7 +506,7 @@ function dressingMoreHTML(tab, label, fn) {
 }
 function wearsBuild(b) {
   const L = dressingRoom.look.body;
-  return trSliders().every(s => s.k === 'chest' || Math.abs((L[s.k] ?? s.def) - (b[s.k] ?? s.def)) < 0.005);
+  return bodySliders().every(s => s.k === 'chest' || Math.abs((L[s.k] ?? s.def) - (b[s.k] ?? s.def)) < 0.005);
 }
 function wearsFace(f) {
   return ['eyes', 'brows', 'mouth', 'facial'].every(k => (dressingRoom.look.wear[k] || null) === (f[k] || null));
@@ -508,7 +517,7 @@ function wearsOutfit(o) {
 function lookWithOutfit(L, o, way) {
   const L2 = JSON.parse(JSON.stringify(L));
   Object.assign(L2.wear, o);
-  const W = WD().items;
+  const W = wardrobeData().items;
   for (const [k, ci] of [
     ['top', 0],
     ['bottom', 1],
@@ -544,7 +553,7 @@ function unownedPieces() {
 }
 function dressingFootHTML() {
   const un = unownedPieces(),
-    W = WD().items,
+    W = wardrobeData().items,
     cost = un.filter(id => boutiqueSells(W[id])).reduce((a, id) => a + (W[id].price || 0), 0),
     elsewhere = un.filter(id => !boutiqueSells(W[id]));
   let msg = '',
@@ -570,7 +579,7 @@ function dressingFootHTML() {
   return `<span class="dr-msg">${msg}</span>${dressingRoom.noBack ? '' : `<button class="pb quiet" data-a="dr-cancel">${dressingRoom.mode === 'intro' ? 'Back' : dressingRoom.shop ? 'Leave' : 'Cancel'}</button>`}${btn}`;
 }
 /* ---------- thumbnails and portraits ---------- */
-const THUMB_CROPS = new Proxy({}, { get: (t, k) => (WD().crops || {})[k] });
+const THUMB_CROPS = new Proxy({}, { get: (t, k) => (wardrobeData().crops || {})[k] });
 function wardrobeThumbnail(slot, id, crop) {
   const L = JSON.parse(JSON.stringify(dressingRoom.look));
   L.wear[slot] = id;
@@ -654,8 +663,8 @@ function dressingPreviewLoop(ts) {
       1,
       Math.floor(
         Math.min(
-          (H * 0.8) / ((WD().figure || 74) * 1.18 * dressingRoom.look.body.height),
-          (W * 0.8) / ((WD().figure || 74) * 0.6)
+          (H * 0.8) / ((wardrobeData().figure || 74) * 1.18 * dressingRoom.look.body.height),
+          (W * 0.8) / ((wardrobeData().figure || 74) * 0.6)
         ) * 2
       ) / 2
     );
@@ -691,10 +700,10 @@ function changeLook(fn, full) {
   refreshDressingRoom(full);
 }
 function randomizeLook() {
-  const P = WD().palettes || {},
+  const P = wardrobeData().palettes || {},
     pk = a => a[Math.floor(random() * a.length)];
   changeLook(L => {
-    for (const s of WD().slots) {
+    for (const s of wardrobeData().slots) {
       const ids = wardrobeItemsInSlot(s.id)
         .map(e => e[0])
         .filter(owns);
@@ -714,7 +723,7 @@ function randomizeLook() {
     L.eyes = pk(P.eyes || [L.eyes]);
     for (const k of ['top', 'outer', 'bottom', 'shoes', 'hat', 'bag']) {
       const id = L.wear[k];
-      if (id) L.colors[id] = WD().items[id].colors.map((c, i) => (i ? c[1] : pk(P.cloth || [c[1]])));
+      if (id) L.colors[id] = wardrobeData().items[id].colors.map((c, i) => (i ? c[1] : pk(P.cloth || [c[1]])));
     }
   });
 }
@@ -747,7 +756,7 @@ export function saveDressingLook() {
   toast(shop ? 'Looking sharp.' : 'Your new look is saved.');
 }
 function buyDressingItems() {
-  const W = WD().items,
+  const W = wardrobeData().items,
     un = unownedPieces(),
     mine = un.filter(id => boutiqueSells(W[id])),
     cost = mine.reduce((a, id) => a + (W[id].price || 0), 0);
@@ -854,9 +863,10 @@ document.addEventListener('click', ev => {
       changeLook(L => {
         L.wear[d.s] = d.id || null;
       });
-      if (d.id && !owns(d.id) && boutiqueSells(WD().items[d.id])) {
+      if (d.id && !owns(d.id) && boutiqueSells(wardrobeData().items[d.id])) {
         const l = $('#drLine');
-        if (l) l.textContent = `${WD().items[d.id].name}? Good eye. $${formatNumber(WD().items[d.id].price || 0)}.`;
+        if (l)
+          l.textContent = `${wardrobeData().items[d.id].name}? Good eye. $${formatNumber(wardrobeData().items[d.id].price || 0)}.`;
       }
       break;
     case 'dr-col':
@@ -885,11 +895,11 @@ document.addEventListener('click', ev => {
             L.wear = L2.wear;
             L.colors = L2.colors;
           });
-          const un = Object.values(o[1]).filter(id => id && !owns(id) && boutiqueSells(WD().items[id]));
+          const un = Object.values(o[1]).filter(id => id && !owns(id) && boutiqueSells(wardrobeData().items[id]));
           if (un.length) {
             const l = $('#drLine');
             if (l)
-              l.textContent = `${o[0]}? Good eye. $${formatNumber(un.reduce((a, id) => a + (WD().items[id].price || 0), 0))}.`;
+              l.textContent = `${o[0]}? Good eye. $${formatNumber(un.reduce((a, id) => a + (wardrobeData().items[id].price || 0), 0))}.`;
           }
         }
       }
@@ -899,14 +909,14 @@ document.addEventListener('click', ev => {
         const b = BODY_BUILD_PRESETS.find(x => x[0] === d.b);
         if (b)
           changeLook(L => {
-            for (const s of trSliders()) if (s.k !== 'chest') L.body[s.k] = s.def;
+            for (const s of bodySliders()) if (s.k !== 'chest') L.body[s.k] = s.def;
             Object.assign(L.body, b[1]);
           });
       }
       break;
     case 'dr-slreset':
       {
-        const s = trSliders().find(x => x.k === d.k);
+        const s = bodySliders().find(x => x.k === d.k);
         if (s)
           changeLook(L => {
             L.body[s.k] = s.def;
@@ -929,7 +939,7 @@ document.addEventListener('click', ev => {
       break;
     case 'dr-preset':
       {
-        const p = TR_PRESETS[+d.i];
+        const p = LOOK_PRESETS[+d.i];
         if (p)
           changeLook(L => {
             const n = L.name;
