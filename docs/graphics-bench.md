@@ -53,11 +53,19 @@ each of its values.
 - **Frame cap kept:** the player's frame-rate cap stays. Frames per second stop at the cap, so a step's cost is read
   from the time the frame takes: the processor's time per frame, and the graphics chip's own time per frame where
   the chip has timers (EXT_disjoint_timer_query_webgl2).
-- **Per step:** set the value, wait 1 s (a setting that rebuilds the ground or the grass waits until the rebuild is
-  done, at most 8 s), then measure for 3 s.
-- **Drift:** each station measures its untouched look first and last. When the two differ by more than 15 % (a phone
-  getting warm), the station is marked as drifting.
-- **The cost of a step** is its time minus the time of that setting's lowest step, in ms per frame.
+- **Per step:** set the value, wait 1 s, then measure for 3 s.
+- **Settling:** a station's first step and every step that rebuilds (and the step after one, which rebuilds back)
+  first wait until nothing is left to prepare or paint (the ground's helper thread included) and two whole seconds in
+  a row agree within 10 %: at most 10 s, 12 s after a rebuild. Without it a station's first look came out slow while
+  its ground was still painting, and the step after a rebuild was measured during the rebuild back.
+- **Drift and noise:** each station measures its untouched look first, midway (stations with two or more settings)
+  and last. When first and last differ by more than 15 % (a phone getting warm), the station is marked as drifting.
+  The spread of the three is the station's noise: a cost no bigger than it is marked "within noise".
+- **The cost of a step** is its time minus the time of that setting's lowest step, in ms per frame: the graphics
+  chip's time where it has timers, else the whole frame's time worked out from the frame rate (1000 / fps). The
+  processor's time is kept in the report but not used for the cost: the phones measured so far wait on their graphics
+  chip (a frame of 25 ms with 3 ms of processor time), so it ranked the settings wrongly. Below the frame cap nothing
+  shows: a setting that fits in the frame's spare time costs 0.
 - **Background:** like the full test, it waits while the app is in the background and runs that station again.
 
 ## What it leaves behind
@@ -69,10 +77,42 @@ everything back when it ends or is stopped.
 
 A table of settings sorted by cost (the highest step's cost), each with its curve, and **Save the report**:
 `pocket-billies-graphics-YYYYMMDD-HHMM.json`. The report has the build, the device and its graphics chip, the
-frame cap, and per setting each step's value, fps, worst fps, processor ms, graphics-chip ms (or null) and cost. It
-has no save data and no names.
+frame cap, and per setting each step's value, fps, frame ms, worst fps, processor ms, graphics-chip ms (or null), their
+costs, the station's noise and whether the cost is within it (`unclear`). It has no save data and no names. Format 2
+(October 2026) added frameMs, frameCost, noise and unclear, and the midway look.
 
 ## Time
 
-125 measured steps (105 setting steps, two untouched looks per station, everything lowest and highest) at about
-4.5 s each, plus rebuilds: about 10 minutes.
+132 measured steps (105 setting steps, two or three untouched looks per station, everything lowest and highest) at
+about 4.5 s each, plus settling and rebuilds: about 11 to 12 minutes.
+
+## Findings so far (format 1 reports, 2026-10-19)
+
+Two reports: an iPad (Apple GPU, Safari engine, 60 Hz) and an Android phone (Adreno 750, Chrome, screen at 3.5×).
+Neither has graphics-chip timers, so these come from the frame rate. Format 1 had the two flaws fixed above (slow
+first looks, the step after a rebuild), so small numbers are not sure; the Android phone's frame rate also jumps
+between two levels at one setting (41 and 35, 27 and 23), about 15 %.
+
+| | iPad | Android |
+|---|---|---|
+| Game's own values / everything lowest / highest | 38.5 / 57.5 / 37 fps | 15.5 / 42 / 16.5 fps |
+| Sharpness 0.4 → 1 (bare pavers) | 60 → 60 | 55 → 29.5 |
+| Grass 0 → 2 | no change | 46 → 32 |
+| Ambient occlusion off → on | 56.5 → 53 | 42 → 35 |
+| Depth of field off → on | not sure (slow first look) | 31 → 26 |
+| Water reflections 0 → 0.5 and more | no change | 39 → 34 |
+| Clouds 0 → 0.5 and more | no change | 41.5 → 35 |
+| Far trees and hills 0 → 600 | 43.5 → 38 | 27.5 → 24 |
+| Sun gap (Light shafts, God rays at any value) | about 40 | 16 to 23 |
+| Lamp square at night (Glow at any value) | about 45 | about 23 |
+
+- The game's own values are about the same as everything at its highest, on both devices: without automatic quality
+  a phone gets the costliest look.
+- The Android phone is held up by the number of pixels: the renderer draws at up to 1.75× the screen's pixel density
+  (walk-view-gl.js, `R0`), and Sharpness alone halves its frame rate on bare ground.
+- The Sun gap is the slowest place on both, whatever its two settings are: the cost is the grove itself (many trees
+  of many sprites each, drawn over each other), not the light effects.
+- Not found: the iPad's Lamps 1.15 to 1.55 dip (36 fps, then 43 at 2). Lamps only scales the lights' colours, the
+  16 nearest lights are picked the same at any value, and the Android phone shows no dip.
+- A rebuild from the settings left the solid props' vertex arrays and buffers behind (9 of each per rebuild on the
+  bench); fixed. Draw calls per frame stay the same across rebuilds (about 400 at the depth corridor).
