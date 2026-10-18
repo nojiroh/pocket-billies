@@ -12,7 +12,7 @@
 //   or from whichever module the page has (the shared renderer reading the game's or the Studio's names), and
 //   provide({...}) of its own names other modules read from there (functions here; other values right after their
 //   declaration, in a line ending in a to-module comment),
-// - setters for the functions the debug log wraps, when the module has none of its own (game/js/log-names.js, also
+// - setters for the functions the debug log wraps, when the module has none of its own (game/js/debug-log-names.js, also
 //   written by the tool, hands them to debug-log.js),
 // - expose({...}): every top-level name of the file, put on window as a getter and a setter only when the checks or
 //   the console ask for it (game/js/test-globals.js),
@@ -35,7 +35,7 @@ export const HOOKS = 'game/js/hooks.js';
 // phase 04d: the debug log (a classic script) reaches the game's modules through what this module, made by the tool
 // and the last of the game's page, puts in debug-log.js's GAME object
 export const LOG = 'game/js/debug-log.js';
-export const LOG_NAMES = 'game/js/log-names.js';
+export const LOG_NAMES = 'game/js/debug-log-names.js';
 const setterName = n => 'set' + n[0].toUpperCase() + n.slice(1);
 // phase 04d: after a declaration another module reads through hooks.js, the tool hands the value over
 const PROVIDE_LINE = /^provide\(\{[^}]*\}\); \/\* to-module \*\/\n/gm;
@@ -313,7 +313,7 @@ export async function run(args) {
   const logReads = new Set([...logText.matchAll(/\bGAME\.([A-Za-z_$][\w$]*)/g)].map(m => m[1]));
   const logWraps = new Set([...logText.matchAll(/(?:\bwrap\(|\[)\s*'(\w+)',/g)].map(m => m[1]));
   const gamePage = pages.find(p => p.page === 'game/index.html').scripts;
-  const logFrom = new Map(); // G -> Set(names log-names.js imports)
+  const logFrom = new Map(); // G -> Set(names debug-log-names.js imports)
   const genSetters = new Map(); // G -> Set(names the tool writes a setter for)
   const logSet = new Map(); // name -> its setter
   for (const n of new Set([...logReads, ...logWraps])) {
@@ -386,7 +386,7 @@ export async function run(args) {
       if (fns) lines.push('/* eslint-enable no-func-assign */');
     }
     if (early.length) lines.push(`provide({ ${early.join(', ')} });`);
-    // setters for the functions the debug log wraps (log-names.js)
+    // setters for the functions the debug log wraps (debug-log-names.js)
     for (const n of gen)
       lines.push(
         `export function ${setterName(n)}(v) {`,
@@ -429,7 +429,7 @@ export async function run(args) {
     '',
   ].join('\n');
   await write(HOOKS, hooksOut, existsSync(join(ROOT, HOOKS)) ? read(HOOKS) : '');
-  // log-names.js: what the debug log reads and wraps, put in debug-log.js's GAME object
+  // debug-log-names.js: what the debug log reads and wraps, put in debug-log.js's GAME object
   const logOut = [
     '// Phase 04d: made by tools/to-module.mjs (npm run modules), do not edit. What the debug log (debug-log.js, a classic',
     "// script that runs before the modules) reads and wraps in the game's modules: a getter for each name in its GAME",
