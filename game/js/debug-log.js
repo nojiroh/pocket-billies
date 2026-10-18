@@ -704,7 +704,7 @@ NWLOG.hook = () => {
     ['paintActions', 'drawing the battle menu'],
     ['humanFrames', 'drawing a person'],
     ['worldMapGlRender', 'drawing the map'],
-    ['csStart', 'starting the opening'],
+    ['cutsceneStart', 'starting the opening'],
     ['openDressingRoom', 'opening the dressing room'],
     ['artPixels', 'reading a picture'],
   ])

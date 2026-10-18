@@ -180,7 +180,7 @@ import { worldMapGlAction, worldMapGlWanted } from './world-map-gl.js';
 import { openShop } from './shop.js';
 import { sfx } from './sound.js';
 import { talkHazel } from './talk.js';
-import { csStart, csWanted, cutscene } from './cutscene.js';
+import { cutscene, cutsceneStart, cutsceneWanted } from './cutscene.js';
 import { fallStill } from './opening-fall.js';
 import { renderTitle, titleMount } from './title.js';
 import { loreBook, renderLore } from './lore.js';
@@ -2573,8 +2573,8 @@ document.addEventListener('click', ev => {
   if (typeof worldMapGlAction === 'function' && worldMapGlAction(a, d)) return;
   switch (a) {
     case 'intro':
-      if (uiState.intro === 0 && typeof csWanted === 'function' && csWanted()) {
-        csStart();
+      if (uiState.intro === 0 && typeof cutsceneWanted === 'function' && cutsceneWanted()) {
+        cutsceneStart();
         break;
       }
       uiState.intro++;

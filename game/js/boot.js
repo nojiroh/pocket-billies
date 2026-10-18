@@ -32,7 +32,7 @@ import { seamlessWorld } from './seamless-world.js';
 import { battleStageKey } from './battle.js';
 import { WORLD_ART, worldMapPrepare } from './world-map.js';
 import { WORLD_RELIEF } from './world-map-gl.js';
-import { csWanted } from './cutscene.js';
+import { cutsceneWanted } from './cutscene.js';
 import { TITLE, titleMount, titleStart, titleWanted } from './title.js';
 import { loreLoadingLines } from './lore.js';
 import { accInit } from './account.js';
@@ -528,7 +528,12 @@ function loadSvg(k) {
    put up behind the loading screen and builds itself while the rest comes in (onTown) */
 function townPaths() {
   try {
-    if (!(typeof titleWanted === 'function' && titleWanted() && typeof csWanted === 'function' && csWanted()))
+    if (!(
+      typeof titleWanted === 'function' &&
+      titleWanted() &&
+      typeof cutsceneWanted === 'function' &&
+      cutsceneWanted()
+    ))
       return new Set();
     const id = mapIdAt(START_NODE),
       sc = mapById(id);

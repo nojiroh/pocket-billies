@@ -280,7 +280,7 @@ def copperleaf_data():
     if 'juniper' not in (LO.get('people') or {}): bad.append('Granny Juniper has no page in the Lore')
     sd = S_['sundown']; sign = [p.get('say') for p in sd['props'] if p.get('act') == 'sign']
     if 'Route 1 · Hedgerow Lane this way.' not in sign: bad.append(f'Marigold Town’s signposts: {sign}')
-    # the opening's stage: east and south of the lab's door, as cutscene.js CS_SPOT has it (door [7.4, 15.4])
+    # the opening's stage: east and south of the lab's door, as cutscene.js CUTSCENE_SPOTS has it (door [7.4, 15.4])
     lab = next(p for p in cl['props'] if p.get('act') == 'lab'); M = C[lab['k']]; dx = M['door']['x'] / 34 * lab.get('s', 1) * (-1 if lab.get('f') else 1)
     d = (lab['x'] + dx, lab['z'])
     for p in cl['props']:
@@ -525,7 +525,7 @@ def phone_flow(b, base, R):
     try:
         pg.click('[data-a=intro]')
         if not until(pg, 'cutscene.on', 15): raise Exception('the opening cutscene didn’t start')
-        skip = "cutscene.say&&cutscene.say.tap();cutscene.skip||csSkip()"
+        skip = "cutscene.say&&cutscene.say.tap();cutscene.skip||skipCutscene()"
         if not until(pg, 'dressingRoom.on', 60, skip): raise Exception('never reached the dressing room')
         pg.click('[data-a=dr-preset][data-i="2"]'); pg.fill('#drName', 'Checker'); pg.click('[data-a=dr-save]')
         if not until(pg, 'cutscene.choosing', 60, skip): raise Exception('never reached the starter picker')

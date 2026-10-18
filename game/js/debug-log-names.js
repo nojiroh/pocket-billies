@@ -93,7 +93,7 @@ import { setWorldMapMount, worldMapMount } from './world-map.js';
 import { setWorldMapGlRender, setWorldMapMiniBuild, worldMapGlRender, worldMapMiniBuild } from './world-map-gl.js';
 import { openShop, setOpenShop } from './shop.js';
 import { AMB, AUD } from './sound.js';
-import { csStart, setCsStart } from './cutscene.js';
+import { cutsceneStart, setCutsceneStart } from './cutscene.js';
 import { ACC } from './account.js';
 import { chalToday, stampCount } from './things-to-do.js';
 import { render, renderOverlay, setRender, setRenderOverlay, toast } from './ui.js';
@@ -117,7 +117,7 @@ Object.defineProperties(GAME, {
   buildingItems: { get: () => buildingItems, set: setBuildingItems },
   buildingState: { get: () => buildingState },
   chalToday: { get: () => chalToday },
-  csStart: { get: () => csStart, set: setCsStart },
+  cutsceneStart: { get: () => cutsceneStart, set: setCutsceneStart },
   drawBuildings: { get: () => drawBuildings, set: setDrawBuildings },
   drawGrass: { get: () => drawGrass, set: setDrawGrass },
   drawGround: { get: () => drawGround, set: setDrawGround },

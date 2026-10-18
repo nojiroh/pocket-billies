@@ -17,14 +17,25 @@ import { standingHeightAt, walkRenderer } from './walk-view-gl.js';
 import { startTrainer, startWild } from './battle.js';
 import { music } from './sound.js';
 import { TALK, talk, talkHide, talkLine } from './talk.js';
-import { csActor, csFlush, csFrame, csHideDlg, csNow, csSay, csShot, csWait, csWalk, cutscene } from './cutscene.js';
+import {
+  cutscene,
+  cutsceneActor,
+  cutsceneFlush,
+  cutsceneFrame,
+  cutsceneHideDialogue,
+  cutsceneNow,
+  cutsceneSay,
+  cutsceneShot,
+  cutsceneWait,
+  cutsceneWalk,
+} from './cutscene.js';
 import { LORE, loreClue, loreFlags } from './lore.js';
 /* eslint-disable no-func-assign */
 expose({
   STORY: [() => STORY],
   blakeHello: [() => blakeHello, v => ((blakeHello = v), provide({ blakeHello }))],
-  csWorldBegin: [() => csWorldBegin, v => (csWorldBegin = v)],
-  csWorldEnd: [() => csWorldEnd, v => (csWorldEnd = v)],
+  cutsceneWorldBegin: [() => cutsceneWorldBegin, v => (cutsceneWorldBegin = v)],
+  cutsceneWorldEnd: [() => cutsceneWorldEnd, v => (cutsceneWorldEnd = v)],
   legendCheck: [() => legendCheck, v => (legendCheck = v)],
   openingDone: [() => openingDone, v => ((openingDone = v), provide({ openingDone }))],
   openingMark: [() => openingMark, v => (openingMark = v)],
@@ -70,11 +81,11 @@ function storyWorldOK() {
     walkView.ready &&
     walkView.cv &&
     !activeBattle &&
-    typeof csFrame === 'function'
+    typeof cutsceneFrame === 'function'
   );
 }
 /* the director, borrowed for a scene in the current walk scene (no remount, no letterbox fade-in) */
-function csWorldBegin() {
+function cutsceneWorldBegin() {
   cutscene.on = true;
   cutscene.run++;
   cutscene.skip = false;
@@ -97,16 +108,16 @@ function csWorldBegin() {
     '<div class="cs-bars" aria-hidden="true"><i></i><i></i></div><button class="cs-skip pb small quiet" data-a="cs-skip">Skip ›</button><div class="cs-fade" id="csFade"></div>';
   el.hidden = false;
   document.body.classList.add('in-cs', 'cs-world');
-  walkView.director = { frame: csFrame };
+  walkView.director = { frame: cutsceneFrame };
   return cutscene.run;
 }
-function csWorldEnd() {
+function cutsceneWorldEnd() {
   talkHide();
   cutscene.on = false;
   cutscene.run++;
   cutscene.skip = false;
   cutscene.world = false;
-  csFlush();
+  cutsceneFlush();
   walkView.director = null;
   walkRenderer.bt = null;
   walkRenderer.camT = null;
@@ -121,7 +132,7 @@ function csWorldEnd() {
 }
 /* Blake (or any trainer with intro lines) runs up to you, talks, and the battle starts */
 async function rivalScene(T) {
-  const run = csWorldBegin(),
+  const run = cutsceneWorldBegin(),
     alive = () => cutscene.on && cutscene.run === run,
     P = walkView.pl,
     sc = walkView.sc,
@@ -136,32 +147,32 @@ async function rivalScene(T) {
     const side = P.x < sc.w / 2 ? 1 : -1,
       to = walkablePointNear(P.x + side * 1.4, P.z + 0.3),
       from = walkablePointNear(clamp(P.x + side * 7, 1, sc.w - 1), clamp(P.z + 4.5, 1, sc.h - 1));
-    csActor('me', 'me', [P.x, P.z], side > 0 ? 'sideR' : 'side');
-    csActor('rival', T.who, from, 'down');
+    cutsceneActor('me', 'me', [P.x, P.z], side > 0 ? 'sideR' : 'side');
+    cutsceneActor('rival', T.who, from, 'down');
     cutscene.actors.rival.hidden = true;
     const mid = () => [(P.x + to[0]) / 2, (P.z + to[1]) / 2],
       m = mid(),
       gy = standingHeightAt(m[0], m[1]);
-    csShot({ eye: [m[0], gy + 3.6, m[1] - 8.5], tgt: [m[0], gy + 1, m[1] + 1.5], fov: 38, w: 6 });
-    await csWait(300);
+    cutsceneShot({ eye: [m[0], gy + 3.6, m[1] - 8.5], tgt: [m[0], gy + 1, m[1] + 1.5], fov: 38, w: 6 });
+    await cutsceneWait(300);
     if (!alive()) return;
     /* "!" and he runs in */
     await talkLine(T.who, (intro[0] || 'Hey!').replace(/^\[\w+\]\s*/, ''), 'angry', {});
     talkHide();
     cutscene.actors.rival.hidden = false;
-    csShot({ eye: [m[0], gy + 2.3, m[1] - 5.2], tgt: [m[0], gy + 1.05, m[1] + 0.4], fov: 38, w: 4 }, 1600);
-    await csWalk('rival', to, 1500);
+    cutsceneShot({ eye: [m[0], gy + 2.3, m[1] - 5.2], tgt: [m[0], gy + 1.05, m[1] + 0.4], fov: 38, w: 4 }, 1600);
+    await cutsceneWalk('rival', to, 1500);
     if (!alive()) return;
     cutscene.actors.rival.dir = side > 0 ? 'side' : 'sideR';
     cutscene.actors.me.dir = side > 0 ? 'sideR' : 'side';
     for (const l of intro.slice(1)) {
-      await csSay(T.who, l);
+      await cutsceneSay(T.who, l);
       if (!alive()) return;
     }
-    csHideDlg();
+    cutsceneHideDialogue();
     cutscene.actors.rival.act = 'cheer';
-    cutscene.actors.rival.actT = csNow();
-    await csWait(700);
+    cutscene.actors.rival.actT = cutsceneNow();
+    await cutsceneWait(700);
     const f = $('#csFade');
     if (f) {
       f.style.background = '#0B0912';
@@ -169,7 +180,7 @@ async function rivalScene(T) {
     }
     await new Promise(r => setTimeout(r, reducedMotion ? 50 : 450));
   } finally {
-    csWorldEnd();
+    cutsceneWorldEnd();
   }
   startTrainer(T.id, { talked: true });
 }

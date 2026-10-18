@@ -81,7 +81,7 @@ import {
   worldMapMinisOn,
 } from './world-map-gl.js';
 import { TALK, talkHide } from './talk.js';
-import { csTeardown, cutscene } from './cutscene.js';
+import { cutscene, cutsceneTeardown } from './cutscene.js';
 import { battleTipHide, fallGL, fallMap } from './opening-fall.js';
 import { closeModal, leaveRoom, mapIdAt, modal, render, renderOverlay, toast, walkPick } from './ui.js';
 /* eslint-disable no-func-assign */
@@ -1432,7 +1432,7 @@ async function runFullTest(mode) {
     }
     if (typeof cutscene !== 'undefined' && cutscene.on) {
       cutscene.test = false;
-      csTeardown();
+      cutsceneTeardown();
     }
     if (typeof dressingRoom !== 'undefined' && dressingRoom.on) closeDressingRoom();
     if (STEST.offVis) {

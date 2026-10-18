@@ -76,7 +76,7 @@ def check_game(pw, base, results):
             def until(cond, n=90):
                 for _ in range(n):
                     if pg.evaluate(cond): return True
-                    pg.evaluate("cutscene.say&&cutscene.say.tap();cutscene.skip||csSkip()"); time.sleep(.5)
+                    pg.evaluate("cutscene.say&&cutscene.say.tap();cutscene.skip||skipCutscene()"); time.sleep(.5)
                 return False
             if opening['cutscene']:
                 opening['dressingRoom'] = until('dressingRoom.on'); time.sleep(1); pg.screenshot(path=str(OUT / f'{name}-opening-dress.png'))

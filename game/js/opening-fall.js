@@ -26,7 +26,7 @@ import { actorTypes, endBattle, fighter, stopTimers } from './battle.js';
 import { LOCATION_VECTORS, WORLD_ART, vector3, worldMap, worldMapHeight, worldMapWidth } from './world-map.js';
 import { WORLD_MAP_GL_SHADERS, worldMapGl, worldMapGlRender, worldMapGlSize } from './world-map-gl.js';
 import { music, sfx } from './sound.js';
-import { csCaption, cutscene } from './cutscene.js';
+import { cutscene, cutsceneCaption } from './cutscene.js';
 /* eslint-disable no-func-assign */
 expose({
   FALL: [() => FALL],
@@ -679,11 +679,11 @@ export function fallMap(run, ms) {
       }
       if (!capA && k > 0.12) {
         capA = 1;
-        csCaption('Inside the planet', 'The Hollow Earth', 2600);
+        cutsceneCaption('Inside the planet', 'The Hollow Earth', 2600);
       }
       if (!capB && k > 0.4) {
         capB = 1;
-        csCaption('At the centre of everything', 'The Inner Sun', 2400);
+        cutsceneCaption('At the centre of everything', 'The Inner Sun', 2400);
       }
       if (k >= 1) {
         res();
@@ -724,7 +724,7 @@ async function fallPlay(run) {
       tick();
     });
   setTimeout(() => {
-    if (alive()) csCaption('The surface', 'Late, after the show', 3000);
+    if (alive()) cutsceneCaption('The surface', 'Late, after the show', 3000);
   }, 700);
   let snd = 0;
   await anim(t => {
@@ -745,7 +745,7 @@ async function fallPlay(run) {
   if (alive()) await anim(t => fallCrust(t), 2900);
   const gcv = alive() && !reducedMotion ? fallGL() : null;
   if (!gcv && alive()) {
-    csCaption('At the centre of everything', 'The Inner Sun', 2600);
+    cutsceneCaption('At the centre of everything', 'The Inner Sun', 2600);
     await anim(t => fallSky(t), reducedMotion ? 2600 : 3400);
   }
   if (gcv) {
@@ -769,7 +769,7 @@ async function fallPlay(run) {
   document.body.classList.remove('cs-falling');
 }
 
-/* ---- 4. the landing: dust, and the papers that fell with you, settling round you (drawn by csFrame) ---- */
+/* ---- 4. the landing: dust, and the papers that fell with you, settling round you (drawn by cutsceneFrame) ---- */
 const LAND = { bits: [] };
 provide({ LAND }); /* to-module */
 function landBurst(x, z) {

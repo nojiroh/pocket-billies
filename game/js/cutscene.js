@@ -59,47 +59,47 @@ import { music, sfx } from './sound.js';
 import { TALK, talkHide, talkLine } from './talk.js';
 /* eslint-disable no-func-assign */
 expose({
-  CS_SPOT: [() => CS_SPOT],
-  csAbort: [() => csAbort, v => (csAbort = v)],
-  csAct: [() => csAct, v => (csAct = v)],
-  csActor: [() => csActor, v => (csActor = v)],
-  csBlink: [() => csBlink, v => (csBlink = v)],
-  csCamNow: [() => csCamNow, v => (csCamNow = v)],
-  csCaption: [() => csCaption, v => (csCaption = v)],
-  csChoose: [() => csChoose, v => (csChoose = v)],
-  csEase: [() => csEase],
-  csEnd: [() => csEnd, v => (csEnd = v)],
-  csFlush: [() => csFlush, v => (csFlush = v)],
-  csFrame: [() => csFrame, v => (csFrame = v)],
-  csHTML: [() => csHTML, v => (csHTML = v)],
-  csHideDlg: [() => csHideDlg, v => (csHideDlg = v)],
-  csNow: [() => csNow],
-  csPersonItem: [() => csPersonItem, v => (csPersonItem = v)],
-  csPickFocus: [() => csPickFocus, v => (csPickFocus = v)],
-  csPickHTML: [() => csPickHTML, v => (csPickHTML = v)],
-  csPickSel: [() => csPickSel, v => (csPickSel = v)],
-  csPlace: [() => csPlace, v => (csPlace = v)],
-  csPortraitTick: [() => csPortraitTick, v => (csPortraitTick = v)],
-  csSay: [() => csSay, v => (csSay = v)],
-  csSceneId: [() => csSceneId, v => (csSceneId = v)],
-  csScript: [() => csScript, v => (csScript = v)],
-  csShot: [() => csShot, v => (csShot = v)],
-  csSkip: [() => csSkip, v => (csSkip = v)],
-  csSparkle: [() => csSparkle, v => (csSparkle = v)],
-  csStarItem: [() => csStarItem, v => (csStarItem = v)],
-  csStart: [() => csStart, v => setCsStart(v)],
-  csStartName: [() => csStartName],
-  csTap: [() => csTap, v => (csTap = v)],
-  csTeardown: [() => csTeardown, v => (csTeardown = v)],
-  csWait: [() => csWait, v => (csWait = v)],
-  csWalk: [() => csWalk, v => (csWalk = v)],
-  csWanted: [() => csWanted, v => (csWanted = v)],
+  CUTSCENE_SPOTS: [() => CUTSCENE_SPOTS],
+  chooseStarter: [() => chooseStarter, v => (chooseStarter = v)],
   cutscene: [() => cutscene],
+  cutsceneAbort: [() => cutsceneAbort, v => (cutsceneAbort = v)],
+  cutsceneAct: [() => cutsceneAct, v => (cutsceneAct = v)],
+  cutsceneActor: [() => cutsceneActor, v => (cutsceneActor = v)],
+  cutsceneBlink: [() => cutsceneBlink, v => (cutsceneBlink = v)],
+  cutsceneCameraNow: [() => cutsceneCameraNow, v => (cutsceneCameraNow = v)],
+  cutsceneCaption: [() => cutsceneCaption, v => (cutsceneCaption = v)],
+  cutsceneEase: [() => cutsceneEase],
+  cutsceneEnd: [() => cutsceneEnd, v => (cutsceneEnd = v)],
+  cutsceneFlush: [() => cutsceneFlush, v => (cutsceneFlush = v)],
+  cutsceneFrame: [() => cutsceneFrame, v => (cutsceneFrame = v)],
+  cutsceneHTML: [() => cutsceneHTML, v => (cutsceneHTML = v)],
+  cutsceneHideDialogue: [() => cutsceneHideDialogue, v => (cutsceneHideDialogue = v)],
+  cutsceneMapId: [() => cutsceneMapId, v => (cutsceneMapId = v)],
+  cutsceneNow: [() => cutsceneNow],
+  cutscenePersonItem: [() => cutscenePersonItem, v => (cutscenePersonItem = v)],
+  cutscenePortraitTick: [() => cutscenePortraitTick, v => (cutscenePortraitTick = v)],
+  cutsceneSay: [() => cutsceneSay, v => (cutsceneSay = v)],
+  cutsceneScript: [() => cutsceneScript, v => (cutsceneScript = v)],
+  cutsceneShot: [() => cutsceneShot, v => (cutsceneShot = v)],
+  cutsceneSparkle: [() => cutsceneSparkle, v => (cutsceneSparkle = v)],
+  cutsceneSpot: [() => cutsceneSpot, v => (cutsceneSpot = v)],
+  cutsceneStart: [() => cutsceneStart, v => setCutsceneStart(v)],
+  cutsceneStartName: [() => cutsceneStartName],
+  cutsceneStarterItem: [() => cutsceneStarterItem, v => (cutsceneStarterItem = v)],
+  cutsceneTap: [() => cutsceneTap, v => (cutsceneTap = v)],
+  cutsceneTeardown: [() => cutsceneTeardown, v => (cutsceneTeardown = v)],
+  cutsceneWait: [() => cutsceneWait, v => (cutsceneWait = v)],
+  cutsceneWalk: [() => cutsceneWalk, v => (cutsceneWalk = v)],
+  cutsceneWanted: [() => cutsceneWanted, v => (cutsceneWanted = v)],
+  skipCutscene: [() => skipCutscene, v => (skipCutscene = v)],
+  starterPickerFocus: [() => starterPickerFocus, v => (starterPickerFocus = v)],
+  starterPickerHTML: [() => starterPickerHTML, v => (starterPickerHTML = v)],
+  starterPickerSelect: [() => starterPickerSelect, v => (starterPickerSelect = v)],
 });
 /* eslint-enable no-func-assign */
-export function setCsStart(v) {
-  csStart = v; // eslint-disable-line no-func-assign
-  provide({ csStart });
+export function setCutsceneStart(v) {
+  cutsceneStart = v; // eslint-disable-line no-func-assign
+  provide({ cutsceneStart });
 }
 /* to-module: end */
 export const cutscene = {
@@ -125,7 +125,7 @@ export const cutscene = {
   ui: null,
 };
 provide({ cutscene }); /* to-module */
-const CS_SPOT = {
+const CUTSCENE_SPOTS = {
   door: [7.4, 15.4],
   hazel: [9.3, 13.25],
   me: [11.05, 12.95],
@@ -138,9 +138,9 @@ const CS_SPOT = {
   blake: [12.55, 12.7],
   blakeFrom: [16.4, 12.1],
 };
-export const csNow = () => performance.now();
+export const cutsceneNow = () => performance.now();
 /* v46: where the opening scene is filmed: in front of the lab's door, wherever the lab stands in Sundown */
-function csPlace(sc) {
+function cutsceneSpot(sc) {
   let o = [0, 0];
   cutscene.dy = 0;
   const C0 = walkData().sc,
@@ -148,29 +148,29 @@ function csPlace(sc) {
   if (L) {
     const M = C0.props[L.k] || {},
       dx = (((M.door && M.door.x) || 0) / (C0.ppu || 34)) * (L.s || 1) * (L.f ? -1 : 1);
-    o = [L.x + dx - CS_SPOT.door[0], L.z - CS_SPOT.door[1]];
+    o = [L.x + dx - CUTSCENE_SPOTS.door[0], L.z - CUTSCENE_SPOTS.door[1]];
     /* alpha 0.4: the shots were framed for a lab on ground half a metre up (Marigold Town's); they rise and fall with the ground at the door */
     if (typeof standingHeightAt === 'function') cutscene.dy = standingHeightAt(L.x + dx, L.z - 0.6) - 0.5;
   }
   cutscene.o = o;
   const sh = p => [p[0] + o[0], p[1] + o[1]];
   cutscene.A = {
-    door: sh(CS_SPOT.door),
-    hazel: sh(CS_SPOT.hazel),
-    me: sh(CS_SPOT.me),
-    meFrom: sh(CS_SPOT.meFrom),
-    stars: CS_SPOT.stars.map(sh),
-    blake: sh(CS_SPOT.blake),
-    blakeFrom: sh(CS_SPOT.blakeFrom),
+    door: sh(CUTSCENE_SPOTS.door),
+    hazel: sh(CUTSCENE_SPOTS.hazel),
+    me: sh(CUTSCENE_SPOTS.me),
+    meFrom: sh(CUTSCENE_SPOTS.meFrom),
+    stars: CUTSCENE_SPOTS.stars.map(sh),
+    blake: sh(CUTSCENE_SPOTS.blake),
+    blakeFrom: sh(CUTSCENE_SPOTS.blakeFrom),
   };
   cutscene.center = sh([10.1, 12.3]);
   return o;
 }
-const csEase = k => (k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2);
+const cutsceneEase = k => (k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2);
 /* v47b: the opening (and the title behind it) is filmed in the same view of Sundown the game then walks in: the town
    with the first stretch of each road. So nothing is built again between the title, the opening, Blake's battle
    and your first steps (it was a pause of most of a second as the battle began) */
-export function csSceneId() {
+export function cutsceneMapId() {
   const id = mapIdAt(START_NODE);
   try {
     const v = typeof seamlessRoamView === 'function' ? seamlessRoamView(START_NODE, null) : null;
@@ -180,7 +180,7 @@ export function csSceneId() {
   }
   return id;
 }
-export function csWanted() {
+export function cutsceneWanted() {
   return (
     typeof webgl2Supported === 'function' &&
     !gpuState.fail &&
@@ -190,13 +190,13 @@ export function csWanted() {
   );
 }
 /* alpha 0.4: the start's name, for the opening's caption (Copperleaf Town) */
-export const csStartName = () =>
+export const cutsceneStartName = () =>
   typeof locationFullName === 'function' && LOCATIONS[START_NODE]
     ? locationFullName(LOCATIONS[START_NODE])
     : 'the Hollow Earth';
 
 /* ---------- timing helpers: everything resolves at once while skipping ---------- */
-export function csWait(ms) {
+export function cutsceneWait(ms) {
   if (cutscene.skip || !cutscene.on) return Promise.resolve();
   return new Promise(r => {
     const id = setTimeout(done, ms);
@@ -208,22 +208,22 @@ export function csWait(ms) {
     cutscene.waits.push(done);
   });
 }
-export function csFlush() {
+export function cutsceneFlush() {
   const w = cutscene.waits.slice();
   cutscene.waits = [];
   w.forEach(f => f());
   if (TALK.cur && cutscene.on) TALK.cur.done();
 }
-function csSkip() {
+function skipCutscene() {
   if (!cutscene.on || cutscene.choosing || cutscene.dressing) return;
   cutscene.skip = true;
-  csFlush();
+  cutsceneFlush();
 }
 /* ---------- the camera: eye, target, field of view and a width that must stay in frame (phones) ---------- */
-function csCamNow() {
+function cutsceneCameraNow() {
   const c = cutscene.cam;
   if (!c) return null;
-  const k = c.dur && !cutscene.skip && !reducedMotion ? csEase(clamp((csNow() - c.t0) / c.dur, 0, 1)) : 1,
+  const k = c.dur && !cutscene.skip && !reducedMotion ? cutsceneEase(clamp((cutsceneNow() - c.t0) / c.dur, 0, 1)) : 1,
     L = (a, b) => a.map((v, i) => v + (b[i] - v) * k);
   return {
     eye: L(c.a.eye, c.b.eye),
@@ -232,9 +232,9 @@ function csCamNow() {
     w: (c.a.w || 0) + ((c.b.w || 0) - (c.a.w || 0)) * k,
   };
 }
-export function csShot(K, ms = 0) {
+export function cutsceneShot(K, ms = 0) {
   K = Object.assign({ fov: 40, w: 0 }, K);
-  /* v46: the shots were framed for the lab's door at CS_SPOT.door; they move with the lab (csPlace) */ if (
+  /* v46: the shots were framed for the lab's door at CUTSCENE_SPOTS.door; they move with the lab (cutsceneSpot) */ if (
     !K.abs &&
     cutscene.o
   ) {
@@ -243,32 +243,32 @@ export function csShot(K, ms = 0) {
     K.eye = [K.eye[0] + o[0], K.eye[1] + dy, K.eye[2] + o[1]];
     K.tgt = [K.tgt[0] + o[0], K.tgt[1] + dy, K.tgt[2] + o[1]];
   }
-  const a = csCamNow() || K;
-  cutscene.cam = { a, b: K, t0: csNow(), dur: ms };
-  return csWait(ms);
+  const a = cutsceneCameraNow() || K;
+  cutscene.cam = { a, b: K, t0: cutsceneNow(), dur: ms };
+  return cutsceneWait(ms);
 }
 /* ---------- actors ---------- */
-export function csActor(id, who, at, dir) {
+export function cutsceneActor(id, who, at, dir) {
   cutscene.actors[id] = { id, who, x: at[0], z: at[1], dir: dir || 'down', walk: null, act: null, actT: 0 };
   return cutscene.actors[id];
 }
-export function csWalk(id, to, ms) {
+export function cutsceneWalk(id, to, ms) {
   const a = cutscene.actors[id];
-  a.walk = { x0: a.x, z0: a.z, x1: to[0], z1: to[1], t0: csNow(), dur: ms };
+  a.walk = { x0: a.x, z0: a.z, x1: to[0], z1: to[1], t0: cutsceneNow(), dur: ms };
   a.dir = directionOf(to[0] - a.x, to[1] - a.z);
-  return csWait(ms);
+  return cutsceneWait(ms);
 }
-function csAct(id, act, ms) {
+function cutsceneAct(id, act, ms) {
   const a = cutscene.actors[id];
   a.act = act;
-  a.actT = csNow();
-  return csWait(ms || 0).then(() => {
+  a.actT = cutsceneNow();
+  return cutsceneWait(ms || 0).then(() => {
     if (ms) a.act = null;
   });
 }
-function csPersonItem(a, t, C0) {
+function cutscenePersonItem(a, t, C0) {
   let im;
-  const now = csNow();
+  const now = cutsceneNow();
   if (a.walk) {
     const k = cutscene.skip || reducedMotion ? 1 : clamp((now - a.walk.t0) / a.walk.dur, 0, 1);
     a.x = a.walk.x0 + (a.walk.x1 - a.walk.x0) * k;
@@ -284,7 +284,7 @@ function csPersonItem(a, t, C0) {
   return personItem('actor', im, a.x, a.z, C0, {});
 }
 /* the starter billionaires, drawn with their rigs every frame */
-function csStarItem(s, t) {
+function cutsceneStarterItem(s, t) {
   const R = rigParts(s.sp, false, 1);
   if (!R) return null;
   if (!s.buf) s.buf = makeCanvas(R.BW, R.BH);
@@ -297,7 +297,7 @@ function csStarItem(s, t) {
   x.imageSmoothingEnabled = false;
   x.setTransform(1, 0, 0, 1, 0, 0);
   x.clearRect(0, 0, b.width, b.height);
-  const tau = csNow() - s.actT,
+  const tau = cutsceneNow() - s.actT,
     ak = s.act && tau < 1200 ? s.act : null;
   drawRig(x, R, rigFrame(R, ak, tau, Math.floor(t / 16) * 16, s.seed), 'front');
   if (s.white > 0) rigTint(x, b.width, b.height, '#FFFFFF', s.white);
@@ -326,18 +326,18 @@ function csStarItem(s, t) {
   };
 }
 /* ---------- what the engine draws: walkView.director.frame ---------- */
-export function csFrame() {
+export function cutsceneFrame() {
   if (!cutscene.on) return null;
   const t = walkView.t,
     C0 = walkData().sc,
     items = cutscene.items,
     parts = cutscene.parts,
     lights = cutscene.lights,
-    now = csNow();
+    now = cutsceneNow();
   items.length = 0;
   parts.length = 0;
   lights.length = 0;
-  for (const a of Object.values(cutscene.actors)) if (!a.hidden) items.push(csPersonItem(a, t, C0));
+  for (const a of Object.values(cutscene.actors)) if (!a.hidden) items.push(cutscenePersonItem(a, t, C0));
   cutscene.stars.forEach((s, i) => {
     if (s.popT) {
       s.pop = cutscene.skip ? 1 : clamp((now - s.popT) / 420, 0, 1);
@@ -349,7 +349,7 @@ export function csFrame() {
       s.hop = Math.sin(k * Math.PI) * 0.4;
     }
     if (s.pop > 0 && s.a > 0) {
-      const it = csStarItem(s, t);
+      const it = cutsceneStarterItem(s, t);
       if (it) items.push(it);
     }
     if (cutscene.choosing && i === cutscene.sel)
@@ -394,7 +394,7 @@ export function csFrame() {
     lights.push({ p: f.p, r: 2.6, c: [1.4 * k, 1.2 * k, 0.7 * k] });
   }
   if (typeof landFrame === 'function') landFrame(now, parts);
-  const K = csCamNow() || { eye: [17, 14, -6], tgt: [17, 0, 12], fov: 42, w: 0 },
+  const K = cutsceneCameraNow() || { eye: [17, 14, -6], tgt: [17, 0, 12], fov: 42, w: 0 },
     sway = reducedMotion ? 0 : 1,
     look = {
       eye: [K.eye[0] + Math.sin(now / 2300) * 0.04 * sway, K.eye[1] + Math.sin(now / 1700) * 0.025 * sway, K.eye[2]],
@@ -403,7 +403,7 @@ export function csFrame() {
       w: K.w,
     };
   const fd = Math.hypot(K.tgt[0] - K.eye[0], K.tgt[1] - K.eye[1], K.tgt[2] - K.eye[2]);
-  csPortraitTick(now);
+  cutscenePortraitTick(now);
   return {
     look,
     items,
@@ -416,7 +416,7 @@ export function csFrame() {
     cut: 2.6,
   };
 }
-function csSparkle(p, n = 10) {
+function cutsceneSparkle(p, n = 10) {
   for (let i = 0; i < n; i++) {
     const a = (i / n) * Math.PI * 2 + Math.random();
     cutscene.fx.push({
@@ -426,21 +426,21 @@ function csSparkle(p, n = 10) {
       vx: Math.cos(a) * 0.7,
       vy: 0.6 + Math.random() * 0.6,
       vz: Math.sin(a) * 0.4,
-      t0: csNow(),
+      t0: cutsceneNow(),
       life: 500 + Math.random() * 300,
     });
   }
 }
 
 /* ---------- the overlay: letterbox, caption, dialogue, starter picker ---------- */
-function csHTML() {
+function cutsceneHTML() {
   return `<div class="cs-bars" aria-hidden="true"><i></i><i></i></div>
  <div class="cs-cap" id="csCap" aria-live="polite"><small></small><b></b></div>
  <button class="cs-skip pb small quiet" data-a="cs-skip">Skip ›</button>
  <div class="cs-pick px" id="csPick" hidden></div>
  <div class="cs-fade" id="csFade"></div>`;
 }
-export function csCaption(sub, title, ms = 3200) {
+export function cutsceneCaption(sub, title, ms = 3200) {
   const c = $('#csCap');
   if (!c || cutscene.skip) return;
   c.querySelector('small').textContent = sub;
@@ -449,7 +449,7 @@ export function csCaption(sub, title, ms = 3200) {
   setTimeout(() => c.classList.remove('on'), ms);
 }
 /* one line of dialogue in the shared dialogue box (talk.js) */
-export function csSay(who, text, expr) {
+export function cutsceneSay(who, text, expr) {
   if (cutscene.skip || !cutscene.on) return Promise.resolve();
   const pr = talkLine(who, text, expr, { cs: true });
   cutscene.say = TALK.cur;
@@ -457,28 +457,28 @@ export function csSay(who, text, expr) {
     if (cutscene.say && !cutscene.say.typing) cutscene.say = null;
   });
 }
-export function csHideDlg() {
+export function cutsceneHideDialogue() {
   talkHide();
   cutscene.say = null;
 }
 /* v47: waking up: the picture starts blurred and bright and sharpens; the letterbox closes like eyelids to blink */
-function csBlink() {
+function cutsceneBlink() {
   if (cutscene.skip || reducedMotion || !cutscene.on) return Promise.resolve();
   document.body.classList.add('cs-blink');
-  return csWait(170).then(() => {
+  return cutsceneWait(170).then(() => {
     document.body.classList.remove('cs-blink');
-    return csWait(240);
+    return cutsceneWait(240);
   });
 }
-function csPortraitTick() {}
-function csTap(ev) {
+function cutscenePortraitTick() {}
+function cutsceneTap(ev) {
   if (!cutscene.on) return;
   if (ev && ev.target.closest && ev.target.closest('button,input,.cs-pick')) return;
   if (TALK.cur) TALK.cur.tap();
 }
 
 /* ---------- the starter picker ---------- */
-function csPickHTML() {
+function starterPickerHTML() {
   const pk = cutscene.pickList,
     l = pk[cutscene.sel],
     s = SPECIES[l + '0'],
@@ -489,12 +489,12 @@ function csPickHTML() {
  <p class="sd">${escapeHtml(s.blurb)}</p><p class="sd">Strong against ${st.join(' and ') || 'nothing in particular'}. Weak to ${wk.join(' and ') || 'nothing in particular'}.</p>
  ${cutscene.confirm ? `<div class="racts"><button class="pb quiet" data-a="cs-no">Not yet</button><button class="pb gold" data-a="cs-yes">Yes, ${escapeHtml(s.name)}!</button></div>` : `<button class="pb gold wide" data-a="cs-choose">Choose ${escapeHtml(s.name)}</button>`}`;
 }
-function csPickFocus() {
+function starterPickerFocus() {
   const s = cutscene.stars[cutscene.sel];
   if (!s) return;
   s.act = 'cheer';
-  s.actT = csNow();
-  csShot(
+  s.actT = cutsceneNow();
+  cutsceneShot(
     {
       eye: [s.x * 0.6 + (10.15 + (cutscene.o || [0, 0])[0]) * 0.4 + 0.1, 1.35 + (cutscene.dy || 0), s.z - 3.6],
       tgt: [s.x, 0.55 + (cutscene.dy || 0), s.z + 0.2],
@@ -505,9 +505,9 @@ function csPickFocus() {
     650
   );
   const p = $('#csPick');
-  if (p) p.innerHTML = csPickHTML();
+  if (p) p.innerHTML = starterPickerHTML();
 }
-function csChoose() {
+function chooseStarter() {
   return new Promise(res => {
     cutscene.choosing = true;
     cutscene.confirm = false;
@@ -515,10 +515,10 @@ function csChoose() {
     const p = $('#csPick');
     p.hidden = false;
     document.body.classList.add('cs-choosing');
-    csPickFocus();
+    starterPickerFocus();
     if (cutscene.test)
       setTimeout(() => {
-        csPickSel(1);
+        starterPickerSelect(1);
         setTimeout(() => {
           if (cutscene.pickRes) {
             const r = cutscene.pickRes;
@@ -529,17 +529,17 @@ function csChoose() {
       }, 900);
   });
 }
-function csPickSel(d) {
+function starterPickerSelect(d) {
   if (!cutscene.choosing) return;
   cutscene.sel = (cutscene.sel + d + cutscene.pickList.length) % cutscene.pickList.length;
   cutscene.confirm = false;
-  csPickFocus();
+  starterPickerFocus();
 }
 
 /* ---------- the script ---------- */
-export async function csStart() {
+export async function cutsceneStart() {
   if (cutscene.on) return;
-  const id = csSceneId();
+  const id = cutsceneMapId();
   cutscene.on = true;
   cutscene.run++;
   const run = cutscene.run;
@@ -563,7 +563,7 @@ export async function csStart() {
     el.className = 'cs';
     document.body.appendChild(el);
   }
-  el.innerHTML = csHTML();
+  el.innerHTML = cutsceneHTML();
   el.hidden = false;
   document.body.classList.add('in-cs');
   $('#app').innerHTML = '';
@@ -598,8 +598,8 @@ export async function csStart() {
     document.body.prepend(cv);
   }
   cv.hidden = false;
-  cv.setAttribute('aria-label', 'Opening scene in ' + csStartName());
-  walkView.director = { frame: csFrame };
+  cv.setAttribute('aria-label', 'Opening scene in ' + cutsceneStartName());
+  walkView.director = { frame: cutsceneFrame };
   await mountWalkView(cv, id, {
     state: () => ({ who: null, npcs: [], enc: [], mode: 'line' }),
     keys: () => false,
@@ -609,14 +609,14 @@ export async function csStart() {
   });
   if (!cutscene.on || cutscene.run !== run) return;
   if (!walkRenderer.on || !walkView.ready || !walkView.cv) {
-    csAbort();
+    cutsceneAbort();
     return;
   }
   cv = walkView.cv;
   cv.classList.add('in');
   const sc = walkView.sc,
     C0 = walkData().sc,
-    o = csPlace(sc);
+    o = cutsceneSpot(sc);
   const eyes = [
     [12.6, 6.2],
     [10.5, 8.4],
@@ -655,65 +655,69 @@ export async function csStart() {
   )
     await new Promise(r => setTimeout(r, 120));
   try {
-    await csScript(run);
+    await cutsceneScript(run);
   } catch (e) {
     console.error(e);
     if (typeof NWLOG !== 'undefined') NWLOG.add('error', 'cutscene: ' + (e.message || e));
-    if (cutscene.on && cutscene.run === run) csAbort();
+    if (cutscene.on && cutscene.run === run) cutsceneAbort();
   }
 }
-async function csScript(run) {
+async function cutsceneScript(run) {
   const alive = () => cutscene.on && cutscene.run === run,
-    A = cutscene.A || CS_SPOT,
+    A = cutscene.A || CUTSCENE_SPOTS,
     O = cutscene.o || [0, 0],
     M = A.me,
     gy = standingHeightAt(M[0], M[1]),
     body = document.body,
     fade = $('#csFade');
-  const pov = (h, tgt, fov, ms) => csShot({ eye: [M[0] + 0.06, gy + h, M[1] - 0.32], tgt, fov, w: 1.3, abs: 1 }, ms);
+  const pov = (h, tgt, fov, ms) =>
+    cutsceneShot({ eye: [M[0] + 0.06, gy + h, M[1] - 0.32], tgt, fov, w: 1.3, abs: 1 }, ms);
   /* 1. you wake in the dust outside the lab, the papers that fell with you still coming down */
   pov(0.4, [M[0] + 2.4, gy + 3.9, M[1] + 5.4], 58);
   if (typeof landBurst === 'function') landBurst(M[0], M[1]);
   if (cutscene.skip) body.classList.remove('cs-dazed');
   if (fade) fade.classList.remove('on');
   setTimeout(() => {
-    if (alive()) csCaption('The Hollow Earth', csStartName(), 3400);
+    if (alive()) cutsceneCaption('The Hollow Earth', cutsceneStartName(), 3400);
   }, 1400);
-  await csWait(1700);
-  await csBlink();
-  await csWait(420);
-  await csBlink();
+  await cutsceneWait(1700);
+  await cutsceneBlink();
+  await cutsceneWait(420);
+  await cutsceneBlink();
   if (!alive()) return;
   body.classList.add('cs-waking');
   body.classList.remove('cs-dazed');
   const dy = standingHeightAt(A.door[0], A.door[1]);
   pov(0.62, [A.door[0], dy + 1.25, A.door[1]], 52, 3200);
-  await csWait(2600);
+  await cutsceneWait(2600);
   if (!alive()) return;
   /* 2. the Professor comes running */
   const hy = standingHeightAt(A.hazel[0], A.hazel[1]);
-  csActor('gini', 'gini', A.door, 'down');
+  cutsceneActor('gini', 'gini', A.door, 'down');
   pov(0.78, [A.hazel[0], hy + 1.08, A.hazel[1]], 58, 1900);
-  await csWalk('gini', A.hazel, 1500);
+  await cutsceneWalk('gini', A.hazel, 1500);
   cutscene.actors.gini.dir = 'down';
   if (!alive()) return;
-  await csSay('gini', 'Oh! Another one! Are you all right? That was quite a landing.', 'surprised');
-  await csSay(
+  await cutsceneSay('gini', 'Oh! Another one! Are you all right? That was quite a landing.', 'surprised');
+  await cutsceneSay(
     'gini',
     'You came down through the crust. Things do, now and then. Mostly furniture. You’re the first this week who can talk.'
   );
-  await csSay('gini', 'Can you tell me your name?');
+  await cutsceneSay('gini', 'Can you tell me your name?');
   if (!alive()) return;
-  csHideDlg();
-  await csWait(1300);
-  await csSay('gini', 'No? Nothing at all?', 'surprised');
-  await csSay('gini', 'Classic fall-related amnesia. Very common down here. It usually comes back, a bit at a time.');
-  await csSay('gini', 'Let’s start with what we can see. Sit up, let me get a good look at you.', 'happy');
+  cutsceneHideDialogue();
+  await cutsceneWait(1300);
+  await cutsceneSay('gini', 'No? Nothing at all?', 'surprised');
+  await cutsceneSay(
+    'gini',
+    'Classic fall-related amnesia. Very common down here. It usually comes back, a bit at a time.'
+  );
+  await cutsceneSay('gini', 'Let’s start with what we can see. Sit up, let me get a good look at you.', 'happy');
   if (!alive()) return;
   body.classList.remove('cs-dazed', 'cs-blink');
   /* 3. make yourself up (skipping stops here) */
   cutscene.skip = false;
-  csHideDlg();
+  cutsceneHideDialogue();
   cutscene.dressing = true;
   body.classList.add('cs-dress');
   await new Promise(r => {
@@ -734,36 +738,36 @@ async function csScript(run) {
   uiState.avatarDraft = cleanLook(uiState.trainerDraft || TR_PRESETS[0]);
   uiState.trainerDraft = uiState.avatarDraft;
   /* 4. on your feet */
-  csActor('me', 'me', M, 'side');
+  cutsceneActor('me', 'me', M, 'side');
   cutscene.actors.gini.dir = 'sideR';
-  csShot({ eye: [10.4, 1.75, 8.0], tgt: [10.2, 1.05, 12.9], fov: 40, w: 3.8 });
-  csAct('me', 'react', 900);
+  cutsceneShot({ eye: [10.4, 1.75, 8.0], tgt: [10.2, 1.05, 12.9], fov: 40, w: 3.8 });
+  cutsceneAct('me', 'react', 900);
   if (!alive()) return;
   const nm = trainerLook('me').name || 'Trainer';
-  await csSay('gini', `${nm}? It suits you. If it isn’t your name, it is now.`, 'happy');
-  await csSay('gini', 'I’m Professor Hazel. I study Billies, the most common wildlife here in the Hollow Earth.');
-  await csSay(
+  await cutsceneSay('gini', `${nm}? It suits you. If it isn’t your name, it is now.`, 'happy');
+  await cutsceneSay('gini', 'I’m Professor Hazel. I study Billies, the most common wildlife here in the Hollow Earth.');
+  await cutsceneSay(
     'gini',
     'Clones of the richest people up top. A lab backed them up and filled the gaps with animals, then shipped the results down here. They went wild.'
   );
-  await csSay(
+  await cutsceneSay(
     'gini',
     'They live in the long grass, in caves and canyons, even in the malls. Walk, and they come to you. Tax them with a coin, train a team, earn badges from the arena leaders.'
   );
-  await csSay(
+  await cutsceneSay(
     'gini',
     'Nobody should walk the Hollow Earth alone. Luckily for you, I have three of them right here.',
     'happy'
   );
   if (!alive()) return;
-  csHideDlg();
+  cutsceneHideDialogue();
   /* 5. three coins, three billionaires */
   cutscene.actors.gini.dir = 'down';
   cutscene.actors.me.dir = 'down';
-  csShot({ eye: [10.15, 1.5, 7.3], tgt: [10.15, 0.7, 11.9], fov: 40, w: 4.4 }, 900);
-  await csWait(500);
-  csAct('gini', 'throw', 900);
-  await csWait(380);
+  cutsceneShot({ eye: [10.15, 1.5, 7.3], tgt: [10.15, 0.7, 11.9], fov: 40, w: 4.4 }, 900);
+  await cutsceneWait(500);
+  cutsceneAct('gini', 'throw', 900);
+  await cutsceneWait(380);
   if (typeof sfx === 'function') sfx('throw');
   cutscene.pickList.forEach((l, i) => {
     const p = A.stars[i],
@@ -783,21 +787,21 @@ async function csScript(run) {
     cutscene.coins.push({
       a: [cutscene.actors.gini.x + 0.2, standingHeightAt(A.hazel[0], A.hazel[1]) + 1.35, cutscene.actors.gini.z - 0.1],
       b: [p[0], standingHeightAt(p[0], p[1]) + 0.1, p[1]],
-      t0: csNow() + i * 140,
+      t0: cutsceneNow() + i * 140,
       dur: 650,
       onLand() {
         const y = standingHeightAt(p[0], p[1]) + 0.3;
-        s.popT = csNow();
+        s.popT = cutsceneNow();
         if (typeof sfx === 'function') sfx('pop');
         s.act = 'enter';
-        s.actT = csNow();
-        cutscene.flashes.push({ p: [p[0], y + 0.2, p[1]], t0: csNow() });
-        if (!cutscene.skip) csSparkle([p[0], y, p[1]], 12);
+        s.actT = cutsceneNow();
+        cutscene.flashes.push({ p: [p[0], y + 0.2, p[1]], t0: cutsceneNow() });
+        if (!cutscene.skip) cutsceneSparkle([p[0], y, p[1]], 12);
         if (typeof buzz === 'function') buzz(8);
       },
     });
   });
-  await csWait(1300);
+  await cutsceneWait(1300);
   cutscene.coins.forEach(c => {
     if (!c.landed) {
       c.landed = 1;
@@ -806,14 +810,14 @@ async function csScript(run) {
   });
   cutscene.coins = [];
   if (!alive()) return;
-  await csSay(
+  await cutsceneSay(
     'gini',
     'Three Billies, three types. Each one beats one of the others. Take a good look before you choose!'
   );
-  csHideDlg();
+  cutsceneHideDialogue();
   cutscene.skip = false;
   /* 6. pick one */
-  const l = await csChoose();
+  const l = await chooseStarter();
   if (!alive()) return;
   cutscene.choosing = false;
   document.body.classList.remove('cs-choosing');
@@ -822,11 +826,11 @@ async function csScript(run) {
     star = cutscene.stars[si],
     sp = SPECIES[l + '0'];
   star.act = 'cheer';
-  star.actT = csNow();
+  star.actT = cutsceneNow();
   cutscene.stars.forEach((s, i) => {
-    if (i !== si) s.leave = csNow() + i * 90;
+    if (i !== si) s.leave = cutsceneNow() + i * 90;
   });
-  csShot(
+  cutsceneShot(
     {
       eye: [10.4 + O[0], 1.45 + (cutscene.dy || 0), 8.0 + O[1]],
       tgt: [(star.x + A.me[0]) / 2, 0.85 + (cutscene.dy || 0), 12.2 + O[1]],
@@ -836,26 +840,26 @@ async function csScript(run) {
     },
     900
   );
-  csAct('me', 'cheer', 1300);
-  await csWait(900);
-  await csSay('gini', `${sp.name}! ${nm} and ${sp.name}. I like the sound of that.`, 'happy');
+  cutsceneAct('me', 'cheer', 1300);
+  await cutsceneWait(900);
+  await cutsceneSay('gini', `${sp.name}! ${nm} and ${sp.name}. I like the sound of that.`, 'happy');
   if (!alive()) return;
   /* 7. Blake runs in, takes the one that beats yours, and wants a battle right now */
   const T0 = TRAINERS.blake0;
   if (!T0) {
-    await csSay('gini', 'Now go and walk! Every step counts. Come back and see me any time.', 'happy');
+    await cutsceneSay('gini', 'Now go and walk! Every step counts. Come back and see me any time.', 'happy');
     if (!alive()) return;
-    csHideDlg();
+    cutsceneHideDialogue();
     if (fade) fade.classList.add('on');
     await new Promise(r => setTimeout(r, reducedMotion ? 50 : 700));
     if (!alive()) return;
-    csEnd(l);
+    cutsceneEnd(l);
     return;
   }
-  csHideDlg();
-  csActor('rival', T0.who || 'chad', A.blakeFrom, 'side');
+  cutsceneHideDialogue();
+  cutsceneActor('rival', T0.who || 'chad', A.blakeFrom, 'side');
   const by = standingHeightAt(A.blake[0], A.blake[1]);
-  csShot(
+  cutsceneShot(
     {
       eye: [(A.hazel[0] + A.blake[0]) / 2, by + 1.9, A.me[1] - 5.2],
       tgt: [(A.hazel[0] + A.blake[0]) / 2, by + 1, A.me[1]],
@@ -866,36 +870,36 @@ async function csScript(run) {
     1100
   );
   if (typeof music === 'function') music('rival');
-  const run1 = csWalk('rival', A.blake, 1500),
+  const run1 = cutsceneWalk('rival', A.blake, 1500),
     BL = blakeHello(l);
   cutscene.actors.me.dir = 'sideR';
   cutscene.actors.gini.dir = 'sideR';
-  await csSay(BL[0][0], BL[0][1]);
+  await cutsceneSay(BL[0][0], BL[0][1]);
   await run1;
   cutscene.actors.rival.dir = 'side';
   if (!alive()) return;
   for (const [w, t] of BL.slice(1)) {
-    await csSay(w, t);
+    await cutsceneSay(w, t);
     if (!alive()) return;
   }
-  csHideDlg();
+  cutsceneHideDialogue();
   cutscene.rival = true;
-  csAct('rival', 'cheer', 800);
-  await csWait(700);
+  cutsceneAct('rival', 'cheer', 800);
+  await cutsceneWait(700);
   if (fade) {
     fade.style.background = '#0B0912';
     fade.classList.add('on');
   }
   await new Promise(r => setTimeout(r, reducedMotion ? 50 : 600));
   if (!alive()) return;
-  csEnd(l);
+  cutsceneEnd(l);
 }
-export function csTeardown() {
+export function cutsceneTeardown() {
   talkHide();
   cutscene.on = false;
   cutscene.run++;
   cutscene.skip = false;
-  csFlush();
+  cutsceneFlush();
   cutscene.choosing = false;
   cutscene.dressing = false;
   walkView.director = null;
@@ -918,22 +922,22 @@ export function csTeardown() {
   document.body.classList.remove('in-cs', 'cs-choosing', 'cs-dress', 'cs-falling', 'cs-dazed', 'cs-waking', 'cs-blink');
   if (walkView.cv) stopWalkView();
 }
-function csEnd(l) {
+function cutsceneEnd(l) {
   if (cutscene.test) {
     cutscene.test = false;
-    csTeardown();
+    cutsceneTeardown();
     const d = cutscene.testDone;
     cutscene.testDone = null;
     if (d) d();
     return;
   }
   const rival = cutscene.rival;
-  csTeardown();
+  cutsceneTeardown();
   startGame(l, { rival });
 }
 /* no WebGL after all: the step-by-step intro */
-function csAbort() {
-  csTeardown();
+function cutsceneAbort() {
+  cutsceneTeardown();
   uiState.intro = 1;
   render();
 }
@@ -943,26 +947,26 @@ document.addEventListener('click', ev => {
   const el = ev.target.closest('[data-a]');
   const a = el && el.dataset.a;
   if (!a) {
-    if (ev.target.closest('#cs')) csTap(ev);
+    if (ev.target.closest('#cs')) cutsceneTap(ev);
     return;
   }
   switch (a) {
     case 'cs-skip':
-      csSkip();
+      skipCutscene();
       break;
     case 'cs-prev':
-      csPickSel(-1);
+      starterPickerSelect(-1);
       break;
     case 'cs-next':
-      csPickSel(1);
+      starterPickerSelect(1);
       break;
     case 'cs-choose':
       cutscene.confirm = true;
-      $('#csPick').innerHTML = csPickHTML();
+      $('#csPick').innerHTML = starterPickerHTML();
       break;
     case 'cs-no':
       cutscene.confirm = false;
-      $('#csPick').innerHTML = csPickHTML();
+      $('#csPick').innerHTML = starterPickerHTML();
       break;
     case 'cs-yes':
       if (cutscene.pickRes) {
@@ -976,12 +980,12 @@ document.addEventListener('click', ev => {
 document.addEventListener('keydown', ev => {
   if (!cutscene.on || cutscene.dressing) return;
   if (ev.key === 'Escape') {
-    csSkip();
+    skipCutscene();
     return;
   }
   if (cutscene.choosing) {
-    if (ev.key === 'ArrowLeft') csPickSel(-1);
-    else if (ev.key === 'ArrowRight') csPickSel(1);
+    if (ev.key === 'ArrowLeft') starterPickerSelect(-1);
+    else if (ev.key === 'ArrowRight') starterPickerSelect(1);
     return;
   }
 });
@@ -1012,6 +1016,6 @@ document.addEventListener('pointerup', ev => {
   if (best >= 0 && bd < walkView.cv.height * 0.18 && best !== cutscene.sel) {
     cutscene.sel = best;
     cutscene.confirm = false;
-    csPickFocus();
+    starterPickerFocus();
   }
 });

@@ -26,7 +26,7 @@ import { applyPreferences } from './settings-screen.js';
 import { mapById, stopWalkView, walkView } from './walk-view.js';
 import { mountWalkView, standingHeightAt, walkRenderer } from './walk-view-gl.js';
 import { music, musicFor } from './sound.js';
-import { csSceneId, csStart, csStartName, csWanted } from './cutscene.js';
+import { cutsceneMapId, cutsceneStart, cutsceneStartName, cutsceneWanted } from './cutscene.js';
 /* eslint-disable no-func-assign */
 expose({
   TITLE: [() => TITLE],
@@ -96,7 +96,7 @@ export async function titleMount() {
   if (TITLE.mounted || !TITLE.on) return;
   TITLE.mounted = true;
   if (typeof music === 'function') music('title');
-  if (typeof csWanted === 'function' && !csWanted()) {
+  if (typeof cutsceneWanted === 'function' && !cutsceneWanted()) {
     document.body.classList.add('ttl-flat');
     return;
   }
@@ -110,12 +110,12 @@ export async function titleMount() {
   cv.hidden = false;
   cv.setAttribute(
     'aria-label',
-    (typeof csStartName === 'function' ? csStartName() : 'The town') + ', from above the rooftops'
+    (typeof cutsceneStartName === 'function' ? cutsceneStartName() : 'The town') + ', from above the rooftops'
   );
   TITLE.t0 = performance.now();
   walkView.director = { frame: titleFrame };
   try {
-    await mountWalkView(cv, typeof csSceneId === 'function' ? csSceneId() : mapIdAt(START_NODE), {
+    await mountWalkView(cv, typeof cutsceneMapId === 'function' ? cutsceneMapId() : mapIdAt(START_NODE), {
       state: () => ({ who: null, npcs: [], enc: [], mode: 'line' }),
       keys: () => false,
       active: () => false,
@@ -166,7 +166,7 @@ function titleEnd() {
 function titleNew() {
   if (!saveData.started) {
     titleEnd();
-    if (typeof csWanted === 'function' && csWanted()) csStart();
+    if (typeof cutsceneWanted === 'function' && cutsceneWanted()) cutsceneStart();
     else {
       uiState.intro = 1;
       render();
@@ -193,7 +193,7 @@ function titleNew() {
           applyPreferences();
           closeModal();
           titleEnd();
-          if (typeof csWanted === 'function' && csWanted()) csStart();
+          if (typeof cutsceneWanted === 'function' && cutsceneWanted()) cutsceneStart();
           else {
             uiState.intro = 1;
             render();
