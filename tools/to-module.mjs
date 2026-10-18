@@ -377,12 +377,22 @@ export async function run(args) {
       if ((own.has(k) && own.get(k).kind === 'function') || gen.includes(n)) return `v => ${k}(v)`;
       return hooked.has(n) ? `v => ((${n} = v), provide({ ${n} }))` : `v => (${n} = v)`;
     };
+    // phase 04e: in a file the type check reads (// @ts-check at the top), TypeScript refuses an assignment to a
+    // function or a class; the generated ones are on purpose, so the line before each says so. Only in those files:
+    // elsewhere the comment would be noise.
+    const typeChecked = /^\/\/ @ts-check\b/m.test(text.slice(0, headerEnd(text)));
+    const replaces = n => typeChecked && ['function', 'class'].includes(own.get(n).kind);
+    const EXPECT = '// @ts-expect-error -- replaced on purpose';
+    const entry = n => {
+      if (own.get(n).kind === 'const') return `${n}: [() => ${n}]`;
+      const set = setterOf(n);
+      // only an arrow that assigns the name itself (v => (n = v)), not one that calls the module's own setter
+      return `${replaces(n) && set.startsWith('v => (') ? `\n${EXPECT}\n` : ''}${n}: [() => ${n}, ${set}]`;
+    };
     if (names.length) {
       // the setters replace functions on purpose: the checks and the console set them (only with the test globals on)
       if (fns) lines.push('/* eslint-disable no-func-assign */');
-      lines.push(
-        `expose({ ${names.map(n => (own.get(n).kind === 'const' ? `${n}: [() => ${n}]` : `${n}: [() => ${n}, ${setterOf(n)}]`)).join(', ')} });`
-      );
+      lines.push(`expose({ ${names.map(entry).join(', ')} });`);
       if (fns) lines.push('/* eslint-enable no-func-assign */');
     }
     if (early.length) lines.push(`provide({ ${early.join(', ')} });`);
@@ -390,6 +400,7 @@ export async function run(args) {
     for (const n of gen)
       lines.push(
         `export function ${setterName(n)}(v) {`,
+        ...(replaces(n) ? [`  ${EXPECT}`] : []),
         `  ${n} = v;${own.get(n).kind === 'function' ? ' // eslint-disable-line no-func-assign' : ''}`,
         `  provide({ ${n} });`,
         '}'
