@@ -185,7 +185,6 @@ expose({
   refreshLastSnapshot: [() => refreshLastSnapshot, v => (refreshLastSnapshot = v)],
   retarget: [() => retarget, v => (retarget = v)],
   runTurn: [() => runTurn, v => (runTurn = v)],
-  scenePlatesOn: [() => scenePlatesOn],
   setEndBattle: [() => setEndBattle, v => (setEndBattle = v)],
   setOpenBattle: [() => setOpenBattle, v => (setOpenBattle = v)],
   shockName: [() => shockName],
@@ -193,6 +192,7 @@ expose({
   showEvent: [() => showEvent, v => (showEvent = v)],
   showSpeakerFace: [() => showSpeakerFace, v => (showSpeakerFace = v)],
   snapSide: [() => snapSide],
+  stagePlatesOn: [() => stagePlatesOn],
   stageTap: [() => stageTap, v => (stageTap = v)],
   startTrainer: [() => startTrainer, v => (startTrainer = v)],
   startWild: [() => startWild, v => ((startWild = v), provide({ startWild }))],
@@ -2148,7 +2148,7 @@ export function setEndBattle(v) {
    camera, so the battle reads from the picture itself. With two or three a side they replace the corner cards; in a
    one-on-one they do too, unless Settings → Battle HUD is set to the classic cards. Tap a foe's plate (or the foe) to
    aim at it. */
-const scenePlatesOn = () =>
+const stagePlatesOn = () =>
   !!activeBattle && (isMulti() || ((saveData.preferences || {}).battleHud || 'scene') !== 'classic');
 function plateElement(k) {
   const L = $('#plates');
@@ -2168,7 +2168,7 @@ function plateElement(k) {
 function paintPlates(s, anim) {
   const L = $('#plates');
   if (!L) return;
-  const on = scenePlatesOn();
+  const on = stagePlatesOn();
   $('#battle') && $('#battle').classList.toggle('hud-scene', on);
   if (!on) {
     L.innerHTML = '';
