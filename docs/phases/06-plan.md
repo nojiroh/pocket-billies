@@ -31,7 +31,7 @@ idle life everywhere; messages that appear at the edge, say their piece and leav
 | A choice opens right after loading: `showPendingWindows` (hatch, learn a move, evolve) runs 500 ms after boot, so the evolution sheet covers a blurred world before you've seen it. (Corrected: modals already queue one at a time, ui.js `modal`/`nextModal`; they don't stack) | town after loading | The first thing a player sees is a wall, not the world |
 | 72 `@keyframes`, several doing the same thing under different names (`pop`, `nwPop`; `rise`, `nwFadeUp`, `csUp`; `breathe`, `nwIdle`), reduced-motion handled per file | all | Motion feels different from screen to screen and is hard to tune |
 | The battle text log stacks every line at the bottom of the screen | battle | Reads like a log file; the important line isn't the loudest |
-| Loader tip still says real steps move you along | loader | Stale since phase 08 Part A (steps removed) |
+| ~~Loader tip still says real steps move you along~~ | loader | Corrected in 06-1: still true until phase 08 Part A removes steps; the tips change with phase 08 |
 | The test boot skipped the opening cutscene | start | Fixed in PR #19 |
 
 ## The look
@@ -117,11 +117,14 @@ Recommended: **Lit** web components (about 6 KB, escapes by default, works with 
 components run in the game and the Studio). Fallback: plain lit-html templates with the same tokens. Phase 06 says to ask
 before adopting a library, so this waits for your answer.
 
-- `game/ui/tokens.css`: every token above, light and dark. The only place colours, sizes, radii and timings live.
-- `game/ui/motion.css`: the eight motions.
-- `game/ui/components/`: `pb-button`, `pb-panel`, `pb-sheet`, `pb-card`, `pb-tabs`, `pb-pill`, `pb-toast`,
+As built in 06-1 (paths differ from the first draft so lint, type and module checks cover the new code):
+- `game/css/tokens.css`: sizes, corners, depth, type and timings. Colours stay in v05.css's variables.
+- `game/css/motion.css`: the eight motions as `m-*` classes; `game/css/ui-kit.css`: the kit's page-side styles.
+- `game/js/ui-kit.js`: the components. Lit comes from `game/vendor/lit.js`, a classic script made by
+  `tools/vendor-lit.mjs` that sets `self.PB_LIT` (the game's modules may only import each other).
+- Built so far: `pb-panel`, `pb-pill`, `pb-button`, `pb-sheet`, `pb-toast`. To come: `pb-card`, `pb-tabs`,
   `pb-dialogue` (portrait slot sized 96×96 for phase 07, typing hook for the mouth), `pb-stat-bar`, `pb-field`.
-- `game/ui/screens/<screen>/`: each screen's component, its styles and its test.
+- Screens: one module per screen in `game/js/` as each moves over (06-2 to 06-4).
 - Components size to their container (container queries), so a card looks right in the phone column, the wide-screen
   side panel and a Studio form.
 - A **gallery page in the Studio** shows every component in every state (empty, full, long names, dark, 320 px wide).
@@ -147,15 +150,38 @@ To check when it lands (verify, these are from a first look):
 - The in-game full test's step "Battle on a painted stage" (self-test.js) and the painted-stage branch in its battle
   check go; the quick check and smoke must not ask for the painted stage.
 
+## The new opening (owner, 2026-10-18)
+| Question | Answer |
+|---|---|
+| Order of the opening | Hazel meets you; **Blake shows up before you have a starter** and wants a battle; **Hazel fights him herself, without a Billie** (a gag), in the battle screen, absurdly overpowered: his Billie goes down in one hit. You only watch and tap to go on. **Then** you pick your starter, Blake takes the one that beats yours, and his rival battle follows as today |
+| Hazel | Stays Professor Hazel, she/her |
+| Tutorial | None. In Blake's rival battle (your first real battle) Hazel only says something meta ("you probably know how these games work") and gives **bad tips about type advantages**, comically obtrusive (in your face, over the action, hard to ignore) |
+| Clicking too easily | She comments when you **skip her lines fast** (several in a row) and when you **pick moves instantly** |
+| Tapping Hazel | During the starter pick: **biased hot takes** about the starter you're looking at; more taps give other lines, then annoyed ones |
+| Fallback starter list | **Removed**, with the whole step-by-step intro it ends (stills, Hazel's lines, trainer, pick). If the 3D opening fails, a "Try again" screen like "This device can't run Pocket Billies" |
+| Starter pick card | Redone in the new look (06-2) |
+| Bots | The card and details sheet are shared by Billies and bots (parts, sizes, weight); the robot builder screen stays in 06-3 |
+| Order | Screens first (06-2), then the opening (06-2b) |
+
+## 06-3 decisions (owner, 2026-10-18/19)
+| Question | Answer |
+|---|---|
+| Robots | Merge `phase-17-robots` (and `main`) into the 06 line; the shared unit card and Build tab cover robots |
+| Dialogue box | The 96×96 portrait framed inside the box, name tag over the line |
+| Battle menu | The moves right away; Tax it, Bag, Team, Run under them |
+| Robot build | Slot rows (part, type, move, broken) and a weight-against-legs meter |
+| Battle UI | Lives in the 3D scene: cards anchored in the world, unaffected by the scene's lighting; the camera holds still while choosing; readable and thumb-reachable before true-to-the-spot |
+
 ## Sessions
 
 Order follows the roadmap's priority on Billies and robots: the screens they need come first.
 
 | Session | Does | Ends with |
 |---|---|---|
-| **06-1** | Audit (refresh the numbers above), tokens.css, motion.css, the renderer (after your decision), button, panel, sheet, pill, toast; the new message rules (toasts, inbox, one sheet on load); loader copy | Tokens in use by the bottom bar and toasts; no visible change except calmer messages |
-| **06-2** | Billie card, details sheet with parts, sizes, weight and the Prime badge (phase 16), Team screen, starter pick | Team and details on the new look; UI tests for them |
-| **06-3** | Dialogue box with portrait slot, battle menus and battle text, Bag, the robot builder shell (phase 17); remove the painted battle stage and the classic HUD (section above) | Battle reads one line at a time; every battle on the 3D stage, rooms included |
+| **06-1** ✓ (PR #24) | tokens.css, motion.css, Lit, button, panel, sheet, pill, toast; the new message rules (toasts, inbox, choices wait for the world); bottom bar on the tokens | Done 2026-10-18; see docs/HANDOFF.md |
+| **06-2** ✓ (PR #26) | A card and details sheet shared by Billies and bots (parts, sizes, weight, the Prime badge), Team screen, the starter pick card redone, the fallback starter list and step-by-step intro removed, the old money toasts trimmed | Team, details and the pick on the new look; UI tests for them |
+| **06-2b** ✓ (PR #28) | The new opening (section above): Hazel fights Blake herself, then the pick (tap Hazel for hot takes), then Blake's battle with her bad, obtrusive tips and her "too fast" comments | The opening plays through; the smoke phone flow follows it |
+| **06-3** ✓ (PR #29) | Dialogue box with portrait slot, battle menus and battle text, Bag, the robot builder shell (phase 17); remove the painted battle stage and the classic HUD (section above) | Battle reads one line at a time; every battle on the 3D stage, rooms included |
 | **06-4** | Guide, Trainer card, Settings, shops, dressing room, friends; Studio gallery; delete the emptied CSS; accessibility pass | All screens moved, no innerHTML with untrusted values, tag `phase-06-done` |
 
 Each session: lint, type-check, module check, unit tests, the UI tests for the screens it moved, screenshots of those
