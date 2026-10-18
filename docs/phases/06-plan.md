@@ -163,6 +163,15 @@ To check when it lands (verify, these are from a first look):
 | Bots | The card and details sheet are shared by Billies and bots (parts, sizes, weight); the robot builder screen stays in 06-3 |
 | Order | Screens first (06-2), then the opening (06-2b) |
 
+## 06-3 decisions (owner, 2026-10-18/19)
+| Question | Answer |
+|---|---|
+| Robots | Merge `phase-17-robots` (and `main`) into the 06 line; the shared unit card and Build tab cover robots |
+| Dialogue box | The 96×96 portrait framed inside the box, name tag over the line |
+| Battle menu | The moves right away; Tax it, Bag, Team, Run under them |
+| Robot build | Slot rows (part, type, move, broken) and a weight-against-legs meter |
+| Battle UI | Lives in the 3D scene: cards anchored in the world, unaffected by the scene's lighting; the camera holds still while choosing; readable and thumb-reachable before true-to-the-spot |
+
 ## Sessions
 
 Order follows the roadmap's priority on Billies and robots: the screens they need come first.
@@ -172,7 +181,7 @@ Order follows the roadmap's priority on Billies and robots: the screens they nee
 | **06-1** ✓ (PR #24) | tokens.css, motion.css, Lit, button, panel, sheet, pill, toast; the new message rules (toasts, inbox, choices wait for the world); bottom bar on the tokens | Done 2026-10-18; see docs/HANDOFF.md |
 | **06-2** ✓ (PR #26) | A card and details sheet shared by Billies and bots (parts, sizes, weight, the Prime badge), Team screen, the starter pick card redone, the fallback starter list and step-by-step intro removed, the old money toasts trimmed | Team, details and the pick on the new look; UI tests for them |
 | **06-2b** ✓ (PR #28) | The new opening (section above): Hazel fights Blake herself, then the pick (tap Hazel for hot takes), then Blake's battle with her bad, obtrusive tips and her "too fast" comments | The opening plays through; the smoke phone flow follows it |
-| **06-3** | Dialogue box with portrait slot, battle menus and battle text, Bag, the robot builder shell (phase 17); remove the painted battle stage and the classic HUD (section above) | Battle reads one line at a time; every battle on the 3D stage, rooms included |
+| **06-3** ✓ (PR #29) | Dialogue box with portrait slot, battle menus and battle text, Bag, the robot builder shell (phase 17); remove the painted battle stage and the classic HUD (section above) | Battle reads one line at a time; every battle on the 3D stage, rooms included |
 | **06-4** | Guide, Trainer card, Settings, shops, dressing room, friends; Studio gallery; delete the emptied CSS; accessibility pass | All screens moved, no innerHTML with untrusted values, tag `phase-06-done` |
 
 Each session: lint, type-check, module check, unit tests, the UI tests for the screens it moved, screenshots of those
