@@ -102,6 +102,9 @@ expose({
   battleStageLayout: [() => battleStageLayout, v => (battleStageLayout = v)],
   battleStagePlay: [() => battleStagePlay, v => (battleStagePlay = v)],
   battleStagePrepare: [() => battleStagePrepare, v => (battleStagePrepare = v)],
+  battleStageProject: [() => battleStageProject],
+  battleStageProjectInto: [() => battleStageProjectInto, v => (battleStageProjectInto = v)],
+  battleStageProjectWith: [() => battleStageProjectWith, v => (battleStageProjectWith = v)],
   battleStageResize: [() => battleStageResize, v => setBattleStageResize(v)],
   battleStageResolutionScale: [() => battleStageResolutionScale, v => (battleStageResolutionScale = v)],
   battleStageRingPhase: [() => battleStageRingPhase],
@@ -166,9 +169,6 @@ expose({
   softDraw: [() => softDraw, v => (softDraw = v)],
   softSmall: [() => softSmall, v => (softSmall = v)],
   speedLines: [() => speedLines, v => (speedLines = v)],
-  stageProject: [() => stageProject],
-  stageProjectInto: [() => stageProjectInto, v => (stageProjectInto = v)],
-  stageProjectWith: [() => stageProjectWith, v => (stageProjectWith = v)],
   throwOrigin: [() => throwOrigin],
   trainerAct: [() => trainerAct, v => (trainerAct = v)],
   trainerBattleFrame: [() => trainerBattleFrame, v => (trainerBattleFrame = v)],
@@ -658,11 +658,11 @@ export function buzz(p) {
   } catch (e) {}
 }
 /* ---------- projection ---------- */
-const stageProject = (X, Y, Z) => stageProjectWith(battleStage.V, X, Y, Z);
+const battleStageProject = (X, Y, Z) => battleStageProjectWith(battleStage.V, X, Y, Z);
 /* stage point to CSS pixels inside #battle (for HUD pop-ups) */
 export function battleStageToCss(P) {
   if (!battleStage.L) return null;
-  const q = stageProject(P.x, P.y, P.z);
+  const q = battleStageProject(P.x, P.y, P.z);
   if (!q) return null;
   const L = battleStage.L,
     z = 1 + battleStage.css.z,
@@ -972,7 +972,7 @@ export const CAMERA_KEYS = ['x', 'y', 'z', 'yaw', 'hz'],
     x: (actorPositions[0].x + actorPositions[1].x) / 2,
     z: (actorPositions[0].z + actorPositions[1].z) / 2,
   };
-function stageProjectWith(C, X, Y, Z) {
+function battleStageProjectWith(C, X, Y, Z) {
   const L = battleStage.L,
     cs = Math.cos(C.yaw),
     sn = Math.sin(C.yaw),
@@ -1012,8 +1012,8 @@ function camOver(C) {
             (s.fs || 1)) /
           2
         : 0.6;
-    const g = stageProjectWith(C, w.x, 0, w.z),
-      m = stageProjectWith(C, c.x, c.y, c.z);
+    const g = battleStageProjectWith(C, w.x, 0, w.z),
+      m = battleStageProjectWith(C, c.x, c.y, c.z);
     if (!g || !m) return 1e9;
     const half = hw * m.s,
       top = 2 * m.y - g.y,
@@ -1476,7 +1476,7 @@ function floorUpdate() {
 }
 /* ---------- drawing helpers ---------- */
 function drawShadow(c, X, Z, r, a) {
-  const p = stageProject(X, 0, Z);
+  const p = battleStageProject(X, 0, Z);
   if (!p) return;
   const w = Math.max(2, r * p.s),
     hh = Math.max(1.5, w * clamp(battleStage.V.y / p.z, 0.18, 0.55));
@@ -1581,7 +1581,7 @@ function drawSide(c, i) {
   if (!B) return;
   const { s, k, R, P, ak, buf } = B;
   const w = sideWorld(i),
-    p = stageProject(w.x, w.y, w.z);
+    p = battleStageProject(w.x, w.y, w.z);
   if (!p) return;
   const sc = (p.s * actorMetersPerPixel[i] * s.sc * (s.big || 1) * (s.fs || 1)) / R.k,
     lift = Math.max(0, -P.y) + Math.max(0, -s.oy);
@@ -1599,7 +1599,7 @@ function drawSide(c, i) {
     H = Math.round(R.BH * sc),
     bl = blurAt(p.z);
   if (AREAS[battleStage.area].indoor && s.a > 0.5 && ak !== 'faint') {
-    const gy = Math.round(stageProject(w.x, 0, w.z).y);
+    const gy = Math.round(battleStageProject(w.x, 0, w.z).y);
     c.save();
     c.globalAlpha = s.a * 0.14;
     c.translate(0, gy * 2);
@@ -1638,7 +1638,7 @@ function drawTrainer(c, i) {
   if (!f) return;
   const X = actorPositions[i].x + (i === 0 ? -1.15 : 1.25) + T.x * actorMetersPerPixel[i],
     Z = actorPositions[i].z + (i === 0 ? 0.25 : 0.4),
-    p = stageProject(X, 0, Z);
+    p = battleStageProject(X, 0, Z);
   if (!p) return;
   const sc = p.s * trainerMetersPerPixel(i),
     w = f.width * sc,
@@ -1651,7 +1651,7 @@ function drawTrainer(c, i) {
   c.globalAlpha = 1;
 }
 function drawBillboard(c, img, X, Y, Z, wk, al, slot) {
-  const p = stageProject(X, Y, Z);
+  const p = battleStageProject(X, Y, Z);
   if (!p) return;
   const sc = (p.s / 30) * wk;
   if (sc > 8) return;
@@ -1712,7 +1712,7 @@ function drawParticles(c, layer) {
   const L = [];
   battleStage.parts.forEach(p => {
     if ((p.layer || 2) !== layer) return;
-    const q = stageProject(p.x, p.y, p.z);
+    const q = battleStageProject(p.x, p.y, p.z);
     if (q) L.push([q, p]);
   });
   L.sort((a, b) => b[0].z - a[0].z);
@@ -1745,7 +1745,7 @@ function drawParticles(c, layer) {
         Math.round(s.height * kk)
       );
     } else if (p.beam) {
-      const q2 = stageProject(p.x2, p.y2, p.z2);
+      const q2 = battleStageProject(p.x2, p.y2, p.z2);
       if (q2) {
         c.strokeStyle = p.col;
         c.lineWidth = Math.max(1, p.w * k);
@@ -1787,7 +1787,7 @@ function cloudShadows(c) {
   c.save();
   c.fillStyle = 'rgba(30,16,60,.16)';
   for (const cl of battleStage.clouds) {
-    const p = stageProject(cl.x, 0, cl.z);
+    const p = battleStageProject(cl.x, 0, cl.z);
     if (!p || p.z > 70) continue;
     const r = 2.6 * p.s,
       ry = r * clamp(battleStage.V.y / p.z, 0.12, 0.55);
@@ -1888,7 +1888,7 @@ function addDrawItem(z, k, o, i) {
   it.i = i;
   drawListLength++;
 }
-function stageProjectInto(o, C, X, Y, Z) {
+function battleStageProjectInto(o, C, X, Y, Z) {
   const L = battleStage.L,
     cs = Math.cos(C.yaw),
     sn = Math.sin(C.yaw),
@@ -1932,19 +1932,19 @@ function battleStageDraw() {
   drawListLength = 0;
   const V = battleStage.V;
   for (const p of battleStage.props) {
-    if (stageProjectInto(p.q || (p.q = { x: 0, y: 0, z: 0, s: 0 }), V, p.x, 0, p.z)) addDrawItem(p.q.z, 0, p, 0);
+    if (battleStageProjectInto(p.q || (p.q = { x: 0, y: 0, z: 0, s: 0 }), V, p.x, 0, p.z)) addDrawItem(p.q.z, 0, p, 0);
   }
   for (const cl of battleStage.clouds) {
-    const q = stageProject(cl.x, cl.y, cl.z);
+    const q = battleStageProject(cl.x, cl.y, cl.z);
     if (q) addDrawItem(q.z + 1000, 1, cl, 0);
   }
   for (let i = battleStage.s.length - 1; i >= 0; i--) {
     const w = sideWorld(i),
-      q = stageProject(w.x, 0, w.z);
+      q = battleStageProject(w.x, 0, w.z);
     if (q) addDrawItem(q.z - 0.01, 2, null, i);
     const T = battleStage.tr[i];
     if (i < 2 && T.show) {
-      const q2 = stageProject(actorPositions[i].x, 0, actorPositions[i].z + (i === 0 ? 0.25 : 0.4));
+      const q2 = battleStageProject(actorPositions[i].x, 0, actorPositions[i].z + (i === 0 ? 0.25 : 0.4));
       if (q2) addDrawItem(q2.z + 0.02, 3, null, i);
     }
   }
@@ -1983,7 +1983,7 @@ export function battleStageTargets(L) {
 }
 function drawSelectionRing(c, i, col, pulse) {
   const w = sideWorld(i),
-    g = stageProject(w.x, 0, w.z);
+    g = battleStageProject(w.x, 0, w.z);
   if (!g) return;
   const s = battleStage.s[i],
     R = s && s.sp ? rigParts(s.sp, s.gold, ACTOR_RIG_SCALES[i]) : null,
@@ -2005,7 +2005,7 @@ function battleStageDrawEffects(c, skip0) {
       if (battleStage.s[k] && battleStage.s[k].show) {
         drawSelectionRing(c, k, Math.floor(battleStage.t / 220) % 2 ? '#FF6B6B' : '#FFFFFF', 3);
         const T = sideTop(k),
-          q = stageProject(T.x, T.y + 0.35 + 0.08 * Math.sin(battleStage.t / 140), T.z);
+          q = battleStageProject(T.x, T.y + 0.35 + 0.08 * Math.sin(battleStage.t / 140), T.z);
         if (q) {
           c.fillStyle = '#FF6B6B';
           const z = Math.max(3, Math.round((q.s / 30) * 4));
@@ -2015,7 +2015,7 @@ function battleStageDrawEffects(c, skip0) {
       }
   if (battleStage.coin && battleStage.coin.show) {
     const C = battleStage.coin,
-      q = stageProject(C.x, C.y, C.z);
+      q = battleStageProject(C.x, C.y, C.z);
     if (q) {
       const cc = coinCanvas(C.kind, 16),
         k = clamp((q.s / 30) * (C.k || 1), 0.6, 4);
@@ -2034,7 +2034,7 @@ function battleStageDrawEffects(c, skip0) {
   if (battleStage.ring) {
     const ph = battleStageRingPhase(),
       o = sideCenter(1),
-      q = stageProject(o.x, o.y, o.z);
+      q = battleStageProject(o.x, o.y, o.z);
     if (q) {
       const r = (1.15 - ph * 0.8) * q.s;
       const col = ph > 0.62 ? '#5DFF8A' : ph > 0.35 ? '#F4C542' : '#F2F2F2';
@@ -2042,7 +2042,7 @@ function battleStageDrawEffects(c, skip0) {
       c.globalAlpha = 0.35;
       pixRing(c, q.x, q.y, r + 3, r + 3, ph > 0.62 ? '#5DFF8A' : '#FFFFFF', 1);
       c.globalAlpha = 1;
-      const g = stageProject(o.x, 0, o.z);
+      const g = battleStageProject(o.x, 0, o.z);
       if (g) {
         c.globalAlpha = 0.5;
         pixRing(c, g.x, g.y, r * 0.9, r * 0.9 * clamp(battleStage.V.y / g.z, 0.2, 0.6), col, 1);
