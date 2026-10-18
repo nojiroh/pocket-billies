@@ -974,7 +974,7 @@ function renderWalk() {
 export function mapIdAt(i) {
   const S0 = gameData.maps || {},
     r = LOCATIONS[i];
-  if (r && r.scene && S0[r.scene]) return r.scene;
+  if (r && r.mapId && S0[r.mapId]) return r.mapId;
   return Object.keys(S0)[0] || null;
 }
 /* which road leaves a stop's scene through which exit: matched by compass direction on the world map */
@@ -1614,7 +1614,7 @@ function walkCross() {
     const x = P.x - (q.ox || 0),
       z = P.z - (q.oz || 0);
     if (x < 0 || z < 0 || x > s.w || z > s.h) continue;
-    const n = LOCATIONS.findIndex(r => r.scene === q.id);
+    const n = LOCATIONS.findIndex(r => r.mapId === q.id);
     if (n < 0 || n === node) {
       uiState.walkOk = [P.x, P.z, walkView.id];
       return;

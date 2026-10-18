@@ -727,8 +727,8 @@ export function setWorldMapGlRender(v) {
 const MINI_PICTURE_SCALE = 0.0004;
 function worldMapGlMiniPicture(i) {
   const r = LOCATIONS[i];
-  if (!r || !r.scene) return null;
-  const p = `map/mini/${r.scene}.png`,
+  if (!r || !r.mapId) return null;
+  const p = `map/mini/${r.mapId}.png`,
     im = typeof artImage === 'function' ? artImage(p) : null;
   if (!im || !imageReady(im)) {
     worldMapGl.miniLoad = worldMapGl.miniLoad || {};
@@ -1268,7 +1268,7 @@ function worldMapMiniKey(sc) {
 }
 export function worldMapMiniBuild(i) {
   const r = LOCATIONS[i],
-    sc = r && r.scene && mapById(r.scene);
+    sc = r && r.mapId && mapById(r.mapId);
   if (!sc || !sc.w) return null;
   const C0 = walkData().sc,
     W = sc.w,
@@ -1527,7 +1527,7 @@ export function worldMapMiniBuild(i) {
 }
 function worldMapMiniGet(i) {
   const r = LOCATIONS[i],
-    sc = r && r.scene && mapById(r.scene);
+    sc = r && r.mapId && mapById(r.mapId);
   if (!sc) return null;
   const key = worldMapMiniKey(sc) + '|' + (worldMapGl.hpix ? 1 : 0),
     e = worldMapMinis.cache.get(i);

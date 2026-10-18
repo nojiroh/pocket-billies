@@ -1429,7 +1429,7 @@ def add_region(D, R, force=False, rep=None):
         i = node_index(D, n['id'])
         cost = next((c for a, b, c, _ in R['links'] if b == n['id']), 1500)
         e = {'name': n['name'], 'cost': cost, 'pool': n['pool'], 'route': n['route'], 't': R['t'], 'blurb': n['blurb'], 'lon': n['lon'], 'lat': n['lat'], 'area': n['area'],
-             'scene': n['id'], 'id': n['id'], 'kind': n['kind'], 'biome': n['biome'], 'routeName': n['route'], 'mood': n.get('mood') or R['mood'], 'region': R['id'], TAG: 1}
+             'mapId': n['id'], 'id': n['id'], 'kind': n['kind'], 'biome': n['biome'], 'routeName': n['route'], 'mood': n.get('mood') or R['mood'], 'region': R['id'], TAG: 1}
         if n['kind'] == 'town': e['town'] = 1
         for k in ('shop', 'boutique', 'gate', 'gateText', 'ride', 'music'):
             if n.get(k) is not None: e[k] = n[k]
@@ -1446,7 +1446,7 @@ def add_region(D, R, force=False, rep=None):
     for a, b, cost, name in R['links']:
         for sid, nid in ((a, b), (b, a)):
             if sid in new or nid not in new: continue
-            sc = D['maps'].get(D['locations'][node_index(D, sid)].get('scene') or sid)
+            sc = D['maps'].get(D['locations'][node_index(D, sid)].get('mapId') or sid)
             if not sc or sc.get(TAG): continue
             if (sid, nid) in WAYS_IN: open_way(D, sid, nid, WAYS_IN[(sid, nid)], rep)
             else: rep.append(f'!! {sid} has no way out planned toward {nid}')

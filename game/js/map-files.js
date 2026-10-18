@@ -81,7 +81,7 @@ function remakeViewsOfMap(id) {
 }
 const needMaps = ids => Promise.all([...new Set(ids)].filter(Boolean).map(loadMapFile));
 provide({ needMaps }); /* to-module */
-const nodeOfMap = sid => LOCATIONS.findIndex(r => r.scene === sid);
+const nodeOfMap = sid => LOCATIONS.findIndex(r => r.mapId === sid);
 function mapsAround(node, hops = 1) {
   const seen = new Set([node]);
   let edge = [node];
@@ -95,7 +95,7 @@ function mapsAround(node, hops = 1) {
         }
     edge = next;
   }
-  return [...seen].map(n => LOCATIONS[n] && LOCATIONS[n].scene).filter(Boolean);
+  return [...seen].map(n => LOCATIONS[n] && LOCATIONS[n].mapId).filter(Boolean);
 }
 function mapsOfView(id) {
   if (!id) return [];

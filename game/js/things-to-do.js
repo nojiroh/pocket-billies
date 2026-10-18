@@ -349,7 +349,7 @@ export function requestListHTML() {
 /* ---------- gold stamps: two in every place ---------- */
 const STAMP_SPOTS = {};
 function stampMaps() {
-  return [...new Set(LOCATIONS.map(r => r.scene).filter(id => id && gameData.maps[id]))];
+  return [...new Set(LOCATIONS.map(r => r.mapId).filter(id => id && gameData.maps[id]))];
 }
 const stampTotal = () => stampMaps().length * 2;
 export const stampCount = () => Object.keys(thingsToDo().stamps).length;

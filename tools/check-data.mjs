@@ -90,7 +90,7 @@ for (const L of D.lines || []) {
 for (const [k, P] of Object.entries(pools))
   for (const [sp] of P.list || []) if (!species.has(sp)) problem('pools.json', `${k} has ${sp}, no such species`);
 route.forEach((r, i) => {
-  if (r.scene && !S[r.scene]) problem('locations.json', `stop ${i} (${r.name}) has map ${r.scene}, no such map`);
+  if (r.mapId && !S[r.mapId]) problem('locations.json', `stop ${i} (${r.name}) has map ${r.mapId}, no such map`);
   if (r.pool && !pools[r.pool]) problem('locations.json', `stop ${i} (${r.name}) has pool ${r.pool}, no such pool`);
 });
 (D.roads || []).forEach((l, i) => {

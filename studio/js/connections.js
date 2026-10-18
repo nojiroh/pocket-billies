@@ -374,7 +374,7 @@ function connectionGraph(cur) {
   }
   if (cur.kind === 'scene') {
     D.locations.forEach((r, i) => {
-      if (r.scene === cur.id) uses.delete('stop:' + i);
+      if (r.mapId === cur.id) uses.delete('stop:' + i);
     });
   }
   const self = R ? R[0] : '';
@@ -391,12 +391,12 @@ function connectionGraph(cur) {
     });
   }
   if (cur.kind === 'scene') {
-    const stops = D.locations.map((r, i) => (r.scene === cur.id ? i : -1)).filter(i => i >= 0);
+    const stops = D.locations.map((r, i) => (r.mapId === cur.id ? i : -1)).filter(i => i >= 0);
     stops.forEach(i => usedBy.set('stop:' + i, ['stop', i]));
     (D.roads || []).forEach(l => {
       const a = stops.includes(l[0]) ? l[1] : stops.includes(l[1]) ? l[0] : null;
       if (a == null || !D.locations[a]) return;
-      const s = D.locations[a].scene;
+      const s = D.locations[a].mapId;
       if (s && s !== cur.id) uses.set('scene:' + s, ['scene', s]);
     });
     const kinds = new Set((D.maps[cur.id].props || []).map(p => p.k));
@@ -405,7 +405,7 @@ function connectionGraph(cur) {
   if (cur.kind === 'stop') {
     const r = D.locations[cur.id];
     if (r) {
-      if (r.scene) uses.set('scene:' + r.scene, ['scene', r.scene]);
+      if (r.mapId) uses.set('scene:' + r.mapId, ['scene', r.mapId]);
       if (r.pool) uses.set('pool:' + r.pool, ['pool', r.pool]);
       if (r.shop) uses.set('shop:' + r.shop, ['shop', r.shop]);
     }

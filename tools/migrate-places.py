@@ -34,14 +34,14 @@ def problems(D):
     out = []; places = D['locations']; ids = {p.get('id') for p in places}
     for n, p in enumerate(places):
         if p.get('kind') not in ('town', 'route'): out.append(f'place {n} ({p.get("name")}): no kind')
-        if p.get('id') != p.get('scene'): out.append(f'place {n} ({p.get("name")}): id {p.get("id")} is not its scene {p.get("scene")}')
+        if p.get('id') != p.get('mapId'): out.append(f'place {n} ({p.get("name")}): id {p.get("id")} is not its scene {p.get("mapId")}')
         if p.get('kind') == 'town' and not p.get('town'): out.append(f'{p.get("name")}: kind town but not marked town')
         if p.get('kind') == 'route' and p.get('town'): out.append(f'{p.get("name")}: kind route but marked town')
     for sid, sc in D['maps'].items():
         k = sc.get('kind')
         if k not in ('town', 'route', 'room', 'test'): out.append(f'scene {sid}: no kind'); continue
         if k in ('town', 'route'):
-            pl = next((p for p in places if p.get('scene') == sid), None)
+            pl = next((p for p in places if p.get('mapId') == sid), None)
             if not pl: out.append(f'scene {sid}: kind {k} but no place uses it')
             elif pl.get('kind') != k: out.append(f'scene {sid}: kind {k} but its place is a {pl.get("kind")}')
         if k == 'room' and not sc.get('building'): out.append(f'scene {sid}: a room without a building')
@@ -57,10 +57,10 @@ def main():
         p = problems(D); print('\n'.join(p) or 'places, scenes and roads all say what they are'); sys.exit(1 if p else 0)
     places, n = D['locations'], 0
     for p in places:
-        for k, v in (('id', p.get('scene')), ('kind', 'town' if p.get('town') else 'route'), ('biome', p.get('t'))):
+        for k, v in (('id', p.get('mapId')), ('kind', 'town' if p.get('town') else 'route'), ('biome', p.get('t'))):
             if p.get(k) is None and v is not None: p[k] = v; n += 1
         if p['kind'] == 'route' and not p.get('routeName') and p.get('route'): p['routeName'] = p['route']; n += 1
-    by_scene = {p['scene']: p for p in places}
+    by_scene = {p['mapId']: p for p in places}
     for sid, sc in D['maps'].items():
         if sc.get('kind'): continue
         if sc.get('test') or sid.startswith('test_'): sc['kind'] = 'test'

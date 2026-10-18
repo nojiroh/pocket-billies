@@ -202,7 +202,7 @@ export const WORLD_MAP_LANDMARKS = [];
     lake: ['tree', 'bush'],
   };
   LANDMARK_REGIONS.forEach((r, ri) => {
-    if (ri < LOCATIONS.length && LOCATIONS[ri].scene) return;
+    if (ri < LOCATIONS.length && LOCATIONS[ri].mapId) return;
     /* v24: stops have miniatures (world-map-gl.js) */ const L = KIND[r.t] || [],
       R = makeSeededRandom(ri * 131 + 9),
       n = r.t === 'mall' ? 1 : L.length ? 7 : 0;

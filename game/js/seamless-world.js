@@ -1541,7 +1541,7 @@ function seamlessMapById(id) {
   }
   m = id.match(/^w:(.+?)(\*|[<>]\d+)$/);
   if (!m) return null;
-  const node = LOCATIONS.findIndex(r => r.scene === m[1]);
+  const node = LOCATIONS.findIndex(r => r.mapId === m[1]);
   return node >= 0 ? seamlessHubMap(node) : null;
 }
 /* v46: seamless rooms. Walking into a building doesn't leave the place: the room is laid into the place's own view

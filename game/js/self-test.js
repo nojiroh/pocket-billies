@@ -1198,7 +1198,7 @@ async function runFullTest(mode) {
           for (let i = 0; i < 3; i++) spawn(false);
           uiState.tab = 'walk';
           uiState.bench = null;
-          const node = LOCATIONS.findIndex(r => r.scene === gid);
+          const node = LOCATIONS.findIndex(r => r.mapId === gid);
           if (node >= 0) saveData.route.node = node;
           render();
           for (let i = 0; i < 80 && !(walkView.ready && walkView.id === gid); i++) await selfTestSleep(100);

@@ -196,7 +196,7 @@ export const currentMap = () => {
   const id = currentMapId();
   return id ? studioState.D.maps[id] : null;
 };
-const locationsUsingMap = id => studioState.D.locations.map((r, i) => [r, i]).filter(([r]) => r.scene === id);
+const locationsUsingMap = id => studioState.D.locations.map((r, i) => [r, i]).filter(([r]) => r.mapId === id);
 /* ---------- section ---------- */
 SECTIONS.scenes = () => {
   const D = studioState.D,
@@ -1901,7 +1901,7 @@ function exitChecks(sc) {
       const here = users.includes(l[0]) && J.a === e.id ? 'a' : users.includes(l[1]) && J.b === e.id ? 'b' : null;
       if (!here) return;
       const o = here === 'a' ? l[1] : l[0],
-        osc = D.maps[(D.locations[o] || {}).scene],
+        osc = D.maps[(D.locations[o] || {}).mapId],
         oid = here === 'a' ? J.b : J.a,
         oe = osc && (osc.edgeExits || []).find(q => q.id === oid);
       if (!oe) out.push({ ok: 0, t: `${nm}: the road to ${D.locations[o].name} names no exit on that side` });

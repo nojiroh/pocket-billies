@@ -1393,8 +1393,8 @@ def main():
             if i >= len(D['locations']): break
             if rescene or sid not in D['maps']:
                 D['maps'][sid] = f(D, i)
-            if force or not D['locations'][i].get('scene'):
-                D['locations'][i]['scene'] = sid
+            if force or not D['locations'][i].get('mapId'):
+                D['locations'][i]['mapId'] = sid
     gamedata.save_js(head + 'window.GAMEDATA=' + json.dumps(D, ensure_ascii=False, indent=1) + ';\n')
     print('scenes:', ', '.join(D['maps']), '| props:', len(D['scenery']['props']))
     for sid in D['maps']:

@@ -222,7 +222,7 @@ export const ROADS = (
   ); /* v42: a fourth entry {a,b} names the exit at each end (the join table) */
 /* v46: what each place, scene and road is (tools/migrate-places.py fills these): use these instead of id prefixes */
 export const LOCATION_BY_ID = Object.fromEntries(
-  LOCATIONS.map((r, i) => [r.id || r.scene, Object.assign({ node: i }, r)])
+  LOCATIONS.map((r, i) => [r.id || r.mapId, Object.assign({ node: i }, r)])
 );
 /* alpha 0.4: what a place is, under its name: its route number ("Route 2"), or "Town" / "City"; and its full name,
    the number and the name together ("Route 2 · Tallgrass Meadow"), for signposts, postcards and the like */

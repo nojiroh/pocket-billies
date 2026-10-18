@@ -46,7 +46,7 @@ function loreStage() {
   return loreFlags().ending ? 9 : (saveData.seats || []).length;
 }
 function loreNode(id) {
-  return LOCATIONS.findIndex(r => r.id === id || r.scene === id);
+  return LOCATIONS.findIndex(r => r.id === id || r.mapId === id);
 }
 function loreMet(k) {
   const F = loreFlags();

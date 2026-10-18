@@ -303,7 +303,7 @@ def main():
         if '@' in sid or sc.get('test'): continue
         c = crops(sc); w = crows(sc) if sid == 'scrapyard' else 0
         if c or w: print(f'{sid}: ' + ', '.join(x for x in (f'{c} crops on a round of their own' if c else '', f'{w} crows' if w else '') if x))
-    towns = [r['scene'] for r in D['locations'] if r.get('kind') == 'town' and r.get('scene') in S]
+    towns = [r['mapId'] for r in D['locations'] if r.get('kind') == 'town' and r.get('mapId') in S]
     want = args or towns
     for sid in want:
         sc = S.get(sid)

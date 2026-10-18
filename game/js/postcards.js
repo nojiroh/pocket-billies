@@ -57,7 +57,7 @@ function postcardTownHere() {
     const x = P.x - (q.ox || 0),
       z = P.z - (q.oz || 0);
     if (x >= 0 && z >= 0 && x < s.w && z < s.h) {
-      const n = LOCATIONS.findIndex(r => r.scene === q.id);
+      const n = LOCATIONS.findIndex(r => r.mapId === q.id);
       return n >= 0 ? n : null;
     }
   }

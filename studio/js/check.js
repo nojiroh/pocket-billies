@@ -118,7 +118,7 @@ function runCheck() {
       err(`${sc.name || k}: doesn’t say what it is (kind: town, route, room or test).`, 'scenes');
       continue;
     }
-    const pl = (D.locations || []).find(r => r.scene === k);
+    const pl = (D.locations || []).find(r => r.mapId === k);
     if ((kd === 'town' || kd === 'route') && !pl)
       warn(`${sc.name || k} is a ${kd} scene but no stop uses it.`, 'scenes');
     if (pl && pl.kind && pl.kind !== kd)
@@ -256,7 +256,7 @@ function runCheck() {
   const SCN = D.maps || {},
     SY = D.scenery || { terrains: {}, props: {} };
   D.locations.forEach((r, i) => {
-    if (r.scene && !SCN[r.scene])
+    if (r.mapId && !SCN[r.mapId])
       err(`${r.name} uses a walk scene that doesn’t exist.`, 'world', { wtab: 'route', stop: i });
   });
   for (const [k, s] of Object.entries(SCN)) {
@@ -327,7 +327,7 @@ function runCheck() {
       if (!['pond', 'stream', 'canal', 'spring', 'swamp', 'lake'].includes(r.k))
         warn(`Scene ${s.name || k}: water rectangle ${n + 1} has an unknown kind “${r.k}”.`, 'scenes', g);
     });
-    const users = D.locations.map((r, i) => [r, i]).filter(([r]) => r.scene === k);
+    const users = D.locations.map((r, i) => [r, i]).filter(([r]) => r.mapId === k);
     users.forEach(([r, i]) => {
       const n = (D.roads || []).filter(l => l[0] === i || l[1] === i).length;
       if (n > (s.exits || []).length)

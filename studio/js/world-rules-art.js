@@ -235,7 +235,7 @@ function worldLocations() {
       ),
       selectField(
         'Walk scene',
-        `${p}.scene`,
+        `${p}.mapId`,
         Object.entries(D.maps || {}).map(([k, v]) => [k, v.name || k]),
         { none: 'First scene', opt: 1, help: 'The tilt-shift view on the Walk screen. Edit scenes under Walk scenes.' }
       ),
@@ -317,7 +317,7 @@ function roadsHTML(i) {
       const side = D.roads[k][0] === i ? 1 : 0,
         end = side ? 'a' : 'b',
         J = D.roads[k][3] || {},
-        sc = D.maps[(D.locations[i] || {}).scene],
+        sc = D.maps[(D.locations[i] || {}).mapId],
         ids = ((sc && sc.edgeExits) || []).map(e => e.id);
       return `<tr><td><select data-p="roads.${k}.${side}" data-k="num" data-rr="1">${opts.map(([j, n]) => `<option value="${j}" ${j === o ? 'selected' : ''}>${escapeHtml(n)}</option>`).join('')}</select></td><td><input type="number" min="50" step="50" data-p="roads.${k}.2" data-k="num" value="${c}" class="sm-num"></td><td><small>${(c / D.rules.steps.stepsPerKm).toFixed(1)} km</small></td><td><select data-join="${k}" data-end="${end}" title="Which exit of this stop’s scene the road uses (v42 join table); ‘by direction’ matches it by compass bearing as before"><option value="">by direction</option>${ids.map(id => `<option value="${escapeHtml(id)}" ${J[end] === id ? 'selected' : ''}>${escapeHtml(id)}</option>`).join('')}</select></td><td><button class="x" data-act="roadDel" data-k="${k}" title="Remove this road">×</button></td></tr>`;
     }

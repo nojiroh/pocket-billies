@@ -840,7 +840,7 @@ def main():
     only = [a for a in args if not a.startswith('--')]
     head, D = load(); cat = D['scenery']['props']; CAT.update(cat); nature = nature_pool(cat)
     for n, pl in enumerate(D['locations']):
-        sid = pl['scene']
+        sid = pl['mapId']
         if only and sid not in only: continue
         old = D['maps'].get(sid)
         if not old or sid not in BUILD: continue

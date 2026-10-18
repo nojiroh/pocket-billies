@@ -496,7 +496,7 @@ def main():
     rep = []
     for r in D['locations']:
         if r.get('kind') != 'town': continue
-        sid = r['scene']; sc = D['maps'][sid]
+        sid = r['mapId']; sc = D['maps'][sid]
         if sid not in TOUCH: continue
         sc['props'] = [p for p in sc['props'] if not p.get(TAG)]
         if sc.get('life'): sc['life'] = [l for l in sc['life'] if not l.get(TAG)]
