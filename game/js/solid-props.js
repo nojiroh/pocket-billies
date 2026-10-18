@@ -20,11 +20,11 @@ import { eng } from './engine/settings.js';
 import { EGL, EGL_GLSL_COMMON, EGL_GLSL_LIGHT, EGL_GLSL_LOOK, EGL_MATS, eglImg, eglPrograms } from './engine/webgl.js';
 import {
   dglBlades,
-  dglBudget,
   dglFol,
   dglHit,
   dglLookU,
   dglUse,
+  frameBudgetLeft,
   walkRenderer,
   worldCurveArgs,
 } from './walk-view-gl.js';
@@ -1162,7 +1162,7 @@ function p3dLod(items, C) {
     if (!it.vol) continue;
     const per = P3D.meshes.get(it.im);
     if (per && per.has(it.vol.key)) continue;
-    if (built && typeof dglBudget === 'function' && !dglBudget()) {
+    if (built && typeof frameBudgetLeft === 'function' && !frameBudgetLeft()) {
       it.vol = null;
       continue;
     }

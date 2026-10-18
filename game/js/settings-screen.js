@@ -11,11 +11,11 @@ import {
   audApply,
   audTest,
   closeModal,
-  dglRebuild,
   eng,
   galleryOpen,
   modal,
   openDressing,
+  rebuildFromSettings,
   render,
   renderOv,
   runDiagTest,
@@ -655,9 +655,9 @@ document.addEventListener('input', ev => {
   S.preferences.eng = S.preferences.eng || {};
   (S.preferences.eng[g] = S.preferences.eng[g] || {})[k] = +el.value;
   const D = GFX_DIALS.flatMap(x => x[1]).find(d => d[0] === el.dataset.eng);
-  if (D && D[7] && typeof dglRebuild === 'function') {
+  if (D && D[7] && typeof rebuildFromSettings === 'function') {
     clearTimeout(setPref.rb);
-    setPref.rb = setTimeout(() => dglRebuild(), 300);
+    setPref.rb = setTimeout(() => rebuildFromSettings(), 300);
   }
 });
 document.addEventListener('change', ev => {
@@ -677,12 +677,12 @@ document.addEventListener('click', ev => {
       if (!Object.keys(S.preferences.eng[g]).length) delete S.preferences.eng[g];
     }
     save();
-    if (typeof dglRebuild === 'function') dglRebuild();
+    if (typeof rebuildFromSettings === 'function') rebuildFromSettings();
     settingsRefresh();
   } else if (a === 'gfx-resetall') {
     delete S.preferences.eng;
     save();
-    if (typeof dglRebuild === 'function') dglRebuild();
+    if (typeof rebuildFromSettings === 'function') rebuildFromSettings();
     settingsRefresh();
   } else if (a === 'gfx-see') {
     if (typeof galleryOpen === 'function') galleryOpen(el.dataset.k);

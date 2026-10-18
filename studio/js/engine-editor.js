@@ -16,7 +16,13 @@ import {
   setEngSource,
 } from '../../game/js/engine/settings.js';
 import { EGL, eglOK } from '../../game/js/engine/webgl.js';
-import { dglAdapt, dglRebuild, mountWalkView, setDglAdapt, walkRenderer } from '../../game/js/walk-view-gl.js';
+import {
+  adaptQuality,
+  mountWalkView,
+  rebuildFromSettings,
+  setAdaptQuality,
+  walkRenderer,
+} from '../../game/js/walk-view-gl.js';
 import { esc } from './game-stand-ins.js';
 import {
   ACTS,
@@ -60,8 +66,8 @@ setEngSource(() => (ST.D ? ST.D.engine : null));
 /* alpha 0.4.1: the Studio's previews show every setting at full effect. The game's automatic quality would step god
    rays, bloom, depth of field and ambient shading off (and lower the resolution) when the preview ran slowly, so a dial
    seemed to do nothing. Here it never steps down. */
-if (typeof dglAdapt === 'function')
-  setDglAdapt(function () {
+if (typeof adaptQuality === 'function')
+  setAdaptQuality(function () {
     if (typeof walkRenderer !== 'undefined') walkRenderer.q = 0;
     if (typeof walkView !== 'undefined') walkView.R = 1;
   });
@@ -231,7 +237,7 @@ ST.hooks.engine = p => {
   if (['world', 'grass', 'water', 'quality'].includes(g)) {
     clearTimeout(ENS.rbT);
     ENS.rbT = setTimeout(() => {
-      if (typeof dglRebuild === 'function') dglRebuild();
+      if (typeof rebuildFromSettings === 'function') rebuildFromSettings();
     }, 350);
   }
 };

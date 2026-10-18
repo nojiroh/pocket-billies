@@ -187,15 +187,12 @@ expose({
   DGL_FIXED_BACK: [() => DGL_FIXED_BACK],
   DGL_FLAG: [() => DGL_FLAG],
   DGL_FOL: [() => DGL_FOL],
-  DGL_FR: [() => DGL_FR],
   DGL_HUG: [() => DGL_HUG],
   DGL_HUGC: [() => DGL_HUGC],
   DGL_IMID: [() => DGL_IMID],
   DGL_IMN: [() => DGL_IMN, v => (DGL_IMN = v)],
-  DGL_KEEP: [() => DGL_KEEP],
   DGL_LK0: [() => DGL_LK0],
   DGL_LOOK: [() => DGL_LOOK],
-  DGL_MOOD0: [() => DGL_MOOD0],
   DGL_PRINT_COL: [() => DGL_PRINT_COL],
   DGL_SINK_BOX: [() => DGL_SINK_BOX],
   DGL_STILL: [() => DGL_STILL],
@@ -203,10 +200,13 @@ expose({
   DGL_VARY_DEF: [() => DGL_VARY_DEF],
   FLOWER_COLORS: [() => FLOWER_COLORS],
   FLOWER_SET_BY_LOCATION: [() => FLOWER_SET_BY_LOCATION],
+  FRUSTUM_PLANES: [() => FRUSTUM_PLANES],
   GRASS_KINDS: [() => GRASS_KINDS],
   GRASS_PUSHER_BUFFER: [() => GRASS_PUSHER_BUFFER],
+  MAP_CACHE_KEYS: [() => MAP_CACHE_KEYS],
   NEAR_RING_CHUNK_M: [() => NEAR_RING_CHUNK_M],
   NEAR_RING_SIZE: [() => NEAR_RING_SIZE],
+  NEUTRAL_MOOD: [() => NEUTRAL_MOOD],
   NO_PAD_PROPS: [() => NO_PAD_PROPS],
   PREP_BUDGET_MS: [() => PREP_BUDGET_MS],
   PROP_MATERIALS: [() => PROP_MATERIALS],
@@ -218,6 +218,7 @@ expose({
   WATER_KIND_LOOKS: [() => WATER_KIND_LOOKS],
   WATER_KIND_UNIFORMS: [() => WATER_KIND_UNIFORMS],
   abortGroundPrep: [() => abortGroundPrep, v => (abortGroundPrep = v)],
+  adaptQuality: [() => adaptQuality, v => setAdaptQuality(v)],
   addRipple: [() => addRipple, v => (addRipple = v)],
   askDeviceTilt: [() => askDeviceTilt, v => (askDeviceTilt = v)],
   baseNavGrid: [() => baseNavGrid],
@@ -232,32 +233,25 @@ expose({
   cameraTurnLimit: [() => cameraTurnLimit],
   canvasForContext: [() => canvasForContext, v => (canvasForContext = v)],
   clampZoom: [() => clampZoom],
+  computeFrustum: [() => computeFrustum, v => (computeFrustum = v)],
+  cullItems: [() => cullItems, v => (cullItems = v)],
   cutsceneCamera: [() => cutsceneCamera, v => (cutsceneCamera = v)],
   defaultWallMaterial: [() => defaultWallMaterial, v => ((defaultWallMaterial = v), provide({ defaultWallMaterial }))],
-  dglAdapt: [() => dglAdapt, v => setDglAdapt(v)],
   dglAltImg: [() => dglAltImg, v => (dglAltImg = v)],
   dglBasinSet: [() => dglBasinSet, v => (dglBasinSet = v)],
   dglBasins: [() => dglBasins, v => (dglBasins = v)],
   dglBlades: [() => dglBlades, v => (dglBlades = v)],
   dglBoxFaces: [() => dglBoxFaces, v => (dglBoxFaces = v)],
   dglBoxInfo: [() => dglBoxInfo, v => (dglBoxInfo = v)],
-  dglBudget: [() => dglBudget, v => ((dglBudget = v), provide({ dglBudget }))],
-  dglCull: [() => dglCull, v => (dglCull = v)],
   dglFlat: [() => dglFlat, v => (dglFlat = v)],
   dglFol: [() => dglFol, v => (dglFol = v)],
   dglFountainFx: [() => dglFountainFx, v => (dglFountainFx = v)],
-  dglFrame: [() => dglFrame, v => (dglFrame = v)],
-  dglFrameIn: [() => dglFrameIn, v => (dglFrameIn = v)],
-  dglFrustum: [() => dglFrustum, v => (dglFrustum = v)],
   dglFxPass: [() => dglFxPass, v => setDglFxPass(v)],
   dglGround: [() => dglGround, v => setDglGround(v)],
   dglHands: [() => dglHands, v => (dglHands = v)],
-  dglHeat: [() => dglHeat, v => (dglHeat = v)],
-  dglHeatSrc: [() => dglHeatSrc, v => (dglHeatSrc = v)],
   dglHit: [() => dglHit, v => (dglHit = v)],
   dglHug: [() => dglHug, v => (dglHug = v)],
   dglImId: [() => dglImId, v => (dglImId = v)],
-  dglInView: [() => dglInView, v => (dglInView = v)],
   dglItems: [() => dglItems, v => setDglItems(v)],
   dglLampOn: [() => dglLampOn, v => (dglLampOn = v)],
   dglLampShadows: [() => dglLampShadows, v => (dglLampShadows = v)],
@@ -269,16 +263,12 @@ expose({
   dglLookOf2: [() => dglLookOf2, v => (dglLookOf2 = v)],
   dglLookSig: [() => dglLookSig, v => (dglLookSig = v)],
   dglLookU: [() => dglLookU, v => (dglLookU = v)],
-  dglMood: [() => dglMood, v => (dglMood = v)],
   dglMount: [() => dglMount, v => (dglMount = v)],
   dglPerson: [() => dglPerson, v => (dglPerson = v)],
   dglPrintAt: [() => dglPrintAt, v => (dglPrintAt = v)],
   dglPrints: [() => dglPrints, v => (dglPrints = v)],
   dglPropGrid: [() => dglPropGrid, v => (dglPropGrid = v)],
   dglPropY: [() => dglPropY, v => (dglPropY = v)],
-  dglRebuild: [() => dglRebuild, v => ((dglRebuild = v), provide({ dglRebuild }))],
-  dglRiseK: [() => dglRiseK, v => (dglRiseK = v)],
-  dglRiseStart: [() => dglRiseStart, v => (dglRiseStart = v)],
   dglRoomBox: [() => dglRoomBox, v => (dglRoomBox = v)],
   dglRoomDim: [() => dglRoomDim, v => (dglRoomDim = v)],
   dglRoomFront: [() => dglRoomFront, v => (dglRoomFront = v)],
@@ -287,9 +277,7 @@ expose({
   dglRoomLights: [() => dglRoomLights, v => (dglRoomLights = v)],
   dglRoomSky: [() => dglRoomSky, v => (dglRoomSky = v)],
   dglRoomTex: [() => dglRoomTex, v => (dglRoomTex = v)],
-  dglSceneFree: [() => dglSceneFree, v => (dglSceneFree = v)],
   dglSceneSun: [() => dglSceneSun, v => (dglSceneSun = v)],
-  dglSceneSwap: [() => dglSceneSwap, v => (dglSceneSwap = v)],
   dglShadowPass: [() => dglShadowPass, v => setDglShadowPass(v)],
   dglShadowPassFit: [() => dglShadowPassFit, v => (dglShadowPassFit = v)],
   dglShadowRect: [() => dglShadowRect, v => (dglShadowRect = v)],
@@ -308,8 +296,13 @@ expose({
   dglWindAt: [() => dglWindAt, v => (dglWindAt = v)],
   dglWorldTex: [() => dglWorldTex, v => (dglWorldTex = v)],
   drawGrass: [() => drawGrass, v => setDrawGrass(v)],
+  drawWalkFrame: [() => drawWalkFrame, v => (drawWalkFrame = v)],
+  drawWalkFrameInner: [() => drawWalkFrameInner, v => (drawWalkFrameInner = v)],
   drawWater: [() => drawWater, v => setDrawWater(v)],
+  easedMood: [() => easedMood, v => (easedMood = v)],
+  frameBudgetLeft: [() => frameBudgetLeft, v => ((frameBudgetLeft = v), provide({ frameBudgetLeft }))],
   freeCameraOn: [() => freeCameraOn],
+  freeMapCache: [() => freeMapCache, v => (freeMapCache = v)],
   freeNearRing: [() => freeNearRing, v => (freeNearRing = v)],
   grassPushers: [() => grassPushers, v => (grassPushers = v)],
   grassTrail: [() => grassTrail, v => (grassTrail = v)],
@@ -324,7 +317,10 @@ expose({
   groundPixelNormal: [() => groundPixelNormal, v => (groundPixelNormal = v)],
   groundPrepWork: [() => groundPrepWork, v => (groundPrepWork = v)],
   handleCanvasClick: [() => handleCanvasClick, v => (handleCanvasClick = v)],
+  heatHaze: [() => heatHaze, v => (heatHaze = v)],
+  heatSources: [() => heatSources, v => (heatSources = v)],
   heightGrid: [() => heightGrid, v => (heightGrid = v)],
+  inFrustum: [() => inFrustum, v => (inFrustum = v)],
   isGroundPrepared: [() => isGroundPrepared, v => (isGroundPrepared = v)],
   labelLayer: [() => labelLayer, v => (labelLayer = v)],
   listenDeviceTilt: [() => listenDeviceTilt, v => (listenDeviceTilt = v)],
@@ -338,6 +334,7 @@ expose({
   prepareMapGround: [() => prepareMapGround, v => (prepareMapGround = v)],
   propMaterial: [() => propMaterial, v => (propMaterial = v)],
   rawHeightAt: [() => rawHeightAt, v => ((rawHeightAt = v), provide({ rawHeightAt }))],
+  rebuildFromSettings: [() => rebuildFromSettings, v => ((rebuildFromSettings = v), provide({ rebuildFromSettings }))],
   reflectionLevel: [() => reflectionLevel, v => (reflectionLevel = v)],
   reflectionPass: [() => reflectionPass, v => setReflectionPass(v)],
   repeatingTexture: [() => repeatingTexture, v => (repeatingTexture = v)],
@@ -346,7 +343,7 @@ expose({
   ringSlot: [() => ringSlot],
   screenRay: [() => screenRay, v => (screenRay = v)],
   screenToGround2d: [() => screenToGround2d],
-  setDglAdapt: [() => setDglAdapt, v => (setDglAdapt = v)],
+  setAdaptQuality: [() => setAdaptQuality, v => (setAdaptQuality = v)],
   setMountWalkView: [() => setMountWalkView, v => (setMountWalkView = v)],
   setNearRingUniforms: [() => setNearRingUniforms, v => (setNearRingUniforms = v)],
   setShoreUniforms: [() => setShoreUniforms, v => (setShoreUniforms = v)],
@@ -354,6 +351,9 @@ expose({
   shoreAt: [() => shoreAt, v => (shoreAt = v)],
   shoreField: [() => shoreField, v => (shoreField = v)],
   standingHeightAt: [() => standingHeightAt, v => ((standingHeightAt = v), provide({ standingHeightAt }))],
+  startTownRise: [() => startTownRise, v => (startTownRise = v)],
+  swapMapCache: [() => swapMapCache, v => (swapMapCache = v)],
+  townRiseAmount: [() => townRiseAmount, v => (townRiseAmount = v)],
   updateNearRing: [() => updateNearRing, v => setUpdateNearRing(v)],
   uploadTextureStrips: [() => uploadTextureStrips, v => (uploadTextureStrips = v)],
   walkCamera: [() => walkCamera, v => (walkCamera = v)],
@@ -372,11 +372,11 @@ expose({
 /* eslint-enable no-func-assign */
 provide({
   defaultWallMaterial,
-  dglBudget,
-  dglRebuild,
+  frameBudgetLeft,
   groundHeightAt,
   onGlContextRestored,
   rawHeightAt,
+  rebuildFromSettings,
   standingHeightAt,
 });
 export function setBuildGrass(v) {
@@ -768,7 +768,7 @@ export function mountWalkView(cv, id, opt = {}) {
       walkView.sc = sc;
       ensureGround();
       walkView.ready = true;
-      frameTask('dio', dglFrame, () => (walkView.opt.cap ? walkView.opt.cap() : userFps()));
+      frameTask('dio', drawWalkFrame, () => (walkView.opt.cap ? walkView.opt.cap() : userFps()));
       cv.classList.add('in');
     })
     .catch(e => {
@@ -821,7 +821,7 @@ export function walkGlContext(cv) {
   walkRenderer.farKey = '';
   walkRenderer.sceneCache = null;
   walkRenderer.wtex = null;
-  for (const k of DGL_KEEP) walkRenderer[k] = null;
+  for (const k of MAP_CACHE_KEYS) walkRenderer[k] = null;
   return true;
 }
 function onGlContextRestored(cv) {
@@ -2372,7 +2372,7 @@ function groundOcclusionTexture(r) {
   eglTexParams({ linear: true });
   return t;
 }
-/* v46: the frame's key for a view's ground (its mesh, water and textures are kept under it, dglSceneSwap) */
+/* v46: the frame's key for a view's ground (its mesh, water and textures are kept under it, swapMapCache) */
 function groundCacheKey(id, sc, gkey) {
   return (
     id +
@@ -2446,7 +2446,7 @@ function abortGroundPrep() {
   try {
     J.it.return();
   } catch (e) {}
-  dglSceneFree(J.T);
+  freeMapCache(J.T);
 }
 function groundPrepWork(budget) {
   const J = walkRenderer.prep;
@@ -2471,7 +2471,7 @@ function groundPrepWork(budget) {
         for (const k of [...M.keys()]) {
           if (M.size <= Math.max(1, keep - 1)) break;
           if (k !== J.hk) {
-            dglSceneFree(M.get(k));
+            freeMapCache(M.get(k));
             M.delete(k);
           }
         }
@@ -2485,7 +2485,7 @@ function groundPrepWork(budget) {
     }
   } catch (e) {
     walkRenderer.prep = null;
-    dglSceneFree(J.T);
+    freeMapCache(J.T);
     if (typeof NWLOG !== 'undefined') NWLOG.add('webgl', 'preparing ' + J.id + ' failed: ' + ((e && e.message) || e));
     return;
   }
@@ -3563,7 +3563,7 @@ function cutsceneCamera(rw, rh, K) {
   };
 }
 /* ---------- frame ---------- */
-function dglFrame(ts, dtm) {
+function drawWalkFrame(ts, dtm) {
   const cv = walkView.cv;
   if (!cv || !cv.isConnected) {
     stopWalkView();
@@ -3607,13 +3607,13 @@ function dglFrame(ts, dtm) {
   if (ENG_CTX.env) envFrame(sc, dt);
   const gq = eglGpuBegin();
   try {
-    dglFrameIn(ts, dt, dtm, t, C0, PPU, rw, rh, w0);
+    drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0);
   } finally {
     ENG_CTX.env = false;
     eglGpuEnd(gq);
   }
 }
-function dglFrameIn(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
+function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
   if (typeof wrLookTick === 'function') wrLookTick();
   const gl = EGL.gl,
     sc = walkView.sc,
@@ -3626,7 +3626,7 @@ function dglFrameIn(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
     walkRenderer.hkey = hk;
     walkView.nav = null;
     navGrid();
-    dglSceneSwap(old, hk);
+    swapMapCache(old, hk);
   }
   navGrid();
   if (walkRenderer.grassKey !== eng('grass', 'density')) buildGrass();
@@ -3669,7 +3669,7 @@ function dglFrameIn(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
     items = items.filter(it => !(it.k === 'prop' && BT.hide && BT.hide.has(it.p)));
     for (const it of BT.items) items.push(it);
   } else walkView.hits = hits;
-  dglCull(items, C);
+  cullItems(items, C);
   const dark0 = sc.tint && sc.tint !== '#000000' ? 1 : sc.indoor ? 0.7 : 0,
     lk = ENG_CTX.env && !sc.indoor ? ENV.lampK : 0,
     dark = Math.max(dark0, lk > 0.4 ? lk : 0);
@@ -3734,9 +3734,9 @@ function dglFrameIn(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
       noRays: QE >= 3,
       bloomN: QE >= 3 ? 3 : 5,
       noDof: QE >= 4,
-      heat: dglHeat(sc),
-      heatS: dglHeatSrc(C),
-      mood: dglMood(sc),
+      heat: heatHaze(sc),
+      heatS: heatSources(C),
+      mood: easedMood(sc),
       sun: sc.indoor ? null : eglSunScreen(C, sun.dir, 300),
       X,
       ivp: C.ivp,
@@ -3787,7 +3787,7 @@ function dglFrameIn(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
   walkRenderer.frames++;
   const work = performance.now() - w0;
   walkView.slow = walkView.slow * 0.9 + work * 0.1;
-  dglAdapt(dtm, work);
+  adaptQuality(dtm, work);
   /* v30: how long frames take, for the debug log */ {
     const H = walkRenderer.hist || (walkRenderer.hist = [0, 0, 0, 0, 0, 0]);
     H[work < 8 ? 0 : work < 16 ? 1 : work < 33 ? 2 : work < 66 ? 3 : work < 133 ? 4 : 5]++;
@@ -3796,7 +3796,7 @@ function dglFrameIn(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
 }
 /* v32: the last few scenes' ground, water and grass stay on the graphics card, so walking out of a house (or back
    from a trip) doesn't rebuild them; the oldest is let go when a fourth arrives */
-const DGL_KEEP = [
+const MAP_CACHE_KEYS = [
   'ring',
   'gaoTex',
   'gtex',
@@ -3822,20 +3822,20 @@ const DGL_KEEP = [
 ];
 /* alpha 0.4.1: everything built from the settings once (the ground and its relief, the grass, far props, solid props and
    trees) made again, for a dial changed in the Studio (or Settings) that those depend on */
-export function dglRebuild() {
+export function rebuildFromSettings() {
   if (typeof walkRenderer === 'undefined' || !walkRenderer.on) return;
   try {
     if (walkRenderer.sceneCache) {
-      for (const e of walkRenderer.sceneCache.values()) dglSceneFree(e);
+      for (const e of walkRenderer.sceneCache.values()) freeMapCache(e);
       walkRenderer.sceneCache.clear();
     }
     if (walkRenderer.mesh) {
       const e = {};
-      for (const k of DGL_KEEP) {
+      for (const k of MAP_CACHE_KEYS) {
         e[k] = walkRenderer[k];
         walkRenderer[k] = null;
       }
-      dglSceneFree(e);
+      freeMapCache(e);
     }
     if (walkRenderer.prep) abortGroundPrep();
   } catch (e) {
@@ -3852,13 +3852,13 @@ export function dglRebuild() {
   if (typeof P3D !== 'undefined' && P3D.meshes) P3D.meshes = new WeakMap();
   if (typeof voxFlush === 'function') voxFlush();
 }
-function dglSceneSwap(oldKey, key) {
+function swapMapCache(oldKey, key) {
   walkRenderer.swapT = performance.now();
   const M = walkRenderer.sceneCache || (walkRenderer.sceneCache = new Map()),
     keep = eng('quality', 'keepScenes') ?? 3;
   if (oldKey && walkRenderer.mesh && keep > 0) {
     const e = {};
-    for (const k of DGL_KEEP) {
+    for (const k of MAP_CACHE_KEYS) {
       e[k] = walkRenderer[k];
       walkRenderer[k] = null;
     }
@@ -3878,7 +3878,7 @@ function dglSceneSwap(oldKey, key) {
   if (walkRenderer.prep && walkRenderer.prep.hk === key) abortGroundPrep(); /* v46: about to build it anyway */
   if (hit && (hit.prepared || hit.grassKey === eng('grass', 'density'))) {
     M.delete(key);
-    for (const k of DGL_KEEP) walkRenderer[k] = hit[k];
+    for (const k of MAP_CACHE_KEYS) walkRenderer[k] = hit[k];
     walkRenderer.rings = [];
     walkRenderer.leaves = null;
     walkRenderer.wlevelR = null;
@@ -3892,17 +3892,17 @@ function dglSceneSwap(oldKey, key) {
   } else {
     if (hit) {
       M.delete(key);
-      dglSceneFree(hit);
+      freeMapCache(hit);
     }
     buildGroundMesh();
   }
   while (M.size > Math.max(0, keep - 1)) {
     const k0 = M.keys().next().value;
-    dglSceneFree(M.get(k0));
+    freeMapCache(M.get(k0));
     M.delete(k0);
   }
 }
-function dglSceneFree(e) {
+function freeMapCache(e) {
   const gl = EGL.gl;
   if (!e) return;
   if (e.ring) {
@@ -3923,9 +3923,9 @@ function dglSceneFree(e) {
 /* v32: only what the camera can see is drawn. The six sides of the view are taken from the camera matrix once a
    frame; each thing is a ball round its middle (lifted by the horizon curve the shaders apply) tested against them.
    Things just outside still cast shadows in (the shadow pass keeps everything near the shadow map's square). */
-const DGL_FR = new Float32Array(24);
-function dglFrustum(m) {
-  const F = DGL_FR;
+const FRUSTUM_PLANES = new Float32Array(24);
+function computeFrustum(m) {
+  const F = FRUSTUM_PLANES;
   for (let i = 0; i < 6; i++) {
     const r = i >> 1,
       sg = i & 1 ? -1 : 1,
@@ -3941,7 +3941,7 @@ function dglFrustum(m) {
   }
   return F;
 }
-function dglInView(F, x, y, z, r) {
+function inFrustum(F, x, y, z, r) {
   for (let i = 0; i < 6; i++) {
     if (i === 5) continue;
     /* no far side: the haze hides the far end anyway */ if (
@@ -3952,8 +3952,8 @@ function dglInView(F, x, y, z, r) {
   }
   return true;
 }
-function dglCull(items, C) {
-  const F = dglFrustum(C.vp);
+function cullItems(items, C) {
+  const F = computeFrustum(C.vp);
   let n = 0,
     k = 0;
   const on = eng('quality', 'cull') ?? true;
@@ -3969,7 +3969,7 @@ function dglCull(items, C) {
       ext = b ? Math.max(b[0], b[1]) * ((it.p && it.p.s) || 1) : 0;
     const r = Math.max(w, h, ext) * 0.6 + 0.4,
       cy = (it.y || 0) + h * 0.5 + worldCurveDrop(it.x, it.z);
-    it.vis = dglInView(F, it.x, cy, it.z, r);
+    it.vis = inFrustum(F, it.x, cy, it.z, r);
     k++;
     if (!it.vis) n++;
   }
@@ -3978,20 +3978,20 @@ function dglCull(items, C) {
 }
 /* v32: a per-frame time budget for one-off work (solid bodies, outlines of buildings): past it, things stay pictures
    for a frame or two instead of freezing the scene while they are worked out */
-export function dglBudget() {
+export function frameBudgetLeft() {
   return performance.now() - (walkRenderer.budT || 0) < (walkRenderer.budMs ?? 7);
 }
 /* v32: how much heat shimmer: over lava always, over desert sand and canyons in the heat of the day */
 /* v47: a mood per place (warm late afternoon in Sundown, cool and misty in the Thicket, hazy heat in the canyon...):
    saturation, contrast, warmth and tints for the darks and the lights, from the data's presets (moods). It eases over
    about two seconds when you walk from one place into the next, and is off with the setting off */
-const DGL_MOOD0 = { sat: 1, con: 1, warm: 0, lift: [0, 0, 0], gain: [0, 0, 0], sh: [0, 0, 0], hi: [0, 0, 0] };
-function dglMood(sc) {
+const NEUTRAL_MOOD = { sat: 1, con: 1, warm: 0, lift: [0, 0, 0], gain: [0, 0, 0], sh: [0, 0, 0], hi: [0, 0, 0] };
+function easedMood(sc) {
   const on = (eng('world', 'moods') ?? 1) > 0,
     Mo = (typeof GD !== 'undefined' && GD.moods) || {},
     T0 = on && sc ? Mo[sc.mood || mapMoodName(sc)] : null,
     k = eng('world', 'moods') ?? 1;
-  const T = Object.assign({}, DGL_MOOD0);
+  const T = Object.assign({}, NEUTRAL_MOOD);
   if (T0)
     for (const f of ['sat', 'con', 'warm']) if (T0[f] != null) T[f] = f === 'warm' ? T0[f] * k : 1 + (T0[f] - 1) * k;
   if (T0) for (const f of ['lift', 'gain', 'sh', 'hi']) if (T0[f]) T[f] = T0[f].map(v => v * k);
@@ -4005,7 +4005,7 @@ function dglMood(sc) {
   return M;
 }
 /* alpha 0.4: where the fires are on screen, for the small shimmer above each (up to six, nearest first in the list) */
-function dglHeatSrc(C) {
+function heatSources(C) {
   const F = walkRenderer.fires || [];
   if (!F.length || !C || !C.vp) return null;
   const m = C.vp,
@@ -4024,7 +4024,7 @@ function dglHeatSrc(C) {
   }
   return out.length ? out : null;
 }
-function dglHeat(sc) {
+function heatHaze(sc) {
   if (sc.indoor) return 0;
   if (sc.waterKind === 'lava' || sc.far === 'volcano') return 0.9;
   const hot =
@@ -4040,7 +4040,7 @@ function dglHeat(sc) {
    no ambient occlusion; 2: smaller shadow map, shadows and reflections every other frame; 3: fewer bloom levels, no
    light shafts, no grass far away; 4: no depth of field); only then the resolution drops. With room to spare it climbs
    back: resolution first, then the extras. Frames held back on purpose (a window open, another screen) don't count. */
-export function dglAdapt(dtm, work) {
+export function adaptQuality(dtm, work) {
   if (!eng('quality', 'auto')) {
     walkView.R = 1;
     walkRenderer.q = 0;
@@ -4098,9 +4098,9 @@ export function dglAdapt(dtm, work) {
   }
 }
 /* phase 04d: the Studio swaps in its own (studio/js/engine-editor.js and viewport.js) */
-export function setDglAdapt(v) {
-  dglAdapt = v; // eslint-disable-line no-func-assign
-  provide({ dglAdapt });
+export function setAdaptQuality(v) {
+  adaptQuality = v; // eslint-disable-line no-func-assign
+  provide({ adaptQuality });
 }
 /* ---------- what stands in the scene this frame ---------- */
 /* v23: low, wide things (fences, benches, logs, rocks, hedges, planters) follow the slope they stand on: a picture's two
@@ -4716,10 +4716,10 @@ export function dglItems(st, C, PPU, C0) {
     isn't looked at at all this frame */
   /* alpha 0.4: in a 3D battle too (it gathered every prop of the place each frame: 6 to 9 ms on a phone) */
   const GR = dglPropGrid(sc),
-    F = C.vp && (eng('quality', 'cull') ?? true) ? dglFrustum(C.vp) : null;
+    F = C.vp && (eng('quality', 'cull') ?? true) ? computeFrustum(C.vp) : null;
   let gs = 0;
   for (const c of GR.cells) {
-    if (F && !dglInView(F, c.x, c.y + worldCurveDrop(c.x, c.z), c.z, c.r + 8)) {
+    if (F && !inFrustum(F, c.x, c.y + worldCurveDrop(c.x, c.z), c.z, c.r + 8)) {
       gs += c.list.length;
       continue;
     }
@@ -5812,13 +5812,13 @@ export function drawGrass(C, X) {
     gl.vertexAttribPointer(2, 4, gl.FLOAT, false, 32, 16);
     gl.drawArraysInstanced(gl.TRIANGLES, 0, 3, G.n);
   } else {
-    const F = dglFrustum(C.vp),
+    const F = computeFrustum(C.vp),
       far = (walkRenderer.q || 0) >= 3 ? 38 : 1e9,
       Pp = walkView.pl;
     gl.bindBuffer(gl.ARRAY_BUFFER, G.ib);
     let drawn = 0;
     for (const c of G.chunks) {
-      if (!dglInView(F, c.x, c.y + worldCurveDrop(c.x, c.z), c.z, c.r)) continue;
+      if (!inFrustum(F, c.x, c.y + worldCurveDrop(c.x, c.z), c.z, c.r)) continue;
       if (far < 1e9 && Math.hypot(c.x - Pp.x, c.z - Pp.z) > far) continue;
       gl.vertexAttribPointer(1, 4, gl.FLOAT, false, 32, c.off * 32);
       gl.vertexAttribPointer(2, 4, gl.FLOAT, false, 32, c.off * 32 + 16);
@@ -5839,14 +5839,14 @@ function dglImId(im) {
   }
   return n;
 }
-/* alpha 0.4.1: the title's town springs up out of the loading screen (dglRiseStart from js/boot.js) */
-export function dglRiseStart(load) {
+/* alpha 0.4.1: the title's town springs up out of the loading screen (startTownRise from js/boot.js) */
+export function startTownRise(load) {
   if (RM || typeof walkView === 'undefined') return;
   walkRenderer.rise = { t0: performance.now(), c: null, load: !!load, seen: new WeakMap() };
 }
 /* how far up a thing has grown (0 to a little over 1). While the game loads, a ring round the middle of the view widens
    with the loading and each thing starts to grow when the ring reaches it */
-function dglRiseK(it) {
+function townRiseAmount(it) {
   const R = walkRenderer.rise,
     now = performance.now();
   if (!R.c) {
@@ -5935,7 +5935,7 @@ export function dglSprites(C, items, X, hits, labels, PPU) {
         if (me.x > q.x - half && me.x < q.x + half && me.y > top && me.y < q.y) fade = 0.4;
       }
     }
-    const rk = walkRenderer.rise ? dglRiseK(it) : 1;
+    const rk = walkRenderer.rise ? townRiseAmount(it) : 1;
     if (rk < 0.002 && !it.person) continue;
     if (it.bld3) {
       walkRenderer.bfade.set(it, fade * Math.min(1, rk));
@@ -6134,7 +6134,7 @@ function dglBoxFaces(C, items, X) {
     )
       continue;
     if (walkRenderer.bt && walkRenderer.bt.hide && walkRenderer.bt.hide.has(it.p)) continue;
-    if (!DGL_BOX.has(it.im) && !dglBudget()) continue;
+    if (!DGL_BOX.has(it.im) && !frameBudgetLeft()) continue;
     const B = dglBoxInfo(it.im);
     if (!B) continue;
     if (!p) {
@@ -6378,7 +6378,7 @@ function waterNear(x, z) {
     R = Q.W + 1;
   return S[(k1 + 1) * R + i1 + 1] - S[k0 * R + i1 + 1] - S[(k1 + 1) * R + i0] + S[k0 * R + i0] > 0;
 }
-/* alpha 0.2: would a thing's mirror image (across the water at height L) be on screen: the sphere dglCull uses, wider
+/* alpha 0.2: would a thing's mirror image (across the water at height L) be on screen: the sphere cullItems uses, wider
    for the ripples, and without the world's curve (the reflection is drawn flat, uCurveOn 0) */
 function mirrorInView(F, it, L) {
   const s = it.mpp || 0.03,
@@ -6388,7 +6388,7 @@ function mirrorInView(F, it, L) {
     ext = b ? Math.max(b[0], b[1]) * ((it.p && it.p.s) || 1) : 0,
     r = Math.max(w, h, ext) * 0.75 + 2,
     cy = (it.y || 0) + h * 0.5;
-  return dglInView(F, it.x, 2 * L - cy, it.z, r);
+  return inFrustum(F, it.x, 2 * L - cy, it.z, r);
 }
 export function reflectionPass(items, C, rw, rh, X) {
   const gl = EGL.gl,
@@ -6427,7 +6427,7 @@ export function reflectionPass(items, C, rw, rh, X) {
   gl.disable(gl.BLEND);
   /* alpha 0.2: near water by a summed table (a joined view can hold thousands of water tiles, and walking them all for
     every thing cost the iPad about 10 ms a frame), and only what shows in the water: its mirror image in view */
-  const FR = dglFrustum(C.vp),
+  const FR = computeFrustum(C.vp),
     cut = eng('quality', 'cull') ?? true;
   for (const it of items) {
     if (it.flat || it.far) continue;

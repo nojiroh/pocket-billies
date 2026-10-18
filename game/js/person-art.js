@@ -7,7 +7,20 @@
    A look: {name, body:{…sliders}, skin, hair, eyes, wear:{slot:itemId|null}, colors:{itemId:[hex,…]}}. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { FR, GD, PEOPLE, S, ST, U, artImage, cleanName, dglBudget, dioArtVer, drawRig, provide } from './hooks.js';
+import {
+  FR,
+  GD,
+  PEOPLE,
+  S,
+  ST,
+  U,
+  artImage,
+  cleanName,
+  dioArtVer,
+  drawRig,
+  frameBudgetLeft,
+  provide,
+} from './hooks.js';
 import { clamp } from './util.js';
 import { frameStop, frameTask } from './frame-scheduler.js';
 import { ART, artImg, cnv, hexA } from './art.js';
@@ -738,7 +751,7 @@ function trReady(arr, i) {
 }
 export function trPick(set, walk, k) {
   const want = walk ? (set.cyc ? [set.cyc, k] : [set, 1]) : [set, 0];
-  if (trReady(want[0], want[1]) || typeof dglBudget !== 'function' || dglBudget()) return want[0][want[1]];
+  if (trReady(want[0], want[1]) || typeof frameBudgetLeft !== 'function' || frameBudgetLeft()) return want[0][want[1]];
   for (const [a, n] of [
     [set, 3],
     [set.cyc, 6],

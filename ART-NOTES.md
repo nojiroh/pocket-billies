@@ -478,7 +478,7 @@ New files only:
 ## alpha 0.4.1
 
 - The title no longer shows the painted `background/sundown.webp`; the first town (Copperleaf) is drawn by the 3D
-  renderer and builds itself in behind the logo while the game loads (`js/boot.js`, `dglRiseK` in `js/walk-view-gl.js`).
+  renderer and builds itself in behind the logo while the game loads (`js/boot.js`, `townRiseAmount` in `js/walk-view-gl.js`).
   The painting stays as the wide-screen page background behind the menus.
 - Without 3D graphics the loading screen draws a small isometric island by hand on a 256 × 168 canvas (no art files):
   ground tiles, trees, houses, lamps and an airship station, in the game's palette.

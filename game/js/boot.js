@@ -16,7 +16,7 @@ import { AREAS, scPrepare, stageArt } from './battle-stage.js';
 import { mapArtPaths, mapById, walkData, walkView } from './walk-view.js';
 import { EGL, eglOK } from './engine/webgl.js';
 import { ENV } from './environment.js';
-import { dglRiseStart, walkRenderer } from './walk-view-gl.js';
+import { startTownRise, walkRenderer } from './walk-view-gl.js';
 import { WORLD } from './seamless-world.js';
 import { areaKey } from './battle.js';
 import { WORLD_ART, mapPrepare } from './world-map.js';
@@ -655,7 +655,7 @@ function townUp() {
   titleStart();
   titleMount();
   LD.el.classList.add('town');
-  if (typeof dglRiseStart === 'function') dglRiseStart(true);
+  if (typeof startTownRise === 'function') startTownRise(true);
 }
 function loaderHide() {
   const el = LD.el;
@@ -706,7 +706,7 @@ function loaderHide() {
       }
       document.body.classList.add('ttl-reveal');
       el.classList.add('reveal');
-      if (typeof dglRiseStart === 'function') dglRiseStart();
+      if (typeof startTownRise === 'function') startTownRise();
       setTimeout(
         () => {
           const top = el.querySelector('.ld-top');

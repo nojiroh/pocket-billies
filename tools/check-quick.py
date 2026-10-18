@@ -888,7 +888,7 @@ def desktop_steps(b, base, R):
 
     @step('v32: 3D miniatures, skipping what is off screen, the scene cache, wear and variety', 240)
     def v32():
-        if not pg.evaluate("typeof dglCull==='function'"): return 'not in this build'
+        if not pg.evaluate("typeof cullItems==='function'"): return 'not in this build'
         out = []
         # what's off screen is skipped (Verdigris City is the biggest scene)
         node = pg.evaluate("ROUTE.findIndex(r=>r.scene==='city')")
