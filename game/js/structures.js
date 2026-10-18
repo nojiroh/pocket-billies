@@ -25,7 +25,7 @@ import {
 import { BUILDING_SHADERS, buildingArt, buildingGuard } from './buildings.js';
 /* eslint-disable no-func-assign */
 expose({
-  STRUCTURE_KINDS: [() => STRUCTURE_KINDS],
+  STRUCTURE_MATERIALS: [() => STRUCTURE_MATERIALS],
   buildStructures: [() => buildStructures, v => (buildStructures = v)],
   drawStructureShadows: [
     () => drawStructureShadows,
@@ -43,7 +43,7 @@ expose({
 provide({ drawStructureShadows, drawStructures });
 /* to-module: end */
 export const structureState = { key: '', mesh: null, parts: [] };
-const STRUCTURE_KINDS = {
+const STRUCTURE_MATERIALS = {
   iron: { tex: 15, col: [0.27, 0.3, 0.38] },
   wood: { tex: 14, col: [0.6, 0.42, 0.28] },
   stone: { tex: 3, col: [0.68, 0.66, 0.62] },
@@ -94,10 +94,10 @@ function buildStructures(sc) {
     rockCol =
       sc.wallCol && sc.wallCol[wd]
         ? hexToRgb(sc.wallCol[wd]).map(v => v / 255)
-        : WALL_COLORS[wd] || STRUCTURE_KINDS.rock.col;
+        : WALL_COLORS[wd] || STRUCTURE_MATERIALS.rock.col;
   const poly = (P, n, uv, K, shade = 1) => {
     const b = V.length / 14,
-      k = K === 'rock' ? { tex: 10, col: rockCol } : STRUCTURE_KINDS[K] || STRUCTURE_KINDS.stone,
+      k = K === 'rock' ? { tex: 10, col: rockCol } : STRUCTURE_MATERIALS[K] || STRUCTURE_MATERIALS.stone,
       tc = [k.tex % 8, Math.floor(k.tex / 8)];
     P.forEach((q, i) =>
       V.push(
