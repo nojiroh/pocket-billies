@@ -384,7 +384,8 @@ async function renameFile(o, n, dry) {
   }
   if (!dry) {
     git('mv', o, n);
-    await toModule([]);
+    // in a new process: to-module.mjs names some files itself (log.js), and this one has the old names loaded
+    execFileSync('node', [join(ROOT, 'tools/to-module.mjs')], { cwd: ROOT, stdio: 'ignore' });
   }
   return { files: changed.length, changed, notes };
 }
