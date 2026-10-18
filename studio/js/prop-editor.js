@@ -50,6 +50,7 @@ expose({
   propEditor: [() => propEditor],
   propEditorCardHTML: [() => propEditorCardHTML, v => ((propEditorCardHTML = v), provide({ propEditorCardHTML }))],
   propEditorHit: [() => propEditorHit, v => (propEditorHit = v)],
+  propEditorOpenHere: [() => propEditorOpenHere, v => (propEditorOpenHere = v)],
   propEditorPoint: [() => propEditorPoint, v => (propEditorPoint = v)],
   propPictureBounds: [() => propPictureBounds, v => (propPictureBounds = v)],
   propVaryHTML: [() => propVaryHTML, v => (propVaryHTML = v)],
@@ -61,7 +62,17 @@ expose({
 /* eslint-enable no-func-assign */
 provide({ drawPropEditor, mountPropTurntable, propEditorCardHTML });
 /* to-module: end */
-const propEditor = { tool: 'move', fxk: 'glow', zoom: 0, spin: true, sel: null, drag: null, sc: null, id: null };
+export const propEditor = {
+  v: 0,
+  tool: 'move',
+  fxk: 'glow',
+  zoom: 0,
+  spin: true,
+  sel: null,
+  drag: null,
+  sc: null,
+  id: null,
+};
 const PROP_EFFECT_KINDS = [
   ['glow', 'Lamp glow', '#FFC94A'],
   ['window', 'Lit window', '#FFB35C'],
@@ -99,7 +110,8 @@ function turntableMap(k) {
     haze: '#EAD9C0',
     hazeD: 70,
     cam: { pitch: 20, h: Math.max(2.6, hM * 0.85 + 1.4), fov: 0.9 },
-    blur: 0.35,
+    blur: 0,
+    plain: 1 /* phase 09 batch 1: no graphic effects on the turntable (engine/settings.js PLAIN_LOOK) */,
   };
 }
 {
@@ -111,7 +123,7 @@ function turntableMap(k) {
   });
 }
 /* ---------- the card ---------- */
-function propEditorCardHTML(k) {
+export function propEditorCardHTML(k) {
   const C = sceneryCatalog(),
     M = C.props[k],
     b = `scenery.props.${k}`,
@@ -613,7 +625,11 @@ addEventListener('keydown', ev => {
   }
 });
 /* ---------- turntable ---------- */
-async function mountPropTurntable() {
+/* phase 09 batch 1: the prop editor opens in Walk scenes or in the Props section */
+function propEditorOpenHere() {
+  return !!mapEditor.ped && (studioState.sec === 'scenes' || studioState.sec === 'props');
+}
+export async function mountPropTurntable() {
   const cv = $('#pedPv'),
     k = mapEditor.ped,
     M = editedProp();
@@ -629,18 +645,21 @@ async function mountPropTurntable() {
   } else {
     propEditor.sc.props[0].k = k;
   }
+  /* phase 09 batch 1: the Props section shows any of the prop's variants on the turntable */
+  if (propEditor.v) propEditor.sc.props[0].v = propEditor.v;
+  else delete propEditor.sc.props[0].v;
   mountWalkView(cv, '__prop', {
     state: () => ({ mode: 'roam', roam: true, pos: propEditor.sc.hub, who: null, enc: [], npcs: [], exits: [] }),
     keys: () => false,
     onPick: () => {},
     onMove: () => {},
-    cap: () => (studioState.sec === 'scenes' && mapEditor.ped ? 40 : 0),
+    cap: () => (propEditorOpenHere() ? 40 : 0),
   }).then(() => {
     const l = $('#pedPvLoad');
     if (l) l.hidden = true;
   });
   frameTask('pedSpin', () => {
-    if (!mapEditor.ped || studioState.sec !== 'scenes') {
+    if (!propEditorOpenHere()) {
       frameStop('pedSpin');
       return;
     }

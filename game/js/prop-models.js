@@ -10,7 +10,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { gameData, provide, reducedMotion } from './hooks.js';
-import { artImg, artURL, hexToRgb } from './art.js';
+import { artImg, artURL, hexToRgb, makeCanvas } from './art.js';
 import { artImage, walkView } from './walk-view.js';
 import { engineSetting } from './engine/settings.js';
 import { COMMON_GLSL, LIGHT_GLSL, ensurePrograms, gpuState, imageTexture } from './engine/webgl.js';
@@ -27,6 +27,7 @@ import { BUILDING_SHADERS, buildingArt, buildingTextureGrid } from './buildings.
 /* eslint-disable no-func-assign */
 expose({
   LAYER_PROPS: [() => LAYER_PROPS],
+  LEAF_CUTS: [() => LEAF_CUTS],
   LOW_POLY_TEXTURE_CELLS: [() => LOW_POLY_TEXTURE_CELLS],
   PROP_MODEL_SHADERS: [() => PROP_MODEL_SHADERS],
   PROP_MODEL_SHAPES: [() => PROP_MODEL_SHAPES],
@@ -53,6 +54,9 @@ expose({
   greedyVoxelMesh: [() => greedyVoxelMesh, v => (greedyVoxelMesh = v)],
   invalidatePropModel: [() => invalidatePropModel, v => (invalidatePropModel = v)],
   layerProp: [() => layerProp, v => (layerProp = v)],
+  leafCut: [() => leafCut, v => (leafCut = v)],
+  leafOutlineColour: [() => leafOutlineColour, v => (leafOutlineColour = v)],
+  limbPoints: [() => limbPoints, v => (limbPoints = v)],
   loadPropModelRecipe: [() => loadPropModelRecipe, v => (loadPropModelRecipe = v)],
   lowPolyFragmentShader: [() => lowPolyFragmentShader, v => (lowPolyFragmentShader = v)],
   lowPolyFromRecipe: [() => lowPolyFromRecipe, v => (lowPolyFromRecipe = v)],
@@ -216,6 +220,18 @@ function voxelFromKey(k) {
     y = r % VOXEL_KEY_SPAN;
   return [(r - y) / VOXEL_KEY_SPAN - VOXEL_KEY_OFFSET, y - VOXEL_KEY_OFFSET, z - VOXEL_KEY_OFFSET];
 }
+/* phase 09 batch 1: a limb's points as [x, y, z, radius] in metres (x across, y depth, z up): its own list (pts, for a
+   bent trunk or branch), else from (x, y, z) with radius r to (x2, y2, z2) with radius r1. A point may sit a little
+   under the ground (a root going in). */
+function limbPoints(L) {
+  if (Array.isArray(L.pts) && L.pts.length >= 2)
+    return L.pts.map(q => [+q[0] || 0, +q[1] || 0, Math.max(-0.3, +q[2] || 0), Math.max(0.002, +q[3] || 0.05)]);
+  const r0 = Math.max(L.r || 0.1, 0.002);
+  return [
+    [L.x || 0, L.y || 0, Math.max(-0.3, L.z || 0), r0],
+    [L.x2 ?? (L.x || 0), L.y2 ?? (L.y || 0), Math.max(-0.3, L.z2 ?? (L.z || 0) + 1), Math.max(L.r1 ?? r0 * 0.7, 0.002)],
+  ];
+}
 /* voxels from a recipe at R to the metre: Map key -> colour (x across, y depth, z up); V.ins: the shapes' insides */
 function voxelise(rec, R) {
   R = R || voxelResolution();
@@ -254,40 +270,55 @@ function voxelise(rec, R) {
       inside = (x, y, z) => x >= xa && x < xb && y >= ya && y < yb && z >= za && z < zb;
       along = L.h >= Math.max(L.w, L.d) ? 2 : L.w >= L.d ? 0 : 1;
     } else if (L.k === 'limb') {
-      /* a tapered branch: inside where the distance to the segment is under the radius there */
-      const ax = x0,
-        ay = y0,
-        az = Math.max(0, z0),
-        bx = L.x2 ?? x0,
-        by = L.y2 ?? y0,
-        bz = Math.max(0, L.z2 ?? z0 + 1),
-        r0 = Math.max(L.r || 0.1, 0.5 / R),
-        r1 = Math.max(L.r1 ?? r0 * 0.7, 0.5 / R),
-        dx = bx - ax,
-        dy = by - ay,
-        dz = bz - az,
-        ll = dx * dx + dy * dy + dz * dz || 1e-9,
-        mr = Math.max(r0, r1);
+      /* a tapered branch: inside where the distance to any of its segments is under the radius there */
+      const P = limbPoints(L),
+        S = [];
+      let mr = 0;
+      for (let i = 0; i < P.length - 1; i++) {
+        const A = P[i],
+          Bq = P[i + 1],
+          d = [Bq[0] - A[0], Bq[1] - A[1], Bq[2] - A[2]];
+        S.push([
+          A,
+          d,
+          d[0] * d[0] + d[1] * d[1] + d[2] * d[2] || 1e-9,
+          Math.max(A[3], 0.5 / R),
+          Math.max(Bq[3], 0.5 / R),
+        ]);
+        mr = Math.max(mr, A[3], Bq[3], 0.5 / R);
+      }
       inside = (x, y, z) => {
-        const px = (x + 0.5) / R - ax,
-          py = (y + 0.5) / R - ay,
-          pz = (z + 0.5) / R - az,
-          k = Math.max(0, Math.min(1, (px * dx + py * dy + pz * dz) / ll)),
-          ex = px - dx * k,
-          ey = py - dy * k,
-          ez = pz - dz * k,
-          rr = r0 + (r1 - r0) * k;
-        return ex * ex + ey * ey + ez * ez <= rr * rr;
+        const px = (x + 0.5) / R,
+          py = (y + 0.5) / R,
+          pz = (z + 0.5) / R;
+        for (const [A, d, ll, ra, rb] of S) {
+          const ax = px - A[0],
+            ay = py - A[1],
+            az = pz - A[2],
+            k = Math.max(0, Math.min(1, (ax * d[0] + ay * d[1] + az * d[2]) / ll)),
+            ex = ax - d[0] * k,
+            ey = ay - d[1] * k,
+            ez = az - d[2] * k,
+            rr = ra + (rb - ra) * k;
+          if (ex * ex + ey * ey + ez * ez <= rr * rr) return true;
+        }
+        return false;
       };
+      const xs = P.map(q => q[0]),
+        ys = P.map(q => q[1]),
+        zs = P.map(q => q[2]);
       B = [
-        fl((Math.min(ax, bx) - mr) * R) - 1,
-        fl((Math.max(ax, bx) + mr) * R) + 2,
-        fl((Math.min(ay, by) - mr) * R) - 1,
-        fl((Math.max(ay, by) + mr) * R) + 2,
-        Math.max(0, fl((Math.min(az, bz) - mr) * R) - 1),
-        fl((Math.max(az, bz) + mr) * R) + 2,
+        fl((Math.min(...xs) - mr) * R) - 1,
+        fl((Math.max(...xs) + mr) * R) + 2,
+        fl((Math.min(...ys) - mr) * R) - 1,
+        fl((Math.max(...ys) + mr) * R) + 2,
+        Math.max(0, fl((Math.min(...zs) - mr) * R) - 1),
+        fl((Math.max(...zs) + mr) * R) + 2,
       ];
-      along = Math.abs(dz) >= Math.max(Math.abs(dx), Math.abs(dy)) ? 2 : Math.abs(dx) >= Math.abs(dy) ? 0 : 1;
+      const dz = Math.abs(zs[zs.length - 1] - zs[0]),
+        dx = Math.abs(xs[xs.length - 1] - xs[0]),
+        dy = Math.abs(ys[ys.length - 1] - ys[0]);
+      along = dz >= Math.max(dx, dy) ? 2 : dx >= dy ? 0 : 1;
     } else {
       const r = Math.max(L.r || 0.1, 0.5 / R),
         ry = Math.max(L.ry || r, 0.5 / R),
@@ -619,6 +650,7 @@ function propModelMesh(path, rec) {
               c: [l.spin.x || 0, l.spin.z || 0, l.spin.y || 0],
               a: a.map(v => v / al),
               rps: l.spin.rps ?? 1.5,
+              sw: +l.spin.swing || 0,
             });
         }
     propModelState.meshes.set(path, m);
@@ -673,6 +705,7 @@ function propModelMesh(path, rec) {
           c: [l.spin.x || 0, l.spin.z || 0, l.spin.y || 0],
           a: a.map(v => v / al),
           rps: l.spin.rps ?? 1.5,
+          sw: +l.spin.swing || 0,
         });
     }
   propModelState.meshes.set(path, m);
@@ -684,7 +717,11 @@ function drawSpinningParts(p, m) {
   const gl = gpuState.gl,
     t = (reducedMotion ? 0 : walkView.t || 0) / 1000;
   for (const s of m.spins) {
-    gl.uniform4f(p.U.uSpin, s.a[0], s.a[1], s.a[2], t * s.rps * Math.PI * 2);
+    /* phase 09 batch 1: a part may swing to and fro instead of turning round (spin.swing: how far, in radians; rps:
+       swings a second; a swing on its ropes) */
+    const ph = t * s.rps * Math.PI * 2,
+      an = s.sw ? Math.sin(ph) * s.sw : ph;
+    gl.uniform4f(p.U.uSpin, s.a[0], s.a[1], s.a[2], an);
     gl.uniform3fv(p.U.uSpinC, s.c);
     drawPropModelMesh(s);
   }
@@ -904,60 +941,69 @@ function lowPolyFromRecipe(rec) {
       );
       continue;
     }
-    /* phase 09 batch 1: a limb, a tapered branch between two points (up is the model's y here), with a few sides */
+    /* phase 09 batch 1: a limb, a tapered branch along a few points (up is the model's y here), with a few sides */
     if (L.k === 'limb') {
-      const A = [x0, z0, y0],
-        Bp = [L.x2 ?? x0, Math.max(0, L.z2 ?? z0 + 1), L.y2 ?? y0],
-        r0 = Math.max(L.r || 0.1, 0.01),
-        r1 = Math.max(L.r1 ?? r0 * 0.7, 0.005),
-        d = [Bp[0] - A[0], Bp[1] - A[1], Bp[2] - A[2]],
-        len = Math.hypot(d[0], d[1], d[2]);
-      if (len < 1e-4) continue;
-      const a = d.map(v => v / len),
-        ref = Math.abs(a[1]) < 0.9 ? [0, 1, 0] : [1, 0, 0],
-        cr = (p, q) => [p[1] * q[2] - p[2] * q[1], p[2] * q[0] - p[0] * q[2], p[0] * q[1] - p[1] * q[0]],
+      const P = limbPoints(L).map(q => [q[0], q[2], q[1], q[3]]);
+      if (P.length < 2) continue;
+      const cr = (p, q) => [p[1] * q[2] - p[2] * q[1], p[2] * q[0] - p[0] * q[2], p[0] * q[1] - p[1] * q[0]],
         nz = v => {
           const l = Math.hypot(v[0], v[1], v[2]) || 1;
           return [v[0] / l, v[1] / l, v[2] / l];
         },
-        u = nz(cr(a, ref)),
-        v = cr(a, u),
+        sub = (p, q) => [p[0] - q[0], p[1] - q[1], p[2] - q[2]],
+        r0 = Math.max(P[0][3], 0.01),
         n = L.sides
           ? Math.max(3, Math.min(24, L.sides | 0))
           : Math.max(5, Math.min(10, Math.round((2 * Math.PI * r0 * 32) / 6))),
         tx = T(t, 1),
-        arc = (2 * Math.PI * r0) / n,
-        ring = (C, r) => {
-          const out = [];
-          for (let j = 0; j <= n; j++) {
-            const an = (2 * Math.PI * (j % n)) / n,
-              c = Math.cos(an),
-              sn = Math.sin(an),
-              nr = [u[0] * c + v[0] * sn, u[1] * c + v[1] * sn, u[2] * c + v[2] * sn];
-            out.push([[C[0] + nr[0] * r, C[1] + nr[1] * r, C[2] + nr[2] * r], nr]);
-          }
-          return out;
-        },
-        G0 = ring(A, r0),
-        G1 = ring(Bp, r1);
-      for (let j = 0; j < n; j++)
-        poly(
-          [G0[j][0], G1[j][0], G1[j + 1][0], G0[j + 1][0]],
-          [G0[j][1], G1[j][1], G1[j + 1][1], G0[j + 1][1]],
-          [
-            [j * arc, 0],
-            [j * arc, len],
-            [(j + 1) * arc, len],
-            [(j + 1) * arc, 0],
-          ],
-          tx,
-          c
-        );
+        arc = (2 * Math.PI * r0) / n;
+      /* the direction at each point (along the bend), and a frame carried along it so the sides don't twist */
+      const D = P.map((q, i) => nz(sub(P[Math.min(P.length - 1, i + 1)], P[Math.max(0, i - 1)]))),
+        a0 = D[0];
+      let u = nz(cr(a0, Math.abs(a0[1]) < 0.9 ? [0, 1, 0] : [1, 0, 0]));
+      const G = [];
+      let len = 0;
+      for (let i = 0; i < P.length; i++) {
+        const a = D[i];
+        if (i) {
+          len += Math.hypot(...sub(P[i], P[i - 1]));
+          const k = u[0] * a[0] + u[1] * a[1] + u[2] * a[2];
+          u = nz([u[0] - a[0] * k, u[1] - a[1] * k, u[2] - a[2] * k]);
+        }
+        const v = cr(a, u),
+          rr = Math.max(P[i][3], 0.004),
+          row = [];
+        for (let j = 0; j <= n; j++) {
+          const an = (2 * Math.PI * (j % n)) / n,
+            c0 = Math.cos(an),
+            sn = Math.sin(an),
+            nr = [u[0] * c0 + v[0] * sn, u[1] * c0 + v[1] * sn, u[2] * c0 + v[2] * sn];
+          row.push([[P[i][0] + nr[0] * rr, P[i][1] + nr[1] * rr, P[i][2] + nr[2] * rr], nr, len]);
+        }
+        G.push(row);
+      }
+      for (let i = 0; i < G.length - 1; i++)
+        for (let j = 0; j < n; j++)
+          poly(
+            [G[i][j][0], G[i + 1][j][0], G[i + 1][j + 1][0], G[i][j + 1][0]],
+            [G[i][j][1], G[i + 1][j][1], G[i + 1][j + 1][1], G[i][j + 1][1]],
+            [
+              [j * arc, G[i][j][2]],
+              [j * arc, G[i + 1][j][2]],
+              [(j + 1) * arc, G[i + 1][j][2]],
+              [(j + 1) * arc, G[i][j][2]],
+            ],
+            tx,
+            c
+          );
       /* the end cap (the cut end of a branch shows rings when the texture is bark) */
+      const E = P[P.length - 1],
+        GE = G[G.length - 1],
+        r1 = Math.max(E[3], 0.004);
       for (let j = 0; j < n; j++)
         poly(
-          [Bp, G1[j + 1][0], G1[j][0]],
-          a,
+          [E.slice(0, 3), GE[j + 1][0], GE[j][0]],
+          D[D.length - 1],
           [
             [1, 1],
             [1 + Math.cos((2 * Math.PI * (j + 1)) / n) * r1, 1 + Math.sin((2 * Math.PI * (j + 1)) / n) * r1],
@@ -1367,11 +1413,13 @@ function propModelImageItems(it, out) {
     sr = Math.sin(ro);
   for (const L of rec.layers || []) {
     if (L.k !== 'img' || L.hide) continue;
-    const im = typeof artImage === 'function' ? artImage(L.img) : null;
-    if (!im || !(im.naturalWidth || im.width)) {
+    const im0 = typeof artImage === 'function' ? artImage(L.img) : null;
+    if (!im0 || !(im0.naturalWidth || im0.width)) {
       if (typeof artImg === 'function' && L.img) artImg(L.img);
       continue;
     }
+    const im = L.clip || L.shade ? leafCut(im0, L) : im0;
+    if (!im) continue;
     const lx = (L.x || 0) * s * f,
       lz = (L.y || 0) * s,
       w = im.naturalWidth || im.width,
@@ -1404,6 +1452,97 @@ function propModelImageItems(it, out) {
       voxImg: 1,
     });
   }
+}
+/* phase 09 batch 1: a tree's leaves are one picture, its crown as drawn (paint it in the Studio like any prop picture).
+   Each clump is cut from it at run time: clip [x, y, r] is a circle in that picture's pixels; the cut is a square
+   2r across with the circle's bottom at its base (where the clump stands), and the lower rim of the cut gets the
+   picture's darkest colour as an outline, as a drawn clump has. shade darkens the whole picture (the crown's core,
+   behind the clumps). Cuts are kept per picture and made again when the picture changes (the Studio's _ver). */
+const LEAF_CUTS = new WeakMap();
+function leafOutlineColour(d) {
+  const n = new Map();
+  for (let i = 0; i < d.length; i += 4)
+    if (d[i + 3] > 127) {
+      const k = (d[i] << 16) | (d[i + 1] << 8) | d[i + 2];
+      n.set(k, (n.get(k) || 0) + 1);
+    }
+  let best = 0,
+    bl = 1e9;
+  for (const [k, c] of n)
+    if (c > 15) {
+      const l = 0.299 * (k >> 16) + 0.587 * ((k >> 8) & 255) + 0.114 * (k & 255);
+      if (l < bl) {
+        bl = l;
+        best = k;
+      }
+    }
+  return [best >> 16, (best >> 8) & 255, best & 255];
+}
+function leafCut(im, L) {
+  const ver = im._ver || 0;
+  let C = LEAF_CUTS.get(im);
+  if (!C || C.ver !== ver) {
+    const W = im.naturalWidth || im.width,
+      H = im.naturalHeight || im.height,
+      src = makeCanvas(W, H),
+      x = src.getContext('2d');
+    x.drawImage(im, 0, 0);
+    const data = x.getImageData(0, 0, W, H).data;
+    C = { ver, W, H, data, outline: leafOutlineColour(data), cuts: new Map() };
+    LEAF_CUTS.set(im, C);
+  }
+  const key = (L.clip || []).join(',') + '|' + (L.shade || 1);
+  let out = C.cuts.get(key);
+  if (out) return out;
+  const { W, H, data } = C,
+    sh = L.shade || 1;
+  if (!L.clip) {
+    out = makeCanvas(W, H);
+    const X = out.getContext('2d'),
+      o = X.createImageData(W, H);
+    for (let i = 0; i < data.length; i += 4) {
+      o.data[i] = data[i] * sh;
+      o.data[i + 1] = data[i + 1] * sh;
+      o.data[i + 2] = data[i + 2] * sh;
+      o.data[i + 3] = data[i + 3];
+    }
+    X.putImageData(o, 0, 0);
+  } else {
+    const [cx, cy, r] = L.clip,
+      R = Math.max(1, Math.ceil(r)),
+      S = 2 * R,
+      x0 = Math.round(cx) - R,
+      y0 = Math.round(cy) - R,
+      inC = (px, py) => (px + 0.5 - cx) ** 2 + (py + 0.5 - cy) ** 2 <= r * r,
+      op = (px, py) => px >= 0 && py >= 0 && px < W && py < H && data[(py * W + px) * 4 + 3] > 127;
+    out = makeCanvas(S, S);
+    const X = out.getContext('2d'),
+      o = X.createImageData(S, S);
+    for (let y = 0; y < S; y++)
+      for (let x = 0; x < S; x++) {
+        const px = x0 + x,
+          py = y0 + y;
+        if (!op(px, py) || !inC(px, py)) continue;
+        const i = (py * W + px) * 4,
+          j = (y * S + x) * 4,
+          rim =
+            py > cy - r * 0.25 &&
+            [
+              [1, 0],
+              [-1, 0],
+              [0, 1],
+              [0, -1],
+            ].some(([a, b]) => op(px + a, py + b) && !inC(px + a, py + b));
+        const c = rim ? C.outline : [data[i], data[i + 1], data[i + 2]];
+        o.data[j] = c[0] * sh;
+        o.data[j + 1] = c[1] * sh;
+        o.data[j + 2] = c[2] * sh;
+        o.data[j + 3] = 255;
+      }
+    X.putImageData(o, 0, 0);
+  }
+  C.cuts.set(key, out);
+  return out;
 }
 /* phase 09 batch 1: a picture layer of a model with a footprint (a cottage's door and windows) is a plain picture: the
    footprint (box) would draw it as a building front pushed back through the house, inside its own walls */
@@ -1523,6 +1662,13 @@ function propModelArtPaths(sc, C) {
     any = true;
     const rec = propModelState.recipes.get(M.model);
     if (rec) for (const l of rec.layers || []) if (l.k === 'img' && l.img) L.push(l.img);
+    /* phase 09 batch 1: a variant's own model and swapped pictures (the autumn oak's leaves) load with the place too */
+    const V = p.v && M.variants ? M.variants[p.v - 1] : null;
+    if (V && V.swap) for (const v of Object.values(V.swap)) if (/\.png$/i.test(v)) L.push(v);
+    if (V && typeof V.model === 'string') {
+      const r2 = propModelState.recipes.get(V.model);
+      if (r2) for (const l of r2.layers || []) if (l.k === 'img' && l.img) L.push(l.img);
+    }
   }
   /* alpha 0.4: the low-poly props and models are painted from the building sheet */
   if (any) L.push((C.buildArt && C.buildArt.detail) || 'scene/build/detail.png');

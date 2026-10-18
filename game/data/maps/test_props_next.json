@@ -1,14 +1,15 @@
 {
  "name": "Test: props batch 1 (phase 09)",
  "w": 56,
- "h": 158,
+ "h": 173,
  "edge": "g",
  "sky": ["#8CC6E6","#BFE3EE","#F4E8C8"],
  "haze": "#EAD9C0",
  "hazeD": 34,
  "cam": {"pitch":30,"h":12,"fov":1},
- "blur": 1,
- "amb": "pollen",
+ "blur": 0,
+ "amb": null,
+ "plain": 1,
  "tint": null,
  "indoor": 0,
  "far": "hills",
@@ -37,7 +38,9 @@
   {"x":28,"z":126,"yaw":0,"label":"beech"},
   {"x":32,"z":127,"yaw":0.9,"label":"beech-turned"},
   {"x":28,"z":141,"yaw":0,"label":"oak"},
-  {"x":32,"z":142,"yaw":0.9,"label":"oak-turned"}
+  {"x":32,"z":142,"yaw":0.9,"label":"oak-turned"},
+  {"x":28,"z":156,"yaw":0,"label":"giant"},
+  {"x":32,"z":157,"yaw":0.9,"label":"giant-turned"}
  ],
  "hub": [28,2.5],
  "tiles": [
@@ -45,6 +48,21 @@
   "pppppppppppppppppppppppppppppppppppppppppppppppppppppppp",
   "pppppppppppppppppppppppppppppppppppppppppppppppppppppppp",
   "pppppppppppppppppppppppppppppppppppppppppppppppppppppppp",
+  "gggggggggggggggggggggggggggggggggggggggggggggggggggggggg",
+  "gggggggggggggggggggggggggggggggggggggggggggggggggggggggg",
+  "gggggggggggggggggggggggggggggggggggggggggggggggggggggggg",
+  "gggggggggggggggggggggggggggggggggggggggggggggggggggggggg",
+  "gggggggggggggggggggggggggggggggggggggggggggggggggggggggg",
+  "gggggggggggggggggggggggggggggggggggggggggggggggggggggggg",
+  "gggggggggggggggggggggggggggggggggggggggggggggggggggggggg",
+  "gggggggggggggggggggggggggggggggggggggggggggggggggggggggg",
+  "gggggggggggggggggggggggggggggggggggggggggggggggggggggggg",
+  "gggggggggggggggggggggggggggggggggggggggggggggggggggggggg",
+  "gggggggggggggggggggggggggggggggggggggggggggggggggggggggg",
+  "gggggggggggggggggggggggggggggggggggggggggggggggggggggggg",
+  "gggggggggggggggggggggggggggggggggggggggggggggggggggggggg",
+  "gggggggggggggggggggggggggggggggggggggggggggggggggggggggg",
+  "gggggggggggggggggggggggggggggggggggggggggggggggggggggggg",
   "gggggggggggggggggggggggggggggggggggggggggggggggggggggggg",
   "gggggggggggggggggggggggggggggggggggggggggggggggggggggggg",
   "gggggggggggggggggggggggggggggggggggggggggggggggggggggggg",
@@ -258,7 +276,9 @@
   {"k":"tree_oak_small","x":31.1,"z":144},
   {"k":"next_oak","x":37.3,"z":144,"v":2},
   {"k":"tree_oak_autumn","x":43.5,"z":144},
-  {"k":"next_oak","x":49.7,"z":144,"v":3}
+  {"k":"next_oak","x":49.7,"z":144,"v":3},
+  {"k":"tree_giant_swing","x":21,"z":159},
+  {"k":"next_tree_giant_swing","x":35,"z":159}
  ],
  "kind": "test"
 }

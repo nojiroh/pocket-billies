@@ -9,7 +9,8 @@ and casts its cut-out shadow. Props that stay flat (tall grass) are only redrawn
     python3 tools/build-props-batch1.py        # writes everything below; run it again after changing it
 
 Writes
-  game/art/scene/next/leaves/*.png        leaf clumps cut from the tree and bush pictures (and an autumn recolour)
+  game/art/scene/next/leaves/*.png        each tree's and bush's leaves as one picture, its crown as drawn (and the
+                                          autumn oak's, recoloured); the clumps are circles cut from it at run time
   game/art/scene/next/decals/*.png        flat parts set on models: the cottage's door and windows, the washing,
                                           the lantern's glass, the roses' flowers
   game/art/scene/next/models/*.json       the recipes (prop-models.js reads them)
@@ -159,42 +160,6 @@ def kmeans(P, k, iters=30):
     return C, lab
 
 
-def cut_clumps(a, mask, k, name, out_dir):
-    """The masked part of a picture cut into k round clumps, each its own picture with an outline where it was cut.
-    Returns the clumps: picture, centre and bottom in the source picture's pixels, size."""
-    H, W = a.shape[:2]
-    P = np.argwhere(mask).astype(float)  # (y, x)
-    C, lab = kmeans(P, k)
-    cols = Counter(tuple(a[y, x, :3]) for y, x in np.argwhere(mask))
-    outline = min((c for c, n in cols.items() if n > 15), key=lum)
-    yy, xx = np.mgrid[0:H, 0:W]
-    out = []
-    for i in range(k):
-        Q = P[lab == i]
-        if len(Q) < 20: continue
-        cy, cx = Q.mean(0)
-        d = np.hypot(Q[:, 0] - cy, Q[:, 1] - cx)
-        R = np.percentile(d, 94) + 6
-        m = mask & (((yy - cy) ** 2 + (xx - cx) ** 2) <= R * R)
-        for y, x in Q.astype(int): m[y, x] = True
-        # spurs a pixel wide go; then the cut edge gets the outline colour
-        nb = sum(np.roll(m, s, ax) for s in (1, -1) for ax in (0, 1))
-        m &= nb >= 2
-        c = np.zeros_like(a)
-        c[m] = a[m]
-        cut = m & ~(np.roll(m & mask, 1, 0) & np.roll(m, -1, 0) & np.roll(m, 1, 1) & np.roll(m, -1, 1))
-        cut &= (np.roll(mask & ~m, 1, 0) | np.roll(mask & ~m, -1, 0) | np.roll(mask & ~m, 1, 1) | np.roll(mask & ~m, -1, 1))
-        # only the clump's lower rim gets an outline: its top runs on into the leaves behind it, as in the drawing
-        cut &= yy > cy - R * 0.25
-        c[cut, :3] = outline; c[cut, 3] = 255
-        ys, xs = np.nonzero(c[..., 3])
-        y0, y1, x0, x1 = ys.min(), ys.max() + 1, xs.min(), xs.max() + 1
-        img = save_png(c[y0:y1, x0:x1], out_dir / f'{name}_{len(out)}.png')
-        out.append({'img': img, 'cx': (x0 + x1) / 2, 'cy': cy, 'bottom': y1 - 1, 'top': y0, 'w': x1 - x0, 'h': y1 - y0,
-                    'n': int(m.sum()), 'arr': c[y0:y1, x0:x1]})
-    return out
-
-
 def recolour(arr, src_cols, dst_cols):
     """Map one picture's colours onto another's by brightness rank (a green crown into the autumn oak's oranges)."""
     s = sorted(src_cols, key=lum); d = sorted(dst_cols, key=lum)
@@ -220,7 +185,40 @@ TREES = {
 }
 
 
+def trace(trunk, a, b, w0, w1):
+    """The centre line of a drawn trunk or limb from a to b (the picture's pixels, a below b): row by row, the drawn
+    part nearest where the straight line would be, so the drawing's own lean, curve and taper come through.
+    Returns [(x, y, width)] about every 6 rows."""
+    H, W = trunk.shape
+    (xa, ya), (xb, yb) = a, b
+    out, prev = [], xa
+    n = max(2, int(abs(ya - yb) // 6))
+    for i in range(n + 1):
+        t = i / n
+        y = int(round(ya + (yb - ya) * t))
+        want = xa + (xb - xa) * t
+        xs = np.nonzero(trunk[min(H - 1, max(0, y))])[0]
+        segs, cur = [], []
+        for x in xs:
+            if cur and x != cur[-1] + 1: segs.append(cur); cur = []
+            cur.append(x)
+        if cur: segs.append(cur)
+        best = min(segs, key=lambda g: abs((g[0] + g[-1]) / 2 - (0.5 * want + 0.5 * prev)), default=None)
+        guess = w0 + (w1 - w0) * t
+        if best and abs((best[0] + best[-1]) / 2 - want) < 10 and len(best) < guess * 1.8:
+            cx, w = (best[0] + best[-1]) / 2, len(best)
+            w = min(max(w, guess * 0.7), guess * 1.3)
+        else:
+            cx, w = want, guess
+        prev = cx
+        out.append((cx, y, w))
+    return out
+
+
 def tree_recipe(key, pic, k, limbs, leaves_dir, seed):
+    """A tree (or, with no limbs, a bush): the trunk and limbs traced from the drawing and bent a little in depth,
+    roots splaying into the ground, branches curving up to the leaf clumps; the leaves are one picture, the crown as
+    drawn (game/art/scene/next/leaves/<key>.png), and each clump is a circle cut from it at run time."""
     a = rgba(PROPS / f'{pic}.png')
     H, W = a.shape[:2]
     if limbs:
@@ -230,49 +228,136 @@ def tree_recipe(key, pic, k, limbs, leaves_dir, seed):
     ax, by = W / 2, H - 1  # the prop's anchor: bottom middle
     X = lambda x: r2((x - ax) / PPM)
     Z = lambda y: r2((by - y) / PPM)
+    rng = np.random.default_rng(seed)
     tc = Counter(tuple(a[y, x, :3]) for y, x in np.argwhere(trunk)).most_common()
     bark = hexc(sorted([c for c, n in tc[:4]], key=lum)[len(tc[:4]) // 2]) if tc else '#7A5236'
-    clumps = cut_clumps(a, canopy, k, key, leaves_dir)
+    # the crown as one picture, and where its clumps are
+    ys, xs = np.nonzero(canopy)
+    sx0, sy0 = xs.min(), ys.min()
+    sheet = np.zeros_like(a); sheet[canopy] = a[canopy]
+    sheet = sheet[sy0:ys.max() + 1, sx0:xs.max() + 1]
+    sheet_path = save_png(sheet, leaves_dir / f'{key}.png')
+    P = np.argwhere(canopy).astype(float)
+    C, lab = kmeans(P, k)
+    clumps = []
+    for i in range(k):
+        Q = P[lab == i]
+        if len(Q) < 20: continue
+        cy, cx = Q.mean(0)
+        d = np.hypot(Q[:, 0] - cy, Q[:, 1] - cx)
+        r = float(np.percentile(d, 94) + 6)
+        clumps.append({'cx': cx - sx0, 'cy': cy - sy0, 'r': r, 'n': len(Q)})
+    Rc = (xs.max() - xs.min() + 1) / 2 / PPM
     L = []
     tops = []
-    for (x0, y0), (x1, y1), w0, w1 in limbs:
-        L.append({'k': 'limb', 'x': X(x0), 'y': 0, 'z': Z(y0), 'x2': X(x1), 'y2': 0, 'z2': Z(y1),
-                  'r': r2(w0 / 2 / PPM), 'r1': r2(w1 / 2 / PPM), 'col': bark, 'tex': 'bark', 'name': 'trunk' if not L else 'limb'})
-        tops.append((X(x1), Z(y1)))
-    # a root flare so the trunk stands on the ground
-    if limbs: L.append({'k': 'cone', 'x': L[0]['x'], 'y': 0, 'z': 0, 'r': r2(L[0]['r'] * 1.45), 'r1': L[0]['r'], 'h': 0.28, 'col': bark, 'tex': 'bark', 'name': 'roots'})
-    # the crown: clumps round the middle, the biggest in front, the rest staggered behind and to the sides
-    cw = max(c['cx'] for c in clumps) - min(c['cx'] for c in clumps) + max(c['w'] for c in clumps)
-    Rc = cw / 2 / PPM
-    # the core: the whole crown, a shade darker, behind the clumps, so the gaps between them read as leaves in shade;
-    # it casts the crown's shadow (the clumps don't, so they don't stripe each other)
-    core = np.zeros_like(a); core[canopy] = a[canopy]
-    ys, xs = np.nonzero(canopy)
-    raw = core[ys.min():ys.max() + 1, xs.min():xs.max() + 1].copy()
-    core[..., :3] = (core[..., :3] * 0.78).astype(np.uint8)
-    cimg = save_png(core[ys.min():ys.max() + 1, xs.min():xs.max() + 1], leaves_dir / f'{key}_core.png')
-    L.append({'k': 'img', 'img': cimg, 'x': r2(((xs.min() + xs.max() + 1) / 2 - ax) / PPM), 'y': r2(Rc * 0.3),
-              'z': r2((by - ys.max()) / PPM), 'shadow': 1, 'recv': 0, 'sway': 0.7, 'name': 'crown core'})
-    clumps_core = cimg
+    if limbs:
+        for li, ((x0, y0), (x1, y1), w0, w1) in enumerate(limbs):
+            path = trace(trunk, (x0, y0), (x1, y1), w0, w1)
+            depth = (0.05 if li == 0 else 0.16) * (1 if rng.random() < 0.5 else -1)
+            pts = []
+            for i, (x, y, w) in enumerate(path):
+                t = i / (len(path) - 1)
+                pts.append([X(x), r2(math.sin(t * math.pi) * depth + (0 if li == 0 else depth * t)), Z(y), r2(w / 2 / PPM)])
+            if li == 0:  # the foot: wider at the ground, as a trunk flares into its roots
+                pts[0][3] = r2(pts[0][3] * 1.35)
+                if len(pts) > 2: pts[1][3] = r2(pts[1][3] * 1.1)
+                # the top: no wider than below it (where the arms part, the drawing is both arms wide), then it
+                # narrows on up into the crown, so the arms grow out of it instead of out of a cut stump
+                for q, qb in zip(pts[2:], pts[1:]):
+                    q[3] = min(q[3], qb[3])
+                tx_, ty_, tz_, tr_ = pts[-1]
+                pts.append([tx_, ty_, r2(tz_ + 0.35), r2(tr_ * 0.45)])
+                top0 = (tx_, ty_, tz_, tr_)
+            else:  # an arm starts inside the trunk's top and goes on into the crown, thinning
+                pts[0] = [r2(top0[0] + (pts[0][0] - top0[0]) * 0.3), top0[1], r2(top0[2] - 0.3), r2(max(pts[0][3], top0[3] * 0.7))]
+                (xa, ya, za, _), (xb, yb, zb, rb) = pts[-2], pts[-1]
+                pts.append([r2(xb + (xb - xa) * 1.6), r2(yb + (yb - ya) * 1.6), r2(zb + (zb - za) * 1.6), r2(rb * 0.55)])
+            L.append({'k': 'limb', 'pts': pts, 'sides': 7 if li == 0 else 6, 'col': bark, 'tex': 'bark', 'name': 'trunk' if li == 0 else 'limb'})
+            tops += [(q[0], q[1], q[2]) for q in pts[len(pts) // 2:]]
+        # roots: a few, splaying out from the foot and down into the ground
+        foot = L[0]['pts'][0]
+        fr = foot[3]
+        for i in range(5):
+            an = (i / 5) * 2 * math.pi + rng.random() * 0.6
+            ca, sa = math.cos(an), math.sin(an)
+            L.append({'k': 'limb', 'pts': [[r2(foot[0] + ca * fr * 0.3), r2(sa * fr * 0.3), r2(fr * 1.1), r2(fr * 0.42)],
+                                           [r2(foot[0] + ca * fr * 0.95), r2(sa * fr * 0.95), r2(fr * 0.32), r2(fr * 0.3)],
+                                           [r2(foot[0] + ca * fr * 1.7), r2(sa * fr * 1.7), -0.03, r2(fr * 0.12)]],
+                      'sides': 5, 'col': bark, 'tex': 'bark', 'name': 'root'})
+    # the crown's core: the whole picture a shade darker, behind the clumps; it casts the crown's shadow
+    L.append({'k': 'img', 'img': sheet_path, 'shade': 0.78, 'x': X(sx0 + sheet.shape[1] / 2), 'y': r2(Rc * 0.3),
+              'z': Z(sy0 + sheet.shape[0] - 1), 'shadow': 1, 'recv': 0, 'sway': 0.7, 'name': 'crown core'})
     order = sorted(range(len(clumps)), key=lambda i: -clumps[i]['n'])
-    rng = np.random.default_rng(seed)
+    big = W > 120
     for rank, i in enumerate(order):
         c = clumps[i]
-        xm = (c['cx'] - ax) / PPM
+        R = max(1, math.ceil(c['r']))
+        xm = (sx0 + round(c['cx']) - ax) / PPM
         xn = max(-1, min(1, xm / max(Rc, .1)))
         side = -1 if rank % 2 == 0 else 1  # toward the camera is -y
         d = side * math.sqrt(max(0, 1 - xn * xn)) * Rc * (0.22 + 0.1 * rng.random())
         if rank == 0: d = -Rc * 0.32
-        zb = (by - c['bottom']) / PPM
-        L.append({'k': 'img', 'img': c['img'], 'x': r2(xm), 'y': r2(d), 'z': r2(zb), 'recv': 0, 'sway': 1, 'name': f'leaves {rank + 1}'})
-        # a branch out to it from the nearest limb top, hidden in the crown until the camera turns
+        zb = (by - (sy0 + round(c['cy']) + R - 1)) / PPM
+        L.append({'k': 'img', 'img': sheet_path, 'clip': [round(c['cx'], 1), round(c['cy'], 1), round(c['r'], 1)],
+                  'x': r2(xm), 'y': r2(d), 'z': r2(zb), 'recv': 0, 'sway': 1, 'name': f'leaves {rank + 1}'})
+        # a branch out to it from the nearest point on a limb, curving up, hidden in the crown until the camera turns
         if not tops: continue
-        tx, tz = min(tops, key=lambda t: (t[0] - xm) ** 2 + (t[1] - zb) ** 2)
-        L.append({'k': 'limb', 'x': tx, 'y': 0, 'z': tz, 'x2': r2(xm * 0.85), 'y2': r2(d * 0.7), 'z2': r2(zb + c['h'] / PPM * 0.35),
-                  'r': 0.07 if W > 120 else 0.045, 'r1': 0.035 if W > 120 else 0.025, 'col': bark, 'tex': 'bark', 'name': 'branch'})
+        tz_ = zb + R / PPM * 0.5
+        sx, sy, sz = min(tops, key=lambda t: (t[0] - xm) ** 2 + (t[2] - tz_) ** 2)
+        ex, ey, ez = xm * 0.85, d * 0.7, tz_
+        mx, my, mz = sx + (ex - sx) * 0.55, sy + (ey - sy) * 0.55, sz + (ez - sz) * 0.35 + 0.12
+        r0 = (0.08 if big else 0.045) * max(1, W / 200)
+        L.append({'k': 'limb', 'pts': [[r2(sx), r2(sy), r2(sz - 0.1), r0], [r2(mx), r2(my), r2(mz), r2(r0 * 0.65)], [r2(ex), r2(ey), r2(ez), r2(r0 * 0.35)]],
+                  'sides': 5, 'col': bark, 'tex': 'bark', 'name': 'branch'})
     # the solid parts first, then the leaves (drawn after, as sprites)
     L.sort(key=lambda l: l['k'] == 'img')
-    return {'ppm': PPM, 'cel': 0.75, 'layers': L}, clumps + [{'img': clumps_core, 'arr': raw, 'dark': 0.78}], a, canopy
+    return {'ppm': PPM, 'cel': 0.75, 'layers': L}, sheet_path, sheet, canopy
+
+
+# ---------------------------------------------------------------- the great oak with the swing (Copperleaf Town)
+GIANT_LIMBS = [((192, 396), (190, 232), 50, 44), ((172, 236), (140, 205), 26, 18), ((190, 236), (188, 195), 24, 16),
+               ((210, 236), (232, 205), 28, 16)]
+
+
+def giant_recipe(leaves_dir):
+    """The great oak in Copperleaf: a tree like the others, bigger (16 clumps), with its knot hole on the trunk and
+    the swing modelled: a branch reaching out to the left, two ropes and a seat that swing to and fro together."""
+    rec, sheet_path, sheet, canopy = tree_recipe('giant', 'tree_giant', 16, GIANT_LIMBS, leaves_dir, 300)
+    P, ax, by = 'tree_giant', 191, 396
+    X = lambda x: r2((x - ax) / PPM)
+    Z = lambda y: r2((by - y) / PPM)
+    bark = next(l['col'] for l in rec['layers'] if l['k'] == 'limb')
+    sw = rgba(PROPS / 'layers' / 'tree_giant_swing.png')
+    sc = Counter(tuple(sw[y, x, :3]) for y in range(378, 385) for x in range(72, 121) if sw[y, x, 3]).most_common()
+    rc = Counter(tuple(sw[y, x, :3]) for y in range(260, 370) for x in (78, 79, 114, 115) if sw[y, x, 3]).most_common()
+    seat_col = hexc(sorted([c for c, n in sc[:3]], key=lum)[len(sc[:3]) // 2])
+    rope_col = hexc(max((c for c, n in rc[:3]), key=lum))
+    L = rec['layers']
+    # the swing's branch, out of the trunk to the left, a little toward the camera so the swing hangs in the open
+    branch = [[X(186), 0, Z(246), 0.2], [X(150), -0.25, Z(236), 0.16], [X(105), -0.45, Z(222), 0.11], [X(58), -0.55, Z(205), 0.06]]
+    L.insert(0, {'k': 'limb', 'pts': [[a, b, c, d] for a, b, c, d in branch], 'sides': 6, 'col': bark, 'tex': 'bark', 'name': 'swing branch'})
+    def branch_z(x):
+        for (x0, y0, z0, _), (x1, y1, z1, _) in zip(branch, branch[1:]):
+            if x1 <= x <= x0: t = (x - x0) / (x1 - x0); return z0 + (z1 - z0) * t, y0 + (y1 - y0) * t
+        return branch[-1][2], branch[-1][1]
+    seat_z = Z(381)
+    xa, xb = X(78.5), X(114.5)
+    (za, ya), (zb, yb) = branch_z(xa), branch_z(xb)
+    yy = (ya + yb) / 2
+    pivot = {'axis': 'x', 'x': r2((xa + xb) / 2), 'y': r2(yy), 'z': r2((za + zb) / 2 - 0.08), 'rps': 0.22, 'swing': 0.2}
+    for x, z in ((xa, za), (xb, zb)):
+        L.insert(0, {'k': 'limb', 'x': x, 'y': r2(yy), 'z': r2(z - 0.05), 'x2': x, 'y2': r2(yy), 'z2': r2(seat_z + 0.06),
+                     'r': 0.018, 'r1': 0.018, 'sides': 4, 'col': rope_col, 'tex': 'cloth', 'name': 'rope', 'spin': dict(pivot)})
+    L.insert(0, box((xa + xb) / 2, yy, seat_z, (xb - xa) + 0.35, 0.32, 0.07, seat_col, 'wood', 'seat') | {'spin': dict(pivot)})
+    # the knot hole, a picture on the trunk's front
+    tr = rgba(PROPS / f'{P}.png')
+    tc = [c for c, n in Counter(tuple(tr[y, x, :3]) for y in range(300, 360) for x in range(170, 210) if tr[y, x, 3]).most_common(6)]
+    kx0, ky0, kx1, ky1 = 186, 284, 208, 312
+    knot = decal(P, (kx0, ky0, kx1, ky1), 'giant_knot', clear=tuple(hexc(c) for c in tc))
+    trunk_r = next(l for l in L if l.get('name') == 'trunk')['pts'][4][3]
+    kx, kz = at(P, (kx0 + kx1) / 2, ky1 - 1)
+    L.append(img(knot, kx, -(trunk_r + 0.12), kz, face='fixed', name='knot hole'))
+    return rec
 
 
 # ---------------------------------------------------------------- flat parts set on models
@@ -473,25 +558,19 @@ def main():
     built = {}
     recs = {}
     for i, (key, (pic, k, limbs)) in enumerate(TREES.items()):
-        rec, clumps, a, canopy = tree_recipe(key, pic, k, limbs, leaves, 100 + i)
-        recs[key] = (rec, clumps)
+        rec, sheet_path, sheet, canopy = tree_recipe(key, pic, k, limbs, leaves, 100 + i)
+        recs[key] = (sheet_path, sheet)
         built[key] = write_recipe(f'tree_{key}', rec)
-    # the autumn oak: the oak's own trunk and clumps, its leaves recoloured to the autumn oak's oranges
+    # the autumn oak: the oak's own trunk and clumps, its leaf picture recoloured to the autumn oak's oranges
     aa = rgba(PROPS / 'tree_oak_autumn.png'); _, ac = split_trunk(aa)
     ga = rgba(PROPS / 'tree_oak.png'); _, gc = split_trunk(ga)
-    src, dst = leaf_colours(ga, gc), leaf_colours(aa, ac)
-    swap = {}
-    for c in recs['oak'][1]:
-        p = Path(c['img'])
-        q = leaves / (p.stem.replace('oak_', 'oak_autumn_') + '.png')
-        o = recolour(c['arr'], src, dst)
-        if c.get('dark'): o[..., :3] = (o[..., :3] * c['dark']).astype(np.uint8)
-        swap[c['img']] = save_png(o, q)
-    built['oak_autumn_swap'] = swap
+    sp, sh = recs['oak']
+    built['oak_autumn_swap'] = {sp: save_png(recolour(sh, leaf_colours(ga, gc), leaf_colours(aa, ac)), leaves / 'oak_autumn.png')}
     # the bushes: crowns without a trunk, one model per shape
-    for i, (key, pic, k) in enumerate((('round', 'bush_round', 3), ('round_b', 'bush_round_b', 4), ('round_c', 'bush_round_c', 3))):
+    for i, (key, pic, k) in enumerate((('bush_round', 'bush_round', 3), ('bush_round_b', 'bush_round_b', 4), ('bush_round_c', 'bush_round_c', 3))):
         rec, *_ = tree_recipe(key, pic, k, [], leaves, 200 + i)
-        built['bush_' + key] = write_recipe(f'bush_{key}', rec)
+        built[key] = write_recipe(key, rec)
+    built['giant'] = write_recipe('tree_giant_swing', giant_recipe(leaves))
     built['roses'] = write_recipe('bush_roses', roses_recipe())
     for key in STONES:
         built[key] = write_recipe(key, rocks_recipe(key))
@@ -536,6 +615,8 @@ def add_catalogue(C, B):
         pic(C, 'tree_oak_small', model=B['oak_small']),
         pic(C, 'tree_oak_autumn', model=B['oak'], swap=B['oak_autumn_swap']),
     ])
+    C['next_tree_giant_swing'] = entry(C, 'tree_giant_swing', name='Great oak with a swing (new)', model=B['giant'], ppm=PPM,
+                                       vary={'rot': 0, 'lean': 0, 'size': 0})
     C['next_bush_roses'] = entry(C, 'bush_roses', name='Wild roses (new)', model=B['roses'], ppm=PPM)
     C['next_bush_round'] = entry(C, 'bush_round', name='Round bush (new)', model=B['bush_round'], ppm=PPM, variants=[
         pic(C, 'bush_round_b', model=B['bush_round_b']),
@@ -573,6 +654,7 @@ ROWS = [
     ('cottage', [('cottage_juniper', 0)], 'next_cottage_juniper', 7.0),
     ('beech', [('tree_beech', 0)] * 2, 'next_beech', 6.5),
     ('oak', [('tree_oak', 0), ('tree_oak_b', 1), ('tree_oak_small', 2), ('tree_oak_autumn', 3)], 'next_oak', 6.2),
+    ('giant', [('tree_giant_swing', 0)], 'next_tree_giant_swing', 14.0),
 ]
 
 
@@ -596,7 +678,7 @@ def test_map(C):
     return {
         'name': 'Test: props batch 1 (phase 09)', 'w': W, 'h': H, 'edge': 'g',
         'sky': ['#8CC6E6', '#BFE3EE', '#F4E8C8'], 'haze': '#EAD9C0', 'hazeD': 34, 'cam': {'pitch': 30, 'h': 12, 'fov': 1},
-        'blur': 1, 'amb': 'pollen', 'tint': None, 'indoor': 0, 'far': 'hills', 'farH': 8, 'folk': 0, 'test': 1,
+        'blur': 0, 'amb': None, 'plain': 1, 'tint': None, 'indoor': 0, 'far': 'hills', 'farH': 8, 'folk': 0, 'test': 1,
         'exits': [], 'checks': [], 'shots': shots, 'hub': [W / 2, 2.5],
         'tiles': [''.join(r) for r in tiles], 'props': props, 'kind': 'test',
     }

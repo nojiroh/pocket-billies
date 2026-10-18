@@ -136,7 +136,7 @@ import {
   walkablePointNear,
   worldToScreen,
 } from './walk-view.js';
-import { engineColor, engineContext, engineSetting } from './engine/settings.js';
+import { PLAIN_LOOK, engineColor, engineContext, engineSetting } from './engine/settings.js';
 import {
   COMMON_GLSL,
   LIGHT_GLSL,
@@ -3596,7 +3596,7 @@ function drawWalkFrame(ts, dtm) {
   const w0 = performance.now(),
     gl = gpuState.gl,
     sc = walkView.sc;
-  engineContext.look = sc.look || null;
+  engineContext.look = sc.plain ? PLAIN_LOOK : sc.look || null;
   gpuState.fr = (gpuState.fr || 0) + 1;
   if (gpuState.fr % 120 === 0) trimTextures();
   runNormalMapJobs(walkView.warm ? 40 : 3);
@@ -3626,7 +3626,7 @@ function drawWalkFrame(ts, dtm) {
     C0 = walkData().sc,
     PPU = C0.ppu || 34;
   /* v26: the hour, the weather and the season (environment.js) lean on the engine dials while this frame draws */
-  engineContext.env = typeof environment !== 'undefined' && (environment.on || !!environment.force);
+  engineContext.env = !sc.plain && typeof environment !== 'undefined' && (environment.on || !!environment.force);
   if (engineContext.env) environmentFrame(sc, dt);
   const gq = beginGpuTimer();
   try {
@@ -3754,7 +3754,7 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
     gl.blitFramebuffer(0, 0, rw, rh, 0, 0, rw, rh, gl.COLOR_BUFFER_BIT, gl.NEAREST);
   } else
     drawPostEffects(S, C, walkRenderer.focus, rw, rh, {
-      blur: BT ? BT.blur : (sc.blur ?? 1) * (walkView.opt.blur ?? 1) * (st.focusY != null ? 0.6 : 1),
+      blur: BT ? BT.blur : sc.plain ? 0 : (sc.blur ?? 1) * (walkView.opt.blur ?? 1) * (st.focusY != null ? 0.6 : 1),
       fast: walkView.R < 0.75 || QE >= 1,
       noAO: QE >= 1,
       noRays: QE >= 3,

@@ -2045,7 +2045,7 @@ export async function openSceneryPixelEditor(path, o) {
     if (e) e.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }, 60);
 }
-function sceneryPixelCardHTML() {
+export function sceneryPixelCardHTML() {
   const pe = mapEditor.pe,
     C = sceneryCatalog(),
     M = pe.kind === 'prop' ? C.props[pe.k] : null,
@@ -2087,7 +2087,7 @@ function sceneryPixelCardHTML() {
   }</div></div></div>`
   );
 }
-function mountSceneryPixelEditor() {
+export function mountSceneryPixelEditor() {
   const cv = $('#scPeCv');
   if (!cv) return;
   drawSceneryPixelEditor();

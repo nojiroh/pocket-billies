@@ -9661,17 +9661,7 @@
      "shadow": 1.3,
      "name": "Autumn oak",
      "model": "scene/next/models/tree_oak.json",
-     "swap": {
-      "scene/next/leaves/oak_0.png": "scene/next/leaves/oak_autumn_0.png",
-      "scene/next/leaves/oak_1.png": "scene/next/leaves/oak_autumn_1.png",
-      "scene/next/leaves/oak_2.png": "scene/next/leaves/oak_autumn_2.png",
-      "scene/next/leaves/oak_3.png": "scene/next/leaves/oak_autumn_3.png",
-      "scene/next/leaves/oak_4.png": "scene/next/leaves/oak_autumn_4.png",
-      "scene/next/leaves/oak_5.png": "scene/next/leaves/oak_autumn_5.png",
-      "scene/next/leaves/oak_6.png": "scene/next/leaves/oak_autumn_6.png",
-      "scene/next/leaves/oak_7.png": "scene/next/leaves/oak_autumn_7.png",
-      "scene/next/leaves/oak_core.png": "scene/next/leaves/oak_autumn_core.png"
-     }
+     "swap": {"scene/next/leaves/oak.png":"scene/next/leaves/oak_autumn.png"}
     }
    ]
   },
@@ -9901,6 +9891,22 @@
     {"img":"scene/props/tallgrass_b.png","ox":-30,"oy":-24,"shadow":0.35,"name":"Lush grass"},
     {"img":"scene/props/tallgrass_c.png","ox":-25,"oy":-39,"shadow":0.35,"name":"Tall reedy grass"}
    ]
+  },
+  "next_tree_giant_swing": {
+   "name": "Great oak with a swing (new)",
+   "img": "scene/props/tree_giant.png",
+   "ox": -191,
+   "oy": -396,
+   "shadow": 4.2,
+   "sway": 0.18,
+   "flat": 0,
+   "tags": ["test"],
+   "group": "tree_giant",
+   "solid": 1,
+   "landmark": 1,
+   "model": "scene/next/models/tree_giant_swing.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0,"size":0}
   }
  },
  "person": 1.75,

@@ -436,6 +436,7 @@ export const SECTION_LIST = [
   ['shops', 'Town shops', 'Keepers and what they sell'],
   ['world', 'World & encounters', 'Route stops, who appears where, eggs, map'],
   ['scenes', 'Walk scenes', 'Towns and routes on the Walk screen: ground, props and camera'],
+  ['props', 'Props', 'Every prop: its picture, 3D model, leaves, variants, and where it stands'],
   ['engine', 'Engine', 'Light, shadows, blur, color and camera of the 3D scenes'],
   ['wardrobe', 'Wardrobe', 'Trainer body, hairstyles, faces and clothes'],
   ['trainers', 'Trainers', 'Rivals and arena leaders'],
@@ -450,7 +451,7 @@ export const SECTION_LIST = [
    a tooltip and under the section you're in, so the list is short enough to see at once */
 const SECTION_GROUPS = [
   ['Billies & battles', ['billionaires', 'parts', 'roster', 'moves', 'preview', 'types']],
-  ['World & places', ['scenes', 'engine', 'world']],
+  ['World & places', ['scenes', 'props', 'engine', 'world']],
   ['People & story', ['trainers', 'people', 'wardrobe', 'lore']],
   ['Money', ['items', 'shops', 'jobs']],
   ['Game', ['rules', 'art', 'check']],
