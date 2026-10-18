@@ -3,7 +3,7 @@
    The world and the story the game draws on (game data "lore", first written by tools/build-lore-v47.py): world
    entries, the story stage by stage, people, places, legends, the clues to who you were, books and papers in rooms,
    the loading screen's lines and what people say in each place at each stage of the story.
-   "When it shows" (unlock): start · place:<stop id> · meet:<look id> · flag:<story flag> · badges:<number>.
+   "When it shows" (unlock): start · location:<stop id> · meet:<look id> · flag:<story flag> · badges:<number>.
    The stage of the story is the number of badges you have (9 after the ending). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
@@ -47,7 +47,7 @@ const LORE_TABS = [
   ['chat', 'What people say'],
 ];
 const LORE_UNLOCK =
-  'start (from the beginning) · place:&lt;stop id&gt; (been there) · meet:&lt;look id&gt; (met them) · flag:&lt;story flag&gt; · badges:&lt;number&gt;';
+  'start (from the beginning) · location:&lt;stop id&gt; (been there) · meet:&lt;look id&gt; (met them) · flag:&lt;story flag&gt; · badges:&lt;number&gt;';
 /* a list of lines at a path, edited one per line */
 {
   const g = readPath,

@@ -3,7 +3,7 @@
    v47: the world and the story, written once in the game data (lore: tools/build-lore-v47.py and the Studio's Lore
    section) and drawn on everywhere: what unlocks as you go, what people say at each stage of the story, books in rooms,
    the clues to who you were, the Lore page of the Guide and the loading screen's lines.
-   An entry's `unlock`: 'start', 'place:<id>' (been there), 'meet:<who>' (met them), 'flag:<name>' (a story flag),
+   An entry's `unlock`: 'start', 'location:<id>' (been there), 'meet:<who>' (met them), 'flag:<name>' (a story flag),
    'badges:<n>'. The stage of the story is the number of badges (9 after the ending). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
@@ -60,7 +60,7 @@ function loreOpen(u) {
   const i = u.indexOf(':'),
     k = u.slice(0, i),
     v = u.slice(i + 1);
-  if (k === 'place') {
+  if (k === 'location') {
     const n = loreNode(v);
     return n >= 0 && !!saveData.visited[n];
   }
