@@ -11,6 +11,70 @@ Newest entry on top. Every phase session ends by adding an entry here and taggin
 - Questions waiting for the owner: 
 - Next session starts with: 
 
+### Phase 04d - Modernize: the window bridge removed - 2026-10-18
+Owner's choices: generated hooks instead of forward imports (after the first plan failed, see Decisions); opt-in test
+globals; JSDoc + .d.ts for TypeScript; this session is the bridge only, TypeScript and boundaries are 04e, which ends
+with `phase-04-done`.
+- Changed:
+  - Nothing in the game or the Studio reaches a module's names as globals any more. A module imports from EARLIER
+    modules directly; what it reads from a LATER module (154 names), or from whichever module the page has (the
+    renderer shared with the Studio reading S, GD, RM, MOVES, sfx...; 64), it imports from game/js/hooks.js, a slot
+    per name that the declaring module fills with provide(): functions at the top, other values right after their
+    declaration (the timing the bridge had). 212 names in all. Page order and script tags are unchanged.
+  - Setters for everything one module changes in another (an imported name can't be assigned): core.js setS, setB,
+    setRM, setSaveHold, setNoSaving (the test mode); diorama.js and map.js for the 3D versions diorama-gl.js and
+    map-gl.js put in place; battle.js and talk.js for extras.js's wraps; core.js setSave and map-gl.js setMglRender
+    for the in-game full test; the Studio's swaps (engine source, dglAdapt, dioMount, rigParts, dioData, dioImg,
+    artLoad, api, saveAll, toast, render, getP/setP, pedDraw). Each setter also updates hooks.js. Nothing renamed.
+  - The Studio's inline shim script (S, U, B, RM, esc, the live data tables) is a module, studio/js/shims.js.
+  - The debug log: log.js (classic, runs first) reads GAME.x instead of 25 module names, and NWLOG.hook wraps through
+    GAME[name] instead of window[name]. game/js/log-names.js (generated, the last module of the game's page) fills
+    GAME with getters and with setters for the ~45 functions the log wraps or times; the tool writes a setter into
+    a module's generated part where it has none.
+  - game/js/bridge.js is game/js/test-globals.js and puts the modules' names on window only with
+    window.PB_TEST_GLOBALS = true (check-quick, check-game, check-studio-github and the art builders set it with an
+    init script; their page.evaluate calls are unchanged) or ?globals in the address (the phone console).
+  - tools/to-module.mjs: writes hooks.js and log-names.js, refuses a name it can't route without the bridge, and
+    checks the load order (nothing a module reads while it loads, directly or through what it calls then, may come
+    from a module that hasn't run). It caught a real case: boot.js calls accInit() at load, which reads NW_TEST.
+  - ESLint lints every script with only the classic scripts' names as globals: a module name used without an import
+    (or by a classic script) is a no-undef error. Planted toast() in tapdebug.js: caught.
+- Risky or unfinished:
+  - hooks.js holds copies. A module that reassigns a name others read from there must do it in a setter that calls
+    provide(); the tool refuses anything else, but code that mutates through another path (eval, Function) is not
+    seen (none found).
+  - The load-order check is a static safety net (it follows direct calls and callbacks run at once, not functions
+    stored in objects).
+  - The cycles are not removed, only made explicit: most forward names are X -> ui.js (toast, render, modal,
+    closeModal, sceneIdAt) and diorama-gl.js -> the renderer parts. Untangling them fits phase 06 (UI per screen).
+  - The overrides keep their two-step shape (diorama-gl.js keeps the 2D function and calls setDioNav with the 3D
+    one); a single definition would need renames (phase 05).
+  - Bundle: 1,534 KB (476 KB gzipped), 16 KB more than 04c (hooks.js, setters, log-names.js); bundler renames
+    (`DIO$1`) in the bundle fell from 4,030 to 941.
+  - Opening the console on a phone: names are only there with ?globals now.
+- Verified:
+  - After each commit: lint, format:check, check:modules, build, smoke 14/14 (120-133 s, base 131 s), and
+    check-studio-github.py after the Studio changes (18 sections, an edit proposed).
+  - Debug log, headless on ?test=1, against the commit before the change: same sections, state, events and timing
+    names; render, dioMount, save, openBattle, mglRender, renderOv and dglGround still wrapped.
+  - Without the flag: the title, a walk scene and the Studio load with no errors and no module names on window.
+  - Full quick check: started on f238266, still running when this entry was written (results to follow here).
+  - In-game diagnostics test without the test globals (headless): not run yet, after the full check.
+  - Phone load, emulated (CPU ×4, gzip, 4G 9 Mbit/40 ms), 04c vs 04d: not measured yet, after the full check.
+- Decisions I made (and why): the approved plan (real forward imports) failed: an imported module runs before its
+  importer, so 120 forward file pairs reorder the whole page (core.js would run before data.js); a chain of imports
+  kept the Studio's order but not the game's. Asked again; you chose generated hooks. No main.js entry module (the
+  page's module tags share one module map and keep their order). Setters instead of single definitions (no renames
+  in a behaviour commit). The test globals keep the generated expose() in each module, off unless asked (a separate
+  test-names module would have needed `export` on every top-level declaration). The bridge's file was renamed in its
+  own commit.
+- Questions waiting for the owner: still open from before: run check-studio-github.py in CI (about a minute)? The
+  "Sundown" text in engine/settings.js and the old-name check on engine/ (phase 05)? Studio local mode
+  (start-studio.py); tags phase-01/02/03-done and legacy-final.
+- Next session starts with: 04e (TypeScript with JSDoc + .d.ts, starting with data and save formats; module
+  boundaries for pure logic), then `phase-04-done`. On your phone first: the in-game full test and a debug log from
+  this build (and ?globals if you use the console).
+
 ### Phase 04c - Modernize: ES modules - 2026-10-17
 Owner's choices: conversion tool applied backwards from boot.js in batches; keep a window bridge through 04c; no
 minifying.
