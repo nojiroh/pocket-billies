@@ -236,7 +236,7 @@ expose({
   boxInfo: [() => boxInfo, v => (boxInfo = v)],
   buildFarProps: [() => buildFarProps, v => (buildFarProps = v)],
   buildGrass: [() => buildGrass, v => setBuildGrass(v)],
-  buildGroundMesh: [() => buildGroundMesh, v => (buildGroundMesh = v)],
+  buildGroundMesh: [() => buildGroundMesh, v => setBuildGroundMesh(v)],
   buildGroundMeshSteps: [() => buildGroundMeshSteps, v => (buildGroundMeshSteps = v)],
   buildingPads: [() => buildingPads, v => (buildingPads = v)],
   cameraTurnLimit: [() => cameraTurnLimit],
@@ -352,7 +352,7 @@ expose({
   standingHeightAt: [() => standingHeightAt, v => ((standingHeightAt = v), provide({ standingHeightAt }))],
   startTownRise: [() => startTownRise, v => (startTownRise = v)],
   stillPropState: [() => stillPropState, v => (stillPropState = v)],
-  swapMapCache: [() => swapMapCache, v => (swapMapCache = v)],
+  swapMapCache: [() => swapMapCache, v => setSwapMapCache(v)],
   townRiseAmount: [() => townRiseAmount, v => (townRiseAmount = v)],
   updateBasinMeshes: [() => updateBasinMeshes, v => (updateBasinMeshes = v)],
   updateNearRing: [() => updateNearRing, v => setUpdateNearRing(v)],
@@ -389,6 +389,10 @@ provide({
 export function setBuildGrass(v) {
   buildGrass = v; // eslint-disable-line no-func-assign
   provide({ buildGrass });
+}
+export function setBuildGroundMesh(v) {
+  buildGroundMesh = v; // eslint-disable-line no-func-assign
+  provide({ buildGroundMesh });
 }
 export function setDrawGrass(v) {
   drawGrass = v; // eslint-disable-line no-func-assign
@@ -429,6 +433,10 @@ export function setReflectionPass(v) {
 export function setShadowPass(v) {
   shadowPass = v; // eslint-disable-line no-func-assign
   provide({ shadowPass });
+}
+export function setSwapMapCache(v) {
+  swapMapCache = v; // eslint-disable-line no-func-assign
+  provide({ swapMapCache });
 }
 export function setUpdateNearRing(v) {
   updateNearRing = v; // eslint-disable-line no-func-assign
@@ -2104,7 +2112,7 @@ function* buildGroundMeshSteps(sc, G, T) {
     T.farKey = '';
   }
 }
-function buildGroundMesh() {
+export function buildGroundMesh() {
   const it = buildGroundMeshSteps(walkView.sc, walkView.ground, walkRenderer);
   let r = it.next();
   while (!r.done) r = it.next();
@@ -3877,7 +3885,7 @@ export function rebuildFromSettings() {
   if (typeof solidPropState !== 'undefined' && solidPropState.meshes) solidPropState.meshes = new WeakMap();
   if (typeof flushPropModelMeshes === 'function') flushPropModelMeshes();
 }
-function swapMapCache(oldKey, key) {
+export function swapMapCache(oldKey, key) {
   walkRenderer.swapT = performance.now();
   const M = walkRenderer.sceneCache || (walkRenderer.sceneCache = new Map()),
     keep = engineSetting('quality', 'keepScenes') ?? 3;

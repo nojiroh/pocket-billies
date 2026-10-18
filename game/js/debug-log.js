@@ -711,6 +711,12 @@ debugLog.hook = () => {
     ['cutsceneStart', 'starting the opening'],
     ['openDressingRoom', 'opening the dressing room'],
     ['artPixels', 'reading a picture'],
+    /* a place's opening hitch was mostly "outside the marked steps": the ground built for the new place, the walkable
+       grid, and the debug log's own screenshot (reading the frame back makes the GPU finish it) */
+    ['swapMapCache', 'setting up the ground'],
+    ['buildGroundMesh', 'building the ground mesh'],
+    ['navGrid', 'working out where you can walk'],
+    ['screenSnapshot', 'reading the picture back'],
   ])
     timed(n, l);
   /* the renderer's own sections, timed every frame */
