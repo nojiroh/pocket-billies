@@ -3,7 +3,7 @@
 //   node tools/check-data.mjs --fix    also rewrites files that are laid out differently from how the Studio writes them
 // - index.json lists exactly the files there are (none missing, none left over),
 // - every file is JSON, laid out as game/js/data-files.js writes it (so a Studio save doesn't reformat it),
-// - every map, line, trainer and person matches its schema (game/data/schema/*.schema.json),
+// - every map, line, trainer and person matches its schema (game/data/schema/*.schema.json), and robots.json its own,
 // - what refers to what exists: moves a line learns, species in pools and teams, a stop's map and wild pool, the
 //   ground kinds and props a map uses, the stops of links and trainers, a trainer's look,
 // - a map's ground is h rows of w, its heights (h+1) rows of w+1.
@@ -104,11 +104,38 @@ route.forEach((r, i) => {
 (D.roads || []).forEach((l, i) => {
   if (!route[l[0]] || !route[l[1]]) problem('roads.json', `link ${i} joins ${l[0]} and ${l[1]}, not both stops`);
 });
+// phase 17: robot parts and gems: the schema, then the moves and types they name and the slot each part fits
+const robots = D.robots || { parts: {}, gems: {} },
+  types = new Set([...(D.types || []).map(t => t.id), 'None']);
+if (D.robots) check('robots.schema.json', D.robots, 'robots.json');
+else problem('robots.json', 'missing');
+for (const [id, P] of Object.entries(robots.parts || {})) {
+  if (!types.has(P.type)) problem('robots.json', `part ${id} is type ${P.type}, no such type`);
+  if (P.slot !== 'torso' && !moves[P.move]) problem('robots.json', `part ${id} gives ${P.move}, no such move`);
+  if (P.slot === 'legs' && !(P.carry > 0)) problem('robots.json', `legs ${id} carry nothing (carry)`);
+}
+for (const [id, G] of Object.entries(robots.gems || {})) {
+  if (!types.has(G.type)) problem('robots.json', `gem ${id} is type ${G.type}, no such type`);
+  if (!moves[G.move]) problem('robots.json', `gem ${id} gives ${G.move}, no such move`);
+}
+const ROBOT_FITS = { torso: 'torso', armL: 'arm', armR: 'arm', legs: 'legs' };
+const robotProblems = R => {
+  if (!R) return ['is a robot with no parts (robot)'];
+  const out = [];
+  if (!(robots.gems || {})[R.gem]) out.push(`has robot gem ${R.gem}, no such gem`);
+  for (const [k, slot] of Object.entries(ROBOT_FITS)) {
+    const P = (robots.parts || {})[R[k]];
+    if (!P) out.push(`has robot ${k} ${R[k]}, no such part`);
+    else if (P.slot !== slot) out.push(`has ${R[k]} as ${k}, but it is a ${P.slot} part`);
+  }
+  return out;
+};
 for (const [id, T] of Object.entries(D.trainers || {})) {
   if (!route[T.node]) problem(`trainers/${id}.json`, `waits at stop ${T.node}, no such stop`);
   if (T.who && !people[T.who]) problem(`trainers/${id}.json`, `looks like ${T.who}, no such person`);
   for (const m of T.team || [])
-    if (!known(m.sp) && !String(m.sp).startsWith('@')) problem(`trainers/${id}.json`, `has ${m.sp}, no such species`);
+    if (m.sp === 'robot') for (const p of robotProblems(m.robot)) problem(`trainers/${id}.json`, p);
+    else if (!known(m.sp) && !String(m.sp).startsWith('@')) problem(`trainers/${id}.json`, `has ${m.sp}, no such species`);
 }
 for (const [id, sc] of Object.entries(S)) {
   const where = `maps/${id}.json`,

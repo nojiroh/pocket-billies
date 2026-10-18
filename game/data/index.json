@@ -7,6 +7,7 @@
   "stats",
   "statuses",
   "moves",
+  "robots",
   "rarities",
   "lines",
   "locations",
@@ -119,7 +120,8 @@
     "bellringer",
     "variant_one",
     "vinylla2",
-    "deepdiver"
+    "deepdiver",
+    "tinker"
    ]
   },
   "maps": {

@@ -134,5 +134,23 @@
   "speedExp": -0.6,
   "cap": 0.2,
   "primeBonus": 0.1
+ },
+ "robots": {
+  "_help": "Phase 17 robots (placeholder numbers, to be tuned with the simulation and agreed). baseStat is added to every stat before the parts. A part's own HP is the robot's max HP x partHpRatio x the part's dur. A hit on a robot lands on the torso (body only) or a limb by hitWeights; the limb loses the damage x partShare. A broken arm loses its move, broken legs multiply Speed by legBreakSpeed and lose their move. Each upgrade level adds upgradeStat to a part's stats. Over the legs' carry, Speed x (carry / weight) ^ overweightExp; under it, up to lightBonus faster. Attack and Sp. Atk x (weight / refWeight) ^ attackExp, capped at +-cap. A move of the gem's type hits gemAffinity times as hard. xpYield is the XP for beating one, like a species yield.",
+  "slots": ["torso","armL","armR","legs"],
+  "baseStat": 15,
+  "partHpRatio": 0.4,
+  "partShare": 1,
+  "hitWeights": {"torso":0.25,"armL":0.25,"armR":0.25,"legs":0.25},
+  "legBreakSpeed": 0.5,
+  "upgradeStat": 0.08,
+  "maxUpgrade": 3,
+  "overweightExp": 0.8,
+  "lightBonus": 0.1,
+  "refWeight": 110,
+  "attackExp": 0.3,
+  "cap": 0.2,
+  "gemAffinity": 1.2,
+  "xpYield": 150
  }
 }

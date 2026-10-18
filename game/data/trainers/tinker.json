@@ -1,0 +1,28 @@
+{
+ "name": "Tinker Rho",
+ "who": "geo",
+ "battleStage": "grass",
+ "node": 0,
+ "blocks": false,
+ "tutorial": true,
+ "team": [
+  {
+   "sp": "robot",
+   "lvl": 12,
+   "robot": {"gem":"volt","torso":"vane","armL":"tesla","armR":"auger","legs":"striders"}
+  },
+  {"sp":"gates1","lvl":12},
+  {
+   "sp": "robot",
+   "lvl": 12,
+   "robot": {"gem":"ember","torso":"bulwark","armL":"clamp","armR":"cinder","legs":"treads"}
+  }
+ ],
+ "reward": 500,
+ "market": null,
+ "lines": ["“Built them myself. Want to see what they can do?”"],
+ "win": "“Ha, you took an arm off! Good. Now I know where to bolt on the armour.”",
+ "lose": "“See? Put the right arm on and anything is possible.”",
+ "hint": "Phase 17 prototype: a robot test battle (debug menu).",
+ "seat": null
+}

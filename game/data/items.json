@@ -23,5 +23,6 @@
   "mint": false,
   "icon": "remedy"
  },
- "parachute": {"n":"Max Revive","price":1600,"revive":1,"d":"Revives a fainted Billie with full HP.","mint":false,"icon":"maxrevive"}
+ "parachute": {"n":"Max Revive","price":1600,"revive":1,"d":"Revives a fainted Billie with full HP.","mint":false,"icon":"maxrevive"},
+ "repairkit": {"n":"Repair Kit","price":300,"repair":1,"d":"Fixes every part of one robot.","icon":"tonic"}
 }
