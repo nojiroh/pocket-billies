@@ -20,14 +20,14 @@ with a Google account keeps it online.
 ## Sending a debug log
 
 If something looks wrong or runs slowly, open **Settings** (the gear) and use:
-- **Run the full test**: about nine minutes on a phone (every place and room, then battles, the map, the opening, the
-  dressing room and shops, then a stress test). A table marks each part OK or Problem. Your save isn't changed.
+- **Run the full test**: several minutes on a phone (every place and room, then battles, the map and the opening, then
+  a stress test). A table marks each part OK or Problem. Your save isn't changed.
 - **Run the diagnostics test**: about two minutes, for when the game runs slowly. It ends with **Save the report**, a
   short `pocket-billies-diagnostics-….json` to send.
 - **Export debug log**: one `.json` file with frame rates per screen and scene, slow frames, errors, loading times,
   your device and graphics chip, and a small picture of the scene. It contains no save data, names or step history.
 
-All three are also in the debug menu (add `?debug` to the address).
+The full test and the log export are also in the debug menu (add `?debug` to the address).
 
 ## Run it from the source
 

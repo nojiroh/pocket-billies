@@ -1,10 +1,11 @@
 'use strict';
 /* ================= FULL TEST =================
-   Settings → Run the full test (and the debug menu) plays through everything that draws, for about nine minutes:
-   every walk scene (walking, turning and zooming the camera), a battle on the 3D stage and one on a painted stage,
-   the world map in 3D and flat, the opening's fall and Blake's first battle, the dressing room and a boutique, the shop, the Team, Guide
-   and Trainer screens, then a stress test that keeps adding load (crowds, particles, extra props, maximum quality)
-   and measures how far the device keeps up. Your save is not changed: saving is paused and everything is put back
+   Settings → Run the full test (and the debug menu) plays through everything that draws, for several minutes:
+   every walk scene and room (walking, turning and zooming the camera), night, weather and seasons, a road between two
+   places, a room that opens in place, the light lab, battles on the 3D stage and on a painted stage (double and Alpha
+   too), the opening's fall and Blake's first battle, Billies in the world, the world map and its 3D miniatures, then a
+   stress test that keeps adding load (crowds, particles, extra props, maximum quality) and measures how far the device
+   keeps up. Your save is not changed: saving is paused and everything is put back
    afterwards. The results go into the debug log. If the app goes to the background (the screen locks), the test waits
    for you and runs that step again. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
