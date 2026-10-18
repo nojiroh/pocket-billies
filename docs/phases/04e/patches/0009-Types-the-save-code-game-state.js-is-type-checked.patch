@@ -1,0 +1,375 @@
+From 10489a39c0295b514bf32bb4d8d86f93ea254306 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Sun, 18 Oct 2026 09:43:59 +0000
+Subject: [PATCH 09/22] Types: the save code (game-state.js) is type-checked
+
+// @ts-check (npm run modules marks its generated setters; the test mode's and the full test's own setters are
+marked by hand), and JSDoc types: newSave() returns SaveData, migrate() and loadSave() take a stored save and
+return SaveData or null, so saveData and everything here that reads or fills the save is checked against
+game/types/save-data.d.ts. Casts where the code knows more than the types (a species with an evolution has a next
+stage, a plan's next location is a road away), each with a comment. Comments and parentheses only: the syntax tree
+is unchanged.
+---
+ game/js/game-state.js | 104 ++++++++++++++++++++++++++++++++++++------
+ 1 file changed, 89 insertions(+), 15 deletions(-)
+
+diff --git a/game/js/game-state.js b/game/js/game-state.js
+index ca7bd35..2757777 100644
+--- a/game/js/game-state.js
++++ b/game/js/game-state.js
+@@ -1,5 +1,8 @@
++// @ts-check
+ 'use strict';
+ /* ================= CORE ================= */
++/** @import { Billy, JobSlot, SaveData } from '../types/save-data' */
++/** @import { Trainer } from '../types/game-data' */
+ /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
+ import { expose } from './test-globals.js';
+ import {
+@@ -50,95 +53,143 @@ expose({
+   SAVE_VERSION: [() => SAVE_VERSION],
+   STEP_BRACKETS: [() => STEP_BRACKETS],
+   activeBattle: [() => activeBattle, v => setActiveBattle(v)],
++  // @ts-expect-error -- replaced on purpose
+   addBilly: [() => addBilly, v => (addBilly = v)],
++  // @ts-expect-error -- replaced on purpose
+   addEgg: [() => addEgg, v => (addEgg = v)],
++  // @ts-expect-error -- replaced on purpose
+   addSteps: [() => addSteps, v => ((addSteps = v), provide({ addSteps }))],
+   allBillies: [() => allBillies],
++  // @ts-expect-error -- replaced on purpose
+   assignJob: [() => assignJob, v => (assignJob = v)],
++  // @ts-expect-error -- replaced on purpose
+   autoSlot: [() => autoSlot, v => (autoSlot = v)],
+   billyName: [() => billyName],
++  // @ts-expect-error -- replaced on purpose
+   blockerAt: [() => blockerAt, v => (blockerAt = v)],
+   canEnter: [() => canEnter],
++  // @ts-expect-error -- replaced on purpose
+   canEvolve: [() => canEvolve, v => (canEvolve = v)],
+   canLeave: [() => canLeave],
+   canRide: [() => canRide],
+   cleanName: [() => cleanName],
++  // @ts-expect-error -- replaced on purpose
+   collectJob: [() => collectJob, v => (collectJob = v)],
++  // @ts-expect-error -- replaced on purpose
+   earningsBetween: [() => earningsBetween, v => (earningsBetween = v)],
+   eggSlotCount: [() => eggSlotCount],
+   emptyJob: [() => emptyJob],
++  // @ts-expect-error -- replaced on purpose
+   encounterPoolHere: [() => encounterPoolHere, v => (encounterPoolHere = v)],
++  // @ts-expect-error -- replaced on purpose
+   endShift: [() => endShift, v => (endShift = v)],
+   escapeHtml: [() => escapeHtml],
++  // @ts-expect-error -- replaced on purpose
+   evolutionHint: [() => evolutionHint, v => (evolutionHint = v)],
+   evolutionItemName: [() => evolutionItemName],
++  // @ts-expect-error -- replaced on purpose
+   evolve: [() => evolve, v => (evolve = v)],
+   findBilly: [() => findBilly],
++  // @ts-expect-error -- replaced on purpose
+   flushSave: [() => flushSave, v => (flushSave = v)],
+   formatNumber: [() => formatNumber],
++  // @ts-expect-error -- replaced on purpose
+   gainXp: [() => gainXp, v => (gainXp = v)],
++  // @ts-expect-error -- replaced on purpose
+   gateMsg: [() => gateMsg, v => (gateMsg = v)],
++  // @ts-expect-error -- replaced on purpose
+   gateOwner: [() => gateOwner, v => (gateOwner = v)],
++  // @ts-expect-error -- replaced on purpose
+   gateText: [() => gateText, v => (gateText = v)],
++  // @ts-expect-error -- replaced on purpose
+   hatchEgg: [() => hatchEgg, v => (hatchEgg = v)],
+   hatchable: [() => hatchable],
++  // @ts-expect-error -- replaced on purpose
+   healAll: [() => healAll, v => (healAll = v)],
+   hereLocation: [() => hereLocation],
+   jobSlotCount: [() => jobSlotCount],
++  // @ts-expect-error -- replaced on purpose
+   loadSave: [() => loadSave, v => (loadSave = v)],
++  // @ts-expect-error -- replaced on purpose
+   makeBilly: [() => makeBilly, v => ((makeBilly = v), provide({ makeBilly }))],
+   maxHp: [() => maxHp],
+   maxLevel: [() => maxLevel],
++  // @ts-expect-error -- replaced on purpose
+   migrate: [() => migrate, v => (migrate = v)],
+   moveSlotCount: [() => moveSlotCount],
++  // @ts-expect-error -- replaced on purpose
+   movesAt: [() => movesAt, v => (movesAt = v)],
++  // @ts-expect-error -- replaced on purpose
+   newSave: [() => newSave, v => (newSave = v)],
++  // @ts-expect-error -- replaced on purpose
+   newSaveKeepingPreferences: [() => newSaveKeepingPreferences, v => (newSaveKeepingPreferences = v)],
+   newUid: [() => newUid],
+   nextBracket: [() => nextBracket],
+   nextTripNode: [() => nextTripNode],
+   pathFrom: [() => pathFrom],
++  // @ts-expect-error -- replaced on purpose
+   pickWeighted: [() => pickWeighted, v => (pickWeighted = v)],
+   plural: [() => plural],
++  // @ts-expect-error -- replaced on purpose
+   readStoredSave: [() => readStoredSave, v => (readStoredSave = v)],
+   reducedMotion: [() => reducedMotion, v => setReducedMotion(v)],
++  // @ts-expect-error -- replaced on purpose
+   resumeTrip: [() => resumeTrip, v => (resumeTrip = v)],
+   riderName: [() => riderName],
++  // @ts-expect-error -- replaced on purpose
+   riderOf: [() => riderOf, v => ((riderOf = v), provide({ riderOf }))],
++  // @ts-expect-error -- replaced on purpose
+   rollDay: [() => rollDay, v => (rollDay = v)],
+   save: [() => save, v => setSave(v)],
++  // @ts-expect-error -- replaced on purpose
+   saveAge: [() => saveAge, v => (saveAge = v)],
+   saveData: [() => saveData, v => setSaveData(v)],
+   saveHold: [() => saveHold, v => setSaveHold(v)],
+   saveTimer: [() => saveTimer, v => (saveTimer = v)],
++  // @ts-expect-error -- replaced on purpose
+   setActiveBattle: [() => setActiveBattle, v => (setActiveBattle = v)],
++  // @ts-expect-error -- replaced on purpose
+   setNoSaving: [() => setNoSaving, v => (setNoSaving = v)],
++  // @ts-expect-error -- replaced on purpose
+   setReducedMotion: [() => setReducedMotion, v => (setReducedMotion = v)],
++  // @ts-expect-error -- replaced on purpose
+   setSave: [() => setSave, v => (setSave = v)],
++  // @ts-expect-error -- replaced on purpose
+   setSaveData: [() => setSaveData, v => (setSaveData = v)],
++  // @ts-expect-error -- replaced on purpose
+   setSaveHold: [() => setSaveHold, v => (setSaveHold = v)],
+   setTrip: [() => setTrip, v => setSetTrip(v)],
++  // @ts-expect-error -- replaced on purpose
+   spawn: [() => spawn, v => (spawn = v)],
++  // @ts-expect-error -- replaced on purpose
+   splitPath: [() => splitPath, v => (splitPath = v)],
++  // @ts-expect-error -- replaced on purpose
+   stat: [() => stat, v => (stat = v)],
+   stepRate: [() => stepRate],
+   stepsToKm: [() => stepsToKm],
++  // @ts-expect-error -- replaced on purpose
+   stopTrip: [() => stopTrip, v => (stopTrip = v)],
+   teamSize: [() => teamSize],
++  // @ts-expect-error -- replaced on purpose
+   toBox: [() => toBox, v => (toBox = v)],
++  // @ts-expect-error -- replaced on purpose
+   toTeam: [() => toTeam, v => (toTeam = v)],
+   today: [() => today],
+   traveling: [() => traveling],
++  // @ts-expect-error -- replaced on purpose
+   tripTo: [() => tripTo, v => (tripTo = v)],
+   uiState: [() => uiState],
++  // @ts-expect-error -- replaced on purpose
+   walkDistances: [() => walkDistances, v => (walkDistances = v)],
+   walkMode: [() => walkMode],
++  // @ts-expect-error -- replaced on purpose
+   writeStoredSave: [() => writeStoredSave, v => (writeStoredSave = v)],
+   xpFor: [() => xpFor],
+ });
+ /* eslint-enable no-func-assign */
+ provide({ addSteps, makeBilly, riderOf });
+ export function setSetTrip(v) {
++  // @ts-expect-error -- replaced on purpose
+   setTrip = v; // eslint-disable-line no-func-assign
+   provide({ setTrip });
+ }
+@@ -180,11 +231,13 @@ export const maxLevel = () => RULES.progression.maxLevel,
+   moveSlotCount = () => RULES.progression.moveSlots,
+   teamSize = () => RULES.progression.teamSize;
+ const jobSlotCount = () => Math.max(1, RULES.jobs.positions || 3);
++/** @returns {JobSlot} */
+ const emptyJob = () => ({ uid: null, job: null, acc: 0, pend: 0 });
++/** @returns {SaveData} */
+ export function newSave() {
+   const R = RULES.start,
+-    coins = {},
+-    items = {};
++    coins = /** @type {Record<string, number>} */ ({}),
++    items = /** @type {Record<string, number>} */ ({});
+   Object.keys(COINS).forEach(k => (coins[k] = 0));
+   Object.keys(ITEMS).forEach(k => (items[k] = 0));
+   Object.assign(coins, R.coins);
+@@ -228,6 +281,7 @@ export function newSave() {
+   };
+ }
+ /* a new game on the same device keeps its settings (theme, motion, effects, sound…) */
++/** @returns {SaveData} */
+ export function newSaveKeepingPreferences() {
+   const p = typeof saveData !== 'undefined' && saveData && saveData.preferences,
+     f = newSave();
+@@ -236,9 +290,11 @@ export function newSaveKeepingPreferences() {
+ }
+ /* alpha 0.4.1: saves only need to work with this version. A save is filled out with anything new and checked against
+    the game data (things the Studio may have removed are dropped), but old formats are no longer converted */
++/** @param {any} o a save as stored (parsed JSON) @returns {SaveData | null} */
+ export function migrate(o) {
+   if (!o || typeof o !== 'object') return null;
+   const f = newSave();
++  /** @type {SaveData} */
+   const s = Object.assign(f, o);
+   const zero = obj => Object.fromEntries(Object.keys(obj).map(k => [k, 0]));
+   s.coins = Object.assign(zero(COINS), o.coins || {});
+@@ -256,7 +312,7 @@ export function migrate(o) {
+   if (!Array.isArray(s.jobs)) s.jobs = [];
+   while (s.jobs.length < jobSlotCount()) s.jobs.push(emptyJob());
+   while (s.jobs.length > jobSlotCount()) {
+-    const j = s.jobs.pop();
++    const j = /** @type {JobSlot} */ (s.jobs.pop());
+     const m = [...(s.team || []), ...(s.box || [])].find(x => x.uid === j.uid);
+     if (m) {
+       m.job = null;
+@@ -303,11 +359,13 @@ export function migrate(o) {
+    saveAge: null (no save), 'ok', 'old' or 'new'. A newer save is never written over (saveHold) */
+ export const SAVE_VERSION = 2;
+ export let saveHold = false;
++/** @param {any} o @returns {'ok' | 'old' | 'new' | null} */
+ export function saveAge(o) {
+   if (!o || typeof o !== 'object') return null;
+   const v = o.saveVersion;
+   return v === SAVE_VERSION ? 'ok' : Number.isInteger(v) && v > SAVE_VERSION ? 'new' : 'old';
+ }
++/** @param {any} o @returns {SaveData | null} */
+ export function loadSave(o) {
+   return saveAge(o) === 'ok' ? migrate(o) : null;
+ }
+@@ -325,6 +383,7 @@ export const ACCOUNT_ID = (() => {
+   }
+ })();
+ export const SAVE_KEY = ACCOUNT_ID ? SAVE_KEY_BASE + '-u-' + ACCOUNT_ID : SAVE_KEY_BASE;
++/** @returns {any} what this browser has under SAVE_KEY, parsed (null when nothing or unreadable) */
+ function readStoredSave() {
+   try {
+     return JSON.parse(localStorage.getItem(SAVE_KEY) || 'null');
+@@ -332,6 +391,7 @@ function readStoredSave() {
+     return null;
+   }
+ }
++/** @param {SaveData} o */
+ export function writeStoredSave(o) {
+   if (saveHold) return;
+   try {
+@@ -348,7 +408,9 @@ export const SAVE_FOUND = saveAge(readStoredSave());
+ if (SAVE_FOUND === 'old' || SAVE_FOUND === 'new')
+   try {
+     const k = SAVE_KEY + '-set-aside';
+-    if (localStorage.getItem(k) == null) localStorage.setItem(k, localStorage.getItem(SAVE_KEY));
++    /* SAVE_FOUND says the key holds a save */
++    if (localStorage.getItem(k) == null)
++      localStorage.setItem(k, /** @type {string} */ (localStorage.getItem(SAVE_KEY)));
+   } catch (e) {}
+ if (SAVE_FOUND === 'new') saveHold = true;
+ export let saveData = loadSave(readStoredSave()) || newSave();
+@@ -376,7 +438,9 @@ export function setSaveHold(v) {
+ /* test mode (?test, boot.js): nothing the checks do reaches the save */
+ export function setNoSaving() {
+   /* eslint-disable no-func-assign */
++  // @ts-expect-error -- replaced on purpose
+   writeStoredSave = function () {};
++  // @ts-expect-error -- replaced on purpose
+   flushSave = async function () {};
+   /* eslint-enable no-func-assign */
+   provide({ writeStoredSave, flushSave });
+@@ -387,7 +451,8 @@ export const uiState = {
+   intro: 0,
+   modal: null,
+   mq: [],
+-  learnQ: [],
++  /* moves waiting to be learned in place of another */
++  learnQ: /** @type {{ uid: string, mv: string }[]} */ ([]),
+   toastQ: [],
+   toastOn: false,
+   evT: null,
+@@ -399,6 +464,7 @@ export const uiState = {
+ provide({ uiState }); /* to-module */
+ 
+ /* ---------- saving: in this browser, and on the account when signed in (account.js) ---------- */
++/** @type {ReturnType<typeof setTimeout> | null} */
+ let saveTimer = null;
+ export function save() {
+   saveData.savedAt = Date.now();
+@@ -411,6 +477,7 @@ export function save() {
+ }
+ /* phase 04d: the in-game full test (self-test.js) keeps your save out of it */
+ export function setSave(v) {
++  // @ts-expect-error -- replaced on purpose
+   save = v; // eslint-disable-line no-func-assign
+   provide({ save });
+ }
+@@ -506,13 +573,15 @@ export function evolutionHint(m) {
+   const s = SPECIES[m.sp],
+     e = s.evo;
+   if (!e) return s.rar === 'mythical' ? 'Does not evolve.' : 'Fully evolved.';
+-  const nx = SPECIES[s.next],
++  /* a species with an evolution has a next stage (game-data.js sets both, or neither) */
++  const nx = SPECIES[/** @type {string} */ (s.next)],
+     nm = saveData.seen[nx.id] ? nx.name : 'something bigger';
+   switch (e.k) {
+     case 'lvl':
+       return `Evolves at level ${e.at} into ${nm}.`;
+     case 'split': {
+-      const alt = SPECIES[s.alt],
++      /* SPECIES[null] is undefined, which alt && handles */
++      const alt = SPECIES[/** @type {string} */ (s.alt)],
+         an = alt && saveData.seen[alt.id] ? alt.name : 'something else';
+       return `Evolves at level ${e.at} into ${nm} or ${an}: ${splitPath(m) === 'A' ? 'the Build path is ahead' : 'the Hype path is ahead'} (${m.wins || 0} battles won, ${stepsToKm(m.bsteps || 0)} km walked as buddy${m.psteps ? ` + ${stepsToKm((m.psteps || 0) / 2)} km in the party at half weight` : ''}).`;
+     }
+@@ -631,6 +700,7 @@ export function blockerAt(i) {
+ /* v24: lake and sea roads need a Water billionaire big enough to ride (rules.ride: types, minHeight in metres) */
+ function riderOf() {
+   const R = RULES.ride || { minHeight: 1.5, types: ['Water'] };
++  /** @type {Billy | null} */
+   let best = null;
+   for (const m of saveData.team) {
+     const sp = SPECIES[m.sp];
+@@ -660,7 +730,8 @@ export function gateMsg() {
+     nx = nextTripNode();
+   if (nx == null) return null;
+   if (saveData.trip.prog === 0 && !canLeave(node, nx)) {
+-    const bl = blockerAt(node);
++    /* canLeave was false, so a trainer blocks this location */
++    const bl = /** @type {Trainer} */ (blockerAt(node));
+     return bl.blockTitle || `${bl.name} is blocking the way.`;
+   }
+   if (!canEnter(nx)) return gateText(LOCATIONS[nx]);
+@@ -706,7 +777,8 @@ export function tripTo(j) {
+     if (D.d[j] === Infinity) return null;
+     return { steps: D.d[j], plan: pathFrom(D.prev, j), back: false };
+   }
+-  const c = roadCost(node, nx),
++  /* the plan's next location is a road away (plans are made from the roads; migrate checks a loaded one) */
++  const c = /** @type {number} */ (roadCost(node, nx)),
+     A = walkDistances(nx),
+     Bk = walkDistances(node),
+     fwd = c - r.prog + A.d[j],
+@@ -721,8 +793,8 @@ export function setTrip(j) {
+   if (!t) return false;
+   const r = saveData.trip;
+   if (t.back && nextTripNode() != null) {
+-    const nx = nextTripNode(),
+-      c = roadCost(r.node, nx);
++    const nx = /** @type {number} */ (nextTripNode()),
++      c = /** @type {number} */ (roadCost(r.node, nx));
+     r.node = nx;
+     r.prog = c - r.prog;
+     t.plan.shift();
+@@ -793,9 +865,10 @@ export function addSteps(n, quiet) {
+   if (traveling()) {
+     const r = saveData.trip;
+     r.prog += n;
+-    while (r.plan.length && r.prog >= roadCost(r.node, r.plan[0])) {
+-      r.prog -= roadCost(r.node, r.plan[0]);
+-      r.node = r.plan.shift();
++    /* each hop of a plan is a road (only the first is checked when a save loads) */
++    while (r.plan.length && r.prog >= /** @type {number} */ (roadCost(r.node, r.plan[0]))) {
++      r.prog -= /** @type {number} */ (roadCost(r.node, r.plan[0]));
++      r.node = /** @type {number} */ (r.plan.shift());
+       saveData.visited[r.node] = 1;
+       msgs.push(
+         r.plan.length ? `You passed through ${LOCATIONS[r.node].name}.` : `You arrived at ${LOCATIONS[r.node].name}.`
+@@ -905,7 +978,8 @@ export function assignJob(slot, job, id) {
+ export function collectJob(slot) {
+   const j = saveData.jobs[slot];
+   if (!j.uid || !j.pend) return null;
+-  const J = JOBS[j.job],
++  /* a slot with a Billie has a job (assignJob sets both) */
++  const J = JOBS[/** @type {string} */ (j.job)],
+     [kind, key, amt] = J.out,
+     n = j.pend;
+   j.pend = 0;

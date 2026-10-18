@@ -1,0 +1,1910 @@
+From a490cda99ea469b5509294b4e8dc04b53b75738a Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Sun, 18 Oct 2026 09:44:01 +0000
+Subject: [PATCH 19/22] Move: the rules outside battle go from game-state.js to
+ game/js/logic/rules.js
+
+65 names, same code (node tools/move-names.mjs verify: 64 statements moved, nothing else changed): the helpers
+cleanName, formatNumber, stepsToKm, newUid, today, plural, pickWeighted; a Billie's numbers (xpFor, maxLevel,
+moveSlotCount, teamSize, stat, maxHp, movesAt, makeBilly...), evolution, team and storage; steps and their money
+(STEP_BRACKETS...); the trip along the roads and its gates; encounters (encounterPoolHere, spawn); addSteps; eggs;
+day jobs. game-state.js keeps the state and where it is stored (saveData, activeBattle, uiState, reducedMotion,
+localStorage, save, flushSave), escapeHtml and, until the next commit, the save format.
+
+rules.js comes right after game-data.js on the game's page. What it reads from game-state.js and the interface
+(saveData, uiState, activeBattle, save, toast, render, jingle...) now comes through hooks.js, filled as before. Only
+STEP_BRACKETS (and the statement that closes its last bracket) is worked out at load, now a little earlier, from
+RULES alone. The modules that used these names import them from rules.js (tools/to-module.mjs).
+
+Checked: lint (rules.js passes with no browser globals), check:modules, format, build, smoke 14/14 (161 s).
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01LpFSn4GaodAVzjKW5J3oQR
+---
+ game/index.html            |   1 +
+ game/js/account.js         |   2 +-
+ game/js/airship.js         |   3 +-
+ game/js/bag.js             |   3 +-
+ game/js/battle.js          |  10 +-
+ game/js/debug-log-names.js |   3 +-
+ game/js/debug-menu.js      |  16 +-
+ game/js/dressing-room.js   |   3 +-
+ game/js/fishing.js         |  12 +-
+ game/js/friends.js         |   3 +-
+ game/js/game-state.js      | 674 +------------------------------------
+ game/js/hooks.js           |   2 +
+ game/js/logic/rules.js     | 668 ++++++++++++++++++++++++++++++++++++
+ game/js/opening-fall.js    |   3 +-
+ game/js/self-test.js       |   6 +-
+ game/js/settings-screen.js |   4 +-
+ game/js/shop.js            |   3 +-
+ game/js/story.js           |   3 +-
+ game/js/things-to-do.js    |   3 +-
+ game/js/ui.js              |  22 +-
+ game/js/world-billies.js   |   3 +-
+ game/js/world-map-gl.js    |  12 +-
+ game/js/world-map.js       |   3 +-
+ 23 files changed, 726 insertions(+), 736 deletions(-)
+ create mode 100644 game/js/logic/rules.js
+
+diff --git a/game/index.html b/game/index.html
+index e690f29..4e70cbe 100644
+--- a/game/index.html
++++ b/game/index.html
+@@ -54,6 +54,7 @@
+ <!-- game -->
+ <script type="module" src="js/util.js"></script>
+ <script type="module" src="js/game-data.js"></script>
++<script type="module" src="js/logic/rules.js"></script>
+ <script type="module" src="js/map-files.js"></script>
+ <script type="module" src="js/game-state.js"></script>
+ <script type="module" src="js/i18n.js"></script>
+diff --git a/game/js/account.js b/game/js/account.js
+index 4f2be95..44ffd9a 100644
+--- a/game/js/account.js
++++ b/game/js/account.js
+@@ -8,6 +8,7 @@
+ /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
+ import { expose } from './test-globals.js';
+ import { TEST_RUN, closeModal, modal, provide, render, toast } from './hooks.js';
++import { formatNumber } from './logic/rules.js';
+ import {
+   ACCOUNT_ID,
+   ACCOUNT_KEY,
+@@ -17,7 +18,6 @@ import {
+   SAVE_VERSION,
+   activeBattle,
+   escapeHtml,
+-  formatNumber,
+   loadSave,
+   save,
+   saveAge,
+diff --git a/game/js/airship.js b/game/js/airship.js
+index 46fdfdb..bddf76b 100644
+--- a/game/js/airship.js
++++ b/game/js/airship.js
+@@ -12,8 +12,9 @@ import { expose } from './test-globals.js';
+ import { closeModal, mapIdAt, modal, provide, render, storyFlags, toast } from './hooks.js';
+ import { $, clamp } from './util.js';
+ import { LOCATIONS, LOCATION_BY_ID, isTown, locationFullName } from './game-data.js';
++import { canEnter, formatNumber } from './logic/rules.js';
+ import { isLiteMap, loadMapFile, loadMapsAhead } from './map-files.js';
+-import { canEnter, escapeHtml, formatNumber, reducedMotion, save, saveData, uiState } from './game-state.js';
++import { escapeHtml, reducedMotion, save, saveData, uiState } from './game-state.js';
+ import { artLoad, uiIconHTML } from './art.js';
+ import { artImage, imageReady, mapById, prepareMap, walkData } from './walk-view.js';
+ import { seamlessHubMap } from './seamless-world.js';
+diff --git a/game/js/bag.js b/game/js/bag.js
+index 1637922..252c341 100644
+--- a/game/js/bag.js
++++ b/game/js/bag.js
+@@ -7,7 +7,8 @@
+ import { expose } from './test-globals.js';
+ import { closeModal, modal, render, toast } from './hooks.js';
+ import { COINS, EGGS, ITEMS, STATUS_NAMES } from './game-data.js';
+-import { billyName, escapeHtml, formatNumber, maxHp, saveData, uiState } from './game-state.js';
++import { billyName, formatNumber, maxHp } from './logic/rules.js';
++import { escapeHtml, saveData, uiState } from './game-state.js';
+ import { coinHTML, eggHTML, uiIconHTML } from './art.js';
+ import { bustHTML } from './skeleton-rig.js';
+ import { applyItem, canUse, itemIcon, teamNeedsHp } from './battle.js';
+diff --git a/game/js/battle.js b/game/js/battle.js
+index ec50ca7..789e1ce 100644
+--- a/game/js/battle.js
++++ b/game/js/battle.js
+@@ -45,11 +45,9 @@ import {
+   typeEffectiveness,
+ } from './game-data.js';
+ import {
+-  activeBattle,
+   addBilly,
+   addEgg,
+   billyName,
+-  escapeHtml,
+   findBilly,
+   formatNumber,
+   gainXp,
+@@ -59,14 +57,10 @@ import {
+   maxHp,
+   pickWeighted,
+   plural,
+-  reducedMotion,
+-  save,
+-  saveData,
+-  setActiveBattle,
+   stat,
+-  uiState,
+   xpFor,
+-} from './game-state.js';
++} from './logic/rules.js';
++import { activeBattle, escapeHtml, reducedMotion, save, saveData, setActiveBattle, uiState } from './game-state.js';
+ import { artURL, coinHTML, eggHTML, iconURL, uiIconHTML } from './art.js';
+ import { portraitHTML } from './person-art.js';
+ import { RIG_BACK_VIEW, bustHTML, rigPreload } from './skeleton-rig.js';
+diff --git a/game/js/debug-log-names.js b/game/js/debug-log-names.js
+index c8f496b..9013776 100644
+--- a/game/js/debug-log-names.js
++++ b/game/js/debug-log-names.js
+@@ -2,7 +2,8 @@
+ // script that runs before the modules) reads and wraps in the game's modules: a getter for each name in its GAME
+ // object, and a setter (the module's own) for each function it wraps. The last module of the game's page.
+ import { LOCATIONS, gameData } from './game-data.js';
+-import { activeBattle, save, saveData, setSave, setSetTrip, setTrip, uiState } from './game-state.js';
++import { setSetTrip, setTrip } from './logic/rules.js';
++import { activeBattle, save, saveData, setSave, uiState } from './game-state.js';
+ import { frameScheduler, userFps } from './frame-scheduler.js';
+ import { artPixels, setArtPixels } from './art.js';
+ import { PERSON_ART_CACHE, personBattleFrames, setPersonBattleFrames } from './person-art.js';
+diff --git a/game/js/debug-menu.js b/game/js/debug-menu.js
+index 6b3fe7b..85275ee 100644
+--- a/game/js/debug-menu.js
++++ b/game/js/debug-menu.js
+@@ -29,27 +29,29 @@ import {
+   TRAINERS,
+ } from './game-data.js';
+ import {
+-  activeBattle,
+   addBilly,
+   addEgg,
+   addSteps,
+-  escapeHtml,
+-  flushSave,
+   gainXp,
+   healAll,
+   makeBilly,
+   maxLevel,
+-  newSaveKeepingPreferences,
+   newUid,
++  spawn,
++  today,
++  xpFor,
++} from './logic/rules.js';
++import {
++  activeBattle,
++  escapeHtml,
++  flushSave,
++  newSaveKeepingPreferences,
+   save,
+   saveData,
+   setActiveBattle,
+   setSaveData,
+-  spawn,
+-  today,
+   uiState,
+   writeStoredSave,
+-  xpFor,
+ } from './game-state.js';
+ import { frameCount, frameScheduler, frameTask, userFps } from './frame-scheduler.js';
+ import { uiIconHTML } from './art.js';
+diff --git a/game/js/dressing-room.js b/game/js/dressing-room.js
+index 747bb59..2fa0599 100644
+--- a/game/js/dressing-room.js
++++ b/game/js/dressing-room.js
+@@ -8,7 +8,8 @@ import { expose } from './test-globals.js';
+ import { buzz, provide, render, soundEffect, toast } from './hooks.js';
+ import { $, $$, random } from './util.js';
+ import { SHOPS } from './game-data.js';
+-import { escapeHtml, formatNumber, save, saveData, uiState } from './game-state.js';
++import { formatNumber } from './logic/rules.js';
++import { escapeHtml, save, saveData, uiState } from './game-state.js';
+ import { frameStop, frameTask } from './frame-scheduler.js';
+ import { makeCanvas, uiIconHTML } from './art.js';
+ import {
+diff --git a/game/js/fishing.js b/game/js/fishing.js
+index 133325e..cd479f3 100644
+--- a/game/js/fishing.js
++++ b/game/js/fishing.js
+@@ -10,16 +10,8 @@ import { expose } from './test-globals.js';
+ import { recordThingsToDoEvent, soundEffect, startWild, toast } from './hooks.js';
+ import { clamp, random } from './util.js';
+ import { RULES, SPECIES, gameData } from './game-data.js';
+-import {
+-  activeBattle,
+-  encounterPoolHere,
+-  newUid,
+-  pickWeighted,
+-  reducedMotion,
+-  save,
+-  saveData,
+-  uiState,
+-} from './game-state.js';
++import { encounterPoolHere, newUid, pickWeighted } from './logic/rules.js';
++import { activeBattle, reducedMotion, save, saveData, uiState } from './game-state.js';
+ import { uiIconHTML } from './art.js';
+ import { terrainAt, walkView } from './walk-view.js';
+ import {
+diff --git a/game/js/friends.js b/game/js/friends.js
+index 6143925..75c3c8b 100644
+--- a/game/js/friends.js
++++ b/game/js/friends.js
+@@ -12,7 +12,8 @@
+ import { expose } from './test-globals.js';
+ import { account, accountOn, closeModal, mapIdAt, mapOffsetInView, modal, provide, render, toast } from './hooks.js';
+ import { LOCATIONS, SPECIES } from './game-data.js';
+-import { billyName, cleanName, escapeHtml, plural, saveData, uiState } from './game-state.js';
++import { billyName, cleanName, plural } from './logic/rules.js';
++import { escapeHtml, saveData, uiState } from './game-state.js';
+ import { personWalkFrames, portraitHTML, warmPerson } from './person-art.js';
+ import { rigCanvasHTML } from './skeleton-rig.js';
+ import { directionOf, walkView } from './walk-view.js';
+diff --git a/game/js/game-state.js b/game/js/game-state.js
+index 2757777..9a3a54c 100644
+--- a/game/js/game-state.js
++++ b/game/js/game-state.js
+@@ -5,42 +5,22 @@
+ /** @import { Trainer } from '../types/game-data' */
+ /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
+ import { expose } from './test-globals.js';
+-import {
+-  JINGLES,
+-  environmentOdds,
+-  flushAccountSave,
+-  jingle,
+-  onStepsAdded,
+-  provide,
+-  render,
+-  showPendingWindows,
+-  soundEffect,
+-  toast,
+-} from './hooks.js';
++import { flushAccountSave, provide, toast } from './hooks.js';
+ import { random } from './util.js';
+ import {
+   COINS,
+   EGGS,
+-  EGG_TIERS,
+   ITEMS,
+   JOBS,
+-  JOB_STEPS,
+   LINES,
+-  LINE_BY_ID,
+   LOCATIONS,
+   MOVES,
+-  POOLS,
+-  ROADS_BY_NODE,
+   RULES,
+   SPECIES,
+   START_NODE,
+-  STAT_IDS,
+-  STEPS_PER_KM,
+-  TRAINERS,
+   roadCost,
+-  trainersAt,
+-  typeEffectiveness,
+ } from './game-data.js';
++import { cleanName, emptyJob, jobSlotCount, movesAt, today } from './logic/rules.js';
+ /* eslint-disable no-func-assign */
+ expose({
+   ACCOUNT_ID: [() => ACCOUNT_ID],
+@@ -51,95 +31,21 @@ expose({
+   SAVE_NEW_MSG: [() => SAVE_NEW_MSG],
+   SAVE_OLD_MSG: [() => SAVE_OLD_MSG],
+   SAVE_VERSION: [() => SAVE_VERSION],
+-  STEP_BRACKETS: [() => STEP_BRACKETS],
+   activeBattle: [() => activeBattle, v => setActiveBattle(v)],
+-  // @ts-expect-error -- replaced on purpose
+-  addBilly: [() => addBilly, v => (addBilly = v)],
+-  // @ts-expect-error -- replaced on purpose
+-  addEgg: [() => addEgg, v => (addEgg = v)],
+-  // @ts-expect-error -- replaced on purpose
+-  addSteps: [() => addSteps, v => ((addSteps = v), provide({ addSteps }))],
+-  allBillies: [() => allBillies],
+-  // @ts-expect-error -- replaced on purpose
+-  assignJob: [() => assignJob, v => (assignJob = v)],
+-  // @ts-expect-error -- replaced on purpose
+-  autoSlot: [() => autoSlot, v => (autoSlot = v)],
+-  billyName: [() => billyName],
+-  // @ts-expect-error -- replaced on purpose
+-  blockerAt: [() => blockerAt, v => (blockerAt = v)],
+-  canEnter: [() => canEnter],
+-  // @ts-expect-error -- replaced on purpose
+-  canEvolve: [() => canEvolve, v => (canEvolve = v)],
+-  canLeave: [() => canLeave],
+-  canRide: [() => canRide],
+-  cleanName: [() => cleanName],
+-  // @ts-expect-error -- replaced on purpose
+-  collectJob: [() => collectJob, v => (collectJob = v)],
+-  // @ts-expect-error -- replaced on purpose
+-  earningsBetween: [() => earningsBetween, v => (earningsBetween = v)],
+-  eggSlotCount: [() => eggSlotCount],
+-  emptyJob: [() => emptyJob],
+-  // @ts-expect-error -- replaced on purpose
+-  encounterPoolHere: [() => encounterPoolHere, v => (encounterPoolHere = v)],
+-  // @ts-expect-error -- replaced on purpose
+-  endShift: [() => endShift, v => (endShift = v)],
+   escapeHtml: [() => escapeHtml],
+   // @ts-expect-error -- replaced on purpose
+-  evolutionHint: [() => evolutionHint, v => (evolutionHint = v)],
+-  evolutionItemName: [() => evolutionItemName],
+-  // @ts-expect-error -- replaced on purpose
+-  evolve: [() => evolve, v => (evolve = v)],
+-  findBilly: [() => findBilly],
+-  // @ts-expect-error -- replaced on purpose
+   flushSave: [() => flushSave, v => (flushSave = v)],
+-  formatNumber: [() => formatNumber],
+-  // @ts-expect-error -- replaced on purpose
+-  gainXp: [() => gainXp, v => (gainXp = v)],
+-  // @ts-expect-error -- replaced on purpose
+-  gateMsg: [() => gateMsg, v => (gateMsg = v)],
+-  // @ts-expect-error -- replaced on purpose
+-  gateOwner: [() => gateOwner, v => (gateOwner = v)],
+-  // @ts-expect-error -- replaced on purpose
+-  gateText: [() => gateText, v => (gateText = v)],
+-  // @ts-expect-error -- replaced on purpose
+-  hatchEgg: [() => hatchEgg, v => (hatchEgg = v)],
+-  hatchable: [() => hatchable],
+-  // @ts-expect-error -- replaced on purpose
+-  healAll: [() => healAll, v => (healAll = v)],
+-  hereLocation: [() => hereLocation],
+-  jobSlotCount: [() => jobSlotCount],
+   // @ts-expect-error -- replaced on purpose
+   loadSave: [() => loadSave, v => (loadSave = v)],
+   // @ts-expect-error -- replaced on purpose
+-  makeBilly: [() => makeBilly, v => ((makeBilly = v), provide({ makeBilly }))],
+-  maxHp: [() => maxHp],
+-  maxLevel: [() => maxLevel],
+-  // @ts-expect-error -- replaced on purpose
+   migrate: [() => migrate, v => (migrate = v)],
+-  moveSlotCount: [() => moveSlotCount],
+-  // @ts-expect-error -- replaced on purpose
+-  movesAt: [() => movesAt, v => (movesAt = v)],
+   // @ts-expect-error -- replaced on purpose
+   newSave: [() => newSave, v => (newSave = v)],
+   // @ts-expect-error -- replaced on purpose
+   newSaveKeepingPreferences: [() => newSaveKeepingPreferences, v => (newSaveKeepingPreferences = v)],
+-  newUid: [() => newUid],
+-  nextBracket: [() => nextBracket],
+-  nextTripNode: [() => nextTripNode],
+-  pathFrom: [() => pathFrom],
+-  // @ts-expect-error -- replaced on purpose
+-  pickWeighted: [() => pickWeighted, v => (pickWeighted = v)],
+-  plural: [() => plural],
+   // @ts-expect-error -- replaced on purpose
+   readStoredSave: [() => readStoredSave, v => (readStoredSave = v)],
+   reducedMotion: [() => reducedMotion, v => setReducedMotion(v)],
+-  // @ts-expect-error -- replaced on purpose
+-  resumeTrip: [() => resumeTrip, v => (resumeTrip = v)],
+-  riderName: [() => riderName],
+-  // @ts-expect-error -- replaced on purpose
+-  riderOf: [() => riderOf, v => ((riderOf = v), provide({ riderOf }))],
+-  // @ts-expect-error -- replaced on purpose
+-  rollDay: [() => rollDay, v => (rollDay = v)],
+   save: [() => save, v => setSave(v)],
+   // @ts-expect-error -- replaced on purpose
+   saveAge: [() => saveAge, v => (saveAge = v)],
+@@ -158,81 +64,17 @@ expose({
+   setSaveData: [() => setSaveData, v => (setSaveData = v)],
+   // @ts-expect-error -- replaced on purpose
+   setSaveHold: [() => setSaveHold, v => (setSaveHold = v)],
+-  setTrip: [() => setTrip, v => setSetTrip(v)],
+-  // @ts-expect-error -- replaced on purpose
+-  spawn: [() => spawn, v => (spawn = v)],
+-  // @ts-expect-error -- replaced on purpose
+-  splitPath: [() => splitPath, v => (splitPath = v)],
+-  // @ts-expect-error -- replaced on purpose
+-  stat: [() => stat, v => (stat = v)],
+-  stepRate: [() => stepRate],
+-  stepsToKm: [() => stepsToKm],
+-  // @ts-expect-error -- replaced on purpose
+-  stopTrip: [() => stopTrip, v => (stopTrip = v)],
+-  teamSize: [() => teamSize],
+-  // @ts-expect-error -- replaced on purpose
+-  toBox: [() => toBox, v => (toBox = v)],
+-  // @ts-expect-error -- replaced on purpose
+-  toTeam: [() => toTeam, v => (toTeam = v)],
+-  today: [() => today],
+-  traveling: [() => traveling],
+-  // @ts-expect-error -- replaced on purpose
+-  tripTo: [() => tripTo, v => (tripTo = v)],
+   uiState: [() => uiState],
+   // @ts-expect-error -- replaced on purpose
+-  walkDistances: [() => walkDistances, v => (walkDistances = v)],
+-  walkMode: [() => walkMode],
+-  // @ts-expect-error -- replaced on purpose
+   writeStoredSave: [() => writeStoredSave, v => (writeStoredSave = v)],
+-  xpFor: [() => xpFor],
+ });
+ /* eslint-enable no-func-assign */
+-provide({ addSteps, makeBilly, riderOf });
+-export function setSetTrip(v) {
+-  // @ts-expect-error -- replaced on purpose
+-  setTrip = v; // eslint-disable-line no-func-assign
+-  provide({ setTrip });
+-}
++provide({ save });
+ /* to-module: end */
+ export const escapeHtml = s =>
+   String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+-/* phase 02: a name the player typed, or that came from a backup file or a friend, loses the characters that could
+-   end a piece of HTML (< > " & `) and control characters, so it is safe in any page text or attribute */
+-export const cleanName = (s, max) =>
+-  String(s == null ? '' : s)
+-    // eslint-disable-next-line no-control-regex -- stripping control characters is the point
+-    .replace(/[\u0000-\u001f\u007f<>"&`]/g, '')
+-    .trim()
+-    .slice(0, max);
+-provide({ cleanName }); /* to-module */
+-export const formatNumber = n => Math.floor(n).toLocaleString('en-US');
+-export const stepsToKm = st => (st / STEPS_PER_KM).toFixed(1);
+ export let reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+ provide({ reducedMotion }); /* to-module */
+-export const newUid = () => 'm' + Date.now().toString(36) + Math.floor(random() * 1e8).toString(36);
+-export const today = () => {
+-  const d = new Date();
+-  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+-};
+-export const plural = (n, w) => `${formatNumber(n)} ${w}${n === 1 ? '' : 's'}`;
+-export function pickWeighted(list) {
+-  const tot = list.reduce((a, b) => a + b[1], 0);
+-  let r = random() * tot;
+-  for (const [id, w] of list) {
+-    r -= w;
+-    if (r <= 0) return id;
+-  }
+-  return list[0][0];
+-}
+-
+-/* ---------- state ---------- */
+-export const xpFor = L => Math.floor(RULES.progression.xpFactor * L * L * L);
+-export const maxLevel = () => RULES.progression.maxLevel,
+-  moveSlotCount = () => RULES.progression.moveSlots,
+-  teamSize = () => RULES.progression.teamSize;
+-const jobSlotCount = () => Math.max(1, RULES.jobs.positions || 3);
+-/** @returns {JobSlot} */
+-const emptyJob = () => ({ uid: null, job: null, acc: 0, pend: 0 });
+ /** @returns {SaveData} */
+ export function newSave() {
+   const R = RULES.start,
+@@ -492,513 +334,3 @@ export function flushSave() {
+   if (saveHold) return;
+   if (typeof flushAccountSave === 'function') flushAccountSave();
+ }
+-
+-/* ---------- billionaires ---------- */
+-export function stat(m, k) {
+-  const b = SPECIES[m.sp].base[STAT_IDS.indexOf(k)];
+-  let v = k === 'hp' ? Math.floor((2 * b * m.lvl) / 100) + m.lvl + 10 : Math.floor((2 * b * m.lvl) / 100) + 5;
+-  /* v33: an Alpha in battle is much tougher (m.boss); one you caught keeps a little of it (m.alpha) */
+-  if (m.boss) v = Math.floor(v * (k === 'hp' ? m.boss.hp : m.boss.st));
+-  else if (m.alpha) v = Math.floor(v * ((RULES.battle && RULES.battle.alphaKeep) ?? 1.08));
+-  return v;
+-}
+-export const maxHp = m => stat(m, 'hp');
+-provide({ maxHp }); /* to-module */
+-function movesAt(lid, lvl) {
+-  const out = [];
+-  for (const [lv, mv] of LINE_BY_ID[lid].learn) if (lv <= lvl && !out.includes(mv)) out.push(mv);
+-  return out.slice(-moveSlotCount());
+-}
+-/* alpha 0.5: a Billie remembers where and when it joined you (shown in its details) */
+-export function makeBilly(sp, lvl, o = {}) {
+-  const m = {
+-    uid: newUid(),
+-    sp,
+-    lvl,
+-    xp: xpFor(lvl),
+-    hp: 0,
+-    status: null,
+-    sTurns: 0,
+-    moves: movesAt(SPECIES[sp].line, lvl),
+-    gold: !!o.gold,
+-    nick: '',
+-  };
+-  m.hp = maxHp(m);
+-  try {
+-    if (typeof saveData !== 'undefined' && saveData && saveData.trip && LOCATIONS[saveData.trip.node])
+-      m.met = { n: LOCATIONS[saveData.trip.node].id || saveData.trip.node, t: Date.now() };
+-  } catch (e) {}
+-  return m;
+-}
+-export const billyName = m => m.nick || SPECIES[m.sp].name;
+-export const allBillies = () => saveData.team.concat(saveData.box);
+-export const findBilly = id => allBillies().find(m => m.uid === id);
+-export function gainXp(m, amt, say) {
+-  if (m.lvl >= maxLevel() || amt <= 0) return;
+-  m.xp += amt;
+-  while (m.lvl < maxLevel() && m.xp >= xpFor(m.lvl + 1)) {
+-    const old = maxHp(m);
+-    m.lvl++;
+-    if (m.hp > 0) m.hp = Math.min(maxHp(m), m.hp + maxHp(m) - old);
+-    say(`${billyName(m)} grew to level ${m.lvl}.`, { k: 'lvl', uid: m.uid });
+-    for (const [lv, mv] of LINE_BY_ID[SPECIES[m.sp].line].learn) {
+-      if (lv !== m.lvl || m.moves.includes(mv)) continue;
+-      if (m.moves.length < moveSlotCount()) {
+-        m.moves.push(mv);
+-        say(`${billyName(m)} learned ${MOVES[mv].n}.`);
+-      } else uiState.learnQ.push({ uid: m.uid, mv });
+-    }
+-  }
+-}
+-export function canEvolve(m) {
+-  const e = SPECIES[m.sp].evo;
+-  if (!e) return false;
+-  if (m.evoNo != null && m.lvl <= m.evoNo) return false;
+-  switch (e.k) {
+-    case 'lvl':
+-    case 'split':
+-      return m.lvl >= e.at;
+-    case 'buddy':
+-      return (m.bsteps || 0) >= e.steps;
+-    case 'idle':
+-      return !!m.boxedAt && !m.job && saveData.box.includes(m) && Date.now() - m.boxedAt >= e.ms && m.lvl >= e.min;
+-    case 'streak':
+-      return (m.streak || 0) >= e.n && m.lvl >= e.min;
+-    default:
+-      return false;
+-  }
+-}
+-export const evolutionItemName = e => (ITEMS[e.item || 'bell'] ? ITEMS[e.item || 'bell'].n : 'Shining Stone');
+-export function evolutionHint(m) {
+-  const s = SPECIES[m.sp],
+-    e = s.evo;
+-  if (!e) return s.rar === 'mythical' ? 'Does not evolve.' : 'Fully evolved.';
+-  /* a species with an evolution has a next stage (game-data.js sets both, or neither) */
+-  const nx = SPECIES[/** @type {string} */ (s.next)],
+-    nm = saveData.seen[nx.id] ? nx.name : 'something bigger';
+-  switch (e.k) {
+-    case 'lvl':
+-      return `Evolves at level ${e.at} into ${nm}.`;
+-    case 'split': {
+-      /* SPECIES[null] is undefined, which alt && handles */
+-      const alt = SPECIES[/** @type {string} */ (s.alt)],
+-        an = alt && saveData.seen[alt.id] ? alt.name : 'something else';
+-      return `Evolves at level ${e.at} into ${nm} or ${an}: ${splitPath(m) === 'A' ? 'the Build path is ahead' : 'the Hype path is ahead'} (${m.wins || 0} battles won, ${stepsToKm(m.bsteps || 0)} km walked as buddy${m.psteps ? ` + ${stepsToKm((m.psteps || 0) / 2)} km in the party at half weight` : ''}).`;
+-    }
+-    case 'buddy':
+-      return `Evolves after you walk ${stepsToKm(e.steps)} km with it as your buddy. ${stepsToKm(m.bsteps || 0)} of ${stepsToKm(e.steps)} km so far.`;
+-    case 'item':
+-      return `Evolves when you use ${/^[AEIOU]/.test(evolutionItemName(e)) ? 'an' : 'a'} ${evolutionItemName(e)}, once it reaches level ${e.min}.`;
+-    case 'donate':
+-      return `Evolves after it gives away ${e.n} items, once it reaches level ${e.min}. ${m.donated || 0} of ${e.n} given.`;
+-    case 'merge':
+-      return `Evolves by combining with another ${s.name}, once it reaches level ${e.min}.`;
+-    case 'idle':
+-      return `Evolves after resting a full day in storage, once it reaches level ${e.min}.`;
+-    case 'streak':
+-      return `Evolves after winning ${e.n} battles in a row as your lead, once it reaches level ${e.min}. Streak: ${m.streak || 0}.`;
+-    case 'rename':
+-      return `Evolves when you give it a new nickname, once it reaches level ${e.min}.`;
+-  }
+-  return '';
+-}
+-/* v36: which final a split line takes: Build (A) when the kilometres it walked as your buddy outweigh the battles it won
+-   (1 km counts as one win), Hype (B) otherwise. A tie goes to Build. */
+-export function splitPath(m) {
+-  const wins = m.wins || 0,
+-    kmW = ((m.bsteps || 0) + (m.psteps || 0) / 2) / STEPS_PER_KM;
+-  return wins > kmW ? 'B' : 'A';
+-}
+-export function evolve(m) {
+-  if (typeof jingle === 'function') jingle(JINGLES.evolve, 140);
+-  const old = maxHp(m),
+-    from = billyName(m),
+-    s0 = SPECIES[m.sp];
+-  m.sp = s0.evo && s0.evo.k === 'split' && s0.alt && splitPath(m) === 'B' ? s0.alt : s0.next;
+-  if (m.hp > 0) m.hp = Math.max(1, Math.min(maxHp(m), m.hp + maxHp(m) - old));
+-  saveData.caught[m.sp] = 1;
+-  saveData.seen[m.sp] = 1;
+-  m.evoNo = null;
+-  m.streak = 0;
+-  m.donated = 0;
+-  return from;
+-}
+-export function healAll() {
+-  if (typeof soundEffect === 'function') soundEffect('heal');
+-  for (const m of allBillies()) {
+-    m.hp = maxHp(m);
+-    m.status = null;
+-    m.sTurns = 0;
+-  }
+-}
+-export function toBox(m) {
+-  const i = saveData.team.indexOf(m);
+-  if (i >= 0) saveData.team.splice(i, 1);
+-  if (!saveData.box.includes(m)) saveData.box.push(m);
+-  m.boxedAt = Date.now();
+-}
+-export function toTeam(m) {
+-  const i = saveData.box.indexOf(m);
+-  if (i >= 0) saveData.box.splice(i, 1);
+-  if (!saveData.team.includes(m)) saveData.team.push(m);
+-  m.boxedAt = null;
+-}
+-export function addBilly(m) {
+-  saveData.caught[m.sp] = 1;
+-  saveData.seen[m.sp] = 1;
+-  if (saveData.team.length < teamSize()) {
+-    saveData.team.push(m);
+-    return 'team';
+-  }
+-  m.boxedAt = Date.now();
+-  saveData.box.push(m);
+-  return 'box';
+-}
+-
+-/* ---------- steps ---------- */
+-export const STEP_BRACKETS = RULES.steps.brackets
+-  .map(b => [b.upTo > 0 ? b.upTo : Infinity, b.rate])
+-  .sort((a, b) => a[0] - b[0]);
+-if (!STEP_BRACKETS.length || STEP_BRACKETS[STEP_BRACKETS.length - 1][0] !== Infinity)
+-  STEP_BRACKETS.push([Infinity, STEP_BRACKETS.length ? STEP_BRACKETS[STEP_BRACKETS.length - 1][1] : 1]);
+-function earningsBetween(a, b) {
+-  let se = 0,
+-    lo = 0;
+-  for (const [hi, r] of STEP_BRACKETS) {
+-    const s = Math.max(a, lo),
+-      e = Math.min(b, hi);
+-    if (e > s) se += (e - s) * r;
+-    lo = hi;
+-  }
+-  return se;
+-}
+-export const stepRate = st => {
+-  for (const [hi, r] of STEP_BRACKETS) if (st < hi) return r;
+-  return STEP_BRACKETS[STEP_BRACKETS.length - 1][1];
+-};
+-export const nextBracket = st => STEP_BRACKETS.find(([hi]) => st < hi);
+-export function rollDay() {
+-  if (saveData.day.date !== today()) saveData.day = { date: today(), steps: 0 };
+-}
+-function gateOwner(seat) {
+-  return Object.values(TRAINERS).find(T => T.seat && T.seat.id === seat);
+-}
+-export function gateText(n) {
+-  if (n.gate && !saveData.seats.includes(n.gate) && n.gateText) return n.gateText;
+-  if (n.ride && !canRide()) {
+-    const R = RULES.ride || { minHeight: 1.5 };
+-    return `To cross ${n.name} you need a Water Billie at least ${R.minHeight || 1.5} m tall in your team to ride on. Quant and Billigator are big enough.`;
+-  }
+-  if (n.gateText) return n.gateText;
+-  const T = gateOwner(n.gate);
+-  return `${n.name} opens once you earn ${T ? T.name + '’s' : 'another'} badge.`;
+-}
+-export function blockerAt(i) {
+-  return trainersAt(i).find(T => T.blocks && !saveData.flags[T.id]) || null;
+-}
+-/* ---------- travel: a plan of stops to walk to, one link at a time; an empty plan means staying put ---------- */
+-/* v24: lake and sea roads need a Water billionaire big enough to ride (rules.ride: types, minHeight in metres) */
+-function riderOf() {
+-  const R = RULES.ride || { minHeight: 1.5, types: ['Water'] };
+-  /** @type {Billy | null} */
+-  let best = null;
+-  for (const m of saveData.team) {
+-    const sp = SPECIES[m.sp];
+-    if (!sp || !sp.types.some(t => (R.types || ['Water']).includes(t)) || sp.ht < (R.minHeight || 1.5)) continue;
+-    if (!best || sp.ht > SPECIES[best.sp].ht) best = m;
+-  }
+-  return best;
+-}
+-export const canRide = () => !!riderOf();
+-export const riderName = () => {
+-  const m = riderOf();
+-  return m ? m.nick || SPECIES[m.sp].name : '';
+-};
+-export const canEnter = n =>
+-  (!LOCATIONS[n].gate || saveData.seats.includes(LOCATIONS[n].gate)) && (!LOCATIONS[n].ride || canRide());
+-const canLeave = (from, to) => !blockerAt(from) || !!saveData.visited[to];
+-export const nextTripNode = () => (saveData.trip.plan.length ? saveData.trip.plan[0] : null);
+-/* alpha 0.4.1: how you get about (rules.travel). 'walk': you walk yourself, with the joystick, the d-pad or a tap, from
+-   place to place across their edges, like a classic RPG; the steps you take in the game count as steps (encounters,
+-   challenges, your buddy). 'steps': your real steps carry you along the roads (the game until 0.4). */
+-export const walkMode = () => ((typeof RULES !== 'undefined' && RULES.travel) || 'walk') === 'walk';
+-provide({ walkMode }); /* to-module */
+-const traveling = () => !walkMode() && nextTripNode() != null && !saveData.trip.hold && !gateMsg();
+-/* why travel can't continue right now (null when it can, or when you're staying) */
+-export function gateMsg() {
+-  const node = saveData.trip.node,
+-    nx = nextTripNode();
+-  if (nx == null) return null;
+-  if (saveData.trip.prog === 0 && !canLeave(node, nx)) {
+-    /* canLeave was false, so a trainer blocks this location */
+-    const bl = /** @type {Trainer} */ (blockerAt(node));
+-    return bl.blockTitle || `${bl.name} is blocking the way.`;
+-  }
+-  if (!canEnter(nx)) return gateText(LOCATIONS[nx]);
+-  return null;
+-}
+-/* shortest walk (in steps) between stops, entering only stops you may enter; returns {d,prev} */
+-function walkDistances(from) {
+-  const N = LOCATIONS.length,
+-    d = Array(N).fill(Infinity),
+-    prev = Array(N).fill(-1),
+-    done = Array(N).fill(false);
+-  d[from] = 0;
+-  for (;;) {
+-    let u = -1;
+-    for (let i = 0; i < N; i++) if (!done[i] && d[i] < Infinity && (u < 0 || d[i] < d[u])) u = i;
+-    if (u < 0) break;
+-    done[u] = true;
+-    for (const e of ROADS_BY_NODE[u]) {
+-      if (!canEnter(e.to)) continue;
+-      if (u !== from && blockerAt(u) && !saveData.visited[e.to]) continue;
+-      const nd = d[u] + e.cost;
+-      if (nd < d[e.to]) {
+-        d[e.to] = nd;
+-        prev[e.to] = u;
+-      }
+-    }
+-  }
+-  return { d, prev };
+-}
+-const pathFrom = (prev, to) => {
+-  const out = [];
+-  for (let x = to; x >= 0 && prev[x] >= 0; x = prev[x]) out.unshift(x);
+-  return out;
+-};
+-/* steps from where you stand to stop j, and the plan that gets there (turning back on the current link if shorter) */
+-export function tripTo(j) {
+-  const r = saveData.trip,
+-    node = r.node,
+-    nx = nextTripNode();
+-  if (nx == null || r.prog === 0) {
+-    if (j === node && nx == null) return { steps: 0, plan: [], back: false };
+-    const D = walkDistances(node);
+-    if (D.d[j] === Infinity) return null;
+-    return { steps: D.d[j], plan: pathFrom(D.prev, j), back: false };
+-  }
+-  /* the plan's next location is a road away (plans are made from the roads; migrate checks a loaded one) */
+-  const c = /** @type {number} */ (roadCost(node, nx)),
+-    A = walkDistances(nx),
+-    Bk = walkDistances(node),
+-    fwd = c - r.prog + A.d[j],
+-    back = r.prog + Bk.d[j];
+-  if (fwd === Infinity && back === Infinity) return null;
+-  return fwd <= back
+-    ? { steps: fwd, plan: [nx, ...pathFrom(A.prev, j)], back: false }
+-    : { steps: back, plan: [node, ...pathFrom(Bk.prev, j)], back: true };
+-}
+-export function setTrip(j) {
+-  const t = tripTo(j);
+-  if (!t) return false;
+-  const r = saveData.trip;
+-  if (t.back && nextTripNode() != null) {
+-    const nx = /** @type {number} */ (nextTripNode()),
+-      c = /** @type {number} */ (roadCost(r.node, nx));
+-    r.node = nx;
+-    r.prog = c - r.prog;
+-    t.plan.shift();
+-  }
+-  r.plan = t.plan;
+-  r.hold = false;
+-  if (!r.plan.length) r.prog = 0;
+-  save();
+-  return true;
+-}
+-export function stopTrip() {
+-  const r = saveData.trip;
+-  if (r.prog > 0) {
+-    r.hold = true;
+-  } else {
+-    r.plan = [];
+-    r.hold = false;
+-  }
+-  save();
+-}
+-export function resumeTrip() {
+-  saveData.trip.hold = false;
+-  save();
+-}
+-/* encounters come from where you're headed while you walk, otherwise from where you are */
+-export const hereLocation = () => {
+-  const nx = nextTripNode();
+-  return LOCATIONS[nx != null && saveData.trip.prog > 0 && !saveData.trip.hold ? nx : saveData.trip.node];
+-};
+-export function encounterPoolHere() {
+-  return POOLS[hereLocation().pool] || POOLS[Object.keys(POOLS)[0]];
+-}
+-export function spawn(gentle, force) {
+-  const P = encounterPoolHere();
+-  let list = typeof environmentOdds === 'function' ? environmentOdds(P.list) : P.list;
+-  if (gentle) {
+-    const my = SPECIES[saveData.starter + '0'].types,
+-      g = list.filter(([id]) => !SPECIES[id].types.some(t => typeEffectiveness(t, my) > 1));
+-    if (g.length) list = g;
+-  }
+-  const sp = force || pickWeighted(list),
+-    lvl = P.lv[0] + Math.floor(random() * (P.lv[1] - P.lv[0] + 1));
+-  const q = { id: newUid(), sp, lvl, gold: random() < 1 / RULES.steps.goldOdds, no: ++saveData.serial };
+-  /* v33: now and then an Alpha (once you have two billionaires to stand with your lead) */
+-  if (
+-    !gentle &&
+-    !force &&
+-    saveData.team.filter(m => m.job == null).length >= 2 &&
+-    random() < 1 / ((RULES.steps && RULES.steps.alphaOdds) || 45)
+-  )
+-    q.alpha = true;
+-  saveData.queue.push(q);
+-  return q;
+-}
+-export function addSteps(n, quiet) {
+-  n = Math.floor(Number(n));
+-  if (!saveData.started || !Number.isFinite(n) || n <= 0 || n > 100000) return;
+-  rollDay();
+-  const a = saveData.day.steps,
+-    b = a + n,
+-    g = earningsBetween(a, b) + saveData.seFrac,
+-    gi = Math.floor(g);
+-  saveData.seFrac = g - gi;
+-  saveData.se += gi;
+-  saveData.day.steps = b;
+-  saveData.totalSteps += n;
+-  const msgs = [];
+-  if (traveling()) {
+-    const r = saveData.trip;
+-    r.prog += n;
+-    /* each hop of a plan is a road (only the first is checked when a save loads) */
+-    while (r.plan.length && r.prog >= /** @type {number} */ (roadCost(r.node, r.plan[0]))) {
+-      r.prog -= /** @type {number} */ (roadCost(r.node, r.plan[0]));
+-      r.node = /** @type {number} */ (r.plan.shift());
+-      saveData.visited[r.node] = 1;
+-      msgs.push(
+-        r.plan.length ? `You passed through ${LOCATIONS[r.node].name}.` : `You arrived at ${LOCATIONS[r.node].name}.`
+-      );
+-      if (typeof uiState !== 'undefined') uiState.arrive = r.node;
+-      /* v43: the walk screen walks you in from the exit */ if (!r.plan.length || gateMsg()) {
+-        r.prog = 0;
+-        break;
+-      }
+-    }
+-    if (!r.plan.length) r.prog = 0;
+-  }
+-  const every = Math.max(1, RULES.steps.encounterEverySE);
+-  saveData.meter += gi;
+-  let sp = 0;
+-  while (saveData.meter >= every) {
+-    saveData.meter -= every;
+-    if (saveData.queue.length < RULES.steps.maxEncounters) {
+-      spawn();
+-      sp++;
+-    }
+-  }
+-  const bud = findBilly(saveData.buddy),
+-    per = Math.max(1, RULES.progression.buddyStepsPerXp);
+-  if (bud) bud.bsteps = (bud.bsteps || 0) + n;
+-  /* v37: the rest of the party walks too, at half weight (for the Build path of a split evolution) */ for (const m of saveData.team)
+-    if (m !== bud) m.psteps = (m.psteps || 0) + n;
+-  saveData.buddyRem += n;
+-  const xp = Math.floor(saveData.buddyRem / per);
+-  saveData.buddyRem -= xp * per;
+-  const notes = [];
+-  if (bud && xp > 0) gainXp(bud, xp, t => notes.push(t));
+-  saveData.eggs.forEach(e => {
+-    if (e.slot != null) e.prog = Math.min(EGGS[e.tier].need, e.prog + n);
+-  });
+-  saveData.jobs.forEach(j => {
+-    if (!j.uid) return;
+-    j.acc += n;
+-    while (j.acc >= JOB_STEPS) {
+-      j.acc -= JOB_STEPS;
+-      if (j.pend < RULES.jobs.maxPending) j.pend++;
+-    }
+-  });
+-  if (!quiet || sp)
+-    toast(`+${formatNumber(n)} steps, +$${formatNumber(gi)}${sp ? `, ${plural(sp, 'new encounter')}` : ''}`);
+-  msgs.concat(notes).forEach(t => toast(t));
+-  save();
+-  if (!activeBattle) {
+-    render();
+-    if (typeof onStepsAdded === 'function') onStepsAdded();
+-    showPendingWindows();
+-  }
+-}
+-
+-/* ---------- Seed Rounds ---------- */
+-export const eggSlotCount = () => Math.max(1, RULES.eggs.slots);
+-function autoSlot() {
+-  for (let sl = 0; sl < eggSlotCount(); sl++) {
+-    if (saveData.eggs.some(e => e.slot === sl)) continue;
+-    const e = saveData.eggs.find(e => e.slot == null);
+-    if (e) e.slot = sl;
+-  }
+-}
+-export function addEgg(tier) {
+-  if (!EGGS[tier]) return false;
+-  if (saveData.eggs.length >= RULES.eggs.capacity) {
+-    toast('You’re carrying too many eggs. Hatch a few first.');
+-    return false;
+-  }
+-  saveData.eggs.push({ id: newUid(), tier, prog: 0, slot: null });
+-  autoSlot();
+-  return true;
+-}
+-export const hatchable = () => saveData.eggs.filter(e => e.slot != null && e.prog >= EGGS[e.tier].need);
+-export function hatchEgg(e) {
+-  if (typeof jingle === 'function') jingle(JINGLES.hatch);
+-  const T = EGGS[e.tier],
+-    R = RULES.eggs,
+-    top = e.tier === EGG_TIERS[EGG_TIERS.length - 1];
+-  let sp = pickWeighted(T.list),
+-    gold = random() < 1 / (top ? R.goldOdds10 : R.goldOdds);
+-  if (top && SPECIES[R.mythSpecies] && random() < 1 / R.mythOdds) {
+-    sp = R.mythSpecies;
+-    gold = false;
+-  }
+-  const m = makeBilly(sp, T.lv, { gold });
+-  saveData.eggs = saveData.eggs.filter(x => x !== e);
+-  saveData.hatched = (saveData.hatched || 0) + 1;
+-  autoSlot();
+-  const where = addBilly(m);
+-  save();
+-  return { m, where };
+-}
+-
+-/* ---------- Day Jobs ---------- */
+-export function assignJob(slot, job, id) {
+-  const m = findBilly(id);
+-  if (!m || m.job != null) return false;
+-  if (saveData.team.includes(m) && saveData.team.filter(x => x.job == null).length <= 1) return false;
+-  toBox(m);
+-  m.boxedAt = null;
+-  m.job = slot;
+-  saveData.jobs[slot] = { uid: id, job, acc: 0, pend: 0 };
+-  save();
+-  return true;
+-}
+-export function collectJob(slot) {
+-  const j = saveData.jobs[slot];
+-  if (!j.uid || !j.pend) return null;
+-  /* a slot with a Billie has a job (assignJob sets both) */
+-  const J = JOBS[/** @type {string} */ (j.job)],
+-    [kind, key, amt] = J.out,
+-    n = j.pend;
+-  j.pend = 0;
+-  if (kind === 'item') saveData.items[key] += amt * n;
+-  else if (kind === 'coin') saveData.coins[key] += amt * n;
+-  else saveData.se += amt * n;
+-  save();
+-  const m = findBilly(j.uid);
+-  return `${m ? billyName(m) : 'Your Billie'} ${J.quip} You collected ${kind === 'se' ? '$' + formatNumber(amt * n) : `${amt * n} × ${kind === 'item' ? ITEMS[key].n : COINS[key].n}`}.`;
+-}
+-export function endShift(slot) {
+-  const j = saveData.jobs[slot];
+-  const msg = collectJob(slot);
+-  const m = findBilly(j.uid);
+-  if (m) {
+-    m.job = null;
+-    m.boxedAt = Date.now();
+-  }
+-  saveData.jobs[slot] = { uid: null, job: null, acc: 0, pend: 0 };
+-  save();
+-  return msg;
+-}
+diff --git a/game/js/hooks.js b/game/js/hooks.js
+index ee02be7..69b7a7f 100644
+--- a/game/js/hooks.js
++++ b/game/js/hooks.js
+@@ -164,6 +164,7 @@ export let ALTERNATE_PROPS,
+   runDiagnostics,
+   runEvolution,
+   runQuickTest,
++  save,
+   saveData,
+   scatterToolBarHTML,
+   sceneryArtPaths,
+@@ -377,6 +378,7 @@ const set = {
+   runDiagnostics: v => (runDiagnostics = v),
+   runEvolution: v => (runEvolution = v),
+   runQuickTest: v => (runQuickTest = v),
++  save: v => (save = v),
+   saveData: v => (saveData = v),
+   scatterToolBarHTML: v => (scatterToolBarHTML = v),
+   sceneryArtPaths: v => (sceneryArtPaths = v),
+diff --git a/game/js/logic/rules.js b/game/js/logic/rules.js
+new file mode 100644
+index 0000000..bf00f07
+--- /dev/null
++++ b/game/js/logic/rules.js
+@@ -0,0 +1,668 @@
++'use strict';
++/* ================= RULES =================
++   Phase 04e: the game's rules outside battle, moved here from game-state.js: a Billie's stats, levels, moves and
++   evolution, the team and storage, steps and their money, the trip along the roads and its gates, encounters from the
++   pool where you are, eggs and day jobs, and the small helpers they share.
++   Logic only (game/js/logic/): no DOM, WebGL or window, so it runs in plain Node (tools/check-logic.mjs). The data
++   tables come from game-data.js; the save, the battle and the interface state (saveData, activeBattle, uiState), and
++   what the rules tell the interface (save, toast, render), come through hooks.js, filled by game-state.js and ui.js on
++   the page or by a test in Node. */
++/* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
++import { expose } from '../test-globals.js';
++import {
++  JINGLES,
++  activeBattle,
++  environmentOdds,
++  jingle,
++  onStepsAdded,
++  provide,
++  render,
++  save,
++  saveData,
++  showPendingWindows,
++  soundEffect,
++  toast,
++  uiState,
++} from '../hooks.js';
++import { random } from '../util.js';
++import {
++  COINS,
++  EGGS,
++  EGG_TIERS,
++  ITEMS,
++  JOBS,
++  JOB_STEPS,
++  LINE_BY_ID,
++  LOCATIONS,
++  MOVES,
++  POOLS,
++  ROADS_BY_NODE,
++  RULES,
++  SPECIES,
++  STAT_IDS,
++  STEPS_PER_KM,
++  TRAINERS,
++  roadCost,
++  trainersAt,
++  typeEffectiveness,
++} from '../game-data.js';
++/* eslint-disable no-func-assign */
++expose({
++  STEP_BRACKETS: [() => STEP_BRACKETS],
++  addBilly: [() => addBilly, v => (addBilly = v)],
++  addEgg: [() => addEgg, v => (addEgg = v)],
++  addSteps: [() => addSteps, v => ((addSteps = v), provide({ addSteps }))],
++  allBillies: [() => allBillies],
++  assignJob: [() => assignJob, v => (assignJob = v)],
++  autoSlot: [() => autoSlot, v => (autoSlot = v)],
++  billyName: [() => billyName],
++  blockerAt: [() => blockerAt, v => (blockerAt = v)],
++  canEnter: [() => canEnter],
++  canEvolve: [() => canEvolve, v => (canEvolve = v)],
++  canLeave: [() => canLeave],
++  canRide: [() => canRide],
++  cleanName: [() => cleanName],
++  collectJob: [() => collectJob, v => (collectJob = v)],
++  earningsBetween: [() => earningsBetween, v => (earningsBetween = v)],
++  eggSlotCount: [() => eggSlotCount],
++  emptyJob: [() => emptyJob],
++  encounterPoolHere: [() => encounterPoolHere, v => (encounterPoolHere = v)],
++  endShift: [() => endShift, v => (endShift = v)],
++  evolutionHint: [() => evolutionHint, v => (evolutionHint = v)],
++  evolutionItemName: [() => evolutionItemName],
++  evolve: [() => evolve, v => (evolve = v)],
++  findBilly: [() => findBilly],
++  formatNumber: [() => formatNumber],
++  gainXp: [() => gainXp, v => (gainXp = v)],
++  gateMsg: [() => gateMsg, v => (gateMsg = v)],
++  gateOwner: [() => gateOwner, v => (gateOwner = v)],
++  gateText: [() => gateText, v => (gateText = v)],
++  hatchEgg: [() => hatchEgg, v => (hatchEgg = v)],
++  hatchable: [() => hatchable],
++  healAll: [() => healAll, v => (healAll = v)],
++  hereLocation: [() => hereLocation],
++  jobSlotCount: [() => jobSlotCount],
++  makeBilly: [() => makeBilly, v => ((makeBilly = v), provide({ makeBilly }))],
++  maxHp: [() => maxHp],
++  maxLevel: [() => maxLevel],
++  moveSlotCount: [() => moveSlotCount],
++  movesAt: [() => movesAt, v => (movesAt = v)],
++  newUid: [() => newUid],
++  nextBracket: [() => nextBracket],
++  nextTripNode: [() => nextTripNode],
++  pathFrom: [() => pathFrom],
++  pickWeighted: [() => pickWeighted, v => (pickWeighted = v)],
++  plural: [() => plural],
++  resumeTrip: [() => resumeTrip, v => (resumeTrip = v)],
++  riderName: [() => riderName],
++  riderOf: [() => riderOf, v => ((riderOf = v), provide({ riderOf }))],
++  rollDay: [() => rollDay, v => (rollDay = v)],
++  setTrip: [() => setTrip, v => setSetTrip(v)],
++  spawn: [() => spawn, v => (spawn = v)],
++  splitPath: [() => splitPath, v => (splitPath = v)],
++  stat: [() => stat, v => (stat = v)],
++  stepRate: [() => stepRate],
++  stepsToKm: [() => stepsToKm],
++  stopTrip: [() => stopTrip, v => (stopTrip = v)],
++  teamSize: [() => teamSize],
++  toBox: [() => toBox, v => (toBox = v)],
++  toTeam: [() => toTeam, v => (toTeam = v)],
++  today: [() => today],
++  traveling: [() => traveling],
++  tripTo: [() => tripTo, v => (tripTo = v)],
++  walkDistances: [() => walkDistances, v => (walkDistances = v)],
++  walkMode: [() => walkMode],
++  xpFor: [() => xpFor],
++});
++/* eslint-enable no-func-assign */
++provide({ addSteps, makeBilly, riderOf });
++export function setSetTrip(v) {
++  setTrip = v; // eslint-disable-line no-func-assign
++  provide({ setTrip });
++}
++/* to-module: end */
++/* phase 02: a name the player typed, or that came from a backup file or a friend, loses the characters that could
++   end a piece of HTML (< > " & `) and control characters, so it is safe in any page text or attribute */
++export const cleanName = (s, max) =>
++  String(s == null ? '' : s)
++    // eslint-disable-next-line no-control-regex -- stripping control characters is the point
++    .replace(/[\u0000-\u001f\u007f<>"&`]/g, '')
++    .trim()
++    .slice(0, max);
++provide({ cleanName }); /* to-module */
++export const formatNumber = n => Math.floor(n).toLocaleString('en-US');
++export const stepsToKm = st => (st / STEPS_PER_KM).toFixed(1);
++export const newUid = () => 'm' + Date.now().toString(36) + Math.floor(random() * 1e8).toString(36);
++export const today = () => {
++  const d = new Date();
++  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
++};
++export const plural = (n, w) => `${formatNumber(n)} ${w}${n === 1 ? '' : 's'}`;
++export function pickWeighted(list) {
++  const tot = list.reduce((a, b) => a + b[1], 0);
++  let r = random() * tot;
++  for (const [id, w] of list) {
++    r -= w;
++    if (r <= 0) return id;
++  }
++  return list[0][0];
++}
++
++/* ---------- state ---------- */
++export const xpFor = L => Math.floor(RULES.progression.xpFactor * L * L * L);
++export const maxLevel = () => RULES.progression.maxLevel,
++  moveSlotCount = () => RULES.progression.moveSlots,
++  teamSize = () => RULES.progression.teamSize;
++export const jobSlotCount = () => Math.max(1, RULES.jobs.positions || 3);
++/** @returns {JobSlot} */
++export const emptyJob = () => ({ uid: null, job: null, acc: 0, pend: 0 });
++
++/* ---------- billionaires ---------- */
++export function stat(m, k) {
++  const b = SPECIES[m.sp].base[STAT_IDS.indexOf(k)];
++  let v = k === 'hp' ? Math.floor((2 * b * m.lvl) / 100) + m.lvl + 10 : Math.floor((2 * b * m.lvl) / 100) + 5;
++  /* v33: an Alpha in battle is much tougher (m.boss); one you caught keeps a little of it (m.alpha) */
++  if (m.boss) v = Math.floor(v * (k === 'hp' ? m.boss.hp : m.boss.st));
++  else if (m.alpha) v = Math.floor(v * ((RULES.battle && RULES.battle.alphaKeep) ?? 1.08));
++  return v;
++}
++export const maxHp = m => stat(m, 'hp');
++provide({ maxHp }); /* to-module */
++export function movesAt(lid, lvl) {
++  const out = [];
++  for (const [lv, mv] of LINE_BY_ID[lid].learn) if (lv <= lvl && !out.includes(mv)) out.push(mv);
++  return out.slice(-moveSlotCount());
++}
++/* alpha 0.5: a Billie remembers where and when it joined you (shown in its details) */
++export function makeBilly(sp, lvl, o = {}) {
++  const m = {
++    uid: newUid(),
++    sp,
++    lvl,
++    xp: xpFor(lvl),
++    hp: 0,
++    status: null,
++    sTurns: 0,
++    moves: movesAt(SPECIES[sp].line, lvl),
++    gold: !!o.gold,
++    nick: '',
++  };
++  m.hp = maxHp(m);
++  try {
++    if (typeof saveData !== 'undefined' && saveData && saveData.trip && LOCATIONS[saveData.trip.node])
++      m.met = { n: LOCATIONS[saveData.trip.node].id || saveData.trip.node, t: Date.now() };
++  } catch (e) {}
++  return m;
++}
++export const billyName = m => m.nick || SPECIES[m.sp].name;
++export const allBillies = () => saveData.team.concat(saveData.box);
++export const findBilly = id => allBillies().find(m => m.uid === id);
++export function gainXp(m, amt, say) {
++  if (m.lvl >= maxLevel() || amt <= 0) return;
++  m.xp += amt;
++  while (m.lvl < maxLevel() && m.xp >= xpFor(m.lvl + 1)) {
++    const old = maxHp(m);
++    m.lvl++;
++    if (m.hp > 0) m.hp = Math.min(maxHp(m), m.hp + maxHp(m) - old);
++    say(`${billyName(m)} grew to level ${m.lvl}.`, { k: 'lvl', uid: m.uid });
++    for (const [lv, mv] of LINE_BY_ID[SPECIES[m.sp].line].learn) {
++      if (lv !== m.lvl || m.moves.includes(mv)) continue;
++      if (m.moves.length < moveSlotCount()) {
++        m.moves.push(mv);
++        say(`${billyName(m)} learned ${MOVES[mv].n}.`);
++      } else uiState.learnQ.push({ uid: m.uid, mv });
++    }
++  }
++}
++export function canEvolve(m) {
++  const e = SPECIES[m.sp].evo;
++  if (!e) return false;
++  if (m.evoNo != null && m.lvl <= m.evoNo) return false;
++  switch (e.k) {
++    case 'lvl':
++    case 'split':
++      return m.lvl >= e.at;
++    case 'buddy':
++      return (m.bsteps || 0) >= e.steps;
++    case 'idle':
++      return !!m.boxedAt && !m.job && saveData.box.includes(m) && Date.now() - m.boxedAt >= e.ms && m.lvl >= e.min;
++    case 'streak':
++      return (m.streak || 0) >= e.n && m.lvl >= e.min;
++    default:
++      return false;
++  }
++}
++export const evolutionItemName = e => (ITEMS[e.item || 'bell'] ? ITEMS[e.item || 'bell'].n : 'Shining Stone');
++export function evolutionHint(m) {
++  const s = SPECIES[m.sp],
++    e = s.evo;
++  if (!e) return s.rar === 'mythical' ? 'Does not evolve.' : 'Fully evolved.';
++  /* a species with an evolution has a next stage (game-data.js sets both, or neither) */
++  const nx = SPECIES[/** @type {string} */ (s.next)],
++    nm = saveData.seen[nx.id] ? nx.name : 'something bigger';
++  switch (e.k) {
++    case 'lvl':
++      return `Evolves at level ${e.at} into ${nm}.`;
++    case 'split': {
++      /* SPECIES[null] is undefined, which alt && handles */
++      const alt = SPECIES[/** @type {string} */ (s.alt)],
++        an = alt && saveData.seen[alt.id] ? alt.name : 'something else';
++      return `Evolves at level ${e.at} into ${nm} or ${an}: ${splitPath(m) === 'A' ? 'the Build path is ahead' : 'the Hype path is ahead'} (${m.wins || 0} battles won, ${stepsToKm(m.bsteps || 0)} km walked as buddy${m.psteps ? ` + ${stepsToKm((m.psteps || 0) / 2)} km in the party at half weight` : ''}).`;
++    }
++    case 'buddy':
++      return `Evolves after you walk ${stepsToKm(e.steps)} km with it as your buddy. ${stepsToKm(m.bsteps || 0)} of ${stepsToKm(e.steps)} km so far.`;
++    case 'item':
++      return `Evolves when you use ${/^[AEIOU]/.test(evolutionItemName(e)) ? 'an' : 'a'} ${evolutionItemName(e)}, once it reaches level ${e.min}.`;
++    case 'donate':
++      return `Evolves after it gives away ${e.n} items, once it reaches level ${e.min}. ${m.donated || 0} of ${e.n} given.`;
++    case 'merge':
++      return `Evolves by combining with another ${s.name}, once it reaches level ${e.min}.`;
++    case 'idle':
++      return `Evolves after resting a full day in storage, once it reaches level ${e.min}.`;
++    case 'streak':
++      return `Evolves after winning ${e.n} battles in a row as your lead, once it reaches level ${e.min}. Streak: ${m.streak || 0}.`;
++    case 'rename':
++      return `Evolves when you give it a new nickname, once it reaches level ${e.min}.`;
++  }
++  return '';
++}
++/* v36: which final a split line takes: Build (A) when the kilometres it walked as your buddy outweigh the battles it won
++   (1 km counts as one win), Hype (B) otherwise. A tie goes to Build. */
++export function splitPath(m) {
++  const wins = m.wins || 0,
++    kmW = ((m.bsteps || 0) + (m.psteps || 0) / 2) / STEPS_PER_KM;
++  return wins > kmW ? 'B' : 'A';
++}
++export function evolve(m) {
++  if (typeof jingle === 'function') jingle(JINGLES.evolve, 140);
++  const old = maxHp(m),
++    from = billyName(m),
++    s0 = SPECIES[m.sp];
++  m.sp = s0.evo && s0.evo.k === 'split' && s0.alt && splitPath(m) === 'B' ? s0.alt : s0.next;
++  if (m.hp > 0) m.hp = Math.max(1, Math.min(maxHp(m), m.hp + maxHp(m) - old));
++  saveData.caught[m.sp] = 1;
++  saveData.seen[m.sp] = 1;
++  m.evoNo = null;
++  m.streak = 0;
++  m.donated = 0;
++  return from;
++}
++export function healAll() {
++  if (typeof soundEffect === 'function') soundEffect('heal');
++  for (const m of allBillies()) {
++    m.hp = maxHp(m);
++    m.status = null;
++    m.sTurns = 0;
++  }
++}
++export function toBox(m) {
++  const i = saveData.team.indexOf(m);
++  if (i >= 0) saveData.team.splice(i, 1);
++  if (!saveData.box.includes(m)) saveData.box.push(m);
++  m.boxedAt = Date.now();
++}
++export function toTeam(m) {
++  const i = saveData.box.indexOf(m);
++  if (i >= 0) saveData.box.splice(i, 1);
++  if (!saveData.team.includes(m)) saveData.team.push(m);
++  m.boxedAt = null;
++}
++export function addBilly(m) {
++  saveData.caught[m.sp] = 1;
++  saveData.seen[m.sp] = 1;
++  if (saveData.team.length < teamSize()) {
++    saveData.team.push(m);
++    return 'team';
++  }
++  m.boxedAt = Date.now();
++  saveData.box.push(m);
++  return 'box';
++}
++
++/* ---------- steps ---------- */
++export const STEP_BRACKETS = RULES.steps.brackets
++  .map(b => [b.upTo > 0 ? b.upTo : Infinity, b.rate])
++  .sort((a, b) => a[0] - b[0]);
++if (!STEP_BRACKETS.length || STEP_BRACKETS[STEP_BRACKETS.length - 1][0] !== Infinity)
++  STEP_BRACKETS.push([Infinity, STEP_BRACKETS.length ? STEP_BRACKETS[STEP_BRACKETS.length - 1][1] : 1]);
++export function earningsBetween(a, b) {
++  let se = 0,
++    lo = 0;
++  for (const [hi, r] of STEP_BRACKETS) {
++    const s = Math.max(a, lo),
++      e = Math.min(b, hi);
++    if (e > s) se += (e - s) * r;
++    lo = hi;
++  }
++  return se;
++}
++export const stepRate = st => {
++  for (const [hi, r] of STEP_BRACKETS) if (st < hi) return r;
++  return STEP_BRACKETS[STEP_BRACKETS.length - 1][1];
++};
++export const nextBracket = st => STEP_BRACKETS.find(([hi]) => st < hi);
++export function rollDay() {
++  if (saveData.day.date !== today()) saveData.day = { date: today(), steps: 0 };
++}
++export function gateOwner(seat) {
++  return Object.values(TRAINERS).find(T => T.seat && T.seat.id === seat);
++}
++export function gateText(n) {
++  if (n.gate && !saveData.seats.includes(n.gate) && n.gateText) return n.gateText;
++  if (n.ride && !canRide()) {
++    const R = RULES.ride || { minHeight: 1.5 };
++    return `To cross ${n.name} you need a Water Billie at least ${R.minHeight || 1.5} m tall in your team to ride on. Quant and Billigator are big enough.`;
++  }
++  if (n.gateText) return n.gateText;
++  const T = gateOwner(n.gate);
++  return `${n.name} opens once you earn ${T ? T.name + '’s' : 'another'} badge.`;
++}
++export function blockerAt(i) {
++  return trainersAt(i).find(T => T.blocks && !saveData.flags[T.id]) || null;
++}
++/* ---------- travel: a plan of stops to walk to, one link at a time; an empty plan means staying put ---------- */
++/* v24: lake and sea roads need a Water billionaire big enough to ride (rules.ride: types, minHeight in metres) */
++export function riderOf() {
++  const R = RULES.ride || { minHeight: 1.5, types: ['Water'] };
++  /** @type {Billy | null} */
++  let best = null;
++  for (const m of saveData.team) {
++    const sp = SPECIES[m.sp];
++    if (!sp || !sp.types.some(t => (R.types || ['Water']).includes(t)) || sp.ht < (R.minHeight || 1.5)) continue;
++    if (!best || sp.ht > SPECIES[best.sp].ht) best = m;
++  }
++  return best;
++}
++export const canRide = () => !!riderOf();
++export const riderName = () => {
++  const m = riderOf();
++  return m ? m.nick || SPECIES[m.sp].name : '';
++};
++export const canEnter = n =>
++  (!LOCATIONS[n].gate || saveData.seats.includes(LOCATIONS[n].gate)) && (!LOCATIONS[n].ride || canRide());
++export const canLeave = (from, to) => !blockerAt(from) || !!saveData.visited[to];
++export const nextTripNode = () => (saveData.trip.plan.length ? saveData.trip.plan[0] : null);
++/* alpha 0.4.1: how you get about (rules.travel). 'walk': you walk yourself, with the joystick, the d-pad or a tap, from
++   place to place across their edges, like a classic RPG; the steps you take in the game count as steps (encounters,
++   challenges, your buddy). 'steps': your real steps carry you along the roads (the game until 0.4). */
++export const walkMode = () => ((typeof RULES !== 'undefined' && RULES.travel) || 'walk') === 'walk';
++provide({ walkMode }); /* to-module */
++export const traveling = () => !walkMode() && nextTripNode() != null && !saveData.trip.hold && !gateMsg();
++/* why travel can't continue right now (null when it can, or when you're staying) */
++export function gateMsg() {
++  const node = saveData.trip.node,
++    nx = nextTripNode();
++  if (nx == null) return null;
++  if (saveData.trip.prog === 0 && !canLeave(node, nx)) {
++    /* canLeave was false, so a trainer blocks this location */
++    const bl = /** @type {Trainer} */ (blockerAt(node));
++    return bl.blockTitle || `${bl.name} is blocking the way.`;
++  }
++  if (!canEnter(nx)) return gateText(LOCATIONS[nx]);
++  return null;
++}
++/* shortest walk (in steps) between stops, entering only stops you may enter; returns {d,prev} */
++export function walkDistances(from) {
++  const N = LOCATIONS.length,
++    d = Array(N).fill(Infinity),
++    prev = Array(N).fill(-1),
++    done = Array(N).fill(false);
++  d[from] = 0;
++  for (;;) {
++    let u = -1;
++    for (let i = 0; i < N; i++) if (!done[i] && d[i] < Infinity && (u < 0 || d[i] < d[u])) u = i;
++    if (u < 0) break;
++    done[u] = true;
++    for (const e of ROADS_BY_NODE[u]) {
++      if (!canEnter(e.to)) continue;
++      if (u !== from && blockerAt(u) && !saveData.visited[e.to]) continue;
++      const nd = d[u] + e.cost;
++      if (nd < d[e.to]) {
++        d[e.to] = nd;
++        prev[e.to] = u;
++      }
++    }
++  }
++  return { d, prev };
++}
++export const pathFrom = (prev, to) => {
++  const out = [];
++  for (let x = to; x >= 0 && prev[x] >= 0; x = prev[x]) out.unshift(x);
++  return out;
++};
++/* steps from where you stand to stop j, and the plan that gets there (turning back on the current link if shorter) */
++export function tripTo(j) {
++  const r = saveData.trip,
++    node = r.node,
++    nx = nextTripNode();
++  if (nx == null || r.prog === 0) {
++    if (j === node && nx == null) return { steps: 0, plan: [], back: false };
++    const D = walkDistances(node);
++    if (D.d[j] === Infinity) return null;
++    return { steps: D.d[j], plan: pathFrom(D.prev, j), back: false };
++  }
++  /* the plan's next location is a road away (plans are made from the roads; migrate checks a loaded one) */
++  const c = /** @type {number} */ (roadCost(node, nx)),
++    A = walkDistances(nx),
++    Bk = walkDistances(node),
++    fwd = c - r.prog + A.d[j],
++    back = r.prog + Bk.d[j];
++  if (fwd === Infinity && back === Infinity) return null;
++  return fwd <= back
++    ? { steps: fwd, plan: [nx, ...pathFrom(A.prev, j)], back: false }
++    : { steps: back, plan: [node, ...pathFrom(Bk.prev, j)], back: true };
++}
++export function setTrip(j) {
++  const t = tripTo(j);
++  if (!t) return false;
++  const r = saveData.trip;
++  if (t.back && nextTripNode() != null) {
++    const nx = /** @type {number} */ (nextTripNode()),
++      c = /** @type {number} */ (roadCost(r.node, nx));
++    r.node = nx;
++    r.prog = c - r.prog;
++    t.plan.shift();
++  }
++  r.plan = t.plan;
++  r.hold = false;
++  if (!r.plan.length) r.prog = 0;
++  save();
++  return true;
++}
++export function stopTrip() {
++  const r = saveData.trip;
++  if (r.prog > 0) {
++    r.hold = true;
++  } else {
++    r.plan = [];
++    r.hold = false;
++  }
++  save();
++}
++export function resumeTrip() {
++  saveData.trip.hold = false;
++  save();
++}
++/* encounters come from where you're headed while you walk, otherwise from where you are */
++export const hereLocation = () => {
++  const nx = nextTripNode();
++  return LOCATIONS[nx != null && saveData.trip.prog > 0 && !saveData.trip.hold ? nx : saveData.trip.node];
++};
++export function encounterPoolHere() {
++  return POOLS[hereLocation().pool] || POOLS[Object.keys(POOLS)[0]];
++}
++export function spawn(gentle, force) {
++  const P = encounterPoolHere();
++  let list = typeof environmentOdds === 'function' ? environmentOdds(P.list) : P.list;
++  if (gentle) {
++    const my = SPECIES[saveData.starter + '0'].types,
++      g = list.filter(([id]) => !SPECIES[id].types.some(t => typeEffectiveness(t, my) > 1));
++    if (g.length) list = g;
++  }
++  const sp = force || pickWeighted(list),
++    lvl = P.lv[0] + Math.floor(random() * (P.lv[1] - P.lv[0] + 1));
++  const q = { id: newUid(), sp, lvl, gold: random() < 1 / RULES.steps.goldOdds, no: ++saveData.serial };
++  /* v33: now and then an Alpha (once you have two billionaires to stand with your lead) */
++  if (
++    !gentle &&
++    !force &&
++    saveData.team.filter(m => m.job == null).length >= 2 &&
++    random() < 1 / ((RULES.steps && RULES.steps.alphaOdds) || 45)
++  )
++    q.alpha = true;
++  saveData.queue.push(q);
++  return q;
++}
++export function addSteps(n, quiet) {
++  n = Math.floor(Number(n));
++  if (!saveData.started || !Number.isFinite(n) || n <= 0 || n > 100000) return;
++  rollDay();
++  const a = saveData.day.steps,
++    b = a + n,
++    g = earningsBetween(a, b) + saveData.seFrac,
++    gi = Math.floor(g);
++  saveData.seFrac = g - gi;
++  saveData.se += gi;
++  saveData.day.steps = b;
++  saveData.totalSteps += n;
++  const msgs = [];
++  if (traveling()) {
++    const r = saveData.trip;
++    r.prog += n;
++    /* each hop of a plan is a road (only the first is checked when a save loads) */
++    while (r.plan.length && r.prog >= /** @type {number} */ (roadCost(r.node, r.plan[0]))) {
++      r.prog -= /** @type {number} */ (roadCost(r.node, r.plan[0]));
++      r.node = /** @type {number} */ (r.plan.shift());
++      saveData.visited[r.node] = 1;
++      msgs.push(
++        r.plan.length ? `You passed through ${LOCATIONS[r.node].name}.` : `You arrived at ${LOCATIONS[r.node].name}.`
++      );
++      if (typeof uiState !== 'undefined') uiState.arrive = r.node;
++      /* v43: the walk screen walks you in from the exit */ if (!r.plan.length || gateMsg()) {
++        r.prog = 0;
++        break;
++      }
++    }
++    if (!r.plan.length) r.prog = 0;
++  }
++  const every = Math.max(1, RULES.steps.encounterEverySE);
++  saveData.meter += gi;
++  let sp = 0;
++  while (saveData.meter >= every) {
++    saveData.meter -= every;
++    if (saveData.queue.length < RULES.steps.maxEncounters) {
++      spawn();
++      sp++;
++    }
++  }
++  const bud = findBilly(saveData.buddy),
++    per = Math.max(1, RULES.progression.buddyStepsPerXp);
++  if (bud) bud.bsteps = (bud.bsteps || 0) + n;
++  /* v37: the rest of the party walks too, at half weight (for the Build path of a split evolution) */ for (const m of saveData.team)
++    if (m !== bud) m.psteps = (m.psteps || 0) + n;
++  saveData.buddyRem += n;
++  const xp = Math.floor(saveData.buddyRem / per);
++  saveData.buddyRem -= xp * per;
++  const notes = [];
++  if (bud && xp > 0) gainXp(bud, xp, t => notes.push(t));
++  saveData.eggs.forEach(e => {
++    if (e.slot != null) e.prog = Math.min(EGGS[e.tier].need, e.prog + n);
++  });
++  saveData.jobs.forEach(j => {
++    if (!j.uid) return;
++    j.acc += n;
++    while (j.acc >= JOB_STEPS) {
++      j.acc -= JOB_STEPS;
++      if (j.pend < RULES.jobs.maxPending) j.pend++;
++    }
++  });
++  if (!quiet || sp)
++    toast(`+${formatNumber(n)} steps, +$${formatNumber(gi)}${sp ? `, ${plural(sp, 'new encounter')}` : ''}`);
++  msgs.concat(notes).forEach(t => toast(t));
++  save();
++  if (!activeBattle) {
++    render();
++    if (typeof onStepsAdded === 'function') onStepsAdded();
++    showPendingWindows();
++  }
++}
++
++/* ---------- Seed Rounds ---------- */
++export const eggSlotCount = () => Math.max(1, RULES.eggs.slots);
++export function autoSlot() {
++  for (let sl = 0; sl < eggSlotCount(); sl++) {
++    if (saveData.eggs.some(e => e.slot === sl)) continue;
++    const e = saveData.eggs.find(e => e.slot == null);
++    if (e) e.slot = sl;
++  }
++}
++export function addEgg(tier) {
++  if (!EGGS[tier]) return false;
++  if (saveData.eggs.length >= RULES.eggs.capacity) {
++    toast('You’re carrying too many eggs. Hatch a few first.');
++    return false;
++  }
++  saveData.eggs.push({ id: newUid(), tier, prog: 0, slot: null });
++  autoSlot();
++  return true;
++}
++export const hatchable = () => saveData.eggs.filter(e => e.slot != null && e.prog >= EGGS[e.tier].need);
++export function hatchEgg(e) {
++  if (typeof jingle === 'function') jingle(JINGLES.hatch);
++  const T = EGGS[e.tier],
++    R = RULES.eggs,
++    top = e.tier === EGG_TIERS[EGG_TIERS.length - 1];
++  let sp = pickWeighted(T.list),
++    gold = random() < 1 / (top ? R.goldOdds10 : R.goldOdds);
++  if (top && SPECIES[R.mythSpecies] && random() < 1 / R.mythOdds) {
++    sp = R.mythSpecies;
++    gold = false;
++  }
++  const m = makeBilly(sp, T.lv, { gold });
++  saveData.eggs = saveData.eggs.filter(x => x !== e);
++  saveData.hatched = (saveData.hatched || 0) + 1;
++  autoSlot();
++  const where = addBilly(m);
++  save();
++  return { m, where };
++}
++
++/* ---------- Day Jobs ---------- */
++export function assignJob(slot, job, id) {
++  const m = findBilly(id);
++  if (!m || m.job != null) return false;
++  if (saveData.team.includes(m) && saveData.team.filter(x => x.job == null).length <= 1) return false;
++  toBox(m);
++  m.boxedAt = null;
++  m.job = slot;
++  saveData.jobs[slot] = { uid: id, job, acc: 0, pend: 0 };
++  save();
++  return true;
++}
++export function collectJob(slot) {
++  const j = saveData.jobs[slot];
++  if (!j.uid || !j.pend) return null;
++  /* a slot with a Billie has a job (assignJob sets both) */
++  const J = JOBS[/** @type {string} */ (j.job)],
++    [kind, key, amt] = J.out,
++    n = j.pend;
++  j.pend = 0;
++  if (kind === 'item') saveData.items[key] += amt * n;
++  else if (kind === 'coin') saveData.coins[key] += amt * n;
++  else saveData.se += amt * n;
++  save();
++  const m = findBilly(j.uid);
++  return `${m ? billyName(m) : 'Your Billie'} ${J.quip} You collected ${kind === 'se' ? '$' + formatNumber(amt * n) : `${amt * n} × ${kind === 'item' ? ITEMS[key].n : COINS[key].n}`}.`;
++}
++export function endShift(slot) {
++  const j = saveData.jobs[slot];
++  const msg = collectJob(slot);
++  const m = findBilly(j.uid);
++  if (m) {
++    m.job = null;
++    m.boxedAt = Date.now();
++  }
++  saveData.jobs[slot] = { uid: null, job: null, acc: 0, pend: 0 };
++  save();
++  return msg;
++}
+diff --git a/game/js/opening-fall.js b/game/js/opening-fall.js
+index 2ad9935..6de55f5 100644
+--- a/game/js/opening-fall.js
++++ b/game/js/opening-fall.js
+@@ -14,7 +14,8 @@ import { expose } from './test-globals.js';
+ import { openingDone, provide } from './hooks.js';
+ import { $, clamp } from './util.js';
+ import { MOVES, SPECIES, START_NODE, typeEffectiveness } from './game-data.js';
+-import { activeBattle, escapeHtml, maxHp, reducedMotion } from './game-state.js';
++import { maxHp } from './logic/rules.js';
++import { activeBattle, escapeHtml, reducedMotion } from './game-state.js';
+ import { artLoad } from './art.js';
+ import { portraitHTML } from './person-art.js';
+ import { particleSprite } from './battle-stage.js';
+diff --git a/game/js/self-test.js b/game/js/self-test.js
+index bc50efc..f5d2651 100644
+--- a/game/js/self-test.js
++++ b/game/js/self-test.js
+@@ -12,20 +12,16 @@ import { expose } from './test-globals.js';
+ import { provide } from './hooks.js';
+ import { clamp } from './util.js';
+ import { LOCATIONS, MOVES, RULES, SPECIES, TRAINERS, gameData, locationKind, roadCost } from './game-data.js';
++import { addSteps, makeBilly, maxHp, setTrip, spawn } from './logic/rules.js';
+ import { loadAllMaps } from './map-files.js';
+ import {
+   activeBattle,
+-  addSteps,
+   escapeHtml,
+-  makeBilly,
+-  maxHp,
+   save,
+   saveData,
+   setActiveBattle,
+   setSave,
+   setSaveData,
+-  setTrip,
+-  spawn,
+   uiState,
+ } from './game-state.js';
+ import { frameScheduler } from './frame-scheduler.js';
+diff --git a/game/js/settings-screen.js b/game/js/settings-screen.js
+index c319947..345950b 100644
+--- a/game/js/settings-screen.js
++++ b/game/js/settings-screen.js
+@@ -24,11 +24,11 @@ import {
+   walkRenderer,
+ } from './hooks.js';
+ import { JOBS, LOCATIONS, MOVES, RULES, SPECIES, STATUS_NAMES } from './game-data.js';
++import { formatNumber, teamSize, today } from './logic/rules.js';
+ import {
+   SAVE_NEW_MSG,
+   SAVE_OLD_MSG,
+   escapeHtml,
+-  formatNumber,
+   migrate,
+   reducedMotion,
+   save,
+@@ -36,8 +36,6 @@ import {
+   saveData,
+   setReducedMotion,
+   setSaveData,
+-  teamSize,
+-  today,
+   uiState,
+ } from './game-state.js';
+ import { I18N_LANGS, i18nSet } from './i18n.js';
+diff --git a/game/js/shop.js b/game/js/shop.js
+index 390d6c8..e27debf 100644
+--- a/game/js/shop.js
++++ b/game/js/shop.js
+@@ -7,7 +7,8 @@ import { expose } from './test-globals.js';
+ import { closeModal, modal, provide, renderOverlay, soundEffect, toast } from './hooks.js';
+ import { clamp, random } from './util.js';
+ import { COINS, ITEMS, SHOPS } from './game-data.js';
+-import { escapeHtml, formatNumber, plural, save, saveData, uiState } from './game-state.js';
++import { formatNumber, plural } from './logic/rules.js';
++import { escapeHtml, save, saveData, uiState } from './game-state.js';
+ import { coinHTML, uiIconHTML } from './art.js';
+ import { portraitHTML } from './person-art.js';
+ import { openDressingRoom } from './dressing-room.js';
+diff --git a/game/js/story.js b/game/js/story.js
+index 8b291e3..030ad89 100644
+--- a/game/js/story.js
++++ b/game/js/story.js
+@@ -9,7 +9,8 @@ import { expose } from './test-globals.js';
+ import { closeModal, modal, provide, render, selfTest, showPendingWindows } from './hooks.js';
+ import { $, clamp } from './util.js';
+ import { LOCATION_BY_ID, RULES, SPECIES, TRAINERS, trainersAt } from './game-data.js';
+-import { activeBattle, escapeHtml, healAll, reducedMotion, save, saveData, today, uiState } from './game-state.js';
++import { healAll, today } from './logic/rules.js';
++import { activeBattle, escapeHtml, reducedMotion, save, saveData, uiState } from './game-state.js';
+ import { dressingRoom } from './dressing-room.js';
+ import { baseMapId, walkView, walkablePointNear } from './walk-view.js';
+ import { gpuState } from './engine/webgl.js';
+diff --git a/game/js/things-to-do.js b/game/js/things-to-do.js
+index 27d8ae8..1b9b74e 100644
+--- a/game/js/things-to-do.js
++++ b/game/js/things-to-do.js
+@@ -8,7 +8,8 @@ import { expose } from './test-globals.js';
+ import { closeModal, modal, progressBarHTML, provide, render, roomRefresh, toast } from './hooks.js';
+ import { clamp } from './util.js';
+ import { COINS, ITEMS, LOCATIONS, RULES, SPECIES, gameData } from './game-data.js';
+-import { activeBattle, billyName, escapeHtml, formatNumber, save, saveData, today, uiState } from './game-state.js';
++import { billyName, formatNumber, today } from './logic/rules.js';
++import { activeBattle, escapeHtml, save, saveData, uiState } from './game-state.js';
+ import { makeCanvas, uiIconHTML } from './art.js';
+ import {
+   baseMapId,
+diff --git a/game/js/ui.js b/game/js/ui.js
+index 4b2e19b..f468273 100644
+--- a/game/js/ui.js
++++ b/game/js/ui.js
+@@ -37,7 +37,6 @@ import {
+ } from './game-data.js';
+ import {
+   STEP_BRACKETS,
+-  activeBattle,
+   addEgg,
+   allBillies,
+   assignJob,
+@@ -50,12 +49,10 @@ import {
+   collectJob,
+   eggSlotCount,
+   endShift,
+-  escapeHtml,
+   evolutionHint,
+   evolutionItemName,
+   evolve,
+   findBilly,
+-  flushSave,
+   formatNumber,
+   gateMsg,
+   gateText,
+@@ -66,17 +63,12 @@ import {
+   maxHp,
+   maxLevel,
+   moveSlotCount,
+-  newSaveKeepingPreferences,
+   nextBracket,
+   nextTripNode,
+   plural,
+-  reducedMotion,
+   resumeTrip,
+   riderName,
+   rollDay,
+-  save,
+-  saveData,
+-  setSaveData,
+   setTrip,
+   spawn,
+   splitPath,
+@@ -88,10 +80,20 @@ import {
+   toBox,
+   toTeam,
+   tripTo,
+-  uiState,
+   walkMode,
+-  writeStoredSave,
+   xpFor,
++} from './logic/rules.js';
++import {
++  activeBattle,
++  escapeHtml,
++  flushSave,
++  newSaveKeepingPreferences,
++  reducedMotion,
++  save,
++  saveData,
++  setSaveData,
++  uiState,
++  writeStoredSave,
+ } from './game-state.js';
+ import { frameTask, userFps } from './frame-scheduler.js';
+ import { ART_CACHE, artLoad, artURL, coinHTML, coinURL, eggHTML, makeCanvas, uiIconHTML } from './art.js';
+diff --git a/game/js/world-billies.js b/game/js/world-billies.js
+index 32c407c..e8d8d0b 100644
+--- a/game/js/world-billies.js
++++ b/game/js/world-billies.js
+@@ -13,7 +13,8 @@ import { expose } from './test-globals.js';
+ import { battleStageKey, mapIdAt, provide, soundEffect } from './hooks.js';
+ import { clamp } from './util.js';
+ import { SPECIES, STATUS_NAMES, TRAINERS, rivalSpecies, trainersAt } from './game-data.js';
+-import { billyName, findBilly, maxHp, nextTripNode, save, saveData, uiState } from './game-state.js';
++import { billyName, findBilly, maxHp, nextTripNode } from './logic/rules.js';
++import { save, saveData, uiState } from './game-state.js';
+ import { makeCanvas } from './art.js';
+ import { RIG_BACK_VIEW, drawRig, rigFrame, rigParts, rigPreload } from './skeleton-rig.js';
+ import { battleStagePrepare } from './battle-stage.js';
+diff --git a/game/js/world-map-gl.js b/game/js/world-map-gl.js
+index b1700b8..cfca079 100644
+--- a/game/js/world-map-gl.js
++++ b/game/js/world-map-gl.js
+@@ -12,16 +12,8 @@ import { expose } from './test-globals.js';
+ import { flyDraw, flyTick, friends, provide } from './hooks.js';
+ import { $, clamp } from './util.js';
+ import { LOCATIONS, REGIONS, ROADS, locationSubtitle, roadCost } from './game-data.js';
+-import {
+-  canEnter,
+-  escapeHtml,
+-  formatNumber,
+-  nextTripNode,
+-  reducedMotion,
+-  saveData,
+-  tripTo,
+-  uiState,
+-} from './game-state.js';
++import { canEnter, formatNumber, nextTripNode, tripTo } from './logic/rules.js';
++import { escapeHtml, reducedMotion, saveData, uiState } from './game-state.js';
+ import { frameCount, frameStop, frameTask, userFps } from './frame-scheduler.js';
+ import { artLoad, artPixels, hexToRgb, makeCanvas, uiIconHTML, worldMapStamp } from './art.js';
+ import { personWalkFrames, portraitHTML } from './person-art.js';
+diff --git a/game/js/world-map.js b/game/js/world-map.js
+index 1e8a043..e5ec11a 100644
+--- a/game/js/world-map.js
++++ b/game/js/world-map.js
+@@ -7,7 +7,8 @@ import { expose } from './test-globals.js';
+ import { flyDraw, flyTick, paintWorldMapCard, provide, toast } from './hooks.js';
+ import { $, clamp } from './util.js';
+ import { LOCATIONS, REGIONS, ROADS, roadCost } from './game-data.js';
+-import { canEnter, escapeHtml, nextTripNode, reducedMotion, saveData, uiState } from './game-state.js';
++import { canEnter, nextTripNode } from './logic/rules.js';
++import { escapeHtml, reducedMotion, saveData, uiState } from './game-state.js';
+ import { frameCount, frameStop, frameTask, userFps } from './frame-scheduler.js';
+ import { artPixels, bayerThreshold, makeSeededRandom, mixRgb, packPixel, worldMapStamp } from './art.js';
+ import { personWalkFrames } from './person-art.js';

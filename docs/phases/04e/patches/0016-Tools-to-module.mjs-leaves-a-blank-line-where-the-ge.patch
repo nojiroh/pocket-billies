@@ -1,0 +1,30 @@
+From a449f2a9de1bf2805a388a01f659d316e3f034dd Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Sun, 18 Oct 2026 09:44:01 +0000
+Subject: [PATCH 16/22] Tools: to-module.mjs leaves a blank line where the
+ generated part was, so the header ends at the same place again
+
+With the previous commit a module whose code starts with a comment got its generated part moved down one comment on
+every second run (the blank line that ended the header was gone once the part was written). Now a refresh is the
+same however often it runs; no module changes.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01LpFSn4GaodAVzjKW5J3oQR
+---
+ tools/to-module.mjs | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/tools/to-module.mjs b/tools/to-module.mjs
+index 38f6c63..2820f43 100644
+--- a/tools/to-module.mjs
++++ b/tools/to-module.mjs
+@@ -66,7 +66,8 @@ export function stripped(text) {
+     if (b < 0) throw new Error('to-module: start marker without an end marker');
+     let e = b + END.length;
+     while (text[e] === '\n') e++;
+-    text = text.slice(0, a) + text.slice(e);
++    // phase 04e: a blank line where the generated part was, so the header ends there again (headerEnd)
++    text = text.slice(0, a) + (a > 0 ? '\n' : '') + text.slice(e);
+   }
+   text = text.replace(PROVIDE_LINE, '');
+   const ast = espree.parse(text, { ecmaVersion: 'latest', sourceType: 'module', range: true });
