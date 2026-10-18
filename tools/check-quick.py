@@ -524,7 +524,8 @@ def go_scene(pg, node, sec=40):
 
 # phase 08: travel is walking. cross() walks from where you stand over the edge into the neighbour n1 the way a player
 # does: a path to 6 m past the exit (no search limit: a route view is long), the player put along it at most 0.8 m at a time, walkCross() after each (the a041
-# way: game time is too slow here to walk it for real). Returns the metres walked and the views seen on the way
+# way: game time is too slow here to walk it for real). Returns the metres walked, the views seen on the way and how
+# often the view was not ready (a remount instead of a shift)
 def cross(pg, n1, sec=90):
     travel = pg.evaluate("(()=>{const t=RULES.travel;RULES.travel='walk';return t})()")   # until play() leaves the steps mode
     try: return cross_walk(pg, n1, sec)
@@ -536,11 +537,12 @@ def cross_walk(pg, n1, sec):
     r = pg.evaluate(f"""(()=>{{const v=walkState(),e=(v.exits||[]).find(e=>e.to==={n1});if(!e)return 'no exit to '+LOCATIONS[{n1}].name+' from '+LOCATIONS[saveData.trip.node].name;const sc=walkView.sc,pt=sc.exits[e.i],hub=mapHub(sc),dx=pt[0]-hub[0],dz=pt[1]-hub[1],l=Math.hypot(dx,dz)||1,tg=[pt[0]+dx/l*6,pt[1]+dz/l*6];
       const P=walkView.pl,R=findPath(P.x,P.z,tg[0],tg[1],{{max:1e6}});return R?{{R}}:'no path to the exit to '+LOCATIONS[{n1}].name}})()""")
     if isinstance(r, str): raise Exception(r)
-    R = r['R']; walked = 0; views = [pg.evaluate('walkView.id')]
+    R = r['R']; walked = 0; views = [pg.evaluate('walkView.id')]; unready = 0
     for a, bb in zip(R, R[1:]):
         d = ((bb[0] - a[0]) ** 2 + (bb[1] - a[1]) ** 2) ** .5; k = max(1, int(d / .8))
         for j in range(1, k + 1):
             x = a[0] + (bb[0] - a[0]) * j / k; z = a[1] + (bb[1] - a[1]) * j / k; walked += d / k
+            if not pg.evaluate('walkView.ready'): unready += 1
             if not until(pg, 'walkView.ready', sec): raise Exception(f'the view went unready on the way ({views})')
             st = pg.evaluate(f"(()=>{{walkView.pl.x={x};walkView.pl.z={z};walkView.pl.route=null;walkCross();return [saveData.trip.node==={n1},walkView.id]}})()")
             if st[1] != views[-1]: views.append(st[1])
@@ -548,7 +550,7 @@ def cross_walk(pg, n1, sec):
                 if not until(pg, f"walkView.ready&&(walkView.id===LOCATIONS[{n1}].mapId||(walkView.sc&&walkView.sc.baseId===LOCATIONS[{n1}].mapId))", sec): raise Exception(f'crossed into {pg.evaluate(f"LOCATIONS[{n1}].name")} but its view never showed (still {pg.evaluate("walkView.id")})')
                 v = pg.evaluate('walkView.id')
                 if v != views[-1]: views.append(v)
-                return walked, views
+                return walked, views, unready
     raise Exception(f'walked {walked:.0f} m toward {pg.evaluate(f"LOCATIONS[{n1}].name")} and never crossed ({views})')
 
 
@@ -556,10 +558,10 @@ def cross_walk(pg, n1, sec):
 def cross_to(pg, n):
     plan = pg.evaluate(f"(()=>{{const t=RULES.travel;RULES.travel='walk';setTrip({n});RULES.travel=t;return saveData.trip.plan.slice()}})()")
     if not plan: raise Exception(f'no way to {pg.evaluate(f"LOCATIONS[{n}].name")}')
-    walked = 0; views = []
+    walked = 0; views = []; unready = 0
     for n1 in plan:
-        w, v = cross(pg, n1); walked += w; views += v if not views else [x for x in v if x != views[-1]]
-    return walked, views
+        w, v, u = cross(pg, n1); walked += w; unready += u; views += v if not views else [x for x in v if x != views[-1]]
+    return walked, views, unready
 
 def debug_picture_privacy(pg):
     # phase 13: the debug log keeps a picture of the scene, and what the buddy says names the Billie, so in the frame that
@@ -827,7 +829,7 @@ def desktop_steps(b, base, R):
         pg.evaluate("if(typeof talkBox!=='undefined'&&talkBox.on&&typeof talkHide==='function')talkHide();0")
         if abs(roam[0] - tgt[0]) > .8 or abs(roam[1] - tgt[1]) > .8: raise Exception(f'tapped {tgt}, ended at {roam} ({pg.evaluate("JSON.stringify({mode:walkView.opt.state&&walkView.opt.state().mode,route:saveData.trip,battle:!!activeBattle,modal:uiState.modal&&uiState.modal.title,talk:talkBox.on,cs:typeof cutscene!==\"undefined\"&&cutscene.on,climb:!!walkView.pl.climb,keys:Object.keys(walkView.keys||{})})")})')
         # phase 08: the trip is walked, over each road's edge in turn (it used to be paid for with steps)
-        pg.evaluate("uiState.toastQ=[];uiState.modal=null;uiState.mq=[];renderOverlay();0"); walked, views = cross_to(pg, 9)
+        pg.evaluate("uiState.toastQ=[];uiState.modal=null;uiState.mq=[];renderOverlay();0"); walked, views, _ = cross_to(pg, 9)
         if not pg.evaluate("saveData.trip.node===9&&!saveData.trip.plan.length"): raise Exception('the trip to Willowmere didn’t arrive (' + pg.evaluate("JSON.stringify([saveData.trip,walkView.id])") + ')')
         shot(pg, 'arrived')
         return f'walked to {roam}, then {walked:.0f} m over two roads to Willowmere ({" → ".join(views)})'
@@ -1418,15 +1420,12 @@ def desktop_steps(b, base, R):
         # a trip seen on the ground: leave Marigold Town, cross the road, arrive at Tallgrass Meadow without a remount
         go_scene(pg, 0); pg.evaluate("(()=>{const h=mapHub(mapById('marigold'));uiState.roam={id:'marigold',node:0,x:h[0],z:h[1]}})();render();0")   # alpha 0.2: places grew; start at the hub
         if not until(pg, "walkView.id==='w:marigold*'&&walkView.ready", 30): raise Exception('Marigold Town is not shown with its roads (' + pg.evaluate('walkView.id') + ')')   # v46: a place is always shown with the first stretch of its roads
-        pg.evaluate("saveData.queue=[];setTrip(1);render();0"); time.sleep(1); ids = []
-        per = pg.evaluate("Math.ceil(roadCost(0,1)/6)+5")   # alpha 0.2: a road's steps follow its walk
-        for n in range(6):
-            pg.evaluate(f"addSteps({per},true);uiState.modal=null;uiState.mq=[];renderOverlay();render();0"); time.sleep(2.5); ids.append(pg.evaluate("walkView.id"))
-            if pg.evaluate("!walkView.ready"): raise Exception('the view went unready mid-road (a remount instead of a shift)')
-        if not until(pg, "saveData.trip.node===1&&saveData.trip.prog===0&&walkView.id.startsWith('w:tallgrass_meadow')", 20): raise Exception(f'the walk to Tallgrass Meadow did not end on its ground ({ids})')
+        pg.evaluate("saveData.queue=[];uiState.modal=null;uiState.mq=[];renderOverlay();0"); time.sleep(1)   # phase 08: walked over the edge, no steps
+        walked, views, unready = cross_to(pg, 1)
+        if unready: raise Exception(f'the view went unready {unready} time(s) on the way (a remount instead of a shift): {views}')
+        if not views[-1].startswith('w:tallgrass_meadow'): raise Exception(f'the walk to Tallgrass Meadow did not end on its ground ({views})')
         shot(pg, 'v43-road')
-        views = [i for k, i in enumerate(ids) if k == 0 or ids[k - 1] != i]
-        out.append('walked Marigold Town → Tallgrass Meadow on the ground: ' + ' → '.join(views + [pg.evaluate("walkView.id")]))
+        out.append(f'walked Marigold Town → Tallgrass Meadow on the ground ({walked:.0f} m): ' + ' → '.join(views))
         # the flags: only towns have one; a flag pole flies its town's and is rigid
         fl = json.loads(pg.evaluate("JSON.stringify({towns:gameData.scenery.flags,pole:gameData.scenery.props.flag_pole,ridge:(gameData.maps.kitewind.props||[]).filter(p=>p.k==='flag_pole').length,path:flagPicturePath(gameData.maps.marigold),pathRoute:flagPicturePath(gameData.maps.tallgrass_meadow)})"))
         for t in fl['towns'] + ['default']:
