@@ -38,11 +38,11 @@ import {
   STATK,
   STATN,
   STATUSN,
-  TC,
   TRAINERS,
-  eff,
+  TYPE_COLORS,
   hasPassive,
   trainerTeam,
+  typeEffectiveness,
 } from './game-data.js';
 import {
   activeBattle,
@@ -333,7 +333,7 @@ function dmgCalc(k, tk, mid, src) {
     aty = src ? src.ty : types(k);
   const base = ((0.4 * L + 2) * P * At) / Dt / 50 + 2;
   const stab = M.t !== 'None' && aty.includes(M.t) ? RB.stab : 1,
-    te = eff(M.t, types(tk));
+    te = typeEffectiveness(M.t, types(tk));
   const cs = (fx.crit || 0) + (hasPassive(aty, 'sharp') ? RB.mediaCrit : 0);
   const crit = !src && random() < RB.critChances[clamp(cs, 0, RB.critChances.length - 1)];
   const roll = hasPassive(aty, 'volatile')
@@ -769,7 +769,7 @@ function aiDmg(k, id, tk) {
   return (
     (((0.4 * L + 2) * P * statE(k, phys ? 'lev' : 'lob')) / statE(tk, phys ? 'law' : 'pr') / 50 + 2) *
     (M.t !== 'None' && types(k).includes(M.t) ? RB.stab : 1) *
-    eff(M.t, types(tk))
+    typeEffectiveness(M.t, types(tk))
   );
 }
 function aiScore(k, id, tk) {
@@ -787,7 +787,11 @@ function aiScore(k, id, tk) {
     if (fx.missCost) P *= 0.8;
     const phys = M.c === 'H';
     s =
-      (((P * (M.t !== 'None' && types(k).includes(M.t) ? RB.stab : 1) * eff(M.t, types(tk)) * (M.a || 100)) / 100) *
+      (((P *
+        (M.t !== 'None' && types(k).includes(M.t) ? RB.stab : 1) *
+        typeEffectiveness(M.t, types(tk)) *
+        (M.a || 100)) /
+        100) *
         statE(k, phys ? 'lev' : 'lob')) /
       statE(tk, phys ? 'law' : 'pr');
     if (t.hp <= s * 0.6) s *= 1.4;
@@ -1750,11 +1754,11 @@ function effLabel(mid, tk) {
   const F = tk != null ? [tk] : liveK(1);
   if (!F.length) return '';
   if (F.length === 1) {
-    const e = eff(M.t, types(F[0]));
+    const e = typeEffectiveness(M.t, types(F[0]));
     return e > 1 ? '<em class="se">Super effective</em>' : e < 1 ? '<em class="nve">Not very effective</em>' : '';
   }
-  const se = F.filter(k => eff(M.t, types(k)) > 1).map(k => billyName(A(k))),
-    nv = F.filter(k => eff(M.t, types(k)) < 1).map(k => billyName(A(k)));
+  const se = F.filter(k => typeEffectiveness(M.t, types(k)) > 1).map(k => billyName(A(k))),
+    nv = F.filter(k => typeEffectiveness(M.t, types(k)) < 1).map(k => billyName(A(k)));
   return se.length
     ? `<em class="se">Super effective on ${escapeHtml(se.join(', '))}</em>`
     : nv.length === F.length
@@ -1827,7 +1831,7 @@ export function paintActions() {
     h = `<div class="moves">${m.moves
       .map((id, n) => {
         const M = MOVES[id],
-          c = TC[M.t],
+          c = TYPE_COLORS[M.t],
           P = M.p ? M.p : M.fx && M.fx.vary ? 'Varies' : 'Status',
           stab = M.t !== 'None' && types(activeBattle.cur).includes(M.t);
         return `<button class="mv" style="--tc:${c[0]};--tf:${c[1]}" data-a="bmove" data-m="${id}" data-tip="${escapeHtml(M.d)}"><span class="mv-top"><b>${escapeHtml(M.n)}</b><kbd>${n + 1}</kbd></span><span class="mv-meta"><span class="mv-ty">${M.t === 'None' ? 'Normal' : M.t}${stab ? ' ★' : ''}</span><span class="tnum">${P}${M.p ? ' pow' : ''}${M.p && typeof battleWeatherMult === 'function' ? (battleWeatherMult(M.t) > 1 ? ' ▲' : battleWeatherMult(M.t) < 1 ? ' ▼' : '') : ''}${M.c !== 'X' || M.a < 100 ? ` · ${M.a || 100}%` : ''}</span></span>${effLabel(id)}</button>`;

@@ -7,10 +7,10 @@ import { expose } from '../../game/js/test-globals.js';
 import { provide, studioState } from '../../game/js/hooks.js';
 expose({
   BACKDROPS: [() => BACKDROPS],
+  HIT_EFFECTS_BY_TYPE: [() => HIT_EFFECTS_BY_TYPE],
   MOVES: [() => MOVES],
   PEOPLE: [() => PEOPLE],
-  TC: [() => TC],
-  TYPEFX: [() => TYPEFX],
+  TYPE_COLORS: [() => TYPE_COLORS],
   activeBattle: [() => activeBattle, v => ((activeBattle = v), provide({ activeBattle }))],
   escapeHtml: [() => escapeHtml],
   liveMap: [() => liveMap],
@@ -56,15 +56,15 @@ const BACKDROPS = liveMap(D => D.backdrops),
   MOVES = liveMap(D => D.moves),
   PEOPLE = liveMap(D => D.people);
 provide({ BACKDROPS, MOVES, PEOPLE }); /* to-module */
-const TC = liveMap(D => {
+const TYPE_COLORS = liveMap(D => {
   const o = Object.fromEntries(D.types.map(t => [t.id, [t.color, t.text || '#fff']]));
   o.None = [(D.untyped || {}).color || '#9a9a9a', (D.untyped || {}).text || '#fff'];
   return o;
 });
-provide({ TC }); /* to-module */
-const TYPEFX = liveMap(D => {
+provide({ TYPE_COLORS }); /* to-module */
+const HIT_EFFECTS_BY_TYPE = liveMap(D => {
   const o = Object.fromEntries(D.types.map(t => [t.id, t.fx && t.fx.length ? t.fx : ['pow', 'star']]));
   o.None = (D.untyped || {}).fx || ['pow', 'star'];
   return o;
 });
-provide({ TYPEFX }); /* to-module */
+provide({ HIT_EFFECTS_BY_TYPE }); /* to-module */

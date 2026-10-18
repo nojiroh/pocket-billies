@@ -16,6 +16,7 @@ expose({
   EGGS: [() => EGGS],
   EGG_TIERS: [() => EGG_TIERS],
   FUTURE: [() => FUTURE],
+  HIT_EFFECTS_BY_TYPE: [() => HIT_EFFECTS_BY_TYPE],
   ITEMS: [() => ITEMS],
   JOBS: [() => JOBS],
   JOB_STEPS: [() => JOB_STEPS],
@@ -28,11 +29,9 @@ expose({
   PEOPLE: [() => PEOPLE],
   PLACE: [() => PLACE],
   POOLS: [() => POOLS],
-  RESm: [() => RESm],
   ROUTE: [() => ROUTE],
   RULES: [() => RULES],
   SEATS: [() => SEATS],
-  SEm: [() => SEm],
   SHOPS: [() => SHOPS],
   SPECIES: [() => SPECIES],
   START_NODE: [() => START_NODE],
@@ -40,12 +39,12 @@ expose({
   STATN: [() => STATN],
   STATUSN: [() => STATUSN],
   STEPS_PER_KM: [() => STEPS_PER_KM],
-  TC: [() => TC],
   TOT: [() => TOT],
   TRAINERS: [() => TRAINERS],
-  TYPEFX: [() => TYPEFX],
   TYPES: [() => TYPES],
-  eff: [() => eff, v => (eff = v)],
+  TYPE_COLORS: [() => TYPE_COLORS],
+  TYPE_RESISTED_BY: [() => TYPE_RESISTED_BY],
+  TYPE_STRONG_AGAINST: [() => TYPE_STRONG_AGAINST],
   gameData: [() => gameData],
   hasPassive: [() => hasPassive],
   isTown: [() => isTown, v => (isTown = v)],
@@ -59,6 +58,7 @@ expose({
   trainerById: [() => trainerById],
   trainerTeam: [() => trainerTeam, v => (trainerTeam = v)],
   trainersAt: [() => trainersAt],
+  typeEffectiveness: [() => typeEffectiveness, v => (typeEffectiveness = v)],
   typesWith: [() => typesWith],
   warnData: [() => warnData],
 });
@@ -79,23 +79,29 @@ export const RULES = gameData.rules;
 provide({ RULES }); /* to-module */
 /* ---------- types ---------- */
 export const TYPES = gameData.types.map(t => t.id);
-export const TC = Object.fromEntries(gameData.types.map(t => [t.id, [t.color, t.text || '#fff']]));
-provide({ TC }); /* to-module */
-TC.None = [gameData.untyped.color, gameData.untyped.text || '#fff'];
-const SEm = Object.fromEntries(gameData.types.map(t => [t.id, (t.strong || []).filter(x => TC[x])]));
-const RESm = Object.fromEntries(gameData.types.map(t => [t.id, (t.weak || []).filter(x => TC[x])]));
+export const TYPE_COLORS = Object.fromEntries(gameData.types.map(t => [t.id, [t.color, t.text || '#fff']]));
+provide({ TYPE_COLORS }); /* to-module */
+TYPE_COLORS.None = [gameData.untyped.color, gameData.untyped.text || '#fff'];
+const TYPE_STRONG_AGAINST = Object.fromEntries(
+  gameData.types.map(t => [t.id, (t.strong || []).filter(x => TYPE_COLORS[x])])
+);
+const TYPE_RESISTED_BY = Object.fromEntries(
+  gameData.types.map(t => [t.id, (t.weak || []).filter(x => TYPE_COLORS[x])])
+);
 export const PASSIVE = Object.fromEntries(gameData.types.map(t => [t.id, t.passive || '']));
-const TYPEFX = Object.fromEntries(gameData.types.map(t => [t.id, t.fx && t.fx.length ? t.fx : ['pow', 'star']]));
-provide({ TYPEFX }); /* to-module */
-TYPEFX.None = gameData.untyped.fx || ['pow', 'star'];
+const HIT_EFFECTS_BY_TYPE = Object.fromEntries(
+  gameData.types.map(t => [t.id, t.fx && t.fx.length ? t.fx : ['pow', 'star']])
+);
+provide({ HIT_EFFECTS_BY_TYPE }); /* to-module */
+HIT_EFFECTS_BY_TYPE.None = gameData.untyped.fx || ['pow', 'star'];
 const typesWith = p => TYPES.filter(t => PASSIVE[t] === p);
 export const hasPassive = (types, p) => types.some(t => PASSIVE[t] === p);
-export function eff(at, defs) {
-  if (at === 'None' || !SEm[at]) return 1;
+export function typeEffectiveness(at, defs) {
+  if (at === 'None' || !TYPE_STRONG_AGAINST[at]) return 1;
   let m = 1;
   for (const d of defs) {
-    if (SEm[at].includes(d)) m *= 2;
-    else if (RESm[at].includes(d)) m *= 0.5;
+    if (TYPE_STRONG_AGAINST[at].includes(d)) m *= 2;
+    else if (TYPE_RESISTED_BY[at].includes(d)) m *= 0.5;
   }
   return m;
 }
@@ -107,7 +113,7 @@ export const MOVES = gameData.moves;
 provide({ MOVES }); /* to-module */
 for (const k in MOVES) {
   const M = MOVES[k];
-  if (!TC[M.t]) {
+  if (!TYPE_COLORS[M.t]) {
     warnData(`Move ${k} has unknown type ${M.t}; using None.`);
     M.t = 'None';
   }
@@ -146,7 +152,7 @@ LINES.forEach(L => {
       id = L.id + st0,
       last = L.split ? st0 >= 2 : st0 === L.names.length - 1,
       at = (arr, d) => (Array.isArray(arr) ? pickI(arr, st0) : d);
-    const types = (at(L.types, ['None']) || ['None']).filter(t => TC[t]);
+    const types = (at(L.types, ['None']) || ['None']).filter(t => TYPE_COLORS[t]);
     SPECIES[id] = {
       id,
       name: n,

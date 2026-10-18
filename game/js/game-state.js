@@ -34,9 +34,9 @@ import {
   STATK,
   STEPS_PER_KM,
   TRAINERS,
-  eff,
   linkCost,
   trainersAt,
+  typeEffectiveness,
 } from './game-data.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -760,7 +760,7 @@ export function spawn(gentle, force) {
   let list = typeof environmentOdds === 'function' ? environmentOdds(P.list) : P.list;
   if (gentle) {
     const my = SPECIES[saveData.starter + '0'].types,
-      g = list.filter(([id]) => !SPECIES[id].types.some(t => eff(t, my) > 1));
+      g = list.filter(([id]) => !SPECIES[id].types.some(t => typeEffectiveness(t, my) > 1));
     if (g.length) list = g;
   }
   const sp = force || pickWeighted(list),

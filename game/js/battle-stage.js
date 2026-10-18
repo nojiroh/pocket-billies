@@ -13,9 +13,9 @@ import { expose } from './test-globals.js';
 import {
   A,
   BACKDROPS,
+  HIT_EFFECTS_BY_TYPE,
   MOVES,
-  TC,
-  TYPEFX,
+  TYPE_COLORS,
   activeBattle,
   battleFreeArea,
   battleGLLayout,
@@ -2068,7 +2068,7 @@ export const battleStageRingPhase = () =>
 function addParticle(o) {
   battleStage.parts.push(Object.assign({ vx: 0, vy: 0, vz: 0, ax: 0, ay: 0, az: 0, age: 0, life: 600, layer: 2 }, o));
 }
-const HIT_SPRITES_BY_TYPE = TYPEFX;
+const HIT_SPRITES_BY_TYPE = HIT_EFFECTS_BY_TYPE;
 const GLOWING_PARTICLES = { spark: 1, star: 1, bolt: 1, bit: 1, gem: 1, pow: 1, up: 1 };
 const typeSprite = (t, i) => {
   const l = HIT_SPRITES_BY_TYPE[t] || HIT_SPRITES_BY_TYPE.None;
@@ -2458,8 +2458,8 @@ export function battleStagePlay(an, ev) {
         const n = 9,
           beamy = M.t === 'Electric' || M.t === 'Psychic' || M.t === 'Water';
         scheduleAt(140, () => {
-          ringFx(A, TC[M.t][0], 0.15, 0.8, 300);
-          groundRing(si, TC[M.t][0], 1.4, 420);
+          ringFx(A, TYPE_COLORS[M.t][0], 0.15, 0.8, 300);
+          groundRing(si, TYPE_COLORS[M.t][0], 1.4, 420);
         });
         if (beamy)
           scheduleAt(200, () =>
@@ -2471,7 +2471,7 @@ export function battleStagePlay(an, ev) {
               y2: T.y,
               z2: T.z,
               beam: 1,
-              col: TC[M.t][0],
+              col: TYPE_COLORS[M.t][0],
               w: 3,
               life: 420,
               glow: 1,
@@ -2524,8 +2524,8 @@ export function battleStagePlay(an, ev) {
           });
         });
       scheduleAt(600, () => {
-        ringFx(Pp, TC[M.t][0], 0.2, 1.1, 420);
-        groundRing(tgt, TC[M.t][0], 1.6);
+        ringFx(Pp, TYPE_COLORS[M.t][0], 0.2, 1.1, 420);
+        groundRing(tgt, TYPE_COLORS[M.t][0], 1.6);
         if (!an.self) {
           blinkActor(tgt, 240);
           setActorAction(tgt, 'dizzy', 700);

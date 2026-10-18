@@ -26,14 +26,14 @@ import {
   STATK,
   STATN,
   STATUSN,
-  TC,
   TRAINERS,
   TYPES,
-  eff,
+  TYPE_COLORS,
   gameData,
   linkCost,
   placeSub,
   trainersAt,
+  typeEffectiveness,
 } from './game-data.js';
 import {
   STEP_BRACKETS,
@@ -336,7 +336,8 @@ export function setRenderOv(v) {
   provide({ renderOv });
 }
 /* to-module: end */
-const chip = t => `<span class="chip" style="--tc:${TC[t][0]};--tf:${TC[t][1]}">${t === 'None' ? 'Normal' : t}</span>`;
+const chip = t =>
+  `<span class="chip" style="--tc:${TYPE_COLORS[t][0]};--tf:${TYPE_COLORS[t][1]}">${t === 'None' ? 'Normal' : t}</span>`;
 provide({ chip }); /* to-module */
 const stBadge = st => (st ? `<span class="stb st-${st}">${STATUSN[st]}</span>` : '');
 provide({ stBadge }); /* to-module */
@@ -737,8 +738,8 @@ function renderIntro() {
    .map((l, j) => {
      const s = SPECIES[l + '0'],
        t = s.types[0];
-     const st = TYPES.filter(x => eff(t, [x]) > 1),
-       wk = TYPES.filter(x => eff(x, [t]) > 1);
+     const st = TYPES.filter(x => typeEffectiveness(t, [x]) > 1),
+       wk = TYPES.filter(x => typeEffectiveness(x, [t]) > 1);
      return `<button class="starter px" data-a="pick" data-l="${l}" style="--d:${j * 80}ms">${rigCanvasHTML(l + '0', 104, { act: 'cheer' })}<span><span class="sn">${s.name}</span><span class="row">${chip(t)}</span><span class="sd">${s.blurb}</span><span class="sd">Strong against ${st.join(' and ')}. Weak to ${wk.join(' and ')}.</span></span></button>`;
    })
    .join('')}</div>`;
@@ -1851,7 +1852,7 @@ function paintMapCard() {
 /* ---------- team: the lead up top, the party as cards, day jobs, then storage ---------- */
 const plateVars = m => {
   const t = SPECIES[m.sp].types;
-  return `--c1:${TC[t[0]][0]};--c2:${TC[t[t.length - 1]][0]}`;
+  return `--c1:${TYPE_COLORS[t[0]][0]};--c2:${TYPE_COLORS[t[t.length - 1]][0]}`;
 };
 const billyConditionHTML = m => (m.hp <= 0 ? '<span class="stb st-down">Fainted</span>' : stBadge(m.status));
 const xpPart = m => {
@@ -1917,12 +1918,12 @@ function boxSection() {
   const full = saveData.team.length >= teamSize();
   const tools =
     all.length > 3
-      ? `<div class="fchips tm-tools" role="group" aria-label="Sort and filter storage">${BOXSORT.map(([k, l]) => `<button class="fchip${so === k ? ' on' : ''}" data-a="boxsort" data-k="${k}" aria-pressed="${so === k}">${l}</button>`).join('')}${types.length > 1 ? `<span class="tm-sep" aria-hidden="true"></span><button class="fchip${f === 'all' ? ' on' : ''}" data-a="boxf" data-f="all" aria-pressed="${f === 'all'}">All types</button>${types.map(t => `<button class="fchip tdot${f === t ? ' on' : ''}" data-a="boxf" data-f="${t}" style="--tc:${TC[t][0]}" aria-pressed="${f === t}"><i></i>${t === 'None' ? 'Normal' : t}</button>`).join('')}` : ''}</div>`
+      ? `<div class="fchips tm-tools" role="group" aria-label="Sort and filter storage">${BOXSORT.map(([k, l]) => `<button class="fchip${so === k ? ' on' : ''}" data-a="boxsort" data-k="${k}" aria-pressed="${so === k}">${l}</button>`).join('')}${types.length > 1 ? `<span class="tm-sep" aria-hidden="true"></span><button class="fchip${f === 'all' ? ' on' : ''}" data-a="boxf" data-f="all" aria-pressed="${f === 'all'}">All types</button>${types.map(t => `<button class="fchip tdot${f === t ? ' on' : ''}" data-a="boxf" data-f="${t}" style="--tc:${TYPE_COLORS[t][0]}" aria-pressed="${f === t}"><i></i>${t === 'None' ? 'Normal' : t}</button>`).join('')}` : ''}</div>`
       : '';
   return `<section class="tpanel tm-box"><div class="sec-h"><h2>Storage</h2><span class="count tnum">${all.length}</span></div>${
     all.length
       ? `<p class="note">Billies resting here don’t battle. Tap one for details.</p>${tools}
- <div class="bx-grid">${L.map(m => `<div class="bx"><button class="bx-main" data-a="mon" data-u="${m.uid}"><span class="bx-spr" style="${plateVars(m)}">${rigCanvasHTML(m.sp, 60, { gold: m.gold })}</span><b>${escapeHtml(billyName(m))}</b><span class="bx-sub tnum">Lv ${m.lvl}<span class="bx-dots">${SPECIES[m.sp].types.map(t => `<i style="--tc:${TC[t][0]}" title="${t}"></i>`).join('')}</span></span></button><button class="qk" data-a="mteam" data-u="${m.uid}">${full ? 'Swap in' : 'To team'}</button></div>`).join('')}</div>`
+ <div class="bx-grid">${L.map(m => `<div class="bx"><button class="bx-main" data-a="mon" data-u="${m.uid}"><span class="bx-spr" style="${plateVars(m)}">${rigCanvasHTML(m.sp, 60, { gold: m.gold })}</span><b>${escapeHtml(billyName(m))}</b><span class="bx-sub tnum">Lv ${m.lvl}<span class="bx-dots">${SPECIES[m.sp].types.map(t => `<i style="--tc:${TYPE_COLORS[t][0]}" title="${t}"></i>`).join('')}</span></span></button><button class="qk" data-a="mteam" data-u="${m.uid}">${full ? 'Swap in' : 'To team'}</button></div>`).join('')}</div>`
       : '<div class="empty tm-empty">Storage is empty. When your team is full, new Billies you tax and hatchlings rest here.</div>'
   }</section>`;
 }
@@ -1991,7 +1992,7 @@ function renderLedger() {
       .join('') +
     TYPES.map(
       t =>
-        `<button class="fchip tdot${f === t ? ' on' : ''}" data-a="dexf" data-f="${t}" style="--tc:${TC[t][0]}" aria-label="${t}"><i></i>${t}</button>`
+        `<button class="fchip tdot${f === t ? ' on' : ''}" data-a="dexf" data-f="${t}" style="--tc:${TYPE_COLORS[t][0]}" aria-label="${t}"><i></i>${t}</button>`
     ).join('');
   return `<header class="bar"><div><div class="sub">Professor Hazel’s records</div><h1 class="where">Field Guide</h1></div></header>${guideTabs()}
  <section class="ledsum paper px"><div class="ls-row"><div><span class="ls-k">Seen</span><b class="tnum">${seen}</b></div><div><span class="ls-k">Taxed</span><b class="tnum">${got}</b></div><div><span class="ls-k">Total</span><b class="tnum">${DEX.length}</b></div></div>${bar(got / DEX.length, 'gold')}<p class="hand">Keep walking. They are out there.</p></section>
@@ -2002,7 +2003,7 @@ function renderLedger() {
        const s = SPECIES[id],
          st = dexStatus(id),
          sn = st !== 'none';
-       return `<li><button class="lrow ${st}" data-a="dex" data-s="${id}" aria-label="${sn ? s.name : 'Unknown'}, number ${s.no}"><span class="lno tnum">${String(s.no).padStart(3, '0')}</span><span class="lspr">${sn ? bustHTML(id, 46) : bustHTML(id, 46, { sil: 1, still: 1 })}</span><span class="ltx"><b>${sn ? escapeHtml(s.name) : 'Unknown'}</b><small>${sn ? escapeHtml(s.cat) : '—'}</small></span><span class="ltypes">${sn ? s.types.map(t => `<i style="--tc:${TC[t][0]}" title="${t}"></i>`).join('') : ''}</span><span class="lst">${st === 'got' ? `<img class="pxi" src="${coinURL('penny')}" width="18" height="18" alt="Taxed">` : st === 'seen' ? '<em>seen</em>' : ''}</span></button></li>`;
+       return `<li><button class="lrow ${st}" data-a="dex" data-s="${id}" aria-label="${sn ? s.name : 'Unknown'}, number ${s.no}"><span class="lno tnum">${String(s.no).padStart(3, '0')}</span><span class="lspr">${sn ? bustHTML(id, 46) : bustHTML(id, 46, { sil: 1, still: 1 })}</span><span class="ltx"><b>${sn ? escapeHtml(s.name) : 'Unknown'}</b><small>${sn ? escapeHtml(s.cat) : '—'}</small></span><span class="ltypes">${sn ? s.types.map(t => `<i style="--tc:${TYPE_COLORS[t][0]}" title="${t}"></i>`).join('') : ''}</span><span class="lst">${st === 'got' ? `<img class="pxi" src="${coinURL('penny')}" width="18" height="18" alt="Taxed">` : st === 'seen' ? '<em>seen</em>' : ''}</span></button></li>`;
      })
      .join('') || '<li class="lempty">No entries match.</li>'
  }</ol>`;
@@ -2053,9 +2054,9 @@ function renderDexEntry(id) {
   const eggs = Object.keys(EGGS)
     .filter(k => EGGS[k].list.some(([x]) => x === id))
     .map(k => k + ' km egg');
-  const strong = TYPES.filter(x => s.types.some(t => eff(t, [x]) > 1)),
-    weak = TYPES.filter(x => eff(x, s.types) > 1),
-    res = TYPES.filter(x => eff(x, s.types) < 1);
+  const strong = TYPES.filter(x => s.types.some(t => typeEffectiveness(t, [x]) > 1)),
+    weak = TYPES.filter(x => typeEffectiveness(x, s.types) > 1),
+    res = TYPES.filter(x => typeEffectiveness(x, s.types) < 1);
   const tot = s.base.reduce((a, b) => a + b, 0),
     mx = Math.max(...s.base);
   const chain = L.names
@@ -2066,8 +2067,8 @@ function renderDexEntry(id) {
       return `${st ? `<span class="evarrow"><i>→</i><small>${escapeHtml(L.split && st >= 2 ? (st === 2 ? 'Build path' : 'Hype path') : evolutionMethod(SPECIES[prev].evo))}</small></span>` : ''}<button class="evnode${sid === id ? ' cur' : ''}" data-a="dex" data-s="${sid}" ${sn ? '' : 'disabled'}>${sn ? rigCanvasHTML(sid, 44) : rigCanvasHTML(sid, 44, { sil: 1, still: 1 })}<small>${sn ? escapeHtml(n) : '???'}</small></button>`;
     })
     .join('');
-  const bg = TC[s.types[0]][0],
-    bg2 = TC[s.types[s.types.length - 1]][0];
+  const bg = TYPE_COLORS[s.types[0]][0],
+    bg2 = TYPE_COLORS[s.types[s.types.length - 1]][0];
   return `<header class="bar dexbar"><button class="pb small quiet" data-a="dexback">‹ Guide</button><div class="dexnav"><button class="pb small quiet" data-a="dex" data-s="${prev || ''}" ${prev ? '' : 'disabled'} aria-label="Previous entry">‹</button><span class="tnum">No. ${String(s.no).padStart(3, '0')}</span><button class="pb small quiet" data-a="dex" data-s="${next || ''}" ${next ? '' : 'disabled'} aria-label="Next entry">›</button></div></header>
  <article class="dexpage">
   <div class="plate px" style="--c1:${bg};--c2:${bg2}"><div class="plate-sky"></div><div class="plate-floor"></div><div class="plate-spr">${rigCanvasHTML(id, 150, { act: 'enter' })}</div><span class="cattag">${escapeHtml(s.cat)}</span><span class="stamp ${got ? 'got' : 'seen'}">${got ? 'Taxed' : 'Seen'}</span><span class="specno tnum">Specimen ${String(s.no).padStart(3, '0')}/${String(DEX.length).padStart(3, '0')}</span></div>

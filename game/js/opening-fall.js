@@ -13,7 +13,7 @@
 import { expose } from './test-globals.js';
 import { openingDone, provide } from './hooks.js';
 import { $, clamp } from './util.js';
-import { MOVES, SPECIES, START_NODE, eff } from './game-data.js';
+import { MOVES, SPECIES, START_NODE, typeEffectiveness } from './game-data.js';
 import { activeBattle, escapeHtml, maxHp, reducedMotion } from './game-state.js';
 import { artLoad } from './art.js';
 import { portraitHTML } from './person-art.js';
@@ -843,8 +843,8 @@ function tutorTypesTip() {
   if (!me || !foe) return null;
   const ft = types(1);
   const mine = me.moves.map(k => MOVES[k]).filter(m => m && m.p),
-    weak = mine.filter(m => m.t !== 'None' && eff(m.t, ft) < 1),
-    strong = mine.filter(m => m.t !== 'None' && eff(m.t, ft) > 1),
+    weak = mine.filter(m => m.t !== 'None' && typeEffectiveness(m.t, ft) < 1),
+    strong = mine.filter(m => m.t !== 'None' && typeEffectiveness(m.t, ft) > 1),
     plain = mine.find(m => m.t === 'None');
   const a = `Every move has a type, shown by its colour. ${ft.join('/')} Billies take double from some types and half from others.`;
   if (strong.length)
