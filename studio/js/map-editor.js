@@ -394,7 +394,7 @@ SECTIONS.scenes = () => {
  ${card(
    'Preview',
    `<div class="sc-pv"><canvas id="scPv"></canvas><div class="sc-pv-load" id="scPvLoad">Loading…</div></div>
-  <div class="seg-row"><button class="seg ${mapEditor.pv === 'roam' ? 'on' : ''}" data-act="scPv" data-m="roam">Walk around</button><button class="seg ${mapEditor.pv === 'path' ? 'on' : ''}" data-act="scPv" data-m="path">Follow the path</button><button class="btn sm subtle" data-act="scPvHub">Back to the hub</button>${typeof seamlessHubMap === 'function' ? `<button class="seg ${mapEditor.joined ? 'on' : ''}" data-act="scJoined" title="The place with its neighbours joined at its edges, as the game shows it">With its neighbours</button>` : ''}<button class="btn sm" data-act="scTestRun" title="Opens the game in a new tab, straight into this scene, with a throwaway save. Your edits show up there as you make them.">Test run in the game</button></div>
+  <div class="seg-row"><button class="seg ${mapEditor.pv === 'roam' ? 'on' : ''}" data-act="scPv" data-m="roam">Walk around</button><button class="seg ${mapEditor.pv === 'path' ? 'on' : ''}" data-act="scPv" data-m="path">Follow the path</button><button class="btn sm subtle" data-act="scPvHub">Back to the hub</button><button class="btn sm" data-act="scTestRun" title="Opens the game in a new tab, straight into this scene, with a throwaway save. Your edits show up there as you make them.">Test run in the game</button></div>
   <div class="seg-row sc-env"><select id="scEnvT" data-act-change="scEnv" aria-label="Time of day">${[
     ['', 'Midday'],
     ['7', 'Morning'],
@@ -864,19 +864,8 @@ function mountMapPreview() {
     mapEditor.pvId = id0;
     mapEditor.pvPos = null;
   }
-  /* alpha 0.4: the place with its neighbours joined at its edges, as the game shows it (saved edits; Refresh after changing the edges) */
-  let id = id0,
+  const id = id0,
     off = [0, 0];
-  if (mapEditor.joined && typeof seamlessHubMap === 'function') {
-    try {
-      const u = locationsUsingMap(id0)[0],
-        h = u && seamlessHubMap(u[1]);
-      if (h && h.id) {
-        id = h.id;
-        off = h.baseOff || [0, 0];
-      }
-    } catch (e) {}
-  }
   const enc = () =>
     mapEditor.enc
       ? [
@@ -2869,13 +2858,5 @@ ACTIONS.scPplDel = d => {
   if (!sc.people.length) delete sc.people;
   changed();
   commit(true);
-  render();
-};
-
-ACTIONS.scJoined = () => {
-  mapEditor.joined = !mapEditor.joined;
-  mapEditor.pvPos = null;
-  mapEditor.pvId = null;
-  walkView.pl.fresh = true;
   render();
 };

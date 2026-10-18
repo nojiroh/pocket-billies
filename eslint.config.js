@@ -102,9 +102,8 @@ for (const html of APPS) {
   }
 }
 
-// Names one page defines and the other checks for with typeof before use: the game's walk hubs (the Studio's preview
-// uses them when present), the Firebase SDK (account.js loads it from the CDN on demand).
-const OPTIONAL = { seamlessHubMap: 'readonly', firebase: 'readonly' };
+// Names a module checks for with typeof before use: the Firebase SDK (account.js loads it from the CDN on demand).
+const OPTIONAL = { firebase: 'readonly' };
 
 const optionalFor = file => Object.fromEntries(Object.entries(OPTIONAL).filter(([n]) => !ownNames.get(file).has(n)));
 
