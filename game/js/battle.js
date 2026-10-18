@@ -35,9 +35,9 @@ import {
   PASSIVE,
   RULES,
   SPECIES,
-  STATK,
-  STATN,
-  STATUSN,
+  STATUS_NAMES,
+  STAT_IDS,
+  STAT_NAMES,
   TRAINERS,
   TYPE_COLORS,
   hasPassive,
@@ -221,7 +221,7 @@ export function setPaintActions(v) {
 export const RB = RULES.battle,
   RC = RULES.catching;
 const freshV = () => ({
-  st: Object.fromEntries(STATK.filter(k => k !== 'hp').map(k => [k, 0])),
+  st: Object.fromEntries(STAT_IDS.filter(k => k !== 'hp').map(k => [k, 0])),
   turnsIn: 0,
   ov: null,
   ovT: 0,
@@ -364,9 +364,9 @@ function stage(k, obj) {
     const d = obj[s2],
       o = v.st[s2] || 0;
     v.st[s2] = clamp(o + d, -RB.stageMax, RB.stageMax);
-    if (v.st[s2] === o) say(`${billyName(m)}’s ${STATN[s2]} won’t go any ${d > 0 ? 'higher' : 'lower'}.`);
+    if (v.st[s2] === o) say(`${billyName(m)}’s ${STAT_NAMES[s2]} won’t go any ${d > 0 ? 'higher' : 'lower'}.`);
     else
-      say(`${billyName(m)}’s ${STATN[s2]} ${d > 0 ? 'rose' : 'fell'}${Math.abs(d) > 1 ? ' sharply' : ''}.`, {
+      say(`${billyName(m)}’s ${STAT_NAMES[s2]} ${d > 0 ? 'rose' : 'fell'}${Math.abs(d) > 1 ? ' sharply' : ''}.`, {
         k: 'stat',
         si: k,
         up: d > 0,
@@ -376,7 +376,7 @@ function stage(k, obj) {
 function inflict(tk, st, loud) {
   const t = A(tk);
   if (t.status) {
-    if (loud) say(`But ${billyName(t)} is already ${(STATUSN[t.status] || 'affected').toLowerCase()}.`);
+    if (loud) say(`But ${billyName(t)} is already ${(STATUS_NAMES[t.status] || 'affected').toLowerCase()}.`);
     return;
   }
   if (t.boss && st === 'sub' && random() < (RB.alphaSleepResist ?? 0.5)) {
@@ -386,7 +386,7 @@ function inflict(tk, st, loud) {
   t.status = st;
   if (st === 'sub') t.sTurns = RB.subpoenaMin + Math.floor(random() * (RB.subpoenaMax - RB.subpoenaMin + 1));
   say(
-    `${billyName(t)} ${st === 'aud' ? 'is paralyzed. It may be unable to move' : st === 'sub' ? 'fell asleep' : st === 'scn' ? 'was burned' : 'is ' + (STATUSN[st] || st)}.`,
+    `${billyName(t)} ${st === 'aud' ? 'is paralyzed. It may be unable to move' : st === 'sub' ? 'fell asleep' : st === 'scn' ? 'was burned' : 'is ' + (STATUS_NAMES[st] || st)}.`,
     { k: 'status', si: tk, st }
   );
 }
@@ -551,7 +551,7 @@ function useMove(k, mid, tk0) {
   if (fx.selfStage && (!fx.selfChance || random() * 100 < fx.selfChance)) stage(k, fx.selfStage);
   if (fx.selfStatus && u.hp > 0 && !u.status && random() * 100 < (fx.selfChance || 100)) {
     u.status = fx.selfStatus;
-    say(`${billyName(u)} hurt itself and is now ${(STATUSN[fx.selfStatus] || 'troubled').toLowerCase()}.`, {
+    say(`${billyName(u)} hurt itself and is now ${(STATUS_NAMES[fx.selfStatus] || 'troubled').toLowerCase()}.`, {
       k: 'status',
       si: k,
       st: fx.selfStatus,
@@ -1120,7 +1120,7 @@ export function applyItem(it, id, inB) {
       const was = m.status;
       m.status = null;
       m.sTurns = 0;
-      t.push(`${billyName(m)} is no longer ${(STATUSN[was] || 'troubled').toLowerCase()}.`);
+      t.push(`${billyName(m)} is no longer ${(STATUS_NAMES[was] || 'troubled').toLowerCase()}.`);
     }
     if (I.hp) {
       const g = Math.min(I.hp, maxHp(m) - m.hp);
@@ -1516,7 +1516,7 @@ function countTo(el, to, dur = 600) {
   };
   st();
 }
-const STG = k => (STATN[k] || k).slice(0, 3).toUpperCase();
+const STG = k => (STAT_NAMES[k] || k).slice(0, 3).toUpperCase();
 function paintSide(i, s, anim) {
   if (!s) return;
   const n = $('#n' + i);

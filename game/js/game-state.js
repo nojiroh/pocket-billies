@@ -24,14 +24,14 @@ import {
   JOBS,
   JOB_STEPS,
   LINES,
-  LN,
+  LINE_BY_ID,
   MOVES,
   POOLS,
   ROUTE,
   RULES,
   SPECIES,
   START_NODE,
-  STATK,
+  STAT_IDS,
   STEPS_PER_KM,
   TRAINERS,
   linkCost,
@@ -428,7 +428,7 @@ export function flushSave() {
 
 /* ---------- billionaires ---------- */
 export function stat(m, k) {
-  const b = SPECIES[m.sp].base[STATK.indexOf(k)];
+  const b = SPECIES[m.sp].base[STAT_IDS.indexOf(k)];
   let v = k === 'hp' ? Math.floor((2 * b * m.lvl) / 100) + m.lvl + 10 : Math.floor((2 * b * m.lvl) / 100) + 5;
   /* v33: an Alpha in battle is much tougher (m.boss); one you caught keeps a little of it (m.alpha) */
   if (m.boss) v = Math.floor(v * (k === 'hp' ? m.boss.hp : m.boss.st));
@@ -439,7 +439,7 @@ export const maxHp = m => stat(m, 'hp');
 provide({ maxHp }); /* to-module */
 function movesAt(lid, lvl) {
   const out = [];
-  for (const [lv, mv] of LN[lid].learn) if (lv <= lvl && !out.includes(mv)) out.push(mv);
+  for (const [lv, mv] of LINE_BY_ID[lid].learn) if (lv <= lvl && !out.includes(mv)) out.push(mv);
   return out.slice(-moveSlotCount());
 }
 /* alpha 0.5: a Billie remembers where and when it joined you (shown in its details) */
@@ -474,7 +474,7 @@ export function gainXp(m, amt, say) {
     m.lvl++;
     if (m.hp > 0) m.hp = Math.min(maxHp(m), m.hp + maxHp(m) - old);
     say(`${billyName(m)} grew to level ${m.lvl}.`, { k: 'lvl', uid: m.uid });
-    for (const [lv, mv] of LN[SPECIES[m.sp].line].learn) {
+    for (const [lv, mv] of LINE_BY_ID[SPECIES[m.sp].line].learn) {
       if (lv !== m.lvl || m.moves.includes(mv)) continue;
       if (m.moves.length < moveSlotCount()) {
         m.moves.push(mv);

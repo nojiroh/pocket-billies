@@ -6,7 +6,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { closeModal, modal, render, toast } from './hooks.js';
-import { COINS, EGGS, ITEMS, STATUSN } from './game-data.js';
+import { COINS, EGGS, ITEMS, STATUS_NAMES } from './game-data.js';
 import { billyName, escapeHtml, formatNumber, maxHp, saveData, uiState } from './game-state.js';
 import { coinHTML, eggHTML, uiIconHTML } from './art.js';
 import { bustHTML } from './skeleton-rig.js';
@@ -116,7 +116,7 @@ document.addEventListener('click', ev => {
     }
     modal({
       title: `Use ${escapeHtml(I.n)} on…`,
-      html: `<div class="list">${L.map(m => `<button class="pickrow" data-a="bag-on" data-k="${escapeHtml(k)}" data-u="${m.uid}">${bustHTML(m.sp, 40, { gold: m.gold })}<span><b>${escapeHtml(billyName(m))}</b><small class="tnum">HP ${m.hp}/${maxHp(m)}${m.status ? ' · ' + escapeHtml(STATUSN[m.status] || m.status) : ''}</small></span></button>`).join('')}</div>`,
+      html: `<div class="list">${L.map(m => `<button class="pickrow" data-a="bag-on" data-k="${escapeHtml(k)}" data-u="${m.uid}">${bustHTML(m.sp, 40, { gold: m.gold })}<span><b>${escapeHtml(billyName(m))}</b><small class="tnum">HP ${m.hp}/${maxHp(m)}${m.status ? ' · ' + escapeHtml(STATUS_NAMES[m.status] || m.status) : ''}</small></span></button>`).join('')}</div>`,
       btns: [{ l: 'Never mind', c: 'quiet', f: closeModal }],
     });
     return;

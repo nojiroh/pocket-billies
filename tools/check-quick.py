@@ -941,7 +941,7 @@ def desktop_steps(b, base, R):
     def v33():
         if not pg.evaluate("typeof liveK==='function'&&typeof worldBillyItem==='function'"): return 'not in this build'
         out = []
-        pg.evaluate("saveData.team.forEach(m=>{m.hp=maxHp(m);m.status=null;m.lvl=Math.max(m.lvl,12)});while(saveData.team.filter(m=>m.job==null).length<3)saveData.team.push(makeBilly(DEX[(saveData.team.length*5+3)%DEX.length],10));saveData.team.forEach(m=>m.hp=maxHp(m));0")
+        pg.evaluate("saveData.team.forEach(m=>{m.hp=maxHp(m);m.status=null;m.lvl=Math.max(m.lvl,12)});while(saveData.team.filter(m=>m.job==null).length<3)saveData.team.push(makeBilly(DEX_ORDER[(saveData.team.length*5+3)%DEX_ORDER.length],10));saveData.team.forEach(m=>m.hp=maxHp(m));0")
         tap = "activeBattle&&activeBattle.phase==='playing'&&tapMsg()"
         for kind in ('double', 'alpha'):
             if kind == 'double':

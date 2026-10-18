@@ -12,7 +12,7 @@
 import { expose } from './test-globals.js';
 import { areaKey, provide, sceneIdAt, sfx } from './hooks.js';
 import { clamp } from './util.js';
-import { SPECIES, STATUSN, TRAINERS, rivalSp, trainersAt } from './game-data.js';
+import { SPECIES, STATUS_NAMES, TRAINERS, rivalSpecies, trainersAt } from './game-data.js';
 import { billyName, findBilly, maxHp, nextTripNode, save, saveData, uiState } from './game-state.js';
 import { makeCanvas } from './art.js';
 import { RIG_BACK_VIEW, drawRig, rigFrame, rigParts, rigPreload } from './skeleton-rig.js';
@@ -319,7 +319,7 @@ export function buddyTap() {
             `${n} leans on you. It’s had a rough day.`,
           ]
         : m.status
-          ? [`${n} doesn’t feel great: ${(STATUSN[m.status] || 'unwell').toLowerCase()}.`]
+          ? [`${n} doesn’t feel great: ${(STATUS_NAMES[m.status] || 'unwell').toLowerCase()}.`]
           : [
               `${n} beams at you.`,
               `${n} does a little victory lap.`,
@@ -359,7 +359,7 @@ export function companionSpecies(T) {
   if (pet !== true && h % 3 === 0) return null;
   const e = T.team[pet && typeof pet === 'number' ? Math.min(T.team.length - 1, pet) : 0];
   let sp = e.sp;
-  if (/^@rival\d?$/.test(sp) && typeof rivalSp === 'function') sp = rivalSp(sp);
+  if (/^@rival\d?$/.test(sp) && typeof rivalSpecies === 'function') sp = rivalSpecies(sp);
   return SPECIES[sp] ? sp : null;
 }
 function companionItems(out, t, npcPos) {
@@ -497,7 +497,7 @@ function warmWorldBillies() {
         const sp = companionSpecies(T);
         if (sp) L.push([sp, false, 1]);
         for (const e of T.team || []) {
-          const s2 = /^@rival\d?$/.test(e.sp) && typeof rivalSp === 'function' ? rivalSp(e.sp) : e.sp;
+          const s2 = /^@rival\d?$/.test(e.sp) && typeof rivalSpecies === 'function' ? rivalSpecies(e.sp) : e.sp;
           if (SPECIES[s2]) L.push([s2, false, 1]);
         }
       }

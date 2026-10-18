@@ -12,7 +12,8 @@ expose({
   BACKDROPS: [() => BACKDROPS],
   COINS: [() => COINS],
   DATA_WARN: [() => DATA_WARN],
-  DEX: [() => DEX],
+  DEFAULT_EVOLUTIONS: [() => DEFAULT_EVOLUTIONS],
+  DEX_ORDER: [() => DEX_ORDER],
   EGGS: [() => EGGS],
   EGG_TIERS: [() => EGG_TIERS],
   FUTURE: [() => FUTURE],
@@ -21,39 +22,38 @@ expose({
   JOBS: [() => JOBS],
   JOB_STEPS: [() => JOB_STEPS],
   LINES: [() => LINES],
+  LINE_BY_ID: [() => LINE_BY_ID],
   LINKS: [() => LINKS],
-  LN: [() => LN],
-  LV: [() => LV],
   MOVES: [() => MOVES],
   PASSIVE: [() => PASSIVE],
   PEOPLE: [() => PEOPLE],
   PLACE: [() => PLACE],
   POOLS: [() => POOLS],
+  RARITY_STAT_TOTALS: [() => RARITY_STAT_TOTALS],
   ROUTE: [() => ROUTE],
   RULES: [() => RULES],
   SEATS: [() => SEATS],
   SHOPS: [() => SHOPS],
   SPECIES: [() => SPECIES],
   START_NODE: [() => START_NODE],
-  STATK: [() => STATK],
-  STATN: [() => STATN],
-  STATUSN: [() => STATUSN],
+  STATUS_NAMES: [() => STATUS_NAMES],
+  STAT_IDS: [() => STAT_IDS],
+  STAT_NAMES: [() => STAT_NAMES],
   STEPS_PER_KM: [() => STEPS_PER_KM],
-  TOT: [() => TOT],
   TRAINERS: [() => TRAINERS],
   TYPES: [() => TYPES],
   TYPE_COLORS: [() => TYPE_COLORS],
   TYPE_RESISTED_BY: [() => TYPE_RESISTED_BY],
   TYPE_STRONG_AGAINST: [() => TYPE_STRONG_AGAINST],
+  atOrLast: [() => atOrLast],
   gameData: [() => gameData],
   hasPassive: [() => hasPassive],
   isTown: [() => isTown, v => (isTown = v)],
   linkCost: [() => linkCost],
-  pickI: [() => pickI],
   placeFull: [() => placeFull, v => (placeFull = v)],
   placeKind: [() => placeKind, v => (placeKind = v)],
   placeSub: [() => placeSub, v => (placeSub = v)],
-  rivalSp: [() => rivalSp, v => (rivalSp = v)],
+  rivalSpecies: [() => rivalSpecies, v => (rivalSpecies = v)],
   roadsOf: [() => roadsOf, v => (roadsOf = v)],
   trainerById: [() => trainerById],
   trainerTeam: [() => trainerTeam, v => (trainerTeam = v)],
@@ -105,9 +105,9 @@ export function typeEffectiveness(at, defs) {
   }
   return m;
 }
-export const STATK = gameData.stats.map(s => s.id);
-export const STATN = Object.fromEntries(gameData.stats.map(s => [s.id, s.name]));
-export const STATUSN = Object.fromEntries(gameData.statuses.map(s => [s.id, s.name]));
+export const STAT_IDS = gameData.stats.map(s => s.id);
+export const STAT_NAMES = Object.fromEntries(gameData.stats.map(s => [s.id, s.name]));
+export const STATUS_NAMES = Object.fromEntries(gameData.statuses.map(s => [s.id, s.name]));
 /* ---------- moves ---------- */
 export const MOVES = gameData.moves;
 provide({ MOVES }); /* to-module */
@@ -120,17 +120,17 @@ for (const k in MOVES) {
   if (M.a == null) M.a = 100;
 }
 /* ---------- billionaires ---------- */
-const LV = [
+const DEFAULT_EVOLUTIONS = [
   { k: 'lvl', at: 16 },
   { k: 'lvl', at: 36 },
 ];
 export const LINES = gameData.lines;
-export const LN = Object.fromEntries(LINES.map(l => [l.id, l]));
+export const LINE_BY_ID = Object.fromEntries(LINES.map(l => [l.id, l]));
 export const SPECIES = {},
-  DEX = [];
+  DEX_ORDER = [];
 provide({ SPECIES }); /* to-module */
-const TOT = Object.fromEntries(Object.entries(gameData.rarities).map(([k, v]) => [k, v.totals]));
-const pickI = (a, i) => a[Math.min(i, a.length - 1)];
+const RARITY_STAT_TOTALS = Object.fromEntries(Object.entries(gameData.rarities).map(([k, v]) => [k, v.totals]));
+const atOrLast = (a, i) => a[Math.min(i, a.length - 1)];
 LINES.forEach(L => {
   L.learn = (L.learn || []).filter(([lv, mv]) => {
     if (MOVES[mv]) return true;
@@ -139,8 +139,8 @@ LINES.forEach(L => {
   });
   if (!L.learn.length) L.learn = [[1, 'handshake']];
   const sum = L.prof.reduce((a, b) => a + b, 0) || 1,
-    ev = L.evo || LV,
-    tot = TOT[L.rar] || TOT.common;
+    ev = L.evo || DEFAULT_EVOLUTIONS,
+    tot = RARITY_STAT_TOTALS[L.rar] || RARITY_STAT_TOTALS.common;
   /* v36: a split line has four names: stages 1, 2 and two finals (3A, 3B); the middle stage evolves into one of the two
     by the Hype/Build rule (see evolve). Both finals count as stage 2 for stats, catch rate and XP yield */
   /* v40: a species with no evolutions (the singles) has the stats and XP yield of a final stage and the catch rate of a middle one */
@@ -151,7 +151,7 @@ LINES.forEach(L => {
       cI = single ? 1 : st,
       id = L.id + st0,
       last = L.split ? st0 >= 2 : st0 === L.names.length - 1,
-      at = (arr, d) => (Array.isArray(arr) ? pickI(arr, st0) : d);
+      at = (arr, d) => (Array.isArray(arr) ? atOrLast(arr, st0) : d);
     const types = (at(L.types, ['None']) || ['None']).filter(t => TYPE_COLORS[t]);
     SPECIES[id] = {
       id,
@@ -159,7 +159,7 @@ LINES.forEach(L => {
       line: L.id,
       stage: st,
       types: types.length ? types : ['None'],
-      base: L.base && L.base[st] ? L.base[st].slice() : L.prof.map(w => Math.round((pickI(tot, sI) * w) / sum)),
+      base: L.base && L.base[st] ? L.base[st].slice() : L.prof.map(w => Math.round((atOrLast(tot, sI) * w) / sum)),
       cat: at(L.cat, ''),
       ht: at(L.ht, 1),
       wt: at(L.wt, 10),
@@ -172,20 +172,20 @@ LINES.forEach(L => {
           ? L.catchRate
           : cI === 0
             ? (RULES.catching.rarity[L.rar] ?? 0.45)
-            : pickI(RULES.catching.evolved, cI - 1),
-      yld: pickI(RULES.progression.xpYield, sI),
+            : atOrLast(RULES.catching.evolved, cI - 1),
+      yld: atOrLast(RULES.progression.xpYield, sI),
       next: last ? null : L.id + (st0 + 1),
       alt: L.split && st0 === 1 ? L.id + '3' : null,
       evo: last
         ? null
         : L.split && st0 === 1
           ? { k: 'split', at: (ev[1] && ev[1].at) || 32 }
-          : ev[st] || LV[Math.min(st, 1)],
-      no: DEX.length + 1,
+          : ev[st] || DEFAULT_EVOLUTIONS[Math.min(st, 1)],
+      no: DEX_ORDER.length + 1,
       rar: L.rar,
       form: L.split && st0 >= 2 ? (st0 === 2 ? 'A' : 'B') : null,
     };
-    DEX.push(id);
+    DEX_ORDER.push(id);
   });
 });
 /* ---------- world ---------- */
@@ -198,7 +198,7 @@ for (const k in gameData.pools) {
     lv: P.lv,
     list: P.list.filter(([id]) => SPECIES[id] || warnData(`Pool ${k} lists unknown Billie ${id}.`)),
   };
-  if (!POOLS[k].list.length) POOLS[k].list = [[DEX[0], 1]];
+  if (!POOLS[k].list.length) POOLS[k].list = [[DEX_ORDER[0], 1]];
 }
 export const BACKDROPS = gameData.backdrops;
 provide({ BACKDROPS }); /* to-module */
@@ -312,8 +312,8 @@ const SEATS = Object.values(TRAINERS)
   .filter(T => T.seat)
   .map(T => T.seat.id);
 /* "@rival" is the starter that beats yours; "@rival1" / "@rival2" the same line evolved */
-export function rivalSp(code) {
-  const base = RULES.start.rival[saveData.starter] || DEX[0],
+export function rivalSpecies(code) {
+  const base = RULES.start.rival[saveData.starter] || DEX_ORDER[0],
     st = +(code.slice(6) || 0),
     id = base.replace(/\d+$/, '') + st;
   return SPECIES[id] ? id : base;
@@ -321,7 +321,7 @@ export function rivalSp(code) {
 /* a team entry may name its moves (v47: Blake's first billionaire only knows Tackle) */
 export function trainerTeam(T) {
   return T.team.map(e => {
-    const m = makeBilly(/^@rival\d?$/.test(e.sp) ? rivalSp(e.sp) : e.sp, e.lvl),
+    const m = makeBilly(/^@rival\d?$/.test(e.sp) ? rivalSpecies(e.sp) : e.sp, e.lvl),
       mv = Array.isArray(e.moves) ? e.moves.filter(k => MOVES[k]) : [];
     if (mv.length) m.moves = mv;
     return m;

@@ -23,7 +23,7 @@ import {
   toast,
   walkRenderer,
 } from './hooks.js';
-import { JOBS, MOVES, ROUTE, RULES, SPECIES, STATUSN } from './game-data.js';
+import { JOBS, MOVES, ROUTE, RULES, SPECIES, STATUS_NAMES } from './game-data.js';
 import {
   SAVE_NEW_MSG,
   SAVE_OLD_MSG,
@@ -178,7 +178,7 @@ function validSave(o) {
   for (const m of o.team.concat(o.box))
     if (
       typeof (m.nick || '') !== 'string' ||
-      (m.status != null && !STATUSN[m.status]) ||
+      (m.status != null && !STATUS_NAMES[m.status]) ||
       (m.job != null &&
         (!Number.isInteger(m.job) || m.job < 0 || m.job >= o.jobs.length || o.jobs[m.job].uid !== m.uid))
     )

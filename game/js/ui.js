@@ -7,14 +7,14 @@ import { $, $$, clamp, random } from './util.js';
 import {
   ADJ,
   COINS,
-  DEX,
+  DEX_ORDER,
   EGGS,
   FUTURE,
   ITEMS,
   JOBS,
   JOB_STEPS,
+  LINE_BY_ID,
   LINKS,
-  LN,
   MOVES,
   PEOPLE,
   POOLS,
@@ -23,9 +23,9 @@ import {
   SHOPS,
   SPECIES,
   START_NODE,
-  STATK,
-  STATN,
-  STATUSN,
+  STATUS_NAMES,
+  STAT_IDS,
+  STAT_NAMES,
   TRAINERS,
   TYPES,
   TYPE_COLORS,
@@ -339,7 +339,7 @@ export function setRenderOv(v) {
 const chip = t =>
   `<span class="chip" style="--tc:${TYPE_COLORS[t][0]};--tf:${TYPE_COLORS[t][1]}">${t === 'None' ? 'Normal' : t}</span>`;
 provide({ chip }); /* to-module */
-const stBadge = st => (st ? `<span class="stb st-${st}">${STATUSN[st]}</span>` : '');
+const stBadge = st => (st ? `<span class="stb st-${st}">${STATUS_NAMES[st]}</span>` : '');
 provide({ stBadge }); /* to-module */
 function bar(p, cls = '') {
   return `<div class="pbar ${cls}"><i style="width:${clamp(p, 0, 1) * 100}%"></i></div>`;
@@ -1972,10 +1972,10 @@ function renderLedger() {
     return `<header class="bar"><div><div class="sub">Greetings from every town you’ve walked into</div><h1 class="where">Postcards</h1></div></header>${guideTabs()}${renderPostcards()}`;
   if (uiState.guideTab === 'lore' && typeof renderLore === 'function')
     return `<header class="bar"><div><div class="sub">The world, the story, the people</div><h1 class="where">Lore</h1></div></header>${guideTabs()}${renderLore()}`;
-  const seen = DEX.filter(id => saveData.seen[id]).length,
-    got = DEX.filter(id => saveData.caught[id]).length,
+  const seen = DEX_ORDER.filter(id => saveData.seen[id]).length,
+    got = DEX_ORDER.filter(id => saveData.caught[id]).length,
     f = uiState.dexF || 'all';
-  const list = DEX.filter(id => {
+  const list = DEX_ORDER.filter(id => {
     const st = dexStatus(id);
     if (f === 'got') return st === 'got';
     if (f === 'miss') return st !== 'got';
@@ -1995,7 +1995,7 @@ function renderLedger() {
         `<button class="fchip tdot${f === t ? ' on' : ''}" data-a="dexf" data-f="${t}" style="--tc:${TYPE_COLORS[t][0]}" aria-label="${t}"><i></i>${t}</button>`
     ).join('');
   return `<header class="bar"><div><div class="sub">Professor Hazel’s records</div><h1 class="where">Field Guide</h1></div></header>${guideTabs()}
- <section class="ledsum paper px"><div class="ls-row"><div><span class="ls-k">Seen</span><b class="tnum">${seen}</b></div><div><span class="ls-k">Taxed</span><b class="tnum">${got}</b></div><div><span class="ls-k">Total</span><b class="tnum">${DEX.length}</b></div></div>${bar(got / DEX.length, 'gold')}<p class="hand">Keep walking. They are out there.</p></section>
+ <section class="ledsum paper px"><div class="ls-row"><div><span class="ls-k">Seen</span><b class="tnum">${seen}</b></div><div><span class="ls-k">Taxed</span><b class="tnum">${got}</b></div><div><span class="ls-k">Total</span><b class="tnum">${DEX_ORDER.length}</b></div></div>${bar(got / DEX_ORDER.length, 'gold')}<p class="hand">Keep walking. They are out there.</p></section>
  <div class="fchips">${chips}</div>
  <ol class="ledger paper px">${
    list
@@ -2035,10 +2035,10 @@ function evolutionMethod(e) {
 function renderDexEntry(id) {
   const s = SPECIES[id],
     got = !!saveData.caught[id],
-    L = LN[s.line],
+    L = LINE_BY_ID[s.line],
     D = (RIGS[id] && RIGS[id].front) || {},
-    idx = DEX.indexOf(id);
-  const seenList = DEX.filter(x => saveData.seen[x]),
+    idx = DEX_ORDER.indexOf(id);
+  const seenList = DEX_ORDER.filter(x => saveData.seen[x]),
     si = seenList.indexOf(id),
     prev = seenList[si - 1],
     next = seenList[si + 1];
@@ -2071,7 +2071,7 @@ function renderDexEntry(id) {
     bg2 = TYPE_COLORS[s.types[s.types.length - 1]][0];
   return `<header class="bar dexbar"><button class="pb small quiet" data-a="dexback">‹ Guide</button><div class="dexnav"><button class="pb small quiet" data-a="dex" data-s="${prev || ''}" ${prev ? '' : 'disabled'} aria-label="Previous entry">‹</button><span class="tnum">No. ${String(s.no).padStart(3, '0')}</span><button class="pb small quiet" data-a="dex" data-s="${next || ''}" ${next ? '' : 'disabled'} aria-label="Next entry">›</button></div></header>
  <article class="dexpage">
-  <div class="plate px" style="--c1:${bg};--c2:${bg2}"><div class="plate-sky"></div><div class="plate-floor"></div><div class="plate-spr">${rigCanvasHTML(id, 150, { act: 'enter' })}</div><span class="cattag">${escapeHtml(s.cat)}</span><span class="stamp ${got ? 'got' : 'seen'}">${got ? 'Taxed' : 'Seen'}</span><span class="specno tnum">Specimen ${String(s.no).padStart(3, '0')}/${String(DEX.length).padStart(3, '0')}</span></div>
+  <div class="plate px" style="--c1:${bg};--c2:${bg2}"><div class="plate-sky"></div><div class="plate-floor"></div><div class="plate-spr">${rigCanvasHTML(id, 150, { act: 'enter' })}</div><span class="cattag">${escapeHtml(s.cat)}</span><span class="stamp ${got ? 'got' : 'seen'}">${got ? 'Taxed' : 'Seen'}</span><span class="specno tnum">Specimen ${String(s.no).padStart(3, '0')}/${String(DEX_ORDER.length).padStart(3, '0')}</span></div>
   <h2 class="dexname">${escapeHtml(s.name)}</h2><p class="row">${s.types.map(chip).join('')}<span class="note rar">${RARN[s.rar] || ''}</span></p>
   <div class="vitals">${[
     ['Height', typeof s.ht === 'number' ? s.ht.toFixed(1) + ' m' : s.ht],
@@ -2082,7 +2082,7 @@ function renderDexEntry(id) {
     .map(([k, v]) => `<div class="vit px"><span>${k}</span><b>${escapeHtml(String(v))}</b></div>`)
     .join('')}</div>
   <section class="paper px notes"><h3>Field notes</h3>${got ? `<p>${escapeHtml(s.blurb)}</p><p class="hand red">${escapeHtml(s.note)}</p>` : `<p>${escapeHtml(s.blurb.split('. ')[0])}. <span class="redact">██████ ████ ███████ ██</span></p><p class="hand">Tax one to complete this entry.</p>`}</section>
-  <section class="paper px"><h3>Base stats</h3>${got ? `<table class="bsheet"><tbody>${STATK.map((k, i) => `<tr><td>${STATN[k]}</td><td class="tnum">${s.base[i]}</td><td><span class="bbar" style="--w:${((s.base[i] / mx) * 100).toFixed(0)}%"></span></td></tr>`).join('')}<tr class="tot"><td>Total</td><td class="tnum">${tot}</td><td></td></tr></tbody></table>` : `<p class="note">Tax one to see its stats.</p>`}</section>
+  <section class="paper px"><h3>Base stats</h3>${got ? `<table class="bsheet"><tbody>${STAT_IDS.map((k, i) => `<tr><td>${STAT_NAMES[k]}</td><td class="tnum">${s.base[i]}</td><td><span class="bbar" style="--w:${((s.base[i] / mx) * 100).toFixed(0)}%"></span></td></tr>`).join('')}<tr class="tot"><td>Total</td><td class="tnum">${tot}</td><td></td></tr></tbody></table>` : `<p class="note">Tax one to see its stats.</p>`}</section>
   <section class="paper px lin"><h3>Evolution</h3><div class="chain">${chain}</div><p class="note">${escapeHtml(evolutionHint({ sp: id, lvl: 0, bsteps: 0 }))}</p></section>
   <section class="paper px"><h3>Type matchups</h3><table class="expo"><tbody><tr><td>Strong against</td><td>${strong.map(chip).join('') || '—'}</td></tr><tr><td>Weak to</td><td>${weak.map(chip).join('') || '—'}</td></tr><tr><td>Resists</td><td>${res.map(chip).join('') || '—'}</td></tr></tbody></table></section>
   <section class="paper px"><h3>Where to look</h3><table class="expo"><tbody><tr><td>Found at</td><td>${where.length ? escapeHtml(where.join(', ')) : 'Not found in the wild'}</td></tr><tr><td>Hatches from</td><td>${eggs.length ? escapeHtml(eggs.join(', ')) : '—'}</td></tr><tr><td>Tracks</td><td>${escapeHtml(TRACKS[D.plan] || 'Unremarkable')}</td></tr></tbody></table></section>
@@ -2122,8 +2122,8 @@ function badgeSlots() {
 }
 function renderProfile() {
   const name = cleanTrainer(saveData.avatar, saveData.gender).name,
-    seen = DEX.filter(id => saveData.seen[id]).length,
-    got = DEX.filter(id => saveData.caught[id]).length,
+    seen = DEX_ORDER.filter(id => saveData.seen[id]).length,
+    got = DEX_ORDER.filter(id => saveData.caught[id]).length,
     places = ROUTE.filter((r, i) => saveData.visited[i]).length,
     bd = badgeSlots(),
     bud = findBilly(saveData.buddy);
@@ -2144,7 +2144,7 @@ function renderProfile() {
  <section class="tpanel pf-stats"><div class="sec-h"><h2>Records</h2></div><div class="pf-grid">
   ${tile(uiIconHTML('walk', 14), 'Steps today', formatNumber(saveData.day.steps))}${tile(uiIconHTML('walk', 14), 'Total steps', formatNumber(saveData.totalSteps))}
   ${tile(uiIconHTML('run', 14), 'Distance walked', `${stepsToKm(saveData.totalSteps)} km`)}${tile(uiIconHTML('map', 14), 'Places visited', `${places}/${ROUTE.length}`, null, places / ROUTE.length)}
-  ${tile(uiIconHTML('ledger', 14), 'Seen', `${seen}/${DEX.length}`, null, seen / DEX.length)}${tile(coinHTML('penny', 14), 'Taxed', `${got}/${DEX.length}`, null, got / DEX.length)}
+  ${tile(uiIconHTML('ledger', 14), 'Seen', `${seen}/${DEX_ORDER.length}`, null, seen / DEX_ORDER.length)}${tile(coinHTML('penny', 14), 'Taxed', `${got}/${DEX_ORDER.length}`, null, got / DEX_ORDER.length)}
   ${tile(uiIconHTML('fight', 14), 'Trainers beaten', formatNumber(beat))}${tile(eggHTML(2, 12), 'Eggs hatched', formatNumber(saveData.hatched || 0), saveData.eggs.length ? `${plural(saveData.eggs.length, 'egg')} on the way` : 'No eggs right now')}${typeof stampTile === 'function' ? stampTile(tile) : ''}
  </div></section></div>
  <div class="pf-row">${bud ? `<section class="tpanel pf-buddy"><div class="sec-h"><h2>Buddy</h2></div><button class="pf-bud" data-a="mon" data-u="${bud.uid}"><span class="tm-spr" style="${plateVars(bud)}">${rigCanvasHTML(bud.sp, 72, { gold: bud.gold })}</span><span class="pf-bt"><b>${escapeHtml(billyName(bud))}</b><span class="tnum">Lv ${bud.lvl}</span><small>You’ve walked ${stepsToKm(bud.bsteps || 0)} km together.</small></span></button></section>` : ''}
@@ -2328,14 +2328,14 @@ function billySheet(m) {
   /* alpha 0.5: the details open on a summary (meters, a stat chart, where it joined you, what it's like), with tabs
     for the exact stats, the moves and how it evolves */
   const base = s.base || [],
-    st = STATK.map((k, i) => {
+    st = STAT_IDS.map((k, i) => {
       const v = k === 'hp' ? mx : stat(m, k),
         b = base[i] || 0;
-      return `<div class="ms-bar"><span>${STATN[k]}</span><i><b style="width:${Math.round(Math.min(1, b / 150) * 100)}%;--c:${['#4E9A4A', '#D9532F', '#E3A12F', '#3478C8', '#7D52C2', '#2BA7A0'][i] || '#888'}"></b></i><em class="tnum">${v}</em></div>`;
+      return `<div class="ms-bar"><span>${STAT_NAMES[k]}</span><i><b style="width:${Math.round(Math.min(1, b / 150) * 100)}%;--c:${['#4E9A4A', '#D9532F', '#E3A12F', '#3478C8', '#7D52C2', '#2BA7A0'][i] || '#888'}"></b></i><em class="tnum">${v}</em></div>`;
     }).join('');
-  const nums = STATK.map(
+  const nums = STAT_IDS.map(
     (k, i) =>
-      `<div class="ms-st"><span>${STATN[k]}</span><b class="tnum">${k === 'hp' ? mx : stat(m, k)}</b><small class="tnum">base ${base[i] ?? '?'}</small></div>`
+      `<div class="ms-st"><span>${STAT_NAMES[k]}</span><b class="tnum">${k === 'hp' ? mx : stat(m, k)}</b><small class="tnum">base ${base[i] ?? '?'}</small></div>`
   ).join('');
   const metR = m.met
     ? (() => {
@@ -2343,7 +2343,7 @@ function billySheet(m) {
         return `<div class="ms-met">${uiIconHTML('flag', 14)}<span>Joined you in <b>${escapeHtml(r ? r.name : 'a place that’s gone')}</b> · ${new Date(m.met.t).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}</span></div>`;
       })()
     : '';
-  const line = LN[s.line],
+  const line = LINE_BY_ID[s.line],
     evo = line
       ? line.names
           .map((n, i) => {

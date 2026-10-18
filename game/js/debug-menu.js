@@ -16,7 +16,7 @@ import {
   toast,
 } from './hooks.js';
 import { $, $$, clamp } from './util.js';
-import { COINS, DATA_WARN, DEX, EGGS, EGG_TIERS, ITEMS, ROUTE, RULES, SPECIES, TRAINERS } from './game-data.js';
+import { COINS, DATA_WARN, DEX_ORDER, EGGS, EGG_TIERS, ITEMS, ROUTE, RULES, SPECIES, TRAINERS } from './game-data.js';
 import {
   activeBattle,
   addBilly,
@@ -69,7 +69,7 @@ const dbgSel = (id, opts, val) =>
   `<select id="${id}">${opts.map(([v, n]) => `<option value="${escapeHtml(v)}" ${String(v) === String(val) ? 'selected' : ''}>${escapeHtml(n)}</option>`).join('')}</select>`;
 const dbgBtn = (x, l, c = '') => `<button class="pb small ${c}" data-a="dbg" data-x="${x}">${l}</button>`;
 function dbgSpecies() {
-  return DEX.map(id => [id, `${String(SPECIES[id].no).padStart(3, '0')} ${SPECIES[id].name}`]);
+  return DEX_ORDER.map(id => [id, `${String(SPECIES[id].no).padStart(3, '0')} ${SPECIES[id].name}`]);
 }
 function debugHTML() {
   const inB = !!activeBattle,
@@ -87,7 +87,7 @@ function debugHTML() {
   }</details>
  <details><summary>Wallet and steps</summary><div class="dbg-row">${dbgBtn('se1', '+$1,000')}${dbgBtn('se10', '+$10,000')}${dbgBtn('st1', '+1,000 steps')}${dbgBtn('st10', '+10,000 steps')}</div>
   <div class="dbg-row">${dbgBtn('coins', '+10 of every coin')}${dbgBtn('items', '+5 of every item')}${dbgBtn('newday', 'Start a new day')}</div></details>
- <details><summary>Billies</summary><div class="dbg-row">${dbgSel('dbgSp', dbgSpecies(), uiState.dbgSp || DEX[0])}<input id="dbgLv" type="number" min="1" max="${maxLevel()}" value="${uiState.dbgLv || 10}" aria-label="Level"><label class="dbg-ck"><input id="dbgGold" type="checkbox"> Golden</label></div>
+ <details><summary>Billies</summary><div class="dbg-row">${dbgSel('dbgSp', dbgSpecies(), uiState.dbgSp || DEX_ORDER[0])}<input id="dbgLv" type="number" min="1" max="${maxLevel()}" value="${uiState.dbgLv || 10}" aria-label="Level"><label class="dbg-ck"><input id="dbgGold" type="checkbox"> Golden</label></div>
   <div class="dbg-row">${dbgBtn('give', 'Give it to me', 'gold')}${dbgBtn('enc', 'Add as encounter')}${dbgBtn('wild', 'Battle it now', 'red')}${dbgBtn('alpha', 'As an Alpha', 'red')}</div>
   <div class="dbg-row">${dbgBtn('heal', 'Heal everyone')}${dbgBtn('lv5', 'Team +5 levels')}${dbgBtn('evo', 'Lead evolves now')}${dbgBtn('dex', 'Fill the Field Guide')}</div></details>
  <details><summary>Trainers and world</summary><div class="dbg-row">${dbgSel(
@@ -248,7 +248,7 @@ function dbgAct(x) {
       return;
     }
     case 'dex':
-      DEX.forEach(id => {
+      DEX_ORDER.forEach(id => {
         saveData.seen[id] = 1;
         saveData.caught[id] = 1;
       });
