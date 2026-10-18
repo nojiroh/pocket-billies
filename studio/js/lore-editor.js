@@ -15,17 +15,17 @@ import {
   card,
   changed,
   dialog,
-  fNum,
-  fSel,
-  fText,
   getP,
   grid,
+  numberField,
   peopleOpts,
   render,
+  selectField,
   setGetP,
   setP,
   setSetP,
   studioState,
+  textField,
   uidKey,
 } from './studio-app.js';
 expose({
@@ -117,10 +117,10 @@ SECTIONS.lore = () => {
       'world',
       p =>
         grid(
-          fText('Title', p + '.title'),
-          fText('Id', p + '.id'),
-          fText('When it shows', p + '.unlock', { help: LORE_UNLOCK })
-        ) + fText('Text', p + '.text', { area: 1, rows: 4 }),
+          textField('Title', p + '.title'),
+          textField('Id', p + '.id'),
+          textField('When it shows', p + '.unlock', { help: LORE_UNLOCK })
+        ) + textField('Text', p + '.text', { area: 1, rows: 4 }),
       'a world entry'
     );
   }
@@ -130,10 +130,10 @@ SECTIONS.lore = () => {
       'story',
       p =>
         grid(
-          fText('Title', p + '.title'),
-          fText('Id', p + '.id'),
-          fNum('Stage (badges)', p + '.stage', { min: 0, max: 9, step: 1 })
-        ) + fText('Text', p + '.text', { area: 1, rows: 4 }),
+          textField('Title', p + '.title'),
+          textField('Id', p + '.id'),
+          numberField('Stage (badges)', p + '.stage', { min: 0, max: 9, step: 1 })
+        ) + textField('Text', p + '.text', { area: 1, rows: 4 }),
       'a part of the story'
     );
   }
@@ -143,16 +143,16 @@ SECTIONS.lore = () => {
       'people',
       p =>
         grid(
-          fText('Name', p + '.name'),
-          fSel('Look', p + '.who', typeof peopleOpts === 'function' ? peopleOpts() : [], {
+          textField('Name', p + '.name'),
+          selectField('Look', p + '.who', typeof peopleOpts === 'function' ? peopleOpts() : [], {
             none: 'No portrait',
             opt: 1,
           }),
-          fText('Role', p + '.role'),
-          fText('When it shows', p + '.unlock', { help: LORE_UNLOCK })
+          textField('Role', p + '.role'),
+          textField('When it shows', p + '.unlock', { help: LORE_UNLOCK })
         ) +
-        fText('About them', p + '.text', { area: 1, rows: 3 }) +
-        fText('Their voice (a line or a description)', p + '.voice', { area: 1, rows: 2 }),
+        textField('About them', p + '.text', { area: 1, rows: 3 }) +
+        textField('Their voice (a line or a description)', p + '.voice', { area: 1, rows: 2 }),
       'a person'
     );
   }
@@ -164,10 +164,10 @@ SECTIONS.lore = () => {
       .map(r =>
         card(
           esc(r.name),
-          fText('History', `lore.places.${r.id}.history`, { area: 1, rows: 2 }) +
-            fText('Known for', `lore.places.${r.id}.known`, { area: 1, rows: 2 }) +
-            fText('Landmark', `lore.places.${r.id}.landmark`, { area: 1, rows: 2 }) +
-            fText('Local legend', `lore.places.${r.id}.legend`, { area: 1, rows: 2 }),
+          textField('History', `lore.places.${r.id}.history`, { area: 1, rows: 2 }) +
+            textField('Known for', `lore.places.${r.id}.known`, { area: 1, rows: 2 }) +
+            textField('Landmark', `lore.places.${r.id}.landmark`, { area: 1, rows: 2 }) +
+            textField('Local legend', `lore.places.${r.id}.legend`, { area: 1, rows: 2 }),
           { sub: P[r.id] ? '' : 'Nothing written yet.' }
         )
       )
@@ -179,16 +179,16 @@ SECTIONS.lore = () => {
       'legends',
       p =>
         grid(
-          fText('Title', p + '.title'),
-          fText('Id', p + '.id'),
-          fSel(
+          textField('Title', p + '.title'),
+          textField('Id', p + '.id'),
+          selectField(
             'Place',
             p + '.place',
             (D.route || []).filter(r => r.id).map(r => [r.id, r.name]),
             { none: 'Anywhere', opt: 1 }
           ),
-          fText('When it shows', p + '.unlock', { help: LORE_UNLOCK })
-        ) + fText('Text', p + '.text', { area: 1, rows: 3 }),
+          textField('When it shows', p + '.unlock', { help: LORE_UNLOCK })
+        ) + textField('Text', p + '.text', { area: 1, rows: 3 }),
       'a legend'
     );
   }
@@ -199,15 +199,15 @@ SECTIONS.lore = () => {
       'clues',
       p =>
         grid(
-          fText('Title', p + '.title'),
-          fText('Id', p + '.id'),
-          fText('When it shows', p + '.unlock', { help: LORE_UNLOCK }),
-          fSel('Lies in', p + '.at.scene', loreSceneOpts(), { none: 'Nowhere (found in the story)', opt: 1 }),
-          fText('Beside (props whose name matches)', p + '.at.near', {
+          textField('Title', p + '.title'),
+          textField('Id', p + '.id'),
+          textField('When it shows', p + '.unlock', { help: LORE_UNLOCK }),
+          selectField('Lies in', p + '.at.scene', loreSceneOpts(), { none: 'Nowhere (found in the story)', opt: 1 }),
+          textField('Beside (props whose name matches)', p + '.at.near', {
             opt: 1,
             help: 'Part of a prop name, or several with |, like bush_berry|bramble',
           })
-        ) + fText('Text', p + '.text', { area: 1, rows: 3 }),
+        ) + textField('Text', p + '.text', { area: 1, rows: 3 }),
       'a clue'
     );
   }
@@ -221,15 +221,15 @@ SECTIONS.lore = () => {
     body = keyed(
       'books',
       (p, e, k) =>
-        grid(fText('Title', p + '.title'), fText('By', p + '.by')) +
-        fText('Pages (one per line)', '@lines.' + p + '.pages', { area: 1, rows: 5 }) +
+        grid(textField('Title', p + '.title'), textField('By', p + '.by')) +
+        textField('Pages (one per line)', '@lines.' + p + '.pages', { area: 1, rows: 5 }) +
         `<p class="help">${used[k] ? 'In: ' + esc(used[k].join(', ')) : 'Not placed in any room yet.'}</p>`,
       'a book'
     );
   }
   if (tab === 'loading') {
     sub = 'Short lines from the world, shown on the loading screen a few at a time, in a random order.';
-    body = card('Lines', fText('One per line', '@lines.lore.loading', { area: 1, rows: 14 }));
+    body = card('Lines', textField('One per line', '@lines.lore.loading', { area: 1, rows: 14 }));
   }
   if (tab === 'chat') {
     sub =
@@ -241,7 +241,7 @@ SECTIONS.lore = () => {
         const st = Object.keys(C[r.id] || {}).sort((a, b) => a - b);
         return card(
           esc(r.name),
-          st.map(s => fText(`From stage ${s}`, `@lines.lore.chat.${r.id}.${s}`, { area: 1, rows: 3 })).join('') +
+          st.map(s => textField(`From stage ${s}`, `@lines.lore.chat.${r.id}.${s}`, { area: 1, rows: 3 })).join('') +
             `<div class="seg-row"><button class="btn sm" data-act="loreChatAdd" data-k="${r.id}">+ Lines for a stage</button></div>`
         );
       })

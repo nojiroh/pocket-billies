@@ -15,20 +15,20 @@ import {
   ask,
   card,
   changed,
+  checkboxField,
   clone,
+  colorField,
   commit,
-  fChk,
-  fColor,
-  fNum,
-  fSel,
-  fText,
   fmtN,
   getP,
   grid,
+  numberField,
   render,
+  selectField,
   spName,
   spOpts,
   studioState,
+  textField,
   toast,
   typeOpts,
   uidKey,
@@ -221,27 +221,27 @@ function worldRoute() {
     )}</tbody></table><div class="seg-row"><button class="btn" data-act="stopAdd">Add a stop after the selected one</button><button class="btn danger subtle" data-act="stopDel">Delete the selected stop</button></div>`;
   const ed =
     grid(
-      fText('Name', `${p}.name`),
-      fText('Route label', `${p}.route`, { help: 'Shown above the name, like “Route 2”.' }),
-      fChk('Town (free clinic)', `${p}.town`, { num: 1, rr: 1 }),
-      fSel(
+      textField('Name', `${p}.name`),
+      textField('Route label', `${p}.route`, { help: 'Shown above the name, like “Route 2”.' }),
+      checkboxField('Town (free clinic)', `${p}.town`, { num: 1, rr: 1 }),
+      selectField(
         'Wild encounters',
         `${p}.pool`,
         Object.keys(D.pools).map(k => [k, k]),
         { help: 'Encounters come from the next stop’s list while you walk toward it.' }
       ),
-      fSel(
+      selectField(
         'Battle backdrop',
         `${p}.area`,
         Object.entries(D.backdrops).map(([k, v]) => [k, v.name || k])
       ),
-      fSel(
+      selectField(
         'Walk scene',
         `${p}.scene`,
         Object.entries(D.scenes || {}).map(([k, v]) => [k, v.name || k]),
         { none: 'First scene', opt: 1, help: 'The tilt-shift view on the Walk screen. Edit scenes under Walk scenes.' }
       ),
-      fSel(
+      selectField(
         'Shop',
         `${p}.shop`,
         Object.keys(D.shops || {})
@@ -249,7 +249,7 @@ function worldRoute() {
           .map(k => [k, D.shops[k].name]),
         { none: 'No shop', opt: 1 }
       ),
-      fSel(
+      selectField(
         'Boutique',
         `${p}.boutique`,
         Object.keys(D.shops || {})
@@ -257,18 +257,18 @@ function worldRoute() {
           .map(k => [k, D.shops[k].name]),
         { none: 'No boutique', opt: 1, help: 'Clothes and hair; edit what it sells under Wardrobe.' }
       ),
-      fSel('Locked until', `${p}.gate`, seatIds, {
+      selectField('Locked until', `${p}.gate`, seatIds, {
         none: 'Always open',
         opt: 1,
         rr: 1,
         help: 'Walking past this point needs that badge.',
       }),
-      fChk('Water crossing: you ride a Billie', `${p}.ride`, {
+      checkboxField('Water crossing: you ride a Billie', `${p}.ride`, {
         num: 1,
         rr: 1,
         help: 'Needs a Water Billie big enough to ride (Rules → ride). Its walk scene lets you move over water.',
       }),
-      fSel(
+      selectField(
         'Mood',
         `${p}.mood`,
         Object.entries(D.moods || {}).map(([k, v]) => [k, v.name || k]),
@@ -278,21 +278,21 @@ function worldRoute() {
           help: 'v47: the place’s colour mood: saturation, contrast, warmth and tints, eased in as you walk here. A walk scene can name its own.',
         }
       ),
-      fSel(
+      selectField(
         'Map landmarks',
         `${p}.t`,
         STOP_KINDS.map(k => [k, k])
       ),
-      fText('Banner picture', `${p}.banner`, {
+      textField('Banner picture', `${p}.banner`, {
         opt: 1,
         ph: 'background/sundown.webp',
         help: 'Optional picture for the route card, inside game/art.',
       }),
-      fNum('Longitude', `${p}.lon`, { step: 1 }),
-      fNum('Latitude', `${p}.lat`, { step: 1 })
+      numberField('Longitude', `${p}.lon`, { step: 1 }),
+      numberField('Latitude', `${p}.lat`, { step: 1 })
     ) +
-    (r.gate ? fText('Locked message', `${p}.gateText`, { opt: 1 }) : '') +
-    fText('Description', `${p}.blurb`, { area: 1, rows: 2 });
+    (r.gate ? textField('Locked message', `${p}.gateText`, { opt: 1 }) : '') +
+    textField('Description', `${p}.blurb`, { area: 1, rows: 2 });
   after(bindWorldMap);
   return (
     card('The route', list, {
@@ -467,8 +467,8 @@ function worldPools() {
         card(
           `Pool “${esc(k)}”`,
           grid(
-            fNum('Lowest level', `pools.${k}.lv.0`, { min: 1, max: 100, step: 1 }),
-            fNum('Highest level', `pools.${k}.lv.1`, { min: 1, max: 100, step: 1 })
+            numberField('Lowest level', `pools.${k}.lv.0`, { min: 1, max: 100, step: 1 }),
+            numberField('Highest level', `pools.${k}.lv.1`, { min: 1, max: 100, step: 1 })
           ) + weightTable(`pools.${k}`, P),
           {
             sub: `Used by: ${esc(
@@ -513,8 +513,8 @@ function worldFishing() {
         return card(
           n,
           grid(
-            fNum('Level bonus, low', `fishing.${k}.lv.0`, { min: 0, max: 20, step: 1 }),
-            fNum('Level bonus, high', `fishing.${k}.lv.1`, { min: 0, max: 20, step: 1 })
+            numberField('Level bonus, low', `fishing.${k}.lv.0`, { min: 0, max: 20, step: 1 }),
+            numberField('Level bonus, high', `fishing.${k}.lv.1`, { min: 0, max: 20, step: 1 })
           ) + weightTable(`fishing.${k}`, P)
         );
       })
@@ -551,12 +551,12 @@ function worldEggs() {
       card(
         `${k} km egg`,
         grid(
-          fNum('Steps to hatch', `eggs.${k}.need`, {
+          numberField('Steps to hatch', `eggs.${k}.need`, {
             min: 100,
             step: 100,
             help: `${(E.need / D.rules.steps.stepsPerKm).toFixed(1)} km at ${D.rules.steps.stepsPerKm} steps per km.`,
           }),
-          fNum('Hatches at level', `eggs.${k}.lv`, { min: 1, max: 100, step: 1 })
+          numberField('Hatches at level', `eggs.${k}.lv`, { min: 1, max: 100, step: 1 })
         ) + weightTable(`eggs.${k}`, E),
         { sub: 'Egg art is art/eggs/egg_' + k + '.png (Art files).' }
       )
@@ -573,8 +573,8 @@ function worldRegions() {
         .map(
           (g, i) =>
             `<div class="item-row"><div class="item-ic"><small class="mono">${esc(g.t)}</small></div><div>${grid(
-              fText('Name', `regions.${i}.name`),
-              fSel(
+              textField('Name', `regions.${i}.name`),
+              selectField(
                 'Look',
                 `regions.${i}.t`,
                 STOP_KINDS.concat(['sun']).map(k => [k, k])
@@ -582,10 +582,10 @@ function worldRegions() {
               ...(g.t === 'sun'
                 ? []
                 : [
-                    fNum('Longitude', `regions.${i}.lon`, { step: 1 }),
-                    fNum('Latitude', `regions.${i}.lat`, { step: 1 }),
+                    numberField('Longitude', `regions.${i}.lon`, { step: 1 }),
+                    numberField('Latitude', `regions.${i}.lat`, { step: 1 }),
                   ])
-            )}${fText('Description', `regions.${i}.blurb`, { area: 1, rows: 2 })}</div></div>`
+            )}${textField('Description', `regions.${i}.blurb`, { area: 1, rows: 2 })}</div></div>`
         )
         .join(''),
       { sub: 'Shown fogged on the world map. The Inner Sun sits at the center.' }
@@ -593,7 +593,7 @@ function worldRegions() {
     card('Map', worldMapHTML()) +
     card(
       'End of the road',
-      fText('Message at the last stop', 'meta.endText', {
+      textField('Message at the last stop', 'meta.endText', {
         area: 1,
         rows: 2,
         opt: 1,
@@ -641,30 +641,30 @@ function worldBackdrops() {
         esc(b.name || k),
         `<div class="bd-prev" style="background:linear-gradient(${b.sky.join(',')})"><span style="background:${b.fog}"></span><img src="../game/art/battle/${art}_ground.png" alt="" class="pix"></div>` +
           grid(
-            fText('Name', `${p}.name`),
-            fSel(
+            textField('Name', `${p}.name`),
+            selectField(
               'Ground art',
               `${p}.art`,
               grounds.map(g => [g, g]),
               { none: `Same as id (${k})`, opt: 1 }
             ),
-            fChk('Indoors', `${p}.indoor`, { num: 1, rr: 1 }),
+            checkboxField('Indoors', `${p}.indoor`, { num: 1, rr: 1 }),
             b.indoor
-              ? fSel(
+              ? selectField(
                   'Walls',
                   `${p}.wall`,
                   walls.map(w => [w, w]),
                   { none: 'None', opt: 1 }
                 )
-              : fSel(
+              : selectField(
                   'Far land',
                   `${p}.far`,
                   fars.map(f => [f, f]),
                   { none: 'None', opt: 1 }
                 ),
-            fSel('In the air', `${p}.amb`, AMBS)
+            selectField('In the air', `${p}.amb`, AMBS)
           ) +
-          `<div class="grid colors">${fColor('Sky top', `${p}.sky.0`)}${fColor('Sky middle', `${p}.sky.1`)}${fColor('Sky horizon', `${p}.sky.2`)}${fColor('Haze', `${p}.fog`)}${fNum('Haze distance', `${p}.fogD`, { min: 10, max: 300, step: 5, help: 'Smaller is hazier.' })}</div>`,
+          `<div class="grid colors">${colorField('Sky top', `${p}.sky.0`)}${colorField('Sky middle', `${p}.sky.1`)}${colorField('Sky horizon', `${p}.sky.2`)}${colorField('Haze', `${p}.fog`)}${numberField('Haze distance', `${p}.fogD`, { min: 10, max: 300, step: 5, help: 'Smaller is hazier.' })}</div>`,
         {
           sub: `id ${esc(k)} · used by ${esc(
             D.route
@@ -705,25 +705,29 @@ SECTIONS.rules = () => {
     ca = 'rules.catching';
   const starters = `<div class="chips">${D.lines.map(L => `<label class="chk-chip"><input type="checkbox" data-act-chk="starter" value="${L.id}" ${R.start.starters.includes(L.id) ? 'checked' : ''}> ${esc(L.names[0])}</label>`).join('')}</div>`;
   const rival = R.start.starters
-    .map(l => fSel(`Rival’s pick if you choose ${esc(spName(l + '0'))}`, `${s}.rival.${l}`, spOpts()))
+    .map(l => selectField(`Rival’s pick if you choose ${esc(spName(l + '0'))}`, `${s}.rival.${l}`, spOpts()))
     .join('');
   const brackets = `<table class="tbl"><thead><tr><th>Steps today up to</th><th>Money per step</th><th></th></tr></thead><tbody>${R.steps.brackets.map((b, i) => `<tr><td><input type="number" min="0" step="500" data-p="${st}.brackets.${i}.upTo" data-k="num" value="${b.upTo}" ${i === R.steps.brackets.length - 1 ? 'title="0 means no limit"' : ''}></td><td><input type="number" min="0" max="5" step=".05" data-p="${st}.brackets.${i}.rate" data-k="num" value="${b.rate}"></td><td><button class="x" data-act="brDel" data-i="${i}">✕</button></td></tr>`).join('')}</tbody></table><button class="btn subtle" data-act="brAdd">Add a rate bracket</button><p class="help">Daily step rate: money earned per step drops after many steps in a day. Use 0 as the last limit for “and beyond”.</p>`;
   const xpPrev = `<p class="help" id="xpPrev">${xpLine()}</p>`;
   const coinsStart = `<div class="grid">${Object.keys(D.coins)
-    .map(c => fNum(D.coins[c].n, `${s}.coins.${c}`, { min: 0, step: 1 }))
+    .map(c => numberField(D.coins[c].n, `${s}.coins.${c}`, { min: 0, step: 1 }))
     .join('')}${Object.keys(D.items)
-    .map(i => fNum(D.items[i].n, `${s}.items.${i}`, { opt: 1, min: 0, step: 1 }))
+    .map(i => numberField(D.items[i].n, `${s}.items.${i}`, { opt: 1, min: 0, step: 1 }))
     .join('')}</div>`;
   const rar = `<div class="grid">${Object.keys(R.catching.rarity)
-    .map(k => fNum(`${RAR_NAMES[k] || k}`, `${ca}.rarity.${k}`, { min: 0, max: 1, step: 0.01 }))
+    .map(k => numberField(`${RAR_NAMES[k] || k}`, `${ca}.rarity.${k}`, { min: 0, max: 1, step: 0.01 }))
     .join(
       ''
-    )}${R.catching.evolved.map((v, i) => fNum(`Evolved stage ${i + 2}`, `${ca}.evolved.${i}`, { min: 0, max: 1, step: 0.01 })).join('')}</div>`;
+    )}${R.catching.evolved.map((v, i) => numberField(`Evolved stage ${i + 2}`, `${ca}.evolved.${i}`, { min: 0, max: 1, step: 0.01 })).join('')}</div>`;
   const totals = `<div class="grid">${Object.entries(D.rarities)
     .map(([k, v]) =>
       v.totals
         .map((t, i) =>
-          fNum(`${RAR_NAMES[k] || k} · stage ${i + 1}`, `rarities.${k}.totals.${i}`, { min: 50, max: 900, step: 5 })
+          numberField(`${RAR_NAMES[k] || k} · stage ${i + 1}`, `rarities.${k}.totals.${i}`, {
+            min: 50,
+            max: 900,
+            step: 5,
+          })
         )
         .join('')
     )
@@ -732,16 +736,16 @@ SECTIONS.rules = () => {
  ${card(
    'Starting out',
    grid(
-     fSel(
+     selectField(
        'Where a new game starts',
        `${s}.place`,
        (D.route || []).filter(r => r.town || r.kind === 'town').map(r => [r.id, r.name]),
        { none: 'The first stop', opt: 1 }
      ),
-     fNum('Money ($)', `${s}.se`, { min: 0, step: 50 }),
-     fNum('Starter’s level', `${s}.starterLevel`, { min: 1, max: 100, step: 1 }),
-     fNum('Encounters waiting', `${s}.starterEncounters`, { min: 0, max: 10, step: 1 }),
-     fSel(
+     numberField('Money ($)', `${s}.se`, { min: 0, step: 50 }),
+     numberField('Starter’s level', `${s}.starterLevel`, { min: 1, max: 100, step: 1 }),
+     numberField('Encounters waiting', `${s}.starterEncounters`, { min: 0, max: 10, step: 1 }),
+     selectField(
        'Free egg',
        `${s}.starterEgg`,
        Object.keys(D.eggs).map(k => [k, k + ' km']),
@@ -758,7 +762,7 @@ SECTIONS.rules = () => {
  ${card(
    'Steps and encounters',
    grid(
-     fSel(
+     selectField(
        'How you travel',
        'rules.travel',
        [
@@ -769,37 +773,37 @@ SECTIONS.rules = () => {
          help: 'alpha 0.4.1: Walk: you walk through towns and along roads with the joystick or a tap; walked metres count as steps. Steps: the old way, where steps from your phone carry you along the route. Either way the steps earn money and hatch eggs.',
        }
      ),
-     fNum('Steps per km', `${st}.stepsPerKm`, { min: 500, max: 3000, step: 1 }),
-     fNum('New encounter every ($ earned)', `${st}.encounterEverySE`, { min: 50, step: 50 }),
-     fNum('Encounter queue size', `${st}.maxEncounters`, { min: 1, max: 30, step: 1 }),
-     fNum('Golden odds: 1 in', `${st}.goldOdds`, { min: 2, step: 1 }),
-     fNum('Alpha odds: 1 in', `${st}.alphaOdds`, {
+     numberField('Steps per km', `${st}.stepsPerKm`, { min: 500, max: 3000, step: 1 }),
+     numberField('New encounter every ($ earned)', `${st}.encounterEverySE`, { min: 50, step: 50 }),
+     numberField('Encounter queue size', `${st}.maxEncounters`, { min: 1, max: 30, step: 1 }),
+     numberField('Golden odds: 1 in', `${st}.goldOdds`, { min: 2, step: 1 }),
+     numberField('Alpha odds: 1 in', `${st}.alphaOdds`, {
        min: 2,
        step: 1,
        ph: '45',
        help: 'How rare an Alpha is among new encounters (once you have two Billies).',
      }),
-     fNum('Rest stop price ($)', `${st}.restCost`, { min: 0, step: 10 })
+     numberField('Rest stop price ($)', `${st}.restCost`, { min: 0, step: 10 })
    ) + brackets
  )}
  ${card(
    'Leveling',
    grid(
-     fNum('XP curve factor', `${pg}.xpFactor`, {
+     numberField('XP curve factor', `${pg}.xpFactor`, {
        min: 0.1,
        max: 3,
        step: 0.05,
        help: 'XP to reach level L = factor × L³.',
      }),
-     fNum('Highest level', `${pg}.maxLevel`, { min: 5, max: 250, step: 1 }),
-     fNum('Buddy steps per XP', `${pg}.buddyStepsPerXp`, { min: 1, max: 100, step: 1 }),
-     fNum('Team size', `${pg}.teamSize`, { min: 1, max: 12, step: 1 }),
-     fNum('Move slots', `${pg}.moveSlots`, { min: 1, max: 8, step: 1 }),
+     numberField('Highest level', `${pg}.maxLevel`, { min: 5, max: 250, step: 1 }),
+     numberField('Buddy steps per XP', `${pg}.buddyStepsPerXp`, { min: 1, max: 100, step: 1 }),
+     numberField('Team size', `${pg}.teamSize`, { min: 1, max: 12, step: 1 }),
+     numberField('Move slots', `${pg}.moveSlots`, { min: 1, max: 8, step: 1 }),
      ...R.progression.xpYield.map((v, i) =>
-       fNum(`XP for beating stage ${i + 1}`, `${pg}.xpYield.${i}`, { min: 1, step: 5 })
+       numberField(`XP for beating stage ${i + 1}`, `${pg}.xpYield.${i}`, { min: 1, step: 5 })
      ),
-     fNum('Trainer battle XP bonus', `${pg}.trainerXpMult`, { min: 1, max: 5, step: 0.1, unit: '×' }),
-     fNum('Bench XP share', `${pg}.teamXpShare`, {
+     numberField('Trainer battle XP bonus', `${pg}.trainerXpMult`, { min: 1, max: 5, step: 0.1, unit: '×' }),
+     numberField('Bench XP share', `${pg}.teamXpShare`, {
        min: 0,
        max: 1,
        step: 0.05,
@@ -813,25 +817,25 @@ SECTIONS.rules = () => {
  ${card(
    'Eggs',
    grid(
-     fNum('Eggs carried', `${eg}.capacity`, { min: 1, max: 30, step: 1 }),
-     fNum('Incubators', `${eg}.slots`, { min: 1, max: 6, step: 1 }),
-     fNum('Golden odds: 1 in', `${eg}.goldOdds`, { min: 2, step: 1 }),
-     fNum('Golden odds, biggest egg: 1 in', `${eg}.goldOdds10`, { min: 2, step: 1 }),
-     fNum('Mythical odds, biggest egg: 1 in', `${eg}.mythOdds`, { min: 2, step: 1 }),
-     fSel('The mythical', `${eg}.mythSpecies`, spOpts()),
-     fNum('Wild drop chance', `${eg}.dropChance`, { min: 0, max: 1, step: 0.01 })
+     numberField('Eggs carried', `${eg}.capacity`, { min: 1, max: 30, step: 1 }),
+     numberField('Incubators', `${eg}.slots`, { min: 1, max: 6, step: 1 }),
+     numberField('Golden odds: 1 in', `${eg}.goldOdds`, { min: 2, step: 1 }),
+     numberField('Golden odds, biggest egg: 1 in', `${eg}.goldOdds10`, { min: 2, step: 1 }),
+     numberField('Mythical odds, biggest egg: 1 in', `${eg}.mythOdds`, { min: 2, step: 1 }),
+     selectField('The mythical', `${eg}.mythSpecies`, spOpts()),
+     numberField('Wild drop chance', `${eg}.dropChance`, { min: 0, max: 1, step: 0.01 })
    ) +
      `<div class="grid">${Object.keys(D.eggs)
-       .map(k => fNum(`Drop weight · ${k} km`, `${eg}.dropTiers.${k}`, { opt: 1, min: 0, max: 1, step: 0.05 }))
+       .map(k => numberField(`Drop weight · ${k} km`, `${eg}.dropTiers.${k}`, { opt: 1, min: 0, max: 1, step: 0.05 }))
        .join('')}</div>`
  )}
  ${card(
    'Time and weather',
    grid(
-     fChk('Billies ignore the hour and the weather', `rules.env.off`, {
+     checkboxField('Billies ignore the hour and the weather', `rules.env.off`, {
        help: 'Off: some come out more at night, in the rain, in the snow and so on (the table below).',
      }),
-     fChk('Weather doesn’t change battles', `rules.env.battleOff`, {
+     checkboxField('Weather doesn’t change battles', `rules.env.battleOff`, {
        help: 'Off: in the rain Water moves hit harder and Fire moves fizzle, at night Psychic and Dragon moves are stronger, and so on (v28).',
      })
    ) +
@@ -840,72 +844,72 @@ SECTIONS.rules = () => {
      )
        .map(
          ([k, F]) =>
-           `<h4>${esc({ night: 'At night', dusk: 'At dusk and dawn', sunny: 'On a fair day', rain: 'In the rain', storm: 'In a thunderstorm', snow: 'In the snow', fog: 'In fog', ash: 'In falling ash' }[k] || k)}</h4><div class="grid">${D.types.map(t => fNum(t.id, `rules.env.likes.${k}.${t.id}`, { opt: 1, min: 0, max: 5, step: 0.05, unit: '×', ph: F[t.id] != null ? String(F[t.id]) : '1' })).join('')}</div>`
+           `<h4>${esc({ night: 'At night', dusk: 'At dusk and dawn', sunny: 'On a fair day', rain: 'In the rain', storm: 'In a thunderstorm', snow: 'In the snow', fog: 'In fog', ash: 'In falling ash' }[k] || k)}</h4><div class="grid">${D.types.map(t => numberField(t.id, `rules.env.likes.${k}.${t.id}`, { opt: 1, min: 0, max: 5, step: 0.05, unit: '×', ph: F[t.id] != null ? String(F[t.id]) : '1' })).join('')}</div>`
        )
        .join('')}</details>`
  )}
- ${card('Riding across water', grid(fNum('Smallest Billie you can ride', `rules.ride.minHeight`, { unit: 'm', min: 0.3, max: 10, step: 0.1, help: 'Its height in the Field Guide. Needed for lake and sea crossings (stops marked as a water crossing).' })))}
- ${card('Jobs', grid(fNum('Steps per pay', `${jb}.stepsPerPay`, { min: 100, step: 100 }), fNum('Pay can pile up to', `${jb}.maxPending`, { min: 1, max: 200, step: 1 }), fNum('Open positions', `${jb}.positions`, { min: 1, max: 8, step: 1 })))}
+ ${card('Riding across water', grid(numberField('Smallest Billie you can ride', `rules.ride.minHeight`, { unit: 'm', min: 0.3, max: 10, step: 0.1, help: 'Its height in the Field Guide. Needed for lake and sea crossings (stops marked as a water crossing).' })))}
+ ${card('Jobs', grid(numberField('Steps per pay', `${jb}.stepsPerPay`, { min: 100, step: 100 }), numberField('Pay can pile up to', `${jb}.maxPending`, { min: 1, max: 200, step: 1 }), numberField('Open positions', `${jb}.positions`, { min: 1, max: 8, step: 1 })))}
  ${card(
    'Battle',
    grid(
-     fNum('Same-type bonus', `${bt}.stab`, { unit: '×', min: 1, max: 3, step: 0.05 }),
-     fNum('Critical damage', `${bt}.critMult`, { unit: '×', min: 1, max: 4, step: 0.05 }),
+     numberField('Same-type bonus', `${bt}.stab`, { unit: '×', min: 1, max: 3, step: 0.05 }),
+     numberField('Critical damage', `${bt}.critMult`, { unit: '×', min: 1, max: 4, step: 0.05 }),
      ...R.battle.critChances.map((v, i) =>
-       fNum(`Critical chance at +${i}`, `${bt}.critChances.${i}`, { min: 0, max: 1, step: 0.005 })
+       numberField(`Critical chance at +${i}`, `${bt}.critChances.${i}`, { min: 0, max: 1, step: 0.005 })
      ),
-     fNum('Lowest damage roll', `${bt}.rollMin`, { min: 0.1, max: 1, step: 0.01 }),
-     fNum('Status damage: 1 /', `${bt}.drainFraction`, {
+     numberField('Lowest damage roll', `${bt}.rollMin`, { min: 0.1, max: 1, step: 0.01 }),
+     numberField('Status damage: 1 /', `${bt}.drainFraction`, {
        min: 2,
        max: 64,
        step: 1,
        help: 'Burn, sandstorm and Regrowth move this fraction of max HP each turn.',
      }),
-     fNum('Sharp stones: 1 /', `${bt}.rentFraction`, { min: 2, max: 64, step: 1 }),
-     fNum('Paralysis lost-turn chance', `${bt}.auditSkip`, { min: 0, max: 1, step: 0.05 }),
-     fNum('Confusion turns', `${bt}.hypeTurns`, { min: 1, max: 10, step: 1 }),
-     fNum('Confusion self-hit chance', `${bt}.hypeSelfHit`, { min: 0, max: 1, step: 0.05 }),
-     fNum('Sleep turns, least', `${bt}.subpoenaMin`, { min: 1, max: 10, step: 1 }),
-     fNum('Sleep turns, most', `${bt}.subpoenaMax`, { min: 1, max: 10, step: 1 }),
-     fNum('Stat stage limit', `${bt}.stageMax`, { min: 1, max: 12, step: 1 }),
-     fNum('Trainer smarts', `${bt}.aiSmart`, {
+     numberField('Sharp stones: 1 /', `${bt}.rentFraction`, { min: 2, max: 64, step: 1 }),
+     numberField('Paralysis lost-turn chance', `${bt}.auditSkip`, { min: 0, max: 1, step: 0.05 }),
+     numberField('Confusion turns', `${bt}.hypeTurns`, { min: 1, max: 10, step: 1 }),
+     numberField('Confusion self-hit chance', `${bt}.hypeSelfHit`, { min: 0, max: 1, step: 0.05 }),
+     numberField('Sleep turns, least', `${bt}.subpoenaMin`, { min: 1, max: 10, step: 1 }),
+     numberField('Sleep turns, most', `${bt}.subpoenaMax`, { min: 1, max: 10, step: 1 }),
+     numberField('Stat stage limit', `${bt}.stageMax`, { min: 1, max: 12, step: 1 }),
+     numberField('Trainer smarts', `${bt}.aiSmart`, {
        min: 0,
        max: 1,
        step: 0.05,
        help: 'Chance a trainer picks its best move.',
      }),
-     fNum('Losing fee', `${bt}.loseFee`, {
+     numberField('Losing fee', `${bt}.loseFee`, {
        min: 0,
        max: 1,
        step: 0.01,
        help: 'Fraction of your money paid when your team is wiped out.',
      }),
-     fNum('Strongest move power cap (doubling moves)', `${bt}.holdCap`, { min: 40, step: 10 }),
-     fNum('Delayed attack turns', `${bt}.mailTurns`, { min: 1, max: 6, step: 1 })
+     numberField('Strongest move power cap (doubling moves)', `${bt}.holdCap`, { min: 40, step: 10 }),
+     numberField('Delayed attack turns', `${bt}.mailTurns`, { min: 1, max: 6, step: 1 })
    ) +
      '<h4>Type abilities</h4>' +
      grid(
-       fNum('Erratic roll, low', `${bt}.cryptoRollMin`, { min: 0, max: 1, step: 0.05 }),
-       fNum('Erratic roll, high', `${bt}.cryptoRollMax`, { min: 1, max: 3, step: 0.05 }),
-       fNum('Keen: extra critical stages', `${bt}.mediaCrit`, { min: 0, max: 3, step: 1 }),
-       fNum('Kindling: Attack boost per turn', `${bt}.financeRamp`, { min: 0, max: 1, step: 0.01 }),
-       fNum('Kindling turns', `${bt}.financeRampTurns`, { min: 1, max: 30, step: 1 }),
-       fNum('Alloy bonus per teammate', `${bt}.retailSynergy`, { min: 0, max: 1, step: 0.01 }),
-       fSel('Sandstorm type', `${bt}.shockType`, typeOpts()),
-       fNum('Sandstorm boost', `${bt}.oilShockMult`, { unit: '×', min: 1, max: 3, step: 0.05 }),
-       fNum('Sandstorm turns', `${bt}.shockTurns`, { min: 1, max: 20, step: 1 }),
-       fSel('Soak turns the target into', `${bt}.spinType`, typeOpts()),
-       fNum('Soak turns', `${bt}.spinTurns`, { min: 1, max: 10, step: 1 })
+       numberField('Erratic roll, low', `${bt}.cryptoRollMin`, { min: 0, max: 1, step: 0.05 }),
+       numberField('Erratic roll, high', `${bt}.cryptoRollMax`, { min: 1, max: 3, step: 0.05 }),
+       numberField('Keen: extra critical stages', `${bt}.mediaCrit`, { min: 0, max: 3, step: 1 }),
+       numberField('Kindling: Attack boost per turn', `${bt}.financeRamp`, { min: 0, max: 1, step: 0.01 }),
+       numberField('Kindling turns', `${bt}.financeRampTurns`, { min: 1, max: 30, step: 1 }),
+       numberField('Alloy bonus per teammate', `${bt}.retailSynergy`, { min: 0, max: 1, step: 0.01 }),
+       selectField('Sandstorm type', `${bt}.shockType`, typeOpts()),
+       numberField('Sandstorm boost', `${bt}.oilShockMult`, { unit: '×', min: 1, max: 3, step: 0.05 }),
+       numberField('Sandstorm turns', `${bt}.shockTurns`, { min: 1, max: 20, step: 1 }),
+       selectField('Soak turns the target into', `${bt}.spinType`, typeOpts()),
+       numberField('Soak turns', `${bt}.spinTurns`, { min: 1, max: 10, step: 1 })
      ) +
      '<h4>Alphas and team battles</h4>' +
      grid(
-       fNum('Alpha HP', `${bt}.alphaHp`, { unit: '×', min: 1, max: 10, step: 0.1, ph: '3' }),
-       fNum('Alpha stats', `${bt}.alphaStats`, { unit: '×', min: 1, max: 3, step: 0.05, ph: '1.3' }),
-       fNum('Alpha extra levels', `${bt}.alphaLevels`, { min: 0, max: 20, step: 1, ph: '3' }),
-       fNum('Alpha moves per turn', `${bt}.alphaActs`, { min: 1, max: 4, step: 1, ph: '2' }),
-       fNum('Your Billies against an Alpha', `${bt}.alphaTeam`, { min: 1, max: 3, step: 1, ph: '3' }),
-       fNum('Alpha XP', `${bt}.alphaXp`, { unit: '×', min: 1, max: 10, step: 0.5, ph: '3' }),
-       fNum('A taxed Alpha keeps', `${bt}.alphaKeep`, {
+       numberField('Alpha HP', `${bt}.alphaHp`, { unit: '×', min: 1, max: 10, step: 0.1, ph: '3' }),
+       numberField('Alpha stats', `${bt}.alphaStats`, { unit: '×', min: 1, max: 3, step: 0.05, ph: '1.3' }),
+       numberField('Alpha extra levels', `${bt}.alphaLevels`, { min: 0, max: 20, step: 1, ph: '3' }),
+       numberField('Alpha moves per turn', `${bt}.alphaActs`, { min: 1, max: 4, step: 1, ph: '2' }),
+       numberField('Your Billies against an Alpha', `${bt}.alphaTeam`, { min: 1, max: 3, step: 1, ph: '3' }),
+       numberField('Alpha XP', `${bt}.alphaXp`, { unit: '×', min: 1, max: 10, step: 0.5, ph: '3' }),
+       numberField('A taxed Alpha keeps', `${bt}.alphaKeep`, {
          unit: '×',
          min: 1,
          max: 1.5,
@@ -913,8 +917,8 @@ SECTIONS.rules = () => {
          ph: '1.08',
          help: 'Its stats compared with others of its kind.',
        }),
-       fNum('Alpha shrugs off sleep', `${bt}.alphaSleepResist`, { min: 0, max: 1, step: 0.05, ph: '0.5' }),
-       fNum('Moves that hit every foe', `${bt}.spreadMult`, {
+       numberField('Alpha shrugs off sleep', `${bt}.alphaSleepResist`, { min: 0, max: 1, step: 0.05, ph: '0.5' }),
+       numberField('Moves that hit every foe', `${bt}.spreadMult`, {
          unit: '×',
          min: 0.3,
          max: 1,
@@ -929,29 +933,34 @@ SECTIONS.rules = () => {
    '<h4>Base tax rate</h4>' +
      rar +
      grid(
-       fNum('HP factor', `${ca}.hpFactor`, {
+       numberField('HP factor', `${ca}.hpFactor`, {
          min: 0,
          max: 1,
          step: 0.01,
          help: 'At full HP the rate is multiplied by (1 − this).',
        }),
-       fNum('Asleep bonus', `${ca}.subpoena`, { unit: '×', min: 1, max: 5, step: 0.1 }),
-       fNum('Other status bonus', `${ca}.status`, { unit: '×', min: 1, max: 5, step: 0.1 }),
-       fNum('Soak bonus', `${ca}.spin`, { unit: '×', min: 1, max: 3, step: 0.05 }),
-       fNum('Perfect ring bonus', `${ca}.ring`, {
+       numberField('Asleep bonus', `${ca}.subpoena`, { unit: '×', min: 1, max: 5, step: 0.1 }),
+       numberField('Other status bonus', `${ca}.status`, { unit: '×', min: 1, max: 5, step: 0.1 }),
+       numberField('Soak bonus', `${ca}.spin`, { unit: '×', min: 1, max: 3, step: 0.05 }),
+       numberField('Perfect ring bonus', `${ca}.ring`, {
          min: 0,
          max: 2,
          step: 0.05,
          help: 'A perfect throw multiplies the odds by 1 + this.',
        }),
-       fNum('Lands-on-edge chance', `${ca}.edge`, { min: 0, max: 0.2, step: 0.005 }),
-       fNum('Alpha tax rate', `${ca}.alpha`, { unit: '×', min: 0.05, max: 1, step: 0.05, ph: '0.4' }),
-       fNum('Copper Coin penalty for luxury lines', `${ca}.luxuryPenny`, { unit: '×', min: 0, max: 1, step: 0.05 }),
-       fNum('Bargain chance', `${ca}.offerChance`, { min: 0, max: 1, step: 0.05 }),
-       fNum('Bargain, least ($)', `${ca}.offerMin`, { min: 0, step: 10 }),
-       fNum('Bargain, most ($)', `${ca}.offerMax`, { min: 0, step: 10 }),
-       fNum('Focus Bonus per refusal', `${ca}.integrityStep`, { unit: '×', min: 1, max: 3, step: 0.05 }),
-       fNum('Focus Bonus cap', `${ca}.integrityMax`, { unit: '×', min: 1, max: 5, step: 0.05 })
+       numberField('Lands-on-edge chance', `${ca}.edge`, { min: 0, max: 0.2, step: 0.005 }),
+       numberField('Alpha tax rate', `${ca}.alpha`, { unit: '×', min: 0.05, max: 1, step: 0.05, ph: '0.4' }),
+       numberField('Copper Coin penalty for luxury lines', `${ca}.luxuryPenny`, {
+         unit: '×',
+         min: 0,
+         max: 1,
+         step: 0.05,
+       }),
+       numberField('Bargain chance', `${ca}.offerChance`, { min: 0, max: 1, step: 0.05 }),
+       numberField('Bargain, least ($)', `${ca}.offerMin`, { min: 0, step: 10 }),
+       numberField('Bargain, most ($)', `${ca}.offerMax`, { min: 0, step: 10 }),
+       numberField('Focus Bonus per refusal', `${ca}.integrityStep`, { unit: '×', min: 1, max: 3, step: 0.05 }),
+       numberField('Focus Bonus cap', `${ca}.integrityMax`, { unit: '×', min: 1, max: 5, step: 0.05 })
      ) +
      '<h4>Luxury lines (sneer at Copper Coins)</h4>' +
      `<div class="chips">${D.lines.map(L => `<label class="chk-chip"><input type="checkbox" data-act-chk="luxury" value="${L.id}" ${R.catching.luxury.includes(L.id) ? 'checked' : ''}> ${esc(L.names[0])}</label>`).join('')}</div>`

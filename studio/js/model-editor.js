@@ -17,16 +17,16 @@ import {
   ACTS,
   ask,
   changed,
+  checkboxField,
+  colorField,
   commit,
-  fChk,
-  fColor,
-  fNum,
-  fRange,
-  fSel,
-  fText,
   grid,
+  numberField,
+  rangeField,
   render,
+  selectField,
   studioState,
+  textField,
   toast,
 } from './studio-app.js';
 import { fileToCanvas, markArt, pickFile } from './sprites.js';
@@ -105,13 +105,13 @@ function pedVoxHTML(k) {
     const title = `<div class="vxe-lh"><b>${i + 1}. ${esc(l.name || names[kind] || kind)}</b><small>${esc(names[kind] || kind)}</small><span class="grow"></span>
    <button class="btn sm subtle" data-act="vxeSel" data-i="${i}">${on ? 'Close' : 'Edit'}</button><button class="btn sm subtle" data-act="vxeMove" data-i="${i}" data-d="-1" title="Up">↑</button><button class="btn sm subtle" data-act="vxeMove" data-i="${i}" data-d="1" title="Down">↓</button><button class="btn sm subtle" data-act="vxeDup" data-i="${i}" title="Duplicate">⧉</button><button class="btn sm danger subtle" data-act="vxeDel" data-i="${i}">Remove</button></div>`;
     if (!on) return `<div class="vxe-layer ${l.hide ? 'off' : ''}">${title}</div>`;
-    const pos = `${fRange('Across (m)', `${p}.x`, { min: -3, max: 3, step: 0.02, def: 0 })}${fRange('Depth (m, + is behind)', `${p}.y`, { min: -3, max: 3, step: 0.02, def: 0 })}${fRange('Up (m)', `${p}.z`, { min: 0, max: 6, step: 0.02, def: 0 })}`;
+    const pos = `${rangeField('Across (m)', `${p}.x`, { min: -3, max: 3, step: 0.02, def: 0 })}${rangeField('Depth (m, + is behind)', `${p}.y`, { min: -3, max: 3, step: 0.02, def: 0 })}${rangeField('Up (m)', `${p}.z`, { min: 0, max: 6, step: 0.02, def: 0 })}`;
     let body = '';
     if (kind === 'img')
       body = `${grid(
-        fText('Picture', `${p}.img`, { help: 'A path under art/, e.g. scene/props/sign_face.png' }),
-        fRange('Size (metres per 34 px)', `${p}.s`, { min: 0.1, max: 3, step: 0.02, def: 1 }),
-        fSel(
+        textField('Picture', `${p}.img`, { help: 'A path under art/, e.g. scene/props/sign_face.png' }),
+        rangeField('Size (metres per 34 px)', `${p}.s`, { min: 0.1, max: 3, step: 0.02, def: 1 }),
+        selectField(
           'Facing',
           `${p}.face`,
           [
@@ -120,22 +120,22 @@ function pedVoxHTML(k) {
           ],
           { opt: 1 }
         ),
-        fChk('Mirrored', `${p}.flip`, { num: 1 })
+        checkboxField('Mirrored', `${p}.flip`, { num: 1 })
       )}<div class="grid">${pos}</div><div class="seg-row"><button class="btn sm subtle" data-act="vxeImgPick" data-i="${i}">Pick a PNG…</button></div>`;
     else if (kind === 'raw')
       body = `<p class="help">${esc(String(l.n || '?'))} voxels imported from ${esc(l.src || 'a .vox')}. Move it with the sliders; its colours are its own.</p><div class="grid">${pos}</div>`;
     else {
       const size =
         kind === 'box'
-          ? `${fRange('Width (m)', `${p}.w`, { min: 0.05, max: 6, step: 0.02, def: 0.5 })}${fRange('Depth (m)', `${p}.d`, { min: 0.05, max: 6, step: 0.02, def: 0.5 })}${fRange('Height (m)', `${p}.h`, { min: 0.05, max: 6, step: 0.02, def: 0.5 })}`
+          ? `${rangeField('Width (m)', `${p}.w`, { min: 0.05, max: 6, step: 0.02, def: 0.5 })}${rangeField('Depth (m)', `${p}.d`, { min: 0.05, max: 6, step: 0.02, def: 0.5 })}${rangeField('Height (m)', `${p}.h`, { min: 0.05, max: 6, step: 0.02, def: 0.5 })}`
           : kind === 'sphere'
-            ? fRange('Radius (m)', `${p}.r`, { min: 0.05, max: 3, step: 0.02, def: 0.3 })
-            : `${fRange('Radius (m)', `${p}.r`, { min: 0.03, max: 3, step: 0.01, def: 0.3 })}${fNum('Depth radius (m)', `${p}.ry`, { opt: 1, min: 0.03, max: 3, step: 0.01, help: 'Empty: round. Set it for an oval, or a wheel seen from the side.' })}${fRange('Height (m)', `${p}.h`, { min: 0.05, max: 6, step: 0.02, def: 0.5 })}${kind === 'cone' ? fRange('Radius at the top (m)', `${p}.r1`, { min: 0, max: 3, step: 0.01, def: 0 }) : ''}${kind === 'barrel' ? fRange('Bulge', `${p}.bulge`, { min: 0, max: 0.4, step: 0.01, def: 0.15 }) : ''}`;
-      body = `<div class="grid">${fSel(
+            ? rangeField('Radius (m)', `${p}.r`, { min: 0.05, max: 3, step: 0.02, def: 0.3 })
+            : `${rangeField('Radius (m)', `${p}.r`, { min: 0.03, max: 3, step: 0.01, def: 0.3 })}${numberField('Depth radius (m)', `${p}.ry`, { opt: 1, min: 0.03, max: 3, step: 0.01, help: 'Empty: round. Set it for an oval, or a wheel seen from the side.' })}${rangeField('Height (m)', `${p}.h`, { min: 0.05, max: 6, step: 0.02, def: 0.5 })}${kind === 'cone' ? rangeField('Radius at the top (m)', `${p}.r1`, { min: 0, max: 3, step: 0.01, def: 0 }) : ''}${kind === 'barrel' ? rangeField('Bulge', `${p}.bulge`, { min: 0, max: 0.4, step: 0.01, def: 0.15 }) : ''}`;
+      body = `<div class="grid">${selectField(
         'Shape',
         `${p}.k`,
         VXE_KINDS.filter(q => !['img', 'raw'].includes(q[0]))
-      )}${fText('Name', `${p}.name`, { opt: 1 })}${fColor('Colour', `${p}.col`)}${fSel('Texture', `${p}.tex`, tex, { opt: 1 })}${fChk('Hidden', `${p}.hide`, { num: 1 })}</div><div class="grid">${pos}</div><div class="grid">${size}</div>`;
+      )}${textField('Name', `${p}.name`, { opt: 1 })}${colorField('Colour', `${p}.col`)}${selectField('Texture', `${p}.tex`, tex, { opt: 1 })}${checkboxField('Hidden', `${p}.hide`, { num: 1 })}</div><div class="grid">${pos}</div><div class="grid">${size}</div>`;
     }
     /* alpha 0.4: a part that turns (a propeller, a windmill's sails, a wheel): about which way, through which point, how fast */
     if (kind !== 'img') {
@@ -143,11 +143,11 @@ function pedVoxHTML(k) {
       body +=
         `<div class="seg-row"><button class="btn sm ${sp ? '' : 'subtle'}" data-act="vxeSpin" data-i="${i}">${sp ? 'It turns ✓' : 'Make it turn'}</button></div>` +
         (sp
-          ? `<div class="grid">${fSel('Turns about', `${p}.spin.axis`, [
+          ? `<div class="grid">${selectField('Turns about', `${p}.spin.axis`, [
               ['x', 'Across (left–right)'],
               ['y', 'Depth (front–back)'],
               ['z', 'Up (like a carousel)'],
-            ])}${fRange('Turns a second', `${p}.spin.rps`, { min: -4, max: 4, step: 0.1, def: 1.5 })}${fRange('Pivot across (m)', `${p}.spin.x`, { min: -3, max: 3, step: 0.02, def: 0 })}${fRange('Pivot depth (m)', `${p}.spin.y`, { min: -3, max: 3, step: 0.02, def: 0 })}${fRange('Pivot up (m)', `${p}.spin.z`, { min: 0, max: 6, step: 0.02, def: 0 })}</div>`
+            ])}${rangeField('Turns a second', `${p}.spin.rps`, { min: -4, max: 4, step: 0.1, def: 1.5 })}${rangeField('Pivot across (m)', `${p}.spin.x`, { min: -3, max: 3, step: 0.02, def: 0 })}${rangeField('Pivot depth (m)', `${p}.spin.y`, { min: -3, max: 3, step: 0.02, def: 0 })}${rangeField('Pivot up (m)', `${p}.spin.z`, { min: 0, max: 6, step: 0.02, def: 0 })}</div>`
           : '');
     }
     return `<div class="vxe-layer on ${l.hide ? 'off' : ''}">${title}${body}</div>`;

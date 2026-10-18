@@ -20,17 +20,17 @@ import {
   ask,
   card,
   changed,
+  checkboxField,
   clone,
+  colorField,
   commit,
-  fChk,
-  fColor,
-  fNum,
-  fRange,
-  fSel,
-  fText,
   grid,
+  numberField,
+  rangeField,
   render,
+  selectField,
   studioState,
+  textField,
   toast,
 } from './studio-app.js';
 import { atlasGet, fileToCanvas, markArt, pickFile } from './sprites.js';
@@ -147,38 +147,38 @@ function pedCard(k) {
     return `<div class="ped-layer ${PED.layer === i ? 'on' : ''}"><canvas class="ped-thumb" data-limg="${esc(l.img || '')}" width="40" height="40"></canvas>
   <div class="ped-lf"><div class="ped-lh"><b>Layer ${i + 1}</b><small class="mono">${esc((l.img || '').split('/').pop())}</small><span class="grow"></span>
    <button class="btn sm subtle" data-act="pedLayerPx" data-i="${i}" title="Edit this layer's pixels">Pixels</button><button class="btn sm subtle" data-act="pedLayerMove" data-i="${i}" data-d="-1" title="Move up the list">↑</button><button class="btn sm subtle" data-act="pedLayerMove" data-i="${i}" data-d="1" title="Move down the list">↓</button><button class="btn sm danger subtle" data-act="pedLayerDel" data-i="${i}">Remove</button></div>
-   <div class="grid ped-lg">${fRange('Depth (m, + is behind)', `${p}.dz`, { min: -3, max: 3, step: 0.05, def: 0 })}${fNum('Across (px)', `${p}.dx`, { step: 1, opt: 1 })}${fNum('Up (px)', `${p}.dy`, { step: 1, opt: 1 })}
-   <label class="fld"><span>Facing</span>${face(`${p}.face`, l.face)}</label>${fRange('Glow (lights itself)', `${p}.glow`, { min: 0, max: 2, step: 0.05, def: 0 })}${fRange('Sway with the main picture', `${p}.sway`, { min: 0, max: 2, step: 0.05, def: 1 })}</div></div></div>`;
+   <div class="grid ped-lg">${rangeField('Depth (m, + is behind)', `${p}.dz`, { min: -3, max: 3, step: 0.05, def: 0 })}${numberField('Across (px)', `${p}.dx`, { step: 1, opt: 1 })}${numberField('Up (px)', `${p}.dy`, { step: 1, opt: 1 })}
+   <label class="fld"><span>Facing</span>${face(`${p}.face`, l.face)}</label>${rangeField('Glow (lights itself)', `${p}.glow`, { min: 0, max: 2, step: 0.05, def: 0 })}${rangeField('Sway with the main picture', `${p}.sway`, { min: 0, max: 2, step: 0.05, def: 1 })}</div></div></div>`;
   }).join('');
   const set =
     grid(
-      fText('Name', `${b}.name`),
-      fText('Variant group', `${b}.group`, { opt: 1 }),
-      fNum('Shadow size (m)', `${b}.shadow`, { min: 0, max: 4, step: 0.05 }),
-      fRange('Sways in the wind', `${b}.sway`, { min: 0, max: 1, step: 0.05, def: 0 }),
-      fNum('Solid radius (m)', `${b}.solid`, {
+      textField('Name', `${b}.name`),
+      textField('Variant group', `${b}.group`, { opt: 1 }),
+      numberField('Shadow size (m)', `${b}.shadow`, { min: 0, max: 4, step: 0.05 }),
+      rangeField('Sways in the wind', `${b}.sway`, { min: 0, max: 1, step: 0.05, def: 0 }),
+      numberField('Solid radius (m)', `${b}.solid`, {
         opt: 1,
         min: 0,
         max: 4,
         step: 0.05,
         help: 'People walk around this. Empty: guessed from the shadow. 0: walk through.',
       }),
-      fNum('Footprint width (m)', `${b}.box.0`, {
+      numberField('Footprint width (m)', `${b}.box.0`, {
         opt: 1,
         min: 0,
         max: 12,
         step: 0.1,
         help: 'Buildings and fences: a box instead of a circle. Buildings also cast solid shadows from it.',
       }),
-      fNum('Footprint depth (m)', `${b}.box.1`, { opt: 1, min: 0, max: 12, step: 0.1 }),
-      fNum('Walkable radius (m)', `${b}.walk`, {
+      numberField('Footprint depth (m)', `${b}.box.1`, { opt: 1, min: 0, max: 12, step: 0.1 }),
+      numberField('Walkable radius (m)', `${b}.walk`, {
         opt: 1,
         min: 0,
         max: 4,
         step: 0.1,
         help: 'Stepping stones and bridges: opens water under it.',
       }),
-      fChk('Lies flat on the ground', `${b}.flat`, { num: 1 })
+      checkboxField('Lies flat on the ground', `${b}.flat`, { num: 1 })
     ) +
     `<div class="grid"><label class="fld"><span>Main picture faces</span>${face(`${b}.face`, M.face)}</label><label class="fld"><span>Material</span><select data-p="${b}.mat" data-k="sel" data-opt="1">${[
       [
@@ -193,9 +193,9 @@ function pedCard(k) {
       .join('')}</select></label></div>` +
     (M.glow
       ? grid(
-          fColor('Glow color', `${b}.glow.c`),
-          fNum('Glow size (m)', `${b}.glow.r`, { step: 0.1, min: 0.2, max: 6 }),
-          fNum('Glow height (m)', `${b}.glow.y`, { step: 0.1, min: 0, max: 8 })
+          colorField('Glow color', `${b}.glow.c`),
+          numberField('Glow size (m)', `${b}.glow.r`, { step: 0.1, min: 0.2, max: 6 }),
+          numberField('Glow height (m)', `${b}.glow.y`, { step: 0.1, min: 0, max: 8 })
         ) + '<button class="btn sm subtle danger" data-act="pedGlowDel">Remove the glow</button>'
       : '<button class="btn sm subtle" data-act="scGlowAdd2">Add a light glow</button>');
   return card(
@@ -799,13 +799,13 @@ function pedVaryHTML(k) {
   return (
     `<h4>Variety and wear</h4><p class="help">Each placed copy draws its own values from where it stands, so a row of these doesn't look stamped out. Colour changes touch only the colourful parts (paint, leaves), not outlines, wood grain or faces; a hue window narrows them further (leaves but not trunks).</p>` +
     grid(
-      fRange('Size ±', `${b}.vary.size`, { min: 0, max: 0.5, step: 0.01, def: D.size || 0 }),
-      fRange('Hue ± (°)', `${b}.vary.hue`, { min: 0, max: 60, step: 1, def: D.hue || 0 }),
-      fRange('Saturation ±', `${b}.vary.sat`, { min: 0, max: 0.5, step: 0.01, def: D.sat || 0 }),
-      fRange('Brightness ±', `${b}.vary.val`, { min: 0, max: 0.4, step: 0.01, def: D.val || 0 }),
-      fRange('Turn ± (°)', `${b}.vary.rot`, { min: 0, max: 45, step: 1, def: D.rot || 0 }),
-      fRange('Lean ± (°)', `${b}.vary.lean`, { min: 0, max: 8, step: 0.5, def: D.lean || 0 }),
-      fNum('Only colours near hue (°)', `${b}.vary.mask.0`, {
+      rangeField('Size ±', `${b}.vary.size`, { min: 0, max: 0.5, step: 0.01, def: D.size || 0 }),
+      rangeField('Hue ± (°)', `${b}.vary.hue`, { min: 0, max: 60, step: 1, def: D.hue || 0 }),
+      rangeField('Saturation ±', `${b}.vary.sat`, { min: 0, max: 0.5, step: 0.01, def: D.sat || 0 }),
+      rangeField('Brightness ±', `${b}.vary.val`, { min: 0, max: 0.4, step: 0.01, def: D.val || 0 }),
+      rangeField('Turn ± (°)', `${b}.vary.rot`, { min: 0, max: 45, step: 1, def: D.rot || 0 }),
+      rangeField('Lean ± (°)', `${b}.vary.lean`, { min: 0, max: 8, step: 0.5, def: D.lean || 0 }),
+      numberField('Only colours near hue (°)', `${b}.vary.mask.0`, {
         opt: 1,
         min: 0,
         max: 360,
@@ -813,7 +813,7 @@ function pedVaryHTML(k) {
         ph: D.mask ? String(D.mask[0]) : 'any',
         help: '0 red, 60 yellow, 120 green, 200 blue, 280 purple.',
       }),
-      fNum('… within ± (°)', `${b}.vary.mask.1`, {
+      numberField('… within ± (°)', `${b}.vary.mask.1`, {
         opt: 1,
         min: 0,
         max: 180,
@@ -822,10 +822,10 @@ function pedVaryHTML(k) {
       })
     ) +
     grid(
-      fRange('Dirt', `${b}.wear.dirt`, { min: 0, max: 1.5, step: 0.05, def: W.dirt || 0 }),
-      fRange('Moss', `${b}.wear.moss`, { min: 0, max: 1.5, step: 0.05, def: W.moss || 0 }),
-      fRange('Faded paint', `${b}.wear.fade`, { min: 0, max: 1.5, step: 0.05, def: W.fade || 0 }),
-      fRange('Cracks', `${b}.wear.crack`, { min: 0, max: 1.5, step: 0.05, def: W.crack || 0 })
+      rangeField('Dirt', `${b}.wear.dirt`, { min: 0, max: 1.5, step: 0.05, def: W.dirt || 0 }),
+      rangeField('Moss', `${b}.wear.moss`, { min: 0, max: 1.5, step: 0.05, def: W.moss || 0 }),
+      rangeField('Faded paint', `${b}.wear.fade`, { min: 0, max: 1.5, step: 0.05, def: W.fade || 0 }),
+      rangeField('Cracks', `${b}.wear.crack`, { min: 0, max: 1.5, step: 0.05, def: W.crack || 0 })
     ) +
     `<div class="seg-row"><button class="btn sm subtle" data-act="pedVaryReset">Back to the defaults for this kind</button></div>`
   );
@@ -852,8 +852,8 @@ function pedVolHTML(k) {
         (
           q,
           i
-        ) => `<div class="ped-part"><b style="color:${PED_PART_COL[i % PED_PART_COL.length]}">${i + 1}</b>${fSel('Shape', `${b}.parts.${i}.k`, PK)}${fNum('Left', `${b}.parts.${i}.r.0`, { step: 1 })}${fNum('Top', `${b}.parts.${i}.r.1`, { step: 1 })}${fNum('Right', `${b}.parts.${i}.r.2`, { step: 1 })}${fNum('Bottom', `${b}.parts.${i}.r.3`, { step: 1 })}
-   ${q.k === 'flat' ? fNum('Lies at row', `${b}.parts.${i}.y`, { opt: 1, step: 1, ph: String(q.r[3]) }) : ''}${['slab', 'block', 'puff', 'flat'].includes(q.k) ? fNum('Depth (m)', `${b}.parts.${i}.d`, { opt: 1, min: 0.02, max: 6, step: 0.05, ph: q.k === 'flat' ? 'as wide' : '0.3' }) : ''}${q.k === 'lathe' ? fChk('Open top', `${b}.parts.${i}.open`, { num: 1 }) : ''}<button class="btn sm danger subtle" data-act="pedPartDel" data-i="${i}">Remove</button></div>`
+        ) => `<div class="ped-part"><b style="color:${PED_PART_COL[i % PED_PART_COL.length]}">${i + 1}</b>${selectField('Shape', `${b}.parts.${i}.k`, PK)}${numberField('Left', `${b}.parts.${i}.r.0`, { step: 1 })}${numberField('Top', `${b}.parts.${i}.r.1`, { step: 1 })}${numberField('Right', `${b}.parts.${i}.r.2`, { step: 1 })}${numberField('Bottom', `${b}.parts.${i}.r.3`, { step: 1 })}
+   ${q.k === 'flat' ? numberField('Lies at row', `${b}.parts.${i}.y`, { opt: 1, step: 1, ph: String(q.r[3]) }) : ''}${['slab', 'block', 'puff', 'flat'].includes(q.k) ? numberField('Depth (m)', `${b}.parts.${i}.d`, { opt: 1, min: 0.02, max: 6, step: 0.05, ph: q.k === 'flat' ? 'as wide' : '0.3' }) : ''}${q.k === 'lathe' ? checkboxField('Open top', `${b}.parts.${i}.open`, { num: 1 }) : ''}<button class="btn sm danger subtle" data-act="pedPartDel" data-i="${i}">Remove</button></div>`
       )
       .join('');
     return `${head} This prop is built from parts: rectangles of the picture in pixels (shown on the picture), each with its own shape. "Laid flat" turns a band drawn in three-quarter view (a basin's water, a table top) into a level surface. Pixels outside every part stay a flat picture.</p>${rows}
@@ -862,13 +862,13 @@ function pedVolHTML(k) {
   const tk = typeof solidTreeKind === 'function' ? solidTreeKind(k, M) : null;
   return `${head} Automatic here: ${tk === 'pine' ? 'turned whole (a cone of tiers)' : tk ? `a round trunk and a crown of leaf clumps${tk === 'bush' ? ' (no trunk)' : ''}` : preset ? `built-in parts (${preset.length})` : auto ? `${esc(names[auto[0]])}${auto[0] === 'lathe' ? '' : `, ${auto[1]} m deep`}` : 'flat picture'}.</p>
   ${grid(
-    fSel(
+    selectField(
       'Shape',
       `${b}.vol`,
       SOLID_PROP_KINDS.filter(o => o[0]),
       { none: 'Automatic', opt: 1 }
     ),
-    fNum('Depth (m)', `${b}.volDepth`, {
+    numberField('Depth (m)', `${b}.volDepth`, {
       opt: 1,
       min: 0.02,
       max: 6,
@@ -966,21 +966,21 @@ function pedBuildHTML(k) {
   const tex = BUILDING_TEXTURE_NAMES.map((n, i) => [i, n]);
   return `<h4>3D building</h4><p class="help">The front is this picture with the roof part cut away (above the eave line) and the glass made see-through. Walls, roof and chimney are built from the settings below. The guides on the picture show the walls (green), the eave (pink) and the windows (blue).</p>
   ${grid(
-    fSel('Roof', `${b}.kind`, PED_KINDS, { rr: 1 }),
+    selectField('Roof', `${b}.kind`, PED_KINDS, { rr: 1 }),
     B.kind === 'gableF'
-      ? fNum('Gable peak (px from the base)', `${b}.apex`, { step: 1 })
-      : fRange('Roof pitch (degrees)', `${b}.pitch`, { min: 10, max: 60, step: 1, def: 40 }),
-    fNum('Eave (px from the base)', `${b}.eave`, {
+      ? numberField('Gable peak (px from the base)', `${b}.apex`, { step: 1 })
+      : rangeField('Roof pitch (degrees)', `${b}.pitch`, { min: 10, max: 60, step: 1, def: 40 }),
+    numberField('Eave (px from the base)', `${b}.eave`, {
       step: 1,
       help: 'Picture rows above this line are roof (cut away). Flat roofs keep anything that isn’t roof colour, like signs.',
     }),
-    fNum('Left wall (px)', `${b}.wall.0`, { step: 1 }),
-    fNum('Right wall (px)', `${b}.wall.1`, { step: 1 }),
-    fNum('Overhang (m)', `${b}.over`, { min: 0, max: 1.2, step: 0.02 }),
-    fNum('Storeys', `${b}.floors`, { min: 1, max: 12, step: 1, help: 'Side and back windows per storey.' })
+    numberField('Left wall (px)', `${b}.wall.0`, { step: 1 }),
+    numberField('Right wall (px)', `${b}.wall.1`, { step: 1 }),
+    numberField('Overhang (m)', `${b}.over`, { min: 0, max: 1.2, step: 0.02 }),
+    numberField('Storeys', `${b}.floors`, { min: 1, max: 12, step: 1, help: 'Side and back windows per storey.' })
   )}
-  <div class="grid colors">${fColor('Walls', `${b}.wallCol`)}${fColor('Roof', `${b}.roofCol`)}${fColor('Trim and frames', `${b}.trimCol`)}</div>
-  ${grid(fSel('Wall texture', `${b}.wallTex`, tex, { num: 1 }), fSel('Roof texture', `${b}.roofTex`, tex, { num: 1 }), fChk('Windows on the sides and back', `${b}.sideWin`, { help: 'Off: plain side walls.' }))}
+  <div class="grid colors">${colorField('Walls', `${b}.wallCol`)}${colorField('Roof', `${b}.roofCol`)}${colorField('Trim and frames', `${b}.trimCol`)}</div>
+  ${grid(selectField('Wall texture', `${b}.wallTex`, tex, { num: 1 }), selectField('Roof texture', `${b}.roofTex`, tex, { num: 1 }), checkboxField('Windows on the sides and back', `${b}.sideWin`, { help: 'Off: plain side walls.' }))}
   <p class="help">${(B.win || []).length} see-through panes found in the picture (tools/build-buildings.py finds them by their glass colours). Rooms behind the glass: ${(B.rooms || [0]).map(i => BUILDING_ROOM_NAMES[i] || i).join(', ')}.</p>
   <div class="seg-row"><button class="btn sm subtle" data-act="pedBuildRooms">Other rooms</button><button class="btn sm subtle" data-act="pedBuildNoWin">No see-through panes</button><button class="btn sm subtle danger" data-act="pedBuildOff">Use the picture instead</button></div>`;
 }

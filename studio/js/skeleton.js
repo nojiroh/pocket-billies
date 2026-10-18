@@ -14,11 +14,11 @@ import { esc } from './game-stand-ins.js';
 import {
   ask,
   changed,
+  checkboxField,
   clone,
   commit,
   dialog,
-  fChk,
-  fNum,
+  numberField,
   redo,
   render,
   spName,
@@ -747,15 +747,15 @@ function skSide() {
      .join(
        ''
      )}<option value="-" ${b.a === '-' ? 'selected' : ''}>Nothing: stays still</option></select><small class="help">Each body plan animates parts by role. Pick one to borrow a motion.</small></label>
-   <div class="grid sk-grid">${fNum('Across', `${p}.at.0`, { step: 0.25 })}${fNum('Up / down', `${p}.at.1`, { step: 0.25 })}${fNum('Tilt', `${p}.rr`, { step: 0.02, opt: 1, ph: '0' })}${fNum(SK.view === 'back' ? 'Layer (back)' : 'Layer', `${p}.${SK.view === 'back' ? 'zb' : 'z'}`, { step: 0.5, help: 'Higher draws on top.' })}</div>
-   ${SK.view === 'back' ? fChk('Hidden in the back view', `${p}.hideB`, { num: 1 }) : ''}
+   <div class="grid sk-grid">${numberField('Across', `${p}.at.0`, { step: 0.25 })}${numberField('Up / down', `${p}.at.1`, { step: 0.25 })}${numberField('Tilt', `${p}.rr`, { step: 0.02, opt: 1, ph: '0' })}${numberField(SK.view === 'back' ? 'Layer (back)' : 'Layer', `${p}.${SK.view === 'back' ? 'zb' : 'z'}`, { step: 0.5, help: 'Higher draws on top.' })}</div>
+   ${SK.view === 'back' ? checkboxField('Hidden in the back view', `${p}.hideB`, { num: 1 }) : ''}
    <div class="seg-row"><button class="btn sm" data-sk="dup">Duplicate</button><button class="btn sm" data-sk="mirror">Mirror copy</button><button class="btn sm" data-sk="child">+ Child part</button><button class="btn sm danger" data-sk="del">Delete</button></div></div>`;
     if (b.i >= 0 && img) {
       const r = img.f.idle || img.f.main || Object.values(img.f)[0];
       h += `<div class="px-sec"><h4>Picture</h4><div class="sk-pic"><canvas id="skPic"></canvas><div><small class="mono">${r[2]}×${r[3]} px · ${variants.length > 1 ? variants.length + ' expressions' : 'one picture'}</small>${users.length > 1 ? `<p class="help">Shared with ${esc(users.filter(n => n !== b.n).join(', '))}. Repainting changes all of them.</p><button class="btn sm" data-sk="unshare">Give it its own copy</button>` : ''}</div></div>
-   <div class="grid sk-grid">${fNum('Picture offset X', `${base}.imgs.${b.i}.ox`, { step: 1 })}${fNum('Picture offset Y', `${base}.imgs.${b.i}.oy`, { step: 1 })}</div>
+   <div class="grid sk-grid">${numberField('Picture offset X', `${base}.imgs.${b.i}.ox`, { step: 1 })}${numberField('Picture offset Y', `${base}.imgs.${b.i}.oy`, { step: 1 })}</div>
    <div class="seg-row"><button class="btn sm primary" data-sk="paintPart">Paint this part</button><button class="btn sm" data-sk="replace">Replace from PNG…</button><button class="btn sm" data-sk="resize">Resize…</button></div>
-   ${fChk('Has expressions (blink, happy, hurt, shout)', `${p}.face`, { num: 1 })}${b.face && variants.length < 5 ? `<button class="btn sm" data-sk="faces">Add the missing expression pictures</button>` : ''}</div>`;
+   ${checkboxField('Has expressions (blink, happy, hurt, shout)', `${p}.face`, { num: 1 })}${b.face && variants.length < 5 ? `<button class="btn sm" data-sk="faces">Add the missing expression pictures</button>` : ''}</div>`;
     } else
       h += `<div class="px-sec"><h4>Picture</h4><p class="help">A pivot without a picture. Other parts hang from it (flyers use one called “fly” to hover).</p><button class="btn sm" data-sk="givePic">Give it a picture</button></div>`;
   } else
@@ -784,7 +784,7 @@ function skSide() {
   )
     .map(k => `<option value="${k}" ${meta.plan === k ? 'selected' : ''}>${k} · ${PLAN_INFO[k] || ''}</option>`)
     .join('')}</select></label>
-  ${(Q_FIELDS[meta.plan] || []).map(([k, l, mn, mx, st]) => fNum(l, `${base}.q.${k}`, { min: mn, max: mx, step: st })).join('')}
+  ${(Q_FIELDS[meta.plan] || []).map(([k, l, mn, mx, st]) => numberField(l, `${base}.q.${k}`, { min: mn, max: mx, step: st })).join('')}
   <p class="help">Parts animate when their name or “Moves like” matches one of: ${roles.map(esc).join(', ')}.</p>
   <button class="btn sm" data-sk="copyView">Copy this layout to the ${SK.view === 'front' ? 'back' : 'front'} view</button></div>`;
   side.innerHTML = h;

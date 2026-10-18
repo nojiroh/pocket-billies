@@ -12,12 +12,11 @@ import { esc } from './game-stand-ins.js';
 /* eslint-disable no-func-assign */
 expose({
   ACTS: [() => ACTS],
-  H: [() => H],
   KEY: [() => KEY],
   NAV: [() => NAV],
   NAV_GROUPS: [() => NAV_GROUPS],
+  RANGE_FORMATS: [() => RANGE_FORMATS],
   SECTIONS: [() => SECTIONS],
-  SHOW: [() => SHOW],
   SLINK: [() => SLINK],
   after: [() => after],
   api: [() => api, v => setApi(v)],
@@ -26,33 +25,33 @@ expose({
   boot: [() => boot, v => (boot = v)],
   card: [() => card],
   changed: [() => changed, v => (changed = v)],
+  checkboxField: [() => checkboxField, v => (checkboxField = v)],
   chipT: [() => chipT],
   clone: [() => clone],
   coinOpts: [() => coinOpts],
+  colorField: [() => colorField, v => (colorField = v)],
   commit: [() => commit, v => (commit = v)],
   dialog: [() => dialog, v => (dialog = v)],
-  fChk: [() => fChk, v => (fChk = v)],
-  fColor: [() => fColor, v => (fColor = v)],
-  fNum: [() => fNum, v => (fNum = v)],
-  fRange: [() => fRange, v => (fRange = v)],
-  fSel: [() => fSel, v => (fSel = v)],
-  fText: [() => fText, v => (fText = v)],
-  fid: [() => fid],
+  fieldOutputId: [() => fieldOutputId],
   fmtN: [() => fmtN],
   getP: [() => getP, v => setGetP(v)],
   go: [() => go, v => (go = v)],
   grid: [() => grid],
+  helpHTML: [() => helpHTML],
   itemOpts: [() => itemOpts],
   moveOpts: [() => moveOpts],
   navFold: [() => navFold],
+  numberField: [() => numberField, v => (numberField = v)],
   onField: [() => onField, v => (onField = v)],
   peopleOpts: [() => peopleOpts],
+  rangeField: [() => rangeField, v => (rangeField = v)],
   readField: [() => readField, v => (readField = v)],
   redo: [() => redo, v => (redo = v)],
   render: [() => render, v => setRender(v)],
   renderSide: [() => renderSide, v => (renderSide = v)],
   restore: [() => restore, v => (restore = v)],
   saveAll: [() => saveAll, v => setSaveAll(v)],
+  selectField: [() => selectField, v => (selectField = v)],
   setApi: [() => setApi, v => (setApi = v)],
   setGetP: [() => setGetP, v => (setGetP = v)],
   setP: [() => setP, v => setSetP(v)],
@@ -67,6 +66,7 @@ expose({
   statusOpts: [() => statusOpts],
   studioBroadcast: [() => studioBroadcast, v => (studioBroadcast = v)],
   studioState: [() => studioState],
+  textField: [() => textField, v => (textField = v)],
   toast: [() => toast, v => setToast(v)],
   typeOpts: [() => typeOpts],
   uidKey: [() => uidKey],
@@ -353,34 +353,34 @@ export const ask = (msg, yes = 'OK', no = 'Cancel', title = 'Are you sure?') =>
     { l: yes, c: 'primary', v: true },
   ]);
 /* ---------- fields bound to the data ---------- */
-const H = s => (s ? `<small class="help">${s}</small>` : '');
-export const fid = p => 'f_' + p.replace(/[^a-z0-9]/gi, '_');
-export function fNum(label, p, o = {}) {
+const helpHTML = s => (s ? `<small class="help">${s}</small>` : '');
+export const fieldOutputId = p => 'f_' + p.replace(/[^a-z0-9]/gi, '_');
+export function numberField(label, p, o = {}) {
   let v = getP(p);
   if (v != null && o.scale) v = +(v / o.scale).toFixed(4);
-  return `<label class="fld ${o.cls || ''}"><span>${label}</span><span class="numw"><input type="number" data-p="${p}" data-k="num" ${o.scale ? `data-scale="${o.scale}"` : ''} ${o.opt ? 'data-opt="1"' : ''} value="${v == null ? '' : v}" ${o.min != null ? `min="${o.min}"` : ''} ${o.max != null ? `max="${o.max}"` : ''} step="${o.step || 'any'}" placeholder="${o.ph || ''}">${o.unit ? `<em>${o.unit}</em>` : ''}</span>${H(o.help)}</label>`;
+  return `<label class="fld ${o.cls || ''}"><span>${label}</span><span class="numw"><input type="number" data-p="${p}" data-k="num" ${o.scale ? `data-scale="${o.scale}"` : ''} ${o.opt ? 'data-opt="1"' : ''} value="${v == null ? '' : v}" ${o.min != null ? `min="${o.min}"` : ''} ${o.max != null ? `max="${o.max}"` : ''} step="${o.step || 'any'}" placeholder="${o.ph || ''}">${o.unit ? `<em>${o.unit}</em>` : ''}</span>${helpHTML(o.help)}</label>`;
 }
-export function fRange(label, p, o = {}) {
+export function rangeField(label, p, o = {}) {
   const v = getP(p) ?? o.def ?? 0;
-  return `<label class="fld range ${o.cls || ''}"><span>${label} <output id="${fid(p)}">${o.show ? o.show(v) : v}</output></span><input type="range" data-p="${p}" data-k="num" data-show="${o.showKey || ''}" value="${v}" min="${o.min}" max="${o.max}" step="${o.step || 1}">${H(o.help)}</label>`;
+  return `<label class="fld range ${o.cls || ''}"><span>${label} <output id="${fieldOutputId(p)}">${o.show ? o.show(v) : v}</output></span><input type="range" data-p="${p}" data-k="num" data-show="${o.showKey || ''}" value="${v}" min="${o.min}" max="${o.max}" step="${o.step || 1}">${helpHTML(o.help)}</label>`;
 }
-export function fText(label, p, o = {}) {
+export function textField(label, p, o = {}) {
   const v = getP(p) ?? '';
   return o.area
-    ? `<label class="fld wide ${o.cls || ''}"><span>${label}</span><textarea data-p="${p}" data-k="text" rows="${o.rows || 3}" ${o.opt ? 'data-opt="1"' : ''} placeholder="${esc(o.ph || '')}">${esc(v)}</textarea>${H(o.help)}</label>`
-    : `<label class="fld ${o.cls || ''}"><span>${label}</span><input type="text" data-p="${p}" data-k="text" ${o.opt ? 'data-opt="1"' : ''} value="${esc(v)}" placeholder="${esc(o.ph || '')}" ${o.max ? `maxlength="${o.max}"` : ''}>${H(o.help)}</label>`;
+    ? `<label class="fld wide ${o.cls || ''}"><span>${label}</span><textarea data-p="${p}" data-k="text" rows="${o.rows || 3}" ${o.opt ? 'data-opt="1"' : ''} placeholder="${esc(o.ph || '')}">${esc(v)}</textarea>${helpHTML(o.help)}</label>`
+    : `<label class="fld ${o.cls || ''}"><span>${label}</span><input type="text" data-p="${p}" data-k="text" ${o.opt ? 'data-opt="1"' : ''} value="${esc(v)}" placeholder="${esc(o.ph || '')}" ${o.max ? `maxlength="${o.max}"` : ''}>${helpHTML(o.help)}</label>`;
 }
-export function fSel(label, p, opts, o = {}) {
+export function selectField(label, p, opts, o = {}) {
   const v = getP(p);
-  return `<label class="fld ${o.cls || ''}"><span>${label}</span><select data-p="${p}" data-k="${o.num ? 'num' : 'sel'}" ${o.opt ? 'data-opt="1"' : ''} ${o.rr ? 'data-rr="1"' : ''}>${o.none ? `<option value="">${o.none}</option>` : ''}${opts.map(([k, n]) => `<option value="${esc(k)}" ${String(v) === String(k) ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select>${H(o.help)}</label>`;
+  return `<label class="fld ${o.cls || ''}"><span>${label}</span><select data-p="${p}" data-k="${o.num ? 'num' : 'sel'}" ${o.opt ? 'data-opt="1"' : ''} ${o.rr ? 'data-rr="1"' : ''}>${o.none ? `<option value="">${o.none}</option>` : ''}${opts.map(([k, n]) => `<option value="${esc(k)}" ${String(v) === String(k) ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select>${helpHTML(o.help)}</label>`;
 }
-export function fChk(label, p, o = {}) {
+export function checkboxField(label, p, o = {}) {
   const v = getP(p);
-  return `<label class="fld chk ${o.cls || ''}"><input type="checkbox" data-p="${p}" data-k="bool" ${o.num ? 'data-num="1"' : ''} ${o.rr ? 'data-rr="1"' : ''} ${v ? 'checked' : ''}><span>${label}</span>${H(o.help)}</label>`;
+  return `<label class="fld chk ${o.cls || ''}"><input type="checkbox" data-p="${p}" data-k="bool" ${o.num ? 'data-num="1"' : ''} ${o.rr ? 'data-rr="1"' : ''} ${v ? 'checked' : ''}><span>${label}</span>${helpHTML(o.help)}</label>`;
 }
-export function fColor(label, p, o = {}) {
+export function colorField(label, p, o = {}) {
   const v = getP(p) || '#000000';
-  return `<label class="fld color ${o.cls || ''}"><span>${label}</span><span class="colw"><input type="color" data-p="${p}" data-k="color" value="${/^#[0-9a-f]{6}$/i.test(v) ? v : '#000000'}"><input type="text" data-p="${p}" data-k="color" value="${esc(v)}" maxlength="7" class="hex"></span>${H(o.help)}</label>`;
+  return `<label class="fld color ${o.cls || ''}"><span>${label}</span><span class="colw"><input type="color" data-p="${p}" data-k="color" value="${/^#[0-9a-f]{6}$/i.test(v) ? v : '#000000'}"><input type="text" data-p="${p}" data-k="color" value="${esc(v)}" maxlength="7" class="hex"></span>${helpHTML(o.help)}</label>`;
 }
 export const card = (title, body, o = {}) =>
   `<section class="card ${o.cls || ''}" ${o.id ? `id="${o.id}"` : ''}><header><h3>${title}</h3>${o.acts || ''}</header>${o.sub ? `<p class="sub">${o.sub}</p>` : ''}<div class="card-b">${body}</div></section>`;
@@ -413,14 +413,14 @@ function onField(ev) {
       if (o !== el) o.value = v;
     });
   }
-  const out = document.getElementById(fid(el.dataset.p));
-  if (out) out.textContent = el.dataset.show && SHOW[el.dataset.show] ? SHOW[el.dataset.show](v) : v;
+  const out = document.getElementById(fieldOutputId(el.dataset.p));
+  if (out) out.textContent = el.dataset.show && RANGE_FORMATS[el.dataset.show] ? RANGE_FORMATS[el.dataset.show](v) : v;
   changed(el.dataset.p.startsWith('@rigs'));
   const hk = studioState.hooks[studioState.sec];
   if (hk) hk(el.dataset.p, v);
   if (el.dataset.rr && ev.type === 'change') render();
 }
-const SHOW = { pct: v => Math.round(v * 100) + '%', x: v => '×' + (+v).toFixed(2), mul: v => (+v).toFixed(2) };
+const RANGE_FORMATS = { pct: v => Math.round(v * 100) + '%', x: v => '×' + (+v).toFixed(2), mul: v => (+v).toFixed(2) };
 /* ---------- navigation ---------- */
 export const NAV = [
   ['billionaires', 'Billies', 'The creatures: names, stats, moves, evolution, sprite art'],

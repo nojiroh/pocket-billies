@@ -33,7 +33,7 @@ import {
   clone,
   commit,
   dialog,
-  fid,
+  fieldOutputId,
   getP,
   render,
   setP,
@@ -107,7 +107,7 @@ function engField(g, f) {
     reset = `<button class="eng-reset" data-act="engReset" data-p="${p}" title="Back to ${ENS.scope === 'scene' ? 'the game default' : 'the built-in value'} (${esc(engFmt(inh, f[4] || 1))})">↺</button>`;
   let body = '';
   if (typ === 'range')
-    body = `<span class="eng-lab">${esc(label)} <output id="${fid(p)}">${engFmt(v, f[4])}</output></span><input type="range" data-p="${p}" data-k="num" value="${v}" min="${f[2]}" max="${f[3]}" step="${f[4]}">`;
+    body = `<span class="eng-lab">${esc(label)} <output id="${fieldOutputId(p)}">${engFmt(v, f[4])}</output></span><input type="range" data-p="${p}" data-k="num" value="${v}" min="${f[2]}" max="${f[3]}" step="${f[4]}">`;
   else if (typ === 'bool')
     body = `<label class="eng-chk"><input type="checkbox" data-p="${p}" data-k="bool" ${v ? 'checked' : ''}><span>${esc(label)}</span></label>`;
   else if (typ === 'sel')

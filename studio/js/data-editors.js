@@ -15,24 +15,23 @@ import {
   ask,
   card,
   changed,
+  checkboxField,
   chipT,
   clone,
   coinOpts,
+  colorField,
   dialog,
-  fChk,
-  fColor,
-  fNum,
-  fRange,
-  fSel,
-  fText,
   fmtN,
   getP,
   go,
   grid,
   itemOpts,
   moveOpts,
+  numberField,
   peopleOpts,
+  rangeField,
   render,
+  selectField,
   setGetP,
   setP,
   setSetP,
@@ -41,6 +40,7 @@ import {
   statOpts,
   statusOpts,
   studioState,
+  textField,
   toast,
   typeOpts,
   uidKey,
@@ -179,20 +179,20 @@ SECTIONS.billionaires = () => {
   };
   const ident =
     grid(
-      fText('Name', `${p}.names.${st}`, { max: 24 }),
-      fText('Field Guide category', `${p}.cat.${st}`, { ph: 'Founder Billie' }),
+      textField('Name', `${p}.names.${st}`, { max: 24 }),
+      textField('Field Guide category', `${p}.cat.${st}`, { ph: 'Founder Billie' }),
       tsel(0),
       tsel(1),
-      fNum('Height', `${p}.ht.${st}`, { unit: 'm', step: 0.1 }),
-      fNum('Weight', `${p}.wt.${st}`, { unit: 'kg', step: 0.1 }),
-      fText('Habitat', `${p}.hab.${st}`),
-      fText('Diet', `${p}.diet.${st}`)
+      numberField('Height', `${p}.ht.${st}`, { unit: 'm', step: 0.1 }),
+      numberField('Weight', `${p}.wt.${st}`, { unit: 'kg', step: 0.1 }),
+      textField('Habitat', `${p}.hab.${st}`),
+      textField('Diet', `${p}.diet.${st}`)
     ) +
-    fText('Field notes', `${p}.bio.${st}`, {
+    textField('Field notes', `${p}.bio.${st}`, {
       area: 1,
       help: 'Shown in the Field Guide and when it hatches or evolves.',
     }) +
-    fText('Handwritten note', `${p}.note.${st}`, {
+    textField('Handwritten note', `${p}.note.${st}`, {
       area: 1,
       rows: 2,
       help: 'The red margin note in the Field Guide, visible after you tax one.',
@@ -237,14 +237,14 @@ function statsCard(L, li) {
   const body = L.base
     ? `<p class="help">Exact numbers for each stage. Rarity and the profile below are ignored.</p><table class="tbl stats"><thead><tr><th></th>${stats.map(s => `<th>${esc(s.name)}</th>`).join('')}</tr></thead><tbody>${L.names.map((n, st) => `<tr><th>${esc(n)}</th>${stats.map((s, k) => `<td><input type="number" min="1" max="255" data-p="${p}.base.${st}.${k}" data-k="num" value="${(L.base[st] || [])[k] ?? ''}"></td>`).join('')}</tr>`).join('')}</tbody></table><button class="btn subtle" data-act="baseOff">Go back to a balanced profile</button>`
     : grid(
-        fSel(
+        selectField(
           'Rarity',
           `${p}.rar`,
           Object.keys(D.rarities).map(k => [k, RAR_NAMES[k] || k]),
           { rr: 1, help: 'Sets the total stat points per stage and the base tax rate.' }
         )
       ) +
-      `<div class="sliders">${stats.map((s, k) => fRange(s.name, `${p}.prof.${k}`, { min: 0.3, max: 1.8, step: 0.05, showKey: 'mul', show: v => (+v).toFixed(2) })).join('')}</div>${table}<button class="btn subtle" data-act="baseOn">Type exact numbers instead</button>`;
+      `<div class="sliders">${stats.map((s, k) => rangeField(s.name, `${p}.prof.${k}`, { min: 0.3, max: 1.8, step: 0.05, showKey: 'mul', show: v => (+v).toFixed(2) })).join('')}</div>${table}<button class="btn subtle" data-act="baseOn">Type exact numbers instead</button>`;
   return card('Stats', body, {
     sub: 'Higher weights shift points into that stat. Totals come from the rarity.',
     id: 'statsCard',
@@ -293,29 +293,30 @@ function evoRow(L, li, i) {
     k = e.k;
   const D = studioState.D;
   const f = {
-    lvl: () => fNum('At level', `${p}.at`, { min: 2, max: 100, step: 1 }),
+    lvl: () => numberField('At level', `${p}.at`, { min: 2, max: 100, step: 1 }),
     buddy: () =>
-      fNum('Distance', `${p}.steps`, {
+      numberField('Distance', `${p}.steps`, {
         unit: 'km',
         scale: D.rules.steps.stepsPerKm,
         step: 0.5,
         help: 'Walked while it is your buddy.',
       }),
     item: () =>
-      fSel('Item', `${p}.item`, itemOpts()) + fNum('Minimum level', `${p}.min`, { min: 1, max: 100, step: 1 }),
+      selectField('Item', `${p}.item`, itemOpts()) +
+      numberField('Minimum level', `${p}.min`, { min: 1, max: 100, step: 1 }),
     donate: () =>
-      fNum('Items to give away', `${p}.n`, { min: 1, max: 50, step: 1 }) +
-      fNum('Minimum level', `${p}.min`, { min: 1, max: 100, step: 1 }),
-    merge: () => fNum('Minimum level', `${p}.min`, { min: 1, max: 100, step: 1 }),
+      numberField('Items to give away', `${p}.n`, { min: 1, max: 50, step: 1 }) +
+      numberField('Minimum level', `${p}.min`, { min: 1, max: 100, step: 1 }),
+    merge: () => numberField('Minimum level', `${p}.min`, { min: 1, max: 100, step: 1 }),
     idle: () =>
-      fNum('Time in storage', `${p}.ms`, { unit: 'hours', scale: 3600000, step: 1 }) +
-      fNum('Minimum level', `${p}.min`, { min: 1, max: 100, step: 1 }),
+      numberField('Time in storage', `${p}.ms`, { unit: 'hours', scale: 3600000, step: 1 }) +
+      numberField('Minimum level', `${p}.min`, { min: 1, max: 100, step: 1 }),
     streak: () =>
-      fNum('Wins in a row', `${p}.n`, { min: 1, max: 30, step: 1 }) +
-      fNum('Minimum level', `${p}.min`, { min: 1, max: 100, step: 1 }),
-    rename: () => fNum('Minimum level', `${p}.min`, { min: 1, max: 100, step: 1 }),
+      numberField('Wins in a row', `${p}.n`, { min: 1, max: 30, step: 1 }) +
+      numberField('Minimum level', `${p}.min`, { min: 1, max: 100, step: 1 }),
+    rename: () => numberField('Minimum level', `${p}.min`, { min: 1, max: 100, step: 1 }),
   };
-  return `<div class="evo-row"><span class="evo-a">${esc(L.names[i])} <b>→</b> ${esc(L.names[i + 1])}</span>${grid(fSel('How', `${p}.k`, EVO_KINDS, { rr: 1 }), (f[k] || f.lvl)())}</div>`;
+  return `<div class="evo-row"><span class="evo-a">${esc(L.names[i])} <b>→</b> ${esc(L.names[i + 1])}</span>${grid(selectField('How', `${p}.k`, EVO_KINDS, { rr: 1 }), (f[k] || f.lvl)())}</div>`;
 }
 function whereCard(L, li) {
   const D = studioState.D,
@@ -802,14 +803,14 @@ SECTIONS.moves = () => {
       )
       .join('')}</div>`;
   const fxB = `<div class="fxgrid">
-  ${fSel('Causes a status', `${p}.fx.status`, statusOpts(), { none: 'Nothing', opt: 1, help: 'Paralyzed: may lose turns, slower. Asleep: can’t act for 2–4 turns, easier to tax. Burned: loses HP each turn, weaker Attack.' })}
-  ${fNum('Status chance', `${p}.fx.chance`, { unit: '%', opt: 1, min: 1, max: 100, step: 1, help: 'For damaging moves. Leave empty for always.' })}
+  ${selectField('Causes a status', `${p}.fx.status`, statusOpts(), { none: 'Nothing', opt: 1, help: 'Paralyzed: may lose turns, slower. Asleep: can’t act for 2–4 turns, easier to tax. Burned: loses HP each turn, weaker Attack.' })}
+  ${numberField('Status chance', `${p}.fx.chance`, { unit: '%', opt: 1, min: 1, max: 100, step: 1, help: 'For damaging moves. Leave empty for always.' })}
   ${st(fx.tgtStage, `${p}.fx.tgtStage`, 'Changes the target’s stats')}${st(fx.selfStage, `${p}.fx.selfStage`, 'Changes its own stats')}
-  ${fNum('Self change chance', `${p}.fx.selfChance`, { unit: '%', opt: 1, min: 1, max: 100, step: 1, help: 'Chance for the self effects above and below.' })}
-  ${fSel('Causes its own status', `${p}.fx.selfStatus`, statusOpts(), { none: 'Nothing', opt: 1 })}
-  ${fChk('Hits every foe in double and Alpha battles', `${p}.fx.spread`, { num: 1, help: 'A little weaker for it (Rules → Moves that hit every foe).' })}  ${fNum('Heals itself', `${p}.fx.heal`, { opt: 1, min: 0, max: 1, step: 0.05, help: 'Fraction of its max HP (0.5 = half).' })}${fNum('Drains', `${p}.fx.drain`, { opt: 1, min: 0, max: 1, step: 0.05, help: 'Heals this fraction of the damage dealt.' })}
-  ${fNum('Extra critical stages', `${p}.fx.crit`, { opt: 1, min: 0, max: 3, step: 1 })}${fNum('Misses cost', `${p}.fx.missCost`, { opt: 1, min: 0, max: 1, step: 0.05, help: 'Fraction of its own max HP lost on a miss (crash).' })}
-  ${fSel(
+  ${numberField('Self change chance', `${p}.fx.selfChance`, { unit: '%', opt: 1, min: 1, max: 100, step: 1, help: 'Chance for the self effects above and below.' })}
+  ${selectField('Causes its own status', `${p}.fx.selfStatus`, statusOpts(), { none: 'Nothing', opt: 1 })}
+  ${checkboxField('Hits every foe in double and Alpha battles', `${p}.fx.spread`, { num: 1, help: 'A little weaker for it (Rules → Moves that hit every foe).' })}  ${numberField('Heals itself', `${p}.fx.heal`, { opt: 1, min: 0, max: 1, step: 0.05, help: 'Fraction of its max HP (0.5 = half).' })}${numberField('Drains', `${p}.fx.drain`, { opt: 1, min: 0, max: 1, step: 0.05, help: 'Heals this fraction of the damage dealt.' })}
+  ${numberField('Extra critical stages', `${p}.fx.crit`, { opt: 1, min: 0, max: 3, step: 1 })}${numberField('Misses cost', `${p}.fx.missCost`, { opt: 1, min: 0, max: 1, step: 0.05, help: 'Fraction of its own max HP lost on a miss (crash).' })}
+  ${selectField(
     'Power changes with',
     `${p}.fx.vary`,
     [
@@ -818,12 +819,12 @@ SECTIONS.moves = () => {
     ],
     { none: 'Fixed power', opt: 1 }
   )}
-  ${fChk('Blocks one attack (fails twice in a row)', `${p}.fx.protect`, { num: 1 })}${fChk('Delayed attack (lands a few turns later)', `${p}.fx.delay`, { num: 1 })}${fChk('Doubles each turn it’s used in a row', `${p}.fx.hold`, { num: 1 })}
-  ${fChk('Confuses the target (it may hit itself)', `${p}.fx.hype`, { num: 1 })}${fChk(`Soak: turns the target ${esc(D.rules.battle.spinType)} type`, `${p}.fx.spin`, { num: 1 })}${fChk('Removes the target’s stat boosts', `${p}.fx.wipe`, { num: 1 })}
-  ${fChk('Scatters sharp stones on the other side', `${p}.fx.rent`, { num: 1 })}${fChk(`Starts a sandstorm (${esc(D.rules.battle.shockType)} moves hit harder)`, `${p}.fx.market`, { num: 1 })}</div>`;
+  ${checkboxField('Blocks one attack (fails twice in a row)', `${p}.fx.protect`, { num: 1 })}${checkboxField('Delayed attack (lands a few turns later)', `${p}.fx.delay`, { num: 1 })}${checkboxField('Doubles each turn it’s used in a row', `${p}.fx.hold`, { num: 1 })}
+  ${checkboxField('Confuses the target (it may hit itself)', `${p}.fx.hype`, { num: 1 })}${checkboxField(`Soak: turns the target ${esc(D.rules.battle.spinType)} type`, `${p}.fx.spin`, { num: 1 })}${checkboxField('Removes the target’s stat boosts', `${p}.fx.wipe`, { num: 1 })}
+  ${checkboxField('Scatters sharp stones on the other side', `${p}.fx.rent`, { num: 1 })}${checkboxField(`Starts a sandstorm (${esc(D.rules.battle.shockType)} moves hit harder)`, `${p}.fx.market`, { num: 1 })}</div>`;
   return `<div class="split"><aside class="list-col"><div class="list-head"><input type="search" placeholder="Search moves" data-search="mq" data-list="moveList" value="${esc(studioState.sel.mq || '')}"><button class="btn primary" data-act="moveNew">+ New move</button></div><div class="llist" id="moveList">${LISTS.mq()}</div></aside>
  <div class="ed-col"><div class="ed-head"><div><small class="mono">${esc(k)}</small><h2>${esc(M.n)}</h2></div><div class="seg-row"><button class="btn" data-act="bpMove" data-id="${esc(k)}" title="Play this move on the battle stage">▶ Preview animation</button><button class="btn subtle" data-act="moveDup">Duplicate</button><button class="btn danger" data-act="moveDel">Delete</button></div></div>
- ${card('Basics', grid(fText('Name', `${p}.n`, { max: 28 }), fSel('Type', `${p}.t`, typeOpts(true), { rr: 1 }), fSel('Kind', `${p}.c`, CAT, { rr: 1 }), fNum('Power', `${p}.p`, { opt: 1, min: 0, max: 250, step: 5, help: M.c === 'X' ? 'Status moves usually have no power.' : '' }), fNum('Accuracy', `${p}.a`, { unit: '%', min: 0, max: 100, step: 5, help: '0 means it never misses.' }), fNum('Priority', `${p}.pr`, { opt: 1, min: -3, max: 5, step: 1, help: 'Higher goes first. Guard uses 4.' })) + fText('Description', `${p}.d`, { area: 1, rows: 2 }))}
+ ${card('Basics', grid(textField('Name', `${p}.n`, { max: 28 }), selectField('Type', `${p}.t`, typeOpts(true), { rr: 1 }), selectField('Kind', `${p}.c`, CAT, { rr: 1 }), numberField('Power', `${p}.p`, { opt: 1, min: 0, max: 250, step: 5, help: M.c === 'X' ? 'Status moves usually have no power.' : '' }), numberField('Accuracy', `${p}.a`, { unit: '%', min: 0, max: 100, step: 5, help: '0 means it never misses.' }), numberField('Priority', `${p}.pr`, { opt: 1, min: -3, max: 5, step: 1, help: 'Higher goes first. Guard uses 4.' })) + textField('Description', `${p}.d`, { area: 1, rows: 2 }))}
  ${card('Effects', fxB, { sub: 'Leave anything empty to switch it off.' })}
  ${card(
    'Learned by',
@@ -951,10 +952,10 @@ SECTIONS.types = () => {
     (
       t,
       i
-    ) => `<div class="type-row">${chipT(t.id)}${grid(fText('Name', `types.${i}.id`, { max: 14, help: 'Renaming updates every move, Billie and rule that uses it.' }), fColor('Color', `types.${i}.color`), fColor('Text color', `types.${i}.text`), fSel('Ability', `types.${i}.passive`, PASSIVES))}
+    ) => `<div class="type-row">${chipT(t.id)}${grid(textField('Name', `types.${i}.id`, { max: 14, help: 'Renaming updates every move, Billie and rule that uses it.' }), colorField('Color', `types.${i}.color`), colorField('Text color', `types.${i}.text`), selectField('Ability', `types.${i}.passive`, PASSIVES))}
   <div class="fxpick"><span>Battle particles</span>${FX_ICONS.map(k => `<button class="icb ${(t.fx || []).includes(k) ? 'on' : ''}" data-act="typeFx" data-i="${i}" data-k="${k}" title="${k}"><img src="${iconURL(k, 2)}" alt="${k}"></button>`).join('')}</div><button class="btn danger subtle" data-act="typeDel" data-i="${i}">Delete type</button></div>`
   ).join('');
-  return `<div class="ed-col solo"><div class="ed-head"><h2>Types</h2><button class="btn primary" data-act="typeNew">+ New type</button></div>${card('Matchups', matrix)}${card('Types', rows + `<div class="type-row">${chipT('None')}${grid(fColor('Normal color', 'untyped.color'), fColor('Normal text', 'untyped.text'))}</div>`, { sub: 'Each type can have one ability. Abilities and their numbers are tuned under Rules → Battle.' })}</div>`;
+  return `<div class="ed-col solo"><div class="ed-head"><h2>Types</h2><button class="btn primary" data-act="typeNew">+ New type</button></div>${card('Matchups', matrix)}${card('Types', rows + `<div class="type-row">${chipT('None')}${grid(colorField('Normal color', 'untyped.color'), colorField('Normal text', 'untyped.text'))}</div>`, { sub: 'Each type can have one ability. Abilities and their numbers are tuned under Rules → Battle.' })}</div>`;
 };
 ACTS.mx = d => {
   const t = studioState.D.types[+d.a],
@@ -1061,24 +1062,24 @@ SECTIONS.items = () => {
       const p = `items.${k}`;
       return `<div class="item-row"><div class="item-ic">${I.img ? `<img src="../game/art/${esc(I.img)}" width="40" height="40" class="pix">` : `<img src="${iconURL('i_' + (I.icon || k), 3)}" class="pix" alt="">`}<small class="mono">${esc(k)}</small></div>
   <div>${grid(
-    fText('Name', `${p}.n`, { max: 24 }),
-    fNum('Shop price ($)', `${p}.price`, { min: 0, step: 10 }),
-    fChk('Sold in the Shop', `${p}.mint`, { help: 'Untick to make it a town-shop special.' }),
-    fSel(
+    textField('Name', `${p}.n`, { max: 24 }),
+    numberField('Shop price ($)', `${p}.price`, { min: 0, step: 10 }),
+    checkboxField('Sold in the Shop', `${p}.mint`, { help: 'Untick to make it a town-shop special.' }),
+    selectField(
       'Icon',
       `${p}.icon`,
       ITEM_ICONS.map(i => [i, i]),
       { rr: 1 }
     )
   )}
-  ${grid(fNum('Restores HP', `${p}.hp`, { opt: 1, min: 0, step: 5 }), fNum('Restores everyone', `${p}.hpAll`, { opt: 1, min: 0, step: 5, help: 'Heals the whole team at once.' }), fSel('Cures', `${p}.cure`, [['any', 'Any status'], ...statusOpts()], { none: 'Nothing', opt: 1 }), fNum('Revives at', `${p}.revive`, { opt: 1, min: 0, max: 1, step: 0.05, help: 'Fraction of max HP after fainting (1 = full).' }), fChk('Evolution item (not used in battle)', `${p}.evoItem`, { num: 1 }))}
-  ${fText('Description', `${p}.d`, { area: 1, rows: 2 })}<div class="seg-row"><button class="btn subtle" data-act="itemImg" data-k="${k}">Upload a custom icon</button>${I.img ? `<button class="btn subtle" data-act="itemImgOff" data-k="${k}">Use an atlas icon</button>` : ''}<span class="grow"></span><button class="btn danger subtle" data-act="itemDel" data-k="${k}">Delete</button></div></div></div>`;
+  ${grid(numberField('Restores HP', `${p}.hp`, { opt: 1, min: 0, step: 5 }), numberField('Restores everyone', `${p}.hpAll`, { opt: 1, min: 0, step: 5, help: 'Heals the whole team at once.' }), selectField('Cures', `${p}.cure`, [['any', 'Any status'], ...statusOpts()], { none: 'Nothing', opt: 1 }), numberField('Revives at', `${p}.revive`, { opt: 1, min: 0, max: 1, step: 0.05, help: 'Fraction of max HP after fainting (1 = full).' }), checkboxField('Evolution item (not used in battle)', `${p}.evoItem`, { num: 1 }))}
+  ${textField('Description', `${p}.d`, { area: 1, rows: 2 })}<div class="seg-row"><button class="btn subtle" data-act="itemImg" data-k="${k}">Upload a custom icon</button>${I.img ? `<button class="btn subtle" data-act="itemImgOff" data-k="${k}">Use an atlas icon</button>` : ''}<span class="grow"></span><button class="btn danger subtle" data-act="itemDel" data-k="${k}">Delete</button></div></div></div>`;
     })
     .join('');
   const coins = Object.entries(D.coins)
     .map(([k, C]) => {
       const p = `coins.${k}`;
-      return `<div class="item-row"><div class="item-ic"><img src="../game/art/coins/${k}_32.png" width="40" height="40" class="pix" onerror="this.style.opacity=.2"><small class="mono">${esc(k)}</small></div><div>${grid(fText('Name', `${p}.n`), fNum('Tax multiplier', `${p}.m`, { min: 0, max: 10, step: 0.1, help: '0 means it always taxes.' }), fNum('Shop price ($)', `${p}.price`, { min: 0, step: 10, help: '0 means it can’t be bought.' }), fNum('Badges needed', `${p}.need`, { opt: 1, min: 0, max: 8, step: 1 }))}${fText('Description', `${p}.d`, { area: 1, rows: 2 })}</div></div>`;
+      return `<div class="item-row"><div class="item-ic"><img src="../game/art/coins/${k}_32.png" width="40" height="40" class="pix" onerror="this.style.opacity=.2"><small class="mono">${esc(k)}</small></div><div>${grid(textField('Name', `${p}.n`), numberField('Tax multiplier', `${p}.m`, { min: 0, max: 10, step: 0.1, help: '0 means it always taxes.' }), numberField('Shop price ($)', `${p}.price`, { min: 0, step: 10, help: '0 means it can’t be bought.' }), numberField('Badges needed', `${p}.need`, { opt: 1, min: 0, max: 8, step: 1 }))}${textField('Description', `${p}.d`, { area: 1, rows: 2 })}</div></div>`;
     })
     .join('');
   return `<div class="ed-col solo"><div class="ed-head"><h2>Items & coins</h2><button class="btn primary" data-act="itemNew">+ New item</button></div>${card('Items', items, { sub: 'An item can combine effects, like the Full Remedy (cure + heal).' })}${card('Tax coins', coins, { sub: 'Coin art is art/coins/<id>_16.png and _32.png. Replace it under Art files.' })}</div>`;
@@ -1156,7 +1157,7 @@ SECTIONS.shops = () => {
       .join('');
   return `<div class="split"><aside class="list-col"><div class="list-head"><button class="btn primary" data-act="shopNew">+ New shop</button><button class="btn" data-act="boutiqueNew">+ New boutique</button></div><div class="llist">${list}</div></aside>
  <div class="ed-col"><div class="ed-head"><div><small class="mono">${esc(k)}</small><h2>${esc(sh.name)}</h2></div><button class="btn danger" data-act="shopDel">Delete</button></div>
- ${card('Shop', `<div class="keeper"><div class="person-prev">${personPrev(sh.who)}</div><div>${grid(fText('Shop name', `${p}.name`), fText('Keeper', `${p}.keeper`), fSel('Keeper’s look', `${p}.who`, peopleOpts(), { rr: 1, help: 'Edit looks under People.' }))}${fText('Greeting', `${p}.greeting`, { area: 1, rows: 2 })}${fText('Thank-you lines (one per line)', '@lines.' + k, { area: 1, rows: 3, ph: 'Leave empty for the default lines.' })}</div></div>`)}
+ ${card('Shop', `<div class="keeper"><div class="person-prev">${personPrev(sh.who)}</div><div>${grid(textField('Shop name', `${p}.name`), textField('Keeper', `${p}.keeper`), selectField('Keeper’s look', `${p}.who`, peopleOpts(), { rr: 1, help: 'Edit looks under People.' }))}${textField('Greeting', `${p}.greeting`, { area: 1, rows: 2 })}${textField('Thank-you lines (one per line)', '@lines.' + k, { area: 1, rows: 3, ph: 'Leave empty for the default lines.' })}</div></div>`)}
  ${
    wardrobe
      ? card(
@@ -1356,7 +1357,7 @@ SECTIONS.people = () => {
     .map(s => {
       const id = L.wear[s.id],
         it = id && W.items[id];
-      return `<div class="wd-prow">${fSel(
+      return `<div class="wd-prow">${selectField(
         s.name,
         `${p}.wear.${s.id}`,
         Object.entries(W.items)
@@ -1364,17 +1365,17 @@ SECTIONS.people = () => {
           .map(([i, x]) => [i, x.name]),
         { none: s.empty ? 'None' : undefined, opt: s.empty, rr: 1 }
       )}
-  ${it ? `<div class="grid colors">${it.colors.map((c, ci) => (it.slot === 'hair' || it.slot === 'eyes' || (it.link && it.link[String(ci + 1)]) ? '' : fColor(c[0], `${p}.colors.${id}.${ci}`))).join('')}</div>` : ''}</div>`;
+  ${it ? `<div class="grid colors">${it.colors.map((c, ci) => (it.slot === 'hair' || it.slot === 'eyes' || (it.link && it.link[String(ci + 1)]) ? '' : colorField(c[0], `${p}.colors.${id}.${ci}`))).join('')}</div>` : ''}</div>`;
     })
     .join('');
   return `<div class="split"><aside class="list-col"><div class="list-head"><button class="btn primary" data-act="personNew">+ New look</button></div><div class="llist">${list}</div></aside>
  <div class="ed-col"><div class="ed-head"><div><h2>${esc(k)}</h2><small>${used.length ? 'Used by ' + esc(used.join(', ')) : k === 'boy' || k === 'girl' ? 'Old default player look (players create their own now)' : 'Not used yet'}</small></div>${['boy', 'girl', 'gini'].includes(k) ? '' : '<button class="btn danger" data-act="personDel">Delete</button>'}</div>
  ${card(
    'Look',
-   `<div class="keeper"><div class="person-prev" id="personPrev">${personPrev(k)}</div><div>${grid(fColor('Skin', `${p}.skin`), fColor('Hair', `${p}.hair`), fColor('Eyes', `${p}.eyes`))}
+   `<div class="keeper"><div class="person-prev" id="personPrev">${personPrev(k)}</div><div>${grid(colorField('Skin', `${p}.skin`), colorField('Hair', `${p}.hair`), colorField('Eyes', `${p}.eyes`))}
    <div class="grid">${trSliders()
      .map(s =>
-       fRange(s.name, `${p}.body.${s.k}`, {
+       rangeField(s.name, `${p}.body.${s.k}`, {
          min: s.min,
          max: s.max,
          step: 0.01,
@@ -1428,8 +1429,8 @@ SECTIONS.jobs = () => {
       const p = `jobs.${k}`,
         kind = J.out[0];
       return `<div class="item-row"><div class="item-ic"><small class="mono">${esc(k)}</small></div><div>${grid(
-        fText('Job title', `${p}.n`),
-        fText('Where', `${p}.where`),
+        textField('Job title', `${p}.n`),
+        textField('Where', `${p}.where`),
         `<label class="fld"><span>Pays in</span><select data-act-sel="jobKind" data-k="${k}">${[
           ['item', 'Items'],
           ['coin', 'Coins'],
@@ -1437,10 +1438,10 @@ SECTIONS.jobs = () => {
         ]
           .map(([v, n]) => `<option value="${v}" ${kind === v ? 'selected' : ''}>${n}</option>`)
           .join('')}</select></label>`,
-        kind === 'se' ? '' : fSel('Which', `${p}.out.1`, kind === 'item' ? itemOpts() : coinOpts()),
-        fNum('Amount per pay', `${p}.out.2`, { min: 1, step: 1 }),
-        fText('Pay label', `${p}.pay`, { help: 'Shown when hiring, like “1 Potion”.' })
-      )}${fText('What it did (after the Billie’s name)', `${p}.quip`, { help: '“Hoodini made 40 lattes. Most were wrong.”' })}<button class="btn danger subtle" data-act="jobDel" data-k="${k}">Delete job</button></div></div>`;
+        kind === 'se' ? '' : selectField('Which', `${p}.out.1`, kind === 'item' ? itemOpts() : coinOpts()),
+        numberField('Amount per pay', `${p}.out.2`, { min: 1, step: 1 }),
+        textField('Pay label', `${p}.pay`, { help: 'Shown when hiring, like “1 Potion”.' })
+      )}${textField('What it did (after the Billie’s name)', `${p}.quip`, { help: '“Hoodini made 40 lattes. Most were wrong.”' })}<button class="btn danger subtle" data-act="jobDel" data-k="${k}">Delete job</button></div></div>`;
     })
     .join('');
   return `<div class="ed-col solo"><div class="ed-head"><h2>Jobs</h2><button class="btn primary" data-act="jobNew">+ New job</button></div>${card('Jobs', rows, { sub: `Pay arrives every ${fmtN(D.rules.jobs.stepsPerPay)} steps (Rules → Jobs).` })}</div>`;
@@ -1503,17 +1504,17 @@ SECTIONS.trainers = () => {
     .join('');
   const seat = T.seat
     ? grid(
-        fText('Badge id', `${p}.seat.id`, { help: 'Route gates refer to this.' }),
-        fText('Title', `${p}.seat.title`),
-        fSel('Coin shown', `${p}.seat.coin`, coinOpts())
+        textField('Badge id', `${p}.seat.id`, { help: 'Route gates refer to this.' }),
+        textField('Title', `${p}.seat.title`),
+        selectField('Coin shown', `${p}.seat.coin`, coinOpts())
       ) +
       `<div class="grid">${Object.keys(D.coins)
-        .map(c => fNum(`${D.coins[c].n} reward`, `${p}.seat.coins.${c}`, { opt: 1, min: 0, step: 1 }))
+        .map(c => numberField(`${D.coins[c].n} reward`, `${p}.seat.coins.${c}`, { opt: 1, min: 0, step: 1 }))
         .join('')}${Object.keys(D.items)
-        .map(it => fNum(`${D.items[it].n} reward`, `${p}.seat.items.${it}`, { opt: 1, min: 0, step: 1 }))
+        .map(it => numberField(`${D.items[it].n} reward`, `${p}.seat.items.${it}`, { opt: 1, min: 0, step: 1 }))
         .join('')}</div>` +
-      fText('Reward text', `${p}.seat.rewardText`, { help: 'Read as “You earned $1,200, …”.' }) +
-      fText('What it unlocks', `${p}.seat.unlockText`, { area: 1, rows: 2 }) +
+      textField('Reward text', `${p}.seat.rewardText`, { help: 'Read as “You earned $1,200, …”.' }) +
+      textField('What it unlocks', `${p}.seat.unlockText`, { area: 1, rows: 2 }) +
       `<button class="btn danger subtle" data-act="seatOff">Remove the badge</button>`
     : `<p class="help">Beating this trainer doesn’t award a badge.</p><button class="btn" data-act="seatOn">Award a badge</button>`;
   return `<div class="split"><aside class="list-col"><div class="list-head"><button class="btn primary" data-act="trainerNew">+ New trainer</button></div><div class="llist">${list}</div></aside>
@@ -1521,28 +1522,28 @@ SECTIONS.trainers = () => {
  ${card(
    'Who and where',
    `<div class="keeper"><div class="person-prev">${personPrev(T.who)}</div><div>${grid(
-     fText('Name', `${p}.name`),
-     fSel('Look', `${p}.who`, peopleOpts(), { rr: 1 }),
-     fSel(
+     textField('Name', `${p}.name`),
+     selectField('Look', `${p}.who`, peopleOpts(), { rr: 1 }),
+     selectField(
        'Stands at',
        `${p}.node`,
        D.route.map((r, i) => [i, `${i + 1}. ${r.name}`]),
        { num: 1, rr: 1 }
      ),
-     fSel(
+     selectField(
        'Battle backdrop',
        `${p}.area`,
        Object.entries(D.backdrops).map(([b, v]) => [b, v.name || b])
      ),
-     fNum('Reward ($)', `${p}.reward`, { min: 0, step: 50 }),
-     fSel(
+     numberField('Reward ($)', `${p}.reward`, { min: 0, step: 50 }),
+     selectField(
        'First-win egg',
        `${p}.egg`,
        Object.keys(D.eggs).map(e => [e, e + ' km']),
        { num: 1, none: 'None', opt: 1 }
      )
    )}
-  ${fChk('Double battle: two of theirs against two of yours', `${p}.double`, { help: 'Needs at least two Billies on their team.' })}${fSel(
+  ${checkboxField('Double battle: two of theirs against two of yours', `${p}.double`, { help: 'Needs at least two Billies on their team.' })}${selectField(
     'Companion beside them in the world',
     `${p}.pet`,
     [
@@ -1551,21 +1552,21 @@ SECTIONS.trainers = () => {
       ['false', 'Never'],
     ]
   )}
-  ${fChk('Story battle only (the opening): stands on no stop, and losing costs nothing', `${p}.tutorial`, { rr: 1, help: 'Blake’s first battle, right after you choose your starter. Hazel gives tips during it.' })}${fChk('Blocks the road until beaten', `${p}.blocks`, { rr: 1 })}${T.blocks ? grid(fText('Blocking headline', `${p}.blockTitle`), fText('Blocking text', `${p}.blockText`)) : ''}${fText('Hint before the battle', `${p}.hint`, { area: 1, rows: 2, opt: 1 })}</div></div>`
+  ${checkboxField('Story battle only (the opening): stands on no stop, and losing costs nothing', `${p}.tutorial`, { rr: 1, help: 'Blake’s first battle, right after you choose your starter. Hazel gives tips during it.' })}${checkboxField('Blocks the road until beaten', `${p}.blocks`, { rr: 1 })}${T.blocks ? grid(textField('Blocking headline', `${p}.blockTitle`), textField('Blocking text', `${p}.blockText`)) : ''}${textField('Hint before the battle', `${p}.hint`, { area: 1, rows: 2, opt: 1 })}</div></div>`
  )}
  ${card('Team', `<table class="tbl"><thead><tr><th>Billie</th><th>Lv</th><th></th></tr></thead><tbody>${team}</tbody></table><div class="seg-row"><button class="btn" data-act="teamAdd">Add a Billie</button></div>`, { sub: 'They send them out in this order.' })}
  ${card(
    'Dialogue',
-   fText('Opening lines in battle (one per line)', '@tlines.' + k, { area: 1, rows: 3 }) +
-     fText(
+   textField('Opening lines in battle (one per line)', '@tlines.' + k, { area: 1, rows: 3 }) +
+     textField(
        'Scene when you first meet (one line each; start a line with [happy], [angry], [sad] or [surprised] for the face)',
        '@tintro.' + k,
        { area: 1, rows: 4 }
      ) +
      grid(
-       fText('When you win', `${p}.win`),
-       fText('When you lose', `${p}.lose`),
-       fSel(
+       textField('When you win', `${p}.win`),
+       textField('When you lose', `${p}.lose`),
+       selectField(
          'Only turns up after you beat',
          `${p}.after`,
          Object.entries(D.trainers)
@@ -1575,7 +1576,7 @@ SECTIONS.trainers = () => {
        )
      )
  )}
- ${card('Sandstorm', T.market ? grid(fNum('Lasts', `${p}.market.n`, { unit: 'turns', min: 1, max: 20, step: 1 })) + fText('Announcement', `${p}.marketText`, { area: 1, rows: 2 }) + '<button class="btn danger subtle" data-act="marketOff">No sandstorm</button>' : `<p class="help">The battle starts in clear weather.</p><button class="btn" data-act="marketOn">Start the battle in a sandstorm</button>`)}
+ ${card('Sandstorm', T.market ? grid(numberField('Lasts', `${p}.market.n`, { unit: 'turns', min: 1, max: 20, step: 1 })) + textField('Announcement', `${p}.marketText`, { area: 1, rows: 2 }) + '<button class="btn danger subtle" data-act="marketOff">No sandstorm</button>' : `<p class="help">The battle starts in clear weather.</p><button class="btn" data-act="marketOn">Start the battle in a sandstorm</button>`)}
  ${card('Badge', seat)}</div></div>`;
 };
 const _getP2 = getP;

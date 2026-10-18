@@ -20,18 +20,18 @@ import {
   ask,
   card,
   changed,
+  checkboxField,
   clone,
+  colorField,
   commit,
   dialog,
-  fChk,
-  fColor,
-  fNum,
-  fSel,
-  fText,
   fmtN,
   grid,
+  numberField,
   render,
+  selectField,
   studioState,
+  textField,
   toast,
   uidKey,
 } from './studio-app.js';
@@ -151,9 +151,9 @@ function wdItemHTML(k) {
     .map(
       (c, i) =>
         `<div class="wd-col">${grid(
-          fText('Colour area ' + (i + 1), `${p}.colors.${i}.0`),
-          fColor('Default colour', `${p}.colors.${i}.1`),
-          fSel(
+          textField('Colour area ' + (i + 1), `${p}.colors.${i}.0`),
+          colorField('Default colour', `${p}.colors.${i}.1`),
+          selectField(
             'Follows',
             `${p}.link.${i + 1}`,
             [
@@ -171,16 +171,16 @@ function wdItemHTML(k) {
  ${card(
    'Details',
    grid(
-     fText('Name', `${p}.name`, { rr: 1 }),
-     fSel(
+     textField('Name', `${p}.name`, { rr: 1 }),
+     selectField(
        'Slot',
        `${p}.slot`,
        W.slots.map(s => [s.id, s.name]),
        { rr: 1 }
      ),
-     fNum('Price ($)', `${p}.price`, { min: 0, step: 10, opt: 1 }),
-     fSel('Sold at', `${p}.shop`, shops, { none: 'Not sold', opt: 1, rr: 1 }),
-     fChk('Everyone has it from the start', `${p}.starter`, { rr: 1 })
+     numberField('Price ($)', `${p}.price`, { min: 0, step: 10, opt: 1 }),
+     selectField('Sold at', `${p}.shop`, shops, { none: 'Not sold', opt: 1, rr: 1 }),
+     checkboxField('Everyone has it from the start', `${p}.starter`, { rr: 1 })
    )
  )}
  ${card('Colour areas', cols + (it.colors.length < 3 ? `<div class="seg-row"><button class="btn sm" data-act="wdColAdd">+ Add a colour area</button></div>` : ''), { sub: 'Players pick a colour for each area; the shading you painted is kept. Paint the areas with the “Colour area” brush below.' })}

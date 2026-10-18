@@ -33,13 +33,13 @@ import {
   SECTIONS,
   after,
   card,
-  fColor,
-  fRange,
-  fSel,
+  colorField,
   go,
   moveOpts,
   peopleOpts,
+  rangeField,
   render,
+  selectField,
   spOpts,
   studioState,
 } from './studio-app.js';
@@ -192,7 +192,7 @@ SECTIONS.preview = () => {
       Object.entries(D.backdrops).map(([k, v]) => [k, v.name || k]),
       BP.area
     )}</select></label>
-   <div class="grid colors">${fColor('Sky top', `${p}.sky.0`)}${fColor('Sky middle', `${p}.sky.1`)}${fColor('Sky horizon', `${p}.sky.2`)}${fColor('Haze', `${p}.fog`)}</div>${fRange('Haze distance', `${p}.fogD`, { min: 10, max: 300, step: 5 })}${fSel('In the air', `${p}.amb`, AMBS)}
+   <div class="grid colors">${colorField('Sky top', `${p}.sky.0`)}${colorField('Sky middle', `${p}.sky.1`)}${colorField('Sky horizon', `${p}.sky.2`)}${colorField('Haze', `${p}.fog`)}</div>${rangeField('Haze distance', `${p}.fogD`, { min: 10, max: 300, step: 5 })}${selectField('In the air', `${p}.amb`, AMBS)}
    <p class="help">Changes apply live. Ground, walls and far land are picked under World & encounters → Battle backdrops.</p>`
   )}
  </aside></div></div>`;

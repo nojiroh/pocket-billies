@@ -50,19 +50,19 @@ import {
   ask,
   card,
   changed,
+  checkboxField,
   clone,
+  colorField,
   commit,
   dialog,
-  fChk,
-  fColor,
-  fNum,
-  fRange,
-  fSel,
-  fText,
   grid,
+  numberField,
   peopleOpts,
+  rangeField,
   render,
+  selectField,
   studioState,
+  textField,
   toast,
   uidKey,
 } from './studio-app.js';
@@ -278,9 +278,9 @@ SECTIONS.scenes = () => {
     .join('');
   const sel = SCN.sel != null && sc.props[SCN.sel] && !(SCN.multi && SCN.multi.size > 1) ? sc.props[SCN.sel] : null;
   const selCard = sel
-    ? `<div class="sc-sel"><b>${esc((scD().props[sel.k] || {}).name || sel.k)}</b>${grid(fNum('Across', `${p}.props.${SCN.sel}.x`, { step: 0.1 }), fNum('Depth', `${p}.props.${SCN.sel}.z`, { step: 0.1 }), fNum('Size', `${p}.props.${SCN.sel}.s`, { step: 0.05, min: 0.2, max: 4, opt: 1, ph: '1' }))}
+    ? `<div class="sc-sel"><b>${esc((scD().props[sel.k] || {}).name || sel.k)}</b>${grid(numberField('Across', `${p}.props.${SCN.sel}.x`, { step: 0.1 }), numberField('Depth', `${p}.props.${SCN.sel}.z`, { step: 0.1 }), numberField('Size', `${p}.props.${SCN.sel}.s`, { step: 0.05, min: 0.2, max: 4, opt: 1, ph: '1' }))}
   ${grid(
-    fSel(
+    selectField(
       'When tapped',
       `${p}.props.${SCN.sel}.act`,
       [
@@ -300,16 +300,16 @@ SECTIONS.scenes = () => {
     ),
     ...(sel.act
       ? [
-          fText('Label above it', `${p}.props.${SCN.sel}.label`, {
+          textField('Label above it', `${p}.props.${SCN.sel}.label`, {
             opt: 1,
             ph: sel.act === 'shop' ? 'Shop' : sel.act === 'clinic' ? 'Clinic' : 'none',
           }),
-          fText('What it says', `${p}.props.${SCN.sel}.say`, { opt: 1 }),
+          textField('What it says', `${p}.props.${SCN.sel}.say`, { opt: 1 }),
         ]
       : []),
     ...(sel.act === 'lift'
       ? [
-          fSel(
+          selectField(
             'Goes to',
             `${p}.props.${SCN.sel}.to`,
             (studioState.D.route || []).map(r => [r.id, r.name]),
@@ -319,7 +319,7 @@ SECTIONS.scenes = () => {
       : []),
     ...(sel.act === 'shop'
       ? [
-          fSel(
+          selectField(
             'Which shop',
             `${p}.props.${SCN.sel}.shop`,
             Object.entries(studioState.D.shops || {}).map(([k, v]) => [k, v.name]),
@@ -328,12 +328,12 @@ SECTIONS.scenes = () => {
         ]
       : [])
   )}
-  <details class="sc-look"><summary>Look: tint, wear and variety</summary>${grid(fColor('Tint', `${p}.props.${SCN.sel}.tint`, { help: 'Black for none. Tints the painted parts only (not outlines, windows or lights).' }), fRange('Tint strength', `${p}.props.${SCN.sel}.tintAmt`, { min: 0, max: 1, step: 0.05, def: 0.6 }), fRange('Wear and tear (× usual)', `${p}.props.${SCN.sel}.wear`, { min: 0, max: 3, step: 0.05, def: 1, help: 'Dirt, moss, faded paint and cracks. The kinds and amounts are set per prop in the prop editor.' }), fChk('Exactly as drawn (no size, colour or turn variety)', `${p}.props.${SCN.sel}.plain`, { num: 1 }))}</details>
+  <details class="sc-look"><summary>Look: tint, wear and variety</summary>${grid(colorField('Tint', `${p}.props.${SCN.sel}.tint`, { help: 'Black for none. Tints the painted parts only (not outlines, windows or lights).' }), rangeField('Tint strength', `${p}.props.${SCN.sel}.tintAmt`, { min: 0, max: 1, step: 0.05, def: 0.6 }), rangeField('Wear and tear (× usual)', `${p}.props.${SCN.sel}.wear`, { min: 0, max: 3, step: 0.05, def: 1, help: 'Dirt, moss, faded paint and cracks. The kinds and amounts are set per prop in the prop editor.' }), checkboxField('Exactly as drawn (no size, colour or turn variety)', `${p}.props.${SCN.sel}.plain`, { num: 1 }))}</details>
   ${(() => {
     const P0 = scD().props[sel.k] || {};
     if (!P0.build) return '';
     return grid(
-      fSel(
+      selectField(
         'Roof',
         `${p}.props.${SCN.sel}.roof`,
         [
@@ -343,7 +343,7 @@ SECTIONS.scenes = () => {
         ],
         { none: 'Its own roof', opt: 1, rr: 1 }
       ),
-      fRange('Turned (degrees)', `${p}.props.${SCN.sel}.rot`, {
+      rangeField('Turned (degrees)', `${p}.props.${SCN.sel}.rot`, {
         min: -30,
         max: 30,
         step: 1,
@@ -375,7 +375,7 @@ SECTIONS.scenes = () => {
       }[sel.k] ||
       { shop: 'int_shop', clinic: 'int_clinic', lab: 'int_lab', house: 'int_house', home: 'int_home' }[sel.act] ||
       '';
-    return `<div class="sc-room">${grid(fSel('Room inside', `${p}.props.${SCN.sel}.room`, rooms, { none: kindRoom ? 'The one for its kind (' + ((studioState.D.scenes[kindRoom] || {}).name || kindRoom) + ')' : 'None', opt: 1, rr: 1, help: 'Where you walk in when you tap it (it needs “When tapped” set). Rooms open in place, larger than the building, with the town dimmed around them.' }))}<div class="seg-row"><button class="btn sm" data-act="scOwnRoom">Give it a room of its own</button>${sel.room || kindRoom ? `<button class="btn sm subtle" data-act="scPick" data-k="${esc(sel.room || kindRoom)}">Open its room</button>` : ''}</div></div>`;
+    return `<div class="sc-room">${grid(selectField('Room inside', `${p}.props.${SCN.sel}.room`, rooms, { none: kindRoom ? 'The one for its kind (' + ((studioState.D.scenes[kindRoom] || {}).name || kindRoom) + ')' : 'None', opt: 1, rr: 1, help: 'Where you walk in when you tap it (it needs “When tapped” set). Rooms open in place, larger than the building, with the town dimmed around them.' }))}<div class="seg-row"><button class="btn sm" data-act="scOwnRoom">Give it a room of its own</button>${sel.room || kindRoom ? `<button class="btn sm subtle" data-act="scPick" data-k="${esc(sel.room || kindRoom)}">Open its room</button>` : ''}</div></div>`;
   })()}
   ${(() => {
     const V = ((scD().props[sel.k] || {}).build || {}).variants;
@@ -383,7 +383,7 @@ SECTIONS.scenes = () => {
     const P0 = scD().props[sel.k];
     return `<div class="fld sc-var"><span>Colours</span><div class="sc-var-row">${[{ img: P0.img, wallCol: P0.build.wallCol, roofCol: P0.build.roofCol }, ...V].map((v, i) => `<button class="sc-var-b ${(sel.v | 0) === i ? 'on' : ''}" data-act="scVar" data-v="${i}" title="${i ? 'Variant ' + i : 'As drawn'}"><span class="sc-thumb" data-img="${esc(v.img)}"></span><i style="background:${esc(v.roofCol || '#888')}"></i><i style="background:${esc(v.wallCol || '#ccc')}"></i></button>`).join('')}</div><small class="help">The same building in other colours. It keeps its shape, roof and rooms.</small></div>`;
   })()}
-  <div class="seg-row">${fChk('Mirrored', `${p}.props.${SCN.sel}.f`, { num: 1 })}<button class="btn sm" data-act="scDupProp">Duplicate</button><button class="btn sm danger subtle" data-act="scDelProp">Remove</button><button class="btn sm subtle" data-act="scEditProp" data-k="${esc(sel.k)}">Edit this prop’s pixels</button></div></div>`
+  <div class="seg-row">${checkboxField('Mirrored', `${p}.props.${SCN.sel}.f`, { num: 1 })}<button class="btn sm" data-act="scDupProp">Duplicate</button><button class="btn sm danger subtle" data-act="scDelProp">Remove</button><button class="btn sm subtle" data-act="scEditProp" data-k="${esc(sel.k)}">Edit this prop’s pixels</button></div></div>`
     : SCN.multi && SCN.multi.size > 1 && typeof scxMultiCard === 'function'
       ? scxMultiCard()
       : '<p class="help">Click a prop on the map to select it. Arrow keys nudge it, Delete removes it. Shift-drag a box (or shift-click) to select several.</p>';
@@ -470,18 +470,18 @@ SECTIONS.scenes = () => {
  )}
  ${SCN.ped && scD().props[SCN.ped] ? pedCard(SCN.ped) : ''}
  ${SCN.pe ? scPixelCard() : ''}
- ${sc.kind === 'town' || sc.kind === 'route' ? `<div class="seg-row sc-keep">${fChk('Keep this layout: the v46 rework tool (tools/build-places-v46.py) never rebuilds it', `${p}.keep`, { num: 1 })}</div>` : ''}
+ ${sc.kind === 'town' || sc.kind === 'route' ? `<div class="seg-row sc-keep">${checkboxField('Keep this layout: the v46 rework tool (tools/build-places-v46.py) never rebuilds it', `${p}.keep`, { num: 1 })}</div>` : ''}
  ${card(
    'Look and camera',
    `${grid(
-     fText('Name', `${p}.name`, { rr: 1 }),
-     fSel(
+     textField('Name', `${p}.name`, { rr: 1 }),
+     selectField(
        'Outside the map',
        `${p}.edge`,
        Object.entries(T).map(([c, t]) => [c, t.name]),
        { help: 'Ground shown past the edges.' }
      ),
-     fSel('In the air', `${p}.amb`, [
+     selectField('In the air', `${p}.amb`, [
        ['pollen', 'Pollen'],
        ['spore', 'Spores'],
        ['drip', 'Drips'],
@@ -489,10 +489,10 @@ SECTIONS.scenes = () => {
        ['dust', 'Sparkling dust'],
        ['none', 'Nothing'],
      ]),
-     fChk('Indoors or underground (no clouds)', `${p}.indoor`, { num: 1 }),
-     fChk('You ride over the water here', `${p}.ride`, { num: 1 }),
-     fChk('Open water to the horizon', `${p}.flatFar`, { num: 1 }),
-     fSel(
+     checkboxField('Indoors or underground (no clouds)', `${p}.indoor`, { num: 1 }),
+     checkboxField('You ride over the water here', `${p}.ride`, { num: 1 }),
+     checkboxField('Open water to the horizon', `${p}.flatFar`, { num: 1 }),
+     selectField(
        'Weather here',
        `${p}.climate`,
        [
@@ -509,7 +509,7 @@ SECTIONS.scenes = () => {
          help: 'The weather changes every few hours (v26). Indoors it never rains.',
        }
      ),
-     fNum('Darkness away from lights', `${p}.dark`, {
+     numberField('Darkness away from lights', `${p}.dark`, {
        opt: 1,
        min: 0,
        max: 1,
@@ -519,7 +519,7 @@ SECTIONS.scenes = () => {
      }),
      ...(sc.room
        ? [
-           fText('Who stands behind the counter', `${p}.keeper`, {
+           textField('Who stands behind the counter', `${p}.keeper`, {
              help:
                'A person from People (their id), or folk:<number> for a townsperson. This is a room you walk into from a ' +
                esc(sc.room) +
@@ -529,7 +529,7 @@ SECTIONS.scenes = () => {
        : [])
    )}
   ${grid(
-    fSel(
+    selectField(
       'Hills in the distance',
       `${p}.far`,
       [
@@ -544,9 +544,9 @@ SECTIONS.scenes = () => {
       ],
       { none: 'None', opt: 1 }
     ),
-    fRange('Distant hills height', `${p}.farH`, { min: 3, max: 16, step: 0.5, def: 8 }),
-    fNum('Townsfolk walking around', `${p}.folk`, { min: 0, max: 12, step: 1 }),
-    fSel(
+    rangeField('Distant hills height', `${p}.farH`, { min: 3, max: 16, step: 0.5, def: 8 }),
+    numberField('Townsfolk walking around', `${p}.folk`, { min: 0, max: 12, step: 1 }),
+    selectField(
       'Town flag',
       `${p}.flag`,
       [['default', 'The coin ring'], ...(scD().flags || []).map(k => [k, ((D.scenes[k] || {}).name || k) + '’s flag'])],
@@ -556,32 +556,32 @@ SECTIONS.scenes = () => {
         help: 'What the flag poles here fly (art/scene/flags/<name>.png, made by tools/build-flags.py).',
       }
     ),
-    fRange('Wind', `${p}.wind`, { min: 0, max: 3, step: 0.1, def: 1 }),
-    fRange('Prop variety', `${p}.variety`, {
+    rangeField('Wind', `${p}.wind`, { min: 0, max: 3, step: 0.1, def: 1 }),
+    rangeField('Prop variety', `${p}.variety`, {
       min: 0,
       max: 2,
       step: 0.05,
       def: 1,
       help: 'How much props differ from their neighbours in size, colour and turn.',
     }),
-    fRange('Wear and tear', `${p}.wear`, {
+    rangeField('Wear and tear', `${p}.wear`, {
       min: 0,
       max: 2,
       step: 0.05,
       def: 1,
       help: 'Dirt, moss, faded paint and cracks on buildings and props here.',
     }),
-    fNum('Look seed', `${p}.lookSeed`, {
+    numberField('Look seed', `${p}.lookSeed`, {
       opt: 1,
       min: 0,
       step: 1,
       help: 'Change it for a different random look; the same number always gives the same look.',
     }),
-    fChk('Sun rays', `${p}.rays`, { num: 1 })
+    checkboxField('Sun rays', `${p}.rays`, { num: 1 })
   )}
   <label class="fld wide"><span>What townsfolk say (one line each)</span><textarea id="scChat" rows="3" placeholder="Lovely day for a walk.">${esc((sc.chat || []).join('\n'))}</textarea></label>
-  <div class="grid colors">${fColor('Sky top', `${p}.sky.0`)}${fColor('Sky middle', `${p}.sky.1`)}${fColor('Horizon', `${p}.sky.2`)}${fColor('Haze', `${p}.haze`)}${fColor('Shade (caves, malls)', `${p}.tint`, { help: 'Leave black for none.' })}</div>
-  ${grid(fRange('Haze distance', `${p}.hazeD`, { min: 8, max: 80, step: 1 }), fRange('Tilt-shift blur', `${p}.blur`, { min: 0, max: 1.5, step: 0.05, def: 1 }), fRange('Camera tilt (degrees)', `${p}.cam.pitch`, { min: 20, max: 70, step: 1 }), fRange('Camera height', `${p}.cam.h`, { min: 4, max: 20, step: 0.5 }), fRange('Zoom', `${p}.cam.fov`, { min: 0.5, max: 2, step: 0.05, def: 1 }), fRange('Where you arrive on the path', `${p}.start`, { min: 0, max: 0.95, step: 0.01, def: 0.42 }))}
+  <div class="grid colors">${colorField('Sky top', `${p}.sky.0`)}${colorField('Sky middle', `${p}.sky.1`)}${colorField('Horizon', `${p}.sky.2`)}${colorField('Haze', `${p}.haze`)}${colorField('Shade (caves, malls)', `${p}.tint`, { help: 'Leave black for none.' })}</div>
+  ${grid(rangeField('Haze distance', `${p}.hazeD`, { min: 8, max: 80, step: 1 }), rangeField('Tilt-shift blur', `${p}.blur`, { min: 0, max: 1.5, step: 0.05, def: 1 }), rangeField('Camera tilt (degrees)', `${p}.cam.pitch`, { min: 20, max: 70, step: 1 }), rangeField('Camera height', `${p}.cam.h`, { min: 4, max: 20, step: 0.5 }), rangeField('Zoom', `${p}.cam.fov`, { min: 0.5, max: 2, step: 0.05, def: 1 }), rangeField('Where you arrive on the path', `${p}.start`, { min: 0, max: 0.95, step: 0.01, def: 0.42 }))}
   <div class="seg-row"><span class="help">Size</span><input type="number" id="scW" min="10" max="240" value="${sc.w}" class="sm-num"> × <input type="number" id="scH" min="8" max="200" value="${sc.h}" class="sm-num"><button class="btn sm" data-act="scResize">Resize the map</button><span class="help">Used by: ${
     scUsers(id)
       .map(([r, i]) => `${i + 1}. ${esc(r.name)}`)
@@ -601,7 +601,7 @@ SECTIONS.scenes = () => {
       (
         q,
         i
-      ) => `<div class="sc-person">${grid(fSel('Look', `${p}.people.${i}.who`, peopleOpts()), fText('Name', `${p}.people.${i}.name`), fNum('Across (m)', `${p}.people.${i}.x`, { step: 0.1 }), fNum('Depth (m)', `${p}.people.${i}.z`, { step: 0.1 }))}
+      ) => `<div class="sc-person">${grid(selectField('Look', `${p}.people.${i}.who`, peopleOpts()), textField('Name', `${p}.people.${i}.name`), numberField('Across (m)', `${p}.people.${i}.x`, { step: 0.1 }), numberField('Depth (m)', `${p}.people.${i}.z`, { step: 0.1 }))}
    <label class="fld wide"><span>The first time (one line each)</span><textarea data-scppl="${i}" data-f="first" rows="3">${esc((q.first || []).join('\n'))}</textarea></label>
    <label class="fld wide"><span>After that (one line each, one at a time)</span><textarea data-scppl="${i}" data-f="lines" rows="3">${esc((q.lines || []).join('\n'))}</textarea></label>
    <div class="seg-row"><button class="btn sm danger subtle" data-act="scPplDel" data-i="${i}">Remove</button></div></div>`
@@ -627,38 +627,38 @@ function scPropSettings(k) {
   const P = scD().props[k],
     b = `scenery.props.${k}`;
   return `<h4>${esc(P.name || k)} settings</h4>${grid(
-    fText('Name', `${b}.name`),
-    fText('Variant group', `${b}.group`, { opt: 1, help: 'Props in the same group are variants of each other.' }),
-    fNum('Shadow size (m)', `${b}.shadow`, { min: 0, max: 4, step: 0.05 }),
-    fNum('Sway in the wind', `${b}.sway`, { min: 0, max: 1, step: 0.05 }),
-    fNum('Solid radius (m)', `${b}.solid`, {
+    textField('Name', `${b}.name`),
+    textField('Variant group', `${b}.group`, { opt: 1, help: 'Props in the same group are variants of each other.' }),
+    numberField('Shadow size (m)', `${b}.shadow`, { min: 0, max: 4, step: 0.05 }),
+    numberField('Sway in the wind', `${b}.sway`, { min: 0, max: 1, step: 0.05 }),
+    numberField('Solid radius (m)', `${b}.solid`, {
       opt: 1,
       min: 0,
       max: 4,
       step: 0.05,
       help: 'People walk around this. Empty: guessed from the shadow. 0: walk through.',
     }),
-    fNum('Footprint width (m)', `${b}.box.0`, {
+    numberField('Footprint width (m)', `${b}.box.0`, {
       opt: 1,
       min: 0,
       max: 12,
       step: 0.1,
       help: 'For buildings and fences: a box instead of a circle.',
     }),
-    fNum('Footprint depth (m)', `${b}.box.1`, { opt: 1, min: 0, max: 12, step: 0.1 }),
-    fNum('Door across (px)', `${b}.door.x`, {
+    numberField('Footprint depth (m)', `${b}.box.1`, { opt: 1, min: 0, max: 12, step: 0.1 }),
+    numberField('Door across (px)', `${b}.door.x`, {
       opt: 1,
       step: 1,
       help: 'Where people walk to when it’s tapped, from the bottom middle.',
     }),
-    fNum('Walkable radius (m)', `${b}.walk`, {
+    numberField('Walkable radius (m)', `${b}.walk`, {
       opt: 1,
       min: 0,
       max: 4,
       step: 0.1,
       help: 'For stepping stones and bridges: opens water under it.',
     }),
-    fChk('Lies flat on the ground', `${b}.flat`, { num: 1 })
+    checkboxField('Lies flat on the ground', `${b}.flat`, { num: 1 })
   )}
   <p class="help">Effects (${(P.fx || []).map(f => f.k).join(', ') || 'none'}) are set in art/scene/props.json and the scenery catalog.</p>`;
 }
@@ -2106,17 +2106,17 @@ function scPixelCard() {
   ${
     M
       ? grid(
-          fText('Name', `${base}.name`),
-          fNum('Shadow size (m)', `${base}.shadow`, { min: 0, max: 4, step: 0.05 }),
-          fRange('Sways in the wind', `${base}.sway`, { min: 0, max: 1, step: 0.05 }),
-          fChk('Lies flat on the ground', `${base}.flat`, { num: 1 }),
-          fText('Tags', `${base}.tagsTxt`, {
+          textField('Name', `${base}.name`),
+          numberField('Shadow size (m)', `${base}.shadow`, { min: 0, max: 4, step: 0.05 }),
+          rangeField('Sways in the wind', `${base}.sway`, { min: 0, max: 1, step: 0.05 }),
+          checkboxField('Lies flat on the ground', `${base}.flat`, { num: 1 }),
+          textField('Tags', `${base}.tagsTxt`, {
             opt: 1,
             ph: (M.tags || []).join(', '),
             help: 'Comma-separated, for the Props filter.',
           })
         ) +
-        `<p class="help">Base point: ${-M.ox}, ${-M.oy}. Pick “Set the base point” and click where the prop touches the ground.</p>${M.glow ? '' : '<button class="btn sm subtle" data-act="scGlowAdd">Add a light glow</button>'}${M.glow ? grid(fColor('Glow color', `${base}.glow.c`), fNum('Glow size (m)', `${base}.glow.r`, { step: 0.1, min: 0.2, max: 6 }), fNum('Glow height (m)', `${base}.glow.y`, { step: 0.1, min: 0, max: 8 })) : ''}`
+        `<p class="help">Base point: ${-M.ox}, ${-M.oy}. Pick “Set the base point” and click where the prop touches the ground.</p>${M.glow ? '' : '<button class="btn sm subtle" data-act="scGlowAdd">Add a light glow</button>'}${M.glow ? grid(colorField('Glow color', `${base}.glow.c`), numberField('Glow size (m)', `${base}.glow.r`, { step: 0.1, min: 0.2, max: 6 }), numberField('Glow height (m)', `${base}.glow.y`, { step: 0.1, min: 0, max: 8 })) : ''}`
       : '<p class="help">The tile repeats in every direction, so keep the edges matching.</p>'
   }</div></div></div>`
   );
