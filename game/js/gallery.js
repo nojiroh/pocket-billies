@@ -7,7 +7,7 @@
 import { expose } from './test-globals.js';
 import { closeModal, openSettings, provide, render, renderOverlay, toast } from './hooks.js';
 import { uiState } from './game-state.js';
-import { GFX_DIALS, gfxDial } from './settings-screen.js';
+import { GRAPHICS_DIALS, graphicsDialHTML } from './settings-screen.js';
 import { mapById, walkView } from './walk-view.js';
 import { environment } from './environment.js';
 /* eslint-disable no-func-assign */
@@ -90,14 +90,14 @@ function galleryPanel() {
     el.className = 'px glass gfx-panel';
     document.body.appendChild(el);
   }
-  const D = GFX_DIALS.flatMap(x => x[1]).find(d => d[0] === GAL.key);
+  const D = GRAPHICS_DIALS.flatMap(x => x[1]).find(d => d[0] === GAL.key);
   if (!D) {
     el.remove();
     return;
   }
-  const near = GFX_DIALS.flatMap(x => x[1]).filter(d => GALLERY_AT[d[0]] === GALLERY_AT[GAL.key]);
+  const near = GRAPHICS_DIALS.flatMap(x => x[1]).filter(d => GALLERY_AT[d[0]] === GALLERY_AT[GAL.key]);
   el.innerHTML = `<div class="gfx-ph"><b>Graphics gallery</b><button type="button" class="pb small quiet" data-a="gal-night">${GAL.night ? 'Day' : 'Night'}</button><button type="button" class="pb small" data-a="gal-leave">Leave</button></div>
-  ${near.length > 1 ? `<div class="gfx-near">${near.map(d => `<button type="button" data-a="gal-pick" data-k="${d[0]}" aria-pressed="${d[0] === GAL.key}">${d[1]}</button>`).join('')}</div>` : ''}${gfxDial(D).replace(/<button type="button" class="gfx-see"[^>]*>See it<\/button>/, '')}`;
+  ${near.length > 1 ? `<div class="gfx-near">${near.map(d => `<button type="button" data-a="gal-pick" data-k="${d[0]}" aria-pressed="${d[0] === GAL.key}">${d[1]}</button>`).join('')}</div>` : ''}${graphicsDialHTML(D).replace(/<button type="button" class="gfx-see"[^>]*>See it<\/button>/, '')}`;
 }
 function galleryClose() {
   GAL.on = false;

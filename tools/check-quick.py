@@ -856,7 +856,7 @@ def desktop_steps(b, base, R):
         # a message waiting on screen (an egg hatching, in steps mode) would queue Settings behind it
         pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();uiState.tab='walk';render();openSettings('game');0"); time.sleep(.6); tabs = []
         # alpha 0.5: the tabs are whatever the game lists (sound, graphics, game, save, help); contrast is under Game
-        names = pg.evaluate("SET_TABS.map(t=>t[0])")
+        names = pg.evaluate("SETTINGS_TABS.map(t=>t[0])")
         for t in names:
             pg.evaluate(f"document.querySelector('[data-a=set-tab][data-k={t}]').click();0"); time.sleep(.3)
             tabs.append(pg.evaluate("[document.querySelectorAll('.set-body .set-row,.set-body .settings-profile,.set-body details').length,(()=>{const b=document.querySelector('.sheet .body');return b.scrollWidth-b.clientWidth})()]"))

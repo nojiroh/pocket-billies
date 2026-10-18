@@ -46,23 +46,23 @@ import { uiIconHTML } from './art.js';
 import { cleanLook, cleanTrainer, humanHTML, lookFromOld } from './person-art.js';
 /* eslint-disable no-func-assign */
 expose({
-  GFX_DIALS: [() => GFX_DIALS],
+  GRAPHICS_DIALS: [() => GRAPHICS_DIALS],
   HOST_THEME: [() => HOST_THEME],
-  SET_TABS: [() => SET_TABS],
+  SETTINGS_TABS: [() => SETTINGS_TABS],
   applyPreferences: [() => applyPreferences, v => (applyPreferences = v)],
+  changePreference: [() => changePreference, v => (changePreference = v)],
   customizeTrainer: [() => customizeTrainer, v => (customizeTrainer = v)],
   exportSave: [() => exportSave, v => (exportSave = v)],
-  gfxDial: [() => gfxDial, v => (gfxDial = v)],
+  graphicsDialHTML: [() => graphicsDialHTML, v => (graphicsDialHTML = v)],
   importSave: [() => importSave, v => (importSave = v)],
-  setPref: [() => setPref, v => (setPref = v)],
-  setRow: [() => setRow, v => (setRow = v)],
-  setSeg: [() => setSeg, v => (setSeg = v)],
-  setSw: [() => setSw, v => (setSw = v)],
-  setVol: [() => setVol, v => (setVol = v)],
+  segmentedHTML: [() => segmentedHTML, v => (segmentedHTML = v)],
   settingsHTML: [() => settingsHTML, v => (settingsHTML = v)],
   settingsRefresh: [() => settingsRefresh, v => (settingsRefresh = v)],
+  settingsRowHTML: [() => settingsRowHTML, v => (settingsRowHTML = v)],
+  switchHTML: [() => switchHTML, v => (switchHTML = v)],
   themeOwned: [() => themeOwned, v => (themeOwned = v)],
   validSave: [() => validSave, v => (validSave = v)],
+  volumeSliderHTML: [() => volumeSliderHTML, v => (volumeSliderHTML = v)],
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
@@ -238,7 +238,7 @@ function importSave() {
 /* v31: settings in tabs (Game, Look, Sound, Controls, Save, Help), each choice a row with a one-line explanation and
    segmented buttons or a switch, so every option shows what it does and what it's set to without opening a menu */
 /* alpha 0.5: settings in five groups: Sound, Graphics, Game, Save, Help */
-const SET_TABS = [
+const SETTINGS_TABS = [
   ['sound', 'Sound'],
   ['graphics', 'Graphics'],
   ['game', 'Game'],
@@ -246,7 +246,7 @@ const SET_TABS = [
   ['help', 'Help'],
 ];
 /* the expert graphics dials: [group.key, label, what it does, cost, min, max, step, rebuild]. Each overrides the game's own value for this player */
-export const GFX_DIALS = [
+export const GRAPHICS_DIALS = [
   [
     'Light and shadow',
     [
@@ -293,26 +293,26 @@ export const GFX_DIALS = [
   ],
   ['Performance', [['quality.resolution', 'Sharpness', 'Fewer pixels draw faster', 'high', 0.4, 1, 0.05]]],
 ];
-export function gfxDial([gk, label, help, cost, min, max, step]) {
+export function graphicsDialHTML([gk, label, help, cost, min, max, step]) {
   const [g, k] = gk.split('.'),
     own = ((saveData.preferences.eng || {})[g] || {})[k],
     v = own != null ? own : engineSetting(g, k);
   return `<div class="gfx-dial"><div class="gfx-h"><b>${label}</b><span class="gfx-cost c-${cost}">${cost === 'high' ? 'Costs a lot' : cost === 'medium' ? 'Costs some' : 'Costs little'}</span>${own != null ? `<button type="button" class="gfx-reset" data-a="gfx-reset" data-k="${gk}" aria-label="Back to the game’s value">↺</button>` : ''}<button type="button" class="gfx-see" data-a="gfx-see" data-k="${gk}">See it</button></div>
  <input type="range" min="${min}" max="${max}" step="${step}" value="${v}" data-eng="${gk}" aria-label="${escapeHtml(label)}"><small>${help}</small></div>`;
 }
-function setRow(title, hint, ctl) {
+function settingsRowHTML(title, hint, ctl) {
   return `<div class="set-row"><div class="set-t"><b>${title}</b>${hint ? `<small>${hint}</small>` : ''}</div><div class="set-c">${ctl}</div></div>`;
 }
-function setSeg(k, cur, opts) {
+function segmentedHTML(k, cur, opts) {
   return `<div class="seg" role="radiogroup" aria-label="${escapeHtml(k)}">${opts.map(([v, n]) => `<button type="button" role="radio" aria-checked="${String(cur) === String(v)}" class="${String(cur) === String(v) ? 'on' : ''}" data-pref-set="${k}" data-v="${escapeHtml(String(v))}">${n}</button>`).join('')}</div>`;
 }
-function setSw(k, on, onV, offV) {
+function switchHTML(k, on, onV, offV) {
   return `<button type="button" class="sw ${on ? 'on' : ''}" role="switch" aria-checked="${!!on}" aria-label="${escapeHtml(k)}" data-pref-set="${k}" data-v="${escapeHtml(String(on ? offV : onV))}"><i></i></button>`;
 }
-function setVol(k, label, hint, def) {
+function volumeSliderHTML(k, label, hint, def) {
   const p = saveData.preferences || {},
     v = Math.round((p[k] ?? def) * 100);
-  return setRow(
+  return settingsRowHTML(
     label,
     hint,
     `<div class="vol"><input type="range" min="0" max="100" step="5" data-preference="${k}" value="${v}" aria-label="${escapeHtml(label)} volume"><span class="vol-n">${v}</span><button type="button" class="pb small quiet" data-a="aud-test" data-k="${k}">Test</button></div>`
@@ -320,16 +320,16 @@ function setVol(k, label, hint, def) {
 }
 export function settingsHTML() {
   const p = saveData.preferences || {},
-    tab = SET_TABS.some(t => t[0] === uiState.setTab) ? uiState.setTab : 'game',
+    tab = SETTINGS_TABS.some(t => t[0] === uiState.setTab) ? uiState.setTab : 'game',
     hz = FRAME.hz || 60;
   let body = '';
   if (tab === 'game')
     body =
       `<h3 class="set-sub">Playing</h3>` +
-      setRow(
+      settingsRowHTML(
         'Time of day',
         'Evenings glow, lamps come on at night, and some Billies only come out after dark.',
-        setSeg('time', p.time || 'real', [
+        segmentedHTML('time', p.time || 'real', [
           ['real', 'My clock'],
           ['morning', 'Morning'],
           ['day', 'Midday'],
@@ -337,10 +337,10 @@ export function settingsHTML() {
           ['night', 'Night'],
         ])
       ) +
-      setRow(
+      settingsRowHTML(
         'Weather',
         'Rain brings out Water types; storms bring Electric ones.',
-        setSeg('weather', p.weather || 'auto', [
+        segmentedHTML('weather', p.weather || 'auto', [
           ['auto', 'Changes'],
           ['clear', 'Fair'],
           ['rain', 'Rain'],
@@ -348,10 +348,10 @@ export function settingsHTML() {
           ['fog', 'Fog'],
         ])
       ) +
-      setRow(
+      settingsRowHTML(
         'Season',
         'Trees turn and snow falls with the calendar, or pick one.',
-        setSeg('season', p.season || 'auto', [
+        segmentedHTML('season', p.season || 'auto', [
           ['auto', 'Calendar'],
           ['spring', 'Spring'],
           ['summer', 'Summer'],
@@ -359,119 +359,128 @@ export function settingsHTML() {
           ['winter', 'Winter'],
         ])
       ) +
-      setRow(
+      settingsRowHTML(
         'Battles happen',
         'In the 3D place you are standing, or on the classic painted stage.',
-        setSeg('battleStage', p.battleStage === 'classic' ? 'classic' : 'scene', [
+        segmentedHTML('battleStage', p.battleStage === 'classic' ? 'classic' : 'scene', [
           ['scene', 'Where I stand'],
           ['classic', 'Painted stage'],
         ])
       ) +
-      setRow(
+      settingsRowHTML(
         'Battle speed',
         'How fast moves play out and lines move on. Tap still skips ahead at any speed.',
-        setSeg('battleSpeed', p.battleSpeed || 'normal', [
+        segmentedHTML('battleSpeed', p.battleSpeed || 'normal', [
           ['normal', 'Normal'],
           ['fast', 'Fast'],
           ['faster', 'Faster'],
         ])
       ) +
-      setRow(
+      settingsRowHTML(
         'Battle panels',
         'Name, level and HP float above each Billie in the scene, or sit in the classic corner cards. Double and Alpha battles always use the scene.',
-        setSeg('battleHud', p.battleHud === 'classic' ? 'classic' : 'scene', [
+        segmentedHTML('battleHud', p.battleHud === 'classic' ? 'classic' : 'scene', [
           ['scene', 'In the scene'],
           ['classic', 'Corner cards'],
         ])
       ) +
-      setRow(
+      settingsRowHTML(
         'Buddy walks with you',
         'Your buddy follows you around the world. Tap it to see how it’s doing.',
-        setSw('buddyWalk', p.buddyWalk !== 'off', 'on', 'off')
+        switchHTML('buddyWalk', p.buddyWalk !== 'off', 'on', 'off')
       ) +
-      setRow(
+      settingsRowHTML(
         'Shops and houses',
         'Walk inside, or go straight to the counter.',
-        setSeg('rooms', p.rooms || 'walk', [
+        segmentedHTML('rooms', p.rooms || 'walk', [
           ['walk', 'Walk inside'],
           ['quick', 'Counter'],
         ])
       ) +
-      setRow(
+      settingsRowHTML(
         'Language',
         'Menus and buttons. Stories and names stay in English.',
         `<select data-preference="lang">${(typeof I18N_LANGS !== 'undefined' ? I18N_LANGS : [['en', 'English']]).map(([v, n]) => `<option value="${v}" ${(p.lang || 'en') === v ? 'selected' : ''}>${n}</option>`).join('')}</select>`
       ) +
       `<h3 class="set-sub">Moving about</h3>` +
-      setRow(
+      settingsRowHTML(
         'Moving about',
         'Joystick: drag anywhere on the scene and a stick appears under your thumb. D-pad: a fixed pad in the corner. Either way, tapping the ground walks you there too.',
-        setSeg('control', p.control || 'stick', [
+        segmentedHTML('control', p.control || 'stick', [
           ['stick', 'Joystick'],
           ['dpad', 'D-pad'],
           ['tap', 'Tap only'],
         ])
       ) +
-      setRow(
+      settingsRowHTML(
         'Scene tilt',
         'Tilt your phone to look a little around the scene.',
-        setSw('tilt', p.tilt !== false, 'on', 'off')
+        switchHTML('tilt', p.tilt !== false, 'on', 'off')
       ) +
-      setRow('Bigger buttons', 'Easier to tap.', setSw('bigTargets', !!p.bigTargets, '1', '')) +
+      settingsRowHTML('Bigger buttons', 'Easier to tap.', switchHTML('bigTargets', !!p.bigTargets, '1', '')) +
       ('vibrate' in navigator
-        ? setRow(
+        ? settingsRowHTML(
             'Vibration',
             'A small buzz on hits, taxes and level-ups.',
-            setSw('haptics', p.haptics !== false, 'on', 'off')
+            switchHTML('haptics', p.haptics !== false, 'on', 'off')
           )
         : '') +
       `<details class="help"><summary>Moving around</summary><p>Drag on the scene for the joystick (or use the D-pad), or tap the ground to walk there. Tap people to talk and glowing spots to act. Two fingers turn the camera and pinch to zoom; with a mouse, drag with the right button to turn and Ctrl+scroll to zoom. On a keyboard: arrow keys or WASD walk, Q and E turn, Enter talks.</p></details>` +
       `<h3 class="set-sub">Screen and comfort</h3>` +
-      setRow(
+      settingsRowHTML(
         'Theme',
         'Menus in light or dark colours.',
-        setSeg('theme', p.theme || 'system', [
+        segmentedHTML('theme', p.theme || 'system', [
           ['system', 'Device'],
           ['light', 'Light'],
           ['dark', 'Dark'],
         ])
       ) +
-      setRow(
+      settingsRowHTML(
         'Animation',
         'Reduced keeps things still: no camera sway, fewer moving effects.',
-        setSeg('motion', p.motion || 'system', [
+        segmentedHTML('motion', p.motion || 'system', [
           ['system', 'Device'],
           ['full', 'Full'],
           ['reduced', 'Reduced'],
         ])
       ) +
-      setRow(
+      settingsRowHTML(
         'Text size',
         'Bigger words in menus and talk.',
-        setSeg('textSize', p.textSize || 'normal', [
+        segmentedHTML('textSize', p.textSize || 'normal', [
           ['normal', 'Normal'],
           ['large', 'Large'],
           ['xlarge', 'Larger'],
         ])
       ) +
-      setRow(
+      settingsRowHTML(
         'High contrast',
         'Stronger outlines and plainer backgrounds behind text.',
-        setSw('contrast', p.contrast === 'high', 'high', 'normal')
+        switchHTML('contrast', p.contrast === 'high', 'high', 'normal')
       ) +
-      setRow(
+      settingsRowHTML(
         'Flashes',
         'Lightning and bright battle flashes. Turn off if flashing bothers you.',
-        setSw('flashes', (p.flashes || 'on') === 'on', 'on', 'off')
+        switchHTML('flashes', (p.flashes || 'on') === 'on', 'on', 'off')
       );
   else if (tab === 'sound')
     body =
-      setRow('Sound', 'All of it at once. Mute keeps your levels for later.', setSw('mute', !p.mute, '', '1')) +
-      setVol('master', 'Volume', 'Everything together.', 1) +
-      setVol('music', 'Music', 'Tunes for each place and battle.', 0.55) +
-      setVol('sfx', 'Sound effects', 'Buttons, battles, coins.', 0.8) +
-      setVol('world', 'World sounds', 'Water, fountains, fire, rain, wind and animals near you.', 0.5) +
-      setVol('amb', 'Ambience', 'Birdsong by day, crickets at night, leaves, a town’s murmur, a room’s clock.', 0.5) +
+      settingsRowHTML(
+        'Sound',
+        'All of it at once. Mute keeps your levels for later.',
+        switchHTML('mute', !p.mute, '', '1')
+      ) +
+      volumeSliderHTML('master', 'Volume', 'Everything together.', 1) +
+      volumeSliderHTML('music', 'Music', 'Tunes for each place and battle.', 0.55) +
+      volumeSliderHTML('sfx', 'Sound effects', 'Buttons, battles, coins.', 0.8) +
+      volumeSliderHTML('world', 'World sounds', 'Water, fountains, fire, rain, wind and animals near you.', 0.5) +
+      volumeSliderHTML(
+        'amb',
+        'Ambience',
+        'Birdsong by day, crickets at night, leaves, a town’s murmur, a room’s clock.',
+        0.5
+      ) +
       `<p class="note">Sounds fade in when you arrive somewhere. Turn a slider to 0 to mute it.</p>`;
   else if (tab === 'graphics') {
     const gp = p.aim === 'smooth' ? 'balanced' : 'best';
@@ -485,23 +494,23 @@ export function settingsHTML() {
             `<button type="button" role="radio" aria-checked="${gp === k}" class="gfx-pre ${gp === k ? 'on' : ''}" data-pref-set="graphics" data-v="${k}"><b>${n}</b><small>${h}</small></button>`
         )
         .join('')}</div>` +
-      setRow(
+      settingsRowHTML(
         'Frame rate',
         `60 is smooth and saves battery; 120 is smoother on screens that can show it (yours shows about ${hz} a second).`,
-        setSeg('fps', +p.fps || 60, [
+        segmentedHTML('fps', +p.fps || 60, [
           [30, '30'],
           [60, '60'],
           [120, '120'],
         ])
       ) +
-      setRow(
+      settingsRowHTML(
         'Expert',
         'Every dial, with what it does and what it costs. “See it” shows the dial in the Graphics gallery.',
-        setSw('expert', !!p.expert, '1', '')
+        switchHTML('expert', !!p.expert, '1', '')
       ) +
       (p.expert
-        ? GFX_DIALS.map(
-            ([t, L]) => `<h3 class="set-sub">${t}</h3><div class="gfx-group">${L.map(gfxDial).join('')}</div>`
+        ? GRAPHICS_DIALS.map(
+            ([t, L]) => `<h3 class="set-sub">${t}</h3><div class="gfx-group">${L.map(graphicsDialHTML).join('')}</div>`
           ).join('') +
           `<button type="button" class="pb small quiet wide" data-a="gfx-resetall">Back to the game’s own look</button>`
         : '');
@@ -512,10 +521,10 @@ export function settingsHTML() {
       `<p class="note">${typeof account !== 'undefined' && account.user ? 'Your progress is saved to your account, and in this browser.' : 'Your progress is saved in this browser. Sign in to keep it online, or download a backup before changing device or clearing browser data.'}</p><div class="two"><button class="pb small" data-a="export-save">Export save</button><button class="pb small" data-a="import-save">Import save</button></div>`;
   else
     body = `<details class="help" open><summary>How to play</summary><p>Walk through towns and along the roads between them with the joystick, the D-pad or a tap on the ground. Every few metres you walk count as steps: they earn money, hatch eggs and train your buddy. Tap a Billy in the grass to battle it. Lower its HP, then throw a coin to tax it.</p><p>The map shows where to go next; pick a place and gold arrows guide you there.</p></details><div class="dbg-help"><b>Something look wrong or run slowly?</b><p class="note">The full test takes about two minutes: it plays through every place, a battle, the map, the opening, the dressing room and the shops, checks each for errors, then piles on more and more until your device can't keep up. Your save isn't changed. The debug log holds those numbers, errors and details about your device and graphics, plus a small picture of the scene. It has no save data or names. Send it to whoever is helping you.</p><div class="two"><button class="pb small" data-a="quicktest">Run the full test</button><button class="pb small" data-a="diagtest">Run the diagnostics test (2 min)</button><button class="pb small" data-a="dbglog">Export debug log</button></div></div><button class="pb small quiet wide dbg-open" data-a="debug">${uiIconHTML('bug', 14)} Debug menu</button>`;
-  return `<div class="set-tabs" role="tablist">${SET_TABS.map(([k, n]) => `<button type="button" role="tab" aria-selected="${k === tab}" class="${k === tab ? 'on' : ''}" data-a="set-tab" data-k="${k}">${n}</button>`).join('')}</div><div class="set-body">${body}</div>`;
+  return `<div class="set-tabs" role="tablist">${SETTINGS_TABS.map(([k, n]) => `<button type="button" role="tab" aria-selected="${k === tab}" class="${k === tab ? 'on' : ''}" data-a="set-tab" data-k="${k}">${n}</button>`).join('')}</div><div class="set-body">${body}</div>`;
 }
 /* one preference changed, from a switch, a segment, a slider or a menu */
-function setPref(k, v) {
+function changePreference(k, v) {
   saveData.preferences = saveData.preferences || {};
   if (k === 'master') v = +v / 100;
   if (k === 'mute') {
@@ -532,7 +541,7 @@ function setPref(k, v) {
   }
   if (k === 'graphics') {
     saveData.preferences.aim = v === 'best' ? 'sharp' : 'smooth';
-    return setPref('effects', 'full');
+    return changePreference('effects', 'full');
   }
   if (k === 'fps') v = +v;
   if (k === 'music' || k === 'sfx' || k === 'world' || k === 'amb') v = +v / 100;
@@ -599,7 +608,7 @@ document.addEventListener('click', ev => {
     if (typeof testVolume === 'function') testVolume(d.k);
     return;
   }
-  setPref(d.prefSet, d.v);
+  changePreference(d.prefSet, d.v);
   settingsRefresh();
   requestAnimationFrame(() => {
     const t = document.querySelector(`[data-pref-set="${d.prefSet}"].on,[data-pref-set="${d.prefSet}"].sw`);
@@ -608,7 +617,7 @@ document.addEventListener('click', ev => {
 });
 document.addEventListener('change', ev => {
   const k = ev.target.dataset.preference;
-  if (k) setPref(k, ev.target.value);
+  if (k) changePreference(k, ev.target.value);
 });
 document.addEventListener('click', ev => {
   const el = ev.target.closest('[data-a]');
@@ -656,10 +665,10 @@ document.addEventListener('input', ev => {
   const [g, k] = el.dataset.eng.split('.');
   saveData.preferences.eng = saveData.preferences.eng || {};
   (saveData.preferences.eng[g] = saveData.preferences.eng[g] || {})[k] = +el.value;
-  const D = GFX_DIALS.flatMap(x => x[1]).find(d => d[0] === el.dataset.eng);
+  const D = GRAPHICS_DIALS.flatMap(x => x[1]).find(d => d[0] === el.dataset.eng);
   if (D && D[7] && typeof rebuildFromSettings === 'function') {
-    clearTimeout(setPref.rb);
-    setPref.rb = setTimeout(() => rebuildFromSettings(), 300);
+    clearTimeout(changePreference.rb);
+    changePreference.rb = setTimeout(() => rebuildFromSettings(), 300);
   }
 });
 document.addEventListener('change', ev => {
