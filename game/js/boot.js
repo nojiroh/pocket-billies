@@ -6,7 +6,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { provide } from './hooks.js';
-import { DATA_WARN, GD, RULES, SP, START_NODE } from './game-data.js';
+import { DATA_WARN, RULES, SP, START_NODE, gameData } from './game-data.js';
 import { loadAllMaps, loadMapsAhead, watchMapsAhead } from './map-files.js';
 import {
   SAVE_FOUND,
@@ -76,7 +76,7 @@ provide({ noWebGL });
 /* to-module: end */
 const ART_VER_KEY = 'networth-artv';
 async function artCacheCheck() {
-  const v = String(GD.meta.artVersion || 0);
+  const v = String(gameData.meta.artVersion || 0);
   let old = null;
   try {
     old = localStorage.getItem(ART_VER_KEY);
@@ -765,7 +765,7 @@ function studioLive(D) {
   let any = false;
   for (const k of ['scenes', 'scenery', 'engine'])
     if (D[k]) {
-      GD[k] = D[k];
+      gameData[k] = D[k];
       any = true;
     }
   if (!any) return;
@@ -773,8 +773,8 @@ function studioLive(D) {
     seamlessWorld.gen++;
     seamlessWorld.cache.clear();
   }
-  if (typeof walkView !== 'undefined' && walkView.id && GD.scenes[walkView.id]) {
-    walkView.sc = GD.scenes[walkView.id];
+  if (typeof walkView !== 'undefined' && walkView.id && gameData.scenes[walkView.id]) {
+    walkView.sc = gameData.scenes[walkView.id];
     walkView.gkey = '';
     walkView.nav = null;
     walkView.cand = null;

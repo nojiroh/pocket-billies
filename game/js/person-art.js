@@ -9,13 +9,13 @@
 import { expose } from './test-globals.js';
 import {
   FR,
-  GD,
   PEOPLE,
   artCacheVersion,
   artImage,
   cleanName,
   drawRig,
   frameBudgetLeft,
+  gameData,
   provide,
   saveData,
   studioState,
@@ -83,7 +83,7 @@ export function setHumanFrames(v) {
 }
 /* to-module: end */
 export const WD = () =>
-  (typeof GD !== 'undefined' && GD.wardrobe) ||
+  (typeof gameData !== 'undefined' && gameData.wardrobe) ||
   (typeof studioState !== 'undefined' && studioState.D && studioState.D.wardrobe) ||
   null;
 const TR_SLOTS = () => (WD() || {}).slots || [];

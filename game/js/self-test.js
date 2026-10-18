@@ -11,7 +11,7 @@
 import { expose } from './test-globals.js';
 import { provide } from './hooks.js';
 import { clamp } from './util.js';
-import { GD, MOVES, ROUTE, RULES, SP, TRAINERS, linkCost, placeKind } from './game-data.js';
+import { MOVES, ROUTE, RULES, SP, TRAINERS, gameData, linkCost, placeKind } from './game-data.js';
 import { loadAllMaps } from './map-files.js';
 import {
   activeBattle,
@@ -120,7 +120,7 @@ function stStats(t0, t1, task) {
 }
 /* v20: the test scenes, and their walking checks (from, to, reach) worked out from the scene data without drawing */
 function testScenes() {
-  return Object.keys(GD.scenes || {}).filter(k => GD.scenes[k].test);
+  return Object.keys(gameData.scenes || {}).filter(k => gameData.scenes[k].test);
 }
 function stSceneChecks(id) {
   const sc = mapById(id);
@@ -170,7 +170,7 @@ async function runFullTest(mode) {
   const keep = JSON.stringify(saveData),
     back = { tab: uiState.tab, roam: uiState.roam, node: saveData.route.node },
     realSave = save,
-    engKeep = GD.engine ? JSON.stringify(GD.engine) : null;
+    engKeep = gameData.engine ? JSON.stringify(gameData.engine) : null;
   setSave(() => {}); /* nothing the test does reaches your save */
   const box = document.createElement('div');
   box.className = 'nw-bench px glass';
@@ -184,8 +184,8 @@ async function runFullTest(mode) {
   };
   const stepEl = box.querySelector('.nb-step'),
     bar = box.querySelector('.nb-bar i');
-  const scenes = Object.keys(GD.scenes || {}).filter(
-      id => mapById(id) && !GD.scenes[id].test && !GD.scenes[id].backup && !id.includes('@')
+  const scenes = Object.keys(gameData.scenes || {}).filter(
+      id => mapById(id) && !gameData.scenes[id].test && !gameData.scenes[id].backup && !id.includes('@')
     ),
     phases = [],
     stress = [],
@@ -619,7 +619,7 @@ async function runFullTest(mode) {
         'Night, weather, seasons and rooms',
         'dio',
         async () => {
-          const sid = GD.scenes.sundown ? 'sundown' : scenes[0],
+          const sid = gameData.scenes.sundown ? 'sundown' : scenes[0],
             f0 = environment.force,
             out = [];
           try {
@@ -645,11 +645,12 @@ async function runFullTest(mode) {
             environment.force = f0;
           }
           for (const id of ['int_shop', 'grotto']) {
-            if (!GD.scenes[id] || STEST.stop) continue;
+            if (!gameData.scenes[id] || STEST.stop) continue;
             uiState.bench = { id };
             render();
             await stSleep(1400);
-            if (!walkView.ready || walkView.id !== id) throw new Error((GD.scenes[id].name || id) + ' didn’t open');
+            if (!walkView.ready || walkView.id !== id)
+              throw new Error((gameData.scenes[id].name || id) + ' didn’t open');
             out.push(id === 'grotto' ? 'a dark cave' : 'a shop you walk into');
           }
           return out.join(', ');
@@ -794,7 +795,7 @@ async function runFullTest(mode) {
       return `${mine} against ${theirs} (${fmt}); ${plates} nameplates; ${picks} picks, ${aimed} aimed; the turn played ${lines} lines in ${(turnMs / 1000).toFixed(1)} s`;
     };
     /* v43: the seamless world: out of Sundown along its road and into the Long Grass, measuring every view change */
-    if (typeof seamlessTripView === 'function' && GD.scenes.sundown && !STEST.stop)
+    if (typeof seamlessTripView === 'function' && gameData.scenes.sundown && !STEST.stop)
       await phase(
         'Road: Marigold Town to Tallgrass Meadow on the ground',
         'dio',
@@ -803,7 +804,7 @@ async function runFullTest(mode) {
           uiState.tab = 'walk';
           saveData.route = { node: 0, prog: 0, plan: [], hold: false };
           {
-            const h = mapHub(GD.scenes.sundown);
+            const h = mapHub(gameData.scenes.sundown);
             uiState.roam = { id: 'sundown', node: 0, x: h[0], z: h[1] };
           }
           render();
@@ -862,7 +863,7 @@ async function runFullTest(mode) {
         120
       );
     /* v46: a room that opens in place: into Sundown's shop and out again, without leaving the town */
-    if (typeof seamlessRoomMap === 'function' && GD.scenes.sundown && !STEST.stop)
+    if (typeof seamlessRoomMap === 'function' && gameData.scenes.sundown && !STEST.stop)
       await phase(
         'A room that opens in place',
         'dio',
@@ -931,7 +932,7 @@ async function runFullTest(mode) {
       );
     /* v44: the light lab: the four light test scenes, each drawn for a second; what each kind of renderer drew, the
      lamps' maps at night, and whether WebGL refused a draw (a sampler fed the wrong texture shows as a thing missing) */
-    if (GD.scenes.test_light_terrain && typeof gpuState !== 'undefined' && gpuState.gl && !STEST.stop)
+    if (gameData.scenes.test_light_terrain && typeof gpuState !== 'undefined' && gpuState.gl && !STEST.stop)
       await phase(
         'Light lab: the land, a room, props, the air',
         'dio',
@@ -1174,7 +1175,7 @@ async function runFullTest(mode) {
         'Billies in the world',
         'dio',
         async () => {
-          const gid = GD.scenes.longgrass ? 'longgrass' : scenes[0];
+          const gid = gameData.scenes.longgrass ? 'longgrass' : scenes[0];
           saveData.queue = (saveData.queue || []).slice(0, 0);
           for (let i = 0; i < 3; i++) spawn(false);
           uiState.tab = 'walk';
@@ -1295,11 +1296,11 @@ async function runFullTest(mode) {
     );
     /* 7. stress: more and more at once in Sundown, until the device can't keep up (not in the diagnostics test) */
     if (!diag) {
-      const sid = GD.scenes.sundown ? 'sundown' : scenes[0],
+      const sid = gameData.scenes.sundown ? 'sundown' : scenes[0],
         sc = mapById(sid),
         folk0 = sc.folk,
         props0 = sc.props,
-        eng0 = GD.engine ? GD.engine.defaults : null;
+        eng0 = gameData.engine ? gameData.engine.defaults : null;
       unblock();
       uiState.tab = 'walk';
       uiState.bench = { id: sid };
@@ -1352,8 +1353,8 @@ async function runFullTest(mode) {
         [
           'Plus maximum quality',
           () => {
-            GD.engine = GD.engine || {};
-            GD.engine.defaults = Object.assign({}, eng0 || {}, {
+            gameData.engine = gameData.engine || {};
+            gameData.engine.defaults = Object.assign({}, eng0 || {}, {
               quality: { resolution: 1.5, shadowMap: 4096, auto: false },
               grass: { density: 3 },
               lens: { bokeh: 2, blur: 1 },
@@ -1405,7 +1406,7 @@ async function runFullTest(mode) {
       }
       sc.folk = folk0;
       sc.props = props0;
-      if (GD.engine) GD.engine.defaults = eng0;
+      if (gameData.engine) gameData.engine.defaults = eng0;
       walkView.parts.length = 0;
     }
   } finally {
@@ -1428,7 +1429,7 @@ async function runFullTest(mode) {
       STEST.offVis();
       STEST.offVis = null;
     }
-    if (engKeep) GD.engine = JSON.parse(engKeep);
+    if (engKeep) gameData.engine = JSON.parse(engKeep);
     setSaveData(JSON.parse(keep));
     setSave(realSave);
     uiState.bench = null;
@@ -1536,7 +1537,7 @@ function runDiagTest() {
   return runFullTest('diag');
 }
 function stDiagScenes() {
-  const sc = GD.scenes,
+  const sc = gameData.scenes,
     ids = Object.keys(sc).filter(id => mapById(id) && !sc[id].test && !sc[id].backup && !id.includes('@')),
     pick = [],
     add = id => {

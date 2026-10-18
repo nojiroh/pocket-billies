@@ -9,7 +9,7 @@
 import { expose } from './test-globals.js';
 import { closeModal, modal, provide, storyFlags } from './hooks.js';
 import { clamp } from './util.js';
-import { GD, ROUTE, TRAINERS } from './game-data.js';
+import { ROUTE, TRAINERS, gameData } from './game-data.js';
 import { escapeHtml, save, saveData, uiState } from './game-state.js';
 import { humanHTML } from './person-art.js';
 import { baseMapId, findPath, mapById, mapHub, walkView, walkablePointNear } from './walk-view.js';
@@ -38,7 +38,7 @@ expose({
 /* eslint-enable no-func-assign */
 provide({ clueDraw, loreFlags, mapChatLines });
 /* to-module: end */
-export const LORE = () => (typeof GD !== 'undefined' && GD.lore) || {};
+export const LORE = () => (typeof gameData !== 'undefined' && gameData.lore) || {};
 export function loreFlags() {
   return typeof storyFlags === 'function' ? storyFlags() : saveData.story || (saveData.story = {});
 }

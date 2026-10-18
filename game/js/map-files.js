@@ -12,7 +12,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { provide, saveData, seamlessWorld } from './hooks.js';
-import { ADJ, GD, LINKS, ROUTE, START_NODE } from './game-data.js';
+import { ADJ, LINKS, ROUTE, START_NODE, gameData } from './game-data.js';
 /* eslint-disable no-func-assign */
 expose({
   MAP_FIELDS: [() => MAP_FIELDS],
@@ -34,12 +34,12 @@ provide({ mapsOfView });
 const mapFiles = { busy: new Map(), touched: new Set(), all: null, ms: 0, n: 0, failed: [] };
 provide({ mapFiles }); /* to-module */
 const MAP_FIELDS = ['heights', 'steps', 'stepm', 'tiles', 'props'];
-export const isLiteMap = id => !!(GD.scenes[id] && GD.scenes[id]._lite);
+export const isLiteMap = id => !!(gameData.scenes[id] && gameData.scenes[id]._lite);
 export function loadMapFile(id) {
   if (!isLiteMap(id)) return Promise.resolve();
   if (mapFiles.busy.has(id)) return mapFiles.busy.get(id);
   const t0 = performance.now(),
-    sc = GD.scenes[id];
+    sc = gameData.scenes[id];
   const p = (async () => {
     let last = null;
     for (let k = 0; k < 3; k++) {
@@ -130,7 +130,7 @@ export function loadAllMaps() {
   const t0 = performance.now(),
     here = typeof saveData !== 'undefined' && saveData && saveData.route ? saveData.route.node : START_NODE,
     near = mapsAround(here, 3),
-    ids = [...new Set([...near, ...Object.keys(GD.scenes)])].filter(isLiteMap);
+    ids = [...new Set([...near, ...Object.keys(gameData.scenes)])].filter(isLiteMap);
   mapFiles.all = (async () => {
     let i = 0;
     const one = async () => {

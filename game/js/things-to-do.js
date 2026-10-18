@@ -7,7 +7,7 @@
 import { expose } from './test-globals.js';
 import { bar, closeModal, modal, provide, render, roomRefresh, toast } from './hooks.js';
 import { clamp } from './util.js';
-import { COINS, GD, ITEMS, ROUTE, RULES, SP } from './game-data.js';
+import { COINS, ITEMS, ROUTE, RULES, SP, gameData } from './game-data.js';
 import { activeBattle, billyName, escapeHtml, formatNumber, save, saveData, today, uiState } from './game-state.js';
 import { makeCanvas, uiIconHTML } from './art.js';
 import {
@@ -91,7 +91,7 @@ function x28Rnd(seed) {
     return ((h ^= h >>> 16) >>> 0) / 4294967296;
   };
 }
-const x28Types = () => (GD.types || []).map(t => t.id);
+const x28Types = () => (gameData.types || []).map(t => t.id);
 /* money, and an item or some coins */
 function x28Reward(k = 1) {
   const R = [],
@@ -343,7 +343,7 @@ export function reqList() {
 /* ---------- gold stamps: two in every place ---------- */
 const STAMP_SPOTS = {};
 function stampScenes() {
-  return [...new Set(ROUTE.map(r => r.scene).filter(id => id && GD.scenes[id]))];
+  return [...new Set(ROUTE.map(r => r.scene).filter(id => id && gameData.scenes[id]))];
 }
 const stampTotal = () => stampScenes().length * 2;
 export const stampCount = () => Object.keys(x28().stamps).length;
@@ -457,7 +457,7 @@ export function homeApply() {
   if (typeof roomRefresh === 'function') roomRefresh();
 }
 function _homeApply() {
-  const sc = GD.scenes.int_home;
+  const sc = gameData.scenes.int_home;
   if (!sc) return;
   if (!sc.props0) sc.props0 = (sc.props || []).slice();
   const X = x28();

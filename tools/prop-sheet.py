@@ -24,7 +24,7 @@ srv, base = cq.serve(cq.ROOT / 'game')
 with sync_playwright() as pw:
     b = pw.chromium.launch(args=['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'])
     errs = []; ctx, pg = cq.open_game(b, base, 520, 420, False, errs)
-    pg.evaluate("GD.engine.defaults.quality=Object.assign({},GD.engine.defaults.quality,{resolution:.6,auto:false});GD.engine.defaults.lens=Object.assign({},GD.engine.defaults.lens,{blur:0,grain:0});GD.engine.defaults.color=Object.assign({},GD.engine.defaults.color,{bloom:0});GD.engine.defaults.shadows=Object.assign({},GD.engine.defaults.shadows,{ao:0});GD.engine.defaults.sun=Object.assign({},GD.engine.defaults.sun,{shafts:0});GD.engine.defaults.grass=Object.assign({},GD.engine.defaults.grass,{density:0});GD.engine.defaults.world=Object.assign({},GD.engine.defaults.world,{farProps:0});GD.engine.defaults.quality=Object.assign({},GD.engine.defaults.quality,{shadowMap:1024});environment.force={time:13,weather:'clear',season:'summer'};;0"); cq.play(pg)
+    pg.evaluate("gameData.engine.defaults.quality=Object.assign({},gameData.engine.defaults.quality,{resolution:.6,auto:false});gameData.engine.defaults.lens=Object.assign({},gameData.engine.defaults.lens,{blur:0,grain:0});gameData.engine.defaults.color=Object.assign({},gameData.engine.defaults.color,{bloom:0});gameData.engine.defaults.shadows=Object.assign({},gameData.engine.defaults.shadows,{ao:0});gameData.engine.defaults.sun=Object.assign({},gameData.engine.defaults.sun,{shafts:0});gameData.engine.defaults.grass=Object.assign({},gameData.engine.defaults.grass,{density:0});gameData.engine.defaults.world=Object.assign({},gameData.engine.defaults.world,{farProps:0});gameData.engine.defaults.quality=Object.assign({},gameData.engine.defaults.quality,{shadowMap:1024});environment.force={time:13,weather:'clear',season:'summer'};;0"); cq.play(pg)
     keys = pg.evaluate("Object.keys(walkData().sc.props).filter(k=>!/^wall_|rug|ladder/.test(k))")
     if ONLY: keys = [k for k in keys if k in ONLY]
     print(len(keys), 'props', flush=True)
@@ -43,7 +43,7 @@ with sync_playwright() as pw:
             wm = max(SZ.get(k, [0, 1.2, 1])[0], SZ.get(k, [0, 1.2, 1])[1]); x += max(5, wm / 2 + 4); xs.append(round(x)); x += max(5, wm / 2 + 4)
         W, H = int(x) + 6, 20
         props = [{'k': k, 'x': xs[i], 'z': 12} for i, k in enumerate(batch)]
-        pg.evaluate(f"""GD.scenes['{sid}']={{name:'Audit',w:{W},h:{H},edge:'g',tiles:Array({H}).fill('g'.repeat({W})),props:{json.dumps(props)},cam:{{pitch:30,h:8,fov:1}},sky:['#8CC6E6','#BFE3EE','#F4E8C8'],haze:'#EAD9C0',hazeD:80,far:null,folk:0,test:1,exits:[],hub:[1,1],blur:0}};uiState.tab='walk';uiState.bench={{id:'{sid}',test:1}};render();0""")
+        pg.evaluate(f"""gameData.scenes['{sid}']={{name:'Audit',w:{W},h:{H},edge:'g',tiles:Array({H}).fill('g'.repeat({W})),props:{json.dumps(props)},cam:{{pitch:30,h:8,fov:1}},sky:['#8CC6E6','#BFE3EE','#F4E8C8'],haze:'#EAD9C0',hazeD:80,far:null,folk:0,test:1,exits:[],hub:[1,1],blur:0}};uiState.tab='walk';uiState.bench={{id:'{sid}',test:1}};render();0""")
         cq.until(pg, f"walkView.ready&&walkView.id==='{sid}'", 60); time.sleep(2)
         pg.evaluate("document.body.classList.add('photo');walkView.pl.route=null;walkView.pl.x=1;walkView.pl.z=1;0")
         for p in props:

@@ -9,7 +9,7 @@
    before. Picture layers are drawn by the sprite pipeline (gatherFrameItems gives them as extra items). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { GD, provide, reducedMotion } from './hooks.js';
+import { gameData, provide, reducedMotion } from './hooks.js';
 import { artImg, artURL, hexToRgb } from './art.js';
 import { artImage, walkView } from './walk-view.js';
 import { engineSetting } from './engine/settings.js';
@@ -1199,7 +1199,7 @@ function propModelImageItems(it, out) {
       lz = (L.y || 0) * s,
       w = im.naturalWidth || im.width,
       h = im.naturalHeight || im.height,
-      mpp = (L.s || 1) / ((typeof GD !== 'undefined' && GD.scenery && GD.scenery.ppu) || 34);
+      mpp = (L.s || 1) / ((typeof gameData !== 'undefined' && gameData.scenery && gameData.scenery.ppu) || 34);
     out.push({
       k: 'prop',
       p: it.p,

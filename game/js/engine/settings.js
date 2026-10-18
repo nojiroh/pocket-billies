@@ -1,12 +1,12 @@
 'use strict';
 /* ================= ENGINE SETTINGS =================
    Every dial the renderer reads. Defaults live here; game data can override them for the whole game
-   (GD.engine.defaults), per walk scene (scenes[id].look; battles use the scene they happen in) and for the map
-   (GD.engine.map). Pocket Billies Studio edits all three in its Engine section.
+   (gameData.engine.defaults), per walk scene (scenes[id].look; battles use the scene they happen in) and for the map
+   (gameData.engine.map). Pocket Billies Studio edits all three in its Engine section.
    A value of null means "use the scene's own field" (its haze, sky, camera…). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { ENVIRONMENT_ENGINE_MODIFIERS, GD, provide, saveData } from '../hooks.js';
+import { ENVIRONMENT_ENGINE_MODIFIERS, gameData, provide, saveData } from '../hooks.js';
 import { hexToRgb } from '../art.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -773,7 +773,7 @@ function lookDials() {
   return null;
 }
 export let engineContext = { look: null, bypass: false, env: false };
-export let engineDataSource = () => (typeof GD !== 'undefined' ? GD.engine : null);
+export let engineDataSource = () => (typeof gameData !== 'undefined' ? gameData.engine : null);
 /* phase 04d: the Studio points it at its unsaved data (studio/js/engine-editor.js) */
 export function setEngineDataSource(v) {
   engineDataSource = v;

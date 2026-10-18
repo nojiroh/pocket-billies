@@ -10,7 +10,6 @@
 import { expose } from './test-globals.js';
 import {
   BUILDING_SHADERS,
-  GD,
   LD,
   LIFE,
   LIFE_KIND,
@@ -38,6 +37,7 @@ import {
   flushPropModelMeshes,
   frWorldItems,
   frontWindowLight,
+  gameData,
   lifeSprites,
   lifeStep,
   litWindowFraction,
@@ -4006,7 +4006,7 @@ export function frameBudgetLeft() {
 const NEUTRAL_MOOD = { sat: 1, con: 1, warm: 0, lift: [0, 0, 0], gain: [0, 0, 0], sh: [0, 0, 0], hi: [0, 0, 0] };
 function easedMood(sc) {
   const on = (engineSetting('world', 'moods') ?? 1) > 0,
-    Mo = (typeof GD !== 'undefined' && GD.moods) || {},
+    Mo = (typeof gameData !== 'undefined' && gameData.moods) || {},
     T0 = on && sc ? Mo[sc.mood || mapMoodName(sc)] : null,
     k = engineSetting('world', 'moods') ?? 1;
   const T = Object.assign({}, NEUTRAL_MOOD);

@@ -41,7 +41,7 @@ CLOCK = """(()=>{const D=Date,off=new D(2026,5,15,12,30,0).getTime()-D.now();cla
 NO_ACCOUNTS = "Object.defineProperty(window,'PB_FIREBASE',{get(){return null},set(){},configurable:false})"   # alpha 0.4.1: no Google sign-in during the checks
 # phase 04d: the modules' names on window (game/js/test-globals.js), only for the checks' page.evaluate() calls
 TEST_GLOBALS = "window.PB_TEST_GLOBALS=true"
-LOW_RENDER = "GD.engine=GD.engine||{};GD.engine.defaults=Object.assign({},GD.engine.defaults||{},{quality:{resolution:.34,shadowMap:1024,auto:false}});0"
+LOW_RENDER = "gameData.engine=gameData.engine||{};gameData.engine.defaults=Object.assign({},gameData.engine.defaults||{},{quality:{resolution:.34,shadowMap:1024,auto:false}});0"
 ARGS = sys.argv[1:]
 # phase 01: --smoke is the fast subset run after every change and on every push (about two minutes): the data and code
 # checks, Start-Game on a phone (with the debug log export) and the Studio opening. The full check runs nightly and per phase
@@ -567,8 +567,8 @@ def phone_flow(b, base, R):
 def all_maps(pg, sec=180):
     # phase 04b: the game fetches each map's ground and props when it is needed and the rest in the background; the
     # steps below read every map at once, so wait until all of them are whole
-    if not until(pg, "typeof loadAllMaps!=='function'||(loadAllMaps(),Object.keys(GD.scenes).every(id=>!isLiteMap(id)))", sec):
-        raise Exception('the maps didn’t all load in %ds: %s' % (sec, pg.evaluate("Object.keys(GD.scenes).filter(isLiteMap).join(', ')")))
+    if not until(pg, "typeof loadAllMaps!=='function'||(loadAllMaps(),Object.keys(gameData.scenes).every(id=>!isLiteMap(id)))", sec):
+        raise Exception('the maps didn’t all load in %ds: %s' % (sec, pg.evaluate("Object.keys(gameData.scenes).filter(isLiteMap).join(', ')")))
 
 
 def desktop_steps(b, base, R):
@@ -618,7 +618,7 @@ def desktop_steps(b, base, R):
                 if not until(pg, f"!!(walkView.ready&&walkView.id==='{id}')", 40): raise Exception(f'{id} didn’t open')
                 f0 = pg.evaluate("typeof walkRenderer!=='undefined'&&walkRenderer.on?walkRenderer.frames:-1")
                 if f0 >= 0 and not until(pg, f'walkRenderer.frames>={f0 + 2}', 30): raise Exception(f'{id} isn’t drawing')
-                for sh in pg.evaluate(f"GD.scenes['{id}'].shots||[]"):
+                for sh in pg.evaluate(f"gameData.scenes['{id}'].shots||[]"):
                     pg.evaluate(f"walkView.pl.x={sh['x']};walkView.pl.z={sh['z']};walkView.pl.route=null;if(typeof walkRenderer!=='undefined')walkRenderer.yawT={sh.get('yaw', 0)};0"); time.sleep(2.2)
                     shot(pg, f"{id}-{sh['label']}"); n += 1
             pg.evaluate("uiState.bench=null;if(typeof walkRenderer!=='undefined')walkRenderer.yawT=0;render();0")
@@ -794,7 +794,7 @@ def desktop_steps(b, base, R):
         pg.evaluate("uiState.toastQ=[];(()=>{const p=walkView.sc.props.find(p=>p.act==='home'),C=walkData().sc,g=actionSpot(p,C.props[p.k],C.ppu||34);walkView.pl.route=null;walkView.pl.x=g[0];walkView.pl.z=g[1];walkPick({k:'act',p,act:'home'})})();0")
         if not until(pg, "walkView.ready&&(walkView.id==='int_home'||(walkView.sc&&walkView.sc.roomOf==='int_home'))", 60): raise Exception('your room didn’t open')
         pg.evaluate("uiState.modal=null;uiState.mq=[];renderOv();x28().home.slots[5]='table_round';x28().home.slots[10]='rug_round';homeApply();0"); time.sleep(2.5); shot(pg, 'room-home')
-        if pg.evaluate("GD.scenes.int_home.props.length") < 2: raise Exception('furniture didn’t appear in your room')
+        if pg.evaluate("gameData.scenes.int_home.props.length") < 2: raise Exception('furniture didn’t appear in your room')
         pg.evaluate("leaveRoom();0"); until(pg, f"walkView.ready&&!walkView.sc.roomRect&&(walkView.id===ROUTE[{home}].scene||(walkView.sc&&walkView.sc.baseId===ROUTE[{home}].scene))", 30); time.sleep(1.5)
         # a photo
         pg.evaluate("window.__ph=null;photoStart();walkRenderer.photoReq=c=>{window.__ph=c?c.width:0};0"); until(pg, "window.__ph!==null", 15)
@@ -906,7 +906,7 @@ def desktop_steps(b, base, R):
         # wear and variety (with the dial at 0, ask computePropLook: propLook keeps a look for the rest of the frame, the game sees the dial on the next one)
         r = pg.evaluate("""(()=>{const sc=walkView.sc,C0=walkData().sc,P=sc.props||[],b=P.find(p=>{const M=C0.props[p.k];return M&&M.box&&M.door}),tr=P.filter(p=>/tree/.test(p.k)).slice(0,6);
          const L=b?propLook(b,C0.props[b.k],sc):null,T=tr.map(p=>propLook(p,C0.props[p.k],sc)),sizes=new Set(T.map(l=>l.size.toFixed(3))),hues=new Set(T.map(l=>l.hsv[0].toFixed(4)));
-         GD.engine.defaults.world=Object.assign(GD.engine.defaults.world||{},{wear:0});const L0=b?computePropLook(b,C0.props[b.k],sc):null;delete GD.engine.defaults.world.wear;
+         gameData.engine.defaults.world=Object.assign(gameData.engine.defaults.world||{},{wear:0});const L0=b?computePropLook(b,C0.props[b.k],sc):null;delete gameData.engine.defaults.world.wear;
          return {w:L?L.wear.reduce((x,y)=>x+y,0):-1,w0:L0?L0.wear.reduce((x,y)=>x+y,0):-1,sizes:sizes.size,hues:hues.size,n:T.length}})()""")
         if r['w'] <= 0: raise Exception(f'buildings have no wear ({r})')
         if r['w0'] != 0: raise Exception(f'Wear and tear at 0 still leaves wear ({r})')
@@ -1031,11 +1031,11 @@ def desktop_steps(b, base, R):
     @step('v35: roster, palette, starter studies, pixel-grid camera', 120)
     def v35():
         out = []
-        n = pg.evaluate("(GD.roster||[]).length")
+        n = pg.evaluate("(gameData.roster||[]).length")
         if n != 117: raise Exception(f'the roster has {n} billionaires, not 117')
-        kinds = pg.evaluate("GD.roster.reduce((a,e)=>{a[e.kind]=(a[e.kind]||0)+1;return a},{})")
+        kinds = pg.evaluate("gameData.roster.reduce((a,e)=>{a[e.kind]=(a[e.kind]||0)+1;return a},{})")
         if kinds != {'starter': 12, 'legendary': 2, 'line3': 45, 'line2': 40, 'single': 18}: raise Exception(f'roster shape: {kinds}')
-        ids = pg.evaluate("GD.roster.map(e=>e.id)")
+        ids = pg.evaluate("gameData.roster.map(e=>e.id)")
         if len(set(ids)) != 117: raise Exception('roster ids repeat')
         old = pg.evaluate("Object.keys(SP)")
         clash = sorted(set(ids) & set(old))
@@ -1055,10 +1055,10 @@ def desktop_steps(b, base, R):
         if len(pal) < 150: raise Exception(f'palette has {len(pal)} distinct colours')
         # the pixel-grid camera dial: off by default, and turning it on keeps the scene drawing
         if pg.evaluate("engineSetting('camera','pixelGrid')!==false"): raise Exception('pixelGrid should be off by default')
-        pg.evaluate("GD.engine.defaults.camera=Object.assign({},GD.engine.defaults.camera||{},{pixelGrid:true});0"); time.sleep(2)
+        pg.evaluate("gameData.engine.defaults.camera=Object.assign({},gameData.engine.defaults.camera||{},{pixelGrid:true});0"); time.sleep(2)
         fr = pg.evaluate("walkRenderer.frames||0")
         if not until(pg, f"(walkRenderer.frames||0)>{fr + 1}", 30): raise Exception('no frames drawn with the pixel-grid camera on')   # alpha 0.1: a frame can take seconds here
-        pg.evaluate("delete GD.engine.defaults.camera.pixelGrid;0")
+        pg.evaluate("delete gameData.engine.defaults.camera.pixelGrid;0")
         out.append('pixel-grid camera: off by default, draws when on')
         if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
         return '; '.join(out)
@@ -1121,7 +1121,7 @@ def desktop_steps(b, base, R):
         go_scene(pg, node); time.sleep(8)
         tp = pg.evaluate("(walkRenderer.ring&&walkRenderer.ring.TP)||(walkView.ground&&walkView.ground._TP)")
         if tp != 32: raise Exception(f'Marigold Town ground painted at {tp} px a tile')
-        r = json.loads(pg.evaluate("JSON.stringify({made:buildingState.made||0,drawn:buildingState.drawn||0,n:(walkView.sc.props||[]).filter(p=>{const M=GD.scenery.props[p.k];return M&&M.build}).length})"))
+        r = json.loads(pg.evaluate("JSON.stringify({made:buildingState.made||0,drawn:buildingState.drawn||0,n:(walkView.sc.props||[]).filter(p=>{const M=gameData.scenery.props[p.k];return M&&M.build}).length})"))
         if r['made'] < 1: raise Exception('no 3D building model was built at Marigold Town')
         shot(pg, 'v37-sundown')
         out.append(f"Marigold Town: ground {tp} px a tile; {r['made']} building models built over frames, {r['drawn']} drawn, {r['n']} buildings in the scene")
@@ -1146,10 +1146,10 @@ def desktop_steps(b, base, R):
         miss = [i for i in ids if not pg.evaluate(f"!!(RIGS['{i}']&&RIGS['{i}'].front&&RIGS['{i}'].back&&RIGS['{i}'].front.sheet)")]
         if miss: raise Exception(f'missing rigs: {miss[:6]}')
         nx = ROOT / 'game' / 'art' / 'next' / 'billionaires'
-        names = json.loads(pg.evaluate("JSON.stringify(GD.roster.filter(e=>%s.includes(e.line)).map(e=>e.id))" % json.dumps(lines)))
+        names = json.loads(pg.evaluate("JSON.stringify(gameData.roster.filter(e=>%s.includes(e.line)).map(e=>e.id))" % json.dumps(lines)))
         bad = [n for n in names if not ((nx / f'{n}.png').exists() and (nx / f'{n}.json').exists() and (nx / f'{n}_gold.png').exists())]
         if bad: raise Exception(f'sheets missing: {bad[:6]}')
-        st = pg.evaluate("GD.roster.filter(e=>e.state&&e.state.sheet&&e.state.rig).length")
+        st = pg.evaluate("gameData.roster.filter(e=>e.state&&e.state.sheet&&e.state.rig).length")
         if st < 73: raise Exception(f'roster board marks only {st} species as drawn and rigged')
         out.append(f'61 species in 23 lines, numbered {pg.evaluate("SP.huang0.no")} to {pg.evaluate("SP.saylor1.no")}; {len(names)} sheets (png + json + gold); roster board: {st} drawn and rigged')
         pg.evaluate("rigPreload(%s.flatMap(id=>[[id,false,1],[id,true,1]]))" % json.dumps(ids)); time.sleep(4)
@@ -1202,7 +1202,7 @@ def desktop_steps(b, base, R):
         sheets = len([f for f in nx.glob('*.png') if not f.stem.endswith('_gold')])
         if sheets < 117: raise Exception(f'{sheets} sheets')
         out.append(f'117 species in 58 lines, every one with a sheet, a rig and a bust; old roster and art/billionaires gone')
-        pools = json.loads(pg.evaluate("JSON.stringify(Object.values(POOLS).concat(Object.values(EGGS||{}),Object.values(GD.fishing||{})).map(p=>p.list.map(x=>x[0])))"))
+        pools = json.loads(pg.evaluate("JSON.stringify(Object.values(POOLS).concat(Object.values(EGGS||{}),Object.values(gameData.fishing||{})).map(p=>p.list.map(x=>x[0])))"))
         bad = [i for L in pools for i in L if i not in ids]
         if bad: raise Exception(f'pools name species that are gone: {bad[:5]}')
         sig = json.loads(pg.evaluate("JSON.stringify(LINES.filter(l=>!(l.learn||[]).some(([lv,m])=>MOVES[m]&&MOVES[m].sig===l.id)).map(l=>l.id))"))
@@ -1259,16 +1259,16 @@ def desktop_steps(b, base, R):
         out.append(f'{len(nat)} nature props in {len(fams)} families (' + ', '.join(f'{f} {n}' for f, n in sorted(fams.items())) + ')')
         # the wild growth: every outdoor scene grown, nothing it added stands on a path or in the sea (test scenes such as
         # alpha 0.5's Graphics gallery, test: true, are laid out by hand)
-        bad = json.loads(pg.evaluate("""JSON.stringify((()=>{const C=walkData().sc.props,out=[];for(const [id,sc] of Object.entries(GD.scenes)){if(/^(test_|int_)/.test(id)||sc.test||sc.indoor||sc.room)continue;const g=(sc.props||[]).filter(p=>p.w===42);if(sc.wild!==42||!g.length){out.push(id+': not grown');continue}
+        bad = json.loads(pg.evaluate("""JSON.stringify((()=>{const C=walkData().sc.props,out=[];for(const [id,sc] of Object.entries(gameData.scenes)){if(/^(test_|int_)/.test(id)||sc.test||sc.indoor||sc.room)continue;const g=(sc.props||[]).filter(p=>p.w===42);if(sc.wild!==42||!g.length){out.push(id+': not grown');continue}
          for(const p of g){const ch=(sc.tiles[sc.h-1-Math.floor(p.z)]||'')[Math.floor(p.x)],M=C[p.k];if(!M){out.push(id+': '+p.k+' unknown');break}if('pcmbaqheo'.includes(ch)){out.push(id+': '+p.k+' on paved ground');break}if('wd'.includes(ch)&&!(M.grow||'').includes(ch)){out.push(id+': '+p.k+' in water');break}}}return out})())"""))
         if bad: raise Exception('wild growth: ' + '; '.join(bad[:4]))
-        grown = pg.evaluate("Object.values(GD.scenes).reduce((n,sc)=>n+(sc.props||[]).filter(p=>p.w===42).length,0)")
+        grown = pg.evaluate("Object.values(gameData.scenes).reduce((n,sc)=>n+(sc.props||[]).filter(p=>p.w===42).length,0)")
         out.append(f'{grown} props grown over the outdoor scenes, none on paths')
         # edge-relative exits: every scene with exits has them, the points they give are the ones everything reads
-        ex = json.loads(pg.evaluate("""JSON.stringify((()=>{const out=[];for(const [id,sc0] of Object.entries(GD.scenes)){if(!(sc0.exits||[]).length)continue;const sc=mapById(id);if(!sc.edgeExits||sc.edgeExits.length!==sc.exits.length){out.push(id+': no edge exits');continue}
+        ex = json.loads(pg.evaluate("""JSON.stringify((()=>{const out=[];for(const [id,sc0] of Object.entries(gameData.scenes)){if(!(sc0.exits||[]).length)continue;const sc=mapById(id);if(!sc.edgeExits||sc.edgeExits.length!==sc.exits.length){out.push(id+': no edge exits');continue}
          sc.edgeExits.forEach((e,k)=>{const p=exitPoint(sc,e),q=sc.exits[k];if(!e.id||!'NSEW'.includes(e.side)||Math.hypot(p[0]-q[0],p[1]-q[1])>.02)out.push(id+' '+(e.id||k)+': '+JSON.stringify(p)+' vs '+JSON.stringify(q))})}return out})())"""))
         if ex: raise Exception('edge exits: ' + '; '.join(ex[:4]))
-        n_ex = pg.evaluate("Object.values(GD.scenes).reduce((n,sc)=>n+((sc.edgeExits||[]).length),0)")
+        n_ex = pg.evaluate("Object.values(gameData.scenes).reduce((n,sc)=>n+((sc.edgeExits||[]).length),0)")
         # the join table: every road's ends name an exit of their place (alpha 0.2: the names decide; tools/join-places.py on the legacy branch
         # moved exits so the two ends of a road face each other, so the old compass match no longer has a say)
         diff = json.loads(pg.evaluate("""JSON.stringify((()=>{const out=[];let joined=0;for(let n=0;n<ROUTE.length;n++){const sc=mapById(sceneIdAt(n));if(!sc||!(sc.exits||[]).length)continue;const a=sceneExits(n);for(const e of ADJ[n]){const L=LINKS[e.i],id=L[3]&&(L[0]===n?L[3].a:L[3].b);if(id&&(sc.edgeExits||[]).some(q=>q.id===id))joined++;else out.push(ROUTE[n].name+' -> '+ROUTE[e.to].name+': no exit named '+id);if(a[e.to]==null)out.push(ROUTE[n].name+' -> '+ROUTE[e.to].name+': no exit')}}return {out,joined}})())"""))
@@ -1309,7 +1309,7 @@ def desktop_steps(b, base, R):
         views = [i for k, i in enumerate(ids) if k == 0 or ids[k - 1] != i]
         out.append('walked Marigold Town → Tallgrass Meadow on the ground: ' + ' → '.join(views + [pg.evaluate("walkView.id")]))
         # the flags: only towns have one; a flag pole flies its town's and is rigid
-        fl = json.loads(pg.evaluate("JSON.stringify({towns:GD.scenery.flags,pole:GD.scenery.props.flag_pole,ridge:(GD.scenes.ridge.props||[]).filter(p=>p.k==='flag_pole').length,path:flagPicturePath(GD.scenes.sundown),pathRoute:flagPicturePath(GD.scenes.longgrass)})"))
+        fl = json.loads(pg.evaluate("JSON.stringify({towns:gameData.scenery.flags,pole:gameData.scenery.props.flag_pole,ridge:(gameData.scenes.ridge.props||[]).filter(p=>p.k==='flag_pole').length,path:flagPicturePath(gameData.scenes.sundown),pathRoute:flagPicturePath(gameData.scenes.longgrass)})"))
         for t in fl['towns'] + ['default']:
             if not (ROOT / 'game' / 'art' / 'scene' / 'flags' / (t + '.png')).exists(): raise Exception(f'no flag picture for {t}')
         if fl['pole']['sway'] or not fl['pole'].get('flag') or fl['ridge'] or fl['path'] != 'scene/flags/sundown.png' or fl['pathRoute'] != 'scene/flags/default.png': raise Exception(f'flags: {fl}')
@@ -1438,7 +1438,7 @@ def desktop_steps(b, base, R):
         out.append(f'{len(tiles)} ground kinds × 12 tiles')
         b = json.loads(pg.evaluate("""(()=>{const C=walkData().sc.props,K=['bakery','inn','market_hall','bank','library','school','fire_station','mansion','barn','greenhouse','ski_lodge'],imgs=[];let plans=0,vars=0;
           for(const [k,M] of Object.entries(C)){if(!M.build)continue;plans++;for(const v of M.build.variants||[]){vars++;imgs.push(v.img)}}
-          return JSON.stringify({missing:K.filter(k=>!C[k]||!C[k].build),plans,vars,imgs,rooms:K.filter(k=>!GD.scenes['int_'+k]),v2:propWithVariant({v:2},C.bakery).img})})()"""))
+          return JSON.stringify({missing:K.filter(k=>!C[k]||!C[k].build),plans,vars,imgs,rooms:K.filter(k=>!gameData.scenes['int_'+k]),v2:propWithVariant({v:2},C.bakery).img})})()"""))
         if b['missing'] or b['rooms']: raise Exception(f'buildings without a plan: {b["missing"]}; kinds without a room: {b["rooms"]}')
         if not b['v2'].endswith('bakery_v2.png'): raise Exception('a placed building’s colour (v) doesn’t pick its picture: ' + b['v2'])
         bad = pg.evaluate(f"Promise.all({json.dumps(b['imgs'])}.map(p=>artLoad([p]).then(()=>imageReady(artImage(p))?null:p).catch(()=>p))).then(L=>L.filter(Boolean))")
@@ -1519,9 +1519,9 @@ def desktop_steps(b, base, R):
             g = pg.evaluate("""(()=>{const ix=id=>ROUTE.findIndex(r=>r.id===id),s0=saveData.seats,o={};
               saveData.seats=['oil','retail','peak'];o.festShut=!canEnter(ix('festival'));saveData.seats=[...S.seats,'haven'];o.festOpen=canEnter(ix('festival'));
               o.frozenShut=!canEnter(ix('frozen'));saveData.seats=[...S.seats,'bloom','vault','morel'];o.frozenStill=!canEnter(ix('frozen'));saveData.seats=[...S.seats,'carat'];o.frozenOpen=canEnter(ix('frozen'));
-              saveData.seats=s0;o.songs=ROUTE.filter(r=>!r.music||!SONGS[r.music]).filter(r=>GD.scenes[r.scene]&&GD.scenes[r.scene].v47region).map(r=>r.id+':'+r.music);
+              saveData.seats=s0;o.songs=ROUTE.filter(r=>!r.music||!SONGS[r.music]).filter(r=>gameData.scenes[r.scene]&&gameData.scenes[r.scene].v47region).map(r=>r.id+':'+r.music);
               /* each new town's shop opens into its own room */
-              o.rooms=ROUTE.filter(r=>GD.scenes[r.scene]&&GD.scenes[r.scene].v47region&&GD.scenes[r.scene].kind==='town').map(r=>{const p=GD.scenes[r.scene].props.find(p=>p.act==='shop');return [r.id,p&&roomFor('shop',p)]}).filter(([k,v])=>!v||!v.startsWith('int_')||['int_shop','int_bank','int_market_hall'].includes(v)).map(x=>x.join(' → '));return o})()""")
+              o.rooms=ROUTE.filter(r=>gameData.scenes[r.scene]&&gameData.scenes[r.scene].v47region&&gameData.scenes[r.scene].kind==='town').map(r=>{const p=gameData.scenes[r.scene].props.find(p=>p.act==='shop');return [r.id,p&&roomFor('shop',p)]}).filter(([k,v])=>!v||!v.startsWith('int_')||['int_shop','int_bank','int_market_hall'].includes(v)).map(x=>x.join(' → '));return o})()""")
             if g['rooms']: raise Exception(f'new towns whose shop doesn’t open into a room of its own: {", ".join(g["rooms"])}')
             if g['songs']: raise Exception(f'places without a song of their own: {", ".join(g["songs"][:6])}')
             if not all(g[k] for k in ('festShut', 'festOpen', 'frozenShut', 'frozenStill', 'frozenOpen')): raise Exception(f'gates: {g}')
@@ -1591,7 +1591,7 @@ def desktop_steps(b, base, R):
         button; every room of a town shows its building's windows (as many as the front has, double windows as one, in
         the same order) with no furniture in front of them; the library's four; the picture setting"""
         out = []
-        t = pg.evaluate("[document.title,renderTitle().includes('<span>POCKET</span><span>BILLIES</span>')?'POCKET BILLIES':'',GD.meta.title]")
+        t = pg.evaluate("[document.title,renderTitle().includes('<span>POCKET</span><span>BILLIES</span>')?'POCKET BILLIES':'',gameData.meta.title]")
         if 'Pocket Billies' not in t[0] or 'POCKETBILLIES' not in t[1].replace(' ', '') or t[2] != 'Pocket Billies': raise Exception(f'the name: {t}')
         g = pg.evaluate("(()=>{uiState.tab='ledger';uiState.dex=null;uiState.guideTab='dex';render();const h=document.body.innerText;uiState.tab='walk';render();return [h.includes('Taxed'),h.includes('Caught')]})()")
         if not g[0] or g[1]: raise Exception(f'the Guide: Taxed shown {g[0]}, Caught still shown {g[1]}')
@@ -1681,12 +1681,12 @@ def desktop_steps(b, base, R):
             /* a corner counts where all four cells round it show the same place in both views */const all=[[0,0],[-1,0],[0,-1],[-1,-1]].every(([u,v])=>{const p=who(A,ax+u,az+v);return p&&p===who(B,bx+u,bz+v)});
             if(all)dh=Math.max(dh,Math.abs(A.heights[A.h-az][ax]-B.heights[B.h-bz][bx]));if(A.tiles[A.h-1-az][ax]!==B.tiles[B.h-1-bz][bx])dt++}
            if(dh>.05||dt)out.push(ROUTE[J.a].scene+' / '+ROUTE[J.b].scene+': the two views differ near the exit ('+dh.toFixed(2)+' m, '+dt+' tiles)')}
-          /* underground places */const und=ROUTE.map((r,k)=>ADJ[k].length?r.scene:null).filter(id=>id&&(GD.scenes[id]||{}).under);
-          for(const id of und){const S=GD.scenes[id];if(!(S.arches||[]).length||!S.grown2)out.push(id+': underground without tunnels');const k=ROUTE.findIndex(r=>r.scene===id),v=seamlessHubMap(k);if(!v.under)out.push(id+': its view isn’t underground');
+          /* underground places */const und=ROUTE.map((r,k)=>ADJ[k].length?r.scene:null).filter(id=>id&&(gameData.scenes[id]||{}).under);
+          for(const id of und){const S=gameData.scenes[id];if(!(S.arches||[]).length||!S.grown2)out.push(id+': underground without tunnels');const k=ROUTE.findIndex(r=>r.scene===id),v=seamlessHubMap(k);if(!v.under)out.push(id+': its view isn’t underground');
            for(const e of ADJ[k]){const w=seamlessHubMap(e.to);if(w.under)continue;const P=w.parts.find(q=>q.id===id);if(!P)continue;const g=S.grown2,cx=P.ox+(g.W||0)+(S.w-(g.W||0)-(g.E||0))/2,cz=P.oz+(g.S||0)+(S.h-(g.S||0)-(g.N||0))/2;
             const c=(w.stable.scenes.find(r=>r.id===id)||{}).clip;if(!c)continue;/* the point of the cave nearest the middle of the band: under rock */const px=clamp(cx,c[0]+.5,c[2]-.5),pz=clamp(cz,c[1]+.5,c[3]-.5);
             if(px>=P.ox+(g.W||0)&&px<P.ox+S.w-(g.E||0)&&pz>=P.oz+(g.S||0)&&pz<P.oz+S.h-(g.N||0)){const t=w.tiles[w.h-1-Math.floor(pz)][Math.floor(px)];if(!'rMP'.includes(t))out.push(ROUTE[e.to].scene+' sees into '+id+'’s cave ('+t+')')}}}
-          let walks=0;for(const r of ROUTE){const S=GD.scenes[r.scene];for(const e of (S&&S.edgeExits)||[]){if(!(e.path&&e.path.length>1&&e.len>0))out.push(r.scene+' '+e.id+': no stored walk');else walks++}}
+          let walks=0;for(const r of ROUTE){const S=gameData.scenes[r.scene];for(const e of (S&&S.edgeExits)||[]){if(!(e.path&&e.path.length>1&&e.len>0))out.push(r.scene+' '+e.id+': no stored walk');else walks++}}
           walkView.sc=keep;walkView.id=keepId;walkView.nav=null;walkView.navSc=null;walkView.cand=null;return {out:out.slice(0,8),n,slow:Math.round(slow),slowId,walks,und}})())"""))
         if r['out']: raise Exception('; '.join(r['out']))
         return f"{r['n']} links joined edge to edge, every seam crossed straight in both views and the views agree round each exit; {r['walks']} exits with their walk stored; underground: {', '.join(r['und']) or 'none'}; the slowest view built in {r['slow']} ms ({r['slowId']})"
@@ -1764,7 +1764,7 @@ def desktop_steps(b, base, R):
         art's scale (32 to the metre) when "Props as low-poly" is off; both within a budget a phone can carry; in the
         every-prop scene they draw as models"""
         if not pg.evaluate("typeof lowPolyFromRecipe==='function'"): return 'not in this build'
-        pg.evaluate("window.__P=Object.entries(GD.scenery.props).filter(([k,M])=>typeof M.vox==='string').map(([k,M])=>M.vox);__P.forEach(p=>loadPropModelRecipe(p));0")
+        pg.evaluate("window.__P=Object.entries(gameData.scenery.props).filter(([k,M])=>typeof M.vox==='string').map(([k,M])=>M.vox);__P.forEach(p=>loadPropModelRecipe(p));0")
         until(pg, "__P.every(p=>propModelState.recipes.get(p))", 30)
         r = pg.evaluate("""(()=>{let n=0,lp=0,q=0,bad=[];for(const p of __P){const rec=propModelState.recipes.get(p);if(!rec||rec.kind==='mesh')continue;n++;
           const L=lowPolyFromRecipe(rec),V=greedyVoxelMesh(voxelise(rec,32),32);if(!L||!V){bad.push(p.split('/').pop());continue}lp+=L.tris;q+=V.quads}return {n,lp,q,bad,on:!!engineSetting('world','voxelLowPoly'),res:propModelState.VPM}})()""")
@@ -1814,12 +1814,12 @@ def desktop_steps(b, base, R):
     def a04_lights():
         """every building kind and every lamp in one scene (test_windows), opened at night: it draws, the buildings are 3D
         and the lamps are lit; then a front of rain comes in over Marigold Town and its curtain sweeps across"""
-        if not pg.evaluate("!!GD.scenes.test_windows"): return 'not in this build'
+        if not pg.evaluate("!!gameData.scenes.test_windows"): return 'not in this build'
         pg.evaluate("uiState.modal=null;uiState.mq=[];renderOv();environment.on=true;environment.force={time:22,weather:'clear',season:'summer'};uiState.tab='walk';uiState.inside=null;uiState.bench={id:'test_windows',test:1};render();0")
         if not until(pg, "!!(walkView.ready&&walkView.id==='test_windows'&&walkRenderer.frames>4)", 60): raise Exception('the windows and lamps scene didn’t open')
         pg.evaluate("walkView.pl.x=44;walkView.pl.z=10;walkView.pl.route=null;0"); time.sleep(4)
         until(pg, "typeof buildingState!=='undefined'&&buildingState.drawn>=8", 90)   # the buildings' meshes come a few a frame: give them time (5 to 8 are in view here)
-        r = pg.evaluate("""(()=>{const L=walkView.sc.props.filter(p=>{const M=GD.scenery.props[p.k];return M&&(M.glow||(M.fx||[]).some(f=>f.k==='glow'))});
+        r = pg.evaluate("""(()=>{const L=walkView.sc.props.filter(p=>{const M=gameData.scenery.props[p.k];return M&&(M.glow||(M.fx||[]).some(f=>f.k==='glow'))});
           engineContext.env=true;const on=typeof lampLit==='function'?L.filter(p=>lampLit(p.x,p.z,0)>.9).length:-1;engineContext.env=false;let fw=0,lit=0;const lf=typeof litWindowFraction==='function'?litWindowFraction():0;
           for(const p of walkView.sc.props){const E=typeof buildingState!=='undefined'?buildingState.mesh.get(p):null;if(E&&E.fw){fw+=E.fw.length;lit+=E.fw.filter(f=>frontWindowLight(f[3],lf)).length}}
           return {b:typeof buildingState!=='undefined'?buildingState.drawn:0,lamp:environment.lampK,lamps:L.length,on,fw,lit}})()""")
@@ -1957,7 +1957,7 @@ def studio_round_trip(pw, R):
                 g = ctx.new_page(); g.goto(f'http://localhost:{port}/game/index.html?test=1&scene=pond'); g.wait_for_selector('#walkHero', timeout=240000)
                 ok = False
                 for _ in range(120):
-                    st = g.evaluate("[typeof walkView!=='undefined'&&walkView.id,GD.scenes.pond.props.length,typeof NW_TEST!=='undefined'&&!!NW_TEST]")
+                    st = g.evaluate("[typeof walkView!=='undefined'&&walkView.id,gameData.scenes.pond.props.length,typeof NW_TEST!=='undefined'&&!!NW_TEST]")
                     if st[0] == 'pond' and st[1] == r['n']: ok = True; break
                     time.sleep(.5)
                 saved = g.evaluate("(()=>{try{return localStorage.getItem(SAVE_KEY)}catch(e){return 'x'}})()")

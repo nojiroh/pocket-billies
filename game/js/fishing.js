@@ -9,7 +9,7 @@
 import { expose } from './test-globals.js';
 import { sfx, startWild, toast, x28Event } from './hooks.js';
 import { clamp, random } from './util.js';
-import { GD, RULES, SP } from './game-data.js';
+import { RULES, SP, gameData } from './game-data.js';
 import { activeBattle, areaPool, newUid, pickWeighted, reducedMotion, save, saveData, uiState } from './game-state.js';
 import { uiIconHTML } from './art.js';
 import { terrainAt, walkView } from './walk-view.js';
@@ -105,7 +105,7 @@ function fishKindAt(x, z) {
 }
 /* what bites: the kind's list, at the place's levels plus the kind's bonus */
 function fishPick(kind) {
-  const F = (GD.fishing || {})[kind] || (GD.fishing || {}).pond;
+  const F = (gameData.fishing || {})[kind] || (gameData.fishing || {}).pond;
   if (!F || !F.list || !F.list.length) return null;
   const list = F.list.filter(([id]) => SP[id]);
   if (!list.length) return null;

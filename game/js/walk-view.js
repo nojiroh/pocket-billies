@@ -11,7 +11,6 @@
 import { expose } from './test-globals.js';
 import {
   ALTERNATE_PROPS,
-  GD,
   ROOM_KIND,
   TERRAIN_MATERIALS,
   addSteps,
@@ -23,6 +22,7 @@ import {
   environment,
   environmentSeason,
   environmentState,
+  gameData,
   groundHeightAt,
   lifePaths,
   loreFlags,
@@ -325,7 +325,7 @@ const FOLK_CHAT = [
   'Watch out, trainers like to battle anyone who looks at them.',
 ];
 /* hooks the Studio replaces to show unsaved art and data */
-export let walkData = () => ({ scenes: GD.scenes || {}, sc: GD.scenery || { terrains: {}, props: {} } });
+export let walkData = () => ({ scenes: gameData.scenes || {}, sc: gameData.scenery || { terrains: {}, props: {} } });
 /* phase 04d: the Studio feeds the renderer its unsaved scenes and art (studio/js/map-editor.js, prop-editor.js) */
 export function setWalkData(v) {
   walkData = v;
@@ -895,7 +895,7 @@ export function applyGroundTone(c, v, odd, k) {
 export function mapMoodName(S) {
   if (!S) return null;
   if (S.mood) return S.mood;
-  const R = ((typeof GD !== 'undefined' && GD.route) || []).find(r => r.id === S.place);
+  const R = ((typeof gameData !== 'undefined' && gameData.route) || []).find(r => r.id === S.place);
   return (R && R.mood) || null;
 }
 export function scaleColor(c, k) {

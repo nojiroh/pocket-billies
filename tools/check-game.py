@@ -26,7 +26,7 @@ VIEWPORTS = [('phone', 390, 844, 3, True), ('tablet', 820, 1180, 2, True), ('des
 T0 = time.time()
 # the test browser draws in software: half resolution and a smaller shadow map keep each frame quick, so the page
 # answers between frames and the run takes minutes instead of an hour (layout and screenshots are unchanged in size)
-TEST_RENDER = "GD.engine=GD.engine||{};GD.engine.defaults=Object.assign({},GD.engine.defaults||{},{quality:{resolution:.5,shadowMap:1024,auto:true}});0"
+TEST_RENDER = "gameData.engine=gameData.engine||{};gameData.engine.defaults=Object.assign({},gameData.engine.defaults||{},{quality:{resolution:.5,shadowMap:1024,auto:true}});0"
 
 
 def log(msg):

@@ -84,7 +84,7 @@ def main():
         pg = b.new_page(viewport={'width': 960, 'height': 640}); pg.set_default_timeout(240000)
         pg.add_init_script('window.PB_TEST_GLOBALS=true')  # phase 04d: the modules' names on window, for evaluate()
         pg.goto(f'http://127.0.0.1:{port}/index.html'); pg.wait_for_selector('.ttl,.title', timeout=60000)
-        pg.evaluate("GD.engine=GD.engine||{};GD.engine.defaults=Object.assign({},GD.engine.defaults||{},{quality:{resolution:1,shadowMap:2048,auto:false},lens:{blur:0,vignette:.25,grain:0,aberration:0}});0")
+        pg.evaluate("gameData.engine=gameData.engine||{};gameData.engine.defaults=Object.assign({},gameData.engine.defaults||{},{quality:{resolution:1,shadowMap:2048,auto:false},lens:{blur:0,vignette:.25,grain:0,aberration:0}});0")
         pg.evaluate("if(typeof titleEnd==='function')titleEnd();uiState.pg='girl';startGame(SP.scoop0?'scoop':RULES.start.starters[0]);uiState.modal=null;uiState.mq=[];renderOv();uiState.toastQ=[];uiState.toastOn=false;render();0")
         pg.add_style_tag(content='body *:not(#dio){visibility:hidden!important} #dio{visibility:visible!important}')
         for sid in want:

@@ -13,7 +13,6 @@ import { expose } from './test-globals.js';
 import {
   A,
   BACKDROPS,
-  GD,
   MOVES,
   TC,
   TYPEFX,
@@ -23,6 +22,7 @@ import {
   battleGLStart,
   battleGLStop,
   battleLayoutChanged,
+  gameData,
   hudHit,
   hudPop,
   maxHp,
@@ -343,7 +343,7 @@ export const battleStage = {
 export const BATTLE_STAGE_ART = {};
 const artKey = area => (AREAS[area] && AREAS[area].art) || area;
 /* a prop kind is either a battle prop (art/battle/props, 30 px per meter) or one of the scene props of the walking world
-   (GD.scenery.props, art/scene/props, 34 px per meter). Foliage sways a little in the wind. */
+   (gameData.scenery.props, art/scene/props, 34 px per meter). Foliage sways a little in the wind. */
 const PROP_SWAY = { tree: 0.3, bush: 0.2, flowers: 0.5, cactus: 0 };
 function propDef(kind) {
   const M = ARTMAN.battle.props[kind];
@@ -358,7 +358,8 @@ function propDef(kind) {
       sway: PROP_SWAY[kind] || 0,
       shadow: null,
     };
-  const G = typeof GD !== 'undefined' && GD.scenery && GD.scenery.props ? GD.scenery.props[kind] : null;
+  const G =
+    typeof gameData !== 'undefined' && gameData.scenery && gameData.scenery.props ? gameData.scenery.props[kind] : null;
   if (!G || !G.img) return null;
   return {
     src: G.img,
@@ -366,7 +367,7 @@ function propDef(kind) {
     oy: G.oy,
     h: 0,
     flat: G.flat,
-    k: 30 / ((GD.scenery && GD.scenery.ppu) || 34),
+    k: 30 / ((gameData.scenery && gameData.scenery.ppu) || 34),
     sway: G.sway || 0,
     shadow: G.shadow == null ? null : G.shadow,
   };

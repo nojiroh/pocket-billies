@@ -16,7 +16,6 @@ expose({
   EGGS: [() => EGGS],
   EGG_TIERS: [() => EGG_TIERS],
   FUTURE: [() => FUTURE],
-  GD: [() => GD],
   ITEMS: [() => ITEMS],
   JOBS: [() => JOBS],
   JOB_STEPS: [() => JOB_STEPS],
@@ -47,6 +46,7 @@ expose({
   TYPEFX: [() => TYPEFX],
   TYPES: [() => TYPES],
   eff: [() => eff, v => (eff = v)],
+  gameData: [() => gameData],
   hasPassive: [() => hasPassive],
   isTown: [() => isTown, v => (isTown = v)],
   linkCost: [() => linkCost],
@@ -64,9 +64,9 @@ expose({
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
-export const GD = window.GAMEDATA;
-provide({ GD }); /* to-module */
-if (!GD)
+export const gameData = window.GAMEDATA;
+provide({ gameData }); /* to-module */
+if (!gameData)
   throw new Error(
     'The game data did not load: data/gamedata.js is missing and the data files in data/ could not be read (npm run check:data says what is wrong).'
   );
@@ -75,19 +75,19 @@ const warnData = m => {
   DATA_WARN.push(m);
   console.warn('[gamedata] ' + m);
 };
-export const RULES = GD.rules;
+export const RULES = gameData.rules;
 provide({ RULES }); /* to-module */
 /* ---------- types ---------- */
-export const TYPES = GD.types.map(t => t.id);
-export const TC = Object.fromEntries(GD.types.map(t => [t.id, [t.color, t.text || '#fff']]));
+export const TYPES = gameData.types.map(t => t.id);
+export const TC = Object.fromEntries(gameData.types.map(t => [t.id, [t.color, t.text || '#fff']]));
 provide({ TC }); /* to-module */
-TC.None = [GD.untyped.color, GD.untyped.text || '#fff'];
-const SEm = Object.fromEntries(GD.types.map(t => [t.id, (t.strong || []).filter(x => TC[x])]));
-const RESm = Object.fromEntries(GD.types.map(t => [t.id, (t.weak || []).filter(x => TC[x])]));
-export const PASSIVE = Object.fromEntries(GD.types.map(t => [t.id, t.passive || '']));
-const TYPEFX = Object.fromEntries(GD.types.map(t => [t.id, t.fx && t.fx.length ? t.fx : ['pow', 'star']]));
+TC.None = [gameData.untyped.color, gameData.untyped.text || '#fff'];
+const SEm = Object.fromEntries(gameData.types.map(t => [t.id, (t.strong || []).filter(x => TC[x])]));
+const RESm = Object.fromEntries(gameData.types.map(t => [t.id, (t.weak || []).filter(x => TC[x])]));
+export const PASSIVE = Object.fromEntries(gameData.types.map(t => [t.id, t.passive || '']));
+const TYPEFX = Object.fromEntries(gameData.types.map(t => [t.id, t.fx && t.fx.length ? t.fx : ['pow', 'star']]));
 provide({ TYPEFX }); /* to-module */
-TYPEFX.None = GD.untyped.fx || ['pow', 'star'];
+TYPEFX.None = gameData.untyped.fx || ['pow', 'star'];
 const typesWith = p => TYPES.filter(t => PASSIVE[t] === p);
 export const hasPassive = (types, p) => types.some(t => PASSIVE[t] === p);
 export function eff(at, defs) {
@@ -99,11 +99,11 @@ export function eff(at, defs) {
   }
   return m;
 }
-export const STATK = GD.stats.map(s => s.id);
-export const STATN = Object.fromEntries(GD.stats.map(s => [s.id, s.name]));
-export const STATUSN = Object.fromEntries(GD.statuses.map(s => [s.id, s.name]));
+export const STATK = gameData.stats.map(s => s.id);
+export const STATN = Object.fromEntries(gameData.stats.map(s => [s.id, s.name]));
+export const STATUSN = Object.fromEntries(gameData.statuses.map(s => [s.id, s.name]));
 /* ---------- moves ---------- */
-export const MOVES = GD.moves;
+export const MOVES = gameData.moves;
 provide({ MOVES }); /* to-module */
 for (const k in MOVES) {
   const M = MOVES[k];
@@ -118,12 +118,12 @@ const LV = [
   { k: 'lvl', at: 16 },
   { k: 'lvl', at: 36 },
 ];
-export const LINES = GD.lines;
+export const LINES = gameData.lines;
 export const LN = Object.fromEntries(LINES.map(l => [l.id, l]));
 export const SP = {},
   DEX = [];
 provide({ SP }); /* to-module */
-const TOT = Object.fromEntries(Object.entries(GD.rarities).map(([k, v]) => [k, v.totals]));
+const TOT = Object.fromEntries(Object.entries(gameData.rarities).map(([k, v]) => [k, v.totals]));
 const pickI = (a, i) => a[Math.min(i, a.length - 1)];
 LINES.forEach(L => {
   L.learn = (L.learn || []).filter(([lv, mv]) => {
@@ -183,15 +183,15 @@ LINES.forEach(L => {
   });
 });
 /* ---------- world ---------- */
-export const ROUTE = GD.route;
-export const FUTURE = GD.regions;
+export const ROUTE = gameData.route;
+export const FUTURE = gameData.regions;
 export const POOLS = {};
-for (const k in GD.pools) {
-  const P = GD.pools[k];
+for (const k in gameData.pools) {
+  const P = gameData.pools[k];
   POOLS[k] = { lv: P.lv, list: P.list.filter(([id]) => SP[id] || warnData(`Pool ${k} lists unknown Billie ${id}.`)) };
   if (!POOLS[k].list.length) POOLS[k].list = [[DEX[0], 1]];
 }
-export const BACKDROPS = GD.backdrops;
+export const BACKDROPS = gameData.backdrops;
 provide({ BACKDROPS }); /* to-module */
 ROUTE.forEach((r, i) => {
   if (!POOLS[r.pool]) {
@@ -202,7 +202,9 @@ ROUTE.forEach((r, i) => {
   r.trainers = [];
 });
 /* the walking network: links between stops (both directions); older data is a single chain */
-export const LINKS = (GD.links && GD.links.length ? GD.links : ROUTE.slice(1).map((r, i) => [i, i + 1, r.cost || 500]))
+export const LINKS = (
+  gameData.links && gameData.links.length ? gameData.links : ROUTE.slice(1).map((r, i) => [i, i + 1, r.cost || 500])
+)
   .filter(l => ROUTE[l[0]] && ROUTE[l[1]] && l[0] !== l[1])
   .map(([a, b, c, j]) =>
     j && typeof j === 'object'
@@ -228,7 +230,7 @@ export const START_NODE = (() => {
   return p && PLACE[p] ? PLACE[p].node : 0;
 })();
 export function placeKind(id) {
-  const sc = GD.scenes && GD.scenes[id];
+  const sc = gameData.scenes && gameData.scenes[id];
   if (sc && sc.kind) return sc.kind;
   const p = PLACE[id];
   return p
@@ -260,8 +262,8 @@ export const linkCost = (a, b) => {
 };
 export const STEPS_PER_KM = RULES.steps.stepsPerKm;
 export const EGGS = {};
-for (const k in GD.eggs) {
-  const E = GD.eggs[k];
+for (const k in gameData.eggs) {
+  const E = gameData.eggs[k];
   EGGS[k] = {
     need: E.need,
     lv: E.lv,
@@ -271,16 +273,16 @@ for (const k in GD.eggs) {
 export const EGG_TIERS = Object.keys(EGGS)
   .map(Number)
   .sort((a, b) => a - b);
-export const COINS = GD.coins;
+export const COINS = gameData.coins;
 provide({ COINS }); /* to-module */
-export const ITEMS = GD.items;
-export const JOBS = GD.jobs;
+export const ITEMS = gameData.items;
+export const JOBS = gameData.jobs;
 export const JOB_STEPS = RULES.jobs.stepsPerPay;
-export const PEOPLE = GD.people;
+export const PEOPLE = gameData.people;
 provide({ PEOPLE }); /* to-module */
-export const SHOPS = GD.shops || {};
+export const SHOPS = gameData.shops || {};
 /* ---------- trainers: plain data, turned into teams when a battle starts ---------- */
-export const TRAINERS = GD.trainers || {};
+export const TRAINERS = gameData.trainers || {};
 /* v47: a "tutorial" trainer only battles in a story scene (blake0, in the opening); it stands on no stop */
 for (const id in TRAINERS) {
   const T = TRAINERS[id];

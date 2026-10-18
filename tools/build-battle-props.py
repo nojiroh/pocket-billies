@@ -9,7 +9,7 @@ The layout is seeded per area, so running it again gives the same result (as lon
 
 Kinds come from two catalogs:
   * battle props   (game/art/battle/props/<kind>.png, anchors in ARTMAN.battle.props, 30 px per meter)
-  * scene props    (game/art/scene/props/<kind>.png, listed in game/art/scene/props.json and GD.scenery.props, 34 px per meter)
+  * scene props    (game/art/scene/props/<kind>.png, listed in game/art/scene/props.json and gameData.scenery.props, 34 px per meter)
 A scene prop is used only if its PNG exists and data/gamedata.js lists it under scenery.props (that is where battle-stage.js reads it).
 
 World space (see game/js/battle-stage.js): x to the right, z away from the camera, meters. The camera sits at (0, 1.6, 0) and looks down +z.

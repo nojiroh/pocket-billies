@@ -10,7 +10,6 @@ import {
   DEX,
   EGGS,
   FUTURE,
-  GD,
   ITEMS,
   JOBS,
   JOB_STEPS,
@@ -31,6 +30,7 @@ import {
   TRAINERS,
   TYPES,
   eff,
+  gameData,
   linkCost,
   placeSub,
   trainersAt,
@@ -970,7 +970,7 @@ function renderWalk() {
 }
 /* ---------- the walk scene behind the Walk tab ---------- */
 export function sceneIdAt(i) {
-  const S0 = GD.scenes || {},
+  const S0 = gameData.scenes || {},
     r = ROUTE[i];
   if (r && r.scene && S0[r.scene]) return r.scene;
   return Object.keys(S0)[0] || null;
