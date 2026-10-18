@@ -13,7 +13,7 @@ import { artURL } from './art.js';
 import { flagPicturePath, mapById, walkView } from './walk-view.js';
 import { sfx } from './sound.js';
 import { TALK } from './talk.js';
-import { CS } from './cutscene.js';
+import { cutscene } from './cutscene.js';
 import { airshipFlight } from './airship.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -91,7 +91,7 @@ export function postcardCheck() {
     uiState.bench ||
     PC.on ||
     (typeof TALK !== 'undefined' && TALK.on) ||
-    (typeof CS !== 'undefined' && CS.on) ||
+    (typeof cutscene !== 'undefined' && cutscene.on) ||
     (typeof STEST !== 'undefined' && STEST.on) ||
     (typeof airshipFlight !== 'undefined' && airshipFlight.on)
   ) {

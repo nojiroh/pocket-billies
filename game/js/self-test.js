@@ -81,7 +81,7 @@ import {
   worldMapMinisOn,
 } from './world-map-gl.js';
 import { TALK, talkHide } from './talk.js';
-import { CS, csTeardown } from './cutscene.js';
+import { csTeardown, cutscene } from './cutscene.js';
 import { battleTipHide, fallGL, fallMap } from './opening-fall.js';
 import { closeModal, leaveRoom, mapIdAt, modal, render, renderOverlay, toast, walkPick } from './ui.js';
 /* eslint-disable no-func-assign */
@@ -1064,9 +1064,9 @@ async function runFullTest(mode) {
           }
           cv.hidden = false;
           cv.classList.add('in');
-          CS.on = true;
-          CS.run++;
-          const run = CS.run,
+          cutscene.on = true;
+          cutscene.run++;
+          const run = cutscene.run,
             fr = [],
             mr = worldMapGlRender;
           let last = performance.now();
@@ -1080,8 +1080,8 @@ async function runFullTest(mode) {
             await fallMap(run, 6000);
           } finally {
             setWorldMapGlRender(mr);
-            CS.on = false;
-            CS.run++;
+            cutscene.on = false;
+            cutscene.run++;
           }
           uiState.tab = 'walk';
           render();
@@ -1430,8 +1430,8 @@ async function runFullTest(mode) {
       setActiveBattle(null);
       battleStageStop();
     }
-    if (typeof CS !== 'undefined' && CS.on) {
-      CS.test = false;
+    if (typeof cutscene !== 'undefined' && cutscene.on) {
+      cutscene.test = false;
       csTeardown();
     }
     if (typeof dressingRoom !== 'undefined' && dressingRoom.on) closeDressingRoom();

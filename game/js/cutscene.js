@@ -59,7 +59,6 @@ import { music, sfx } from './sound.js';
 import { TALK, talkHide, talkLine } from './talk.js';
 /* eslint-disable no-func-assign */
 expose({
-  CS: [() => CS],
   CS_SPOT: [() => CS_SPOT],
   csAbort: [() => csAbort, v => (csAbort = v)],
   csAct: [() => csAct, v => (csAct = v)],
@@ -95,6 +94,7 @@ expose({
   csWait: [() => csWait, v => (csWait = v)],
   csWalk: [() => csWalk, v => (csWalk = v)],
   csWanted: [() => csWanted, v => (csWanted = v)],
+  cutscene: [() => cutscene],
 });
 /* eslint-enable no-func-assign */
 export function setCsStart(v) {
@@ -102,7 +102,7 @@ export function setCsStart(v) {
   provide({ csStart });
 }
 /* to-module: end */
-export const CS = {
+export const cutscene = {
   on: false,
   run: 0,
   skip: false,
@@ -124,7 +124,7 @@ export const CS = {
   center: [10.1, 12.3],
   ui: null,
 };
-provide({ CS }); /* to-module */
+provide({ cutscene }); /* to-module */
 const CS_SPOT = {
   door: [7.4, 15.4],
   hazel: [9.3, 13.25],
@@ -142,7 +142,7 @@ export const csNow = () => performance.now();
 /* v46: where the opening scene is filmed: in front of the lab's door, wherever the lab stands in Sundown */
 function csPlace(sc) {
   let o = [0, 0];
-  CS.dy = 0;
+  cutscene.dy = 0;
   const C0 = walkData().sc,
     L = ((sc && sc.props) || []).find(p => p.act === 'lab');
   if (L) {
@@ -150,11 +150,11 @@ function csPlace(sc) {
       dx = (((M.door && M.door.x) || 0) / (C0.ppu || 34)) * (L.s || 1) * (L.f ? -1 : 1);
     o = [L.x + dx - CS_SPOT.door[0], L.z - CS_SPOT.door[1]];
     /* alpha 0.4: the shots were framed for a lab on ground half a metre up (Marigold Town's); they rise and fall with the ground at the door */
-    if (typeof standingHeightAt === 'function') CS.dy = standingHeightAt(L.x + dx, L.z - 0.6) - 0.5;
+    if (typeof standingHeightAt === 'function') cutscene.dy = standingHeightAt(L.x + dx, L.z - 0.6) - 0.5;
   }
-  CS.o = o;
+  cutscene.o = o;
   const sh = p => [p[0] + o[0], p[1] + o[1]];
-  CS.A = {
+  cutscene.A = {
     door: sh(CS_SPOT.door),
     hazel: sh(CS_SPOT.hazel),
     me: sh(CS_SPOT.me),
@@ -163,7 +163,7 @@ function csPlace(sc) {
     blake: sh(CS_SPOT.blake),
     blakeFrom: sh(CS_SPOT.blakeFrom),
   };
-  CS.center = sh([10.1, 12.3]);
+  cutscene.center = sh([10.1, 12.3]);
   return o;
 }
 const csEase = k => (k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2);
@@ -197,33 +197,33 @@ export const csStartName = () =>
 
 /* ---------- timing helpers: everything resolves at once while skipping ---------- */
 export function csWait(ms) {
-  if (CS.skip || !CS.on) return Promise.resolve();
+  if (cutscene.skip || !cutscene.on) return Promise.resolve();
   return new Promise(r => {
     const id = setTimeout(done, ms);
     function done() {
       clearTimeout(id);
-      CS.waits = CS.waits.filter(f => f !== done);
+      cutscene.waits = cutscene.waits.filter(f => f !== done);
       r();
     }
-    CS.waits.push(done);
+    cutscene.waits.push(done);
   });
 }
 export function csFlush() {
-  const w = CS.waits.slice();
-  CS.waits = [];
+  const w = cutscene.waits.slice();
+  cutscene.waits = [];
   w.forEach(f => f());
-  if (TALK.cur && CS.on) TALK.cur.done();
+  if (TALK.cur && cutscene.on) TALK.cur.done();
 }
 function csSkip() {
-  if (!CS.on || CS.choosing || CS.dressing) return;
-  CS.skip = true;
+  if (!cutscene.on || cutscene.choosing || cutscene.dressing) return;
+  cutscene.skip = true;
   csFlush();
 }
 /* ---------- the camera: eye, target, field of view and a width that must stay in frame (phones) ---------- */
 function csCamNow() {
-  const c = CS.cam;
+  const c = cutscene.cam;
   if (!c) return null;
-  const k = c.dur && !CS.skip && !reducedMotion ? csEase(clamp((csNow() - c.t0) / c.dur, 0, 1)) : 1,
+  const k = c.dur && !cutscene.skip && !reducedMotion ? csEase(clamp((csNow() - c.t0) / c.dur, 0, 1)) : 1,
     L = (a, b) => a.map((v, i) => v + (b[i] - v) * k);
   return {
     eye: L(c.a.eye, c.b.eye),
@@ -236,30 +236,30 @@ export function csShot(K, ms = 0) {
   K = Object.assign({ fov: 40, w: 0 }, K);
   /* v46: the shots were framed for the lab's door at CS_SPOT.door; they move with the lab (csPlace) */ if (
     !K.abs &&
-    CS.o
+    cutscene.o
   ) {
-    const o = CS.o,
-      dy = CS.dy || 0;
+    const o = cutscene.o,
+      dy = cutscene.dy || 0;
     K.eye = [K.eye[0] + o[0], K.eye[1] + dy, K.eye[2] + o[1]];
     K.tgt = [K.tgt[0] + o[0], K.tgt[1] + dy, K.tgt[2] + o[1]];
   }
   const a = csCamNow() || K;
-  CS.cam = { a, b: K, t0: csNow(), dur: ms };
+  cutscene.cam = { a, b: K, t0: csNow(), dur: ms };
   return csWait(ms);
 }
 /* ---------- actors ---------- */
 export function csActor(id, who, at, dir) {
-  CS.actors[id] = { id, who, x: at[0], z: at[1], dir: dir || 'down', walk: null, act: null, actT: 0 };
-  return CS.actors[id];
+  cutscene.actors[id] = { id, who, x: at[0], z: at[1], dir: dir || 'down', walk: null, act: null, actT: 0 };
+  return cutscene.actors[id];
 }
 export function csWalk(id, to, ms) {
-  const a = CS.actors[id];
+  const a = cutscene.actors[id];
   a.walk = { x0: a.x, z0: a.z, x1: to[0], z1: to[1], t0: csNow(), dur: ms };
   a.dir = directionOf(to[0] - a.x, to[1] - a.z);
   return csWait(ms);
 }
 function csAct(id, act, ms) {
-  const a = CS.actors[id];
+  const a = cutscene.actors[id];
   a.act = act;
   a.actT = csNow();
   return csWait(ms || 0).then(() => {
@@ -270,7 +270,7 @@ function csPersonItem(a, t, C0) {
   let im;
   const now = csNow();
   if (a.walk) {
-    const k = CS.skip || reducedMotion ? 1 : clamp((now - a.walk.t0) / a.walk.dur, 0, 1);
+    const k = cutscene.skip || reducedMotion ? 1 : clamp((now - a.walk.t0) / a.walk.dur, 0, 1);
     a.x = a.walk.x0 + (a.walk.x1 - a.walk.x0) * k;
     a.z = a.walk.z0 + (a.walk.z1 - a.walk.z0) * k;
     if (k >= 1) a.walk = null;
@@ -327,20 +327,20 @@ function csStarItem(s, t) {
 }
 /* ---------- what the engine draws: walkView.director.frame ---------- */
 export function csFrame() {
-  if (!CS.on) return null;
+  if (!cutscene.on) return null;
   const t = walkView.t,
     C0 = walkData().sc,
-    items = CS.items,
-    parts = CS.parts,
-    lights = CS.lights,
+    items = cutscene.items,
+    parts = cutscene.parts,
+    lights = cutscene.lights,
     now = csNow();
   items.length = 0;
   parts.length = 0;
   lights.length = 0;
-  for (const a of Object.values(CS.actors)) if (!a.hidden) items.push(csPersonItem(a, t, C0));
-  CS.stars.forEach((s, i) => {
+  for (const a of Object.values(cutscene.actors)) if (!a.hidden) items.push(csPersonItem(a, t, C0));
+  cutscene.stars.forEach((s, i) => {
     if (s.popT) {
-      s.pop = CS.skip ? 1 : clamp((now - s.popT) / 420, 0, 1);
+      s.pop = cutscene.skip ? 1 : clamp((now - s.popT) / 420, 0, 1);
       s.white = Math.max(0, 1 - (now - s.popT) / 300);
     }
     if (s.leave) {
@@ -352,12 +352,12 @@ export function csFrame() {
       const it = csStarItem(s, t);
       if (it) items.push(it);
     }
-    if (CS.choosing && i === CS.sel)
+    if (cutscene.choosing && i === cutscene.sel)
       lights.push({ p: [s.x, 0.35 + standingHeightAt(s.x, s.z), s.z - 0.2], r: 1.7, c: [0.55, 0.48, 0.3] });
   });
   const coin = artImage('coins/penny_32.png');
-  for (const c of CS.coins) {
-    const k = CS.skip ? 1 : clamp((now - c.t0) / c.dur, 0, 1);
+  for (const c of cutscene.coins) {
+    const k = cutscene.skip ? 1 : clamp((now - c.t0) / c.dur, 0, 1);
     if (k >= 1) {
       if (!c.landed) {
         c.landed = 1;
@@ -373,8 +373,8 @@ export function csFrame() {
     lights.push({ p: [x, y, z], r: 1.1, c: [0.5, 0.4, 0.12] });
   }
   const spark = typeof particleSprite === 'function' ? particleSprite('sparkle') : null;
-  CS.fx = CS.fx.filter(f => now - f.t0 < f.life);
-  for (const f of CS.fx) {
+  cutscene.fx = cutscene.fx.filter(f => now - f.t0 < f.life);
+  for (const f of cutscene.fx) {
     const k = (now - f.t0) / f.life;
     if (spark && spark.width > 1)
       parts.push({
@@ -388,8 +388,8 @@ export function csFrame() {
         glow: true,
       });
   }
-  CS.flashes = CS.flashes.filter(f => now - f.t0 < 500);
-  for (const f of CS.flashes) {
+  cutscene.flashes = cutscene.flashes.filter(f => now - f.t0 < 500);
+  for (const f of cutscene.flashes) {
     const k = 1 - (now - f.t0) / 500;
     lights.push({ p: f.p, r: 2.6, c: [1.4 * k, 1.2 * k, 0.7 * k] });
   }
@@ -409,7 +409,7 @@ export function csFrame() {
     items,
     lights,
     parts,
-    hide: CS.hide,
+    hide: cutscene.hide,
     focus: fd,
     blur: fd < 6 ? 0.45 : 0.2,
     center: [K.tgt[0], K.tgt[2]],
@@ -419,7 +419,7 @@ export function csFrame() {
 function csSparkle(p, n = 10) {
   for (let i = 0; i < n; i++) {
     const a = (i / n) * Math.PI * 2 + Math.random();
-    CS.fx.push({
+    cutscene.fx.push({
       x: p[0],
       y: p[1],
       z: p[2],
@@ -442,7 +442,7 @@ function csHTML() {
 }
 export function csCaption(sub, title, ms = 3200) {
   const c = $('#csCap');
-  if (!c || CS.skip) return;
+  if (!c || cutscene.skip) return;
   c.querySelector('small').textContent = sub;
   c.querySelector('b').textContent = title;
   c.classList.add('on');
@@ -450,20 +450,20 @@ export function csCaption(sub, title, ms = 3200) {
 }
 /* one line of dialogue in the shared dialogue box (talk.js) */
 export function csSay(who, text, expr) {
-  if (CS.skip || !CS.on) return Promise.resolve();
+  if (cutscene.skip || !cutscene.on) return Promise.resolve();
   const pr = talkLine(who, text, expr, { cs: true });
-  CS.say = TALK.cur;
+  cutscene.say = TALK.cur;
   return pr.then(() => {
-    if (CS.say && !CS.say.typing) CS.say = null;
+    if (cutscene.say && !cutscene.say.typing) cutscene.say = null;
   });
 }
 export function csHideDlg() {
   talkHide();
-  CS.say = null;
+  cutscene.say = null;
 }
 /* v47: waking up: the picture starts blurred and bright and sharpens; the letterbox closes like eyelids to blink */
 function csBlink() {
-  if (CS.skip || reducedMotion || !CS.on) return Promise.resolve();
+  if (cutscene.skip || reducedMotion || !cutscene.on) return Promise.resolve();
   document.body.classList.add('cs-blink');
   return csWait(170).then(() => {
     document.body.classList.remove('cs-blink');
@@ -472,32 +472,32 @@ function csBlink() {
 }
 function csPortraitTick() {}
 function csTap(ev) {
-  if (!CS.on) return;
+  if (!cutscene.on) return;
   if (ev && ev.target.closest && ev.target.closest('button,input,.cs-pick')) return;
   if (TALK.cur) TALK.cur.tap();
 }
 
 /* ---------- the starter picker ---------- */
 function csPickHTML() {
-  const pk = CS.pickList,
-    l = pk[CS.sel],
+  const pk = cutscene.pickList,
+    l = pk[cutscene.sel],
     s = SPECIES[l + '0'],
     t = s.types[0],
     st = TYPES.filter(x => typeEffectiveness(t, [x]) > 1),
     wk = TYPES.filter(x => typeEffectiveness(x, [t]) > 1);
-  return `<div class="cs-pk-top"><button class="mbtn" data-a="cs-prev" aria-label="Previous">‹</button><div class="cs-pk-name"><small>${CS.sel + 1} of ${pk.length}</small><b>${escapeHtml(s.name)}</b><span class="row">${typeBadgeHTML(t)}</span></div><button class="mbtn" data-a="cs-next" aria-label="Next">›</button></div>
+  return `<div class="cs-pk-top"><button class="mbtn" data-a="cs-prev" aria-label="Previous">‹</button><div class="cs-pk-name"><small>${cutscene.sel + 1} of ${pk.length}</small><b>${escapeHtml(s.name)}</b><span class="row">${typeBadgeHTML(t)}</span></div><button class="mbtn" data-a="cs-next" aria-label="Next">›</button></div>
  <p class="sd">${escapeHtml(s.blurb)}</p><p class="sd">Strong against ${st.join(' and ') || 'nothing in particular'}. Weak to ${wk.join(' and ') || 'nothing in particular'}.</p>
- ${CS.confirm ? `<div class="racts"><button class="pb quiet" data-a="cs-no">Not yet</button><button class="pb gold" data-a="cs-yes">Yes, ${escapeHtml(s.name)}!</button></div>` : `<button class="pb gold wide" data-a="cs-choose">Choose ${escapeHtml(s.name)}</button>`}`;
+ ${cutscene.confirm ? `<div class="racts"><button class="pb quiet" data-a="cs-no">Not yet</button><button class="pb gold" data-a="cs-yes">Yes, ${escapeHtml(s.name)}!</button></div>` : `<button class="pb gold wide" data-a="cs-choose">Choose ${escapeHtml(s.name)}</button>`}`;
 }
 function csPickFocus() {
-  const s = CS.stars[CS.sel];
+  const s = cutscene.stars[cutscene.sel];
   if (!s) return;
   s.act = 'cheer';
   s.actT = csNow();
   csShot(
     {
-      eye: [s.x * 0.6 + (10.15 + (CS.o || [0, 0])[0]) * 0.4 + 0.1, 1.35 + (CS.dy || 0), s.z - 3.6],
-      tgt: [s.x, 0.55 + (CS.dy || 0), s.z + 0.2],
+      eye: [s.x * 0.6 + (10.15 + (cutscene.o || [0, 0])[0]) * 0.4 + 0.1, 1.35 + (cutscene.dy || 0), s.z - 3.6],
+      tgt: [s.x, 0.55 + (cutscene.dy || 0), s.z + 0.2],
       fov: 36,
       w: 2.6,
       abs: 1,
@@ -509,53 +509,53 @@ function csPickFocus() {
 }
 function csChoose() {
   return new Promise(res => {
-    CS.choosing = true;
-    CS.confirm = false;
-    CS.pickRes = res;
+    cutscene.choosing = true;
+    cutscene.confirm = false;
+    cutscene.pickRes = res;
     const p = $('#csPick');
     p.hidden = false;
     document.body.classList.add('cs-choosing');
     csPickFocus();
-    if (CS.test)
+    if (cutscene.test)
       setTimeout(() => {
         csPickSel(1);
         setTimeout(() => {
-          if (CS.pickRes) {
-            const r = CS.pickRes;
-            CS.pickRes = null;
-            r(CS.pickList[CS.sel]);
+          if (cutscene.pickRes) {
+            const r = cutscene.pickRes;
+            cutscene.pickRes = null;
+            r(cutscene.pickList[cutscene.sel]);
           }
         }, 900);
       }, 900);
   });
 }
 function csPickSel(d) {
-  if (!CS.choosing) return;
-  CS.sel = (CS.sel + d + CS.pickList.length) % CS.pickList.length;
-  CS.confirm = false;
+  if (!cutscene.choosing) return;
+  cutscene.sel = (cutscene.sel + d + cutscene.pickList.length) % cutscene.pickList.length;
+  cutscene.confirm = false;
   csPickFocus();
 }
 
 /* ---------- the script ---------- */
 export async function csStart() {
-  if (CS.on) return;
+  if (cutscene.on) return;
   const id = csSceneId();
-  CS.on = true;
-  CS.run++;
-  const run = CS.run;
-  CS.skip = false;
-  CS.actors = {};
-  CS.stars = [];
-  CS.coins = [];
-  CS.fx = [];
-  CS.flashes = [];
-  CS.cam = null;
-  CS.sel = 1;
-  CS.choosing = false;
-  CS.hide = null;
-  CS.rival = false;
+  cutscene.on = true;
+  cutscene.run++;
+  const run = cutscene.run;
+  cutscene.skip = false;
+  cutscene.actors = {};
+  cutscene.stars = [];
+  cutscene.coins = [];
+  cutscene.fx = [];
+  cutscene.flashes = [];
+  cutscene.cam = null;
+  cutscene.sel = 1;
+  cutscene.choosing = false;
+  cutscene.hide = null;
+  cutscene.rival = false;
   if (typeof LAND !== 'undefined') LAND.bits = [];
-  CS.pickList = RULES.start.starters.filter(l => SPECIES[l + '0']);
+  cutscene.pickList = RULES.start.starters.filter(l => SPECIES[l + '0']);
   let el = $('#cs');
   if (!el) {
     el = document.createElement('div');
@@ -569,12 +569,12 @@ export async function csStart() {
   $('#app').innerHTML = '';
   updateNav(false);
   const pre = Promise.all([
-    rigPreload(CS.pickList.map(l => [l + '0', false, 1])),
+    rigPreload(cutscene.pickList.map(l => [l + '0', false, 1])),
     artLoad(['coins/penny_32.png']),
     prepareMap(id),
   ]).catch(() => {});
   /* v47: the fall, from the surface down to Sundown (opening-fall.js); it ends on a white screen */
-  if (typeof fallPlay === 'function' && !CS.test) {
+  if (typeof fallPlay === 'function' && !cutscene.test) {
     try {
       await fallPlay(run);
     } catch (e) {
@@ -586,10 +586,11 @@ export async function csStart() {
     const f = $('#csFade');
     if (f) f.classList.add('on');
   }
-  if (!CS.skip && !CS.test) document.body.classList.add('cs-dazed'); /* blurred already while the screen is white */
-  if (!CS.on || CS.run !== run) return;
+  if (!cutscene.skip && !cutscene.test)
+    document.body.classList.add('cs-dazed'); /* blurred already while the screen is white */
+  if (!cutscene.on || cutscene.run !== run) return;
   await pre;
-  if (!CS.on || CS.run !== run) return;
+  if (!cutscene.on || cutscene.run !== run) return;
   let cv = $('#dio');
   if (!cv) {
     cv = document.createElement('canvas');
@@ -606,7 +607,7 @@ export async function csStart() {
     onPick: () => {},
     cap: () => (document.hidden ? 1 : dressingRoom.on ? 4 : Math.min(60, userFps())),
   });
-  if (!CS.on || CS.run !== run) return;
+  if (!cutscene.on || cutscene.run !== run) return;
   if (!walkRenderer.on || !walkView.ready || !walkView.cv) {
     csAbort();
     return;
@@ -629,14 +630,14 @@ export async function csStart() {
       k = clamp(((x - a[0]) * dx + (z - a[1]) * dz) / (dx * dx + dz * dz), 0, 1);
     return Math.hypot(x - a[0] - dx * k, z - a[1] - dz * k);
   };
-  CS.hide = new Set(
+  cutscene.hide = new Set(
     (sc.props || []).filter(p => {
       const M = C0.props[p.k];
       return (
         M &&
         !M.flat &&
         ((p.x > 7.9 + o[0] && p.x < 12.9 + o[0] && p.z > 9.6 + o[1] && p.z < 13.9 + o[1]) ||
-          seg(p.x, p.z, CS.A.blakeFrom, CS.A.blake) < 1.1 ||
+          seg(p.x, p.z, cutscene.A.blakeFrom, cutscene.A.blake) < 1.1 ||
           (!M.box && eyes.some(e => Math.hypot(p.x - e[0], p.z - e[1]) < 2.3)))
       );
     })
@@ -647,8 +648,8 @@ export async function csStart() {
   const f0 = walkRenderer.frames,
     t0 = performance.now();
   while (
-    CS.on &&
-    CS.run === run &&
+    cutscene.on &&
+    cutscene.run === run &&
     !(walkRenderer.gtex && walkRenderer.frames >= f0 + 3) &&
     performance.now() - t0 < 15000
   )
@@ -658,13 +659,13 @@ export async function csStart() {
   } catch (e) {
     console.error(e);
     if (typeof NWLOG !== 'undefined') NWLOG.add('error', 'cutscene: ' + (e.message || e));
-    if (CS.on && CS.run === run) csAbort();
+    if (cutscene.on && cutscene.run === run) csAbort();
   }
 }
 async function csScript(run) {
-  const alive = () => CS.on && CS.run === run,
-    A = CS.A || CS_SPOT,
-    O = CS.o || [0, 0],
+  const alive = () => cutscene.on && cutscene.run === run,
+    A = cutscene.A || CS_SPOT,
+    O = cutscene.o || [0, 0],
     M = A.me,
     gy = standingHeightAt(M[0], M[1]),
     body = document.body,
@@ -673,7 +674,7 @@ async function csScript(run) {
   /* 1. you wake in the dust outside the lab, the papers that fell with you still coming down */
   pov(0.4, [M[0] + 2.4, gy + 3.9, M[1] + 5.4], 58);
   if (typeof landBurst === 'function') landBurst(M[0], M[1]);
-  if (CS.skip) body.classList.remove('cs-dazed');
+  if (cutscene.skip) body.classList.remove('cs-dazed');
   if (fade) fade.classList.remove('on');
   setTimeout(() => {
     if (alive()) csCaption('The Hollow Earth', csStartName(), 3400);
@@ -694,7 +695,7 @@ async function csScript(run) {
   csActor('gini', 'gini', A.door, 'down');
   pov(0.78, [A.hazel[0], hy + 1.08, A.hazel[1]], 58, 1900);
   await csWalk('gini', A.hazel, 1500);
-  CS.actors.gini.dir = 'down';
+  cutscene.actors.gini.dir = 'down';
   if (!alive()) return;
   await csSay('gini', 'Oh! Another one! Are you all right? That was quite a landing.', 'surprised');
   await csSay(
@@ -711,9 +712,9 @@ async function csScript(run) {
   if (!alive()) return;
   body.classList.remove('cs-dazed', 'cs-blink');
   /* 3. make yourself up (skipping stops here) */
-  CS.skip = false;
+  cutscene.skip = false;
   csHideDlg();
-  CS.dressing = true;
+  cutscene.dressing = true;
   body.classList.add('cs-dress');
   await new Promise(r => {
     openDressingRoom({
@@ -722,19 +723,19 @@ async function csScript(run) {
       look: uiState.trainerDraft || TR_PRESETS[Math.floor(Math.random() * TR_PRESETS.length)],
       done: r,
     });
-    if (CS.test)
+    if (cutscene.test)
       setTimeout(() => {
         if (dressingRoom.on) saveDressingLook();
       }, 1500);
   });
-  CS.dressing = false;
+  cutscene.dressing = false;
   body.classList.remove('cs-dress', 'cs-waking');
   if (!alive()) return;
   uiState.avatarDraft = cleanLook(uiState.trainerDraft || TR_PRESETS[0]);
   uiState.trainerDraft = uiState.avatarDraft;
   /* 4. on your feet */
   csActor('me', 'me', M, 'side');
-  CS.actors.gini.dir = 'sideR';
+  cutscene.actors.gini.dir = 'sideR';
   csShot({ eye: [10.4, 1.75, 8.0], tgt: [10.2, 1.05, 12.9], fov: 40, w: 3.8 });
   csAct('me', 'react', 900);
   if (!alive()) return;
@@ -757,14 +758,14 @@ async function csScript(run) {
   if (!alive()) return;
   csHideDlg();
   /* 5. three coins, three billionaires */
-  CS.actors.gini.dir = 'down';
-  CS.actors.me.dir = 'down';
+  cutscene.actors.gini.dir = 'down';
+  cutscene.actors.me.dir = 'down';
   csShot({ eye: [10.15, 1.5, 7.3], tgt: [10.15, 0.7, 11.9], fov: 40, w: 4.4 }, 900);
   await csWait(500);
   csAct('gini', 'throw', 900);
   await csWait(380);
   if (typeof sfx === 'function') sfx('throw');
-  CS.pickList.forEach((l, i) => {
+  cutscene.pickList.forEach((l, i) => {
     const p = A.stars[i],
       s = {
         sp: l + '0',
@@ -778,9 +779,9 @@ async function csScript(run) {
         flip: i === 0 ? -1 : 1,
         white: 0,
       };
-    CS.stars.push(s);
-    CS.coins.push({
-      a: [CS.actors.gini.x + 0.2, standingHeightAt(A.hazel[0], A.hazel[1]) + 1.35, CS.actors.gini.z - 0.1],
+    cutscene.stars.push(s);
+    cutscene.coins.push({
+      a: [cutscene.actors.gini.x + 0.2, standingHeightAt(A.hazel[0], A.hazel[1]) + 1.35, cutscene.actors.gini.z - 0.1],
       b: [p[0], standingHeightAt(p[0], p[1]) + 0.1, p[1]],
       t0: csNow() + i * 140,
       dur: 650,
@@ -790,45 +791,45 @@ async function csScript(run) {
         if (typeof sfx === 'function') sfx('pop');
         s.act = 'enter';
         s.actT = csNow();
-        CS.flashes.push({ p: [p[0], y + 0.2, p[1]], t0: csNow() });
-        if (!CS.skip) csSparkle([p[0], y, p[1]], 12);
+        cutscene.flashes.push({ p: [p[0], y + 0.2, p[1]], t0: csNow() });
+        if (!cutscene.skip) csSparkle([p[0], y, p[1]], 12);
         if (typeof buzz === 'function') buzz(8);
       },
     });
   });
   await csWait(1300);
-  CS.coins.forEach(c => {
+  cutscene.coins.forEach(c => {
     if (!c.landed) {
       c.landed = 1;
       c.onLand();
     }
   });
-  CS.coins = [];
+  cutscene.coins = [];
   if (!alive()) return;
   await csSay(
     'gini',
     'Three Billies, three types. Each one beats one of the others. Take a good look before you choose!'
   );
   csHideDlg();
-  CS.skip = false;
+  cutscene.skip = false;
   /* 6. pick one */
   const l = await csChoose();
   if (!alive()) return;
-  CS.choosing = false;
+  cutscene.choosing = false;
   document.body.classList.remove('cs-choosing');
   $('#csPick').hidden = true;
-  const si = CS.pickList.indexOf(l),
-    star = CS.stars[si],
+  const si = cutscene.pickList.indexOf(l),
+    star = cutscene.stars[si],
     sp = SPECIES[l + '0'];
   star.act = 'cheer';
   star.actT = csNow();
-  CS.stars.forEach((s, i) => {
+  cutscene.stars.forEach((s, i) => {
     if (i !== si) s.leave = csNow() + i * 90;
   });
   csShot(
     {
-      eye: [10.4 + O[0], 1.45 + (CS.dy || 0), 8.0 + O[1]],
-      tgt: [(star.x + A.me[0]) / 2, 0.85 + (CS.dy || 0), 12.2 + O[1]],
+      eye: [10.4 + O[0], 1.45 + (cutscene.dy || 0), 8.0 + O[1]],
+      tgt: [(star.x + A.me[0]) / 2, 0.85 + (cutscene.dy || 0), 12.2 + O[1]],
       fov: 40,
       w: 3.6,
       abs: 1,
@@ -867,18 +868,18 @@ async function csScript(run) {
   if (typeof music === 'function') music('rival');
   const run1 = csWalk('rival', A.blake, 1500),
     BL = blakeHello(l);
-  CS.actors.me.dir = 'sideR';
-  CS.actors.gini.dir = 'sideR';
+  cutscene.actors.me.dir = 'sideR';
+  cutscene.actors.gini.dir = 'sideR';
   await csSay(BL[0][0], BL[0][1]);
   await run1;
-  CS.actors.rival.dir = 'side';
+  cutscene.actors.rival.dir = 'side';
   if (!alive()) return;
   for (const [w, t] of BL.slice(1)) {
     await csSay(w, t);
     if (!alive()) return;
   }
   csHideDlg();
-  CS.rival = true;
+  cutscene.rival = true;
   csAct('rival', 'cheer', 800);
   await csWait(700);
   if (fade) {
@@ -891,12 +892,12 @@ async function csScript(run) {
 }
 export function csTeardown() {
   talkHide();
-  CS.on = false;
-  CS.run++;
-  CS.skip = false;
+  cutscene.on = false;
+  cutscene.run++;
+  cutscene.skip = false;
   csFlush();
-  CS.choosing = false;
-  CS.dressing = false;
+  cutscene.choosing = false;
+  cutscene.dressing = false;
   walkView.director = null;
   walkRenderer.bt = null;
   walkRenderer.camT = null;
@@ -918,15 +919,15 @@ export function csTeardown() {
   if (walkView.cv) stopWalkView();
 }
 function csEnd(l) {
-  if (CS.test) {
-    CS.test = false;
+  if (cutscene.test) {
+    cutscene.test = false;
     csTeardown();
-    const d = CS.testDone;
-    CS.testDone = null;
+    const d = cutscene.testDone;
+    cutscene.testDone = null;
     if (d) d();
     return;
   }
-  const rival = CS.rival;
+  const rival = cutscene.rival;
   csTeardown();
   startGame(l, { rival });
 }
@@ -938,7 +939,7 @@ function csAbort() {
 }
 
 document.addEventListener('click', ev => {
-  if (!CS.on) return;
+  if (!cutscene.on) return;
   const el = ev.target.closest('[data-a]');
   const a = el && el.dataset.a;
   if (!a) {
@@ -956,29 +957,29 @@ document.addEventListener('click', ev => {
       csPickSel(1);
       break;
     case 'cs-choose':
-      CS.confirm = true;
+      cutscene.confirm = true;
       $('#csPick').innerHTML = csPickHTML();
       break;
     case 'cs-no':
-      CS.confirm = false;
+      cutscene.confirm = false;
       $('#csPick').innerHTML = csPickHTML();
       break;
     case 'cs-yes':
-      if (CS.pickRes) {
-        const r = CS.pickRes;
-        CS.pickRes = null;
-        r(CS.pickList[CS.sel]);
+      if (cutscene.pickRes) {
+        const r = cutscene.pickRes;
+        cutscene.pickRes = null;
+        r(cutscene.pickList[cutscene.sel]);
       }
       break;
   }
 });
 document.addEventListener('keydown', ev => {
-  if (!CS.on || CS.dressing) return;
+  if (!cutscene.on || cutscene.dressing) return;
   if (ev.key === 'Escape') {
     csSkip();
     return;
   }
-  if (CS.choosing) {
+  if (cutscene.choosing) {
     if (ev.key === 'ArrowLeft') csPickSel(-1);
     else if (ev.key === 'ArrowRight') csPickSel(1);
     return;
@@ -987,8 +988,8 @@ document.addEventListener('keydown', ev => {
 /* tapping a billionaire in the scene picks it */
 document.addEventListener('pointerup', ev => {
   if (
-    !CS.on ||
-    !CS.choosing ||
+    !cutscene.on ||
+    !cutscene.choosing ||
     !walkView.C ||
     !walkView.cv ||
     (ev.target !== walkView.cv && ev.target.id !== 'dioui' && !ev.target.classList.contains('cs'))
@@ -999,7 +1000,7 @@ document.addEventListener('pointerup', ev => {
     sy = ((ev.clientY - r.top) / r.height) * walkView.cv.height;
   let best = -1,
     bd = 1e9;
-  CS.stars.forEach((s, i) => {
+  cutscene.stars.forEach((s, i) => {
     const q = worldToScreen(walkView.C, s.x, 0.45, s.z);
     if (!q) return;
     const d = Math.hypot(q.x - sx, q.y - sy);
@@ -1008,9 +1009,9 @@ document.addEventListener('pointerup', ev => {
       best = i;
     }
   });
-  if (best >= 0 && bd < walkView.cv.height * 0.18 && best !== CS.sel) {
-    CS.sel = best;
-    CS.confirm = false;
+  if (best >= 0 && bd < walkView.cv.height * 0.18 && best !== cutscene.sel) {
+    cutscene.sel = best;
+    cutscene.confirm = false;
     csPickFocus();
   }
 });

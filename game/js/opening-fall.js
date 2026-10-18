@@ -26,7 +26,7 @@ import { actorTypes, endBattle, fighter, stopTimers } from './battle.js';
 import { LOCATION_VECTORS, WORLD_ART, vector3, worldMap, worldMapHeight, worldMapWidth } from './world-map.js';
 import { WORLD_MAP_GL_SHADERS, worldMapGl, worldMapGlRender, worldMapGlSize } from './world-map-gl.js';
 import { music, sfx } from './sound.js';
-import { CS, csCaption } from './cutscene.js';
+import { csCaption, cutscene } from './cutscene.js';
 /* eslint-disable no-func-assign */
 expose({
   FALL: [() => FALL],
@@ -663,7 +663,7 @@ export function fallMap(run, ms) {
     let capA = 0,
       capB = 0;
     const step = ts => {
-      if (!CS.on || CS.run !== run || CS.skip || gpuState.lost) {
+      if (!cutscene.on || cutscene.run !== run || cutscene.skip || gpuState.lost) {
         res();
         return;
       }
@@ -696,7 +696,7 @@ export function fallMap(run, ms) {
 }
 /* the whole fall; resolves on a white screen, ready for Sundown */
 async function fallPlay(run) {
-  const alive = () => CS.on && CS.run === run && !CS.skip;
+  const alive = () => cutscene.on && cutscene.run === run && !cutscene.skip;
   FALL.run = run;
   if (typeof music === 'function') music('fall');
   if (typeof artLoad === 'function')
@@ -761,7 +761,7 @@ async function fallPlay(run) {
   cancelAnimationFrame(FALL.raf);
   if (fade) fade.classList.add('on');
   if (typeof sfx === 'function' && alive()) sfx('thud');
-  await new Promise(r => setTimeout(r, reducedMotion || CS.skip ? 0 : 500));
+  await new Promise(r => setTimeout(r, reducedMotion || cutscene.skip ? 0 : 500));
   if (FALL.cv) {
     FALL.cv.remove();
     FALL.cv = null;

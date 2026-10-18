@@ -13,7 +13,7 @@ import { activeBattle, saveData, uiState } from './game-state.js';
 import { walkView } from './walk-view.js';
 import { walkRenderer } from './walk-view-gl.js';
 import { TALK } from './talk.js';
-import { CS } from './cutscene.js';
+import { cutscene } from './cutscene.js';
 import { airshipFlight, glassLift } from './airship.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -40,7 +40,7 @@ function joyAllowed() {
     !uiState.modal &&
     !uiState.title &&
     !(typeof activeBattle !== 'undefined' && activeBattle) &&
-    !(typeof CS !== 'undefined' && CS.on) &&
+    !(typeof cutscene !== 'undefined' && cutscene.on) &&
     typeof walkView !== 'undefined' &&
     walkView.ready &&
     walkView.cv &&

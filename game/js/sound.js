@@ -7,7 +7,7 @@
    Settings → Music and Sound effects set the volumes (0 mutes). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { CS, mapIdAt, provide } from './hooks.js';
+import { cutscene, mapIdAt, provide } from './hooks.js';
 import { clamp } from './util.js';
 import { LOCATIONS } from './game-data.js';
 import { activeBattle, saveData, uiState } from './game-state.js';
@@ -761,7 +761,7 @@ export function musicFor() {
   return r && r.town ? 'town' : 'route';
 }
 function musicSync() {
-  if (typeof CS !== 'undefined' && CS.on) return;
+  if (typeof cutscene !== 'undefined' && cutscene.on) return;
   if (AUD.jingle && performance.now() < AUD.jingle) return;
   music(musicFor());
 }

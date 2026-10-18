@@ -71,17 +71,17 @@ def check_game(pw, base, results):
         log(f'{name}: open the game'); t0 = time.time(); pg.goto(base + '/index.html'); pg.wait_for_selector('.ttl,.title', timeout=30000); boot = round(time.time() - t0, 2); pg.evaluate(TEST_RENDER)
         if name in ('phone', 'desktop'):
             # the opening cutscene: Start, skip the talk, make a trainer, pick a starter
-            log(f'{name}: opening cutscene'); pg.click('[data-a=intro]'); time.sleep(4); opening = {'cutscene': pg.evaluate('CS.on')}
+            log(f'{name}: opening cutscene'); pg.click('[data-a=intro]'); time.sleep(4); opening = {'cutscene': pg.evaluate('cutscene.on')}
             pg.screenshot(path=str(OUT / f'{name}-opening.png'))
             def until(cond, n=90):
                 for _ in range(n):
                     if pg.evaluate(cond): return True
-                    pg.evaluate("CS.say&&CS.say.tap();CS.skip||csSkip()"); time.sleep(.5)
+                    pg.evaluate("cutscene.say&&cutscene.say.tap();cutscene.skip||csSkip()"); time.sleep(.5)
                 return False
             if opening['cutscene']:
                 opening['dressingRoom'] = until('dressingRoom.on'); time.sleep(1); pg.screenshot(path=str(OUT / f'{name}-opening-dress.png'))
                 pg.click('[data-a=dr-preset][data-i="2"]'); pg.fill('#drName', 'Checker'); pg.click('[data-a=dr-save]')
-                opening['picker'] = until('CS.choosing'); time.sleep(1.5); pg.screenshot(path=str(OUT / f'{name}-opening-pick.png'))
+                opening['picker'] = until('cutscene.choosing'); time.sleep(1.5); pg.screenshot(path=str(OUT / f'{name}-opening-pick.png'))
                 pg.click('[data-a=cs-next]'); time.sleep(.6); pg.click('[data-a=cs-choose]'); pg.click('[data-a=cs-yes]')
                 opening['started'] = until('saveData.started'); time.sleep(1.5)
                 opening['result'] = pg.evaluate('[saveData.starter,saveData.avatar.name,saveData.team.length]')
@@ -104,7 +104,7 @@ def check_game(pw, base, results):
                 pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();saveData.route={node:2,prog:0,plan:[],hold:false};saveData.visited[2]=1;uiState.roam=null;uiState.tab='walk';render();0")
                 rival = {'scene': False, 'battle': False}; log(f'{name}: rival scene')
                 for _ in range(40):
-                    if pg.evaluate('CS.on'): rival['scene'] = True; break
+                    if pg.evaluate('cutscene.on'): rival['scene'] = True; break
                     time.sleep(1)
                 time.sleep(3); pg.screenshot(path=str(OUT / f'{name}-rival.png'))
                 for _ in range(80):

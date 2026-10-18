@@ -180,7 +180,7 @@ import { worldMapGlAction, worldMapGlWanted } from './world-map-gl.js';
 import { openShop } from './shop.js';
 import { sfx } from './sound.js';
 import { talkHazel } from './talk.js';
-import { CS, csStart, csWanted } from './cutscene.js';
+import { csStart, csWanted, cutscene } from './cutscene.js';
 import { fallStill } from './opening-fall.js';
 import { renderTitle, titleMount } from './title.js';
 import { loreBook, renderLore } from './lore.js';
@@ -589,7 +589,7 @@ export function render() {
     return;
   }
   if (!saveData.started) {
-    if (typeof CS !== 'undefined' && CS.on) {
+    if (typeof cutscene !== 'undefined' && cutscene.on) {
       app.innerHTML = '';
       updateNav(false);
       return;
@@ -1600,7 +1600,7 @@ function walkCross() {
     uiState.inside ||
     uiState.bench ||
     (typeof activeBattle !== 'undefined' && activeBattle) ||
-    (typeof CS !== 'undefined' && CS.on)
+    (typeof cutscene !== 'undefined' && cutscene.on)
   )
     return;
   const sc = walkView.sc,
@@ -1661,7 +1661,7 @@ setInterval(() => {
       !saveData.started ||
       uiState.tab !== 'walk' ||
       (typeof activeBattle !== 'undefined' && activeBattle) ||
-      (typeof CS !== 'undefined' && CS.on) ||
+      (typeof cutscene !== 'undefined' && cutscene.on) ||
       typeof walkView === 'undefined' ||
       !walkView.ready ||
       !walkView.cv
@@ -1672,7 +1672,7 @@ setInterval(() => {
   } catch (e) {}
 }, 400);
 function walkMapSync() {
-  if (typeof CS !== 'undefined' && CS.on) return;
+  if (typeof cutscene !== 'undefined' && cutscene.on) return;
   /* in a battle the scene keeps running inside the battle stage (battle-3d.js) when it can; otherwise it stops */
   if (activeBattle) {
     document.body.classList.remove('on-walk', 'on-scene');
