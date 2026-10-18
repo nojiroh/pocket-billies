@@ -6,7 +6,7 @@
    a small stamp shows in the corner for a moment. saveData.cards keeps them: {town id: the day you got it}. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { STEST, STORY, mapIdAt, storyFlags, toast } from './hooks.js';
+import { STORY, mapIdAt, selfTest, storyFlags, toast } from './hooks.js';
 import { LOCATIONS, TRAINERS, isTown, trainersAt } from './game-data.js';
 import { activeBattle, escapeHtml, save, saveData, uiState } from './game-state.js';
 import { artURL } from './art.js';
@@ -92,7 +92,7 @@ export function postcardCheck() {
     postcardState.on ||
     (typeof TALK !== 'undefined' && TALK.on) ||
     (typeof cutscene !== 'undefined' && cutscene.on) ||
-    (typeof STEST !== 'undefined' && STEST.on) ||
+    (typeof selfTest !== 'undefined' && selfTest.on) ||
     (typeof airshipFlight !== 'undefined' && airshipFlight.on)
   ) {
     postcardState.calm = 0;

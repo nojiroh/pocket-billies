@@ -17,7 +17,7 @@ import {
   rebuildFromSettings,
   render,
   renderOverlay,
-  runDiagTest,
+  runDiagnostics,
   runQuickTest,
   testVolume,
   toast,
@@ -638,7 +638,7 @@ document.addEventListener('click', ev => {
       uiState.modal = null;
       uiState.mq = [];
       renderOverlay();
-      runDiagTest();
+      runDiagnostics();
       break;
     case 'import-save':
       importSave();

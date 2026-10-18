@@ -6,7 +6,7 @@
    battle. saveData.story remembers which scenes you have seen. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { STEST, closeModal, modal, postProcess, provide, render } from './hooks.js';
+import { closeModal, modal, postProcess, provide, render, selfTest } from './hooks.js';
 import { $, clamp } from './util.js';
 import { LOCATION_BY_ID, RULES, SPECIES, TRAINERS, trainersAt } from './game-data.js';
 import { activeBattle, escapeHtml, healAll, reducedMotion, save, saveData, today, uiState } from './game-state.js';
@@ -187,7 +187,7 @@ async function rivalScene(T) {
 /* when you arrive somewhere a story trainer waits, the scene starts by itself */
 export function storyCheck() {
   if (
-    (typeof STEST !== 'undefined' && STEST.on) ||
+    (typeof selfTest !== 'undefined' && selfTest.on) ||
     uiState.bench ||
     !saveData.started ||
     activeBattle ||
@@ -223,7 +223,7 @@ export function legendCheck() {
     TALK.on ||
     (typeof cutscene !== 'undefined' && cutscene.on) ||
     !walkView.ready ||
-    (typeof STEST !== 'undefined' && STEST.on) ||
+    (typeof selfTest !== 'undefined' && selfTest.on) ||
     uiState.bench
   )
     return;
@@ -296,7 +296,7 @@ export function storyMovedCheck() {
     uiState.title ||
     TALK.on ||
     (typeof cutscene !== 'undefined' && cutscene.on) ||
-    (typeof STEST !== 'undefined' && STEST.on) ||
+    (typeof selfTest !== 'undefined' && selfTest.on) ||
     uiState.bench
   )
     return;

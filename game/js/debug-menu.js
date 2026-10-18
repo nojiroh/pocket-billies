@@ -11,8 +11,8 @@ import {
   render,
   renderOverlay,
   runEvolution,
-  stSceneChecks,
-  testScenes,
+  testMapChecks,
+  testMaps,
   toast,
 } from './hooks.js';
 import { $, $$, clamp } from './util.js';
@@ -125,8 +125,8 @@ function debugHTML() {
  <details ${uiState.bench && uiState.bench.test ? 'open' : ''}><summary>Test scenes</summary><p class="note">Small places that each show one tricky situation: stairs, ledges at the limits, bridges, water, shadows, every prop, slopes, the camera in tight spots, night lights, a dense forest, tiny and huge maps, traffic, and the light lab (v44: light on the land, in a room, on props, in the air — the places the quick check measures the lighting in). Checks test the walking rules there (what should and shouldn't be reachable).</p>
   <div class="dbg-row">${debugSelectHTML(
     'dbgTest',
-    testScenes().map(k => [k, (mapById(k).name || k).replace(/^Test: /, '')]),
-    uiState.dbgTest || testScenes()[0] || ''
+    testMaps().map(k => [k, (mapById(k).name || k).replace(/^Test: /, '')]),
+    uiState.dbgTest || testMaps()[0] || ''
   )}${debugButtonHTML('test', 'Go there')}${debugButtonHTML('testchk', 'Run its checks')}${uiState.bench && uiState.bench.test ? debugButtonHTML('untest', 'Back to the game', 'gold') : ''}</div>
   ${uiState.testRes ? `<ul class="dbg-warn">${uiState.testRes.map(r => `<li>${r.ok ? '✓' : '✗'} ${escapeHtml(r.what)}${r.ok ? '' : ` (expected ${r.reach ? 'reachable' : 'not reachable'})`}</li>`).join('')}</ul>` : ''}</details>
  <details><summary>Eggs and jobs</summary><div class="dbg-row">${debugSelectHTML(
@@ -310,7 +310,7 @@ function debugAction(x) {
     case 'testchk': {
       const id = v('dbgTest') || uiState.dbgTest;
       uiState.dbgTest = id;
-      uiState.testRes = stSceneChecks(id);
+      uiState.testRes = testMapChecks(id);
       break;
     }
     case 'jump': {

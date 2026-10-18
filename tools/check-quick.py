@@ -603,7 +603,7 @@ def desktop_steps(b, base, R):
 
     @step('Test scenes: walking rules (from the data)', 30)
     def test_checks():
-        r = pg.evaluate("(()=>{const o={};for(const id of testScenes())o[id]=stSceneChecks(id);return o})()")
+        r = pg.evaluate("(()=>{const o={};for(const id of testMaps())o[id]=testMapChecks(id);return o})()")
         R['testChecks'] = r; bad = [f'{k}: {c["what"]}' for k, v in r.items() for c in v if not c['ok']]
         if bad: raise Exception('; '.join(bad[:6]))
         return f'{len(r)} test scenes, {sum(len(v) for v in r.values())} checks'
@@ -612,7 +612,7 @@ def desktop_steps(b, base, R):
     if '--tests' in ARGS:
         @step('Test scenes: each one drawn, with its pictures', 600)
         def test_draw():
-            tests = pg.evaluate('testScenes()'); n = 0
+            tests = pg.evaluate('testMaps()'); n = 0
             for id in tests:
                 pg.evaluate(f"uiState.tab='walk';uiState.bench={{id:'{id}',test:1}};render();0")
                 if not until(pg, f"!!(walkView.ready&&walkView.id==='{id}')", 40): raise Exception(f'{id} didn’t open')

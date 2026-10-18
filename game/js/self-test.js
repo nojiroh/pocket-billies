@@ -86,33 +86,33 @@ import { battleTipHide, fallMap, fallMapCanvas } from './opening-fall.js';
 import { closeModal, leaveRoom, mapIdAt, modal, render, renderOverlay, toast, walkPick } from './ui.js';
 /* eslint-disable no-func-assign */
 expose({
-  DIAGR: [() => DIAGR, v => (DIAGR = v)],
-  DIAG_PASSES: [() => DIAG_PASSES],
-  STD_EMPTY: [() => STD_EMPTY],
-  STEST: [() => STEST],
-  diagReport: [() => diagReport, v => (diagReport = v)],
-  diagTimersOff: [() => diagTimersOff, v => (diagTimersOff = v)],
-  diagTimersOn: [() => diagTimersOn, v => (diagTimersOn = v)],
-  exportDiagReport: [() => exportDiagReport, v => (exportDiagReport = v)],
-  runDiagTest: [() => runDiagTest, v => ((runDiagTest = v), provide({ runDiagTest }))],
+  DIAGNOSTICS_PASSES: [() => DIAGNOSTICS_PASSES],
+  diagnosticsMaps: [() => diagnosticsMaps, v => (diagnosticsMaps = v)],
+  diagnosticsReport: [() => diagnosticsReport, v => (diagnosticsReport = v)],
+  diagnosticsSummary: [() => diagnosticsSummary, v => (diagnosticsSummary = v)],
+  diagnosticsTimersOff: [() => diagnosticsTimersOff, v => (diagnosticsTimersOff = v)],
+  diagnosticsTimersOn: [() => diagnosticsTimersOn, v => (diagnosticsTimersOn = v)],
+  emptyDiagnosticsReport: [() => emptyDiagnosticsReport],
+  exportDiagnosticsReport: [() => exportDiagnosticsReport, v => (exportDiagnosticsReport = v)],
+  runDiagnostics: [() => runDiagnostics, v => ((runDiagnostics = v), provide({ runDiagnostics }))],
   runFullTest: [() => runFullTest, v => (runFullTest = v)],
   runQuickTest: [() => runQuickTest],
-  stDiagScenes: [() => stDiagScenes, v => (stDiagScenes = v)],
-  stSceneChecks: [() => stSceneChecks, v => ((stSceneChecks = v), provide({ stSceneChecks }))],
-  stSleep: [() => stSleep, v => (stSleep = v)],
-  stStats: [() => stStats, v => (stStats = v)],
-  testScenes: [() => testScenes, v => ((testScenes = v), provide({ testScenes }))],
+  selfTest: [() => selfTest],
+  selfTestFrameStats: [() => selfTestFrameStats, v => (selfTestFrameStats = v)],
+  selfTestSleep: [() => selfTestSleep, v => (selfTestSleep = v)],
+  testMapChecks: [() => testMapChecks, v => ((testMapChecks = v), provide({ testMapChecks }))],
+  testMaps: [() => testMaps, v => ((testMaps = v), provide({ testMaps }))],
 });
 /* eslint-enable no-func-assign */
-provide({ runDiagTest, stSceneChecks, testScenes });
+provide({ runDiagnostics, testMapChecks, testMaps });
 /* to-module: end */
-const STEST = { on: false, stop: false };
-provide({ STEST }); /* to-module */
-function stSleep(ms) {
+const selfTest = { on: false, stop: false };
+provide({ selfTest }); /* to-module */
+function selfTestSleep(ms) {
   return new Promise(r => setTimeout(r, ms));
 }
 /* frame rate of one scheduler task between two moments of the debug log */
-function stStats(t0, t1, task) {
+function selfTestFrameStats(t0, t1, task) {
   const f = [],
     m = [];
   let slow = 0;
@@ -129,10 +129,10 @@ function stStats(t0, t1, task) {
   return { fpsAvg: avg(f), fpsWorst: Math.min(...f), cpuMs: avg(m), slow, seconds: f.length };
 }
 /* v20: the test scenes, and their walking checks (from, to, reach) worked out from the scene data without drawing */
-function testScenes() {
+function testMaps() {
   return Object.keys(gameData.scenes || {}).filter(k => gameData.scenes[k].test);
 }
-function stSceneChecks(id) {
+function testMapChecks(id) {
   const sc = mapById(id);
   if (!sc) return [];
   const keep = [walkView.sc, walkView.nav, walkView.gkey],
@@ -160,7 +160,7 @@ function stSceneChecks(id) {
 }
 async function runFullTest(mode) {
   const diag = mode === 'diag';
-  if (STEST.on) return;
+  if (selfTest.on) return;
   if (typeof activeBattle !== 'undefined' && activeBattle) {
     toast('Finish the battle first.');
     return;
@@ -174,8 +174,8 @@ async function runFullTest(mode) {
     uiState.mq = [];
     renderOverlay();
   }
-  STEST.on = true;
-  STEST.stop = false;
+  selfTest.on = true;
+  selfTest.stop = false;
   await loadAllMaps(); /* phase 04b: every map whole before the test opens them */
   const keep = JSON.stringify(saveData),
     back = { tab: uiState.tab, roam: uiState.roam, node: saveData.route.node },
@@ -190,7 +190,7 @@ async function runFullTest(mode) {
     '</b><span class="nb-step">Getting ready…</span><span class="nb-bar"><i></i></span><button class="pb small quiet" type="button">Stop</button>';
   document.body.appendChild(box);
   box.querySelector('button').onclick = () => {
-    STEST.stop = true;
+    selfTest.stop = true;
   };
   const stepEl = box.querySelector('.nb-step'),
     bar = box.querySelector('.nb-bar i');
@@ -201,11 +201,19 @@ async function runFullTest(mode) {
     stress = [],
     errs0 = debugLog.err.length,
     T0 = debugLog.now();
-  const only0 = STEST.only;
+  const only0 = selfTest.only;
   if (diag) {
-    DIAGR = STD_EMPTY();
-    scenes.splice(0, scenes.length, ...stDiagScenes());
-    STEST.only = ['Shaders', 'Walk: ', 'Device', 'Frame budget', 'Rain and night', 'Battle on the 3D stage', 'Memory'];
+    diagnosticsReport = emptyDiagnosticsReport();
+    scenes.splice(0, scenes.length, ...diagnosticsMaps());
+    selfTest.only = [
+      'Shaders',
+      'Walk: ',
+      'Device',
+      'Frame budget',
+      'Rain and night',
+      'Battle on the 3D stage',
+      'Memory',
+    ];
   }
   const total = diag
     ? scenes.length * 4 + 1 + 1 + 6 + 10 + 6 + 1
@@ -227,11 +235,11 @@ async function runFullTest(mode) {
   const wake = async () => {
     try {
       if (navigator.wakeLock && !document.hidden) {
-        STEST.wl = await navigator.wakeLock.request('screen');
+        selfTest.wl = await navigator.wakeLock.request('screen');
         debugLog.add('bench', 'the screen stays on during the test');
       }
     } catch (e) {
-      STEST.wl = null;
+      selfTest.wl = null;
     }
   };
   let hid = 0;
@@ -243,29 +251,29 @@ async function runFullTest(mode) {
   };
   document.addEventListener('visibilitychange', onVis);
   wake();
-  STEST.offVis = () => {
+  selfTest.offVis = () => {
     document.removeEventListener('visibilitychange', onVis);
     try {
-      if (STEST.wl) STEST.wl.release();
+      if (selfTest.wl) selfTest.wl.release();
     } catch (e) {}
-    STEST.wl = null;
+    selfTest.wl = null;
   };
   const awake = async () => {
     if (!document.hidden) return;
     stepEl.textContent = 'Paused while the app is in the background';
-    while (document.hidden && !STEST.stop) await stSleep(300);
-    await stSleep(800); /* frames start again */
+    while (document.hidden && !selfTest.stop) await selfTestSleep(300);
+    await selfTestSleep(800); /* frames start again */
   };
   const phase = async (name, task, fn, sec, maxSec) => {
-    if (STEST.stop) return;
-    /* v44b: STEST.only=['light'] runs only the steps whose names hold one of those words (for diagnosis) */ if (
-      STEST.only &&
-      !STEST.only.some(w => name.toLowerCase().includes(w.toLowerCase()))
+    if (selfTest.stop) return;
+    /* v44b: selfTest.only=['light'] runs only the steps whose names hold one of those words (for diagnosis) */ if (
+      selfTest.only &&
+      !selfTest.only.some(w => name.toLowerCase().includes(w.toLowerCase()))
     )
       return;
     for (let attempt = 0; ; attempt++) {
       await awake();
-      if (STEST.stop) return;
+      if (selfTest.stop) return;
       const h0 = hid;
       stepEl.textContent = name;
       debugLog.bench.step = name;
@@ -285,7 +293,7 @@ async function runFullTest(mode) {
           fn(),
           new Promise((_, rej) => {
             timer = setTimeout(() => {
-              STEST.gen = (STEST.gen || 0) + 1;
+              selfTest.gen = (selfTest.gen || 0) + 1;
               /* a step left behind stops at its next check */ rej(
                 new Error(`took longer than ${Math.round(limit / 1000)} s, skipped`)
               );
@@ -304,14 +312,14 @@ async function runFullTest(mode) {
       } finally {
         clearTimeout(timer);
       }
-      await stSleep(300);
+      await selfTestSleep(300);
       if (hid !== h0 && attempt < 2) {
         debugLog.add('bench', name + ': the app went to the background, running the step again');
         continue;
       }
       const bg = hid !== h0; /* still interrupted after three tries: not measured */
       if (err && !bg) debugLog.error('test', name + ': ' + why, err && err.stack);
-      const st = stStats(t0, debugLog.now(), task),
+      const st = selfTestFrameStats(t0, debugLog.now(), task),
         ne = debugLog.err.slice(e0).filter(x => x.kind !== 'test');
       if (ne.length && !bg) {
         ok = false;
@@ -386,8 +394,8 @@ async function runFullTest(mode) {
   const walkAbout = async sec => {
     const end = performance.now() + sec * 1000;
     let k = 0;
-    while (performance.now() < end && !STEST.stop) {
-      await stSleep(500);
+    while (performance.now() < end && !selfTest.stop) {
+      await selfTestSleep(500);
       k++;
       unblock();
       if (walkView.ready && walkView.sc) {
@@ -441,7 +449,7 @@ async function runFullTest(mode) {
               .filter(e => /quality|resolution/i.test(e.kind + ' ' + (e.msg || '')))
               .slice(-6)
               .map(e => e.msg || e.kind);
-          DIAGR.device = {
+          diagnosticsReport.device = {
             device: debugLog.device ? debugLog.device() : null,
             graphics: g,
             auto: engineSetting('quality', 'auto') ?? null,
@@ -450,13 +458,13 @@ async function runFullTest(mode) {
             screenHz: typeof FRAME !== 'undefined' ? FRAME.hz : null,
             why: ev,
           };
-          return `${String(g.renderer || g.gpu || 'graphics unknown').slice(0, 60)} · resolution ×${DIAGR.device.resolution ?? '?'} · quality level ${DIAGR.device.level ?? '?'}${ev.length ? ' · ' + ev.slice(-1)[0] : ''}`;
+          return `${String(g.renderer || g.gpu || 'graphics unknown').slice(0, 60)} · resolution ×${diagnosticsReport.device.resolution ?? '?'} · quality level ${diagnosticsReport.device.level ?? '?'}${ev.length ? ' · ' + ev.slice(-1)[0] : ''}`;
         },
         1
       );
     /* 1. every walk scene */
     for (const id of scenes) {
-      if (STEST.stop) break;
+      if (selfTest.stop) break;
       await phase(
         'Walk: ' + ((mapById(id) || {}).name || id),
         'dio',
@@ -466,9 +474,9 @@ async function runFullTest(mode) {
           uiState.bench = { id };
           render();
           let open = null;
-          for (let i = 0; i < 60 && !(walkView.ready && walkView.id === id); i++) await stSleep(50);
+          for (let i = 0; i < 60 && !(walkView.ready && walkView.id === id); i++) await selfTestSleep(50);
           open = walkView.ready && walkView.id === id ? Math.round(performance.now() - tm) : null;
-          await stSleep(Math.max(0, 900 - (performance.now() - tm)));
+          await selfTestSleep(Math.max(0, 900 - (performance.now() - tm)));
           const f0 = typeof walkRenderer !== 'undefined' ? walkRenderer.frames : 0;
           await walkAbout(3);
           if (!walkView.ready || walkView.id !== id)
@@ -512,16 +520,16 @@ async function runFullTest(mode) {
         'Frame budget: where the time goes',
         'dio',
         async () => {
-          const sid = DIAGR.busiest;
+          const sid = diagnosticsReport.busiest;
           uiState.bench = { id: sid };
           uiState.tab = 'walk';
           render();
-          for (let i = 0; i < 80 && !(walkView.ready && walkView.id === sid); i++) await stSleep(100);
-          await stSleep(900);
-          const T = diagTimersOn();
+          for (let i = 0; i < 80 && !(walkView.ready && walkView.id === sid); i++) await selfTestSleep(100);
+          await selfTestSleep(900);
+          const T = diagnosticsTimersOn();
           await walkAbout(4);
-          const r = await diagTimersOff(T);
-          DIAGR.passes = r;
+          const r = await diagnosticsTimersOff(T);
+          diagnosticsReport.passes = r;
           return (
             `per frame: ` +
             Object.entries(r.cpu)
@@ -547,16 +555,16 @@ async function runFullTest(mode) {
           const meas = async force => {
             environment.on = true;
             environment.force = force;
-            await stSleep(1000);
+            await selfTestSleep(1000);
             const t0 = debugLog.now();
             await walkAbout(3);
-            return stStats(t0, debugLog.now(), 'dio');
+            return selfTestFrameStats(t0, debugLog.now(), 'dio');
           };
           try {
             const a = await meas({ time: 12.5, weather: 'clear', season: 'summer' }),
               b = await meas({ time: 12.5, weather: 'rain', season: 'summer' }),
               c = await meas({ time: 23, weather: 'clear', season: 'summer' });
-            DIAGR.weather = { clear: a, rain: b, night: c };
+            diagnosticsReport.weather = { clear: a, rain: b, night: c };
             return `clear day ${a.fpsAvg} fps (${a.cpuMs} ms), rain ${b.fpsAvg} fps (${b.cpuMs} ms), night ${c.fpsAvg} fps (${c.cpuMs} ms)`;
           } finally {
             environment.force = f0;
@@ -624,7 +632,7 @@ async function runFullTest(mode) {
       );
     }
     /* 1c. v26: night, bad weather and the seasons drawn in town, a room you walk into, and a dark cave */
-    if (typeof environment !== 'undefined' && !STEST.stop)
+    if (typeof environment !== 'undefined' && !selfTest.stop)
       await phase(
         'Night, weather, seasons and rooms',
         'dio',
@@ -636,17 +644,17 @@ async function runFullTest(mode) {
             uiState.tab = 'walk';
             uiState.bench = { id: sid };
             render();
-            await stSleep(900);
+            await selfTestSleep(900);
             for (const [n, f] of [
               ['night', { time: 23.5, weather: 'clear' }],
               ['a storm', { time: 15, weather: 'storm' }],
               ['snow', { time: 11, weather: 'snow', season: 'winter' }],
               ['autumn', { time: 12, weather: 'clear', season: 'autumn' }],
             ]) {
-              if (STEST.stop) break;
+              if (selfTest.stop) break;
               environment.force = f;
               const f1 = typeof walkRenderer !== 'undefined' ? walkRenderer.frames : 0;
-              await stSleep(1600);
+              await selfTestSleep(1600);
               if (typeof walkRenderer !== 'undefined' && walkRenderer.on && walkRenderer.frames <= f1)
                 throw new Error(n + ': the scene stopped drawing');
               out.push(n);
@@ -655,10 +663,10 @@ async function runFullTest(mode) {
             environment.force = f0;
           }
           for (const id of ['int_shop', 'grotto']) {
-            if (!gameData.scenes[id] || STEST.stop) continue;
+            if (!gameData.scenes[id] || selfTest.stop) continue;
             uiState.bench = { id };
             render();
-            await stSleep(1400);
+            await selfTestSleep(1400);
             if (!walkView.ready || walkView.id !== id)
               throw new Error((gameData.scenes[id].name || id) + ' didn’t open');
             out.push(id === 'grotto' ? 'a dark cave' : 'a shop you walk into');
@@ -680,8 +688,8 @@ async function runFullTest(mode) {
       uiState.tab = 'walk';
       saveData.route.node = back.node;
       render();
-      await stSleep(600);
-      for (let i = 0; i < 40 && !(walkView.ready && walkView.id === mapIdAt(back.node)); i++) await stSleep(200);
+      await selfTestSleep(600);
+      for (let i = 0; i < 40 && !(walkView.ready && walkView.id === mapIdAt(back.node)); i++) await selfTestSleep(200);
       /* v43: the stage needs the walk scene open */ saveData.preferences = saveData.preferences || {};
       const pref = saveData.preferences.battleStage;
       saveData.preferences.battleStage = classic ? 'classic' : 'scene';
@@ -691,14 +699,14 @@ async function runFullTest(mode) {
       const q = { id: 'selftest', sp: foeSp, lvl: 5, gold: false, no: 1 };
       saveData.queue = [q].concat(saveData.queue || []);
       startWild(q);
-      const g0 = STEST.gen || 0;
+      const g0 = selfTest.gen || 0;
       const want = async (ph, ms) => {
         const end = performance.now() + ms;
         while (performance.now() < end) {
-          if (!activeBattle || (STEST.gen || 0) !== g0) return false;
+          if (!activeBattle || (selfTest.gen || 0) !== g0) return false;
           if (ph.includes(activeBattle.phase)) return true;
           if (activeBattle.phase === 'playing') tapMessage();
-          await stSleep(150);
+          await selfTestSleep(150);
         }
         return false;
       };
@@ -713,7 +721,7 @@ async function runFullTest(mode) {
         const f = document.querySelector('[data-a=bfight]');
         if (f) {
           f.click();
-          await stSleep(200);
+          await selfTestSleep(200);
           const m = document.querySelector('[data-a=bmove]');
           if (m) m.click();
         }
@@ -725,7 +733,7 @@ async function runFullTest(mode) {
       battleStageStop();
       saveData.preferences.battleStage = pref;
       render();
-      await stSleep(600);
+      await selfTestSleep(600);
       if (!ok) throw new Error(why);
       return `${classic ? 'painted stage' : gl ? '3D stage' : '3D stage not available here, painted stage used'}; move menu after ${(menuMs / 1000).toFixed(1)} s`;
     };
@@ -735,7 +743,7 @@ async function runFullTest(mode) {
       uiState.tab = 'walk';
       saveData.route.node = back.node;
       render();
-      await stSleep(1200);
+      await selfTestSleep(1200);
       saveData.team.forEach(m => {
         m.hp = maxHp(m);
         m.status = null;
@@ -752,14 +760,14 @@ async function runFullTest(mode) {
         saveData.queue = [q].concat(saveData.queue || []);
         startWild(q);
       }
-      const g0 = STEST.gen || 0;
+      const g0 = selfTest.gen || 0;
       const want = async (ph, ms) => {
         const end = performance.now() + ms;
         while (performance.now() < end) {
-          if (!activeBattle || (STEST.gen || 0) !== g0) return false;
+          if (!activeBattle || (selfTest.gen || 0) !== g0) return false;
           if (ph.includes(activeBattle.phase)) return true;
           if (activeBattle.phase === 'playing') tapMessage();
-          await stSleep(120);
+          await selfTestSleep(120);
         }
         return false;
       };
@@ -772,7 +780,7 @@ async function runFullTest(mode) {
       let plates = 0;
       for (let i = 0; i < 40 && plates < mine + theirs; i++) {
         plates = document.querySelectorAll('#plates .bplate:not(.off)').length;
-        if (plates < mine + theirs) await stSleep(150);
+        if (plates < mine + theirs) await selfTestSleep(150);
       } /* a plate shows once its fighter is drawn */
       if (kind === 'double' && (fmt !== 'double' || theirs < 2))
         throw new Error(`expected 2 against 2, got ${mine} against ${theirs} (${fmt})`);
@@ -790,7 +798,7 @@ async function runFullTest(mode) {
           aimed++;
           pickTarget(liveActors(1)[0]);
         }
-        await stSleep(80);
+        await selfTestSleep(80);
       }
       const tt = performance.now();
       if (!(await want(['choose', 'end', 'switch'], 60000)))
@@ -801,11 +809,11 @@ async function runFullTest(mode) {
       setActiveBattle(null);
       battleStageStop();
       render();
-      await stSleep(600);
+      await selfTestSleep(600);
       return `${mine} against ${theirs} (${fmt}); ${plates} nameplates; ${picks} picks, ${aimed} aimed; the turn played ${lines} lines in ${(turnMs / 1000).toFixed(1)} s`;
     };
     /* v43: the seamless world: out of Sundown along its road and into the Long Grass, measuring every view change */
-    if (typeof seamlessTripView === 'function' && gameData.scenes.sundown && !STEST.stop)
+    if (typeof seamlessTripView === 'function' && gameData.scenes.sundown && !selfTest.stop)
       await phase(
         'Road: Marigold Town to Tallgrass Meadow on the ground',
         'dio',
@@ -818,7 +826,7 @@ async function runFullTest(mode) {
             uiState.roam = { id: 'sundown', node: 0, x: h[0], z: h[1] };
           }
           render();
-          for (let i = 0; i < 60 && !(walkView.ready && walkView.id === 'w:sundown*'); i++) await stSleep(100);
+          for (let i = 0; i < 60 && !(walkView.ready && walkView.id === 'w:sundown*'); i++) await selfTestSleep(100);
           if (walkView.id !== 'w:sundown*')
             throw new Error('Marigold Town is not shown with its neighbours (still ' + walkView.id + ')');
           const q0 = saveData.queue,
@@ -826,7 +834,7 @@ async function runFullTest(mode) {
           saveData.queue = [];
           setTrip(1);
           render();
-          await stSleep(600);
+          await selfTestSleep(600);
           const views = [walkView.id];
           let unready = 0,
             shifts = 0,
@@ -842,7 +850,7 @@ async function runFullTest(mode) {
             const f0 = walkRenderer.frames,
               t0 = performance.now();
             for (let i = 0; i < 14; i++) {
-              await stSleep(100);
+              await selfTestSleep(100);
               if (!walkView.ready) unready++;
               if (walkView.id !== views[views.length - 1]) {
                 views.push(walkView.id);
@@ -852,7 +860,8 @@ async function runFullTest(mode) {
             const ms = (performance.now() - t0) / Math.max(1, walkRenderer.frames - f0);
             worst = Math.max(worst, ms);
           }
-          for (let i = 0; i < 40 && !(saveData.route.node === 1 && saveData.route.prog === 0); i++) await stSleep(100);
+          for (let i = 0; i < 40 && !(saveData.route.node === 1 && saveData.route.prog === 0); i++)
+            await selfTestSleep(100);
           saveData.queue = q0;
           if (saveData.route.node !== 1)
             throw new Error('never arrived at Tallgrass Meadow (' + JSON.stringify(saveData.route) + ')');
@@ -873,7 +882,7 @@ async function runFullTest(mode) {
         120
       );
     /* v46: a room that opens in place: into Sundown's shop and out again, without leaving the town */
-    if (typeof seamlessRoomMap === 'function' && gameData.scenes.sundown && !STEST.stop)
+    if (typeof seamlessRoomMap === 'function' && gameData.scenes.sundown && !selfTest.stop)
       await phase(
         'A room that opens in place',
         'dio',
@@ -892,7 +901,7 @@ async function runFullTest(mode) {
             saveData.route = { node: 0, prog: 0, plan: [], hold: false };
             uiState.roam = null;
             render();
-            for (let i = 0; i < 60 && !(walkView.ready && walkView.id === 'w:sundown*'); i++) await stSleep(100);
+            for (let i = 0; i < 60 && !(walkView.ready && walkView.id === 'w:sundown*'); i++) await selfTestSleep(100);
             if (walkView.id !== 'w:sundown*') throw new Error('Marigold Town is not shown (still ' + walkView.id + ')');
             const p = walkView.sc.props.find(p => p.act === 'shop' && p.k === 'shop');
             if (!p) throw new Error('no shop in Marigold Town');
@@ -908,16 +917,16 @@ async function runFullTest(mode) {
               i < 150 && !(walkView.ready && (walkView.sc.roomOf === 'int_shop' || walkView.id === 'int_shop'));
               i++
             )
-              await stSleep(100);
+              await selfTestSleep(100);
             const ms = performance.now() - t0;
             if (walkView.id === 'int_shop') {
               leaveRoom();
-              await stSleep(1500);
+              await selfTestSleep(1500);
               return `the room wasn’t ready in time and opened on its own (${(ms / 1000).toFixed(1)} s)`;
             }
             if (walkView.sc.roomOf !== 'int_shop')
               throw new Error('the shop’s room didn’t open (still ' + walkView.id + ')');
-            await stSleep(1200);
+            await selfTestSleep(1200);
             const sc = walkView.sc,
               c = sc.roomCut,
               I = uiState.inside,
@@ -926,7 +935,7 @@ async function runFullTest(mode) {
               RD = roomDimming(sc);
             if (off > 0.8) throw new Error(`the room’s doorway is ${off.toFixed(1)} m from the shop’s door`);
             leaveRoom();
-            for (let i = 0; i < 60 && !(walkView.ready && walkView.id === 'w:sundown*'); i++) await stSleep(100);
+            for (let i = 0; i < 60 && !(walkView.ready && walkView.id === 'w:sundown*'); i++) await selfTestSleep(100);
             if (walkView.id !== 'w:sundown*')
               throw new Error('walking out didn’t bring the town back (' + walkView.id + ')');
             return `in ${(ms / 1000).toFixed(1)} s, doorway ${off.toFixed(2)} m from the door, town dimmed ${(RD ? RD.dim : 0).toFixed(2)}, back out at the door`;
@@ -942,7 +951,7 @@ async function runFullTest(mode) {
       );
     /* v44: the light lab: the four light test scenes, each drawn for a second; what each kind of renderer drew, the
      lamps' maps at night, and whether WebGL refused a draw (a sampler fed the wrong texture shows as a thing missing) */
-    if (gameData.scenes.test_light_terrain && typeof gpuState !== 'undefined' && gpuState.gl && !STEST.stop)
+    if (gameData.scenes.test_light_terrain && typeof gpuState !== 'undefined' && gpuState.gl && !selfTest.stop)
       await phase(
         'Light lab: the land, a room, props, the air',
         'dio',
@@ -975,17 +984,17 @@ async function runFullTest(mode) {
               ['test_light_room', 23],
               ['test_light_air', 17.5],
             ]) {
-              if (STEST.stop) break;
+              if (selfTest.stop) break;
               if (typeof environment !== 'undefined')
                 environment.force = { time: t, weather: 'clear', season: 'summer' };
               uiState.tab = 'walk';
               uiState.bench = { id, test: 1 };
               render();
-              for (let i = 0; i < 60 && !(walkView.ready && walkView.id === id); i++) await stSleep(100);
+              for (let i = 0; i < 60 && !(walkView.ready && walkView.id === id); i++) await selfTestSleep(100);
               if (walkView.id !== id) throw new Error(id + ' did not open');
               /* v44b: wait until the scene has settled: ready, every voxel recipe it uses arrived, then 20 more frames
         (the first frames after a scene opens draw voxel props as their pictures while the recipes load) */
-              for (let i = 0; i < 80 && !walkView.ready; i++) await stSleep(100);
+              for (let i = 0; i < 80 && !walkView.ready; i++) await selfTestSleep(100);
               const C0 = walkData().sc.props,
                 vk = (walkView.sc.props || [])
                   .filter(p => C0[p.k] && typeof C0[p.k].vox === 'string')
@@ -995,10 +1004,10 @@ async function runFullTest(mode) {
                 i < 60 && typeof propModelState !== 'undefined' && vk.some(k => !propModelState.recipes.get(k));
                 i++
               )
-                await stSleep(100);
+                await selfTestSleep(100);
               const f0 = walkRenderer.frames;
-              for (let i = 0; i < 80 && walkRenderer.frames < f0 + 20; i++) await stSleep(100);
-              await stSleep(300);
+              for (let i = 0; i < 80 && walkRenderer.frames < f0 + 20; i++) await selfTestSleep(100);
+              await selfTestSleep(300);
               const b = typeof buildingState !== 'undefined' ? buildingState.drawn || 0 : 0,
                 v = typeof propModelState !== 'undefined' ? propModelState.drawn || 0 : 0,
                 p = typeof solidPropState !== 'undefined' ? solidPropState.drawn || 0 : 0,
@@ -1048,7 +1057,7 @@ async function runFullTest(mode) {
     await phase('Double battle with a trainer', 'scene', () => teamBattle('double'), 8, 150);
     await phase('Alpha battle: your team against one', 'scene', () => teamBattle('alpha'), 8, 150);
     /* v47: the opening's fall across the Hollow Earth (the world map's renderer, flying past the Inner Sun), timed */
-    if (typeof fallMap === 'function' && !STEST.stop)
+    if (typeof fallMap === 'function' && !selfTest.stop)
       await phase(
         'Opening: falling across the Hollow Earth',
         'map',
@@ -1085,7 +1094,7 @@ async function runFullTest(mode) {
           }
           uiState.tab = 'walk';
           render();
-          await stSleep(1200);
+          await selfTestSleep(1200);
           if (fr.length < 3) throw new Error(`the fall drew ${fr.length} frames`);
           const a = fr.slice(2),
             avg = a.reduce((x, y) => x + y, 0) / a.length;
@@ -1095,7 +1104,7 @@ async function runFullTest(mode) {
         40
       );
     /* v47: Blake's first battle: Hazel's first tip shows, a turn plays, and after it Blake and Hazel talk and your team is healed */
-    if (TRAINERS.blake0 && !STEST.stop)
+    if (TRAINERS.blake0 && !selfTest.stop)
       await phase(
         'Opening: Blake’s first battle',
         'scene',
@@ -1105,7 +1114,7 @@ async function runFullTest(mode) {
           uiState.tab = 'walk';
           saveData.route.node = back.node;
           render();
-          await stSleep(1200);
+          await selfTestSleep(1200);
           let od = null;
           try {
             od = localStorage.getItem('nw-opening-done');
@@ -1116,14 +1125,14 @@ async function runFullTest(mode) {
             m.status = null;
           });
           startTrainer('blake0', { talked: true });
-          const g0 = STEST.gen || 0,
+          const g0 = selfTest.gen || 0,
             want = async (ph, ms) => {
               const end = performance.now() + ms;
               while (performance.now() < end) {
-                if (!activeBattle || (STEST.gen || 0) !== g0) return false;
+                if (!activeBattle || (selfTest.gen || 0) !== g0) return false;
                 if (ph.includes(activeBattle.phase)) return true;
                 if (activeBattle.phase === 'playing') tapMessage();
-                await stSleep(150);
+                await selfTestSleep(150);
               }
               return false;
             };
@@ -1146,7 +1155,7 @@ async function runFullTest(mode) {
                 said++;
                 TALK.cur.tap();
               }
-              await stSleep(200);
+              await selfTestSleep(200);
             }
             const st = (saveData.story || {}).rival0,
               healed = saveData.team.every(m => m.hp === maxHp(m));
@@ -1173,7 +1182,7 @@ async function runFullTest(mode) {
               else localStorage.setItem('nw-opening-done', od);
             } catch (e) {}
             render();
-            await stSleep(500);
+            await selfTestSleep(500);
           }
         },
         10,
@@ -1193,10 +1202,10 @@ async function runFullTest(mode) {
           const node = LOCATIONS.findIndex(r => r.scene === gid);
           if (node >= 0) saveData.route.node = node;
           render();
-          for (let i = 0; i < 80 && !(walkView.ready && walkView.id === gid); i++) await stSleep(100);
-          await stSleep(1500);
+          for (let i = 0; i < 80 && !(walkView.ready && walkView.id === gid); i++) await selfTestSleep(100);
+          await selfTestSleep(1500);
           const p0 = Object.fromEntries(Object.entries(walkView.enc).map(([k, v]) => [k, [v.x, v.z]]));
-          await stSleep(8000);
+          await selfTestSleep(8000);
           const moved = Object.entries(walkView.enc).filter(
               ([k, v]) => p0[k] && Math.hypot(v.x - p0[k][0], v.z - p0[k][1]) > 0.3
             ).length,
@@ -1205,7 +1214,7 @@ async function runFullTest(mode) {
           const P = walkView.pl,
             hb = mapHub(walkView.sc);
           walkTo([clamp(hb[0] + 4, 1, walkView.sc.w - 1), clamp(hb[1] + 2, 1, walkView.sc.h - 1)]);
-          await stSleep(3500);
+          await selfTestSleep(3500);
           const b = worldBillies.bud,
             gap = b ? Math.hypot(b.x - P.x, b.z - P.z) : null;
           if (b) buddyTap();
@@ -1224,17 +1233,17 @@ async function runFullTest(mode) {
       async () => {
         uiState.tab = 'map';
         render();
-        await stSleep(3500);
+        await selfTestSleep(3500);
         const fl = document.querySelector('[data-a=mflat]');
         if (fl) {
           fl.click();
-          await stSleep(2500);
+          await selfTestSleep(2500);
           fl.click();
         }
-        await stSleep(1500);
+        await selfTestSleep(1500);
         uiState.tab = 'walk';
         render();
-        await stSleep(500);
+        await selfTestSleep(500);
       },
       8
     );
@@ -1246,7 +1255,7 @@ async function runFullTest(mode) {
         if (typeof worldMapMinisOn !== 'function' || !worldMapMinisOn()) return 'switched off';
         uiState.tab = 'map';
         render();
-        await stSleep(2500);
+        await selfTestSleep(2500);
         if (!worldMap.gl) {
           uiState.tab = 'walk';
           render();
@@ -1257,14 +1266,14 @@ async function runFullTest(mode) {
         worldMap.tilt = 0.4;
         worldMapGl.altT = null;
         worldMap.dirty = true;
-        await stSleep(3000);
+        await selfTestSleep(3000);
         const n = [...worldMapMinis.cache.values()].filter(e => e.m).length;
         worldMap.alt = a0;
         worldMap.tilt = 0.5733;
         worldMap.dirty = true;
         uiState.tab = 'walk';
         render();
-        await stSleep(500);
+        await selfTestSleep(500);
         return n ? `${n} miniatures built` : false;
       },
       6
@@ -1315,7 +1324,7 @@ async function runFullTest(mode) {
       uiState.tab = 'walk';
       uiState.bench = { id: sid };
       render();
-      await stSleep(1200);
+      await selfTestSleep(1200);
       unblock();
       const steps = [
         ['Normal', () => {}],
@@ -1376,7 +1385,7 @@ async function runFullTest(mode) {
       const drawing = async () => {
         if (!(typeof walkRenderer !== 'undefined' && walkRenderer.on)) return true;
         const f = walkRenderer.frames;
-        await stSleep(1500);
+        await selfTestSleep(1500);
         return walkRenderer.frames > f;
       };
       if (!(await drawing())) {
@@ -1392,22 +1401,22 @@ async function runFullTest(mode) {
         steps.length = 0;
       }
       for (const [name, fn] of steps) {
-        if (STEST.stop) break;
+        if (selfTest.stop) break;
         stepEl.textContent = 'Stress test: ' + name;
         debugLog.bench.step = 'stress: ' + name;
         try {
           fn();
         } catch (e) {}
-        await stSleep(800);
+        await selfTestSleep(800);
         await walkAbout(2); /* new people and props are drawn the first time they appear; measure after that */
         let st = null;
-        for (let a = 0; a < 3 && !STEST.stop; a++) {
+        for (let a = 0; a < 3 && !selfTest.stop; a++) {
           await awake();
           stepEl.textContent = 'Stress test: ' + name;
           const h0 = hid,
             t0 = debugLog.now();
           await walkAbout(5);
-          st = stStats(t0, debugLog.now(), 'dio');
+          st = selfTestFrameStats(t0, debugLog.now(), 'dio');
           if (hid === h0) break;
           st.notMeasured = a === 2 || undefined;
         } /* v47: measured again after a spell in the background */
@@ -1420,7 +1429,7 @@ async function runFullTest(mode) {
       walkView.parts.length = 0;
     }
   } finally {
-    STEST.only = only0;
+    selfTest.only = only0;
     if (typeof walkRenderer !== 'undefined') {
       walkRenderer.yawT = 0;
       walkRenderer.zoomT = 1;
@@ -1435,9 +1444,9 @@ async function runFullTest(mode) {
       cutsceneTeardown();
     }
     if (typeof dressingRoom !== 'undefined' && dressingRoom.on) closeDressingRoom();
-    if (STEST.offVis) {
-      STEST.offVis();
-      STEST.offVis = null;
+    if (selfTest.offVis) {
+      selfTest.offVis();
+      selfTest.offVis = null;
     }
     if (engKeep) gameData.engine = JSON.parse(engKeep);
     setSaveData(JSON.parse(keep));
@@ -1449,7 +1458,7 @@ async function runFullTest(mode) {
     uiState.mq = [];
     renderOverlay();
     render();
-    STEST.on = false;
+    selfTest.on = false;
     box.remove();
   }
   const errors = debugLog.err
@@ -1462,8 +1471,8 @@ async function runFullTest(mode) {
   debugLog.bench.step = null;
   debugLog.bench.result = {
     kind: diag ? 'diagnostics' : 'full',
-    diag: diag ? DIAGR : undefined,
-    stopped: STEST.stop,
+    diag: diag ? diagnosticsReport : undefined,
+    stopped: selfTest.stop,
     seconds: Math.round((debugLog.now() - T0) / 1000),
     passed: okAll,
     phases,
@@ -1471,7 +1480,7 @@ async function runFullTest(mode) {
     errors,
     device: debugLog.device ? debugLog.device() : null,
   };
-  debugLog.add('bench', STEST.stop ? 'stopped' : okAll ? 'passed' : 'problems found');
+  debugLog.add('bench', selfTest.stop ? 'stopped' : okAll ? 'passed' : 'problems found');
   const f = v => (v == null ? '–' : v),
     ctxLine = c =>
       c
@@ -1501,7 +1510,7 @@ async function runFullTest(mode) {
     )
     .join('');
   modal({
-    title: STEST.stop ? 'Test stopped' : okAll ? 'Everything works' : 'The test found problems',
+    title: selfTest.stop ? 'Test stopped' : okAll ? 'Everything works' : 'The test found problems',
     html: `<p class="note">Frames per second (higher is smoother; most screens show at most 60).</p>
   <table class="nb-table"><thead><tr><th>What</th><th>Average</th><th>Worst</th><th>Result</th></tr></thead><tbody>${rows || '<tr><td colspan="4">Nothing was measured.</td></tr>'}</tbody></table>
   ${srows ? `<h3>Stress test</h3><p class="note">${keepUp ? `This device keeps up (28+ frames per second) up to: <b>${escapeHtml(keepUp.name)}</b>.` : 'This device struggled from the first step.'}</p><table class="nb-table"><thead><tr><th>Load</th><th>Average</th><th>Worst</th><th>ms per frame</th></tr></thead><tbody>${srows}</tbody></table>` : ''}
@@ -1514,7 +1523,7 @@ async function runFullTest(mode) {
             c: 'gold',
             f: () => {
               closeModal();
-              exportDiagReport();
+              exportDiagnosticsReport();
             },
           },
           { l: 'Close', c: 'quiet', f: closeModal },
@@ -1541,12 +1550,12 @@ provide({ runQuickTest }); /* to-module */
    you ride across, a new place: time to the first frame and the worst frame), where a frame's time goes, memory after,
    a battle's start, what rain and night cost, and any errors. It saves a compact report made to be read (not the whole
    debug log). Like the full test it leaves your save alone and waits for you if the app goes to the background. */
-const STD_EMPTY = () => ({ device: null, busiest: null, places: [], passes: null, weather: null });
-let DIAGR = STD_EMPTY();
-function runDiagTest() {
+const emptyDiagnosticsReport = () => ({ device: null, busiest: null, places: [], passes: null, weather: null });
+let diagnosticsReport = emptyDiagnosticsReport();
+function runDiagnostics() {
   return runFullTest('diag');
 }
-function stDiagScenes() {
+function diagnosticsMaps() {
   const sc = gameData.scenes,
     ids = Object.keys(sc).filter(id => mapById(id) && !sc[id].test && !sc[id].backup && !id.includes('@')),
     pick = [],
@@ -1563,12 +1572,12 @@ function stDiagScenes() {
   add(ids.find(id => (sc[id].under || sc[id].far === 'cave') && kindOf(id) !== 'room'));
   add(ids.find(id => sc[id].ride));
   add(ids.find(id => sc[id].a04pearl) || ids.find(id => sc[id].a04place));
-  DIAGR.busiest = busiest;
-  DIAGR.places = pick;
+  diagnosticsReport.busiest = busiest;
+  diagnosticsReport.places = pick;
   return pick;
 }
 /* timers round the render passes: the processor's time for each, and the graphics chip's own (EXT_disjoint_timer_query_webgl2) */
-const DIAG_PASSES = {
+const DIAGNOSTICS_PASSES = {
   shadows: ['shadowPass'],
   ground: ['drawGround'],
   grass: ['drawGrass'],
@@ -1577,7 +1586,7 @@ const DIAG_PASSES = {
   effects: ['effectsPass'],
   'final pass': ['drawPostEffects'],
 };
-function diagTimersOn() {
+function diagnosticsTimersOn() {
   const gl = typeof gpuState !== 'undefined' ? gpuState.gl : null,
     ext = gl && gl.getExtension('EXT_disjoint_timer_query_webgl2'),
     T = {
@@ -1589,7 +1598,7 @@ function diagTimersOn() {
       active: false,
       f0: typeof walkRenderer !== 'undefined' ? walkRenderer.frames : 0,
     };
-  for (const [grp, names] of Object.entries(DIAG_PASSES)) {
+  for (const [grp, names] of Object.entries(DIAGNOSTICS_PASSES)) {
     T.cpu[grp] = 0;
     for (const n of names) {
       // phase 05: through the debug log's view of the modules (window has them only with the test globals on)
@@ -1623,14 +1632,14 @@ function diagTimersOn() {
   }
   return T;
 }
-async function diagTimersOff(T) {
+async function diagnosticsTimersOff(T) {
   for (const [n, o] of Object.entries(T.orig)) GAME[n] = o;
   const frames = Math.max(1, (typeof walkRenderer !== 'undefined' ? walkRenderer.frames : 0) - T.f0),
     cpu = {};
   for (const [k, v] of Object.entries(T.cpu)) if (v > 0) cpu[k] = Math.round((v / frames) * 100) / 100;
   let gpu = null;
   if (T.ext && T.q.length) {
-    await stSleep(400);
+    await selfTestSleep(400);
     const sum = {};
     let ok = 0;
     const disj = T.gl.getParameter(T.ext.GPU_DISJOINT_EXT);
@@ -1650,7 +1659,7 @@ async function diagTimersOff(T) {
   return { frames, cpu, gpu };
 }
 /* the report: what was measured, short, made to be read */
-function diagReport() {
+function diagnosticsSummary() {
   const R = debugLog.bench && debugLog.bench.result;
   if (!R) return null;
   const P = R.phases || [];
@@ -1676,17 +1685,17 @@ function diagReport() {
     created: new Date().toISOString(),
     seconds: R.seconds,
     passed: R.passed,
-    device: (R.diag || DIAGR).device,
+    device: (R.diag || diagnosticsReport).device,
     places: pl,
-    frame: (R.diag || DIAGR).passes,
-    rainAndNight: (R.diag || DIAGR).weather,
+    frame: (R.diag || diagnosticsReport).passes,
+    rainAndNight: (R.diag || diagnosticsReport).weather,
     battle: one('Battle on the 3D stage'),
     memory: one('Memory'),
     errors: R.errors,
   };
 }
-async function exportDiagReport() {
-  const r = diagReport();
+async function exportDiagnosticsReport() {
+  const r = diagnosticsSummary();
   if (!r) {
     toast('Run the diagnostics test first.');
     return;
