@@ -244,26 +244,17 @@ expose({
   dglBasins: [() => dglBasins, v => (dglBasins = v)],
   dglFountainFx: [() => dglFountainFx, v => (dglFountainFx = v)],
   dglFxPass: [() => dglFxPass, v => setDglFxPass(v)],
-  dglLampTex: [() => dglLampTex, v => (dglLampTex = v)],
   dglLifeFx: [() => dglLifeFx, v => (dglLifeFx = v)],
   dglPrintAt: [() => dglPrintAt, v => (dglPrintAt = v)],
   dglPrints: [() => dglPrints, v => (dglPrints = v)],
-  dglRoomBox: [() => dglRoomBox, v => (dglRoomBox = v)],
-  dglRoomDim: [() => dglRoomDim, v => (dglRoomDim = v)],
-  dglRoomFront: [() => dglRoomFront, v => (dglRoomFront = v)],
-  dglRoomFx: [() => dglRoomFx, v => (dglRoomFx = v)],
-  dglRoomLamps: [() => dglRoomLamps, v => (dglRoomLamps = v)],
-  dglRoomLights: [() => dglRoomLights, v => (dglRoomLights = v)],
-  dglRoomSky: [() => dglRoomSky, v => (dglRoomSky = v)],
-  dglRoomTex: [() => dglRoomTex, v => (dglRoomTex = v)],
   dglWeather: [() => dglWeather, v => (dglWeather = v)],
-  dglWinBlocked: [() => dglWinBlocked, v => (dglWinBlocked = v)],
-  dglWinShare: [() => dglWinShare, v => (dglWinShare = v)],
   drawBoxFaces: [() => drawBoxFaces, v => (drawBoxFaces = v)],
   drawClockHands: [() => drawClockHands, v => (drawClockHands = v)],
   drawFlatItem: [() => drawFlatItem, v => (drawFlatItem = v)],
   drawGrass: [() => drawGrass, v => setDrawGrass(v)],
   drawGround: [() => drawGround, v => setDrawGround(v)],
+  drawRoomEffects: [() => drawRoomEffects, v => (drawRoomEffects = v)],
+  drawRoomFront: [() => drawRoomFront, v => (drawRoomFront = v)],
   drawRotatingBlades: [() => drawRotatingBlades, v => (drawRotatingBlades = v)],
   drawShadowSprites: [() => drawShadowSprites, v => (drawShadowSprites = v)],
   drawSky: [() => drawSky, v => (drawSky = v)],
@@ -303,6 +294,7 @@ expose({
   labelLayer: [() => labelLayer, v => (labelLayer = v)],
   lampLit: [() => lampLit, v => (lampLit = v)],
   lampShadowMaps: [() => lampShadowMaps, v => (lampShadowMaps = v)],
+  lampTexture: [() => lampTexture, v => (lampTexture = v)],
   landmarkTilt: [() => landmarkTilt, v => (landmarkTilt = v)],
   listenDeviceTilt: [() => listenDeviceTilt, v => (listenDeviceTilt = v)],
   makeTextureMipmaps: [() => makeTextureMipmaps, v => (makeTextureMipmaps = v)],
@@ -330,6 +322,12 @@ expose({
   ringHasChunk: [() => ringHasChunk, v => (ringHasChunk = v)],
   ringMissingCount: [() => ringMissingCount, v => (ringMissingCount = v)],
   ringSlot: [() => ringSlot],
+  roomBoxOf: [() => roomBoxOf, v => (roomBoxOf = v)],
+  roomDimming: [() => roomDimming, v => (roomDimming = v)],
+  roomLamps: [() => roomLamps, v => (roomLamps = v)],
+  roomLights: [() => roomLights, v => (roomLights = v)],
+  roomSkyLight: [() => roomSkyLight, v => (roomSkyLight = v)],
+  roomTexture: [() => roomTexture, v => (roomTexture = v)],
   screenRay: [() => screenRay, v => (screenRay = v)],
   screenToGround2d: [() => screenToGround2d],
   setAdaptQuality: [() => setAdaptQuality, v => (setAdaptQuality = v)],
@@ -363,6 +361,8 @@ expose({
   waterLife: [() => waterLife, v => (waterLife = v)],
   waterNear: [() => waterNear, v => (waterNear = v)],
   windLeanAt: [() => windLeanAt, v => (windLeanAt = v)],
+  windowBlocked: [() => windowBlocked, v => (windowBlocked = v)],
+  windowLightShare: [() => windowLightShare, v => (windowLightShare = v)],
   windowLit: [() => windowLit, v => (windowLit = v)],
   worldCurveArgs: [() => worldCurveArgs, v => (worldCurveArgs = v)],
   worldCurveDrop: [() => worldCurveDrop, v => (worldCurveDrop = v)],
@@ -3692,7 +3692,7 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
   const D = walkRenderer.dbg || {};
   drawSky(C, sun, 0);
   drawGround(C, X);
-  dglRoomFront(C, X);
+  drawRoomFront(C, X);
   if (walkRenderer.grass && !D.noGrass) drawGrass(C, X);
   drawSprites(C, items, X, hits, labels, PPU);
   if (typeof p3dDraw === 'function') p3dDraw(C, items, X, hits, labels, PPU);
@@ -4971,11 +4971,11 @@ export function personItem(k, im, x, z, C0, extra) {
   );
 }
 /* the light context: sky ambient, fog, mist, shadows, contact shadows and the nearest lamps, windows and fires */
-/* v43: the light that stands in for the sun in a room: daylight through the windows, from the front at a slant (dglRoomSky
+/* v43: the light that stands in for the sun in a room: daylight through the windows, from the front at a slant (roomSkyLight
    says how bright and from which side), so shadows fall into the room; it is what the shadow maps are drawn from too */
 function mapSun(sc, sun) {
   if (!sc || !sc.room || (eng('lights', 'roomLight') ?? true) === false) return sun;
-  const Rk = dglRoomSky(),
+  const Rk = roomSkyLight(),
     wd = v3n([Rk.dx * 0.45, 0.6, -0.7]);
   return Object.assign({}, sun, {
     dir: wd,
@@ -4987,7 +4987,7 @@ function mapSun(sc, sun) {
 }
 /* v46: inside a building laid into the place (seamless-world.js wrRoomScene) the town around the room dims over 0.6 s; walking
    out it brightens again over 0.7 s, as your eyes adjust */
-export function dglRoomDim(sc) {
+export function roomDimming(sc) {
   const now = performance.now(),
     k0 = eng('world', 'roomDim') ?? 0.68;
   let R = sc.roomRect,
@@ -5148,7 +5148,7 @@ function walkLightContext(C, sun, dark, items, shadow, BT) {
       c: [2.5, 1.95, 1.3].map(v => v * lan * (cave > 0.02 ? 1 : 0.55) * lb),
     });
   }
-  dglRoomLights(sc, L, lb);
+  roomLights(sc, L, lb);
   const lights = eglPickLights(L, P.x, P.z, 16),
     sky = skyColors(sc);
   let hz = hexA(eng('air', 'haze') || sc.haze || (sc.sky || [])[2] || '#EAD9C0').map(v => v / 255);
@@ -5158,10 +5158,10 @@ function walkLightContext(C, sun, dark, items, shadow, BT) {
       ? [0.62, 0.58, 0.52]
       : [0.3 + sky[0][0] * 0.24, 0.32 + sky[0][1] * 0.24, 0.36 + sky[0][2] * 0.28],
     ambBot = sc.indoor ? [0.38, 0.31, 0.25] : [0.3, 0.32, 0.24];
-  /* v43: a room is lit by its windows: the daylight comes in from the front at a slant (dglRoomSky says how bright and from which side), warm walls and a dark floor make the ambient, no sun lobe; the lamps do the rest after dark */
+  /* v43: a room is lit by its windows: the daylight comes in from the front at a slant (roomSkyLight says how bright and from which side), warm walls and a dark floor make the ambient, no sun lobe; the lamps do the rest after dark */
   let roomSH = null;
   if (sc.room && (eng('lights', 'roomLight') ?? true) !== false) {
-    const Rk = dglRoomSky();
+    const Rk = roomSkyLight();
     const wc = sc.wallCol && sc.wallCol[0] ? hexA(sc.wallCol[0]).map(v => v / 255) : [0.78, 0.7, 0.58];
     const wk = 0.3 + 0.2 * Math.max(0.25, Rk.I);
     ambTop = wc.map(v => v * wk);
@@ -5190,7 +5190,7 @@ function walkLightContext(C, sun, dark, items, shadow, BT) {
       : [0.3 + sky[2][0] * 0.26, 0.32 + sky[2][1] * 0.26, 0.34 + sky[2][2] * 0.26].map(
           (v, i) => v * (E ? 1 - night * 0.5 : 1)
         ); /* v43: the horizon's colour for the sky-shaped ambient */
-  const RD = BT ? null : dglRoomDim(sc);
+  const RD = BT ? null : roomDimming(sc);
   return eglLightCtx({
     roomB: RD ? RD.b : null,
     roomDim: RD ? RD.dim : 0,
@@ -5685,7 +5685,7 @@ export function drawGround(C, X) {
     gl.uniform1f(U.uCausW, eng('water', 'wallLight') ?? 1);
   }
   if (U.uRoom) {
-    const B = sc.room && (eng('lights', 'roomLight') ?? true) !== false ? dglRoomBox(sc) : null;
+    const B = sc.room && (eng('lights', 'roomLight') ?? true) !== false ? roomBoxOf(sc) : null;
     gl.uniform4f(U.uRoom, B ? B[0] : 0, B ? B[1] : 0, B ? B[2] : 0, B ? 1 : 0);
     if (U.uRoomY) gl.uniform1f(U.uRoomY, B ? standingHeightAt(sc.w / 2, 1.5) : 0);
   }
@@ -6643,7 +6643,7 @@ export function drawWater(C, X, rw, rh) {
    the floor with the panes' cross in it, moving with the sun (warm by day, golden at sunset, blue under the moon), a
    faint dusty shaft from the glass to the floor, the glass itself darkening at night; pendant lamps come on in the
    evening; the floor darkens toward the walls and the walls get a skirting board (in the ground shader) */
-function dglRoomBox(sc) {
+function roomBoxOf(sc) {
   if (walkRenderer.roomBoxId === walkView.id) return walkRenderer.roomBox;
   walkRenderer.roomBoxId = walkView.id;
   walkRenderer.roomBox = null;
@@ -6662,7 +6662,7 @@ function dglRoomBox(sc) {
   while (zb < Z0 + H && !hi(X0 + W / 2, zb + 0.05)) zb += 0.05;
   return (walkRenderer.roomBox = [x0, x1, zb]);
 }
-function dglRoomSky() {
+function roomSkyLight() {
   const now = performance.now();
   if (walkRenderer.roomSkyT && now - walkRenderer.roomSkyT < 500) return walkRenderer.roomSky;
   walkRenderer.roomSkyT = now;
@@ -6694,7 +6694,7 @@ function dglRoomSky() {
     grey,
   });
 }
-function dglRoomTex(k) {
+function roomTexture(k) {
   const key = 'roomTex_' + k;
   if (walkRenderer[key]) return walkRenderer[key];
   const N = 64,
@@ -6720,7 +6720,7 @@ function dglRoomTex(k) {
   x.putImageData(d, 0, 0);
   return (walkRenderer[key] = c);
 }
-function dglLampTex(on) {
+function lampTexture(on) {
   const key = on ? 'lampTexOn' : 'lampTex';
   if (walkRenderer[key]) return walkRenderer[key];
   const c = cnv(14, 18),
@@ -6741,10 +6741,10 @@ function dglLampTex(on) {
   return (walkRenderer[key] = c);
 }
 /* two lamps on the back wall, one each side, where nothing hangs or stands against it */
-function dglRoomLamps(sc) {
+function roomLamps(sc) {
   if (walkRenderer.lampsId === walkView.id) return walkRenderer.lamps;
   walkRenderer.lampsId = walkView.id;
-  const B = dglRoomBox(sc);
+  const B = roomBoxOf(sc);
   if (!B) return (walkRenderer.lamps = []);
   const W = B[1] - B[0],
     near = (sc.props || []).filter(p => p.z > B[2] - 1.6),
@@ -6760,7 +6760,7 @@ function dglRoomLamps(sc) {
   return (walkRenderer.lamps = out);
 }
 /* something tall standing right in front of a window (a fridge, a shelf) keeps its light out */
-function dglWinBlocked(sc, w) {
+function windowBlocked(sc, w) {
   const C0 = walkData().sc;
   return (sc.props || []).some(p => {
     if (p === w.p || p === w) return false;
@@ -6771,21 +6771,21 @@ function dglWinBlocked(sc, w) {
 }
 /* alpha 0.1: a room with many windows (it shows its building's own) shares their daylight, as if it had two or so: the
    back wall doesn't wash out to white */
-function dglWinShare(sc) {
+function windowLightShare(sc) {
   if (walkRenderer.wsP !== sc.props) {
     walkRenderer.wsP = sc.props;
     walkRenderer.ws = Math.min(1, 2.2 / Math.max(1, (sc.props || []).filter(p => /wall_window/.test(p.k)).length));
   }
   return walkRenderer.ws;
 }
-function dglRoomLights(sc, L, lb) {
+function roomLights(sc, L, lb) {
   if (!sc.room || (eng('lights', 'roomLight') ?? true) === false) return;
-  const R = dglRoomSky(),
-    B = dglRoomBox(sc),
-    ws = dglWinShare(sc);
+  const R = roomSkyLight(),
+    B = roomBoxOf(sc),
+    ws = windowLightShare(sc);
   if (!B) return;
   /* alpha 0.4: the wall lamp's light a little out from the wall (it burned the wall white round it) and a soft pool of it on the floor */
-  for (const [x, z, ly] of dglRoomLamps(sc))
+  for (const [x, z, ly] of roomLamps(sc))
     if (R.lamp > 0.02) {
       L.push({
         p: [x, standingHeightAt(x, z - 0.9) + ly, z - 0.9],
@@ -6800,7 +6800,7 @@ function dglRoomLights(sc, L, lb) {
       });
     }
   for (const p of sc.props || [])
-    if (/wall_window/.test(p.k) && R.I > 0.03 && !dglWinBlocked(sc, p)) {
+    if (/wall_window/.test(p.k) && R.I > 0.03 && !windowBlocked(sc, p)) {
       const u = 1.9 / Math.max(0.25, R.tan);
       L.push({
         p: [p.x + R.dx * u * 0.6, 0.9, Math.max(0.6, p.z - u * 0.7)],
@@ -6809,13 +6809,13 @@ function dglRoomLights(sc, L, lb) {
       });
     }
 }
-function dglRoomFx(C, U, items, glows, t, rm) {
+function drawRoomEffects(C, U, items, glows, t, rm) {
   const sc = walkView.sc;
   if (!sc.room || (eng('lights', 'roomLight') ?? true) === false) return;
   const gl = EGL.gl,
-    R = dglRoomSky(),
+    R = roomSkyLight(),
     gk = eng('lights', 'glow'),
-    ws = dglWinShare(sc);
+    ws = windowLightShare(sc);
   const draw = (cv, x, y, z, r, u, sw, sh, col, a) => {
     const T = eglImg(cv, { noNormal: true });
     if (!T) return;
@@ -6847,7 +6847,7 @@ function dglRoomFx(C, U, items, glows, t, rm) {
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
     if (R.night > 0.02)
       draw(
-        dglRoomTex('glass'),
+        roomTexture('glass'),
         cx,
         (yt + yb) / 2,
         zw,
@@ -6860,7 +6860,7 @@ function dglRoomFx(C, U, items, glows, t, rm) {
       );
     if (R.dusk > 0.05)
       draw(
-        dglRoomTex('glass'),
+        roomTexture('glass'),
         cx,
         (yt + yb) / 2,
         zw,
@@ -6873,7 +6873,7 @@ function dglRoomFx(C, U, items, glows, t, rm) {
       );
     if (R.grey > 0.05)
       draw(
-        dglRoomTex('glass'),
+        roomTexture('glass'),
         cx,
         (yt + yb) / 2,
         zw,
@@ -6884,7 +6884,7 @@ function dglRoomFx(C, U, items, glows, t, rm) {
         [0.62, 0.66, 0.72],
         0.35 * R.grey * (1 - R.night)
       );
-    if (R.I < 0.03 || dglWinBlocked(sc, it)) continue;
+    if (R.I < 0.03 || windowBlocked(sc, it)) continue;
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
     /* where the glass's corners land on the floor along the light */
     const ut = (yt - fy) / R.tan,
@@ -6896,7 +6896,7 @@ function dglRoomFx(C, U, items, glows, t, rm) {
       vz = T0[2] - B0[2],
       L = Math.hypot(vx, vz) || 1;
     draw(
-      dglRoomTex('pane'),
+      roomTexture('pane'),
       (T0[0] + B0[0]) / 2,
       fy + 0.012,
       (T0[2] + B0[2]) / 2,
@@ -6912,7 +6912,7 @@ function dglRoomFx(C, U, items, glows, t, rm) {
     for (let k = 0; k < n; k++) {
       const u = ((k + 0.5) / n) * ut;
       draw(
-        dglRoomTex('beam'),
+        roomTexture('beam'),
         cx + R.dx * u,
         (yt + yb) / 2 - R.tan * u,
         zw - u,
@@ -6949,7 +6949,7 @@ function dglRoomFx(C, U, items, glows, t, rm) {
     if (R.I > 0.03) {
       gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
       draw(
-        dglRoomTex('beam'),
+        roomTexture('beam'),
         ex[0] + R.dx * 0.3,
         fy + 0.012,
         0.75,
@@ -6964,8 +6964,8 @@ function dglRoomFx(C, U, items, glows, t, rm) {
   }
   gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
   /* wall lamps, lit in the evening */
-  const LT = dglLampTex(R.lamp > 0.3);
-  for (const [x, z, ly] of dglRoomLamps(sc)) {
+  const LT = lampTexture(R.lamp > 0.3);
+  for (const [x, z, ly] of roomLamps(sc)) {
     const y = standingHeightAt(x, z - 0.5) + ly;
     draw(LT, x, y, z, [1, 0, 0], [0, 1, 0], 0.33, 0.42, [1, 1, 1], 1);
     if (R.lamp > 0.02) {
@@ -6976,10 +6976,10 @@ function dglRoomFx(C, U, items, glows, t, rm) {
 }
 /* v31: a room's front wall, cut off low like a doll's house so you see in, with the doorway left open where the exit
    is; its face runs down into the dark under the floor, so the room reads as a box that ends at its door */
-function dglRoomFront(C, X) {
+function drawRoomFront(C, X) {
   const sc = walkView.sc;
   if (!sc.room || (eng('lights', 'roomLight') ?? true) === false) return;
-  const B = dglRoomBox(sc);
+  const B = roomBoxOf(sc);
   if (!B) return;
   const gl = EGL.gl;
   const Rr = sc.roomRect || [0, 0, sc.w, sc.h],
@@ -7728,8 +7728,8 @@ export function dglFxPass(C, items, X, dark, t, dt) {
         (walkRenderer.fires || (walkRenderer.fires = [])).push([x, y + 0.8 * sz, z, sz]);
       } else if (e.k === 'window') {
         if (it.bld3 && !(sc.room && !out) && BLD.mesh.get(it.p)) return;
-        const RS = sc.room && !out ? dglRoomSky() : null;
-        let k = RS ? RS.I * (1 - RS.night) * 0.9 * dglWinShare(sc) : dark ? 1 : winDay;
+        const RS = sc.room && !out ? roomSkyLight() : null;
+        let k = RS ? RS.I * (1 - RS.night) * 0.9 * windowLightShare(sc) : dark ? 1 : winDay;
         if (
           !RS &&
           typeof envWinLit === 'function' &&
@@ -7945,7 +7945,7 @@ export function dglFxPass(C, items, X, dark, t, dt) {
   if (ENG_CTX.env && !sc.indoor && eng('air', 'weather') > 0) dglWeather(quad, glows, U, R, Up, dt, rm);
   if (!walkRenderer.bt) dglPrints(quad, U, R, Up, dt);
   dglFountainFx(quad, t, rm, dt);
-  dglRoomFx(C, U, items, glows, t, rm);
+  drawRoomEffects(C, U, items, glows, t, rm);
   gl.uniform3fv(U.uRight, R);
   gl.uniform3fv(U.uUp, Up);
   if (typeof stampDraw === 'function') stampDraw(quad, glows, t);

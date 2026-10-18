@@ -39,7 +39,7 @@ import { eng } from './engine/settings.js';
 import { EGL, eglAttrClashes } from './engine/webgl.js';
 import { EGL_POST_SH } from './engine/post-effects.js';
 import { ENV } from './environment.js';
-import { WALK_SHADERS, dglRoomDim, standingHeightAt, walkRenderer } from './walk-view-gl.js';
+import { WALK_SHADERS, roomDimming, standingHeightAt, walkRenderer } from './walk-view-gl.js';
 import { BLD, BLD_SH } from './buildings.js';
 import { STR, strHas } from './structures.js';
 import { P3D, P3D_SH } from './solid-props.js';
@@ -878,7 +878,7 @@ async function runFullTest(mode) {
               I = U.inside,
               ex = [sc.exits[0][0] + c[0], sc.exits[0][1] + c[1]],
               off = I && I.door ? Math.hypot(ex[0] - I.door[0], ex[1] - I.door[1]) : 9,
-              RD = dglRoomDim(sc);
+              RD = roomDimming(sc);
             if (off > 0.8) throw new Error(`the room’s doorway is ${off.toFixed(1)} m from the shop’s door`);
             leaveRoom();
             for (let i = 0; i < 60 && !(walkView.ready && walkView.id === 'w:sundown*'); i++) await stSleep(100);

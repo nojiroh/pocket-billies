@@ -846,7 +846,7 @@ def desktop_steps(b, base, R):
         # rooms: light through the window by day, lamps at night, the floor ends at the door
         pg.evaluate("enterRoom('house',{});0"); until(pg, "walkView.ready&&(walkView.id==='int_house'||(walkView.sc&&walkView.sc.roomOf==='int_house'))", 30); time.sleep(1.5)
         pg.evaluate("ENV.force={time:15.5,weather:'clear',season:'summer'};walkRenderer.roomSkyT=0;0"); time.sleep(2); shot(pg, 'room-day')
-        day = pg.evaluate("[walkRenderer.roomSky&&walkRenderer.roomSky.I,walkRenderer.roomSky&&walkRenderer.roomSky.lamp,(dglRoomLamps(walkView.sc)||[]).length,!!walkRenderer.roomBox]")
+        day = pg.evaluate("[walkRenderer.roomSky&&walkRenderer.roomSky.I,walkRenderer.roomSky&&walkRenderer.roomSky.lamp,(roomLamps(walkView.sc)||[]).length,!!walkRenderer.roomBox]")
         pg.evaluate("ENV.force={time:23,weather:'clear',season:'summer'};walkRenderer.roomSkyT=0;0"); time.sleep(2); shot(pg, 'room-night')
         night = pg.evaluate("[walkRenderer.roomSky&&walkRenderer.roomSky.night,walkRenderer.roomSky&&walkRenderer.roomSky.lamp]")
         pg.evaluate("ENV.force=null;leaveRoom();0"); until(pg, "walkView.ready&&!walkView.sc.roomRect&&(walkView.id==='sundown'||(walkView.sc&&walkView.sc.baseId==='sundown'))", 30)
@@ -1454,8 +1454,8 @@ def desktop_steps(b, base, R):
             if pg.evaluate("!!(walkView.ready&&walkView.id==='int_shop')"): break
             time.sleep(1)
         if not ok: raise Exception('the shop’s room didn’t open in place (' + pg.evaluate("walkView.id") + '; ' + ' | '.join(pg.evaluate("NWLOG.ev.slice(-4).map(e=>e.msg)")) + ')')
-        time.sleep(2); until(pg, "(dglRoomDim(walkView.sc)||{dim:0}).dim>.6", 15)   # alpha 0.1: the dimming fades in over the first frames drawn inside (slow here)
-        r = json.loads(pg.evaluate("""JSON.stringify((()=>{const sc=walkView.sc,c=sc.roomCut,I=U.inside,RD=dglRoomDim(sc),n=navGrid(),N=NAV_CELLS_PER_M,R=sc.roomRect,blocked=(x,z)=>!!n.blk[Math.floor(z*N)*n.gw+Math.floor(x*N)];
+        time.sleep(2); until(pg, "(roomDimming(walkView.sc)||{dim:0}).dim>.6", 15)   # alpha 0.1: the dimming fades in over the first frames drawn inside (slow here)
+        r = json.loads(pg.evaluate("""JSON.stringify((()=>{const sc=walkView.sc,c=sc.roomCut,I=U.inside,RD=roomDimming(sc),n=navGrid(),N=NAV_CELLS_PER_M,R=sc.roomRect,blocked=(x,z)=>!!n.blk[Math.floor(z*N)*n.gw+Math.floor(x*N)];
           return {exit:[sc.exits[0][0]+c[0],sc.exits[0][1]+c[1]],door:I&&I.door,dim:RD?RD.dim:0,outBlocked:blocked(R[0]-2,R[1]+R[3]/2)&&blocked(R[0]+R[2]/2,R[1]-2),inFree:!blocked(R[0]+R[2]/2,R[1]+R[3]/2-1),shopGone:!sc.props.some(p=>p.act==='shop'&&p.k==='shop')}})())"""))
         shot(pg, 'v46-room-in-place')
         if not r['door'] or abs(r['exit'][0] - r['door'][0]) > .3 or abs(r['exit'][1] - r['door'][1]) > .7: raise Exception(f'the room’s doorway {r["exit"]} isn’t at the shop’s door {r["door"]}')
