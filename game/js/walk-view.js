@@ -21,6 +21,7 @@ import {
   U,
   addSteps,
   bldSigF,
+  buddyTap,
   defaultWallMaterial,
   dioArtVer,
   envHere,
@@ -30,7 +31,6 @@ import {
   lifePaths,
   loreFlags,
   mapChatLines,
-  owBuddyTap,
   provide,
   pwPaint,
   pwSettle,
@@ -3118,7 +3118,7 @@ export function handleWalkClick(ev) {
     st = walkView.st || {},
     P = walkView.pl;
   if (h && h.k === 'buddy') {
-    if (typeof owBuddyTap === 'function') owBuddyTap();
+    if (typeof buddyTap === 'function') buddyTap();
     return;
   }
   if (h && h.k === 'folk') {

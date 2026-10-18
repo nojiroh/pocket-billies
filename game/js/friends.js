@@ -17,7 +17,7 @@ import { owFrames, portraitHTML, trWarm } from './person-art.js';
 import { sprHTML } from './skeleton-rig.js';
 import { directionOf, walkView } from './walk-view.js';
 import { personItem } from './walk-view-gl.js';
-import { owBuddyMon, owItem } from './world-billies.js';
+import { buddyBilly, worldBillyItem } from './world-billies.js';
 import { worldMap, worldMapSelect } from './world-map.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -221,7 +221,7 @@ function frPublish(now) {
     x = +U.roam.x.toFixed(1);
     z = +U.roam.z.toFixed(1);
   }
-  const m = typeof owBuddyMon === 'function' ? owBuddyMon() : S.team && S.team[0],
+  const m = typeof buddyBilly === 'function' ? buddyBilly() : S.team && S.team[0],
     pt = m ? { sp: m.sp, gold: !!m.gold, name: N(m), lvl: m.lvl } : null;
   const doc = {
     name: (S.avatar && S.avatar.name) || ACC.user.name || 'Trainer',
@@ -445,9 +445,9 @@ function frWorldItems(out, t, C0) {
       im = set && set[0];
     if (im) out.push(personItem('friend', im, x, z, C0, { fr: u }));
     const p = d.partner;
-    if (p && SP[p.sp] && typeof owItem === 'function') {
+    if (p && SP[p.sp] && typeof worldBillyItem === 'function') {
       const seed = u.length * 13 + 7,
-        it = owItem('fpet', p.sp, !!p.gold, 'front', null, t + seed * 91, seed, x + 0.9, z + 0.2, {
+        it = worldBillyItem('fpet', p.sp, !!p.gold, 'front', null, t + seed * 91, seed, x + 0.9, z + 0.2, {
           flip: P && P.x > x ? -1 : 1,
         });
       if (it) out.push(it);

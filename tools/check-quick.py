@@ -939,7 +939,7 @@ def desktop_steps(b, base, R):
 
     @step('v33: double and Alpha battles, nameplates, Billies in the world', 300)
     def v33():
-        if not pg.evaluate("typeof liveK==='function'&&typeof owItem==='function'"): return 'not in this build'
+        if not pg.evaluate("typeof liveK==='function'&&typeof worldBillyItem==='function'"): return 'not in this build'
         out = []
         pg.evaluate("S.team.forEach(m=>{m.hp=maxHp(m);m.status=null;m.lvl=Math.max(m.lvl,12)});while(S.team.filter(m=>m.job==null).length<3)S.team.push(makeMon(DEX[(S.team.length*5+3)%DEX.length],10));S.team.forEach(m=>m.hp=maxHp(m));0")
         tap = "B&&B.phase==='playing'&&tapMsg()"
@@ -977,16 +977,16 @@ def desktop_steps(b, base, R):
         node = pg.evaluate("ROUTE.findIndex(r=>r.scene==='longgrass')")
         go_scene(pg, node); time.sleep(4)
         w0 = pg.evaluate("JSON.stringify(Object.fromEntries(Object.entries(walkView.enc).map(([k,v])=>[k,[v.x,v.z]])))"); time.sleep(5)
-        w = json.loads(pg.evaluate(f"(()=>{{const p0={w0};return JSON.stringify({{shown:(walkView.st.enc||[]).filter(e=>OWM.mons[e.id]).length,moved:Object.entries(walkView.enc).filter(([k,v])=>p0[k]&&Math.hypot(v.x-p0[k][0],v.z-p0[k][1])>.25).length,alpha:(walkView.st.enc||[]).some(e=>e.alpha),bud:!!OWM.bud}})}})()"))
+        w = json.loads(pg.evaluate(f"(()=>{{const p0={w0};return JSON.stringify({{shown:(walkView.st.enc||[]).filter(e=>worldBillies.mons[e.id]).length,moved:Object.entries(walkView.enc).filter(([k,v])=>p0[k]&&Math.hypot(v.x-p0[k][0],v.z-p0[k][1])>.25).length,alpha:(walkView.st.enc||[]).some(e=>e.alpha),bud:!!worldBillies.bud}})}})()"))
         if not w['shown']: raise Exception(f'no billionaires shown in the grass: {w}')
         if w['moved']: raise Exception(f'{w["moved"]} wild Billie(s) left their spot in 5 s (v46: they stand still)')
         if not w['bud']: raise Exception('the buddy isn’t walking with you')
         pg.evaluate("(()=>{const P=walkView.pl,s=walkView.sc;walkTo([clamp(P.x+4,1,s.w-1),clamp(P.z+2,1,s.h-1)])})()"); time.sleep(4)
-        gap = pg.evaluate("Math.hypot(OWM.bud.x-walkView.pl.x,OWM.bud.z-walkView.pl.z)")
+        gap = pg.evaluate("Math.hypot(worldBillies.bud.x-walkView.pl.x,worldBillies.bud.z-walkView.pl.z)")
         if gap > 4: raise Exception(f'the buddy fell {gap:.1f} m behind')
-        pg.evaluate("owBuddyTap();0"); time.sleep(.8); shot(pg, 'world-buddy')
-        said = pg.evaluate("OWM.say")
-        pets = pg.evaluate("Object.values(TRAINERS).filter(T=>owPetSp(T)).length")
+        pg.evaluate("buddyTap();0"); time.sleep(.8); shot(pg, 'world-buddy')
+        said = pg.evaluate("worldBillies.say")
+        pets = pg.evaluate("Object.values(TRAINERS).filter(T=>companionSpecies(T)).length")
         out.append(f"world: {w['shown']} in the grass (none left its spot in 5 s, Alpha {'there' if w['alpha'] else 'not rolled'}), buddy {gap:.1f} m behind and says “{said[:50]}”, {pets} trainers with a companion")
         if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
         return '; '.join(out)
@@ -1003,7 +1003,7 @@ def desktop_steps(b, base, R):
         shot(pg, 'v34-city')
         out.append(f"ground {r['tp']} px a tile, {r['mb']} MB of pictures on the card; shadow cache {r['sh'][0]} kept / {r['sh'][1]} drawn; {r['grid']} props skipped by the grid; GPU {r['gpu']}")
         # walk cycles per body plan, front and back only
-        w = pg.evaluate("""(()=>{const plans={};for(const sp of Object.keys(SP)){const R=typeof rigParts==='function'?rigParts(sp,false,1):null;if(!R||plans[R.plan])continue;const a=owFrame(sp,false,'front','walk',0,1),b=owFrame(sp,false,'front','walk',280,1);if(!a||!b)continue;
+        w = pg.evaluate("""(()=>{const plans={};for(const sp of Object.keys(SP)){const R=typeof rigParts==='function'?rigParts(sp,false,1):null;if(!R||plans[R.plan])continue;const a=worldBillyFrame(sp,false,'front','walk',0,1),b=worldBillyFrame(sp,false,'front','walk',280,1);if(!a||!b)continue;
           const d=(c)=>c.getContext('2d').getImageData(0,0,c.width,c.height).data;const x=d(a),y=d(b);let diff=0;for(let i=3;i<x.length;i+=16)if(x[i]!==y[i])diff++;plans[R.plan]=diff}return plans})()""")
         still = [k for k, v in w.items() if v == 0]
         if still: raise Exception(f'walk cycle doesn’t move for: {", ".join(still)}')

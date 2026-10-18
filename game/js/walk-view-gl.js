@@ -15,7 +15,6 @@ import {
   LD,
   LIFE,
   LIFE_KIND,
-  OWM,
   P3D,
   P3D_PARTS,
   P3D_SH,
@@ -32,18 +31,13 @@ import {
   bldShadow,
   bldSmoke,
   bldWinLit,
+  buddyItems,
   clueDraw,
+  companionItems,
   frWorldItems,
   lifeSprites,
   lifeStep,
   noWebGL,
-  owBuddyItems,
-  owEncItem,
-  owFx,
-  owItem,
-  owLabels,
-  owPetItems,
-  owWarm,
   p3dDraw,
   p3dLod,
   p3dShadow,
@@ -64,6 +58,12 @@ import {
   voxShaders,
   voxShadow,
   voxTag,
+  warmWorldBillies,
+  wildBillyItem,
+  worldBillies,
+  worldBillyGlows,
+  worldBillyItem,
+  worldBillyLabels,
   wrLookTick,
 } from './hooks.js';
 import { clamp } from './util.js';
@@ -3749,7 +3749,7 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
   if (!BT && !(walkView.opt.active && !walkView.opt.active())) {
     drawExitMarks(C, st, t);
     drawTapMark(C, t);
-    if (typeof owLabels === 'function' && !BT) owLabels(C, labels);
+    if (typeof worldBillyLabels === 'function' && !BT) worldBillyLabels(C, labels);
     for (const l of labels) {
       if (l.k === 'enc') drawLevelTag(x, l.x, l.y, l.e);
       else if (l.k === 'bang') drawBubble(x, l.x, l.y, '!', l.col);
@@ -4566,12 +4566,12 @@ export function gatherFrameItems(st, C, PPU, C0) {
     tg = tallGrassProps(C0),
     wind = eng('grass', 'wind'),
     odt = Math.min(0.1, Math.max(0, (t - (walkRenderer.owT ?? t)) / 1000)),
-    ow = typeof owItem === 'function' && !st.battle && !walkRenderer.bt,
+    ow = typeof worldBillyItem === 'function' && !st.battle && !walkRenderer.bt,
     npcPos = [];
   walkRenderer.owT = t;
-  if (ow && OWM.warmId !== walkView.id) {
-    OWM.warmId = walkView.id;
-    owWarm();
+  if (ow && worldBillies.warmId !== walkView.id) {
+    worldBillies.warmId = walkView.id;
+    warmWorldBillies();
   }
   const prop = (p, far) => {
     const M = propWithVariant(p, C0.props[p.k]);
@@ -4766,8 +4766,8 @@ export function gatherFrameItems(st, C, PPU, C0) {
     npcPos.push([n, pos]);
   });
   if (ow) {
-    owPetItems(out, t, npcPos);
-    owBuddyItems(out, t, odt);
+    companionItems(out, t, npcPos);
+    buddyItems(out, t, odt);
     if (typeof frWorldItems === 'function')
       try {
         frWorldItems(out, t, C0);
@@ -4782,7 +4782,7 @@ export function gatherFrameItems(st, C, PPU, C0) {
       s = walkView.enc[e.id] = { x: sp[0], z: sp[1], tx: sp[0], tz: sp[1], sc: walkView.id };
     }
     /* v46: they keep their spot in the tall grass until you battle them: no wandering. They stay alive in place (a bob,
-     the grass swaying round them, a peek now and then, see owEncItem) and rustle when you come close */
+     the grass swaying round them, a peek now and then, see wildBillyItem) and rustle when you come close */
     s.tx = s.x;
     s.tz = s.z;
     if (!st.battle && !RM && !walkRenderer.bt) {
@@ -4832,7 +4832,7 @@ export function gatherFrameItems(st, C, PPU, C0) {
       shear: -(wv * 0.8) - ru * 0.7,
       sh: 0,
     });
-    if (ow) owEncItem(out, e, s, t, odt);
+    if (ow) wildBillyItem(out, e, s, t, odt);
   });
   if (!st.battle)
     for (const f of walkView.folk) {
@@ -5730,7 +5730,7 @@ function grassPushers() {
     for (const it of walkRenderer.bt.items)
       if (it.k === 'rig') L.push([it.x, it.z, Math.max(0.45, (it.aoR || 0.4) * 1.3)]);
   } else {
-    if (typeof OWM !== 'undefined' && OWM.bud) L.push([OWM.bud.x, OWM.bud.z, 0.6]);
+    if (typeof worldBillies !== 'undefined' && worldBillies.bud) L.push([worldBillies.bud.x, worldBillies.bud.z, 0.6]);
     if (walkRenderer.encPos) for (const e of walkRenderer.encPos) L.push([e[0], e[1], 0.75]);
     for (const f of walkView.folk || []) if (Math.hypot(f.x - P.x, f.z - P.z) < 14) L.push([f.x, f.z, 0.5]);
   }
@@ -7950,7 +7950,7 @@ export function effectsPass(C, items, X, dark, t, dt) {
   gl.uniform3fv(U.uUp, Up);
   if (typeof stampDraw === 'function') stampDraw(quad, glows, t);
   if (typeof clueDraw === 'function') clueDraw(quad, glows, t);
-  if (typeof owFx === 'function' && !walkRenderer.bt) owFx(glows, dt);
+  if (typeof worldBillyGlows === 'function' && !walkRenderer.bt) worldBillyGlows(glows, dt);
   if (!walkRenderer.bt && walkRenderer.encPos)
     walkRenderer.encPos.forEach(([x, z, id], k) => {
       const ph = (t / 1000 + k * 1.7) % 6;

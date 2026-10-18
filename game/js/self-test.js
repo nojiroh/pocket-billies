@@ -44,7 +44,7 @@ import { BLD, BLD_SH } from './buildings.js';
 import { STR, strHas } from './structures.js';
 import { P3D, P3D_SH } from './solid-props.js';
 import { VOX } from './prop-models.js';
-import { OWM, owBuddyTap, owPetSp } from './world-billies.js';
+import { buddyTap, companionSpecies, worldBillies } from './world-billies.js';
 import { WORLD, wrRoomScene, wrTripView } from './seamless-world.js';
 import { A, endBattle, liveK, pickMove, pickTarget, startTrainer, startWild, stopTimers, tapMsg } from './battle.js';
 import { worldMap } from './world-map.js';
@@ -464,7 +464,7 @@ async function runFullTest(mode) {
             gl && typeof P3D !== 'undefined' && P3D.drawn ? `${P3D.drawn} solid props` : '',
             gl && walkRenderer.grassDrawn ? `${walkRenderer.grassDrawn} grass patches` : '',
             (walkView.folk || []).length ? `${walkView.folk.length} folk` : '',
-            typeof OWM !== 'undefined' && OWM.bud ? 'buddy along' : '',
+            typeof worldBillies !== 'undefined' && worldBillies.bud ? 'buddy along' : '',
             g || '',
           ]
             .filter(Boolean)
@@ -1137,7 +1137,7 @@ async function runFullTest(mode) {
         150
       );
     /* v33: the billionaires out in the world: the wild ones move about in the grass, your buddy keeps up, trainers' companions stand by */
-    if (typeof OWM !== 'undefined')
+    if (typeof worldBillies !== 'undefined')
       await phase(
         'Billies in the world',
         'dio',
@@ -1157,17 +1157,17 @@ async function runFullTest(mode) {
           const moved = Object.entries(walkView.enc).filter(
               ([k, v]) => p0[k] && Math.hypot(v.x - p0[k][0], v.z - p0[k][1]) > 0.3
             ).length,
-            shown = Object.keys(OWM.mons).length;
+            shown = Object.keys(worldBillies.mons).length;
           if (moved) throw new Error(moved + ' wild Billie(s) left their spot in 8 s (they should stand still)');
           const P = walkView.pl,
             hb = mapHub(walkView.sc);
           walkTo([clamp(hb[0] + 4, 1, walkView.sc.w - 1), clamp(hb[1] + 2, 1, walkView.sc.h - 1)]);
           await stSleep(3500);
-          const b = OWM.bud,
+          const b = worldBillies.bud,
             gap = b ? Math.hypot(b.x - P.x, b.z - P.z) : null;
-          if (b) owBuddyTap();
-          const said = OWM.say;
-          const pets = Object.values(TRAINERS).filter(T => owPetSp(T)).length;
+          if (b) buddyTap();
+          const said = worldBillies.say;
+          const pets = Object.values(TRAINERS).filter(T => companionSpecies(T)).length;
           if (!shown) throw new Error('no Billies shown in the grass (' + (walkView.st.enc || []).length + ' hiding)');
           if (b && gap > 4) throw new Error(`your buddy fell ${gap.toFixed(1)} m behind`);
           return `${shown} in the grass, all still on their spots after 8 s; buddy ${b ? `${gap.toFixed(1)} m behind you, said “${said.slice(0, 60)}”` : 'off'}; ${pets} trainers have a companion`;

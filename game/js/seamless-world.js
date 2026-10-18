@@ -41,7 +41,7 @@ import { eng } from './engine/settings.js';
 import { smooth01 } from './engine/webgl.js';
 import { isGroundPrepared, prepareMapGround, walkRenderer } from './walk-view-gl.js';
 import { lifeShift } from './ambient-life.js';
-import { owShift } from './world-billies.js';
+import { shiftWorldBillies } from './world-billies.js';
 /* eslint-disable no-func-assign */
 expose({
   WORLD: [() => WORLD],
@@ -2209,7 +2209,7 @@ export function shiftWalkView(id, dx, dz) {
     if (walkView.cam.cz != null) walkView.cam.cz += dz;
   }
   if (typeof lifeShift === 'function') lifeShift(dx, dz, id);
-  if (typeof owShift === 'function') owShift(dx, dz);
+  if (typeof shiftWorldBillies === 'function') shiftWorldBillies(dx, dz);
   walkView.id = id;
   walkView.sc = sc;
   walkView.gkey = '';

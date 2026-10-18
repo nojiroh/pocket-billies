@@ -22,28 +22,37 @@ import { ENV } from './environment.js';
 import { standingHeightAt } from './walk-view-gl.js';
 /* eslint-disable no-func-assign */
 expose({
-  OWM: [() => OWM],
-  OW_MAX: [() => OW_MAX],
-  OW_PREP: [() => OW_PREP],
-  owBuddyItems: [() => owBuddyItems, v => ((owBuddyItems = v), provide({ owBuddyItems }))],
-  owBuddyMon: [() => owBuddyMon, v => (owBuddyMon = v)],
-  owBuddyTap: [() => owBuddyTap, v => ((owBuddyTap = v), provide({ owBuddyTap }))],
-  owEncItem: [() => owEncItem, v => ((owEncItem = v), provide({ owEncItem }))],
-  owFrame: [() => owFrame, v => (owFrame = v)],
-  owFx: [() => owFx, v => ((owFx = v), provide({ owFx }))],
-  owItem: [() => owItem, v => ((owItem = v), provide({ owItem }))],
-  owLabels: [() => owLabels, v => ((owLabels = v), provide({ owLabels }))],
-  owMpp: [() => owMpp, v => (owMpp = v)],
-  owPetItems: [() => owPetItems, v => ((owPetItems = v), provide({ owPetItems }))],
-  owPetSp: [() => owPetSp, v => (owPetSp = v)],
-  owRig: [() => owRig, v => (owRig = v)],
-  owShift: [() => owShift, v => (owShift = v)],
-  owWarm: [() => owWarm, v => ((owWarm = v), provide({ owWarm }))],
+  BILLY_FRAME_CACHE_MAX: [() => BILLY_FRAME_CACHE_MAX],
+  buddyBilly: [() => buddyBilly, v => (buddyBilly = v)],
+  buddyItems: [() => buddyItems, v => ((buddyItems = v), provide({ buddyItems }))],
+  buddyTap: [() => buddyTap, v => ((buddyTap = v), provide({ buddyTap }))],
+  companionItems: [() => companionItems, v => ((companionItems = v), provide({ companionItems }))],
+  companionSpecies: [() => companionSpecies, v => (companionSpecies = v)],
+  mapsPreparedAhead: [() => mapsPreparedAhead],
+  shiftWorldBillies: [() => shiftWorldBillies, v => (shiftWorldBillies = v)],
+  warmWorldBillies: [() => warmWorldBillies, v => ((warmWorldBillies = v), provide({ warmWorldBillies }))],
+  wildBillyItem: [() => wildBillyItem, v => ((wildBillyItem = v), provide({ wildBillyItem }))],
+  worldBillies: [() => worldBillies],
+  worldBillyFrame: [() => worldBillyFrame, v => (worldBillyFrame = v)],
+  worldBillyGlows: [() => worldBillyGlows, v => ((worldBillyGlows = v), provide({ worldBillyGlows }))],
+  worldBillyItem: [() => worldBillyItem, v => ((worldBillyItem = v), provide({ worldBillyItem }))],
+  worldBillyLabels: [() => worldBillyLabels, v => ((worldBillyLabels = v), provide({ worldBillyLabels }))],
+  worldBillyMetersPerPixel: [() => worldBillyMetersPerPixel, v => (worldBillyMetersPerPixel = v)],
+  worldBillyRig: [() => worldBillyRig, v => (worldBillyRig = v)],
 });
 /* eslint-enable no-func-assign */
-provide({ owBuddyItems, owBuddyTap, owEncItem, owFx, owItem, owLabels, owPetItems, owWarm });
+provide({
+  buddyItems,
+  buddyTap,
+  companionItems,
+  warmWorldBillies,
+  wildBillyItem,
+  worldBillyGlows,
+  worldBillyItem,
+  worldBillyLabels,
+});
 /* to-module: end */
-export const OWM = {
+export const worldBillies = {
   cache: new Map(),
   req: new Set(),
   trail: [],
@@ -55,9 +64,9 @@ export const OWM = {
   mons: {},
   fx: [],
 };
-provide({ OWM }); /* to-module */
-const OW_MAX = 320;
-function owRig(sp, gold, view) {
+provide({ worldBillies }); /* to-module */
+const BILLY_FRAME_CACHE_MAX = 320;
+function worldBillyRig(sp, gold, view) {
   if (!SP[sp] || typeof rigParts !== 'function') return null;
   const k = view === 'back' ? KBACK : 1;
   let R = null;
@@ -68,25 +77,25 @@ function owRig(sp, gold, view) {
   }
   if (R) return R;
   const key = sp + (gold ? 'g' : '') + view;
-  if (!OWM.req.has(key) && typeof rigPreload === 'function') {
-    OWM.req.add(key);
+  if (!worldBillies.req.has(key) && typeof rigPreload === 'function') {
+    worldBillies.req.add(key);
     rigPreload([[sp, !!gold, k]]).catch(() => {});
   }
   return null;
 }
 /* a frame: pose null = idle loop (8 frames over 1.6 s); a named pose plays once over ~0.9 s */
-function owFrame(sp, gold, view, pose, t, seed) {
-  const R = owRig(sp, gold, view);
+function worldBillyFrame(sp, gold, view, pose, t, seed) {
+  const R = worldBillyRig(sp, gold, view);
   if (!R) return null;
   const wk = pose === 'walk',
     n = wk ? 8 : pose ? 9 : 8,
     dur = wk ? 560 : pose ? 900 : 1600,
     fi = pose && !wk ? clamp(Math.floor(t / 100), 0, n - 1) : Math.floor(((((t % dur) + dur) % dur) / dur) * n);
   const key = sp + '|' + (gold ? 1 : 0) + '|' + view + '|' + (pose || '') + '|' + fi + '|' + ((seed % 4) | 0);
-  let c = OWM.cache.get(key);
+  let c = worldBillies.cache.get(key);
   if (c) {
-    OWM.cache.delete(key);
-    OWM.cache.set(key, c);
+    worldBillies.cache.delete(key);
+    worldBillies.cache.set(key, c);
     return c;
   }
   const tD = performance.now();
@@ -100,11 +109,11 @@ function owFrame(sp, gold, view, pose, t, seed) {
   }
   c.noNormal = true;
   c.__R = R;
-  OWM.cache.set(key, c);
+  worldBillies.cache.set(key, c);
   if (typeof NWLOG !== 'undefined') NWLOG.mark('drawing billionaires in the world', tD, performance.now());
-  if (OWM.cache.size > OW_MAX) {
-    const k0 = OWM.cache.keys().next().value;
-    OWM.cache.delete(k0);
+  if (worldBillies.cache.size > BILLY_FRAME_CACHE_MAX) {
+    const k0 = worldBillies.cache.keys().next().value;
+    worldBillies.cache.delete(k0);
   }
   return c;
 }
@@ -112,7 +121,7 @@ function owFrame(sp, gold, view, pose, t, seed) {
 /* v34: and sized so its pixels sit on the art grid: one art pixel (1/68 m) holds a whole number of quarter rig pixels
    (2, 2.25, 2.5 ...), never off by more than 6% of the height it would otherwise have, so its pixels line up with the
    props' instead of beating against them */
-function owMpp(sp, R, big = 1) {
+function worldBillyMetersPerPixel(sp, R, big = 1) {
   const h = clamp((SP[sp].ht || 1) * 0.9, 0.6, 2) * big,
     px = Math.max(20, R.geo.base - R.geo.top || R.BH * 0.7),
     m = h / px;
@@ -121,11 +130,11 @@ function owMpp(sp, R, big = 1) {
     mq = 1 / (rq * 68);
   return Math.abs(mq / m - 1) <= 0.06 ? mq : m;
 }
-export function owItem(k, sp, gold, view, pose, t, seed, x, z, o = {}) {
-  const im = owFrame(sp, gold, view, pose, t, seed);
+export function worldBillyItem(k, sp, gold, view, pose, t, seed, x, z, o = {}) {
+  const im = worldBillyFrame(sp, gold, view, pose, t, seed);
   if (!im) return null;
   const R = im.__R,
-    mpp = owMpp(sp, R, o.big || 1),
+    mpp = worldBillyMetersPerPixel(sp, R, o.big || 1),
     gy = standingHeightAt(x, z);
   return Object.assign(
     {
@@ -151,14 +160,14 @@ export function owItem(k, sp, gold, view, pose, t, seed, x, z, o = {}) {
 }
 /* ---------- the buddy ---------- */
 /* your buddy (the one you made buddy on its sheet; it earns XP as you walk), or your lead if you haven't picked one */
-export function owBuddyMon() {
+export function buddyBilly() {
   if ((S.preferences || {}).buddyWalk === 'off' || !S.team) return null;
   let m = S.buddy && typeof findMon === 'function' ? findMon(S.buddy) : null;
   if (!m) m = S.team[0] || null;
   return m && m.job == null ? m : null;
 }
-export function owShift(dx, dz) {
-  const b = OWM.bud;
+export function shiftWorldBillies(dx, dz) {
+  const b = worldBillies.bud;
   if (b) {
     b.x += dx;
     b.z += dz;
@@ -168,19 +177,21 @@ export function owShift(dx, dz) {
     }
     b.sc = walkView.id;
   }
-  OWM.trail = (OWM.trail || []).map(q => (Array.isArray(q) ? [q[0] + dx, q[1] + dz, ...q.slice(2)] : q));
+  worldBillies.trail = (worldBillies.trail || []).map(q =>
+    Array.isArray(q) ? [q[0] + dx, q[1] + dz, ...q.slice(2)] : q
+  );
 }
-function owBuddyItems(out, t, dt) {
+function buddyItems(out, t, dt) {
   const P = walkView.pl,
-    m = owBuddyMon();
+    m = buddyBilly();
   if (!m || U.inside || U.bench || (walkView.st && walkView.st.battle) || !walkView.sc) {
-    OWM.bud = null;
+    worldBillies.bud = null;
     return;
   }
-  let b = OWM.bud;
+  let b = worldBillies.bud;
   if (!b || b.uid !== m.uid || b.sc !== walkView.id) {
-    OWM.sayT = 0;
-    b = OWM.bud = {
+    worldBillies.sayT = 0;
+    b = worldBillies.bud = {
       uid: m.uid,
       sc: walkView.id,
       x: P.x - 0.9,
@@ -195,10 +206,10 @@ function owBuddyItems(out, t, dt) {
       tz: null,
       seed: Math.abs(m.uid.split('').reduce((a, c) => a * 31 + c.charCodeAt(0), 7)) % 997,
     };
-    OWM.trail = [];
+    worldBillies.trail = [];
   }
   /* the trail: where you've been, every 0.15 m. The buddy walks it about 1.2 m behind you */
-  const T = OWM.trail,
+  const T = worldBillies.trail,
     last = T[T.length - 1];
   if (!last || Math.hypot(P.x - last[0], P.z - last[1]) > 0.15) {
     T.push([P.x, P.z]);
@@ -261,18 +272,18 @@ function owBuddyItems(out, t, dt) {
   } /* left behind (a ladder, a door): catch up at once */
   /* v34: your buddy notices the weather and the hour while you stand: it shakes off the rain, hunkers down at night,
     cheers at the water's edge, now and then */
-  if (!moving && !OWM.react && typeof ENV !== 'undefined' && Math.random() < dt * 0.12) {
+  if (!moving && !worldBillies.react && typeof ENV !== 'undefined' && Math.random() < dt * 0.12) {
     const nearW = (walkView.water || []).some(w => Math.hypot(w[0] - b.x, w[1] - b.z) < 2.2);
     const pz = ENV.rain > 0.3 ? 'dizzy' : ENV.night > 0.6 ? 'block' : nearW ? 'cheer' : null;
-    if (pz) OWM.react = { pose: pz, t0: t };
+    if (pz) worldBillies.react = { pose: pz, t0: t };
   }
-  const R = OWM.react,
+  const R = worldBillies.react,
     rt = R ? t - R.t0 : 0;
-  if (R && rt > 900) OWM.react = null;
-  const pose = OWM.react ? OWM.react.pose : null;
+  if (R && rt > 900) worldBillies.react = null;
+  const pose = worldBillies.react ? worldBillies.react.pose : null;
   const walk = d > 0.03 && !pose,
     dy = 0,
-    it = owItem(
+    it = worldBillyItem(
       'buddy',
       m.sp,
       m.gold,
@@ -285,15 +296,15 @@ function owBuddyItems(out, t, dt) {
       { flip: b.flip, dy, big: m.alpha ? 1.12 : 1, extra: { mon: m } }
     );
   if (it) out.push(it);
-  if (OWM.sayT > 0) OWM.sayT = Math.max(0, OWM.sayT - dt);
+  if (worldBillies.sayT > 0) worldBillies.sayT = Math.max(0, worldBillies.sayT - dt);
 }
 /* tapping your buddy: it reacts, and says how it's doing */
-export function owBuddyTap() {
-  const m = owBuddyMon();
+export function buddyTap() {
+  const m = buddyBilly();
   if (!m) return;
   const now = performance.now();
-  if (now - OWM.lastTap < 450) return;
-  OWM.lastTap = now;
+  if (now - worldBillies.lastTap < 450) return;
+  worldBillies.lastTap = now;
   const hp = m.hp / maxHp(m),
     t = walkView.t,
     bond = (m.bond = (m.bond || 0) + 1),
@@ -319,13 +330,13 @@ export function owBuddyTap() {
               `${n} is itching for a battle.`,
               bond > 20 ? `${n} trusts you completely.` : `${n} seems to like you more each day.`,
             ];
-  OWM.say = lines[bond % lines.length];
-  OWM.sayT = 2.6;
-  OWM.react = { pose: hp < 0.3 || m.status ? 'dizzy' : Math.random() < 0.5 ? 'cheer' : 'smug', t0: t };
-  const b = OWM.bud;
+  worldBillies.say = lines[bond % lines.length];
+  worldBillies.sayT = 2.6;
+  worldBillies.react = { pose: hp < 0.3 || m.status ? 'dizzy' : Math.random() < 0.5 ? 'cheer' : 'smug', t0: t };
+  const b = worldBillies.bud;
   if (b)
     for (let i = 0; i < 10; i++)
-      OWM.fx.push({
+      worldBillies.fx.push({
         x: b.x + (Math.random() - 0.5) * 0.4,
         z: b.z + (Math.random() - 0.5) * 0.3,
         y: 0.5 + Math.random() * 0.4,
@@ -338,7 +349,7 @@ export function owBuddyTap() {
   save();
 }
 /* ---------- world trainers' companions ---------- */
-export function owPetSp(T) {
+export function companionSpecies(T) {
   const pet = T && (T.pet === 'true' ? true : T.pet === 'false' ? false : T.pet);
   if (!T || !T.team || !T.team.length || pet === false) return null;
   const h =
@@ -351,28 +362,34 @@ export function owPetSp(T) {
   if (/^@rival\d?$/.test(sp) && typeof rivalSp === 'function') sp = rivalSp(sp);
   return SP[sp] ? sp : null;
 }
-function owPetItems(out, t, npcPos) {
+function companionItems(out, t, npcPos) {
   const P = walkView.pl;
   for (const [n, pos] of npcPos) {
     const T = TRAINERS[n.id],
-      sp = owPetSp(T);
+      sp = companionSpecies(T);
     if (!sp) continue;
     const side = String(n.id).length % 2 ? 1 : -1,
       x = pos[0] + side * 0.85,
       z = pos[1] + 0.15,
       fl = P.x > x ? -1 : 1,
       seed = String(n.id).length * 7;
-    const it = owItem('pet', sp, false, 'front', null, t + seed * 91, seed, x, z, { flip: fl, extra: { n } });
+    const it = worldBillyItem('pet', sp, false, 'front', null, t + seed * 91, seed, x, z, { flip: fl, extra: { n } });
     if (it) out.push(it);
   }
 }
 /* ---------- the wild ones in the grass ---------- */
 /* called per encounter from gatherFrameItems with its spot s (x, z): adds the billionaire, mostly sunk in the grass */
-function owEncItem(out, e, s, t, dt) {
+function wildBillyItem(out, e, s, t, dt) {
   if (!e.sp) return;
   const big = e.alpha ? 1.6 : 1;
-  let w = OWM.mons[e.id];
-  if (!w) w = OWM.mons[e.id] = { pop: 2 + Math.random() * 5, popT: 0, flip: 1, seed: e.id.length * 13 + (e.lvl || 1) };
+  let w = worldBillies.mons[e.id];
+  if (!w)
+    w = worldBillies.mons[e.id] = {
+      pop: 2 + Math.random() * 5,
+      popT: 0,
+      flip: 1,
+      seed: e.id.length * 13 + (e.lvl || 1),
+    };
   /* v46: it stays on its spot and turns to face you; it peeks up sooner when you come within 3 m */
   const P = typeof walkView !== 'undefined' ? walkView.pl : null,
     dx = P ? P.x - s.x : 0,
@@ -389,7 +406,7 @@ function owEncItem(out, e, s, t, dt) {
   }
   if (w.popT > 0) w.popT = Math.max(0, w.popT - dt);
   /* how much of it is hidden: a hop shows it whole for a moment */
-  const im = owFrame(
+  const im = worldBillyFrame(
     e.sp,
     e.gold,
     'front',
@@ -399,13 +416,13 @@ function owEncItem(out, e, s, t, dt) {
   );
   if (!im) return;
   const R = im.__R,
-    mpp = owMpp(e.sp, R, big),
+    mpp = worldBillyMetersPerPixel(e.sp, R, big),
     H = (R.geo.base - R.geo.top) * mpp;
   const hop = w.popT > 0 ? Math.sin(((0.9 - w.popT) / 0.9) * Math.PI) : 0,
     sink = (e.alpha ? 0.1 : 0.22) * (1 - hop) + 0.03,
     moving = Math.hypot((s.tx ?? s.x) - s.x, (s.tz ?? s.z) - s.z) > 0.05,
     bob = moving ? Math.abs(Math.sin(t / 120)) * 0.05 : Math.sin(t / 500 + w.seed) * 0.015;
-  const it = owItem(
+  const it = worldBillyItem(
     'encm',
     e.sp,
     e.gold,
@@ -419,7 +436,7 @@ function owEncItem(out, e, s, t, dt) {
   );
   /* v34: a Golden one gives itself away: gold glints rise out of the grass where it moves */
   if (e.gold && Math.random() < dt * 5)
-    OWM.fx.push({
+    worldBillies.fx.push({
       x: s.x + (Math.random() - 0.5) * 0.5,
       z: s.z + (Math.random() - 0.5) * 0.3,
       y: 0.15 + Math.random() * 0.3,
@@ -432,7 +449,7 @@ function owEncItem(out, e, s, t, dt) {
     it.sh = hop > 0.3 ? it.sh * 0.6 : 0;
     out.push(it);
     if (e.alpha && Math.random() < dt * 7)
-      OWM.fx.push({
+      worldBillies.fx.push({
         x: s.x + (Math.random() - 0.5) * H * 0.6,
         z: s.z + (Math.random() - 0.5) * 0.3,
         y: 0.2,
@@ -444,8 +461,8 @@ function owEncItem(out, e, s, t, dt) {
   }
 }
 /* glows: buddy hearts and Alpha embers (drawn with the world's glow sprites) */
-function owFx(glows, dt) {
-  const L = OWM.fx;
+function worldBillyGlows(glows, dt) {
+  const L = worldBillies.fx;
   for (let i = L.length - 1; i >= 0; i--) {
     const q = L[i];
     q.age += dt;
@@ -459,25 +476,25 @@ function owFx(glows, dt) {
   }
 }
 /* labels: what your buddy just said */
-function owLabels(C, labels) {
-  const b = OWM.bud;
-  if (!b || OWM.sayT <= 0 || !OWM.say) return;
+function worldBillyLabels(C, labels) {
+  const b = worldBillies.bud;
+  if (!b || worldBillies.sayT <= 0 || !worldBillies.say) return;
   const q = worldToScreen(C, b.x, 1.1, b.z);
-  if (q) labels.push({ k: 'say', x: q.x, y: q.y - 6, t: OWM.say, a: Math.min(1, OWM.sayT * 3) });
+  if (q) labels.push({ k: 'say', x: q.x, y: q.y - 6, t: worldBillies.say, a: Math.min(1, worldBillies.sayT * 3) });
 }
 /* species to warm up when a scene opens: the queue, your buddy and the trainers here */
-function owWarm() {
+function warmWorldBillies() {
   try {
     const L = [];
     for (const q of S.queue || []) L.push([q.sp, q.gold, 1]);
-    const m = owBuddyMon();
+    const m = buddyBilly();
     if (m) {
       L.push([m.sp, m.gold, 1]);
       L.push([m.sp, m.gold, KBACK]);
     }
     if (typeof trainersAt === 'function')
       for (const T of trainersAt(S.route.node)) {
-        const sp = owPetSp(T);
+        const sp = companionSpecies(T);
         if (sp) L.push([sp, false, 1]);
         for (const e of T.team || []) {
           const s2 = /^@rival\d?$/.test(e.sp) && typeof rivalSp === 'function' ? rivalSp(e.sp) : e.sp;
@@ -509,7 +526,7 @@ function owWarm() {
 }
 /* v34: on a trip, the next stop is got ready (its pictures loaded, its ground worked out) while you're still walking
    there, so arriving doesn't pay for all of it at once */
-const OW_PREP = new Set();
+const mapsPreparedAhead = new Set();
 setInterval(() => {
   try {
     if (typeof S === 'undefined' || !S.started || !S.route || !(S.route.prog > 0) || typeof nextStop !== 'function')
@@ -517,15 +534,15 @@ setInterval(() => {
     const nx = nextStop();
     if (nx == null) return;
     const id = sceneIdAt(nx);
-    if (!id || OW_PREP.has(id) || (typeof walkView !== 'undefined' && walkView.id === id)) return;
-    OW_PREP.add(id);
-    if (OW_PREP.size > 6) OW_PREP.delete(OW_PREP.values().next().value);
+    if (!id || mapsPreparedAhead.has(id) || (typeof walkView !== 'undefined' && walkView.id === id)) return;
+    mapsPreparedAhead.add(id);
+    if (mapsPreparedAhead.size > 6) mapsPreparedAhead.delete(mapsPreparedAhead.values().next().value);
     const t0 = performance.now();
     prepareMap(id)
       .then(() => {
         if (typeof NWLOG !== 'undefined')
           NWLOG.add('scene', `prepared ${id} ahead (${Math.round(performance.now() - t0)} ms in the background)`);
       })
-      .catch(() => OW_PREP.delete(id));
+      .catch(() => mapsPreparedAhead.delete(id));
   } catch (e) {}
 }, 4000);
