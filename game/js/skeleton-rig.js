@@ -10,20 +10,21 @@ import { ART_CACHE, artImg, artLoad, artReady, artURL, makeCanvas } from './art.
 import { animFor } from './body-plan-animation.js';
 /* eslint-disable no-func-assign */
 expose({
-  KBACK: [() => KBACK],
-  RIGBOX: [() => RIGBOX],
-  RIGC: [() => RIGC],
-  RIGDOM: [() => RIGDOM],
+  BACK_VIEW_SCALE: [() => BACK_VIEW_SCALE],
+  RIG_CANVAS_SIZE: [() => RIG_CANVAS_SIZE],
+  RIG_PARTS_CACHE: [() => RIG_PARTS_CACHE],
   RIG_POSES: [() => RIG_POSES],
+  affineMultiply: [() => affineMultiply],
+  affineRotate: [() => affineRotate],
+  affineScale: [() => affineScale],
+  affineTranslate: [() => affineTranslate],
   bustHTML: [() => bustHTML, v => (bustHTML = v)],
   drawDomRig: [() => drawDomRig, v => (drawDomRig = v)],
   drawRig: [() => drawRig, v => ((drawRig = v), provide({ drawRig }))],
-  mMul: [() => mMul],
-  mR: [() => mR],
-  mS: [() => mS],
-  mT: [() => mT],
   rigAtlas: [() => rigAtlas, v => (rigAtlas = v)],
   rigAudit: [() => rigAudit, v => (rigAudit = v)],
+  rigCanvasAnimator: [() => rigCanvasAnimator],
+  rigCanvasHTML: [() => rigCanvasHTML, v => (rigCanvasHTML = v)],
   rigFrame: [() => rigFrame, v => (rigFrame = v)],
   rigMatrices: [() => rigMatrices, v => (rigMatrices = v)],
   rigParts: [() => rigParts, v => setRigParts(v)],
@@ -32,13 +33,12 @@ expose({
   rigTick: [() => rigTick, v => (rigTick = v)],
   rigTint: [() => rigTint, v => (rigTint = v)],
   setRigParts: [() => setRigParts, v => (setRigParts = v)],
-  sm: [() => sm],
-  sprHTML: [() => sprHTML, v => (sprHTML = v)],
+  smoothCurve: [() => smoothCurve],
 });
 /* eslint-enable no-func-assign */
 provide({ drawRig });
 /* to-module: end */
-const mMul = (m, n) => [
+const affineMultiply = (m, n) => [
   m[0] * n[0] + m[2] * n[1],
   m[1] * n[0] + m[3] * n[1],
   m[0] * n[2] + m[2] * n[3],
@@ -46,13 +46,13 @@ const mMul = (m, n) => [
   m[0] * n[4] + m[2] * n[5] + m[4],
   m[1] * n[4] + m[3] * n[5] + m[5],
 ];
-const mT = (x, y) => [1, 0, 0, 1, x, y],
-  mR = a => {
+const affineTranslate = (x, y) => [1, 0, 0, 1, x, y],
+  affineRotate = a => {
     const c = Math.cos(a),
       s = Math.sin(a);
     return [c, s, -s, c, 0, 0];
   },
-  mS = (x, y) => [x, 0, 0, y, 0, 0];
+  affineScale = (x, y) => [x, 0, 0, y, 0, 0];
 /* ---- skeleton drawing ---- */
 /* bone world matrices for a pose; a bone animates by its role (b.a) or, by default, its name */
 export function rigMatrices(R, P, view) {
@@ -61,16 +61,16 @@ export function rigMatrices(R, P, view) {
     A = R.anim(P, back) || {},
     A0 = P.prev && R.lag ? R.anim(P.prev, back) || {} : null;
   const root = A.root || {};
-  let M = mT(R.cx, R.base);
-  if (back) M = mMul(M, mS(-1, 1));
-  M = mMul(M, mT(((P.x || 0) + (root.dx || 0)) * k, ((P.y || 0) + (root.dy || 0)) * k));
+  let M = affineTranslate(R.cx, R.base);
+  if (back) M = affineMultiply(M, affineScale(-1, 1));
+  M = affineMultiply(M, affineTranslate(((P.x || 0) + (root.dx || 0)) * k, ((P.y || 0) + (root.dy || 0)) * k));
   if (P.r || root.r) {
     const pv = R.tipX || 0;
-    M = mMul(M, mT(pv * k, 0));
-    M = mMul(M, mR((P.r || 0) + (root.r || 0)));
-    M = mMul(M, mT(-pv * k, 0));
+    M = affineMultiply(M, affineTranslate(pv * k, 0));
+    M = affineMultiply(M, affineRotate((P.r || 0) + (root.r || 0)));
+    M = affineMultiply(M, affineTranslate(-pv * k, 0));
   }
-  M = mMul(M, mS((P.sx || 1) * (root.sx || 1), (P.sy || 1) * (root.sy || 1)));
+  M = affineMultiply(M, affineScale((P.sx || 1) * (root.sx || 1), (P.sy || 1) * (root.sy || 1)));
   const W = { root: M },
     list = [];
   for (const b of R.bones) {
@@ -80,11 +80,11 @@ export function rigMatrices(R, P, view) {
       W[b.n] = pm;
       continue;
     }
-    let m = mMul(pm, mT(b.at[0] * k, b.at[1] * k));
-    if (a.dx || a.dy) m = mMul(m, mT((a.dx || 0) * k, (a.dy || 0) * k));
+    let m = affineMultiply(pm, affineTranslate(b.at[0] * k, b.at[1] * k));
+    if (a.dx || a.dy) m = affineMultiply(m, affineTranslate((a.dx || 0) * k, (a.dy || 0) * k));
     const r = (b.rr || 0) + (a.r || 0);
-    if (r) m = mMul(m, mR(r));
-    if (a.sx || a.sy) m = mMul(m, mS(a.sx || 1, a.sy || 1));
+    if (r) m = affineMultiply(m, affineRotate(r));
+    if (a.sx || a.sy) m = affineMultiply(m, affineScale(a.sx || 1, a.sy || 1));
     W[b.n] = m;
     const img = back && b.imgB ? b.imgB : b.img;
     if (!img || (back && b.hideB)) continue;
@@ -114,7 +114,7 @@ export function rigTint(ctx, w, h, col, a) {
   ctx.fillRect(0, 0, w, h);
   ctx.restore();
 }
-const sm = x => x * x * (3 - 2 * x);
+const smoothCurve = x => x * x * (3 - 2 * x);
 /* ---- shared pose channels (design space faces left: forward is -x) ---- */
 export function rigPose(act, tau, t, seed) {
   const P = {
@@ -162,9 +162,9 @@ export function rigPose(act, tau, t, seed) {
   }
   switch (act) {
     case 'attack': {
-      const w = sm(ph(0, 150)),
-        s = sm(ph(150, 240)),
-        r = sm(ph(300, 580)),
+      const w = smoothCurve(ph(0, 150)),
+        s = smoothCurve(ph(150, 240)),
+        r = smoothCurve(ph(300, 580)),
         q = 1 - r;
       P.k = s * q;
       P.sq = w > 0.5 && s < 0.3 ? 'squash' : s > 0.5 && r < 0.5 ? 'stretch' : null;
@@ -182,8 +182,8 @@ export function rigPose(act, tau, t, seed) {
       break;
     }
     case 'cast': {
-      const u = sm(ph(0, 220)),
-        r = sm(ph(560, 820)),
+      const u = smoothCurve(ph(0, 220)),
+        r = smoothCurve(ph(560, 820)),
         q = u * (1 - r);
       P.k = q;
       P.aL += (2.4 + 0.25 * Math.sin(tau / 70)) * q;
@@ -212,11 +212,11 @@ export function rigPose(act, tau, t, seed) {
       break;
     }
     case 'faint': {
-      const q = sm(ph(0, 650)),
-        w = sm(ph(0, 160));
+      const q = smoothCurve(ph(0, 650)),
+        w = smoothCurve(ph(0, 160));
       P.k = q;
       P.sq = w > 0.5 && q < 0.6 ? 'squash' : null;
-      P.r = 1.2 * sm(ph(120, 620));
+      P.r = 1.2 * smoothCurve(ph(120, 620));
       P.body = -0.1 * w;
       P.head = 0.35 * q;
       P.lL = -0.3 * q;
@@ -224,7 +224,7 @@ export function rigPose(act, tau, t, seed) {
       P.aL = -0.9 * q;
       P.aR = 1.1 * q;
       P.flap = 1 - q;
-      P.fall = sm(ph(80, 600));
+      P.fall = smoothCurve(ph(80, 600));
       P.face = 'hurt';
       break;
     }
@@ -241,7 +241,7 @@ export function rigPose(act, tau, t, seed) {
       break;
     }
     case 'buff': {
-      const q = tau < 760 ? sm(ph(0, 140)) : 0,
+      const q = tau < 760 ? smoothCurve(ph(0, 140)) : 0,
         pump = Math.sin(tau / 95) * 0.3;
       P.k = q;
       P.aL += (1.9 + pump) * q;
@@ -254,7 +254,7 @@ export function rigPose(act, tau, t, seed) {
       break;
     }
     case 'block': {
-      const q = tau < 700 ? sm(ph(0, 120)) : 0;
+      const q = tau < 700 ? smoothCurve(ph(0, 120)) : 0;
       P.k = q;
       P.aL += 1.3 * q;
       P.aR += 1.1 * q;
@@ -274,7 +274,7 @@ export function rigPose(act, tau, t, seed) {
       break;
     }
     case 'enter': {
-      const q = 1 - sm(ph(100, 600));
+      const q = 1 - smoothCurve(ph(100, 600));
       P.k = q;
       P.aL += 1.2 * q;
       P.aR -= 1.2 * q;
@@ -331,7 +331,7 @@ export function rigFrame(R, act, tau, t, seed) {
    fails a species whose legs, head or tail never move. */
 const RIG_POSES = ['idle', 'walk', 'attack', 'cast', 'hurt', 'faint', 'cheer', 'buff', 'dizzy'];
 export function rigAudit(sp, view = 'front') {
-  const R = rigParts(sp, false, view === 'back' ? KBACK : 1);
+  const R = rigParts(sp, false, view === 'back' ? BACK_VIEW_SCALE : 1);
   if (!R) return null;
   const out = {};
   for (const act of RIG_POSES) {
@@ -363,9 +363,9 @@ export function rigAudit(sp, view = 'front') {
     still = bones.filter(b => RIG_POSES.every(a => !(out[a][b] > 0.5)));
   return { plan: R.plan, clock: R.clock || 0, bones, poses: out, still };
 } /* v38: a bone without a picture (the hover bone of fish and fliers) is not audited */
-export const RIGBOX = { w: 112, h: 104 },
-  KBACK = 1.4;
-const RIGC = {};
+export const RIG_CANVAS_SIZE = { w: 112, h: 104 },
+  BACK_VIEW_SCALE = 1.4;
+const RIG_PARTS_CACHE = {};
 /* v36: the new piece sheets (art/next/billionaires, rigs in art/next/rigs-next.js) hold both views on one picture */
 if (typeof window !== 'undefined' && window.RIGS_NEXT) {
   window.RIGS = window.RIGS || {};
@@ -379,7 +379,7 @@ export function rigAtlas(sp, gold, view) {
 export function rigParts(sp, gold, k = 1) {
   const view = k === 1 ? 'front' : 'back',
     key = sp + (gold ? 'g' : '') + view;
-  if (RIGC[key]) return RIGC[key];
+  if (RIG_PARTS_CACHE[key]) return RIG_PARTS_CACHE[key];
   const meta = RIGS[sp] && RIGS[sp][view];
   if (!meta) return null;
   const path = rigAtlas(sp, gold, view);
@@ -399,7 +399,7 @@ export function rigParts(sp, gold, k = 1) {
     return { ox: e.ox, oy: e.oy, v, c: v.idle || v[names[0]] };
   });
   const bones = meta.bones.map(b => Object.assign({}, b, { img: b.i >= 0 ? imgs[b.i] : null }));
-  return (RIGC[key] = {
+  return (RIG_PARTS_CACHE[key] = {
     k: meta.k,
     BW: meta.BW,
     BH: meta.BH,
@@ -423,13 +423,13 @@ export function rigPreload(list) {
   return artLoad(list.map(([sp, gold, k]) => rigAtlas(sp, gold, k === 1 ? 'front' : 'back')));
 }
 /* ---- DOM animator: every <canvas class="rig"> on screen ---- */
-const RIGDOM = { vis: new Set(), nodes: new Set(), io: null, mo: null, last: 0 };
-export function sprHTML(sp, size, o = {}) {
+const rigCanvasAnimator = { vis: new Set(), nodes: new Set(), io: null, mo: null, last: 0 };
+export function rigCanvasHTML(sp, size, o = {}) {
   const w = Math.round(size * 1.25),
-    h = Math.round((w * RIGBOX.h) / RIGBOX.w),
+    h = Math.round((w * RIG_CANVAS_SIZE.h) / RIG_CANVAS_SIZE.w),
     st = SP[sp] ? (SP[sp].rar === 'mythical' ? 2 : SP[sp].stage) : 2,
     f = [1.3, 1.1, 1][st];
-  return `<canvas class="rig${o.sil ? ' sil' : ''}" width="${RIGBOX.w * 2}" height="${RIGBOX.h * 2}" data-sp="${sp}" data-g="${o.gold ? 1 : 0}" data-v="${o.view || 'front'}"${o.still || o.sil ? ' data-still="1"' : ''}${o.act ? ` data-act="${o.act}"` : ''} style="width:${w}px;height:${h}px;margin:${-Math.round((h - size) / 2)}px ${-Math.round((w - size) / 2)}px;transform:scale(${f});transform-origin:50% 94%" aria-hidden="true"></canvas>`;
+  return `<canvas class="rig${o.sil ? ' sil' : ''}" width="${RIG_CANVAS_SIZE.w * 2}" height="${RIG_CANVAS_SIZE.h * 2}" data-sp="${sp}" data-g="${o.gold ? 1 : 0}" data-v="${o.view || 'front'}"${o.still || o.sil ? ' data-still="1"' : ''}${o.act ? ` data-act="${o.act}"` : ''} style="width:${w}px;height:${h}px;margin:${-Math.round((h - size) / 2)}px ${-Math.round((w - size) / 2)}px;transform:scale(${f});transform-origin:50% 94%" aria-hidden="true"></canvas>`;
 }
 /* v39: the 64x64 bust from a species' piece sheet (rig meta "portrait"), as an <img> cropped by CSS; falls back to the
    rest-pose rig for a species without one */
@@ -437,7 +437,7 @@ export function bustHTML(sp, size, o = {}) {
   const R = RIGS[sp] && RIGS[sp].front,
     pr = R && R.portrait,
     sh = R && R.sheet;
-  if (!pr || !sh) return sprHTML(sp, size, o);
+  if (!pr || !sh) return rigCanvasHTML(sp, size, o);
   const k = size / 64,
     [x, y, w, h] = pr,
     W = R.size ? R.size[0] : 512,
@@ -463,7 +463,7 @@ function drawDomRig(c, ts) {
   if (R.BW === c.width && R.BH === c.height) drawRig(x, R, P, c.dataset.v);
   else {
     /* v36: a rig on another canvas size (the new 96/128 px sheets, k=1) is drawn to its own size, then placed with its base line on the box's base line at 2 px a pixel */
-    const b = RIGDOM.buf || (RIGDOM.buf = makeCanvas(1, 1));
+    const b = rigCanvasAnimator.buf || (rigCanvasAnimator.buf = makeCanvas(1, 1));
     if (b.width !== R.BW || b.height !== R.BH) {
       b.width = R.BW;
       b.height = R.BH;
@@ -486,13 +486,13 @@ function drawDomRig(c, ts) {
   c._drawn = 1;
 }
 function rigTick(ts) {
-  RIGDOM.last = ts;
-  if (!RIGDOM.mo) {
+  rigCanvasAnimator.last = ts;
+  if (!rigCanvasAnimator.mo) {
     if ('IntersectionObserver' in window)
-      RIGDOM.io = new IntersectionObserver(es =>
+      rigCanvasAnimator.io = new IntersectionObserver(es =>
         es.forEach(e => {
-          if (e.isIntersecting) RIGDOM.vis.add(e.target);
-          else RIGDOM.vis.delete(e.target);
+          if (e.isIntersecting) rigCanvasAnimator.vis.add(e.target);
+          else rigCanvasAnimator.vis.delete(e.target);
         })
       );
     const scan = root => {
@@ -502,27 +502,27 @@ function rigTick(ts) {
         ...root.querySelectorAll('canvas.rig'),
       ];
       list.forEach(c => {
-        if (RIGDOM.nodes.has(c)) return;
-        RIGDOM.nodes.add(c);
-        if (RIGDOM.io) RIGDOM.io.observe(c);
-        else RIGDOM.vis.add(c);
+        if (rigCanvasAnimator.nodes.has(c)) return;
+        rigCanvasAnimator.nodes.add(c);
+        if (rigCanvasAnimator.io) rigCanvasAnimator.io.observe(c);
+        else rigCanvasAnimator.vis.add(c);
       });
     };
     scan(document);
     if ('MutationObserver' in window) {
-      RIGDOM.mo = new MutationObserver(es => es.forEach(e => e.addedNodes.forEach(scan)));
-      RIGDOM.mo.observe(document.body, { childList: true, subtree: true });
-    } else RIGDOM.mo = { fallback: scan };
+      rigCanvasAnimator.mo = new MutationObserver(es => es.forEach(e => e.addedNodes.forEach(scan)));
+      rigCanvasAnimator.mo.observe(document.body, { childList: true, subtree: true });
+    } else rigCanvasAnimator.mo = { fallback: scan };
   }
-  if (RIGDOM.mo.fallback) RIGDOM.mo.fallback(document);
-  for (const c of RIGDOM.nodes) {
+  if (rigCanvasAnimator.mo.fallback) rigCanvasAnimator.mo.fallback(document);
+  for (const c of rigCanvasAnimator.nodes) {
     if (!c.isConnected) {
-      RIGDOM.nodes.delete(c);
-      RIGDOM.vis.delete(c);
-      if (RIGDOM.io) RIGDOM.io.unobserve(c);
+      rigCanvasAnimator.nodes.delete(c);
+      rigCanvasAnimator.vis.delete(c);
+      if (rigCanvasAnimator.io) rigCanvasAnimator.io.unobserve(c);
       continue;
     }
-    if (!RIGDOM.vis.has(c)) continue;
+    if (!rigCanvasAnimator.vis.has(c)) continue;
     if ((!c.dataset.still && !RM) || !c._drawn) drawDomRig(c, ts);
   }
 }

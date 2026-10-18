@@ -15,7 +15,7 @@ import { clamp } from './util.js';
 import { SP, STATUSN, TRAINERS, rivalSp, trainersAt } from './game-data.js';
 import { N, S, U, findMon, maxHp, nextStop, save } from './game-state.js';
 import { makeCanvas } from './art.js';
-import { KBACK, drawRig, rigFrame, rigParts, rigPreload } from './skeleton-rig.js';
+import { BACK_VIEW_SCALE, drawRig, rigFrame, rigParts, rigPreload } from './skeleton-rig.js';
 import { battleStagePrepare } from './battle-stage.js';
 import { prepareMap, walkView, walkablePointNear, worldToScreen } from './walk-view.js';
 import { environment } from './environment.js';
@@ -68,7 +68,7 @@ provide({ worldBillies }); /* to-module */
 const BILLY_FRAME_CACHE_MAX = 320;
 function worldBillyRig(sp, gold, view) {
   if (!SP[sp] || typeof rigParts !== 'function') return null;
-  const k = view === 'back' ? KBACK : 1;
+  const k = view === 'back' ? BACK_VIEW_SCALE : 1;
   let R = null;
   try {
     R = rigParts(sp, !!gold, k);
@@ -490,7 +490,7 @@ function warmWorldBillies() {
     const m = buddyBilly();
     if (m) {
       L.push([m.sp, m.gold, 1]);
-      L.push([m.sp, m.gold, KBACK]);
+      L.push([m.sp, m.gold, BACK_VIEW_SCALE]);
     }
     if (typeof trainersAt === 'function')
       for (const T of trainersAt(S.route.node)) {
@@ -502,7 +502,7 @@ function warmWorldBillies() {
         }
       }
     /* v34: what a battle here would need, loaded now while you walk (a battle used to start by loading it: 4 fps at worst) */
-    for (const m of S.team.slice(0, 3)) L.push([m.sp, m.gold, KBACK]);
+    for (const m of S.team.slice(0, 3)) L.push([m.sp, m.gold, BACK_VIEW_SCALE]);
     if (L.length && typeof rigPreload === 'function')
       setTimeout(
         () =>

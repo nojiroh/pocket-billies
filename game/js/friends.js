@@ -14,7 +14,7 @@ import { ACC, accOn, closeModal, modal, provide, render, sceneIdAt, toast, walkO
 import { ROUTE, SP } from './game-data.js';
 import { N, S, U, cleanName, esc, plural } from './game-state.js';
 import { owFrames, portraitHTML, trWarm } from './person-art.js';
-import { sprHTML } from './skeleton-rig.js';
+import { rigCanvasHTML } from './skeleton-rig.js';
 import { directionOf, walkView } from './walk-view.js';
 import { personItem } from './walk-view-gl.js';
 import { buddyBilly, worldBillyItem } from './world-billies.js';
@@ -349,7 +349,7 @@ export function friendsHTML() {
       return `<div class="fr-row">
   <span class="fr-face">${typeof portraitHTML === 'function' ? portraitHTML('friend:' + u, 44) : ''}</span>
   <span class="fr-t"><b>${esc(d.name || 'Friend')}</b><small>${a.place ? `In ${esc(a.place)} · ${frAgo(a.t)}` : 'Not seen yet'}</small>${p && SP[p.sp] ? `<small class="fr-pt">with ${esc(p.name || SP[p.sp].n)} · Lv ${p.lvl || 1}</small>` : ''}</span>
-  ${p && SP[p.sp] ? `<span class="fr-mon">${sprHTML(p.sp, 48, { gold: p.gold })}</span>` : ''}
+  ${p && SP[p.sp] ? `<span class="fr-mon">${rigCanvasHTML(p.sp, 48, { gold: p.gold })}</span>` : ''}
   <span class="fr-acts">${a.node != null && ROUTE[a.node] ? `<button class="pb small" data-a="fr-map" data-n="${a.node}">Map</button>` : ''}<button class="pb small quiet" data-a="fr-rm" data-u="${esc(u)}" aria-label="Remove ${esc(d.name || 'friend')}">✕</button></span></div>`;
     })
     .join('');

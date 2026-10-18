@@ -106,7 +106,7 @@ import {
 } from './person-art.js';
 import { applyPreferences, settingsHTML } from './settings-screen.js';
 import { lookPortrait, openDressing } from './dressing-room.js';
-import { bustHTML, sprHTML } from './skeleton-rig.js';
+import { bustHTML, rigCanvasHTML } from './skeleton-rig.js';
 import { EASE, battleStage, battleStageFocus, battleStageTargets, camHome } from './battle-stage.js';
 import {
   closedText,
@@ -465,7 +465,7 @@ function evoModal(m) {
     }[e.k] || '';
   modal({
     title: `${esc(N(m))} is evolving`,
-    top: `<div class="evo">${sprHTML(m.sp, 128, { gold: m.gold })}</div>`,
+    top: `<div class="evo">${rigCanvasHTML(m.sp, 128, { gold: m.gold })}</div>`,
     html: `<p>${why} Something bigger is coming.</p>`,
     lock: 1,
     btns: [
@@ -489,7 +489,7 @@ function evoRun(m, note) {
   U.modal = null;
   modal({
     title: `What? ${esc(fromName)} is evolving!`,
-    top: `<div class="evo run" id="evoBox"><span class="ea">${sprHTML(from.id, 128, { gold: m.gold, still: 1 })}</span><span class="eb">${sprHTML(to.id, 128, { gold: m.gold, still: 1 })}</span></div>`,
+    top: `<div class="evo run" id="evoBox"><span class="ea">${rigCanvasHTML(from.id, 128, { gold: m.gold, still: 1 })}</span><span class="eb">${rigCanvasHTML(to.id, 128, { gold: m.gold, still: 1 })}</span></div>`,
     html: '<p class="note">Don’t look away.</p>',
     btns: [],
     lock: 1,
@@ -515,7 +515,7 @@ function evoRun(m, note) {
             U.modal = null;
             modal({
               title: `${esc(fromName)} became ${esc(to.name)}`,
-              top: `<div class="evo done">${sprHTML(m.sp, 128, { gold: m.gold })}</div>`,
+              top: `<div class="evo done">${rigCanvasHTML(m.sp, 128, { gold: m.gold })}</div>`,
               html: `<p>${esc(to.blurb)}</p><p>${to.types.map(chip).join('')}</p>${note ? `<p class="note">${note}</p>` : ''}`,
               btns: [{ l: 'Nice', c: 'dark', f: closeModal }],
             });
@@ -545,7 +545,7 @@ function hatchModal(e) {
             U.modal = null;
             modal({
               title: `It’s ${/^[AEIOU]/.test(s.name) ? 'an' : 'a'} ${m.gold ? 'Golden ' : ''}${esc(s.name)}`,
-              top: `<div class="hatch done">${sprHTML(m.sp, 128, { gold: m.gold })}</div>`,
+              top: `<div class="hatch done">${rigCanvasHTML(m.sp, 128, { gold: m.gold })}</div>`,
               html: `<p>${s.types.map(chip).join('')} <b class="tnum">Lv ${m.lvl}</b></p><p>${esc(s.blurb)}</p>${res.where === 'box' ? '<p class="note">It went to storage because your team is full.</p>' : ''}`,
               btns: [{ l: 'Welcome aboard', c: 'dark', f: closeModal }],
             });
@@ -739,7 +739,7 @@ function renderIntro() {
        t = s.types[0];
      const st = TYPES.filter(x => eff(t, [x]) > 1),
        wk = TYPES.filter(x => eff(x, [t]) > 1);
-     return `<button class="starter px" data-a="pick" data-l="${l}" style="--d:${j * 80}ms">${sprHTML(l + '0', 104, { act: 'cheer' })}<span><span class="sn">${s.name}</span><span class="row">${chip(t)}</span><span class="sd">${s.blurb}</span><span class="sd">Strong against ${st.join(' and ')}. Weak to ${wk.join(' and ')}.</span></span></button>`;
+     return `<button class="starter px" data-a="pick" data-l="${l}" style="--d:${j * 80}ms">${rigCanvasHTML(l + '0', 104, { act: 'cheer' })}<span><span class="sn">${s.name}</span><span class="row">${chip(t)}</span><span class="sd">${s.blurb}</span><span class="sd">Strong against ${st.join(' and ')}. Weak to ${wk.join(' and ')}.</span></span></button>`;
    })
    .join('')}</div>`;
 }
@@ -899,7 +899,7 @@ function buddyCard() {
     e && e.k === 'buddy'
       ? `<div class="note">Buddy distance: ${km(m.bsteps || 0)} of ${km(e.steps)} km to evolve.</div>${bar((m.bsteps || 0) / e.steps, 'gold')}`
       : '';
-  return `<section><div class="sec-h"><h2>Buddy</h2></div><div class="buddy px" data-a="mon" data-u="${m.uid}" role="button" tabindex="0">${sprHTML(m.sp, 80, { gold: m.gold })}<div class="bd"><div class="bn">${esc(N(m))} <span class="lv tnum">Lv ${m.lvl}</span></div><div class="note">Earns 1 XP for every ${plural(RULES.progression.buddyStepsPerXp, 'step')}. ${fmt(Math.ceil((b - m.xp) * RULES.progression.buddyStepsPerXp))} more steps to level ${m.lvl + 1}.</div>${bar((m.xp - a) / (b - a), 'xpb')}${ev}</div></div></section>`;
+  return `<section><div class="sec-h"><h2>Buddy</h2></div><div class="buddy px" data-a="mon" data-u="${m.uid}" role="button" tabindex="0">${rigCanvasHTML(m.sp, 80, { gold: m.gold })}<div class="bd"><div class="bn">${esc(N(m))} <span class="lv tnum">Lv ${m.lvl}</span></div><div class="note">Earns 1 XP for every ${plural(RULES.progression.buddyStepsPerXp, 'step')}. ${fmt(Math.ceil((b - m.xp) * RULES.progression.buddyStepsPerXp))} more steps to level ${m.lvl + 1}.</div>${bar((m.xp - a) / (b - a), 'xpb')}${ev}</div></div></section>`;
 }
 function roomHero() {
   const I = U.inside,
@@ -1802,7 +1802,7 @@ function renderMap() {
 function poolStrip(pool) {
   const P = POOLS[pool];
   if (!P) return '';
-  return `<div class="poolstrip">${P.list.map(([id]) => (S.seen[id] ? sprHTML(id, 36) : sprHTML(id, 36, { sil: 1, still: 1 }))).join('')}</div>`;
+  return `<div class="poolstrip">${P.list.map(([id]) => (S.seen[id] ? rigCanvasHTML(id, 36) : rigCanvasHTML(id, 36, { sil: 1, still: 1 }))).join('')}</div>`;
 }
 function mapCardHTML() {
   const sel = U.mapSel == null ? S.route.node : U.mapSel;
@@ -1866,7 +1866,7 @@ function teamHero(m) {
   const s = SP[m.sp],
     mx = maxHp(m),
     bud = m.uid === S.buddy;
-  return `<section class="tm-hero tpanel"><button class="tm-stage" data-a="mon" data-u="${m.uid}" style="${plateVars(m)}" aria-label="${esc(N(m))}, details"><span class="tm-ribbon">Lead</span>${m.gold ? '<span class="tm-ribbon gold">Golden</span>' : ''}${sprHTML(m.sp, 120, { gold: m.gold })}</button>
+  return `<section class="tm-hero tpanel"><button class="tm-stage" data-a="mon" data-u="${m.uid}" style="${plateVars(m)}" aria-label="${esc(N(m))}, details"><span class="tm-ribbon">Lead</span>${m.gold ? '<span class="tm-ribbon gold">Golden</span>' : ''}${rigCanvasHTML(m.sp, 120, { gold: m.gold })}</button>
  <div class="tm-info"><div class="tm-name"><h2>${esc(N(m))}</h2><span class="lv tnum">Lv ${m.lvl}</span></div>${m.nick ? `<div class="tm-sp">${esc(s.name)}</div>` : ''}
   <div class="row">${s.types.map(chip).join('')}${monState(m)}${bud ? `<span class="badge bud">${uiIconHTML('heart', 11)} Buddy</span>` : ''}</div>
   ${meter('HP', hpBar(m.hp, mx), `${m.hp}/${mx}`)}${meter('XP', bar(xpPart(m), 'xpb'), xpLeft(m))}
@@ -1875,7 +1875,7 @@ function teamHero(m) {
 function teamCard(m, i) {
   const mx = maxHp(m),
     bud = m.uid === S.buddy;
-  return `<div class="tm-card${m.hp <= 0 ? ' down' : ''}" style="--d:${i * 40}ms"><button class="tm-main" data-a="mon" data-u="${m.uid}"><span class="tm-spr" style="${plateVars(m)}">${sprHTML(m.sp, 72, { gold: m.gold })}${bud ? `<i class="tm-heart" title="Buddy">${uiIconHTML('heart', 12)}</i>` : ''}</span>
+  return `<div class="tm-card${m.hp <= 0 ? ' down' : ''}" style="--d:${i * 40}ms"><button class="tm-main" data-a="mon" data-u="${m.uid}"><span class="tm-spr" style="${plateVars(m)}">${rigCanvasHTML(m.sp, 72, { gold: m.gold })}${bud ? `<i class="tm-heart" title="Buddy">${uiIconHTML('heart', 12)}</i>` : ''}</span>
   <span class="tm-t"><b>${esc(N(m))}</b><span class="tm-lv tnum">Lv ${m.lvl}</span></span><span class="row">${SP[m.sp].types.map(chip).join('')}${monState(m)}</span>${hpBar(m.hp, mx)}<span class="hpn tnum">${m.hp}/${mx} HP</span></button>
   <div class="tm-quick"><button class="qk" data-a="mlead" data-u="${m.uid}" ${m.hp <= 0 ? 'disabled' : ''}>Make lead</button>${needsCare(m) ? `<button class="qk heal" data-a="mheal" data-u="${m.uid}">Heal</button>` : ''}</div></div>`;
 }
@@ -1890,7 +1890,7 @@ function jobSlots() {
       const m = findMon(j.uid),
         J = JOBS[j.job];
       if (!m) return '';
-      return `<div class="job"><button class="job-spr" data-a="mon" data-u="${m.uid}" style="${plateVars(m)}" aria-label="${esc(N(m))}, details">${sprHTML(m.sp, 48, { gold: m.gold })}</button><div class="jt"><b>${esc(N(m))}</b><span class="note">${esc(J.n)}, ${esc(J.where)}. Earns ${esc(J.pay)}.</span>${bar(j.acc / JOB_STEPS, 'gold live')}<span class="note tnum">${fmt(JOB_STEPS - j.acc)} steps to the next pay${j.pend ? `, ${j.pend} ready` : ''}</span>
+      return `<div class="job"><button class="job-spr" data-a="mon" data-u="${m.uid}" style="${plateVars(m)}" aria-label="${esc(N(m))}, details">${rigCanvasHTML(m.sp, 48, { gold: m.gold })}</button><div class="jt"><b>${esc(N(m))}</b><span class="note">${esc(J.n)}, ${esc(J.where)}. Earns ${esc(J.pay)}.</span>${bar(j.acc / JOB_STEPS, 'gold live')}<span class="note tnum">${fmt(JOB_STEPS - j.acc)} steps to the next pay${j.pend ? `, ${j.pend} ready` : ''}</span>
   <div class="racts"><button class="pb small ${j.pend ? 'gold' : ''}" data-a="collect" data-s="${i}" ${j.pend ? '' : 'disabled'}>Collect pay${j.pend ? ` (${j.pend})` : ''}</button><button class="pb small quiet" data-a="endshift" data-s="${i}">End shift</button></div></div></div>`;
     })
     .join('')}</div>`;
@@ -1921,7 +1921,7 @@ function boxSection() {
   return `<section class="tpanel tm-box"><div class="sec-h"><h2>Storage</h2><span class="count tnum">${all.length}</span></div>${
     all.length
       ? `<p class="note">Billies resting here don’t battle. Tap one for details.</p>${tools}
- <div class="bx-grid">${L.map(m => `<div class="bx"><button class="bx-main" data-a="mon" data-u="${m.uid}"><span class="bx-spr" style="${plateVars(m)}">${sprHTML(m.sp, 60, { gold: m.gold })}</span><b>${esc(N(m))}</b><span class="bx-sub tnum">Lv ${m.lvl}<span class="bx-dots">${SP[m.sp].types.map(t => `<i style="--tc:${TC[t][0]}" title="${t}"></i>`).join('')}</span></span></button><button class="qk" data-a="mteam" data-u="${m.uid}">${full ? 'Swap in' : 'To team'}</button></div>`).join('')}</div>`
+ <div class="bx-grid">${L.map(m => `<div class="bx"><button class="bx-main" data-a="mon" data-u="${m.uid}"><span class="bx-spr" style="${plateVars(m)}">${rigCanvasHTML(m.sp, 60, { gold: m.gold })}</span><b>${esc(N(m))}</b><span class="bx-sub tnum">Lv ${m.lvl}<span class="bx-dots">${SP[m.sp].types.map(t => `<i style="--tc:${TC[t][0]}" title="${t}"></i>`).join('')}</span></span></button><button class="qk" data-a="mteam" data-u="${m.uid}">${full ? 'Swap in' : 'To team'}</button></div>`).join('')}</div>`
       : '<div class="empty tm-empty">Storage is empty. When your team is full, new Billies you tax and hatchlings rest here.</div>'
   }</section>`;
 }
@@ -2062,14 +2062,14 @@ function renderDexEntry(id) {
       const sid = L.id + st,
         sn = S.seen[sid],
         prev = L.split && st === 3 ? L.id + '1' : L.id + (st - 1);
-      return `${st ? `<span class="evarrow"><i>→</i><small>${esc(L.split && st >= 2 ? (st === 2 ? 'Build path' : 'Hype path') : evoMethod(SP[prev].evo))}</small></span>` : ''}<button class="evnode${sid === id ? ' cur' : ''}" data-a="dex" data-s="${sid}" ${sn ? '' : 'disabled'}>${sn ? sprHTML(sid, 44) : sprHTML(sid, 44, { sil: 1, still: 1 })}<small>${sn ? esc(n) : '???'}</small></button>`;
+      return `${st ? `<span class="evarrow"><i>→</i><small>${esc(L.split && st >= 2 ? (st === 2 ? 'Build path' : 'Hype path') : evoMethod(SP[prev].evo))}</small></span>` : ''}<button class="evnode${sid === id ? ' cur' : ''}" data-a="dex" data-s="${sid}" ${sn ? '' : 'disabled'}>${sn ? rigCanvasHTML(sid, 44) : rigCanvasHTML(sid, 44, { sil: 1, still: 1 })}<small>${sn ? esc(n) : '???'}</small></button>`;
     })
     .join('');
   const bg = TC[s.types[0]][0],
     bg2 = TC[s.types[s.types.length - 1]][0];
   return `<header class="bar dexbar"><button class="pb small quiet" data-a="dexback">‹ Guide</button><div class="dexnav"><button class="pb small quiet" data-a="dex" data-s="${prev || ''}" ${prev ? '' : 'disabled'} aria-label="Previous entry">‹</button><span class="tnum">No. ${String(s.no).padStart(3, '0')}</span><button class="pb small quiet" data-a="dex" data-s="${next || ''}" ${next ? '' : 'disabled'} aria-label="Next entry">›</button></div></header>
  <article class="dexpage">
-  <div class="plate px" style="--c1:${bg};--c2:${bg2}"><div class="plate-sky"></div><div class="plate-floor"></div><div class="plate-spr">${sprHTML(id, 150, { act: 'enter' })}</div><span class="cattag">${esc(s.cat)}</span><span class="stamp ${got ? 'got' : 'seen'}">${got ? 'Taxed' : 'Seen'}</span><span class="specno tnum">Specimen ${String(s.no).padStart(3, '0')}/${String(DEX.length).padStart(3, '0')}</span></div>
+  <div class="plate px" style="--c1:${bg};--c2:${bg2}"><div class="plate-sky"></div><div class="plate-floor"></div><div class="plate-spr">${rigCanvasHTML(id, 150, { act: 'enter' })}</div><span class="cattag">${esc(s.cat)}</span><span class="stamp ${got ? 'got' : 'seen'}">${got ? 'Taxed' : 'Seen'}</span><span class="specno tnum">Specimen ${String(s.no).padStart(3, '0')}/${String(DEX.length).padStart(3, '0')}</span></div>
   <h2 class="dexname">${esc(s.name)}</h2><p class="row">${s.types.map(chip).join('')}<span class="note rar">${RARN[s.rar] || ''}</span></p>
   <div class="vitals">${[
     ['Height', typeof s.ht === 'number' ? s.ht.toFixed(1) + ' m' : s.ht],
@@ -2145,7 +2145,7 @@ function renderProfile() {
   ${tile(uiIconHTML('ledger', 14), 'Seen', `${seen}/${DEX.length}`, null, seen / DEX.length)}${tile(coinHTML('penny', 14), 'Taxed', `${got}/${DEX.length}`, null, got / DEX.length)}
   ${tile(uiIconHTML('fight', 14), 'Trainers beaten', fmt(beat))}${tile(eggHTML(2, 12), 'Eggs hatched', fmt(S.hatched || 0), S.eggs.length ? `${plural(S.eggs.length, 'egg')} on the way` : 'No eggs right now')}${typeof stampTile === 'function' ? stampTile(tile) : ''}
  </div></section></div>
- <div class="pf-row">${bud ? `<section class="tpanel pf-buddy"><div class="sec-h"><h2>Buddy</h2></div><button class="pf-bud" data-a="mon" data-u="${bud.uid}"><span class="tm-spr" style="${plateVars(bud)}">${sprHTML(bud.sp, 72, { gold: bud.gold })}</span><span class="pf-bt"><b>${esc(N(bud))}</b><span class="tnum">Lv ${bud.lvl}</span><small>You’ve walked ${km(bud.bsteps || 0)} km together.</small></span></button></section>` : ''}
+ <div class="pf-row">${bud ? `<section class="tpanel pf-buddy"><div class="sec-h"><h2>Buddy</h2></div><button class="pf-bud" data-a="mon" data-u="${bud.uid}"><span class="tm-spr" style="${plateVars(bud)}">${rigCanvasHTML(bud.sp, 72, { gold: bud.gold })}</span><span class="pf-bt"><b>${esc(N(bud))}</b><span class="tnum">Lv ${bud.lvl}</span><small>You’ve walked ${km(bud.bsteps || 0)} km together.</small></span></button></section>` : ''}
  <section class="tpanel pf-bag"><div class="sec-h"><h2>Bag</h2></div>
   <div class="pf-coins">${Object.keys(COINS)
     .map(
@@ -2348,7 +2348,7 @@ function monSheet(m) {
             const id = s.line + i;
             if (!SP[id]) return '';
             const seen = S.seen[id] || S.caught[id] || id === m.sp;
-            return `<div class="ms-evo ${id === m.sp ? 'on' : ''}">${seen ? sprHTML(id, 64, {}) : '<span class="ms-q">?</span>'}<b>${seen ? esc(SP[id].name) : '???'}</b></div>`;
+            return `<div class="ms-evo ${id === m.sp ? 'on' : ''}">${seen ? rigCanvasHTML(id, 64, {}) : '<span class="ms-q">?</span>'}<b>${seen ? esc(SP[id].name) : '???'}</b></div>`;
           })
           .join('<span class="ms-arr" aria-hidden="true">›</span>')
       : '';
@@ -2362,7 +2362,7 @@ function monSheet(m) {
     title: esc(N(m)),
     cls: 'mon-sheet',
     acts,
-    top: `<div class="ms-plate" style="${plateVars(m)}">${lead ? '<span class="tm-ribbon">Lead</span>' : ''}${bud ? `<span class="tm-ribbon bud">${uiIconHTML('heart', 11)} Buddy</span>` : ''}${m.gold ? '<span class="tm-ribbon gold">Golden</span>' : ''}${sprHTML(m.sp, 128, { gold: m.gold })}</div>`,
+    top: `<div class="ms-plate" style="${plateVars(m)}">${lead ? '<span class="tm-ribbon">Lead</span>' : ''}${bud ? `<span class="tm-ribbon bud">${uiIconHTML('heart', 11)} Buddy</span>` : ''}${m.gold ? '<span class="tm-ribbon gold">Golden</span>' : ''}${rigCanvasHTML(m.sp, 128, { gold: m.gold })}</div>`,
     html: `<p class="row ms-chips">${s.types.map(chip).join('')}${monState(m)}<b class="lv tnum">Lv ${m.lvl}</b>${m.nick ? `<span class="ms-sp">${esc(s.name)}</span>` : ''}</p>
   <div class="ms-tabs" role="tablist" aria-label="About ${esc(N(m))}" data-on="sum">${tabs.map(([k, l]) => `<button role="tab" data-a="ms-tab" data-k="${k}" aria-selected="${k === 'sum'}">${l}</button>`).join('')}</div>
   <div class="ms-pane" data-k="sum"><div class="ms-meters">${meter('HP', hpBar(m.hp, mx), `${m.hp}/${mx}`)}${meter('XP', bar(xpPart(m), 'xpb'), xpLeft(m))}</div>
@@ -2419,7 +2419,7 @@ function healPick(m, back) {
 function swapPick(m) {
   modal({
     title: `Swap in ${esc(N(m))}`,
-    html: `<p class="note">Your team is full. Pick who rests in storage instead.</p><div class="list">${S.team.map((o, i) => `<button class="pickrow" data-a="mswap" data-u="${m.uid}" data-o="${o.uid}">${sprHTML(o.sp, 40, { gold: o.gold })}<span class="pr-t"><b>${esc(N(o))}</b><small>Lv ${o.lvl}${i === 0 ? ', your lead' : ''}${o.uid === S.buddy ? ', buddy' : ''}</small></span></button>`).join('')}</div>`,
+    html: `<p class="note">Your team is full. Pick who rests in storage instead.</p><div class="list">${S.team.map((o, i) => `<button class="pickrow" data-a="mswap" data-u="${m.uid}" data-o="${o.uid}">${rigCanvasHTML(o.sp, 40, { gold: o.gold })}<span class="pr-t"><b>${esc(N(o))}</b><small>Lv ${o.lvl}${i === 0 ? ', your lead' : ''}${o.uid === S.buddy ? ', buddy' : ''}</small></span></button>`).join('')}</div>`,
     btns: [{ l: 'Cancel', c: 'quiet', f: closeModal }],
   });
 }
@@ -2427,7 +2427,7 @@ function addPick() {
   const free = S.box.filter(m => m.job == null).sort((a, b) => b.lvl - a.lvl);
   modal({
     title: 'Add to your team',
-    html: `<div class="list">${free.map(m => `<button class="pickrow" data-a="tmaddon" data-u="${m.uid}">${sprHTML(m.sp, 40, { gold: m.gold })}<span class="pr-t"><b>${esc(N(m))}</b><small>Lv ${m.lvl}, ${SP[m.sp].types.map(t => (t === 'None' ? 'Normal' : t)).join(' and ')}</small></span></button>`).join('') || '<p>Storage is empty.</p>'}</div>`,
+    html: `<div class="list">${free.map(m => `<button class="pickrow" data-a="tmaddon" data-u="${m.uid}">${rigCanvasHTML(m.sp, 40, { gold: m.gold })}<span class="pr-t"><b>${esc(N(m))}</b><small>Lv ${m.lvl}, ${SP[m.sp].types.map(t => (t === 'None' ? 'Normal' : t)).join(' and ')}</small></span></button>`).join('') || '<p>Storage is empty.</p>'}</div>`,
     btns: [{ l: 'Cancel', c: 'quiet', f: closeModal }],
   });
 }
@@ -2453,7 +2453,7 @@ function hirePick(slot, job) {
   modal({
     title: `Who becomes the ${JOBS[job].n.toLowerCase()}?`,
     html: list.length
-      ? `<div class="list">${list.map(m => `<button class="pickrow px" data-a="hireon" data-s="${slot}" data-j="${job}" data-u="${m.uid}">${sprHTML(m.sp, 40, { gold: m.gold })}<span class="pr-t"><b>${esc(N(m))}</b><small>${S.team.includes(m) ? 'On your team' : 'In storage'}, Lv ${m.lvl}</small></span></button>`).join('')}</div>`
+      ? `<div class="list">${list.map(m => `<button class="pickrow px" data-a="hireon" data-s="${slot}" data-j="${job}" data-u="${m.uid}">${rigCanvasHTML(m.sp, 40, { gold: m.gold })}<span class="pr-t"><b>${esc(N(m))}</b><small>${S.team.includes(m) ? 'On your team' : 'In storage'}, Lv ${m.lvl}</small></span></button>`).join('')}</div>`
       : '<p>Tax another Billie first. Your last one has to stay on the team.</p>',
     btns: [{ l: 'Cancel', c: 'quiet', f: closeModal }],
   });
@@ -2533,7 +2533,7 @@ export function startGame(l, o = {}) {
     words = ['No', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten'];
   const W = {
     title: `${SP[m.sp].name} joined your team`,
-    top: `<div class="sheet-art">${sprHTML(m.sp, 128)}</div>`,
+    top: `<div class="sheet-art">${rigCanvasHTML(m.sp, 128)}</div>`,
     html: `${nE ? `<p>${words[nE] || nE} Billie${nE === 1 ? ' is' : 's are'} already rustling in the grass. Tap one to battle it, then flick a coin.</p>` : ''}${egg ? `<p>Professor Hazel also gave you a ${R.starterEgg} km egg. It’s warming up in an incubator, and every step you walk helps it hatch.</p>` : ''}`,
     btns: [{ l: 'Let’s go', c: 'dark', f: closeModal }],
   };

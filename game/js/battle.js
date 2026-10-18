@@ -69,7 +69,7 @@ import {
 } from './game-state.js';
 import { artURL, coinHTML, eggHTML, iconURL, uiIconHTML } from './art.js';
 import { portraitHTML } from './person-art.js';
-import { KBACK, bustHTML, rigPreload } from './skeleton-rig.js';
+import { BACK_VIEW_SCALE, bustHTML, rigPreload } from './skeleton-rig.js';
 import {
   AREAS,
   EASE,
@@ -1211,7 +1211,7 @@ export function openBattle() {
   const bs = (S.preferences || {}).battleSpeed;
   if (bs && !U.dbgSpeed) battleStage.speed = bs === 'fast' ? 1.6 : bs === 'faster' ? 2.2 : 1;
   const area = B.area || 'grass',
-    list = S.team.map(m => [m.sp, m.gold, KBACK]).concat(B.sides[1].team.map(m => [m.sp, m.gold, 1]));
+    list = S.team.map(m => [m.sp, m.gold, BACK_VIEW_SCALE]).concat(B.sides[1].team.map(m => [m.sp, m.gold, 1]));
   const b = B;
   Promise.all([battleStagePrepare(area), rigPreload(list)])
     .then(() => {
