@@ -21,7 +21,7 @@ import { particleSprite } from './battle-stage.js';
 import { walkView } from './walk-view.js';
 import { ensurePrograms, gpuState } from './engine/webgl.js';
 import { POST_EFFECT_SHADERS } from './engine/post-effects.js';
-import { canvasForContext, standingHeightAt, walkGlContext } from './walk-view-gl.js';
+import { canvasForContext, ensureWalkGl, standingHeightAt } from './walk-view-gl.js';
 import { A, endBattle, stopTimers, types } from './battle.js';
 import { LOCATION_VECTORS, WORLD_ART, vector3, worldMap, worldMapHeight, worldMapWidth } from './world-map.js';
 import { WORLD_MAP_GL_SHADERS, worldMapGl, worldMapGlRender, worldMapGlSize } from './world-map-gl.js';
@@ -93,7 +93,7 @@ function fallCanvas() {
 }
 /* the walk scene's canvas, ready for the world map's renderer (the map is drawn on it before Sundown is mounted) */
 export function fallGL() {
-  if (typeof worldMapGlRender !== 'function' || typeof walkGlContext !== 'function' || gpuState.fail || gpuState.lost)
+  if (typeof worldMapGlRender !== 'function' || typeof ensureWalkGl !== 'function' || gpuState.fail || gpuState.lost)
     return null;
   let cv = $('#dio');
   if (!cv) {
@@ -102,7 +102,7 @@ export function fallGL() {
     document.body.prepend(cv);
   }
   cv = canvasForContext(cv, 'gl');
-  if (!walkGlContext(cv)) return null;
+  if (!ensureWalkGl(cv)) return null;
   try {
     ensurePrograms(WORLD_MAP_GL_SHADERS);
     ensurePrograms(POST_EFFECT_SHADERS);

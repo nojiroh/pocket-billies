@@ -269,6 +269,7 @@ expose({
   drawWeather: [() => drawWeather, v => (drawWeather = v)],
   easedMood: [() => easedMood, v => (easedMood = v)],
   effectsPass: [() => effectsPass, v => setEffectsPass(v)],
+  ensureWalkGl: [() => ensureWalkGl, v => (ensureWalkGl = v)],
   fittedShadowPass: [() => fittedShadowPass, v => (fittedShadowPass = v)],
   foliageAmount: [() => foliageAmount, v => (foliageAmount = v)],
   frameBudgetLeft: [() => frameBudgetLeft, v => ((frameBudgetLeft = v), provide({ frameBudgetLeft }))],
@@ -359,7 +360,6 @@ expose({
   uploadTextureStrips: [() => uploadTextureStrips, v => (uploadTextureStrips = v)],
   useWalkProgram: [() => useWalkProgram, v => (useWalkProgram = v)],
   walkCamera: [() => walkCamera, v => (walkCamera = v)],
-  walkGlContext: [() => walkGlContext, v => (walkGlContext = v)],
   walkLightContext: [() => walkLightContext, v => (walkLightContext = v)],
   walkRenderer: [() => walkRenderer],
   wantedRingChunks: [() => wantedRingChunks, v => (wantedRingChunks = v)],
@@ -757,7 +757,7 @@ export function mountWalkView(cv, id, opt = {}) {
   walkView.ready = false;
   walkView.err = null;
   cv.classList.add('gl');
-  if (!walkGlContext(cv)) return mountWalkView(cv, id, opt);
+  if (!ensureWalkGl(cv)) return mountWalkView(cv, id, opt);
   const ui = labelLayer(cv);
   walkView.x = ui.getContext('2d');
   walkRenderer.on = true;
@@ -791,7 +791,7 @@ export function setMountWalkView(v) {
 }
 /* the GL context on this canvas, with the walk scene's programs (v47: also used by the opening's fall, which draws the
    world map on the same canvas before Sundown is mounted; a context made by the map alone gets the walk programs here) */
-export function walkGlContext(cv) {
+export function ensureWalkGl(cv) {
   if (gpuState.cv === cv && gpuState.gl) {
     if (!gpuState.lost)
       try {
