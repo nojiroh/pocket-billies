@@ -54,6 +54,7 @@ import { ART_CACHE, artLoad, makeCanvas, packHexPixel } from './art.js';
 expose({
   BRIDGE_ARCH: [() => BRIDGE_ARCH],
   BUILDING_VARIANT_CACHE: [() => BUILDING_VARIANT_CACHE],
+  CLOSED_VENUE_NAMES: [() => CLOSED_VENUE_NAMES],
   EFFECT_FRAMES: [() => EFFECT_FRAMES],
   EFFECT_KINDS: [() => EFFECT_KINDS],
   FAR_GROUND_PX_PER_M: [() => FAR_GROUND_PX_PER_M],
@@ -69,7 +70,6 @@ expose({
   NATURAL_EDGE_WALLS: [() => NATURAL_EDGE_WALLS],
   NAV_CELLS_PER_M: [() => NAV_CELLS_PER_M],
   OPEN_HOURS: [() => OPEN_HOURS],
-  OPEN_NAMES: [() => OPEN_NAMES],
   PAINT_WORKER_WAIT: [() => PAINT_WORKER_WAIT],
   PROP_CLOCK: [() => PROP_CLOCK],
   ROOF_STYLES: [() => ROOF_STYLES],
@@ -159,7 +159,7 @@ expose({
   navGrid: [() => navGrid, v => setNavGrid(v)],
   nearestWalkableCell: [() => nearestWalkableCell, v => (nearestWalkableCell = v)],
   newStepGrid: [() => newStepGrid, v => (newStepGrid = v)],
-  openKind: [() => openKind, v => (openKind = v)],
+  openingHoursKind: [() => openingHoursKind, v => (openingHoursKind = v)],
   paintFarGroundSteps: [() => paintFarGroundSteps, v => (paintFarGroundSteps = v)],
   paintGroundSteps: [() => paintGroundSteps, v => (paintGroundSteps = v)],
   pathWearAmountFn: [() => pathWearAmountFn, v => (pathWearAmountFn = v)],
@@ -536,7 +536,7 @@ const OPEN_HOURS = {
   greenhouse: [7, 20],
   barn: [6, 20],
 };
-const OPEN_NAMES = {
+const CLOSED_VENUE_NAMES = {
   shop: 'The shop',
   bakery: 'The bakery',
   market_hall: 'The market hall',
@@ -547,7 +547,7 @@ const OPEN_NAMES = {
   barn: 'The barn',
 };
 /* v47: the kind a door keeps hours as (not game-data.js placeKind(id), the kind of a place) */
-export function openKind(a, p) {
+export function openingHoursKind(a, p) {
   const C = walkData().sc,
     M = p && C.props[p.k],
     RK = typeof ROOM_KIND !== 'undefined' ? ROOM_KIND : {};
@@ -562,7 +562,7 @@ export function isOpenNow(kind) {
 export function closedText(kind) {
   const H = OPEN_HOURS[kind],
     f = v => `${Math.floor(v)}:${String(Math.round((v % 1) * 60)).padStart(2, '0')}`;
-  return `${OPEN_NAMES[kind] || 'It'} is closed for the night. It opens at ${H ? f(H[0]) : 'morning'}.${kind === 'shop' ? ' You can still order from the town card.' : ''}`;
+  return `${CLOSED_VENUE_NAMES[kind] || 'It'} is closed for the night. It opens at ${H ? f(H[0]) : 'morning'}.${kind === 'shop' ? ' You can still order from the town card.' : ''}`;
 }
 /* the label over something you can use: what it is, Read for a book you haven't read, Closed after hours */
 export function actionLabel(p, M) {
@@ -571,7 +571,7 @@ export function actionLabel(p, M) {
   if (!(M && (M.door || M.box))) return null;
   const b = { shop: 'Shop', clinic: 'Clinic', lab: 'Lab' }[p.act];
   if (!b) return null;
-  return isOpenNow(openKind(p.act, p)) ? b : 'Closed';
+  return isOpenNow(openingHoursKind(p.act, p)) ? b : 'Closed';
 }
 export function mapArtPaths(sc) {
   const C = walkData().sc,
