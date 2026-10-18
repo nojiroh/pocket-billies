@@ -5,7 +5,7 @@
 import { expose } from '../../game/js/test-globals.js';
 import { provide } from '../../game/js/hooks.js';
 import { $ } from '../../game/js/util.js';
-import { dioB64 } from '../../game/js/walk-view.js';
+import { decodeBase64Array } from '../../game/js/walk-view.js';
 import { esc } from './game-stand-ins.js';
 import { ACTS, SECTIONS, ST, after, api, ask, card, changed, go, render, toast } from './studio-app.js';
 import { atlasPath, pickFile } from './sprites.js';
@@ -268,7 +268,7 @@ function runCheck() {
     });
     /* v18: cliffs, stairs and bridges */
     if (s.steps) {
-      const raw = typeof dioB64 === 'function' ? dioB64(s.steps, Int16Array) : null;
+      const raw = typeof decodeBase64Array === 'function' ? decodeBase64Array(s.steps, Int16Array) : null;
       if (raw && raw.length !== s.w * 2 * s.h * 2)
         warn(
           `Scene ${s.name || k}: its cliffs and stairs were made for a different map size. Repaint them with Cliffs & stairs.`,

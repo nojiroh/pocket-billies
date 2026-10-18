@@ -22,16 +22,16 @@ import {
   GROUND_CACHE,
   PROP_CLOCK,
   actionSpot,
-  dioBridges,
   dioCell,
   dioClimbEnds,
   dioFind,
   dioNav,
-  dioSteps,
   dioStop,
   dioWalkTo,
+  mapBridges,
   mapById,
   mapHub,
+  stepGrid,
   walkData,
   walkView,
 } from './walk-view.js';
@@ -557,13 +557,13 @@ async function runFullTest(mode) {
           const g = actionSpot(p, C0.props[p.k], C0.ppu || 34);
           if (g && far(dioFind(hub[0], hub[1], g[0], g[1]), g)) bad.push(p.k);
         }
-      for (const b of dioBridges(sc) || []) {
+      for (const b of mapBridges(sc) || []) {
         const A = [b.a[0] - b.ux * 0.4, b.a[1] - b.uz * 0.4],
           Bp = b.pier ? [b.b[0] - b.ux * 0.4, b.b[1] - b.uz * 0.4] : [b.b[0] + b.ux * 0.4, b.b[1] + b.uz * 0.4];
         if (far(dioFind(A[0], A[1], Bp[0], Bp[1]), Bp)) bad.push('across a bridge');
       }
       if (bad.length) throw new Error('can’t walk to: ' + [...new Set(bad)].join(', '));
-      const E = dioSteps(sc),
+      const E = stepGrid(sc),
         G = dioNav();
       let hops = 0;
       for (let q = 0; q < G.hop.length; q++) if (G.hop[q]) hops++;

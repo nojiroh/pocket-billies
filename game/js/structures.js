@@ -12,7 +12,7 @@ import { expose } from './test-globals.js';
 import { RM, provide } from './hooks.js';
 import { clamp } from './util.js';
 import { hexA } from './art.js';
-import { artImage, dioBridges, walkView } from './walk-view.js';
+import { artImage, mapBridges, walkView } from './walk-view.js';
 import { EGL, eglImg, eglPrograms } from './engine/webgl.js';
 import { DGL_WALL_COL, dglCurveArgs, dglUse, dglWallDefault, dioGroundH, dioH } from './walk-view-gl.js';
 import { BLD_SH, bldArt, bldGuard } from './buildings.js';
@@ -237,7 +237,7 @@ function strBuild(sc) {
     end();
   }
   /* bridges */
-  for (const b of dioBridges(sc) || []) {
+  for (const b of mapBridges(sc) || []) {
     const K = b.kind || 'wood',
       ux = b.ux,
       uz = b.uz,

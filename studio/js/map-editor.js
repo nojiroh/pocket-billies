@@ -24,20 +24,20 @@ import {
 import { $, $$, clamp } from '../../game/js/util.js';
 import { ART, cnv } from '../../game/js/art.js';
 import {
-  DIO_RISE,
+  MAX_STEP_RISE,
   artImage,
   dioFind,
   dioNav,
   dioPass,
-  dioSteps,
-  dioStepsNew,
-  dioStepsStore,
   exitEdge,
   exitPoint,
   mapHub,
+  newStepGrid,
   pointAlongMapPath,
   setArtImage,
   setWalkData,
+  stepGrid,
+  storeStepGrid,
   walkView,
 } from '../../game/js/walk-view.js';
 import { ENV } from '../../game/js/environment.js';
@@ -1814,7 +1814,7 @@ ACTS.scResize = () => {
     w = clamp(+$('#scW').value || sc.w, 10, 240),
     h = clamp(+$('#scH').value || sc.h, 8, 200);
   if (w === sc.w && h === sc.h) return;
-  const oldE = dioSteps(sc),
+  const oldE = stepGrid(sc),
     before = clone(sc);
   /* v42: an exit on the north or east edge moves out with that edge (the rest of the map keeps its place); its id and width stay */
   if (sc.edgeExits && sc.exits)
@@ -1848,13 +1848,13 @@ ACTS.scResize = () => {
   if (oldE) {
     delete sc.steps;
     delete sc.stepm;
-    const E = dioStepsNew(sc);
+    const E = newStepGrid(sc);
     for (let j = 0; j < Math.min(E.h, oldE.h); j++)
       for (let i = 0; i < Math.min(E.w, oldE.w); i++) {
         E.H[j * E.w + i] = oldE.H[j * oldE.w + i];
         E.M[j * E.w + i] = oldE.M[j * oldE.w + i];
       }
-    dioStepsStore(sc, E);
+    storeStepGrid(sc, E);
   }
   walkView.gkey = '';
   walkView.nav = null;
@@ -2478,8 +2478,8 @@ document.addEventListener('change', ev => {
 });
 function scStepsWork(sc) {
   if (SCN.stE) return SCN.stE;
-  const E = dioSteps(sc);
-  SCN.stE = E ? { w: E.w, h: E.h, H: new Float32Array(E.H), M: new Uint8Array(E.M) } : dioStepsNew(sc);
+  const E = stepGrid(sc);
+  SCN.stE = E ? { w: E.w, h: E.h, H: new Float32Array(E.H), M: new Uint8Array(E.M) } : newStepGrid(sc);
   return SCN.stE;
 }
 function scStepsDown(sc, m, ev) {
@@ -2599,14 +2599,14 @@ function scStepsUp(sc, D) {
       }
     }
     /* v23: a ramp is a smooth slope (flag 32): no risers, the ground leans from one end to the other */
-    if (rise > DIO_RISE)
+    if (rise > MAX_STEP_RISE)
       toast(
         D.ramp
           ? `The ramp climbs ${Math.round(rise * 200)} cm per metre, too steep to walk up. Make it longer.`
           : `Each step rises ${Math.round(rise * 100)} cm, too tall to walk up. Make the flight longer.`
       );
   }
-  dioStepsStore(sc, E);
+  storeStepGrid(sc, E);
   SCN.stE = null;
   walkView.nav = null;
   walkView.cand = null;
@@ -2615,7 +2615,7 @@ function scStepsUp(sc, D) {
   scMapDraw();
 }
 function scDrawSteps(x, sc, Z) {
-  const E = SCN.stE || dioSteps(sc),
+  const E = SCN.stE || stepGrid(sc),
     hz = Z / 2,
     H = sc.h;
   if (E) {
@@ -2667,8 +2667,8 @@ function scDrawSteps(x, sc, Z) {
         ]) {
           const d = Math.abs(h - at(i + di, j + dj));
           if (d < 0.03 || i + di >= E.w || j + dj >= E.h) continue;
-          x.strokeStyle = d > DIO_RISE ? 'rgba(40,24,12,.9)' : 'rgba(40,24,12,.35)';
-          x.lineWidth = d > DIO_RISE ? 2 : 1;
+          x.strokeStyle = d > MAX_STEP_RISE ? 'rgba(40,24,12,.9)' : 'rgba(40,24,12,.35)';
+          x.lineWidth = d > MAX_STEP_RISE ? 2 : 1;
           x.beginPath();
           if (di) {
             x.moveTo(X + hz, Y);

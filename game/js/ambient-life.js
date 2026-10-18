@@ -15,8 +15,8 @@ import { clamp } from './util.js';
 import { cnv } from './art.js';
 import {
   artImage,
+  canWalkStraight,
   dioFree,
-  dioStepOK,
   hash2d,
   imageReady,
   pointAlongPolyline,
@@ -453,7 +453,7 @@ export function lifeStep(dt) {
     if (
       c.k === 'duck' ||
       c.dive ||
-      (typeof dioStepOK === 'function' ? dioStepOK(c.x, c.z, nx, nz, true) : dioFree(nx, nz))
+      (typeof canWalkStraight === 'function' ? canWalkStraight(c.x, c.z, nx, nz, true) : dioFree(nx, nz))
     ) {
       c.x = nx;
       c.z = nz;

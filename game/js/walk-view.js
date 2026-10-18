@@ -52,16 +52,12 @@ import { frameStop } from './frame-scheduler.js';
 import { ART, artLoad, cnv, pkh } from './art.js';
 /* eslint-disable no-func-assign */
 expose({
+  BRIDGE_ARCH: [() => BRIDGE_ARCH],
   BUILDING_VARIANT_CACHE: [() => BUILDING_VARIANT_CACHE],
-  DIO_BRIDGE_ARC: [() => DIO_BRIDGE_ARC],
   DIO_CHAT: [() => DIO_CHAT],
-  DIO_HOP: [() => DIO_HOP],
   DIO_KEYS: [() => DIO_KEYS],
   DIO_N: [() => DIO_N],
-  DIO_NATW: [() => DIO_NATW],
-  DIO_RISE: [() => DIO_RISE],
   DIO_SPEED: [() => DIO_SPEED],
-  DIO_STEPS: [() => DIO_STEPS],
   EFFECT_FRAMES: [() => EFFECT_FRAMES],
   EFFECT_KINDS: [() => EFFECT_KINDS],
   FAR_GROUND_PX_PER_M: [() => FAR_GROUND_PX_PER_M],
@@ -71,11 +67,15 @@ expose({
   GROUND_BUILDS_PENDING: [() => GROUND_BUILDS_PENDING],
   GROUND_CACHE: [() => GROUND_CACHE],
   GROUND_CACHE_SIZE: [() => GROUND_CACHE_SIZE],
+  MAX_HOP_DOWN: [() => MAX_HOP_DOWN],
+  MAX_STEP_RISE: [() => MAX_STEP_RISE],
+  NATURAL_EDGE_WALLS: [() => NATURAL_EDGE_WALLS],
   OPEN_HOURS: [() => OPEN_HOURS],
   OPEN_NAMES: [() => OPEN_NAMES],
   PAINT_WORKER_WAIT: [() => PAINT_WORKER_WAIT],
   PROP_CLOCK: [() => PROP_CLOCK],
   ROOF_STYLES: [() => ROOF_STYLES],
+  STEP_GRID_CACHE: [() => STEP_GRID_CACHE],
   TILE_PIXEL_CACHE: [() => TILE_PIXEL_CACHE],
   TONE_AMOUNT: [() => TONE_AMOUNT],
   TONE_DARK: [() => TONE_DARK],
@@ -90,16 +90,15 @@ expose({
   baseMapId: [() => baseMapId, v => (baseMapId = v)],
   bigTilePath: [() => bigTilePath, v => (bigTilePath = v)],
   bigTilesOn: [() => bigTilesOn],
+  bridgeAt: [() => bridgeAt, v => (bridgeAt = v)],
   buildGroundAsync: [() => buildGroundAsync, v => (buildGroundAsync = v)],
   buildGroundPicture: [() => buildGroundPicture, v => (buildGroundPicture = v)],
   cachedGround: [() => cachedGround, v => (cachedGround = v)],
+  canWalkStraight: [() => canWalkStraight, v => (canWalkStraight = v)],
   clipSegmentToRect: [() => clipSegmentToRect, v => (clipSegmentToRect = v)],
   closedText: [() => closedText, v => (closedText = v)],
   cropGrowth: [() => cropGrowth, v => (cropGrowth = v)],
-  dioB64: [() => dioB64, v => (dioB64 = v)],
-  dioB64Out: [() => dioB64Out, v => (dioB64Out = v)],
-  dioBridgeAt: [() => dioBridgeAt, v => (dioBridgeAt = v)],
-  dioBridges: [() => dioBridges, v => (dioBridges = v)],
+  decodeBase64Array: [() => decodeBase64Array, v => (decodeBase64Array = v)],
   dioBubble: [() => dioBubble, v => (dioBubble = v)],
   dioCandidates: [() => dioCandidates, v => (dioCandidates = v)],
   dioCanvasXY: [() => dioCanvasXY, v => (dioCanvasXY = v)],
@@ -143,20 +142,7 @@ expose({
   dioPxFont: [() => dioPxFont, v => (dioPxFont = v)],
   dioPxTail: [() => dioPxTail, v => (dioPxTail = v)],
   dioSay: [() => dioSay, v => (dioSay = v)],
-  dioShape: [() => dioShape, v => (dioShape = v)],
   dioSpeech: [() => dioSpeech, v => (dioSpeech = v)],
-  dioStep: [() => dioStep, v => (dioStep = v)],
-  dioStepCH: [() => dioStepCH, v => (dioStepCH = v)],
-  dioStepCHS: [() => dioStepCHS, v => (dioStepCHS = v)],
-  dioStepCell: [() => dioStepCell, v => (dioStepCell = v)],
-  dioStepCorners: [() => dioStepCorners, v => (dioStepCorners = v)],
-  dioStepJoined: [() => dioStepJoined, v => (dioStepJoined = v)],
-  dioStepLevel: [() => dioStepLevel, v => (dioStepLevel = v)],
-  dioStepM: [() => dioStepM, v => (dioStepM = v)],
-  dioStepOK: [() => dioStepOK, v => (dioStepOK = v)],
-  dioSteps: [() => dioSteps, v => (dioSteps = v)],
-  dioStepsNew: [() => dioStepsNew, v => (dioStepsNew = v)],
-  dioStepsStore: [() => dioStepsStore, v => (dioStepsStore = v)],
   dioStop: [() => dioStop, v => setDioStop(v)],
   dioTag: [() => dioTag, v => (dioTag = v)],
   dioTapMark: [() => dioTapMark, v => (dioTapMark = v)],
@@ -165,6 +151,7 @@ expose({
   dioWalkTo: [() => dioWalkTo, v => (dioWalkTo = v)],
   drawExitLabels: [() => drawExitLabels, v => (drawExitLabels = v)],
   drawExitMarks: [() => drawExitMarks, v => (drawExitMarks = v)],
+  encodeBase64Array: [() => encodeBase64Array, v => (encodeBase64Array = v)],
   ensureGround: [() => ensureGround, v => (ensureGround = v)],
   exitEdge: [() => exitEdge, v => (exitEdge = v)],
   exitPoint: [() => exitPoint, v => (exitPoint = v)],
@@ -183,11 +170,13 @@ expose({
   keepGround: [() => keepGround, v => (keepGround = v)],
   layerAsProp: [() => layerAsProp, v => (layerAsProp = v)],
   mapArtPaths: [() => mapArtPaths, v => (mapArtPaths = v)],
+  mapBridges: [() => mapBridges, v => (mapBridges = v)],
   mapById: [() => mapById, v => (mapById = v)],
   mapHub: [() => mapHub, v => (mapHub = v)],
   mapMoodName: [() => mapMoodName, v => (mapMoodName = v)],
   mapWaterCells: [() => mapWaterCells, v => (mapWaterCells = v)],
   nearestOnPolyline: [() => nearestOnPolyline, v => (nearestOnPolyline = v)],
+  newStepGrid: [() => newStepGrid, v => (newStepGrid = v)],
   openKind: [() => openKind, v => (openKind = v)],
   paintGroundSteps: [() => paintGroundSteps, v => (paintGroundSteps = v)],
   pathWearAmountFn: [() => pathWearAmountFn, v => (pathWearAmountFn = v)],
@@ -209,7 +198,18 @@ expose({
   setDioStop: [() => setDioStop, v => (setDioStop = v)],
   setDioUnproject: [() => setDioUnproject, v => (setDioUnproject = v)],
   setWalkData: [() => setWalkData, v => (setWalkData = v)],
+  shapedStepCornerHeight: [() => shapedStepCornerHeight, v => (shapedStepCornerHeight = v)],
   stableCells: [() => stableCells, v => (stableCells = v)],
+  stepCellAt: [() => stepCellAt, v => (stepCellAt = v)],
+  stepCellsJoined: [() => stepCellsJoined, v => (stepCellsJoined = v)],
+  stepCornerHeight: [() => stepCornerHeight, v => (stepCornerHeight = v)],
+  stepEdgeShape: [() => stepEdgeShape, v => (stepEdgeShape = v)],
+  stepGrid: [() => stepGrid, v => (stepGrid = v)],
+  stepGridCorners: [() => stepGridCorners, v => (stepGridCorners = v)],
+  stepLevelAt: [() => stepLevelAt, v => (stepLevelAt = v)],
+  stepRaiseAt: [() => stepRaiseAt, v => (stepRaiseAt = v)],
+  stepWallAt: [() => stepWallAt, v => (stepWallAt = v)],
+  storeStepGrid: [() => storeStepGrid, v => (storeStepGrid = v)],
   syncExits: [() => syncExits, v => (syncExits = v)],
   tallGrassProps: [() => tallGrassProps, v => (tallGrassProps = v)],
   terrainAt: [() => terrainAt, v => (terrainAt = v)],
@@ -1791,11 +1791,11 @@ export function* paintGroundSteps(sc, o) {
     yield;
   }
   /* v18: cliff and terrace edges. Step cells are half a metre (TP/2 pixels); image rows run from the far edge */
-  const E = dioSteps(sc),
+  const E = stepGrid(sc),
     X0 = wx0 * TP + PXO,
     Y0 = wy0 * TP + PXO;
   if (E) {
-    dioStepCorners(E);
+    stepGridCorners(E);
     const half = TP / 2,
       sh = (x, y, k) => {
         x -= X0;
@@ -1826,7 +1826,7 @@ export function* paintGroundSteps(sc, o) {
         ]) {
           const d = h - hAt(i + di, j + dj);
           if (Math.abs(d) < 0.12) continue;
-          if (E.sl && dioStepJoined(E, i, j, di, dj)) continue;
+          if (E.sl && stepCellsJoined(E, i, j, di, dj)) continue;
           for (let t = 0; t < half; t++) {
             const px = side === 's' || side === 'n' ? x0 + t : side === 'w' ? x0 : x0 + half - 1,
               py = side === 's' ? y0 + half - 1 : side === 'n' ? y0 : y0 + t;
@@ -2190,10 +2190,10 @@ export function mapHub(sc) {
    edge, x across). Neighbouring cells at different raises meet in a vertical wall: a cliff, a terrace front, a stair riser.
    scene.stepm: per cell (Uint8, base64) the wall material in the low 4 bits (0 = the scene's own rock) and flag 16 = a
    ledge: you can hop down from this cell, never climb up. Stairs are cells that rise a little at a time. */
-export const DIO_STEPS = new WeakMap(),
-  DIO_RISE = 0.34,
-  DIO_HOP = 1.8;
-export function dioB64(s, Type) {
+export const STEP_GRID_CACHE = new WeakMap(),
+  MAX_STEP_RISE = 0.34,
+  MAX_HOP_DOWN = 1.8;
+export function decodeBase64Array(s, Type) {
   if (!s) return null;
   try {
     const b = atob(s),
@@ -2204,34 +2204,34 @@ export function dioB64(s, Type) {
     return null;
   }
 }
-function dioB64Out(a) {
+function encodeBase64Array(a) {
   const u = new Uint8Array(a.buffer, a.byteOffset, a.byteLength);
   let s = '';
   for (let i = 0; i < u.length; i += 8192) s += String.fromCharCode.apply(null, u.subarray(i, i + 8192));
   return btoa(s);
 }
-export function dioSteps(sc) {
+export function stepGrid(sc) {
   if (!sc || !sc.steps) return null;
-  let E = DIO_STEPS.get(sc);
+  let E = STEP_GRID_CACHE.get(sc);
   if (E && E.s === sc.steps && E.m0 === sc.stepm && E.w === sc.w * 2) return E;
   const w = sc.w * 2,
     h = sc.h * 2,
-    raw = dioB64(sc.steps, Int16Array),
-    m = dioB64(sc.stepm, Uint8Array);
+    raw = decodeBase64Array(sc.steps, Int16Array),
+    m = decodeBase64Array(sc.stepm, Uint8Array);
   const H = new Float32Array(w * h);
   if (raw && raw.length === w * h) for (let i = 0; i < w * h; i++) H[i] = raw[i] / 20;
   E = { s: sc.steps, m0: sc.stepm, w, h, H, M: m && m.length === w * h ? m : new Uint8Array(w * h) };
-  DIO_STEPS.set(sc, E);
+  STEP_GRID_CACHE.set(sc, E);
   return E;
 }
 /* an empty step grid for a scene (the Studio paints into it) and storing an edited one back */
-export function dioStepsNew(sc) {
+export function newStepGrid(sc) {
   const w = sc.w * 2,
     h = sc.h * 2,
     E = { s: null, m0: null, w, h, H: new Float32Array(w * h), M: new Uint8Array(w * h) };
   return E;
 }
-export function dioStepsStore(sc, E) {
+export function storeStepGrid(sc, E) {
   const raw = new Int16Array(E.w * E.h);
   let any = false;
   for (let i = 0; i < raw.length; i++) {
@@ -2241,18 +2241,18 @@ export function dioStepsStore(sc, E) {
   if (!any) {
     delete sc.steps;
     delete sc.stepm;
-    DIO_STEPS.delete(sc);
+    STEP_GRID_CACHE.delete(sc);
     return;
   }
-  sc.steps = dioB64Out(raw);
-  sc.stepm = dioB64Out(E.M);
+  sc.steps = encodeBase64Array(raw);
+  sc.stepm = encodeBase64Array(E.M);
   E.s = sc.steps;
   E.m0 = sc.stepm;
-  DIO_STEPS.set(sc, E);
+  STEP_GRID_CACHE.set(sc, E);
   sc.stepsV = (sc.stepsV || 0) + 1;
 }
 /* two neighbouring cells meet without a step when their corners on the shared edge agree (a slope) */
-export function dioStepJoined(E, i, j, di, dj) {
+export function stepCellsJoined(E, i, j, di, dj) {
   const ii = i + di,
     jj = j + dj;
   if (ii < 0 || jj < 0 || ii >= E.w || jj >= E.h) return false;
@@ -2269,18 +2269,18 @@ export function dioStepJoined(E, i, j, di, dj) {
       ];
   for (const [ci, cj] of A) {
     const B = [di ? 1 - ci : ci, dj ? 1 - cj : cj];
-    if (Math.abs(dioStepCH(E, q, ci, cj) - dioStepCH(E, r, B[0], B[1])) > 0.03) return false;
+    if (Math.abs(stepCornerHeight(E, q, ci, cj) - stepCornerHeight(E, r, B[0], B[1])) > 0.03) return false;
   }
   return true;
 }
-export function dioStepCell(x, z, E) {
+export function stepCellAt(x, z, E) {
   return clamp(Math.floor(z * 2), 0, E.h - 1) * E.w + clamp(Math.floor(x * 2), 0, E.w - 1);
 }
 /* v23: slopes. A step cell flagged 32 is a ramp: instead of lying flat at its own height it leans between its
    neighbours. Each corner touching a ramp cell takes the average height of the cells around it that are within a
    step of the ramp, and those cells use that corner height too, so a ramp meets the ground above and below it with
-   no riser. dioStepCorners caches the corners (NaN where a corner is ordinary). */
-export function dioStepCorners(E) {
+   no riser. stepGridCorners caches the corners (NaN where a corner is ordinary). */
+export function stepGridCorners(E) {
   if (E.cs === E.s && E.cm === E.m0 && E.C && E.cs != null) return E.C;
   const w = E.w,
     h = E.h,
@@ -2327,8 +2327,8 @@ export function dioStepCorners(E) {
   return C;
 }
 /* the height of cell q's corner (ci,cj in 0/1): the shared ramp height when the corner is part of a slope, else the cell's own */
-export function dioStepCH(E, q, ci, cj) {
-  const C = dioStepCorners(E);
+export function stepCornerHeight(E, q, ci, cj) {
+  const C = stepGridCorners(E);
   if (!E.sl) return E.H[q];
   const i = q % E.w,
     j = (q - i) / E.w,
@@ -2340,10 +2340,10 @@ export function dioStepCH(E, q, ci, cj) {
    is shorter and the hill reads as a hill. How much changes along the edge, so the face's height wavers. At least
    0.45 m of face is always left, so a terrace you couldn't climb before still can't be climbed (and one you could,
    still can). Built walls (brick, dressed stone, boards, steps, concrete, hedges), ledges, ramps and stairs, water's
-   edge and the foot of a ladder keep their shape. dioShape holds an offset for each corner of each half-metre cell,
+   edge and the foot of a ladder keep their shape. stepEdgeShape holds an offset for each corner of each half-metre cell,
    the same for every cell of one level that shares the corner, so the ground stays joined. */
-const DIO_NATW = new Set([1, 2, 3, 9, 11]);
-export function dioShape(sc, E) {
+const NATURAL_EDGE_WALLS = new Set([1, 2, 3, 9, 11]);
+export function stepEdgeShape(sc, E) {
   if (!E || walkView.noShape) return null;
   if (E.shS === E.s && E.shM === E.m0 && E.shD) return E.SH;
   E.shS = E.s;
@@ -2358,7 +2358,7 @@ export function dioShape(sc, E) {
     nat = q => {
       let m = M[q] & 15;
       if (!m) m = wd;
-      return DIO_NATW.has(m) && !(M[q] & 48);
+      return NATURAL_EDGE_WALLS.has(m) && !(M[q] & 48);
     };
   /* corners that keep their shape: around stairs and ramps, at the water's edge, at the foot and top of a ladder */
   const kc = new Uint8Array((w + 1) * (h + 1)),
@@ -2522,7 +2522,7 @@ export function dioShape(sc, E) {
               dv = SN[A] - SN[B];
             if (Math.abs(dv) < 1e-6) continue;
             let tt = 1;
-            if (D <= DIO_RISE) {
+            if (D <= MAX_STEP_RISE) {
               const lim = Math.max(D, 0.3);
               if (Math.abs(base + dv) > lim + 1e-4) tt = dv > 0 ? (lim - base) / dv : (-lim - base) / dv;
             } else {
@@ -2544,7 +2544,7 @@ export function dioShape(sc, E) {
               dv = av(q) - av(r);
             if (Math.abs(dv) > 1e-6) {
               let tt = 1;
-              if (D <= DIO_RISE) {
+              if (D <= MAX_STEP_RISE) {
                 const lim = Math.max(D, 0.32);
                 if (Math.abs(base + dv) > lim) tt = dv > 0 ? (lim - base) / dv : (-lim - base) / dv;
               } else {
@@ -2570,40 +2570,40 @@ export function dioShape(sc, E) {
   return (E.SH = SN);
 }
 /* a cell corner's height above the smooth land: its raise (or the shared ramp height), shaped at natural edges */
-export function dioStepCHS(E, q, ci, cj, SH) {
-  return dioStepCH(E, q, ci, cj) + (SH ? SH[q * 4 + ci + cj * 2] : 0);
+export function shapedStepCornerHeight(E, q, ci, cj, SH) {
+  return stepCornerHeight(E, q, ci, cj) + (SH ? SH[q * 4 + ci + cj * 2] : 0);
 }
-export function dioStep(x, z, sc = walkView.sc) {
-  const E = dioSteps(sc);
+export function stepRaiseAt(x, z, sc = walkView.sc) {
+  const E = stepGrid(sc);
   if (!E) return 0;
-  const q = dioStepCell(x, z, E);
-  dioStepCorners(E);
-  const SH = dioShape(sc, E);
+  const q = stepCellAt(x, z, E);
+  stepGridCorners(E);
+  const SH = stepEdgeShape(sc, E);
   if (!E.sl && !SH) return E.H[q];
   const fx = clamp(x * 2 - Math.floor(x * 2), 0, 1),
     fz = clamp(z * 2 - Math.floor(z * 2), 0, 1),
-    a = dioStepCHS(E, q, 0, 0, SH),
-    b = dioStepCHS(E, q, 1, 0, SH),
-    c = dioStepCHS(E, q, 0, 1, SH),
-    d = dioStepCHS(E, q, 1, 1, SH);
+    a = shapedStepCornerHeight(E, q, 0, 0, SH),
+    b = shapedStepCornerHeight(E, q, 1, 0, SH),
+    c = shapedStepCornerHeight(E, q, 0, 1, SH),
+    d = shapedStepCornerHeight(E, q, 1, 1, SH);
   return (a * (1 - fx) + b * fx) * (1 - fz) + (c * (1 - fx) + d * fx) * fz;
 }
 /* alpha 0.2: the terrace level a point is on (its cell's raise, not shaped): which samples belong to one level */
-export function dioStepLevel(x, z, sc = walkView.sc) {
-  const E = dioSteps(sc);
-  return E ? E.H[dioStepCell(x, z, E)] : 0;
+export function stepLevelAt(x, z, sc = walkView.sc) {
+  const E = stepGrid(sc);
+  return E ? E.H[stepCellAt(x, z, E)] : 0;
 }
-export function dioStepM(x, z, sc = walkView.sc) {
-  const E = dioSteps(sc);
-  return E ? E.M[dioStepCell(x, z, E)] : 0;
+export function stepWallAt(x, z, sc = walkView.sc) {
+  const E = stepGrid(sc);
+  return E ? E.M[stepCellAt(x, z, E)] : 0;
 }
 /* bridges: a deck from end a to end b, w wide; its height runs from the ground at one end to the other, with a hump
    (stone), a slight crown (wood) or a sag (rope) */
-const DIO_BRIDGE_ARC = { stone: 0.5, wood: 0.12, rope: -0.32 };
-export function dioBridges(sc = walkView.sc) {
+const BRIDGE_ARCH = { stone: 0.5, wood: 0.12, rope: -0.32 };
+export function mapBridges(sc = walkView.sc) {
   const L = sc && sc.bridges;
   if (!L || !L.length) return null;
-  let E = DIO_STEPS.get(L);
+  let E = STEP_GRID_CACHE.get(L);
   if (E && E.v === JSON.stringify(L) + (sc.stepsV || 0)) return E.list;
   const list = L.map(b => {
     const a = b.a,
@@ -2611,7 +2611,7 @@ export function dioBridges(sc = walkView.sc) {
       len = Math.hypot(c[0] - a[0], c[1] - a[1]) || 1,
       ux = (c[0] - a[0]) / len,
       uz = (c[1] - a[1]) / len,
-      g = (x, z) => dioHRaw(sc, x, z) + dioStep(x, z, sc);
+      g = (x, z) => dioHRaw(sc, x, z) + stepRaiseAt(x, z, sc);
     /* alpha 0.4: a jetty (pier: 1): one flat deck from the bank (a) out over the water (b), level with the bank and never
      closer than a hand's breadth above the water, so there is always water underneath it */
     if (b.pier) {
@@ -2626,15 +2626,15 @@ export function dioBridges(sc = walkView.sc) {
       uz,
       ha: b.ha ?? g(a[0] - ux * 0.3, a[1] - uz * 0.3),
       hb: b.hb ?? g(c[0] + ux * 0.3, c[1] + uz * 0.3),
-      arc: (b.arc ?? DIO_BRIDGE_ARC[b.kind || 'wood'] ?? 0.1) * Math.min(1, len / 6),
+      arc: (b.arc ?? BRIDGE_ARCH[b.kind || 'wood'] ?? 0.1) * Math.min(1, len / 6),
       w: b.w || 1.6,
     };
   });
-  DIO_STEPS.set(L, { v: JSON.stringify(L) + (sc.stepsV || 0), list });
+  STEP_GRID_CACHE.set(L, { v: JSON.stringify(L) + (sc.stepsV || 0), list });
   return list;
 }
-export function dioBridgeAt(x, z, sc = walkView.sc) {
-  const L = dioBridges(sc);
+export function bridgeAt(x, z, sc = walkView.sc) {
+  const L = mapBridges(sc);
   if (!L) return null;
   for (const b of L) {
     const vx = x - b.a[0],
@@ -2754,20 +2754,20 @@ export function dioNav() {
     a bridge deck opens the water or the drop under it */
   const lv = new Float32Array(gw * gh),
     hop = new Uint8Array(gw * gh),
-    E = dioSteps(sc),
-    BR = dioBridges(sc);
+    E = stepGrid(sc),
+    BR = mapBridges(sc);
   for (let j = 0; j < gh; j++)
     for (let i = 0; i < gw; i++) {
       const x = (i + 0.5) / N,
         z = (j + 0.5) / N,
         q = j * gw + i;
-      const ec = E ? dioStepCell(x, z, E) : 0,
-        SH = E ? dioShape(sc, E) : null;
+      const ec = E ? stepCellAt(x, z, E) : 0,
+        SH = E ? stepEdgeShape(sc, E) : null;
       let h =
         dioHRaw(sc, x, z) +
         (E ? E.H[ec] + (SH ? (SH[ec * 4] + SH[ec * 4 + 1] + SH[ec * 4 + 2] + SH[ec * 4 + 3]) / 4 : 0) : 0);
       if (BR) {
-        const d = dioBridgeAt(x, z, sc);
+        const d = bridgeAt(x, z, sc);
         if (d != null) {
           h = d;
           blk[q] = 0;
@@ -2775,7 +2775,7 @@ export function dioNav() {
         }
       }
       lv[q] = h;
-      if (E && E.M[dioStepCell(x, z, E)] & 16) hop[q] = 1;
+      if (E && E.M[stepCellAt(x, z, E)] & 16) hop[q] = 1;
     }
   if (BR)
     for (const p of sc.props || []) {
@@ -2806,15 +2806,15 @@ export function setDioNav(v) {
   dioNav = v; // eslint-disable-line no-func-assign
   provide({ dioNav });
 }
-/* may you step from nav cell c to its neighbour q? Up to DIO_RISE up or down; further down only off a ledge */
+/* may you step from nav cell c to its neighbour q? Up to MAX_STEP_RISE up or down; further down only off a ledge */
 export function dioPass(G, c, q, noHop) {
   const d = G.lv[q] - G.lv[c];
-  if (d > DIO_RISE) return false;
-  if (d < -DIO_RISE) return !noHop && !!G.hop[c] && d > -DIO_HOP;
+  if (d > MAX_STEP_RISE) return false;
+  if (d < -MAX_STEP_RISE) return !noHop && !!G.hop[c] && d > -MAX_HOP_DOWN;
   return true;
 }
 /* a straight step from a to b (keyboard walking, animals): free at b and no wall in between */
-export function dioStepOK(ax, az, bx, bz, noHop) {
+export function canWalkStraight(ax, az, bx, bz, noHop) {
   const G = dioNav(),
     c = dioCell(ax, az),
     q = dioCell(bx, bz);
@@ -2871,7 +2871,7 @@ function dioLOS(a, b, mc) {
     const c = dioCell(a[0] + ((b[0] - a[0]) * k) / n, a[1] + ((b[1] - a[1]) * k) / n);
     if (c < 0 || G.blk[c]) return false;
     if (mc != null && G.cost[c] > mc + 0.01) return false;
-    if (pc >= 0 && c !== pc && Math.abs(G.lv[c] - G.lv[pc]) > DIO_RISE) return false;
+    if (pc >= 0 && c !== pc && Math.abs(G.lv[c] - G.lv[pc]) > MAX_STEP_RISE) return false;
     pc = c;
   }
   return true;
@@ -2973,9 +2973,9 @@ export function dioFind(ax, az, bx, bz, o = {}) {
         if (di && dj && (blk[cj * gw + ni] || blk[nj * gw + ci])) continue;
         if (di && dj) {
           if (
-            Math.abs(G.lv[q] - G.lv[c]) > DIO_RISE ||
-            Math.abs(G.lv[cj * gw + ni] - G.lv[c]) > DIO_RISE ||
-            Math.abs(G.lv[nj * gw + ci] - G.lv[c]) > DIO_RISE
+            Math.abs(G.lv[q] - G.lv[c]) > MAX_STEP_RISE ||
+            Math.abs(G.lv[cj * gw + ni] - G.lv[c]) > MAX_STEP_RISE ||
+            Math.abs(G.lv[nj * gw + ci] - G.lv[c]) > MAX_STEP_RISE
           )
             continue;
         } else if (!dioPass(G, c, q, noHop)) continue;
@@ -3358,7 +3358,7 @@ function dioPlayerY(dt) {
     P.hop = null;
     return;
   }
-  if (!P.hop && gh < P.yv - DIO_RISE) {
+  if (!P.hop && gh < P.yv - MAX_STEP_RISE) {
     P.hop = { t: 0, h0: P.yv };
   }
   if (P.hop) {
@@ -3522,8 +3522,8 @@ function dioPlayer0(st, dt) {
         s = DIO_SPEED * dt * run * dioGradeK(P.x, P.z, wx / l, wz / l);
       let nx = P.x + (wx / l) * s,
         nz = P.z + (wz / l) * s;
-      if (dioStepOK(P.x, P.z, nx, P.z)) P.x = nx;
-      if (dioStepOK(P.x, P.z, P.x, nz)) P.z = nz;
+      if (canWalkStraight(P.x, P.z, nx, P.z)) P.x = nx;
+      if (canWalkStraight(P.x, P.z, P.x, nz)) P.z = nz;
       mx = wx;
       mz = wz;
     } else if (P.route) {

@@ -22,11 +22,9 @@ import { ADJ, LINKS, ROUTE } from './game-data.js';
 import { U } from './game-state.js';
 import { artLoad, hexA } from './art.js';
 import {
-  DIO_STEPS,
   GROUND_CACHE,
+  STEP_GRID_CACHE,
   buildGroundAsync,
-  dioStepCell,
-  dioSteps,
   exitEdge,
   groundKey,
   mapArtPaths,
@@ -34,6 +32,8 @@ import {
   mapHub,
   mapMoodName,
   polyline,
+  stepCellAt,
+  stepGrid,
   walkData,
   walkView,
 } from './walk-view.js';
@@ -313,13 +313,13 @@ function wrCornerH(S, x, z) {
   return r ? +r[Math.round(x)] || 0 : 0;
 }
 function wrRaiseAt(S, ex) {
-  const E = dioSteps(S);
+  const E = stepGrid(S);
   if (!E) return 0;
   const p = ex.p,
     s = ex.side,
     x = s === 'E' ? S.w - 0.25 : s === 'W' ? 0.25 : p[0],
     z = s === 'N' ? S.h - 0.25 : s === 'S' ? 0.25 : p[1];
-  return E.H[dioStepCell(x, z, E)];
+  return E.H[stepCellAt(x, z, E)];
 }
 function wrSeamOf(i) {
   return wrFix('seam' + i, () => {
@@ -409,7 +409,7 @@ function wrAdj(S, sid) {
       const r = (S.heights || [])[Hh - b];
       for (let a = 0; a <= W; a++) G[b * (W + 1) + a] = r ? +r[a] || 0 : 0;
     }
-    const E0 = dioSteps(S);
+    const E0 = stepGrid(S);
     let E = null;
     const dOf = (s, x, z) => (s === 'E' ? W - x : s === 'W' ? x : s === 'N' ? Hh - z : z),
       uOf = (s, x, z) => (s === 'E' || s === 'W' ? z : x);
@@ -1129,7 +1129,7 @@ function wrComposeMulti(id, F) {
     EK = new Uint8Array(w * 4 * h);
   let anyS = false;
   for (const q of SS) {
-    const SE = (q.adj && q.adj.E) || dioSteps(q.S),
+    const SE = (q.adj && q.adj.E) || stepGrid(q.S),
       ox = q.O[0] * 2,
       oz = q.O[1] * 2;
     if (SE) anyS = true;
@@ -1203,7 +1203,7 @@ function wrComposeMulti(id, F) {
     sc.steps = E.s;
     sc.stepm = E.m0;
     sc.stepsV = 1;
-    DIO_STEPS.set(sc, E);
+    STEP_GRID_CACHE.set(sc, E);
   }
   /* the roads' countryside and furniture, kept off every scene in the view */
   for (const q of RR) {
@@ -1779,8 +1779,8 @@ export function wrRoomScene(baseId, roomId, door) {
       }
     }
   /* steps: the place's, with the room's walls stamped in */
-  const SB = dioSteps(B),
-    SR = dioSteps(R),
+  const SB = stepGrid(B),
+    SR = stepGrid(R),
     E = {
       s: '@' + id,
       m0: '@' + id,
@@ -1849,7 +1849,7 @@ export function wrRoomScene(baseId, roomId, door) {
     if (bp) wrRoomWindows(props, r0, R, C, C.props[bp.k], bp, ox, oz);
   }
   sc = Object.assign({}, B, { tiles, heights, props, id, steps: E.s, stepm: E.m0, stepsV: 1 });
-  DIO_STEPS.set(sc, E);
+  STEP_GRID_CACHE.set(sc, E);
   for (const k of WR_LOOK) sc[k] = R[k];
   Object.assign(sc, {
     indoor: R.indoor || 1,

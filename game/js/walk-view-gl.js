@@ -82,8 +82,8 @@ import {
   artImage,
   bigTilePath,
   bigTilesOn,
+  bridgeAt,
   cropGrowth,
-  dioBridgeAt,
   dioBubble,
   dioCanvasXY,
   dioClick,
@@ -98,14 +98,7 @@ import {
   dioPill,
   dioPlayer,
   dioProj,
-  dioShape,
   dioSpeech,
-  dioStep,
-  dioStepCHS,
-  dioStepCell,
-  dioStepCorners,
-  dioStepLevel,
-  dioSteps,
   dioStop,
   dioTag,
   dioTapMark,
@@ -130,6 +123,13 @@ import {
   setDioProj,
   setDioStop,
   setDioUnproject,
+  shapedStepCornerHeight,
+  stepCellAt,
+  stepEdgeShape,
+  stepGrid,
+  stepGridCorners,
+  stepLevelAt,
+  stepRaiseAt,
   tallGrassProps,
   terrainAt,
   valueNoise2d,
@@ -596,13 +596,13 @@ export function dioHRaw(sc, x, z) {
 export function dioGroundH(x, z) {
   const sc = walkView.sc;
   if (!sc) return 0;
-  return dioHRaw(sc, x, z) + dioStep(x, z, sc);
+  return dioHRaw(sc, x, z) + stepRaiseAt(x, z, sc);
 }
 export function dioH(x, z) {
   const sc = walkView.sc;
   if (!sc) return 0;
   if (sc.bridges) {
-    const b = dioBridgeAt(x, z, sc);
+    const b = bridgeAt(x, z, sc);
     if (b != null) return b;
   }
   let h = dioGroundH(x, z);
@@ -1334,9 +1334,9 @@ function* dglGroundSteps(sc, G, T) {
     };
   /* v18: one set of corners per half-metre cell, so cells on different terraces don't share corners; a vertical wall
     joins them (cliffs, terrace fronts, stair risers). Normals come from the smooth land. */
-  const E = dioSteps(sc),
-    stp = (x, z) => (E ? E.H[dioStepCell(clamp(x, 0, W - 0.01), clamp(z, 0, H - 0.01), E)] : 0),
-    stm = (x, z) => (E ? E.M[dioStepCell(clamp(x, 0, W - 0.01), clamp(z, 0, H - 0.01), E)] & 15 : 0);
+  const E = stepGrid(sc),
+    stp = (x, z) => (E ? E.H[stepCellAt(clamp(x, 0, W - 0.01), clamp(z, 0, H - 0.01), E)] : 0),
+    stm = (x, z) => (E ? E.M[stepCellAt(clamp(x, 0, W - 0.01), clamp(z, 0, H - 0.01), E)] & 15 : 0);
   const base = (x, z) => (x >= 0 && z >= 0 && x <= W && z <= H ? hAt(x, z) : farH(x, z));
   const x0 = -P,
     z0 = -P,
@@ -1373,14 +1373,16 @@ function* dglGroundSteps(sc, G, T) {
     for (let i = 0; i < nx; i++) cst[j * nx + i] = stp(x0 + (i + 0.5) * res, z0 + (j + 0.5) * res);
   }
   /* v23: a cell's corner height: ramps (step flag 32) lean between their neighbours, everything else is flat */
-  if (E) dioStepCorners(E);
-  const SHP = E ? dioShape(sc, E) : null,
+  if (E) stepGridCorners(E);
+  const SHP = E ? stepEdgeShape(sc, E) : null,
     sl = !!(E && (E.sl || SHP)),
     cc = (i, j, ci, cj) => {
       if (!sl) return cst[j * nx + i];
       const ei = Math.floor((x0 + (i + 0.5) * res) * 2),
         ej = Math.floor((z0 + (j + 0.5) * res) * 2);
-      return ei < 0 || ej < 0 || ei >= E.w || ej >= E.h ? cst[j * nx + i] : dioStepCHS(E, ej * E.w + ei, ci, cj, SHP);
+      return ei < 0 || ej < 0 || ei >= E.w || ej >= E.h
+        ? cst[j * nx + i]
+        : shapedStepCornerHeight(E, ej * E.w + ei, ci, cj, SHP);
     };
   /* alpha 0.2: natural cliffs. Where a terrace or cliff of rock (not a wall someone built: brick, dressed stone, boards,
     steps, concrete, hedge) drops away, its top edge is pulled back and rounded down a little and its foot pushed out,
@@ -1396,7 +1398,7 @@ function* dglGroundSteps(sc, G, T) {
       for (let i = 0; i < nx; i++) {
         const x = x0 + (i + 0.5) * res,
           z = z0 + (j + 0.5) * res,
-          q = E.M[dioStepCell(clamp(x, 0, W - 0.01), clamp(z, 0, H - 0.01), E)];
+          q = E.M[stepCellAt(clamp(x, 0, W - 0.01), clamp(z, 0, H - 0.01), E)];
         let m = q & 15;
         if (!m) m = wdef;
         cm[j * nx + i] = NAT.has(m) ? 1 : 0;
@@ -2703,12 +2705,12 @@ function* dglGaoSteps(sc) {
     if (++n % 24 === 0) yield;
   }
   /* at the foot of cliffs, terrace walls and steps: heights read once per texel, neighbours looked up in the grid */
-  const E = dioSteps(sc);
+  const E = stepGrid(sc);
   if (E) {
     const S = new Float32Array(FW * FH);
     for (let j = 0; j < FH; j++) {
       for (let i = 0; i < FW; i++)
-        S[j * FW + i] = dioStep(clamp((i + 0.5) / R, 0, W - 0.01), clamp((j + 0.5) / R, 0, H - 0.01), sc);
+        S[j * FW + i] = stepRaiseAt(clamp((i + 0.5) / R, 0, W - 0.01), clamp((j + 0.5) / R, 0, H - 0.01), sc);
       if (j % 6 === 5) yield;
     }
     const at = (i, j) => S[clamp(j, 0, FH - 1) * FW + clamp(i, 0, FW - 1)],
@@ -3154,7 +3156,7 @@ export function dglBuildGrass() {
     I[o + 3] = rnd(J.k, 5);
     I[o + 4] = kind;
     I[o + 5] = rnd(J.k, 6);
-    I[o + 6] = dioHRaw(sc, x, z) + dioStep(x, z, sc);
+    I[o + 6] = dioHRaw(sc, x, z) + stepRaiseAt(x, z, sc);
     I[o + 7] = tint;
     J.n++;
   };
@@ -4893,7 +4895,7 @@ function dglPropY(p, M) {
     const s = p.s || 1,
       bw = (M.box[0] * s) / 2,
       bd = M.box[1] * s,
-      lv = dioStepLevel(p.x, p.z);
+      lv = stepLevelAt(p.x, p.z);
     let y = y0;
     for (const [x, z] of [
       [p.x - bw, p.z - 0.05],
@@ -4901,13 +4903,13 @@ function dglPropY(p, M) {
       [p.x - bw, p.z + bd],
       [p.x + bw, p.z + bd],
     ])
-      if (Math.abs(dioStepLevel(x, z) - lv) <= 0.05) y = Math.min(y, dioH(x, z));
+      if (Math.abs(stepLevelAt(x, z) - lv) <= 0.05) y = Math.min(y, dioH(x, z));
     return y;
   }
   if (M.box || M.flat || M.walk) return y0;
   const r = Math.min(0.45, (M.shadow || 0) * 0.3 * (p.s || 1));
   if (r < 0.08) return y0;
-  const s0 = dioStepLevel(p.x, p.z);
+  const s0 = stepLevelAt(p.x, p.z);
   let y = y0;
   for (const [a, b] of [
     [-r, 0],
@@ -4915,7 +4917,7 @@ function dglPropY(p, M) {
     [0, -r * 0.6],
     [0, r * 0.6],
   ]) {
-    if (Math.abs(dioStepLevel(p.x + a, p.z + b) - s0) > 0.05) continue;
+    if (Math.abs(stepLevelAt(p.x + a, p.z + b) - s0) > 0.05) continue;
     y = Math.min(y, dioH(p.x + a, p.z + b));
   }
   const g = (M.group || '') + ' ' + p.k;
@@ -6619,7 +6621,7 @@ function dglRoomBox(sc) {
     Z0 = Rr[1],
     W = Rr[2],
     H = Rr[3],
-    hi = (x, z) => dioStep(x, z) > 1;
+    hi = (x, z) => stepRaiseAt(x, z) > 1;
   let x0 = X0 + W / 2,
     x1 = X0 + W / 2,
     zb = Z0 + H * 0.5;

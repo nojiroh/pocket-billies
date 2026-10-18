@@ -22,10 +22,6 @@ import {
   applyGroundTone,
   bigTilesOn,
   clipSegmentToRect,
-  dioStepCH,
-  dioStepCorners,
-  dioStepJoined,
-  dioSteps,
   groundKey,
   groundTileFolder,
   groundToneAt,
@@ -37,6 +33,10 @@ import {
   plainTileIndex,
   scaleColor,
   stableCells,
+  stepCellsJoined,
+  stepCornerHeight,
+  stepGrid,
+  stepGridCorners,
   tileSetPixels,
   valueNoise2d,
   walkData,
@@ -93,7 +93,7 @@ const PW_KEEP = 4,
    starts is skipped) and the small sizes of a picture */
 const PW_MAIN = `var DGL_TERRAIN_MAT;let CTX=null;const CTXS=new Map(),TILES=new Map(),Q=[],GONE=new Set();let busy=false;
 /* (stand-ins for walk-view.js's own, from what the main thread handed over) */
-var walkData=()=>({sc:CTX.C}),bigTilesOn=()=>!!CTX.next,worldPatchTilesOn=()=>!!CTX.t47,dioSteps=sc=>CTX.E,dioBridges=()=>null,
+var walkData=()=>({sc:CTX.C}),bigTilesOn=()=>!!CTX.next,worldPatchTilesOn=()=>!!CTX.t47,stepGrid=sc=>CTX.E,mapBridges=()=>null,
  tileSetPixels=(T,TP)=>TILES.get(TP+'|'+T.tile+'|'+(T.vars||[]).join(','))||[null];
 function pwMips(s,W,H,n){const out=[];for(let k=0;k<n&&W>1&&H>1;k++){const w=W>>1,h=H>>1,d=new Uint8Array(w*h*4);
  for(let y=0;y<h;y++){const r0=(y*2)*W*4,r1=r0+W*4;for(let x=0;x<w;x++){const a=r0+x*8,c=r1+x*8,o=(y*w+x)*4;
@@ -126,9 +126,9 @@ function pwSource() {
     clipSegmentToRect,
     pathWearAmountFn,
     pathWearFn,
-    dioStepCorners,
-    dioStepCH,
-    dioStepJoined,
+    stepGridCorners,
+    stepCornerHeight,
+    stepCellsJoined,
     paintGroundSteps,
     wrNear,
   ];
@@ -235,7 +235,7 @@ function pwSendCtx(id, sc) {
     return;
   }
   const C = walkData().sc,
-    E = dioSteps(sc);
+    E = stepGrid(sc);
   const S = sc.stable
     ? {
         scenes: sc.stable.scenes.map(r => ({

@@ -12,7 +12,7 @@ import { clamp } from './util.js';
 import { ROUTE } from './game-data.js';
 import { B, S, U } from './game-state.js';
 import { SC } from './battle-stage.js';
-import { baseMapId, dioBridgeAt, dioBridges, dioStepM, mapById, terrainAt, walkData, walkView } from './walk-view.js';
+import { baseMapId, bridgeAt, mapBridges, mapById, stepWallAt, terrainAt, walkData, walkView } from './walk-view.js';
 import { ENV, envHour, envState } from './environment.js';
 import { walkRenderer } from './walk-view-gl.js';
 /* eslint-disable no-func-assign */
@@ -1050,16 +1050,16 @@ setInterval(() => {
     const P = walkView.pl;
     let ter = typeof terrainAt === 'function' ? terrainAt(P.x, P.z) : 'g';
     /* v18: hollow boards on wooden and rope bridges, stone on stone bridges and stairs */
-    if (typeof dioBridgeAt === 'function' && dioBridgeAt(P.x, P.z) != null) {
-      const b = (dioBridges() || []).find(b => {
+    if (typeof bridgeAt === 'function' && bridgeAt(P.x, P.z) != null) {
+      const b = (mapBridges() || []).find(b => {
         const vx = P.x - b.a[0],
           vz = P.z - b.a[1],
           t = (vx * b.ux + vz * b.uz) / b.len;
         return t >= -0.05 && t <= 1.05 && Math.abs(-vx * b.uz + vz * b.ux) <= b.w / 2 + 0.05;
       });
       ter = b && b.kind === 'stone' ? 'e' : 'b';
-    } else if (typeof dioStepM === 'function') {
-      if ((dioStepM(P.x, P.z) & 15) === 8) ter = 'e';
+    } else if (typeof stepWallAt === 'function') {
+      if ((stepWallAt(P.x, P.z) & 15) === 8) ter = 'e';
     }
     if (
       typeof ENV !== 'undefined' &&
