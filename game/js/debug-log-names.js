@@ -21,7 +21,7 @@ import {
   setEglNormal,
   setEglPrograms,
 } from './engine/webgl.js';
-import { eglPost, setEglPost } from './engine/post.js';
+import { eglPost, setEglPost } from './engine/post-effects.js';
 import { ENV } from './environment.js';
 import {
   DGL,

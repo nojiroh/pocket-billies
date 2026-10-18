@@ -174,7 +174,7 @@ import {
   eglShadowEnd,
   eglSun,
 } from './engine/light.js';
-import { EGL_POST_SH, eglPost, eglSnapshot, eglSunScreen } from './engine/post.js';
+import { EGL_POST_SH, eglPost, eglSnapshot, eglSunScreen } from './engine/post-effects.js';
 import { ENV, ENV_WX, envFrame, envHere, envSky, envState, envWinLit } from './environment.js';
 /* eslint-disable no-func-assign */
 expose({

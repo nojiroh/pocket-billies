@@ -20,7 +20,7 @@ import { portraitHTML } from './person-art.js';
 import { partSpr } from './battle-stage.js';
 import { DIO } from './walk-view.js';
 import { EGL, eglPrograms } from './engine/webgl.js';
-import { EGL_POST_SH } from './engine/post.js';
+import { EGL_POST_SH } from './engine/post-effects.js';
 import { dglCanvasFor, dglGL, dioH } from './walk-view-gl.js';
 import { A, endBattle, stopTimers, types } from './battle.js';
 import { MAP, MH, MNV, MW, WORLD_ART, v3 } from './world-map.js';
