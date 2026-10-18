@@ -34,7 +34,7 @@ import {
   uidKey,
 } from './studio-app.js';
 import { fileToCanvas, loadImage, markArt, mountPreviews, pickFile, prevCanvas } from './sprites.js';
-import { RAR_NAMES } from './sections.js';
+import { RAR_NAMES } from './data-editors.js';
 /* eslint-disable no-func-assign */
 expose({
   AMBS: [() => AMBS],
