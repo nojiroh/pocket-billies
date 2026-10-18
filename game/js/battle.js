@@ -74,18 +74,18 @@ import {
   AREAS,
   EASE,
   battleStage,
+  battleStageCatch,
+  battleStageFocus,
+  battleStagePlay,
+  battleStagePrepare,
+  battleStageResize,
+  battleStageRingPhase,
+  battleStageSelect,
+  battleStageStart,
+  battleStageStop,
+  battleStageTargets,
+  battleStageToCss,
   camAt,
-  scCatch,
-  scFocus,
-  scPlay,
-  scPrepare,
-  scResize,
-  scRingPhase,
-  scSelect,
-  scStart,
-  scStop,
-  scTargets,
-  scToCss,
   sideCenter,
   sideTop,
   sideWorld,
@@ -1203,7 +1203,7 @@ export function battleResize() {
   const m = battleMode();
   if (el.dataset.layout !== m) el.dataset.layout = m;
   requestAnimationFrame(() => {
-    scResize();
+    battleStageResize();
     if (B && B.phase !== 'playing') paintActions();
   });
 }
@@ -1213,7 +1213,7 @@ export function openBattle() {
   const area = B.area || 'grass',
     list = S.team.map(m => [m.sp, m.gold, KBACK]).concat(B.sides[1].team.map(m => [m.sp, m.gold, 1]));
   const b = B;
-  Promise.all([scPrepare(area), rigPreload(list)])
+  Promise.all([battleStagePrepare(area), rigPreload(list)])
     .then(() => {
       if (B !== b) return;
       const seam = battleSeamless();
@@ -1221,7 +1221,7 @@ export function openBattle() {
         if (B !== b) return;
         /* the battle was closed during the wipe */ document.body.classList.add('in-battle');
         render();
-        scStart(area);
+        battleStageStart(area);
         play();
         if (seam) battleRise();
       };
@@ -1378,7 +1378,7 @@ function stepEv() {
   logLine(B.ev);
   msgFace(ev.face);
   const tt = ev.t ? typeText(ev.t) : 0,
-    r = ev.an ? scPlay(ev.an, ev) : { dur: 0, hit: 0 };
+    r = ev.an ? battleStagePlay(ev.an, ev) : { dur: 0, hit: 0 };
   if (ev.an && typeof sfxBattle === 'function') sfxBattle(ev.an, r);
   boxAnims(ev);
   const k = 1 / battleStage.speed;
@@ -1612,7 +1612,7 @@ function tickerUpdate(s, mk) {
 function hudPop(si, text, kind) {
   const L = $('#pops');
   if (!L || !battleStage.L || (RM && kind === 'tag')) return;
-  const q = scToCss(sideTop(si));
+  const q = battleStageToCss(sideTop(si));
   if (!q) return;
   const e = document.createElement('div');
   e.className = 'pop ' + kind;
@@ -1669,7 +1669,7 @@ export function chooseMsg() {
   const L = liveK(0),
     n = L.indexOf(B.cur);
   $('#msgT').textContent = L.length > 1 ? `What will ${N(m)} do? (${n + 1} of ${L.length})` : `What will ${N(m)} do?`;
-  if (typeof scSelect === 'function') scSelect(B.cur);
+  if (typeof battleStageSelect === 'function') battleStageSelect(B.cur);
 }
 export function planNext(p) {
   B.plan.push(p);
@@ -1681,7 +1681,7 @@ export function planNext(p) {
     paintActions();
     return;
   }
-  if (typeof scSelect === 'function') scSelect(null);
+  if (typeof battleStageSelect === 'function') battleStageSelect(null);
   runTurn(B.plan);
 }
 export function planBack() {
@@ -1706,14 +1706,14 @@ export function pickMove(mid) {
     B.phase = 'target';
     $('#msgT').textContent = `${MOVES[mid].n}: which one? Tap it.`;
     paintActions();
-    if (typeof scTargets === 'function') scTargets(liveK(1));
+    if (typeof battleStageTargets === 'function') battleStageTargets(liveK(1));
     return;
   }
   planNext({ who: B.cur, k: 'move', mid, tk: liveK(1)[0] });
 }
 export function pickTarget(tk) {
   if (!B || B.phase !== 'target') return;
-  if (typeof scTargets === 'function') scTargets(null);
+  if (typeof battleStageTargets === 'function') battleStageTargets(null);
   planNext({ who: B.cur, k: 'move', mid: B.mv, tk });
 }
 function effLabel(mid, tk) {
@@ -1911,14 +1911,14 @@ function bindAim() {
 export function showAim() {
   battleStage.ring = { t0: battleStage.t };
   camAt(1, 0.45, 0.16, 0.015, 320);
-  scFocus('foe');
+  battleStageFocus('foe');
   $('#msgT').textContent =
     B.integrity > 1 ? `Focus Bonus ×${+B.integrity.toFixed(2)} is active.` : 'Line up your throw.';
 }
 export function doThrow(spin) {
   if (U.throwing || !B || B.phase !== 'aim') return;
   U.throwing = true;
-  const ph = scRingPhase(),
+  const ph = battleStageRingPhase(),
     T = 1 + RC.ring * ph,
     id = B.coin;
   S.coins[id]--;
@@ -1929,7 +1929,7 @@ export function doThrow(spin) {
   B.phase = 'throwing';
   paintActions();
   $('#msgT').textContent = [`You flicked a ${COINS[id].n}.`, lab, spin ? 'Spin bonus!' : ''].filter(Boolean).join(' ');
-  scCatch(id, res, spin, caught => finishThrow(res, id, lab, spin));
+  battleStageCatch(id, res, spin, caught => finishThrow(res, id, lab, spin));
 }
 function finishThrow(res, id, lab, spin) {
   U.throwing = false;
@@ -1985,7 +1985,7 @@ export function endBattle() {
     save();
     battleLeave(() => {
       setB(null);
-      scStop();
+      battleStageStop();
       document.body.classList.remove('in-battle');
       U.tab = 'walk';
       render();
@@ -2065,7 +2065,7 @@ export function endBattle() {
   save();
   battleLeave(() => {
     setB(null);
-    scStop();
+    battleStageStop();
     document.body.classList.remove('in-battle');
     U.tab = 'walk';
     render();
@@ -2199,7 +2199,7 @@ function platesTick() {
     const vis = sd && sd.show && sd.a > 0.3 && !e.classList.contains('gone');
     e.classList.toggle('off', !vis);
     if (!vis) continue;
-    const q = scToCss(sideTop(k));
+    const q = battleStageToCss(sideTop(k));
     if (!q) continue;
     const w = e.offsetWidth || 120,
       h = e.offsetHeight || 44;
@@ -2228,7 +2228,7 @@ function stageTap(ev) {
   let best = null,
     bd = 1e9;
   for (const k of liveK(1)) {
-    const c = scToCss(sideCenter(k));
+    const c = battleStageToCss(sideCenter(k));
     if (!c) continue;
     const d = Math.hypot(c.x - x, (c.y - y) * 0.8);
     if (d < bd) {

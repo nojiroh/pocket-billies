@@ -7,7 +7,13 @@ import { FRAME, userFps } from './frame-scheduler.js';
 import { artPixels, setArtPixels } from './art.js';
 import { TR_CACHE, humanFrames, setHumanFrames } from './person-art.js';
 import { openDressing, setOpenDressing } from './dressing-room.js';
-import { battleStage, scResize, scStart, setScResize, setScStart } from './battle-stage.js';
+import {
+  battleStage,
+  battleStageResize,
+  battleStageStart,
+  setBattleStageResize,
+  setBattleStageStart,
+} from './battle-stage.js';
 import {
   prepareMap,
   setPrepareMap,
@@ -103,6 +109,8 @@ Object.defineProperties(GAME, {
   areaKey: { get: () => areaKey },
   artPixels: { get: () => artPixels, set: setArtPixels },
   battleStage: { get: () => battleStage },
+  battleStageResize: { get: () => battleStageResize, set: setBattleStageResize },
+  battleStageStart: { get: () => battleStageStart, set: setBattleStageStart },
   bldDraw: { get: () => bldDraw, set: setBldDraw },
   bldItems: { get: () => bldItems, set: setBldItems },
   buildGrass: { get: () => buildGrass, set: setBuildGrass },
@@ -142,8 +150,6 @@ Object.defineProperties(GAME, {
   render: { get: () => render, set: setRender },
   renderOv: { get: () => renderOv, set: setRenderOv },
   save: { get: () => save, set: setSave },
-  scResize: { get: () => scResize, set: setScResize },
-  scStart: { get: () => scStart, set: setScStart },
   setTrip: { get: () => setTrip, set: setSetTrip },
   shadowPass: { get: () => shadowPass, set: setShadowPass },
   stampCount: { get: () => stampCount },

@@ -551,7 +551,7 @@ def phone_flow(b, base, R):
         pg.evaluate("closeModal();wipe=f=>f();S.preferences.battleStage='classic';B=null;const q={id:'tq',sp:'knight1',lvl:12,gold:false,no:1};S.queue=[q];S.team.forEach(m=>{m.hp=maxHp(m)});startWild(q);0")
         if wait_phase(pg) != 'choose': raise Exception('a wild battle never reached the move menu')
         shot(pg, 'phone-battle')
-        pg.evaluate("stopTimers();B=null;scStop();render();0")
+        pg.evaluate("stopTimers();B=null;battleStageStop();render();0")
         # phase 01: the owner tests on a phone and sends the exported debug log, so the export must keep working. Here the
         # game saves it as a download (nothing is sent anywhere); the file must be a JSON log
         with pg.expect_download(timeout=60000) as dl:
@@ -815,7 +815,7 @@ def desktop_steps(b, base, R):
         # rain in battle
         go_scene(pg, 0); pg.evaluate("ENV.force={time:15,weather:'rain'};S.preferences.battleStage='classic';const q={id:'twx',sp:'knight1',lvl:8,gold:false,no:1};S.queue=[q];S.team.forEach(m=>{m.hp=maxHp(m)});startWild(q);0")
         wait_phase(pg, sec=60); bw = pg.evaluate("(()=>{const w=battleWx();return w?[w.k,battleWeatherMult('Water'),battleWeatherMult('Fire'),document.getElementById('camWorld')?document.getElementById('camWorld').dataset.wx:''] :null})()")
-        time.sleep(1); shot(pg, 'battle-rain'); pg.evaluate("stopTimers();B=null;scStop();S.preferences.battleStage='scene';ENV.force=null;render();0")
+        time.sleep(1); shot(pg, 'battle-rain'); pg.evaluate("stopTimers();B=null;battleStageStop();S.preferences.battleStage='scene';ENV.force=null;render();0")
         if not bw or bw[0] != 'rain' or bw[1] <= 1 or bw[2] >= 1: raise Exception(f'rain didn’t change the battle ({bw})')
         out.append(f'rain in battle: Water ×{bw[1]}, Fire ×{bw[2]}')
         if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
@@ -1905,7 +1905,7 @@ def desktop_steps(b, base, R):
         pg.evaluate("const q={id:'t3d',sp:'knight1',lvl:12,gold:false,no:1};S.queue=[q];S.team.forEach(m=>{m.hp=maxHp(m)});startWild(q);0")
         if wait_phase(pg, sec=60) != 'choose': raise Exception('the 3D-stage battle never reached the move menu')
         shot(pg, 'battle-3d'); stage = pg.evaluate("!!battleStage.gl")
-        pg.evaluate("stopTimers();B=null;scStop();S.preferences.battleStage='classic';render();0")
+        pg.evaluate("stopTimers();B=null;battleStageStop();S.preferences.battleStage='classic';render();0")
         # battle animations at four times the speed (the Debug panel's speed setting), so the result comes quickly
         pg.evaluate("battleStage.speed=4;S.team=[makeMon('musk2',45),makeMon('ek1',30)];S.route.node=4;startTrainer('crude');0")
         end = time.time() + 300; won = None
@@ -1914,7 +1914,7 @@ def desktop_steps(b, base, R):
             if ph == 'end': won = pg.evaluate('B.over') == 'win'; break
             if ph == 'switch': pg.evaluate("document.querySelector('[data-a=bswitch]:not([disabled])').click()"); continue
             if ph == 'choose': pg.evaluate("document.querySelector('[data-a=bfight]').click();document.querySelector('[data-a=bmove]').click()")
-        pg.evaluate("battleStage.speed=1;if(B){stopTimers();B=null;scStop()}render();0")
+        pg.evaluate("battleStage.speed=1;if(B){stopTimers();B=null;battleStageStop()}render();0")
         if won is None: raise Exception('the trainer battle didn’t finish in 300s')
         if not won: raise Exception('the trainer battle was lost (it should be an easy win)')
         if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))

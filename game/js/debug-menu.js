@@ -33,7 +33,7 @@ import {
 import { FRAME, frameCount, frameTask, userFps } from './frame-scheduler.js';
 import { uiIco } from './art.js';
 import { applyPreferences, exportSave } from './settings-screen.js';
-import { battleStage, scResize, scStop } from './battle-stage.js';
+import { battleStage, battleStageResize, battleStageStop } from './battle-stage.js';
 import { mapById } from './walk-view.js';
 import { EGL } from './engine/webgl.js';
 import { A, checkFaints, paintBoxes, play, say, snapAll, startTrainer, startWild, stopTimers } from './battle.js';
@@ -169,7 +169,7 @@ function dbgAct(x) {
     case 'q0':
       battleStage.lockQ = true;
       battleStage.q.lvl = 0;
-      if (B) scResize();
+      if (B) battleStageResize();
       return dbgRefresh('Battle quality locked to best.');
     case 'qauto':
       battleStage.lockQ = false;
@@ -389,7 +389,7 @@ function settingsReset() {
           if (B) {
             stopTimers();
             setB(null);
-            scStop();
+            battleStageStop();
           }
           setS(freshKeep());
           S.savedAt = Date.now();

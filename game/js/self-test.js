@@ -17,7 +17,7 @@ import { B, S, U, addSteps, esc, makeMon, maxHp, save, setB, setS, setSave, setT
 import { FRAME } from './frame-scheduler.js';
 import { TR_CACHE } from './person-art.js';
 import { DR, closeDressing } from './dressing-room.js';
-import { battleStage, scStop } from './battle-stage.js';
+import { battleStage, battleStageStop } from './battle-stage.js';
 import {
   GROUND_CACHE,
   PROP_CLOCK,
@@ -678,7 +678,7 @@ async function runFullTest(mode) {
       }
       stopTimers();
       setB(null);
-      scStop();
+      battleStageStop();
       S.preferences.battleStage = pref;
       render();
       await stSleep(600);
@@ -754,7 +754,7 @@ async function runFullTest(mode) {
         lines = B.events.length;
       stopTimers();
       setB(null);
-      scStop();
+      battleStageStop();
       render();
       await stSleep(600);
       return `${mine} against ${theirs} (${fmt}); ${plates} nameplates; ${picks} picks, ${aimed} aimed; the turn played ${lines} lines in ${(turnMs / 1000).toFixed(1)} s`;
@@ -1109,7 +1109,7 @@ async function runFullTest(mode) {
             if (B) {
               stopTimers();
               setB(null);
-              scStop();
+              battleStageStop();
             }
             talkHide();
             if (typeof battleTipHide === 'function') battleTipHide();
@@ -1375,7 +1375,7 @@ async function runFullTest(mode) {
     if (B) {
       stopTimers();
       setB(null);
-      scStop();
+      battleStageStop();
     }
     if (typeof CS !== 'undefined' && CS.on) {
       CS.test = false;

@@ -83,6 +83,26 @@ expose({
   artKey: [() => artKey],
   at: [() => at, v => (at = v)],
   battleStage: [() => battleStage],
+  battleStageCatch: [() => battleStageCatch, v => (battleStageCatch = v)],
+  battleStageChromaticFlash: [() => battleStageChromaticFlash, v => (battleStageChromaticFlash = v)],
+  battleStageDraw: [() => battleStageDraw, v => (battleStageDraw = v)],
+  battleStageDrawEffects: [() => battleStageDrawEffects, v => (battleStageDrawEffects = v)],
+  battleStageFlash: [() => battleStageFlash, v => (battleStageFlash = v)],
+  battleStageFlush: [() => battleStageFlush, v => (battleStageFlush = v)],
+  battleStageFocus: [() => battleStageFocus, v => (battleStageFocus = v)],
+  battleStageFormat: [() => battleStageFormat, v => (battleStageFormat = v)],
+  battleStageFrame: [() => battleStageFrame, v => (battleStageFrame = v)],
+  battleStageLayout: [() => battleStageLayout, v => (battleStageLayout = v)],
+  battleStagePlay: [() => battleStagePlay, v => (battleStagePlay = v)],
+  battleStagePrepare: [() => battleStagePrepare, v => (battleStagePrepare = v)],
+  battleStageResize: [() => battleStageResize, v => setBattleStageResize(v)],
+  battleStageResolutionScale: [() => battleStageResolutionScale, v => (battleStageResolutionScale = v)],
+  battleStageRingPhase: [() => battleStageRingPhase],
+  battleStageSelect: [() => battleStageSelect, v => (battleStageSelect = v)],
+  battleStageStart: [() => battleStageStart, v => setBattleStageStart(v)],
+  battleStageStop: [() => battleStageStop, v => (battleStageStop = v)],
+  battleStageTargets: [() => battleStageTargets, v => (battleStageTargets = v)],
+  battleStageToCss: [() => battleStageToCss, v => (battleStageToCss = v)],
   blinkSide: [() => blinkSide, v => (blinkSide = v)],
   blurAt: [() => blurAt, v => (blurAt = v)],
   burst: [() => burst, v => (burst = v)],
@@ -128,26 +148,6 @@ expose({
   propDef: [() => propDef, v => (propDef = v)],
   punch: [() => punch, v => (punch = v)],
   ringFx: [() => ringFx, v => (ringFx = v)],
-  scCA: [() => scCA, v => (scCA = v)],
-  scCatch: [() => scCatch, v => (scCatch = v)],
-  scDraw: [() => scDraw, v => (scDraw = v)],
-  scDrawFx: [() => scDrawFx, v => (scDrawFx = v)],
-  scFlash: [() => scFlash, v => (scFlash = v)],
-  scFlush: [() => scFlush, v => (scFlush = v)],
-  scFocus: [() => scFocus, v => (scFocus = v)],
-  scFormat: [() => scFormat, v => (scFormat = v)],
-  scFrame: [() => scFrame, v => (scFrame = v)],
-  scLayout: [() => scLayout, v => (scLayout = v)],
-  scPlay: [() => scPlay, v => (scPlay = v)],
-  scPrepare: [() => scPrepare, v => (scPrepare = v)],
-  scQualityR: [() => scQualityR, v => (scQualityR = v)],
-  scResize: [() => scResize, v => setScResize(v)],
-  scRingPhase: [() => scRingPhase],
-  scSelect: [() => scSelect, v => (scSelect = v)],
-  scStart: [() => scStart, v => setScStart(v)],
-  scStop: [() => scStop, v => (scStop = v)],
-  scTargets: [() => scTargets, v => (scTargets = v)],
-  scToCss: [() => scToCss, v => (scToCss = v)],
   selRing: [() => selRing, v => (selRing = v)],
   sideBuf: [() => sideBuf, v => (sideBuf = v)],
   sideCenter: [() => sideCenter, v => (sideCenter = v)],
@@ -166,13 +166,13 @@ expose({
 });
 /* eslint-enable no-func-assign */
 provide({ buzz });
-export function setScResize(v) {
-  scResize = v; // eslint-disable-line no-func-assign
-  provide({ scResize });
+export function setBattleStageResize(v) {
+  battleStageResize = v; // eslint-disable-line no-func-assign
+  provide({ battleStageResize });
 }
-export function setScStart(v) {
-  scStart = v; // eslint-disable-line no-func-assign
-  provide({ scStart });
+export function setBattleStageStart(v) {
+  battleStageStart = v; // eslint-disable-line no-func-assign
+  provide({ battleStageStart });
 }
 /* to-module: end */
 export const FW = 224,
@@ -210,7 +210,7 @@ const FORMS = {
   ],
 };
 const FSCALE = { single: [1, 1], double: [0.86, 1, 0.86, 1], alpha: [0.8, 1, 0.8, 1, 0.8] };
-function scFormat(f) {
+function battleStageFormat(f) {
   const L = FORMS[f] || FORMS.single;
   POS.length = 0;
   UPP.length = 0;
@@ -372,7 +372,7 @@ export function stageArt(area) {
   return [...new Set(L)];
 }
 /* load (once) everything a stage needs; pixel arrays for ground, far land and walls */
-export async function scPrepare(area) {
+export async function battleStagePrepare(area) {
   area = AREAS[area] ? area : 'grass';
   if (STAGEART[area]) return STAGEART[area];
   const A = AREAS[area],
@@ -411,10 +411,10 @@ export async function scPrepare(area) {
   return (STAGEART[area] = { near, far, wall, fg: ART.img[`battle/${k}_foreground.png`], props, clouds });
 }
 /* ---------- layout: where the frame goes, how big a stage pixel is ---------- */
-function scQualityR() {
+function battleStageResolutionScale() {
   return battleStage.q.lvl >= 2 ? 1 : 2;
 }
-function scLayout() {
+function battleStageLayout() {
   const el = $('#battle');
   if (!el) return null;
   const vw = el.clientWidth,
@@ -431,7 +431,7 @@ function scLayout() {
   const M = 14,
     LW = Math.ceil(vw / u) + 2 * M,
     LH = Math.ceil(vh / u) + 2 * M,
-    R = scQualityR();
+    R = battleStageResolutionScale();
   return {
     vw,
     vh,
@@ -453,9 +453,9 @@ function scLayout() {
     ver: (battleStage.L ? battleStage.L.ver : 0) + 1,
   };
 }
-export function scResize() {
+export function battleStageResize() {
   if (!battleStage.cv) return;
-  const L = scLayout();
+  const L = battleStageLayout();
   if (!L) return;
   battleStage.L = L;
   battleStage.u = L.u;
@@ -488,7 +488,7 @@ export function scResize() {
   if (typeof battleLayoutChanged === 'function') battleLayoutChanged(L);
   if (battleStage.gl && typeof battleGLLayout === 'function') battleGLLayout();
 }
-export function scStart(area) {
+export function battleStageStart(area) {
   battleStage.area = AREAS[area] ? area : 'grass';
   const A = AREAS[battleStage.area],
     G = STAGEART[battleStage.area];
@@ -512,7 +512,7 @@ export function scStart(area) {
     v: 0.12 + rnd() * 0.12,
   }));
   battleStage.small = cnv(10, 10);
-  scFormat((typeof B !== 'undefined' && B && B.fmt) || 'single');
+  battleStageFormat((typeof B !== 'undefined' && B && B.fmt) || 'single');
   battleStage.tr = [
     { who: null, show: false, x: 0, a: 1 },
     { who: null, show: false, x: 0, a: 1 },
@@ -540,15 +540,15 @@ export function scStart(area) {
     stopWalkView();
     cv.hidden = true;
   }
-  scResize();
-  scFocus('wide', true);
+  battleStageResize();
+  battleStageFocus('wide', true);
   if (battleStage.gl) fgDraw();
   if (!battleStage.on) {
     battleStage.on = true;
-    frameTask('scene', scFrame);
+    frameTask('scene', battleStageFrame);
   }
 }
-export function scStop() {
+export function battleStageStop() {
   battleStage.on = false;
   frameStop('scene');
   if (battleStage.gl && typeof battleGLStop === 'function') battleGLStop();
@@ -570,7 +570,7 @@ function at(ms, fn) {
   battleStage.evs.push({ t: battleStage.t + ms, fn });
 }
 /* skip to the end of whatever is still playing. Camera, lens and zoom glide to where they were headed instead of cutting there */
-function scFlush() {
+function battleStageFlush() {
   const glide = new Map(),
     G = [battleStage.cam, battleStage.css, battleStage.dof, battleStage.hand];
   battleStage.tws
@@ -600,7 +600,7 @@ const FOCUS = {
   me: { zf: POS[0].z, ap: 1.35 },
   none: { zf: 4, ap: 0 },
 };
-export function scFocus(f, now) {
+export function battleStageFocus(f, now) {
   if (battleStage.focusK === f && !now) return;
   battleStage.focusK = f;
   const F = FOCUS[f] || FOCUS.none,
@@ -619,7 +619,7 @@ function blurAt(z) {
   if (d.ap <= 0 || battleStage.q.lvl >= 3) return 0;
   return Math.min(4, d.ap * DOFK * Math.abs(1 / Math.max(0.3, z) - 1 / d.zf));
 }
-function scFlash(col, a, dur) {
+function battleStageFlash(col, a, dur) {
   const f = $('#flash');
   if (!f) return;
   f.style.transition = 'none';
@@ -629,7 +629,7 @@ function scFlash(col, a, dur) {
   f.style.transition = `opacity ${dur}ms ease-out`;
   f.style.opacity = 0;
 }
-function scCA(ms = 160) {
+function battleStageChromaticFlash(ms = 160) {
   const w = $('#camWorld');
   if (!w || RM) return;
   w.classList.add('ca');
@@ -646,7 +646,7 @@ export function buzz(p) {
 /* ---------- projection ---------- */
 const proj = (X, Y, Z) => projC(battleStage.V, X, Y, Z);
 /* stage point to CSS pixels inside #battle (for HUD pop-ups) */
-export function scToCss(P) {
+export function battleStageToCss(P) {
   if (!battleStage.L) return null;
   const q = proj(P.x, P.y, P.z);
   if (!q) return null;
@@ -683,7 +683,7 @@ export function sideTop(i) {
 }
 /* ---------- frame ---------- */
 const DUE = [];
-function scFrame(ts, rawDt) {
+function battleStageFrame(ts, rawDt) {
   if (!battleStage.on) return;
   const w0 = performance.now();
   let dt = clamp(rawDt, 0, 50) * battleStage.speed;
@@ -745,11 +745,11 @@ function scFrame(ts, rawDt) {
   battleStage.shk = Math.max(0, battleStage.shk - dt * 0.02);
   if (battleStage.cv && battleStage.cv.isConnected) {
     camUpdate(dt);
-    scDraw();
+    battleStageDraw();
     camApply();
     if (typeof platesTick === 'function') platesTick();
   } else {
-    scStop();
+    battleStageStop();
     return;
   }
   const work = performance.now() - w0;
@@ -905,13 +905,13 @@ function governor(work) {
     Q.lowT = 0;
     Q.since = now;
     Q.dropped = (Q.dropped || 0) + 1;
-    if (Q.lvl === 2) scResize();
+    if (Q.lvl === 2) battleStageResize();
     battleStage.floorKey = '';
   } else if (Q.highT > target * 6 && Q.lvl > 0 && (Q.dropped || 0) < 4) {
     Q.lvl--;
     Q.highT = 0;
     Q.since = now;
-    if (Q.lvl === 1) scResize();
+    if (Q.lvl === 1) battleStageResize();
     battleStage.floorKey = '';
   }
 }
@@ -1872,7 +1872,7 @@ function projTo(o, C, X, Y, Z) {
   o.s = FOC / lz;
   return true;
 }
-function scDraw() {
+function battleStageDraw() {
   const c = battleStage.cx,
     L = battleStage.L,
     R = L.R;
@@ -1882,7 +1882,7 @@ function scDraw() {
     c.clearRect(0, 0, battleStage.cv.width, battleStage.cv.height);
     c.setTransform(R, 0, 0, R, 0, 0);
     c.imageSmoothingEnabled = false;
-    scDrawFx(c);
+    battleStageDrawEffects(c);
     return;
   }
   floorUpdate();
@@ -1941,13 +1941,13 @@ function scDraw() {
     else drawTrainer(c, it.i);
   }
   if (!partsDrawn) drawParts(c, 0);
-  scDrawFx(c, 1);
+  battleStageDrawEffects(c, 1);
 }
 /* v33: the fighter choosing stands in a gold ring; while aiming, the foes you can pick pulse */
-export function scSelect(k) {
+export function battleStageSelect(k) {
   battleStage.sel = k;
 }
-export function scTargets(L) {
+export function battleStageTargets(L) {
   battleStage.tg = L && L.length ? L.slice() : null;
 }
 function selRing(c, i, col, pulse) {
@@ -1965,7 +1965,7 @@ function selRing(c, i, col, pulse) {
   pixRing(c, g.x, g.y, r + 3, ry + 2, col, 1);
   c.globalAlpha = 1;
 }
-function scDrawFx(c, skip0) {
+function battleStageDrawEffects(c, skip0) {
   if (!skip0) drawParts(c, 0);
   if (battleStage.sel != null && battleStage.s[battleStage.sel] && battleStage.s[battleStage.sel].show)
     selRing(c, battleStage.sel, '#F4C542', 1);
@@ -2001,7 +2001,7 @@ function scDrawFx(c, skip0) {
     }
   }
   if (battleStage.ring) {
-    const ph = scRingPhase(),
+    const ph = battleStageRingPhase(),
       o = sideCenter(1),
       q = proj(o.x, o.y, o.z);
     if (q) {
@@ -2022,7 +2022,8 @@ function scDrawFx(c, skip0) {
   drawParts(c, 1);
   drawParts(c, 2);
 }
-export const scRingPhase = () => (battleStage.ring ? ((battleStage.t - battleStage.ring.t0) % 1300) / 1300 : 0);
+export const battleStageRingPhase = () =>
+  battleStage.ring ? ((battleStage.t - battleStage.ring.t0) % 1300) / 1300 : 0;
 /* ---------- effects (world space, y up) ---------- */
 function part(o) {
   battleStage.parts.push(Object.assign({ vx: 0, vy: 0, vz: 0, ax: 0, ay: 0, az: 0, age: 0, life: 600, layer: 2 }, o));
@@ -2095,8 +2096,8 @@ function hitFx(ti, an) {
   }
   if (an.te > 1) {
     battleStage.shk = 8;
-    scFlash('#FFFFFF', 0.55, 260);
-    scCA(180);
+    battleStageFlash('#FFFFFF', 0.55, 260);
+    battleStageChromaticFlash(180);
     hitStop(80);
     ringFx(T, '#FFFFFF', 0.2, 1.6);
     groundRing(ti, '#FFFFFF', 2.2);
@@ -2107,7 +2108,7 @@ function hitFx(ti, an) {
     if (ts === 0) buzz(w > 0.45 ? [14, 20, 14] : 10);
   }
   if (an.crit) {
-    scFlash('#FFF2A8', 0.6, 300);
+    battleStageFlash('#FFF2A8', 0.6, 300);
     hitStop(90);
     speedLines(T);
     punch(an.te > 1 ? 0.12 : 0.09, 320, ts === 1 ? 0.014 : -0.014);
@@ -2158,8 +2159,8 @@ function coinArc(from, to, dur, kind, onLand, spin) {
 }
 const PULLCAM = { x: 0.15, y: 1.82, z: -0.75, yaw: 0, hz: -3 };
 const CAMPOS = () => ({ x: battleStage.V.x - 0.9, y: battleStage.V.y - 0.6, z: battleStage.V.z + 0.6 });
-export function scPlay(an, ev) {
-  scFlush();
+export function battleStagePlay(an, ev) {
+  battleStageFlush();
   const s0 = battleStage.s[0],
     s1 = battleStage.s[1];
   const syncSide = i => {
@@ -2180,7 +2181,7 @@ export function scPlay(an, ev) {
       if (an.alpha) {
         battleStage.shk = 7;
         at(650, () => {
-          scFlash('#5A1030', 0.45, 600);
+          battleStageFlash('#5A1030', 0.45, 600);
           battleStage.shk = 9;
           handheld(900, 1.4);
           for (let i = 0; i < 26; i++) {
@@ -2210,14 +2211,14 @@ export function scPlay(an, ev) {
         camTo({ x: 2.7, y: 1.12, z: 2.85, yaw: -0.47, hz: 12 }, 650, 'out');
         camHome(1150, 600);
       }
-      scFocus('foe', true);
+      battleStageFocus('foe', true);
       tw(s1, 'dark', 0, 380, 'lin', 700);
       at(700, () => {
         act(1, 'enter', 700);
         ringFx(sideCenter(1), '#FFFFFF', 0.1, 0.9);
         groundRing(1, '#FFFFFF', 1.8);
       });
-      at(1250, () => scFocus('wide'));
+      at(1250, () => battleStageFocus('wide'));
       return { dur: 1250, hit: 0 };
     }
     case 'trainerIn': {
@@ -2231,9 +2232,9 @@ export function scPlay(an, ev) {
         camTo({ x: -2.25, y: 1.85, z: -0.6, yaw: 0.42, hz: -5 }, 420, 'out');
         camHome(1000, 320);
       }
-      scFocus('me', true);
-      at(450, () => scFocus('foe'));
-      at(1200, () => scFocus('wide'));
+      battleStageFocus('me', true);
+      at(450, () => battleStageFocus('foe'));
+      at(1200, () => battleStageFocus('wide'));
       return { dur: 1150, hit: 0 };
     }
     case 'enter': {
@@ -2251,7 +2252,7 @@ export function scPlay(an, ev) {
         });
       }
       if (!an.quiet) {
-        scFocus(si === 0 ? 'me' : 'foe');
+        battleStageFocus(si === 0 ? 'me' : 'foe');
         camAt(i, 0.35, 0.1, si === 0 ? -0.012 : 0.012, 300);
       }
       const w = sideWorld(i),
@@ -2264,13 +2265,13 @@ export function scPlay(an, ev) {
         ringFx(c, '#FFFFFF', 0.1, si === 0 ? 1.3 : 1);
         groundRing(i, '#FFFFFF', 2);
         burst(c, 'Dynasty', 10, 2, 1);
-        scFlash('#FFFFFF', 0.25, 200);
+        battleStageFlash('#FFFFFF', 0.25, 200);
         tw(s, 'sc', 1, 300, 'back');
         tw(s, 'white', 0, 320, 'lin', 120);
         act(i, 'enter', 700);
       });
       camHome(520, 560);
-      at(950, () => scFocus('wide'));
+      at(950, () => battleStageFocus('wide'));
       return { dur: 900, hit: 0 };
     }
     case 'recall': {
@@ -2290,7 +2291,7 @@ export function scPlay(an, ev) {
         s = battleStage.s[i],
         si = SIDEOF(i);
       act(i, 'faint', 99999);
-      scFocus(si === 0 ? 'me' : 'foe');
+      battleStageFocus(si === 0 ? 'me' : 'foe');
       camAt(i, 0.3, 0.08, si === 0 ? 0.02 : -0.02, 500);
       if (!RM) camTo(PULLCAM, 520, 'io', 480);
       tw(s, 'oy', 10, 500, 'in', 450);
@@ -2305,7 +2306,7 @@ export function scPlay(an, ev) {
       battleStage.shk = 2.5;
       if (si === 0) buzz(40);
       camHome(650, 1050);
-      at(1100, () => scFocus('wide'));
+      at(1100, () => battleStageFocus('wide'));
       return { dur: 1050, hit: 0 };
     }
     case 'move': {
@@ -2319,7 +2320,7 @@ export function scPlay(an, ev) {
       const A = sideCenter(si),
         T = sideCenter(ti),
         kk = 1;
-      scFocus(ss === 0 ? 'me' : 'foe');
+      battleStageFocus(ss === 0 ? 'me' : 'foe');
       camAt(si, 0.32, 0.08, ss === 0 ? -0.012 : 0.012, 200);
       if ((M.p || 0) >= 80 && !an.miss && !an.blocked && !an.protect) handheld(M.c === 'H' ? 700 : 950, 0.8);
       /* on the 3D stage a big move gets a camera sweep: low behind the attacker, then across to the target */
@@ -2331,7 +2332,7 @@ export function scPlay(an, ev) {
       const ak = an.protect ? 'block' : M.c === 'H' ? 'attack' : M.c === 'S' ? 'cast' : an.self ? 'buff' : 'cast';
       act(si, ak, ak === 'attack' ? 620 : 800);
       const toT = (d = 180) => {
-        scFocus(SIDEOF(ti) === 0 ? 'me' : 'foe');
+        battleStageFocus(SIDEOF(ti) === 0 ? 'me' : 'foe');
         camAt(ti, 0.45, 0.15, SIDEOF(ti) === 1 ? 0.022 : -0.022, d, 'out3');
       };
       if (an.miss) {
@@ -2361,7 +2362,7 @@ export function scPlay(an, ev) {
           if (typeof hudPop === 'function') hudPop(ti, 'Miss', 'miss');
         });
         camHome(420, 560);
-        at(900, () => scFocus('wide'));
+        at(900, () => battleStageFocus('wide'));
         return { dur: 760, hit: 999 };
       }
       if (an.protect) {
@@ -2371,7 +2372,7 @@ export function scPlay(an, ev) {
           groundRing(si, '#8FD8FF', 1.8, 600);
         });
         camHome(400, 500);
-        at(800, () => scFocus('wide'));
+        at(800, () => battleStageFocus('wide'));
         return { dur: 700, hit: 0 };
       }
       if (an.blocked) {
@@ -2382,7 +2383,7 @@ export function scPlay(an, ev) {
           if (typeof hudPop === 'function') hudPop(ti, 'Hedged', 'miss');
         });
         camHome(400, 520);
-        at(900, () => scFocus('wide'));
+        at(900, () => battleStageFocus('wide'));
         return { dur: 740, hit: 999 };
       }
       if (M.c === 'H') {
@@ -2410,7 +2411,7 @@ export function scPlay(an, ev) {
           if (an.dmg) hitFx(ti, an);
         });
         camHome(460, 620);
-        at(1050, () => scFocus('wide'));
+        at(1050, () => battleStageFocus('wide'));
         return { dur: 880, hit: 200 };
       }
       if (M.c === 'S') {
@@ -2458,7 +2459,7 @@ export function scPlay(an, ev) {
         at(330, () => toT(220));
         if (an.dmg) at(500, () => hitFx(ti, an));
         camHome(480, 820);
-        at(1250, () => scFocus('wide'));
+        at(1250, () => battleStageFocus('wide'));
         return { dur: 1060, hit: 500 };
       }
       const tgt = an.self ? si : ti,
@@ -2491,7 +2492,7 @@ export function scPlay(an, ev) {
         }
       });
       camHome(460, 800);
-      at(1250, () => scFocus('wide'));
+      at(1250, () => battleStageFocus('wide'));
       return { dur: 1000, hit: 600 };
     }
     case 'hurt': {
@@ -2520,12 +2521,12 @@ export function scPlay(an, ev) {
             part({ x: T.x + (rnd() - 0.5) * 0.8, y: T.y + 0.6, z: T.z, vy: 1, life: 520, spr: 'flame', k: kk })
           );
       if (an.fx === 'mail') {
-        scFocus(SIDEOF(an.si) === 0 ? 'me' : 'foe');
+        battleStageFocus(SIDEOF(an.si) === 0 ? 'me' : 'foe');
         coinArc({ x: T.x + 3, y: 4, z: T.z + 2 }, T, 380, 'gold', C => {
           C.show = false;
           hitFx(an.si, { te: an.te, t: 'Retail' });
         });
-        at(1000, () => scFocus('wide'));
+        at(1000, () => battleStageFocus('wide'));
         return { dur: 900, hit: 400 };
       }
       return { dur: 560, hit: 80 };
@@ -2623,14 +2624,14 @@ export function scPlay(an, ev) {
       const s = battleStage.s[an.si];
       act(an.si, 'smug', 900);
       camAt(an.si, 0.3, 0.1, SIDEOF(an.si) === 1 ? 0.012 : -0.012, 260);
-      scFocus(SIDEOF(an.si) === 0 ? 'me' : 'foe');
+      battleStageFocus(SIDEOF(an.si) === 0 ? 'me' : 'foe');
       tw(s, 'oy', -7, 110, 'out');
       tw(s, 'oy', 0, 140, 'in', 110);
       tw(s, 'oy', -5, 100, 'out', 260);
       tw(s, 'oy', 0, 130, 'in', 360);
       at(120, () => groundRing(an.si, '#FFFFFF', 1.2, 380));
       camHome(400, 520);
-      at(800, () => scFocus('wide'));
+      at(800, () => battleStageFocus('wide'));
       return { dur: 700, hit: 0 };
     }
     case 'market': {
@@ -2646,7 +2647,7 @@ export function scPlay(an, ev) {
           col: rnd() < 0.5 ? '#E8CF96' : '#C9A866',
           size: 1 + (rnd() < 0.3 ? 1 : 0),
         });
-      scFlash('#C8A060', 0.35, 500);
+      battleStageFlash('#C8A060', 0.35, 500);
       battleStage.shk = 3;
       return { dur: 760, hit: 0 };
     }
@@ -2658,8 +2659,8 @@ export function scPlay(an, ev) {
       const T = sideCenter(an.si),
         s = battleStage.s[an.si];
       act(an.si, 'buff', 900);
-      scFocus(SIDEOF(an.si) === 0 ? 'me' : 'foe');
-      scFlash('#FFD860', 0.5, 420);
+      battleStageFocus(SIDEOF(an.si) === 0 ? 'me' : 'foe');
+      battleStageFlash('#FFD860', 0.5, 420);
       battleStage.shk = 7;
       handheld(800, 1.2);
       if (s) s.shield = 1;
@@ -2680,7 +2681,7 @@ export function scPlay(an, ev) {
           });
         });
       buzz([20, 40, 20]);
-      at(1100, () => scFocus('wide'));
+      at(1100, () => battleStageFocus('wide'));
       return { dur: 1200, hit: 0 };
     }
     case 'block': {
@@ -2704,7 +2705,7 @@ export function scPlay(an, ev) {
       if (!battleStage.s[li] || !battleStage.s[li].show) return { dur: 0, hit: 0 };
       const T = sideCenter(li);
       act(li, 'cheer', 900);
-      scFocus('me');
+      battleStageFocus('me');
       camAt(li, 0.3, 0.08, -0.012, 300);
       ringFx(T, '#F4C542', 0.2, 1.5, 520);
       groundRing(li, '#F4C542', 2, 600);
@@ -2721,7 +2722,7 @@ export function scPlay(an, ev) {
         });
       if (typeof hudPop === 'function') hudPop(li, 'Level up', 'lvl');
       camHome(400, 500);
-      at(900, () => scFocus('wide'));
+      at(900, () => battleStageFocus('wide'));
       return { dur: 700, hit: 0 };
     }
     case 'run': {
@@ -2736,21 +2737,21 @@ export function scPlay(an, ev) {
   }
   return { dur: 0, hit: 0 };
 }
-export function scCatch(kind, res, spin, done) {
-  scFlush();
+export function battleStageCatch(kind, res, spin, done) {
+  battleStageFlush();
   const s1 = battleStage.s[1],
     o = sideCenter(1),
     w = sideWorld(1),
     land = { x: w.x, y: 0.25, z: w.z };
   camAt(1, 0.5, 0.18, 0.02, 320);
-  scFocus('foe');
+  battleStageFocus('foe');
   coinArc(
     CAMPOS(),
     { x: o.x, y: o.y, z: o.z },
     480,
     kind,
     C => {
-      scFlash('#FFFFFF', 0.55, 280);
+      battleStageFlash('#FFFFFF', 0.55, 280);
       ringFx(C, '#FFFFFF', 0.1, 1);
       tw(s1, 'white', 1, 120, 'lin');
       tw(s1, 'sc', 0, 220, 'in', 120);
@@ -2794,10 +2795,10 @@ export function scCatch(kind, res, spin, done) {
               });
             tw(C, 'glow', 0.9, 100);
             tw(C, 'glow', 0, 300, 'lin', 120);
-            scFlash('#FFF2A8', 0.3, 400);
+            battleStageFlash('#FFF2A8', 0.3, 400);
             at(900, () => done(true));
           } else {
-            scFlash('#FFFFFF', 0.6, 300);
+            battleStageFlash('#FFFFFF', 0.6, 300);
             ringFx(C, '#FFFFFF', 0.1, 1.1);
             C.show = false;
             s1.show = true;
@@ -2807,7 +2808,7 @@ export function scCatch(kind, res, spin, done) {
             tw(s1, 'white', 0, 260, 'lin', 80);
             act(1, 'smug', 800);
             camHome(400, 200);
-            at(700, () => scFocus('wide'));
+            at(700, () => battleStageFocus('wide'));
             at(620, () => done(false));
           }
         });

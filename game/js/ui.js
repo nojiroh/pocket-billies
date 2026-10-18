@@ -107,7 +107,7 @@ import {
 import { applyPreferences, settingsHTML } from './settings-screen.js';
 import { drPortrait, openDressing } from './dressing-room.js';
 import { bustHTML, sprHTML } from './skeleton-rig.js';
-import { EASE, battleStage, camHome, scFocus, scTargets } from './battle-stage.js';
+import { EASE, battleStage, battleStageFocus, battleStageTargets, camHome } from './battle-stage.js';
 import {
   closedText,
   findPath,
@@ -2911,7 +2911,7 @@ document.addEventListener('click', ev => {
       break;
     case 'bback':
       if (B) {
-        if (B.phase === 'target' && typeof scTargets === 'function') scTargets(null);
+        if (B.phase === 'target' && typeof battleStageTargets === 'function') battleStageTargets(null);
         if (B.phase === 'choose') {
           planBack();
           break;
@@ -2933,7 +2933,7 @@ document.addEventListener('click', ev => {
       if (B && !U.throwing) {
         battleStage.ring = null;
         camHome(300);
-        scFocus('wide');
+        battleStageFocus('wide');
         B.phase = 'choose';
         chooseMsg();
         paintActions();

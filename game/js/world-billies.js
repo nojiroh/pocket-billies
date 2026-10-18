@@ -16,7 +16,7 @@ import { SP, STATUSN, TRAINERS, rivalSp, trainersAt } from './game-data.js';
 import { N, S, U, findMon, maxHp, nextStop, save } from './game-state.js';
 import { cnv } from './art.js';
 import { KBACK, drawRig, rigFrame, rigParts, rigPreload } from './skeleton-rig.js';
-import { scPrepare } from './battle-stage.js';
+import { battleStagePrepare } from './battle-stage.js';
 import { prepareMap, walkView, walkablePointNear, worldToScreen } from './walk-view.js';
 import { ENV } from './environment.js';
 import { standingHeightAt } from './walk-view-gl.js';
@@ -499,10 +499,10 @@ function owWarm() {
             .catch(() => {}),
         600
       );
-    if (typeof scPrepare === 'function' && typeof areaKey === 'function')
+    if (typeof battleStagePrepare === 'function' && typeof areaKey === 'function')
       setTimeout(() => {
         try {
-          scPrepare(areaKey()).catch(() => {});
+          battleStagePrepare(areaKey()).catch(() => {});
         } catch (e) {}
       }, 1500);
   } catch (e) {}

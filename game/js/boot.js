@@ -12,7 +12,7 @@ import { RM, S, SAVE_FOUND, SAVE_NEW_MSG, SAVE_OLD_MSG, U, esc, fresh, setNoSavi
 import { ART, BG_ART, COIN_ART, EGG_ART, ICON_ATLAS, UIURL, artBoot, artImg } from './art.js';
 import { trainerArtPaths } from './person-art.js';
 import { rigAtlas } from './skeleton-rig.js';
-import { AREAS, scPrepare, stageArt } from './battle-stage.js';
+import { AREAS, battleStagePrepare, stageArt } from './battle-stage.js';
 import { mapArtPaths, mapById, walkData, walkView } from './walk-view.js';
 import { EGL, eglOK } from './engine/webgl.js';
 import { ENV } from './environment.js';
@@ -572,7 +572,7 @@ async function preloadAll(onTown) {
   try {
     if (S.started) {
       const area = areaKey();
-      await scPrepare(AREAS[area] ? area : 'grass');
+      await battleStagePrepare(AREAS[area] ? area : 'grass');
     }
   } catch (e) {
     console.error(e);

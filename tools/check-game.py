@@ -111,7 +111,7 @@ def check_game(pw, base, results):
                     if pg.evaluate('!!B'): rival['battle'] = pg.evaluate('B.foeName'); break
                     pg.evaluate('TALK.cur&&TALK.cur.tap()'); time.sleep(.8)
                 results.setdefault('rival', {})[name] = rival
-                pg.evaluate("if(B){stopTimers();B=null;scStop()}render();0")
+                pg.evaluate("if(B){stopTimers();B=null;battleStageStop()}render();0")
         pg.evaluate("if(typeof titleEnd==='function')titleEnd();U.pg='girl';startGame('scoop');S.story={met_chad:1,met_chad2:1};U.modal=null;U.mq=[];renderOv();S.team.push(makeMon('box1',18));addSteps(2400,true);U.toastQ=[];U.toastOn=false;U.modal=null;U.mq=[];renderOv();render();0")
         log(f'{name}: screens and battles')
         for tab in ['walk', 'map', 'team', 'ledger', 'profile']:
@@ -125,14 +125,14 @@ def check_game(pw, base, results):
             pg.evaluate(f"B=null;const q={{id:'t{area}',sp:'tweet1',lvl:12,gold:false,no:1}};S.queue=[q];S.team.forEach(m=>{{m.hp=maxHp(m)}});const f=areaKey;areaKey=()=>'{area}';startWild(q);areaKey=f;0")
             wait_phase(pg); time.sleep(.6)
             pg.screenshot(path=str(OUT / f'{name}-battle-{area}.png'))
-            pg.evaluate("stopTimers();B=null;scStop();render();0")
+            pg.evaluate("stopTimers();B=null;battleStageStop();render();0")
         # then a battle on the 3D stage, where you stand in the walk scene
         pg.evaluate("S.preferences.battleStage='scene';U.tab='walk';S.route={node:0,prog:0,plan:[],hold:false};render();0"); time.sleep(2)
         pg.evaluate("const q={id:'t3d',sp:'tweet1',lvl:12,gold:false,no:1};S.queue=[q];startWild(q);0")
         wait_phase(pg); time.sleep(1)
         pg.screenshot(path=str(OUT / f'{name}-battle-3d.png'))
         results.setdefault('battle3d', {})[name] = pg.evaluate("[!!battleStage.gl,!!walkView.battle,walkView.id]")
-        pg.evaluate("stopTimers();B=null;scStop();render();0")
+        pg.evaluate("stopTimers();B=null;battleStageStop();render();0")
         pg.evaluate("S.team=[makeMon('hood2',45),makeMon('box1',30)];S.route.node=4;startTrainer('crude');0")
         won = False
         for _ in range(60):
@@ -145,7 +145,7 @@ def check_game(pw, base, results):
         if name in ('phone', 'desktop'):
             # every walk scene, walking around in a town, and a trip along two roads
             log(f'{name}: every walk scene')
-            pg.evaluate("stopTimers&&stopTimers();B=null;scStop();S.queue=[];U.tab='walk';0")
+            pg.evaluate("stopTimers&&stopTimers();B=null;battleStageStop();S.queue=[];U.tab='walk';0")
             for i in range(pg.evaluate('ROUTE.length')):
                 pg.evaluate(f"S.route={{node:{i},prog:0,plan:[],hold:false}};S.visited[{i}]=1;U.roam=null;render();0"); time.sleep(2.6)
                 if name == 'phone' or i in (0, 10, 12): pg.screenshot(path=str(OUT / f'{name}-scene-{pg.evaluate("walkView.id")}.png'))

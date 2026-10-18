@@ -12,16 +12,16 @@ import {
   AREAS,
   STAGEART,
   battleStage,
+  battleStageCatch,
+  battleStageFocus,
+  battleStagePlay,
+  battleStagePrepare,
+  battleStageResize,
+  battleStageStart,
+  battleStageToCss,
   camAt,
   camHome,
   fgDraw,
-  scCatch,
-  scFocus,
-  scPlay,
-  scPrepare,
-  scResize,
-  scStart,
-  scToCss,
   sideTop,
 } from '../../game/js/battle-stage.js';
 import { mapHub, walkView } from '../../game/js/walk-view.js';
@@ -92,7 +92,7 @@ function battleLayoutChanged(L) {
 function hudPop(si, text, kind) {
   const L = $('#pops');
   if (!L || !battleStage.L) return;
-  const q = scToCss(sideTop(si));
+  const q = battleStageToCss(sideTop(si));
   if (!q) return;
   const e = document.createElement('div');
   e.className = 'pop ' + kind;
@@ -209,7 +209,7 @@ async function bpStart() {
       BP._art = BP.area + (art.art || '') + (art.wall || '') + (art.far || '') + (art.indoor || '');
     }
     await Promise.all([
-      scPrepare(BP.area),
+      battleStagePrepare(BP.area),
       artLoad(COIN_ART),
       atlasGet(atlasPath(BP.me, 'back', BP.meGold)),
       atlasGet(atlasPath(BP.foe, 'front', BP.foeGold)),
@@ -225,14 +225,14 @@ async function bpStart() {
     battleGLStop();
     battleStage.gl = false;
   }
-  scStart(BP.area);
+  battleStageStart(BP.area);
   if (BP.stage !== 'backdrop' && ST.D.scenes && ST.D.scenes[BP.stage] && typeof battleGLAttach === 'function') {
     await bpScene();
   }
   if (load) load.hidden = true;
   if (!BP.ro)
     BP.ro = new ResizeObserver(() => {
-      if (battleStage.on && ST.sec === 'preview' && $('#battle')) scResize();
+      if (battleStage.on && ST.sec === 'preview' && $('#battle')) battleStageResize();
     });
   BP.ro.disconnect();
   BP.ro.observe($('#battle'));
@@ -263,7 +263,7 @@ async function bpScene() {
   walkView.pl.z = hb[1];
   battleStage.gl = battleGLAttach({ detach: true });
   document.body.classList.toggle('battle-3d', !!battleStage.gl);
-  scResize();
+  battleStageResize();
   fgDraw();
 }
 function bpApplyBackdrop() {
@@ -302,9 +302,9 @@ function bpMove(si) {
     an.te = BP.res === 'se' ? 2 : BP.res === 'nve' ? 0.5 : 1;
     an.crit = BP.res === 'crit';
   }
-  scPlay(an, bpEv());
+  battleStagePlay(an, bpEv());
   if (onFoe && !an.miss && !an.blocked && fx.status)
-    setTimeout(() => scPlay({ k: 'status', si: 1 - si, st: fx.status }, bpEv()), 1100 / battleStage.speed);
+    setTimeout(() => battleStagePlay({ k: 'status', si: 1 - si, st: fx.status }, bpEv()), 1100 / battleStage.speed);
 }
 ACTS.bp = d => {
   if (!battleStage.L) return;
@@ -338,7 +338,7 @@ ACTS.bp = d => {
     });
   };
   if (x.startsWith('cam-')) {
-    scFocus(x.slice(4));
+    battleStageFocus(x.slice(4));
     if (x === 'cam-wide') camHome(400);
     else camAt(x === 'cam-foe' ? 1 : 0, 0.45, 0.15, 0, 400);
     return;
@@ -352,25 +352,25 @@ ACTS.bp = d => {
     case 'wild':
       reset();
       battleStage.s[0].show = false;
-      scPlay({ k: 'wild' }, ev);
-      later(1350, () => scPlay({ k: 'enter', si: 0 }, ev));
+      battleStagePlay({ k: 'wild' }, ev);
+      later(1350, () => battleStagePlay({ k: 'enter', si: 0 }, ev));
       break;
     case 'trainer':
       reset();
       battleStage.s[0].show = battleStage.s[1].show = false;
-      scPlay({ k: 'trainerIn', who: BP.who }, ev);
-      later(1250, () => scPlay({ k: 'enter', si: 1 }, ev));
-      later(2300, () => scPlay({ k: 'enter', si: 0 }, ev));
+      battleStagePlay({ k: 'trainerIn', who: BP.who }, ev);
+      later(1250, () => battleStagePlay({ k: 'enter', si: 1 }, ev));
+      later(2300, () => battleStagePlay({ k: 'enter', si: 0 }, ev));
       break;
     case 'enter0':
-      scPlay({ k: 'enter', si: 0 }, ev);
+      battleStagePlay({ k: 'enter', si: 0 }, ev);
       break;
     case 'enter1':
-      scPlay({ k: 'enter', si: 1 }, ev);
+      battleStagePlay({ k: 'enter', si: 1 }, ev);
       break;
     case 'recall':
-      scPlay({ k: 'recall', si: 0 }, ev);
-      later(900, () => scPlay({ k: 'enter', si: 0 }, ev));
+      battleStagePlay({ k: 'recall', si: 0 }, ev);
+      later(900, () => battleStagePlay({ k: 'enter', si: 0 }, ev));
       break;
     case 'move0':
       reset();
@@ -381,45 +381,45 @@ ACTS.bp = d => {
       bpMove(1);
       break;
     case 'heal':
-      scPlay({ k: 'heal', si: 0, amt: 18 }, ev);
+      battleStagePlay({ k: 'heal', si: 0, amt: 18 }, ev);
       break;
     case 'statup':
-      scPlay({ k: 'stat', si: 0, up: true }, ev);
+      battleStagePlay({ k: 'stat', si: 0, up: true }, ev);
       break;
     case 'statdn':
-      scPlay({ k: 'stat', si: 1, up: false }, ev);
+      battleStagePlay({ k: 'stat', si: 1, up: false }, ev);
       break;
     case 'aud':
     case 'sub':
     case 'scn':
-      scPlay({ k: 'status', si: 1, st: x }, ev);
+      battleStagePlay({ k: 'status', si: 1, st: x }, ev);
       break;
     case 'hype':
-      scPlay({ k: 'hype', si: 1 }, ev);
+      battleStagePlay({ k: 'hype', si: 1 }, ev);
       break;
     case 'hurt':
-      scPlay({ k: 'hurt', si: 1, fx: 'scn', dmg: 7 }, ev);
+      battleStagePlay({ k: 'hurt', si: 1, fx: 'scn', dmg: 7 }, ev);
       break;
     case 'lvl':
-      scPlay({ k: 'lvl' }, ev);
+      battleStagePlay({ k: 'lvl' }, ev);
       break;
     case 'shock':
       BP.shock = !battleStage.oil;
-      if (BP.shock) scPlay({ k: 'market' }, ev);
-      else scPlay({ k: 'marketEnd' }, ev);
+      if (BP.shock) battleStagePlay({ k: 'market' }, ev);
+      else battleStagePlay({ k: 'marketEnd' }, ev);
       break;
     case 'faint1':
-      scPlay({ k: 'faint', si: 1 }, ev);
+      battleStagePlay({ k: 'faint', si: 1 }, ev);
       later(1600, reset);
       break;
     case 'faint0':
-      scPlay({ k: 'faint', si: 0 }, ev);
+      battleStagePlay({ k: 'faint', si: 0 }, ev);
       later(1600, reset);
       break;
     case 'catch':
     case 'escape':
       reset();
-      scCatch('penny', { caught: x === 'catch', w: x === 'catch' ? 3 : 1 }, false, ok => {
+      battleStageCatch('penny', { caught: x === 'catch', w: x === 'catch' ? 3 : 1 }, false, ok => {
         if (ok) later(600, reset);
       });
       break;

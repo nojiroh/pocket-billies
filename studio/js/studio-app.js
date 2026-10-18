@@ -6,7 +6,7 @@ import { expose } from '../../game/js/test-globals.js';
 import { mountPreviews, provide, runCheck, scheduleCheck, spriteCacheClear } from '../../game/js/hooks.js';
 import { $, $$ } from '../../game/js/util.js';
 import { ICON_ATLAS, artLoad } from '../../game/js/art.js';
-import { scStop } from '../../game/js/battle-stage.js';
+import { battleStageStop } from '../../game/js/battle-stage.js';
 import { ENG_CTX } from '../../game/js/engine/settings.js';
 import { esc } from './game-stand-ins.js';
 /* eslint-disable no-func-assign */
@@ -477,7 +477,7 @@ function renderSide() {
     `<div class="side-foot"><small><kbd>Ctrl K</kbd> finds any setting · <kbd>Ctrl L</kbd> shows connections · <kbd>Ctrl S</kbd> saves.<br>Saves go to <code>game/data</code> and <code>game/art</code>, with backups in <code>backups/</code>.</small></div>`;
 }
 export function go(s, sel) {
-  if (ST.sec === 'preview' && s !== 'preview' && typeof scStop === 'function') scStop();
+  if (ST.sec === 'preview' && s !== 'preview' && typeof battleStageStop === 'function') battleStageStop();
   if (typeof ENG_CTX !== 'undefined') ENG_CTX.bypass = false;
   ST.sec = s;
   if (sel) Object.assign(ST.sel, sel);
