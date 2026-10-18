@@ -77,6 +77,9 @@ npm run lint            # ESLint: undefined names (a module name used without an
 npm run check:modules   # the modules' generated parts are up to date and the load order holds (npm run modules fixes them)
 npm run format          # Prettier (npm run format:check only checks)
 npm run check:data      # the game data: files, schemas, what refers to what (a second)
+npm run typecheck       # TypeScript on the files that start with // @ts-check, against game/types, then game/js/logic/
+                        # again with no DOM lib (tsconfig.logic.json), a second
+npm run check:logic     # game/js/logic/ loads and runs in plain Node, with no browser (a fraction of a second)
 npm run check:smoke     # the quick check's smoke set, about two minutes
 ```
 
@@ -102,7 +105,8 @@ stands.
     game fetches from each map's file when it needs it (`js/map-files.js`).
   - `art/`: pictures, `manifest.js` (atlas rectangles), `next/rigs-next.js` (skeletons).
   - `js/`: the code. `game-data.js` builds everything from the data file; `boot.js` loading; `ui.js` the screens;
-    `battle.js` battle rules and HUD; `seamless-world.js` walking from one place into the next; `walk-view.js` the walk scene's data and logic and
+    `logic/` the rules that run without a browser (`rules.js` the rules outside battle, `saves.js` the save format,
+    `battle-engine.js` the battle rules; they reach the page only through `hooks.js`); `battle.js` the battle screen and HUD; `seamless-world.js` walking from one place into the next; `walk-view.js` the walk scene's data and logic and
     `walk-view-gl.js` draws it; `engine/` the 3D engine (settings, WebGL setup, light, post effects); `battle-3d.js`,
     `world-map-gl.js` battles and the world map on the engine; `buildings.js`, `structures.js`, `solid-props.js`, `prop-models.js`
     3D buildings and props; `debug-log.js` the debug log; `self-test.js` the full test; `debug-menu.js` the debug menu;

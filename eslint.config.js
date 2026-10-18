@@ -9,6 +9,8 @@
 // page. Phase 04d: a module imports every other module's name it uses (tools/to-module.mjs: from the module, or from
 // game/js/hooks.js), so the globals are only the classic scripts' names; no-undef finds a module name read without
 // an import (run npm run modules), or read by a classic script.
+// Phase 04e: the logic (game/js/logic/) and the data tables it reads (game/js/game-data.js) run in plain Node too
+// (tools/check-logic.mjs), so they get no browser globals and import only logic (see isLogic below).
 import js from '@eslint/js';
 import * as espree from 'espree';
 import globals from 'globals';
@@ -100,10 +102,8 @@ for (const html of APPS) {
   }
 }
 
-// Names one page defines and the other checks for with typeof before use: the Studio's art version (the game's
-// renderers repaint when it changes), the game's walk hubs (the Studio's preview uses them when present), the Firebase
-// SDK (account.js loads it from the CDN on demand).
-const OPTIONAL = { artCacheVersion: 'readonly', seamlessHubMap: 'readonly', firebase: 'readonly' };
+// Names a module checks for with typeof before use: the Firebase SDK (account.js loads it from the CDN on demand).
+const OPTIONAL = { firebase: 'readonly' };
 
 const optionalFor = file => Object.fromEntries(Object.entries(OPTIONAL).filter(([n]) => !ownNames.get(file).has(n)));
 
@@ -121,6 +121,27 @@ const bugRules = {
   // tools/check-names.mjs, which npm run lint runs after ESLint
   camelcase: ['error', { properties: 'never', ignoreDestructuring: true, ignoreImports: true }],
 };
+
+// Phase 04e: the logic runs in the game and in plain Node (tools/check-logic.mjs, the unit tests), so it may use no
+// browser global: no window, document, localStorage, matchMedia, timers or WebGL. Of the classic scripts' names only
+// PB_VERSION (game/version.js: a new save's gameVersion; a test sets it). It imports only other logic modules,
+// game-data.js (the tables), util.js (random, clamp) and the generated test-globals.js and hooks.js; what it needs
+// from the browser side (the save, the battle, toast, render...) it reads through hooks.js, which game-state.js and
+// the interface fill on the page and a test fills in Node.
+const isLogic = f => f.startsWith('game/js/logic/') || f === 'game/js/game-data.js';
+const LOGIC_GLOBALS = { PB_VERSION: 'readonly', console: 'readonly' };
+// an import that matches none of these (regular expressions) is an error
+const onlyImports = (...allowed) => [
+  'error',
+  {
+    patterns: [
+      {
+        regex: `^(?!(?:${allowed.join('|')})$)`,
+        message: 'the logic imports only logic: game/js/logic/, game-data.js, util.js, hooks.js, test-globals.js',
+      },
+    ],
+  },
+];
 
 export default [
   {
@@ -141,10 +162,27 @@ export default [
     languageOptions: {
       ecmaVersion: 'latest',
       sourceType: MODULES.has(file) ? 'module' : 'script',
-      globals: { ...globals.browser, ...optionalFor(file), ...shared },
+      globals: isLogic(file)
+        ? Object.fromEntries(Object.entries(LOGIC_GLOBALS).filter(([n]) => n === 'console' || n in shared))
+        : { ...globals.browser, ...optionalFor(file), ...shared },
     },
     rules: bugRules,
   })),
+  {
+    files: ['game/js/logic/**/*.js'],
+    languageOptions: { ecmaVersion: 'latest', sourceType: 'module', globals: LOGIC_GLOBALS },
+    rules: {
+      ...bugRules,
+      'no-restricted-imports': onlyImports(
+        String.raw`\./[a-z0-9-]+\.js`,
+        String.raw`\.\./(?:game-data|util|hooks|test-globals)\.js`
+      ),
+    },
+  },
+  {
+    files: ['game/js/game-data.js'],
+    rules: { 'no-restricted-imports': onlyImports(String.raw`\./(?:util|hooks|test-globals)\.js`) },
+  },
   {
     files: ['game/js/test-globals.js', 'game/js/hooks.js'],
     languageOptions: { ecmaVersion: 'latest', sourceType: 'module', globals: globals.browser },

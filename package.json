@@ -10,9 +10,11 @@
     "check:data": "node tools/check-data.mjs",
     "modules": "node tools/to-module.mjs",
     "check:modules": "node tools/to-module.mjs --check",
-    "lint": "eslint . && node tools/check-names.mjs",
-    "format": "prettier --write \"game/**/*.{js,css}\" \"studio/**/*.{js,css}\" \"*.js\"",
-    "format:check": "prettier --check \"game/**/*.{js,css}\" \"studio/**/*.{js,css}\" \"*.js\"",
+    "lint": "eslint --cache --cache-strategy content . && node tools/check-names.mjs",
+    "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.logic.json",
+    "check:logic": "node --test tools/check-logic.mjs",
+    "format": "prettier --write \"game/**/*.{js,css,ts}\" \"studio/**/*.{js,css}\" \"*.js\"",
+    "format:check": "prettier --check \"game/**/*.{js,css,ts}\" \"studio/**/*.{js,css}\" \"*.js\"",
     "check:smoke": "python3 tools/check-quick.py --smoke",
     "check:quick": "python3 tools/check-quick.py"
   },
@@ -22,6 +24,7 @@
     "eslint": "10.12.0",
     "globals": "17.13.0",
     "prettier": "3.9.9",
+    "typescript": "7.0.2",
     "vite": "8.3.2"
   },
   "engines": {

@@ -1,8 +1,15 @@
+// @ts-check
 'use strict';
 /* ================= DATA =================
    Everything here is built from the game data (data/*.json, put together as data/gamedata.js), which Pocket Billies
    Studio edits.
-   The rest of the game reads these globals, so the file format can change without touching game code. */
+   The rest of the game reads these globals, so the file format can change without touching game code.
+   Phase 04e: the data is read from globalThis, the page's window; in plain Node (tools/check-logic.mjs) a test puts
+   its own small data there before it imports this module. */
+/**
+ * @import { EggTier, Evolution, GameData, LocationData, LocationEntry, Pool, Road, RoadFromNode } from '../types/game-data'
+ * @import { Seat, Species, TrainerEntry } from '../types/game-data'
+ */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { makeBilly, provide, saveData } from './hooks.js';
@@ -48,30 +55,37 @@ expose({
   atOrLast: [() => atOrLast],
   gameData: [() => gameData],
   hasPassive: [() => hasPassive],
+  // @ts-expect-error -- replaced on purpose
   isTown: [() => isTown, v => (isTown = v)],
+  // @ts-expect-error -- replaced on purpose
   locationFullName: [() => locationFullName, v => (locationFullName = v)],
+  // @ts-expect-error -- replaced on purpose
   locationKind: [() => locationKind, v => (locationKind = v)],
+  // @ts-expect-error -- replaced on purpose
   locationSubtitle: [() => locationSubtitle, v => (locationSubtitle = v)],
+  // @ts-expect-error -- replaced on purpose
   rivalSpecies: [() => rivalSpecies, v => (rivalSpecies = v)],
   roadCost: [() => roadCost],
-  roadsOf: [() => roadsOf, v => (roadsOf = v)],
   trainerById: [() => trainerById],
+  // @ts-expect-error -- replaced on purpose
   trainerTeam: [() => trainerTeam, v => (trainerTeam = v)],
   trainersAt: [() => trainersAt],
+  // @ts-expect-error -- replaced on purpose
   typeEffectiveness: [() => typeEffectiveness, v => (typeEffectiveness = v)],
   typesWith: [() => typesWith],
   warnData: [() => warnData],
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
-export const gameData = window.GAMEDATA;
+/* the check below stops the page when it is missing, so the rest can count on it */
+export const gameData = /** @type {GameData} */ (globalThis.GAMEDATA);
 provide({ gameData }); /* to-module */
 if (!gameData)
   throw new Error(
     'The game data did not load: data/gamedata.js is missing and the data files in data/ could not be read (npm run check:data says what is wrong).'
   );
 export const DATA_WARN = [];
-const warnData = m => {
+export const warnData = m => {
   DATA_WARN.push(m);
   console.warn('[gamedata] ' + m);
 };
@@ -82,19 +96,19 @@ export const TYPES = gameData.types.map(t => t.id);
 export const TYPE_COLORS = Object.fromEntries(gameData.types.map(t => [t.id, [t.color, t.text || '#fff']]));
 provide({ TYPE_COLORS }); /* to-module */
 TYPE_COLORS.None = [gameData.untyped.color, gameData.untyped.text || '#fff'];
-const TYPE_STRONG_AGAINST = Object.fromEntries(
+export const TYPE_STRONG_AGAINST = Object.fromEntries(
   gameData.types.map(t => [t.id, (t.strong || []).filter(x => TYPE_COLORS[x])])
 );
-const TYPE_RESISTED_BY = Object.fromEntries(
+export const TYPE_RESISTED_BY = Object.fromEntries(
   gameData.types.map(t => [t.id, (t.weak || []).filter(x => TYPE_COLORS[x])])
 );
 export const PASSIVE = Object.fromEntries(gameData.types.map(t => [t.id, t.passive || '']));
-const HIT_EFFECTS_BY_TYPE = Object.fromEntries(
+export const HIT_EFFECTS_BY_TYPE = Object.fromEntries(
   gameData.types.map(t => [t.id, t.fx && t.fx.length ? t.fx : ['pow', 'star']])
 );
 provide({ HIT_EFFECTS_BY_TYPE }); /* to-module */
 HIT_EFFECTS_BY_TYPE.None = gameData.untyped.fx || ['pow', 'star'];
-const typesWith = p => TYPES.filter(t => PASSIVE[t] === p);
+export const typesWith = p => TYPES.filter(t => PASSIVE[t] === p);
 export const hasPassive = (types, p) => types.some(t => PASSIVE[t] === p);
 export function typeEffectiveness(at, defs) {
   if (at === 'None' || !TYPE_STRONG_AGAINST[at]) return 1;
@@ -120,17 +134,18 @@ for (const k in MOVES) {
   if (M.a == null) M.a = 100;
 }
 /* ---------- billionaires ---------- */
-const DEFAULT_EVOLUTIONS = [
+/** @type {Evolution[]} */
+export const DEFAULT_EVOLUTIONS = [
   { k: 'lvl', at: 16 },
   { k: 'lvl', at: 36 },
 ];
 export const LINES = gameData.lines;
 export const LINE_BY_ID = Object.fromEntries(LINES.map(l => [l.id, l]));
-export const SPECIES = {},
-  DEX_ORDER = [];
+export const SPECIES = /** @type {Record<string, Species>} */ ({}),
+  DEX_ORDER = /** @type {string[]} */ ([]);
 provide({ SPECIES }); /* to-module */
-const RARITY_STAT_TOTALS = Object.fromEntries(Object.entries(gameData.rarities).map(([k, v]) => [k, v.totals]));
-const atOrLast = (a, i) => a[Math.min(i, a.length - 1)];
+export const RARITY_STAT_TOTALS = Object.fromEntries(Object.entries(gameData.rarities).map(([k, v]) => [k, v.totals]));
+export const atOrLast = (a, i) => a[Math.min(i, a.length - 1)];
 LINES.forEach(L => {
   L.learn = (L.learn || []).filter(([lv, mv]) => {
     if (MOVES[mv]) return true;
@@ -179,7 +194,7 @@ LINES.forEach(L => {
       evo: last
         ? null
         : L.split && st0 === 1
-          ? { k: 'split', at: (ev[1] && ev[1].at) || 32 }
+          ? { k: 'split', at: (ev[1] && /** @type {{ at?: number }} */ (ev[1]).at) || 32 }
           : ev[st] || DEFAULT_EVOLUTIONS[Math.min(st, 1)],
       no: DEX_ORDER.length + 1,
       rar: L.rar,
@@ -189,9 +204,10 @@ LINES.forEach(L => {
   });
 });
 /* ---------- world ---------- */
-export const LOCATIONS = gameData.locations;
+/* trainers and board are filled in below */
+export const LOCATIONS = /** @type {LocationEntry[]} */ (gameData.locations);
 export const REGIONS = gameData.regions;
-export const POOLS = {};
+export const POOLS = /** @type {Record<string, Pool>} */ ({});
 for (const k in gameData.pools) {
   const P = gameData.pools[k];
   POOLS[k] = {
@@ -211,16 +227,22 @@ LOCATIONS.forEach((r, i) => {
   r.trainers = [];
 });
 /* the walking network: links between stops (both directions); older data is a single chain */
+/** @type {Road[]} */
 export const ROADS = (
-  gameData.roads && gameData.roads.length ? gameData.roads : LOCATIONS.slice(1).map((r, i) => [i, i + 1, r.cost || 500])
+  gameData.roads && gameData.roads.length
+    ? gameData.roads
+    : LOCATIONS.slice(1).map((r, i) => /** @type {Road} */ ([i, i + 1, r.cost || 500]))
 )
   .filter(l => LOCATIONS[l[0]] && LOCATIONS[l[1]] && l[0] !== l[1])
-  .map(([a, b, c, j]) =>
-    j && typeof j === 'object'
-      ? [a, b, Math.max(1, Math.round(+c || 500)), j]
-      : [a, b, Math.max(1, Math.round(+c || 500))]
+  .map(
+    /** @returns {Road} */ ([a, b, c, j]) =>
+      j && typeof j === 'object'
+        ? [a, b, Math.max(1, Math.round(+c || 500)), j]
+        : [a, b, Math.max(1, Math.round(+c || 500))]
   ); /* v42: a fourth entry {a,b} names the exit at each end (the join table) */
 /* v46: what each place, scene and road is (tools/migrate-places.py fills these): use these instead of id prefixes */
+/* copies made before board is filled in (below), so they have none: read LOCATIONS[node].board */
+/** @type {Record<string, LocationData & { node: number, trainers: string[] }>} */
 export const LOCATION_BY_ID = Object.fromEntries(
   LOCATIONS.map((r, i) => [r.id || r.mapId, Object.assign({ node: i }, r)])
 );
@@ -256,13 +278,7 @@ export function isTown(nodeOrId) {
   const r = typeof nodeOrId === 'number' ? LOCATIONS[nodeOrId] : LOCATION_BY_ID[nodeOrId];
   return !!r && (r.kind ? r.kind === 'town' : !!r.town);
 }
-function roadsOf(id) {
-  const n = LOCATION_BY_ID[id] ? LOCATION_BY_ID[id].node : -1;
-  return ROADS.map((L, i) => Object.assign({ i, a: L[0], b: L[1], cost: L[2] }, L[3] || {})).filter(
-    R => R.a === n || R.b === n
-  );
-}
-export const ROADS_BY_NODE = LOCATIONS.map(() => []);
+export const ROADS_BY_NODE = LOCATIONS.map(() => /** @type {RoadFromNode[]} */ ([]));
 ROADS.forEach(([a, b, c], i) => {
   ROADS_BY_NODE[a].push({ to: b, cost: c, i });
   ROADS_BY_NODE[b].push({ to: a, cost: c, i });
@@ -272,7 +288,7 @@ export const roadCost = (a, b) => {
   return e ? e.cost : null;
 };
 export const STEPS_PER_KM = RULES.steps.stepsPerKm;
-export const EGGS = {};
+export const EGGS = /** @type {Record<string, EggTier>} */ ({});
 for (const k in gameData.eggs) {
   const E = gameData.eggs[k];
   EGGS[k] = {
@@ -293,13 +309,14 @@ export const PEOPLE = gameData.people;
 provide({ PEOPLE }); /* to-module */
 export const SHOPS = gameData.shops || {};
 /* ---------- trainers: plain data, turned into teams when a battle starts ---------- */
-export const TRAINERS = gameData.trainers || {};
+export const TRAINERS = /** @type {Record<string, TrainerEntry>} */ (gameData.trainers || {});
 /* v47: a "tutorial" trainer only battles in a story scene (blake0, in the opening); it stands on no stop */
 for (const id in TRAINERS) {
   const T = TRAINERS[id];
   T.id = id;
-  if (T.tutorial);
-  else if (LOCATIONS[T.node]) LOCATIONS[T.node].trainers.push(id);
+  if (T.tutorial) {
+    /* it waits on no location */
+  } else if (LOCATIONS[T.node]) LOCATIONS[T.node].trainers.push(id);
   else warnData(`Trainer ${id} stands on a stop that doesn’t exist.`);
   if (!PEOPLE[T.who]) T.who = 'gini';
   T.team = (T.team || []).filter(
@@ -310,9 +327,9 @@ for (const id in TRAINERS) {
 LOCATIONS.forEach(r => {
   r.board = r.trainers.find(id => TRAINERS[id].seat) || null;
 });
-const SEATS = Object.values(TRAINERS)
+export const SEATS = Object.values(TRAINERS)
   .filter(T => T.seat)
-  .map(T => T.seat.id);
+  .map(T => /** @type {Seat} */ (T.seat).id);
 /* "@rival" is the starter that beats yours; "@rival1" / "@rival2" the same line evolved */
 export function rivalSpecies(code) {
   const base = RULES.start.rival[saveData.starter] || DEX_ORDER[0],
@@ -329,7 +346,7 @@ export function trainerTeam(T) {
     return m;
   });
 }
-const trainerById = id => TRAINERS[id] || null;
+export const trainerById = id => TRAINERS[id] || null;
 /* a trainer with "after" only turns up once you've beaten that one */
 export const trainersAt = i =>
   ((LOCATIONS[i] && LOCATIONS[i].trainers) || [])

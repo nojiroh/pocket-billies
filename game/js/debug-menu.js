@@ -29,27 +29,30 @@ import {
   TRAINERS,
 } from './game-data.js';
 import {
-  activeBattle,
   addBilly,
   addEgg,
   addSteps,
-  escapeHtml,
-  flushSave,
   gainXp,
   healAll,
   makeBilly,
   maxLevel,
-  newSaveKeepingPreferences,
   newUid,
+  spawn,
+  today,
+  xpFor,
+} from './logic/rules.js';
+import { newSaveKeepingPreferences } from './logic/saves.js';
+import { allSnapshots, battleSay, checkFaints, fighter, startTrainer, startWild } from './logic/battle-engine.js';
+import {
+  activeBattle,
+  escapeHtml,
+  flushSave,
   save,
   saveData,
   setActiveBattle,
   setSaveData,
-  spawn,
-  today,
   uiState,
   writeStoredSave,
-  xpFor,
 } from './game-state.js';
 import { frameCount, frameScheduler, frameTask, userFps } from './frame-scheduler.js';
 import { uiIconHTML } from './art.js';
@@ -57,17 +60,7 @@ import { applyPreferences, exportSave } from './settings-screen.js';
 import { battleStage, battleStageResize, battleStageStop } from './battle-stage.js';
 import { mapById } from './walk-view.js';
 import { gpuState } from './engine/webgl.js';
-import {
-  allSnapshots,
-  battleSay,
-  checkFaints,
-  fighter,
-  paintBoxes,
-  playTurnEvents,
-  startTrainer,
-  startWild,
-  stopTimers,
-} from './battle.js';
+import { paintBoxes, playTurnEvents, stopTimers } from './battle.js';
 import { worldMap } from './world-map.js';
 /* eslint-disable no-func-assign */
 expose({

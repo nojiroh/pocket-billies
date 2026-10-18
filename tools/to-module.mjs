@@ -37,6 +37,8 @@ export const HOOKS = 'game/js/hooks.js';
 export const LOG = 'game/js/debug-log.js';
 export const LOG_NAMES = 'game/js/debug-log-names.js';
 const setterName = n => 'set' + n[0].toUpperCase() + n.slice(1);
+// phase 04e: the logic, which runs in plain Node too (tools/check-logic.mjs; eslint.config.js gives it no browser globals)
+export const LOGIC = f => f.startsWith('game/js/logic/') || f === 'game/js/game-data.js';
 // phase 04d: after a declaration another module reads through hooks.js, the tool hands the value over
 const PROVIDE_LINE = /^provide\(\{[^}]*\}\); \/\* to-module \*\/\n/gm;
 
@@ -64,7 +66,8 @@ export function stripped(text) {
     if (b < 0) throw new Error('to-module: start marker without an end marker');
     let e = b + END.length;
     while (text[e] === '\n') e++;
-    text = text.slice(0, a) + text.slice(e);
+    // phase 04e: a blank line where the generated part was, so the header ends there again (headerEnd)
+    text = text.slice(0, a) + (a > 0 ? '\n' : '') + text.slice(e);
   }
   text = text.replace(PROVIDE_LINE, '');
   const ast = espree.parse(text, { ecmaVersion: 'latest', sourceType: 'module', range: true });
@@ -178,11 +181,13 @@ function loadTime(ast, g) {
 }
 
 // where the leading comments of a file end (the generated part goes after them)
-function headerEnd(text) {
+export function headerEnd(text) {
   let i = 0;
   for (;;) {
     const ws = text.slice(i).match(/^\s*/)[0].length;
     const j = i + ws;
+    // phase 04e: a blank line ends the header (a moved declaration's comment at the top of a new module stays with it)
+    if (i > 0 && /\n[^\S\n]*\n/.test(text.slice(i, j))) return i;
     if (text.startsWith('//', j)) i = text.indexOf('\n', j) < 0 ? text.length : text.indexOf('\n', j) + 1;
     else if (text.startsWith('/*', j)) i = text.indexOf('*/', j) + 2;
     else if (/^(['"])use strict\1;?/.test(text.slice(j)))
@@ -377,12 +382,22 @@ export async function run(args) {
       if ((own.has(k) && own.get(k).kind === 'function') || gen.includes(n)) return `v => ${k}(v)`;
       return hooked.has(n) ? `v => ((${n} = v), provide({ ${n} }))` : `v => (${n} = v)`;
     };
+    // phase 04e: in a file the type check reads (// @ts-check at the top), TypeScript refuses an assignment to a
+    // function or a class; the generated ones are on purpose, so the line before each says so. Only in those files:
+    // elsewhere the comment would be noise.
+    const typeChecked = /^\/\/ @ts-check\b/m.test(text.slice(0, headerEnd(text)));
+    const replaces = n => typeChecked && ['function', 'class'].includes(own.get(n).kind);
+    const EXPECT = '// @ts-expect-error -- replaced on purpose';
+    const entry = n => {
+      if (own.get(n).kind === 'const') return `${n}: [() => ${n}]`;
+      const set = setterOf(n);
+      // only an arrow that assigns the name itself (v => (n = v)), not one that calls the module's own setter
+      return `${replaces(n) && set.startsWith('v => (') ? `\n${EXPECT}\n` : ''}${n}: [() => ${n}, ${set}]`;
+    };
     if (names.length) {
       // the setters replace functions on purpose: the checks and the console set them (only with the test globals on)
       if (fns) lines.push('/* eslint-disable no-func-assign */');
-      lines.push(
-        `expose({ ${names.map(n => (own.get(n).kind === 'const' ? `${n}: [() => ${n}]` : `${n}: [() => ${n}, ${setterOf(n)}]`)).join(', ')} });`
-      );
+      lines.push(`expose({ ${names.map(entry).join(', ')} });`);
       if (fns) lines.push('/* eslint-enable no-func-assign */');
     }
     if (early.length) lines.push(`provide({ ${early.join(', ')} });`);
@@ -390,13 +405,17 @@ export async function run(args) {
     for (const n of gen)
       lines.push(
         `export function ${setterName(n)}(v) {`,
+        ...(replaces(n) ? [`  ${EXPECT}`] : []),
         `  ${n} = v;${own.get(n).kind === 'function' ? ' // eslint-disable-line no-func-assign' : ''}`,
         `  provide({ ${n} });`,
         '}'
       );
     lines.push(END);
     // export keywords and the hand-over after each declaration hooks.js needs, last to first so the offsets hold
-    const ex = new Set([...(exportsOf.get(f) || [])].map(n => own.get(n).node));
+    // phase 04e: the logic (game/js/logic/ and game-data.js) exports every top-level name, so a unit test in plain Node
+    // can import any of them (an export changes nothing when the page runs)
+    const exported = LOGIC(f) ? [...own.keys()].filter(n => own.get(n).node) : [...(exportsOf.get(f) || [])];
+    const ex = new Set(exported.map(n => own.get(n).node));
     const after = new Map();
     for (const n of later) use(after, own.get(n).node, n);
     const edits = [
@@ -408,7 +427,9 @@ export async function run(args) {
     ];
     let body = text;
     for (const [at, str] of edits.sort((a, b) => b[0] - a[0])) body = body.slice(0, at) + str + body.slice(at);
-    const h = headerEnd(body);
+    // the generated part goes where it was (a comment right after it stays below it), else after the leading comments
+    const was = raw.indexOf(START);
+    const h = was >= 0 ? was : headerEnd(body);
     const head = body.slice(0, h).replace(/\s*$/, '');
     let out = (head ? head + '\n' : '') + lines.join('\n') + '\n' + body.slice(h).replace(/^\s*\n/, '');
     await write(f, out, raw);

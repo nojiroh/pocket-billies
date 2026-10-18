@@ -12,16 +12,8 @@ import { expose } from './test-globals.js';
 import { flyDraw, flyTick, friends, provide } from './hooks.js';
 import { $, clamp } from './util.js';
 import { LOCATIONS, REGIONS, ROADS, locationSubtitle, roadCost } from './game-data.js';
-import {
-  canEnter,
-  escapeHtml,
-  formatNumber,
-  nextTripNode,
-  reducedMotion,
-  saveData,
-  tripTo,
-  uiState,
-} from './game-state.js';
+import { canEnter, formatNumber, nextTripNode, tripTo } from './logic/rules.js';
+import { escapeHtml, reducedMotion, saveData, uiState } from './game-state.js';
 import { frameCount, frameStop, frameTask, userFps } from './frame-scheduler.js';
 import { artLoad, artPixels, hexToRgb, makeCanvas, uiIconHTML, worldMapStamp } from './art.js';
 import { personWalkFrames, portraitHTML } from './person-art.js';
@@ -1263,7 +1255,6 @@ function worldMapMiniKey(sc) {
     (sc.tiles || []).join('').length,
     sc.steps ? sc.steps.length : 0,
     sc.heights ? sc.heights.length : 0,
-    typeof artCacheVersion === 'function' ? artCacheVersion() : 0,
   ].join('|');
 }
 export function worldMapMiniBuild(i) {

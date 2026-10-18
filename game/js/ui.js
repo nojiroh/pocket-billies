@@ -37,7 +37,6 @@ import {
 } from './game-data.js';
 import {
   STEP_BRACKETS,
-  activeBattle,
   addEgg,
   allBillies,
   assignJob,
@@ -50,12 +49,10 @@ import {
   collectJob,
   eggSlotCount,
   endShift,
-  escapeHtml,
   evolutionHint,
   evolutionItemName,
   evolve,
   findBilly,
-  flushSave,
   formatNumber,
   gateMsg,
   gateText,
@@ -66,17 +63,12 @@ import {
   maxHp,
   maxLevel,
   moveSlotCount,
-  newSaveKeepingPreferences,
   nextBracket,
   nextTripNode,
   plural,
-  reducedMotion,
   resumeTrip,
   riderName,
   rollDay,
-  save,
-  saveData,
-  setSaveData,
   setTrip,
   spawn,
   splitPath,
@@ -88,10 +80,32 @@ import {
   toBox,
   toTeam,
   tripTo,
-  uiState,
   walkMode,
-  writeStoredSave,
   xpFor,
+} from './logic/rules.js';
+import { newSaveKeepingPreferences } from './logic/saves.js';
+import {
+  CATCH_RULES,
+  applyItem,
+  battleSay,
+  canUse,
+  checkFaints,
+  doSwitch,
+  enemyOnly,
+  fighter,
+  runTurn,
+  startWild,
+} from './logic/battle-engine.js';
+import {
+  activeBattle,
+  escapeHtml,
+  flushSave,
+  reducedMotion,
+  save,
+  saveData,
+  setSaveData,
+  uiState,
+  writeStoredSave,
 } from './game-state.js';
 import { frameTask, userFps } from './frame-scheduler.js';
 import { ART_CACHE, artLoad, artURL, coinHTML, coinURL, eggHTML, makeCanvas, uiIconHTML } from './art.js';
@@ -142,19 +156,11 @@ import {
 } from './seamless-world.js';
 import { battle3dLayout, battle3dWanted } from './battle-3d.js';
 import {
-  CATCH_RULES,
-  applyItem,
   battleResize,
-  battleSay,
   battleShell,
-  canUse,
-  checkFaints,
   chooseMessage,
-  doSwitch,
   doThrow,
   endBattle,
-  enemyOnly,
-  fighter,
   itemIcon,
   paintActions,
   pickMove,
@@ -162,9 +168,7 @@ import {
   planBack,
   planNext,
   playTurnEvents,
-  runTurn,
   showAim,
-  startWild,
   tapMessage,
 } from './battle.js';
 import {

@@ -9,12 +9,13 @@ import { expose } from './test-globals.js';
 import { closeModal, modal, provide, render, selfTest, showPendingWindows } from './hooks.js';
 import { $, clamp } from './util.js';
 import { LOCATION_BY_ID, RULES, SPECIES, TRAINERS, trainersAt } from './game-data.js';
-import { activeBattle, escapeHtml, healAll, reducedMotion, save, saveData, today, uiState } from './game-state.js';
+import { healAll, today } from './logic/rules.js';
+import { startTrainer, startWild } from './logic/battle-engine.js';
+import { activeBattle, escapeHtml, reducedMotion, save, saveData, uiState } from './game-state.js';
 import { dressingRoom } from './dressing-room.js';
 import { baseMapId, walkView, walkablePointNear } from './walk-view.js';
 import { gpuState } from './engine/webgl.js';
 import { standingHeightAt, walkRenderer } from './walk-view-gl.js';
-import { startTrainer, startWild } from './battle.js';
 import { music } from './sound.js';
 import { talk, talkBox, talkHide, talkLine } from './talk.js';
 import {

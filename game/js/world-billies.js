@@ -10,10 +10,12 @@
    frame. A species' rig art is loaded the first time it's needed; until then it simply isn't shown. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { battleStageKey, mapIdAt, provide, soundEffect } from './hooks.js';
+import { mapIdAt, provide, soundEffect } from './hooks.js';
 import { clamp } from './util.js';
 import { SPECIES, STATUS_NAMES, TRAINERS, rivalSpecies, trainersAt } from './game-data.js';
-import { billyName, findBilly, maxHp, nextTripNode, save, saveData, uiState } from './game-state.js';
+import { billyName, findBilly, maxHp, nextTripNode } from './logic/rules.js';
+import { battleStageKey } from './logic/battle-engine.js';
+import { save, saveData, uiState } from './game-state.js';
 import { makeCanvas } from './art.js';
 import { RIG_BACK_VIEW, drawRig, rigFrame, rigParts, rigPreload } from './skeleton-rig.js';
 import { battleStagePrepare } from './battle-stage.js';

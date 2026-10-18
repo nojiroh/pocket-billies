@@ -8,19 +8,16 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { TEST_RUN, closeModal, modal, provide, render, toast } from './hooks.js';
+import { formatNumber } from './logic/rules.js';
+import { SAVE_NEW_MSG, SAVE_VERSION, loadSave, saveAge } from './logic/saves.js';
 import {
   ACCOUNT_ID,
   ACCOUNT_KEY,
   SAVE_KEY,
   SAVE_KEY_BASE,
-  SAVE_NEW_MSG,
-  SAVE_VERSION,
   activeBattle,
   escapeHtml,
-  formatNumber,
-  loadSave,
   save,
-  saveAge,
   saveData,
   saveHold,
   setSaveData,

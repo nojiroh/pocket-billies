@@ -84,12 +84,15 @@ function copySite() {
     async closeBundle() {
       for (const p of SITE) cpSync(resolve(ROOT, p), resolve(outDir, p), { recursive: true });
       rmSync(resolve(outDir, 'assets'), { recursive: true, force: true });
+      // phase 04e: the types are for the type check only
+      rmSync(resolve(outDir, 'game/types'), { recursive: true, force: true });
       buildData(resolve(outDir, 'game', 'data'));
       const sources = new Set(['game/js/test-globals.js', 'game/js/hooks.js']);
       for (const page of PAGES) for (const f of await bundlePage(outDir, page)) sources.add(f);
       for (const f of sources) rmSync(resolve(outDir, f));
-      // the folder the engine's modules came from, now empty
+      // the folder the engine's modules came from, now empty (phase 04e: and the logic's, once it has modules)
       rmdirSync(resolve(outDir, 'game/js/engine'));
+      if (existsSync(resolve(outDir, 'game/js/logic'))) rmdirSync(resolve(outDir, 'game/js/logic'));
     },
   };
 }

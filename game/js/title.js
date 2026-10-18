@@ -18,16 +18,8 @@ import {
 } from './hooks.js';
 import { $, clamp } from './util.js';
 import { LOCATIONS, START_NODE } from './game-data.js';
-import {
-  escapeHtml,
-  flushSave,
-  newSaveKeepingPreferences,
-  reducedMotion,
-  saveData,
-  setSaveData,
-  uiState,
-  writeStoredSave,
-} from './game-state.js';
+import { newSaveKeepingPreferences } from './logic/saves.js';
+import { escapeHtml, flushSave, reducedMotion, saveData, setSaveData, uiState, writeStoredSave } from './game-state.js';
 import { userFps } from './frame-scheduler.js';
 import { uiIconHTML } from './art.js';
 import { personHTML } from './person-art.js';
