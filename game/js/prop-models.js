@@ -1140,7 +1140,15 @@ precision highp float;out vec4 o;void main(){o=vec4(1.);}`,
 };
 /* tag an item that draws as voxels (gatherFrameItems calls this): the sprite and the solid-prop body stand aside */
 function tagPropModel(it) {
-  if (!propModelsOn() || it.k !== 'prop' || it.far || it.layer || !it.M || !it.M.model || (it.p && it.p.vox === 'card'))
+  if (
+    !propModelsOn() ||
+    it.k !== 'prop' ||
+    it.far ||
+    it.layer ||
+    !it.M ||
+    !it.M.model ||
+    (it.p && it.p.model === 'card')
+  )
     return;
   const spec = it.M.model;
   let rec, path;

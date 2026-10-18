@@ -1028,7 +1028,7 @@ async function runFullTest(mode) {
               };
               const seen = (sc.props || []).filter(inView),
                 wantB = seen.filter(pp => C0[pp.k] && C0[pp.k].build).length,
-                wantV = seen.filter(pp => C0[pp.k] && C0[pp.k].model && pp.vox !== 'card').length;
+                wantV = seen.filter(pp => C0[pp.k] && C0[pp.k].model && pp.model !== 'card').length;
               if (id === 'test_light_props' && (b < wantB || v < wantV || !wantB))
                 throw new Error(
                   `props in view: ${b} of ${wantB} buildings and ${v} of ${wantV} voxel props drawn (${p} solid props)`

@@ -66,7 +66,7 @@
   {"k":"planter_box","x":33.4,"z":12},
   {"k":"bush_box","x":37.2,"z":12},
   {"k":"crate","x":5,"z":6},
-  {"k":"crate","x":10,"z":6,"vox":"card"},
+  {"k":"crate","x":10,"z":6,"model":"card"},
   {"k":"hydrant","x":15,"z":6},
   {"k":"mailbox","x":20,"z":6},
   {"k":"trash","x":25,"z":6},

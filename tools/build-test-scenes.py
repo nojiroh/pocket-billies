@@ -345,7 +345,7 @@ def t_light_props():
         s.put(k, 3 + i * 3.8, 12)
     s.put('house_red', 9, 18); s.put('shop', 22, 18); s.put('clinic', 33, 18)
     for i, k in enumerate(['crate', 'crate', 'hydrant', 'mailbox', 'trash', 'bollard']):
-        s.put(k, 5 + i * 5, 6, **({'vox': 'card'} if i == 1 else {}))                    # the second crate stays a picture
+        s.put(k, 5 + i * 5, 6, **({'model': 'card'} if i == 1 else {}))                    # the second crate stays a picture
     s.d['lab'] = {'row': [3, 12, 38], 'buildings': 3}
     shot(s, 20, 7, 'props-and-buildings', 0); shot(s, 8, 8, 'west-end', -.3); shot(s, 32, 8, 'east-end', .3)
     return s.out(8)
