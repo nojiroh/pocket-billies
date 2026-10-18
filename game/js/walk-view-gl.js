@@ -310,9 +310,12 @@ expose({
   mapSun: [() => mapSun, v => (mapSun = v)],
   mirrorInView: [() => mirrorInView, v => (mirrorInView = v)],
   mountWalkView: [() => mountWalkView, v => setMountWalkView(v)],
+  nearRingHasChunk: [() => nearRingHasChunk, v => (nearRingHasChunk = v)],
+  nearRingMissingCount: [() => nearRingMissingCount, v => (nearRingMissingCount = v)],
+  nearRingSlot: [() => nearRingSlot],
   newNearRing: [() => newNearRing, v => (newNearRing = v)],
   onGlContextRestored: [() => onGlContextRestored, v => ((onGlContextRestored = v), provide({ onGlContextRestored }))],
-  paintRingChunk: [() => paintRingChunk, v => (paintRingChunk = v)],
+  paintNearRingChunk: [() => paintNearRingChunk, v => (paintNearRingChunk = v)],
   personItem: [() => personItem, v => (personItem = v)],
   prepareMapGround: [() => prepareMapGround, v => (prepareMapGround = v)],
   propBaseHeight: [() => propBaseHeight, v => (propBaseHeight = v)],
@@ -327,9 +330,6 @@ expose({
   reflectionPass: [() => reflectionPass, v => setReflectionPass(v)],
   repeatingTexture: [() => repeatingTexture, v => (repeatingTexture = v)],
   rideMountItem: [() => rideMountItem, v => (rideMountItem = v)],
-  ringHasChunk: [() => ringHasChunk, v => (ringHasChunk = v)],
-  ringMissingCount: [() => ringMissingCount, v => (ringMissingCount = v)],
-  ringSlot: [() => ringSlot],
   roomBoxOf: [() => roomBoxOf, v => (roomBoxOf = v)],
   roomDimming: [() => roomDimming, v => (roomDimming = v)],
   roomLamps: [() => roomLamps, v => (roomLamps = v)],
@@ -362,7 +362,7 @@ expose({
   walkCamera: [() => walkCamera, v => (walkCamera = v)],
   walkLightContext: [() => walkLightContext, v => (walkLightContext = v)],
   walkRenderer: [() => walkRenderer],
-  wantedRingChunks: [() => wantedRingChunks, v => (wantedRingChunks = v)],
+  wantedNearRingChunks: [() => wantedNearRingChunks, v => (wantedNearRingChunks = v)],
   waterAt: [() => waterAt, v => (waterAt = v)],
   waterFlowField: [() => waterFlowField, v => (waterFlowField = v)],
   waterKindLookup: [() => waterKindLookup, v => (waterKindLookup = v)],
@@ -2212,7 +2212,7 @@ function freeNearRing(R) {
   R.tex = R.ntex = null;
 }
 /* which squares are wanted: the 4 x 4 round the focus (a little ahead of it, the way the camera looks) */
-function wantedRingChunks(R, sc, fx, fz) {
+function wantedNearRingChunks(R, sc, fx, fz) {
   const P = BORDER_M,
     cx = fx + P,
     cy = sc.h + P - fz,
@@ -2254,21 +2254,21 @@ function wantedRingChunks(R, sc, fx, fz) {
   }
   return R.want;
 }
-const ringSlot = (ci, cj) =>
+const nearRingSlot = (ci, cj) =>
   (((ci % NEAR_RING_SIZE) + NEAR_RING_SIZE) % NEAR_RING_SIZE) +
   (((cj % NEAR_RING_SIZE) + NEAR_RING_SIZE) % NEAR_RING_SIZE) * NEAR_RING_SIZE;
-function ringHasChunk(R, ci, cj) {
-  const s = ringSlot(ci, cj);
+function nearRingHasChunk(R, ci, cj) {
+  const s = nearRingSlot(ci, cj);
   return R.C[s * 2] === ci && R.C[s * 2 + 1] === cj;
 }
-function ringMissingCount(R) {
+function nearRingMissingCount(R) {
   let n = 0;
-  for (const [i, j] of R.want) if (!ringHasChunk(R, i, j)) n++;
+  for (const [i, j] of R.want) if (!nearRingHasChunk(R, i, j)) n++;
   return n;
 }
 /* paint and upload one square (a generator: the painting is sliced; the upload is at the end) */
-function* paintRingChunk(R, sc, ci, cj, pr) {
-  const s = ringSlot(ci, cj);
+function* paintNearRingChunk(R, sc, ci, cj, pr) {
+  const s = nearRingSlot(ci, cj);
   R.C[s * 2] = -9999;
   R.C[s * 2 + 1] = -9999;
   const o = {
@@ -2319,9 +2319,9 @@ export function updateNearRing(sc, fx, fz, budget) {
     if (!walkRenderer.gtex) return;
     R = walkRenderer.ring = newNearRing();
   }
-  const W = wantedRingChunks(R, sc, fx, fz);
+  const W = wantedNearRingChunks(R, sc, fx, fz);
   const t0 = performance.now();
-  const near = W.slice(0, 4).some(([i, j]) => !ringHasChunk(R, i, j));
+  const near = W.slice(0, 4).some(([i, j]) => !nearRingHasChunk(R, i, j));
   if (near) budget = Math.max(budget, R.n === 0 ? 30 : 12);
   /* alpha 0.4: with the helper thread painting, a few squares are asked for at once (nearest first) and this frame only
     puts the finished ones on the card; without it, one square at a time, painted here a slice at a time */
@@ -2335,9 +2335,9 @@ export function updateNearRing(sc, fx, fz, budget) {
   }); /* (squares that left the ring before they were done) */
   while (performance.now() - t0 < budget) {
     for (; R.jobs.length < K;) {
-      const nx = W.find(([i, j]) => !ringHasChunk(R, i, j) && !R.jobs.some(J => J.ci === i && J.cj === j));
+      const nx = W.find(([i, j]) => !nearRingHasChunk(R, i, j) && !R.jobs.some(J => J.ci === i && J.cj === j));
       if (!nx) break;
-      R.jobs.push({ ci: nx[0], cj: nx[1], it: paintRingChunk(R, sc, nx[0], nx[1], nx[2]) });
+      R.jobs.push({ ci: nx[0], cj: nx[1], it: paintNearRingChunk(R, sc, nx[0], nx[1], nx[2]) });
     }
     if (!R.jobs.length) break;
     let moved = false;
@@ -2434,8 +2434,8 @@ export function prepareMapGround(id, sc, G, urgent, focus) {
       yield* buildGroundSteps(sc, G, T);
       /* v46: and the squares round where you will come in */ if (focus) {
         T.ring = newNearRing();
-        const W = wantedRingChunks(T.ring, sc, focus[0], focus[1]),
-          Q = W.slice(0, 9).map(([i, j, d]) => paintRingChunk(T.ring, sc, i, j, 6 + d));
+        const W = wantedNearRingChunks(T.ring, sc, focus[0], focus[1]),
+          Q = W.slice(0, 9).map(([i, j, d]) => paintNearRingChunk(T.ring, sc, i, j, 6 + d));
         /* alpha 0.4: all nine on the helper together; painted here, one after another */ if (
           typeof paintWorkerOn === 'function' &&
           paintWorkerOn()
