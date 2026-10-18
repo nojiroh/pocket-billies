@@ -657,6 +657,12 @@ export interface Rules {
     alphaXp: number;
     alphaKeep: number;
     alphaSleepResist: number;
+    /** optional (the code falls back to 0.5): an alpha's damage taken while its shield is up */
+    alphaShieldMult?: number;
+    /** optional (0.5): the share of its HP at which an alpha starts its second phase */
+    alphaPhaseAt?: number;
+    /** optional (2): how many turns an alpha's shield lasts */
+    alphaShieldTurns?: number;
     spreadMult: number;
   };
   catching: {

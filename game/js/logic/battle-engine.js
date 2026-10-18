@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 /* ================= BATTLE ENGINE =================
    Every number comes from RULES.battle / RULES.catching (data/gamedata.js); type abilities come from each type's passive.
@@ -59,53 +60,83 @@ expose({
   CATCH_RULES: [() => CATCH_RULES],
   SIDE_ACTORS: [() => SIDE_ACTORS],
   actorIndex: [() => actorIndex],
+  // @ts-expect-error -- replaced on purpose
   actorSnapshot: [() => actorSnapshot, v => (actorSnapshot = v)],
   actorTypes: [() => actorTypes],
+  // @ts-expect-error -- replaced on purpose
   aiDamage: [() => aiDamage, v => (aiDamage = v)],
+  // @ts-expect-error -- replaced on purpose
   aiScore: [() => aiScore, v => (aiScore = v)],
   allActors: [() => allActors],
   allSnapshots: [() => allSnapshots],
+  // @ts-expect-error -- replaced on purpose
   alphaPhase: [() => alphaPhase, v => (alphaPhase = v)],
+  // @ts-expect-error -- replaced on purpose
   applyItem: [() => applyItem, v => (applyItem = v)],
+  // @ts-expect-error -- replaced on purpose
   applyStatStages: [() => applyStatStages, v => (applyStatStages = v)],
+  // @ts-expect-error -- replaced on purpose
   award: [() => award, v => (award = v)],
+  // @ts-expect-error -- replaced on purpose
   battleSay: [() => battleSay, v => (battleSay = v)],
+  // @ts-expect-error -- replaced on purpose
   battleStageKey: [() => battleStageKey, v => (battleStageKey = v)],
+  // @ts-expect-error -- replaced on purpose
   benchCandidates: [() => benchCandidates, v => (benchCandidates = v)],
+  // @ts-expect-error -- replaced on purpose
   calcDamage: [() => calcDamage, v => (calcDamage = v)],
   canUse: [() => canUse],
+  // @ts-expect-error -- replaced on purpose
   catchOdds: [() => catchOdds, v => (catchOdds = v)],
+  // @ts-expect-error -- replaced on purpose
   catchRoll: [() => catchRoll, v => (catchRoll = v)],
+  // @ts-expect-error -- replaced on purpose
   checkFaints: [() => checkFaints, v => (checkFaints = v)],
+  // @ts-expect-error -- replaced on purpose
   chooseAI: [() => chooseAI, v => (chooseAI = v)],
+  // @ts-expect-error -- replaced on purpose
   doSwitch: [() => doSwitch, v => (doSwitch = v)],
+  // @ts-expect-error -- replaced on purpose
   effectiveStat: [() => effectiveStat, v => (effectiveStat = v)],
+  // @ts-expect-error -- replaced on purpose
   endTurn: [() => endTurn, v => (endTurn = v)],
+  // @ts-expect-error -- replaced on purpose
   enemyOnly: [() => enemyOnly, v => (enemyOnly = v)],
   fieldSlot: [() => fieldSlot],
   fieldState: [() => fieldState],
   fighter: [() => fighter],
   foeSide: [() => foeSide],
+  // @ts-expect-error -- replaced on purpose
   inflict: [() => inflict, v => (inflict = v)],
+  // @ts-expect-error -- replaced on purpose
   inherit: [() => inherit, v => (inherit = v)],
   isMulti: [() => isMulti],
   joinNames: [() => joinNames],
   liveActors: [() => liveActors],
+  // @ts-expect-error -- replaced on purpose
   makeAlpha: [() => makeAlpha, v => (makeAlpha = v)],
+  // @ts-expect-error -- replaced on purpose
   movePower: [() => movePower, v => (movePower = v)],
   newBattle: [() => newBattle, v => setNewBattle(v)],
   newFieldState: [() => newFieldState],
+  // @ts-expect-error -- replaced on purpose
   refreshLastSnapshot: [() => refreshLastSnapshot, v => (refreshLastSnapshot = v)],
+  // @ts-expect-error -- replaced on purpose
   retarget: [() => retarget, v => (retarget = v)],
+  // @ts-expect-error -- replaced on purpose
   runTurn: [() => runTurn, v => (runTurn = v)],
   shockName: [() => shockName],
+  // @ts-expect-error -- replaced on purpose
   startTrainer: [() => startTrainer, v => (startTrainer = v)],
+  // @ts-expect-error -- replaced on purpose
   startWild: [() => startWild, v => (startWild = v)],
   teamNeedsHp: [() => teamNeedsHp],
+  // @ts-expect-error -- replaced on purpose
   useMove: [() => useMove, v => (useMove = v)],
 });
 /* eslint-enable no-func-assign */
 export function setNewBattle(v) {
+  // @ts-expect-error -- replaced on purpose
   newBattle = v; // eslint-disable-line no-func-assign
   provide({ newBattle });
 }
@@ -878,7 +909,8 @@ export function startTrainer(id, o = {}) {
       tid: id,
       foeName: T.name,
       T,
-      area: BATTLE_STAGES[T.battleStage] ? T.battleStage : battleStageKey(),
+      /* BATTLE_STAGES[undefined] is undefined: a trainer without a stage gets the place's */
+      area: BATTLE_STAGES[/** @type {string} */ (T.battleStage)] ? T.battleStage : battleStageKey(),
       fmt: dbl ? 'double' : 'single',
     })
   )
@@ -1051,7 +1083,8 @@ export function applyItem(it, id, inB) {
       let n = 0;
       saveData.team.forEach(x => {
         if (x.hp > 0 && x.job == null) {
-          const g = Math.min(I.hpAll, maxHp(x) - x.hp);
+          /* if (I.hpAll) above; TypeScript doesn't carry that into the callback */
+          const g = Math.min(/** @type {number} */ (I.hpAll), maxHp(x) - x.hp);
           if (g > 0) {
             x.hp += g;
             n++;
