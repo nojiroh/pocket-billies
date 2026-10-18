@@ -72,7 +72,7 @@ export function newSave() {
     items,
     day: { date: today(), steps: 0 },
     totalSteps: 0,
-    trip: { node: START_NODE, prog: 0, plan: [], hold: false },
+    trip: { node: START_NODE, plan: [] },
     mapSeen: null,
     meter: 0,
     queue: [],
@@ -150,13 +150,14 @@ export function migrate(o) {
   s.jobs.forEach(j => {
     if (j.job && !JOBS[j.job]) j.job = Object.keys(JOBS)[0] || null;
   });
-  if (!s.trip || !LOCATIONS[s.trip.node]) s.trip = { node: START_NODE, prog: 0, plan: [], hold: false };
+  if (!s.trip || !LOCATIONS[s.trip.node]) s.trip = { node: START_NODE, plan: [] };
   s.trip.plan = (Array.isArray(s.trip.plan) ? s.trip.plan : []).filter(x => LOCATIONS[x]);
-  if (s.trip.plan.length && !roadCost(s.trip.node, s.trip.plan[0])) {
-    s.trip.plan = [];
-    s.trip.prog = 0;
-  }
-  s.trip.hold = !!s.trip.hold;
+  if (s.trip.plan.length && !roadCost(s.trip.node, s.trip.plan[0])) s.trip.plan = [];
+  /* phase 08: travel is walking; a save from before still carries how far along a road its steps had taken it (a field
+     the Trip type no longer has, hence the cast) */
+  const oldTrip = /** @type {any} */ (s.trip);
+  delete oldTrip.prog;
+  delete oldTrip.hold;
   if (!s.visited || typeof s.visited !== 'object') s.visited = {};
   s.visited[s.trip.node] = 1;
   if (s.started && !s.team.length && !s.box.length) return newSave();
@@ -215,7 +216,6 @@ export function validSave(o) {
     !o.trip ||
     !Number.isInteger(o.trip.node) ||
     !num(o.trip.node, 0, LOCATIONS.length - 1) ||
-    !num(o.trip.prog, 0, 1e9) ||
     !o.day ||
     !num(o.day.steps, 0, 1e9) ||
     !num(o.se, 0, 1e12) ||

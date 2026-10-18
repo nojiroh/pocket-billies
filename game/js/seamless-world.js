@@ -31,7 +31,6 @@ import {
   mapById,
   mapHub,
   mapMoodName,
-  polyline,
   stepCellAt,
   stepGrid,
   walkData,
@@ -74,7 +73,6 @@ expose({
   seamlessHubParts: [() => seamlessHubParts, v => (seamlessHubParts = v)],
   seamlessInRect: [() => seamlessInRect],
   seamlessJoin: [() => seamlessJoin, v => (seamlessJoin = v)],
-  seamlessJoinTrip: [() => seamlessJoinTrip, v => (seamlessJoinTrip = v)],
   seamlessLookMix: [() => seamlessLookMix, v => (seamlessLookMix = v)],
   seamlessLookOf: [() => seamlessLookOf, v => (seamlessLookOf = v)],
   seamlessLookTick: [() => seamlessLookTick, v => ((seamlessLookTick = v), provide({ seamlessLookTick }))],
@@ -88,8 +86,6 @@ expose({
   seamlessNoise: [() => seamlessNoise, v => (seamlessNoise = v)],
   seamlessOn: [() => seamlessOn],
   seamlessPointAlong: [() => seamlessPointAlong, v => (seamlessPointAlong = v)],
-  seamlessPrefetch: [() => seamlessPrefetch, v => (seamlessPrefetch = v)],
-  seamlessPrefetchView: [() => seamlessPrefetchView, v => (seamlessPrefetchView = v)],
   seamlessRoad: [() => seamlessRoad, v => (seamlessRoad = v)],
   seamlessRoadExit: [() => seamlessRoadExit, v => (seamlessRoadExit = v)],
   seamlessRoadHeight: [() => seamlessRoadHeight, v => (seamlessRoadHeight = v)],
@@ -106,9 +102,7 @@ expose({
   seamlessRoomWindows: [() => seamlessRoomWindows, v => (seamlessRoomWindows = v)],
   seamlessSalt: [() => seamlessSalt, v => (seamlessSalt = v)],
   seamlessSeamOf: [() => seamlessSeamOf, v => (seamlessSeamOf = v)],
-  seamlessStartAlong: [() => seamlessStartAlong, v => (seamlessStartAlong = v)],
   seamlessTrimCache: [() => seamlessTrimCache, v => (seamlessTrimCache = v)],
-  seamlessTripView: [() => seamlessTripView, v => (seamlessTripView = v)],
   seamlessUndergroundVeil: [() => seamlessUndergroundVeil, v => (seamlessUndergroundVeil = v)],
   seamlessViewFor: [() => seamlessViewFor, v => (seamlessViewFor = v)],
   seamlessViewMap: [() => seamlessViewMap, v => (seamlessViewMap = v)],
@@ -1931,137 +1925,6 @@ export function seamlessRoamView(node, pos) {
   seamlessWorld.roam = { node };
   return { id: hs.id, sc: hs, R: null };
 }
-/* on a road: the view for your progress, and where you stand on it (in that view's metres) */
-export function seamlessTripView(node, nx, f) {
-  if (!seamlessOn()) return null;
-  const i = seamlessRoadIndex(node, nx);
-  if (i < 0) return null;
-  const J = seamlessJoin(i);
-  if (J) return seamlessJoinTrip(J, node, f);
-  const R = seamlessRoad(i);
-  if (!R) return null;
-  const fwd = R.a === node,
-    u = fwd ? f * R.Lr : (1 - f) * R.Lr,
-    v = seamlessViewFor(R, u),
-    sc = seamlessViewMap(v, R);
-  if (!sc) return null;
-  const p = seamlessRoadPointAt(R, u);
-  const lane = (seamlessNoise(u * 0.05, 1, R.seed + 41) - 0.5) * 1.2,
-    o = v.off || [0, 0];
-  return {
-    id: v.id,
-    sc,
-    R,
-    u,
-    fwd,
-    pos: [p.x - p.d[1] * lane - o[0] - sc.comp.box[0], p.z + p.d[0] * lane - o[1] - sc.comp.box[1]],
-    dir: fwd ? p.d : [-p.d[0], -p.d[1]],
-  };
-}
-/* alpha 0.2: a trip between two joined places is the walk from the middle of one (its hub) to the exit, then from the
-   next place's entrance to its middle, your steps spread evenly along it; the view is the place you are in, and changes
-   at the seam. If you set off from somewhere along the way out (near the exit already), the trip starts there. */
-function seamlessJoinTrip(J, node, f) {
-  const fwd = J.a === node,
-    X = fwd ? J.A : J.B,
-    Y = fwd ? J.B : J.A,
-    xn = fwd ? J.a : J.b,
-    yn = fwd ? J.b : J.a,
-    PX = seamlessExitPath(X, (fwd ? J.ea : J.eb).k),
-    PY = seamlessExitPath(Y, (fwd ? J.eb : J.ea).k),
-    L = Math.max(1, PX.len + PY.len);
-  const T = seamlessWorld.trip;
-  let u0 = 0;
-  if (T && T.i === J.i && T.node === node) u0 = T.u0;
-  else if (f <= 0) {
-    u0 = seamlessStartAlong(xn, PX);
-    seamlessWorld.trip = { i: J.i, node, u0 };
-  } else seamlessWorld.trip = null;
-  const u = u0 + clamp(f, 0, 1) * (L - u0),
-    inX = u < PX.len,
-    vn = inX ? xn : yn,
-    sc = seamlessHubMap(vn);
-  if (!sc) return null;
-  const o = sc.baseOff || [0, 0],
-    p = inX ? seamlessPointAlong(PX, u) : seamlessPointAlong(PY, PY.len - (u - PX.len));
-  return {
-    id: sc.id,
-    sc,
-    R: J,
-    u,
-    fwd,
-    pos: [p.x + o[0], p.z + o[1]],
-    dir: inX ? p.d : [-p.d[0], -p.d[1]],
-    join: 1,
-    inX,
-    xn,
-    yn,
-    PX,
-    PY,
-    L,
-  };
-}
-/* how far along the way out you stand (0 if you aren't in that place's view) */
-function seamlessStartAlong(xn, P) {
-  const sid = mapIdAt(xn);
-  if (!(
-    walkView.ready &&
-    walkView.sc &&
-    walkView.pl &&
-    !walkView.pl.fresh &&
-    (walkView.sc.baseId || walkView.id) === sid
-  ))
-    return 0;
-  const o = walkView.sc.baseOff || [0, 0],
-    x = walkView.pl.x - o[0],
-    z = walkView.pl.z - o[1];
-  let best = null,
-    s = 0;
-  for (let i = 1; i < P.pts.length; i++) {
-    const a = P.pts[i - 1],
-      b = P.pts[i],
-      vx = b[0] - a[0],
-      vz = b[1] - a[1],
-      l = Math.hypot(vx, vz) || 1e-9,
-      k = clamp(((x - a[0]) * vx + (z - a[1]) * vz) / (l * l), 0, 1),
-      d = Math.hypot(a[0] + vx * k - x, a[1] + vz * k - z);
-    if (!best || d < best.d) best = { d, u: s + l * k };
-    s += l;
-  }
-  return best ? Math.max(0, best.u - 1) : 0;
-}
-/* paint the ground of the view that comes next while this one is on screen (so the shift to it is instant) */
-export function seamlessPrefetch(R, u, fwd, tv) {
-  if (!R) return;
-  if (R.join) {
-    /* the next place's view, from 40 m before the seam */ if (tv && tv.inX && tv.PX.len - u < 40) {
-      const sc = seamlessHubMap(tv.yn);
-      if (sc && sc.id !== walkView.id) {
-        const e = tv.PY.pts[tv.PY.pts.length - 1],
-          o = sc.baseOff || [0, 0];
-        seamlessGetReady(sc.id, false, [e[0] + o[0], e[1] + o[1]]);
-      }
-    }
-    return;
-  }
-  const ahead = clamp(fwd ? u + 40 : u - 40, 0, R.Lr);
-  /* v46: 40 m ahead (was 26; and near the end, the far place itself), the painting and the card both need the time */ const v =
-    seamlessViewFor(R, ahead);
-  if (v.id === walkView.id) return;
-  const sc = seamlessViewMap(v, R);
-  if (!sc) return;
-  /* where you will be when it is shown: a little past where you are now */ const p = seamlessRoadPointAt(
-      R,
-      clamp(fwd ? u + 12 : u - 12, 0, R.Lr)
-    ),
-    o = v.off || [0, 0];
-  seamlessGetReady(v.id, false, [p.x - o[0] - sc.comp.box[0], p.z - o[1] - sc.comp.box[1]]);
-}
-function seamlessPrefetchView(v, R) {
-  if (v.id === walkView.id) return;
-  seamlessViewMap(v, R);
-  seamlessGetReady(v.id);
-}
 /* v46: is a view ready to be shown at once (its ground painted and, in 3D, built on the card)? seamlessGetReady also starts
    whatever is missing: the painting in slices of about 8 ms, then the building on the card a few ms a frame (prepareMapGround) */
 function seamlessViewReady(id) {
@@ -2129,11 +1992,8 @@ export function seamlessGate(v) {
     sc = walkView.sc,
     m = 3,
     room = Math.min(x - m, z - m, sc.w - m - x, sc.h - m - z);
-  /* alpha 0.2: neighbours share their edges, so a jump to the next place lands inside this view too; only a walk (a trip,
-    or a few steps) waits here for the next view, a jump opens it at once */ if (
-    v.mode !== 'road' &&
-    Math.hypot(x - walkView.pl.x, z - walkView.pl.z) > 25
-  )
+  /* alpha 0.2: neighbours share their edges, so a jump to the next place lands inside this view too; only a walk
+    waits here for the next view, a jump opens it at once */ if (Math.hypot(x - walkView.pl.x, z - walkView.pl.z) > 25)
     return v;
   if (typeof walkRenderer !== 'undefined') walkRenderer.prepBoost = room < 6 ? 4 : room < 12 ? 2 : 1;
   /* closer to the edge, bigger slices */ if (room < 0) {
@@ -2183,7 +2043,6 @@ export function shiftWalkView(id, dx, dz) {
     P.lz += dz;
   }
   if (P.route) P.route = P.route.map(([x, z]) => [x + dx, z + dz]);
-  if (P.line) P.line = polyline(P.line.p.map(([x, z]) => [x + dx, z + dz]));
   for (const e of Object.values(walkView.enc || {})) {
     e.x += dx;
     e.z += dz;
@@ -2242,7 +2101,6 @@ export function shiftWalkView(id, dx, dz) {
   walkView.cand = null;
   walkView.nav = null;
   walkView.npcAt = {};
-  P.pk = '';
   if (typeof debugLog !== 'undefined') debugLog.add('scene', 'seamless to ' + id);
   return true;
 }

@@ -59,7 +59,6 @@ expose({
   personRig: [() => personRig, v => (personRig = v)],
   personSheet: [() => personSheet, v => (personSheet = v)],
   personWalkFrames: [() => personWalkFrames, v => (personWalkFrames = v)],
-  personWalkIconURL: [() => personWalkIconURL, v => (personWalkIconURL = v)],
   personWarmup: [() => personWarmup],
   pickWalkFrame: [() => pickWalkFrame, v => (pickWalkFrame = v)],
   portraitHTML: [() => portraitHTML, v => (portraitHTML = v)],
@@ -878,19 +877,6 @@ export function personHTML(who, size, view = 'front') {
     hgt = Math.round(size * 1.375),
     wid = Math.round((hgt * s.w) / s.h);
   return `<span class="spr slow tr-por" style="width:${wid}px;height:${hgt}px"><img src="${s.url}" alt=""></span>`;
-}
-export function personWalkIconURL(who) {
-  return cachedPersonArt('walkurl|' + lookKey(lookOf(who)) + '|' + personArtVersion(), () => {
-    const f = personWalkFrames(who).sideR,
-      a = opaqueBox(f[1]),
-      w = a[2] + 2,
-      h = a[3] + 2,
-      c = makeCanvas(w * 2, h),
-      x = c.getContext('2d');
-    x.drawImage(f[1], a[0] - 1, a[1] - 1, w, h, 0, 0, w, h);
-    x.drawImage(f[2], a[0] - 1, a[1] - 1, w, h, w, 0, w, h);
-    return c.toDataURL();
-  });
 }
 /* the art files every look needs (loaded at start) */
 /* older code paths */

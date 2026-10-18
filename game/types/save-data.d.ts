@@ -88,14 +88,10 @@ export interface SaveData {
   wardrobe?: { owned: Record<string, any>; outfits: any[] };
 }
 
-/** the player's travel along the roads: where you are, how far along the next road, and the locations still ahead */
+/** the player's travel: where you are, and the locations still ahead (the gold arrows' guide) */
 export interface Trip {
   node: LocationNode;
-  /** steps along the road to plan[0] */
-  prog: number;
   plan: LocationNode[];
-  /** stopped on the way */
-  hold: boolean;
 }
 
 /** settings kept in the save (a new game on this device keeps them) */
