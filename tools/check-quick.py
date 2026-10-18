@@ -511,7 +511,7 @@ def play(pg):
 
 def go_scene(pg, node, sec=40):
     # alpha 0.4: a jump, not a walk: a neighbour whose middle is near this view's would otherwise wait for its view to be
-    # prepared a few milliseconds a frame (seamless-world.js wrGate), which at a frame every few seconds here takes minutes
+    # prepared a few milliseconds a frame (seamless-world.js seamlessGate), which at a frame every few seconds here takes minutes
     pg.evaluate(f"U.inside=null;U.tab='walk';S.route={{node:{node},prog:0,plan:[],hold:false}};S.visited[{node}]=1;U.roam=null;if(typeof walkView!=='undefined'&&walkView.pl)walkView.pl.fresh=true;render();0")
     if not until(pg, f'!!(walkView.ready&&(walkView.id===ROUTE[{node}].scene||(walkView.sc&&walkView.sc.baseId===ROUTE[{node}].scene)))', sec):   # v43: the hub may sit near an exit, so the view may be the scene with its road
         raise Exception(f'{pg.evaluate(f"ROUTE[{node}].scene")} didn’t open in {sec}s')
@@ -1598,11 +1598,11 @@ def desktop_steps(b, base, R):
         out.append('Pocket Billies on the page, the title screen and in the data; the Guide counts Taxed')
         pg.evaluate("U.inside=null;U.goingIn=null;U.bench=null;U.modal=null;U.mq=[];renderOv();0"); go_scene(pg, 0); time.sleep(1)
         rows = pg.evaluate("""(()=>{const C=walkData().sc,ppu=C.ppu||34,out=[];for(const p of walkView.sc.props){const M=C.props[p.k];if(!M||!M.box||!p.act)continue;let id=null;try{id=roomFor(p.act,p)}catch(e){}if(!id||!mapById(id)||mapById(id).winMatch===0)continue;
-          const s=p.s||1,f=p.f?-1:1,dx=((M.door&&M.door.x)||0)/ppu*s*f,door=[+(p.x+dx).toFixed(1),+(+p.z).toFixed(1),+(+p.x).toFixed(1)];seamlessWorld.cache.delete(wrRoomId(walkView.id,id,door)+'|'+seamlessWorld.gen);
-          const sc=wrRoomScene(walkView.id,id,door);if(!sc)continue;const R=sc.roomRect,inR=q=>q.x>=R[0]&&q.x<=R[0]+R[2]&&q.z>=R[1]&&q.z<=R[1]+R[3],ws=sc.props.filter(q=>q.k==='wall_window'&&inR(q)).sort((a,b)=>a.x-b.x);
+          const s=p.s||1,f=p.f?-1:1,dx=((M.door&&M.door.x)||0)/ppu*s*f,door=[+(p.x+dx).toFixed(1),+(+p.z).toFixed(1),+(+p.x).toFixed(1)];seamlessWorld.cache.delete(seamlessRoomId(walkView.id,id,door)+'|'+seamlessWorld.gen);
+          const sc=seamlessRoomMap(walkView.id,id,door);if(!sc)continue;const R=sc.roomRect,inR=q=>q.x>=R[0]&&q.x<=R[0]+R[2]&&q.z>=R[1]&&q.z<=R[1]+R[3],ws=sc.props.filter(q=>q.k==='wall_window'&&inR(q)).sort((a,b)=>a.x-b.x);
           const tan=Math.tan((((mapById(id).cam||{}).pitch||34)-3+12)*Math.PI/180),hid=ws.filter(w=>sc.props.some(q=>{if(q===w||!inR(q)||q.k==='wall_window')return false;const Q=C.props[q.k]||{};if(Q.flat)return false;const k=(q.s||1)/ppu,hw=-(Q.ox??-16)*k*.92,d=w.z-q.z;if(d<=.05)return false;
             return Math.min(q.x+hw,w.x+.75*w.s)-Math.max(q.x-hw,w.x-.75*w.s)>.3&&-(Q.oy??-32)*k-d*tan>1.3*w.s+.3}));
-          out.push({k:p.k,room:id,front:wrBldWindows(M,p,ppu).length,inside:ws.length,hidden:hid.length})}return out})()""")
+          out.push({k:p.k,room:id,front:seamlessBuildingWindows(M,p,ppu).length,inside:ws.length,hidden:hid.length})}return out})()""")
         if not rows: raise Exception('no building in Marigold Town opens into a room')
         hidden = [r for r in rows if r['hidden']]; none = [r for r in rows if r['front'] and not r['inside']]; more = [r for r in rows if r['inside'] > r['front']]
         if hidden: raise Exception(f'furniture in front of a room window: {hidden[:3]}')

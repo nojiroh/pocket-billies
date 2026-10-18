@@ -52,13 +52,14 @@ expose({
   NEIGHBOR_BAND_HALF_WIDTH: [() => NEIGHBOR_BAND_HALF_WIDTH],
   OPPOSITE_SIDE: [() => OPPOSITE_SIDE],
   ROCK_RAISE: [() => ROCK_RAISE],
+  ROOM_GAP_BY_KIND: [() => ROOM_GAP_BY_KIND],
+  ROOM_WINDOW_PROP: [() => ROOM_WINDOW_PROP],
   SEAM_REACH: [() => SEAM_REACH],
   SEAM_TAPER: [() => SEAM_TAPER],
   SIDE_VECTORS: [() => SIDE_VECTORS],
   TUNNEL_RUN: [() => TUNNEL_RUN],
-  WR_DECO: [() => WR_DECO],
-  WR_ROOM_GAP: [() => WR_ROOM_GAP],
-  WR_WIN: [() => WR_WIN],
+  WALL_DECOR_PATTERN: [() => WALL_DECOR_PATTERN],
+  seamlessBuildingWindows: [() => seamlessBuildingWindows, v => (seamlessBuildingWindows = v)],
   seamlessCompose: [() => seamlessCompose, v => (seamlessCompose = v)],
   seamlessComposeRoad: [() => seamlessComposeRoad, v => (seamlessComposeRoad = v)],
   seamlessCornerHeight: [() => seamlessCornerHeight, v => (seamlessCornerHeight = v)],
@@ -66,6 +67,8 @@ expose({
   seamlessEasedGround: [() => seamlessEasedGround, v => (seamlessEasedGround = v)],
   seamlessExitPath: [() => seamlessExitPath, v => (seamlessExitPath = v)],
   seamlessExitRaise: [() => seamlessExitRaise, v => (seamlessExitRaise = v)],
+  seamlessGate: [() => seamlessGate, v => (seamlessGate = v)],
+  seamlessGetReady: [() => seamlessGetReady, v => (seamlessGetReady = v)],
   seamlessHash: [() => seamlessHash, v => (seamlessHash = v)],
   seamlessHubMap: [() => seamlessHubMap, v => (seamlessHubMap = v)],
   seamlessHubParts: [() => seamlessHubParts, v => (seamlessHubParts = v)],
@@ -85,6 +88,8 @@ expose({
   seamlessNoise: [() => seamlessNoise, v => (seamlessNoise = v)],
   seamlessOn: [() => seamlessOn],
   seamlessPointAlong: [() => seamlessPointAlong, v => (seamlessPointAlong = v)],
+  seamlessPrefetch: [() => seamlessPrefetch, v => (seamlessPrefetch = v)],
+  seamlessPrefetchView: [() => seamlessPrefetchView, v => (seamlessPrefetchView = v)],
   seamlessRoad: [() => seamlessRoad, v => (seamlessRoad = v)],
   seamlessRoadExit: [() => seamlessRoadExit, v => (seamlessRoadExit = v)],
   seamlessRoadHeight: [() => seamlessRoadHeight, v => (seamlessRoadHeight = v)],
@@ -95,26 +100,21 @@ expose({
   seamlessRoadProps: [() => seamlessRoadProps, v => (seamlessRoadProps = v)],
   seamlessRoadTile: [() => seamlessRoadTile, v => (seamlessRoadTile = v)],
   seamlessRoamView: [() => seamlessRoamView, v => (seamlessRoamView = v)],
+  seamlessRoomId: [() => seamlessRoomId, v => (seamlessRoomId = v)],
+  seamlessRoomMap: [() => seamlessRoomMap, v => (seamlessRoomMap = v)],
+  seamlessRoomPlacement: [() => seamlessRoomPlacement, v => (seamlessRoomPlacement = v)],
+  seamlessRoomWindows: [() => seamlessRoomWindows, v => (seamlessRoomWindows = v)],
   seamlessSalt: [() => seamlessSalt, v => (seamlessSalt = v)],
   seamlessSeamOf: [() => seamlessSeamOf, v => (seamlessSeamOf = v)],
   seamlessStartAlong: [() => seamlessStartAlong, v => (seamlessStartAlong = v)],
   seamlessTrimCache: [() => seamlessTrimCache, v => (seamlessTrimCache = v)],
   seamlessTripView: [() => seamlessTripView, v => (seamlessTripView = v)],
+  seamlessUndergroundVeil: [() => seamlessUndergroundVeil, v => (seamlessUndergroundVeil = v)],
   seamlessViewFor: [() => seamlessViewFor, v => (seamlessViewFor = v)],
   seamlessViewMap: [() => seamlessViewMap, v => (seamlessViewMap = v)],
+  seamlessViewReady: [() => seamlessViewReady, v => (seamlessViewReady = v)],
   seamlessWorld: [() => seamlessWorld],
   shiftWalkView: [() => shiftWalkView, v => (shiftWalkView = v)],
-  wrBldWindows: [() => wrBldWindows, v => (wrBldWindows = v)],
-  wrGate: [() => wrGate, v => (wrGate = v)],
-  wrGetReady: [() => wrGetReady, v => (wrGetReady = v)],
-  wrPrefetch: [() => wrPrefetch, v => (wrPrefetch = v)],
-  wrPrefetchView: [() => wrPrefetchView, v => (wrPrefetchView = v)],
-  wrReady: [() => wrReady, v => (wrReady = v)],
-  wrRoomId: [() => wrRoomId, v => (wrRoomId = v)],
-  wrRoomPlace: [() => wrRoomPlace, v => (wrRoomPlace = v)],
-  wrRoomScene: [() => wrRoomScene, v => (wrRoomScene = v)],
-  wrRoomWindows: [() => wrRoomWindows, v => (wrRoomWindows = v)],
-  wrVeil: [() => wrVeil, v => (wrVeil = v)],
 });
 /* eslint-enable no-func-assign */
 provide({ seamlessLookTick, seamlessMapById, seamlessNearestRoadPoint });
@@ -1529,7 +1529,7 @@ function seamlessMapById(id) {
   if (!id || !id.startsWith('w:')) return null;
   for (const [k, v] of seamlessWorld.cache) if (k === id + '|' + seamlessWorld.gen) return v;
   let m = id.match(/^(w:.+)#([^@#]+)@(-?[\d.]+),(-?[\d.]+)(?:,(-?[\d.]+))?$/);
-  if (m) return wrRoomScene(m[1], m[2], m[5] != null ? [+m[3], +m[4], +m[5]] : [+m[3], +m[4]]);
+  if (m) return seamlessRoomMap(m[1], m[2], m[5] != null ? [+m[3], +m[4], +m[5]] : [+m[3], +m[4]]);
   m = id.match(/^w:road(\d+)@(-?\d+)$/);
   if (m) {
     const R = seamlessRoad(+m[1]);
@@ -1549,14 +1549,14 @@ function seamlessMapById(id) {
    id: "<the place's view>#<room scene>@<door x>,<door z>" */
 /* where the room goes: centred on the building (door[2], its middle), so a door left of the middle outside is left of
    the middle inside too; its doorway is then moved to lie exactly at the building's door */
-const WR_ROOM_GAP = { station: 2.6, fire_station: 3.2, market_hall: 3, barn: 3 };
+const ROOM_GAP_BY_KIND = { station: 2.6, fire_station: 3.2, market_hall: 3, barn: 3 };
 /* alpha 0.1: a room shows the building's own windows. As many as its front has (a column of windows counts once, a
    window in the roof not at all), where they are along the front as you see it from the street, the wide ones wider,
    on the room's back wall. Each slides along the wall to the nearest spot no furniture stands in front of (or is left
    out), and pictures, clocks and boards on that wall step aside for them. A room with winMatch: 0 keeps its own. */
-const WR_WIN = { k: 'wall_window', w: 1.5, y0: 1.3 },
-  WR_DECO = /^(wall_clock|wall_painting|wall_map|blackboard|timetable_board)$/;
-function wrBldWindows(M, p, ppu) {
+const ROOM_WINDOW_PROP = { k: 'wall_window', w: 1.5, y0: 1.3 },
+  WALL_DECOR_PATTERN = /^(wall_clock|wall_painting|wall_map|blackboard|timetable_board)$/;
+function seamlessBuildingWindows(M, p, ppu) {
   const B = M.build || {},
     eave = B.eave,
     cols = [],
@@ -1583,12 +1583,12 @@ function wrBldWindows(M, p, ppu) {
     })
     .sort((a, b) => a.u - b.u);
 }
-function wrRoomWindows(props, r0, R, C, BM, bp, ox, oz) {
+function seamlessRoomWindows(props, r0, R, C, BM, bp, ox, oz) {
   const ppu = C.ppu || 34,
     room = props.slice(r0),
-    wins = wrBldWindows(BM, bp, ppu),
+    wins = seamlessBuildingWindows(BM, bp, ppu),
     tan = Math.tan(((((R.cam && R.cam.pitch) || 34) - 3 + 12) * Math.PI) / 180); /* the room camera's tilt */
-  const own = room.filter(q => q.k === WR_WIN.k),
+  const own = room.filter(q => q.k === ROOM_WINDOW_PROP.k),
     zw = own.length ? own[0].z : +(oz + R.h - 1.55).toFixed(2),
     xa = ox + 1.3,
     xb = ox + R.w - 1.3;
@@ -1599,23 +1599,28 @@ function wrRoomWindows(props, r0, R, C, BM, bp, ox, oz) {
       bw = M.box ? (M.box[0] * (q.s || 1)) / 2 : hw;
     return { x0: q.x - hw, x1: q.x + hw, top: -(M.oy ?? -32) * s, bw, bd: M.box ? M.box[1] * (q.s || 1) : 0.5 };
   };
-  const deco = room.filter(q => WR_DECO.test(q.k) && Math.abs(q.z - zw) < 0.3),
+  const deco = room.filter(q => WALL_DECOR_PATTERN.test(q.k) && Math.abs(q.z - zw) < 0.3),
     furn = room.filter(
-      q => q.k !== WR_WIN.k && !deco.includes(q) && q.z < zw + 0.3 && q.z > zw - 4.5 && !(C.props[q.k] || {}).flat
+      q =>
+        q.k !== ROOM_WINDOW_PROP.k &&
+        !deco.includes(q) &&
+        q.z < zw + 0.3 &&
+        q.z > zw - 4.5 &&
+        !(C.props[q.k] || {}).flat
     );
   const hides = (q, x, s) => {
     const e = ext(q),
-      hw = (WR_WIN.w * s) / 2;
+      hw = (ROOM_WINDOW_PROP.w * s) / 2;
     return (
       Math.min(e.x1, x + hw) - Math.max(e.x0, x - hw) > 0.2 &&
-      e.top - Math.max(0, zw - q.z) * tan > WR_WIN.y0 * s + 0.12
+      e.top - Math.max(0, zw - q.z) * tan > ROOM_WINDOW_PROP.y0 * s + 0.12
     );
   };
   /* the windows where the front has them; furniture against the back wall that would stand in front of one slides
     along the wall to a free stretch; what can't, the window slides past (keeping the windows' order), or is left out */
   const W = wins.map(w => {
     const s = clamp(w.w / 20, 0.85, 1.3);
-    return { x: xa + w.u * (xb - xa), s, hw: (WR_WIN.w * s) / 2 };
+    return { x: xa + w.u * (xb - xa), s, hw: (ROOM_WINDOW_PROP.w * s) / 2 };
   });
   /* two windows close together on the front (a double window) are one wide window inside */
   for (let i = 1; i < W.length; i++) {
@@ -1624,8 +1629,8 @@ function wrRoomWindows(props, r0, R, C, BM, bp, ox, oz) {
     if (b.x - a.x < a.hw + b.hw + 0.25) {
       const x0 = a.x - a.hw,
         x1 = b.x + b.hw,
-        s = clamp((x1 - x0) / WR_WIN.w, 0.85, 1.3);
-      W.splice(i - 1, 2, { x: (x0 + x1) / 2, s, hw: (WR_WIN.w * s) / 2 });
+        s = clamp((x1 - x0) / ROOM_WINDOW_PROP.w, 0.85, 1.3);
+      W.splice(i - 1, 2, { x: (x0 + x1) / 2, s, hw: (ROOM_WINDOW_PROP.w * s) / 2 });
       i--;
     }
   }
@@ -1668,16 +1673,16 @@ function wrRoomWindows(props, r0, R, C, BM, bp, ox, oz) {
     if (at != null) w.x = at;
     else w.gone = 1;
   }
-  for (let i = props.length - 1; i >= r0; i--) if (props[i].k === WR_WIN.k) props.splice(i, 1);
+  for (let i = props.length - 1; i >= r0; i--) if (props[i].k === ROOM_WINDOW_PROP.k) props.splice(i, 1);
   const placed = W.filter(w => !w.gone);
-  for (const o of placed) props.push({ k: WR_WIN.k, x: +o.x.toFixed(2), z: zw, s: +o.s.toFixed(2) });
+  for (const o of placed) props.push({ k: ROOM_WINDOW_PROP.k, x: +o.x.toFixed(2), z: zw, s: +o.s.toFixed(2) });
   const dw = q => (ext(q).x1 - ext(q).x0) / 2,
     behind = (q, x) =>
       furn.some(f => {
         const e = ext(f);
         return (
           Math.min(e.x1, x + dw(q)) - Math.max(e.x0, x - dw(q)) > 0.2 &&
-          e.top - Math.max(0, zw - f.z) * tan > WR_WIN.y0 + 0.2
+          e.top - Math.max(0, zw - f.z) * tan > ROOM_WINDOW_PROP.y0 + 0.2
         );
       }),
     clash = (q, x) =>
@@ -1699,7 +1704,7 @@ function wrRoomWindows(props, r0, R, C, BM, bp, ox, oz) {
     else props.splice(props.indexOf(q), 1);
   }
 }
-function wrRoomPlace(B, R, door) {
+function seamlessRoomPlacement(B, R, door) {
   const mid = door[2] ?? door[0];
   let ox = Math.round(mid - R.w / 2),
     oz = Math.round(door[1] - ((R.exits && R.exits[0]) || [0, 0.6])[1]);
@@ -1708,11 +1713,11 @@ function wrRoomPlace(B, R, door) {
   oz = clamp(oz, 0, Math.max(0, B.h - R.h));
   return [ox, oz];
 }
-export function wrRoomId(baseId, roomId, door) {
+export function seamlessRoomId(baseId, roomId, door) {
   return baseId + '#' + roomId + '@' + door.map(v => (+v).toFixed(1)).join(',');
 }
-export function wrRoomScene(baseId, roomId, door) {
-  const id = wrRoomId(baseId, roomId, door),
+export function seamlessRoomMap(baseId, roomId, door) {
+  const id = seamlessRoomId(baseId, roomId, door),
     key = id + '|' + seamlessWorld.gen;
   let sc = seamlessWorld.cache.get(key);
   if (sc) return sc;
@@ -1720,7 +1725,7 @@ export function wrRoomScene(baseId, roomId, door) {
     R = mapById(roomId);
   if (!B0 || !B0.w || !R || !R.w) return null;
   const C = walkData().sc,
-    [rx, rz] = wrRoomPlace(B0, R, door);
+    [rx, rz] = seamlessRoomPlacement(B0, R, door);
   /* only a window of the place round the room is made again (the rest isn't seen from inside): far less to prepare */
   let B = B0,
     cx = 0,
@@ -1749,7 +1754,7 @@ export function wrRoomScene(baseId, roomId, door) {
     WALLS = ['#E6CFA2', '#D9B79C', '#DCD2BC', '#E4D3B8', '#CBD6DC', '#E8CDBA', '#D8CCDC', '#D2DCC4'];
   /* the doorway, in the room's own metres: right where the building's door is */
   const ex = clamp(door[0] - cx - ox, 2.2, R.w - 2.2),
-    gap = WR_ROOM_GAP[R.building] || WR_ROOM_GAP[R.room] || 2,
+    gap = ROOM_GAP_BY_KIND[R.building] || ROOM_GAP_BY_KIND[R.room] || 2,
     fl = (() => {
       const n = {};
       for (const ch of (R.tiles || [])[Math.floor(R.h / 2)] || '') n[ch] = (n[ch] || 0) + 1;
@@ -1845,7 +1850,7 @@ export function wrRoomScene(baseId, roomId, door) {
     q.z = +(p.z + oz).toFixed(2);
     props.push(q);
   }
-  /* alpha 0.1: the room's windows are the building's own (wrRoomWindows) */
+  /* alpha 0.1: the room's windows are the building's own (seamlessRoomWindows) */
   if (R.winMatch !== 0) {
     const bp = (B0.props || []).find(p => {
       const M = C.props[p.k];
@@ -1856,7 +1861,7 @@ export function wrRoomScene(baseId, roomId, door) {
         Math.abs(p.x - (door[2] ?? door[0])) < (door[2] != null ? 0.08 : (M.box[0] * (p.s || 1)) / 2)
       );
     });
-    if (bp) wrRoomWindows(props, r0, R, C, C.props[bp.k], bp, ox, oz);
+    if (bp) seamlessRoomWindows(props, r0, R, C, C.props[bp.k], bp, ox, oz);
   }
   sc = Object.assign({}, B, { tiles, heights, props, id, steps: E.s, stepm: E.m0, stepsV: 1 });
   STEP_GRID_CACHE.set(sc, E);
@@ -2023,7 +2028,7 @@ function seamlessStartAlong(xn, P) {
   return best ? Math.max(0, best.u - 1) : 0;
 }
 /* paint the ground of the view that comes next while this one is on screen (so the shift to it is instant) */
-export function wrPrefetch(R, u, fwd, tv) {
+export function seamlessPrefetch(R, u, fwd, tv) {
   if (!R) return;
   if (R.join) {
     /* the next place's view, from 40 m before the seam */ if (tv && tv.inX && tv.PX.len - u < 40) {
@@ -2031,7 +2036,7 @@ export function wrPrefetch(R, u, fwd, tv) {
       if (sc && sc.id !== walkView.id) {
         const e = tv.PY.pts[tv.PY.pts.length - 1],
           o = sc.baseOff || [0, 0];
-        wrGetReady(sc.id, false, [e[0] + o[0], e[1] + o[1]]);
+        seamlessGetReady(sc.id, false, [e[0] + o[0], e[1] + o[1]]);
       }
     }
     return;
@@ -2047,16 +2052,16 @@ export function wrPrefetch(R, u, fwd, tv) {
       clamp(fwd ? u + 12 : u - 12, 0, R.Lr)
     ),
     o = v.off || [0, 0];
-  wrGetReady(v.id, false, [p.x - o[0] - sc.comp.box[0], p.z - o[1] - sc.comp.box[1]]);
+  seamlessGetReady(v.id, false, [p.x - o[0] - sc.comp.box[0], p.z - o[1] - sc.comp.box[1]]);
 }
-function wrPrefetchView(v, R) {
+function seamlessPrefetchView(v, R) {
   if (v.id === walkView.id) return;
   seamlessViewMap(v, R);
-  wrGetReady(v.id);
+  seamlessGetReady(v.id);
 }
-/* v46: is a view ready to be shown at once (its ground painted and, in 3D, built on the card)? wrGetReady also starts
+/* v46: is a view ready to be shown at once (its ground painted and, in 3D, built on the card)? seamlessGetReady also starts
    whatever is missing: the painting in slices of about 8 ms, then the building on the card a few ms a frame (prepareMapGround) */
-function wrReady(id) {
+function seamlessViewReady(id) {
   if (id === walkView.id) return true;
   const sc = mapById(id);
   if (!sc) return false;
@@ -2069,8 +2074,8 @@ function wrReady(id) {
     isGroundPrepared(id, sc, key)
   );
 }
-export function wrGetReady(id, urgent, focus) {
-  if (wrReady(id)) return true;
+export function seamlessGetReady(id, urgent, focus) {
+  if (seamlessViewReady(id)) return true;
   const sc = mapById(id);
   if (!sc) return false;
   const key = groundKey(sc),
@@ -2098,7 +2103,7 @@ export function wrGetReady(id, urgent, focus) {
 /* v46: show a view only when it is ready; until then stay in the one on screen, as long as where you stand is still
    well inside it (on a road the views overlap by 40 m, so there is time). If you would walk off its edge the switch
    happens anyway, built on the spot as before. */
-export function wrGate(v) {
+export function seamlessGate(v) {
   if (
     !seamlessOn() ||
     !v ||
@@ -2109,7 +2114,7 @@ export function wrGate(v) {
     walkView.pl.fresh
   )
     return v;
-  if (wrGetReady(v.id, true, v.pos)) {
+  if (seamlessGetReady(v.id, true, v.pos)) {
     seamlessWorld.heldFor = null;
     if (typeof walkRenderer !== 'undefined') walkRenderer.prepBoost = 1;
     return v;
@@ -2140,7 +2145,7 @@ export function wrGate(v) {
 }
 /* move everything that is in the scene by (dx, dz) and carry on in the next composite without a cut */
 /* alpha 0.2: going into or out of an underground place the picture dips to dark for a moment (you step into a cave) */
-function wrVeil() {
+function seamlessUndergroundVeil() {
   const cv = walkView.cv;
   if (!cv || !cv.isConnected || (typeof U !== 'undefined' && U.photo)) return;
   let v = document.getElementById('wrVeil');
@@ -2167,7 +2172,7 @@ export function shiftWalkView(id, dx, dz) {
   const sc = mapById(id);
   if (!sc) return false;
   const P = walkView.pl;
-  if (!!(walkView.sc && walkView.sc.under) !== !!sc.under) wrVeil();
+  if (!!(walkView.sc && walkView.sc.under) !== !!sc.under) seamlessUndergroundVeil();
   P.x += dx;
   P.z += dz;
   if (P.lx != null) {

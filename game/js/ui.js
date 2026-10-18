@@ -129,16 +129,16 @@ import { mountWalkView, walkRenderer } from './walk-view-gl.js';
 import { fishStart } from './fishing.js';
 import {
   seamlessDelta,
+  seamlessGate,
+  seamlessGetReady,
   seamlessOn,
+  seamlessPrefetch,
   seamlessRoamView,
+  seamlessRoomId,
+  seamlessRoomMap,
   seamlessTripView,
   seamlessWorld,
   shiftWalkView,
-  wrGate,
-  wrGetReady,
-  wrPrefetch,
-  wrRoomId,
-  wrRoomScene,
 } from './seamless-world.js';
 import { battleGLLayout, battleGLWanted } from './battle-3d.js';
 import {
@@ -1088,12 +1088,12 @@ function enterRoom(a, p) {
   render();
   return true;
 }
-/* v46: seamless rooms (seamless-world.js wrRoomScene). The room's view is the place's own view with the room laid in at the
+/* v46: seamless rooms (seamless-world.js seamlessRoomMap). The room's view is the place's own view with the room laid in at the
    building's door, so going in and out is a shift of nothing. roomLayIn makes (and starts preparing) that view;
    it is also called when you tap a building, so the room is usually ready by the time you reach the door. */
 function roomLayIn(id, p, fresh) {
   if (
-    typeof wrRoomScene !== 'function' ||
+    typeof seamlessRoomMap !== 'function' ||
     !seamlessOn() ||
     !walkView.ready ||
     !walkView.sc ||
@@ -1115,11 +1115,11 @@ function roomLayIn(id, p, fresh) {
     door = [+(p.x + dx).toFixed(1), +(+p.z).toFixed(1), +(+p.x).toFixed(1)]; /* the door, and the building's middle */
   if (fresh)
     seamlessWorld.cache.delete(
-      wrRoomId(walkView.id, id, door) + '|' + seamlessWorld.gen
+      seamlessRoomId(walkView.id, id, door) + '|' + seamlessWorld.gen
     ); /* the room as it is now (your room's decorations) */
-  const sc = wrRoomScene(walkView.id, id, door);
+  const sc = seamlessRoomMap(walkView.id, id, door);
   if (!sc) return null;
-  wrGetReady(sc.id, true, door);
+  seamlessGetReady(sc.id, true, door);
   return { view: sc.id, door, base: walkView.id };
 }
 /* the room's things changed while you're in it (your room's decorations): lay it in again */
@@ -1127,7 +1127,7 @@ function roomRefresh() {
   const I = U.inside;
   if (!I || !I.view || walkView.id !== I.view || !walkView.sc) return;
   seamlessWorld.cache.delete(I.view + '|' + seamlessWorld.gen);
-  const n = wrRoomScene(I.base, I.id, I.door);
+  const n = seamlessRoomMap(I.base, I.id, I.door);
   if (!n) return;
   walkView.sc.props = n.props;
   if (typeof walkRenderer !== 'undefined') walkRenderer.itemGen = (walkRenderer.itemGen || 0) + 1;
@@ -1147,7 +1147,7 @@ function roomStepIn(info, n = 0) {
     U.goingIn = null;
     return;
   } /* you walked off, or the view moved on */
-  if (!wrGetReady(info.view, true, info.door)) {
+  if (!seamlessGetReady(info.view, true, info.door)) {
     if (typeof walkRenderer !== 'undefined') walkRenderer.prepBoost = Math.max(walkRenderer.prepBoost || 1, 3);
     /* you're standing at the door: bigger slices */ if (n < (U.roomWait || 90)) {
       setTimeout(() => roomStepIn(info, n + 1), 100);
@@ -1319,7 +1319,7 @@ function walkState() {
   if (tv) {
     const base = tv.sc.baseId === sceneIdAt(nx) ? nx : node;
     v = { id: tv.id, node: base, mode: 'road', pos: tv.pos, roam: true, road: tv.u };
-    if (typeof wrPrefetch === 'function') wrPrefetch(tv.R, tv.u, tv.fwd, tv);
+    if (typeof seamlessPrefetch === 'function') seamlessPrefetch(tv.R, tv.u, tv.fwd, tv);
   } else if (nx != null && r.prog > 0 && f >= 0.5) {
     const id = sceneIdAt(nx),
       sc = mapById(id) || {},
@@ -1382,8 +1382,8 @@ function walkState() {
       }
     }
   }
-  /* v46: a new view is shown only once its ground is ready on the card; until then you stay in the one on screen (seamless-world.js wrGate) */
-  if (typeof wrGate === 'function' && v && v.pos && (v.mode === 'road' || v.roam)) v = wrGate(v);
+  /* v46: a new view is shown only once its ground is ready on the card; until then you stay in the one on screen (seamless-world.js seamlessGate) */
+  if (typeof seamlessGate === 'function' && v && v.pos && (v.mode === 'road' || v.roam)) v = seamlessGate(v);
   const sc = mapById(v.id) || {},
     ex = sceneExits(v.node),
     bl = blockerAt(v.node),
@@ -1650,7 +1650,7 @@ function walkCross() {
     return;
   }
 }
-/* alpha 0.4.1: a view that was held until it was ready (seamless-world.js wrGate) takes over as soon as it is: walking yourself,
+/* alpha 0.4.1: a view that was held until it was ready (seamless-world.js seamlessGate) takes over as soon as it is: walking yourself,
    nothing else would ask for it (a trip did, with each batch of steps) */
 setInterval(() => {
   try {

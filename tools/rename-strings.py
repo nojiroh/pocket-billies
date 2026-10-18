@@ -71,7 +71,7 @@ def rename(src, pairs, file, guarded=()):
         text = src[s:e]
         for o, (sure, loose) in compiled.items():
             if comment:
-                # a comment only gets the names that can only be code (wrGate, WALK_SHADERS), never a review line
+                # a comment only gets the names that can only be code (seamlessGate, WALK_SHADERS), never a review line
                 if code_only(o):
                     edits += [(s + m.start(), s + m.end(), pairs[o]) for m in loose.finditer(text)]
                 continue

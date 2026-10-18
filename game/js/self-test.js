@@ -45,7 +45,7 @@ import { STR, strHas } from './structures.js';
 import { P3D, P3D_SH } from './solid-props.js';
 import { VOX } from './prop-models.js';
 import { buddyTap, companionSpecies, worldBillies } from './world-billies.js';
-import { seamlessTripView, seamlessWorld, wrRoomScene } from './seamless-world.js';
+import { seamlessRoomMap, seamlessTripView, seamlessWorld } from './seamless-world.js';
 import { A, endBattle, liveK, pickMove, pickTarget, startTrainer, startWild, stopTimers, tapMsg } from './battle.js';
 import { worldMap } from './world-map.js';
 import {
@@ -835,7 +835,7 @@ async function runFullTest(mode) {
         120
       );
     /* v46: a room that opens in place: into Sundown's shop and out again, without leaving the town */
-    if (typeof wrRoomScene === 'function' && GD.scenes.sundown && !STEST.stop)
+    if (typeof seamlessRoomMap === 'function' && GD.scenes.sundown && !STEST.stop)
       await phase(
         'A room that opens in place',
         'dio',

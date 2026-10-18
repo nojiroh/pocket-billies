@@ -4985,7 +4985,7 @@ function mapSun(sc, sun) {
     room: true,
   });
 }
-/* v46: inside a building laid into the place (seamless-world.js wrRoomScene) the town around the room dims over 0.6 s; walking
+/* v46: inside a building laid into the place (seamless-world.js seamlessRoomMap) the town around the room dims over 0.6 s; walking
    out it brightens again over 0.7 s, as your eyes adjust */
 export function roomDimming(sc) {
   const now = performance.now(),
