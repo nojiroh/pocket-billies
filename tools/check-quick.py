@@ -243,10 +243,11 @@ def old_names():
         elif isinstance(v, str):
             for h in hits(v): bad.append(f"{'/'.join(map(str, path))}: {h}")
     walk(D, [])
-    for f in sorted((GAME / 'js').glob('*.js')):
+    # phase 05: the engine's files and the Studio's too (the Studio's Engine section shows the engine's setting texts)
+    for f in sorted([*(GAME / 'js').rglob('*.js'), *(ROOT / 'studio' / 'js').glob('*.js')]):
         code = _re.sub(r'/\*.*?\*/', '', f.read_text(encoding='utf-8'), flags=_re.S)
         code = _re.sub(r'(?m)^\s*//.*$', '', code)
-        for h in hits(code): bad.append(f'js/{f.name}: {h}')
+        for h in hits(code): bad.append(f'{f.relative_to(ROOT)}: {h}')
     if bad: raise Exception(f'{len(bad)} old names: ' + '; '.join(bad[:8]))
     return f'{len(D["route"])} places by their new names; none of the {len(rx)} old names left in the data or the game\'s texts'
 
