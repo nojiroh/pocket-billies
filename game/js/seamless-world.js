@@ -39,7 +39,7 @@ import {
 } from './walk-view.js';
 import { eng } from './engine/settings.js';
 import { smooth01 } from './engine/webgl.js';
-import { dglPrepare, dglPrepared, walkRenderer } from './walk-view-gl.js';
+import { isGroundPrepared, prepareMapGround, walkRenderer } from './walk-view-gl.js';
 import { lifeShift } from './ambient-life.js';
 import { owShift } from './world-billies.js';
 /* eslint-disable no-func-assign */
@@ -2045,7 +2045,7 @@ function wrPrefetchView(v, R) {
   wrGetReady(v.id);
 }
 /* v46: is a view ready to be shown at once (its ground painted and, in 3D, built on the card)? wrGetReady also starts
-   whatever is missing: the painting in slices of about 8 ms, then the building on the card a few ms a frame (dglPrepare) */
+   whatever is missing: the painting in slices of about 8 ms, then the building on the card a few ms a frame (prepareMapGround) */
 function wrReady(id) {
   if (id === walkView.id) return true;
   const sc = mapById(id);
@@ -2055,8 +2055,8 @@ function wrReady(id) {
   return (
     typeof walkRenderer === 'undefined' ||
     !walkRenderer.on ||
-    typeof dglPrepared !== 'function' ||
-    dglPrepared(id, sc, key)
+    typeof isGroundPrepared !== 'function' ||
+    isGroundPrepared(id, sc, key)
   );
 }
 export function wrGetReady(id, urgent, focus) {
@@ -2081,7 +2081,8 @@ export function wrGetReady(id, urgent, focus) {
     }
     return false;
   }
-  if (typeof dglPrepare === 'function') dglPrepare(id, sc, G, urgent, focus || sc.hub || [sc.w / 2, sc.h / 2]);
+  if (typeof prepareMapGround === 'function')
+    prepareMapGround(id, sc, G, urgent, focus || sc.hub || [sc.w / 2, sc.h / 2]);
   return false;
 }
 /* v46: show a view only when it is ready; until then stay in the one on screen, as long as where you stand is still

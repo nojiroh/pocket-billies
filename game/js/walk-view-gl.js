@@ -199,7 +199,6 @@ expose({
   DGL_LK0: [() => DGL_LK0],
   DGL_LOOK: [() => DGL_LOOK],
   DGL_MOOD0: [() => DGL_MOOD0],
-  DGL_PREP_MS: [() => DGL_PREP_MS],
   DGL_PRINT_COL: [() => DGL_PRINT_COL],
   DGL_PUSH: [() => DGL_PUSH],
   DGL_SINK_BOX: [() => DGL_SINK_BOX],
@@ -209,14 +208,16 @@ expose({
   DGL_WKID: [() => DGL_WKID],
   DGL_WKIND: [() => DGL_WKIND],
   DGL_WKU: [() => DGL_WKU],
+  NEAR_RING_CHUNK_M: [() => NEAR_RING_CHUNK_M],
+  NEAR_RING_SIZE: [() => NEAR_RING_SIZE],
   NO_PAD_PROPS: [() => NO_PAD_PROPS],
+  PREP_BUDGET_MS: [() => PREP_BUDGET_MS],
   PROP_MATERIALS: [() => PROP_MATERIALS],
-  RING_CS: [() => RING_CS],
-  RING_N: [() => RING_N],
   TERRAIN_MATERIALS: [() => TERRAIN_MATERIALS],
   WALK_SHADERS: [() => WALK_SHADERS],
   WALL_COLORS: [() => WALL_COLORS],
   WALL_MATERIALS: [() => WALL_MATERIALS],
+  abortGroundPrep: [() => abortGroundPrep, v => (abortGroundPrep = v)],
   askDeviceTilt: [() => askDeviceTilt, v => (askDeviceTilt = v)],
   baseNavGrid: [() => baseNavGrid],
   baseStopWalkView: [() => baseStopWalkView],
@@ -250,14 +251,9 @@ expose({
   dglFrameIn: [() => dglFrameIn, v => (dglFrameIn = v)],
   dglFrustum: [() => dglFrustum, v => (dglFrustum = v)],
   dglFxPass: [() => dglFxPass, v => setDglFxPass(v)],
-  dglGaoSteps: [() => dglGaoSteps, v => (dglGaoSteps = v)],
-  dglGaoTex: [() => dglGaoTex, v => (dglGaoTex = v)],
-  dglGaoWork: [() => dglGaoWork, v => (dglGaoWork = v)],
   dglGrass: [() => dglGrass, v => setDglGrass(v)],
   dglGrassWork: [() => dglGrassWork, v => setDglGrassWork(v)],
   dglGround: [() => dglGround, v => setDglGround(v)],
-  dglGroundAO: [() => dglGroundAO, v => setDglGroundAO(v)],
-  dglHK: [() => dglHK, v => (dglHK = v)],
   dglHands: [() => dglHands, v => (dglHands = v)],
   dglHeat: [() => dglHeat, v => (dglHeat = v)],
   dglHeatSrc: [() => dglHeatSrc, v => (dglHeatSrc = v)],
@@ -280,10 +276,6 @@ expose({
   dglMood: [() => dglMood, v => (dglMood = v)],
   dglMount: [() => dglMount, v => (dglMount = v)],
   dglPerson: [() => dglPerson, v => (dglPerson = v)],
-  dglPrepAbort: [() => dglPrepAbort, v => (dglPrepAbort = v)],
-  dglPrepWork: [() => dglPrepWork, v => (dglPrepWork = v)],
-  dglPrepare: [() => dglPrepare, v => (dglPrepare = v)],
-  dglPrepared: [() => dglPrepared, v => (dglPrepared = v)],
   dglPrintAt: [() => dglPrintAt, v => (dglPrintAt = v)],
   dglPrints: [() => dglPrints, v => (dglPrints = v)],
   dglPropGrid: [() => dglPropGrid, v => (dglPropGrid = v)],
@@ -293,15 +285,6 @@ expose({
   dglReflLevel: [() => dglReflLevel, v => (dglReflLevel = v)],
   dglReflPass: [() => dglReflPass, v => setDglReflPass(v)],
   dglRing: [() => dglRing, v => (dglRing = v)],
-  dglRingChunk: [() => dglRingChunk, v => (dglRingChunk = v)],
-  dglRingFree: [() => dglRingFree, v => (dglRingFree = v)],
-  dglRingHas: [() => dglRingHas, v => (dglRingHas = v)],
-  dglRingMissing: [() => dglRingMissing, v => (dglRingMissing = v)],
-  dglRingNew: [() => dglRingNew, v => (dglRingNew = v)],
-  dglRingSlot: [() => dglRingSlot],
-  dglRingU: [() => dglRingU, v => (dglRingU = v)],
-  dglRingUpdate: [() => dglRingUpdate, v => setDglRingUpdate(v)],
-  dglRingWant: [() => dglRingWant, v => (dglRingWant = v)],
   dglRiseK: [() => dglRiseK, v => (dglRiseK = v)],
   dglRiseStart: [() => dglRiseStart, v => (dglRiseStart = v)],
   dglRoomBox: [() => dglRoomBox, v => (dglRoomBox = v)],
@@ -343,28 +326,45 @@ expose({
   dglWindAt: [() => dglWindAt, v => (dglWindAt = v)],
   dglWorldTex: [() => dglWorldTex, v => (dglWorldTex = v)],
   freeCameraOn: [() => freeCameraOn],
+  freeNearRing: [() => freeNearRing, v => (freeNearRing = v)],
+  groundCacheKey: [() => groundCacheKey, v => (groundCacheKey = v)],
   groundHeightAt: [() => groundHeightAt, v => ((groundHeightAt = v), provide({ groundHeightAt }))],
   groundNormalTexture: [() => groundNormalTexture, v => (groundNormalTexture = v)],
+  groundOcclusion: [() => groundOcclusion, v => setGroundOcclusion(v)],
+  groundOcclusionSteps: [() => groundOcclusionSteps, v => (groundOcclusionSteps = v)],
+  groundOcclusionTexture: [() => groundOcclusionTexture, v => (groundOcclusionTexture = v)],
+  groundOcclusionWork: [() => groundOcclusionWork, v => (groundOcclusionWork = v)],
   groundPixelNormal: [() => groundPixelNormal, v => (groundPixelNormal = v)],
+  groundPrepWork: [() => groundPrepWork, v => (groundPrepWork = v)],
   handleCanvasClick: [() => handleCanvasClick, v => (handleCanvasClick = v)],
   heightGrid: [() => heightGrid, v => (heightGrid = v)],
+  isGroundPrepared: [() => isGroundPrepared, v => (isGroundPrepared = v)],
   labelLayer: [() => labelLayer, v => (labelLayer = v)],
   listenDeviceTilt: [() => listenDeviceTilt, v => (listenDeviceTilt = v)],
   makeTextureMipmaps: [() => makeTextureMipmaps, v => (makeTextureMipmaps = v)],
   mountWalkView: [() => mountWalkView, v => setMountWalkView(v)],
+  newNearRing: [() => newNearRing, v => (newNearRing = v)],
   onGlContextRestored: [() => onGlContextRestored, v => ((onGlContextRestored = v), provide({ onGlContextRestored }))],
+  paintRingChunk: [() => paintRingChunk, v => (paintRingChunk = v)],
+  prepareMapGround: [() => prepareMapGround, v => (prepareMapGround = v)],
   propMaterial: [() => propMaterial, v => (propMaterial = v)],
   rawHeightAt: [() => rawHeightAt, v => ((rawHeightAt = v), provide({ rawHeightAt }))],
   repeatingTexture: [() => repeatingTexture, v => (repeatingTexture = v)],
+  ringHasChunk: [() => ringHasChunk, v => (ringHasChunk = v)],
+  ringMissingCount: [() => ringMissingCount, v => (ringMissingCount = v)],
+  ringSlot: [() => ringSlot],
   screenRay: [() => screenRay, v => (screenRay = v)],
   screenToGround2d: [() => screenToGround2d],
   setDglAdapt: [() => setDglAdapt, v => (setDglAdapt = v)],
   setMountWalkView: [() => setMountWalkView, v => (setMountWalkView = v)],
+  setNearRingUniforms: [() => setNearRingUniforms, v => (setNearRingUniforms = v)],
   standingHeightAt: [() => standingHeightAt, v => ((standingHeightAt = v), provide({ standingHeightAt }))],
+  updateNearRing: [() => updateNearRing, v => setUpdateNearRing(v)],
   uploadTextureStrips: [() => uploadTextureStrips, v => (uploadTextureStrips = v)],
   walkCamera: [() => walkCamera, v => (walkCamera = v)],
   walkGlContext: [() => walkGlContext, v => (walkGlContext = v)],
   walkRenderer: [() => walkRenderer],
+  wantedRingChunks: [() => wantedRingChunks, v => (wantedRingChunks = v)],
   worldCurveArgs: [() => worldCurveArgs, v => (worldCurveArgs = v)],
   worldCurveDrop: [() => worldCurveDrop, v => (worldCurveDrop = v)],
   worldToScreen2d: [() => worldToScreen2d],
@@ -399,10 +399,6 @@ export function setDglGround(v) {
   dglGround = v; // eslint-disable-line no-func-assign
   provide({ dglGround });
 }
-export function setDglGroundAO(v) {
-  dglGroundAO = v; // eslint-disable-line no-func-assign
-  provide({ dglGroundAO });
-}
 export function setDglItems(v) {
   dglItems = v; // eslint-disable-line no-func-assign
   provide({ dglItems });
@@ -410,10 +406,6 @@ export function setDglItems(v) {
 export function setDglReflPass(v) {
   dglReflPass = v; // eslint-disable-line no-func-assign
   provide({ dglReflPass });
-}
-export function setDglRingUpdate(v) {
-  dglRingUpdate = v; // eslint-disable-line no-func-assign
-  provide({ dglRingUpdate });
 }
 export function setDglShadowPass(v) {
   dglShadowPass = v; // eslint-disable-line no-func-assign
@@ -426,6 +418,14 @@ export function setDglSprites(v) {
 export function setDglWater(v) {
   dglWater = v; // eslint-disable-line no-func-assign
   provide({ dglWater });
+}
+export function setGroundOcclusion(v) {
+  groundOcclusion = v; // eslint-disable-line no-func-assign
+  provide({ groundOcclusion });
+}
+export function setUpdateNearRing(v) {
+  updateNearRing = v; // eslint-disable-line no-func-assign
+  provide({ updateNearRing });
 }
 /* to-module: end */
 export const walkRenderer = {
@@ -457,7 +457,7 @@ export const walkRenderer = {
 };
 provide({ walkRenderer }); /* to-module */
 /* v46: how long a frame may spend getting the next view ready (ms) */
-const DGL_PREP_MS = /Android|iPhone|iPad/.test(navigator.userAgent) ? 4 : 6;
+const PREP_BUDGET_MS = /Android|iPhone|iPad/.test(navigator.userAgent) ? 4 : 6;
 const BORDER_M = GROUND_BORDER_M,
   DGL_FIXED = [1, 0, 0],
   DGL_FIXED_BACK = [0, 0, -1];
@@ -1273,7 +1273,7 @@ void main(){vec4 c;if(uGlow>.5){vec2 q=vUV*2.-1.;float d=dot(q,q);if(d>1.)discar
 };
 /* ---------- ground mesh: the scene at half-meter resolution, then a coarse ring of distant land curving up ---------- */
 /* v46: the ground of a scene, built a slice at a time into T. With T = walkRenderer it runs to the end at once (opening a scene);
-   with a fresh T it runs a few milliseconds a frame for the view that comes next (dglPrepare), so walking from one view
+   with a fresh T it runs a few milliseconds a frame for the view that comes next (prepareMapGround), so walking from one view
    to the next finds everything ready: the textures go up to the card in strips, the mesh and water are built in slices */
 function* buildGroundSteps(sc, G, T) {
   const gl = EGL.gl,
@@ -1290,8 +1290,8 @@ function* buildGroundSteps(sc, G, T) {
   if (T.gtex) gl.deleteTexture(T.gtex);
   T.gtex = null;
   T.gtex = yield* uploadTextureStrips(G.width, G.height, G._px || G, { nearest: true });
-  if (T.ring) dglRingFree(T.ring);
-  T.ring = null; /* v46: the near ring starts empty (dglRingUpdate, or the preparation fills it) */
+  if (T.ring) freeNearRing(T.ring);
+  T.ring = null; /* v46: the near ring starts empty (updateNearRing, or the preparation fills it) */
   const C0 = walkData().sc,
     tile = k => {
       const T = C0.terrains[k];
@@ -1821,10 +1821,10 @@ function* buildGroundSteps(sc, G, T) {
     darkens a wet rim just outside it and paints a bed under it */
   dglShoreField(sc, isW, T);
   yield;
-  if (T === walkRenderer) dglGroundAO(sc);
+  if (T === walkRenderer) groundOcclusion(sc);
   else {
-    const r = yield* dglGaoSteps(sc);
-    if (r) T.gaoTex = dglGaoTex(r);
+    const r = yield* groundOcclusionSteps(sc);
+    if (r) T.gaoTex = groundOcclusionTexture(r);
   }
   /* rocks standing in the water throw foam around themselves */
   const C1 = walkData().sc,
@@ -2151,12 +2151,12 @@ function makeTextureMipmaps(t, o) {
    ms a frame, nearest first, as you walk; the 4 x 4 squares round the camera's focus sit in one texture (2048 px), each
    in the slot its position mod 4 gives, so moving on repaints only the row or column that comes into range. Beyond it
    the view's small distant picture (8 px a metre) shows, faded in over the ring's last 3 m. */
-const RING_N = 4,
-  RING_CS = 16;
-function dglRingNew() {
+const NEAR_RING_SIZE = 4,
+  NEAR_RING_CHUNK_M = 16;
+function newNearRing() {
   const gl = EGL.gl,
     TP = bigTilesOn() ? 32 : 16,
-    S = RING_N * RING_CS * TP,
+    S = NEAR_RING_SIZE * NEAR_RING_CHUNK_M * TP,
     mk = (sz, lin) => {
       const t = gl.createTexture();
       gl.bindTexture(gl.TEXTURE_2D, t);
@@ -2165,7 +2165,7 @@ function dglRingNew() {
      the whole texture's mipmaps aren't rebuilt for every square */ gl.texParameteri(
         gl.TEXTURE_2D,
         gl.TEXTURE_MAX_LEVEL,
-        Math.log2(sz / RING_N)
+        Math.log2(sz / NEAR_RING_SIZE)
       );
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, lin ? gl.LINEAR_MIPMAP_LINEAR : gl.NEAREST_MIPMAP_LINEAR);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, lin ? gl.LINEAR : gl.NEAREST);
@@ -2186,7 +2186,7 @@ function dglRingNew() {
     n: 0,
   };
 }
-function dglRingFree(R) {
+function freeNearRing(R) {
   if (!R) return;
   const gl = EGL.gl;
   for (const J of R.jobs || [])
@@ -2201,22 +2201,27 @@ function dglRingFree(R) {
   R.tex = R.ntex = null;
 }
 /* which squares are wanted: the 4 x 4 round the focus (a little ahead of it, the way the camera looks) */
-function dglRingWant(R, sc, fx, fz) {
+function wantedRingChunks(R, sc, fx, fz) {
   const P = BORDER_M,
     cx = fx + P,
     cy = sc.h + P - fz,
-    tx = cx / RING_CS,
-    ty = cy / RING_CS - 0.4,
-    nx = Math.ceil((sc.w + 2 * P) / RING_CS),
-    ny = Math.ceil((sc.h + 2 * P) / RING_CS);
+    tx = cx / NEAR_RING_CHUNK_M,
+    ty = cy / NEAR_RING_CHUNK_M - 0.4,
+    nx = Math.ceil((sc.w + 2 * P) / NEAR_RING_CHUNK_M),
+    ny = Math.ceil((sc.h + 2 * P) / NEAR_RING_CHUNK_M);
   let c0 = [Math.round(tx - 2), Math.round(ty - 2)];
   if (R.c0 && Math.abs(tx - 2 - R.c0[0]) < 0.75 && Math.abs(ty - 2 - R.c0[1]) < 0.75) c0 = R.c0;
   if (!R.c0 || R.c0[0] !== c0[0] || R.c0[1] !== c0[1]) {
     R.c0 = c0;
-    R.box = [c0[0] * RING_CS, c0[1] * RING_CS, (c0[0] + RING_N) * RING_CS, (c0[1] + RING_N) * RING_CS];
+    R.box = [
+      c0[0] * NEAR_RING_CHUNK_M,
+      c0[1] * NEAR_RING_CHUNK_M,
+      (c0[0] + NEAR_RING_SIZE) * NEAR_RING_CHUNK_M,
+      (c0[1] + NEAR_RING_SIZE) * NEAR_RING_CHUNK_M,
+    ];
     const L = [];
-    for (let j = c0[1]; j < c0[1] + RING_N; j++)
-      for (let i = c0[0]; i < c0[0] + RING_N; i++) {
+    for (let j = c0[1]; j < c0[1] + NEAR_RING_SIZE; j++)
+      for (let i = c0[0]; i < c0[0] + NEAR_RING_SIZE; i++) {
         if (i < 0 || j < 0 || i >= nx || j >= ny) continue;
         L.push([i, j, Math.hypot(i + 0.5 - tx, j + 0.5 - ty)]);
       }
@@ -2230,7 +2235,7 @@ function dglRingWant(R, sc, fx, fz) {
       const ci = R.C[s * 2],
         cj = R.C[s * 2 + 1];
       if (ci < -999) continue;
-      if (ci < c0[0] || cj < c0[1] || ci >= c0[0] + RING_N || cj >= c0[1] + RING_N) {
+      if (ci < c0[0] || cj < c0[1] || ci >= c0[0] + NEAR_RING_SIZE || cj >= c0[1] + NEAR_RING_SIZE) {
         R.C[s * 2] = -9999;
         R.C[s * 2 + 1] = -9999;
       }
@@ -2238,24 +2243,26 @@ function dglRingWant(R, sc, fx, fz) {
   }
   return R.want;
 }
-const dglRingSlot = (ci, cj) => (((ci % RING_N) + RING_N) % RING_N) + (((cj % RING_N) + RING_N) % RING_N) * RING_N;
-function dglRingHas(R, ci, cj) {
-  const s = dglRingSlot(ci, cj);
+const ringSlot = (ci, cj) =>
+  (((ci % NEAR_RING_SIZE) + NEAR_RING_SIZE) % NEAR_RING_SIZE) +
+  (((cj % NEAR_RING_SIZE) + NEAR_RING_SIZE) % NEAR_RING_SIZE) * NEAR_RING_SIZE;
+function ringHasChunk(R, ci, cj) {
+  const s = ringSlot(ci, cj);
   return R.C[s * 2] === ci && R.C[s * 2 + 1] === cj;
 }
-function dglRingMissing(R) {
+function ringMissingCount(R) {
   let n = 0;
-  for (const [i, j] of R.want) if (!dglRingHas(R, i, j)) n++;
+  for (const [i, j] of R.want) if (!ringHasChunk(R, i, j)) n++;
   return n;
 }
 /* paint and upload one square (a generator: the painting is sliced; the upload is at the end) */
-function* dglRingChunk(R, sc, ci, cj, pr) {
-  const s = dglRingSlot(ci, cj);
+function* paintRingChunk(R, sc, ci, cj, pr) {
+  const s = ringSlot(ci, cj);
   R.C[s * 2] = -9999;
   R.C[s * 2 + 1] = -9999;
   const o = {
     TP: R.TP,
-    rect: [ci * RING_CS, cj * RING_CS, RING_CS, RING_CS],
+    rect: [ci * NEAR_RING_CHUNK_M, cj * NEAR_RING_CHUNK_M, NEAR_RING_CHUNK_M, NEAR_RING_CHUNK_M],
     margin: 2,
     nhalf: true,
     mips: 1,
@@ -2264,9 +2271,9 @@ function* dglRingChunk(R, sc, ci, cj, pr) {
   const r = yield* typeof pwPaint === 'function' ? pwPaint(sc, o) : paintGroundSteps(sc, o);
   if (!R.tex) return;
   const gl = EGL.gl,
-    px = R.TP * RING_CS,
-    sx = s % RING_N,
-    sy = (s / RING_N) | 0;
+    px = R.TP * NEAR_RING_CHUNK_M,
+    sx = s % NEAR_RING_SIZE,
+    sy = (s / NEAR_RING_SIZE) | 0;
   gl.bindTexture(gl.TEXTURE_2D, R.tex);
   gl.pixelStorei(gl.UNPACK_ALIGNMENT, 4);
   gl.texSubImage2D(gl.TEXTURE_2D, 0, sx * px, sy * px, px, px, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(r.px.buffer));
@@ -2294,16 +2301,16 @@ function* dglRingChunk(R, sc, ci, cj, pr) {
 }
 /* each frame: keep the ring round the camera's focus, painting what is missing a few ms at a time (more while the
    squares right round you are still missing, so a scene never opens blurred for long) */
-export function dglRingUpdate(sc, fx, fz, budget) {
+export function updateNearRing(sc, fx, fz, budget) {
   if (!walkRenderer.on || !sc) return;
   let R = walkRenderer.ring;
   if (!R) {
     if (!walkRenderer.gtex) return;
-    R = walkRenderer.ring = dglRingNew();
+    R = walkRenderer.ring = newNearRing();
   }
-  const W = dglRingWant(R, sc, fx, fz);
+  const W = wantedRingChunks(R, sc, fx, fz);
   const t0 = performance.now();
-  const near = W.slice(0, 4).some(([i, j]) => !dglRingHas(R, i, j));
+  const near = W.slice(0, 4).some(([i, j]) => !ringHasChunk(R, i, j));
   if (near) budget = Math.max(budget, R.n === 0 ? 30 : 12);
   /* alpha 0.4: with the helper thread painting, a few squares are asked for at once (nearest first) and this frame only
     puts the finished ones on the card; without it, one square at a time, painted here a slice at a time */
@@ -2317,9 +2324,9 @@ export function dglRingUpdate(sc, fx, fz, budget) {
   }); /* (squares that left the ring before they were done) */
   while (performance.now() - t0 < budget) {
     for (; R.jobs.length < K;) {
-      const nx = W.find(([i, j]) => !dglRingHas(R, i, j) && !R.jobs.some(J => J.ci === i && J.cj === j));
+      const nx = W.find(([i, j]) => !ringHasChunk(R, i, j) && !R.jobs.some(J => J.ci === i && J.cj === j));
       if (!nx) break;
-      R.jobs.push({ ci: nx[0], cj: nx[1], it: dglRingChunk(R, sc, nx[0], nx[1], nx[2]) });
+      R.jobs.push({ ci: nx[0], cj: nx[1], it: paintRingChunk(R, sc, nx[0], nx[1], nx[2]) });
     }
     if (!R.jobs.length) break;
     let moved = false;
@@ -2333,7 +2340,7 @@ export function dglRingUpdate(sc, fx, fz, budget) {
     if (!moved) break;
   }
 }
-function dglRingU(U, sc) {
+function setNearRingUniforms(U, sc) {
   if (!U.uRing) return;
   const gl = EGL.gl,
     R = walkRenderer.ring,
@@ -2354,7 +2361,7 @@ function dglRingU(U, sc) {
     gl.uniform4f(U.uRingBox, R.box[0], R.box[1], R.box[2], R.box[3]);
   }
 }
-function dglGaoTex(r) {
+function groundOcclusionTexture(r) {
   const gl = EGL.gl,
     { FW, FH, d } = r,
     t = gl.createTexture();
@@ -2366,7 +2373,7 @@ function dglGaoTex(r) {
   return t;
 }
 /* v46: the frame's key for a view's ground (its mesh, water and textures are kept under it, dglSceneSwap) */
-function dglHK(id, sc, gkey) {
+function groundCacheKey(id, sc, gkey) {
   return (
     id +
     '|' +
@@ -2383,16 +2390,16 @@ function dglHK(id, sc, gkey) {
     (sc.ride ? 'R' : '')
   );
 }
-/* v46: get a view's ground ready before it is shown: built a few ms a frame (dglPrepWork) and kept with the scenes you
+/* v46: get a view's ground ready before it is shown: built a few ms a frame (groundPrepWork) and kept with the scenes you
    left (walkRenderer.sceneCache), so the switch to it is a swap of a few references. Returns true when it is ready. */
-export function dglPrepared(id, sc, gkey) {
+export function isGroundPrepared(id, sc, gkey) {
   const M = walkRenderer.sceneCache;
-  return !!(M && M.has(dglHK(id, sc, gkey || groundKey(sc))));
+  return !!(M && M.has(groundCacheKey(id, sc, gkey || groundKey(sc))));
 }
-export function dglPrepare(id, sc, G, urgent, focus) {
+export function prepareMapGround(id, sc, G, urgent, focus) {
   if (!walkRenderer.on || !G) return false;
   const gkey = groundKey(sc),
-    hk = dglHK(id, sc, gkey);
+    hk = groundCacheKey(id, sc, gkey);
   if (walkRenderer.sceneCache && walkRenderer.sceneCache.has(hk)) return true;
   if (walkRenderer.hkey === hk) return true;
   if (walkRenderer.prep) {
@@ -2401,7 +2408,7 @@ export function dglPrepare(id, sc, G, urgent, focus) {
       return false;
     }
     if (!urgent || walkRenderer.prep.urgent) return false;
-    dglPrepAbort();
+    abortGroundPrep();
   }
   /* a view needed now goes first; one only looked ahead to waits its turn */ const T = {
     prepared: 1,
@@ -2415,9 +2422,9 @@ export function dglPrepare(id, sc, G, urgent, focus) {
     it: (function* () {
       yield* buildGroundSteps(sc, G, T);
       /* v46: and the squares round where you will come in */ if (focus) {
-        T.ring = dglRingNew();
-        const W = dglRingWant(T.ring, sc, focus[0], focus[1]),
-          Q = W.slice(0, 9).map(([i, j, d]) => dglRingChunk(T.ring, sc, i, j, 6 + d));
+        T.ring = newNearRing();
+        const W = wantedRingChunks(T.ring, sc, focus[0], focus[1]),
+          Q = W.slice(0, 9).map(([i, j, d]) => paintRingChunk(T.ring, sc, i, j, 6 + d));
         /* alpha 0.4: all nine on the helper together; painted here, one after another */ if (
           typeof pwOn === 'function' &&
           pwOn()
@@ -2432,7 +2439,7 @@ export function dglPrepare(id, sc, G, urgent, focus) {
   };
   return false;
 }
-function dglPrepAbort() {
+function abortGroundPrep() {
   const J = walkRenderer.prep;
   if (!J) return;
   walkRenderer.prep = null;
@@ -2441,11 +2448,11 @@ function dglPrepAbort() {
   } catch (e) {}
   dglSceneFree(J.T);
 }
-function dglPrepWork(budget) {
+function groundPrepWork(budget) {
   const J = walkRenderer.prep;
   if (!J) return;
   if (walkRenderer.hkey === J.hk) {
-    dglPrepAbort();
+    abortGroundPrep();
     return;
   }
   if (J.urgent && budget) budget *= 2 * (walkRenderer.prepBoost || 1);
@@ -2635,16 +2642,16 @@ const DGL_WKID = Object.fromEntries(DGL_WKIND.map((w, i) => [w.k, i]));
 /* v34: worked out a slice at a time (a few ms per frame) instead of all at once when a scene opens: it was the cause of
    almost every slow frame in the v33 log (up to 243 ms). The cliff-foot pass reads each spot's height once into a grid
    instead of asking the terrain nine times per texel. Until it's done the ground simply isn't darkened. */
-export function dglGroundAO(sc) {
+export function groundOcclusion(sc) {
   const gl = EGL.gl;
   if (walkRenderer.gaoTex) {
     walkRenderer.gaoTex = null;
   }
   walkRenderer.gaoJob = null;
   if ((eng('shadows', 'groundAO') ?? 1) <= 0) return;
-  walkRenderer.gaoJob = { sc, it: dglGaoSteps(sc) };
+  walkRenderer.gaoJob = { sc, it: groundOcclusionSteps(sc) };
 }
-function dglGaoWork(budget = 4) {
+function groundOcclusionWork(budget = 4) {
   const J = walkRenderer.gaoJob;
   if (!J) return;
   if (J.sc !== walkView.sc) {
@@ -2656,12 +2663,12 @@ function dglGaoWork(budget = 4) {
     const r = J.it.next();
     if (r.done) {
       walkRenderer.gaoJob = null;
-      if (r.value) walkRenderer.gaoTex = dglGaoTex(r.value);
+      if (r.value) walkRenderer.gaoTex = groundOcclusionTexture(r.value);
       return;
     }
   }
 }
-function* dglGaoSteps(sc) {
+function* groundOcclusionSteps(sc) {
   const W = sc.w,
     H = sc.h,
     R = 4,
@@ -3571,8 +3578,8 @@ function dglFrame(ts, dtm) {
   if (EGL.fr % 120 === 0) eglTexTrim();
   eglNormWork(walkView.warm ? 40 : 3);
   eglPendPoll(1);
-  dglGaoWork();
-  dglPrepWork(walkRenderer.bt ? 0 : DGL_PREP_MS);
+  groundOcclusionWork();
+  groundPrepWork(walkRenderer.bt ? 0 : PREP_BUDGET_MS);
   const cssW = cv.clientWidth,
     cssH = cv.clientHeight;
   if (!cssW || !cssH) return;
@@ -3612,7 +3619,7 @@ function dglFrameIn(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
     sc = walkView.sc,
     cv = walkView.cv;
   ensureGround();
-  const hk = dglHK(walkView.id, sc, walkView.gkey);
+  const hk = groundCacheKey(walkView.id, sc, walkView.gkey);
   if (walkRenderer.gkey !== walkView.gkey || walkRenderer.hkey !== hk) {
     const old = walkRenderer.hkey;
     walkRenderer.gkey = walkView.gkey;
@@ -3652,7 +3659,7 @@ function dglFrameIn(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
       T = walkRenderer.camT;
     const fx = bc ? bc[0] : T ? T[0] : walkView.pl.x,
       fz = bc ? bc[1] : T ? T[1] : walkView.pl.z;
-    dglRingUpdate(sc, fx, fz, DGL_PREP_MS);
+    updateNearRing(sc, fx, fz, PREP_BUDGET_MS);
   }
   walkRenderer.budT = performance.now();
   let items = dglItems(st, C, PPU, C0);
@@ -3830,7 +3837,7 @@ export function dglRebuild() {
       }
       dglSceneFree(e);
     }
-    if (walkRenderer.prep) dglPrepAbort();
+    if (walkRenderer.prep) abortGroundPrep();
   } catch (e) {
     console.warn(e);
   }
@@ -3856,7 +3863,7 @@ function dglSceneSwap(oldKey, key) {
       walkRenderer[k] = null;
     }
     if (e.ring) {
-      dglRingFree(e.ring);
+      freeNearRing(e.ring);
       e.ring = null;
     }
     /* v46: a view you left keeps its ground but not its near ring (26 MB); it is painted again if you come back */ M.delete(
@@ -3864,11 +3871,11 @@ function dglSceneSwap(oldKey, key) {
     );
     M.set(oldKey, e);
   } else if (walkRenderer.ring) {
-    dglRingFree(walkRenderer.ring);
+    freeNearRing(walkRenderer.ring);
     walkRenderer.ring = null;
   }
   const hit = M.get(key);
-  if (walkRenderer.prep && walkRenderer.prep.hk === key) dglPrepAbort(); /* v46: about to build it anyway */
+  if (walkRenderer.prep && walkRenderer.prep.hk === key) abortGroundPrep(); /* v46: about to build it anyway */
   if (hit && (hit.prepared || hit.grassKey === eng('grass', 'density'))) {
     M.delete(key);
     for (const k of DGL_KEEP) walkRenderer[k] = hit[k];
@@ -3877,7 +3884,7 @@ function dglSceneSwap(oldKey, key) {
     walkRenderer.wlevelR = null;
     walkRenderer.farKey = '';
     walkRenderer.basinKey = null;
-    if (!walkRenderer.gaoTex && walkView.sc) dglGroundAO(walkView.sc);
+    if (!walkRenderer.gaoTex && walkView.sc) groundOcclusion(walkView.sc);
     /* v46: a view prepared ahead plants its grass now (sliced, a few ms a frame) */ if (hit.prepared) {
       walkRenderer.grass = null;
       walkRenderer.grassKey = null;
@@ -3899,7 +3906,7 @@ function dglSceneFree(e) {
   const gl = EGL.gl;
   if (!e) return;
   if (e.ring) {
-    dglRingFree(e.ring);
+    freeNearRing(e.ring);
     e.ring = null;
   }
   try {
@@ -5652,7 +5659,7 @@ export function dglGround(C, X) {
   gl.uniform1f(U.uGShine, eng('world', 'groundShine'));
   gl.uniform4f(U.uGRect, -P, sc.h + P, 1 / (sc.w + 2 * P), 1 / (sc.h + 2 * P));
   dglShoreU(U, sc);
-  dglRingU(U, sc);
+  setNearRingUniforms(U, sc);
   if (U.uBed) gl.uniform3fv(U.uBed, engHex('water', 'bed', '#74654A'));
   if (U.uGAO) {
     gl.activeTexture(gl.TEXTURE8);

@@ -677,7 +677,7 @@ NWLOG.hook = () => {
     ['eglFinish', 'finishing a shader'],
     ['eglNormal', 'working out a bump map'],
     ['eglNormWork', 'handing bump maps to the helper'],
-    ['dglGroundAO', 'shading the ground'],
+    ['groundOcclusion', 'shading the ground'],
     ['dglBuildGrass', 'planting the grass'],
     ['bldItems', 'building 3D buildings'],
     ['openBattle', 'opening a battle'],
@@ -705,7 +705,7 @@ NWLOG.hook = () => {
     ['dglWater', 'water'],
     ['dglFxPass', 'effects'],
     /* alpha 0.2: the rest of a frame's work, so a slow frame names it (a slow frame used to say only "drawing") */
-    ['dglRingUpdate', 'near ring', 'painting the ground nearby'],
+    ['updateNearRing', 'near ring', 'painting the ground nearby'],
     ['dglGrassWork', 'grass rows', 'planting the grass'],
     ['updatePlayer', 'walking', 'moving you'],
     ['updateFolk', 'folk', 'moving the townsfolk'],
