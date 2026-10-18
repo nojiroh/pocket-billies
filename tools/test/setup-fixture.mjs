@@ -11,12 +11,9 @@
 //   interface fill on the page and provide() fills here;
 // - random numbers: util.js's random, which is Math.random when util.js loads: seeded here, so every run is the same;
 // - PB_VERSION (a new save's gameVersion): from game/version.js.
-import { readdirSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
-import vm from 'node:vm';
+import { loadLogic } from './load-logic.mjs';
 
-export const ROOT = join(import.meta.dirname, '..', '..');
-export const LOGIC_DIR = 'game/js/logic';
+export { LOGIC_DIR, reseed, ROOT } from './load-logic.mjs';
 
 // the data: three types, three lines (five species; a line of one is a final stage: Drip has final-stage stats),
 // three locations on two roads, one pool, one trainer
@@ -186,47 +183,5 @@ export const FIXTURE = {
   trainers: { ray: { name: 'Rival Ray', who: 'gini', node: 1, blocks: true, team: [{ sp: '@rival', lvl: 5 }] } },
 };
 
-// before anything imports util.js: a seeded Math.random (Park-Miller)
-let seed = 12345;
-Math.random = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
-// game/version.js is a classic script (self.PB_VERSION = ...): run it on its own
-const version = { self: {} };
-vm.runInNewContext(readFileSync(join(ROOT, 'game/version.js'), 'utf8'), version);
-globalThis.PB_VERSION = version.self.PB_VERSION;
-globalThis.GAMEDATA = FIXTURE;
-
-export const hooks = await import('../../game/js/hooks.js');
-export const said = [];
-const page = {
-  uiState: { learnQ: [], mq: [] },
-  activeBattle: null,
-  setActiveBattle: v => hooks.provide({ activeBattle: v }),
-  save: () => said.push('save'),
-  toast: t => said.push('toast: ' + t),
-  render: () => {},
-  showPendingWindows: () => {},
-  openBattle: () => said.push('openBattle'),
-  playTurnEvents: () => said.push('playTurnEvents'),
-};
-hooks.provide(page);
-
-export const files = readdirSync(join(ROOT, LOGIC_DIR))
-  .filter(f => f.endsWith('.js'))
-  .map(f => `${LOGIC_DIR}/${f}`);
-export const data = await import('../../game/js/game-data.js');
-export const modules = {};
-for (const f of files) modules[f.slice(LOGIC_DIR.length + 1, -3)] = await import(join(ROOT, f));
-export const logic = Object.assign({}, data, ...Object.values(modules));
-export const fn = name => {
-  if (typeof logic[name] !== 'function') throw new Error(`no logic module exports ${name}`);
-  return logic[name];
-};
-// a fresh started save with one Billie, handed to the logic as the page would (setSaveData)
-export function startedSave(sp = 'sparky0', lvl = 10) {
-  const s = fn('newSave')();
-  s.started = true;
-  s.starter = sp.replace(/\d+$/, '');
-  hooks.provide({ saveData: s });
-  s.team.push(fn('makeBilly')(sp, lvl));
-  return s;
-}
+export const { hooks, said, files, data, modules, logic, fn, startedSave: started } = await loadLogic(FIXTURE);
+export const startedSave = (sp = 'sparky0', lvl = 10) => started(sp, lvl);
