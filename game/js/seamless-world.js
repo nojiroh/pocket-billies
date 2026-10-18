@@ -1,4 +1,4 @@
-/* world.js — v43: the seamless world. Scenes stay separate files, but what the walk screen shows is a window onto one
+/* seamless-world.js — v43: the seamless world. Scenes stay separate files, but what the walk screen shows is a window onto one
    continuous ground: a scene with the road leaving its exit, the road itself, or the next scene with the road arriving.
 
    How it is stitched: a road (a link between two stops) lives in a frame of its own, the "road frame", whose origin is

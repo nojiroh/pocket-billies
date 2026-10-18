@@ -511,7 +511,7 @@ def play(pg):
 
 def go_scene(pg, node, sec=40):
     # alpha 0.4: a jump, not a walk: a neighbour whose middle is near this view's would otherwise wait for its view to be
-    # prepared a few milliseconds a frame (world.js wrGate), which at a frame every few seconds here takes minutes
+    # prepared a few milliseconds a frame (seamless-world.js wrGate), which at a frame every few seconds here takes minutes
     pg.evaluate(f"U.inside=null;U.tab='walk';S.route={{node:{node},prog:0,plan:[],hold:false}};S.visited[{node}]=1;U.roam=null;if(typeof DIO!=='undefined'&&DIO.pl)DIO.pl.fresh=true;render();0")
     if not until(pg, f'!!(DIO.ready&&(DIO.id===ROUTE[{node}].scene||(DIO.sc&&DIO.sc.baseId===ROUTE[{node}].scene)))', sec):   # v43: the hub may sit near an exit, so the view may be the scene with its road
         raise Exception(f'{pg.evaluate(f"ROUTE[{node}].scene")} didn’t open in {sec}s')

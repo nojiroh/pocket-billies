@@ -101,7 +101,7 @@ stands.
     game fetches from each map's file when it needs it (`js/scene-files.js`).
   - `art/`: pictures, `manifest.js` (atlas rectangles), `next/rigs-next.js` (skeletons).
   - `js/`: the code. `data.js` builds everything from the data file; `boot.js` loading; `ui.js` the screens;
-    `battle.js` battle rules and HUD; `world.js` walking from one place into the next; `walk-view.js` the walk scene's data and logic and
+    `battle.js` battle rules and HUD; `seamless-world.js` walking from one place into the next; `walk-view.js` the walk scene's data and logic and
     `walk-view-gl.js` draws it; `engine/` the 3D engine (settings, WebGL setup, light, post effects); `battle-gl.js`,
     `world-map-gl.js` battles and the world map on the engine; `buildings.js`, `structures.js`, `props3d.js`, `vox.js`
     3D buildings and props; `log.js` the debug log; `selftest.js` the full test; `debug.js` the debug menu;

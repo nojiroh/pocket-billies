@@ -45,7 +45,7 @@ import {
 } from './walk-view.js';
 import { eng } from './engine/settings.js';
 import { DGL_TERRAIN_MAT } from './walk-view-gl.js';
-import { wrNear } from './world.js';
+import { wrNear } from './seamless-world.js';
 /* eslint-disable no-func-assign */
 expose({
   PW: [() => PW],

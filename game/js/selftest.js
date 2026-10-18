@@ -45,7 +45,7 @@ import { STR, strHas } from './structures.js';
 import { P3D, P3D_SH } from './props3d.js';
 import { VOX } from './vox.js';
 import { OWM, owBuddyTap, owPetSp } from './world-billies.js';
-import { WORLD, wrRoomScene, wrTripView } from './world.js';
+import { WORLD, wrRoomScene, wrTripView } from './seamless-world.js';
 import { A, endBattle, liveK, pickMove, pickTarget, startTrainer, startWild, stopTimers, tapMsg } from './battle.js';
 import { MAP } from './world-map.js';
 import { MGL, MGL_SH, MM, mglRender, mmOn, setMglRender } from './world-map-gl.js';

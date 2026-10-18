@@ -137,7 +137,7 @@ def int_library():
     s = room('int_library', 'Inside the library', '%', '#D8C8A8', 2614, 'library', 'folk:51', (7, 7.4),
              ['Shh. The books are sleeping.', 'We have every billionaire’s biography. None of them are short.', 'Late fees are paid in steps.'])
     # alpha 0.1: two bookcases at the ends of the back wall and two standing in the room as stacks, so the library's
-    # four front windows have room on the back wall (world.js wrRoomWindows)
+    # four front windows have room on the back wall (seamless-world.js wrRoomWindows)
     for x in (1.6, 12.4): s.put('bookshelf', x, 9.0)
     for x in (2.6, 11.4): s.put('bookshelf', x, 6.9)
     s.put('reading_desk', 7, 6.4, label='Librarian'); s.put('armchair', 2.4, 4.6); s.put('armchair', 11.6, 4.6, 1, 1)

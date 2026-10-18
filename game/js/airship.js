@@ -16,7 +16,7 @@ import { sceneLite, sceneLoad, scenesAhead } from './scene-files.js';
 import { RM, S, U, canEnter, esc, fmt, save } from './core.js';
 import { artLoad, uiIco } from './art.js';
 import { dioData, dioImg, dioOk, dioPrepare, dioScene } from './walk-view.js';
-import { wrHubScene } from './world.js';
+import { wrHubScene } from './seamless-world.js';
 import { D2R, MAP, MNV, slerp, v3 } from './world-map.js';
 import { MGL } from './world-map-gl.js';
 import { sfx } from './sound.js';

@@ -131,7 +131,7 @@ import {
   wrRoomId,
   wrRoomScene,
   wrTripView,
-} from './world.js';
+} from './seamless-world.js';
 import { battleGLLayout, battleGLWanted } from './battle-gl.js';
 import {
   A,

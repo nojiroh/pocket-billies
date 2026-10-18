@@ -35,7 +35,7 @@ import { buzz, partSpr } from './battle-stage.js';
 import { DIO, dioData, dioDirOf, dioImg, dioOk, dioPrepare, dioProj, dioScene, dioStop } from './walk-view.js';
 import { EGL, eglOK } from './engine/core.js';
 import { DGL, dglPerson, dioH, dioMount } from './walk-view-gl.js';
-import { wrRoamView } from './world.js';
+import { wrRoamView } from './seamless-world.js';
 import { music, sfx } from './sound.js';
 import { TALK, talkHide, talkLine } from './talk.js';
 /* eslint-disable no-func-assign */

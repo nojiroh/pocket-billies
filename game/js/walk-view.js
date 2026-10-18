@@ -673,7 +673,7 @@ export function dioGroundKey(sc) {
    v18 also builds it a slice at a time (dioGroundAsync) so opening a scene never freezes the game, with the noise
    sampled on a coarse grid (several times faster), and keeps the last few scenes' pictures for instant revisits. */
 /* v46: which ground pattern each cell takes. Inside a scene its own metres, on a road the road's frame, so a spot
-   looks the same in every view it appears in (sc.stable, set by world.js); a plain scene uses its own metres. */
+   looks the same in every view it appears in (sc.stable, set by seamless-world.js); a plain scene uses its own metres. */
 export function dioStableCells(sc, cx0, cy0, cw, ch) {
   const P = DIO_PAD,
     H = sc.h,

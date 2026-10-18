@@ -17,7 +17,7 @@ import { DIO, dioData, dioPaths, dioScene } from './walk-view.js';
 import { EGL, eglOK } from './engine/core.js';
 import { ENV } from './env.js';
 import { DGL, dglRiseStart } from './walk-view-gl.js';
-import { WORLD } from './world.js';
+import { WORLD } from './seamless-world.js';
 import { areaKey } from './battle.js';
 import { WORLD_ART, mapPrepare } from './world-map.js';
 import { WORLD_RELIEF } from './world-map-gl.js';
