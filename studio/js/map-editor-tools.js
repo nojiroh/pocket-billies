@@ -15,7 +15,7 @@ import { $ } from '../../game/js/util.js';
 import { walkView } from '../../game/js/walk-view.js';
 import { esc } from './game-stand-ins.js';
 import { ACTIONS, ask, changed, clone, commit, dialog, render, studioState, toast, uniqueKey } from './studio-app.js';
-import { currentMap, mapEditor, scMapDraw, scPropAt, scSetTile, sceneryCatalog } from './map-editor.js';
+import { currentMap, drawEditorMap, mapEditor, paintMapTile, propAtPointer, sceneryCatalog } from './map-editor.js';
 /* eslint-disable no-func-assign */
 expose({
   scxBlocks: [() => scxBlocks],
@@ -82,7 +82,7 @@ function scxSelBoxes(a, b) {
 function scxDown(sc, m, ev) {
   const t = mapEditor.tool;
   if (t === 'props') {
-    const hit = scPropAt(m);
+    const hit = propAtPointer(m);
     if (ev.shiftKey) {
       if (hit != null) {
         if (mapEditor.multi.has(hit)) mapEditor.multi.delete(hit);
@@ -107,7 +107,7 @@ function scxDown(sc, m, ev) {
     }
     if (mapEditor.multi.size) {
       mapEditor.multi.clear();
-      scMapDraw();
+      drawEditorMap();
     }
     return false;
   }
@@ -131,7 +131,7 @@ function scxDown(sc, m, ev) {
       return true;
     }
     (mapEditor.road = mapEditor.road || []).push([+m.x.toFixed(2), +m.z.toFixed(2)]);
-    scMapDraw();
+    drawEditorMap();
     return true;
   }
   return false;
@@ -141,7 +141,7 @@ function scxMove(sc, m, D, ev) {
   if (!D) return false;
   if (D.k === 'band') {
     D.b = [m.mx, m.my];
-    scMapDraw();
+    drawEditorMap();
     return true;
   }
   if (D.k === 'group') {
@@ -159,7 +159,7 @@ function scxMove(sc, m, D, ev) {
       }
     }
     D.moved = 1;
-    scMapDraw();
+    drawEditorMap();
     return true;
   }
   if (D.k === 'scatter') {
@@ -267,7 +267,7 @@ document.addEventListener(
     if (k === 'escape') {
       if (mapEditor.road) {
         mapEditor.road = null;
-        scMapDraw();
+        drawEditorMap();
       }
       if (mapEditor.multi.size) {
         mapEditor.multi.clear();
@@ -350,7 +350,7 @@ function scxStampAt(sc, b, x, z, mirror) {
   walkView.nav = null;
   changed();
   commit(true);
-  scMapDraw();
+  drawEditorMap();
 }
 function scxBlocksBar() {
   const B = scxBlocks(),
@@ -421,7 +421,7 @@ function scxScatter(sc, m, D) {
       D.n++;
       mapEditor.sel = null;
       mapEditor.multi.clear();
-      scMapDraw();
+      drawEditorMap();
     }
     return;
   }
@@ -447,7 +447,7 @@ function scxScatter(sc, m, D) {
   }
   if (placed) {
     D.n += placed;
-    scMapDraw();
+    drawEditorMap();
   }
 }
 function scxScatterBar() {
@@ -511,7 +511,7 @@ function scxRoadLay(sc) {
         if (dx * dx + dz * dz > w * w) continue;
         const i = Math.floor(x + dx),
           j = sc.h - 1 - Math.floor(z + dz);
-        any = scSetTile(sc, i, j, mapEditor.ter) || any;
+        any = paintMapTile(sc, i, j, mapEditor.ter) || any;
       }
   if (any) {
     walkView.gkey = '';
@@ -520,7 +520,7 @@ function scxRoadLay(sc) {
     changed();
     commit(true);
   }
-  scMapDraw();
+  drawEditorMap();
   toast('Road laid.');
 }
 ACTIONS.scxSmoothPath = () => {
@@ -531,7 +531,7 @@ ACTIONS.scxSmoothPath = () => {
   walkView.nav = null;
   changed();
   commit(true);
-  scMapDraw();
+  drawEditorMap();
 };
 /* ---------- drawn over the map ---------- */
 function scxDraw(x, sc, Z) {

@@ -190,7 +190,7 @@ def check_studio(pw, results):
         pg.goto(f'http://localhost:{port}/studio/index.html'); pg.wait_for_selector('.split', timeout=30000); time.sleep(1)
         for sec in ['billionaires', 'moves', 'preview', 'types', 'items', 'shops', 'world', 'scenes', 'engine', 'wardrobe', 'trainers', 'people', 'jobs', 'rules', 'art', 'check']:
             pg.evaluate(f"openSection('{sec}')"); time.sleep(2 if sec in ('preview', 'scenes', 'engine') else .6); pg.screenshot(path=str(OUT / f'studio-{sec}.png'))
-        pg.evaluate("openSection('scenes');mapEditor.tool='steps';mapEditor.smode='stairs';mapEditor.walkOv=true;render()"); time.sleep(3); pg.evaluate("scMapDraw()"); time.sleep(.5)
+        pg.evaluate("openSection('scenes');mapEditor.tool='steps';mapEditor.smode='stairs';mapEditor.walkOv=true;render()"); time.sleep(3); pg.evaluate("drawEditorMap()"); time.sleep(.5)
         pg.screenshot(path=str(OUT / 'studio-scenes-steps.png'))
         pg.evaluate("mapEditor.tool='paint';mapEditor.walkOv=false;openSection('rules')"); time.sleep(.6)
         pg.evaluate("openSection('moves',{move:'lawsuit'})"); pg.fill('input[data-p="moves.lawsuit.p"]', '77'); pg.dispatch_event('input[data-p="moves.lawsuit.p"]', 'change')

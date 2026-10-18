@@ -72,31 +72,35 @@ expose({
   GROUND_KEYS: [() => GROUND_KEYS],
   SC_WK: [() => SC_WK],
   addSceneryProp: [() => addSceneryProp, v => (addSceneryProp = v)],
+  applyPreviewEnvironment: [() => applyPreviewEnvironment, v => (applyPreviewEnvironment = v)],
   artCacheVersion: [() => artCacheVersion, v => ((artCacheVersion = v), provide({ artCacheVersion }))],
+  bindEditorMap: [() => bindEditorMap, v => (bindEditorMap = v)],
   blankMap: [() => blankMap, v => (blankMap = v)],
   currentMap: [() => currentMap],
   currentMapId: [() => currentMapId],
+  drawEditorMap: [() => drawEditorMap, v => (drawEditorMap = v)],
+  drawTileThumbs: [() => drawTileThumbs, v => (drawTileThumbs = v)],
   dropStaleExitJoins: [() => dropStaleExitJoins, v => (dropStaleExitJoins = v)],
   edgeExitId: [() => edgeExitId, v => (edgeExitId = v)],
+  ensureHeightGrid: [() => ensureHeightGrid, v => (ensureHeightGrid = v)],
   exitChecks: [() => exitChecks, v => (exitChecks = v)],
+  floodFillGround: [() => floodFillGround, v => (floodFillGround = v)],
   isGroundKey: [() => isGroundKey],
   locationsUsingMap: [() => locationsUsingMap],
   mapEditor: [() => mapEditor],
   mapExitNames: [() => mapExitNames, v => (mapExitNames = v)],
   mapLifeText: [() => mapLifeText, v => (mapLifeText = v)],
+  mapPointer: [() => mapPointer, v => (mapPointer = v)],
+  mapToolHint: [() => mapToolHint, v => (mapToolHint = v)],
+  mountMapEditor: [() => mountMapEditor, v => (mountMapEditor = v)],
+  mountMapPreview: [() => mountMapPreview, v => (mountMapPreview = v)],
   newEdgeExitName: [() => newEdgeExitName, v => (newEdgeExitName = v)],
+  paintMapTile: [() => paintMapTile, v => (paintMapTile = v)],
   parseMapLife: [() => parseMapLife, v => (parseMapLife = v)],
+  propAtPointer: [() => propAtPointer, v => (propAtPointer = v)],
   resizeReport: [() => resizeReport, v => (resizeReport = v)],
-  scBindMap: [() => scBindMap, v => (scBindMap = v)],
   scDrawSteps: [() => scDrawSteps, v => (scDrawSteps = v)],
   scDrawWaters: [() => scDrawWaters, v => (scDrawWaters = v)],
-  scEnvApply: [() => scEnvApply, v => (scEnvApply = v)],
-  scFlood: [() => scFlood, v => (scFlood = v)],
-  scHGrid: [() => scHGrid, v => (scHGrid = v)],
-  scHeightAt: [() => scHeightAt, v => (scHeightAt = v)],
-  scHint: [() => scHint, v => (scHint = v)],
-  scMapDraw: [() => scMapDraw, v => (scMapDraw = v)],
-  scMount: [() => scMount, v => (scMount = v)],
   scOpenPe: [() => scOpenPe, v => (scOpenPe = v)],
   scPeDone: [() => scPeDone, v => (scPeDone = v)],
   scPeDraw: [() => scPeDraw, v => (scPeDraw = v)],
@@ -105,24 +109,20 @@ expose({
   scPePalette: [() => scPePalette, v => (scPePalette = v)],
   scPePlot: [() => scPePlot, v => (scPePlot = v)],
   scPixelCard: [() => scPixelCard, v => (scPixelCard = v)],
-  scPos: [() => scPos, v => (scPos = v)],
-  scPreview: [() => scPreview, v => (scPreview = v)],
-  scPropAt: [() => scPropAt, v => (scPropAt = v)],
   scPropSettings: [() => scPropSettings, v => (scPropSettings = v)],
-  scSetTile: [() => scSetTile, v => (scSetTile = v)],
   scStepsBar: [() => scStepsBar, v => (scStepsBar = v)],
   scStepsDown: [() => scStepsDown, v => (scStepsDown = v)],
   scStepsPaint: [() => scStepsPaint, v => (scStepsPaint = v)],
   scStepsUp: [() => scStepsUp, v => (scStepsUp = v)],
   scStepsWork: [() => scStepsWork, v => (scStepsWork = v)],
-  scThumbs: [() => scThumbs, v => (scThumbs = v)],
   scWaterAt: [() => scWaterAt, v => (scWaterAt = v)],
   scWaterBar: [() => scWaterBar, v => (scWaterBar = v)],
   scWaterChanged: [() => scWaterChanged, v => (scWaterChanged = v)],
   scWaterUp: [() => scWaterUp, v => (scWaterUp = v)],
   sceneryArtPaths: [() => sceneryArtPaths, v => ((sceneryArtPaths = v), provide({ sceneryArtPaths }))],
   sceneryCatalog: [() => sceneryCatalog],
-  segDist: [() => segDist, v => (segDist = v)],
+  sculptHeights: [() => sculptHeights, v => (sculptHeights = v)],
+  segmentDistance: [() => segmentDistance, v => (segmentDistance = v)],
   syncEdgeExits: [() => syncEdgeExits, v => (syncEdgeExits = v)],
 });
 /* eslint-enable no-func-assign */
@@ -203,7 +203,7 @@ SECTIONS.scenes = () => {
   const D = studioState.D,
     id = currentMapId(),
     sc = currentMap();
-  after(scMount);
+  after(mountMapEditor);
   /* v46: each scene says what it is (kind: town, route, room, test); the list is grouped by kind and can be filtered */
   const kindOf = ([k, s]) =>
       s.kind || (s.test ? 'test' : s.room ? 'room' : locationsUsingMap(k).some(([r]) => r.town) ? 'town' : 'route'),
@@ -467,7 +467,7 @@ SECTIONS.scenes = () => {
               : `<div class="sc-ters">${terr}</div>`
   }
   <div class="sc-stage" id="scStage"><canvas id="scMap"></canvas></div>
-  <p class="help" id="scHint">${scHint()}</p>${mapEditor.tool === 'path' ? `<div class="seg-row"><button class="btn sm" data-act="scxSmoothPath">Smooth the path into a curve</button></div>` : ''}${selCard}`,
+  <p class="help" id="scHint">${mapToolHint()}</p>${mapEditor.tool === 'path' ? `<div class="seg-row"><button class="btn sm" data-act="scxSmoothPath">Smooth the path into a curve</button></div>` : ''}${selCard}`,
    {
      sub: 'Top is far away, bottom is close to the camera. The gold star is where you stand when you stay; green dots are the exits roads leave through.',
    }
@@ -675,7 +675,7 @@ function scPropSettings(k) {
   )}
   <p class="help">Effects (${(P.fx || []).map(f => f.k).join(', ') || 'none'}) are set in art/scene/props.json and the scenery catalog.</p>`;
 }
-function scHint() {
+function mapToolHint() {
   return (
     {
       paint: 'Paint ground with the selected type. Alt-click picks the type under the cursor.',
@@ -705,15 +705,15 @@ function scHint() {
   );
 }
 /* ---------- mount ---------- */
-async function scMount() {
+async function mountMapEditor() {
   const sc = currentMap();
   if (!sc) return;
   const C = sceneryCatalog();
   const paths = sceneryArtPaths(C);
   await Promise.all(paths.map(p => atlasGet('art/' + p).catch(() => null)));
-  scThumbs();
-  scMapDraw();
-  scBindMap();
+  drawTileThumbs();
+  drawEditorMap();
+  bindEditorMap();
   if (mapEditor.ped && sceneryCatalog().props[mapEditor.ped] && typeof pedMount === 'function') {
     const l = $('#scPvLoad');
     if (l) {
@@ -721,7 +721,7 @@ async function scMount() {
       l.textContent = 'Paused while the prop editor’s turntable runs';
     }
     pedMount();
-  } else scPreview();
+  } else mountMapPreview();
   const tr = $('#scT');
   if (tr)
     tr.addEventListener('input', () => {
@@ -780,7 +780,7 @@ async function scMount() {
     });
   if (mapEditor.pe) scPeMount();
 }
-function scThumbs() {
+function drawTileThumbs() {
   const C = sceneryCatalog();
   $$('canvas[data-tile]').forEach(c => {
     const T = C.terrains[c.dataset.tile];
@@ -895,7 +895,7 @@ function dropStaleExitJoins(sc) {
     if (!J.a && !J.b) l.length = 3;
   });
 }
-function scPreview() {
+function mountMapPreview() {
   const cv = $('#scPv'),
     id0 = currentMapId();
   if (!cv || !id0) return;
@@ -986,7 +986,7 @@ ACTIONS.scPvHub = () => {
   walkView.pl.route = null;
 };
 /* ---------- map ---------- */
-export function scMapDraw() {
+export function drawEditorMap() {
   const cv = $('#scMap'),
     sc = currentMap();
   if (!cv || !sc) return;
@@ -1181,7 +1181,7 @@ export function scMapDraw() {
   const zEl = $('#scZ');
   if (zEl) zEl.textContent = Z + 'px';
 }
-function scPos(ev) {
+function mapPointer(ev) {
   const cv = $('#scMap'),
     r = cv.getBoundingClientRect(),
     sc = currentMap(),
@@ -1196,14 +1196,14 @@ function scPos(ev) {
     j: Math.floor(my / mapEditor.zoom),
   };
 }
-export function scSetTile(sc, i, j, ch) {
+export function paintMapTile(sc, i, j, ch) {
   if (i < 0 || j < 0 || i >= sc.w || j >= sc.h) return false;
   const row = sc.tiles[j] || ''.padEnd(sc.w, sc.edge);
   if (row[i] === ch) return false;
   sc.tiles[j] = row.slice(0, i) + ch + row.slice(i + 1);
   return true;
 }
-export function scPropAt(m) {
+export function propAtPointer(m) {
   const L = mapEditor.boxes || [];
   for (let k = L.length - 1; k >= 0; k--) {
     const b = L[k];
@@ -1211,7 +1211,7 @@ export function scPropAt(m) {
   }
   return null;
 }
-function scBindMap() {
+function bindEditorMap() {
   const cv = $('#scMap');
   if (!cv || cv._b) return;
   cv._b = 1;
@@ -1223,16 +1223,16 @@ function scBindMap() {
     for (let a = -r; a <= r; a++)
       for (let b = -r; b <= r; b++) {
         if (a * a + b * b > r * r + r) continue;
-        any = scSetTile(sc, m.i + a, m.j + b, mapEditor.ter) || any;
+        any = paintMapTile(sc, m.i + a, m.j + b, mapEditor.ter) || any;
       }
     if (any) {
       walkView.gkey = '';
-      scMapDraw();
+      drawEditorMap();
     }
   };
   cv.addEventListener('pointerdown', ev => {
     const sc = currentMap(),
-      m = scPos(ev);
+      m = mapPointer(ev);
     cv.setPointerCapture(ev.pointerId);
     if (typeof scxDown === 'function' && scxDown(sc, m, ev)) return;
     if (mapEditor.tool === 'paint' || mapEditor.tool === 'fill') {
@@ -1245,9 +1245,9 @@ function scBindMap() {
         return;
       }
       if (mapEditor.tool === 'fill') {
-        scFlood(sc, m.i, m.j, mapEditor.ter);
+        floodFillGround(sc, m.i, m.j, mapEditor.ter);
         walkView.gkey = '';
-        scMapDraw();
+        drawEditorMap();
         changed();
         commit(true);
         return;
@@ -1259,7 +1259,7 @@ function scBindMap() {
     if (mapEditor.tool === 'height') {
       mapEditor.hflat = rawHeightAt(sc, m.x, m.z);
       mapEditor.drag = { k: 'height' };
-      scHeightAt(sc, m);
+      sculptHeights(sc, m);
       return;
     }
     if (mapEditor.tool === 'steps') {
@@ -1291,7 +1291,7 @@ function scBindMap() {
       if (n >= 0 && (ev.button === 2 || ev.altKey)) {
         E.splice(n, 1);
         syncEdgeExits(sc, null, n);
-        scMapDraw();
+        drawEditorMap();
         changed();
         commit(true);
         return;
@@ -1303,7 +1303,7 @@ function scBindMap() {
       E.push([+m.x.toFixed(2), +m.z.toFixed(2)]);
       syncEdgeExits(sc, E.length - 1);
       mapEditor.drag = { k: 'exit', n: E.length - 1 };
-      scMapDraw();
+      drawEditorMap();
       return;
     }
     if (mapEditor.tool === 'path') {
@@ -1321,7 +1321,7 @@ function scBindMap() {
           P.splice(near, 1);
           walkView.cand = null;
           walkView.nav = null;
-          scMapDraw();
+          drawEditorMap();
           changed();
           commit(true);
         }
@@ -1334,7 +1334,7 @@ function scBindMap() {
       let best = -1,
         bd = 1e9;
       for (let k = 0; k < P.length - 1; k++) {
-        const d = segDist(m.x, m.z, P[k], P[k + 1]);
+        const d = segmentDistance(m.x, m.z, P[k], P[k + 1]);
         if (d < bd) {
           bd = d;
           best = k;
@@ -1343,16 +1343,16 @@ function scBindMap() {
       if (bd * mapEditor.zoom < 12) {
         P.splice(best + 1, 0, [+m.x.toFixed(2), +m.z.toFixed(2)]);
         mapEditor.drag = { k: 'pt', n: best + 1 };
-        scMapDraw();
+        drawEditorMap();
       }
       return;
     }
-    const hit = scPropAt(m);
+    const hit = propAtPointer(m);
     if (mapEditor.tool === 'erase') {
       if (hit != null) {
         sc.props.splice(hit, 1);
         mapEditor.sel = null;
-        scMapDraw();
+        drawEditorMap();
         changed();
         commit(true);
       }
@@ -1390,20 +1390,20 @@ function scBindMap() {
   cv.addEventListener('pointermove', ev => {
     const D = mapEditor.drag,
       sc = currentMap(),
-      m = scPos(ev);
+      m = mapPointer(ev);
     if (typeof scxMove === 'function' && scxMove(sc, m, D, ev)) return;
     if (!D) {
-      if (mapEditor.road || mapEditor.tool === 'scatter') scMapDraw();
+      if (mapEditor.road || mapEditor.tool === 'scatter') drawEditorMap();
       return;
     }
     if (D.k === 'paint') paint(m);
-    else if (D.k === 'height') scHeightAt(sc, m);
+    else if (D.k === 'height') sculptHeights(sc, m);
     else if (D.k === 'steps') {
       scStepsPaint(sc, m, D);
-      scMapDraw();
+      drawEditorMap();
     } else if (D.k === 'stairs' || D.k === 'bridge' || D.k === 'wrect') {
       D.b = [m.x, m.z];
-      scMapDraw();
+      drawEditorMap();
     } else if (D.k === 'hub' || D.k === 'exit') {
       const q = +clamp(m.x, 0.3, sc.w - 0.3).toFixed(2),
         r = +clamp(m.z, 0.3, sc.h - 0.3).toFixed(2);
@@ -1415,7 +1415,7 @@ function scBindMap() {
       D.moved = 1;
       walkView.cand = null;
       walkView.nav = null;
-      scMapDraw();
+      drawEditorMap();
     } else if (D.k === 'pt') {
       const q = clamp(m.x, 0, sc.w),
         r = clamp(m.z, 0, sc.h);
@@ -1423,7 +1423,7 @@ function scBindMap() {
       D.moved = 1;
       walkView.cand = null;
       walkView.nav = null;
-      scMapDraw();
+      drawEditorMap();
     } else if (D.k === 'prop') {
       const p = sc.props[mapEditor.sel];
       if (!p) return;
@@ -1436,7 +1436,7 @@ function scBindMap() {
       p.x = +clamp(nx, -4, sc.w + 4).toFixed(2);
       p.z = +clamp(nz, -4, sc.h + 6).toFixed(2);
       D.moved = 1;
-      scMapDraw();
+      drawEditorMap();
     }
   });
   const up = () => {
@@ -1466,20 +1466,20 @@ function scBindMap() {
       if (!ev.ctrlKey && !ev.metaKey) return;
       ev.preventDefault();
       mapEditor.zoom = clamp(mapEditor.zoom + (ev.deltaY < 0 ? 2 : -2), 8, 48);
-      scMapDraw();
+      drawEditorMap();
     },
     { passive: false }
   );
 }
-function scHGrid(sc) {
+function ensureHeightGrid(sc) {
   if (!sc.heights || sc.heights.length !== sc.h + 1)
     sc.heights = Array.from({ length: sc.h + 1 }, (_, r) =>
       Array.from({ length: sc.w + 1 }, (_, i) => (sc.heights && sc.heights[r] && +sc.heights[r][i]) || 0)
     );
   return sc.heights;
 }
-function scHeightAt(sc, m) {
-  const H = scHGrid(sc),
+function sculptHeights(sc, m) {
+  const H = ensureHeightGrid(sc),
     R = Math.max(1, mapEditor.brush * 0.9),
     k = mapEditor.hstr * 0.35;
   for (let r = 0; r <= sc.h; r++)
@@ -1521,7 +1521,7 @@ function scHeightAt(sc, m) {
   mapEditor.hT = setTimeout(() => {
     if (typeof walkRenderer !== 'undefined') walkRenderer.hkey = '';
   }, 120);
-  scMapDraw();
+  drawEditorMap();
 }
 ACTIONS.scHMode = d => {
   mapEditor.hmode = d.m;
@@ -1537,14 +1537,14 @@ ACTIONS.scHFlat = async () => {
   commit(true);
   render();
 };
-function segDist(x, z, a, b) {
+function segmentDistance(x, z, a, b) {
   const dx = b[0] - a[0],
     dz = b[1] - a[1],
     L = dx * dx + dz * dz || 1,
     t = clamp(((x - a[0]) * dx + (z - a[1]) * dz) / L, 0, 1);
   return Math.hypot(a[0] + dx * t - x, a[1] + dz * t - z);
 }
-function scFlood(sc, i, j, ch) {
+function floodFillGround(sc, i, j, ch) {
   const from = (sc.tiles[j] || '')[i];
   if (from == null || from === ch) return;
   const st = [[i, j]];
@@ -1552,7 +1552,7 @@ function scFlood(sc, i, j, ch) {
   while (st.length && n < 5000) {
     const [a, b] = st.pop();
     if ((sc.tiles[b] || '')[a] !== from) continue;
-    scSetTile(sc, a, b, ch);
+    paintMapTile(sc, a, b, ch);
     n++;
     st.push([a + 1, b], [a - 1, b], [a, b + 1], [a, b - 1]);
   }
@@ -1606,7 +1606,7 @@ document.addEventListener('keydown', ev => {
     p.z = +(p.z + mv[1]).toFixed(2);
     walkView.nav = null;
     changed();
-    scMapDraw();
+    drawEditorMap();
   }
 });
 /* field edits for the current scene update the map and preview */
@@ -1616,8 +1616,8 @@ studioState.hooks.scenes = path => {
     walkView.nav = null;
     walkView.cand = null;
     if (/\.(edge|w|h)$/.test(path) || path.startsWith('scenery.terrains')) walkView.gkey = '';
-    scMapDraw();
-    if (path.startsWith('scenery.terrains')) scThumbs();
+    drawEditorMap();
+    if (path.startsWith('scenery.terrains')) drawTileThumbs();
   }
 };
 /* ---------- actions ---------- */
@@ -1635,7 +1635,7 @@ ACTIONS.scTool = d => {
   render();
 };
 /* v26: preview the scene at another hour, in other weather or season (environment.js); nothing is saved */
-function scEnvApply() {
+function applyPreviewEnvironment() {
   if (typeof environment === 'undefined') return;
   const e = mapEditor.env || {},
     f = {};
@@ -1646,7 +1646,7 @@ function scEnvApply() {
 }
 ACTIONS.scEnv = () => {
   mapEditor.env = { time: $('#scEnvT').value, weather: $('#scEnvW').value, season: $('#scEnvS').value };
-  scEnvApply();
+  applyPreviewEnvironment();
 };
 ACTIONS.scTer = d => {
   mapEditor.ter = d.c;
@@ -1664,7 +1664,7 @@ ACTIONS.scTag = d => {
 };
 ACTIONS.scZoom = d => {
   mapEditor.zoom = clamp(mapEditor.zoom + +d.z, 8, 48);
-  scMapDraw();
+  drawEditorMap();
 };
 ACTIONS.scDupProp = () => {
   const sc = currentMap(),
@@ -2254,8 +2254,8 @@ function scPeDone() {
   markArt(mapEditor.pe.path, c);
   if (mapEditor.ped && typeof pedDraw === 'function') pedDraw();
   if (mapEditor.pe.kind === 'tile') walkView.gkey = '';
-  scThumbs();
-  scMapDraw();
+  drawTileThumbs();
+  drawEditorMap();
   scPePalette();
 }
 function scPeDraw() {
@@ -2495,7 +2495,7 @@ document.addEventListener('change', ev => {
   else if (t.id === 'scBW') mapEditor.bw = clamp(+t.value || 1.6, 0.8, 5);
   else if (t.id === 'scWalkOv') {
     mapEditor.walkOv = t.checked;
-    scMapDraw();
+    drawEditorMap();
   }
 });
 function scStepsWork(sc) {
@@ -2518,7 +2518,7 @@ function scStepsDown(sc, m, ev) {
   if (mapEditor.smode === 'bridge') {
     if (ev.altKey || ev.button === 2) {
       const L = sc.bridges || [],
-        k = L.findIndex(b => segDist(m.x, m.z, b.a, b.b) < (b.w || 1.6) / 2 + 0.3);
+        k = L.findIndex(b => segmentDistance(m.x, m.z, b.a, b.b) < (b.w || 1.6) / 2 + 0.3);
       mapEditor.stE = null;
       if (k >= 0) {
         L.splice(k, 1);
@@ -2526,7 +2526,7 @@ function scStepsDown(sc, m, ev) {
         walkView.nav = null;
         changed();
         commit(true);
-        scMapDraw();
+        drawEditorMap();
       }
       return;
     }
@@ -2540,7 +2540,7 @@ function scStepsDown(sc, m, ev) {
   }
   mapEditor.drag = { k: 'steps', alt: ev.altKey || ev.button === 2 };
   scStepsPaint(sc, m, mapEditor.drag);
-  scMapDraw();
+  drawEditorMap();
 }
 function scStepsPaint(sc, m, D) {
   const E = scStepsWork(sc),
@@ -2581,7 +2581,7 @@ function scStepsUp(sc, D) {
       changed();
       commit(true);
     }
-    scMapDraw();
+    drawEditorMap();
     return;
   }
   const E = mapEditor.stE || scStepsWork(sc);
@@ -2634,7 +2634,7 @@ function scStepsUp(sc, D) {
   walkView.cand = null;
   changed();
   commit(true);
-  scMapDraw();
+  drawEditorMap();
 }
 function scDrawSteps(x, sc, Z) {
   const E = mapEditor.stE || stepGrid(sc),
@@ -2812,7 +2812,7 @@ function scWaterChanged() {
   if (typeof walkRenderer !== 'undefined') walkRenderer.hkey = '';
   changed();
   commit(true);
-  scMapDraw();
+  drawEditorMap();
 }
 function scWaterUp(sc, D) {
   const snap = v => Math.round(v * 2) / 2,
@@ -2821,7 +2821,7 @@ function scWaterUp(sc, D) {
     z0 = snap(Math.min(D.a[1], D.b[1])),
     z1 = snap(Math.max(D.a[1], D.b[1]));
   if (x1 - x0 < 0.5 || z1 - z0 < 0.5) {
-    scMapDraw();
+    drawEditorMap();
     return;
   }
   (sc.waters || (sc.waters = [])).push({ x: x0, z: z0, w: x1 - x0, h: z1 - z0, k: mapEditor.wk || 'pond' });
