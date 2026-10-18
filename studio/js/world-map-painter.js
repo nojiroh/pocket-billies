@@ -26,17 +26,16 @@ expose({
   drawPainterGlobe: [() => drawPainterGlobe, v => (drawPainterGlobe = v)],
   drawPainterMarkers: [() => drawPainterMarkers, v => (drawPainterMarkers = v)],
   eraseTrailAll: [() => eraseTrailAll, v => (eraseTrailAll = v)],
+  fillPainterArea: [() => fillPainterArea, v => (fillPainterArea = v)],
   hexToPixel32: [() => hexToPixel32],
   inpaint: [() => inpaint, v => (inpaint = v)],
   lonLatToDirection: [() => lonLatToDirection],
   mountPainter: [() => mountPainter, v => (mountPainter = v)],
   paintTrail: [() => paintTrail, v => (paintTrail = v)],
   painterDisplayX: [() => painterDisplayX],
-  painterFill: [() => painterFill, v => (painterFill = v)],
   painterHint: [() => painterHint, v => (painterHint = v)],
   painterPalette: [() => painterPalette, v => (painterPalette = v)],
   painterPixels: [() => painterPixels, v => (painterPixels = v)],
-  painterStamp: [() => painterStamp, v => (painterStamp = v)],
   pixel32ToHex: [() => pixel32ToHex],
   plotDisc: [() => plotDisc, v => (plotDisc = v)],
   pushPainterUndo: [() => pushPainterUndo, v => (pushPainterUndo = v)],
@@ -44,6 +43,7 @@ expose({
   refreshPainterView: [() => refreshPainterView, v => (refreshPainterView = v)],
   scrollPainterToSelection: [() => scrollPainterToSelection, v => (scrollPainterToSelection = v)],
   slerpVectors: [() => slerpVectors, v => (slerpVectors = v)],
+  stampPainterBrush: [() => stampPainterBrush, v => (stampPainterBrush = v)],
   texelToDirection: [() => texelToDirection, v => (texelToDirection = v)],
   trailColors: [() => trailColors, v => (trailColors = v)],
   trailSegments: [() => trailSegments, v => (trailSegments = v)],
@@ -575,7 +575,7 @@ function carryPatch(lon0, lat0, lon1, lat1) {
   return n;
 }
 /* ---------- brush strokes ---------- */
-function painterStamp(P, cx, cy, stroke) {
+function stampPainterBrush(P, cx, cy, stroke) {
   const r = worldMapPainter.size / 2,
     T = worldMapPainter.tool,
     col = hexToPixel32(worldMapPainter.color),
@@ -600,7 +600,7 @@ function painterStamp(P, cx, cy, stroke) {
     }
   if (mask && any) inpaint(P.d, P.W, P.H, mask);
 }
-function painterFill(P, x, y) {
+function fillPainterArea(P, x, y) {
   x = wrapTexelX(x, P.W);
   const t = P.d[y * P.W + x],
     c = hexToPixel32(worldMapPainter.color);
@@ -660,7 +660,7 @@ function bindPainter() {
     pushPainterUndo();
     const P = painterPixels();
     if (worldMapPainter.tool === 'fill') {
-      painterFill(P, Math.floor(x), Math.floor(y));
+      fillPainterArea(P, Math.floor(x), Math.floor(y));
       commitPainterPixels(P);
       drawPainterGlobe();
       return;
@@ -672,7 +672,7 @@ function bindPainter() {
       snap: worldMapPainter.tool === 'clone' ? P.d.slice() : null,
     };
     w.setPointerCapture(ev.pointerId);
-    painterStamp(P, x, y, stroke);
+    stampPainterBrush(P, x, y, stroke);
     P.x.putImageData(P.img, 0, 0);
     drawPainterCanvas(P.c);
   });
@@ -697,7 +697,7 @@ function bindPainter() {
     const [lx, ly] = stroke.last,
       dist = Math.hypot(x - lx, y - ly),
       n = Math.max(1, Math.ceil(dist / Math.max(1, worldMapPainter.size / 3)));
-    for (let i = 1; i <= n; i++) painterStamp(stroke.P, lx + ((x - lx) * i) / n, ly + ((y - ly) * i) / n, stroke);
+    for (let i = 1; i <= n; i++) stampPainterBrush(stroke.P, lx + ((x - lx) * i) / n, ly + ((y - ly) * i) / n, stroke);
     stroke.last = [x, y];
     stroke.P.x.putImageData(stroke.P.img, 0, 0);
     drawPainterCanvas(stroke.P.c);
