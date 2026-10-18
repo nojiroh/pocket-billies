@@ -359,16 +359,18 @@ async function renameFile(o, n, dry) {
     .filter(f => f !== o && basename(f) === basename(o));
   const changed = [],
     notes = [];
-  // the forms a path to the file takes: from the repository, from each page, from the tools' folder
-  const forms = new Map([[o, n]]);
-  for (const page of PAGES) forms.set(relative(dirname(page), o), relative(dirname(page), n));
-  forms.set(relative('tools', o), relative('tools', n));
+  // the forms a path to the file takes: from the repository (anywhere), from each page's folder (only in that folder:
+  // studio/'s js/world.js is the Studio's own), from the tools' folder (only there)
+  const forms = [[o, n, '']];
+  for (const page of PAGES) forms.push([relative(dirname(page), o), relative(dirname(page), n), dirname(page) + '/']);
+  forms.push([relative('tools', o), relative('tools', n), 'tools/']);
+  forms.sort((x, y) => y[0].length - x[0].length);
   const files = [...new Set([...otherFiles(all), ...all.filter(u => u.kind !== 'inline').map(u => u.file)])];
   for (const f of files) {
     let t = read(f);
     const was = t;
-    for (const [a, b] of [...forms].sort((x, y) => y[0].length - x[0].length))
-      t = t.replace(new RegExp(`(?<![\\w./-])${esc(a)}(?![\\w-])`, 'g'), b);
+    for (const [a, b, dir] of forms)
+      if (f.startsWith(dir)) t = t.replace(new RegExp(`(?<![\\w./-])${esc(a)}(?![\\w-])`, 'g'), b);
     const base = new RegExp(`(?<![\\w./-])${esc(basename(o))}(?![\\w-])`, 'g');
     for (const m of t.matchAll(base)) {
       if (same.length)
