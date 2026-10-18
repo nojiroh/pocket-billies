@@ -1,11 +1,11 @@
 'use strict';
 /* ================= THE OPENING CUTSCENE =================
-   Starts with New game on the title screen. v47: first the fall (opening.js): the surface, the crust, the inner sky.
+   Starts with New game on the title screen. v47: first the fall (opening-fall.js): the surface, the crust, the inner sky.
    Then Sundown, filmed with the walk-scene engine (walk-view-gl.js DIO.director hook): you wake in the dust outside
    Professor Hazel's lab, seen through your own eyes, and she comes running. You can't remember your name, so you
    make yourself up in the dressing room; she tells you about billionaires and throws three coins that pop open into
    the starters. Pick one, and her other student Blake runs in, takes the one that beats yours and battles you on the
-   spot (opening.js battleTutor, story.js storyAfterRival).
+   spot (opening-fall.js battleTutor, story.js storyAfterRival).
    If the cutscene can't run or stops, the older step-by-step intro in ui.js runs instead. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
@@ -552,7 +552,7 @@ export async function csStart() {
     artLoad(['coins/penny_32.png']),
     dioPrepare(id),
   ]).catch(() => {});
-  /* v47: the fall, from the surface down to Sundown (opening.js); it ends on a white screen */
+  /* v47: the fall, from the surface down to Sundown (opening-fall.js); it ends on a white screen */
   if (typeof fallPlay === 'function' && !CS.test) {
     try {
       await fallPlay(run);

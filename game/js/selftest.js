@@ -51,7 +51,7 @@ import { MAP } from './world-map.js';
 import { MGL, MGL_SH, MM, mglRender, mmOn, setMglRender } from './world-map-gl.js';
 import { TALK, talkHide } from './talk.js';
 import { CS, csTeardown } from './cutscene.js';
-import { battleTipHide, fallGL, fallMap } from './opening.js';
+import { battleTipHide, fallGL, fallMap } from './opening-fall.js';
 import { closeModal, leaveRoom, modal, render, renderOv, sceneIdAt, toast, walkPick } from './ui.js';
 /* eslint-disable no-func-assign */
 expose({

@@ -173,7 +173,7 @@ import { openShop } from './shop.js';
 import { sfx } from './sound.js';
 import { talkHazel } from './talk.js';
 import { CS, csStart, csWanted } from './cutscene.js';
-import { fallStill } from './opening.js';
+import { fallStill } from './opening-fall.js';
 import { renderTitle, titleMount } from './title.js';
 import { loreBook, renderLore } from './lore.js';
 import { flyMenu, liftGo } from './airship.js';
@@ -664,7 +664,7 @@ function updateNav(show) {
     else b.removeAttribute('aria-current');
   });
 }
-/* v47: the opening in pictures, when the cutscene can't run or stops (opening.js draws them): the fall, Hazel, your trainer, your starter, then Blake */
+/* v47: the opening in pictures, when the cutscene can't run or stops (opening-fall.js draws them): the fall, Hazel, your trainer, your starter, then Blake */
 const INTRO_STILLS = [
   [
     'street',
