@@ -23,7 +23,7 @@ import {
   toast,
   walkRenderer,
 } from './hooks.js';
-import { JOBS, MOVES, ROUTE, RULES, SPECIES, STATUS_NAMES } from './game-data.js';
+import { JOBS, LOCATIONS, MOVES, RULES, SPECIES, STATUS_NAMES } from './game-data.js';
 import {
   SAVE_NEW_MSG,
   SAVE_OLD_MSG,
@@ -138,7 +138,7 @@ function validSave(o) {
   if (
     !o.route ||
     !Number.isInteger(o.route.node) ||
-    !num(o.route.node, 0, ROUTE.length - 1) ||
+    !num(o.route.node, 0, LOCATIONS.length - 1) ||
     !num(o.route.prog, 0, 1e9) ||
     !o.day ||
     !num(o.day.steps, 0, 1e9) ||

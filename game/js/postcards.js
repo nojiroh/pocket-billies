@@ -7,7 +7,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { STEST, STORY, sceneIdAt, storyFlags, toast } from './hooks.js';
-import { ROUTE, TRAINERS, isTown, trainersAt } from './game-data.js';
+import { LOCATIONS, TRAINERS, isTown, trainersAt } from './game-data.js';
 import { activeBattle, escapeHtml, save, saveData, uiState } from './game-state.js';
 import { artURL } from './art.js';
 import { flagPicturePath, mapById, walkView } from './walk-view.js';
@@ -36,7 +36,7 @@ function pcCards() {
   return saveData.cards || (saveData.cards = {});
 }
 function pcTowns() {
-  return ROUTE.map((r, i) => i).filter(i => isTown(i) && sceneIdAt(i));
+  return LOCATIONS.map((r, i) => i).filter(i => isTown(i) && sceneIdAt(i));
 }
 function pcImg(i) {
   return 'postcards/' + sceneIdAt(i) + '.webp';
@@ -57,7 +57,7 @@ function pcHere() {
     const x = P.x - (q.ox || 0),
       z = P.z - (q.oz || 0);
     if (x >= 0 && z >= 0 && x < s.w && z < s.h) {
-      const n = ROUTE.findIndex(r => r.scene === q.id);
+      const n = LOCATIONS.findIndex(r => r.scene === q.id);
       return n >= 0 ? n : null;
     }
   }
@@ -107,11 +107,11 @@ export function postcardCheck() {
   if (n == null || n === PC.last) return;
   PC.last = n;
   if (!isTown(n)) return;
-  if (!pcCards()[ROUTE[n].id]) postcardShow(n, true);
+  if (!pcCards()[LOCATIONS[n].id]) postcardShow(n, true);
   else postcardStamp(n);
 }
 function postcardShow(n, first) {
-  const r = ROUTE[n];
+  const r = LOCATIONS[n];
   if (!r) return;
   if (first) {
     pcCards()[r.id] = saveData.day || Date.now();
@@ -148,7 +148,7 @@ function postcardShow(n, first) {
 }
 /* a town you have the postcard of: its stamp in the corner for a moment */
 function postcardStamp(n) {
-  const r = ROUTE[n];
+  const r = LOCATIONS[n];
   const old = document.querySelector('.pc-mini');
   if (old) old.remove();
   const el = document.createElement('div');
@@ -165,9 +165,9 @@ function postcardStamp(n) {
 export function renderPostcards() {
   const T = pcTowns(),
     C = pcCards(),
-    got = T.filter(i => C[ROUTE[i].id]).length;
+    got = T.filter(i => C[LOCATIONS[i].id]).length;
   const cards = T.map(i => {
-    const r = ROUTE[i];
+    const r = LOCATIONS[i];
     return C[r.id]
       ? `<button class="pc-thumb" data-a="pcopen" data-n="${i}"><img alt="" loading="lazy" src="${artURL(pcImg(i))}"><span>${escapeHtml(r.name)}</span></button>`
       : `<div class="pc-thumb none"><i>?</i><span>Not been yet</span></div>`;

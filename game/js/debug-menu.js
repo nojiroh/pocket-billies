@@ -16,7 +16,18 @@ import {
   toast,
 } from './hooks.js';
 import { $, $$, clamp } from './util.js';
-import { COINS, DATA_WARN, DEX_ORDER, EGGS, EGG_TIERS, ITEMS, ROUTE, RULES, SPECIES, TRAINERS } from './game-data.js';
+import {
+  COINS,
+  DATA_WARN,
+  DEX_ORDER,
+  EGGS,
+  EGG_TIERS,
+  ITEMS,
+  LOCATIONS,
+  RULES,
+  SPECIES,
+  TRAINERS,
+} from './game-data.js';
 import {
   activeBattle,
   addBilly,
@@ -97,7 +108,7 @@ function debugHTML() {
  )}${dbgBtn('trainer', 'Battle trainer', 'red')}${dbgBtn('trainer2', 'As a double battle', 'red')}</div>
   <div class="dbg-row">${dbgSel(
     'dbgNode',
-    ROUTE.map((r, i) => [i, `${i}. ${r.name}`]),
+    LOCATIONS.map((r, i) => [i, `${i}. ${r.name}`]),
     node
   )}${dbgBtn('jump', 'Go there')}</div>
   <div class="dbg-row">${dbgBtn('seats', 'Earn every badge')}${dbgBtn('flags', 'Reset trainer wins')}${dbgBtn('fillq', 'Fill encounter queue')}${dbgBtn('clearq', 'Clear queue')}</div></details>
@@ -293,7 +304,7 @@ function dbgAct(x) {
       break;
     }
     case 'jump': {
-      const n = clamp(+v('dbgNode'), 0, ROUTE.length - 1);
+      const n = clamp(+v('dbgNode'), 0, LOCATIONS.length - 1);
       saveData.route = { node: n, prog: 0, plan: [], hold: false };
       saveData.visited[n] = 1;
       saveData.mapSeen = null;

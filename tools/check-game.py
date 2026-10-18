@@ -119,7 +119,7 @@ def check_game(pw, base, results):
             pg.screenshot(path=str(OUT / f'{name}-{tab}.png'))
         pg.evaluate("uiState.tab='walk';saveData.route.node=0;render();openShop('sundown');0"); time.sleep(.5); pg.screenshot(path=str(OUT / f'{name}-shop.png'))
         pg.evaluate("closeModal();wipe=f=>f();0")
-        areas = pg.evaluate('Object.keys(BACKDROPS)') if name == 'phone' else ['grass', 'mall']
+        areas = pg.evaluate('Object.keys(BATTLE_STAGES)') if name == 'phone' else ['grass', 'mall']
         pg.evaluate("saveData.preferences.battleStage='classic';0")  # the painted backdrops first
         for area in areas:
             pg.evaluate(f"activeBattle=null;const q={{id:'t{area}',sp:'tweet1',lvl:12,gold:false,no:1}};saveData.queue=[q];saveData.team.forEach(m=>{{m.hp=maxHp(m)}});const f=areaKey;areaKey=()=>'{area}';startWild(q);areaKey=f;0")
@@ -146,14 +146,14 @@ def check_game(pw, base, results):
             # every walk scene, walking around in a town, and a trip along two roads
             log(f'{name}: every walk scene')
             pg.evaluate("stopTimers&&stopTimers();activeBattle=null;battleStageStop();saveData.queue=[];uiState.tab='walk';0")
-            for i in range(pg.evaluate('ROUTE.length')):
+            for i in range(pg.evaluate('LOCATIONS.length')):
                 pg.evaluate(f"saveData.route={{node:{i},prog:0,plan:[],hold:false}};saveData.visited[{i}]=1;uiState.roam=null;render();0"); time.sleep(2.6)
                 if name == 'phone' or i in (0, 10, 12): pg.screenshot(path=str(OUT / f'{name}-scene-{pg.evaluate("walkView.id")}.png'))
             if name == 'desktop':
                 # v18: cliffs, stairs, bridges, waterfalls, arches and escalators up close
                 for node, x, z, label in ((0, 23.2, 17.6, 'sundown-stairs'), (12, 32.5, 9.6, 'city-canal'), (12, 32.5, 30.5, 'city-stairs'), (11, 22, 25.6, 'ridge-bridge'),
                                           (9, 27, 21, 'pond-falls'), (8, 31, 18.5, 'mall-escalators'), (4, 11.2, 14.2, 'grotto-cascade'), (5, 19.3, 7.4, 'canyon-arch')):
-                    if node >= pg.evaluate('ROUTE.length'): continue
+                    if node >= pg.evaluate('LOCATIONS.length'): continue
                     pg.evaluate(f"saveData.route={{node:{node},prog:0,plan:[],hold:false}};saveData.visited[{node}]=1;uiState.roam=null;render();0"); time.sleep(2.6)
                     pg.evaluate(f"walkView.pl.x={x};walkView.pl.z={z};walkView.pl.route=null;0"); time.sleep(2.2)
                     pg.screenshot(path=str(OUT / f'desktop-geo-{label}.png'))

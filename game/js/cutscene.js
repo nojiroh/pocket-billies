@@ -24,7 +24,16 @@ import {
   updateNav,
 } from './hooks.js';
 import { $, clamp } from './util.js';
-import { ROUTE, RULES, SPECIES, START_NODE, TRAINERS, TYPES, placeFull, typeEffectiveness } from './game-data.js';
+import {
+  LOCATIONS,
+  RULES,
+  SPECIES,
+  START_NODE,
+  TRAINERS,
+  TYPES,
+  locationFullName,
+  typeEffectiveness,
+} from './game-data.js';
 import { escapeHtml, reducedMotion, uiState } from './game-state.js';
 import { userFps } from './frame-scheduler.js';
 import { artLoad, makeCanvas } from './art.js';
@@ -182,7 +191,9 @@ export function csWanted() {
 }
 /* alpha 0.4: the start's name, for the opening's caption (Copperleaf Town) */
 export const csStartName = () =>
-  typeof placeFull === 'function' && ROUTE[START_NODE] ? placeFull(ROUTE[START_NODE]) : 'the Hollow Earth';
+  typeof locationFullName === 'function' && LOCATIONS[START_NODE]
+    ? locationFullName(LOCATIONS[START_NODE])
+    : 'the Hollow Earth';
 
 /* ---------- timing helpers: everything resolves at once while skipping ---------- */
 export function csWait(ms) {

@@ -1,7 +1,7 @@
 // Phase 04d: made by tools/to-module.mjs (npm run modules), do not edit. What the debug log (debug-log.js, a classic
 // script that runs before the modules) reads and wraps in the game's modules: a getter for each name in its GAME
 // object, and a setter (the module's own) for each function it wraps. The last module of the game's page.
-import { ROUTE, gameData } from './game-data.js';
+import { LOCATIONS, gameData } from './game-data.js';
 import { activeBattle, save, saveData, setSave, setSetTrip, setTrip, uiState } from './game-state.js';
 import { FRAME, userFps } from './frame-scheduler.js';
 import { artPixels, setArtPixels } from './art.js';
@@ -103,7 +103,7 @@ Object.defineProperties(GAME, {
   AUD: { get: () => AUD },
   FRAME: { get: () => FRAME },
   LIFE: { get: () => LIFE },
-  ROUTE: { get: () => ROUTE },
+  LOCATIONS: { get: () => LOCATIONS },
   TR_CACHE: { get: () => TR_CACHE },
   activeBattle: { get: () => activeBattle },
   areaKey: { get: () => areaKey },

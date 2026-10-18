@@ -18,7 +18,7 @@
 import { expose } from './test-globals.js';
 import { provide, sceneExits, sceneIdAt } from './hooks.js';
 import { clamp } from './util.js';
-import { ADJ, LINKS, ROUTE } from './game-data.js';
+import { LOCATIONS, ROADS, ROADS_BY_NODE } from './game-data.js';
 import { uiState } from './game-state.js';
 import { artLoad, hexToRgb } from './art.js';
 import {
@@ -127,8 +127,8 @@ function seamlessRoadLength(steps) {
   return Math.max(24, Math.round((40 * steps) / 500));
 }
 function seamlessRoadIndex(a, b) {
-  for (let i = 0; i < LINKS.length; i++) {
-    const L = LINKS[i];
+  for (let i = 0; i < ROADS.length; i++) {
+    const L = ROADS[i];
     if ((L[0] === a && L[1] === b) || (L[0] === b && L[1] === a)) return i;
   }
   return -1;
@@ -155,7 +155,7 @@ const SIDE_VECTORS = { E: [1, 0], W: [-1, 0], N: [0, 1], S: [0, -1] };
 function seamlessRoadExit(node, i) {
   const sc = mapById(sceneIdAt(node));
   if (!sc || !(sc.exits || []).length) return null;
-  const L = LINKS[i],
+  const L = ROADS[i],
     J = L[3],
     id = J ? (L[0] === node ? J.a : J.b) : null,
     E = sc.edgeExits || [];
@@ -174,7 +174,7 @@ function seamlessRoad(i) {
   const key = 'road' + i + '|' + seamlessWorld.gen;
   let R = seamlessWorld.cache.get(key);
   if (R) return R;
-  const L = LINKS[i],
+  const L = ROADS[i],
     a = L[0],
     b = L[1],
     A = mapById(sceneIdAt(a)),
@@ -282,7 +282,7 @@ function seamlessMemo(key, fn) {
 function seamlessJoin(i) {
   if (!seamlessOn() || (typeof engineSetting === 'function' && engineSetting('world', 'joined') === false)) return null;
   return seamlessMemo('join' + i, () => {
-    const L = LINKS[i];
+    const L = ROADS[i];
     if (!L) return null;
     const a = L[0],
       b = L[1],
@@ -398,8 +398,8 @@ function seamlessSeamOf(i) {
 function seamlessEasedGround(S, sid) {
   return seamlessMemo('adj' + sid, () => {
     const L = [];
-    for (let i = 0; i < LINKS.length; i++) {
-      if (sceneIdAt(LINKS[i][0]) !== sid && sceneIdAt(LINKS[i][1]) !== sid) continue; /* only this place's seams */
+    for (let i = 0; i < ROADS.length; i++) {
+      if (sceneIdAt(ROADS[i][0]) !== sid && sceneIdAt(ROADS[i][1]) !== sid) continue; /* only this place's seams */
       const Q = seamlessSeamOf(i);
       if (!Q) continue;
       if (Q.aId === sid) L.push([Q, 1]);
@@ -1380,7 +1380,7 @@ function seamlessHubParts(node) {
     z0 = 0,
     x1 = S.w,
     z1 = S.h;
-  for (const e of ADJ[node]) {
+  for (const e of ROADS_BY_NODE[node]) {
     const J = seamlessJoin(e.i);
     if (J) {
       const atA = J.a === node,
@@ -1477,7 +1477,7 @@ export function seamlessHubMap(node) {
   return sc;
 }
 function seamlessTrimCache() {
-  while (seamlessWorld.cache.size > seamlessWorld.max + LINKS.length) {
+  while (seamlessWorld.cache.size > seamlessWorld.max + ROADS.length) {
     let k0 = null;
     for (const k of seamlessWorld.cache.keys())
       if (!k.startsWith('road')) {
@@ -1541,7 +1541,7 @@ function seamlessMapById(id) {
   }
   m = id.match(/^w:(.+?)(\*|[<>]\d+)$/);
   if (!m) return null;
-  const node = ROUTE.findIndex(r => r.scene === m[1]);
+  const node = LOCATIONS.findIndex(r => r.scene === m[1]);
   return node >= 0 ? seamlessHubMap(node) : null;
 }
 /* v46: seamless rooms. Walking into a building doesn't leave the place: the room is laid into the place's own view

@@ -9,7 +9,7 @@
 import { expose } from './test-globals.js';
 import { CS, provide, sceneIdAt } from './hooks.js';
 import { clamp } from './util.js';
-import { ROUTE } from './game-data.js';
+import { LOCATIONS } from './game-data.js';
 import { activeBattle, saveData, uiState } from './game-state.js';
 import { battleStage } from './battle-stage.js';
 import { baseMapId, bridgeAt, mapBridges, mapById, stepWallAt, terrainAt, walkData, walkView } from './walk-view.js';
@@ -753,7 +753,7 @@ export function musicFor() {
   if (uiState.tab === 'map') return 'map';
   const id = typeof sceneIdAt === 'function' ? sceneIdAt(saveData.route.node) : null,
     sc = id && mapById(id),
-    r = ROUTE[saveData.route.node];
+    r = LOCATIONS[saveData.route.node];
   if (sc && sc.indoor) return /mall|food/.test(id) ? 'mall' : 'cave';
   if (r && r.music && SONGS[r.music]) return r.music;
   /* v47: a place's own song */ if (/mall|food/.test(id || '')) return 'mall';
@@ -1486,8 +1486,8 @@ function ambLife(sc, E, T, pans, t) {
   /* v47: a room laid into a place hears the place outside, quieter and through the walls (the low-pass in ambUpdate) */
   const thru = !sc.indoor ? 1 : sc.roomRect ? 0.45 : 0;
   const node =
-      typeof ROUTE !== 'undefined' && typeof saveData !== 'undefined' && saveData.route
-        ? ROUTE[saveData.route.node]
+      typeof LOCATIONS !== 'undefined' && typeof saveData !== 'undefined' && saveData.route
+        ? LOCATIONS[saveData.route.node]
         : null,
     town = thru > 0 && !!((node && node.town) || (!sc.indoor && (sc.far === 'town' || sc.far === 'city')));
   if (thru) {

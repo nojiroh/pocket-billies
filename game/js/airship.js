@@ -11,7 +11,7 @@
 import { expose } from './test-globals.js';
 import { closeModal, modal, provide, render, sceneIdAt, storyFlags, toast } from './hooks.js';
 import { $, clamp } from './util.js';
-import { PLACE, ROUTE, isTown, placeFull } from './game-data.js';
+import { LOCATIONS, LOCATION_BY_ID, isTown, locationFullName } from './game-data.js';
 import { isLiteMap, loadMapFile, loadMapsAhead } from './map-files.js';
 import { canEnter, escapeHtml, formatNumber, reducedMotion, save, saveData, uiState } from './game-state.js';
 import { artLoad, uiIconHTML } from './art.js';
@@ -41,12 +41,12 @@ export const airshipFlight = { on: false, a: -1, b: -1, t0: 0, dur: 0, lastX: nu
 /* where the airships go from here: the towns you've been to (and may enter), nearest first */
 function flyTowns() {
   const here = saveData.route.node;
-  return ROUTE.map((r, i) => i)
+  return LOCATIONS.map((r, i) => i)
     .filter(
       i =>
         i !== here &&
         isTown(i) &&
-        !ROUTE[i].noFly &&
+        !LOCATIONS[i].noFly &&
         saveData.visited[i] &&
         sceneIdAt(i) &&
         (typeof canEnter !== 'function' || canEnter(i))
@@ -65,7 +65,7 @@ export function flyMenu(p) {
   const rows = L.map(i => {
     const f = flyFare(here, i),
       ok = saveData.se >= f;
-    return `<button class="pickrow fly-row${ok ? '' : ' off'}" data-a="flyto" data-n="${i}"${ok ? '' : ' aria-disabled="true"'}><span class="fly-ico">${uiIconHTML('house', 18)}</span><span class="pr-t"><b>${escapeHtml(placeFull(ROUTE[i]))}</b><small>${escapeHtml(ROUTE[i].blurb || '')}</small></span><span class="fly-fare tnum">$${formatNumber(f)}</span></button>`;
+    return `<button class="pickrow fly-row${ok ? '' : ' off'}" data-a="flyto" data-n="${i}"${ok ? '' : ' aria-disabled="true"'}><span class="fly-ico">${uiIconHTML('house', 18)}</span><span class="pr-t"><b>${escapeHtml(locationFullName(LOCATIONS[i]))}</b><small>${escapeHtml(LOCATIONS[i].blurb || '')}</small></span><span class="fly-fare tnum">$${formatNumber(f)}</span></button>`;
   }).join('');
   modal({
     title: escapeHtml((p && p.label) || 'Airship mast'),
@@ -79,11 +79,11 @@ export function flyMenu(p) {
 /* buy the ticket and go: you are at the other end at once (a reload mid-flight lands you there), the flight is the
    show on the way */
 function startAirshipFlight(i) {
-  if (airshipFlight.on || !ROUTE[i]) return;
+  if (airshipFlight.on || !LOCATIONS[i]) return;
   const a = saveData.route.node,
     f = flyFare(a, i);
   if (saveData.se < f) {
-    toast(`A ticket to ${ROUTE[i].name} costs $${formatNumber(f)}. You have $${formatNumber(saveData.se)}.`);
+    toast(`A ticket to ${LOCATIONS[i].name} costs $${formatNumber(f)}. You have $${formatNumber(saveData.se)}.`);
     return;
   }
   saveData.se -= f;
@@ -101,7 +101,7 @@ function startAirshipFlight(i) {
   }
   save();
   closeModal();
-  if (typeof NWLOG !== 'undefined') NWLOG.add('scene', `airship ${ROUTE[a].id} to ${ROUTE[i].id} ($${f})`);
+  if (typeof NWLOG !== 'undefined') NWLOG.add('scene', `airship ${LOCATIONS[a].id} to ${LOCATIONS[i].id} ($${f})`);
   const d = Math.acos(clamp(vector3.dot(LOCATION_VECTORS[a], LOCATION_VECTORS[i]), -1, 1)) / RADIANS_PER_DEGREE;
   Object.assign(airshipFlight, {
     on: true,
@@ -136,7 +136,7 @@ function startAirshipFlight(i) {
     const c = document.createElement('div');
     c.id = 'flycap';
     c.className = 'fly-cap glass';
-    c.innerHTML = `<small>Airship</small><b>${escapeHtml(placeFull(ROUTE[a]))} → ${escapeHtml(placeFull(ROUTE[i]))}</b><span class="note">Tap to skip</span>`;
+    c.innerHTML = `<small>Airship</small><b>${escapeHtml(locationFullName(LOCATIONS[a]))} → ${escapeHtml(locationFullName(LOCATIONS[i]))}</b><span class="note">Tap to skip</span>`;
     host.appendChild(c);
   }
   if (typeof sfx === 'function') sfx('throw');
@@ -249,7 +249,7 @@ function flyLand() {
   if (typeof worldMapGl !== 'undefined') worldMapGl.altT = null;
   save();
   render();
-  toast(`Welcome to ${ROUTE[b].name}.`);
+  toast(`Welcome to ${LOCATIONS[b].name}.`);
   if (typeof sfx === 'function') sfx('pop');
 }
 function flySkip() {
@@ -285,18 +285,18 @@ document.addEventListener(
 export const glassLift = { on: false };
 export function rideGlassLift(p) {
   if (glassLift.on || !saveData.started || !p) return;
-  const to = PLACE[p.to];
+  const to = LOCATION_BY_ID[p.to];
   if (!to) {
     toast('The lift isn’t working.');
     return;
   }
   const i = to.node,
     a = saveData.route.node,
-    down = !!ROUTE[i].noFly;
+    down = !!LOCATIONS[i].noFly;
   glassLift.on = true;
   const cv = document.createElement('div');
   cv.className = 'lift-veil' + (down ? ' down' : ' up');
-  cv.innerHTML = `<div class="lift-cap glass"><small>Glass lift</small><b>${down ? 'Down to' : 'Up to'} ${escapeHtml(ROUTE[i].name)}</b><span class="note">${down ? 'Kelp, then dark water, then the lights of the dome.' : 'Up past the kelp, into the light.'}</span></div>`;
+  cv.innerHTML = `<div class="lift-cap glass"><small>Glass lift</small><b>${down ? 'Down to' : 'Up to'} ${escapeHtml(LOCATIONS[i].name)}</b><span class="note">${down ? 'Kelp, then dark water, then the lights of the dome.' : 'Up past the kelp, into the light.'}</span></div>`;
   document.body.appendChild(cv);
   requestAnimationFrame(() => requestAnimationFrame(() => cv.classList.add('in')));
   if (typeof sfx === 'function') sfx('throw');
@@ -323,7 +323,7 @@ export function rideGlassLift(p) {
           bx = M.box ? M.box[0] * s : 1.2;
         uiState.roam = { id: sid, node: i, x: m.x + (bx / 2 + 0.9) * f, z: m.z - 0.9 };
       } else uiState.roam = null;
-      if (typeof NWLOG !== 'undefined') NWLOG.add('scene', `lift ${ROUTE[a].id} to ${ROUTE[i].id}`);
+      if (typeof NWLOG !== 'undefined') NWLOG.add('scene', `lift ${LOCATIONS[a].id} to ${LOCATIONS[i].id}`);
       uiState.tab = 'walk';
       save();
       render();
@@ -337,7 +337,7 @@ export function rideGlassLift(p) {
         cv.remove();
         glassLift.on = false;
       }, 700);
-      toast(`${ROUTE[i].name}.`);
+      toast(`${LOCATIONS[i].name}.`);
       if (typeof sfx === 'function') sfx('pop');
     },
     reducedMotion ? 500 : 2600

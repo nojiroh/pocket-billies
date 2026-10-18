@@ -8,7 +8,7 @@
 import { expose } from './test-globals.js';
 import { NW_TEST, accChipHTML, closeModal, modal, postProcess, render, sceneIdAt, settings } from './hooks.js';
 import { $, clamp } from './util.js';
-import { ROUTE, START_NODE } from './game-data.js';
+import { LOCATIONS, START_NODE } from './game-data.js';
 import {
   escapeHtml,
   flushSave,
@@ -82,7 +82,7 @@ function titlePlayTime() {
 }
 export function renderTitle() {
   const cont = saveData.started && saveData.avatar,
-    place = cont && ROUTE[saveData.route.node] ? ROUTE[saveData.route.node].name : '',
+    place = cont && LOCATIONS[saveData.route.node] ? LOCATIONS[saveData.route.node].name : '',
     nm = cont ? saveData.avatar.name || 'Trainer' : '';
   return `<div class="ttl${cont ? ' can-tap' : ''}" data-a="${cont ? 'ttltap' : ''}"><div class="ttl-bg" aria-hidden="true"></div>
   <div class="ttl-acc">${typeof accChipHTML === 'function' ? accChipHTML() : ''}</div><div class="ttl-top"><h1 class="ttl-logo" aria-label="Pocket Billies"><span>POCKET</span><span>BILLIES</span></h1><p class="ttl-tag">Gotta tax 'em all!</p></div><p class="ttl-ver">${escapeHtml(PB_VERSION)}</p>

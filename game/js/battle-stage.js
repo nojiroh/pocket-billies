@@ -12,7 +12,7 @@
 import { expose } from './test-globals.js';
 import {
   A,
-  BACKDROPS,
+  BATTLE_STAGES,
   HIT_EFFECTS_BY_TYPE,
   MOVES,
   TYPE_COLORS,
@@ -254,7 +254,7 @@ const CLOSE_UP_CAMERAS = [
   { x: -0.5, y: 1.78, z: -0.55, yaw: -0.11, hz: -8 },
   { x: 0.8, y: 1.4, z: 1.1, yaw: 0.09, hz: 8 },
 ];
-export const AREAS = BACKDROPS;
+export const AREAS = BATTLE_STAGES;
 const GROUND_CENTER_X = 0.55,
   GROUND_CENTER_Z = 3.9,
   GROUND_TEXTURE_SIZE = 512,

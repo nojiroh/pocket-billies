@@ -6,7 +6,7 @@
 import { expose } from './test-globals.js';
 import { flyDraw, flyTick, paintMapCard, provide, toast } from './hooks.js';
 import { $, clamp } from './util.js';
-import { FUTURE, LINKS, ROUTE, linkCost } from './game-data.js';
+import { LOCATIONS, REGIONS, ROADS, roadCost } from './game-data.js';
 import { canEnter, escapeHtml, nextTripNode, reducedMotion, saveData, uiState } from './game-state.js';
 import { frameCount, frameStop, frameTask, userFps } from './frame-scheduler.js';
 import { artPixels, bayerThreshold, makeSeededRandom, mixRgb, packPixel, worldMapStamp } from './art.js';
@@ -101,17 +101,17 @@ export function slerp(a, b, t) {
   const s = Math.sin(w);
   return vector3.add(vector3.mul(a, Math.sin((1 - t) * w) / s), vector3.mul(b, Math.sin(t * w) / s));
 }
-export const LOCATION_VECTORS = ROUTE.map(r => lonLatToUnitVector(r.lon || 0, r.lat || 0));
-export const REGION_VECTORS = FUTURE.map(f =>
+export const LOCATION_VECTORS = LOCATIONS.map(r => lonLatToUnitVector(r.lon || 0, r.lat || 0));
+export const REGION_VECTORS = REGIONS.map(f =>
   f.t === 'sun' || f.lon == null ? [0, 0, 0] : lonLatToUnitVector(f.lon, f.lat || 0)
 );
-const LANDMARK_REGIONS = ROUTE.map((r, i) => ({ t: r.t, v: LOCATION_VECTORS[i], r: r.town ? 4.6 : 5.6 })).concat(
-  FUTURE.map((f, i) => ({ f, i }))
+const LANDMARK_REGIONS = LOCATIONS.map((r, i) => ({ t: r.t, v: LOCATION_VECTORS[i], r: r.town ? 4.6 : 5.6 })).concat(
+  REGIONS.map((f, i) => ({ f, i }))
     .filter(o => o.f.t !== 'sun' && o.f.lon != null)
     .map(({ f, i }) => ({ t: f.t, v: REGION_VECTORS[i], r: f.t === 'trench' ? 9 : 6.5 }))
 );
 /* each link as points on the sphere, curved exactly like the painted trail */
-const ROAD_CURVES = LINKS.map(([a, b], i) => {
+const ROAD_CURVES = ROADS.map(([a, b], i) => {
   const A = LOCATION_VECTORS[a],
     Bv = LOCATION_VECTORS[b],
     nrm = vector3.norm(vector3.cross(A, Bv)),
@@ -129,7 +129,7 @@ const ROAD_CURVES = LINKS.map(([a, b], i) => {
   return { a, b, pts, len };
 });
 export function roadPosition(a, b, f) {
-  const i = LINKS.findIndex(l => (l[0] === a && l[1] === b) || (l[0] === b && l[1] === a));
+  const i = ROADS.findIndex(l => (l[0] === a && l[1] === b) || (l[0] === b && l[1] === a));
   if (i < 0) return LOCATION_VECTORS[a];
   const s = ROAD_CURVES[i],
     g = (s.a === a ? f : 1 - f) * s.len;
@@ -144,7 +144,7 @@ export function worldMapPlayerPosition() {
   const r = saveData.route,
     nx = nextTripNode();
   if (nx == null || !r.prog) return LOCATION_VECTORS[r.node];
-  return roadPosition(r.node, nx, clamp(r.prog / linkCost(r.node, nx), 0, 1));
+  return roadPosition(r.node, nx, clamp(r.prog / roadCost(r.node, nx), 0, 1));
 }
 /* the inner surface of the world, read from art/map/world.png */
 export const WORLD_ART = 'map/world.png';
@@ -202,7 +202,7 @@ export const WORLD_MAP_LANDMARKS = [];
     lake: ['tree', 'bush'],
   };
   LANDMARK_REGIONS.forEach((r, ri) => {
-    if (ri < ROUTE.length && ROUTE[ri].scene) return;
+    if (ri < LOCATIONS.length && LOCATIONS[ri].scene) return;
     /* v24: stops have miniatures (world-map-gl.js) */ const L = KIND[r.t] || [],
       R = makeSeededRandom(ri * 131 + 9),
       n = r.t === 'mall' ? 1 : L.length ? 7 : 0;
@@ -446,7 +446,7 @@ function worldMapRender(t, lo) {
       const a = plan[k],
         b = plan[k + 1];
       for (let f = 0; f <= 1; f += 0.04) {
-        if (k === 0 && f < saveData.route.prog / linkCost(a, b)) continue;
+        if (k === 0 && f < saveData.route.prog / roadCost(a, b)) continue;
         if (Math.floor(f * 25 + t / 120) % 3 === 0) continue;
         const q = worldMapProject(cam, roadPosition(a, b, f));
         if (q && q.z < 1.4) c.fillRect(Math.round(q.x), Math.round(q.y), 1, 1);
@@ -455,11 +455,11 @@ function worldMapRender(t, lo) {
   }
   /* markers, landmarks, player */
   const L = [];
-  ROUTE.forEach((n, i) => {
+  LOCATIONS.forEach((n, i) => {
     const q = worldMapProject(cam, LOCATION_VECTORS[i]);
     if (q) L.push({ q, i, kind: 'r' });
   });
-  FUTURE.forEach((f, i) => {
+  REGIONS.forEach((f, i) => {
     if (f.t === 'sun') {
       const q = worldMapProject(cam, [0, 0, 0]);
       if (q) L.push({ q, i, kind: 'sun' });
@@ -477,7 +477,7 @@ function worldMapRender(t, lo) {
     if (occ) return;
     const s = clamp(0.16 / q.z, 0.6, 2.4);
     if (kind === 'r') {
-      const n = ROUTE[i],
+      const n = LOCATIONS[i],
         reached = !!saveData.visited[i],
         locked = !canEnter(i),
         col =
@@ -521,7 +521,7 @@ function worldMapRender(t, lo) {
     }
   });
   const sq2 = worldMapProject(cam, [0, 0, 0]);
-  const sunI = FUTURE.findIndex(f => f.t === 'sun');
+  const sunI = REGIONS.findIndex(f => f.t === 'sun');
   if (sq2 && sunI >= 0 && uiState.mapSel === 'f' + sunI)
     worldMapPixelRing(c, Math.round(sq2.x), Math.round(sq2.y), Math.round(12 + Math.sin(t / 200) * 2), '#FFFFFF');
   const LS = [];
@@ -768,7 +768,7 @@ export function worldMapLabels() {
       if (isBehindSun(worldMap.cam, LOCATION_VECTORS[i])) return;
       const far = q.z > 0.85 && i !== saveData.route.node && uiState.mapSel !== i && i !== dest;
       if (far) return;
-      name = ROUTE[i].name;
+      name = LOCATIONS[i].name;
       cls =
         (i === saveData.route.node ? ' here' : '') +
         (uiState.mapSel === i ? ' sel' : '') +
@@ -777,10 +777,10 @@ export function worldMapLabels() {
     } else if (kind === 'f') {
       if (isBehindSun(worldMap.cam, REGION_VECTORS[i])) return;
       if (q.z > 0.9 && uiState.mapSel !== 'f' + i) return;
-      name = FUTURE[i].name;
+      name = REGIONS[i].name;
       cls = ' fog' + (uiState.mapSel === 'f' + i ? ' sel' : '');
     } else {
-      name = FUTURE[i].name;
+      name = REGIONS[i].name;
       cls = ' sun' + (uiState.mapSel === 'f' + i ? ' sel' : '');
     }
     const n = kind === 'r' ? i : 'f' + i,
@@ -806,7 +806,7 @@ export function worldMapSelect(n) {
     typeof n === 'number'
       ? LOCATION_VECTORS[n]
       : typeof n === 'string'
-        ? FUTURE[+n.slice(1)].t === 'sun'
+        ? REGIONS[+n.slice(1)].t === 'sun'
           ? null
           : REGION_VECTORS[+n.slice(1)]
         : null;

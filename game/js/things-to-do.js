@@ -7,7 +7,7 @@
 import { expose } from './test-globals.js';
 import { bar, closeModal, modal, provide, render, roomRefresh, toast } from './hooks.js';
 import { clamp } from './util.js';
-import { COINS, ITEMS, ROUTE, RULES, SPECIES, gameData } from './game-data.js';
+import { COINS, ITEMS, LOCATIONS, RULES, SPECIES, gameData } from './game-data.js';
 import { activeBattle, billyName, escapeHtml, formatNumber, save, saveData, today, uiState } from './game-state.js';
 import { makeCanvas, uiIconHTML } from './art.js';
 import {
@@ -207,7 +207,7 @@ const X28_REQ = {
   catch: q => `I’d love to see a ${q.t} Billie. Tax one and come back to show me?`,
 };
 function reqHere(node = saveData.route.node) {
-  const R = ROUTE[node];
+  const R = LOCATIONS[node];
   if (!R || !R.town || !saveData.started) return null;
   const X = x28(),
     d = today();
@@ -326,7 +326,7 @@ export function reqList() {
   return Object.entries(X.reqs)
     .filter(([, q]) => q.state === 'accepted')
     .map(([n, q]) => {
-      const where = ROUTE[+n] ? ROUTE[+n].name : '';
+      const where = LOCATIONS[+n] ? LOCATIONS[+n].name : '';
       const txt =
         q.k === 'steps'
           ? `Walk ${formatNumber(Math.max(0, q.n - (saveData.totalSteps - (q.base || 0))))} more steps for a letter`
@@ -343,7 +343,7 @@ export function reqList() {
 /* ---------- gold stamps: two in every place ---------- */
 const STAMP_SPOTS = {};
 function stampScenes() {
-  return [...new Set(ROUTE.map(r => r.scene).filter(id => id && gameData.scenes[id]))];
+  return [...new Set(LOCATIONS.map(r => r.scene).filter(id => id && gameData.scenes[id]))];
 }
 const stampTotal = () => stampScenes().length * 2;
 export const stampCount = () => Object.keys(x28().stamps).length;

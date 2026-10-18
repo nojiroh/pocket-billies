@@ -8,29 +8,29 @@ import { expose } from './test-globals.js';
 import { makeBilly, provide, saveData } from './hooks.js';
 /* eslint-disable no-func-assign */
 expose({
-  ADJ: [() => ADJ],
-  BACKDROPS: [() => BACKDROPS],
+  BATTLE_STAGES: [() => BATTLE_STAGES],
   COINS: [() => COINS],
   DATA_WARN: [() => DATA_WARN],
   DEFAULT_EVOLUTIONS: [() => DEFAULT_EVOLUTIONS],
   DEX_ORDER: [() => DEX_ORDER],
   EGGS: [() => EGGS],
   EGG_TIERS: [() => EGG_TIERS],
-  FUTURE: [() => FUTURE],
   HIT_EFFECTS_BY_TYPE: [() => HIT_EFFECTS_BY_TYPE],
   ITEMS: [() => ITEMS],
   JOBS: [() => JOBS],
   JOB_STEPS: [() => JOB_STEPS],
   LINES: [() => LINES],
   LINE_BY_ID: [() => LINE_BY_ID],
-  LINKS: [() => LINKS],
+  LOCATIONS: [() => LOCATIONS],
+  LOCATION_BY_ID: [() => LOCATION_BY_ID],
   MOVES: [() => MOVES],
   PASSIVE: [() => PASSIVE],
   PEOPLE: [() => PEOPLE],
-  PLACE: [() => PLACE],
   POOLS: [() => POOLS],
   RARITY_STAT_TOTALS: [() => RARITY_STAT_TOTALS],
-  ROUTE: [() => ROUTE],
+  REGIONS: [() => REGIONS],
+  ROADS: [() => ROADS],
+  ROADS_BY_NODE: [() => ROADS_BY_NODE],
   RULES: [() => RULES],
   SEATS: [() => SEATS],
   SHOPS: [() => SHOPS],
@@ -49,11 +49,11 @@ expose({
   gameData: [() => gameData],
   hasPassive: [() => hasPassive],
   isTown: [() => isTown, v => (isTown = v)],
-  linkCost: [() => linkCost],
-  placeFull: [() => placeFull, v => (placeFull = v)],
-  placeKind: [() => placeKind, v => (placeKind = v)],
-  placeSub: [() => placeSub, v => (placeSub = v)],
+  locationFullName: [() => locationFullName, v => (locationFullName = v)],
+  locationKind: [() => locationKind, v => (locationKind = v)],
+  locationSubtitle: [() => locationSubtitle, v => (locationSubtitle = v)],
   rivalSpecies: [() => rivalSpecies, v => (rivalSpecies = v)],
+  roadCost: [() => roadCost],
   roadsOf: [() => roadsOf, v => (roadsOf = v)],
   trainerById: [() => trainerById],
   trainerTeam: [() => trainerTeam, v => (trainerTeam = v)],
@@ -189,8 +189,8 @@ LINES.forEach(L => {
   });
 });
 /* ---------- world ---------- */
-export const ROUTE = gameData.route;
-export const FUTURE = gameData.regions;
+export const LOCATIONS = gameData.route;
+export const REGIONS = gameData.regions;
 export const POOLS = {};
 for (const k in gameData.pools) {
   const P = gameData.pools[k];
@@ -200,48 +200,50 @@ for (const k in gameData.pools) {
   };
   if (!POOLS[k].list.length) POOLS[k].list = [[DEX_ORDER[0], 1]];
 }
-export const BACKDROPS = gameData.backdrops;
-provide({ BACKDROPS }); /* to-module */
-ROUTE.forEach((r, i) => {
+export const BATTLE_STAGES = gameData.backdrops;
+provide({ BATTLE_STAGES }); /* to-module */
+LOCATIONS.forEach((r, i) => {
   if (!POOLS[r.pool]) {
     warnData(`${r.name} uses unknown pool ${r.pool}.`);
     r.pool = Object.keys(POOLS)[0];
   }
-  if (!BACKDROPS[r.area]) r.area = BACKDROPS[r.pool] ? r.pool : 'grass';
+  if (!BATTLE_STAGES[r.area]) r.area = BATTLE_STAGES[r.pool] ? r.pool : 'grass';
   r.trainers = [];
 });
 /* the walking network: links between stops (both directions); older data is a single chain */
-export const LINKS = (
-  gameData.links && gameData.links.length ? gameData.links : ROUTE.slice(1).map((r, i) => [i, i + 1, r.cost || 500])
+export const ROADS = (
+  gameData.links && gameData.links.length ? gameData.links : LOCATIONS.slice(1).map((r, i) => [i, i + 1, r.cost || 500])
 )
-  .filter(l => ROUTE[l[0]] && ROUTE[l[1]] && l[0] !== l[1])
+  .filter(l => LOCATIONS[l[0]] && LOCATIONS[l[1]] && l[0] !== l[1])
   .map(([a, b, c, j]) =>
     j && typeof j === 'object'
       ? [a, b, Math.max(1, Math.round(+c || 500)), j]
       : [a, b, Math.max(1, Math.round(+c || 500))]
   ); /* v42: a fourth entry {a,b} names the exit at each end (the join table) */
 /* v46: what each place, scene and road is (tools/migrate-places.py fills these): use these instead of id prefixes */
-export const PLACE = Object.fromEntries(ROUTE.map((r, i) => [r.id || r.scene, Object.assign({ node: i }, r)]));
+export const LOCATION_BY_ID = Object.fromEntries(
+  LOCATIONS.map((r, i) => [r.id || r.scene, Object.assign({ node: i }, r)])
+);
 /* alpha 0.4: what a place is, under its name: its route number ("Route 2"), or "Town" / "City"; and its full name,
    the number and the name together ("Route 2 · Tallgrass Meadow"), for signposts, postcards and the like */
-export function placeSub(n) {
+export function locationSubtitle(n) {
   if (!n) return '';
   if (n.town) return /City$/.test(n.name || '') ? 'City' : 'Town';
   return n.route || '';
 }
-export function placeFull(n) {
+export function locationFullName(n) {
   if (!n) return '';
   return !n.town && /^Route \d/.test(n.route || '') ? n.route + ' · ' + n.name : n.name;
 }
 /* alpha 0.4: where a new game starts (rules.start.place: Copperleaf Town; before alpha 0.4 the first stop, Marigold Town) */
 export const START_NODE = (() => {
   const p = RULES.start && RULES.start.place;
-  return p && PLACE[p] ? PLACE[p].node : 0;
+  return p && LOCATION_BY_ID[p] ? LOCATION_BY_ID[p].node : 0;
 })();
-export function placeKind(id) {
+export function locationKind(id) {
   const sc = gameData.scenes && gameData.scenes[id];
   if (sc && sc.kind) return sc.kind;
-  const p = PLACE[id];
+  const p = LOCATION_BY_ID[id];
   return p
     ? p.kind || (p.town ? 'town' : 'route')
     : /^int_/.test(id || '')
@@ -251,22 +253,22 @@ export function placeKind(id) {
         : null;
 }
 export function isTown(nodeOrId) {
-  const r = typeof nodeOrId === 'number' ? ROUTE[nodeOrId] : PLACE[nodeOrId];
+  const r = typeof nodeOrId === 'number' ? LOCATIONS[nodeOrId] : LOCATION_BY_ID[nodeOrId];
   return !!r && (r.kind ? r.kind === 'town' : !!r.town);
 }
 function roadsOf(id) {
-  const n = PLACE[id] ? PLACE[id].node : -1;
-  return LINKS.map((L, i) => Object.assign({ i, a: L[0], b: L[1], cost: L[2] }, L[3] || {})).filter(
+  const n = LOCATION_BY_ID[id] ? LOCATION_BY_ID[id].node : -1;
+  return ROADS.map((L, i) => Object.assign({ i, a: L[0], b: L[1], cost: L[2] }, L[3] || {})).filter(
     R => R.a === n || R.b === n
   );
 }
-export const ADJ = ROUTE.map(() => []);
-LINKS.forEach(([a, b, c], i) => {
-  ADJ[a].push({ to: b, cost: c, i });
-  ADJ[b].push({ to: a, cost: c, i });
+export const ROADS_BY_NODE = LOCATIONS.map(() => []);
+ROADS.forEach(([a, b, c], i) => {
+  ROADS_BY_NODE[a].push({ to: b, cost: c, i });
+  ROADS_BY_NODE[b].push({ to: a, cost: c, i });
 });
-export const linkCost = (a, b) => {
-  const e = (ADJ[a] || []).find(e => e.to === b);
+export const roadCost = (a, b) => {
+  const e = (ROADS_BY_NODE[a] || []).find(e => e.to === b);
   return e ? e.cost : null;
 };
 export const STEPS_PER_KM = RULES.steps.stepsPerKm;
@@ -297,7 +299,7 @@ for (const id in TRAINERS) {
   const T = TRAINERS[id];
   T.id = id;
   if (T.tutorial);
-  else if (ROUTE[T.node]) ROUTE[T.node].trainers.push(id);
+  else if (LOCATIONS[T.node]) LOCATIONS[T.node].trainers.push(id);
   else warnData(`Trainer ${id} stands on a stop that doesn’t exist.`);
   if (!PEOPLE[T.who]) T.who = 'gini';
   T.team = (T.team || []).filter(
@@ -305,7 +307,7 @@ for (const id in TRAINERS) {
   );
 }
 /* the first trainer at a stop that hands out a Board Seat (or doesn’t block the road) is that stop’s Boardroom */
-ROUTE.forEach(r => {
+LOCATIONS.forEach(r => {
   r.board = r.trainers.find(id => TRAINERS[id].seat) || null;
 });
 const SEATS = Object.values(TRAINERS)
@@ -330,6 +332,6 @@ export function trainerTeam(T) {
 const trainerById = id => TRAINERS[id] || null;
 /* a trainer with "after" only turns up once you've beaten that one */
 export const trainersAt = i =>
-  ((ROUTE[i] && ROUTE[i].trainers) || [])
+  ((LOCATIONS[i] && LOCATIONS[i].trainers) || [])
     .map(id => TRAINERS[id])
     .filter(T => !T.after || (typeof saveData !== 'undefined' && saveData.flags && saveData.flags[T.after]));

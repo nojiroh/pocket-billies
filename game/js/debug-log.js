@@ -656,7 +656,10 @@ NWLOG.hook = () => {
   wrap('endBattle', () => NWLOG.add('battle', 'end ' + ((GAME.activeBattle && GAME.activeBattle.over) || '')));
   wrap('mountWalkView', (cv, id, opt) => NWLOG.add('scene', `mount ${id}`));
   wrap('setTrip', j =>
-    NWLOG.add('travel', `trip to ${typeof GAME.ROUTE !== 'undefined' && GAME.ROUTE[j] ? GAME.ROUTE[j].name : j}`)
+    NWLOG.add(
+      'travel',
+      `trip to ${typeof GAME.LOCATIONS !== 'undefined' && GAME.LOCATIONS[j] ? GAME.LOCATIONS[j].name : j}`
+    )
   );
   wrap('openShop', id => NWLOG.add('shop', id));
   wrap('worldMapMount', () => NWLOG.add('map', 'open'));

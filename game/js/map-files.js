@@ -12,7 +12,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { provide, saveData, seamlessWorld } from './hooks.js';
-import { ADJ, LINKS, ROUTE, START_NODE, gameData } from './game-data.js';
+import { LOCATIONS, ROADS, ROADS_BY_NODE, START_NODE, gameData } from './game-data.js';
 /* eslint-disable no-func-assign */
 expose({
   MAP_FIELDS: [() => MAP_FIELDS],
@@ -80,21 +80,21 @@ function remakeViewsOfMap(id) {
 }
 const needMaps = ids => Promise.all([...new Set(ids)].filter(Boolean).map(loadMapFile));
 provide({ needMaps }); /* to-module */
-const nodeOfMap = sid => ROUTE.findIndex(r => r.scene === sid);
+const nodeOfMap = sid => LOCATIONS.findIndex(r => r.scene === sid);
 function mapsAround(node, hops = 1) {
   const seen = new Set([node]);
   let edge = [node];
   for (let h = 0; h < hops; h++) {
     const next = [];
     for (const n of edge)
-      for (const e of ADJ[n] || [])
+      for (const e of ROADS_BY_NODE[n] || [])
         if (!seen.has(e.to)) {
           seen.add(e.to);
           next.push(e.to);
         }
     edge = next;
   }
-  return [...seen].map(n => ROUTE[n] && ROUTE[n].scene).filter(Boolean);
+  return [...seen].map(n => LOCATIONS[n] && LOCATIONS[n].scene).filter(Boolean);
 }
 function mapsOfView(id) {
   if (!id) return [];
@@ -104,7 +104,7 @@ function mapsOfView(id) {
   if (!id.startsWith('w:')) return out.concat(id.split('#')[0]);
   m = id.match(/^w:road(\d+)@/);
   if (m) {
-    const L = LINKS[+m[1]];
+    const L = ROADS[+m[1]];
     return L ? out.concat(mapsAround(L[0], 1), mapsAround(L[1], 1)) : out;
   }
   m = id.match(/^w:(.+?)(\*|[<>]\d+)/);

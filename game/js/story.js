@@ -8,7 +8,7 @@
 import { expose } from './test-globals.js';
 import { STEST, closeModal, modal, postProcess, provide, render } from './hooks.js';
 import { $, clamp } from './util.js';
-import { PLACE, RULES, SPECIES, TRAINERS, trainersAt } from './game-data.js';
+import { LOCATION_BY_ID, RULES, SPECIES, TRAINERS, trainersAt } from './game-data.js';
 import { activeBattle, escapeHtml, healAll, reducedMotion, save, saveData, today, uiState } from './game-state.js';
 import { dressingRoom } from './dressing-room.js';
 import { baseMapId, walkView, walkablePointNear } from './walk-view.js';
@@ -293,7 +293,7 @@ export function storyMovedCheck() {
   if (F.copperleafNote) return;
   F.copperleafNote = 1;
   save();
-  if (!PLACE.copperleaf) return;
+  if (!LOCATION_BY_ID.copperleaf) return;
   modal({
     title: 'Copperleaf Town',
     html: '<p>Professor Hazel has moved her lab to Copperleaf Town, the hamlet up Route 1 · Hedgerow Lane, north of Marigold Town. Your room went with her: it is in Granny Juniper’s cottage there now, among the beehives.</p><p class="note">Marigold Town keeps its shop and its clinic. Copperleaf has the swing.</p>',

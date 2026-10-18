@@ -26,7 +26,7 @@ import {
 } from './hooks.js';
 import { $, $$, clamp, random } from './util.js';
 import {
-  BACKDROPS,
+  BATTLE_STAGES,
   COINS,
   EGGS,
   EGG_TIERS,
@@ -961,7 +961,7 @@ export function startTrainer(id, o = {}) {
       tid: id,
       foeName: T.name,
       T,
-      area: BACKDROPS[T.area] ? T.area : areaKey(),
+      area: BATTLE_STAGES[T.area] ? T.area : areaKey(),
       fmt: dbl ? 'double' : 'single',
     })
   )

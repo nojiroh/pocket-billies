@@ -11,7 +11,7 @@
 import { expose } from './test-globals.js';
 import { FR, flyDraw, flyTick, provide } from './hooks.js';
 import { $, clamp } from './util.js';
-import { FUTURE, LINKS, ROUTE, linkCost, placeSub } from './game-data.js';
+import { LOCATIONS, REGIONS, ROADS, locationSubtitle, roadCost } from './game-data.js';
 import {
   canEnter,
   escapeHtml,
@@ -726,7 +726,7 @@ export function setWorldMapGlRender(v) {
 /* the miniatures: loaded the first time the map opens; size in world units per pixel (about 3 degrees across) */
 const MINI_PICTURE_SCALE = 0.0004;
 function worldMapGlMiniPicture(i) {
-  const r = ROUTE[i];
+  const r = LOCATIONS[i];
   if (!r || !r.scene) return null;
   const p = `map/mini/${r.scene}.png`,
     im = typeof artImage === 'function' ? artImage(p) : null;
@@ -769,7 +769,7 @@ function worldMapGlLift(v) {
   return vector3.mul(v, 1 - h * R);
 }
 function worldMapGlMiniPictures(cam, draw) {
-  ROUTE.forEach((r, i) => {
+  LOCATIONS.forEach((r, i) => {
     const v = worldMapGlLift(LOCATION_VECTORS[i]),
       d = vector3.sub(v, cam.C),
       z = vector3.dot(d, cam.fw);
@@ -792,7 +792,7 @@ function worldMapGlMiniTop(i) {
   }
   const im = worldMapGlMiniPicture(i);
   if (!im || worldMapGl.flat || !worldMap.cam) return null;
-  const r = ROUTE[i],
+  const r = LOCATIONS[i],
     v = worldMapGlLift(LOCATION_VECTORS[i]);
   return vector3.add(
     v,
@@ -844,7 +844,7 @@ function worldMapGlOverlay(t) {
   const r = saveData.route,
     plan = [r.node, ...r.plan];
   if (plan.length > 1) {
-    const pts = worldMapGlPath(plan, r.prog / linkCost(plan[0], plan[1]));
+    const pts = worldMapGlPath(plan, r.prog / roadCost(plan[0], plan[1]));
     worldMapGlLine(c, pts, 'rgba(255,214,90,.35)', 9);
     worldMapGlLine(c, pts, r.hold ? 'rgba(255,255,255,.9)' : '#FFE27A', 3.5, [10, 8], -t / 40);
   }
@@ -891,7 +891,7 @@ function worldMapGlOverlay(t) {
 }
 /* ---------- pins and road chips (HTML, so they're crisp and easy to tap) ---------- */
 function worldMapGlPinState(i) {
-  const n = ROUTE[i],
+  const n = LOCATIONS[i],
     dest = saveData.route.plan.length ? saveData.route.plan[saveData.route.plan.length - 1] : null,
     locked = !canEnter(i);
   const ico = i === saveData.route.node ? 'walk' : locked ? 'lock' : i === dest ? 'flag' : n.town ? 'house' : 'leaf';
@@ -947,9 +947,9 @@ function worldMapGlPins() {
     dest = saveData.route.plan.length ? saveData.route.plan[saveData.route.plan.length - 1] : null;
   const placed = [],
     pr = i => (i === saveData.route.node ? 0 : i === uiState.mapSel ? 1 : i === dest ? 2 : saveData.visited[i] ? 3 : 4),
-    order = ROUTE.map((n, i) => i).sort((a, b) => pr(a) - pr(b));
+    order = LOCATIONS.map((n, i) => i).sort((a, b) => pr(a) - pr(b));
   for (const i of order) {
-    const n = ROUTE[i],
+    const n = LOCATIONS[i],
       tv = worldMapGlMiniTop(i);
     let q = worldMapGlProject(tv || LOCATION_VECTORS[i]);
     const far = q && q.z > 0.9 && i !== saveData.route.node && i !== sel && i !== dest && !worldMapGl.flat;
@@ -973,7 +973,7 @@ function worldMapGlPins() {
       { 'data-a': 'msel', 'data-n': String(i), 'aria-label': n.name }
     );
   }
-  FUTURE.forEach((f, i) => {
+  REGIONS.forEach((f, i) => {
     let q =
       f.t === 'sun'
         ? worldMapGl.flat
@@ -1000,7 +1000,7 @@ function worldMapGlPins() {
     onPlan = new Set();
   for (let k = 0; k < plan.length - 1; k++)
     onPlan.add(Math.min(plan[k], plan[k + 1]) + '-' + Math.max(plan[k], plan[k + 1]));
-  LINKS.forEach(([a, b, c], i) => {
+  ROADS.forEach(([a, b, c], i) => {
     const show =
       (typeof sel === 'number' && (a === sel || b === sel)) || onPlan.has(Math.min(a, b) + '-' + Math.max(a, b));
     const q = show ? worldMapGlProject(roadPosition(a, b, 0.5)) : null;
@@ -1040,7 +1040,7 @@ function worldMapGlPick(ev) {
     y = ev.clientY - r.top;
   let best = null,
     bd = 30;
-  ROUTE.forEach((n, i) => {
+  LOCATIONS.forEach((n, i) => {
     const q = worldMapGlProject(LOCATION_VECTORS[i]);
     if (!q) return;
     const d = Math.hypot(q.x - x, q.y - y);
@@ -1050,7 +1050,7 @@ function worldMapGlPick(ev) {
     }
   });
   if (best === null)
-    FUTURE.forEach((f, i) => {
+    REGIONS.forEach((f, i) => {
       const q =
         f.t === 'sun'
           ? worldMapGl.flat
@@ -1131,7 +1131,7 @@ function worldMapGlChrome() {
   } else if (pl) pl.remove();
 }
 function worldMapGlLocationListHTML() {
-  const rows = ROUTE.map((n, i) => {
+  const rows = LOCATIONS.map((n, i) => {
     const st = worldMapGlPinState(i),
       t = i === saveData.route.node ? null : tripTo(i),
       locked = st.cls.includes('locked');
@@ -1162,7 +1162,7 @@ function worldMapGlLocationListHTML() {
       g = r.g;
       h += `<div class="mpl-g">${G[g]}</div>`;
     }
-    h += `<button class="mpl-row ${r.st.cls.replace('mpin', '')}" data-a="msel" data-n="${r.i}"><span class="mp-i">${uiIconHTML(r.st.ico, 14)}</span><span class="mpl-n">${escapeHtml(r.n.name)}<small>${escapeHtml(placeSub(r.n))}</small></span><span class="mpl-s">${escapeHtml(r.sub)}</span></button>`;
+    h += `<button class="mpl-row ${r.st.cls.replace('mpin', '')}" data-a="msel" data-n="${r.i}"><span class="mp-i">${uiIconHTML(r.st.ico, 14)}</span><span class="mpl-n">${escapeHtml(r.n.name)}<small>${escapeHtml(locationSubtitle(r.n))}</small></span><span class="mpl-s">${escapeHtml(r.sub)}</span></button>`;
   }
   return h + '</div>';
 }
@@ -1267,7 +1267,7 @@ function worldMapMiniKey(sc) {
   ].join('|');
 }
 export function worldMapMiniBuild(i) {
-  const r = ROUTE[i],
+  const r = LOCATIONS[i],
     sc = r && r.scene && mapById(r.scene);
   if (!sc || !sc.w) return null;
   const C0 = walkData().sc,
@@ -1526,7 +1526,7 @@ export function worldMapMiniBuild(i) {
   return mesh;
 }
 function worldMapMiniGet(i) {
-  const r = ROUTE[i],
+  const r = LOCATIONS[i],
     sc = r && r.scene && mapById(r.scene);
   if (!sc) return null;
   const key = worldMapMiniKey(sc) + '|' + (worldMapGl.hpix ? 1 : 0),
@@ -1557,7 +1557,7 @@ function worldMapMiniDraw(cam) {
   gl.depthFunc(gl.LEQUAL);
   gl.depthMask(true);
   worldMapMinis.busy = 0;
-  ROUTE.forEach((r, i) => {
+  LOCATIONS.forEach((r, i) => {
     const d = vector3.sub(LOCATION_VECTORS[i], cam.C),
       z = vector3.dot(d, cam.fw);
     if (z < 0.005 || z > 1.3) return;

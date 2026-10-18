@@ -9,7 +9,7 @@
 import { expose } from './test-globals.js';
 import { closeModal, modal, provide, storyFlags } from './hooks.js';
 import { clamp } from './util.js';
-import { ROUTE, TRAINERS, gameData } from './game-data.js';
+import { LOCATIONS, TRAINERS, gameData } from './game-data.js';
 import { escapeHtml, save, saveData, uiState } from './game-state.js';
 import { humanHTML } from './person-art.js';
 import { baseMapId, findPath, mapById, mapHub, walkView, walkablePointNear } from './walk-view.js';
@@ -46,7 +46,7 @@ function loreStage() {
   return loreFlags().ending ? 9 : (saveData.seats || []).length;
 }
 function loreNode(id) {
-  return ROUTE.findIndex(r => r.id === id || r.scene === id);
+  return LOCATIONS.findIndex(r => r.id === id || r.scene === id);
 }
 function loreMet(k) {
   const F = loreFlags();
@@ -251,7 +251,7 @@ export function renderLore() {
       })
       .join('');
   if (sec === 'places')
-    body = ROUTE.map((r, i) => {
+    body = LOCATIONS.map((r, i) => {
       const P = (L.places || {})[r.id];
       if (!P) return '';
       const o = !!saveData.visited[i];

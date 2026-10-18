@@ -6,7 +6,7 @@
 import { expose } from '../../game/js/test-globals.js';
 import { provide, studioState } from '../../game/js/hooks.js';
 expose({
-  BACKDROPS: [() => BACKDROPS],
+  BATTLE_STAGES: [() => BATTLE_STAGES],
   HIT_EFFECTS_BY_TYPE: [() => HIT_EFFECTS_BY_TYPE],
   MOVES: [() => MOVES],
   PEOPLE: [() => PEOPLE],
@@ -52,10 +52,10 @@ const liveMap = f =>
       },
     }
   );
-const BACKDROPS = liveMap(D => D.backdrops),
+const BATTLE_STAGES = liveMap(D => D.backdrops),
   MOVES = liveMap(D => D.moves),
   PEOPLE = liveMap(D => D.people);
-provide({ BACKDROPS, MOVES, PEOPLE }); /* to-module */
+provide({ BATTLE_STAGES, MOVES, PEOPLE }); /* to-module */
 const TYPE_COLORS = liveMap(D => {
   const o = Object.fromEntries(D.types.map(t => [t.id, [t.color, t.text || '#fff']]));
   o.None = [(D.untyped || {}).color || '#9a9a9a', (D.untyped || {}).text || '#fff'];

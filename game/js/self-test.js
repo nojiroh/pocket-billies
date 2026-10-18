@@ -11,7 +11,7 @@
 import { expose } from './test-globals.js';
 import { provide } from './hooks.js';
 import { clamp } from './util.js';
-import { MOVES, ROUTE, RULES, SPECIES, TRAINERS, gameData, linkCost, placeKind } from './game-data.js';
+import { LOCATIONS, MOVES, RULES, SPECIES, TRAINERS, gameData, locationKind, roadCost } from './game-data.js';
 import { loadAllMaps } from './map-files.js';
 import {
   activeBattle,
@@ -822,7 +822,7 @@ async function runFullTest(mode) {
             shifts = 0,
             worst = 0;
           const L0 = NWLOG.ev.length;
-          const per = Math.ceil(linkCost(0, 1) / 7) + 5;
+          const per = Math.ceil(roadCost(0, 1) / 7) + 5;
           /* alpha 0.2: a road's steps follow its walk */ for (let n = 0; n < 7; n++) {
             addSteps(per, true);
             uiState.modal = null;
@@ -1180,7 +1180,7 @@ async function runFullTest(mode) {
           for (let i = 0; i < 3; i++) spawn(false);
           uiState.tab = 'walk';
           uiState.bench = null;
-          const node = ROUTE.findIndex(r => r.scene === gid);
+          const node = LOCATIONS.findIndex(r => r.scene === gid);
           if (node >= 0) saveData.route.node = node;
           render();
           for (let i = 0; i < 80 && !(walkView.ready && walkView.id === gid); i++) await stSleep(100);
@@ -1543,7 +1543,7 @@ function stDiagScenes() {
     add = id => {
       if (id && !pick.includes(id)) pick.push(id);
     };
-  const kindOf = id => sc[id].kind || (typeof placeKind === 'function' ? placeKind(id) : null);
+  const kindOf = id => sc[id].kind || (typeof locationKind === 'function' ? locationKind(id) : null);
   const towns = ids.filter(id => kindOf(id) === 'town'),
     routes = ids.filter(id => kindOf(id) === 'route');
   const busiest = towns.slice().sort((a, b) => (sc[b].props || []).length - (sc[a].props || []).length)[0];
