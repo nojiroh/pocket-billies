@@ -28,8 +28,8 @@ expose({
   P3D_MATID: [() => P3D_MATID],
   P3D_PARTS: [() => P3D_PARTS],
   P3D_SH: [() => P3D_SH],
-  p3dBuild: [() => p3dBuild, v => (p3dBuild = v)],
-  p3dDraw: [() => p3dDraw, v => (p3dDraw = v)],
+  p3dBuild: [() => p3dBuild, v => setP3dBuild(v)],
+  p3dDraw: [() => p3dDraw, v => setP3dDraw(v)],
   p3dGuard: [() => p3dGuard, v => (p3dGuard = v)],
   p3dKind: [() => p3dKind, v => (p3dKind = v)],
   p3dLod: [() => p3dLod, v => (p3dLod = v)],
@@ -39,13 +39,25 @@ expose({
   p3dSpec: [() => p3dSpec, v => (p3dSpec = v)],
   p3dTag: [() => p3dTag, v => (p3dTag = v)],
   p3dTex: [() => p3dTex, v => (p3dTex = v)],
-  p3dTreeBuild: [() => p3dTreeBuild, v => (p3dTreeBuild = v)],
+  p3dTreeBuild: [() => p3dTreeBuild, v => setP3dTreeBuild(v)],
   p3dTreeKind: [() => p3dTreeKind, v => (p3dTreeKind = v)],
   p3dU: [() => p3dU, v => (p3dU = v)],
   p3dUpload: [() => p3dUpload, v => (p3dUpload = v)],
 });
 /* eslint-enable no-func-assign */
-provide({ p3dLod, p3dShadow, p3dTag });
+provide({ p3dDraw, p3dLod, p3dShadow, p3dTag });
+export function setP3dBuild(v) {
+  p3dBuild = v; // eslint-disable-line no-func-assign
+  provide({ p3dBuild });
+}
+export function setP3dDraw(v) {
+  p3dDraw = v; // eslint-disable-line no-func-assign
+  provide({ p3dDraw });
+}
+export function setP3dTreeBuild(v) {
+  p3dTreeBuild = v; // eslint-disable-line no-func-assign
+  provide({ p3dTreeBuild });
+}
 /* to-module: end */
 export const P3D = { meshes: new WeakMap(), fail: '', drawn: 0 };
 provide({ P3D }); /* to-module */
@@ -258,7 +270,7 @@ function p3dMesh(im, spec) {
   per.set(spec.key, M);
   return M;
 }
-function p3dBuild(im, parts) {
+export function p3dBuild(im, parts) {
   const TOPS = typeof eng !== 'function' || eng('world', 'texDetail') !== 0;
   const w = im.naturalWidth || im.width,
     h = im.naturalHeight || im.height;
@@ -716,7 +728,7 @@ export function p3dTreeKind(k, M) {
   if (/^(bush|bush_round|bush_berry|bush_flower|dry_bush)$/.test(g)) return 'bush';
   return null;
 }
-function p3dTreeBuild(im, kind) {
+export function p3dTreeBuild(im, kind) {
   const w = im.naturalWidth || im.width,
     h = im.naturalHeight || im.height;
   if (!w || !h) return null;
@@ -1181,7 +1193,7 @@ function p3dU(p, it, M) {
 function p3dTex(it, M) {
   return eglImg(M && M.tex ? M.tex : it.im);
 }
-function p3dDraw(C, items, X, hits, labels, PPU) {
+export function p3dDraw(C, items, X, hits, labels, PPU) {
   P3D.drawn = 0;
   if (!p3dOn()) return;
   p3dGuard(() => {

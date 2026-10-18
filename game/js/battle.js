@@ -17,6 +17,7 @@ import {
   modal,
   postProcess,
   provide,
+  render,
   sfxBattle,
   stBadge,
   storyAfterRival,
@@ -163,9 +164,9 @@ expose({
   movePower: [() => movePower, v => (movePower = v)],
   msgFace: [() => msgFace, v => (msgFace = v)],
   needsTarget: [() => needsTarget, v => (needsTarget = v)],
-  newBattle: [() => newBattle, v => (newBattle = v)],
+  newBattle: [() => newBattle, v => setNewBattle(v)],
   openBattle: [() => openBattle, v => setOpenBattle(v)],
-  paintActions: [() => paintActions, v => (paintActions = v)],
+  paintActions: [() => paintActions, v => setPaintActions(v)],
   paintBoxes: [() => paintBoxes, v => (paintBoxes = v)],
   paintParty: [() => paintParty, v => (paintParty = v)],
   paintPlates: [() => paintPlates, v => (paintPlates = v)],
@@ -208,6 +209,14 @@ expose({
 });
 /* eslint-enable no-func-assign */
 provide({ areaKey, battleFreeArea, battleLayoutChanged, hudHit, hudPop, platesTick, startWild });
+export function setNewBattle(v) {
+  newBattle = v; // eslint-disable-line no-func-assign
+  provide({ newBattle });
+}
+export function setPaintActions(v) {
+  paintActions = v; // eslint-disable-line no-func-assign
+  provide({ paintActions });
+}
 /* to-module: end */
 export const RB = RULES.battle,
   RC = RULES.catching;
@@ -822,7 +831,7 @@ function chooseAI(k = 1) {
   return pick;
 }
 /* fmt: 'single', 'double' (two a side) or 'alpha' (up to three of yours against one Alpha) */
-function newBattle(kind, foe, extra) {
+export function newBattle(kind, foe, extra) {
   const able = S.team.map((m, i) => i).filter(i => S.team[i].hp > 0 && S.team[i].job == null);
   if (!able.length) {
     toast('Everyone on your team has fainted. Rest first, or use a Revive.');

@@ -5,7 +5,7 @@
    Tap a thing to choose it; healing is used straight from here on a Billie you pick. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './bridge.js';
-import { closeModal, modal, toast } from './hooks.js';
+import { closeModal, modal, render, toast } from './hooks.js';
 import { COINS, EGGS, ITEMS, STATUSN } from './data.js';
 import { N, S, U, esc, fmt, maxHp } from './core.js';
 import { coinHTML, eggHTML, uiIco } from './art.js';

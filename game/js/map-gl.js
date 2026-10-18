@@ -97,7 +97,7 @@ expose({
   mglRender: [() => mglRender, v => setMglRender(v)],
   mglSize: [() => mglSize, v => (mglSize = v)],
   mglUV: [() => mglUV, v => (mglUV = v)],
-  mmBuild: [() => mmBuild, v => (mmBuild = v)],
+  mmBuild: [() => mmBuild, v => setMmBuild(v)],
   mmCols: [() => mmCols, v => (mmCols = v)],
   mmDraw: [() => mmDraw, v => (mmDraw = v)],
   mmGet: [() => mmGet, v => (mmGet = v)],
@@ -106,6 +106,10 @@ expose({
   setMglRender: [() => setMglRender, v => (setMglRender = v)],
 });
 /* eslint-enable no-func-assign */
+export function setMmBuild(v) {
+  mmBuild = v; // eslint-disable-line no-func-assign
+  provide({ mmBuild });
+}
 /* to-module: end */
 export const MGL = {
   flat: false,
@@ -1204,7 +1208,7 @@ function mmKey(sc) {
     typeof dioArtVer === 'function' ? dioArtVer() : 0,
   ].join('|');
 }
-function mmBuild(i) {
+export function mmBuild(i) {
   const r = ROUTE[i],
     sc = r && r.scene && dioScene(r.scene);
   if (!sc || !sc.w) return null;

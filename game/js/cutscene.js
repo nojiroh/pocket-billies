@@ -18,6 +18,7 @@ import {
   landBurst,
   landFrame,
   provide,
+  render,
   sceneIdAt,
   startGame,
   updateNav,
@@ -68,7 +69,7 @@ expose({
   csSkip: [() => csSkip, v => (csSkip = v)],
   csSparkle: [() => csSparkle, v => (csSparkle = v)],
   csStarItem: [() => csStarItem, v => (csStarItem = v)],
-  csStart: [() => csStart, v => (csStart = v)],
+  csStart: [() => csStart, v => setCsStart(v)],
   csStartName: [() => csStartName],
   csTap: [() => csTap, v => (csTap = v)],
   csTeardown: [() => csTeardown, v => (csTeardown = v)],
@@ -77,6 +78,10 @@ expose({
   csWanted: [() => csWanted, v => (csWanted = v)],
 });
 /* eslint-enable no-func-assign */
+export function setCsStart(v) {
+  csStart = v; // eslint-disable-line no-func-assign
+  provide({ csStart });
+}
 /* to-module: end */
 export const CS = {
   on: false,

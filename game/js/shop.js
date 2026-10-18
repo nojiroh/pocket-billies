@@ -4,7 +4,7 @@
    Each shop has a keeper (drawn by the trainer renderer from PEOPLE), a greeting and a stock list. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './bridge.js';
-import { closeModal, modal, sfx, toast } from './hooks.js';
+import { closeModal, modal, provide, renderOv, sfx, toast } from './hooks.js';
 import { clamp, rnd } from './util.js';
 import { COINS, ITEMS, SHOPS } from './data.js';
 import { S, U, esc, fmt, plural, save } from './core.js';
@@ -16,13 +16,17 @@ import { itemIcon } from './battle.js';
 /* eslint-disable no-func-assign */
 expose({
   SHOP_THANKS: [() => SHOP_THANKS],
-  openShop: [() => openShop, v => (openShop = v)],
+  openShop: [() => openShop, v => setOpenShop(v)],
   shopBuy: [() => shopBuy, v => (shopBuy = v)],
   shopHTML: [() => shopHTML, v => (shopHTML = v)],
   shopRefresh: [() => shopRefresh, v => (shopRefresh = v)],
   wareInfo: [() => wareInfo],
 });
 /* eslint-enable no-func-assign */
+export function setOpenShop(v) {
+  openShop = v; // eslint-disable-line no-func-assign
+  provide({ openShop });
+}
 /* to-module: end */
 const SHOP_THANKS = [
   'Pleasure doing business.',

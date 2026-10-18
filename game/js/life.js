@@ -30,13 +30,17 @@ expose({
   lifeShift: [() => lifeShift, v => (lifeShift = v)],
   lifeShore: [() => lifeShore, v => (lifeShore = v)],
   lifeSprites: [() => lifeSprites, v => (lifeSprites = v)],
-  lifeStep: [() => lifeStep, v => (lifeStep = v)],
+  lifeStep: [() => lifeStep, v => setLifeStep(v)],
   lifeTarget: [() => lifeTarget, v => (lifeTarget = v)],
 });
 /* eslint-enable no-func-assign */
-provide({ lifePaths, lifeSprites });
+provide({ lifePaths, lifeSprites, lifeStep });
+export function setLifeStep(v) {
+  lifeStep = v; // eslint-disable-line no-func-assign
+  provide({ lifeStep });
+}
 /* to-module: end */
-const LIFE = { id: null, key: '', list: [], cut: new Map() };
+export const LIFE = { id: null, key: '', list: [], cut: new Map() };
 provide({ LIFE }); /* to-module */
 const LIFE_KIND = {
   duck: { s: 0.62, speed: 0.35, sh: 0.22 },
@@ -241,7 +245,7 @@ export function lifeShift(dx, dz, id) {
   LIFE.id = id;
   LIFE.key = DIO.sc ? lifeKey(DIO.sc) : LIFE.key;
 }
-function lifeStep(dt) {
+export function lifeStep(dt) {
   const sc = DIO.sc;
   if (!sc) return;
   /* the water may only be known a few frames after the scene opens: ducks and frogs join then */ if (

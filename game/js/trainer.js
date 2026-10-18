@@ -7,7 +7,7 @@
    A look: {name, body:{…sliders}, skin, hair, eyes, wear:{slot:itemId|null}, colors:{itemId:[hex,…]}}. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './bridge.js';
-import { FR, GD, PEOPLE, S, ST, U, cleanName, dglBudget, dioArtVer, dioImg, drawRig } from './hooks.js';
+import { FR, GD, PEOPLE, S, ST, U, cleanName, dglBudget, dioArtVer, dioImg, drawRig, provide } from './hooks.js';
 import { clamp } from './util.js';
 import { frameStop, frameTask } from './frame.js';
 import { ART, artImg, cnv, hexA } from './art.js';
@@ -26,7 +26,7 @@ expose({
   dioFolkFrames: [() => dioFolkFrames],
   folkLook: [() => folkLook, v => (folkLook = v)],
   hsl2rgb: [() => hsl2rgb, v => (hsl2rgb = v)],
-  humanFrames: [() => humanFrames, v => (humanFrames = v)],
+  humanFrames: [() => humanFrames, v => setHumanFrames(v)],
   humanHTML: [() => humanHTML, v => (humanHTML = v)],
   humanPose: [() => humanPose, v => (humanPose = v)],
   humanSheet: [() => humanSheet, v => (humanSheet = v)],
@@ -64,6 +64,10 @@ expose({
   trainerLook: [() => trainerLook, v => (trainerLook = v)],
 });
 /* eslint-enable no-func-assign */
+export function setHumanFrames(v) {
+  humanFrames = v; // eslint-disable-line no-func-assign
+  provide({ humanFrames });
+}
 /* to-module: end */
 export const WD = () =>
   (typeof GD !== 'undefined' && GD.wardrobe) || (typeof ST !== 'undefined' && ST.D && ST.D.wardrobe) || null;

@@ -23,6 +23,7 @@ import {
   S,
   SP,
   WORLD_ART,
+  bldDraw,
   bldFacade,
   bldGuard,
   bldLitF,
@@ -34,6 +35,7 @@ import {
   clueDraw,
   frWorldItems,
   lifeSprites,
+  lifeStep,
   noWebGL,
   owBuddyItems,
   owEncItem,
@@ -42,6 +44,7 @@ import {
   owLabels,
   owPetItems,
   owWarm,
+  p3dDraw,
   p3dLod,
   p3dShadow,
   p3dTag,
@@ -229,7 +232,7 @@ expose({
   dglBoxInfo: [() => dglBoxInfo, v => (dglBoxInfo = v)],
   dglBudget: [() => dglBudget, v => (dglBudget = v)],
   dglBuildFar: [() => dglBuildFar, v => (dglBuildFar = v)],
-  dglBuildGrass: [() => dglBuildGrass, v => (dglBuildGrass = v)],
+  dglBuildGrass: [() => dglBuildGrass, v => setDglBuildGrass(v)],
   dglBuildGround: [() => dglBuildGround, v => (dglBuildGround = v)],
   dglCamera: [() => dglCamera, v => (dglCamera = v)],
   dglCanvasFor: [() => dglCanvasFor, v => (dglCanvasFor = v)],
@@ -246,16 +249,16 @@ expose({
   dglFrameIn: [() => dglFrameIn, v => (dglFrameIn = v)],
   dglFree: [() => dglFree],
   dglFrustum: [() => dglFrustum, v => (dglFrustum = v)],
-  dglFxPass: [() => dglFxPass, v => (dglFxPass = v)],
+  dglFxPass: [() => dglFxPass, v => setDglFxPass(v)],
   dglGL: [() => dglGL, v => (dglGL = v)],
   dglGaoSteps: [() => dglGaoSteps, v => (dglGaoSteps = v)],
   dglGaoTex: [() => dglGaoTex, v => (dglGaoTex = v)],
   dglGaoWork: [() => dglGaoWork, v => (dglGaoWork = v)],
   dglGestures: [() => dglGestures, v => (dglGestures = v)],
-  dglGrass: [() => dglGrass, v => (dglGrass = v)],
-  dglGrassWork: [() => dglGrassWork, v => (dglGrassWork = v)],
-  dglGround: [() => dglGround, v => (dglGround = v)],
-  dglGroundAO: [() => dglGroundAO, v => (dglGroundAO = v)],
+  dglGrass: [() => dglGrass, v => setDglGrass(v)],
+  dglGrassWork: [() => dglGrassWork, v => setDglGrassWork(v)],
+  dglGround: [() => dglGround, v => setDglGround(v)],
+  dglGroundAO: [() => dglGroundAO, v => setDglGroundAO(v)],
   dglGroundNormals: [() => dglGroundNormals, v => (dglGroundNormals = v)],
   dglGroundSteps: [() => dglGroundSteps, v => (dglGroundSteps = v)],
   dglHK: [() => dglHK, v => (dglHK = v)],
@@ -267,7 +270,7 @@ expose({
   dglImId: [() => dglImId, v => (dglImId = v)],
   dglImgRepeat: [() => dglImgRepeat, v => (dglImgRepeat = v)],
   dglInView: [() => dglInView, v => (dglInView = v)],
-  dglItems: [() => dglItems, v => (dglItems = v)],
+  dglItems: [() => dglItems, v => setDglItems(v)],
   dglLampOn: [() => dglLampOn, v => (dglLampOn = v)],
   dglLampShadows: [() => dglLampShadows, v => (dglLampShadows = v)],
   dglLampTex: [() => dglLampTex, v => (dglLampTex = v)],
@@ -297,7 +300,7 @@ expose({
   dglRay: [() => dglRay, v => (dglRay = v)],
   dglRebuild: [() => dglRebuild, v => (dglRebuild = v)],
   dglReflLevel: [() => dglReflLevel, v => (dglReflLevel = v)],
-  dglReflPass: [() => dglReflPass, v => (dglReflPass = v)],
+  dglReflPass: [() => dglReflPass, v => setDglReflPass(v)],
   dglRing: [() => dglRing, v => (dglRing = v)],
   dglRingChunk: [() => dglRingChunk, v => (dglRingChunk = v)],
   dglRingFree: [() => dglRingFree, v => (dglRingFree = v)],
@@ -306,7 +309,7 @@ expose({
   dglRingNew: [() => dglRingNew, v => (dglRingNew = v)],
   dglRingSlot: [() => dglRingSlot],
   dglRingU: [() => dglRingU, v => (dglRingU = v)],
-  dglRingUpdate: [() => dglRingUpdate, v => (dglRingUpdate = v)],
+  dglRingUpdate: [() => dglRingUpdate, v => setDglRingUpdate(v)],
   dglRingWant: [() => dglRingWant, v => (dglRingWant = v)],
   dglRiseK: [() => dglRiseK, v => (dglRiseK = v)],
   dglRiseStart: [() => dglRiseStart, v => (dglRiseStart = v)],
@@ -321,7 +324,7 @@ expose({
   dglSceneFree: [() => dglSceneFree, v => (dglSceneFree = v)],
   dglSceneSun: [() => dglSceneSun, v => (dglSceneSun = v)],
   dglSceneSwap: [() => dglSceneSwap, v => (dglSceneSwap = v)],
-  dglShadowPass: [() => dglShadowPass, v => (dglShadowPass = v)],
+  dglShadowPass: [() => dglShadowPass, v => setDglShadowPass(v)],
   dglShadowPassFit: [() => dglShadowPassFit, v => (dglShadowPassFit = v)],
   dglShadowRect: [() => dglShadowRect, v => (dglShadowRect = v)],
   dglShadowSprites: [() => dglShadowSprites, v => (dglShadowSprites = v)],
@@ -331,7 +334,7 @@ expose({
   dglSky: [() => dglSky, v => (dglSky = v)],
   dglSkyCols: [() => dglSkyCols, v => (dglSkyCols = v)],
   dglSprU: [() => dglSprU, v => (dglSprU = v)],
-  dglSprites: [() => dglSprites, v => (dglSprites = v)],
+  dglSprites: [() => dglSprites, v => setDglSprites(v)],
   dglStill: [() => dglStill, v => (dglStill = v)],
   dglTexMip: [() => dglTexMip, v => (dglTexMip = v)],
   dglTexStrips: [() => dglTexStrips, v => (dglTexStrips = v)],
@@ -343,7 +346,7 @@ expose({
   dglUse: [() => dglUse, v => (dglUse = v)],
   dglVaryOf: [() => dglVaryOf, v => (dglVaryOf = v)],
   dglWallDefault: [() => dglWallDefault, v => (dglWallDefault = v)],
-  dglWater: [() => dglWater, v => (dglWater = v)],
+  dglWater: [() => dglWater, v => setDglWater(v)],
   dglWaterKinds: [() => dglWaterKinds, v => (dglWaterKinds = v)],
   dglWaterLife: [() => dglWaterLife, v => (dglWaterLife = v)],
   dglWaterNear: [() => dglWaterNear, v => (dglWaterNear = v)],
@@ -368,6 +371,54 @@ expose({
 });
 /* eslint-enable no-func-assign */
 provide({ dglBudget, dglRebuild, dglWallDefault, dioGroundH, dioH, dioHRaw, eglRestored });
+export function setDglBuildGrass(v) {
+  dglBuildGrass = v; // eslint-disable-line no-func-assign
+  provide({ dglBuildGrass });
+}
+export function setDglFxPass(v) {
+  dglFxPass = v; // eslint-disable-line no-func-assign
+  provide({ dglFxPass });
+}
+export function setDglGrass(v) {
+  dglGrass = v; // eslint-disable-line no-func-assign
+  provide({ dglGrass });
+}
+export function setDglGrassWork(v) {
+  dglGrassWork = v; // eslint-disable-line no-func-assign
+  provide({ dglGrassWork });
+}
+export function setDglGround(v) {
+  dglGround = v; // eslint-disable-line no-func-assign
+  provide({ dglGround });
+}
+export function setDglGroundAO(v) {
+  dglGroundAO = v; // eslint-disable-line no-func-assign
+  provide({ dglGroundAO });
+}
+export function setDglItems(v) {
+  dglItems = v; // eslint-disable-line no-func-assign
+  provide({ dglItems });
+}
+export function setDglReflPass(v) {
+  dglReflPass = v; // eslint-disable-line no-func-assign
+  provide({ dglReflPass });
+}
+export function setDglRingUpdate(v) {
+  dglRingUpdate = v; // eslint-disable-line no-func-assign
+  provide({ dglRingUpdate });
+}
+export function setDglShadowPass(v) {
+  dglShadowPass = v; // eslint-disable-line no-func-assign
+  provide({ dglShadowPass });
+}
+export function setDglSprites(v) {
+  dglSprites = v; // eslint-disable-line no-func-assign
+  provide({ dglSprites });
+}
+export function setDglWater(v) {
+  dglWater = v; // eslint-disable-line no-func-assign
+  provide({ dglWater });
+}
 /* to-module: end */
 export const DGL = {
   on: false,
@@ -2215,7 +2266,7 @@ function* dglRingChunk(R, sc, ci, cj, pr) {
 }
 /* each frame: keep the ring round the camera's focus, painting what is missing a few ms at a time (more while the
    squares right round you are still missing, so a scene never opens blurred for long) */
-function dglRingUpdate(sc, fx, fz, budget) {
+export function dglRingUpdate(sc, fx, fz, budget) {
   if (!DGL.on || !sc) return;
   let R = DGL.ring;
   if (!R) {
@@ -2556,7 +2607,7 @@ const DGL_WKID = Object.fromEntries(DGL_WKIND.map((w, i) => [w.k, i]));
 /* v34: worked out a slice at a time (a few ms per frame) instead of all at once when a scene opens: it was the cause of
    almost every slow frame in the v33 log (up to 243 ms). The cliff-foot pass reads each spot's height once into a grid
    instead of asking the terrain nine times per texel. Until it's done the ground simply isn't darkened. */
-function dglGroundAO(sc) {
+export function dglGroundAO(sc) {
   const gl = EGL.gl;
   if (DGL.gaoTex) {
     DGL.gaoTex = null;
@@ -3005,7 +3056,7 @@ const DGL_GKIND = {
 }; /* v47: sunburnt grass (mostly dry straw), wildflower meadow (flower heads) */
 /* v39: planting is spread over frames: each frame plants rows for a few milliseconds (dglGrassWork), and the blades
    appear when the last row is in, so a big meadow no longer costs one long frame when the scene opens */
-function dglBuildGrass() {
+export function dglBuildGrass() {
   const gl = EGL.gl,
     sc = DIO.sc;
   DGL.grassDrawn = 0;
@@ -3201,7 +3252,7 @@ function dglBuildGrass() {
   DGL.grassJob = J;
   dglGrassWork(12);
 }
-function dglGrassWork(ms = 4) {
+export function dglGrassWork(ms = 4) {
   const J = DGL.grassJob;
   if (!J) return;
   if (J.sc !== DIO.sc) {
@@ -4455,7 +4506,7 @@ export function dglWindAt(x, z, t, sc, wind) {
   const k = (sc.wind || 1) * (wind == null ? eng('grass', 'wind') : wind);
   return eglWindBend(x, z, t, eng('grass', 'gusts')) * k;
 }
-function dglItems(st, C, PPU, C0) {
+export function dglItems(st, C, PPU, C0) {
   const sc = DIO.sc,
     P = DIO.pl,
     t = DIO.t,
@@ -5170,7 +5221,7 @@ function dglShadowRect(C) {
    you walk; the sun's slow travel or any change to the scene draws it again. */
 /* v43: two cascades. The far map is the fitted view as before (cached for what never moves); the near map is a tight
    square round you at a finer texel, drawn every frame from the things in it, so shadows near you are crisp */
-function dglShadowPass(items0, sun, C) {
+export function dglShadowPass(items0, sun, C) {
   const far = dglShadowPassFit(items0, sun, C);
   if (!(eng('shadows', 'cascades') ?? true) || (DGL.bt && (eng('quality', 'battleLite') ?? true))) return far;
   const P = DIO.pl,
@@ -5511,7 +5562,7 @@ export function dglWorldTex() {
   gl.generateMipmap(gl.TEXTURE_2D);
   return (DGL.wtex = t);
 }
-function dglGround(C, X) {
+export function dglGround(C, X) {
   const gl = EGL.gl,
     sc = DIO.sc,
     p = dglUse('ground', C, X),
@@ -5672,7 +5723,7 @@ function dglFlowers(sc) {
     k = DGL_FLW_OF[id] || (sc && sc.kind === 'town' ? 'town' : 'meadow');
   return { c: DGL_FLW[k].map(h => hexA(h).map(v => v / 255)), glow: k === 'spore' ? 0.55 : 0 };
 }
-function dglGrass(C, X) {
+export function dglGrass(C, X) {
   const gl = EGL.gl,
     p = dglUse('grass', C, X),
     U = p.U,
@@ -5779,7 +5830,7 @@ function dglRiseK(it) {
     c = 1.7;
   return 1 + (c + 1) * Math.pow(k - 1, 3) + c * Math.pow(k - 1, 2);
 }
-function dglSprites(C, items, X, hits, labels, PPU) {
+export function dglSprites(C, items, X, hits, labels, PPU) {
   const gl = EGL.gl,
     p = dglUse('sprite', C, X),
     U = p.U,
@@ -6291,7 +6342,7 @@ function dglMirrorInView(F, it, L) {
     cy = (it.y || 0) + h * 0.5;
   return dglInView(F, it.x, 2 * L - cy, it.z, r);
 }
-function dglReflPass(items, C, rw, rh, X) {
+export function dglReflPass(items, C, rw, rh, X) {
   const gl = EGL.gl,
     w = Math.max(32, rw >> 1),
     h = Math.max(32, rh >> 1),
@@ -6473,7 +6524,7 @@ function dglReflLevel() {
   }
   return (DGL.wlevelR = best ? best.y : DGL.wlevel);
 }
-function dglWater(C, X, rw, rh) {
+export function dglWater(C, X, rw, rh) {
   const gl = EGL.gl,
     p = dglUse('water', C, X),
     U = p.U,
@@ -7457,7 +7508,7 @@ function dglLifeFx(quad, glows, t, rm, dt, sc, C0) {
     }
   }
 }
-function dglFxPass(C, items, X, dark, t, dt) {
+export function dglFxPass(C, items, X, dark, t, dt) {
   const gl = EGL.gl,
     p = dglUse('fx', C, X),
     U = p.U,

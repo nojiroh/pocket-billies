@@ -6,6 +6,11 @@
    test (selftest.js) plays through everything for about two minutes, stress-tests the device and adds the results.
    Nothing here leaves the device unless the player exports it. No save data, names or step history are included. */
 const NW_BUILD = PB_VERSION;
+/* phase 04d: what the log reads and wraps in the game's modules. log.js runs before them (it catches their errors),
+   so js/log-names.js (made by tools/to-module.mjs, the last module of the page) fills this in once they have loaded:
+   a getter for each name, and a setter (the module's own setX) for each function the log wraps. Until then it is
+   empty, as the names were before the modules ran. */
+const GAME = {};
 const NWLOG = {
   t0: performance.now(),
   ev: [],
@@ -157,8 +162,8 @@ NWLOG.task = (name, work, ts) => {
       task: name,
       ms: Math.round(work),
       why,
-      view: typeof B !== 'undefined' && B ? 'battle' : typeof U !== 'undefined' ? U.tab : '-',
-      scene: typeof DIO !== 'undefined' ? DIO.id : null,
+      view: typeof GAME.B !== 'undefined' && GAME.B ? 'battle' : typeof GAME.U !== 'undefined' ? GAME.U.tab : '-',
+      scene: typeof GAME.DIO !== 'undefined' ? GAME.DIO.id : null,
     });
     if (L.length > 60) L.shift();
   }
@@ -174,22 +179,23 @@ NWLOG.task = (name, work, ts) => {
 NWLOG.ctx = () => {
   const c = {};
   try {
-    c.view = typeof B !== 'undefined' && B ? 'battle' : typeof U !== 'undefined' ? U.tab : '-';
-    if (typeof DIO !== 'undefined' && DIO.id) c.scene = DIO.id;
-    if (typeof DGL !== 'undefined') c.gl = DGL.on ? 1 : 0;
-    if (typeof DIO !== 'undefined') c.res = Math.round((DIO.R || 1) * 100) / 100;
-    if (typeof SC !== 'undefined' && SC.q) c.bq = SC.q.lvl;
-    if (typeof DIO !== 'undefined' && DIO.held) c.held = DIO.held;
-    if (typeof DGL !== 'undefined' && DGL.on) {
-      c.q = DGL.qe || 0;
-      if (DGL.cullOf) c.cull = [DGL.culled, DGL.cullOf];
-      if (DGL.gridSkip) c.grid = DGL.gridSkip;
-      if (DGL.shHit !== undefined || DGL.shMiss !== undefined) {
-        c.shc = [DGL.shHit || 0, DGL.shMiss || 0];
-        DGL.shHit = DGL.shMiss = 0;
+    c.view = typeof GAME.B !== 'undefined' && GAME.B ? 'battle' : typeof GAME.U !== 'undefined' ? GAME.U.tab : '-';
+    if (typeof GAME.DIO !== 'undefined' && GAME.DIO.id) c.scene = GAME.DIO.id;
+    if (typeof GAME.DGL !== 'undefined') c.gl = GAME.DGL.on ? 1 : 0;
+    if (typeof GAME.DIO !== 'undefined') c.res = Math.round((GAME.DIO.R || 1) * 100) / 100;
+    if (typeof GAME.SC !== 'undefined' && GAME.SC.q) c.bq = GAME.SC.q.lvl;
+    if (typeof GAME.DIO !== 'undefined' && GAME.DIO.held) c.held = GAME.DIO.held;
+    if (typeof GAME.DGL !== 'undefined' && GAME.DGL.on) {
+      c.q = GAME.DGL.qe || 0;
+      if (GAME.DGL.cullOf) c.cull = [GAME.DGL.culled, GAME.DGL.cullOf];
+      if (GAME.DGL.gridSkip) c.grid = GAME.DGL.gridSkip;
+      if (GAME.DGL.shHit !== undefined || GAME.DGL.shMiss !== undefined) {
+        c.shc = [GAME.DGL.shHit || 0, GAME.DGL.shMiss || 0];
+        GAME.DGL.shHit = GAME.DGL.shMiss = 0;
       }
     }
-    if (typeof EGL !== 'undefined' && EGL.gpuMs) c.gpu = [Math.round(EGL.gpuMs * 10) / 10, Math.round(EGL.gpuMax || 0)];
+    if (typeof GAME.EGL !== 'undefined' && GAME.EGL.gpuMs)
+      c.gpu = [Math.round(GAME.EGL.gpuMs * 10) / 10, Math.round(GAME.EGL.gpuMax || 0)];
     if (NWLOG.bench && NWLOG.bench.step) c.bench = NWLOG.bench.step;
   } catch (e) {}
   return c;
@@ -231,11 +237,12 @@ NWLOG.flush = ts => {
 /* the WebGL scene can only be read inside the frame that drew it, so it is captured there (diorama-gl.js) */
 NWLOG.snap = () => {
   try {
-    if (typeof DGL !== 'undefined' && DGL.on && DIO.cv && DIO.ready) {
-      DGL.snapReq = 1;
+    if (typeof GAME.DGL !== 'undefined' && GAME.DGL.on && GAME.DIO.cv && GAME.DIO.ready) {
+      GAME.DGL.snapReq = 1;
       return;
     }
-    const cv = typeof B !== 'undefined' && B ? document.getElementById('cvWorld') : document.getElementById('dio');
+    const cv =
+      typeof GAME.B !== 'undefined' && GAME.B ? document.getElementById('cvWorld') : document.getElementById('dio');
     if (cv && cv.width && !cv.hidden) NWLOG.keepShot(cv, null);
   } catch (e) {}
 };
@@ -250,7 +257,10 @@ NWLOG.keepShot = (cv, over) => {
     if (over) x.drawImage(over, 0, 0, c.width, c.height);
     NWLOG.shot = {
       t: NWLOG.now(),
-      what: typeof B !== 'undefined' && B ? 'battle' : (typeof DIO !== 'undefined' && DIO.id) || 'scene',
+      what:
+        typeof GAME.B !== 'undefined' && GAME.B
+          ? 'battle'
+          : (typeof GAME.DIO !== 'undefined' && GAME.DIO.id) || 'scene',
       jpeg: c.toDataURL('image/jpeg', 0.72),
     };
   } catch (e) {
@@ -358,23 +368,24 @@ NWLOG.glInfo = () => {
   } catch (e) {
     o.error = String(e.message || e);
   }
-  if (typeof DGL !== 'undefined') {
-    o.sceneRenderer = DGL.on ? 'webgl' : 'canvas';
-    o.webglFailed = !!(typeof EGL !== 'undefined' && EGL.fail);
-    o.contextLost = !!(typeof EGL !== 'undefined' && EGL.lost);
-    o.frames = DGL.frames;
+  if (typeof GAME.DGL !== 'undefined') {
+    o.sceneRenderer = GAME.DGL.on ? 'webgl' : 'canvas';
+    o.webglFailed = !!(typeof GAME.EGL !== 'undefined' && GAME.EGL.fail);
+    o.contextLost = !!(typeof GAME.EGL !== 'undefined' && GAME.EGL.lost);
+    o.frames = GAME.DGL.frames;
   }
   /* alpha 0.4: the helper threads: the ground painter's (paint.js) and the bump maps' (engine/core.js) */
   try {
-    if (typeof pwState === 'function') o.groundPainter = pwState();
-    if (typeof EGL_NW !== 'undefined') o.bumpHelper = EGL_NW.w ? 'on' : EGL_NW.bad ? 'off' : 'not started';
+    if (typeof GAME.pwState === 'function') o.groundPainter = GAME.pwState();
+    if (typeof GAME.EGL_NW !== 'undefined')
+      o.bumpHelper = GAME.EGL_NW.w ? 'on' : GAME.EGL_NW.bad ? 'off' : 'not started';
   } catch (e) {}
   return o;
 };
 NWLOG.state = () => {
   const s = {};
   try {
-    const p = S.preferences || {};
+    const p = GAME.S.preferences || {};
     s.preferences = {
       theme: p.theme || 'system',
       motion: p.motion || 'system',
@@ -382,19 +393,19 @@ NWLOG.state = () => {
       effects: p.effects || 'full',
       tilt: p.tilt !== false,
     };
-    s.started = !!S.started;
-    s.tab = U.tab;
-    s.battle = !!B;
-    s.stop = S.route ? S.route.node : null;
-    s.trip = S.route ? S.route.plan.slice() : [];
-    s.tripProgress = S.route ? S.route.prog : 0;
-    s.scene = typeof DIO !== 'undefined' ? DIO.id : null;
-    s.team = S.team ? S.team.length : 0;
-    s.encounters = S.queue ? S.queue.length : 0;
-    s.badges = (S.seats || []).length;
-    s.visited = Object.keys(S.visited || {}).length;
-    s.frameHz = FRAME.hz;
-    s.fpsCap = userFps();
+    s.started = !!GAME.S.started;
+    s.tab = GAME.U.tab;
+    s.battle = !!GAME.B;
+    s.stop = GAME.S.route ? GAME.S.route.node : null;
+    s.trip = GAME.S.route ? GAME.S.route.plan.slice() : [];
+    s.tripProgress = GAME.S.route ? GAME.S.route.prog : 0;
+    s.scene = typeof GAME.DIO !== 'undefined' ? GAME.DIO.id : null;
+    s.team = GAME.S.team ? GAME.S.team.length : 0;
+    s.encounters = GAME.S.queue ? GAME.S.queue.length : 0;
+    s.badges = (GAME.S.seats || []).length;
+    s.visited = Object.keys(GAME.S.visited || {}).length;
+    s.frameHz = GAME.FRAME.hz;
+    s.fpsCap = GAME.userFps();
   } catch (e) {
     s.error = String(e.message || e);
   }
@@ -426,45 +437,45 @@ NWLOG.more = () => {
       o[k] = 'error: ' + String(e.message || e).slice(0, 80);
     }
   };
-  t('account', () => (typeof ACC !== 'undefined' && ACC.user ? 'signed in' : 'this browser'));
-  t('preferences', () => Object.assign({}, S.preferences || {}));
-  t('saveBytes', () => JSON.stringify(S).length);
+  t('account', () => (typeof GAME.ACC !== 'undefined' && GAME.ACC.user ? 'signed in' : 'this browser'));
+  t('preferences', () => Object.assign({}, GAME.S.preferences || {}));
+  t('saveBytes', () => JSON.stringify(GAME.S).length);
   t('time', () =>
-    typeof ENV !== 'undefined'
+    typeof GAME.ENV !== 'undefined'
       ? {
-          on: ENV.on,
-          hour: +ENV.tod.toFixed(2),
-          weather: ENV.weather,
-          season: ENV.season,
-          climate: ENV.climate,
-          night: +(ENV.night || 0).toFixed(2),
-          lamps: +(ENV.lampK || 0).toFixed(2),
-          forced: ENV.force || null,
+          on: GAME.ENV.on,
+          hour: +GAME.ENV.tod.toFixed(2),
+          weather: GAME.ENV.weather,
+          season: GAME.ENV.season,
+          climate: GAME.ENV.climate,
+          night: +(GAME.ENV.night || 0).toFixed(2),
+          lamps: +(GAME.ENV.lampK || 0).toFixed(2),
+          forced: GAME.ENV.force || null,
         }
       : null
   );
   t('scene', () => {
-    if (typeof DIO === 'undefined' || !DIO.sc) return null;
-    const sc = DIO.sc;
+    if (typeof GAME.DIO === 'undefined' || !GAME.DIO.sc) return null;
+    const sc = GAME.DIO.sc;
     return {
-      id: DIO.id,
+      id: GAME.DIO.id,
       size: [sc.w, sc.h],
       props: (sc.props || []).length,
-      life: typeof LIFE !== 'undefined' ? LIFE.list.map(c => c.k).join(' ') : '',
-      folk: (DIO.folk || []).length,
-      water: (DIO.water || []).length,
+      life: typeof GAME.LIFE !== 'undefined' ? GAME.LIFE.list.map(c => c.k).join(' ') : '',
+      folk: (GAME.DIO.folk || []).length,
+      water: (GAME.DIO.water || []).length,
       ladders: (sc.props || []).filter(p => p.act === 'climb').length,
-      resolution: DIO.R,
-      inside: U.inside ? U.inside.id : null,
+      resolution: GAME.DIO.R,
+      inside: GAME.U.inside ? GAME.U.inside.id : null,
       room: !!sc.room,
     };
   });
   t('caches', () => ({
-    people: typeof TR_CACHE !== 'undefined' ? TR_CACHE.size : null,
-    lifeFrames: typeof LIFE !== 'undefined' ? LIFE.cut.size : null,
-    normalsWaiting: typeof EGL !== 'undefined' && EGL.normQ ? EGL.normQ.length : null,
-    targets: typeof EGL !== 'undefined' ? Object.keys(EGL.fb || {}).length : null,
-    prints: typeof DGL !== 'undefined' && DGL.prints ? DGL.prints.length : 0,
+    people: typeof GAME.TR_CACHE !== 'undefined' ? GAME.TR_CACHE.size : null,
+    lifeFrames: typeof GAME.LIFE !== 'undefined' ? GAME.LIFE.cut.size : null,
+    normalsWaiting: typeof GAME.EGL !== 'undefined' && GAME.EGL.normQ ? GAME.EGL.normQ.length : null,
+    targets: typeof GAME.EGL !== 'undefined' ? Object.keys(GAME.EGL.fb || {}).length : null,
+    prints: typeof GAME.DGL !== 'undefined' && GAME.DGL.prints ? GAME.DGL.prints.length : 0,
   }));
   t('memoryMB', () =>
     performance.memory
@@ -491,31 +502,33 @@ NWLOG.more = () => {
   );
   t('slowFrames', () => NWLOG.slow.slice(-30));
   t('frameMs', () =>
-    typeof DGL !== 'undefined' && DGL.hist
+    typeof GAME.DGL !== 'undefined' && GAME.DGL.hist
       ? {
-          under8: DGL.hist[0],
-          under16: DGL.hist[1],
-          under33: DGL.hist[2],
-          under66: DGL.hist[3],
-          under133: DGL.hist[4],
-          over133: DGL.hist[5],
+          under8: GAME.DGL.hist[0],
+          under16: GAME.DGL.hist[1],
+          under33: GAME.DGL.hist[2],
+          under66: GAME.DGL.hist[3],
+          under133: GAME.DGL.hist[4],
+          over133: GAME.DGL.hist[5],
         }
       : null
   );
-  t('glExtensions', () => (typeof EGL !== 'undefined' && EGL.gl ? EGL.gl.getSupportedExtensions() : null));
+  t('glExtensions', () =>
+    typeof GAME.EGL !== 'undefined' && GAME.EGL.gl ? GAME.EGL.gl.getSupportedExtensions() : null
+  );
   t('audio', () =>
-    typeof AUD !== 'undefined' && AUD.ctx
+    typeof GAME.AUD !== 'undefined' && GAME.AUD.ctx
       ? {
-          state: AUD.ctx.state,
-          rate: AUD.ctx.sampleRate,
-          song: AUD.song ? AUD.song.name : null,
-          worldBeds: typeof AMB !== 'undefined' ? Object.keys(AMB.beds).length : 0,
+          state: GAME.AUD.ctx.state,
+          rate: GAME.AUD.ctx.sampleRate,
+          song: GAME.AUD.song ? GAME.AUD.song.name : null,
+          worldBeds: typeof GAME.AMB !== 'undefined' ? Object.keys(GAME.AMB.beds).length : 0,
         }
       : null
   );
   t('today', () =>
-    typeof chalToday === 'function' && S.started
-      ? { challenges: chalToday().list.map(c => [c.k, c.have, c.need, c.claimed]), stamps: stampCount() }
+    typeof GAME.chalToday === 'function' && GAME.S.started
+      ? { challenges: GAME.chalToday().list.map(c => [c.k, c.have, c.need, c.claimed]), stamps: GAME.stampCount() }
       : null
   );
   return o;
@@ -525,8 +538,8 @@ NWLOG.build = () => ({
   kind: 'debug-log',
   format: 1,
   build: NW_BUILD,
-  dataVersion: (GD.meta && GD.meta.version) || null,
-  artVersion: (GD.meta && GD.meta.artVersion) || 0,
+  dataVersion: (GAME.GD.meta && GAME.GD.meta.version) || null,
+  artVersion: (GAME.GD.meta && GAME.GD.meta.artVersion) || 0,
   created: new Date().toISOString(),
   uptimeSec: Math.round(NWLOG.now() / 1000),
   device: NWLOG.device(),
@@ -544,16 +557,16 @@ NWLOG.build = () => ({
 /* save it: the share sheet on phones (send it to yourself, or to Files), a download elsewhere, the clipboard as a last resort */
 async function exportDebugLog() {
   /* take a current picture first: the WebGL scene hands it over on its next frame */
-  if (typeof DGL !== 'undefined' && DGL.on && typeof DIO !== 'undefined' && DIO.ready) {
+  if (typeof GAME.DGL !== 'undefined' && GAME.DGL.on && typeof GAME.DIO !== 'undefined' && GAME.DIO.ready) {
     const t0 = NWLOG.shot && NWLOG.shot.t;
     NWLOG.snap();
-    for (let i = 0; i < 25 && DGL.snapReq; i++) await new Promise(r => setTimeout(r, 60));
+    for (let i = 0; i < 25 && GAME.DGL.snapReq; i++) await new Promise(r => setTimeout(r, 60));
   }
   let data;
   try {
     data = JSON.stringify(NWLOG.build());
   } catch (e) {
-    toast('Couldn’t build the debug log: ' + (e.message || e));
+    GAME.toast('Couldn’t build the debug log: ' + (e.message || e));
     return;
   }
   const d = new Date(),
@@ -568,7 +581,7 @@ async function exportDebugLog() {
       /Mobi|Android|iPhone|iPad/.test(navigator.userAgent)
     ) {
       await navigator.share({ files: [f], title: 'Pocket Billies debug log' });
-      toast('Debug log shared.');
+      GAME.toast('Debug log shared.');
       return;
     }
   } catch (e) {
@@ -583,14 +596,14 @@ async function exportDebugLog() {
     a.click();
     a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 4000);
-    toast('Debug log saved to your downloads.');
+    GAME.toast('Debug log saved to your downloads.');
     return;
   } catch (e) {}
   try {
     await navigator.clipboard.writeText(data);
-    toast('The debug log was copied. Paste it into a text file.');
+    GAME.toast('The debug log was copied. Paste it into a text file.');
   } catch (e) {
-    toast('This browser can’t save files here.');
+    GAME.toast('This browser can’t save files here.');
   }
 }
 /* hooks into the game, installed once everything has loaded */
@@ -598,9 +611,9 @@ NWLOG.hook = () => {
   if (NWLOG.hooked) return;
   NWLOG.hooked = true;
   const wrap = (name, fn) => {
-    const o = window[name];
+    const o = GAME[name];
     if (typeof o !== 'function') return;
-    window[name] = function (...a) {
+    GAME[name] = function (...a) {
       try {
         fn(...a);
       } catch (e) {}
@@ -609,23 +622,25 @@ NWLOG.hook = () => {
   };
   let lastTab = null;
   wrap('render', () => {
-    const v = typeof B !== 'undefined' && B ? 'battle' : U.tab;
+    const v = typeof GAME.B !== 'undefined' && GAME.B ? 'battle' : GAME.U.tab;
     if (v !== lastTab) {
       lastTab = v;
       NWLOG.add('screen', v);
     }
   });
   wrap('newBattle', kind =>
-    NWLOG.add('battle', `start ${kind}${typeof areaKey === 'function' ? ' at ' + areaKey() : ''}`)
+    NWLOG.add('battle', `start ${kind}${typeof GAME.areaKey === 'function' ? ' at ' + GAME.areaKey() : ''}`)
   );
-  wrap('endBattle', () => NWLOG.add('battle', 'end ' + ((B && B.over) || '')));
+  wrap('endBattle', () => NWLOG.add('battle', 'end ' + ((GAME.B && GAME.B.over) || '')));
   wrap('dioMount', (cv, id, opt) => NWLOG.add('scene', `mount ${id}`));
-  wrap('setTrip', j => NWLOG.add('travel', `trip to ${typeof ROUTE !== 'undefined' && ROUTE[j] ? ROUTE[j].name : j}`));
+  wrap('setTrip', j =>
+    NWLOG.add('travel', `trip to ${typeof GAME.ROUTE !== 'undefined' && GAME.ROUTE[j] ? GAME.ROUTE[j].name : j}`)
+  );
   wrap('openShop', id => NWLOG.add('shop', id));
   wrap('mapMount', () => NWLOG.add('map', 'open'));
   /* v33: costly jobs leave marks (see NWLOG.blame) */
   const timed = (name, label) => {
-    const o = window[name];
+    const o = GAME[name];
     if (typeof o !== 'function' || o.__nwT) return;
     const f = function (...a) {
       const t0 = performance.now();
@@ -636,7 +651,7 @@ NWLOG.hook = () => {
       }
     };
     f.__nwT = 1;
-    window[name] = f;
+    GAME[name] = f;
   };
   for (const [n, l] of [
     ['dioMount', 'opening a scene'],
@@ -685,7 +700,7 @@ NWLOG.hook = () => {
     ['dioFolkTick', 'folk', 'moving the townsfolk'],
     ['lifeStep', 'animals', 'moving the animals'],
   ]) {
-    const o = window[n];
+    const o = GAME[n];
     if (typeof o !== 'function' || o.__nwP) continue;
     const f = function (...a) {
       const t0 = performance.now();
@@ -698,7 +713,7 @@ NWLOG.hook = () => {
       }
     };
     f.__nwP = 1;
-    window[n] = f;
+    GAME[n] = f;
   }
 };
 /* v33: everything a test needs to explain a result: what's on screen, what the renderer is doing, what went wrong lately */
@@ -712,27 +727,27 @@ NWLOG.diag = (since = 0) => {
     }
   };
   t('view', () =>
-    typeof B !== 'undefined' && B
-      ? `battle ${B.kind}/${B.fmt || 'single'} (${B.phase})`
-      : typeof U !== 'undefined'
-        ? U.tab
+    typeof GAME.B !== 'undefined' && GAME.B
+      ? `battle ${GAME.B.kind}/${GAME.B.fmt || 'single'} (${GAME.B.phase})`
+      : typeof GAME.U !== 'undefined'
+        ? GAME.U.tab
         : '-'
   );
-  t('scene', () => (typeof DIO !== 'undefined' ? DIO.id + (DIO.ready ? '' : ' (loading)') : null));
+  t('scene', () => (typeof GAME.DIO !== 'undefined' ? GAME.DIO.id + (GAME.DIO.ready ? '' : ' (loading)') : null));
   t('renderer', () =>
-    typeof DGL !== 'undefined'
-      ? DGL.on
-        ? `webgl q${DGL.q || 0} res ${Math.round((DIO.R || 1) * 100)}% · ${DGL.frames} frames`
+    typeof GAME.DGL !== 'undefined'
+      ? GAME.DGL.on
+        ? `webgl q${GAME.DGL.q || 0} res ${Math.round((GAME.DIO.R || 1) * 100)}% · ${GAME.DGL.frames} frames`
         : 'canvas'
       : '-'
   );
   t('drawn', () =>
-    typeof DGL !== 'undefined' && DGL.on
+    typeof GAME.DGL !== 'undefined' && GAME.DGL.on
       ? {
-          skipped: DGL.cullOf ? `${DGL.culled}/${DGL.cullOf}` : null,
-          buildings: typeof BLD !== 'undefined' ? BLD.drawn : null,
-          solid: typeof P3D !== 'undefined' ? P3D.drawn : null,
-          grass: DGL.grassDrawn || null,
+          skipped: GAME.DGL.cullOf ? `${GAME.DGL.culled}/${GAME.DGL.cullOf}` : null,
+          buildings: typeof GAME.BLD !== 'undefined' ? GAME.BLD.drawn : null,
+          solid: typeof GAME.P3D !== 'undefined' ? GAME.P3D.drawn : null,
+          grass: GAME.DGL.grassDrawn || null,
         }
       : null
   );

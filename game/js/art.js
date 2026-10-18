@@ -21,7 +21,7 @@ expose({
   artBoot: [() => artBoot, v => (artBoot = v)],
   artImg: [() => artImg, v => (artImg = v)],
   artLoad: [() => artLoad, v => setArtLoad(v)],
-  artPixels: [() => artPixels, v => (artPixels = v)],
+  artPixels: [() => artPixels, v => setArtPixels(v)],
   artReady: [() => artReady],
   artURL: [() => artURL],
   cnv: [() => cnv, v => (cnv = v)],
@@ -50,6 +50,10 @@ expose({
   whiteOf: [() => whiteOf, v => (whiteOf = v)],
 });
 /* eslint-enable no-func-assign */
+export function setArtPixels(v) {
+  artPixels = v; // eslint-disable-line no-func-assign
+  provide({ artPixels });
+}
 /* to-module: end */
 const ARTDIR = window.NW_ARTDIR || 'art/';
 /* the address of an art file; a single-file build carries its art inline in window.NW_ART */

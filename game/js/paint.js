@@ -377,7 +377,7 @@ function* pwAll(G) {
   }
 }
 /* for the debug log */
-function pwState() {
+export function pwState() {
   return {
     helper: PW.w ? 'on' : PW.bad ? 'off: ' + PW.why : 'not started',
     painted: PW.done,

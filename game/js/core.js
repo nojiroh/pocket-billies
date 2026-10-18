@@ -2,7 +2,7 @@
 /* ================= CORE ================= */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './bridge.js';
-import { JINGLES, accFlush, envOdds, jingle, onStepsAdded, postProcess, provide, sfx, toast } from './hooks.js';
+import { JINGLES, accFlush, envOdds, jingle, onStepsAdded, postProcess, provide, render, sfx, toast } from './hooks.js';
 import { rnd } from './util.js';
 import {
   ADJ,
@@ -110,7 +110,7 @@ expose({
   setS: [() => setS, v => (setS = v)],
   setSave: [() => setSave, v => (setSave = v)],
   setSaveHold: [() => setSaveHold, v => (setSaveHold = v)],
-  setTrip: [() => setTrip, v => (setTrip = v)],
+  setTrip: [() => setTrip, v => setSetTrip(v)],
   spawn: [() => spawn, v => (spawn = v)],
   splitPath: [() => splitPath, v => (splitPath = v)],
   stat: [() => stat, v => (stat = v)],
@@ -127,6 +127,10 @@ expose({
 });
 /* eslint-enable no-func-assign */
 provide({ addSteps, makeMon, riderOf });
+export function setSetTrip(v) {
+  setTrip = v; // eslint-disable-line no-func-assign
+  provide({ setTrip });
+}
 /* to-module: end */
 export const esc = s =>
   String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);

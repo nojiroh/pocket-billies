@@ -5,7 +5,7 @@
    first time it's needed. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './bridge.js';
-import { bar, closeModal, modal, provide, roomRefresh, toast } from './hooks.js';
+import { bar, closeModal, modal, provide, render, roomRefresh, toast } from './hooks.js';
 import { clamp } from './util.js';
 import { COINS, GD, ITEMS, ROUTE, RULES, SP } from './data.js';
 import { B, N, S, U, esc, fmt, save, today } from './core.js';
@@ -127,7 +127,7 @@ const X28_CH = [
   { k: 'fish', make: () => ({ need: 1 }), text: () => 'Land something with your fishing rod' },
   { k: 'stamp', make: () => ({ need: 1 }), text: () => 'Find a gold stamp' },
 ];
-function chalToday() {
+export function chalToday() {
   const X = x28(),
     d = today();
   if (!X.chal || X.chal.date !== d) {
@@ -335,7 +335,7 @@ function stampScenes() {
   return [...new Set(ROUTE.map(r => r.scene).filter(id => id && GD.scenes[id]))];
 }
 const stampTotal = () => stampScenes().length * 2;
-const stampCount = () => Object.keys(x28().stamps).length;
+export const stampCount = () => Object.keys(x28().stamps).length;
 /* where they lie: worked out once per place, on open ground you can walk to, away from where you arrive */
 function stampSpots() {
   if (typeof U !== 'undefined' && U.inside) return [];

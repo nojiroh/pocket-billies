@@ -123,7 +123,7 @@ expose({
   dioFolkInit: [() => dioFolkInit, v => (dioFolkInit = v)],
   dioFolkStep: [() => dioFolkStep, v => (dioFolkStep = v)],
   dioFolkStreet: [() => dioFolkStreet, v => (dioFolkStreet = v)],
-  dioFolkTick: [() => dioFolkTick, v => (dioFolkTick = v)],
+  dioFolkTick: [() => dioFolkTick, v => setDioFolkTick(v)],
   dioFree: [() => dioFree, v => (dioFree = v)],
   dioFreePt: [() => dioFreePt, v => (dioFreePt = v)],
   dioGradeK: [() => dioGradeK, v => (dioGradeK = v)],
@@ -156,13 +156,13 @@ expose({
   dioPill: [() => dioPill, v => (dioPill = v)],
   dioPillSize: [() => dioPillSize, v => (dioPillSize = v)],
   dioPlain47: [() => dioPlain47, v => (dioPlain47 = v)],
-  dioPlayer: [() => dioPlayer, v => (dioPlayer = v)],
+  dioPlayer: [() => dioPlayer, v => setDioPlayer(v)],
   dioPlayer0: [() => dioPlayer0, v => (dioPlayer0 = v)],
   dioPlayerY: [() => dioPlayerY, v => (dioPlayerY = v)],
   dioPoly: [() => dioPoly, v => (dioPoly = v)],
   dioPolyAt: [() => dioPolyAt, v => (dioPolyAt = v)],
   dioPolyNear: [() => dioPolyNear, v => (dioPolyNear = v)],
-  dioPrepare: [() => dioPrepare, v => (dioPrepare = v)],
+  dioPrepare: [() => dioPrepare, v => setDioPrepare(v)],
   dioProj: [() => dioProj, v => setDioProj(v)],
   dioPropM: [() => dioPropM, v => (dioPropM = v)],
   dioPropOn: [() => dioPropOn, v => (dioPropOn = v)],
@@ -223,6 +223,18 @@ expose({
 });
 /* eslint-enable no-func-assign */
 provide({ dioStop });
+export function setDioFolkTick(v) {
+  dioFolkTick = v; // eslint-disable-line no-func-assign
+  provide({ dioFolkTick });
+}
+export function setDioPlayer(v) {
+  dioPlayer = v; // eslint-disable-line no-func-assign
+  provide({ dioPlayer });
+}
+export function setDioPrepare(v) {
+  dioPrepare = v; // eslint-disable-line no-func-assign
+  provide({ dioPrepare });
+}
 /* to-module: end */
 export const DIO = {
   cv: null,

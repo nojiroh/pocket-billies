@@ -141,10 +141,10 @@ expose({
   scPlay: [() => scPlay, v => (scPlay = v)],
   scPrepare: [() => scPrepare, v => (scPrepare = v)],
   scQualityR: [() => scQualityR, v => (scQualityR = v)],
-  scResize: [() => scResize, v => (scResize = v)],
+  scResize: [() => scResize, v => setScResize(v)],
   scRingPhase: [() => scRingPhase],
   scSelect: [() => scSelect, v => (scSelect = v)],
-  scStart: [() => scStart, v => (scStart = v)],
+  scStart: [() => scStart, v => setScStart(v)],
   scStop: [() => scStop, v => (scStop = v)],
   scTargets: [() => scTargets, v => (scTargets = v)],
   scToCss: [() => scToCss, v => (scToCss = v)],
@@ -166,6 +166,14 @@ expose({
 });
 /* eslint-enable no-func-assign */
 provide({ buzz });
+export function setScResize(v) {
+  scResize = v; // eslint-disable-line no-func-assign
+  provide({ scResize });
+}
+export function setScStart(v) {
+  scStart = v; // eslint-disable-line no-func-assign
+  provide({ scStart });
+}
 /* to-module: end */
 export const FW = 224,
   FH = 168,

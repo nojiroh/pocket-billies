@@ -27,6 +27,11 @@ const BRIDGE = 'game/js/bridge.js';
 const START = '/* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */';
 const END = '/* to-module: end */';
 const HOOKS = 'game/js/hooks.js';
+// phase 04d: the debug log (a classic script) reaches the game's modules through what this module, made by the tool
+// and the last of the game's page, puts in log.js's GAME object
+const LOG = 'game/js/log.js';
+const LOG_NAMES = 'game/js/log-names.js';
+const setterName = n => 'set' + n[0].toUpperCase() + n.slice(1);
 // phase 04d: after a declaration another module reads through hooks.js, the tool hands the value over
 const PROVIDE_LINE = /^provide\(\{[^}]*\}\); \/\* to-module \*\/\n/gm;
 
@@ -213,6 +218,10 @@ export async function run(args) {
   for (const { scripts } of pages)
     for (const s of scripts) {
       if (info.has(s.file)) continue;
+      if (s.file === LOG_NAMES) {
+        info.set(s.file, { own: new Map(), reads: new Set(), writes: new Set(), loadReads: new Set(), fnReads: new Map() });
+        continue;
+      }
       if (s.file === 'game/data/gamedata.js') {
         info.set(s.file, {
           own: new Map([['GAMEDATA', { kind: 'var', node: null }]]),
@@ -228,6 +237,7 @@ export async function run(args) {
     }
   const modules = new Set(pages.flatMap(p => p.scripts.filter(s => s.module).map(s => s.file)));
   if (make.length && !check) for (const f of make) modules.add(f);
+  modules.delete(LOG_NAMES);
 
   // 3. Where each name a module reads from another file comes from:
   // - an import from G when, on every page loading the file, exactly one script declares it, it is the same module G,
@@ -241,9 +251,8 @@ export async function run(args) {
   //   gives each of those a setter or a hook of its own;
   // - a global, when only classic scripts declare it.
   const order = pages.flatMap(p => p.scripts.map(s => s.file));
-  // names some file assigns: other modules, and the debug log (game/js/log.js wraps functions through window[...])
+  // names some other module assigns
   const assigned = new Set([...modules].flatMap(f => [...info.get(f).writes]));
-  for (const [, n] of read('game/js/log.js').matchAll(/(?:\bwrap\(|\[)\s*'(\w+)',/g)) assigned.add(n);
   const imports = new Map(); // file -> Map(G -> Set(names))
   const exportsOf = new Map(); // G -> Set(names)
   const hooked = new Map(); // name -> Set(files that hand it to hooks.js)
@@ -286,6 +295,39 @@ export async function run(args) {
     }
     imports.set(f, im);
   }
+  // 3b. the debug log: what log.js reads (GAME.x) and the functions it wraps (wrap('render', ...) and the timing
+  // lists), each from the game module that declares it. A function it wraps gets a setter in that module (its own
+  // setX, or one the tool writes in the generated part), so the wrapped version is the one every module calls.
+  const logText = read(LOG);
+  const logReads = new Set([...logText.matchAll(/\bGAME\.([A-Za-z_$][\w$]*)/g)].map(m => m[1]));
+  const logWraps = new Set([...logText.matchAll(/(?:\bwrap\(|\[)\s*'(\w+)',/g)].map(m => m[1]));
+  const gamePage = pages.find(p => p.page === 'game/index.html').scripts;
+  const logFrom = new Map(); // G -> Set(names log-names.js imports)
+  const genSetters = new Map(); // G -> Set(names the tool writes a setter for)
+  const logSet = new Map(); // name -> its setter
+  for (const n of new Set([...logReads, ...logWraps])) {
+    const d = gamePage.filter(s => info.get(s.file).own.has(n));
+    if (d.length !== 1 || !d[0].module) {
+      if (logReads.has(n)) throw new Error(`to-module: log.js reads GAME.${n}, which no game module declares`);
+      continue; // a timing list may name a function that is gone; log.js skips it
+    }
+    const g = d[0].file,
+      own = info.get(g).own;
+    use(logFrom, g, n);
+    if (own.get(n).node) use(exportsOf, g, n);
+    if (!logWraps.has(n)) continue;
+    const k = setterName(n);
+    if (own.has(k) && own.get(k).kind === 'function') {
+      use(logFrom, g, k);
+      use(exportsOf, g, k);
+    } else if (['const', 'class'].includes(own.get(n).kind))
+      throw new Error(`to-module: log.js wraps ${n}, a ${own.get(n).kind} in ${g}`);
+    else {
+      use(genSetters, g, n);
+      use(logFrom, g, k);
+    }
+    logSet.set(n, k);
+  }
   const provides = new Map(); // G -> Set(names it hands to hooks.js)
   for (const [n, files] of hooked) for (const g of files) use(provides, g, n);
   for (const n of hooked.keys())
@@ -311,7 +353,8 @@ export async function run(args) {
     const lines = [START, `import { expose } from '${spec(f, BRIDGE)}';`];
     const im = [...imports.get(f)].sort((a, b) => order.indexOf(a[0]) - order.indexOf(b[0]));
     const fromHooks = [...(imports.get(f).get(HOOKS) || [])];
-    if (gives.length || info.get(f).reads.has('provide')) fromHooks.push('provide');
+    const gen = [...(genSetters.get(f) || [])].sort();
+    if (gives.length || gen.length || info.get(f).reads.has('provide')) fromHooks.push('provide');
     if (fromHooks.length) lines.push(`import { ${fromHooks.sort().join(', ')} } from '${spec(f, HOOKS)}';`);
     for (const [g, names] of im)
       if (g !== HOOKS) lines.push(`import { ${[...names].sort().join(', ')} } from '${spec(f, g)}';`);
@@ -319,8 +362,8 @@ export async function run(args) {
     const fns = names.some(n => own.get(n).kind === 'function');
     // a module's own setter (setS for S) also hands the value to hooks.js, so the bridge uses it
     const setterOf = n => {
-      const k = 'set' + n[0].toUpperCase() + n.slice(1);
-      return own.has(k) && own.get(k).kind === 'function' ? `v => ${k}(v)` : `v => (${n} = v)`;
+      const k = setterName(n);
+      return (own.has(k) && own.get(k).kind === 'function') || gen.includes(n) ? `v => ${k}(v)` : `v => (${n} = v)`;
     };
     if (names.length) {
       // the setters replace functions on purpose: the debug log and the Studio wrap or swap them through window
@@ -331,6 +374,14 @@ export async function run(args) {
       if (fns) lines.push('/* eslint-enable no-func-assign */');
     }
     if (early.length) lines.push(`provide({ ${early.join(', ')} });`);
+    // setters for the functions the debug log wraps (log-names.js)
+    for (const n of gen)
+      lines.push(
+        `export function ${setterName(n)}(v) {`,
+        `  ${n} = v;${own.get(n).kind === 'function' ? ' // eslint-disable-line no-func-assign' : ''}`,
+        `  provide({ ${n} });`,
+        '}'
+      );
     lines.push(END);
     // export keywords and the hand-over after each declaration hooks.js needs, last to first so the offsets hold
     const ex = new Set([...(exportsOf.get(f) || [])].map(n => own.get(n).node));
@@ -366,6 +417,23 @@ export async function run(args) {
     '',
   ].join('\n');
   await write(HOOKS, hooksOut, existsSync(join(ROOT, HOOKS)) ? read(HOOKS) : '');
+  // log-names.js: what the debug log reads and wraps, put in log.js's GAME object
+  const logOut = [
+    '// Phase 04d: made by tools/to-module.mjs (npm run modules), do not edit. What the debug log (log.js, a classic',
+    '// script that runs before the modules) reads and wraps in the game\'s modules: a getter for each name in its GAME',
+    "// object, and a setter (the module's own) for each function it wraps. The last module of the game's page.",
+    ...[...logFrom]
+      .sort((a, b) => order.indexOf(a[0]) - order.indexOf(b[0]))
+      .map(([g, ns]) => `import { ${[...ns].sort().join(', ')} } from '${spec(LOG_NAMES, g)}';`),
+    'Object.defineProperties(GAME, {',
+    ...[...new Set([...logReads, ...logSet.keys()])]
+      .filter(n => [...logFrom.values()].some(ns => ns.has(n)))
+      .sort()
+      .map(n => `  ${n}: { get: () => ${n}${logSet.has(n) ? `, set: ${logSet.get(n)}` : ''} },`),
+    '});',
+    '',
+  ].join('\n');
+  await write(LOG_NAMES, logOut, existsSync(join(ROOT, LOG_NAMES)) ? read(LOG_NAMES) : '');
   if (check && stale.length) throw new Error('to-module: out of date (run npm run modules): ' + stale.join(', '));
 
   // 5. Phase 04d: nothing a module reads WHILE it loads (directly or through the functions it calls then) may come

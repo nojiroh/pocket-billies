@@ -248,12 +248,12 @@ expose({
   plateVars: [() => plateVars],
   poolStrip: [() => poolStrip, v => (poolStrip = v)],
   postProcess: [() => postProcess, v => (postProcess = v)],
-  render: [() => render, v => (render = v)],
+  render: [() => render, v => setRender(v)],
   renderDexEntry: [() => renderDexEntry, v => (renderDexEntry = v)],
   renderIntro: [() => renderIntro, v => (renderIntro = v)],
   renderLedger: [() => renderLedger, v => (renderLedger = v)],
   renderMap: [() => renderMap, v => (renderMap = v)],
-  renderOv: [() => renderOv, v => (renderOv = v)],
+  renderOv: [() => renderOv, v => setRenderOv(v)],
   renderProfile: [() => renderProfile, v => (renderProfile = v)],
   renderTeam: [() => renderTeam, v => (renderTeam = v)],
   renderWalk: [() => renderWalk, v => (renderWalk = v)],
@@ -300,6 +300,8 @@ provide({
   modal,
   paintMapCard,
   postProcess,
+  render,
+  renderOv,
   roomRefresh,
   sceneExits,
   sceneIdAt,
@@ -309,6 +311,14 @@ provide({
   updateNav,
   walkOff,
 });
+export function setRender(v) {
+  render = v; // eslint-disable-line no-func-assign
+  provide({ render });
+}
+export function setRenderOv(v) {
+  renderOv = v; // eslint-disable-line no-func-assign
+  provide({ renderOv });
+}
 /* to-module: end */
 const chip = t => `<span class="chip" style="--tc:${TC[t][0]};--tf:${TC[t][1]}">${t === 'None' ? 'Normal' : t}</span>`;
 provide({ chip }); /* to-module */

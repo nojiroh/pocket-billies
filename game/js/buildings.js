@@ -41,14 +41,14 @@ expose({
   bldArt: [() => bldArt, v => (bldArt = v)],
   bldAtlas: [() => bldAtlas, v => (bldAtlas = v)],
   bldBudget: [() => bldBudget, v => (bldBudget = v)],
-  bldDraw: [() => bldDraw, v => (bldDraw = v)],
+  bldDraw: [() => bldDraw, v => setBldDraw(v)],
   bldDraw0: [() => bldDraw0, v => (bldDraw0 = v)],
   bldFacade: [() => bldFacade, v => (bldFacade = v)],
   bldFree: [() => bldFree, v => (bldFree = v)],
   bldGuard: [() => bldGuard, v => (bldGuard = v)],
   bldHex: [() => bldHex, v => (bldHex = v)],
   bldHexSet: [() => bldHexSet, v => (bldHexSet = v)],
-  bldItems: [() => bldItems, v => (bldItems = v)],
+  bldItems: [() => bldItems, v => setBldItems(v)],
   bldLitF: [() => bldLitF, v => (bldLitF = v)],
   bldMake: [() => bldMake, v => (bldMake = v)],
   bldMeshFor: [() => bldMeshFor, v => (bldMeshFor = v)],
@@ -62,7 +62,15 @@ expose({
   bldWinLit: [() => bldWinLit, v => (bldWinLit = v)],
 });
 /* eslint-enable no-func-assign */
-provide({ bldFacade, bldGuard, bldLitF, bldMeshFor, bldShadow, bldSigF, bldSmoke, bldWinLit });
+provide({ bldDraw, bldFacade, bldGuard, bldLitF, bldMeshFor, bldShadow, bldSigF, bldSmoke, bldWinLit });
+export function setBldDraw(v) {
+  bldDraw = v; // eslint-disable-line no-func-assign
+  provide({ bldDraw });
+}
+export function setBldItems(v) {
+  bldItems = v; // eslint-disable-line no-func-assign
+  provide({ bldItems });
+}
 /* to-module: end */
 export const BLD = { mesh: new WeakMap(), fac: new WeakMap(), vao: null };
 provide({ BLD }); /* to-module */
@@ -1506,7 +1514,7 @@ function bldWinLit(seed, litF) {
   return { k: 0.62 + 0.6 * h2, c: h2 < 0.18 ? [0.62, 0.78, 1.25] : h2 < 0.45 ? [1.15, 1.05, 0.85] : [1.25, 1, 0.7] };
 }
 /* ---------- drawing ---------- */
-function bldItems(items) {
+export function bldItems(items) {
   if (!bldOn()) return [];
   if (!BLD.ready) {
     bldGuard(() => {
@@ -1519,7 +1527,7 @@ function bldItems(items) {
   for (const it of items) if (it.bld3 && !(DGL.bt && DGL.bt.hide && DGL.bt.hide.has(it.p))) out.push(it);
   return out;
 }
-function bldDraw(C, X, items, fades) {
+export function bldDraw(C, X, items, fades) {
   bldGuard(() => bldDraw0(C, X, items, fades));
 }
 function bldDraw0(C, X, items, fades) {

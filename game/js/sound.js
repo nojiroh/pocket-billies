@@ -60,7 +60,7 @@ expose({
 /* eslint-enable no-func-assign */
 provide({ ambApply, audApply, audTest, jingle, sfx, sfxAt, sfxBattle });
 /* to-module: end */
-const AUD = {
+export const AUD = {
   ctx: null,
   master: null,
   mus: null,
@@ -1095,7 +1095,7 @@ document.addEventListener(
 /* v31: world sounds are half as loud by default and fade in over a few seconds when you arrive somewhere; a second
    bus carries the ambience (Settings → Sound → Ambience): birdsong by day, crickets and the odd owl at night, leaves
    in the wind near trees, a town's murmur, a cave's hum and a room's quiet with its clock ticking */
-const AMB = { bus: null, amb: null, beds: {}, flash: 0, arrive: 0, id: null, lastCall: 0, ev: {} };
+export const AMB = { bus: null, amb: null, beds: {}, flash: 0, arrive: 0, id: null, lastCall: 0, ev: {} };
 function ambFade() {
   if (!AUD.ctx) return 1;
   return clamp((AUD.ctx.currentTime - AMB.arrive) / 2.8, 0, 1);
