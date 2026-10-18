@@ -129,8 +129,10 @@ same phase:
 - **16 Billies**: write the breeding simulation first, against the prototype, before the full build (the owner
   agreed in 13a's plan); agree its bounds. The roster steps (v35, v38, v39/v40) count today's 117 Billies: update
   them with the slimmed roster, and move what is data into unit tests.
-- **17 Robots**: the robot battle rules live in `game/js/logic/` with unit tests; the simulation (no build dominates)
-  comes before the full build.
+- **17 Robots**: the robot battle rules live in `game/js/logic/` with unit tests (`tools/test/robots.test.mjs`); the
+  simulation (no build dominates) comes before the full build: `node tools/test/sim/robot-sim.mjs` fights every build
+  the data allows against a reference set of robots and Billies and reports win rates per build and part
+  (`--quick` for a sample; `robot-sim.test.mjs` checks it runs). Its bounds are still to be agreed with the owner.
 - **18 Trading and battles with friends**: every new Firestore rule gets emulator tests in `firebase/test/`;
   trade validation is logic with unit tests.
 

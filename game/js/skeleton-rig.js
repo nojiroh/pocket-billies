@@ -3,10 +3,11 @@
 /* ---- matrices ---- */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { RULES, SPECIES, activeBattle, provide, reducedMotion } from './hooks.js';
+import { ROBOTS, RULES, SPECIES, activeBattle, provide, reducedMotion } from './hooks.js';
 import { clamp, random } from './util.js';
 import { frameTask, userFps } from './frame-scheduler.js';
 import { ART_CACHE, artImg, artLoad, artReady, artURL, makeCanvas } from './art.js';
+import { robotArtFiles, robotRig } from './robot-art.js';
 import { animFor } from './body-plan-animation.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -39,7 +40,10 @@ expose({
   rigPreload: [() => rigPreload, v => (rigPreload = v)],
   rigTick: [() => rigTick, v => (rigTick = v)],
   rigTint: [() => rigTint, v => (rigTint = v)],
+  robotRigData: [() => robotRigData, v => setRobotRigData(v)],
+  robotRigParts: [() => robotRigParts, v => (robotRigParts = v)],
   setRigParts: [() => setRigParts, v => (setRigParts = v)],
+  setRobotRigData: [() => setRobotRigData, v => (setRobotRigData = v)],
   smoothStepUnclamped: [() => smoothStepUnclamped],
 });
 /* eslint-enable no-func-assign */
@@ -160,7 +164,8 @@ export function rigMatrices(R, P, view) {
       sc !== 1 ? affineMultiply(m, affineScale(sc, sc)) : m,
       img,
       a.v || (b.face ? P.face : null) || (img.v && P.sq && img.v[P.sq] ? P.sq : null),
-      a.al,
+      /* phase 17: a robot's broken parts (P.dim, bone names) are drawn faint */
+      P.dim && P.dim.includes(b.n) ? 0.3 : a.al,
       b,
     ]);
   }
@@ -453,6 +458,8 @@ export function rigParts(sp, gold, k = 1) {
   const view = k === 1 ? 'front' : 'back',
     key = sp + (gold ? 'g' : '') + view;
   if (RIG_PARTS_CACHE[key]) return RIG_PARTS_CACHE[key];
+  /* phase 17: a robot is drawn from its parts */
+  if (typeof sp === 'string' && sp.startsWith('bot:')) return robotRigParts(sp, gold, k);
   const meta = RIGS[sp] && RIGS[sp][view];
   if (!meta) return null;
   const path = rigAtlas(sp, gold, view);
@@ -487,13 +494,36 @@ export function rigParts(sp, gold, k = 1) {
     lag: bones.some(b => b.lag),
   });
 }
+/* phase 17: a robot's rig, drawn from its parts (robot-art.js); the game hands over robots.json as ROBOTS, the Studio
+   its own copy (setRobotRigData). While its pictures load it is drawn with stand-ins and asked for again. */
+export function robotRigParts(sp, gold, k = 1) {
+  const key = sp + (k === 1 ? 'front' : 'back');
+  if (RIG_PARTS_CACHE[key]) return RIG_PARTS_CACHE[key];
+  const R = robotRig(sp, robotRigData || (typeof ROBOTS !== 'undefined' ? ROBOTS : null));
+  if (!R) return null;
+  Object.assign(R, { anim: animFor(R.plan, R.q), lag: false });
+  if (!R.wait) RIG_PARTS_CACHE[key] = R;
+  return R;
+}
+/* phase 17: the Studio draws robots from the robots.json it is editing; after an edit, the robots are drawn again */
+let robotRigData = null;
+export function setRobotRigData(D) {
+  robotRigData = D;
+  for (const k of Object.keys(RIG_PARTS_CACHE)) if (k.startsWith('bot:')) delete RIG_PARTS_CACHE[k];
+}
 /* phase 04d: the Studio's battle preview draws its own billionaires (studio/js/battle-preview.js) */
 export function setRigParts(v) {
   rigParts = v; // eslint-disable-line no-func-assign
   provide({ rigParts });
 }
 export function rigPreload(list) {
-  return artLoad(list.map(([sp, gold, k]) => rigAtlas(sp, gold, k === 1 ? 'front' : 'back')));
+  /* phase 17: a robot loads its parts' pictures */
+  const D = robotRigData || (typeof ROBOTS !== 'undefined' ? ROBOTS : null);
+  return artLoad(
+    list.flatMap(([sp, gold, k]) =>
+      String(sp).startsWith('bot:') ? robotArtFiles(sp, D) : [rigAtlas(sp, gold, k === 1 ? 'front' : 'back')]
+    )
+  );
 }
 /* ---- DOM animator: every <canvas class="rig"> on screen ---- */
 const rigCanvasAnimator = { vis: new Set(), nodes: new Set(), io: null, mo: null, last: 0 };
@@ -530,7 +560,7 @@ export function bustHTML(sp, size, o = {}) {
 }
 function drawDomRig(c, ts) {
   const sp = c.dataset.sp;
-  if (!SPECIES[sp]) return;
+  if (!sp.startsWith('bot:') && !(SPECIES && SPECIES[sp])) return;
   const R = rigParts(sp, c.dataset.g === '1', 1);
   if (!R) return;
   const x = c.getContext('2d');

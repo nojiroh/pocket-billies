@@ -17,7 +17,6 @@ import {
   changed,
   checkboxField,
   clone,
-  colorField,
   commit,
   formatThousands,
   grid,
@@ -609,60 +608,19 @@ export const AMBIENT_PARTICLES = [
   ['none', 'Nothing'],
 ];
 function worldBackdrops() {
-  const D = studioState.D,
-    grounds = [
-      ...new Set(
-        studioState.files
-          .filter(f => /art\/battle\/[^/]+_ground\.png$/.test(f.path))
-          .map(f => f.path.split('/').pop().replace('_ground.png', ''))
-      ),
-    ],
-    fars = [
-      ...new Set(
-        studioState.files
-          .filter(f => /art\/battle\/far_/.test(f.path))
-          .map(f => f.path.split('/').pop().replace('far_', '').replace('.png', ''))
-      ),
-    ],
-    walls = [
-      ...new Set(
-        studioState.files
-          .filter(f => /_walls\.png$/.test(f.path))
-          .map(f => f.path.split('/').pop().replace('_walls.png', ''))
-      ),
-    ];
+  const D = studioState.D;
   return Object.entries(D.battleStages)
     .map(([k, b]) => {
-      const p = `battleStages.${k}`,
-        art = b.art || k;
+      const p = `battleStages.${k}`;
       return card(
         escapeHtml(b.name || k),
-        `<div class="bd-prev" style="background:linear-gradient(${b.sky.join(',')})"><span style="background:${b.fog}"></span><img src="../game/art/battle/${art}_ground.png" alt="" class="pix"></div>` +
-          grid(
-            textField('Name', `${p}.name`),
-            selectField(
-              'Ground art',
-              `${p}.art`,
-              grounds.map(g => [g, g]),
-              { none: `Same as id (${k})`, opt: 1 }
-            ),
-            checkboxField('Indoors', `${p}.indoor`, { num: 1, rr: 1 }),
-            b.indoor
-              ? selectField(
-                  'Walls',
-                  `${p}.wall`,
-                  walls.map(w => [w, w]),
-                  { none: 'None', opt: 1 }
-                )
-              : selectField(
-                  'Far land',
-                  `${p}.far`,
-                  fars.map(f => [f, f]),
-                  { none: 'None', opt: 1 }
-                ),
-            selectField('In the air', `${p}.amb`, AMBIENT_PARTICLES)
-          ) +
-          `<div class="grid colors">${colorField('Sky top', `${p}.sky.0`)}${colorField('Sky middle', `${p}.sky.1`)}${colorField('Sky horizon', `${p}.sky.2`)}${colorField('Haze', `${p}.fog`)}${numberField('Haze distance', `${p}.fogD`, { min: 10, max: 300, step: 5, help: 'Smaller is hazier.' })}</div>`,
+        /* phase 06-3: battles happen in the 3D place you stand; a stage is a name, indoors or not, and what floats in
+           the air (the painted ground, far land, walls, sky and haze are gone) */
+        grid(
+          textField('Name', `${p}.name`),
+          checkboxField('Indoors', `${p}.indoor`, { num: 1, rr: 1 }),
+          selectField('In the air', `${p}.amb`, AMBIENT_PARTICLES)
+        ),
         {
           sub: `id ${escapeHtml(k)} · used by ${escapeHtml(
             D.locations

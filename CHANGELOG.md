@@ -9,6 +9,11 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- Robots (phase 17 prototype): build your own from a gem and four parts (torso with head, left arm, right arm,
+  legs). They join the same team and the same battles as Billies. Their moves come from their parts; a hit on a robot
+  also lands on a part, aimed moves pick the part, a broken arm loses its move and broken legs are slow; healing and
+  the new Repair Kit fix them. A Workshop panel on the Team screen refits them. Placeholder art. In the Studio: a
+  Robots section, robot options in Moves, Items and Trainers.
 - One version, 0.1.0 alpha, read everywhere from game/version.js: the title screen, the Studio's top bar, the offline
   cache, the debug log, the diagnostics report and saves.
 - Friends are safer: friends find each other by code only, only friends see a player's page, and only the receiver

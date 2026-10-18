@@ -82,7 +82,11 @@ export function renderBag() {
     else
       act = `<div class="bag-act px"><span class="bag-t"><b>${escapeHtml(ITEMS[sel].n)}</b><small>Open a Billie’s details on the Team screen to use it</small></span><button class="pb" data-a="tab" data-t="team">Team</button></div>`;
   }
-  return `<div class="bag-head"><h1>Bag</h1></div>${tabs}${body}${act}`;
+  /* phase 06-3: the same title as the other screens; the use panel floats above the bottom bar (css/units.css "Bag") */
+  const total =
+    Object.keys(ITEMS).reduce((a, k) => a + (saveData.items[k] || 0), 0) +
+    Object.keys(COINS).reduce((a, k) => a + (saveData.coins[k] || 0), 0);
+  return `<header class="bar"><div><div class="sub">${formatNumber(total)} things carried</div><h1 class="where">Bag</h1></div></header>${tabs}${body}${act}`;
 }
 document.addEventListener('click', ev => {
   const el = ev.target.closest && ev.target.closest('[data-a^="bag-"]');

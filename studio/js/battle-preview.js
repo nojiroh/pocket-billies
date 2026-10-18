@@ -6,11 +6,10 @@
 import { expose } from '../../game/js/test-globals.js';
 import { provide, sceneryArtPaths, sceneryCatalog } from '../../game/js/hooks.js';
 import { $, $$ } from '../../game/js/util.js';
-import { COIN_ART, artLoad, hexToRgb } from '../../game/js/art.js';
-import { setRigParts } from '../../game/js/skeleton-rig.js';
+import { COIN_ART, artLoad } from '../../game/js/art.js';
+import { robotRigParts, setRigParts } from '../../game/js/skeleton-rig.js';
 import {
   AREAS,
-  BATTLE_STAGE_ART,
   actorTop,
   battleStage,
   battleStageCatch,
@@ -33,11 +32,9 @@ import {
   SECTIONS,
   afterRender,
   card,
-  colorField,
   moveOptions,
   openSection,
   peopleOptions,
-  rangeField,
   render,
   selectField,
   speciesOptions,
@@ -47,7 +44,6 @@ import { atlasGet, atlasPath, rigFor } from './sprites.js';
 import { AMBIENT_PARTICLES } from './world-rules-art.js';
 /* eslint-disable no-func-assign */
 expose({
-  applyBattlePreviewBackdrop: [() => applyBattlePreviewBackdrop, v => (applyBattlePreviewBackdrop = v)],
   battleFreeArea: [() => battleFreeArea, v => ((battleFreeArea = v), provide({ battleFreeArea }))],
   battleLayoutChanged: [() => battleLayoutChanged, v => ((battleLayoutChanged = v), provide({ battleLayoutChanged }))],
   battlePreview: [() => battlePreview],
@@ -62,7 +58,9 @@ expose({
 /* eslint-enable no-func-assign */
 provide({ battleFreeArea, battleLayoutChanged, hudHit, hudPop });
 /* to-module: end */
-setRigParts((sp, gold, k) => rigFor(sp, k === 1 ? 'front' : 'back', !!gold));
+setRigParts((sp, gold, k) =>
+  String(sp).startsWith('bot:') ? robotRigParts(sp, gold, k) : rigFor(sp, k === 1 ? 'front' : 'back', !!gold)
+);
 const battlePreview = {
   stage: 'backdrop',
   area: null,
@@ -186,9 +184,7 @@ SECTIONS.preview = () => {
         ([k, s]) =>
           `<option value="${escapeHtml(k)}" ${battlePreview.stage === k ? 'selected' : ''}>Walk scene: ${escapeHtml(s.name || k)}</option>`
       )
-      .join(
-        ''
-      )}</select></label><p class="help">In the game, battles happen in the walk scene where you stand; the painted backdrops are used when players choose the classic stage.</p>`
+      .join('')}</select></label><p class="help">In the game, battles happen in the walk scene where you stand.</p>`
   )}
   ${card(
     'Backdrop',
@@ -196,8 +192,8 @@ SECTIONS.preview = () => {
       Object.entries(D.battleStages).map(([k, v]) => [k, v.name || k]),
       battlePreview.area
     )}</select></label>
-   <div class="grid colors">${colorField('Sky top', `${p}.sky.0`)}${colorField('Sky middle', `${p}.sky.1`)}${colorField('Sky horizon', `${p}.sky.2`)}${colorField('Haze', `${p}.fog`)}</div>${rangeField('Haze distance', `${p}.fogD`, { min: 10, max: 300, step: 5 })}${selectField('In the air', `${p}.amb`, AMBIENT_PARTICLES)}
-   <p class="help">Changes apply live. Ground, walls and far land are picked under World & encounters → Battle backdrops.</p>`
+   ${selectField('In the air', `${p}.amb`, AMBIENT_PARTICLES)}
+   <p class="help">Changes apply live. A backdrop is now its name, indoors or not, and what floats in the air.</p>`
   )}
  </aside></div></div>`;
 };
@@ -207,15 +203,6 @@ async function startBattlePreview() {
   const load = $('#bpLoad');
   if (load) load.hidden = false;
   try {
-    const art = D.battleStages[battlePreview.area];
-    if (
-      battlePreview._art !==
-      battlePreview.area + (art.art || '') + (art.wall || '') + (art.far || '') + (art.indoor || '')
-    ) {
-      delete BATTLE_STAGE_ART[battlePreview.area];
-      battlePreview._art =
-        battlePreview.area + (art.art || '') + (art.wall || '') + (art.far || '') + (art.indoor || '');
-    }
     await Promise.all([
       battleStagePrepare(battlePreview.area),
       artLoad(COIN_ART),
@@ -279,16 +266,6 @@ async function mountBattlePreviewMap() {
   battleStageResize();
   drawForegrounds();
 }
-function applyBattlePreviewBackdrop() {
-  if (!battleStage.L || battleStage.area !== battlePreview.area) return;
-  const A = studioState.D.battleStages[battlePreview.area];
-  battleStage.skyC = A.sky.map(hexToRgb);
-  battleStage.fogC = hexToRgb(A.fog);
-  battleStage.floorKey = '';
-}
-studioState.hooks.preview = path => {
-  if (path.startsWith('battleStages.')) applyBattlePreviewBackdrop();
-};
 document.addEventListener('change', ev => {
   const el = ev.target,
     k = el.dataset && el.dataset.bp;

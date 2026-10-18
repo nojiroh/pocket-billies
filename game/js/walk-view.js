@@ -222,7 +222,6 @@ expose({
   worldToScreen: [() => worldToScreen, v => setWorldToScreen(v)],
 });
 /* eslint-enable no-func-assign */
-provide({ stopWalkView });
 export function setPrepareMap(v) {
   prepareMap = v; // eslint-disable-line no-func-assign
   provide({ prepareMap });

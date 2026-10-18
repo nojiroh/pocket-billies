@@ -570,5 +570,90 @@
   "d": "Drops a caravan of gold on the foe; prices fall for a decade.",
   "sig": "mansa",
   "p": 120
+ },
+ "pistonjab": {"n":"Piston Jab","t":"Steel","c":"H","p":65,"a":100,"d":"A straight punch from a piston arm."},
+ "augerbore": {
+  "n": "Auger Bore",
+  "t": "Ground",
+  "c": "H",
+  "p": 65,
+  "a": 95,
+  "fx": {"aim":1,"breaker":1.5},
+  "d": "Aim it at a part. Hurts parts half again as much."
+ },
+ "gripcrush": {
+  "n": "Grip Crush",
+  "t": "Steel",
+  "c": "H",
+  "p": 50,
+  "a": 100,
+  "fx": {"aim":1,"breaker":2},
+  "d": "Aim it at a part. Hurts parts twice as much."
+ },
+ "cindershot": {
+  "n": "Cinder Shot",
+  "t": "Fire",
+  "c": "S",
+  "p": 75,
+  "a": 95,
+  "fx": {"status":"scn","chance":10},
+  "d": "10% chance to burn the target."
+ },
+ "arcwhip": {
+  "n": "Arc Whip",
+  "t": "Electric",
+  "c": "S",
+  "p": 60,
+  "a": 100,
+  "fx": {"status":"aud","chance":20},
+  "d": "20% chance to paralyze the target."
+ },
+ "jetblast": {
+  "n": "Jet Blast",
+  "t": "Water",
+  "c": "S",
+  "p": 65,
+  "a": 100,
+  "fx": {"aim":1},
+  "d": "A jet of water you can aim at a part."
+ },
+ "anchor": {
+  "n": "Anchor Down",
+  "t": "None",
+  "c": "X",
+  "a": 0,
+  "fx": {
+   "selfStage": {"law":1,"pr":1}
+  },
+  "d": "Digs in. Raises Defense and Sp. Def."
+ },
+ "dashkick": {"n":"Dash Kick","t":"None","c":"H","p":45,"a":100,"pr":1,"d":"Always strikes first."},
+ "skimguard": {
+  "n": "Skim Guard",
+  "t": "None",
+  "c": "X",
+  "a": 0,
+  "pr": 4,
+  "fx": {"protect":1},
+  "d": "Floats clear of one attack. Fails if used twice in a row."
+ },
+ "flarecore": {"n":"Flare Core","t":"Fire","c":"S","p":90,"a":90,"d":"The gem flares. A heavy hit."},
+ "selfrepair": {
+  "n": "Self-Repair",
+  "t": "None",
+  "c": "X",
+  "a": 0,
+  "fx": {"heal":0.33,"repair":0.5},
+  "d": "Restores a third of its HP and half the HP of each part, and fixes broken parts that get back above zero."
+ },
+ "overclock": {
+  "n": "Overclock",
+  "t": "Electric",
+  "c": "X",
+  "a": 0,
+  "fx": {
+   "selfStage": {"lev":1,"lob":1,"hus":1}
+  },
+  "d": "Raises Attack, Sp. Atk and Speed."
  }
 }

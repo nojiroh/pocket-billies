@@ -1,0 +1,77 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "robots.schema.json",
+ "title": "game/data/robots.json: robot parts and gems (phase 17)",
+ "type": "object",
+ "required": ["parts", "gems"],
+ "additionalProperties": false,
+ "properties": {
+  "_help": {"type": "string"},
+  "parts": {
+   "type": "object",
+   "propertyNames": {"pattern": "^[a-z0-9_]+$"},
+   "additionalProperties": {
+    "type": "object",
+    "required": ["name", "slot", "type", "wt", "stats", "art"],
+    "additionalProperties": false,
+    "properties": {
+     "name": {"type": "string", "minLength": 1},
+     "short": {"description": "a torso's family name, used in a robot's default name", "type": "string"},
+     "slot": {"enum": ["torso", "arm", "legs"]},
+     "type": {"description": "a type id; a torso's and legs' types are the robot's", "type": "string"},
+     "rar": {"type": "string"},
+     "wt": {"description": "kg", "type": "number", "minimum": 0},
+     "dur": {"description": "how tough the part is: its HP x this", "type": "number", "exclusiveMinimum": 0},
+     "carry": {"description": "legs: kg they carry before the robot slows down", "type": "number", "exclusiveMinimum": 0},
+     "move": {"description": "the move it gives (arms and legs)", "type": "string"},
+     "stats": {"$ref": "#/$defs/stats"},
+     "art": {"$ref": "#/$defs/art"},
+     "d": {"type": "string"}
+    }
+   }
+  },
+  "gems": {
+   "type": "object",
+   "propertyNames": {"pattern": "^[a-z0-9_]+$"},
+   "additionalProperties": {
+    "type": "object",
+    "required": ["name", "type", "move", "stats", "color"],
+    "additionalProperties": false,
+    "properties": {
+     "name": {"type": "string", "minLength": 1},
+     "short": {"type": "string"},
+     "type": {"type": "string"},
+     "rar": {"type": "string"},
+     "move": {"description": "its signature move", "type": "string"},
+     "stats": {"$ref": "#/$defs/stats"},
+     "color": {"type": "string", "pattern": "^#[0-9A-Fa-f]{6}$"},
+     "img": {"description": "its picture on the torso's chest, a path in game/art", "type": "string"},
+     "d": {"type": "string"}
+    }
+   }
+  }
+ },
+ "$defs": {
+  "stats": {
+   "description": "added to the robot's stats, by stat id (stats.json)",
+   "type": "object",
+   "additionalProperties": {"type": "number"}
+  },
+  "art": {
+   "description": "the placeholder picture",
+   "type": "object",
+   "required": ["color", "shape"],
+   "additionalProperties": false,
+   "properties": {
+    "color": {"type": "string", "pattern": "^#[0-9A-Fa-f]{6}$"},
+    "shape": {"enum": ["block", "barrel", "slim", "fist", "drill", "claw", "cannon", "coil", "treads", "legs", "hover"]},
+    "w": {"type": "integer", "minimum": 4, "maximum": 48},
+    "h": {"type": "integer", "minimum": 4, "maximum": 48},
+    "img": {"description": "the front picture, a path in game/art", "type": "string"},
+    "imgB": {"description": "the back picture", "type": "string"},
+    "head": {"description": "a torso's head, front", "type": "string"},
+    "headB": {"description": "a torso's head, back", "type": "string"}
+   }
+  }
+ }
+}

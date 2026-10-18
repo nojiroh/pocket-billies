@@ -28,6 +28,8 @@ export interface SaveData {
   starter: DataId | null;
   team: Billy[];
   box: Billy[];
+  /** phase 17: robot parts and spare gems you own that no robot is using */
+  parts: PartInstance[];
   /** species seen and caught: 1 */
   seen: Record<SpeciesId, number>;
   caught: Record<SpeciesId, number>;
@@ -120,7 +122,6 @@ export interface Preferences {
   control?: string;
   skipTitle?: boolean;
   cardClosed?: any;
-  battleStage?: any;
   /** the player's own engine settings: group -> setting -> value (engine/settings.js) */
   eng?: Record<string, Record<string, number>>;
   [key: string]: any;
@@ -162,7 +163,25 @@ export interface Billy {
   boss?: { hp: number; st: number };
   /** phase 16: the size of each part (rules.js rollBuild); missing means all M */
   build?: Build;
+  /** phase 17: 'robot' for a robot (sp is then made from its parts: logic/fighters.js robotSp); missing for a Billie */
+  kind?: 'robot';
+  /** phase 17: a robot's gem (a key of robots.json gems): the gem is the robot, its level and XP */
+  gem?: string;
+  /** phase 17: a robot's parts, one per slot */
+  fit?: RobotFit;
+  /** phase 17: damage each limb has taken; a limb at or past its HP is broken until healed */
+  partDmg?: Partial<Record<'armL' | 'armR' | 'legs', number>>;
 }
+
+/** phase 17: a robot part you own (in saveData.parts, or fitted to a robot) */
+export interface PartInstance {
+  uid: string;
+  /** a key of robots.json parts or gems */
+  id: string;
+  /** upgrade level, 0 to rules.robots.maxUpgrade */
+  up: number;
+}
+export type RobotFit = Record<'torso' | 'armL' | 'armR' | 'legs', PartInstance>;
 
 /** phase 16: a part size per slot (RULES.parts) */
 export type PartSize = 'S' | 'M' | 'L';

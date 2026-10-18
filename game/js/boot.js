@@ -24,7 +24,7 @@ import {
 import { ART_CACHE, COIN_ART, EGG_ART, ICON_ATLAS, MENU_BACKGROUND_ART, artBoot, artImg, uiIconURL } from './art.js';
 import { personArtPaths } from './person-art.js';
 import { rigAtlas } from './skeleton-rig.js';
-import { AREAS, battleStageArtFiles, battleStagePrepare } from './battle-stage.js';
+import { AREAS, battleStagePrepare } from './battle-stage.js';
 import { mapArtPaths, mapById, walkData, walkView } from './walk-view.js';
 import { gpuState, webgl2Supported } from './engine/webgl.js';
 import { environment } from './environment.js';
@@ -38,7 +38,6 @@ import { loreLoadingLines } from './lore.js';
 import { initAccount } from './account.js';
 import {
   initPixelSky,
-  introSteps,
   mapIdAt,
   notice,
   render,
@@ -180,11 +179,6 @@ function loadList() {
     const R = RIGS[sp];
     if (!R) continue;
     for (const v of ['front', 'back']) if (R[v]) for (const g of [0, 1]) add(rigAtlas(sp, g, v), 1);
-  }
-  for (const a of Object.keys(AREAS)) {
-    try {
-      battleStageArtFiles(a).forEach(p => add(p, 2));
-    } catch (e) {}
   }
   try {
     const D = walkData();
@@ -851,10 +845,9 @@ else
       initPixelSky();
       if (typeof titleWanted === 'function' && titleWanted()) titleStart();
       /* phase 16 test boot (js/test-boot.js): no title; the opening cutscene starts on Hazel's scene (below), or,
-         where it can't run, the step-by-step intro starts on her first line */
+         where it can't run, the Try again screen */
       const quickOpening = TEST_BOOT && !TEST_RUN && !FIXTURE && !saveData.started;
-      if (quickOpening && !(typeof cutsceneWanted === 'function' && cutsceneWanted()))
-        uiState.intro = introSteps().findIndex(s => s.k === 'gini') + 1;
+      if (quickOpening && !(typeof cutsceneWanted === 'function' && cutsceneWanted())) uiState.openingFailed = 'cant';
       render();
       if (TEST_RUN) studioTestStart();
       if (FIXTURE) fixtureStart();

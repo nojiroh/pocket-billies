@@ -283,3 +283,47 @@ body.battle-3d #camFg {
     transition: opacity 0.2s;
   }
 }
+
+/* ===================== phase 17: robots in battle =====================
+   A robot's limbs under its HP bar (left arm, right arm, legs), a broken one crossed out; a broken part's move. */
+.hc-parts {
+  display: flex;
+  gap: 6px;
+  margin-top: 4px;
+}
+.hc-parts[hidden] {
+  display: none;
+}
+.hp-part {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  flex: 1;
+  font: 400 9px/1 var(--disp);
+  color: #cfe3ff;
+}
+.hp-part i {
+  position: relative;
+  flex: 1;
+  height: 5px;
+  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+}
+.hp-part u {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: #8fd8ff;
+  transition: width 0.4s;
+}
+.hp-part u.low {
+  background: #ffb04a;
+}
+.hp-part.broken {
+  color: #ff8a96;
+  text-decoration: line-through;
+}
+.mv.off {
+  filter: grayscale(0.85) brightness(0.7);
+  cursor: not-allowed;
+}

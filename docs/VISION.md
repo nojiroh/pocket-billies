@@ -20,7 +20,7 @@ The single source of truth for what the game is becoming. Phase files implement 
 
 ## Two kinds of creatures
 - Billies (existing): satirical billionaire creatures, tax and market battle mechanics, slimmed roster, swappable parts, breeding and funny "abominations". (Phase 16.)
-- Robots (new): inspired by Medabots, similar in role to Billies. The player builds their own from many parts. Each robot has a torso with head, a left arm, a right arm, legs and a gem that acts as its soul. Their battle mechanics differ from Billies and are more like Medabots. Parts can be upgraded and are found, crafted or won in trainer battles. (Phase 17.) Use original names and designs.
+- Robots (new): inspired by Medabots, similar in role to Billies. The player builds their own from many parts. Each robot has a torso with head, a left arm, a right arm, legs and a gem that acts as its soul. They battle in the same system as Billies, on mixed teams; their own flavour comes from parts: moves come from parts and arms and legs can break in battle. Parts can be upgraded and are found, crafted or won in trainer battles. (Phase 17.) Use original names and designs.
 
 ## Presentation
 - Portraits: only the eyes and mouth animate; the head may move a little. The old portrait system is replaced. 32-bit pixel art. (Phase 07.)

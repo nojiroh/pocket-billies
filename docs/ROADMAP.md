@@ -49,5 +49,5 @@ Priority order: 01, 02, 03, the cheap parts of 04 (.gitignore, CI, README, tooli
 - Ranch editing UI and whether the robot workshop lives at the ranch (12).
 - The organization's name, goals and how often it appears (15).
 - Breeding mode: deliberate, partly random, or both (16).
-- Robot battle model, defeat condition, and whether robots and Billies can share a team (17).
+- Robots: decided 2026-10-18 (same battle system, mixed teams, body HP + breakable parts; see 17). Still open: the gem's story role, wild robots, the sim bounds (17).
 - Live real-time friend battles (18).
