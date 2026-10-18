@@ -66,8 +66,6 @@ expose({
   // @ts-expect-error -- replaced on purpose
   rivalSpecies: [() => rivalSpecies, v => (rivalSpecies = v)],
   roadCost: [() => roadCost],
-  // @ts-expect-error -- replaced on purpose
-  roadsOf: [() => roadsOf, v => (roadsOf = v)],
   trainerById: [() => trainerById],
   // @ts-expect-error -- replaced on purpose
   trainerTeam: [() => trainerTeam, v => (trainerTeam = v)],
@@ -279,12 +277,6 @@ export function locationKind(id) {
 export function isTown(nodeOrId) {
   const r = typeof nodeOrId === 'number' ? LOCATIONS[nodeOrId] : LOCATION_BY_ID[nodeOrId];
   return !!r && (r.kind ? r.kind === 'town' : !!r.town);
-}
-export function roadsOf(id) {
-  const n = LOCATION_BY_ID[id] ? LOCATION_BY_ID[id].node : -1;
-  return ROADS.map((L, i) => Object.assign({ i, a: L[0], b: L[1], cost: L[2] }, L[3] || {})).filter(
-    R => R.a === n || R.b === n
-  );
 }
 export const ROADS_BY_NODE = LOCATIONS.map(() => /** @type {RoadFromNode[]} */ ([]));
 ROADS.forEach(([a, b, c], i) => {
