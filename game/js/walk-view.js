@@ -3417,6 +3417,8 @@ function movePlayer(st, dt) {
     mz = 0;
   const ox = P.x,
     oz = P.z;
+  /* phase 08: set when a fresh view puts you at its spawn point: that jump is not walked */
+  let jumped = false;
   if (mode === 'line') {
     const target = clamp(st.t || 0, 0, 1);
     if (P.t < 0 || walkView.opt.instant) P.t = target;
@@ -3463,6 +3465,7 @@ function movePlayer(st, dt) {
       const p = walkablePointNear(...(st.pos || mapHub(sc)));
       P.x = p[0];
       P.z = p[1];
+      jumped = true;
       P.fresh = false;
       P.dir = 'down';
       P.rp = null;
@@ -3576,6 +3579,7 @@ function movePlayer(st, dt) {
     /* alpha 0.4.1: walking yourself, the metres you walk are your steps (14 a metre): encounters, challenges, your buddy */
     if (
       P.walk &&
+      !jumped &&
       typeof walkMode === 'function' &&
       walkMode() &&
       typeof addSteps === 'function' &&
