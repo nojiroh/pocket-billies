@@ -8,6 +8,9 @@
 //                                                              WALK_VIEW_FX, Dio -> WalkView, dio -> walkView;
 //                                                              --in a,b: only the names those files declare
 //   node tools/rename.mjs file <old path> <new path>           git mv, the pages' script tags and the paths naming it
+//   node tools/rename.mjs prop <old> <new> --in game,studio,node,<files> [--strings] [--py all|<files>]
+//                              [--skip|--only <file:line,...>]  a property (a data key) where the code reads it, with
+//                                                              tools/rename-data.mjs renaming it in the data
 //   node tools/rename.mjs verify [--base <rev>] [--expect name|prefix|file <old> <new> ...] (--expect last)
 //                                                              the staged changes (git add -A first) against <rev>
 //                                                              (default HEAD)
@@ -434,6 +437,90 @@ async function renameFile(o, n, dry) {
   return { files: changed.length, changed, notes };
 }
 
+// prop: a property (a data key the code reads) in the given files: obj.old, obj['old'], { old: ... }, { old } (as
+// { new: old }, the variable keeps its name), and with --strings the strings 'old' and the paths in strings (`${p}.old`).
+// No scope can tell whose property it is, so the files are chosen by hand and every site is listed; --skip and --only
+// take file:line lists. In the Python tools (--py), the strings 'old' and the .old paths inside strings.
+async function renameProp(o, n, opt) {
+  const sites = [],
+    notes = [];
+  const pick = (f, line) => {
+    const k = `${f}:${line}`;
+    if (opt.only && !opt.only.includes(k)) return false;
+    return !(opt.skip && opt.skip.includes(k));
+  };
+  const path = new RegExp(`(?<=[\\w$\\])}])\\.${esc(o)}(?![\\w$])`, 'g');
+  for (const f of opt.files) {
+    const raw = read(f);
+    const sourceType = /^\s*(import|export)\b/m.test(raw) ? 'module' : 'script';
+    let ast;
+    try {
+      ast = espree.parse(raw, { ecmaVersion: 'latest', sourceType, range: true, loc: true });
+    } catch (e) {
+      throw new Error(`${f}: ${e.message}`);
+    }
+    // the generated part names top-level names, never data keys
+    const a = raw.indexOf(START),
+      b = a >= 0 ? raw.indexOf('/* to-module: end */', a) : -1;
+    const generated = r => a >= 0 && r[0] > a && r[1] < b;
+    const E = new Map();
+    const put = (r, text, why) => {
+      if (generated(r)) return;
+      const line = lineOf(raw, r[0]);
+      if (!pick(f, line)) return notes.push(`${f}:${line}: skipped ${why}: ${snippet(raw, r[0])}`);
+      E.set(r[0], [r[0], r[1], text]);
+      sites.push(`${f}:${line}: ${why}: ${snippet(raw, r[0])}`);
+    };
+    walk(ast, null, (node, p) => {
+      if (node.type === 'MemberExpression') {
+        const pr = node.property;
+        if (!node.computed && pr.name === o) put(pr.range, n, `.${o}`);
+        else if (node.computed && pr.type === 'Literal' && pr.value === o)
+          put([pr.range[0] + 1, pr.range[1] - 1], n, `['${o}']`);
+      } else if (node.type === 'Property' && !node.computed) {
+        const k = node.key;
+        const name = k.type === 'Identifier' ? k.name : k.type === 'Literal' ? k.value : null;
+        if (name !== o) return;
+        if (node.shorthand) put(k.range, `${n}: ${o}`, `{ ${o} }`);
+        else if (k.type === 'Literal') put([k.range[0] + 1, k.range[1] - 1], n, `'${o}':`);
+        else put(k.range, n, `${o}:`);
+      } else if (opt.strings && node.type === 'Literal' && typeof node.value === 'string') {
+        const t = raw.slice(...node.range);
+        if (
+          node.value === o &&
+          !(p && p.type === 'MemberExpression' && p.property === node) &&
+          !(p && p.type === 'Property' && p.key === node)
+        )
+          put([node.range[0] + 1, node.range[1] - 1], n, `'${o}'`);
+        else
+          for (const m of t.matchAll(path))
+            put([node.range[0] + m.index + 1, node.range[0] + m.index + 1 + o.length], n, `'….${o}'`);
+      } else if (opt.strings && node.type === 'TemplateElement') {
+        const t = raw.slice(...node.range);
+        for (const m of t.matchAll(path))
+          put([node.range[0] + m.index + 1, node.range[0] + m.index + 1 + o.length], n, `\`….${o}\``);
+      }
+    });
+    if (E.size && !opt.dry) {
+      let out = apply(raw, [...E.values()]);
+      if (!/\.(mjs)$/.test(f) && !f.startsWith('tools/')) out = await format(f, out);
+      writeFileSync(join(ROOT, f), out);
+    }
+  }
+  let py = { changed: [], review: [] };
+  if (opt.py && opt.py.length)
+    py = JSON.parse(
+      execFileSync('python3', [join(ROOT, 'tools/rename-strings.py'), opt.dry ? 'prop-dry' : 'prop'], {
+        cwd: ROOT,
+        input: JSON.stringify({ old: o, new: n, files: opt.py }),
+        encoding: 'utf8',
+        maxBuffer: 1 << 26,
+      })
+    );
+  if (!opt.dry) execFileSync('node', [join(ROOT, 'tools/to-module.mjs')], { cwd: ROOT, stdio: 'ignore' });
+  return { sites, notes: [...notes, ...py.review], python: py.changed };
+}
+
 // ---- verify ----
 
 const IGNORE = new Set(['range', 'loc', 'start', 'end', 'raw', 'comments', 'tokens', 'parent', 'shorthand']);
@@ -586,12 +673,46 @@ function report(notes, all) {
   }
 }
 
+// the files a prop rule reads: game (game/js and its engine), studio (studio/js), node (the Node tools), or paths
+function expand(list) {
+  const out = [];
+  for (const t of list.split(','))
+    if (t === 'game')
+      out.push(
+        ...git('ls-files', 'game/js/*.js', 'game/js/engine/*.js')
+          .split('\n')
+          .filter(f => f && !GENERATED.has(f))
+      );
+    else if (t === 'studio') out.push(...git('ls-files', 'studio/js/*.js').split('\n').filter(Boolean));
+    else if (t === 'node')
+      out.push(
+        ...git('ls-files', 'tools/*.mjs')
+          .split('\n')
+          .filter(f => f && !/^tools\/rename/.test(f))
+      );
+    else if (t === 'all') out.push(...expand('game,studio,node'));
+    else out.push(normalize(t));
+  return [...new Set(out)];
+}
+const pyFiles = list =>
+  list === 'all' ? git('ls-files', 'tools/*.py', 'tools/**/*.py').split('\n').filter(Boolean) : list.split(',');
+
 async function main(argv) {
-  const dry = argv.includes('--dry'),
-    all = argv.includes('--all');
-  const ii = argv.indexOf('--in');
-  const only = ii >= 0 ? argv[ii + 1].split(',') : null;
-  const args = argv.filter((a, i) => a !== '--dry' && a !== '--all' && (ii < 0 || (i !== ii && i !== ii + 1)));
+  const flags = new Set(['--dry', '--all', '--strings']);
+  const valued = new Set(['--in', '--skip', '--only', '--py', '--base']);
+  const opt = {},
+    args = [];
+  for (let i = 0; i < argv.length; i++) {
+    if (argv[i] === '--expect') {
+      opt.expect = argv.slice(i + 1);
+      break;
+    }
+    if (flags.has(argv[i])) opt[argv[i].slice(2)] = true;
+    else if (valued.has(argv[i])) opt[argv[i].slice(2)] = argv[++i];
+    else args.push(argv[i]);
+  }
+  const { dry, all } = opt;
+  const only = opt.in ? opt.in.split(',') : null;
   const [cmd, ...rest] = args;
   if (cmd === 'name' || cmd === 'prefix') {
     if (!rest.length || rest.length % 2) throw new Error(`${cmd} takes <old> <new> pairs`);
@@ -619,11 +740,27 @@ async function main(argv) {
     console.log(`${dry ? 'would move' : 'moved'} ${rest[0]} -> ${rest[1]}; paths changed in ${r.files} file(s)`);
     if (r.changed.length) console.log('  ' + r.changed.join('\n  '));
     report(r.notes, all);
+  } else if (cmd === 'prop') {
+    if (rest.length !== 2 || !opt.in) throw new Error('prop <old> <new> --in <files> [--strings] [--py all|<files>]');
+    const r = await renameProp(rest[0], rest[1], {
+      files: expand(opt.in),
+      strings: opt.strings,
+      py: opt.py && pyFiles(opt.py),
+      skip: opt.skip && opt.skip.split(','),
+      only: opt.only && opt.only.split(','),
+      dry,
+    });
+    console.log(
+      `${dry ? 'would rename' : 'renamed'} the property ${rest[0]} -> ${rest[1]} at ${r.sites.length} site(s):`
+    );
+    console.log(
+      '  ' + r.sites.slice(0, all ? undefined : 40).join('\n  ') + (!all && r.sites.length > 40 ? '\n  ...' : '')
+    );
+    if (r.python.length) console.log(`Python tools:\n  ${r.python.join('\n  ')}`);
+    report(r.notes, all);
   } else if (cmd === 'verify') {
-    const bi = args.indexOf('--base'),
-      ei = args.indexOf('--expect');
-    const base = bi >= 0 ? args[bi + 1] : 'HEAD';
-    const expect = ei >= 0 ? args.slice(ei + 1) : null;
+    const base = opt.base || 'HEAD';
+    const expect = opt.expect || null;
     const r = verify(base, expect);
     console.log(`checked ${r.checked.length} script file(s) and ${r.python.length} Python file(s) against ${base}`);
     for (const [k, c] of [...r.pairs].sort()) console.log(`  ${k} (${c})`);
@@ -636,7 +773,7 @@ async function main(argv) {
       process.exit(1);
     }
     console.log('a pure rename');
-  } else throw new Error('usage: node tools/rename.mjs name|prefix|file|verify ... (see the top of the file)');
+  } else throw new Error('usage: node tools/rename.mjs name|prefix|file|prop|verify ... (see the top of the file)');
 }
 
 if (import.meta.url === `file://${process.argv[1]}`)

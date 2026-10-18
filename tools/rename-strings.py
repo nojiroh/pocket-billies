@@ -3,6 +3,7 @@ globals; tools/rename.mjs renames them there too, through this script, and in co
 code. Only strings and comments change, never Python code.
 
   python3 tools/rename-strings.py apply|dry    stdin {"pairs": {old: new}, "files": [...]} -> stdout {"changed", "review"}
+  python3 tools/rename-strings.py prop|prop-dry stdin {"old", "new", "files": [...]}         -> stdout {"changed", "review"}
   python3 tools/rename-strings.py verify BASE  stdin {"files": [[old path, new path], ...]}  -> stdout {"strings", "problems"}
 
 In a string, a name is renamed where it stands as a name: not part of a longer name, and not a property of something
@@ -87,6 +88,41 @@ def rename(src, pairs, file, guarded=()):
     return src, changed, review
 
 
+def rename_prop(src, old, new, file):
+    """a data key in a Python tool: the strings that are exactly the key ('ox' in p['ox'], p.get('ox')) and the .ox
+    paths inside strings (the JavaScript of page.evaluate); other hits are listed"""
+    path = re.compile(r'(?<=[\w$\])}])\.' + re.escape(old) + r'(?![\w$])')
+    word = re.compile(r'(?<![\w$])' + re.escape(old) + r'(?![\w$])')
+    lines = src.splitlines(keepends=True)
+    starts = [0]
+    for ln in lines:
+        starts.append(starts[-1] + len(ln))
+    off = lambda pos: starts[pos[0] - 1] + pos[1]
+    edits, review = [], []
+    for t in tokenize.generate_tokens(io.StringIO(src).readline):
+        kind = tokenize.tok_name[t.type]
+        if kind not in ('STRING', 'FSTRING_MIDDLE'):
+            continue
+        a, text = off(t.start), src[off(t.start):off(t.end)]
+        m = re.fullmatch(r'([rRbBuU]*)(\'\'\'|"""|\'|")(.*)\2', text, re.S) if kind == 'STRING' else None
+        if m and m.group(3) == old:
+            s0 = a + len(m.group(1)) + len(m.group(2))
+            edits.append((s0, s0 + len(old), new))
+            continue
+        done = set()
+        for p in path.finditer(text):
+            edits.append((a + p.start() + 1, a + p.end(), new))
+            done.add(p.start() + 1)
+        for w in word.finditer(text):
+            if w.start() not in done:
+                ln = line_of(src, a + w.start())
+                review.append(f'{file}:{ln}: string holds {old}: {lines[ln - 1].strip()[:160]}')
+    changed = sorted({line_of(src, x) for x, _, _ in edits})
+    for x, y, t in sorted(edits, reverse=True):
+        src = src[:x] + t + src[y:]
+    return src, changed, review
+
+
 def without_strings(tree):
     """the syntax tree as text, every string constant left out (and the strings in order)"""
     strings = []
@@ -111,6 +147,18 @@ def main():
             if new != src:
                 out['changed'].append(f'{f}: lines {", ".join(map(str, changed[:30]))}{" ..." if len(changed) > 30 else ""}')
                 if cmd == 'apply':
+                    p.write_text(new, encoding='utf-8')
+        print(json.dumps(out))
+    elif cmd in ('prop', 'prop-dry'):
+        out = {'changed': [], 'review': []}
+        for f in data['files']:
+            p = ROOT / f
+            src = p.read_text(encoding='utf-8')
+            new, changed, review = rename_prop(src, data['old'], data['new'], f)
+            out['review'] += review
+            if new != src:
+                out['changed'].append(f'{f}: lines {", ".join(map(str, changed[:30]))}{" ..." if len(changed) > 30 else ""}')
+                if cmd == 'prop':
                     p.write_text(new, encoding='utf-8')
         print(json.dumps(out))
     elif cmd == 'verify':
