@@ -10,7 +10,7 @@ import { linkNote } from '../../game/js/hooks.js';
 import { $, $$ } from '../../game/js/util.js';
 import { ENGINE_SPEC } from '../../game/js/engine/settings.js';
 import { esc } from './game-stand-ins.js';
-import { ACTS, NAV, SECTIONS, ST, clone, go, toast } from './studio-app.js';
+import { ACTS, NAV, SECTIONS, clone, go, studioState, toast } from './studio-app.js';
 import { ENS, engRefresh } from './engine-editor.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -65,13 +65,13 @@ export function findFlash(sel, tries = 0) {
 }
 export const findSel = p => `[data-p="${CSS.escape(p)}"],[data-path="${CSS.escape(p)}"]`;
 export function findField(sec, p, sel) {
-  if (ST.sec !== sec || sel) go(sec, sel);
+  if (studioState.sec !== sec || sel) go(sec, sel);
   findFlash(findSel(p));
 }
 export function findEngine(g, k) {
   ENS.scope = 'game';
   ENS.open[g] = 1;
-  if (ST.sec === 'engine') engRefresh();
+  if (studioState.sec === 'engine') engRefresh();
   else go('engine');
   findFlash(findSel(`engine.defaults.${g}.${k}`));
 }
@@ -79,17 +79,17 @@ export function findEngine(g, k) {
 function findPageFields(sec, add) {
   const S = SECTIONS[sec];
   if (!S) return;
-  const keep = ST.after,
-    keepSel = clone(ST.sel);
+  const keep = studioState.after,
+    keepSel = clone(studioState.sel);
   let html = '';
   try {
-    ST.after = [];
+    studioState.after = [];
     html = S();
   } catch (e) {
     html = '';
   } finally {
-    ST.after = keep;
-    ST.sel = keepSel;
+    studioState.after = keep;
+    studioState.sel = keepSel;
   }
   const div = document.createElement('div');
   div.innerHTML = html;
@@ -117,7 +117,7 @@ function findPageFields(sec, add) {
   });
 }
 function findBuild() {
-  const D = ST.D,
+  const D = studioState.D,
     E = [],
     add = (label, where, kind, fn, extra = '') => {
       if (label)
@@ -193,7 +193,7 @@ function findBuild() {
   return E;
 }
 function findIdx() {
-  const key = ST.undo.length + '|' + (ST.last || '').length;
+  const key = studioState.undo.length + '|' + (studioState.last || '').length;
   if (!FIND.idx || FIND.key !== key) {
     FIND.idx = findBuild();
     FIND.key = key;

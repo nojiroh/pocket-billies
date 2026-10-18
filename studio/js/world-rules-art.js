@@ -10,7 +10,6 @@ import { esc } from './game-stand-ins.js';
 import {
   ACTS,
   SECTIONS,
-  ST,
   after,
   api,
   ask,
@@ -29,6 +28,7 @@ import {
   render,
   spName,
   spOpts,
+  studioState,
   toast,
   typeOpts,
   uidKey,
@@ -88,7 +88,7 @@ const STOP_KINDS = [
 ];
 let WORLD_IMG = null;
 function worldMapHTML() {
-  return `<div class="wmap" id="wmap"><img src="../game/art/map/world.png?v=${(ST.D.meta || {}).artVersion || 0}" alt="" draggable="false" id="wmapImg"><svg viewBox="0 0 360 180" preserveAspectRatio="none" id="wmapSvg"></svg></div><p class="help">Drag a marker to move a stop. The painted trail and patches are part of the map art: <button class="linkish" data-act="wtab" data-t="paint">paint them under Map art</button>, where moving a stop can carry its patch along and the trail can be repainted to match.</p>`;
+  return `<div class="wmap" id="wmap"><img src="../game/art/map/world.png?v=${(studioState.D.meta || {}).artVersion || 0}" alt="" draggable="false" id="wmapImg"><svg viewBox="0 0 360 180" preserveAspectRatio="none" id="wmapSvg"></svg></div><p class="help">Drag a marker to move a stop. The painted trail and patches are part of the map art: <button class="linkish" data-act="wtab" data-t="paint">paint them under Map art</button>, where moving a stop can carry its patch along and the trail can be repainted to match.</p>`;
 }
 function lonlatXY(lon, lat) {
   return [((lon % 360) + 360) % 360, 90 - lat];
@@ -96,7 +96,7 @@ function lonlatXY(lon, lat) {
 function drawWorldMarkers() {
   const svg = $('#wmapSvg');
   if (!svg) return;
-  const D = ST.D;
+  const D = studioState.D;
   let h = '';
   const pts = D.route.map(r => lonlatXY(r.lon || 0, r.lat || 0));
   (D.links || []).forEach(([a, b]) => {
@@ -106,18 +106,18 @@ function drawWorldMarkers() {
   D.regions.forEach((g, i) => {
     if (g.lon == null) return;
     const [x, y] = lonlatXY(g.lon, g.lat || 0);
-    h += `<g class="mk reg ${ST.sel.stop === 'r' + i ? 'on' : ''}" data-mk="r${i}" transform="translate(${x},${y})"><circle r="3.2"/><text y="-5">${esc(g.name)}</text></g>`;
+    h += `<g class="mk reg ${studioState.sel.stop === 'r' + i ? 'on' : ''}" data-mk="r${i}" transform="translate(${x},${y})"><circle r="3.2"/><text y="-5">${esc(g.name)}</text></g>`;
   });
   D.route.forEach((r, i) => {
     const [x, y] = pts[i];
-    h += `<g class="mk ${r.town ? 'town' : ''} ${ST.sel.stop === i ? 'on' : ''}" data-mk="${i}" transform="translate(${x},${y})"><circle r="${r.town ? 3.2 : 2.6}"/><text y="-5">${i + 1}. ${esc(r.name)}</text></g>`;
+    h += `<g class="mk ${r.town ? 'town' : ''} ${studioState.sel.stop === i ? 'on' : ''}" data-mk="${i}" transform="translate(${x},${y})"><circle r="${r.town ? 3.2 : 2.6}"/><text y="-5">${i + 1}. ${esc(r.name)}</text></g>`;
   });
   svg.innerHTML = h;
 }
 function bindWorldMap() {
   const svg = $('#wmapSvg');
   if (!svg) return;
-  const ed = ST.artDirty.get('art/map/world.png'),
+  const ed = studioState.artDirty.get('art/map/world.png'),
     im = $('#wmapImg');
   if (ed && im) im.src = ed.toDataURL();
   drawWorldMarkers();
@@ -135,8 +135,8 @@ function bindWorldMap() {
     drag = g.dataset.mk;
     svg.setPointerCapture(ev.pointerId);
     const v = drag.startsWith('r') ? drag : +drag;
-    if (ST.sel.stop !== v) {
-      ST.sel.stop = v;
+    if (studioState.sel.stop !== v) {
+      studioState.sel.stop = v;
       render();
     }
   });
@@ -145,7 +145,7 @@ function bindWorldMap() {
     const [x, y] = pos(ev),
       lon = Math.round(x > 180 ? x - 360 : x),
       lat = Math.round(90 - y);
-    const o = drag.startsWith('r') ? ST.D.regions[+drag.slice(1)] : ST.D.route[+drag];
+    const o = drag.startsWith('r') ? studioState.D.regions[+drag.slice(1)] : studioState.D.route[+drag];
     o.lon = lon;
     o.lat = lat;
     drawWorldMarkers();
@@ -161,8 +161,8 @@ function bindWorldMap() {
   });
 }
 SECTIONS.world = () => {
-  const D = ST.D,
-    tab = ST.sel.wtab || 'route';
+  const D = studioState.D,
+    tab = studioState.sel.wtab || 'route';
   const tabs = [
     ['route', 'Route stops'],
     ['pools', 'Wild encounters'],
@@ -184,14 +184,14 @@ SECTIONS.world = () => {
   return `<div class="ed-col solo"><div class="ed-head"><h2>World & encounters</h2></div><div class="seg-row tabs">${tabs.map(([k, n]) => `<button class="seg ${k === tab ? 'on' : ''}" data-act="wtab" data-t="${k}">${n}</button>`).join('')}</div>${body}</div>`;
 };
 ACTS.wtab = d => {
-  ST.sel.wtab = d.t;
+  studioState.sel.wtab = d.t;
   render();
 };
 function worldRoute() {
-  const D = ST.D;
-  let i = typeof ST.sel.stop === 'number' ? ST.sel.stop : 0;
+  const D = studioState.D;
+  let i = typeof studioState.sel.stop === 'number' ? studioState.sel.stop : 0;
   if (!D.route[i]) i = 0;
-  ST.sel.stop = i;
+  studioState.sel.stop = i;
   const r = D.route[i],
     p = `route.${i}`,
     seatIds = Object.values(D.trainers || {})
@@ -306,12 +306,12 @@ function worldRoute() {
   );
 }
 function stopRoads(i) {
-  return (ST.D.links || [])
+  return (studioState.D.links || [])
     .map((l, k) => (l[0] === i ? [l[1], l[2], k] : l[1] === i ? [l[0], l[2], k] : null))
     .filter(Boolean);
 }
 function roadsHTML(i) {
-  const D = ST.D,
+  const D = studioState.D,
     R = stopRoads(i),
     opts = D.route.map((r, j) => [j, `${j + 1}. ${r.name}`]).filter(([j]) => j !== i);
   return `<table class="tbl"><thead><tr><th>Road to</th><th>Steps</th><th>About</th><th>Leaves by</th><th></th></tr></thead><tbody>${R.map(
@@ -330,7 +330,7 @@ function roadsHTML(i) {
    .join('')}</select><button class="btn" data-act="roadAdd" data-i="${i}">+ Add a road</button></div>`;
 }
 ACTS.roadAdd = d => {
-  const D = ST.D,
+  const D = studioState.D,
     i = +d.i,
     j = +$('#roadTo').value;
   if (!Number.isFinite(j) || j === i) return;
@@ -342,7 +342,7 @@ ACTS.roadAdd = d => {
 document.addEventListener('change', ev => {
   const t = ev.target;
   if (!t || t.dataset.join == null) return;
-  const l = ST.D.links[+t.dataset.join];
+  const l = studioState.D.links[+t.dataset.join];
   if (!l) return;
   const J = l[3] || {};
   if (t.value) J[t.dataset.end] = t.value;
@@ -356,17 +356,17 @@ document.addEventListener('change', ev => {
   render();
 });
 ACTS.roadDel = d => {
-  ST.D.links.splice(+d.k, 1);
+  studioState.D.links.splice(+d.k, 1);
   changed();
   commit(true);
   render();
 };
 ACTS.pickStop = d => {
-  ST.sel.stop = +d.i;
+  studioState.sel.stop = +d.i;
   render();
 };
 ACTS.stopMove = d => {
-  const D = ST.D,
+  const D = studioState.D,
     i = +d.i,
     j = i + +d.d;
   if (j < 0 || j >= D.route.length) return;
@@ -381,13 +381,13 @@ ACTS.stopMove = d => {
     if (T.node === i) T.node = j;
     else if (T.node === j) T.node = i;
   });
-  ST.sel.stop = j;
+  studioState.sel.stop = j;
   changed();
   render();
 };
 ACTS.stopAdd = () => {
-  const D = ST.D,
-    i = typeof ST.sel.stop === 'number' ? ST.sel.stop : D.route.length - 1,
+  const D = studioState.D,
+    i = typeof studioState.sel.stop === 'number' ? studioState.sel.stop : D.route.length - 1,
     a = D.route[i],
     b = D.route[i + 1];
   const n = {
@@ -408,13 +408,13 @@ ACTS.stopAdd = () => {
     for (const q of [0, 1]) if (l[q] > i) l[q]++;
   });
   D.links.push([i, i + 1, 800]);
-  ST.sel.stop = i + 1;
+  studioState.sel.stop = i + 1;
   changed();
   render();
 };
 ACTS.stopDel = async () => {
-  const D = ST.D,
-    i = ST.sel.stop;
+  const D = studioState.D,
+    i = studioState.sel.stop;
   if (D.route.length < 2) return toast('The route needs at least one stop.');
   const T = Object.values(D.trainers || {}).filter(t => t.node === i);
   if (
@@ -431,7 +431,7 @@ ACTS.stopDel = async () => {
   D.links = (D.links || [])
     .filter(l => l[0] !== i && l[1] !== i)
     .map(l => l.map((v, q) => (q < 2 && v > i ? v - 1 : v)));
-  ST.sel.stop = Math.max(0, i - 1);
+  studioState.sel.stop = Math.max(0, i - 1);
   changed();
   render();
 };
@@ -454,12 +454,12 @@ ACTS.wDel = d => {
   render();
 };
 ACTS.wAdd = d => {
-  getP(d.b).list.push([ST.D.lines[0].id + '0', 10]);
+  getP(d.b).list.push([studioState.D.lines[0].id + '0', 10]);
   changed();
   render();
 };
 function worldPools() {
-  const D = ST.D;
+  const D = studioState.D;
   after(() => mountPreviews($('#main')));
   return (
     Object.entries(D.pools)
@@ -497,7 +497,7 @@ const FISH_KN = {
   ice: 'Ice holes',
 };
 function worldFishing() {
-  const D = ST.D;
+  const D = studioState.D;
   D.fishing = D.fishing || {};
   after(() => mountPreviews($('#main')));
   return (
@@ -522,20 +522,20 @@ function worldFishing() {
   );
 }
 ACTS.fishAdd = d => {
-  const D = ST.D;
+  const D = studioState.D;
   (D.fishing = D.fishing || {})[d.k] = { lv: [0, 2], list: [[D.lines[0].id + '0', 10]] };
   changed();
   render();
 };
 ACTS.poolNew = () => {
-  const D = ST.D,
+  const D = studioState.D,
     k = uidKey($('#newPool').value || 'pool', x => !!D.pools[x]);
   D.pools[k] = { lv: [5, 8], list: [[D.lines[0].id + '0', 10]] };
   changed();
   render();
 };
 ACTS.poolDel = async d => {
-  const D = ST.D;
+  const D = studioState.D;
   if (D.route.some(r => r.pool === d.k))
     return toast('A route stop still uses this pool. Pick another pool for it first.', 'err');
   if (!(await ask('Delete this pool?', 'Delete'))) return;
@@ -544,7 +544,7 @@ ACTS.poolDel = async d => {
   render();
 };
 function worldEggs() {
-  const D = ST.D;
+  const D = studioState.D;
   after(() => mountPreviews($('#main')));
   return Object.entries(D.eggs)
     .map(([k, E]) =>
@@ -564,7 +564,7 @@ function worldEggs() {
     .join('');
 }
 function worldRegions() {
-  const D = ST.D;
+  const D = studioState.D;
   after(bindWorldMap);
   return (
     card(
@@ -611,24 +611,26 @@ export const AMBS = [
   ['none', 'Nothing'],
 ];
 function worldBackdrops() {
-  const D = ST.D,
+  const D = studioState.D,
     grounds = [
       ...new Set(
-        ST.files
+        studioState.files
           .filter(f => /art\/battle\/[^/]+_ground\.png$/.test(f.path))
           .map(f => f.path.split('/').pop().replace('_ground.png', ''))
       ),
     ],
     fars = [
       ...new Set(
-        ST.files
+        studioState.files
           .filter(f => /art\/battle\/far_/.test(f.path))
           .map(f => f.path.split('/').pop().replace('far_', '').replace('.png', ''))
       ),
     ],
     walls = [
       ...new Set(
-        ST.files.filter(f => /_walls\.png$/.test(f.path)).map(f => f.path.split('/').pop().replace('_walls.png', ''))
+        studioState.files
+          .filter(f => /_walls\.png$/.test(f.path))
+          .map(f => f.path.split('/').pop().replace('_walls.png', ''))
       ),
     ];
   return Object.entries(D.backdrops)
@@ -682,7 +684,7 @@ function worldBackdrops() {
     .join('');
 }
 ACTS.bdDup = d => {
-  const D = ST.D,
+  const D = studioState.D,
     k = uidKey(d.k + 'b', x => !!D.backdrops[x]);
   D.backdrops[k] = clone(D.backdrops[d.k]);
   D.backdrops[k].name = (D.backdrops[k].name || d.k) + ' (copy)';
@@ -692,7 +694,7 @@ ACTS.bdDup = d => {
 };
 /* ================= RULES ================= */
 SECTIONS.rules = () => {
-  const D = ST.D,
+  const D = studioState.D,
     R = D.rules,
     s = 'rules.start',
     st = 'rules.steps',
@@ -956,10 +958,10 @@ SECTIONS.rules = () => {
  )}</div>`;
 };
 function xpLine() {
-  const f = ST.D.rules.progression.xpFactor;
+  const f = studioState.D.rules.progression.xpFactor;
   return [5, 10, 20, 36, 50, 100].map(L => `Lv ${L}: ${fmtN(Math.floor(f * L * L * L))} XP`).join(' · ');
 }
-ST.hooks.rules = path => {
+studioState.hooks.rules = path => {
   if (path.includes('xpFactor')) {
     const e = $('#xpPrev');
     if (e) e.textContent = xpLine();
@@ -969,7 +971,7 @@ document.addEventListener('change', ev => {
   const el = ev.target,
     k = el.dataset.actChk;
   if (!k) return;
-  const R = ST.D.rules,
+  const R = studioState.D.rules,
     arr = k === 'starter' ? R.start.starters : R.catching.luxury,
     v = el.value;
   const i = arr.indexOf(v);
@@ -981,20 +983,20 @@ document.addEventListener('change', ev => {
       el.checked = true;
       return toast('Keep at least one starter.', 'err');
     }
-    if (el.checked && !R.start.rival[v]) R.start.rival[v] = ST.D.lines[0].id + '0';
+    if (el.checked && !R.start.rival[v]) R.start.rival[v] = studioState.D.lines[0].id + '0';
   }
   changed();
   commit(true);
   if (k === 'starter') render();
 });
 ACTS.brAdd = () => {
-  const b = ST.D.rules.steps.brackets;
+  const b = studioState.D.rules.steps.brackets;
   b.splice(Math.max(0, b.length - 1), 0, { upTo: (b[b.length - 2] || { upTo: 5000 }).upTo + 5000, rate: 0.25 });
   changed();
   render();
 };
 ACTS.brDel = d => {
-  const b = ST.D.rules.steps.brackets;
+  const b = studioState.D.rules.steps.brackets;
   if (b.length < 2) return;
   b.splice(+d.i, 1);
   changed();
@@ -1014,15 +1016,15 @@ const ART_GROUPS = [
   ['app', 'App icon', ''],
 ];
 SECTIONS.art = () => {
-  const g = ST.sel.agroup || 'battle',
-    files = ST.files.filter(f => f.path.split('/')[1] === g);
+  const g = studioState.sel.agroup || 'battle',
+    files = studioState.files.filter(f => f.path.split('/')[1] === g);
   return `<div class="ed-col solo"><div class="ed-head"><h2>Art files</h2><button class="btn" data-act="artRefresh">Refresh list</button></div><div class="seg-row tabs">${ART_GROUPS.map(([k, n]) => `<button class="seg ${k === g ? 'on' : ''}" data-act="agroup" data-g="${k}">${n}</button>`).join('')}</div>
  ${card(
    ART_GROUPS.find(x => x[0] === g)[1],
    `<div class="files">${
      files
        .map(f => {
-         const dirty = ST.artDirty.has(f.path);
+         const dirty = studioState.artDirty.has(f.path);
          return `<figure class="file"><div class="fthumb"><img src="../game/${f.path}?v=${f.mtime}${dirty ? '&d' : ''}" alt="" loading="lazy" class="pix"></div><figcaption><b title="${esc(f.path)}">${esc(f.path.split('/').slice(2).join('/'))}</b><small>${(f.size / 1024).toFixed(1)} KB${dirty ? ' · edited' : ''}</small></figcaption>
   <div class="seg-row"><a class="btn sm" href="../game/${f.path}" download>Download</a>${f.path.endsWith('.svg') ? '' : `<button class="btn sm" data-act="artReplace" data-p="${f.path}">Replace…</button>`}</div></figure>`;
        })
@@ -1033,11 +1035,11 @@ SECTIONS.art = () => {
  ${g === 'background' ? card('Title picture for the web', `<p class="help">The game shows <code>background/sundown.webp</code>, a lighter copy of <code>sundown.png</code>. After replacing sundown.png, rebuild the web copy here.</p><button class="btn primary" data-act="rebuildWebp">Rebuild sundown.webp</button>`) : ''}</div>`;
 };
 ACTS.agroup = d => {
-  ST.sel.agroup = d.g;
+  studioState.sel.agroup = d.g;
   render();
 };
 ACTS.artRefresh = async () => {
-  ST.files = await api('files?dir=');
+  studioState.files = await api('files?dir=');
   render();
 };
 ACTS.artReplace = async d => {

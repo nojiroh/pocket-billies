@@ -56,9 +56,9 @@ def main():
         pg.add_init_script("localStorage.setItem('pb-studio-gh-token','ghp_stand-in')")
         t0 = time.time()
         pg.goto(f'http://127.0.0.1:{srv.server_address[1]}/studio/index.html')
-        while time.time() - t0 < 120 and not pg.evaluate("typeof ST!=='undefined'&&!!ST.D&&!document.querySelector('#main .loading')"):
+        while time.time() - t0 < 120 and not pg.evaluate("typeof studioState!=='undefined'&&!!studioState.D&&!document.querySelector('#main .loading')"):
             time.sleep(0.5)
-        if not pg.evaluate("typeof ST!=='undefined'&&!!ST.D"): errs.append('the game data never loaded')
+        if not pg.evaluate("typeof studioState!=='undefined'&&!!studioState.D"): errs.append('the game data never loaded')
         print(f'loaded in {time.time() - t0:.0f} s', flush=True)
         sections = pg.evaluate("typeof SECTIONS==='object'?Object.keys(SECTIONS):[]")
         for k in sections:
@@ -67,7 +67,7 @@ def main():
             time.sleep(1)
             if len(errs) > n: errs[n:] = [f'{k}: {e}' for e in errs[n:]]
         print(f'{len(sections)} sections opened', flush=True)
-        pg.evaluate("const k = Object.keys(ST.D.moves)[0]; ST.D.moves[k].name += ' Test'; ST.dirty = true; void saveAll()")
+        pg.evaluate("const k = Object.keys(studioState.D.moves)[0]; studioState.D.moves[k].name += ' Test'; studioState.dirty = true; void saveAll()")
         t0 = time.time()
         while time.time() - t0 < 60 and 'pulls' not in posts:
             time.sleep(0.5)

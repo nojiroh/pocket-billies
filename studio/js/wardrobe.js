@@ -16,7 +16,6 @@ import { esc } from './game-stand-ins.js';
 import {
   ACTS,
   SECTIONS,
-  ST,
   after,
   ask,
   card,
@@ -32,6 +31,7 @@ import {
   fmtN,
   grid,
   render,
+  studioState,
   toast,
   uidKey,
 } from './studio-app.js';
@@ -88,7 +88,7 @@ const WDS = {
   loaded: false,
 };
 provide({ WDS }); /* to-module */
-const wdW = () => ST.D.wardrobe;
+const wdW = () => studioState.D.wardrobe;
 const wdCur = () => (WDS.sel === 'body' ? wdW().body : wdW().items[WDS.sel]);
 const WD_CROP = new Proxy({}, { get: (t, k) => (wdW().crops || {})[k] });
 const WD_VIEWS = [
@@ -129,7 +129,7 @@ SECTIONS.wardrobe = () => {
   const rows = list
     .map(
       ([k, it]) =>
-        `<button class="lcard ${WDS.sel === k ? 'on' : ''}" data-act="wdPick" data-k="${esc(k)}"><span class="wd-th" data-th="${esc(k)}"></span><span class="lt"><b>${esc(it.name)}</b><small>${esc((slots.find(s => s.id === it.slot) || {}).name || it.slot)}${it.starter ? ' · everyone has it' : it.price ? ` · $${fmtN(it.price)}${it.shop && ST.D.shops[it.shop] ? ' · ' + esc(ST.D.shops[it.shop].name) : ''}` : ''}</small></span></button>`
+        `<button class="lcard ${WDS.sel === k ? 'on' : ''}" data-act="wdPick" data-k="${esc(k)}"><span class="wd-th" data-th="${esc(k)}"></span><span class="lt"><b>${esc(it.name)}</b><small>${esc((slots.find(s => s.id === it.slot) || {}).name || it.slot)}${it.starter ? ' · everyone has it' : it.price ? ` · $${fmtN(it.price)}${it.shop && studioState.D.shops[it.shop] ? ' · ' + esc(studioState.D.shops[it.shop].name) : ''}` : ''}</small></span></button>`
     )
     .join('');
   return `<div class="split"><aside class="list-col"><div class="list-head"><button class="btn primary" data-act="wdNew">+ New item</button>
@@ -141,10 +141,10 @@ function wdItemHTML(k) {
   const W = wdW(),
     it = W.items[k],
     p = `wardrobe.items.${k}`,
-    shops = Object.entries(ST.D.shops || {})
+    shops = Object.entries(studioState.D.shops || {})
       .filter(([s, v]) => v.kind === 'wardrobe')
       .map(([s, v]) => [s, v.name]);
-  const used = Object.entries(ST.D.people || {})
+  const used = Object.entries(studioState.D.people || {})
     .filter(([x, P]) => P.look && P.look.wear && Object.values(P.look.wear).includes(k))
     .map(([x]) => x);
   const cols = it.colors
@@ -272,7 +272,7 @@ function wdEditorHTML(src) {
 /* ---------- mount, drawing ---------- */
 async function wdMount() {
   if (!WDS.loaded) await wdLoad();
-  if (ST.sec !== 'wardrobe') return;
+  if (studioState.sec !== 'wardrobe') return;
   wdThumbs();
   wdDraw();
   wdBind();
@@ -334,7 +334,7 @@ function wdThumbs() {
 }
 function wdPvLoop(ts) {
   const cv = $('#wdPv');
-  if (!cv || !cv.isConnected || ST.sec !== 'wardrobe') {
+  if (!cv || !cv.isConnected || studioState.sec !== 'wardrobe') {
     frameStop('wdpv');
     return;
   }
@@ -957,7 +957,7 @@ ACTS.wdColDel = d => {
   commit(true);
   render();
 };
-ST.hooks.wardrobe = () => {
+studioState.hooks.wardrobe = () => {
   TR_CACHE.clear();
   wdDraw();
 };

@@ -12,7 +12,6 @@ import {
   GD,
   PEOPLE,
   S,
-  ST,
   U,
   artImage,
   cleanName,
@@ -20,6 +19,7 @@ import {
   drawRig,
   frameBudgetLeft,
   provide,
+  studioState,
 } from './hooks.js';
 import { clamp } from './util.js';
 import { frameStop, frameTask } from './frame-scheduler.js';
@@ -83,7 +83,9 @@ export function setHumanFrames(v) {
 }
 /* to-module: end */
 export const WD = () =>
-  (typeof GD !== 'undefined' && GD.wardrobe) || (typeof ST !== 'undefined' && ST.D && ST.D.wardrobe) || null;
+  (typeof GD !== 'undefined' && GD.wardrobe) ||
+  (typeof studioState !== 'undefined' && studioState.D && studioState.D.wardrobe) ||
+  null;
 const TR_SLOTS = () => (WD() || {}).slots || [];
 const TR_HEX = /^#[0-9a-f]{6}$/i;
 const TR_DEFAULT_WEAR = {

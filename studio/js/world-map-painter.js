@@ -9,7 +9,7 @@ import { provide } from '../../game/js/hooks.js';
 import { $, $$, clamp } from '../../game/js/util.js';
 import { makeCanvas } from '../../game/js/art.js';
 import { esc } from './game-stand-ins.js';
-import { ST, after, ask, card, changed, commit, fmtN, render, toast } from './studio-app.js';
+import { after, ask, card, changed, commit, fmtN, render, studioState, toast } from './studio-app.js';
 import { atlasGet, atlasNow, markArt } from './sprites.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -96,7 +96,7 @@ function slerp_(a, b, t) {
 }
 /* the walking path, computed exactly as game/js/world-map.js does */
 function gamePath() {
-  const D = ST.D,
+  const D = studioState.D,
     pts = D.route
       .map(r => llv_(r.lon || 0, r.lat || 0))
       .concat(D.regions.filter(f => f.t !== 'sun' && f.lon != null).map(f => llv_(f.lon, f.lat || 0))),
@@ -225,7 +225,7 @@ async function mpMount() {
 }
 /* the texture wraps around; turn it so the route sits in the middle instead of across the left/right seam */
 function mpCenter(c) {
-  const D = ST.D;
+  const D = studioState.D;
   let sx = 0,
     sy = 0;
   D.route.forEach(r => {
@@ -244,8 +244,11 @@ function mpScrollTo() {
   const st = $('#mpStage'),
     c = atlasNow(WORLD_PATH);
   if (!st || !c) return;
-  const sel = ST.sel.stop,
-    o = typeof sel === 'string' ? ST.D.regions[+sel.slice(1)] : ST.D.route[typeof sel === 'number' ? sel : 0];
+  const sel = studioState.sel.stop,
+    o =
+      typeof sel === 'string'
+        ? studioState.D.regions[+sel.slice(1)]
+        : studioState.D.route[typeof sel === 'number' ? sel : 0];
   if (!o) return;
   const [u, v] = uvOf(llv_(o.lon || 0, o.lat || 0), c.width, c.height);
   st.scrollLeft = mpDisp(u) * MP.zoom - st.clientWidth / 2;
@@ -278,7 +281,7 @@ function mpMarkers() {
     c = atlasNow(WORLD_PATH);
   if (!svg || !c) return;
   const [W, H] = [c.width, c.height],
-    D = ST.D;
+    D = studioState.D;
   svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
   let h = '';
   gamePath().forEach(s => {
@@ -300,10 +303,10 @@ function mpMarkers() {
   };
   D.regions.forEach((g, i) => {
     if (g.lon != null)
-      h += mk(g.lon, g.lat || 0, 'r' + i, g.name, g.name, 'reg' + (ST.sel.stop === 'r' + i ? ' on' : ''));
+      h += mk(g.lon, g.lat || 0, 'r' + i, g.name, g.name, 'reg' + (studioState.sel.stop === 'r' + i ? ' on' : ''));
   });
   D.route.forEach((r, i) => {
-    const on = ST.sel.stop === i;
+    const on = studioState.sel.stop === i;
     h += mk(
       r.lon || 0,
       r.lat || 0,
@@ -625,8 +628,8 @@ function mpBind() {
     const [x, y] = pos(ev);
     if (mkEl) {
       const id = mkEl.dataset.mk,
-        o = id.startsWith('r') ? ST.D.regions[+id.slice(1)] : ST.D.route[+id];
-      ST.sel.stop = id.startsWith('r') ? id : +id;
+        o = id.startsWith('r') ? studioState.D.regions[+id.slice(1)] : studioState.D.route[+id];
+      studioState.sel.stop = id.startsWith('r') ? id : +id;
       stroke = { mk: o, lon0: o.lon || 0, lat0: o.lat || 0 };
       w.setPointerCapture(ev.pointerId);
       mpMarkers();
@@ -818,8 +821,8 @@ function mpGlobe() {
   const cv = $('#mpGlobe'),
     tex = atlasNow(WORLD_PATH);
   if (!cv || !tex) return;
-  const D = ST.D,
-    sel = ST.sel.stop,
+  const D = studioState.D,
+    sel = studioState.sel.stop,
     o = typeof sel === 'string' ? D.regions[+sel.slice(1)] : D.route[typeof sel === 'number' ? sel : 0];
   if (!o || o.lon == null) return;
   const W = tex.width,

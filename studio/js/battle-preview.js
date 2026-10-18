@@ -31,7 +31,6 @@ import { esc } from './game-stand-ins.js';
 import {
   ACTS,
   SECTIONS,
-  ST,
   after,
   card,
   fColor,
@@ -42,6 +41,7 @@ import {
   peopleOpts,
   render,
   spOpts,
+  studioState,
 } from './studio-app.js';
 import { atlasGet, atlasPath, rigFor } from './sprites.js';
 import { AMBS } from './world-rules-art.js';
@@ -106,11 +106,11 @@ function hudHit(ti, an) {
   if (an.dmg) hudPop(ti, '−' + an.dmg, 'dmg' + (an.te > 1 ? ' se' : '') + (an.crit ? ' crit' : ''));
 }
 function bpDefaults() {
-  const D = ST.D,
-    ids = D.lines.flatMap(L => L.names.map((n, i) => L.id + i)).filter(id => ST.rigs[id]);
+  const D = studioState.D,
+    ids = D.lines.flatMap(L => L.names.map((n, i) => L.id + i)).filter(id => studioState.rigs[id]);
   if (!BP.area || !D.backdrops[BP.area]) BP.area = D.route[0].area || Object.keys(D.backdrops)[0];
-  if (!BP.me || !ST.rigs[BP.me]) BP.me = (D.rules.start.starters[0] || D.lines[0].id) + '0';
-  if (!BP.foe || !ST.rigs[BP.foe]) BP.foe = ids[3] || ids[0];
+  if (!BP.me || !studioState.rigs[BP.me]) BP.me = (D.rules.start.starters[0] || D.lines[0].id) + '0';
+  if (!BP.foe || !studioState.rigs[BP.foe]) BP.foe = ids[3] || ids[0];
   if (!BP.move || !D.moves[BP.move]) BP.move = Object.keys(D.moves)[1];
 }
 const bpEv = () => ({
@@ -120,7 +120,7 @@ const bpEv = () => ({
   ],
 });
 SECTIONS.preview = () => {
-  const D = ST.D;
+  const D = studioState.D;
   bpDefaults();
   const A = D.backdrops[BP.area],
     p = `backdrops.${BP.area}`;
@@ -198,7 +198,7 @@ SECTIONS.preview = () => {
  </aside></div></div>`;
 };
 async function bpStart() {
-  const D = ST.D;
+  const D = studioState.D;
   if (!$('#cvWorld')) return;
   const load = $('#bpLoad');
   if (load) load.hidden = false;
@@ -226,13 +226,18 @@ async function bpStart() {
     battleStage.gl = false;
   }
   battleStageStart(BP.area);
-  if (BP.stage !== 'backdrop' && ST.D.scenes && ST.D.scenes[BP.stage] && typeof battleGLAttach === 'function') {
+  if (
+    BP.stage !== 'backdrop' &&
+    studioState.D.scenes &&
+    studioState.D.scenes[BP.stage] &&
+    typeof battleGLAttach === 'function'
+  ) {
     await bpScene();
   }
   if (load) load.hidden = true;
   if (!BP.ro)
     BP.ro = new ResizeObserver(() => {
-      if (battleStage.on && ST.sec === 'preview' && $('#battle')) battleStageResize();
+      if (battleStage.on && studioState.sec === 'preview' && $('#battle')) battleStageResize();
     });
   BP.ro.disconnect();
   BP.ro.observe($('#battle'));
@@ -243,7 +248,7 @@ async function bpStart() {
 /* the engine stage: the chosen walk scene, mounted on its own canvas inside the battle stage */
 async function bpScene() {
   const id = BP.stage,
-    sc = ST.D.scenes[id],
+    sc = studioState.D.scenes[id],
     C = scD();
   await Promise.all(scArt(C).map(p => atlasGet('art/' + p).catch(() => null)));
   const host = $('#camWorld');
@@ -255,7 +260,7 @@ async function bpScene() {
     state: () => ({ mode: 'roam', roam: true, pos: mapHub(sc), who: null, enc: [], npcs: [], exits: [] }),
     keys: () => false,
     onPick: () => {},
-    cap: () => (ST.sec === 'preview' ? 60 : 0),
+    cap: () => (studioState.sec === 'preview' ? 60 : 0),
   });
   if (!walkView.cv || !$('#camWorld')) return;
   const hb = mapHub(sc);
@@ -268,12 +273,12 @@ async function bpScene() {
 }
 function bpApplyBackdrop() {
   if (!battleStage.L || battleStage.area !== BP.area) return;
-  const A = ST.D.backdrops[BP.area];
+  const A = studioState.D.backdrops[BP.area];
   battleStage.skyC = A.sky.map(hexToRgb);
   battleStage.fogC = hexToRgb(A.fog);
   battleStage.floorKey = '';
 }
-ST.hooks.preview = path => {
+studioState.hooks.preview = path => {
   if (path.startsWith('backdrops.')) bpApplyBackdrop();
 };
 document.addEventListener('change', ev => {
@@ -288,7 +293,7 @@ document.addEventListener('change', ev => {
   if (['me', 'foe', 'meGold', 'foeGold'].includes(k)) bpStart();
 });
 function bpMove(si) {
-  const D = ST.D,
+  const D = studioState.D,
     M = D.moves[BP.move],
     fx = M.fx || {},
     onFoe = M.c !== 'X' || fx.status || fx.tgtStage || fx.hype || fx.spin || fx.wipe,

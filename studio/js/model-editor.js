@@ -15,7 +15,6 @@ import { PROP_MODEL_TEXTURES, invalidatePropModel, loadPropModelRecipe } from '.
 import { esc } from './game-stand-ins.js';
 import {
   ACTS,
-  ST,
   ask,
   changed,
   commit,
@@ -27,6 +26,7 @@ import {
   fText,
   grid,
   render,
+  studioState,
   toast,
 } from './studio-app.js';
 import { fileToCanvas, markArt, pickFile } from './sprites.js';
@@ -313,7 +313,7 @@ ACTS.vxeImgPick = async d => {
   const c = await fileToCanvas(f);
   if (c.width > 400 || c.height > 400) return toast('Keep pictures under 400×400 pixels.', 'err');
   let n = 1;
-  while (ST.artDirty.has(`art/scene/props/${k}_vox${n}.png`) || artImage(`scene/props/${k}_vox${n}.png`)) n++;
+  while (studioState.artDirty.has(`art/scene/props/${k}_vox${n}.png`) || artImage(`scene/props/${k}_vox${n}.png`)) n++;
   const path = `scene/props/${k}_vox${n}.png`;
   markArt('art/' + path, c);
   rec.layers[+d.i].img = path;

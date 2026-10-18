@@ -7,7 +7,7 @@ import { provide } from '../../game/js/hooks.js';
 import { $ } from '../../game/js/util.js';
 import { decodeBase64Array } from '../../game/js/walk-view.js';
 import { esc } from './game-stand-ins.js';
-import { ACTS, SECTIONS, ST, after, api, ask, card, changed, go, render, toast } from './studio-app.js';
+import { ACTS, SECTIONS, after, api, ask, card, changed, go, render, studioState, toast } from './studio-app.js';
 import { atlasPath, pickFile } from './sprites.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -21,7 +21,7 @@ expose({
 provide({ runCheck, scheduleCheck });
 /* to-module: end */
 function runCheck() {
-  const D = ST.D,
+  const D = studioState.D,
     P = [],
     err = (msg, go, sel) => P.push({ lvl: 'error', msg, go, sel }),
     warn = (msg, go, sel) => P.push({ lvl: 'warn', msg, go, sel });
@@ -54,16 +54,16 @@ function runCheck() {
     L.names.forEach((n, i) => {
       const id = L.id + i;
       if (!n) err(`${L.id} stage ${i + 1} has no name.`, 'billionaires', g);
-      if (!ST.rigs[id])
+      if (!studioState.rigs[id])
         err(`${n || id} has no skeleton, so it can’t be drawn.`, 'billionaires', { line: L.id, stage: i });
       else
         ['front', 'back'].forEach(v => {
-          if (!ST.rigs[id][v]) err(`${n} has no ${v} view.`, 'billionaires', { line: L.id, stage: i });
+          if (!studioState.rigs[id][v]) err(`${n} has no ${v} view.`, 'billionaires', { line: L.id, stage: i });
         });
       ['front', 'back'].forEach(v =>
         [0, 1].forEach(gd => {
           const path = atlasPath(id, v, gd);
-          if (!ST.artDirty.has(path) && !ST.files.some(f => f.path === path))
+          if (!studioState.artDirty.has(path) && !studioState.files.some(f => f.path === path))
             err(`${n}: missing art file ${path}.`, 'billionaires', { line: L.id, stage: i });
         })
       );
@@ -362,8 +362,8 @@ function scheduleCheck(now) {
       const b = $('#checkCount');
       b.textContent = n || w || '✓';
       b.className = 'badge' + (n ? ' err' : w ? ' warn' : ' ok');
-      ST.lastCheck = P;
-      if (ST.sec === 'check' && !now) renderCheckList();
+      studioState.lastCheck = P;
+      if (studioState.sec === 'check' && !now) renderCheckList();
     },
     now ? 0 : 500
   );
@@ -378,10 +378,10 @@ function renderCheckList() {
           `<li class="${p.lvl}"><span>${p.lvl === 'error' ? 'Problem' : 'Note'}</span><p>${esc(p.msg)}</p>${p.go ? `<button class="btn sm" data-act="fix" data-i="${i}">Show me</button>` : ''}</li>`
       ).join('')
     : '<li class="ok"><span>All good</span><p>No problems found. The game will load every Billie, move and rule.</p></li>';
-  ST.lastCheck = P;
+  studioState.lastCheck = P;
 }
 ACTS.fix = d => {
-  const p = ST.lastCheck[+d.i];
+  const p = studioState.lastCheck[+d.i];
   if (p) go(p.go, p.sel || {});
 };
 SECTIONS.check = () => {
@@ -413,7 +413,7 @@ async function loadBackups() {
   }
 }
 ACTS.restore = async d => {
-  if (ST.dirty || ST.rigsDirty || ST.artDirty.size) {
+  if (studioState.dirty || studioState.rigsDirty || studioState.artDirty.size) {
     if (
       !(await ask('You have unsaved changes. Restoring will reload the Studio and they’ll be lost.', 'Restore anyway'))
     )
@@ -421,8 +421,8 @@ ACTS.restore = async d => {
   } else if (!(await ask('Restore this backup? The current file is backed up first.', 'Restore'))) return;
   try {
     const r = await api('restore', { method: 'POST', body: JSON.stringify({ kind: d.k, name: d.n }) });
-    ST.dirty = ST.rigsDirty = false;
-    ST.artDirty.clear();
+    studioState.dirty = studioState.rigsDirty = false;
+    studioState.artDirty.clear();
     toast('Restored ' + r.restored + '. Reloading…', 'ok');
     setTimeout(() => location.reload(), 800);
   } catch (e) {
@@ -430,7 +430,7 @@ ACTS.restore = async d => {
   }
 };
 ACTS.exportData = () => {
-  const b = new Blob([JSON.stringify(ST.D, (k, v) => (k[0] === '_' && k.length > 1 ? undefined : v), 1)], {
+  const b = new Blob([JSON.stringify(studioState.D, (k, v) => (k[0] === '_' && k.length > 1 ? undefined : v), 1)], {
       type: 'application/json',
     }),
     a = document.createElement('a');
@@ -449,7 +449,7 @@ ACTS.importData = async () => {
       !(await ask('Replace the game data in the Studio with this file? Nothing is written until you save.', 'Load it'))
     )
       return;
-    ST.D = o;
+    studioState.D = o;
     changed();
     render();
     toast('Loaded. Review it, then save to game.');

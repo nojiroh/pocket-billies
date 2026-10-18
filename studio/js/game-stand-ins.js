@@ -4,7 +4,7 @@
    data tables) when they run inside the Studio. Phase 04d: was an inline script in studio/index.html. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
-import { ST, provide } from '../../game/js/hooks.js';
+import { provide, studioState } from '../../game/js/hooks.js';
 expose({
   B: [() => B, v => ((B = v), provide({ B }))],
   BACKDROPS: [() => BACKDROPS],
@@ -29,25 +29,25 @@ export const esc = s =>
     /[&<>"']/g,
     c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]
   );
-/* the game's tables, read live from the Studio's unsaved data (ST is declared in js/studio-app.js) */
+/* the game's tables, read live from the Studio's unsaved data (studioState is declared in js/studio-app.js) */
 const liveMap = f =>
   new Proxy(
     {},
     {
       get: (t, k) => {
-        const o = typeof ST !== 'undefined' && ST.D ? f(ST.D) : null;
+        const o = typeof studioState !== 'undefined' && studioState.D ? f(studioState.D) : null;
         return o ? o[k] : undefined;
       },
       has: (t, k) => {
-        const o = typeof ST !== 'undefined' && ST.D ? f(ST.D) : null;
+        const o = typeof studioState !== 'undefined' && studioState.D ? f(studioState.D) : null;
         return !!o && k in o;
       },
       ownKeys: () => {
-        const o = typeof ST !== 'undefined' && ST.D ? f(ST.D) : null;
+        const o = typeof studioState !== 'undefined' && studioState.D ? f(studioState.D) : null;
         return o ? Reflect.ownKeys(o) : [];
       },
       getOwnPropertyDescriptor: (t, k) => {
-        const o = typeof ST !== 'undefined' && ST.D ? f(ST.D) : null;
+        const o = typeof studioState !== 'undefined' && studioState.D ? f(studioState.D) : null;
         if (o && k in o) return { value: o[k], enumerable: true, configurable: true, writable: true };
       },
     }

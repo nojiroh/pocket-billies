@@ -11,7 +11,7 @@ import { $, $$ } from '../../game/js/util.js';
 import { makeCanvas } from '../../game/js/art.js';
 import { drawRig } from '../../game/js/skeleton-rig.js';
 import { esc } from './game-stand-ins.js';
-import { ACTS, SECTIONS, ST, after, changed, commit, render } from './studio-app.js';
+import { ACTS, SECTIONS, after, changed, commit, render, studioState } from './studio-app.js';
 import { downloadCanvas, loadImage, rigFor } from './sprites.js';
 import { skNeutral } from './skeleton.js';
 /* eslint-disable no-func-assign */
@@ -38,7 +38,7 @@ const RO_KINDS = {
   single: 'Single',
 };
 function roList() {
-  const L = ST.D.roster || [];
+  const L = studioState.D.roster || [];
   return L.filter(
     e =>
       (RO.kind ? e.kind === RO.kind : true) &&
@@ -51,12 +51,12 @@ function roList() {
   );
 }
 function roCard(e, i) {
-  const idx = (ST.D.roster || []).indexOf(e),
+  const idx = (studioState.D.roster || []).indexOf(e),
     st = e.state || {},
     done = Object.values(st).filter(Boolean).length,
     ty = (e.types || [])
       .map(t => {
-        const T = (ST.D.types || []).find(x => x.id === t);
+        const T = (studioState.D.types || []).find(x => x.id === t);
         return `<span class="ro-type" style="background:${T ? T.color : '#888'};color:${T ? T.text : '#fff'}">${esc(t)}</span>`;
       })
       .join('');
@@ -67,7 +67,7 @@ function roCard(e, i) {
   <div class="ro-state">${['silhouette', 'sheet', 'rig', 'portrait'].map(k => `<label class="fld chk sm"><input type="checkbox" data-p="roster.${idx}.state.${k}" data-k="bool" ${st[k] ? 'checked' : ''}><span>${k}</span></label>`).join('')}</div></div>`;
 }
 SECTIONS.roster = () => {
-  const L = ST.D.roster || [];
+  const L = studioState.D.roster || [];
   if (!L.length)
     return `<div class="ed-col solo"><h2>Roster board</h2><p class="help">No roster in this game data. Version 35 adds it (117 Billies for the big art update).</p></div>`;
   const all = L.length,
@@ -89,7 +89,7 @@ ACTS.roFilter = d => {
 };
 ACTS.roSheet = () => roSilSheet();
 ACTS.roExport = () => {
-  const L = ST.D.roster || [];
+  const L = studioState.D.roster || [];
   const csv =
     'no,name,line,stage,kind,parody,types,design,silhouette,sheet,rig,portrait\n' +
     L.map(e =>
@@ -121,7 +121,7 @@ document.addEventListener('input', ev => {
     }
   }
   if (el.dataset && el.dataset.roDes != null) {
-    const e = (ST.D.roster || [])[+el.dataset.roDes];
+    const e = (studioState.D.roster || [])[+el.dataset.roDes];
     if (e) {
       e.design = el.textContent;
       changed();
@@ -140,9 +140,9 @@ document.addEventListener('change', ev => {
 const RO_SIL = new Map();
 /* a roster id (emberox) is the sheet's name; the species id the rigs use is line + stage (musk0) */
 function roSpId(id) {
-  const e = (ST.D.roster || []).find(x => x.id === id);
+  const e = (studioState.D.roster || []).find(x => x.id === id);
   if (!e) return id;
-  const L = (ST.D.lines || []).find(l => l.id === e.line);
+  const L = (studioState.D.lines || []).find(l => l.id === e.line);
   if (!L) return id;
   const i = L.names.findIndex(n => n === e.name);
   return i >= 0 ? L.id + i : id;

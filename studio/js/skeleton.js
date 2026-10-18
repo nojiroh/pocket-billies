@@ -12,7 +12,6 @@ import { ANIM } from '../../game/js/body-plan-animation.js';
 import { drawRig, rigAudit, rigMatrices, rigPose } from '../../game/js/skeleton-rig.js';
 import { esc } from './game-stand-ins.js';
 import {
-  ST,
   ask,
   changed,
   clone,
@@ -23,6 +22,7 @@ import {
   redo,
   render,
   spName,
+  studioState,
   toast,
   undo,
 } from './studio-app.js';
@@ -198,7 +198,7 @@ function planRoles(plan, q) {
   }
 }
 function skMeta(view = SK.view) {
-  return ST.rigs[SK.sp] && ST.rigs[SK.sp][view];
+  return studioState.rigs[SK.sp] && studioState.rigs[SK.sp][view];
 }
 export function skNeutral() {
   const P = rigPose(null, 0, 0, 0);
@@ -257,7 +257,7 @@ function allocRect(sp, view, w, h) {
   };
   markArt(pN, grow(N));
   markArt(pG, grow(G || N));
-  const meta = ST.rigs[sp][view];
+  const meta = studioState.rigs[sp][view];
   meta.size = [W, Hh];
   return [x, y, w, h];
 }
@@ -326,7 +326,7 @@ function skTopo(meta) {
 /* shadow width, body center and top for battle framing */
 function skGeo(sp) {
   for (const view of ['front', 'back']) {
-    const meta = ST.rigs[sp] && ST.rigs[sp][view];
+    const meta = studioState.rigs[sp] && studioState.rigs[sp][view];
     if (!meta) continue;
     const R = rigFor(sp, view, false);
     if (!R) continue;
@@ -386,7 +386,7 @@ async function openSkeleton(sp, view = 'front') {
     toast(e.message, 'err');
     return;
   }
-  if (!ST.rigs[sp]) {
+  if (!studioState.rigs[sp]) {
     toast('This Billie has no skeleton yet.', 'err');
     return;
   }
@@ -609,7 +609,7 @@ function skBindCanvas() {
     if (mode === 'pivot' && h.b.i >= 0 && imgUsers(meta, h.b.i).length > 1) {
       meta.imgs.push(clone(meta.imgs[h.b.i]));
       h.b.i = meta.imgs.length - 1;
-      ST.rigVer = (ST.rigVer || 0) + 1;
+      studioState.rigVer = (studioState.rigVer || 0) + 1;
     }
     SK.drag = { b: h.b, mode, last: [x, y], ang: null, moved: false };
     skTree();
@@ -661,8 +661,8 @@ function skBindCanvas() {
       const det = pm[0] * pm[3] - pm[1] * pm[2];
       b.rr = +((b.rr || 0) + (det < 0 ? -d : d)).toFixed(4);
     }
-    ST.rigVer = (ST.rigVer || 0) + 1;
-    ST.rigsDirty = true;
+    studioState.rigVer = (studioState.rigVer || 0) + 1;
+    studioState.rigsDirty = true;
   });
   const up = () => {
     const D = SK.drag;
@@ -812,9 +812,9 @@ function skSide() {
     });
   $('#skPlan').addEventListener('change', e => skSetPlan(e.target.value));
 }
-ST.hooks._skel = null;
+studioState.hooks._skel = null;
 function skDone() {
-  ST.rigVer = (ST.rigVer || 0) + 1;
+  studioState.rigVer = (studioState.rigVer || 0) + 1;
   skGeo(SK.sp);
   changed(true);
   commit(true);
@@ -826,7 +826,7 @@ function skDone() {
 /* field edits inside the builder go through the normal data binding; refresh the drawing after them */
 document.addEventListener('input', ev => {
   if (ev.target.closest('.skel') && ev.target.dataset.p) {
-    ST.rigVer = (ST.rigVer || 0) + 1;
+    studioState.rigVer = (studioState.rigVer || 0) + 1;
     skDraw();
   }
 });
@@ -894,7 +894,7 @@ function skSetPlan(plan) {
   (Q_FIELDS[plan] || []).forEach(([k, l, mn, mx]) => {
     if (meta.q[k] == null) meta.q[k] = k === 'n' ? 3 : k === 'per' ? 300 : k === 'flapMs' ? 300 : mn;
   });
-  const other = ST.rigs[SK.sp][SK.view === 'front' ? 'back' : 'front'];
+  const other = studioState.rigs[SK.sp][SK.view === 'front' ? 'back' : 'front'];
   if (other) {
     other.plan = plan;
     other.q = clone(meta.q);
@@ -1000,7 +1000,7 @@ function skAddPart(src, opts = {}) {
   skTopo(meta);
   if (SK.both && !opts.abs) {
     const ov = view === 'front' ? 'back' : 'front',
-      om = ST.rigs[sp][ov];
+      om = studioState.rigs[sp][ov];
     if (om && !om.bones.some(x => x.n === name)) {
       const s2 = scaled(src, om.k / k),
         r2 = allocRect(sp, ov, s2.width, s2.height);
@@ -1276,7 +1276,7 @@ function skClick(ev) {
     },
     copyView: async () => {
       const ov = SK.view === 'front' ? 'back' : 'front',
-        om = ST.rigs[SK.sp][ov];
+        om = studioState.rigs[SK.sp][ov];
       if (
         !(await ask(
           `Copy part positions, parents and tilts to the ${ov} view? Parts it doesn’t have yet are added with scaled copies of these pictures.`,
@@ -1519,8 +1519,8 @@ function makeBlankBody(id, plan, col, scale = 1) {
     markArt(atlasPath(id, view, false), sheet);
     markArt(atlasPath(id, view, true), gold);
   }
-  ST.rigs[id] = rig;
-  ST.rigVer = (ST.rigVer || 0) + 1;
+  studioState.rigs[id] = rig;
+  studioState.rigVer = (studioState.rigVer || 0) + 1;
   skGeo(id);
 }
 

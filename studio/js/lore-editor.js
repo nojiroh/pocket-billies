@@ -11,7 +11,6 @@ import { esc } from './game-stand-ins.js';
 import {
   ACTS,
   SECTIONS,
-  ST,
   ask,
   card,
   changed,
@@ -26,6 +25,7 @@ import {
   setGetP,
   setP,
   setSetP,
+  studioState,
   uidKey,
 } from './studio-app.js';
 expose({
@@ -74,16 +74,16 @@ const LORE_UNLOCK =
   });
 }
 const loreSceneOpts = () =>
-  Object.keys(ST.D.scenes || {})
-    .filter(k => !ST.D.scenes[k].test && !k.includes('@'))
+  Object.keys(studioState.D.scenes || {})
+    .filter(k => !studioState.D.scenes[k].test && !k.includes('@'))
     .sort()
-    .map(k => [k, (ST.D.scenes[k].name || k) + ' (' + k + ')']);
+    .map(k => [k, (studioState.D.scenes[k].name || k) + ' (' + k + ')']);
 const loreDelBtn = (k, i) =>
   `<button class="btn sm danger subtle" data-act="loreDel" data-k="${k}" data-i="${esc(String(i))}">Delete</button>`;
 SECTIONS.lore = () => {
-  const D = ST.D,
+  const D = studioState.D,
     L = (D.lore = D.lore || {}),
-    tab = ST.sel.ltab || 'world';
+    tab = studioState.sel.ltab || 'world';
   const tabs = `<div class="seg-row lore-tabs">${LORE_TABS.map(([k, n]) => `<button class="btn sm ${k === tab ? 'primary' : ''}" data-act="loreTab" data-k="${k}">${n}</button>`).join('')}</div>`;
   const list = (key, fields, one) => {
     const A = Array.isArray(L[key]) ? L[key] : (L[key] = []);
@@ -250,11 +250,11 @@ SECTIONS.lore = () => {
   return `<div class="ed-col solo"><div class="ed-head"><h2>Lore & story</h2></div>${tabs}<p class="help">${sub}</p>${body}</div>`;
 };
 ACTS.loreTab = d => {
-  ST.sel.ltab = d.k;
+  studioState.sel.ltab = d.k;
   render();
 };
 ACTS.loreAdd = async d => {
-  const L = (ST.D.lore = ST.D.lore || {}),
+  const L = (studioState.D.lore = studioState.D.lore || {}),
     k = d.k;
   if (k === 'people' || k === 'books') {
     const O = (L[k] = L[k] || {}),
@@ -282,7 +282,7 @@ ACTS.loreDel = async d => {
     !(await ask('Delete this entry? Anything that names it (a room’s book, a story flag) stops finding it.', 'Delete'))
   )
     return;
-  const L = ST.D.lore,
+  const L = studioState.D.lore,
     O = L[d.k];
   if (Array.isArray(O)) O.splice(+d.i, 1);
   else if (O) delete O[d.i];
@@ -299,7 +299,7 @@ ACTS.loreChatAdd = async d => {
     ]
   );
   if (v == null || !Number.isFinite(v)) return;
-  const C = (ST.D.lore.chat = ST.D.lore.chat || {}),
+  const C = (studioState.D.lore.chat = studioState.D.lore.chat || {}),
     P = (C[d.k] = C[d.k] || {}),
     s = String(Math.max(0, Math.min(9, Math.round(v))));
   if (!P[s]) P[s] = ['Something people say here.'];

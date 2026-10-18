@@ -19,7 +19,6 @@ expose({
   SECTIONS: [() => SECTIONS],
   SHOW: [() => SHOW],
   SLINK: [() => SLINK],
-  ST: [() => ST],
   after: [() => after],
   api: [() => api, v => setApi(v)],
   ask: [() => ask],
@@ -67,6 +66,7 @@ expose({
   statOpts: [() => statOpts],
   statusOpts: [() => statusOpts],
   studioBroadcast: [() => studioBroadcast, v => (studioBroadcast = v)],
+  studioState: [() => studioState],
   toast: [() => toast, v => setToast(v)],
   typeOpts: [() => typeOpts],
   uidKey: [() => uidKey],
@@ -75,7 +75,7 @@ expose({
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
-export const ST = {
+export const studioState = {
   D: null,
   rigs: null,
   files: [],
@@ -91,7 +91,7 @@ export const ST = {
   hooks: {},
   after: [],
 };
-provide({ ST }); /* to-module */
+provide({ studioState }); /* to-module */
 const KEY = window.STUDIO_KEY;
 export async function api(path, opt = {}) {
   const r = await fetch('/api/' + path, { ...opt, headers: { 'X-Studio-Key': KEY, ...(opt.headers || {}) } });
@@ -124,9 +124,9 @@ export const uidKey = (base, taken) => {
 export function getP(path, o) {
   if (o === undefined) {
     if (path.startsWith('@rigs.')) {
-      o = ST.rigs;
+      o = studioState.rigs;
       path = path.slice(6);
-    } else o = ST.D;
+    } else o = studioState.D;
   }
   if (path === '') return o;
   return path.split('.').reduce((a, k) => (a == null ? undefined : a[k]), o);
@@ -139,9 +139,9 @@ export function setGetP(v) {
 export function setP(path, val, o) {
   if (o === undefined) {
     if (path.startsWith('@rigs.')) {
-      o = ST.rigs;
+      o = studioState.rigs;
       path = path.slice(6);
-    } else o = ST.D;
+    } else o = studioState.D;
   }
   const ks = path.split('.');
   let a = o;
@@ -162,26 +162,26 @@ export function setSetP(v) {
   provide({ setP });
 }
 /* ---------- undo / dirty ---------- */
-const snapshot = () => JSON.stringify({ D: ST.D, R: ST.rigs });
+const snapshot = () => JSON.stringify({ D: studioState.D, R: studioState.rigs });
 export function commit(now) {
-  clearTimeout(ST.snapT);
+  clearTimeout(studioState.snapT);
   const go = () => {
     const s = snapshot();
-    if (s === ST.last) return;
-    if (ST.last) ST.undo.push(ST.last);
-    if (ST.undo.length > 80) ST.undo.shift();
-    ST.redo = [];
-    ST.last = s;
+    if (s === studioState.last) return;
+    if (studioState.last) studioState.undo.push(studioState.last);
+    if (studioState.undo.length > 80) studioState.undo.shift();
+    studioState.redo = [];
+    studioState.last = s;
     updTop();
   };
   if (now) go();
-  else ST.snapT = setTimeout(go, 450);
+  else studioState.snapT = setTimeout(go, 450);
 }
 export function changed(rigs) {
   if (rigs) {
-    ST.rigsDirty = true;
-    ST.rigVer = (ST.rigVer || 0) + 1;
-  } else ST.dirty = true;
+    studioState.rigsDirty = true;
+    studioState.rigVer = (studioState.rigVer || 0) + 1;
+  } else studioState.dirty = true;
   commit();
   updTop();
   scheduleCheck();
@@ -201,11 +201,14 @@ const SLINK = (() => {
   }
 })();
 function studioBroadcast() {
-  if (!SLINK || !ST.D) return;
+  if (!SLINK || !studioState.D) return;
   clearTimeout(studioBroadcast.t);
   studioBroadcast.t = setTimeout(() => {
     try {
-      SLINK.postMessage({ type: 'data', D: { scenes: ST.D.scenes, scenery: ST.D.scenery, engine: ST.D.engine } });
+      SLINK.postMessage({
+        type: 'data',
+        D: { scenes: studioState.D.scenes, scenery: studioState.D.scenery, engine: studioState.D.engine },
+      });
     } catch (e) {}
   }, 500);
 }
@@ -216,36 +219,36 @@ const blurField = () => {
 export function undo() {
   blurField();
   commit(true);
-  if (!ST.undo.length) return toast('Nothing to undo.');
-  ST.redo.push(ST.last);
-  ST.last = ST.undo.pop();
-  restore(ST.last);
+  if (!studioState.undo.length) return toast('Nothing to undo.');
+  studioState.redo.push(studioState.last);
+  studioState.last = studioState.undo.pop();
+  restore(studioState.last);
   toast('Undone.');
 }
 export function redo() {
   blurField();
-  if (!ST.redo.length) return toast('Nothing to redo.');
-  ST.undo.push(ST.last);
-  ST.last = ST.redo.pop();
-  restore(ST.last);
+  if (!studioState.redo.length) return toast('Nothing to redo.');
+  studioState.undo.push(studioState.last);
+  studioState.last = studioState.redo.pop();
+  restore(studioState.last);
   toast('Redone.');
 }
 function restore(s) {
   const o = JSON.parse(s);
-  ST.D = o.D;
-  ST.rigs = o.R;
-  ST.dirty = true;
-  ST.rigsDirty = true;
-  window.RIGS = ST.rigs;
+  studioState.D = o.D;
+  studioState.rigs = o.R;
+  studioState.dirty = true;
+  studioState.rigsDirty = true;
+  window.RIGS = studioState.rigs;
   spriteCacheClear();
   render();
   updTop();
   scheduleCheck();
 }
 export function updTop() {
-  $('#dirty').hidden = !(ST.dirty || ST.rigsDirty || ST.artDirty.size);
-  $('#undoBtn').disabled = !ST.undo.length && ST.last === snapshot();
-  $('#redoBtn').disabled = !ST.redo.length;
+  $('#dirty').hidden = !(studioState.dirty || studioState.rigsDirty || studioState.artDirty.size);
+  $('#undoBtn').disabled = !studioState.undo.length && studioState.last === snapshot();
+  $('#redoBtn').disabled = !studioState.redo.length;
 }
 /* ---------- save ---------- */
 export async function saveAll() {
@@ -267,27 +270,27 @@ export async function saveAll() {
       return;
     }
     let n = 0;
-    if (ST.artDirty.size) {
-      for (const [path, c] of ST.artDirty) {
+    if (studioState.artDirty.size) {
+      for (const [path, c] of studioState.artDirty) {
         const blob = await new Promise(r => c.toBlob(r, path.endsWith('.webp') ? 'image/webp' : 'image/png', 0.85));
         await api('file?path=' + encodeURIComponent(path), { method: 'POST', body: blob });
         n++;
       }
-      ST.artDirty.clear();
-      ST.D.meta.artVersion = (ST.D.meta.artVersion || 0) + 1;
-      ST.dirty = true;
+      studioState.artDirty.clear();
+      studioState.D.meta.artVersion = (studioState.D.meta.artVersion || 0) + 1;
+      studioState.dirty = true;
     }
-    if (ST.rigsDirty) {
-      await api('rigs', { method: 'POST', body: JSON.stringify(ST.rigs) });
-      ST.rigsDirty = false;
+    if (studioState.rigsDirty) {
+      await api('rigs', { method: 'POST', body: JSON.stringify(studioState.rigs) });
+      studioState.rigsDirty = false;
       n++;
     }
-    if (ST.dirty) {
+    if (studioState.dirty) {
       await api('gamedata', {
         method: 'POST',
-        body: JSON.stringify(ST.D, (k, v) => (k[0] === '_' && k.length > 1 ? undefined : v)),
+        body: JSON.stringify(studioState.D, (k, v) => (k[0] === '_' && k.length > 1 ? undefined : v)),
       });
-      ST.dirty = false;
+      studioState.dirty = false;
       n++;
     }
     toast(n ? 'Saved to the game. Reload the game tab to see the changes.' : 'Everything was already saved.', 'ok');
@@ -413,7 +416,7 @@ function onField(ev) {
   const out = document.getElementById(fid(el.dataset.p));
   if (out) out.textContent = el.dataset.show && SHOW[el.dataset.show] ? SHOW[el.dataset.show](v) : v;
   changed(el.dataset.p.startsWith('@rigs'));
-  const hk = ST.hooks[ST.sec];
+  const hk = studioState.hooks[studioState.sec];
   if (hk) hk(el.dataset.p, v);
   if (el.dataset.rr && ev.type === 'change') render();
 }
@@ -461,7 +464,7 @@ function renderSide() {
     G = NAV_GROUPS.concat([['More', NAV.map(n => n[0]).filter(k => !used.has(k))]]).filter(g => g[1].some(k => N[k]));
   $('#side').innerHTML =
     G.map(([t, L]) => {
-      const has = L.includes(ST.sec),
+      const has = L.includes(studioState.sec),
         shut = navFold[t] && !has;
       return `<div class="nav-g ${shut ? 'shut' : ''}"><button class="nav-gh" data-act="navFold" data-g="${esc(t)}" aria-expanded="${!shut}"><span>${shut ? '▸' : '▾'}</span>${esc(t)}</button>${
         shut
@@ -469,7 +472,7 @@ function renderSide() {
           : L.filter(k => N[k])
               .map(k => {
                 const [, n, d] = N[k];
-                return `<button class="nav ${ST.sec === k ? 'on' : ''}" data-act="go" data-s="${k}" title="${esc(d)}"><b>${n}</b>${ST.sec === k ? `<small>${d}</small>` : ''}</button>`;
+                return `<button class="nav ${studioState.sec === k ? 'on' : ''}" data-act="go" data-s="${k}" title="${esc(d)}"><b>${n}</b>${studioState.sec === k ? `<small>${d}</small>` : ''}</button>`;
               })
               .join('')
       }</div>`;
@@ -477,10 +480,10 @@ function renderSide() {
     `<div class="side-foot"><small><kbd>Ctrl K</kbd> finds any setting · <kbd>Ctrl L</kbd> shows connections · <kbd>Ctrl S</kbd> saves.<br>Saves go to <code>game/data</code> and <code>game/art</code>, with backups in <code>backups/</code>.</small></div>`;
 }
 export function go(s, sel) {
-  if (ST.sec === 'preview' && s !== 'preview' && typeof battleStageStop === 'function') battleStageStop();
+  if (studioState.sec === 'preview' && s !== 'preview' && typeof battleStageStop === 'function') battleStageStop();
   if (typeof engineContext !== 'undefined') engineContext.bypass = false;
-  ST.sec = s;
-  if (sel) Object.assign(ST.sel, sel);
+  studioState.sec = s;
+  if (sel) Object.assign(studioState.sel, sel);
   renderSide();
   render();
   $('#main').scrollTop = 0;
@@ -498,12 +501,12 @@ ACTS.navFold = d => {
   renderSide();
 };
 export function render() {
-  const S = SECTIONS[ST.sec];
+  const S = SECTIONS[studioState.sec];
   if (!S) return;
-  ST.after = [];
+  studioState.after = [];
   const m = $('#main');
   m.innerHTML = S();
-  ST.after.forEach(f => f());
+  studioState.after.forEach(f => f());
   mountPreviews(m);
 }
 /* phase 04d: github.js takes the GitHub route, connections.js redraws the links */
@@ -512,7 +515,7 @@ export function setRender(v) {
   provide({ render });
 }
 export const after = f => {
-  ST.after.push(f);
+  studioState.after.push(f);
 };
 /* ---------- events ---------- */
 document.addEventListener('input', ev => {
@@ -559,44 +562,44 @@ document.addEventListener('keydown', ev => {
   }
 });
 addEventListener('beforeunload', e => {
-  if (ST.dirty || ST.rigsDirty || ST.artDirty.size) {
+  if (studioState.dirty || studioState.rigsDirty || studioState.artDirty.size) {
     e.preventDefault();
     e.returnValue = '';
   }
 });
 /* ---------- helpers for lists of things ---------- */
-export const typeOpts = none => (none ? [['None', 'Normal']] : []).concat(ST.D.types.map(t => [t.id, t.id]));
-export const spOpts = () => ST.D.lines.flatMap(L => L.names.map((n, i) => [L.id + i, `${n} (${L.id}${i})`]));
+export const typeOpts = none => (none ? [['None', 'Normal']] : []).concat(studioState.D.types.map(t => [t.id, t.id]));
+export const spOpts = () => studioState.D.lines.flatMap(L => L.names.map((n, i) => [L.id + i, `${n} (${L.id}${i})`]));
 export const moveOpts = () =>
-  Object.keys(ST.D.moves)
-    .sort((a, b) => ST.D.moves[a].n.localeCompare(ST.D.moves[b].n))
-    .map(k => [k, `${ST.D.moves[k].n} · ${ST.D.moves[k].t}`]);
-export const itemOpts = () => Object.keys(ST.D.items).map(k => [k, ST.D.items[k].n]);
-export const coinOpts = () => Object.keys(ST.D.coins).map(k => [k, ST.D.coins[k].n]);
-export const peopleOpts = () => Object.keys(ST.D.people).map(k => [k, k]);
-export const statusOpts = () => ST.D.statuses.map(s => [s.id, s.name]);
-export const statOpts = () => ST.D.stats.filter(s => s.id !== 'hp').map(s => [s.id, s.name]);
+  Object.keys(studioState.D.moves)
+    .sort((a, b) => studioState.D.moves[a].n.localeCompare(studioState.D.moves[b].n))
+    .map(k => [k, `${studioState.D.moves[k].n} · ${studioState.D.moves[k].t}`]);
+export const itemOpts = () => Object.keys(studioState.D.items).map(k => [k, studioState.D.items[k].n]);
+export const coinOpts = () => Object.keys(studioState.D.coins).map(k => [k, studioState.D.coins[k].n]);
+export const peopleOpts = () => Object.keys(studioState.D.people).map(k => [k, k]);
+export const statusOpts = () => studioState.D.statuses.map(s => [s.id, s.name]);
+export const statOpts = () => studioState.D.stats.filter(s => s.id !== 'hp').map(s => [s.id, s.name]);
 export const spName = id => {
-  const L = ST.D.lines.find(l => id && id.startsWith(l.id) && /^\d+$/.test(id.slice(l.id.length)));
+  const L = studioState.D.lines.find(l => id && id.startsWith(l.id) && /^\d+$/.test(id.slice(l.id.length)));
   return L ? L.names[+id.slice(L.id.length)] || id : id;
 };
 export const chipT = t => {
-  const T = ST.D.types.find(x => x.id === t);
-  const c = T ? [T.color, T.text] : [ST.D.untyped.color, ST.D.untyped.text];
+  const T = studioState.D.types.find(x => x.id === t);
+  const c = T ? [T.color, T.text] : [studioState.D.untyped.color, studioState.D.untyped.text];
   return `<span class="chip" style="background:${c[0]};color:${c[1]}">${t === 'None' ? 'Normal' : esc(t)}</span>`;
 };
 /* ---------- boot ---------- */
 export async function boot() {
   try {
     const [D, R, F] = await Promise.all([api('gamedata'), api('rigs'), api('files?dir='), artLoad([ICON_ATLAS])]);
-    ST.D = D;
-    ST.rigs = R;
+    studioState.D = D;
+    studioState.rigs = R;
     if (window.RIGS_NEXT) for (const k in window.RIGS_NEXT) if (!R[k]) R[k] = window.RIGS_NEXT[k];
     window.RIGS = R;
-    ST.files = F;
-    ST.last = snapshot();
+    studioState.files = F;
+    studioState.last = snapshot();
     const h = location.hash.slice(1);
-    if (NAV.some(n => n[0] === h)) ST.sec = h;
+    if (NAV.some(n => n[0] === h)) studioState.sec = h;
     renderSide();
     render();
     updTop();

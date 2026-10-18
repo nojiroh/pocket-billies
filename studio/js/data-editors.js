@@ -11,7 +11,6 @@ import { esc } from './game-stand-ins.js';
 import {
   ACTS,
   SECTIONS,
-  ST,
   after,
   ask,
   card,
@@ -41,6 +40,7 @@ import {
   spOpts,
   statOpts,
   statusOpts,
+  studioState,
   toast,
   typeOpts,
   uidKey,
@@ -100,20 +100,20 @@ export const RAR_NAMES = {
   rare: 'Rare',
   mythical: 'Mythical',
 };
-const lineIdx = id => ST.D.lines.findIndex(l => l.id === id);
+const lineIdx = id => studioState.D.lines.findIndex(l => l.id === id);
 export const curLine = () => {
-  const D = ST.D;
-  let i = lineIdx(ST.sel.line);
+  const D = studioState.D;
+  let i = lineIdx(studioState.sel.line);
   if (i < 0) {
     i = 0;
-    ST.sel.line = D.lines[0] && D.lines[0].id;
+    studioState.sel.line = D.lines[0] && D.lines[0].id;
   }
   return i;
 };
 document.addEventListener('input', ev => {
   const s = ev.target.closest('[data-search]');
   if (!s) return;
-  ST.sel[s.dataset.search] = s.value;
+  studioState.sel[s.dataset.search] = s.value;
   const box = document.getElementById(s.dataset.list);
   if (box && LISTS[s.dataset.search]) {
     box.innerHTML = LISTS[s.dataset.search]();
@@ -123,7 +123,7 @@ document.addEventListener('input', ev => {
 const LISTS = {};
 /* ================= BILLIONAIRES ================= */
 function baseStats(L, st) {
-  const D = ST.D;
+  const D = studioState.D;
   if (L.base && L.base[st]) return L.base[st];
   const tot = (D.rarities[L.rar] || D.rarities.common).totals,
     T = tot[Math.min(st, tot.length - 1)],
@@ -131,9 +131,9 @@ function baseStats(L, st) {
   return L.prof.map(w => Math.round((T * w) / sum));
 }
 LISTS.lq = () => {
-  const D = ST.D,
-    q = (ST.sel.lq || '').toLowerCase(),
-    cur = ST.sel.line;
+  const D = studioState.D,
+    q = (studioState.sel.lq || '').toLowerCase(),
+    cur = studioState.sel.line;
   return (
     D.lines
       .map((l, i) => ({ l, i }))
@@ -152,14 +152,14 @@ LISTS.lq = () => {
   );
 };
 SECTIONS.billionaires = () => {
-  const D = ST.D,
+  const D = studioState.D,
     li = curLine(),
     L = D.lines[li],
     p = `lines.${li}`,
-    st = Math.min(ST.sel.stage || 0, L.names.length - 1),
+    st = Math.min(studioState.sel.stage || 0, L.names.length - 1),
     sp = L.id + st,
-    gold = !!ST.sel.gold;
-  ST.sel.stage = st;
+    gold = !!studioState.sel.gold;
+  studioState.sel.stage = st;
   const stageTabs = L.names
     .map(
       (n, i) =>
@@ -168,7 +168,7 @@ SECTIONS.billionaires = () => {
     .join('');
   const prev = `<div class="prev-row"><figure>${prevCanvas({ sp, view: 'front', gold, cls: 'big' })}<figcaption>Front (foes, Field Guide)</figcaption></figure><figure>${prevCanvas({ sp, view: 'back', gold, cls: 'big' })}<figcaption>Back (your side in battle)</figcaption></figure></div>
   <div class="seg-row">${['attack', 'cast', 'hurt', 'cheer', 'buff', 'dizzy', 'faint'].map(a => `<button class="seg sm" data-act="anim" data-a="${a}">${a}</button>`).join('')}<span class="grow"></span><label class="fld chk inline"><input type="checkbox" data-act="goldToggle" ${gold ? 'checked' : ''}><span>Golden</span></label></div>
-  <div class="seg-row"><button class="btn primary" data-act="pixels" data-sp="${sp}">Edit pixels and skeleton</button><button class="btn" data-act="skeleton" data-sp="${sp}">Skeleton builder</button><button class="btn" data-act="recolor" data-sp="${sp}">Recolor this stage…</button><button class="btn" data-act="bpFoe" data-sp="${sp}">See it in battle</button>${ST.rigs[sp] ? '' : '<span class="warn">No skeleton for this stage: it can’t be drawn.</span>'}</div>`;
+  <div class="seg-row"><button class="btn primary" data-act="pixels" data-sp="${sp}">Edit pixels and skeleton</button><button class="btn" data-act="skeleton" data-sp="${sp}">Skeleton builder</button><button class="btn" data-act="recolor" data-sp="${sp}">Recolor this stage…</button><button class="btn" data-act="bpFoe" data-sp="${sp}">See it in battle</button>${studioState.rigs[sp] ? '' : '<span class="warn">No skeleton for this stage: it can’t be drawn.</span>'}</div>`;
   const tsel = i => {
     const ts = L.types[st] || [];
     return `<label class="fld"><span>${i ? 'Second type' : 'Type'}</span><select data-p="${p}.types.${st}.${i}" data-k="sel" ${i ? 'data-opt="1"' : ''} data-rr="1">${i ? '<option value="">None</option>' : ''}${typeOpts(
@@ -217,14 +217,14 @@ SECTIONS.billionaires = () => {
           .map((n, i) => evoRow(L, li, i))
           .join('');
   const where = whereCard(L, li);
-  return `<div class="split"><aside class="list-col"><div class="list-head"><input type="search" placeholder="Search name, id or type" data-search="lq" data-list="lineList" value="${esc(ST.sel.lq || '')}"><button class="btn primary" data-act="newLine">+ New Billie</button></div><div class="llist" id="lineList">${LISTS.lq()}</div></aside>
+  return `<div class="split"><aside class="list-col"><div class="list-head"><input type="search" placeholder="Search name, id or type" data-search="lq" data-list="lineList" value="${esc(studioState.sel.lq || '')}"><button class="btn primary" data-act="newLine">+ New Billie</button></div><div class="llist" id="lineList">${LISTS.lq()}</div></aside>
  <div class="ed-col"><div class="ed-head"><div><small class="mono">${esc(L.id)} · ${RAR_NAMES[L.rar] || L.rar}</small><h2>${esc(L.names.join(' → '))}</h2></div><div class="seg-row"><button class="btn subtle" data-act="lineMove" data-d="-1" title="Earlier in the Field Guide">↑</button><button class="btn subtle" data-act="lineMove" data-d="1" title="Later in the Field Guide">↓</button><button class="btn subtle" data-act="lineDup">Duplicate</button><button class="btn danger" data-act="lineDel">Delete</button></div></div>
  <div class="seg-row tabs">${stageTabs}<button class="seg add" data-act="stageAdd" title="Add an evolution stage (copies the last stage’s art)">+ Stage</button>${L.names.length > 1 ? `<button class="seg" data-act="stageDel" title="Remove the last stage">− Last stage</button>` : ''}</div>
  ${card('Sprite', prev, { cls: 'sprite-card' })}${card(`${STAGE_LABEL[st]} details`, ident)}${stats}${card('Moves it learns', learn, { sub: 'Moves unlock when it reaches that level. It keeps the last ' + (D.rules.progression.moveSlots || 4) + ' it learned unless you choose.' })}
  ${card('Evolution', evo)}${where}</div></div>`;
 };
 function statsCard(L, li) {
-  const D = ST.D,
+  const D = studioState.D,
     p = `lines.${li}`,
     stats = D.stats,
     rows = L.names
@@ -250,17 +250,17 @@ function statsCard(L, li) {
     id: 'statsCard',
   });
 }
-ST.hooks.billionaires = path => {
+studioState.hooks.billionaires = path => {
   const m = path.match(/^lines\.(\d+)\.types\.(\d+)\.(\d)$/);
   if (m) {
-    const L = ST.D.lines[+m[1]],
+    const L = studioState.D.lines[+m[1]],
       a = L.types[+m[2]];
     L.types[+m[2]] = (a || []).filter(Boolean);
     if (!L.types[+m[2]].length) L.types[+m[2]] = ['None'];
   }
   if (/^lines\.\d+\.(prof|rar|base)/.test(path)) {
     const li = curLine(),
-      L = ST.D.lines[li],
+      L = studioState.D.lines[li],
       t = $('#statTable');
     if (t && !L.base) {
       const tmp = document.createElement('div');
@@ -291,7 +291,7 @@ function evoRow(L, li, i) {
   const p = `lines.${li}.evo.${i}`,
     e = (L.evo || [])[i] || { k: 'lvl', at: 16 },
     k = e.k;
-  const D = ST.D;
+  const D = studioState.D;
   const f = {
     lvl: () => fNum('At level', `${p}.at`, { min: 2, max: 100, step: 1 }),
     buddy: () =>
@@ -318,7 +318,7 @@ function evoRow(L, li, i) {
   return `<div class="evo-row"><span class="evo-a">${esc(L.names[i])} <b>→</b> ${esc(L.names[i + 1])}</span>${grid(fSel('How', `${p}.k`, EVO_KINDS, { rr: 1 }), (f[k] || f.lvl)())}</div>`;
 }
 function whereCard(L, li) {
-  const D = ST.D,
+  const D = studioState.D,
     ids = L.names.map((n, i) => L.id + i),
     rows = [];
   for (const [pk, P] of Object.entries(D.pools))
@@ -349,7 +349,7 @@ function whereCard(L, li) {
   );
 }
 const poolName = k => {
-  const r = ST.D.route.filter(x => x.pool === k).map(x => x.name);
+  const r = studioState.D.route.filter(x => x.pool === k).map(x => x.name);
   return r.length ? `${k} (${r.join(', ')})` : k;
 };
 const poolPct = (P, j) => {
@@ -357,44 +357,44 @@ const poolPct = (P, j) => {
   return t ? Math.round(((+P.list[j][1] || 0) / t) * 100) + '%' : '—';
 };
 ACTS.pickLine = d => {
-  ST.sel.line = d.id;
-  ST.sel.stage = 0;
+  studioState.sel.line = d.id;
+  studioState.sel.stage = 0;
   render();
 };
 ACTS.stage = d => {
-  ST.sel.stage = +d.i;
+  studioState.sel.stage = +d.i;
   render();
 };
 ACTS.goldToggle = (d, el) => {
-  ST.sel.gold = el.checked;
+  studioState.sel.gold = el.checked;
   render();
 };
 ACTS.anim = d => {
   $$('canvas.spr-prev.big').forEach(c => prevAct(c, d.a));
 };
-ACTS.pixels = d => openPixelEditor(d.sp, 'front', !!ST.sel.gold);
+ACTS.pixels = d => openPixelEditor(d.sp, 'front', !!studioState.sel.gold);
 ACTS.skeleton = d => openSkeleton(d.sp, 'front');
 ACTS.learnAdd = () => {
-  const L = ST.D.lines[curLine()],
+  const L = studioState.D.lines[curLine()],
     last = L.learn[L.learn.length - 1];
-  L.learn.push([Math.min(100, (last ? last[0] : 1) + 4), Object.keys(ST.D.moves)[0]]);
+  L.learn.push([Math.min(100, (last ? last[0] : 1) + 4), Object.keys(studioState.D.moves)[0]]);
   changed();
   render();
 };
 ACTS.learnDel = d => {
-  const L = ST.D.lines[curLine()];
+  const L = studioState.D.lines[curLine()];
   L.learn.splice(+d.i, 1);
   changed();
   render();
 };
 ACTS.learnSort = () => {
-  const L = ST.D.lines[curLine()];
+  const L = studioState.D.lines[curLine()];
   L.learn.sort((a, b) => a[0] - b[0]);
   changed();
   render();
 };
 ACTS.baseOn = () => {
-  const L = ST.D.lines[curLine()];
+  const L = studioState.D.lines[curLine()];
   L.base = L.names.map((n, st) => baseStats(L, st).slice());
   changed();
   render();
@@ -402,24 +402,24 @@ ACTS.baseOn = () => {
 ACTS.baseOff = async () => {
   if (!(await ask('Switch back to rarity totals and the stat profile? The exact numbers will be lost.', 'Switch back')))
     return;
-  delete ST.D.lines[curLine()].base;
+  delete studioState.D.lines[curLine()].base;
   changed();
   render();
 };
 ACTS.whereDel = d => {
-  ST.D[d.kind][d.k].list.splice(+d.j, 1);
+  studioState.D[d.kind][d.k].list.splice(+d.j, 1);
   changed();
   render();
 };
 ACTS.whereAdd = () => {
   const [kind, k] = $('#whereTo').value.split(':'),
     sp = $('#whereSp').value;
-  ST.D[kind][k].list.push([sp, 15]);
+  studioState.D[kind][k].list.push([sp, 15]);
   changed();
   render();
 };
 ACTS.lineMove = d => {
-  const D = ST.D,
+  const D = studioState.D,
     i = curLine(),
     j = i + +d.d;
   if (j < 0 || j >= D.lines.length) return;
@@ -428,7 +428,7 @@ ACTS.lineMove = d => {
   render();
 };
 ACTS.lineDel = async () => {
-  const D = ST.D,
+  const D = studioState.D,
     i = curLine(),
     L = D.lines[i],
     ids = L.names.map((n, k) => L.id + k);
@@ -442,16 +442,16 @@ ACTS.lineDel = async () => {
     return;
   D.lines.splice(i, 1);
   ids.forEach(id => {
-    delete ST.rigs[id];
+    delete studioState.rigs[id];
   });
   removeRefs(ids);
-  ST.sel.line = (D.lines[Math.max(0, i - 1)] || {}).id;
+  studioState.sel.line = (D.lines[Math.max(0, i - 1)] || {}).id;
   changed();
   changed(true);
   render();
 };
 function refsTo(ids) {
-  const D = ST.D,
+  const D = studioState.D,
     out = [];
   for (const [k, P] of Object.entries(D.pools)) if (P.list.some(([id]) => ids.includes(id))) out.push('wild pool ' + k);
   for (const [k, E] of Object.entries(D.eggs)) if (E.list.some(([id]) => ids.includes(id))) out.push(k + ' km egg');
@@ -461,7 +461,7 @@ function refsTo(ids) {
   return out;
 }
 function removeRefs(ids) {
-  const D = ST.D;
+  const D = studioState.D;
   for (const P of Object.values(D.pools)) P.list = P.list.filter(([id]) => !ids.includes(id));
   for (const E of Object.values(D.eggs)) E.list = E.list.filter(([id]) => !ids.includes(id));
   for (const T of Object.values(D.trainers || {})) T.team = T.team.filter(e => !ids.includes(e.sp));
@@ -470,7 +470,7 @@ function removeRefs(ids) {
 }
 /* ---------- copying art between species (new billionaires, new stages, duplicates) ---------- */
 async function cloneSpeciesArt(fromId, toId, hue = 0, sat = 1) {
-  ST.rigs[toId] = clone(ST.rigs[fromId]);
+  studioState.rigs[toId] = clone(studioState.rigs[fromId]);
   for (const view of ['front', 'back'])
     for (const gold of [false, true]) {
       const src = await atlasGet(atlasPath(fromId, view, gold)).catch(() => null);
@@ -479,13 +479,13 @@ async function cloneSpeciesArt(fromId, toId, hue = 0, sat = 1) {
     }
 }
 ACTS.stageAdd = async () => {
-  const D = ST.D,
+  const D = studioState.D,
     L = D.lines[curLine()],
     n = L.names.length;
   if (n >= 4) return toast('Four stages is the most a line can have.');
   const from = L.id + (n - 1),
     to = L.id + n;
-  if (!ST.rigs[from]) return toast('The last stage has no skeleton to copy.', 'err');
+  if (!studioState.rigs[from]) return toast('The last stage has no skeleton to copy.', 'err');
   await cloneSpeciesArt(from, to, 25);
   const keys = ['names', 'cat', 'ht', 'wt', 'hab', 'diet', 'bio', 'note'];
   keys.forEach(k => {
@@ -505,12 +505,12 @@ ACTS.stageAdd = async () => {
   if (tot.length <= n) tot.push(Math.round(tot[tot.length - 1] * 1.15));
   changed();
   changed(true);
-  ST.sel.stage = n;
+  studioState.sel.stage = n;
   render();
   toast('Stage added with recolored art from the previous stage. Edit its pixels next.');
 };
 ACTS.stageDel = async () => {
-  const D = ST.D,
+  const D = studioState.D,
     L = D.lines[curLine()],
     n = L.names.length - 1,
     id = L.id + n;
@@ -526,15 +526,15 @@ ACTS.stageDel = async () => {
   });
   if (L.evo) L.evo.length = Math.min(L.evo.length, n - 1);
   if (L.base) L.base.length = n;
-  delete ST.rigs[id];
+  delete studioState.rigs[id];
   removeRefs([id]);
-  ST.sel.stage = n - 1;
+  studioState.sel.stage = n - 1;
   changed();
   changed(true);
   render();
 };
 ACTS.lineDup = async () => {
-  const D = ST.D,
+  const D = studioState.D,
     L = D.lines[curLine()],
     id = uidKey(L.id, k => D.lines.some(l => l.id === k));
   const N = clone(L);
@@ -542,7 +542,7 @@ ACTS.lineDup = async () => {
   N.names = N.names.map(n => n + ' II');
   for (let i = 0; i < L.names.length; i++) await cloneSpeciesArt(L.id + i, id + i, 40);
   D.lines.splice(curLine() + 1, 0, N);
-  ST.sel.line = id;
+  studioState.sel.line = id;
   changed();
   changed(true);
   render();
@@ -567,7 +567,7 @@ ACTS.recolor = async d => {
     const c = $('#rcPrev');
     c.width = R.BW;
     c.height = R.BH;
-    const meta = ST.rigs[sp].front,
+    const meta = studioState.rigs[sp].front,
       cut = ([x, y, w, h2]) => {
         const q = makeCanvas(w, h2);
         q.getContext('2d').drawImage(tmp, x, y, w, h2, 0, 0, w, h2);
@@ -605,7 +605,7 @@ ACTS.recolor = async d => {
 };
 /* ---------- new billionaire wizard ---------- */
 ACTS.newLine = async () => {
-  const D = ST.D;
+  const D = studioState.D;
   const blanks = Object.keys(BODY_TPL);
   const html = `<p class="help">Start from a <b>blank body</b> to design a new shape from scratch, or copy an existing Billie’s skeleton, animations and recolored art. Either way it works in the game right away.</p>
  <label class="fld"><span>Start from</span><select id="nwFrom"><optgroup label="Blank body (new shape)">${blanks.map(k => `<option value="blank:${k}">${k} · ${PLAN_INFO[k]}</option>`).join('')}</optgroup><optgroup label="Copy a Billie">${D.lines.map(l => `<option value="${l.id}">${esc(l.names.join(' → '))}</option>`).join('')}</optgroup></select></label><div class="prev-row"><canvas id="nwPrev" class="spr-prev big"></canvas></div>
@@ -653,14 +653,14 @@ ACTS.newLine = async () => {
     $$('.nw-blank').forEach(e => (e.hidden = !blank));
     $('#nwH').textContent = h + '°';
     if (blank) {
-      const saved = { rigs: ST.rigs[tmpId], dirty: new Map(ST.artDirty) };
+      const saved = { rigs: studioState.rigs[tmpId], dirty: new Map(studioState.artDirty) };
       makeBlankBody(tmpId, from.slice(6), $('#nwCol').value);
       const R = rigFor(tmpId, 'front', false);
-      draw(R, ST.rigs[tmpId].front, atlasNow(atlasPath(tmpId, 'front', false)));
-      delete ST.rigs[tmpId];
-      for (const k of [...ST.artDirty.keys()])
+      draw(R, studioState.rigs[tmpId].front, atlasNow(atlasPath(tmpId, 'front', false)));
+      delete studioState.rigs[tmpId];
+      for (const k of [...studioState.artDirty.keys()])
         if (k.includes(tmpId)) {
-          ST.artDirty.delete(k);
+          studioState.artDirty.delete(k);
           ATL.delete(k);
         }
       updTop();
@@ -670,7 +670,7 @@ ACTS.newLine = async () => {
       .then(src => {
         const R = rigFor(from + '0', 'front', false);
         if (!R) return;
-        draw(R, ST.rigs[from + '0'].front, hueShift(src, h));
+        draw(R, studioState.rigs[from + '0'].front, hueShift(src, h));
       })
       .catch(() => {});
   };
@@ -679,7 +679,7 @@ ACTS.newLine = async () => {
       const v = $('#nwFrom').value;
       if (!v.startsWith('blank:')) {
         const L = D.lines.find(l => l.id === v);
-        $('#nwType').value = (L.types[0] || [ST.D.types[0].id])[0];
+        $('#nwType').value = (L.types[0] || [studioState.D.types[0].id])[0];
       }
       show();
     });
@@ -717,7 +717,7 @@ ACTS.newLine = async () => {
     'wide'
   );
   if (!r) return;
-  const id = uidKey(r.name, k => D.lines.some(l => l.id === k) || !!ST.rigs[k + '0']);
+  const id = uidKey(r.name, k => D.lines.some(l => l.id === k) || !!studioState.rigs[k + '0']);
   let N;
   if (r.from.startsWith('blank:')) {
     const plan = r.from.slice(6),
@@ -759,8 +759,8 @@ ACTS.newLine = async () => {
   D.lines.splice(firstMyth < 0 ? D.lines.length : firstMyth, 0, N);
   const pool = Object.keys(D.pools)[0];
   D.pools[pool].list.push([id + '0', 10]);
-  ST.sel.line = id;
-  ST.sel.stage = 0;
+  studioState.sel.line = id;
+  studioState.sel.stage = 0;
   changed();
   changed(true);
   render();
@@ -774,9 +774,9 @@ const CAT = [
   ['X', 'Status · no damage'],
 ];
 LISTS.mq = () => {
-  const D = ST.D,
-    q = (ST.sel.mq || '').toLowerCase(),
-    cur = ST.sel.move;
+  const D = studioState.D,
+    q = (studioState.sel.mq || '').toLowerCase(),
+    cur = studioState.sel.move;
   return Object.entries(D.moves)
     .filter(([k, m]) => !q || k.includes(q) || m.n.toLowerCase().includes(q) || m.t.toLowerCase().includes(q))
     .sort((a, b) => a[1].t.localeCompare(b[1].t) || a[1].n.localeCompare(b[1].n))
@@ -787,9 +787,9 @@ LISTS.mq = () => {
     .join('');
 };
 SECTIONS.moves = () => {
-  const D = ST.D;
-  if (!D.moves[ST.sel.move]) ST.sel.move = Object.keys(D.moves)[0];
-  const k = ST.sel.move,
+  const D = studioState.D;
+  if (!D.moves[studioState.sel.move]) studioState.sel.move = Object.keys(D.moves)[0];
+  const k = studioState.sel.move,
     M = D.moves[k],
     p = `moves.${k}`,
     fx = M.fx || {},
@@ -821,7 +821,7 @@ SECTIONS.moves = () => {
   ${fChk('Blocks one attack (fails twice in a row)', `${p}.fx.protect`, { num: 1 })}${fChk('Delayed attack (lands a few turns later)', `${p}.fx.delay`, { num: 1 })}${fChk('Doubles each turn it’s used in a row', `${p}.fx.hold`, { num: 1 })}
   ${fChk('Confuses the target (it may hit itself)', `${p}.fx.hype`, { num: 1 })}${fChk(`Soak: turns the target ${esc(D.rules.battle.spinType)} type`, `${p}.fx.spin`, { num: 1 })}${fChk('Removes the target’s stat boosts', `${p}.fx.wipe`, { num: 1 })}
   ${fChk('Scatters sharp stones on the other side', `${p}.fx.rent`, { num: 1 })}${fChk(`Starts a sandstorm (${esc(D.rules.battle.shockType)} moves hit harder)`, `${p}.fx.market`, { num: 1 })}</div>`;
-  return `<div class="split"><aside class="list-col"><div class="list-head"><input type="search" placeholder="Search moves" data-search="mq" data-list="moveList" value="${esc(ST.sel.mq || '')}"><button class="btn primary" data-act="moveNew">+ New move</button></div><div class="llist" id="moveList">${LISTS.mq()}</div></aside>
+  return `<div class="split"><aside class="list-col"><div class="list-head"><input type="search" placeholder="Search moves" data-search="mq" data-list="moveList" value="${esc(studioState.sel.mq || '')}"><button class="btn primary" data-act="moveNew">+ New move</button></div><div class="llist" id="moveList">${LISTS.mq()}</div></aside>
  <div class="ed-col"><div class="ed-head"><div><small class="mono">${esc(k)}</small><h2>${esc(M.n)}</h2></div><div class="seg-row"><button class="btn" data-act="bpMove" data-id="${esc(k)}" title="Play this move on the battle stage">▶ Preview animation</button><button class="btn subtle" data-act="moveDup">Duplicate</button><button class="btn danger" data-act="moveDel">Delete</button></div></div>
  ${card('Basics', grid(fText('Name', `${p}.n`, { max: 28 }), fSel('Type', `${p}.t`, typeOpts(true), { rr: 1 }), fSel('Kind', `${p}.c`, CAT, { rr: 1 }), fNum('Power', `${p}.p`, { opt: 1, min: 0, max: 250, step: 5, help: M.c === 'X' ? 'Status moves usually have no power.' : '' }), fNum('Accuracy', `${p}.a`, { unit: '%', min: 0, max: 100, step: 5, help: '0 means it never misses.' }), fNum('Priority', `${p}.pr`, { opt: 1, min: -3, max: 5, step: 1, help: 'Higher goes first. Guard uses 4.' })) + fText('Description', `${p}.d`, { area: 1, rows: 2 }))}
  ${card('Effects', fxB, { sub: 'Leave anything empty to switch it off.' })}
@@ -840,15 +840,15 @@ SECTIONS.moves = () => {
      : '<p class="help">No Billie learns this yet. Add it from a Billie’s move list.</p>'
  )}</div></div>`;
 };
-ST.hooks.moves = path => {
+studioState.hooks.moves = path => {
   const m = path.match(/^moves\.([^.]+)\.fx\.(tgtStage|selfStage)\./);
   if (m) {
-    const o = ST.D.moves[m[1]].fx[m[2]];
-    if (o && !Object.values(o).some(v => v)) delete ST.D.moves[m[1]].fx[m[2]];
+    const o = studioState.D.moves[m[1]].fx[m[2]];
+    if (o && !Object.values(o).some(v => v)) delete studioState.D.moves[m[1]].fx[m[2]];
   }
   const f = path.match(/^moves\.([^.]+)\.fx\./);
   if (f) {
-    const M = ST.D.moves[f[1]];
+    const M = studioState.D.moves[f[1]];
     if (M.fx && !Object.keys(M.fx).length) delete M.fx;
   }
   if (/^moves\.[^.]+\.n$/.test(path)) {
@@ -857,32 +857,32 @@ ST.hooks.moves = path => {
   }
 };
 ACTS.pickMove = d => {
-  ST.sel.move = d.id;
+  studioState.sel.move = d.id;
   render();
 };
 ACTS.gotoLine = d => {
   go('billionaires', { line: d.id, stage: 0 });
 };
 ACTS.moveNew = () => {
-  const D = ST.D,
+  const D = studioState.D,
     k = uidKey('newmove', x => !!D.moves[x]);
   D.moves[k] = { n: 'New Move', t: 'None', c: 'H', p: 50, a: 100, d: 'Describe what it does.' };
-  ST.sel.move = k;
+  studioState.sel.move = k;
   changed();
   render();
 };
 ACTS.moveDup = () => {
-  const D = ST.D,
-    k = uidKey(ST.sel.move, x => !!D.moves[x]);
-  D.moves[k] = clone(D.moves[ST.sel.move]);
+  const D = studioState.D,
+    k = uidKey(studioState.sel.move, x => !!D.moves[x]);
+  D.moves[k] = clone(D.moves[studioState.sel.move]);
   D.moves[k].n += ' II';
-  ST.sel.move = k;
+  studioState.sel.move = k;
   changed();
   render();
 };
 ACTS.moveDel = async () => {
-  const D = ST.D,
-    k = ST.sel.move,
+  const D = studioState.D,
+    k = studioState.sel.move,
     users = D.lines.filter(L => L.learn.some(([, m]) => m === k));
   if (
     !(await ask(
@@ -896,7 +896,7 @@ ACTS.moveDel = async () => {
     if (!L.learn.length) L.learn = [[1, 'handshake']];
   });
   delete D.moves[k];
-  ST.sel.move = null;
+  studioState.sel.move = null;
   changed();
   render();
 };
@@ -935,7 +935,7 @@ const FX_ICONS = [
   'down',
 ];
 SECTIONS.types = () => {
-  const D = ST.D,
+  const D = studioState.D,
     T = D.types;
   const matrix = `<div class="mx-wrap"><table class="mx"><thead><tr><th class="corner">Attack ↓ / Defend →</th>${T.map(t => `<th>${chipT(t.id)}</th>`).join('')}</tr></thead><tbody>${T.map(
     (a, i) =>
@@ -957,7 +957,7 @@ SECTIONS.types = () => {
   return `<div class="ed-col solo"><div class="ed-head"><h2>Types</h2><button class="btn primary" data-act="typeNew">+ New type</button></div>${card('Matchups', matrix)}${card('Types', rows + `<div class="type-row">${chipT('None')}${grid(fColor('Normal color', 'untyped.color'), fColor('Normal text', 'untyped.text'))}</div>`, { sub: 'Each type can have one ability. Abilities and their numbers are tuned under Rules → Battle.' })}</div>`;
 };
 ACTS.mx = d => {
-  const t = ST.D.types[+d.a],
+  const t = studioState.D.types[+d.a],
     b = d.b;
   const s = t.strong.includes(b),
     w = t.weak.includes(b);
@@ -969,7 +969,7 @@ ACTS.mx = d => {
   render();
 };
 ACTS.typeFx = d => {
-  const t = ST.D.types[+d.i];
+  const t = studioState.D.types[+d.i];
   t.fx = t.fx || [];
   const k = d.k;
   t.fx = t.fx.includes(k) ? t.fx.filter(x => x !== k) : t.fx.concat(k);
@@ -977,7 +977,7 @@ ACTS.typeFx = d => {
   render();
 };
 ACTS.typeNew = () => {
-  const D = ST.D,
+  const D = studioState.D,
     id = uidKey('New', k => D.types.some(t => t.id.toLowerCase() === k));
   D.types.push({
     id: id[0].toUpperCase() + id.slice(1),
@@ -992,7 +992,7 @@ ACTS.typeNew = () => {
   render();
 };
 ACTS.typeDel = async d => {
-  const D = ST.D,
+  const D = studioState.D,
     t = D.types[+d.i];
   if (!(await ask(`Delete the ${esc(t.id)} type? Moves of this type become Normal and Billies lose it.`, 'Delete')))
     return;
@@ -1002,7 +1002,7 @@ ACTS.typeDel = async d => {
   render();
 };
 function renameType(from, to) {
-  const D = ST.D;
+  const D = studioState.D;
   D.types.forEach(t => {
     t.strong = t.strong.map(x => (x === from ? to : x)).filter(Boolean);
     t.weak = t.weak.map(x => (x === from ? to : x)).filter(Boolean);
@@ -1020,11 +1020,11 @@ function renameType(from, to) {
   if (R.shockType === from) R.shockType = to || D.types[0].id;
   if (R.spinType === from) R.spinType = to || D.types[0].id;
 }
-ST.hooks.types = (path, v) => {
+studioState.hooks.types = (path, v) => {
   const m = path.match(/^types\.(\d+)\.id$/);
   if (m) {
-    const t = ST.D.types[+m[1]];
-    const old = ST._typeOld || null;
+    const t = studioState.D.types[+m[1]];
+    const old = studioState._typeOld || null;
   }
 };
 document.addEventListener('focusin', ev => {
@@ -1038,7 +1038,7 @@ document.addEventListener('change', ev => {
     const old = el.dataset.old,
       nu = el.value.trim();
     if (old && nu && old !== nu) {
-      if (ST.D.types.filter(t => t.id === nu).length > 1) {
+      if (studioState.D.types.filter(t => t.id === nu).length > 1) {
         toast('Another type already has that name.', 'err');
         setP(p, old);
         el.value = old;
@@ -1055,7 +1055,7 @@ const ITEM_ICONS = Object.keys(ARTMAN.icons)
   .filter(k => k.startsWith('i_'))
   .map(k => k.slice(2));
 SECTIONS.items = () => {
-  const D = ST.D;
+  const D = studioState.D;
   const items = Object.entries(D.items)
     .map(([k, I]) => {
       const p = `items.${k}`;
@@ -1084,14 +1084,14 @@ SECTIONS.items = () => {
   return `<div class="ed-col solo"><div class="ed-head"><h2>Items & coins</h2><button class="btn primary" data-act="itemNew">+ New item</button></div>${card('Items', items, { sub: 'An item can combine effects, like the Full Remedy (cure + heal).' })}${card('Tax coins', coins, { sub: 'Coin art is art/coins/<id>_16.png and _32.png. Replace it under Art files.' })}</div>`;
 };
 ACTS.itemNew = () => {
-  const D = ST.D,
+  const D = studioState.D,
     k = uidKey('item', x => !!D.items[x]);
   D.items[k] = { n: 'New Item', price: 200, hp: 30, d: 'Restores 30 HP.', icon: 'taxbreak', mint: true };
   changed();
   render();
 };
 ACTS.itemDel = async d => {
-  const D = ST.D;
+  const D = studioState.D;
   if (!(await ask(`Delete ${esc(D.items[d.k].n)}? It’s removed from shops and starting items.`, 'Delete'))) return;
   delete D.items[d.k];
   Object.values(D.shops || {}).forEach(s => (s.stock = s.stock.filter(w => w.item !== d.k)));
@@ -1106,23 +1106,23 @@ ACTS.itemImg = async d => {
   if (c.width > 64 || c.height > 64) return toast('Use a small pixel icon (16×16 works best).', 'err');
   const path = `art/items/${d.k}.png`;
   markArt(path, c);
-  ST.D.items[d.k].img = path.slice(4);
+  studioState.D.items[d.k].img = path.slice(4);
   changed();
   render();
   toast('Icon added. Save to game to keep it.');
 };
 ACTS.itemImgOff = d => {
-  delete ST.D.items[d.k].img;
+  delete studioState.D.items[d.k].img;
   changed();
   render();
 };
 /* ================= SHOPS ================= */
 SECTIONS.shops = () => {
-  const D = ST.D,
+  const D = studioState.D,
     S = (D.shops = D.shops || {});
   const ks = Object.keys(S);
-  if (!S[ST.sel.shop]) ST.sel.shop = ks[0];
-  const k = ST.sel.shop,
+  if (!S[studioState.sel.shop]) studioState.sel.shop = ks[0];
+  const k = studioState.sel.shop,
     sh = S[k];
   const list = ks
     .map(
@@ -1194,7 +1194,7 @@ SECTIONS.shops = () => {
 const _getP = getP;
 setGetP(function (path, o) {
   if (path && path.startsWith('@lines.')) {
-    const s = ST.D.shops[path.slice(7)];
+    const s = studioState.D.shops[path.slice(7)];
     return s && s.thanks ? s.thanks.join('\n') : '';
   }
   return _getP(path, o);
@@ -1202,7 +1202,7 @@ setGetP(function (path, o) {
 const _setP = setP;
 setSetP(function (path, v, o) {
   if (path && path.startsWith('@lines.')) {
-    const s = ST.D.shops[path.slice(7)];
+    const s = studioState.D.shops[path.slice(7)];
     const a = String(v || '')
       .split('\n')
       .map(x => x.trim())
@@ -1216,13 +1216,13 @@ setSetP(function (path, v, o) {
 document.addEventListener('change', ev => {
   const el = ev.target;
   if (el.dataset.actSel === 'stockKind') {
-    const w = ST.D.shops[ST.sel.shop].stock[+el.dataset.i];
+    const w = studioState.D.shops[studioState.sel.shop].stock[+el.dataset.i];
     if (el.value === 'coin') {
       delete w.item;
-      w.coin = Object.keys(ST.D.coins)[0];
+      w.coin = Object.keys(studioState.D.coins)[0];
     } else {
       delete w.coin;
-      w.item = Object.keys(ST.D.items)[0];
+      w.item = Object.keys(studioState.D.items)[0];
     }
     delete w.price;
     changed();
@@ -1230,21 +1230,21 @@ document.addEventListener('change', ev => {
   }
 });
 ACTS.pickShop = d => {
-  ST.sel.shop = d.id;
+  studioState.sel.shop = d.id;
   render();
 };
 ACTS.stockAdd = () => {
-  ST.D.shops[ST.sel.shop].stock.push({ item: Object.keys(ST.D.items)[0] });
+  studioState.D.shops[studioState.sel.shop].stock.push({ item: Object.keys(studioState.D.items)[0] });
   changed();
   render();
 };
 ACTS.stockDel = d => {
-  ST.D.shops[ST.sel.shop].stock.splice(+d.i, 1);
+  studioState.D.shops[studioState.sel.shop].stock.splice(+d.i, 1);
   changed();
   render();
 };
 ACTS.stockMove = d => {
-  const a = ST.D.shops[ST.sel.shop].stock,
+  const a = studioState.D.shops[studioState.sel.shop].stock,
     i = +d.i,
     j = i - 1;
   if (j < 0) return;
@@ -1253,7 +1253,7 @@ ACTS.stockMove = d => {
   render();
 };
 ACTS.boutiqueNew = () => {
-  const D = ST.D,
+  const D = studioState.D,
     k = uidKey('boutique', x => !!(D.shops || {})[x]);
   D.shops = D.shops || {};
   D.shops[k] = {
@@ -1263,12 +1263,12 @@ ACTS.boutiqueNew = () => {
     kind: 'wardrobe',
     greeting: 'Try anything on!',
   };
-  ST.sel.shop = k;
+  studioState.sel.shop = k;
   changed();
   render();
 };
 ACTS.shopNew = () => {
-  const D = ST.D,
+  const D = studioState.D,
     k = uidKey('shop', x => !!(D.shops || {})[x]);
   D.shops = D.shops || {};
   D.shops[k] = {
@@ -1278,33 +1278,33 @@ ACTS.shopNew = () => {
     greeting: 'Welcome in!',
     stock: [{ item: Object.keys(D.items)[0] }],
   };
-  ST.sel.shop = k;
+  studioState.sel.shop = k;
   changed();
   render();
 };
 ACTS.shopDel = async () => {
-  const D = ST.D,
-    k = ST.sel.shop;
+  const D = studioState.D,
+    k = studioState.sel.shop;
   if (!(await ask(`Delete ${esc(D.shops[k].name)}? Route stops that used it lose their shop.`, 'Delete'))) return;
   delete D.shops[k];
   D.route.forEach(r => {
     if (r.shop === k) delete r.shop;
     if (r.boutique === k) delete r.boutique;
   });
-  ST.sel.shop = null;
+  studioState.sel.shop = null;
   changed();
   render();
 };
 /* ================= PEOPLE =================
    Rivals, shopkeepers and the professor are dressed from the wardrobe, like players. */
 function personLook(k) {
-  const P = ST.D.people[k];
+  const P = studioState.D.people[k];
   if (!P) return null;
   if (!P.look) P.look = cleanLook(lookFromOld(P));
   return P.look;
 }
 function personPrev(who) {
-  if (!ST.D.people[who]) return '<p class="help">Unknown look.</p>';
+  if (!studioState.D.people[who]) return '<p class="help">Unknown look.</p>';
   try {
     const f = humanSheet(who, 'front'),
       b = humanSheet(who, 'back');
@@ -1314,15 +1314,15 @@ function personPrev(who) {
   }
 }
 SECTIONS.people = () => {
-  const D = ST.D,
+  const D = studioState.D,
     ks = Object.keys(D.people);
-  if (!D.people[ST.sel.person]) ST.sel.person = ks[0];
-  const k = ST.sel.person,
+  if (!D.people[studioState.sel.person]) studioState.sel.person = ks[0];
+  const k = studioState.sel.person,
     P = D.people[k],
     W = D.wardrobe;
   if (!P.look) {
     personLook(k);
-    ST.dirty = true;
+    studioState.dirty = true;
     updTop();
   }
   const L = P.look,
@@ -1387,32 +1387,32 @@ SECTIONS.people = () => {
  )}
  ${card('Wearing', `<div class="wd-pgrid">${wear}</div>`)}</div></div>`;
 };
-ST.hooks.people = path => {
+studioState.hooks.people = path => {
   if (/^people\./.test(path)) {
     TR_CACHE.clear();
     const b = $('#personPrev');
-    if (b) b.innerHTML = personPrev(ST.sel.person);
+    if (b) b.innerHTML = personPrev(studioState.sel.person);
   }
 };
 ACTS.pickPerson = d => {
-  ST.sel.person = d.id;
+  studioState.sel.person = d.id;
   render();
 };
 ACTS.personNew = () => {
-  const D = ST.D,
+  const D = studioState.D,
     k = uidKey('npc', x => !!D.people[x]);
   D.people[k] = { look: clone(personLook('gini') || cleanLook(null)) };
-  ST.sel.person = k;
+  studioState.sel.person = k;
   changed();
   render();
 };
 ACTS.personDel = async () => {
-  const D = ST.D,
-    k = ST.sel.person;
+  const D = studioState.D,
+    k = studioState.sel.person;
   if (!(await ask(`Delete the look “${esc(k)}”? Anyone using it falls back to Professor Hazel’s look.`, 'Delete')))
     return;
   delete D.people[k];
-  ST.sel.person = null;
+  studioState.sel.person = null;
   changed();
   render();
 };
@@ -1422,7 +1422,7 @@ ACTS.wdGo = d => {
 };
 /* ================= JOBS ================= */
 SECTIONS.jobs = () => {
-  const D = ST.D;
+  const D = studioState.D;
   const rows = Object.entries(D.jobs)
     .map(([k, J]) => {
       const p = `jobs.${k}`,
@@ -1448,11 +1448,11 @@ SECTIONS.jobs = () => {
 document.addEventListener('change', ev => {
   const el = ev.target;
   if (el.dataset.actSel === 'jobKind') {
-    const J = ST.D.jobs[el.dataset.k];
+    const J = studioState.D.jobs[el.dataset.k];
     const v = el.value;
     J.out = [
       v,
-      v === 'se' ? 'se' : v === 'item' ? Object.keys(ST.D.items)[0] : Object.keys(ST.D.coins)[0],
+      v === 'se' ? 'se' : v === 'item' ? Object.keys(studioState.D.items)[0] : Object.keys(studioState.D.coins)[0],
       J.out[2] || 1,
     ];
     changed();
@@ -1460,7 +1460,7 @@ document.addEventListener('change', ev => {
   }
 });
 ACTS.jobNew = () => {
-  const D = ST.D,
+  const D = studioState.D,
     k = uidKey('job', x => !!D.jobs[x]);
   D.jobs[k] = { n: 'New job', where: 'Somewhere', out: ['se', 'se', 100], pay: '$100', quip: 'worked a full shift.' };
   changed();
@@ -1468,17 +1468,17 @@ ACTS.jobNew = () => {
 };
 ACTS.jobDel = async d => {
   if (!(await ask('Delete this job? Anyone working it keeps working until the shift ends.', 'Delete'))) return;
-  delete ST.D.jobs[d.k];
+  delete studioState.D.jobs[d.k];
   changed();
   render();
 };
 /* ================= TRAINERS ================= */
 SECTIONS.trainers = () => {
-  const D = ST.D,
+  const D = studioState.D,
     TR = (D.trainers = D.trainers || {}),
     ks = Object.keys(TR);
-  if (!TR[ST.sel.trainer]) ST.sel.trainer = ks[0];
-  const k = ST.sel.trainer,
+  if (!TR[studioState.sel.trainer]) studioState.sel.trainer = ks[0];
+  const k = studioState.sel.trainer,
     T = TR[k];
   const list = ks
     .map(
@@ -1581,7 +1581,7 @@ SECTIONS.trainers = () => {
 const _getP2 = getP;
 setGetP(function (path, o) {
   if (path && path.startsWith('@tlines.')) {
-    const T = ST.D.trainers[path.slice(8)];
+    const T = studioState.D.trainers[path.slice(8)];
     return T && T.lines ? T.lines.join('\n') : '';
   }
   return _getP2(path, o);
@@ -1591,14 +1591,14 @@ setGetP(function (path, o) {
     st = setP;
   setGetP(function (path, o) {
     if (path && path.startsWith('@tintro.')) {
-      const T = ST.D.trainers[path.slice(8)];
+      const T = studioState.D.trainers[path.slice(8)];
       return T && T.intro ? T.intro.join('\n') : '';
     }
     return g(path, o);
   });
   setSetP(function (path, v, o) {
     if (path && path.startsWith('@tintro.')) {
-      const T = ST.D.trainers[path.slice(8)],
+      const T = studioState.D.trainers[path.slice(8)],
         L = String(v || '')
           .split('\n')
           .map(x => x.trim())
@@ -1613,7 +1613,7 @@ setGetP(function (path, o) {
 const _setP2 = setP;
 setSetP(function (path, v, o) {
   if (path && path.startsWith('@tlines.')) {
-    const T = ST.D.trainers[path.slice(8)];
+    const T = studioState.D.trainers[path.slice(8)];
     T.lines = String(v || '')
       .split('\n')
       .map(x => x.trim())
@@ -1623,25 +1623,25 @@ setSetP(function (path, v, o) {
   return _setP2(path, v, o);
 });
 ACTS.pickTrainer = d => {
-  ST.sel.trainer = d.id;
+  studioState.sel.trainer = d.id;
   render();
 };
 ACTS.teamAdd = () => {
-  const T = ST.D.trainers[ST.sel.trainer];
-  T.team.push({ sp: ST.D.lines[0].id + '0', lvl: (T.team[T.team.length - 1] || { lvl: 10 }).lvl });
+  const T = studioState.D.trainers[studioState.sel.trainer];
+  T.team.push({ sp: studioState.D.lines[0].id + '0', lvl: (T.team[T.team.length - 1] || { lvl: 10 }).lvl });
   changed();
   render();
 };
 ACTS.teamDel = d => {
-  ST.D.trainers[ST.sel.trainer].team.splice(+d.i, 1);
+  studioState.D.trainers[studioState.sel.trainer].team.splice(+d.i, 1);
   changed();
   render();
 };
 ACTS.seatOn = () => {
-  const T = ST.D.trainers[ST.sel.trainer];
-  const n = Object.values(ST.D.trainers).filter(t => t.seat).length + 1;
+  const T = studioState.D.trainers[studioState.sel.trainer];
+  const n = Object.values(studioState.D.trainers).filter(t => t.seat).length + 1;
   T.seat = {
-    id: uidKey(T.name, k => Object.values(ST.D.trainers).some(t => t.seat && t.seat.id === k)),
+    id: uidKey(T.name, k => Object.values(studioState.D.trainers).some(t => t.seat && t.seat.id === k)),
     title: `Badge ${n} of 8`,
     coin: 'gold',
     coins: { tbtf: 1 },
@@ -1653,26 +1653,26 @@ ACTS.seatOn = () => {
   render();
 };
 ACTS.seatOff = () => {
-  ST.D.trainers[ST.sel.trainer].seat = null;
+  studioState.D.trainers[studioState.sel.trainer].seat = null;
   changed();
   render();
 };
 ACTS.marketOn = () => {
-  const T = ST.D.trainers[ST.sel.trainer];
-  T.market = { k: 'sand', n: ST.D.rules.battle.shockTurns || 5 };
-  T.marketText = `The arena is caught in a sandstorm. ${ST.D.rules.battle.shockType} moves hit harder, and everyone else takes a little damage each turn.`;
+  const T = studioState.D.trainers[studioState.sel.trainer];
+  T.market = { k: 'sand', n: studioState.D.rules.battle.shockTurns || 5 };
+  T.marketText = `The arena is caught in a sandstorm. ${studioState.D.rules.battle.shockType} moves hit harder, and everyone else takes a little damage each turn.`;
   changed();
   render();
 };
 ACTS.marketOff = () => {
-  const T = ST.D.trainers[ST.sel.trainer];
+  const T = studioState.D.trainers[studioState.sel.trainer];
   T.market = null;
   delete T.marketText;
   changed();
   render();
 };
 ACTS.trainerNew = () => {
-  const D = ST.D,
+  const D = studioState.D,
     k = uidKey('trainer', x => !!D.trainers[x]);
   D.trainers[k] = {
     name: 'New Trainer',
@@ -1690,13 +1690,13 @@ ACTS.trainerNew = () => {
     hint: '',
     seat: null,
   };
-  ST.sel.trainer = k;
+  studioState.sel.trainer = k;
   changed();
   render();
 };
 ACTS.trainerDel = async () => {
-  const D = ST.D,
-    k = ST.sel.trainer,
+  const D = studioState.D,
+    k = studioState.sel.trainer,
     T = D.trainers[k];
   if (
     !(await ask(
@@ -1713,7 +1713,7 @@ ACTS.trainerDel = async () => {
       }
     });
   delete D.trainers[k];
-  ST.sel.trainer = null;
+  studioState.sel.trainer = null;
   changed();
   render();
 };

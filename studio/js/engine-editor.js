@@ -27,7 +27,6 @@ import { esc } from './game-stand-ins.js';
 import {
   ACTS,
   SECTIONS,
-  ST,
   after,
   ask,
   changed,
@@ -38,6 +37,7 @@ import {
   getP,
   render,
   setP,
+  studioState,
   toast,
   uidKey,
 } from './studio-app.js';
@@ -62,7 +62,7 @@ expose({
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
-setEngineDataSource(() => (ST.D ? ST.D.engine : null));
+setEngineDataSource(() => (studioState.D ? studioState.D.engine : null));
 /* alpha 0.4.1: the Studio's previews show every setting at full effect. The game's automatic quality would step god
    rays, bloom, depth of field and ambient shading off (and lower the resolution) when the preview ran slowly, so a dial
    seemed to do nothing. Here it never steps down. */
@@ -72,10 +72,11 @@ if (typeof adaptQuality === 'function')
     if (typeof walkView !== 'undefined') walkView.R = 1;
   });
 export const ENS = { scope: 'game', scene: null, open: { lens: 1, color: 1, sun: 1, shadows: 1 }, meterT: null };
-export const engD = () => ST.D.engine || (ST.D.engine = { defaults: {}, presets: {} });
+export const engD = () => studioState.D.engine || (studioState.D.engine = { defaults: {}, presets: {} });
 const engScene = () => {
-  const S = ST.D.scenes || {};
-  if (!S[ENS.scene]) ENS.scene = ST.sel.scene && S[ST.sel.scene] ? ST.sel.scene : Object.keys(S)[0] || null;
+  const S = studioState.D.scenes || {};
+  if (!S[ENS.scene])
+    ENS.scene = studioState.sel.scene && S[studioState.sel.scene] ? studioState.sel.scene : Object.keys(S)[0] || null;
   return ENS.scene;
 };
 const engBase = () =>
@@ -139,7 +140,7 @@ function engPresets() {
 }
 function engSettingsHTML() {
   const sid = engScene(),
-    sc = sid ? ST.D.scenes[sid] : null,
+    sc = sid ? studioState.D.scenes[sid] : null,
     nScene = sc && sc.look ? Object.values(sc.look).reduce((a, o) => a + Object.keys(o || {}).length, 0) : 0,
     nGame = Object.values(engD().defaults || {}).reduce((a, o) => a + Object.keys(o || {}).length, 0),
     nMap = Object.values(engD().map || {}).reduce((a, o) => a + Object.keys(o || {}).length, 0);
@@ -154,7 +155,7 @@ SECTIONS.engine = () => {
   after(engMount);
   if (!sid)
     return `<div class="ed-col solo"><h2>Engine</h2><p class="help">Add a walk scene first; the preview needs one.</p></div>`;
-  const opts = Object.entries(ST.D.scenes)
+  const opts = Object.entries(studioState.D.scenes)
     .map(([k, s]) => `<option value="${esc(k)}" ${k === sid ? 'selected' : ''}>${esc(s.name || k)}</option>`)
     .join('');
   return `<div class="eng-split"><div class="eng-set" id="engSet">${engSettingsHTML()}</div>
@@ -176,7 +177,7 @@ async function engMount() {
     state: () => ({
       mode: 'roam',
       roam: true,
-      pos: ENS.pos && ENS.pos[0] === id ? ENS.pos[1] : mapHub(ST.D.scenes[id]),
+      pos: ENS.pos && ENS.pos[0] === id ? ENS.pos[1] : mapHub(studioState.D.scenes[id]),
       who: 'boy',
       enc: [
         { id: 'pv1', lvl: 5 },
@@ -192,7 +193,7 @@ async function engMount() {
     onPick: h => {
       if (h.k !== 'ground') toast('That works in the game; here you can only walk.');
     },
-    cap: () => (ST.sec === 'engine' ? 60 : 0),
+    cap: () => (studioState.sec === 'engine' ? 60 : 0),
   }).then(() => {
     const l = $('#engPvLoad');
     if (l) l.hidden = true;
@@ -211,7 +212,7 @@ async function engMount() {
   clearInterval(ENS.meterT);
   ENS.meterT = setInterval(() => {
     const m = $('#engMeter');
-    if (!m || ST.sec !== 'engine') {
+    if (!m || studioState.sec !== 'engine') {
       clearInterval(ENS.meterT);
       return;
     }
@@ -227,7 +228,7 @@ async function engMount() {
   }, 500);
 }
 /* edits */
-ST.hooks.engine = p => {
+studioState.hooks.engine = p => {
   const el = document.querySelector(`.eng-f[data-path="${p}"]`);
   if (el && !el.classList.contains('own')) {
     el.classList.add('own');

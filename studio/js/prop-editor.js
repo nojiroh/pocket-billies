@@ -17,7 +17,6 @@ import { SOLID_PROP_BODIES, SOLID_PROP_KINDS, SOLID_PROP_PARTS, solidTreeKind } 
 import { esc } from './game-stand-ins.js';
 import {
   ACTS,
-  ST,
   ask,
   card,
   changed,
@@ -31,6 +30,7 @@ import {
   fText,
   grid,
   render,
+  studioState,
   toast,
 } from './studio-app.js';
 import { atlasGet, fileToCanvas, markArt, pickFile } from './sprites.js';
@@ -628,13 +628,13 @@ async function pedMount() {
     keys: () => false,
     onPick: () => {},
     onMove: () => {},
-    cap: () => (ST.sec === 'scenes' && SCN.ped ? 40 : 0),
+    cap: () => (studioState.sec === 'scenes' && SCN.ped ? 40 : 0),
   }).then(() => {
     const l = $('#pedPvLoad');
     if (l) l.hidden = true;
   });
   frameTask('pedSpin', () => {
-    if (!SCN.ped || ST.sec !== 'scenes') {
+    if (!SCN.ped || studioState.sec !== 'scenes') {
       frameStop('pedSpin');
       return;
     }
@@ -782,7 +782,7 @@ ACTS.pedLayerPx = d => {
 /* pictures made here but not saved yet come from the Studio's own copies, not the server */
 {
   const base = artLoad;
-  setArtLoad(paths => base(paths.filter(p => !(ST.artDirty && ST.artDirty.has('art/' + p)))));
+  setArtLoad(paths => base(paths.filter(p => !(studioState.artDirty && studioState.artDirty.has('art/' + p)))));
 }
 
 /* ---------- v19: a solid body behind the picture (game/js/solid-props.js) ---------- */

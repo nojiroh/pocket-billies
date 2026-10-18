@@ -12,7 +12,19 @@
 import { expose } from '../../game/js/test-globals.js';
 import { $ } from '../../game/js/util.js';
 import { esc } from './game-stand-ins.js';
-import { ACTS, ST, ask, boot, dialog, saveAll, setApi, setSaveAll, setToast, toast, updTop } from './studio-app.js';
+import {
+  ACTS,
+  ask,
+  boot,
+  dialog,
+  saveAll,
+  setApi,
+  setSaveAll,
+  setToast,
+  studioState,
+  toast,
+  updTop,
+} from './studio-app.js';
 /* eslint-disable no-func-assign */
 expose({
   GH: [() => GH],
@@ -193,7 +205,7 @@ async function ghStart() {
   }
 }
 ACTS.ghOut = async () => {
-  if (ST.dirty || ST.rigsDirty || ST.artDirty.size) {
+  if (studioState.dirty || studioState.rigsDirty || studioState.artDirty.size) {
     if (!(await ask('You have changes you haven’t proposed yet. Sign out anyway? They will be lost.', 'Sign out')))
       return;
   }
@@ -389,7 +401,7 @@ if (GH.on) {
       $('#saveBtn').disabled = false;
     }
     if (err) {
-      ST.dirty = true;
+      studioState.dirty = true;
       updTop();
       return toast('Couldn’t send the changes: ' + err.message, 'err');
     }
@@ -399,7 +411,7 @@ if (GH.on) {
         `<p>Your changes are pull request <b>#${pr.number}</b>. They go into the game when ${esc(GH_CFG.owner)} merges it. Until then the Studio (and the game) show the game as it is now.</p><p><a href="${esc(pr.html_url)}" target="_blank" rel="noopener">Open the pull request on GitHub</a></p>`,
         [{ l: 'OK', c: 'primary', v: 1 }]
       );
-    } else if (none && !(ST.dirty || ST.rigsDirty || ST.artDirty.size))
+    } else if (none && !(studioState.dirty || studioState.rigsDirty || studioState.artDirty.size))
       toast('Nothing to send: everything is as it is in the game.');
   });
   /* the Studio waits for sign-in before it loads anything */

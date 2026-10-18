@@ -11,7 +11,7 @@ import { makeCanvas } from '../../game/js/art.js';
 import { animFor } from '../../game/js/body-plan-animation.js';
 import { drawRig, rigPose } from '../../game/js/skeleton-rig.js';
 import { esc } from './game-stand-ins.js';
-import { ST, ask, render, spName, toast, updTop } from './studio-app.js';
+import { ask, render, spName, studioState, toast, updTop } from './studio-app.js';
 /* eslint-disable no-func-assign */
 expose({
   ATL: [() => ATL],
@@ -76,7 +76,7 @@ const ATL_WAIT = new Map();
 const RIGB = new Map(); /* key -> {ver,R} */
 export let ATL_VER = 0;
 export const atlasPath = (sp, view, gold) => {
-  const m = ST.rigs && ST.rigs[sp] && ST.rigs[sp][view];
+  const m = studioState.rigs && studioState.rigs[sp] && studioState.rigs[sp][view];
   if (m && m.sheet) return 'art/' + (gold ? m.sheet.replace(/\.png$/, '_gold.png') : m.sheet);
   return `art/billionaires/${sp}${view === 'back' ? '_back' : ''}${gold ? '_gold' : ''}.png`;
 };
@@ -93,7 +93,7 @@ export function loadImage(src) {
   });
 }
 export function atlasGet(path) {
-  if (ST.artDirty.has(path)) return Promise.resolve(ST.artDirty.get(path));
+  if (studioState.artDirty.has(path)) return Promise.resolve(studioState.artDirty.get(path));
   if (ATL.has(path)) return Promise.resolve(ATL.get(path));
   if (ATL_WAIT.has(path)) return ATL_WAIT.get(path);
   const p = loadImage('../game/' + path + '?v=' + Date.now())
@@ -111,7 +111,7 @@ export function atlasGet(path) {
   ATL_WAIT.set(path, p);
   return p;
 }
-export const atlasNow = path => ST.artDirty.get(path) || ATL.get(path) || null;
+export const atlasNow = path => studioState.artDirty.get(path) || ATL.get(path) || null;
 /* assemble a skeleton like skeleton-rig.js rigParts(), but from the Studio's editable atlas */
 export function rigFor(sp, view, gold) {
   const path = atlasPath(sp, view, gold),
@@ -120,10 +120,10 @@ export function rigFor(sp, view, gold) {
     atlasGet(path).catch(() => {});
     return null;
   }
-  const meta = ST.rigs[sp] && ST.rigs[sp][view];
+  const meta = studioState.rigs[sp] && studioState.rigs[sp][view];
   if (!meta) return null;
   const key = path,
-    ver = (ST.rigVer || 0) + ':' + ATL_VER + ':' + (atlas._ver || 0),
+    ver = (studioState.rigVer || 0) + ':' + ATL_VER + ':' + (atlas._ver || 0),
     hit = RIGB.get(key);
   if (hit && hit.ver === ver) return hit.R;
   const cut = ([x, y, w, h]) => {
@@ -338,7 +338,7 @@ function canvasCopy(src) {
 export function markArt(path, c) {
   c._ver = (c._ver || 0) + 1;
   ATL_VER++;
-  ST.artDirty.set(path, c);
+  studioState.artDirty.set(path, c);
   ATL.set(path, c);
   updTop();
   previewsDirty();
@@ -376,7 +376,7 @@ export async function fileToCanvas(f) {
 export const PX_ED = {};
 const FACE_N = { idle: 'face', blink: 'blink', happy: 'happy', hurt: 'hurt', shout: 'shout', main: '' };
 function partsOf(sp, view) {
-  const meta = ST.rigs[sp] && ST.rigs[sp][view];
+  const meta = studioState.rigs[sp] && studioState.rigs[sp][view];
   if (!meta) return [];
   const out = [];
   meta.imgs.forEach((e, i) => {
@@ -560,7 +560,7 @@ function pxPalette() {
 }
 function pxBones() {
   const E = PX_ED,
-    meta = ST.rigs[E.sp] && ST.rigs[E.sp][E.view];
+    meta = studioState.rigs[E.sp] && studioState.rigs[E.sp][E.view];
   if (!meta) {
     $('#pxBones').innerHTML = '';
     return;
@@ -803,7 +803,7 @@ function pxBind() {
     } else if (k === 'revert') {
       const p = pxPath();
       if (!(await ask('Throw away unsaved edits to this sheet?', 'Revert'))) return;
-      ST.artDirty.delete(p);
+      studioState.artDirty.delete(p);
       ATL.delete(p);
       await atlasGet(p).catch(() => null);
       previewsDirty();

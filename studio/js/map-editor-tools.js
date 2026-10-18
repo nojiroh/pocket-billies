@@ -14,7 +14,7 @@ import { VP, provide } from '../../game/js/hooks.js';
 import { $ } from '../../game/js/util.js';
 import { walkView } from '../../game/js/walk-view.js';
 import { esc } from './game-stand-ins.js';
-import { ACTS, ST, ask, changed, clone, commit, dialog, render, toast, uidKey } from './studio-app.js';
+import { ACTS, ask, changed, clone, commit, dialog, render, studioState, toast, uidKey } from './studio-app.js';
 import { SCN, scCur, scD, scMapDraw, scPropAt, scSetTile } from './map-editor.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -237,7 +237,7 @@ document.addEventListener(
   ev => {
     if (
       (typeof VP !== 'undefined' && VP.hover) ||
-      ST.sec !== 'scenes' ||
+      studioState.sec !== 'scenes' ||
       ev.target.closest('input,select,textarea') ||
       $('#modal').innerHTML ||
       $('#dlg').innerHTML

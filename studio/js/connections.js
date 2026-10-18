@@ -13,7 +13,7 @@ import { provide } from '../../game/js/hooks.js';
 import { $ } from '../../game/js/util.js';
 import { ENGINE_DEFAULTS, ENGINE_PRESETS, ENGINE_SPEC } from '../../game/js/engine/settings.js';
 import { esc } from './game-stand-ins.js';
-import { ACTS, ST, go, render, setRender, spName } from './studio-app.js';
+import { ACTS, go, render, setRender, spName, studioState } from './studio-app.js';
 import { curLine } from './data-editors.js';
 import { SCN, scId } from './map-editor.js';
 import { ENS, engD, engFmt } from './engine-editor.js';
@@ -113,8 +113,8 @@ const engLabel = gk => {
 };
 /* ---- what is selected ---- */
 function linkCur() {
-  const D = ST.D,
-    s = ST.sec,
+  const D = studioState.D,
+    s = studioState.sec,
     f = LNK.field;
   if (s === 'engine' && /\.(defaults|map)\.|^scenes\.[^.]+\.look\./.test(f)) {
     const m = f.match(/(?:defaults|map|look)\.([^.]+)\.([^.]+)$/);
@@ -124,14 +124,14 @@ function linkCur() {
     const i = typeof curLine === 'function' ? curLine() : 0,
       L = D.lines[i];
     if (L) {
-      const st = Math.min(ST.sel.stage || 0, L.names.length - 1);
+      const st = Math.min(studioState.sel.stage || 0, L.names.length - 1);
       return { kind: 'billy', id: L.id + st, line: L.id };
     }
   }
-  if (s === 'moves' && ST.sel.move) return { kind: 'move', id: ST.sel.move };
-  if (s === 'trainers' && ST.sel.trainer) return { kind: 'trainer', id: ST.sel.trainer };
-  if (s === 'shops' && ST.sel.shop) return { kind: 'shop', id: ST.sel.shop };
-  if (s === 'people' && ST.sel.person) return { kind: 'person', id: ST.sel.person };
+  if (s === 'moves' && studioState.sel.move) return { kind: 'move', id: studioState.sel.move };
+  if (s === 'trainers' && studioState.sel.trainer) return { kind: 'trainer', id: studioState.sel.trainer };
+  if (s === 'shops' && studioState.sel.shop) return { kind: 'shop', id: studioState.sel.shop };
+  if (s === 'people' && studioState.sel.person) return { kind: 'person', id: studioState.sel.person };
   if (s === 'scenes') {
     if (typeof SCN !== 'undefined' && SCN.sel != null) {
       const sc = D.scenes[scId()],
@@ -140,7 +140,8 @@ function linkCur() {
     }
     return { kind: 'scene', id: scId() };
   }
-  if (s === 'world' && ST.sel.stop != null && D.route[ST.sel.stop]) return { kind: 'stop', id: ST.sel.stop };
+  if (s === 'world' && studioState.sel.stop != null && D.route[studioState.sel.stop])
+    return { kind: 'stop', id: studioState.sel.stop };
   const m = f.match(/^(items|coins)\.([^.]+)\./);
   if (s === 'items' && m) return { kind: m[1] === 'items' ? 'item' : 'coin', id: m[2] };
   if (f) return { kind: 'field', id: f };
@@ -148,7 +149,7 @@ function linkCur() {
 }
 /* ---- names and ways to go to things ---- */
 function lnkNode(kind, id) {
-  const D = ST.D;
+  const D = studioState.D;
   switch (kind) {
     case 'billy': {
       const L = D.lines.find(l => id.startsWith(l.id) && /^\d+$/.test(id.slice(l.id.length)));
@@ -157,7 +158,7 @@ function lnkNode(kind, id) {
         id,
         label: spName(id),
         sub: 'Billy',
-        go: () => go('billionaires', { line: L ? L.id : ST.sel.line, stage: L ? +id.slice(L.id.length) : 0 }),
+        go: () => go('billionaires', { line: L ? L.id : studioState.sel.line, stage: L ? +id.slice(L.id.length) : 0 }),
       };
     }
     case 'move':
@@ -240,7 +241,7 @@ function lnkNode(kind, id) {
 }
 /* every id the data knows, by kind */
 function lnkIds() {
-  const D = ST.D,
+  const D = studioState.D,
     m = new Map(),
     put = (id, kind) => {
       if (typeof id === 'string' && id.length >= 3 && !m.has(id)) m.set(id, kind);
@@ -262,7 +263,7 @@ function lnkOwner(path) {
   const p = path.split('.');
   switch (p[0]) {
     case 'lines': {
-      const L = ST.D.lines[+p[1]];
+      const L = studioState.D.lines[+p[1]];
       return L ? ['billy', L.id + '0'] : null;
     }
     case 'moves':
@@ -306,7 +307,7 @@ function lnkWalk(o, path, f) {
     }
 }
 function lnkRecord(kind, id) {
-  const D = ST.D;
+  const D = studioState.D;
   switch (kind) {
     case 'billy': {
       const L = D.lines.find(l => id.startsWith(l.id));
@@ -338,7 +339,7 @@ function lnkRecord(kind, id) {
   }
 }
 function lnkGraph(cur) {
-  const D = ST.D,
+  const D = studioState.D,
     ids = lnkIds(),
     uses = new Map(),
     usedBy = new Map(),
@@ -411,7 +412,7 @@ function lnkDial(gk) {
     built = (ENGINE_DEFAULTS[g] || {})[k],
     game = ((D.defaults || {})[g] || {})[k],
     map = ((D.map || {})[g] || {})[k];
-  const scenes = Object.entries(ST.D.scenes || {})
+  const scenes = Object.entries(studioState.D.scenes || {})
     .filter(([s, v]) => v.look && v.look[g] && v.look[g][k] !== undefined)
     .map(([s, v]) => ({
       kind: 'scene',
@@ -421,7 +422,7 @@ function lnkDial(gk) {
       go: () => {
         ENS.scope = 'scene';
         ENS.scene = s;
-        ST.sel.scene = s;
+        studioState.sel.scene = s;
         ENS.open[g] = 1;
         go('engine');
         findFlash(findSel(`scenes.${s}.look.${g}.${k}`));

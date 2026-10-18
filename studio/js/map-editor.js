@@ -46,7 +46,6 @@ import { esc } from './game-stand-ins.js';
 import {
   ACTS,
   SECTIONS,
-  ST,
   after,
   ask,
   card,
@@ -63,6 +62,7 @@ import {
   grid,
   peopleOpts,
   render,
+  studioState,
   toast,
   uidKey,
 } from './studio-app.js';
@@ -128,7 +128,10 @@ expose({
 /* eslint-enable no-func-assign */
 provide({ dioArtVer, scArt });
 /* to-module: end */
-setWalkData(() => ({ scenes: (ST.D && ST.D.scenes) || {}, sc: (ST.D && ST.D.scenery) || { terrains: {}, props: {} } }));
+setWalkData(() => ({
+  scenes: (studioState.D && studioState.D.scenes) || {},
+  sc: (studioState.D && studioState.D.scenery) || { terrains: {}, props: {} },
+}));
 setArtImage(path => atlasNow('art/' + path) || ART_CACHE.img[path]);
 function dioArtVer() {
   return ATL_VER;
@@ -182,21 +185,22 @@ export function scArt(C) {
   for (const m of Object.values(C.life || {})) L.add(m.img);
   return [...L].filter(Boolean);
 }
-export const scD = () => ST.D.scenery || (ST.D.scenery = { ppu: 34, tile: 16, terrains: {}, props: {}, person: 1.75 });
+export const scD = () =>
+  studioState.D.scenery || (studioState.D.scenery = { ppu: 34, tile: 16, terrains: {}, props: {}, person: 1.75 });
 provide({ scD }); /* to-module */
 export const scId = () => {
-  const S = ST.D.scenes || (ST.D.scenes = {});
-  if (!S[ST.sel.scene]) ST.sel.scene = Object.keys(S)[0] || null;
-  return ST.sel.scene;
+  const S = studioState.D.scenes || (studioState.D.scenes = {});
+  if (!S[studioState.sel.scene]) studioState.sel.scene = Object.keys(S)[0] || null;
+  return studioState.sel.scene;
 };
 export const scCur = () => {
   const id = scId();
-  return id ? ST.D.scenes[id] : null;
+  return id ? studioState.D.scenes[id] : null;
 };
-const scUsers = id => ST.D.route.map((r, i) => [r, i]).filter(([r]) => r.scene === id);
+const scUsers = id => studioState.D.route.map((r, i) => [r, i]).filter(([r]) => r.scene === id);
 /* ---------- section ---------- */
 SECTIONS.scenes = () => {
-  const D = ST.D,
+  const D = studioState.D,
     id = scId(),
     sc = scCur();
   after(scMount);
@@ -308,7 +312,7 @@ SECTIONS.scenes = () => {
           fSel(
             'Goes to',
             `${p}.props.${SCN.sel}.to`,
-            (ST.D.route || []).map(r => [r.id, r.name]),
+            (studioState.D.route || []).map(r => [r.id, r.name]),
             { opt: 1 }
           ),
         ]
@@ -318,7 +322,7 @@ SECTIONS.scenes = () => {
           fSel(
             'Which shop',
             `${p}.props.${SCN.sel}.shop`,
-            Object.entries(ST.D.shops || {}).map(([k, v]) => [k, v.name]),
+            Object.entries(studioState.D.shops || {}).map(([k, v]) => [k, v.name]),
             { none: 'The stop’s shop', opt: 1 }
           ),
         ]
@@ -351,7 +355,7 @@ SECTIONS.scenes = () => {
   ${(() => {
     const P0 = scD().props[sel.k] || {};
     if (!P0.build && !P0.box) return '';
-    const rooms = Object.entries(ST.D.scenes)
+    const rooms = Object.entries(studioState.D.scenes)
       .filter(([k, v]) => v.kind === 'room' || /^int_/.test(k))
       .map(([k, v]) => [k, v.name || k]);
     const kindRoom =
@@ -371,7 +375,7 @@ SECTIONS.scenes = () => {
       }[sel.k] ||
       { shop: 'int_shop', clinic: 'int_clinic', lab: 'int_lab', house: 'int_house', home: 'int_home' }[sel.act] ||
       '';
-    return `<div class="sc-room">${grid(fSel('Room inside', `${p}.props.${SCN.sel}.room`, rooms, { none: kindRoom ? 'The one for its kind (' + ((ST.D.scenes[kindRoom] || {}).name || kindRoom) + ')' : 'None', opt: 1, rr: 1, help: 'Where you walk in when you tap it (it needs “When tapped” set). Rooms open in place, larger than the building, with the town dimmed around them.' }))}<div class="seg-row"><button class="btn sm" data-act="scOwnRoom">Give it a room of its own</button>${sel.room || kindRoom ? `<button class="btn sm subtle" data-act="scPick" data-k="${esc(sel.room || kindRoom)}">Open its room</button>` : ''}</div></div>`;
+    return `<div class="sc-room">${grid(fSel('Room inside', `${p}.props.${SCN.sel}.room`, rooms, { none: kindRoom ? 'The one for its kind (' + ((studioState.D.scenes[kindRoom] || {}).name || kindRoom) + ')' : 'None', opt: 1, rr: 1, help: 'Where you walk in when you tap it (it needs “When tapped” set). Rooms open in place, larger than the building, with the town dimmed around them.' }))}<div class="seg-row"><button class="btn sm" data-act="scOwnRoom">Give it a room of its own</button>${sel.room || kindRoom ? `<button class="btn sm subtle" data-act="scPick" data-k="${esc(sel.room || kindRoom)}">Open its room</button>` : ''}</div></div>`;
   })()}
   ${(() => {
     const V = ((scD().props[sel.k] || {}).build || {}).variants;
@@ -787,7 +791,7 @@ function scThumbs() {
   });
 }
 export function scExitNames(id) {
-  const D = ST.D,
+  const D = studioState.D,
     sc = D.scenes[id],
     ex = (sc && sc.exits) || [],
     u = scUsers(id)[0];
@@ -867,7 +871,7 @@ function scExitSync(sc, k, removed) {
   sc._exk = sc.w + 'x' + sc.h + '/' + E.length;
 }
 function scExitJoinsDrop(sc) {
-  const D = ST.D,
+  const D = studioState.D,
     ids = new Set((sc.edgeExits || []).map(e => e.id)),
     users = scUsers(scId()).map(([, i]) => i);
   (D.links || []).forEach(l => {
@@ -949,7 +953,7 @@ function scPreview() {
                 ? `${{ shop: 'Opens the shop', clinic: 'Heals the team', lab: 'Shows what it says', house: 'Shows what it says', sign: 'Shows what it says', talk: 'Shows what it says' }[h.act] || h.act}${h.p.say ? ': “' + h.p.say + '”' : ''}`
                 : 'Click the ground to walk there.'
       ),
-    cap: () => (ST.sec === 'scenes' ? 30 : 0),
+    cap: () => (studioState.sec === 'scenes' ? 30 : 0),
   }).then(() => {
     const l = $('#scPvLoad');
     if (l) l.hidden = true;
@@ -1539,7 +1543,7 @@ function scFlood(sc, i, j, ch) {
 document.addEventListener('keydown', ev => {
   if (
     (typeof VP !== 'undefined' && VP.hover) ||
-    ST.sec !== 'scenes' ||
+    studioState.sec !== 'scenes' ||
     ev.target.closest('input,select,textarea') ||
     $('#modal').innerHTML ||
     $('#dlg').innerHTML ||
@@ -1589,7 +1593,7 @@ document.addEventListener('keydown', ev => {
   }
 });
 /* field edits for the current scene update the map and preview */
-ST.hooks.scenes = path => {
+studioState.hooks.scenes = path => {
   if (SCN.ped && typeof pedDraw === 'function') pedDraw();
   if (path.startsWith('scenes.') || path.startsWith('scenery.')) {
     walkView.nav = null;
@@ -1601,7 +1605,7 @@ ST.hooks.scenes = path => {
 };
 /* ---------- actions ---------- */
 ACTS.scPick = d => {
-  ST.sel.scene = d.k;
+  studioState.sel.scene = d.k;
   SCN.sel = null;
   render();
 };
@@ -1656,7 +1660,7 @@ ACTS.scDupProp = () => {
   render();
 };
 ACTS.scOwnRoom = () => {
-  const D = ST.D,
+  const D = studioState.D,
     id = scId(),
     sc = scCur(),
     p = sc.props[SCN.sel];
@@ -1686,7 +1690,7 @@ ACTS.scOwnRoom = () => {
   if (!p.act) p.act = 'house';
   changed();
   commit(true);
-  ST.sel.scene = k;
+  studioState.sel.scene = k;
   SCN.sel = null;
   render();
 };
@@ -1747,7 +1751,7 @@ function blankScene(name) {
   };
 }
 ACTS.scNew = async () => {
-  const D = ST.D,
+  const D = studioState.D,
     r = await dialog(
       'New scene',
       `<label class="fld"><span>Name</span><input id="scnName" value="New place"></label><label class="fld"><span>Start from</span><select id="scnFrom"><option value="">A blank grass field</option>${Object.entries(
@@ -1776,7 +1780,7 @@ ACTS.scNew = async () => {
   D.scenes[id] = r.from ? { ...clone(D.scenes[r.from]), name: r.n } : blankScene(r.n);
   D.scenes[id].kind = r.kind || 'route';
   if (r.kind === 'room') D.scenes[id].building = D.scenes[id].building || 'house';
-  ST.sel.scene = id;
+  studioState.sel.scene = id;
   SCN.sel = null;
   changed();
   commit(true);
@@ -1784,17 +1788,17 @@ ACTS.scNew = async () => {
   toast('Scene created. Pick it for a stop under World & encounters → Route stops.');
 };
 ACTS.scDup = () => {
-  const D = ST.D,
+  const D = studioState.D,
     id = scId(),
     k = uidKey(id + 'b', x => !!D.scenes[x]);
   D.scenes[k] = { ...clone(D.scenes[id]), name: (D.scenes[id].name || id) + ' (copy)' };
-  ST.sel.scene = k;
+  studioState.sel.scene = k;
   changed();
   commit(true);
   render();
 };
 ACTS.scDel = async () => {
-  const D = ST.D,
+  const D = studioState.D,
     id = scId(),
     u = scUsers(id);
   if (u.length)
@@ -1804,7 +1808,7 @@ ACTS.scDel = async () => {
     );
   if (!(await ask('Delete this scene?', 'Delete'))) return;
   delete D.scenes[id];
-  ST.sel.scene = null;
+  studioState.sel.scene = null;
   changed();
   commit(true);
   render();
@@ -1867,7 +1871,7 @@ ACTS.scResize = () => {
 /* v42: after a resize, three checks on every exit: it stands on walkable ground, the hub can reach it, and the exit it is
    joined to on the far side faces this one. Problems are listed; the resize can be undone from the same dialog. */
 function scExitChecks(sc) {
-  const D = ST.D,
+  const D = studioState.D,
     C = scD(),
     out = [],
     E = sc.edgeExits || [],
@@ -2867,7 +2871,7 @@ ACTS.scPplAdd = () => {
   while (ids.has('person' + n)) n++;
   (sc.people || (sc.people = [])).push({
     id: 'person' + n,
-    who: Object.keys(ST.D.people)[0],
+    who: Object.keys(studioState.D.people)[0],
     name: 'Someone',
     x: +(h[0] + 1.5).toFixed(2),
     z: +(h[1] + 1).toFixed(2),
