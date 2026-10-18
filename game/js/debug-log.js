@@ -377,8 +377,8 @@ NWLOG.glInfo = () => {
   /* alpha 0.4: the helper threads: the ground painter's (ground-paint-worker.js) and the bump maps' (engine/webgl.js) */
   try {
     if (typeof GAME.paintWorkerReport === 'function') o.groundPainter = GAME.paintWorkerReport();
-    if (typeof GAME.EGL_NW !== 'undefined')
-      o.bumpHelper = GAME.EGL_NW.w ? 'on' : GAME.EGL_NW.bad ? 'off' : 'not started';
+    if (typeof GAME.normalMapWorker !== 'undefined')
+      o.bumpHelper = GAME.normalMapWorker.w ? 'on' : GAME.normalMapWorker.bad ? 'off' : 'not started';
   } catch (e) {}
   return o;
 };
@@ -675,8 +675,8 @@ NWLOG.hook = () => {
     ['worldMapMiniBuild', 'building a map miniature'],
     ['ensurePrograms', 'compiling shaders'],
     ['finishProgramCompile', 'finishing a shader'],
-    ['eglNormal', 'working out a bump map'],
-    ['eglNormWork', 'handing bump maps to the helper'],
+    ['makeNormalMap', 'working out a bump map'],
+    ['runNormalMapJobs', 'handing bump maps to the helper'],
     ['groundOcclusion', 'shading the ground'],
     ['buildGrass', 'planting the grass'],
     ['buildingItems', 'building 3D buildings'],

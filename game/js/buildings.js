@@ -22,9 +22,9 @@ import {
   GLSL_LIGHT,
   GLSL_LOOK,
   eglBindQuad,
-  eglImg,
   ensurePrograms,
   gpuState,
+  imageTexture,
   v3n,
 } from './engine/webgl.js';
 import { environment, environmentLitFraction } from './environment.js';
@@ -1555,8 +1555,8 @@ function drawBuildingsUnguarded(C, X, items, fades) {
   const gl = gpuState.gl;
   ensurePrograms(BUILDING_SHADERS);
   const A = buildingArt(),
-    det = eglImg(artImage(A.detail), { noNormal: true }),
-    rm = eglImg(artImage(A.rooms), { noNormal: true });
+    det = imageTexture(artImage(A.detail), { noNormal: true }),
+    rm = imageTexture(artImage(A.rooms), { noNormal: true });
   if (!det || !rm) return;
   const sc = walkView.sc,
     dark = sc.tint && sc.tint !== '#000000' ? 1 : sc.indoor ? 0.7 : 0,
@@ -1636,7 +1636,7 @@ function drawBuildingsUnguarded(C, X, items, fades) {
     const F = buildingFrontPicture(it.im, it.M.build, it.M);
     if (!F) continue;
     F.__mat = 'building';
-    const T = eglImg(F);
+    const T = imageTexture(F);
     if (!T) continue;
     const s = it.mpp,
       w = it.w * s,

@@ -22,11 +22,11 @@ import { engineContext, engineDataSource, engineSetting } from './engine/setting
 import {
   eglBindQuad,
   eglFree,
-  eglImg,
   eglMesh,
   eglTarget,
   ensurePrograms,
   gpuState,
+  imageTexture,
   initWebgl,
   webgl2Supported,
 } from './engine/webgl.js';
@@ -657,7 +657,7 @@ export function worldMapGlRender(t) {
     }
     if (!m3)
       worldMapGlMiniPictures(cam, (im, v, k) => {
-        const T = eglImg(im, { noNormal: true });
+        const T = imageTexture(im, { noNormal: true });
         if (!T) return;
         const n = vector3.norm(vector3.mul(v, -1)),
           rt = vector3.norm(vector3.sub(cam.rt, vector3.mul(n, vector3.dot(cam.rt, n)))),
@@ -677,7 +677,7 @@ export function worldMapGlRender(t) {
         z = vector3.dot(d, cam.fw);
       if (z < 0.01 || z > 1.3) continue;
       const im = worldMapStamp(l.k),
-        T = eglImg(im, { noNormal: true });
+        T = imageTexture(im, { noNormal: true });
       if (!T) continue;
       const up = vector3.mul(l.v, -1),
         rt = vector3.norm(vector3.sub(cam.rt, vector3.mul(up, vector3.dot(cam.rt, up)))),

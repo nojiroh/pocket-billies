@@ -13,55 +13,47 @@ import { engineSetting } from './settings.js';
 /* eslint-disable no-func-assign */
 expose({
   ATTRIBUTE_LOCATIONS: [() => ATTRIBUTE_LOCATIONS],
-  EGL_MATS: [() => EGL_MATS],
-  EGL_NW: [() => EGL_NW],
-  EGL_NW_SRC: [() => EGL_NW_SRC],
   GLSL_COMMON: [() => GLSL_COMMON],
   GLSL_LIGHT: [() => GLSL_LIGHT],
   GLSL_LOOK: [() => GLSL_LOOK],
   M4: [() => M4],
+  NORMAL_MAP_WORKER_SOURCE: [() => NORMAL_MAP_WORKER_SOURCE],
+  SURFACE_MATERIALS: [() => SURFACE_MATERIALS],
+  applyAnisotropy: [() => applyAnisotropy, v => (applyAnisotropy = v)],
   attributeClashes: [() => attributeClashes, v => (attributeClashes = v)],
   compileProgram: [() => compileProgram, v => (compileProgram = v)],
-  eglAniso: [() => eglAniso, v => (eglAniso = v)],
   eglBindGrid: [() => eglBindGrid, v => (eglBindGrid = v)],
   eglBindQuad: [() => eglBindQuad, v => (eglBindQuad = v)],
   eglFree: [() => eglFree, v => (eglFree = v)],
   eglGpuBegin: [() => eglGpuBegin, v => (eglGpuBegin = v)],
   eglGpuEnd: [() => eglGpuEnd, v => (eglGpuEnd = v)],
   eglGpuPoll: [() => eglGpuPoll, v => (eglGpuPoll = v)],
-  eglImg: [() => eglImg, v => (eglImg = v)],
   eglMesh: [() => eglMesh, v => (eglMesh = v)],
-  eglNormWork: [() => eglNormWork, v => setEglNormWork(v)],
-  eglNormWorker: [() => eglNormWorker, v => (eglNormWorker = v)],
-  eglNormal: [() => eglNormal, v => setEglNormal(v)],
   eglTarget: [() => eglTarget, v => (eglTarget = v)],
-  eglTexData: [() => eglTexData, v => (eglTexData = v)],
-  eglTexParams: [() => eglTexParams, v => (eglTexParams = v)],
-  eglTexTrack: [() => eglTexTrack, v => (eglTexTrack = v)],
-  eglTexTrim: [() => eglTexTrim, v => (eglTexTrim = v)],
   eglWind: [() => eglWind, v => (eglWind = v)],
   eglWindBend: [() => eglWindBend, v => (eglWindBend = v)],
+  ensureNormalMapWorker: [() => ensureNormalMapWorker, v => (ensureNormalMapWorker = v)],
   ensurePrograms: [() => ensurePrograms, v => setEnsurePrograms(v)],
   finishProgramCompile: [() => finishProgramCompile, v => setFinishProgramCompile(v)],
   gpuState: [() => gpuState],
+  imageTexture: [() => imageTexture, v => (imageTexture = v)],
   initWebgl: [() => initWebgl, v => (initWebgl = v)],
+  makeNormalMap: [() => makeNormalMap, v => setMakeNormalMap(v)],
+  normalMapWorker: [() => normalMapWorker],
   pollPendingPrograms: [() => pollPendingPrograms, v => (pollPendingPrograms = v)],
   precompilePrograms: [() => precompilePrograms, v => (precompilePrograms = v)],
+  runNormalMapJobs: [() => runNormalMapJobs, v => setRunNormalMapJobs(v)],
+  setTextureParams: [() => setTextureParams, v => (setTextureParams = v)],
   smooth01: [() => smooth01],
   startProgramCompile: [() => startProgramCompile, v => (startProgramCompile = v)],
+  textureFromData: [() => textureFromData, v => (textureFromData = v)],
+  trackTexture: [() => trackTexture, v => (trackTexture = v)],
+  trimTextures: [() => trimTextures, v => (trimTextures = v)],
   v3c: [() => v3c],
   v3n: [() => v3n],
   webgl2Supported: [() => webgl2Supported, v => (webgl2Supported = v)],
 });
 /* eslint-enable no-func-assign */
-export function setEglNormWork(v) {
-  eglNormWork = v; // eslint-disable-line no-func-assign
-  provide({ eglNormWork });
-}
-export function setEglNormal(v) {
-  eglNormal = v; // eslint-disable-line no-func-assign
-  provide({ eglNormal });
-}
 export function setEnsurePrograms(v) {
   ensurePrograms = v; // eslint-disable-line no-func-assign
   provide({ ensurePrograms });
@@ -69,6 +61,14 @@ export function setEnsurePrograms(v) {
 export function setFinishProgramCompile(v) {
   finishProgramCompile = v; // eslint-disable-line no-func-assign
   provide({ finishProgramCompile });
+}
+export function setMakeNormalMap(v) {
+  makeNormalMap = v; // eslint-disable-line no-func-assign
+  provide({ makeNormalMap });
+}
+export function setRunNormalMapJobs(v) {
+  runNormalMapJobs = v; // eslint-disable-line no-func-assign
+  provide({ runNormalMapJobs });
 }
 /* to-module: end */
 export const gpuState = {
@@ -493,9 +493,9 @@ export function initWebgl(cv) {
     gpuState.gpuOpen = false;
     gpuState.pend = new Map();
     gpuState.pcx = undefined;
-    if (typeof EGL_NW !== 'undefined') {
-      EGL_NW.jobs.clear();
-      EGL_NW.fly = 0;
+    if (typeof normalMapWorker !== 'undefined') {
+      normalMapWorker.jobs.clear();
+      normalMapWorker.fly = 0;
     }
     gpuState.fb = {};
     gpuState.tex = new WeakMap();
@@ -508,8 +508,8 @@ export function initWebgl(cv) {
     gl.bindBuffer(gl.ARRAY_BUFFER, q);
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([0, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 1]), gl.STATIC_DRAW);
     gpuState.quad = q;
-    gpuState.white = eglTexData(1, 1, new Uint8Array([255, 255, 255, 255]));
-    gpuState.flatN = eglTexData(1, 1, new Uint8Array([128, 128, 255, 255]));
+    gpuState.white = textureFromData(1, 1, new Uint8Array([255, 255, 255, 255]));
+    gpuState.flatN = textureFromData(1, 1, new Uint8Array([128, 128, 255, 255]));
     /* one depth texture read two ways: compared (soft shadow taps) and raw (blocker search) */
     /* a 1x1 "lit everywhere" depth map stands in on every shadow unit while no real map exists (shadows off, the first
      frames): a shadow sampler must always see a depth texture, or the whole draw is refused (v44) */
@@ -551,15 +551,15 @@ export function initWebgl(cv) {
   }
 }
 /* ---------- textures ---------- */
-function eglTexData(w, h, data, o = {}) {
+function textureFromData(w, h, data, o = {}) {
   const gl = gpuState.gl,
     t = gl.createTexture();
   gl.bindTexture(gl.TEXTURE_2D, t);
   gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, w, h, 0, gl.RGBA, gl.UNSIGNED_BYTE, data);
-  eglTexParams(o);
+  setTextureParams(o);
   return t;
 }
-export function eglTexParams(o = {}) {
+export function setTextureParams(o = {}) {
   const gl = gpuState.gl,
     f = o.linear ? gl.LINEAR : gl.NEAREST,
     wr = o.repeat ? gl.REPEAT : gl.CLAMP_TO_EDGE;
@@ -571,7 +571,7 @@ export function eglTexParams(o = {}) {
 }
 /* an image or canvas as a texture. Small or far sprites use mipmaps (no shimmer); a soft normal map ("pillow" shading
    from the outline) is made in the background, a few per frame, so a new scene never freezes */
-export function eglImg(im, o = {}) {
+export function imageTexture(im, o = {}) {
   if (!imageReady(im)) return null;
   const v = typeof dioArtVer === 'function' ? dioArtVer() : 0,
     dv = im.__v;
@@ -587,7 +587,7 @@ export function eglImg(im, o = {}) {
     gl.bindTexture(gl.TEXTURE_2D, t);
     gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, im);
-    eglTexParams({});
+    setTextureParams({});
     const ne = { t, n: gpuState.flatN, w: im.width, h: im.height, v, dv, im, nDone: true };
     gpuState.tex.set(im, ne);
     return ne;
@@ -608,7 +608,7 @@ export function eglImg(im, o = {}) {
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, wr);
   if (!o.repeat) gl.generateMipmap(gl.TEXTURE_2D);
   /* v32: props seen at a slant (stepping stones, signs side-on, a roof far off) stay sharp instead of smearing into their small mip levels */
-  if (!o.repeat) eglAniso();
+  if (!o.repeat) applyAnisotropy();
   const ne = {
     t,
     n: e && e.n && e.n !== gpuState.flatN ? e.n : gpuState.flatN,
@@ -623,12 +623,12 @@ export function eglImg(im, o = {}) {
     sh: h,
   };
   gpuState.tex.set(im, ne);
-  eglTexTrack(im, ne);
+  trackTexture(im, ne);
   if (typeof NWLOG !== 'undefined') NWLOG.mark('uploading pictures', tU, performance.now());
   if (!o.noNormal && !im.noNormal) gpuState.normQ.push(ne);
   return ne;
 }
-function eglAniso() {
+function applyAnisotropy() {
   const gl = gpuState.gl,
     n =
       gpuState.aniso && typeof engineSetting === 'function'
@@ -646,7 +646,7 @@ function eglAniso() {
 /* materials: how a picture's normal map is shaped (pillow: rounded from the outline; detail: bumps from the pixels'
    brightness) and how it takes light (spec: shine, shin: how tight the shine is, transl: light through it from
    behind, wrap: how far light wraps around it) */
-export const EGL_MATS = {
+export const SURFACE_MATERIALS = {
   plain: { name: 'Plain', pillow: 1, detail: 0.6, spec: 0.06, shin: 12, transl: 0, wrap: 0.15 },
   foliage: { name: 'Leaves and plants', pillow: 1.25, detail: 1.1, spec: 0.04, shin: 8, transl: 0.7, wrap: 0.45 },
   wood: { name: 'Wood', pillow: 0.6, detail: 1.2, spec: 0.08, shin: 14, transl: 0, wrap: 0.15 },
@@ -658,8 +658,8 @@ export const EGL_MATS = {
 };
 /* v32: normal maps are worked out on a helper thread (a big picture took seconds and froze the game when a scene
    opened); only reading the pixels and uploading the result happen here. Without workers it falls back to here. */
-export const EGL_NW = { w: null, bad: false, id: 0, jobs: new Map(), fly: 0 };
-const EGL_NW_SRC = `const clamp=(v,a,b)=>v<a?a:v>b?b:v;onmessage=ev=>{const {id,w,h,pillow,detail,bm}=ev.data;let d=ev.data.d;
+export const normalMapWorker = { w: null, bad: false, id: 0, jobs: new Map(), fly: 0 };
+const NORMAL_MAP_WORKER_SOURCE = `const clamp=(v,a,b)=>v<a?a:v>b?b:v;onmessage=ev=>{const {id,w,h,pillow,detail,bm}=ev.data;let d=ev.data.d;
 /* v33: the picture can come as a bitmap and be read here, so the main thread never waits for its pixels */
 if(!d&&bm){if(typeof OffscreenCanvas==='undefined'){postMessage({id,retry:1});return}try{const oc=new OffscreenCanvas(w,h),ox=oc.getContext('2d');ox.drawImage(bm,0,0);d=ox.getImageData(0,0,w,h).data;bm.close&&bm.close()}catch(e){postMessage({id,retry:1});return}}const A=new Float32Array(w*h),Lm=new Float32Array(w*h);for(let i=0;i<w*h;i++){A[i]=d[i*4+3]>127?1:0;Lm[i]=(d[i*4]*.3+d[i*4+1]*.59+d[i*4+2]*.11)/255}
 const blur=(src,r)=>{const t=new Float32Array(w*h),o=new Float32Array(w*h);for(let y=0;y<h;y++){let s=0;for(let k=-r;k<=r;k++)s+=src[y*w+clamp(k,0,w-1)];for(let X=0;X<w;X++){t[y*w+X]=s/(2*r+1);s+=src[y*w+clamp(X+r+1,0,w-1)]-src[y*w+clamp(X-r,0,w-1)]}}
@@ -674,22 +674,22 @@ for(let pass=0;pass<4;pass++){const nk=ok.slice();for(let y=0;y<h;y++)for(let X=
  if(k){col[i*4]=r2/k;col[i*4+1]=g2/k;col[i*4+2]=b2/k;nk[i]=1}}ok.set(nk)}
 if(an)for(let i=0;i<w*h;i++)if(!ok[i]){col[i*4]=ar/an;col[i*4+1]=ag/an;col[i*4+2]=ab/an}
 postMessage({id,out,col},[out.buffer,col.buffer])}`;
-function eglNormWorker() {
-  if (EGL_NW.w || EGL_NW.bad) return EGL_NW.w;
+function ensureNormalMapWorker() {
+  if (normalMapWorker.w || normalMapWorker.bad) return normalMapWorker.w;
   try {
-    const u = URL.createObjectURL(new Blob([EGL_NW_SRC], { type: 'text/javascript' }));
+    const u = URL.createObjectURL(new Blob([NORMAL_MAP_WORKER_SOURCE], { type: 'text/javascript' }));
     const W = new Worker(u);
     W.onmessage = ev => {
       const { id, out, col } = ev.data,
-        j = EGL_NW.jobs.get(id);
-      EGL_NW.jobs.delete(id);
-      EGL_NW.fly = Math.max(0, EGL_NW.fly - 1);
+        j = normalMapWorker.jobs.get(id);
+      normalMapWorker.jobs.delete(id);
+      normalMapWorker.fly = Math.max(0, normalMapWorker.fly - 1);
       if (!j || j.gl !== gpuState.gl || gpuState.lost) return;
       const e = j.e,
         gl = gpuState.gl;
       if (e.im && gpuState.tex.get(e.im) !== e) return;
       if (ev.data.retry) {
-        EGL_NW.osc = false;
+        normalMapWorker.osc = false;
         gpuState.normQ.unshift(e);
         return;
       }
@@ -698,7 +698,7 @@ function eglNormWorker() {
         const t = e.n && e.n !== gpuState.flatN ? e.n : gl.createTexture();
         gl.bindTexture(gl.TEXTURE_2D, t);
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, j.w, j.h, 0, gl.RGBA, gl.UNSIGNED_BYTE, out);
-        eglTexParams({ linear: true });
+        setTextureParams({ linear: true });
         e.n = t;
         if (col && e.t && engineSetting('quality', 'edgeBleed') !== false) {
           gl.bindTexture(gl.TEXTURE_2D, e.t);
@@ -711,53 +711,53 @@ function eglNormWorker() {
       if (typeof NWLOG !== 'undefined') NWLOG.mark('uploading bump maps', tU, performance.now());
     };
     W.onerror = () => {
-      EGL_NW.bad = true;
-      EGL_NW.w = null;
-      for (const j of EGL_NW.jobs.values()) gpuState.normQ.unshift(j.e);
-      EGL_NW.jobs.clear();
-      EGL_NW.fly = 0;
+      normalMapWorker.bad = true;
+      normalMapWorker.w = null;
+      for (const j of normalMapWorker.jobs.values()) gpuState.normQ.unshift(j.e);
+      normalMapWorker.jobs.clear();
+      normalMapWorker.fly = 0;
     };
-    EGL_NW.w = W;
+    normalMapWorker.w = W;
   } catch (e) {
-    EGL_NW.bad = true;
+    normalMapWorker.bad = true;
   }
-  return EGL_NW.w;
+  return normalMapWorker.w;
 }
-export function eglNormWork(budget) {
+export function runNormalMapJobs(budget) {
   const t0 = performance.now(),
-    W = eglNormWorker();
-  while (gpuState.normQ.length && performance.now() - t0 < budget && (!W || EGL_NW.fly < 10)) {
+    W = ensureNormalMapWorker();
+  while (gpuState.normQ.length && performance.now() - t0 < budget && (!W || normalMapWorker.fly < 10)) {
     const e = gpuState.normQ.shift();
     if (!e || e.nDone || (e.im && gpuState.tex.get(e.im) !== e)) continue;
     if (e.src && e.src !== e.im) e.src.__mat = e.im.__mat;
     try {
       if (
         W &&
-        EGL_NW.osc !== false &&
+        normalMapWorker.osc !== false &&
         typeof createImageBitmap === 'function' &&
         !(e.im instanceof HTMLCanvasElement && e.im.__v !== undefined)
       ) {
         const im = e.src || e.im,
           w = e.sw || e.w,
           h = e.sh || e.h,
-          M = EGL_MATS[e.im.__mat] || EGL_MATS.plain,
-          id = ++EGL_NW.id,
+          M = SURFACE_MATERIALS[e.im.__mat] || SURFACE_MATERIALS.plain,
+          id = ++normalMapWorker.id,
           gl0 = gpuState.gl;
-        EGL_NW.jobs.set(id, { e, w, h, gl: gl0 });
-        EGL_NW.fly++;
+        normalMapWorker.jobs.set(id, { e, w, h, gl: gl0 });
+        normalMapWorker.fly++;
         createImageBitmap(im)
           .then(bm => {
-            if (gpuState.gl !== gl0 || !EGL_NW.jobs.has(id)) {
+            if (gpuState.gl !== gl0 || !normalMapWorker.jobs.has(id)) {
               bm.close && bm.close();
-              if (EGL_NW.jobs.delete(id)) EGL_NW.fly = Math.max(0, EGL_NW.fly - 1);
+              if (normalMapWorker.jobs.delete(id)) normalMapWorker.fly = Math.max(0, normalMapWorker.fly - 1);
               return;
             }
             W.postMessage({ id, w, h, bm, pillow: M.pillow, detail: M.detail }, [bm]);
           })
           .catch(() => {
-            EGL_NW.jobs.delete(id);
-            EGL_NW.fly = Math.max(0, EGL_NW.fly - 1);
-            EGL_NW.osc = false;
+            normalMapWorker.jobs.delete(id);
+            normalMapWorker.fly = Math.max(0, normalMapWorker.fly - 1);
+            normalMapWorker.osc = false;
             gpuState.normQ.unshift(e);
           });
       } else if (W) {
@@ -768,13 +768,13 @@ export function eglNormWork(budget) {
           x = c.getContext('2d', { willReadFrequently: true });
         x.drawImage(im, 0, 0, w, h);
         const d = x.getImageData(0, 0, w, h).data,
-          M = EGL_MATS[e.im.__mat] || EGL_MATS.plain,
-          id = ++EGL_NW.id;
-        EGL_NW.jobs.set(id, { e, w, h, gl: gpuState.gl });
-        EGL_NW.fly++;
+          M = SURFACE_MATERIALS[e.im.__mat] || SURFACE_MATERIALS.plain,
+          id = ++normalMapWorker.id;
+        normalMapWorker.jobs.set(id, { e, w, h, gl: gpuState.gl });
+        normalMapWorker.fly++;
         W.postMessage({ id, w, h, d, pillow: M.pillow, detail: M.detail }, [d.buffer]);
       } else {
-        e.n = eglNormal(e.src || e.im, e.sw || e.w, e.sh || e.h, e.n);
+        e.n = makeNormalMap(e.src || e.im, e.sw || e.w, e.sh || e.h, e.n);
         e.nDone = true;
       }
     } catch (err) {
@@ -782,8 +782,8 @@ export function eglNormWork(budget) {
     }
   }
 }
-export function eglNormal(im, w, h, old) {
-  const M = EGL_MATS[im.__mat] || EGL_MATS.plain,
+export function makeNormalMap(im, w, h, old) {
+  const M = SURFACE_MATERIALS[im.__mat] || SURFACE_MATERIALS.plain,
     c = makeCanvas(w, h),
     x = c.getContext('2d', { willReadFrequently: true });
   x.drawImage(im, 0, 0);
@@ -848,7 +848,7 @@ export function eglNormal(im, w, h, old) {
     t = old && old !== gpuState.flatN ? old : gl.createTexture();
   gl.bindTexture(gl.TEXTURE_2D, t);
   gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, w, h, 0, gl.RGBA, gl.UNSIGNED_BYTE, out);
-  eglTexParams({ linear: true });
+  setTextureParams({ linear: true });
   return t;
 }
 /* ---------- render targets ---------- */
@@ -880,7 +880,7 @@ export function eglTarget(name, w, h, o = {}) {
       hdr ? gl.HALF_FLOAT : gl.UNSIGNED_BYTE,
       null
     );
-    eglTexParams({ linear: true });
+    setTextureParams({ linear: true });
     gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, c, 0);
   }
   if (o.depth || o.depthOnly) {
@@ -1023,13 +1023,13 @@ function eglGpuPoll() {
 /* v34: a cap on pictures kept on the graphics card. Every uploaded picture is counted (with its mip levels and normal
    map); past the cap (128 MB on phones since v41, 384 MB elsewhere) the ones not drawn for the longest go first (never those used
    in the last ten seconds) and are uploaded again if they come back into view. */
-function eglTexTrack(im, e) {
+function trackTexture(im, e) {
   const L = gpuState.texL || (gpuState.texL = new Map());
   e.bytes = Math.round((e.sw || e.w || 1) * (e.sh || e.h || 1) * 4 * 1.34 * 2);
   if (!L.has(im)) gpuState.texB = (gpuState.texB || 0) + e.bytes;
   L.set(im, e);
 }
-export function eglTexTrim(force) {
+export function trimTextures(force) {
   const L = gpuState.texL;
   if (!L) return 0;
   const phone = /Android|iPhone|iPad/.test(navigator.userAgent),

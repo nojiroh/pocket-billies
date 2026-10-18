@@ -13,7 +13,7 @@ import { GD, RM, provide } from './hooks.js';
 import { artImg, artURL, hexToRgb } from './art.js';
 import { artImage, walkView } from './walk-view.js';
 import { engineSetting } from './engine/settings.js';
-import { GLSL_COMMON, GLSL_LIGHT, eglImg, ensurePrograms, gpuState } from './engine/webgl.js';
+import { GLSL_COMMON, GLSL_LIGHT, ensurePrograms, gpuState, imageTexture } from './engine/webgl.js';
 import {
   addHitTarget,
   setPropLookUniforms,
@@ -1085,7 +1085,7 @@ function drawLowPolyModels(C, X, L) {
   propModelShaders();
   ensurePrograms(PROP_MODEL_SHADERS);
   const A = buildingArt(),
-    det = eglImg(artImage(A.detail), { noNormal: true });
+    det = imageTexture(artImage(A.detail), { noNormal: true });
   if (!det) return;
   const p = useWalkProgram('mdl', C, X);
   gl.enable(gl.DEPTH_TEST);

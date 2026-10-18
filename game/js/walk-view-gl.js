@@ -138,30 +138,30 @@ import {
 } from './walk-view.js';
 import { engineColor, engineContext, engineSetting } from './engine/settings.js';
 import {
-  EGL_MATS,
   GLSL_COMMON,
   GLSL_LIGHT,
   GLSL_LOOK,
   M4,
+  SURFACE_MATERIALS,
   eglBindGrid,
   eglBindQuad,
   eglFree,
   eglGpuBegin,
   eglGpuEnd,
-  eglImg,
   eglMesh,
-  eglNormWork,
   eglTarget,
-  eglTexParams,
-  eglTexTrim,
   eglWind,
   eglWindBend,
   ensurePrograms,
   gpuState,
+  imageTexture,
   initWebgl,
   pollPendingPrograms,
   precompilePrograms,
+  runNormalMapJobs,
+  setTextureParams,
   smooth01,
+  trimTextures,
   v3n,
   webgl2Supported,
 } from './engine/webgl.js';
@@ -470,9 +470,9 @@ const BORDER_M = GROUND_BORDER_M,
   FIXED_FACING = [1, 0, 0],
   FIXED_FACING_BACK = [0, 0, -1];
 /* which material a prop is made of: its own "mat", else guessed from its name */
-export const PROP_MATERIALS = EGL_MATS;
+export const PROP_MATERIALS = SURFACE_MATERIALS;
 export function propMaterial(k, M) {
-  if (M && M.mat && EGL_MATS[M.mat]) return M.mat;
+  if (M && M.mat && SURFACE_MATERIALS[M.mat]) return M.mat;
   const n = ((M && M.group) || '') + ' ' + k;
   if (/house|shop|clinic|lab|bunker|tent|stall|windmill|busstop|kiosk/.test(n)) return 'building';
   if (/crystal|glass|coral/.test(n)) return 'crystal';
@@ -2380,7 +2380,7 @@ function groundOcclusionTexture(r) {
   gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
   gl.texImage2D(gl.TEXTURE_2D, 0, gl.R8, FW, FH, 0, gl.RED, gl.UNSIGNED_BYTE, d);
   gl.pixelStorei(gl.UNPACK_ALIGNMENT, 4);
-  eglTexParams({ linear: true });
+  setTextureParams({ linear: true });
   return t;
 }
 /* v46: the frame's key for a view's ground (its mesh, water and textures are kept under it, swapMapCache) */
@@ -3053,7 +3053,7 @@ function repeatingTexture(im, old) {
   const t = old && old !== gpuState.white ? old : gl.createTexture();
   gl.bindTexture(gl.TEXTURE_2D, t);
   gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, im);
-  eglTexParams({ repeat: true });
+  setTextureParams({ repeat: true });
   return t;
 }
 /* grass blades: many little triangles on grassy tiles, denser in tall grass, none on paths or under things */
@@ -3585,8 +3585,8 @@ function drawWalkFrame(ts, dtm) {
     sc = walkView.sc;
   engineContext.look = sc.look || null;
   gpuState.fr = (gpuState.fr || 0) + 1;
-  if (gpuState.fr % 120 === 0) eglTexTrim();
-  eglNormWork(walkView.warm ? 40 : 3);
+  if (gpuState.fr % 120 === 0) trimTextures();
+  runNormalMapJobs(walkView.warm ? 40 : 3);
   pollPendingPrograms(1);
   groundOcclusionWork();
   groundPrepWork(walkRenderer.bt ? 0 : PREP_BUDGET_MS);
@@ -5402,7 +5402,7 @@ function drawShadowSprites(SH, L, sun, ca, lamp) {
   for (const it of L) {
     if (it.flat || it.far || it.k === 'enc2' || it.vol || it.k === 'flag' || it.vox) continue;
     if (it.k === 'prop' && !(it.sh > 0)) continue;
-    const T = eglImg(it.im);
+    const T = imageTexture(it.im);
     if (!T) {
       miss++;
       continue;
@@ -5418,7 +5418,7 @@ function drawShadowSprites(SH, L, sun, ca, lamp) {
     if (it.bld3) {
       let F = null;
       buildingGuard(() => {
-        F = eglImg(buildingFrontPicture(it.im, it.M.build, it.M));
+        F = imageTexture(buildingFrontPicture(it.im, it.M.build, it.M));
       });
       if (!F) miss++;
       if (F) {
@@ -5521,7 +5521,7 @@ function fittedShadowPass(items0, sun, C) {
     for (const it of L) {
       if (it.flat || it.far || it.k === 'enc2' || it.vol || it.k === 'flag' || it.vox) continue;
       if (it.k === 'prop' && !(it.sh > 0)) continue;
-      const T = eglImg(it.im);
+      const T = imageTexture(it.im);
       if (!T) {
         miss++;
         continue;
@@ -5532,7 +5532,7 @@ function fittedShadowPass(items0, sun, C) {
       if (it.bld3) {
         let F = null;
         buildingGuard(() => {
-          F = eglImg(buildingFrontPicture(it.im, it.M.build, it.M));
+          F = imageTexture(buildingFrontPicture(it.im, it.M.build, it.M));
         });
         if (!F) miss++;
         if (F) {
@@ -5659,7 +5659,7 @@ export function drawGround(C, X) {
     p = useWalkProgram('ground', C, X),
     U = p.U,
     P = BORDER_M;
-  const wa = eglImg(artImage(walkData().sc.wallArt || 'scene/build/walls.png'), { noNormal: true });
+  const wa = imageTexture(artImage(walkData().sc.wallArt || 'scene/build/walls.png'), { noNormal: true });
   gl.activeTexture(gl.TEXTURE4);
   gl.bindTexture(gl.TEXTURE_2D, wa ? wa.t : gpuState.white);
   gl.uniform1i(U.uWallA, 4);
@@ -5966,7 +5966,7 @@ export function drawSprites(C, items, X, hits, labels, PPU) {
       if (!it.far) addHitTarget(it, C, hits, labels, PPU);
       continue;
     }
-    const T = eglImg(it.im);
+    const T = imageTexture(it.im);
     if (!T) continue;
     const s = it.mpp,
       hM = -it.oy * s;
@@ -5996,7 +5996,7 @@ export function drawSprites(C, items, X, hits, labels, PPU) {
     gl.uniform1f(U.uFixed, it.fixed && it.plane ? 1 : 0);
     gl.uniform1f(U.uFlipN, it.flip || 1);
     setPropLookUniforms(U, it.lk);
-    const mt = EGL_MATS[it.mat] || EGL_MATS[it.person ? 'cloth' : 'plain'];
+    const mt = SURFACE_MATERIALS[it.mat] || SURFACE_MATERIALS[it.person ? 'cloth' : 'plain'];
     gl.uniform4f(U.uMat, mt.spec, mt.shin, mt.transl, mt.wrap);
     if (U.uFol) {
       const f = foliageAmount(it);
@@ -6038,7 +6038,7 @@ export function drawSprites(C, items, X, hits, labels, PPU) {
     }
     if (it.M && it.M.blades) {
       const b = it.M.blades,
-        BT = eglImg(artImage(b.img));
+        BT = imageTexture(artImage(b.img));
       if (BT)
         drawRotatingBlades(
           p,
@@ -6060,7 +6060,7 @@ export function drawSprites(C, items, X, hits, labels, PPU) {
   gl.uniform1f(U.uFade, 1);
   for (const it of items) {
     if (!it.flat || it.vis === false) continue;
-    const T = eglImg(it.im);
+    const T = imageTexture(it.im);
     if (!T) continue;
     drawFlatItem(it, T, C, X);
   }
@@ -6208,10 +6208,10 @@ function drawBoxFaces(C, items, X) {
       H = B.h * s,
       eave = (-it.oy - B.ye) * s,
       y0 = it.y;
-    const ST = eglImg(B.side, { noNormal: true }),
-      RT = eglImg(B.roof, { noNormal: true });
+    const ST = imageTexture(B.side, { noNormal: true }),
+      RT = imageTexture(B.roof, { noNormal: true });
     if (!ST || !RT) continue;
-    const mat = EGL_MATS.building;
+    const mat = SURFACE_MATERIALS.building;
     gl.uniform1f(p.U.uSpec, mat.spec * 0.5);
     setPropLookUniforms(p.U, it.lk, [it.x, it.y, it.z]);
     gl.bindTexture(gl.TEXTURE_2D, ST.t);
@@ -6272,7 +6272,7 @@ function drawClockHands(p, it, C, X) {
   const d = new Date(),
     sec = d.getHours() * 3600 + d.getMinutes() * 60 + d.getSeconds() + d.getMilliseconds() / 1000;
   for (const h of it.M.hands) {
-    const T = eglImg(artImage(h.img));
+    const T = imageTexture(artImage(h.img));
     if (T) drawRotatingBlades(p, it, h, T, -((sec % h.per) / h.per) * Math.PI * 2, C, X, 0.06);
   }
 }
@@ -6487,7 +6487,7 @@ export function reflectionPass(items, C, rw, rh, X) {
     if (it.flat || it.far) continue;
     if (!waterNear(it.x, it.z)) continue;
     if (cut && !it.person && !mirrorInView(FR, it, L)) continue;
-    const T = eglImg(it.im);
+    const T = imageTexture(it.im);
     if (!T) continue;
     gl.uniform3fv(U.uRight, it.fixed ? FIXED_FACING : C.right);
     gl.uniform3f(U.uBaseP, it.x, it.y, it.z);
@@ -6861,7 +6861,7 @@ function drawRoomEffects(C, U, items, glows, t, rm) {
     gk = engineSetting('lights', 'glow'),
     ws = windowLightShare(sc);
   const draw = (cv, x, y, z, r, u, sw, sh, col, a) => {
-    const T = eglImg(cv, { noNormal: true });
+    const T = imageTexture(cv, { noNormal: true });
     if (!T) return;
     gl.bindTexture(gl.TEXTURE_2D, T.t);
     gl.uniform3f(U.uP, x, y, z);
@@ -7058,8 +7058,8 @@ function drawRoomFront(C, X) {
     tx.fillRect(0, 0, 4, 1);
     walkRenderer.frontTex = [c, t];
   }
-  const F = eglImg(walkRenderer.frontTex[0], { noNormal: true }),
-    T = eglImg(walkRenderer.frontTex[1], { noNormal: true });
+  const F = imageTexture(walkRenderer.frontTex[0], { noNormal: true }),
+    T = imageTexture(walkRenderer.frontTex[1], { noNormal: true });
   if (!F || !T) return;
   const p = useWalkProgram('face', C, X);
   eglBindQuad();
@@ -7658,7 +7658,7 @@ export function effectsPass(C, items, X, dark, t, dt) {
   gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
   gl.depthMask(false);
   gl.enable(gl.DEPTH_TEST);
-  const fxT = k => eglImg(artImage(`scene/fx/${k}.png`), { noNormal: true }),
+  const fxT = k => imageTexture(artImage(`scene/fx/${k}.png`), { noNormal: true }),
     quad = (k, fr, x, y, z, sw, sh, a, col) => {
       const T = fxT(k);
       if (!T) return;
@@ -8082,7 +8082,7 @@ export function effectsPass(C, items, X, dark, t, dt) {
       if (pass) gl.blendFunc(gl.ONE, gl.ONE);
       for (const q of BP) {
         if (!!q.glow !== !!pass) continue;
-        const T = eglImg(q.im, { noNormal: true });
+        const T = imageTexture(q.im, { noNormal: true });
         if (!T) continue;
         gl.bindTexture(gl.TEXTURE_2D, T.t);
         gl.uniform3f(U.uP, q.x, q.y + worldCurveDrop(q.x, q.z), q.z);

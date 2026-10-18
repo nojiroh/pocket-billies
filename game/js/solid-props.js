@@ -17,7 +17,15 @@ import { clamp } from './util.js';
 import { makeCanvas } from './art.js';
 import { artImage, hash2d, walkView, worldToScreen } from './walk-view.js';
 import { engineSetting } from './engine/settings.js';
-import { EGL_MATS, GLSL_COMMON, GLSL_LIGHT, GLSL_LOOK, eglImg, ensurePrograms, gpuState } from './engine/webgl.js';
+import {
+  GLSL_COMMON,
+  GLSL_LIGHT,
+  GLSL_LOOK,
+  SURFACE_MATERIALS,
+  ensurePrograms,
+  gpuState,
+  imageTexture,
+} from './engine/webgl.js';
 import {
   addHitTarget,
   drawRotatingBlades,
@@ -1220,7 +1228,7 @@ function setSolidPropUniforms(p, it, M) {
     );
 }
 function solidPropTexture(it, M) {
-  return eglImg(M && M.tex ? M.tex : it.im);
+  return imageTexture(M && M.tex ? M.tex : it.im);
 }
 export function drawSolidProps(C, items, X, hits, labels, PPU) {
   solidPropState.drawn = 0;
@@ -1261,7 +1269,7 @@ export function drawSolidProps(C, items, X, hits, labels, PPU) {
           if (me.x > q.x - half && me.x < q.x + half && me.y > top && me.y < q.y) fade = 0.4;
         }
       }
-      const mt = EGL_MATS[it.mat] || EGL_MATS.plain;
+      const mt = SURFACE_MATERIALS[it.mat] || SURFACE_MATERIALS.plain;
       gl.uniform4f(p.U.uMat, mt.spec, mt.shin, mt.transl, mt.wrap);
       if (p.U.uDet)
         gl.uniform4f(
@@ -1286,7 +1294,7 @@ export function drawSolidProps(C, items, X, hits, labels, PPU) {
       solidPropState.drawn++;
       if (it.M && it.M.blades) {
         const b = it.M.blades,
-          BT = eglImg(artImage(b.img));
+          BT = imageTexture(artImage(b.img));
         if (BT)
           drawRotatingBlades(
             p,
