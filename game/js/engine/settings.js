@@ -483,7 +483,7 @@ export const ENGINE_SPEC = [
         0,
         1.5,
         0.05,
-        'v47: each place has its own colour mood (warm late afternoon in Sundown, cool and misty in the Thicket, hazy heat in the canyon). 0: one look everywhere.',
+        'v47: each place has its own colour mood (warm late afternoon in Marigold Town, cool and misty in Thornberry Wood, hazy heat in Stepstone Canyon). 0: one look everywhere.',
       ],
       [
         'voxelProps',
