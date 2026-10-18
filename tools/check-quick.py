@@ -1763,7 +1763,6 @@ def desktop_steps(b, base, R):
         if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
         return f'{len(R2)} places: the same cells and exits reachable with natural terraces as without, no prop more than 15 cm off the ground'
     a02_ground()
-    a02_ground()
 
     @step('alpha 0.2: places joined edge to edge — every seam walks straight across and both views agree there', 600)
     def a02_joins():
