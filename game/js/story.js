@@ -33,7 +33,6 @@ import {
 import { loreClue, loreData, loreFlags } from './lore.js';
 /* eslint-disable no-func-assign */
 expose({
-  blakeHello: [() => blakeHello, v => ((blakeHello = v), provide({ blakeHello }))],
   cutsceneWorldBegin: [() => cutsceneWorldBegin, v => (cutsceneWorldBegin = v)],
   cutsceneWorldEnd: [() => cutsceneWorldEnd, v => (cutsceneWorldEnd = v)],
   legendCheck: [() => legendCheck, v => (legendCheck = v)],
@@ -53,7 +52,7 @@ expose({
   trainerTalk: [() => trainerTalk, v => (trainerTalk = v)],
 });
 /* eslint-enable no-func-assign */
-provide({ blakeHello, openingDone, storyAfterRival, storyAfterWin, storyFlags });
+provide({ openingDone, storyAfterRival, storyAfterWin, storyFlags });
 /* to-module: end */
 export function storyFlags() {
   return saveData.story || (saveData.story = {});
@@ -319,23 +318,6 @@ export function storyMovedCheck() {
 /* ================= v47: BLAKE'S FIRST BATTLE, AND WHAT COMES AFTER =================
    The opening ends with Blake wanting a battle (cutscene.js); it starts as soon as Sundown is back on screen. */
 /* what Blake says when he runs in (the opening's scene, or the step-by-step intro's conversation before the battle) */
-function blakeHello(l) {
-  const T = TRAINERS.blake0 || {},
-    who = T.who || 'chad',
-    sp = SPECIES[l + '0'],
-    rv = RULES.start.rival && RULES.start.rival[l],
-    rs = rv && SPECIES[rv];
-  return [
-    [who, '[surprised] Professor! Professor! Did another one fall in?'],
-    [
-      who,
-      '[happy] I’m Blake. Blake Sterling. My father is Sterling Sterling the Third. Sterling Capital? You’ve heard of it. Everyone’s heard of it.',
-    ],
-    ...(rs && sp ? [[who, `And I picked ${rs.name}. It beats ${sp.name}. No offence. Well, a little offence.`]] : []),
-    ['gini', 'Blake. They fell out of the sky ten minutes ago.'],
-    [who, '[angry] Then it’s a fair fight. Mine only knows Tackle so far. Come on, surface stray. Battle me!'],
-  ];
-}
 /* this device has seen Blake's first battle through once: next time it can be skipped */
 function openingDone() {
   try {
@@ -354,15 +336,6 @@ export function storyRivalBattle(o = {}) {
     go = async () => {
       if (activeBattle || !saveData.started) return;
       uiState.modal = null;
-      if (o.talkFirst && typeof talk === 'function' && !talkBox.on) {
-        storyState.rivalTalk = 1;
-        try {
-          await talk(blakeHello(saveData.starter));
-        } finally {
-          storyState.rivalTalk = 0;
-        }
-        if (activeBattle || !saveData.started) return;
-      }
       startTrainer('blake0', { talked: true });
       if (!activeBattle) storyAfterRival(null, TRAINERS.blake0);
     };

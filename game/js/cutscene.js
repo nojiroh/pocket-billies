@@ -10,7 +10,6 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import {
-  blakeHello,
   fallPlay,
   landing,
   landingBurst,
@@ -34,6 +33,8 @@ import {
   locationFullName,
   typeEffectiveness,
 } from './game-data.js';
+import { formatNumber, maxHp } from './logic/rules.js';
+import { FAST_SKIPS, FAST_SKIP_MS, HAZEL, fillLine, hotTake, speedWatch } from './logic/hazel.js';
 import { escapeHtml, reducedMotion, uiState } from './game-state.js';
 import { userFps } from './frame-scheduler.js';
 import { artLoad, makeCanvas } from './art.js';
@@ -60,6 +61,8 @@ import { talkBox, talkHide, talkLine } from './talk.js';
 /* eslint-disable no-func-assign */
 expose({
   CUTSCENE_SPOTS: [() => CUTSCENE_SPOTS],
+  blakeArrives: [() => blakeArrives, v => (blakeArrives = v)],
+  blakeFirstBillie: [() => blakeFirstBillie, v => (blakeFirstBillie = v)],
   chooseStarter: [() => chooseStarter, v => (chooseStarter = v)],
   cutscene: [() => cutscene],
   cutsceneAbort: [() => cutsceneAbort, v => (cutsceneAbort = v)],
@@ -90,6 +93,10 @@ expose({
   cutsceneWait: [() => cutsceneWait, v => (cutsceneWait = v)],
   cutsceneWalk: [() => cutsceneWalk, v => (cutsceneWalk = v)],
   cutsceneWanted: [() => cutsceneWanted, v => (cutsceneWanted = v)],
+  fightLog: [() => fightLog, v => (fightLog = v)],
+  fightPlate: [() => fightPlate, v => (fightPlate = v)],
+  hazelFight: [() => hazelFight, v => (hazelFight = v)],
+  hazelHotTake: [() => hazelHotTake, v => (hazelHotTake = v)],
   placeCutsceneSpots: [() => placeCutsceneSpots, v => (placeCutsceneSpots = v)],
   skipCutscene: [() => skipCutscene, v => (skipCutscene = v)],
   starterPickerFocus: [() => starterPickerFocus, v => (starterPickerFocus = v)],
@@ -338,7 +345,8 @@ export function cutsceneFrame() {
   parts.length = 0;
   lights.length = 0;
   for (const a of Object.values(cutscene.actors)) if (!a.hidden) items.push(cutscenePersonItem(a, t, C0));
-  cutscene.stars.forEach((s, i) => {
+  const drawn = cutscene.foe ? [...cutscene.stars, cutscene.foe] : cutscene.stars;
+  drawn.forEach((s, i) => {
     if (s.popT) {
       s.pop = cutscene.skip ? 1 : clamp((now - s.popT) / 420, 0, 1);
       s.white = Math.max(0, 1 - (now - s.popT) / 300);
@@ -352,7 +360,7 @@ export function cutsceneFrame() {
       const it = cutsceneStarterItem(s, t);
       if (it) items.push(it);
     }
-    if (cutscene.choosing && i === cutscene.sel)
+    if (cutscene.choosing && s !== cutscene.foe && i === cutscene.sel)
       lights.push({ p: [s.x, 0.35 + standingHeightAt(s.x, s.z), s.z - 0.2], r: 1.7, c: [0.55, 0.48, 0.3] });
   });
   const coin = artImage('coins/penny_32.png');
@@ -438,6 +446,8 @@ function cutsceneHTML() {
  <div class="cs-cap" id="csCap" aria-live="polite"><small></small><b></b></div>
  <button class="cs-skip pb small quiet" data-a="cs-skip">Skip ›</button>
  <div class="cs-pick px" id="csPick" hidden></div>
+ <div class="cs-fight" id="csFight" hidden></div>
+ <div class="cs-bubble" id="csBubble" role="status" hidden></div>
  <div class="cs-fade" id="csFade"></div>`;
 }
 export function cutsceneCaption(sub, title, ms = 3200) {
@@ -453,8 +463,13 @@ export function cutsceneSay(who, text, expr) {
   if (cutscene.skip || !cutscene.on) return Promise.resolve();
   const pr = talkLine(who, text, expr, { cs: true });
   cutscene.say = talkBox.cur;
+  cutscene.sayT = performance.now();
   return pr.then(() => {
     if (cutscene.say && !cutscene.say.typing) cutscene.say = null;
+    /* phase 06-2b: skipped several lines fast? Hazel says something about it, once */
+    const q = cutscene.quip;
+    cutscene.quip = null;
+    if (q && !cutscene.skip && cutscene.on) return cutsceneSay('gini', q, 'surprised');
   });
 }
 export function cutsceneHideDialogue() {
@@ -473,8 +488,13 @@ function cutsceneBlink() {
 function cutscenePortraitTick() {}
 function cutsceneTap(ev) {
   if (!cutscene.on) return;
-  if (ev && ev.target.closest && ev.target.closest('button,input,.cs-pick')) return;
-  if (talkBox.cur) talkBox.cur.tap();
+  if (ev && ev.target.closest && ev.target.closest('button,input,.cs-pick,.cs-fight')) return;
+  if (talkBox.cur) {
+    /* phase 06-2b: a tap that cuts a line short counts towards Hazel's "too fast" comment */
+    if (talkBox.cur.typing && cutscene.skipWatch && !cutscene.quip)
+      cutscene.quip = cutscene.skipWatch.record(performance.now() - (cutscene.sayT || 0));
+    talkBox.cur.tap();
+  }
 }
 
 /* ---------- the starter picker ---------- */
@@ -492,6 +512,7 @@ function starterPickerHTML() {
  <div class="pk-dots" role="img" aria-label="${cutscene.sel + 1} of ${pk.length}">${pk.map((_, i) => `<i class="${i === cutscene.sel ? 'on' : ''}"></i>`).join('')}</div>
  <p class="pk-blurb">${escapeHtml(s.blurb)}</p>
  <div class="pk-match"><div><span class="pk-k">Strong against</span><span class="pk-ts">${pills(st)}</span></div><div><span class="pk-k">Weak to</span><span class="pk-ts">${pills(wk)}</span></div></div>
+ <p class="pk-note">${escapeHtml(HAZEL.pickNote)}</p>
  ${cutscene.confirm ? `<div class="pk-acts"><button class="pb quiet" data-a="cs-no">Not yet</button><button class="pb gold" data-a="cs-yes">Yes, ${escapeHtml(s.name)}!</button></div>` : `<button class="pb gold wide pk-go" data-a="cs-choose">Choose ${escapeHtml(s.name)}</button>`}`;
 }
 function starterPickerFocus() {
@@ -562,6 +583,12 @@ export async function cutsceneStart(opts) {
   cutscene.choosing = false;
   cutscene.hide = null;
   cutscene.rival = false;
+  /* phase 06-2b: Blake's first Billie (Hazel's fight), how often each starter's hot take was asked, the "too fast"
+     watch for skipped lines and a comment waiting to be said */
+  cutscene.foe = null;
+  cutscene.takes = {};
+  cutscene.skipWatch = speedWatch(FAST_SKIP_MS, FAST_SKIPS, HAZEL.tooFastSkips);
+  cutscene.quip = null;
   if (typeof landing !== 'undefined') landing.bits = [];
   cutscene.pickList = RULES.start.starters.filter(l => SPECIES[l + '0']);
   let el = $('#cs');
@@ -769,6 +796,21 @@ async function cutsceneScript(run) {
   );
   if (!alive()) return;
   cutsceneHideDialogue();
+  /* 4b. phase 06-2b: Blake barges in before you have a Billie, and Hazel fights him herself */
+  const T0 = TRAINERS.blake0,
+    who = (T0 && T0.who) || 'chad';
+  if (T0) {
+    await blakeArrives(who, A);
+    if (!alive()) return;
+    await hazelFight(who, A);
+    if (!alive()) return;
+    for (const [w, t] of HAZEL.afterFight(who)) {
+      await cutsceneSay(w, t);
+      if (!alive()) return;
+    }
+    cutsceneHideDialogue();
+    cutscene.actors.rival.dir = 'side';
+  }
   /* 5. three coins, three billionaires */
   cutscene.actors.gini.dir = 'down';
   cutscene.actors.me.dir = 'down';
@@ -852,8 +894,7 @@ async function cutsceneScript(run) {
   await cutsceneWait(900);
   await cutsceneSay('gini', `${sp.name}! ${nm} and ${sp.name}. I like the sound of that.`, 'happy');
   if (!alive()) return;
-  /* 7. Blake runs in, takes the one that beats yours, and wants a battle right now */
-  const T0 = TRAINERS.blake0;
+  /* 7. phase 06-2b: Blake (already here since Hazel's fight) takes the one that beats yours and wants a battle */
   if (!T0) {
     await cutsceneSay('gini', 'Now go and walk! Every step counts. Come back and see me any time.', 'happy');
     if (!alive()) return;
@@ -864,8 +905,6 @@ async function cutsceneScript(run) {
     cutsceneEnd(l);
     return;
   }
-  cutsceneHideDialogue();
-  cutsceneActor('rival', T0.who || 'chad', A.blakeFrom, 'side');
   const by = standingHeightAt(A.blake[0], A.blake[1]);
   cutsceneShot(
     {
@@ -878,16 +917,16 @@ async function cutsceneScript(run) {
     1100
   );
   if (typeof music === 'function') music('rival');
-  const run1 = cutsceneWalk('rival', A.blake, 1500),
-    BL = blakeHello(l);
   cutscene.actors.me.dir = 'sideR';
   cutscene.actors.gini.dir = 'sideR';
-  await cutsceneSay(BL[0][0], BL[0][1]);
-  await run1;
-  cutscene.actors.rival.dir = 'side';
-  if (!alive()) return;
-  for (const [w, t] of BL.slice(1)) {
-    await cutsceneSay(w, t);
+  const rv = RULES.start.rival && RULES.start.rival[l],
+    vars = {
+      foe: cutscene.foeName || 'mine',
+      counter: (rv && SPECIES[rv] && SPECIES[rv].name) || 'the one that beats yours',
+      yours: sp.name,
+    };
+  for (const [w, t] of HAZEL.blakeTakes(who)) {
+    await cutsceneSay(w, fillLine(t, vars));
     if (!alive()) return;
   }
   cutsceneHideDialogue();
@@ -901,6 +940,169 @@ async function cutsceneScript(run) {
   await new Promise(r => setTimeout(r, reducedMotion ? 50 : 600));
   if (!alive()) return;
   cutsceneEnd(l);
+}
+/* ---------- phase 06-2b: Blake arrives early, and Hazel fights him herself ---------- */
+/* Blake runs in from the side and stands by Hazel */
+async function blakeArrives(who, A) {
+  cutsceneActor('rival', who, A.blakeFrom, 'side');
+  const by = standingHeightAt(A.blake[0], A.blake[1]);
+  cutsceneShot(
+    {
+      eye: [(A.hazel[0] + A.blake[0]) / 2, by + 1.9, A.me[1] - 5.2],
+      tgt: [(A.hazel[0] + A.blake[0]) / 2, by + 1, A.me[1]],
+      fov: 40,
+      w: 5.9,
+      abs: 1,
+    },
+    1100
+  );
+  if (typeof music === 'function') music('rival');
+  const L = HAZEL.blakeArrives(who),
+    walk = cutsceneWalk('rival', A.blake, 1500);
+  cutscene.actors.me.dir = 'sideR';
+  cutscene.actors.gini.dir = 'sideR';
+  await cutsceneSay(L[0][0], L[0][1]);
+  await walk;
+  if (cutscene.actors.rival) cutscene.actors.rival.dir = 'side';
+  for (const [w, t] of L.slice(1)) {
+    if (!cutscene.on) return;
+    await cutsceneSay(w, t);
+  }
+  cutsceneHideDialogue();
+}
+/* Blake's first Billie: Gildlet (the slug line's first form) when the game has it, else any common first form */
+function blakeFirstBillie() {
+  if (SPECIES.trump0) return 'trump0';
+  const starters = RULES.start.starters || [];
+  return Object.keys(SPECIES).find(k => SPECIES[k].stage === 0 && !starters.includes(SPECIES[k].line)) || null;
+}
+/* the fight's log line under the plates: waits for a tap (or goes at once when the opening is being skipped) */
+function fightLog(text) {
+  const box = $('#csFight'),
+    t = box && box.querySelector('.csf-t');
+  if (!t || cutscene.skip || !cutscene.on) return Promise.resolve();
+  t.textContent = text;
+  t.classList.remove('m-enter');
+  void t.offsetWidth;
+  t.classList.add('m-enter');
+  const t0 = performance.now();
+  return new Promise(res => {
+    const done = () => {
+      box.removeEventListener('click', onTap);
+      clearInterval(poll);
+      res();
+    };
+    const onTap = () => {
+      /* a tap right away counts as skipping fast, like a line cut short */
+      if (cutscene.skipWatch && !cutscene.quip) cutscene.quip = cutscene.skipWatch.record(performance.now() - t0);
+      done();
+    };
+    box.addEventListener('click', onTap);
+    /* the opening being skipped (the Skip button, the checks) or ended lets the fight go on */
+    const poll = setInterval(() => {
+      if (cutscene.skip || !cutscene.on) done();
+    }, 150);
+    if (cutscene.test) setTimeout(done, 300);
+  });
+}
+function fightPlate(cls, name, lvl, hp, max) {
+  return `<div class="csf-plate ${cls}"><div class="csf-top"><b>${escapeHtml(name)}</b><span class="tnum">${escapeHtml(lvl)}</span></div><span class="csf-hp"><i style="width:${max ? (hp / max) * 100 : 100}%"></i></span><small class="tnum">${formatNumber(hp)}/${formatNumber(max)}</small></div>`;
+}
+async function hazelFight(who, A) {
+  const id = blakeFirstBillie(),
+    box = $('#csFight');
+  if (!id || !box) return;
+  const F = HAZEL.fight,
+    name = SPECIES[id].name,
+    vars = { foe: name };
+  cutscene.foeName = name;
+  let max = 19;
+  try {
+    max = maxHp({ sp: id, lvl: 4 }) || max;
+  } catch (e) {}
+  /* Blake throws a coin and his Billie pops out between them */
+  const p = A.stars[1],
+    foe = { sp: id, x: p[0], z: p[1], pop: 0, a: 1, act: null, actT: 0, seed: 3.1, flip: -1, white: 0 };
+  cutscene.foe = foe;
+  cutsceneShot({ eye: [10.15, 1.5, 7.3], tgt: [10.15, 0.7, 11.9], fov: 40, w: 4.4 }, 900);
+  if (cutscene.actors.rival) cutsceneAct('rival', 'throw', 900);
+  if (typeof soundEffect === 'function') soundEffect('throw');
+  cutscene.coins.push({
+    a: [cutscene.actors.rival.x - 0.2, standingHeightAt(A.blake[0], A.blake[1]) + 1.35, cutscene.actors.rival.z - 0.1],
+    b: [p[0], standingHeightAt(p[0], p[1]) + 0.1, p[1]],
+    t0: cutsceneNow(),
+    dur: 650,
+    onLand() {
+      foe.popT = cutsceneNow();
+      foe.act = 'enter';
+      foe.actT = cutsceneNow();
+      if (typeof soundEffect === 'function') soundEffect('pop');
+      if (!cutscene.skip) cutsceneSparkle([p[0], standingHeightAt(p[0], p[1]) + 0.3, p[1]], 10);
+    },
+  });
+  await cutsceneWait(900);
+  cutscene.coins.forEach(c => {
+    if (!c.landed) {
+      c.landed = 1;
+      c.onLand();
+    }
+  });
+  cutscene.coins = [];
+  if (!cutscene.on) return;
+  /* the battle plates: Hazel (absurd) against Blake's Billie, a move line, the log */
+  box.innerHTML = `<div class="csf-plates">${fightPlate('me', 'Prof. Hazel', 'Lv ???', 9999, 9999)}${fightPlate('foe', name, 'Lv 4', max, max)}</div><div class="csf-moves" hidden>${F.moves.map((m, i) => `<span class="${i === 0 ? 'on' : ''}">${escapeHtml(m)}</span>`).join('')}</div><button class="csf-log" type="button"><span class="csf-t"></span><small>Tap to go on</small></button>`;
+  box.hidden = false;
+  document.body.classList.add('cs-fighting');
+  await fightLog(F.start);
+  await fightLog(fillLine(F.blakeGo, vars));
+  foe.act = 'attack';
+  foe.actT = cutsceneNow();
+  await fightLog(fillLine(F.tackle, vars));
+  const mv = box.querySelector('.csf-moves');
+  if (mv) mv.hidden = false;
+  cutsceneAct('gini', 'throw', 700);
+  await fightLog(F.hit);
+  if (mv) mv.hidden = true;
+  /* one hit: the plate drains to zero, the Billie flashes white and goes */
+  const fill = box.querySelector('.csf-plate.foe .csf-hp i'),
+    num = box.querySelector('.csf-plate.foe small');
+  if (fill) fill.style.width = '0%';
+  if (num) num.textContent = `0/${formatNumber(max)}`;
+  foe.white = 1;
+  if (typeof soundEffect === 'function') soundEffect('hit');
+  if (typeof buzz === 'function') buzz(20);
+  await fightLog(F.effective);
+  foe.leave = cutsceneNow();
+  await fightLog(fillLine(F.faint, vars));
+  box.hidden = true;
+  box.innerHTML = '';
+  document.body.classList.remove('cs-fighting');
+  cutscene.foe = null;
+}
+/* during the pick: tap Hazel for a hot take about the starter you're looking at, in a bubble over her head */
+function hazelHotTake() {
+  const g = cutscene.actors.gini,
+    b = $('#csBubble');
+  if (!g || !b || !walkView.C || !walkView.cv) return;
+  const line = cutscene.pickList[cutscene.sel],
+    n = cutscene.takes[line] || 0;
+  cutscene.takes[line] = n + 1;
+  b.textContent = hotTake(line, n);
+  const q = worldToScreen(walkView.C, g.x, 2.1 + standingHeightAt(g.x, g.z), g.z),
+    r = walkView.cv.getBoundingClientRect();
+  b.hidden = false;
+  if (q) {
+    /* over her head, but kept fully on screen */
+    const half = b.offsetWidth / 2 + 16;
+    b.style.left = clamp(r.left + (q.x / walkView.cv.width) * r.width, half, innerWidth - half) + 'px';
+    b.style.top = Math.max(b.offsetHeight + 70, r.top + (q.y / walkView.cv.height) * r.height) + 'px';
+  }
+  b.classList.remove('m-pop');
+  void b.offsetWidth;
+  b.classList.add('m-pop');
+  cutsceneAct('gini', 'react', 700);
+  clearTimeout(b._t);
+  b._t = setTimeout(() => (b.hidden = true), 3600);
 }
 export function cutsceneTeardown() {
   talkHide();
@@ -927,7 +1129,17 @@ export function cutsceneTeardown() {
     }
   }
   if (typeof landing !== 'undefined') landing.bits = [];
-  document.body.classList.remove('in-cs', 'cs-choosing', 'cs-dress', 'cs-falling', 'cs-dazed', 'cs-waking', 'cs-blink');
+  cutscene.foe = null;
+  document.body.classList.remove(
+    'in-cs',
+    'cs-choosing',
+    'cs-dress',
+    'cs-falling',
+    'cs-dazed',
+    'cs-waking',
+    'cs-blink',
+    'cs-fighting'
+  );
   if (walkView.cv) stopWalkView();
 }
 function cutsceneEnd(l) {
@@ -1013,6 +1225,10 @@ document.addEventListener('pointerup', ev => {
     sy = ((ev.clientY - r.top) / r.height) * walkView.cv.height;
   let best = -1,
     bd = 1e9;
+  /* phase 06-2b: Hazel, nearer than any starter, gives a hot take */
+  const g = cutscene.actors.gini,
+    hq = g && worldToScreen(walkView.C, g.x, 1.0 + standingHeightAt(g.x, g.z), g.z),
+    hd = hq ? Math.hypot(hq.x - sx, hq.y - sy) : 1e9;
   cutscene.stars.forEach((s, i) => {
     const q = worldToScreen(walkView.C, s.x, 0.45, s.z);
     if (!q) return;
@@ -1022,6 +1238,10 @@ document.addEventListener('pointerup', ev => {
       best = i;
     }
   });
+  if (hd < bd && hd < walkView.cv.height * 0.16) {
+    hazelHotTake();
+    return;
+  }
   if (best >= 0 && bd < walkView.cv.height * 0.18 && best !== cutscene.sel) {
     cutscene.sel = best;
     cutscene.confirm = false;
