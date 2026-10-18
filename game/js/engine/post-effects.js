@@ -11,7 +11,7 @@ import { clamp } from '../util.js';
 import { makeCanvas } from '../art.js';
 import { walkView } from '../walk-view.js';
 import { engineColor, engineSetting } from './settings.js';
-import { EGL_GLSL_LIGHT, eglBindQuad, eglPrograms, eglTarget, gpuState } from './webgl.js';
+import { GLSL_LIGHT, eglBindQuad, eglTarget, ensurePrograms, gpuState } from './webgl.js';
 import { setLightUniforms } from './light.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -101,7 +101,7 @@ void main(){vec2 dv=(uSun-vUV);if(uVirt>.5)dv=normalize(dv)*.32;dv*=uLen/24.;vec
     `#version 300 es
 precision highp float;in vec2 aC;out vec2 vUV;void main(){vUV=aC;gl_Position=vec4(aC*2.-1.,0.,1.);}`,
     `#version 300 es
-precision highp float;in vec2 vUV;out vec4 o;uniform sampler2D uDep;uniform mat4 uIVP;uniform float uN,uF,uK,uLK,uDens,uMaxD;${EGL_GLSL_LIGHT}
+precision highp float;in vec2 vUV;out vec4 o;uniform sampler2D uDep;uniform mat4 uIVP;uniform float uN,uF,uK,uLK,uDens,uMaxD;${GLSL_LIGHT}
 /* v43: light in the air. From the camera to what each pixel shows, the ray is walked in twelve steps; at each the sun's
    shadow map says whether the air there is lit (the near map first, the far cascade beyond it), and the nearest lamps
    add their glow. Forward scattering (Henyey-Greenstein) makes rays toward the sun bright; the air is thickest low down. */
@@ -157,7 +157,7 @@ void main(){vec2 uv=vUV;/* v32: heat shimmer above hot ground (lava, desert noon
 /* draws the post chain from scene target S (color + depth) to the screen */
 export function drawPostEffects(S, C, focusDist, rw, rh, o = {}) {
   const gl = gpuState.gl;
-  eglPrograms(POST_EFFECT_SHADERS);
+  ensurePrograms(POST_EFFECT_SHADERS);
   gl.disable(gl.DEPTH_TEST);
   gl.disable(gl.BLEND);
   eglBindQuad();

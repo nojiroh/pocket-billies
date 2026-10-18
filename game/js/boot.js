@@ -14,7 +14,7 @@ import { trainerArtPaths } from './person-art.js';
 import { rigAtlas } from './skeleton-rig.js';
 import { AREAS, battleStageArtFiles, battleStagePrepare } from './battle-stage.js';
 import { mapArtPaths, mapById, walkData, walkView } from './walk-view.js';
-import { eglOK, gpuState } from './engine/webgl.js';
+import { gpuState, webgl2Supported } from './engine/webgl.js';
 import { environment } from './environment.js';
 import { startTownRise, walkRenderer } from './walk-view-gl.js';
 import { seamlessWorld } from './seamless-world.js';
@@ -809,7 +809,7 @@ function noWebGL(why) {
   });
   document.body.appendChild(el);
 }
-if (!eglOK()) noWebGL();
+if (!webgl2Supported()) noWebGL();
 else
   /* phase 04b: the maps round where you are come with the art check; the others after the loader (js/map-files.js) */
   Promise.all([artCacheCheck(), loadMapsAhead(S.route ? S.route.node : START_NODE)])

@@ -12,35 +12,28 @@ import { imageReady } from '../walk-view.js';
 import { engineSetting } from './settings.js';
 /* eslint-disable no-func-assign */
 expose({
-  EGL_ATTR_LOC: [() => EGL_ATTR_LOC],
-  EGL_GLSL_COMMON: [() => EGL_GLSL_COMMON],
-  EGL_GLSL_LIGHT: [() => EGL_GLSL_LIGHT],
-  EGL_GLSL_LOOK: [() => EGL_GLSL_LOOK],
+  ATTRIBUTE_LOCATIONS: [() => ATTRIBUTE_LOCATIONS],
   EGL_MATS: [() => EGL_MATS],
   EGL_NW: [() => EGL_NW],
   EGL_NW_SRC: [() => EGL_NW_SRC],
+  GLSL_COMMON: [() => GLSL_COMMON],
+  GLSL_LIGHT: [() => GLSL_LIGHT],
+  GLSL_LOOK: [() => GLSL_LOOK],
   M4: [() => M4],
+  attributeClashes: [() => attributeClashes, v => (attributeClashes = v)],
+  compileProgram: [() => compileProgram, v => (compileProgram = v)],
   eglAniso: [() => eglAniso, v => (eglAniso = v)],
-  eglAttrClashes: [() => eglAttrClashes, v => (eglAttrClashes = v)],
   eglBindGrid: [() => eglBindGrid, v => (eglBindGrid = v)],
   eglBindQuad: [() => eglBindQuad, v => (eglBindQuad = v)],
-  eglCompile: [() => eglCompile, v => (eglCompile = v)],
-  eglFinish: [() => eglFinish, v => setEglFinish(v)],
   eglFree: [() => eglFree, v => (eglFree = v)],
   eglGpuBegin: [() => eglGpuBegin, v => (eglGpuBegin = v)],
   eglGpuEnd: [() => eglGpuEnd, v => (eglGpuEnd = v)],
   eglGpuPoll: [() => eglGpuPoll, v => (eglGpuPoll = v)],
   eglImg: [() => eglImg, v => (eglImg = v)],
-  eglInit: [() => eglInit, v => (eglInit = v)],
   eglMesh: [() => eglMesh, v => (eglMesh = v)],
   eglNormWork: [() => eglNormWork, v => setEglNormWork(v)],
   eglNormWorker: [() => eglNormWorker, v => (eglNormWorker = v)],
   eglNormal: [() => eglNormal, v => setEglNormal(v)],
-  eglOK: [() => eglOK, v => (eglOK = v)],
-  eglPendPoll: [() => eglPendPoll, v => (eglPendPoll = v)],
-  eglPrecompile: [() => eglPrecompile, v => (eglPrecompile = v)],
-  eglPrograms: [() => eglPrograms, v => setEglPrograms(v)],
-  eglStart: [() => eglStart, v => (eglStart = v)],
   eglTarget: [() => eglTarget, v => (eglTarget = v)],
   eglTexData: [() => eglTexData, v => (eglTexData = v)],
   eglTexParams: [() => eglTexParams, v => (eglTexParams = v)],
@@ -48,16 +41,19 @@ expose({
   eglTexTrim: [() => eglTexTrim, v => (eglTexTrim = v)],
   eglWind: [() => eglWind, v => (eglWind = v)],
   eglWindBend: [() => eglWindBend, v => (eglWindBend = v)],
+  ensurePrograms: [() => ensurePrograms, v => setEnsurePrograms(v)],
+  finishProgramCompile: [() => finishProgramCompile, v => setFinishProgramCompile(v)],
   gpuState: [() => gpuState],
+  initWebgl: [() => initWebgl, v => (initWebgl = v)],
+  pollPendingPrograms: [() => pollPendingPrograms, v => (pollPendingPrograms = v)],
+  precompilePrograms: [() => precompilePrograms, v => (precompilePrograms = v)],
   smooth01: [() => smooth01],
+  startProgramCompile: [() => startProgramCompile, v => (startProgramCompile = v)],
   v3c: [() => v3c],
   v3n: [() => v3n],
+  webgl2Supported: [() => webgl2Supported, v => (webgl2Supported = v)],
 });
 /* eslint-enable no-func-assign */
-export function setEglFinish(v) {
-  eglFinish = v; // eslint-disable-line no-func-assign
-  provide({ eglFinish });
-}
 export function setEglNormWork(v) {
   eglNormWork = v; // eslint-disable-line no-func-assign
   provide({ eglNormWork });
@@ -66,9 +62,13 @@ export function setEglNormal(v) {
   eglNormal = v; // eslint-disable-line no-func-assign
   provide({ eglNormal });
 }
-export function setEglPrograms(v) {
-  eglPrograms = v; // eslint-disable-line no-func-assign
-  provide({ eglPrograms });
+export function setEnsurePrograms(v) {
+  ensurePrograms = v; // eslint-disable-line no-func-assign
+  provide({ ensurePrograms });
+}
+export function setFinishProgramCompile(v) {
+  finishProgramCompile = v; // eslint-disable-line no-func-assign
+  provide({ finishProgramCompile });
 }
 /* to-module: end */
 export const gpuState = {
@@ -87,7 +87,7 @@ export const gpuState = {
   lost: 0,
   fail: 0,
 };
-export function eglOK() {
+export function webgl2Supported() {
   if (gpuState.ok != null) return gpuState.ok;
   try {
     const c = document.createElement('canvas');
@@ -198,7 +198,7 @@ export const smooth01 = t => {
 };
 provide({ smooth01 }); /* to-module */
 /* ---------- shared GLSL ---------- */
-export const EGL_GLSL_COMMON = `
+export const GLSL_COMMON = `
 uniform vec3 uCurve;uniform float uCurveD0;
 float curveY(vec2 p){float d=max(0.,length(p-uCurve.xy)-uCurveD0);return uCurve.z*d*d;}
 float windGust(vec2 p,float t){float a=sin(p.x*.35+p.y*.21-t*.0018)*.5+.5;float band=pow(max(0.,sin(p.x*.11+p.y*.06-t*.00055)),8.);return a*a+band*1.3;}
@@ -222,7 +222,7 @@ export function eglWindBend(x, z, t, g) {
 }
 /* lighting shared by everything lit in the world: sun with soft contact-hardening shadows and cloud shadows, contact
    occlusion, point lights (window lights only light what is in front of them), sky and ground ambient, haze and mist */
-export const EGL_GLSL_LIGHT = `
+export const GLSL_LIGHT = `
 uniform vec3 uEye,uSunDir,uSunCol,uAmbTop,uAmbBot,uFogCol,uTint,uShTint;
 uniform vec4 uRoomB;uniform float uRoomDim;
 uniform vec2 uValley;uniform float uFogStart,uFogD,uTintAmt,uMist,uMistY,uTime,uShStr,uShPen,uCloudSh,uCloudSpd,uCloudCov,uContact,uAmbK,uShLite,uShPx;uniform vec3 uShLift;
@@ -300,7 +300,7 @@ vec3 fogit(vec3 c,vec3 p){float d=length(p-uEye);float f=1.-exp(-max(0.,d-uFogSt
    the colourful parts, and only within a hue window when the prop says so: leaves, not the trunk), a tint, and wear
    and tear (faded paint, dirt streaks running down and splashed at the foot, moss, hairline cracks). px is the
    position in the picture's own pixels, so the wear is as blocky as the art; hgt runs 0 at the foot to 1 at the top. */
-export const EGL_GLSL_LOOK = `
+export const GLSL_LOOK = `
 uniform vec4 uWear,uHsv,uLkTint;uniform vec2 uMaskH;
 vec3 lkHsv(vec3 c){vec4 K=vec4(0.,-1./3.,2./3.,-1.);vec4 p=mix(vec4(c.bg,K.wz),vec4(c.gb,K.xy),step(c.b,c.g));vec4 q=mix(vec4(p.xyw,c.r),vec4(c.r,p.yzx),step(p.x,c.r));float d=q.x-min(q.w,q.y);return vec3(abs(q.z+(q.w-q.y)/(6.*d+1e-10)),d/(q.x+1e-10),q.x);}
 vec3 lkRgb(vec3 c){vec3 p=abs(fract(c.xxx+vec3(1.,2./3.,1./3.))*6.-3.);return c.z*mix(vec3(1.),clamp(p-1.,0.,1.),c.y);}
@@ -321,7 +321,7 @@ vec3 lookOn(vec3 c,vec2 px,float hgt,vec3 bp){
 /* v32: compiling is split in two: start (the GPU driver can work on it in the background) and finish (read the result).
    Shader sets that are needed later (buildings, solid props, the map) are started when a scene opens and finished a
    few at a time, so the first frame with a building in it no longer stalls while they compile. */
-function eglStart([vs, fs], name) {
+function startProgramCompile([vs, fs], name) {
   const gl = gpuState.gl,
     mk = (t, src) => {
       const s = gl.createShader(t);
@@ -352,7 +352,7 @@ function eglStart([vs, fs], name) {
   gl.linkProgram(p);
   return { p, a, b, name, gl };
 }
-export function eglFinish(j) {
+export function finishProgramCompile(j) {
   const gl = gpuState.gl,
     p = j.p;
   if (!gl.getProgramParameter(p, gl.LINK_STATUS)) {
@@ -370,16 +370,16 @@ export function eglFinish(j) {
   }
   return { p, U, name: j.name };
 }
-export function eglPrecompile(defs) {
+export function precompilePrograms(defs) {
   if (!gpuState.gl || !defs) return;
   gpuState.pend = gpuState.pend || new Map();
   for (const [k, v] of Object.entries(defs))
     if (!gpuState.P[k] && !gpuState.pend.has(k))
       try {
-        gpuState.pend.set(k, eglStart(v, k));
+        gpuState.pend.set(k, startProgramCompile(v, k));
       } catch (e) {}
 }
-export function eglPendPoll(max = 2) {
+export function pollPendingPrograms(max = 2) {
   const M = gpuState.pend;
   if (!M || !M.size) return;
   const gl = gpuState.gl,
@@ -393,12 +393,12 @@ export function eglPendPoll(max = 2) {
     if (X && !gl.getProgramParameter(j.p, X.COMPLETION_STATUS_KHR)) continue;
     M.delete(k);
     try {
-      if (!gpuState.P[k]) gpuState.P[k] = eglFinish(j);
+      if (!gpuState.P[k]) gpuState.P[k] = finishProgramCompile(j);
     } catch (e) {}
     if (++n >= max) break;
   }
 }
-function eglCompile([vs, fs], name) {
+function compileProgram([vs, fs], name) {
   const gl = gpuState.gl,
     mk = (t, src) => {
       const s = gl.createShader(t);
@@ -440,39 +440,39 @@ function eglCompile([vs, fs], name) {
 }
 /* the input locations a vertex shader ends up with (its own layout(location=…), else the engine's standard one);
    two inputs on one location is a link error on some GPUs (Adreno) that others forgive, so the full test checks it */
-const EGL_ATTR_LOC = { aPos: 0, aC: 0, aNrm: 1, aShore: 1, aI: 1, aCol: 2, aUV: 2 };
-export function eglAttrClashes(vs) {
+const ATTRIBUTE_LOCATIONS = { aPos: 0, aC: 0, aNrm: 1, aShore: 1, aI: 1, aCol: 2, aUV: 2 };
+export function attributeClashes(vs) {
   const used = {},
     bad = [];
   const re = /(layout\s*\(\s*location\s*=\s*(\d+)\s*\)\s*)?in\s+\w+\s+(\w+)\s*;/g;
   let m;
   while ((m = re.exec(vs))) {
     const name = m[3],
-      loc = m[2] != null ? +m[2] : EGL_ATTR_LOC[name];
+      loc = m[2] != null ? +m[2] : ATTRIBUTE_LOCATIONS[name];
     if (loc == null) continue;
-    if (m[2] != null && EGL_ATTR_LOC[name] != null && +m[2] !== EGL_ATTR_LOC[name])
-      bad.push(`${name} sets location ${m[2]}, the engine’s standard is ${EGL_ATTR_LOC[name]}`);
+    if (m[2] != null && ATTRIBUTE_LOCATIONS[name] != null && +m[2] !== ATTRIBUTE_LOCATIONS[name])
+      bad.push(`${name} sets location ${m[2]}, the engine’s standard is ${ATTRIBUTE_LOCATIONS[name]}`);
     if (used[loc] != null && used[loc] !== name) bad.push(`${used[loc]} and ${name} both on ${loc}`);
     used[loc] = name;
   }
   return bad;
 }
-export function eglPrograms(defs) {
+export function ensurePrograms(defs) {
   for (const [k, v] of Object.entries(defs))
     if (!gpuState.P[k]) {
       const j = gpuState.pend && gpuState.pend.get(k);
       if (j && j.gl === gpuState.gl) {
         gpuState.pend.delete(k);
         try {
-          gpuState.P[k] = eglFinish(j);
+          gpuState.P[k] = finishProgramCompile(j);
           continue;
         } catch (e) {}
       }
-      gpuState.P[k] = eglCompile(v, k);
+      gpuState.P[k] = compileProgram(v, k);
     }
 }
 /* ---------- context ---------- */
-export function eglInit(cv) {
+export function initWebgl(cv) {
   try {
     const gl = cv.getContext('webgl2', {
       alpha: false,

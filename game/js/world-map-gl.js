@@ -23,12 +23,12 @@ import {
   eglBindQuad,
   eglFree,
   eglImg,
-  eglInit,
   eglMesh,
-  eglOK,
-  eglPrograms,
   eglTarget,
+  ensurePrograms,
   gpuState,
+  initWebgl,
+  webgl2Supported,
 } from './engine/webgl.js';
 import { POST_EFFECT_SHADERS, drawPostEffects, projectToScreenUv } from './engine/post-effects.js';
 import { rawHeightAt, walkRenderer, worldMapTexture } from './walk-view-gl.js';
@@ -179,7 +179,7 @@ void main(){vec4 c=texture(uTex,vUV);if(c.a<.5)discard;float d=length(vW-uC),fk=
 };
 /* ---------- when it runs ---------- */
 export function worldMapGlWanted() {
-  return typeof gpuState !== 'undefined' && !gpuState.fail && !gpuState.lost && eglOK();
+  return typeof gpuState !== 'undefined' && !gpuState.fail && !gpuState.lost && webgl2Supported();
 }
 function worldMapGlCanvas() {
   let cv = $('#dio');
@@ -195,7 +195,7 @@ function worldMapGlReady() {
   const cv = worldMapGlCanvas();
   if (gpuState.cv !== cv) {
     if (walkView.cv && walkView.cv !== cv) return false;
-    if (!eglInit(cv)) {
+    if (!initWebgl(cv)) {
       gpuState.fail = 1;
       return false;
     }
@@ -206,8 +206,8 @@ function worldMapGlReady() {
     }
   }
   try {
-    eglPrograms(WORLD_MAP_GL_SHADERS);
-    eglPrograms(POST_EFFECT_SHADERS);
+    ensurePrograms(WORLD_MAP_GL_SHADERS);
+    ensurePrograms(POST_EFFECT_SHADERS);
   } catch (e) {
     console.error(e);
     gpuState.fail = 1;
@@ -1526,7 +1526,7 @@ function worldMapMiniGet(i) {
 function worldMapMiniDraw(cam) {
   if (!worldMapMinisOn() || worldMapGl.flat) return false;
   const gl = gpuState.gl;
-  eglPrograms({ mmini: WORLD_MAP_GL_SHADERS.mmini });
+  ensurePrograms({ mmini: WORLD_MAP_GL_SHADERS.mmini });
   const p = gpuState.P.mmini;
   gl.useProgram(p.p);
   gl.uniformMatrix4fv(p.U.uVP, false, worldMapGlMatrix(cam));

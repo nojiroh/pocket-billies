@@ -19,7 +19,7 @@ import { artLoad } from './art.js';
 import { portraitHTML } from './person-art.js';
 import { particleSprite } from './battle-stage.js';
 import { walkView } from './walk-view.js';
-import { eglPrograms, gpuState } from './engine/webgl.js';
+import { ensurePrograms, gpuState } from './engine/webgl.js';
 import { POST_EFFECT_SHADERS } from './engine/post-effects.js';
 import { canvasForContext, standingHeightAt, walkGlContext } from './walk-view-gl.js';
 import { A, endBattle, stopTimers, types } from './battle.js';
@@ -104,8 +104,8 @@ export function fallGL() {
   cv = canvasForContext(cv, 'gl');
   if (!walkGlContext(cv)) return null;
   try {
-    eglPrograms(WORLD_MAP_GL_SHADERS);
-    eglPrograms(POST_EFFECT_SHADERS);
+    ensurePrograms(WORLD_MAP_GL_SHADERS);
+    ensurePrograms(POST_EFFECT_SHADERS);
   } catch (e) {
     console.error(e);
     return null;
@@ -647,7 +647,7 @@ export function fallMap(run, ms) {
       return;
     }
     try {
-      eglPrograms(WORLD_MAP_GL_SHADERS);
+      ensurePrograms(WORLD_MAP_GL_SHADERS);
     } catch (e) {
       console.error(e);
       res();

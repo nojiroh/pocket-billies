@@ -580,7 +580,7 @@ def desktop_steps(b, base, R):
     @step('Shaders: every program compiles, no clashing inputs', 30)
     def shaders():
         r = pg.evaluate("""(()=>{if(typeof gpuState==='undefined'||!gpuState.gl)return {skip:'no WebGL in this browser'};const sets={WALK_SHADERS:typeof WALK_SHADERS!=='undefined'?WALK_SHADERS:null,BUILDING_SHADERS:typeof BUILDING_SHADERS!=='undefined'?BUILDING_SHADERS:null,POST_EFFECT_SHADERS:typeof POST_EFFECT_SHADERS!=='undefined'?POST_EFFECT_SHADERS:null,WORLD_MAP_GL_SHADERS:typeof WORLD_MAP_GL_SHADERS!=='undefined'?WORLD_MAP_GL_SHADERS:null,SOLID_PROP_SHADERS:typeof SOLID_PROP_SHADERS!=='undefined'?SOLID_PROP_SHADERS:null};
-         const bad=[];let n=0;for(const [name,S] of Object.entries(sets)){if(!S)continue;for(const [k,v] of Object.entries(S)){n++;const c=eglAttrClashes(v[0]);if(c.length)bad.push(k+' clash: '+c.join(','));try{if(!gpuState.P[k])gpuState.P[k]=eglCompile(v,k)}catch(e){bad.push(String(e.message||e).slice(0,160))}}}return {n,bad}})()""")
+         const bad=[];let n=0;for(const [name,S] of Object.entries(sets)){if(!S)continue;for(const [k,v] of Object.entries(S)){n++;const c=attributeClashes(v[0]);if(c.length)bad.push(k+' clash: '+c.join(','));try{if(!gpuState.P[k])gpuState.P[k]=compileProgram(v,k)}catch(e){bad.push(String(e.message||e).slice(0,160))}}}return {n,bad}})()""")
         if r.get('skip'): return r['skip']
         if r['bad']: raise Exception('; '.join(r['bad'][:4]))
         return f"{r['n']} programs"

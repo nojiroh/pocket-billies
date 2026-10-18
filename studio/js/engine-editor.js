@@ -15,7 +15,7 @@ import {
   engineSetting,
   setEngineDataSource,
 } from '../../game/js/engine/settings.js';
-import { eglOK, gpuState } from '../../game/js/engine/webgl.js';
+import { gpuState, webgl2Supported } from '../../game/js/engine/webgl.js';
 import {
   adaptQuality,
   mountWalkView,
@@ -217,7 +217,7 @@ async function engMount() {
     }
     if (typeof walkRenderer === 'undefined' || !walkRenderer.on) {
       m.textContent =
-        typeof gpuState !== 'undefined' && (gpuState.fail || !eglOK())
+        typeof gpuState !== 'undefined' && (gpuState.fail || !webgl2Supported())
           ? 'WebGL 2 isn’t available in this browser, so there is no preview.'
           : 'Starting…';
       return;

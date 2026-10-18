@@ -25,15 +25,15 @@ import {
 } from './walk-view.js';
 import {
   EGL_NW,
-  eglFinish,
   eglNormWork,
   eglNormal,
-  eglPrograms,
+  ensurePrograms,
+  finishProgramCompile,
   gpuState,
-  setEglFinish,
   setEglNormWork,
   setEglNormal,
-  setEglPrograms,
+  setEnsurePrograms,
+  setFinishProgramCompile,
 } from './engine/webgl.js';
 import { drawPostEffects, setDrawPostEffects } from './engine/post-effects.js';
 import { environment } from './environment.js';
@@ -130,12 +130,12 @@ Object.defineProperties(GAME, {
   drawSprites: { get: () => drawSprites, set: setDrawSprites },
   drawWater: { get: () => drawWater, set: setDrawWater },
   effectsPass: { get: () => effectsPass, set: setEffectsPass },
-  eglFinish: { get: () => eglFinish, set: setEglFinish },
   eglNormWork: { get: () => eglNormWork, set: setEglNormWork },
   eglNormal: { get: () => eglNormal, set: setEglNormal },
-  eglPrograms: { get: () => eglPrograms, set: setEglPrograms },
   endBattle: { get: () => endBattle, set: setEndBattle },
+  ensurePrograms: { get: () => ensurePrograms, set: setEnsurePrograms },
   environment: { get: () => environment },
+  finishProgramCompile: { get: () => finishProgramCompile, set: setFinishProgramCompile },
   gatherFrameItems: { get: () => gatherFrameItems, set: setGatherFrameItems },
   gpuState: { get: () => gpuState },
   grassWork: { get: () => grassWork, set: setGrassWork },

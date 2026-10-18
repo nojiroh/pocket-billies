@@ -13,7 +13,7 @@ import { RM, provide } from './hooks.js';
 import { clamp } from './util.js';
 import { hexToRgb } from './art.js';
 import { artImage, mapBridges, walkView } from './walk-view.js';
-import { eglImg, eglPrograms, gpuState } from './engine/webgl.js';
+import { eglImg, ensurePrograms, gpuState } from './engine/webgl.js';
 import {
   WALL_COLORS,
   defaultWallMaterial,
@@ -565,7 +565,7 @@ function drawStructures(C, X) {
   buildingGuard(() => {
     if (!ensureStructures()) return;
     const gl = gpuState.gl;
-    eglPrograms(BUILDING_SHADERS);
+    ensurePrograms(BUILDING_SHADERS);
     const A = buildingArt(),
       det = eglImg(artImage(A.detail), { noNormal: true });
     if (!det) return;
@@ -600,7 +600,7 @@ function drawStructureShadows(SH) {
   buildingGuard(() => {
     if (!ensureStructures()) return;
     const gl = gpuState.gl;
-    eglPrograms(BUILDING_SHADERS);
+    ensurePrograms(BUILDING_SHADERS);
     const p = gpuState.P.bshadow;
     gl.useProgram(p.p);
     gl.uniformMatrix4fv(p.U.uVP, false, SH.vp);

@@ -36,7 +36,7 @@ import {
   walkView,
 } from './walk-view.js';
 import { engineSetting } from './engine/settings.js';
-import { eglAttrClashes, gpuState } from './engine/webgl.js';
+import { attributeClashes, gpuState } from './engine/webgl.js';
 import { POST_EFFECT_SHADERS } from './engine/post-effects.js';
 import { environment } from './environment.js';
 import { WALK_SHADERS, roomDimming, standingHeightAt, walkRenderer } from './walk-view-gl.js';
@@ -396,7 +396,7 @@ async function runFullTest(mode) {
         );
         const bad = [];
         for (const [k, v] of Object.entries(all)) {
-          const c = eglAttrClashes(v[0]);
+          const c = attributeClashes(v[0]);
           if (c.length) bad.push(k + ': ' + c.join(', '));
         }
         if (bad.length) throw new Error(bad.join('; '));
