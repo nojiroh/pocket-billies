@@ -91,7 +91,7 @@ import {
   sideWorld,
 } from './battle-stage.js';
 import { walkView } from './walk-view.js';
-import { WEATHER_NAMES, environment, environmentHere, environmentState } from './environment.js';
+import { WEATHER_NAMES, currentLocationMap, environment, environmentState } from './environment.js';
 import { addRipple, walkRenderer, waterAt } from './walk-view-gl.js';
 import { BGL, battleGLWanted } from './battle-3d.js';
 /* eslint-disable no-func-assign */
@@ -1585,7 +1585,7 @@ function tickerUpdate(s, mk) {
     items.push(`<span class="tki warn"><b>${esc(shockName().toUpperCase())}</b> ${plural(mk.n, 'turn')} left</span>`);
   const sunTxt = (() => {
     if (typeof environmentState !== 'function' || !environment.on) return 'noon, steady';
-    const st = environmentState(environmentHere());
+    const st = environmentState(currentLocationMap());
     return (
       (st.night > 0.5
         ? 'night, dim'

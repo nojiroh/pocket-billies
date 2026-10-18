@@ -24,13 +24,13 @@ expose({
   WEATHER_LOOKS: [() => WEATHER_LOOKS],
   WEATHER_NAMES: [() => WEATHER_NAMES],
   WEATHER_SKY_PALETTES: [() => WEATHER_SKY_PALETTES],
+  currentLocationMap: [() => currentLocationMap, v => ((currentLocationMap = v), provide({ currentLocationMap }))],
   environment: [() => environment],
   environmentClimate: [() => environmentClimate, v => (environmentClimate = v)],
   environmentFactors: [() => environmentFactors, v => (environmentFactors = v)],
   environmentForecast: [() => environmentForecast, v => (environmentForecast = v)],
   environmentFrame: [() => environmentFrame, v => (environmentFrame = v)],
   environmentHash: [() => environmentHash, v => (environmentHash = v)],
-  environmentHere: [() => environmentHere, v => ((environmentHere = v), provide({ environmentHere }))],
   environmentHint: [() => environmentHint, v => (environmentHint = v)],
   environmentHistory: [() => environmentHistory, v => (environmentHistory = v)],
   environmentHour: [() => environmentHour, v => (environmentHour = v)],
@@ -38,7 +38,7 @@ expose({
   environmentLabel: [() => environmentLabel, v => (environmentLabel = v)],
   environmentLikes: [() => environmentLikes, v => (environmentLikes = v)],
   environmentLitFraction: [() => environmentLitFraction, v => (environmentLitFraction = v)],
-  environmentMixHex: [() => environmentMixHex, v => (environmentMixHex = v)],
+  environmentMixRgb: [() => environmentMixRgb, v => (environmentMixRgb = v)],
   environmentOdds: [() => environmentOdds, v => ((environmentOdds = v), provide({ environmentOdds }))],
   environmentPreferences: [() => environmentPreferences, v => (environmentPreferences = v)],
   environmentRules: [() => environmentRules, v => (environmentRules = v)],
@@ -52,7 +52,7 @@ expose({
   weatherHistory: [() => weatherHistory],
 });
 /* eslint-enable no-func-assign */
-provide({ environmentHere, environmentOdds, environmentSeason, environmentState, environmentSun });
+provide({ currentLocationMap, environmentOdds, environmentSeason, environmentState, environmentSun });
 /* to-module: end */
 export const environment = {
   on: false,
@@ -257,7 +257,7 @@ export function environmentWindowLit(x, z, h) {
   const v = Math.sin(x * 12.9898 + z * 78.233) * 43758.5453;
   return v - Math.floor(v) < environmentLitFraction(h);
 }
-export function environmentHere() {
+export function currentLocationMap() {
   try {
     return typeof sceneIdAt === 'function' && typeof mapById === 'function' && typeof S !== 'undefined' && S.route
       ? mapById(sceneIdAt(S.route.node))
@@ -430,7 +430,7 @@ export function environmentFrame(sc, dt) {
   return environment;
 }
 /* colours of the sky (top, middle, horizon) after time and weather */
-function environmentMixHex(a, b, t) {
+function environmentMixRgb(a, b, t) {
   return a.map((v, i) => v + (b[i] - v) * t);
 }
 export function environmentSky(sky, indoor) {
@@ -443,15 +443,15 @@ export function environmentSky(sky, indoor) {
     ni = P('night');
   for (let i = 0; i < 3; i++) {
     let v = c[i];
-    v = environmentMixHex(v, da[i], environment.dawn * 0.75);
-    v = environmentMixHex(v, du[i], environment.dusk * 0.85);
-    v = environmentMixHex(v, gr[i], environment.grey * 0.85);
-    v = environmentMixHex(
+    v = environmentMixRgb(v, da[i], environment.dawn * 0.75);
+    v = environmentMixRgb(v, du[i], environment.dusk * 0.85);
+    v = environmentMixRgb(v, gr[i], environment.grey * 0.85);
+    v = environmentMixRgb(
       v,
       ni[i].map(x => x * (1 - environment.grey * 0.25)),
       environment.night * 0.94
     );
-    if (environment.flash) v = environmentMixHex(v, [0.9, 0.92, 1], environment.flash * 0.5);
+    if (environment.flash) v = environmentMixRgb(v, [0.9, 0.92, 1], environment.flash * 0.5);
     c[i] = v;
   }
   return c;
@@ -532,7 +532,7 @@ function environmentFactors(st) {
 }
 function environmentOdds(list, sc) {
   if (!environment.on || !list || environmentRules().off) return list;
-  const sc2 = sc || environmentHere();
+  const sc2 = sc || currentLocationMap();
   if (sc2 && sc2.indoor) return list;
   const f = environmentFactors(environmentState(sc2));
   if (!f.length) return list;
@@ -546,7 +546,7 @@ function environmentOdds(list, sc) {
 /* a short line for the walk card: “Evening · Rain · Autumn”, its icon, and who is about */
 export function environmentLabel(sc) {
   if (!environment.on) return '';
-  const st = environmentState(sc || environmentHere()),
+  const st = environmentState(sc || currentLocationMap()),
     t =
       st.night > 0.5
         ? 'Night'
@@ -562,13 +562,13 @@ export function environmentLabel(sc) {
   const hh = Math.floor(st.h) % 24,
     mm = Math.floor((st.h - Math.floor(st.h)) * 60),
     clock = `${hh}:${String(mm).padStart(2, '0')}`;
-  const fc = environmentForecast(sc || environmentHere());
+  const fc = environmentForecast(sc || currentLocationMap());
   return `${clock} ${t} · ${WEATHER_NAMES[st.wx] || 'Clear'}${fc ? ' (' + fc + ')' : ''} · ${st.ss[0].toUpperCase() + st.ss.slice(1)}`;
 }
 /* alpha 0.4: what's coming: the weather of the next few hours where it changes ("rain from 15:00", "clearing by 18:00") */
 function environmentForecast(sc) {
   if (!environment.on || (environment.force && environment.force.weather)) return '';
-  const s = sc || environmentHere();
+  const s = sc || currentLocationMap();
   if (!s || s.indoor) return '';
   const clim = environmentClimate(s),
     d = new Date(),
@@ -589,7 +589,7 @@ function environmentForecast(sc) {
   return '';
 }
 export function environmentIcon(sc) {
-  const st = environmentState(sc || environmentHere()),
+  const st = environmentState(sc || currentLocationMap()),
     w = st.wx;
   return w === 'rain' || w === 'storm'
     ? 'rain'
@@ -607,7 +607,7 @@ export function environmentIcon(sc) {
 }
 export function environmentHint(sc) {
   if (!environment.on || environmentRules().off) return '';
-  const s = sc || environmentHere();
+  const s = sc || currentLocationMap();
   if (s && s.indoor) return '';
   const up = new Set();
   for (const [, F] of environmentFactors(environmentState(s)))

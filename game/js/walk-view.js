@@ -20,9 +20,9 @@ import {
   artCacheVersion,
   buddyTap,
   cachedBuildingSignature,
+  currentLocationMap,
   defaultWallMaterial,
   environment,
-  environmentHere,
   environmentSeason,
   environmentState,
   groundHeightAt,
@@ -3646,7 +3646,7 @@ const FOLK_HOME = /house|cottage|townhouse|apartment|cave_house|chalet|villa|cab
 function folkHour() {
   if (typeof environmentState !== 'function') return 13;
   try {
-    const st = environmentState(typeof environmentHere === 'function' ? environmentHere() : null);
+    const st = environmentState(typeof currentLocationMap === 'function' ? currentLocationMap() : null);
     return st && st.h != null ? st.h : 13;
   } catch (e) {
     return 13;

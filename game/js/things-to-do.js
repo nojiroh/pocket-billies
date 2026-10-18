@@ -21,7 +21,7 @@ import {
   walkablePointNear,
 } from './walk-view.js';
 import { engineSetting } from './engine/settings.js';
-import { environment, environmentHere, environmentState } from './environment.js';
+import { currentLocationMap, environment, environmentState } from './environment.js';
 import { standingHeightAt, walkRenderer } from './walk-view-gl.js';
 import { endBattle, openBattle, say, setEndBattle, setOpenBattle } from './battle.js';
 import { sfx } from './sound.js';
@@ -633,7 +633,7 @@ function battleWx() {
   if (B.wx !== undefined) return B.wx;
   if (typeof environmentState !== 'function' || !environment.on || (RULES.env && RULES.env.battleOff))
     return (B.wx = null);
-  const sc = environmentHere();
+  const sc = currentLocationMap();
   if (!sc || sc.indoor) return (B.wx = null);
   const st = environmentState(sc),
     k = st.night > 0.5 ? (st.wx === 'clear' ? 'night' : st.wx) : st.wx === 'clear' ? 'sunny' : st.wx,

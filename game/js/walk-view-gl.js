@@ -177,9 +177,9 @@ import {
 import { POST_EFFECT_SHADERS, drawPostEffects, screenSnapshot, sunScreenPosition } from './engine/post-effects.js';
 import {
   WEATHER_LOOKS,
+  currentLocationMap,
   environment,
   environmentFrame,
-  environmentHere,
   environmentSky,
   environmentState,
   environmentWindowLit,
@@ -6712,7 +6712,7 @@ function roomSkyLight() {
   walkRenderer.roomSkyT = now;
   let st;
   try {
-    st = environmentState(environmentHere() || walkView.sc);
+    st = environmentState(currentLocationMap() || walkView.sc);
   } catch (e) {
     st = { h: 13, rise: 6, set: 20, night: 0, dusk: 0, dawn: 0, wx: 'clear' };
   }
