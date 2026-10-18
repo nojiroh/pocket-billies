@@ -44,29 +44,37 @@ import { lifeShift } from './ambient-life.js';
 import { shiftWorldBillies } from './world-billies.js';
 /* eslint-disable no-func-assign */
 expose({
+  NEIGHBOR_BAND_DEPTH: [() => NEIGHBOR_BAND_DEPTH],
+  NEIGHBOR_BAND_HALF_WIDTH: [() => NEIGHBOR_BAND_HALF_WIDTH],
+  OPPOSITE_SIDE: [() => OPPOSITE_SIDE],
+  ROCK_RAISE: [() => ROCK_RAISE],
+  SEAM_REACH: [() => SEAM_REACH],
+  SEAM_TAPER: [() => SEAM_TAPER],
+  SIDE_VECTORS: [() => SIDE_VECTORS],
+  TUNNEL_RUN: [() => TUNNEL_RUN],
   WR_DECO: [() => WR_DECO],
-  WR_DIR: [() => WR_DIR],
   WR_HUBL: [() => WR_HUBL],
-  WR_JD: [() => WR_JD],
-  WR_JW: [() => WR_JW],
   WR_LOOK: [() => WR_LOOK],
   WR_LR: [() => WR_LR],
   WR_MIX: [() => WR_MIX],
-  WR_OPP: [() => WR_OPP],
-  WR_ROCK: [() => WR_ROCK],
   WR_ROOM_GAP: [() => WR_ROOM_GAP],
-  WR_SR: [() => WR_SR],
-  WR_ST: [() => WR_ST],
-  WR_TUN: [() => WR_TUN],
   WR_WIN: [() => WR_WIN],
+  seamlessCornerHeight: [() => seamlessCornerHeight, v => (seamlessCornerHeight = v)],
+  seamlessEasedGround: [() => seamlessEasedGround, v => (seamlessEasedGround = v)],
+  seamlessExitPath: [() => seamlessExitPath, v => (seamlessExitPath = v)],
+  seamlessExitRaise: [() => seamlessExitRaise, v => (seamlessExitRaise = v)],
   seamlessHash: [() => seamlessHash, v => (seamlessHash = v)],
   seamlessInRect: [() => seamlessInRect],
+  seamlessJoin: [() => seamlessJoin, v => (seamlessJoin = v)],
+  seamlessJoinTrip: [() => seamlessJoinTrip, v => (seamlessJoinTrip = v)],
+  seamlessMemo: [() => seamlessMemo, v => (seamlessMemo = v)],
   seamlessNearestRoadPoint: [
     () => seamlessNearestRoadPoint,
     v => ((seamlessNearestRoadPoint = v), provide({ seamlessNearestRoadPoint })),
   ],
   seamlessNoise: [() => seamlessNoise, v => (seamlessNoise = v)],
   seamlessOn: [() => seamlessOn],
+  seamlessPointAlong: [() => seamlessPointAlong, v => (seamlessPointAlong = v)],
   seamlessRoad: [() => seamlessRoad, v => (seamlessRoad = v)],
   seamlessRoadExit: [() => seamlessRoadExit, v => (seamlessRoadExit = v)],
   seamlessRoadHeight: [() => seamlessRoadHeight, v => (seamlessRoadHeight = v)],
@@ -76,23 +84,18 @@ expose({
   seamlessRoadProps: [() => seamlessRoadProps, v => (seamlessRoadProps = v)],
   seamlessRoadTile: [() => seamlessRoadTile, v => (seamlessRoadTile = v)],
   seamlessSalt: [() => seamlessSalt, v => (seamlessSalt = v)],
+  seamlessSeamOf: [() => seamlessSeamOf, v => (seamlessSeamOf = v)],
+  seamlessStartAlong: [() => seamlessStartAlong, v => (seamlessStartAlong = v)],
   seamlessWorld: [() => seamlessWorld],
   shiftWalkView: [() => shiftWalkView, v => (shiftWalkView = v)],
-  wrAdj: [() => wrAdj, v => (wrAdj = v)],
-  wrAlongPts: [() => wrAlongPts, v => (wrAlongPts = v)],
   wrBldWindows: [() => wrBldWindows, v => (wrBldWindows = v)],
   wrCompose: [() => wrCompose, v => (wrCompose = v)],
   wrComposeMulti: [() => wrComposeMulti, v => (wrComposeMulti = v)],
-  wrCornerH: [() => wrCornerH, v => (wrCornerH = v)],
   wrDelta: [() => wrDelta, v => (wrDelta = v)],
-  wrExitPath: [() => wrExitPath, v => (wrExitPath = v)],
-  wrFix: [() => wrFix, v => (wrFix = v)],
   wrGate: [() => wrGate, v => (wrGate = v)],
   wrGetReady: [() => wrGetReady, v => (wrGetReady = v)],
   wrHubParts: [() => wrHubParts, v => (wrHubParts = v)],
   wrHubScene: [() => wrHubScene, v => (wrHubScene = v)],
-  wrJoin: [() => wrJoin, v => (wrJoin = v)],
-  wrJoinTrip: [() => wrJoinTrip, v => (wrJoinTrip = v)],
   wrLook: [() => wrLook, v => (wrLook = v)],
   wrLookMix: [() => wrLookMix, v => (wrLookMix = v)],
   wrLookOf: [() => wrLookOf, v => (wrLookOf = v)],
@@ -100,7 +103,6 @@ expose({
   wrMixHex: [() => wrMixHex, v => (wrMixHex = v)],
   wrPrefetch: [() => wrPrefetch, v => (wrPrefetch = v)],
   wrPrefetchView: [() => wrPrefetchView, v => (wrPrefetchView = v)],
-  wrRaiseAt: [() => wrRaiseAt, v => (wrRaiseAt = v)],
   wrReady: [() => wrReady, v => (wrReady = v)],
   wrRoamView: [() => wrRoamView, v => (wrRoamView = v)],
   wrRoomId: [() => wrRoomId, v => (wrRoomId = v)],
@@ -109,8 +111,6 @@ expose({
   wrRoomWindows: [() => wrRoomWindows, v => (wrRoomWindows = v)],
   wrScene: [() => wrScene, v => (wrScene = v)],
   wrSceneById: [() => wrSceneById, v => ((wrSceneById = v), provide({ wrSceneById }))],
-  wrSeamOf: [() => wrSeamOf, v => (wrSeamOf = v)],
-  wrStartU: [() => wrStartU, v => (wrStartU = v)],
   wrTrim: [() => wrTrim, v => (wrTrim = v)],
   wrTripView: [() => wrTripView, v => (wrTripView = v)],
   wrVeil: [() => wrVeil, v => (wrVeil = v)],
@@ -149,7 +149,7 @@ function seamlessNoise(x, y, s) {
     d = seamlessHash(xi + 1, yi + 1, s);
   return a + (b - a) * u(fx) + (c - a) * u(fy) + (a - b - c + d) * u(fx) * u(fy);
 }
-const WR_DIR = { E: [1, 0], W: [-1, 0], N: [0, 1], S: [0, -1] };
+const SIDE_VECTORS = { E: [1, 0], W: [-1, 0], N: [0, 1], S: [0, -1] };
 /* which exit of a stop's scene a link uses: the join table first, then the compass match (ui.js sceneExits) */
 function seamlessRoadExit(node, i) {
   const sc = mapById(sceneIdAt(node));
@@ -182,8 +182,8 @@ function seamlessRoad(i) {
     eb = seamlessRoadExit(b, i);
   if (!A || !B || !ea || !eb) return null;
   const Lr = seamlessRoadLength(L[2]),
-    dA = WR_DIR[ea.side],
-    dB = WR_DIR[eb.side],
+    dA = SIDE_VECTORS[ea.side],
+    dB = SIDE_VECTORS[eb.side],
     LW = seamlessWorld.LW;
   /* A sits at (ax, az): room on its west or south for the road when the exit is on that side */
   const ax = ea.side === 'W' ? LW : 0,
@@ -258,17 +258,17 @@ function seamlessRoad(i) {
 /* ---------- alpha 0.2: places joined edge to edge ----------
    Two linked places meet at their exits: B's edge lies against A's, B placed so that its exit is exactly across from
    A's (tools/join-places.py, now on the legacy branch, made every link's two exits face each other, east to west or north to south). A place's
-   view is the place itself with a band of each neighbour where they meet (WR_JD deep, WR_JW either side of the exit,
+   view is the place itself with a band of each neighbour where they meet (NEIGHBOR_BAND_DEPTH deep, NEIGHBOR_BAND_HALF_WIDTH either side of the exit,
    never past the place's own edge, two neighbours on one side sharing it half and half); around that lies
    countryside you can't walk into. The ground eases across every seam (heights over 8 m each side, a ragged line
    where two kinds of ground meet). A trip is the walk from the hub to the exit (the path the tool measured,
    edgeExits[k].path) and on from the next place's entrance to its hub, the view changing to the next place's at
    the seam. A link whose exits don't face each other (one drawn in the Studio since) still gets a road. */
-const WR_OPP = { E: 'W', W: 'E', N: 'S', S: 'N' },
-  WR_JD = 36,
-  WR_JW = 26;
+const OPPOSITE_SIDE = { E: 'W', W: 'E', N: 'S', S: 'N' },
+  NEIGHBOR_BAND_DEPTH = 36,
+  NEIGHBOR_BAND_HALF_WIDTH = 26;
 /* what doesn't change from view to view (joins, seams, each place's eased ground), kept until the data changes */
-function wrFix(key, fn) {
+function seamlessMemo(key, fn) {
   if (seamlessWorld.fixGen !== seamlessWorld.gen) {
     seamlessWorld.fix = new Map();
     seamlessWorld.fixGen = seamlessWorld.gen;
@@ -278,9 +278,9 @@ function wrFix(key, fn) {
   seamlessWorld.fix.set(key, v);
   return v;
 }
-function wrJoin(i) {
+function seamlessJoin(i) {
   if (!seamlessOn() || (typeof eng === 'function' && eng('world', 'joined') === false)) return null;
-  return wrFix('join' + i, () => {
+  return seamlessMemo('join' + i, () => {
     const L = LINKS[i];
     if (!L) return null;
     const a = L[0],
@@ -289,7 +289,7 @@ function wrJoin(i) {
       B = mapById(sceneIdAt(b)),
       ea = seamlessRoadExit(a, i),
       eb = seamlessRoadExit(b, i);
-    if (!A || !B || !ea || !eb || WR_OPP[ea.side] !== eb.side || sceneIdAt(a) === sceneIdAt(b)) return null;
+    if (!A || !B || !ea || !eb || OPPOSITE_SIDE[ea.side] !== eb.side || sceneIdAt(a) === sceneIdAt(b)) return null;
     const off =
       ea.side === 'E'
         ? [A.w, Math.round(ea.p[1] - eb.p[1])]
@@ -302,20 +302,20 @@ function wrJoin(i) {
   });
 }
 /* The seam of join i. The stretch of edge the two places share near the exit (lo..hi, in A's metres along the edge;
-   at most WR_SR either side of the exit, ending half way to another exit on that edge, of either place) eases out over
-   WR_ST at each end. dh is the land's difference across it, metre by metre (B's minus A's), W how far either side the
+   at most SEAM_REACH either side of the exit, ending half way to another exit on that edge, of either place) eases out over
+   SEAM_TAPER at each end. dh is the land's difference across it, metre by metre (B's minus A's), W how far either side the
    land eases, and dE the difference of the step raise right at the exit (a cave mouth up on a shelf, a canyon rim). */
-const WR_SR = 22,
-  WR_ST = 4,
-  WR_ROCK = 4.1,
-  WR_TUN = 6; /* (the rock's raise: as tools/expand-places.py ROCK_UP) */
-function wrCornerH(S, x, z) {
+const SEAM_REACH = 22,
+  SEAM_TAPER = 4,
+  ROCK_RAISE = 4.1,
+  TUNNEL_RUN = 6; /* (the rock's raise: as tools/expand-places.py ROCK_UP) */
+function seamlessCornerHeight(S, x, z) {
   const H = S.heights;
   if (!H) return 0;
   const r = H[S.h - Math.round(z)];
   return r ? +r[Math.round(x)] || 0 : 0;
 }
-function wrRaiseAt(S, ex) {
+function seamlessExitRaise(S, ex) {
   const E = stepGrid(S);
   if (!E) return 0;
   const p = ex.p,
@@ -324,9 +324,9 @@ function wrRaiseAt(S, ex) {
     z = s === 'N' ? S.h - 0.25 : s === 'S' ? 0.25 : p[1];
   return E.H[stepCellAt(x, z, E)];
 }
-function wrSeamOf(i) {
-  return wrFix('seam' + i, () => {
-    const J = wrJoin(i);
+function seamlessSeamOf(i) {
+  return seamlessMemo('seam' + i, () => {
+    const J = seamlessJoin(i);
     if (!J) return null;
     const s = J.ea.side,
       vert = s === 'E' || s === 'W',
@@ -337,8 +337,8 @@ function wrSeamOf(i) {
     const c0 = Math.max(0, oa),
       c1 = Math.min(vert ? A.h : A.w, oa + (vert ? B.h : B.w));
     if (c1 <= c0) return null;
-    let lo = Math.max(e - WR_SR, c0),
-      hi = Math.min(e + WR_SR, c1);
+    let lo = Math.max(e - SEAM_REACH, c0),
+      hi = Math.min(e + SEAM_REACH, c1);
     const along = (S, j) => {
         const q = S.edgeExits[j],
           p = S.exits[j];
@@ -353,17 +353,17 @@ function wrSeamOf(i) {
     });
     for (const o of oth) {
       const m = (o + e) / 2;
-      if (o < e) lo = Math.max(lo, m + WR_ST / 2);
-      else hi = Math.min(hi, m - WR_ST / 2);
+      if (o < e) lo = Math.max(lo, m + SEAM_TAPER / 2);
+      else hi = Math.min(hi, m - SEAM_TAPER / 2);
     }
     if (hi < lo) lo = hi = (lo + hi) / 2;
-    const hA = u => wrCornerH(A, vert ? (s === 'E' ? A.w : 0) : u, vert ? u : s === 'N' ? A.h : 0),
+    const hA = u => seamlessCornerHeight(A, vert ? (s === 'E' ? A.w : 0) : u, vert ? u : s === 'N' ? A.h : 0),
       hB = u => {
         const v = u - oa;
-        return wrCornerH(B, vert ? (s === 'E' ? 0 : B.w) : v, vert ? v : s === 'N' ? 0 : B.h);
+        return seamlessCornerHeight(B, vert ? (s === 'E' ? 0 : B.w) : v, vert ? v : s === 'N' ? 0 : B.h);
       };
-    const u0 = Math.floor(lo - WR_ST),
-      u1 = Math.ceil(hi + WR_ST),
+    const u0 = Math.floor(lo - SEAM_TAPER),
+      u1 = Math.ceil(hi + SEAM_TAPER),
       dh = {};
     let big = 0;
     for (let u = u0; u <= u1; u++) {
@@ -385,7 +385,7 @@ function wrSeamOf(i) {
       u1,
       dh,
       W: clamp(3 * big, 8, 14),
-      dE: wrRaiseAt(B, J.eb) - wrRaiseAt(A, J.ea),
+      dE: seamlessExitRaise(B, J.eb) - seamlessExitRaise(A, J.ea),
     };
   });
 }
@@ -394,12 +394,12 @@ function wrSeamOf(i) {
    rim or shelf, the other place's ground rises to meet it in a broad slope round its exit (a ramp of half-metre cells
    that lean, so no new wall). Worked out from the place's own joins alone, so every view of it shows it the same. The
    place's data is not changed. {G: corners, (w+1)*(h+1), row b at b metres from the near edge; E: a step grid or null} */
-function wrAdj(S, sid) {
-  return wrFix('adj' + sid, () => {
+function seamlessEasedGround(S, sid) {
+  return seamlessMemo('adj' + sid, () => {
     const L = [];
     for (let i = 0; i < LINKS.length; i++) {
       if (sceneIdAt(LINKS[i][0]) !== sid && sceneIdAt(LINKS[i][1]) !== sid) continue; /* only this place's seams */
-      const Q = wrSeamOf(i);
+      const Q = seamlessSeamOf(i);
       if (!Q) continue;
       if (Q.aId === sid) L.push([Q, 1]);
       else if (Q.bId === sid) L.push([Q, 0]);
@@ -420,7 +420,7 @@ function wrAdj(S, sid) {
       const s = isA ? Q.sA : Q.sB,
         sh = isA ? 0 : Q.oa,
         sg = isA ? 1 : -1,
-        tap = u => smooth01((u - (Q.lo - WR_ST)) / WR_ST) * smooth01((Q.hi + WR_ST - u) / WR_ST);
+        tap = u => smooth01((u - (Q.lo - SEAM_TAPER)) / SEAM_TAPER) * smooth01((Q.hi + SEAM_TAPER - u) / SEAM_TAPER);
       for (let b = 0; b <= Hh; b++)
         for (let a = 0; a <= W; a++) {
           const d = dOf(s, a, b);
@@ -468,7 +468,7 @@ function wrAdj(S, sid) {
   });
 }
 /* the walk from a place's hub to one of its exits, in its own metres: the path the tool measured, or a straight line */
-function wrExitPath(S, k) {
+function seamlessExitPath(S, k) {
   const e = (S.edgeExits || [])[k],
     p = (S.exits || [])[k],
     hub = mapHub(S);
@@ -480,7 +480,7 @@ function wrExitPath(S, k) {
   for (let i = 1; i < pts.length; i++) len += Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]);
   return { pts, len };
 }
-function wrAlongPts(P, u) {
+function seamlessPointAlong(P, u) {
   u = clamp(u, 0, P.len);
   let s = 0;
   for (let i = 1; i < P.pts.length; i++) {
@@ -754,7 +754,7 @@ function wrLookTick() {
    scenes:[{S, id, off:[x, z], clip?, side?}] (where each scene's corner lies; alpha 0.2: a neighbour shown only where it
    meets the place has the stretch shown, clip [x0, z0, x1, z1] in the frame, and the side of the place it meets),
    roads:[{R, off:[x, z]}] (frame = road frame + off), base (the scene whose hub, exits and folk the view uses), look}.
-   Inside a scene its own tiles, heights, steps and things (alpha 0.2: its eased ground, wrAdj); elsewhere the nearest
+   Inside a scene its own tiles, heights, steps and things (alpha 0.2: its eased ground, seamlessEasedGround); elsewhere the nearest
    road's ground eased to the scenes' rims, or, in a joined view (no road), countryside: the places' own edge ground
    running on a little, then their surroundings rising gently, with trees, which you can't walk into (sc.inside).
    Where two places meet, the grounds mingle over a couple of metres. Each part is recorded with where its corner lies
@@ -781,7 +781,7 @@ function wrComposeMulti(id, F) {
         ];
       K = [Math.max(K[0], 0), Math.max(K[1], 0), Math.min(K[2], w), Math.min(K[3], h)];
       return K[2] > K[0] && K[3] > K[1]
-        ? { S: q.S, id: q.id, O, K, band: !!q.clip, side: q.side || null, adj: wrAdj(q.S, q.id) }
+        ? { S: q.S, id: q.id, O, K, band: !!q.clip, side: q.side || null, adj: seamlessEasedGround(q.S, q.id) }
         : null;
     })
     .filter(Boolean);
@@ -845,7 +845,7 @@ function wrComposeMulti(id, F) {
       hi: v ? q.K[3] : q.K[2],
     });
   }
-  /* a rock band's tunnel: where the place's exit on that side is, along it (the tunnel runs on WR_TUN m past the line) */
+  /* a rock band's tunnel: where the place's exit on that side is, along it (the tunnel runs on TUNNEL_RUN m past the line) */
   for (const m of seams)
     if (m.q.rock) {
       const ex = (F.base.exits || [])
@@ -863,7 +863,7 @@ function wrComposeMulti(id, F) {
     if (!T || T.u == null) return false;
     const m = T.m,
       d = ((m.v ? x : z) - m.at) * m.n;
-    return d >= 0 && d < WR_TUN && Math.abs((m.v ? z : x) - T.u) <= 1.5;
+    return d >= 0 && d < TUNNEL_RUN && Math.abs((m.v ? z : x) - T.u) <= 1.5;
   };
   const NAT = ch => {
     const T = C.terrains[ch];
@@ -1171,7 +1171,7 @@ function wrComposeMulti(id, F) {
             E.H[k] = E.H[r] || 0;
             E.M[k] = 32;
           } else {
-            E.H[k] = Math.max(WR_ROCK, E.H[r] || 0);
+            E.H[k] = Math.max(ROCK_RAISE, E.H[r] || 0);
             E.M[k] = 35;
           }
         } else if (inCover(q, x, z)) {
@@ -1185,10 +1185,10 @@ function wrComposeMulti(id, F) {
             bj = Math.floor(bz * 2),
             inside =
               bx >= q.K[0] && bx < q.K[2] && bz >= q.K[1] && bz < q.K[3] && bi >= 0 && bj >= 0 && bi < E.w && bj < E.h,
-            b = inside && EK[bj * E.w + bi] ? E.H[bj * E.w + bi] : WR_ROCK + 3;
+            b = inside && EK[bj * E.w + bi] ? E.H[bj * E.w + bi] : ROCK_RAISE + 3;
           E.H[k] =
             Math.round(
-              (Math.max(WR_ROCK, b) +
+              (Math.max(ROCK_RAISE, b) +
                 smooth01(d / 16) * (4 + 6 * seamlessNoise(x * 0.06, z * 0.06, seamlessSalt(q.id) + 47))) *
                 20
             ) / 20;
@@ -1205,7 +1205,7 @@ function wrComposeMulti(id, F) {
           ci = clamp(Math.floor(n.cx * 2), n.q.K[0] * 2, n.q.K[2] * 2 - 1),
           cj = clamp(Math.floor(n.cz * 2), n.q.K[1] * 2, n.q.K[3] * 2 - 1),
           r = cj * E.w + ci;
-        E.H[k] = UB ? Math.max(WR_ROCK, E.H[r]) : E.H[r];
+        E.H[k] = UB ? Math.max(ROCK_RAISE, E.H[r]) : E.H[r];
         E.M[k] = UB ? 35 : E.M[r] & 15;
       }
   if (anyS) {
@@ -1377,7 +1377,7 @@ function wrHubParts(node) {
     x1 = S.w,
     z1 = S.h;
   for (const e of ADJ[node]) {
-    const J = wrJoin(e.i);
+    const J = seamlessJoin(e.i);
     if (J) {
       const atA = J.a === node,
         nid = atA ? J.bId : J.aId;
@@ -1412,15 +1412,15 @@ function wrHubParts(node) {
       z1 = Math.max(z1, z + seamlessWorld.BAND);
     }
   }
-  /* alpha 0.2: each neighbour shows where it meets the place, WR_JW either side of its exit (past the place's corner
+  /* alpha 0.2: each neighbour shows where it meets the place, NEIGHBOR_BAND_HALF_WIDTH either side of its exit (past the place's corner
     too, so the view you leave and the one you arrive in agree round the exit); two on one side share it half and half,
     and where two bands would meet beyond a corner each stops at the corner */
   const clips = [];
   for (const s of ['E', 'W', 'N', 'S']) {
     const bs = bands.filter(b => b.side === s).sort((a, b) => a.at - b.at);
     bs.forEach((b, k) => {
-      let lo = b.at - WR_JW,
-        hi = b.at + WR_JW;
+      let lo = b.at - NEIGHBOR_BAND_HALF_WIDTH,
+        hi = b.at + NEIGHBOR_BAND_HALF_WIDTH;
       if (k > 0) lo = Math.max(lo, (bs[k - 1].at + b.at) / 2);
       if (k < bs.length - 1) hi = Math.min(hi, (b.at + bs[k + 1].at) / 2);
       clips.push({ b, s, lo, hi });
@@ -1428,12 +1428,12 @@ function wrHubParts(node) {
   }
   const rect = c =>
     c.s === 'E'
-      ? [S.w, c.lo, S.w + WR_JD, c.hi]
+      ? [S.w, c.lo, S.w + NEIGHBOR_BAND_DEPTH, c.hi]
       : c.s === 'W'
-        ? [-WR_JD, c.lo, 0, c.hi]
+        ? [-NEIGHBOR_BAND_DEPTH, c.lo, 0, c.hi]
         : c.s === 'N'
-          ? [c.lo, S.h, c.hi, S.h + WR_JD]
-          : [c.lo, -WR_JD, c.hi, 0];
+          ? [c.lo, S.h, c.hi, S.h + NEIGHBOR_BAND_DEPTH]
+          : [c.lo, -NEIGHBOR_BAND_DEPTH, c.hi, 0];
   for (const c of clips)
     for (const d of clips) {
       if (c === d) continue;
@@ -1927,8 +1927,8 @@ export function wrTripView(node, nx, f) {
   if (!seamlessOn()) return null;
   const i = seamlessRoadIndex(node, nx);
   if (i < 0) return null;
-  const J = wrJoin(i);
-  if (J) return wrJoinTrip(J, node, f);
+  const J = seamlessJoin(i);
+  if (J) return seamlessJoinTrip(J, node, f);
   const R = seamlessRoad(i);
   if (!R) return null;
   const fwd = R.a === node,
@@ -1952,20 +1952,20 @@ export function wrTripView(node, nx, f) {
 /* alpha 0.2: a trip between two joined places is the walk from the middle of one (its hub) to the exit, then from the
    next place's entrance to its middle, your steps spread evenly along it; the view is the place you are in, and changes
    at the seam. If you set off from somewhere along the way out (near the exit already), the trip starts there. */
-function wrJoinTrip(J, node, f) {
+function seamlessJoinTrip(J, node, f) {
   const fwd = J.a === node,
     X = fwd ? J.A : J.B,
     Y = fwd ? J.B : J.A,
     xn = fwd ? J.a : J.b,
     yn = fwd ? J.b : J.a,
-    PX = wrExitPath(X, (fwd ? J.ea : J.eb).k),
-    PY = wrExitPath(Y, (fwd ? J.eb : J.ea).k),
+    PX = seamlessExitPath(X, (fwd ? J.ea : J.eb).k),
+    PY = seamlessExitPath(Y, (fwd ? J.eb : J.ea).k),
     L = Math.max(1, PX.len + PY.len);
   const T = seamlessWorld.trip;
   let u0 = 0;
   if (T && T.i === J.i && T.node === node) u0 = T.u0;
   else if (f <= 0) {
-    u0 = wrStartU(xn, PX);
+    u0 = seamlessStartAlong(xn, PX);
     seamlessWorld.trip = { i: J.i, node, u0 };
   } else seamlessWorld.trip = null;
   const u = u0 + clamp(f, 0, 1) * (L - u0),
@@ -1974,7 +1974,7 @@ function wrJoinTrip(J, node, f) {
     sc = wrHubScene(vn);
   if (!sc) return null;
   const o = sc.baseOff || [0, 0],
-    p = inX ? wrAlongPts(PX, u) : wrAlongPts(PY, PY.len - (u - PX.len));
+    p = inX ? seamlessPointAlong(PX, u) : seamlessPointAlong(PY, PY.len - (u - PX.len));
   return {
     id: sc.id,
     sc,
@@ -1993,7 +1993,7 @@ function wrJoinTrip(J, node, f) {
   };
 }
 /* how far along the way out you stand (0 if you aren't in that place's view) */
-function wrStartU(xn, P) {
+function seamlessStartAlong(xn, P) {
   const sid = sceneIdAt(xn);
   if (!(
     walkView.ready &&

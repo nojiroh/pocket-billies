@@ -1669,8 +1669,8 @@ def desktop_steps(b, base, R):
         r = json.loads(pg.evaluate("""JSON.stringify((()=>{const out=[],keep=walkView.sc,keepId=walkView.id;let slow=0,slowId='',n=0;
           for(let k=0;k<ROUTE.length;k++){const t0=performance.now();let sc=null;try{sc=wrHubScene(k)}catch(e){out.push(ROUTE[k].scene+': '+e)}const ms=performance.now()-t0;if(ms>slow){slow=ms;slowId=ROUTE[k].scene}if(sc&&!sc.comp.joined&&ADJ[k].length)out.push(ROUTE[k].scene+': not joined')}/* alpha 0.4: a place reached only by a lift (Pearlantis) has no neighbour to join */
           const nav=sc=>{walkView.sc=sc;walkView.id=sc.id;walkView.nav=null;walkView.navSc=null;walkView.cand=null;return navGrid()};
-          for(let i=0;i<LINKS.length;i++){const J=wrJoin(i);if(!J){out.push('link '+i+': not joined');continue}n++;
-           for(const [vn,isA] of [[J.a,1],[J.b,0]]){const sc=wrHubScene(vn),o=sc.baseOff,d=WR_DIR[J.ea.side],p=isA?[J.ea.p[0]+o[0],J.ea.p[1]+o[1]]:[J.ea.p[0]+o[0]-J.off[0],J.ea.p[1]+o[1]-J.off[1]];
+          for(let i=0;i<LINKS.length;i++){const J=seamlessJoin(i);if(!J){out.push('link '+i+': not joined');continue}n++;
+           for(const [vn,isA] of [[J.a,1],[J.b,0]]){const sc=wrHubScene(vn),o=sc.baseOff,d=SIDE_VECTORS[J.ea.side],p=isA?[J.ea.p[0]+o[0],J.ea.p[1]+o[1]]:[J.ea.p[0]+o[0]-J.off[0],J.ea.p[1]+o[1]-J.off[1]];
             const a=[p[0]-d[0]*4,p[1]-d[1]*4],b=[p[0]+d[0]*5.2,p[1]+d[1]*5.2],G=nav(sc),cb=Math.floor(b[1]*G.N)*G.gw+Math.floor(b[0]*G.N),ch=terrainAt(b[0],b[1]),ca=terrainAt(a[0],a[1]);
             if('wd'.includes(ch)&&!sc.ride||'wd'.includes(ca)&&!sc.ride)continue;const rt=findPath(a[0],a[1],b[0],b[1]);let L=0;if(rt)for(let q=1;q<rt.length;q++)L+=Math.hypot(rt[q][0]-rt[q-1][0],rt[q][1]-rt[q-1][1]);const e=rt&&rt[rt.length-1];
             if(!rt||Math.hypot(e[0]-b[0],e[1]-b[1])>.6||L>11.5)out.push(ROUTE[J.a].scene+' → '+ROUTE[J.b].scene+' in '+ROUTE[vn].scene+'’s view: '+(rt?L.toFixed(1)+' m to cross':'no way across'))}
