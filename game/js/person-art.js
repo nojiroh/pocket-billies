@@ -8,13 +8,13 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import {
-  FR,
   PEOPLE,
   artCacheVersion,
   artImage,
   cleanName,
   drawRig,
   frameBudgetLeft,
+  friends,
   gameData,
   provide,
   saveData,
@@ -292,7 +292,7 @@ export function lookFromOld(o, gender) {
 /* who → look: 'boy'/'girl'/'me' is the player, 'folk:<seed>' a townsperson, anything else a person in game data */
 export function trainerLook(who) {
   if (typeof who === 'string' && who.startsWith('friend:')) {
-    const f = typeof FR !== 'undefined' && FR.data[who.slice(7)];
+    const f = typeof friends !== 'undefined' && friends.data[who.slice(7)];
     return cleanLook(f && f.avatar, TR_PRESETS[1] || TR_PRESETS[0]);
   }
   if (who === 'boy' || who === 'girl' || who === 'me')

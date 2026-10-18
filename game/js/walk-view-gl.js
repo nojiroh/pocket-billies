@@ -35,7 +35,7 @@ import {
   drawStructureShadows,
   drawStructures,
   flushPropModelMeshes,
-  frWorldItems,
+  friendWorldItems,
   frontWindowLight,
   gameData,
   lifeSprites,
@@ -4801,9 +4801,9 @@ export function gatherFrameItems(st, C, PPU, C0) {
   if (ow) {
     companionItems(out, t, npcPos);
     buddyItems(out, t, odt);
-    if (typeof frWorldItems === 'function')
+    if (typeof friendWorldItems === 'function')
       try {
-        frWorldItems(out, t, C0);
+        friendWorldItems(out, t, C0);
       } catch (e) {}
   }
   const used = [];

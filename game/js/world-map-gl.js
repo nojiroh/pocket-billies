@@ -9,7 +9,7 @@
    available (a lost context). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { FR, flyDraw, flyTick, provide } from './hooks.js';
+import { flyDraw, flyTick, friends, provide } from './hooks.js';
 import { $, clamp } from './util.js';
 import { LOCATIONS, REGIONS, ROADS, locationSubtitle, roadCost } from './game-data.js';
 import {
@@ -1012,9 +1012,9 @@ function worldMapGlPins() {
     );
   });
   /* 0.5: friends, at the place they were last */
-  if (typeof FR !== 'undefined')
-    for (const u of FR.list) {
-      const d = FR.data[u],
+  if (typeof friends !== 'undefined')
+    for (const u of friends.list) {
+      const d = friends.data[u],
         a = d && d.at;
       if (!a || a.node == null || !LOCATION_VECTORS[a.node]) {
         put('fr' + u, null);

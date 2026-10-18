@@ -30,7 +30,7 @@ import {
 import { cleanTrainer } from './person-art.js';
 import { applyPreferences, settingsRefresh } from './settings-screen.js';
 import { TITLE, titleStart } from './title.js';
-import { frInit } from './friends.js';
+import { initFriends } from './friends.js';
 /* eslint-disable no-func-assign */
 expose({
   FIREBASE_SDK_URL: [() => FIREBASE_SDK_URL],
@@ -124,7 +124,7 @@ function accountChanged(u) {
   }
   if (u) {
     pullAccountSave();
-    if (typeof frInit === 'function') frInit();
+    if (typeof initFriends === 'function') initFriends();
   }
   refreshAccount();
 }

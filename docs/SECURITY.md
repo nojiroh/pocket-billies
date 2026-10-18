@@ -25,7 +25,7 @@ decisions left open. Newest facts win: update this file when the rules, the sign
   - Writes are checked for shape and size (save under 1 MB, names up to 40 characters, at most 50 friends).
 - **friends.js**: a friend's page can only be read once their game has put you on their list too, so a refused read is
   retried every minute instead of showing "Friends need the updated database rules". What a friend's page holds is
-  cleaned before it is drawn (`frClean`): only the drawn fields, names without HTML characters, numbers as numbers.
+  cleaned before it is drawn (`cleanFriend`): only the drawn fields, names without HTML characters, numbers as numbers.
 - **Names**: `cleanName()` (game-state.js) strips `< > " & `` ` and control characters where names enter the game: the
   nickname box, `cleanLook()` (the trainer name) and `migrate()` (every load and every imported backup). This makes the
   ~60 places that put `N(m)` or a trainer name into HTML without `esc()` safe as they are. There is no single-quoted
@@ -85,7 +85,7 @@ Every `innerHTML` in game/js and studio/js was traced to where its text comes fr
 | Fixed markup, icons, numbers the game computes | most of them (joystick, loader, fishing, story, talk, debug button, battle plates, ticker, pips, map pins) | Safe. |
 | Text through `esc()` | toasts, battle log lines, postcards, airship captions, account chip, friends list, missing-art list, Studio sign-in | Safe. |
 | Player names: nicknames `N(m)` and the trainer name, unescaped in ~60 templates (battle.js, ui.js, game-state.js, buildings, structures, vox, extras, bag) | typed, loaded from a save, imported from a backup file | **Was unsafe** (a backup file could carry a nickname with markup, without any length limit). Fixed at the way in (`cleanName`). |
-| Friend data (name, partner, place, request names) | friends list, map pins, world | Already escaped in friends.js and world-map-gl.js; now also cleaned on arrival (`frClean`), and `data-n` gets a number only. |
+| Friend data (name, partner, place, request names) | friends list, map pins, world | Already escaped in friends.js and world-map-gl.js; now also cleaned on arrival (`cleanFriend`), and `data-n` gets a number only. |
 | Firebase sign-in name, e-mail, photo URL | account chip, Settings → Save | Escaped. Safe. |
 | Game data: place, Billie, move, item, scene and trainer names (game and Studio, unescaped) | gamedata.js from the repo | Trusted source, but changed by Studio pull requests. Guarded by `tools/check-data-text.py` in CI. |
 | Studio: GitHub login, error messages | sign-in, top bar | Escaped. Safe. |
@@ -122,6 +122,6 @@ own rules.
 ## Found, not fixed (not security)
 
 - Making friends again the other way round fails: if A once sent B a request that was later removed, and B then sends
-  A a new one that A accepts, both games drop each other again (frSync applies "removed" from the old request after
+  A a new one that A accepts, both games drop each other again (syncFriends applies "removed" from the old request after
   "accepted" from the new one). Asking again from the same side works. Fix by taking each pair's newest request (`t`).
   Small; best done with the rest of the friends work (phase 06 or 18).
