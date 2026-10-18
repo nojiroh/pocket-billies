@@ -28,7 +28,7 @@ import {
   v3n,
 } from './engine/webgl.js';
 import { ENV, envLitFrac } from './environment.js';
-import { dglCurveArgs, dglLookU, dglUse, standingHeightAt, walkRenderer } from './walk-view-gl.js';
+import { dglLookU, dglUse, standingHeightAt, walkRenderer, worldCurveArgs } from './walk-view-gl.js';
 /* eslint-disable no-func-assign */
 expose({
   BLD: [() => BLD],
@@ -1651,7 +1651,7 @@ function bldShadow0(SH, items) {
   const p = EGL.P.bshadow;
   gl.useProgram(p.p);
   gl.uniformMatrix4fv(p.U.uVP, false, SH.vp);
-  const ca = dglCurveArgs();
+  const ca = worldCurveArgs();
   gl.uniform3f(p.U.uCurve, ca[0], ca[1], ca[2]);
   gl.uniform1f(p.U.uCurveD0, ca[3]);
   for (const it of L) {

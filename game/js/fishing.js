@@ -13,7 +13,7 @@ import { GD, RULES, SP } from './game-data.js';
 import { B, RM, S, U, areaPool, pickW, save, uid } from './game-state.js';
 import { uiIco } from './art.js';
 import { terrainAt, walkView } from './walk-view.js';
-import { DGL_WKIND, dglCurve, dglRing, dglWgAt, standingHeightAt, walkRenderer } from './walk-view-gl.js';
+import { DGL_WKIND, dglRing, dglWgAt, standingHeightAt, walkRenderer, worldCurveDrop } from './walk-view-gl.js';
 /* eslint-disable no-func-assign */
 expose({
   FISH: [() => FISH],
@@ -304,7 +304,7 @@ function fishDraw(ts) {
     };
   const P = walkView.pl,
     S0 = FISH.spot,
-    py = (P.yv ?? standingHeightAt(P.x, P.z)) + (typeof dglCurve === 'function' ? dglCurve(P.x, P.z) : 0),
+    py = (P.yv ?? standingHeightAt(P.x, P.z)) + (typeof worldCurveDrop === 'function' ? worldCurveDrop(P.x, P.z) : 0),
     hx = P.x + S0.dir[0] * 0.35,
     hz = P.z + S0.dir[1] * 0.35;
   const tip = [P.x + S0.dir[0] * 1.05, py + 1.75, P.z + S0.dir[1] * 1.05],
@@ -316,7 +316,7 @@ function fishDraw(ts) {
   FISH.nib = Math.max(0, FISH.nib - 0.016);
   const by =
       S0.y +
-      (typeof dglCurve === 'function' ? dglCurve(S0.x, S0.z) : 0) +
+      (typeof worldCurveDrop === 'function' ? worldCurveDrop(S0.x, S0.z) : 0) +
       0.03 -
       dip +
       (RM ? 0 : Math.sin(ts / 500) * 0.015),

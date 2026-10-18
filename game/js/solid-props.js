@@ -18,7 +18,16 @@ import { cnv } from './art.js';
 import { artImage, hash2d, walkView, worldToScreen } from './walk-view.js';
 import { eng } from './engine/settings.js';
 import { EGL, EGL_GLSL_COMMON, EGL_GLSL_LIGHT, EGL_GLSL_LOOK, EGL_MATS, eglImg, eglPrograms } from './engine/webgl.js';
-import { dglBlades, dglBudget, dglCurveArgs, dglFol, dglHit, dglLookU, dglUse, walkRenderer } from './walk-view-gl.js';
+import {
+  dglBlades,
+  dglBudget,
+  dglFol,
+  dglHit,
+  dglLookU,
+  dglUse,
+  walkRenderer,
+  worldCurveArgs,
+} from './walk-view-gl.js';
 /* eslint-disable no-func-assign */
 expose({
   P3D: [() => P3D],
@@ -1272,7 +1281,7 @@ function p3dShadow(SH, items) {
     const p = EGL.P.p3dS;
     gl.useProgram(p.p);
     gl.uniformMatrix4fv(p.U.uVP, false, SH.vp);
-    const ca = dglCurveArgs();
+    const ca = worldCurveArgs();
     gl.uniform3f(p.U.uCurve, ca[0], ca[1], ca[2]);
     gl.uniform1f(p.U.uCurveD0, ca[3]);
     gl.activeTexture(gl.TEXTURE0);

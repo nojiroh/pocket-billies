@@ -21,7 +21,7 @@ import { partSpr } from './battle-stage.js';
 import { walkView } from './walk-view.js';
 import { EGL, eglPrograms } from './engine/webgl.js';
 import { EGL_POST_SH } from './engine/post-effects.js';
-import { dglCanvasFor, dglGL, standingHeightAt } from './walk-view-gl.js';
+import { canvasForContext, standingHeightAt, walkGlContext } from './walk-view-gl.js';
 import { A, endBattle, stopTimers, types } from './battle.js';
 import { MAP, MH, MNV, MW, WORLD_ART, v3 } from './world-map.js';
 import { MGL, MGL_SH, mglRender, mglSize } from './world-map-gl.js';
@@ -93,15 +93,15 @@ function fallCanvas() {
 }
 /* the walk scene's canvas, ready for the world map's renderer (the map is drawn on it before Sundown is mounted) */
 export function fallGL() {
-  if (typeof mglRender !== 'function' || typeof dglGL !== 'function' || EGL.fail || EGL.lost) return null;
+  if (typeof mglRender !== 'function' || typeof walkGlContext !== 'function' || EGL.fail || EGL.lost) return null;
   let cv = $('#dio');
   if (!cv) {
     cv = document.createElement('canvas');
     cv.id = 'dio';
     document.body.prepend(cv);
   }
-  cv = dglCanvasFor(cv, 'gl');
-  if (!dglGL(cv)) return null;
+  cv = canvasForContext(cv, 'gl');
+  if (!walkGlContext(cv)) return null;
   try {
     eglPrograms(MGL_SH);
     eglPrograms(EGL_POST_SH);

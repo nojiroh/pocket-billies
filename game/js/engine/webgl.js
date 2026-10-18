@@ -5,7 +5,7 @@
    One engine state object, EGL, is shared by every view. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { dioArtVer, eglRestored, provide, walkRenderer } from '../hooks.js';
+import { dioArtVer, onGlContextRestored, provide, walkRenderer } from '../hooks.js';
 import { clamp } from '../util.js';
 import { cnv } from '../art.js';
 import { imageReady } from '../walk-view.js';
@@ -539,7 +539,7 @@ export function eglInit(cv) {
       EGL.lost = 0;
       EGL.cv = null;
       if (typeof NWLOG !== 'undefined') NWLOG.add('webgl', 'context restored');
-      if (typeof eglRestored === 'function') eglRestored(cv);
+      if (typeof onGlContextRestored === 'function') onGlContextRestored(cv);
     });
     if (typeof NWLOG !== 'undefined') NWLOG.add('webgl', `ready${EGL.hdr ? ' (HDR)' : ''}`);
     return true;

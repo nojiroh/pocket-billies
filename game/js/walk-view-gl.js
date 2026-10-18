@@ -217,14 +217,20 @@ expose({
   NO_PAD_PROPS: [() => NO_PAD_PROPS],
   RING_CS: [() => RING_CS],
   RING_N: [() => RING_N],
+  askDeviceTilt: [() => askDeviceTilt, v => (askDeviceTilt = v)],
   baseNavGrid: [() => baseNavGrid],
   baseStopWalkView: [() => baseStopWalkView],
+  battleCamera: [() => battleCamera, v => (battleCamera = v)],
+  bindGestures: [() => bindGestures, v => (bindGestures = v)],
   buildingPads: [() => buildingPads, v => (buildingPads = v)],
+  cameraTurnLimit: [() => cameraTurnLimit],
+  canvasForContext: [() => canvasForContext, v => (canvasForContext = v)],
+  clampZoom: [() => clampZoom],
+  cutsceneCamera: [() => cutsceneCamera, v => (cutsceneCamera = v)],
   dglAdapt: [() => dglAdapt, v => setDglAdapt(v)],
   dglAltImg: [() => dglAltImg, v => (dglAltImg = v)],
   dglBasinSet: [() => dglBasinSet, v => (dglBasinSet = v)],
   dglBasins: [() => dglBasins, v => (dglBasins = v)],
-  dglBattleCamera: [() => dglBattleCamera, v => (dglBattleCamera = v)],
   dglBlades: [() => dglBlades, v => (dglBlades = v)],
   dglBoxFaces: [() => dglBoxFaces, v => (dglBoxFaces = v)],
   dglBoxInfo: [() => dglBoxInfo, v => (dglBoxInfo = v)],
@@ -232,11 +238,7 @@ expose({
   dglBuildFar: [() => dglBuildFar, v => (dglBuildFar = v)],
   dglBuildGrass: [() => dglBuildGrass, v => setDglBuildGrass(v)],
   dglBuildGround: [() => dglBuildGround, v => (dglBuildGround = v)],
-  dglCamera: [() => dglCamera, v => (dglCamera = v)],
-  dglCanvasFor: [() => dglCanvasFor, v => (dglCanvasFor = v)],
   dglCull: [() => dglCull, v => (dglCull = v)],
-  dglCurve: [() => dglCurve, v => (dglCurve = v)],
-  dglCurveArgs: [() => dglCurveArgs, v => (dglCurveArgs = v)],
   dglFlat: [() => dglFlat, v => (dglFlat = v)],
   dglFlowField: [() => dglFlowField, v => (dglFlowField = v)],
   dglFlowers: [() => dglFlowers, v => (dglFlowers = v)],
@@ -244,14 +246,11 @@ expose({
   dglFountainFx: [() => dglFountainFx, v => (dglFountainFx = v)],
   dglFrame: [() => dglFrame, v => (dglFrame = v)],
   dglFrameIn: [() => dglFrameIn, v => (dglFrameIn = v)],
-  dglFree: [() => dglFree],
   dglFrustum: [() => dglFrustum, v => (dglFrustum = v)],
   dglFxPass: [() => dglFxPass, v => setDglFxPass(v)],
-  dglGL: [() => dglGL, v => (dglGL = v)],
   dglGaoSteps: [() => dglGaoSteps, v => (dglGaoSteps = v)],
   dglGaoTex: [() => dglGaoTex, v => (dglGaoTex = v)],
   dglGaoWork: [() => dglGaoWork, v => (dglGaoWork = v)],
-  dglGestures: [() => dglGestures, v => (dglGestures = v)],
   dglGrass: [() => dglGrass, v => setDglGrass(v)],
   dglGrassWork: [() => dglGrassWork, v => setDglGrassWork(v)],
   dglGround: [() => dglGround, v => setDglGround(v)],
@@ -274,7 +273,6 @@ expose({
   dglLandmarkTilt: [() => dglLandmarkTilt, v => (dglLandmarkTilt = v)],
   dglLifeFx: [() => dglLifeFx, v => (dglLifeFx = v)],
   dglLightCtx: [() => dglLightCtx, v => (dglLightCtx = v)],
-  dglLookCamera: [() => dglLookCamera, v => (dglLookCamera = v)],
   dglLookOf: [() => dglLookOf, v => (dglLookOf = v)],
   dglLookOf2: [() => dglLookOf2, v => (dglLookOf2 = v)],
   dglLookSig: [() => dglLookSig, v => (dglLookSig = v)],
@@ -294,7 +292,6 @@ expose({
   dglPropGrid: [() => dglPropGrid, v => (dglPropGrid = v)],
   dglPropY: [() => dglPropY, v => (dglPropY = v)],
   dglPushers: [() => dglPushers, v => (dglPushers = v)],
-  dglRay: [() => dglRay, v => (dglRay = v)],
   dglRebuild: [() => dglRebuild, v => ((dglRebuild = v), provide({ dglRebuild }))],
   dglReflLevel: [() => dglReflLevel, v => (dglReflLevel = v)],
   dglReflPass: [() => dglReflPass, v => setDglReflPass(v)],
@@ -335,11 +332,7 @@ expose({
   dglStill: [() => dglStill, v => (dglStill = v)],
   dglTexMip: [() => dglTexMip, v => (dglTexMip = v)],
   dglTexStrips: [() => dglTexStrips, v => (dglTexStrips = v)],
-  dglTiltAsk: [() => dglTiltAsk, v => (dglTiltAsk = v)],
-  dglTiltListen: [() => dglTiltListen, v => (dglTiltListen = v)],
   dglTrail: [() => dglTrail, v => (dglTrail = v)],
-  dglTurn: [() => dglTurn],
-  dglUI: [() => dglUI, v => (dglUI = v)],
   dglUse: [() => dglUse, v => (dglUse = v)],
   dglVaryOf: [() => dglVaryOf, v => (dglVaryOf = v)],
   dglWallDefault: [() => dglWallDefault, v => ((dglWallDefault = v), provide({ dglWallDefault }))],
@@ -355,22 +348,29 @@ expose({
   dglWinShare: [() => dglWinShare, v => (dglWinShare = v)],
   dglWindAt: [() => dglWindAt, v => (dglWindAt = v)],
   dglWorldTex: [() => dglWorldTex, v => (dglWorldTex = v)],
-  dglZoomLim: [() => dglZoomLim],
-  eglRestored: [() => eglRestored, v => ((eglRestored = v), provide({ eglRestored }))],
+  freeCameraOn: [() => freeCameraOn],
   groundHeightAt: [() => groundHeightAt, v => ((groundHeightAt = v), provide({ groundHeightAt }))],
   handleCanvasClick: [() => handleCanvasClick, v => (handleCanvasClick = v)],
   heightGrid: [() => heightGrid, v => (heightGrid = v)],
+  labelLayer: [() => labelLayer, v => (labelLayer = v)],
+  listenDeviceTilt: [() => listenDeviceTilt, v => (listenDeviceTilt = v)],
   mountWalkView: [() => mountWalkView, v => setMountWalkView(v)],
+  onGlContextRestored: [() => onGlContextRestored, v => ((onGlContextRestored = v), provide({ onGlContextRestored }))],
   rawHeightAt: [() => rawHeightAt, v => ((rawHeightAt = v), provide({ rawHeightAt }))],
+  screenRay: [() => screenRay, v => (screenRay = v)],
   screenToGround2d: [() => screenToGround2d],
   setDglAdapt: [() => setDglAdapt, v => (setDglAdapt = v)],
   setMountWalkView: [() => setMountWalkView, v => (setMountWalkView = v)],
   standingHeightAt: [() => standingHeightAt, v => ((standingHeightAt = v), provide({ standingHeightAt }))],
+  walkCamera: [() => walkCamera, v => (walkCamera = v)],
+  walkGlContext: [() => walkGlContext, v => (walkGlContext = v)],
   walkRenderer: [() => walkRenderer],
+  worldCurveArgs: [() => worldCurveArgs, v => (worldCurveArgs = v)],
+  worldCurveDrop: [() => worldCurveDrop, v => (worldCurveDrop = v)],
   worldToScreen2d: [() => worldToScreen2d],
 });
 /* eslint-enable no-func-assign */
-provide({ dglBudget, dglRebuild, dglWallDefault, eglRestored, groundHeightAt, rawHeightAt, standingHeightAt });
+provide({ dglBudget, dglRebuild, dglWallDefault, groundHeightAt, onGlContextRestored, rawHeightAt, standingHeightAt });
 export function setDglBuildGrass(v) {
   dglBuildGrass = v; // eslint-disable-line no-func-assign
   provide({ dglBuildGrass });
@@ -673,7 +673,7 @@ setNavGrid(function () {
   return n;
 });
 /* ---------- canvas plumbing: the WebGL canvas plus a 2D layer on top for labels ---------- */
-export function dglCanvasFor(cv, type) {
+export function canvasForContext(cv, type) {
   if (!cv._ctx) {
     cv._ctx = type;
     return cv;
@@ -689,7 +689,7 @@ export function dglCanvasFor(cv, type) {
   cv.replaceWith(n);
   return n;
 }
-function dglUI(cv) {
+function labelLayer(cv) {
   let u = walkRenderer.ui;
   if (!u || !u.isConnected) {
     u = document.getElementById('dioui') || document.createElement('canvas');
@@ -708,7 +708,7 @@ const baseStopWalkView = stopWalkView,
    run it (boot.js noWebGL); the Studio shows its own message (engine-editor.js) */
 export function mountWalkView(cv, id, opt = {}) {
   const useGL = !EGL.fail && eglOK();
-  cv = dglCanvasFor(cv, 'gl');
+  cv = canvasForContext(cv, 'gl');
   if (!useGL) {
     walkRenderer.on = false;
     if (walkRenderer.ui) walkRenderer.ui.hidden = true;
@@ -741,8 +741,8 @@ export function mountWalkView(cv, id, opt = {}) {
   walkView.ready = false;
   walkView.err = null;
   cv.classList.add('gl');
-  if (!dglGL(cv)) return mountWalkView(cv, id, opt);
-  const ui = dglUI(cv);
+  if (!walkGlContext(cv)) return mountWalkView(cv, id, opt);
+  const ui = labelLayer(cv);
   walkView.x = ui.getContext('2d');
   walkRenderer.on = true;
   if (!cv._dioBound) {
@@ -752,7 +752,7 @@ export function mountWalkView(cv, id, opt = {}) {
       const h = hitAt(ev);
       cv.style.cursor = h ? 'pointer' : walkView.st.roam ? 'crosshair' : '';
     });
-    dglGestures(cv);
+    bindGestures(cv);
   }
   return prepareMap(id)
     .then(sc => {
@@ -775,7 +775,7 @@ export function setMountWalkView(v) {
 }
 /* the GL context on this canvas, with the walk scene's programs (v47: also used by the opening's fall, which draws the
    world map on the same canvas before Sundown is mounted; a context made by the map alone gets the walk programs here) */
-export function dglGL(cv) {
+export function walkGlContext(cv) {
   if (EGL.cv === cv && EGL.gl) {
     if (!EGL.lost)
       try {
@@ -816,7 +816,7 @@ export function dglGL(cv) {
   for (const k of DGL_KEEP) walkRenderer[k] = null;
   return true;
 }
-function eglRestored(cv) {
+function onGlContextRestored(cv) {
   if (walkView.id && walkView.cv === cv) {
     const id = walkView.id;
     walkView.id = null;
@@ -829,7 +829,7 @@ setStopWalkView(function () {
 });
 setWorldToScreen(function (C, x, y, z) {
   if (!C || !C.gl) return worldToScreen2d(C, x, y, z);
-  const wy = standingHeightAt(x, z) + y + dglCurve(x, z),
+  const wy = standingHeightAt(x, z) + y + worldCurveDrop(x, z),
     m = C.vp,
     cx = m[0] * x + m[4] * wy + m[8] * z + m[12],
     cy = m[1] * x + m[5] * wy + m[9] * z + m[13],
@@ -840,7 +840,7 @@ setWorldToScreen(function (C, x, y, z) {
 setScreenToGround(function (sx, sy) {
   const C = walkView.C;
   if (!C || !C.gl) return screenToGround2d(sx, sy);
-  const r = dglRay(C, sx, sy);
+  const r = screenRay(C, sx, sy);
   let t = 0,
     prev = null;
   for (let k = 0; k < 400; k++) {
@@ -869,7 +869,7 @@ setScreenToGround(function (sx, sy) {
   }
   return null;
 });
-function dglRay(C, sx, sy) {
+function screenRay(C, sx, sy) {
   const nx = (sx / C.rw) * 2 - 1,
     ny = 1 - (sy / C.rh) * 2,
     inv = C.ivp,
@@ -886,26 +886,26 @@ function dglRay(C, sx, sy) {
     l = Math.hypot(...d);
   return { o: p0, d: d.map(v => v / l) };
 }
-export function dglCurveArgs() {
+export function worldCurveArgs() {
   const sc = walkView.sc;
   return [sc.w / 2, sc.h / 2, eng('world', 'curve'), Math.max(sc.w, sc.h) * 0.55 + 4];
 }
-export function dglCurve(x, z) {
+export function worldCurveDrop(x, z) {
   const sc = walkView.sc;
   if (!sc) return 0;
-  const c = dglCurveArgs(),
+  const c = worldCurveArgs(),
     d = Math.max(0, Math.hypot(x - c[0], z - c[1]) - c[3]);
   return c[2] * d * d;
 }
 /* ---------- input: taps (focus follows them), two-finger turn and pinch, Ctrl+wheel zoom, Q/E/R, phone tilt ---------- */
 /* alpha 0.4.1: a preview that asks for a free camera (the Studio's) turns all the way round, zooms further and zooms with the plain wheel */
-const dglFree = () => !!(walkView.opt && walkView.opt.freeCam),
-  dglTurn = () => (dglFree() ? Math.PI : (eng('camera', 'turn') * Math.PI) / 180),
-  dglZoomLim = v => (dglFree() ? clamp(v, 0.3, 3.2) : clamp(v, eng('camera', 'zoomMin'), eng('camera', 'zoomMax')));
+const freeCameraOn = () => !!(walkView.opt && walkView.opt.freeCam),
+  cameraTurnLimit = () => (freeCameraOn() ? Math.PI : (eng('camera', 'turn') * Math.PI) / 180),
+  clampZoom = v => (freeCameraOn() ? clamp(v, 0.3, 3.2) : clamp(v, eng('camera', 'zoomMin'), eng('camera', 'zoomMax')));
 function handleCanvasClick(ev) {
   if (walkView.battle || walkView.director || !walkView.ready || (walkView.opt.active && !walkView.opt.active()))
     return;
-  if (typeof S !== 'undefined') dglTiltAsk();
+  if (typeof S !== 'undefined') askDeviceTilt();
   if (walkRenderer.dragged) {
     walkRenderer.dragged = false;
     return;
@@ -917,7 +917,7 @@ function handleCanvasClick(ev) {
   }
   handleWalkClick(ev);
 }
-function dglGestures(cv) {
+function bindGestures(cv) {
   const pts = new Map();
   let g0 = null;
   cv.addEventListener('pointerdown', ev => {
@@ -940,8 +940,8 @@ function dglGestures(cv) {
     if (walkRenderer.drag) {
       walkRenderer.yawT = clamp(
         walkRenderer.drag.yaw + (ev.clientX - walkRenderer.drag.x) * 0.006,
-        -dglTurn(),
-        dglTurn()
+        -cameraTurnLimit(),
+        cameraTurnLimit()
       );
       walkRenderer.dragged = true;
       return;
@@ -952,8 +952,8 @@ function dglGestures(cv) {
       const [a, b] = [...pts.values()],
         d = Math.hypot(a[0] - b[0], a[1] - b[1]),
         cx = (a[0] + b[0]) / 2;
-      walkRenderer.zoomT = dglZoomLim((g0.zoom * g0.d) / Math.max(20, d));
-      walkRenderer.yawT = clamp(g0.yaw + (cx - g0.cx) * 0.006, -dglTurn(), dglTurn());
+      walkRenderer.zoomT = clampZoom((g0.zoom * g0.d) / Math.max(20, d));
+      walkRenderer.yawT = clamp(g0.yaw + (cx - g0.cx) * 0.006, -cameraTurnLimit(), cameraTurnLimit());
       walkRenderer.dragged = true;
     }
   });
@@ -969,20 +969,21 @@ function dglGestures(cv) {
     'wheel',
     ev => {
       if (walkView.opt.active && !walkView.opt.active()) return;
-      if (!ev.ctrlKey && !dglFree()) return;
+      if (!ev.ctrlKey && !freeCameraOn()) return;
       ev.preventDefault();
-      walkRenderer.zoomT = dglZoomLim(walkRenderer.zoomT * Math.exp(ev.deltaY * 0.0012));
+      walkRenderer.zoomT = clampZoom(walkRenderer.zoomT * Math.exp(ev.deltaY * 0.0012));
     },
     { passive: false }
   );
   addEventListener('keydown', ev => {
     if (!walkRenderer.on || !walkView.cv || (walkView.opt.active && !walkView.opt.active())) return;
-    if (dglFree() && !(walkView.opt.keys && walkView.opt.keys())) return;
+    if (freeCameraOn() && !(walkView.opt.keys && walkView.opt.keys())) return;
     const t = ev.target;
     if (t && /INPUT|TEXTAREA|SELECT/.test(t.tagName)) return;
-    if (ev.key === 'q' || ev.key === 'Q') walkRenderer.yawT = clamp(walkRenderer.yawT - 0.12, -dglTurn(), dglTurn());
+    if (ev.key === 'q' || ev.key === 'Q')
+      walkRenderer.yawT = clamp(walkRenderer.yawT - 0.12, -cameraTurnLimit(), cameraTurnLimit());
     else if (ev.key === 'e' || ev.key === 'E')
-      walkRenderer.yawT = clamp(walkRenderer.yawT + 0.12, -dglTurn(), dglTurn());
+      walkRenderer.yawT = clamp(walkRenderer.yawT + 0.12, -cameraTurnLimit(), cameraTurnLimit());
     else if (ev.key === 'r' || ev.key === 'R') {
       walkRenderer.yawT = 0;
       walkRenderer.zoomT = 1;
@@ -996,9 +997,9 @@ function dglGestures(cv) {
     },
     { passive: true }
   );
-  dglTiltListen();
+  listenDeviceTilt();
 }
-function dglTiltListen() {
+function listenDeviceTilt() {
   if (walkRenderer._tl) return;
   walkRenderer._tl = 1;
   addEventListener('deviceorientation', ev => {
@@ -1013,7 +1014,7 @@ function dglTiltListen() {
     walkRenderer.tiltY = clamp((ev.beta - o.b) / 30, -1, 1);
   });
 }
-function dglTiltAsk() {
+function askDeviceTilt() {
   if (walkRenderer._asked) return;
   walkRenderer._asked = 1;
   try {
@@ -3340,7 +3341,7 @@ function dglBuildFar() {
   }
 }
 /* ---------- camera ---------- */
-function dglCamera(rw, rh, st, dt) {
+function walkCamera(rw, rh, st, dt) {
   const sc = walkView.sc,
     c = sc.cam || {},
     P = walkView.pl,
@@ -3460,7 +3461,7 @@ function dglCamera(rw, rh, st, dt) {
   };
 }
 /* the battle stage's camera (battle-stage.js projC) as a matrix: a level pinhole camera with an off-center horizon, in stage pixels */
-function dglBattleCamera(rw, rh, BT) {
+function battleCamera(rw, rh, BT) {
   const c = BT.cam,
     L = BT.L,
     O = BT.off,
@@ -3514,7 +3515,7 @@ function dglBattleCamera(rw, rh, BT) {
   };
 }
 /* a free camera for cutscenes: eye, target and vertical field of view in degrees */
-function dglLookCamera(rw, rh, K) {
+function cutsceneCamera(rw, rh, K) {
   const eye = K.eye.slice(),
     tgt = K.tgt.slice(),
     df = Math.hypot(tgt[0] - eye[0], tgt[1] - eye[1], tgt[2] - eye[2]) || 1,
@@ -3633,7 +3634,7 @@ function dglFrameIn(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
     walkView.folkAll = [];
   }
   if (!BT && typeof lifeStep === 'function') lifeStep(dt);
-  const C = BT ? (BT.look ? dglLookCamera(rw, rh, BT.look) : dglBattleCamera(rw, rh, BT)) : dglCamera(rw, rh, st, dt);
+  const C = BT ? (BT.look ? cutsceneCamera(rw, rh, BT.look) : battleCamera(rw, rh, BT)) : walkCamera(rw, rh, st, dt);
   walkView.C = C;
   const sun = dglSceneSun(sc, eglSun(!!sc.indoor));
   walkRenderer.sun = sun;
@@ -3952,7 +3953,7 @@ function dglCull(items, C) {
       b = it.M && it.M.box,
       ext = b ? Math.max(b[0], b[1]) * ((it.p && it.p.s) || 1) : 0;
     const r = Math.max(w, h, ext) * 0.6 + 0.4,
-      cy = (it.y || 0) + h * 0.5 + dglCurve(it.x, it.z);
+      cy = (it.y || 0) + h * 0.5 + worldCurveDrop(it.x, it.z);
     it.vis = dglInView(F, it.x, cy, it.z, r);
     k++;
     if (!it.vis) n++;
@@ -4703,7 +4704,7 @@ export function dglItems(st, C, PPU, C0) {
     F = C.vp && (eng('quality', 'cull') ?? true) ? dglFrustum(C.vp) : null;
   let gs = 0;
   for (const c of GR.cells) {
-    if (F && !dglInView(F, c.x, c.y + dglCurve(c.x, c.z), c.z, c.r + 8)) {
+    if (F && !dglInView(F, c.x, c.y + worldCurveDrop(c.x, c.z), c.z, c.r + 8)) {
       gs += c.list.length;
       continue;
     }
@@ -5189,7 +5190,7 @@ function dglLightCtx(C, sun, dark, items, shadow, BT) {
     shadow,
     lights,
     ao: ao.slice(0, 64).map(a => [a[0], a[1], a[2], a[3]]),
-    curve: dglCurveArgs(),
+    curve: worldCurveArgs(),
     season: E ? E.sk : [0, 0, 0, 0],
   });
 }
@@ -5230,7 +5231,7 @@ function dglShadowRect(C) {
     [C.rw, C.rh],
     [C.rw / 2, C.rh / 2],
   ]) {
-    const r = dglRay(C, sx, sy);
+    const r = screenRay(C, sx, sy);
     const t = r.d[1] < -0.02 ? Math.min(55, (y0 - r.o[1]) / r.d[1]) : 55;
     X.push(r.o[0] + r.d[0] * t);
     Z.push(r.o[2] + r.d[2] * t);
@@ -5258,7 +5259,7 @@ export function dglShadowPass(items0, sun, C) {
     gl = EGL.gl,
     items = items0.filter(it => Math.hypot(it.x - P.x, it.z - P.z) < R + (it.w || 32) * (it.mpp || 0.03) + 3);
   const SH = eglShadowBegin(P.x, P.z, R, sun, res, 'shadowN'),
-    ca = dglCurveArgs();
+    ca = worldCurveArgs();
   {
     const p = EGL.P.shadowG;
     gl.useProgram(p.p);
@@ -5295,7 +5296,7 @@ function dglLampShadows(items, X, dark) {
   X._lc = null;
   X.lampSh = [];
   const gl = EGL.gl,
-    ca = dglCurveArgs();
+    ca = worldCurveArgs();
   cand.forEach((l, i) => {
     const SH = eglLampShadowBegin([l.p[0], l.p[1] + 0.2, l.p[2]], 512, 'lamp' + i),
       near = items.filter(
@@ -5408,7 +5409,7 @@ function dglShadowPassFit(items0, sun, C) {
     it => Math.hypot(it.x - fit[0], it.z - fit[1]) < fit[2] + (it.w || 32) * (it.mpp || 0.03) + 4
   );
   const SH = eglShadowBegin(fit[0], fit[1], fit[2], sun, res);
-  const ca = dglCurveArgs(),
+  const ca = worldCurveArgs(),
     curve = P => {
       gl.uniform3f(P.U.uCurve, ca[0], ca[1], ca[2]);
       gl.uniform1f(P.U.uCurveD0, ca[3]);
@@ -5617,7 +5618,7 @@ export function dglGround(C, X) {
     ? null
     : (() => {
         const P = walkView.pl,
-          y = (P.yv ?? standingHeightAt(P.x, P.z)) + 0.9 + dglCurve(P.x, P.z),
+          y = (P.yv ?? standingHeightAt(P.x, P.z)) + 0.9 + worldCurveDrop(P.x, P.z),
           m = C.vp,
           cx = m[0] * P.x + m[4] * y + m[8] * P.z + m[12],
           cy = m[1] * P.x + m[5] * y + m[9] * P.z + m[13],
@@ -5802,7 +5803,7 @@ export function dglGrass(C, X) {
     gl.bindBuffer(gl.ARRAY_BUFFER, G.ib);
     let drawn = 0;
     for (const c of G.chunks) {
-      if (!dglInView(F, c.x, c.y + dglCurve(c.x, c.z), c.z, c.r)) continue;
+      if (!dglInView(F, c.x, c.y + worldCurveDrop(c.x, c.z), c.z, c.r)) continue;
       if (far < 1e9 && Math.hypot(c.x - Pp.x, c.z - Pp.z) > far) continue;
       gl.vertexAttribPointer(1, 4, gl.FLOAT, false, 32, c.off * 32);
       gl.vertexAttribPointer(2, 4, gl.FLOAT, false, 32, c.off * 32 + 16);
@@ -6184,7 +6185,7 @@ export function dglBlades(p, it, b, BT, rot, C, X, lift) {
     u2 = [-R[0] * sn, c, -R[2] * sn];
   gl.activeTexture(gl.TEXTURE0);
   gl.bindTexture(gl.TEXTURE_2D, BT.t);
-  gl.uniform3f(fp.U.uP, cx, cy + dglCurve(it.x, it.z), cz);
+  gl.uniform3f(fp.U.uP, cx, cy + worldCurveDrop(it.x, it.z), cz);
   gl.uniform3fv(fp.U.uRight, r2);
   gl.uniform3fv(fp.U.uUp, u2);
   gl.uniform2f(fp.U.uS, bs, bs);
@@ -6247,7 +6248,7 @@ function dglFlat(it, T, C, X) {
     ph = (walkView.t || 0) / 1000 + it.x * 1.3 + it.z * 0.7,
     an = wet ? Math.sin(ph * 0.45) * 0.07 : 0,
     bob = wet ? Math.sin(ph * 1.2) * 0.012 : 0;
-  gl.uniform3f(U.uP, cx, standingHeightAt(it.x, it.z) + 0.04 + bob + dglCurve(it.x, it.z), cz);
+  gl.uniform3f(U.uP, cx, standingHeightAt(it.x, it.z) + 0.04 + bob + worldCurveDrop(it.x, it.z), cz);
   gl.uniform3f(U.uRight, it.flip * Math.cos(an), 0, Math.sin(an));
   gl.uniform3f(U.uUp, -Math.sin(an) * it.flip, 0, Math.cos(an));
   gl.uniform2f(U.uS, w, h * 0.95);
@@ -7589,7 +7590,7 @@ export function dglFxPass(C, items, X, dark, t, dt) {
       if (!T) return;
       const m = EFFECT_FRAMES[k];
       gl.bindTexture(gl.TEXTURE_2D, T.t);
-      gl.uniform3f(U.uP, x, y + dglCurve(x, z), z);
+      gl.uniform3f(U.uP, x, y + worldCurveDrop(x, z), z);
       gl.uniform2f(U.uS, sw, sh);
       gl.uniform4f(U.uUV, ((fr % m[2]) * m[0]) / T.w, 0, m[0] / T.w, 1);
       gl.uniform4f(U.uCol, col ? col[0] : 1, col ? col[1] : 1, col ? col[2] : 1, a);
@@ -8004,7 +8005,7 @@ export function dglFxPass(C, items, X, dark, t, dt) {
         const T = eglImg(q.im, { noNormal: true });
         if (!T) continue;
         gl.bindTexture(gl.TEXTURE_2D, T.t);
-        gl.uniform3f(U.uP, q.x, q.y + dglCurve(q.x, q.z), q.z);
+        gl.uniform3f(U.uP, q.x, q.y + worldCurveDrop(q.x, q.z), q.z);
         gl.uniform2f(U.uS, q.w, q.h);
         const k = pass ? 1.6 : 1;
         gl.uniform4f(U.uCol, k, k, k, q.a);
@@ -8025,7 +8026,7 @@ export function dglFxPass(C, items, X, dark, t, dt) {
   );
   for (const [x, y, z, r, c, a] of glows) {
     if (a <= 0.01) continue;
-    gl.uniform3f(U.uP, x, y + dglCurve(x, z), z);
+    gl.uniform3f(U.uP, x, y + worldCurveDrop(x, z), z);
     gl.uniform2f(U.uS, r * 2, r * 2);
     gl.uniform4f(U.uCol, c[0], c[1], c[2], a);
     gl.drawArrays(gl.TRIANGLES, 0, 6);

@@ -16,11 +16,11 @@ import { artImage, mapBridges, walkView } from './walk-view.js';
 import { EGL, eglImg, eglPrograms } from './engine/webgl.js';
 import {
   DGL_WALL_COL,
-  dglCurveArgs,
   dglUse,
   dglWallDefault,
   groundHeightAt,
   standingHeightAt,
+  worldCurveArgs,
 } from './walk-view-gl.js';
 import { BLD_SH, bldArt, bldGuard } from './buildings.js';
 /* eslint-disable no-func-assign */
@@ -595,7 +595,7 @@ function strShadow(SH) {
     const p = EGL.P.bshadow;
     gl.useProgram(p.p);
     gl.uniformMatrix4fv(p.U.uVP, false, SH.vp);
-    const ca = dglCurveArgs(),
+    const ca = worldCurveArgs(),
       sc = walkView.sc;
     gl.uniform3f(p.U.uCurve, ca[0], ca[1], ca[2]);
     gl.uniform1f(p.U.uCurveD0, ca[3]);

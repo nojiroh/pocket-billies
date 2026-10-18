@@ -14,7 +14,7 @@ import { artImg, artURL, hexA } from './art.js';
 import { artImage, walkView } from './walk-view.js';
 import { eng } from './engine/settings.js';
 import { EGL, EGL_GLSL_COMMON, EGL_GLSL_LIGHT, eglImg, eglPrograms } from './engine/webgl.js';
-import { dglCurveArgs, dglHit, dglLookU, dglUse, dglWindAt, walkRenderer } from './walk-view-gl.js';
+import { dglHit, dglLookU, dglUse, dglWindAt, walkRenderer, worldCurveArgs } from './walk-view-gl.js';
 import { BLD_SH, bldArt, bldAtlas } from './buildings.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -1041,7 +1041,7 @@ function voxMdlFS() {
     .replace('uniform vec3 uBP;', 'uniform vec3 uBP;uniform float uCel;');
 }
 /* the models among the items, drawn after the voxel props: L is [item, mesh] */
-/* alpha 0.4: the props' shaders with the low-poly model's, for compiling ahead when the 3D view starts (walk-view-gl.js dglGL) */
+/* alpha 0.4: the props' shaders with the low-poly model's, for compiling ahead when the 3D view starts (walk-view-gl.js walkGlContext) */
 function voxShaders() {
   if (!VOX_SH.mdl && typeof BLD_SH !== 'undefined') VOX_SH.mdl = [VOX_MDL_VS(), voxMdlFS()];
   return VOX_SH;
@@ -1263,7 +1263,7 @@ function voxShadow(SH, items) {
     const gl = EGL.gl;
     eglPrograms(VOX_SH);
     let p = null;
-    const ca = typeof dglCurveArgs === 'function' ? dglCurveArgs() : [0, 0, 0, 1e9];
+    const ca = typeof worldCurveArgs === 'function' ? worldCurveArgs() : [0, 0, 0, 1e9];
     for (const it of items) {
       if (!it.vox) continue;
       const m = voxMeshFor(it.voxPath, it.vox);
