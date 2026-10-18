@@ -31,7 +31,7 @@ idle life everywhere; messages that appear at the edge, say their piece and leav
 | A choice opens right after loading: `showPendingWindows` (hatch, learn a move, evolve) runs 500 ms after boot, so the evolution sheet covers a blurred world before you've seen it. (Corrected: modals already queue one at a time, ui.js `modal`/`nextModal`; they don't stack) | town after loading | The first thing a player sees is a wall, not the world |
 | 72 `@keyframes`, several doing the same thing under different names (`pop`, `nwPop`; `rise`, `nwFadeUp`, `csUp`; `breathe`, `nwIdle`), reduced-motion handled per file | all | Motion feels different from screen to screen and is hard to tune |
 | The battle text log stacks every line at the bottom of the screen | battle | Reads like a log file; the important line isn't the loudest |
-| Loader tip still says real steps move you along | loader | Stale since phase 08 Part A (steps removed) |
+| ~~Loader tip still says real steps move you along~~ | loader | Corrected in 06-1: still true until phase 08 Part A removes steps; the tips change with phase 08 |
 | The test boot skipped the opening cutscene | start | Fixed in PR #19 |
 
 ## The look
@@ -117,11 +117,14 @@ Recommended: **Lit** web components (about 6 KB, escapes by default, works with 
 components run in the game and the Studio). Fallback: plain lit-html templates with the same tokens. Phase 06 says to ask
 before adopting a library, so this waits for your answer.
 
-- `game/ui/tokens.css`: every token above, light and dark. The only place colours, sizes, radii and timings live.
-- `game/ui/motion.css`: the eight motions.
-- `game/ui/components/`: `pb-button`, `pb-panel`, `pb-sheet`, `pb-card`, `pb-tabs`, `pb-pill`, `pb-toast`,
+As built in 06-1 (paths differ from the first draft so lint, type and module checks cover the new code):
+- `game/css/tokens.css`: sizes, corners, depth, type and timings. Colours stay in v05.css's variables.
+- `game/css/motion.css`: the eight motions as `m-*` classes; `game/css/ui-kit.css`: the kit's page-side styles.
+- `game/js/ui-kit.js`: the components. Lit comes from `game/vendor/lit.js`, a classic script made by
+  `tools/vendor-lit.mjs` that sets `self.PB_LIT` (the game's modules may only import each other).
+- Built so far: `pb-panel`, `pb-pill`, `pb-button`, `pb-sheet`, `pb-toast`. To come: `pb-card`, `pb-tabs`,
   `pb-dialogue` (portrait slot sized 96×96 for phase 07, typing hook for the mouth), `pb-stat-bar`, `pb-field`.
-- `game/ui/screens/<screen>/`: each screen's component, its styles and its test.
+- Screens: one module per screen in `game/js/` as each moves over (06-2 to 06-4).
 - Components size to their container (container queries), so a card looks right in the phone column, the wide-screen
   side panel and a Studio form.
 - A **gallery page in the Studio** shows every component in every state (empty, full, long names, dark, 320 px wide).
@@ -153,7 +156,7 @@ Order follows the roadmap's priority on Billies and robots: the screens they nee
 
 | Session | Does | Ends with |
 |---|---|---|
-| **06-1** | Audit (refresh the numbers above), tokens.css, motion.css, the renderer (after your decision), button, panel, sheet, pill, toast; the new message rules (toasts, inbox, one sheet on load); loader copy | Tokens in use by the bottom bar and toasts; no visible change except calmer messages |
+| **06-1** ✓ (PR #24) | tokens.css, motion.css, Lit, button, panel, sheet, pill, toast; the new message rules (toasts, inbox, choices wait for the world); bottom bar on the tokens | Done 2026-10-18; see docs/HANDOFF.md |
 | **06-2** | Billie card, details sheet with parts, sizes, weight and the Prime badge (phase 16), Team screen, starter pick | Team and details on the new look; UI tests for them |
 | **06-3** | Dialogue box with portrait slot, battle menus and battle text, Bag, the robot builder shell (phase 17); remove the painted battle stage and the classic HUD (section above) | Battle reads one line at a time; every battle on the 3D stage, rooms included |
 | **06-4** | Guide, Trainer card, Settings, shops, dressing room, friends; Studio gallery; delete the emptied CSS; accessibility pass | All screens moved, no innerHTML with untrusted values, tag `phase-06-done` |
