@@ -165,7 +165,7 @@ def dress(P, rnd):
 
 def chalk(P, rnd):
     """chalk on the paving in front of some front doors: hopscotch or a drawing. "dry": the rain washes it away and
-    it is drawn again once the ground has dried (diorama.js dioPropOn). The pictures come from tools/build-landmarks-v47.py"""
+    it is drawn again once the ground has dried (walk-view.js dioPropOn). The pictures come from tools/build-landmarks-v47.py"""
     if 'chalk_hopscotch' not in P.cat: return 0
     n = 0; homes = [p for p in P.sc['props'] if (P.cat.get(p['k']) or {}).get('box') and is_home(p, P.cat.get(p['k']) or {}) and not p.get(TAG)]
     rnd.shuffle(homes)
@@ -214,7 +214,7 @@ def cats(P):
 
 def worn(P, rnd):
     """the shortcuts: from the square to the doors people use most, and from doors to the nearest street, wherever
-    the straight way crosses grass. The ground painter wears them in (diorama.js dioWearLines)."""
+    the straight way crosses grass. The ground painter wears them in (walk-view.js dioWearLines)."""
     sc, cat = P.sc, P.cat; hub = sc.get('hub') or [P.W / 2, P.H / 2]; L = []
 
     def soft_share(a, b):
@@ -262,7 +262,7 @@ def worn(P, rnd):
 
 
 def crops(sc):
-    """the farm's fields grow and are harvested on rounds of their own (diorama.js dioGrowK): each crop gets its
+    """the farm's fields grow and are harvested on rounds of their own (walk-view.js dioGrowK): each crop gets its
     field's number from where it stands"""
     n = 0
     for p in sc.get('props', []):

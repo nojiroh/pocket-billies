@@ -2,7 +2,7 @@
 """v46: the terrain kit. Every ground kind gets twelve 32 px tiles instead of six, and twelve new kinds join the 26.
 
 Variants of a kind (game/art/next/tiles/<name>_1..12.png): 1 is the plain tile, 2-6 the v37 ones (one extra touch
-each), and the six new ones have roles the ground painter (diorama.js) places them by:
+each), and the six new ones have roles the ground painter (walk-view.js) places them by:
    7, 8   plain re-rolls        (most of the ground, so it repeats less)
    9      a damp or shaded patch  (in slow patches of detail)
    10     a second touch of its own kind (stones, weeds, cracks)

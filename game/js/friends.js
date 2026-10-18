@@ -15,7 +15,7 @@ import { ROUTE, SP } from './data.js';
 import { N, S, U, cleanName, esc, plural } from './core.js';
 import { owFrames, portraitHTML, trWarm } from './trainer.js';
 import { sprHTML } from './rig.js';
-import { DIO, dioDirOf } from './diorama.js';
+import { DIO, dioDirOf } from './walk-view.js';
 import { dglPerson } from './diorama-gl.js';
 import { owBuddyMon, owItem } from './owmon.js';
 import { MAP, mapSelect } from './map.js';

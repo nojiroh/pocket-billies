@@ -8,7 +8,7 @@ import { expose } from '../test-globals.js';
 import { DGL, dioArtVer, eglRestored, provide } from '../hooks.js';
 import { clamp } from '../util.js';
 import { cnv } from '../art.js';
-import { dioOk } from '../diorama.js';
+import { dioOk } from '../walk-view.js';
 import { eng } from './settings.js';
 /* eslint-disable no-func-assign */
 expose({

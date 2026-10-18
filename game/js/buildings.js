@@ -15,7 +15,7 @@
 import { expose } from './test-globals.js';
 import { dioArtVer, provide } from './hooks.js';
 import { cnv, hexA } from './art.js';
-import { DIO, dioData, dioHash, dioImg } from './diorama.js';
+import { DIO, dioData, dioHash, dioImg } from './walk-view.js';
 import { ENG_CTX, eng } from './engine/settings.js';
 import {
   EGL,

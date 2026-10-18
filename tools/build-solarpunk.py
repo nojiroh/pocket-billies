@@ -17,7 +17,7 @@ benches and lamps, flower beds, solar trees and garden walls, its old trees kept
 
 Pictures are written only where missing (--force writes them again). What this tool adds to the places carries
 "a04solar": 1 (roofs "a04roof": 1), so running it again first takes its own away. The roofs are a prop's "roof":
-'moss' or 'solar' (diorama.js dioPropM turns them into the building's roof texture and colours).
+'moss' or 'solar' (walk-view.js dioPropM turns them into the building's roof texture and colours).
 
     python3 tools/build-solarpunk.py            # pictures that are missing, the catalogue, every town, the park
     python3 tools/build-solarpunk.py --dry      # say what it would place

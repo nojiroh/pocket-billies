@@ -7,7 +7,7 @@
 import { expose } from '../test-globals.js';
 import { ENV, envSun } from '../hooks.js';
 import { clamp } from '../util.js';
-import { DIO } from '../diorama.js';
+import { DIO } from '../walk-view.js';
 import { ENG_CTX, eng, engHex } from './settings.js';
 import { EGL, M4, eglTarget, v3c, v3n } from './core.js';
 /* eslint-disable no-func-assign */

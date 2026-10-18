@@ -12,7 +12,7 @@ import { B, FV, RM, S, provide } from './hooks.js';
 import { $, clamp } from './util.js';
 import { hexA } from './art.js';
 import { ACT, FOC, POS, SC, UPP, partSpr, sideBuf, sideWorld, trainerBattleFrame, trainerMpp } from './scene.js';
-import { DIO, dioData, dioStop } from './diorama.js';
+import { DIO, dioData, dioStop } from './walk-view.js';
 import { EGL } from './engine/core.js';
 import { DGL, dioH } from './diorama-gl.js';
 /* eslint-disable no-func-assign */

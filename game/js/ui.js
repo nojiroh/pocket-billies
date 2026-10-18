@@ -114,7 +114,7 @@ import {
   openKind,
   placeClosedText,
   placeOpen,
-} from './diorama.js';
+} from './walk-view.js';
 import { eng } from './engine/settings.js';
 import { ENV, envHint, envIcon, envLabel } from './env.js';
 import { DGL, dioMount } from './diorama-gl.js';

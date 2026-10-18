@@ -1,6 +1,6 @@
 'use strict';
 /* ================= POCKET BILLIES STUDIO · walk scenes =================
-   Each route stop shows a tilt-shift diorama on the Walk screen (game/js/diorama.js). A scene is a grid of ground
+   Each route stop shows a tilt-shift diorama on the Walk screen (game/js/walk-view.js). A scene is a grid of ground
    tiles (one character per tile), a list of props, a walking path and a camera. Props and ground tiles are PNG files
    in art/scene/ that can be painted here. The live preview runs the game's own renderer on your unsaved changes. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
@@ -39,7 +39,7 @@ import {
   dioStepsStore,
   setDioData,
   setDioImg,
-} from '../../game/js/diorama.js';
+} from '../../game/js/walk-view.js';
 import { ENV } from '../../game/js/env.js';
 import { DGL, DGL_WALL_MATS, dioHRaw, dioMount } from '../../game/js/diorama-gl.js';
 import { esc } from './shims.js';

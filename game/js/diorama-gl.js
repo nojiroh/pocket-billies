@@ -5,7 +5,7 @@
    (buildings cast solid shadows, people and trees their cut-out shape), contact shadows, lamps and windows that light
    the ground in front of them and glow through bloom, ponds that reflect, grass that sways and bends away from you,
    mist, cloud shadows, and a lens with depth of field. Every dial is an engine setting (Studio → Engine).
-   Same scenes, walking and taps as js/diorama.js (scene data, paths, the player); this file draws them. */
+   Same scenes, walking and taps as js/walk-view.js (scene data, paths, the player); this file draws them. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import {
@@ -135,7 +135,7 @@ import {
   setDioProj,
   setDioStop,
   setDioUnproject,
-} from './diorama.js';
+} from './walk-view.js';
 import { ENG_CTX, eng, engHex } from './engine/settings.js';
 import {
   EGL,

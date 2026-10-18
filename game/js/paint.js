@@ -5,7 +5,7 @@
    copy of the code) now runs on a Web Worker. The main thread hands it a view once and the tile pictures once, then
    asks for rectangles and gets the pixels back, the near ring's with their smaller sizes (mipmaps) made there too.
    Where workers aren't allowed (or one fails), painting stays on the main thread, a slice at a time, as before.
-   A generator waiting on the worker yields PW_WAIT (diorama.js): the loops that step it stop for the frame. */
+   A generator waiting on the worker yields PW_WAIT (walk-view.js): the loops that step it stop for the frame. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { provide } from './hooks.js';
@@ -42,7 +42,7 @@ import {
   dioWearAmtFn,
   dioWearFn,
   dioWearLines,
-} from './diorama.js';
+} from './walk-view.js';
 import { eng } from './engine/settings.js';
 import { DGL_TERRAIN_MAT } from './diorama-gl.js';
 import { wrNear } from './world.js';
@@ -92,7 +92,7 @@ const PW_KEEP = 4,
 /* the helper's own part: the views it holds, the tile pictures, a queue (nearest square first; one dropped before it
    starts is skipped) and the small sizes of a picture */
 const PW_MAIN = `var DGL_TERRAIN_MAT;let CTX=null;const CTXS=new Map(),TILES=new Map(),Q=[],GONE=new Set();let busy=false;
-/* (stand-ins for diorama.js's own, from what the main thread handed over) */
+/* (stand-ins for walk-view.js's own, from what the main thread handed over) */
 var dioData=()=>({sc:CTX.C}),dioNextOn=()=>!!CTX.next,dioT47=()=>!!CTX.t47,dioSteps=sc=>CTX.E,dioBridges=()=>null,
  dioTileSet=(T,TP)=>TILES.get(TP+'|'+T.tile+'|'+(T.vars||[]).join(','))||[null];
 function pwMips(s,W,H,n){const out=[];for(let k=0;k<n&&W>1&&H>1;k++){const w=W>>1,h=H>>1,d=new Uint8Array(w*h*4);
@@ -112,7 +112,7 @@ onmessage=ev=>{const m=ev.data;
  if(m.t==='cancel'){if(Q.some(q=>q.id===m.id))GONE.add(m.id);return}
  if(m.t==='prio'){for(const q of Q)if(q.id===m.id)q.pr=m.pr;return}
  if(m.t==='paint'){Q.push(m);if(!busy){busy=true;setTimeout(run,0)}}};`;
-/* the worker's source: the painter and everything it calls, as written in diorama.js (and wrNear, world.js) */
+/* the worker's source: the painter and everything it calls, as written in walk-view.js (and wrNear, world.js) */
 function pwSource() {
   const fns = [
     dioHash,

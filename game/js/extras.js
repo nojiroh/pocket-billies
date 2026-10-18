@@ -10,7 +10,7 @@ import { clamp } from './util.js';
 import { COINS, GD, ITEMS, ROUTE, RULES, SP } from './data.js';
 import { B, N, S, U, esc, fmt, save, today } from './core.js';
 import { cnv, uiIco } from './art.js';
-import { DIO, dioBaseId, dioFace, dioFind, dioFreePt, dioHubOf, dioScene, dioTer } from './diorama.js';
+import { DIO, dioBaseId, dioFace, dioFind, dioFreePt, dioHubOf, dioScene, dioTer } from './walk-view.js';
 import { eng } from './engine/settings.js';
 import { ENV, envHere, envState } from './env.js';
 import { DGL, dioH } from './diorama-gl.js';

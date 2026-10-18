@@ -90,7 +90,7 @@ import {
   sideTop,
   sideWorld,
 } from './scene.js';
-import { DIO } from './diorama.js';
+import { DIO } from './walk-view.js';
 import { ENV, ENV_NAMES, envHere, envState } from './env.js';
 import { DGL, dglRing, dglWgAt } from './diorama-gl.js';
 import { BGL, battleGLWanted } from './battle-gl.js';

@@ -6,7 +6,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
 import { $ } from '../../game/js/util.js';
-import { DIO, dioHubOf } from '../../game/js/diorama.js';
+import { DIO, dioHubOf } from '../../game/js/walk-view.js';
 import {
   ENGINE_DEFAULTS,
   ENGINE_PRESETS,

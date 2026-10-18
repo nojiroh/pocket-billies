@@ -14,7 +14,7 @@ import { userFps } from './frame.js';
 import { uiIco } from './art.js';
 import { humanHTML } from './trainer.js';
 import { applyPreferences } from './profile.js';
-import { DIO, dioScene, dioStop } from './diorama.js';
+import { DIO, dioScene, dioStop } from './walk-view.js';
 import { DGL, dioH, dioMount } from './diorama-gl.js';
 import { music, musicFor } from './sound.js';
 import { csSceneId, csStart, csStartName, csWanted } from './cutscene.js';

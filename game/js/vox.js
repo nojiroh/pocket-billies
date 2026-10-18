@@ -11,7 +11,7 @@
 import { expose } from './test-globals.js';
 import { GD, RM, provide } from './hooks.js';
 import { artImg, artURL, hexA } from './art.js';
-import { DIO, dioImg } from './diorama.js';
+import { DIO, dioImg } from './walk-view.js';
 import { eng } from './engine/settings.js';
 import { EGL, EGL_GLSL_COMMON, EGL_GLSL_LIGHT, eglImg, eglPrograms } from './engine/core.js';
 import { DGL, dglCurveArgs, dglHit, dglLookU, dglUse, dglWindAt } from './diorama-gl.js';

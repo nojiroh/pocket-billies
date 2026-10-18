@@ -17,7 +17,7 @@ import { N, S, U, findMon, maxHp, nextStop, save } from './core.js';
 import { cnv } from './art.js';
 import { KBACK, drawRig, rigFrame, rigParts, rigPreload } from './rig.js';
 import { scPrepare } from './scene.js';
-import { DIO, dioFreePt, dioPrepare, dioProj } from './diorama.js';
+import { DIO, dioFreePt, dioPrepare, dioProj } from './walk-view.js';
 import { ENV } from './env.js';
 import { dioH } from './diorama-gl.js';
 /* eslint-disable no-func-assign */

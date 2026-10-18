@@ -36,7 +36,7 @@ import {
   dioScene,
   dioStepCell,
   dioSteps,
-} from './diorama.js';
+} from './walk-view.js';
 import { eng } from './engine/settings.js';
 import { smooth01 } from './engine/core.js';
 import { DGL, dglPrepare, dglPrepared } from './diorama-gl.js';
@@ -1315,7 +1315,7 @@ function wrComposeMulti(id, F) {
   }
   sc.under = UB ? 1 : 0;
   /* v46: where each spot's ground pattern comes from, so it is the same in every view: a scene's own metres inside it,
-    the road's frame on the road (the painter, diorama.js, seeds its variants and noise from these) */
+    the road's frame on the road (the painter, walk-view.js, seeds its variants and noise from these) */
   sc.stable = {
     scenes: SS.map(q => ({
       id: q.id,

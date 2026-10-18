@@ -32,7 +32,7 @@ import { TR_PRESETS, cleanLook, humanPose, owFrames, trainerLook } from './train
 import { DR, drSave, openDressing } from './dressing.js';
 import { drawRig, rigFrame, rigParts, rigPreload, rigTint } from './rig.js';
 import { buzz, partSpr } from './scene.js';
-import { DIO, dioData, dioDirOf, dioImg, dioOk, dioPrepare, dioProj, dioScene, dioStop } from './diorama.js';
+import { DIO, dioData, dioDirOf, dioImg, dioOk, dioPrepare, dioProj, dioScene, dioStop } from './walk-view.js';
 import { EGL, eglOK } from './engine/core.js';
 import { DGL, dglPerson, dioH, dioMount } from './diorama-gl.js';
 import { wrRoamView } from './world.js';

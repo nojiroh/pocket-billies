@@ -10,7 +10,7 @@ import { STEST, STORY, sceneIdAt, storyFlags, toast } from './hooks.js';
 import { ROUTE, TRAINERS, isTown, trainersAt } from './data.js';
 import { B, S, U, esc, save } from './core.js';
 import { artURL } from './art.js';
-import { DIO, dioFlagPath, dioScene } from './diorama.js';
+import { DIO, dioFlagPath, dioScene } from './walk-view.js';
 import { sfx } from './sound.js';
 import { TALK } from './talk.js';
 import { CS } from './cutscene.js';

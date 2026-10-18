@@ -11,7 +11,7 @@ import { PEOPLE, TRAINERS } from './data.js';
 import { RM, S } from './core.js';
 import { frameStop, frameTask } from './frame.js';
 import { trPortrait, trainerLook } from './trainer.js';
-import { DIO, dioFace } from './diorama.js';
+import { DIO, dioFace } from './walk-view.js';
 import { DGL } from './diorama-gl.js';
 import { sfx } from './sound.js';
 /* eslint-disable no-func-assign */

@@ -8,7 +8,7 @@ import { expose } from './test-globals.js';
 import { closeModal, provide, render, renderOv, settings, toast } from './hooks.js';
 import { U } from './core.js';
 import { GFX_DIALS, gfxDial } from './profile.js';
-import { DIO, dioScene } from './diorama.js';
+import { DIO, dioScene } from './walk-view.js';
 import { ENV } from './env.js';
 /* eslint-disable no-func-assign */
 expose({

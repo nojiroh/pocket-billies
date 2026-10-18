@@ -6,11 +6,11 @@
      a tap (walk there, open a door, talk). A second finger turns it back into a pinch.
    - D-pad: a fixed eight-way pad in the lower left corner.
    - Tap only: neither; tap where to go.
-   Both set DIO.stick {x right, y up, length 0-1}; diorama.js walks along the camera's own right and forward. */
+   Both set DIO.stick {x right, y up, length 0-1}; walk-view.js walks along the camera's own right and forward. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { B, S, U } from './core.js';
-import { DIO } from './diorama.js';
+import { DIO } from './walk-view.js';
 import { DGL } from './diorama-gl.js';
 import { TALK } from './talk.js';
 import { CS } from './cutscene.js';

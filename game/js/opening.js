@@ -18,7 +18,7 @@ import { B, RM, esc, maxHp } from './core.js';
 import { artLoad } from './art.js';
 import { portraitHTML } from './trainer.js';
 import { partSpr } from './scene.js';
-import { DIO } from './diorama.js';
+import { DIO } from './walk-view.js';
 import { EGL, eglPrograms } from './engine/core.js';
 import { EGL_POST_SH } from './engine/post.js';
 import { dglCanvasFor, dglGL, dioH } from './diorama-gl.js';

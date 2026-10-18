@@ -12,7 +12,7 @@ import { expose } from './test-globals.js';
 import { RM, provide } from './hooks.js';
 import { clamp } from './util.js';
 import { hexA } from './art.js';
-import { DIO, dioBridges, dioImg } from './diorama.js';
+import { DIO, dioBridges, dioImg } from './walk-view.js';
 import { EGL, eglImg, eglPrograms } from './engine/core.js';
 import { DGL_WALL_COL, dglCurveArgs, dglUse, dglWallDefault, dioGroundH, dioH } from './diorama-gl.js';
 import { BLD_SH, bldArt, bldGuard } from './buildings.js';

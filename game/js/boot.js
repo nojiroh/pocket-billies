@@ -13,7 +13,7 @@ import { ART, BG_ART, COIN_ART, EGG_ART, ICON_ATLAS, UIURL, artBoot, artImg } fr
 import { trainerArtPaths } from './trainer.js';
 import { rigAtlas } from './rig.js';
 import { AREAS, scPrepare, stageArt } from './scene.js';
-import { DIO, dioData, dioPaths, dioScene } from './diorama.js';
+import { DIO, dioData, dioPaths, dioScene } from './walk-view.js';
 import { EGL, eglOK } from './engine/core.js';
 import { ENV } from './env.js';
 import { DGL, dglRiseStart } from './diorama-gl.js';

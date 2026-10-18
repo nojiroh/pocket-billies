@@ -34,7 +34,7 @@ import {
   dioSteps,
   dioStop,
   dioWalkTo,
-} from './diorama.js';
+} from './walk-view.js';
 import { eng } from './engine/settings.js';
 import { EGL, eglAttrClashes } from './engine/core.js';
 import { EGL_POST_SH } from './engine/post.js';

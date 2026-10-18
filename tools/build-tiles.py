@@ -5,7 +5,7 @@ They keep the colours of the 16 px tiles the world was built with (tools/build-s
 and people sit on them as before, and draw the detail those colours only hinted at: blades with lit tips, clover,
 pebbles with a lit top and a dark underside, cracks, cobbles with mortar, plank grain and knots, wave crests,
 furrows, cinders. Shade and light steps come from the prop ramp (shadows lean lavender, lights lean warm), so the
-ground and the props share one light. Every tile wraps on all four sides; the ground painter in diorama.js mixes
+ground and the props share one light. Every tile wraps on all four sides; the ground painter in walk-view.js mixes
 the six variants per metre and wobbles the edges itself, so no edge pieces are needed any more.
 
     python3 tools/build-tiles.py                 # writes what is missing

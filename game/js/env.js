@@ -12,7 +12,7 @@ import { expose } from './test-globals.js';
 import { RM, RULES, S, SP, provide, sceneIdAt } from './hooks.js';
 import { clamp } from './util.js';
 import { hexA } from './art.js';
-import { DIO, dioScene } from './diorama.js';
+import { DIO, dioScene } from './walk-view.js';
 /* eslint-disable no-func-assign */
 expose({
   ENV: [() => ENV],
