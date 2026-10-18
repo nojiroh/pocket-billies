@@ -3639,6 +3639,8 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
     const old = walkRenderer.hkey;
     walkRenderer.gkey = walkView.gkey;
     walkRenderer.hkey = hk;
+    /* the ground changed: the props' heights and their grid are worked out again */
+    walkRenderer.itemGen = (walkRenderer.itemGen || 0) + 1;
     walkView.nav = null;
     navGrid();
     swapMapCache(old, hk);
@@ -4396,10 +4398,12 @@ function propCheckedAt(p, t) {
 function propGrid(sc) {
   const L = sc.props || [],
     G = walkRenderer.pgrid;
+  /* made again only when a prop is added, moved or resized, or the ground changes (itemGen), not on a timer: a full
+     rebuild every 2 s was a regular spike on phones; the signature reads every prop (cheap next to the rebuild) */
   let sig = L.length;
-  for (let i = 0; i < L.length; i += Math.max(1, L.length >> 4))
-    sig = (sig * 31 + ((L[i].x * 7 + L[i].z * 13) | 0)) | 0;
-  if (G && G.sc === sc && G.sig === sig && (walkView.t || 0) - G.at < 2000 && (walkView.t || 0) >= G.at) return G;
+  for (const p of L) sig = (sig * 31 + (p.x * 7 + p.z * 13 + (p.s || 1) * 101) * 16) | 0;
+  const gen = walkRenderer.itemGen || 0;
+  if (G && G.sc === sc && G.sig === sig && G.gen === gen) return G;
   const S = 6,
     m = new Map();
   for (const p of L) {
@@ -4426,7 +4430,7 @@ function propGrid(sc) {
     y: (c.y0 + c.y1) / 2,
     r: Math.hypot(c.x1 - c.x0, c.z1 - c.z0, c.y1 - c.y0) / 2,
   }));
-  return (walkRenderer.pgrid = { sc, sig, at: walkView.t || 0, cells });
+  return (walkRenderer.pgrid = { sc, sig, gen, cells });
 }
 function stillPropState(p, M, im, sc) {
   const t = walkView.t || 0,
