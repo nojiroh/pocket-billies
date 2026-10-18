@@ -17,7 +17,7 @@ import { billyName, findBilly, maxHp, nextTripNode } from './logic/rules.js';
 import { battleStageKey } from './logic/battle-engine.js';
 import { save, saveData, uiState } from './game-state.js';
 import { makeCanvas } from './art.js';
-import { RIG_BACK_VIEW, drawRig, rigFrame, rigParts, rigPreload } from './skeleton-rig.js';
+import { RIG_BACK_VIEW, buildCode, drawRig, rigFrame, rigParts, rigPreload } from './skeleton-rig.js';
 import { battleStagePrepare } from './battle-stage.js';
 import { prepareMap, walkView, walkablePointNear, worldToScreen } from './walk-view.js';
 import { environment } from './environment.js';
@@ -86,14 +86,15 @@ function worldBillyRig(sp, gold, view) {
   return null;
 }
 /* a frame: pose null = idle loop (8 frames over 1.6 s); a named pose plays once over ~0.9 s */
-function worldBillyFrame(sp, gold, view, pose, t, seed) {
+function worldBillyFrame(sp, gold, view, pose, t, seed, build) {
   const R = worldBillyRig(sp, gold, view);
   if (!R) return null;
   const wk = pose === 'walk',
     n = wk ? 8 : pose ? 9 : 8,
     dur = wk ? 560 : pose ? 900 : 1600,
     fi = pose && !wk ? clamp(Math.floor(t / 100), 0, n - 1) : Math.floor(((((t % dur) + dur) % dur) / dur) * n);
-  const key = sp + '|' + (gold ? 1 : 0) + '|' + view + '|' + (pose || '') + '|' + fi + '|' + ((seed % 4) | 0);
+  const bc = build ? buildCode(build) : '',
+    key = sp + '|' + (gold ? 1 : 0) + '|' + view + '|' + (pose || '') + '|' + fi + '|' + ((seed % 4) | 0) + '|' + bc;
   let c = worldBillies.cache.get(key);
   if (c) {
     worldBillies.cache.delete(key);
@@ -105,7 +106,9 @@ function worldBillyFrame(sp, gold, view, pose, t, seed) {
   const x = c.getContext('2d');
   x.imageSmoothingEnabled = false;
   try {
-    drawRig(x, R, rigFrame(R, pose || null, wk ? fi * (dur / n) : pose ? fi * 100 : 0, fi * (dur / n), seed % 4), view);
+    const P = rigFrame(R, pose || null, wk ? fi * (dur / n) : pose ? fi * 100 : 0, fi * (dur / n), seed % 4);
+    if (bc) P.build = build;
+    drawRig(x, R, P, view);
   } catch (e) {
     return null;
   }
@@ -133,7 +136,7 @@ function worldBillyMetersPerPixel(sp, R, big = 1) {
   return Math.abs(mq / m - 1) <= 0.06 ? mq : m;
 }
 export function worldBillyItem(k, sp, gold, view, pose, t, seed, x, z, o = {}) {
-  const im = worldBillyFrame(sp, gold, view, pose, t, seed);
+  const im = worldBillyFrame(sp, gold, view, pose, t, seed, o.build);
   if (!im) return null;
   const R = im.__R,
     mpp = worldBillyMetersPerPixel(sp, R, o.big || 1),
@@ -295,7 +298,7 @@ function buddyItems(out, t, dt) {
       b.seed,
       b.x,
       b.z,
-      { flip: b.flip, dy, big: m.alpha ? 1.12 : 1, extra: { mon: m } }
+      { flip: b.flip, dy, big: m.alpha ? 1.12 : 1, build: m.build, extra: { mon: m } }
     );
   if (it) out.push(it);
   if (worldBillies.sayT > 0) worldBillies.sayT = Math.max(0, worldBillies.sayT - dt);
@@ -414,7 +417,8 @@ function wildBillyItem(out, e, s, t, dt) {
     'front',
     w.popT > 0 ? 'cheer' : null,
     w.popT > 0 ? (0.9 - w.popT) * 1000 : t + w.seed * 53,
-    w.seed
+    w.seed,
+    e.build
   );
   if (!im) return;
   const R = im.__R,
@@ -434,7 +438,7 @@ function wildBillyItem(out, e, s, t, dt) {
     w.seed,
     s.x,
     s.z + 0.05,
-    { flip: w.flip, big, dy: -H * sink + hop * 0.32 + bob, extra: { e } }
+    { flip: w.flip, big, dy: -H * sink + hop * 0.32 + bob, build: e.build, extra: { e } }
   );
   /* v34: a Golden one gives itself away: gold glints rise out of the grass where it moves */
   if (e.gold && Math.random() < dt * 5)

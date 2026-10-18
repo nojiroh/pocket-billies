@@ -1270,3 +1270,60 @@ nav#nav button[aria-current='page']::after {
   width: 26px;
   height: auto;
 }
+/* phase 16: a Billie's parts (details, Stats) */
+.tm-ribbon.prime {
+  background: linear-gradient(180deg, #f6d36b, #d39b22);
+  color: #3a2603;
+}
+.ms-parts {
+  margin: 12px 0 4px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.55);
+}
+.ms-parts-h {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  flex-wrap: wrap;
+}
+.ms-parts-h span {
+  opacity: 0.75;
+}
+.ms-prime {
+  margin-left: auto;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: #e8b53a;
+  color: #3a2603;
+  font-weight: 700;
+  opacity: 1 !important;
+}
+.ms-parts-row {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 6px;
+  margin-top: 8px;
+}
+.ms-part {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 6px 2px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.05);
+  min-width: 0;
+}
+.ms-part small {
+  font-size: 10px;
+  opacity: 0.7;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+.ms-part.sz-S b {
+  color: #2b8a7e;
+}
+.ms-part.sz-L b {
+  color: #c2552f;
+}
