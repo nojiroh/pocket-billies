@@ -244,12 +244,8 @@ expose({
   dglBasins: [() => dglBasins, v => (dglBasins = v)],
   dglFountainFx: [() => dglFountainFx, v => (dglFountainFx = v)],
   dglFxPass: [() => dglFxPass, v => setDglFxPass(v)],
-  dglGround: [() => dglGround, v => setDglGround(v)],
-  dglLampOn: [() => dglLampOn, v => (dglLampOn = v)],
-  dglLampShadows: [() => dglLampShadows, v => (dglLampShadows = v)],
   dglLampTex: [() => dglLampTex, v => (dglLampTex = v)],
   dglLifeFx: [() => dglLifeFx, v => (dglLifeFx = v)],
-  dglLightCtx: [() => dglLightCtx, v => (dglLightCtx = v)],
   dglPrintAt: [() => dglPrintAt, v => (dglPrintAt = v)],
   dglPrints: [() => dglPrints, v => (dglPrints = v)],
   dglRoomBox: [() => dglRoomBox, v => (dglRoomBox = v)],
@@ -260,28 +256,23 @@ expose({
   dglRoomLights: [() => dglRoomLights, v => (dglRoomLights = v)],
   dglRoomSky: [() => dglRoomSky, v => (dglRoomSky = v)],
   dglRoomTex: [() => dglRoomTex, v => (dglRoomTex = v)],
-  dglSceneSun: [() => dglSceneSun, v => (dglSceneSun = v)],
-  dglShadowPass: [() => dglShadowPass, v => setDglShadowPass(v)],
-  dglShadowPassFit: [() => dglShadowPassFit, v => (dglShadowPassFit = v)],
-  dglShadowRect: [() => dglShadowRect, v => (dglShadowRect = v)],
-  dglShadowSprites: [() => dglShadowSprites, v => (dglShadowSprites = v)],
-  dglSky: [() => dglSky, v => (dglSky = v)],
-  dglSkyCols: [() => dglSkyCols, v => (dglSkyCols = v)],
   dglWeather: [() => dglWeather, v => (dglWeather = v)],
   dglWinBlocked: [() => dglWinBlocked, v => (dglWinBlocked = v)],
-  dglWinOn: [() => dglWinOn, v => (dglWinOn = v)],
   dglWinShare: [() => dglWinShare, v => (dglWinShare = v)],
-  dglWorldTex: [() => dglWorldTex, v => (dglWorldTex = v)],
   drawBoxFaces: [() => drawBoxFaces, v => (drawBoxFaces = v)],
   drawClockHands: [() => drawClockHands, v => (drawClockHands = v)],
   drawFlatItem: [() => drawFlatItem, v => (drawFlatItem = v)],
   drawGrass: [() => drawGrass, v => setDrawGrass(v)],
+  drawGround: [() => drawGround, v => setDrawGround(v)],
   drawRotatingBlades: [() => drawRotatingBlades, v => (drawRotatingBlades = v)],
+  drawShadowSprites: [() => drawShadowSprites, v => (drawShadowSprites = v)],
+  drawSky: [() => drawSky, v => (drawSky = v)],
   drawSprites: [() => drawSprites, v => setDrawSprites(v)],
   drawWalkFrame: [() => drawWalkFrame, v => (drawWalkFrame = v)],
   drawWalkFrameInner: [() => drawWalkFrameInner, v => (drawWalkFrameInner = v)],
   drawWater: [() => drawWater, v => setDrawWater(v)],
   easedMood: [() => easedMood, v => (easedMood = v)],
+  fittedShadowPass: [() => fittedShadowPass, v => (fittedShadowPass = v)],
   foliageAmount: [() => foliageAmount, v => (foliageAmount = v)],
   frameBudgetLeft: [() => frameBudgetLeft, v => ((frameBudgetLeft = v), provide({ frameBudgetLeft }))],
   freeCameraOn: [() => freeCameraOn],
@@ -310,10 +301,13 @@ expose({
   inFrustum: [() => inFrustum, v => (inFrustum = v)],
   isGroundPrepared: [() => isGroundPrepared, v => (isGroundPrepared = v)],
   labelLayer: [() => labelLayer, v => (labelLayer = v)],
+  lampLit: [() => lampLit, v => (lampLit = v)],
+  lampShadowMaps: [() => lampShadowMaps, v => (lampShadowMaps = v)],
   landmarkTilt: [() => landmarkTilt, v => (landmarkTilt = v)],
   listenDeviceTilt: [() => listenDeviceTilt, v => (listenDeviceTilt = v)],
   makeTextureMipmaps: [() => makeTextureMipmaps, v => (makeTextureMipmaps = v)],
   mapFlowers: [() => mapFlowers, v => (mapFlowers = v)],
+  mapSun: [() => mapSun, v => (mapSun = v)],
   mirrorInView: [() => mirrorInView, v => (mirrorInView = v)],
   mountWalkView: [() => mountWalkView, v => setMountWalkView(v)],
   newNearRing: [() => newNearRing, v => (newNearRing = v)],
@@ -345,8 +339,11 @@ expose({
   setShoreUniforms: [() => setShoreUniforms, v => (setShoreUniforms = v)],
   setSpriteUniforms: [() => setSpriteUniforms, v => (setSpriteUniforms = v)],
   setWaterUniforms: [() => setWaterUniforms, v => (setWaterUniforms = v)],
+  shadowMapArea: [() => shadowMapArea, v => (shadowMapArea = v)],
+  shadowPass: [() => shadowPass, v => setShadowPass(v)],
   shoreAt: [() => shoreAt, v => (shoreAt = v)],
   shoreField: [() => shoreField, v => (shoreField = v)],
+  skyColors: [() => skyColors, v => (skyColors = v)],
   standingHeightAt: [() => standingHeightAt, v => ((standingHeightAt = v), provide({ standingHeightAt }))],
   startTownRise: [() => startTownRise, v => (startTownRise = v)],
   stillPropState: [() => stillPropState, v => (stillPropState = v)],
@@ -357,6 +354,7 @@ expose({
   useWalkProgram: [() => useWalkProgram, v => (useWalkProgram = v)],
   walkCamera: [() => walkCamera, v => (walkCamera = v)],
   walkGlContext: [() => walkGlContext, v => (walkGlContext = v)],
+  walkLightContext: [() => walkLightContext, v => (walkLightContext = v)],
   walkRenderer: [() => walkRenderer],
   wantedRingChunks: [() => wantedRingChunks, v => (wantedRingChunks = v)],
   waterAt: [() => waterAt, v => (waterAt = v)],
@@ -365,8 +363,10 @@ expose({
   waterLife: [() => waterLife, v => (waterLife = v)],
   waterNear: [() => waterNear, v => (waterNear = v)],
   windLeanAt: [() => windLeanAt, v => (windLeanAt = v)],
+  windowLit: [() => windowLit, v => (windowLit = v)],
   worldCurveArgs: [() => worldCurveArgs, v => (worldCurveArgs = v)],
   worldCurveDrop: [() => worldCurveDrop, v => (worldCurveDrop = v)],
+  worldMapTexture: [() => worldMapTexture, v => (worldMapTexture = v)],
   worldToScreen2d: [() => worldToScreen2d],
 });
 /* eslint-enable no-func-assign */
@@ -387,17 +387,13 @@ export function setDglFxPass(v) {
   dglFxPass = v; // eslint-disable-line no-func-assign
   provide({ dglFxPass });
 }
-export function setDglGround(v) {
-  dglGround = v; // eslint-disable-line no-func-assign
-  provide({ dglGround });
-}
-export function setDglShadowPass(v) {
-  dglShadowPass = v; // eslint-disable-line no-func-assign
-  provide({ dglShadowPass });
-}
 export function setDrawGrass(v) {
   drawGrass = v; // eslint-disable-line no-func-assign
   provide({ drawGrass });
+}
+export function setDrawGround(v) {
+  drawGround = v; // eslint-disable-line no-func-assign
+  provide({ drawGround });
 }
 export function setDrawSprites(v) {
   drawSprites = v; // eslint-disable-line no-func-assign
@@ -422,6 +418,10 @@ export function setGroundOcclusion(v) {
 export function setReflectionPass(v) {
   reflectionPass = v; // eslint-disable-line no-func-assign
   provide({ reflectionPass });
+}
+export function setShadowPass(v) {
+  shadowPass = v; // eslint-disable-line no-func-assign
+  provide({ shadowPass });
 }
 export function setUpdateNearRing(v) {
   updateNearRing = v; // eslint-disable-line no-func-assign
@@ -3650,7 +3650,7 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
   if (!BT && typeof lifeStep === 'function') lifeStep(dt);
   const C = BT ? (BT.look ? cutsceneCamera(rw, rh, BT.look) : battleCamera(rw, rh, BT)) : walkCamera(rw, rh, st, dt);
   walkView.C = C;
-  const sun = dglSceneSun(sc, eglSun(!!sc.indoor));
+  const sun = mapSun(sc, eglSun(!!sc.indoor));
   walkRenderer.sun = sun;
   /* v46: the near ring follows the camera's focus (in a battle, the stage) */
   {
@@ -3677,12 +3677,12 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
   walkRenderer.qe = QE;
   let shadow = walkRenderer.lastShadow || null;
   if (!((walkView.R < 0.7 || QE >= 2) && walkRenderer.frames % 2 && shadow)) {
-    shadow = dglShadowPass(items, sun, C);
+    shadow = shadowPass(items, sun, C);
     walkRenderer.lastShadow = shadow;
   }
-  const X = dglLightCtx(C, sun, dark, items, shadow, BT);
+  const X = walkLightContext(C, sun, dark, items, shadow, BT);
   walkRenderer.X = X;
-  if (dark > 0.3 && !BT && shadow) dglLampShadows(items, X, dark);
+  if (dark > 0.3 && !BT && shadow) lampShadowMaps(items, X, dark);
   if (walkRenderer.water && !(QE >= 2 && walkRenderer.frames % 2 && EGL.fb.refl)) reflectionPass(items, C, rw, rh, X);
   const S = eglTarget('scene', rw, rh, { depth: true, hdr: true });
   gl.bindFramebuffer(gl.FRAMEBUFFER, S.f);
@@ -3690,8 +3690,8 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
   gl.clearColor(0, 0, 0, 1);
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
   const D = walkRenderer.dbg || {};
-  dglSky(C, sun, 0);
-  dglGround(C, X);
+  drawSky(C, sun, 0);
+  drawGround(C, X);
   dglRoomFront(C, X);
   if (walkRenderer.grass && !D.noGrass) drawGrass(C, X);
   drawSprites(C, items, X, hits, labels, PPU);
@@ -4973,7 +4973,7 @@ export function personItem(k, im, x, z, C0, extra) {
 /* the light context: sky ambient, fog, mist, shadows, contact shadows and the nearest lamps, windows and fires */
 /* v43: the light that stands in for the sun in a room: daylight through the windows, from the front at a slant (dglRoomSky
    says how bright and from which side), so shadows fall into the room; it is what the shadow maps are drawn from too */
-function dglSceneSun(sc, sun) {
+function mapSun(sc, sun) {
   if (!sc || !sc.room || (eng('lights', 'roomLight') ?? true) === false) return sun;
   const Rk = dglRoomSky(),
     wd = v3n([Rk.dx * 0.45, 0.6, -0.7]);
@@ -5015,7 +5015,7 @@ export function dglRoomDim(sc) {
 }
 /* alpha 0.4: how far a lamp is on (0-1). Outdoors with the world's hours each lamp has its own moment as the light
    fails (ENV.lampK: dusk, night, a grey storm, fog), so they come on one by one; in a dark place or a room, all on */
-function dglLampOn(x, z, dark) {
+function lampLit(x, z, dark) {
   const sc = walkView.sc,
     E = typeof ENV !== 'undefined' && ENG_CTX.env && !sc.indoor ? ENV : null;
   if (!E || (sc.tint && sc.tint !== '#000000')) return dark ? 1 : 0;
@@ -5023,10 +5023,10 @@ function dglLampOn(x, z, dark) {
   return Math.min(1, Math.max(0, (E.lampK - th) / 0.07));
 }
 /* an old (picture-only) house's window: lit at this hour or not (environment.js envWinLit) */
-function dglWinOn(x, z) {
+function windowLit(x, z) {
   return typeof envWinLit === 'function' && typeof ENV !== 'undefined' && ENG_CTX.env ? envWinLit(x, z, ENV.tod) : true;
 }
-function dglLightCtx(C, sun, dark, items, shadow, BT) {
+function walkLightContext(C, sun, dark, items, shadow, BT) {
   const dark0L = dark;
   const sc = walkView.sc,
     t = walkView.t,
@@ -5059,7 +5059,7 @@ function dglLightCtx(C, sun, dark, items, shadow, BT) {
      high, each lamp coming on at its own moment at dusk, and the windows' light as one soft pool in front of a house
      from its lit ground-floor windows (the upper floors' never reached the ground) */
     const fl = 1 - flick * 0.15 + flick * 0.15 * Math.sin(t / 170 + it.x * 3) * Math.sin(t / 97 + it.z),
-      on = dglLampOn(it.x, it.z, dark),
+      on = lampLit(it.x, it.z, dark),
       pk = (eng('lights', 'pools') ?? 1) * lb,
       G = [],
       inRoom = !!sc.room && !out,
@@ -5070,7 +5070,7 @@ function dglLightCtx(C, sun, dark, items, shadow, BT) {
         L.push({ p: at(e.x, e.y), r: 4.4, c: [1.7, 0.8, 0.32].map(v => v * fl * lb * (dark ? 1 : 0.6)) });
       else if (e.k === 'window' && !inRoom && !E) {
         const p = at(e.x, e.y);
-        if (p[1] - it.y < 2.6 && dglWinOn(p[0], p[2])) (W || (W = [])).push(p);
+        if (p[1] - it.y < 2.6 && windowLit(p[0], p[2])) (W || (W = [])).push(p);
       } else if (e.k === 'glow') G.push(at(e.x, e.y));
     }
     if (E && E.fw && !inRoom) {
@@ -5150,7 +5150,7 @@ function dglLightCtx(C, sun, dark, items, shadow, BT) {
   }
   dglRoomLights(sc, L, lb);
   const lights = eglPickLights(L, P.x, P.z, 16),
-    sky = dglSkyCols(sc);
+    sky = skyColors(sc);
   let hz = hexA(eng('air', 'haze') || sc.haze || (sc.sky || [])[2] || '#EAD9C0').map(v => v / 255);
   if (E && !sc.indoor) hz = envSky([hz, hz, hz], false)[2];
   const tint = sc.tint && sc.tint !== '#000000' ? hexA(sc.tint).map(v => 0.35 + (v / 255) * 1.3) : null;
@@ -5239,7 +5239,7 @@ function setSpriteUniforms(p, it, uv) {
 }
 /* v19: the shadow map covers the ground the camera sees (plus a margin for tall things just outside), not the whole
    scene, so its texels are smaller where it matters; the radius moves in 2 m steps */
-function dglShadowRect(C) {
+function shadowMapArea(C) {
   const sc = walkView.sc,
     full = [sc.w / 2, sc.h / 2, Math.hypot(sc.w, sc.h) / 2 + 6];
   if (!C || !eng('shadows', 'fit')) return full;
@@ -5273,8 +5273,8 @@ function dglShadowRect(C) {
    you walk; the sun's slow travel or any change to the scene draws it again. */
 /* v43: two cascades. The far map is the fitted view as before (cached for what never moves); the near map is a tight
    square round you at a finer texel, drawn every frame from the things in it, so shadows near you are crisp */
-export function dglShadowPass(items0, sun, C) {
-  const far = dglShadowPassFit(items0, sun, C);
+export function shadowPass(items0, sun, C) {
+  const far = fittedShadowPass(items0, sun, C);
   if (!(eng('shadows', 'cascades') ?? true) || (walkRenderer.bt && (eng('quality', 'battleLite') ?? true))) return far;
   const P = walkView.pl,
     R = eng('shadows', 'nearRadius') ?? 13,
@@ -5293,7 +5293,7 @@ export function dglShadowPass(items0, sun, C) {
     gl.drawElements(gl.TRIANGLES, walkRenderer.mesh.n, gl.UNSIGNED_INT, 0);
     gl.bindVertexArray(null);
   }
-  dglShadowSprites(SH, items, sun, ca);
+  drawShadowSprites(SH, items, sun, ca);
   if (typeof bldShadow === 'function') bldShadow(SH, items);
   if (typeof strShadow === 'function') strShadow(SH);
   if (typeof p3dShadow === 'function') p3dShadow(SH, items);
@@ -5304,7 +5304,7 @@ export function dglShadowPass(items0, sun, C) {
 }
 /* v43: shadow maps for the two nearest lamps after dark (the ones that hang high: street lamps, lanterns, windows don't
    count). The lamps are moved to the front of the light list so the shader knows which they are. */
-function dglLampShadows(items, X, dark) {
+function lampShadowMaps(items, X, dark) {
   const n = Math.min(2, eng('shadows', 'lampShadows') ?? 2);
   if (!n) return;
   const L = X.lights,
@@ -5338,7 +5338,7 @@ function dglLampShadows(items, X, dark) {
       gl.drawElements(gl.TRIANGLES, walkRenderer.mesh.n, gl.UNSIGNED_INT, 0);
       gl.bindVertexArray(null);
     }
-    dglShadowSprites(SH, near, null, ca, l.p);
+    drawShadowSprites(SH, near, null, ca, l.p);
     if (typeof bldShadow === 'function') bldShadow(SH, near);
     if (typeof p3dShadow === 'function') p3dShadow(SH, near);
     if (typeof voxShadow === 'function') voxShadow(SH, near);
@@ -5347,7 +5347,7 @@ function dglLampShadows(items, X, dark) {
   });
 }
 /* the sprites of a shadow pass, each turned to face the sun (fixed ones and buildings as they stand); for a lamp, each turned to face the lamp */
-function dglShadowSprites(SH, L, sun, ca, lamp) {
+function drawShadowSprites(SH, L, sun, ca, lamp) {
   const gl = EGL.gl,
     p = EGL.P.shadow,
     solid = eng('shadows', 'buildings'),
@@ -5418,14 +5418,14 @@ function dglShadowSprites(SH, L, sun, ca, lamp) {
   }
   return miss;
 }
-function dglShadowPassFit(items0, sun, C) {
+function fittedShadowPass(items0, sun, C) {
   const sc = walkView.sc,
     res =
       walkView.R < 0.8 || (walkRenderer.q || 0) >= 2
         ? Math.min(1024, eng('quality', 'shadowMap'))
         : eng('quality', 'shadowMap'),
     gl = EGL.gl;
-  let fit = dglShadowRect(C);
+  let fit = shadowMapArea(C);
   const cache = (eng('quality', 'shadowCache') ?? true) && !walkRenderer.bt && !!gl.blitFramebuffer;
   if (cache) fit = [Math.round(fit[0] / 3) * 3, Math.round(fit[1] / 3) * 3, fit[2] + 3];
   const items = items0.filter(
@@ -5565,16 +5565,16 @@ function dglShadowPassFit(items0, sun, C) {
   return SH;
 }
 /* v26: the scene's sky colours after the hour and the weather (environment.js) */
-function dglSkyCols(sc) {
+function skyColors(sc) {
   const s = (sc.sky || ['#8CC6E6', '#BFE3EE', '#F4E8C8']).map(c => hexA(c).map(v => v / 255));
   return typeof envSky === 'function' && ENG_CTX.env ? envSky(s, !!sc.indoor) : s;
 }
-function dglSky(C, sun, mirror) {
+function drawSky(C, sun, mirror) {
   const gl = EGL.gl,
     sc = walkView.sc,
     p = EGL.P.sky,
     U = p.U,
-    sky = dglSkyCols(sc);
+    sky = skyColors(sc);
   gl.useProgram(p.p);
   eglBindQuad();
   if (U.uEnv) {
@@ -5594,7 +5594,7 @@ function dglSky(C, sun, mirror) {
   gl.uniform1f(U.uClouds, eng('sun', 'clouds'));
   gl.uniform1f(U.uCloudSpd, eng('sun', 'cloudSpeed'));
   gl.activeTexture(gl.TEXTURE0);
-  gl.bindTexture(gl.TEXTURE_2D, dglWorldTex());
+  gl.bindTexture(gl.TEXTURE_2D, worldMapTexture());
   gl.uniform1i(U.uWorld, 0);
   gl.depthMask(false);
   gl.disable(gl.DEPTH_TEST);
@@ -5602,7 +5602,7 @@ function dglSky(C, sun, mirror) {
   gl.depthMask(true);
   gl.enable(gl.DEPTH_TEST);
 }
-export function dglWorldTex() {
+export function worldMapTexture() {
   if (walkRenderer.wtex) return walkRenderer.wtex;
   const im = artImage(typeof WORLD_ART !== 'undefined' ? WORLD_ART : 'map/world.png');
   if (!imageReady(im)) return EGL.white;
@@ -5617,7 +5617,7 @@ export function dglWorldTex() {
   gl.generateMipmap(gl.TEXTURE_2D);
   return (walkRenderer.wtex = t);
 }
-export function dglGround(C, X) {
+export function drawGround(C, X) {
   const gl = EGL.gl,
     sc = walkView.sc,
     p = useWalkProgram('ground', C, X),
@@ -5678,7 +5678,7 @@ export function dglGround(C, X) {
   }
   if (U.uWet) {
     const E = typeof ENV !== 'undefined' && ENG_CTX.env && !sc.indoor ? ENV : null,
-      sk = dglSkyCols(sc);
+      sk = skyColors(sc);
     gl.uniform1f(U.uWet, E ? clamp((E.wet || 0) * (eng('air', 'wetGround') ?? 1), 0, 1) : 0);
     gl.uniform1f(U.uRainK, E ? Math.min(1, E.rain || 0) : 0);
     gl.uniform3fv(U.uSkyW, sk[1]);
@@ -6597,7 +6597,7 @@ export function drawWater(C, X, rw, rh) {
     p = useWalkProgram('water', C, X),
     U = p.U,
     sc = walkView.sc,
-    sky = dglSkyCols(sc);
+    sky = skyColors(sc);
   gl.activeTexture(gl.TEXTURE0);
   gl.bindTexture(gl.TEXTURE_2D, walkRenderer.water && EGL.fb.refl ? EGL.fb.refl.c : EGL.white);
   gl.uniform1i(U.uRefl, 0);
@@ -7743,7 +7743,7 @@ export function dglFxPass(C, items, X, dark, t, dt) {
       }
       /* several lamps on one prop share their light, so a four-lamp lantern isn't four times as bright */
       else if (e.k === 'glow') {
-        const on = dglLampOn(it.x, it.z, dark),
+        const on = lampLit(it.x, it.z, dark),
           k = on + (1 - on) * 0.1,
           nG = it.M.fx.filter(f => f.k === 'glow').length,
           share = Math.min(1, 2.2 / nG);
@@ -7783,7 +7783,7 @@ export function dglFxPass(C, items, X, dark, t, dt) {
     if (it.M.glow) {
       const g = it.M.glow,
         c = hexA(g.c).map(v => v / 255),
-        on = dglLampOn(it.x, it.z, dIt);
+        on = lampLit(it.x, it.z, dIt);
       /* v47: "day" sets how much of it shows by day (a neon sign's halo hardly does) */ glows.push([
         it.x,
         it.y + g.y,

@@ -1516,8 +1516,8 @@ function stDiagScenes() {
 }
 /* timers round the render passes: the processor's time for each, and the graphics chip's own (EXT_disjoint_timer_query_webgl2) */
 const DIAG_PASSES = {
-  shadows: ['dglShadowPass'],
-  ground: ['dglGround'],
+  shadows: ['shadowPass'],
+  ground: ['drawGround'],
   grass: ['drawGrass'],
   props: ['drawSprites', 'p3dDraw', 'voxDraw', 'bldDraw', 'drawBoxFaces', 'strDraw'],
   water: ['reflectionPass', 'drawWater'],

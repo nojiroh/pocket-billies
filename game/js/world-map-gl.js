@@ -21,7 +21,7 @@ import { artImage, hash2d, imageReady, mapById, stepRaiseAt, walkData, walkView 
 import { ENG_CTX, eng, engSource } from './engine/settings.js';
 import { EGL, eglBindQuad, eglFree, eglImg, eglInit, eglMesh, eglOK, eglPrograms, eglTarget } from './engine/webgl.js';
 import { EGL_POST_SH, eglPost, eglScreenOf } from './engine/post-effects.js';
-import { dglWorldTex, rawHeightAt, walkRenderer } from './walk-view-gl.js';
+import { rawHeightAt, walkRenderer, worldMapTexture } from './walk-view-gl.js';
 import {
   D2R,
   MAP,
@@ -610,7 +610,7 @@ export function mglRender(t) {
   gl.uniform4fv(U2.uCl, cl);
   gl.uniform1i(U2.uNCl, MGL.noClouds ? 0 : Math.min(16, MCL.length));
   gl.activeTexture(gl.TEXTURE0);
-  gl.bindTexture(gl.TEXTURE_2D, typeof dglWorldTex === 'function' ? dglWorldTex() : EGL.white);
+  gl.bindTexture(gl.TEXTURE_2D, typeof worldMapTexture === 'function' ? worldMapTexture() : EGL.white);
   gl.uniform1i(U2.uWorld, 0);
   const HT = mglHeightTex();
   gl.activeTexture(gl.TEXTURE1);
