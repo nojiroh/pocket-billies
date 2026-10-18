@@ -197,7 +197,7 @@ import {
   storyRivalBattle,
   trainerTalk,
 } from './story.js';
-import { challengeCardHTML, homeApply, homeDecorate, requestListHTML, stampTile } from './things-to-do.js';
+import { challengeCardHTML, homeDecorate, refreshHomeFurniture, requestListHTML, stampTile } from './things-to-do.js';
 /* eslint-disable no-func-assign */
 expose({
   BOX_SORTS: [() => BOX_SORTS],
@@ -1071,7 +1071,7 @@ function enterRoom(a, p) {
       };
     })(),
   };
-  if (id === 'int_home' && typeof homeApply === 'function') homeApply();
+  if (id === 'int_home' && typeof refreshHomeFurniture === 'function') refreshHomeFurniture();
   /* v46: the room laid into the place where the building stands: step in once it's ready (a moment at most) */
   const lay = roomLayIn(id, p, true);
   if (lay) {

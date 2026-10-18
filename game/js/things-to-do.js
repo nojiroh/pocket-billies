@@ -36,7 +36,6 @@ expose({
   STAMP_SPOTS: [() => STAMP_SPOTS],
   WEATHER_BATTLE_NOTES: [() => WEATHER_BATTLE_NOTES],
   WEATHER_TYPE_BOOSTS: [() => WEATHER_TYPE_BOOSTS],
-  applyHomeFurniture: [() => applyHomeFurniture, v => (applyHomeFurniture = v)],
   battleWeather: [() => battleWeather, v => (battleWeather = v)],
   battleWeatherMultiplier: [
     () => battleWeatherMultiplier,
@@ -48,12 +47,13 @@ expose({
   challengesToday: [() => challengesToday, v => (challengesToday = v)],
   claimChallenge: [() => claimChallenge, v => (claimChallenge = v)],
   furnitureFits: [() => furnitureFits],
-  homeApply: [() => homeApply, v => (homeApply = v)],
   homeDecorate: [() => homeDecorate, v => (homeDecorate = v)],
   photoEnd: [() => photoEnd, v => (photoEnd = v)],
   photoFilter: [() => photoFilter, v => (photoFilter = v)],
   photoShot: [() => photoShot, v => (photoShot = v)],
   photoStart: [() => photoStart, v => (photoStart = v)],
+  placeHomeFurniture: [() => placeHomeFurniture, v => (placeHomeFurniture = v)],
+  refreshHomeFurniture: [() => refreshHomeFurniture, v => (refreshHomeFurniture = v)],
   requestAsker: [() => requestAsker, v => ((requestAsker = v), provide({ requestAsker }))],
   requestHere: [() => requestHere, v => (requestHere = v)],
   requestListHTML: [() => requestListHTML, v => (requestListHTML = v)],
@@ -455,11 +455,11 @@ const HOME_SLOTS = [
   { x: 7, z: 3.9, n: 'Floor (rug)', rug: 1 },
 ];
 const furnitureFits = (k, s) => (s.wall ? /^wall_/.test(k) : s.rug ? /^rug_/.test(k) : !/^wall_|^rug_/.test(k));
-export function homeApply() {
-  applyHomeFurniture();
+export function refreshHomeFurniture() {
+  placeHomeFurniture();
   if (typeof roomRefresh === 'function') roomRefresh();
 }
-function applyHomeFurniture() {
+function placeHomeFurniture() {
   const sc = gameData.scenes.int_home;
   if (!sc) return;
   if (!sc.props0) sc.props0 = (sc.props || []).slice();
@@ -499,7 +499,7 @@ document.addEventListener('change', ev => {
   const X = thingsToDo();
   if (ev.target.value) X.home.slots[i] = ev.target.value;
   else delete X.home.slots[i];
-  homeApply();
+  refreshHomeFurniture();
   save();
 });
 
