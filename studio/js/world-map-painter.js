@@ -9,13 +9,13 @@ import { provide } from '../../game/js/hooks.js';
 import { $, $$, clamp } from '../../game/js/util.js';
 import { makeCanvas } from '../../game/js/art.js';
 import { esc } from './game-stand-ins.js';
-import { after, ask, card, changed, commit, formatThousands, render, studioState, toast } from './studio-app.js';
-import { atlasGet, atlasNow, markArt } from './sprites.js';
+import { afterRender, ask, card, changed, commit, formatThousands, render, studioState, toast } from './studio-app.js';
+import { atlasGet, loadedAtlas, markArt } from './sprites.js';
 /* eslint-disable no-func-assign */
 expose({
   DEGREES_TO_RADIANS: [() => DEGREES_TO_RADIANS],
   MPW: [() => MPW],
-  WORLD_PATH: [() => WORLD_PATH],
+  WORLD_MAP_ART_PATH: [() => WORLD_MAP_ART_PATH],
   bindPainter: [() => bindPainter, v => (bindPainter = v)],
   carryPatch: [() => carryPatch, v => (carryPatch = v)],
   centerPainter: [() => centerPainter, v => (centerPainter = v)],
@@ -70,7 +70,7 @@ const worldMapPainter = {
   style: { path: '#8A6A3E', pathR: 2, dots: '#E2C48A', dotEvery: 7, future: '#F0E6C8', futureR: 0.8 },
   trailCols: ['#8A6A3E', '#E2C48A', '#F0E6C8'],
 };
-const WORLD_PATH = 'art/map/world.png';
+const WORLD_MAP_ART_PATH = 'art/map/world.png';
 const vectorMath = {
   add: (a, b) => [a[0] + b[0], a[1] + b[1], a[2] + b[2]],
   mul: (a, k) => [a[0] * k, a[1] * k, a[2] * k],
@@ -118,7 +118,7 @@ function trailSegments() {
   return segs;
 }
 const MPW = () => {
-  const c = atlasNow(WORLD_PATH);
+  const c = loadedAtlas(WORLD_MAP_ART_PATH);
   return c ? [c.width, c.height] : [1536, 768];
 };
 function directionToTexel(v, W, H) {
@@ -143,7 +143,7 @@ const pixel32ToHex = c =>
     .toUpperCase();
 /* ---------- section ---------- */
 function worldPaint() {
-  after(mountPainter);
+  afterRender(mountPainter);
   const s = worldMapPainter.style;
   return `<div class="mp">${card(
     'Map art',
@@ -207,7 +207,7 @@ async function mountPainter() {
   if (!stage) return;
   let c;
   try {
-    c = await atlasGet(WORLD_PATH);
+    c = await atlasGet(WORLD_MAP_ART_PATH);
   } catch (e) {
     stage.textContent = e.message;
     return;
@@ -237,12 +237,12 @@ function centerPainter(c) {
   worldMapPainter.off = wrapTexelX(Math.round(((lon / 360 + 1) % 1) * c.width - c.width / 2), c.width);
 }
 const painterDisplayX = u => {
-  const c = atlasNow(WORLD_PATH);
+  const c = loadedAtlas(WORLD_MAP_ART_PATH);
   return wrapTexelX(u - (worldMapPainter.off || 0), c ? c.width : 1536);
 };
 function scrollPainterToSelection() {
   const st = $('#mpStage'),
-    c = atlasNow(WORLD_PATH);
+    c = loadedAtlas(WORLD_MAP_ART_PATH);
   if (!st || !c) return;
   const sel = studioState.sel.stop,
     o =
@@ -263,7 +263,7 @@ function drawPainterCanvas(c) {
   if (o) x.drawImage(c, c.width - o, 0);
 }
 function refreshPainterView() {
-  const c = atlasNow(WORLD_PATH),
+  const c = loadedAtlas(WORLD_MAP_ART_PATH),
     v = $('#mpCv');
   if (!c || !v) return;
   if (v.width !== c.width) {
@@ -278,7 +278,7 @@ function refreshPainterView() {
 }
 function drawPainterMarkers() {
   const svg = $('#mpSvg'),
-    c = atlasNow(WORLD_PATH);
+    c = loadedAtlas(WORLD_MAP_ART_PATH);
   if (!svg || !c) return;
   const [W, H] = [c.width, c.height],
     D = studioState.D;
@@ -322,7 +322,7 @@ function drawPainterMarkers() {
   svg.innerHTML = h;
 }
 function painterPalette() {
-  const c = atlasNow(WORLD_PATH);
+  const c = loadedAtlas(WORLD_MAP_ART_PATH);
   if (!c) return;
   const d = new Uint32Array(c.getContext('2d').getImageData(0, 0, c.width, c.height).data.buffer),
     cnt = new Map();
@@ -338,39 +338,39 @@ function painterPalette() {
 }
 /* ---------- pixels ---------- */
 function painterPixels() {
-  const c = atlasNow(WORLD_PATH),
+  const c = loadedAtlas(WORLD_MAP_ART_PATH),
     x = c.getContext('2d'),
     img = x.getImageData(0, 0, c.width, c.height);
   return { c, x, img, d: new Uint32Array(img.data.buffer), W: c.width, H: c.height };
 }
 function commitPainterPixels(P) {
   P.x.putImageData(P.img, 0, 0);
-  markArt(WORLD_PATH, P.c);
+  markArt(WORLD_MAP_ART_PATH, P.c);
   refreshPainterView();
 }
 function pushPainterUndo() {
-  const c = atlasNow(WORLD_PATH);
+  const c = loadedAtlas(WORLD_MAP_ART_PATH);
   worldMapPainter.undo.push(c.getContext('2d').getImageData(0, 0, c.width, c.height));
   if (worldMapPainter.undo.length > 12) worldMapPainter.undo.shift();
   worldMapPainter.redo = [];
 }
 function undoPainter() {
-  const c = atlasNow(WORLD_PATH);
+  const c = loadedAtlas(WORLD_MAP_ART_PATH);
   if (!worldMapPainter.undo.length) return toast('Nothing to undo on the map.');
   const x = c.getContext('2d');
   worldMapPainter.redo.push(x.getImageData(0, 0, c.width, c.height));
   x.putImageData(worldMapPainter.undo.pop(), 0, 0);
-  markArt(WORLD_PATH, c);
+  markArt(WORLD_MAP_ART_PATH, c);
   refreshPainterView();
   drawPainterGlobe();
 }
 function redoPainter() {
-  const c = atlasNow(WORLD_PATH);
+  const c = loadedAtlas(WORLD_MAP_ART_PATH);
   if (!worldMapPainter.redo.length) return;
   const x = c.getContext('2d');
   worldMapPainter.undo.push(x.getImageData(0, 0, c.width, c.height));
   x.putImageData(worldMapPainter.redo.pop(), 0, 0);
-  markArt(WORLD_PATH, c);
+  markArt(WORLD_MAP_ART_PATH, c);
   refreshPainterView();
   drawPainterGlobe();
 }
@@ -625,7 +625,7 @@ function bindPainter() {
   let stroke = null;
   const pos = ev => {
     const r = w.getBoundingClientRect(),
-      c = atlasNow(WORLD_PATH),
+      c = loadedAtlas(WORLD_MAP_ART_PATH),
       xd = ((ev.clientX - r.left) / r.width) * c.width;
     return [xd + (worldMapPainter.off || 0), ((ev.clientY - r.top) / r.height) * c.height, xd];
   };
@@ -686,7 +686,7 @@ function bindPainter() {
     }
     if (!stroke) return;
     if (stroke.mk) {
-      const c = atlasNow(WORLD_PATH),
+      const c = loadedAtlas(WORLD_MAP_ART_PATH),
         lon = Math.round((((x / c.width) * 360 + 180) % 360) - 180),
         lat = Math.round(90 - (y / c.height) * 180);
       stroke.mk.lon = lon;
@@ -828,7 +828,7 @@ document.addEventListener(
 /* ---------- in-sphere preview (the game's map camera, without clouds) ---------- */
 function drawPainterGlobe() {
   const cv = $('#mpGlobe'),
-    tex = atlasNow(WORLD_PATH);
+    tex = loadedAtlas(WORLD_MAP_ART_PATH);
   if (!cv || !tex) return;
   const D = studioState.D,
     sel = studioState.sel.stop,

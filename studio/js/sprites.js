@@ -21,7 +21,6 @@ expose({
   RIG_CACHE: [() => RIG_CACHE],
   SPRITE_PREVIEWS: [() => SPRITE_PREVIEWS],
   atlasGet: [() => atlasGet, v => (atlasGet = v)],
-  atlasNow: [() => atlasNow],
   atlasPath: [() => atlasPath],
   atlasVersion: [() => atlasVersion, v => (atlasVersion = v)],
   bindPixelCanvas: [() => bindPixelCanvas, v => (bindPixelCanvas = v)],
@@ -37,6 +36,7 @@ expose({
   hsvToRgb: [() => hsvToRgb, v => (hsvToRgb = v)],
   hueShift: [() => hueShift, v => (hueShift = v)],
   loadImage: [() => loadImage, v => (loadImage = v)],
+  loadedAtlas: [() => loadedAtlas],
   luminance: [() => luminance],
   markArt: [() => markArt, v => (markArt = v)],
   mountPreviews: [() => mountPreviews, v => ((mountPreviews = v), provide({ mountPreviews }))],
@@ -111,11 +111,11 @@ export function atlasGet(path) {
   ATLAS_LOADS.set(path, p);
   return p;
 }
-export const atlasNow = path => studioState.artDirty.get(path) || ATLAS_CACHE.get(path) || null;
+export const loadedAtlas = path => studioState.artDirty.get(path) || ATLAS_CACHE.get(path) || null;
 /* assemble a skeleton like skeleton-rig.js rigParts(), but from the Studio's editable atlas */
 export function rigFor(sp, view, gold) {
   const path = atlasPath(sp, view, gold),
-    atlas = atlasNow(path);
+    atlas = loadedAtlas(path);
   if (!atlas) {
     atlasGet(path).catch(() => {});
     return null;
@@ -458,7 +458,7 @@ function pixelEditorAtlasPath() {
   return atlasPath(pixelEditor.sp, pixelEditor.view, pixelEditor.gold);
 }
 function pixelEditorCanvas() {
-  return atlasNow(pixelEditorAtlasPath());
+  return loadedAtlas(pixelEditorAtlasPath());
 }
 function refreshPixelEditor() {
   const E = pixelEditor,
@@ -777,7 +777,7 @@ function bindPixelEditor() {
       playSpritePreviewAction($('#pxPrev'), E.act === 'idle' ? null : E.act);
       $('#pxPrev')._p.loop = 1;
     } else if (k === 'gold') {
-      const src = atlasNow(atlasPath(E.sp, E.view, false));
+      const src = loadedAtlas(atlasPath(E.sp, E.view, false));
       if (!src) return;
       const g = goldFrom(src, +$('#pxGoldK').value / 100);
       if (pixelEditorCanvas()) pushPixelUndo();

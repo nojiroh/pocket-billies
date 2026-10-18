@@ -27,7 +27,7 @@ import { esc } from './game-stand-ins.js';
 import {
   ACTIONS,
   SECTIONS,
-  after,
+  afterRender,
   ask,
   changed,
   clone,
@@ -162,7 +162,7 @@ function engineSettingsHTML() {
 }
 SECTIONS.engine = () => {
   const sid = engineEditorMapId();
-  after(mountEnginePreview);
+  afterRender(mountEnginePreview);
   if (!sid)
     return `<div class="ed-col solo"><h2>Engine</h2><p class="help">Add a walk scene first; the preview needs one.</p></div>`;
   const opts = Object.entries(studioState.D.scenes)

@@ -19,7 +19,7 @@ import { esc } from './game-stand-ins.js';
 import {
   ACTIONS,
   SECTIONS,
-  after,
+  afterRender,
   ask,
   card,
   changed,
@@ -57,10 +57,10 @@ import {
 import {
   ATLAS_CACHE,
   atlasGet,
-  atlasNow,
   atlasPath,
   fileToCanvas,
   hueShift,
+  loadedAtlas,
   markArt,
   mountPreviews,
   openPixelEditor,
@@ -74,10 +74,10 @@ expose({
   EVOLUTION_KINDS: [() => EVOLUTION_KINDS],
   FX_ICONS: [() => FX_ICONS],
   ITEM_ICONS: [() => ITEM_ICONS],
-  LISTS: [() => LISTS],
   MOVE_CATEGORIES: [() => MOVE_CATEGORIES],
   PASSIVES: [() => PASSIVES],
   RARITY_LABELS: [() => RARITY_LABELS],
+  SIDE_LIST_RENDERERS: [() => SIDE_LIST_RENDERERS],
   STAGE_LABEL: [() => STAGE_LABEL],
   baseStats: [() => baseStats, v => (baseStats = v)],
   cloneSpeciesArt: [() => cloneSpeciesArt, v => (cloneSpeciesArt = v)],
@@ -123,12 +123,12 @@ document.addEventListener('input', ev => {
   if (!s) return;
   studioState.sel[s.dataset.search] = s.value;
   const box = document.getElementById(s.dataset.list);
-  if (box && LISTS[s.dataset.search]) {
-    box.innerHTML = LISTS[s.dataset.search]();
+  if (box && SIDE_LIST_RENDERERS[s.dataset.search]) {
+    box.innerHTML = SIDE_LIST_RENDERERS[s.dataset.search]();
     mountPreviews(box);
   }
 });
-const LISTS = {};
+const SIDE_LIST_RENDERERS = {};
 /* ================= BILLIONAIRES ================= */
 function baseStats(L, st) {
   const D = studioState.D;
@@ -138,7 +138,7 @@ function baseStats(L, st) {
     sum = L.prof.reduce((a, b) => a + b, 0) || 1;
   return L.prof.map(w => Math.round((T * w) / sum));
 }
-LISTS.lq = () => {
+SIDE_LIST_RENDERERS.lq = () => {
   const D = studioState.D,
     q = (studioState.sel.lq || '').toLowerCase(),
     cur = studioState.sel.line;
@@ -225,7 +225,7 @@ SECTIONS.billionaires = () => {
           .map((n, i) => evolutionRowHTML(L, li, i))
           .join('');
   const where = whereCard(L, li);
-  return `<div class="split"><aside class="list-col"><div class="list-head"><input type="search" placeholder="Search name, id or type" data-search="lq" data-list="lineList" value="${esc(studioState.sel.lq || '')}"><button class="btn primary" data-act="newLine">+ New Billie</button></div><div class="llist" id="lineList">${LISTS.lq()}</div></aside>
+  return `<div class="split"><aside class="list-col"><div class="list-head"><input type="search" placeholder="Search name, id or type" data-search="lq" data-list="lineList" value="${esc(studioState.sel.lq || '')}"><button class="btn primary" data-act="newLine">+ New Billie</button></div><div class="llist" id="lineList">${SIDE_LIST_RENDERERS.lq()}</div></aside>
  <div class="ed-col"><div class="ed-head"><div><small class="mono">${esc(L.id)} · ${RARITY_LABELS[L.rar] || L.rar}</small><h2>${esc(L.names.join(' → '))}</h2></div><div class="seg-row"><button class="btn subtle" data-act="lineMove" data-d="-1" title="Earlier in the Field Guide">↑</button><button class="btn subtle" data-act="lineMove" data-d="1" title="Later in the Field Guide">↓</button><button class="btn subtle" data-act="lineDup">Duplicate</button><button class="btn danger" data-act="lineDel">Delete</button></div></div>
  <div class="seg-row tabs">${stageTabs}<button class="seg add" data-act="stageAdd" title="Add an evolution stage (copies the last stage’s art)">+ Stage</button>${L.names.length > 1 ? `<button class="seg" data-act="stageDel" title="Remove the last stage">− Last stage</button>` : ''}</div>
  ${card('Sprite', prev, { cls: 'sprite-card' })}${card(`${STAGE_LABEL[st]} details`, ident)}${stats}${card('Moves it learns', learn, { sub: 'Moves unlock when it reaches that level. It keeps the last ' + (D.rules.progression.moveSlots || 4) + ' it learned unless you choose.' })}
@@ -280,7 +280,7 @@ studioState.hooks.billionaires = path => {
   if (/^lines\.\d+\.names\./.test(path)) {
     const box = $('#lineList');
     if (box) {
-      box.innerHTML = LISTS.lq();
+      box.innerHTML = SIDE_LIST_RENDERERS.lq();
       mountPreviews(box);
     }
   }
@@ -665,7 +665,7 @@ ACTIONS.newLine = async () => {
       const saved = { rigs: studioState.rigs[tmpId], dirty: new Map(studioState.artDirty) };
       makeBlankBody(tmpId, from.slice(6), $('#nwCol').value);
       const R = rigFor(tmpId, 'front', false);
-      draw(R, studioState.rigs[tmpId].front, atlasNow(atlasPath(tmpId, 'front', false)));
+      draw(R, studioState.rigs[tmpId].front, loadedAtlas(atlasPath(tmpId, 'front', false)));
       delete studioState.rigs[tmpId];
       for (const k of [...studioState.artDirty.keys()])
         if (k.includes(tmpId)) {
@@ -782,7 +782,7 @@ const MOVE_CATEGORIES = [
   ['S', 'Special · Sp. Atk vs Sp. Def'],
   ['X', 'Status · no damage'],
 ];
-LISTS.mq = () => {
+SIDE_LIST_RENDERERS.mq = () => {
   const D = studioState.D,
     q = (studioState.sel.mq || '').toLowerCase(),
     cur = studioState.sel.move;
@@ -830,7 +830,7 @@ SECTIONS.moves = () => {
   ${checkboxField('Blocks one attack (fails twice in a row)', `${p}.fx.protect`, { num: 1 })}${checkboxField('Delayed attack (lands a few turns later)', `${p}.fx.delay`, { num: 1 })}${checkboxField('Doubles each turn it’s used in a row', `${p}.fx.hold`, { num: 1 })}
   ${checkboxField('Confuses the target (it may hit itself)', `${p}.fx.hype`, { num: 1 })}${checkboxField(`Soak: turns the target ${esc(D.rules.battle.spinType)} type`, `${p}.fx.spin`, { num: 1 })}${checkboxField('Removes the target’s stat boosts', `${p}.fx.wipe`, { num: 1 })}
   ${checkboxField('Scatters sharp stones on the other side', `${p}.fx.rent`, { num: 1 })}${checkboxField(`Starts a sandstorm (${esc(D.rules.battle.shockType)} moves hit harder)`, `${p}.fx.market`, { num: 1 })}</div>`;
-  return `<div class="split"><aside class="list-col"><div class="list-head"><input type="search" placeholder="Search moves" data-search="mq" data-list="moveList" value="${esc(studioState.sel.mq || '')}"><button class="btn primary" data-act="moveNew">+ New move</button></div><div class="llist" id="moveList">${LISTS.mq()}</div></aside>
+  return `<div class="split"><aside class="list-col"><div class="list-head"><input type="search" placeholder="Search moves" data-search="mq" data-list="moveList" value="${esc(studioState.sel.mq || '')}"><button class="btn primary" data-act="moveNew">+ New move</button></div><div class="llist" id="moveList">${SIDE_LIST_RENDERERS.mq()}</div></aside>
  <div class="ed-col"><div class="ed-head"><div><small class="mono">${esc(k)}</small><h2>${esc(M.n)}</h2></div><div class="seg-row"><button class="btn" data-act="bpMove" data-id="${esc(k)}" title="Play this move on the battle stage">▶ Preview animation</button><button class="btn subtle" data-act="moveDup">Duplicate</button><button class="btn danger" data-act="moveDel">Delete</button></div></div>
  ${card('Basics', grid(textField('Name', `${p}.n`, { max: 28 }), selectField('Type', `${p}.t`, typeOptions(true), { rr: 1 }), selectField('Kind', `${p}.c`, MOVE_CATEGORIES, { rr: 1 }), numberField('Power', `${p}.p`, { opt: 1, min: 0, max: 250, step: 5, help: M.c === 'X' ? 'Status moves usually have no power.' : '' }), numberField('Accuracy', `${p}.a`, { unit: '%', min: 0, max: 100, step: 5, help: '0 means it never misses.' }), numberField('Priority', `${p}.pr`, { opt: 1, min: -3, max: 5, step: 1, help: 'Higher goes first. Guard uses 4.' })) + textField('Description', `${p}.d`, { area: 1, rows: 2 }))}
  ${card('Effects', fxB, { sub: 'Leave anything empty to switch it off.' })}
@@ -862,7 +862,7 @@ studioState.hooks.moves = path => {
   }
   if (/^moves\.[^.]+\.n$/.test(path)) {
     const b = $('#moveList');
-    if (b) b.innerHTML = LISTS.mq();
+    if (b) b.innerHTML = SIDE_LIST_RENDERERS.mq();
   }
 };
 ACTIONS.pickMove = d => {
@@ -1339,7 +1339,7 @@ SECTIONS.people = () => {
   L.colors = L.colors || {};
   for (const id of Object.values(L.wear || {}))
     if (id && W.items[id] && !L.colors[id]) L.colors[id] = trColorsOf(cleanLook(L), id);
-  after(() => {
+  afterRender(() => {
     if (typeof loadWardrobe === 'function' && !wardrobeEditor.loaded)
       loadWardrobe().then(() => {
         TR_CACHE.clear();

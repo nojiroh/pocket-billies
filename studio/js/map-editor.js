@@ -46,7 +46,7 @@ import { esc } from './game-stand-ins.js';
 import {
   ACTIONS,
   SECTIONS,
-  after,
+  afterRender,
   ask,
   card,
   changed,
@@ -66,7 +66,7 @@ import {
   toast,
   uniqueKey,
 } from './studio-app.js';
-import { atlasGet, atlasNow, atlasVersion, fileToCanvas, markArt, pickFile } from './sprites.js';
+import { atlasGet, atlasVersion, fileToCanvas, loadedAtlas, markArt, pickFile } from './sprites.js';
 /* eslint-disable no-func-assign */
 expose({
   GROUND_KEYS: [() => GROUND_KEYS],
@@ -132,7 +132,7 @@ setWalkData(() => ({
   scenes: (studioState.D && studioState.D.scenes) || {},
   sc: (studioState.D && studioState.D.scenery) || { terrains: {}, props: {} },
 }));
-setArtImage(path => atlasNow('art/' + path) || ART_CACHE.img[path]);
+setArtImage(path => loadedAtlas('art/' + path) || ART_CACHE.img[path]);
 function artCacheVersion() {
   return atlasVersion;
 }
@@ -203,7 +203,7 @@ SECTIONS.scenes = () => {
   const D = studioState.D,
     id = currentMapId(),
     sc = currentMap();
-  after(mountMapEditor);
+  afterRender(mountMapEditor);
   /* v46: each scene says what it is (kind: town, route, room, test); the list is grouped by kind and can be filtered */
   const kindOf = ([k, s]) =>
       s.kind || (s.test ? 'test' : s.room ? 'room' : locationsUsingMap(k).some(([r]) => r.town) ? 'town' : 'route'),
@@ -2161,7 +2161,7 @@ function mountSceneryPixelEditor() {
   let down = false;
   const pos = ev => {
     const r = cv.getBoundingClientRect(),
-      c = atlasNow(mapEditor.pe.path),
+      c = loadedAtlas(mapEditor.pe.path),
       Z = mapEditor.peZoom,
       m = (v, n) => ((v % n) + n) % n,
       x = Math.floor((((ev.clientX - r.left) / r.width) * cv.width) / Z),
@@ -2170,7 +2170,7 @@ function mountSceneryPixelEditor() {
   };
   cv.addEventListener('pointerdown', ev => {
     const [x, y] = pos(ev),
-      c = atlasNow(mapEditor.pe.path),
+      c = loadedAtlas(mapEditor.pe.path),
       X = c.getContext('2d');
     if (mapEditor.peTool === 'pick') {
       const d = X.getImageData(x, y, 1, 1).data;
@@ -2220,7 +2220,7 @@ function mountSceneryPixelEditor() {
   cv.addEventListener('pointercancel', up);
 }
 function plotSceneryPixel(x, y) {
-  const c = atlasNow(mapEditor.pe.path),
+  const c = loadedAtlas(mapEditor.pe.path),
     X = c.getContext('2d');
   if (x < 0 || y < 0 || x >= c.width || y >= c.height) return;
   if (mapEditor.peTool === 'erase') X.clearRect(x, y, 1, 1);
@@ -2251,7 +2251,7 @@ function fillSceneryPixels(c, x, y) {
   drawSceneryPixelEditor();
 }
 function sceneryPixelsChanged() {
-  const c = atlasNow(mapEditor.pe.path);
+  const c = loadedAtlas(mapEditor.pe.path);
   markArt(mapEditor.pe.path, c);
   if (mapEditor.ped && typeof drawPropEditor === 'function') drawPropEditor();
   if (mapEditor.pe.kind === 'tile') walkView.gkey = '';
@@ -2261,7 +2261,7 @@ function sceneryPixelsChanged() {
 }
 function drawSceneryPixelEditor() {
   const cv = $('#scPeCv'),
-    c = atlasNow(mapEditor.pe && mapEditor.pe.path);
+    c = loadedAtlas(mapEditor.pe && mapEditor.pe.path);
   if (!cv || !c) return;
   const Z = mapEditor.peZoom,
     rep = mapEditor.pe.kind === 'tile' ? 3 : 1;
@@ -2312,7 +2312,7 @@ function drawSceneryPixelEditor() {
 }
 function sceneryPixelPalette() {
   const el = $('#scPePal'),
-    c = atlasNow(mapEditor.pe && mapEditor.pe.path);
+    c = loadedAtlas(mapEditor.pe && mapEditor.pe.path);
   if (!el || !c) return;
   const d = new Uint32Array(c.getContext('2d').getImageData(0, 0, c.width, c.height).data.buffer),
     cnt = new Map();
@@ -2349,7 +2349,7 @@ ACTIONS.scPeZoom = d => {
   drawSceneryPixelEditor();
 };
 ACTIONS.scPeUndo = () => {
-  const c = atlasNow(mapEditor.pe.path),
+  const c = loadedAtlas(mapEditor.pe.path),
     u = mapEditor.peUndo.pop();
   if (!u) return toast('Nothing to undo in this picture.');
   c.getContext('2d').putImageData(u, 0, 0);
@@ -2367,7 +2367,7 @@ ACTIONS.scGlowAdd = () => {
   render();
 };
 ACTIONS.scPeResize = async () => {
-  const c = atlasNow(mapEditor.pe.path),
+  const c = loadedAtlas(mapEditor.pe.path),
     r = await dialog(
       'Resize the picture',
       `<p class="help">New space is added evenly on the left and right and at the top, so the base stays put.</p><div class="grid"><label class="fld"><span>Width</span><input id="rsW" type="number" value="${c.width}" min="4" max="400"></label><label class="fld"><span>Height</span><input id="rsH" type="number" value="${c.height}" min="4" max="400"></label></div>`,

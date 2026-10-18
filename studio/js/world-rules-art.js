@@ -10,7 +10,7 @@ import { esc } from './game-stand-ins.js';
 import {
   ACTIONS,
   SECTIONS,
-  after,
+  afterRender,
   api,
   ask,
   card,
@@ -55,7 +55,7 @@ expose({
   worldMapHTML: [() => worldMapHTML, v => (worldMapHTML = v)],
   worldPools: [() => worldPools, v => (worldPools = v)],
   worldRegions: [() => worldRegions, v => (worldRegions = v)],
-  xpLine: [() => xpLine, v => (xpLine = v)],
+  xpCurveText: [() => xpCurveText, v => (xpCurveText = v)],
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
@@ -293,7 +293,7 @@ function worldLocations() {
     ) +
     (r.gate ? textField('Locked message', `${p}.gateText`, { opt: 1 }) : '') +
     textField('Description', `${p}.blurb`, { area: 1, rows: 2 });
-  after(bindWorldMap);
+  afterRender(bindWorldMap);
   return (
     card('The route', list, {
       sub: 'Stops and the roads between them. Players pick where to walk on the world map. Trainers are placed on stops under Trainers.',
@@ -460,7 +460,7 @@ ACTIONS.wAdd = d => {
 };
 function worldPools() {
   const D = studioState.D;
-  after(() => mountPreviews($('#main')));
+  afterRender(() => mountPreviews($('#main')));
   return (
     Object.entries(D.pools)
       .map(([k, P]) =>
@@ -499,7 +499,7 @@ const FISHING_WATERS = {
 function worldFishing() {
   const D = studioState.D;
   D.fishing = D.fishing || {};
-  after(() => mountPreviews($('#main')));
+  afterRender(() => mountPreviews($('#main')));
   return (
     `<p class="help">Fishing: stand by water on the Walk screen and tap Fish. What bites depends on the kind of water (set in Walk scenes → Kinds of water). Levels are the place’s own wild levels plus these.</p>` +
     Object.entries(FISHING_WATERS)
@@ -545,7 +545,7 @@ ACTIONS.poolDel = async d => {
 };
 function worldEggs() {
   const D = studioState.D;
-  after(() => mountPreviews($('#main')));
+  afterRender(() => mountPreviews($('#main')));
   return Object.entries(D.eggs)
     .map(([k, E]) =>
       card(
@@ -565,7 +565,7 @@ function worldEggs() {
 }
 function worldRegions() {
   const D = studioState.D;
-  after(bindWorldMap);
+  afterRender(bindWorldMap);
   return (
     card(
       'Regions beyond the route',
@@ -710,7 +710,7 @@ SECTIONS.rules = () => {
     )
     .join('');
   const brackets = `<table class="tbl"><thead><tr><th>Steps today up to</th><th>Money per step</th><th></th></tr></thead><tbody>${R.steps.brackets.map((b, i) => `<tr><td><input type="number" min="0" step="500" data-p="${st}.brackets.${i}.upTo" data-k="num" value="${b.upTo}" ${i === R.steps.brackets.length - 1 ? 'title="0 means no limit"' : ''}></td><td><input type="number" min="0" max="5" step=".05" data-p="${st}.brackets.${i}.rate" data-k="num" value="${b.rate}"></td><td><button class="x" data-act="brDel" data-i="${i}">✕</button></td></tr>`).join('')}</tbody></table><button class="btn subtle" data-act="brAdd">Add a rate bracket</button><p class="help">Daily step rate: money earned per step drops after many steps in a day. Use 0 as the last limit for “and beyond”.</p>`;
-  const xpPrev = `<p class="help" id="xpPrev">${xpLine()}</p>`;
+  const xpPrev = `<p class="help" id="xpPrev">${xpCurveText()}</p>`;
   const coinsStart = `<div class="grid">${Object.keys(D.coins)
     .map(c => numberField(D.coins[c].n, `${s}.coins.${c}`, { min: 0, step: 1 }))
     .join('')}${Object.keys(D.items)
@@ -968,14 +968,14 @@ SECTIONS.rules = () => {
      `<div class="chips">${D.lines.map(L => `<label class="chk-chip"><input type="checkbox" data-act-chk="luxury" value="${L.id}" ${R.catching.luxury.includes(L.id) ? 'checked' : ''}> ${esc(L.names[0])}</label>`).join('')}</div>`
  )}</div>`;
 };
-function xpLine() {
+function xpCurveText() {
   const f = studioState.D.rules.progression.xpFactor;
   return [5, 10, 20, 36, 50, 100].map(L => `Lv ${L}: ${formatThousands(Math.floor(f * L * L * L))} XP`).join(' · ');
 }
 studioState.hooks.rules = path => {
   if (path.includes('xpFactor')) {
     const e = $('#xpPrev');
-    if (e) e.textContent = xpLine();
+    if (e) e.textContent = xpCurveText();
   }
 };
 document.addEventListener('change', ev => {

@@ -28,11 +28,11 @@ import {
 } from './studio-app.js';
 import {
   atlasGet,
-  atlasNow,
   atlasPath,
   fileToCanvas,
   goldFrom,
   loadImage,
+  loadedAtlas,
   markArt,
   openPixelEditor,
   pickFile,
@@ -244,8 +244,8 @@ const uniqueBoneName = (meta, base) => {
 function allocRect(sp, view, w, h) {
   const pN = atlasPath(sp, view, false),
     pG = atlasPath(sp, view, true),
-    N = atlasNow(pN),
-    G = atlasNow(pG);
+    N = loadedAtlas(pN),
+    G = loadedAtlas(pG);
   if (!N) throw new Error('Sheet not loaded');
   const x = 1,
     y = N.height + 1,
@@ -270,7 +270,7 @@ function putPart(sp, view, rect, src) {
     [pN, 0],
     [pG, 1],
   ]) {
-    const c = atlasNow(p);
+    const c = loadedAtlas(p);
     if (!c) continue;
     const x = c.getContext('2d');
     x.clearRect(rect[0], rect[1], rect[2], rect[3]);
@@ -279,7 +279,7 @@ function putPart(sp, view, rect, src) {
   }
 }
 function cutRect(sp, view, rect, gold = false) {
-  const c = atlasNow(atlasPath(sp, view, gold)),
+  const c = loadedAtlas(atlasPath(sp, view, gold)),
     o = makeCanvas(rect[2], rect[3]);
   if (c) o.getContext('2d').drawImage(c, rect[0], rect[1], rect[2], rect[3], 0, 0, rect[2], rect[3]);
   return o;

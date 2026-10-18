@@ -11,7 +11,7 @@ import { $, $$ } from '../../game/js/util.js';
 import { makeCanvas } from '../../game/js/art.js';
 import { drawRig } from '../../game/js/skeleton-rig.js';
 import { esc } from './game-stand-ins.js';
-import { ACTIONS, SECTIONS, after, changed, commit, render, studioState } from './studio-app.js';
+import { ACTIONS, SECTIONS, afterRender, changed, commit, render, studioState } from './studio-app.js';
 import { downloadCanvas, loadImage, rigFor } from './sprites.js';
 import { neutralPose } from './skeleton.js';
 /* eslint-disable no-func-assign */
@@ -75,7 +75,7 @@ SECTIONS.roster = () => {
     done = L.filter(e => Object.values(e.state || {}).every(Boolean)).length,
     sil = L.filter(e => e.state && e.state.silhouette).length,
     sheets = L.filter(e => e.state && e.state.sheet).length;
-  after(mountSilhouettes);
+  afterRender(mountSilhouettes);
   return `<div class="ed-col solo ro"><div class="ed-head"><h2>Roster board</h2><div class="seg-row">${['all', 'todo', 'done'].map(f => `<button class="seg ${rosterBoard.filter === f ? 'on' : ''}" data-act="roFilter" data-f="${f}">${f === 'all' ? 'All' : f === 'todo' ? 'To do' : 'Done'}</button>`).join('')}</div>
   <select data-act="roKind" id="roKind"><option value="">Every kind</option>${Object.entries(ROSTER_KINDS)
     .map(([k, n]) => `<option value="${k}" ${rosterBoard.kind === k ? 'selected' : ''}>${n}</option>`)

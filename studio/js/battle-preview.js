@@ -31,7 +31,7 @@ import { esc } from './game-stand-ins.js';
 import {
   ACTIONS,
   SECTIONS,
-  after,
+  afterRender,
   card,
   colorField,
   moveOptions,
@@ -126,7 +126,7 @@ SECTIONS.preview = () => {
   battlePreviewDefaults();
   const A = D.backdrops[battlePreview.area],
     p = `backdrops.${battlePreview.area}`;
-  after(startBattlePreview);
+  afterRender(startBattlePreview);
   const opt = (arr, v) =>
     arr.map(([k, n]) => `<option value="${esc(k)}" ${k === v ? 'selected' : ''}>${esc(n)}</option>`).join('');
   return `<div class="ed-col solo bp"><div class="ed-head"><div><h2>Battle preview</h2><p class="sub">The game’s real battle stage, using your unsaved changes. Art you replaced under Art files appears here after you save.</p></div></div>

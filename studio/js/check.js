@@ -10,7 +10,7 @@ import { esc } from './game-stand-ins.js';
 import {
   ACTIONS,
   SECTIONS,
-  after,
+  afterRender,
   api,
   ask,
   card,
@@ -397,8 +397,8 @@ ACTIONS.fix = d => {
   if (p) openSection(p.go, p.sel || {});
 };
 SECTIONS.check = () => {
-  after(renderCheckList);
-  after(loadBackups);
+  afterRender(renderCheckList);
+  afterRender(loadBackups);
   return `<div class="ed-col solo"><div class="ed-head"><h2>Check & backups</h2><div class="seg-row"><button class="btn" data-act="exportData">Download game data</button><button class="btn" data-act="importData">Load game data from a file</button></div></div>
  ${card('Problems', `<ul class="checks" id="checkList"></ul>`, { sub: 'Problems are things the game will skip or patch over. Notes are worth a look.' })}
  ${card('Backups', `<p class="help">Every save keeps the previous version in the backups folder. Restoring replaces the current file (which is backed up first). Reload the Studio afterwards.</p><div id="backupList">Loading…</div>`)}</div>`;

@@ -18,7 +18,7 @@ expose({
   SECTION_GROUPS: [() => SECTION_GROUPS],
   SECTION_LIST: [() => SECTION_LIST],
   STUDIO_SERVER_KEY: [() => STUDIO_SERVER_KEY],
-  after: [() => after],
+  afterRender: [() => afterRender],
   api: [() => api, v => setApi(v)],
   ask: [() => ask],
   blurField: [() => blurField],
@@ -519,7 +519,7 @@ export function setRender(v) {
   render = v; // eslint-disable-line no-func-assign
   provide({ render });
 }
-export const after = f => {
+export const afterRender = f => {
   studioState.after.push(f);
 };
 /* ---------- events ---------- */

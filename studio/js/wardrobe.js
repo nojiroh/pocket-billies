@@ -16,7 +16,7 @@ import { esc } from './game-stand-ins.js';
 import {
   ACTIONS,
   SECTIONS,
-  after,
+  afterRender,
   ask,
   card,
   changed,
@@ -35,7 +35,7 @@ import {
   toast,
   uniqueKey,
 } from './studio-app.js';
-import { atlasGet, atlasNow, markArt } from './sprites.js';
+import { atlasGet, loadedAtlas, markArt } from './sprites.js';
 /* eslint-disable no-func-assign */
 expose({
   FACE_EXPRESSIONS: [() => FACE_EXPRESSIONS],
@@ -119,7 +119,7 @@ SECTIONS.wardrobe = () => {
     return `<div class="ed-col solo"><h2>Wardrobe</h2><p class="help">This game data has no wardrobe yet. Run <code>python3 tools/build-trainer-art.py</code>.</p></div>`;
   if (!wardrobeEditor.sel || (wardrobeEditor.sel !== 'body' && !W.items[wardrobeEditor.sel]))
     wardrobeEditor.sel = 'body';
-  after(mountWardrobe);
+  afterRender(mountWardrobe);
   const slots = W.slots,
     list = Object.entries(W.items)
       .filter(([k, it]) => wardrobeEditor.filter === 'all' || it.slot === wardrobeEditor.filter)
@@ -396,7 +396,7 @@ function wardrobeJoints(view) {
   return J;
 }
 function wardrobeSheets(src) {
-  return [atlasNow('art/' + src.img), atlasNow('art/' + src.mask)];
+  return [loadedAtlas('art/' + src.img), loadedAtlas('art/' + src.mask)];
 }
 const MASK_AREA_COLORS = [null, [226, 60, 60], [46, 168, 74], [58, 98, 224]];
 function drawWardrobeEditor() {
@@ -498,7 +498,7 @@ function growPiece(src, P, x, y) {
   if (w > 160 || h > 160) return null;
   let top = 0;
   for (const k of ['img', 'mask']) {
-    const c = atlasNow('art/' + src[k]);
+    const c = loadedAtlas('art/' + src[k]);
     if (!c) continue;
     const H = c.height,
       n = makeCanvas(Math.max(c.width, w + 2), H + h + 1),
@@ -562,8 +562,8 @@ function plotWardrobePixel(l) {
   wardrobeArtChanged(src);
 }
 function wardrobeArtChanged(src) {
-  markArt('art/' + src.img, atlasNow('art/' + src.img));
-  if (src.mask) markArt('art/' + src.mask, atlasNow('art/' + src.mask));
+  markArt('art/' + src.img, loadedAtlas('art/' + src.img));
+  if (src.mask) markArt('art/' + src.mask, loadedAtlas('art/' + src.mask));
   changed();
   TR_CACHE.clear();
   drawWardrobeEditor();
@@ -693,7 +693,7 @@ function addPieceRegion(src, c, m) {
     ['mask', m],
   ]) {
     if (!src[k]) continue;
-    const s = atlasNow('art/' + src[k]),
+    const s = loadedAtlas('art/' + src[k]),
       H = s ? s.height : 0,
       W = Math.max(s ? s.width : 0, pic.width + 2),
       n = makeCanvas(W, H + pic.height + 1),
@@ -725,7 +725,7 @@ ACTIONS.wdAdd = d => {
     if (b) m.getContext('2d').drawImage(b, P.r[0], P.r[1], P.r[2], P.r[3], 0, 0, P.r[2], P.r[3]);
     o = P.o.slice();
   } else if (d.from === 'body' && body) {
-    const bi = atlasNow('art/' + W.body.img),
+    const bi = loadedAtlas('art/' + W.body.img),
       [rx, ry, rw, rh] = body.r;
     c = makeCanvas(rw + 2, rh + 2);
     const x = c.getContext('2d');
