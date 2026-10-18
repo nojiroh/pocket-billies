@@ -534,7 +534,7 @@ NWLOG.more = () => {
           state: GAME.soundEngine.ctx.state,
           rate: GAME.soundEngine.ctx.sampleRate,
           song: GAME.soundEngine.song ? GAME.soundEngine.song.name : null,
-          worldBeds: typeof GAME.AMB !== 'undefined' ? Object.keys(GAME.AMB.beds).length : 0,
+          worldBeds: typeof GAME.ambience !== 'undefined' ? Object.keys(GAME.ambience.beds).length : 0,
         }
       : null
   );

@@ -92,19 +92,19 @@ import {
 import { setWorldMapMount, worldMapMount } from './world-map.js';
 import { setWorldMapGlRender, setWorldMapMiniBuild, worldMapGlRender, worldMapMiniBuild } from './world-map-gl.js';
 import { openShop, setOpenShop } from './shop.js';
-import { AMB, soundEngine } from './sound.js';
+import { ambience, soundEngine } from './sound.js';
 import { cutsceneStart, setCutsceneStart } from './cutscene.js';
 import { account } from './account.js';
 import { chalToday, stampCount } from './things-to-do.js';
 import { render, renderOverlay, setRender, setRenderOverlay, toast } from './ui.js';
 Object.defineProperties(GAME, {
-  AMB: { get: () => AMB },
   FRAME: { get: () => FRAME },
   LIFE: { get: () => LIFE },
   LOCATIONS: { get: () => LOCATIONS },
   TR_CACHE: { get: () => TR_CACHE },
   account: { get: () => account },
   activeBattle: { get: () => activeBattle },
+  ambience: { get: () => ambience },
   artPixels: { get: () => artPixels, set: setArtPixels },
   battleStage: { get: () => battleStage },
   battleStageKey: { get: () => battleStageKey },

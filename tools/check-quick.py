@@ -763,7 +763,7 @@ def desktop_steps(b, base, R):
         prints = pg.evaluate("(walkRenderer.prints||[]).length"); shot(pg, 'prints-snow')
         if prints < 4: raise Exception(f'only {prints} footprints after a walk in the snow')
         pg.mouse.click(5, 300); time.sleep(1.5)
-        snd = pg.evaluate("typeof soundEngine==='undefined'||!soundEngine.ctx?'no sound in this browser':soundEngine.ctx.state!=='running'?'sound not started ('+soundEngine.ctx.state+')':(typeof AMB!=='undefined'&&Object.keys(AMB.beds).length>=9?'ok':'beds missing')")
+        snd = pg.evaluate("typeof soundEngine==='undefined'||!soundEngine.ctx?'no sound in this browser':soundEngine.ctx.state!=='running'?'sound not started ('+soundEngine.ctx.state+')':(typeof ambience!=='undefined'&&Object.keys(ambience.beds).length>=9?'ok':'beds missing')")
         if snd == 'beds missing': raise Exception('the world sound beds didn’t start')
         pg.evaluate("environment.force=null;0")
         if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))

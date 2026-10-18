@@ -6,7 +6,7 @@ import { expose } from './test-globals.js';
 import {
   account,
   accountSettingsHTML,
-  ambApply,
+  applyAmbienceVolume,
   applyVolumes,
   closeModal,
   engineSetting,
@@ -564,7 +564,7 @@ function setPref(k, v) {
     try {
       navigator.vibrate(12);
     } catch (e) {}
-  if ((k === 'world' || k === 'amb') && typeof ambApply === 'function') ambApply();
+  if ((k === 'world' || k === 'amb') && typeof applyAmbienceVolume === 'function') applyAmbienceVolume();
 }
 export function settingsRefresh() {
   if (!uiState.modal || !uiState.modal.settings) return;

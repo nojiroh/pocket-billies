@@ -17,27 +17,20 @@ import { environment, environmentHour, environmentState } from './environment.js
 import { walkRenderer } from './walk-view-gl.js';
 /* eslint-disable no-func-assign */
 expose({
-  AMB: [() => AMB],
-  AMB_BIRDS: [() => AMB_BIRDS],
-  AMB_RARE: [() => AMB_RARE],
+  BIRD_CALLS: [() => BIRD_CALLS],
   JINGLES: [() => JINGLES],
+  RARE_BIRDS: [() => RARE_BIRDS],
   SCALES: [() => SCALES],
   SONGS: [() => SONGS],
-  ambApply: [() => ambApply, v => ((ambApply = v), provide({ ambApply }))],
-  ambBird: [() => ambBird, v => (ambBird = v)],
-  ambClank: [() => ambClank, v => (ambClank = v)],
-  ambFade: [() => ambFade, v => (ambFade = v)],
-  ambInit: [() => ambInit, v => (ambInit = v)],
-  ambLife: [() => ambLife, v => (ambLife = v)],
-  ambNearest: [() => ambNearest, v => (ambNearest = v)],
-  ambOut: [() => ambOut, v => (ambOut = v)],
-  ambOwl: [() => ambOwl, v => (ambOwl = v)],
-  ambTick: [() => ambTick, v => (ambTick = v)],
-  ambUpdate: [() => ambUpdate, v => (ambUpdate = v)],
-  ambWhere: [() => ambWhere, v => (ambWhere = v)],
+  ambience: [() => ambience],
+  ambienceBeds: [() => ambienceBeds, v => (ambienceBeds = v)],
+  ambienceFadeIn: [() => ambienceFadeIn, v => (ambienceFadeIn = v)],
+  ambienceOutput: [() => ambienceOutput, v => (ambienceOutput = v)],
+  applyAmbienceVolume: [() => applyAmbienceVolume, v => ((applyAmbienceVolume = v), provide({ applyAmbienceVolume }))],
   applyVolumes: [() => applyVolumes, v => ((applyVolumes = v), provide({ applyVolumes }))],
   battleSoundEffect: [() => battleSoundEffect, v => ((battleSoundEffect = v), provide({ battleSoundEffect }))],
   composeSong: [() => composeSong, v => (composeSong = v)],
+  initAmbience: [() => initAmbience, v => (initAmbience = v)],
   initSound: [() => initSound, v => (initSound = v)],
   jingle: [() => jingle, v => ((jingle = v), provide({ jingle }))],
   midiToFrequency: [() => midiToFrequency],
@@ -46,19 +39,26 @@ expose({
   musicStop: [() => musicStop, v => (musicStop = v)],
   musicSync: [() => musicSync, v => (musicSync = v)],
   musicTick: [() => musicTick, v => (musicTick = v)],
+  nearestSoundSource: [() => nearestSoundSource, v => (nearestSoundSource = v)],
+  playBirdCall: [() => playBirdCall, v => (playBirdCall = v)],
+  playClockTick: [() => playClockTick, v => (playClockTick = v)],
+  playOwlCall: [() => playOwlCall, v => (playOwlCall = v)],
+  playScrapClank: [() => playScrapClank, v => (playScrapClank = v)],
   songRandom: [() => songRandom, v => (songRandom = v)],
   soundEffect: [() => soundEffect, v => ((soundEffect = v), provide({ soundEffect }))],
   soundEffectAt: [() => soundEffectAt, v => ((soundEffectAt = v), provide({ soundEffectAt }))],
   soundEngine: [() => soundEngine],
+  soundPlacement: [() => soundPlacement, v => (soundPlacement = v)],
   synthKick: [() => synthKick, v => (synthKick = v)],
   synthNoise: [() => synthNoise, v => (synthNoise = v)],
   synthVoice: [() => synthVoice, v => (synthVoice = v)],
   testVolume: [() => testVolume, v => ((testVolume = v), provide({ testVolume }))],
   unlockSound: [() => unlockSound, v => (unlockSound = v)],
+  updateAmbience: [() => updateAmbience, v => (updateAmbience = v)],
   volumePreference: [() => volumePreference, v => (volumePreference = v)],
 });
 /* eslint-enable no-func-assign */
-provide({ ambApply, applyVolumes, battleSoundEffect, jingle, soundEffect, soundEffectAt, testVolume });
+provide({ applyAmbienceVolume, applyVolumes, battleSoundEffect, jingle, soundEffect, soundEffectAt, testVolume });
 /* to-module: end */
 export const soundEngine = {
   ctx: null,
@@ -1161,7 +1161,7 @@ document.addEventListener('input', ev => {
   saveData.preferences = saveData.preferences || {};
   saveData.preferences[k] = +ev.target.value / 100;
   applyVolumes();
-  if (typeof ambApply === 'function') ambApply();
+  if (typeof applyAmbienceVolume === 'function') applyAmbienceVolume();
   if (k === 'sfx') soundEffect('tick');
 });
 /* a soft tick on every button */
@@ -1182,30 +1182,30 @@ document.addEventListener(
 /* v31: world sounds are half as loud by default and fade in over a few seconds when you arrive somewhere; a second
    bus carries the ambience (Settings → Sound → Ambience): birdsong by day, crickets and the odd owl at night, leaves
    in the wind near trees, a town's murmur, a cave's hum and a room's quiet with its clock ticking */
-export const AMB = { bus: null, amb: null, beds: {}, flash: 0, arrive: 0, id: null, lastCall: 0, ev: {} };
-function ambFade() {
+export const ambience = { bus: null, amb: null, beds: {}, flash: 0, arrive: 0, id: null, lastCall: 0, ev: {} };
+function ambienceFadeIn() {
   if (!soundEngine.ctx) return 1;
-  return clamp((soundEngine.ctx.currentTime - AMB.arrive) / 2.8, 0, 1);
+  return clamp((soundEngine.ctx.currentTime - ambience.arrive) / 2.8, 0, 1);
 }
-function ambApply() {
-  if (!AMB.bus || !soundEngine.ctx) return;
+function applyAmbienceVolume() {
+  if (!ambience.bus || !soundEngine.ctx) return;
   const v = volumePreference('world', 0.5),
     a = volumePreference('amb', 0.5),
-    f = ambFade(),
+    f = ambienceFadeIn(),
     t = soundEngine.ctx.currentTime;
-  AMB.bus.gain.setTargetAtTime(v * v * f, t, 0.1);
-  if (AMB.amb) AMB.amb.gain.setTargetAtTime(a * a * 0.9 * f, t, 0.1);
+  ambience.bus.gain.setTargetAtTime(v * v * f, t, 0.1);
+  if (ambience.amb) ambience.amb.gain.setTargetAtTime(a * a * 0.9 * f, t, 0.1);
 }
-function ambInit() {
-  if (AMB.bus) return true;
+function initAmbience() {
+  if (ambience.bus) return true;
   if (!soundEngine.ctx || soundEngine.ctx.state !== 'running') return false;
   const c = soundEngine.ctx;
-  AMB.bus = c.createGain();
-  AMB.bus.gain.value = 0;
-  AMB.bus.connect(soundEngine.master);
-  AMB.amb = c.createGain();
-  AMB.amb.gain.value = 0;
-  AMB.amb.connect(soundEngine.master);
+  ambience.bus = c.createGain();
+  ambience.bus.gain.value = 0;
+  ambience.bus.connect(soundEngine.master);
+  ambience.amb = c.createGain();
+  ambience.amb.gain.value = 0;
+  ambience.amb.connect(soundEngine.master);
   /* v47: the outdoors comes through a low-pass of its own, closed down when you are in a room laid into the place:
     the town's murmur, the birds, the rain on the roof and the fountain outside reach you through the walls */
   const lp = to => {
@@ -1216,9 +1216,9 @@ function ambInit() {
     f.connect(to);
     return f;
   };
-  AMB.lpA = lp(AMB.amb);
-  AMB.lpW = lp(AMB.bus);
-  ambApply();
+  ambience.lpA = lp(ambience.amb);
+  ambience.lpW = lp(ambience.bus);
+  applyAmbienceVolume();
   const loop =
     (filters, lfo, rate = 1) =>
     dest => {
@@ -1251,7 +1251,7 @@ function ambInit() {
       n.connect(dest);
       s.start(0, Math.random() * 0.9);
     };
-  const bed = (name, make, bus = AMB.lpW) => {
+  const bed = (name, make, bus = ambience.lpW) => {
     const g = c.createGain();
     g.gain.value = 0;
     const p = c.createStereoPanner ? c.createStereoPanner() : null;
@@ -1260,7 +1260,7 @@ function ambInit() {
       g.connect(p);
       p.connect(bus);
     } else g.connect(bus);
-    AMB.beds[name] = { g, p };
+    ambience.beds[name] = { g, p };
   };
   /* crickets: a high tone chopped fast, then gated in slow pulses; two of them, slightly apart */
   const cricket = (f, r1, r2) => dest => {
@@ -1297,7 +1297,7 @@ function ambInit() {
       cricket(4300, 26, 0.9)(d);
       cricket(4650, 23, 0.7)(d);
     },
-    AMB.lpA
+    ambience.lpA
   );
   bed(
     'leaves',
@@ -1308,7 +1308,7 @@ function ambInit() {
       ],
       [0.13, 0.8]
     ),
-    AMB.lpA
+    ambience.lpA
   );
   bed(
     'town',
@@ -1320,7 +1320,7 @@ function ambInit() {
       [0.21, 0.5],
       0.9
     ),
-    AMB.lpA
+    ambience.lpA
   );
   bed(
     'cave',
@@ -1334,7 +1334,7 @@ function ambInit() {
       g.connect(d);
       o.start();
     },
-    AMB.amb
+    ambience.amb
   );
   bed(
     'room',
@@ -1346,7 +1346,7 @@ function ambInit() {
       null,
       0.6
     ),
-    AMB.amb
+    ambience.amb
   );
   bed(
     'stream',
@@ -1398,7 +1398,7 @@ function ambInit() {
   return true;
 }
 /* where a sound is, as a volume and a left-right pan, from where you stand and which way the camera faces */
-function ambWhere(x, z, range) {
+function soundPlacement(x, z, range) {
   const P = walkView.pl,
     C = walkView.C;
   if (!P) return null;
@@ -1408,18 +1408,18 @@ function ambWhere(x, z, range) {
     dx = (x - P.x) * R[0] + (z - P.z) * R[2];
   return { v: Math.pow(1 - d / range, 1.6), pan: clamp(dx / 7, -1, 1) * 0.75, d };
 }
-function ambNearest(list, get, range) {
+function nearestSoundSource(list, get, range) {
   let best = null;
   for (const it of list || []) {
     const [x, z] = get(it);
-    const w = ambWhere(x, z, range);
+    const w = soundPlacement(x, z, range);
     if (w && (!best || w.d < best.d)) best = w;
   }
   return best;
 }
-function ambUpdate() {
+function updateAmbience() {
   if (!soundEngine.ctx || soundEngine.ctx.state !== 'running') return;
-  if (!AMB.bus && !ambInit()) return;
+  if (!ambience.bus && !initAmbience()) return;
   const c = soundEngine.ctx,
     t = c.currentTime,
     T = {};
@@ -1442,12 +1442,12 @@ function ambUpdate() {
     };
     put(
       'stream',
-      ambNearest(walkRenderer.streamCells, q => q, 10),
+      nearestSoundSource(walkRenderer.streamCells, q => q, 10),
       0.5
     );
     put(
       'falls',
-      ambNearest(walkRenderer.falls, q => [q[0], q[2]], 14),
+      nearestSoundSource(walkRenderer.falls, q => [q[0], q[2]], 14),
       0.7
     );
     if (sc.flatFar || sc.waterKind === 'sea' || sc.far === 'sea') {
@@ -1455,26 +1455,26 @@ function ambUpdate() {
       pans.sea = 0;
       put(
         'sea',
-        ambNearest(walkView.water, q => q, 8),
+        nearestSoundSource(walkView.water, q => q, 8),
         0.6
       );
     } else
       put(
         'pond',
-        ambNearest(walkView.water, q => q, 6),
+        nearestSoundSource(walkView.water, q => q, 6),
         0.22
       );
     if (sc.waterKind === 'lava')
       put(
         'lava',
-        ambNearest(walkView.water, q => q, 10),
+        nearestSoundSource(walkView.water, q => q, 10),
         0.5
       );
     const C0 = walkData().sc,
       props = sc.props || [];
     put(
       'fountain',
-      ambNearest(
+      nearestSoundSource(
         props.filter(p => /fountain/.test(p.k)),
         p => [p.x, p.z],
         9
@@ -1483,7 +1483,7 @@ function ambUpdate() {
     );
     put(
       'fire',
-      ambNearest(
+      nearestSoundSource(
         props.filter(p => {
           const M = C0.props[p.k];
           return M && (M.fx || []).some(e => e.k === 'fire');
@@ -1500,29 +1500,29 @@ function ambUpdate() {
       pans.rain = pans.wind = 0;
     }
     /* thunder a moment after the flash */
-    if (E && E.flash > 0.9 && !AMB.flash) {
-      AMB.flash = 1;
+    if (E && E.flash > 0.9 && !ambience.flash) {
+      ambience.flash = 1;
       const d = 0.5 + Math.random() * 1.6;
-      synthNoise(AMB.bus, { t: t + d, dur: 2.6, vol: 0.55, lp: 180 });
-      synthNoise(AMB.bus, { t: t + d + 0.1, dur: 1.2, vol: 0.25, lp: 420 });
-    } else if (E && E.flash < 0.5) AMB.flash = 0;
+      synthNoise(ambience.bus, { t: t + d, dur: 2.6, vol: 0.55, lp: 180 });
+      synthNoise(ambience.bus, { t: t + d + 0.1, dur: 1.2, vol: 0.25, lp: 420 });
+    } else if (E && E.flash < 0.5) ambience.flash = 0;
   }
   /* arriving somewhere: everything fades in */
   const sid = sc ? baseMapId() : null;
-  if (sid !== AMB.id) {
-    AMB.id = sid;
-    AMB.arrive = t;
+  if (sid !== ambience.id) {
+    ambience.id = sid;
+    ambience.arrive = t;
   }
-  ambApply();
+  applyAmbienceVolume();
   {
     const muf = !!(sc && sc.roomRect);
-    if (AMB.lpA) {
-      AMB.lpA.frequency.setTargetAtTime(muf ? 620 : 20000, t, 0.3);
-      AMB.lpW.frequency.setTargetAtTime(muf ? 850 : 20000, t, 0.3);
+    if (ambience.lpA) {
+      ambience.lpA.frequency.setTargetAtTime(muf ? 620 : 20000, t, 0.3);
+      ambience.lpW.frequency.setTargetAtTime(muf ? 850 : 20000, t, 0.3);
     }
   }
-  if (sc) ambLife(sc, E, T, pans, t);
-  for (const [k, b] of Object.entries(AMB.beds)) {
+  if (sc) ambienceBeds(sc, E, T, pans, t);
+  for (const [k, b] of Object.entries(ambience.beds)) {
     b.g.gain.setTargetAtTime(T[k] || 0, t, 0.35);
     if (b.p && pans[k] != null) b.p.pan.setTargetAtTime(pans[k], t, 0.25);
   }
@@ -1540,21 +1540,21 @@ function ambUpdate() {
 }
 setInterval(() => {
   try {
-    ambUpdate();
+    updateAmbience();
   } catch (e) {}
 }, 200);
 /* the ambience: which beds play here, and the occasional bird, owl and clock tick */
-function ambLife(sc, E, T, pans, t) {
+function ambienceBeds(sc, E, T, pans, t) {
   const st = E || (typeof environmentState === 'function' ? environmentState(sc) : { night: 0, dusk: 0 }),
     night = st.night || 0,
     day = 1 - night,
     rain = E ? E.rain : 0,
     dt = 0.2,
-    ev = AMB.ev,
+    ev = ambience.ev,
     room = !!sc.room,
     cave = sc.indoor && sc.far === 'cave',
     ss = st.season || st.ss;
-  /* v47: a room laid into a place hears the place outside, quieter and through the walls (the low-pass in ambUpdate) */
+  /* v47: a room laid into a place hears the place outside, quieter and through the walls (the low-pass in updateAmbience) */
   const thru = !sc.indoor ? 1 : sc.roomRect ? 0.45 : 0;
   const node =
       typeof LOCATIONS !== 'undefined' && typeof saveData !== 'undefined' && saveData.route
@@ -1578,24 +1578,24 @@ function ambLife(sc, E, T, pans, t) {
       T.town = 0.13 * (1 - night * 0.6) * thru;
       pans.town = 0;
     }
-    /* birds: a short call now and then by day, fewer in the rain; v47: the birds of the place (AMB_BIRDS) */
+    /* birds: a short call now and then by day, fewer in the rain; v47: the birds of the place (BIRD_CALLS) */
     {
-      const L = AMB_BIRDS[sc.biome] || AMB_BIRDS._;
+      const L = BIRD_CALLS[sc.biome] || BIRD_CALLS._;
       if (
         L.length &&
         day > 0.3 &&
         Math.random() < dt * (town ? 0.12 : 0.3) * day * (1 - Math.min(1, rain) * 0.8) * thru
       ) {
         const k = L[Math.floor(Math.random() * L.length)];
-        if (Math.random() < (AMB_RARE[k] || 1)) ambBird(t, k);
+        if (Math.random() < (RARE_BIRDS[k] || 1)) playBirdCall(t, k);
       }
     }
     /* the farm's rooster at first light */
     const hr = typeof environmentHour === 'function' ? environmentHour() : 12;
-    if (sc.biome === 'farm' && hr > 5 && hr < 8.5 && Math.random() < dt * 0.03 * thru) ambBird(t, 'rooster');
+    if (sc.biome === 'farm' && hr > 5 && hr < 8.5 && Math.random() < dt * 0.03 * thru) playBirdCall(t, 'rooster');
     /* the scrap yard: metal shifting somewhere, the crane's cable creaking when nobody is looking */
-    if (sc.biome === 'bins' && Math.random() < dt * 0.035 * thru) ambClank(t);
-    if (night > 0.6 && !town && Math.random() < dt * 0.025 * thru) ambOwl(t);
+    if (sc.biome === 'bins' && Math.random() < dt * 0.035 * thru) playScrapClank(t);
+    if (night > 0.6 && !town && Math.random() < dt * 0.025 * thru) playOwlCall(t);
   }
   if (cave) {
     T.cave = 0.3;
@@ -1608,13 +1608,13 @@ function ambLife(sc, E, T, pans, t) {
       if (!ev.tick || ev.tick < t - 1) ev.tick = t + 0.05;
       while (ev.tick < t + 0.25) {
         ev.tock = !ev.tock;
-        ambTick(ev.tick, ev.tock);
+        playClockTick(ev.tick, ev.tock);
         ev.tick += 1;
       }
     }
   }
 }
-function ambOut(pan, dry) {
+function ambienceOutput(pan, dry) {
   const c = soundEngine.ctx,
     g = c.createGain();
   let out = g;
@@ -1624,7 +1624,7 @@ function ambOut(pan, dry) {
     g.connect(p);
     out = p;
   }
-  out.connect(dry ? AMB.amb : AMB.lpA || AMB.amb);
+  out.connect(dry ? ambience.amb : ambience.lpA || ambience.amb);
   setTimeout(() => {
     try {
       out.disconnect();
@@ -1634,8 +1634,8 @@ function ambOut(pan, dry) {
 }
 /* v47: the birds of each place (by the scene's biome): sparrows' chips and pigeons in town, larks over the open grass,
    thrushes in the woods, a reed warbler by the pond, gulls by the sea, crows on the scrap heaps, choughs and now and
-   then a hawk in the mountains; "song" is a phrase of no bird in particular. AMB_RARE makes some of them rarer. */
-const AMB_BIRDS = {
+   then a hawk in the mountains; "song" is a phrase of no bird in particular. RARE_BIRDS makes some of them rarer. */
+const BIRD_CALLS = {
   _: ['song'],
   town: ['sparrow', 'sparrow', 'pigeon', 'song'],
   food: ['sparrow', 'pigeon', 'sparrow'],
@@ -1679,9 +1679,9 @@ const AMB_BIRDS = {
   desert: ['hawk'],
   sun: [],
 };
-const AMB_RARE = { hawk: 0.3, woodpecker: 0.45, rooster: 1 };
-function ambBird(t, kind) {
-  const g = ambOut((Math.random() - 0.5) * 1.4),
+const RARE_BIRDS = { hawk: 0.3, woodpecker: 0.45, rooster: 1 };
+function playBirdCall(t, kind) {
+  const g = ambienceOutput((Math.random() - 0.5) * 1.4),
     r = Math.random,
     V = o => synthVoice(g, o);
   g.gain.value = 0.5 + r() * 0.5;
@@ -1856,8 +1856,8 @@ function ambBird(t, kind) {
   }
 }
 /* v47: the scrap yard: a sheet of metal shifting, or a slow creak of cable */
-function ambClank(t) {
-  const g = ambOut((Math.random() - 0.5) * 1.6);
+function playScrapClank(t) {
+  const g = ambienceOutput((Math.random() - 0.5) * 1.6);
   g.gain.value = 0.4 + Math.random() * 0.4;
   if (Math.random() < 0.5) {
     synthNoise(g, { t, dur: 0.35, vol: 0.05, bp: 700 + Math.random() * 500, q: 6 });
@@ -1885,8 +1885,8 @@ function ambClank(t) {
       cut: 900,
     });
 }
-function ambOwl(t) {
-  const g = ambOut((Math.random() - 0.5) * 1.2);
+function playOwlCall(t) {
+  const g = ambienceOutput((Math.random() - 0.5) * 1.2);
   [0, 0.42].forEach((d, i) =>
     synthVoice(g, {
       type: 'sine',
@@ -1900,8 +1900,8 @@ function ambOwl(t) {
     })
   );
 }
-function ambTick(t, tock) {
-  const g = ambOut(0.15, true);
+function playClockTick(t, tock) {
+  const g = ambienceOutput(0.15, true);
   synthNoise(g, { t, dur: 0.018, vol: 0.05, bp: tock ? 2600 : 3400, q: 4 });
 }
 /* Settings → Sound: hear each volume */
@@ -1909,20 +1909,28 @@ function testVolume(k) {
   unlockSound();
   setTimeout(() => {
     if (!soundEngine.ctx || soundEngine.ctx.state !== 'running') return;
-    ambInit();
-    AMB.arrive = -9;
-    ambApply();
+    initAmbience();
+    ambience.arrive = -9;
+    applyAmbienceVolume();
     const t = soundEngine.ctx.currentTime + 0.05;
     if (k === 'music') jingle(JINGLES.levelup);
     else if (k === 'sfx') soundEffect('coin');
     else if (k === 'world') {
-      synthNoise(AMB.bus, { t, dur: 1.2, vol: 0.35, bp: 1500, q: 0.9 });
+      synthNoise(ambience.bus, { t, dur: 1.2, vol: 0.35, bp: 1500, q: 0.9 });
       [0, 0.14].forEach(d =>
-        synthVoice(AMB.bus, { type: 'square', freq: 520, t: t + 0.5 + d, dur: 0.09, vol: 0.05, slide: 0.7, cut: 1600 })
+        synthVoice(ambience.bus, {
+          type: 'square',
+          freq: 520,
+          t: t + 0.5 + d,
+          dur: 0.09,
+          vol: 0.05,
+          slide: 0.7,
+          cut: 1600,
+        })
       );
     } else if (k === 'amb') {
-      ambBird(t);
-      ambBird(t + 0.7);
+      playBirdCall(t);
+      playBirdCall(t + 0.7);
     }
   }, 60);
 }
@@ -1930,15 +1938,15 @@ function testVolume(k) {
 function soundEffectAt(name, x, z, o = {}) {
   if (!soundEngine.ctx || soundEngine.ctx.state !== 'running' || typeof walkView === 'undefined' || !walkView.ready)
     return;
-  const w = ambWhere(x, z, 14);
+  const w = soundPlacement(x, z, 14);
   if (!w || w.v < 0.03) return;
   const c = soundEngine.ctx,
     t = c.currentTime + 0.01,
     g = c.createGain();
   g.gain.value = w.v;
   if (name === 'call') {
-    if (t - AMB.lastCall < 3) return;
-    AMB.lastCall = t;
+    if (t - ambience.lastCall < 3) return;
+    ambience.lastCall = t;
   }
   let out = g;
   if (c.createStereoPanner) {
@@ -1947,7 +1955,7 @@ function soundEffectAt(name, x, z, o = {}) {
     g.connect(p);
     out = p;
   }
-  out.connect(AMB.bus || soundEngine.fx);
+  out.connect(ambience.bus || soundEngine.fx);
   const F = g;
   const k = o.k;
   if (name === 'plop') {
