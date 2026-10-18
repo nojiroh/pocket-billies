@@ -83,7 +83,7 @@ expose({
   hatchEgg: [() => hatchEgg, v => (hatchEgg = v)],
   hatchable: [() => hatchable],
   healAll: [() => healAll, v => (healAll = v)],
-  hereStop: [() => hereStop],
+  hereLocation: [() => hereLocation],
   jobSlotCount: [() => jobSlotCount],
   loadSave: [() => loadSave, v => (loadSave = v)],
   makeBilly: [() => makeBilly, v => ((makeBilly = v), provide({ makeBilly }))],
@@ -96,7 +96,7 @@ expose({
   newSaveKeepingPreferences: [() => newSaveKeepingPreferences, v => (newSaveKeepingPreferences = v)],
   newUid: [() => newUid],
   nextBracket: [() => nextBracket],
-  nextStop: [() => nextStop],
+  nextTripNode: [() => nextTripNode],
   pathFrom: [() => pathFrom],
   pickWeighted: [() => pickWeighted, v => (pickWeighted = v)],
   plural: [() => plural],
@@ -106,7 +106,6 @@ expose({
   riderName: [() => riderName],
   riderOf: [() => riderOf, v => ((riderOf = v), provide({ riderOf }))],
   rollDay: [() => rollDay, v => (rollDay = v)],
-  routeDists: [() => routeDists, v => (routeDists = v)],
   save: [() => save, v => setSave(v)],
   saveAge: [() => saveAge, v => (saveAge = v)],
   saveData: [() => saveData, v => setSaveData(v)],
@@ -132,6 +131,7 @@ expose({
   traveling: [() => traveling],
   tripTo: [() => tripTo, v => (tripTo = v)],
   uiState: [() => uiState],
+  walkDistances: [() => walkDistances, v => (walkDistances = v)],
   walkMode: [() => walkMode],
   writeStoredSave: [() => writeStoredSave, v => (writeStoredSave = v)],
   xpFor: [() => xpFor],
@@ -646,17 +646,17 @@ export const riderName = () => {
 export const canEnter = n =>
   (!ROUTE[n].gate || saveData.seats.includes(ROUTE[n].gate)) && (!ROUTE[n].ride || canRide());
 const canLeave = (from, to) => !blockerAt(from) || !!saveData.visited[to];
-export const nextStop = () => (saveData.route.plan.length ? saveData.route.plan[0] : null);
+export const nextTripNode = () => (saveData.route.plan.length ? saveData.route.plan[0] : null);
 /* alpha 0.4.1: how you get about (rules.travel). 'walk': you walk yourself, with the joystick, the d-pad or a tap, from
    place to place across their edges, like a classic RPG; the steps you take in the game count as steps (encounters,
    challenges, your buddy). 'steps': your real steps carry you along the roads (the game until 0.4). */
 export const walkMode = () => ((typeof RULES !== 'undefined' && RULES.travel) || 'walk') === 'walk';
 provide({ walkMode }); /* to-module */
-const traveling = () => !walkMode() && nextStop() != null && !saveData.route.hold && !gateMsg();
+const traveling = () => !walkMode() && nextTripNode() != null && !saveData.route.hold && !gateMsg();
 /* why travel can't continue right now (null when it can, or when you're staying) */
 export function gateMsg() {
   const node = saveData.route.node,
-    nx = nextStop();
+    nx = nextTripNode();
   if (nx == null) return null;
   if (saveData.route.prog === 0 && !canLeave(node, nx)) {
     const bl = blockerAt(node);
@@ -666,7 +666,7 @@ export function gateMsg() {
   return null;
 }
 /* shortest walk (in steps) between stops, entering only stops you may enter; returns {d,prev} */
-function routeDists(from) {
+function walkDistances(from) {
   const N = ROUTE.length,
     d = Array(N).fill(Infinity),
     prev = Array(N).fill(-1),
@@ -698,16 +698,16 @@ const pathFrom = (prev, to) => {
 export function tripTo(j) {
   const r = saveData.route,
     node = r.node,
-    nx = nextStop();
+    nx = nextTripNode();
   if (nx == null || r.prog === 0) {
     if (j === node && nx == null) return { steps: 0, plan: [], back: false };
-    const D = routeDists(node);
+    const D = walkDistances(node);
     if (D.d[j] === Infinity) return null;
     return { steps: D.d[j], plan: pathFrom(D.prev, j), back: false };
   }
   const c = linkCost(node, nx),
-    A = routeDists(nx),
-    Bk = routeDists(node),
+    A = walkDistances(nx),
+    Bk = walkDistances(node),
     fwd = c - r.prog + A.d[j],
     back = r.prog + Bk.d[j];
   if (fwd === Infinity && back === Infinity) return null;
@@ -719,8 +719,8 @@ export function setTrip(j) {
   const t = tripTo(j);
   if (!t) return false;
   const r = saveData.route;
-  if (t.back && nextStop() != null) {
-    const nx = nextStop(),
+  if (t.back && nextTripNode() != null) {
+    const nx = nextTripNode(),
       c = linkCost(r.node, nx);
     r.node = nx;
     r.prog = c - r.prog;
@@ -747,12 +747,12 @@ export function resumeTrip() {
   save();
 }
 /* encounters come from where you're headed while you walk, otherwise from where you are */
-export const hereStop = () => {
-  const nx = nextStop();
+export const hereLocation = () => {
+  const nx = nextTripNode();
   return ROUTE[nx != null && saveData.route.prog > 0 && !saveData.route.hold ? nx : saveData.route.node];
 };
 export function areaPool() {
-  return POOLS[hereStop().pool] || POOLS[Object.keys(POOLS)[0]];
+  return POOLS[hereLocation().pool] || POOLS[Object.keys(POOLS)[0]];
 }
 export function spawn(gentle, force) {
   const P = areaPool();

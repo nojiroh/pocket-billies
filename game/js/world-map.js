@@ -7,7 +7,7 @@ import { expose } from './test-globals.js';
 import { flyDraw, flyTick, paintMapCard, provide, toast } from './hooks.js';
 import { $, clamp } from './util.js';
 import { FUTURE, LINKS, ROUTE, linkCost } from './game-data.js';
-import { canEnter, escapeHtml, nextStop, reducedMotion, saveData, uiState } from './game-state.js';
+import { canEnter, escapeHtml, nextTripNode, reducedMotion, saveData, uiState } from './game-state.js';
 import { frameCount, frameStop, frameTask, userFps } from './frame-scheduler.js';
 import { artPixels, bayerThreshold, makeSeededRandom, mixRgb, packPixel, worldMapStamp } from './art.js';
 import { owFrames } from './person-art.js';
@@ -142,7 +142,7 @@ export function roadPosition(a, b, f) {
 }
 export function worldMapPlayerPosition() {
   const r = saveData.route,
-    nx = nextStop();
+    nx = nextTripNode();
   if (nx == null || !r.prog) return LOCATION_VECTORS[r.node];
   return roadPosition(r.node, nx, clamp(r.prog / linkCost(r.node, nx), 0, 1));
 }

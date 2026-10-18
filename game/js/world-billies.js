@@ -13,7 +13,7 @@ import { expose } from './test-globals.js';
 import { areaKey, provide, sceneIdAt, sfx } from './hooks.js';
 import { clamp } from './util.js';
 import { SP, STATUSN, TRAINERS, rivalSp, trainersAt } from './game-data.js';
-import { billyName, findBilly, maxHp, nextStop, save, saveData, uiState } from './game-state.js';
+import { billyName, findBilly, maxHp, nextTripNode, save, saveData, uiState } from './game-state.js';
 import { makeCanvas } from './art.js';
 import { RIG_BACK_VIEW, drawRig, rigFrame, rigParts, rigPreload } from './skeleton-rig.js';
 import { battleStagePrepare } from './battle-stage.js';
@@ -534,10 +534,10 @@ setInterval(() => {
       !saveData.started ||
       !saveData.route ||
       !(saveData.route.prog > 0) ||
-      typeof nextStop !== 'function'
+      typeof nextTripNode !== 'function'
     )
       return;
-    const nx = nextStop();
+    const nx = nextTripNode();
     if (nx == null) return;
     const id = sceneIdAt(nx);
     if (!id || mapsPreparedAhead.has(id) || (typeof walkView !== 'undefined' && walkView.id === id)) return;

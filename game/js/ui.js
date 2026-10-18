@@ -68,7 +68,7 @@ import {
   moveSlotCount,
   newSaveKeepingPreferences,
   nextBracket,
-  nextStop,
+  nextTripNode,
   plural,
   reducedMotion,
   resumeTrip,
@@ -856,7 +856,7 @@ function hereCard() {
   const node = saveData.route.node,
     here = ROUTE[node],
     st = tripStatus(),
-    nx = nextStop();
+    nx = nextTripNode();
   let prog = '';
   if (st.k === 'go' || st.k === 'hold') {
     const c = linkCost(node, nx),
@@ -942,7 +942,7 @@ function walkHero() {
     here = ROUTE[node],
     q = saveData.queue,
     st = tripStatus(),
-    nx = nextStop();
+    nx = nextTripNode();
   let next = '';
   if (st.k === 'go')
     next = `<div class="wh-next"><span>${escapeHtml(st.t)}</span><span class="tnum">${formatNumber(st.left)} steps</span>${bar(saveData.route.prog / linkCost(node, nx), 'trailbar live')}</div>`;
@@ -1308,7 +1308,7 @@ function walkState() {
   }
   const r = saveData.route,
     node = r.node,
-    nx = walkMode() ? null : nextStop(),
+    nx = walkMode() ? null : nextTripNode(),
     c = nx != null ? linkCost(node, nx) : 0,
     f = nx != null && c ? clamp(r.prog / c, 0, 1) : 0;
   let v; /* alpha 0.4.1: walking yourself, the view is always the place you're in */
@@ -1388,7 +1388,7 @@ function walkState() {
   const sc = mapById(v.id) || {},
     ex = sceneExits(v.node),
     bl = blockerAt(v.node),
-    dest = v.node === node ? (walkMode() ? (saveData.route.plan[0] ?? null) : nextStop()) : null;
+    dest = v.node === node ? (walkMode() ? (saveData.route.plan[0] ?? null) : nextTripNode()) : null;
   v.exits = ADJ[v.node]
     .map(e => ({
       i: ex[e.to],
@@ -2812,7 +2812,7 @@ document.addEventListener('click', ev => {
       break;
     case 'turnback': {
       const r = saveData.route,
-        nx = nextStop();
+        nx = nextTripNode();
       if (nx != null && r.prog > 0) {
         const c = linkCost(r.node, nx);
         r.plan = [r.node];

@@ -54,7 +54,7 @@ import {
   formatNumber,
   gainXp,
   healAll,
-  hereStop,
+  hereLocation,
   makeBilly,
   maxHp,
   pickWeighted,
@@ -978,7 +978,7 @@ export function startTrainer(id, o = {}) {
   openBattle();
 }
 export function areaKey() {
-  return hereStop().area;
+  return hereLocation().area;
 }
 /* one turn. plan: what each of your fighters does ({who,k:'move',mid,tk} | {who,k:'switch',i} | {who,k:'item',item,uid})
    or a single {k:'run'}. An older single action ({k:'move',mid}) is your first fighter's. */

@@ -16,7 +16,7 @@ import {
   canEnter,
   escapeHtml,
   formatNumber,
-  nextStop,
+  nextTripNode,
   reducedMotion,
   saveData,
   tripTo,
@@ -852,7 +852,7 @@ function worldMapGlOverlay(t) {
   if (typeof sel === 'number' && sel !== r.node && sel !== (r.plan.length ? r.plan[r.plan.length - 1] : null)) {
     const tr = tripTo(sel);
     if (tr && tr.plan.length) {
-      const from = nextStop() != null && r.prog > 0 ? (tr.back ? r.node : nextStop()) : r.node;
+      const from = nextTripNode() != null && r.prog > 0 ? (tr.back ? r.node : nextTripNode()) : r.node;
       const seq = [r.prog > 0 && !tr.back ? r.node : from, ...tr.plan.filter((x, i) => !(i === 0 && x === from))];
       worldMapGlLine(
         c,
