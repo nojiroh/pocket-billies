@@ -1,53 +1,57 @@
-# Roadmap
+# Roadmap (what is left)
 
-Do the phases in order. Each phase is one session (or a few for the big ones). Every phase follows docs/TESTING.md (phase 13): where its tests go and what must pass before it ends. Work-time estimates are rough guesses of Claude's working time, not calendar time, and exclude my testing. The vision is in docs/VISION.md.
+Updated 2026-10-19. Only remaining work is listed. What is done lives in docs/HANDOFF.md and the phase files; the
+previous full roadmap is in git history. Every phase follows docs/TESTING.md. Times are rough guesses of Claude's
+working time, not calendar time, and exclude my testing. The vision is in docs/VISION.md.
 
-| # | File | Goal | Rough work time | Depends on |
-|---|------|------|-----------------|------------|
-| 00 | 00-finish-current-work | Stable checkpoint, tagged `baseline` | unknown | none |
-| 01 | 01-baseline-and-bug-fixes | Tests green, duplicates fixed, CI | 1-2 h | 00 |
-| 02 | 02-security | Firestore rules, keys, token, innerHTML, saveVersion | 2-4 h | 01 |
-| 03 | 03-fresh-base-and-scope-reset | Legacy preserved, version 0.1.0 alpha, keep/rewrite/delete list, deletions | 4-8 h | 01 |
-| 04 | 04-modernize-codebase | Vite, ESLint, modules, data split, TypeScript, README | 12-25 h | 03 |
-| 05 | 05-internal-renaming | Clean names for code, data, concepts | 3-6 h | 04 |
-| 06 | 06-ui-structure | RPG UI: one module per screen, safe rendering, dialogue box, tokens | 10-20 h | 04, 05 |
-| 07 | 07-portraits | Layered portraits: animated eyes and mouth, head moves a little | 8-14 h | 06 |
-| 08 | 08-classic-movement-seamless-maps-rooms | Part A: remove step tracking. Part B: seamless maps and rooms | 14-28 h | 03, 04, 05 |
-| 09 | 09-props-and-terrain | Terrain textures, low-poly 32 px/m props, variants, dedupe | 15-30 h | 04, 05 |
-| 10 | 10-world-map-bowl | New 3D bowl world map, clouds, simplified terrain, new layout | 15-30 h | 05, 08, 09 |
-| 11 | 11-opening-sequence | Cyberpunk city, flying cars, portal, falling, arrival | 6-12 h | 07, 09 |
-| 12 | 12-ranch | Customizable ranch in the starting town | 10-20 h | 08, 09 |
-| 13 | 13-testing-and-debugging | Fast tests (fixtures, tiers, parallel), unit tests, simulations, lazy debug, error reports | 6-10 h | 04 |
-| 14 | 14-studio | Studio performance, polish and new editors | 14-28 h | 04, 05, 06, 08, 10 |
-| 15 | 15-game-design-and-story | Design doc, story bible, organization, tax mechanics | 3-5 h doc; rest open | any (do before 16, 17) |
-| 16 | 16-billies-monster-system | Slimmed roster, parts, breeding, abominations, encounters | 6-12 h prototype; 20-40 h full | 04, 05, 13, 15 |
-| 17 | 17-robots | Medabot-inspired build-your-own robots and battles | 8-15 h prototype; 25-45 h full | 09, 13, 15 |
-| 18 | 18-friend-trading-and-battles | Async friend battles and atomic trades (Billies, robots, parts) | 10-20 h | 02, 16, 17 |
+**Done:** 00-05 (stable base, security, fresh base 0.1.0 alpha, Vite/ESLint/modules/data split/TypeScript, renaming).
+**Partly done:** 06 (06-1, 06-2, 06-2b, 06-3), 08 (08a-1), 09 (batch 1), 13 (fast check, fixtures, Node unit tests,
+logic in Node, robot sim, edit hooks, graphics test and bench), 16 (prototype part 1), 17 (prototype built).
+**Not started:** 07, 10, 11, 12, 14, 15, 18.
 
-Rough total: about 190-370 hours at a careful, gated pace (plan first, approvals, tests, tags). These are guesses, not measurements, and are probably too high: the legacy game was built in about six days (file dates run 2026-10-10 to 2026-10-15) with roughly 50 releases. Treat the numbers as upper bounds and recalibrate after phases 01 and 03 using real usage. Phases 00-05 give a stable, modern, fresh base. Look at the game on my phone before starting phase 06.
+## Order: Billies and robots first
 
-## What "remove the walking" means
-It means the FITNESS STEP TRACKING (real-world steps driving travel, hatching and pace) is removed. In-game walking with the joystick, the seamless maps and the rooms stay. That is phase 08 (Part A removes steps, Part B improves maps and rooms).
+| Step | Phase | What is left | Rough work time | Needs |
+|------|-------|--------------|-----------------|-------|
+| 1 | 16 prototype | Starter split by body size (L heavy, S light, M you pick); the 7 passives, quirks and Prime moves; one breed function and one abomination. Then stop and show me | 4-8 h | - |
+| 2 | 17 prototype review | I play it (debug menu: robot kit, Tinker Rho); answer the "Ask me before" list; agree the sim bounds; Hazel's tips say "Billies" for robots | 1-2 h | - |
+| 3 | 15 design and story | Design doc (core loop, progression, tax/market mechanics central), story bible, the organization, first 30 minutes, de-personalise parodies. Short doc only; it steers the full 16 and 17 builds | 3-5 h | - |
+| 4 | 13b sims and checks | Breeding simulation within agreed bounds (must exist before 16 full); replace the old roster-count steps (v35, v38, v39/v40) and the Studio round trip that name legacy species | 3-5 h | 1 |
+| 5 | 08a-2, 08a-3 | Remove the remaining step mechanics (per-map encounter stock, prize money, buddy XP, Build/Hype split choice, eggs by metres, jobs, addSteps, `rules.steps`, SAVE_VERSION 3), then step widgets, text, Studio labels, run button, full check and a new baseline | 8-14 h | - |
+| 6 | 16 full | 30-40 species from old sheets and the part library; abominations; encounters with varied parts; trainers and areas past Fizzwell off the legacy stand-ins; full Studio section | 20-40 h | 3, 4, 5 |
+| 7 | 17 full | First robot and parts in the game (sourcing, chests, trainers, maybe wild robots), the workshop's place, crafting, paint, loadouts, 3D assembly and the art socket standard, robots as walking buddy | 25-45 h | 2, 3 |
+| 8 | 06-4 | Guide, Trainer card, Settings, shops, dressing room, friends; Studio gallery; delete emptied CSS and the hidden classic HUD (`paintBoxes`, `.hcard`); accessibility pass; tag `phase-06-done` | 5-10 h | - |
+| 9 | 07 portraits | Decided: 64 px art, head moves freely (not locked to the pixel grid) while the body stays still, editable in the Studio. Left: audit the old system, layered renderer and tags, shared face kit, Studio portrait editor, replace and delete the old system. The dialogue box's 96 px slot and `talkBox.onType` hook exist | 8-14 h | 6 assets from me |
+| 10 | 09 props and terrain | My verdict on batch 1 (and PR #31, the cottage); swap new props into Copperleaf, Hedgerow Lane, Tallgrass Meadow; flat-vs-model list; terrain library; variants and dedupe; compact mesh pipeline; instancing and LOD; delete extrusion/volumetric code | 15-30 h | - |
+| 11 | 08b maps and rooms | Typed links and doors, seam validations, edge prefetch, rooms in their own space, room templates, Studio link editing; tag `phase-08-done` | 10-20 h | 5 |
+| 12 | 12 ranch | Customizable ranch in the starting town; breeding (16) and maybe the workshop (17) live here | 10-20 h | 6, 9 |
+| 13 | 10 world map bowl | 3D bowl map, clouds, simplified terrain, new layout | 15-30 h | 11, 10 |
+| 14 | 11 opening sequence | Cyberpunk city, portal, fall, arrival, leading into the Hazel opening built in 06-2b | 6-12 h | 3, 9, 10 |
+| 15 | 13c rest of testing | Lazy-load debug, self-test and debug-log scripts; opt-in error reports; split check-quick.py; screenshot tolerances (no quick baseline exists yet); ready-event waits instead of sleeps; null renderer; parallel end-to-end; portrait tests; speed budget report; tag `phase-13-done` | 6-10 h | - |
+| 16 | 14 Studio | Studio performance and polish (new editors are built in their own phases) | 6-12 h | - |
+| 17 | 18 friend trading and battles | Async friend battles, atomic trades of Billies, robots and parts | 10-20 h | 6, 7 |
 
-## Where the old brief went
-Old 1 -> 01, old 2 -> 02, old 3 -> 04, old 4 -> 05, old 5 (seamless maps and rooms) -> 08 Part B, old 5B -> 06, old 5C -> 09, old 6 -> 13, old 7 -> 14, old 8 -> 15, old 9 -> 16, old 10 -> 18. New: 03, 07, 10, 11, 12, 17, and 08 Part A.
+Rough total left: about 155-300 hours, probably high (the past phases ran well under their guesses).
 
-## If the scope is too big
-Priority order: 01, 02, 03, the cheap parts of 04 (.gitignore, CI, README, tooling), the 04 data split, 05, 08, 07, 10, 11, 12, the 13 unit tests, then the 17 prototype and the 16 prototype. 06, 09 and 14 grow as needed. 15 happens early because the story and mechanics drive everything else. 18 comes last.
+## Housekeeping
+- Tags: only `Baseline` is on GitHub. `phase-04-done` and `phase-05-done` exist only locally in an old session; push
+  tags from your machine (Claude's tag pushes are refused).
+- Open PRs: #31 (cottage, step 10); #11 (old phase order, replaced by this file: close it); #5 and #1 (stale).
+- Many old `ccr-*` and merged branches on GitHub can be deleted.
+- Your devices: run the graphics bench and Diagnostics on phone and PC when a step asks for it.
 
-## Questions I want to be asked (do not decide these alone)
-- Version scheme after 0.1.0 alpha and the single game name (03).
-- The keep / rewrite / delete list (03).
-- Lite mode: keep or remove (03).
-- Which UI rendering approach to adopt (06).
-- Portrait pixel size and how the face kit is made (07).
-- What replaces each step-based mechanic: travel cost, encounters, egg hatching, pace, step-based unlocks and costs (08 Part A).
-- Maps with several neighbours per side, or one exit per neighbour; rooms as `kind: room` maps or a separate type (08 Part B).
-- Which props stay flat on purpose (09).
-- Bowl layout, camera limits, central light, travel animation (10).
-- When character creation happens in the opening (11).
-- Ranch editing UI and whether the robot workshop lives at the ranch (12).
-- The organization's name, goals and how often it appears (15).
-- Breeding mode: deliberate, partly random, or both (16).
-- Robots: decided 2026-10-18 (same battle system, mixed teams, body HP + breakable parts; see 17). Still open: the gem's story role, wild robots, the sim bounds (17).
-- Live real-time friend battles (18).
+## Open questions (do not decide these alone)
+- Billies (16): names of the 4 new lines; does gear count as clothing; S/M/L or add XL; weight effects and how weight
+  shows; Prime bonus; parts through evolution; can parts break in battle; 4 move slots; tone of passives and quirks;
+  final art for the new lines; bird and fish column names; breeding mode (deliberate, random or both).
+- Robots (17): part HP ratio, weight curve, leg-break penalty, sim bounds; the gem's story role; wild robots; how
+  the first robot is found; one move per part or a choice; where the workshop lives.
+- Steps (08a): anything still open in docs/phases/08a-plan.md; trainers' block texts (shown nowhere now).
+- Maps (08b): several neighbours per side or one exit each; rooms as `kind: room` maps or a separate type.
+- Props (09): which props stay flat; approval of each batch.
+- World map (10): bowl layout, camera limits, central light, travel animation.
+- Opening (11): when character creation happens.
+- Ranch (12): editing UI; robot workshop at the ranch or not.
+- Story (15): the organization's name, goals and prominence; the cyberpunk surface / solarpunk interior contrast;
+  every mechanic change.
+- Friends (18): live real-time friend battles.
