@@ -1523,10 +1523,11 @@ function diagTimersOn() {
   for (const [grp, names] of Object.entries(DIAG_PASSES)) {
     T.cpu[grp] = 0;
     for (const n of names) {
-      const o = window[n];
+      // phase 05: through the debug log's view of the modules (window has them only with the test globals on)
+      const o = GAME[n];
       if (typeof o !== 'function') continue;
       T.orig[n] = o;
-      window[n] = function (...a) {
+      GAME[n] = function (...a) {
         const t0 = performance.now();
         let q = null;
         if (T.ext && !T.active) {
@@ -1554,7 +1555,7 @@ function diagTimersOn() {
   return T;
 }
 async function diagTimersOff(T) {
-  for (const [n, o] of Object.entries(T.orig)) window[n] = o;
+  for (const [n, o] of Object.entries(T.orig)) GAME[n] = o;
   const frames = Math.max(1, (typeof DGL !== 'undefined' ? DGL.frames : 0) - T.f0),
     cpu = {};
   for (const [k, v] of Object.entries(T.cpu)) if (v > 0) cpu[k] = Math.round((v / frames) * 100) / 100;
