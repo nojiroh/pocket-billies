@@ -54,7 +54,7 @@ def wait_phase(pg, want=('choose',), tries=120):
         if ph in want:
             return ph
         if ph == 'playing':
-            pg.evaluate('tapMsg()')
+            pg.evaluate('tapMessage()')
         time.sleep(.15)
     return pg.evaluate('activeBattle?activeBattle.phase:"none"')
 

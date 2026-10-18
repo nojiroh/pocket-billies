@@ -494,7 +494,7 @@ def wait_phase(pg, want=('choose',), sec=60):
     while time.time() < end:
         ph = pg.evaluate('activeBattle?activeBattle.phase:"none"')
         if ph in want: return ph
-        if ph == 'playing': pg.evaluate('tapMsg()')
+        if ph == 'playing': pg.evaluate('tapMessage()')
         time.sleep(.15)
     return pg.evaluate('activeBattle?activeBattle.phase:"none"')
 
@@ -942,7 +942,7 @@ def desktop_steps(b, base, R):
         if not pg.evaluate("typeof liveActors==='function'&&typeof worldBillyItem==='function'"): return 'not in this build'
         out = []
         pg.evaluate("saveData.team.forEach(m=>{m.hp=maxHp(m);m.status=null;m.lvl=Math.max(m.lvl,12)});while(saveData.team.filter(m=>m.job==null).length<3)saveData.team.push(makeBilly(DEX_ORDER[(saveData.team.length*5+3)%DEX_ORDER.length],10));saveData.team.forEach(m=>m.hp=maxHp(m));0")
-        tap = "activeBattle&&activeBattle.phase==='playing'&&tapMsg()"
+        tap = "activeBattle&&activeBattle.phase==='playing'&&tapMessage()"
         for kind in ('double', 'alpha'):
             if kind == 'double':
                 tid = pg.evaluate("Object.keys(TRAINERS).find(k=>TRAINERS[k].team.length>=2)||''")
@@ -967,9 +967,9 @@ def desktop_steps(b, base, R):
             hit_two = sum(1 for l in lines if ' used ' in l)
             out.append(f"{kind}: {r['mine']} vs {r['theirs']}, {r['plates']} nameplates, {picks[0]} picks ({picks[1]} aimed), {hit_two} moves in the turn" + (f", Alpha {r['big']}x size" if kind == 'alpha' else ''))
             if kind == 'alpha':
-                pg.evaluate("(async()=>{for(let i=0;i<20&&activeBattle&&activeBattle.phase==='switch';i++){const b=document.querySelector('#acts [data-a=bswitch]:not([disabled])');if(b)b.click();await new Promise(r=>setTimeout(r,200));for(let j=0;j<40&&activeBattle&&activeBattle.phase==='playing';j++){tapMsg();await new Promise(r=>setTimeout(r,150))}}})()")
+                pg.evaluate("(async()=>{for(let i=0;i<20&&activeBattle&&activeBattle.phase==='switch';i++){const b=document.querySelector('#acts [data-a=bswitch]:not([disabled])');if(b)b.click();await new Promise(r=>setTimeout(r,200));for(let j=0;j<40&&activeBattle&&activeBattle.phase==='playing';j++){tapMessage();await new Promise(r=>setTimeout(r,150))}}})()")
                 c = pg.evaluate("""(async()=>{if(!activeBattle||activeBattle.phase!=='choose')return 'catching skipped: the battle '+(activeBattle?'is at '+activeBattle.phase:'ended');uiState.dbgCatch=true;activeBattle.coin=Object.keys(COINS).find(k=>saveData.coins[k]>0)||Object.keys(COINS)[0];saveData.coins[activeBattle.coin]=(saveData.coins[activeBattle.coin]||0)+1;activeBattle.phase='aim';paintActions();showAim();doThrow(false);
-                  for(let i=0;i<120&&activeBattle&&activeBattle.phase!=='end';i++){if(activeBattle.phase==='playing')tapMsg();await new Promise(r=>setTimeout(r,250))}uiState.dbgCatch=false;const m=saveData.team.concat(saveData.box).find(m=>m.alpha);return m?`caught: Alpha flag kept, boss boost dropped (${m.hp}/${maxHp(m)} HP)`:'not caught'})()""")
+                  for(let i=0;i<120&&activeBattle&&activeBattle.phase!=='end';i++){if(activeBattle.phase==='playing')tapMessage();await new Promise(r=>setTimeout(r,250))}uiState.dbgCatch=false;const m=saveData.team.concat(saveData.box).find(m=>m.alpha);return m?`caught: Alpha flag kept, boss boost dropped (${m.hp}/${maxHp(m)} HP)`:'not caught'})()""")
                 out.append(c)
             pg.evaluate("if(activeBattle){activeBattle.over=activeBattle.over||'ran';activeBattle.phase='end';endBattle()};0"); time.sleep(2.5); pg.evaluate("uiState.modal=null;uiState.mq=[];renderOv();0")
         # the world: billionaires waiting in the grass (one an Alpha; v46: each keeps its spot), the buddy, a trainer's companion
@@ -1010,7 +1010,7 @@ def desktop_steps(b, base, R):
         out.append('walk cycles move for ' + ', '.join(sorted(w)))
         # an Alpha brought below half: the shield phase
         pg.evaluate("(()=>{const sp=Object.keys(SPECIES).find(k=>SPECIES[k].stage===0);const q={id:'cq-a34',sp,lvl:6,gold:false,no:1,alpha:true};saveData.queue.push(q);saveData.team.forEach(m=>{m.hp=maxHp(m);m.status=null});startWild(q)})()")
-        tap = "activeBattle&&activeBattle.phase==='playing'&&tapMsg()"
+        tap = "activeBattle&&activeBattle.phase==='playing'&&tapMessage()"
         if not until(pg, "activeBattle&&activeBattle.phase==='choose'", 90, tap): raise Exception('Alpha battle never reached the move menu')
         a = json.loads(pg.evaluate("(()=>{const m=fighter(1);m.hp=Math.floor(maxHp(m)*.55);activeBattle.events=[];alphaPhase(1);m.hp=Math.floor(maxHp(m)*.45);alphaPhase(1);const tb=document.querySelector('#plates .turnbar');paintPlates(allSnapshots());return JSON.stringify({ph2:!!m.boss.ph2,shield:fieldState(1).shield,lines:activeBattle.events.map(e=>e.t),bar:!!document.querySelector('#plates .turnbar')})})()"))
         if not a['ph2'] or a['shield'] < 1: raise Exception(f'Alpha shield phase didn’t start: {a}')
@@ -1100,7 +1100,7 @@ def desktop_steps(b, base, R):
         out.append(f"split at 32: Build → Marsox, Hype → Memeox (“{e['hint'][:60]}…”)")
         # a battle with the new starter on the 3D stage: the player's rig buffer has pixels
         pg.evaluate("saveData.team.unshift(makeBilly('gates0',14));saveData.team[0].hp=maxHp(saveData.team[0]);saveData.preferences.battleStage='scene';const q={id:'cq36',sp:'bezos1',lvl:12,gold:false,no:1};saveData.queue.push(q);startWild(q);0")
-        if not until(pg, "activeBattle&&activeBattle.phase==='choose'", 90, "activeBattle&&activeBattle.phase==='playing'&&tapMsg()"): raise Exception('the starter battle never reached the move menu')
+        if not until(pg, "activeBattle&&activeBattle.phase==='choose'", 90, "activeBattle&&activeBattle.phase==='playing'&&tapMessage()"): raise Exception('the starter battle never reached the move menu')
         until(pg, "(()=>{const a=actorBuffer(0),b=actorBuffer(1);return !!(a&&b)})()", 15); time.sleep(2)
         px = json.loads(pg.evaluate("(()=>{const o={};for(const i of [0,1]){const Bf=actorBuffer(i);if(!Bf){o[i]=0;continue}const d=Bf.buf.getContext('2d').getImageData(0,0,Bf.buf.width,Bf.buf.height).data;let n=0;for(let k=3;k<d.length;k+=4)if(d[k]>0)n++;o[i]=n}return JSON.stringify(o)})()"))
         shot(pg, 'v36-starter-battle')

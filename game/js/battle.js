@@ -101,13 +101,12 @@ expose({
   BATTLE_RULES: [() => BATTLE_RULES],
   CATCH_RULES: [() => CATCH_RULES],
   SIDE_ACTORS: [() => SIDE_ACTORS],
-  STG: [() => STG],
-  TKL: [() => TKL],
+  TICKER_LAST: [() => TICKER_LAST],
   actorIndex: [() => actorIndex],
   actorSnapshot: [() => actorSnapshot, v => (actorSnapshot = v)],
   actorTypes: [() => actorTypes],
-  adv: [() => adv, v => (adv = v)],
   afterEvents: [() => afterEvents, v => (afterEvents = v)],
+  afterStageTime: [() => afterStageTime, v => (afterStageTime = v)],
   aiDamage: [() => aiDamage, v => (aiDamage = v)],
   aiScore: [() => aiScore, v => (aiScore = v)],
   allActors: [() => allActors],
@@ -116,7 +115,7 @@ expose({
   applyItem: [() => applyItem, v => (applyItem = v)],
   applyStatStages: [() => applyStatStages, v => (applyStatStages = v)],
   award: [() => award, v => (award = v)],
-  backBtn: [() => backBtn],
+  backButtonHTML: [() => backButtonHTML],
   battleFreeArea: [() => battleFreeArea, v => ((battleFreeArea = v), provide({ battleFreeArea }))],
   battleLayoutChanged: [() => battleLayoutChanged, v => ((battleLayoutChanged = v), provide({ battleLayoutChanged }))],
   battleLeave: [() => battleLeave, v => (battleLeave = v)],
@@ -139,12 +138,12 @@ expose({
   catchRoll: [() => catchRoll, v => (catchRoll = v)],
   checkFaints: [() => checkFaints, v => (checkFaints = v)],
   chooseAI: [() => chooseAI, v => (chooseAI = v)],
-  chooseMsg: [() => chooseMsg, v => (chooseMsg = v)],
+  chooseMessage: [() => chooseMessage, v => (chooseMessage = v)],
   countTo: [() => countTo, v => (countTo = v)],
   doSwitch: [() => doSwitch, v => (doSwitch = v)],
   doThrow: [() => doThrow, v => (doThrow = v)],
-  effLabel: [() => effLabel, v => (effLabel = v)],
   effectiveStat: [() => effectiveStat, v => (effectiveStat = v)],
+  effectivenessLabel: [() => effectivenessLabel, v => (effectivenessLabel = v)],
   endBattle: [() => endBattle, v => setEndBattle(v)],
   endTurn: [() => endTurn, v => (endTurn = v)],
   enemyOnly: [() => enemyOnly, v => (enemyOnly = v)],
@@ -153,11 +152,10 @@ expose({
   fighter: [() => fighter],
   finishThrow: [() => finishThrow, v => (finishThrow = v)],
   foeSide: [() => foeSide],
-  hcard: [() => hcard, v => (hcard = v)],
   hpMini: [() => hpMini, v => (hpMini = v)],
+  hudCardHTML: [() => hudCardHTML, v => (hudCardHTML = v)],
   hudHit: [() => hudHit, v => ((hudHit = v), provide({ hudHit }))],
   hudPop: [() => hudPop, v => ((hudPop = v), provide({ hudPop }))],
-  hudScene: [() => hudScene],
   inflict: [() => inflict, v => (inflict = v)],
   inherit: [() => inherit, v => (inherit = v)],
   isMulti: [() => isMulti],
@@ -167,10 +165,10 @@ expose({
   logLine: [() => logLine, v => (logLine = v)],
   makeAlpha: [() => makeAlpha, v => (makeAlpha = v)],
   movePower: [() => movePower, v => (movePower = v)],
-  msgFace: [() => msgFace, v => (msgFace = v)],
   needsTarget: [() => needsTarget, v => (needsTarget = v)],
   newBattle: [() => newBattle, v => setNewBattle(v)],
   newFieldState: [() => newFieldState],
+  nextEvent: [() => nextEvent, v => (nextEvent = v)],
   openBattle: [() => openBattle, v => setOpenBattle(v)],
   paintActions: [() => paintActions, v => setPaintActions(v)],
   paintBoxes: [() => paintBoxes, v => (paintBoxes = v)],
@@ -181,24 +179,26 @@ expose({
   pickTarget: [() => pickTarget, v => (pickTarget = v)],
   planBack: [() => planBack, v => (planBack = v)],
   planNext: [() => planNext, v => (planNext = v)],
-  plateEl: [() => plateEl, v => (plateEl = v)],
+  plateElement: [() => plateElement, v => (plateElement = v)],
   platesTick: [() => platesTick, v => ((platesTick = v), provide({ platesTick }))],
   play: [() => play, v => (play = v)],
   refreshLastSnapshot: [() => refreshLastSnapshot, v => (refreshLastSnapshot = v)],
   retarget: [() => retarget, v => (retarget = v)],
   runTurn: [() => runTurn, v => (runTurn = v)],
-  scAfter: [() => scAfter, v => (scAfter = v)],
+  scenePlatesOn: [() => scenePlatesOn],
   setEndBattle: [() => setEndBattle, v => (setEndBattle = v)],
   setOpenBattle: [() => setOpenBattle, v => (setOpenBattle = v)],
   shockName: [() => shockName],
   showAim: [() => showAim, v => (showAim = v)],
+  showEvent: [() => showEvent, v => (showEvent = v)],
+  showSpeakerFace: [() => showSpeakerFace, v => (showSpeakerFace = v)],
   snapSide: [() => snapSide],
   stageTap: [() => stageTap, v => (stageTap = v)],
   startTrainer: [() => startTrainer, v => (startTrainer = v)],
   startWild: [() => startWild, v => ((startWild = v), provide({ startWild }))],
-  stepEv: [() => stepEv, v => (stepEv = v)],
+  statShortName: [() => statShortName],
   stopTimers: [() => stopTimers, v => (stopTimers = v)],
-  tapMsg: [() => tapMsg, v => (tapMsg = v)],
+  tapMessage: [() => tapMessage, v => (tapMessage = v)],
   teamNeedsHp: [() => teamNeedsHp],
   teamPick: [() => teamPick, v => (teamPick = v)],
   tickerUpdate: [() => tickerUpdate, v => (tickerUpdate = v)],
@@ -1189,7 +1189,7 @@ function battleMode() {
     h = innerHeight;
   return w > h * 1.05 && w >= 600 ? 'landscape' : 'portrait';
 }
-function hcard(i) {
+function hudCardHTML(i) {
   return `<div class="hc-row"><b class="hc-n" id="n${i}"></b><span class="hc-gp" id="gp${i}" hidden>${uiIconHTML('spark', 12)}</span><span class="hc-lv tnum" id="l${i}"></span></div>
  <div class="hc-row2"><span class="hc-t" id="t${i}"></span><span class="hc-st" id="st${i}"></span><span class="hc-sg" id="sg${i}"></span></div>
  <div class="hpbar"><span class="hpl">HP</span><div class="hpt"><i class="ghost" id="g${i}"></i><i class="fill" id="h${i}"></i></div></div>
@@ -1205,10 +1205,10 @@ export function battleShell() {
   <div class="bplates" id="plates"></div>
  </div>
  <div class="ticker" aria-hidden="true"><div class="tk-in" id="tk"></div></div>
- <section class="hcard glassy foe" id="hb1" aria-label="Opponent">${hcard(1)}</section>
+ <section class="hcard glassy foe" id="hb1" aria-label="Opponent">${hudCardHTML(1)}</section>
  <div class="mk glassy" id="mk"></div>
  <div class="dock glassy" id="dock">
-  <section class="hcard glassy me" id="hb0" aria-label="Your Billie">${hcard(0)}</section>
+  <section class="hcard glassy me" id="hb0" aria-label="Your Billie">${hudCardHTML(0)}</section>
   <button class="bmsg" id="msg" data-a="adv" aria-live="polite"><span id="msgT"></span><i class="more"></i></button>
   <div class="cmd" id="acts"></div>
  </div>
@@ -1404,7 +1404,7 @@ export function play() {
   activeBattle.phase = 'playing';
   activeBattle.ev = 0;
   paintActions();
-  stepEv();
+  showEvent();
 }
 /* while a turn plays out, the command area shows the turn so far, so nothing is missed */
 function logLine(i) {
@@ -1425,30 +1425,30 @@ function logLine(i) {
       ? `<li class="next">${plural(activeBattle.events.length - 1 - i, 'more line')} this turn · tap to skip ahead</li>`
       : '');
 }
-function stepEv() {
+function showEvent() {
   stopTimers();
   if (!activeBattle || !$('#msg')) return;
   if (activeBattle.ev >= activeBattle.events.length) return afterEvents();
   const ev = activeBattle.events[activeBattle.ev];
   logLine(activeBattle.ev);
-  msgFace(ev.face);
+  showSpeakerFace(ev.face);
   const tt = ev.t ? typeText(ev.t) : 0,
     r = ev.an ? battleStagePlay(ev.an, ev) : { dur: 0, hit: 0 };
   if (ev.an && typeof sfxBattle === 'function') sfxBattle(ev.an, r);
   boxAnims(ev);
   const k = 1 / battleStage.speed;
-  scAfter('hpT', r.hit >= 999 ? 0 : r.hit, 0, () => paintBoxes(ev.s, ev.mk, true));
+  afterStageTime('hpT', r.hit >= 999 ? 0 : r.hit, 0, () => paintBoxes(ev.s, ev.mk, true));
   $('#msg').classList.remove('ready');
   uiState.evReady = false;
   /* the next line waits for the animation on the scene's own clock (a slow device draws fewer frames, so it takes
     longer in real time) as well as for the text to finish typing */
-  scAfter('evT', r.dur + 120, tt + 120 * k, () => {
+  afterStageTime('evT', r.dur + 120, tt + 120 * k, () => {
     uiState.evReady = true;
     $('#msg') && $('#msg').classList.add('ready');
-    uiState.evT = setTimeout(adv, (reducedMotion ? 1300 : 820) * k);
+    uiState.evT = setTimeout(nextEvent, (reducedMotion ? 1300 : 820) * k);
   });
 }
-function scAfter(slot, sceneMs, realMs, fn) {
+function afterStageTime(slot, sceneMs, realMs, fn) {
   const t0 = battleStage.t,
     r0 = performance.now();
   const tick = () => {
@@ -1467,13 +1467,13 @@ function scAfter(slot, sceneMs, realMs, fn) {
   };
   uiState[slot] = setTimeout(tick, Math.max(0, Math.min(realMs, sceneMs / battleStage.speed)));
 }
-function adv() {
+function nextEvent() {
   if (!activeBattle || activeBattle.phase !== 'playing') return;
   activeBattle.ev++;
-  stepEv();
+  showEvent();
 }
 /* who is talking: a portrait at the start of the message box */
-function msgFace(f) {
+function showSpeakerFace(f) {
   const m = $('#msg');
   if (!m) return;
   let el = m.querySelector('.msg-face');
@@ -1490,7 +1490,7 @@ function msgFace(f) {
   el.innerHTML = portraitHTML(f.who, 46, f.expr);
   m.classList.add('has-face');
 }
-export function tapMsg() {
+export function tapMessage() {
   if (!activeBattle || activeBattle.phase !== 'playing' || !$('#msg')) return;
   if (uiState.typing) {
     clearInterval(uiState.typeT);
@@ -1498,7 +1498,7 @@ export function tapMsg() {
     $('#msgT').textContent = uiState.typeFull || '';
     return;
   }
-  if (uiState.evReady) adv();
+  if (uiState.evReady) nextEvent();
 }
 function boxShow(i, on) {
   const b = $('#hb' + i);
@@ -1542,7 +1542,7 @@ function countTo(el, to, dur = 600) {
   };
   st();
 }
-const STG = k => (STAT_NAMES[k] || k).slice(0, 3).toUpperCase();
+const statShortName = k => (STAT_NAMES[k] || k).slice(0, 3).toUpperCase();
 function paintSide(i, s, anim) {
   if (!s) return;
   const n = $('#n' + i);
@@ -1554,7 +1554,7 @@ function paintSide(i, s, anim) {
   $('#st' + i).innerHTML = s.hp <= 0 ? '<span class="stb st-down">Fainted</span>' : stBadge(s.st);
   $('#sg' + i).innerHTML = Object.entries(s.stg || {})
     .filter(([k, v]) => v)
-    .map(([k, v]) => `<span class="stg ${v > 0 ? 'up' : 'dn'}">${STG(k)} ${v > 0 ? '+' : ''}${v}</span>`)
+    .map(([k, v]) => `<span class="stg ${v > 0 ? 'up' : 'dn'}">${statShortName(k)} ${v > 0 ? '+' : ''}${v}</span>`)
     .join('');
   const p = Math.max(0, (s.hp / s.max) * 100),
     h = $('#h' + i),
@@ -1619,7 +1619,7 @@ export function paintBoxes(s, mk, anim) {
     m.classList.toggle('on', !!mk);
   }
 }
-const TKL = {};
+const TICKER_LAST = {};
 function tickerUpdate(s, mk) {
   const el = $('#tk');
   if (!el) return;
@@ -1629,9 +1629,9 @@ function tickerUpdate(s, mk) {
     if (!x) return;
     const p = Math.round((Math.max(0, x.hp) / x.max) * 100),
       k = x.uid,
-      prev = TKL[k],
+      prev = TICKER_LAST[k],
       d = prev == null ? 0 : p - prev;
-    TKL[k] = p;
+    TICKER_LAST[k] = p;
     items.push(
       `<span class="tki"><b>${escapeHtml(x.name.toUpperCase())}</b> Lv ${x.lvl} <em class="${d < 0 ? 'dn' : d > 0 ? 'up' : ''}">HP ${p}%</em></span>`
     );
@@ -1711,7 +1711,7 @@ function afterEvents() {
   activeBattle.plan = [];
   activeBattle.cur = liveActors(0)[0];
   activeBattle.phase = 'choose';
-  chooseMsg();
+  chooseMessage();
   paintBoxes(allSnapshots(), activeBattle.market);
   boxShow(0, true);
   boxShow(1, true);
@@ -1720,7 +1720,7 @@ function afterEvents() {
     battleTutor(); /* v47: Hazel's tips in Blake's first battle */
 }
 /* v33: with two or three of yours out, each picks in turn; the one choosing stands in a ring */
-export function chooseMsg() {
+export function chooseMessage() {
   const m = fighter(activeBattle.cur);
   if (!m) return;
   const L = liveActors(0),
@@ -1735,7 +1735,7 @@ export function planNext(p) {
   if (L.length && !activeBattle.plan.some(q => q.k === 'run')) {
     activeBattle.cur = L[0];
     activeBattle.phase = 'choose';
-    chooseMsg();
+    chooseMessage();
     paintActions();
     return;
   }
@@ -1747,7 +1747,7 @@ export function planBack() {
   if (!p) return false;
   activeBattle.cur = p.who;
   activeBattle.phase = 'choose';
-  chooseMsg();
+  chooseMessage();
   paintActions();
   return true;
 }
@@ -1774,7 +1774,7 @@ export function pickTarget(tk) {
   if (typeof battleStageTargets === 'function') battleStageTargets(null);
   planNext({ who: activeBattle.cur, k: 'move', mid: activeBattle.mv, tk });
 }
-function effLabel(mid, tk) {
+function effectivenessLabel(mid, tk) {
   const M = MOVES[mid];
   if (!M.p && !(M.fx && M.fx.vary)) return '';
   const F = tk != null ? [tk] : liveActors(1);
@@ -1821,9 +1821,9 @@ function teamPick(back) {
               : stBadge(m.status)
       );
     })
-    .join('')}</div>${back ? backBtn() : ''}`;
+    .join('')}</div>${back ? backButtonHTML() : ''}`;
 }
-const backBtn = () =>
+const backButtonHTML = () =>
   `<button class="bt back wide" data-a="bback">${uiIconHTML('back', 16)}<b>Back</b><kbd>Esc</kbd></button>`;
 export const itemIcon = (k, size = 30) => {
   const I = ITEMS[k] || {};
@@ -1860,9 +1860,9 @@ export function paintActions() {
           c = TYPE_COLORS[M.t],
           P = M.p ? M.p : M.fx && M.fx.vary ? 'Varies' : 'Status',
           stab = M.t !== 'None' && actorTypes(activeBattle.cur).includes(M.t);
-        return `<button class="mv" style="--tc:${c[0]};--tf:${c[1]}" data-a="bmove" data-m="${id}" data-tip="${escapeHtml(M.d)}"><span class="mv-top"><b>${escapeHtml(M.n)}</b><kbd>${n + 1}</kbd></span><span class="mv-meta"><span class="mv-ty">${M.t === 'None' ? 'Normal' : M.t}${stab ? ' ★' : ''}</span><span class="tnum">${P}${M.p ? ' pow' : ''}${M.p && typeof battleWeatherMult === 'function' ? (battleWeatherMult(M.t) > 1 ? ' ▲' : battleWeatherMult(M.t) < 1 ? ' ▼' : '') : ''}${M.c !== 'X' || M.a < 100 ? ` · ${M.a || 100}%` : ''}</span></span>${effLabel(id)}</button>`;
+        return `<button class="mv" style="--tc:${c[0]};--tf:${c[1]}" data-a="bmove" data-m="${id}" data-tip="${escapeHtml(M.d)}"><span class="mv-top"><b>${escapeHtml(M.n)}</b><kbd>${n + 1}</kbd></span><span class="mv-meta"><span class="mv-ty">${M.t === 'None' ? 'Normal' : M.t}${stab ? ' ★' : ''}</span><span class="tnum">${P}${M.p ? ' pow' : ''}${M.p && typeof battleWeatherMult === 'function' ? (battleWeatherMult(M.t) > 1 ? ' ▲' : battleWeatherMult(M.t) < 1 ? ' ▼' : '') : ''}${M.c !== 'X' || M.a < 100 ? ` · ${M.a || 100}%` : ''}</span></span>${effectivenessLabel(id)}</button>`;
       })
-      .join('')}</div>${backBtn()}`;
+      .join('')}</div>${backButtonHTML()}`;
   } else if (ph === 'target') {
     const mid = activeBattle.mv;
     h = `<div class="plist">${liveActors(1)
@@ -1873,10 +1873,10 @@ export function paintActions() {
           false,
           `data-a="btarget" data-t="${k}"`,
           false,
-          effLabel(mid, k) || (m.boss ? '<em class="alpha">Alpha</em>' : '')
+          effectivenessLabel(mid, k) || (m.boss ? '<em class="alpha">Alpha</em>' : '')
         );
       })
-      .join('')}</div>${backBtn()}`;
+      .join('')}</div>${backButtonHTML()}`;
   } else if (ph === 'coins') {
     h = `<div class="coins">${Object.keys(COINS)
       .map((k, n) => {
@@ -1885,7 +1885,7 @@ export function paintActions() {
           odds = Math.round(catchOdds(k, 1 + CATCH_RULES.ring * 0.5, false) * 100);
         return `<button class="ccard" data-a="bcoin" data-c="${k}" ${have ? '' : 'disabled'}>${coinHTML(k, 34)}<span class="cc-t"><b>${escapeHtml(c.n)}</b><small class="tnum">${c.m === 0 ? 'Guaranteed' : `~${odds}% tax`} · ${have} left</small></span><span class="cc-bar"><i style="width:${c.m === 0 ? 100 : clamp(odds, 2, 100)}%"></i></span></button>`;
       })
-      .join('')}</div>${backBtn()}`;
+      .join('')}</div>${backButtonHTML()}`;
   } else if (ph === 'items') {
     const its = Object.keys(ITEMS).filter(k => saveData.items[k] > 0 && !ITEMS[k].evoItem);
     h = `<div class="plist">${
@@ -1898,10 +1898,10 @@ export function paintActions() {
             })
             .join('')
         : '<p class="note">No items. Buy some at a town shop.</p>'
-    }</div>${backBtn()}`;
+    }</div>${backButtonHTML()}`;
   } else if (ph === 'itemTarget') {
     const it = activeBattle.item;
-    h = `<p class="note">Use ${escapeHtml(ITEMS[it].n)} on:</p><div class="plist">${saveData.team.map(m => billyPickHTML(m, false, `data-a="bitemon" data-u="${m.uid}"`, !canUse(it, m), m.hp <= 0 ? 'Fainted' : stBadge(m.status))).join('')}</div>${backBtn()}`;
+    h = `<p class="note">Use ${escapeHtml(ITEMS[it].n)} on:</p><div class="plist">${saveData.team.map(m => billyPickHTML(m, false, `data-a="bitemon" data-u="${m.uid}"`, !canUse(it, m), m.hp <= 0 ? 'Fainted' : stBadge(m.status))).join('')}</div>${backButtonHTML()}`;
   } else if (ph === 'team') h = teamPick(true);
   else if (ph === 'switch') h = teamPick(false);
   else if (ph === 'aim') {
@@ -2146,9 +2146,9 @@ export function setEndBattle(v) {
    camera, so the battle reads from the picture itself. With two or three a side they replace the corner cards; in a
    one-on-one they do too, unless Settings → Battle HUD is set to the classic cards. Tap a foe's plate (or the foe) to
    aim at it. */
-const hudScene = () =>
+const scenePlatesOn = () =>
   !!activeBattle && (isMulti() || ((saveData.preferences || {}).battleHud || 'scene') !== 'classic');
-function plateEl(k) {
+function plateElement(k) {
   const L = $('#plates');
   if (!L) return null;
   let e = L.querySelector(`.bplate[data-k="${k}"]`);
@@ -2166,7 +2166,7 @@ function plateEl(k) {
 function paintPlates(s, anim) {
   const L = $('#plates');
   if (!L) return;
-  const on = hudScene();
+  const on = scenePlatesOn();
   $('#battle') && $('#battle').classList.toggle('hud-scene', on);
   if (!on) {
     L.innerHTML = '';
@@ -2174,7 +2174,7 @@ function paintPlates(s, anim) {
   }
   for (let k = 0; k < 5; k++) {
     const x = s && s[k],
-      e = x ? plateEl(k) : L.querySelector(`.bplate[data-k="${k}"]`);
+      e = x ? plateElement(k) : L.querySelector(`.bplate[data-k="${k}"]`);
     if (!e) continue;
     if (!x) {
       e.classList.add('gone');

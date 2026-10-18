@@ -69,7 +69,7 @@ import {
   startTrainer,
   startWild,
   stopTimers,
-  tapMsg,
+  tapMessage,
 } from './battle.js';
 import { worldMap } from './world-map.js';
 import {
@@ -697,7 +697,7 @@ async function runFullTest(mode) {
         while (performance.now() < end) {
           if (!activeBattle || (STEST.gen || 0) !== g0) return false;
           if (ph.includes(activeBattle.phase)) return true;
-          if (activeBattle.phase === 'playing') tapMsg();
+          if (activeBattle.phase === 'playing') tapMessage();
           await stSleep(150);
         }
         return false;
@@ -758,7 +758,7 @@ async function runFullTest(mode) {
         while (performance.now() < end) {
           if (!activeBattle || (STEST.gen || 0) !== g0) return false;
           if (ph.includes(activeBattle.phase)) return true;
-          if (activeBattle.phase === 'playing') tapMsg();
+          if (activeBattle.phase === 'playing') tapMessage();
           await stSleep(120);
         }
         return false;
@@ -1122,7 +1122,7 @@ async function runFullTest(mode) {
               while (performance.now() < end) {
                 if (!activeBattle || (STEST.gen || 0) !== g0) return false;
                 if (ph.includes(activeBattle.phase)) return true;
-                if (activeBattle.phase === 'playing') tapMsg();
+                if (activeBattle.phase === 'playing') tapMessage();
                 await stSleep(150);
               }
               return false;

@@ -149,7 +149,7 @@ import {
   battleShell,
   canUse,
   checkFaints,
-  chooseMsg,
+  chooseMessage,
   doSwitch,
   doThrow,
   endBattle,
@@ -165,7 +165,7 @@ import {
   runTurn,
   showAim,
   startWild,
-  tapMsg,
+  tapMessage,
 } from './battle.js';
 import {
   worldMapFit,
@@ -2890,7 +2890,7 @@ document.addEventListener('click', ev => {
       loreBook(d.k);
       break;
     case 'adv':
-      tapMsg();
+      tapMessage();
       break;
     case 'bfight':
       if (activeBattle && activeBattle.phase === 'choose') {
@@ -2933,7 +2933,7 @@ document.addEventListener('click', ev => {
           break;
         }
         activeBattle.phase = activeBattle.phase === 'target' ? 'fight' : 'choose';
-        if (activeBattle.phase === 'choose') chooseMsg();
+        if (activeBattle.phase === 'choose') chooseMessage();
         paintActions();
       }
       break;
@@ -2951,7 +2951,7 @@ document.addEventListener('click', ev => {
         camHome(300);
         battleStageFocus('wide');
         activeBattle.phase = 'choose';
-        chooseMsg();
+        chooseMessage();
         paintActions();
       }
       break;
@@ -3032,7 +3032,7 @@ document.addEventListener('keydown', ev => {
       }
     };
   if (ph === 'playing' && (k === ' ' || k === 'enter')) {
-    tapMsg();
+    tapMessage();
     ev.preventDefault();
     return;
   }
@@ -3071,7 +3071,7 @@ document.addEventListener('keydown', ev => {
     click('#acts [data-a=bback]');
 });
 document.addEventListener('pointerdown', ev => {
-  if (activeBattle && activeBattle.phase === 'playing' && ev.target.closest('.bstage')) tapMsg();
+  if (activeBattle && activeBattle.phase === 'playing' && ev.target.closest('.bstage')) tapMessage();
 });
 document.addEventListener('keydown', ev => {
   if (ev.key === 'Escape' && uiState.modal && !uiState.modal.lock) {
