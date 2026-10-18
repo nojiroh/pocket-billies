@@ -40,7 +40,7 @@ import {
 import { eng } from './engine/settings.js';
 import { smooth01 } from './engine/core.js';
 import { DGL, dglPrepare, dglPrepared } from './walk-view-gl.js';
-import { lifeShift } from './life.js';
+import { lifeShift } from './ambient-life.js';
 import { owShift } from './world-billies.js';
 /* eslint-disable no-func-assign */
 expose({

@@ -54,7 +54,7 @@ import {
 } from './walk-view-gl.js';
 import { BLD, bldDraw, bldItems, setBldDraw, setBldItems } from './buildings.js';
 import { P3D, p3dBuild, p3dDraw, p3dTreeBuild, setP3dBuild, setP3dDraw, setP3dTreeBuild } from './props3d.js';
-import { LIFE, lifeStep, setLifeStep } from './life.js';
+import { LIFE, lifeStep, setLifeStep } from './ambient-life.js';
 import { pwState } from './paint.js';
 import {
   areaKey,
