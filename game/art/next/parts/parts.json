@@ -1,0 +1,885 @@
+{
+ "note": "Placeholder part kit, phase 16. Made by tools/slice-part-kit.py.",
+ "parts": {
+  "cat_head": {
+   "animal": "cat",
+   "kind": "head",
+   "slot": "head",
+   "pivot": [
+    0.5,
+    0.92
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/cat_head.png",
+     "w": 40,
+     "h": 36
+    },
+    "back": {
+     "file": "next/parts/back/cat_head.png",
+     "w": 40,
+     "h": 35
+    }
+   }
+  },
+  "rabbit_head": {
+   "animal": "rabbit",
+   "kind": "head",
+   "slot": "head",
+   "pivot": [
+    0.5,
+    0.92
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/rabbit_head.png",
+     "w": 40,
+     "h": 35
+    },
+    "back": {
+     "file": "next/parts/back/rabbit_head.png",
+     "w": 42,
+     "h": 35
+    }
+   }
+  },
+  "fox_head": {
+   "animal": "fox",
+   "kind": "head",
+   "slot": "head",
+   "pivot": [
+    0.5,
+    0.92
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/fox_head.png",
+     "w": 40,
+     "h": 37
+    },
+    "back": {
+     "file": "next/parts/back/fox_head.png",
+     "w": 41,
+     "h": 36
+    }
+   }
+  },
+  "bear_head": {
+   "animal": "bear",
+   "kind": "head",
+   "slot": "head",
+   "pivot": [
+    0.5,
+    0.92
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/bear_head.png",
+     "w": 41,
+     "h": 35
+    },
+    "back": {
+     "file": "next/parts/back/bear_head.png",
+     "w": 41,
+     "h": 34
+    }
+   }
+  },
+  "bird_head": {
+   "animal": "bird",
+   "kind": "head",
+   "slot": "head",
+   "pivot": [
+    0.5,
+    0.92
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/bird_head.png",
+     "w": 40,
+     "h": 36
+    },
+    "back": {
+     "file": "next/parts/back/bird_head.png",
+     "w": 40,
+     "h": 37
+    }
+   }
+  },
+  "reptile_head": {
+   "animal": "reptile",
+   "kind": "head",
+   "slot": "head",
+   "pivot": [
+    0.5,
+    0.92
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/reptile_head.png",
+     "w": 39,
+     "h": 33
+    },
+    "back": {
+     "file": "next/parts/back/reptile_head.png",
+     "w": 41,
+     "h": 35
+    }
+   }
+  },
+  "cat_ear": {
+   "animal": "cat",
+   "kind": "ear",
+   "slot": "head-extra",
+   "pivot": [
+    0.5,
+    0.95
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/cat_ear.png",
+     "w": 26,
+     "h": 31
+    },
+    "back": {
+     "file": "next/parts/back/cat_ear.png",
+     "w": 27,
+     "h": 32
+    }
+   }
+  },
+  "rabbit_ear": {
+   "animal": "rabbit",
+   "kind": "ear",
+   "slot": "head-extra",
+   "pivot": [
+    0.5,
+    0.95
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/rabbit_ear.png",
+     "w": 32,
+     "h": 36
+    },
+    "back": {
+     "file": "next/parts/back/rabbit_ear.png",
+     "w": 33,
+     "h": 36
+    }
+   }
+  },
+  "fox_ear": {
+   "animal": "fox",
+   "kind": "ear",
+   "slot": "head-extra",
+   "pivot": [
+    0.5,
+    0.95
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/fox_ear.png",
+     "w": 25,
+     "h": 32
+    },
+    "back": {
+     "file": "next/parts/back/fox_ear.png",
+     "w": 27,
+     "h": 33
+    }
+   }
+  },
+  "bear_ear": {
+   "animal": "bear",
+   "kind": "ear",
+   "slot": "head-extra",
+   "pivot": [
+    0.5,
+    0.95
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/bear_ear.png",
+     "w": 26,
+     "h": 27
+    },
+    "back": {
+     "file": "next/parts/back/bear_ear.png",
+     "w": 28,
+     "h": 27
+    }
+   }
+  },
+  "bird_ear": {
+   "animal": "bird",
+   "kind": "ear",
+   "slot": "head-extra",
+   "pivot": [
+    0.5,
+    0.95
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/bird_ear.png",
+     "w": 22,
+     "h": 37
+    },
+    "back": {
+     "file": "next/parts/back/bird_ear.png",
+     "w": 23,
+     "h": 37
+    }
+   }
+  },
+  "reptile_ear": {
+   "animal": "reptile",
+   "kind": "ear",
+   "slot": "head-extra",
+   "pivot": [
+    0.5,
+    0.95
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/reptile_ear.png",
+     "w": 28,
+     "h": 34
+    },
+    "back": {
+     "file": "next/parts/back/reptile_ear.png",
+     "w": 31,
+     "h": 35
+    }
+   }
+  },
+  "cat_torso": {
+   "animal": "cat",
+   "kind": "torso",
+   "slot": "body",
+   "pivot": [
+    0.5,
+    0.5
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/cat_torso.png",
+     "w": 40,
+     "h": 50
+    },
+    "back": {
+     "file": "next/parts/back/cat_torso.png",
+     "w": 41,
+     "h": 50
+    }
+   }
+  },
+  "rabbit_torso": {
+   "animal": "rabbit",
+   "kind": "torso",
+   "slot": "body",
+   "pivot": [
+    0.5,
+    0.5
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/rabbit_torso.png",
+     "w": 40,
+     "h": 50
+    },
+    "back": {
+     "file": "next/parts/back/rabbit_torso.png",
+     "w": 42,
+     "h": 50
+    }
+   }
+  },
+  "fox_torso": {
+   "animal": "fox",
+   "kind": "torso",
+   "slot": "body",
+   "pivot": [
+    0.5,
+    0.5
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/fox_torso.png",
+     "w": 40,
+     "h": 50
+    },
+    "back": {
+     "file": "next/parts/back/fox_torso.png",
+     "w": 41,
+     "h": 50
+    }
+   }
+  },
+  "bear_torso": {
+   "animal": "bear",
+   "kind": "torso",
+   "slot": "body",
+   "pivot": [
+    0.5,
+    0.5
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/bear_torso.png",
+     "w": 44,
+     "h": 50
+    },
+    "back": {
+     "file": "next/parts/back/bear_torso.png",
+     "w": 44,
+     "h": 50
+    }
+   }
+  },
+  "bird_torso": {
+   "animal": "bird",
+   "kind": "torso",
+   "slot": "body",
+   "pivot": [
+    0.5,
+    0.5
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/bird_torso.png",
+     "w": 43,
+     "h": 48
+    },
+    "back": {
+     "file": "next/parts/back/bird_torso.png",
+     "w": 44,
+     "h": 50
+    }
+   }
+  },
+  "reptile_torso": {
+   "animal": "reptile",
+   "kind": "torso",
+   "slot": "body",
+   "pivot": [
+    0.5,
+    0.5
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/reptile_torso.png",
+     "w": 41,
+     "h": 50
+    },
+    "back": {
+     "file": "next/parts/back/reptile_torso.png",
+     "w": 42,
+     "h": 50
+    }
+   }
+  },
+  "cat_arm": {
+   "animal": "cat",
+   "kind": "arm",
+   "slot": "front",
+   "pivot": [
+    0.5,
+    0.08
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/cat_arm.png",
+     "w": 30,
+     "h": 38
+    },
+    "back": {
+     "file": "next/parts/back/cat_arm.png",
+     "w": 28,
+     "h": 40
+    }
+   }
+  },
+  "rabbit_arm": {
+   "animal": "rabbit",
+   "kind": "arm",
+   "slot": "front",
+   "pivot": [
+    0.5,
+    0.08
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/rabbit_arm.png",
+     "w": 28,
+     "h": 40
+    },
+    "back": {
+     "file": "next/parts/back/rabbit_arm.png",
+     "w": 28,
+     "h": 40
+    }
+   }
+  },
+  "fox_arm": {
+   "animal": "fox",
+   "kind": "arm",
+   "slot": "front",
+   "pivot": [
+    0.5,
+    0.08
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/fox_arm.png",
+     "w": 32,
+     "h": 39
+    },
+    "back": {
+     "file": "next/parts/back/fox_arm.png",
+     "w": 30,
+     "h": 40
+    }
+   }
+  },
+  "bear_arm": {
+   "animal": "bear",
+   "kind": "arm",
+   "slot": "front",
+   "pivot": [
+    0.5,
+    0.08
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/bear_arm.png",
+     "w": 32,
+     "h": 39
+    },
+    "back": {
+     "file": "next/parts/back/bear_arm.png",
+     "w": 34,
+     "h": 40
+    }
+   }
+  },
+  "bird_arm": {
+   "animal": "bird",
+   "kind": "arm",
+   "slot": "front",
+   "pivot": [
+    0.5,
+    0.08
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/bird_arm.png",
+     "w": 36,
+     "h": 40
+    },
+    "back": {
+     "file": "next/parts/back/bird_arm.png",
+     "w": 35,
+     "h": 41
+    }
+   }
+  },
+  "reptile_arm": {
+   "animal": "reptile",
+   "kind": "arm",
+   "slot": "front",
+   "pivot": [
+    0.5,
+    0.08
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/reptile_arm.png",
+     "w": 31,
+     "h": 39
+    },
+    "back": {
+     "file": "next/parts/back/reptile_arm.png",
+     "w": 35,
+     "h": 41
+    }
+   }
+  },
+  "cat_leg": {
+   "animal": "cat",
+   "kind": "leg",
+   "slot": "back",
+   "pivot": [
+    0.5,
+    0.1
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/cat_leg.png",
+     "w": 29,
+     "h": 46
+    },
+    "back": {
+     "file": "next/parts/back/cat_leg.png",
+     "w": 28,
+     "h": 45
+    }
+   }
+  },
+  "rabbit_leg": {
+   "animal": "rabbit",
+   "kind": "leg",
+   "slot": "back",
+   "pivot": [
+    0.5,
+    0.1
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/rabbit_leg.png",
+     "w": 30,
+     "h": 47
+    },
+    "back": {
+     "file": "next/parts/back/rabbit_leg.png",
+     "w": 28,
+     "h": 46
+    }
+   }
+  },
+  "fox_leg": {
+   "animal": "fox",
+   "kind": "leg",
+   "slot": "back",
+   "pivot": [
+    0.5,
+    0.1
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/fox_leg.png",
+     "w": 28,
+     "h": 47
+    },
+    "back": {
+     "file": "next/parts/back/fox_leg.png",
+     "w": 28,
+     "h": 45
+    }
+   }
+  },
+  "bear_leg": {
+   "animal": "bear",
+   "kind": "leg",
+   "slot": "back",
+   "pivot": [
+    0.5,
+    0.1
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/bear_leg.png",
+     "w": 34,
+     "h": 48
+    },
+    "back": {
+     "file": "next/parts/back/bear_leg.png",
+     "w": 31,
+     "h": 47
+    }
+   }
+  },
+  "bird_leg": {
+   "animal": "bird",
+   "kind": "leg",
+   "slot": "back",
+   "pivot": [
+    0.5,
+    0.1
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/bird_leg.png",
+     "w": 35,
+     "h": 49
+    },
+    "back": {
+     "file": "next/parts/back/bird_leg.png",
+     "w": 33,
+     "h": 47
+    }
+   }
+  },
+  "reptile_leg": {
+   "animal": "reptile",
+   "kind": "leg",
+   "slot": "back",
+   "pivot": [
+    0.5,
+    0.1
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/reptile_leg.png",
+     "w": 32,
+     "h": 48
+    },
+    "back": {
+     "file": "next/parts/back/reptile_leg.png",
+     "w": 30,
+     "h": 46
+    }
+   }
+  },
+  "cat_tail": {
+   "animal": "cat",
+   "kind": "tail",
+   "slot": "signature",
+   "pivot": [
+    0.1,
+    0.5
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/cat_tail.png",
+     "w": 38,
+     "h": 36
+    },
+    "back": {
+     "file": "next/parts/back/cat_tail.png",
+     "w": 38,
+     "h": 38
+    }
+   }
+  },
+  "rabbit_tail": {
+   "animal": "rabbit",
+   "kind": "tail",
+   "slot": "signature",
+   "pivot": [
+    0.1,
+    0.5
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/rabbit_tail.png",
+     "w": 24,
+     "h": 24
+    },
+    "back": {
+     "file": "next/parts/back/rabbit_tail.png",
+     "w": 25,
+     "h": 25
+    }
+   }
+  },
+  "fox_tail": {
+   "animal": "fox",
+   "kind": "tail",
+   "slot": "signature",
+   "pivot": [
+    0.1,
+    0.5
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/fox_tail.png",
+     "w": 39,
+     "h": 37
+    },
+    "back": {
+     "file": "next/parts/back/fox_tail.png",
+     "w": 40,
+     "h": 40
+    }
+   }
+  },
+  "bear_tail": {
+   "animal": "bear",
+   "kind": "tail",
+   "slot": "signature",
+   "pivot": [
+    0.1,
+    0.5
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/bear_tail.png",
+     "w": 22,
+     "h": 22
+    },
+    "back": {
+     "file": "next/parts/back/bear_tail.png",
+     "w": 24,
+     "h": 24
+    }
+   }
+  },
+  "bird_tail": {
+   "animal": "bird",
+   "kind": "tail",
+   "slot": "signature",
+   "pivot": [
+    0.1,
+    0.5
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/bird_tail.png",
+     "w": 39,
+     "h": 34
+    },
+    "back": {
+     "file": "next/parts/back/bird_tail.png",
+     "w": 43,
+     "h": 33
+    }
+   }
+  },
+  "reptile_tail": {
+   "animal": "reptile",
+   "kind": "tail",
+   "slot": "signature",
+   "pivot": [
+    0.1,
+    0.5
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/reptile_tail.png",
+     "w": 40,
+     "h": 34
+    },
+    "back": {
+     "file": "next/parts/back/reptile_tail.png",
+     "w": 40,
+     "h": 34
+    }
+   }
+  },
+  "any_horn": {
+   "animal": "any",
+   "kind": "horn",
+   "slot": "head-extra",
+   "pivot": [
+    0.5,
+    0.95
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/any_horn.png",
+     "w": 21,
+     "h": 36
+    },
+    "back": {
+     "file": "next/parts/back/any_horn.png",
+     "w": 20,
+     "h": 36
+    }
+   }
+  },
+  "any_spikes": {
+   "animal": "any",
+   "kind": "spikes",
+   "slot": "signature",
+   "pivot": [
+    0.5,
+    0.95
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/any_spikes.png",
+     "w": 37,
+     "h": 28
+    },
+    "back": {
+     "file": "next/parts/back/any_spikes.png",
+     "w": 40,
+     "h": 28
+    }
+   }
+  },
+  "any_mane": {
+   "animal": "any",
+   "kind": "mane",
+   "slot": "signature",
+   "pivot": [
+    0.5,
+    0.6
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/any_mane.png",
+     "w": 43,
+     "h": 38
+    },
+    "back": {
+     "file": "next/parts/back/any_mane.png",
+     "w": 43,
+     "h": 37
+    }
+   }
+  },
+  "any_shell": {
+   "animal": "any",
+   "kind": "shell",
+   "slot": "body-extra",
+   "pivot": [
+    0.5,
+    0.6
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/any_shell.png",
+     "w": 45,
+     "h": 32
+    },
+    "back": {
+     "file": "next/parts/back/any_shell.png",
+     "w": 44,
+     "h": 32
+    }
+   }
+  }
+ }
+}

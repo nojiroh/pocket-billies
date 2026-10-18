@@ -23,10 +23,8 @@ PLAN = {
     'kontourlet': ('siliclet', 0.04, 0.55),
     'filterleon': ('jenzard', 0.95, 0.6),
     'kardashleon':('gigajenzard', 0.92, 0.75),
-    # Trump line, quad plan, from the elephant line
-    'tycalf':     ('tuskling', 0.08, 1.6),
-    'towerphant': ('reliancephant', 0.08, 1.8),
-    'tremendophant': ('antiliaphant_gold', 0.11, 1.2),
+    # Trump line (blob) and Zuckerberg line (octo) have no same-plan art;
+    # they are built from the part kit (tools/slice-part-kit.py) or Studio blanks.
 }
 
 def recolour(im, hue, sat):
