@@ -10,7 +10,7 @@ import { $, $$, clamp } from '../../game/js/util.js';
 import { cnv, hexA, shadeHex } from '../../game/js/art.js';
 import { ANIM } from '../../game/js/body-plan-animation.js';
 import { drawRig, rigAudit, rigMatrices, rigPose } from '../../game/js/skeleton-rig.js';
-import { esc } from './shims.js';
+import { esc } from './game-stand-ins.js';
 import {
   ST,
   ask,

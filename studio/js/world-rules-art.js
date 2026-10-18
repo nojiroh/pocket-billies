@@ -6,7 +6,7 @@ import { worldPaint } from '../../game/js/hooks.js';
 import { $, clamp } from '../../game/js/util.js';
 import { cnv } from '../../game/js/art.js';
 import { ENV_LIKES } from '../../game/js/environment.js';
-import { esc } from './shims.js';
+import { esc } from './game-stand-ins.js';
 import {
   ACTS,
   SECTIONS,

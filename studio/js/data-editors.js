@@ -7,7 +7,7 @@ import { $, $$ } from '../../game/js/util.js';
 import { cnv, iconURL } from '../../game/js/art.js';
 import { TR_CACHE, cleanLook, humanSheet, lookFromOld, trColorsOf, trSliders } from '../../game/js/person-art.js';
 import { drawRig, rigPose } from '../../game/js/skeleton-rig.js';
-import { esc } from './shims.js';
+import { esc } from './game-stand-ins.js';
 import {
   ACTS,
   SECTIONS,

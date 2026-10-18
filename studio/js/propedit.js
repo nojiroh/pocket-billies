@@ -14,7 +14,7 @@ import { DIO, dioData, dioImg, dioLayerM, dioOk, setDioData } from '../../game/j
 import { DGL, DGL_MATS, dglMatOf, dglVaryOf, dioMount } from '../../game/js/walk-view-gl.js';
 import { BLD_ROOM_NAMES, BLD_TEX_NAMES } from '../../game/js/buildings.js';
 import { P3D_AUTO, P3D_KINDS, P3D_PARTS, p3dTreeKind } from '../../game/js/solid-props.js';
-import { esc } from './shims.js';
+import { esc } from './game-stand-ins.js';
 import {
   ACTS,
   ST,

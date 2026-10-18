@@ -12,7 +12,7 @@ import { expose } from '../../game/js/test-globals.js';
 import { provide } from '../../game/js/hooks.js';
 import { $ } from '../../game/js/util.js';
 import { ENGINE_DEFAULTS, ENGINE_PRESETS, ENGINE_SPEC } from '../../game/js/engine/settings.js';
-import { esc } from './shims.js';
+import { esc } from './game-stand-ins.js';
 import { ACTS, ST, go, render, setRender, spName } from './studio-app.js';
 import { curLine } from './data-editors.js';
 import { SCN, scId } from './scenes.js';

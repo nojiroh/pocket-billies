@@ -8,7 +8,7 @@ import { $, $$ } from '../../game/js/util.js';
 import { ICON_ATLAS, artLoad } from '../../game/js/art.js';
 import { scStop } from '../../game/js/battle-stage.js';
 import { ENG_CTX } from '../../game/js/engine/settings.js';
-import { esc } from './shims.js';
+import { esc } from './game-stand-ins.js';
 /* eslint-disable no-func-assign */
 expose({
   ACTS: [() => ACTS],

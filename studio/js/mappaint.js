@@ -8,7 +8,7 @@ import { expose } from '../../game/js/test-globals.js';
 import { provide } from '../../game/js/hooks.js';
 import { $, $$, clamp } from '../../game/js/util.js';
 import { cnv } from '../../game/js/art.js';
-import { esc } from './shims.js';
+import { esc } from './game-stand-ins.js';
 import { ST, after, ask, card, changed, commit, fmtN, render, toast } from './studio-app.js';
 import { atlasGet, atlasNow, markArt } from './sprites.js';
 /* eslint-disable no-func-assign */

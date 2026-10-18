@@ -12,7 +12,7 @@ import { provide } from '../../game/js/hooks.js';
 import { cnv } from '../../game/js/art.js';
 import { dioImg } from '../../game/js/walk-view.js';
 import { VOX_TEXTURES, voxInvalidate, voxRecipe } from '../../game/js/prop-models.js';
-import { esc } from './shims.js';
+import { esc } from './game-stand-ins.js';
 import {
   ACTS,
   ST,

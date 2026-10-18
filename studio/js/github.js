@@ -11,7 +11,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
 import { $ } from '../../game/js/util.js';
-import { esc } from './shims.js';
+import { esc } from './game-stand-ins.js';
 import { ACTS, ST, ask, boot, dialog, saveAll, setApi, setSaveAll, setToast, toast, updTop } from './studio-app.js';
 /* eslint-disable no-func-assign */
 expose({

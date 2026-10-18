@@ -42,7 +42,7 @@ import {
 } from '../../game/js/walk-view.js';
 import { ENV } from '../../game/js/environment.js';
 import { DGL, DGL_WALL_MATS, dioHRaw, dioMount } from '../../game/js/walk-view-gl.js';
-import { esc } from './shims.js';
+import { esc } from './game-stand-ins.js';
 import {
   ACTS,
   SECTIONS,

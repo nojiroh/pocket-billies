@@ -27,7 +27,7 @@ import {
 import { DIO, dioHubOf } from '../../game/js/walk-view.js';
 import { dioMount } from '../../game/js/walk-view-gl.js';
 import { battleGLAttach, battleGLStop } from '../../game/js/battle-3d.js';
-import { esc } from './shims.js';
+import { esc } from './game-stand-ins.js';
 import {
   ACTS,
   SECTIONS,
