@@ -821,53 +821,61 @@ async function runFullTest(mode) {
           if (walkView.id !== 'w:marigold*')
             throw new Error('Marigold Town is not shown with its neighbours (still ' + walkView.id + ')');
           const q0 = saveData.queue,
-            t00 = performance.now() - (debugLog.t0 || 0);
+            t00 = performance.now() - (debugLog.t0 || 0),
+            travel0 = RULES.travel;
           saveData.queue = [];
-          setTrip(1);
-          render();
-          await selfTestSleep(600);
-          const views = [walkView.id];
-          let unready = 0,
-            shifts = 0,
-            worst = 0;
-          const L0 = debugLog.ev.length;
-          const per = Math.ceil(roadCost(0, 1) / 7) + 5;
-          /* alpha 0.2: a road's steps follow its walk */ for (let n = 0; n < 7; n++) {
-            addSteps(per, true);
-            uiState.modal = null;
-            uiState.mq = [];
-            renderOverlay();
+          /* phase 13: the trip is driven by steps, which only move you along a road when travel goes by steps (the
+             game walks by default since alpha 0.4.1: without this the step never arrived). Phase 08 replaces it */
+          RULES.travel = 'steps';
+          try {
+            setTrip(1);
             render();
-            const f0 = walkRenderer.frames,
-              t0 = performance.now();
-            for (let i = 0; i < 14; i++) {
-              await selfTestSleep(100);
-              if (!walkView.ready) unready++;
-              if (walkView.id !== views[views.length - 1]) {
-                views.push(walkView.id);
-                shifts++;
+            await selfTestSleep(600);
+            const views = [walkView.id];
+            let unready = 0,
+              shifts = 0,
+              worst = 0;
+            const L0 = debugLog.ev.length;
+            const per = Math.ceil(roadCost(0, 1) / 7) + 5;
+            /* alpha 0.2: a road's steps follow its walk */ for (let n = 0; n < 7; n++) {
+              addSteps(per, true);
+              uiState.modal = null;
+              uiState.mq = [];
+              renderOverlay();
+              render();
+              const f0 = walkRenderer.frames,
+                t0 = performance.now();
+              for (let i = 0; i < 14; i++) {
+                await selfTestSleep(100);
+                if (!walkView.ready) unready++;
+                if (walkView.id !== views[views.length - 1]) {
+                  views.push(walkView.id);
+                  shifts++;
+                }
               }
+              const ms = (performance.now() - t0) / Math.max(1, walkRenderer.frames - f0);
+              worst = Math.max(worst, ms);
             }
-            const ms = (performance.now() - t0) / Math.max(1, walkRenderer.frames - f0);
-            worst = Math.max(worst, ms);
+            for (let i = 0; i < 40 && !(saveData.trip.node === 1 && saveData.trip.prog === 0); i++)
+              await selfTestSleep(100);
+            saveData.queue = q0;
+            if (saveData.trip.node !== 1)
+              throw new Error('never arrived at Tallgrass Meadow (' + JSON.stringify(saveData.trip) + ')');
+            const ev = debugLog.ev.slice(L0),
+              builds = ev.filter(e => /seamless to/.test(e.msg || '')).length,
+              onSpot = ev.filter(e => /built on the spot/.test(e.msg || '')).length,
+              held = ev.filter(e => /painted .* ahead/.test(e.msg || '')).length;
+            /* v46: the worst single frame on the way (the frame log), and whether any view had to be built on the spot */
+            const sm = (debugLog.samples || []).filter(x => x && x.t >= t00),
+              wf = sm.length
+                ? Math.max(
+                    ...sm.map(x => (x.tasks && x.tasks.dio ? Math.max(x.tasks.dio.max || 0, x.tasks.dio.gap || 0) : 0))
+                  )
+                : 0;
+            return `${views.join(' → ')}; ${shifts} view changes (${builds} logged, ${held} prepared ahead, ${onSpot} built on the spot), ${unready ? unready + ' unready frames' : 'never unready'}, slowest stretch ${worst.toFixed(0)} ms a frame${wf ? ', worst frame ' + Math.round(wf) + ' ms' : ''}`;
+          } finally {
+            RULES.travel = travel0;
           }
-          for (let i = 0; i < 40 && !(saveData.trip.node === 1 && saveData.trip.prog === 0); i++)
-            await selfTestSleep(100);
-          saveData.queue = q0;
-          if (saveData.trip.node !== 1)
-            throw new Error('never arrived at Tallgrass Meadow (' + JSON.stringify(saveData.trip) + ')');
-          const ev = debugLog.ev.slice(L0),
-            builds = ev.filter(e => /seamless to/.test(e.msg || '')).length,
-            onSpot = ev.filter(e => /built on the spot/.test(e.msg || '')).length,
-            held = ev.filter(e => /painted .* ahead/.test(e.msg || '')).length;
-          /* v46: the worst single frame on the way (the frame log), and whether any view had to be built on the spot */
-          const sm = (debugLog.samples || []).filter(x => x && x.t >= t00),
-            wf = sm.length
-              ? Math.max(
-                  ...sm.map(x => (x.tasks && x.tasks.dio ? Math.max(x.tasks.dio.max || 0, x.tasks.dio.gap || 0) : 0))
-                )
-              : 0;
-          return `${views.join(' → ')}; ${shifts} view changes (${builds} logged, ${held} prepared ahead, ${onSpot} built on the spot), ${unready ? unready + ' unready frames' : 'never unready'}, slowest stretch ${worst.toFixed(0)} ms a frame${wf ? ', worst frame ' + Math.round(wf) + ' ms' : ''}`;
         },
         8,
         120
