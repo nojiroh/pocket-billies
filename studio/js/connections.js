@@ -119,7 +119,7 @@ function connectionsTarget() {
   const D = studioState.D,
     s = studioState.sec,
     f = connectionsDrawer.field;
-  if (s === 'engine' && /\.(defaults|map)\.|^scenes\.[^.]+\.look\./.test(f)) {
+  if (s === 'engine' && /\.(defaults|map)\.|^maps\.[^.]+\.look\./.test(f)) {
     const m = f.match(/(?:defaults|map|look)\.([^.]+)\.([^.]+)$/);
     if (m) return { kind: 'dial', id: m[1] + '.' + m[2] };
   }
@@ -137,7 +137,7 @@ function connectionsTarget() {
   if (s === 'people' && studioState.sel.person) return { kind: 'person', id: studioState.sel.person };
   if (s === 'scenes') {
     if (typeof mapEditor !== 'undefined' && mapEditor.sel != null) {
-      const sc = D.scenes[currentMapId()],
+      const sc = D.maps[currentMapId()],
         p = sc && sc.props[mapEditor.sel];
       if (p) return { kind: 'prop', id: p.k };
     }
@@ -211,7 +211,7 @@ function connectionNode(kind, id) {
       return {
         kind,
         id,
-        label: (D.scenes[id] || {}).name || id,
+        label: (D.maps[id] || {}).name || id,
         sub: 'Walk scene',
         go: () => openSection('scenes', { scene: id }),
       };
@@ -268,7 +268,7 @@ function allDataIds() {
   Object.keys(D.coins || {}).forEach(k => put(k, 'coin'));
   Object.keys(D.trainers || {}).forEach(k => put(k, 'trainer'));
   Object.keys(D.shops || {}).forEach(k => put(k, 'shop'));
-  Object.keys(D.scenes || {}).forEach(k => put(k, 'scene'));
+  Object.keys(D.maps || {}).forEach(k => put(k, 'scene'));
   Object.keys(D.pools || {}).forEach(k => put(k, 'pool'));
   Object.keys((D.scenery || {}).props || {}).forEach(k => put(k, 'prop'));
   return m;
@@ -294,7 +294,7 @@ function recordOwningPath(path) {
       return ['shop', p[1]];
     case 'people':
       return ['person', p[1]];
-    case 'scenes':
+    case 'maps':
       return ['scene', p[1]];
     case 'locations':
       return ['stop', p[1]];
@@ -342,10 +342,7 @@ function recordPath(kind, id) {
     case 'person':
       return ['people.' + id, D.people[id]];
     case 'scene':
-      return [
-        'scenes.' + id,
-        Object.assign({}, D.scenes[id], { props: undefined, ground: undefined, heights: undefined }),
-      ];
+      return ['maps.' + id, Object.assign({}, D.maps[id], { props: undefined, ground: undefined, heights: undefined })];
     case 'stop':
       return ['locations.' + id, D.locations[id]];
     case 'prop':
@@ -381,18 +378,7 @@ function connectionGraph(cur) {
     });
   }
   const self = R ? R[0] : '';
-  for (const root of [
-    'lines',
-    'moves',
-    'items',
-    'coins',
-    'trainers',
-    'shops',
-    'scenes',
-    'locations',
-    'pools',
-    'rules',
-  ]) {
+  for (const root of ['lines', 'moves', 'items', 'coins', 'trainers', 'shops', 'maps', 'locations', 'pools', 'rules']) {
     walkDataStrings(D[root], root, (v, path) => {
       if (!ownIds.has(v) || (self && (path === self || path.startsWith(self + '.')))) return;
       const o = recordOwningPath(path);
@@ -400,7 +386,7 @@ function connectionGraph(cur) {
     });
   }
   if (cur.kind === 'prop') {
-    Object.entries(D.scenes || {}).forEach(([k, s]) => {
+    Object.entries(D.maps || {}).forEach(([k, s]) => {
       if ((s.props || []).some(p => p.k === cur.id)) usedBy.set('scene:' + k, ['scene', k]);
     });
   }
@@ -413,7 +399,7 @@ function connectionGraph(cur) {
       const s = D.locations[a].scene;
       if (s && s !== cur.id) uses.set('scene:' + s, ['scene', s]);
     });
-    const kinds = new Set((D.scenes[cur.id].props || []).map(p => p.k));
+    const kinds = new Set((D.maps[cur.id].props || []).map(p => p.k));
     [...kinds].slice(0, 24).forEach(k => uses.set('prop:' + k, ['prop', k]));
   }
   if (cur.kind === 'stop') {
@@ -439,7 +425,7 @@ function dialConnections(gk) {
     built = (ENGINE_DEFAULTS[g] || {})[k],
     game = ((D.defaults || {})[g] || {})[k],
     map = ((D.map || {})[g] || {})[k];
-  const scenes = Object.entries(studioState.D.scenes || {})
+  const scenes = Object.entries(studioState.D.maps || {})
     .filter(([s, v]) => v.look && v.look[g] && v.look[g][k] !== undefined)
     .map(([s, v]) => ({
       kind: 'scene',
@@ -452,7 +438,7 @@ function dialConnections(gk) {
         studioState.sel.scene = s;
         engineEditor.open[g] = 1;
         openSection('engine');
-        findFlash(fieldSelector(`scenes.${s}.look.${g}.${k}`));
+        findFlash(fieldSelector(`maps.${s}.look.${g}.${k}`));
       },
     }));
   const pre = [

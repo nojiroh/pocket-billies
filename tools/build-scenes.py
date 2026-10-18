@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Builds the walk-scene catalog (ground types and props) and a scene for every route stop, and writes them into
-game/data/gamedata.js as "scenery" and "scenes".
+game/data/gamedata.js as "scenery" and "maps".
 
     python3 tools/build-scenes.py            # adds anything missing, keeps scenes you already have
     python3 tools/build-scenes.py --force    # rebuilds every scene from scratch (your scene edits are lost)
@@ -1386,19 +1386,19 @@ def main():
         D['scenery'].setdefault('buildArt', cat['buildArt'])
         D['scenery'].setdefault('wallArt', cat['wallArt'])
         for k, m in cat['life'].items(): D['scenery'].setdefault('life', {}).setdefault(k, m)
-    D.setdefault('scenes', {})
+    D.setdefault('maps', {})
     if '--catalog' not in sys.argv:
         D.setdefault('roads', [])
         for i, (sid, f) in enumerate(BUILD):
             if i >= len(D['locations']): break
-            if rescene or sid not in D['scenes']:
-                D['scenes'][sid] = f(D, i)
+            if rescene or sid not in D['maps']:
+                D['maps'][sid] = f(D, i)
             if force or not D['locations'][i].get('scene'):
                 D['locations'][i]['scene'] = sid
     gamedata.save_js(head + 'window.GAMEDATA=' + json.dumps(D, ensure_ascii=False, indent=1) + ';\n')
-    print('scenes:', ', '.join(D['scenes']), '| props:', len(D['scenery']['props']))
-    for sid in D['scenes']:
-        sc = D['scenes'][sid]; print(f"  {sid}: {len(sc.get('props', []))} props, exits {sc.get('exits')}, hub {sc.get('hub')}")
+    print('scenes:', ', '.join(D['maps']), '| props:', len(D['scenery']['props']))
+    for sid in D['maps']:
+        sc = D['maps'][sid]; print(f"  {sid}: {len(sc.get('props', []))} props, exits {sc.get('exits')}, hub {sc.get('hub')}")
 
 if __name__ == '__main__':
     main()

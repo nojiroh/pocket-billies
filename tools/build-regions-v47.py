@@ -1389,7 +1389,7 @@ WAYS_IN = {('mall', 'festival'): dict(side='E', at=20.0, start=66.0, ch='T', wid
 
 def open_way(D, sid, nid, spec, rep):
     import base64, struct
-    sc = D['scenes'][sid]; i, j = node_index(D, sid), node_index(D, nid)
+    sc = D['maps'][sid]; i, j = node_index(D, sid), node_index(D, nid)
     L = next(L for L in D['roads'] if {L[0], L[1]} == {i, j}); J = L[3]; mine = 'a' if L[0] == i else 'b'
     E = sc.setdefault('edgeExits', []); ex = sc.setdefault('exits', []); ids = {e['id'] for e in E}
     if J.get(mine) in ids: return
@@ -1446,7 +1446,7 @@ def add_region(D, R, force=False, rep=None):
     for a, b, cost, name in R['links']:
         for sid, nid in ((a, b), (b, a)):
             if sid in new or nid not in new: continue
-            sc = D['scenes'].get(D['locations'][node_index(D, sid)].get('scene') or sid)
+            sc = D['maps'].get(D['locations'][node_index(D, sid)].get('scene') or sid)
             if not sc or sc.get(TAG): continue
             if (sid, nid) in WAYS_IN: open_way(D, sid, nid, WAYS_IN[(sid, nid)], rep)
             else: rep.append(f'!! {sid} has no way out planned toward {nid}')
@@ -1560,7 +1560,7 @@ def finish_v47(sid, sc, D, cat):
     adds); returns what it did"""
     out = []
     room = SHOP_ROOM.get(sid)
-    if room and room in D['scenes']:
+    if room and room in D['maps']:
         for p in sc['props']:
             if p.get('act') == 'shop' and not p.get('room'): p['room'] = room; out.append(f'shop opens into {room}')
     E = EXTRAS.get(sid) or {}
@@ -1583,7 +1583,7 @@ def build_places(D, R, cat, nature, force=False, only=None, mp=None):
     for n in R['nodes']:
         sid = n['id']
         if only and sid not in only: continue
-        old = D['scenes'].get(sid)
+        old = D['maps'].get(sid)
         if old and old.get('keep'): out.append(f'{sid}: marked keep, left alone'); continue
         if old and not force and not old.get(TAG): out.append(f'{sid}: a scene of that name is already there, left alone'); continue
         if old and not force:
@@ -1596,7 +1596,7 @@ def build_places(D, R, cat, nature, force=False, only=None, mp=None):
         sc[TAG] = 1; sc['biome'] = n['biome']
         occ, grown = BP.finish(sc, D, i, nature, cat)
         prune_wild(sc); grown = sum(1 for p in sc['props'] if p.get('w') == 42); finish_v47(sid, sc, D, cat)
-        D['scenes'][sid] = sc
+        D['maps'][sid] = sc
         tg = sum(r.count('t') for r in sc['tiles'])
         out.append(f'{sid}: {sc["w"]}×{sc["h"]}, tall grass {tg} m², {occ} placed + {grown} grown, exits {[(e["id"], e["side"]) for e in sc["edgeExits"]]}')
         if mp: BP.draw_map(sid, sc, cat, mp / f'{sid}.png')

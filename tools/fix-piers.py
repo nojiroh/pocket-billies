@@ -84,7 +84,7 @@ def piers_of(sc):
 
 def main():
     dry = '--dry' in sys.argv; head, D = load(); n = 0
-    for sid, sc in D['scenes'].items():
+    for sid, sc in D['maps'].items():
         if '@' in sid or not sc.get('tiles') or sc.get('kind') == 'room': continue
         # boards left under a jetty already made (a row the first run missed) are water too
         rows = [list(r) for r in sc['tiles']]; H = len(rows); W = len(rows[0]); left = 0

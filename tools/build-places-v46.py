@@ -842,17 +842,17 @@ def main():
     for n, pl in enumerate(D['locations']):
         sid = pl['scene']
         if only and sid not in only: continue
-        old = D['scenes'].get(sid)
+        old = D['maps'].get(sid)
         if not old or sid not in BUILD: continue
         if old.get('keep'): print(f'  {sid}: marked keep, left alone'); continue
-        base_old = D['scenes'].get(sid + '@v45') or old
-        if old.get('v46') and sid + '@v45' in D['scenes']: base_old = D['scenes'][sid + '@v45']
+        base_old = D['maps'].get(sid + '@v45') or old
+        if old.get('v46') and sid + '@v45' in D['maps']: base_old = D['maps'][sid + '@v45']
         sc, info = BUILD[sid](D, n, base_old)
         occ, grown = finish(sc, D, n, nature, cat)
-        if sid + '@v45' not in D['scenes']:
+        if sid + '@v45' not in D['maps']:
             bk = copy.deepcopy(old); bk['name'] = (old.get('name') or sid) + ' (v45)'; bk['kind'] = 'test'; bk['place'] = sid; bk['backup'] = 'v45'
-            D['scenes'][sid + '@v45'] = bk
-        D['scenes'][sid] = sc
+            D['maps'][sid + '@v45'] = bk
+        D['maps'][sid] = sc
         lab = info.get('lab')
         need = lambda S: sorted({(p['act'], p.get('shop') or '') for p in S.get('props', []) if p.get('act') in ('shop', 'clinic', 'lab', 'home', 'climb')})
         lost = [x for x in need(base_old) if x not in need(sc)]

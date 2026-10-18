@@ -128,7 +128,7 @@ def main():
     nature = {k: M for k, M in cat.items() if M.get('family') and M.get('grow')}
     if not nature: print('no nature props in the catalogue; run tools/build-nature-props.py first'); return
     total = 0
-    for sid, sc in D['scenes'].items():
+    for sid, sc in D['maps'].items():
         if ids and sid not in ids: continue
         if not ids and (sid.startswith('test_') or sid.startswith('int_') or sc.get('indoor') or sc.get('room')): continue
         if regrow:

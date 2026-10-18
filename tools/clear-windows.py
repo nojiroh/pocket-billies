@@ -253,7 +253,7 @@ def main():
     only = [a for a in sys.argv[1:] if not a.startswith('--')]
     head, D = load(); C = D['scenery']['props']; P = ppu(D)
     tot = [0, 0, 0]
-    for sid, sc in D['scenes'].items():
+    for sid, sc in D['maps'].items():
         if sid.startswith('test') or (only and sid not in only) or not sc.get('props'): continue
         log = []
         m, r, l = clear_scene(sc, C, P, fix=fix, log=log)

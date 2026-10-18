@@ -942,7 +942,7 @@ def place(D, dry=False):
     count as in the way: the plants under a landmark's footprint are lifted and kept on the landmark ("under"), and
     put back when this tool runs again; anything else in the way moves the landmark instead"""
     lp = importlib.util.spec_from_file_location('life', os.path.join(HERE, 'build-life-v47.py')); life = importlib.util.module_from_spec(lp); lp.loader.exec_module(life)
-    cat = D['scenery']['props']; S = D['scenes']; report = []
+    cat = D['scenery']['props']; S = D['maps']; report = []
     for sid in {s[0] for s in SPOTS}:
         sc = S.get(sid)
         if not sc: continue

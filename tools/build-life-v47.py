@@ -296,7 +296,7 @@ def draw_map(sid, sc, cat, path):
 def main():
     args = sys.argv[1:]; dry = '--dry' in args; args = [a for a in args if a != '--dry']; mp = None
     if '--map' in args: j = args.index('--map'); mp = Path(args[j + 1]); del args[j:j + 2]; mp.mkdir(parents=True, exist_ok=True)
-    head, D = load(); cat = D['scenery']['props']; S = D['scenes']
+    head, D = load(); cat = D['scenery']['props']; S = D['maps']
     life = D['scenery'].setdefault('life', {})
     if 'crow' not in life: life['crow'] = {'name': 'Crow', 'img': 'scene/life/crow.png', 'w': 24, 'h': 22, 'frames': 5, 'where': 'junk'}
     for sid, sc in S.items():

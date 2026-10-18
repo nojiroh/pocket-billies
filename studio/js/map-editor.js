@@ -128,7 +128,7 @@ expose({
 provide({ artCacheVersion, sceneryArtPaths });
 /* to-module: end */
 setWalkData(() => ({
-  scenes: (studioState.D && studioState.D.scenes) || {},
+  scenes: (studioState.D && studioState.D.maps) || {},
   sc: (studioState.D && studioState.D.scenery) || { terrains: {}, props: {} },
 }));
 setArtImage(path => loadedAtlas('art/' + path) || ART_CACHE.img[path]);
@@ -188,13 +188,13 @@ export const sceneryCatalog = () =>
   studioState.D.scenery || (studioState.D.scenery = { ppu: 34, tile: 16, terrains: {}, props: {}, person: 1.75 });
 provide({ sceneryCatalog }); /* to-module */
 export const currentMapId = () => {
-  const S = studioState.D.scenes || (studioState.D.scenes = {});
+  const S = studioState.D.maps || (studioState.D.maps = {});
   if (!S[studioState.sel.scene]) studioState.sel.scene = Object.keys(S)[0] || null;
   return studioState.sel.scene;
 };
 export const currentMap = () => {
   const id = currentMapId();
-  return id ? studioState.D.scenes[id] : null;
+  return id ? studioState.D.maps[id] : null;
 };
 const locationsUsingMap = id => studioState.D.locations.map((r, i) => [r, i]).filter(([r]) => r.scene === id);
 /* ---------- section ---------- */
@@ -217,7 +217,7 @@ SECTIONS.scenes = () => {
                 .map(([r, i]) => `${i + 1}. ${escapeHtml(r.name)}`)
                 .join(', ') || 'Not used by a stop'
       }</small></button>`,
-    all = Object.entries(D.scenes || {});
+    all = Object.entries(D.maps || {});
   const kf = mapEditor.kindF || '',
     filt = `<div class="seg-row sc-kinds">${[
       ['', 'All'],
@@ -242,7 +242,7 @@ SECTIONS.scenes = () => {
       .join('');
   if (!sc)
     return `<div class="ed-col solo"><div class="ed-head"><h2>Walk scenes</h2><button class="btn primary" data-act="scNew">+ New scene</button></div><p class="help">No scenes yet.</p></div>`;
-  const p = `scenes.${id}`,
+  const p = `maps.${id}`,
     T = sceneryCatalog().terrains;
   const terr = Object.entries(T)
     .map(
@@ -357,7 +357,7 @@ SECTIONS.scenes = () => {
   ${(() => {
     const P0 = sceneryCatalog().props[sel.k] || {};
     if (!P0.build && !P0.box) return '';
-    const rooms = Object.entries(studioState.D.scenes)
+    const rooms = Object.entries(studioState.D.maps)
       .filter(([k, v]) => v.kind === 'room' || /^int_/.test(k))
       .map(([k, v]) => [k, v.name || k]);
     const kindRoom =
@@ -377,7 +377,7 @@ SECTIONS.scenes = () => {
       }[sel.k] ||
       { shop: 'int_shop', clinic: 'int_clinic', lab: 'int_lab', house: 'int_house', home: 'int_home' }[sel.act] ||
       '';
-    return `<div class="sc-room">${grid(selectField('Room inside', `${p}.props.${mapEditor.sel}.room`, rooms, { none: kindRoom ? 'The one for its kind (' + ((studioState.D.scenes[kindRoom] || {}).name || kindRoom) + ')' : 'None', opt: 1, rr: 1, help: 'Where you walk in when you tap it (it needs “When tapped” set). Rooms open in place, larger than the building, with the town dimmed around them.' }))}<div class="seg-row"><button class="btn sm" data-act="scOwnRoom">Give it a room of its own</button>${sel.room || kindRoom ? `<button class="btn sm subtle" data-act="scPick" data-k="${escapeHtml(sel.room || kindRoom)}">Open its room</button>` : ''}</div></div>`;
+    return `<div class="sc-room">${grid(selectField('Room inside', `${p}.props.${mapEditor.sel}.room`, rooms, { none: kindRoom ? 'The one for its kind (' + ((studioState.D.maps[kindRoom] || {}).name || kindRoom) + ')' : 'None', opt: 1, rr: 1, help: 'Where you walk in when you tap it (it needs “When tapped” set). Rooms open in place, larger than the building, with the town dimmed around them.' }))}<div class="seg-row"><button class="btn sm" data-act="scOwnRoom">Give it a room of its own</button>${sel.room || kindRoom ? `<button class="btn sm subtle" data-act="scPick" data-k="${escapeHtml(sel.room || kindRoom)}">Open its room</button>` : ''}</div></div>`;
   })()}
   ${(() => {
     const V = ((sceneryCatalog().props[sel.k] || {}).build || {}).variants;
@@ -560,7 +560,7 @@ SECTIONS.scenes = () => {
       `${p}.flag`,
       [
         ['default', 'The coin ring'],
-        ...(sceneryCatalog().flags || []).map(k => [k, ((D.scenes[k] || {}).name || k) + '’s flag']),
+        ...(sceneryCatalog().flags || []).map(k => [k, ((D.maps[k] || {}).name || k) + '’s flag']),
       ],
       {
         none: 'This town’s own',
@@ -765,7 +765,7 @@ function drawSceneryThumbs() {
 }
 export function mapExitNames(id) {
   const D = studioState.D,
-    sc = D.scenes[id],
+    sc = D.maps[id],
     ex = (sc && sc.exits) || [],
     u = locationsUsingMap(id)[0];
   if (!u) return ex.map((e, k) => ({ i: k, name: edgeExitId(sc, k) || `Exit ${k + 1}` }));
@@ -1572,7 +1572,7 @@ document.addEventListener('keydown', ev => {
 /* field edits for the current scene update the map and preview */
 studioState.hooks.scenes = path => {
   if (mapEditor.ped && typeof drawPropEditor === 'function') drawPropEditor();
-  if (path.startsWith('scenes.') || path.startsWith('scenery.')) {
+  if (path.startsWith('maps.') || path.startsWith('scenery.')) {
     walkView.nav = null;
     walkView.cand = null;
     if (/\.(edge|w|h)$/.test(path) || path.startsWith('scenery.terrains')) walkView.gkey = '';
@@ -1659,10 +1659,10 @@ ACTIONS.scOwnRoom = () => {
     }[p.k] ||
     { shop: 'int_shop', clinic: 'int_clinic', lab: 'int_lab', home: 'int_home' }[p.act] ||
     'int_house';
-  const from = D.scenes[p.room] || D.scenes[kr];
+  const from = D.maps[p.room] || D.maps[kr];
   if (!from) return;
-  const k = uniqueKey('int_' + id + '_' + p.k, x => !!D.scenes[x]);
-  D.scenes[k] = { ...clone(from), name: (from.name || k) + ' (' + (sc.name || id) + ')', place: id, vary: 0 };
+  const k = uniqueKey('int_' + id + '_' + p.k, x => !!D.maps[x]);
+  D.maps[k] = { ...clone(from), name: (from.name || k) + ' (' + (sc.name || id) + ')', place: id, vary: 0 };
   p.room = k;
   if (!p.act) p.act = 'house';
   changed();
@@ -1732,7 +1732,7 @@ ACTIONS.scNew = async () => {
     r = await dialog(
       'New scene',
       `<label class="fld"><span>Name</span><input id="scnName" value="New place"></label><label class="fld"><span>Start from</span><select id="scnFrom"><option value="">A blank grass field</option>${Object.entries(
-        D.scenes || {}
+        D.maps || {}
       )
         .map(([k, s]) => `<option value="${escapeHtml(k)}">A copy of ${escapeHtml(s.name || k)}</option>`)
         .join(
@@ -1752,11 +1752,11 @@ ACTIONS.scNew = async () => {
       ]
     );
   if (!r) return;
-  const id = uniqueKey(r.n, k => !!(D.scenes || {})[k]);
-  D.scenes = D.scenes || {};
-  D.scenes[id] = r.from ? { ...clone(D.scenes[r.from]), name: r.n } : blankMap(r.n);
-  D.scenes[id].kind = r.kind || 'route';
-  if (r.kind === 'room') D.scenes[id].building = D.scenes[id].building || 'house';
+  const id = uniqueKey(r.n, k => !!(D.maps || {})[k]);
+  D.maps = D.maps || {};
+  D.maps[id] = r.from ? { ...clone(D.maps[r.from]), name: r.n } : blankMap(r.n);
+  D.maps[id].kind = r.kind || 'route';
+  if (r.kind === 'room') D.maps[id].building = D.maps[id].building || 'house';
   studioState.sel.scene = id;
   mapEditor.sel = null;
   changed();
@@ -1767,8 +1767,8 @@ ACTIONS.scNew = async () => {
 ACTIONS.scDup = () => {
   const D = studioState.D,
     id = currentMapId(),
-    k = uniqueKey(id + 'b', x => !!D.scenes[x]);
-  D.scenes[k] = { ...clone(D.scenes[id]), name: (D.scenes[id].name || id) + ' (copy)' };
+    k = uniqueKey(id + 'b', x => !!D.maps[x]);
+  D.maps[k] = { ...clone(D.maps[id]), name: (D.maps[id].name || id) + ' (copy)' };
   studioState.sel.scene = k;
   changed();
   commit(true);
@@ -1784,7 +1784,7 @@ ACTIONS.scDel = async () => {
       'err'
     );
   if (!(await ask('Delete this scene?', 'Delete'))) return;
-  delete D.scenes[id];
+  delete D.maps[id];
   studioState.sel.scene = null;
   changed();
   commit(true);
@@ -1901,7 +1901,7 @@ function exitChecks(sc) {
       const here = users.includes(l[0]) && J.a === e.id ? 'a' : users.includes(l[1]) && J.b === e.id ? 'b' : null;
       if (!here) return;
       const o = here === 'a' ? l[1] : l[0],
-        osc = D.scenes[(D.locations[o] || {}).scene],
+        osc = D.maps[(D.locations[o] || {}).scene],
         oid = here === 'a' ? J.b : J.a,
         oe = osc && (osc.edgeExits || []).find(q => q.id === oid);
       if (!oe) out.push({ ok: 0, t: `${nm}: the road to ${D.locations[o].name} names no exit on that side` });

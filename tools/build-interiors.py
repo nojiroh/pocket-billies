@@ -298,7 +298,7 @@ def repair_corners(D):
     their heights added up). Every step cell taller than the room's wall comes down to it; nothing else changes."""
     import base64, struct
     fixed = []
-    for sid, sc in D['scenes'].items():
+    for sid, sc in D['maps'].items():
         if sc.get('kind') != 'room' or not sc.get('steps'): continue
         raw = base64.b64decode(sc['steps']); n = len(raw) // 2; v = list(struct.unpack('<%dh' % n, raw))
         nz = [x for x in v if x > 0]
@@ -317,8 +317,8 @@ def main():
     D = json.JSONDecoder().raw_decode(src[src.index('window.GAMEDATA=') + len('window.GAMEDATA='):])[0]
     for f in BUILD:
         sid = f.__name__
-        if sid in D['scenes'] and not force: print(f'  {sid}: kept'); continue
-        sc = f(); D['scenes'][sid] = sc
+        if sid in D['maps'] and not force: print(f'  {sid}: kept'); continue
+        sc = f(); D['maps'][sid] = sc
         print(f'  {sid}: {sc["w"]}x{sc["h"]}, {len(sc.get("props", []))} props')
     fx = repair_corners(D)
     if fx: print('  corners brought down to the wall height:', ', '.join(fx))

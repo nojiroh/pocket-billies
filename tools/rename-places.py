@@ -135,14 +135,14 @@ def main():
             if r.get(k) != v: changes.append((f"locations/{r['id']}/{k}", r.get(k), v)); r[k] = v
         if label: r['routeName'] = label
         elif 'routeName' in r: del r['routeName']
-    for sid, sc in D['scenes'].items():
+    for sid, sc in D['maps'].items():
         base = sid.split('@')[0]
         if '@' in sid: continue
         if base in NEW and sc.get('name') and sc['name'] != NEW[base][0]:
-            changes.append((f'scenes/{sid}/name', sc['name'], NEW[base][0])); sc['name'] = NEW[base][0]
+            changes.append((f'maps/{sid}/name', sc['name'], NEW[base][0])); sc['name'] = NEW[base][0]
         elif base not in NEW and sc.get('name'):
             t = swap(sc['name'])
-            if t != sc['name']: changes.append((f'scenes/{sid}/name', sc['name'], t)); sc['name'] = t
+            if t != sc['name']: changes.append((f'maps/{sid}/name', sc['name'], t)); sc['name'] = t
     # the links between places: the route they belong to (or the town they lead into)
     rid = {r['id']: r for r in D['locations']}
     for L in D['roads']:
@@ -155,7 +155,7 @@ def main():
             for k in list(v):
                 if k in ('id', 'img', 'tile', 'scene', 'k', 'from', 'to', 'art', 'banner', 'icon', 'src', 'path') and isinstance(v[k], str): continue
                 if path[:1] == ['locations'] and k in ('name', 'route', 'routeName'): continue
-                if path[:1] == ['scenes'] and len(path) == 2 and k == 'name': continue
+                if path[:1] == ['maps'] and len(path) == 2 and k == 'name': continue
                 v[k] = walk(v[k], path + [k])
             return v
         if isinstance(v, list): return [walk(x, path + [i]) for i, x in enumerate(v)]

@@ -1,7 +1,7 @@
 {
  "$schema": "https://json-schema.org/draft/2020-12/schema",
- "$id": "scene.schema.json",
- "title": "game/data/scenes/<id>.json: a walkable map (a town, a route, a room or a test scene)",
+ "$id": "map.schema.json",
+ "title": "game/data/maps/<id>.json: a walkable map (a town, a route, a room or a test scene)",
  "type": "object",
  "required": ["name", "w", "h", "edge", "kind", "hub", "exits", "tiles", "props"],
  "properties": {

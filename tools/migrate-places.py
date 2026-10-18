@@ -37,7 +37,7 @@ def problems(D):
         if p.get('id') != p.get('scene'): out.append(f'place {n} ({p.get("name")}): id {p.get("id")} is not its scene {p.get("scene")}')
         if p.get('kind') == 'town' and not p.get('town'): out.append(f'{p.get("name")}: kind town but not marked town')
         if p.get('kind') == 'route' and p.get('town'): out.append(f'{p.get("name")}: kind route but marked town')
-    for sid, sc in D['scenes'].items():
+    for sid, sc in D['maps'].items():
         k = sc.get('kind')
         if k not in ('town', 'route', 'room', 'test'): out.append(f'scene {sid}: no kind'); continue
         if k in ('town', 'route'):
@@ -61,7 +61,7 @@ def main():
             if p.get(k) is None and v is not None: p[k] = v; n += 1
         if p['kind'] == 'route' and not p.get('routeName') and p.get('route'): p['routeName'] = p['route']; n += 1
     by_scene = {p['scene']: p for p in places}
-    for sid, sc in D['scenes'].items():
+    for sid, sc in D['maps'].items():
         if sc.get('kind'): continue
         if sc.get('test') or sid.startswith('test_'): sc['kind'] = 'test'
         elif sc.get('room') or sid.startswith('int_'): sc['kind'] = 'room'; sc.setdefault('building', sc.get('room')); sc.setdefault('place', None)

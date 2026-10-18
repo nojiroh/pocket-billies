@@ -112,7 +112,7 @@ function runCheck() {
     });
   }
   /* v46: every scene says what it is, and a place's scene agrees with its place */
-  for (const [k, sc] of Object.entries(D.scenes || {})) {
+  for (const [k, sc] of Object.entries(D.maps || {})) {
     const kd = sc.kind;
     if (!['town', 'route', 'room', 'test'].includes(kd)) {
       err(`${sc.name || k}: doesn’t say what it is (kind: town, route, room or test).`, 'scenes');
@@ -141,12 +141,12 @@ function runCheck() {
   /* v26: the rooms you walk into */
   const people = new Set(Array.isArray(D.people) ? D.people.map(x => x.id) : Object.keys(D.people || {}));
   for (const k of ['shop', 'clinic', 'lab', 'house'])
-    if (!(D.scenes || {})['int_' + k])
+    if (!(D.maps || {})['int_' + k])
       warn(
         `There’s no room to walk into for a ${k} (scene int_${k}), so tapping one opens it straight away.`,
         'scenes'
       );
-  for (const [k, sc] of Object.entries(D.scenes || {}))
+  for (const [k, sc] of Object.entries(D.maps || {}))
     if (sc.room && sc.keeper && !String(sc.keeper).startsWith('folk:') && !people.has(sc.keeper))
       err(`${sc.name || k}: the person behind the counter (${sc.keeper}) isn’t in People.`, 'scenes');
   for (const [k, E] of Object.entries(D.eggs))
@@ -191,7 +191,7 @@ function runCheck() {
   {
     const LO = D.lore || {},
       books = LO.books || {};
-    for (const [k, sc] of Object.entries(D.scenes || {}))
+    for (const [k, sc] of Object.entries(D.maps || {}))
       for (const pr of sc.props || [])
         if (pr.act === 'read' && !books[pr.book])
           warn(
@@ -200,7 +200,7 @@ function runCheck() {
             { ltab: 'books' }
           );
     for (const c of LO.clues || [])
-      if (c.at && c.at.scene && !(D.scenes || {})[c.at.scene])
+      if (c.at && c.at.scene && !(D.maps || {})[c.at.scene])
         warn(`The clue “${c.title}” lies in a scene that doesn’t exist (${c.at.scene}).`, 'lore', { ltab: 'clues' });
     for (const [k, P] of Object.entries(LO.people || {}))
       if (P.who && !people.has(P.who))
@@ -253,7 +253,7 @@ function runCheck() {
       if (!seen.has(i)) warn(`No road leads to ${r.name}.`, 'world', { wtab: 'route', stop: i });
     });
   }
-  const SCN = D.scenes || {},
+  const SCN = D.maps || {},
     SY = D.scenery || { terrains: {}, props: {} };
   D.locations.forEach((r, i) => {
     if (r.scene && !SCN[r.scene])

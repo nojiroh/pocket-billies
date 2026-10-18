@@ -370,9 +370,9 @@ BUILD = [t_stairs, t_ledges, t_bridges, t_water, t_shadows, t_props, t_slopes, t
 def main():
     src = gamedata.js_text(); head = src[:src.index('window.GAMEDATA=')]
     D = json.JSONDecoder().raw_decode(src[src.index('window.GAMEDATA=') + len('window.GAMEDATA='):])[0]
-    for k in [k for k, v in D['scenes'].items() if v.get('test')]: del D['scenes'][k]
+    for k in [k for k, v in D['maps'].items() if v.get('test')]: del D['maps'][k]
     for f in BUILD:
-        sc = f(); D['scenes'][sc_id(sc, f)] = sc
+        sc = f(); D['maps'][sc_id(sc, f)] = sc
         print(f'  {sc_id(sc, f)}: {sc["w"]}x{sc["h"]}, {len(sc.get("props", []))} props, {len(sc.get("checks", []))} checks, {len(sc.get("shots", []))} shots')
     gamedata.save_js(head + 'window.GAMEDATA=' + json.dumps(D, ensure_ascii=False, indent=1) + ';\n')
 

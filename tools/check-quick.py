@@ -199,7 +199,7 @@ def check_data():
     need(SY.get('wallArt', 'scene/build/walls.png'))
     for k in ('detail', 'rooms'): need((SY.get('buildArt') or {}).get(k))
     import base64
-    for k, s in D.get('scenes', {}).items():
+    for k, s in D.get('maps', {}).items():
         if len(s.get('tiles', [])) != s['h']: warn.append(f'{k}: {len(s.get("tiles", []))} rows for height {s["h"]}')
         if s.get('steps') and len(base64.b64decode(s['steps'])) != s['w'] * 2 * s['h'] * 2 * 2: warn.append(f'{k}: step grid is the wrong size')
         for p in s.get('props', []):
@@ -208,7 +208,7 @@ def check_data():
         bad = {ch for row in s.get('tiles', []) for ch in row} - set(SY.get('terrains', {}))
         if bad: warn.append(f'{k}: squares with no ground kind: {"".join(sorted(bad))[:12]}')
     for r in D['locations']:
-        if r.get('scene') and r['scene'] not in D.get('scenes', {}): warn.append(f'{r["name"]}: missing scene {r["scene"]}')
+        if r.get('scene') and r['scene'] not in D.get('maps', {}): warn.append(f'{r["name"]}: missing scene {r["scene"]}')
         if r.get('scene'): need(f'map/mini/{r["scene"]}.png')   # v47: the world map asks for every stop's miniature (tools/build-map-minis.py)
     if missing: warn.append('missing pictures: ' + ', '.join(sorted(missing)[:8]))
     # v46: every place, scene and road says what it is (tools/migrate-places.py)
@@ -217,8 +217,8 @@ def check_data():
     warn += MP.problems(D)
     if warn: raise Exception('; '.join(warn[:8]))
     kinds = {}
-    for s in D.get('scenes', {}).values(): kinds[s.get('kind')] = kinds.get(s.get('kind'), 0) + 1
-    return f'{len(D.get("scenes", {}))} scenes ({", ".join(f"{v} {k}s" for k, v in kinds.items())}), {len(SY.get("props", {}))} props, {len(D["roads"])} named roads'
+    for s in D.get('maps', {}).values(): kinds[s.get('kind')] = kinds.get(s.get('kind'), 0) + 1
+    return f'{len(D.get("maps", {}))} scenes ({", ".join(f"{v} {k}s" for k, v in kinds.items())}), {len(SY.get("props", {}))} props, {len(D["roads"])} named roads'
 
 
 @step('alpha 0.4: no old place name left (the game data and what the game says)', 20)
@@ -236,7 +236,7 @@ def old_names():
     def walk(v, path):
         if isinstance(v, dict):
             for k, x in v.items():
-                if k in ('id', 'img', 'tile', 'scene', 'k', 'src', 'path') or (path[:1] == ['scenes'] and len(path) == 1 and '@' in k): continue
+                if k in ('id', 'img', 'tile', 'scene', 'k', 'src', 'path') or (path[:1] == ['maps'] and len(path) == 1 and '@' in k): continue
                 walk(x, path + [k])
         elif isinstance(v, list):
             for i, x in enumerate(v): walk(x, path + [i])
@@ -261,7 +261,7 @@ def copperleaf_data():
     start = (D['rules'].get('start') or {}).get('place')
     if start != 'copperleaf' or 'copperleaf' not in ix: raise Exception(f'a new game starts at {start!r}')
     if (R[ix.get('hedgerow', 0)] or {}).get('route') != 'Route 1': bad.append('Hedgerow Lane is not Route 1')
-    S_ = D['scenes']; C = D['scenery']['props']
+    S_ = D['maps']; C = D['scenery']['props']
     for rid, a, b in (('road:sundown-hedgerow', 'sundown', 'hedgerow'), ('road:hedgerow-copperleaf', 'hedgerow', 'copperleaf')):
         L = next((L for L in D['roads'] if len(L) > 3 and (L[3] or {}).get('id') == rid), None)
         if not L: bad.append(f'no road {rid}'); continue
@@ -302,7 +302,7 @@ def check_water():
     sp2 = ilu.spec_from_file_location('fpi', ROOT / 'tools' / 'fix-piers.py'); FP = ilu.module_from_spec(sp2); sp2.loader.exec_module(FP)
     D = gamedata(); bad = [f'{a}: {b} at {c},{d} has water in it' for a, b, c, d, e in FM.buildings_in_water(D)]
     piers = 0
-    for sid, sc in D['scenes'].items():
+    for sid, sc in D['maps'].items():
         if '@' in sid or not sc.get('tiles') or sc.get('kind') == 'room': continue
         for cells, a, b, w in FP.piers_of(sc): bad.append(f'{sid}: boards run out over the water at {a} (python3 tools/fix-piers.py makes them a jetty)')
         for B_ in sc.get('bridges') or []:
@@ -320,13 +320,13 @@ def check_masts():
     D = gamedata(); bad = []; n = 0
     for r in D['locations']:
         if r.get('kind') != 'town': continue
-        sc = D['scenes'][r['scene']]; f = [p for p in sc['props'] if p.get('act') == ('lift' if r.get('noFly') else 'fly')]
+        sc = D['maps'][r['scene']]; f = [p for p in sc['props'] if p.get('act') == ('lift' if r.get('noFly') else 'fly')]
         if not f: bad.append(f'{r["id"]}: nowhere to fly from' if not r.get('noFly') else f'{r["id"]}: no lift')
         n += len(f)
-    if 'station' in [p['k'] for sc in D['scenes'].values() for p in sc.get('props', [])]: bad.append('an old train station is still standing')
+    if 'station' in [p['k'] for sc in D['maps'].values() for p in sc.get('props', [])]: bad.append('an old train station is still standing')
     # alpha 0.4.1: the mast and the airship are two props; every mast has its airship moored at it
     CP = D['scenery']['props']; M = CP.get('airship_mast') or {}; AS = CP.get('airship') or {}; rp = GAME / 'art' / (M.get('vox') or 'missing'); ra = GAME / 'art' / (AS.get('vox') or 'missing')
-    for sc in D['scenes'].values():
+    for sc in D['maps'].values():
         P = sc.get('props') or []
         for m in [q for q in P if q.get('k') in ('airship_mast', 'airship_station')]:
             if not any(q.get('k') == 'airship' and abs(q['x'] - m['x']) < .05 and abs(q['z'] - m['z']) < .05 for q in P): bad.append(f'{sc.get("name")}: a mast without its airship')
@@ -356,14 +356,14 @@ def check_postcards():
         sid = r['scene']; f = GAME / 'art' / 'postcards' / f'{sid}.webp'
         if not f.exists() or f.stat().st_size < 4000: bad.append(f'{r["id"]}: no postcard')
         else: n += 1
-        sc = D['scenes'][sid]
+        sc = D['maps'][sid]
         if sid != 'copperleaf' and not any(p['k'] in kit or p.get('roof') for p in sc['props']): bad.append(f'{r["id"]}: no solarpunk touch')
-    city = D['scenes'].get('city') or {}
+    city = D['maps'].get('city') or {}
     if not city.get('a04park') or not any(p.get('label') == 'Verdigris Park' for p in city.get('props', [])): bad.append('Verdigris City has no park')
     for k in kit:
         if k not in C: bad.append(f'{k} missing from the catalogue')
     if bad: raise Exception('; '.join(bad[:6]))
-    roofs = sum(1 for sc in D['scenes'].values() for p in sc.get('props', []) if p.get('roof'))
+    roofs = sum(1 for sc in D['maps'].values() for p in sc.get('props', []) if p.get('roof'))
     return f'{n} postcards; every town has its solarpunk touch ({roofs} moss and solar roofs); Verdigris Park is there'
 
 
@@ -374,12 +374,12 @@ def check_windows():
     import importlib.util
     spec = importlib.util.spec_from_file_location('clearwin', ROOT / 'tools' / 'clear-windows.py'); CW = importlib.util.module_from_spec(spec); spec.loader.exec_module(CW)
     head, D = CW.load(); C = D['scenery']['props']; P = CW.ppu(D); bad = []; nw = 0
-    for sid, sc in D['scenes'].items():
+    for sid, sc in D['maps'].items():
         if sid.startswith('test') or not sc.get('props'): continue
         wins = CW.windows_of(sc, C, P); nw += len(wins)
         for (W, n, c) in CW.occluders(sc, C, P, wins): bad.append(f"{sid}: {sc['props'][n]['k']} at {sc['props'][n]['x']:.1f},{sc['props'][n]['z']:.1f} hides {c:.0%} of a {W['k']} window")
     if bad: raise Exception(f'{len(bad)} props in front of windows (python3 tools/clear-windows.py --fix moves them): ' + '; '.join(bad[:5]))
-    return f'{nw} windows in {len(D["scenes"])} scenes, nothing stands in front of one'
+    return f'{nw} windows in {len(D["maps"])} scenes, nothing stands in front of one'
 
 
 @step('Rooms: no wall taller than the room', 10)
@@ -388,7 +388,7 @@ def check_rooms():
     room may be taller than the height most of its wall cells have"""
     import base64, struct
     D = gamedata(); bad = []; n = 0
-    for sid, sc in D['scenes'].items():
+    for sid, sc in D['maps'].items():
         if sc.get('kind') != 'room' or not sc.get('steps'): continue
         raw = base64.b64decode(sc['steps']); v = struct.unpack('<%dh' % (len(raw) // 2), raw); nz = [x for x in v if x > 0]
         if not nz: continue
@@ -451,7 +451,7 @@ def report_unused():
         rel = f.relative_to(art).as_posix(); d = f.parent.relative_to(art).as_posix(); stem = re.sub(r'(_\d+|_[a-z]+)$', '', f.stem)
         if {rel, f.name, f.stem, stem} & tokens or d in dynd or 'tiles' in d or any(rel.startswith(x) for x in pre if x.startswith(d)): continue
         unused.append(rel)
-    placed = {p['k'] for sc in D['scenes'].values() for p in sc.get('props', [])}
+    placed = {p['k'] for sc in D['maps'].values() for p in sc.get('props', [])}
     code = '\n'.join(f.read_text(encoding='utf-8', errors='ignore') for f in list((GAME / 'js').rglob('*.js')) + list((ROOT / 'studio' / 'js').glob('*.js')))
     ctok = set(re.findall(r'[\'"`]([A-Za-z0-9_]+)[\'"`]', code)) | set(re.findall(r'[\'"`]([A-Za-z0-9_]+)[|,]', code))
     props = [k for k in SY.get('props', {}) if k not in placed and k not in ctok]
@@ -568,8 +568,8 @@ def phone_flow(b, base, R):
 def all_maps(pg, sec=180):
     # phase 04b: the game fetches each map's ground and props when it is needed and the rest in the background; the
     # steps below read every map at once, so wait until all of them are whole
-    if not until(pg, "typeof loadAllMaps!=='function'||(loadAllMaps(),Object.keys(gameData.scenes).every(id=>!isLiteMap(id)))", sec):
-        raise Exception('the maps didn’t all load in %ds: %s' % (sec, pg.evaluate("Object.keys(gameData.scenes).filter(isLiteMap).join(', ')")))
+    if not until(pg, "typeof loadAllMaps!=='function'||(loadAllMaps(),Object.keys(gameData.maps).every(id=>!isLiteMap(id)))", sec):
+        raise Exception('the maps didn’t all load in %ds: %s' % (sec, pg.evaluate("Object.keys(gameData.maps).filter(isLiteMap).join(', ')")))
 
 
 def desktop_steps(b, base, R):
@@ -619,7 +619,7 @@ def desktop_steps(b, base, R):
                 if not until(pg, f"!!(walkView.ready&&walkView.id==='{id}')", 40): raise Exception(f'{id} didn’t open')
                 f0 = pg.evaluate("typeof walkRenderer!=='undefined'&&walkRenderer.on?walkRenderer.frames:-1")
                 if f0 >= 0 and not until(pg, f'walkRenderer.frames>={f0 + 2}', 30): raise Exception(f'{id} isn’t drawing')
-                for sh in pg.evaluate(f"gameData.scenes['{id}'].shots||[]"):
+                for sh in pg.evaluate(f"gameData.maps['{id}'].shots||[]"):
                     pg.evaluate(f"walkView.pl.x={sh['x']};walkView.pl.z={sh['z']};walkView.pl.route=null;if(typeof walkRenderer!=='undefined')walkRenderer.yawT={sh.get('yaw', 0)};0"); time.sleep(2.2)
                     shot(pg, f"{id}-{sh['label']}"); n += 1
             pg.evaluate("uiState.bench=null;if(typeof walkRenderer!=='undefined')walkRenderer.yawT=0;render();0")
@@ -795,7 +795,7 @@ def desktop_steps(b, base, R):
         pg.evaluate("uiState.toastQ=[];(()=>{const p=walkView.sc.props.find(p=>p.act==='home'),C=walkData().sc,g=actionSpot(p,C.props[p.k],C.ppu||34);walkView.pl.route=null;walkView.pl.x=g[0];walkView.pl.z=g[1];walkPick({k:'act',p,act:'home'})})();0")
         if not until(pg, "walkView.ready&&(walkView.id==='int_home'||(walkView.sc&&walkView.sc.roomOf==='int_home'))", 60): raise Exception('your room didn’t open')
         pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();thingsToDo().home.slots[5]='table_round';thingsToDo().home.slots[10]='rug_round';refreshHomeFurniture();0"); time.sleep(2.5); shot(pg, 'room-home')
-        if pg.evaluate("gameData.scenes.int_home.props.length") < 2: raise Exception('furniture didn’t appear in your room')
+        if pg.evaluate("gameData.maps.int_home.props.length") < 2: raise Exception('furniture didn’t appear in your room')
         pg.evaluate("leaveRoom();0"); until(pg, f"walkView.ready&&!walkView.sc.roomRect&&(walkView.id===LOCATIONS[{home}].scene||(walkView.sc&&walkView.sc.baseId===LOCATIONS[{home}].scene))", 30); time.sleep(1.5)
         # a photo
         pg.evaluate("window.__ph=null;photoStart();walkRenderer.photoReq=c=>{window.__ph=c?c.width:0};0"); until(pg, "window.__ph!==null", 15)
@@ -1260,16 +1260,16 @@ def desktop_steps(b, base, R):
         out.append(f'{len(nat)} nature props in {len(fams)} families (' + ', '.join(f'{f} {n}' for f, n in sorted(fams.items())) + ')')
         # the wild growth: every outdoor scene grown, nothing it added stands on a path or in the sea (test scenes such as
         # alpha 0.5's Graphics gallery, test: true, are laid out by hand)
-        bad = json.loads(pg.evaluate("""JSON.stringify((()=>{const C=walkData().sc.props,out=[];for(const [id,sc] of Object.entries(gameData.scenes)){if(/^(test_|int_)/.test(id)||sc.test||sc.indoor||sc.room)continue;const g=(sc.props||[]).filter(p=>p.w===42);if(sc.wild!==42||!g.length){out.push(id+': not grown');continue}
+        bad = json.loads(pg.evaluate("""JSON.stringify((()=>{const C=walkData().sc.props,out=[];for(const [id,sc] of Object.entries(gameData.maps)){if(/^(test_|int_)/.test(id)||sc.test||sc.indoor||sc.room)continue;const g=(sc.props||[]).filter(p=>p.w===42);if(sc.wild!==42||!g.length){out.push(id+': not grown');continue}
          for(const p of g){const ch=(sc.tiles[sc.h-1-Math.floor(p.z)]||'')[Math.floor(p.x)],M=C[p.k];if(!M){out.push(id+': '+p.k+' unknown');break}if('pcmbaqheo'.includes(ch)){out.push(id+': '+p.k+' on paved ground');break}if('wd'.includes(ch)&&!(M.grow||'').includes(ch)){out.push(id+': '+p.k+' in water');break}}}return out})())"""))
         if bad: raise Exception('wild growth: ' + '; '.join(bad[:4]))
-        grown = pg.evaluate("Object.values(gameData.scenes).reduce((n,sc)=>n+(sc.props||[]).filter(p=>p.w===42).length,0)")
+        grown = pg.evaluate("Object.values(gameData.maps).reduce((n,sc)=>n+(sc.props||[]).filter(p=>p.w===42).length,0)")
         out.append(f'{grown} props grown over the outdoor scenes, none on paths')
         # edge-relative exits: every scene with exits has them, the points they give are the ones everything reads
-        ex = json.loads(pg.evaluate("""JSON.stringify((()=>{const out=[];for(const [id,sc0] of Object.entries(gameData.scenes)){if(!(sc0.exits||[]).length)continue;const sc=mapById(id);if(!sc.edgeExits||sc.edgeExits.length!==sc.exits.length){out.push(id+': no edge exits');continue}
+        ex = json.loads(pg.evaluate("""JSON.stringify((()=>{const out=[];for(const [id,sc0] of Object.entries(gameData.maps)){if(!(sc0.exits||[]).length)continue;const sc=mapById(id);if(!sc.edgeExits||sc.edgeExits.length!==sc.exits.length){out.push(id+': no edge exits');continue}
          sc.edgeExits.forEach((e,k)=>{const p=exitPoint(sc,e),q=sc.exits[k];if(!e.id||!'NSEW'.includes(e.side)||Math.hypot(p[0]-q[0],p[1]-q[1])>.02)out.push(id+' '+(e.id||k)+': '+JSON.stringify(p)+' vs '+JSON.stringify(q))})}return out})())"""))
         if ex: raise Exception('edge exits: ' + '; '.join(ex[:4]))
-        n_ex = pg.evaluate("Object.values(gameData.scenes).reduce((n,sc)=>n+((sc.edgeExits||[]).length),0)")
+        n_ex = pg.evaluate("Object.values(gameData.maps).reduce((n,sc)=>n+((sc.edgeExits||[]).length),0)")
         # the join table: every road's ends name an exit of their place (alpha 0.2: the names decide; tools/join-places.py on the legacy branch
         # moved exits so the two ends of a road face each other, so the old compass match no longer has a say)
         diff = json.loads(pg.evaluate("""JSON.stringify((()=>{const out=[];let joined=0;for(let n=0;n<LOCATIONS.length;n++){const sc=mapById(mapIdAt(n));if(!sc||!(sc.exits||[]).length)continue;const a=mapExits(n);for(const e of ROADS_BY_NODE[n]){const L=ROADS[e.i],id=L[3]&&(L[0]===n?L[3].a:L[3].b);if(id&&(sc.edgeExits||[]).some(q=>q.id===id))joined++;else out.push(LOCATIONS[n].name+' -> '+LOCATIONS[e.to].name+': no exit named '+id);if(a[e.to]==null)out.push(LOCATIONS[n].name+' -> '+LOCATIONS[e.to].name+': no exit')}}return {out,joined}})())"""))
@@ -1310,7 +1310,7 @@ def desktop_steps(b, base, R):
         views = [i for k, i in enumerate(ids) if k == 0 or ids[k - 1] != i]
         out.append('walked Marigold Town → Tallgrass Meadow on the ground: ' + ' → '.join(views + [pg.evaluate("walkView.id")]))
         # the flags: only towns have one; a flag pole flies its town's and is rigid
-        fl = json.loads(pg.evaluate("JSON.stringify({towns:gameData.scenery.flags,pole:gameData.scenery.props.flag_pole,ridge:(gameData.scenes.ridge.props||[]).filter(p=>p.k==='flag_pole').length,path:flagPicturePath(gameData.scenes.sundown),pathRoute:flagPicturePath(gameData.scenes.longgrass)})"))
+        fl = json.loads(pg.evaluate("JSON.stringify({towns:gameData.scenery.flags,pole:gameData.scenery.props.flag_pole,ridge:(gameData.maps.ridge.props||[]).filter(p=>p.k==='flag_pole').length,path:flagPicturePath(gameData.maps.sundown),pathRoute:flagPicturePath(gameData.maps.longgrass)})"))
         for t in fl['towns'] + ['default']:
             if not (ROOT / 'game' / 'art' / 'scene' / 'flags' / (t + '.png')).exists(): raise Exception(f'no flag picture for {t}')
         if fl['pole']['sway'] or not fl['pole'].get('flag') or fl['ridge'] or fl['path'] != 'scene/flags/sundown.png' or fl['pathRoute'] != 'scene/flags/default.png': raise Exception(f'flags: {fl}')
@@ -1439,7 +1439,7 @@ def desktop_steps(b, base, R):
         out.append(f'{len(tiles)} ground kinds × 12 tiles')
         b = json.loads(pg.evaluate("""(()=>{const C=walkData().sc.props,K=['bakery','inn','market_hall','bank','library','school','fire_station','mansion','barn','greenhouse','ski_lodge'],imgs=[];let plans=0,vars=0;
           for(const [k,M] of Object.entries(C)){if(!M.build)continue;plans++;for(const v of M.build.variants||[]){vars++;imgs.push(v.img)}}
-          return JSON.stringify({missing:K.filter(k=>!C[k]||!C[k].build),plans,vars,imgs,rooms:K.filter(k=>!gameData.scenes['int_'+k]),v2:propWithVariant({v:2},C.bakery).img})})()"""))
+          return JSON.stringify({missing:K.filter(k=>!C[k]||!C[k].build),plans,vars,imgs,rooms:K.filter(k=>!gameData.maps['int_'+k]),v2:propWithVariant({v:2},C.bakery).img})})()"""))
         if b['missing'] or b['rooms']: raise Exception(f'buildings without a plan: {b["missing"]}; kinds without a room: {b["rooms"]}')
         if not b['v2'].endswith('bakery_v2.png'): raise Exception('a placed building’s colour (v) doesn’t pick its picture: ' + b['v2'])
         bad = pg.evaluate(f"Promise.all({json.dumps(b['imgs'])}.map(p=>artLoad([p]).then(()=>imageReady(artImage(p))?null:p).catch(()=>p))).then(L=>L.filter(Boolean))")
@@ -1493,12 +1493,12 @@ def desktop_steps(b, base, R):
             for m in adj[todo.pop()] - seen: seen.add(m); todo.append(m)
         cut = [rid[i] for i in range(len(RT)) if i not in seen]
         if cut: raise Exception(f'no road or lift reaches {", ".join(cut[:6])}')
-        new = [r for r in RT if (D['scenes'].get(r.get('scene')) or {}).get('v47region')]
+        new = [r for r in RT if (D['maps'].get(r.get('scene')) or {}).get('v47region')]
         if len(new) < 27: raise Exception(f'only {len(new)} places of the seven regions')
         C = D['scenery']['props']; LP = (D.get('lore') or {}).get('places') or {}; bad = []
         REST = {'bench_wood', 'bench_metal', 'bench', 'log', 'log_mossy', 'campfire', 'picnic', 'deck_chair'}
         for r in new:
-            sc = D['scenes'][r['scene']]
+            sc = D['maps'][r['scene']]
             if (sc.get('mood') or r.get('mood')) not in (D.get('moods') or {}): bad.append(f'{r["id"]}: mood {r.get("mood")} unknown')
             if not (LP.get(r['id']) or {}).get('landmark'): bad.append(f'{r["id"]}: no lore')
             if not sc.get('ride') and not any((C.get(p['k']) or {}).get('landmark') for p in sc['props']): bad.append(f'{r["id"]}: no landmark stands in it')
@@ -1506,11 +1506,11 @@ def desktop_steps(b, base, R):
                 bad.append(f'{r["id"]}: shop or clinic missing')
             if sc.get('kind') == 'town':
                 rm = next((p.get('room') for p in sc['props'] if p.get('act') == 'shop'), None)
-                if not rm or rm not in D['scenes'] or not any(q.get('act') == 'shop' for q in D['scenes'][rm]['props']): bad.append(f'{r["id"]}: its shop has no room of its own with a counter')
+                if not rm or rm not in D['maps'] or not any(q.get('act') == 'shop' for q in D['maps'][rm]['props']): bad.append(f'{r["id"]}: its shop has no room of its own with a counter')
             if not any(p['k'] in REST for p in sc['props']): bad.append(f'{r["id"]}: nowhere to sit')
             if not sc.get('life'): bad.append(f'{r["id"]}: no animals')
         floors = collections.defaultdict(list)
-        for sid, sc in D['scenes'].items():
+        for sid, sc in D['maps'].items():
             if sc.get('kind') == 'room' and '@' not in sid: floors[collections.Counter(''.join(sc['tiles'])).most_common(1)[0][0]].append(sid)
         bad += [f'rooms sharing a floor ({k}): {", ".join(v)}' for k, v in floors.items() if len(v) > 1]
         if bad: raise Exception('; '.join(bad[:6]))
@@ -1520,9 +1520,9 @@ def desktop_steps(b, base, R):
             g = pg.evaluate("""(()=>{const ix=id=>LOCATIONS.findIndex(r=>r.id===id),s0=saveData.seats,o={};
               saveData.seats=['oil','retail','peak'];o.festShut=!canEnter(ix('festival'));saveData.seats=[...S.seats,'haven'];o.festOpen=canEnter(ix('festival'));
               o.frozenShut=!canEnter(ix('frozen'));saveData.seats=[...S.seats,'bloom','vault','morel'];o.frozenStill=!canEnter(ix('frozen'));saveData.seats=[...S.seats,'carat'];o.frozenOpen=canEnter(ix('frozen'));
-              saveData.seats=s0;o.songs=LOCATIONS.filter(r=>!r.music||!SONGS[r.music]).filter(r=>gameData.scenes[r.scene]&&gameData.scenes[r.scene].v47region).map(r=>r.id+':'+r.music);
+              saveData.seats=s0;o.songs=LOCATIONS.filter(r=>!r.music||!SONGS[r.music]).filter(r=>gameData.maps[r.scene]&&gameData.maps[r.scene].v47region).map(r=>r.id+':'+r.music);
               /* each new town's shop opens into its own room */
-              o.rooms=LOCATIONS.filter(r=>gameData.scenes[r.scene]&&gameData.scenes[r.scene].v47region&&gameData.scenes[r.scene].kind==='town').map(r=>{const p=gameData.scenes[r.scene].props.find(p=>p.act==='shop');return [r.id,p&&roomFor('shop',p)]}).filter(([k,v])=>!v||!v.startsWith('int_')||['int_shop','int_bank','int_market_hall'].includes(v)).map(x=>x.join(' → '));return o})()""")
+              o.rooms=LOCATIONS.filter(r=>gameData.maps[r.scene]&&gameData.maps[r.scene].v47region&&gameData.maps[r.scene].kind==='town').map(r=>{const p=gameData.maps[r.scene].props.find(p=>p.act==='shop');return [r.id,p&&roomFor('shop',p)]}).filter(([k,v])=>!v||!v.startsWith('int_')||['int_shop','int_bank','int_market_hall'].includes(v)).map(x=>x.join(' → '));return o})()""")
             if g['rooms']: raise Exception(f'new towns whose shop doesn’t open into a room of its own: {", ".join(g["rooms"])}')
             if g['songs']: raise Exception(f'places without a song of their own: {", ".join(g["songs"][:6])}')
             if not all(g[k] for k in ('festShut', 'festOpen', 'frozenShut', 'frozenStill', 'frozenOpen')): raise Exception(f'gates: {g}')
@@ -1682,12 +1682,12 @@ def desktop_steps(b, base, R):
             /* a corner counts where all four cells round it show the same place in both views */const all=[[0,0],[-1,0],[0,-1],[-1,-1]].every(([u,v])=>{const p=who(A,ax+u,az+v);return p&&p===who(B,bx+u,bz+v)});
             if(all)dh=Math.max(dh,Math.abs(A.heights[A.h-az][ax]-B.heights[B.h-bz][bx]));if(A.tiles[A.h-1-az][ax]!==B.tiles[B.h-1-bz][bx])dt++}
            if(dh>.05||dt)out.push(LOCATIONS[J.a].scene+' / '+LOCATIONS[J.b].scene+': the two views differ near the exit ('+dh.toFixed(2)+' m, '+dt+' tiles)')}
-          /* underground places */const und=LOCATIONS.map((r,k)=>ROADS_BY_NODE[k].length?r.scene:null).filter(id=>id&&(gameData.scenes[id]||{}).under);
-          for(const id of und){const S=gameData.scenes[id];if(!(S.arches||[]).length||!S.grown2)out.push(id+': underground without tunnels');const k=LOCATIONS.findIndex(r=>r.scene===id),v=seamlessHubMap(k);if(!v.under)out.push(id+': its view isn’t underground');
+          /* underground places */const und=LOCATIONS.map((r,k)=>ROADS_BY_NODE[k].length?r.scene:null).filter(id=>id&&(gameData.maps[id]||{}).under);
+          for(const id of und){const S=gameData.maps[id];if(!(S.arches||[]).length||!S.grown2)out.push(id+': underground without tunnels');const k=LOCATIONS.findIndex(r=>r.scene===id),v=seamlessHubMap(k);if(!v.under)out.push(id+': its view isn’t underground');
            for(const e of ROADS_BY_NODE[k]){const w=seamlessHubMap(e.to);if(w.under)continue;const P=w.parts.find(q=>q.id===id);if(!P)continue;const g=S.grown2,cx=P.ox+(g.W||0)+(S.w-(g.W||0)-(g.E||0))/2,cz=P.oz+(g.S||0)+(S.h-(g.S||0)-(g.N||0))/2;
             const c=(w.stable.scenes.find(r=>r.id===id)||{}).clip;if(!c)continue;/* the point of the cave nearest the middle of the band: under rock */const px=clamp(cx,c[0]+.5,c[2]-.5),pz=clamp(cz,c[1]+.5,c[3]-.5);
             if(px>=P.ox+(g.W||0)&&px<P.ox+S.w-(g.E||0)&&pz>=P.oz+(g.S||0)&&pz<P.oz+S.h-(g.N||0)){const t=w.tiles[w.h-1-Math.floor(pz)][Math.floor(px)];if(!'rMP'.includes(t))out.push(LOCATIONS[e.to].scene+' sees into '+id+'’s cave ('+t+')')}}}
-          let walks=0;for(const r of LOCATIONS){const S=gameData.scenes[r.scene];for(const e of (S&&S.edgeExits)||[]){if(!(e.path&&e.path.length>1&&e.len>0))out.push(r.scene+' '+e.id+': no stored walk');else walks++}}
+          let walks=0;for(const r of LOCATIONS){const S=gameData.maps[r.scene];for(const e of (S&&S.edgeExits)||[]){if(!(e.path&&e.path.length>1&&e.len>0))out.push(r.scene+' '+e.id+': no stored walk');else walks++}}
           walkView.sc=keep;walkView.id=keepId;walkView.nav=null;walkView.navSc=null;walkView.cand=null;return {out:out.slice(0,8),n,slow:Math.round(slow),slowId,walks,und}})())"""))
         if r['out']: raise Exception('; '.join(r['out']))
         return f"{r['n']} links joined edge to edge, every seam crossed straight in both views and the views agree round each exit; {r['walks']} exits with their walk stored; underground: {', '.join(r['und']) or 'none'}; the slowest view built in {r['slow']} ms ({r['slowId']})"
@@ -1815,7 +1815,7 @@ def desktop_steps(b, base, R):
     def a04_lights():
         """every building kind and every lamp in one scene (test_windows), opened at night: it draws, the buildings are 3D
         and the lamps are lit; then a front of rain comes in over Marigold Town and its curtain sweeps across"""
-        if not pg.evaluate("!!gameData.scenes.test_windows"): return 'not in this build'
+        if not pg.evaluate("!!gameData.maps.test_windows"): return 'not in this build'
         pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();environment.on=true;environment.force={time:22,weather:'clear',season:'summer'};uiState.tab='walk';uiState.inside=null;uiState.bench={id:'test_windows',test:1};render();0")
         if not until(pg, "!!(walkView.ready&&walkView.id==='test_windows'&&walkRenderer.frames>4)", 60): raise Exception('the windows and lamps scene didn’t open')
         pg.evaluate("walkView.pl.x=44;walkView.pl.z=10;walkView.pl.route=null;0"); time.sleep(4)
@@ -1958,7 +1958,7 @@ def studio_round_trip(pw, R):
                 g = ctx.new_page(); g.goto(f'http://localhost:{port}/game/index.html?test=1&scene=pond'); g.wait_for_selector('#walkHero', timeout=240000)
                 ok = False
                 for _ in range(120):
-                    st = g.evaluate("[typeof walkView!=='undefined'&&walkView.id,gameData.scenes.pond.props.length,typeof TEST_RUN!=='undefined'&&!!TEST_RUN]")
+                    st = g.evaluate("[typeof walkView!=='undefined'&&walkView.id,gameData.maps.pond.props.length,typeof TEST_RUN!=='undefined'&&!!TEST_RUN]")
                     if st[0] == 'pond' and st[1] == r['n']: ok = True; break
                     time.sleep(.5)
                 saved = g.evaluate("(()=>{try{return localStorage.getItem(SAVE_KEY)}catch(e){return 'x'}})()")

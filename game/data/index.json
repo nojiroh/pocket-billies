@@ -22,7 +22,7 @@
   "rules",
   "battleStages",
   "scenery",
-  "scenes",
+  "maps",
   "roads",
   "engine",
   "wardrobe",
@@ -184,7 +184,7 @@
     "deepdiver"
    ]
   },
-  "scenes": {
+  "maps": {
    "ids": [
     "sundown",
     "longgrass",

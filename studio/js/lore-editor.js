@@ -74,10 +74,10 @@ const LORE_UNLOCK =
   });
 }
 const loreMapOptions = () =>
-  Object.keys(studioState.D.scenes || {})
-    .filter(k => !studioState.D.scenes[k].test && !k.includes('@'))
+  Object.keys(studioState.D.maps || {})
+    .filter(k => !studioState.D.maps[k].test && !k.includes('@'))
     .sort()
-    .map(k => [k, (studioState.D.scenes[k].name || k) + ' (' + k + ')']);
+    .map(k => [k, (studioState.D.maps[k].name || k) + ' (' + k + ')']);
 const loreDeleteButton = (k, i) =>
   `<button class="btn sm danger subtle" data-act="loreDel" data-k="${k}" data-i="${escapeHtml(String(i))}">Delete</button>`;
 SECTIONS.lore = () => {
@@ -217,7 +217,7 @@ SECTIONS.lore = () => {
     sub =
       'Books and papers in rooms. Put one on any furniture in the Walk scenes editor: action “read”, and the book’s id.';
     const used = {};
-    for (const [sid, sc] of Object.entries(D.scenes || {}))
+    for (const [sid, sc] of Object.entries(D.maps || {}))
       for (const pr of sc.props || [])
         if (pr.act === 'read' && pr.book) (used[pr.book] = used[pr.book] || []).push(sc.name || sid);
     body = keyed(

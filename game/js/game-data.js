@@ -241,7 +241,7 @@ export const START_NODE = (() => {
   return p && LOCATION_BY_ID[p] ? LOCATION_BY_ID[p].node : 0;
 })();
 export function locationKind(id) {
-  const sc = gameData.scenes && gameData.scenes[id];
+  const sc = gameData.maps && gameData.maps[id];
   if (sc && sc.kind) return sc.kind;
   const p = LOCATION_BY_ID[id];
   return p

@@ -180,7 +180,7 @@ SECTIONS.preview = () => {
   ${card(
     'Stage',
     `<label class="fld"><span>Where the battle happens</span><select data-bp="stage"><option value="backdrop" ${battlePreview.stage === 'backdrop' ? 'selected' : ''}>A painted backdrop (classic)</option>${Object.entries(
-      D.scenes || {}
+      D.maps || {}
     )
       .map(
         ([k, s]) =>
@@ -236,8 +236,8 @@ async function startBattlePreview() {
   battleStageStart(battlePreview.area);
   if (
     battlePreview.stage !== 'backdrop' &&
-    studioState.D.scenes &&
-    studioState.D.scenes[battlePreview.stage] &&
+    studioState.D.maps &&
+    studioState.D.maps[battlePreview.stage] &&
     typeof battle3dAttach === 'function'
   ) {
     await mountBattlePreviewMap();
@@ -256,7 +256,7 @@ async function startBattlePreview() {
 /* the engine stage: the chosen walk scene, mounted on its own canvas inside the battle stage */
 async function mountBattlePreviewMap() {
   const id = battlePreview.stage,
-    sc = studioState.D.scenes[id],
+    sc = studioState.D.maps[id],
     C = sceneryCatalog();
   await Promise.all(sceneryArtPaths(C).map(p => atlasGet('art/' + p).catch(() => null)));
   const host = $('#camWorld');

@@ -349,7 +349,7 @@ export function requestListHTML() {
 /* ---------- gold stamps: two in every place ---------- */
 const STAMP_SPOTS = {};
 function stampMaps() {
-  return [...new Set(LOCATIONS.map(r => r.scene).filter(id => id && gameData.scenes[id]))];
+  return [...new Set(LOCATIONS.map(r => r.scene).filter(id => id && gameData.maps[id]))];
 }
 const stampTotal = () => stampMaps().length * 2;
 export const stampCount = () => Object.keys(thingsToDo().stamps).length;
@@ -463,7 +463,7 @@ export function refreshHomeFurniture() {
   if (typeof roomRefresh === 'function') roomRefresh();
 }
 function placeHomeFurniture() {
-  const sc = gameData.scenes.int_home;
+  const sc = gameData.maps.int_home;
   if (!sc) return;
   if (!sc.props0) sc.props0 = (sc.props || []).slice();
   const X = thingsToDo();

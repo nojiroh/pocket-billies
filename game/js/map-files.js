@@ -1,7 +1,7 @@
 'use strict';
 /* ================= MAP FILES (phase 04b) =================
    data/gamedata.js has every map without its ground and props (sc._lite says which ground kinds and props it uses);
-   each map's own file, data/scenes/<id>.json, brings them when the map is needed. Rooms come whole.
+   each map's own file, data/maps/<id>.json, brings them when the map is needed. Rooms come whole.
    - needMaps(ids): fetch those maps (each once), resolves when they are whole.
    - mapsOfView(viewId): the maps a walk view is put together from (a place's view also shows its neighbours).
    - mapsAround(node, hops): the place's map and its neighbours' maps, `hops` roads out.
@@ -34,18 +34,18 @@ provide({ mapsOfView });
 const mapFiles = { busy: new Map(), touched: new Set(), all: null, ms: 0, n: 0, failed: [] };
 provide({ mapFiles }); /* to-module */
 const MAP_FIELDS = ['heights', 'steps', 'stepm', 'tiles', 'props'];
-export const isLiteMap = id => !!(gameData.scenes[id] && gameData.scenes[id]._lite);
+export const isLiteMap = id => !!(gameData.maps[id] && gameData.maps[id]._lite);
 export function loadMapFile(id) {
   if (!isLiteMap(id)) return Promise.resolve();
   if (mapFiles.busy.has(id)) return mapFiles.busy.get(id);
   const t0 = performance.now(),
-    sc = gameData.scenes[id];
+    sc = gameData.maps[id];
   const p = (async () => {
     let last = null;
     for (let k = 0; k < 3; k++) {
       try {
-        const r = await fetch('data/scenes/' + id + '.json');
-        if (!r.ok) throw new Error(`data/scenes/${id}.json: ${r.status}`);
+        const r = await fetch('data/maps/' + id + '.json');
+        if (!r.ok) throw new Error(`data/maps/${id}.json: ${r.status}`);
         const full = await r.json();
         /* only into the map it was asked for: the Studio's play test may have put its own (whole) maps in since */
         if (!sc._lite) return;
@@ -131,7 +131,7 @@ export function loadAllMaps() {
   const t0 = performance.now(),
     here = typeof saveData !== 'undefined' && saveData && saveData.route ? saveData.route.node : START_NODE,
     near = mapsAround(here, 3),
-    ids = [...new Set([...near, ...Object.keys(gameData.scenes)])].filter(isLiteMap);
+    ids = [...new Set([...near, ...Object.keys(gameData.maps)])].filter(isLiteMap);
   mapFiles.all = (async () => {
     let i = 0;
     const one = async () => {

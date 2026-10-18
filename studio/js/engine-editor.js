@@ -79,7 +79,7 @@ export const engineEditor = {
 };
 export const engineData = () => studioState.D.engine || (studioState.D.engine = { defaults: {}, presets: {} });
 const engineEditorMapId = () => {
-  const S = studioState.D.scenes || {};
+  const S = studioState.D.maps || {};
   if (!S[engineEditor.scene])
     engineEditor.scene =
       studioState.sel.scene && S[studioState.sel.scene] ? studioState.sel.scene : Object.keys(S)[0] || null;
@@ -87,7 +87,7 @@ const engineEditorMapId = () => {
 };
 const engineScopePath = () =>
   engineEditor.scope === 'scene'
-    ? `scenes.${engineEditorMapId()}.look`
+    ? `maps.${engineEditorMapId()}.look`
     : engineEditor.scope === 'map'
       ? 'engine.map'
       : 'engine.defaults';
@@ -150,7 +150,7 @@ function enginePresetsHTML() {
 }
 function engineSettingsHTML() {
   const sid = engineEditorMapId(),
-    sc = sid ? studioState.D.scenes[sid] : null,
+    sc = sid ? studioState.D.maps[sid] : null,
     nScene = sc && sc.look ? Object.values(sc.look).reduce((a, o) => a + Object.keys(o || {}).length, 0) : 0,
     nGame = Object.values(engineData().defaults || {}).reduce((a, o) => a + Object.keys(o || {}).length, 0),
     nMap = Object.values(engineData().map || {}).reduce((a, o) => a + Object.keys(o || {}).length, 0);
@@ -165,7 +165,7 @@ SECTIONS.engine = () => {
   afterRender(mountEnginePreview);
   if (!sid)
     return `<div class="ed-col solo"><h2>Engine</h2><p class="help">Add a walk scene first; the preview needs one.</p></div>`;
-  const opts = Object.entries(studioState.D.scenes)
+  const opts = Object.entries(studioState.D.maps)
     .map(
       ([k, s]) => `<option value="${escapeHtml(k)}" ${k === sid ? 'selected' : ''}>${escapeHtml(s.name || k)}</option>`
     )
@@ -189,7 +189,7 @@ async function mountEnginePreview() {
     state: () => ({
       mode: 'roam',
       roam: true,
-      pos: engineEditor.pos && engineEditor.pos[0] === id ? engineEditor.pos[1] : mapHub(studioState.D.scenes[id]),
+      pos: engineEditor.pos && engineEditor.pos[0] === id ? engineEditor.pos[1] : mapHub(studioState.D.maps[id]),
       who: 'boy',
       enc: [
         { id: 'pv1', lvl: 5 },

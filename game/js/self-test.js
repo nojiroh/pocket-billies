@@ -130,7 +130,7 @@ function selfTestFrameStats(t0, t1, task) {
 }
 /* v20: the test scenes, and their walking checks (from, to, reach) worked out from the scene data without drawing */
 function testMaps() {
-  return Object.keys(gameData.scenes || {}).filter(k => gameData.scenes[k].test);
+  return Object.keys(gameData.maps || {}).filter(k => gameData.maps[k].test);
 }
 function testMapChecks(id) {
   const sc = mapById(id);
@@ -194,8 +194,8 @@ async function runFullTest(mode) {
   };
   const stepEl = box.querySelector('.nb-step'),
     bar = box.querySelector('.nb-bar i');
-  const scenes = Object.keys(gameData.scenes || {}).filter(
-      id => mapById(id) && !gameData.scenes[id].test && !gameData.scenes[id].backup && !id.includes('@')
+  const scenes = Object.keys(gameData.maps || {}).filter(
+      id => mapById(id) && !gameData.maps[id].test && !gameData.maps[id].backup && !id.includes('@')
     ),
     phases = [],
     stress = [],
@@ -637,7 +637,7 @@ async function runFullTest(mode) {
         'Night, weather, seasons and rooms',
         'dio',
         async () => {
-          const sid = gameData.scenes.sundown ? 'sundown' : scenes[0],
+          const sid = gameData.maps.sundown ? 'sundown' : scenes[0],
             f0 = environment.force,
             out = [];
           try {
@@ -663,12 +663,11 @@ async function runFullTest(mode) {
             environment.force = f0;
           }
           for (const id of ['int_shop', 'grotto']) {
-            if (!gameData.scenes[id] || selfTest.stop) continue;
+            if (!gameData.maps[id] || selfTest.stop) continue;
             uiState.bench = { id };
             render();
             await selfTestSleep(1400);
-            if (!walkView.ready || walkView.id !== id)
-              throw new Error((gameData.scenes[id].name || id) + ' didn’t open');
+            if (!walkView.ready || walkView.id !== id) throw new Error((gameData.maps[id].name || id) + ' didn’t open');
             out.push(id === 'grotto' ? 'a dark cave' : 'a shop you walk into');
           }
           return out.join(', ');
@@ -813,7 +812,7 @@ async function runFullTest(mode) {
       return `${mine} against ${theirs} (${fmt}); ${plates} nameplates; ${picks} picks, ${aimed} aimed; the turn played ${lines} lines in ${(turnMs / 1000).toFixed(1)} s`;
     };
     /* v43: the seamless world: out of Sundown along its road and into the Long Grass, measuring every view change */
-    if (typeof seamlessTripView === 'function' && gameData.scenes.sundown && !selfTest.stop)
+    if (typeof seamlessTripView === 'function' && gameData.maps.sundown && !selfTest.stop)
       await phase(
         'Road: Marigold Town to Tallgrass Meadow on the ground',
         'dio',
@@ -822,7 +821,7 @@ async function runFullTest(mode) {
           uiState.tab = 'walk';
           saveData.route = { node: 0, prog: 0, plan: [], hold: false };
           {
-            const h = mapHub(gameData.scenes.sundown);
+            const h = mapHub(gameData.maps.sundown);
             uiState.roam = { id: 'sundown', node: 0, x: h[0], z: h[1] };
           }
           render();
@@ -882,7 +881,7 @@ async function runFullTest(mode) {
         120
       );
     /* v46: a room that opens in place: into Sundown's shop and out again, without leaving the town */
-    if (typeof seamlessRoomMap === 'function' && gameData.scenes.sundown && !selfTest.stop)
+    if (typeof seamlessRoomMap === 'function' && gameData.maps.sundown && !selfTest.stop)
       await phase(
         'A room that opens in place',
         'dio',
@@ -951,7 +950,7 @@ async function runFullTest(mode) {
       );
     /* v44: the light lab: the four light test scenes, each drawn for a second; what each kind of renderer drew, the
      lamps' maps at night, and whether WebGL refused a draw (a sampler fed the wrong texture shows as a thing missing) */
-    if (gameData.scenes.test_light_terrain && typeof gpuState !== 'undefined' && gpuState.gl && !selfTest.stop)
+    if (gameData.maps.test_light_terrain && typeof gpuState !== 'undefined' && gpuState.gl && !selfTest.stop)
       await phase(
         'Light lab: the land, a room, props, the air',
         'dio',
@@ -1194,7 +1193,7 @@ async function runFullTest(mode) {
         'Billies in the world',
         'dio',
         async () => {
-          const gid = gameData.scenes.longgrass ? 'longgrass' : scenes[0];
+          const gid = gameData.maps.longgrass ? 'longgrass' : scenes[0];
           saveData.queue = (saveData.queue || []).slice(0, 0);
           for (let i = 0; i < 3; i++) spawn(false);
           uiState.tab = 'walk';
@@ -1315,7 +1314,7 @@ async function runFullTest(mode) {
     );
     /* 7. stress: more and more at once in Sundown, until the device can't keep up (not in the diagnostics test) */
     if (!diag) {
-      const sid = gameData.scenes.sundown ? 'sundown' : scenes[0],
+      const sid = gameData.maps.sundown ? 'sundown' : scenes[0],
         sc = mapById(sid),
         folk0 = sc.folk,
         props0 = sc.props,
@@ -1556,7 +1555,7 @@ function runDiagnostics() {
   return runFullTest('diag');
 }
 function diagnosticsMaps() {
-  const sc = gameData.scenes,
+  const sc = gameData.maps,
     ids = Object.keys(sc).filter(id => mapById(id) && !sc[id].test && !sc[id].backup && !id.includes('@')),
     pick = [],
     add = id => {

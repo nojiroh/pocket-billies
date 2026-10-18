@@ -33,7 +33,7 @@ VIEW = {
 def clear_view(D, sid, v):
     """a place to look at with nothing tall between the camera and it: the moored airship, a wind sail or a tower in the
     foreground would fill the card. Tries the town's own view first, then its middle, its landmarks and points round it"""
-    sc = D['scenes'][sid]; C = D['scenery']['props']; hub = sc.get('hub') or [sc['w'] / 2, sc['h'] / 2]
+    sc = D['maps'][sid]; C = D['scenery']['props']; hub = sc.get('hub') or [sc['w'] / 2, sc['h'] / 2]
     back = v.get('back', 22)
     def tall(p):
         M = C.get(p['k']) or {}

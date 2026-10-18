@@ -325,7 +325,7 @@ const FOLK_CHAT = [
   'Watch out, trainers like to battle anyone who looks at them.',
 ];
 /* hooks the Studio replaces to show unsaved art and data */
-export let walkData = () => ({ scenes: gameData.scenes || {}, sc: gameData.scenery || { terrains: {}, props: {} } });
+export let walkData = () => ({ scenes: gameData.maps || {}, sc: gameData.scenery || { terrains: {}, props: {} } });
 /* phase 04d: the Studio feeds the renderer its unsaved scenes and art (studio/js/map-editor.js, prop-editor.js) */
 export function setWalkData(v) {
   walkData = v;

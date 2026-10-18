@@ -1,7 +1,7 @@
 """Phase 04b: the game data for the Python tools, read from its files in game/data.
 
 index.json lists the files: `keys` is the order of the top-level sections; a section in `split` has a file per entry
-in a folder of its name (scenes/<id>.json, ...), in the order of its `ids` (an array when `array` is set); every other
+in a folder of its name (maps/<id>.json, ...), in the order of its `ids` (an array when `array` is set); every other
 section is <section>.json. The same layout as game/js/data-files.js, which the game, the Studio and the build use.
 
     import gamedata; D = gamedata.load(); ...; gamedata.save(D)

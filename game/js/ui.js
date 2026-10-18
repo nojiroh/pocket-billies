@@ -972,7 +972,7 @@ function renderWalk() {
 }
 /* ---------- the walk scene behind the Walk tab ---------- */
 export function mapIdAt(i) {
-  const S0 = gameData.scenes || {},
+  const S0 = gameData.maps || {},
     r = LOCATIONS[i];
   if (r && r.scene && S0[r.scene]) return r.scene;
   return Object.keys(S0)[0] || null;

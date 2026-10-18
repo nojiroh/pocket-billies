@@ -210,7 +210,7 @@ function studioBroadcast() {
     try {
       LIVE_UPDATE_CHANNEL.postMessage({
         type: 'data',
-        D: { scenes: studioState.D.scenes, scenery: studioState.D.scenery, engine: studioState.D.engine },
+        D: { maps: studioState.D.maps, scenery: studioState.D.scenery, engine: studioState.D.engine },
       });
     } catch (e) {}
   }, 500);

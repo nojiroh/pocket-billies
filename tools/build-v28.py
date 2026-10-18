@@ -73,7 +73,7 @@ def main():
     s = gamedata.js_text(); i = s.index('window.GAMEDATA=')
     head, D = s[:i], json.JSONDecoder().raw_decode(s[i + 16:])[0]
     for sid, want in SCENES.items():
-        sc = D['scenes'].get(sid)
+        sc = D['maps'].get(sid)
         if not sc or any(p['k'] == 'ladder' for p in sc.get('props', [])): continue
         L = ladders(sc, want)
         for x, zf, d in L:
@@ -81,7 +81,7 @@ def main():
                                 'to': [round(x, 2), round(zf + .8, 2)], 'h': round(d, 2)})
         print(f'{sid}: {len(L)} ladder(s)', [(round(x, 1), round(zf, 1), round(d, 1)) for x, zf, d in L])
     # your house in Sundown: the house nearest where you arrive
-    sd = D['scenes'].get('sundown')
+    sd = D['maps'].get('sundown')
     if sd and not any(p.get('act') == 'home' for p in sd['props']):
         hub = sd.get('hub', [0, 0]); hs = [p for p in sd['props'] if (PROPS.get(p['k'], {}).get('group') == 'house') and p.get('act') in (None, 'house')]
         if hs:

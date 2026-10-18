@@ -782,7 +782,7 @@ function studioTestStart() {
 }
 function studioLive(D) {
   let any = false;
-  for (const k of ['scenes', 'scenery', 'engine'])
+  for (const k of ['maps', 'scenery', 'engine'])
     if (D[k]) {
       gameData[k] = D[k];
       any = true;
@@ -792,8 +792,8 @@ function studioLive(D) {
     seamlessWorld.gen++;
     seamlessWorld.cache.clear();
   }
-  if (typeof walkView !== 'undefined' && walkView.id && gameData.scenes[walkView.id]) {
-    walkView.sc = gameData.scenes[walkView.id];
+  if (typeof walkView !== 'undefined' && walkView.id && gameData.maps[walkView.id]) {
+    walkView.sc = gameData.maps[walkView.id];
     walkView.gkey = '';
     walkView.nav = null;
     walkView.cand = null;

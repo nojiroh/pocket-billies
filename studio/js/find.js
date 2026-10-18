@@ -175,7 +175,7 @@ function buildSearchIndex() {
   Object.keys(D.people || {}).forEach(k =>
     add(k, 'Look (People)', 'person', () => openSection('people', { person: k }))
   );
-  Object.entries(D.scenes || {}).forEach(([k, s]) =>
+  Object.entries(D.maps || {}).forEach(([k, s]) =>
     add(
       s.name || k,
       `Walk scene · ${s.kind || (s.room ? 'room' : 'place')}`,

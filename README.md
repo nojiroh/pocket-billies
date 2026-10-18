@@ -95,7 +95,7 @@ stands.
 - `game/`: the game. `index.html` (the script order; the build replaces the module tags with one bundle), `version.js` (the version, the only place it is written),
   `sw.js` (offline cache), `css/`, `fonts/` (SIL Open Font License).
   - `data/`: all game data and rules as JSON files, edited by the Studio (or by hand). `index.json` lists them;
-    a file per map (`scenes/`), Billie line (`lines/`), trainer (`trainers/`) and person (`people/`), and one file
+    a file per map (`maps/`), Billie line (`lines/`), trainer (`trainers/`) and person (`people/`), and one file
     per other section (`moves.json`, `rules.json`, `locations.json`, `scenery.json`...). `schema/` has their JSON
     schemas. `gamedata.js` is generated from them (not in git): everything but the maps' ground and props, which the
     game fetches from each map's file when it needs it (`js/map-files.js`).

@@ -43,7 +43,7 @@ with sync_playwright() as pw:
             wm = max(SZ.get(k, [0, 1.2, 1])[0], SZ.get(k, [0, 1.2, 1])[1]); x += max(5, wm / 2 + 4); xs.append(round(x)); x += max(5, wm / 2 + 4)
         W, H = int(x) + 6, 20
         props = [{'k': k, 'x': xs[i], 'z': 12} for i, k in enumerate(batch)]
-        pg.evaluate(f"""gameData.scenes['{sid}']={{name:'Audit',w:{W},h:{H},edge:'g',tiles:Array({H}).fill('g'.repeat({W})),props:{json.dumps(props)},cam:{{pitch:30,h:8,fov:1}},sky:['#8CC6E6','#BFE3EE','#F4E8C8'],haze:'#EAD9C0',hazeD:80,far:null,folk:0,test:1,exits:[],hub:[1,1],blur:0}};uiState.tab='walk';uiState.bench={{id:'{sid}',test:1}};render();0""")
+        pg.evaluate(f"""gameData.maps['{sid}']={{name:'Audit',w:{W},h:{H},edge:'g',tiles:Array({H}).fill('g'.repeat({W})),props:{json.dumps(props)},cam:{{pitch:30,h:8,fov:1}},sky:['#8CC6E6','#BFE3EE','#F4E8C8'],haze:'#EAD9C0',hazeD:80,far:null,folk:0,test:1,exits:[],hub:[1,1],blur:0}};uiState.tab='walk';uiState.bench={{id:'{sid}',test:1}};render();0""")
         cq.until(pg, f"walkView.ready&&walkView.id==='{sid}'", 60); time.sleep(2)
         pg.evaluate("document.body.classList.add('photo');walkView.pl.route=null;walkView.pl.x=1;walkView.pl.z=1;0")
         for p in props:
