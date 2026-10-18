@@ -77,7 +77,7 @@ import {
   solidPropState,
 } from './solid-props.js';
 import { LIFE, lifeStep, setLifeStep } from './ambient-life.js';
-import { pwState } from './ground-paint-worker.js';
+import { paintWorkerReport } from './ground-paint-worker.js';
 import {
   areaKey,
   endBattle,
@@ -148,8 +148,8 @@ Object.defineProperties(GAME, {
   openDressing: { get: () => openDressing, set: setOpenDressing },
   openShop: { get: () => openShop, set: setOpenShop },
   paintActions: { get: () => paintActions, set: setPaintActions },
+  paintWorkerReport: { get: () => paintWorkerReport },
   prepareMap: { get: () => prepareMap, set: setPrepareMap },
-  pwState: { get: () => pwState },
   reflectionPass: { get: () => reflectionPass, set: setReflectionPass },
   render: { get: () => render, set: setRender },
   renderOv: { get: () => renderOv, set: setRenderOv },

@@ -48,26 +48,26 @@ import { TERRAIN_MATERIALS } from './walk-view-gl.js';
 import { seamlessNearestRoadPoint } from './seamless-world.js';
 /* eslint-disable no-func-assign */
 expose({
-  PW: [() => PW],
-  PW_KEEP: [() => PW_KEEP],
-  PW_KINDS: [() => PW_KINDS],
-  PW_MAIN: [() => PW_MAIN],
-  pwAll: [() => pwAll, v => ((pwAll = v), provide({ pwAll }))],
-  pwCtxId: [() => pwCtxId, v => (pwCtxId = v)],
-  pwOn: [() => pwOn, v => ((pwOn = v), provide({ pwOn }))],
-  pwPaint: [() => pwPaint, v => ((pwPaint = v), provide({ pwPaint }))],
-  pwSendCtx: [() => pwSendCtx, v => (pwSendCtx = v)],
-  pwSendTiles: [() => pwSendTiles, v => (pwSendTiles = v)],
-  pwSettle: [() => pwSettle, v => ((pwSettle = v), provide({ pwSettle }))],
-  pwSource: [() => pwSource, v => (pwSource = v)],
-  pwState: [() => pwState, v => (pwState = v)],
-  pwWake: [() => pwWake, v => (pwWake = v)],
-  pwWorker: [() => pwWorker, v => (pwWorker = v)],
+  PAINT_WORKER_MAIN: [() => PAINT_WORKER_MAIN],
+  PAINT_WORKER_VIEWS_KEPT: [() => PAINT_WORKER_VIEWS_KEPT],
+  TILE_KINDS_CACHE: [() => TILE_KINDS_CACHE],
+  ensurePaintWorker: [() => ensurePaintWorker, v => (ensurePaintWorker = v)],
+  paintGroundOnWorker: [() => paintGroundOnWorker, v => ((paintGroundOnWorker = v), provide({ paintGroundOnWorker }))],
+  paintGroundTogether: [() => paintGroundTogether, v => ((paintGroundTogether = v), provide({ paintGroundTogether }))],
+  paintWorkerOn: [() => paintWorkerOn, v => ((paintWorkerOn = v), provide({ paintWorkerOn }))],
+  paintWorkerReport: [() => paintWorkerReport, v => (paintWorkerReport = v)],
+  paintWorkerSource: [() => paintWorkerSource, v => (paintWorkerSource = v)],
+  paintWorkerState: [() => paintWorkerState],
+  paintWorkerViewId: [() => paintWorkerViewId, v => (paintWorkerViewId = v)],
+  sendPaintWorkerTiles: [() => sendPaintWorkerTiles, v => (sendPaintWorkerTiles = v)],
+  sendPaintWorkerView: [() => sendPaintWorkerView, v => (sendPaintWorkerView = v)],
+  waitForPaintWorker: [() => waitForPaintWorker, v => ((waitForPaintWorker = v), provide({ waitForPaintWorker }))],
+  wakePaintWorkerWaiters: [() => wakePaintWorkerWaiters, v => (wakePaintWorkerWaiters = v)],
 });
 /* eslint-enable no-func-assign */
-provide({ pwAll, pwOn, pwPaint, pwSettle });
+provide({ paintGroundOnWorker, paintGroundTogether, paintWorkerOn, waitForPaintWorker });
 /* to-module: end */
-const PW = {
+const paintWorkerState = {
   w: null,
   bad: false,
   why: '',
@@ -86,12 +86,12 @@ const PW = {
   waiters: [],
   last: '',
 };
-provide({ PW }); /* to-module */
-const PW_KEEP = 4,
-  PW_KINDS = new WeakMap();
+provide({ paintWorkerState }); /* to-module */
+const PAINT_WORKER_VIEWS_KEPT = 4,
+  TILE_KINDS_CACHE = new WeakMap();
 /* the helper's own part: the views it holds, the tile pictures, a queue (nearest square first; one dropped before it
    starts is skipped) and the small sizes of a picture */
-const PW_MAIN = `var TERRAIN_MATERIALS;let CTX=null;const CTXS=new Map(),TILES=new Map(),Q=[],GONE=new Set();let busy=false;
+const PAINT_WORKER_MAIN = `var TERRAIN_MATERIALS;let CTX=null;const CTXS=new Map(),TILES=new Map(),Q=[],GONE=new Set();let busy=false;
 /* (stand-ins for walk-view.js's own, from what the main thread handed over) */
 var walkData=()=>({sc:CTX.C}),bigTilesOn=()=>!!CTX.next,worldPatchTilesOn=()=>!!CTX.t47,stepGrid=sc=>CTX.E,mapBridges=()=>null,
  tileSetPixels=(T,TP)=>TILES.get(TP+'|'+T.tile+'|'+(T.vars||[]).join(','))||[null];
@@ -107,13 +107,13 @@ function run(){busy=false;if(!Q.length)return;Q.sort((a,b)=>a.pr-b.pr);const m=Q
  catch(e){postMessage({id:m.id,err:String(e&&e.stack||e).slice(0,400)})}
  if(Q.length){busy=true;setTimeout(run,0)}}
 onmessage=ev=>{const m=ev.data;
- if(m.t==='ctx'){CTXS.delete(m.id);CTXS.set(m.id,m.ctx);while(CTXS.size>${PW_KEEP})CTXS.delete(CTXS.keys().next().value);return}
+ if(m.t==='ctx'){CTXS.delete(m.id);CTXS.set(m.id,m.ctx);while(CTXS.size>${PAINT_WORKER_VIEWS_KEPT})CTXS.delete(CTXS.keys().next().value);return}
  if(m.t==='tiles'){if(m.gen!==TILES.gen){TILES.clear();TILES.gen=m.gen}for(const [k,L] of m.L)TILES.set(k,L);return}
  if(m.t==='cancel'){if(Q.some(q=>q.id===m.id))GONE.add(m.id);return}
  if(m.t==='prio'){for(const q of Q)if(q.id===m.id)q.pr=m.pr;return}
  if(m.t==='paint'){Q.push(m);if(!busy){busy=true;setTimeout(run,0)}}};`;
 /* the worker's source: the painter and everything it calls, as written in walk-view.js (and seamlessNearestRoadPoint, seamless-world.js) */
-function pwSource() {
+function paintWorkerSource() {
   const fns = [
     hash2d,
     valueNoise2d,
@@ -147,91 +147,91 @@ function pwSource() {
     'const pkh=' + pkh.toString() + ';',
     ...Object.entries(consts).map(([k, v]) => `const ${k}=${JSON.stringify(v)};`),
     ...fns.map(f => f.toString()),
-    PW_MAIN,
+    PAINT_WORKER_MAIN,
   ].join('\n');
 }
-function pwOn() {
-  return !!pwWorker();
+function paintWorkerOn() {
+  return !!ensurePaintWorker();
 }
-function pwWorker() {
-  if (PW.w || PW.bad) return PW.w;
+function ensurePaintWorker() {
+  if (paintWorkerState.w || paintWorkerState.bad) return paintWorkerState.w;
   if (typeof Worker === 'undefined' || (typeof eng === 'function' && eng('quality', 'paintWorker') === false)) {
-    PW.bad = true;
-    PW.why = typeof Worker === 'undefined' ? 'no workers here' : 'turned off';
+    paintWorkerState.bad = true;
+    paintWorkerState.why = typeof Worker === 'undefined' ? 'no workers here' : 'turned off';
     return null;
   }
   try {
-    const u = URL.createObjectURL(new Blob([pwSource()], { type: 'text/javascript' })),
+    const u = URL.createObjectURL(new Blob([paintWorkerSource()], { type: 'text/javascript' })),
       W = new Worker(u);
     W.onmessage = ev => {
       const m = ev.data,
-        j = PW.jobs.get(m.id);
-      PW.jobs.delete(m.id);
+        j = paintWorkerState.jobs.get(m.id);
+      paintWorkerState.jobs.delete(m.id);
       if (j) {
         j.done = true;
         if (m.r) {
           j.r = m.r;
           j.r.mips = m.mips;
           j.r.nmips = m.nmips;
-          PW.done++;
-          PW.ms += m.ms || 0;
+          paintWorkerState.done++;
+          paintWorkerState.ms += m.ms || 0;
         } else if (m.miss) {
           j.miss = 1;
         } else if (m.err) {
           j.err = m.err;
-          PW.fails++;
-          PW.last = m.err;
+          paintWorkerState.fails++;
+          paintWorkerState.last = m.err;
         }
       }
-      pwWake();
+      wakePaintWorkerWaiters();
     };
     W.onerror = e => {
-      PW.bad = true;
-      PW.why = 'the helper stopped: ' + ((e && e.message) || 'error');
-      PW.w = null;
-      for (const j of PW.jobs.values()) {
+      paintWorkerState.bad = true;
+      paintWorkerState.why = 'the helper stopped: ' + ((e && e.message) || 'error');
+      paintWorkerState.w = null;
+      for (const j of paintWorkerState.jobs.values()) {
         j.done = true;
         j.err = 'worker';
       }
-      PW.jobs.clear();
-      pwWake();
-      if (typeof NWLOG !== 'undefined') NWLOG.add('webgl', 'ground painter helper: ' + PW.why);
+      paintWorkerState.jobs.clear();
+      wakePaintWorkerWaiters();
+      if (typeof NWLOG !== 'undefined') NWLOG.add('webgl', 'ground painter helper: ' + paintWorkerState.why);
     };
-    PW.w = W;
-    PW.gen = '';
+    paintWorkerState.w = W;
+    paintWorkerState.gen = '';
   } catch (e) {
-    PW.bad = true;
-    PW.why = 'not allowed here (' + String((e && e.message) || e).slice(0, 80) + ')';
+    paintWorkerState.bad = true;
+    paintWorkerState.why = 'not allowed here (' + String((e && e.message) || e).slice(0, 80) + ')';
   }
-  return PW.w;
+  return paintWorkerState.w;
 }
-function pwWake() {
-  const L = PW.waiters;
-  PW.waiters = [];
+function wakePaintWorkerWaiters() {
+  const L = paintWorkerState.waiters;
+  paintWorkerState.waiters = [];
   for (const f of L) f();
 }
 /* for async callers (buildGroundAsync): wait for the helper's next answer (or a tenth of a second) */
-function pwSettle() {
+function waitForPaintWorker() {
   return new Promise(res => {
-    PW.waiters.push(res);
+    paintWorkerState.waiters.push(res);
     setTimeout(res, 100);
   });
 }
 /* a view's id with the helper: its ground key (tiles, sizes, heights, art) and its own id */
-function pwCtxId(sc) {
+function paintWorkerViewId(sc) {
   const key = (sc.id || '') + '|' + (sc === walkView.sc && walkView.gkey ? walkView.gkey : groundKey(sc));
-  let id = PW.ids.get(key);
+  let id = paintWorkerState.ids.get(key);
   if (id == null) {
-    id = ++PW.ctxN;
-    PW.ids.set(key, id);
-    if (PW.ids.size > 64) PW.ids.delete(PW.ids.keys().next().value);
+    id = ++paintWorkerState.ctxN;
+    paintWorkerState.ids.set(key, id);
+    if (paintWorkerState.ids.size > 64) paintWorkerState.ids.delete(paintWorkerState.ids.keys().next().value);
   }
   return id;
 }
-function pwSendCtx(id, sc) {
-  if (PW.sent.has(id)) {
-    PW.sent.delete(id);
-    PW.sent.set(id, 1);
+function sendPaintWorkerView(id, sc) {
+  if (paintWorkerState.sent.has(id)) {
+    paintWorkerState.sent.delete(id);
+    paintWorkerState.sent.set(id, 1);
     return;
   }
   const C = walkData().sc,
@@ -274,24 +274,25 @@ function pwSendCtx(id, sc) {
     next: bigTilesOn(),
     mat: typeof TERRAIN_MATERIALS !== 'undefined' ? TERRAIN_MATERIALS : null,
   };
-  PW.w.postMessage({ t: 'ctx', id, ctx });
-  PW.sent.set(id, 1);
-  while (PW.sent.size > PW_KEEP) PW.sent.delete(PW.sent.keys().next().value);
+  paintWorkerState.w.postMessage({ t: 'ctx', id, ctx });
+  paintWorkerState.sent.set(id, 1);
+  while (paintWorkerState.sent.size > PAINT_WORKER_VIEWS_KEPT)
+    paintWorkerState.sent.delete(paintWorkerState.sent.keys().next().value);
 }
 /* the tile pictures of every kind the view shows, at TP pixels a metre (sent once; again when the art changes).
    false while a picture hasn't loaded: that rectangle is painted here meanwhile, as before */
-function pwSendTiles(sc, TP) {
+function sendPaintWorkerTiles(sc, TP) {
   const C = walkData().sc,
     gen = (typeof dioArtVer === 'function' ? dioArtVer() : 0) + '|' + groundTileFolder() + '|' + (bigTilesOn() ? 1 : 0);
-  if (gen !== PW.gen) {
-    PW.gen = gen;
-    PW.tiles.clear();
+  if (gen !== paintWorkerState.gen) {
+    paintWorkerState.gen = gen;
+    paintWorkerState.tiles.clear();
   }
-  let kinds = PW_KINDS.get(sc.tiles);
+  let kinds = TILE_KINDS_CACHE.get(sc.tiles);
   if (!kinds) {
     kinds = new Set();
     for (const row of sc.tiles || []) for (let i = 0; i < row.length; i++) kinds.add(row[i]);
-    PW_KINDS.set(sc.tiles, kinds);
+    TILE_KINDS_CACHE.set(sc.tiles, kinds);
   }
   kinds = new Set(kinds).add(sc.edge);
   const L = [];
@@ -300,7 +301,7 @@ function pwSendTiles(sc, TP) {
     const T = C.terrains[ch];
     if (!T) continue;
     const k = TP + '|' + T.tile + '|' + (T.vars || []).join(',');
-    if (PW.tiles.get(k) === 2) continue;
+    if (paintWorkerState.tiles.get(k) === 2) continue;
     const set = tileSetPixels(T, TP),
       full = set.every(Boolean);
     if (!full) {
@@ -308,24 +309,24 @@ function pwSendTiles(sc, TP) {
       continue;
     }
     L.push([k, set]);
-    PW.tiles.set(k, 2);
+    paintWorkerState.tiles.set(k, 2);
   }
-  if (L.length) PW.w.postMessage({ t: 'tiles', gen, L });
+  if (L.length) paintWorkerState.w.postMessage({ t: 'tiles', gen, L });
   return ok;
 }
 /* paint a rectangle of a view's ground (the options of paintGroundSteps): on the helper when it can, here otherwise */
-function* pwPaint(sc, o) {
+function* paintGroundOnWorker(sc, o) {
   for (let attempt = 0; attempt < 2; attempt++) {
-    const W = PW.sync ? null : pwWorker();
+    const W = paintWorkerState.sync ? null : ensurePaintWorker();
     if (!W || !sc || !sc.tiles) break;
     let id, job, cid;
     try {
-      cid = pwCtxId(sc);
-      pwSendCtx(cid, sc);
-      if (!pwSendTiles(sc, o.TP)) break;
-      id = ++PW.id;
+      cid = paintWorkerViewId(sc);
+      sendPaintWorkerView(cid, sc);
+      if (!sendPaintWorkerTiles(sc, o.TP)) break;
+      id = ++paintWorkerState.id;
       job = { done: false };
-      PW.jobs.set(id, job);
+      paintWorkerState.jobs.set(id, job);
       if (o.rec) {
         o.rec.id = id;
         o.pr = o.rec.pr;
@@ -339,30 +340,30 @@ function* pwPaint(sc, o) {
         o: { TP: o.TP, rect: o.rect, margin: o.margin, nhalf: !!o.nhalf, normals: o.normals },
       });
     } catch (e) {
-      PW.fails++;
-      PW.last = String((e && e.message) || e);
+      paintWorkerState.fails++;
+      paintWorkerState.last = String((e && e.message) || e);
       break;
     }
     try {
       while (!job.done) yield PAINT_WORKER_WAIT;
     } finally {
       if (!job.done) {
-        PW.jobs.delete(id);
-        if (PW.w) PW.w.postMessage({ t: 'cancel', id });
+        paintWorkerState.jobs.delete(id);
+        if (paintWorkerState.w) paintWorkerState.w.postMessage({ t: 'cancel', id });
       }
     }
     if (job.r) return job.r;
     if (job.miss) {
-      PW.sent.delete(cid);
+      paintWorkerState.sent.delete(cid);
       continue;
     }
     /* the helper had let the view go: hand it over again */ break;
   }
-  PW.local++;
+  paintWorkerState.local++;
   return yield* paintGroundSteps(sc, o);
 }
 /* several paintings at once (the squares round where you will come in): all are queued on the helper together */
-function* pwAll(G) {
+function* paintGroundTogether(G) {
   const L = G.slice();
   try {
     while (L.length) {
@@ -384,13 +385,13 @@ function* pwAll(G) {
   }
 }
 /* for the debug log */
-export function pwState() {
+export function paintWorkerReport() {
   return {
-    helper: PW.w ? 'on' : PW.bad ? 'off: ' + PW.why : 'not started',
-    painted: PW.done,
-    here: PW.local,
-    failed: PW.fails,
-    avgMs: PW.done ? Math.round(PW.ms / PW.done) : 0,
-    last: PW.last || undefined,
+    helper: paintWorkerState.w ? 'on' : paintWorkerState.bad ? 'off: ' + paintWorkerState.why : 'not started',
+    painted: paintWorkerState.done,
+    here: paintWorkerState.local,
+    failed: paintWorkerState.fails,
+    avgMs: paintWorkerState.done ? Math.round(paintWorkerState.ms / paintWorkerState.done) : 0,
+    last: paintWorkerState.last || undefined,
   };
 }

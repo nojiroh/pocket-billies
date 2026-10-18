@@ -12,7 +12,6 @@ import { expose } from './test-globals.js';
 import {
   ALTERNATE_PROPS,
   GD,
-  PW,
   RM,
   ROOM_KIND,
   TERRAIN_MATERIALS,
@@ -33,10 +32,10 @@ import {
   mapFiles,
   mapsOfView,
   needMaps,
+  paintGroundOnWorker,
+  paintWorkerState,
   propModelArtPaths,
   provide,
-  pwPaint,
-  pwSettle,
   rawHeightAt,
   seamlessMapById,
   seamlessNearestRoadPoint,
@@ -45,6 +44,7 @@ import {
   smooth01,
   standingHeightAt,
   talkFolk,
+  waitForPaintWorker,
   walkMode,
 } from './hooks.js';
 import { clamp } from './util.js';
@@ -2008,8 +2008,8 @@ export function* paintGroundSteps(sc, o) {
    renderer the distant picture (8 px a metre; the near ring paints the 16 m squares round you at full size) */
 function* farGroundSteps(sc, pr = 0, rec = null) {
   const full = FAR_GROUND_PX_PER_M;
-  const r = yield* typeof pwPaint === 'function'
-    ? pwPaint(sc, { TP: full, margin: 0, pr, rec })
+  const r = yield* typeof paintGroundOnWorker === 'function'
+    ? paintGroundOnWorker(sc, { TP: full, margin: 0, pr, rec })
     : paintGroundSteps(sc, { TP: full, margin: 0 });
   const g = { width: r.w, height: r.h, _px: new Uint8Array(r.px.buffer) };
   g._nrm = r.nrm;
@@ -2019,7 +2019,7 @@ function* farGroundSteps(sc, pr = 0, rec = null) {
 }
 const FAR_GROUND_PX_PER_M = 8;
 function buildGroundPicture(sc) {
-  const pw = typeof PW !== 'undefined' ? PW : null;
+  const pw = typeof paintWorkerState !== 'undefined' ? paintWorkerState : null;
   if (pw) pw.sync++;
   /* (all here, now: no waiting on the helper) */ try {
     const it = farGroundSteps(sc);
@@ -2066,7 +2066,8 @@ export async function buildGroundAsync(sc, pr = 0) {
   if (pend) {
     if (pr < pend.rec.pr) {
       pend.rec.pr = pr;
-      if (pend.rec.id && typeof PW !== 'undefined' && PW.w) PW.w.postMessage({ t: 'prio', id: pend.rec.id, pr });
+      if (pend.rec.id && typeof paintWorkerState !== 'undefined' && paintWorkerState.w)
+        paintWorkerState.w.postMessage({ t: 'prio', id: pend.rec.id, pr });
     }
     return pend.p;
   }
@@ -2079,7 +2080,7 @@ export async function buildGroundAsync(sc, pr = 0) {
         r = it.next();
         if (r.done) break;
         if (r.value === PAINT_WORKER_WAIT) {
-          await pwSettle();
+          await waitForPaintWorker();
           t0 = performance.now();
           continue;
         }

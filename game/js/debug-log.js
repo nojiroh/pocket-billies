@@ -376,7 +376,7 @@ NWLOG.glInfo = () => {
   }
   /* alpha 0.4: the helper threads: the ground painter's (ground-paint-worker.js) and the bump maps' (engine/webgl.js) */
   try {
-    if (typeof GAME.pwState === 'function') o.groundPainter = GAME.pwState();
+    if (typeof GAME.paintWorkerReport === 'function') o.groundPainter = GAME.paintWorkerReport();
     if (typeof GAME.EGL_NW !== 'undefined')
       o.bumpHelper = GAME.EGL_NW.w ? 'on' : GAME.EGL_NW.bad ? 'off' : 'not started';
   } catch (e) {}

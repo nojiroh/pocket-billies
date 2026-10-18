@@ -44,12 +44,12 @@ import {
   lifeStep,
   litWindowFraction,
   noWebGL,
+  paintGroundOnWorker,
+  paintGroundTogether,
+  paintWorkerOn,
   propModelImageItems,
   propModelShaders,
   provide,
-  pwAll,
-  pwOn,
-  pwPaint,
   reqAsker,
   riderOf,
   seamlessLookTick,
@@ -2276,7 +2276,7 @@ function* paintRingChunk(R, sc, ci, cj, pr) {
     mips: 1,
     pr: pr || 0,
   };
-  const r = yield* typeof pwPaint === 'function' ? pwPaint(sc, o) : paintGroundSteps(sc, o);
+  const r = yield* typeof paintGroundOnWorker === 'function' ? paintGroundOnWorker(sc, o) : paintGroundSteps(sc, o);
   if (!R.tex) return;
   const gl = EGL.gl,
     px = R.TP * NEAR_RING_CHUNK_M,
@@ -2322,7 +2322,7 @@ export function updateNearRing(sc, fx, fz, budget) {
   if (near) budget = Math.max(budget, R.n === 0 ? 30 : 12);
   /* alpha 0.4: with the helper thread painting, a few squares are asked for at once (nearest first) and this frame only
     puts the finished ones on the card; without it, one square at a time, painted here a slice at a time */
-  const K = typeof pwOn === 'function' && pwOn() ? 3 : 1;
+  const K = typeof paintWorkerOn === 'function' && paintWorkerOn() ? 3 : 1;
   R.jobs = (R.jobs || []).filter(J => {
     if (W.some(([i, j]) => i === J.ci && j === J.cj)) return true;
     try {
@@ -2434,10 +2434,10 @@ export function prepareMapGround(id, sc, G, urgent, focus) {
         const W = wantedRingChunks(T.ring, sc, focus[0], focus[1]),
           Q = W.slice(0, 9).map(([i, j, d]) => paintRingChunk(T.ring, sc, i, j, 6 + d));
         /* alpha 0.4: all nine on the helper together; painted here, one after another */ if (
-          typeof pwOn === 'function' &&
-          pwOn()
+          typeof paintWorkerOn === 'function' &&
+          paintWorkerOn()
         )
-          yield* pwAll(Q);
+          yield* paintGroundTogether(Q);
         else for (const g of Q) yield* g;
       }
     })(),
