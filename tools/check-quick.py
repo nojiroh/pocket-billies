@@ -694,12 +694,14 @@ def phone_flow(b, base, R):
         pg.click('[data-a=cs-next]'); time.sleep(.5); pg.click('[data-a=cs-choose]'); pg.click('[data-a=cs-yes]')
         if not until(pg, 'saveData.started', 40, skip): raise Exception('the game didn’t start after picking a starter')
         R['opening'] = pg.evaluate('[saveData.starter,saveData.avatar.name,saveData.team.length,LOCATIONS[saveData.trip.node].id]')
+        # phase 06-2b: Blake came before the pick and Hazel fought his first Billie herself
+        if not pg.evaluate('!!cutscene.foeName'): raise Exception('Hazel’s fight against Blake never ran in the opening')
         if R['opening'][3] != 'copperleaf': raise Exception(f'the game started at {R["opening"][3]}, not in Copperleaf')
         # v47: Blake battles you on the spot, with Hazel's tips; win or lose, he talks, Hazel heals you, the welcome sheet
         if not until(pg, "!!activeBattle&&activeBattle.phase==='choose'", 120): raise Exception('Blake’s first battle never reached the move menu')
-        R['rivalBattle'] = pg.evaluate("({tutorial:!!(activeBattle.T&&activeBattle.T.tutorial),foe:activeBattle.foeName,moves:activeBattle.sides[1].team[0].moves,tip:!!document.querySelector('#btip.on')})")
+        R['rivalBattle'] = pg.evaluate("({tutorial:!!(activeBattle.T&&activeBattle.T.tutorial),foe:activeBattle.foeName,moves:activeBattle.sides[1].team[0].moves,tip:!!document.querySelector('#btip.on'),hot:!!document.querySelector('#btip.hot.on')})")
         shot(pg, 'phone-rival-battle')
-        if not R['rivalBattle']['tutorial'] or not R['rivalBattle']['tip']: raise Exception(f'Blake’s first battle isn’t the tutorial one: {R["rivalBattle"]}')
+        if not R['rivalBattle']['tutorial'] or not R['rivalBattle']['hot']: raise Exception(f'Blake’s first battle doesn’t open on Hazel’s HOT TIP: {R["rivalBattle"]}')
         pg.evaluate("activeBattle.over='win';stopTimers();endBattle();0")
         if not until(pg, '!!talkBox.cur', 40): raise Exception('nobody spoke after Blake’s battle')
         if not until(pg, '!talkBox.on&&!!uiState.modal', 60, 'talkBox.cur&&talkBox.cur.tap()'): raise Exception('the talk after Blake’s battle never ended')
@@ -726,7 +728,7 @@ def phone_flow(b, base, R):
         names = [n for n in ('Checker', 'Zorblax') if n.lower() in Path(d.path()).read_text(encoding='utf-8').lower()]
         if names: raise Exception(f'the exported debug log holds a name: {names}')
         if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
-        return f'the fall, Hazel, dressing room, starter, Blake’s first battle and the talk after, five screens, shop, battle, speech kept out of the debug picture, debug log ({len(json.dumps(dlog)) // 1024} KB, no names)'
+        return f'the fall, Hazel, dressing room, Hazel’s fight, starter, Blake’s first battle (HOT TIP) and the talk after, five screens, shop, battle, speech kept out of the debug picture, debug log ({len(json.dumps(dlog)) // 1024} KB, no names)'
     finally:
         R['phoneErrors'] = errs[:10]; ctx.close()
 
