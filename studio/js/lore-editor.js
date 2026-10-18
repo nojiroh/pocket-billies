@@ -31,8 +31,8 @@ import {
 expose({
   LORE_TABS: [() => LORE_TABS],
   LORE_UNLOCK: [() => LORE_UNLOCK],
-  loreDelBtn: [() => loreDelBtn],
-  loreSceneOpts: [() => loreSceneOpts],
+  loreDeleteButton: [() => loreDeleteButton],
+  loreMapOptions: [() => loreMapOptions],
 });
 /* to-module: end */
 const LORE_TABS = [
@@ -73,12 +73,12 @@ const LORE_UNLOCK =
     return st(path, v, o);
   });
 }
-const loreSceneOpts = () =>
+const loreMapOptions = () =>
   Object.keys(studioState.D.scenes || {})
     .filter(k => !studioState.D.scenes[k].test && !k.includes('@'))
     .sort()
     .map(k => [k, (studioState.D.scenes[k].name || k) + ' (' + k + ')']);
-const loreDelBtn = (k, i) =>
+const loreDeleteButton = (k, i) =>
   `<button class="btn sm danger subtle" data-act="loreDel" data-k="${k}" data-i="${esc(String(i))}">Delete</button>`;
 SECTIONS.lore = () => {
   const D = studioState.D,
@@ -89,7 +89,9 @@ SECTIONS.lore = () => {
     const A = Array.isArray(L[key]) ? L[key] : (L[key] = []);
     return (
       A.map((e, i) =>
-        card(esc(e.title || e.id || `Entry ${i + 1}`), fields(`lore.${key}.${i}`, e, i), { acts: loreDelBtn(key, i) })
+        card(esc(e.title || e.id || `Entry ${i + 1}`), fields(`lore.${key}.${i}`, e, i), {
+          acts: loreDeleteButton(key, i),
+        })
       ).join('') +
       `<div class="seg-row"><button class="btn" data-act="loreAdd" data-k="${key}">+ Add ${one}</button></div>`
     );
@@ -102,7 +104,7 @@ SECTIONS.lore = () => {
           card(
             esc(e.title || e.name || k),
             `<small class="mono">${esc(k)}</small>` + fields(`lore.${key}.${k}`, e, k),
-            { acts: loreDelBtn(key, k) }
+            { acts: loreDeleteButton(key, k) }
           )
         )
         .join('') +
@@ -202,7 +204,7 @@ SECTIONS.lore = () => {
           textField('Title', p + '.title'),
           textField('Id', p + '.id'),
           textField('When it shows', p + '.unlock', { help: LORE_UNLOCK }),
-          selectField('Lies in', p + '.at.scene', loreSceneOpts(), { none: 'Nowhere (found in the story)', opt: 1 }),
+          selectField('Lies in', p + '.at.scene', loreMapOptions(), { none: 'Nowhere (found in the story)', opt: 1 }),
           textField('Beside (props whose name matches)', p + '.at.near', {
             opt: 1,
             help: 'Part of a prop name, or several with |, like bush_berry|bramble',
