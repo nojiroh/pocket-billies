@@ -18,16 +18,16 @@ expose({
   ATLAS_LOADS: [() => ATLAS_LOADS],
   FACE_N: [() => FACE_N],
   GOLD_RAMP: [() => GOLD_RAMP],
-  PREV: [() => PREV],
   PX_ED: [() => PX_ED],
   RIG_CACHE: [() => RIG_CACHE],
+  SPRITE_PREVIEWS: [() => SPRITE_PREVIEWS],
   atlasGet: [() => atlasGet, v => (atlasGet = v)],
   atlasNow: [() => atlasNow],
   atlasPath: [() => atlasPath],
   atlasVersion: [() => atlasVersion, v => (atlasVersion = v)],
   canvasCopy: [() => canvasCopy, v => (canvasCopy = v)],
   downloadCanvas: [() => downloadCanvas, v => (downloadCanvas = v)],
-  drawPrev: [() => drawPrev, v => (drawPrev = v)],
+  drawSpritePreview: [() => drawSpritePreview, v => (drawSpritePreview = v)],
   fileToCanvas: [() => fileToCanvas, v => (fileToCanvas = v)],
   goldFrom: [() => goldFrom, v => (goldFrom = v)],
   hsv2rgb: [() => hsv2rgb, v => (hsv2rgb = v)],
@@ -39,10 +39,7 @@ expose({
   openPixelEditor: [() => openPixelEditor, v => (openPixelEditor = v)],
   partsOf: [() => partsOf, v => (partsOf = v)],
   pickFile: [() => pickFile, v => (pickFile = v)],
-  prevAct: [() => prevAct, v => (prevAct = v)],
-  prevCanvas: [() => prevCanvas, v => (prevCanvas = v)],
-  prevLoop: [() => prevLoop, v => (prevLoop = v)],
-  prevOn: [() => prevOn, v => (prevOn = v)],
+  playSpritePreviewAction: [() => playSpritePreviewAction, v => (playSpritePreviewAction = v)],
   previewsDirty: [() => previewsDirty, v => (previewsDirty = v)],
   pxBind: [() => pxBind, v => (pxBind = v)],
   pxBindCanvas: [() => pxBindCanvas, v => (pxBindCanvas = v)],
@@ -67,6 +64,9 @@ expose({
   rgb2hsv: [() => rgb2hsv, v => (rgb2hsv = v)],
   rigFor: [() => rigFor, v => (rigFor = v)],
   spriteCacheClear: [() => spriteCacheClear, v => ((spriteCacheClear = v), provide({ spriteCacheClear }))],
+  spritePreviewHTML: [() => spritePreviewHTML, v => (spritePreviewHTML = v)],
+  spritePreviewLoop: [() => spritePreviewLoop, v => (spritePreviewLoop = v)],
+  spritePreviewsRunning: [() => spritePreviewsRunning, v => (spritePreviewsRunning = v)],
 });
 /* eslint-enable no-func-assign */
 provide({ mountPreviews, spriteCacheClear });
@@ -155,9 +155,9 @@ export function rigFor(sp, view, gold) {
   return R;
 }
 /* ---------- previews ---------- */
-const PREV = new Set();
-let prevOn = false;
-export function prevCanvas(o) {
+const SPRITE_PREVIEWS = new Set();
+let spritePreviewsRunning = false;
+export function spritePreviewHTML(o) {
   return `<canvas class="spr-prev ${o.cls || ''}" data-prev='${esc(JSON.stringify(o))}' width="10" height="10"></canvas>`;
 }
 export function mountPreviews(root = document) {
@@ -165,21 +165,21 @@ export function mountPreviews(root = document) {
     if (c._p) return;
     const o = JSON.parse(c.dataset.prev);
     c._p = { ...o, seed: Math.random() * 6, t0: performance.now(), act: o.act || null };
-    PREV.add(c);
-    drawPrev(c, performance.now());
+    SPRITE_PREVIEWS.add(c);
+    drawSpritePreview(c, performance.now());
   });
-  if (!prevOn) {
-    prevOn = true;
-    requestAnimationFrame(prevLoop);
+  if (!spritePreviewsRunning) {
+    spritePreviewsRunning = true;
+    requestAnimationFrame(spritePreviewLoop);
   }
 }
-export function prevAct(c, act) {
+export function playSpritePreviewAction(c, act) {
   if (c && c._p) {
     c._p.act = act;
     c._p.t0 = performance.now();
   }
 }
-function drawPrev(c, ts) {
+function drawSpritePreview(c, ts) {
   const o = c._p,
     R = rigFor(o.sp, o.view || 'front', !!o.gold);
   const x = c.getContext('2d');
@@ -189,7 +189,7 @@ function drawPrev(c, ts) {
       atlasGet(atlasPath(o.sp, o.view || 'front', !!o.gold))
         .then(() => {
           o.miss = 0;
-          drawPrev(c, performance.now());
+          drawSpritePreview(c, performance.now());
         })
         .catch(() => {
           x.clearRect(0, 0, c.width, c.height);
@@ -211,23 +211,23 @@ function drawPrev(c, ts) {
   drawRig(x, R, rigPose(act, tau, o.still ? 0 : ts, o.seed), o.view || 'front');
   o.drawn = 1;
 }
-function prevLoop(ts) {
+function spritePreviewLoop(ts) {
   let any = false;
-  for (const c of PREV) {
+  for (const c of SPRITE_PREVIEWS) {
     if (!c.isConnected) {
-      PREV.delete(c);
+      SPRITE_PREVIEWS.delete(c);
       continue;
     }
     any = true;
     if (c._p.still && c._p.drawn && !c._p.dirty) continue;
     c._p.dirty = 0;
-    drawPrev(c, ts);
+    drawSpritePreview(c, ts);
   }
-  if (any) requestAnimationFrame(prevLoop);
-  else prevOn = false;
+  if (any) requestAnimationFrame(spritePreviewLoop);
+  else spritePreviewsRunning = false;
 }
 export function previewsDirty() {
-  for (const c of PREV) c._p.dirty = 1;
+  for (const c of SPRITE_PREVIEWS) c._p.dirty = 1;
 }
 /* ---------- color tools ---------- */
 const lumOf = (r, g, b) => (0.299 * r + 0.587 * g + 0.114 * b) / 255;
@@ -507,7 +507,7 @@ function pxLoad() {
     loop: 1,
   });
   pv._p = null;
-  PREV.delete(pv);
+  SPRITE_PREVIEWS.delete(pv);
   mountPreviews($('.pxed'));
 }
 function pxDraw() {
@@ -769,7 +769,7 @@ function pxBind() {
     } else if (k === 'sw') pxSetColor(b.dataset.c);
     else if (k === 'act') {
       E.act = b.dataset.a;
-      prevAct($('#pxPrev'), E.act === 'idle' ? null : E.act);
+      playSpritePreviewAction($('#pxPrev'), E.act === 'idle' ? null : E.act);
       $('#pxPrev')._p.loop = 1;
     } else if (k === 'gold') {
       const src = atlasNow(atlasPath(E.sp, E.view, false));

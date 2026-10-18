@@ -57,9 +57,9 @@ import {
   mountPreviews,
   openPixelEditor,
   pickFile,
-  prevAct,
-  prevCanvas,
+  playSpritePreviewAction,
   rigFor,
+  spritePreviewHTML,
 } from './sprites.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -146,7 +146,7 @@ LISTS.lq = () => {
       )
       .map(
         ({ l, i }) =>
-          `<button class="lcard ${l.id === cur ? 'on' : ''}" data-act="pickLine" data-id="${l.id}"><span class="lno">${String(D.lines.slice(0, i).reduce((a, x) => a + x.names.length, 0) + 1).padStart(3, '0')}</span>${prevCanvas({ sp: l.id + '0', still: 1, cls: 'thumb' })}<span class="lt"><b>${esc(l.names[0])}</b><small>${esc(l.names.slice(1).join(' → ')) || 'Does not evolve'}</small><span class="row">${[...new Set(l.types.flat())].map(typeChipHTML).join('')}</span></span></button>`
+          `<button class="lcard ${l.id === cur ? 'on' : ''}" data-act="pickLine" data-id="${l.id}"><span class="lno">${String(D.lines.slice(0, i).reduce((a, x) => a + x.names.length, 0) + 1).padStart(3, '0')}</span>${spritePreviewHTML({ sp: l.id + '0', still: 1, cls: 'thumb' })}<span class="lt"><b>${esc(l.names[0])}</b><small>${esc(l.names.slice(1).join(' → ')) || 'Does not evolve'}</small><span class="row">${[...new Set(l.types.flat())].map(typeChipHTML).join('')}</span></span></button>`
       )
       .join('') || '<p class="help">No matches.</p>'
   );
@@ -166,7 +166,7 @@ SECTIONS.billionaires = () => {
         `<button class="seg ${i === st ? 'on' : ''}" data-act="stage" data-i="${i}">${STAGE_LABEL[i]}: ${esc(n)}</button>`
     )
     .join('');
-  const prev = `<div class="prev-row"><figure>${prevCanvas({ sp, view: 'front', gold, cls: 'big' })}<figcaption>Front (foes, Field Guide)</figcaption></figure><figure>${prevCanvas({ sp, view: 'back', gold, cls: 'big' })}<figcaption>Back (your side in battle)</figcaption></figure></div>
+  const prev = `<div class="prev-row"><figure>${spritePreviewHTML({ sp, view: 'front', gold, cls: 'big' })}<figcaption>Front (foes, Field Guide)</figcaption></figure><figure>${spritePreviewHTML({ sp, view: 'back', gold, cls: 'big' })}<figcaption>Back (your side in battle)</figcaption></figure></div>
   <div class="seg-row">${['attack', 'cast', 'hurt', 'cheer', 'buff', 'dizzy', 'faint'].map(a => `<button class="seg sm" data-act="anim" data-a="${a}">${a}</button>`).join('')}<span class="grow"></span><label class="fld chk inline"><input type="checkbox" data-act="goldToggle" ${gold ? 'checked' : ''}><span>Golden</span></label></div>
   <div class="seg-row"><button class="btn primary" data-act="pixels" data-sp="${sp}">Edit pixels and skeleton</button><button class="btn" data-act="skeleton" data-sp="${sp}">Skeleton builder</button><button class="btn" data-act="recolor" data-sp="${sp}">Recolor this stage…</button><button class="btn" data-act="bpFoe" data-sp="${sp}">See it in battle</button>${studioState.rigs[sp] ? '' : '<span class="warn">No skeleton for this stage: it can’t be drawn.</span>'}</div>`;
   const tsel = i => {
@@ -371,7 +371,7 @@ ACTIONS.goldToggle = (d, el) => {
   render();
 };
 ACTIONS.anim = d => {
-  $$('canvas.spr-prev.big').forEach(c => prevAct(c, d.a));
+  $$('canvas.spr-prev.big').forEach(c => playSpritePreviewAction(c, d.a));
 };
 ACTIONS.pixels = d => openPixelEditor(d.sp, 'front', !!studioState.sel.gold);
 ACTIONS.skeleton = d => openSkeleton(d.sp, 'front');

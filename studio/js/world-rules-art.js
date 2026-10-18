@@ -33,7 +33,7 @@ import {
   typeOptions,
   uniqueKey,
 } from './studio-app.js';
-import { fileToCanvas, loadImage, markArt, mountPreviews, pickFile, prevCanvas } from './sprites.js';
+import { fileToCanvas, loadImage, markArt, mountPreviews, pickFile, spritePreviewHTML } from './sprites.js';
 import { RAR_NAMES } from './data-editors.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -440,7 +440,7 @@ function weightTable(base, P) {
   return `<table class="tbl"><thead><tr><th>Billie</th><th>Weight</th><th>Chance</th><th></th></tr></thead><tbody>${P.list
     .map(
       ([id, w], j) =>
-        `<tr><td>${prevCanvas({ sp: id, still: 1, cls: 'mini' })} <select data-p="${base}.list.${j}.0" data-k="sel" data-rr="1">${speciesOptions()
+        `<tr><td>${spritePreviewHTML({ sp: id, still: 1, cls: 'mini' })} <select data-p="${base}.list.${j}.0" data-k="sel" data-rr="1">${speciesOptions()
           .map(([v, n]) => `<option value="${v}" ${v === id ? 'selected' : ''}>${esc(n)}</option>`)
           .join(
             ''
