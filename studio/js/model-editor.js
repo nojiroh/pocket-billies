@@ -31,7 +31,7 @@ import {
 } from './studio-app.js';
 import { fileToCanvas, markArt, pickFile } from './sprites.js';
 import { mapEditor, sceneryCatalog } from './map-editor.js';
-import { pedM } from './prop-editor.js';
+import { editedProp } from './prop-editor.js';
 /* eslint-disable no-func-assign */
 expose({
   VXE: [() => VXE],
@@ -158,7 +158,7 @@ function pedVoxHTML(k) {
 }
 /* a first model: a box the size of the picture, a third as deep */
 ACTIONS.vxeNew = () => {
-  const M = pedM();
+  const M = editedProp();
   if (!M) return;
   const im = artImage(M.img),
     ppu = sceneryCatalog().ppu || 34,
@@ -215,7 +215,7 @@ function vxeMainColour(M) {
   }
 }
 ACTIONS.vxeAdd = d => {
-  const M = pedM(),
+  const M = editedProp(),
     rec = vxeOwn(M);
   if (!rec) return;
   const L = rec.layers || (rec.layers = []),
@@ -244,7 +244,7 @@ ACTIONS.vxeSel = d => {
   render();
 };
 ACTIONS.vxeMove = d => {
-  const M = pedM(),
+  const M = editedProp(),
     rec = vxeOwn(M);
   if (!rec) return;
   const i = +d.i,
@@ -256,7 +256,7 @@ ACTIONS.vxeMove = d => {
   render();
 };
 ACTIONS.vxeDup = d => {
-  const M = pedM(),
+  const M = editedProp(),
     rec = vxeOwn(M);
   if (!rec) return;
   const i = +d.i,
@@ -268,7 +268,7 @@ ACTIONS.vxeDup = d => {
   render();
 };
 ACTIONS.vxeDel = d => {
-  const M = pedM(),
+  const M = editedProp(),
     rec = vxeOwn(M);
   if (!rec) return;
   rec.layers.splice(+d.i, 1);
@@ -277,7 +277,7 @@ ACTIONS.vxeDel = d => {
   render();
 };
 ACTIONS.vxeOff = async () => {
-  const M = pedM();
+  const M = editedProp();
   if (
     !M ||
     !(await ask(
@@ -294,7 +294,7 @@ ACTIONS.vxeOff = async () => {
   render();
 };
 ACTIONS.vxeExport = () => {
-  const M = pedM(),
+  const M = editedProp(),
     rec = vxeRec(M);
   if (!rec) return;
   const b = new Blob([JSON.stringify(rec)], { type: 'application/json' }),
@@ -304,7 +304,7 @@ ACTIONS.vxeExport = () => {
   a.click();
 };
 ACTIONS.vxeImgPick = async d => {
-  const M = pedM(),
+  const M = editedProp(),
     rec = vxeOwn(M),
     k = mapEditor.ped;
   if (!rec) return;
@@ -322,7 +322,7 @@ ACTIONS.vxeImgPick = async d => {
 };
 /* MagicaVoxel import: SIZE + XYZI + RGBA chunks of the first model; the voxels become one raw layer, centred on the base point */
 ACTIONS.vxeImport = async () => {
-  const M = pedM();
+  const M = editedProp();
   if (!M) return;
   const f = await pickFile('.vox');
   if (!f) return;
@@ -387,7 +387,7 @@ document.addEventListener('input', ev => {
   const t = ev.target;
   if (!t || !t.dataset || !t.dataset.p || !mapEditor.ped) return;
   if (!t.dataset.p.startsWith(`scenery.props.${mapEditor.ped}.vox`)) return;
-  const M = pedM();
+  const M = editedProp();
   if (!M) return;
   clearTimeout(VXE.t);
   VXE.t = setTimeout(() => {

@@ -9,15 +9,15 @@ import {
   VP,
   blocksToolBarHTML,
   drawExtraTools,
+  drawPropEditor,
   extraMapTools,
   extraToolHint,
   extraToolPointerDown,
   extraToolPointerMove,
   extraToolPointerUp,
+  mountPropTurntable,
   multiSelectCardHTML,
-  pedCard,
-  pedDraw,
-  pedMount,
+  propEditorCardHTML,
   provide,
   scatterToolBarHTML,
 } from '../../game/js/hooks.js';
@@ -478,7 +478,7 @@ SECTIONS.scenes = () => {
   <div class="sc-props">${props}</div><div class="seg-row"><button class="btn" data-act="scNewProp">+ New blank prop</button><button class="btn" data-act="scImportProp">+ Prop from PNG</button>${mapEditor.prop ? `<button class="btn subtle" data-act="scEditProp" data-k="${esc(mapEditor.prop)}">Edit ${esc((sceneryCatalog().props[mapEditor.prop] || {}).name || mapEditor.prop)}</button>` : ''}</div>
   <p class="help">Pick a prop, then click the map with “Place & move props”. Prop pictures live in art/scene/props.</p>${mapEditor.prop && sceneryCatalog().props[mapEditor.prop] ? `<div class="seg-row"><button class="btn primary" data-act="pedOpen" data-k="${esc(mapEditor.prop)}">Open ${esc(sceneryCatalog().props[mapEditor.prop].name || mapEditor.prop)} in the prop editor</button><span class="help">Effects, door, layers for depth, facing, glow and a 3D turntable.</span></div>` : ''}`
  )}
- ${mapEditor.ped && sceneryCatalog().props[mapEditor.ped] ? pedCard(mapEditor.ped) : ''}
+ ${mapEditor.ped && sceneryCatalog().props[mapEditor.ped] ? propEditorCardHTML(mapEditor.ped) : ''}
  ${mapEditor.pe ? sceneryPixelCardHTML() : ''}
  ${sc.kind === 'town' || sc.kind === 'route' ? `<div class="seg-row sc-keep">${checkboxField('Keep this layout: the v46 rework tool (tools/build-places-v46.py) never rebuilds it', `${p}.keep`, { num: 1 })}</div>` : ''}
  ${card(
@@ -714,13 +714,13 @@ async function mountMapEditor() {
   drawTileThumbs();
   drawEditorMap();
   bindEditorMap();
-  if (mapEditor.ped && sceneryCatalog().props[mapEditor.ped] && typeof pedMount === 'function') {
+  if (mapEditor.ped && sceneryCatalog().props[mapEditor.ped] && typeof mountPropTurntable === 'function') {
     const l = $('#scPvLoad');
     if (l) {
       l.hidden = false;
       l.textContent = 'Paused while the prop editor’s turntable runs';
     }
-    pedMount();
+    mountPropTurntable();
   } else mountMapPreview();
   const tr = $('#scT');
   if (tr)
@@ -1611,7 +1611,7 @@ document.addEventListener('keydown', ev => {
 });
 /* field edits for the current scene update the map and preview */
 studioState.hooks.scenes = path => {
-  if (mapEditor.ped && typeof pedDraw === 'function') pedDraw();
+  if (mapEditor.ped && typeof drawPropEditor === 'function') drawPropEditor();
   if (path.startsWith('scenes.') || path.startsWith('scenery.')) {
     walkView.nav = null;
     walkView.cand = null;
@@ -2253,7 +2253,7 @@ function fillSceneryPixels(c, x, y) {
 function sceneryPixelsChanged() {
   const c = atlasNow(mapEditor.pe.path);
   markArt(mapEditor.pe.path, c);
-  if (mapEditor.ped && typeof pedDraw === 'function') pedDraw();
+  if (mapEditor.ped && typeof drawPropEditor === 'function') drawPropEditor();
   if (mapEditor.pe.kind === 'tile') walkView.gkey = '';
   drawTileThumbs();
   drawEditorMap();
