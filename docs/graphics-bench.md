@@ -3,7 +3,9 @@
 The **Graphics test** measures what each graphics setting costs on the device it runs on. It steps every setting
 through a few values while everything else stays put, and reports the cost of each step. It is run by players only
 (Settings → Help, or the debug menu): Claude's checks never run it, because a headless browser draws in software and
-its numbers mean nothing. The checks only open its place and build its step list.
+its numbers mean nothing. The checks never draw it either: the smoke check builds its step list, checks every setting
+and station spot from the data, and saves a report made from made-up numbers (graphics_test_ready in
+tools/check-quick.py); the full check walks the place's paths from the data.
 
 Code: `game/js/graphics-test.js`. Place: `test_graphics` ("Test: graphics bench"), built by
 `python3 tools/build-test-scenes.py --only=test_graphics`.
@@ -72,4 +74,5 @@ has no save data and no names.
 
 ## Time
 
-About 108 measured steps at about 4.5 s each, plus moving between stations and rebuilds: about 9-10 minutes.
+125 measured steps (105 setting steps, two untouched looks per station, everything lowest and highest) at about
+4.5 s each, plus rebuilds: about 10 minutes.
