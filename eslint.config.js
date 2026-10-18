@@ -10,7 +10,7 @@
 // game/js/hooks.js), so the globals are only the classic scripts' names; no-undef finds a module name read without
 // an import (run npm run modules), or read by a classic script.
 // Phase 04e: the logic (game/js/logic/) and the data tables it reads (game/js/game-data.js) run in plain Node too
-// (tools/check-logic.mjs), so they get no browser globals and import only logic (see isLogic below).
+// (tools/test/logic.test.mjs), so they get no browser globals and import only logic (see isLogic below).
 import js from '@eslint/js';
 import * as espree from 'espree';
 import globals from 'globals';
@@ -122,7 +122,7 @@ const bugRules = {
   camelcase: ['error', { properties: 'never', ignoreDestructuring: true, ignoreImports: true }],
 };
 
-// Phase 04e: the logic runs in the game and in plain Node (tools/check-logic.mjs, the unit tests), so it may use no
+// Phase 04e: the logic runs in the game and in plain Node (tools/test/logic.test.mjs, the unit tests), so it may use no
 // browser global: no window, document, localStorage, matchMedia, timers or WebGL. Of the classic scripts' names only
 // PB_VERSION (game/version.js: a new save's gameVersion; a test sets it). It imports only other logic modules,
 // game-data.js (the tables), util.js (random, clamp) and the generated test-globals.js and hooks.js; what it needs

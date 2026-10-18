@@ -37,7 +37,7 @@ export const HOOKS = 'game/js/hooks.js';
 export const LOG = 'game/js/debug-log.js';
 export const LOG_NAMES = 'game/js/debug-log-names.js';
 const setterName = n => 'set' + n[0].toUpperCase() + n.slice(1);
-// phase 04e: the logic, which runs in plain Node too (tools/check-logic.mjs; eslint.config.js gives it no browser globals)
+// phase 04e: the logic, which runs in plain Node too (tools/test/logic.test.mjs; eslint.config.js gives it no browser globals)
 export const LOGIC = f => f.startsWith('game/js/logic/') || f === 'game/js/game-data.js';
 // phase 04d: after a declaration another module reads through hooks.js, the tool hands the value over
 const PROVIDE_LINE = /^provide\(\{[^}]*\}\); \/\* to-module \*\/\n/gm;

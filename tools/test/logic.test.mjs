@@ -17,7 +17,7 @@ import { join } from 'node:path';
 import { test } from 'node:test';
 import vm from 'node:vm';
 
-const ROOT = join(import.meta.dirname, '..');
+const ROOT = join(import.meta.dirname, '..', '..');
 const LOGIC_DIR = 'game/js/logic';
 
 // what the logic may ask the page for through hooks.js (the state, and telling the interface what happened); a logic
@@ -219,7 +219,7 @@ vm.runInNewContext(readFileSync(join(ROOT, 'game/version.js'), 'utf8'), version)
 globalThis.PB_VERSION = version.self.PB_VERSION;
 globalThis.GAMEDATA = FIXTURE;
 
-const hooks = await import('../game/js/hooks.js');
+const hooks = await import('../../game/js/hooks.js');
 const said = [];
 const page = {
   uiState: { learnQ: [], mq: [] },
@@ -237,7 +237,7 @@ hooks.provide(page);
 const files = readdirSync(join(ROOT, LOGIC_DIR))
   .filter(f => f.endsWith('.js'))
   .map(f => `${LOGIC_DIR}/${f}`);
-const data = await import('../game/js/game-data.js');
+const data = await import('../../game/js/game-data.js');
 const modules = {};
 for (const f of files) modules[f.slice(LOGIC_DIR.length + 1, -3)] = await import(join(ROOT, f));
 const logic = Object.assign({}, data, ...Object.values(modules));

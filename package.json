@@ -12,7 +12,7 @@
     "check:modules": "node tools/to-module.mjs --check",
     "lint": "eslint --cache --cache-strategy content . && node tools/check-names.mjs",
     "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.logic.json",
-    "check:logic": "node --test tools/check-logic.mjs",
+    "check:logic": "node --test tools/test/logic.test.mjs",
     "format": "prettier --write \"game/**/*.{js,css,ts}\" \"studio/**/*.{js,css}\" \"*.js\"",
     "format:check": "prettier --check \"game/**/*.{js,css,ts}\" \"studio/**/*.{js,css}\" \"*.js\"",
     "check:smoke": "python3 tools/check-quick.py --smoke",

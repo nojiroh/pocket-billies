@@ -4,7 +4,7 @@
    Everything here is built from the game data (data/*.json, put together as data/gamedata.js), which Pocket Billies
    Studio edits.
    The rest of the game reads these globals, so the file format can change without touching game code.
-   Phase 04e: the data is read from globalThis, the page's window; in plain Node (tools/check-logic.mjs) a test puts
+   Phase 04e: the data is read from globalThis, the page's window; in plain Node (tools/test/logic.test.mjs) a test puts
    its own small data there before it imports this module. */
 /**
  * @import { EggTier, Evolution, GameData, LocationData, LocationEntry, Pool, Road, RoadFromNode } from '../types/game-data'
