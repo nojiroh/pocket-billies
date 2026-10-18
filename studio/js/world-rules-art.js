@@ -20,9 +20,9 @@ import {
   colorField,
   commit,
   fmtN,
-  getP,
   grid,
   numberField,
+  readPath,
   render,
   selectField,
   spName,
@@ -449,12 +449,12 @@ function weightTable(base, P) {
     .join('')}</tbody></table><button class="btn" data-act="wAdd" data-b="${base}">Add a Billie</button>`;
 }
 ACTS.wDel = d => {
-  getP(d.b).list.splice(+d.j, 1);
+  readPath(d.b).list.splice(+d.j, 1);
   changed();
   render();
 };
 ACTS.wAdd = d => {
-  getP(d.b).list.push([studioState.D.lines[0].id + '0', 10]);
+  readPath(d.b).list.push([studioState.D.lines[0].id + '0', 10]);
   changed();
   render();
 };

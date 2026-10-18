@@ -34,12 +34,12 @@ import {
   commit,
   dialog,
   fieldOutputId,
-  getP,
+  readPath,
   render,
-  setP,
   studioState,
   toast,
   uidKey,
+  writePath,
 } from './studio-app.js';
 import { atlasGet } from './sprites.js';
 import { scArt, scD, scExitNames } from './map-editor.js';
@@ -100,7 +100,7 @@ function engField(g, f) {
   const [k, label] = f,
     typ = typeof f[2] === 'string' ? f[2] : 'range',
     p = `${engBase()}.${g}.${k}`,
-    own = getP(p),
+    own = readPath(p),
     inh = engInherited(g, k),
     v = own !== undefined ? own : inh;
   const help = typ === 'range' ? f[5] : typ === 'sel' ? null : f[3],
@@ -120,7 +120,7 @@ function engField(g, f) {
   return `<div class="eng-f ${own !== undefined ? 'own' : ''}" data-path="${p}">${body}${reset}${help ? `<small class="help">${esc(help)}</small>` : ''}</div>`;
 }
 function engGroup([g, title, fields]) {
-  const set = fields.filter(f => getP(`${engBase()}.${g}.${f[0]}`) !== undefined).length,
+  const set = fields.filter(f => readPath(`${engBase()}.${g}.${f[0]}`) !== undefined).length,
     open = ENS.open[g];
   return `<section class="card eng-g ${open ? 'open' : ''}"><header><button class="eng-gh" data-act="engOpen" data-g="${g}"><span class="eng-tw">${open ? '▾' : '▸'}</span><h3>${esc(title)}</h3>${set ? `<span class="badge">${set} set</span>` : ''}</button>${set ? `<button class="btn sm subtle" data-act="engResetG" data-g="${g}">Reset</button>` : ''}</header>
  ${open ? `<div class="card-b eng-fields">${fields.map(f => engField(g, f)).join('')}</div>` : ''}</section>`;
@@ -251,13 +251,13 @@ export const engRefresh = () => {
   }
 };
 const engPrune = () => {
-  const base = getP(engBase());
+  const base = readPath(engBase());
   if (!base) return;
   for (const g of Object.keys(base)) {
     for (const k of Object.keys(base[g] || {})) if (base[g][k] === undefined) delete base[g][k];
     if (!base[g] || !Object.keys(base[g]).length) delete base[g];
   }
-  if (ENS.scope !== 'game' && !Object.keys(base).length) setP(engBase(), undefined);
+  if (ENS.scope !== 'game' && !Object.keys(base).length) writePath(engBase(), undefined);
 };
 ACTS.engScope = d => {
   ENS.scope = d.s;
@@ -268,39 +268,39 @@ ACTS.engOpen = d => {
   engRefresh();
 };
 ACTS.engReset = d => {
-  setP(d.p, undefined);
+  writePath(d.p, undefined);
   engPrune();
   changed();
   commit(true);
   engRefresh();
 };
 ACTS.engResetG = d => {
-  setP(`${engBase()}.${d.g}`, undefined);
+  writePath(`${engBase()}.${d.g}`, undefined);
   engPrune();
   changed();
   commit(true);
   engRefresh();
 };
 ACTS.engClear = async () => {
-  if (!getP(engBase())) return toast('Nothing is set here.');
+  if (!readPath(engBase())) return toast('Nothing is set here.');
   if (
     !(await ask(`Clear every engine setting on ${ENS.scope === 'scene' ? 'this scene' : 'the whole game'}?`, 'Clear'))
   )
     return;
-  setP(engBase(), ENS.scope === 'game' ? {} : undefined);
+  writePath(engBase(), ENS.scope === 'game' ? {} : undefined);
   changed();
   commit(true);
   engRefresh();
 };
 ACTS.engPromote = async () => {
-  const look = getP(engBase());
+  const look = readPath(engBase());
   if (!look) return;
   if (!(await ask('Copy this scene’s settings to the whole game and clear them from the scene?', 'Copy'))) return;
   const d = engD().defaults || (engD().defaults = {});
   for (const [g, o] of Object.entries(look)) {
     d[g] = Object.assign(d[g] || {}, o);
   }
-  setP(engBase(), undefined);
+  writePath(engBase(), undefined);
   changed();
   commit(true);
   ENS.scope = 'game';
@@ -311,14 +311,14 @@ ACTS.engPreset = d => {
   if (!P) return;
   for (const [g, o] of Object.entries(P.v || {}))
     for (const [k, v] of Object.entries(o))
-      if (ENGINE_DEFAULTS[g] && k in ENGINE_DEFAULTS[g]) setP(`${engBase()}.${g}.${k}`, v);
+      if (ENGINE_DEFAULTS[g] && k in ENGINE_DEFAULTS[g]) writePath(`${engBase()}.${g}.${k}`, v);
   changed();
   commit(true);
   engRefresh();
   toast(`${P.name || d.k} applied${ENS.scope === 'scene' ? ' to this scene' : ''}.`);
 };
 ACTS.engPresetSave = async () => {
-  const cur = getP(engBase());
+  const cur = readPath(engBase());
   if (!cur || !Object.keys(cur).length) return toast('Set a few dials first; a preset saves the ones you’ve set here.');
   const name = await dialog(
     'Save as preset',
@@ -376,20 +376,20 @@ ACTS.engLookPreviews = async () => {
       ...Object.entries(ENGINE_PRESETS).map(([k, P]) => [k, P, 0]),
       ...Object.entries(own).map(([k, P]) => [k, P, 1]),
     ],
-    keep = clone(getP(engBase()) || {}),
+    keep = clone(readPath(engBase()) || {}),
     out = [];
   toast('Drawing each look…');
   try {
     for (const [k, P, o] of all) {
-      setP(engBase(), clone(keep));
+      writePath(engBase(), clone(keep));
       for (const [g, v] of Object.entries(P.v || {}))
         for (const [kk, vv] of Object.entries(v))
-          if (ENGINE_DEFAULTS[g] && kk in ENGINE_DEFAULTS[g]) setP(`${engBase()}.${g}.${kk}`, vv);
+          if (ENGINE_DEFAULTS[g] && kk in ENGINE_DEFAULTS[g]) writePath(`${engBase()}.${g}.${kk}`, vv);
       await new Promise(r => setTimeout(r, 650));
       out.push([k, P, o, await engGrab()]);
     }
   } finally {
-    setP(engBase(), Object.keys(keep).length ? keep : ENS.scope === 'game' ? {} : undefined);
+    writePath(engBase(), Object.keys(keep).length ? keep : ENS.scope === 'game' ? {} : undefined);
   }
   const cur = await engGrab();
   await dialog(

@@ -15,18 +15,18 @@ import {
   card,
   changed,
   dialog,
-  getP,
   grid,
   numberField,
   peopleOpts,
+  readPath,
   render,
   selectField,
-  setGetP,
-  setP,
-  setSetP,
+  setReadPath,
+  setWritePath,
   studioState,
   textField,
   uidKey,
+  writePath,
 } from './studio-app.js';
 expose({
   LORE_TABS: [() => LORE_TABS],
@@ -50,16 +50,16 @@ const LORE_UNLOCK =
   'start (from the beginning) · place:&lt;stop id&gt; (been there) · meet:&lt;look id&gt; (met them) · flag:&lt;story flag&gt; · badges:&lt;number&gt;';
 /* a list of lines at a path, edited one per line */
 {
-  const g = getP,
-    st = setP;
-  setGetP(function (path, o) {
+  const g = readPath,
+    st = writePath;
+  setReadPath(function (path, o) {
     if (path && path.startsWith('@lines.')) {
       const v = g(path.slice(7));
       return Array.isArray(v) ? v.join('\n') : '';
     }
     return g(path, o);
   });
-  setSetP(function (path, v, o) {
+  setWritePath(function (path, v, o) {
     if (path && path.startsWith('@lines.')) {
       st(
         path.slice(7),

@@ -34,7 +34,6 @@ expose({
   dialog: [() => dialog, v => (dialog = v)],
   fieldOutputId: [() => fieldOutputId],
   fmtN: [() => fmtN],
-  getP: [() => getP, v => setGetP(v)],
   go: [() => go, v => (go = v)],
   grid: [() => grid],
   helpHTML: [() => helpHTML],
@@ -46,6 +45,7 @@ expose({
   peopleOpts: [() => peopleOpts],
   rangeField: [() => rangeField, v => (rangeField = v)],
   readField: [() => readField, v => (readField = v)],
+  readPath: [() => readPath, v => setReadPath(v)],
   redo: [() => redo, v => (redo = v)],
   render: [() => render, v => setRender(v)],
   renderSide: [() => renderSide, v => (renderSide = v)],
@@ -53,12 +53,11 @@ expose({
   saveAll: [() => saveAll, v => setSaveAll(v)],
   selectField: [() => selectField, v => (selectField = v)],
   setApi: [() => setApi, v => (setApi = v)],
-  setGetP: [() => setGetP, v => (setGetP = v)],
-  setP: [() => setP, v => setSetP(v)],
+  setReadPath: [() => setReadPath, v => (setReadPath = v)],
   setRender: [() => setRender, v => (setRender = v)],
   setSaveAll: [() => setSaveAll, v => (setSaveAll = v)],
-  setSetP: [() => setSetP, v => (setSetP = v)],
   setToast: [() => setToast, v => (setToast = v)],
+  setWritePath: [() => setWritePath, v => (setWritePath = v)],
   snapshot: [() => snapshot],
   spName: [() => spName],
   spOpts: [() => spOpts],
@@ -72,6 +71,7 @@ expose({
   uidKey: [() => uidKey],
   undo: [() => undo, v => (undo = v)],
   updTop: [() => updTop, v => (updTop = v)],
+  writePath: [() => writePath, v => setWritePath(v)],
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
@@ -121,7 +121,7 @@ export const uidKey = (base, taken) => {
   return k + i;
 };
 /* ---------- paths ---------- */
-export function getP(path, o) {
+export function readPath(path, o) {
   if (o === undefined) {
     if (path.startsWith('@rigs.')) {
       o = studioState.rigs;
@@ -132,11 +132,11 @@ export function getP(path, o) {
   return path.split('.').reduce((a, k) => (a == null ? undefined : a[k]), o);
 }
 /* phase 04d: data-editors.js and lore-editor.js read and write fields their own way */
-export function setGetP(v) {
-  getP = v; // eslint-disable-line no-func-assign
-  provide({ getP });
+export function setReadPath(v) {
+  readPath = v; // eslint-disable-line no-func-assign
+  provide({ readPath });
 }
-export function setP(path, val, o) {
+export function writePath(path, val, o) {
   if (o === undefined) {
     if (path.startsWith('@rigs.')) {
       o = studioState.rigs;
@@ -157,9 +157,9 @@ export function setP(path, val, o) {
   } else a[k] = val;
 }
 /* phase 04d: data-editors.js and lore-editor.js read and write fields their own way */
-export function setSetP(v) {
-  setP = v; // eslint-disable-line no-func-assign
-  provide({ setP });
+export function setWritePath(v) {
+  writePath = v; // eslint-disable-line no-func-assign
+  provide({ writePath });
 }
 /* ---------- undo / dirty ---------- */
 const snapshot = () => JSON.stringify({ D: studioState.D, R: studioState.rigs });
@@ -356,30 +356,30 @@ export const ask = (msg, yes = 'OK', no = 'Cancel', title = 'Are you sure?') =>
 const helpHTML = s => (s ? `<small class="help">${s}</small>` : '');
 export const fieldOutputId = p => 'f_' + p.replace(/[^a-z0-9]/gi, '_');
 export function numberField(label, p, o = {}) {
-  let v = getP(p);
+  let v = readPath(p);
   if (v != null && o.scale) v = +(v / o.scale).toFixed(4);
   return `<label class="fld ${o.cls || ''}"><span>${label}</span><span class="numw"><input type="number" data-p="${p}" data-k="num" ${o.scale ? `data-scale="${o.scale}"` : ''} ${o.opt ? 'data-opt="1"' : ''} value="${v == null ? '' : v}" ${o.min != null ? `min="${o.min}"` : ''} ${o.max != null ? `max="${o.max}"` : ''} step="${o.step || 'any'}" placeholder="${o.ph || ''}">${o.unit ? `<em>${o.unit}</em>` : ''}</span>${helpHTML(o.help)}</label>`;
 }
 export function rangeField(label, p, o = {}) {
-  const v = getP(p) ?? o.def ?? 0;
+  const v = readPath(p) ?? o.def ?? 0;
   return `<label class="fld range ${o.cls || ''}"><span>${label} <output id="${fieldOutputId(p)}">${o.show ? o.show(v) : v}</output></span><input type="range" data-p="${p}" data-k="num" data-show="${o.showKey || ''}" value="${v}" min="${o.min}" max="${o.max}" step="${o.step || 1}">${helpHTML(o.help)}</label>`;
 }
 export function textField(label, p, o = {}) {
-  const v = getP(p) ?? '';
+  const v = readPath(p) ?? '';
   return o.area
     ? `<label class="fld wide ${o.cls || ''}"><span>${label}</span><textarea data-p="${p}" data-k="text" rows="${o.rows || 3}" ${o.opt ? 'data-opt="1"' : ''} placeholder="${esc(o.ph || '')}">${esc(v)}</textarea>${helpHTML(o.help)}</label>`
     : `<label class="fld ${o.cls || ''}"><span>${label}</span><input type="text" data-p="${p}" data-k="text" ${o.opt ? 'data-opt="1"' : ''} value="${esc(v)}" placeholder="${esc(o.ph || '')}" ${o.max ? `maxlength="${o.max}"` : ''}>${helpHTML(o.help)}</label>`;
 }
 export function selectField(label, p, opts, o = {}) {
-  const v = getP(p);
+  const v = readPath(p);
   return `<label class="fld ${o.cls || ''}"><span>${label}</span><select data-p="${p}" data-k="${o.num ? 'num' : 'sel'}" ${o.opt ? 'data-opt="1"' : ''} ${o.rr ? 'data-rr="1"' : ''}>${o.none ? `<option value="">${o.none}</option>` : ''}${opts.map(([k, n]) => `<option value="${esc(k)}" ${String(v) === String(k) ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select>${helpHTML(o.help)}</label>`;
 }
 export function checkboxField(label, p, o = {}) {
-  const v = getP(p);
+  const v = readPath(p);
   return `<label class="fld chk ${o.cls || ''}"><input type="checkbox" data-p="${p}" data-k="bool" ${o.num ? 'data-num="1"' : ''} ${o.rr ? 'data-rr="1"' : ''} ${v ? 'checked' : ''}><span>${label}</span>${helpHTML(o.help)}</label>`;
 }
 export function colorField(label, p, o = {}) {
-  const v = getP(p) || '#000000';
+  const v = readPath(p) || '#000000';
   return `<label class="fld color ${o.cls || ''}"><span>${label}</span><span class="colw"><input type="color" data-p="${p}" data-k="color" value="${/^#[0-9a-f]{6}$/i.test(v) ? v : '#000000'}"><input type="text" data-p="${p}" data-k="color" value="${esc(v)}" maxlength="7" class="hex"></span>${helpHTML(o.help)}</label>`;
 }
 export const card = (title, body, o = {}) =>
@@ -407,7 +407,7 @@ function onField(ev) {
   const v = readField(el);
   if (v === undefined && el.dataset.k === 'color') return;
   if (v === undefined && el.dataset.k === 'num' && !el.dataset.opt) return;
-  setP(el.dataset.p, v);
+  writePath(el.dataset.p, v);
   if (el.dataset.k === 'color') {
     $$(`[data-p="${el.dataset.p}"]`).forEach(o => {
       if (o !== el) o.value = v;

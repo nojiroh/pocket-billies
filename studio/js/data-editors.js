@@ -22,7 +22,6 @@ import {
   colorField,
   dialog,
   fmtN,
-  getP,
   go,
   grid,
   itemOpts,
@@ -30,11 +29,11 @@ import {
   numberField,
   peopleOpts,
   rangeField,
+  readPath,
   render,
   selectField,
-  setGetP,
-  setP,
-  setSetP,
+  setReadPath,
+  setWritePath,
   spName,
   spOpts,
   statOpts,
@@ -45,6 +44,7 @@ import {
   typeOpts,
   uidKey,
   updTop,
+  writePath,
 } from './studio-app.js';
 import {
   ATL,
@@ -71,10 +71,6 @@ expose({
   PASSIVES: [() => PASSIVES],
   RAR_NAMES: [() => RAR_NAMES],
   STAGE_LABEL: [() => STAGE_LABEL],
-  _getP: [() => _getP],
-  _getP2: [() => _getP2],
-  _setP: [() => _setP],
-  _setP2: [() => _setP2],
   baseStats: [() => baseStats, v => (baseStats = v)],
   cloneSpeciesArt: [() => cloneSpeciesArt, v => (cloneSpeciesArt = v)],
   curLine: [() => curLine],
@@ -84,11 +80,15 @@ expose({
   personPrev: [() => personPrev, v => (personPrev = v)],
   poolName: [() => poolName],
   poolPct: [() => poolPct],
+  readPathBeforeShopThanks: [() => readPathBeforeShopThanks],
+  readPathBeforeTrainerLines: [() => readPathBeforeTrainerLines],
   refsTo: [() => refsTo, v => (refsTo = v)],
   removeRefs: [() => removeRefs, v => (removeRefs = v)],
   renameType: [() => renameType, v => (renameType = v)],
   statsCard: [() => statsCard, v => (statsCard = v)],
   whereCard: [() => whereCard, v => (whereCard = v)],
+  writePathBeforeShopThanks: [() => writePathBeforeShopThanks],
+  writePathBeforeTrainerLines: [() => writePathBeforeTrainerLines],
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
@@ -1041,7 +1041,7 @@ document.addEventListener('change', ev => {
     if (old && nu && old !== nu) {
       if (studioState.D.types.filter(t => t.id === nu).length > 1) {
         toast('Another type already has that name.', 'err');
-        setP(p, old);
+        writePath(p, old);
         el.value = old;
         return;
       }
@@ -1192,16 +1192,16 @@ SECTIONS.shops = () => {
  )}</div></div>`;
 };
 /* thank-you lines are stored as an array; edit them as text */
-const _getP = getP;
-setGetP(function (path, o) {
+const readPathBeforeShopThanks = readPath;
+setReadPath(function (path, o) {
   if (path && path.startsWith('@lines.')) {
     const s = studioState.D.shops[path.slice(7)];
     return s && s.thanks ? s.thanks.join('\n') : '';
   }
-  return _getP(path, o);
+  return readPathBeforeShopThanks(path, o);
 });
-const _setP = setP;
-setSetP(function (path, v, o) {
+const writePathBeforeShopThanks = writePath;
+setWritePath(function (path, v, o) {
   if (path && path.startsWith('@lines.')) {
     const s = studioState.D.shops[path.slice(7)];
     const a = String(v || '')
@@ -1212,7 +1212,7 @@ setSetP(function (path, v, o) {
     else delete s.thanks;
     return;
   }
-  return _setP(path, v, o);
+  return writePathBeforeShopThanks(path, v, o);
 });
 document.addEventListener('change', ev => {
   const el = ev.target;
@@ -1579,25 +1579,25 @@ SECTIONS.trainers = () => {
  ${card('Sandstorm', T.market ? grid(numberField('Lasts', `${p}.market.n`, { unit: 'turns', min: 1, max: 20, step: 1 })) + textField('Announcement', `${p}.marketText`, { area: 1, rows: 2 }) + '<button class="btn danger subtle" data-act="marketOff">No sandstorm</button>' : `<p class="help">The battle starts in clear weather.</p><button class="btn" data-act="marketOn">Start the battle in a sandstorm</button>`)}
  ${card('Badge', seat)}</div></div>`;
 };
-const _getP2 = getP;
-setGetP(function (path, o) {
+const readPathBeforeTrainerLines = readPath;
+setReadPath(function (path, o) {
   if (path && path.startsWith('@tlines.')) {
     const T = studioState.D.trainers[path.slice(8)];
     return T && T.lines ? T.lines.join('\n') : '';
   }
-  return _getP2(path, o);
+  return readPathBeforeTrainerLines(path, o);
 });
 {
-  const g = getP,
-    st = setP;
-  setGetP(function (path, o) {
+  const g = readPath,
+    st = writePath;
+  setReadPath(function (path, o) {
     if (path && path.startsWith('@tintro.')) {
       const T = studioState.D.trainers[path.slice(8)];
       return T && T.intro ? T.intro.join('\n') : '';
     }
     return g(path, o);
   });
-  setSetP(function (path, v, o) {
+  setWritePath(function (path, v, o) {
     if (path && path.startsWith('@tintro.')) {
       const T = studioState.D.trainers[path.slice(8)],
         L = String(v || '')
@@ -1611,8 +1611,8 @@ setGetP(function (path, o) {
     return st(path, v, o);
   });
 }
-const _setP2 = setP;
-setSetP(function (path, v, o) {
+const writePathBeforeTrainerLines = writePath;
+setWritePath(function (path, v, o) {
   if (path && path.startsWith('@tlines.')) {
     const T = studioState.D.trainers[path.slice(8)];
     T.lines = String(v || '')
@@ -1621,7 +1621,7 @@ setSetP(function (path, v, o) {
       .filter(Boolean);
     return;
   }
-  return _setP2(path, v, o);
+  return writePathBeforeTrainerLines(path, v, o);
 });
 ACTS.pickTrainer = d => {
   studioState.sel.trainer = d.id;
