@@ -54,6 +54,34 @@ Not a phase; plan approved at the start. Both runs passed with no errors; the ph
   - If the phone is still slow, the next renderer work is: reuse per-frame item objects, instance static sprites,
     group solid props by mesh. That is a phase of its own.
 
+### Phase 06, session 06-2 - Team, details and the starter pick - 2026-10-18
+Built on 06-1 (PR #24) and the test boot fix (PR #19, cherry-picked). Owner's choices (docs/phases/06-plan.md):
+the lead big and the rest as rows; parts as slot rows on an S·M·L dial; weight as a Speed–Attack balance meter; a Build
+tab; the card and details shared by Billies and bots; the fallback starter list removed; screens before the new opening.
+- Changed:
+  - `game/js/unit-card.js` + `game/css/units.css`: one "unit" model (billyUnit now; a botUnit in phase 17) drawn by
+    unitHeroHTML (the lead), unitRowHTML (everyone else), unitOpenRowHTML (open spots) and unitBuildHTML (the Build
+    tab). Markup in the page (the rig canvases need it), names escaped, tokens only.
+  - Team screen: the lead's card, then one roomy row per Billie (sprite, name, level, types, HP); tap for details.
+    Day jobs and Storage are unchanged below (jobs go with phase 08).
+  - Details sheet: a floating card clear of the edges; tabs Summary · Build · Moves · Evolves (the Stats tab's numbers
+    were the same as the Summary's bars, minus "base"). Build: each slot's size on S·M·L (off-size in gold), weight
+    and class, the Speed–Attack meter with its percentages, and Prime or how many parts are off.
+  - `buildLean` (rules.js, from `partsLean` in logic/parts.js): attack and speed change, lean, parts off, Prime; unit
+    tested against the stat factors.
+  - The opening's starter pick card redone: arrows either side of the name, position dots, the blurb in the reading
+    font, "Strong against / Weak to" as type pills, one gold button (Not yet / Yes on confirm). Same data-a buttons.
+  - Removed: the step-by-step intro (stills, Hazel's lines, trainer step, the starter list) and `fallStill`. If the
+    opening can't start or breaks, a Try again screen with Export debug log (`uiState.openingFailed`).
+  - The step toast no longer repeats the money ("+$" rises from the money chip instead).
+- Verified: lint, type-check, modules, format, data, build; unit tests 37/37 (new Build balance test); smoke 15/15
+  (203 s; the phone flow plays the opening through the new card). New full-check step "Team" passes (31 s). Screens
+  looked at in both themes at 390 px (sent in chat).
+- Not cleaned yet: the CSS of the old intro, team cards and Stats tab (`.talk`, `.tr-*`, `.starters`, `.tm-*`,
+  `.ms-stats`, `.ms-parts`) is unused now; 06-4 deletes emptied CSS.
+- Next session starts with: 06-2b, the new opening (Hazel fights Blake herself, tap Hazel for hot takes during the
+  pick, Blake's battle with her bad, obtrusive tips and "too fast" comments).
+
 ### Phase 06, session 06-1 - UI foundation and calmer messages - 2026-10-18
 Plan: docs/phases/06-plan.md (PR #20). Owner's choices: Lit components, Chakra Petch for long text, an inbox dot for
 notices, delete the codex prototype branch, start 06-1 now.
