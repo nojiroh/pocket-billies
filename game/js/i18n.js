@@ -40,12 +40,8 @@ Settings|Instellingen|Einstellungen|Ajustes|Réglages
 Open map|Kaart openen|Karte öffnen|Abrir mapa|Ouvrir la carte
 World map|Wereldkaart|Weltkarte|Mapa del mundo|Carte du monde
 The Hollow Earth|De Holle Aarde|Die Hohle Erde|La Tierra Hueca|La Terre creuse
-Start walking|Begin met lopen|Losgehen|Empezar a caminar|Se mettre en marche
 Keep walking|Blijf lopen|Weitergehen|Sigue caminando|Continuer
-Stop walking|Stop met lopen|Anhalten|Dejar de caminar|S’arrêter
-Turn back|Keer terug|Umkehren|Volver|Faire demi-tour
 Change plans|Plannen wijzigen|Pläne ändern|Cambiar de planes|Changer de plan
-Stay here|Hier blijven|Hierbleiben|Quedarse aquí|Rester ici
 Not now|Niet nu|Nicht jetzt|Ahora no|Pas maintenant
 Done|Klaar|Fertig|Hecho|Terminé
 Close|Sluiten|Schließen|Cerrar|Fermer

@@ -308,7 +308,7 @@ function debugAction(x) {
     }
     case 'jump': {
       const n = clamp(+v('dbgNode'), 0, LOCATIONS.length - 1);
-      saveData.trip = { node: n, prog: 0, plan: [], hold: false };
+      saveData.trip = { node: n, plan: [] };
       saveData.visited[n] = 1;
       saveData.mapSeen = null;
       break;

@@ -926,7 +926,6 @@ function mountMapPreview() {
 ACTIONS.scPv = d => {
   mapEditor.pv = d.m;
   walkView.pl.fresh = true;
-  walkView.pl.pk = '';
   render();
 };
 ACTIONS.scPvHub = () => {

@@ -199,7 +199,7 @@ export function storyCheck() {
     !storyWorldOK()
   )
     return;
-  if (saveData.trip.prog !== 0 || (saveData.trip.plan && saveData.trip.plan.length)) return;
+  if (saveData.trip.plan && saveData.trip.plan.length) return;
   const F = storyFlags();
   const T = trainersAt(saveData.trip.node).find(
     T => T.intro && T.intro.length && !saveData.flags[T.id] && !F['met_' + T.id]
@@ -227,7 +227,7 @@ export function legendCheck() {
     uiState.bench
   )
     return;
-  if (saveData.trip.prog !== 0 || (saveData.trip.plan && saveData.trip.plan.length)) return;
+  if (saveData.trip.plan && saveData.trip.plan.length) return;
   const F = storyFlags(),
     L = (RULES.legends || []).find(
       l => l.scene === baseMapId() && SPECIES[l.sp] && !saveData.caught[l.sp] && F['legend_' + l.sp] !== today()

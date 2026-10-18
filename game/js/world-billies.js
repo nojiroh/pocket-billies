@@ -10,16 +10,16 @@
    frame. A species' rig art is loaded the first time it's needed; until then it simply isn't shown. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { mapIdAt, provide, soundEffect } from './hooks.js';
+import { provide, soundEffect } from './hooks.js';
 import { clamp } from './util.js';
 import { SPECIES, STATUS_NAMES, TRAINERS, rivalSpecies, trainersAt } from './game-data.js';
-import { billyName, findBilly, maxHp, nextTripNode } from './logic/rules.js';
+import { billyName, findBilly, maxHp } from './logic/rules.js';
 import { battleStageKey } from './logic/battle-engine.js';
 import { save, saveData, uiState } from './game-state.js';
 import { makeCanvas } from './art.js';
 import { RIG_BACK_VIEW, buildCode, drawRig, rigFrame, rigParts, rigPreload } from './skeleton-rig.js';
 import { battleStagePrepare } from './battle-stage.js';
-import { prepareMap, walkView, walkablePointNear, worldToScreen } from './walk-view.js';
+import { walkView, walkablePointNear, worldToScreen } from './walk-view.js';
 import { environment } from './environment.js';
 import { standingHeightAt } from './walk-view-gl.js';
 /* eslint-disable no-func-assign */
@@ -30,7 +30,6 @@ expose({
   buddyTap: [() => buddyTap, v => ((buddyTap = v), provide({ buddyTap }))],
   companionItems: [() => companionItems, v => ((companionItems = v), provide({ companionItems }))],
   companionSpecies: [() => companionSpecies, v => (companionSpecies = v)],
-  mapsPreparedAhead: [() => mapsPreparedAhead],
   shiftWorldBillies: [() => shiftWorldBillies, v => (shiftWorldBillies = v)],
   warmWorldBillies: [() => warmWorldBillies, v => ((warmWorldBillies = v), provide({ warmWorldBillies }))],
   wildBillyItem: [() => wildBillyItem, v => ((wildBillyItem = v), provide({ wildBillyItem }))],
@@ -530,31 +529,3 @@ function warmWorldBillies() {
       }, 1500);
   } catch (e) {}
 }
-/* v34: on a trip, the next stop is got ready (its pictures loaded, its ground worked out) while you're still walking
-   there, so arriving doesn't pay for all of it at once */
-const mapsPreparedAhead = new Set();
-setInterval(() => {
-  try {
-    if (
-      typeof saveData === 'undefined' ||
-      !saveData.started ||
-      !saveData.trip ||
-      !(saveData.trip.prog > 0) ||
-      typeof nextTripNode !== 'function'
-    )
-      return;
-    const nx = nextTripNode();
-    if (nx == null) return;
-    const id = mapIdAt(nx);
-    if (!id || mapsPreparedAhead.has(id) || (typeof walkView !== 'undefined' && walkView.id === id)) return;
-    mapsPreparedAhead.add(id);
-    if (mapsPreparedAhead.size > 6) mapsPreparedAhead.delete(mapsPreparedAhead.values().next().value);
-    const t0 = performance.now();
-    prepareMap(id)
-      .then(() => {
-        if (typeof debugLog !== 'undefined')
-          debugLog.add('scene', `prepared ${id} ahead (${Math.round(performance.now() - t0)} ms in the background)`);
-      })
-      .catch(() => mapsPreparedAhead.delete(id));
-  } catch (e) {}
-}, 4000);
