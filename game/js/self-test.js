@@ -172,13 +172,20 @@ async function runFullTest(mode) {
   }
   selfTest.on = true;
   selfTest.stop = false;
-  await loadAllMaps(); /* phase 04b: every map whole before the test opens them */
+  /* held before the maps load, not after: the friends list publishes every 5 s and could write while they loaded */
+  pauseSaving();
+  try {
+    await loadAllMaps(); /* phase 04b: every map whole before the test opens them */
+  } catch (e) {
+    selfTest.on = false;
+    resumeSaving();
+    throw e;
+  }
   const keep = JSON.stringify(saveData),
     back = { tab: uiState.tab, roam: uiState.roam, node: saveData.trip.node },
     realSave = save,
     engKeep = gameData.engine ? JSON.stringify(gameData.engine) : null;
-  setSave(() => {}); /* nothing the test does reaches your save */
-  pauseSaving(); /* phase 13: nor the account or your friends (game-state.js) */
+  setSave(() => {}); /* nothing the test does reaches your save; phase 13: nor the account or your friends (above) */
   const box = document.createElement('div');
   box.className = 'nw-bench px glass';
   box.innerHTML =
