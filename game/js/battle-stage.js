@@ -1579,6 +1579,7 @@ export function actorBuffer(i) {
     tau = a ? battleStage.t - a.t0 : 0,
     ak = a && (a.k === 'faint' || tau < a.dur) ? a.k : null;
   const P = rigFrame(R, ak, tau, Math.floor(battleStage.t / 16) * 16, s.seed);
+  if (s.build) P.build = s.build;
   drawRig(bx, R, P, view);
   rigTint(bx, buf.width, buf.height, '#FFFFFF', s.white);
   rigTint(bx, buf.width, buf.height, '#0C0A16', s.dark);
@@ -2208,6 +2209,7 @@ export function battleStagePlay(an, ev) {
     if (sn && battleStage.s[i]) {
       battleStage.s[i].sp = sn.sp;
       battleStage.s[i].gold = sn.gold;
+      battleStage.s[i].build = sn.build || null;
       battleStage.s[i].st = sn.st;
       battleStage.s[i].boss = !!sn.boss;
       battleStage.s[i].big = sn.boss ? 1.6 : sn.alpha ? 1.12 : 1;

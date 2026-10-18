@@ -1,0 +1,43 @@
+{
+ "_help": "One entry per kit. Sources: <name>-front.png and <name>-back.png in this folder, six animals as columns on a magenta background, one row per slot, then a last row of extras. Run tools/slice-part-kit.py after adding or changing a kit. Part ids are <animal>_<row> and <kit>_<extra>, so adding a kit never renames old parts.",
+ "kits": [
+  {
+   "name": "beasts",
+   "animals": ["cat", "rabbit", "fox", "bear", "bird", "reptile"],
+   "rows": ["head", "ear", "torso", "arm", "leg", "tail"],
+   "extras": ["horn", "spikes", "mane", "shell"]
+  },
+  {
+   "name": "birds",
+   "animals": ["chick", "duck", "owl", "sparrow", "eagle", "hawk"],
+   "rows": ["head", "crest", "torso", "wing", "foot", "tail"],
+   "extras": ["ruff", "horn", "plume", "crown"]
+  },
+  {
+   "name": "fish",
+   "animals": ["goldfish", "carp", "koi", "piranha", "betta", "shark"],
+   "rows": ["head", "dorsal", "torso", "frontfin", "backfin", "tailfin"],
+   "extras": ["sail", "spike", "scales", "lure"]
+  }
+ ],
+ "slots": {
+  "head": "head", "ear": "head-extra", "crest": "head-extra", "dorsal": "head-extra",
+  "torso": "body",
+  "arm": "front", "wing": "front", "frontfin": "front",
+  "leg": "back", "foot": "back", "backfin": "back",
+  "tail": "signature", "tailfin": "signature",
+  "horn": "head-extra", "spikes": "signature", "mane": "signature", "shell": "body-extra",
+  "ruff": "body-extra", "plume": "head-extra", "crown": "head-extra",
+  "sail": "signature", "spike": "head-extra", "scales": "body-extra", "lure": "head-extra"
+ },
+ "pivots": {
+  "head": [0.5, 0.92], "ear": [0.5, 0.95], "crest": [0.5, 0.95], "dorsal": [0.5, 0.95],
+  "torso": [0.5, 0.5],
+  "arm": [0.5, 0.08], "wing": [0.85, 0.08], "frontfin": [0.15, 0.1],
+  "leg": [0.5, 0.1], "foot": [0.5, 0.05], "backfin": [0.3, 0.05],
+  "tail": [0.1, 0.5], "tailfin": [0.05, 0.5],
+  "horn": [0.5, 0.95], "spikes": [0.5, 0.95], "mane": [0.5, 0.6], "shell": [0.5, 0.6],
+  "ruff": [0.5, 0.2], "plume": [0.5, 0.95], "crown": [0.5, 0.95],
+  "sail": [0.2, 0.95], "spike": [0.5, 0.95], "scales": [0.5, 0.5], "lure": [0.1, 0.95]
+ }
+}

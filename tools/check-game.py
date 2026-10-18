@@ -68,7 +68,7 @@ def check_game(pw, base, results):
         pg = ctx.new_page(); errs = []
         pg.on('pageerror', lambda e: errs.append(str(e)))
         pg.on('console', lambda m: errs.append(m.text) if m.type == 'error' else None)
-        log(f'{name}: open the game'); t0 = time.time(); pg.goto(base + '/index.html'); pg.wait_for_selector('.ttl,.title', timeout=30000); boot = round(time.time() - t0, 2); pg.evaluate(TEST_RENDER)
+        log(f'{name}: open the game'); t0 = time.time(); pg.goto(base + '/index.html?boot=normal'); pg.wait_for_selector('.ttl,.title', timeout=30000); boot = round(time.time() - t0, 2); pg.evaluate(TEST_RENDER)
         if name in ('phone', 'desktop'):
             # the opening cutscene: Start, skip the talk, make a trainer, pick a starter
             log(f'{name}: opening cutscene'); pg.click('[data-a=intro]'); time.sleep(4); opening = {'cutscene': pg.evaluate('cutscene.on')}
@@ -210,7 +210,7 @@ def check_studio(pw, results):
         pg.evaluate("openSection('rules')")  # leave the heavier 3D sections before opening the game
         g = b.new_context(viewport={'width': 1440, 'height': 900}); g.add_init_script(TEST_GLOBALS); g = g.new_page(); g.set_default_timeout(240000); gerrs = []
         g.on('pageerror', lambda e: gerrs.append(str(e))); g.on('console', lambda m: gerrs.append(m.text) if m.type == 'error' else None)
-        g.goto(f'http://localhost:{port}/game/index.html'); g.wait_for_selector('.ttl,.title', timeout=30000)
+        g.goto(f'http://localhost:{port}/game/index.html?boot=normal'); g.wait_for_selector('.ttl,.title', timeout=30000)
         seen = g.evaluate("[MOVES.lawsuit.p,!!SPECIES.checko0,!!(RIGS.checko0&&RIGS.checko0.front.bones.some(b=>b.n==='headTip'))]")
         results['studioSeen'] = seen
         if not seen[1]:

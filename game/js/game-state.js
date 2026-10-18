@@ -5,6 +5,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { flushAccountSave, provide, toast } from './hooks.js';
+import { TEST_BOOT } from './test-boot.js';
 import { loadSave, newSave, saveAge } from './logic/saves.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -82,6 +83,7 @@ export const SAVE_KEY = FIXTURE
     : SAVE_KEY_BASE;
 /** @returns {any} what this browser has under SAVE_KEY, parsed (null when nothing or unreadable) */
 function readStoredSave() {
+  if (TEST_BOOT) return null; /* phase 16 test boot (js/test-boot.js): every load starts fresh */
   try {
     return JSON.parse(localStorage.getItem(SAVE_KEY) || 'null');
   } catch (e) {
@@ -90,7 +92,7 @@ function readStoredSave() {
 }
 /** @param {SaveData} o */
 export function writeStoredSave(o) {
-  if (saveHold) return;
+  if (saveHold || TEST_BOOT) return;
   try {
     localStorage.setItem(SAVE_KEY, JSON.stringify(o));
   } catch (e) {
@@ -186,7 +188,7 @@ document.addEventListener('visibilitychange', () => {
   }
 });
 export function flushSave() {
-  if (saveHold) return;
+  if (saveHold || TEST_BOOT) return;
   if (typeof flushAccountSave === 'function') flushAccountSave();
 }
 /* phase 13: the in-game full test (self-test.js) changes the save while it runs, so nothing is written, in this browser,

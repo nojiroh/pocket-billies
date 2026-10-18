@@ -8,24 +8,24 @@ const { RULES, SPECIES } = data;
 
 test('a species the game no longer has is dropped from a save with its Guide marks; the rest loads as it was', () => {
   assert.equal(SPECIES.ghost0, undefined, 'the test needs a species the data does not have');
-  assert.ok(SPECIES.walton0, 'the test needs walton0');
+  assert.ok(SPECIES.swift0, 'the test needs swift0');
   const s = fn('migrate')({
     started: true,
     team: [
       { uid: 'g1', sp: 'ghost0', lvl: 7, moves: [] },
-      { uid: 'g2', sp: 'walton0', lvl: 6, moves: [] },
+      { uid: 'g2', sp: 'swift0', lvl: 6, moves: [] },
     ],
     box: [],
-    seen: { ghost0: 1, walton1: 1 },
+    seen: { ghost0: 1, swift1: 1 },
     caught: { ghost0: 1 },
     queue: [{ id: 'q', sp: 'ghost0', lvl: 5 }],
   });
   assert.deepEqual(
     s.team.map(m => m.sp),
-    ['walton0']
+    ['swift0']
   );
   assert.ok(s.team[0].moves.length > 0, 'the Billie that stayed has no moves');
-  assert.deepEqual(Object.keys(s.seen), ['walton1']);
+  assert.deepEqual(Object.keys(s.seen), ['swift1']);
   assert.deepEqual(Object.keys(s.caught), []);
   assert.equal(s.queue.length, 0);
 });

@@ -6,6 +6,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { provide } from './hooks.js';
+import { TEST_BOOT } from './test-boot.js';
 import { DATA_WARN, RULES, SPECIES, START_NODE, gameData } from './game-data.js';
 import { SAVE_NEW_MSG, SAVE_OLD_MSG, newSave } from './logic/saves.js';
 import { battleStageKey } from './logic/battle-engine.js';
@@ -38,6 +39,7 @@ import { initAccount } from './account.js';
 import {
   closeModal,
   initPixelSky,
+  introSteps,
   mapIdAt,
   modal,
   render,
@@ -848,6 +850,8 @@ else
       if (typeof debugLog !== 'undefined') debugLog.hook();
       initPixelSky();
       if (typeof titleWanted === 'function' && titleWanted()) titleStart();
+      /* phase 16 test boot (js/test-boot.js): the step-by-step intro's last step is the starter pick */
+      if (TEST_BOOT && !TEST_RUN && !FIXTURE) uiState.intro = introSteps().length;
       render();
       if (TEST_RUN) studioTestStart();
       if (FIXTURE) fixtureStart();
@@ -870,6 +874,8 @@ else
           1200
         );
       if (saveData.started && !TEST_RUN && !FIXTURE) setTimeout(showPendingWindows, 500);
+      if (TEST_BOOT && !TEST_RUN && !FIXTURE)
+        setTimeout(() => toast('Test boot: starter selection, nothing is saved.'), 900);
       if (location.protocol === 'file:')
         setTimeout(
           () => toast('Battles and the map need a local web server. Open the game with Start-Game (see README).'),

@@ -87,8 +87,16 @@ for (const L of D.lines || []) {
   (L.names || []).forEach((n, i) => species.add(L.id + i));
   for (const [lv, m] of L.learn || []) if (!moves[m]) problem(`lines/${L.id}.json`, `learns ${m} at ${lv}, no such move`);
 }
+// phase 16: a species from a line kept in game/data/legacy is fine; the game stands in a new line's Billie for it
+const legacy = new Set();
+if (existsSync(join(DATA, 'legacy', 'lines')))
+  for (const f of readdirSync(join(DATA, 'legacy', 'lines')).filter(f => f.endsWith('.json'))) {
+    const L = JSON.parse(readFileSync(join(DATA, 'legacy', 'lines', f), 'utf8'));
+    (L.names || []).forEach((n, i) => legacy.add(L.id + i));
+  }
+const known = sp => species.has(sp) || legacy.has(sp);
 for (const [k, P] of Object.entries(pools))
-  for (const [sp] of P.list || []) if (!species.has(sp)) problem('pools.json', `${k} has ${sp}, no such species`);
+  for (const [sp] of P.list || []) if (!known(sp)) problem('pools.json', `${k} has ${sp}, no such species`);
 route.forEach((r, i) => {
   if (r.mapId && !S[r.mapId]) problem('locations.json', `stop ${i} (${r.name}) has map ${r.mapId}, no such map`);
   if (r.pool && !pools[r.pool]) problem('locations.json', `stop ${i} (${r.name}) has pool ${r.pool}, no such pool`);
@@ -100,7 +108,7 @@ for (const [id, T] of Object.entries(D.trainers || {})) {
   if (!route[T.node]) problem(`trainers/${id}.json`, `waits at stop ${T.node}, no such stop`);
   if (T.who && !people[T.who]) problem(`trainers/${id}.json`, `looks like ${T.who}, no such person`);
   for (const m of T.team || [])
-    if (!species.has(m.sp) && !String(m.sp).startsWith('@')) problem(`trainers/${id}.json`, `has ${m.sp}, no such species`);
+    if (!known(m.sp) && !String(m.sp).startsWith('@')) problem(`trainers/${id}.json`, `has ${m.sp}, no such species`);
 }
 for (const [id, sc] of Object.entries(S)) {
   const where = `maps/${id}.json`,

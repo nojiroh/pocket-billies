@@ -5,6 +5,7 @@
 import { expose } from '../../game/js/test-globals.js';
 import { provide } from '../../game/js/hooks.js';
 import { $ } from '../../game/js/util.js';
+import { boneSlot } from '../../game/js/skeleton-rig.js';
 import { decodeBase64Array } from '../../game/js/walk-view.js';
 import { escapeHtml } from './game-stand-ins.js';
 import {
@@ -42,6 +43,14 @@ function runCheck() {
     moves = D.moves,
     items = D.items,
     coins = D.coins;
+  /* phase 16: a Billie from a line moved to game/data/legacy (a name like walton0 whose line isn't loaded) is stood in
+     for by the game, so it is one warning per section, not an error per place */
+  const legacyRefs = {},
+    isLegacyRef = id => typeof id === 'string' && /^[a-z]+\d+$/.test(id) && !D.lines.some(L => id.startsWith(L.id)),
+    missingSp = (id, msg, go, sel) => {
+      if (!isLegacyRef(id)) return err(msg, go, sel);
+      (legacyRefs[go] = legacyRefs[go] || { go, sel, ids: new Set() }).ids.add(id);
+    };
   if (!D.types.length) err('There are no types.', 'types');
   const tid = new Set();
   D.types.forEach(t => {
@@ -102,13 +111,13 @@ function runCheck() {
   for (const [k, Pl] of Object.entries(D.pools)) {
     if (!Pl.list.length) warn(`Wild pool ${k} is empty.`, 'world', { wtab: 'pools' });
     Pl.list.forEach(([id]) => {
-      if (!sp.has(id)) err(`Wild pool ${k} lists ${id}, which doesn’t exist.`, 'world', { wtab: 'pools' });
+      if (!sp.has(id)) missingSp(id, `Wild pool ${k} lists ${id}, which doesn’t exist.`, 'world', { wtab: 'pools' });
     });
     if (Pl.lv[0] > Pl.lv[1]) warn(`Wild pool ${k}: lowest level is above the highest.`, 'world', { wtab: 'pools' });
   }
   for (const [k, Pl] of Object.entries(D.fishing || {})) {
     (Pl.list || []).forEach(([id]) => {
-      if (!sp.has(id)) err(`Fishing in ${k} lists ${id}, which doesn’t exist.`, 'world', { wtab: 'fishing' });
+      if (!sp.has(id)) missingSp(id, `Fishing in ${k} lists ${id}, which doesn’t exist.`, 'world', { wtab: 'fishing' });
     });
   }
   /* v46: every scene says what it is, and a place's scene agrees with its place */
@@ -151,7 +160,7 @@ function runCheck() {
       err(`${sc.name || k}: the person behind the counter (${sc.keeper}) isn’t in People.`, 'scenes');
   for (const [k, E] of Object.entries(D.eggs))
     E.list.forEach(([id]) => {
-      if (!sp.has(id)) err(`The ${k} km egg lists ${id}, which doesn’t exist.`, 'world', { wtab: 'eggs' });
+      if (!sp.has(id)) missingSp(id, `The ${k} km egg lists ${id}, which doesn’t exist.`, 'world', { wtab: 'eggs' });
     });
   const seats = new Set(
     Object.values(D.trainers || {})
@@ -173,7 +182,7 @@ function runCheck() {
     if (!T.team.length) err(`${T.name} has no team.`, 'trainers', g);
     T.team.forEach(e => {
       if (!/^@rival\d?$/.test(e.sp) && !sp.has(e.sp))
-        err(`${T.name} uses ${e.sp}, which doesn’t exist.`, 'trainers', g);
+        missingSp(e.sp, `${T.name} uses ${e.sp}, which doesn’t exist.`, 'trainers', g);
     });
     if (!D.people[T.who]) warn(`${T.name} uses an unknown look.`, 'trainers', g);
     if (T.seat) {
@@ -221,7 +230,34 @@ function runCheck() {
     if (!sp.has(l + '0')) err(`Starter ${l} doesn’t exist.`, 'rules');
     if (!sp.has(R.start.rival[l])) warn(`The rival has no valid pick for starter ${l}.`, 'rules');
   });
-  if (!sp.has(R.eggs.mythSpecies)) warn('The mythical egg species doesn’t exist.', 'rules');
+  if (!sp.has(R.eggs.mythSpecies) && !isLegacyRef(R.eggs.mythSpecies))
+    warn('The mythical egg species doesn’t exist.', 'rules');
+  /* phase 16: parts */
+  const PR = R.parts;
+  if (!PR) warn('Rules have no part sizes (parts); every Billie is drawn at its normal size.', 'parts');
+  else {
+    const odds = Object.values(PR.sizes || {}).reduce((a, s) => a + (+s.odds || 0), 0),
+      share = (PR.slots || []).reduce((a, k) => a + (+(PR.share || {})[k] || 0), 0);
+    if (Math.abs(odds - 1) > 0.001)
+      warn(`Part sizes: the chances add up to ${Math.round(odds * 100)}%, not 100%.`, 'parts');
+    if (Math.abs(share - 1) > 0.001)
+      warn(`Part sizes: the weight shares add up to ${Math.round(share * 100)}%, not 100%.`, 'parts');
+    if (!PR.sizes || !PR.sizes.M) err('Part sizes: there is no normal size (M), so no Billie can be Prime.', 'parts');
+    D.lines.forEach(L =>
+      L.names.forEach((n, i) => {
+        const meta = studioState.rigs[L.id + i] && studioState.rigs[L.id + i].front;
+        if (!meta) return;
+        const has = new Set(meta.bones.map(b => boneSlot(b)).filter(Boolean)),
+          miss = (PR.slots || []).filter(k => !has.has(k));
+        if (miss.length)
+          warn(
+            `${n}: no part is its ${miss.join(', ')} slot, so ${miss.length > 1 ? 'those sizes change' : 'that size changes'} only its weight. Set “Part slot” in the skeleton builder.`,
+            'billionaires',
+            { line: L.id, stage: i }
+          );
+      })
+    );
+  }
   for (const it in R.start.items) if (!items[it]) warn(`Starting items include unknown ${it}.`, 'rules');
   if (R.battle.subpoenaMin > R.battle.subpoenaMax) warn('Sleep turns: least is above most.', 'rules');
   if (R.catching.offerMin > R.catching.offerMax) warn('Bargain: least is above most.', 'rules');
@@ -366,6 +402,12 @@ function runCheck() {
     (sh.sells || []).forEach(o => {
       if (!(D.shops || {})[o]) warn(`${sh.name} sells the clothes of a shop that doesn’t exist (${o}).`, 'shops');
     });
+  for (const r of Object.values(legacyRefs))
+    warn(
+      `${r.ids.size} Billie${r.ids.size === 1 ? '' : 's'} named here ${r.ids.size === 1 ? 'is' : 'are'} in legacy (${[...r.ids].slice(0, 4).join(', ')}${r.ids.size > 4 ? '…' : ''}); the game stands in one of the new lines for ${r.ids.size === 1 ? 'it' : 'them'}.`,
+      r.go,
+      r.sel
+    );
   return P;
 }
 let checkTimer = null;

@@ -1,0 +1,2765 @@
+{
+ "note": "Placeholder part kits, phase 16. Made by tools/slice-part-kit.py from tools/art-source/part-kit. Do not edit by hand.",
+ "parts": {
+  "cat_head": {
+   "kit": "beasts",
+   "animal": "cat",
+   "kind": "head",
+   "slot": "head",
+   "pivot": [
+    0.5,
+    0.92
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/cat_head.png",
+     "w": 43,
+     "h": 39
+    },
+    "back": {
+     "file": "next/parts/back/cat_head.png",
+     "w": 44,
+     "h": 38
+    }
+   }
+  },
+  "rabbit_head": {
+   "kit": "beasts",
+   "animal": "rabbit",
+   "kind": "head",
+   "slot": "head",
+   "pivot": [
+    0.5,
+    0.92
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/rabbit_head.png",
+     "w": 42,
+     "h": 38
+    },
+    "back": {
+     "file": "next/parts/back/rabbit_head.png",
+     "w": 45,
+     "h": 38
+    }
+   }
+  },
+  "fox_head": {
+   "kit": "beasts",
+   "animal": "fox",
+   "kind": "head",
+   "slot": "head",
+   "pivot": [
+    0.5,
+    0.92
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/fox_head.png",
+     "w": 44,
+     "h": 40
+    },
+    "back": {
+     "file": "next/parts/back/fox_head.png",
+     "w": 44,
+     "h": 40
+    }
+   }
+  },
+  "bear_head": {
+   "kit": "beasts",
+   "animal": "bear",
+   "kind": "head",
+   "slot": "head",
+   "pivot": [
+    0.5,
+    0.92
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/bear_head.png",
+     "w": 44,
+     "h": 38
+    },
+    "back": {
+     "file": "next/parts/back/bear_head.png",
+     "w": 44,
+     "h": 38
+    }
+   }
+  },
+  "bird_head": {
+   "kit": "beasts",
+   "animal": "bird",
+   "kind": "head",
+   "slot": "head",
+   "pivot": [
+    0.5,
+    0.92
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/bird_head.png",
+     "w": 42,
+     "h": 39
+    },
+    "back": {
+     "file": "next/parts/back/bird_head.png",
+     "w": 43,
+     "h": 40
+    }
+   }
+  },
+  "reptile_head": {
+   "kit": "beasts",
+   "animal": "reptile",
+   "kind": "head",
+   "slot": "head",
+   "pivot": [
+    0.5,
+    0.92
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/reptile_head.png",
+     "w": 42,
+     "h": 36
+    },
+    "back": {
+     "file": "next/parts/back/reptile_head.png",
+     "w": 44,
+     "h": 38
+    }
+   }
+  },
+  "cat_ear": {
+   "kit": "beasts",
+   "animal": "cat",
+   "kind": "ear",
+   "slot": "head-extra",
+   "pivot": [
+    0.5,
+    0.95
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/cat_ear.png",
+     "w": 28,
+     "h": 34
+    },
+    "back": {
+     "file": "next/parts/back/cat_ear.png",
+     "w": 30,
+     "h": 36
+    }
+   }
+  },
+  "rabbit_ear": {
+   "kit": "beasts",
+   "animal": "rabbit",
+   "kind": "ear",
+   "slot": "head-extra",
+   "pivot": [
+    0.5,
+    0.95
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/rabbit_ear.png",
+     "w": 35,
+     "h": 39
+    },
+    "back": {
+     "file": "next/parts/back/rabbit_ear.png",
+     "w": 36,
+     "h": 39
+    }
+   }
+  },
+  "fox_ear": {
+   "kit": "beasts",
+   "animal": "fox",
+   "kind": "ear",
+   "slot": "head-extra",
+   "pivot": [
+    0.5,
+    0.95
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/fox_ear.png",
+     "w": 28,
+     "h": 36
+    },
+    "back": {
+     "file": "next/parts/back/fox_ear.png",
+     "w": 30,
+     "h": 36
+    }
+   }
+  },
+  "bear_ear": {
+   "kit": "beasts",
+   "animal": "bear",
+   "kind": "ear",
+   "slot": "head-extra",
+   "pivot": [
+    0.5,
+    0.95
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/bear_ear.png",
+     "w": 29,
+     "h": 30
+    },
+    "back": {
+     "file": "next/parts/back/bear_ear.png",
+     "w": 31,
+     "h": 30
+    }
+   }
+  },
+  "bird_ear": {
+   "kit": "beasts",
+   "animal": "bird",
+   "kind": "ear",
+   "slot": "head-extra",
+   "pivot": [
+    0.5,
+    0.95
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/bird_ear.png",
+     "w": 25,
+     "h": 40
+    },
+    "back": {
+     "file": "next/parts/back/bird_ear.png",
+     "w": 26,
+     "h": 40
+    }
+   }
+  },
+  "reptile_ear": {
+   "kit": "beasts",
+   "animal": "reptile",
+   "kind": "ear",
+   "slot": "head-extra",
+   "pivot": [
+    0.5,
+    0.95
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/reptile_ear.png",
+     "w": 31,
+     "h": 37
+    },
+    "back": {
+     "file": "next/parts/back/reptile_ear.png",
+     "w": 34,
+     "h": 38
+    }
+   }
+  },
+  "cat_torso": {
+   "kit": "beasts",
+   "animal": "cat",
+   "kind": "torso",
+   "slot": "body",
+   "pivot": [
+    0.5,
+    0.5
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/cat_torso.png",
+     "w": 43,
+     "h": 53
+    },
+    "back": {
+     "file": "next/parts/back/cat_torso.png",
+     "w": 44,
+     "h": 54
+    }
+   }
+  },
+  "rabbit_torso": {
+   "kit": "beasts",
+   "animal": "rabbit",
+   "kind": "torso",
+   "slot": "body",
+   "pivot": [
+    0.5,
+    0.5
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/rabbit_torso.png",
+     "w": 43,
+     "h": 52
+    },
+    "back": {
+     "file": "next/parts/back/rabbit_torso.png",
+     "w": 45,
+     "h": 53
+    }
+   }
+  },
+  "fox_torso": {
+   "kit": "beasts",
+   "animal": "fox",
+   "kind": "torso",
+   "slot": "body",
+   "pivot": [
+    0.5,
+    0.5
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/fox_torso.png",
+     "w": 44,
+     "h": 53
+    },
+    "back": {
+     "file": "next/parts/back/fox_torso.png",
+     "w": 44,
+     "h": 54
+    }
+   }
+  },
+  "bear_torso": {
+   "kit": "beasts",
+   "animal": "bear",
+   "kind": "torso",
+   "slot": "body",
+   "pivot": [
+    0.5,
+    0.5
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/bear_torso.png",
+     "w": 47,
+     "h": 53
+    },
+    "back": {
+     "file": "next/parts/back/bear_torso.png",
+     "w": 47,
+     "h": 53
+    }
+   }
+  },
+  "bird_torso": {
+   "kit": "beasts",
+   "animal": "bird",
+   "kind": "torso",
+   "slot": "body",
+   "pivot": [
+    0.5,
+    0.5
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/bird_torso.png",
+     "w": 46,
+     "h": 52
+    },
+    "back": {
+     "file": "next/parts/back/bird_torso.png",
+     "w": 47,
+     "h": 53
+    }
+   }
+  },
+  "reptile_torso": {
+   "kit": "beasts",
+   "animal": "reptile",
+   "kind": "torso",
+   "slot": "body",
+   "pivot": [
+    0.5,
+    0.5
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/reptile_torso.png",
+     "w": 44,
+     "h": 53
+    },
+    "back": {
+     "file": "next/parts/back/reptile_torso.png",
+     "w": 46,
+     "h": 54
+    }
+   }
+  },
+  "cat_arm": {
+   "kit": "beasts",
+   "animal": "cat",
+   "kind": "arm",
+   "slot": "front",
+   "pivot": [
+    0.5,
+    0.08
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/cat_arm.png",
+     "w": 33,
+     "h": 41
+    },
+    "back": {
+     "file": "next/parts/back/cat_arm.png",
+     "w": 31,
+     "h": 42
+    }
+   }
+  },
+  "rabbit_arm": {
+   "kit": "beasts",
+   "animal": "rabbit",
+   "kind": "arm",
+   "slot": "front",
+   "pivot": [
+    0.5,
+    0.08
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/rabbit_arm.png",
+     "w": 30,
+     "h": 43
+    },
+    "back": {
+     "file": "next/parts/back/rabbit_arm.png",
+     "w": 32,
+     "h": 44
+    }
+   }
+  },
+  "fox_arm": {
+   "kit": "beasts",
+   "animal": "fox",
+   "kind": "arm",
+   "slot": "front",
+   "pivot": [
+    0.5,
+    0.08
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/fox_arm.png",
+     "w": 35,
+     "h": 42
+    },
+    "back": {
+     "file": "next/parts/back/fox_arm.png",
+     "w": 33,
+     "h": 43
+    }
+   }
+  },
+  "bear_arm": {
+   "kit": "beasts",
+   "animal": "bear",
+   "kind": "arm",
+   "slot": "front",
+   "pivot": [
+    0.5,
+    0.08
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/bear_arm.png",
+     "w": 36,
+     "h": 42
+    },
+    "back": {
+     "file": "next/parts/back/bear_arm.png",
+     "w": 37,
+     "h": 43
+    }
+   }
+  },
+  "bird_arm": {
+   "kit": "beasts",
+   "animal": "bird",
+   "kind": "arm",
+   "slot": "front",
+   "pivot": [
+    0.5,
+    0.08
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/bird_arm.png",
+     "w": 40,
+     "h": 43
+    },
+    "back": {
+     "file": "next/parts/back/bird_arm.png",
+     "w": 38,
+     "h": 44
+    }
+   }
+  },
+  "reptile_arm": {
+   "kit": "beasts",
+   "animal": "reptile",
+   "kind": "arm",
+   "slot": "front",
+   "pivot": [
+    0.5,
+    0.08
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/reptile_arm.png",
+     "w": 34,
+     "h": 42
+    },
+    "back": {
+     "file": "next/parts/back/reptile_arm.png",
+     "w": 38,
+     "h": 44
+    }
+   }
+  },
+  "cat_leg": {
+   "kit": "beasts",
+   "animal": "cat",
+   "kind": "leg",
+   "slot": "back",
+   "pivot": [
+    0.5,
+    0.1
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/cat_leg.png",
+     "w": 32,
+     "h": 49
+    },
+    "back": {
+     "file": "next/parts/back/cat_leg.png",
+     "w": 31,
+     "h": 48
+    }
+   }
+  },
+  "rabbit_leg": {
+   "kit": "beasts",
+   "animal": "rabbit",
+   "kind": "leg",
+   "slot": "back",
+   "pivot": [
+    0.5,
+    0.1
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/rabbit_leg.png",
+     "w": 32,
+     "h": 50
+    },
+    "back": {
+     "file": "next/parts/back/rabbit_leg.png",
+     "w": 32,
+     "h": 49
+    }
+   }
+  },
+  "fox_leg": {
+   "kit": "beasts",
+   "animal": "fox",
+   "kind": "leg",
+   "slot": "back",
+   "pivot": [
+    0.5,
+    0.1
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/fox_leg.png",
+     "w": 31,
+     "h": 50
+    },
+    "back": {
+     "file": "next/parts/back/fox_leg.png",
+     "w": 30,
+     "h": 48
+    }
+   }
+  },
+  "bear_leg": {
+   "kit": "beasts",
+   "animal": "bear",
+   "kind": "leg",
+   "slot": "back",
+   "pivot": [
+    0.5,
+    0.1
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/bear_leg.png",
+     "w": 38,
+     "h": 52
+    },
+    "back": {
+     "file": "next/parts/back/bear_leg.png",
+     "w": 34,
+     "h": 50
+    }
+   }
+  },
+  "bird_leg": {
+   "kit": "beasts",
+   "animal": "bird",
+   "kind": "leg",
+   "slot": "back",
+   "pivot": [
+    0.5,
+    0.1
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/bird_leg.png",
+     "w": 38,
+     "h": 52
+    },
+    "back": {
+     "file": "next/parts/back/bird_leg.png",
+     "w": 36,
+     "h": 50
+    }
+   }
+  },
+  "reptile_leg": {
+   "kit": "beasts",
+   "animal": "reptile",
+   "kind": "leg",
+   "slot": "back",
+   "pivot": [
+    0.5,
+    0.1
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/reptile_leg.png",
+     "w": 35,
+     "h": 51
+    },
+    "back": {
+     "file": "next/parts/back/reptile_leg.png",
+     "w": 34,
+     "h": 49
+    }
+   }
+  },
+  "cat_tail": {
+   "kit": "beasts",
+   "animal": "cat",
+   "kind": "tail",
+   "slot": "signature",
+   "pivot": [
+    0.1,
+    0.5
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/cat_tail.png",
+     "w": 42,
+     "h": 40
+    },
+    "back": {
+     "file": "next/parts/back/cat_tail.png",
+     "w": 41,
+     "h": 41
+    }
+   }
+  },
+  "rabbit_tail": {
+   "kit": "beasts",
+   "animal": "rabbit",
+   "kind": "tail",
+   "slot": "signature",
+   "pivot": [
+    0.1,
+    0.5
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/rabbit_tail.png",
+     "w": 27,
+     "h": 28
+    },
+    "back": {
+     "file": "next/parts/back/rabbit_tail.png",
+     "w": 28,
+     "h": 28
+    }
+   }
+  },
+  "fox_tail": {
+   "kit": "beasts",
+   "animal": "fox",
+   "kind": "tail",
+   "slot": "signature",
+   "pivot": [
+    0.1,
+    0.5
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/fox_tail.png",
+     "w": 42,
+     "h": 40
+    },
+    "back": {
+     "file": "next/parts/back/fox_tail.png",
+     "w": 43,
+     "h": 42
+    }
+   }
+  },
+  "bear_tail": {
+   "kit": "beasts",
+   "animal": "bear",
+   "kind": "tail",
+   "slot": "signature",
+   "pivot": [
+    0.1,
+    0.5
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/bear_tail.png",
+     "w": 25,
+     "h": 24
+    },
+    "back": {
+     "file": "next/parts/back/bear_tail.png",
+     "w": 27,
+     "h": 27
+    }
+   }
+  },
+  "bird_tail": {
+   "kit": "beasts",
+   "animal": "bird",
+   "kind": "tail",
+   "slot": "signature",
+   "pivot": [
+    0.1,
+    0.5
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/bird_tail.png",
+     "w": 42,
+     "h": 37
+    },
+    "back": {
+     "file": "next/parts/back/bird_tail.png",
+     "w": 46,
+     "h": 36
+    }
+   }
+  },
+  "reptile_tail": {
+   "kit": "beasts",
+   "animal": "reptile",
+   "kind": "tail",
+   "slot": "signature",
+   "pivot": [
+    0.1,
+    0.5
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/reptile_tail.png",
+     "w": 42,
+     "h": 37
+    },
+    "back": {
+     "file": "next/parts/back/reptile_tail.png",
+     "w": 43,
+     "h": 38
+    }
+   }
+  },
+  "beasts_horn": {
+   "kit": "beasts",
+   "animal": "any",
+   "kind": "horn",
+   "slot": "head-extra",
+   "pivot": [
+    0.5,
+    0.95
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/beasts_horn.png",
+     "w": 24,
+     "h": 39
+    },
+    "back": {
+     "file": "next/parts/back/beasts_horn.png",
+     "w": 22,
+     "h": 40
+    }
+   }
+  },
+  "beasts_spikes": {
+   "kit": "beasts",
+   "animal": "any",
+   "kind": "spikes",
+   "slot": "signature",
+   "pivot": [
+    0.5,
+    0.95
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/beasts_spikes.png",
+     "w": 40,
+     "h": 31
+    },
+    "back": {
+     "file": "next/parts/back/beasts_spikes.png",
+     "w": 42,
+     "h": 31
+    }
+   }
+  },
+  "beasts_mane": {
+   "kit": "beasts",
+   "animal": "any",
+   "kind": "mane",
+   "slot": "signature",
+   "pivot": [
+    0.5,
+    0.6
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/beasts_mane.png",
+     "w": 46,
+     "h": 41
+    },
+    "back": {
+     "file": "next/parts/back/beasts_mane.png",
+     "w": 46,
+     "h": 40
+    }
+   }
+  },
+  "beasts_shell": {
+   "kit": "beasts",
+   "animal": "any",
+   "kind": "shell",
+   "slot": "body-extra",
+   "pivot": [
+    0.5,
+    0.6
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/beasts_shell.png",
+     "w": 48,
+     "h": 35
+    },
+    "back": {
+     "file": "next/parts/back/beasts_shell.png",
+     "w": 48,
+     "h": 35
+    }
+   }
+  },
+  "chick_head": {
+   "kit": "birds",
+   "animal": "chick",
+   "kind": "head",
+   "slot": "head",
+   "pivot": [
+    0.5,
+    0.92
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/chick_head.png",
+     "w": 46,
+     "h": 44
+    },
+    "back": {
+     "file": "next/parts/back/chick_head.png",
+     "w": 46,
+     "h": 44
+    }
+   }
+  },
+  "duck_head": {
+   "kit": "birds",
+   "animal": "duck",
+   "kind": "head",
+   "slot": "head",
+   "pivot": [
+    0.5,
+    0.92
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/duck_head.png",
+     "w": 43,
+     "h": 43
+    },
+    "back": {
+     "file": "next/parts/back/duck_head.png",
+     "w": 44,
+     "h": 44
+    }
+   }
+  },
+  "owl_head": {
+   "kit": "birds",
+   "animal": "owl",
+   "kind": "head",
+   "slot": "head",
+   "pivot": [
+    0.5,
+    0.92
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/owl_head.png",
+     "w": 46,
+     "h": 41
+    },
+    "back": {
+     "file": "next/parts/back/owl_head.png",
+     "w": 46,
+     "h": 42
+    }
+   }
+  },
+  "sparrow_head": {
+   "kit": "birds",
+   "animal": "sparrow",
+   "kind": "head",
+   "slot": "head",
+   "pivot": [
+    0.5,
+    0.92
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/sparrow_head.png",
+     "w": 45,
+     "h": 40
+    },
+    "back": {
+     "file": "next/parts/back/sparrow_head.png",
+     "w": 45,
+     "h": 40
+    }
+   }
+  },
+  "eagle_head": {
+   "kit": "birds",
+   "animal": "eagle",
+   "kind": "head",
+   "slot": "head",
+   "pivot": [
+    0.5,
+    0.92
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/eagle_head.png",
+     "w": 44,
+     "h": 44
+    },
+    "back": {
+     "file": "next/parts/back/eagle_head.png",
+     "w": 45,
+     "h": 44
+    }
+   }
+  },
+  "hawk_head": {
+   "kit": "birds",
+   "animal": "hawk",
+   "kind": "head",
+   "slot": "head",
+   "pivot": [
+    0.5,
+    0.92
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/hawk_head.png",
+     "w": 46,
+     "h": 45
+    },
+    "back": {
+     "file": "next/parts/back/hawk_head.png",
+     "w": 46,
+     "h": 45
+    }
+   }
+  },
+  "chick_crest": {
+   "kit": "birds",
+   "animal": "chick",
+   "kind": "crest",
+   "slot": "head-extra",
+   "pivot": [
+    0.5,
+    0.95
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/chick_crest.png",
+     "w": 32,
+     "h": 28
+    },
+    "back": {
+     "file": "next/parts/back/chick_crest.png",
+     "w": 32,
+     "h": 28
+    }
+   }
+  },
+  "duck_crest": {
+   "kit": "birds",
+   "animal": "duck",
+   "kind": "crest",
+   "slot": "head-extra",
+   "pivot": [
+    0.5,
+    0.95
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/duck_crest.png",
+     "w": 40,
+     "h": 36
+    },
+    "back": {
+     "file": "next/parts/back/duck_crest.png",
+     "w": 40,
+     "h": 36
+    }
+   }
+  },
+  "owl_crest": {
+   "kit": "birds",
+   "animal": "owl",
+   "kind": "crest",
+   "slot": "head-extra",
+   "pivot": [
+    0.5,
+    0.95
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/owl_crest.png",
+     "w": 37,
+     "h": 35
+    },
+    "back": {
+     "file": "next/parts/back/owl_crest.png",
+     "w": 38,
+     "h": 35
+    }
+   }
+  },
+  "sparrow_crest": {
+   "kit": "birds",
+   "animal": "sparrow",
+   "kind": "crest",
+   "slot": "head-extra",
+   "pivot": [
+    0.5,
+    0.95
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/sparrow_crest.png",
+     "w": 38,
+     "h": 33
+    },
+    "back": {
+     "file": "next/parts/back/sparrow_crest.png",
+     "w": 38,
+     "h": 32
+    }
+   }
+  },
+  "eagle_crest": {
+   "kit": "birds",
+   "animal": "eagle",
+   "kind": "crest",
+   "slot": "head-extra",
+   "pivot": [
+    0.5,
+    0.95
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/eagle_crest.png",
+     "w": 37,
+     "h": 38
+    },
+    "back": {
+     "file": "next/parts/back/eagle_crest.png",
+     "w": 40,
+     "h": 37
+    }
+   }
+  },
+  "hawk_crest": {
+   "kit": "birds",
+   "animal": "hawk",
+   "kind": "crest",
+   "slot": "head-extra",
+   "pivot": [
+    0.5,
+    0.95
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/hawk_crest.png",
+     "w": 36,
+     "h": 34
+    },
+    "back": {
+     "file": "next/parts/back/hawk_crest.png",
+     "w": 40,
+     "h": 34
+    }
+   }
+  },
+  "chick_torso": {
+   "kit": "birds",
+   "animal": "chick",
+   "kind": "torso",
+   "slot": "body",
+   "pivot": [
+    0.5,
+    0.5
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/chick_torso.png",
+     "w": 46,
+     "h": 47
+    },
+    "back": {
+     "file": "next/parts/back/chick_torso.png",
+     "w": 45,
+     "h": 47
+    }
+   }
+  },
+  "duck_torso": {
+   "kit": "birds",
+   "animal": "duck",
+   "kind": "torso",
+   "slot": "body",
+   "pivot": [
+    0.5,
+    0.5
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/duck_torso.png",
+     "w": 46,
+     "h": 46
+    },
+    "back": {
+     "file": "next/parts/back/duck_torso.png",
+     "w": 46,
+     "h": 46
+    }
+   }
+  },
+  "owl_torso": {
+   "kit": "birds",
+   "animal": "owl",
+   "kind": "torso",
+   "slot": "body",
+   "pivot": [
+    0.5,
+    0.5
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/owl_torso.png",
+     "w": 45,
+     "h": 48
+    },
+    "back": {
+     "file": "next/parts/back/owl_torso.png",
+     "w": 44,
+     "h": 48
+    }
+   }
+  },
+  "sparrow_torso": {
+   "kit": "birds",
+   "animal": "sparrow",
+   "kind": "torso",
+   "slot": "body",
+   "pivot": [
+    0.5,
+    0.5
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/sparrow_torso.png",
+     "w": 45,
+     "h": 44
+    },
+    "back": {
+     "file": "next/parts/back/sparrow_torso.png",
+     "w": 44,
+     "h": 44
+    }
+   }
+  },
+  "eagle_torso": {
+   "kit": "birds",
+   "animal": "eagle",
+   "kind": "torso",
+   "slot": "body",
+   "pivot": [
+    0.5,
+    0.5
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/eagle_torso.png",
+     "w": 43,
+     "h": 48
+    },
+    "back": {
+     "file": "next/parts/back/eagle_torso.png",
+     "w": 44,
+     "h": 48
+    }
+   }
+  },
+  "hawk_torso": {
+   "kit": "birds",
+   "animal": "hawk",
+   "kind": "torso",
+   "slot": "body",
+   "pivot": [
+    0.5,
+    0.5
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/hawk_torso.png",
+     "w": 46,
+     "h": 51
+    },
+    "back": {
+     "file": "next/parts/back/hawk_torso.png",
+     "w": 46,
+     "h": 50
+    }
+   }
+  },
+  "chick_wing": {
+   "kit": "birds",
+   "animal": "chick",
+   "kind": "wing",
+   "slot": "front",
+   "pivot": [
+    0.85,
+    0.08
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/chick_wing.png",
+     "w": 38,
+     "h": 42
+    },
+    "back": {
+     "file": "next/parts/back/chick_wing.png",
+     "w": 36,
+     "h": 44
+    }
+   }
+  },
+  "duck_wing": {
+   "kit": "birds",
+   "animal": "duck",
+   "kind": "wing",
+   "slot": "front",
+   "pivot": [
+    0.85,
+    0.08
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/duck_wing.png",
+     "w": 46,
+     "h": 50
+    },
+    "back": {
+     "file": "next/parts/back/duck_wing.png",
+     "w": 45,
+     "h": 52
+    }
+   }
+  },
+  "owl_wing": {
+   "kit": "birds",
+   "animal": "owl",
+   "kind": "wing",
+   "slot": "front",
+   "pivot": [
+    0.85,
+    0.08
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/owl_wing.png",
+     "w": 42,
+     "h": 47
+    },
+    "back": {
+     "file": "next/parts/back/owl_wing.png",
+     "w": 42,
+     "h": 48
+    }
+   }
+  },
+  "sparrow_wing": {
+   "kit": "birds",
+   "animal": "sparrow",
+   "kind": "wing",
+   "slot": "front",
+   "pivot": [
+    0.85,
+    0.08
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/sparrow_wing.png",
+     "w": 44,
+     "h": 43
+    },
+    "back": {
+     "file": "next/parts/back/sparrow_wing.png",
+     "w": 43,
+     "h": 45
+    }
+   }
+  },
+  "eagle_wing": {
+   "kit": "birds",
+   "animal": "eagle",
+   "kind": "wing",
+   "slot": "front",
+   "pivot": [
+    0.85,
+    0.08
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/eagle_wing.png",
+     "w": 48,
+     "h": 63
+    },
+    "back": {
+     "file": "next/parts/back/eagle_wing.png",
+     "w": 44,
+     "h": 64
+    }
+   }
+  },
+  "hawk_wing": {
+   "kit": "birds",
+   "animal": "hawk",
+   "kind": "wing",
+   "slot": "front",
+   "pivot": [
+    0.85,
+    0.08
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/hawk_wing.png",
+     "w": 44,
+     "h": 52
+    },
+    "back": {
+     "file": "next/parts/back/hawk_wing.png",
+     "w": 44,
+     "h": 53
+    }
+   }
+  },
+  "chick_foot": {
+   "kit": "birds",
+   "animal": "chick",
+   "kind": "foot",
+   "slot": "back",
+   "pivot": [
+    0.5,
+    0.05
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/chick_foot.png",
+     "w": 32,
+     "h": 41
+    },
+    "back": {
+     "file": "next/parts/back/chick_foot.png",
+     "w": 36,
+     "h": 41
+    }
+   }
+  },
+  "duck_foot": {
+   "kit": "birds",
+   "animal": "duck",
+   "kind": "foot",
+   "slot": "back",
+   "pivot": [
+    0.5,
+    0.05
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/duck_foot.png",
+     "w": 32,
+     "h": 43
+    },
+    "back": {
+     "file": "next/parts/back/duck_foot.png",
+     "w": 32,
+     "h": 43
+    }
+   }
+  },
+  "owl_foot": {
+   "kit": "birds",
+   "animal": "owl",
+   "kind": "foot",
+   "slot": "back",
+   "pivot": [
+    0.5,
+    0.05
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/owl_foot.png",
+     "w": 38,
+     "h": 42
+    },
+    "back": {
+     "file": "next/parts/back/owl_foot.png",
+     "w": 40,
+     "h": 44
+    }
+   }
+  },
+  "sparrow_foot": {
+   "kit": "birds",
+   "animal": "sparrow",
+   "kind": "foot",
+   "slot": "back",
+   "pivot": [
+    0.5,
+    0.05
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/sparrow_foot.png",
+     "w": 32,
+     "h": 43
+    },
+    "back": {
+     "file": "next/parts/back/sparrow_foot.png",
+     "w": 34,
+     "h": 42
+    }
+   }
+  },
+  "eagle_foot": {
+   "kit": "birds",
+   "animal": "eagle",
+   "kind": "foot",
+   "slot": "back",
+   "pivot": [
+    0.5,
+    0.05
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/eagle_foot.png",
+     "w": 36,
+     "h": 44
+    },
+    "back": {
+     "file": "next/parts/back/eagle_foot.png",
+     "w": 39,
+     "h": 43
+    }
+   }
+  },
+  "hawk_foot": {
+   "kit": "birds",
+   "animal": "hawk",
+   "kind": "foot",
+   "slot": "back",
+   "pivot": [
+    0.5,
+    0.05
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/hawk_foot.png",
+     "w": 38,
+     "h": 44
+    },
+    "back": {
+     "file": "next/parts/back/hawk_foot.png",
+     "w": 38,
+     "h": 43
+    }
+   }
+  },
+  "chick_tail": {
+   "kit": "birds",
+   "animal": "chick",
+   "kind": "tail",
+   "slot": "signature",
+   "pivot": [
+    0.1,
+    0.5
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/chick_tail.png",
+     "w": 37,
+     "h": 35
+    },
+    "back": {
+     "file": "next/parts/back/chick_tail.png",
+     "w": 38,
+     "h": 36
+    }
+   }
+  },
+  "duck_tail": {
+   "kit": "birds",
+   "animal": "duck",
+   "kind": "tail",
+   "slot": "signature",
+   "pivot": [
+    0.1,
+    0.5
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/duck_tail.png",
+     "w": 38,
+     "h": 47
+    },
+    "back": {
+     "file": "next/parts/back/duck_tail.png",
+     "w": 39,
+     "h": 48
+    }
+   }
+  },
+  "owl_tail": {
+   "kit": "birds",
+   "animal": "owl",
+   "kind": "tail",
+   "slot": "signature",
+   "pivot": [
+    0.1,
+    0.5
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/owl_tail.png",
+     "w": 45,
+     "h": 40
+    },
+    "back": {
+     "file": "next/parts/back/owl_tail.png",
+     "w": 45,
+     "h": 41
+    }
+   }
+  },
+  "sparrow_tail": {
+   "kit": "birds",
+   "animal": "sparrow",
+   "kind": "tail",
+   "slot": "signature",
+   "pivot": [
+    0.1,
+    0.5
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/sparrow_tail.png",
+     "w": 41,
+     "h": 42
+    },
+    "back": {
+     "file": "next/parts/back/sparrow_tail.png",
+     "w": 41,
+     "h": 42
+    }
+   }
+  },
+  "eagle_tail": {
+   "kit": "birds",
+   "animal": "eagle",
+   "kind": "tail",
+   "slot": "signature",
+   "pivot": [
+    0.1,
+    0.5
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/eagle_tail.png",
+     "w": 39,
+     "h": 49
+    },
+    "back": {
+     "file": "next/parts/back/eagle_tail.png",
+     "w": 38,
+     "h": 50
+    }
+   }
+  },
+  "hawk_tail": {
+   "kit": "birds",
+   "animal": "hawk",
+   "kind": "tail",
+   "slot": "signature",
+   "pivot": [
+    0.1,
+    0.5
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/hawk_tail.png",
+     "w": 47,
+     "h": 45
+    },
+    "back": {
+     "file": "next/parts/back/hawk_tail.png",
+     "w": 47,
+     "h": 44
+    }
+   }
+  },
+  "birds_ruff": {
+   "kit": "birds",
+   "animal": "any",
+   "kind": "ruff",
+   "slot": "body-extra",
+   "pivot": [
+    0.5,
+    0.2
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/birds_ruff.png",
+     "w": 48,
+     "h": 39
+    },
+    "back": {
+     "file": "next/parts/back/birds_ruff.png",
+     "w": 46,
+     "h": 39
+    }
+   }
+  },
+  "birds_horn": {
+   "kit": "birds",
+   "animal": "any",
+   "kind": "horn",
+   "slot": "head-extra",
+   "pivot": [
+    0.5,
+    0.95
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/birds_horn.png",
+     "w": 22,
+     "h": 39
+    },
+    "back": {
+     "file": "next/parts/back/birds_horn.png",
+     "w": 20,
+     "h": 38
+    }
+   }
+  },
+  "birds_plume": {
+   "kit": "birds",
+   "animal": "any",
+   "kind": "plume",
+   "slot": "head-extra",
+   "pivot": [
+    0.5,
+    0.95
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/birds_plume.png",
+     "w": 36,
+     "h": 38
+    },
+    "back": {
+     "file": "next/parts/back/birds_plume.png",
+     "w": 35,
+     "h": 36
+    }
+   }
+  },
+  "birds_crown": {
+   "kit": "birds",
+   "animal": "any",
+   "kind": "crown",
+   "slot": "head-extra",
+   "pivot": [
+    0.5,
+    0.95
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/birds_crown.png",
+     "w": 48,
+     "h": 36
+    },
+    "back": {
+     "file": "next/parts/back/birds_crown.png",
+     "w": 48,
+     "h": 36
+    }
+   }
+  },
+  "goldfish_head": {
+   "kit": "fish",
+   "animal": "goldfish",
+   "kind": "head",
+   "slot": "head",
+   "pivot": [
+    0.5,
+    0.92
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/goldfish_head.png",
+     "w": 40,
+     "h": 44
+    },
+    "back": {
+     "file": "next/parts/back/goldfish_head.png",
+     "w": 40,
+     "h": 44
+    }
+   }
+  },
+  "carp_head": {
+   "kit": "fish",
+   "animal": "carp",
+   "kind": "head",
+   "slot": "head",
+   "pivot": [
+    0.5,
+    0.92
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/carp_head.png",
+     "w": 43,
+     "h": 41
+    },
+    "back": {
+     "file": "next/parts/back/carp_head.png",
+     "w": 44,
+     "h": 42
+    }
+   }
+  },
+  "koi_head": {
+   "kit": "fish",
+   "animal": "koi",
+   "kind": "head",
+   "slot": "head",
+   "pivot": [
+    0.5,
+    0.92
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/koi_head.png",
+     "w": 41,
+     "h": 43
+    },
+    "back": {
+     "file": "next/parts/back/koi_head.png",
+     "w": 41,
+     "h": 43
+    }
+   }
+  },
+  "piranha_head": {
+   "kit": "fish",
+   "animal": "piranha",
+   "kind": "head",
+   "slot": "head",
+   "pivot": [
+    0.5,
+    0.92
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/piranha_head.png",
+     "w": 42,
+     "h": 41
+    },
+    "back": {
+     "file": "next/parts/back/piranha_head.png",
+     "w": 42,
+     "h": 42
+    }
+   }
+  },
+  "betta_head": {
+   "kit": "fish",
+   "animal": "betta",
+   "kind": "head",
+   "slot": "head",
+   "pivot": [
+    0.5,
+    0.92
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/betta_head.png",
+     "w": 46,
+     "h": 41
+    },
+    "back": {
+     "file": "next/parts/back/betta_head.png",
+     "w": 46,
+     "h": 42
+    }
+   }
+  },
+  "shark_head": {
+   "kit": "fish",
+   "animal": "shark",
+   "kind": "head",
+   "slot": "head",
+   "pivot": [
+    0.5,
+    0.92
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/shark_head.png",
+     "w": 40,
+     "h": 44
+    },
+    "back": {
+     "file": "next/parts/back/shark_head.png",
+     "w": 39,
+     "h": 44
+    }
+   }
+  },
+  "goldfish_dorsal": {
+   "kit": "fish",
+   "animal": "goldfish",
+   "kind": "dorsal",
+   "slot": "head-extra",
+   "pivot": [
+    0.5,
+    0.95
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/goldfish_dorsal.png",
+     "w": 36,
+     "h": 32
+    },
+    "back": {
+     "file": "next/parts/back/goldfish_dorsal.png",
+     "w": 36,
+     "h": 32
+    }
+   }
+  },
+  "carp_dorsal": {
+   "kit": "fish",
+   "animal": "carp",
+   "kind": "dorsal",
+   "slot": "head-extra",
+   "pivot": [
+    0.5,
+    0.95
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/carp_dorsal.png",
+     "w": 20,
+     "h": 35
+    },
+    "back": {
+     "file": "next/parts/back/carp_dorsal.png",
+     "w": 21,
+     "h": 36
+    }
+   }
+  },
+  "koi_dorsal": {
+   "kit": "fish",
+   "animal": "koi",
+   "kind": "dorsal",
+   "slot": "head-extra",
+   "pivot": [
+    0.5,
+    0.95
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/koi_dorsal.png",
+     "w": 38,
+     "h": 27
+    },
+    "back": {
+     "file": "next/parts/back/koi_dorsal.png",
+     "w": 38,
+     "h": 27
+    }
+   }
+  },
+  "piranha_dorsal": {
+   "kit": "fish",
+   "animal": "piranha",
+   "kind": "dorsal",
+   "slot": "head-extra",
+   "pivot": [
+    0.5,
+    0.95
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/piranha_dorsal.png",
+     "w": 30,
+     "h": 32
+    },
+    "back": {
+     "file": "next/parts/back/piranha_dorsal.png",
+     "w": 32,
+     "h": 32
+    }
+   }
+  },
+  "betta_dorsal": {
+   "kit": "fish",
+   "animal": "betta",
+   "kind": "dorsal",
+   "slot": "head-extra",
+   "pivot": [
+    0.5,
+    0.95
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/betta_dorsal.png",
+     "w": 39,
+     "h": 29
+    },
+    "back": {
+     "file": "next/parts/back/betta_dorsal.png",
+     "w": 40,
+     "h": 28
+    }
+   }
+  },
+  "shark_dorsal": {
+   "kit": "fish",
+   "animal": "shark",
+   "kind": "dorsal",
+   "slot": "head-extra",
+   "pivot": [
+    0.5,
+    0.95
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/shark_dorsal.png",
+     "w": 24,
+     "h": 35
+    },
+    "back": {
+     "file": "next/parts/back/shark_dorsal.png",
+     "w": 24,
+     "h": 35
+    }
+   }
+  },
+  "goldfish_torso": {
+   "kit": "fish",
+   "animal": "goldfish",
+   "kind": "torso",
+   "slot": "body",
+   "pivot": [
+    0.5,
+    0.5
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/goldfish_torso.png",
+     "w": 39,
+     "h": 46
+    },
+    "back": {
+     "file": "next/parts/back/goldfish_torso.png",
+     "w": 39,
+     "h": 47
+    }
+   }
+  },
+  "carp_torso": {
+   "kit": "fish",
+   "animal": "carp",
+   "kind": "torso",
+   "slot": "body",
+   "pivot": [
+    0.5,
+    0.5
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/carp_torso.png",
+     "w": 46,
+     "h": 46
+    },
+    "back": {
+     "file": "next/parts/back/carp_torso.png",
+     "w": 46,
+     "h": 47
+    }
+   }
+  },
+  "koi_torso": {
+   "kit": "fish",
+   "animal": "koi",
+   "kind": "torso",
+   "slot": "body",
+   "pivot": [
+    0.5,
+    0.5
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/koi_torso.png",
+     "w": 39,
+     "h": 48
+    },
+    "back": {
+     "file": "next/parts/back/koi_torso.png",
+     "w": 39,
+     "h": 48
+    }
+   }
+  },
+  "piranha_torso": {
+   "kit": "fish",
+   "animal": "piranha",
+   "kind": "torso",
+   "slot": "body",
+   "pivot": [
+    0.5,
+    0.5
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/piranha_torso.png",
+     "w": 44,
+     "h": 47
+    },
+    "back": {
+     "file": "next/parts/back/piranha_torso.png",
+     "w": 44,
+     "h": 48
+    }
+   }
+  },
+  "betta_torso": {
+   "kit": "fish",
+   "animal": "betta",
+   "kind": "torso",
+   "slot": "body",
+   "pivot": [
+    0.5,
+    0.5
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/betta_torso.png",
+     "w": 45,
+     "h": 46
+    },
+    "back": {
+     "file": "next/parts/back/betta_torso.png",
+     "w": 45,
+     "h": 47
+    }
+   }
+  },
+  "shark_torso": {
+   "kit": "fish",
+   "animal": "shark",
+   "kind": "torso",
+   "slot": "body",
+   "pivot": [
+    0.5,
+    0.5
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/shark_torso.png",
+     "w": 38,
+     "h": 47
+    },
+    "back": {
+     "file": "next/parts/back/shark_torso.png",
+     "w": 39,
+     "h": 48
+    }
+   }
+  },
+  "goldfish_frontfin": {
+   "kit": "fish",
+   "animal": "goldfish",
+   "kind": "frontfin",
+   "slot": "front",
+   "pivot": [
+    0.15,
+    0.1
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/goldfish_frontfin.png",
+     "w": 34,
+     "h": 29
+    },
+    "back": {
+     "file": "next/parts/back/goldfish_frontfin.png",
+     "w": 34,
+     "h": 29
+    }
+   }
+  },
+  "carp_frontfin": {
+   "kit": "fish",
+   "animal": "carp",
+   "kind": "frontfin",
+   "slot": "front",
+   "pivot": [
+    0.15,
+    0.1
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/carp_frontfin.png",
+     "w": 38,
+     "h": 29
+    },
+    "back": {
+     "file": "next/parts/back/carp_frontfin.png",
+     "w": 38,
+     "h": 29
+    }
+   }
+  },
+  "koi_frontfin": {
+   "kit": "fish",
+   "animal": "koi",
+   "kind": "frontfin",
+   "slot": "front",
+   "pivot": [
+    0.15,
+    0.1
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/koi_frontfin.png",
+     "w": 32,
+     "h": 32
+    },
+    "back": {
+     "file": "next/parts/back/koi_frontfin.png",
+     "w": 32,
+     "h": 32
+    }
+   }
+  },
+  "piranha_frontfin": {
+   "kit": "fish",
+   "animal": "piranha",
+   "kind": "frontfin",
+   "slot": "front",
+   "pivot": [
+    0.15,
+    0.1
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/piranha_frontfin.png",
+     "w": 34,
+     "h": 32
+    },
+    "back": {
+     "file": "next/parts/back/piranha_frontfin.png",
+     "w": 34,
+     "h": 32
+    }
+   }
+  },
+  "betta_frontfin": {
+   "kit": "fish",
+   "animal": "betta",
+   "kind": "frontfin",
+   "slot": "front",
+   "pivot": [
+    0.15,
+    0.1
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/betta_frontfin.png",
+     "w": 30,
+     "h": 29
+    },
+    "back": {
+     "file": "next/parts/back/betta_frontfin.png",
+     "w": 30,
+     "h": 29
+    }
+   }
+  },
+  "shark_frontfin": {
+   "kit": "fish",
+   "animal": "shark",
+   "kind": "frontfin",
+   "slot": "front",
+   "pivot": [
+    0.15,
+    0.1
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/shark_frontfin.png",
+     "w": 36,
+     "h": 32
+    },
+    "back": {
+     "file": "next/parts/back/shark_frontfin.png",
+     "w": 36,
+     "h": 32
+    }
+   }
+  },
+  "goldfish_backfin": {
+   "kit": "fish",
+   "animal": "goldfish",
+   "kind": "backfin",
+   "slot": "back",
+   "pivot": [
+    0.3,
+    0.05
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/goldfish_backfin.png",
+     "w": 24,
+     "h": 25
+    },
+    "back": {
+     "file": "next/parts/back/goldfish_backfin.png",
+     "w": 24,
+     "h": 25
+    }
+   }
+  },
+  "carp_backfin": {
+   "kit": "fish",
+   "animal": "carp",
+   "kind": "backfin",
+   "slot": "back",
+   "pivot": [
+    0.3,
+    0.05
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/carp_backfin.png",
+     "w": 22,
+     "h": 36
+    },
+    "back": {
+     "file": "next/parts/back/carp_backfin.png",
+     "w": 22,
+     "h": 36
+    }
+   }
+  },
+  "koi_backfin": {
+   "kit": "fish",
+   "animal": "koi",
+   "kind": "backfin",
+   "slot": "back",
+   "pivot": [
+    0.3,
+    0.05
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/koi_backfin.png",
+     "w": 28,
+     "h": 29
+    },
+    "back": {
+     "file": "next/parts/back/koi_backfin.png",
+     "w": 27,
+     "h": 29
+    }
+   }
+  },
+  "piranha_backfin": {
+   "kit": "fish",
+   "animal": "piranha",
+   "kind": "backfin",
+   "slot": "back",
+   "pivot": [
+    0.3,
+    0.05
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/piranha_backfin.png",
+     "w": 27,
+     "h": 35
+    },
+    "back": {
+     "file": "next/parts/back/piranha_backfin.png",
+     "w": 28,
+     "h": 34
+    }
+   }
+  },
+  "betta_backfin": {
+   "kit": "fish",
+   "animal": "betta",
+   "kind": "backfin",
+   "slot": "back",
+   "pivot": [
+    0.3,
+    0.05
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/betta_backfin.png",
+     "w": 20,
+     "h": 35
+    },
+    "back": {
+     "file": "next/parts/back/betta_backfin.png",
+     "w": 20,
+     "h": 35
+    }
+   }
+  },
+  "shark_backfin": {
+   "kit": "fish",
+   "animal": "shark",
+   "kind": "backfin",
+   "slot": "back",
+   "pivot": [
+    0.3,
+    0.05
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/shark_backfin.png",
+     "w": 27,
+     "h": 36
+    },
+    "back": {
+     "file": "next/parts/back/shark_backfin.png",
+     "w": 27,
+     "h": 36
+    }
+   }
+  },
+  "goldfish_tailfin": {
+   "kit": "fish",
+   "animal": "goldfish",
+   "kind": "tailfin",
+   "slot": "signature",
+   "pivot": [
+    0.05,
+    0.5
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/goldfish_tailfin.png",
+     "w": 45,
+     "h": 37
+    },
+    "back": {
+     "file": "next/parts/back/goldfish_tailfin.png",
+     "w": 45,
+     "h": 36
+    }
+   }
+  },
+  "carp_tailfin": {
+   "kit": "fish",
+   "animal": "carp",
+   "kind": "tailfin",
+   "slot": "signature",
+   "pivot": [
+    0.05,
+    0.5
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/carp_tailfin.png",
+     "w": 37,
+     "h": 40
+    },
+    "back": {
+     "file": "next/parts/back/carp_tailfin.png",
+     "w": 36,
+     "h": 40
+    }
+   }
+  },
+  "koi_tailfin": {
+   "kit": "fish",
+   "animal": "koi",
+   "kind": "tailfin",
+   "slot": "signature",
+   "pivot": [
+    0.05,
+    0.5
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/koi_tailfin.png",
+     "w": 44,
+     "h": 37
+    },
+    "back": {
+     "file": "next/parts/back/koi_tailfin.png",
+     "w": 42,
+     "h": 38
+    }
+   }
+  },
+  "piranha_tailfin": {
+   "kit": "fish",
+   "animal": "piranha",
+   "kind": "tailfin",
+   "slot": "signature",
+   "pivot": [
+    0.05,
+    0.5
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/piranha_tailfin.png",
+     "w": 37,
+     "h": 39
+    },
+    "back": {
+     "file": "next/parts/back/piranha_tailfin.png",
+     "w": 37,
+     "h": 39
+    }
+   }
+  },
+  "betta_tailfin": {
+   "kit": "fish",
+   "animal": "betta",
+   "kind": "tailfin",
+   "slot": "signature",
+   "pivot": [
+    0.05,
+    0.5
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/betta_tailfin.png",
+     "w": 42,
+     "h": 42
+    },
+    "back": {
+     "file": "next/parts/back/betta_tailfin.png",
+     "w": 42,
+     "h": 42
+    }
+   }
+  },
+  "shark_tailfin": {
+   "kit": "fish",
+   "animal": "shark",
+   "kind": "tailfin",
+   "slot": "signature",
+   "pivot": [
+    0.05,
+    0.5
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/shark_tailfin.png",
+     "w": 34,
+     "h": 42
+    },
+    "back": {
+     "file": "next/parts/back/shark_tailfin.png",
+     "w": 34,
+     "h": 42
+    }
+   }
+  },
+  "fish_sail": {
+   "kit": "fish",
+   "animal": "any",
+   "kind": "sail",
+   "slot": "signature",
+   "pivot": [
+    0.2,
+    0.95
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/fish_sail.png",
+     "w": 40,
+     "h": 42
+    },
+    "back": {
+     "file": "next/parts/back/fish_sail.png",
+     "w": 40,
+     "h": 42
+    }
+   }
+  },
+  "fish_spike": {
+   "kit": "fish",
+   "animal": "any",
+   "kind": "spike",
+   "slot": "head-extra",
+   "pivot": [
+    0.5,
+    0.95
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/fish_spike.png",
+     "w": 17,
+     "h": 30
+    },
+    "back": {
+     "file": "next/parts/back/fish_spike.png",
+     "w": 18,
+     "h": 30
+    }
+   }
+  },
+  "fish_scales": {
+   "kit": "fish",
+   "animal": "any",
+   "kind": "scales",
+   "slot": "body-extra",
+   "pivot": [
+    0.5,
+    0.5
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/fish_scales.png",
+     "w": 34,
+     "h": 31
+    },
+    "back": {
+     "file": "next/parts/back/fish_scales.png",
+     "w": 34,
+     "h": 31
+    }
+   }
+  },
+  "fish_lure": {
+   "kit": "fish",
+   "animal": "any",
+   "kind": "lure",
+   "slot": "head-extra",
+   "pivot": [
+    0.1,
+    0.95
+   ],
+   "size": "M",
+   "views": {
+    "front": {
+     "file": "next/parts/front/fish_lure.png",
+     "w": 26,
+     "h": 42
+    },
+    "back": {
+     "file": "next/parts/back/fish_lure.png",
+     "w": 26,
+     "h": 42
+    }
+   }
+  }
+ }
+}

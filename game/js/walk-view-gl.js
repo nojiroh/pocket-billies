@@ -4226,7 +4226,9 @@ function rideMountItem(P, t) {
   x.setTransform(1, 0, 0, 1, 0, 0);
   x.clearRect(0, 0, cv.width, cv.height);
   x.imageSmoothingEnabled = false;
-  drawRig(x, R, rigFrame(R, null, 0, reducedMotion ? 0 : Math.floor(t / 50) * 50, 1.7), back ? 'back' : 'front');
+  const F = rigFrame(R, null, 0, reducedMotion ? 0 : Math.floor(t / 50) * 50, 1.7);
+  if (m.build) F.build = m.build;
+  drawRig(x, R, F, back ? 'back' : 'front');
   cv.__v++;
   const ht = clamp(SPECIES[m.sp].ht, 0.9, 3),
     hm = 0.75 + ht * 0.32,
