@@ -490,7 +490,7 @@ New files only:
 ## Robots (phase 17, placeholder)
 
 `game/art/robots/` holds one picture per robot part and view (`<part>.png`, `<part>_back.png`; a torso's head as
-`<torso>_head.png`; a gem as `gem_<gem>.png`), sliced from the owner's placeholder sheet at its pixel grid (about 5
+`<torso>_head.png`; a gem as `gem_<gem>.png`, front only: the back of a torso hides it), sliced from the owner's placeholder sheet at its pixel grid (about 5
 sheet pixels to one, a gem 9) with the alpha cut at half. robots.json names them per part (`art.img`, `art.imgB`,
 `art.head`, `art.headB`; a gem's `img`). `game/js/robot-art.js` stacks them on the biped skeleton at their sockets:
 the legs' hip knob under the torso, the head's neck on the torso's top, each arm's shoulder knob at the torso's side
