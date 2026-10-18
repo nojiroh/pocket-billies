@@ -1431,7 +1431,7 @@ def desktop_steps(b, base, R):
         exactly at the shop's door, the town dimmed around it, nowhere to walk but the floor) and walking out leaves you
         at the door with the shop back"""
         out = []
-        tiles = json.loads(pg.evaluate("JSON.stringify(Object.values(walkData().sc.terrains).map(T=>bigTilePath(T.tile)))"))
+        tiles = json.loads(pg.evaluate("JSON.stringify(Object.values(walkData().sc.terrains).map(T=>bigTilePaths(T.tile)))"))
         miss = [p for L in tiles for p in L if not (ROOT / 'game' / 'art' / p).exists()]
         short = [L[0] for L in tiles if len(L) < 12]
         if miss or short: raise Exception(f'ground tiles: {len(miss)} missing (e.g. {miss[:3]}), {len(short)} kinds with fewer than 12')

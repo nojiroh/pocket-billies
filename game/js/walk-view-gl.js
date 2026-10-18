@@ -80,7 +80,7 @@ import {
   actionSpot,
   approachPoint,
   artImage,
-  bigTilePath,
+  bigTilePaths,
   bigTilesOn,
   bridgeAt,
   canvasPoint,
@@ -1308,7 +1308,7 @@ function* buildGroundSteps(sc, G, T) {
       const T = C0.terrains[k];
       if (!T) return null;
       if (typeof bigTilesOn === 'function' && bigTilesOn()) {
-        const n = artImage(bigTilePath(T.tile)[0]);
+        const n = artImage(bigTilePaths(T.tile)[0]);
         if (imageReady(n)) return n;
       }
       return artImage(T.tile);

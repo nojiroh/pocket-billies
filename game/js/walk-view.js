@@ -88,7 +88,7 @@ expose({
   approachPoint: [() => approachPoint, v => (approachPoint = v)],
   artImage: [() => artImage, v => setArtImage(v)],
   baseMapId: [() => baseMapId, v => (baseMapId = v)],
-  bigTilePath: [() => bigTilePath, v => (bigTilePath = v)],
+  bigTilePaths: [() => bigTilePaths, v => (bigTilePaths = v)],
   bigTilesOn: [() => bigTilesOn],
   blendHexColor: [() => blendHexColor, v => (blendHexColor = v)],
   bridgeAt: [() => bridgeAt, v => (bridgeAt = v)],
@@ -96,7 +96,7 @@ expose({
   buildGroundPicture: [() => buildGroundPicture, v => (buildGroundPicture = v)],
   cachedGround: [() => cachedGround, v => (cachedGround = v)],
   canStepBetween: [() => canStepBetween, v => (canStepBetween = v)],
-  canWalkStraight: [() => canWalkStraight, v => (canWalkStraight = v)],
+  canStepTo: [() => canStepTo, v => (canStepTo = v)],
   canvasPixels: [() => canvasPixels],
   canvasPoint: [() => canvasPoint, v => (canvasPoint = v)],
   climbEnds: [() => climbEnds, v => (climbEnds = v)],
@@ -106,6 +106,7 @@ expose({
   cropGrowth: [() => cropGrowth, v => (cropGrowth = v)],
   decodeBase64Array: [() => decodeBase64Array, v => (decodeBase64Array = v)],
   directionOf: [() => directionOf, v => (directionOf = v)],
+  distanceAlongPolyline: [() => distanceAlongPolyline, v => (distanceAlongPolyline = v)],
   drawBubble: [() => drawBubble, v => (drawBubble = v)],
   drawExitLabels: [() => drawExitLabels, v => (drawExitLabels = v)],
   drawExitMarks: [() => drawExitMarks, v => (drawExitMarks = v)],
@@ -157,7 +158,6 @@ expose({
   navCellAt: [() => navCellAt, v => (navCellAt = v)],
   navCostAt: [() => navCostAt, v => (navCostAt = v)],
   navGrid: [() => navGrid, v => setNavGrid(v)],
-  nearestOnPolyline: [() => nearestOnPolyline, v => (nearestOnPolyline = v)],
   nearestWalkableCell: [() => nearestWalkableCell, v => (nearestWalkableCell = v)],
   newStepGrid: [() => newStepGrid, v => (newStepGrid = v)],
   openKind: [() => openKind, v => (openKind = v)],
@@ -402,7 +402,7 @@ export function layerAsProp(M, l) {
 /* the 32 px ground tiles, twelve per kind (art/next/tiles47; the v46 set in art/next/tiles is on the legacy branch) */
 /* v47: the 32 px ground is the only full-mode ground (the 16 px tiles stay for Lite mode and the Studio's tile editor) */
 export const bigTilesOn = () => true;
-export function bigTilePath(path, set) {
+export function bigTilePaths(path, set) {
   const b = (path || '')
       .replace(/^.*\//, '')
       .replace(/\.png$/, '')
@@ -588,7 +588,7 @@ export function mapArtPaths(sc) {
     if (T) {
       L.add(T.tile);
       for (const v of T.vars || []) L.add(v);
-      if (bigTilesOn()) for (const q of bigTilePath(T.tile)) L.add(q);
+      if (bigTilesOn()) for (const q of bigTilePaths(T.tile)) L.add(q);
     }
   }
   for (const p of sc.props || lite.props || []) {
@@ -957,7 +957,7 @@ export function tileSetPixels(T, TP) {
   let L = TILE_PIXEL_CACHE.get(key);
   if (L) return L;
   if (nxOn) {
-    const src = bigTilePath(T.tile)
+    const src = bigTilePaths(T.tile)
       .map(q => tilePixels(q))
       .filter(Boolean);
     if (src.length) L = src.map(t => scaledTilePixels(t, Math.round(t.w / TP)));
@@ -2161,7 +2161,7 @@ export function pointAlongPolyline(P, d) {
     }
   }
 }
-function nearestOnPolyline(P, x, z) {
+function distanceAlongPolyline(P, x, z) {
   let best = 0,
     bd = 1e9;
   const p = P.p;
@@ -2827,7 +2827,7 @@ export function canStepBetween(G, c, q, noHop) {
   return true;
 }
 /* a straight step from a to b (keyboard walking, animals): free at b and no wall in between */
-export function canWalkStraight(ax, az, bx, bz, noHop) {
+export function canStepTo(ax, az, bx, bz, noHop) {
   const G = navGrid(),
     c = navCellAt(ax, az),
     q = navCellAt(bx, bz);
@@ -3438,7 +3438,7 @@ function movePlayer(st, dt) {
       P.line = polyline(r);
       P.d = P.fresh
         ? Math.max(0, clamp(st.t, 0, 1) * P.line.L - (walkView.opt.instant ? 0 : 4))
-        : nearestOnPolyline(P.line, P.x, P.z);
+        : distanceAlongPolyline(P.line, P.x, P.z);
       P.pk = key;
       P.route = null;
       P.goal = null;
@@ -3537,8 +3537,8 @@ function movePlayer(st, dt) {
         s = WALK_SPEED * dt * run * slopeSpeedFactor(P.x, P.z, wx / l, wz / l);
       let nx = P.x + (wx / l) * s,
         nz = P.z + (wz / l) * s;
-      if (canWalkStraight(P.x, P.z, nx, P.z)) P.x = nx;
-      if (canWalkStraight(P.x, P.z, P.x, nz)) P.z = nz;
+      if (canStepTo(P.x, P.z, nx, P.z)) P.x = nx;
+      if (canStepTo(P.x, P.z, P.x, nz)) P.z = nz;
       mx = wx;
       mz = wz;
     } else if (P.route) {

@@ -15,7 +15,7 @@ import { clamp } from './util.js';
 import { makeCanvas } from './art.js';
 import {
   artImage,
-  canWalkStraight,
+  canStepTo,
   hash2d,
   imageReady,
   isWalkable,
@@ -453,7 +453,7 @@ export function lifeStep(dt) {
     if (
       c.k === 'duck' ||
       c.dive ||
-      (typeof canWalkStraight === 'function' ? canWalkStraight(c.x, c.z, nx, nz, true) : isWalkable(nx, nz))
+      (typeof canStepTo === 'function' ? canStepTo(c.x, c.z, nx, nz, true) : isWalkable(nx, nz))
     ) {
       c.x = nx;
       c.z = nz;
