@@ -16,7 +16,7 @@ import { gpuState } from './engine/webgl.js';
 import { standingHeightAt, walkRenderer } from './walk-view-gl.js';
 import { startTrainer, startWild } from './battle.js';
 import { music } from './sound.js';
-import { TALK, talk, talkHide, talkLine } from './talk.js';
+import { talk, talkBox, talkHide, talkLine } from './talk.js';
 import {
   cutscene,
   cutsceneActor,
@@ -32,7 +32,6 @@ import {
 import { LORE, loreClue, loreFlags } from './lore.js';
 /* eslint-disable no-func-assign */
 expose({
-  STORY: [() => STORY],
   blakeHello: [() => blakeHello, v => ((blakeHello = v), provide({ blakeHello }))],
   cutsceneWorldBegin: [() => cutsceneWorldBegin, v => (cutsceneWorldBegin = v)],
   cutsceneWorldEnd: [() => cutsceneWorldEnd, v => (cutsceneWorldEnd = v)],
@@ -48,6 +47,7 @@ expose({
   storyFlags: [() => storyFlags, v => ((storyFlags = v), provide({ storyFlags }))],
   storyMovedCheck: [() => storyMovedCheck, v => (storyMovedCheck = v)],
   storyRivalBattle: [() => storyRivalBattle, v => (storyRivalBattle = v)],
+  storyState: [() => storyState],
   storyWorldOK: [() => storyWorldOK, v => (storyWorldOK = v)],
   trainerTalk: [() => trainerTalk, v => (trainerTalk = v)],
 });
@@ -61,7 +61,7 @@ export function storyFlags() {
 export async function trainerTalk(id) {
   const T = TRAINERS[id];
   if (!T) return;
-  if (TALK.on || (typeof cutscene !== 'undefined' && cutscene.on)) return;
+  if (talkBox.on || (typeof cutscene !== 'undefined' && cutscene.on)) return;
   const F = storyFlags();
   if (T.intro && T.intro.length && !F['met_' + id] && !saveData.flags[id] && storyWorldOK()) {
     await rivalScene(T);
@@ -193,7 +193,7 @@ export function storyCheck() {
     activeBattle ||
     uiState.modal ||
     uiState.tab !== 'walk' ||
-    TALK.on ||
+    talkBox.on ||
     (typeof cutscene !== 'undefined' && cutscene.on) ||
     (typeof dressingRoom !== 'undefined' && dressingRoom.on) ||
     !storyWorldOK()
@@ -205,11 +205,11 @@ export function storyCheck() {
     T => T.intro && T.intro.length && !saveData.flags[T.id] && !F['met_' + T.id]
   );
   if (!T) return;
-  if (STORY.pending === T.id) return;
-  STORY.pending = T.id;
+  if (storyState.pending === T.id) return;
+  storyState.pending = T.id;
   setTimeout(() => {
-    STORY.pending = null;
-    if (walkView.ready && !activeBattle && uiState.tab === 'walk' && !uiState.modal && !TALK.on && !cutscene.on)
+    storyState.pending = null;
+    if (walkView.ready && !activeBattle && uiState.tab === 'walk' && !uiState.modal && !talkBox.on && !cutscene.on)
       rivalScene(T);
   }, 1400);
 }
@@ -220,7 +220,7 @@ export function legendCheck() {
     activeBattle ||
     uiState.modal ||
     uiState.tab !== 'walk' ||
-    TALK.on ||
+    talkBox.on ||
     (typeof cutscene !== 'undefined' && cutscene.on) ||
     !walkView.ready ||
     (typeof selfTest !== 'undefined' && selfTest.on) ||
@@ -232,16 +232,16 @@ export function legendCheck() {
     L = (RULES.legends || []).find(
       l => l.scene === baseMapId() && SPECIES[l.sp] && !saveData.caught[l.sp] && F['legend_' + l.sp] !== today()
     );
-  if (!L || STORY.pending === 'legend') return;
-  STORY.pending = 'legend';
+  if (!L || storyState.pending === 'legend') return;
+  storyState.pending = 'legend';
   setTimeout(() => {
-    STORY.pending = null;
+    storyState.pending = null;
     if (
       !walkView.ready ||
       activeBattle ||
       uiState.tab !== 'walk' ||
       uiState.modal ||
-      TALK.on ||
+      talkBox.on ||
       cutscene.on ||
       baseMapId() !== L.scene
     )
@@ -267,11 +267,11 @@ export function legendCheck() {
     });
   }, 1200);
 }
-const STORY = { pending: null };
-provide({ STORY }); /* to-module */
+const storyState = { pending: null };
+provide({ storyState }); /* to-module */
 /* alpha 0.4: someone who only talks (scene.people: Granny Juniper): what they say the first time, then a line or two */
 export async function personTalk(P) {
-  if (!P || TALK.on || (typeof cutscene !== 'undefined' && cutscene.on)) return;
+  if (!P || talkBox.on || (typeof cutscene !== 'undefined' && cutscene.on)) return;
   const F = storyFlags(),
     k = 'met_' + P.id,
     first = !F[k] && P.first && P.first.length;
@@ -294,7 +294,7 @@ export function storyMovedCheck() {
     activeBattle ||
     uiState.modal ||
     uiState.title ||
-    TALK.on ||
+    talkBox.on ||
     (typeof cutscene !== 'undefined' && cutscene.on) ||
     (typeof selfTest !== 'undefined' && selfTest.on) ||
     uiState.bench
@@ -350,12 +350,12 @@ export function storyRivalBattle(o = {}) {
     go = async () => {
       if (activeBattle || !saveData.started) return;
       uiState.modal = null;
-      if (o.talkFirst && typeof talk === 'function' && !TALK.on) {
-        STORY.rivalTalk = 1;
+      if (o.talkFirst && typeof talk === 'function' && !talkBox.on) {
+        storyState.rivalTalk = 1;
         try {
           await talk(blakeHello(saveData.starter));
         } finally {
-          STORY.rivalTalk = 0;
+          storyState.rivalTalk = 0;
         }
         if (activeBattle || !saveData.started) return;
       }

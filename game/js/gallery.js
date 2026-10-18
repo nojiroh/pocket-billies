@@ -12,8 +12,8 @@ import { mapById, walkView } from './walk-view.js';
 import { environment } from './environment.js';
 /* eslint-disable no-func-assign */
 expose({
-  GAL: [() => GAL],
   GALLERY_AT: [() => GALLERY_AT],
+  gallery: [() => gallery],
   galleryClose: [() => galleryClose, v => (galleryClose = v)],
   galleryOpen: [() => galleryOpen, v => ((galleryOpen = v), provide({ galleryOpen }))],
   galleryPanel: [() => galleryPanel, v => (galleryPanel = v)],
@@ -40,22 +40,22 @@ const GALLERY_AT = {
   'lens.grain': 'view',
   'quality.resolution': 'view',
 };
-const GAL = { on: false, key: null, night: false };
+const gallery = { on: false, key: null, night: false };
 function galleryOpen(gk) {
   const sc = mapById && mapById('gallery');
   if (!sc) {
     toast('The Graphics gallery isn’t in this build.');
     return;
   }
-  GAL.on = true;
-  GAL.key = gk;
-  GAL.night = gk === 'lights.brightness' || gk === 'color.bloom';
+  gallery.on = true;
+  gallery.key = gk;
+  gallery.night = gk === 'lights.brightness' || gk === 'color.bloom';
   closeModal();
   uiState.modal = null;
   uiState.mq = [];
   renderOverlay();
   if (typeof environment !== 'undefined')
-    environment.force = GAL.night
+    environment.force = gallery.night
       ? { time: 22, weather: 'clear', season: 'summer' }
       : { time: 15, weather: 'clear', season: 'summer' };
   uiState.bench = { id: 'gallery', test: 1 };
@@ -64,7 +64,7 @@ function galleryOpen(gk) {
   const st = (sc.stations || {})[GALLERY_AT[gk] || 'grove'] || sc.hub,
     t0 = performance.now();
   const place = () => {
-    if (!GAL.on) return;
+    if (!gallery.on) return;
     if (
       typeof walkView !== 'undefined' &&
       walkView.ready &&
@@ -90,17 +90,17 @@ function galleryPanel() {
     el.className = 'px glass gfx-panel';
     document.body.appendChild(el);
   }
-  const D = GRAPHICS_DIALS.flatMap(x => x[1]).find(d => d[0] === GAL.key);
+  const D = GRAPHICS_DIALS.flatMap(x => x[1]).find(d => d[0] === gallery.key);
   if (!D) {
     el.remove();
     return;
   }
-  const near = GRAPHICS_DIALS.flatMap(x => x[1]).filter(d => GALLERY_AT[d[0]] === GALLERY_AT[GAL.key]);
-  el.innerHTML = `<div class="gfx-ph"><b>Graphics gallery</b><button type="button" class="pb small quiet" data-a="gal-night">${GAL.night ? 'Day' : 'Night'}</button><button type="button" class="pb small" data-a="gal-leave">Leave</button></div>
-  ${near.length > 1 ? `<div class="gfx-near">${near.map(d => `<button type="button" data-a="gal-pick" data-k="${d[0]}" aria-pressed="${d[0] === GAL.key}">${d[1]}</button>`).join('')}</div>` : ''}${graphicsDialHTML(D).replace(/<button type="button" class="gfx-see"[^>]*>See it<\/button>/, '')}`;
+  const near = GRAPHICS_DIALS.flatMap(x => x[1]).filter(d => GALLERY_AT[d[0]] === GALLERY_AT[gallery.key]);
+  el.innerHTML = `<div class="gfx-ph"><b>Graphics gallery</b><button type="button" class="pb small quiet" data-a="gal-night">${gallery.night ? 'Day' : 'Night'}</button><button type="button" class="pb small" data-a="gal-leave">Leave</button></div>
+  ${near.length > 1 ? `<div class="gfx-near">${near.map(d => `<button type="button" data-a="gal-pick" data-k="${d[0]}" aria-pressed="${d[0] === gallery.key}">${d[1]}</button>`).join('')}</div>` : ''}${graphicsDialHTML(D).replace(/<button type="button" class="gfx-see"[^>]*>See it<\/button>/, '')}`;
 }
 function galleryClose() {
-  GAL.on = false;
+  gallery.on = false;
   const el = document.getElementById('gfxPanel');
   if (el) el.remove();
   if (typeof environment !== 'undefined') environment.force = null;
@@ -115,16 +115,16 @@ document.addEventListener('click', ev => {
   const a = el.dataset.a;
   if (a === 'gal-leave') galleryClose();
   else if (a === 'gal-night') {
-    GAL.night = !GAL.night;
+    gallery.night = !gallery.night;
     if (typeof environment !== 'undefined')
-      environment.force = { time: GAL.night ? 22 : 15, weather: 'clear', season: 'summer' };
+      environment.force = { time: gallery.night ? 22 : 15, weather: 'clear', season: 'summer' };
     galleryPanel();
   } else if (a === 'gal-pick') {
-    GAL.key = el.dataset.k;
+    gallery.key = el.dataset.k;
     galleryPanel();
   }
 });
 /* the dial in the panel works like the one in Settings (settings-screen.js listens for data-eng); keep the panel's value fresh */
 document.addEventListener('change', ev => {
-  if (GAL.on && ev.target.dataset && ev.target.dataset.eng) setTimeout(galleryPanel, 0);
+  if (gallery.on && ev.target.dataset && ev.target.dataset.eng) setTimeout(galleryPanel, 0);
 });

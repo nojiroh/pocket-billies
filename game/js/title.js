@@ -29,28 +29,28 @@ import { music, musicFor } from './sound.js';
 import { cutsceneMapId, cutsceneStart, cutsceneStartName, cutsceneWanted } from './cutscene.js';
 /* eslint-disable no-func-assign */
 expose({
-  TITLE: [() => TITLE],
   renderTitle: [() => renderTitle, v => (renderTitle = v)],
   titleEnd: [() => titleEnd, v => (titleEnd = v)],
   titleFrame: [() => titleFrame, v => (titleFrame = v)],
   titleMount: [() => titleMount, v => (titleMount = v)],
   titleNew: [() => titleNew, v => (titleNew = v)],
   titlePlayTime: [() => titlePlayTime, v => (titlePlayTime = v)],
+  titleScreen: [() => titleScreen],
   titleStart: [() => titleStart, v => (titleStart = v)],
   titleWanted: [() => titleWanted, v => (titleWanted = v)],
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
-export const TITLE = { on: false, t0: 0, run: 0, mounted: false };
+export const titleScreen = { on: false, t0: 0, run: 0, mounted: false };
 export function titleWanted() {
   return !(typeof TEST_RUN !== 'undefined' && TEST_RUN) && !(saveData.preferences && saveData.preferences.skipTitle);
 }
 /* the camera: a slow drift along the front of the town, high above the rooftops, looking up the main street */
 function titleFrame() {
-  if (!TITLE.on || !walkView.sc) return null;
+  if (!titleScreen.on || !walkView.sc) return null;
   const sc = walkView.sc,
     now = performance.now(),
-    k = reducedMotion ? 0.5 : 0.5 - 0.5 * Math.cos(((now - TITLE.t0) / 1000) * 0.05),
+    k = reducedMotion ? 0.5 : 0.5 - 0.5 * Math.cos(((now - titleScreen.t0) / 1000) * 0.05),
     /* (in the walk view the town is one part of a bigger picture: frame the town itself) */ b = sc.baseId
       ? mapById(sc.baseId) || sc
       : sc,
@@ -93,14 +93,14 @@ export function renderTitle() {
 }
 /* the scene behind the title: Sundown, drawn by the walk renderer with the title camera */
 export async function titleMount() {
-  if (TITLE.mounted || !TITLE.on) return;
-  TITLE.mounted = true;
+  if (titleScreen.mounted || !titleScreen.on) return;
+  titleScreen.mounted = true;
   if (typeof music === 'function') music('title');
   if (typeof cutsceneWanted === 'function' && !cutsceneWanted()) {
     document.body.classList.add('ttl-flat');
     return;
   }
-  const run = ++TITLE.run;
+  const run = ++titleScreen.run;
   let cv = $('#dio');
   if (!cv) {
     cv = document.createElement('canvas');
@@ -112,7 +112,7 @@ export async function titleMount() {
     'aria-label',
     (typeof cutsceneStartName === 'function' ? cutsceneStartName() : 'The town') + ', from above the rooftops'
   );
-  TITLE.t0 = performance.now();
+  titleScreen.t0 = performance.now();
   walkView.director = { frame: titleFrame };
   try {
     await mountWalkView(cv, typeof cutsceneMapId === 'function' ? cutsceneMapId() : mapIdAt(START_NODE), {
@@ -125,7 +125,7 @@ export async function titleMount() {
   } catch (e) {
     console.error(e);
   }
-  if (!TITLE.on || run !== TITLE.run) return;
+  if (!titleScreen.on || run !== titleScreen.run) return;
   if (!walkRenderer.on || !walkView.ready) {
     document.body.classList.add('ttl-flat');
     return;
@@ -134,7 +134,7 @@ export async function titleMount() {
   /* the painted landscape stays in front until the town's ground is laid and drawn, then fades away */
   const t0 = performance.now(),
     poll = () => {
-      if (!TITLE.on || run !== TITLE.run) return;
+      if (!titleScreen.on || run !== titleScreen.run) return;
       if ((walkRenderer.gtex && walkRenderer.frames > 3) || performance.now() - t0 > 20000) {
         document.body.classList.add('ttl-live');
         return;
@@ -144,16 +144,16 @@ export async function titleMount() {
   poll();
 }
 export function titleStart() {
-  if (TITLE.on) return;
-  TITLE.on = true;
-  TITLE.mounted = false;
+  if (titleScreen.on) return;
+  titleScreen.on = true;
+  titleScreen.mounted = false;
   uiState.title = true;
   document.body.classList.add('in-title');
 }
 function titleEnd() {
-  if (!TITLE.on) return;
-  TITLE.on = false;
-  TITLE.run++;
+  if (!titleScreen.on) return;
+  titleScreen.on = false;
+  titleScreen.run++;
   uiState.title = false;
   document.body.classList.remove('in-title', 'ttl-live', 'ttl-flat');
   if (walkView.director && walkView.director.frame === titleFrame) {
@@ -212,7 +212,7 @@ setInterval(() => {
 document.addEventListener(
   'click',
   ev => {
-    if (!TITLE.on) return;
+    if (!titleScreen.on) return;
     const el = ev.target.closest('[data-a]'),
       a = el && el.dataset.a;
     if (!a) return;
@@ -242,7 +242,7 @@ document.addEventListener(
   true
 );
 document.addEventListener('keydown', ev => {
-  if (!TITLE.on || uiState.modal) return;
+  if (!titleScreen.on || uiState.modal) return;
   if ((ev.key === 'Enter' || ev.key === ' ') && saveData.started) {
     ev.preventDefault();
     titleEnd();

@@ -27,9 +27,9 @@ import {
 import { addRipple, groundHeightAt, rawHeightAt, standingHeightAt } from './walk-view-gl.js';
 /* eslint-disable no-func-assign */
 expose({
-  LIFE: [() => LIFE],
   LIFE_FRAMES: [() => LIFE_FRAMES],
   LIFE_KIND: [() => LIFE_KIND],
+  ambientLife: [() => ambientLife],
   lifeFrame: [() => lifeFrame, v => (lifeFrame = v)],
   lifeInit: [() => lifeInit, v => (lifeInit = v)],
   lifeKey: [() => lifeKey, v => (lifeKey = v)],
@@ -50,8 +50,8 @@ export function setLifeStep(v) {
   provide({ lifeStep });
 }
 /* to-module: end */
-export const LIFE = { id: null, key: '', list: [], cut: new Map() };
-provide({ LIFE }); /* to-module */
+export const ambientLife = { id: null, key: '', list: [], cut: new Map() };
+provide({ ambientLife }); /* to-module */
 const LIFE_KIND = {
   duck: { s: 0.62, speed: 0.35, sh: 0.22 },
   pigeon: { s: 0.62, speed: 0.7, sh: 0.16 },
@@ -104,13 +104,13 @@ function lifeFrame(key, i) {
   const im = artImage(m.img);
   if (!imageReady(im)) return null;
   const ck = key + '|' + i;
-  let c = LIFE.cut.get(ck);
+  let c = ambientLife.cut.get(ck);
   if (c && c.__src === im) return c;
   c = makeCanvas(m.w, m.h);
   c.getContext('2d').drawImage(im, i * m.w, 0, m.w, m.h, 0, 0, m.w, m.h);
   c.__src = im;
   c.__mat = 'plain';
-  LIFE.cut.set(ck, c);
+  ambientLife.cut.set(ck, c);
   return c;
 }
 function lifeRnd(a, b) {
@@ -121,9 +121,9 @@ function lifeKey(sc) {
 }
 function lifeInit() {
   const sc = walkView.sc;
-  LIFE.id = walkView.id;
-  LIFE.key = lifeKey(sc);
-  LIFE.list = [];
+  ambientLife.id = walkView.id;
+  ambientLife.key = lifeKey(sc);
+  ambientLife.list = [];
   let n = 0;
   const water = walkView.water || [];
   for (const L of sc.life || []) {
@@ -151,7 +151,7 @@ function lifeInit() {
         const q = pointAlongPolyline(P, d);
         x = q.x;
         z = q.z;
-        LIFE.list.push({
+        ambientLife.list.push({
           k: 'car',
           key: ['car_red', 'car_blue', 'car_yellow', 'car_mint'][(n + i) % 4],
           x,
@@ -172,7 +172,7 @@ function lifeInit() {
           if (isWalkable(x, z)) break;
         }
       }
-      LIFE.list.push({
+      ambientLife.list.push({
         k: L.k,
         key: L.k,
         x,
@@ -242,7 +242,7 @@ function lifeTarget(c) {
 }
 /* v43: a seamless shift between composites moves the animals along instead of starting them over */
 export function lifeShift(dx, dz, id) {
-  for (const a of LIFE.list) {
+  for (const a of ambientLife.list) {
     a.x += dx;
     a.z += dz;
     if (a.tx != null) {
@@ -252,20 +252,20 @@ export function lifeShift(dx, dz, id) {
     if (a.area) a.area = [a.area[0] + dx, a.area[1] + dz, a.area[2] + dx, a.area[3] + dz];
     if (a.P && a.P.p) a.P = polyline(a.P.p.map(([x, z]) => [x + dx, z + dz]));
   }
-  LIFE.id = id;
-  LIFE.key = walkView.sc ? lifeKey(walkView.sc) : LIFE.key;
+  ambientLife.id = id;
+  ambientLife.key = walkView.sc ? lifeKey(walkView.sc) : ambientLife.key;
 }
 export function lifeStep(dt) {
   const sc = walkView.sc;
   if (!sc) return;
   /* the water may only be known a few frames after the scene opens: ducks and frogs join then */ if (
-    LIFE.id !== walkView.id ||
-    LIFE.key !== lifeKey(sc)
+    ambientLife.id !== walkView.id ||
+    ambientLife.key !== lifeKey(sc)
   )
     lifeInit();
-  if (!LIFE.list.length) return;
+  if (!ambientLife.list.length) return;
   const P = walkView.pl;
-  for (const c of LIFE.list) {
+  for (const c of ambientLife.list) {
     const K = LIFE_KIND[c.k];
     c.t += dt;
     if (c.k === 'car') {
@@ -283,7 +283,7 @@ export function lifeStep(dt) {
         return f > 0 && f < r && s < 1.3;
       };
       if (ahead(P.x, P.z, 3.2)) blocked = true;
-      for (const o of LIFE.list) if (o !== c && o.k === 'car' && ahead(o.x, o.z, 4.2)) blocked = true;
+      for (const o of ambientLife.list) if (o !== c && o.k === 'car' && ahead(o.x, o.z, 4.2)) blocked = true;
       c.v0 = c.v0 ?? c.v;
       c.cur = c.cur ?? c.v;
       c.cur += ((blocked ? 0 : c.v) - c.cur) * Math.min(1, dt * (blocked ? 6 : 1.5));
@@ -488,7 +488,7 @@ export function lifeStep(dt) {
 function lifeSprites() {
   const out = [],
     PPU = walkData().sc.ppu || 34;
-  for (const c of LIFE.list) {
+  for (const c of ambientLife.list) {
     const K = LIFE_KIND[c.k];
     let i = c.fr || 0,
       flip = c.flip || 1;

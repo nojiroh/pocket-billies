@@ -34,7 +34,7 @@ import {
   walkView,
 } from './hooks.js';
 import { $, clamp, random } from './util.js';
-import { FRAME, frameCount, frameStop, frameTask, userFps } from './frame-scheduler.js';
+import { frameCount, frameScheduler, frameStop, frameTask, userFps } from './frame-scheduler.js';
 import {
   ART_CACHE,
   artLoad,
@@ -913,9 +913,9 @@ function spawnAmbientParticles(dt) {
 function adaptBattleStageQuality(work) {
   const Q = battleStage.q,
     now = performance.now(),
-    target = Math.min(userFps(), FRAME.hz || 60),
+    target = Math.min(userFps(), frameScheduler.hz || 60),
     budget = 1000 / target,
-    fps = FRAME.meter.fps;
+    fps = frameScheduler.meter.fps;
   if (now - Q.since < 1500 || !fps || battleStage.lockQ) return;
   const slow = fps < target * 0.82 || work > budget * 0.85,
     fast = fps >= target * 0.95 && work < budget * 0.32;

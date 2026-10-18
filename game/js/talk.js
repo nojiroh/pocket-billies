@@ -18,10 +18,10 @@ import { soundEffect } from './sound.js';
 expose({
   FOLK_NAMES: [() => FOLK_NAMES],
   FOLK_TALK: [() => FOLK_TALK],
-  TALK: [() => TALK],
   TALK_NAMES: [() => TALK_NAMES],
   setTalkFolk: [() => setTalkFolk, v => (setTalkFolk = v)],
   talk: [() => talk, v => (talk = v)],
+  talkBox: [() => talkBox],
   talkEl: [() => talkEl, v => (talkEl = v)],
   talkFolk: [() => talkFolk, v => setTalkFolk(v)],
   talkHazel: [() => talkHazel, v => (talkHazel = v)],
@@ -33,7 +33,7 @@ expose({
 /* eslint-enable no-func-assign */
 provide({ talkFolk });
 /* to-module: end */
-export const TALK = { on: false, cur: null, por: { who: null, expr: null, t: 0 }, el: null };
+export const talkBox = { on: false, cur: null, por: { who: null, expr: null, t: 0 }, el: null };
 const TALK_NAMES = { gini: 'Professor Hazel' };
 const FOLK_NAMES = [
   'Ada',
@@ -75,7 +75,7 @@ function talkName(who) {
   );
 }
 function talkEl() {
-  let el = TALK.el;
+  let el = talkBox.el;
   if (el && el.isConnected) return el;
   el = document.createElement('div');
   el.id = 'talk';
@@ -85,10 +85,10 @@ function talkEl() {
     '<div class="talk-box px" role="dialog" aria-live="polite"><canvas class="talk-por" aria-hidden="true"></canvas><div class="talk-txt"><p class="talk-who"></p><p class="talk-line"></p></div><span class="talk-more" aria-hidden="true">▼</span></div>';
   el.addEventListener('click', ev => {
     if (ev.target.closest('button,a,input')) return;
-    if (TALK.cur) TALK.cur.tap();
+    if (talkBox.cur) talkBox.cur.tap();
   });
   document.body.appendChild(el);
-  TALK.el = el;
+  talkBox.el = el;
   return el;
 }
 /* one line; the box stays open for the next one until talkHide() */
@@ -108,18 +108,18 @@ export function talkLine(who, text, expr, o = {}) {
   el.querySelector('.talk-who').textContent = o.name || talkName(who);
   box.classList.remove('done');
   line.textContent = '';
-  TALK.on = true;
-  TALK.por = { who, expr: expr || null, t: 0 };
-  if (!TALK.loop) {
-    TALK.loop = true;
+  talkBox.on = true;
+  talkBox.por = { who, expr: expr || null, t: 0 };
+  if (!talkBox.loop) {
+    talkBox.loop = true;
     frameTask('talk', talkTick, () => 30);
   }
   return new Promise(res => {
     const st = { who, text, n: 0, t0: performance.now(), typing: true, res };
-    TALK.cur = st;
+    talkBox.cur = st;
     let blipN = 0;
     const step = () => {
-      if (TALK.cur !== st) return;
+      if (talkBox.cur !== st) return;
       st.n = reducedMotion ? text.length : Math.min(text.length, Math.floor((performance.now() - st.t0) / 28));
       line.textContent = text.slice(0, st.n);
       const b = Math.floor(st.n / 3);
@@ -144,17 +144,17 @@ export function talkLine(who, text, expr, o = {}) {
       st.done();
     };
     st.done = () => {
-      if (TALK.cur !== st) return;
-      TALK.cur = null;
+      if (talkBox.cur !== st) return;
+      talkBox.cur = null;
       res();
     };
   });
 }
 export function talkHide() {
-  const el = TALK.el;
+  const el = talkBox.el;
   if (el) el.hidden = true;
-  TALK.cur = null;
-  TALK.on = false;
+  talkBox.cur = null;
+  talkBox.on = false;
   document.body.classList.remove('talking');
 }
 /* a whole conversation: [[who,text,expr],…] or [{who,text,expr}] */
@@ -166,16 +166,16 @@ export async function talk(lines, o = {}) {
   talkHide();
 }
 function talkTick(ts) {
-  const P = TALK.por,
-    el = TALK.el;
-  if (!TALK.on || !el || el.hidden || !P.who) {
-    TALK.loop = false;
+  const P = talkBox.por,
+    el = talkBox.el;
+  if (!talkBox.on || !el || el.hidden || !P.who) {
+    talkBox.loop = false;
     frameStop('talk');
     return;
   }
   if (ts - P.t < 70) return;
   P.t = ts;
-  const typing = TALK.cur && TALK.cur.typing,
+  const typing = talkBox.cur && talkBox.cur.typing,
     blink = ts % 3700 < 130 && P.expr !== 'happy';
   const ex = blink ? 'blink' : typing && !P.expr && Math.floor(ts / 120) % 2 ? 'talk' : P.expr;
   try {
@@ -183,10 +183,10 @@ function talkTick(ts) {
   } catch (e) {}
 }
 document.addEventListener('keydown', ev => {
-  if (!TALK.cur || TALK.el.hidden) return;
+  if (!talkBox.cur || talkBox.el.hidden) return;
   if (ev.key === 'Enter' || ev.key === ' ') {
     ev.preventDefault();
-    TALK.cur.tap();
+    talkBox.cur.tap();
   }
 });
 
@@ -202,7 +202,7 @@ const FOLK_TALK = [
   'Careful in the tall grass. They hide in there.',
 ];
 export async function talkFolk(f) {
-  if (TALK.on) return;
+  if (talkBox.on) return;
   const sc = walkView.sc,
     L = typeof mapChatLines === 'function' ? mapChatLines(FOLK_TALK) : sc.chat && sc.chat.length ? sc.chat : FOLK_TALK,
     who = 'folk:' + f.seed,
@@ -225,7 +225,7 @@ export function setTalkFolk(v) {
   provide({ talkFolk });
 }
 export async function talkHazel(p) {
-  if (TALK.on) return;
+  if (talkBox.on) return;
   const caught = Object.keys(saveData.caught).length,
     badges = (saveData.seats || []).length,
     nm = lookOf('me').name || 'Trainer';

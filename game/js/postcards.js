@@ -6,13 +6,13 @@
    a small stamp shows in the corner for a moment. saveData.cards keeps them: {town id: the day you got it}. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { STORY, mapIdAt, selfTest, storyFlags, toast } from './hooks.js';
+import { mapIdAt, selfTest, storyFlags, storyState, toast } from './hooks.js';
 import { LOCATIONS, TRAINERS, isTown, trainersAt } from './game-data.js';
 import { activeBattle, escapeHtml, save, saveData, uiState } from './game-state.js';
 import { artURL } from './art.js';
 import { flagPicturePath, mapById, walkView } from './walk-view.js';
 import { soundEffect } from './sound.js';
-import { TALK } from './talk.js';
+import { talkBox } from './talk.js';
 import { cutscene } from './cutscene.js';
 import { airshipFlight } from './airship.js';
 /* eslint-disable no-func-assign */
@@ -68,7 +68,7 @@ function postcardTownHere() {
 function postcardAllowed() {
   const F = typeof storyFlags === 'function' ? storyFlags() : {};
   if (TRAINERS.blake0 && !F.rival0 && !F.met_blake0) return false;
-  if (typeof STORY !== 'undefined' && (STORY.pending || STORY.rivalTalk)) return false;
+  if (typeof storyState !== 'undefined' && (storyState.pending || storyState.rivalTalk)) return false;
   if (
     trainersAt(saveData.route.node).some(T => !saveData.flags[T.id] && T.intro && T.intro.length && !F['met_' + T.id])
   )
@@ -90,7 +90,7 @@ export function postcardCheck() {
     uiState.inside ||
     uiState.bench ||
     postcardState.on ||
-    (typeof TALK !== 'undefined' && TALK.on) ||
+    (typeof talkBox !== 'undefined' && talkBox.on) ||
     (typeof cutscene !== 'undefined' && cutscene.on) ||
     (typeof selfTest !== 'undefined' && selfTest.on) ||
     (typeof airshipFlight !== 'undefined' && airshipFlight.on)

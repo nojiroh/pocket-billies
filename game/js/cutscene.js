@@ -56,7 +56,7 @@ import { gpuState, webgl2Supported } from './engine/webgl.js';
 import { mountWalkView, personItem, standingHeightAt, walkRenderer } from './walk-view-gl.js';
 import { seamlessRoamView } from './seamless-world.js';
 import { music, soundEffect } from './sound.js';
-import { TALK, talkHide, talkLine } from './talk.js';
+import { talkBox, talkHide, talkLine } from './talk.js';
 /* eslint-disable no-func-assign */
 expose({
   CUTSCENE_SPOTS: [() => CUTSCENE_SPOTS],
@@ -212,7 +212,7 @@ export function cutsceneFlush() {
   const w = cutscene.waits.slice();
   cutscene.waits = [];
   w.forEach(f => f());
-  if (TALK.cur && cutscene.on) TALK.cur.done();
+  if (talkBox.cur && cutscene.on) talkBox.cur.done();
 }
 function skipCutscene() {
   if (!cutscene.on || cutscene.choosing || cutscene.dressing) return;
@@ -452,7 +452,7 @@ export function cutsceneCaption(sub, title, ms = 3200) {
 export function cutsceneSay(who, text, expr) {
   if (cutscene.skip || !cutscene.on) return Promise.resolve();
   const pr = talkLine(who, text, expr, { cs: true });
-  cutscene.say = TALK.cur;
+  cutscene.say = talkBox.cur;
   return pr.then(() => {
     if (cutscene.say && !cutscene.say.typing) cutscene.say = null;
   });
@@ -474,7 +474,7 @@ function cutscenePortraitTick() {}
 function cutsceneTap(ev) {
   if (!cutscene.on) return;
   if (ev && ev.target.closest && ev.target.closest('button,input,.cs-pick')) return;
-  if (TALK.cur) TALK.cur.tap();
+  if (talkBox.cur) talkBox.cur.tap();
 }
 
 /* ---------- the starter picker ---------- */

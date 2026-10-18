@@ -3,7 +3,7 @@
 // object, and a setter (the module's own) for each function it wraps. The last module of the game's page.
 import { LOCATIONS, gameData } from './game-data.js';
 import { activeBattle, save, saveData, setSave, setSetTrip, setTrip, uiState } from './game-state.js';
-import { FRAME, userFps } from './frame-scheduler.js';
+import { frameScheduler, userFps } from './frame-scheduler.js';
 import { artPixels, setArtPixels } from './art.js';
 import { PERSON_ART_CACHE, personBattleFrames, setPersonBattleFrames } from './person-art.js';
 import { openDressingRoom, setOpenDressingRoom } from './dressing-room.js';
@@ -76,7 +76,7 @@ import {
   setDrawSolidProps,
   solidPropState,
 } from './solid-props.js';
-import { LIFE, lifeStep, setLifeStep } from './ambient-life.js';
+import { ambientLife, lifeStep, setLifeStep } from './ambient-life.js';
 import { paintWorkerReport } from './ground-paint-worker.js';
 import {
   battleStageKey,
@@ -98,13 +98,12 @@ import { account } from './account.js';
 import { challengesToday, stampCount } from './things-to-do.js';
 import { render, renderOverlay, setRender, setRenderOverlay, toast } from './ui.js';
 Object.defineProperties(GAME, {
-  FRAME: { get: () => FRAME },
-  LIFE: { get: () => LIFE },
   LOCATIONS: { get: () => LOCATIONS },
   PERSON_ART_CACHE: { get: () => PERSON_ART_CACHE },
   account: { get: () => account },
   activeBattle: { get: () => activeBattle },
   ambience: { get: () => ambience },
+  ambientLife: { get: () => ambientLife },
   artPixels: { get: () => artPixels, set: setArtPixels },
   battleStage: { get: () => battleStage },
   battleStageKey: { get: () => battleStageKey },
@@ -129,6 +128,7 @@ Object.defineProperties(GAME, {
   ensurePrograms: { get: () => ensurePrograms, set: setEnsurePrograms },
   environment: { get: () => environment },
   finishProgramCompile: { get: () => finishProgramCompile, set: setFinishProgramCompile },
+  frameScheduler: { get: () => frameScheduler },
   gameData: { get: () => gameData },
   gatherFrameItems: { get: () => gatherFrameItems, set: setGatherFrameItems },
   gpuState: { get: () => gpuState },

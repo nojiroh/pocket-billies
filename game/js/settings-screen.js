@@ -41,7 +41,7 @@ import {
   uiState,
 } from './game-state.js';
 import { I18N_LANGS, i18nSet } from './i18n.js';
-import { FRAME } from './frame-scheduler.js';
+import { frameScheduler } from './frame-scheduler.js';
 import { uiIconHTML } from './art.js';
 import { cleanLook, cleanTrainer, lookFromOld, personHTML } from './person-art.js';
 /* eslint-disable no-func-assign */
@@ -321,7 +321,7 @@ function volumeSliderHTML(k, label, hint, def) {
 export function settingsHTML() {
   const p = saveData.preferences || {},
     tab = SETTINGS_TABS.some(t => t[0] === uiState.setTab) ? uiState.setTab : 'game',
-    hz = FRAME.hz || 60;
+    hz = frameScheduler.hz || 60;
   let body = '';
   if (tab === 'game')
     body =

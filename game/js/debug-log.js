@@ -417,7 +417,7 @@ debugLog.state = () => {
     s.encounters = GAME.saveData.queue ? GAME.saveData.queue.length : 0;
     s.badges = (GAME.saveData.seats || []).length;
     s.visited = Object.keys(GAME.saveData.visited || {}).length;
-    s.frameHz = GAME.FRAME.hz;
+    s.frameHz = GAME.frameScheduler.hz;
     s.fpsCap = GAME.userFps();
   } catch (e) {
     s.error = String(e.message || e);
@@ -474,7 +474,7 @@ debugLog.more = () => {
       id: GAME.walkView.id,
       size: [sc.w, sc.h],
       props: (sc.props || []).length,
-      life: typeof GAME.LIFE !== 'undefined' ? GAME.LIFE.list.map(c => c.k).join(' ') : '',
+      life: typeof GAME.ambientLife !== 'undefined' ? GAME.ambientLife.list.map(c => c.k).join(' ') : '',
       folk: (GAME.walkView.folk || []).length,
       water: (GAME.walkView.water || []).length,
       ladders: (sc.props || []).filter(p => p.act === 'climb').length,
@@ -485,7 +485,7 @@ debugLog.more = () => {
   });
   t('caches', () => ({
     people: typeof GAME.PERSON_ART_CACHE !== 'undefined' ? GAME.PERSON_ART_CACHE.size : null,
-    lifeFrames: typeof GAME.LIFE !== 'undefined' ? GAME.LIFE.cut.size : null,
+    lifeFrames: typeof GAME.ambientLife !== 'undefined' ? GAME.ambientLife.cut.size : null,
     normalsWaiting: typeof GAME.gpuState !== 'undefined' && GAME.gpuState.normQ ? GAME.gpuState.normQ.length : null,
     targets: typeof GAME.gpuState !== 'undefined' ? Object.keys(GAME.gpuState.fb || {}).length : null,
     prints: typeof GAME.walkRenderer !== 'undefined' && GAME.walkRenderer.prints ? GAME.walkRenderer.prints.length : 0,

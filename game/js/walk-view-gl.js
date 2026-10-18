@@ -10,12 +10,12 @@
 import { expose } from './test-globals.js';
 import {
   BUILDING_SHADERS,
-  LIFE,
   LIFE_KIND,
   SOLID_PROP_PARTS,
   SOLID_PROP_SHADERS,
   SPECIES,
   WORLD_ART,
+  ambientLife,
   buddyItems,
   buildingFrontPicture,
   buildingGuard,
@@ -67,7 +67,7 @@ import {
   worldBillyLabels,
 } from './hooks.js';
 import { clamp } from './util.js';
-import { FRAME, frameCount, frameTask, userFps } from './frame-scheduler.js';
+import { frameCount, frameScheduler, frameTask, userFps } from './frame-scheduler.js';
 import { hexToRgb, makeCanvas } from './art.js';
 import { folkFrames, personBattlePose, personWalkFrames, pickWalkFrame, warmPerson } from './person-art.js';
 import { drawRig, rigFrame, rigParts, rigPreload } from './skeleton-rig.js';
@@ -4073,7 +4073,7 @@ export function adaptQuality(dtm, work) {
   /* alpha 0.1: the picture stays sharp at 60 frames a second; only Smoothest (preferences.aim) trades sharpness for more */
   const smooth =
       typeof saveData !== 'undefined' && saveData && saveData.preferences && saveData.preferences.aim === 'smooth',
-    target = 1000 / Math.min(cap, FRAME.hz || 60, smooth ? 999 : 60);
+    target = 1000 / Math.min(cap, frameScheduler.hz || 60, smooth ? 999 : 60);
   walkRenderer.int = walkRenderer.int ? walkRenderer.int * 0.92 + dtm * 0.08 : dtm;
   /* alpha 0.4: in every log the picture sat on the lowest step outdoors most of the time: a place's first seconds
     (its ground painting, its grass planting) pushed it down, and it only came back up on frames under 8 ms of work,
@@ -6568,8 +6568,8 @@ function waterLife() {
       }
     });
   if (engineSetting('water', 'rings') && !walkRenderer.bt && !reducedMotion) {
-    if (typeof LIFE !== 'undefined')
-      for (const c of LIFE.list || [])
+    if (typeof ambientLife !== 'undefined')
+      for (const c of ambientLife.list || [])
         if (c.k === 'duck') {
           c._rg = (c._rg || Math.random()) - dt * (c.st === 'walk' ? 1.6 : 0.35);
           if (c._rg <= 0) {
@@ -7480,8 +7480,8 @@ function drawFootprints(quad, U, R, Up, dt) {
       walkRenderer.lastPrint = [pl.x, pl.z];
     }
   }
-  if (typeof LIFE !== 'undefined')
-    for (const c of LIFE.list) {
+  if (typeof ambientLife !== 'undefined')
+    for (const c of ambientLife.list) {
       const K = LIFE_KIND[c.k];
       if (!K || K.fly || c.k === 'car' || c.k === 'duck' || c.hide > 0 || c.st === 'idle') continue;
       if (!c._lp || Math.hypot(c.x - c._lp[0], c.z - c._lp[1]) > 0.3) {

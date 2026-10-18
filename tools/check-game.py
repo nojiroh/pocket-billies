@@ -94,8 +94,8 @@ def check_game(pw, base, results):
                 pg.screenshot(path=str(OUT / f'{name}-opening-rival.png'))
                 pg.evaluate("if(activeBattle){activeBattle.over='win';stopTimers();endBattle()}0")
                 for _ in range(80):
-                    if pg.evaluate("!TALK.on&&!!uiState.modal&&!activeBattle"): break
-                    pg.evaluate('TALK.cur&&TALK.cur.tap()'); time.sleep(.8)
+                    if pg.evaluate("!talkBox.on&&!!uiState.modal&&!activeBattle"): break
+                    pg.evaluate('talkBox.cur&&talkBox.cur.tap()'); time.sleep(.8)
                 opening['afterRival'] = pg.evaluate("(saveData.story||{}).rival0||null")
                 opening['ok'] = opening['ok'] and bool(opening['rivalBattle']) and opening['afterRival'] == 'win'
             results.setdefault('opening', {})[name] = opening
@@ -109,7 +109,7 @@ def check_game(pw, base, results):
                 time.sleep(3); pg.screenshot(path=str(OUT / f'{name}-rival.png'))
                 for _ in range(80):
                     if pg.evaluate('!!activeBattle'): rival['battle'] = pg.evaluate('activeBattle.foeName'); break
-                    pg.evaluate('TALK.cur&&TALK.cur.tap()'); time.sleep(.8)
+                    pg.evaluate('talkBox.cur&&talkBox.cur.tap()'); time.sleep(.8)
                 results.setdefault('rival', {})[name] = rival
                 pg.evaluate("if(activeBattle){stopTimers();activeBattle=null;battleStageStop()}render();0")
         pg.evaluate("if(typeof titleEnd==='function')titleEnd();uiState.pg='girl';startGame('scoop');saveData.story={met_chad:1,met_chad2:1};uiState.modal=null;uiState.mq=[];renderOverlay();saveData.team.push(makeBilly('box1',18));addSteps(2400,true);uiState.toastQ=[];uiState.toastOn=false;uiState.modal=null;uiState.mq=[];renderOverlay();render();0")
@@ -169,7 +169,7 @@ def check_game(pw, base, results):
             trip = pg.evaluate("[saveData.route.node,saveData.route.plan.length,walkView.id,!!saveData.visited[9]]")
             pg.screenshot(path=str(OUT / f'{name}-arrived.png'))
             results.setdefault('walk', {})[name] = {'walkedTo': roam, 'tripEnd': trip, 'ok': abs(roam[0] - tgt[0]) < .8 and abs(roam[1] - tgt[1]) < .8 and trip[0] == 9 and trip[1] == 0 and trip[2] == 'pond'}
-        fps = pg.evaluate('[FRAME.meter.fps,FRAME.hz,battleStage.q.lvl]')
+        fps = pg.evaluate('[frameScheduler.meter.fps,frameScheduler.hz,battleStage.q.lvl]')
         results['viewports'][name] = {'bootSeconds': boot, 'errors': errs[:10], 'trainerBattleWon': won, 'battleFps': fps[0], 'displayHz': fps[1], 'qualityLevel': fps[2]}
         ctx.close()
     b.close()

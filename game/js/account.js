@@ -29,7 +29,7 @@ import {
 } from './game-state.js';
 import { cleanTrainer } from './person-art.js';
 import { applyPreferences, settingsRefresh } from './settings-screen.js';
-import { TITLE, titleStart } from './title.js';
+import { titleScreen, titleStart } from './title.js';
 import { initFriends } from './friends.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -207,8 +207,8 @@ async function pullAccountSave() {
             writeStoredSave(saveData);
             closeModal();
             flushAccountSave(true);
-            if (typeof TITLE !== 'undefined' && TITLE.on) {
-              TITLE.on = false;
+            if (typeof titleScreen !== 'undefined' && titleScreen.on) {
+              titleScreen.on = false;
               titleStart();
             }
             render();

@@ -28,7 +28,7 @@ import {
   spawn,
   uiState,
 } from './game-state.js';
-import { FRAME } from './frame-scheduler.js';
+import { frameScheduler } from './frame-scheduler.js';
 import { PERSON_ART_CACHE } from './person-art.js';
 import { closeDressingRoom, dressingRoom } from './dressing-room.js';
 import { battleStage, battleStageStop } from './battle-stage.js';
@@ -80,7 +80,7 @@ import {
   worldMapMinis,
   worldMapMinisOn,
 } from './world-map-gl.js';
-import { TALK, talkHide } from './talk.js';
+import { talkBox, talkHide } from './talk.js';
 import { cutscene, cutsceneTeardown } from './cutscene.js';
 import { battleTipHide, fallMap, fallMapCanvas } from './opening-fall.js';
 import { closeModal, leaveRoom, mapIdAt, modal, render, renderOverlay, toast, walkPick } from './ui.js';
@@ -389,7 +389,7 @@ async function runFullTest(mode) {
       uiState.mq = [];
       renderOverlay();
     }
-    if (typeof TALK !== 'undefined' && TALK.on && typeof talkHide === 'function') talkHide();
+    if (typeof talkBox !== 'undefined' && talkBox.on && typeof talkHide === 'function') talkHide();
   };
   const walkAbout = async sec => {
     const end = performance.now() + sec * 1000;
@@ -455,7 +455,7 @@ async function runFullTest(mode) {
             auto: engineSetting('quality', 'auto') ?? null,
             resolution: typeof walkView !== 'undefined' ? walkView.R : null,
             level: typeof walkRenderer !== 'undefined' ? (walkRenderer.q ?? null) : null,
-            screenHz: typeof FRAME !== 'undefined' ? FRAME.hz : null,
+            screenHz: typeof frameScheduler !== 'undefined' ? frameScheduler.hz : null,
             why: ev,
           };
           return `${String(g.renderer || g.gpu || 'graphics unknown').slice(0, 60)} · resolution ×${diagnosticsReport.device.resolution ?? '?'} · quality level ${diagnosticsReport.device.level ?? '?'}${ev.length ? ' · ' + ev.slice(-1)[0] : ''}`;
@@ -1150,10 +1150,10 @@ async function runFullTest(mode) {
             activeBattle.over = 'win';
             endBattle();
             let said = 0;
-            for (let i = 0; i < 120 && !(said && !TALK.on); i++) {
-              if (TALK.cur) {
+            for (let i = 0; i < 120 && !(said && !talkBox.on); i++) {
+              if (talkBox.cur) {
                 said++;
-                TALK.cur.tap();
+                talkBox.cur.tap();
               }
               await selfTestSleep(200);
             }

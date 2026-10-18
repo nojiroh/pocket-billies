@@ -25,7 +25,7 @@ import { currentLocationMap, environment, environmentState } from './environment
 import { standingHeightAt, walkRenderer } from './walk-view-gl.js';
 import { battleSay, endBattle, openBattle, setEndBattle, setOpenBattle } from './battle.js';
 import { soundEffect } from './sound.js';
-import { TALK, setTalkFolk, talk, talkFolk } from './talk.js';
+import { setTalkFolk, talk, talkBox, talkFolk } from './talk.js';
 /* eslint-disable no-func-assign */
 expose({
   CHALLENGE_KINDS: [() => CHALLENGE_KINDS],
@@ -241,7 +241,7 @@ const teamBillyOfType = t =>
   saveData.team.find(m => m.hp > 0 && SPECIES[m.sp].types.includes(t)) ||
   saveData.team.find(m => SPECIES[m.sp].types.includes(t));
 async function requestTalk(f) {
-  if (TALK.on) return;
+  if (talkBox.on) return;
   const q = requestHere(),
     who = 'folk:' + f.seed;
   f.wait = 99;

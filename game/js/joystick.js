@@ -12,7 +12,7 @@ import { expose } from './test-globals.js';
 import { activeBattle, saveData, uiState } from './game-state.js';
 import { walkView } from './walk-view.js';
 import { walkRenderer } from './walk-view-gl.js';
-import { TALK } from './talk.js';
+import { talkBox } from './talk.js';
 import { cutscene } from './cutscene.js';
 import { airshipFlight, glassLift } from './airship.js';
 /* eslint-disable no-func-assign */
@@ -48,7 +48,7 @@ function joystickAllowed() {
     !walkView.director &&
     !(typeof airshipFlight !== 'undefined' && airshipFlight.on) &&
     !(typeof glassLift !== 'undefined' && glassLift.on) &&
-    !(typeof TALK !== 'undefined' && TALK.on)
+    !(typeof talkBox !== 'undefined' && talkBox.on)
   );
 }
 function joystickInput(x, y) {

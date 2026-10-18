@@ -540,8 +540,8 @@ def phone_flow(b, base, R):
         shot(pg, 'phone-rival-battle')
         if not R['rivalBattle']['tutorial'] or not R['rivalBattle']['tip']: raise Exception(f'Blake’s first battle isn’t the tutorial one: {R["rivalBattle"]}')
         pg.evaluate("activeBattle.over='win';stopTimers();endBattle();0")
-        if not until(pg, '!!TALK.cur', 40): raise Exception('nobody spoke after Blake’s battle')
-        if not until(pg, '!TALK.on&&!!uiState.modal', 60, 'TALK.cur&&TALK.cur.tap()'): raise Exception('the talk after Blake’s battle never ended')
+        if not until(pg, '!!talkBox.cur', 40): raise Exception('nobody spoke after Blake’s battle')
+        if not until(pg, '!talkBox.on&&!!uiState.modal', 60, 'talkBox.cur&&talkBox.cur.tap()'): raise Exception('the talk after Blake’s battle never ended')
         R['afterRival'] = pg.evaluate("({story:saveData.story.rival0,hp:saveData.team.map(m=>m.hp===maxHp(m)),welcome:uiState.modal&&uiState.modal.title})")
         pg.evaluate("closeModal();0")
         play(pg)
@@ -678,14 +678,14 @@ def desktop_steps(b, base, R):
         for attempt in range(5):
             pt = pg.evaluate(PROJ % json.dumps(tgt)); pg.mouse.click(pt[0], pt[1]); time.sleep(.8)
             if pg.evaluate('!!walkView.pl.route'): break
-            whys.append(pg.evaluate("uiState.modal?('a message: '+(uiState.modal.title||'')):(walkView.opt.active&&!walkView.opt.active())?'the scene wasn’t taking taps':TALK.on?'a chat':'no path from the tap'"))
-            pg.evaluate("uiState.toastQ=[];uiState.modal=null;uiState.mq=[];if(TALK.on&&typeof talkHide==='function')talkHide();renderOverlay();0"); time.sleep(1.2)
+            whys.append(pg.evaluate("uiState.modal?('a message: '+(uiState.modal.title||'')):(walkView.opt.active&&!walkView.opt.active())?'the scene wasn’t taking taps':talkBox.on?'a chat':'no path from the tap'"))
+            pg.evaluate("uiState.toastQ=[];uiState.modal=null;uiState.mq=[];if(talkBox.on&&typeof talkHide==='function')talkHide();renderOverlay();0"); time.sleep(1.2)
         if whys: notes.append(f'Walking: {len(whys)} tap(s) didn’t start a walk ({", ".join(whys)})')
         if not pg.evaluate('!!walkView.pl.route'): raise Exception(f'no walk started after 5 taps at {tgt} ({", ".join(whys)})')
         until(pg, '!walkView.pl.route', 45)
         roam = pg.evaluate("[+walkView.pl.x.toFixed(1),+walkView.pl.z.toFixed(1)]")
-        pg.evaluate("if(typeof TALK!=='undefined'&&TALK.on&&typeof talkHide==='function')talkHide();0")
-        if abs(roam[0] - tgt[0]) > .8 or abs(roam[1] - tgt[1]) > .8: raise Exception(f'tapped {tgt}, ended at {roam} ({pg.evaluate("JSON.stringify({mode:walkView.opt.state&&walkView.opt.state().mode,route:saveData.route,battle:!!activeBattle,modal:uiState.modal&&uiState.modal.title,talk:TALK.on,cs:typeof cutscene!==\"undefined\"&&cutscene.on,climb:!!walkView.pl.climb,keys:Object.keys(walkView.keys||{})})")})')
+        pg.evaluate("if(typeof talkBox!=='undefined'&&talkBox.on&&typeof talkHide==='function')talkHide();0")
+        if abs(roam[0] - tgt[0]) > .8 or abs(roam[1] - tgt[1]) > .8: raise Exception(f'tapped {tgt}, ended at {roam} ({pg.evaluate("JSON.stringify({mode:walkView.opt.state&&walkView.opt.state().mode,route:saveData.route,battle:!!activeBattle,modal:uiState.modal&&uiState.modal.title,talk:talkBox.on,cs:typeof cutscene!==\"undefined\"&&cutscene.on,climb:!!walkView.pl.climb,keys:Object.keys(walkView.keys||{})})")})')
         pg.evaluate("(()=>{const n=tripTo(9).steps;setTrip(9);addSteps(n,true)})();uiState.toastQ=[];uiState.modal=null;uiState.mq=[];renderOverlay();render();0")   # alpha 0.2: the steps a trip costs follow the walk
         if not until(pg, "saveData.route.node===9&&!saveData.route.plan.length&&(walkView.id==='pond'||(walkView.sc&&walkView.sc.baseId==='pond'))", 30): raise Exception('the trip to Willowmere didn’t arrive (' + pg.evaluate("JSON.stringify([saveData.route,walkView.id])") + ')')   # v43: you arrive at the exit, with the road still in view
         shot(pg, 'arrived')
@@ -750,11 +750,11 @@ def desktop_steps(b, base, R):
         if not pg.evaluate("typeof LIFE_KIND!=='undefined'&&!!LIFE_KIND.frog"): return 'no new animals in this build'
         pg.evaluate("environment.force={time:13,weather:'clear',season:'summer'};0")
         node = pg.evaluate("LOCATIONS.findIndex(r=>r.scene==='pond')"); go_scene(pg, node); time.sleep(3)
-        kinds = pg.evaluate("[...new Set(LIFE.list.map(c=>c.k))]")
+        kinds = pg.evaluate("[...new Set(ambientLife.list.map(c=>c.k))]")
         for k in ('frog', 'rabbit'):
             if k not in kinds: raise Exception(f'no {k} at Willowmere (animals there: {", ".join(kinds)})')
-        pg.evaluate("(()=>{const f=LIFE.list.find(c=>c.k==='frog'&&!(c.hide>0));walkView.pl.route=null;const p=walkablePointNear(f.x+.7,f.z-.4);walkView.pl.x=p[0];walkView.pl.z=p[1]})();0"); time.sleep(4)
-        leapt = pg.evaluate("LIFE.list.some(c=>c.k==='frog'&&(c.hide>0||c.dive||c.st==='run'))")
+        pg.evaluate("(()=>{const f=ambientLife.list.find(c=>c.k==='frog'&&!(c.hide>0));walkView.pl.route=null;const p=walkablePointNear(f.x+.7,f.z-.4);walkView.pl.x=p[0];walkView.pl.z=p[1]})();0"); time.sleep(4)
+        leapt = pg.evaluate("ambientLife.list.some(c=>c.k==='frog'&&(c.hide>0||c.dive||c.st==='run'))")
         if not leapt: raise Exception('a frog didn’t leap away when you stood next to it')
         shot(pg, 'life-pond')
         pg.evaluate("environment.force={time:11,weather:'snow',season:'winter'};0"); go_scene(pg, 0); time.sleep(1)
@@ -1212,8 +1212,8 @@ def desktop_steps(b, base, R):
         # the legendary at the volcano
         node = pg.evaluate("LOCATIONS.findIndex(r=>r.scene==='volcano')")
         if node >= 0:
-            pg.evaluate("delete saveData.story['legend_rockefeller0'];delete saveData.caught.rockefeller0;STORY.pending=null;uiState.modal=null;uiState.mq=[];if(TALK.on&&typeof talkHide==='function')talkHide();renderOverlay();0"); go_scene(pg, node); time.sleep(3)
-            if not until(pg, "!!uiState.modal&&/leaking/.test(uiState.modal.title||'')", 40): raise Exception(f"the legendary at the volcano did not show up ({pg.evaluate('JSON.stringify({ready:walkView.ready,id:walkView.id,tab:uiState.tab,modal:uiState.modal&&uiState.modal.title,talk:TALK.on,cs:cutscene.on,pend:STORY.pending,flag:saveData.story.legend_rockefeller0,route:saveData.route,b:!!activeBattle})')})")
+            pg.evaluate("delete saveData.story['legend_rockefeller0'];delete saveData.caught.rockefeller0;storyState.pending=null;uiState.modal=null;uiState.mq=[];if(talkBox.on&&typeof talkHide==='function')talkHide();renderOverlay();0"); go_scene(pg, node); time.sleep(3)
+            if not until(pg, "!!uiState.modal&&/leaking/.test(uiState.modal.title||'')", 40): raise Exception(f"the legendary at the volcano did not show up ({pg.evaluate('JSON.stringify({ready:walkView.ready,id:walkView.id,tab:uiState.tab,modal:uiState.modal&&uiState.modal.title,talk:talkBox.on,cs:cutscene.on,pend:storyState.pending,flag:saveData.story.legend_rockefeller0,route:saveData.route,b:!!activeBattle})')})")
             pg.evaluate("uiState.modal.btns[0].f();0"); until(pg, "!!activeBattle", 6); time.sleep(2)
             foe = pg.evaluate("activeBattle&&activeBattle.sides[1].team.map(m=>[m.sp,m.lvl])[0]")
             if foe != ['rockefeller0', 42]: raise Exception(f'legendary battle foe: {foe}')
@@ -1558,8 +1558,8 @@ def desktop_steps(b, base, R):
                 if not until(pg, '!!uiState.modal', 30): raise Exception(f'{tid}: no sheet after the win')
                 seen = []; idle = 0; t_end = time.time() + 150; taps = 0
                 while idle < 6 and len(seen) < 40:
-                    if time.time() > t_end: raise Exception(f'{tid}: the talk and sheets after the win never ended ({taps} taps; sheets {seen}; talk {pg.evaluate("JSON.stringify({on:TALK.on,cur:!!TALK.cur})")})')
-                    if pg.evaluate("!!(TALK.cur&&TALK.on)"): pg.evaluate("TALK.cur.tap();0"); idle = 0; taps += 1
+                    if time.time() > t_end: raise Exception(f'{tid}: the talk and sheets after the win never ended ({taps} taps; sheets {seen}; talk {pg.evaluate("JSON.stringify({on:talkBox.on,cur:!!talkBox.cur})")})')
+                    if pg.evaluate("!!(talkBox.cur&&talkBox.on)"): pg.evaluate("talkBox.cur.tap();0"); idle = 0; taps += 1
                     elif pg.evaluate("!!uiState.modal"):
                         seen.append(pg.evaluate("String(uiState.modal.title||'')"))
                         if pic and pic[0] == seen[-1]: time.sleep(4); shot(pg, pic[1])     # the sheet slides in (slowly here)
@@ -1580,7 +1580,7 @@ def desktop_steps(b, base, R):
             if not st[0] or st[1] != 9 or E not in sheets: raise Exception(f'the ending: flag {st[0]}, stage {st[1]}, sheets {sheets}')
             out.append(f'Cass Flow’s clue; Vinylla at the Inner Sun only after the Spire; the ending (“{E}”, stage 9)')
         finally:
-            pg.evaluate(f"(o=>{{saveData.seats=o.seats;saveData.story=o.story;saveData.flags=o.flags;saveData.visited=o.visited;if(o.beaten)saveData.beaten=o.beaten;uiState.modal=null;uiState.mq=[];if(typeof TALK!=='undefined')TALK.on=false;environment.force=null;PROP_CLOCK.t=0;uiState.guideTab=null;uiState.tab='walk';renderOverlay();render()}})({keep});0")
+            pg.evaluate(f"(o=>{{saveData.seats=o.seats;saveData.story=o.story;saveData.flags=o.flags;saveData.visited=o.visited;if(o.beaten)saveData.beaten=o.beaten;uiState.modal=null;uiState.mq=[];if(typeof talkBox!=='undefined')talkBox.on=false;environment.force=null;PROP_CLOCK.t=0;uiState.guideTab=null;uiState.tab='walk';renderOverlay();render()}})({keep});0")
         if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
         return '; '.join(out)
     v47()
@@ -1704,13 +1704,13 @@ def desktop_steps(b, base, R):
         if not j: raise Exception('Granny Juniper isn’t standing in Copperleaf')
         shot(pg, 'a04-copperleaf')
         pg.evaluate("personTalk(walkState().npcs.find(n=>n.id==='_talk:juniper').talk);0")
-        if not until(pg, '!!TALK.cur', 15): raise Exception('Granny Juniper didn’t say anything')
-        first = pg.evaluate("TALK.cur&&TALK.cur.text||''")
-        until(pg, '!TALK.on', 40, 'TALK.cur&&TALK.cur.tap()')
+        if not until(pg, '!!talkBox.cur', 15): raise Exception('Granny Juniper didn’t say anything')
+        first = pg.evaluate("talkBox.cur&&talkBox.cur.text||''")
+        until(pg, '!talkBox.on', 40, 'talkBox.cur&&talkBox.cur.tap()')
         if not pg.evaluate("!!storyFlags().met_juniper"): raise Exception('talking to Granny Juniper didn’t count as meeting her')
         out.append(f'Granny Juniper at {j}, she said “{first[:40]}…”')
         pg.evaluate("uiState.toastQ=[];(()=>{const p=walkView.sc.props.find(p=>p.act==='lab'),C=walkData().sc,g=actionSpot(p,C.props[p.k],C.ppu||34);walkView.pl.route=null;walkView.pl.x=g[0];walkView.pl.z=g[1];walkPick({k:'act',p,act:'lab'})})();0")
-        if not until(pg, "walkView.ready&&(walkView.id==='int_lab'||(walkView.sc&&walkView.sc.roomOf==='int_lab'))||TALK.on", 60): raise Exception('the lab didn’t open')
+        if not until(pg, "walkView.ready&&(walkView.id==='int_lab'||(walkView.sc&&walkView.sc.roomOf==='int_lab'))||talkBox.on", 60): raise Exception('the lab didn’t open')
         pg.evaluate("talkHide&&talkHide();if(uiState.inside)leaveRoom();0"); until(pg, "walkView.ready&&!walkView.sc.roomRect", 30)
         out.append('the lab opens')
         # down Route 1 to Marigold Town, on foot

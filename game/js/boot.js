@@ -33,7 +33,7 @@ import { battleStageKey } from './battle.js';
 import { WORLD_ART, worldMapPrepare } from './world-map.js';
 import { WORLD_RELIEF } from './world-map-gl.js';
 import { cutsceneWanted } from './cutscene.js';
-import { TITLE, titleMount, titleStart, titleWanted } from './title.js';
+import { titleMount, titleScreen, titleStart, titleWanted } from './title.js';
 import { loreLoadingLines } from './lore.js';
 import { initAccount } from './account.js';
 import {
@@ -700,7 +700,7 @@ function loaderHide() {
     loadingScreen.el = null;
     document.body.classList.remove('ld-on', 'ttl-reveal');
   };
-  if (!(typeof TITLE !== 'undefined' && TITLE.on)) {
+  if (!(typeof titleScreen !== 'undefined' && titleScreen.on)) {
     el.classList.add('done');
     document.body.classList.remove('ld-on');
     setTimeout(end, 900);
