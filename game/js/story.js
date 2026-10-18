@@ -9,7 +9,7 @@ import { expose } from './test-globals.js';
 import { STEST, closeModal, modal, postProcess, provide, render } from './hooks.js';
 import { $, clamp } from './util.js';
 import { PLACE, RULES, SP, TRAINERS, trainersAt } from './game-data.js';
-import { RM, activeBattle, esc, healAll, save, saveData, today, uiState } from './game-state.js';
+import { activeBattle, esc, healAll, reducedMotion, save, saveData, today, uiState } from './game-state.js';
 import { dressingRoom } from './dressing-room.js';
 import { baseMapId, walkView, walkablePointNear } from './walk-view.js';
 import { gpuState } from './engine/webgl.js';
@@ -167,7 +167,7 @@ async function rivalScene(T) {
       f.style.background = '#0B0912';
       f.classList.add('on');
     }
-    await new Promise(r => setTimeout(r, RM ? 50 : 450));
+    await new Promise(r => setTimeout(r, reducedMotion ? 50 : 450));
   } finally {
     csWorldEnd();
   }

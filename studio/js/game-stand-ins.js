@@ -9,12 +9,12 @@ expose({
   BACKDROPS: [() => BACKDROPS],
   MOVES: [() => MOVES],
   PEOPLE: [() => PEOPLE],
-  RM: [() => RM, v => ((RM = v), provide({ RM }))],
   TC: [() => TC],
   TYPEFX: [() => TYPEFX],
   activeBattle: [() => activeBattle, v => ((activeBattle = v), provide({ activeBattle }))],
   esc: [() => esc],
   liveMap: [() => liveMap],
+  reducedMotion: [() => reducedMotion, v => ((reducedMotion = v), provide({ reducedMotion }))],
   saveData: [() => saveData, v => ((saveData = v), provide({ saveData }))],
   uiState: [() => uiState, v => ((uiState = v), provide({ uiState }))],
 });
@@ -22,8 +22,8 @@ expose({
 var saveData = { preferences: {}, gender: 'boy', avatar: null },
   uiState = {},
   activeBattle = null,
-  RM = false;
-provide({ RM, activeBattle, saveData, uiState }); /* to-module */
+  reducedMotion = false;
+provide({ activeBattle, reducedMotion, saveData, uiState }); /* to-module */
 export const esc = s =>
   String(s == null ? '' : s).replace(
     /[&<>"']/g,

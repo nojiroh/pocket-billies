@@ -25,17 +25,17 @@ import {
 } from './hooks.js';
 import { JOBS, MOVES, ROUTE, RULES, SP, STATUSN } from './game-data.js';
 import {
-  RM,
   SAVE_NEW_MSG,
   SAVE_OLD_MSG,
   TEAM_MAX,
   esc,
   fmt,
   migrate,
+  reducedMotion,
   save,
   saveAge,
   saveData,
-  setRM,
+  setReducedMotion,
   setSaveData,
   today,
   uiState,
@@ -79,8 +79,10 @@ export function applyPreferences() {
     else delete root.dataset.theme;
     themeOwned = false;
   }
-  setRM(p.motion === 'reduced' || (p.motion !== 'full' && matchMedia('(prefers-reduced-motion: reduce)').matches));
-  document.documentElement.dataset.motion = RM ? 'reduced' : 'full';
+  setReducedMotion(
+    p.motion === 'reduced' || (p.motion !== 'full' && matchMedia('(prefers-reduced-motion: reduce)').matches)
+  );
+  document.documentElement.dataset.motion = reducedMotion ? 'reduced' : 'full';
   /* v30: accessibility: text size, high contrast, no flashing, bigger buttons */ root.dataset.text =
     p.textSize || 'normal';
   root.dataset.contrast = p.contrast === 'high' ? 'high' : 'normal';

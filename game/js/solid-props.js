@@ -12,7 +12,7 @@
    flat picture. "lathe" turns the outline round, like a pot on a potter's wheel. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { RM, provide } from './hooks.js';
+import { provide, reducedMotion } from './hooks.js';
 import { clamp } from './util.js';
 import { makeCanvas } from './art.js';
 import { artImage, hash2d, walkView, worldToScreen } from './walk-view.js';
@@ -1208,7 +1208,7 @@ function setSolidPropUniforms(p, it, M) {
   gl.uniform1f(U.uShear, (it.shear || 0) + (V.rot ? (h2 - 0.5) * 0.07 : 0));
   if (it.lk && U.uWear) setPropLookUniforms(U, it.lk);
   if (U.uTilt) gl.uniform2f(U.uTilt, it.tilt ? it.tilt[0] : 0, it.tilt ? it.tilt[1] : 0);
-  gl.uniform1f(U.uT, RM ? 0 : walkView.t);
+  gl.uniform1f(U.uT, reducedMotion ? 0 : walkView.t);
   gl.uniform1f(
     U.uWob,
     V.wind ? (it.M.sway || 0.3) * 0.14 * ((walkView.sc && walkView.sc.wind) || 1) * engineSetting('grass', 'wind') : 0
@@ -1301,7 +1301,7 @@ export function drawSolidProps(C, items, X, hits, labels, PPU) {
             it,
             b,
             BT,
-            (RM ? 0 : walkView.t / 1100) * (walkView.sc.wind || 1) * engineSetting('grass', 'wind'),
+            (reducedMotion ? 0 : walkView.t / 1100) * (walkView.sc.wind || 1) * engineSetting('grass', 'wind'),
             C,
             X
           );

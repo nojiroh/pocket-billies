@@ -9,7 +9,7 @@
    The renderer reads environment through environmentFrame() once a frame; nothing here touches WebGL. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { RM, RULES, SP, provide, saveData, sceneIdAt } from './hooks.js';
+import { RULES, SP, provide, reducedMotion, saveData, sceneIdAt } from './hooks.js';
 import { clamp } from './util.js';
 import { hexToRgb } from './art.js';
 import { mapById, walkView } from './walk-view.js';
@@ -336,7 +336,7 @@ export function environmentFrame(sc, dt) {
       w0: environment.wxNow,
       W0: WEATHER_LOOKS[environment.wxNow] || WEATHER_LOOKS.clear,
       t0: now,
-      dur: typeof RM !== 'undefined' && RM ? 3 : environmentRules().frontSecs || 75,
+      dur: typeof reducedMotion !== 'undefined' && reducedMotion ? 3 : environmentRules().frontSecs || 75,
       dir: environmentHash(wx + environment.wxNow + Math.floor(now / 600)) < 0.5 ? 1 : -1,
     };
     environment.wxNow = wx;
@@ -409,7 +409,7 @@ export function environmentFrame(sc, dt) {
   environment.flash = Math.max(0, environment.flash - dt * 3.2);
   if (
     environment.storm > 0.5 &&
-    !(typeof RM !== 'undefined' && RM) &&
+    !(typeof reducedMotion !== 'undefined' && reducedMotion) &&
     document.documentElement.dataset.flash !== 'off' &&
     Math.random() < dt * 0.06
   )

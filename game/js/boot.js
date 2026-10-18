@@ -9,12 +9,12 @@ import { provide } from './hooks.js';
 import { DATA_WARN, GD, RULES, SP, START_NODE } from './game-data.js';
 import { loadAllMaps, loadMapsAhead, watchMapsAhead } from './map-files.js';
 import {
-  RM,
   SAVE_FOUND,
   SAVE_NEW_MSG,
   SAVE_OLD_MSG,
   esc,
   fresh,
+  reducedMotion,
   saveData,
   setNoSaving,
   setSaveData,
@@ -641,7 +641,7 @@ async function bootLoad() {
   LDW.doneAt = performance.now();
   LD.el.classList.add('ready');
   LD.el.querySelector('.ld-phase').textContent = 'Ready';
-  const wait = Math.max(RM ? 0 : 650, (RM ? 0 : 1400) - (performance.now() - LD.shown));
+  const wait = Math.max(reducedMotion ? 0 : 650, (reducedMotion ? 0 : 1400) - (performance.now() - LD.shown));
   await new Promise(r => setTimeout(r, wait));
 }
 /* wait (at most 5 s) until the walk scene has drawn a few frames, so its first, slow frame happens behind the loader */
@@ -699,9 +699,9 @@ function loaderHide() {
         if (top) top.style.visibility = 'hidden';
         document.body.classList.remove('ld-on');
       },
-      RM ? 0 : 700
+      reducedMotion ? 0 : 700
     );
-    setTimeout(end, RM ? 300 : 1400);
+    setTimeout(end, reducedMotion ? 300 : 1400);
     return;
   }
   const t0 = performance.now(),
@@ -724,11 +724,11 @@ function loaderHide() {
           if (top) top.style.visibility = 'hidden';
           document.body.classList.remove('ld-on');
         },
-        RM ? 0 : 950
+        reducedMotion ? 0 : 950
       );
-      setTimeout(end, RM ? 300 : 2200);
+      setTimeout(end, reducedMotion ? 300 : 2200);
     };
-  setTimeout(go, RM ? 0 : Math.max(0, 900 - (performance.now() - (LDW.doneAt || 0))));
+  setTimeout(go, reducedMotion ? 0 : Math.max(0, 900 - (performance.now() - (LDW.doneAt || 0))));
 }
 /* v29: Pocket Billies Studio and an open game tab. A test run (?test=1&scene=<id>) is a throwaway game that starts in that
    scene and never touches your save; while the Studio is open, its edits to scenes, props and the engine reach the

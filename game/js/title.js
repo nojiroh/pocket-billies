@@ -9,7 +9,7 @@ import { expose } from './test-globals.js';
 import { NW_TEST, accChipHTML, closeModal, modal, postProcess, render, sceneIdAt, settings } from './hooks.js';
 import { $, clamp } from './util.js';
 import { ROUTE, START_NODE } from './game-data.js';
-import { RM, esc, flush, freshKeep, lsSet, saveData, setSaveData, uiState } from './game-state.js';
+import { esc, flush, freshKeep, lsSet, reducedMotion, saveData, setSaveData, uiState } from './game-state.js';
 import { userFps } from './frame-scheduler.js';
 import { uiIconHTML } from './art.js';
 import { humanHTML } from './person-art.js';
@@ -41,7 +41,7 @@ function titleFrame() {
   if (!TITLE.on || !walkView.sc) return null;
   const sc = walkView.sc,
     now = performance.now(),
-    k = RM ? 0.5 : 0.5 - 0.5 * Math.cos(((now - TITLE.t0) / 1000) * 0.05),
+    k = reducedMotion ? 0.5 : 0.5 - 0.5 * Math.cos(((now - TITLE.t0) / 1000) * 0.05),
     /* (in the walk view the town is one part of a bigger picture: frame the town itself) */ b = sc.baseId
       ? mapById(sc.baseId) || sc
       : sc,

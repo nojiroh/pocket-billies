@@ -6,7 +6,7 @@
    and a light sharpen. Also takes a small screenshot for the debug log when asked. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { RM, provide } from '../hooks.js';
+import { provide, reducedMotion } from '../hooks.js';
 import { clamp } from '../util.js';
 import { makeCanvas } from '../art.js';
 import { walkView } from '../walk-view.js';
@@ -303,10 +303,10 @@ export function drawPostEffects(S, C, focusDist, rw, rh, o = {}) {
   if (U.uTone) {
     const tm = engineSetting('color', 'tone') || 'soft';
     gl.uniform1f(U.uTone, tm === 'film' ? 1 : tm === 'punchy' ? 2 : 0);
-    gl.uniform1f(U.uHeat, RM ? 0 : (o.heat || 0) * (engineSetting('air', 'heat') ?? 1));
+    gl.uniform1f(U.uHeat, reducedMotion ? 0 : (o.heat || 0) * (engineSetting('air', 'heat') ?? 1));
   }
   if (U.uHeatN) {
-    const hs = RM ? null : o.heatS;
+    const hs = reducedMotion ? null : o.heatS;
     gl.uniform1f(U.uHeatN, hs ? hs.length / 4 : 0);
     if (hs && hs.length) gl.uniform4fv(U.uHeatS, hs);
   }
@@ -317,7 +317,7 @@ export function drawPostEffects(S, C, focusDist, rw, rh, o = {}) {
   gl.uniform1f(U.uWarm, engineSetting('color', 'warmth') + (MO ? MO.warm : 0));
   gl.uniform1f(U.uVig, engineSetting('lens', 'vignette'));
   gl.uniform1f(U.uCA, engineSetting('lens', 'aberration'));
-  gl.uniform1f(U.uGrain, RM ? 0 : engineSetting('lens', 'grain'));
+  gl.uniform1f(U.uGrain, reducedMotion ? 0 : engineSetting('lens', 'grain'));
   gl.uniform1f(U.uSharp, engineSetting('lens', 'sharpen'));
   gl.uniform1f(U.uTime, typeof walkView !== 'undefined' ? walkView.t : 0);
   tex(U, 'uVol', 12, VO ? VO.c : gpuState.white);

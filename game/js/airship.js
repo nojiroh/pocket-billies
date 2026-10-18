@@ -13,7 +13,7 @@ import { closeModal, modal, provide, render, sceneIdAt, storyFlags, toast } from
 import { $, clamp } from './util.js';
 import { PLACE, ROUTE, isTown, placeFull } from './game-data.js';
 import { isLiteMap, loadMapFile, loadMapsAhead } from './map-files.js';
-import { RM, canEnter, esc, fmt, save, saveData, uiState } from './game-state.js';
+import { canEnter, esc, fmt, reducedMotion, save, saveData, uiState } from './game-state.js';
 import { artLoad, uiIconHTML } from './art.js';
 import { artImage, imageReady, mapById, prepareMap, walkData } from './walk-view.js';
 import { seamlessHubMap } from './seamless-world.js';
@@ -108,7 +108,7 @@ function startAirshipFlight(i) {
     a,
     b: i,
     t0: performance.now() + 500,
-    dur: RM ? 400 : 2600 + Math.min(1, d / 120) * 2600,
+    dur: reducedMotion ? 400 : 2600 + Math.min(1, d / 120) * 2600,
     lastX: null,
     dir: 1,
   });
@@ -328,7 +328,7 @@ export function rideGlassLift(p) {
       save();
       render();
     },
-    RM ? 200 : 1500
+    reducedMotion ? 200 : 1500
   );
   setTimeout(
     () => {
@@ -340,6 +340,6 @@ export function rideGlassLift(p) {
       toast(`${ROUTE[i].name}.`);
       if (typeof sfx === 'function') sfx('pop');
     },
-    RM ? 500 : 2600
+    reducedMotion ? 500 : 2600
   );
 }

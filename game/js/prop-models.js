@@ -9,7 +9,7 @@
    before. Picture layers are drawn by the sprite pipeline (gatherFrameItems gives them as extra items). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { GD, RM, provide } from './hooks.js';
+import { GD, provide, reducedMotion } from './hooks.js';
 import { artImg, artURL, hexToRgb } from './art.js';
 import { artImage, walkView } from './walk-view.js';
 import { engineSetting } from './engine/settings.js';
@@ -635,7 +635,7 @@ function propModelMesh(path, rec) {
 function drawSpinningParts(p, m) {
   if (!m.spins || !m.spins.length) return;
   const gl = gpuState.gl,
-    t = (RM ? 0 : walkView.t || 0) / 1000;
+    t = (reducedMotion ? 0 : walkView.t || 0) / 1000;
   for (const s of m.spins) {
     gl.uniform4f(p.U.uSpin, s.a[0], s.a[1], s.a[2], t * s.rps * Math.PI * 2);
     gl.uniform3fv(p.U.uSpinC, s.c);
@@ -1229,7 +1229,7 @@ function propModelImageItems(it, out) {
    wind, and swings a few degrees round its mast (it turns about its base point, the mast's foot) */
 function mooredBob(it) {
   const b = it.M && it.M.bob;
-  if (!b || (typeof RM !== 'undefined' && RM)) return null;
+  if (!b || (typeof reducedMotion !== 'undefined' && reducedMotion)) return null;
   const t = (walkView.t || 0) / 1000,
     ph = it.x * 0.37 + it.z * 0.21,
     w =

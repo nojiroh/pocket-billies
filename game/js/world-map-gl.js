@@ -12,7 +12,7 @@ import { expose } from './test-globals.js';
 import { FR, flyDraw, flyTick, provide } from './hooks.js';
 import { $, clamp } from './util.js';
 import { FUTURE, LINKS, ROUTE, linkCost, placeSub } from './game-data.js';
-import { RM, canEnter, esc, fmt, nextStop, saveData, tripTo, uiState } from './game-state.js';
+import { canEnter, esc, fmt, nextStop, reducedMotion, saveData, tripTo, uiState } from './game-state.js';
 import { frameCount, frameStop, frameTask, userFps } from './frame-scheduler.js';
 import { artLoad, artPixels, hexToRgb, makeCanvas, uiIconHTML, worldMapStamp } from './art.js';
 import { owFrames, portraitHTML } from './person-art.js';
@@ -291,7 +291,7 @@ setWorldMapMount(function () {
   else if (vector3.dot(worldMap.me, to) < 0.999999) worldMapWalk(worldMap.me, to);
   if (!worldMap.focus) worldMap.focus = to;
   /* arriving from the walk screen: start close to you and pull back */
-  if (uiState.mglFrom === 'walk' && !RM && !worldMapGl.flat) {
+  if (uiState.mglFrom === 'walk' && !reducedMotion && !worldMapGl.flat) {
     worldMap.alt = 0.11;
     worldMapGl.altT = 0.32;
   }

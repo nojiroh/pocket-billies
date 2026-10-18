@@ -12,7 +12,6 @@ import { expose } from './test-globals.js';
 import {
   ALTERNATE_PROPS,
   GD,
-  RM,
   ROOM_KIND,
   TERRAIN_MATERIALS,
   addSteps,
@@ -36,6 +35,7 @@ import {
   propModelArtPaths,
   provide,
   rawHeightAt,
+  reducedMotion,
   seamlessMapById,
   seamlessNearestRoadPoint,
   sfx,
@@ -3598,7 +3598,7 @@ function movePlayer(st, dt) {
   P.wasWalk = P.walk;
   /* grass rustle and dust */
   P.rust -= dt;
-  if (P.walk && P.rust <= 0 && !RM) {
+  if (P.walk && P.rust <= 0 && !reducedMotion) {
     const ch = terrainAt(P.x, P.z);
     if (ch === 't') {
       P.rust = 0.18;
@@ -3914,7 +3914,7 @@ function stepFolk(dt) {
     }
   }
   if (vis) walkView.folk = all.filter(f => !f.in);
-  if (!RM && walkView.folk.length && Math.random() < dt / 8) {
+  if (!reducedMotion && walkView.folk.length && Math.random() < dt / 8) {
     const f = walkView.folk[Math.floor(Math.random() * walkView.folk.length)];
     if (!f.sayT) folkSay(f);
   }
@@ -3973,7 +3973,7 @@ export function drawExitMarks(C, st, t) {
       pz = ux,
       col = e.locked ? '255,120,110' : e.dest ? '255,212,71' : '255,255,255';
     for (let c = 0; c < 3; c++) {
-      const f = ((RM ? 0 : t / 1100) + c / 3) % 1,
+      const f = ((reducedMotion ? 0 : t / 1100) + c / 3) % 1,
         cx = pt[0] - ux * (2.2 - f * 1.9),
         cz = pt[1] - uz * (2.2 - f * 1.9),
         a = Math.sin(f * Math.PI) * 0.9;

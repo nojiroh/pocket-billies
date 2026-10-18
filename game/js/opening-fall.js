@@ -14,7 +14,7 @@ import { expose } from './test-globals.js';
 import { openingDone, provide } from './hooks.js';
 import { $, clamp } from './util.js';
 import { MOVES, SP, START_NODE, eff } from './game-data.js';
-import { RM, activeBattle, esc, maxHp } from './game-state.js';
+import { activeBattle, esc, maxHp, reducedMotion } from './game-state.js';
 import { artLoad } from './art.js';
 import { portraitHTML } from './person-art.js';
 import { particleSprite } from './battle-stage.js';
@@ -166,7 +166,10 @@ function fallStreet(t) {
     W = FALL.W,
     H = FALL.H,
     gY = Math.round(H - clamp(H * 0.2, 26, 64)),
-    shake = !RM && t > 5 && t < 7.2 ? Math.round((fallRnd(Math.floor(t * 30), 3) - 0.5) * 2 * (t > 6.3 ? 2 : 1)) : 0,
+    shake =
+      !reducedMotion && t > 5 && t < 7.2
+        ? Math.round((fallRnd(Math.floor(t * 30), 3) - 0.5) * 2 * (t > 6.3 ? 2 : 1))
+        : 0,
     drop = t > 6.9 ? Math.pow((t - 6.9) / 0.5, 2) * H * 0.6 : 0;
   x.fillStyle = '#050408';
   x.fillRect(0, 0, W, H);
@@ -740,10 +743,10 @@ async function fallPlay(run) {
     }
   }, 7600);
   if (alive()) await anim(t => fallCrust(t), 2900);
-  const gcv = alive() && !RM ? fallGL() : null;
+  const gcv = alive() && !reducedMotion ? fallGL() : null;
   if (!gcv && alive()) {
     csCaption('At the centre of everything', 'The Inner Sun', 2600);
-    await anim(t => fallSky(t), RM ? 2600 : 3400);
+    await anim(t => fallSky(t), reducedMotion ? 2600 : 3400);
   }
   if (gcv) {
     if (fade) fade.classList.add('on');
@@ -758,7 +761,7 @@ async function fallPlay(run) {
   cancelAnimationFrame(FALL.raf);
   if (fade) fade.classList.add('on');
   if (typeof sfx === 'function' && alive()) sfx('thud');
-  await new Promise(r => setTimeout(r, RM || CS.skip ? 0 : 500));
+  await new Promise(r => setTimeout(r, reducedMotion || CS.skip ? 0 : 500));
   if (FALL.cv) {
     FALL.cv.remove();
     FALL.cv = null;

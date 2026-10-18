@@ -40,7 +40,6 @@ import {
   EGG_SLOTS,
   MAXLV,
   N,
-  RM,
   SLOTS,
   TEAM_MAX,
   activeBattle,
@@ -75,6 +74,7 @@ import {
   nextStop,
   plural,
   rate,
+  reducedMotion,
   resumeTrip,
   riderName,
   rollDay,
@@ -496,7 +496,7 @@ function evoRun(m, note) {
     after: () => {
       const box = $('#evoBox');
       if (!box) return;
-      const seq = RM ? [] : [420, 380, 330, 280, 240, 200, 170, 140, 110, 90, 70, 60, 50, 40, 40, 30];
+      const seq = reducedMotion ? [] : [420, 380, 330, 280, 240, 200, 170, 140, 110, 90, 70, 60, 50, 40, 40, 30];
       let t = 0,
         flip = false;
       seq.forEach(d => {
@@ -520,7 +520,7 @@ function evoRun(m, note) {
               btns: [{ l: 'Nice', c: 'dark', f: closeModal }],
             });
           },
-          RM ? 60 : 700
+          reducedMotion ? 60 : 700
         );
       }, t + 300);
     },
@@ -551,7 +551,7 @@ function hatchModal(e) {
             });
             render();
           };
-          if (RM || !box) {
+          if (reducedMotion || !box) {
             done();
             return;
           }
@@ -634,7 +634,7 @@ export function render() {
       to = +el.dataset.to,
       from = uiState.disp[k];
     uiState.disp[k] = to;
-    if (from == null || from === to || RM) {
+    if (from == null || from === to || reducedMotion) {
       el.textContent = fmt(to);
       return;
     }
@@ -2624,7 +2624,8 @@ document.addEventListener('click', ev => {
       break;
     case 'walkdown': {
       const w = $('.walk-sheet');
-      if (w) scrollTo({ top: w.getBoundingClientRect().top + scrollY - 70, behavior: RM ? 'auto' : 'smooth' });
+      if (w)
+        scrollTo({ top: w.getBoundingClientRect().top + scrollY - 70, behavior: reducedMotion ? 'auto' : 'smooth' });
       break;
     }
     case 'settings':
@@ -3087,7 +3088,7 @@ document.addEventListener(
   'pointermove',
   ev => {
     const el = ev.target.closest && ev.target.closest('.enc,.starter,.gcard');
-    if (!el || RM) return;
+    if (!el || reducedMotion) return;
     const r = el.getBoundingClientRect(),
       x = (ev.clientX - r.left) / r.width - 0.5,
       y = (ev.clientY - r.top) / r.height - 0.5;
@@ -3172,12 +3173,12 @@ function bgTick(ts) {
     BG.dark = dk;
     bgBuild();
   }
-  if (RM && BG._still === BG.base) return;
+  if (reducedMotion && BG._still === BG.base) return;
   BG._still = BG.base;
   const x = BG.x,
     W = BG.w,
     H = BG.h,
-    t = RM ? 0 : ts;
+    t = reducedMotion ? 0 : ts;
   x.imageSmoothingEnabled = false;
   x.drawImage(BG.base, 0, 0);
   const sx = W * 0.78,

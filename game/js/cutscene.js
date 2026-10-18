@@ -25,7 +25,7 @@ import {
 } from './hooks.js';
 import { $, clamp } from './util.js';
 import { ROUTE, RULES, SP, START_NODE, TRAINERS, TYPES, eff, placeFull } from './game-data.js';
-import { RM, esc, uiState } from './game-state.js';
+import { esc, reducedMotion, uiState } from './game-state.js';
 import { userFps } from './frame-scheduler.js';
 import { artLoad, makeCanvas } from './art.js';
 import { TR_PRESETS, cleanLook, humanPose, owFrames, trainerLook } from './person-art.js';
@@ -212,7 +212,7 @@ function csSkip() {
 function csCamNow() {
   const c = CS.cam;
   if (!c) return null;
-  const k = c.dur && !CS.skip && !RM ? csEase(clamp((csNow() - c.t0) / c.dur, 0, 1)) : 1,
+  const k = c.dur && !CS.skip && !reducedMotion ? csEase(clamp((csNow() - c.t0) / c.dur, 0, 1)) : 1,
     L = (a, b) => a.map((v, i) => v + (b[i] - v) * k);
   return {
     eye: L(c.a.eye, c.b.eye),
@@ -259,7 +259,7 @@ function csPersonItem(a, t, C0) {
   let im;
   const now = csNow();
   if (a.walk) {
-    const k = CS.skip || RM ? 1 : clamp((now - a.walk.t0) / a.walk.dur, 0, 1);
+    const k = CS.skip || reducedMotion ? 1 : clamp((now - a.walk.t0) / a.walk.dur, 0, 1);
     a.x = a.walk.x0 + (a.walk.x1 - a.walk.x0) * k;
     a.z = a.walk.z0 + (a.walk.z1 - a.walk.z0) * k;
     if (k >= 1) a.walk = null;
@@ -384,7 +384,7 @@ export function csFrame() {
   }
   if (typeof landFrame === 'function') landFrame(now, parts);
   const K = csCamNow() || { eye: [17, 14, -6], tgt: [17, 0, 12], fov: 42, w: 0 },
-    sway = RM ? 0 : 1,
+    sway = reducedMotion ? 0 : 1,
     look = {
       eye: [K.eye[0] + Math.sin(now / 2300) * 0.04 * sway, K.eye[1] + Math.sin(now / 1700) * 0.025 * sway, K.eye[2]],
       tgt: K.tgt,
@@ -452,7 +452,7 @@ export function csHideDlg() {
 }
 /* v47: waking up: the picture starts blurred and bright and sharpens; the letterbox closes like eyelids to blink */
 function csBlink() {
-  if (CS.skip || RM || !CS.on) return Promise.resolve();
+  if (CS.skip || reducedMotion || !CS.on) return Promise.resolve();
   document.body.classList.add('cs-blink');
   return csWait(170).then(() => {
     document.body.classList.remove('cs-blink');
@@ -835,7 +835,7 @@ async function csScript(run) {
     if (!alive()) return;
     csHideDlg();
     if (fade) fade.classList.add('on');
-    await new Promise(r => setTimeout(r, RM ? 50 : 700));
+    await new Promise(r => setTimeout(r, reducedMotion ? 50 : 700));
     if (!alive()) return;
     csEnd(l);
     return;
@@ -874,7 +874,7 @@ async function csScript(run) {
     fade.style.background = '#0B0912';
     fade.classList.add('on');
   }
-  await new Promise(r => setTimeout(r, RM ? 50 : 600));
+  await new Promise(r => setTimeout(r, reducedMotion ? 50 : 600));
   if (!alive()) return;
   csEnd(l);
 }

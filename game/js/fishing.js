@@ -10,7 +10,7 @@ import { expose } from './test-globals.js';
 import { sfx, startWild, toast, x28Event } from './hooks.js';
 import { clamp, rnd } from './util.js';
 import { GD, RULES, SP } from './game-data.js';
-import { RM, activeBattle, areaPool, pickW, save, saveData, uiState, uid } from './game-state.js';
+import { activeBattle, areaPool, pickW, reducedMotion, save, saveData, uiState, uid } from './game-state.js';
 import { uiIconHTML } from './art.js';
 import { terrainAt, walkView } from './walk-view.js';
 import {
@@ -333,7 +333,7 @@ function fishDraw(ts) {
       (typeof worldCurveDrop === 'function' ? worldCurveDrop(S0.x, S0.z) : 0) +
       0.03 -
       dip +
-      (RM ? 0 : Math.sin(ts / 500) * 0.015),
+      (reducedMotion ? 0 : Math.sin(ts / 500) * 0.015),
     bob = [
       tip[0] + (S0.x - tip[0]) * k,
       tip[1] + (by - tip[1]) * k + Math.sin(k * Math.PI) * 0.8,

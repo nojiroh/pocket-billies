@@ -9,7 +9,7 @@
    scene.escalators [{a:[x,z], b:[x,z], w}]                                 moving steps over a stair (bottom a, top b) */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { RM, provide } from './hooks.js';
+import { provide, reducedMotion } from './hooks.js';
 import { clamp } from './util.js';
 import { hexToRgb } from './art.js';
 import { artImage, mapBridges, walkView } from './walk-view.js';
@@ -572,7 +572,7 @@ function drawStructures(C, X) {
     const p = useWalkProgram('bld', C, X),
       sc = walkView.sc,
       P = walkView.pl,
-      t = RM ? 0 : walkView.t / 1000;
+      t = reducedMotion ? 0 : walkView.t / 1000;
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, det.t);
     gl.uniform1i(p.U.uDet, 0);

@@ -15,7 +15,6 @@ import {
   BACKDROPS,
   GD,
   MOVES,
-  RM,
   TC,
   TYPEFX,
   activeBattle,
@@ -29,6 +28,7 @@ import {
   maxHp,
   platesTick,
   provide,
+  reducedMotion,
   saveData,
   stopWalkView,
   walkView,
@@ -596,7 +596,7 @@ function battleStageFlush() {
   battleStage.tws
     .sort((a, b) => a.st + a.dur - b.st - b.dur)
     .forEach(w => {
-      if (G.includes(w.o) && !RM) {
+      if (G.includes(w.o) && !reducedMotion) {
         let m = glide.get(w.o);
         if (!m) glide.set(w.o, (m = {}));
         m[w.p] = w.to;
@@ -624,7 +624,7 @@ export function battleStageFocus(f, now) {
   if (battleStage.focusK === f && !now) return;
   battleStage.focusK = f;
   const F = formatFocus[f] || formatFocus.none,
-    ap = RM ? 0 : F.ap;
+    ap = reducedMotion ? 0 : F.ap;
   if (now) {
     battleStage.dof.zf = F.zf;
     battleStage.dof.ap = ap;
@@ -651,12 +651,12 @@ function battleStageFlash(col, a, dur) {
 }
 function battleStageChromaticFlash(ms = 160) {
   const w = $('#camWorld');
-  if (!w || RM) return;
+  if (!w || reducedMotion) return;
   w.classList.add('ca');
   setTimeout(() => w.classList.remove('ca'), ms);
 }
 function hitStop(ms) {
-  if (!RM) battleStage.hold = performance.now() + ms;
+  if (!reducedMotion) battleStage.hold = performance.now() + ms;
 }
 export function buzz(p) {
   try {
@@ -761,7 +761,7 @@ function battleStageFrame(ts, rawDt) {
     c.x += c.v * s;
     if (c.x > 18) c.x = -18;
   }
-  if (dt > 0 && !RM) spawnAmbientParticles(dt);
+  if (dt > 0 && !reducedMotion) spawnAmbientParticles(dt);
   battleStage.shk = Math.max(0, battleStage.shk - dt * 0.02);
   if (battleStage.cv && battleStage.cv.isConnected) {
     camUpdate(dt);
@@ -942,7 +942,7 @@ function camApply() {
     L = battleStage.L,
     u = L.u,
     el = battleStage.el,
-    still = RM;
+    still = reducedMotion;
   let sx = 0,
     sy = 0;
   if (battleStage.shk > 0.3 && !still) {
@@ -1043,7 +1043,9 @@ function camUpdate(dt) {
     busy = camBusy();
   if (busy) battleStage.camT = battleStage.t;
   const want =
-    !RM && !busy && battleStage.t - battleStage.camT > 650 && battleStage.s[0].show && battleStage.s[1].show ? 1 : 0;
+    !reducedMotion && !busy && battleStage.t - battleStage.camT > 650 && battleStage.s[0].show && battleStage.s[1].show
+      ? 1
+      : 0;
   D.w += (want - D.w) * Math.min(1, dt / (want > D.w ? 1600 : 260));
   if (D.w < 0.002 && !want) D.w = 0;
   /* the slow orbit only advances in 50 ms steps while the directed camera rests, so the ground is re-cast ~20×/s instead of every frame */
@@ -1087,7 +1089,7 @@ function camUpdate(dt) {
 }
 const cameraGuardPose = { x: 0, y: 0, z: 0, yaw: 0, hz: 0 };
 function camTo(c, d = 260, e = 'io', delay = 0) {
-  if (RM) {
+  if (reducedMotion) {
     scheduleAt(delay, () => {
       for (const k in c) if (k in battleStage.cam) battleStage.cam[k] = c[k];
     });
@@ -1097,13 +1099,13 @@ function camTo(c, d = 260, e = 'io', delay = 0) {
 }
 /* handheld feel for big moves: the wobble fades in fast and settles out */
 function handheld(ms, amt = 1) {
-  if (RM) return;
+  if (reducedMotion) return;
   tween(battleStage.hand, 'a', amt, 90, 'out');
   tween(battleStage.hand, 'a', 0, 420, 'io', Math.max(0, ms - 200));
 }
 /* a quick zoom punch (and optional roll kick) from the CSS layer */
 function punch(z, ms = 260, roll = 0) {
-  if (RM) return;
+  if (reducedMotion) return;
   tween(battleStage.css, 'z', z, 60, 'out');
   tween(battleStage.css, 'z', 0, ms, 'io', 70);
   if (roll) {
@@ -1688,7 +1690,7 @@ function drawProp(c, p) {
   if (x > L.LW || x + w < 0 || y > L.LH || y + h < 0) return;
   if (p.sh > 0 && q.z < 34) drawShadow(c, p.x, p.z, p.sh, 0.2);
   const sw =
-    p.sway && !RM
+    p.sway && !reducedMotion
       ? p.sway * 0.05 * (Math.sin(battleStage.t / 1300 + p.ph) * 0.7 + Math.sin(battleStage.t / 530 + p.ph * 1.7) * 0.3)
       : 0;
   if (Math.abs(sw) * h < 0.35) {
@@ -2100,7 +2102,7 @@ function groundRing(i, col = '#FFFFFF', r1 = 1.6, life = 520) {
   addParticle({ x: w.x, y: 0.02, z: w.z, ring: 1, ground: 1, r0: 6, r1: r1 * 30, col, life, layer: 2 });
 }
 function speedLines(P, col = 'rgba(255,255,255,.85)') {
-  if (RM) return;
+  if (reducedMotion) return;
   addParticle({ x: P.x, y: P.y, z: P.z, lines: 1, col, life: 260, n: 22, seed: rnd() * 6 });
 }
 function blinkActor(i, ms = 380) {
@@ -2156,11 +2158,11 @@ function hitFx(ti, an) {
 }
 export function camHome(d = 420, delay = 0) {
   camTo(homeCamera, d, 'io', delay);
-  if (!RM) tween(battleStage.css, 'r', 0, d, 'io', delay);
+  if (!reducedMotion) tween(battleStage.css, 'r', 0, d, 'io', delay);
 }
 /* push in toward a side. Under reduced motion the camera stays on the wide shot */
 export const camAt = (i, amt = 0.45, z = 0.14, rr = 0, d = 260, e = 'io') => {
-  if (RM) return;
+  if (reducedMotion) return;
   const F = CLOSE_UP_CAMERAS[actorTeam(i)],
     k = clamp(amt * 2.1, 0, 1),
     c = {};
@@ -2242,7 +2244,7 @@ export function battleStagePlay(an, ev) {
         });
         if (typeof buzz === 'function') buzz([30, 60, 30, 60, 80]);
       }
-      if (!RM) {
+      if (!reducedMotion) {
         Object.assign(battleStage.cam, { x: 3.2, y: 1.05, z: 2.6, yaw: -0.56, hz: 13 });
         battleStage.css.r = -0.028;
         camTo({ x: 2.7, y: 1.12, z: 2.85, yaw: -0.47, hz: 12 }, 650, 'out');
@@ -2263,7 +2265,7 @@ export function battleStagePlay(an, ev) {
       battleStage.tr[0] = { who: 'me', show: true, x: -120, a: 1 };
       tween(battleStage.tr[1], 'x', 0, 560, 'out3');
       tween(battleStage.tr[0], 'x', 0, 560, 'out3');
-      if (!RM) {
+      if (!reducedMotion) {
         Object.assign(battleStage.cam, { x: -2.6, y: 1.9, z: -0.8, yaw: 0.5, hz: -6 });
         battleStage.css.r = 0.02;
         camTo({ x: -2.25, y: 1.85, z: -0.6, yaw: 0.42, hz: -5 }, 420, 'out');
@@ -2330,7 +2332,7 @@ export function battleStagePlay(an, ev) {
       setActorAction(i, 'faint', 99999);
       battleStageFocus(si === 0 ? 'me' : 'foe');
       camAt(i, 0.3, 0.08, si === 0 ? 0.02 : -0.02, 500);
-      if (!RM) camTo(PULL_BACK_CAMERA, 520, 'io', 480);
+      if (!reducedMotion) camTo(PULL_BACK_CAMERA, 520, 'io', 480);
       tween(s, 'oy', 10, 500, 'in', 450);
       tween(s, 'a', 0, 420, 'in', 560);
       scheduleAt(700, () => groundRing(i, '#C8C0E0', 1.6, 500));
@@ -2361,7 +2363,7 @@ export function battleStagePlay(an, ev) {
       camAt(si, 0.32, 0.08, ss === 0 ? -0.012 : 0.012, 200);
       if ((M.p || 0) >= 80 && !an.miss && !an.blocked && !an.protect) handheld(M.c === 'H' ? 700 : 950, 0.8);
       /* on the 3D stage a big move gets a camera sweep: low behind the attacker, then across to the target */
-      if (battleStage.gl && !RM && (M.p || 0) >= 80 && !an.miss && !an.blocked && !an.protect) {
+      if (battleStage.gl && !reducedMotion && (M.p || 0) >= 80 && !an.miss && !an.blocked && !an.protect) {
         const m = ss === 0 ? 1 : -1;
         camTo({ x: -0.7 * m, y: 1.05, z: 0.5, yaw: 0.16 * m, hz: 5 }, 300, 'out3');
         camTo({ x: 0.9 * m, y: 1.35, z: 1.3, yaw: -0.1 * m, hz: -3 }, 420, 'io', 420);

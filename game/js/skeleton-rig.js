@@ -3,7 +3,7 @@
 /* ---- matrices ---- */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { RM, SP, activeBattle, provide } from './hooks.js';
+import { SP, activeBattle, provide, reducedMotion } from './hooks.js';
 import { clamp, rnd } from './util.js';
 import { frameTask, userFps } from './frame-scheduler.js';
 import { ART_CACHE, artImg, artLoad, artReady, artURL, makeCanvas } from './art.js';
@@ -459,7 +459,13 @@ function drawDomRig(c, ts) {
   x.clearRect(0, 0, c.width, c.height);
   const a = c._act;
   let act = a && ts - a.t0 < 1100 ? a.k : null;
-  const P = rigFrame(R, act, a ? ts - a.t0 : 0, c.dataset.still || RM ? 0 : Math.floor(ts / 50) * 50, c._seed);
+  const P = rigFrame(
+    R,
+    act,
+    a ? ts - a.t0 : 0,
+    c.dataset.still || reducedMotion ? 0 : Math.floor(ts / 50) * 50,
+    c._seed
+  );
   if (R.BW === c.width && R.BH === c.height) drawRig(x, R, P, c.dataset.v);
   else {
     /* v36: a rig on another canvas size (the new 96/128 px sheets, k=1) is drawn to its own size, then placed with its base line on the box's base line at 2 px a pixel */
@@ -523,7 +529,7 @@ function rigTick(ts) {
       continue;
     }
     if (!rigCanvasAnimator.vis.has(c)) continue;
-    if ((!c.dataset.still && !RM) || !c._drawn) drawDomRig(c, ts);
+    if ((!c.dataset.still && !reducedMotion) || !c._drawn) drawDomRig(c, ts);
   }
 }
 frameTask('rig', rigTick, () => (activeBattle ? 4 : Math.min(60, userFps() / 2)));

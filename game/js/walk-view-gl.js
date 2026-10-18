@@ -14,7 +14,6 @@ import {
   LD,
   LIFE,
   LIFE_KIND,
-  RM,
   SOLID_PROP_PARTS,
   SOLID_PROP_SHADERS,
   SP,
@@ -49,6 +48,7 @@ import {
   propModelImageItems,
   propModelShaders,
   provide,
+  reducedMotion,
   reqAsker,
   riderOf,
   saveData,
@@ -3441,12 +3441,19 @@ function walkCamera(rw, rh, st, dt) {
       room = T[1] + 1.2;
     if (back > room) df = Math.max(4, room / Math.cos(pitch));
   }
-  const bob = P.walk && !RM ? Math.sin(walkView.t / 170) * 0.025 * engineSetting('camera', 'sway') : 0,
+  const bob = P.walk && !reducedMotion ? Math.sin(walkView.t / 170) * 0.025 * engineSetting('camera', 'sway') : 0,
     f = [Math.sin(yaw) * Math.cos(pitch), -Math.sin(pitch), Math.cos(yaw) * Math.cos(pitch)];
   let tgt = [T[0], T[2] + bob, T[1]];
   /* v35: pixel-grid camera (Engine > Camera > Pixel grid, off until the new art): when you stand still the camera
     target settles onto the art grid (1/32 m), so still pictures sit on whole pixels and don't shimmer */
-  if (engineSetting('camera', 'pixelGrid') && !P.walk && !P.route && !st.focus && !walkRenderer.swoop && !RM) {
+  if (
+    engineSetting('camera', 'pixelGrid') &&
+    !P.walk &&
+    !P.route &&
+    !st.focus &&
+    !walkRenderer.swoop &&
+    !reducedMotion
+  ) {
     const g = 1 / 32,
       sn = v => Math.round(v / g) * g,
       dx = sn(tgt[0]) - tgt[0],
@@ -4213,14 +4220,14 @@ function rideMountItem(P, t) {
   x.setTransform(1, 0, 0, 1, 0, 0);
   x.clearRect(0, 0, cv.width, cv.height);
   x.imageSmoothingEnabled = false;
-  drawRig(x, R, rigFrame(R, null, 0, RM ? 0 : Math.floor(t / 50) * 50, 1.7), back ? 'back' : 'front');
+  drawRig(x, R, rigFrame(R, null, 0, reducedMotion ? 0 : Math.floor(t / 50) * 50, 1.7), back ? 'back' : 'front');
   cv.__v++;
   const ht = clamp(SP[m.sp].ht, 0.9, 3),
     hm = 0.75 + ht * 0.32,
     mpp = hm / Math.max(40, R.base - (R.geo && R.geo.top != null ? R.geo.top : 0)),
-    bob = RM ? 0 : Math.sin(t / 420) * 0.05,
+    bob = reducedMotion ? 0 : Math.sin(t / 420) * 0.05,
     y = standingHeightAt(P.x, P.z) + bob - 0.08;
-  if (!RM && P.walk && (!walkRenderer.wakeT || t - walkRenderer.wakeT > 320)) {
+  if (!reducedMotion && P.walk && (!walkRenderer.wakeT || t - walkRenderer.wakeT > 320)) {
     walkRenderer.wakeT = t;
     addRipple(P.x, P.z - 0.1, 0.9);
   }
@@ -4609,13 +4616,13 @@ export function gatherFrameItems(st, C, PPU, C0) {
       h = im.naturalHeight || im.height;
     const S = far ? null : stillPropState(p, M, im, sc);
     const y = far ? standingHeightAt(p.x, p.z) : S.y,
-      sw = far || !M.sway ? 0 : (M.sway || 0) * windLeanAt(p.x, p.z, RM ? 0 : t, sc, wind);
+      sw = far || !M.sway ? 0 : (M.sway || 0) * windLeanAt(p.x, p.z, reducedMotion ? 0 : t, sc, wind);
     const mat = S ? S.mat : propMaterial(p.k, M);
     im.__mat = mat;
     /* v27: boats and buoys bob and roll on the water; flags, banners and washing flutter in the wind */
     let y2 = y,
       sw2 = sw;
-    if (!far && !RM) {
+    if (!far && !reducedMotion) {
       const ph = p.x * 1.3 + p.z * 0.7,
         gk = (sc.wind || 1) * wind;
       if (S.bob) {
@@ -4678,7 +4685,7 @@ export function gatherFrameItems(st, C, PPU, C0) {
       if (imageReady(fim)) {
         const fl = p.f ? -1 : 1,
           ps = p.s || 1,
-          wv = RM ? 0 : windLeanAt(p.x, p.z, t, sc, wind);
+          wv = reducedMotion ? 0 : windLeanAt(p.x, p.z, t, sc, wind);
         out.push({
           k: 'flag',
           p,
@@ -4711,7 +4718,7 @@ export function gatherFrameItems(st, C, PPU, C0) {
       pushed a little harder by the gusts: it leans one way about the pivot and moves the other, so the pivot stays put */
         let lx = p.x,
           lsh = sw * (l.sway ?? 1);
-        if (l.swing && !RM) {
+        if (l.swing && !reducedMotion) {
           const a =
             Math.sin(t / (l.swingT || 720) + p.x * 0.9 + p.z * 0.4) * l.swing * (1 + Math.min(1.5, Math.abs(sw) * 10));
           lsh -= a;
@@ -4810,7 +4817,7 @@ export function gatherFrameItems(st, C, PPU, C0) {
      the grass swaying round them, a peek now and then, see wildBillyItem) and rustle when you come close */
     s.tx = s.x;
     s.tz = s.z;
-    if (!st.battle && !RM && !walkRenderer.bt) {
+    if (!st.battle && !reducedMotion && !walkRenderer.bt) {
       const dd = Math.min(0.1, (t - (s.lt || t)) / 1000);
       s.lt = t;
       const P = walkView.pl;
@@ -4824,7 +4831,7 @@ export function gatherFrameItems(st, C, PPU, C0) {
     if (!imageReady(im)) return;
     const moving = Math.hypot((s.tx ?? s.x) - s.x, (s.tz ?? s.z) - s.z) > 0.05,
       ru = moving ? 0.06 * Math.sin(t / 70 + s.x) : 0,
-      wv = RM ? 0 : windLeanAt(s.x, s.z, t, sc, wind);
+      wv = reducedMotion ? 0 : windLeanAt(s.x, s.z, t, sc, wind);
     out.push({
       k: 'enc',
       e,
@@ -4921,7 +4928,7 @@ export function gatherFrameItems(st, C, PPU, C0) {
       P.x,
       P.z,
       C0,
-      { shear: RM ? 0 : P.lean || 0 }
+      { shear: reducedMotion ? 0 : P.lean || 0 }
     );
     if (P.yv != null && P.yId === walkView.id) me.y = P.yv;
     const mt = rideMountItem(P, t);
@@ -5833,7 +5840,7 @@ export function drawGrass(C, X) {
   if (U.uPush) gl.uniform3fv(U.uPush, grassPushers());
   gl.uniform3fv(U.uRight, C.right);
   gl.uniform3f(U.uPl, P.x, 0, P.z);
-  gl.uniform1f(U.uT, RM ? 0 : walkView.t);
+  gl.uniform1f(U.uT, reducedMotion ? 0 : walkView.t);
   gl.uniform1f(U.uWind, (sc.wind ?? 1) * engineSetting('grass', 'wind'));
   gl.uniform1f(U.uGust, engineSetting('grass', 'gusts'));
   gl.uniform1f(U.uBend, engineSetting('grass', 'bend'));
@@ -5887,7 +5894,7 @@ function imageId(im) {
 }
 /* alpha 0.4.1: the title's town springs up out of the loading screen (startTownRise from js/boot.js) */
 export function startTownRise(load) {
-  if (RM || typeof walkView === 'undefined') return;
+  if (reducedMotion || typeof walkView === 'undefined') return;
   walkRenderer.rise = { t0: performance.now(), c: null, load: !!load, seen: new WeakMap() };
 }
 /* how far up a thing has grown (0 to a little over 1). While the game loads, a ring round the middle of the view widens
@@ -6047,7 +6054,7 @@ export function drawSprites(C, items, X, hits, labels, PPU) {
           it,
           b,
           BT,
-          (RM ? 0 : walkView.t / 1100) * (sc.wind || 1) * engineSetting('grass', 'wind'),
+          (reducedMotion ? 0 : walkView.t / 1100) * (sc.wind || 1) * engineSetting('grass', 'wind'),
           C,
           X
         );
@@ -6282,7 +6289,7 @@ function drawClockHands(p, it, C, X) {
    tower, the giant tree, the crane...) between 2 and 18 metres ahead and within 8 to the side, by how far its top
    rises above what the camera shows anyway (about 5 m); up to 11 degrees */
 function landmarkTilt(P, sc) {
-  if (!sc || sc.indoor || !P || RM) return 0;
+  if (!sc || sc.indoor || !P || reducedMotion) return 0;
   const C0 = walkData().sc;
   let L = walkRenderer.lmL;
   if (!L || L.sc !== sc)
@@ -6315,7 +6322,7 @@ function drawFlatItem(it, T, C, X) {
     h = it.h * s,
     cx = it.x + (it.ox * s + w / 2) * it.flip,
     cz = it.z - (it.oy * s + h / 2) * 0.95;
-  /* v22: lily pads on water bob and turn a little */ const wet = /lily/.test((it.p && it.p.k) || '') && !RM,
+  /* v22: lily pads on water bob and turn a little */ const wet = /lily/.test((it.p && it.p.k) || '') && !reducedMotion,
     ph = (walkView.t || 0) / 1000 + it.x * 1.3 + it.z * 0.7,
     an = wet ? Math.sin(ph * 0.45) * 0.07 : 0,
     bob = wet ? Math.sin(ph * 1.2) * 0.012 : 0;
@@ -6525,7 +6532,7 @@ export function waterAt(x, z) {
   return G.dep[q] > 0 || G.y[q] !== 0 ? { dep: G.dep[q], kind: G.kind[q], y: G.y[q] } : null;
 }
 function waterLife() {
-  const t = (RM ? 0 : walkView.t || 0) / 1000,
+  const t = (reducedMotion ? 0 : walkView.t || 0) / 1000,
     now = performance.now() / 1000,
     dt = Math.min(0.1, Math.max(0, now - (walkRenderer.wlT || now)));
   walkRenderer.wlT = now;
@@ -6543,7 +6550,11 @@ function waterLife() {
       fish[i * 4 + 2] = Math.atan2(Math.cos(a) * 0.8, -Math.sin(a));
       fish[i * 4 + 3] = 0.75 + (0.25 * ((i * 7) % 3)) / 2;
       if (!walkRenderer.bt && Math.random() < dt * 0.06) addRipple(x, z, 0.7);
-      /* v27: now and then one jumps clear of the water */ if (!walkRenderer.bt && !RM && Math.random() < dt * 0.012) {
+      /* v27: now and then one jumps clear of the water */ if (
+        !walkRenderer.bt &&
+        !reducedMotion &&
+        Math.random() < dt * 0.012
+      ) {
         addRipple(x, z, 0.9);
         (walkRenderer.splash = walkRenderer.splash || []).push({
           x,
@@ -6554,7 +6565,7 @@ function waterLife() {
         if (typeof sfxAt === 'function') sfxAt('plop', x, z);
       }
     });
-  if (engineSetting('water', 'rings') && !walkRenderer.bt && !RM) {
+  if (engineSetting('water', 'rings') && !walkRenderer.bt && !reducedMotion) {
     if (typeof LIFE !== 'undefined')
       for (const c of LIFE.list || [])
         if (c.k === 'duck') {
@@ -7415,7 +7426,7 @@ function drawWeather(quad, glows, U, R, Up, dt, rm) {
     const f = s.a / 0.28;
     quad('spray', 2, s.x, s.y + 0.04 + f * 0.06, s.z, 0.1 + f * 0.14, 0.05 + f * 0.05, (1 - f) * 0.45, [0.85, 0.9, 1]);
   }
-  if (rain > 0 && walkRenderer.wgrid && !RM && Math.random() < dt * rain * 18) {
+  if (rain > 0 && walkRenderer.wgrid && !reducedMotion && Math.random() < dt * rain * 18) {
     const x = P.x + (Math.random() - 0.5) * 16,
       z = P.z - 3 + Math.random() * 12,
       g = waterAt(x, z);
@@ -7643,7 +7654,7 @@ export function effectsPass(C, items, X, dark, t, dt) {
     U = p.U,
     sc = walkView.sc,
     C0 = walkData().sc,
-    rm = RM ? 0 : 1,
+    rm = reducedMotion ? 0 : 1,
     R = C.right,
     Up = [0, 1, 0],
     lb = engineSetting('lights', 'brightness'),

@@ -8,7 +8,7 @@
    or when the player picks it in Settings. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { FV, RM, activeBattle, provide, saveData } from './hooks.js';
+import { FV, activeBattle, provide, reducedMotion, saveData } from './hooks.js';
 import { $, clamp } from './util.js';
 import { hexToRgb } from './art.js';
 import {
@@ -263,7 +263,7 @@ function battleGLFrame() {
     hide: BGL.hide,
     lights,
     focus: d.zf,
-    blur: RM ? 0 : clamp(d.ap / 1.35, 0, 1) * 0.8,
+    blur: reducedMotion ? 0 : clamp(d.ap / 1.35, 0, 1) * 0.8,
     center: [actionCenter.x + O[0], actionCenter.z + O[1]],
   };
 }

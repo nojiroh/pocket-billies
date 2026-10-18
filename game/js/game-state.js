@@ -49,7 +49,6 @@ expose({
   LS_BASE: [() => LS_BASE],
   MAXLV: [() => MAXLV],
   N: [() => N],
-  RM: [() => RM, v => setRM(v)],
   SAVE_FOUND: [() => SAVE_FOUND],
   SAVE_HOLD: [() => SAVE_HOLD, v => (SAVE_HOLD = v)],
   SAVE_NEW_MSG: [() => SAVE_NEW_MSG],
@@ -105,6 +104,7 @@ expose({
   pickW: [() => pickW, v => (pickW = v)],
   plural: [() => plural],
   rate: [() => rate],
+  reducedMotion: [() => reducedMotion, v => setReducedMotion(v)],
   resumeTrip: [() => resumeTrip, v => (resumeTrip = v)],
   riderName: [() => riderName],
   riderOf: [() => riderOf, v => ((riderOf = v), provide({ riderOf }))],
@@ -116,7 +116,7 @@ expose({
   saveT: [() => saveT, v => (saveT = v)],
   setActiveBattle: [() => setActiveBattle, v => (setActiveBattle = v)],
   setNoSaving: [() => setNoSaving, v => (setNoSaving = v)],
-  setRM: [() => setRM, v => (setRM = v)],
+  setReducedMotion: [() => setReducedMotion, v => (setReducedMotion = v)],
   setSave: [() => setSave, v => (setSave = v)],
   setSaveData: [() => setSaveData, v => (setSaveData = v)],
   setSaveHold: [() => setSaveHold, v => (setSaveHold = v)],
@@ -156,8 +156,8 @@ export const cleanName = (s, max) =>
 provide({ cleanName }); /* to-module */
 export const fmt = n => Math.floor(n).toLocaleString('en-US');
 export const km = st => (st / STEPS_PER_KM).toFixed(1);
-export let RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
-provide({ RM }); /* to-module */
+export let reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+provide({ reducedMotion }); /* to-module */
 export const uid = () => 'm' + Date.now().toString(36) + Math.floor(rnd() * 1e8).toString(36);
 export const today = () => {
   const d = new Date();
@@ -364,9 +364,9 @@ export function setActiveBattle(v) {
   activeBattle = v;
   provide({ activeBattle });
 }
-export function setRM(v) {
-  RM = v;
-  provide({ RM });
+export function setReducedMotion(v) {
+  reducedMotion = v;
+  provide({ reducedMotion });
 }
 export function setSaveHold(v) {
   SAVE_HOLD = v;

@@ -8,7 +8,7 @@
 import { expose } from './test-globals.js';
 import { mapChatLines, provide } from './hooks.js';
 import { PEOPLE, TRAINERS } from './game-data.js';
-import { RM, saveData } from './game-state.js';
+import { reducedMotion, saveData } from './game-state.js';
 import { frameStop, frameTask } from './frame-scheduler.js';
 import { trPortrait, trainerLook } from './person-art.js';
 import { turnToPlayer, walkView } from './walk-view.js';
@@ -120,7 +120,7 @@ export function talkLine(who, text, expr, o = {}) {
     let blipN = 0;
     const step = () => {
       if (TALK.cur !== st) return;
-      st.n = RM ? text.length : Math.min(text.length, Math.floor((performance.now() - st.t0) / 28));
+      st.n = reducedMotion ? text.length : Math.min(text.length, Math.floor((performance.now() - st.t0) / 28));
       line.textContent = text.slice(0, st.n);
       const b = Math.floor(st.n / 3);
       if (b > blipN && st.n < text.length) {

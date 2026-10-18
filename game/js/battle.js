@@ -46,7 +46,6 @@ import {
 } from './game-data.js';
 import {
   N,
-  RM,
   activeBattle,
   addEgg,
   addMon,
@@ -60,6 +59,7 @@ import {
   maxHp,
   pickW,
   plural,
+  reducedMotion,
   save,
   saveData,
   setActiveBattle,
@@ -1251,7 +1251,7 @@ export function setOpenBattle(v) {
    When it's over they slide away and the camera pulls back out. The painted stage keeps the wipe. */
 function battleSeamless() {
   return (
-    !RM &&
+    !reducedMotion &&
     typeof battleGLWanted === 'function' &&
     battleGLWanted() &&
     uiState.tab === 'walk' &&
@@ -1305,7 +1305,7 @@ function battleRise() {
 }
 function battleLeave(mid) {
   const el = $('#battle'),
-    seam = !RM && typeof BGL !== 'undefined' && BGL.on && el;
+    seam = !reducedMotion && typeof BGL !== 'undefined' && BGL.on && el;
   if (!seam) return wipe(mid);
   el.classList.add('bt-leave');
   setTimeout(() => {
@@ -1317,7 +1317,7 @@ function battleLeave(mid) {
 }
 function wipe(mid) {
   const w = $('#wipe');
-  if (RM || !w) {
+  if (reducedMotion || !w) {
     mid();
     return;
   }
@@ -1339,7 +1339,7 @@ function typeText(t) {
   const el = $('#msgT');
   clearInterval(uiState.typeT);
   if (!el) return 0;
-  if (RM) {
+  if (reducedMotion) {
     el.textContent = t;
     uiState.typing = false;
     return 0;
@@ -1405,7 +1405,7 @@ function stepEv() {
   scAfter('evT', r.dur + 120, tt + 120 * k, () => {
     uiState.evReady = true;
     $('#msg') && $('#msg').classList.add('ready');
-    uiState.evT = setTimeout(adv, (RM ? 1300 : 820) * k);
+    uiState.evT = setTimeout(adv, (reducedMotion ? 1300 : 820) * k);
   });
 }
 function scAfter(slot, sceneMs, realMs, fn) {
@@ -1489,7 +1489,7 @@ function countTo(el, to, dur = 600) {
   const from = +(el.dataset.v || to);
   el.dataset.v = to;
   const show = v => (el.textContent = el.dataset.fmt ? el.dataset.fmt.replace('#', v) : v);
-  if (from === to || RM) {
+  if (from === to || reducedMotion) {
     show(to);
     return;
   }
@@ -1626,7 +1626,7 @@ function tickerUpdate(s, mk) {
 /* floating numbers and tags over the billionaires */
 function hudPop(si, text, kind) {
   const L = $('#pops');
-  if (!L || !battleStage.L || (RM && kind === 'tag')) return;
+  if (!L || !battleStage.L || (reducedMotion && kind === 'tag')) return;
   const q = battleStageToCss(actorTop(si));
   if (!q) return;
   const e = document.createElement('div');

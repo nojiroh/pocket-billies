@@ -7,7 +7,7 @@ import { expose } from './test-globals.js';
 import { flyDraw, flyTick, paintMapCard, provide, toast } from './hooks.js';
 import { $, clamp } from './util.js';
 import { FUTURE, LINKS, ROUTE, linkCost } from './game-data.js';
-import { RM, canEnter, esc, nextStop, saveData, uiState } from './game-state.js';
+import { canEnter, esc, nextStop, reducedMotion, saveData, uiState } from './game-state.js';
 import { frameCount, frameStop, frameTask, userFps } from './frame-scheduler.js';
 import { artPixels, bayerThreshold, makeSeededRandom, mixRgb, packPixel, worldMapStamp } from './art.js';
 import { owFrames } from './person-art.js';
@@ -689,14 +689,14 @@ export function setWorldMapReset(v) {
   provide({ worldMapReset });
 }
 function worldMapFocus(v) {
-  worldMap.fT = { from: worldMap.focus || v, to: v, t0: performance.now(), dur: RM ? 1 : 700 };
+  worldMap.fT = { from: worldMap.focus || v, to: v, t0: performance.now(), dur: reducedMotion ? 1 : 700 };
 }
 export function worldMapWalk(from, to) {
   worldMap.anim = {
     from,
     to,
     t0: performance.now(),
-    dur: RM ? 1 : clamp(Math.acos(clamp(vector3.dot(from, to), -1, 1)) * 9000, 600, 3200),
+    dur: reducedMotion ? 1 : clamp(Math.acos(clamp(vector3.dot(from, to), -1, 1)) * 9000, 600, 3200),
   };
 }
 function onStepsAdded() {
