@@ -7,7 +7,7 @@ import { expose } from '../../game/js/test-globals.js';
 import { provide, scArt, scD } from '../../game/js/hooks.js';
 import { $, $$ } from '../../game/js/util.js';
 import { COIN_ART, artLoad, hexA } from '../../game/js/art.js';
-import { setRigParts } from '../../game/js/rig.js';
+import { setRigParts } from '../../game/js/skeleton-rig.js';
 import {
   AREAS,
   SC,

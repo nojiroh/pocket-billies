@@ -281,7 +281,7 @@ def build(sid, parts, canvas, base, plan):
             p = parts[n]; e['px'], e['py'], e['pivot'], e['par'] = p['px'], p['py'], list(p['pivot']), p['par']
             if g == 'back': e['px'] = canvas - p['px'] - r[2]; e['pivot'] = [r[2] - 1 - p['pivot'][0], p['pivot'][1]]
         lay['pieces'].append(e)
-    # rig meta (rig.js format, k = 1): bones hang from their parent by the pivot difference at rest
+    # rig meta (skeleton-rig.js format, k = 1): bones hang from their parent by the pivot difference at rest
     def meta_for(group):
         imgs = []; bones = []; idx = {}
         names = [n for n in parts if group == 'front' or n in back_names]

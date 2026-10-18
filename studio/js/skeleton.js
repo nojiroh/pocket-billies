@@ -9,7 +9,7 @@ import { provide } from '../../game/js/hooks.js';
 import { $, $$, clamp } from '../../game/js/util.js';
 import { cnv, hexA, shadeHex } from '../../game/js/art.js';
 import { ANIM } from '../../game/js/body-plan-animation.js';
-import { drawRig, rigAudit, rigMatrices, rigPose } from '../../game/js/rig.js';
+import { drawRig, rigAudit, rigMatrices, rigPose } from '../../game/js/skeleton-rig.js';
 import { esc } from './shims.js';
 import { ST, ask, changed, clone, commit, dialog, fChk, fNum, redo, render, spName, toast, undo } from './core.js';
 import {

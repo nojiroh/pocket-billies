@@ -9,7 +9,7 @@ import { openSkeleton, provide } from '../../game/js/hooks.js';
 import { $, $$, clamp } from '../../game/js/util.js';
 import { cnv } from '../../game/js/art.js';
 import { animFor } from '../../game/js/body-plan-animation.js';
-import { drawRig, rigPose } from '../../game/js/rig.js';
+import { drawRig, rigPose } from '../../game/js/skeleton-rig.js';
 import { esc } from './shims.js';
 import { ST, ask, render, spName, toast, updTop } from './core.js';
 /* eslint-disable no-func-assign */
@@ -112,7 +112,7 @@ export function atlasGet(path) {
   return p;
 }
 export const atlasNow = path => ST.artDirty.get(path) || ATL.get(path) || null;
-/* assemble a skeleton like rig.js rigParts(), but from the Studio's editable atlas */
+/* assemble a skeleton like skeleton-rig.js rigParts(), but from the Studio's editable atlas */
 export function rigFor(sp, view, gold) {
   const path = atlasPath(sp, view, gold),
     atlas = atlasNow(path);

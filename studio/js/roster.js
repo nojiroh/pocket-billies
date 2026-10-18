@@ -9,7 +9,7 @@
 import { expose } from '../../game/js/test-globals.js';
 import { $, $$ } from '../../game/js/util.js';
 import { cnv } from '../../game/js/art.js';
-import { drawRig } from '../../game/js/rig.js';
+import { drawRig } from '../../game/js/skeleton-rig.js';
 import { esc } from './shims.js';
 import { ACTS, SECTIONS, ST, after, changed, commit, render } from './core.js';
 import { downloadCanvas, loadImage, rigFor } from './sprites.js';

@@ -1,7 +1,7 @@
 'use strict';
 /* ================= TRAINERS =================
    People are built like the billionaires: a skeleton (art/rigs.js style bones, here in game data: wardrobe.skeleton,
-   one per view: front, back, side) with pictures on the bones, drawn and animated by rig.js. The pictures are the
+   one per view: front, back, side) with pictures on the bones, drawn and animated by skeleton-rig.js. The pictures are the
    body plus every item worn (hair, face, clothes, hat, glasses, neckwear, bag), each recoloured from its colour-area
    mask, and stretched by the body sliders (height, legs, arms, body, shoulders, hips, chest, head).
    A look: {name, body:{…sliders}, skin, hair, eyes, wear:{slot:itemId|null}, colors:{itemId:[hex,…]}}. */

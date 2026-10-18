@@ -69,7 +69,7 @@ import {
 } from './game-state.js';
 import { artURL, coinHTML, eggHTML, iconURL, uiIco } from './art.js';
 import { portraitHTML } from './person-art.js';
-import { KBACK, bustHTML, rigPreload } from './rig.js';
+import { KBACK, bustHTML, rigPreload } from './skeleton-rig.js';
 import {
   AREAS,
   EASE,

@@ -11,7 +11,7 @@ import { sceneWatch, scenesAhead, scenesAll } from './map-files.js';
 import { RM, S, SAVE_FOUND, SAVE_NEW_MSG, SAVE_OLD_MSG, U, esc, fresh, setNoSaving, setS } from './game-state.js';
 import { ART, BG_ART, COIN_ART, EGG_ART, ICON_ATLAS, UIURL, artBoot, artImg } from './art.js';
 import { trainerArtPaths } from './person-art.js';
-import { rigAtlas } from './rig.js';
+import { rigAtlas } from './skeleton-rig.js';
 import { AREAS, scPrepare, stageArt } from './battle-stage.js';
 import { DIO, dioData, dioPaths, dioScene } from './walk-view.js';
 import { EGL, eglOK } from './engine/core.js';

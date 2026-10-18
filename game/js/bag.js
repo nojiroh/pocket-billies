@@ -9,7 +9,7 @@ import { closeModal, modal, render, toast } from './hooks.js';
 import { COINS, EGGS, ITEMS, STATUSN } from './game-data.js';
 import { N, S, U, esc, fmt, maxHp } from './game-state.js';
 import { coinHTML, eggHTML, uiIco } from './art.js';
-import { bustHTML } from './rig.js';
+import { bustHTML } from './skeleton-rig.js';
 import { applyItem, canUse, itemIcon, teamNeedsHp } from './battle.js';
 /* eslint-disable no-func-assign */
 expose({

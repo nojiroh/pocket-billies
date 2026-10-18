@@ -11,7 +11,7 @@ import { $, $$, clamp } from '../../game/js/util.js';
 import { frameStop, frameTask } from '../../game/js/frame-scheduler.js';
 import { cnv } from '../../game/js/art.js';
 import { TR_CACHE, TR_PRESETS, cleanLook, trFrame, trRig, trSliders } from '../../game/js/person-art.js';
-import { rigMatrices } from '../../game/js/rig.js';
+import { rigMatrices } from '../../game/js/skeleton-rig.js';
 import { esc } from './shims.js';
 import {
   ACTS,

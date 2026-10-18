@@ -14,7 +14,7 @@ import { ACC, accOn, closeModal, modal, provide, render, sceneIdAt, toast, walkO
 import { ROUTE, SP } from './game-data.js';
 import { N, S, U, cleanName, esc, plural } from './game-state.js';
 import { owFrames, portraitHTML, trWarm } from './person-art.js';
-import { sprHTML } from './rig.js';
+import { sprHTML } from './skeleton-rig.js';
 import { DIO, dioDirOf } from './walk-view.js';
 import { dglPerson } from './walk-view-gl.js';
 import { owBuddyMon, owItem } from './world-billies.js';

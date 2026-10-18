@@ -6,7 +6,7 @@ import { BODY_TPL, PLAN_INFO, WDS, makeBlankBody, openSkeleton, skNeutral, wdLoa
 import { $, $$ } from '../../game/js/util.js';
 import { cnv, iconURL } from '../../game/js/art.js';
 import { TR_CACHE, cleanLook, humanSheet, lookFromOld, trColorsOf, trSliders } from '../../game/js/person-art.js';
-import { drawRig, rigPose } from '../../game/js/rig.js';
+import { drawRig, rigPose } from '../../game/js/skeleton-rig.js';
 import { esc } from './shims.js';
 import {
   ACTS,
