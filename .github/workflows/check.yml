@@ -7,7 +7,8 @@
 # - Phase 04a: lint (ESLint: undefined names, names defined twice across scripts, recommended bug rules), the Prettier
 #   format check and the Vite build on every push and pull request, about a minute. ESLint replaces check-globals.py.
 #   Phase 04b: the game data check (tools/check-data.mjs: the files index.json lists, their schemas, references).
-#   Phase 04e: the type check (npm run typecheck: TypeScript on the files that start with // @ts-check, a second).
+#   Phase 04e: the type check (npm run typecheck: TypeScript on the files that start with // @ts-check, then the
+#   logic again with no DOM lib, tsconfig.logic.json; a second).
 #   The logic in plain Node (npm run check:logic: game/js/logic/ loads and runs with no browser, a fraction of a second).
 # - Phase 03: the picture baseline is made on this runner (the pictures depend on the renderer) and kept as the asset
 #   quick-baseline.zip of the release baseline-<version> (version from game/version.js, e.g. baseline-0.1.0-alpha).

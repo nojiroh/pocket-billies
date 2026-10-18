@@ -77,7 +77,8 @@ npm run lint            # ESLint: undefined names (a module name used without an
 npm run check:modules   # the modules' generated parts are up to date and the load order holds (npm run modules fixes them)
 npm run format          # Prettier (npm run format:check only checks)
 npm run check:data      # the game data: files, schemas, what refers to what (a second)
-npm run typecheck       # TypeScript on the files that start with // @ts-check, against game/types (a second)
+npm run typecheck       # TypeScript on the files that start with // @ts-check, against game/types, then game/js/logic/
+                        # again with no DOM lib (tsconfig.logic.json), a second
 npm run check:logic     # game/js/logic/ loads and runs in plain Node, with no browser (a fraction of a second)
 npm run check:smoke     # the quick check's smoke set, about two minutes
 ```

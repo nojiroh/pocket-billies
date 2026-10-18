@@ -1,0 +1,9 @@
+// Phase 04e: the logic (game/js/logic/ and the tables it reads, game-data.js) type-checked with no DOM lib, so a
+// checked logic file that reaches for window, document, localStorage or WebGL fails here (npm run typecheck runs
+// both). It proves it for the checked files only: util.js, hooks.js and test-globals.js are read but not checked.
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": { "lib": ["es2023"] },
+  "include": ["game/js/logic/*.js", "game/types/*.d.ts", "game/types/no-dom/*.d.ts"],
+  "exclude": ["game/js/debug-log.js"]
+}
