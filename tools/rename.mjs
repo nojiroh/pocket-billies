@@ -2,10 +2,11 @@
 // rename changed nothing else.
 //
 //   node tools/rename.mjs name <old> <new> [<old> <new> ...]  top-level names of the pages' scripts
-//   node tools/rename.mjs prefix <old> <new>                   every top-level name made of <old> and the rest of a
+//   node tools/rename.mjs prefix <old> <new> [--in <files>]    every top-level name made of <old> and the rest of a
 //                                                              name (a capital, digit, _ or $ next): dioMount ->
 //                                                              walkViewMount, _dioProj -> _walkViewProj, DIO_FX ->
-//                                                              WALK_VIEW_FX, Dio -> WalkView, dio -> walkView
+//                                                              WALK_VIEW_FX, Dio -> WalkView, dio -> walkView;
+//                                                              --in a,b: only the names those files declare
 //   node tools/rename.mjs file <old path> <new path>           git mv, the pages' script tags and the paths naming it
 //   node tools/rename.mjs verify [--base <rev>] [--expect name|prefix|file <old> <new> ...] (--expect last)
 //                                                              the staged changes (git add -A first) against <rev>
@@ -133,8 +134,9 @@ function walk(n, p, fn) {
 const upper = s => s.replace(/([a-z0-9])([A-Z])/g, '$1_$2').toUpperCase(); // walkView -> WALK_VIEW
 const cap = s => s[0].toUpperCase() + s.slice(1);
 
-// the pairs a prefix rule makes from the names the scripts declare
-function prefixPairs(all, o, n) {
+// the pairs a prefix rule makes from the names the scripts declare (only those in the files `only`, when given: the
+// Studio's scene editor sc* is not the game's battle stage sc*)
+function prefixPairs(all, o, n, only) {
   const pairs = new Map();
   const forms = [
     [o, n, /^[A-Z0-9_$]/],
@@ -142,7 +144,7 @@ function prefixPairs(all, o, n) {
     [cap(o), cap(n), /^[A-Z0-9_$]/],
   ];
   for (const u of all)
-    for (const x of u.declared.keys()) {
+    for (const x of only && u.file ? (only.includes(u.file) ? u.declared.keys() : []) : u.declared.keys()) {
       const lead = x.match(/^_*/)[0],
         rest = x.slice(lead.length);
       for (const [a, b, next] of forms)
@@ -189,6 +191,9 @@ function plan(all, pairs) {
     strings = [],
     count = new Map();
   const any = words(pairs.keys());
+  // a name that is also a property key (ACTS.scResize behind data-act="scResize"), a CSS or HTML name (#skTree) is
+  // not renamed inside strings, only listed: the key, the style or the element would keep the old name
+  const keyed = guarded(all, pairs);
   for (const u of all) {
     const E = new Map(); // start -> [start, end, text]
     const put = (s, e, t) => E.set(s, [s, e, t]);
@@ -252,10 +257,11 @@ function plan(all, pairs) {
         // a name that can only be code (dioMount, DGL_SH, csStart) is renamed in strings too: the paint worker's
         // source, the self-test's list of passes; short ones (S, GD, at) are only listed
         for (const m of t.matchAll(any))
-          if (inStrings(m[0])) {
+          if (inStrings(m[0]) && !keyed.has(m[0])) {
             put(s + m.index, s + m.index + m[0].length, pairs.get(m[0]));
             strings.push(at(s + m.index, `${m[0]} -> ${pairs.get(m[0])}`));
-          } else if (codeLike(t, m)) notes.push(at(s + m.index, `string holds ${m[0]}`));
+          } else if (keyed.has(m[0])) notes.push(at(s + m.index, `string holds ${m[0]} (${keyed.get(m[0])}: left)`));
+          else if (codeLike(t, m)) notes.push(at(s + m.index, `string holds ${m[0]}`));
       }
       // a property of the same name (a plain lowercase word, like .at, is another thing)
       const prop = x => pairs.has(x) && !/^[a-z]+$/.test(x);
@@ -273,7 +279,29 @@ function plan(all, pairs) {
       }
     if (E.size) edits.set(u.file, [...E.values()]);
   }
-  return { edits, notes, strings, problems, count };
+  return { edits, notes, strings, problems, count, keyed };
+}
+
+// the old names that are also property keys or members (not of window/GAME), or names in the CSS or the pages' HTML
+function guarded(all, pairs) {
+  const out = new Map();
+  for (const u of all)
+    walk(u.ast, null, n => {
+      let k = null;
+      if (n.type === 'MemberExpression' && !(n.object.type === 'Identifier' && WINDOWS.has(n.object.name)))
+        k = n.computed ? n.property.type === 'Literal' && n.property.value : n.property.name;
+      else if (n.type === 'Property' && !n.shorthand && !n.computed)
+        k = n.key.type === 'Identifier' ? n.key.name : n.key.value;
+      if (typeof k === 'string' && pairs.has(k) && !out.has(k)) out.set(k, `a property key in ${u.file}`);
+    });
+  const html = PAGES.map(p => [p, read(p).replace(SCRIPT_TAG, '')]);
+  const css = git('ls-files', '*.css')
+    .split('\n')
+    .filter(Boolean)
+    .map(f => [f, read(f)]);
+  for (const [f, t] of [...html, ...css])
+    for (const m of t.matchAll(words(pairs.keys()))) if (!out.has(m[0])) out.set(m[0], `a name in ${f}`);
+  return out;
 }
 
 // a classic script as Prettier writes it (the modules are written by tools/to-module.mjs), unless Prettier skips it
@@ -299,7 +327,7 @@ function otherFiles(all) {
 
 async function renameNames(pairs, dry) {
   const all = units();
-  const { edits, notes, strings, problems, count } = plan(all, pairs);
+  const { edits, notes, strings, problems, count, keyed } = plan(all, pairs);
   if (problems.length) throw new Error('refused:\n  ' + [...new Set(problems)].join('\n  '));
   for (const [o] of pairs) if (!count.get(o)) notes.push(`${o}: declared but nothing to rename?`);
   const pages = new Map();
@@ -319,7 +347,7 @@ async function renameNames(pairs, dry) {
   const pyReport = JSON.parse(
     execFileSync('python3', [join(ROOT, 'tools/rename-strings.py'), dry ? 'dry' : 'apply'], {
       cwd: ROOT,
-      input: JSON.stringify({ pairs: Object.fromEntries(pairs), files: py }),
+      input: JSON.stringify({ pairs: Object.fromEntries(pairs), files: py, guarded: [...keyed.keys()] }),
       encoding: 'utf8',
       maxBuffer: 1 << 26,
     })
@@ -334,7 +362,7 @@ async function renameNames(pairs, dry) {
     let out = '',
       i = 0;
     for (const m of t.matchAll(any)) {
-      if (fix && inStrings(m[0])) {
+      if (fix && inStrings(m[0]) && !(f.endsWith('js') && keyed.has(m[0]))) {
         out += t.slice(i, m.index) + pairs.get(m[0]);
         i = m.index + m[0].length;
       } else if (codeLike(t, m)) notes.push(`${f}:${lineOf(t, m.index)}: holds ${m[0]}: ${snippet(t, m.index)}`);
@@ -345,7 +373,21 @@ async function renameNames(pairs, dry) {
     }
   }
   if (!dry) await toModule([]);
-  return { files: edits.size, count, strings, other, notes: [...notes, ...pyReport.review], python: pyReport.changed };
+  // a name declared in more than one script (the Studio's stand-ins for the game's S, U, B...): all are renamed
+  const twins = new Map();
+  for (const o of pairs.keys()) {
+    const d = all.filter(u => u.declared.has(o)).map(u => u.file);
+    if (d.length > 1) twins.set(o, d.join(', '));
+  }
+  return {
+    files: edits.size,
+    count,
+    strings,
+    other,
+    twins,
+    notes: [...notes, ...pyReport.review],
+    python: pyReport.changed,
+  };
 }
 
 async function renameFile(o, n, dry) {
@@ -547,7 +589,9 @@ function report(notes, all) {
 async function main(argv) {
   const dry = argv.includes('--dry'),
     all = argv.includes('--all');
-  const args = argv.filter(a => a !== '--dry' && a !== '--all');
+  const ii = argv.indexOf('--in');
+  const only = ii >= 0 ? argv[ii + 1].split(',') : null;
+  const args = argv.filter((a, i) => a !== '--dry' && a !== '--all' && i !== ii && i !== ii + 1);
   const [cmd, ...rest] = args;
   if (cmd === 'name' || cmd === 'prefix') {
     if (!rest.length || rest.length % 2) throw new Error(`${cmd} takes <old> <new> pairs`);
@@ -555,12 +599,13 @@ async function main(argv) {
     if (cmd === 'name') for (let i = 0; i < rest.length; i += 2) pairs.set(rest[i], rest[i + 1]);
     else {
       if (rest.length !== 2) throw new Error('prefix takes one <old> <new>');
-      pairs = prefixPairs(units(), rest[0], rest[1]);
+      pairs = prefixPairs(units(), rest[0], rest[1], only);
       if (!pairs.size) throw new Error(`no top-level name starts with ${rest[0]}`);
     }
     const r = await renameNames(pairs, dry);
     console.log(`${dry ? 'would rename' : 'renamed'} ${pairs.size} name(s) in ${r.files} script(s):`);
-    for (const [o, n] of pairs) console.log(`  ${o} -> ${n} (${r.count.get(o) || 0})`);
+    for (const [o, n] of pairs)
+      console.log(`  ${o} -> ${n} (${r.count.get(o) || 0})${r.twins.has(o) ? ` declared in ${r.twins.get(o)}` : ''}`);
     if (r.strings.length)
       console.log(
         `renamed in strings (${r.strings.length}):\n  ${r.strings.slice(0, all ? undefined : 12).join('\n  ')}`

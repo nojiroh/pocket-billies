@@ -61,8 +61,9 @@ def line_of(src, at):
     return src.count('\n', 0, at) + 1
 
 
-def rename(src, pairs, file):
-    """the file with the names renamed in its strings, the lines changed, the hits left for a person"""
+def rename(src, pairs, file, guarded=()):
+    """the file with the names renamed in its strings, the lines changed, the hits left for a person; a guarded name
+    (also a property key, a CSS or HTML name in the game) is only listed in strings"""
     compiled = {o: pattern(o) for o in pairs}
     edits, review = [], []
     for s, e, comment in string_spans(src):
@@ -73,7 +74,7 @@ def rename(src, pairs, file):
                 if code_only(o):
                     edits += [(s + m.start(), s + m.end(), pairs[o]) for m in loose.finditer(text)]
                 continue
-            hit = {m.start() for m in sure.finditer(text)}
+            hit = set() if o in guarded else {m.start() for m in sure.finditer(text)}
             for m in loose.finditer(text):
                 if m.start() in hit:
                     edits.append((s + m.start(), s + m.end(), pairs[o]))
@@ -105,7 +106,7 @@ def main():
         for f in data['files']:
             p = ROOT / f
             src = p.read_text(encoding='utf-8')
-            new, changed, review = rename(src, pairs, f)
+            new, changed, review = rename(src, pairs, f, set(data.get('guarded', ())))
             out['review'] += review
             if new != src:
                 out['changed'].append(f'{f}: lines {", ".join(map(str, changed[:30]))}{" ..." if len(changed) > 30 else ""}')
