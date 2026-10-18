@@ -23,7 +23,7 @@ expose({
   WD: [() => WD],
   cleanLook: [() => cleanLook, v => (cleanLook = v)],
   cleanTrainer: [() => cleanTrainer, v => (cleanTrainer = v)],
-  dioFolkFrames: [() => dioFolkFrames],
+  folkFrames: [() => folkFrames],
   folkLook: [() => folkLook, v => (folkLook = v)],
   hsl2rgb: [() => hsl2rgb, v => (hsl2rgb = v)],
   humanFrames: [() => humanFrames, v => setHumanFrames(v)],
@@ -791,7 +791,7 @@ function trWarmStep() {
     frameStop('trwarm');
   }
 }
-export const dioFolkFrames = seed => owFrames('folk:' + seed);
+export const folkFrames = seed => owFrames('folk:' + seed);
 /* battle: 2 breathing frames ('back' for you, 'front' for rivals), plus poses */
 export function humanFrames(who, view) {
   const L = trainerLook(who);

@@ -54,10 +54,10 @@ import { ART, artLoad, cnv, pkh } from './art.js';
 expose({
   BRIDGE_ARCH: [() => BRIDGE_ARCH],
   BUILDING_VARIANT_CACHE: [() => BUILDING_VARIANT_CACHE],
-  DIO_CHAT: [() => DIO_CHAT],
   EFFECT_FRAMES: [() => EFFECT_FRAMES],
   EFFECT_KINDS: [() => EFFECT_KINDS],
   FAR_GROUND_PX_PER_M: [() => FAR_GROUND_PX_PER_M],
+  FOLK_CHAT: [() => FOLK_CHAT],
   FOLK_HOME: [() => FOLK_HOME],
   FOLK_WORK: [() => FOLK_WORK],
   GROUND_BORDER_M: [() => GROUND_BORDER_M],
@@ -105,13 +105,6 @@ expose({
   cropGrowth: [() => cropGrowth, v => (cropGrowth = v)],
   decodeBase64Array: [() => decodeBase64Array, v => (decodeBase64Array = v)],
   dioBubble: [() => dioBubble, v => (dioBubble = v)],
-  dioFolkAnchors: [() => dioFolkAnchors, v => (dioFolkAnchors = v)],
-  dioFolkCount: [() => dioFolkCount, v => (dioFolkCount = v)],
-  dioFolkGo: [() => dioFolkGo, v => (dioFolkGo = v)],
-  dioFolkInit: [() => dioFolkInit, v => (dioFolkInit = v)],
-  dioFolkStep: [() => dioFolkStep, v => (dioFolkStep = v)],
-  dioFolkStreet: [() => dioFolkStreet, v => (dioFolkStreet = v)],
-  dioFolkTick: [() => dioFolkTick, v => setDioFolkTick(v)],
   dioMix: [() => dioMix, v => (dioMix = v)],
   dioPanel: [() => dioPanel, v => (dioPanel = v)],
   dioPill: [() => dioPill, v => (dioPill = v)],
@@ -120,7 +113,6 @@ expose({
   dioPxArrow: [() => dioPxArrow, v => (dioPxArrow = v)],
   dioPxFont: [() => dioPxFont, v => (dioPxFont = v)],
   dioPxTail: [() => dioPxTail, v => (dioPxTail = v)],
-  dioSay: [() => dioSay, v => (dioSay = v)],
   dioSpeech: [() => dioSpeech, v => (dioSpeech = v)],
   dioTag: [() => dioTag, v => (dioTag = v)],
   dioTapMark: [() => dioTapMark, v => (dioTapMark = v)],
@@ -136,9 +128,13 @@ expose({
   farGroundSteps: [() => farGroundSteps, v => (farGroundSteps = v)],
   findPath: [() => findPath, v => (findPath = v)],
   flagPicturePath: [() => flagPicturePath, v => (flagPicturePath = v)],
+  folkAnchors: [() => folkAnchors, v => (folkAnchors = v)],
+  folkCount: [() => folkCount, v => (folkCount = v)],
   folkHello: [() => folkHello, v => (folkHello = v)],
   folkHour: [() => folkHour, v => (folkHour = v)],
   folkPhase: [() => folkPhase, v => (folkPhase = v)],
+  folkSay: [() => folkSay, v => (folkSay = v)],
+  folkStreetSpot: [() => folkStreetSpot, v => (folkStreetSpot = v)],
   folkTown: [() => folkTown, v => (folkTown = v)],
   groundKey: [() => groundKey, v => (groundKey = v)],
   groundTileFolder: [() => groundTileFolder, v => (groundTileFolder = v)],
@@ -148,6 +144,7 @@ expose({
   hash2d: [() => hash2d, v => (hash2d = v)],
   hitAt: [() => hitAt, v => (hitAt = v)],
   imageReady: [() => imageReady],
+  initFolk: [() => initFolk, v => (initFolk = v)],
   isOpenNow: [() => isOpenNow, v => (isOpenNow = v)],
   isWalkable: [() => isWalkable, v => (isWalkable = v)],
   keepGround: [() => keepGround, v => (keepGround = v)],
@@ -182,6 +179,7 @@ expose({
   scaleColor: [() => scaleColor, v => (scaleColor = v)],
   scaledTilePixels: [() => scaledTilePixels, v => (scaledTilePixels = v)],
   screenToGround: [() => screenToGround, v => setScreenToGround(v)],
+  sendFolk: [() => sendFolk, v => (sendFolk = v)],
   setArtImage: [() => setArtImage, v => (setArtImage = v)],
   setNavGrid: [() => setNavGrid, v => (setNavGrid = v)],
   setScreenToGround: [() => setScreenToGround, v => (setScreenToGround = v)],
@@ -197,6 +195,7 @@ expose({
   stepClimb: [() => stepClimb, v => (stepClimb = v)],
   stepCornerHeight: [() => stepCornerHeight, v => (stepCornerHeight = v)],
   stepEdgeShape: [() => stepEdgeShape, v => (stepEdgeShape = v)],
+  stepFolk: [() => stepFolk, v => (stepFolk = v)],
   stepGrid: [() => stepGrid, v => (stepGrid = v)],
   stepGridCorners: [() => stepGridCorners, v => (stepGridCorners = v)],
   stepLevelAt: [() => stepLevelAt, v => (stepLevelAt = v)],
@@ -211,6 +210,7 @@ expose({
   tileSetPixels: [() => tileSetPixels, v => (tileSetPixels = v)],
   timedPropsKey: [() => timedPropsKey, v => (timedPropsKey = v)],
   turnToPlayer: [() => turnToPlayer, v => (turnToPlayer = v)],
+  updateFolk: [() => updateFolk, v => setUpdateFolk(v)],
   updatePlayer: [() => updatePlayer, v => setUpdatePlayer(v)],
   updatePlayerHeight: [() => updatePlayerHeight, v => (updatePlayerHeight = v)],
   valueNoise2d: [() => valueNoise2d, v => (valueNoise2d = v)],
@@ -223,13 +223,13 @@ expose({
 });
 /* eslint-enable no-func-assign */
 provide({ stopWalkView });
-export function setDioFolkTick(v) {
-  dioFolkTick = v; // eslint-disable-line no-func-assign
-  provide({ dioFolkTick });
-}
 export function setPrepareMap(v) {
   prepareMap = v; // eslint-disable-line no-func-assign
   provide({ prepareMap });
+}
+export function setUpdateFolk(v) {
+  updateFolk = v; // eslint-disable-line no-func-assign
+  provide({ updateFolk });
 }
 export function setUpdatePlayer(v) {
   updatePlayer = v; // eslint-disable-line no-func-assign
@@ -313,7 +313,7 @@ export const EFFECT_FRAMES = {
   fish: [9, 5, 2],
   moth: [7, 5, 2],
 };
-const DIO_CHAT = [
+const FOLK_CHAT = [
   'Lovely day for a walk.',
   'Mind the tall grass. Something’s rustling in there.',
   'I heard a Billie tried to buy the sun once.',
@@ -3123,7 +3123,7 @@ export function handleWalkClick(ev) {
   }
   if (h && h.k === 'folk') {
     if (typeof talkFolk !== 'function') {
-      dioSay(h.f, true);
+      folkSay(h.f, true);
       if (st.roam) turnToPlayer(h.f);
       return;
     }
@@ -3648,7 +3648,7 @@ function folkTown(sc) {
   return !!b && !sc.indoor && (b.kind === 'town' || /^(town|city)$/.test(String(b.biome || '')));
 }
 /* homes, places of work and places to stand about, in the town itself (not in the next place along the road) */
-function dioFolkAnchors(sc) {
+function folkAnchors(sc) {
   const C0 = walkData().sc,
     PPU = C0.ppu || 34,
     b = sc.baseId ? mapById(sc.baseId) : sc,
@@ -3683,7 +3683,7 @@ function dioFolkAnchors(sc) {
   if (!A.home.length) A.home = A.hang.slice();
   return A;
 }
-function dioFolkInit(n) {
+function initFolk(n) {
   const sc = walkView.sc,
     hub = mapHub(sc);
   walkView.folk = [];
@@ -3692,7 +3692,7 @@ function dioFolkInit(n) {
   let seed = 0;
   for (const ch of walkView.id) seed = (seed * 31 + ch.charCodeAt(0)) % 9973;
   const town = folkTown(sc),
-    A = town ? dioFolkAnchors(sc) : null,
+    A = town ? folkAnchors(sc) : null,
     h = folkHour();
   for (let i = 0; i < n; i++) {
     const a = i * 2.4 + 1,
@@ -3744,7 +3744,7 @@ function dioFolkInit(n) {
         f.z = q[1];
       }
       if (f.ph === 'about') {
-        const q = dioFolkStreet(f);
+        const q = folkStreetSpot(f);
         f.x = q[0];
         f.z = q[1];
       }
@@ -3754,24 +3754,24 @@ function dioFolkInit(n) {
   walkView.folk = walkView.folkAll.filter(f => !f.in);
 }
 /* somewhere on the streets: another home, a place of work, the square */
-function dioFolkStreet(f) {
+function folkStreetSpot(f) {
   const all = walkView.folkAll || [],
     o = all[Math.floor(Math.random() * all.length)] || f,
     L = o.A ? [o.A.home, o.A.work, o.A.hang] : [o.home],
     t = L[Math.floor(Math.random() * L.length)] || [f.x, f.z];
   return walkablePointNear(t[0] + (Math.random() - 0.5) * 3, t[1] + (Math.random() - 0.5) * 2);
 }
-function dioSay(f, force) {
+function folkSay(f, force) {
   const L =
     typeof mapChatLines === 'function'
-      ? mapChatLines(DIO_CHAT)
+      ? mapChatLines(FOLK_CHAT)
       : walkView.sc.chat && walkView.sc.chat.length
         ? walkView.sc.chat
-        : DIO_CHAT;
+        : FOLK_CHAT;
   f.say = L[(f.line + walkView.chat++) % L.length];
   f.sayT = force ? 4.2 : 3.2;
 }
-function dioFolkGo(f, to, then) {
+function sendFolk(f, to, then) {
   const rt = findPath(f.x, f.z, to[0], to[1], { noHop: true });
   if (rt && rt.length > 1) {
     f.route = rt;
@@ -3787,7 +3787,7 @@ function folkHello() {
   const h = folkHour();
   return h < 11 ? 'Morning!' : h < 17 ? 'Afternoon!' : h < 21.5 ? 'Evening!' : 'Late one, eh?';
 }
-function dioFolkStep(dt) {
+function stepFolk(dt) {
   const P = walkView.pl,
     h = folkHour(),
     all = walkView.folkAll || walkView.folk;
@@ -3813,13 +3813,13 @@ function dioFolkStep(dt) {
         }
         if (ph === 'in' || ph === 'home') {
           f.route = null;
-          dioFolkGo(f, f.A.home, ph === 'in' || ph === 'home' ? 'inside' : null);
+          sendFolk(f, f.A.home, ph === 'in' || ph === 'home' ? 'inside' : null);
         } else if (ph === 'out') {
           f.route = null;
-          dioFolkGo(f, f.A.work);
+          sendFolk(f, f.A.work);
         } else if (ph === 'noon') {
           f.route = null;
-          dioFolkGo(f, f.A.hang);
+          sendFolk(f, f.A.hang);
         }
       }
     }
@@ -3856,7 +3856,7 @@ function dioFolkStep(dt) {
       f.walk = f.in ? 0 : 1;
     } else if ((f.wait -= dt) <= 0) {
       if (f.A && (f.ph === 'home' || f.ph === 'in')) {
-        if (!dioFolkGo(f, f.A.home, 'inside')) {
+        if (!sendFolk(f, f.A.home, 'inside')) {
           f.in = true;
           vis = true;
         }
@@ -3868,7 +3868,7 @@ function dioFolkStep(dt) {
               r = 1.5 + Math.random() * 4.5;
             return walkablePointNear(f.home[0] + Math.cos(a) * r, f.home[1] + Math.sin(a) * r * 0.8);
           })();
-        else if (f.ph === 'about' && Math.random() < 0.6) t = dioFolkStreet(f);
+        else if (f.ph === 'about' && Math.random() < 0.6) t = folkStreetSpot(f);
         else {
           const c =
               f.ph === 'work' || f.ph === 'out'
@@ -3882,7 +3882,7 @@ function dioFolkStep(dt) {
             r = 0.6 + Math.random() * (f.ph === 'noon' ? 1.6 : 2.4);
           t = walkablePointNear(c[0] + Math.cos(a) * r, c[1] + Math.sin(a) * r * 0.8);
         }
-        if (!dioFolkGo(f, t)) f.wait = 2;
+        if (!sendFolk(f, t)) f.wait = 2;
       }
     }
     /* you come close: they turn to look, and now and then wave and say hello */
@@ -3895,27 +3895,27 @@ function dioFolkStep(dt) {
         f.waveT = 1.4;
         f.say = folkHello();
         f.sayT = 2.4;
-      } else if (Math.random() < dt * 0.6) dioSay(f);
+      } else if (Math.random() < dt * 0.6) folkSay(f);
     }
   }
   if (vis) walkView.folk = all.filter(f => !f.in);
   if (!RM && walkView.folk.length && Math.random() < dt / 8) {
     const f = walkView.folk[Math.floor(Math.random() * walkView.folk.length)];
-    if (!f.sayT) dioSay(f);
+    if (!f.sayT) folkSay(f);
   }
 }
 /* v47: on market day (scene "market": {days, folk}) more people come to town, to the stalls */
-function dioFolkCount(sc, n) {
+function folkCount(sc, n) {
   const M = sc.market || (sc.baseId && (mapById(sc.baseId) || {}).market);
   if (!M || !M.days) return n;
   const T = propClock(),
     h = T.h;
   return M.days.includes(T.day) && h >= 7 && h < 18 ? n + (M.folk || 0) : n;
 }
-export function dioFolkTick(n, dt) {
-  n = dioFolkCount(walkView.sc, n);
-  if (walkView.folkId !== walkView.id || (walkView.folkAll || walkView.folk).length !== n) dioFolkInit(n);
-  dioFolkStep(dt);
+export function updateFolk(n, dt) {
+  n = folkCount(walkView.sc, n);
+  if (walkView.folkId !== walkView.id || (walkView.folkAll || walkView.folk).length !== n) initFolk(n);
+  stepFolk(dt);
 }
 export function tallGrassProps(C0) {
   const out = [];

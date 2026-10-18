@@ -9,11 +9,11 @@ import { TR_CACHE, humanFrames, setHumanFrames } from './person-art.js';
 import { openDressing, setOpenDressing } from './dressing-room.js';
 import { SC, scResize, scStart, setScResize, setScStart } from './battle-stage.js';
 import {
-  dioFolkTick,
   prepareMap,
-  setDioFolkTick,
   setPrepareMap,
+  setUpdateFolk,
   setUpdatePlayer,
+  updateFolk,
   updatePlayer,
   walkView,
 } from './walk-view.js';
@@ -119,7 +119,6 @@ Object.defineProperties(GAME, {
   dglShadowPass: { get: () => dglShadowPass, set: setDglShadowPass },
   dglSprites: { get: () => dglSprites, set: setDglSprites },
   dglWater: { get: () => dglWater, set: setDglWater },
-  dioFolkTick: { get: () => dioFolkTick, set: setDioFolkTick },
   eglFinish: { get: () => eglFinish, set: setEglFinish },
   eglNormWork: { get: () => eglNormWork, set: setEglNormWork },
   eglNormal: { get: () => eglNormal, set: setEglNormal },
@@ -150,6 +149,7 @@ Object.defineProperties(GAME, {
   setTrip: { get: () => setTrip, set: setSetTrip },
   stampCount: { get: () => stampCount },
   toast: { get: () => toast },
+  updateFolk: { get: () => updateFolk, set: setUpdateFolk },
   updatePlayer: { get: () => updatePlayer, set: setUpdatePlayer },
   userFps: { get: () => userFps },
   walkRenderer: { get: () => walkRenderer },

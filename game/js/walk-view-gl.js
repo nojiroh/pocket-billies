@@ -69,7 +69,7 @@ import {
 import { clamp } from './util.js';
 import { FRAME, frameCount, frameTask, userFps } from './frame-scheduler.js';
 import { cnv, hexA } from './art.js';
-import { dioFolkFrames, humanPose, owFrames, trPick, trWarm } from './person-art.js';
+import { folkFrames, humanPose, owFrames, trPick, trWarm } from './person-art.js';
 import { drawRig, rigFrame, rigParts, rigPreload } from './skeleton-rig.js';
 import {
   EFFECT_FRAMES,
@@ -87,7 +87,6 @@ import {
   climbStartEnd,
   cropGrowth,
   dioBubble,
-  dioFolkTick,
   dioPill,
   dioSpeech,
   dioTag,
@@ -129,6 +128,7 @@ import {
   stopWalkView,
   tallGrassProps,
   terrainAt,
+  updateFolk,
   updatePlayer,
   valueNoise2d,
   walkData,
@@ -3627,7 +3627,7 @@ function dglFrameIn(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
     updatePlayer(st, dt);
   }
   const P = walkView.pl;
-  if (!BT && sc.folk && st.mode && st.mode !== 'line') dioFolkTick(sc.folk, dt);
+  if (!BT && sc.folk && st.mode && st.mode !== 'line') updateFolk(sc.folk, dt);
   else if (!BT) {
     walkView.folk = [];
     walkView.folkAll = [];
@@ -4812,7 +4812,7 @@ export function dglItems(st, C, PPU, C0) {
   });
   if (!st.battle)
     for (const f of walkView.folk) {
-      const fr = dioFolkFrames(f.seed);
+      const fr = folkFrames(f.seed);
       if (!fr) continue;
       trWarm('folk:' + f.seed);
       const set = fr[f.dir] || fr.down;

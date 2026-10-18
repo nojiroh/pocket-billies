@@ -708,7 +708,7 @@ NWLOG.hook = () => {
     ['dglRingUpdate', 'near ring', 'painting the ground nearby'],
     ['dglGrassWork', 'grass rows', 'planting the grass'],
     ['updatePlayer', 'walking', 'moving you'],
-    ['dioFolkTick', 'folk', 'moving the townsfolk'],
+    ['updateFolk', 'folk', 'moving the townsfolk'],
     ['lifeStep', 'animals', 'moving the animals'],
   ]) {
     const o = GAME[n];
