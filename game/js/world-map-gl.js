@@ -12,7 +12,7 @@ import { expose } from './test-globals.js';
 import { flyDraw, flyTick, friends, provide } from './hooks.js';
 import { $, clamp } from './util.js';
 import { LOCATIONS, REGIONS, ROADS, locationSubtitle } from './game-data.js';
-import { canEnter, formatNumber, tripTo } from './logic/rules.js';
+import { canEnter, distanceText, tripTo } from './logic/rules.js';
 import { escapeHtml, reducedMotion, saveData, uiState } from './game-state.js';
 import { frameCount, frameStop, frameTask, userFps } from './frame-scheduler.js';
 import { artLoad, artPixels, hexToRgb, makeCanvas, uiIconHTML, worldMapStamp } from './art.js';
@@ -987,12 +987,7 @@ function worldMapGlPins() {
     const show =
       (typeof sel === 'number' && (a === sel || b === sel)) || onPlan.has(Math.min(a, b) + '-' + Math.max(a, b));
     const q = show ? worldMapGlProject(roadPosition(a, b, 0.5)) : null;
-    put(
-      'L' + i,
-      q,
-      `${formatNumber(c)} steps`,
-      'mchip' + (onPlan.has(Math.min(a, b) + '-' + Math.max(a, b)) ? ' trip' : '')
-    );
+    put('L' + i, q, distanceText(c), 'mchip' + (onPlan.has(Math.min(a, b) + '-' + Math.max(a, b)) ? ' trip' : ''));
   });
   /* 0.5: friends, at the place they were last */
   if (typeof friends !== 'undefined')
@@ -1124,7 +1119,7 @@ function worldMapGlLocationListHTML() {
         : locked
           ? 'Locked'
           : t
-            ? `${formatNumber(t.steps)} steps${saveData.visited[i] ? '' : ' · new'}`
+            ? `${distanceText(t.steps)}${saveData.visited[i] ? '' : ' · new'}`
             : 'No road yet';
     return {
       i,

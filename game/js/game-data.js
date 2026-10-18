@@ -52,6 +52,8 @@ expose({
   TYPE_RESISTED_BY: [() => TYPE_RESISTED_BY],
   TYPE_STRONG_AGAINST: [() => TYPE_STRONG_AGAINST],
   atOrLast: [() => atOrLast],
+  // @ts-expect-error -- replaced on purpose
+  exitLength: [() => exitLength, v => (exitLength = v)],
   gameData: [() => gameData],
   hasPassive: [() => hasPassive],
   // @ts-expect-error -- replaced on purpose
@@ -65,6 +67,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   rivalSpecies: [() => rivalSpecies, v => (rivalSpecies = v)],
   roadCost: [() => roadCost],
+  // @ts-expect-error -- replaced on purpose
+  roadMetres: [() => roadMetres, v => (roadMetres = v)],
   standInList: [() => standInList],
   // @ts-expect-error -- replaced on purpose
   standInSpecies: [() => standInSpecies, v => (standInSpecies = v)],
@@ -253,7 +257,20 @@ LOCATIONS.forEach((r, i) => {
   if (!BATTLE_STAGES[r.battleStage]) r.battleStage = BATTLE_STAGES[r.pool] ? r.pool : 'grass';
   r.trainers = [];
 });
-/* the walking network: links between stops (both directions); older data is a single chain */
+/* phase 08: a road is as long as the walk from one place's middle out to its edge plus the other's from its edge in:
+   the two exits' len (a map's edgeExits, in the boot bundle). A road without named exits counts 100 m */
+export function exitLength(node, id) {
+  const sc = id && gameData.maps ? gameData.maps[LOCATIONS[node].mapId] : null,
+    e = sc ? (sc.edgeExits || []).find(x => x.id === id) : null;
+  return e && Number.isFinite(e.len) ? e.len : null;
+}
+export function roadMetres(a, b, j) {
+  const la = j ? exitLength(a, j.a) : null,
+    lb = j ? exitLength(b, j.b) : null;
+  return la != null && lb != null ? Math.max(1, Math.round(la + lb)) : 100;
+}
+/* the walking network: links between stops (both directions), with their length in metres; older data is a single
+   chain */
 /** @type {Road[]} */
 export const ROADS = (
   gameData.roads && gameData.roads.length
@@ -262,11 +279,9 @@ export const ROADS = (
 )
   .filter(l => LOCATIONS[l[0]] && LOCATIONS[l[1]] && l[0] !== l[1])
   .map(
-    /** @returns {Road} */ ([a, b, c, j]) =>
-      j && typeof j === 'object'
-        ? [a, b, Math.max(1, Math.round(+c || 500)), j]
-        : [a, b, Math.max(1, Math.round(+c || 500))]
-  ); /* v42: a fourth entry {a,b} names the exit at each end (the join table) */
+    /** @returns {Road} */ ([a, b, , j]) =>
+      j && typeof j === 'object' ? [a, b, roadMetres(a, b, j), j] : [a, b, roadMetres(a, b, null)]
+  ); /* v42: a fourth entry {a,b} names the exit at each end (the join table); the third, the old step count, is not read */
 /* v46: what each place, scene and road is (tools/migrate-places.py fills these): use these instead of id prefixes */
 /* copies made before board is filled in (below), so they have none: read LOCATIONS[node].board */
 /** @type {Record<string, LocationData & { node: number, trainers: string[] }>} */

@@ -109,3 +109,14 @@ test('the graph is the one in the snapshot (places, roads with their exits, gate
     lifts: lifts.map(([a, b]) => `${a} -> ${b}`).sort(),
   });
 });
+
+test('phase 08: every road is measured in metres, from each place’s middle to the exit it leaves by', () => {
+  for (const [a, b, len, ends] of data.ROADS) {
+    const exit = (i, id) => (mapOf(at(i)).edgeExits || []).find(e => e.id === id);
+    const ea = exit(a, ends.a),
+      eb = exit(b, ends.b);
+    assert.ok(ea && eb, `${ends.id}: an exit it names is missing`);
+    assert.equal(len, Math.round(ea.len + eb.len), ends.id);
+    assert.ok(len >= 20 && len <= 400, `${ends.id} is ${len} m`);
+  }
+});

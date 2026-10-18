@@ -14,6 +14,6 @@ test('data tables: type matchups, species, the start', () => {
   assert.equal(data.SPECIES.sparky0.next, 'sparky1');
   assert.deepEqual(data.SPECIES.sparky0.base, [50, 50, 50, 50, 50, 50]); // 300 (starter, stage 1) / 6 even weights
   assert.equal(data.START_NODE, 1); // rules.start.locationId: meadow
-  assert.equal(data.roadCost(1, 2), 200);
+  assert.equal(data.roadCost(1, 2), 100); // phase 08: measured from the exits; a road without named exits counts 100 m
   assert.deepEqual(data.DATA_WARN, []);
 });

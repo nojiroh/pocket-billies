@@ -73,6 +73,7 @@ expose({
   // @ts-expect-error -- replaced on purpose
   cleanBuild: [() => cleanBuild, v => (cleanBuild = v)],
   cleanName: [() => cleanName],
+  distanceText: [() => distanceText],
   // @ts-expect-error -- replaced on purpose
   dropEncounter: [() => dropEncounter, v => (dropEncounter = v)],
   eggKm: [() => eggKm],
@@ -593,6 +594,8 @@ export function addWalked(m) {
   }
 }
 export const metresToKm = m => (m / 1000).toFixed(1);
+/* a walking distance for people: "80 m", "850 m", "1.2 km" */
+export const distanceText = m => (m < 1000 ? `${Math.max(10, Math.round(m / 10) * 10)} m` : `${metresToKm(m)} km`);
 /* an egg's name comes from the distance it needs ("2 km egg"); its tier id is only a key */
 export const eggKm = tier => Math.round((EGGS[tier] ? EGGS[tier].need : 0) / 100) / 10;
 /* ---------- Seed Rounds ---------- */

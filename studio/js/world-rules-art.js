@@ -45,6 +45,7 @@ expose({
   drawWorldMarkers: [() => drawWorldMarkers, v => (drawWorldMarkers = v)],
   locationRoads: [() => locationRoads, v => (locationRoads = v)],
   lonLatToWorldMapXY: [() => lonLatToWorldMapXY, v => (lonLatToWorldMapXY = v)],
+  roadLengthText: [() => roadLengthText, v => (roadLengthText = v)],
   roadsHTML: [() => roadsHTML, v => (roadsHTML = v)],
   weightTable: [() => weightTable, v => (weightTable = v)],
   worldBackdrops: [() => worldBackdrops, v => (worldBackdrops = v)],
@@ -298,10 +299,25 @@ function worldLocations() {
     }) +
     card(`${i + 1}. ${escapeHtml(r.name)}`, ed) +
     card('Roads from here', roadsHTML(i), {
-      sub: 'Each road is walked in either direction. Steps are how far it is. In the stop’s walk scene, each road leaves through the exit named under “Leaves by”, or, when none is named, the exit that points the same way on the world map.',
+      sub: 'Each road is walked in either direction. Its length is measured from the two exits it joins. In the stop’s walk scene, each road leaves through the exit named under “Leaves by”, or, when none is named, the exit that points the same way on the world map.',
     }) +
     card('Map', worldMapHTML())
   );
+}
+/* phase 08: a road's length is measured, as the game does (game-data.js roadMetres): the walk from each place's middle
+   to the exit it leaves by (the exits' len) */
+function roadLengthText(k) {
+  const D = studioState.D,
+    l = D.roads[k],
+    J = l[3] || {},
+    len = (node, id) => {
+      const sc = D.maps[(D.locations[node] || {}).mapId],
+        e = sc && id ? (sc.edgeExits || []).find(x => x.id === id) : null;
+      return e && Number.isFinite(e.len) ? e.len : null;
+    },
+    a = len(l[0], J.a),
+    b = len(l[1], J.b);
+  return a != null && b != null ? `${Math.round(a + b)} m` : 'not joined (100 m)';
 }
 function locationRoads(i) {
   return (studioState.D.roads || [])
@@ -312,14 +328,14 @@ function roadsHTML(i) {
   const D = studioState.D,
     R = locationRoads(i),
     opts = D.locations.map((r, j) => [j, `${j + 1}. ${r.name}`]).filter(([j]) => j !== i);
-  return `<table class="tbl"><thead><tr><th>Road to</th><th>Steps</th><th>About</th><th>Leaves by</th><th></th></tr></thead><tbody>${R.map(
+  return `<table class="tbl"><thead><tr><th>Road to</th><th>Length</th><th>Leaves by</th><th></th></tr></thead><tbody>${R.map(
     ([o, c, k]) => {
       const side = D.roads[k][0] === i ? 1 : 0,
         end = side ? 'a' : 'b',
         J = D.roads[k][3] || {},
         sc = D.maps[(D.locations[i] || {}).mapId],
         ids = ((sc && sc.edgeExits) || []).map(e => e.id);
-      return `<tr><td><select data-p="roads.${k}.${side}" data-k="num" data-rr="1">${opts.map(([j, n]) => `<option value="${j}" ${j === o ? 'selected' : ''}>${escapeHtml(n)}</option>`).join('')}</select></td><td><input type="number" min="50" step="50" data-p="roads.${k}.2" data-k="num" value="${c}" class="sm-num"></td><td><small>${(c / D.rules.steps.stepsPerKm).toFixed(1)} km</small></td><td><select data-join="${k}" data-end="${end}" title="Which exit of this stop’s scene the road uses (v42 join table); ‘by direction’ matches it by compass bearing as before"><option value="">by direction</option>${ids.map(id => `<option value="${escapeHtml(id)}" ${J[end] === id ? 'selected' : ''}>${escapeHtml(id)}</option>`).join('')}</select></td><td><button class="x" data-act="roadDel" data-k="${k}" title="Remove this road">×</button></td></tr>`;
+      return `<tr><td><select data-p="roads.${k}.${side}" data-k="num" data-rr="1">${opts.map(([j, n]) => `<option value="${j}" ${j === o ? 'selected' : ''}>${escapeHtml(n)}</option>`).join('')}</select></td><td><small>${roadLengthText(k)}</small></td><td><select data-join="${k}" data-end="${end}" title="Which exit of this stop’s scene the road uses (v42 join table); ‘by direction’ matches it by compass bearing as before"><option value="">by direction</option>${ids.map(id => `<option value="${escapeHtml(id)}" ${J[end] === id ? 'selected' : ''}>${escapeHtml(id)}</option>`).join('')}</select></td><td><button class="x" data-act="roadDel" data-k="${k}" title="Remove this road">×</button></td></tr>`;
     }
   ).join('')}</tbody></table>
  <div class="seg-row"><select id="roadTo">${opts

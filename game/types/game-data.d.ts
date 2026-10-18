@@ -307,7 +307,8 @@ export interface LocationEntry extends LocationData {
   board: DataId | null;
 }
 
-/** roads.json: [from node, to node, length in steps, the two ends] */
+/** roads.json: [from node, to node, length, the two ends]. The data's length (old steps) is not read: game-data.js
+    ROADS measures it in metres from the two exits (roadMetres) */
 export type Road = [from: LocationNode, to: LocationNode, length: number, ends?: RoadEnds];
 
 /** a road as one end sees it (game-data.js ROADS_BY_NODE): the other end, the length and the road's index */
