@@ -10,7 +10,7 @@ import { pedVoxHTML, provide } from '../../game/js/hooks.js';
 import { $, $$, clamp } from '../../game/js/util.js';
 import { frameStop, frameTask } from '../../game/js/frame-scheduler.js';
 import { artLoad, cnv, setArtLoad } from '../../game/js/art.js';
-import { artImage, dioLayerM, imageReady, setWalkData, walkData, walkView } from '../../game/js/walk-view.js';
+import { artImage, imageReady, layerAsProp, setWalkData, walkData, walkView } from '../../game/js/walk-view.js';
 import { DGL_MATS, dglMatOf, dglVaryOf, dioMount, walkRenderer } from '../../game/js/walk-view-gl.js';
 import { BLD_ROOM_NAMES, BLD_TEX_NAMES } from '../../game/js/buildings.js';
 import { P3D_AUTO, P3D_KINDS, P3D_PARTS, p3dTreeKind } from '../../game/js/solid-props.js';
@@ -214,7 +214,7 @@ function pedCard(k) {
 function pedBounds(M) {
   const ims = [[artImage(M.img), M.ox, M.oy]].concat(
     (M.layers || []).map(l => {
-      const LM = dioLayerM(M, l);
+      const LM = layerAsProp(M, l);
       return [artImage(l.img), LM.ox, LM.oy];
     })
   );
@@ -256,7 +256,7 @@ function pedDraw() {
   const list = [{ im: artImage(M.img), ox: M.ox, oy: M.oy, dz: 0, i: -1 }]
     .concat(
       (M.layers || []).map((l, i) => {
-        const LM = dioLayerM(M, l);
+        const LM = layerAsProp(M, l);
         return { im: artImage(l.img), ox: LM.ox, oy: LM.oy, dz: l.dz || 0, i };
       })
     )

@@ -52,12 +52,10 @@ import { frameStop } from './frame-scheduler.js';
 import { ART, artLoad, cnv, pkh } from './art.js';
 /* eslint-disable no-func-assign */
 expose({
+  BUILDING_VARIANT_CACHE: [() => BUILDING_VARIANT_CACHE],
   DIO_BRIDGE_ARC: [() => DIO_BRIDGE_ARC],
   DIO_CHAT: [() => DIO_CHAT],
-  DIO_CLK: [() => DIO_CLK],
   DIO_FAR_TP: [() => DIO_FAR_TP],
-  DIO_FX: [() => DIO_FX],
-  DIO_FXM: [() => DIO_FXM],
   DIO_GCACHE: [() => DIO_GCACHE],
   DIO_GKEEP: [() => DIO_GKEEP],
   DIO_GPEND: [() => DIO_GPEND],
@@ -67,7 +65,6 @@ expose({
   DIO_NATW: [() => DIO_NATW],
   DIO_PAD: [() => DIO_PAD],
   DIO_RISE: [() => DIO_RISE],
-  DIO_ROOF: [() => DIO_ROOF],
   DIO_SPEED: [() => DIO_SPEED],
   DIO_STEPS: [() => DIO_STEPS],
   DIO_T0: [() => DIO_T0],
@@ -76,17 +73,22 @@ expose({
   DIO_TD: [() => DIO_TD],
   DIO_TILECACHE: [() => DIO_TILECACHE],
   DIO_TL: [() => DIO_TL],
-  DIO_VAR: [() => DIO_VAR],
+  EFFECT_FRAMES: [() => EFFECT_FRAMES],
+  EFFECT_KINDS: [() => EFFECT_KINDS],
   FOLK_HOME: [() => FOLK_HOME],
   FOLK_WORK: [() => FOLK_WORK],
   OPEN_HOURS: [() => OPEN_HOURS],
   OPEN_NAMES: [() => OPEN_NAMES],
+  PROP_CLOCK: [() => PROP_CLOCK],
   PW_WAIT: [() => PW_WAIT],
+  ROOF_STYLES: [() => ROOF_STYLES],
+  actionLabel: [() => actionLabel, v => (actionLabel = v)],
+  actionSpot: [() => actionSpot, v => (actionSpot = v)],
+  approachPoint: [() => approachPoint, v => (approachPoint = v)],
   artImage: [() => artImage, v => setArtImage(v)],
   baseMapId: [() => baseMapId, v => (baseMapId = v)],
-  dioActLabel: [() => dioActLabel, v => (dioActLabel = v)],
-  dioActSpot: [() => dioActSpot, v => (dioActSpot = v)],
-  dioApproach: [() => dioApproach, v => (dioApproach = v)],
+  closedText: [() => closedText, v => (closedText = v)],
+  cropGrowth: [() => cropGrowth, v => (cropGrowth = v)],
   dioB64: [() => dioB64, v => (dioB64 = v)],
   dioB64Out: [() => dioB64Out, v => (dioB64Out = v)],
   dioBridgeAt: [() => dioBridgeAt, v => (dioBridgeAt = v)],
@@ -102,7 +104,6 @@ expose({
   dioClimbGo: [() => dioClimbGo, v => (dioClimbGo = v)],
   dioClimbStep: [() => dioClimbStep, v => (dioClimbStep = v)],
   dioClipSeg: [() => dioClipSeg, v => (dioClipSeg = v)],
-  dioClock: [() => dioClock, v => (dioClock = v)],
   dioCostAt: [() => dioCostAt, v => (dioCostAt = v)],
   dioDirOf: [() => dioDirOf, v => (dioDirOf = v)],
   dioEncSpot: [() => dioEncSpot, v => (dioEncSpot = v)],
@@ -119,17 +120,14 @@ expose({
   dioFree: [() => dioFree, v => (dioFree = v)],
   dioFreePt: [() => dioFreePt, v => (dioFreePt = v)],
   dioGradeK: [() => dioGradeK, v => (dioGradeK = v)],
-  dioGrassImgs: [() => dioGrassImgs, v => (dioGrassImgs = v)],
   dioGroundAsync: [() => dioGroundAsync, v => (dioGroundAsync = v)],
   dioGroundCached: [() => dioGroundCached, v => (dioGroundCached = v)],
   dioGroundGen: [() => dioGroundGen, v => (dioGroundGen = v)],
   dioGroundKeep: [() => dioGroundKeep, v => (dioGroundKeep = v)],
   dioGroundKey: [() => dioGroundKey, v => (dioGroundKey = v)],
-  dioGrowK: [() => dioGrowK, v => (dioGrowK = v)],
   dioHash: [() => dioHash, v => (dioHash = v)],
   dioHitAt: [() => dioHitAt, v => (dioHitAt = v)],
   dioLOS: [() => dioLOS, v => (dioLOS = v)],
-  dioLayerM: [() => dioLayerM, v => (dioLayerM = v)],
   dioMix: [() => dioMix, v => (dioMix = v)],
   dioNav: [() => dioNav, v => setDioNav(v)],
   dioNearFree: [() => dioNearFree, v => (dioNearFree = v)],
@@ -150,8 +148,6 @@ expose({
   dioPolyAt: [() => dioPolyAt, v => (dioPolyAt = v)],
   dioPolyNear: [() => dioPolyNear, v => (dioPolyNear = v)],
   dioProj: [() => dioProj, v => setDioProj(v)],
-  dioPropM: [() => dioPropM, v => (dioPropM = v)],
-  dioPropOn: [() => dioPropOn, v => (dioPropOn = v)],
   dioPx: [() => dioPx, v => (dioPx = v)],
   dioPxArrow: [() => dioPxArrow, v => (dioPxArrow = v)],
   dioPxFont: [() => dioPxFont, v => (dioPxFont = v)],
@@ -181,7 +177,6 @@ expose({
   dioTilePix: [() => dioTilePix, v => (dioTilePix = v)],
   dioTileScale: [() => dioTileScale, v => (dioTileScale = v)],
   dioTileSet: [() => dioTileSet, v => (dioTileSet = v)],
-  dioTimedKey: [() => dioTimedKey, v => (dioTimedKey = v)],
   dioToneAt: [() => dioToneAt, v => (dioToneAt = v)],
   dioTonePx: [() => dioTonePx, v => (dioTonePx = v)],
   dioUIpx: [() => dioUIpx],
@@ -200,16 +195,19 @@ expose({
   folkPhase: [() => folkPhase, v => (folkPhase = v)],
   folkTown: [() => folkTown, v => (folkTown = v)],
   imageReady: [() => imageReady],
+  isOpenNow: [() => isOpenNow, v => (isOpenNow = v)],
+  layerAsProp: [() => layerAsProp, v => (layerAsProp = v)],
   mapArtPaths: [() => mapArtPaths, v => (mapArtPaths = v)],
   mapById: [() => mapById, v => (mapById = v)],
   mapHub: [() => mapHub, v => (mapHub = v)],
   mapMoodName: [() => mapMoodName, v => (mapMoodName = v)],
   mapWaterCells: [() => mapWaterCells, v => (mapWaterCells = v)],
   openKind: [() => openKind, v => (openKind = v)],
-  placeClosedText: [() => placeClosedText, v => (placeClosedText = v)],
-  placeOpen: [() => placeOpen, v => (placeOpen = v)],
   pointAlongMapPath: [() => pointAlongMapPath, v => (pointAlongMapPath = v)],
   prepareMap: [() => prepareMap, v => setPrepareMap(v)],
+  propClock: [() => propClock, v => (propClock = v)],
+  propShown: [() => propShown, v => (propShown = v)],
+  propWithVariant: [() => propWithVariant, v => (propWithVariant = v)],
   setArtImage: [() => setArtImage, v => (setArtImage = v)],
   setDioNav: [() => setDioNav, v => (setDioNav = v)],
   setDioProj: [() => setDioProj, v => (setDioProj = v)],
@@ -217,7 +215,9 @@ expose({
   setDioUnproject: [() => setDioUnproject, v => (setDioUnproject = v)],
   setWalkData: [() => setWalkData, v => (setWalkData = v)],
   syncExits: [() => syncExits, v => (syncExits = v)],
+  tallGrassProps: [() => tallGrassProps, v => (tallGrassProps = v)],
   terrainAt: [() => terrainAt, v => (terrainAt = v)],
+  timedPropsKey: [() => timedPropsKey, v => (timedPropsKey = v)],
   walkData: [() => walkData, v => setWalkData(v)],
   walkView: [() => walkView],
 });
@@ -299,8 +299,8 @@ export const DIO_PAD = 8,
 /* alpha 0.4: what a painting generator yields while the ground painter's helper thread works (ground-paint-worker.js): whatever
    steps it stops for now and comes back later */
 export const PW_WAIT = { pw: 1 };
-const DIO_FX = ['butterfly', 'bird', 'leaf', 'smoke', 'spray', 'sparkle', 'bee', 'fish', 'moth', 'flame'];
-export const DIO_FXM = {
+const EFFECT_KINDS = ['butterfly', 'bird', 'leaf', 'smoke', 'spray', 'sparkle', 'bee', 'fish', 'moth', 'flame'];
+export const EFFECT_FRAMES = {
   flame: [12, 18, 4],
   butterfly: [8, 7, 2],
   bird: [10, 6, 2],
@@ -388,7 +388,7 @@ export function mapById(id) {
 export const imageReady = im => !!(im && (im.naturalWidth || im.width));
 /* a prop's extra layer as a prop of its own: same base point unless it says otherwise, shifted dx right and dy up (pixels),
    dz meters back (negative: in front). Effects, glows, labels and shadows stay with the main picture. */
-export function dioLayerM(M, l) {
+export function layerAsProp(M, l) {
   return {
     img: l.img,
     ox: (l.ox ?? M.ox) + (l.dx || 0),
@@ -427,23 +427,23 @@ export function flagPicturePath(sc) {
 }
 /* v46: a building's colour variant (p.v = 1..n): the same plan with the variant's picture and colours; the plain
    building (no v, or 0) is the catalogue entry itself, so every placed building looks exactly as before */
-const DIO_VAR = new WeakMap();
+const BUILDING_VARIANT_CACHE = new WeakMap();
 /* alpha 0.4: a house may wear a green moss roof, solar shingles or chrome instead of its own (p.roof 'moss', 'solar' or
    'chrome', from tools/build-solarpunk.py and build-pearlantis.py): the 3D roof's texture and colour change, the picture stays (its roof is still cut away by
    its own colours) */
-const DIO_ROOF = {
+const ROOF_STYLES = {
   moss: { roofTex: 16, roofCol: '#76AA50' },
   solar: { roofTex: 17, roofCol: '#3A4C7E' },
   chrome: { roofTex: 12, roofCol: '#8FC4CE' },
 };
-export function dioPropM(p, M) {
+export function propWithVariant(p, M) {
   const n = p && p.v | 0,
-    rf = M && M.build && p && p.roof ? DIO_ROOF[p.roof] : null;
+    rf = M && M.build && p && p.roof ? ROOF_STYLES[p.roof] : null;
   if (!M || !M.build || (!rf && (!n || !M.build.variants))) return M;
   const V = n && M.build.variants ? M.build.variants[n - 1] : null;
   if (!rf && (!V || !V.img)) return M;
-  let c = DIO_VAR.get(M);
-  if (!c) DIO_VAR.set(M, (c = new Map()));
+  let c = BUILDING_VARIANT_CACHE.get(M);
+  if (!c) BUILDING_VARIANT_CACHE.set(M, (c = new Map()));
   const key = n + '|' + (rf ? p.roof : '') + '|' + (typeof bldSigF === 'function' ? bldSigF(M.build) : '');
   if (c.has(key)) return c.get(key);
   const B = Object.assign({}, M.build);
@@ -458,33 +458,33 @@ export function dioPropM(p, M) {
 /* v47: things that are only out at some hours, on some days or in some seasons. A prop may say hours:[from,to]
    (e.g. [6,12]; [21,4] runs past midnight), days:[0-6] (0 is Sunday) and season:'autumn' or a list. The clock is
    the game's (environment.js: real time, or the time set in Settings), checked once a second. */
-export const DIO_CLK = { t: -1e9, h: 13, day: 0, ss: 'summer' };
-function dioClock() {
+export const PROP_CLOCK = { t: -1e9, h: 13, day: 0, ss: 'summer' };
+function propClock() {
   const n = performance.now();
-  if (n - DIO_CLK.t < 1000) return DIO_CLK;
-  DIO_CLK.t = n;
+  if (n - PROP_CLOCK.t < 1000) return PROP_CLOCK;
+  PROP_CLOCK.t = n;
   const d = new Date();
-  DIO_CLK.h = typeof folkHour === 'function' ? folkHour() : 13;
-  DIO_CLK.day = d.getDay();
-  DIO_CLK.ss = typeof envSeason === 'function' ? envSeason(d) : 'summer';
-  return DIO_CLK;
+  PROP_CLOCK.h = typeof folkHour === 'function' ? folkHour() : 13;
+  PROP_CLOCK.day = d.getDay();
+  PROP_CLOCK.ss = typeof envSeason === 'function' ? envSeason(d) : 'summer';
+  return PROP_CLOCK;
 }
 /* v47: crops grow between your visits: each field (a prop's "grow", from tools/build-life-v47.py) is sown, grows for
    a week and is harvested, on a nine-day round of its own */
-export function dioGrowK(p) {
+export function cropGrowth(p) {
   if (!p || p.grow == null) return 1;
   const d = new Date(),
     day = Math.floor((d.getTime() - d.getTimezoneOffset() * 6e4) / 864e5),
     st = (day + p.grow * 4) % 9;
   return st === 0 ? 0 : Math.min(1, 0.3 + st * 0.14);
 }
-export function dioPropOn(p) {
+export function propShown(p) {
   if (!p || (!p.hours && !p.days && !p.season && p.grow == null && !p.dry)) return true;
-  if (p.grow != null && !dioGrowK(p)) return false;
+  if (p.grow != null && !cropGrowth(p)) return false;
   /* v47: "dry": only while the ground is dry and clear (chalk drawings wash away in the rain and come back after) */
   if (p.dry && typeof ENV !== 'undefined' && ENV.on && (ENV.wet > 0.25 || (ENV.sk && ENV.sk[3] > 0.3))) return false;
   if (!p.hours && !p.days && !p.season) return true;
-  const T = dioClock();
+  const T = propClock();
   if (p.hours) {
     const a = p.hours[0],
       b = p.hours[1],
@@ -495,7 +495,7 @@ export function dioPropOn(p) {
   if (p.season && !(Array.isArray(p.season) ? p.season : [p.season]).includes(T.ss)) return false;
   return true;
 }
-function dioTimedKey(sc) {
+function timedPropsKey(sc) {
   let L = sc._timed;
   if (!L || sc._timedN !== (sc.props || []).length) {
     L = sc._timed = (sc.props || []).filter(p => (p.hours || p.days || p.season) && !/^fallen|^crops/.test(p.k));
@@ -506,7 +506,7 @@ function dioTimedKey(sc) {
   const n = performance.now();
   if (n - sc._tkAt < 200 && sc._tkL === L) return sc._tk;
   let k = '';
-  for (const p of L) k += dioPropOn(p) ? 1 : 0;
+  for (const p of L) k += propShown(p) ? 1 : 0;
   sc._tk = k;
   sc._tkAt = n;
   sc._tkL = L;
@@ -541,25 +541,25 @@ export function openKind(a, p) {
     RK = typeof ROOM_KIND !== 'undefined' ? ROOM_KIND : {};
   return p && RK[p.k] ? p.k : M && RK[M.group] ? M.group : a;
 }
-export function placeOpen(kind) {
+export function isOpenNow(kind) {
   const H = OPEN_HOURS[kind];
   if (!H) return true;
-  const h = dioClock().h;
+  const h = propClock().h;
   return h >= H[0] && h < H[1];
 }
-export function placeClosedText(kind) {
+export function closedText(kind) {
   const H = OPEN_HOURS[kind],
     f = v => `${Math.floor(v)}:${String(Math.round((v % 1) * 60)).padStart(2, '0')}`;
   return `${OPEN_NAMES[kind] || 'It'} is closed for the night. It opens at ${H ? f(H[0]) : 'morning'}.${kind === 'shop' ? ' You can still order from the town card.' : ''}`;
 }
 /* the label over something you can use: what it is, Read for a book you haven't read, Closed after hours */
-export function dioActLabel(p, M) {
+export function actionLabel(p, M) {
   if (p.label) return p.label;
   if (p.act === 'read') return typeof loreFlags === 'function' && !loreFlags()['read_' + p.book] ? 'Read' : null;
   if (!(M && (M.door || M.box))) return null;
   const b = { shop: 'Shop', clinic: 'Clinic', lab: 'Lab' }[p.act];
   if (!b) return null;
-  return placeOpen(openKind(p.act, p)) ? b : 'Closed';
+  return isOpenNow(openKind(p.act, p)) ? b : 'Closed';
 }
 export function mapArtPaths(sc) {
   const C = walkData().sc,
@@ -568,7 +568,7 @@ export function mapArtPaths(sc) {
       'battle/cloud_0.png',
       'battle/cloud_1.png',
       'battle/cloud_2.png',
-      ...DIO_FX.map(k => `scene/fx/${k}.png`),
+      ...EFFECT_KINDS.map(k => `scene/fx/${k}.png`),
     ]);
   const lite = sc._lite || {}; /* phase 04b: what a map uses, before its own file has come */
   for (const ch of new Set((sc.tiles ? sc.tiles.join('') : lite.tiles || '') + (sc.edge || 'g'))) {
@@ -580,7 +580,7 @@ export function mapArtPaths(sc) {
     }
   }
   for (const p of sc.props || lite.props || []) {
-    const P = dioPropM(p, C.props[p.k]);
+    const P = propWithVariant(p, C.props[p.k]);
     if (P) {
       L.add(P.img);
       if (typeof DGL_ALT !== 'undefined' && DGL_ALT[p.k])
@@ -2648,7 +2648,7 @@ export function dioBridgeAt(x, z, sc = walkView.sc) {
 /* ---------- where you can walk: a half-meter grid from the terrain and the props' footprints ---------- */
 export function dioNav() {
   const sc = walkView.sc,
-    tk = dioTimedKey(sc);
+    tk = timedPropsKey(sc);
   if (
     walkView.nav &&
     walkView.navSc === sc &&
@@ -2696,7 +2696,7 @@ export function dioNav() {
   }
   for (const p of sc.props || []) {
     const M = C.props[p.k];
-    if (!M || M.walk || !dioPropOn(p)) continue;
+    if (!M || M.walk || !propShown(p)) continue;
     const s = p.s || 1,
       f = p.f ? -1 : 1;
     if (M.box) {
@@ -3129,7 +3129,7 @@ export function dioClick(ev) {
     }
     const f = h.f;
     if (st.roam) {
-      const g = dioApproach(f.x, f.z);
+      const g = approachPoint(f.x, f.z);
       dioWalkTo(g, () => {
         P.dir = dioDirOf(f.x - P.x, f.z - P.z);
         talkFolk(f);
@@ -3662,13 +3662,13 @@ function dioFolkAnchors(sc) {
     if (!M) continue;
     const k = p.k + ' ' + (M.group || '') + ' ' + (p.act || '');
     if (p.days && /stall|market_cart/.test(p.k)) {
-      if (dioPropOn(p))
+      if (propShown(p))
         for (const dz of [-1.1, -1.5]) A.stalls.push(dioFreePt(p.x + (Math.random() - 0.5) * 2, p.z + dz));
       continue;
     }
     if (p.act === 'home') continue;
-    if (M.door && (p.act === 'house' || FOLK_HOME.test(k)) && !FOLK_WORK.test(p.k)) A.home.push(dioActSpot(p, M, PPU));
-    else if ((M.door || /stall|kiosk/.test(p.k)) && FOLK_WORK.test(k)) A.work.push(dioActSpot(p, M, PPU));
+    if (M.door && (p.act === 'house' || FOLK_HOME.test(k)) && !FOLK_WORK.test(p.k)) A.home.push(actionSpot(p, M, PPU));
+    else if ((M.door || /stall|kiosk/.test(p.k)) && FOLK_WORK.test(k)) A.work.push(actionSpot(p, M, PPU));
     else if (/bench/.test(p.k)) A.hang.push(dioFreePt(p.x, p.z - 0.7));
     else if (/fountain|well\b|statue|clock/.test(p.k)) {
       for (let a = 0; a < 4; a++)
@@ -3908,7 +3908,7 @@ function dioFolkStep(dt) {
 function dioFolkCount(sc, n) {
   const M = sc.market || (sc.baseId && (mapById(sc.baseId) || {}).market);
   if (!M || !M.days) return n;
-  const T = dioClock(),
+  const T = propClock(),
     h = T.h;
   return M.days.includes(T.day) && h >= 7 && h < 18 ? n + (M.folk || 0) : n;
 }
@@ -3917,25 +3917,25 @@ export function dioFolkTick(n, dt) {
   if (walkView.folkId !== walkView.id || (walkView.folkAll || walkView.folk).length !== n) dioFolkInit(n);
   dioFolkStep(dt);
 }
-export function dioGrassImgs(C0) {
+export function tallGrassProps(C0) {
   const out = [];
   for (const [k, P] of Object.entries(C0.props))
     if (k === 'tallgrass' || (P.group === 'tallgrass' && !P.flat)) out.push(P);
   return out.length ? out : [C0.props.tallgrass].filter(Boolean);
 }
 /* stand next to a thing, on the side you're coming from */
-export function dioApproach(x, z) {
+export function approachPoint(x, z) {
   const P = walkView.pl,
     dx = P.x - x,
     dz = P.z - z,
     l = Math.hypot(dx, dz) || 1;
   return dioFreePt(x + (dx / l) * 1.1, z + (dz / l) * 1.1);
 }
-export function dioActSpot(p, M, PPU) {
+export function actionSpot(p, M, PPU) {
   const s = p.s || 1,
     f = p.f ? -1 : 1;
   if (M.door) return dioFreePt(p.x + ((M.door.x || 0) / PPU) * s * f, p.z - 0.55);
-  return dioApproach(p.x, p.z - 0.3);
+  return approachPoint(p.x, p.z - 0.3);
 }
 export function drawExitMarks(C, st, t) {
   const sc = walkView.sc,

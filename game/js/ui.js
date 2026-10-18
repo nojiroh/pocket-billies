@@ -109,17 +109,17 @@ import { drPortrait, openDressing } from './dressing-room.js';
 import { bustHTML, sprHTML } from './skeleton-rig.js';
 import { EASE, SC, camHome, scFocus, scTargets } from './battle-stage.js';
 import {
+  closedText,
   dioClimb,
   dioFind,
   dioFreePt,
   dioStop,
   dioWalkTo,
+  isOpenNow,
   mapArtPaths,
   mapById,
   mapHub,
   openKind,
-  placeClosedText,
-  placeOpen,
   walkData,
   walkView,
 } from './walk-view.js';
@@ -1127,7 +1127,7 @@ function roomRefresh() {
 }
 function roomAim(h) {
   if (!h || h.k !== 'act' || !ROOM_OF[h.act] || U.inside) return;
-  if (typeof placeOpen === 'function' && !placeOpen(openKind(h.act, h.p))) return;
+  if (typeof isOpenNow === 'function' && !isOpenNow(openKind(h.act, h.p))) return;
   const id = roomFor(h.act, h.p);
   if (id) roomLayIn(id, h.p);
 }
@@ -1460,10 +1460,10 @@ export function walkPick(h) {
       return;
     }
     /* v47: shops and the like keep opening hours */
-    if (typeof placeOpen === 'function') {
+    if (typeof isOpenNow === 'function') {
       const kind = openKind(a, p);
-      if (!placeOpen(kind)) {
-        toast(placeClosedText(kind));
+      if (!isOpenNow(kind)) {
+        toast(closedText(kind));
         return;
       }
     }

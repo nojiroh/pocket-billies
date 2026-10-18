@@ -165,7 +165,7 @@ def dress(P, rnd):
 
 def chalk(P, rnd):
     """chalk on the paving in front of some front doors: hopscotch or a drawing. "dry": the rain washes it away and
-    it is drawn again once the ground has dried (walk-view.js dioPropOn). The pictures come from tools/build-landmarks-v47.py"""
+    it is drawn again once the ground has dried (walk-view.js propShown). The pictures come from tools/build-landmarks-v47.py"""
     if 'chalk_hopscotch' not in P.cat: return 0
     n = 0; homes = [p for p in P.sc['props'] if (P.cat.get(p['k']) or {}).get('box') and is_home(p, P.cat.get(p['k']) or {}) and not p.get(TAG)]
     rnd.shuffle(homes)
@@ -262,7 +262,7 @@ def worn(P, rnd):
 
 
 def crops(sc):
-    """the farm's fields grow and are harvested on rounds of their own (walk-view.js dioGrowK): each crop gets its
+    """the farm's fields grow and are harvested on rounds of their own (walk-view.js cropGrowth): each crop gets its
     field's number from where it stands"""
     n = 0
     for p in sc.get('props', []):

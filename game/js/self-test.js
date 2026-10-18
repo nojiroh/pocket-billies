@@ -19,9 +19,9 @@ import { TR_CACHE } from './person-art.js';
 import { DR, closeDressing } from './dressing-room.js';
 import { SC, scStop } from './battle-stage.js';
 import {
-  DIO_CLK,
   DIO_GCACHE,
-  dioActSpot,
+  PROP_CLOCK,
+  actionSpot,
   dioBridges,
   dioCell,
   dioClimbEnds,
@@ -554,7 +554,7 @@ async function runFullTest(mode) {
             })
           )
         ) {
-          const g = dioActSpot(p, C0.props[p.k], C0.ppu || 34);
+          const g = actionSpot(p, C0.props[p.k], C0.ppu || 34);
           if (g && far(dioFind(hub[0], hub[1], g[0], g[1]), g)) bad.push(p.k);
         }
       for (const b of dioBridges(sc) || []) {
@@ -837,7 +837,7 @@ async function runFullTest(mode) {
             typeof ENV !== 'undefined' ? ENV.force : null;
           if (typeof ENV !== 'undefined') {
             ENV.force = Object.assign({}, f0 || {}, { time: 12.5 });
-            if (typeof DIO_CLK !== 'undefined') DIO_CLK.t = 0;
+            if (typeof PROP_CLOCK !== 'undefined') PROP_CLOCK.t = 0;
           }
           try {
             U.bench = null;
@@ -852,7 +852,7 @@ async function runFullTest(mode) {
             const p = walkView.sc.props.find(p => p.act === 'shop' && p.k === 'shop');
             if (!p) throw new Error('no shop in Marigold Town');
             const C = walkData().sc,
-              g = dioActSpot(p, C.props[p.k], C.ppu || 34);
+              g = actionSpot(p, C.props[p.k], C.ppu || 34);
             walkView.pl.route = null;
             walkView.pl.x = g[0];
             walkView.pl.z = g[1];
@@ -888,7 +888,7 @@ async function runFullTest(mode) {
           } finally {
             if (typeof ENV !== 'undefined') {
               ENV.force = f0;
-              if (typeof DIO_CLK !== 'undefined') DIO_CLK.t = 0;
+              if (typeof PROP_CLOCK !== 'undefined') PROP_CLOCK.t = 0;
             }
           }
         },

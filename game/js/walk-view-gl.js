@@ -72,14 +72,15 @@ import { cnv, hexA } from './art.js';
 import { dioFolkFrames, humanPose, owFrames, trPick, trWarm } from './person-art.js';
 import { drawRig, rigFrame, rigParts, rigPreload } from './skeleton-rig.js';
 import {
-  DIO_FXM,
   DIO_GCACHE,
   DIO_PAD,
+  EFFECT_FRAMES,
   PW_WAIT,
+  actionLabel,
+  actionSpot,
+  approachPoint,
   artImage,
-  dioActLabel,
-  dioActSpot,
-  dioApproach,
+  cropGrowth,
   dioBridgeAt,
   dioBubble,
   dioCanvasXY,
@@ -91,12 +92,9 @@ import {
   dioFolkTick,
   dioFree,
   dioFreePt,
-  dioGrassImgs,
   dioGroundKey,
-  dioGrowK,
   dioHash,
   dioHitAt,
-  dioLayerM,
   dioNav,
   dioNextOn,
   dioNextTiles,
@@ -105,8 +103,6 @@ import {
   dioPill,
   dioPlayer,
   dioProj,
-  dioPropM,
-  dioPropOn,
   dioShape,
   dioSpeech,
   dioStep,
@@ -123,15 +119,19 @@ import {
   drawExitMarks,
   flagPicturePath,
   imageReady,
+  layerAsProp,
   mapById,
   mapHub,
   mapMoodName,
   pointAlongMapPath,
   prepareMap,
+  propShown,
+  propWithVariant,
   setDioNav,
   setDioProj,
   setDioStop,
   setDioUnproject,
+  tallGrassProps,
   terrainAt,
   walkData,
   walkView,
@@ -4537,7 +4537,7 @@ export function dglItems(st, C, PPU, C0) {
     t = walkView.t,
     out = [],
     hub = mapHub(sc),
-    tg = dioGrassImgs(C0),
+    tg = tallGrassProps(C0),
     wind = eng('grass', 'wind'),
     odt = Math.min(0.1, Math.max(0, (t - (walkRenderer.owT ?? t)) / 1000)),
     ow = typeof owItem === 'function' && !st.battle && !walkRenderer.bt,
@@ -4548,12 +4548,12 @@ export function dglItems(st, C, PPU, C0) {
     owWarm();
   }
   const prop = (p, far) => {
-    const M = dioPropM(p, C0.props[p.k]);
-    if (!M || !dioPropOn(p)) return;
+    const M = propWithVariant(p, C0.props[p.k]);
+    if (!M || !propShown(p)) return;
     const im = artImage(dglAltImg(p, M, C0, sc));
     if (!imageReady(im)) return;
     const lk = far ? null : dglLookOf(p, M, sc),
-      s = ((p.s || 1) / PPU) * (lk ? lk.size : 1) * (p.grow != null ? dioGrowK(p) : 1),
+      s = ((p.s || 1) / PPU) * (lk ? lk.size : 1) * (p.grow != null ? cropGrowth(p) : 1),
       w = im.naturalWidth || im.width,
       h = im.naturalHeight || im.height;
     const S = far ? null : dglStill(p, M, im, sc);
@@ -4655,7 +4655,7 @@ export function dglItems(st, C, PPU, C0) {
       for (const l of M.layers) {
         const li = l.img && artImage(l.img);
         if (!imageReady(li)) continue;
-        const LM = dioLayerM(M, l);
+        const LM = layerAsProp(M, l);
         /* alpha 0.4: a layer that swings from a point (the rope swing on the great oak: l.pivot metres up), a slow pendulum
       pushed a little harder by the gusts: it leans one way about the pivot and moves the other, so the pivot stays put */
         let lx = p.x,
@@ -6220,7 +6220,7 @@ function dglLandmarkTilt(P, sc) {
     };
   let best = 0;
   for (const p of L.list) {
-    if (typeof dioPropOn === 'function' && !dioPropOn(p)) continue;
+    if (typeof propShown === 'function' && !propShown(p)) continue;
     const M = C0.props[p.k],
       dz = p.z - P.z,
       dx = Math.abs(p.x - P.x);
@@ -6282,16 +6282,16 @@ export function dglHit(it, C, hits, labels, PPU) {
   }
   if (it.k === 'prop' && it.p.act) {
     const go =
-      it.p.act === 'climb' && typeof dioClimbGo === 'function' ? dioClimbGo(it.p) : dioActSpot(it.p, it.M, PPU);
+      it.p.act === 'climb' && typeof dioClimbGo === 'function' ? dioClimbGo(it.p) : actionSpot(it.p, it.M, PPU);
     hits.push({ k: 'act', act: it.p.act, p: it.p, ...box, z: q.d, go, look: [it.p.x, it.p.z] });
-    const lb = dioActLabel(it.p, it.M);
+    const lb = actionLabel(it.p, it.M);
     if (lb) labels.push({ k: 'act', x: q.x, y: box.y0 - 4, t: lb, act: lb === 'Closed' ? 'closed' : it.p.act });
   } else if (it.k === 'buddy') {
     hits.push({ k: 'buddy', ...box, z: q.d - 0.5 });
   } else if (it.k === 'pet') {
-    hits.push({ k: 'npc', n: it.n, ...box, z: q.d + 0.2, go: dioApproach(it.x, it.z), look: [it.x, it.z] });
+    hits.push({ k: 'npc', n: it.n, ...box, z: q.d + 0.2, go: approachPoint(it.x, it.z), look: [it.x, it.z] });
   } else if (it.k === 'encm') {
-    hits.push({ k: 'enc', e: it.e, ...box, z: q.d, go: dioApproach(it.x, it.z), look: [it.x, it.z] });
+    hits.push({ k: 'enc', e: it.e, ...box, z: q.d, go: approachPoint(it.x, it.z), look: [it.x, it.z] });
     if (it.e.alpha) labels.push({ k: 'bang', x: q.x, y: box.y0 - 6, col: '#FF3B6B' });
   } else if (it.k === 'npc') {
     hits.push({
@@ -6301,7 +6301,7 @@ export function dglHit(it, C, hits, labels, PPU) {
       x0: q.x - 18 * k,
       x1: q.x + 18 * k,
       z: q.d,
-      go: dioApproach(it.x, it.z),
+      go: approachPoint(it.x, it.z),
       look: [it.x, it.z],
     });
     if (!it.n.done) labels.push({ k: 'bang', x: q.x, y: box.y0, col: it.n.col || '#D9434B' });
@@ -6320,7 +6320,7 @@ export function dglHit(it, C, hits, labels, PPU) {
       y0: by - 22,
       y1: q.y + 4,
       z: q.d,
-      go: dioApproach(it.x, it.z),
+      go: approachPoint(it.x, it.z),
       look: [it.x, it.z],
     });
     labels.push({ k: 'enc', x: q.x, y: by, e: it.e });
@@ -7571,7 +7571,7 @@ export function dglFxPass(C, items, X, dark, t, dt) {
     quad = (k, fr, x, y, z, sw, sh, a, col) => {
       const T = fxT(k);
       if (!T) return;
-      const m = DIO_FXM[k];
+      const m = EFFECT_FRAMES[k];
       gl.bindTexture(gl.TEXTURE_2D, T.t);
       gl.uniform3f(U.uP, x, y + dglCurve(x, z), z);
       gl.uniform2f(U.uS, sw, sh);
