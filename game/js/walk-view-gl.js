@@ -84,12 +84,11 @@ import {
   bigTilesOn,
   bridgeAt,
   canvasPoint,
+  climbStartEnd,
   cropGrowth,
   dioBubble,
-  dioClimbGo,
   dioFolkTick,
   dioPill,
-  dioPlayer,
   dioSpeech,
   dioTag,
   dioTapMark,
@@ -130,6 +129,7 @@ import {
   stopWalkView,
   tallGrassProps,
   terrainAt,
+  updatePlayer,
   valueNoise2d,
   walkData,
   walkView,
@@ -3624,7 +3624,7 @@ function dglFrameIn(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
   const st = BT ? { who: null, npcs: [], enc: [], battle: 1 } : walkView.opt.state ? walkView.opt.state() : { t: 0 };
   if (!BT) {
     walkView.st = st;
-    dioPlayer(st, dt);
+    updatePlayer(st, dt);
   }
   const P = walkView.pl;
   if (!BT && sc.folk && st.mode && st.mode !== 'line') dioFolkTick(sc.folk, dt);
@@ -6285,7 +6285,7 @@ export function dglHit(it, C, hits, labels, PPU) {
   }
   if (it.k === 'prop' && it.p.act) {
     const go =
-      it.p.act === 'climb' && typeof dioClimbGo === 'function' ? dioClimbGo(it.p) : actionSpot(it.p, it.M, PPU);
+      it.p.act === 'climb' && typeof climbStartEnd === 'function' ? climbStartEnd(it.p) : actionSpot(it.p, it.M, PPU);
     hits.push({ k: 'act', act: it.p.act, p: it.p, ...box, z: q.d, go, look: [it.p.x, it.p.z] });
     const lb = actionLabel(it.p, it.M);
     if (lb) labels.push({ k: 'act', x: q.x, y: box.y0 - 4, t: lb, act: lb === 'Closed' ? 'closed' : it.p.act });

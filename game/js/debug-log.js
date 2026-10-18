@@ -707,7 +707,7 @@ NWLOG.hook = () => {
     /* alpha 0.2: the rest of a frame's work, so a slow frame names it (a slow frame used to say only "drawing") */
     ['dglRingUpdate', 'near ring', 'painting the ground nearby'],
     ['dglGrassWork', 'grass rows', 'planting the grass'],
-    ['dioPlayer', 'walking', 'moving you'],
+    ['updatePlayer', 'walking', 'moving you'],
     ['dioFolkTick', 'folk', 'moving the townsfolk'],
     ['lifeStep', 'animals', 'moving the animals'],
   ]) {

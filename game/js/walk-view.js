@@ -98,15 +98,13 @@ expose({
   canWalkStraight: [() => canWalkStraight, v => (canWalkStraight = v)],
   canvasPixels: [() => canvasPixels],
   canvasPoint: [() => canvasPoint, v => (canvasPoint = v)],
+  climbEnds: [() => climbEnds, v => (climbEnds = v)],
+  climbStartEnd: [() => climbStartEnd, v => (climbStartEnd = v)],
   clipSegmentToRect: [() => clipSegmentToRect, v => (clipSegmentToRect = v)],
   closedText: [() => closedText, v => (closedText = v)],
   cropGrowth: [() => cropGrowth, v => (cropGrowth = v)],
   decodeBase64Array: [() => decodeBase64Array, v => (decodeBase64Array = v)],
   dioBubble: [() => dioBubble, v => (dioBubble = v)],
-  dioClimb: [() => dioClimb, v => (dioClimb = v)],
-  dioClimbEnds: [() => dioClimbEnds, v => (dioClimbEnds = v)],
-  dioClimbGo: [() => dioClimbGo, v => (dioClimbGo = v)],
-  dioClimbStep: [() => dioClimbStep, v => (dioClimbStep = v)],
   dioFolkAnchors: [() => dioFolkAnchors, v => (dioFolkAnchors = v)],
   dioFolkCount: [() => dioFolkCount, v => (dioFolkCount = v)],
   dioFolkGo: [() => dioFolkGo, v => (dioFolkGo = v)],
@@ -114,14 +112,10 @@ expose({
   dioFolkStep: [() => dioFolkStep, v => (dioFolkStep = v)],
   dioFolkStreet: [() => dioFolkStreet, v => (dioFolkStreet = v)],
   dioFolkTick: [() => dioFolkTick, v => setDioFolkTick(v)],
-  dioGradeK: [() => dioGradeK, v => (dioGradeK = v)],
   dioMix: [() => dioMix, v => (dioMix = v)],
   dioPanel: [() => dioPanel, v => (dioPanel = v)],
   dioPill: [() => dioPill, v => (dioPill = v)],
   dioPillSize: [() => dioPillSize, v => (dioPillSize = v)],
-  dioPlayer: [() => dioPlayer, v => setDioPlayer(v)],
-  dioPlayer0: [() => dioPlayer0, v => (dioPlayer0 = v)],
-  dioPlayerY: [() => dioPlayerY, v => (dioPlayerY = v)],
   dioPx: [() => dioPx, v => (dioPx = v)],
   dioPxArrow: [() => dioPxArrow, v => (dioPxArrow = v)],
   dioPxFont: [() => dioPxFont, v => (dioPxFont = v)],
@@ -164,6 +158,7 @@ expose({
   mapHub: [() => mapHub, v => (mapHub = v)],
   mapMoodName: [() => mapMoodName, v => (mapMoodName = v)],
   mapWaterCells: [() => mapWaterCells, v => (mapWaterCells = v)],
+  movePlayer: [() => movePlayer, v => (movePlayer = v)],
   navCellAt: [() => navCellAt, v => (navCellAt = v)],
   navCostAt: [() => navCostAt, v => (navCostAt = v)],
   navGrid: [() => navGrid, v => setNavGrid(v)],
@@ -194,9 +189,12 @@ expose({
   setWalkData: [() => setWalkData, v => (setWalkData = v)],
   setWorldToScreen: [() => setWorldToScreen, v => (setWorldToScreen = v)],
   shapedStepCornerHeight: [() => shapedStepCornerHeight, v => (shapedStepCornerHeight = v)],
+  slopeSpeedFactor: [() => slopeSpeedFactor, v => (slopeSpeedFactor = v)],
   stableCells: [() => stableCells, v => (stableCells = v)],
+  startClimb: [() => startClimb, v => (startClimb = v)],
   stepCellAt: [() => stepCellAt, v => (stepCellAt = v)],
   stepCellsJoined: [() => stepCellsJoined, v => (stepCellsJoined = v)],
+  stepClimb: [() => stepClimb, v => (stepClimb = v)],
   stepCornerHeight: [() => stepCornerHeight, v => (stepCornerHeight = v)],
   stepEdgeShape: [() => stepEdgeShape, v => (stepEdgeShape = v)],
   stepGrid: [() => stepGrid, v => (stepGrid = v)],
@@ -213,6 +211,8 @@ expose({
   tileSetPixels: [() => tileSetPixels, v => (tileSetPixels = v)],
   timedPropsKey: [() => timedPropsKey, v => (timedPropsKey = v)],
   turnToPlayer: [() => turnToPlayer, v => (turnToPlayer = v)],
+  updatePlayer: [() => updatePlayer, v => setUpdatePlayer(v)],
+  updatePlayerHeight: [() => updatePlayerHeight, v => (updatePlayerHeight = v)],
   valueNoise2d: [() => valueNoise2d, v => (valueNoise2d = v)],
   walkData: [() => walkData, v => setWalkData(v)],
   walkTo: [() => walkTo, v => (walkTo = v)],
@@ -227,13 +227,13 @@ export function setDioFolkTick(v) {
   dioFolkTick = v; // eslint-disable-line no-func-assign
   provide({ dioFolkTick });
 }
-export function setDioPlayer(v) {
-  dioPlayer = v; // eslint-disable-line no-func-assign
-  provide({ dioPlayer });
-}
 export function setPrepareMap(v) {
   prepareMap = v; // eslint-disable-line no-func-assign
   provide({ prepareMap });
+}
+export function setUpdatePlayer(v) {
+  updatePlayer = v; // eslint-disable-line no-func-assign
+  provide({ updatePlayer });
 }
 /* to-module: end */
 export const walkView = {
@@ -3235,17 +3235,17 @@ export function setWorldToScreen(v) {
   provide({ worldToScreen });
 }
 /* ---------- the player ---------- */
-export function dioPlayer(st, dt) {
+export function updatePlayer(st, dt) {
   if (walkView.pl.climb) {
-    dioClimbStep(dt);
+    stepClimb(dt);
     return;
   }
-  dioPlayer0(st, dt);
-  dioPlayerY(dt);
+  movePlayer(st, dt);
+  updatePlayerHeight(dt);
 }
 /* v28: ladders up the cliffs. A ladder prop stands at the foot of a cliff with "to" (the landing on top); tapping it
    walks you to whichever end is on your level, then you climb, hand over hand, to the other */
-export function dioClimbEnds(p) {
+export function climbEnds(p) {
   if (p._ce && p._ce.id === walkView.id && p._ce.k === walkView.gkey) return p._ce.v;
   const t = p.to || [p.x, p.z + 0.9],
     yt = dioH(t[0], t[1]);
@@ -3271,15 +3271,15 @@ export function dioClimbEnds(p) {
   });
   return v;
 }
-export function dioClimbGo(p) {
+export function climbStartEnd(p) {
   const P = walkView.pl,
-    E = dioClimbEnds(p),
+    E = climbEnds(p),
     y = P.yv ?? dioH(P.x, P.z);
   return Math.abs(y - dioH(E.top[0], E.top[1])) < Math.abs(y - dioH(E.bot[0], E.bot[1])) ? E.top : E.bot;
 }
-export function dioClimb(p) {
+export function startClimb(p) {
   const P = walkView.pl,
-    E = dioClimbEnds(p),
+    E = climbEnds(p),
     yb = dioH(E.bot[0], E.bot[1]),
     yt = dioH(E.top[0], E.top[1]),
     y = P.yv ?? dioH(P.x, P.z),
@@ -3298,7 +3298,7 @@ export function dioClimb(p) {
     up,
   };
 }
-function dioClimbStep(dt) {
+function stepClimb(dt) {
   const P = walkView.pl,
     C = P.climb;
   C.t += dt / C.dur;
@@ -3348,7 +3348,7 @@ function dioClimbStep(dt) {
   }
 }
 /* the height you are drawn at: follows the ground a step at a time, and off a ledge you hop down in a little arc */
-function dioPlayerY(dt) {
+function updatePlayerHeight(dt) {
   const P = walkView.pl;
   if (typeof dioH !== 'function') return;
   const gh = dioH(P.x, P.z);
@@ -3388,13 +3388,13 @@ function dioPlayerY(dt) {
   P.ly = gh;
 }
 /* v23: how the ground ahead changes your pace: up to 40% slower up a steep ramp or stairs, up to 12% quicker going down */
-function dioGradeK(x, z, ux, uz) {
+function slopeSpeedFactor(x, z, ux, uz) {
   if (typeof dioGroundH !== 'function') return 1;
   const g = (dioGroundH(x + ux * 0.35, z + uz * 0.35) - dioGroundH(x, z)) / 0.35;
   if (!(Math.abs(g) < 1.2)) return 1;
   return clamp(1 - g * 0.75, 0.6, 1.12);
 }
-function dioPlayer0(st, dt) {
+function movePlayer(st, dt) {
   const P = walkView.pl,
     sc = walkView.sc,
     mode = st.mode || 'line';
@@ -3519,7 +3519,7 @@ function dioPlayer0(st, dt) {
         P.goal = null;
       }
       const run = km > 0.92 ? 1.3 : km < 0.5 ? 0.6 : 1,
-        s = WALK_SPEED * dt * run * dioGradeK(P.x, P.z, wx / l, wz / l);
+        s = WALK_SPEED * dt * run * slopeSpeedFactor(P.x, P.z, wx / l, wz / l);
       let nx = P.x + (wx / l) * s,
         nz = P.z + (wz / l) * s;
       if (canWalkStraight(P.x, P.z, nx, P.z)) P.x = nx;
@@ -3529,7 +3529,7 @@ function dioPlayer0(st, dt) {
     } else if (P.route) {
       const tg0 = P.route[P.ri],
         d0 = Math.hypot(tg0[0] - P.x, tg0[1] - P.z) || 1;
-      let left = WALK_SPEED * (P.rush || 1) * dt * dioGradeK(P.x, P.z, (tg0[0] - P.x) / d0, (tg0[1] - P.z) / d0);
+      let left = WALK_SPEED * (P.rush || 1) * dt * slopeSpeedFactor(P.x, P.z, (tg0[0] - P.x) / d0, (tg0[1] - P.z) / d0);
       while (left > 0 && P.route) {
         const tg = P.route[P.ri],
           dx = tg[0] - P.x,

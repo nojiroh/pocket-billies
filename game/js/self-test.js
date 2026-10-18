@@ -22,7 +22,7 @@ import {
   GROUND_CACHE,
   PROP_CLOCK,
   actionSpot,
-  dioClimbEnds,
+  climbEnds,
   findPath,
   mapBridges,
   mapById,
@@ -546,8 +546,8 @@ async function runFullTest(mode) {
           p.act &&
           !(
             p.act === 'climb' &&
-            typeof dioClimbEnds === 'function' &&
-            [dioClimbEnds(p).bot, dioClimbEnds(p).top].some(g => {
+            typeof climbEnds === 'function' &&
+            [climbEnds(p).bot, climbEnds(p).top].some(g => {
               const q = findPath(hub[0], hub[1], g[0], g[1]),
                 e = q && q[q.length - 1];
               return e && Math.hypot(e[0] - g[0], e[1] - g[1]) <= 1.6;

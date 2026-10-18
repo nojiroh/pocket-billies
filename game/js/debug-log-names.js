@@ -10,11 +10,11 @@ import { openDressing, setOpenDressing } from './dressing-room.js';
 import { SC, scResize, scStart, setScResize, setScStart } from './battle-stage.js';
 import {
   dioFolkTick,
-  dioPlayer,
   prepareMap,
   setDioFolkTick,
-  setDioPlayer,
   setPrepareMap,
+  setUpdatePlayer,
+  updatePlayer,
   walkView,
 } from './walk-view.js';
 import {
@@ -120,7 +120,6 @@ Object.defineProperties(GAME, {
   dglSprites: { get: () => dglSprites, set: setDglSprites },
   dglWater: { get: () => dglWater, set: setDglWater },
   dioFolkTick: { get: () => dioFolkTick, set: setDioFolkTick },
-  dioPlayer: { get: () => dioPlayer, set: setDioPlayer },
   eglFinish: { get: () => eglFinish, set: setEglFinish },
   eglNormWork: { get: () => eglNormWork, set: setEglNormWork },
   eglNormal: { get: () => eglNormal, set: setEglNormal },
@@ -151,6 +150,7 @@ Object.defineProperties(GAME, {
   setTrip: { get: () => setTrip, set: setSetTrip },
   stampCount: { get: () => stampCount },
   toast: { get: () => toast },
+  updatePlayer: { get: () => updatePlayer, set: setUpdatePlayer },
   userFps: { get: () => userFps },
   walkRenderer: { get: () => walkRenderer },
   walkView: { get: () => walkView },

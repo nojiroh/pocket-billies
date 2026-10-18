@@ -110,13 +110,13 @@ import { bustHTML, sprHTML } from './skeleton-rig.js';
 import { EASE, SC, camHome, scFocus, scTargets } from './battle-stage.js';
 import {
   closedText,
-  dioClimb,
   findPath,
   isOpenNow,
   mapArtPaths,
   mapById,
   mapHub,
   openKind,
+  startClimb,
   stopWalkView,
   walkData,
   walkTo,
@@ -1446,8 +1446,8 @@ export function walkPick(h) {
   } else if (h.k === 'act') {
     const p = h.p,
       a = h.act;
-    if (a === 'climb' && typeof dioClimb === 'function') {
-      dioClimb(p);
+    if (a === 'climb' && typeof startClimb === 'function') {
+      startClimb(p);
       return;
     }
     /* alpha 0.4: an airship mast (or a sky lift, or the terminal's ticket window): fly to a town you've been to */

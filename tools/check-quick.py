@@ -591,7 +591,7 @@ def desktop_steps(b, base, R):
         r = pg.evaluate("""((ids)=>{const out={},keep=[walkView.sc,walkView.nav,walkView.gkey];
          for(const id of ids){const sc=mapById(id);if(!sc)continue;walkView.sc=sc;walkView.nav=null;walkView.gkey='quick-'+id;const C0=walkData().sc,hub=mapHub(sc),bad=[],far=(q,p)=>{const e=q&&q[q.length-1];return !q||Math.hypot(e[0]-p[0],e[1]-p[1])>1.6};
           for(const e of sc.exits||[])if(far(findPath(hub[0],hub[1],e[0],e[1]),e))bad.push('exit '+e.map(v=>v.toFixed(1)));
-          for(const p of sc.props||[])if(p.act&&!(p.act==='climb'&&typeof dioClimbEnds==='function'&&[dioClimbEnds(p).bot,dioClimbEnds(p).top].some(g=>{const q=findPath(hub[0],hub[1],g[0],g[1]),e=q&&q[q.length-1];return e&&Math.hypot(e[0]-g[0],e[1]-g[1])<=1.6}))){const g=actionSpot(p,C0.props[p.k],C0.ppu||34);if(g&&far(findPath(hub[0],hub[1],g[0],g[1]),g))bad.push(p.k+' @'+p.x+','+p.z)}
+          for(const p of sc.props||[])if(p.act&&!(p.act==='climb'&&typeof climbEnds==='function'&&[climbEnds(p).bot,climbEnds(p).top].some(g=>{const q=findPath(hub[0],hub[1],g[0],g[1]),e=q&&q[q.length-1];return e&&Math.hypot(e[0]-g[0],e[1]-g[1])<=1.6}))){const g=actionSpot(p,C0.props[p.k],C0.ppu||34);if(g&&far(findPath(hub[0],hub[1],g[0],g[1]),g))bad.push(p.k+' @'+p.x+','+p.z)}
           for(const b of mapBridges(sc)||[]){const A=[b.a[0]-b.ux*.4,b.a[1]-b.uz*.4],B=b.pier?[b.b[0]-b.ux*.4,b.b[1]-b.uz*.4]:[b.b[0]+b.ux*.4,b.b[1]+b.uz*.4];if(far(findPath(A[0],A[1],B[0],B[1]),B))bad.push((b.pier?'jetty ':'bridge ')+b.a)}
           const G=navGrid(),hc=navCellAt(hub[0],hub[1]);if(hc<0||G.blk[hc])bad.push('hub is blocked');out[id]=bad}
          [walkView.sc,walkView.nav,walkView.gkey]=keep;return out})(%s)""" % json.dumps([ids[n] for n in nodes]))
@@ -805,7 +805,7 @@ def desktop_steps(b, base, R):
         node = pg.evaluate("ROUTE.findIndex(r=>r.scene==='ridge')")
         if node >= 0:
             go_scene(pg, node); time.sleep(1.5)
-            r = pg.evaluate("(()=>{const p=walkView.sc.props.find(p=>p.act==='climb');if(!p)return null;const E=dioClimbEnds(p);walkView.pl.route=null;walkView.pl.x=E.bot[0];walkView.pl.z=E.bot[1];walkView.pl.yv=dioH(E.bot[0],E.bot[1]);return [E.top[0],E.top[1],dioH(E.top[0],E.top[1]),p.h]})()")
+            r = pg.evaluate("(()=>{const p=walkView.sc.props.find(p=>p.act==='climb');if(!p)return null;const E=climbEnds(p);walkView.pl.route=null;walkView.pl.x=E.bot[0];walkView.pl.z=E.bot[1];walkView.pl.yv=dioH(E.bot[0],E.bot[1]);return [E.top[0],E.top[1],dioH(E.top[0],E.top[1]),p.h]})()")
             if not r: raise Exception('no ladder at Kitewind Ridge')
             time.sleep(1); pg.evaluate("walkPick({k:'act',p:walkView.sc.props.find(p=>p.act==='climb'),act:'climb'});0"); time.sleep(1)
             until(pg, '!walkView.pl.climb', 60); time.sleep(.5); shot(pg, 'ladder-top')          # the climb runs on game time, slow in software drawing
