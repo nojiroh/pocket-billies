@@ -1788,8 +1788,8 @@ def desktop_steps(b, base, R):
         Guide's Postcards page (it slides away by itself or on a tap); coming back shows just the stamp"""
         if not pg.evaluate("typeof postcardCheck==='function'"): return 'not in this build'
         sd = pg.evaluate("LOCATION_BY_ID.sundown.node")
-        # alpha 0.5: no postcard before Blake's first battle (pcFree); the checks skip the opening, so mark it as played
-        pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();uiState.bench=null;saveData.cards={};PC.last=null;PC.on=false;Object.assign(storyFlags(),{rival0:'win',met_blake0:1});0")
+        # alpha 0.5: no postcard before Blake's first battle (postcardAllowed); the checks skip the opening, so mark it as played
+        pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();uiState.bench=null;saveData.cards={};postcardState.last=null;postcardState.on=false;Object.assign(storyFlags(),{rival0:'win',met_blake0:1});0")
         go_scene(pg, sd)
         if not until(pg, "!!document.querySelector('.pcard-wrap.in')", 12, "postcardCheck()"): raise Exception('no postcard came on walking into Marigold Town')
         time.sleep(1.2)
@@ -1803,7 +1803,7 @@ def desktop_steps(b, base, R):
         n = pg.evaluate("document.querySelectorAll('.pc-thumb:not(.none)').length")
         if n != 1: raise Exception(f'the Postcards page shows {n} cards')
         shot(pg, 'a04-postcards-page')
-        pg.evaluate("uiState.guideTab='dex';uiState.tab='walk';render();PC.last=null;0")
+        pg.evaluate("uiState.guideTab='dex';uiState.tab='walk';render();postcardState.last=null;0")
         if not until(pg, "!!document.querySelector('.pc-mini')", 10, "postcardCheck()"): raise Exception('coming back showed no stamp')
         if pg.evaluate("!!document.querySelector('.pcard-wrap')"): raise Exception('coming back showed the big card again')
         if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
