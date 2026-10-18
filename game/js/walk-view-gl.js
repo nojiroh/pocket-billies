@@ -175,7 +175,7 @@ import {
   eglSun,
 } from './engine/light.js';
 import { EGL_POST_SH, eglPost, eglSnapshot, eglSunScreen } from './engine/post-effects.js';
-import { ENV_WX, envFrame, envHere, envSky, envState, envWinLit, environment } from './environment.js';
+import { WEATHER_LOOKS, envFrame, envHere, envSky, envState, envWinLit, environment } from './environment.js';
 /* eslint-disable no-func-assign */
 expose({
   ALTERNATE_PROPS: [() => ALTERNATE_PROPS],
@@ -6674,7 +6674,7 @@ function roomSkyLight() {
   } catch (e) {
     st = { h: 13, rise: 6, set: 20, night: 0, dusk: 0, dawn: 0, wx: 'clear' };
   }
-  const W = (typeof ENV_WX !== 'undefined' && ENV_WX[st.wx]) || {},
+  const W = (typeof WEATHER_LOOKS !== 'undefined' && WEATHER_LOOKS[st.wx]) || {},
     grey = W.grey || 0,
     day = 1 - st.night,
     ph = clamp((st.h - st.rise) / Math.max(1, st.set - st.rise), 0, 1),

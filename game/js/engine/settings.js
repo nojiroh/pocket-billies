@@ -6,7 +6,7 @@
    A value of null means "use the scene's own field" (its haze, sky, camera…). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { ENV_MOD, GD, S, provide } from '../hooks.js';
+import { GD, S, WEATHER_ENGINE_MODIFIERS, provide } from '../hooks.js';
 import { hexA } from '../art.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -798,8 +798,8 @@ export function eng(group, key) {
   if (v === undefined && G && G[group]) v = G[group][key];
   if (v === undefined) v = ENGINE_DEFAULTS[group][key];
   /* v26: the time of day and the weather lean on some dials while a walk scene draws (environment.js) */
-  if (ENG_CTX.env && typeof ENV_MOD !== 'undefined') {
-    const m = ENV_MOD[group];
+  if (ENG_CTX.env && typeof WEATHER_ENGINE_MODIFIERS !== 'undefined') {
+    const m = WEATHER_ENGINE_MODIFIERS[group];
     if (m && m[key] && typeof v === 'number') v = m[key](v);
   }
   return v;

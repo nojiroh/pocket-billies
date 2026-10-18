@@ -15,16 +15,15 @@ import { hexA } from './art.js';
 import { mapById, walkView } from './walk-view.js';
 /* eslint-disable no-func-assign */
 expose({
-  ENV_CLIMATE: [() => ENV_CLIMATE],
-  ENV_HIST: [() => ENV_HIST],
-  ENV_LIKES: [() => ENV_LIKES],
-  ENV_MOD: [() => ENV_MOD],
-  ENV_NAMES: [() => ENV_NAMES],
-  ENV_PAL: [() => ENV_PAL],
-  ENV_SEASONS: [() => ENV_SEASONS],
-  ENV_TIMES: [() => ENV_TIMES],
-  ENV_TIME_H: [() => ENV_TIME_H],
-  ENV_WX: [() => ENV_WX],
+  CLIMATE_WEATHER_ODDS: [() => CLIMATE_WEATHER_ODDS],
+  ENVIRONMENT_LIKES: [() => ENVIRONMENT_LIKES],
+  PINNED_HOURS: [() => PINNED_HOURS],
+  SEASON_BY_MONTH: [() => SEASON_BY_MONTH],
+  TIME_OF_DAY_CHOICES: [() => TIME_OF_DAY_CHOICES],
+  WEATHER_ENGINE_MODIFIERS: [() => WEATHER_ENGINE_MODIFIERS],
+  WEATHER_LOOKS: [() => WEATHER_LOOKS],
+  WEATHER_NAMES: [() => WEATHER_NAMES],
+  WEATHER_SKY_PALETTES: [() => WEATHER_SKY_PALETTES],
   envClimate: [() => envClimate, v => (envClimate = v)],
   envFactors: [() => envFactors, v => (envFactors = v)],
   envForecast: [() => envForecast, v => (envForecast = v)],
@@ -50,6 +49,7 @@ expose({
   envWeatherFor: [() => envWeatherFor, v => (envWeatherFor = v)],
   envWinLit: [() => envWinLit, v => (envWinLit = v)],
   environment: [() => environment],
+  weatherHistory: [() => weatherHistory],
 });
 /* eslint-enable no-func-assign */
 provide({ envHere, envOdds, envSeason, envState, envSun });
@@ -79,7 +79,7 @@ export const environment = {
   t: 0,
 };
 provide({ environment }); /* to-module */
-const ENV_SEASONS = [
+const SEASON_BY_MONTH = [
   'winter',
   'winter',
   'spring',
@@ -93,7 +93,7 @@ const ENV_SEASONS = [
   'autumn',
   'winter',
 ];
-const ENV_PAL = {
+const WEATHER_SKY_PALETTES = {
   night: ['#070B22', '#121A3C', '#232B52'],
   dusk: ['#34407E', '#C77C7A', '#FFB070'],
   dawn: ['#6E8ECA', '#EEB2A6', '#FFD4A0'],
@@ -102,7 +102,7 @@ const ENV_PAL = {
   ash: ['#6A5C58', '#8A7C74', '#A69284'],
 };
 /* how each weather looks: cloud cover, how grey the sky turns, rain, snow, fog, ash */
-export const ENV_WX = {
+export const WEATHER_LOOKS = {
   clear: { cloud: 0.35 },
   cloudy: { cloud: 0.85, grey: 0.5 },
   rain: { cloud: 0.95, grey: 0.72, rain: 1, fog: 0.15 },
@@ -112,7 +112,7 @@ export const ENV_WX = {
   ash: { cloud: 0.55, grey: 0.35, ash: 1, fog: 0.15 },
 };
 /* the odds of each weather by kind of place */
-const ENV_CLIMATE = {
+const CLIMATE_WEATHER_ODDS = {
   mild: { clear: 50, cloudy: 22, rain: 16, fog: 8, storm: 4 },
   coast: { clear: 46, cloudy: 20, rain: 18, fog: 10, storm: 6 },
   alpine: { clear: 34, cloudy: 16, snow: 40, fog: 10 },
@@ -120,7 +120,7 @@ const ENV_CLIMATE = {
   dry: { clear: 80, cloudy: 20 },
   none: { clear: 100 },
 };
-export const ENV_NAMES = {
+export const WEATHER_NAMES = {
   clear: 'Clear',
   cloudy: 'Cloudy',
   rain: 'Rain',
@@ -129,16 +129,16 @@ export const ENV_NAMES = {
   snow: 'Snow',
   ash: 'Falling ash',
 };
-const ENV_TIMES = [
+const TIME_OF_DAY_CHOICES = [
   ['real', 'Follow my clock'],
   ['morning', 'Always morning'],
   ['day', 'Always midday'],
   ['evening', 'Always evening'],
   ['night', 'Always night'],
 ];
-const ENV_TIME_H = { morning: 8.2, day: 13, evening: 19.6, night: 23.4 };
+const PINNED_HOURS = { morning: 8.2, day: 13, evening: 19.6, night: 23.4 };
 /* who comes out when (multiplies a billionaire's odds in the wild by its types) */
-export const ENV_LIKES = {
+export const ENVIRONMENT_LIKES = {
   night: { Psychic: 2, Dragon: 1.6, Steel: 1.2, Grass: 0.8 },
   dusk: { Flying: 1.4, Psychic: 1.2 },
   sunny: { Grass: 1.25, Fire: 1.2 },
@@ -161,7 +161,7 @@ function envRules() {
 /* the kind of weather a scene gets: its own field, else guessed from what it is */
 function envClimate(sc) {
   if (!sc) return 'mild';
-  if (sc.climate && ENV_CLIMATE[sc.climate]) return sc.climate;
+  if (sc.climate && CLIMATE_WEATHER_ODDS[sc.climate]) return sc.climate;
   if (sc.indoor) return 'none';
   if (sc.waterKind === 'lava' || sc.far === 'volcano' || sc.edge === 'z' || sc.edge === 'j') return 'volcano';
   if (sc.waterKind === 'ice' || sc.far === 'snow' || sc.edge === 'n') return 'alpine';
@@ -172,13 +172,13 @@ function envClimate(sc) {
 function envSeason(d) {
   const p = (environment.force && environment.force.season) || envPrefs().season;
   if (p && p !== 'auto') return p;
-  return ENV_SEASONS[(d || new Date()).getMonth()];
+  return SEASON_BY_MONTH[(d || new Date()).getMonth()];
 }
 export function envHour(d) {
   const f = environment.force && environment.force.time,
     p = f != null ? f : environment.on ? envPrefs().time || 'real' : 'day';
   if (typeof p === 'number') return p;
-  if (p !== 'real' && ENV_TIME_H[p] != null) return ENV_TIME_H[p];
+  if (p !== 'real' && PINNED_HOURS[p] != null) return PINNED_HOURS[p];
   d = d || new Date();
   return d.getHours() + d.getMinutes() / 60;
 }
@@ -196,9 +196,9 @@ function envWeatherFor(climate, d) {
   if (f) return f;
   const p = envPrefs().weather;
   if (p === 'clear' || !environment.on) return 'clear';
-  if (p && p !== 'auto' && ENV_WX[p]) return p;
+  if (p && p !== 'auto' && WEATHER_LOOKS[p]) return p;
   d = d || new Date();
-  const odds = Object.assign({}, ENV_CLIMATE[climate] || ENV_CLIMATE.mild),
+  const odds = Object.assign({}, CLIMATE_WEATHER_ODDS[climate] || CLIMATE_WEATHER_ODDS.mild),
     ss = envSeason(d);
   if (climate === 'mild' && ss === 'winter') {
     odds.snow = (odds.rain || 0) * 0.7;
@@ -268,12 +268,12 @@ export function envHere() {
 /* v47: what the weather has been doing these past hours, worked out from the weather of each hour (the same for
    everyone): the ground stays wet and the puddles last for a few hours after rain; snow piles up while it snows and
    melts away over the hours after (slowly in the mountains, quickly in the sun) */
-const ENV_HIST = { key: '', wet: 0, snow: 0 };
+const weatherHistory = { key: '', wet: 0, snow: 0 };
 function envHistory(clim, d) {
   const now = (d || new Date()).getTime(),
     key =
       clim + '|' + Math.floor(now / 3.6e6) + '|' + JSON.stringify(environment.force || 0) + (environment.on ? 1 : 0);
-  if (ENV_HIST.key === key) return ENV_HIST;
+  if (weatherHistory.key === key) return weatherHistory;
   let wet = 0,
     snow = 0;
   if (clim !== 'none')
@@ -288,10 +288,10 @@ function envHistory(clim, d) {
         else snow = Math.max(0, snow - (clim === 'alpine' ? 0.012 : w === 'clear' ? 0.06 : 0.03));
       }
     }
-  ENV_HIST.key = key;
-  ENV_HIST.wet = wet;
-  ENV_HIST.snow = snow;
-  return ENV_HIST;
+  weatherHistory.key = key;
+  weatherHistory.wet = wet;
+  weatherHistory.snow = snow;
+  return weatherHistory;
 }
 /* everything the renderer needs, eased so weather drifts in and out; a new scene (or a changed setting) snaps */
 export function envFrame(sc, dt) {
@@ -308,7 +308,7 @@ export function envFrame(sc, dt) {
   environment._f = f;
   const st = envState(sc),
     { h, ss, rise, set, clim, wx, night, dusk, dawn } = st,
-    W = ENV_WX[wx] || ENV_WX.clear;
+    W = WEATHER_LOOKS[wx] || WEATHER_LOOKS.clear;
   environment.tod = h;
   environment.season = ss;
   environment.weather = wx;
@@ -330,7 +330,7 @@ export function envFrame(sc, dt) {
   } else if (wx !== environment.wxNow) {
     environment.front = {
       w0: environment.wxNow,
-      W0: ENV_WX[environment.wxNow] || ENV_WX.clear,
+      W0: WEATHER_LOOKS[environment.wxNow] || WEATHER_LOOKS.clear,
       t0: now,
       dur: typeof RM !== 'undefined' && RM ? 3 : envRules().frontSecs || 75,
       dir: envHash(wx + environment.wxNow + Math.floor(now / 600)) < 0.5 ? 1 : -1,
@@ -435,7 +435,7 @@ function envMixHex(a, b, t) {
 export function envSky(sky, indoor) {
   const c = sky.map(s => s.slice());
   if (indoor) return c;
-  const P = k => ENV_PAL[k].map(h => hexA(h).map(v => v / 255));
+  const P = k => WEATHER_SKY_PALETTES[k].map(h => hexA(h).map(v => v / 255));
   const du = P('dusk'),
     da = P('dawn'),
     gr = P(environment.storm > 0.5 ? 'storm' : environment.ash > 0.5 ? 'ash' : 'grey'),
@@ -456,7 +456,7 @@ export function envSky(sky, indoor) {
   return c;
 }
 /* engine dials the time and weather lean on (read through eng(); see settings.js) */
-const ENV_MOD = {
+const WEATHER_ENGINE_MODIFIERS = {
   sun: {
     strength: v =>
       environment.on || environment.force ? v * (1 - environment.grey * 0.55) * (1 - environment.fog * 0.25) : v,
@@ -491,7 +491,7 @@ const ENV_MOD = {
   world: { groundShine: v => v * (1 + environment.wet * 1.6) },
   water: { ripples: v => v * (1 + environment.rain * 0.7 + environment.storm * 0.8) },
 };
-provide({ ENV_MOD }); /* to-module */
+provide({ WEATHER_ENGINE_MODIFIERS }); /* to-module */
 /* the light of the moment: a low warm sun at dusk, the moon at night */
 function envSun(a, h, col) {
   const day = 1 - environment.night,
@@ -514,7 +514,7 @@ function envSun(a, h, col) {
 }
 /* the odds of meeting each billionaire, tilted by the hour and the weather */
 function envLikes() {
-  const L = Object.assign({}, ENV_LIKES),
+  const L = Object.assign({}, ENVIRONMENT_LIKES),
     R = envRules().likes || {};
   for (const k in R) L[k] = Object.assign({}, L[k] || {}, R[k]);
   return L;
@@ -562,7 +562,7 @@ export function envLabel(sc) {
     mm = Math.floor((st.h - Math.floor(st.h)) * 60),
     clock = `${hh}:${String(mm).padStart(2, '0')}`;
   const fc = envForecast(sc || envHere());
-  return `${clock} ${t} · ${ENV_NAMES[st.wx] || 'Clear'}${fc ? ' (' + fc + ')' : ''} · ${st.ss[0].toUpperCase() + st.ss.slice(1)}`;
+  return `${clock} ${t} · ${WEATHER_NAMES[st.wx] || 'Clear'}${fc ? ' (' + fc + ')' : ''} · ${st.ss[0].toUpperCase() + st.ss.slice(1)}`;
 }
 /* alpha 0.4: what's coming: the weather of the next few hours where it changes ("rain from 15:00", "clearing by 18:00") */
 function envForecast(sc) {
@@ -580,10 +580,10 @@ function envForecast(sc) {
     const at = `${nb.getHours()}:00`,
       wet = x => x === 'rain' || x === 'storm' || x === 'snow' || x === 'ash';
     return wet(w)
-      ? `${(ENV_NAMES[w] || w).toLowerCase()} from ${at}`
+      ? `${(WEATHER_NAMES[w] || w).toLowerCase()} from ${at}`
       : wet(now)
         ? `clearing by ${at}`
-        : `${(ENV_NAMES[w] || w).toLowerCase()} from ${at}`;
+        : `${(WEATHER_NAMES[w] || w).toLowerCase()} from ${at}`;
   }
   return '';
 }

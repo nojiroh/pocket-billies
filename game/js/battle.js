@@ -91,7 +91,7 @@ import {
   sideWorld,
 } from './battle-stage.js';
 import { walkView } from './walk-view.js';
-import { ENV_NAMES, envHere, envState, environment } from './environment.js';
+import { WEATHER_NAMES, envHere, envState, environment } from './environment.js';
 import { addRipple, walkRenderer, waterAt } from './walk-view-gl.js';
 import { BGL, battleGLWanted } from './battle-3d.js';
 /* eslint-disable no-func-assign */
@@ -1598,7 +1598,7 @@ function tickerUpdate(s, mk) {
               : st.h < 15
                 ? 'noon, steady'
                 : 'afternoon, mellow') +
-      (st.wx !== 'clear' ? ` · <b>WEATHER</b> ${(ENV_NAMES[st.wx] || st.wx).toLowerCase()}` : '')
+      (st.wx !== 'clear' ? ` · <b>WEATHER</b> ${(WEATHER_NAMES[st.wx] || st.wx).toLowerCase()}` : '')
     );
   })();
   items.push(
