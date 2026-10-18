@@ -928,7 +928,7 @@ def desktop_steps(b, base, R):
         pg.evaluate("U.tab='map';render();0"); time.sleep(3)
         if pg.evaluate("worldMap.gl&&typeof worldMapMinisOn==='function'&&worldMapMinisOn()"):
             pg.evaluate("worldMap.alt=.04;worldMap.tilt=.45;worldMapGl.altT=null;worldMap.dirty=true;0"); time.sleep(4)
-            n = pg.evaluate("[...MM.cache.values()].filter(e=>e.m).length"); shot(pg, 'map-minis')
+            n = pg.evaluate("[...worldMapMinis.cache.values()].filter(e=>e.m).length"); shot(pg, 'map-minis')
             pg.evaluate("worldMapReset();0")
             if n < 1: raise Exception('no 3D miniatures were built on the map')
             out.append(f'{n} 3D miniatures on the map')
@@ -1774,7 +1774,7 @@ def desktop_steps(b, base, R):
         if r['lp'] > 15000 or r['q'] > 40000: raise Exception(f'too heavy: {r["lp"]} low-poly triangles, {r["q"]} voxel quads')
         pg.evaluate("U.modal=null;U.mq=[];renderOv();U.tab='walk';U.inside=null;U.bench={id:'test_props',test:1};render();0")
         until(pg, "!!(walkView.ready&&walkView.id==='test_props')", 60); pg.evaluate("walkView.pl.x=12;walkView.pl.z=21;walkView.pl.route=null;0"); time.sleep(3)
-        m = pg.evaluate("(()=>{const v=[...VOX.meshes.values()].filter(Boolean);return {lp:v.filter(m=>m.lowpoly).length,vox:v.filter(m=>!m.model).length,drawn:propModelState.drawn}})()")
+        m = pg.evaluate("(()=>{const v=[...propModelState.meshes.values()].filter(Boolean);return {lp:v.filter(m=>m.lowpoly).length,vox:v.filter(m=>!m.model).length,drawn:propModelState.drawn}})()")
         if not m['lp'] or m['vox']: raise Exception(f'the every-prop scene drew {m["lp"]} low-poly props and {m["vox"]} voxel ones')
         shot(pg, 'a04-props-lowpoly')
         pg.evaluate("U.bench=null;render();0")

@@ -23,7 +23,8 @@ import tokenize
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-BEFORE = r'(?:(?<![\w$.])|(?<=\bwindow\.)|(?<=\bself\.)|(?<=\bglobalThis\.))'
+# not a property (x.name), except window./self./globalThis. members; a spread (...name) is the name itself
+BEFORE = r'(?:(?<![\w$.])|(?<=\bwindow\.)|(?<=\bself\.)|(?<=\bglobalThis\.)|(?<=\.\.\.))'
 
 
 def pattern(old):
