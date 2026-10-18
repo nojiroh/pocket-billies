@@ -60,7 +60,6 @@ expose({
   CLOSE_UP_CAMERAS: [() => CLOSE_UP_CAMERAS],
   EASE: [() => EASE],
   FOCAL_LENGTH: [() => FOCAL_LENGTH],
-  FOCUS: [() => FOCUS],
   FORMATIONS: [() => FORMATIONS],
   FORMATION_SCALES: [() => FORMATION_SCALES],
   GLOWING_PARTICLES: [() => GLOWING_PARTICLES],
@@ -88,9 +87,9 @@ expose({
   actorTeam: [() => actorTeam],
   actorTop: [() => actorTop, v => (actorTop = v)],
   actorWorldPoint: [() => actorWorldPoint, v => (actorWorldPoint = v)],
+  adaptBattleStageQuality: [() => adaptBattleStageQuality, v => (adaptBattleStageQuality = v)],
   addDrawItem: [() => addDrawItem, v => (addDrawItem = v)],
   addParticle: [() => addParticle, v => (addParticle = v)],
-  ambient: [() => ambient, v => (ambient = v)],
   artKey: [() => artKey],
   battleStage: [() => battleStage],
   battleStageArtFiles: [() => battleStageArtFiles, v => (battleStageArtFiles = v)],
@@ -128,10 +127,10 @@ expose({
   camAt: [() => camAt],
   camBusy: [() => camBusy],
   camHome: [() => camHome, v => (camHome = v)],
-  camOver: [() => camOver, v => (camOver = v)],
   camTo: [() => camTo, v => (camTo = v)],
   camUpdate: [() => camUpdate, v => (camUpdate = v)],
   cameraGuardPose: [() => cameraGuardPose],
+  cameraOverflow: [() => cameraOverflow, v => (cameraOverflow = v)],
   castFloor: [() => castFloor, v => (castFloor = v)],
   cloudShadows: [() => cloudShadows, v => (cloudShadows = v)],
   coinArc: [() => coinArc, v => (coinArc = v)],
@@ -141,6 +140,7 @@ expose({
   drawList: [() => drawList],
   drawListLength: [() => drawListLength, v => (drawListLength = v)],
   drawParticles: [() => drawParticles, v => (drawParticles = v)],
+  drawPixelRing: [() => drawPixelRing, v => (drawPixelRing = v)],
   drawProp: [() => drawProp, v => (drawProp = v)],
   drawSelectionRing: [() => drawSelectionRing, v => (drawSelectionRing = v)],
   drawShadow: [() => drawShadow, v => (drawShadow = v)],
@@ -150,7 +150,7 @@ expose({
   floorKey: [() => floorKey, v => (floorKey = v)],
   floorLowFrom: [() => floorLowFrom, v => (floorLowFrom = v)],
   floorUpdate: [() => floorUpdate, v => (floorUpdate = v)],
-  governor: [() => governor, v => (governor = v)],
+  formatFocus: [() => formatFocus],
   groundRing: [() => groundRing, v => (groundRing = v)],
   handheld: [() => handheld, v => (handheld = v)],
   hitFx: [() => hitFx, v => (hitFx = v)],
@@ -160,17 +160,17 @@ expose({
   lightShafts: [() => lightShafts, v => (lightShafts = v)],
   newActorState: [() => newActorState],
   particleSprite: [() => particleSprite, v => (particleSprite = v)],
-  pixRing: [() => pixRing, v => (pixRing = v)],
   propDef: [() => propDef, v => (propDef = v)],
   punch: [() => punch, v => (punch = v)],
   ringFx: [() => ringFx, v => (ringFx = v)],
   scheduleAt: [() => scheduleAt, v => (scheduleAt = v)],
   setActorAction: [() => setActorAction, v => (setActorAction = v)],
+  setTrainerAction: [() => setTrainerAction, v => (setTrainerAction = v)],
+  shrinkForSoftBlur: [() => shrinkForSoftBlur, v => (shrinkForSoftBlur = v)],
   softDraw: [() => softDraw, v => (softDraw = v)],
-  softSmall: [() => softSmall, v => (softSmall = v)],
+  spawnAmbientParticles: [() => spawnAmbientParticles, v => (spawnAmbientParticles = v)],
   speedLines: [() => speedLines, v => (speedLines = v)],
   throwOrigin: [() => throwOrigin],
-  trainerAct: [() => trainerAct, v => (trainerAct = v)],
   trainerBattleFrame: [() => trainerBattleFrame, v => (trainerBattleFrame = v)],
   trainerMetersPerPixel: [() => trainerMetersPerPixel],
   tween: [() => tween, v => (tween = v)],
@@ -235,7 +235,7 @@ function battleStageFormat(f) {
   );
   battleStage.buf = actorPositions.map(() => makeCanvas(10, 10));
   battleStage.fmt = f || 'single';
-  FOCUS.wide.zf = f === 'alpha' ? 5.2 : f === 'double' ? 4.6 : 4.3;
+  formatFocus.wide.zf = f === 'alpha' ? 5.2 : f === 'double' ? 4.6 : 4.3;
   Object.assign(
     homeCamera,
     { single: { x: 0, y: 1.6, z: 0 }, double: { x: 0.15, y: 1.82, z: -0.85 }, alpha: { x: 0.05, y: 1.95, z: -1.15 } }[
@@ -244,8 +244,8 @@ function battleStageFormat(f) {
   );
   actionCenter.x = (actorPositions[0].x + actorPositions[1].x) / 2;
   actionCenter.z = (actorPositions[0].z + actorPositions[1].z) / 2;
-  FOCUS.foe.zf = actorPositions[1].z;
-  FOCUS.me.zf = actorPositions[0].z;
+  formatFocus.foe.zf = actorPositions[1].z;
+  formatFocus.me.zf = actorPositions[0].z;
   battleStage.sel = null;
   battleStage.tg = null;
 }
@@ -608,7 +608,7 @@ function setActorAction(i, k, dur = 1000) {
   battleStage.s[i].act = { k, t0: battleStage.t, dur };
 }
 /* depth of field: focus distance and aperture, eased like a real focus pull */
-const FOCUS = {
+const formatFocus = {
   wide: { zf: 4.3, ap: 0.55 },
   foe: { zf: actorPositions[1].z, ap: 1.35 },
   me: { zf: actorPositions[0].z, ap: 1.35 },
@@ -617,7 +617,7 @@ const FOCUS = {
 export function battleStageFocus(f, now) {
   if (battleStage.focusK === f && !now) return;
   battleStage.focusK = f;
-  const F = FOCUS[f] || FOCUS.none,
+  const F = formatFocus[f] || formatFocus.none,
     ap = RM ? 0 : F.ap;
   if (now) {
     battleStage.dof.zf = F.zf;
@@ -755,7 +755,7 @@ function battleStageFrame(ts, rawDt) {
     c.x += c.v * s;
     if (c.x > 18) c.x = -18;
   }
-  if (dt > 0 && !RM) ambient(dt);
+  if (dt > 0 && !RM) spawnAmbientParticles(dt);
   battleStage.shk = Math.max(0, battleStage.shk - dt * 0.02);
   if (battleStage.cv && battleStage.cv.isConnected) {
     camUpdate(dt);
@@ -768,11 +768,11 @@ function battleStageFrame(ts, rawDt) {
   }
   const work = performance.now() - w0;
   frameCount(work);
-  governor(work);
+  adaptBattleStageQuality(work);
 }
 /* ambient life: motes, drips, falling leaves, glints, status fizz, gold sparkle */
 const LEAF_COLORS = ['#6FAE3F', '#9CC850', '#D7B447', '#4E8A3A'];
-function ambient(dt) {
+function spawnAmbientParticles(dt) {
   const A = AREAS[battleStage.area];
   if (battleStage.parts.length > 220) return;
   if (battleStage.oil && rnd() < dt / 18)
@@ -903,7 +903,7 @@ function ambient(dt) {
   }
 }
 /* adaptive quality: drop render detail if frames run long, restore when there's headroom */
-function governor(work) {
+function adaptBattleStageQuality(work) {
   const Q = battleStage.q,
     now = performance.now(),
     target = Math.min(userFps(), FRAME.hz || 60),
@@ -989,7 +989,7 @@ function battleStageProjectWith(C, X, Y, Z) {
   };
 }
 /* how far (stage px) the shown billionaires' sprites stick out of the free area for camera C (10% grace) */
-function camOver(C) {
+function cameraOverflow(C) {
   const L = battleStage.L,
     fr = L.free,
     x0 = L.M + fr.x / L.u + 2,
@@ -1054,25 +1054,25 @@ function camUpdate(dt) {
     D.hz = 1.4 * Math.sin(ts * 0.19 + 2.1) * k;
     for (const p of CAMERA_KEYS) V[p] = C[p] + D[p];
     /* guard: never frame the billionaires worse than the home shot does. First the orbit gives way, then a directed push stops short */
-    const lim = camOver(homeCamera) + 0.5;
-    if (camOver(V) > lim && camOver(C) <= lim) {
+    const lim = cameraOverflow(homeCamera) + 0.5;
+    if (cameraOverflow(V) > lim && cameraOverflow(C) <= lim) {
       let lo = 0,
         hi = 1;
       for (let it = 0; it < 5; it++) {
         const m = (lo + hi) / 2;
         for (const p of CAMERA_KEYS) V[p] = C[p] + D[p] * m;
-        if (camOver(V) <= lim) lo = m;
+        if (cameraOverflow(V) <= lim) lo = m;
         else hi = m;
       }
       for (const p of CAMERA_KEYS) V[p] = C[p] + D[p] * lo;
-    } else if (camOver(V) > lim) {
+    } else if (cameraOverflow(V) > lim) {
       let lo = 0,
         hi = 1;
       for (const p of CAMERA_KEYS) cameraGuardPose[p] = V[p];
       for (let it = 0; it < 6; it++) {
         const m = (lo + hi) / 2;
         for (const p of CAMERA_KEYS) V[p] = cameraGuardPose[p] + (homeCamera[p] - cameraGuardPose[p]) * m;
-        if (camOver(V) <= lim) hi = m;
+        if (cameraOverflow(V) <= lim) hi = m;
         else lo = m;
       }
       for (const p of CAMERA_KEYS) V[p] = cameraGuardPose[p] + (homeCamera[p] - cameraGuardPose[p]) * hi;
@@ -1506,7 +1506,7 @@ const SOFT_BLUR_PAD = 3,
       return false;
     }
   })();
-function softSmall(sm, img, sw, sh) {
+function shrinkForSoftBlur(sm, img, sw, sh) {
   const P = SOFT_BLUR_PAD,
     x = sm.getContext('2d'),
     cw = sw + 2 * P,
@@ -1535,12 +1535,12 @@ function softDraw(c, img, x, y, w, h, blur, slot) {
   if (slot) {
     sm = slot.c || (slot.c = makeCanvas(sw + 2 * P + 1, sh + 2 * P + 1));
     if (slot.img !== img || slot.sw !== sw || slot.sh !== sh) {
-      softSmall(sm, img, sw, sh);
+      shrinkForSoftBlur(sm, img, sw, sh);
       slot.img = img;
       slot.sw = sw;
       slot.sh = sh;
     }
-  } else softSmall(sm, img, sw, sh);
+  } else shrinkForSoftBlur(sm, img, sw, sh);
   const kx = w / sw,
     ky = h / sh,
     prev = c.imageSmoothingEnabled;
@@ -1623,7 +1623,7 @@ export function trainerBattleFrame(i) {
   const fr = humanFrames(T.who, view);
   return fr[Math.floor(battleStage.t / 700) % 2];
 }
-function trainerAct(i, act, dur) {
+function setTrainerAction(i, act, dur) {
   const T = battleStage.tr[i];
   if (T) {
     T.act = act;
@@ -1696,7 +1696,7 @@ function drawProp(c, p) {
   softDraw(c, I.c, x, y, w, h, blurAt(q.z), p.soft);
   c.restore();
 }
-function pixRing(c, cx, cy, rx, ry, col, th = 1) {
+function drawPixelRing(c, cx, cy, rx, ry, col, th = 1) {
   c.fillStyle = col;
   const n = Math.max(24, Math.round((rx + ry) * 2));
   for (let k = 0; k < n; k++) {
@@ -1725,7 +1725,7 @@ function drawParticles(c, layer) {
     const k = clamp((q.s / 30) * (p.k || 1), 0.5, 5);
     if (p.ring) {
       const r = ((p.r0 + (p.r1 - p.r0) * EASE.out(p.age / p.life)) * q.s) / 30;
-      pixRing(
+      drawPixelRing(
         c,
         q.x,
         q.y,
@@ -1991,9 +1991,9 @@ function drawSelectionRing(c, i, col, pulse) {
   const r = Math.max(6, hw * g.s * (1 + 0.06 * Math.sin(battleStage.t / 180) * pulse)),
     ry = r * clamp(battleStage.V.y / g.z, 0.2, 0.6);
   c.globalAlpha = 0.85;
-  pixRing(c, g.x, g.y, r, ry, col, 2);
+  drawPixelRing(c, g.x, g.y, r, ry, col, 2);
   c.globalAlpha = 0.35;
-  pixRing(c, g.x, g.y, r + 3, ry + 2, col, 1);
+  drawPixelRing(c, g.x, g.y, r + 3, ry + 2, col, 1);
   c.globalAlpha = 1;
 }
 function battleStageDrawEffects(c, skip0) {
@@ -2038,14 +2038,14 @@ function battleStageDrawEffects(c, skip0) {
     if (q) {
       const r = (1.15 - ph * 0.8) * q.s;
       const col = ph > 0.62 ? '#5DFF8A' : ph > 0.35 ? '#F4C542' : '#F2F2F2';
-      pixRing(c, q.x, q.y, r, r, col, 2);
+      drawPixelRing(c, q.x, q.y, r, r, col, 2);
       c.globalAlpha = 0.35;
-      pixRing(c, q.x, q.y, r + 3, r + 3, ph > 0.62 ? '#5DFF8A' : '#FFFFFF', 1);
+      drawPixelRing(c, q.x, q.y, r + 3, r + 3, ph > 0.62 ? '#5DFF8A' : '#FFFFFF', 1);
       c.globalAlpha = 1;
       const g = battleStageProject(o.x, 0, o.z);
       if (g) {
         c.globalAlpha = 0.5;
-        pixRing(c, g.x, g.y, r * 0.9, r * 0.9 * clamp(battleStage.V.y / g.z, 0.2, 0.6), col, 1);
+        drawPixelRing(c, g.x, g.y, r * 0.9, r * 0.9 * clamp(battleStage.V.y / g.z, 0.2, 0.6), col, 1);
         c.globalAlpha = 1;
       }
     }
@@ -2276,7 +2276,7 @@ export function battleStagePlay(an, ev) {
       const si = actorTeam(i),
         T = battleStage.tr[si];
       if (T.show) {
-        trainerAct(si, 'throw', 520);
+        setTrainerAction(si, 'throw', 520);
         tween(T, 'x', si === 0 ? -140 : 140, 320, 'in', 180);
         scheduleAt(510, () => {
           T.show = false;
