@@ -10,7 +10,16 @@ import { expose } from './test-globals.js';
 import { recordThingsToDoEvent, soundEffect, startWild, toast } from './hooks.js';
 import { clamp, random } from './util.js';
 import { RULES, SPECIES, gameData } from './game-data.js';
-import { activeBattle, areaPool, newUid, pickWeighted, reducedMotion, save, saveData, uiState } from './game-state.js';
+import {
+  activeBattle,
+  encounterPoolHere,
+  newUid,
+  pickWeighted,
+  reducedMotion,
+  save,
+  saveData,
+  uiState,
+} from './game-state.js';
 import { uiIconHTML } from './art.js';
 import { terrainAt, walkView } from './walk-view.js';
 import {
@@ -110,7 +119,7 @@ function fishPick(kind) {
   const list = F.list.filter(([id]) => SPECIES[id]);
   if (!list.length) return null;
   const sp = pickWeighted(list),
-    P = areaPool(),
+    P = encounterPoolHere(),
     lv =
       P.lv[0] +
       (F.lv ? F.lv[0] : 0) +

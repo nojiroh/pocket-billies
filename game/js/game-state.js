@@ -8,9 +8,9 @@ import {
   flushAccountSave,
   jingle,
   onStepsAdded,
-  postProcess,
   provide,
   render,
+  showPendingWindows,
   soundEffect,
   toast,
 } from './hooks.js';
@@ -54,7 +54,6 @@ expose({
   addEgg: [() => addEgg, v => (addEgg = v)],
   addSteps: [() => addSteps, v => ((addSteps = v), provide({ addSteps }))],
   allBillies: [() => allBillies],
-  areaPool: [() => areaPool, v => (areaPool = v)],
   assignJob: [() => assignJob, v => (assignJob = v)],
   autoSlot: [() => autoSlot, v => (autoSlot = v)],
   billyName: [() => billyName],
@@ -68,6 +67,7 @@ expose({
   earningsBetween: [() => earningsBetween, v => (earningsBetween = v)],
   eggSlotCount: [() => eggSlotCount],
   emptyJob: [() => emptyJob],
+  encounterPoolHere: [() => encounterPoolHere, v => (encounterPoolHere = v)],
   endShift: [() => endShift, v => (endShift = v)],
   escapeHtml: [() => escapeHtml],
   evolutionHint: [() => evolutionHint, v => (evolutionHint = v)],
@@ -752,11 +752,11 @@ export const hereLocation = () => {
   const nx = nextTripNode();
   return LOCATIONS[nx != null && saveData.route.prog > 0 && !saveData.route.hold ? nx : saveData.route.node];
 };
-export function areaPool() {
+export function encounterPoolHere() {
   return POOLS[hereLocation().pool] || POOLS[Object.keys(POOLS)[0]];
 }
 export function spawn(gentle, force) {
-  const P = areaPool();
+  const P = encounterPoolHere();
   let list = typeof environmentOdds === 'function' ? environmentOdds(P.list) : P.list;
   if (gentle) {
     const my = SPECIES[saveData.starter + '0'].types,
@@ -846,7 +846,7 @@ export function addSteps(n, quiet) {
   if (!activeBattle) {
     render();
     if (typeof onStepsAdded === 'function') onStepsAdded();
-    postProcess();
+    showPendingWindows();
   }
 }
 

@@ -161,7 +161,7 @@ import {
   pickTarget,
   planBack,
   planNext,
-  play,
+  playTurnEvents,
   runTurn,
   showAim,
   startWild,
@@ -264,7 +264,6 @@ expose({
   plateVars: [() => plateVars],
   playerWalkIconHTML: [() => playerWalkIconHTML, v => (playerWalkIconHTML = v)],
   poolStrip: [() => poolStrip, v => (poolStrip = v)],
-  postProcess: [() => postProcess, v => ((postProcess = v), provide({ postProcess }))],
   progressBarHTML: [() => progressBarHTML, v => ((progressBarHTML = v), provide({ progressBarHTML }))],
   render: [() => render, v => setRender(v)],
   renderDexEntry: [() => renderDexEntry, v => (renderDexEntry = v)],
@@ -285,6 +284,7 @@ expose({
   roomState: [() => roomState, v => (roomState = v)],
   roomStepIn: [() => roomStepIn, v => (roomStepIn = v)],
   runEvolution: [() => runEvolution, v => ((runEvolution = v), provide({ runEvolution }))],
+  showPendingWindows: [() => showPendingWindows, v => ((showPendingWindows = v), provide({ showPendingWindows }))],
   startGame: [() => startGame, v => ((startGame = v), provide({ startGame }))],
   statusBadgeHTML: [() => statusBadgeHTML],
   stepsTo: [() => stepsTo, v => (stepsTo = v)],
@@ -317,12 +317,12 @@ provide({
   modal,
   openSettings,
   paintWorldMapCard,
-  postProcess,
   progressBarHTML,
   render,
   renderOverlay,
   roomRefresh,
   runEvolution,
+  showPendingWindows,
   startGame,
   toast,
   updateNav,
@@ -376,7 +376,7 @@ function nextModal() {
 export function closeModal() {
   uiState.modal = null;
   nextModal();
-  if (!uiState.modal) postProcess();
+  if (!uiState.modal) showPendingWindows();
 }
 export function renderOverlay() {
   const ov = $('#ov');
@@ -408,7 +408,7 @@ export function renderOverlay() {
 }
 
 /* ---------- post-step events ---------- */
-export function postProcess() {
+export function showPendingWindows() {
   if (activeBattle || uiState.modal || !saveData.started || uiState.title) return;
   const eg = hatchable()[0];
   if (eg) {
@@ -422,7 +422,7 @@ export function postProcess() {
       learnModal(m, lq.mv);
       return;
     }
-    return postProcess();
+    return showPendingWindows();
   }
   const m = allBillies().find(canEvolve);
   if (m) evolutionModal(m);
@@ -2984,7 +2984,7 @@ document.addEventListener('click', ev => {
         activeBattle.events = [];
         doSwitch(k ?? 0, +d.i);
         if (!activeBattle.needSwitch.length) checkFaints();
-        play();
+        playTurnEvents();
       }
       break;
     case 'boffer':
@@ -3006,7 +3006,7 @@ document.addEventListener('click', ev => {
           battleSay(`You refused. Focus Bonus ×${+activeBattle.integrity.toFixed(2)} on your next throw.`);
           enemyOnly();
         }
-        play();
+        playTurnEvents();
       }
       break;
     case 'bend':

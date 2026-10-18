@@ -15,9 +15,9 @@ import {
   closeModal,
   jingle,
   modal,
-  postProcess,
   provide,
   render,
+  showPendingWindows,
   statusBadgeHTML,
   storyAfterRival,
   storyAfterWin,
@@ -127,7 +127,7 @@ expose({
   battleShell: [() => battleShell, v => (battleShell = v)],
   battleStageKey: [() => battleStageKey, v => ((battleStageKey = v), provide({ battleStageKey }))],
   battleSwoop: [() => battleSwoop, v => (battleSwoop = v)],
-  bench: [() => bench, v => (bench = v)],
+  benchCandidates: [() => benchCandidates, v => (benchCandidates = v)],
   billyPickHTML: [() => billyPickHTML, v => (billyPickHTML = v)],
   bindAim: [() => bindAim, v => (bindAim = v)],
   boxAnims: [() => boxAnims, v => (boxAnims = v)],
@@ -181,7 +181,7 @@ expose({
   planNext: [() => planNext, v => (planNext = v)],
   plateElement: [() => plateElement, v => (plateElement = v)],
   platesTick: [() => platesTick, v => ((platesTick = v), provide({ platesTick }))],
-  play: [() => play, v => (play = v)],
+  playTurnEvents: [() => playTurnEvents, v => (playTurnEvents = v)],
   refreshLastSnapshot: [() => refreshLastSnapshot, v => (refreshLastSnapshot = v)],
   retarget: [() => retarget, v => (retarget = v)],
   runTurn: [() => runTurn, v => (runTurn = v)],
@@ -696,7 +696,7 @@ function inherit(k) {
   if (any) sd.inh = st;
 }
 /* who on a side could still come in: alive, not at work, not on the field and not already called in this turn */
-function bench(si, also = []) {
+function benchCandidates(si, also = []) {
   const sd = activeBattle.sides[si],
     on = sd.f.filter(f => f.on).map(f => f.act);
   return sd.team
@@ -748,7 +748,7 @@ export function checkFaints() {
     battleSay(`${billyName(e)} fainted.`, { k: 'faint', si: k });
     award(e);
     inherit(k);
-    const nx = bench(1)[0];
+    const nx = benchCandidates(1)[0];
     if (nx == null) f.on = false;
     else if (!activeBattle.over) doSwitch(k, nx);
   }
@@ -764,7 +764,7 @@ export function checkFaints() {
     battleSay(`${billyName(p)} fainted.`, { k: 'faint', si: k });
     inherit(k);
     const pend = (activeBattle.needSwitch || []).length;
-    if (bench(0).length > pend) {
+    if (benchCandidates(0).length > pend) {
       if (!activeBattle.over) (activeBattle.needSwitch || (activeBattle.needSwitch = [])).push(k);
     } else f.on = false;
   }
@@ -1022,7 +1022,7 @@ export function runTurn(plan) {
   if (plan.some(p => p.k === 'run')) {
     battleSay('You got away safely.', { k: 'run' });
     activeBattle.over = 'ran';
-    return play();
+    return playTurnEvents();
   }
   for (const p of plan.filter(p => p.k === 'switch')) {
     const out = fighter(p.who);
@@ -1037,8 +1037,8 @@ export function runTurn(plan) {
     p.free = free;
   }
   checkFaints();
-  if (activeBattle.over) return play();
-  if (plan.length === 1 && plan[0].k === 'switch' && plan[0].free) return play();
+  if (activeBattle.over) return playTurnEvents();
+  if (plan.length === 1 && plan[0].k === 'switch' && plan[0].free) return playTurnEvents();
   for (const p of plan.filter(p => p.k === 'item')) applyItem(p.item, p.uid, true);
   const acts = [];
   for (const p of plan.filter(p => p.k === 'move')) acts.push({ who: p.who, mid: p.mid, tk: p.tk });
@@ -1069,7 +1069,7 @@ export function runTurn(plan) {
     endTurn();
     checkFaints();
   }
-  play();
+  playTurnEvents();
 }
 export function enemyOnly() {
   activeBattle.aiPlan = {};
@@ -1272,7 +1272,7 @@ export function openBattle() {
         /* the battle was closed during the wipe */ document.body.classList.add('in-battle');
         render();
         battleStageStart(area);
-        play();
+        playTurnEvents();
         if (seam) battleRise();
       };
       if (seam) battleSwoop(go);
@@ -1401,7 +1401,7 @@ function typeText(t) {
   uiState.typeFull = t;
   return Math.ceil(t.length / sp) * 16;
 }
-export function play() {
+export function playTurnEvents() {
   if (!activeBattle) return;
   activeBattle.phase = 'playing';
   activeBattle.ev = 0;
@@ -2013,17 +2013,17 @@ function finishThrow(res, id, lab, spin) {
     if (where === 'box') battleSay(`${billyName(e)} went to storage. Your team is full.`);
     activeBattle.over = 'caught';
     save();
-    return play();
+    return playTurnEvents();
   }
   battleSay(['It broke free right away.', 'It almost stayed in.', 'So close. It wobbled twice.'][res.w]);
   if (random() < CATCH_RULES.offerChance) {
     activeBattle.offer =
       Math.round((CATCH_RULES.offerMin + random() * (CATCH_RULES.offerMax - CATCH_RULES.offerMin)) / 10) * 10;
     battleSay(`${billyName(e)} is offering you money to let it go.`, { k: 'cry', si: 1 });
-    return play();
+    return playTurnEvents();
   }
   enemyOnly();
-  play();
+  playTurnEvents();
 }
 export function endBattle() {
   stopTimers();
@@ -2056,7 +2056,7 @@ export function endBattle() {
       if (typeof storyAfterRival === 'function') storyAfterRival(o, T);
       else {
         healAll();
-        postProcess();
+        showPendingWindows();
       }
     });
     return;
@@ -2134,7 +2134,7 @@ export function endBattle() {
     uiState.tab = 'walk';
     render();
     after.forEach(m => modal(m));
-    if (!after.length) postProcess();
+    if (!after.length) showPendingWindows();
   });
 }
 /* phase 04d: things-to-do.js adds the weather and its events around it */

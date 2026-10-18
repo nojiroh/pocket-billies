@@ -6,7 +6,7 @@
    battle. saveData.story remembers which scenes you have seen. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { closeModal, modal, postProcess, provide, render, selfTest } from './hooks.js';
+import { closeModal, modal, provide, render, selfTest, showPendingWindows } from './hooks.js';
 import { $, clamp } from './util.js';
 import { LOCATION_BY_ID, RULES, SPECIES, TRAINERS, trainersAt } from './game-data.js';
 import { activeBattle, escapeHtml, healAll, reducedMotion, save, saveData, today, uiState } from './game-state.js';
@@ -422,7 +422,7 @@ async function storyAfterRival(o, T) {
   if (typeof loreFlags === 'function') loreFlags().askLongGrass = 1;
   save();
   if (W) modal(W);
-  else if (typeof postProcess === 'function') postProcess();
+  else if (typeof showPendingWindows === 'function') showPendingWindows();
 }
 /* v47 part 4: after the first win over a trainer with a story beat: a clue to who you were (Cass Flow, at the pressing
    plant), or the ending (Vinylla, at the Inner Sun): what everyone says, the last clue, and the B-side */
@@ -433,7 +433,7 @@ async function storyAfterWin(T) {
     return;
   }
   if (T.clue && typeof loreClue === 'function') loreClue(T.clue);
-  else if (typeof postProcess === 'function') postProcess();
+  else if (typeof showPendingWindows === 'function') showPendingWindows();
 }
 async function storyEnding(T) {
   const L = T.endLines || [];

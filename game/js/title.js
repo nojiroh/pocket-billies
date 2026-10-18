@@ -6,7 +6,16 @@
    Without the 3D scene the title stands on the painted landscape instead. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { TEST_RUN, accountChipHTML, closeModal, mapIdAt, modal, openSettings, postProcess, render } from './hooks.js';
+import {
+  TEST_RUN,
+  accountChipHTML,
+  closeModal,
+  mapIdAt,
+  modal,
+  openSettings,
+  render,
+  showPendingWindows,
+} from './hooks.js';
 import { $, clamp } from './util.js';
 import { LOCATIONS, START_NODE } from './game-data.js';
 import {
@@ -225,7 +234,7 @@ document.addEventListener(
       titleEnd();
       if (typeof music === 'function' && typeof musicFor === 'function') music(musicFor());
       render();
-      if (typeof postProcess === 'function') setTimeout(postProcess, 400);
+      if (typeof showPendingWindows === 'function') setTimeout(showPendingWindows, 400);
       return;
     }
     if (a === 'ttlnew') {

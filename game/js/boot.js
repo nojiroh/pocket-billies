@@ -41,9 +41,9 @@ import {
   initPixelSky,
   mapIdAt,
   modal,
-  postProcess,
   render,
   renderOverlay,
+  showPendingWindows,
   startGame,
   toast,
 } from './ui.js';
@@ -868,7 +868,7 @@ else
             }),
           1200
         );
-      if (saveData.started && !TEST_RUN) setTimeout(postProcess, 500);
+      if (saveData.started && !TEST_RUN) setTimeout(showPendingWindows, 500);
       if (location.protocol === 'file:')
         setTimeout(
           () => toast('Battles and the map need a local web server. Open the game with Start-Game (see README).'),

@@ -63,7 +63,7 @@ import {
   checkFaints,
   fighter,
   paintBoxes,
-  play,
+  playTurnEvents,
   startTrainer,
   startWild,
   stopTimers,
@@ -366,7 +366,7 @@ function debugAction(x) {
         fighter(1).hp = 0;
         checkFaints();
       }
-      play();
+      playTurnEvents();
       return;
     case 'lose':
       if (!activeBattle || activeBattle.phase === 'playing' || activeBattle.over)
@@ -376,7 +376,7 @@ function debugAction(x) {
       saveData.team.forEach(m => (m.hp = 0));
       battleSay('Your team fainted. (Debug.)');
       activeBattle.over = 'lose';
-      play();
+      playTurnEvents();
       return;
     case 'foe1':
       if (!activeBattle) return;

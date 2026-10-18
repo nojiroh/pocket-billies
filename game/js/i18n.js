@@ -12,7 +12,7 @@ expose({
   I18N_ATTRIBUTES: [() => I18N_ATTRIBUTES],
   I18N_LANGS: [() => I18N_LANGS],
   I18N_ORIGINALS: [() => I18N_ORIGINALS],
-  I18N_ROWS: [() => I18N_ROWS],
+  I18N_TABLE_TEXT: [() => I18N_TABLE_TEXT],
   i18nAttribute: [() => i18nAttribute, v => (i18nAttribute = v)],
   i18nLanguage: [() => i18nLanguage, v => (i18nLanguage = v)],
   i18nNode: [() => i18nNode, v => (i18nNode = v)],
@@ -29,7 +29,7 @@ export const I18N_LANGS = [
   ['fr', 'Français'],
 ];
 /* English | Nederlands | Deutsch | Español | Français */
-const I18N_ROWS = `
+const I18N_TABLE_TEXT = `
 Walk|Lopen|Gehen|Caminar|Marcher
 Map|Kaart|Karte|Mapa|Carte
 Team|Team|Team|Equipo|Équipe
@@ -196,7 +196,7 @@ const I18N = (() => {
   I18N_LANGS.forEach(([c], i) => {
     if (i) M[c] = new Map();
   });
-  for (const line of I18N_ROWS.trim().split('\n')) {
+  for (const line of I18N_TABLE_TEXT.trim().split('\n')) {
     const p = line.split('|');
     if (p.length < I18N_LANGS.length) continue;
     I18N_LANGS.forEach(([c], i) => {
