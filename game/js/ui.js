@@ -1514,7 +1514,7 @@ export function walkCross() {
     }
     const r = saveData.trip,
       plan = r.plan && r.plan[0] === n ? r.plan.slice(1) : [];
-    saveData.trip = { node: n, prog: 0, plan, hold: false };
+    saveData.trip = { node: n, plan };
     saveData.visited[n] = 1;
     uiState.roam = { id: q.id, node: n, x, z };
     uiState.backAt = null;
@@ -2395,7 +2395,7 @@ export function startGame(l, o = {}) {
   saveData.caught[m.sp] = 1;
   saveData.seen[m.sp] = 1;
   saveData.since = Date.now();
-  saveData.trip = { node: START_NODE, prog: 0, plan: [], hold: false };
+  saveData.trip = { node: START_NODE, plan: [] };
   saveData.visited = { [START_NODE]: 1 };
   saveData.mapSeen = null;
   if (typeof storyFlags === 'function') storyFlags().copperleafNote = 1;

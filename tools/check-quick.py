@@ -511,7 +511,7 @@ def play(pg):
 def go_scene(pg, node, sec=40):
     # alpha 0.4: a jump, not a walk: a neighbour whose middle is near this view's would otherwise wait for its view to be
     # prepared a few milliseconds a frame (seamless-world.js seamlessGate), which at a frame every few seconds here takes minutes
-    pg.evaluate(f"uiState.inside=null;uiState.tab='walk';saveData.trip={{node:{node},prog:0,plan:[],hold:false}};saveData.visited[{node}]=1;uiState.roam=null;if(typeof walkView!=='undefined'&&walkView.pl)walkView.pl.fresh=true;render();0")
+    pg.evaluate(f"uiState.inside=null;uiState.tab='walk';saveData.trip={{node:{node},plan:[]}};saveData.visited[{node}]=1;uiState.roam=null;if(typeof walkView!=='undefined'&&walkView.pl)walkView.pl.fresh=true;render();0")
     if not until(pg, f'!!(walkView.ready&&(walkView.id===LOCATIONS[{node}].mapId||(walkView.sc&&walkView.sc.baseId===LOCATIONS[{node}].mapId)))', sec):   # v43: the hub may sit near an exit, so the view may be the scene with its road
         raise Exception(f'{pg.evaluate(f"LOCATIONS[{node}].mapId")} didn’t open in {sec}s')
     f0 = pg.evaluate("typeof walkRenderer!=='undefined'&&walkRenderer.on?walkRenderer.frames:-1")
@@ -1819,7 +1819,7 @@ def desktop_steps(b, base, R):
         pg.evaluate("talkHide&&talkHide();if(uiState.inside)leaveRoom();0"); until(pg, "walkView.ready&&!walkView.sc.roomRect", 30)
         out.append('the lab opens')
         # down Route 1 to Marigold Town, on foot: over Copperleaf's edge onto Route 1, then over Route 1's into Marigold
-        pg.evaluate(f"saveData.trip={{node:{node},prog:0,plan:[LOCATION_BY_ID.hedgerow.node,LOCATION_BY_ID.marigold.node],hold:false}};render();0")
+        pg.evaluate(f"saveData.trip={{node:{node},plan:[LOCATION_BY_ID.hedgerow.node,LOCATION_BY_ID.marigold.node]}};render();0")
         walked = 0
         for n1 in pg.evaluate('[LOCATION_BY_ID.hedgerow.node,LOCATION_BY_ID.marigold.node]'): walked += cross(pg, n1)[0]
         at = pg.evaluate("LOCATIONS[saveData.trip.node].id")
@@ -1994,7 +1994,7 @@ def desktop_steps(b, base, R):
 
     @step('Battles: on the 3D stage, and a trainer battle played to the end', 330)
     def battles():
-        pg.evaluate("saveData.preferences.battleStage='scene';screenWipe=f=>f();saveData.trip={node:0,prog:0,plan:[],hold:false};uiState.tab='walk';render();0"); time.sleep(2)
+        pg.evaluate("saveData.preferences.battleStage='scene';screenWipe=f=>f();saveData.trip={node:0,plan:[]};uiState.tab='walk';render();0"); time.sleep(2)
         pg.evaluate("const q={id:'t3d',sp:'bezos1',lvl:12,gold:false,no:1};saveData.queue=[q];saveData.team.forEach(m=>{m.hp=maxHp(m)});startWild(q);0")
         if wait_phase(pg, sec=60) != 'choose': raise Exception('the 3D-stage battle never reached the move menu')
         shot(pg, 'battle-3d'); stage = pg.evaluate("!!battleStage.gl")

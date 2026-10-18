@@ -6,8 +6,8 @@
 import { expose } from './test-globals.js';
 import { flyDraw, flyTick, paintWorldMapCard, provide, toast } from './hooks.js';
 import { $, clamp } from './util.js';
-import { LOCATIONS, REGIONS, ROADS, roadCost } from './game-data.js';
-import { canEnter, nextTripNode } from './logic/rules.js';
+import { LOCATIONS, REGIONS, ROADS } from './game-data.js';
+import { canEnter } from './logic/rules.js';
 import { escapeHtml, reducedMotion, saveData, uiState } from './game-state.js';
 import { frameCount, frameStop, frameTask, userFps } from './frame-scheduler.js';
 import { artPixels, bayerThreshold, makeSeededRandom, mixRgb, packPixel, worldMapStamp } from './art.js';
@@ -140,10 +140,7 @@ export function roadPosition(a, b, f) {
   return vector3.norm(vector3.add(vector3.mul(p0.p, 1 - u), vector3.mul(p1.p, u)));
 }
 export function worldMapPlayerPosition() {
-  const r = saveData.trip,
-    nx = nextTripNode();
-  if (nx == null || !r.prog) return LOCATION_VECTORS[r.node];
-  return roadPosition(r.node, nx, clamp(r.prog / roadCost(r.node, nx), 0, 1));
+  return LOCATION_VECTORS[saveData.trip.node];
 }
 /* the inner surface of the world, read from art/map/world.png */
 export const WORLD_ART = 'map/world.png';
@@ -440,12 +437,11 @@ function worldMapRender(t, lo) {
   /* the planned trip, drawn over the painted trail */
   const plan = [saveData.trip.node, ...saveData.trip.plan];
   if (plan.length > 1) {
-    c.fillStyle = saveData.trip.hold ? 'rgba(255,255,255,.75)' : '#FFE27A';
+    c.fillStyle = '#FFE27A';
     for (let k = 0; k < plan.length - 1; k++) {
       const a = plan[k],
         b = plan[k + 1];
       for (let f = 0; f <= 1; f += 0.04) {
-        if (k === 0 && f < saveData.trip.prog / roadCost(a, b)) continue;
         if (Math.floor(f * 25 + t / 120) % 3 === 0) continue;
         const q = worldMapProject(cam, roadPosition(a, b, f));
         if (q && q.z < 1.4) c.fillRect(Math.round(q.x), Math.round(q.y), 1, 1);

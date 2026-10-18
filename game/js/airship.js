@@ -88,7 +88,7 @@ function startAirshipFlight(i) {
     return;
   }
   saveData.se -= f;
-  saveData.trip = { node: i, prog: 0, plan: [], hold: false };
+  saveData.trip = { node: i, plan: [] };
   saveData.visited[i] = 1;
   uiState.inside = null;
   uiState.goingIn = null;
@@ -306,7 +306,7 @@ export function rideGlassLift(p) {
   setTimeout(
     async () => {
       await ready;
-      saveData.trip = { node: i, prog: 0, plan: [], hold: false };
+      saveData.trip = { node: i, plan: [] };
       saveData.visited[i] = 1;
       uiState.inside = null;
       uiState.goingIn = null;

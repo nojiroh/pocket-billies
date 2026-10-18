@@ -44,7 +44,6 @@ import {
   STAT_IDS,
   STEPS_PER_KM,
   TRAINERS,
-  roadCost,
   trainersAt,
   typeEffectiveness,
 } from '../game-data.js';
@@ -510,55 +509,27 @@ export const pathFrom = (prev, to) => {
   for (let x = to; x >= 0 && prev[x] >= 0; x = prev[x]) out.unshift(x);
   return out;
 };
-/* steps from where you stand to stop j, and the plan that gets there (turning back on the current link if shorter) */
+/* steps from where you stand to stop j, and the plan that gets there */
 export function tripTo(j) {
-  const r = saveData.trip,
-    node = r.node,
-    nx = nextTripNode();
-  if (nx == null || r.prog === 0) {
-    if (j === node && nx == null) return { steps: 0, plan: [], back: false };
-    const D = walkDistances(node);
-    if (D.d[j] === Infinity) return null;
-    return { steps: D.d[j], plan: pathFrom(D.prev, j), back: false };
-  }
-  /* the plan's next location is a road away (plans are made from the roads; migrate checks a loaded one) */
-  const c = /** @type {number} */ (roadCost(node, nx)),
-    A = walkDistances(nx),
-    Bk = walkDistances(node),
-    fwd = c - r.prog + A.d[j],
-    back = r.prog + Bk.d[j];
-  if (fwd === Infinity && back === Infinity) return null;
-  return fwd <= back
-    ? { steps: fwd, plan: [nx, ...pathFrom(A.prev, j)], back: false }
-    : { steps: back, plan: [node, ...pathFrom(Bk.prev, j)], back: true };
+  const node = saveData.trip.node;
+  if (j === node) return { steps: 0, plan: [] };
+  const D = walkDistances(node);
+  if (D.d[j] === Infinity) return null;
+  return { steps: D.d[j], plan: pathFrom(D.prev, j) };
 }
 export function setTrip(j) {
   const t = tripTo(j);
   if (!t) return false;
-  const r = saveData.trip;
-  if (t.back && nextTripNode() != null) {
-    const nx = /** @type {number} */ (nextTripNode()),
-      c = /** @type {number} */ (roadCost(r.node, nx));
-    r.node = nx;
-    r.prog = c - r.prog;
-    t.plan.shift();
-  }
-  r.plan = t.plan;
-  r.hold = false;
-  if (!r.plan.length) r.prog = 0;
+  saveData.trip.plan = t.plan;
   save();
   return true;
 }
 export function stopTrip() {
   saveData.trip.plan = [];
-  saveData.trip.hold = false;
   save();
 }
-/* encounters come from where you're headed while you walk, otherwise from where you are */
-export const hereLocation = () => {
-  const nx = nextTripNode();
-  return LOCATIONS[nx != null && saveData.trip.prog > 0 && !saveData.trip.hold ? nx : saveData.trip.node];
-};
+/* encounters come from where you are */
+export const hereLocation = () => LOCATIONS[saveData.trip.node];
 export function encounterPoolHere() {
   return POOLS[hereLocation().pool] || POOLS[Object.keys(POOLS)[0]];
 }

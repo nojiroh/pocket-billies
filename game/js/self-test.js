@@ -824,7 +824,7 @@ async function runFullTest(mode) {
         async () => {
           uiState.bench = null;
           uiState.tab = 'walk';
-          saveData.trip = { node: 0, prog: 0, plan: [], hold: false };
+          saveData.trip = { node: 0, plan: [] };
           {
             const h = mapHub(gameData.maps.marigold);
             uiState.roam = { id: 'marigold', node: 0, x: h[0], z: h[1] };
@@ -941,7 +941,7 @@ async function runFullTest(mode) {
             uiState.inside = null;
             uiState.goingIn = null;
             uiState.tab = 'walk';
-            saveData.trip = { node: 0, prog: 0, plan: [], hold: false };
+            saveData.trip = { node: 0, plan: [] };
             uiState.roam = null;
             render();
             for (let i = 0; i < 60 && !(walkView.ready && walkView.id === 'w:marigold*'); i++) await selfTestSleep(100);
