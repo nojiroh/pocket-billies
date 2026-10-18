@@ -160,16 +160,16 @@ SECTIONS.lore = () => {
   }
   if (tab === 'places') {
     sub = 'Each stop’s history, what it’s known for, its landmark and a local legend. Shown once you’ve been there.';
-    const P = (L.places = L.places || {});
+    const P = (L.locations = L.locations || {});
     body = (D.locations || [])
       .filter(r => r.id)
       .map(r =>
         card(
           escapeHtml(r.name),
-          textField('History', `lore.places.${r.id}.history`, { area: 1, rows: 2 }) +
-            textField('Known for', `lore.places.${r.id}.known`, { area: 1, rows: 2 }) +
-            textField('Landmark', `lore.places.${r.id}.landmark`, { area: 1, rows: 2 }) +
-            textField('Local legend', `lore.places.${r.id}.legend`, { area: 1, rows: 2 }),
+          textField('History', `lore.locations.${r.id}.history`, { area: 1, rows: 2 }) +
+            textField('Known for', `lore.locations.${r.id}.known`, { area: 1, rows: 2 }) +
+            textField('Landmark', `lore.locations.${r.id}.landmark`, { area: 1, rows: 2 }) +
+            textField('Local legend', `lore.locations.${r.id}.legend`, { area: 1, rows: 2 }),
           { sub: P[r.id] ? '' : 'Nothing written yet.' }
         )
       )

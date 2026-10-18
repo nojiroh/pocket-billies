@@ -252,7 +252,7 @@ export function renderLore() {
       .join('');
   if (sec === 'places')
     body = LOCATIONS.map((r, i) => {
-      const P = (L.places || {})[r.id];
+      const P = (L.locations || {})[r.id];
       if (!P) return '';
       const o = !!saveData.visited[i];
       return o

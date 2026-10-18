@@ -277,7 +277,7 @@ def copperleaf_data():
     if not any(p.get('who') == 'juniper' and p.get('first') and p.get('lines') for p in ppl) or 'juniper' not in D['people']: bad.append('Granny Juniper isn’t in Copperleaf')
     LO = D.get('lore') or {}
     for k in ('copperleaf', 'hedgerow'):
-        if k not in (LO.get('places') or {}): bad.append(f'no lore for {k}')
+        if k not in (LO.get('locations') or {}): bad.append(f'no lore for {k}')
     if 'juniper' not in (LO.get('people') or {}): bad.append('Granny Juniper has no page in the Lore')
     sd = S_['sundown']; sign = [p.get('say') for p in sd['props'] if p.get('act') == 'sign']
     if 'Route 1 · Hedgerow Lane this way.' not in sign: bad.append(f'Marigold Town’s signposts: {sign}')
@@ -1495,7 +1495,7 @@ def desktop_steps(b, base, R):
         if cut: raise Exception(f'no road or lift reaches {", ".join(cut[:6])}')
         new = [r for r in RT if (D['maps'].get(r.get('scene')) or {}).get('v47region')]
         if len(new) < 27: raise Exception(f'only {len(new)} places of the seven regions')
-        C = D['scenery']['props']; LP = (D.get('lore') or {}).get('places') or {}; bad = []
+        C = D['scenery']['props']; LP = (D.get('lore') or {}).get('locations') or {}; bad = []
         REST = {'bench_wood', 'bench_metal', 'bench', 'log', 'log_mossy', 'campfire', 'picnic', 'deck_chair'}
         for r in new:
             sc = D['maps'][r['scene']]

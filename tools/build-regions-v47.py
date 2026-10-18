@@ -1461,7 +1461,7 @@ def add_region(D, R, force=False, rep=None):
         if k not in D['shops'] or force: D['shops'][k] = v
     for k, v in R.get('moods', {}).items():
         if k not in D['moods'] or force: D['moods'][k] = v
-    L = D.setdefault('lore', {}); P = L.setdefault('places', {})
+    L = D.setdefault('lore', {}); P = L.setdefault('locations', {})
     for k, v in R['lore'].items():
         if k not in P or force: P[k] = v
     C = L.setdefault('chat', {})

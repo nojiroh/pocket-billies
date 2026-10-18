@@ -67,7 +67,7 @@ REWRITE = {
     'trainers/morel/seat/unlockText': 'Tanglewild Jungle, east of Capshade Town, is open.',
     'trainers/carat/seat/unlockText': 'The Rimefrost Caves, east of Glimmershaft Town, are open. Beyond them, the inner sea.',
     'trainers/chad2/hint': 'Blake waits in Clovercrest Town with an evolved starter. Bring a team around level 18.',
-    'lore/places/city/known': 'Banks, towers, and Verdigris City’s famous traffic, which is mostly Billies.',
+    'lore/locations/city/known': 'Banks, towers, and Verdigris City’s famous traffic, which is mostly Billies.',
     'lore/chat/marketcap/0/4': 'Capshade’s market cap goes up when the spores do. Breathe out, then.',
     'lore/loading/14': 'The soup of the day in Pepperpot Town has been the same soup since 1971.',
     # the old route groups had numbers of their own (the canyon was on "Route 2")
