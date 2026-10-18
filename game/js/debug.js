@@ -33,7 +33,7 @@ import {
 import { FRAME, frameCount, frameTask, userFps } from './frame.js';
 import { uiIco } from './art.js';
 import { applyPreferences, exportSave } from './profile.js';
-import { SC, scResize, scStop } from './scene.js';
+import { SC, scResize, scStop } from './battle-stage.js';
 import { dioScene } from './walk-view.js';
 import { EGL } from './engine/core.js';
 import { A, checkFaints, paintBoxes, play, say, snapAll, startTrainer, startWild, stopTimers } from './battle.js';

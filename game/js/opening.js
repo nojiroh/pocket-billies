@@ -17,7 +17,7 @@ import { MOVES, SP, START_NODE, eff } from './data.js';
 import { B, RM, esc, maxHp } from './core.js';
 import { artLoad } from './art.js';
 import { portraitHTML } from './trainer.js';
-import { partSpr } from './scene.js';
+import { partSpr } from './battle-stage.js';
 import { DIO } from './walk-view.js';
 import { EGL, eglPrograms } from './engine/core.js';
 import { EGL_POST_SH } from './engine/post.js';

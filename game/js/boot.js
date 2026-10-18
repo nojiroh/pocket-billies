@@ -12,7 +12,7 @@ import { RM, S, SAVE_FOUND, SAVE_NEW_MSG, SAVE_OLD_MSG, U, esc, fresh, setNoSavi
 import { ART, BG_ART, COIN_ART, EGG_ART, ICON_ATLAS, UIURL, artBoot, artImg } from './art.js';
 import { trainerArtPaths } from './trainer.js';
 import { rigAtlas } from './rig.js';
-import { AREAS, scPrepare, stageArt } from './scene.js';
+import { AREAS, scPrepare, stageArt } from './battle-stage.js';
 import { DIO, dioData, dioPaths, dioScene } from './walk-view.js';
 import { EGL, eglOK } from './engine/core.js';
 import { ENV } from './env.js';

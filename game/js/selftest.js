@@ -17,7 +17,7 @@ import { B, S, U, addSteps, esc, makeMon, maxHp, save, setB, setS, setSave, setT
 import { FRAME } from './frame.js';
 import { TR_CACHE } from './trainer.js';
 import { DR, closeDressing } from './dressing.js';
-import { SC, scStop } from './scene.js';
+import { SC, scStop } from './battle-stage.js';
 import {
   DIO,
   DIO_CLK,

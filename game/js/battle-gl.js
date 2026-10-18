@@ -1,9 +1,9 @@
 'use strict';
 /* ================= BATTLES ON THE ENGINE =================
    A battle happens where you stand: the walk scene's canvas moves into the battle stage and keeps rendering the same
-   world through the battle camera (scene.js keeps directing it: SC.V, focus, punches and shakes). The billionaires and
+   world through the battle camera (battle-stage.js keeps directing it: SC.V, focus, punches and shakes). The billionaires and
    trainers become lit sprites in that world, with sun shadows and contact shadows; props standing in the way are
-   hidden; glowing move effects light the ground. scene.js still draws the move effects themselves on its canvas
+   hidden; glowing move effects light the ground. battle-stage.js still draws the move effects themselves on its canvas
    above. The classic painted stage is used when WebGL isn't running, when the stop has no walk scene,
    or when the player picks it in Settings. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
@@ -11,7 +11,7 @@ import { expose } from './test-globals.js';
 import { B, FV, RM, S, provide } from './hooks.js';
 import { $, clamp } from './util.js';
 import { hexA } from './art.js';
-import { ACT, FOC, POS, SC, UPP, partSpr, sideBuf, sideWorld, trainerBattleFrame, trainerMpp } from './scene.js';
+import { ACT, FOC, POS, SC, UPP, partSpr, sideBuf, sideWorld, trainerBattleFrame, trainerMpp } from './battle-stage.js';
 import { DIO, dioData, dioStop } from './walk-view.js';
 import { EGL } from './engine/core.js';
 import { DGL, dioH } from './walk-view-gl.js';

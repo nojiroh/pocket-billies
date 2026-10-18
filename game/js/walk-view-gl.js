@@ -3436,7 +3436,7 @@ function dglCamera(rw, rh, st, dt) {
     yaw,
   };
 }
-/* the battle stage's camera (scene.js projC) as a matrix: a level pinhole camera with an off-center horizon, in stage pixels */
+/* the battle stage's camera (battle-stage.js projC) as a matrix: a level pinhole camera with an off-center horizon, in stage pixels */
 function dglBattleCamera(rw, rh, BT) {
   const c = BT.cam,
     L = BT.L,

@@ -99,7 +99,7 @@ import { TR_PRESETS, cleanLook, cleanTrainer, humanHTML, owHTMLsheet, portraitHT
 import { applyPreferences, settingsHTML } from './profile.js';
 import { drPortrait, openDressing } from './dressing.js';
 import { bustHTML, sprHTML } from './rig.js';
-import { EASE, SC, camHome, scFocus, scTargets } from './scene.js';
+import { EASE, SC, camHome, scFocus, scTargets } from './battle-stage.js';
 import {
   DIO,
   dioClimb,

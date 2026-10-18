@@ -16,7 +16,7 @@ import { RM, S, U, canEnter, esc, fmt, nextStop, tripTo } from './core.js';
 import { frameCount, frameStop, frameTask, userFps } from './frame.js';
 import { artLoad, artPixels, cnv, hexA, mstamp, uiIco } from './art.js';
 import { owFrames, portraitHTML } from './trainer.js';
-import { EASE } from './scene.js';
+import { EASE } from './battle-stage.js';
 import { DIO, dioData, dioHash, dioImg, dioOk, dioScene, dioStep } from './walk-view.js';
 import { ENG_CTX, eng, engSource } from './engine/settings.js';
 import { EGL, eglBindQuad, eglFree, eglImg, eglInit, eglMesh, eglOK, eglPrograms, eglTarget } from './engine/core.js';

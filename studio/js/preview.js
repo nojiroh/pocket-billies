@@ -1,6 +1,6 @@
 'use strict';
 /* ================= POCKET BILLIES STUDIO · battle preview =================
-   Runs the game's own battle stage (game/js/scene.js) inside the Studio, fed by the Studio's unsaved data and art,
+   Runs the game's own battle stage (game/js/battle-stage.js) inside the Studio, fed by the Studio's unsaved data and art,
    so moves, backdrops and new billionaires can be checked without starting the game. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
@@ -23,7 +23,7 @@ import {
   scStart,
   scToCss,
   sideTop,
-} from '../../game/js/scene.js';
+} from '../../game/js/battle-stage.js';
 import { DIO, dioHubOf } from '../../game/js/walk-view.js';
 import { dioMount } from '../../game/js/walk-view-gl.js';
 import { battleGLAttach, battleGLStop } from '../../game/js/battle-gl.js';

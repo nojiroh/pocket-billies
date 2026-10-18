@@ -11,7 +11,7 @@ import { S, U, esc, fmt, plural, save } from './core.js';
 import { coinHTML, uiIco } from './art.js';
 import { portraitHTML } from './trainer.js';
 import { openDressing } from './dressing.js';
-import { buzz } from './scene.js';
+import { buzz } from './battle-stage.js';
 import { itemIcon } from './battle.js';
 /* eslint-disable no-func-assign */
 expose({
