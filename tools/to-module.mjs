@@ -178,7 +178,7 @@ function loadTime(ast, g) {
 }
 
 // where the leading comments of a file end (the generated part goes after them)
-function headerEnd(text) {
+export function headerEnd(text) {
   let i = 0;
   for (;;) {
     const ws = text.slice(i).match(/^\s*/)[0].length;
