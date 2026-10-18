@@ -20,7 +20,7 @@ test('rules: stats, levels, moves, evolution', () => {
   assert.equal(m.sp, 'sparky1');
 });
 
-test('rules: steps, trips and gates, encounters', () => {
+test('rules: trips and gates, encounters, the wild prize', () => {
   const s = startedSave('sparky0', 10);
   assert.equal(fn('hereLocation')().id, 'meadow');
   assert.deepEqual(fn('tripTo')(0), { metres: 100, plan: [0] });

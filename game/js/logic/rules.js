@@ -2,8 +2,8 @@
 'use strict';
 /* ================= RULES =================
    Phase 04e: the game's rules outside battle, moved here from game-state.js: a Billie's stats, levels, moves and
-   evolution, the team and storage, steps and their money, the trip along the roads and its gates, encounters from the
-   pool where you are, eggs, and the small helpers they share.
+   evolution, the team and storage, the trip along the roads (in metres) and its gates, the wild Billies on each
+   place's map, walking and eggs, and the small helpers they share.
    Logic only (game/js/logic/): no DOM, WebGL or window, so it runs in plain Node (tools/test/logic.test.mjs). The data
    tables come from game-data.js; the save, the battle and the interface state (saveData, activeBattle, uiState), and
    what the rules tell the interface (save, toast, render), come through hooks.js, filled by game-state.js and ui.js on
