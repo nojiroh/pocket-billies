@@ -43,7 +43,7 @@ import {
   eff,
   hasPassive,
   trainerTeam,
-} from './data.js';
+} from './game-data.js';
 import {
   B,
   N,

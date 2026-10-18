@@ -11,7 +11,7 @@
 import { expose } from './test-globals.js';
 import { closeModal, modal, provide, render, sceneIdAt, storyFlags, toast } from './hooks.js';
 import { $, clamp } from './util.js';
-import { PLACE, ROUTE, isTown, placeFull } from './data.js';
+import { PLACE, ROUTE, isTown, placeFull } from './game-data.js';
 import { sceneLite, sceneLoad, scenesAhead } from './map-files.js';
 import { RM, S, U, canEnter, esc, fmt, save } from './game-state.js';
 import { artLoad, uiIco } from './art.js';

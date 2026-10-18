@@ -6,7 +6,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { provide } from './hooks.js';
-import { DATA_WARN, GD, RULES, SP, START_NODE } from './data.js';
+import { DATA_WARN, GD, RULES, SP, START_NODE } from './game-data.js';
 import { sceneWatch, scenesAhead, scenesAll } from './map-files.js';
 import { RM, S, SAVE_FOUND, SAVE_NEW_MSG, SAVE_OLD_MSG, U, esc, fresh, setNoSaving, setS } from './game-state.js';
 import { ART, BG_ART, COIN_ART, EGG_ART, ICON_ATLAS, UIURL, artBoot, artImg } from './art.js';

@@ -534,7 +534,7 @@ const OPEN_NAMES = {
   greenhouse: 'The greenhouse',
   barn: 'The barn',
 };
-/* v47: the kind a door keeps hours as (not data.js placeKind(id), the kind of a place) */
+/* v47: the kind a door keeps hours as (not game-data.js placeKind(id), the kind of a place) */
 export function openKind(a, p) {
   const C = dioData().sc,
     M = p && C.props[p.k],

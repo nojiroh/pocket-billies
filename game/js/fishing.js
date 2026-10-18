@@ -9,7 +9,7 @@
 import { expose } from './test-globals.js';
 import { sfx, startWild, toast, x28Event } from './hooks.js';
 import { clamp, rnd } from './util.js';
-import { GD, RULES, SP } from './data.js';
+import { GD, RULES, SP } from './game-data.js';
 import { B, RM, S, U, areaPool, pickW, save, uid } from './game-state.js';
 import { uiIco } from './art.js';
 import { DIO, dioTer } from './walk-view.js';

@@ -11,7 +11,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { ACC, accOn, closeModal, modal, provide, render, sceneIdAt, toast, walkOff } from './hooks.js';
-import { ROUTE, SP } from './data.js';
+import { ROUTE, SP } from './game-data.js';
 import { N, S, U, cleanName, esc, plural } from './game-state.js';
 import { owFrames, portraitHTML, trWarm } from './trainer.js';
 import { sprHTML } from './rig.js';

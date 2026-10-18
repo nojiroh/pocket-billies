@@ -12,7 +12,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { S, WORLD, provide } from './hooks.js';
-import { ADJ, GD, LINKS, ROUTE, START_NODE } from './data.js';
+import { ADJ, GD, LINKS, ROUTE, START_NODE } from './game-data.js';
 /* eslint-disable no-func-assign */
 expose({
   MAP_FIELDS: [() => MAP_FIELDS],

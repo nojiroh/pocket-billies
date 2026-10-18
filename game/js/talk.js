@@ -7,7 +7,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { dioChatLines, provide } from './hooks.js';
-import { PEOPLE, TRAINERS } from './data.js';
+import { PEOPLE, TRAINERS } from './game-data.js';
 import { RM, S } from './game-state.js';
 import { frameStop, frameTask } from './frame.js';
 import { trPortrait, trainerLook } from './trainer.js';

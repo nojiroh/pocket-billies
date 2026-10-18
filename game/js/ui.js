@@ -34,7 +34,7 @@ import {
   linkCost,
   placeSub,
   trainersAt,
-} from './data.js';
+} from './game-data.js';
 import {
   B,
   BR,

@@ -7,7 +7,7 @@
 import { expose } from './test-globals.js';
 import { bar, closeModal, modal, provide, render, roomRefresh, toast } from './hooks.js';
 import { clamp } from './util.js';
-import { COINS, GD, ITEMS, ROUTE, RULES, SP } from './data.js';
+import { COINS, GD, ITEMS, ROUTE, RULES, SP } from './game-data.js';
 import { B, N, S, U, esc, fmt, save, today } from './game-state.js';
 import { cnv, uiIco } from './art.js';
 import { DIO, dioBaseId, dioFace, dioFind, dioFreePt, dioHubOf, dioScene, dioTer } from './walk-view.js';

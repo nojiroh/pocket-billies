@@ -26,7 +26,7 @@ import {
   eff,
   linkCost,
   trainersAt,
-} from './data.js';
+} from './game-data.js';
 /* eslint-disable no-func-assign */
 expose({
   ACC_ID: [() => ACC_ID],

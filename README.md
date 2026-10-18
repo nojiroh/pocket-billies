@@ -100,7 +100,7 @@ stands.
     schemas. `gamedata.js` is generated from them (not in git): everything but the maps' ground and props, which the
     game fetches from each map's file when it needs it (`js/scene-files.js`).
   - `art/`: pictures, `manifest.js` (atlas rectangles), `next/rigs-next.js` (skeletons).
-  - `js/`: the code. `data.js` builds everything from the data file; `boot.js` loading; `ui.js` the screens;
+  - `js/`: the code. `game-data.js` builds everything from the data file; `boot.js` loading; `ui.js` the screens;
     `battle.js` battle rules and HUD; `seamless-world.js` walking from one place into the next; `walk-view.js` the walk scene's data and logic and
     `walk-view-gl.js` draws it; `engine/` the 3D engine (settings, WebGL setup, light, post effects); `battle-gl.js`,
     `world-map-gl.js` battles and the world map on the engine; `buildings.js`, `structures.js`, `props3d.js`, `vox.js`

@@ -7,7 +7,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { STEST, STORY, sceneIdAt, storyFlags, toast } from './hooks.js';
-import { ROUTE, TRAINERS, isTown, trainersAt } from './data.js';
+import { ROUTE, TRAINERS, isTown, trainersAt } from './game-data.js';
 import { B, S, U, esc, save } from './game-state.js';
 import { artURL } from './art.js';
 import { DIO, dioFlagPath, dioScene } from './walk-view.js';

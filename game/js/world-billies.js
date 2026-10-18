@@ -12,7 +12,7 @@
 import { expose } from './test-globals.js';
 import { areaKey, provide, sceneIdAt, sfx } from './hooks.js';
 import { clamp } from './util.js';
-import { SP, STATUSN, TRAINERS, rivalSp, trainersAt } from './data.js';
+import { SP, STATUSN, TRAINERS, rivalSp, trainersAt } from './game-data.js';
 import { N, S, U, findMon, maxHp, nextStop, save } from './game-state.js';
 import { cnv } from './art.js';
 import { KBACK, drawRig, rigFrame, rigParts, rigPreload } from './rig.js';

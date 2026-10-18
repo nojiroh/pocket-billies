@@ -23,7 +23,7 @@ import {
   runQuickTest,
   toast,
 } from './hooks.js';
-import { JOBS, MOVES, ROUTE, RULES, SP, STATUSN } from './data.js';
+import { JOBS, MOVES, ROUTE, RULES, SP, STATUSN } from './game-data.js';
 import {
   RM,
   S,

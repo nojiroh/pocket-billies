@@ -173,7 +173,7 @@ def check_code():
         r = subprocess.run([node, '--check', str(f)], capture_output=True, text=True)
         if r.returncode: bad.append(f'{f.relative_to(ROOT)}: {r.stderr.strip().splitlines()[-1] if r.stderr.strip() else "error"}')
     # v47: a function declared in two of the page's scripts: the later one silently replaces the other everywhere
-    # (walk-view.js's placeKind(act, prop) for shop hours hid data.js's placeKind(id))
+    # (walk-view.js's placeKind(act, prop) for shop hours hid game-data.js's placeKind(id))
     where = {}
     for src in re.findall(r'<script (?:type="module" )?src="(js/[^"]+)"', (GAME / 'index.html').read_text(encoding='utf-8')):
         f = GAME / src

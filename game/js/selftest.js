@@ -11,7 +11,7 @@
 import { expose } from './test-globals.js';
 import { provide } from './hooks.js';
 import { clamp } from './util.js';
-import { GD, MOVES, ROUTE, RULES, SP, TRAINERS, linkCost, placeKind } from './data.js';
+import { GD, MOVES, ROUTE, RULES, SP, TRAINERS, linkCost, placeKind } from './game-data.js';
 import { scenesAll } from './map-files.js';
 import { B, S, U, addSteps, esc, makeMon, maxHp, save, setB, setS, setSave, setTrip, spawn } from './game-state.js';
 import { FRAME } from './frame.js';

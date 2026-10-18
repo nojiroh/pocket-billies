@@ -6,7 +6,7 @@
 import { expose } from './test-globals.js';
 import { closeModal, evoRun, modal, provide, render, renderOv, stSceneChecks, testScenes, toast } from './hooks.js';
 import { $, $$, clamp } from './util.js';
-import { COINS, DATA_WARN, DEX, EGGS, EGG_TIERS, ITEMS, ROUTE, RULES, SP, TRAINERS } from './data.js';
+import { COINS, DATA_WARN, DEX, EGGS, EGG_TIERS, ITEMS, ROUTE, RULES, SP, TRAINERS } from './game-data.js';
 import {
   B,
   MAXLV,
