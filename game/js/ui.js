@@ -176,7 +176,7 @@ import {
   worldMapWidth,
   worldMapZoom,
 } from './world-map.js';
-import { mapGLAction, mapGLWanted } from './world-map-gl.js';
+import { worldMapGlAction, worldMapGlWanted } from './world-map-gl.js';
 import { openShop } from './shop.js';
 import { sfx } from './sound.js';
 import { talkHazel } from './talk.js';
@@ -1692,7 +1692,7 @@ function walkSceneSync() {
   document.body.classList.toggle('on-scene', on && !walk);
   if (!on) {
     if (walkView.cv) stopWalkView();
-    if (U.tab === 'map' && S.started && typeof mapGLWanted === 'function' && mapGLWanted()) {
+    if (U.tab === 'map' && S.started && typeof worldMapGlWanted === 'function' && worldMapGlWanted()) {
       if (cv) {
         cv.hidden = false;
         cv.classList.add('in');
@@ -2560,7 +2560,7 @@ document.addEventListener('click', ev => {
     if (b && !b.dis) b.f();
     return;
   }
-  if (typeof mapGLAction === 'function' && mapGLAction(a, d)) return;
+  if (typeof worldMapGlAction === 'function' && worldMapGlAction(a, d)) return;
   switch (a) {
     case 'intro':
       if (U.intro === 0 && typeof csWanted === 'function' && csWanted()) {

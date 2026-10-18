@@ -24,7 +24,7 @@ import { EGL_POST_SH } from './engine/post-effects.js';
 import { canvasForContext, standingHeightAt, walkGlContext } from './walk-view-gl.js';
 import { A, endBattle, stopTimers, types } from './battle.js';
 import { LOCATION_VECTORS, WORLD_ART, vector3, worldMap, worldMapHeight, worldMapWidth } from './world-map.js';
-import { MGL_SH, mglRender, mglSize, worldMapGl } from './world-map-gl.js';
+import { WORLD_MAP_GL_SHADERS, worldMapGl, worldMapGlRender, worldMapGlSize } from './world-map-gl.js';
 import { music, sfx } from './sound.js';
 import { CS, csCaption } from './cutscene.js';
 /* eslint-disable no-func-assign */
@@ -93,7 +93,8 @@ function fallCanvas() {
 }
 /* the walk scene's canvas, ready for the world map's renderer (the map is drawn on it before Sundown is mounted) */
 export function fallGL() {
-  if (typeof mglRender !== 'function' || typeof walkGlContext !== 'function' || EGL.fail || EGL.lost) return null;
+  if (typeof worldMapGlRender !== 'function' || typeof walkGlContext !== 'function' || EGL.fail || EGL.lost)
+    return null;
   let cv = $('#dio');
   if (!cv) {
     cv = document.createElement('canvas');
@@ -103,7 +104,7 @@ export function fallGL() {
   cv = canvasForContext(cv, 'gl');
   if (!walkGlContext(cv)) return null;
   try {
-    eglPrograms(MGL_SH);
+    eglPrograms(WORLD_MAP_GL_SHADERS);
     eglPrograms(EGL_POST_SH);
   } catch (e) {
     console.error(e);
@@ -641,12 +642,12 @@ export function fallMap(run, ms) {
         worldMap.dirty = true;
         res0();
       };
-    if (typeof mglRender !== 'function' || !EGL.gl) {
+    if (typeof worldMapGlRender !== 'function' || !EGL.gl) {
       res();
       return;
     }
     try {
-      eglPrograms(MGL_SH);
+      eglPrograms(WORLD_MAP_GL_SHADERS);
     } catch (e) {
       console.error(e);
       res();
@@ -665,9 +666,9 @@ export function fallMap(run, ms) {
       }
       const k = Math.min(1, (performance.now() - t0) / ms);
       try {
-        mglSize();
+        worldMapGlSize();
         worldMap.cam = fallCam(k);
-        mglRender(ts);
+        worldMapGlRender(ts);
       } catch (e) {
         console.error(e);
         res();

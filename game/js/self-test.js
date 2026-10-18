@@ -48,7 +48,7 @@ import { OWM, owBuddyTap, owPetSp } from './world-billies.js';
 import { WORLD, wrRoomScene, wrTripView } from './seamless-world.js';
 import { A, endBattle, liveK, pickMove, pickTarget, startTrainer, startWild, stopTimers, tapMsg } from './battle.js';
 import { worldMap } from './world-map.js';
-import { MGL_SH, MM, mglRender, mmOn, setMglRender, worldMapGl } from './world-map-gl.js';
+import { MM, WORLD_MAP_GL_SHADERS, mmOn, setWorldMapGlRender, worldMapGl, worldMapGlRender } from './world-map-gl.js';
 import { TALK, talkHide } from './talk.js';
 import { CS, csTeardown } from './cutscene.js';
 import { battleTipHide, fallGL, fallMap } from './opening-fall.js';
@@ -384,7 +384,7 @@ async function runFullTest(mode) {
           typeof WALK_SHADERS !== 'undefined' ? WALK_SHADERS : {},
           typeof BLD_SH !== 'undefined' ? BLD_SH : {},
           typeof EGL_POST_SH !== 'undefined' ? EGL_POST_SH : {},
-          typeof MGL_SH !== 'undefined' ? MGL_SH : {},
+          typeof WORLD_MAP_GL_SHADERS !== 'undefined' ? WORLD_MAP_GL_SHADERS : {},
           typeof P3D_SH !== 'undefined' ? P3D_SH : {}
         );
         const bad = [];
@@ -1018,9 +1018,9 @@ async function runFullTest(mode) {
           CS.run++;
           const run = CS.run,
             fr = [],
-            mr = mglRender;
+            mr = worldMapGlRender;
           let last = performance.now();
-          setMglRender(t => {
+          setWorldMapGlRender(t => {
             const n = performance.now();
             fr.push(n - last);
             last = n;
@@ -1029,7 +1029,7 @@ async function runFullTest(mode) {
           try {
             await fallMap(run, 6000);
           } finally {
-            setMglRender(mr);
+            setWorldMapGlRender(mr);
             CS.on = false;
             CS.run++;
           }

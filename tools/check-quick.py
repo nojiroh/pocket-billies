@@ -579,7 +579,7 @@ def desktop_steps(b, base, R):
 
     @step('Shaders: every program compiles, no clashing inputs', 30)
     def shaders():
-        r = pg.evaluate("""(()=>{if(typeof EGL==='undefined'||!EGL.gl)return {skip:'no WebGL in this browser'};const sets={WALK_SHADERS:typeof WALK_SHADERS!=='undefined'?WALK_SHADERS:null,BLD_SH:typeof BLD_SH!=='undefined'?BLD_SH:null,EGL_POST_SH:typeof EGL_POST_SH!=='undefined'?EGL_POST_SH:null,MGL_SH:typeof MGL_SH!=='undefined'?MGL_SH:null,P3D_SH:typeof P3D_SH!=='undefined'?P3D_SH:null};
+        r = pg.evaluate("""(()=>{if(typeof EGL==='undefined'||!EGL.gl)return {skip:'no WebGL in this browser'};const sets={WALK_SHADERS:typeof WALK_SHADERS!=='undefined'?WALK_SHADERS:null,BLD_SH:typeof BLD_SH!=='undefined'?BLD_SH:null,EGL_POST_SH:typeof EGL_POST_SH!=='undefined'?EGL_POST_SH:null,WORLD_MAP_GL_SHADERS:typeof WORLD_MAP_GL_SHADERS!=='undefined'?WORLD_MAP_GL_SHADERS:null,P3D_SH:typeof P3D_SH!=='undefined'?P3D_SH:null};
          const bad=[];let n=0;for(const [name,S] of Object.entries(sets)){if(!S)continue;for(const [k,v] of Object.entries(S)){n++;const c=eglAttrClashes(v[0]);if(c.length)bad.push(k+' clash: '+c.join(','));try{if(!EGL.P[k])EGL.P[k]=eglCompile(v,k)}catch(e){bad.push(String(e.message||e).slice(0,160))}}}return {n,bad}})()""")
         if r.get('skip'): return r['skip']
         if r['bad']: raise Exception('; '.join(r['bad'][:4]))
@@ -876,7 +876,7 @@ def desktop_steps(b, base, R):
         pg.evaluate("U.tab='map';render();0"); time.sleep(6)
         if pg.evaluate("worldMap.gl"):
             f0 = pg.evaluate("JSON.stringify(worldMap.focus)"); y0 = pg.evaluate("worldMap.yaw")
-            pg.evaluate("mglPanTo({focus:worldMap.focus||worldMapPlayerPosition(),cam:worldMap.cam},-120,40);mapGLAction('mturn',{k:'1'});for(let i=0;i<20;i++)worldMapZoom(.8);worldMap.tilt=.35;0"); time.sleep(2); shot(pg, 'map-close')
+            pg.evaluate("worldMapGlPanTo({focus:worldMap.focus||worldMapPlayerPosition(),cam:worldMap.cam},-120,40);worldMapGlAction('mturn',{k:'1'});for(let i=0;i<20;i++)worldMapZoom(.8);worldMap.tilt=.35;0"); time.sleep(2); shot(pg, 'map-close')
             m = pg.evaluate("[JSON.stringify(worldMap.focus),worldMap.yaw,worldMap.alt,worldMap.free]")
             pg.evaluate("worldMapReset();0")
             if m[0] == f0 or abs(m[1] - y0) < .3 or m[2] > .03 or not m[3]: raise Exception(f'map camera: {m}')
