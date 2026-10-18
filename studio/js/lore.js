@@ -27,7 +27,7 @@ import {
   setP,
   setSetP,
   uidKey,
-} from './core.js';
+} from './studio-app.js';
 expose({
   LORE_TABS: [() => LORE_TABS],
   LORE_UNLOCK: [() => LORE_UNLOCK],

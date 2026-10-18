@@ -32,7 +32,7 @@ import {
   grid,
   render,
   toast,
-} from './core.js';
+} from './studio-app.js';
 import { atlasGet, fileToCanvas, markArt, pickFile } from './sprites.js';
 import { SCN, scArt, scD, scOpenPe } from './scenes.js';
 /* eslint-disable no-func-assign */

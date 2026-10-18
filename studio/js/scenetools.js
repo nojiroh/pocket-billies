@@ -14,7 +14,7 @@ import { VP, provide } from '../../game/js/hooks.js';
 import { $ } from '../../game/js/util.js';
 import { DIO } from '../../game/js/walk-view.js';
 import { esc } from './shims.js';
-import { ACTS, ST, ask, changed, clone, commit, dialog, render, toast, uidKey } from './core.js';
+import { ACTS, ST, ask, changed, clone, commit, dialog, render, toast, uidKey } from './studio-app.js';
 import { SCN, scCur, scD, scMapDraw, scPropAt, scSetTile } from './scenes.js';
 /* eslint-disable no-func-assign */
 expose({

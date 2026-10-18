@@ -42,7 +42,7 @@ import {
   peopleOpts,
   render,
   spOpts,
-} from './core.js';
+} from './studio-app.js';
 import { atlasGet, atlasPath, rigFor } from './sprites.js';
 import { AMBS } from './world.js';
 /* eslint-disable no-func-assign */

@@ -29,7 +29,7 @@ export const esc = s =>
     /[&<>"']/g,
     c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]
   );
-/* the game's tables, read live from the Studio's unsaved data (ST is declared in js/core.js) */
+/* the game's tables, read live from the Studio's unsaved data (ST is declared in js/studio-app.js) */
 const liveMap = f =>
   new Proxy(
     {},

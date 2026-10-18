@@ -12,7 +12,7 @@
 import { expose } from '../../game/js/test-globals.js';
 import { $ } from '../../game/js/util.js';
 import { esc } from './shims.js';
-import { ACTS, ST, ask, boot, dialog, saveAll, setApi, setSaveAll, setToast, toast, updTop } from './core.js';
+import { ACTS, ST, ask, boot, dialog, saveAll, setApi, setSaveAll, setToast, toast, updTop } from './studio-app.js';
 /* eslint-disable no-func-assign */
 expose({
   GH: [() => GH],

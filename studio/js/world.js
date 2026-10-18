@@ -32,7 +32,7 @@ import {
   toast,
   typeOpts,
   uidKey,
-} from './core.js';
+} from './studio-app.js';
 import { fileToCanvas, loadImage, markArt, mountPreviews, pickFile, prevCanvas } from './sprites.js';
 import { RAR_NAMES } from './sections.js';
 /* eslint-disable no-func-assign */

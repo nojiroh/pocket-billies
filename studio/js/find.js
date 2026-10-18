@@ -10,7 +10,7 @@ import { linkNote } from '../../game/js/hooks.js';
 import { $, $$ } from '../../game/js/util.js';
 import { ENGINE_SPEC } from '../../game/js/engine/settings.js';
 import { esc } from './shims.js';
-import { ACTS, NAV, SECTIONS, ST, clone, go, toast } from './core.js';
+import { ACTS, NAV, SECTIONS, ST, clone, go, toast } from './studio-app.js';
 import { ENS, engRefresh } from './engine.js';
 /* eslint-disable no-func-assign */
 expose({

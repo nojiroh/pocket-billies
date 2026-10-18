@@ -45,7 +45,7 @@ import {
   typeOpts,
   uidKey,
   updTop,
-} from './core.js';
+} from './studio-app.js';
 import {
   ATL,
   atlasGet,

@@ -28,7 +28,7 @@ import {
   grid,
   render,
   toast,
-} from './core.js';
+} from './studio-app.js';
 import { fileToCanvas, markArt, pickFile } from './sprites.js';
 import { SCN, scD } from './scenes.js';
 import { pedM } from './propedit.js';

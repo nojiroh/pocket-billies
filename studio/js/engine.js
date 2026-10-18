@@ -34,7 +34,7 @@ import {
   setP,
   toast,
   uidKey,
-} from './core.js';
+} from './studio-app.js';
 import { atlasGet } from './sprites.js';
 import { scArt, scD, scExitNames } from './scenes.js';
 /* eslint-disable no-func-assign */

@@ -34,7 +34,7 @@ import {
   render,
   toast,
   uidKey,
-} from './core.js';
+} from './studio-app.js';
 import { atlasGet, atlasNow, markArt } from './sprites.js';
 /* eslint-disable no-func-assign */
 expose({
