@@ -537,10 +537,13 @@ function starterPickerSelect(d) {
 }
 
 /* ---------- the script ---------- */
-export async function cutsceneStart() {
+/* opts.quick (phase 16 test boot, js/test-boot.js): no fall, and the dressing room keeps a random look on its own,
+   so the game opens on Hazel's scene and goes on to the coins and the starter pick */
+export async function cutsceneStart(opts) {
   if (cutscene.on) return;
   const id = cutsceneMapId();
   cutscene.on = true;
+  cutscene.quick = !!(opts && opts.quick);
   cutscene.run++;
   const run = cutscene.run;
   cutscene.skip = false;
@@ -574,7 +577,7 @@ export async function cutsceneStart() {
     prepareMap(id),
   ]).catch(() => {});
   /* v47: the fall, from the surface down to Sundown (opening-fall.js); it ends on a white screen */
-  if (typeof fallPlay === 'function' && !cutscene.test) {
+  if (typeof fallPlay === 'function' && !cutscene.test && !cutscene.quick) {
     try {
       await fallPlay(run);
     } catch (e) {
@@ -727,7 +730,7 @@ async function cutsceneScript(run) {
       look: uiState.trainerDraft || LOOK_PRESETS[Math.floor(Math.random() * LOOK_PRESETS.length)],
       done: r,
     });
-    if (cutscene.test)
+    if (cutscene.test || cutscene.quick)
       setTimeout(() => {
         if (dressingRoom.on) saveDressingLook();
       }, 1500);

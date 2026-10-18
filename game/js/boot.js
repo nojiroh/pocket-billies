@@ -32,7 +32,7 @@ import { startTownRise, walkRenderer } from './walk-view-gl.js';
 import { seamlessWorld } from './seamless-world.js';
 import { WORLD_ART, worldMapPrepare } from './world-map.js';
 import { WORLD_RELIEF } from './world-map-gl.js';
-import { cutsceneWanted } from './cutscene.js';
+import { cutsceneStart, cutsceneWanted } from './cutscene.js';
 import { titleMount, titleScreen, titleStart, titleWanted } from './title.js';
 import { loreLoadingLines } from './lore.js';
 import { initAccount } from './account.js';
@@ -850,8 +850,11 @@ else
       if (typeof debugLog !== 'undefined') debugLog.hook();
       initPixelSky();
       if (typeof titleWanted === 'function' && titleWanted()) titleStart();
-      /* phase 16 test boot (js/test-boot.js): the step-by-step intro's last step is the starter pick */
-      if (TEST_BOOT && !TEST_RUN && !FIXTURE) uiState.intro = introSteps().length;
+      /* phase 16 test boot (js/test-boot.js): no title; the opening cutscene starts on Hazel's scene (below), or,
+         where it can't run, the step-by-step intro starts on her first line */
+      const quickOpening = TEST_BOOT && !TEST_RUN && !FIXTURE && !saveData.started;
+      if (quickOpening && !(typeof cutsceneWanted === 'function' && cutsceneWanted()))
+        uiState.intro = introSteps().findIndex(s => s.k === 'gini') + 1;
       render();
       if (TEST_RUN) studioTestStart();
       if (FIXTURE) fixtureStart();
@@ -861,6 +864,8 @@ else
         } catch (e) {}
       await walkViewWarmup();
       loaderHide();
+      if (quickOpening && uiState.intro === 0 && typeof cutsceneWanted === 'function' && cutsceneWanted())
+        cutsceneStart({ quick: true });
       watchMapsAhead();
       loadAllMaps();
       /* phase 06: a notice, not a choice: it waits behind the dot on the portrait */
@@ -873,7 +878,7 @@ else
       /* phase 06: a waiting choice (hatch, learn a move, evolve) opens only once the world is showing */
       if (saveData.started && !TEST_RUN && !FIXTURE) whenWorldShows(showPendingWindows);
       if (TEST_BOOT && !TEST_RUN && !FIXTURE)
-        setTimeout(() => toast('Test boot: starter selection, nothing is saved.'), 900);
+        setTimeout(() => toast('Test boot: the opening with Professor Hazel, nothing is saved.'), 900);
       if (location.protocol === 'file:')
         setTimeout(
           () => toast('Battles and the map need a local web server. Open the game with Start-Game (see README).'),
