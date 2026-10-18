@@ -77,8 +77,13 @@ Plan approved at the start (docs/phases/08a-plan.md, section 08a-2, now marked d
   - The tags `phase-05-done` and `phase-04-done` still need pushing from your machine (08a-1).
   - On your phone: a new game (format 3), walk a route (encounters fill, a win pays), the debug "Walk 1 km" twice
     for the starter egg, and a debug log.
-- Next session starts with: "start 08a-3" (docs/phases/08a-plan.md, section 08a-3). First check where the UI
-  phase (06) stands: 08a-3 rewrites the same widgets and CSS.
+- Merged in afterwards (owner's request): phase-06-3 (with 06-1, 06-2, 06-2b and phase 17 robots) and
+  docs/phase-06-plan. 21 conflicts in 7 files: 06's structure kept, 08a-2's mechanics carried into it (unit cards
+  without Day jobs, speciesOf in the split evolution, no job checks, check-quick on per-map encounters). Fast checks
+  and smoke green after the merge; headless: walk card "Encounters here 4/4", team screen without Day jobs, the
+  evolution window's Build/Hype buttons. Not merged: graphics-bench and props-batch-1 (separate work, still moving).
+- Next session starts with: "start 08a-3" (docs/phases/08a-plan.md, section 08a-3), on top of this branch, which
+  now holds phase 06 up to 06-3.
 ### Phase 17 - Robots, prototype (in progress, not tagged) - 2026-10-18
 Plan agreed in chat (docs/phases/17-robots.md, rewritten first: robots battle in the same system as Billies, mixed
 teams, body HP + breakable parts, moves from parts, torso + legs types, some moves aim, gem levels + part upgrades,
