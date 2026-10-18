@@ -72,7 +72,7 @@ Plan approved at the start (docs/phases/08a-plan.md, section 08a-2, now marked d
     $240; the visit challenge goes 1/2 -> 2/2 on arriving; a letter Marigold -> Copperleaf turns into a reply on
     arrival with its toast; walking 4.32 m outdoors adds 4.32 m, 2.83 m inside a house adds 0; at 2 km the hatch
     window opens ("A 2 km egg is hatching"); the world map says "90 m", Copperleaf -> Marigold "200 m".
-  - Full-check steps v36 and v37 (split window, both paths): ok. The other steps this session touched (Walking, Things to do, v33, v38, v40, v43, Battles) were running at the time of writing; their result follows in the next commit.
+  - Full-check steps v36 and v37 (split window, both paths): ok. The other steps this session touched, run together on the final code (693 s): Walking (218 m over two roads), Things to do ("Visit 3 different places today" among the challenges, a ladder, rain in battle), v33 (4 wild Billies in the grass, double and Alpha battles), v43, the terraces, the joystick and edge crossing, Battles (3D stage, a trainer battle won): all ok. v38 and v39/v40 fail as before (they count the old roster, phase 16).
 - Questions waiting for the owner:
   - The tags `phase-05-done` and `phase-04-done` still need pushing from your machine (08a-1).
   - On your phone: a new game (format 3), walk a route (encounters fill, a win pays), the debug "Walk 1 km" twice
