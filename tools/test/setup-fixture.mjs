@@ -43,7 +43,6 @@ export const FIXTURE = {
       teamXpShare: 0.5,
     },
     eggs: { capacity: 8, slots: 2, goldOdds: 512, goldOdds10: 128, mythOdds: 1000, mythSpecies: 'sparky0' },
-    jobs: { stepsPerPay: 2000, maxPending: 20, positions: 3 },
     battle: {
       stab: 1.5,
       critChances: [0.0625, 0.125, 0.25, 0.5],

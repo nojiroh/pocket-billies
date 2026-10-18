@@ -23,7 +23,6 @@
   "dropChance": 0.12,
   "dropTiers": {"2":0.6,"5":0.3,"10":0.1}
  },
- "jobs": {"stepsPerPay":2000,"maxPending":20,"positions":3},
  "battle": {
   "stab": 1.5,
   "critChances": [0.0625,0.125,0.25,0.5],

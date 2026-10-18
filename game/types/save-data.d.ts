@@ -54,8 +54,6 @@ export interface SaveData {
   /** the last encounter number */
   serial: number;
   eggs: Egg[];
-  /** a slot per day job position (rules.jobs.positions) */
-  jobs: JobSlot[];
   /** Date.now() at the last save */
   savedAt: number;
   /** the trainer card: ID number, start date (0: unknown) and eggs hatched */
@@ -135,8 +133,6 @@ export interface Billy {
   nick: string;
   /** where and when it joined you: a location id (or node), Date.now() */
   met?: { n: DataId | LocationNode; t: number };
-  /** the day job slot it works in, or null */
-  job?: number | null;
   /** when it went into the box (for the 'idle' evolution) */
   boxedAt?: number | null;
   /** battles won (the Hype counter), the lead's win streak, items given away */
@@ -185,16 +181,4 @@ export interface Egg {
   prog: number;
   /** the incubator slot it is in, or null */
   slot: number | null;
-}
-
-/** a day job position (game-state.js assignJob) */
-export interface JobSlot {
-  /** the Billie working it, or null */
-  uid: string | null;
-  /** a key of gameData.jobs */
-  job: DataId | null;
-  /** steps toward the next pay */
-  acc: number;
-  /** pay waiting to be collected */
-  pend: number;
 }

@@ -579,11 +579,7 @@ function paintParty() {
   if (!activeBattle) return;
   const pip = m => `<i class="pip${m.hp <= 0 ? ' out' : ''}${m.status ? ' st' : ''}"></i>`;
   const a = $('#pips0');
-  if (a)
-    a.innerHTML = saveData.team
-      .filter(m => m.job == null)
-      .map(pip)
-      .join('');
+  if (a) a.innerHTML = saveData.team.map(pip).join('');
   const b = $('#pips1');
   if (b) b.innerHTML = activeBattle.kind === 'trainer' ? activeBattle.sides[1].team.map(pip).join('') : '';
 }
@@ -784,21 +780,13 @@ function teamPick(back) {
   return `<div class="plist">${saveData.team
     .map((m, i) => {
       const act = (on.includes(i) && m.hp > 0) || called.includes(i);
-      const dis = act || m.hp <= 0 || m.job != null;
+      const dis = act || m.hp <= 0;
       return billyPickHTML(
         m,
         act,
         `data-a="bswitch" data-i="${i}"`,
         dis,
-        act
-          ? called.includes(i)
-            ? 'Coming in'
-            : 'In battle'
-          : m.job != null
-            ? 'At work'
-            : m.hp <= 0
-              ? 'Fainted'
-              : statusBadgeHTML(m.status)
+        act ? (called.includes(i) ? 'Coming in' : 'In battle') : m.hp <= 0 ? 'Fainted' : statusBadgeHTML(m.status)
       );
     })
     .join('')}</div>${back ? backButtonHTML() : ''}`;
@@ -825,7 +813,7 @@ export function paintActions() {
       items = Object.keys(ITEMS)
         .filter(k => saveData.items[k] > 0 && !ITEMS[k].evoItem)
         .reduce((a, k) => a + saveData.items[k], 0),
-      crew = saveData.team.filter(x => x.job == null),
+      crew = saveData.team,
       alive = crew.filter(x => x.hp > 0).length;
     h = `<div class="c-choose"><button class="bt fight" data-a="bfight"><span class="bt-i">${uiIconHTML('fight', 24)}</span><span class="bt-t"><b>Fight</b><small>${plural(m.moves.length, 'move')}</small></span><kbd>F</kbd></button>
   <div class="bt-row"><button class="bt coin" data-a="bcoins" ${wild && first ? '' : 'disabled'}>${uiIconHTML('coin', 18)}<b>Tax it</b><small>${wild ? (first ? coins + ' left' : 'First pick only') : 'Wild only'}</small><kbd>X</kbd></button>
@@ -1011,9 +999,7 @@ export function endBattle() {
     tid = activeBattle.tid,
     lead = findBilly(activeBattle.lead);
   if (o === 'win' && typeof jingle === 'function') jingle(JINGLES.victory);
-  if (o === 'win')
-    for (const m of saveData.team)
-      if (m.hp > 0 && m.job == null) m.wins = (m.wins || 0) + 1; /* v36: the Hype counter */
+  if (o === 'win') for (const m of saveData.team) if (m.hp > 0) m.wins = (m.wins || 0) + 1; /* v36: the Hype counter */
   if (typeof battleTipHide === 'function') battleTipHide();
   if (kind === 'wild') dropEncounter(activeBattle.qid);
   if (lead) {

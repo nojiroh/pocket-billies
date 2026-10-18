@@ -104,7 +104,7 @@ document.addEventListener('click', ev => {
       I = ITEMS[k];
     if (!I) return;
     if (I.hpAll) {
-      const m = saveData.team.find(x => x.hp > 0 && x.job == null);
+      const m = saveData.team.find(x => x.hp > 0);
       if (m && applyItem(k, m.uid, false)) {
         if (!saveData.items[k]) uiState.bagSel = null;
         render();

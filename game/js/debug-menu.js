@@ -123,11 +123,11 @@ function debugHTML() {
     uiState.dbgTest || testMaps()[0] || ''
   )}${debugButtonHTML('test', 'Go there')}${debugButtonHTML('testchk', 'Run its checks')}${uiState.bench && uiState.bench.test ? debugButtonHTML('untest', 'Back to the game', 'gold') : ''}</div>
   ${uiState.testRes ? `<ul class="dbg-warn">${uiState.testRes.map(r => `<li>${r.ok ? '✓' : '✗'} ${escapeHtml(r.what)}${r.ok ? '' : ` (expected ${r.reach ? 'reachable' : 'not reachable'})`}</li>`).join('')}</ul>` : ''}</details>
- <details><summary>Eggs and jobs</summary><div class="dbg-row">${debugSelectHTML(
+ <details><summary>Eggs and evolution</summary><div class="dbg-row">${debugSelectHTML(
    'dbgEgg',
    EGG_TIERS.map(t => [t, t + ' km']),
    EGG_TIERS[0]
- )}${debugButtonHTML('egg', 'Add egg')}${debugButtonHTML('hatch', 'Finish all incubators')}${debugButtonHTML('pay', 'Pay all jobs')}</div>
+ )}${debugButtonHTML('egg', 'Add egg')}${debugButtonHTML('hatch', 'Finish all incubators')}</div>
   <div class="dbg-row">${debugButtonHTML('idle', 'Age storage by a day')}${debugButtonHTML('streak', 'Lead +3 win streak')}</div></details>
  <details ${inB ? 'open' : ''}><summary>Battle${inB ? '' : ' (start one first)'}</summary><div class="dbg-row">${debugButtonHTML('win', 'Win now', 'gold')}${debugButtonHTML('lose', 'Lose now')}${debugButtonHTML('foe1', 'Foe to 1 HP')}${debugButtonHTML('catch', uiState.dbgCatch ? 'Taxing works as normal' : 'Every throw taxes')}</div>
   <div class="dbg-row">${[1, 2, 4].map(x => debugButtonHTML('speed' + x, `${x}× speed`, battleStage.speed === x ? 'dark' : '')).join('')}</div></details>
@@ -336,11 +336,6 @@ function debugAction(x) {
     case 'hatch':
       saveData.eggs.forEach(e => {
         if (e.slot != null) e.prog = EGGS[e.tier].need;
-      });
-      break;
-    case 'pay':
-      saveData.jobs.forEach(j => {
-        if (j.uid) j.pend = Math.max(j.pend, 3);
       });
       break;
     case 'idle':

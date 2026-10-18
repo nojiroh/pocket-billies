@@ -9,8 +9,6 @@ import {
   DEX_ORDER,
   EGGS,
   ITEMS,
-  JOBS,
-  JOB_STEPS,
   LINE_BY_ID,
   LOCATIONS,
   MOVES,
@@ -38,7 +36,6 @@ import { weightClass } from './logic/parts.js';
 import {
   addEgg,
   allBillies,
-  assignJob,
   billyBuild,
   billyName,
   billyWeight,
@@ -47,12 +44,10 @@ import {
   canEvolve,
   canRide,
   cleanName,
-  collectJob,
   eggSlotCount,
   encounterBuild,
   encounterStock,
   encountersHere,
-  endShift,
   evolutionHint,
   evolutionItemName,
   evolve,
@@ -233,13 +228,10 @@ expose({
   hatchModal: [() => hatchModal, v => (hatchModal = v)],
   healPick: [() => healPick, v => (healPick = v)],
   hereCard: [() => hereCard, v => (hereCard = v)],
-  hireFlow: [() => hireFlow, v => (hireFlow = v)],
-  hirePick: [() => hirePick, v => (hirePick = v)],
   hpBar: [() => hpBar, v => (hpBar = v)],
   initPixelSky: [() => initPixelSky, v => (initPixelSky = v)],
   introSteps: [() => introSteps, v => (introSteps = v)],
   isDark: [() => isDark],
-  jobSlots: [() => jobSlots, v => (jobSlots = v)],
   learnModal: [() => learnModal, v => (learnModal = v)],
   leaveRoom: [() => leaveRoom, v => (leaveRoom = v)],
   locationCardHTML: [() => locationCardHTML, v => (locationCardHTML = v)],
@@ -1688,7 +1680,7 @@ function paintWorldMapCard() {
   const c = $('#mapcard');
   if (c) c.innerHTML = worldMapCardHTML();
 }
-/* ---------- team: the lead up top, the party as cards, day jobs, then storage ---------- */
+/* ---------- team: the lead up top, the party as cards, then storage ---------- */
 const plateVars = m => {
   const t = SPECIES[m.sp].types;
   return `--c1:${TYPE_COLORS[t[0]][0]};--c2:${TYPE_COLORS[t[t.length - 1]][0]}`;
@@ -1720,29 +1712,13 @@ function teamCard(m, i) {
   <span class="tm-t"><b>${escapeHtml(billyName(m))}</b><span class="tm-lv tnum">Lv ${m.lvl}</span></span><span class="row">${SPECIES[m.sp].types.map(typeBadgeHTML).join('')}${billyConditionHTML(m)}</span>${hpBar(m.hp, mx)}<span class="hpn tnum">${m.hp}/${mx} HP</span></button>
   <div class="tm-quick"><button class="qk" data-a="mlead" data-u="${m.uid}" ${m.hp <= 0 ? 'disabled' : ''}>Make lead</button>${needsCare(m) ? `<button class="qk heal" data-a="mheal" data-u="${m.uid}">Heal</button>` : ''}</div></div>`;
 }
-function jobSlots() {
-  const open = saveData.jobs.map((j, i) => (j.uid ? -1 : i)).filter(i => i >= 0);
-  return `<div class="jobs">${saveData.jobs
-    .map((j, i) => {
-      if (!j.uid)
-        return i !== open[0]
-          ? ''
-          : `<div class="job empty"><span class="job-ic">${uiIconHTML('bag', 20)}</span><div class="jt"><b>${open.length === 1 ? '1 open job' : `${open.length} open jobs`}</b><span class="note">Each pays out every ${formatNumber(JOB_STEPS)} steps.</span></div><button class="pb small" data-a="hire" data-s="${i}">Hire</button></div>`;
-      const m = findBilly(j.uid),
-        J = JOBS[j.job];
-      if (!m) return '';
-      return `<div class="job"><button class="job-spr" data-a="mon" data-u="${m.uid}" style="${plateVars(m)}" aria-label="${escapeHtml(billyName(m))}, details">${rigCanvasHTML(m.sp, 48, { gold: m.gold, build: m.build })}</button><div class="jt"><b>${escapeHtml(billyName(m))}</b><span class="note">${escapeHtml(J.n)}, ${escapeHtml(J.where)}. Earns ${escapeHtml(J.pay)}.</span>${progressBarHTML(j.acc / JOB_STEPS, 'gold live')}<span class="note tnum">${formatNumber(JOB_STEPS - j.acc)} steps to the next pay${j.pend ? `, ${j.pend} ready` : ''}</span>
-  <div class="racts"><button class="pb small ${j.pend ? 'gold' : ''}" data-a="collect" data-s="${i}" ${j.pend ? '' : 'disabled'}>Collect pay${j.pend ? ` (${j.pend})` : ''}</button><button class="pb small quiet" data-a="endshift" data-s="${i}">End shift</button></div></div></div>`;
-    })
-    .join('')}</div>`;
-}
 const BOX_SORTS = [
   ['new', 'Newest'],
   ['lvl', 'Level'],
   ['name', 'Name'],
 ];
 function boxSection() {
-  const all = saveData.box.filter(m => m.job == null),
+  const all = saveData.box,
     so = uiState.boxSort || 'new',
     types = [...new Set(all.flatMap(m => SPECIES[m.sp].types))].sort();
   let f = uiState.boxF || 'all';
@@ -1769,15 +1745,13 @@ function boxSection() {
 function renderTeam() {
   const lead = saveData.team[0],
     rest = saveData.team.slice(1),
-    free = saveData.box.filter(m => m.job == null).length,
-    open = Math.max(0, teamSize() - saveData.team.length),
-    work = saveData.jobs.filter(j => j.uid).length;
+    free = saveData.box.length,
+    open = Math.max(0, teamSize() - saveData.team.length);
   const slots = open
     ? `<div class="tm-card empty tm-open"><span class="tm-plus" aria-hidden="true">+</span><span class="tm-ot"><b>${open === 1 ? '1 open spot' : `${open} open spots`}</b><span class="note">${free ? 'Bring someone back from storage.' : 'Tax more in the grass, or hatch an egg.'}</span></span>${free ? '<button class="qk" data-a="tmadd">Add from storage</button>' : ''}</div>`
     : '';
   return `<header class="bar"><div><div class="sub">${saveData.team.length} of ${teamSize()} on your team</div><h1 class="where">Your team</h1></div></header>
  <div class="tm-top">${lead ? teamHero(lead) : ''}<section class="tpanel tm-party"><div class="sec-h"><h2>Party</h2><span class="count tnum">${saveData.team.length}/${teamSize()}</span></div><p class="note">Your lead goes first in battle. Tap a card for details.</p><div class="tm-grid">${rest.map(teamCard).join('')}${slots}</div></section></div>
- <section class="tpanel tm-jobs"><div class="sec-h"><h2>Day jobs</h2><span class="count tnum">${work}/${saveData.jobs.length}</span></div><p class="note">Billies at work leave your team and earn pay while you walk.</p>${jobSlots()}</section>
  ${boxSection()}`;
 }
 const RARITY_NAMES = { starter: 'Starter', common: 'Common', uncommon: 'Uncommon', rare: 'Rare', mythical: 'Mythical' };
@@ -2072,7 +2046,7 @@ function billySheet(m) {
         toast(`${billyName(m)} is resting in storage.`);
       },
     });
-  if (!inTeam && m.job == null)
+  if (!inTeam)
     acts.push(
       saveData.team.length < teamSize()
         ? {
@@ -2133,7 +2107,7 @@ function billySheet(m) {
   }
   if (e && e.k === 'merge' && m.lvl >= e.min) {
     const other = allBillies()
-      .filter(o => o !== m && o.sp === m.sp && o.job == null)
+      .filter(o => o !== m && o.sp === m.sp)
       .sort((x, y) => x.lvl - y.lvl)[0];
     acts.push({
       c: 'gold',
@@ -2206,7 +2180,6 @@ function billySheet(m) {
   <div class="ms-tabs" role="tablist" aria-label="About ${escapeHtml(billyName(m))}" data-on="sum">${tabs.map(([k, l]) => `<button role="tab" data-a="ms-tab" data-k="${k}" aria-selected="${k === 'sum'}">${l}</button>`).join('')}</div>
   <div class="ms-pane" data-k="sum"><div class="ms-meters">${meter('HP', hpBar(m.hp, mx), `${m.hp}/${mx}`)}${meter('XP', progressBarHTML(xpProgress(m), 'xpb'), xpLeft(m))}</div>
    <div class="ms-chart">${st}</div>${metR}
-   ${m.job != null ? `<p class="note ms-job">${uiIconHTML('bag', 14)} Working as a ${escapeHtml(JOBS[saveData.jobs[m.job].job].n.toLowerCase())} right now. End the shift from Day jobs to bring it back.</p>` : ''}
    ${acts.length ? `<div class="ms-acts">${acts.map((b, i) => `<button class="pb small ${b.c || ''}" data-a="mact" data-i="${i}" ${b.dis ? 'disabled' : ''}>${b.ic ? uiIconHTML(b.ic, 15) : ''}<span>${b.l}</span></button>`).join('')}</div>` : ''}
    <p class="note ms-about">${escapeHtml(s.blurb)}</p>
    <div class="ms-nick"><label class="field-l">Nickname<input id="nick" maxlength="16" value="${escapeHtml(m.nick)}" placeholder="${escapeHtml(s.name)}" autocomplete="off" enterkeyhint="done"></label><button class="pb small" data-a="mnick">Save</button></div></div>
@@ -2263,37 +2236,10 @@ function swapPick(m) {
   });
 }
 function addPick() {
-  const free = saveData.box.filter(m => m.job == null).sort((a, b) => b.lvl - a.lvl);
+  const free = saveData.box.slice().sort((a, b) => b.lvl - a.lvl);
   modal({
     title: 'Add to your team',
     html: `<div class="list">${free.map(m => `<button class="pickrow" data-a="tmaddon" data-u="${m.uid}">${rigCanvasHTML(m.sp, 40, { gold: m.gold, build: m.build })}<span class="pr-t"><b>${escapeHtml(billyName(m))}</b><small>Lv ${m.lvl}, ${SPECIES[m.sp].types.map(t => (t === 'None' ? 'Normal' : t)).join(' and ')}</small></span></button>`).join('') || '<p>Storage is empty.</p>'}</div>`,
-    btns: [{ l: 'Cancel', c: 'quiet', f: closeModal }],
-  });
-}
-function hireFlow(slot) {
-  modal({
-    title: 'Pick a job',
-    html: `<p class="note">Each job pays out every ${formatNumber(JOB_STEPS)} steps you walk.</p>`,
-    btns: Object.keys(JOBS)
-      .map(k => ({
-        l: `${JOBS[k].n}, ${JOBS[k].where}: ${JOBS[k].pay}`,
-        f: () => {
-          uiState.modal = null;
-          hirePick(slot, k);
-        },
-      }))
-      .concat([{ l: 'Cancel', c: 'quiet', f: closeModal }]),
-  });
-}
-function hirePick(slot, job) {
-  const free = allBillies().filter(m => m.job == null),
-    canTeam = saveData.team.filter(x => x.job == null).length > 1;
-  const list = free.filter(m => !saveData.team.includes(m) || canTeam);
-  modal({
-    title: `Who becomes the ${JOBS[job].n.toLowerCase()}?`,
-    html: list.length
-      ? `<div class="list">${list.map(m => `<button class="pickrow px" data-a="hireon" data-s="${slot}" data-j="${job}" data-u="${m.uid}">${rigCanvasHTML(m.sp, 40, { gold: m.gold, build: m.build })}<span class="pr-t"><b>${escapeHtml(billyName(m))}</b><small>${saveData.team.includes(m) ? 'On your team' : 'In storage'}, Lv ${m.lvl}</small></span></button>`).join('')}</div>`
-      : '<p>Tax another Billie first. Your last one has to stay on the team.</p>',
     btns: [{ l: 'Cancel', c: 'quiet', f: closeModal }],
   });
 }
@@ -2563,7 +2509,7 @@ document.addEventListener('click', ev => {
     }
     case 'mteam': {
       const m = findBilly(d.u);
-      if (!m || m.job != null || saveData.team.includes(m)) break;
+      if (!m || saveData.team.includes(m)) break;
       if (saveData.team.length < teamSize()) {
         toTeam(m);
         save();
@@ -2577,7 +2523,7 @@ document.addEventListener('click', ev => {
       break;
     case 'tmaddon': {
       const m = findBilly(d.u);
-      if (m && m.job == null && !saveData.team.includes(m) && saveData.team.length < teamSize()) {
+      if (m && !saveData.team.includes(m) && saveData.team.length < teamSize()) {
         toTeam(m);
         save();
         closeModal();
@@ -2589,7 +2535,7 @@ document.addEventListener('click', ev => {
     case 'mswap': {
       const m = findBilly(d.u),
         o = findBilly(d.o);
-      if (!m || !o || m.job != null || !saveData.team.includes(o) || saveData.team.includes(m)) break;
+      if (!m || !o || !saveData.team.includes(o) || saveData.team.includes(m)) break;
       const i = saveData.team.indexOf(o);
       toBox(o);
       saveData.box.splice(saveData.box.indexOf(m), 1);
@@ -2631,29 +2577,6 @@ document.addEventListener('click', ev => {
     case 'mreset':
       worldMapReset();
       break;
-    case 'hire':
-      hireFlow(+d.s);
-      break;
-    case 'hireon':
-      if (assignJob(+d.s, d.j, d.u)) {
-        const m = findBilly(d.u);
-        closeModal();
-        render();
-        toast(`${billyName(m)} started work as a ${JOBS[d.j].n.toLowerCase()}.`);
-      }
-      break;
-    case 'collect': {
-      const t = collectJob(+d.s);
-      if (t) toast(t);
-      render();
-      break;
-    }
-    case 'endshift': {
-      const t = endShift(+d.s);
-      if (t) toast(t);
-      render();
-      break;
-    }
     case 'dex': {
       if (!d.s) break;
       if (!saveData.seen[d.s]) {

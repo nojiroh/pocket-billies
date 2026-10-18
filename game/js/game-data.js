@@ -24,8 +24,6 @@ expose({
   EGG_TIERS: [() => EGG_TIERS],
   HIT_EFFECTS_BY_TYPE: [() => HIT_EFFECTS_BY_TYPE],
   ITEMS: [() => ITEMS],
-  JOBS: [() => JOBS],
-  JOB_STEPS: [() => JOB_STEPS],
   LINES: [() => LINES],
   LINE_BY_ID: [() => LINE_BY_ID],
   LOCATIONS: [() => LOCATIONS],
@@ -333,8 +331,6 @@ export const EGG_TIERS = Object.keys(EGGS)
 export const COINS = gameData.coins;
 provide({ COINS }); /* to-module */
 export const ITEMS = gameData.items;
-export const JOBS = gameData.jobs;
-export const JOB_STEPS = RULES.jobs.stepsPerPay;
 export const PEOPLE = gameData.people;
 provide({ PEOPLE }); /* to-module */
 export const SHOPS = gameData.shops || {};

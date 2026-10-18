@@ -698,7 +698,6 @@ SECTIONS.rules = () => {
     st = 'rules.steps',
     pg = 'rules.progression',
     eg = 'rules.eggs',
-    jb = 'rules.jobs',
     bt = 'rules.battle',
     ca = 'rules.catching';
   const starters = `<div class="chips">${D.lines.map(L => `<label class="chk-chip"><input type="checkbox" data-act-chk="starter" value="${L.id}" ${R.start.starters.includes(L.id) ? 'checked' : ''}> ${escapeHtml(L.names[0])}</label>`).join('')}</div>`;
@@ -853,7 +852,6 @@ SECTIONS.rules = () => {
        .join('')}</details>`
  )}
  ${card('Riding across water', grid(numberField('Smallest Billie you can ride', `rules.ride.minHeight`, { unit: 'm', min: 0.3, max: 10, step: 0.1, help: 'Its height in the Field Guide. Needed for lake and sea crossings (stops marked as a water crossing).' })))}
- ${card('Jobs', grid(numberField('Steps per pay', `${jb}.stepsPerPay`, { min: 100, step: 100 }), numberField('Pay can pile up to', `${jb}.maxPending`, { min: 1, max: 200, step: 1 }), numberField('Open positions', `${jb}.positions`, { min: 1, max: 8, step: 1 })))}
  ${card(
    'Battle',
    grid(

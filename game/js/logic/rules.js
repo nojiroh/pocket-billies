@@ -3,12 +3,12 @@
 /* ================= RULES =================
    Phase 04e: the game's rules outside battle, moved here from game-state.js: a Billie's stats, levels, moves and
    evolution, the team and storage, steps and their money, the trip along the roads and its gates, encounters from the
-   pool where you are, eggs and day jobs, and the small helpers they share.
+   pool where you are, eggs, and the small helpers they share.
    Logic only (game/js/logic/): no DOM, WebGL or window, so it runs in plain Node (tools/test/logic.test.mjs). The data
    tables come from game-data.js; the save, the battle and the interface state (saveData, activeBattle, uiState), and
    what the rules tell the interface (save, toast, render), come through hooks.js, filled by game-state.js and ui.js on
    the page or by a test in Node. */
-/** @import { Billy, JobSlot } from '../../types/save-data' */
+/** @import { Billy } from '../../types/save-data' */
 /** @import { Trainer } from '../../types/game-data' */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
@@ -28,12 +28,9 @@ import {
 } from '../hooks.js';
 import { random } from '../util.js';
 import {
-  COINS,
   EGGS,
   EGG_TIERS,
   ITEMS,
-  JOBS,
-  JOB_STEPS,
   LINE_BY_ID,
   LOCATIONS,
   LOCATION_BY_ID,
@@ -61,8 +58,6 @@ expose({
   addSteps: [() => addSteps, v => ((addSteps = v), provide({ addSteps }))],
   allBillies: [() => allBillies],
   // @ts-expect-error -- replaced on purpose
-  assignJob: [() => assignJob, v => (assignJob = v)],
-  // @ts-expect-error -- replaced on purpose
   autoSlot: [() => autoSlot, v => (autoSlot = v)],
   billyBuild: [() => billyBuild],
   billyName: [() => billyName],
@@ -79,11 +74,8 @@ expose({
   cleanBuild: [() => cleanBuild, v => (cleanBuild = v)],
   cleanName: [() => cleanName],
   // @ts-expect-error -- replaced on purpose
-  collectJob: [() => collectJob, v => (collectJob = v)],
-  // @ts-expect-error -- replaced on purpose
   dropEncounter: [() => dropEncounter, v => (dropEncounter = v)],
   eggSlotCount: [() => eggSlotCount],
-  emptyJob: [() => emptyJob],
   // @ts-expect-error -- replaced on purpose
   encounterBuild: [() => encounterBuild, v => (encounterBuild = v)],
   // @ts-expect-error -- replaced on purpose
@@ -92,8 +84,6 @@ expose({
   encounterStock: [() => encounterStock, v => (encounterStock = v)],
   // @ts-expect-error -- replaced on purpose
   encountersHere: [() => encountersHere, v => (encountersHere = v)],
-  // @ts-expect-error -- replaced on purpose
-  endShift: [() => endShift, v => (endShift = v)],
   // @ts-expect-error -- replaced on purpose
   evolutionHint: [() => evolutionHint, v => (evolutionHint = v)],
   evolutionItemName: [() => evolutionItemName],
@@ -114,7 +104,6 @@ expose({
   healAll: [() => healAll, v => (healAll = v)],
   hereLocation: [() => hereLocation],
   isPrime: [() => isPrime],
-  jobSlotCount: [() => jobSlotCount],
   // @ts-expect-error -- replaced on purpose
   makeBilly: [() => makeBilly, v => ((makeBilly = v), provide({ makeBilly }))],
   maxHp: [() => maxHp],
@@ -202,9 +191,6 @@ export const xpFor = L => Math.floor(RULES.progression.xpFactor * L * L * L);
 export const maxLevel = () => RULES.progression.maxLevel,
   moveSlotCount = () => RULES.progression.moveSlots,
   teamSize = () => RULES.progression.teamSize;
-export const jobSlotCount = () => Math.max(1, RULES.jobs.positions || 3);
-/** @returns {JobSlot} */
-export const emptyJob = () => ({ uid: null, job: null, acc: 0, pend: 0 });
 
 /* ---------- parts (phase 16, docs/phases/16) ----------
    Every Billie has a size (S, M or L) for each part slot: head, body, front, back and sig (its signature part). Wild
@@ -325,7 +311,7 @@ export function canEvolve(m) {
     case 'split':
       return m.lvl >= e.at;
     case 'idle':
-      return !!m.boxedAt && !m.job && saveData.box.includes(m) && Date.now() - m.boxedAt >= e.ms && m.lvl >= e.min;
+      return !!m.boxedAt && saveData.box.includes(m) && Date.now() - m.boxedAt >= e.ms && m.lvl >= e.min;
     case 'streak':
       return (m.streak || 0) >= e.n && m.lvl >= e.min;
     default:
@@ -572,12 +558,7 @@ export function spawn(gentle, force, node = saveData.trip.node) {
     build: rollBuild(),
   };
   /* v33: now and then an Alpha (once you have two billionaires to stand with your lead) */
-  if (
-    !gentle &&
-    !force &&
-    saveData.team.filter(m => m.job == null).length >= 2 &&
-    random() < 1 / ((RULES.steps && RULES.steps.alphaOdds) || 45)
-  )
+  if (!gentle && !force && saveData.team.length >= 2 && random() < 1 / ((RULES.steps && RULES.steps.alphaOdds) || 45))
     q.alpha = true;
   wildList(node).push(q);
   return q;
@@ -588,14 +569,6 @@ export function addSteps(n, quiet) {
   saveData.totalSteps += n;
   saveData.eggs.forEach(e => {
     if (e.slot != null) e.prog = Math.min(EGGS[e.tier].need, e.prog + n);
-  });
-  saveData.jobs.forEach(j => {
-    if (!j.uid) return;
-    j.acc += n;
-    while (j.acc >= JOB_STEPS) {
-      j.acc -= JOB_STEPS;
-      if (j.pend < RULES.jobs.maxPending) j.pend++;
-    }
   });
   if (!quiet) toast(`+${formatNumber(n)} steps`);
   save();
@@ -643,44 +616,4 @@ export function hatchEgg(e) {
   const where = addBilly(m);
   save();
   return { m, where };
-}
-
-/* ---------- Day Jobs ---------- */
-export function assignJob(slot, job, id) {
-  const m = findBilly(id);
-  if (!m || m.job != null) return false;
-  if (saveData.team.includes(m) && saveData.team.filter(x => x.job == null).length <= 1) return false;
-  toBox(m);
-  m.boxedAt = null;
-  m.job = slot;
-  saveData.jobs[slot] = { uid: id, job, acc: 0, pend: 0 };
-  save();
-  return true;
-}
-export function collectJob(slot) {
-  const j = saveData.jobs[slot];
-  if (!j.uid || !j.pend) return null;
-  /* a slot with a Billie has a job (assignJob sets both) */
-  const J = JOBS[/** @type {string} */ (j.job)],
-    [kind, key, amt] = J.out,
-    n = j.pend;
-  j.pend = 0;
-  if (kind === 'item') saveData.items[key] += amt * n;
-  else if (kind === 'coin') saveData.coins[key] += amt * n;
-  else saveData.se += amt * n;
-  save();
-  const m = findBilly(j.uid);
-  return `${m ? billyName(m) : 'Your Billie'} ${J.quip} You collected ${kind === 'se' ? '$' + formatNumber(amt * n) : `${amt * n} × ${kind === 'item' ? ITEMS[key].n : COINS[key].n}`}.`;
-}
-export function endShift(slot) {
-  const j = saveData.jobs[slot];
-  const msg = collectJob(slot);
-  const m = findBilly(j.uid);
-  if (m) {
-    m.job = null;
-    m.boxedAt = Date.now();
-  }
-  saveData.jobs[slot] = { uid: null, job: null, acc: 0, pend: 0 };
-  save();
-  return msg;
 }

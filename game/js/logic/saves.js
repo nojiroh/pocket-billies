@@ -4,7 +4,7 @@
    Phase 04e: the save format, moved here from game-state.js (a new save, filling one out, the load checks) and
    settings-screen.js (the backup check). Where a save is kept (this browser, the account) stays in game-state.js
    and account.js. Logic only (game/js/logic/, see rules.js). */
-/** @import { JobSlot, SaveData } from '../../types/save-data' */
+/** @import { SaveData } from '../../types/save-data' */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 import { saveData } from '../hooks.js';
@@ -13,7 +13,6 @@ import {
   COINS,
   EGGS,
   ITEMS,
-  JOBS,
   LINES,
   LOCATIONS,
   MOVES,
@@ -23,7 +22,7 @@ import {
   STATUS_NAMES,
   roadCost,
 } from '../game-data.js';
-import { cleanName, emptyJob, jobSlotCount, movesAt, teamSize } from './rules.js';
+import { cleanName, movesAt, teamSize } from './rules.js';
 /* eslint-disable no-func-assign */
 expose({
   SAVE_NEW_MSG: [() => SAVE_NEW_MSG],
@@ -79,7 +78,6 @@ export function newSave() {
     visited: { [START_NODE]: 1 },
     serial: 300,
     eggs: [],
-    jobs: Array.from({ length: jobSlotCount() }, emptyJob),
     savedAt: 0,
     /* trainer card: ID number, start date (0 = unknown, older saves) and eggs hatched */
     tid: 10000 + Math.floor(random() * 90000),
@@ -116,15 +114,12 @@ export function migrate(o) {
   p.effects = 'full';
   p.fps = +p.fps;
   if (!Array.isArray(s.eggs)) s.eggs = [];
-  if (!Array.isArray(s.jobs)) s.jobs = [];
-  while (s.jobs.length < jobSlotCount()) s.jobs.push(emptyJob());
-  while (s.jobs.length > jobSlotCount()) {
-    const j = /** @type {JobSlot} */ (s.jobs.pop());
-    const m = [...(s.team || []), ...(s.box || [])].find(x => x.uid === j.uid);
-    if (m) {
-      m.job = null;
-      m.boxedAt = Date.now();
-    }
+  /* phase 08: day jobs are gone (until the ranch); a Billie that was at work rests in storage */
+  delete (/** @type {any} */ (s).jobs);
+  for (const m of [...(s.team || []), ...(s.box || [])]) {
+    const old = /** @type {any} */ (m);
+    if (old.job != null) m.boxedAt = Date.now();
+    delete old.job;
   }
   if (!SPECIES[s.starter + '0'] && s.started)
     s.starter = RULES.start.starters.find(l => SPECIES[l + '0']) || LINES[0].id;
@@ -156,9 +151,6 @@ export function migrate(o) {
   if (!s.wild || typeof s.wild !== 'object') s.wild = {};
   for (const w of Object.values(s.wild)) w.list = (w.list || []).filter(q => SPECIES[q.sp]);
   s.eggs = s.eggs.filter(e => EGGS[e.tier]);
-  s.jobs.forEach(j => {
-    if (j.job && !JOBS[j.job]) j.job = Object.keys(JOBS)[0] || null;
-  });
   if (!s.trip || !LOCATIONS[s.trip.node]) s.trip = { node: START_NODE, plan: [] };
   s.trip.plan = (Array.isArray(s.trip.plan) ? s.trip.plan : []).filter(x => LOCATIONS[x]);
   if (s.trip.plan.length && !roadCost(s.trip.node, s.trip.plan[0])) s.trip.plan = [];
@@ -230,14 +222,6 @@ export function validSave(o) {
   )
     return false;
   if (!Array.isArray(o.eggs) || o.eggs.some(e => !e || !num(e.prog, 0, 1e12))) return false;
-  if (
-    !Array.isArray(o.jobs) ||
-    o.jobs.length > 12 ||
-    o.jobs.some(
-      j => !j || (j.uid && (!ids.has(j.uid) || !JOBS[j.job])) || !num(j.acc, 0, 1e12) || !num(j.pend, 0, 1e12)
-    )
-  )
-    return false;
   for (const k of ['coins', 'items'])
     if (!o[k] || typeof o[k] !== 'object' || Object.values(o[k]).some(n => !num(n, 0, 1e12))) return false;
   const record = v => v && typeof v === 'object' && !Array.isArray(v) && !Object.hasOwn(v, '__proto__');
@@ -265,12 +249,6 @@ export function validSave(o) {
     return false;
   if (!num(o.serial, 0, 1e12)) return false;
   for (const m of o.team.concat(o.box))
-    if (
-      typeof (m.nick || '') !== 'string' ||
-      (m.status != null && !STATUS_NAMES[m.status]) ||
-      (m.job != null &&
-        (!Number.isInteger(m.job) || m.job < 0 || m.job >= o.jobs.length || o.jobs[m.job].uid !== m.uid))
-    )
-      return false;
+    if (typeof (m.nick || '') !== 'string' || (m.status != null && !STATUS_NAMES[m.status])) return false;
   return true;
 }

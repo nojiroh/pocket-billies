@@ -168,7 +168,7 @@ export function buddyBilly() {
   if ((saveData.preferences || {}).buddyWalk === 'off' || !saveData.team) return null;
   let m = saveData.buddy && typeof findBilly === 'function' ? findBilly(saveData.buddy) : null;
   if (!m) m = saveData.team[0] || null;
-  return m && m.job == null ? m : null;
+  return m || null;
 }
 export function shiftWorldBillies(dx, dz) {
   const b = worldBillies.bud;

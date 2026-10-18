@@ -623,7 +623,6 @@ export interface Rules {
     dropChance: number;
     dropTiers: Record<string, number>;
   };
-  jobs: { stepsPerPay: number; maxPending: number; positions: number };
   battle: {
     stab: number;
     critChances: number[];
