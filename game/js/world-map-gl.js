@@ -56,7 +56,6 @@ import {
 /* eslint-disable no-func-assign */
 expose({
   MINI_PICTURE_SCALE: [() => MINI_PICTURE_SCALE],
-  MM: [() => MM],
   WORLD_MAP_GL_ALTITUDE_RANGE: [() => WORLD_MAP_GL_ALTITUDE_RANGE],
   WORLD_MAP_GL_FAR: [() => WORLD_MAP_GL_FAR],
   WORLD_MAP_GL_NEAR: [() => WORLD_MAP_GL_NEAR],
@@ -67,12 +66,6 @@ expose({
   cpuWorldMapMount: [() => cpuWorldMapMount],
   cpuWorldMapReset: [() => cpuWorldMapReset],
   cpuWorldMapZoom: [() => cpuWorldMapZoom],
-  mmBuild: [() => mmBuild, v => setMmBuild(v)],
-  mmCols: [() => mmCols, v => (mmCols = v)],
-  mmDraw: [() => mmDraw, v => (mmDraw = v)],
-  mmGet: [() => mmGet, v => (mmGet = v)],
-  mmKey: [() => mmKey, v => (mmKey = v)],
-  mmOn: [() => mmOn, v => (mmOn = v)],
   setWorldMapGlRender: [() => setWorldMapGlRender, v => (setWorldMapGlRender = v)],
   worldMapGl: [() => worldMapGl],
   worldMapGlAction: [() => worldMapGlAction, v => (worldMapGlAction = v)],
@@ -104,11 +97,18 @@ expose({
   worldMapGlSize: [() => worldMapGlSize, v => (worldMapGlSize = v)],
   worldMapGlUV: [() => worldMapGlUV, v => (worldMapGlUV = v)],
   worldMapGlWanted: [() => worldMapGlWanted, v => (worldMapGlWanted = v)],
+  worldMapMiniBuild: [() => worldMapMiniBuild, v => setWorldMapMiniBuild(v)],
+  worldMapMiniColors: [() => worldMapMiniColors, v => (worldMapMiniColors = v)],
+  worldMapMiniDraw: [() => worldMapMiniDraw, v => (worldMapMiniDraw = v)],
+  worldMapMiniGet: [() => worldMapMiniGet, v => (worldMapMiniGet = v)],
+  worldMapMiniKey: [() => worldMapMiniKey, v => (worldMapMiniKey = v)],
+  worldMapMinis: [() => worldMapMinis],
+  worldMapMinisOn: [() => worldMapMinisOn, v => (worldMapMinisOn = v)],
 });
 /* eslint-enable no-func-assign */
-export function setMmBuild(v) {
-  mmBuild = v; // eslint-disable-line no-func-assign
-  provide({ mmBuild });
+export function setWorldMapMiniBuild(v) {
+  worldMapMiniBuild = v; // eslint-disable-line no-func-assign
+  provide({ worldMapMiniBuild });
 }
 /* to-module: end */
 export const worldMapGl = {
@@ -635,7 +635,7 @@ export function worldMapGlRender(t) {
     gl.uniform3fv(U2.uHaze, haze);
     gl.uniform1i(U2.uTex, 0);
     /* v24: a miniature of every stop's walk scene, standing on the globe where the stop is (art/map/mini, tools/build-map-minis.py) */
-    const m3 = typeof mmDraw === 'function' && mmDraw(cam);
+    const m3 = typeof worldMapMiniDraw === 'function' && worldMapMiniDraw(cam);
     if (m3) {
       p = EGL.P.mspr;
       gl.useProgram(p.p);
@@ -767,8 +767,8 @@ function worldMapGlPinUp(v, cam) {
   return vector3.norm(vector3.add(vector3.mul(n, 0.62), vector3.mul(bk, -0.78)));
 }
 function worldMapGlMiniTop(i) {
-  if (typeof mmOn === 'function' && mmOn() && !worldMapGl.flat && worldMap.cam) {
-    const e = MM.cache.get(i);
+  if (typeof worldMapMinisOn === 'function' && worldMapMinisOn() && !worldMapGl.flat && worldMap.cam) {
+    const e = worldMapMinis.cache.get(i);
     if (e && e.m && e.m.top) return e.m.top;
   }
   const im = worldMapGlMiniPicture(i);
@@ -1178,19 +1178,19 @@ export function worldMapGlAction(a, d) {
    or rounded crowns on a trunk; big rocks as stones. The light is worked into the colours once (from above, as the
    sun in the middle of the world shines, a little from the side so the shapes read). Built when first seen and
    rebuilt when the scene changes (Studio edits, new districts). */
-export const MM = { cache: new Map(), col: new WeakMap(), on: true };
+export const worldMapMinis = { cache: new Map(), col: new WeakMap(), on: true };
 WORLD_MAP_GL_SHADERS.mmini = [
   `#version 300 es
 precision highp float;in vec3 aPos;in vec3 aUV;uniform mat4 uVP;out vec3 vW;out vec3 vC;void main(){vW=aPos;vC=aUV;gl_Position=uVP*vec4(aPos,1.);}`,
   `#version 300 es
 precision highp float;in vec3 vW;in vec3 vC;out vec4 o;uniform vec3 uC,uHaze;void main(){float d=length(vW-uC),fk=1.-exp(-max(0.,d-.3)*.72);o=vec4(mix(vC,uHaze,clamp(fk,0.,.86)),1.);}`,
 ];
-export function mmOn() {
-  return MM.on && (eng('world', 'mini3d') ?? true) !== false;
+export function worldMapMinisOn() {
+  return worldMapMinis.on && (eng('world', 'mini3d') ?? true) !== false;
 }
 /* average colours of a picture's upper and lower parts (roof and walls of a building, crown and trunk of a tree) */
-function mmCols(im) {
-  let c = MM.col.get(im);
+function worldMapMiniColors(im) {
+  let c = worldMapMinis.col.get(im);
   if (c) return c;
   c = { top: [0.5, 0.5, 0.5], mid: [0.6, 0.6, 0.6], low: [0.5, 0.45, 0.4] };
   try {
@@ -1221,10 +1221,10 @@ function mmCols(im) {
     };
     c = { top: avg(0.05, 0.4) || c.top, mid: avg(0.45, 0.8) || c.mid, low: avg(0.82, 1, 0.35, 0.65) || c.low };
   } catch (e) {}
-  MM.col.set(im, c);
+  worldMapMinis.col.set(im, c);
   return c;
 }
-function mmKey(sc) {
+function worldMapMiniKey(sc) {
   return [
     sc.w,
     sc.h,
@@ -1235,7 +1235,7 @@ function mmKey(sc) {
     typeof dioArtVer === 'function' ? dioArtVer() : 0,
   ].join('|');
 }
-export function mmBuild(i) {
+export function worldMapMiniBuild(i) {
   const r = ROUTE[i],
     sc = r && r.scene && mapById(r.scene);
   if (!sc || !sc.w) return null;
@@ -1357,7 +1357,7 @@ export function mmBuild(i) {
       hm = (hpx * s) / PPU,
       y = hAt(Math.min(W - 0.1, Math.max(0, p.x)), Math.min(H - 0.1, Math.max(0, p.z + 0.3)));
     if (p.x < 0 || p.z < 0 || p.x > W || p.z > H) continue;
-    const cols = im && imageReady(im) ? mmCols(im) : null;
+    const cols = im && imageReady(im) ? worldMapMiniColors(im) : null;
     if (
       M.box &&
       (M.door ||
@@ -1494,27 +1494,27 @@ export function mmBuild(i) {
   mesh.v = v;
   return mesh;
 }
-function mmGet(i) {
+function worldMapMiniGet(i) {
   const r = ROUTE[i],
     sc = r && r.scene && mapById(r.scene);
   if (!sc) return null;
-  const key = mmKey(sc) + '|' + (worldMapGl.hpix ? 1 : 0),
-    e = MM.cache.get(i);
+  const key = worldMapMiniKey(sc) + '|' + (worldMapGl.hpix ? 1 : 0),
+    e = worldMapMinis.cache.get(i);
   if (e && e.key === key && e.gl === EGL.gl) return e.m;
-  if (MM.busy > 0) return e && e.gl === EGL.gl ? e.m : null;
-  MM.busy = (MM.busy || 0) + 1;
+  if (worldMapMinis.busy > 0) return e && e.gl === EGL.gl ? e.m : null;
+  worldMapMinis.busy = (worldMapMinis.busy || 0) + 1;
   let m = null;
   try {
-    m = mmBuild(i);
+    m = worldMapMiniBuild(i);
   } catch (err) {
     console.warn('mini', err);
   }
   if (e && e.m && e.gl === EGL.gl) eglFree(e.m);
-  MM.cache.set(i, { key, m, gl: EGL.gl });
+  worldMapMinis.cache.set(i, { key, m, gl: EGL.gl });
   return m;
 }
-function mmDraw(cam) {
-  if (!mmOn() || worldMapGl.flat) return false;
+function worldMapMiniDraw(cam) {
+  if (!worldMapMinisOn() || worldMapGl.flat) return false;
   const gl = EGL.gl;
   eglPrograms({ mmini: WORLD_MAP_GL_SHADERS.mmini });
   const p = EGL.P.mmini;
@@ -1525,12 +1525,12 @@ function mmDraw(cam) {
   gl.enable(gl.DEPTH_TEST);
   gl.depthFunc(gl.LEQUAL);
   gl.depthMask(true);
-  MM.busy = 0;
+  worldMapMinis.busy = 0;
   ROUTE.forEach((r, i) => {
     const d = vector3.sub(LOCATION_VECTORS[i], cam.C),
       z = vector3.dot(d, cam.fw);
     if (z < 0.005 || z > 1.3) return;
-    const m = mmGet(i);
+    const m = worldMapMiniGet(i);
     if (!m) return;
     gl.bindVertexArray(m.vao);
     gl.drawElements(gl.TRIANGLES, m.n, gl.UNSIGNED_INT, 0);

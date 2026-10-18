@@ -672,7 +672,7 @@ NWLOG.hook = () => {
     ['save', 'saving'],
     ['p3dBuild', 'building a solid prop'],
     ['p3dTreeBuild', 'building a 3D tree'],
-    ['mmBuild', 'building a map miniature'],
+    ['worldMapMiniBuild', 'building a map miniature'],
     ['eglPrograms', 'compiling shaders'],
     ['eglFinish', 'finishing a shader'],
     ['eglNormal', 'working out a bump map'],

@@ -48,7 +48,14 @@ import { OWM, owBuddyTap, owPetSp } from './world-billies.js';
 import { WORLD, wrRoomScene, wrTripView } from './seamless-world.js';
 import { A, endBattle, liveK, pickMove, pickTarget, startTrainer, startWild, stopTimers, tapMsg } from './battle.js';
 import { worldMap } from './world-map.js';
-import { MM, WORLD_MAP_GL_SHADERS, mmOn, setWorldMapGlRender, worldMapGl, worldMapGlRender } from './world-map-gl.js';
+import {
+  WORLD_MAP_GL_SHADERS,
+  setWorldMapGlRender,
+  worldMapGl,
+  worldMapGlRender,
+  worldMapMinis,
+  worldMapMinisOn,
+} from './world-map-gl.js';
 import { TALK, talkHide } from './talk.js';
 import { CS, csTeardown } from './cutscene.js';
 import { battleTipHide, fallGL, fallMap } from './opening-fall.js';
@@ -1193,7 +1200,7 @@ async function runFullTest(mode) {
       'World map: 3D miniatures up close',
       'map',
       async () => {
-        if (typeof mmOn !== 'function' || !mmOn()) return 'switched off';
+        if (typeof worldMapMinisOn !== 'function' || !worldMapMinisOn()) return 'switched off';
         U.tab = 'map';
         render();
         await stSleep(2500);
@@ -1208,7 +1215,7 @@ async function runFullTest(mode) {
         worldMapGl.altT = null;
         worldMap.dirty = true;
         await stSleep(3000);
-        const n = [...MM.cache.values()].filter(e => e.m).length;
+        const n = [...worldMapMinis.cache.values()].filter(e => e.m).length;
         worldMap.alt = a0;
         worldMap.tilt = 0.5733;
         worldMap.dirty = true;

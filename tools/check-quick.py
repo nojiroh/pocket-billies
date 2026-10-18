@@ -926,7 +926,7 @@ def desktop_steps(b, base, R):
         pg.evaluate("(()=>{const sc=walkView.sc,C0=walkData().sc,b=(sc.props||[]).find(p=>{const M=C0.props[p.k];return M&&M.box&&M.door});if(!b)return;walkView.pl.route=null;const q=walkablePointNear(b.x,b.z-2.5);walkView.pl.x=q[0];walkView.pl.z=q[1];walkRenderer.zoomT=walkRenderer.zoom=.7})();0"); time.sleep(2.5); shot(pg, 'wear-building')
         # the map's 3D miniatures
         pg.evaluate("U.tab='map';render();0"); time.sleep(3)
-        if pg.evaluate("worldMap.gl&&typeof mmOn==='function'&&mmOn()"):
+        if pg.evaluate("worldMap.gl&&typeof worldMapMinisOn==='function'&&worldMapMinisOn()"):
             pg.evaluate("worldMap.alt=.04;worldMap.tilt=.45;worldMapGl.altT=null;worldMap.dirty=true;0"); time.sleep(4)
             n = pg.evaluate("[...MM.cache.values()].filter(e=>e.m).length"); shot(pg, 'map-minis')
             pg.evaluate("worldMapReset();0")
