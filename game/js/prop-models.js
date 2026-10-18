@@ -55,7 +55,6 @@ expose({
   lowPolyOn: [() => lowPolyOn, v => (lowPolyOn = v)],
   lowPolyVertexShader: [() => lowPolyVertexShader],
   mooredBob: [() => mooredBob, v => (mooredBob = v)],
-  prebuiltModelMesh: [() => prebuiltModelMesh, v => (prebuiltModelMesh = v)],
   propModelArtPaths: [() => propModelArtPaths, v => ((propModelArtPaths = v), provide({ propModelArtPaths }))],
   propModelGuard: [() => propModelGuard, v => (propModelGuard = v)],
   propModelImageItems: [() => propModelImageItems, v => ((propModelImageItems = v), provide({ propModelImageItems }))],
@@ -66,6 +65,7 @@ expose({
   setPropModelUniforms: [() => setPropModelUniforms, v => (setPropModelUniforms = v)],
   tagPropModel: [() => tagPropModel, v => ((tagPropModel = v), provide({ tagPropModel }))],
   uploadLowPolyMesh: [() => uploadLowPolyMesh, v => (uploadLowPolyMesh = v)],
+  uploadPrebuiltModel: [() => uploadPrebuiltModel, v => (uploadPrebuiltModel = v)],
   voxelFromKey: [() => voxelFromKey, v => (voxelFromKey = v)],
   voxelHash: [() => voxelHash, v => (voxelHash = v)],
   voxelKey: [() => voxelKey, v => (voxelKey = v)],
@@ -543,7 +543,7 @@ function propModelMesh(path, rec) {
   let m = propModelState.meshes.get(path);
   if (m !== undefined) return m;
   if (rec.kind === 'mesh') {
-    m = prebuiltModelMesh(rec);
+    m = uploadPrebuiltModel(rec);
     propModelState.meshes.set(path, m);
     return m;
   }
@@ -687,7 +687,7 @@ function uploadLowPolyMesh(vb, ib) {
   gl.bindVertexArray(null);
   return { vao, n: ib.length, el: 1, u32: ib instanceof Uint32Array, bufs: [v, e] };
 }
-function prebuiltModelMesh(rec) {
+function uploadPrebuiltModel(rec) {
   const gl = gpuState.gl;
   const mk = P => {
     const b = Uint8Array.from(atob(P.data || ''), c => c.charCodeAt(0));
