@@ -205,9 +205,6 @@ expose({
   DGL_STILL: [() => DGL_STILL],
   DGL_VARY_ANY: [() => DGL_VARY_ANY],
   DGL_VARY_DEF: [() => DGL_VARY_DEF],
-  DGL_WKID: [() => DGL_WKID],
-  DGL_WKIND: [() => DGL_WKIND],
-  DGL_WKU: [() => DGL_WKU],
   NEAR_RING_CHUNK_M: [() => NEAR_RING_CHUNK_M],
   NEAR_RING_SIZE: [() => NEAR_RING_SIZE],
   NO_PAD_PROPS: [() => NO_PAD_PROPS],
@@ -217,7 +214,11 @@ expose({
   WALK_SHADERS: [() => WALK_SHADERS],
   WALL_COLORS: [() => WALL_COLORS],
   WALL_MATERIALS: [() => WALL_MATERIALS],
+  WATER_KIND_INDEX: [() => WATER_KIND_INDEX],
+  WATER_KIND_LOOKS: [() => WATER_KIND_LOOKS],
+  WATER_KIND_UNIFORMS: [() => WATER_KIND_UNIFORMS],
   abortGroundPrep: [() => abortGroundPrep, v => (abortGroundPrep = v)],
+  addRipple: [() => addRipple, v => (addRipple = v)],
   askDeviceTilt: [() => askDeviceTilt, v => (askDeviceTilt = v)],
   baseNavGrid: [() => baseNavGrid],
   baseStopWalkView: [() => baseStopWalkView],
@@ -243,7 +244,6 @@ expose({
   dglBuildGrass: [() => dglBuildGrass, v => setDglBuildGrass(v)],
   dglCull: [() => dglCull, v => (dglCull = v)],
   dglFlat: [() => dglFlat, v => (dglFlat = v)],
-  dglFlowField: [() => dglFlowField, v => (dglFlowField = v)],
   dglFlowers: [() => dglFlowers, v => (dglFlowers = v)],
   dglFol: [() => dglFol, v => (dglFol = v)],
   dglFountainFx: [() => dglFountainFx, v => (dglFountainFx = v)],
@@ -272,7 +272,6 @@ expose({
   dglLookOf2: [() => dglLookOf2, v => (dglLookOf2 = v)],
   dglLookSig: [() => dglLookSig, v => (dglLookSig = v)],
   dglLookU: [() => dglLookU, v => (dglLookU = v)],
-  dglMirrorInView: [() => dglMirrorInView, v => (dglMirrorInView = v)],
   dglMood: [() => dglMood, v => (dglMood = v)],
   dglMount: [() => dglMount, v => (dglMount = v)],
   dglPerson: [() => dglPerson, v => (dglPerson = v)],
@@ -282,9 +281,6 @@ expose({
   dglPropY: [() => dglPropY, v => (dglPropY = v)],
   dglPushers: [() => dglPushers, v => (dglPushers = v)],
   dglRebuild: [() => dglRebuild, v => ((dglRebuild = v), provide({ dglRebuild }))],
-  dglReflLevel: [() => dglReflLevel, v => (dglReflLevel = v)],
-  dglReflPass: [() => dglReflPass, v => setDglReflPass(v)],
-  dglRing: [() => dglRing, v => (dglRing = v)],
   dglRiseK: [() => dglRiseK, v => (dglRiseK = v)],
   dglRiseStart: [() => dglRiseStart, v => (dglRiseStart = v)],
   dglRoomBox: [() => dglRoomBox, v => (dglRoomBox = v)],
@@ -302,9 +298,6 @@ expose({
   dglShadowPassFit: [() => dglShadowPassFit, v => (dglShadowPassFit = v)],
   dglShadowRect: [() => dglShadowRect, v => (dglShadowRect = v)],
   dglShadowSprites: [() => dglShadowSprites, v => (dglShadowSprites = v)],
-  dglShoreAt: [() => dglShoreAt, v => (dglShoreAt = v)],
-  dglShoreField: [() => dglShoreField, v => (dglShoreField = v)],
-  dglShoreU: [() => dglShoreU, v => (dglShoreU = v)],
   dglSky: [() => dglSky, v => (dglSky = v)],
   dglSkyCols: [() => dglSkyCols, v => (dglSkyCols = v)],
   dglSprU: [() => dglSprU, v => (dglSprU = v)],
@@ -313,18 +306,13 @@ expose({
   dglTrail: [() => dglTrail, v => (dglTrail = v)],
   dglUse: [() => dglUse, v => (dglUse = v)],
   dglVaryOf: [() => dglVaryOf, v => (dglVaryOf = v)],
-  dglWater: [() => dglWater, v => setDglWater(v)],
-  dglWaterKinds: [() => dglWaterKinds, v => (dglWaterKinds = v)],
-  dglWaterLife: [() => dglWaterLife, v => (dglWaterLife = v)],
-  dglWaterNear: [() => dglWaterNear, v => (dglWaterNear = v)],
-  dglWaterU: [() => dglWaterU, v => (dglWaterU = v)],
   dglWeather: [() => dglWeather, v => (dglWeather = v)],
-  dglWgAt: [() => dglWgAt, v => (dglWgAt = v)],
   dglWinBlocked: [() => dglWinBlocked, v => (dglWinBlocked = v)],
   dglWinOn: [() => dglWinOn, v => (dglWinOn = v)],
   dglWinShare: [() => dglWinShare, v => (dglWinShare = v)],
   dglWindAt: [() => dglWindAt, v => (dglWindAt = v)],
   dglWorldTex: [() => dglWorldTex, v => (dglWorldTex = v)],
+  drawWater: [() => drawWater, v => setDrawWater(v)],
   freeCameraOn: [() => freeCameraOn],
   freeNearRing: [() => freeNearRing, v => (freeNearRing = v)],
   groundCacheKey: [() => groundCacheKey, v => (groundCacheKey = v)],
@@ -342,6 +330,7 @@ expose({
   labelLayer: [() => labelLayer, v => (labelLayer = v)],
   listenDeviceTilt: [() => listenDeviceTilt, v => (listenDeviceTilt = v)],
   makeTextureMipmaps: [() => makeTextureMipmaps, v => (makeTextureMipmaps = v)],
+  mirrorInView: [() => mirrorInView, v => (mirrorInView = v)],
   mountWalkView: [() => mountWalkView, v => setMountWalkView(v)],
   newNearRing: [() => newNearRing, v => (newNearRing = v)],
   onGlContextRestored: [() => onGlContextRestored, v => ((onGlContextRestored = v), provide({ onGlContextRestored }))],
@@ -349,6 +338,8 @@ expose({
   prepareMapGround: [() => prepareMapGround, v => (prepareMapGround = v)],
   propMaterial: [() => propMaterial, v => (propMaterial = v)],
   rawHeightAt: [() => rawHeightAt, v => ((rawHeightAt = v), provide({ rawHeightAt }))],
+  reflectionLevel: [() => reflectionLevel, v => (reflectionLevel = v)],
+  reflectionPass: [() => reflectionPass, v => setReflectionPass(v)],
   repeatingTexture: [() => repeatingTexture, v => (repeatingTexture = v)],
   ringHasChunk: [() => ringHasChunk, v => (ringHasChunk = v)],
   ringMissingCount: [() => ringMissingCount, v => (ringMissingCount = v)],
@@ -358,6 +349,10 @@ expose({
   setDglAdapt: [() => setDglAdapt, v => (setDglAdapt = v)],
   setMountWalkView: [() => setMountWalkView, v => (setMountWalkView = v)],
   setNearRingUniforms: [() => setNearRingUniforms, v => (setNearRingUniforms = v)],
+  setShoreUniforms: [() => setShoreUniforms, v => (setShoreUniforms = v)],
+  setWaterUniforms: [() => setWaterUniforms, v => (setWaterUniforms = v)],
+  shoreAt: [() => shoreAt, v => (shoreAt = v)],
+  shoreField: [() => shoreField, v => (shoreField = v)],
   standingHeightAt: [() => standingHeightAt, v => ((standingHeightAt = v), provide({ standingHeightAt }))],
   updateNearRing: [() => updateNearRing, v => setUpdateNearRing(v)],
   uploadTextureStrips: [() => uploadTextureStrips, v => (uploadTextureStrips = v)],
@@ -365,6 +360,11 @@ expose({
   walkGlContext: [() => walkGlContext, v => (walkGlContext = v)],
   walkRenderer: [() => walkRenderer],
   wantedRingChunks: [() => wantedRingChunks, v => (wantedRingChunks = v)],
+  waterAt: [() => waterAt, v => (waterAt = v)],
+  waterFlowField: [() => waterFlowField, v => (waterFlowField = v)],
+  waterKindLookup: [() => waterKindLookup, v => (waterKindLookup = v)],
+  waterLife: [() => waterLife, v => (waterLife = v)],
+  waterNear: [() => waterNear, v => (waterNear = v)],
   worldCurveArgs: [() => worldCurveArgs, v => (worldCurveArgs = v)],
   worldCurveDrop: [() => worldCurveDrop, v => (worldCurveDrop = v)],
   worldToScreen2d: [() => worldToScreen2d],
@@ -403,10 +403,6 @@ export function setDglItems(v) {
   dglItems = v; // eslint-disable-line no-func-assign
   provide({ dglItems });
 }
-export function setDglReflPass(v) {
-  dglReflPass = v; // eslint-disable-line no-func-assign
-  provide({ dglReflPass });
-}
 export function setDglShadowPass(v) {
   dglShadowPass = v; // eslint-disable-line no-func-assign
   provide({ dglShadowPass });
@@ -415,13 +411,17 @@ export function setDglSprites(v) {
   dglSprites = v; // eslint-disable-line no-func-assign
   provide({ dglSprites });
 }
-export function setDglWater(v) {
-  dglWater = v; // eslint-disable-line no-func-assign
-  provide({ dglWater });
+export function setDrawWater(v) {
+  drawWater = v; // eslint-disable-line no-func-assign
+  provide({ drawWater });
 }
 export function setGroundOcclusion(v) {
   groundOcclusion = v; // eslint-disable-line no-func-assign
   provide({ groundOcclusion });
+}
+export function setReflectionPass(v) {
+  reflectionPass = v; // eslint-disable-line no-func-assign
+  provide({ reflectionPass });
 }
 export function setUpdateNearRing(v) {
   updateNearRing = v; // eslint-disable-line no-func-assign
@@ -1702,13 +1702,13 @@ function* buildGroundSteps(sc, G, T) {
       return c === 'w' || c === 'd';
     },
     wlev = (x, z) => rawHeightAt(sc, x, z) + stp(x, z) - 0.12,
-    flowAt = dglFlowField(sc);
+    flowAt = waterFlowField(sc);
   const W2 = W * 2,
     H2 = H * 2,
     wd = new Float32Array(W2 * H2).fill(-2),
     wk = new Uint8Array(W2 * H2),
     wy = new Float32Array(W2 * H2),
-    kindAt = dglWaterKinds(sc),
+    kindAt = waterKindLookup(sc),
     Q = [];
   for (let j = 0; j < H2; j++) {
     if (j % 12 === 11) yield;
@@ -1807,7 +1807,7 @@ function* buildGroundSteps(sc, G, T) {
   const depth = q => {
     const d = wd[q];
     if (d < 0) return 0;
-    const K = DGL_WKIND[wk[q]],
+    const K = WATER_KIND_LOOKS[wk[q]],
       i = q % W2,
       j = (q - i) / W2,
       deep = ter((i + 0.5) * 0.5, (j + 0.5) * 0.5) === 'd' ? 0.3 : 0;
@@ -1819,7 +1819,7 @@ function* buildGroundSteps(sc, G, T) {
   /* v31: the shoreline: the water mask at 8 samples a metre, softened twice and nudged by noise, so the water's edge
     curves round corners instead of following the tiles; the water shader fills to its 0.5 line, the ground shader
     darkens a wet rim just outside it and paints a bed under it */
-  dglShoreField(sc, isW, T);
+  shoreField(sc, isW, T);
   yield;
   if (T === walkRenderer) groundOcclusion(sc);
   else {
@@ -2042,7 +2042,7 @@ function* buildGroundSteps(sc, G, T) {
   for (let j = 0; j < H2; j++)
     for (let i = 0; i < W2; i++) {
       const q = j * W2 + i;
-      if (wd[q] < 4 || !DGL_WKIND[wk[q]].fish) continue;
+      if (wd[q] < 4 || !WATER_KIND_LOOKS[wk[q]].fish) continue;
       const x = (i + 0.5) * 0.5,
         z = (j + 0.5) * 0.5;
       if (homes.every(h => Math.hypot(h[0] - x, h[1] - z) > 3.2))
@@ -2494,7 +2494,7 @@ function groundPrepWork(budget) {
 /* which way water flows: along the scene's streams (sc.streams: [{pts:[[x,z],…]}]), still everywhere else */
 /* v22: kinds of water. r = how quickly it deepens away from the shore (m), top = how deep the middle gets; colours multiply
    the Look's water colours; clarity = how much bed shows in the shallows; caus = light patterns on the bed */
-export const DGL_WKIND = [
+export const WATER_KIND_LOOKS = [
   {
     k: 'pond',
     r: 1.6,
@@ -2634,7 +2634,7 @@ export const DGL_WKIND = [
     mode: 2,
   },
 ];
-const DGL_WKID = Object.fromEntries(DGL_WKIND.map((w, i) => [w.k, i]));
+const WATER_KIND_INDEX = Object.fromEntries(WATER_KIND_LOOKS.map((w, i) => [w.k, i]));
 /* which kind each spot of water is: painted rectangles (sc.waters, Studio's water tool) win; then running water is a
    stream (except in a canal town, where canals flow slowly); then the scene's own kind (sc.waterKind), or a guess from the setting (caves have springs, towns have canals) */
 /* v32: soft shade on the ground round the feet of buildings, trees, rocks and walls, worked out once per scene at
@@ -2773,7 +2773,7 @@ function* groundOcclusionSteps(sc) {
   }
   return { FW, FH, d };
 }
-function dglShoreField(sc, isW, T = walkRenderer) {
+function shoreField(sc, isW, T = walkRenderer) {
   const gl = EGL.gl,
     W = sc.w,
     H = sc.h,
@@ -2841,7 +2841,7 @@ function dglShoreField(sc, isW, T = walkRenderer) {
   T.shoreF = { W, H, d, FW, FH };
 }
 /* the shoreline value at a spot (0 dry ... 0.5 the water's edge ... 1 open water); 1 where there is no field */
-function dglShoreU(U, sc) {
+function setShoreUniforms(U, sc) {
   if (!U.uShoreR) return;
   const gl = EGL.gl,
     on = !!(walkRenderer.shoreF && walkRenderer.shoreTex);
@@ -2851,26 +2851,26 @@ function dglShoreU(U, sc) {
   gl.uniform1i(U.uShore, 5);
   gl.uniform3f(U.uShoreR, 1 / sc.w, 1 / sc.h, on ? 1 : 0);
 }
-function dglShoreAt(x, z) {
+function shoreAt(x, z) {
   const F = walkRenderer.shoreF;
   if (!F) return 1;
   const i = clamp(Math.floor(x * 8), 0, F.FW - 1),
     j = clamp(Math.floor(z * 8), 0, F.FH - 1);
   return F.d[j * F.FW + i] / 255;
 }
-function dglWaterKinds(sc) {
+function waterKindLookup(sc) {
   if (!eng('water', 'kinds')) return () => 0;
   const R = sc.waters || [],
-    def = DGL_WKID[sc.waterKind] ?? (sc.indoor && sc.far === 'cave' ? 3 : sc.far === 'town' ? 2 : 0);
+    def = WATER_KIND_INDEX[sc.waterKind] ?? (sc.indoor && sc.far === 'cave' ? 3 : sc.far === 'town' ? 2 : 0);
   return (x, z, run) => {
     for (let i = R.length - 1; i >= 0; i--) {
       const r = R[i];
-      if (x >= r.x && z >= r.z && x < r.x + r.w && z < r.z + r.h) return DGL_WKID[r.k] ?? def;
+      if (x >= r.x && z >= r.z && x < r.x + r.w && z < r.z + r.h) return WATER_KIND_INDEX[r.k] ?? def;
     }
-    return run && def !== 2 && !DGL_WKIND[def].mode ? 1 : def;
+    return run && def !== 2 && !WATER_KIND_LOOKS[def].mode ? 1 : def;
   };
 }
-function dglFlowField(sc) {
+function waterFlowField(sc) {
   const S = sc.streams || [];
   if (!S.length) return () => [0, 0];
   return (x, z) => {
@@ -3684,7 +3684,7 @@ function dglFrameIn(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
   const X = dglLightCtx(C, sun, dark, items, shadow, BT);
   walkRenderer.X = X;
   if (dark > 0.3 && !BT && shadow) dglLampShadows(items, X, dark);
-  if (walkRenderer.water && !(QE >= 2 && walkRenderer.frames % 2 && EGL.fb.refl)) dglReflPass(items, C, rw, rh, X);
+  if (walkRenderer.water && !(QE >= 2 && walkRenderer.frames % 2 && EGL.fb.refl)) reflectionPass(items, C, rw, rh, X);
   const S = eglTarget('scene', rw, rh, { depth: true, hdr: true });
   gl.bindFramebuffer(gl.FRAMEBUFFER, S.f);
   gl.viewport(0, 0, rw, rh);
@@ -3702,7 +3702,7 @@ function dglFrameIn(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
   if (typeof bldDraw === 'function') bldDraw(C, X, items, walkRenderer.bfade);
   if (typeof strDraw === 'function') strDraw(C, X);
   dglBasins(items);
-  if (walkRenderer.water || walkRenderer.basin) dglWater(C, X, rw, rh);
+  if (walkRenderer.water || walkRenderer.basin) drawWater(C, X, rw, rh);
   dglFxPass(C, items, X, dark, t, dt);
   /* focus: on you, or on what you tapped for a moment */
   let fx = BT ? BT.center[0] : P.x,
@@ -4209,7 +4209,7 @@ function dglMount(P, t) {
     y = standingHeightAt(P.x, P.z) + bob - 0.08;
   if (!RM && P.walk && (!walkRenderer.wakeT || t - walkRenderer.wakeT > 320)) {
     walkRenderer.wakeT = t;
-    dglRing(P.x, P.z - 0.1, 0.9);
+    addRipple(P.x, P.z - 0.1, 0.9);
   }
   walkRenderer.mountOn = true;
   return {
@@ -5658,7 +5658,7 @@ export function dglGround(C, X) {
   gl.uniform1f(U.uGStr, eng('world', 'groundBumps'));
   gl.uniform1f(U.uGShine, eng('world', 'groundShine'));
   gl.uniform4f(U.uGRect, -P, sc.h + P, 1 / (sc.w + 2 * P), 1 / (sc.h + 2 * P));
-  dglShoreU(U, sc);
+  setShoreUniforms(U, sc);
   setNearRingUniforms(U, sc);
   if (U.uBed) gl.uniform3fv(U.uBed, engHex('water', 'bed', '#74654A'));
   if (U.uGAO) {
@@ -6347,7 +6347,7 @@ export function dglHit(it, C, hits, labels, PPU) {
 }
 /* alpha 0.2: is there water within 5 m to the side, 1 m in front or 9 m behind (the reflection pass asks this of
    everything it might mirror): a summed table of the view's water tiles, rebuilt when the tiles change */
-function dglWaterNear(x, z) {
+function waterNear(x, z) {
   const wt = walkView.water;
   if (!wt || !wt.length) return false;
   let Q = walkRenderer.wsat;
@@ -6380,7 +6380,7 @@ function dglWaterNear(x, z) {
 }
 /* alpha 0.2: would a thing's mirror image (across the water at height L) be on screen: the sphere dglCull uses, wider
    for the ripples, and without the world's curve (the reflection is drawn flat, uCurveOn 0) */
-function dglMirrorInView(F, it, L) {
+function mirrorInView(F, it, L) {
   const s = it.mpp || 0.03,
     w = (it.w || 32) * s,
     h = (it.h || 32) * s,
@@ -6390,7 +6390,7 @@ function dglMirrorInView(F, it, L) {
     cy = (it.y || 0) + h * 0.5;
   return dglInView(F, it.x, 2 * L - cy, it.z, r);
 }
-export function dglReflPass(items, C, rw, rh, X) {
+export function reflectionPass(items, C, rw, rh, X) {
   const gl = EGL.gl,
     w = Math.max(32, rw >> 1),
     h = Math.max(32, rh >> 1),
@@ -6399,7 +6399,7 @@ export function dglReflPass(items, C, rw, rh, X) {
   gl.viewport(0, 0, w, h);
   gl.clearColor(0, 0, 0, 0);
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-  const L = dglReflLevel(),
+  const L = reflectionLevel(),
     mir = new Float32Array([1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1, 0, 0, 2 * L, 0, 1]),
     RC = Object.assign({}, C, { vp: M4.mul(C.vp, mir) });
   const p = dglUse('sprite', RC, Object.assign({}, X, { shadow: null })),
@@ -6431,8 +6431,8 @@ export function dglReflPass(items, C, rw, rh, X) {
     cut = eng('quality', 'cull') ?? true;
   for (const it of items) {
     if (it.flat || it.far) continue;
-    if (!dglWaterNear(it.x, it.z)) continue;
-    if (cut && !it.person && !dglMirrorInView(FR, it, L)) continue;
+    if (!waterNear(it.x, it.z)) continue;
+    if (cut && !it.person && !mirrorInView(FR, it, L)) continue;
     const T = eglImg(it.im);
     if (!T) continue;
     gl.uniform3fv(U.uRight, it.fixed ? DGL_FIXED : C.right);
@@ -6447,14 +6447,19 @@ export function dglReflPass(items, C, rw, rh, X) {
   }
 }
 /* v22: the kinds' colours and the water's small lives: fish circling their deep spots, rings from ducks, fish and insects */
-const DGL_WKU = { D: new Float32Array(27), S: new Float32Array(27), A: new Float32Array(36), B: new Float32Array(36) };
-DGL_WKIND.forEach((k, i) => {
-  DGL_WKU.D.set(k.deep, i * 3);
-  DGL_WKU.S.set(k.shal, i * 3);
-  DGL_WKU.A.set([k.clar, k.caus, k.foam, k.rip], i * 4);
-  DGL_WKU.B.set([k.glow, k.murk, k.weed, k.mode || 0], i * 4);
+const WATER_KIND_UNIFORMS = {
+  D: new Float32Array(27),
+  S: new Float32Array(27),
+  A: new Float32Array(36),
+  B: new Float32Array(36),
+};
+WATER_KIND_LOOKS.forEach((k, i) => {
+  WATER_KIND_UNIFORMS.D.set(k.deep, i * 3);
+  WATER_KIND_UNIFORMS.S.set(k.shal, i * 3);
+  WATER_KIND_UNIFORMS.A.set([k.clar, k.caus, k.foam, k.rip], i * 4);
+  WATER_KIND_UNIFORMS.B.set([k.glow, k.murk, k.weed, k.mode || 0], i * 4);
 });
-export function dglWgAt(x, z) {
+export function waterAt(x, z) {
   const G = walkRenderer.wgrid;
   if (!G) return null;
   const i = Math.floor(x * 2),
@@ -6463,7 +6468,7 @@ export function dglWgAt(x, z) {
   const q = j * G.W2 + i;
   return G.dep[q] > 0 || G.y[q] !== 0 ? { dep: G.dep[q], kind: G.kind[q], y: G.y[q] } : null;
 }
-function dglWaterLife() {
+function waterLife() {
   const t = (RM ? 0 : walkView.t || 0) / 1000,
     now = performance.now() / 1000,
     dt = Math.min(0.1, Math.max(0, now - (walkRenderer.wlT || now)));
@@ -6481,9 +6486,9 @@ function dglWaterLife() {
       fish[i * 4 + 1] = z;
       fish[i * 4 + 2] = Math.atan2(Math.cos(a) * 0.8, -Math.sin(a));
       fish[i * 4 + 3] = 0.75 + (0.25 * ((i * 7) % 3)) / 2;
-      if (!walkRenderer.bt && Math.random() < dt * 0.06) dglRing(x, z, 0.7);
+      if (!walkRenderer.bt && Math.random() < dt * 0.06) addRipple(x, z, 0.7);
       /* v27: now and then one jumps clear of the water */ if (!walkRenderer.bt && !RM && Math.random() < dt * 0.012) {
-        dglRing(x, z, 0.9);
+        addRipple(x, z, 0.9);
         (walkRenderer.splash = walkRenderer.splash || []).push({
           x,
           z,
@@ -6500,7 +6505,7 @@ function dglWaterLife() {
           c._rg = (c._rg || Math.random()) - dt * (c.st === 'walk' ? 1.6 : 0.35);
           if (c._rg <= 0) {
             c._rg = 1;
-            dglRing(c.x, c.z, c.st === 'walk' ? 0.8 : 0.5);
+            addRipple(c.x, c.z, c.st === 'walk' ? 0.8 : 0.5);
           }
         }
     /* v47: rings now and then round what stands in the water: rocks, posts, reeds, the legs of a jetty */
@@ -6509,14 +6514,14 @@ function dglWaterLife() {
       walkRenderer.wetProps = (walkView.sc.props || [])
         .filter(p => {
           const M = walkData().sc.props[p.k];
-          return M && !M.walk && typeof dglWgAt === 'function' && dglWgAt(p.x, p.z);
+          return M && !M.walk && typeof waterAt === 'function' && waterAt(p.x, p.z);
         })
         .slice(0, 40);
     }
     const WP = walkRenderer.wetProps;
     if (WP && WP.length && Math.random() < dt * Math.min(2.5, WP.length * 0.35)) {
       const p = WP[Math.floor(Math.random() * WP.length)];
-      dglRing(p.x + (Math.random() - 0.5) * 0.3, p.z + (Math.random() - 0.5) * 0.3, 0.45 + Math.random() * 0.25);
+      addRipple(p.x + (Math.random() - 0.5) * 0.3, p.z + (Math.random() - 0.5) * 0.3, 0.45 + Math.random() * 0.25);
     }
     const G = walkRenderer.wgrid;
     if (G && Math.random() < dt * 1.4) {
@@ -6526,7 +6531,7 @@ function dglWaterLife() {
           q = j * G.W2 + i,
           kd = G.kind[q];
         if (G.dep[q] > 0.05 && kd !== 1) {
-          dglRing(
+          addRipple(
             (i + 0.5) * 0.5 + Math.random() * 0.4 - 0.2,
             (j + 0.5) * 0.5 + Math.random() * 0.4 - 0.2,
             kd === 4 ? 0.7 : 0.45
@@ -6542,24 +6547,24 @@ function dglWaterLife() {
   walkRenderer.rings.slice(-8).forEach((r, i) => rings.set(r, i * 4));
   return { fish, rings };
 }
-export function dglRing(x, z, k) {
+export function addRipple(x, z, k) {
   (walkRenderer.rings = walkRenderer.rings || []).push([x, z, 0, k]);
   if (walkRenderer.rings.length > 16) walkRenderer.rings.shift();
 }
-function dglWaterU(U) {
+function setWaterUniforms(U) {
   const gl = EGL.gl;
   if (!U.uKD) return;
-  gl.uniform3fv(U.uKD, DGL_WKU.D);
-  gl.uniform3fv(U.uKS, DGL_WKU.S);
-  gl.uniform4fv(U.uKA, DGL_WKU.A);
-  gl.uniform4fv(U.uKB, DGL_WKU.B);
+  gl.uniform3fv(U.uKD, WATER_KIND_UNIFORMS.D);
+  gl.uniform3fv(U.uKS, WATER_KIND_UNIFORMS.S);
+  gl.uniform4fv(U.uKA, WATER_KIND_UNIFORMS.A);
+  gl.uniform4fv(U.uKB, WATER_KIND_UNIFORMS.B);
   gl.uniform1f(U.uCaus, eng('water', 'caustics'));
   gl.uniform1f(U.uClar, eng('water', 'clarity'));
-  const L = dglWaterLife();
+  const L = waterLife();
   gl.uniform4fv(U.uFish, L.fish);
   gl.uniform4fv(U.uRings, L.rings);
 }
-function dglReflLevel() {
+function reflectionLevel() {
   const G = walkRenderer.wlevels;
   if (!G || G.length < 2) return (walkRenderer.wlevelR = walkRenderer.wlevel || 0);
   const P = walkView.pl;
@@ -6577,7 +6582,7 @@ function dglReflLevel() {
   }
   return (walkRenderer.wlevelR = best ? best.y : walkRenderer.wlevel);
 }
-export function dglWater(C, X, rw, rh) {
+export function drawWater(C, X, rw, rh) {
   const gl = EGL.gl,
     p = dglUse('water', C, X),
     U = p.U,
@@ -6595,8 +6600,8 @@ export function dglWater(C, X, rw, rh) {
   gl.uniform1f(U.uFoam, eng('water', 'foam'));
   gl.uniform1f(U.uGlint, eng('water', 'glints'));
   gl.uniform1f(U.uLevel, walkRenderer.wlevelR ?? walkRenderer.wlevel ?? 0);
-  dglWaterU(U);
-  dglShoreU(U, sc);
+  setWaterUniforms(U);
+  setShoreUniforms(U, sc);
   gl.enable(gl.BLEND);
   gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
   gl.depthMask(false);
@@ -7175,7 +7180,7 @@ function dglFountainFx(quad, t, rm, dt) {
         const q = B[0],
           a = Math.random() * 6.3,
           r = Math.random() * 0.5;
-        dglRing(q.x + Math.cos(a) * q.rx * r, q.z + Math.sin(a) * q.rz * r, 0.35);
+        addRipple(q.x + Math.cos(a) * q.rx * r, q.z + Math.sin(a) * q.rz * r, 0.35);
       }
       continue;
     }
@@ -7257,12 +7262,12 @@ function dglFountainFx(quad, t, rm, dt) {
       }
       if (rm && Math.random() < dt * 2.2) {
         const an = Math.random() * 6.3;
-        dglRing(a.x + Math.cos(an) * a.rx * 1.2, a.z + Math.sin(an) * a.rz * 1.2, 0.4);
+        addRipple(a.x + Math.cos(an) * a.rx * 1.2, a.z + Math.sin(an) * a.rz * 1.2, 0.4);
       }
     }
     if (rm && Math.random() < dt * 1.2) {
       const an = Math.random() * 6.3;
-      dglRing(u.x + Math.cos(an) * u.rx * 0.6, u.z + Math.sin(an) * u.rz * 0.6, 0.3);
+      addRipple(u.x + Math.cos(an) * u.rx * 0.6, u.z + Math.sin(an) * u.rz * 0.6, 0.3);
     }
   }
 }
@@ -7357,8 +7362,8 @@ function dglWeather(quad, glows, U, R, Up, dt, rm) {
   if (rain > 0 && walkRenderer.wgrid && !RM && Math.random() < dt * rain * 18) {
     const x = P.x + (Math.random() - 0.5) * 16,
       z = P.z - 3 + Math.random() * 12,
-      g = dglWgAt(x, z);
-    if (g && g.dep > 0) dglRing(x, z, 0.3);
+      g = waterAt(x, z);
+    if (g && g.dep > 0) addRipple(x, z, 0.3);
   }
 }
 /* v27: footprints in snow, sand, ash and mud (and anywhere after rain): yours and the animals', fading in half a minute */
@@ -7894,7 +7899,7 @@ export function dglFxPass(C, items, X, dark, t, dt) {
         L.x += (f[0] * L.sp + Math.sin(L.age * 1.3 + L.i) * 0.05) * dt;
         L.z += (f[1] * L.sp + Math.cos(L.age * 1.1 + L.i) * 0.05) * dt;
       }
-      const g = dglWgAt(L.x, L.z);
+      const g = waterAt(L.x, L.z);
       if (!g || (g.kind !== 1 && L.age > 2)) {
         L.ok = false;
         continue;
@@ -7908,7 +7913,7 @@ export function dglFxPass(C, items, X, dark, t, dt) {
   }
   if (walkRenderer.springCells && walkRenderer.springCells.length && eng('water', 'steam')) {
     walkRenderer.springCells.forEach(([x, z, dp], k) => {
-      const g = dglWgAt(x, z),
+      const g = waterAt(x, z),
         y = g ? g.y : standingHeightAt(x, z);
       for (let n = 0; n < 2; n++) {
         const ph = ((t * rm) / 5200 + n / 2 + k * 0.37) % 1,

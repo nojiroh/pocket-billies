@@ -13,7 +13,14 @@ import { GD, RULES, SP } from './game-data.js';
 import { B, RM, S, U, areaPool, pickW, save, uid } from './game-state.js';
 import { uiIco } from './art.js';
 import { terrainAt, walkView } from './walk-view.js';
-import { DGL_WKIND, dglRing, dglWgAt, standingHeightAt, walkRenderer, worldCurveDrop } from './walk-view-gl.js';
+import {
+  WATER_KIND_LOOKS,
+  addRipple,
+  standingHeightAt,
+  walkRenderer,
+  waterAt,
+  worldCurveDrop,
+} from './walk-view-gl.js';
 /* eslint-disable no-func-assign */
 expose({
   FISH: [() => FISH],
@@ -89,9 +96,9 @@ function fishSpot() {
   return null;
 }
 function fishKindAt(x, z) {
-  if (typeof dglWgAt === 'function') {
-    const g = dglWgAt(x, z);
-    if (g && typeof DGL_WKIND !== 'undefined' && DGL_WKIND[g.kind]) return DGL_WKIND[g.kind].k;
+  if (typeof waterAt === 'function') {
+    const g = waterAt(x, z);
+    if (g && typeof WATER_KIND_LOOKS !== 'undefined' && WATER_KIND_LOOKS[g.kind]) return WATER_KIND_LOOKS[g.kind].k;
   }
   const sc = walkView.sc;
   return sc.waterKind || (sc.indoor && sc.far === 'cave' ? 'spring' : sc.far === 'town' ? 'canal' : 'pond');
@@ -216,7 +223,7 @@ function fishTap() {
     FISH.el.querySelector('.fish-reel').hidden = false;
     FISH.el.querySelector('.fish-tap').textContent = 'Hold to reel';
     fishMsg('Hold to lift the green band. Keep the fish in it!');
-    if (typeof dglRing === 'function') dglRing(FISH.spot.x, FISH.spot.z, 1);
+    if (typeof addRipple === 'function') addRipple(FISH.spot.x, FISH.spot.z, 1);
   }
 }
 function fishLoop(ts) {
@@ -230,7 +237,7 @@ function fishLoop(ts) {
       FISH.phase = 'wait';
       FISH.t0 = ts;
       fishMsg('Waiting for a bite… don’t tap yet.');
-      if (typeof dglRing === 'function') dglRing(FISH.spot.x, FISH.spot.z, 0.8);
+      if (typeof addRipple === 'function') addRipple(FISH.spot.x, FISH.spot.z, 0.8);
     }
   } else if (FISH.phase === 'wait') {
     if (t > FISH.bite) {
@@ -238,10 +245,10 @@ function fishLoop(ts) {
       FISH.t0 = ts;
       fishMsg('A bite! Tap now!');
       if (typeof sfx === 'function') sfx('step', { hard: 1 });
-      if (typeof dglRing === 'function') dglRing(FISH.spot.x, FISH.spot.z, 1);
+      if (typeof addRipple === 'function') addRipple(FISH.spot.x, FISH.spot.z, 1);
     } else if (rnd() < dt * 0.6) {
       FISH.nib = 0.18;
-      if (typeof dglRing === 'function') dglRing(FISH.spot.x, FISH.spot.z, 0.35);
+      if (typeof addRipple === 'function') addRipple(FISH.spot.x, FISH.spot.z, 0.35);
     }
   } else if (FISH.phase === 'bite') {
     if (t > R.reactTime) {

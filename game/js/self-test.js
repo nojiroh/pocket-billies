@@ -1520,7 +1520,7 @@ const DIAG_PASSES = {
   ground: ['dglGround'],
   grass: ['dglGrass'],
   props: ['dglSprites', 'p3dDraw', 'voxDraw', 'bldDraw', 'dglBoxFaces', 'strDraw'],
-  water: ['dglReflPass', 'dglWater'],
+  water: ['reflectionPass', 'drawWater'],
   effects: ['dglFxPass'],
   'final pass': ['eglPost'],
 };

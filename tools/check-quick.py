@@ -824,7 +824,7 @@ def desktop_steps(b, base, R):
 
     @step('v31: shorelines, fountains, autumn, facing, rooms, settings tabs, place card, map camera', 300)
     def v31():
-        if not pg.evaluate("typeof dglShoreField==='function'"): return 'not in this build'
+        if not pg.evaluate("typeof shoreField==='function'"): return 'not in this build'
         out = []
         # walking left is the mirror of walking right, not the same picture
         f = pg.evaluate("""(()=>{const fr=owFrames('me'),a=fr.side[0],b=fr.sideR[0],px=c=>{const x=c.getContext('2d');return x.getImageData(0,0,c.width,c.height).data};const A=px(a),B=px(b);let same=0,n=0;for(let i=3;i<A.length;i+=4){if(A[i]>0||B[i]>0){n++;if(A[i]===B[i]&&A[i-1]===B[i-1]&&A[i-2]===B[i-2])same++}}return [n,same]})()""")

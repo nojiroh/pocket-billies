@@ -24,7 +24,7 @@ import {
   walkData,
   walkView,
 } from './walk-view.js';
-import { dglRing, groundHeightAt, rawHeightAt, standingHeightAt } from './walk-view-gl.js';
+import { addRipple, groundHeightAt, rawHeightAt, standingHeightAt } from './walk-view-gl.js';
 /* eslint-disable no-func-assign */
 expose({
   LIFE: [() => LIFE],
@@ -465,7 +465,7 @@ export function lifeStep(dt) {
       /* plop */ c.dive = 0;
       c.hide = 4 + Math.random() * 5;
       c.st = 'idle';
-      if (typeof dglRing === 'function') dglRing(c.x, c.z, 0.6);
+      if (typeof addRipple === 'function') addRipple(c.x, c.z, 0.6);
       if (typeof sfxAt === 'function') sfxAt('plop', c.x, c.z);
       continue;
     }

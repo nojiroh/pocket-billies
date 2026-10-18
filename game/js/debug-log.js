@@ -701,8 +701,8 @@ NWLOG.hook = () => {
     ['bldDraw', 'buildings'],
     ['eglPost', 'post'],
     ['dglGround', 'ground'],
-    ['dglReflPass', 'reflections'],
-    ['dglWater', 'water'],
+    ['reflectionPass', 'reflections'],
+    ['drawWater', 'water'],
     ['dglFxPass', 'effects'],
     /* alpha 0.2: the rest of a frame's work, so a slow frame names it (a slow frame used to say only "drawing") */
     ['updateNearRing', 'near ring', 'painting the ground nearby'],

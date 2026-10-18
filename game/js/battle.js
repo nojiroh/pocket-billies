@@ -92,7 +92,7 @@ import {
 } from './battle-stage.js';
 import { walkView } from './walk-view.js';
 import { ENV, ENV_NAMES, envHere, envState } from './environment.js';
-import { dglRing, dglWgAt, walkRenderer } from './walk-view-gl.js';
+import { addRipple, walkRenderer, waterAt } from './walk-view-gl.js';
 import { BGL, battleGLWanted } from './battle-3d.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -1272,7 +1272,8 @@ function battleSwoop(go) {
         max: 0.8 + Math.random() * 0.5,
       });
     }
-    if (typeof dglRing === 'function' && typeof dglWgAt === 'function' && dglWgAt(e[0], e[1])) dglRing(e[0], e[1], 1);
+    if (typeof addRipple === 'function' && typeof waterAt === 'function' && waterAt(e[0], e[1]))
+      addRipple(e[0], e[1], 1);
   }
   setTimeout(() => {
     const S0 = walkRenderer.swoop;
