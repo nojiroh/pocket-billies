@@ -3,7 +3,9 @@
 /* ================= DATA =================
    Everything here is built from the game data (data/*.json, put together as data/gamedata.js), which Pocket Billies
    Studio edits.
-   The rest of the game reads these globals, so the file format can change without touching game code. */
+   The rest of the game reads these globals, so the file format can change without touching game code.
+   Phase 04e: the data is read from globalThis, the page's window; in plain Node (tools/check-logic.mjs) a test puts
+   its own small data there before it imports this module. */
 /**
  * @import { EggTier, Evolution, GameData, LocationData, LocationEntry, Pool, Road, RoadFromNode } from '../types/game-data'
  * @import { Seat, Species, TrainerEntry } from '../types/game-data'
@@ -78,7 +80,7 @@ expose({
 /* eslint-enable no-func-assign */
 /* to-module: end */
 /* the check below stops the page when it is missing, so the rest can count on it */
-export const gameData = /** @type {GameData} */ (window.GAMEDATA);
+export const gameData = /** @type {GameData} */ (globalThis.GAMEDATA);
 provide({ gameData }); /* to-module */
 if (!gameData)
   throw new Error(
