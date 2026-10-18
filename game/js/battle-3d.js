@@ -28,19 +28,19 @@ import { gpuState } from './engine/webgl.js';
 import { standingHeightAt, walkRenderer } from './walk-view-gl.js';
 /* eslint-disable no-func-assign */
 expose({
-  BGL: [() => BGL],
-  battleGLAttach: [() => battleGLAttach, v => (battleGLAttach = v)],
-  battleGLFrame: [() => battleGLFrame, v => (battleGLFrame = v)],
-  battleGLLayout: [() => battleGLLayout, v => ((battleGLLayout = v), provide({ battleGLLayout }))],
-  battleGLStart: [() => battleGLStart, v => ((battleGLStart = v), provide({ battleGLStart }))],
-  battleGLStop: [() => battleGLStop, v => ((battleGLStop = v), provide({ battleGLStop }))],
-  battleGLWanted: [() => battleGLWanted, v => (battleGLWanted = v)],
+  battle3d: [() => battle3d],
+  battle3dAttach: [() => battle3dAttach, v => (battle3dAttach = v)],
+  battle3dFrame: [() => battle3dFrame, v => (battle3dFrame = v)],
+  battle3dLayout: [() => battle3dLayout, v => ((battle3dLayout = v), provide({ battle3dLayout }))],
+  battle3dStart: [() => battle3dStart, v => ((battle3dStart = v), provide({ battle3dStart }))],
+  battle3dStop: [() => battle3dStop, v => ((battle3dStop = v), provide({ battle3dStop }))],
+  battle3dWanted: [() => battle3dWanted, v => (battle3dWanted = v)],
 });
 /* eslint-enable no-func-assign */
-provide({ battleGLLayout, battleGLStart, battleGLStop });
+provide({ battle3dLayout, battle3dStart, battle3dStop });
 /* to-module: end */
-export const BGL = { on: false, off: [0, 0], gy: 0, hide: null, items: [], lights: [] };
-export function battleGLWanted() {
+export const battle3d = { on: false, off: [0, 0], gy: 0, hide: null, items: [], lights: [] };
+export function battle3dWanted() {
   if (
     typeof walkRenderer === 'undefined' ||
     !walkRenderer.on ||
@@ -55,30 +55,30 @@ export function battleGLWanted() {
     !!walkView.id && !!walkView.sc && !walkView.sc.room
   );
 }
-function battleGLStart() {
-  if (!battleGLWanted()) return false;
-  return battleGLAttach();
+function battle3dStart() {
+  if (!battle3dWanted()) return false;
+  return battle3dAttach();
 }
 /* the walk scene that's running (walkView) becomes the stage; o.detach removes its canvas afterwards (the Studio preview) */
-export function battleGLAttach(o = {}) {
+export function battle3dAttach(o = {}) {
   const cv = walkView.cv,
     host = $('#camWorld');
   if (!host || !cv) return false;
-  BGL.detach = !!o.detach;
+  battle3d.detach = !!o.detach;
   const sc = walkView.sc,
     P = walkView.pl,
     C0 = walkData().sc,
     ax = clamp(P.x, 3.5, Math.max(3.5, sc.w - 3.5)),
     az = clamp(P.z, 2.5, Math.max(2.5, sc.h - 3));
-  BGL.off = [ax - actionCenter.x, az - actionCenter.z];
-  BGL.gy = standingHeightAt(ax, az);
+  battle3d.off = [ax - actionCenter.x, az - actionCenter.z];
+  battle3d.gy = standingHeightAt(ax, az);
   /* clear the lane between the camera and the two billionaires */
   const hide = new Set();
   for (const p of sc.props || []) {
     const M = C0.props[p.k];
     if (!M || M.flat) continue;
-    const bx = p.x - BGL.off[0],
-      bz = p.z - BGL.off[1],
+    const bx = p.x - battle3d.off[0],
+      bz = p.z - battle3d.off[1],
       bw = M.box ? (M.box[0] * (p.s || 1)) / 2 : 0,
       bd = M.box ? M.box[1] * (p.s || 1) : 0;
     const zMax = Math.max(...actorPositions.map(q => q.z)) + 1.6,
@@ -86,33 +86,33 @@ export function battleGLAttach(o = {}) {
       xMax = Math.max(...actorPositions.map(q => q.x)) + 2.2;
     if (bz > -2.5 && bz - bd < zMax && bx + bw > xMin && bx - bw < xMax) hide.add(p);
   }
-  BGL.hide = hide;
+  battle3d.hide = hide;
   host.insertBefore(cv, host.firstChild);
   cv.classList.add('dio-battle');
   cv.hidden = false;
   if (walkRenderer.ui) walkRenderer.ui.hidden = true;
   battleStage.leafy = [];
   battleStage.glint = [];
-  walkView.battle = { frame: battleGLFrame };
-  BGL.on = true;
+  walkView.battle = { frame: battle3dFrame };
+  battle3d.on = true;
   if (typeof NWLOG !== 'undefined') NWLOG.add('battle', '3D stage in ' + walkView.id);
   return true;
 }
-export function battleGLLayout() {
+export function battle3dLayout() {
   const cv = walkView.cv,
     ref = battleStage.cv;
-  if (!BGL.on || !cv || !ref) return;
+  if (!battle3d.on || !cv || !ref) return;
   for (const k of ['left', 'top', 'width', 'height']) cv.style[k] = ref.style[k];
 }
-export function battleGLStop() {
-  if (!BGL.on) return;
-  BGL.on = false;
+export function battle3dStop() {
+  if (!battle3d.on) return;
+  battle3d.on = false;
   walkView.battle = null;
   walkRenderer.bt = null;
   walkRenderer.camT = null;
   walkRenderer.focus = null;
   const cv = walkView.cv;
-  if (BGL.detach) {
+  if (battle3d.detach) {
     if (cv) {
       stopWalkView();
       cv.remove();
@@ -129,12 +129,12 @@ export function battleGLStop() {
     if (cv) cv.after(walkRenderer.ui);
   }
 }
-/* what the engine draws this frame, in walk-scene meters (battle space shifted by BGL.off) */
-function battleGLFrame() {
+/* what the engine draws this frame, in walk-scene meters (battle space shifted by battle3d.off) */
+function battle3dFrame() {
   if (!battleStage.on || !battleStage.L) return null;
-  const O = BGL.off,
-    items = BGL.items,
-    lights = BGL.lights;
+  const O = battle3d.off,
+    items = battle3d.items,
+    lights = battle3d.lights;
   items.length = 0;
   lights.length = 0;
   for (let i = 0; i < battleStage.s.length; i++) {
@@ -196,7 +196,7 @@ function battleGLFrame() {
   if (battleStage.sel != null && battleStage.s[battleStage.sel] && battleStage.s[battleStage.sel].show) {
     const w = actorWorldPoint(battleStage.sel),
       k = 0.5 + 0.12 * Math.sin(battleStage.t / 300);
-    lights.push({ p: [w.x + O[0], BGL.gy + 1.4, w.z + O[1]], r: 2.2, c: [1.1 * k, 0.9 * k, 0.45 * k] });
+    lights.push({ p: [w.x + O[0], battle3d.gy + 1.4, w.z + O[1]], r: 2.2, c: [1.1 * k, 0.9 * k, 0.45 * k] });
   }
   /* v33: an Alpha glows from below */
   for (let i = 0; i < battleStage.s.length; i++) {
@@ -204,7 +204,7 @@ function battleGLFrame() {
     if (!s.boss || !s.show || s.a < 0.4) continue;
     const w = actorWorldPoint(i),
       k = 0.55 + 0.2 * Math.sin(battleStage.t / 260);
-    lights.push({ p: [w.x + O[0], BGL.gy + 0.5, w.z + O[1]], r: 3.2, c: [1.2 * k, 0.25 * k, 0.45 * k] });
+    lights.push({ p: [w.x + O[0], battle3d.gy + 0.5, w.z + O[1]], r: 3.2, c: [1.2 * k, 0.25 * k, 0.45 * k] });
     /* v34: its shield, while it holds: a gold light round it */ const fv =
       typeof fieldState === 'function' && typeof activeBattle !== 'undefined' && activeBattle
         ? (() => {
@@ -216,7 +216,7 @@ function battleGLFrame() {
           })()
         : null;
     if (fv && fv.shield > 0)
-      lights.push({ p: [w.x + O[0], BGL.gy + 1.2, w.z + O[1] - 0.6], r: 2.6, c: [1.3 * k, 1.05 * k, 0.35 * k] });
+      lights.push({ p: [w.x + O[0], battle3d.gy + 1.2, w.z + O[1] - 0.6], r: 2.6, c: [1.3 * k, 1.05 * k, 0.35 * k] });
   }
   /* glowing move effects light what's around them */
   for (let i = battleStage.parts.length - 1; i >= 0 && lights.length < 6; i--) {
@@ -225,13 +225,13 @@ function battleGLFrame() {
     const k = Math.max(0, 1 - p.age / p.life),
       c = hexToRgb(p.col);
     lights.push({
-      p: [p.x + O[0], BGL.gy + Math.max(0.1, p.y), p.z + O[1]],
+      p: [p.x + O[0], battle3d.gy + Math.max(0.1, p.y), p.z + O[1]],
       r: 2.4,
       c: [(c[0] / 255) * 1.1 * k, (c[1] / 255) * 1.1 * k, (c[2] / 255) * 1.1 * k],
     });
   }
   /* icon particles (sparks, stars, coins of effect) live in the world */
-  const parts = BGL.parts || (BGL.parts = []);
+  const parts = battle3d.parts || (battle3d.parts = []);
   parts.length = 0;
   for (const p of battleStage.parts) {
     if (!p.spr) continue;
@@ -243,7 +243,7 @@ function battleGLFrame() {
     parts.push({
       im,
       x: p.x + O[0],
-      y: BGL.gy + p.y,
+      y: battle3d.gy + p.y,
       z: p.z + O[1],
       w: im.width * s,
       h: im.height * s,
@@ -258,9 +258,9 @@ function battleGLFrame() {
     L: battleStage.L,
     foc: FOCAL_LENGTH,
     off: O,
-    gy: BGL.gy,
+    gy: battle3d.gy,
     items,
-    hide: BGL.hide,
+    hide: battle3d.hide,
     lights,
     focus: d.zf,
     blur: reducedMotion ? 0 : clamp(d.ap / 1.35, 0, 1) * 0.8,

@@ -16,10 +16,10 @@ import {
   MOVES,
   TYPE_COLORS,
   activeBattle,
+  battle3dLayout,
+  battle3dStart,
+  battle3dStop,
   battleFreeArea,
-  battleGLLayout,
-  battleGLStart,
-  battleGLStop,
   battleLayoutChanged,
   fighter,
   gameData,
@@ -501,7 +501,7 @@ export function battleStageResize() {
   battleStage.camKey = '';
   battleStage.fgKey = '';
   if (typeof battleLayoutChanged === 'function') battleLayoutChanged(L);
-  if (battleStage.gl && typeof battleGLLayout === 'function') battleGLLayout();
+  if (battleStage.gl && typeof battle3dLayout === 'function') battle3dLayout();
 }
 export function battleStageStart(area) {
   battleStage.area = AREAS[area] ? area : 'grass';
@@ -548,7 +548,7 @@ export function battleStageStart(area) {
   battleStage.hold = 0;
   battleStage.focusK = null;
   battleStage.q.since = performance.now();
-  battleStage.gl = typeof battleGLStart === 'function' && battleGLStart();
+  battleStage.gl = typeof battle3dStart === 'function' && battle3dStart();
   document.body.classList.toggle('battle-3d', !!battleStage.gl);
   if (
     !battleStage.gl &&
@@ -572,7 +572,7 @@ export function battleStageStart(area) {
 export function battleStageStop() {
   battleStage.on = false;
   frameStop('scene');
-  if (battleStage.gl && typeof battleGLStop === 'function') battleGLStop();
+  if (battleStage.gl && typeof battle3dStop === 'function') battle3dStop();
   battleStage.gl = false;
   document.body.classList.remove('battle-3d');
 }

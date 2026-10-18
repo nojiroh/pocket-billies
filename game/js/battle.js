@@ -93,7 +93,7 @@ import {
 import { walkView } from './walk-view.js';
 import { WEATHER_NAMES, currentLocationMap, environment, environmentState } from './environment.js';
 import { addRipple, walkRenderer, waterAt } from './walk-view-gl.js';
-import { BGL, battleGLWanted } from './battle-3d.js';
+import { battle3d, battle3dWanted } from './battle-3d.js';
 /* eslint-disable no-func-assign */
 expose({
   ACTOR_SIDE: [() => ACTOR_SIDE],
@@ -1292,8 +1292,8 @@ export function setOpenBattle(v) {
 function battleSeamless() {
   return (
     !reducedMotion &&
-    typeof battleGLWanted === 'function' &&
-    battleGLWanted() &&
+    typeof battle3dWanted === 'function' &&
+    battle3dWanted() &&
     uiState.tab === 'walk' &&
     !uiState.inside &&
     !uiState.bench
@@ -1345,7 +1345,7 @@ function battleRise() {
 }
 function battleLeave(mid) {
   const el = $('#battle'),
-    seam = !reducedMotion && typeof BGL !== 'undefined' && BGL.on && el;
+    seam = !reducedMotion && typeof battle3d !== 'undefined' && battle3d.on && el;
   if (!seam) return wipe(mid);
   el.classList.add('bt-leave');
   setTimeout(() => {

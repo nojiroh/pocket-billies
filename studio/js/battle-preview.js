@@ -26,7 +26,7 @@ import {
 } from '../../game/js/battle-stage.js';
 import { mapHub, walkView } from '../../game/js/walk-view.js';
 import { mountWalkView } from '../../game/js/walk-view-gl.js';
-import { battleGLAttach, battleGLStop } from '../../game/js/battle-3d.js';
+import { battle3dAttach, battle3dStop } from '../../game/js/battle-3d.js';
 import { escapeHtml } from './game-stand-ins.js';
 import {
   ACTIONS,
@@ -229,8 +229,8 @@ async function startBattlePreview() {
   if (!$('#cvWorld')) return;
   battleStage.lockQ = true;
   battleStage.q.lvl = 0;
-  if (battleStage.gl && typeof battleGLStop === 'function') {
-    battleGLStop();
+  if (battleStage.gl && typeof battle3dStop === 'function') {
+    battle3dStop();
     battleStage.gl = false;
   }
   battleStageStart(battlePreview.area);
@@ -238,7 +238,7 @@ async function startBattlePreview() {
     battlePreview.stage !== 'backdrop' &&
     studioState.D.scenes &&
     studioState.D.scenes[battlePreview.stage] &&
-    typeof battleGLAttach === 'function'
+    typeof battle3dAttach === 'function'
   ) {
     await mountBattlePreviewMap();
   }
@@ -274,7 +274,7 @@ async function mountBattlePreviewMap() {
   const hb = mapHub(sc);
   walkView.pl.x = hb[0];
   walkView.pl.z = hb[1];
-  battleStage.gl = battleGLAttach({ detach: true });
+  battleStage.gl = battle3dAttach({ detach: true });
   document.body.classList.toggle('battle-3d', !!battleStage.gl);
   battleStageResize();
   drawForegrounds();

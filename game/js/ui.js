@@ -140,7 +140,7 @@ import {
   seamlessWorld,
   shiftWalkView,
 } from './seamless-world.js';
-import { battleGLLayout, battleGLWanted } from './battle-3d.js';
+import { battle3dLayout, battle3dWanted } from './battle-3d.js';
 import {
   CATCH_RULES,
   applyItem,
@@ -1681,11 +1681,11 @@ function walkSceneSync() {
         host = $('#camWorld');
       if (cv && !cv.isConnected && host) {
         host.insertBefore(cv, host.firstChild);
-        if (typeof battleGLLayout === 'function') battleGLLayout();
+        if (typeof battle3dLayout === 'function') battle3dLayout();
       }
       return;
     }
-    if (typeof battleGLWanted === 'function' && battleGLWanted()) return;
+    if (typeof battle3dWanted === 'function' && battle3dWanted()) return;
     const cv = $('#dio');
     if (cv) cv.hidden = true;
     if (walkView.cv) stopWalkView();
