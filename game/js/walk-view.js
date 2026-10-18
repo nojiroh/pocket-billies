@@ -33,6 +33,7 @@ import {
   mapFiles,
   mapsOfView,
   needMaps,
+  propModelArtPaths,
   provide,
   pwPaint,
   pwSettle,
@@ -44,7 +45,6 @@ import {
   smooth01,
   standingHeightAt,
   talkFolk,
-  voxPaths,
   walkMode,
 } from './hooks.js';
 import { clamp } from './util.js';
@@ -610,7 +610,7 @@ export function mapArtPaths(sc) {
   }
   if (sc.far) L.add(`scene/far/${sc.far}.png`);
   if (typeof lifePaths === 'function') for (const q of lifePaths(sc)) L.add(q);
-  if (typeof voxPaths === 'function') for (const q of voxPaths(sc, C)) L.add(q);
+  if (typeof propModelArtPaths === 'function') for (const q of propModelArtPaths(sc, C)) L.add(q);
   return [...L];
 }
 export async function prepareMap(id) {

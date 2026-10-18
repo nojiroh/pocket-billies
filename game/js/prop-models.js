@@ -26,40 +26,46 @@ import { BLD_SH, bldArt, bldAtlas } from './buildings.js';
 /* eslint-disable no-func-assign */
 expose({
   LOW_POLY_TEXTURE_CELLS: [() => LOW_POLY_TEXTURE_CELLS],
+  PROP_MODEL_SHADERS: [() => PROP_MODEL_SHADERS],
+  PROP_MODEL_SHAPES: [() => PROP_MODEL_SHAPES],
+  PROP_MODEL_TEXTURES: [() => PROP_MODEL_TEXTURES],
+  SPIN_GLSL: [() => SPIN_GLSL],
   VOXEL_KEY_OFFSET: [() => VOXEL_KEY_OFFSET],
   VOXEL_KEY_SPAN: [() => VOXEL_KEY_SPAN],
   VOXEL_TEXTURE_GRAIN: [() => VOXEL_TEXTURE_GRAIN],
-  VOX_GLSL_SPIN: [() => VOX_GLSL_SPIN],
-  VOX_SH: [() => VOX_SH],
-  VOX_SHAPES: [() => VOX_SHAPES],
-  VOX_TEXTURES: [() => VOX_TEXTURES],
   addRawVoxels: [() => addRawVoxels, v => (addRawVoxels = v)],
   decodeRawVoxels: [() => decodeRawVoxels, v => (decodeRawVoxels = v)],
   drawLowPolyModels: [() => drawLowPolyModels, v => (drawLowPolyModels = v)],
+  drawPropModelMesh: [() => drawPropModelMesh, v => (drawPropModelMesh = v)],
+  drawPropModelShadows: [
+    () => drawPropModelShadows,
+    v => ((drawPropModelShadows = v), provide({ drawPropModelShadows })),
+  ],
+  drawPropModels: [() => drawPropModels, v => ((drawPropModels = v), provide({ drawPropModels }))],
   drawSpinningParts: [() => drawSpinningParts, v => (drawSpinningParts = v)],
+  flushPropModelMeshes: [
+    () => flushPropModelMeshes,
+    v => ((flushPropModelMeshes = v), provide({ flushPropModelMeshes })),
+  ],
   greedyVoxelMesh: [() => greedyVoxelMesh, v => (greedyVoxelMesh = v)],
+  invalidatePropModel: [() => invalidatePropModel, v => (invalidatePropModel = v)],
+  loadPropModelRecipe: [() => loadPropModelRecipe, v => (loadPropModelRecipe = v)],
   lowPolyFragmentShader: [() => lowPolyFragmentShader, v => (lowPolyFragmentShader = v)],
   lowPolyFromRecipe: [() => lowPolyFromRecipe, v => (lowPolyFromRecipe = v)],
   lowPolyOn: [() => lowPolyOn, v => (lowPolyOn = v)],
   lowPolyVertexShader: [() => lowPolyVertexShader],
+  mooredBob: [() => mooredBob, v => (mooredBob = v)],
   prebuiltModelMesh: [() => prebuiltModelMesh, v => (prebuiltModelMesh = v)],
+  propModelArtPaths: [() => propModelArtPaths, v => ((propModelArtPaths = v), provide({ propModelArtPaths }))],
+  propModelGuard: [() => propModelGuard, v => (propModelGuard = v)],
+  propModelImageItems: [() => propModelImageItems, v => ((propModelImageItems = v), provide({ propModelImageItems }))],
+  propModelMesh: [() => propModelMesh, v => (propModelMesh = v)],
+  propModelShaders: [() => propModelShaders, v => ((propModelShaders = v), provide({ propModelShaders }))],
   propModelState: [() => propModelState],
+  propModelsOn: [() => propModelsOn, v => (propModelsOn = v)],
+  setPropModelUniforms: [() => setPropModelUniforms, v => (setPropModelUniforms = v)],
+  tagPropModel: [() => tagPropModel, v => ((tagPropModel = v), provide({ tagPropModel }))],
   uploadLowPolyMesh: [() => uploadLowPolyMesh, v => (uploadLowPolyMesh = v)],
-  voxBob: [() => voxBob, v => (voxBob = v)],
-  voxDraw: [() => voxDraw, v => ((voxDraw = v), provide({ voxDraw }))],
-  voxEl: [() => voxEl, v => (voxEl = v)],
-  voxFlush: [() => voxFlush, v => ((voxFlush = v), provide({ voxFlush }))],
-  voxGuard: [() => voxGuard, v => (voxGuard = v)],
-  voxImageItems: [() => voxImageItems, v => ((voxImageItems = v), provide({ voxImageItems }))],
-  voxInvalidate: [() => voxInvalidate, v => (voxInvalidate = v)],
-  voxMeshFor: [() => voxMeshFor, v => (voxMeshFor = v)],
-  voxOn: [() => voxOn, v => (voxOn = v)],
-  voxPaths: [() => voxPaths, v => ((voxPaths = v), provide({ voxPaths }))],
-  voxRecipe: [() => voxRecipe, v => (voxRecipe = v)],
-  voxShaders: [() => voxShaders, v => ((voxShaders = v), provide({ voxShaders }))],
-  voxShadow: [() => voxShadow, v => ((voxShadow = v), provide({ voxShadow }))],
-  voxTag: [() => voxTag, v => ((voxTag = v), provide({ voxTag }))],
-  voxU: [() => voxU, v => (voxU = v)],
   voxelFromKey: [() => voxelFromKey, v => (voxelFromKey = v)],
   voxelHash: [() => voxelHash, v => (voxelHash = v)],
   voxelKey: [() => voxelKey, v => (voxelKey = v)],
@@ -67,7 +73,15 @@ expose({
   voxelise: [() => voxelise, v => (voxelise = v)],
 });
 /* eslint-enable no-func-assign */
-provide({ voxDraw, voxFlush, voxImageItems, voxPaths, voxShaders, voxShadow, voxTag });
+provide({
+  drawPropModelShadows,
+  drawPropModels,
+  flushPropModelMeshes,
+  propModelArtPaths,
+  propModelImageItems,
+  propModelShaders,
+  tagPropModel,
+});
 /* to-module: end */
 export const propModelState = {
   recipes: new Map(),
@@ -92,7 +106,7 @@ const VOXEL_TEXTURE_GRAIN = {
   stripes: 0,
   rings: 0,
 };
-export const VOX_TEXTURES = [
+export const PROP_MODEL_TEXTURES = [
   ['plain', 'Plain'],
   ['grain', 'Grain'],
   ['wood', 'Wood'],
@@ -105,17 +119,17 @@ export const VOX_TEXTURES = [
   ['stripes', 'Stripes'],
   ['rings', 'Rings'],
 ];
-const VOX_SHAPES = [
+const PROP_MODEL_SHAPES = [
   ['box', 'Box'],
   ['cyl', 'Cylinder'],
   ['sphere', 'Sphere'],
   ['cone', 'Cone'],
   ['barrel', 'Barrel'],
 ];
-function voxOn() {
+function propModelsOn() {
   return typeof eng === 'function' && (eng('world', 'voxelProps') ?? true) && !propModelState.fail;
 }
-function voxGuard(fn) {
+function propModelGuard(fn) {
   if (propModelState.fail) return;
   try {
     return fn();
@@ -126,7 +140,7 @@ function voxGuard(fn) {
   }
 }
 /* the recipe of a prop: fetched once (inline in a single-file build), null while it loads */
-export function voxRecipe(path) {
+export function loadPropModelRecipe(path) {
   if (propModelState.recipes.has(path)) return propModelState.recipes.get(path);
   propModelState.recipes.set(path, null);
   const url = typeof artURL === 'function' ? artURL(path) : 'art/' + path;
@@ -525,7 +539,7 @@ function greedyVoxelMesh(V, R) {
   };
 }
 /* the mesh of a recipe on the card (built once; the Studio asks for a rebuild after an edit) */
-function voxMeshFor(path, rec) {
+function propModelMesh(path, rec) {
   let m = propModelState.meshes.get(path);
   if (m !== undefined) return m;
   if (rec.kind === 'mesh') {
@@ -625,15 +639,15 @@ function drawSpinningParts(p, m) {
   for (const s of m.spins) {
     gl.uniform4f(p.U.uSpin, s.a[0], s.a[1], s.a[2], t * s.rps * Math.PI * 2);
     gl.uniform3fv(p.U.uSpinC, s.c);
-    voxEl(s);
+    drawPropModelMesh(s);
   }
   gl.uniform4f(p.U.uSpin, 1, 0, 0, 0);
   gl.uniform3f(p.U.uSpinC, 0, 0, 0);
 }
-function voxFlush() {
-  for (const k of [...propModelState.meshes.keys()]) voxInvalidate(k, true);
+function flushPropModelMeshes() {
+  for (const k of [...propModelState.meshes.keys()]) invalidatePropModel(k, true);
 }
-export function voxInvalidate(path, keep) {
+export function invalidatePropModel(path, keep) {
   const m = propModelState.meshes.get(path);
   if (m && m.vao && typeof EGL !== 'undefined' && EGL.gl) {
     const gl = EGL.gl;
@@ -1036,7 +1050,7 @@ function lowPolyOn(rec) {
     !(rec.layers || []).some(l => l.k === 'raw' && !l.hide)
   );
 }
-function voxEl(m) {
+function drawPropModelMesh(m) {
   const gl = EGL.gl;
   gl.bindVertexArray(m.vao);
   if (m.el) gl.drawElements(gl.TRIANGLES, m.n, m.u32 ? gl.UNSIGNED_INT : gl.UNSIGNED_SHORT, 0);
@@ -1045,7 +1059,7 @@ function voxEl(m) {
 /* the model's program: its own vertex shader (placed, scaled, turned and spun like a voxel prop), the buildings' look */
 const lowPolyVertexShader = () => `#version 300 es
 precision highp float;layout(location=0) in vec3 mPos;layout(location=1) in vec3 mNrm;layout(location=2) in vec2 mUV;layout(location=3) in vec3 mTex;layout(location=4) in vec3 mCol;
-uniform mat4 uVP;uniform vec3 uBase,uSpinC;uniform vec4 uSpin;uniform float uS,uRot,uFlip;out vec3 vW;out vec3 vN;out vec2 vUV;out vec3 vTex;out vec3 vCol;${EGL_GLSL_COMMON}${VOX_GLSL_SPIN}
+uniform mat4 uVP;uniform vec3 uBase,uSpinC;uniform vec4 uSpin;uniform float uS,uRot,uFlip;out vec3 vW;out vec3 vN;out vec2 vUV;out vec3 vTex;out vec3 vCol;${EGL_GLSL_COMMON}${SPIN_GLSL}
 void main(){float cr=cos(uRot),sr=sin(uRot);vec3 q0=voxSpin(mPos/256.-uSpinC)+uSpinC,n0=voxSpin(mNrm);vec3 p=vec3(q0.x*uFlip,q0.y,q0.z)*uS;p=vec3(p.x*cr-p.z*sr,p.y,p.x*sr+p.z*cr);vec3 n=vec3(n0.x*uFlip,n0.y,n0.z);n=vec3(n.x*cr-n.z*sr,n.y,n.x*sr+n.z*cr);
  vec3 w=uBase+p;w.y+=curveY(uBase.xz);vW=w;vN=n;vUV=mUV/64.;vTex=mTex;vCol=mCol;gl_Position=uVP*vec4(w,1.);}`;
 /* the model's light: the buildings' look and textures, with the props' cel shading (three tones of sun, as the voxel
@@ -1060,15 +1074,16 @@ function lowPolyFragmentShader() {
 }
 /* the models among the items, drawn after the voxel props: L is [item, mesh] */
 /* alpha 0.4: the props' shaders with the low-poly model's, for compiling ahead when the 3D view starts (walk-view-gl.js walkGlContext) */
-function voxShaders() {
-  if (!VOX_SH.mdl && typeof BLD_SH !== 'undefined') VOX_SH.mdl = [lowPolyVertexShader(), lowPolyFragmentShader()];
-  return VOX_SH;
+function propModelShaders() {
+  if (!PROP_MODEL_SHADERS.mdl && typeof BLD_SH !== 'undefined')
+    PROP_MODEL_SHADERS.mdl = [lowPolyVertexShader(), lowPolyFragmentShader()];
+  return PROP_MODEL_SHADERS;
 }
 function drawLowPolyModels(C, X, L) {
   if (!L.length || typeof BLD_SH === 'undefined' || typeof bldArt !== 'function') return;
   const gl = EGL.gl;
-  voxShaders();
-  eglPrograms(VOX_SH);
+  propModelShaders();
+  eglPrograms(PROP_MODEL_SHADERS);
   const A = bldArt(),
     det = eglImg(artImage(A.detail), { noNormal: true });
   if (!det) return;
@@ -1087,11 +1102,11 @@ function drawLowPolyModels(C, X, L) {
     gl.uniform1f(p.U.uBaseY, it.y);
     if (p.U.uCel) gl.uniform1f(p.U.uCel, it.vox && it.vox.cel != null ? it.vox.cel : 0.75);
     if (typeof setPropLookUniforms === 'function') setPropLookUniforms(p.U, it.lk, [it.x, it.y, it.z]);
-    voxU(p, it);
+    setPropModelUniforms(p, it);
     gl.uniform4f(p.U.uSpin, 1, 0, 0, 0);
     gl.uniform3f(p.U.uSpinC, 0, 0, 0);
-    voxEl(m);
-    for (const q of m.more || []) voxEl(q);
+    drawPropModelMesh(m);
+    for (const q of m.more || []) drawPropModelMesh(q);
     drawSpinningParts(p, m);
     propModelState.drawn++;
   }
@@ -1099,11 +1114,11 @@ function drawLowPolyModels(C, X, L) {
 }
 /* alpha 0.4: a part that turns (a propeller): its own mesh, turned uSpin.w radians about the axis uSpin.xyz (a unit
    vector, up as y) through its pivot uSpinC (the model's metres, up as y) */
-const VOX_GLSL_SPIN = `vec3 voxSpin(vec3 d){float a=uSpin.w;if(a==0.)return d;vec3 k=uSpin.xyz;float c=cos(a),s=sin(a);return d*c+cross(k,d)*s+k*dot(k,d)*(1.-c);}`;
-const VOX_SH = {
+const SPIN_GLSL = `vec3 voxSpin(vec3 d){float a=uSpin.w;if(a==0.)return d;vec3 k=uSpin.xyz;float c=cos(a),s=sin(a);return d*c+cross(k,d)*s+k*dot(k,d)*(1.-c);}`;
+const PROP_MODEL_SHADERS = {
   vox: [
     `#version 300 es
-precision highp float;layout(location=0) in vec3 qPos;layout(location=1) in vec3 qNrm;layout(location=2) in vec3 qCol;uniform mat4 uVP;uniform vec3 uBase,uSpinC;uniform vec4 uSpin;uniform float uS,uRot,uFlip,uQ;${EGL_GLSL_COMMON}out vec3 vW;out vec3 vN;out vec3 vC;${VOX_GLSL_SPIN}
+precision highp float;layout(location=0) in vec3 qPos;layout(location=1) in vec3 qNrm;layout(location=2) in vec3 qCol;uniform mat4 uVP;uniform vec3 uBase,uSpinC;uniform vec4 uSpin;uniform float uS,uRot,uFlip,uQ;${EGL_GLSL_COMMON}out vec3 vW;out vec3 vN;out vec3 vC;${SPIN_GLSL}
 void main(){float cr=cos(uRot),sr=sin(uRot);vec3 q0=voxSpin(qPos*uQ-uSpinC)+uSpinC,n0=voxSpin(qNrm);vec3 p=vec3(q0.x*uFlip,q0.y,q0.z)*uS;p=vec3(p.x*cr-p.z*sr,p.y,p.x*sr+p.z*cr);vec3 n=vec3(n0.x*uFlip,n0.y,n0.z);n=vec3(n.x*cr-n.z*sr,n.y,n.x*sr+n.z*cr);
  vec3 w=uBase+p;w.y+=curveY(uBase.xz);vW=w;vN=n;vC=qCol;gl_Position=uVP*vec4(w,1.);}`,
     `#version 300 es
@@ -1117,27 +1132,28 @@ void main(){if(uFade<.99&&bay(gl_FragCoord.xy)>uFade)discard;vec3 n=normalize(vN
   ],
   voxS: [
     `#version 300 es
-precision highp float;layout(location=0) in vec3 qPos;layout(location=1) in vec3 qNrm;layout(location=2) in vec3 qCol;uniform mat4 uVP;uniform vec3 uBase,uSpinC;uniform vec4 uSpin;uniform float uS,uRot,uFlip,uQ;${EGL_GLSL_COMMON}${VOX_GLSL_SPIN}
+precision highp float;layout(location=0) in vec3 qPos;layout(location=1) in vec3 qNrm;layout(location=2) in vec3 qCol;uniform mat4 uVP;uniform vec3 uBase,uSpinC;uniform vec4 uSpin;uniform float uS,uRot,uFlip,uQ;${EGL_GLSL_COMMON}${SPIN_GLSL}
 void main(){float cr=cos(uRot),sr=sin(uRot);vec3 q0=voxSpin(qPos*uQ-uSpinC)+uSpinC;vec3 p=vec3(q0.x*uFlip,q0.y,q0.z)*uS;p=vec3(p.x*cr-p.z*sr,p.y,p.x*sr+p.z*cr);vec3 w=uBase+p;w.y+=curveY(uBase.xz);gl_Position=uVP*vec4(w,1.);}`,
     `#version 300 es
 precision highp float;out vec4 o;void main(){o=vec4(1.);}`,
   ],
 };
 /* tag an item that draws as voxels (gatherFrameItems calls this): the sprite and the solid-prop body stand aside */
-function voxTag(it) {
-  if (!voxOn() || it.k !== 'prop' || it.far || it.layer || !it.M || !it.M.vox || (it.p && it.p.vox === 'card')) return;
+function tagPropModel(it) {
+  if (!propModelsOn() || it.k !== 'prop' || it.far || it.layer || !it.M || !it.M.vox || (it.p && it.p.vox === 'card'))
+    return;
   const spec = it.M.vox;
   let rec, path;
   if (typeof spec === 'object') {
     rec = spec;
     path = 'inline:' + it.p.k + '#' + (it.M.voxV || 0);
   } else {
-    rec = voxRecipe(spec);
+    rec = loadPropModelRecipe(spec);
     path = spec;
   }
   const R = voxelResolution() + (eng('world', 'voxelLowPoly') ? 1000 : 0);
   if (propModelState.res !== R) {
-    if (propModelState.res) voxFlush();
+    if (propModelState.res) flushPropModelMeshes();
     propModelState.res = R;
   }
   /* a few new meshes a frame (about 12 ms): the rest draw as their pictures a frame or two longer */
@@ -1149,7 +1165,7 @@ function voxTag(it) {
     }
     if (propModelState.bt > 12) return;
     const t0 = performance.now();
-    voxGuard(() => voxMeshFor(path, rec));
+    propModelGuard(() => propModelMesh(path, rec));
     propModelState.bt += performance.now() - t0;
   }
   /* only a recipe that makes a solid stands in for the picture: while it loads, or if it is empty or failed, the picture draws */
@@ -1159,12 +1175,12 @@ function voxTag(it) {
       im = A && typeof artImage === 'function' ? artImage(A.detail) : null;
     if (!im || !(im.naturalWidth || im.width)) return;
   }
-  if (!voxGuard(() => voxMeshFor(path, rec))) return;
+  if (!propModelGuard(() => propModelMesh(path, rec))) return;
   it.vox = rec;
   it.voxPath = path;
 }
 /* picture layers of a voxel prop as sprite items of their own (set in the model, metres from its base) */
-function voxImageItems(it, out) {
+function propModelImageItems(it, out) {
   const rec = it.vox;
   if (!rec) return;
   const s = it.p.s || 1,
@@ -1211,7 +1227,7 @@ function voxImageItems(it, out) {
 }
 /* alpha 0.4.1: a moored airship (catalogue bob: metres) rides the air: it rises and settles, a little more in a stronger
    wind, and swings a few degrees round its mast (it turns about its base point, the mast's foot) */
-function voxBob(it) {
+function mooredBob(it) {
   const b = it.M && it.M.bob;
   if (!b || (typeof RM !== 'undefined' && RM)) return null;
   const t = (walkView.t || 0) / 1000,
@@ -1225,27 +1241,27 @@ function voxBob(it) {
     Math.sin(t * 0.29 + ph) * 0.03 * (1 + w * 0.4),
   ];
 }
-function voxU(p, it) {
+function setPropModelUniforms(p, it) {
   const gl = EGL.gl,
     U = p.U,
     s = (it.p.s || 1) * (it.lk ? it.lk.size : 1),
-    bo = voxBob(it);
+    bo = mooredBob(it);
   gl.uniform3f(U.uBase, it.x, it.y + (bo ? bo[0] : 0), it.z);
   gl.uniform1f(U.uS, s);
   gl.uniform1f(U.uRot, (it.lk && it.lk.rot ? it.lk.rot * 0.6 : 0) + (bo ? bo[1] : 0));
   gl.uniform1f(U.uFlip, it.flip || 1);
 }
-function voxDraw(C, items, X, hits, labels, PPU) {
+function drawPropModels(C, items, X, hits, labels, PPU) {
   propModelState.drawn = 0;
-  if (!voxOn()) return;
-  voxGuard(() => {
+  if (!propModelsOn()) return;
+  propModelGuard(() => {
     const gl = EGL.gl;
-    eglPrograms(VOX_SH);
+    eglPrograms(PROP_MODEL_SHADERS);
     let p = null;
     const ML = [];
     for (const it of items) {
       if (!it.vox || it.vis === false) continue;
-      const m = voxMeshFor(it.voxPath, it.vox);
+      const m = propModelMesh(it.voxPath, it.vox);
       if (!m) continue;
       if (m.model) {
         ML.push([it, m]);
@@ -1261,11 +1277,11 @@ function voxDraw(C, items, X, hits, labels, PPU) {
       gl.uniform3f(p.U.uBaseP, it.x, it.y, it.z);
       gl.uniform1f(p.U.uFade, it.fade ?? 1);
       gl.uniform1f(p.U.uEmit, it.glow ? it.glow : 0);
-      voxU(p, it);
+      setPropModelUniforms(p, it);
       gl.uniform1f(p.U.uQ, m.q || 1);
       gl.uniform4f(p.U.uSpin, 1, 0, 0, 0);
       gl.uniform3f(p.U.uSpinC, 0, 0, 0);
-      voxEl(m);
+      drawPropModelMesh(m);
       drawSpinningParts(p, m);
       propModelState.drawn++;
       if (hits && !it.far) addHitTarget(it, C, hits, labels, PPU);
@@ -1275,16 +1291,16 @@ function voxDraw(C, items, X, hits, labels, PPU) {
     if (hits) for (const [it] of ML) if (!it.far) addHitTarget(it, C, hits, labels, PPU);
   });
 }
-function voxShadow(SH, items) {
-  if (!voxOn()) return;
-  voxGuard(() => {
+function drawPropModelShadows(SH, items) {
+  if (!propModelsOn()) return;
+  propModelGuard(() => {
     const gl = EGL.gl;
-    eglPrograms(VOX_SH);
+    eglPrograms(PROP_MODEL_SHADERS);
     let p = null;
     const ca = typeof worldCurveArgs === 'function' ? worldCurveArgs() : [0, 0, 0, 1e9];
     for (const it of items) {
       if (!it.vox) continue;
-      const m = voxMeshFor(it.voxPath, it.vox);
+      const m = propModelMesh(it.voxPath, it.vox);
       if (!m) continue;
       if (!p) {
         p = EGL.P.voxS;
@@ -1293,19 +1309,19 @@ function voxShadow(SH, items) {
         gl.uniform3f(p.U.uCurve, ca[0], ca[1], ca[2]);
         gl.uniform1f(p.U.uCurveD0, ca[3]);
       }
-      voxU(p, it);
+      setPropModelUniforms(p, it);
       gl.uniform1f(p.U.uQ, m.q || 1);
       gl.uniform4f(p.U.uSpin, 1, 0, 0, 0);
       gl.uniform3f(p.U.uSpinC, 0, 0, 0);
-      voxEl(m);
-      for (const q of m.more || []) voxEl(q);
+      drawPropModelMesh(m);
+      for (const q of m.more || []) drawPropModelMesh(q);
       drawSpinningParts(p, m);
     }
     gl.bindVertexArray(null);
   });
 }
 /* art the scene needs for its voxel props' picture layers (mapArtPaths asks) */
-function voxPaths(sc, C) {
+function propModelArtPaths(sc, C) {
   const L = [];
   let any = false;
   for (const p of sc.props || (sc._lite && sc._lite.props) || []) {

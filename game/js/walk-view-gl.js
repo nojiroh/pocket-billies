@@ -34,6 +34,9 @@ import {
   buddyItems,
   clueDraw,
   companionItems,
+  drawPropModelShadows,
+  drawPropModels,
+  flushPropModelMeshes,
   frWorldItems,
   lifeSprites,
   lifeStep,
@@ -42,6 +45,8 @@ import {
   p3dLod,
   p3dShadow,
   p3dTag,
+  propModelImageItems,
+  propModelShaders,
   provide,
   pwAll,
   pwOn,
@@ -53,12 +58,7 @@ import {
   stampDraw,
   strDraw,
   strShadow,
-  voxDraw,
-  voxFlush,
-  voxImageItems,
-  voxShaders,
-  voxShadow,
-  voxTag,
+  tagPropModel,
   warmWorldBillies,
   wildBillyItem,
   worldBillies,
@@ -813,7 +813,7 @@ export function walkGlContext(cv) {
     for (const d of [
       typeof BLD_SH !== 'undefined' && BLD_SH,
       typeof P3D_SH !== 'undefined' && P3D_SH,
-      typeof voxShaders === 'function' && voxShaders(),
+      typeof propModelShaders === 'function' && propModelShaders(),
     ])
       if (d)
         eglPrecompile(
@@ -3704,7 +3704,7 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
   if (walkRenderer.grass && !D.noGrass) drawGrass(C, X);
   drawSprites(C, items, X, hits, labels, PPU);
   if (typeof p3dDraw === 'function') p3dDraw(C, items, X, hits, labels, PPU);
-  if (typeof voxDraw === 'function') voxDraw(C, items, X, null, null, PPU);
+  if (typeof drawPropModels === 'function') drawPropModels(C, items, X, null, null, PPU);
   drawBoxFaces(C, items, X);
   if (typeof bldDraw === 'function') bldDraw(C, X, items, walkRenderer.bfade);
   if (typeof strDraw === 'function') strDraw(C, X);
@@ -3857,7 +3857,7 @@ export function rebuildFromSettings() {
   walkView.gkey = '';
   if (typeof GROUND_CACHE !== 'undefined') GROUND_CACHE.clear();
   if (typeof P3D !== 'undefined' && P3D.meshes) P3D.meshes = new WeakMap();
-  if (typeof voxFlush === 'function') voxFlush();
+  if (typeof flushPropModelMeshes === 'function') flushPropModelMeshes();
 }
 function swapMapCache(oldKey, key) {
   walkRenderer.swapT = performance.now();
@@ -4648,10 +4648,10 @@ export function gatherFrameItems(st, C, PPU, C0) {
       }
     }
     /* v43: a prop with a voxel recipe draws as a solid (prop-models.js); its picture layers come along as sprites */
-    if (!far && M.vox && typeof voxTag === 'function') {
+    if (!far && M.vox && typeof tagPropModel === 'function') {
       const vi = out[out.length - 1];
-      voxTag(vi);
-      if (vi.vox) voxImageItems(vi, out);
+      tagPropModel(vi);
+      if (vi.vox) propModelImageItems(vi, out);
     }
     /* v43: a flag pole is rigid; its cloth is a separate picture (the town's flag) draped from the top and waved by the wind */
     if (!far && M.flag) {
@@ -5307,7 +5307,7 @@ export function shadowPass(items0, sun, C) {
   if (typeof bldShadow === 'function') bldShadow(SH, items);
   if (typeof strShadow === 'function') strShadow(SH);
   if (typeof p3dShadow === 'function') p3dShadow(SH, items);
-  if (typeof voxShadow === 'function') voxShadow(SH, items);
+  if (typeof drawPropModelShadows === 'function') drawPropModelShadows(SH, items);
   eglShadowEnd();
   SH.far = far;
   return SH;
@@ -5351,7 +5351,7 @@ function lampShadowMaps(items, X, dark) {
     drawShadowSprites(SH, near, null, ca, l.p);
     if (typeof bldShadow === 'function') bldShadow(SH, near);
     if (typeof p3dShadow === 'function') p3dShadow(SH, near);
-    if (typeof voxShadow === 'function') voxShadow(SH, near);
+    if (typeof drawPropModelShadows === 'function') drawPropModelShadows(SH, near);
     eglShadowEnd();
     X.lampSh.push(SH);
   });
@@ -5553,7 +5553,7 @@ function fittedShadowPass(items0, sun, C) {
     sprites(stat);
     if (typeof bldShadow === 'function') bldShadow(SH, stat);
     if (typeof strShadow === 'function') strShadow(SH);
-    if (typeof voxShadow === 'function') voxShadow(SH, stat);
+    if (typeof drawPropModelShadows === 'function') drawPropModelShadows(SH, stat);
     if (cache) {
       const S2 = eglTarget('shadowS', res, res, { depthOnly: true });
       gl.bindFramebuffer(gl.READ_FRAMEBUFFER, SF.f);
@@ -5568,7 +5568,7 @@ function fittedShadowPass(items0, sun, C) {
   if (cache) {
     sprites(dyn);
     if (typeof bldShadow === 'function') bldShadow(SH, dyn);
-    if (typeof voxShadow === 'function') voxShadow(SH, dyn);
+    if (typeof drawPropModelShadows === 'function') drawPropModelShadows(SH, dyn);
   }
   if (typeof p3dShadow === 'function') p3dShadow(SH, items);
   eglShadowEnd();

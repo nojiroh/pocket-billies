@@ -11,7 +11,7 @@ import { expose } from '../../game/js/test-globals.js';
 import { provide } from '../../game/js/hooks.js';
 import { cnv } from '../../game/js/art.js';
 import { artImage } from '../../game/js/walk-view.js';
-import { VOX_TEXTURES, voxInvalidate, voxRecipe } from '../../game/js/prop-models.js';
+import { PROP_MODEL_TEXTURES, invalidatePropModel, loadPropModelRecipe } from '../../game/js/prop-models.js';
 import { esc } from './game-stand-ins.js';
 import {
   ACTS,
@@ -58,7 +58,7 @@ const VXE_KINDS = [
 function vxeRec(M) {
   if (!M || !M.vox) return null;
   if (typeof M.vox === 'object') return M.vox;
-  const r = typeof voxRecipe === 'function' ? voxRecipe(M.vox) : null;
+  const r = typeof loadPropModelRecipe === 'function' ? loadPropModelRecipe(M.vox) : null;
   return r;
 }
 /* the recipe is edited in place: a file-based one is pulled into the catalogue entry first */
@@ -73,7 +73,7 @@ function vxeOwn(M) {
 }
 function vxeBump(M) {
   M.voxV = (M.voxV || 0) + 1;
-  if (typeof voxInvalidate === 'function') voxInvalidate('inline:' + SCN.ped + '#' + (M.voxV - 1));
+  if (typeof invalidatePropModel === 'function') invalidatePropModel('inline:' + SCN.ped + '#' + (M.voxV - 1));
   changed();
   commit(true);
 }
@@ -97,7 +97,7 @@ function pedVoxHTML(k) {
   if (typeof M.vox === 'string') vxeOwn(M); /* edited in the catalogue entry from here on */
   const L = rec.layers || [],
     names = Object.fromEntries(VXE_KINDS),
-    tex = typeof VOX_TEXTURES !== 'undefined' ? VOX_TEXTURES : [['plain', 'Plain']];
+    tex = typeof PROP_MODEL_TEXTURES !== 'undefined' ? PROP_MODEL_TEXTURES : [['plain', 'Plain']];
   const rows = L.map((l, i) => {
     const p = `${b}.layers.${i}`,
       on = VXE.sel === i,
@@ -392,7 +392,7 @@ document.addEventListener('input', ev => {
   clearTimeout(VXE.t);
   VXE.t = setTimeout(() => {
     M.voxV = (M.voxV || 0) + 1;
-    if (typeof voxInvalidate === 'function') voxInvalidate('inline:' + SCN.ped + '#' + (M.voxV - 1));
+    if (typeof invalidatePropModel === 'function') invalidatePropModel('inline:' + SCN.ped + '#' + (M.voxV - 1));
   }, 60);
 });
 

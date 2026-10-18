@@ -1534,7 +1534,7 @@ const DIAG_PASSES = {
   shadows: ['shadowPass'],
   ground: ['drawGround'],
   grass: ['drawGrass'],
-  props: ['drawSprites', 'p3dDraw', 'voxDraw', 'bldDraw', 'drawBoxFaces', 'strDraw'],
+  props: ['drawSprites', 'p3dDraw', 'drawPropModels', 'bldDraw', 'drawBoxFaces', 'strDraw'],
   water: ['reflectionPass', 'drawWater'],
   effects: ['effectsPass'],
   'final pass': ['eglPost'],
