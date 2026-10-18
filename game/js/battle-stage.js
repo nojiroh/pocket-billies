@@ -51,7 +51,6 @@ expose({
   DOFG: [() => DOFG],
   DOFK: [() => DOFK],
   DRAWL: [() => DRAWL],
-  DUE: [() => DUE],
   EASE: [() => EASE],
   FH: [() => FH],
   FOC: [() => FOC],
@@ -78,10 +77,8 @@ expose({
   TFX: [() => TFX],
   UPP: [() => UPP],
   ZMAX: [() => ZMAX],
-  act: [() => act, v => (act = v)],
   ambient: [() => ambient, v => (ambient = v)],
   artKey: [() => artKey],
-  at: [() => at, v => (at = v)],
   battleStage: [() => battleStage],
   battleStageCatch: [() => battleStageCatch, v => (battleStageCatch = v)],
   battleStageChromaticFlash: [() => battleStageChromaticFlash, v => (battleStageChromaticFlash = v)],
@@ -124,6 +121,7 @@ expose({
   drawShadow: [() => drawShadow, v => (drawShadow = v)],
   drawSide: [() => drawSide, v => (drawSide = v)],
   drawTrainer: [() => drawTrainer, v => (drawTrainer = v)],
+  dueEvents: [() => dueEvents],
   fgDraw: [() => fgDraw, v => (fgDraw = v)],
   floorBuffers: [() => floorBuffers, v => (floorBuffers = v)],
   floorKey: [() => floorKey, v => (floorKey = v)],
@@ -148,7 +146,9 @@ expose({
   propDef: [() => propDef, v => (propDef = v)],
   punch: [() => punch, v => (punch = v)],
   ringFx: [() => ringFx, v => (ringFx = v)],
+  scheduleAt: [() => scheduleAt, v => (scheduleAt = v)],
   selRing: [() => selRing, v => (selRing = v)],
+  setActorAction: [() => setActorAction, v => (setActorAction = v)],
   sideBuf: [() => sideBuf, v => (sideBuf = v)],
   sideCenter: [() => sideCenter, v => (sideCenter = v)],
   sideTop: [() => sideTop, v => (sideTop = v)],
@@ -161,7 +161,7 @@ expose({
   trainerBattleFrame: [() => trainerBattleFrame, v => (trainerBattleFrame = v)],
   trainerMpp: [() => trainerMpp],
   tspr: [() => tspr],
-  tw: [() => tw, v => (tw = v)],
+  tween: [() => tween, v => (tween = v)],
   vBox: [() => vBox, v => (vBox = v)],
 });
 /* eslint-enable no-func-assign */
@@ -555,7 +555,7 @@ export function battleStageStop() {
   battleStage.gl = false;
   document.body.classList.remove('battle-3d');
 }
-function tw(o, p, to, dur, ease = 'out', delay = 0) {
+function tween(o, p, to, dur, ease = 'out', delay = 0) {
   battleStage.tws.push({
     o,
     p,
@@ -566,7 +566,7 @@ function tw(o, p, to, dur, ease = 'out', delay = 0) {
     from: null,
   });
 }
-function at(ms, fn) {
+function scheduleAt(ms, fn) {
   battleStage.evs.push({ t: battleStage.t + ms, fn });
 }
 /* skip to the end of whatever is still playing. Camera, lens and zoom glide to where they were headed instead of cutting there */
@@ -584,13 +584,13 @@ function battleStageFlush() {
     });
   battleStage.tws = [];
   glide.forEach((m, o) => {
-    for (const p in m) tw(o, p, m[p], 170, 'out');
+    for (const p in m) tween(o, p, m[p], 170, 'out');
   });
   const ev = battleStage.evs.sort((a, b) => a.t - b.t);
   battleStage.evs = [];
   ev.forEach(e => e.fn());
 }
-function act(i, k, dur = 1000) {
+function setActorAction(i, k, dur = 1000) {
   battleStage.s[i].act = { k, t0: battleStage.t, dur };
 }
 /* depth of field: focus distance and aperture, eased like a real focus pull */
@@ -610,8 +610,8 @@ export function battleStageFocus(f, now) {
     battleStage.dof.ap = ap;
     return;
   }
-  tw(battleStage.dof, 'zf', F.zf, 380, 'io');
-  tw(battleStage.dof, 'ap', ap, 380, 'io');
+  tween(battleStage.dof, 'zf', F.zf, 380, 'io');
+  tween(battleStage.dof, 'ap', ap, 380, 'io');
 }
 const DOFK = 4.6;
 function blurAt(z) {
@@ -682,7 +682,7 @@ export function sideTop(i) {
   return { x: c.x, y: w.y + (c.y - w.y) * (SIDEOF(i) === 0 ? 1.55 : 1.9), z: c.z };
 }
 /* ---------- frame ---------- */
-const DUE = [];
+const dueEvents = [];
 function battleStageFrame(ts, rawDt) {
   if (!battleStage.on) return;
   const w0 = performance.now();
@@ -709,12 +709,12 @@ function battleStageFrame(ts, rawDt) {
   n = 0;
   for (let i = 0; i < E.length; i++) {
     const e = E[i];
-    if (e.t <= t) DUE.push(e);
+    if (e.t <= t) dueEvents.push(e);
     else E[n++] = e;
   }
   E.length = n;
-  for (let i = 0; i < DUE.length; i++) DUE[i].fn();
-  DUE.length = 0;
+  for (let i = 0; i < dueEvents.length; i++) dueEvents[i].fn();
+  dueEvents.length = 0;
   const s = dt / 1000,
     P = battleStage.parts;
   n = 0;
@@ -1060,27 +1060,27 @@ function camUpdate(dt) {
 const GB = { x: 0, y: 0, z: 0, yaw: 0, hz: 0 };
 function camTo(c, d = 260, e = 'io', delay = 0) {
   if (RM) {
-    at(delay, () => {
+    scheduleAt(delay, () => {
       for (const k in c) if (k in battleStage.cam) battleStage.cam[k] = c[k];
     });
     return;
   }
-  for (const k in c) if (k in battleStage.cam) tw(battleStage.cam, k, c[k], d, e, delay);
+  for (const k in c) if (k in battleStage.cam) tween(battleStage.cam, k, c[k], d, e, delay);
 }
 /* handheld feel for big moves: the wobble fades in fast and settles out */
 function handheld(ms, amt = 1) {
   if (RM) return;
-  tw(battleStage.hand, 'a', amt, 90, 'out');
-  tw(battleStage.hand, 'a', 0, 420, 'io', Math.max(0, ms - 200));
+  tween(battleStage.hand, 'a', amt, 90, 'out');
+  tween(battleStage.hand, 'a', 0, 420, 'io', Math.max(0, ms - 200));
 }
 /* a quick zoom punch (and optional roll kick) from the CSS layer */
 function punch(z, ms = 260, roll = 0) {
   if (RM) return;
-  tw(battleStage.css, 'z', z, 60, 'out');
-  tw(battleStage.css, 'z', 0, ms, 'io', 70);
+  tween(battleStage.css, 'z', z, 60, 'out');
+  tween(battleStage.css, 'z', 0, ms, 'io', 70);
   if (roll) {
-    tw(battleStage.css, 'r', battleStage.css.r + roll, 60, 'out');
-    tw(battleStage.css, 'r', 0, ms + 80, 'io', 70);
+    tween(battleStage.css, 'r', battleStage.css.r + roll, 60, 'out');
+    tween(battleStage.css, 'r', 0, ms + 80, 'io', 70);
   }
 }
 /* ---------- the ground: cast once per camera/focus change ---------- */
@@ -2086,9 +2086,9 @@ function hitFx(ti, an) {
     ts = SIDEOF(ti),
     w = hitWeight(ti, an),
     kb = 4 + w * 9;
-  act(ti, 'hurt', 650);
-  tw(s, 'ox', ts === 1 ? kb : -kb, 60);
-  tw(s, 'ox', 0, 200 + w * 160, 'out', 60);
+  setActorAction(ti, 'hurt', 650);
+  tween(s, 'ox', ts === 1 ? kb : -kb, 60);
+  tween(s, 'ox', 0, 200 + w * 160, 'out', 60);
   if (an.te <= 1 && !an.crit) {
     battleStage.shk = Math.max(battleStage.shk, 1.4 + w * 6);
     hitStop(20 + w * 70);
@@ -2119,7 +2119,7 @@ function hitFx(ti, an) {
 }
 export function camHome(d = 420, delay = 0) {
   camTo(HOMECAM, d, 'io', delay);
-  if (!RM) tw(battleStage.css, 'r', 0, d, 'io', delay);
+  if (!RM) tween(battleStage.css, 'r', 0, d, 'io', delay);
 }
 /* push in toward a side. Under reduced motion the camera stays on the wide shot */
 export const camAt = (i, amt = 0.45, z = 0.14, rr = 0, d = 260, e = 'io') => {
@@ -2136,7 +2136,7 @@ export const camAt = (i, amt = 0.45, z = 0.14, rr = 0, d = 260, e = 'io') => {
   c.x += (dx / L) * dd;
   c.z += (dz / L) * dd;
   camTo(c, d, e);
-  tw(battleStage.css, 'r', rr, d, e);
+  tween(battleStage.css, 'r', rr, d, e);
 };
 function coinArc(from, to, dur, kind, onLand, spin) {
   const C = { kind, x: from.x, y: from.y, z: from.z, show: true, rot: 0, k: 1.6, glow: 0 };
@@ -2148,7 +2148,7 @@ function coinArc(from, to, dur, kind, onLand, spin) {
     C.z = from.z + (to.z - from.z) * k;
     C.y = from.y + (to.y - from.y) * k + Math.sin(k * Math.PI) * 1.6;
     C.rot = k * Math.PI * (spin ? 6 : 3);
-    if (k < 1) at(8, step);
+    if (k < 1) scheduleAt(8, step);
     else {
       C.rot = 0;
       onLand && onLand(C);
@@ -2180,7 +2180,7 @@ export function battleStagePlay(an, ev) {
       battleStage.tr[0] = { who: 'me', show: true, x: 0, a: 1 };
       if (an.alpha) {
         battleStage.shk = 7;
-        at(650, () => {
+        scheduleAt(650, () => {
           battleStageFlash('#5A1030', 0.45, 600);
           battleStage.shk = 9;
           handheld(900, 1.4);
@@ -2212,20 +2212,20 @@ export function battleStagePlay(an, ev) {
         camHome(1150, 600);
       }
       battleStageFocus('foe', true);
-      tw(s1, 'dark', 0, 380, 'lin', 700);
-      at(700, () => {
-        act(1, 'enter', 700);
+      tween(s1, 'dark', 0, 380, 'lin', 700);
+      scheduleAt(700, () => {
+        setActorAction(1, 'enter', 700);
         ringFx(sideCenter(1), '#FFFFFF', 0.1, 0.9);
         groundRing(1, '#FFFFFF', 1.8);
       });
-      at(1250, () => battleStageFocus('wide'));
+      scheduleAt(1250, () => battleStageFocus('wide'));
       return { dur: 1250, hit: 0 };
     }
     case 'trainerIn': {
       battleStage.tr[1] = { who: an.who, show: true, x: 120, a: 1 };
       battleStage.tr[0] = { who: 'me', show: true, x: -120, a: 1 };
-      tw(battleStage.tr[1], 'x', 0, 560, 'out3');
-      tw(battleStage.tr[0], 'x', 0, 560, 'out3');
+      tween(battleStage.tr[1], 'x', 0, 560, 'out3');
+      tween(battleStage.tr[0], 'x', 0, 560, 'out3');
       if (!RM) {
         Object.assign(battleStage.cam, { x: -2.6, y: 1.9, z: -0.8, yaw: 0.5, hz: -6 });
         battleStage.css.r = 0.02;
@@ -2233,8 +2233,8 @@ export function battleStagePlay(an, ev) {
         camHome(1000, 320);
       }
       battleStageFocus('me', true);
-      at(450, () => battleStageFocus('foe'));
-      at(1200, () => battleStageFocus('wide'));
+      scheduleAt(450, () => battleStageFocus('foe'));
+      scheduleAt(1200, () => battleStageFocus('wide'));
       return { dur: 1150, hit: 0 };
     }
     case 'enter': {
@@ -2246,8 +2246,8 @@ export function battleStagePlay(an, ev) {
         T = battleStage.tr[si];
       if (T.show) {
         trainerAct(si, 'throw', 520);
-        tw(T, 'x', si === 0 ? -140 : 140, 320, 'in', 180);
-        at(510, () => {
+        tween(T, 'x', si === 0 ? -140 : 140, 320, 'in', 180);
+        scheduleAt(510, () => {
           T.show = false;
         });
       }
@@ -2266,20 +2266,20 @@ export function battleStagePlay(an, ev) {
         groundRing(i, '#FFFFFF', 2);
         burst(c, 'Dynasty', 10, 2, 1);
         battleStageFlash('#FFFFFF', 0.25, 200);
-        tw(s, 'sc', 1, 300, 'back');
-        tw(s, 'white', 0, 320, 'lin', 120);
-        act(i, 'enter', 700);
+        tween(s, 'sc', 1, 300, 'back');
+        tween(s, 'white', 0, 320, 'lin', 120);
+        setActorAction(i, 'enter', 700);
       });
       camHome(520, 560);
-      at(950, () => battleStageFocus('wide'));
+      scheduleAt(950, () => battleStageFocus('wide'));
       return { dur: 900, hit: 0 };
     }
     case 'recall': {
       const s = battleStage.s[an.si];
-      act(an.si, 'block', 500);
-      tw(s, 'white', 1, 160, 'lin', 120);
-      tw(s, 'sc', 0, 220, 'in', 260);
-      at(500, () => {
+      setActorAction(an.si, 'block', 500);
+      tween(s, 'white', 1, 160, 'lin', 120);
+      tween(s, 'sc', 0, 220, 'in', 260);
+      scheduleAt(500, () => {
         s.show = false;
         s.sc = 1;
         s.white = 0;
@@ -2290,14 +2290,14 @@ export function battleStagePlay(an, ev) {
       const i = an.si,
         s = battleStage.s[i],
         si = SIDEOF(i);
-      act(i, 'faint', 99999);
+      setActorAction(i, 'faint', 99999);
       battleStageFocus(si === 0 ? 'me' : 'foe');
       camAt(i, 0.3, 0.08, si === 0 ? 0.02 : -0.02, 500);
       if (!RM) camTo(PULLCAM, 520, 'io', 480);
-      tw(s, 'oy', 10, 500, 'in', 450);
-      tw(s, 'a', 0, 420, 'in', 560);
-      at(700, () => groundRing(i, '#C8C0E0', 1.6, 500));
-      at(1000, () => {
+      tween(s, 'oy', 10, 500, 'in', 450);
+      tween(s, 'a', 0, 420, 'in', 560);
+      scheduleAt(700, () => groundRing(i, '#C8C0E0', 1.6, 500));
+      scheduleAt(1000, () => {
         s.show = false;
         s.oy = 0;
         s.a = 1;
@@ -2306,7 +2306,7 @@ export function battleStagePlay(an, ev) {
       battleStage.shk = 2.5;
       if (si === 0) buzz(40);
       camHome(650, 1050);
-      at(1100, () => battleStageFocus('wide'));
+      scheduleAt(1100, () => battleStageFocus('wide'));
       return { dur: 1050, hit: 0 };
     }
     case 'move': {
@@ -2330,18 +2330,18 @@ export function battleStagePlay(an, ev) {
         camTo({ x: 0.9 * m, y: 1.35, z: 1.3, yaw: -0.1 * m, hz: -3 }, 420, 'io', 420);
       }
       const ak = an.protect ? 'block' : M.c === 'H' ? 'attack' : M.c === 'S' ? 'cast' : an.self ? 'buff' : 'cast';
-      act(si, ak, ak === 'attack' ? 620 : 800);
+      setActorAction(si, ak, ak === 'attack' ? 620 : 800);
       const toT = (d = 180) => {
         battleStageFocus(SIDEOF(ti) === 0 ? 'me' : 'foe');
         camAt(ti, 0.45, 0.15, SIDEOF(ti) === 1 ? 0.022 : -0.022, d, 'out3');
       };
       if (an.miss) {
         if (M.c === 'H') {
-          tw(me, 'ox', dir * 22, 110);
-          tw(me, 'ox', 0, 160, 'out', 120);
+          tween(me, 'ox', dir * 22, 110);
+          tween(me, 'ox', 0, 160, 'out', 120);
         } else
           for (let i = 0; i < 6; i++)
-            at(i * 45, () =>
+            scheduleAt(i * 45, () =>
               part({
                 x: A.x,
                 y: A.y,
@@ -2355,43 +2355,43 @@ export function battleStagePlay(an, ev) {
               })
             );
         const ts = battleStage.s[ti];
-        at(150, () => {
+        scheduleAt(150, () => {
           toT();
-          tw(ts, 'ox', ts.ox - dir * 18, 100);
-          tw(ts, 'ox', 0, 180, 'out', 160);
+          tween(ts, 'ox', ts.ox - dir * 18, 100);
+          tween(ts, 'ox', 0, 180, 'out', 160);
           if (typeof hudPop === 'function') hudPop(ti, 'Miss', 'miss');
         });
         camHome(420, 560);
-        at(900, () => battleStageFocus('wide'));
+        scheduleAt(900, () => battleStageFocus('wide'));
         return { dur: 760, hit: 999 };
       }
       if (an.protect) {
-        at(140, () => {
+        scheduleAt(140, () => {
           ringFx(A, '#8FD8FF', 0.3, 1.1, 600);
           ringFx(A, '#FFFFFF', 0.1, 0.8, 450);
           groundRing(si, '#8FD8FF', 1.8, 600);
         });
         camHome(400, 500);
-        at(800, () => battleStageFocus('wide'));
+        scheduleAt(800, () => battleStageFocus('wide'));
         return { dur: 700, hit: 0 };
       }
       if (an.blocked) {
-        at(170, () => {
+        scheduleAt(170, () => {
           toT();
           ringFx(T, '#8FD8FF', 0.4, 0.9, 420);
-          act(ti, 'block', 500);
+          setActorAction(ti, 'block', 500);
           if (typeof hudPop === 'function') hudPop(ti, 'Hedged', 'miss');
         });
         camHome(400, 520);
-        at(900, () => battleStageFocus('wide'));
+        scheduleAt(900, () => battleStageFocus('wide'));
         return { dur: 740, hit: 999 };
       }
       if (M.c === 'H') {
-        tw(me, 'ox', dir * 30, 120, 'in', 100);
-        tw(me, 'oy', -4, 120, 'in', 100);
-        tw(me, 'ox', 0, 200, 'out', 240);
-        tw(me, 'oy', 0, 200, 'out', 240);
-        at(120, () => {
+        tween(me, 'ox', dir * 30, 120, 'in', 100);
+        tween(me, 'oy', -4, 120, 'in', 100);
+        tween(me, 'ox', 0, 200, 'out', 240);
+        tween(me, 'oy', 0, 200, 'out', 240);
+        scheduleAt(120, () => {
           for (let i = 0; i < 5; i++)
             part({
               x: A.x,
@@ -2406,23 +2406,23 @@ export function battleStagePlay(an, ev) {
               floor: 1,
             });
         });
-        at(200, () => {
+        scheduleAt(200, () => {
           toT(140);
           if (an.dmg) hitFx(ti, an);
         });
         camHome(460, 620);
-        at(1050, () => battleStageFocus('wide'));
+        scheduleAt(1050, () => battleStageFocus('wide'));
         return { dur: 880, hit: 200 };
       }
       if (M.c === 'S') {
         const n = 9,
           beamy = M.t === 'Electric' || M.t === 'Psychic' || M.t === 'Water';
-        at(140, () => {
+        scheduleAt(140, () => {
           ringFx(A, TC[M.t][0], 0.15, 0.8, 300);
           groundRing(si, TC[M.t][0], 1.4, 420);
         });
         if (beamy)
-          at(200, () =>
+          scheduleAt(200, () =>
             part({
               x: A.x,
               y: A.y,
@@ -2438,7 +2438,7 @@ export function battleStagePlay(an, ev) {
             })
           );
         for (let i = 0; i < n; i++)
-          at(160 + i * 34, () => {
+          scheduleAt(160 + i * 34, () => {
             const v = 1 / 0.32,
               key = tspr(M.t, i);
             part({
@@ -2456,18 +2456,18 @@ export function battleStagePlay(an, ev) {
               glow: GLOWY[key],
             });
           });
-        at(330, () => toT(220));
-        if (an.dmg) at(500, () => hitFx(ti, an));
+        scheduleAt(330, () => toT(220));
+        if (an.dmg) scheduleAt(500, () => hitFx(ti, an));
         camHome(480, 820);
-        at(1250, () => battleStageFocus('wide'));
+        scheduleAt(1250, () => battleStageFocus('wide'));
         return { dur: 1060, hit: 500 };
       }
       const tgt = an.self ? si : ti,
         Pp = an.self ? A : T,
         tk = 1;
-      if (!an.self) at(260, () => toT(240));
+      if (!an.self) scheduleAt(260, () => toT(240));
       for (let i = 0; i < 10; i++)
-        at(200 + i * 48, () => {
+        scheduleAt(200 + i * 48, () => {
           const a = (i / 10) * Math.PI * 2,
             key = tspr(M.t, i);
           part({
@@ -2483,25 +2483,25 @@ export function battleStagePlay(an, ev) {
             glow: GLOWY[key],
           });
         });
-      at(600, () => {
+      scheduleAt(600, () => {
         ringFx(Pp, TC[M.t][0], 0.2, 1.1, 420);
         groundRing(tgt, TC[M.t][0], 1.6);
         if (!an.self) {
           blinkSide(tgt, 240);
-          act(tgt, 'dizzy', 700);
+          setActorAction(tgt, 'dizzy', 700);
         }
       });
       camHome(460, 800);
-      at(1250, () => battleStageFocus('wide'));
+      scheduleAt(1250, () => battleStageFocus('wide'));
       return { dur: 1000, hit: 600 };
     }
     case 'hurt': {
       const T = sideCenter(an.si),
         kk = 1;
-      act(an.si, 'hurt', 600);
+      setActorAction(an.si, 'hurt', 600);
       blinkSide(an.si, 360);
       battleStage.shk = 2.5;
-      if (an.dmg && typeof hudPop === 'function') at(60, () => hudPop(an.si, '−' + an.dmg, 'dmg'));
+      if (an.dmg && typeof hudPop === 'function') scheduleAt(60, () => hudPop(an.si, '−' + an.dmg, 'dmg'));
       if (an.fx === 'oil')
         for (let i = 0; i < 7; i++)
           part({
@@ -2517,7 +2517,7 @@ export function battleStagePlay(an, ev) {
       if (an.fx === 'rent') burst(T, 'Ground', 7, 1.6, kk);
       if (an.fx === 'scn')
         for (let i = 0; i < 4; i++)
-          at(i * 70, () =>
+          scheduleAt(i * 70, () =>
             part({ x: T.x + (rnd() - 0.5) * 0.8, y: T.y + 0.6, z: T.z, vy: 1, life: 520, spr: 'flame', k: kk })
           );
       if (an.fx === 'mail') {
@@ -2526,7 +2526,7 @@ export function battleStagePlay(an, ev) {
           C.show = false;
           hitFx(an.si, { te: an.te, t: 'Retail' });
         });
-        at(1000, () => battleStageFocus('wide'));
+        scheduleAt(1000, () => battleStageFocus('wide'));
         return { dur: 900, hit: 400 };
       }
       return { dur: 560, hit: 80 };
@@ -2534,9 +2534,9 @@ export function battleStagePlay(an, ev) {
     case 'heal': {
       const T = sideCenter(an.si),
         kk = 1;
-      act(an.si, 'cheer', 700);
+      setActorAction(an.si, 'cheer', 700);
       for (let i = 0; i < 12; i++)
-        at(i * 45, () =>
+        scheduleAt(i * 45, () =>
           part({
             x: T.x + (rnd() - 0.5) * 1.2,
             y: 0.2,
@@ -2548,18 +2548,18 @@ export function battleStagePlay(an, ev) {
             glow: i % 3 ? 0 : 1,
           })
         );
-      if (an.amt && typeof hudPop === 'function') at(120, () => hudPop(an.si, '+' + an.amt, 'heal'));
+      if (an.amt && typeof hudPop === 'function') scheduleAt(120, () => hudPop(an.si, '+' + an.amt, 'heal'));
       groundRing(an.si, '#5DFF8A', 1.5, 600);
-      tw(battleStage.s[an.si], 'white', 0.35, 150);
-      tw(battleStage.s[an.si], 'white', 0, 260, 'lin', 160);
+      tween(battleStage.s[an.si], 'white', 0.35, 150);
+      tween(battleStage.s[an.si], 'white', 0, 260, 'lin', 160);
       return { dur: 720, hit: 200 };
     }
     case 'stat': {
       const T = sideCenter(an.si),
         kk = 1;
-      act(an.si, an.up ? 'buff' : 'dizzy', 700);
+      setActorAction(an.si, an.up ? 'buff' : 'dizzy', 700);
       for (let i = 0; i < 9; i++)
-        at(i * 55, () =>
+        scheduleAt(i * 55, () =>
           part({
             x: T.x + (rnd() - 0.5) * 1.4,
             y: an.up ? 0.2 : T.y + 0.8,
@@ -2572,17 +2572,17 @@ export function battleStagePlay(an, ev) {
           })
         );
       if (an.up) groundRing(an.si, '#8FD8FF', 1.6, 520);
-      tw(battleStage.s[an.si], 'white', 0.3, 120);
-      tw(battleStage.s[an.si], 'white', 0, 240, 'lin', 140);
+      tween(battleStage.s[an.si], 'white', 0.3, 120);
+      tween(battleStage.s[an.si], 'white', 0, 240, 'lin', 140);
       return { dur: 680, hit: 0 };
     }
     case 'status': {
       const T = sideCenter(an.si),
         kk = 1,
         sp = an.st === 'aud' ? 'bolt' : an.st === 'sub' ? 'zz' : 'flame';
-      act(an.si, 'dizzy', 800);
+      setActorAction(an.si, 'dizzy', 800);
       for (let i = 0; i < 8; i++)
-        at(i * 60, () =>
+        scheduleAt(i * 60, () =>
           part({
             x: T.x + (rnd() - 0.5) * 1.2,
             y: T.y + 0.9,
@@ -2601,9 +2601,9 @@ export function battleStagePlay(an, ev) {
     case 'hype': {
       const T = sideCenter(an.si),
         kk = 1;
-      act(an.si, 'dizzy', 800);
+      setActorAction(an.si, 'dizzy', 800);
       for (let i = 0; i < 7; i++)
-        at(i * 60, () => {
+        scheduleAt(i * 60, () => {
           const a = (i / 7) * Math.PI * 2;
           part({
             x: T.x + Math.cos(a) * 0.5,
@@ -2622,16 +2622,16 @@ export function battleStagePlay(an, ev) {
     }
     case 'cry': {
       const s = battleStage.s[an.si];
-      act(an.si, 'smug', 900);
+      setActorAction(an.si, 'smug', 900);
       camAt(an.si, 0.3, 0.1, SIDEOF(an.si) === 1 ? 0.012 : -0.012, 260);
       battleStageFocus(SIDEOF(an.si) === 0 ? 'me' : 'foe');
-      tw(s, 'oy', -7, 110, 'out');
-      tw(s, 'oy', 0, 140, 'in', 110);
-      tw(s, 'oy', -5, 100, 'out', 260);
-      tw(s, 'oy', 0, 130, 'in', 360);
-      at(120, () => groundRing(an.si, '#FFFFFF', 1.2, 380));
+      tween(s, 'oy', -7, 110, 'out');
+      tween(s, 'oy', 0, 140, 'in', 110);
+      tween(s, 'oy', -5, 100, 'out', 260);
+      tween(s, 'oy', 0, 130, 'in', 360);
+      scheduleAt(120, () => groundRing(an.si, '#FFFFFF', 1.2, 380));
       camHome(400, 520);
-      at(800, () => battleStageFocus('wide'));
+      scheduleAt(800, () => battleStageFocus('wide'));
       return { dur: 700, hit: 0 };
     }
     case 'market': {
@@ -2658,7 +2658,7 @@ export function battleStagePlay(an, ev) {
     case 'alphaPhase': {
       const T = sideCenter(an.si),
         s = battleStage.s[an.si];
-      act(an.si, 'buff', 900);
+      setActorAction(an.si, 'buff', 900);
       battleStageFocus(SIDEOF(an.si) === 0 ? 'me' : 'foe');
       battleStageFlash('#FFD860', 0.5, 420);
       battleStage.shk = 7;
@@ -2667,7 +2667,7 @@ export function battleStagePlay(an, ev) {
       ringFx(T, '#FFD860', 0.3, 2.2, 700);
       groundRing(an.si, '#FFD860', 2.6, 800);
       for (let i = 0; i < 24; i++)
-        at(i * 25, () => {
+        scheduleAt(i * 25, () => {
           const a = (i / 24) * Math.PI * 2;
           part({
             x: T.x + Math.cos(a) * 1.1,
@@ -2681,7 +2681,7 @@ export function battleStagePlay(an, ev) {
           });
         });
       buzz([20, 40, 20]);
-      at(1100, () => battleStageFocus('wide'));
+      scheduleAt(1100, () => battleStageFocus('wide'));
       return { dur: 1200, hit: 0 };
     }
     case 'block': {
@@ -2694,8 +2694,8 @@ export function battleStagePlay(an, ev) {
       if (C) {
         for (let i = 0; i < 10; i++)
           part({ x: C.x, y: C.y, z: C.z, vx: (i - 4.5) * 0.5, vy: 3, ay: -6, life: 720, spr: 'spark', glow: 1 });
-        tw(C, 'glow', 0.8, 120);
-        tw(C, 'glow', 0, 300, 'lin', 140);
+        tween(C, 'glow', 0.8, 120);
+        tween(C, 'glow', 0, 300, 'lin', 140);
       }
       buzz([10, 40, 10, 40, 30]);
       return { dur: 720, hit: 0 };
@@ -2704,7 +2704,7 @@ export function battleStagePlay(an, ev) {
       const li = an.si ?? 0;
       if (!battleStage.s[li] || !battleStage.s[li].show) return { dur: 0, hit: 0 };
       const T = sideCenter(li);
-      act(li, 'cheer', 900);
+      setActorAction(li, 'cheer', 900);
       battleStageFocus('me');
       camAt(li, 0.3, 0.08, -0.012, 300);
       ringFx(T, '#F4C542', 0.2, 1.5, 520);
@@ -2722,14 +2722,14 @@ export function battleStagePlay(an, ev) {
         });
       if (typeof hudPop === 'function') hudPop(li, 'Level up', 'lvl');
       camHome(400, 500);
-      at(900, () => battleStageFocus('wide'));
+      scheduleAt(900, () => battleStageFocus('wide'));
       return { dur: 700, hit: 0 };
     }
     case 'run': {
       battleStage.s.forEach((s, i) => {
         if (SIDEOF(i) === 0) {
-          tw(s, 'a', 0, 300, 'in');
-          tw(s, 'ox', -30, 300, 'in');
+          tween(s, 'a', 0, 300, 'in');
+          tween(s, 'ox', -30, 300, 'in');
         }
       });
       return { dur: 420, hit: 0 };
@@ -2753,31 +2753,31 @@ export function battleStageCatch(kind, res, spin, done) {
     C => {
       battleStageFlash('#FFFFFF', 0.55, 280);
       ringFx(C, '#FFFFFF', 0.1, 1);
-      tw(s1, 'white', 1, 120, 'lin');
-      tw(s1, 'sc', 0, 220, 'in', 120);
+      tween(s1, 'white', 1, 120, 'lin');
+      tween(s1, 'sc', 0, 220, 'in', 120);
       buzz(15);
-      at(360, () => {
+      scheduleAt(360, () => {
         s1.show = false;
-        tw(C, 'y', land.y, 300, 'in');
-        at(300, () => {
+        tween(C, 'y', land.y, 300, 'in');
+        scheduleAt(300, () => {
           battleStage.shk = 1.5;
           groundRing(1, '#FFFFFF', 1, 300);
-          tw(C, 'y', land.y + 0.25, 110, 'out');
-          tw(C, 'y', land.y, 120, 'in', 110);
+          tween(C, 'y', land.y + 0.25, 110, 'out');
+          tween(C, 'y', land.y, 120, 'in', 110);
         });
         let t = 760;
         for (let k = 0; k < res.w; k++) {
-          at(t, () => {
-            tw(battleStage.css, 'z', 0.06 + k * 0.03, 200, 'out');
-            tw(C, 'rot', -0.42, 150, 'out');
-            tw(C, 'rot', 0.42, 240, 'io', 150);
-            tw(C, 'rot', 0, 140, 'in', 390);
+          scheduleAt(t, () => {
+            tween(battleStage.css, 'z', 0.06 + k * 0.03, 200, 'out');
+            tween(C, 'rot', -0.42, 150, 'out');
+            tween(C, 'rot', 0.42, 240, 'io', 150);
+            tween(C, 'rot', 0, 140, 'in', 390);
             buzz(8);
           });
           t += 820;
         }
-        at(t, () => {
-          tw(battleStage.css, 'z', 0, 300, 'io');
+        scheduleAt(t, () => {
+          tween(battleStage.css, 'z', 0, 300, 'io');
           if (res.caught) {
             C.glow = 0;
             for (let i = 0; i < 12; i++)
@@ -2793,10 +2793,10 @@ export function battleStageCatch(kind, res, spin, done) {
                 spr: 'star',
                 glow: 1,
               });
-            tw(C, 'glow', 0.9, 100);
-            tw(C, 'glow', 0, 300, 'lin', 120);
+            tween(C, 'glow', 0.9, 100);
+            tween(C, 'glow', 0, 300, 'lin', 120);
             battleStageFlash('#FFF2A8', 0.3, 400);
-            at(900, () => done(true));
+            scheduleAt(900, () => done(true));
           } else {
             battleStageFlash('#FFFFFF', 0.6, 300);
             ringFx(C, '#FFFFFF', 0.1, 1.1);
@@ -2804,12 +2804,12 @@ export function battleStageCatch(kind, res, spin, done) {
             s1.show = true;
             s1.sc = 0;
             s1.white = 1;
-            tw(s1, 'sc', 1, 220, 'back');
-            tw(s1, 'white', 0, 260, 'lin', 80);
-            act(1, 'smug', 800);
+            tween(s1, 'sc', 1, 220, 'back');
+            tween(s1, 'white', 0, 260, 'lin', 80);
+            setActorAction(1, 'smug', 800);
             camHome(400, 200);
-            at(700, () => battleStageFocus('wide'));
-            at(620, () => done(false));
+            scheduleAt(700, () => battleStageFocus('wide'));
+            scheduleAt(620, () => done(false));
           }
         });
       });
