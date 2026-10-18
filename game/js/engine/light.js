@@ -9,7 +9,7 @@ import { environment, environmentSun } from '../hooks.js';
 import { clamp } from '../util.js';
 import { walkView } from '../walk-view.js';
 import { engineColor, engineContext, engineSetting } from './settings.js';
-import { M4, eglTarget, gpuState, v3c, v3n } from './webgl.js';
+import { cross3, gpuState, matrix4, normalize3, renderTarget } from './webgl.js';
 /* eslint-disable no-func-assign */
 expose({
   SKY_HARMONIC_DIRECTIONS: [() => SKY_HARMONIC_DIRECTIONS],
@@ -45,7 +45,7 @@ export function sunLight(indoor) {
     warm = clamp(0.6 - ph * 0.6, 0, 1);
   }
   const ch = Math.cos(h * deg),
-    toSun = v3n([-Math.cos(a * deg) * ch, Math.sin(h * deg), -Math.sin(a * deg) * ch]);
+    toSun = normalize3([-Math.cos(a * deg) * ch, Math.sin(h * deg), -Math.sin(a * deg) * ch]);
   let k = engineSetting('sun', 'strength');
   if (warm) col = [col[0], col[1] * (1 - warm * 0.12), col[2] * (1 - warm * 0.3)];
   if (indoor) k *= 0.75;
@@ -296,15 +296,15 @@ export function setLightUniforms(p, X) {
 /* a sun shadow map covering a rectangle of the world; returns what lightContext needs */
 export function beginSunShadow(cx, cz, radius, sun, res, name = 'shadow') {
   const gl = gpuState.gl,
-    S = eglTarget(name, res, res, { depthOnly: true }),
+    S = renderTarget(name, res, res, { depthOnly: true }),
     tr = sun.travel,
     dist = 60;
   /* v19: the centre moves in whole shadow-map texels (seen from the sun), so shadow edges stand still while the camera moves */
   {
-    const f = v3n(tr),
+    const f = normalize3(tr),
       upR = Math.abs(tr[1]) > 0.98 ? [0, 0, 1] : [0, 1, 0],
-      rt = v3n(v3c(f, upR)),
-      up = v3c(rt, f),
+      rt = normalize3(cross3(f, upR)),
+      up = cross3(rt, f),
       tw = (2 * radius) / res,
       a = cx * rt[0] + cz * rt[2],
       b = cx * up[0] + cz * up[2],
@@ -318,10 +318,10 @@ export function beginSunShadow(cx, cz, radius, sun, res, name = 'shadow') {
     cz += dz + f[2] * t;
   }
   const eye = [cx - tr[0] * dist, -tr[1] * dist + 2, cz - tr[2] * dist];
-  const view = M4.look(eye, [cx, 0, cz], Math.abs(tr[1]) > 0.98 ? [0, 0, 1] : [0, 1, 0]),
+  const view = matrix4.look(eye, [cx, 0, cz], Math.abs(tr[1]) > 0.98 ? [0, 0, 1] : [0, 1, 0]),
     depth = 140,
-    proj = M4.ortho(-radius, radius, -radius, radius, 1, depth),
-    vp = M4.mul(proj, view);
+    proj = matrix4.ortho(-radius, radius, -radius, radius, 1, depth),
+    vp = matrix4.mul(proj, view);
   gl.bindSampler(6, null);
   gl.bindSampler(7, null);
   gl.bindFramebuffer(gl.FRAMEBUFFER, S.f);
@@ -342,10 +342,10 @@ export function beginSunShadow(cx, cz, radius, sun, res, name = 'shadow') {
    its shadow outward on the ground. Perspective, so the texel is finest right under the lamp. */
 export function beginLampShadow(pos, res, name) {
   const gl = gpuState.gl,
-    S = eglTarget(name, res, res, { depthOnly: true }),
-    view = M4.look(pos, [pos[0], pos[1] - 1, pos[2]], [0, 0, 1]),
-    proj = M4.persp(2.55, 1, 0.25, 24),
-    vp = M4.mul(proj, view);
+    S = renderTarget(name, res, res, { depthOnly: true }),
+    view = matrix4.look(pos, [pos[0], pos[1] - 1, pos[2]], [0, 0, 1]),
+    proj = matrix4.persp(2.55, 1, 0.25, 24),
+    vp = matrix4.mul(proj, view);
   gl.bindSampler(12, null);
   gl.bindSampler(13, null);
   gl.bindFramebuffer(gl.FRAMEBUFFER, S.f);

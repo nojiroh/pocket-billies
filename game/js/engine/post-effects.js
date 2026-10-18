@@ -11,7 +11,7 @@ import { clamp } from '../util.js';
 import { makeCanvas } from '../art.js';
 import { walkView } from '../walk-view.js';
 import { engineColor, engineSetting } from './settings.js';
-import { GLSL_LIGHT, eglBindQuad, eglTarget, ensurePrograms, gpuState } from './webgl.js';
+import { GLSL_LIGHT, bindQuad, ensurePrograms, gpuState, renderTarget } from './webgl.js';
 import { setLightUniforms } from './light.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -160,7 +160,7 @@ export function drawPostEffects(S, C, focusDist, rw, rh, o = {}) {
   ensurePrograms(POST_EFFECT_SHADERS);
   gl.disable(gl.DEPTH_TEST);
   gl.disable(gl.BLEND);
-  eglBindQuad();
+  bindQuad();
   const hw = Math.max(16, rw >> 1),
     hh = Math.max(16, rh >> 1),
     use = (name, F, w, h) => {
@@ -178,7 +178,7 @@ export function drawPostEffects(S, C, focusDist, rw, rh, o = {}) {
   /* depth of field */
   const blur = (o.blur ?? 1) * engineSetting('lens', 'blur'),
     dofOn = blur > 0.01 && !o.noDof,
-    D = eglTarget('dof', hw, hh, { hdr: true });
+    D = renderTarget('dof', hw, hh, { hdr: true });
   if (dofOn) {
     const U = use('dof', D, hw, hh);
     tex(U, 'uCol', 0, S.c);
@@ -202,7 +202,7 @@ export function drawPostEffects(S, C, focusDist, rw, rh, o = {}) {
     w = hw,
     h = hh;
   if (bk > 0.01) {
-    let U = use('bright', eglTarget('b0', w, h, { hdr: true }), w, h);
+    let U = use('bright', renderTarget('b0', w, h, { hdr: true }), w, h);
     tex(U, 'uCol', 0, S.c);
     gl.uniform2f(U.uPx, 1 / rw, 1 / rh);
     gl.uniform1f(U.uT, engineSetting('color', 'bloomThreshold'));
@@ -213,7 +213,7 @@ export function drawPostEffects(S, C, focusDist, rw, rh, o = {}) {
         ph = h;
       w = Math.max(4, w >> 1);
       h = Math.max(4, h >> 1);
-      const F = eglTarget('b' + i, w, h, { hdr: true });
+      const F = renderTarget('b' + i, w, h, { hdr: true });
       U = use('down', F, w, h);
       tex(U, 'uCol', 0, chain[i - 1].c);
       gl.uniform2f(U.uPx, 1 / pw, 1 / ph);
@@ -236,7 +236,7 @@ export function drawPostEffects(S, C, focusDist, rw, rh, o = {}) {
   const aoK = o.noAO ? 0 : engineSetting('shadows', 'ao');
   let AO = null;
   if (aoK > 0.01) {
-    AO = eglTarget('ao', hw, hh);
+    AO = renderTarget('ao', hw, hh);
     const U = use('ao', AO, hw, hh);
     tex(U, 'uDep', 0, S.d);
     gl.uniform2f(U.uPx, 1 / hw, 1 / hh);
@@ -254,7 +254,7 @@ export function drawPostEffects(S, C, focusDist, rw, rh, o = {}) {
   if (rk > 0.01) {
     const qw = Math.max(16, hw >> 1),
       qh = Math.max(16, hh >> 1);
-    RY = eglTarget('rays', qw, qh, { hdr: true });
+    RY = renderTarget('rays', qw, qh, { hdr: true });
     const U = use('rays', RY, qw, qh);
     tex(U, 'uCol', 0, S.c);
     tex(U, 'uDep', 1, S.d);
@@ -272,7 +272,7 @@ export function drawPostEffects(S, C, focusDist, rw, rh, o = {}) {
   if (X && (gk > 0.01 || lk > 0.01) && X.shadow) {
     const qw = Math.max(16, hw >> 1),
       qh = Math.max(16, hh >> 1),
-      V0 = eglTarget('vol0', qw, qh, { hdr: true });
+      V0 = renderTarget('vol0', qw, qh, { hdr: true });
     const U = use('vol', V0, qw, qh);
     const p = gpuState.P.vol;
     setLightUniforms(p, X);
@@ -285,7 +285,7 @@ export function drawPostEffects(S, C, focusDist, rw, rh, o = {}) {
     gl.uniform1f(U.uDens, o.volDens ?? 1);
     gl.uniform1f(U.uMaxD, o.volMax || 48);
     gl.drawArrays(gl.TRIANGLES, 0, 6);
-    VO = eglTarget('vol1', qw, qh, { hdr: true });
+    VO = renderTarget('vol1', qw, qh, { hdr: true });
     const U2 = use('down', VO, qw, qh);
     tex(U2, 'uCol', 0, V0.c);
     gl.uniform2f(U2.uPx, 1 / qw, 1 / qh);
@@ -481,7 +481,7 @@ export function screenSnapshot(rw, rh, over, max = 480) {
     k = Math.min(1, max / Math.max(rw, rh)),
     w = Math.max(1, Math.round(rw * k)),
     h = Math.max(1, Math.round(rh * k)),
-    F = eglTarget('snap', w, h);
+    F = renderTarget('snap', w, h);
   gl.bindFramebuffer(gl.READ_FRAMEBUFFER, null);
   gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, F.f);
   gl.blitFramebuffer(0, 0, rw, rh, 0, 0, w, h, gl.COLOR_BUFFER_BIT, gl.LINEAR);

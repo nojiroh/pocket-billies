@@ -141,29 +141,29 @@ import {
   GLSL_COMMON,
   GLSL_LIGHT,
   GLSL_LOOK,
-  M4,
   SURFACE_MATERIALS,
-  eglBindGrid,
-  eglBindQuad,
-  eglFree,
-  eglGpuBegin,
-  eglGpuEnd,
-  eglMesh,
-  eglTarget,
-  eglWind,
-  eglWindBend,
+  beginGpuTimer,
+  bindGridQuad,
+  bindQuad,
+  endGpuTimer,
   ensurePrograms,
+  freeMesh,
   gpuState,
   imageTexture,
   initWebgl,
+  matrix4,
+  normalize3,
   pollPendingPrograms,
   precompilePrograms,
+  renderTarget,
   runNormalMapJobs,
   setTextureParams,
   smooth01,
   trimTextures,
-  v3n,
+  uploadMesh,
   webgl2Supported,
+  windBendAt,
+  windGustAt,
 } from './engine/webgl.js';
 import {
   beginLampShadow,
@@ -1374,7 +1374,7 @@ function* buildGroundSteps(sc, G, T) {
       CB[q] = base(x, z);
       const gx = (base(x + e, z) - base(x - e, z)) / (2 * e),
         gz = (base(x, z + e) - base(x, z - e)) / (2 * e),
-        n = v3n([-gx, 1, -gz]);
+        n = normalize3([-gx, 1, -gz]);
       CN[q * 3] = n[0];
       CN[q * 3 + 1] = n[1];
       CN[q * 3 + 2] = n[2];
@@ -1516,7 +1516,7 @@ function* buildGroundSteps(sc, G, T) {
             n2 = CN[c * 3 + 2];
           if (D[3] > 0) {
             const L = Math.hypot(D[0], D[2]) || 1,
-              nn = v3n([n0 - (D[0] / L) * 0.45, n1, n2 - (D[1] / L) * 0.45]);
+              nn = normalize3([n0 - (D[0] / L) * 0.45, n1, n2 - (D[1] / L) * 0.45]);
             n0 = nn[0];
             n1 = nn[1];
             n2 = nn[2];
@@ -1556,7 +1556,7 @@ function* buildGroundSteps(sc, G, T) {
           (P2[1] + P3[1] - P0[1] - P1[1]) / 2,
           (P2[2] + P3[2] - P0[2] - P1[2]) / 2,
         ];
-      let c = v3n([e1[1] * e2[2] - e1[2] * e2[1], e1[2] * e2[0] - e1[0] * e2[2], e1[0] * e2[1] - e1[1] * e2[0]]);
+      let c = normalize3([e1[1] * e2[2] - e1[2] * e2[1], e1[2] * e2[0] - e1[0] * e2[2], e1[0] * e2[1] - e1[1] * e2[0]]);
       if (c[0] * nrm[0] + c[2] * nrm[2] < 0) c = [-c[0], -c[1], -c[2]];
       if (Math.abs(c[0]) + Math.abs(c[2]) > 0.2) N = c;
     }
@@ -1662,7 +1662,7 @@ function* buildGroundSteps(sc, G, T) {
         e = 1,
         gx = (farH(x + e, z) - farH(x - e, z)) / (2 * e),
         gz = (farH(x, z + e) - farH(x, z - e)) / (2 * e),
-        n = v3n([-gx, 1, -gz]);
+        n = normalize3([-gx, 1, -gz]);
       vtx(x, h, z, n[0], n[1], n[2], 0, 0, 0);
     }
   }
@@ -1678,8 +1678,8 @@ function* buildGroundSteps(sc, G, T) {
       I.push(a, c, b, b, c, d);
     }
   yield;
-  eglFree(T.mesh);
-  T.mesh = eglMesh(
+  freeMesh(T.mesh);
+  T.mesh = uploadMesh(
     new Float32Array(V),
     new Uint32Array(I),
     [
@@ -2034,9 +2034,9 @@ function* buildGroundSteps(sc, G, T) {
     quad(0, -F, W, 0);
     quad(0, H, W, H + F);
   }
-  eglFree(T.water);
+  freeMesh(T.water);
   T.water = wn
-    ? eglMesh(
+    ? uploadMesh(
         new Float32Array(wv),
         new Uint32Array(wi),
         [
@@ -2089,9 +2089,9 @@ function* buildGroundSteps(sc, G, T) {
       T.wlevel = g.y;
     }
   T.wlevelR = T.wlevel;
-  eglFree(T.fallMesh);
+  freeMesh(T.fallMesh);
   T.fallMesh = fv.length
-    ? eglMesh(
+    ? uploadMesh(
         new Float32Array(fv),
         new Uint32Array(fi),
         [
@@ -3458,10 +3458,10 @@ function walkCamera(rw, rh, st, dt) {
   const eye = [tgt[0] - f[0] * df, tgt[1] - f[1] * df, tgt[2] - f[2] * df];
   const hfov = Math.min(1.3, 2 * Math.atan((visW * walkRenderer.zoom) / 2 / df)),
     vfov = 2 * Math.atan((Math.tan(hfov / 2) * rh) / rw);
-  const proj = M4.persp(vfov, rw / rh, 0.5, 420);
+  const proj = matrix4.persp(vfov, rw / rh, 0.5, 420);
   proj[0] = -proj[0];
-  const view = M4.look(eye, tgt, [0, 1, 0]),
-    vp = M4.mul(proj, view);
+  const view = matrix4.look(eye, tgt, [0, 1, 0]),
+    vp = matrix4.mul(proj, view);
   const right = [Math.cos(yaw), 0, -Math.sin(yaw)],
     back = [-Math.sin(yaw), 0, -Math.cos(yaw)],
     fwd = [Math.sin(yaw), 0, Math.cos(yaw)];
@@ -3470,7 +3470,7 @@ function walkCamera(rw, rh, st, dt) {
     rw,
     rh,
     vp,
-    ivp: M4.inv(vp),
+    ivp: matrix4.inv(vp),
     eye,
     tgt,
     right,
@@ -3524,7 +3524,7 @@ function battleCamera(rw, rh, BT) {
     rw,
     rh,
     vp: m,
-    ivp: M4.inv(m),
+    ivp: matrix4.inv(m),
     eye: e,
     tgt: [ex + f[0] * 4, ey, ez + f[2] * 4],
     right: r,
@@ -3546,10 +3546,10 @@ function cutsceneCamera(rw, rh, K) {
     df = Math.hypot(tgt[0] - eye[0], tgt[1] - eye[1], tgt[2] - eye[2]) || 1,
     vfov0 = ((K.fov || 40) * Math.PI) / 180,
     vfov = K.w ? Math.max(vfov0, 2 * Math.atan(((K.w / 2 / df) * rh) / rw)) : vfov0;
-  const proj = M4.persp(vfov, rw / rh, 0.3, 420);
+  const proj = matrix4.persp(vfov, rw / rh, 0.3, 420);
   proj[0] = -proj[0];
-  const view = M4.look(eye, tgt, [0, 1, 0]),
-    vp = M4.mul(proj, view),
+  const view = matrix4.look(eye, tgt, [0, 1, 0]),
+    vp = matrix4.mul(proj, view),
     yaw = Math.atan2(tgt[0] - eye[0], tgt[2] - eye[2]),
     pitch = Math.asin(clamp((eye[1] - tgt[1]) / df, -1, 1));
   return {
@@ -3557,7 +3557,7 @@ function cutsceneCamera(rw, rh, K) {
     rw,
     rh,
     vp,
-    ivp: M4.inv(vp),
+    ivp: matrix4.inv(vp),
     eye,
     tgt,
     right: [Math.cos(yaw), 0, -Math.sin(yaw)],
@@ -3615,12 +3615,12 @@ function drawWalkFrame(ts, dtm) {
   /* v26: the hour, the weather and the season (environment.js) lean on the engine dials while this frame draws */
   engineContext.env = typeof environment !== 'undefined' && (environment.on || !!environment.force);
   if (engineContext.env) environmentFrame(sc, dt);
-  const gq = eglGpuBegin();
+  const gq = beginGpuTimer();
   try {
     drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0);
   } finally {
     engineContext.env = false;
-    eglGpuEnd(gq);
+    endGpuTimer(gq);
   }
 }
 function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
@@ -3696,7 +3696,7 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
   if (dark > 0.3 && !BT && shadow) lampShadowMaps(items, X, dark);
   if (walkRenderer.water && !(QE >= 2 && walkRenderer.frames % 2 && gpuState.fb.refl))
     reflectionPass(items, C, rw, rh, X);
-  const S = eglTarget('scene', rw, rh, { depth: true, hdr: true });
+  const S = renderTarget('scene', rw, rh, { depth: true, hdr: true });
   gl.bindFramebuffer(gl.FRAMEBUFFER, S.f);
   gl.viewport(0, 0, rw, rh);
   gl.clearColor(0, 0, 0, 1);
@@ -3726,7 +3726,7 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
   }
   const fy = standingHeightAt(fx, fz) + 0.8,
     v = [fx - C.eye[0], fy - C.eye[1], fz - C.eye[2]],
-    dir = v3n([C.tgt[0] - C.eye[0], C.tgt[1] - C.eye[1], C.tgt[2] - C.eye[2]]),
+    dir = normalize3([C.tgt[0] - C.eye[0], C.tgt[1] - C.eye[1], C.tgt[2] - C.eye[2]]),
     fd = v[0] * dir[0] + v[1] * dir[1] + v[2] * dir[2];
   walkRenderer.focus = BT
     ? BT.focus
@@ -3923,7 +3923,7 @@ function freeMapCache(e) {
   try {
     for (const k of ['gtex', 'ftex', 'ctex', 'gntex', 'shoreTex', 'gaoTex'])
       if (e[k] && e[k] !== gpuState.white && e[k] !== gpuState.flatN) gl.deleteTexture(e[k]);
-    for (const k of ['mesh', 'water', 'fallMesh']) if (e[k]) eglFree(e[k]);
+    for (const k of ['mesh', 'water', 'fallMesh']) if (e[k]) freeMesh(e[k]);
     if (e.grass) {
       gl.deleteVertexArray(e.grass.vao);
       gl.deleteBuffer(e.grass.ib);
@@ -4575,10 +4575,10 @@ export function setPropLookUniforms(U, L, bp) {
 const BOBBING_PROPS = /sailboat|rowboat|buoy/,
   WAVING_PROPS = /banner|laundry|beach_umbrella|ski_sign/;
 /* v43: one wind for every plant: a slow lean that drifts across the scene, a faster flutter, and the gust bands
-   (eglWind) that travel over the grass; the result is a lean of the top of the sprite as a fraction of its height */
+   (windGustAt) that travel over the grass; the result is a lean of the top of the sprite as a fraction of its height */
 export function windLeanAt(x, z, t, sc, wind) {
   const k = (sc.wind || 1) * (wind == null ? engineSetting('grass', 'wind') : wind);
-  return eglWindBend(x, z, t, engineSetting('grass', 'gusts')) * k;
+  return windBendAt(x, z, t, engineSetting('grass', 'gusts')) * k;
 }
 export function gatherFrameItems(st, C, PPU, C0) {
   const sc = walkView.sc,
@@ -4999,7 +4999,7 @@ export function personItem(k, im, x, z, C0, extra) {
 function mapSun(sc, sun) {
   if (!sc || !sc.room || (engineSetting('lights', 'roomLight') ?? true) === false) return sun;
   const Rk = roomSkyLight(),
-    wd = v3n([Rk.dx * 0.45, 0.6, -0.7]);
+    wd = normalize3([Rk.dx * 0.45, 0.6, -0.7]);
   return Object.assign({}, sun, {
     dir: wd,
     travel: [-wd[0], -wd[1], -wd[2]],
@@ -5388,14 +5388,14 @@ function drawShadowSprites(SH, L, sun, ca, lamp) {
     p = gpuState.P.shadow,
     solid = engineSetting('shadows', 'buildings'),
     tr = sun ? sun.travel : [0, -1, 0],
-    h = v3n([tr[0], 0, tr[2]]),
+    h = normalize3([tr[0], 0, tr[2]]),
     Rs0 = Math.hypot(tr[0], tr[2]) < 0.05 ? [1, 0, 0] : [-h[2], 0, h[0]];
   let Rs = Rs0;
   gl.useProgram(p.p);
   gl.uniformMatrix4fv(p.U.uVP, false, SH.vp);
   gl.uniform3f(p.U.uCurve, ca[0], ca[1], ca[2]);
   gl.uniform1f(p.U.uCurveD0, ca[3]);
-  eglBindQuad();
+  bindQuad();
   gl.activeTexture(gl.TEXTURE0);
   gl.uniform1i(p.U.uTex, 0);
   let miss = 0;
@@ -5475,7 +5475,7 @@ function fittedShadowPass(items0, sun, C) {
     };
   const solid = engineSetting('shadows', 'buildings'),
     tr = sun.travel,
-    h = v3n([tr[0], 0, tr[2]]),
+    h = normalize3([tr[0], 0, tr[2]]),
     Rs = Math.hypot(tr[0], tr[2]) < 0.05 ? [1, 0, 0] : [-h[2], 0, h[0]];
   const still = it => it.k === 'prop' && it.still && !it.vol,
     stat = cache ? items.filter(still) : items,
@@ -5515,7 +5515,7 @@ function fittedShadowPass(items0, sun, C) {
     gl.useProgram(p.p);
     gl.uniformMatrix4fv(p.U.uVP, false, SH.vp);
     curve(p);
-    eglBindQuad();
+    bindQuad();
     gl.activeTexture(gl.TEXTURE0);
     gl.uniform1i(p.U.uTex, 0);
     for (const it of L) {
@@ -5581,7 +5581,7 @@ function fittedShadowPass(items0, sun, C) {
     if (typeof drawStructureShadows === 'function') drawStructureShadows(SH);
     if (typeof drawPropModelShadows === 'function') drawPropModelShadows(SH, stat);
     if (cache) {
-      const S2 = eglTarget('shadowS', res, res, { depthOnly: true });
+      const S2 = renderTarget('shadowS', res, res, { depthOnly: true });
       gl.bindFramebuffer(gl.READ_FRAMEBUFFER, SF.f);
       gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, S2.f);
       gl.blitFramebuffer(0, 0, res, res, 0, 0, res, res, gl.DEPTH_BUFFER_BIT, gl.NEAREST);
@@ -5612,7 +5612,7 @@ function drawSky(C, sun, mirror) {
     U = p.U,
     sky = skyColors(sc);
   gl.useProgram(p.p);
-  eglBindQuad();
+  bindQuad();
   if (U.uEnv) {
     const E = typeof environment !== 'undefined' && engineContext.env ? environment : null;
     gl.uniform4f(U.uEnv, E ? E.night : 0, E ? E.flash : 0, E ? E.grey : 0, E ? (E.rainbow || 0) * (1 - E.night) : 0);
@@ -5929,10 +5929,10 @@ export function drawSprites(C, items, X, hits, labels, PPU) {
     P = walkView.pl,
     sc = walkView.sc,
     sun = X.sun;
-  eglBindQuad();
+  bindQuad();
   if (U.uWave) gl.uniform3f(U.uWave, 0, 0, 0);
   if (U.uSelOut) gl.uniform1f(U.uSelOut, engineSetting('color', 'outlines') ?? 1);
-  const sh = v3n([sun.dir[0], 0, sun.dir[2]]);
+  const sh = normalize3([sun.dir[0], 0, sun.dir[2]]);
   gl.uniform3fv(U.uRight, C.right);
   gl.uniform3fv(U.uBack, C.back);
   gl.uniform3fv(U.uFwd, C.fwd);
@@ -6020,10 +6020,10 @@ export function drawSprites(C, items, X, hits, labels, PPU) {
     setSpriteUniforms(p, rk !== 1 ? Object.assign({}, it, { oy: it.oy * rk, h: it.h * rk }) : it);
     if (it.wave) {
       gl.uniform3fv(U.uWave, it.wave);
-      eglBindGrid();
+      bindGridQuad();
       gl.drawArrays(gl.TRIANGLES, 0, gpuState.gridN);
       gl.uniform3f(U.uWave, 0, 0, 0);
-      eglBindQuad();
+      bindQuad();
       continue;
     }
     gl.drawArrays(gl.TRIANGLES, 0, 6);
@@ -6193,7 +6193,7 @@ function drawBoxFaces(C, items, X) {
     if (!B) continue;
     if (!p) {
       p = useWalkProgram('face', C, X);
-      eglBindQuad();
+      bindQuad();
       gl.uniform1i(p.U.uTex, 0);
       gl.activeTexture(gl.TEXTURE0);
     }
@@ -6448,17 +6448,17 @@ export function reflectionPass(items, C, rw, rh, X) {
   const gl = gpuState.gl,
     w = Math.max(32, rw >> 1),
     h = Math.max(32, rh >> 1),
-    F = eglTarget('refl', w, h, { depth: true, hdr: true });
+    F = renderTarget('refl', w, h, { depth: true, hdr: true });
   gl.bindFramebuffer(gl.FRAMEBUFFER, F.f);
   gl.viewport(0, 0, w, h);
   gl.clearColor(0, 0, 0, 0);
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
   const L = reflectionLevel(),
     mir = new Float32Array([1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1, 0, 0, 2 * L, 0, 1]),
-    RC = Object.assign({}, C, { vp: M4.mul(C.vp, mir) });
+    RC = Object.assign({}, C, { vp: matrix4.mul(C.vp, mir) });
   const p = useWalkProgram('sprite', RC, Object.assign({}, X, { shadow: null })),
     U = p.U;
-  eglBindQuad();
+  bindQuad();
   gl.uniform3fv(U.uRight, C.right);
   gl.uniform3fv(U.uBack, C.back);
   gl.uniform3fv(U.uFwd, C.fwd);
@@ -7062,7 +7062,7 @@ function drawRoomFront(C, X) {
     T = imageTexture(walkRenderer.frontTex[1], { noNormal: true });
   if (!F || !T) return;
   const p = useWalkProgram('face', C, X);
-  eglBindQuad();
+  bindQuad();
   setPropLookUniforms(p.U, null, [0, 0, 0]);
   gl.uniform1i(p.U.uTex, 0);
   gl.activeTexture(gl.TEXTURE0);
@@ -7165,7 +7165,7 @@ function updateBasinMeshes(L) {
   walkRenderer.basinP = new Set(L.map(b => b.p));
   if (walkRenderer.basinKey === key) return;
   walkRenderer.basinKey = key;
-  eglFree(walkRenderer.basin);
+  freeMesh(walkRenderer.basin);
   walkRenderer.basin = null;
   if (!L.length) return;
   const V = [],
@@ -7210,7 +7210,7 @@ function updateBasinMeshes(L) {
         }
       }
     }
-  walkRenderer.basin = eglMesh(
+  walkRenderer.basin = uploadMesh(
     new Float32Array(V),
     new Uint32Array(I),
     [
@@ -7367,7 +7367,7 @@ function drawWeather(quad, glows, U, R, Up, dt, rm) {
   }
   if (W.p.length > n) W.p.length = n;
   gl.uniform3f(U.uRight, R[0], R[1], R[2]);
-  const lean = v3n([wind * 0.22, 1, 0]);
+  const lean = normalize3([wind * 0.22, 1, 0]);
   for (let i = 0; i < n; i++) {
     const q = W.p[i],
       kd = i < nR ? 0 : i < nR + nS ? 1 : 2;
@@ -7554,7 +7554,7 @@ function drawLifeEffects(quad, glows, t, rm, dt, sc, C0) {
     });
   }
   /* autumn leaves along the ground, blown across the paving near you */ if (ss === 'autumn' && rm && L.tr.length) {
-    const W = (sc.wind || 1) * (0.7 + eglWind(P.x, P.z, t * rm)),
+    const W = (sc.wind || 1) * (0.7 + windGustAt(P.x, P.z, t * rm)),
       sk = L.sk || (L.sk = []);
     if (sk.length < 7 && Math.random() < dt * 1.6) {
       const a = Math.random() * 6.283,
@@ -7648,7 +7648,7 @@ export function effectsPass(C, items, X, dark, t, dt) {
     gk = engineSetting('lights', 'glow'),
     winDay = engineSetting('lights', 'windowsDay'),
     flick = engineSetting('lights', 'flicker');
-  eglBindQuad();
+  bindQuad();
   gl.uniform3fv(U.uRight, R);
   gl.uniform3fv(U.uUp, Up);
   gl.uniform1i(U.uTex, 0);
@@ -7874,7 +7874,7 @@ export function effectsPass(C, items, X, dark, t, dt) {
         per = 6500 + i * 700,
         ph = ((t * rm) / per + i * 0.37) % 1,
         top = M ? Math.min(4, (-M.oy / 34) * (p.s || 1) * 0.75) : 3,
-        bx = p.x + Math.sin(ph * 9 + i) * 0.55 + ph * (0.6 + eglWind(p.x, p.z, t * rm) * 0.5) * (sc.wind || 1),
+        bx = p.x + Math.sin(ph * 9 + i) * 0.55 + ph * (0.6 + windGustAt(p.x, p.z, t * rm) * 0.5) * (sc.wind || 1),
         bz = p.z - 0.4 - ph * 0.6;
       quad(
         'leaf',

@@ -20,14 +20,14 @@ import { EASE } from './battle-stage.js';
 import { artImage, hash2d, imageReady, mapById, stepRaiseAt, walkData, walkView } from './walk-view.js';
 import { engineContext, engineDataSource, engineSetting } from './engine/settings.js';
 import {
-  eglBindQuad,
-  eglFree,
-  eglMesh,
-  eglTarget,
+  bindQuad,
   ensurePrograms,
+  freeMesh,
   gpuState,
   imageTexture,
   initWebgl,
+  renderTarget,
+  uploadMesh,
   webgl2Supported,
 } from './engine/webgl.js';
 import { POST_EFFECT_SHADERS, drawPostEffects, projectToScreenUv } from './engine/post-effects.js';
@@ -589,7 +589,7 @@ export function worldMapGlRender(t) {
     cv.width = rw;
     cv.height = rh;
   }
-  const S = eglTarget('scene', rw, rh, { depth: true, hdr: true });
+  const S = renderTarget('scene', rw, rh, { depth: true, hdr: true });
   gl.bindFramebuffer(gl.FRAMEBUFFER, S.f);
   gl.viewport(0, 0, rw, rh);
   gl.clearColor(0, 0, 0, 1);
@@ -603,7 +603,7 @@ export function worldMapGlRender(t) {
   let p = gpuState.P.mglobe,
     U2 = p.U;
   gl.useProgram(p.p);
-  eglBindQuad();
+  bindQuad();
   gl.uniform3fv(U2.uC, cam.C);
   gl.uniform3fv(U2.uFw, cam.fw);
   gl.uniform3fv(U2.uRt, cam.rt);
@@ -653,7 +653,7 @@ export function worldMapGlRender(t) {
       gl.uniform3fv(U2.uC, cam.C);
       gl.uniform3fv(U2.uHaze, haze);
       gl.uniform1i(U2.uTex, 0);
-      eglBindQuad();
+      bindQuad();
     }
     if (!m3)
       worldMapGlMiniPictures(cam, (im, v, k) => {
@@ -1491,7 +1491,7 @@ export function worldMapMiniBuild(i) {
     }
   }
   if (!V.length) return null;
-  const mesh = eglMesh(
+  const mesh = uploadMesh(
     new Float32Array(V),
     new Uint32Array(I),
     [
@@ -1519,7 +1519,7 @@ function worldMapMiniGet(i) {
   } catch (err) {
     console.warn('mini', err);
   }
-  if (e && e.m && e.gl === gpuState.gl) eglFree(e.m);
+  if (e && e.m && e.gl === gpuState.gl) freeMesh(e.m);
   worldMapMinis.cache.set(i, { key, m, gl: gpuState.gl });
   return m;
 }

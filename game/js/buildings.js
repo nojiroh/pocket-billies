@@ -21,11 +21,11 @@ import {
   GLSL_COMMON,
   GLSL_LIGHT,
   GLSL_LOOK,
-  eglBindQuad,
+  bindQuad,
   ensurePrograms,
   gpuState,
   imageTexture,
-  v3n,
+  normalize3,
 } from './engine/webgl.js';
 import { environment, environmentLitFraction } from './environment.js';
 import { setPropLookUniforms, standingHeightAt, useWalkProgram, walkRenderer, worldCurveArgs } from './walk-view-gl.js';
@@ -542,8 +542,8 @@ function makeBuildingModel(it) {
         rx0 = x0 + inset,
         rx1 = x1 - inset,
         sl = half / Math.cos(pit);
-      const nf = v3n([0, 1, -tp]),
-        nb = v3n([0, 1, tp]);
+      const nf = normalize3([0, 1, -tp]),
+        nb = normalize3([0, 1, tp]);
       roofFace(
         [
           [x0, eY, za],
@@ -575,8 +575,8 @@ function makeBuildingModel(it) {
         ]
       );
       if (kind === 'hip') {
-        const nl = v3n([-tp, 1, 0]),
-          nr = v3n([tp, 1, 0]);
+        const nl = normalize3([-tp, 1, 0]),
+          nr = normalize3([tp, 1, 0]);
         roofFace(
           [
             [x0, eY, zb],
@@ -689,8 +689,8 @@ function makeBuildingModel(it) {
         inset = kind === 'hip' ? half : 0,
         rz0 = za + inset,
         rz1 = zb - inset,
-        nl = v3n([-tp, 1, 0]),
-        nr = v3n([tp, 1, 0]);
+        nl = normalize3([-tp, 1, 0]),
+        nr = normalize3([tp, 1, 0]);
       roofFace(
         [
           [x0, eY, zb],
@@ -727,7 +727,7 @@ function makeBuildingModel(it) {
           [x1, eY, za],
           [xc, rY, rz0],
         ],
-        v3n([0, 1, -tp]),
+        normalize3([0, 1, -tp]),
         [
           [0, 0],
           [x1 - x0, 0],
@@ -740,7 +740,7 @@ function makeBuildingModel(it) {
           [x0, eY, zb],
           [xc, rY, rz1],
         ],
-        v3n([0, 1, tp]),
+        normalize3([0, 1, tp]),
         [
           [0, 0],
           [x1 - x0, 0],
@@ -771,8 +771,8 @@ function makeBuildingModel(it) {
       za = z0 - o,
       zb = z1 + o,
       sl = (half + o) / Math.cos(ptc);
-    const nl = v3n([-tq, 1, 0]),
-      nr = v3n([tq, 1, 0]);
+    const nl = normalize3([-tq, 1, 0]),
+      nr = normalize3([tq, 1, 0]);
     roofFace(
       [
         [x0, eY, zb],
@@ -868,7 +868,7 @@ function makeBuildingModel(it) {
       za = z0 - o,
       zb = z1 + o,
       sl = (zb - za) / Math.cos(pit),
-      n = v3n([0, 1, -tp]);
+      n = normalize3([0, 1, -tp]);
     roofFace(
       [
         [x0, eY, za],
@@ -1615,7 +1615,7 @@ function drawBuildingsUnguarded(C, X, items, fades) {
   gl.bindVertexArray(null);
   /* fronts last, blended, so the glass shows the rooms behind it */
   p = useWalkProgram('bfac', C, X);
-  eglBindQuad();
+  bindQuad();
   gl.enable(gl.BLEND);
   if (p.U.uGlassN)
     gl.uniform1f(

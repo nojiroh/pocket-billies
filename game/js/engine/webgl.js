@@ -16,32 +16,31 @@ expose({
   GLSL_COMMON: [() => GLSL_COMMON],
   GLSL_LIGHT: [() => GLSL_LIGHT],
   GLSL_LOOK: [() => GLSL_LOOK],
-  M4: [() => M4],
   NORMAL_MAP_WORKER_SOURCE: [() => NORMAL_MAP_WORKER_SOURCE],
   SURFACE_MATERIALS: [() => SURFACE_MATERIALS],
   applyAnisotropy: [() => applyAnisotropy, v => (applyAnisotropy = v)],
   attributeClashes: [() => attributeClashes, v => (attributeClashes = v)],
+  beginGpuTimer: [() => beginGpuTimer, v => (beginGpuTimer = v)],
+  bindGridQuad: [() => bindGridQuad, v => (bindGridQuad = v)],
+  bindQuad: [() => bindQuad, v => (bindQuad = v)],
   compileProgram: [() => compileProgram, v => (compileProgram = v)],
-  eglBindGrid: [() => eglBindGrid, v => (eglBindGrid = v)],
-  eglBindQuad: [() => eglBindQuad, v => (eglBindQuad = v)],
-  eglFree: [() => eglFree, v => (eglFree = v)],
-  eglGpuBegin: [() => eglGpuBegin, v => (eglGpuBegin = v)],
-  eglGpuEnd: [() => eglGpuEnd, v => (eglGpuEnd = v)],
-  eglGpuPoll: [() => eglGpuPoll, v => (eglGpuPoll = v)],
-  eglMesh: [() => eglMesh, v => (eglMesh = v)],
-  eglTarget: [() => eglTarget, v => (eglTarget = v)],
-  eglWind: [() => eglWind, v => (eglWind = v)],
-  eglWindBend: [() => eglWindBend, v => (eglWindBend = v)],
+  cross3: [() => cross3],
+  endGpuTimer: [() => endGpuTimer, v => (endGpuTimer = v)],
   ensureNormalMapWorker: [() => ensureNormalMapWorker, v => (ensureNormalMapWorker = v)],
   ensurePrograms: [() => ensurePrograms, v => setEnsurePrograms(v)],
   finishProgramCompile: [() => finishProgramCompile, v => setFinishProgramCompile(v)],
+  freeMesh: [() => freeMesh, v => (freeMesh = v)],
   gpuState: [() => gpuState],
   imageTexture: [() => imageTexture, v => (imageTexture = v)],
   initWebgl: [() => initWebgl, v => (initWebgl = v)],
   makeNormalMap: [() => makeNormalMap, v => setMakeNormalMap(v)],
+  matrix4: [() => matrix4],
   normalMapWorker: [() => normalMapWorker],
+  normalize3: [() => normalize3],
+  pollGpuTimers: [() => pollGpuTimers, v => (pollGpuTimers = v)],
   pollPendingPrograms: [() => pollPendingPrograms, v => (pollPendingPrograms = v)],
   precompilePrograms: [() => precompilePrograms, v => (precompilePrograms = v)],
+  renderTarget: [() => renderTarget, v => (renderTarget = v)],
   runNormalMapJobs: [() => runNormalMapJobs, v => setRunNormalMapJobs(v)],
   setTextureParams: [() => setTextureParams, v => (setTextureParams = v)],
   smooth01: [() => smooth01],
@@ -49,9 +48,10 @@ expose({
   textureFromData: [() => textureFromData, v => (textureFromData = v)],
   trackTexture: [() => trackTexture, v => (trackTexture = v)],
   trimTextures: [() => trimTextures, v => (trimTextures = v)],
-  v3c: [() => v3c],
-  v3n: [() => v3n],
+  uploadMesh: [() => uploadMesh, v => (uploadMesh = v)],
   webgl2Supported: [() => webgl2Supported, v => (webgl2Supported = v)],
+  windBendAt: [() => windBendAt, v => (windBendAt = v)],
+  windGustAt: [() => windGustAt, v => (windGustAt = v)],
 });
 /* eslint-enable no-func-assign */
 export function setEnsurePrograms(v) {
@@ -98,7 +98,7 @@ export function webgl2Supported() {
   return gpuState.ok;
 }
 /* ---------- math (column-major 4×4) ---------- */
-export const M4 = {
+export const matrix4 = {
   mul(a, b) {
     const o = new Float32Array(16);
     for (let i = 0; i < 4; i++)
@@ -131,9 +131,9 @@ export const M4 = {
     return o;
   },
   look(e, c, u) {
-    const z = v3n([e[0] - c[0], e[1] - c[1], e[2] - c[2]]),
-      x = v3n(v3c(u, z)),
-      y = v3c(z, x),
+    const z = normalize3([e[0] - c[0], e[1] - c[1], e[2] - c[2]]),
+      x = normalize3(cross3(u, z)),
+      y = cross3(z, x),
       o = new Float32Array(16);
     o[0] = x[0];
     o[4] = x[1];
@@ -187,11 +187,11 @@ export const M4 = {
     return o;
   },
 };
-export const v3n = a => {
+export const normalize3 = a => {
     const l = Math.hypot(a[0], a[1], a[2]) || 1;
     return [a[0] / l, a[1] / l, a[2] / l];
   },
-  v3c = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+  cross3 = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
 export const smooth01 = t => {
   t = clamp(t, 0, 1);
   return t * t * (3 - 2 * t);
@@ -205,19 +205,19 @@ float windGust(vec2 p,float t){float a=sin(p.x*.35+p.y*.21-t*.0018)*.5+.5;float 
 float windBend(vec2 p,float t,float g){return .07*sin(t*.000625+p.x*.45+p.y*.3)+.035*sin(t*.0023+p.x*1.7+p.y*1.1)+.012*sin(t*.0071+p.x*3.1)+.08*windGust(p,t)*g;}
 `;
 /* the same wind for things moved on the CPU (trees, bushes, leaves): one field, so gusts roll across grass and trees together */
-export function eglWind(x, z, t) {
+export function windGustAt(x, z, t) {
   const a = Math.sin(x * 0.35 + z * 0.21 - t * 0.0018) * 0.5 + 0.5,
     band = Math.pow(Math.max(0, Math.sin(x * 0.11 + z * 0.06 - t * 0.00055)), 8);
   return a * a + band * 1.3;
 }
 /* alpha 0.4: one wind for a whole place: the slow sway, the quicker flutter and the gusts rolling across, the same field
    for every blade of grass (GLSL windBend), every swaying prop and every tree, so they all bend together */
-export function eglWindBend(x, z, t, g) {
+export function windBendAt(x, z, t, g) {
   return (
     0.07 * Math.sin(t * 0.000625 + x * 0.45 + z * 0.3) +
     0.035 * Math.sin(t * 0.0023 + x * 1.7 + z * 1.1) +
     0.012 * Math.sin(t * 0.0071 + x * 3.1) +
-    0.08 * eglWind(x, z, t) * g
+    0.08 * windGustAt(x, z, t) * g
   );
 }
 /* lighting shared by everything lit in the world: sun with soft contact-hardening shadows and cloud shadows, contact
@@ -852,7 +852,7 @@ export function makeNormalMap(im, w, h, old) {
   return t;
 }
 /* ---------- render targets ---------- */
-export function eglTarget(name, w, h, o = {}) {
+export function renderTarget(name, w, h, o = {}) {
   const gl = gpuState.gl,
     F = gpuState.fb[name];
   if (F && F.w === w && F.h === h) return F;
@@ -900,7 +900,7 @@ export function eglTarget(name, w, h, o = {}) {
   return (gpuState.fb[name] = { f, c, d, w, h });
 }
 /* v43: a quad split into a grid (for cloth that waves); the same aC attribute as the quad */
-export function eglBindGrid(nx = 16, ny = 4) {
+export function bindGridQuad(nx = 16, ny = 4) {
   const gl = gpuState.gl;
   if (!gpuState.grid || gpuState.gridGL !== gl) {
     const a = [];
@@ -927,7 +927,7 @@ export function eglBindGrid(nx = 16, ny = 4) {
     gl.vertexAttribDivisor(i, 0);
   }
 }
-export function eglBindQuad() {
+export function bindQuad() {
   const gl = gpuState.gl;
   gl.bindVertexArray(null);
   gl.bindBuffer(gl.ARRAY_BUFFER, gpuState.quad);
@@ -938,7 +938,7 @@ export function eglBindQuad() {
     gl.vertexAttribDivisor(i, 0);
   }
 }
-export function eglMesh(V, I, attrs, stride) {
+export function uploadMesh(V, I, attrs, stride) {
   const gl = gpuState.gl,
     vao = gl.createVertexArray();
   gl.bindVertexArray(vao);
@@ -957,7 +957,7 @@ export function eglMesh(V, I, attrs, stride) {
   gl.bindVertexArray(null);
   return { vao, n: I.length, vb, ib };
 }
-export function eglFree(m) {
+export function freeMesh(m) {
   if (!m) return;
   const gl = gpuState.gl;
   try {
@@ -970,7 +970,7 @@ export function eglFree(m) {
 /* v34: how long the graphics card itself takes for a frame (EXT_disjoint_timer_query_webgl2, where the browser has
    it). A few queries are in flight at once; each answer arrives a frame or two later and goes into gpuState.gpuMs (a
    running average) and the log's slow-frame causes. Off with the "Measure the graphics card" dial. */
-export function eglGpuBegin() {
+export function beginGpuTimer() {
   const gl = gpuState.gl;
   if (!gl || !(engineSetting('quality', 'gpuTimer') ?? true)) return null;
   if (gpuState.gpuX === undefined) {
@@ -983,14 +983,14 @@ export function eglGpuBegin() {
   }
   const X = gpuState.gpuX;
   if (!X) return null;
-  eglGpuPoll();
+  pollGpuTimers();
   if (gpuState.gpuQ.length >= 4 || gpuState.gpuOpen) return null;
   const q = gl.createQuery();
   gl.beginQuery(X.TIME_ELAPSED_EXT, q);
   gpuState.gpuOpen = true;
   return q;
 }
-export function eglGpuEnd(q) {
+export function endGpuTimer(q) {
   if (!q) return;
   const gl = gpuState.gl,
     X = gpuState.gpuX;
@@ -1000,7 +1000,7 @@ export function eglGpuEnd(q) {
   gpuState.gpuOpen = false;
   gpuState.gpuQ.push(q);
 }
-function eglGpuPoll() {
+function pollGpuTimers() {
   const gl = gpuState.gl,
     X = gpuState.gpuX,
     Q = gpuState.gpuQ;
