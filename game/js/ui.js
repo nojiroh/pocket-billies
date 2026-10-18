@@ -2717,7 +2717,9 @@ document.addEventListener('click', ev => {
       }
       break;
     case 'bmove':
-      if (activeBattle && activeBattle.phase === 'fight') {
+      /* phase 06-3: the moves are on the first menu too */
+      if (activeBattle && (activeBattle.phase === 'fight' || activeBattle.phase === 'choose')) {
+        activeBattle.phase = 'fight';
         if (typeof tutorPicked === 'function') tutorPicked();
         pickMove(d.m);
       }
@@ -2763,8 +2765,9 @@ document.addEventListener('click', ev => {
           planBack();
           break;
         }
-        activeBattle.phase = activeBattle.phase === 'target' || activeBattle.phase === 'part' ? 'fight' : 'choose';
-        if (activeBattle.phase === 'choose') chooseMessage();
+        /* phase 06-3: the first menu has the moves, so Back always goes there */
+        activeBattle.phase = 'choose';
+        chooseMessage();
         paintActions();
       }
       break;
@@ -2868,8 +2871,11 @@ document.addEventListener('keydown', ev => {
     return;
   }
   if (ph === 'choose') {
-    if (k === 'f') click('[data-a=bfight]');
-    else if (k === 'x' || k === 'c') click('[data-a=bcoins]');
+    /* phase 06-3: 1-4 pick a move straight from the first menu */
+    if (/^[1-9]$/.test(k)) {
+      const b = $$('#acts [data-a=bmove]')[+k - 1];
+      if (b) b.click();
+    } else if (k === 'x' || k === 'c') click('[data-a=bcoins]');
     else if (k === 'i') click('[data-a=bitems]');
     else if (k === 't') click('[data-a=bteam]');
     else if (k === 'r') click('[data-a=brun]');

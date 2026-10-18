@@ -1,0 +1,92 @@
+/* ================= phase 06-3: the battle UI lives in the scene =================
+   When the 3D stage is on, #battle gets .ui3d and js/battle.js floatTick places the battle text and the menu as
+   cards anchored in the world (text over the ground between the fighters, the menu beside the one choosing). They are
+   page elements over the scene, so the scene's lighting never touches them: solid, high-contrast cards that stay
+   readable in the dark and the rain. Only tokens from css/tokens.css. */
+
+/* the dock is just the layer the cards float in */
+.battle.ui3d .dock {
+  inset: 0;
+  padding: 0;
+  border-radius: 0;
+  background: none !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  box-shadow: none !important;
+  border: 0;
+  pointer-events: none;
+}
+.battle.ui3d .dock > .hcard {
+  display: none;
+}
+.battle.ui3d .dock > #msg,
+.battle.ui3d .dock > #acts {
+  position: absolute;
+  left: 0;
+  top: 0;
+  margin: 0;
+  pointer-events: auto;
+  will-change: transform;
+}
+
+/* the battle text: a speech-like card over the ground */
+.battle.ui3d #msg {
+  min-height: 0;
+  padding: var(--s3) var(--s6) var(--s3) var(--s4);
+  border-radius: var(--r-lg) !important;
+  background: var(--g-solid) !important;
+  color: var(--text) !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  box-shadow:
+    0 0 0 1px var(--g-bd),
+    var(--depth-float) !important;
+  font: 600 16px/1.4 var(--font-voice) !important;
+}
+.battle.ui3d #msg .more {
+  border-top-color: var(--gold-b);
+}
+
+/* the menu: one card holding the move tiles and the row under them */
+.battle.ui3d #acts {
+  height: auto !important;
+  max-height: 72vh;
+  overflow: auto;
+  padding: var(--s3);
+  gap: var(--s2);
+  border-radius: var(--r-lg);
+  background: color-mix(in srgb, var(--g-solid) 94%, transparent);
+  box-shadow:
+    0 0 0 1px var(--g-bd),
+    var(--depth-float);
+}
+.battle.ui3d #acts.empty {
+  visibility: hidden;
+}
+.battle.ui3d #acts .c-choose {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+}
+.battle.ui3d #acts .moves {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--s2);
+}
+.battle.ui3d #acts .mv,
+.battle.ui3d #acts .bt {
+  min-height: var(--tap);
+}
+.battle.ui3d #acts .bt.run {
+  color: #fff;
+  background: #3a2c55;
+}
+.battle.ui3d #acts .bt.run small {
+  color: rgba(255, 255, 255, 0.75);
+}
+@media (prefers-reduced-motion: reduce) {
+  .battle.ui3d .dock > #msg,
+  .battle.ui3d .dock > #acts {
+    will-change: auto;
+  }
+}

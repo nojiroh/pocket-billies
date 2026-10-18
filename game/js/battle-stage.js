@@ -303,6 +303,8 @@ export const battleStage = {
   stT: 0,
   goldT: 0,
   speed: 1,
+  /* phase 06-3: the camera holds still while the player chooses (battle.js floatTick) */
+  calm: false,
 };
 const BATTLE_STAGE_ART = {};
 /* phase 06-3: the painted stage is gone, so a stage needs no art of its own; kept as the start-up step battles await */
@@ -456,6 +458,7 @@ export function battleStageStop() {
   battleStage.gl = false;
   battleStage.waitT = 0;
   battleStage.waitLogged = false;
+  battleStage.calm = false;
   document.body.classList.remove('battle-3d');
 }
 function tween(o, p, to, dur, ease = 'out', delay = 0) {
@@ -923,7 +926,13 @@ function camUpdate(dt) {
     busy = camBusy();
   if (busy) battleStage.camT = battleStage.t;
   const want =
-    !reducedMotion && !busy && battleStage.t - battleStage.camT > 650 && battleStage.s[0].show && battleStage.s[1].show
+    /* phase 06-3: calm while the player chooses (the battle cards float in the scene and should hold still) */
+    !reducedMotion &&
+    !busy &&
+    !battleStage.calm &&
+    battleStage.t - battleStage.camT > 650 &&
+    battleStage.s[0].show &&
+    battleStage.s[1].show
       ? 1
       : 0;
   D.w += (want - D.w) * Math.min(1, dt / (want > D.w ? 1600 : 260));

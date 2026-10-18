@@ -2074,7 +2074,7 @@ def desktop_steps(b, base, R):
             ph = wait_phase(pg, ('choose', 'switch', 'end'), 30)
             if ph == 'end': won = pg.evaluate('activeBattle.over') == 'win'; break
             if ph == 'switch': pg.evaluate("document.querySelector('[data-a=bswitch]:not([disabled])').click()"); continue
-            if ph == 'choose': pg.evaluate("document.querySelector('[data-a=bfight]').click();document.querySelector('[data-a=bmove]').click()")
+            if ph == 'choose': pg.evaluate("document.querySelector('[data-a=bfight]')?.click();document.querySelector('[data-a=bmove]').click()")
         pg.evaluate("battleStage.speed=1;if(activeBattle){stopTimers();activeBattle=null;battleStageStop()}render();0")
         if won is None: raise Exception('the trainer battle didn’t finish in 300s')
         if not won: raise Exception('the trainer battle was lost (it should be an easy win)')
