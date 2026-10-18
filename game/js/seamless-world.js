@@ -22,14 +22,14 @@ import { ADJ, LINKS, ROUTE } from './game-data.js';
 import { U } from './game-state.js';
 import { artLoad, hexA } from './art.js';
 import {
-  DIO_GCACHE,
   DIO_STEPS,
-  dioGroundAsync,
-  dioGroundKey,
+  GROUND_CACHE,
+  buildGroundAsync,
   dioPoly,
   dioStepCell,
   dioSteps,
   exitEdge,
+  groundKey,
   mapArtPaths,
   mapById,
   mapHub,
@@ -2050,8 +2050,8 @@ function wrReady(id) {
   if (id === walkView.id) return true;
   const sc = mapById(id);
   if (!sc) return false;
-  const key = dioGroundKey(sc);
-  if (!DIO_GCACHE.has(key)) return false;
+  const key = groundKey(sc);
+  if (!GROUND_CACHE.has(key)) return false;
   return (
     typeof walkRenderer === 'undefined' ||
     !walkRenderer.on ||
@@ -2063,15 +2063,15 @@ export function wrGetReady(id, urgent, focus) {
   if (wrReady(id)) return true;
   const sc = mapById(id);
   if (!sc) return false;
-  const key = dioGroundKey(sc),
-    G = DIO_GCACHE.get(key);
+  const key = groundKey(sc),
+    G = GROUND_CACHE.get(key);
   if (!G) {
     if (!WORLD.busy) {
       WORLD.busy = true;
       WORLD.busyId = id;
       const t0 = performance.now();
       artLoad(mapArtPaths(sc))
-        .then(() => dioGroundAsync(sc, urgent ? -5 : 10))
+        .then(() => buildGroundAsync(sc, urgent ? -5 : 10))
         .catch(() => {})
         .then(() => {
           WORLD.busy = false;

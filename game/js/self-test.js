@@ -19,7 +19,7 @@ import { TR_CACHE } from './person-art.js';
 import { DR, closeDressing } from './dressing-room.js';
 import { SC, scStop } from './battle-stage.js';
 import {
-  DIO_GCACHE,
+  GROUND_CACHE,
   PROP_CLOCK,
   actionSpot,
   dioBridges,
@@ -1229,10 +1229,10 @@ async function runFullTest(mode) {
         const mb = performance.memory ? Math.round(performance.memory.usedJSHeapSize / 1048576) : null,
           tex = typeof EGL !== 'undefined' && EGL.texB ? Math.round(EGL.texB / 1048576) : null,
           ntex = typeof EGL !== 'undefined' && EGL.texL ? EGL.texL.size : null,
-          grounds = typeof DIO_GCACHE !== 'undefined' ? DIO_GCACHE.size : null,
+          grounds = typeof GROUND_CACHE !== 'undefined' ? GROUND_CACHE.size : null,
           gw =
-            typeof DIO_GCACHE !== 'undefined'
-              ? [...DIO_GCACHE.values()].reduce((a, g) => a + (g && g.width ? g.width * g.height * 4 : 0), 0)
+            typeof GROUND_CACHE !== 'undefined'
+              ? [...GROUND_CACHE.values()].reduce((a, g) => a + (g && g.width ? g.width * g.height * 4 : 0), 0)
               : 0,
           lost = typeof EGL !== 'undefined' && EGL.gl && EGL.gl.isContextLost();
         if (lost) throw new Error('the WebGL context was lost during the run');

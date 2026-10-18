@@ -72,9 +72,9 @@ import { cnv, hexA } from './art.js';
 import { dioFolkFrames, humanPose, owFrames, trPick, trWarm } from './person-art.js';
 import { drawRig, rigFrame, rigParts, rigPreload } from './skeleton-rig.js';
 import {
-  DIO_GCACHE,
   EFFECT_FRAMES,
   GROUND_BORDER_M,
+  GROUND_CACHE,
   PAINT_WORKER_WAIT,
   actionLabel,
   actionSpot,
@@ -90,11 +90,9 @@ import {
   dioClimbGo,
   dioDirOf,
   dioEncSpot,
-  dioEnsureGround,
   dioFolkTick,
   dioFree,
   dioFreePt,
-  dioGroundKey,
   dioHitAt,
   dioNav,
   dioPill,
@@ -114,7 +112,9 @@ import {
   dioUnproject,
   drawExitLabels,
   drawExitMarks,
+  ensureGround,
   flagPicturePath,
+  groundKey,
   hash2d,
   imageReady,
   layerAsProp,
@@ -758,7 +758,7 @@ export function dioMount(cv, id, opt = {}) {
     .then(sc => {
       if (walkView.id !== id) return;
       walkView.sc = sc;
-      dioEnsureGround();
+      ensureGround();
       walkView.ready = true;
       frameTask('dio', dglFrame, () => (walkView.opt.cap ? walkView.opt.cap() : userFps()));
       cv.classList.add('in');
@@ -2376,11 +2376,11 @@ function dglHK(id, sc, gkey) {
    left (walkRenderer.sceneCache), so the switch to it is a swap of a few references. Returns true when it is ready. */
 export function dglPrepared(id, sc, gkey) {
   const M = walkRenderer.sceneCache;
-  return !!(M && M.has(dglHK(id, sc, gkey || dioGroundKey(sc))));
+  return !!(M && M.has(dglHK(id, sc, gkey || groundKey(sc))));
 }
 export function dglPrepare(id, sc, G, urgent, focus) {
   if (!walkRenderer.on || !G) return false;
-  const gkey = dioGroundKey(sc),
+  const gkey = groundKey(sc),
     hk = dglHK(id, sc, gkey);
   if (walkRenderer.sceneCache && walkRenderer.sceneCache.has(hk)) return true;
   if (walkRenderer.hkey === hk) return true;
@@ -3600,7 +3600,7 @@ function dglFrameIn(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
   const gl = EGL.gl,
     sc = walkView.sc,
     cv = walkView.cv;
-  dioEnsureGround();
+  ensureGround();
   const hk = dglHK(walkView.id, sc, walkView.gkey);
   if (walkRenderer.gkey !== walkView.gkey || walkRenderer.hkey !== hk) {
     const old = walkRenderer.hkey;
@@ -3830,7 +3830,7 @@ export function dglRebuild() {
   walkRenderer.grassKey = null;
   walkRenderer.itemGen = (walkRenderer.itemGen || 0) + 1;
   walkView.gkey = '';
-  if (typeof DIO_GCACHE !== 'undefined') DIO_GCACHE.clear();
+  if (typeof GROUND_CACHE !== 'undefined') GROUND_CACHE.clear();
   if (typeof P3D !== 'undefined' && P3D.meshes) P3D.meshes = new WeakMap();
   if (typeof voxFlush === 'function') voxFlush();
 }

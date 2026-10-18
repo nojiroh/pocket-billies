@@ -22,11 +22,11 @@ import {
   applyGroundTone,
   bigTilesOn,
   clipSegmentToRect,
-  dioGroundKey,
   dioStepCH,
   dioStepCorners,
   dioStepJoined,
   dioSteps,
+  groundKey,
   groundTileFolder,
   groundToneAt,
   hash2d,
@@ -210,7 +210,7 @@ function pwWake() {
   PW.waiters = [];
   for (const f of L) f();
 }
-/* for async callers (dioGroundAsync): wait for the helper's next answer (or a tenth of a second) */
+/* for async callers (buildGroundAsync): wait for the helper's next answer (or a tenth of a second) */
 function pwSettle() {
   return new Promise(res => {
     PW.waiters.push(res);
@@ -219,7 +219,7 @@ function pwSettle() {
 }
 /* a view's id with the helper: its ground key (tiles, sizes, heights, art) and its own id */
 function pwCtxId(sc) {
-  const key = (sc.id || '') + '|' + (sc === walkView.sc && walkView.gkey ? walkView.gkey : dioGroundKey(sc));
+  const key = (sc.id || '') + '|' + (sc === walkView.sc && walkView.gkey ? walkView.gkey : groundKey(sc));
   let id = PW.ids.get(key);
   if (id == null) {
     id = ++PW.ctxN;

@@ -55,10 +55,6 @@ expose({
   BUILDING_VARIANT_CACHE: [() => BUILDING_VARIANT_CACHE],
   DIO_BRIDGE_ARC: [() => DIO_BRIDGE_ARC],
   DIO_CHAT: [() => DIO_CHAT],
-  DIO_FAR_TP: [() => DIO_FAR_TP],
-  DIO_GCACHE: [() => DIO_GCACHE],
-  DIO_GKEEP: [() => DIO_GKEEP],
-  DIO_GPEND: [() => DIO_GPEND],
   DIO_HOP: [() => DIO_HOP],
   DIO_KEYS: [() => DIO_KEYS],
   DIO_N: [() => DIO_N],
@@ -68,9 +64,13 @@ expose({
   DIO_STEPS: [() => DIO_STEPS],
   EFFECT_FRAMES: [() => EFFECT_FRAMES],
   EFFECT_KINDS: [() => EFFECT_KINDS],
+  FAR_GROUND_PX_PER_M: [() => FAR_GROUND_PX_PER_M],
   FOLK_HOME: [() => FOLK_HOME],
   FOLK_WORK: [() => FOLK_WORK],
   GROUND_BORDER_M: [() => GROUND_BORDER_M],
+  GROUND_BUILDS_PENDING: [() => GROUND_BUILDS_PENDING],
+  GROUND_CACHE: [() => GROUND_CACHE],
+  GROUND_CACHE_SIZE: [() => GROUND_CACHE_SIZE],
   OPEN_HOURS: [() => OPEN_HOURS],
   OPEN_NAMES: [() => OPEN_NAMES],
   PAINT_WORKER_WAIT: [() => PAINT_WORKER_WAIT],
@@ -90,6 +90,9 @@ expose({
   baseMapId: [() => baseMapId, v => (baseMapId = v)],
   bigTilePath: [() => bigTilePath, v => (bigTilePath = v)],
   bigTilesOn: [() => bigTilesOn],
+  buildGroundAsync: [() => buildGroundAsync, v => (buildGroundAsync = v)],
+  buildGroundPicture: [() => buildGroundPicture, v => (buildGroundPicture = v)],
+  cachedGround: [() => cachedGround, v => (cachedGround = v)],
   clipSegmentToRect: [() => clipSegmentToRect, v => (clipSegmentToRect = v)],
   closedText: [() => closedText, v => (closedText = v)],
   cropGrowth: [() => cropGrowth, v => (cropGrowth = v)],
@@ -98,7 +101,6 @@ expose({
   dioBridgeAt: [() => dioBridgeAt, v => (dioBridgeAt = v)],
   dioBridges: [() => dioBridges, v => (dioBridges = v)],
   dioBubble: [() => dioBubble, v => (dioBubble = v)],
-  dioBuildGround: [() => dioBuildGround, v => (dioBuildGround = v)],
   dioCandidates: [() => dioCandidates, v => (dioCandidates = v)],
   dioCanvasXY: [() => dioCanvasXY, v => (dioCanvasXY = v)],
   dioCell: [() => dioCell, v => (dioCell = v)],
@@ -110,7 +112,6 @@ expose({
   dioCostAt: [() => dioCostAt, v => (dioCostAt = v)],
   dioDirOf: [() => dioDirOf, v => (dioDirOf = v)],
   dioEncSpot: [() => dioEncSpot, v => (dioEncSpot = v)],
-  dioEnsureGround: [() => dioEnsureGround, v => (dioEnsureGround = v)],
   dioFace: [() => dioFace, v => (dioFace = v)],
   dioFind: [() => dioFind, v => (dioFind = v)],
   dioFolkAnchors: [() => dioFolkAnchors, v => (dioFolkAnchors = v)],
@@ -123,11 +124,6 @@ expose({
   dioFree: [() => dioFree, v => (dioFree = v)],
   dioFreePt: [() => dioFreePt, v => (dioFreePt = v)],
   dioGradeK: [() => dioGradeK, v => (dioGradeK = v)],
-  dioGroundAsync: [() => dioGroundAsync, v => (dioGroundAsync = v)],
-  dioGroundCached: [() => dioGroundCached, v => (dioGroundCached = v)],
-  dioGroundGen: [() => dioGroundGen, v => (dioGroundGen = v)],
-  dioGroundKeep: [() => dioGroundKeep, v => (dioGroundKeep = v)],
-  dioGroundKey: [() => dioGroundKey, v => (dioGroundKey = v)],
   dioHitAt: [() => dioHitAt, v => (dioHitAt = v)],
   dioLOS: [() => dioLOS, v => (dioLOS = v)],
   dioMix: [() => dioMix, v => (dioMix = v)],
@@ -172,18 +168,22 @@ expose({
   dioWalkTo: [() => dioWalkTo, v => (dioWalkTo = v)],
   drawExitLabels: [() => drawExitLabels, v => (drawExitLabels = v)],
   drawExitMarks: [() => drawExitMarks, v => (drawExitMarks = v)],
+  ensureGround: [() => ensureGround, v => (ensureGround = v)],
   exitEdge: [() => exitEdge, v => (exitEdge = v)],
   exitPoint: [() => exitPoint, v => (exitPoint = v)],
+  farGroundSteps: [() => farGroundSteps, v => (farGroundSteps = v)],
   flagPicturePath: [() => flagPicturePath, v => (flagPicturePath = v)],
   folkHello: [() => folkHello, v => (folkHello = v)],
   folkHour: [() => folkHour, v => (folkHour = v)],
   folkPhase: [() => folkPhase, v => (folkPhase = v)],
   folkTown: [() => folkTown, v => (folkTown = v)],
+  groundKey: [() => groundKey, v => (groundKey = v)],
   groundTileFolder: [() => groundTileFolder, v => (groundTileFolder = v)],
   groundToneAt: [() => groundToneAt, v => (groundToneAt = v)],
   hash2d: [() => hash2d, v => (hash2d = v)],
   imageReady: [() => imageReady],
   isOpenNow: [() => isOpenNow, v => (isOpenNow = v)],
+  keepGround: [() => keepGround, v => (keepGround = v)],
   layerAsProp: [() => layerAsProp, v => (layerAsProp = v)],
   mapArtPaths: [() => mapArtPaths, v => (mapArtPaths = v)],
   mapById: [() => mapById, v => (mapById = v)],
@@ -613,7 +613,7 @@ export async function prepareMap(id) {
   if (!sc) throw new Error('No scene ' + id);
   await artLoad(mapArtPaths(sc));
   try {
-    await dioGroundAsync(sc, -10);
+    await buildGroundAsync(sc, -10);
   } catch (e) {
     console.error(e);
   }
@@ -647,7 +647,7 @@ function tilePixels(path) {
   x.drawImage(im, 0, 0);
   return { w, h, d: new Uint32Array(x.getImageData(0, 0, w, h).data.buffer) };
 }
-export function dioGroundKey(sc) {
+export function groundKey(sc) {
   const C = walkData().sc;
   return JSON.stringify([
     sc.w,
@@ -670,7 +670,7 @@ export function dioGroundKey(sc) {
    a lower neighbour (curbs, lawn edges). Large soft patches of light, shade and slightly warmer or cooler colour lie on
    top of natural ground. v18: a light lip along the top of every cliff and terrace edge and a shadow along its foot;
    the Lite renderer (no 3D walls) also gets the wall faces painted below each edge.
-   v18 also builds it a slice at a time (dioGroundAsync) so opening a scene never freezes the game, with the noise
+   v18 also builds it a slice at a time (buildGroundAsync) so opening a scene never freezes the game, with the noise
    sampled on a coarse grid (several times faster), and keeps the last few scenes' pictures for instant revisits. */
 /* v46: which ground pattern each cell takes. Inside a scene its own metres, on a road the road's frame, so a spot
    looks the same in every view it appears in (sc.stable, set by seamless-world.js); a plain scene uses its own metres. */
@@ -1994,8 +1994,8 @@ export function* paintGroundSteps(sc, o) {
 }
 /* the whole picture of a scene: the Lite renderer's canvas (32 px a metre when it fits, else 16), or for the 3D
    renderer the distant picture (8 px a metre; the near ring paints the 16 m squares round you at full size) */
-function* dioGroundGen(sc, pr = 0, rec = null) {
-  const full = DIO_FAR_TP;
+function* farGroundSteps(sc, pr = 0, rec = null) {
+  const full = FAR_GROUND_PX_PER_M;
   const r = yield* typeof pwPaint === 'function'
     ? pwPaint(sc, { TP: full, margin: 0, pr, rec })
     : paintGroundSteps(sc, { TP: full, margin: 0 });
@@ -2005,12 +2005,12 @@ function* dioGroundGen(sc, pr = 0, rec = null) {
   g._TP = full;
   return g;
 }
-const DIO_FAR_TP = 8;
-function dioBuildGround(sc) {
+const FAR_GROUND_PX_PER_M = 8;
+function buildGroundPicture(sc) {
   const pw = typeof PW !== 'undefined' ? PW : null;
   if (pw) pw.sync++;
   /* (all here, now: no waiting on the helper) */ try {
-    const it = dioGroundGen(sc);
+    const it = farGroundSteps(sc);
     let r = it.next();
     while (!r.done) r = it.next();
     return r.value;
@@ -2019,23 +2019,23 @@ function dioBuildGround(sc) {
   }
 }
 /* built pictures, newest last; a scene you come back to opens at once */
-export const DIO_GCACHE = new Map();
-function dioGroundCached(key) {
-  const g = DIO_GCACHE.get(key);
+export const GROUND_CACHE = new Map();
+function cachedGround(key) {
+  const g = GROUND_CACHE.get(key);
   if (g) {
-    DIO_GCACHE.delete(key);
-    DIO_GCACHE.set(key, g);
+    GROUND_CACHE.delete(key);
+    GROUND_CACHE.set(key, g);
   }
   return g || null;
 }
 /* v41: a 32 px ground picture of a big scene is 15-25 MB; phones keep two (the scene you left and the one you are in), computers four */
-const DIO_GKEEP = /Android|iPhone|iPad/.test(navigator.userAgent) ? 2 : 4;
-function dioGroundKeep(key, g) {
-  DIO_GCACHE.set(key, g);
-  while (DIO_GCACHE.size > DIO_GKEEP) {
-    const k = DIO_GCACHE.keys().next().value,
-      old = DIO_GCACHE.get(k);
-    DIO_GCACHE.delete(k);
+const GROUND_CACHE_SIZE = /Android|iPhone|iPad/.test(navigator.userAgent) ? 2 : 4;
+function keepGround(key, g) {
+  GROUND_CACHE.set(key, g);
+  while (GROUND_CACHE.size > GROUND_CACHE_SIZE) {
+    const k = GROUND_CACHE.keys().next().value,
+      old = GROUND_CACHE.get(k);
+    GROUND_CACHE.delete(k);
     if (old && old.getContext) {
       old.width = 1;
       old.height = 1;
@@ -2046,11 +2046,11 @@ function dioGroundKeep(key, g) {
 /* alpha 0.4: pr = its place in the painter helper's queue (lower first): the view being opened -10, one needed
    soon -5, one only looked ahead to 10; the squares round you 0 to 3 */
 /* (one build per ground at a time: a second asker waits for the first, moving it up the queue if it is needed sooner) */
-const DIO_GPEND = new Map();
-export async function dioGroundAsync(sc, pr = 0) {
-  const key = dioGroundKey(sc);
-  if (dioGroundCached(key)) return;
-  const pend = DIO_GPEND.get(key);
+const GROUND_BUILDS_PENDING = new Map();
+export async function buildGroundAsync(sc, pr = 0) {
+  const key = groundKey(sc);
+  if (cachedGround(key)) return;
+  const pend = GROUND_BUILDS_PENDING.get(key);
   if (pend) {
     if (pr < pend.rec.pr) {
       pend.rec.pr = pr;
@@ -2060,7 +2060,7 @@ export async function dioGroundAsync(sc, pr = 0) {
   }
   const rec = { pr, id: 0 },
     p = (async () => {
-      const it = dioGroundGen(sc, pr, rec);
+      const it = farGroundSteps(sc, pr, rec);
       let r,
         t0 = performance.now();
       for (;;) {
@@ -2076,13 +2076,13 @@ export async function dioGroundAsync(sc, pr = 0) {
           t0 = performance.now();
         }
       }
-      dioGroundKeep(key, r.value);
+      keepGround(key, r.value);
     })();
-  DIO_GPEND.set(key, { rec, p });
+  GROUND_BUILDS_PENDING.set(key, { rec, p });
   try {
     await p;
   } finally {
-    DIO_GPEND.delete(key);
+    GROUND_BUILDS_PENDING.delete(key);
   }
 }
 /* v27: the water cells belong to the scene (a ground picture from the cache used to leave the last scene's here) */
@@ -2102,13 +2102,13 @@ function mapWaterCells(sc) {
   Object.defineProperty(sc, '_wKey', { value: rows.join(''), writable: true, configurable: true, enumerable: false });
   return out;
 }
-export function dioEnsureGround() {
+export function ensureGround() {
   const sc = walkView.sc,
-    key = dioGroundKey(sc);
+    key = groundKey(sc);
   if (key !== walkView.gkey || !walkView.ground) {
-    const c = dioGroundCached(key);
-    walkView.ground = c || dioBuildGround(sc);
-    if (!c) dioGroundKeep(key, walkView.ground);
+    const c = cachedGround(key);
+    walkView.ground = c || buildGroundPicture(sc);
+    if (!c) keepGround(key, walkView.ground);
     walkView.gkey = key;
     walkView.cand = null;
     walkView.nav = null;
