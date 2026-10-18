@@ -11,7 +11,7 @@ import { $, $$ } from '../../game/js/util.js';
 import { ENGINE_SPEC } from '../../game/js/engine/settings.js';
 import { esc } from './game-stand-ins.js';
 import { ACTIONS, SECTIONS, SECTION_LIST, clone, openSection, studioState, toast } from './studio-app.js';
-import { ENS, engRefresh } from './engine-editor.js';
+import { engineEditor, refreshEngineSettings } from './engine-editor.js';
 /* eslint-disable no-func-assign */
 expose({
   FIND: [() => FIND],
@@ -69,9 +69,9 @@ export function findField(sec, p, sel) {
   findFlash(findSel(p));
 }
 export function findEngine(g, k) {
-  ENS.scope = 'game';
-  ENS.open[g] = 1;
-  if (studioState.sec === 'engine') engRefresh();
+  engineEditor.scope = 'game';
+  engineEditor.open[g] = 1;
+  if (studioState.sec === 'engine') refreshEngineSettings();
   else openSection('engine');
   findFlash(findSel(`engine.defaults.${g}.${k}`));
 }

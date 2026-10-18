@@ -16,7 +16,7 @@ import { esc } from './game-stand-ins.js';
 import { ACTIONS, openSection, render, setRender, speciesName, studioState } from './studio-app.js';
 import { selectedLineIndex } from './data-editors.js';
 import { currentMapId, mapEditor } from './map-editor.js';
-import { ENS, engD, engFmt } from './engine-editor.js';
+import { engineData, engineEditor, formatDialValue } from './engine-editor.js';
 import { findEngine, findField, findFlash, findSel } from './find.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -421,7 +421,7 @@ function lnkGraph(cur) {
 }
 function lnkDial(gk) {
   const [g, k] = gk.split('.'),
-    D = engD(),
+    D = engineData(),
     built = (ENGINE_DEFAULTS[g] || {})[k],
     game = ((D.defaults || {})[g] || {})[k],
     map = ((D.map || {})[g] || {})[k];
@@ -431,12 +431,12 @@ function lnkDial(gk) {
       kind: 'scene',
       id: s,
       label: v.name || s,
-      sub: 'This place: ' + engFmt(v.look[g][k], 0.01),
+      sub: 'This place: ' + formatDialValue(v.look[g][k], 0.01),
       go: () => {
-        ENS.scope = 'scene';
-        ENS.scene = s;
+        engineEditor.scope = 'scene';
+        engineEditor.scene = s;
         studioState.sel.scene = s;
-        ENS.open[g] = 1;
+        engineEditor.open[g] = 1;
         openSection('engine');
         findFlash(findSel(`scenes.${s}.look.${g}.${k}`));
       },
@@ -448,17 +448,17 @@ function lnkDial(gk) {
         kind: 'preset',
         id: n,
         label: 'Look: ' + (P.name || n),
-        sub: 'sets it to ' + engFmt(P.v[g][k], 0.01),
+        sub: 'sets it to ' + formatDialValue(P.v[g][k], 0.01),
         go: () => openSection('engine'),
       })),
   ];
   const chain = [
-    { kind: 'src', id: 'b', label: 'Built in', sub: engFmt(built, 0.01), go: null },
+    { kind: 'src', id: 'b', label: 'Built in', sub: formatDialValue(built, 0.01), go: null },
     {
       kind: 'src',
       id: 'g',
       label: 'Whole game',
-      sub: game !== undefined ? engFmt(game, 0.01) : 'not set (built in)',
+      sub: game !== undefined ? formatDialValue(game, 0.01) : 'not set (built in)',
       go: () => findEngine(g, k),
       on: game !== undefined,
     },
@@ -468,10 +468,10 @@ function lnkDial(gk) {
       kind: 'src',
       id: 'm',
       label: 'World map',
-      sub: engFmt(map, 0.01),
+      sub: formatDialValue(map, 0.01),
       go: () => {
-        ENS.scope = 'map';
-        ENS.open[g] = 1;
+        engineEditor.scope = 'map';
+        engineEditor.open[g] = 1;
         openSection('engine');
       },
     });

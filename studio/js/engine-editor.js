@@ -45,20 +45,20 @@ import { atlasGet } from './sprites.js';
 import { mapExitNames, sceneryArtPaths, sceneryCatalog } from './map-editor.js';
 /* eslint-disable no-func-assign */
 expose({
-  ENS: [() => ENS],
-  engBase: [() => engBase],
-  engD: [() => engD],
-  engField: [() => engField, v => (engField = v)],
-  engFmt: [() => engFmt],
-  engGrab: [() => engGrab, v => (engGrab = v)],
-  engGroup: [() => engGroup, v => (engGroup = v)],
-  engInherited: [() => engInherited, v => (engInherited = v)],
-  engMount: [() => engMount, v => (engMount = v)],
-  engPresets: [() => engPresets, v => (engPresets = v)],
-  engPrune: [() => engPrune],
-  engRefresh: [() => engRefresh],
-  engScene: [() => engScene],
-  engSettingsHTML: [() => engSettingsHTML, v => (engSettingsHTML = v)],
+  captureLookPreviews: [() => captureLookPreviews, v => (captureLookPreviews = v)],
+  engineData: [() => engineData],
+  engineDialHTML: [() => engineDialHTML, v => (engineDialHTML = v)],
+  engineEditor: [() => engineEditor],
+  engineEditorMapId: [() => engineEditorMapId],
+  engineGroupHTML: [() => engineGroupHTML, v => (engineGroupHTML = v)],
+  enginePresetsHTML: [() => enginePresetsHTML, v => (enginePresetsHTML = v)],
+  engineScopePath: [() => engineScopePath],
+  engineSettingsHTML: [() => engineSettingsHTML, v => (engineSettingsHTML = v)],
+  formatDialValue: [() => formatDialValue],
+  inheritedDialValue: [() => inheritedDialValue, v => (inheritedDialValue = v)],
+  mountEnginePreview: [() => mountEnginePreview, v => (mountEnginePreview = v)],
+  pruneEngineOverrides: [() => pruneEngineOverrides],
+  refreshEngineSettings: [() => refreshEngineSettings],
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
@@ -71,43 +71,53 @@ if (typeof adaptQuality === 'function')
     if (typeof walkRenderer !== 'undefined') walkRenderer.q = 0;
     if (typeof walkView !== 'undefined') walkView.R = 1;
   });
-export const ENS = { scope: 'game', scene: null, open: { lens: 1, color: 1, sun: 1, shadows: 1 }, meterT: null };
-export const engD = () => studioState.D.engine || (studioState.D.engine = { defaults: {}, presets: {} });
-const engScene = () => {
-  const S = studioState.D.scenes || {};
-  if (!S[ENS.scene])
-    ENS.scene = studioState.sel.scene && S[studioState.sel.scene] ? studioState.sel.scene : Object.keys(S)[0] || null;
-  return ENS.scene;
+export const engineEditor = {
+  scope: 'game',
+  scene: null,
+  open: { lens: 1, color: 1, sun: 1, shadows: 1 },
+  meterT: null,
 };
-const engBase = () =>
-  ENS.scope === 'scene' ? `scenes.${engScene()}.look` : ENS.scope === 'map' ? 'engine.map' : 'engine.defaults';
+export const engineData = () => studioState.D.engine || (studioState.D.engine = { defaults: {}, presets: {} });
+const engineEditorMapId = () => {
+  const S = studioState.D.scenes || {};
+  if (!S[engineEditor.scene])
+    engineEditor.scene =
+      studioState.sel.scene && S[studioState.sel.scene] ? studioState.sel.scene : Object.keys(S)[0] || null;
+  return engineEditor.scene;
+};
+const engineScopePath = () =>
+  engineEditor.scope === 'scene'
+    ? `scenes.${engineEditorMapId()}.look`
+    : engineEditor.scope === 'map'
+      ? 'engine.map'
+      : 'engine.defaults';
 /* what a dial would be without the scope being edited */
-function engInherited(g, k) {
-  if (ENS.scope !== 'game') {
-    const d = (engD().defaults || {})[g];
+function inheritedDialValue(g, k) {
+  if (engineEditor.scope !== 'game') {
+    const d = (engineData().defaults || {})[g];
     if (d && d[k] !== undefined) return d[k];
   }
   return ENGINE_DEFAULTS[g][k];
 }
-export const engFmt = (v, step) => {
+export const formatDialValue = (v, step) => {
   if (v == null) return '—';
   if (typeof v === 'boolean') return v ? 'on' : 'off';
   if (typeof v !== 'number') return String(v);
   const t = v.toFixed(step < 0.01 ? 4 : step < 1 ? 2 : 0);
   return t.includes('.') ? t.replace(/0+$/, '').replace(/\.$/, '') : t;
 };
-function engField(g, f) {
+function engineDialHTML(g, f) {
   const [k, label] = f,
     typ = typeof f[2] === 'string' ? f[2] : 'range',
-    p = `${engBase()}.${g}.${k}`,
+    p = `${engineScopePath()}.${g}.${k}`,
     own = readPath(p),
-    inh = engInherited(g, k),
+    inh = inheritedDialValue(g, k),
     v = own !== undefined ? own : inh;
   const help = typ === 'range' ? f[5] : typ === 'sel' ? null : f[3],
-    reset = `<button class="eng-reset" data-act="engReset" data-p="${p}" title="Back to ${ENS.scope === 'scene' ? 'the game default' : 'the built-in value'} (${esc(engFmt(inh, f[4] || 1))})">↺</button>`;
+    reset = `<button class="eng-reset" data-act="engReset" data-p="${p}" title="Back to ${engineEditor.scope === 'scene' ? 'the game default' : 'the built-in value'} (${esc(formatDialValue(inh, f[4] || 1))})">↺</button>`;
   let body = '';
   if (typ === 'range')
-    body = `<span class="eng-lab">${esc(label)} <output id="${fieldOutputId(p)}">${engFmt(v, f[4])}</output></span><input type="range" data-p="${p}" data-k="num" value="${v}" min="${f[2]}" max="${f[3]}" step="${f[4]}">`;
+    body = `<span class="eng-lab">${esc(label)} <output id="${fieldOutputId(p)}">${formatDialValue(v, f[4])}</output></span><input type="range" data-p="${p}" data-k="num" value="${v}" min="${f[2]}" max="${f[3]}" step="${f[4]}">`;
   else if (typ === 'bool')
     body = `<label class="eng-chk"><input type="checkbox" data-p="${p}" data-k="bool" ${v ? 'checked' : ''}><span>${esc(label)}</span></label>`;
   else if (typ === 'sel')
@@ -119,14 +129,14 @@ function engField(g, f) {
     body = `<span class="eng-lab">${esc(label)}</span><input type="number" data-p="${p}" data-k="num" data-opt="1" step="any" value="${v == null ? '' : v}" placeholder="scene’s own">`;
   return `<div class="eng-f ${own !== undefined ? 'own' : ''}" data-path="${p}">${body}${reset}${help ? `<small class="help">${esc(help)}</small>` : ''}</div>`;
 }
-function engGroup([g, title, fields]) {
-  const set = fields.filter(f => readPath(`${engBase()}.${g}.${f[0]}`) !== undefined).length,
-    open = ENS.open[g];
+function engineGroupHTML([g, title, fields]) {
+  const set = fields.filter(f => readPath(`${engineScopePath()}.${g}.${f[0]}`) !== undefined).length,
+    open = engineEditor.open[g];
   return `<section class="card eng-g ${open ? 'open' : ''}"><header><button class="eng-gh" data-act="engOpen" data-g="${g}"><span class="eng-tw">${open ? '▾' : '▸'}</span><h3>${esc(title)}</h3>${set ? `<span class="badge">${set} set</span>` : ''}</button>${set ? `<button class="btn sm subtle" data-act="engResetG" data-g="${g}">Reset</button>` : ''}</header>
- ${open ? `<div class="card-b eng-fields">${fields.map(f => engField(g, f)).join('')}</div>` : ''}</section>`;
+ ${open ? `<div class="card-b eng-fields">${fields.map(f => engineDialHTML(g, f)).join('')}</div>` : ''}</section>`;
 }
-function engPresets() {
-  const own = engD().presets || {};
+function enginePresetsHTML() {
+  const own = engineData().presets || {};
   return `<div class="eng-pre">${Object.entries(ENGINE_PRESETS)
     .map(([k, P]) => `<button class="seg" data-act="engPreset" data-k="${k}">${esc(P.name)}</button>`)
     .join('')}
@@ -136,38 +146,38 @@ function engPresets() {
        `<span class="eng-own"><button class="seg" data-act="engPreset" data-k="${esc(k)}" data-own="1">${esc(P.name || k)}</button><button class="eng-x" data-act="engPresetDel" data-k="${esc(k)}" title="Delete this preset">×</button></span>`
    )
    .join('')}
- <button class="seg add" data-act="engPresetSave">+ Save as preset</button><button class="seg" data-act="engLookPreviews" title="Draws the preview once with each look and shows them side by side">Preview every look</button></div><p class="help">A preset only changes the dials it lists, on ${ENS.scope === 'scene' ? 'this scene' : ENS.scope === 'map' ? 'the map' : 'the whole game'}. Undo takes it back.</p>`;
+ <button class="seg add" data-act="engPresetSave">+ Save as preset</button><button class="seg" data-act="engLookPreviews" title="Draws the preview once with each look and shows them side by side">Preview every look</button></div><p class="help">A preset only changes the dials it lists, on ${engineEditor.scope === 'scene' ? 'this scene' : engineEditor.scope === 'map' ? 'the map' : 'the whole game'}. Undo takes it back.</p>`;
 }
-function engSettingsHTML() {
-  const sid = engScene(),
+function engineSettingsHTML() {
+  const sid = engineEditorMapId(),
     sc = sid ? studioState.D.scenes[sid] : null,
     nScene = sc && sc.look ? Object.values(sc.look).reduce((a, o) => a + Object.keys(o || {}).length, 0) : 0,
-    nGame = Object.values(engD().defaults || {}).reduce((a, o) => a + Object.keys(o || {}).length, 0),
-    nMap = Object.values(engD().map || {}).reduce((a, o) => a + Object.keys(o || {}).length, 0);
-  return `<div class="card eng-scope"><div class="card-b"><div class="seg-row"><button class="seg ${ENS.scope === 'game' ? 'on' : ''}" data-act="engScope" data-s="game">Whole game${nGame ? ` · ${nGame}` : ''}</button><button class="seg ${ENS.scope === 'scene' ? 'on' : ''}" data-act="engScope" data-s="scene">Only ${esc(sc ? sc.name || sid : 'this scene')}${nScene ? ` · ${nScene}` : ''}</button><button class="seg ${ENS.scope === 'map' ? 'on' : ''}" data-act="engScope" data-s="map">World map${nMap ? ` · ${nMap}` : ''}</button></div>
- <p class="help">${ENS.scope === 'map' ? 'These override the game-wide values on the Map tab (lens, color, bloom). The preview here shows a walk scene; open the game to see the map.' : ENS.scope === 'scene' ? 'These override the game-wide values for this one scene. A dial you haven’t touched follows the game.' : 'These apply to every walk scene unless a scene overrides them. A dial you haven’t touched uses the built-in value.'} Dials you’ve set show a ↺ to undo just that one.</p>
- <h4>Presets</h4>${engPresets()}
- <div class="seg-row"><button class="btn sm subtle" data-act="engClear">Clear everything set here</button>${ENS.scope === 'scene' && nScene ? `<button class="btn sm subtle" data-act="engPromote">Use these for the whole game</button>` : ''}</div></div></div>
- ${ENGINE_SPEC.map(engGroup).join('')}`;
+    nGame = Object.values(engineData().defaults || {}).reduce((a, o) => a + Object.keys(o || {}).length, 0),
+    nMap = Object.values(engineData().map || {}).reduce((a, o) => a + Object.keys(o || {}).length, 0);
+  return `<div class="card eng-scope"><div class="card-b"><div class="seg-row"><button class="seg ${engineEditor.scope === 'game' ? 'on' : ''}" data-act="engScope" data-s="game">Whole game${nGame ? ` · ${nGame}` : ''}</button><button class="seg ${engineEditor.scope === 'scene' ? 'on' : ''}" data-act="engScope" data-s="scene">Only ${esc(sc ? sc.name || sid : 'this scene')}${nScene ? ` · ${nScene}` : ''}</button><button class="seg ${engineEditor.scope === 'map' ? 'on' : ''}" data-act="engScope" data-s="map">World map${nMap ? ` · ${nMap}` : ''}</button></div>
+ <p class="help">${engineEditor.scope === 'map' ? 'These override the game-wide values on the Map tab (lens, color, bloom). The preview here shows a walk scene; open the game to see the map.' : engineEditor.scope === 'scene' ? 'These override the game-wide values for this one scene. A dial you haven’t touched follows the game.' : 'These apply to every walk scene unless a scene overrides them. A dial you haven’t touched uses the built-in value.'} Dials you’ve set show a ↺ to undo just that one.</p>
+ <h4>Presets</h4>${enginePresetsHTML()}
+ <div class="seg-row"><button class="btn sm subtle" data-act="engClear">Clear everything set here</button>${engineEditor.scope === 'scene' && nScene ? `<button class="btn sm subtle" data-act="engPromote">Use these for the whole game</button>` : ''}</div></div></div>
+ ${ENGINE_SPEC.map(engineGroupHTML).join('')}`;
 }
 SECTIONS.engine = () => {
-  const sid = engScene();
-  after(engMount);
+  const sid = engineEditorMapId();
+  after(mountEnginePreview);
   if (!sid)
     return `<div class="ed-col solo"><h2>Engine</h2><p class="help">Add a walk scene first; the preview needs one.</p></div>`;
   const opts = Object.entries(studioState.D.scenes)
     .map(([k, s]) => `<option value="${esc(k)}" ${k === sid ? 'selected' : ''}>${esc(s.name || k)}</option>`)
     .join('');
-  return `<div class="eng-split"><div class="eng-set" id="engSet">${engSettingsHTML()}</div>
+  return `<div class="eng-split"><div class="eng-set" id="engSet">${engineSettingsHTML()}</div>
  <div class="eng-side"><div class="card"><div class="card-b"><div class="eng-pvbar"><label class="fld"><span>Preview scene</span><select id="engScene">${opts}</select></label>
    <button class="btn sm" id="engCmp" title="Hold to see the built-in look without any of your settings">Hold to compare</button></div>
   <div class="sc-pv eng-pv"><canvas id="engPv"></canvas><div class="sc-pv-load" id="engPvLoad">Loading…</div></div>
   <div class="eng-meter" id="engMeter">–</div>
   <p class="help">Click the ground to walk, drag to turn, scroll to zoom. What you see is the game’s own renderer with your unsaved values. Battles happen inside the walk scene, so they follow its look.</p></div></div></div></div>`;
 };
-async function engMount() {
+async function mountEnginePreview() {
   const cv = $('#engPv'),
-    id = engScene();
+    id = engineEditorMapId();
   if (!cv || !id) return;
   const C = sceneryCatalog();
   await Promise.all(sceneryArtPaths(C).map(p => atlasGet('art/' + p).catch(() => null)));
@@ -177,7 +187,7 @@ async function engMount() {
     state: () => ({
       mode: 'roam',
       roam: true,
-      pos: ENS.pos && ENS.pos[0] === id ? ENS.pos[1] : mapHub(studioState.D.scenes[id]),
+      pos: engineEditor.pos && engineEditor.pos[0] === id ? engineEditor.pos[1] : mapHub(studioState.D.scenes[id]),
       who: 'boy',
       enc: [
         { id: 'pv1', lvl: 5 },
@@ -187,7 +197,7 @@ async function engMount() {
       exits: typeof mapExitNames === 'function' ? mapExitNames(id) : [],
     }),
     onMove: (x, z) => {
-      ENS.pos = [id, [x, z]];
+      engineEditor.pos = [id, [x, z]];
     },
     keys: () => false,
     onPick: h => {
@@ -199,7 +209,7 @@ async function engMount() {
     if (l) l.hidden = true;
   });
   $('#engScene').onchange = e => {
-    ENS.scene = e.target.value;
+    engineEditor.scene = e.target.value;
     render();
   };
   const b = $('#engCmp'),
@@ -209,11 +219,11 @@ async function engMount() {
     };
   b.onpointerdown = () => on(true);
   ['pointerup', 'pointerleave', 'pointercancel'].forEach(t => b.addEventListener(t, () => on(false)));
-  clearInterval(ENS.meterT);
-  ENS.meterT = setInterval(() => {
+  clearInterval(engineEditor.meterT);
+  engineEditor.meterT = setInterval(() => {
     const m = $('#engMeter');
     if (!m || studioState.sec !== 'engine') {
-      clearInterval(ENS.meterT);
+      clearInterval(engineEditor.meterT);
       return;
     }
     if (typeof walkRenderer === 'undefined' || !walkRenderer.on) {
@@ -236,89 +246,92 @@ studioState.hooks.engine = p => {
   /* alpha 0.4.1: dials the ground, grass, water, trees and solid props are built from rebuild the preview (they showed no change before) */
   const g = String(p).split('.').slice(-2)[0];
   if (['world', 'grass', 'water', 'quality'].includes(g)) {
-    clearTimeout(ENS.rbT);
-    ENS.rbT = setTimeout(() => {
+    clearTimeout(engineEditor.rbT);
+    engineEditor.rbT = setTimeout(() => {
       if (typeof rebuildFromSettings === 'function') rebuildFromSettings();
     }, 350);
   }
 };
-export const engRefresh = () => {
+export const refreshEngineSettings = () => {
   const s = $('#engSet');
   if (s) {
     const y = $('#main').scrollTop;
-    s.innerHTML = engSettingsHTML();
+    s.innerHTML = engineSettingsHTML();
     $('#main').scrollTop = y;
   }
 };
-const engPrune = () => {
-  const base = readPath(engBase());
+const pruneEngineOverrides = () => {
+  const base = readPath(engineScopePath());
   if (!base) return;
   for (const g of Object.keys(base)) {
     for (const k of Object.keys(base[g] || {})) if (base[g][k] === undefined) delete base[g][k];
     if (!base[g] || !Object.keys(base[g]).length) delete base[g];
   }
-  if (ENS.scope !== 'game' && !Object.keys(base).length) writePath(engBase(), undefined);
+  if (engineEditor.scope !== 'game' && !Object.keys(base).length) writePath(engineScopePath(), undefined);
 };
 ACTIONS.engScope = d => {
-  ENS.scope = d.s;
-  engRefresh();
+  engineEditor.scope = d.s;
+  refreshEngineSettings();
 };
 ACTIONS.engOpen = d => {
-  ENS.open[d.g] = !ENS.open[d.g];
-  engRefresh();
+  engineEditor.open[d.g] = !engineEditor.open[d.g];
+  refreshEngineSettings();
 };
 ACTIONS.engReset = d => {
   writePath(d.p, undefined);
-  engPrune();
+  pruneEngineOverrides();
   changed();
   commit(true);
-  engRefresh();
+  refreshEngineSettings();
 };
 ACTIONS.engResetG = d => {
-  writePath(`${engBase()}.${d.g}`, undefined);
-  engPrune();
+  writePath(`${engineScopePath()}.${d.g}`, undefined);
+  pruneEngineOverrides();
   changed();
   commit(true);
-  engRefresh();
+  refreshEngineSettings();
 };
 ACTIONS.engClear = async () => {
-  if (!readPath(engBase())) return toast('Nothing is set here.');
+  if (!readPath(engineScopePath())) return toast('Nothing is set here.');
   if (
-    !(await ask(`Clear every engine setting on ${ENS.scope === 'scene' ? 'this scene' : 'the whole game'}?`, 'Clear'))
+    !(await ask(
+      `Clear every engine setting on ${engineEditor.scope === 'scene' ? 'this scene' : 'the whole game'}?`,
+      'Clear'
+    ))
   )
     return;
-  writePath(engBase(), ENS.scope === 'game' ? {} : undefined);
+  writePath(engineScopePath(), engineEditor.scope === 'game' ? {} : undefined);
   changed();
   commit(true);
-  engRefresh();
+  refreshEngineSettings();
 };
 ACTIONS.engPromote = async () => {
-  const look = readPath(engBase());
+  const look = readPath(engineScopePath());
   if (!look) return;
   if (!(await ask('Copy this scene’s settings to the whole game and clear them from the scene?', 'Copy'))) return;
-  const d = engD().defaults || (engD().defaults = {});
+  const d = engineData().defaults || (engineData().defaults = {});
   for (const [g, o] of Object.entries(look)) {
     d[g] = Object.assign(d[g] || {}, o);
   }
-  writePath(engBase(), undefined);
+  writePath(engineScopePath(), undefined);
   changed();
   commit(true);
-  ENS.scope = 'game';
-  engRefresh();
+  engineEditor.scope = 'game';
+  refreshEngineSettings();
 };
 ACTIONS.engPreset = d => {
-  const P = d.own ? (engD().presets || {})[d.k] : ENGINE_PRESETS[d.k];
+  const P = d.own ? (engineData().presets || {})[d.k] : ENGINE_PRESETS[d.k];
   if (!P) return;
   for (const [g, o] of Object.entries(P.v || {}))
     for (const [k, v] of Object.entries(o))
-      if (ENGINE_DEFAULTS[g] && k in ENGINE_DEFAULTS[g]) writePath(`${engBase()}.${g}.${k}`, v);
+      if (ENGINE_DEFAULTS[g] && k in ENGINE_DEFAULTS[g]) writePath(`${engineScopePath()}.${g}.${k}`, v);
   changed();
   commit(true);
-  engRefresh();
-  toast(`${P.name || d.k} applied${ENS.scope === 'scene' ? ' to this scene' : ''}.`);
+  refreshEngineSettings();
+  toast(`${P.name || d.k} applied${engineEditor.scope === 'scene' ? ' to this scene' : ''}.`);
 };
 ACTIONS.engPresetSave = async () => {
-  const cur = readPath(engBase());
+  const cur = readPath(engineScopePath());
   if (!cur || !Object.keys(cur).length) return toast('Set a few dials first; a preset saves the ones you’ve set here.');
   const name = await dialog(
     'Save as preset',
@@ -329,25 +342,25 @@ ACTIONS.engPresetSave = async () => {
     ]
   );
   if (!name) return;
-  const ps = engD().presets || (engD().presets = {}),
+  const ps = engineData().presets || (engineData().presets = {}),
     k = uniqueKey(name, x => !!ps[x] || !!ENGINE_PRESETS[x]);
   ps[k] = { name, v: clone(cur) };
   changed();
   commit(true);
-  engRefresh();
+  refreshEngineSettings();
   toast('Preset saved.');
 };
 ACTIONS.engPresetDel = async d => {
-  if (!(await ask(`Delete the preset “${(engD().presets[d.k] || {}).name || d.k}”?`, 'Delete'))) return;
-  delete engD().presets[d.k];
+  if (!(await ask(`Delete the preset “${(engineData().presets[d.k] || {}).name || d.k}”?`, 'Delete'))) return;
+  delete engineData().presets[d.k];
   changed();
   commit(true);
-  engRefresh();
+  refreshEngineSettings();
 };
 
 /* v29: look previews. The preview is drawn once with each preset (nothing is changed), then they're shown side by side;
    click one to apply it */
-function engGrab() {
+function captureLookPreviews() {
   return new Promise(res => {
     if (typeof walkRenderer === 'undefined' || !walkRenderer.on) return res(null);
     let done = false;
@@ -371,27 +384,27 @@ function engGrab() {
 }
 ACTIONS.engLookPreviews = async () => {
   if (!$('#engPv')) return;
-  const own = engD().presets || {},
+  const own = engineData().presets || {},
     all = [
       ...Object.entries(ENGINE_PRESETS).map(([k, P]) => [k, P, 0]),
       ...Object.entries(own).map(([k, P]) => [k, P, 1]),
     ],
-    keep = clone(readPath(engBase()) || {}),
+    keep = clone(readPath(engineScopePath()) || {}),
     out = [];
   toast('Drawing each look…');
   try {
     for (const [k, P, o] of all) {
-      writePath(engBase(), clone(keep));
+      writePath(engineScopePath(), clone(keep));
       for (const [g, v] of Object.entries(P.v || {}))
         for (const [kk, vv] of Object.entries(v))
-          if (ENGINE_DEFAULTS[g] && kk in ENGINE_DEFAULTS[g]) writePath(`${engBase()}.${g}.${kk}`, vv);
+          if (ENGINE_DEFAULTS[g] && kk in ENGINE_DEFAULTS[g]) writePath(`${engineScopePath()}.${g}.${kk}`, vv);
       await new Promise(r => setTimeout(r, 650));
-      out.push([k, P, o, await engGrab()]);
+      out.push([k, P, o, await captureLookPreviews()]);
     }
   } finally {
-    writePath(engBase(), Object.keys(keep).length ? keep : ENS.scope === 'game' ? {} : undefined);
+    writePath(engineScopePath(), Object.keys(keep).length ? keep : engineEditor.scope === 'game' ? {} : undefined);
   }
-  const cur = await engGrab();
+  const cur = await captureLookPreviews();
   await dialog(
     'Every look on this scene',
     `<div class="eng-looks">${cur ? `<figure><img src="${cur}" alt="As it is now"><figcaption>As it is now</figcaption></figure>` : ''}${out.map(([k, P, o, u]) => `<figure class="eng-look" data-act="engPreset" data-k="${esc(k)}" ${o ? 'data-own="1"' : ''} role="button" tabindex="0">${u ? `<img src="${u}" alt="${esc(P.name || k)}">` : '<div class="help">No picture</div>'}<figcaption>${esc(P.name || k)}</figcaption></figure>`).join('')}</div><p class="help">Click a look to apply it (Undo takes it back).</p>`,
