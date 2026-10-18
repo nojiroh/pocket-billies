@@ -28,3 +28,39 @@ test('saves: a new save, load checks, migrate, backup check', () => {
   assert.equal(valid({ ...m, team: [{ ...m.team[0], lvl: 101 }] }), false);
   assert.equal(valid(JSON.parse(JSON.stringify(m).replace('"flags":{}', '"flags":{"__proto__":1}'))), false);
 });
+
+test('saves: a started save comes back from its JSON (loading again changes nothing); a broken one is refused', () => {
+  const s = startedSave('sparky0', 10);
+  s.team.push(fn('makeBilly')('drip0', 7));
+  const once = fn('loadSave')(JSON.parse(JSON.stringify(s)));
+  assert.deepEqual(once.team, s.team);
+  assert.deepEqual(fn('loadSave')(JSON.parse(JSON.stringify(once))), once);
+  const text = JSON.stringify(once);
+  const valid = fn('validSave');
+  assert.equal(valid(JSON.parse(text)), true);
+  const broken = f => {
+    const o = JSON.parse(text);
+    f(o);
+    return valid(o);
+  };
+  assert.equal(
+    broken(o => (o.team[1].uid = o.team[0].uid)),
+    false,
+    'two Billies with one id'
+  );
+  assert.equal(
+    broken(o => (o.team[0].moves = ['nosuchmove'])),
+    false,
+    'a move the game does not have'
+  );
+  assert.equal(
+    broken(o => (o.trip.node = 99)),
+    false,
+    'a place the game does not have'
+  );
+  assert.equal(
+    broken(o => (o.se = -1)),
+    false,
+    'money below zero'
+  );
+});
