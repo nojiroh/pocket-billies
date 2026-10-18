@@ -10,7 +10,7 @@
 // game/js/hooks.js), so the globals are only the classic scripts' names; no-undef finds a module name read without
 // an import (run npm run modules), or read by a classic script.
 // Phase 04e: the logic (game/js/logic/) and the data tables it reads (game/js/game-data.js) run in plain Node too
-// (tools/check-logic.mjs), so they get no browser globals and import only logic (see LOGIC below).
+// (tools/check-logic.mjs), so they get no browser globals and import only logic (see isLogic below).
 import js from '@eslint/js';
 import * as espree from 'espree';
 import globals from 'globals';
