@@ -112,7 +112,7 @@ onmessage=ev=>{const m=ev.data;
  if(m.t==='cancel'){if(Q.some(q=>q.id===m.id))GONE.add(m.id);return}
  if(m.t==='prio'){for(const q of Q)if(q.id===m.id)q.pr=m.pr;return}
  if(m.t==='paint'){Q.push(m);if(!busy){busy=true;setTimeout(run,0)}}};`;
-/* the worker's source: the painter and everything it calls, as written in walk-view.js (and wrNear, world-rules-art.js) */
+/* the worker's source: the painter and everything it calls, as written in walk-view.js (and wrNear, seamless-world.js) */
 function pwSource() {
   const fns = [
     dioHash,
