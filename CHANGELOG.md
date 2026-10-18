@@ -36,6 +36,9 @@ kept aside in the browser).
   the data, the save and the logic from JSDoc comments (`npm run typecheck`); nothing is compiled.
 - Studio: the hidden "With its neighbours" preview button is gone (it hadn't shown since the modules change).
 - The debug log's picture of the scene no longer shows what your buddy says (it could name your Billie).
+- Settings → Help → Run the graphics test (also in the debug menu): every graphics setting on its own, then the
+  graphics presets, each checked for frames, frame rate and errors, in an OK/Problem table. "Save the report" saves a
+  short file with no save data or names. Your save and your graphics settings are put back afterwards.
 - The full test saves nothing while it runs, in this browser, to your account or to your friends, and puts your save
   back after (a signed-in player's account could get the test's changed save before). Its Road step arrives again
   (it never did since walking became the default), and its room step works on a slow device. Settings → Help says
