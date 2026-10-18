@@ -523,25 +523,28 @@ def go_scene(pg, node, sec=40):
 def debug_picture_privacy(pg):
     # phase 13: the debug log keeps a picture of the scene, and what the buddy says names the Billie, so in the frame that
     # takes the picture speech is drawn after it (walk-view-gl.js). The buddy talks, the log takes its picture, and the
-    # order of drawing in that frame is read back
-    pg.evaluate("uiState.mq=[];uiState.modal=null;renderOverlay();uiState.tab='walk';render();0")
+    # order of drawing in that frame is read back. A window or the camera can keep the speech out of that frame (the
+    # check then proves nothing), so it tries up to three times
+    pg.evaluate("uiState.tab='walk';render();0")
     if not until(pg, 'walkView.ready&&walkRenderer.on&&!!worldBillies.bud', 40): raise Exception('no buddy in the walk view to test the debug picture with')
-    pg.evaluate("""window.__pq={ev:[],say:drawSpeech,snap:screenSnapshot,t:debugLog.shot&&debugLog.shot.t};
+    pg.evaluate("""window.__pq={ev:[],say:drawSpeech,snap:screenSnapshot};
       drawSpeech=(...a)=>{__pq.ev.push(['say',walkRenderer.frames]);return __pq.say(...a)};
-      screenSnapshot=(...a)=>{__pq.ev.push(['snap',walkRenderer.frames]);return __pq.snap(...a)};buddyTap();worldBillies.sayT=60;0""")
+      screenSnapshot=(...a)=>{const b=worldBillies.bud,q=b&&worldToScreen(walkView.C,b.x,1.1,b.z);__pq.ev.push(['snap',walkRenderer.frames,{active:walkView.opt.active(),sayT:+worldBillies.sayT.toFixed(1),onScreen:!!q}]);return __pq.snap(...a)};0""")
+    seen = []
     try:
-        f0 = pg.evaluate('walkRenderer.frames')
-        if not until(pg, f'walkRenderer.frames>{f0 + 1}', 30): raise Exception('the walk view stopped drawing')
-        pg.evaluate('debugLog.snap();0')
-        if not until(pg, 'walkRenderer.snapReq===0&&!!debugLog.shot&&debugLog.shot.t!==__pq.t', 30): raise Exception('the debug log took no picture')
-        f1 = pg.evaluate('walkRenderer.frames'); until(pg, f'walkRenderer.frames>{f1}', 30)
-        ev = pg.evaluate('__pq.ev')
+        for _ in range(3):
+            t0 = pg.evaluate("__pq.ev=[];__pq.t=debugLog.shot&&debugLog.shot.t;uiState.mq=[];uiState.modal=null;renderOverlay();buddyTap();worldBillies.sayT=60;debugLog.snap();__pq.t")
+            if not until(pg, f'walkRenderer.snapReq===0&&!!debugLog.shot&&debugLog.shot.t!=={json.dumps(t0)}', 30): raise Exception('the debug log took no picture')
+            f1 = pg.evaluate('walkRenderer.frames'); until(pg, f'walkRenderer.frames>{f1}', 30)
+            ev = pg.evaluate('__pq.ev'); snap = next((e for e in ev if e[0] == 'snap'), None)
+            frame = [e[0] for e in ev if snap and e[1] == snap[1]]
+            seen.append(snap[2] if snap else None)
+            if 'say' in frame:
+                if frame.index('say') < frame.index('snap'): raise Exception('the debug picture shows what the buddy says (speech drawn before the picture was taken)')
+                return
     finally:
         pg.evaluate("drawSpeech=__pq.say;screenSnapshot=__pq.snap;0")
-    snap = next((f for k, f in ev if k == 'snap'), None)
-    frame = [k for k, f in ev if f == snap]
-    if 'say' not in frame: raise Exception(f'the buddy’s speech wasn’t drawn in the frame of the debug picture: {ev[-8:]}')
-    if frame.index('say') < frame.index('snap'): raise Exception('the debug picture shows what the buddy says (speech drawn before the picture was taken)')
+    raise Exception(f'the buddy’s speech wasn’t drawn in the frame of the debug picture (three tries: {seen})')
 
 
 @step('Phone: opening, first battle, screens and a battle', 260)
