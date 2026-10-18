@@ -10,7 +10,7 @@ import { $, $$, rnd } from './util.js';
 import { SHOPS } from './game-data.js';
 import { S, U, esc, fmt, save } from './game-state.js';
 import { frameStop, frameTask } from './frame-scheduler.js';
-import { makeCanvas, uiIco } from './art.js';
+import { makeCanvas, uiIconHTML } from './art.js';
 import { TR_PRESETS, WD, cleanLook, portraitHTML, trBox, trColorsOf, trFrame, trSliders } from './person-art.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -330,7 +330,7 @@ function dressingRoomHTML() {
   return `<div class="dr-stage"><canvas id="drCv" aria-label="Your trainer. Drag to turn around."></canvas>
   ${sh ? `<div class="dr-keeper glass">${portraitHTML(sh.who || 'clerk', 46, 'happy')}<div><b>${esc(sh.keeper || 'Shopkeeper')}</b><p id="drLine">${esc(sh.greeting || 'Try anything on.')}</p></div></div>` : ''}
   <div class="dr-viewbar glass"><button class="mbtn" data-a="dr-turn" data-d="-1" aria-label="Turn left">‹</button><button class="mbtn" data-a="dr-turn" data-d="1" aria-label="Turn right">›</button>
-   <button class="dr-tog" data-a="dr-walk" aria-pressed="false">${uiIco('walk', 14)} Walk</button><button class="dr-tog" data-a="dr-pose" data-p="throw">Throw</button><button class="dr-tog" data-a="dr-pose" data-p="cheer">Cheer</button></div></div>
+   <button class="dr-tog" data-a="dr-walk" aria-pressed="false">${uiIconHTML('walk', 14)} Walk</button><button class="dr-tog" data-a="dr-pose" data-p="throw">Throw</button><button class="dr-tog" data-a="dr-pose" data-p="cheer">Cheer</button></div></div>
  <div class="dr-panel px"><div class="dr-top"><label class="dr-name"><span>Name</span><input id="drName" maxlength="18" autocomplete="nickname" value="${esc(dressingRoom.look.name)}"></label>
    <button class="pb small quiet" data-a="dr-rand" title="A random look from what you own">Surprise me</button><button class="mbtn sm" data-a="dr-undo" aria-label="Undo" title="Undo">↶</button><button class="mbtn sm" data-a="dr-redo" aria-label="Redo" title="Redo">↷</button></div>
   <div class="dr-tabs" role="tablist">${DRESSING_TABS.filter(
@@ -363,7 +363,7 @@ function wardrobeGridHTML(slot, crop) {
       const own = owns(k),
         here = boutiqueSells(it);
       return `<button class="dr-it${own ? '' : ' locked'}${here && !own ? ' here' : ''}" data-a="dr-wear" data-s="${slot}" data-id="${k}" aria-pressed="${cur === k}" title="${esc(it.name)}${own ? '' : ` · $${fmt(it.price || 0)} at ${esc(shopName(it.shop))}`}">
-  <img class="dr-th" src="${wardrobeThumbnail(slot, k, crop)}" alt=""><b>${esc(it.name)}</b>${own ? '' : `<small>${here ? '' : uiIco('lock', 10)} $${fmt(it.price || 0)}${here ? '' : ` · ${esc(shopName(it.shop))}`}</small>`}</button>`;
+  <img class="dr-th" src="${wardrobeThumbnail(slot, k, crop)}" alt=""><b>${esc(it.name)}</b>${own ? '' : `<small>${here ? '' : uiIconHTML('lock', 10)} $${fmt(it.price || 0)}${here ? '' : ` · ${esc(shopName(it.shop))}`}</small>`}</button>`;
     })
     .join('')}</div>`;
 }
@@ -453,7 +453,7 @@ function dressingTabHTML() {
                 cost = Object.values(o)
                   .filter(id => id && !owns(id))
                   .reduce((a, id) => a + (W[id].price || 0), 0);
-              return `<div class="dr-it dr-outfit${own ? '' : ' locked'}" aria-pressed="${wearsOutfit(o)}"><button class="dr-outmain" data-a="dr-outfit" data-n="${esc(n)}" data-w="0" title="${n}"><img class="dr-th" src="${lookThumbnail(lookWithOutfit(L, o, ways[0]), 'body')}" alt=""><b>${n}</b>${own ? '' : `<small>${uiIco('lock', 10)} $${fmt(cost)}</small>`}</button>
+              return `<div class="dr-it dr-outfit${own ? '' : ' locked'}" aria-pressed="${wearsOutfit(o)}"><button class="dr-outmain" data-a="dr-outfit" data-n="${esc(n)}" data-w="0" title="${n}"><img class="dr-th" src="${lookThumbnail(lookWithOutfit(L, o, ways[0]), 'body')}" alt=""><b>${n}</b>${own ? '' : `<small>${uiIconHTML('lock', 10)} $${fmt(cost)}</small>`}</button>
      <span class="dr-ways">${ways.map((w, k) => `<button class="swatch" style="--sw:${w[0]}" data-a="dr-outfit" data-n="${esc(n)}" data-w="${k}" aria-label="${n}, colourway ${k + 1}"><span>✓</span></button>`).join('')}</span></div>`;
             })
             .join('')}</div>`

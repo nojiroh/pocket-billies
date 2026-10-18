@@ -67,7 +67,7 @@ import {
   stat,
   xpFor,
 } from './game-state.js';
-import { artURL, coinHTML, eggHTML, iconURL, uiIco } from './art.js';
+import { artURL, coinHTML, eggHTML, iconURL, uiIconHTML } from './art.js';
 import { portraitHTML } from './person-art.js';
 import { KBACK, bustHTML, rigPreload } from './skeleton-rig.js';
 import {
@@ -1144,7 +1144,7 @@ function battleMode() {
   return w > h * 1.05 && w >= 600 ? 'landscape' : 'portrait';
 }
 function hcard(i) {
-  return `<div class="hc-row"><b class="hc-n" id="n${i}"></b><span class="hc-gp" id="gp${i}" hidden>${uiIco('spark', 12)}</span><span class="hc-lv tnum" id="l${i}"></span></div>
+  return `<div class="hc-row"><b class="hc-n" id="n${i}"></b><span class="hc-gp" id="gp${i}" hidden>${uiIconHTML('spark', 12)}</span><span class="hc-lv tnum" id="l${i}"></span></div>
  <div class="hc-row2"><span class="hc-t" id="t${i}"></span><span class="hc-st" id="st${i}"></span><span class="hc-sg" id="sg${i}"></span></div>
  <div class="hpbar"><span class="hpl">HP</span><div class="hpt"><i class="ghost" id="g${i}"></i><i class="fill" id="h${i}"></i></div></div>
  <div class="hc-row3">${i === 0 ? '<span class="hc-num tnum" id="hn0"></span>' : ''}<span class="hc-pips" id="pips${i}"></span></div>${i === 0 ? '<div class="xpbar"><i id="x0"></i></div>' : ''}`;
@@ -1560,7 +1560,7 @@ export function paintBoxes(s, mk, anim) {
   tickerUpdate(s, mk);
   const m = $('#mk');
   if (m) {
-    m.innerHTML = mk ? `${uiIco('bolt', 14)} ${esc(shockName())} · ${plural(mk.n, 'turn')}` : '';
+    m.innerHTML = mk ? `${uiIconHTML('bolt', 14)} ${esc(shockName())} · ${plural(mk.n, 'turn')}` : '';
     m.classList.toggle('on', !!mk);
   }
 }
@@ -1766,7 +1766,7 @@ function teamPick(back) {
     .join('')}</div>${back ? backBtn() : ''}`;
 }
 const backBtn = () =>
-  `<button class="bt back wide" data-a="bback">${uiIco('back', 16)}<b>Back</b><kbd>Esc</kbd></button>`;
+  `<button class="bt back wide" data-a="bback">${uiIconHTML('back', 16)}<b>Back</b><kbd>Esc</kbd></button>`;
 export const itemIcon = (k, size = 30) => {
   const I = ITEMS[k] || {};
   return I.img
@@ -1789,11 +1789,11 @@ export function paintActions() {
         .reduce((a, k) => a + S.items[k], 0),
       crew = S.team.filter(x => x.job == null),
       alive = crew.filter(x => x.hp > 0).length;
-    h = `<div class="c-choose"><button class="bt fight" data-a="bfight"><span class="bt-i">${uiIco('fight', 24)}</span><span class="bt-t"><b>Fight</b><small>${plural(m.moves.length, 'move')}</small></span><kbd>F</kbd></button>
-  <div class="bt-row"><button class="bt coin" data-a="bcoins" ${wild && first ? '' : 'disabled'}>${uiIco('coin', 18)}<b>Tax it</b><small>${wild ? (first ? coins + ' left' : 'First pick only') : 'Wild only'}</small><kbd>X</kbd></button>
-  <button class="bt items" data-a="bitems">${uiIco('bag', 18)}<b>Bag</b><small>${items}</small><kbd>I</kbd></button>
-  <button class="bt team" data-a="bteam">${uiIco('team', 18)}<b>Team</b><small>${alive}/${crew.length}</small><kbd>T</kbd></button>
-  <button class="bt run" data-a="brun" ${wild ? '' : 'disabled'}>${uiIco('run', 18)}<b>Run</b><small>${wild ? 'Walk away' : 'No exit'}</small><kbd>R</kbd></button></div>${first ? '' : `<button class="bt back wide" data-a="bback">${uiIco('back', 16)}<b>Back to ${esc(N(A(B.plan[B.plan.length - 1].who)))}</b><kbd>Esc</kbd></button>`}</div>`;
+    h = `<div class="c-choose"><button class="bt fight" data-a="bfight"><span class="bt-i">${uiIconHTML('fight', 24)}</span><span class="bt-t"><b>Fight</b><small>${plural(m.moves.length, 'move')}</small></span><kbd>F</kbd></button>
+  <div class="bt-row"><button class="bt coin" data-a="bcoins" ${wild && first ? '' : 'disabled'}>${uiIconHTML('coin', 18)}<b>Tax it</b><small>${wild ? (first ? coins + ' left' : 'First pick only') : 'Wild only'}</small><kbd>X</kbd></button>
+  <button class="bt items" data-a="bitems">${uiIconHTML('bag', 18)}<b>Bag</b><small>${items}</small><kbd>I</kbd></button>
+  <button class="bt team" data-a="bteam">${uiIconHTML('team', 18)}<b>Team</b><small>${alive}/${crew.length}</small><kbd>T</kbd></button>
+  <button class="bt run" data-a="brun" ${wild ? '' : 'disabled'}>${uiIconHTML('run', 18)}<b>Run</b><small>${wild ? 'Walk away' : 'No exit'}</small><kbd>R</kbd></button></div>${first ? '' : `<button class="bt back wide" data-a="bback">${uiIconHTML('back', 16)}<b>Back to ${esc(N(A(B.plan[B.plan.length - 1].who)))}</b><kbd>Esc</kbd></button>`}</div>`;
   } else if (ph === 'fight') {
     const m = A(B.cur);
     h = `<div class="moves">${m.moves
@@ -1847,10 +1847,10 @@ export function paintActions() {
   } else if (ph === 'team') h = teamPick(true);
   else if (ph === 'switch') h = teamPick(false);
   else if (ph === 'aim') {
-    h = `<div class="aim"><div class="aimcoin" id="aimCoin" role="button" tabindex="0" aria-label="Swipe up to throw">${coinHTML(B.coin, 96, 32)}<span class="aim-hint">${uiIco('back', 14)}</span></div><p class="note">Swipe the coin up when the ring is small and green. A sideways swipe adds spin.</p><div class="two"><button class="bt coin" data-a="bthrow"><b>Flick it</b><kbd>Space</kbd></button><button class="bt back" data-a="baimback"><b>Put it away</b><kbd>Esc</kbd></button></div></div>`;
+    h = `<div class="aim"><div class="aimcoin" id="aimCoin" role="button" tabindex="0" aria-label="Swipe up to throw">${coinHTML(B.coin, 96, 32)}<span class="aim-hint">${uiIconHTML('back', 14)}</span></div><p class="note">Swipe the coin up when the ring is small and green. A sideways swipe adds spin.</p><div class="two"><button class="bt coin" data-a="bthrow"><b>Flick it</b><kbd>Space</kbd></button><button class="bt back" data-a="baimback"><b>Put it away</b><kbd>Esc</kbd></button></div></div>`;
   } else if (ph === 'throwing') h = `<div class="aim"><p class="note">The coin is in the air…</p></div>`;
   else if (ph === 'offer') {
-    h = `<div class="offer"><p>${uiIco('coin', 16)} ${esc(N(A(1)))} is offering you <b class="tnum">$${fmt(B.offer)}</b> to let it go. Refusing gives your next throw a Focus Bonus.</p><div class="two"><button class="bt coin" data-a="boffer" data-y="1"><b>Take it</b></button><button class="bt fightish" data-a="boffer" data-y="0"><b>Refuse</b></button></div></div>`;
+    h = `<div class="offer"><p>${uiIconHTML('coin', 16)} ${esc(N(A(1)))} is offering you <b class="tnum">$${fmt(B.offer)}</b> to let it go. Refusing gives your next throw a Focus Bonus.</p><div class="two"><button class="bt coin" data-a="boffer" data-y="1"><b>Take it</b></button><button class="bt fightish" data-a="boffer" data-y="0"><b>Refuse</b></button></div></div>`;
   } else if (ph === 'end') {
     const t = {
       win: 'You won.',
@@ -2096,7 +2096,7 @@ function plateEl(k) {
   e.dataset.a = 'btarget';
   e.dataset.t = k;
   e.tabIndex = -1;
-  e.innerHTML = `<span class="pl-top"><b class="pl-n"></b><span class="pl-cr" hidden>${uiIco('spark', 11)}</span><span class="pl-lv tnum"></span></span><span class="pl-hp"><i class="ghost"></i><i class="fill"></i></span><span class="pl-bot"><span class="pl-st"></span><span class="pl-num tnum"></span></span>${ASIDE[k] ? '' : '<span class="pl-xp"><i></i></span>'}`;
+  e.innerHTML = `<span class="pl-top"><b class="pl-n"></b><span class="pl-cr" hidden>${uiIconHTML('spark', 11)}</span><span class="pl-lv tnum"></span></span><span class="pl-hp"><i class="ghost"></i><i class="fill"></i></span><span class="pl-bot"><span class="pl-st"></span><span class="pl-num tnum"></span></span>${ASIDE[k] ? '' : '<span class="pl-xp"><i></i></span>'}`;
   L.appendChild(e);
   return e;
 }

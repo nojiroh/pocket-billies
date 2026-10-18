@@ -14,7 +14,7 @@ import { $, clamp } from './util.js';
 import { FUTURE, LINKS, ROUTE, linkCost, placeSub } from './game-data.js';
 import { RM, S, U, canEnter, esc, fmt, nextStop, tripTo } from './game-state.js';
 import { frameCount, frameStop, frameTask, userFps } from './frame-scheduler.js';
-import { artLoad, artPixels, hexToRgb, makeCanvas, mstamp, uiIco } from './art.js';
+import { artLoad, artPixels, hexToRgb, makeCanvas, uiIconHTML, worldMapStamp } from './art.js';
 import { owFrames, portraitHTML } from './person-art.js';
 import { EASE } from './battle-stage.js';
 import { artImage, hash2d, imageReady, mapById, stepRaiseAt, walkData, walkView } from './walk-view.js';
@@ -666,7 +666,7 @@ export function worldMapGlRender(t) {
       const d = vector3.sub(l.v, cam.C),
         z = vector3.dot(d, cam.fw);
       if (z < 0.01 || z > 1.3) continue;
-      const im = mstamp(l.k),
+      const im = worldMapStamp(l.k),
         T = eglImg(im, { noNormal: true });
       if (!T) continue;
       const up = vector3.mul(l.v, -1),
@@ -949,7 +949,7 @@ function worldMapGlPins() {
     put(
       'r' + i,
       q,
-      `<span class="mp-i">${uiIco(st.ico, 14)}</span><span class="mp-n">${esc(n.name)}</span>`,
+      `<span class="mp-i">${uiIconHTML(st.ico, 14)}</span><span class="mp-n">${esc(n.name)}</span>`,
       st.cls + (mini ? ' mini' : ''),
       { 'data-a': 'msel', 'data-n': String(i), 'aria-label': n.name }
     );
@@ -1084,7 +1084,7 @@ function worldMapGlChrome() {
   if (ctl && !ctl.querySelector('[data-a=mflat]')) {
     ctl.insertAdjacentHTML(
       'beforeend',
-      `<button class="mbtn" data-a="mlist" aria-label="Places" title="Places">${uiIco('list', 16)}</button><button class="mbtn" data-a="mflat" aria-label="${worldMapGl.flat ? 'Show the globe' : 'Show the whole world flat'}" title="${worldMapGl.flat ? 'Globe' : 'Flat map'}">${uiIco('globe', 16)}</button>`
+      `<button class="mbtn" data-a="mlist" aria-label="Places" title="Places">${uiIconHTML('list', 16)}</button><button class="mbtn" data-a="mflat" aria-label="${worldMapGl.flat ? 'Show the globe' : 'Show the whole world flat'}" title="${worldMapGl.flat ? 'Globe' : 'Flat map'}">${uiIconHTML('globe', 16)}</button>`
     );
   }
   if (!box.querySelector('.mapview'))
@@ -1131,7 +1131,7 @@ function worldMapGlLocationListHTML() {
       g = r.g;
       h += `<div class="mpl-g">${G[g]}</div>`;
     }
-    h += `<button class="mpl-row ${r.st.cls.replace('mpin', '')}" data-a="msel" data-n="${r.i}"><span class="mp-i">${uiIco(r.st.ico, 14)}</span><span class="mpl-n">${esc(r.n.name)}<small>${esc(placeSub(r.n))}</small></span><span class="mpl-s">${esc(r.sub)}</span></button>`;
+    h += `<button class="mpl-row ${r.st.cls.replace('mpin', '')}" data-a="msel" data-n="${r.i}"><span class="mp-i">${uiIconHTML(r.st.ico, 14)}</span><span class="mpl-n">${esc(r.n.name)}<small>${esc(placeSub(r.n))}</small></span><span class="mpl-s">${esc(r.sub)}</span></button>`;
   }
   return h + '</div>';
 }

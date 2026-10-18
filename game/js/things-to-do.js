@@ -9,7 +9,7 @@ import { bar, closeModal, modal, provide, render, roomRefresh, toast } from './h
 import { clamp } from './util.js';
 import { COINS, GD, ITEMS, ROUTE, RULES, SP } from './game-data.js';
 import { B, N, S, U, esc, fmt, save, today } from './game-state.js';
-import { makeCanvas, uiIco } from './art.js';
+import { makeCanvas, uiIconHTML } from './art.js';
 import {
   baseMapId,
   findPath,
@@ -408,7 +408,7 @@ function stampDraw(quad, glows, t) {
 }
 export function stampTile(tile) {
   return tile(
-    uiIco('spark', 14),
+    uiIconHTML('spark', 14),
     'Gold stamps',
     `${stampCount()}/${stampTotal()}`,
     'Two hidden in every place',
@@ -521,7 +521,7 @@ function photoStart() {
   el.id = 'photoUI';
   el.innerHTML = `<div class="ph-row">${PHOTO_FILTERS.map(([k, n]) => `<button class="pb small ${k === 'none' ? 'on' : ''}" data-a="photoF" data-k="${k}">${n}</button>`).join('')}</div>
   <div class="ph-row"><button class="pb small" data-a="photoTurn" data-d="-1" aria-label="Turn left">⟲</button><button class="pb small" data-a="photoZoom" data-d="-1" aria-label="Closer">+</button><button class="pb small" data-a="photoZoom" data-d="1" aria-label="Farther">−</button><button class="pb small" data-a="photoTurn" data-d="1" aria-label="Turn right">⟳</button><button class="pb small" data-a="photoLabels">Labels</button></div>
-  <div class="ph-row"><button class="pb gold" data-a="photoShot">${uiIco('camera', 16)} Take photo</button><button class="pb quiet" data-a="photoEnd">Done</button></div>`;
+  <div class="ph-row"><button class="pb gold" data-a="photoShot">${uiIconHTML('camera', 16)} Take photo</button><button class="pb quiet" data-a="photoEnd">Done</button></div>`;
   document.body.appendChild(el);
   photoFilter('none');
 }

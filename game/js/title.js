@@ -11,7 +11,7 @@ import { $, clamp } from './util.js';
 import { ROUTE, START_NODE } from './game-data.js';
 import { RM, S, U, esc, flush, freshKeep, lsSet, setS } from './game-state.js';
 import { userFps } from './frame-scheduler.js';
-import { uiIco } from './art.js';
+import { uiIconHTML } from './art.js';
 import { humanHTML } from './person-art.js';
 import { applyPreferences } from './settings-screen.js';
 import { mapById, stopWalkView, walkView } from './walk-view.js';
@@ -79,7 +79,7 @@ export function renderTitle() {
   <div class="ttl-acc">${typeof accChipHTML === 'function' ? accChipHTML() : ''}</div><div class="ttl-top"><h1 class="ttl-logo" aria-label="Pocket Billies"><span>POCKET</span><span>BILLIES</span></h1><p class="ttl-tag">Gotta tax 'em all!</p></div><p class="ttl-ver">${esc(PB_VERSION)}</p>
   <div class="ttl-bottom">
    ${cont ? `<button class="ttl-cont" data-a="ttlgo"><span class="ttl-face">${humanHTML('me', 56)}</span><span class="ttl-ct"><b>Continue</b><small>${esc(nm)} · ${esc(place)}</small><small>${titlePlayTime()} played</small></span></button>` : ''}
-   <div class="ttl-btns">${cont ? `<button class="pb quiet" data-a="ttlnew">New game</button>` : `<button class="pb gold big wide" data-a="intro">New game</button>`}<button class="pb quiet" data-a="ttlset">${uiIco('gear', 14)} Settings</button></div>
+   <div class="ttl-btns">${cont ? `<button class="pb quiet" data-a="ttlnew">New game</button>` : `<button class="pb gold big wide" data-a="intro">New game</button>`}<button class="pb quiet" data-a="ttlset">${uiIconHTML('gear', 14)} Settings</button></div>
    ${cont ? '<p class="ttl-hint">Tap anywhere to continue</p>' : ''}</div></div>`;
 }
 /* the scene behind the title: Sundown, drawn by the walk renderer with the title camera */

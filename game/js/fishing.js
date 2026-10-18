@@ -11,7 +11,7 @@ import { sfx, startWild, toast, x28Event } from './hooks.js';
 import { clamp, rnd } from './util.js';
 import { GD, RULES, SP } from './game-data.js';
 import { B, RM, S, U, areaPool, pickW, save, uid } from './game-state.js';
-import { uiIco } from './art.js';
+import { uiIconHTML } from './art.js';
 import { terrainAt, walkView } from './walk-view.js';
 import {
   WATER_KIND_LOOKS,
@@ -159,7 +159,7 @@ export function fishStart() {
   const el = (FISH.el = document.createElement('div'));
   el.className = 'fish-ui';
   el.innerHTML = `<canvas class="fish-cv"></canvas><div class="fish-msg glass" aria-live="polite">Casting…</div>
-  <div class="fish-reel" hidden><div class="fr-bar"><div class="fr-zone"></div><div class="fr-fish">${uiIco('fish', 20)}</div></div><div class="fr-prog"><i></i></div></div>
+  <div class="fish-reel" hidden><div class="fr-bar"><div class="fr-zone"></div><div class="fr-fish">${uiIconHTML('fish', 20)}</div></div><div class="fr-prog"><i></i></div></div>
   <div class="fish-acts"><button class="pb small gold fish-tap" data-fish="tap">Strike!</button><button class="pb small glass" data-fish="stop">Stop fishing</button></div>`;
   document.body.appendChild(el);
   FISH.cv = el.querySelector('.fish-cv');

@@ -9,7 +9,7 @@ import { provide } from './hooks.js';
 import { DATA_WARN, GD, RULES, SP, START_NODE } from './game-data.js';
 import { loadAllMaps, loadMapsAhead, watchMapsAhead } from './map-files.js';
 import { RM, S, SAVE_FOUND, SAVE_NEW_MSG, SAVE_OLD_MSG, U, esc, fresh, setNoSaving, setS } from './game-state.js';
-import { ART_CACHE, COIN_ART, EGG_ART, ICON_ATLAS, MENU_BACKGROUND_ART, UIURL, artBoot, artImg } from './art.js';
+import { ART_CACHE, COIN_ART, EGG_ART, ICON_ATLAS, MENU_BACKGROUND_ART, artBoot, artImg, uiIconURL } from './art.js';
 import { trainerArtPaths } from './person-art.js';
 import { rigAtlas } from './skeleton-rig.js';
 import { AREAS, battleStageArtFiles, battleStagePrepare } from './battle-stage.js';
@@ -499,7 +499,7 @@ function loadSvg(k) {
     const im = new Image();
     im.onload = () => res(true);
     im.onerror = () => res(false);
-    im.src = UIURL(k);
+    im.src = uiIconURL(k);
   });
 }
 /* loads phase by phase (files within a phase in parallel), then checks the world map and the scene you start in */

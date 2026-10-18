@@ -14,7 +14,7 @@ import { $, clamp } from './util.js';
 import { PLACE, ROUTE, isTown, placeFull } from './game-data.js';
 import { isLiteMap, loadMapFile, loadMapsAhead } from './map-files.js';
 import { RM, S, U, canEnter, esc, fmt, save } from './game-state.js';
-import { artLoad, uiIco } from './art.js';
+import { artLoad, uiIconHTML } from './art.js';
 import { artImage, imageReady, mapById, prepareMap, walkData } from './walk-view.js';
 import { seamlessHubMap } from './seamless-world.js';
 import { LOCATION_VECTORS, RADIANS_PER_DEGREE, slerp, vector3, worldMap } from './world-map.js';
@@ -65,7 +65,7 @@ export function flyMenu(p) {
   const rows = L.map(i => {
     const f = flyFare(here, i),
       ok = S.se >= f;
-    return `<button class="pickrow fly-row${ok ? '' : ' off'}" data-a="flyto" data-n="${i}"${ok ? '' : ' aria-disabled="true"'}><span class="fly-ico">${uiIco('house', 18)}</span><span class="pr-t"><b>${esc(placeFull(ROUTE[i]))}</b><small>${esc(ROUTE[i].blurb || '')}</small></span><span class="fly-fare tnum">$${fmt(f)}</span></button>`;
+    return `<button class="pickrow fly-row${ok ? '' : ' off'}" data-a="flyto" data-n="${i}"${ok ? '' : ' aria-disabled="true"'}><span class="fly-ico">${uiIconHTML('house', 18)}</span><span class="pr-t"><b>${esc(placeFull(ROUTE[i]))}</b><small>${esc(ROUTE[i].blurb || '')}</small></span><span class="fly-fare tnum">$${fmt(f)}</span></button>`;
   }).join('');
   modal({
     title: esc((p && p.label) || 'Airship mast'),

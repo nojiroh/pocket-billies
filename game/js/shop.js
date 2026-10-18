@@ -8,7 +8,7 @@ import { closeModal, modal, provide, renderOv, sfx, toast } from './hooks.js';
 import { clamp, rnd } from './util.js';
 import { COINS, ITEMS, SHOPS } from './game-data.js';
 import { S, U, esc, fmt, plural, save } from './game-state.js';
-import { coinHTML, uiIco } from './art.js';
+import { coinHTML, uiIconHTML } from './art.js';
 import { portraitHTML } from './person-art.js';
 import { openDressing } from './dressing-room.js';
 import { buzz } from './battle-stage.js';
@@ -63,13 +63,13 @@ function shopHTML(id) {
   <span class="w-buy">${
     locked
       ? `<span class="note">Needs ${plural(it.need, 'badge')}</span>`
-      : `<span class="qty"><button class="qb" data-a="shopq" data-k="${k}" data-d="-1" aria-label="One fewer" ${n <= 1 ? 'disabled' : ''}>${uiIco('minus', 10)}</button><b class="tnum">${n}</b><button class="qb" data-a="shopq" data-k="${k}" data-d="1" aria-label="One more" ${n >= 99 ? 'disabled' : ''}>${uiIco('plus', 10)}</button></span>
+      : `<span class="qty"><button class="qb" data-a="shopq" data-k="${k}" data-d="-1" aria-label="One fewer" ${n <= 1 ? 'disabled' : ''}>${uiIconHTML('minus', 10)}</button><b class="tnum">${n}</b><button class="qb" data-a="shopq" data-k="${k}" data-d="1" aria-label="One more" ${n >= 99 ? 'disabled' : ''}>${uiIconHTML('plus', 10)}</button></span>
   <button class="pb small ${S.se >= cost ? 'gold' : ''}" data-a="shopbuy" data-s="${id}" data-k="${k}" ${S.se >= cost ? '' : 'disabled'}>$${fmt(cost)}</button>`
   }</span></div>`;
     })
     .join('');
   return `<div class="shop-head"><div class="shop-keeper">${portraitHTML(sh.who || 'clerk', 78, 'happy')}</div><div class="shop-say"><b>${esc(sh.keeper || 'Shopkeeper')}</b><p id="shopLine">${esc(U.shopLine || sh.greeting || 'Welcome in.')}</p></div></div>
- <div class="shop-bal"><span>${uiIco('coin', 14)} Money</span><b class="tnum" data-count="shopse" data-to="${S.se}">${fmt(S.se)}</b></div>
+ <div class="shop-bal"><span>${uiIconHTML('coin', 14)} Money</span><b class="tnum" data-count="shopse" data-to="${S.se}">${fmt(S.se)}</b></div>
  <div class="shop-bag"><span>In your bag</span>${Object.keys(COINS)
    .map(
      k =>

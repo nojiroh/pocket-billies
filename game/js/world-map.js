@@ -9,7 +9,7 @@ import { $, clamp } from './util.js';
 import { FUTURE, LINKS, ROUTE, linkCost } from './game-data.js';
 import { RM, S, U, canEnter, esc, nextStop } from './game-state.js';
 import { frameCount, frameStop, frameTask, userFps } from './frame-scheduler.js';
-import { artPixels, bayerThreshold, makeSeededRandom, mixRgb, mstamp, packPixel } from './art.js';
+import { artPixels, bayerThreshold, makeSeededRandom, mixRgb, packPixel, worldMapStamp } from './art.js';
 import { owFrames } from './person-art.js';
 import { EASE } from './battle-stage.js';
 /* eslint-disable no-func-assign */
@@ -539,7 +539,7 @@ function worldMapRender(t, lo) {
   });
   LS.sort((a, b) => b[0].z - a[0].z);
   LS.forEach(([q, l]) => {
-    const im = mstamp(l.k),
+    const im = worldMapStamp(l.k),
       sc = clamp(Math.round((0.09 / q.z) * 2) / 2, 0.5, 3),
       w = im.width * sc,
       h = im.height * sc,

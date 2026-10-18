@@ -46,7 +46,7 @@ import {
   makeCanvas,
   mixRgb,
   packPixel,
-  whiteOf,
+  whiteCopy,
 } from './art.js';
 import { WD, humanFrames, humanPose } from './person-art.js';
 import { drawRig, rigFrame, rigParts, rigTint } from './skeleton-rig.js';
@@ -2025,7 +2025,7 @@ function battleStageDrawEffects(c, skip0) {
       c.drawImage(cc, -8 * k, -8 * k, 16 * k, 16 * k);
       if (C.glow > 0) {
         c.globalAlpha = C.glow;
-        c.drawImage(whiteOf(cc), -8 * k, -8 * k, 16 * k, 16 * k);
+        c.drawImage(whiteCopy(cc), -8 * k, -8 * k, 16 * k, 16 * k);
       }
       c.restore();
       c.globalAlpha = 1;

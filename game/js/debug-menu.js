@@ -31,7 +31,7 @@ import {
   xpFor,
 } from './game-state.js';
 import { FRAME, frameCount, frameTask, userFps } from './frame-scheduler.js';
-import { uiIco } from './art.js';
+import { uiIconHTML } from './art.js';
 import { applyPreferences, exportSave } from './settings-screen.js';
 import { battleStage, battleStageResize, battleStageStop } from './battle-stage.js';
 import { mapById } from './walk-view.js';
@@ -428,6 +428,6 @@ if (DBG.on)
     b.className = 'dbg-fab';
     b.dataset.a = 'debug';
     b.setAttribute('aria-label', 'Debug menu');
-    b.innerHTML = uiIco('bug', 20);
+    b.innerHTML = uiIconHTML('bug', 20);
     document.body.appendChild(b);
   });

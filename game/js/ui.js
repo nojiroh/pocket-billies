@@ -94,7 +94,7 @@ import {
   xpFor,
 } from './game-state.js';
 import { frameTask, userFps } from './frame-scheduler.js';
-import { ART_CACHE, artLoad, artURL, coinHTML, coinURL, eggHTML, makeCanvas, uiIco } from './art.js';
+import { ART_CACHE, artLoad, artURL, coinHTML, coinURL, eggHTML, makeCanvas, uiIconHTML } from './art.js';
 import {
   TR_PRESETS,
   cleanLook,
@@ -575,7 +575,7 @@ function topbar() {
   rollDay();
   const shut = !!(S.preferences && S.preferences.cardClosed),
     walk = U.tab === 'walk';
-  return `<div class="topbar glass" role="status">${walk ? `<button class="tb-where ${shut ? 'shut' : ''}" data-a="card-open" aria-expanded="${!shut}" aria-label="${shut ? 'Show' : 'Hide'} the card for ${esc(ROUTE[S.route.node].name)}">${esc(U.inside && !U.bench && typeof roomState === 'function' && roomState() ? U.inside.name || ROUTE[S.route.node].name : ROUTE[S.route.node].name)}${uiIco('chev', 12)}</button>` : `<span class="tb-where">${esc(ROUTE[S.route.node].name)}</span>`}<span class="tb-chip tnum" title="Money">${coinHTML('penny', 16)}<small>$</small><b data-count="tse" data-to="${S.se}">${fmt(S.se)}</b></span><button class="tb-btn" data-a="settings" aria-label="Settings and help">${uiIco('gear', 18)}</button><button class="tb-me" data-a="tab" data-t="profile" aria-label="Your trainer card" ${U.tab === 'profile' ? 'aria-current="page"' : ''}>${typeof portraitHTML === 'function' ? portraitHTML('me', 84) : ''}</button></div>`;
+  return `<div class="topbar glass" role="status">${walk ? `<button class="tb-where ${shut ? 'shut' : ''}" data-a="card-open" aria-expanded="${!shut}" aria-label="${shut ? 'Show' : 'Hide'} the card for ${esc(ROUTE[S.route.node].name)}">${esc(U.inside && !U.bench && typeof roomState === 'function' && roomState() ? U.inside.name || ROUTE[S.route.node].name : ROUTE[S.route.node].name)}${uiIconHTML('chev', 12)}</button>` : `<span class="tb-where">${esc(ROUTE[S.route.node].name)}</span>`}<span class="tb-chip tnum" title="Money">${coinHTML('penny', 16)}<small>$</small><b data-count="tse" data-to="${S.se}">${fmt(S.se)}</b></span><button class="tb-btn" data-a="settings" aria-label="Settings and help">${uiIconHTML('gear', 18)}</button><button class="tb-me" data-a="tab" data-t="profile" aria-label="Your trainer card" ${U.tab === 'profile' ? 'aria-current="page"' : ''}>${typeof portraitHTML === 'function' ? portraitHTML('me', 84) : ''}</button></div>`;
 }
 export function render() {
   const app = $('#app');
@@ -662,7 +662,7 @@ function updateNav(show) {
     n = document.createElement('nav');
     n.id = 'nav';
     n.setAttribute('aria-label', 'Main');
-    n.innerHTML = `<div class="in px glass"><span class="ind"></span>${t.map(([k, l]) => `<button data-a="tab" data-t="${k}">${uiIco(k)}<span>${l}</span></button>`).join('')}</div>`;
+    n.innerHTML = `<div class="in px glass"><span class="ind"></span>${t.map(([k, l]) => `<button data-a="tab" data-t="${k}">${uiIconHTML(k)}<span>${l}</span></button>`).join('')}</div>`;
     document.body.appendChild(n);
   }
   n.hidden = !show;
@@ -725,7 +725,7 @@ function renderIntro() {
     return `<header class="bar"><div><div class="sub">Your adventure, your style</div><h1 class="where">Create your trainer</h1></div></header>
   <p class="note">Pick a starting look, then make it yours: body, face, hair and clothes. You can change it any time from your Trainer card.</p>
   <div class="tr-presets">${TR_PRESETS.map((p, j) => `<button class="tr-pre px" data-a="tr-preset" data-i="${j}" aria-pressed="${JSON.stringify(cleanLook(p)) === cur}"><img src="${lookPortrait(p)}" alt="Look ${j + 1}"></button>`).join('')}</div>
-  <div class="tr-me px"><div class="tr-big">${humanHTML('me', 120)}</div><div class="racts"><button class="pb dark wide" data-a="tr-custom">${uiIco('profile', 16)} Customize</button><button class="pb gold wide big" data-a="tr-next">Next</button></div></div>`;
+  <div class="tr-me px"><div class="tr-big">${humanHTML('me', 120)}</div><div class="racts"><button class="pb dark wide" data-a="tr-custom">${uiIconHTML('profile', 16)} Customize</button><button class="pb gold wide big" data-a="tr-next">Next</button></div></div>`;
   }
   if (st && st.k === 'named') {
     const nm = trainerLook('me').name || 'Trainer';
@@ -819,11 +819,11 @@ function tripButtons() {
   if (st.k === 'guide')
     return `<button class="pb small" data-a="stoptrip">Stop guiding me</button><button class="pb small quiet" data-a="tab" data-t="map">Change plans</button>`;
   if (st.k === 'stay')
-    return `<button class="pb small gold" data-a="tab" data-t="map">${uiIco('map', 16)} Choose where to go</button>`;
+    return `<button class="pb small gold" data-a="tab" data-t="map">${uiIconHTML('map', 16)} Choose where to go</button>`;
   if (st.k === 'hold')
     return `<button class="pb small gold" data-a="resumetrip">Keep walking</button>${r.prog > 0 ? '<button class="pb small" data-a="turnback">Turn back</button>' : ''}<button class="pb small quiet" data-a="tab" data-t="map">Change plans</button>`;
   if (st.k === 'blocked')
-    return `<button class="pb small" data-a="tab" data-t="map">${uiIco('map', 16)} Choose another way</button>${r.prog === 0 ? '<button class="pb small quiet" data-a="stay">Stay here</button>' : '<button class="pb small" data-a="turnback">Turn back</button>'}`;
+    return `<button class="pb small" data-a="tab" data-t="map">${uiIconHTML('map', 16)} Choose another way</button>${r.prog === 0 ? '<button class="pb small quiet" data-a="stay">Stay here</button>' : '<button class="pb small" data-a="turnback">Turn back</button>'}`;
   return `<button class="pb small" data-a="stoptrip">${r.prog > 0 ? 'Stop walking' : 'Stay here instead'}</button><button class="pb small quiet" data-a="tab" data-t="map">Change plans</button>`;
 }
 function nodeActions(i) {
@@ -832,9 +832,9 @@ function nodeActions(i) {
   let x = '';
   if (i !== node) return '';
   if (n.shop && SHOPS[n.shop])
-    x += `<button class="pb small gold" data-a="shop" data-s="${n.shop}">${uiIco('mint', 16)} ${esc(SHOPS[n.shop].name)}</button>`;
+    x += `<button class="pb small gold" data-a="shop" data-s="${n.shop}">${uiIconHTML('mint', 16)} ${esc(SHOPS[n.shop].name)}</button>`;
   if (n.boutique && SHOPS[n.boutique])
-    x += `<button class="pb small" data-a="shop" data-s="${n.boutique}">${uiIco('profile', 16)} ${esc(SHOPS[n.boutique].name)}</button>`;
+    x += `<button class="pb small" data-a="shop" data-s="${n.boutique}">${uiIconHTML('profile', 16)} ${esc(SHOPS[n.boutique].name)}</button>`;
   x += n.town
     ? '<button class="pb small" data-a="clinic">Rest at the clinic, free</button>'
     : `<button class="pb small quiet" data-a="rest">Rest stop, $${fmt(RULES.steps.restCost)}</button>`;
@@ -913,8 +913,8 @@ function roomHero() {
         house: 'Tap whoever lives here to chat.',
         home: 'Your room in Granny Juniper’s cottage. Decorate it with what you’ve found.',
       }[I.kind] || '';
-  return `<div class="walk-hero" id="walkHero">${whCard(esc(here.name), esc(I.name || sc.name || 'Inside'), `<p class="wh-gate">${esc(what)}</p>`, (I.kind === 'home' ? `<button class="pb small gold" data-a="decorate">Decorate</button>` : '') + `<button class="pb small" data-a="leaveroom">${uiIco('door', 14)} Go outside</button>`)}
- <div class="wh-foot"><div class="wh-row"><button class="pb small glass fish-btn" data-a="fish" hidden>${uiIco('fish', 14)} Fish</button><button class="wh-down glass" data-a="walkdown" aria-label="Show actions">${uiIco('chev', 18)}<span>Actions</span></button><span class="wh-steps glass tnum">${uiIco('walk', 14)} ${fmt(S.day.steps)}</span></div></div></div>`;
+  return `<div class="walk-hero" id="walkHero">${whCard(esc(here.name), esc(I.name || sc.name || 'Inside'), `<p class="wh-gate">${esc(what)}</p>`, (I.kind === 'home' ? `<button class="pb small gold" data-a="decorate">Decorate</button>` : '') + `<button class="pb small" data-a="leaveroom">${uiIconHTML('door', 14)} Go outside</button>`)}
+ <div class="wh-foot"><div class="wh-row"><button class="pb small glass fish-btn" data-a="fish" hidden>${uiIconHTML('fish', 14)} Fish</button><button class="wh-down glass" data-a="walkdown" aria-label="Show actions">${uiIconHTML('chev', 18)}<span>Actions</span></button><span class="wh-steps glass tnum">${uiIconHTML('walk', 14)} ${fmt(S.day.steps)}</span></div></div></div>`;
 }
 /* v31: the place card: compact (where, the hour and weather, staying or walking, one main button; the rest folded
    under More), closable with ×, and brought back by tapping the place's name in the top bar. Closed stays closed. */
@@ -930,7 +930,7 @@ function envLine() {
   const t = environmentLabel();
   if (!t) return '';
   const h = environmentHint();
-  return `<p class="wh-env">${uiIco(environmentIcon(), 12)} ${esc(t)}${h ? `<span> · ${esc(h)}</span>` : ''}</p>`;
+  return `<p class="wh-env">${uiIconHTML(environmentIcon(), 12)} ${esc(t)}${h ? `<span> · ${esc(h)}</span>` : ''}</p>`;
 }
 function walkHero() {
   if (U.inside && !U.bench && roomState()) return roomHero();
@@ -948,8 +948,8 @@ function walkHero() {
     next = `<div class="wh-next"><span>${esc(st.t)}</span><span class="tnum">${fmt(st.left)} steps</span>${bar(S.route.prog / linkCost(node, nx), 'trailbar live')}</div>`;
   else next = `<p class="wh-gate">${esc(st.t)}</p>`;
   return `<div class="walk-hero" id="walkHero">${whCard(esc(placeSub(here)), esc(here.name), envLine() + next, tripButtons())}
- <div class="wh-foot">${q.length ? `<p class="wh-hint glass">${uiIco('spark', 12)} ${plural(q.length, 'Billie')} hiding nearby. Tap a <b>?</b> to battle.</p>` : S.route.prog === 0 ? `<p class="wh-hint glass">${uiIco('walk', 12)} Tap the ground to walk around. Tap buildings, people and signs.</p>` : ''}
-  <div class="wh-row"><button class="pb small glass fish-btn" data-a="fish" hidden>${uiIco('fish', 14)} Fish</button><button class="pb small glass" data-a="photo" aria-label="Photo mode">${uiIco('camera', 14)}</button><button class="wh-down glass" data-a="walkdown" aria-label="Show actions">${uiIco('chev', 18)}<span>Actions</span></button><span class="wh-steps glass tnum">${uiIco('walk', 14)} ${fmt(S.day.steps)}</span></div></div></div>`;
+ <div class="wh-foot">${q.length ? `<p class="wh-hint glass">${uiIconHTML('spark', 12)} ${plural(q.length, 'Billie')} hiding nearby. Tap a <b>?</b> to battle.</p>` : S.route.prog === 0 ? `<p class="wh-hint glass">${uiIconHTML('walk', 12)} Tap the ground to walk around. Tap buildings, people and signs.</p>` : ''}
+  <div class="wh-row"><button class="pb small glass fish-btn" data-a="fish" hidden>${uiIconHTML('fish', 14)} Fish</button><button class="pb small glass" data-a="photo" aria-label="Photo mode">${uiIconHTML('camera', 14)}</button><button class="wh-down glass" data-a="walkdown" aria-label="Show actions">${uiIconHTML('chev', 18)}<span>Actions</span></button><span class="wh-steps glass tnum">${uiIconHTML('walk', 14)} ${fmt(S.day.steps)}</span></div></div></div>`;
 }
 function renderWalk() {
   rollDay();
@@ -1551,7 +1551,7 @@ function exitPrompt(e) {
     html: `<p class="note">${esc(o.blurb || '')}</p><p><b class="tnum">${fmt(t.steps)} steps</b> · about ${km(t.steps)} km${S.visited[to] ? '' : ' · somewhere new'}</p>${poolStrip(o.pool)}<p class="note">Your real steps walk you there. You can stop or change plans any time.</p>`,
     btns: [
       {
-        l: `${uiIco('walk', 16)} Start walking`,
+        l: `${uiIconHTML('walk', 16)} Start walking`,
         c: 'gold',
         f: () => {
           closeModal();
@@ -1796,7 +1796,7 @@ function walkSceneSync() {
 function renderMap() {
   return `<div class="map-full"><canvas id="mapcv" width="${worldMapWidth}" height="${worldMapHeight}" aria-label="World map. Drag to look around, tap a place."></canvas><div id="maplabels"></div>
  <div class="map-head glass"><div class="sub">The Hollow Earth</div><h1 class="where">World map</h1><p class="map-trip ${tripStatus().k}">${esc(tripStatus().t)}</p></div>
- <div class="mapctl"><button class="mbtn" data-a="mzoom" data-k="in" aria-label="Zoom in">+</button><button class="mbtn" data-a="mzoom" data-k="out" aria-label="Zoom out">−</button><button class="mbtn" data-a="mreset" aria-label="Back to you">${uiIco('walk', 16)}</button></div>
+ <div class="mapctl"><button class="mbtn" data-a="mzoom" data-k="in" aria-label="Zoom in">+</button><button class="mbtn" data-a="mzoom" data-k="out" aria-label="Zoom out">−</button><button class="mbtn" data-a="mreset" aria-label="Back to you">${uiIconHTML('walk', 16)}</button></div>
  <div class="mapcard px glass" id="mapcard">${mapCardHTML()}</div></div>`;
 }
 function poolStrip(pool) {
@@ -1837,11 +1837,11 @@ function mapCardHTML() {
               .join(', ')}`
           : ''
       }${S.visited[sel] ? '' : ' · new place'}.`;
-      btns = `<button class="pb small gold" data-a="travel" data-n="${sel}">${uiIco('walk', 16)} Travel here</button>`;
+      btns = `<button class="pb small gold" data-a="travel" data-n="${sel}">${uiIconHTML('walk', 16)} Travel here</button>`;
     }
   }
   const nb = ADJ[sel].map(e => ROUTE[e.to].name);
-  return `<div class="mc-top"><h2>${esc(n.name)}</h2><span class="sub">${esc(placeSub(n))}</span></div><p class="note">${esc(n.blurb || '')}</p>${n.ride && canRide() ? `<p class="note ride">${uiIco('drop', 14)} You ride across on ${esc(riderName())}.</p>` : ''}<p class="status">${status}</p>${btns ? `<div class="racts">${btns}</div>` : ''}${poolStrip(n.pool)}<p class="note mc-nb">Roads to ${nb.map(esc).join(', ')}.</p>${nodeActions(sel)}`;
+  return `<div class="mc-top"><h2>${esc(n.name)}</h2><span class="sub">${esc(placeSub(n))}</span></div><p class="note">${esc(n.blurb || '')}</p>${n.ride && canRide() ? `<p class="note ride">${uiIconHTML('drop', 14)} You ride across on ${esc(riderName())}.</p>` : ''}<p class="status">${status}</p>${btns ? `<div class="racts">${btns}</div>` : ''}${poolStrip(n.pool)}<p class="note mc-nb">Roads to ${nb.map(esc).join(', ')}.</p>${nodeActions(sel)}`;
 }
 function paintMapCard() {
   const c = $('#mapcard');
@@ -1868,14 +1868,14 @@ function teamHero(m) {
     bud = m.uid === S.buddy;
   return `<section class="tm-hero tpanel"><button class="tm-stage" data-a="mon" data-u="${m.uid}" style="${plateVars(m)}" aria-label="${esc(N(m))}, details"><span class="tm-ribbon">Lead</span>${m.gold ? '<span class="tm-ribbon gold">Golden</span>' : ''}${sprHTML(m.sp, 120, { gold: m.gold })}</button>
  <div class="tm-info"><div class="tm-name"><h2>${esc(N(m))}</h2><span class="lv tnum">Lv ${m.lvl}</span></div>${m.nick ? `<div class="tm-sp">${esc(s.name)}</div>` : ''}
-  <div class="row">${s.types.map(chip).join('')}${monState(m)}${bud ? `<span class="badge bud">${uiIco('heart', 11)} Buddy</span>` : ''}</div>
+  <div class="row">${s.types.map(chip).join('')}${monState(m)}${bud ? `<span class="badge bud">${uiIconHTML('heart', 11)} Buddy</span>` : ''}</div>
   ${meter('HP', hpBar(m.hp, mx), `${m.hp}/${mx}`)}${meter('XP', bar(xpPart(m), 'xpb'), xpLeft(m))}
-  <div class="tm-acts">${needsCare(m) ? `<button class="pb small green" data-a="mheal" data-u="${m.uid}">${uiIco('heart', 14)} Heal</button>` : ''}${bud ? '' : `<button class="pb small" data-a="mbuddy" data-u="${m.uid}">${uiIco('walk', 14)} Make buddy</button>`}<button class="pb small quiet" data-a="mon" data-u="${m.uid}">Details</button></div></div></section>`;
+  <div class="tm-acts">${needsCare(m) ? `<button class="pb small green" data-a="mheal" data-u="${m.uid}">${uiIconHTML('heart', 14)} Heal</button>` : ''}${bud ? '' : `<button class="pb small" data-a="mbuddy" data-u="${m.uid}">${uiIconHTML('walk', 14)} Make buddy</button>`}<button class="pb small quiet" data-a="mon" data-u="${m.uid}">Details</button></div></div></section>`;
 }
 function teamCard(m, i) {
   const mx = maxHp(m),
     bud = m.uid === S.buddy;
-  return `<div class="tm-card${m.hp <= 0 ? ' down' : ''}" style="--d:${i * 40}ms"><button class="tm-main" data-a="mon" data-u="${m.uid}"><span class="tm-spr" style="${plateVars(m)}">${sprHTML(m.sp, 72, { gold: m.gold })}${bud ? `<i class="tm-heart" title="Buddy">${uiIco('heart', 12)}</i>` : ''}</span>
+  return `<div class="tm-card${m.hp <= 0 ? ' down' : ''}" style="--d:${i * 40}ms"><button class="tm-main" data-a="mon" data-u="${m.uid}"><span class="tm-spr" style="${plateVars(m)}">${sprHTML(m.sp, 72, { gold: m.gold })}${bud ? `<i class="tm-heart" title="Buddy">${uiIconHTML('heart', 12)}</i>` : ''}</span>
   <span class="tm-t"><b>${esc(N(m))}</b><span class="tm-lv tnum">Lv ${m.lvl}</span></span><span class="row">${SP[m.sp].types.map(chip).join('')}${monState(m)}</span>${hpBar(m.hp, mx)}<span class="hpn tnum">${m.hp}/${mx} HP</span></button>
   <div class="tm-quick"><button class="qk" data-a="mlead" data-u="${m.uid}" ${m.hp <= 0 ? 'disabled' : ''}>Make lead</button>${needsCare(m) ? `<button class="qk heal" data-a="mheal" data-u="${m.uid}">Heal</button>` : ''}</div></div>`;
 }
@@ -1886,7 +1886,7 @@ function jobSlots() {
       if (!j.uid)
         return i !== open[0]
           ? ''
-          : `<div class="job empty"><span class="job-ic">${uiIco('bag', 20)}</span><div class="jt"><b>${open.length === 1 ? '1 open job' : `${open.length} open jobs`}</b><span class="note">Each pays out every ${fmt(JOB_STEPS)} steps.</span></div><button class="pb small" data-a="hire" data-s="${i}">Hire</button></div>`;
+          : `<div class="job empty"><span class="job-ic">${uiIconHTML('bag', 20)}</span><div class="jt"><b>${open.length === 1 ? '1 open job' : `${open.length} open jobs`}</b><span class="note">Each pays out every ${fmt(JOB_STEPS)} steps.</span></div><button class="pb small" data-a="hire" data-s="${i}">Hire</button></div>`;
       const m = findMon(j.uid),
         J = JOBS[j.job];
       if (!m) return '';
@@ -2132,7 +2132,7 @@ function renderProfile() {
   const tile = (ic, k, v, sub, p) =>
     `<div class="pf-tile"><span class="pf-k">${ic}${k}</span><b class="tnum">${v}</b>${sub ? `<small>${sub}</small>` : ''}${p != null ? bar(p, 'gold') : ''}</div>`;
   const items = Object.keys(ITEMS).filter(k => S.items[k] > 0);
-  return `<header class="bar"><div><div class="sub">Your profile</div><h1 class="where">Trainer</h1></div><button class="pb small quiet" data-a="settings">${uiIco('gear', 16)} Settings</button></header>
+  return `<header class="bar"><div><div class="sub">Your profile</div><h1 class="where">Trainer</h1></div><button class="pb small quiet" data-a="settings">${uiIconHTML('gear', 16)} Settings</button></header>
  <div class="pf-top"><section class="tcard">
   <div class="tc-band"><span>Trainer card</span><span class="tnum">ID No. ${String(S.tid || 0).padStart(5, '0')}</span></div>
   <div class="tc-body"><div class="tc-photo"><div class="tc-portrait">${humanHTML('me', 92)}</div><button class="pb small" data-a="customize">Edit look</button></div>
@@ -2140,10 +2140,10 @@ function renderProfile() {
   <div class="tc-badges"><div class="tc-bh"><span>Badges</span><b class="tnum">${bd.got} of ${bd.tot}</b></div><ol class="bdgs">${bd.html}</ol></div>
  </section>
  <section class="tpanel pf-stats"><div class="sec-h"><h2>Records</h2></div><div class="pf-grid">
-  ${tile(uiIco('walk', 14), 'Steps today', fmt(S.day.steps))}${tile(uiIco('walk', 14), 'Total steps', fmt(S.totalSteps))}
-  ${tile(uiIco('run', 14), 'Distance walked', `${km(S.totalSteps)} km`)}${tile(uiIco('map', 14), 'Places visited', `${places}/${ROUTE.length}`, null, places / ROUTE.length)}
-  ${tile(uiIco('ledger', 14), 'Seen', `${seen}/${DEX.length}`, null, seen / DEX.length)}${tile(coinHTML('penny', 14), 'Taxed', `${got}/${DEX.length}`, null, got / DEX.length)}
-  ${tile(uiIco('fight', 14), 'Trainers beaten', fmt(beat))}${tile(eggHTML(2, 12), 'Eggs hatched', fmt(S.hatched || 0), S.eggs.length ? `${plural(S.eggs.length, 'egg')} on the way` : 'No eggs right now')}${typeof stampTile === 'function' ? stampTile(tile) : ''}
+  ${tile(uiIconHTML('walk', 14), 'Steps today', fmt(S.day.steps))}${tile(uiIconHTML('walk', 14), 'Total steps', fmt(S.totalSteps))}
+  ${tile(uiIconHTML('run', 14), 'Distance walked', `${km(S.totalSteps)} km`)}${tile(uiIconHTML('map', 14), 'Places visited', `${places}/${ROUTE.length}`, null, places / ROUTE.length)}
+  ${tile(uiIconHTML('ledger', 14), 'Seen', `${seen}/${DEX.length}`, null, seen / DEX.length)}${tile(coinHTML('penny', 14), 'Taxed', `${got}/${DEX.length}`, null, got / DEX.length)}
+  ${tile(uiIconHTML('fight', 14), 'Trainers beaten', fmt(beat))}${tile(eggHTML(2, 12), 'Eggs hatched', fmt(S.hatched || 0), S.eggs.length ? `${plural(S.eggs.length, 'egg')} on the way` : 'No eggs right now')}${typeof stampTile === 'function' ? stampTile(tile) : ''}
  </div></section></div>
  <div class="pf-row">${bud ? `<section class="tpanel pf-buddy"><div class="sec-h"><h2>Buddy</h2></div><button class="pf-bud" data-a="mon" data-u="${bud.uid}"><span class="tm-spr" style="${plateVars(bud)}">${sprHTML(bud.sp, 72, { gold: bud.gold })}</span><span class="pf-bt"><b>${esc(N(bud))}</b><span class="tnum">Lv ${bud.lvl}</span><small>You’ve walked ${km(bud.bsteps || 0)} km together.</small></span></button></section>` : ''}
  <section class="tpanel pf-bag"><div class="sec-h"><h2>Bag</h2></div>
@@ -2338,7 +2338,7 @@ function monSheet(m) {
   const metR = m.met
     ? (() => {
         const r = ROUTE.find(x => (x.id || '') === m.met.n) || ROUTE[m.met.n];
-        return `<div class="ms-met">${uiIco('flag', 14)}<span>Joined you in <b>${esc(r ? r.name : 'a place that’s gone')}</b> · ${new Date(m.met.t).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}</span></div>`;
+        return `<div class="ms-met">${uiIconHTML('flag', 14)}<span>Joined you in <b>${esc(r ? r.name : 'a place that’s gone')}</b> · ${new Date(m.met.t).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}</span></div>`;
       })()
     : '';
   const line = LN[s.line],
@@ -2362,13 +2362,13 @@ function monSheet(m) {
     title: esc(N(m)),
     cls: 'mon-sheet',
     acts,
-    top: `<div class="ms-plate" style="${plateVars(m)}">${lead ? '<span class="tm-ribbon">Lead</span>' : ''}${bud ? `<span class="tm-ribbon bud">${uiIco('heart', 11)} Buddy</span>` : ''}${m.gold ? '<span class="tm-ribbon gold">Golden</span>' : ''}${sprHTML(m.sp, 128, { gold: m.gold })}</div>`,
+    top: `<div class="ms-plate" style="${plateVars(m)}">${lead ? '<span class="tm-ribbon">Lead</span>' : ''}${bud ? `<span class="tm-ribbon bud">${uiIconHTML('heart', 11)} Buddy</span>` : ''}${m.gold ? '<span class="tm-ribbon gold">Golden</span>' : ''}${sprHTML(m.sp, 128, { gold: m.gold })}</div>`,
     html: `<p class="row ms-chips">${s.types.map(chip).join('')}${monState(m)}<b class="lv tnum">Lv ${m.lvl}</b>${m.nick ? `<span class="ms-sp">${esc(s.name)}</span>` : ''}</p>
   <div class="ms-tabs" role="tablist" aria-label="About ${esc(N(m))}" data-on="sum">${tabs.map(([k, l]) => `<button role="tab" data-a="ms-tab" data-k="${k}" aria-selected="${k === 'sum'}">${l}</button>`).join('')}</div>
   <div class="ms-pane" data-k="sum"><div class="ms-meters">${meter('HP', hpBar(m.hp, mx), `${m.hp}/${mx}`)}${meter('XP', bar(xpPart(m), 'xpb'), xpLeft(m))}</div>
    <div class="ms-chart">${st}</div>${metR}
-   ${m.job != null ? `<p class="note ms-job">${uiIco('bag', 14)} Working as a ${esc(JOBS[S.jobs[m.job].job].n.toLowerCase())} right now. End the shift from Day jobs to bring it back.</p>` : ''}
-   ${acts.length ? `<div class="ms-acts">${acts.map((b, i) => `<button class="pb small ${b.c || ''}" data-a="mact" data-i="${i}" ${b.dis ? 'disabled' : ''}>${b.ic ? uiIco(b.ic, 15) : ''}<span>${b.l}</span></button>`).join('')}</div>` : ''}
+   ${m.job != null ? `<p class="note ms-job">${uiIconHTML('bag', 14)} Working as a ${esc(JOBS[S.jobs[m.job].job].n.toLowerCase())} right now. End the shift from Day jobs to bring it back.</p>` : ''}
+   ${acts.length ? `<div class="ms-acts">${acts.map((b, i) => `<button class="pb small ${b.c || ''}" data-a="mact" data-i="${i}" ${b.dis ? 'disabled' : ''}>${b.ic ? uiIconHTML(b.ic, 15) : ''}<span>${b.l}</span></button>`).join('')}</div>` : ''}
    <p class="note ms-about">${esc(s.blurb)}</p>
    <div class="ms-nick"><label class="field-l">Nickname<input id="nick" maxlength="16" value="${esc(m.nick)}" placeholder="${esc(s.name)}" autocomplete="off" enterkeyhint="done"></label><button class="pb small" data-a="mnick">Save</button></div></div>
   <div class="ms-pane" data-k="stats" hidden><div class="ms-stats">${nums}</div><p class="note">The bars on the summary show what its kind is good at; the numbers grow as it levels up.</p></div>

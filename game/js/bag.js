@@ -8,7 +8,7 @@ import { expose } from './test-globals.js';
 import { closeModal, modal, render, toast } from './hooks.js';
 import { COINS, EGGS, ITEMS, STATUSN } from './game-data.js';
 import { N, S, U, esc, fmt, maxHp } from './game-state.js';
-import { coinHTML, eggHTML, uiIco } from './art.js';
+import { coinHTML, eggHTML, uiIconHTML } from './art.js';
 import { bustHTML } from './skeleton-rig.js';
 import { applyItem, canUse, itemIcon, teamNeedsHp } from './battle.js';
 /* eslint-disable no-func-assign */
@@ -42,7 +42,7 @@ export function renderBag() {
   const tabs = `<div class="bag-pockets glass px" role="tablist" aria-label="Pockets">${BAG_POCKETS.map(
     ([k, l, ic]) => {
       const n = k === 'eggs' ? S.eggs.length : bagList(k).length;
-      return `<button role="tab" aria-selected="${p === k}" data-a="bag-p" data-p="${k}">${uiIco(ic, 20)}<span>${l}</span>${n ? `<small class="tnum">${n}</small>` : ''}</button>`;
+      return `<button role="tab" aria-selected="${p === k}" data-a="bag-p" data-p="${k}">${uiIconHTML(ic, 20)}<span>${l}</span>${n ? `<small class="tnum">${n}</small>` : ''}</button>`;
     }
   ).join('')}</div>`;
   let body = '';

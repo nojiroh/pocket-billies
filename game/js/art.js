@@ -17,7 +17,6 @@ expose({
   ICON_ATLAS: [() => ICON_ATLAS],
   ICON_CACHE: [() => ICON_CACHE],
   MENU_BACKGROUND_ART: [() => MENU_BACKGROUND_ART],
-  UIURL: [() => UIURL],
   artBoot: [() => artBoot, v => (artBoot = v)],
   artImg: [() => artImg, v => (artImg = v)],
   artLoad: [() => artLoad, v => setArtLoad(v)],
@@ -28,7 +27,7 @@ expose({
   coinCanvas: [() => coinCanvas, v => (coinCanvas = v)],
   coinHTML: [() => coinHTML, v => (coinHTML = v)],
   coinURL: [() => coinURL, v => (coinURL = v)],
-  darkOf: [() => darkOf, v => (darkOf = v)],
+  darkCopy: [() => darkCopy, v => (darkCopy = v)],
   eggCanvas: [() => eggCanvas, v => (eggCanvas = v)],
   eggHTML: [() => eggHTML, v => (eggHTML = v)],
   hexChannels: [() => hexChannels, v => (hexChannels = v)],
@@ -40,14 +39,15 @@ expose({
   makeSeededRandom: [() => makeSeededRandom, v => (makeSeededRandom = v)],
   mixHex: [() => mixHex, v => (mixHex = v)],
   mixRgb: [() => mixRgb],
-  mstamp: [() => mstamp, v => (mstamp = v)],
   packHexPixel: [() => packHexPixel],
   packPixel: [() => packPixel],
   setArtLoad: [() => setArtLoad, v => (setArtLoad = v)],
   shadeHex: [() => shadeHex, v => (shadeHex = v)],
-  tintOf: [() => tintOf, v => (tintOf = v)],
-  uiIco: [() => uiIco, v => (uiIco = v)],
-  whiteOf: [() => whiteOf, v => (whiteOf = v)],
+  tintedCopy: [() => tintedCopy, v => (tintedCopy = v)],
+  uiIconHTML: [() => uiIconHTML, v => (uiIconHTML = v)],
+  uiIconURL: [() => uiIconURL],
+  whiteCopy: [() => whiteCopy, v => (whiteCopy = v)],
+  worldMapStamp: [() => worldMapStamp, v => (worldMapStamp = v)],
 });
 /* eslint-enable no-func-assign */
 export function setArtPixels(v) {
@@ -169,18 +169,18 @@ export function iconURL(key, scale = 1) {
   const k = 'u' + key + scale;
   return ICON_CACHE[k] || (ICON_CACHE[k] = iconCanvas(key, scale).toDataURL());
 }
-export function mstamp(k) {
+export function worldMapStamp(k) {
   return iconCanvas('map_' + k);
 }
-export const UIURL = k =>
+export const uiIconURL = k =>
   window.NW_ART && window.NW_ART[`ui/${k}.svg`]
     ? window.NW_ART[`ui/${k}.svg`]
     : new URL(`${ART_DIR}ui/${k}.svg`, document.baseURI).href;
-export function uiIco(key, size = 22) {
-  return `<i class="uico" style="--ico:url('${UIURL(key)}');width:${size}px;height:${size}px" aria-hidden="true"></i>`;
+export function uiIconHTML(key, size = 22) {
+  return `<i class="uico" style="--ico:url('${uiIconURL(key)}');width:${size}px;height:${size}px" aria-hidden="true"></i>`;
 }
 /* ---- tints of any image (white flash, silhouettes) ---- */
-function tintOf(c, col) {
+function tintedCopy(c, col) {
   const w = c.naturalWidth || c.width,
     h = c.naturalHeight || c.height,
     t = makeCanvas(w, h),
@@ -191,11 +191,11 @@ function tintOf(c, col) {
   x.fillRect(0, 0, w, h);
   return t;
 }
-export function whiteOf(c) {
-  return c._w || (c._w = tintOf(c, '#FFFFFF'));
+export function whiteCopy(c) {
+  return c._w || (c._w = tintedCopy(c, '#FFFFFF'));
 }
-function darkOf(c) {
-  return c._d || (c._d = tintOf(c, '#0E1418'));
+function darkCopy(c) {
+  return c._d || (c._d = tintedCopy(c, '#0E1418'));
 }
 /* ---- people are drawn in code by person-art.js ---- */
 /* ---- coins and Seed Rounds ---- */
