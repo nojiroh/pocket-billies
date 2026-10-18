@@ -69,3 +69,43 @@
     0 0 6px var(--g-solid);
   white-space: nowrap;
 }
+
+/* the evolution sheet (phase 06): a floating card that keeps clear of the screen's edges, with room to breathe.
+   The other sheets follow when their screens move over (06-2 to 06-4). */
+.scrim .sheet.evo-sheet {
+  width: calc(100% - 2 * var(--gutter));
+  max-width: 440px;
+  margin: 0 var(--gutter) calc(var(--gutter) + env(safe-area-inset-bottom, 0px));
+  padding: var(--s5) var(--pad-panel) var(--pad-panel) !important;
+  border-radius: var(--r-lg) !important;
+  box-shadow: var(--depth-float) !important;
+  text-align: center;
+}
+.sheet.evo-sheet::before {
+  display: none;
+}
+.sheet.evo-sheet .evo {
+  margin: 0 auto var(--s4);
+}
+.sheet.evo-sheet > h2 {
+  justify-content: center;
+  margin: 0;
+  font-size: var(--fs-title);
+  line-height: 1.2;
+}
+.sheet.evo-sheet .body {
+  margin-top: var(--s3);
+  font-family: var(--font-prose);
+  font-size: var(--fs-body);
+  line-height: var(--lh-prose);
+  color: var(--text2);
+}
+.sheet.evo-sheet .btns {
+  gap: var(--s3);
+  margin-top: var(--s5);
+  padding-top: var(--s5);
+}
+.sheet.evo-sheet .btns .pb {
+  min-height: var(--tap);
+  font-size: 15px !important;
+}

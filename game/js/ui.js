@@ -559,6 +559,7 @@ function evolutionModal(m) {
     }[e.k] || '';
   modal({
     title: `${escapeHtml(billyName(m))} is evolving`,
+    cls: 'evo-sheet',
     top: `<div class="evo">${rigCanvasHTML(m.sp, 128, { gold: m.gold, build: m.build })}</div>`,
     html: `<p>${why} Something bigger is coming.</p>`,
     lock: 1,
