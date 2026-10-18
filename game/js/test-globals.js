@@ -7,7 +7,7 @@
 // - window.PB_TEST_GLOBALS = true before the page loads (the checks' init script), or
 // - ?globals in the address (on a phone: game/index.html?globals).
 // Setting a name changes the module's own variable, and hands it to hooks.js if other modules read it from there.
-const on = (() => {
+const testGlobalsOn = (() => {
   try {
     return !!window.PB_TEST_GLOBALS || new URLSearchParams(location.search).has('globals');
   } catch (e) {
@@ -16,7 +16,7 @@ const on = (() => {
 })();
 const seen = new Set();
 export function expose(names) {
-  if (!on) return;
+  if (!testGlobalsOn) return;
   for (const [k, [get, set]] of Object.entries(names)) {
     if (seen.has(k)) console.error(`Pocket Billies: two modules define ${k}; the later one wins`);
     seen.add(k);
