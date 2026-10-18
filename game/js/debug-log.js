@@ -163,7 +163,7 @@ NWLOG.task = (name, work, ts) => {
       ms: Math.round(work),
       why,
       view:
-        typeof GAME.B !== 'undefined' && GAME.B
+        typeof GAME.activeBattle !== 'undefined' && GAME.activeBattle
           ? 'battle'
           : typeof GAME.uiState !== 'undefined'
             ? GAME.uiState.tab
@@ -185,7 +185,11 @@ NWLOG.ctx = () => {
   const c = {};
   try {
     c.view =
-      typeof GAME.B !== 'undefined' && GAME.B ? 'battle' : typeof GAME.uiState !== 'undefined' ? GAME.uiState.tab : '-';
+      typeof GAME.activeBattle !== 'undefined' && GAME.activeBattle
+        ? 'battle'
+        : typeof GAME.uiState !== 'undefined'
+          ? GAME.uiState.tab
+          : '-';
     if (typeof GAME.walkView !== 'undefined' && GAME.walkView.id) c.scene = GAME.walkView.id;
     if (typeof GAME.walkRenderer !== 'undefined') c.gl = GAME.walkRenderer.on ? 1 : 0;
     if (typeof GAME.walkView !== 'undefined') c.res = Math.round((GAME.walkView.R || 1) * 100) / 100;
@@ -248,7 +252,9 @@ NWLOG.snap = () => {
       return;
     }
     const cv =
-      typeof GAME.B !== 'undefined' && GAME.B ? document.getElementById('cvWorld') : document.getElementById('dio');
+      typeof GAME.activeBattle !== 'undefined' && GAME.activeBattle
+        ? document.getElementById('cvWorld')
+        : document.getElementById('dio');
     if (cv && cv.width && !cv.hidden) NWLOG.keepShot(cv, null);
   } catch (e) {}
 };
@@ -264,7 +270,7 @@ NWLOG.keepShot = (cv, over) => {
     NWLOG.shot = {
       t: NWLOG.now(),
       what:
-        typeof GAME.B !== 'undefined' && GAME.B
+        typeof GAME.activeBattle !== 'undefined' && GAME.activeBattle
           ? 'battle'
           : (typeof GAME.walkView !== 'undefined' && GAME.walkView.id) || 'scene',
       jpeg: c.toDataURL('image/jpeg', 0.72),
@@ -401,7 +407,7 @@ NWLOG.state = () => {
     };
     s.started = !!GAME.saveData.started;
     s.tab = GAME.uiState.tab;
-    s.battle = !!GAME.B;
+    s.battle = !!GAME.activeBattle;
     s.stop = GAME.saveData.route ? GAME.saveData.route.node : null;
     s.trip = GAME.saveData.route ? GAME.saveData.route.plan.slice() : [];
     s.tripProgress = GAME.saveData.route ? GAME.saveData.route.prog : 0;
@@ -638,7 +644,7 @@ NWLOG.hook = () => {
   };
   let lastTab = null;
   wrap('render', () => {
-    const v = typeof GAME.B !== 'undefined' && GAME.B ? 'battle' : GAME.uiState.tab;
+    const v = typeof GAME.activeBattle !== 'undefined' && GAME.activeBattle ? 'battle' : GAME.uiState.tab;
     if (v !== lastTab) {
       lastTab = v;
       NWLOG.add('screen', v);
@@ -647,7 +653,7 @@ NWLOG.hook = () => {
   wrap('newBattle', kind =>
     NWLOG.add('battle', `start ${kind}${typeof GAME.areaKey === 'function' ? ' at ' + GAME.areaKey() : ''}`)
   );
-  wrap('endBattle', () => NWLOG.add('battle', 'end ' + ((GAME.B && GAME.B.over) || '')));
+  wrap('endBattle', () => NWLOG.add('battle', 'end ' + ((GAME.activeBattle && GAME.activeBattle.over) || '')));
   wrap('mountWalkView', (cv, id, opt) => NWLOG.add('scene', `mount ${id}`));
   wrap('setTrip', j =>
     NWLOG.add('travel', `trip to ${typeof GAME.ROUTE !== 'undefined' && GAME.ROUTE[j] ? GAME.ROUTE[j].name : j}`)
@@ -748,8 +754,8 @@ NWLOG.diag = (since = 0) => {
     }
   };
   t('view', () =>
-    typeof GAME.B !== 'undefined' && GAME.B
-      ? `battle ${GAME.B.kind}/${GAME.B.fmt || 'single'} (${GAME.B.phase})`
+    typeof GAME.activeBattle !== 'undefined' && GAME.activeBattle
+      ? `battle ${GAME.activeBattle.kind}/${GAME.activeBattle.fmt || 'single'} (${GAME.activeBattle.phase})`
       : typeof GAME.uiState !== 'undefined'
         ? GAME.uiState.tab
         : '-'

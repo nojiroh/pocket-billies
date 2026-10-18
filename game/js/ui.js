@@ -36,7 +36,6 @@ import {
   trainersAt,
 } from './game-data.js';
 import {
-  B,
   BR,
   EGG_SLOTS,
   MAXLV,
@@ -44,6 +43,7 @@ import {
   RM,
   SLOTS,
   TEAM_MAX,
+  activeBattle,
   addEgg,
   allMons,
   assignJob,
@@ -408,7 +408,7 @@ export function renderOv() {
 
 /* ---------- post-step events ---------- */
 export function postProcess() {
-  if (B || uiState.modal || !saveData.started || uiState.title) return;
+  if (activeBattle || uiState.modal || !saveData.started || uiState.title) return;
   const eg = hatchable()[0];
   if (eg) {
     hatchModal(eg);
@@ -600,7 +600,7 @@ export function render() {
     walkSceneSync();
     return;
   }
-  if (B) {
+  if (activeBattle) {
     app.innerHTML = battleShell();
     updateNav(false);
     document.body.classList.remove('on-map');
@@ -1597,7 +1597,7 @@ function walkCross() {
     !walkView.pl ||
     uiState.inside ||
     uiState.bench ||
-    (typeof B !== 'undefined' && B) ||
+    (typeof activeBattle !== 'undefined' && activeBattle) ||
     (typeof CS !== 'undefined' && CS.on)
   )
     return;
@@ -1658,7 +1658,7 @@ setInterval(() => {
     if (
       !saveData.started ||
       uiState.tab !== 'walk' ||
-      (typeof B !== 'undefined' && B) ||
+      (typeof activeBattle !== 'undefined' && activeBattle) ||
       (typeof CS !== 'undefined' && CS.on) ||
       typeof walkView === 'undefined' ||
       !walkView.ready ||
@@ -1672,7 +1672,7 @@ setInterval(() => {
 function walkSceneSync() {
   if (typeof CS !== 'undefined' && CS.on) return;
   /* in a battle the scene keeps running inside the battle stage (battle-3d.js) when it can; otherwise it stops */
-  if (B) {
+  if (activeBattle) {
     document.body.classList.remove('on-walk', 'on-scene');
     if (walkView.battle) {
       const cv = walkView.cv,
@@ -2890,64 +2890,64 @@ document.addEventListener('click', ev => {
       tapMsg();
       break;
     case 'bfight':
-      if (B && B.phase === 'choose') {
-        B.phase = 'fight';
+      if (activeBattle && activeBattle.phase === 'choose') {
+        activeBattle.phase = 'fight';
         paintActions();
       }
       break;
     case 'bmove':
-      if (B && B.phase === 'fight') pickMove(d.m);
+      if (activeBattle && activeBattle.phase === 'fight') pickMove(d.m);
       break;
     case 'btarget':
-      if (B && B.phase === 'target' && d.t != null) pickTarget(+d.t);
+      if (activeBattle && activeBattle.phase === 'target' && d.t != null) pickTarget(+d.t);
       break;
     case 'bcoins':
-      if (B && B.phase === 'choose') {
-        B.phase = 'coins';
+      if (activeBattle && activeBattle.phase === 'choose') {
+        activeBattle.phase = 'coins';
         paintActions();
       }
       break;
     case 'bitems':
-      if (B && B.phase === 'choose') {
-        B.phase = 'items';
+      if (activeBattle && activeBattle.phase === 'choose') {
+        activeBattle.phase = 'items';
         paintActions();
       }
       break;
     case 'bteam':
-      if (B && B.phase === 'choose') {
-        B.phase = 'team';
+      if (activeBattle && activeBattle.phase === 'choose') {
+        activeBattle.phase = 'team';
         paintActions();
       }
       break;
     case 'brun':
-      if (B && B.phase === 'choose') runTurn([{ k: 'run' }]);
+      if (activeBattle && activeBattle.phase === 'choose') runTurn([{ k: 'run' }]);
       break;
     case 'bback':
-      if (B) {
-        if (B.phase === 'target' && typeof battleStageTargets === 'function') battleStageTargets(null);
-        if (B.phase === 'choose') {
+      if (activeBattle) {
+        if (activeBattle.phase === 'target' && typeof battleStageTargets === 'function') battleStageTargets(null);
+        if (activeBattle.phase === 'choose') {
           planBack();
           break;
         }
-        B.phase = B.phase === 'target' ? 'fight' : 'choose';
-        if (B.phase === 'choose') chooseMsg();
+        activeBattle.phase = activeBattle.phase === 'target' ? 'fight' : 'choose';
+        if (activeBattle.phase === 'choose') chooseMsg();
         paintActions();
       }
       break;
     case 'bcoin':
-      if (B && B.phase === 'coins' && saveData.coins[d.c] > 0) {
-        B.coin = d.c;
-        B.phase = 'aim';
+      if (activeBattle && activeBattle.phase === 'coins' && saveData.coins[d.c] > 0) {
+        activeBattle.coin = d.c;
+        activeBattle.phase = 'aim';
         paintActions();
         showAim();
       }
       break;
     case 'baimback':
-      if (B && !uiState.throwing) {
+      if (activeBattle && !uiState.throwing) {
         battleStage.ring = null;
         camHome(300);
         battleStageFocus('wide');
-        B.phase = 'choose';
+        activeBattle.phase = 'choose';
         chooseMsg();
         paintActions();
       }
@@ -2956,60 +2956,68 @@ document.addEventListener('click', ev => {
       doThrow(false);
       break;
     case 'bitem':
-      if (B && B.phase === 'items') {
+      if (activeBattle && activeBattle.phase === 'items') {
         if (ITEMS[d.it].hpAll) {
-          planNext({ who: B.cur, k: 'item', item: d.it, uid: A(B.cur).uid });
+          planNext({ who: activeBattle.cur, k: 'item', item: d.it, uid: A(activeBattle.cur).uid });
           break;
         }
-        B.item = d.it;
-        B.phase = 'itemTarget';
+        activeBattle.item = d.it;
+        activeBattle.phase = 'itemTarget';
         paintActions();
       }
       break;
     case 'bitemon':
-      if (B && B.phase === 'itemTarget') planNext({ who: B.cur, k: 'item', item: B.item, uid: d.u });
+      if (activeBattle && activeBattle.phase === 'itemTarget')
+        planNext({ who: activeBattle.cur, k: 'item', item: activeBattle.item, uid: d.u });
       break;
     case 'bswitch':
-      if (!B) break;
-      if (B.phase === 'team') planNext({ who: B.cur, k: 'switch', i: +d.i });
-      else if (B.phase === 'switch') {
-        const k = B.needSwitch.shift();
-        B.events = [];
+      if (!activeBattle) break;
+      if (activeBattle.phase === 'team') planNext({ who: activeBattle.cur, k: 'switch', i: +d.i });
+      else if (activeBattle.phase === 'switch') {
+        const k = activeBattle.needSwitch.shift();
+        activeBattle.events = [];
         doSwitch(k ?? 0, +d.i);
-        if (!B.needSwitch.length) checkFaints();
+        if (!activeBattle.needSwitch.length) checkFaints();
         play();
       }
       break;
     case 'boffer':
-      if (B && B.phase === 'offer') {
-        const amt = B.offer;
-        B.offer = null;
-        B.events = [];
+      if (activeBattle && activeBattle.phase === 'offer') {
+        const amt = activeBattle.offer;
+        activeBattle.offer = null;
+        activeBattle.events = [];
         if (d.y === '1') {
           saveData.se += amt;
           say(`You took $${fmt(amt)}. ${N(A(1))} scampered off.`);
-          B.over = 'bribed';
+          activeBattle.over = 'bribed';
           battleStage.s[1].show = false;
           save();
         } else {
-          B.integrity = Math.min(RC.integrityMax, B.integrity * RC.integrityStep);
-          say(`You refused. Focus Bonus ×${+B.integrity.toFixed(2)} on your next throw.`);
+          activeBattle.integrity = Math.min(RC.integrityMax, activeBattle.integrity * RC.integrityStep);
+          say(`You refused. Focus Bonus ×${+activeBattle.integrity.toFixed(2)} on your next throw.`);
           enemyOnly();
         }
         play();
       }
       break;
     case 'bend':
-      if (B && B.phase === 'end') endBattle();
+      if (activeBattle && activeBattle.phase === 'end') endBattle();
       break;
   }
 });
 /* keyboard play in battle: F fight, 1–4 moves, X tax (or C), I items, T team, R run, Esc back, Space/Enter advance */
 document.addEventListener('keydown', ev => {
-  if (!B || uiState.modal || ev.ctrlKey || ev.metaKey || ev.altKey || /INPUT|SELECT|TEXTAREA/.test(ev.target.tagName))
+  if (
+    !activeBattle ||
+    uiState.modal ||
+    ev.ctrlKey ||
+    ev.metaKey ||
+    ev.altKey ||
+    /INPUT|SELECT|TEXTAREA/.test(ev.target.tagName)
+  )
     return;
   const k = ev.key.toLowerCase(),
-    ph = B.phase,
+    ph = activeBattle.phase,
     click = s => {
       const e = $(s);
       if (e && !e.disabled) {
@@ -3057,7 +3065,7 @@ document.addEventListener('keydown', ev => {
     click('#acts [data-a=bback]');
 });
 document.addEventListener('pointerdown', ev => {
-  if (B && B.phase === 'playing' && ev.target.closest('.bstage')) tapMsg();
+  if (activeBattle && activeBattle.phase === 'playing' && ev.target.closest('.bstage')) tapMsg();
 });
 document.addEventListener('keydown', ev => {
   if (ev.key === 'Escape' && uiState.modal && !uiState.modal.lock) {
@@ -3070,7 +3078,7 @@ document.addEventListener('keydown', ev => {
   }
 });
 window.addEventListener('resize', () => {
-  if (B) battleResize();
+  if (activeBattle) battleResize();
   else if (uiState.tab === 'map' && saveData.started) worldMapFit();
 });
 
@@ -3147,7 +3155,7 @@ export function bgInit() {
   BG.x = c.getContext('2d');
   bgResize();
   window.addEventListener('resize', bgResize);
-  frameTask('bg', bgTick, () => (B ? 1 : 15));
+  frameTask('bg', bgTick, () => (activeBattle ? 1 : 15));
 }
 function bgResize() {
   BG.w = 160;
@@ -3157,7 +3165,7 @@ function bgResize() {
   BG.dark = null;
 }
 function bgTick(ts) {
-  if (B) return;
+  if (activeBattle) return;
   BG.last = ts;
   const dk = isDark();
   if (dk !== BG.dark) {

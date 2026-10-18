@@ -10,13 +10,13 @@ import { expose } from './test-globals.js';
 import { NW_TEST, closeModal, modal, provide, render, toast } from './hooks.js';
 import {
   ACC_ID,
-  B,
   LS,
   LS_ACC,
   LS_BASE,
   SAVE_HOLD,
   SAVE_NEW_MSG,
   SAVE_VERSION,
+  activeBattle,
   esc,
   fmt,
   loadSave,
@@ -171,7 +171,12 @@ async function accPull() {
       } catch (e) {}
       toast('Your account’s save is from an older version of the game, so this is a new game. Playing on replaces it.');
     }
-    if (remote && remote.started && (!saveData.started || (remote.savedAt || 0) > (saveData.savedAt || 0)) && !B) {
+    if (
+      remote &&
+      remote.started &&
+      (!saveData.started || (remote.savedAt || 0) > (saveData.savedAt || 0)) &&
+      !activeBattle
+    ) {
       setSaveData(remote);
       saveData.avatar = cleanTrainer(saveData.avatar, saveData.gender);
       applyPreferences();

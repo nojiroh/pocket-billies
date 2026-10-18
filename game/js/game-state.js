@@ -41,7 +41,6 @@ import {
 /* eslint-disable no-func-assign */
 expose({
   ACC_ID: [() => ACC_ID],
-  B: [() => B, v => setB(v)],
   BR: [() => BR],
   EGG_SLOTS: [() => EGG_SLOTS],
   JOB_SLOTS: [() => JOB_SLOTS],
@@ -58,6 +57,7 @@ expose({
   SAVE_VERSION: [() => SAVE_VERSION],
   SLOTS: [() => SLOTS],
   TEAM_MAX: [() => TEAM_MAX],
+  activeBattle: [() => activeBattle, v => setActiveBattle(v)],
   addEgg: [() => addEgg, v => (addEgg = v)],
   addMon: [() => addMon, v => (addMon = v)],
   addSteps: [() => addSteps, v => ((addSteps = v), provide({ addSteps }))],
@@ -114,7 +114,7 @@ expose({
   saveAge: [() => saveAge, v => (saveAge = v)],
   saveData: [() => saveData, v => setSaveData(v)],
   saveT: [() => saveT, v => (saveT = v)],
-  setB: [() => setB, v => (setB = v)],
+  setActiveBattle: [() => setActiveBattle, v => (setActiveBattle = v)],
   setNoSaving: [() => setNoSaving, v => (setNoSaving = v)],
   setRM: [() => setRM, v => (setRM = v)],
   setSave: [() => setSave, v => (setSave = v)],
@@ -352,17 +352,17 @@ if (SAVE_FOUND === 'old' || SAVE_FOUND === 'new')
 if (SAVE_FOUND === 'new') SAVE_HOLD = true;
 export let saveData = loadSave(lsGet()) || fresh();
 provide({ saveData }); /* to-module */
-export let B = null;
-provide({ B }); /* to-module */
+export let activeBattle = null;
+provide({ activeBattle }); /* to-module */
 /* phase 04d: other modules change the save, the battle, reduced motion and the save hold through these (an imported
    name can't be assigned); each hands the new value to hooks.js for the modules that read it from there */
 export function setSaveData(v) {
   saveData = v;
   provide({ saveData });
 }
-export function setB(v) {
-  B = v;
-  provide({ B });
+export function setActiveBattle(v) {
+  activeBattle = v;
+  provide({ activeBattle });
 }
 export function setRM(v) {
   RM = v;
@@ -836,7 +836,7 @@ export function addSteps(n, quiet) {
   if (!quiet || sp) toast(`+${fmt(n)} steps, +$${fmt(gi)}${sp ? `, ${plural(sp, 'new encounter')}` : ''}`);
   msgs.concat(notes).forEach(t => toast(t));
   save();
-  if (!B) {
+  if (!activeBattle) {
     render();
     if (typeof onStepsAdded === 'function') onStepsAdded();
     postProcess();

@@ -8,7 +8,7 @@ import { expose } from './test-globals.js';
 import { bar, closeModal, modal, provide, render, roomRefresh, toast } from './hooks.js';
 import { clamp } from './util.js';
 import { COINS, GD, ITEMS, ROUTE, RULES, SP } from './game-data.js';
-import { B, N, esc, fmt, save, saveData, today, uiState } from './game-state.js';
+import { N, activeBattle, esc, fmt, save, saveData, today, uiState } from './game-state.js';
 import { makeCanvas, uiIconHTML } from './art.js';
 import {
   baseMapId,
@@ -631,16 +631,16 @@ const X28_BWX_TEXT = {
   night: 'It’s night: Psychic and Dragon moves are a little stronger.',
 };
 function battleWx() {
-  if (typeof B === 'undefined' || !B) return null;
-  if (B.wx !== undefined) return B.wx;
+  if (typeof activeBattle === 'undefined' || !activeBattle) return null;
+  if (activeBattle.wx !== undefined) return activeBattle.wx;
   if (typeof environmentState !== 'function' || !environment.on || (RULES.env && RULES.env.battleOff))
-    return (B.wx = null);
+    return (activeBattle.wx = null);
   const sc = currentLocationMap();
-  if (!sc || sc.indoor) return (B.wx = null);
+  if (!sc || sc.indoor) return (activeBattle.wx = null);
   const st = environmentState(sc),
     k = st.night > 0.5 ? (st.wx === 'clear' ? 'night' : st.wx) : st.wx === 'clear' ? 'sunny' : st.wx,
     m = Object.assign({}, X28_BWX[k] || {}, ((RULES.env || {}).battle || {})[k] || {});
-  return (B.wx = Object.keys(m).length ? { k, m } : null);
+  return (activeBattle.wx = Object.keys(m).length ? { k, m } : null);
 }
 function battleWeatherMult(t) {
   const w = battleWx();
@@ -664,10 +664,10 @@ function battleWeatherMult(t) {
       let o = null,
         types = null;
       try {
-        o = B && B.over;
-        const f = B && B.sides && B.sides[1] && B.sides[1].team[0];
+        o = activeBattle && activeBattle.over;
+        const f = activeBattle && activeBattle.sides && activeBattle.sides[1] && activeBattle.sides[1].team[0];
         types = f ? SP[f.sp].types : null;
-        if (B && B.fished && o === 'caught') x28Event('fish');
+        if (activeBattle && activeBattle.fished && o === 'caught') x28Event('fish');
       } catch (e) {}
       const r = eb.apply(this, arguments);
       try {
@@ -689,7 +689,10 @@ function battleWeatherMult(t) {
 setInterval(() => {
   const el = document.getElementById('camWorld');
   if (!el) return;
-  const w = typeof B !== 'undefined' && B && !(typeof walkView !== 'undefined' && walkView.battle) ? battleWx() : null,
+  const w =
+      typeof activeBattle !== 'undefined' && activeBattle && !(typeof walkView !== 'undefined' && walkView.battle)
+        ? battleWx()
+        : null,
     k = w ? w.k : '';
   if (el.dataset.wx !== k) el.dataset.wx = k;
 }, 500);

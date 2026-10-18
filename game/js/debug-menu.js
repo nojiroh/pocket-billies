@@ -8,8 +8,8 @@ import { closeModal, evoRun, modal, provide, render, renderOv, stSceneChecks, te
 import { $, $$, clamp } from './util.js';
 import { COINS, DATA_WARN, DEX, EGGS, EGG_TIERS, ITEMS, ROUTE, RULES, SP, TRAINERS } from './game-data.js';
 import {
-  B,
   MAXLV,
+  activeBattle,
   addEgg,
   addMon,
   addSteps,
@@ -22,7 +22,7 @@ import {
   makeMon,
   save,
   saveData,
-  setB,
+  setActiveBattle,
   setSaveData,
   spawn,
   today,
@@ -62,7 +62,7 @@ function dbgSpecies() {
   return DEX.map(id => [id, `${String(SP[id].no).padStart(3, '0')} ${SP[id].name}`]);
 }
 function debugHTML() {
-  const inB = !!B,
+  const inB = !!activeBattle,
     node = saveData.route.node;
   return `<div class="dbg">
  <p class="note">Changes apply to this save right away. Export a backup first if you might want to undo.</p>
@@ -122,7 +122,7 @@ function openDebug() {
 }
 function dbgRefresh(msg) {
   if (msg) toast(msg);
-  if (!B) render();
+  if (!activeBattle) render();
   const M = uiState.modal;
   if (M && M.dbg) {
     const open = $$('.dbg details').map(d => d.open);
@@ -169,7 +169,7 @@ function dbgAct(x) {
     case 'q0':
       battleStage.lockQ = true;
       battleStage.q.lvl = 0;
-      if (B) battleStageResize();
+      if (activeBattle) battleStageResize();
       return dbgRefresh('Battle quality locked to best.');
     case 'qauto':
       battleStage.lockQ = false;
@@ -206,7 +206,7 @@ function dbgAct(x) {
       break;
     }
     case 'alpha': {
-      if (B) return toast('Finish the current battle first.');
+      if (activeBattle) return toast('Finish the current battle first.');
       const q = { id: uid(), sp, lvl: lv, gold: $('#dbgGold').checked, no: ++saveData.serial, alpha: true };
       saveData.queue.push(q);
       closeModal();
@@ -214,7 +214,7 @@ function dbgAct(x) {
       return;
     }
     case 'wild': {
-      if (B) return toast('Finish the current battle first.');
+      if (activeBattle) return toast('Finish the current battle first.');
       const q = { id: uid(), sp, lvl: lv, gold: $('#dbgGold').checked, no: ++saveData.serial };
       saveData.queue.push(q);
       closeModal();
@@ -245,14 +245,14 @@ function dbgAct(x) {
       break;
     case 'trainer2': {
       const id = v('dbgTr');
-      if (B) return toast('Finish the current battle first.');
+      if (activeBattle) return toast('Finish the current battle first.');
       closeModal();
       startTrainer(id, { double: true });
       return;
     }
     case 'trainer': {
       const id = v('dbgTr');
-      if (B) return toast('Finish the current battle first.');
+      if (activeBattle) return toast('Finish the current battle first.');
       closeModal();
       startTrainer(id);
       return;
@@ -327,28 +327,30 @@ function dbgAct(x) {
       if (saveData.team[0]) saveData.team[0].streak = (saveData.team[0].streak || 0) + 3;
       break;
     case 'win':
-      if (!B || B.phase === 'playing' || B.over) return toast('Wait for your turn in a battle.');
+      if (!activeBattle || activeBattle.phase === 'playing' || activeBattle.over)
+        return toast('Wait for your turn in a battle.');
       closeModal();
-      B.events = [];
-      for (let g = 0; g < 12 && !B.over; g++) {
+      activeBattle.events = [];
+      for (let g = 0; g < 12 && !activeBattle.over; g++) {
         A(1).hp = 0;
         checkFaints();
       }
       play();
       return;
     case 'lose':
-      if (!B || B.phase === 'playing' || B.over) return toast('Wait for your turn in a battle.');
+      if (!activeBattle || activeBattle.phase === 'playing' || activeBattle.over)
+        return toast('Wait for your turn in a battle.');
       closeModal();
-      B.events = [];
+      activeBattle.events = [];
       saveData.team.forEach(m => (m.hp = 0));
       say('Your team fainted. (Debug.)');
-      B.over = 'lose';
+      activeBattle.over = 'lose';
       play();
       return;
     case 'foe1':
-      if (!B) return;
+      if (!activeBattle) return;
       A(1).hp = 1;
-      paintBoxes(snapAll(), B.market);
+      paintBoxes(snapAll(), activeBattle.market);
       break;
     case 'catch':
       uiState.dbgCatch = !uiState.dbgCatch;
@@ -386,9 +388,9 @@ function settingsReset() {
         l: 'Erase and start over',
         c: 'red',
         f: () => {
-          if (B) {
+          if (activeBattle) {
             stopTimers();
-            setB(null);
+            setActiveBattle(null);
             battleStageStop();
           }
           setSaveData(freshKeep());

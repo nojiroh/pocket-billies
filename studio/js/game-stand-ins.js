@@ -6,13 +6,13 @@
 import { expose } from '../../game/js/test-globals.js';
 import { provide, studioState } from '../../game/js/hooks.js';
 expose({
-  B: [() => B, v => ((B = v), provide({ B }))],
   BACKDROPS: [() => BACKDROPS],
   MOVES: [() => MOVES],
   PEOPLE: [() => PEOPLE],
   RM: [() => RM, v => ((RM = v), provide({ RM }))],
   TC: [() => TC],
   TYPEFX: [() => TYPEFX],
+  activeBattle: [() => activeBattle, v => ((activeBattle = v), provide({ activeBattle }))],
   esc: [() => esc],
   liveMap: [() => liveMap],
   saveData: [() => saveData, v => ((saveData = v), provide({ saveData }))],
@@ -21,9 +21,9 @@ expose({
 /* to-module: end */
 var saveData = { preferences: {}, gender: 'boy', avatar: null },
   uiState = {},
-  B = null,
+  activeBattle = null,
   RM = false;
-provide({ B, RM, saveData, uiState }); /* to-module */
+provide({ RM, activeBattle, saveData, uiState }); /* to-module */
 export const esc = s =>
   String(s == null ? '' : s).replace(
     /[&<>"']/g,

@@ -12,13 +12,13 @@
 import { expose } from './test-globals.js';
 import {
   A,
-  B,
   BACKDROPS,
   GD,
   MOVES,
   RM,
   TC,
   TYPEFX,
+  activeBattle,
   battleFreeArea,
   battleGLLayout,
   battleGLStart,
@@ -526,7 +526,7 @@ export function battleStageStart(area) {
     v: 0.12 + rnd() * 0.12,
   }));
   battleStage.small = makeCanvas(10, 10);
-  battleStageFormat((typeof B !== 'undefined' && B && B.fmt) || 'single');
+  battleStageFormat((typeof activeBattle !== 'undefined' && activeBattle && activeBattle.fmt) || 'single');
   battleStage.tr = [
     { who: null, show: false, x: 0, a: 1 },
     { who: null, show: false, x: 0, a: 1 },
@@ -549,7 +549,13 @@ export function battleStageStart(area) {
   battleStage.q.since = performance.now();
   battleStage.gl = typeof battleGLStart === 'function' && battleGLStart();
   document.body.classList.toggle('battle-3d', !!battleStage.gl);
-  if (!battleStage.gl && typeof walkView !== 'undefined' && walkView.cv && typeof B !== 'undefined' && B) {
+  if (
+    !battleStage.gl &&
+    typeof walkView !== 'undefined' &&
+    walkView.cv &&
+    typeof activeBattle !== 'undefined' &&
+    activeBattle
+  ) {
     const cv = walkView.cv;
     stopWalkView();
     cv.hidden = true;

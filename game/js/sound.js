@@ -10,7 +10,7 @@ import { expose } from './test-globals.js';
 import { CS, provide, sceneIdAt } from './hooks.js';
 import { clamp } from './util.js';
 import { ROUTE } from './game-data.js';
-import { B, saveData, uiState } from './game-state.js';
+import { activeBattle, saveData, uiState } from './game-state.js';
 import { battleStage } from './battle-stage.js';
 import { baseMapId, bridgeAt, mapBridges, mapById, stepWallAt, terrainAt, walkData, walkView } from './walk-view.js';
 import { environment, environmentHour, environmentState } from './environment.js';
@@ -744,8 +744,12 @@ function audTick() {
 /* the music that fits where you are */
 export function musicFor() {
   if (typeof saveData === 'undefined' || !saveData || !saveData.started) return 'hazel';
-  if (typeof B !== 'undefined' && B)
-    return B.kind === 'trainer' ? (B.T && B.T.who === 'chad' ? 'rival' : 'trainer') : 'wild';
+  if (typeof activeBattle !== 'undefined' && activeBattle)
+    return activeBattle.kind === 'trainer'
+      ? activeBattle.T && activeBattle.T.who === 'chad'
+        ? 'rival'
+        : 'trainer'
+      : 'wild';
   if (uiState.tab === 'map') return 'map';
   const id = typeof sceneIdAt === 'function' ? sceneIdAt(saveData.route.node) : null,
     sc = id && mapById(id),
@@ -1044,7 +1048,7 @@ setInterval(() => {
       !walkView.pl ||
       !walkView.pl.walk ||
       document.hidden ||
-      (typeof B !== 'undefined' && B)
+      (typeof activeBattle !== 'undefined' && activeBattle)
     )
       return;
     const P = walkView.pl;
@@ -1356,7 +1360,7 @@ function ambUpdate() {
     walkView.sc &&
     !document.hidden &&
     typeof uiState !== 'undefined' &&
-    (uiState.tab === 'walk' || (typeof B !== 'undefined' && B));
+    (uiState.tab === 'walk' || (typeof activeBattle !== 'undefined' && activeBattle));
   const E = typeof environment !== 'undefined' && environment.on ? environment : null,
     sc = walk ? walkView.sc : null;
   let pans = {};
@@ -1457,7 +1461,7 @@ function ambUpdate() {
   const night = E ? (E.raw || E).night : 0,
     moving = sc && walkView.pl && walkView.pl.walk;
   AUD.L = {
-    drums: (moving || (typeof B !== 'undefined' && B) ? 1 : 0.45) * (1 - night * 0.4),
+    drums: (moving || (typeof activeBattle !== 'undefined' && activeBattle) ? 1 : 0.45) * (1 - night * 0.4),
     pad: sc && !sc.indoor ? night : 0,
   };
   if (AUD.song && AUD.song.drums) AUD.song.drums.gain.setTargetAtTime(AUD.L.drums, t, 0.6);

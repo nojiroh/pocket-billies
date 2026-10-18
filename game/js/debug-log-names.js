@@ -2,7 +2,7 @@
 // script that runs before the modules) reads and wraps in the game's modules: a getter for each name in its GAME
 // object, and a setter (the module's own) for each function it wraps. The last module of the game's page.
 import { GD, ROUTE } from './game-data.js';
-import { B, save, saveData, setSave, setSetTrip, setTrip, uiState } from './game-state.js';
+import { activeBattle, save, saveData, setSave, setSetTrip, setTrip, uiState } from './game-state.js';
 import { FRAME, userFps } from './frame-scheduler.js';
 import { artPixels, setArtPixels } from './art.js';
 import { TR_CACHE, humanFrames, setHumanFrames } from './person-art.js';
@@ -101,12 +101,12 @@ Object.defineProperties(GAME, {
   ACC: { get: () => ACC },
   AMB: { get: () => AMB },
   AUD: { get: () => AUD },
-  B: { get: () => B },
   FRAME: { get: () => FRAME },
   GD: { get: () => GD },
   LIFE: { get: () => LIFE },
   ROUTE: { get: () => ROUTE },
   TR_CACHE: { get: () => TR_CACHE },
+  activeBattle: { get: () => activeBattle },
   areaKey: { get: () => areaKey },
   artPixels: { get: () => artPixels, set: setArtPixels },
   battleStage: { get: () => battleStage },

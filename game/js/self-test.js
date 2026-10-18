@@ -14,14 +14,14 @@ import { clamp } from './util.js';
 import { GD, MOVES, ROUTE, RULES, SP, TRAINERS, linkCost, placeKind } from './game-data.js';
 import { loadAllMaps } from './map-files.js';
 import {
-  B,
+  activeBattle,
   addSteps,
   esc,
   makeMon,
   maxHp,
   save,
   saveData,
-  setB,
+  setActiveBattle,
   setSave,
   setSaveData,
   setTrip,
@@ -151,7 +151,7 @@ function stSceneChecks(id) {
 async function runFullTest(mode) {
   const diag = mode === 'diag';
   if (STEST.on) return;
-  if (typeof B !== 'undefined' && B) {
+  if (typeof activeBattle !== 'undefined' && activeBattle) {
     toast('Finish the battle first.');
     return;
   }
@@ -684,16 +684,18 @@ async function runFullTest(mode) {
       const want = async (ph, ms) => {
         const end = performance.now() + ms;
         while (performance.now() < end) {
-          if (!B || (STEST.gen || 0) !== g0) return false;
-          if (ph.includes(B.phase)) return true;
-          if (B.phase === 'playing') tapMsg();
+          if (!activeBattle || (STEST.gen || 0) !== g0) return false;
+          if (ph.includes(activeBattle.phase)) return true;
+          if (activeBattle.phase === 'playing') tapMsg();
           await stSleep(150);
         }
         return false;
       };
       const tb = performance.now();
       let ok = await want(['choose'], 45000),
-        why = ok ? '' : `the battle never got to the move menu (stuck in ${B ? B.phase : 'no battle'})`;
+        why = ok
+          ? ''
+          : `the battle never got to the move menu (stuck in ${activeBattle ? activeBattle.phase : 'no battle'})`;
       const gl = !!battleStage.gl,
         menuMs = Math.round(performance.now() - tb);
       if (ok) {
@@ -708,7 +710,7 @@ async function runFullTest(mode) {
         if (!ok) why = 'a move never finished playing';
       }
       stopTimers();
-      setB(null);
+      setActiveBattle(null);
       battleStageStop();
       saveData.preferences.battleStage = pref;
       render();
@@ -743,16 +745,17 @@ async function runFullTest(mode) {
       const want = async (ph, ms) => {
         const end = performance.now() + ms;
         while (performance.now() < end) {
-          if (!B || (STEST.gen || 0) !== g0) return false;
-          if (ph.includes(B.phase)) return true;
-          if (B.phase === 'playing') tapMsg();
+          if (!activeBattle || (STEST.gen || 0) !== g0) return false;
+          if (ph.includes(activeBattle.phase)) return true;
+          if (activeBattle.phase === 'playing') tapMsg();
           await stSleep(120);
         }
         return false;
       };
       const tb = performance.now();
-      if (!(await want(['choose'], 45000))) throw new Error(`never got to the menu (${B ? B.phase : 'no battle'})`);
-      const fmt = B.fmt,
+      if (!(await want(['choose'], 45000)))
+        throw new Error(`never got to the menu (${activeBattle ? activeBattle.phase : 'no battle'})`);
+      const fmt = activeBattle.fmt,
         mine = liveK(0).length,
         theirs = liveK(1).length;
       let plates = 0;
@@ -767,12 +770,12 @@ async function runFullTest(mode) {
       if (plates < mine + theirs) throw new Error(`only ${plates} of ${mine + theirs} nameplates in the scene`);
       let picks = 0,
         aimed = 0;
-      while (B && B.phase === 'choose' && picks < 4) {
-        const m = A(B.cur),
+      while (activeBattle && activeBattle.phase === 'choose' && picks < 4) {
+        const m = A(activeBattle.cur),
           mid = m.moves.find(id => MOVES[id] && MOVES[id].c !== 'X') || m.moves[0];
         pickMove(mid);
         picks++;
-        if (B.phase === 'target') {
+        if (activeBattle.phase === 'target') {
           aimed++;
           pickTarget(liveK(1)[0]);
         }
@@ -780,11 +783,11 @@ async function runFullTest(mode) {
       }
       const tt = performance.now();
       if (!(await want(['choose', 'end', 'switch'], 60000)))
-        throw new Error(`the turn never finished (${B ? B.phase : 'no battle'})`);
+        throw new Error(`the turn never finished (${activeBattle ? activeBattle.phase : 'no battle'})`);
       const turnMs = Math.round(performance.now() - tt),
-        lines = B.events.length;
+        lines = activeBattle.events.length;
       stopTimers();
-      setB(null);
+      setActiveBattle(null);
       battleStageStop();
       render();
       await stSleep(600);
@@ -1106,25 +1109,25 @@ async function runFullTest(mode) {
             want = async (ph, ms) => {
               const end = performance.now() + ms;
               while (performance.now() < end) {
-                if (!B || (STEST.gen || 0) !== g0) return false;
-                if (ph.includes(B.phase)) return true;
-                if (B.phase === 'playing') tapMsg();
+                if (!activeBattle || (STEST.gen || 0) !== g0) return false;
+                if (ph.includes(activeBattle.phase)) return true;
+                if (activeBattle.phase === 'playing') tapMsg();
                 await stSleep(150);
               }
               return false;
             };
           try {
             if (!(await want(['choose'], 45000)))
-              throw new Error(`never got to the menu (${B ? B.phase : 'no battle'})`);
+              throw new Error(`never got to the menu (${activeBattle ? activeBattle.phase : 'no battle'})`);
             const tip = !!document.querySelector('#btip.on'),
               foe = A(1),
               fm = foe ? foe.moves.join(',') : '';
             pickMove(A(0).moves[0]);
             if (!(await want(['choose', 'end', 'switch'], 60000)))
-              throw new Error(`the turn never finished (${B ? B.phase : 'no battle'})`);
+              throw new Error(`the turn never finished (${activeBattle ? activeBattle.phase : 'no battle'})`);
             const tip2 = (document.querySelector('#btip') || {}).textContent || '';
             stopTimers();
-            B.over = 'win';
+            activeBattle.over = 'win';
             endBattle();
             let said = 0;
             for (let i = 0; i < 120 && !(said && !TALK.on); i++) {
@@ -1142,9 +1145,9 @@ async function runFullTest(mode) {
             if (!healed) throw new Error('the team wasn’t healed');
             return `tip shown; Blake’s Billie knows ${fm}; after a turn: ${tip2 ? '“' + tip2.replace(/^Professor Hazel/, '').slice(0, 60) + '…”' : 'no new tip'}; ${said} lines after; healed`;
           } finally {
-            if (B) {
+            if (activeBattle) {
               stopTimers();
-              setB(null);
+              setActiveBattle(null);
               battleStageStop();
             }
             talkHide();
@@ -1411,9 +1414,9 @@ async function runFullTest(mode) {
       walkRenderer.yawT = 0;
       walkRenderer.zoomT = 1;
     }
-    if (B) {
+    if (activeBattle) {
       stopTimers();
-      setB(null);
+      setActiveBattle(null);
       battleStageStop();
     }
     if (typeof CS !== 'undefined' && CS.on) {

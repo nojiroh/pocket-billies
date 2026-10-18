@@ -50,13 +50,13 @@ def serve(directory):
 
 def wait_phase(pg, want=('choose',), tries=120):
     for _ in range(tries):
-        ph = pg.evaluate('B?B.phase:"none"')
+        ph = pg.evaluate('activeBattle?activeBattle.phase:"none"')
         if ph in want:
             return ph
         if ph == 'playing':
             pg.evaluate('tapMsg()')
         time.sleep(.15)
-    return pg.evaluate('B?B.phase:"none"')
+    return pg.evaluate('activeBattle?activeBattle.phase:"none"')
 
 
 def check_game(pw, base, results):
@@ -89,12 +89,12 @@ def check_game(pw, base, results):
                 # v47: Blake's first battle (Hazel's tips), then the talk after it and the welcome sheet
                 opening['rivalBattle'] = False
                 for _ in range(120):
-                    if pg.evaluate("!!B&&B.phase==='choose'"): opening['rivalBattle'] = pg.evaluate("!!(B.T&&B.T.tutorial)"); break
+                    if pg.evaluate("!!activeBattle&&activeBattle.phase==='choose'"): opening['rivalBattle'] = pg.evaluate("!!(activeBattle.T&&activeBattle.T.tutorial)"); break
                     time.sleep(1)
                 pg.screenshot(path=str(OUT / f'{name}-opening-rival.png'))
-                pg.evaluate("if(B){B.over='win';stopTimers();endBattle()}0")
+                pg.evaluate("if(activeBattle){activeBattle.over='win';stopTimers();endBattle()}0")
                 for _ in range(80):
-                    if pg.evaluate("!TALK.on&&!!uiState.modal&&!B"): break
+                    if pg.evaluate("!TALK.on&&!!uiState.modal&&!activeBattle"): break
                     pg.evaluate('TALK.cur&&TALK.cur.tap()'); time.sleep(.8)
                 opening['afterRival'] = pg.evaluate("(saveData.story||{}).rival0||null")
                 opening['ok'] = opening['ok'] and bool(opening['rivalBattle']) and opening['afterRival'] == 'win'
@@ -108,10 +108,10 @@ def check_game(pw, base, results):
                     time.sleep(1)
                 time.sleep(3); pg.screenshot(path=str(OUT / f'{name}-rival.png'))
                 for _ in range(80):
-                    if pg.evaluate('!!B'): rival['battle'] = pg.evaluate('B.foeName'); break
+                    if pg.evaluate('!!activeBattle'): rival['battle'] = pg.evaluate('activeBattle.foeName'); break
                     pg.evaluate('TALK.cur&&TALK.cur.tap()'); time.sleep(.8)
                 results.setdefault('rival', {})[name] = rival
-                pg.evaluate("if(B){stopTimers();B=null;battleStageStop()}render();0")
+                pg.evaluate("if(activeBattle){stopTimers();activeBattle=null;battleStageStop()}render();0")
         pg.evaluate("if(typeof titleEnd==='function')titleEnd();uiState.pg='girl';startGame('scoop');saveData.story={met_chad:1,met_chad2:1};uiState.modal=null;uiState.mq=[];renderOv();saveData.team.push(makeMon('box1',18));addSteps(2400,true);uiState.toastQ=[];uiState.toastOn=false;uiState.modal=null;uiState.mq=[];renderOv();render();0")
         log(f'{name}: screens and battles')
         for tab in ['walk', 'map', 'team', 'ledger', 'profile']:
@@ -122,30 +122,30 @@ def check_game(pw, base, results):
         areas = pg.evaluate('Object.keys(BACKDROPS)') if name == 'phone' else ['grass', 'mall']
         pg.evaluate("saveData.preferences.battleStage='classic';0")  # the painted backdrops first
         for area in areas:
-            pg.evaluate(f"B=null;const q={{id:'t{area}',sp:'tweet1',lvl:12,gold:false,no:1}};saveData.queue=[q];saveData.team.forEach(m=>{{m.hp=maxHp(m)}});const f=areaKey;areaKey=()=>'{area}';startWild(q);areaKey=f;0")
+            pg.evaluate(f"activeBattle=null;const q={{id:'t{area}',sp:'tweet1',lvl:12,gold:false,no:1}};saveData.queue=[q];saveData.team.forEach(m=>{{m.hp=maxHp(m)}});const f=areaKey;areaKey=()=>'{area}';startWild(q);areaKey=f;0")
             wait_phase(pg); time.sleep(.6)
             pg.screenshot(path=str(OUT / f'{name}-battle-{area}.png'))
-            pg.evaluate("stopTimers();B=null;battleStageStop();render();0")
+            pg.evaluate("stopTimers();activeBattle=null;battleStageStop();render();0")
         # then a battle on the 3D stage, where you stand in the walk scene
         pg.evaluate("saveData.preferences.battleStage='scene';uiState.tab='walk';saveData.route={node:0,prog:0,plan:[],hold:false};render();0"); time.sleep(2)
         pg.evaluate("const q={id:'t3d',sp:'tweet1',lvl:12,gold:false,no:1};saveData.queue=[q];startWild(q);0")
         wait_phase(pg); time.sleep(1)
         pg.screenshot(path=str(OUT / f'{name}-battle-3d.png'))
         results.setdefault('battle3d', {})[name] = pg.evaluate("[!!battleStage.gl,!!walkView.battle,walkView.id]")
-        pg.evaluate("stopTimers();B=null;battleStageStop();render();0")
+        pg.evaluate("stopTimers();activeBattle=null;battleStageStop();render();0")
         pg.evaluate("saveData.team=[makeMon('hood2',45),makeMon('box1',30)];saveData.route.node=4;startTrainer('crude');0")
         won = False
         for _ in range(60):
             ph = wait_phase(pg, ('choose', 'switch', 'end'))
             if ph == 'end':
-                won = pg.evaluate("B.over")=='win'; break
+                won = pg.evaluate("activeBattle.over")=='win'; break
             if ph == 'switch':
                 pg.evaluate("document.querySelector('[data-a=bswitch]:not([disabled])').click()"); continue
             pg.evaluate("document.querySelector('[data-a=bfight]').click()"); pg.evaluate("document.querySelector('[data-a=bmove]').click()")
         if name in ('phone', 'desktop'):
             # every walk scene, walking around in a town, and a trip along two roads
             log(f'{name}: every walk scene')
-            pg.evaluate("stopTimers&&stopTimers();B=null;battleStageStop();saveData.queue=[];uiState.tab='walk';0")
+            pg.evaluate("stopTimers&&stopTimers();activeBattle=null;battleStageStop();saveData.queue=[];uiState.tab='walk';0")
             for i in range(pg.evaluate('ROUTE.length')):
                 pg.evaluate(f"saveData.route={{node:{i},prog:0,plan:[],hold:false}};saveData.visited[{i}]=1;uiState.roam=null;render();0"); time.sleep(2.6)
                 if name == 'phone' or i in (0, 10, 12): pg.screenshot(path=str(OUT / f'{name}-scene-{pg.evaluate("walkView.id")}.png'))
@@ -216,7 +216,7 @@ def check_studio(pw, results):
         if not seen[1]:
             results['studio'] = {'errors': (errs + gerrs + ['the new billionaire did not reach the game'])[:10], 'movePowerSaved': seen[0] == 77, 'newBillionaireInGame': False, 'builderPartInGame': seen[2]}
             b.close(); return
-        g.evaluate("if(typeof titleEnd==='function')titleEnd();uiState.pg='girl';startGame('scoop');uiState.modal=null;uiState.mq=[];renderOv();wipe=f=>f();B=null;const q={id:'tc',sp:'checko0',lvl:9,gold:false,no:1};saveData.queue=[q];startWild(q);0")
+        g.evaluate("if(typeof titleEnd==='function')titleEnd();uiState.pg='girl';startGame('scoop');uiState.modal=null;uiState.mq=[];renderOv();wipe=f=>f();activeBattle=null;const q={id:'tc',sp:'checko0',lvl:9,gold:false,no:1};saveData.queue=[q];startWild(q);0")
         wait_phase(g); time.sleep(.6); g.screenshot(path=str(OUT / 'studio-new-in-game.png'))
         results['studio'] = {'errors': (errs + gerrs)[:10], 'movePowerSaved': seen[0] == 77, 'newBillionaireInGame': seen[1], 'builderPartInGame': seen[2]}
         b.close()

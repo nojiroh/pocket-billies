@@ -14,7 +14,7 @@ import { expose } from './test-globals.js';
 import { openingDone, provide } from './hooks.js';
 import { $, clamp } from './util.js';
 import { MOVES, SP, START_NODE, eff } from './game-data.js';
-import { B, RM, esc, maxHp } from './game-state.js';
+import { RM, activeBattle, esc, maxHp } from './game-state.js';
 import { artLoad } from './art.js';
 import { portraitHTML } from './person-art.js';
 import { particleSprite } from './battle-stage.js';
@@ -858,14 +858,14 @@ const TUTOR_TIPS = {
     'Nearly there! In the wild you’d flick a coin now: a tired Billie can’t resist one. Not Blake’s, though. He’d sue.',
 };
 function battleTutor() {
-  if (!B || !B.T || !B.T.tutorial || B.over) return;
-  const seen = B.tips || (B.tips = {}),
+  if (!activeBattle || !activeBattle.T || !activeBattle.T.tutorial || activeBattle.over) return;
+  const seen = activeBattle.tips || (activeBattle.tips = {}),
     me = A(0),
     foe = A(1),
     fresh = k => !seen[k];
   let k = null;
   if (fresh('start')) k = 'start';
-  else if (fresh('types') && B.turn >= 1) k = 'types';
+  else if (fresh('types') && activeBattle.turn >= 1) k = 'types';
   else if (fresh('hurt') && me && me.hp < maxHp(me) * 0.5) k = 'hurt';
   else if (fresh('coin') && foe && foe.hp < maxHp(foe) * 0.45) k = 'coin';
   if (!k) return;
@@ -882,9 +882,9 @@ function battleTutor() {
 }
 /* seen it all before: Blake's battle ends at once, and the story carries on */
 function tutorSkip() {
-  if (!B || !B.T || !B.T.tutorial || B.over) return;
+  if (!activeBattle || !activeBattle.T || !activeBattle.T.tutorial || activeBattle.over) return;
   stopTimers();
-  B.over = 'skip';
+  activeBattle.over = 'skip';
   endBattle();
 }
 /* a word from someone at the top of the battle, without stopping it; it goes after a while, or with a tap */

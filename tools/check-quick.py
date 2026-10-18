@@ -492,11 +492,11 @@ def until(pg, cond, sec, poke=None):
 def wait_phase(pg, want=('choose',), sec=60):
     end = time.time() + sec
     while time.time() < end:
-        ph = pg.evaluate('B?B.phase:"none"')
+        ph = pg.evaluate('activeBattle?activeBattle.phase:"none"')
         if ph in want: return ph
         if ph == 'playing': pg.evaluate('tapMsg()')
         time.sleep(.15)
-    return pg.evaluate('B?B.phase:"none"')
+    return pg.evaluate('activeBattle?activeBattle.phase:"none"')
 
 
 def play(pg):
@@ -535,11 +535,11 @@ def phone_flow(b, base, R):
         R['opening'] = pg.evaluate('[saveData.starter,saveData.avatar.name,saveData.team.length,ROUTE[saveData.route.node].id]')
         if R['opening'][3] != 'copperleaf': raise Exception(f'the game started at {R["opening"][3]}, not in Copperleaf')
         # v47: Blake battles you on the spot, with Hazel's tips; win or lose, he talks, Hazel heals you, the welcome sheet
-        if not until(pg, "!!B&&B.phase==='choose'", 120): raise Exception('Blake’s first battle never reached the move menu')
-        R['rivalBattle'] = pg.evaluate("({tutorial:!!(B.T&&B.T.tutorial),foe:B.foeName,moves:B.sides[1].team[0].moves,tip:!!document.querySelector('#btip.on')})")
+        if not until(pg, "!!activeBattle&&activeBattle.phase==='choose'", 120): raise Exception('Blake’s first battle never reached the move menu')
+        R['rivalBattle'] = pg.evaluate("({tutorial:!!(activeBattle.T&&activeBattle.T.tutorial),foe:activeBattle.foeName,moves:activeBattle.sides[1].team[0].moves,tip:!!document.querySelector('#btip.on')})")
         shot(pg, 'phone-rival-battle')
         if not R['rivalBattle']['tutorial'] or not R['rivalBattle']['tip']: raise Exception(f'Blake’s first battle isn’t the tutorial one: {R["rivalBattle"]}')
-        pg.evaluate("B.over='win';stopTimers();endBattle();0")
+        pg.evaluate("activeBattle.over='win';stopTimers();endBattle();0")
         if not until(pg, '!!TALK.cur', 40): raise Exception('nobody spoke after Blake’s battle')
         if not until(pg, '!TALK.on&&!!uiState.modal', 60, 'TALK.cur&&TALK.cur.tap()'): raise Exception('the talk after Blake’s battle never ended')
         R['afterRival'] = pg.evaluate("({story:saveData.story.rival0,hp:saveData.team.map(m=>m.hp===maxHp(m)),welcome:uiState.modal&&uiState.modal.title})")
@@ -548,10 +548,10 @@ def phone_flow(b, base, R):
         for tab in ['walk', 'map', 'team', 'ledger', 'profile']:
             pg.evaluate(f"uiState.tab='{tab}';render();scrollTo(0,0);0"); time.sleep(2.5 if tab in ('walk', 'map') else .6); shot(pg, f'phone-{tab}')
         pg.evaluate("uiState.tab='walk';saveData.route.node=0;render();openShop('sundown');0"); time.sleep(.6); shot(pg, 'phone-shop')
-        pg.evaluate("closeModal();wipe=f=>f();saveData.preferences.battleStage='classic';B=null;const q={id:'tq',sp:'knight1',lvl:12,gold:false,no:1};saveData.queue=[q];saveData.team.forEach(m=>{m.hp=maxHp(m)});startWild(q);0")
+        pg.evaluate("closeModal();wipe=f=>f();saveData.preferences.battleStage='classic';activeBattle=null;const q={id:'tq',sp:'knight1',lvl:12,gold:false,no:1};saveData.queue=[q];saveData.team.forEach(m=>{m.hp=maxHp(m)});startWild(q);0")
         if wait_phase(pg) != 'choose': raise Exception('a wild battle never reached the move menu')
         shot(pg, 'phone-battle')
-        pg.evaluate("stopTimers();B=null;battleStageStop();render();0")
+        pg.evaluate("stopTimers();activeBattle=null;battleStageStop();render();0")
         # phase 01: the owner tests on a phone and sends the exported debug log, so the export must keep working. Here the
         # game saves it as a download (nothing is sent anywhere); the file must be a JSON log
         with pg.expect_download(timeout=60000) as dl:
@@ -655,7 +655,7 @@ def desktop_steps(b, base, R):
         tgt = pg.evaluate("(()=>{const h=mapHub(walkView.sc);return walkablePointNear(h[0]-3.5,h[1]-1)})()")   # v46: a few steps from where you stand (the places are bigger now)   # v46: the hub view holds the scene at its baseOff; v40: a short walk; software drawing throttles game time, so a long one can outlast the wait
         # the camera eases in after a scene opens, and a story message can be up: let both settle, then tap (twice if the first missed)
         time.sleep(2.5); pg.evaluate("uiState.toastQ=[];uiState.modal=null;uiState.mq=[];renderOv();0")
-        pg.evaluate("saveData.queue=[];if(B){B.over='ran';B.phase='end';endBattle()}uiState.modal=null;uiState.mq=[];renderOv();0"); time.sleep(.5)   # v40: no hidden encounters near the tap (a tap on one starts a battle)
+        pg.evaluate("saveData.queue=[];if(activeBattle){activeBattle.over='ran';activeBattle.phase='end';endBattle()}uiState.modal=null;uiState.mq=[];renderOv();0"); time.sleep(.5)   # v40: no hidden encounters near the tap (a tap on one starts a battle)
         # townsfolk wander about: none may stand where the tap lands (a tap on a person starts a chat instead)
         pg.evaluate("(t=>{for(const f of walkView.folk||[])if(Math.hypot(f.x-t[0],f.z-t[1])<3.5){f.x=Math.min(walkView.sc.w-1,f.x+7);f.tx=f.x;f.tz=f.z}})(%s);0" % json.dumps(tgt)); time.sleep(.3)
         # v47: and no billionaire hiding in the open nearby (its marker and label are a big target, and a tap on it starts a battle)
@@ -685,7 +685,7 @@ def desktop_steps(b, base, R):
         until(pg, '!walkView.pl.route', 45)
         roam = pg.evaluate("[+walkView.pl.x.toFixed(1),+walkView.pl.z.toFixed(1)]")
         pg.evaluate("if(typeof TALK!=='undefined'&&TALK.on&&typeof talkHide==='function')talkHide();0")
-        if abs(roam[0] - tgt[0]) > .8 or abs(roam[1] - tgt[1]) > .8: raise Exception(f'tapped {tgt}, ended at {roam} ({pg.evaluate("JSON.stringify({mode:walkView.opt.state&&walkView.opt.state().mode,route:saveData.route,battle:!!B,modal:uiState.modal&&uiState.modal.title,talk:TALK.on,cs:typeof CS!==\"undefined\"&&CS.on,climb:!!walkView.pl.climb,keys:Object.keys(walkView.keys||{})})")})')
+        if abs(roam[0] - tgt[0]) > .8 or abs(roam[1] - tgt[1]) > .8: raise Exception(f'tapped {tgt}, ended at {roam} ({pg.evaluate("JSON.stringify({mode:walkView.opt.state&&walkView.opt.state().mode,route:saveData.route,battle:!!activeBattle,modal:uiState.modal&&uiState.modal.title,talk:TALK.on,cs:typeof CS!==\"undefined\"&&CS.on,climb:!!walkView.pl.climb,keys:Object.keys(walkView.keys||{})})")})')
         pg.evaluate("(()=>{const n=tripTo(9).steps;setTrip(9);addSteps(n,true)})();uiState.toastQ=[];uiState.modal=null;uiState.mq=[];renderOv();render();0")   # alpha 0.2: the steps a trip costs follow the walk
         if not until(pg, "saveData.route.node===9&&!saveData.route.plan.length&&(walkView.id==='pond'||(walkView.sc&&walkView.sc.baseId==='pond'))", 30): raise Exception('the trip to Willowmere didn’t arrive (' + pg.evaluate("JSON.stringify([saveData.route,walkView.id])") + ')')   # v43: you arrive at the exit, with the road still in view
         shot(pg, 'arrived')
@@ -815,7 +815,7 @@ def desktop_steps(b, base, R):
         # rain in battle
         go_scene(pg, 0); pg.evaluate("environment.force={time:15,weather:'rain'};saveData.preferences.battleStage='classic';const q={id:'twx',sp:'knight1',lvl:8,gold:false,no:1};saveData.queue=[q];saveData.team.forEach(m=>{m.hp=maxHp(m)});startWild(q);0")
         wait_phase(pg, sec=60); bw = pg.evaluate("(()=>{const w=battleWx();return w?[w.k,battleWeatherMult('Water'),battleWeatherMult('Fire'),document.getElementById('camWorld')?document.getElementById('camWorld').dataset.wx:''] :null})()")
-        time.sleep(1); shot(pg, 'battle-rain'); pg.evaluate("stopTimers();B=null;battleStageStop();saveData.preferences.battleStage='scene';environment.force=null;render();0")
+        time.sleep(1); shot(pg, 'battle-rain'); pg.evaluate("stopTimers();activeBattle=null;battleStageStop();saveData.preferences.battleStage='scene';environment.force=null;render();0")
         if not bw or bw[0] != 'rain' or bw[1] <= 1 or bw[2] >= 1: raise Exception(f'rain didn’t change the battle ({bw})')
         out.append(f'rain in battle: Water ×{bw[1]}, Fire ×{bw[2]}')
         if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
@@ -942,7 +942,7 @@ def desktop_steps(b, base, R):
         if not pg.evaluate("typeof liveK==='function'&&typeof worldBillyItem==='function'"): return 'not in this build'
         out = []
         pg.evaluate("saveData.team.forEach(m=>{m.hp=maxHp(m);m.status=null;m.lvl=Math.max(m.lvl,12)});while(saveData.team.filter(m=>m.job==null).length<3)saveData.team.push(makeMon(DEX[(saveData.team.length*5+3)%DEX.length],10));saveData.team.forEach(m=>m.hp=maxHp(m));0")
-        tap = "B&&B.phase==='playing'&&tapMsg()"
+        tap = "activeBattle&&activeBattle.phase==='playing'&&tapMsg()"
         for kind in ('double', 'alpha'):
             if kind == 'double':
                 tid = pg.evaluate("Object.keys(TRAINERS).find(k=>TRAINERS[k].team.length>=2)||''")
@@ -950,28 +950,28 @@ def desktop_steps(b, base, R):
                 pg.evaluate(f"startTrainer('{tid}',{{talked:true,double:true}});0")
             else:
                 pg.evaluate("(()=>{const sp=Object.keys(SP).find(k=>SP[k].stage===0&&!RULES.start.starters.includes(SP[k].line));const q={id:'cq-alpha',sp,lvl:6,gold:false,no:1,alpha:true};saveData.queue.push(q);startWild(q)})()")
-            if not until(pg, "B&&B.phase==='choose'", 90, tap): raise Exception(f'{kind}: never reached the move menu (phase {pg.evaluate("B&&B.phase")})')
+            if not until(pg, "activeBattle&&activeBattle.phase==='choose'", 90, tap): raise Exception(f'{kind}: never reached the move menu (phase {pg.evaluate("activeBattle&&activeBattle.phase")})')
             # the plates fade in with their billionaires; in software drawing that can take a few seconds
             until(pg, "document.querySelectorAll('#plates .bplate:not(.off):not(.gone)').length>=liveK(0).length+liveK(1).length", 12); time.sleep(.5)
-            r = pg.evaluate("JSON.stringify({fmt:B.fmt,mine:liveK(0).length,theirs:liveK(1).length,plates:document.querySelectorAll('#plates .bplate:not(.off):not(.gone)').length,boss:!!(A(1)&&A(1).boss),big:battleStage.s[1]?battleStage.s[1].big:1})")
+            r = pg.evaluate("JSON.stringify({fmt:activeBattle.fmt,mine:liveK(0).length,theirs:liveK(1).length,plates:document.querySelectorAll('#plates .bplate:not(.off):not(.gone)').length,boss:!!(A(1)&&A(1).boss),big:battleStage.s[1]?battleStage.s[1].big:1})")
             r = json.loads(r)
             if kind == 'double' and (r['fmt'] != 'double' or r['theirs'] < 2): raise Exception(f'double battle came out as {r}')
             if kind == 'alpha' and (r['fmt'] != 'alpha' or not r['boss'] or r['mine'] < 2): raise Exception(f'Alpha battle came out as {r}')
             if r['plates'] < r['mine'] + r['theirs']: raise Exception(f'{kind}: only {r["plates"]} nameplates for {r["mine"] + r["theirs"]} billionaires')
             shot(pg, f'battle-{kind}')
             # every fighter picks; with two foes the move needs a target
-            picks = pg.evaluate("""(async()=>{let n=0,aim=0;while(B&&B.phase==='choose'&&n<4){const m=A(B.cur),mid=m.moves.find(id=>MOVES[id]&&MOVES[id].c!=='X')||m.moves[0];pickMove(mid);n++;if(B.phase==='target'){aim++;await new Promise(r=>setTimeout(r,300));pickTarget(liveK(1)[liveK(1).length-1])}await new Promise(r=>setTimeout(r,60))}return [n,aim]})()""")
+            picks = pg.evaluate("""(async()=>{let n=0,aim=0;while(activeBattle&&activeBattle.phase==='choose'&&n<4){const m=A(activeBattle.cur),mid=m.moves.find(id=>MOVES[id]&&MOVES[id].c!=='X')||m.moves[0];pickMove(mid);n++;if(activeBattle.phase==='target'){aim++;await new Promise(r=>setTimeout(r,300));pickTarget(liveK(1)[liveK(1).length-1])}await new Promise(r=>setTimeout(r,60))}return [n,aim]})()""")
             if kind == 'double' and picks[1] < 1: raise Exception('double battle: no move asked for a target')
-            if not until(pg, "B&&['choose','end','switch'].includes(B.phase)", 120, tap): raise Exception(f'{kind}: the turn never finished (phase {pg.evaluate("B&&B.phase")})')
-            lines = pg.evaluate("B.events.map(e=>e.t).filter(Boolean)")
+            if not until(pg, "activeBattle&&['choose','end','switch'].includes(activeBattle.phase)", 120, tap): raise Exception(f'{kind}: the turn never finished (phase {pg.evaluate("activeBattle&&activeBattle.phase")})')
+            lines = pg.evaluate("activeBattle.events.map(e=>e.t).filter(Boolean)")
             hit_two = sum(1 for l in lines if ' used ' in l)
             out.append(f"{kind}: {r['mine']} vs {r['theirs']}, {r['plates']} nameplates, {picks[0]} picks ({picks[1]} aimed), {hit_two} moves in the turn" + (f", Alpha {r['big']}x size" if kind == 'alpha' else ''))
             if kind == 'alpha':
-                pg.evaluate("(async()=>{for(let i=0;i<20&&B&&B.phase==='switch';i++){const b=document.querySelector('#acts [data-a=bswitch]:not([disabled])');if(b)b.click();await new Promise(r=>setTimeout(r,200));for(let j=0;j<40&&B&&B.phase==='playing';j++){tapMsg();await new Promise(r=>setTimeout(r,150))}}})()")
-                c = pg.evaluate("""(async()=>{if(!B||B.phase!=='choose')return 'catching skipped: the battle '+(B?'is at '+B.phase:'ended');uiState.dbgCatch=true;B.coin=Object.keys(COINS).find(k=>saveData.coins[k]>0)||Object.keys(COINS)[0];saveData.coins[B.coin]=(saveData.coins[B.coin]||0)+1;B.phase='aim';paintActions();showAim();doThrow(false);
-                  for(let i=0;i<120&&B&&B.phase!=='end';i++){if(B.phase==='playing')tapMsg();await new Promise(r=>setTimeout(r,250))}uiState.dbgCatch=false;const m=saveData.team.concat(saveData.box).find(m=>m.alpha);return m?`caught: Alpha flag kept, boss boost dropped (${m.hp}/${maxHp(m)} HP)`:'not caught'})()""")
+                pg.evaluate("(async()=>{for(let i=0;i<20&&activeBattle&&activeBattle.phase==='switch';i++){const b=document.querySelector('#acts [data-a=bswitch]:not([disabled])');if(b)b.click();await new Promise(r=>setTimeout(r,200));for(let j=0;j<40&&activeBattle&&activeBattle.phase==='playing';j++){tapMsg();await new Promise(r=>setTimeout(r,150))}}})()")
+                c = pg.evaluate("""(async()=>{if(!activeBattle||activeBattle.phase!=='choose')return 'catching skipped: the battle '+(activeBattle?'is at '+activeBattle.phase:'ended');uiState.dbgCatch=true;activeBattle.coin=Object.keys(COINS).find(k=>saveData.coins[k]>0)||Object.keys(COINS)[0];saveData.coins[activeBattle.coin]=(saveData.coins[activeBattle.coin]||0)+1;activeBattle.phase='aim';paintActions();showAim();doThrow(false);
+                  for(let i=0;i<120&&activeBattle&&activeBattle.phase!=='end';i++){if(activeBattle.phase==='playing')tapMsg();await new Promise(r=>setTimeout(r,250))}uiState.dbgCatch=false;const m=saveData.team.concat(saveData.box).find(m=>m.alpha);return m?`caught: Alpha flag kept, boss boost dropped (${m.hp}/${maxHp(m)} HP)`:'not caught'})()""")
                 out.append(c)
-            pg.evaluate("if(B){B.over=B.over||'ran';B.phase='end';endBattle()};0"); time.sleep(2.5); pg.evaluate("uiState.modal=null;uiState.mq=[];renderOv();0")
+            pg.evaluate("if(activeBattle){activeBattle.over=activeBattle.over||'ran';activeBattle.phase='end';endBattle()};0"); time.sleep(2.5); pg.evaluate("uiState.modal=null;uiState.mq=[];renderOv();0")
         # the world: billionaires waiting in the grass (one an Alpha; v46: each keeps its spot), the buddy, a trainer's companion
         pg.evaluate("saveData.queue=[];for(let i=0;i<3;i++){const q=spawn(false);if(!i)q.alpha=true};saveData.buddy=saveData.team[1].uid;save();0")
         node = pg.evaluate("ROUTE.findIndex(r=>r.scene==='longgrass')")
@@ -1010,20 +1010,20 @@ def desktop_steps(b, base, R):
         out.append('walk cycles move for ' + ', '.join(sorted(w)))
         # an Alpha brought below half: the shield phase
         pg.evaluate("(()=>{const sp=Object.keys(SP).find(k=>SP[k].stage===0);const q={id:'cq-a34',sp,lvl:6,gold:false,no:1,alpha:true};saveData.queue.push(q);saveData.team.forEach(m=>{m.hp=maxHp(m);m.status=null});startWild(q)})()")
-        tap = "B&&B.phase==='playing'&&tapMsg()"
-        if not until(pg, "B&&B.phase==='choose'", 90, tap): raise Exception('Alpha battle never reached the move menu')
-        a = json.loads(pg.evaluate("(()=>{const m=A(1);m.hp=Math.floor(maxHp(m)*.55);B.events=[];alphaPhase(1);m.hp=Math.floor(maxHp(m)*.45);alphaPhase(1);const tb=document.querySelector('#plates .turnbar');paintPlates(snapAll());return JSON.stringify({ph2:!!m.boss.ph2,shield:FV(1).shield,lines:B.events.map(e=>e.t),bar:!!document.querySelector('#plates .turnbar')})})()"))
+        tap = "activeBattle&&activeBattle.phase==='playing'&&tapMsg()"
+        if not until(pg, "activeBattle&&activeBattle.phase==='choose'", 90, tap): raise Exception('Alpha battle never reached the move menu')
+        a = json.loads(pg.evaluate("(()=>{const m=A(1);m.hp=Math.floor(maxHp(m)*.55);activeBattle.events=[];alphaPhase(1);m.hp=Math.floor(maxHp(m)*.45);alphaPhase(1);const tb=document.querySelector('#plates .turnbar');paintPlates(snapAll());return JSON.stringify({ph2:!!m.boss.ph2,shield:FV(1).shield,lines:activeBattle.events.map(e=>e.t),bar:!!document.querySelector('#plates .turnbar')})})()"))
         if not a['ph2'] or a['shield'] < 1: raise Exception(f'Alpha shield phase didn’t start: {a}')
         out.append(f"Alpha below half: “{a['lines'][0][:60]}”, shield {a['shield']} turns, turn order bar {'shown' if a['bar'] else 'missing'}")
-        pg.evaluate("if(B){B.over='ran';B.phase='end';endBattle()};0"); time.sleep(2.5); pg.evaluate("uiState.modal=null;uiState.mq=[];renderOv();0")
+        pg.evaluate("if(activeBattle){activeBattle.over='ran';activeBattle.phase='end';endBattle()};0"); time.sleep(2.5); pg.evaluate("uiState.modal=null;uiState.mq=[];renderOv();0")
         # partner AI: two foes don't both hit a target the first one already finishes
         tid = pg.evaluate("Object.keys(TRAINERS).find(k=>TRAINERS[k].team.length>=2)||''")
         if tid:
             pg.evaluate(f"startTrainer('{tid}',{{talked:true,double:true}});0")
-            if until(pg, "B&&B.phase==='choose'", 90, tap):
-                p = json.loads(pg.evaluate("(()=>{const me=liveK(0);if(me.length<2)return JSON.stringify({skip:1});const t=A(me[0]);const keep=t.hp;t.hp=1;let pile=0;for(let i=0;i<30;i++){B.aiPlan={};const a=chooseAI(liveK(1)[0]),b=chooseAI(liveK(1)[1]);if(a&&b&&a.tk===me[0]&&b.tk===me[0]&&MOVES[a.mid].c!=='X'&&MOVES[b.mid].c!=='X')pile++}t.hp=keep;return JSON.stringify({pile})})()"))
+            if until(pg, "activeBattle&&activeBattle.phase==='choose'", 90, tap):
+                p = json.loads(pg.evaluate("(()=>{const me=liveK(0);if(me.length<2)return JSON.stringify({skip:1});const t=A(me[0]);const keep=t.hp;t.hp=1;let pile=0;for(let i=0;i<30;i++){activeBattle.aiPlan={};const a=chooseAI(liveK(1)[0]),b=chooseAI(liveK(1)[1]);if(a&&b&&a.tk===me[0]&&b.tk===me[0]&&MOVES[a.mid].c!=='X'&&MOVES[b.mid].c!=='X')pile++}t.hp=keep;return JSON.stringify({pile})})()"))
                 out.append('partner AI: ' + ('skipped (one fighter)' if p.get('skip') else f"both foes piled on a 1 HP target {p['pile']} of 30 times"))
-            pg.evaluate("if(B){B.over='ran';B.phase='end';endBattle()};0"); time.sleep(2.5); pg.evaluate("uiState.modal=null;uiState.mq=[];renderOv();0")
+            pg.evaluate("if(activeBattle){activeBattle.over='ran';activeBattle.phase='end';endBattle()};0"); time.sleep(2.5); pg.evaluate("uiState.modal=null;uiState.mq=[];renderOv();0")
         if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
         return '; '.join(out)
     v34()
@@ -1100,12 +1100,12 @@ def desktop_steps(b, base, R):
         out.append(f"split at 32: Build → Marsox, Hype → Memeox (“{e['hint'][:60]}…”)")
         # a battle with the new starter on the 3D stage: the player's rig buffer has pixels
         pg.evaluate("saveData.team.unshift(makeMon('gates0',14));saveData.team[0].hp=maxHp(saveData.team[0]);saveData.preferences.battleStage='scene';const q={id:'cq36',sp:'bezos1',lvl:12,gold:false,no:1};saveData.queue.push(q);startWild(q);0")
-        if not until(pg, "B&&B.phase==='choose'", 90, "B&&B.phase==='playing'&&tapMsg()"): raise Exception('the starter battle never reached the move menu')
+        if not until(pg, "activeBattle&&activeBattle.phase==='choose'", 90, "activeBattle&&activeBattle.phase==='playing'&&tapMsg()"): raise Exception('the starter battle never reached the move menu')
         until(pg, "(()=>{const a=actorBuffer(0),b=actorBuffer(1);return !!(a&&b)})()", 15); time.sleep(2)
         px = json.loads(pg.evaluate("(()=>{const o={};for(const i of [0,1]){const Bf=actorBuffer(i);if(!Bf){o[i]=0;continue}const d=Bf.buf.getContext('2d').getImageData(0,0,Bf.buf.width,Bf.buf.height).data;let n=0;for(let k=3;k<d.length;k+=4)if(d[k]>0)n++;o[i]=n}return JSON.stringify(o)})()"))
         shot(pg, 'v36-starter-battle')
         if px['0'] < 500 or px['1'] < 500: raise Exception(f'battle rig buffers nearly empty: {px}')
-        pg.evaluate("if(B){B.over='ran';B.phase='end';endBattle()};0"); time.sleep(2.5); pg.evaluate("uiState.modal=null;uiState.mq=[];renderOv();saveData.team.shift();0")
+        pg.evaluate("if(activeBattle){activeBattle.over='ran';activeBattle.phase='end';endBattle()};0"); time.sleep(2.5); pg.evaluate("uiState.modal=null;uiState.mq=[];renderOv();saveData.team.shift();0")
         out.append(f"3D-stage battle Kidling vs Primotter: both puppets drawn ({px['0']} / {px['1']} px)")
         if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
         return '; '.join(out)
@@ -1182,7 +1182,7 @@ def desktop_steps(b, base, R):
         px = json.loads(pg.evaluate("(()=>{const o={};for(const i of [0,1]){const Bf=actorBuffer(i);if(!Bf){o[i]=0;continue}const d=Bf.buf.getContext('2d').getImageData(0,0,Bf.buf.width,Bf.buf.height).data;let n=0;for(let k=3;k<d.length;k+=4)if(d[k]>0)n++;o[i]=n}return JSON.stringify(o)})()"))
         shot(pg, 'v38-battle')
         if px['1'] < 500: raise Exception(f'the wild Frylet drew nothing on the stage: {px}')
-        pg.evaluate("if(B){B.over='ran';B.phase='end';endBattle()};0"); time.sleep(2.5); pg.evaluate("uiState.modal=null;uiState.mq=[];renderOv();0")
+        pg.evaluate("if(activeBattle){activeBattle.over='ran';activeBattle.phase='end';endBattle()};0"); time.sleep(2.5); pg.evaluate("uiState.modal=null;uiState.mq=[];renderOv();0")
         out.append(f"wild Frylet on the 3D stage ({px['1']} px)")
         if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
         return '; '.join(out)
@@ -1213,12 +1213,12 @@ def desktop_steps(b, base, R):
         node = pg.evaluate("ROUTE.findIndex(r=>r.scene==='volcano')")
         if node >= 0:
             pg.evaluate("delete saveData.story['legend_rockefeller0'];delete saveData.caught.rockefeller0;STORY.pending=null;uiState.modal=null;uiState.mq=[];if(TALK.on&&typeof talkHide==='function')talkHide();renderOv();0"); go_scene(pg, node); time.sleep(3)
-            if not until(pg, "!!uiState.modal&&/leaking/.test(uiState.modal.title||'')", 40): raise Exception(f"the legendary at the volcano did not show up ({pg.evaluate('JSON.stringify({ready:walkView.ready,id:walkView.id,tab:uiState.tab,modal:uiState.modal&&uiState.modal.title,talk:TALK.on,cs:CS.on,pend:STORY.pending,flag:saveData.story.legend_rockefeller0,route:saveData.route,b:!!B})')})")
-            pg.evaluate("uiState.modal.btns[0].f();0"); until(pg, "!!B", 6); time.sleep(2)
-            foe = pg.evaluate("B&&B.sides[1].team.map(m=>[m.sp,m.lvl])[0]")
+            if not until(pg, "!!uiState.modal&&/leaking/.test(uiState.modal.title||'')", 40): raise Exception(f"the legendary at the volcano did not show up ({pg.evaluate('JSON.stringify({ready:walkView.ready,id:walkView.id,tab:uiState.tab,modal:uiState.modal&&uiState.modal.title,talk:TALK.on,cs:CS.on,pend:STORY.pending,flag:saveData.story.legend_rockefeller0,route:saveData.route,b:!!activeBattle})')})")
+            pg.evaluate("uiState.modal.btns[0].f();0"); until(pg, "!!activeBattle", 6); time.sleep(2)
+            foe = pg.evaluate("activeBattle&&activeBattle.sides[1].team.map(m=>[m.sp,m.lvl])[0]")
             if foe != ['rockefeller0', 42]: raise Exception(f'legendary battle foe: {foe}')
             shot(pg, 'v39-legend')
-            pg.evaluate("if(B){B.over='ran';B.phase='end';endBattle()};0"); time.sleep(2.5); pg.evaluate("uiState.modal=null;uiState.mq=[];renderOv();0")
+            pg.evaluate("if(activeBattle){activeBattle.over='ran';activeBattle.phase='end';endBattle()};0"); time.sleep(2.5); pg.evaluate("uiState.modal=null;uiState.mq=[];renderOv();0")
             if pg.evaluate("!!uiState.modal"): raise Exception('the legendary came back the same day')
             out.append('Oilympus meets you at the volcano at level 42, once a day')
         # the six-choice dressing room
@@ -1554,7 +1554,7 @@ def desktop_steps(b, base, R):
             def beat(tid, pic=None):
                 pg.evaluate(f"saveData.team.forEach(m=>{{m.hp=maxHp(m)}});startTrainer('{tid}',{{talked:true}});0")
                 if wait_phase(pg, ('choose',), 90) != 'choose': raise Exception(f'{tid}: the battle never reached the move menu')
-                pg.evaluate("B.over='win';stopTimers();endBattle();0")
+                pg.evaluate("activeBattle.over='win';stopTimers();endBattle();0")
                 if not until(pg, '!!uiState.modal', 30): raise Exception(f'{tid}: no sheet after the win')
                 seen = []; idle = 0; t_end = time.time() + 150; taps = 0
                 while idle < 6 and len(seen) < 40:
@@ -1905,16 +1905,16 @@ def desktop_steps(b, base, R):
         pg.evaluate("const q={id:'t3d',sp:'knight1',lvl:12,gold:false,no:1};saveData.queue=[q];saveData.team.forEach(m=>{m.hp=maxHp(m)});startWild(q);0")
         if wait_phase(pg, sec=60) != 'choose': raise Exception('the 3D-stage battle never reached the move menu')
         shot(pg, 'battle-3d'); stage = pg.evaluate("!!battleStage.gl")
-        pg.evaluate("stopTimers();B=null;battleStageStop();saveData.preferences.battleStage='classic';render();0")
+        pg.evaluate("stopTimers();activeBattle=null;battleStageStop();saveData.preferences.battleStage='classic';render();0")
         # battle animations at four times the speed (the Debug panel's speed setting), so the result comes quickly
         pg.evaluate("battleStage.speed=4;saveData.team=[makeMon('musk2',45),makeMon('ek1',30)];saveData.route.node=4;startTrainer('crude');0")
         end = time.time() + 300; won = None
         while time.time() < end:
             ph = wait_phase(pg, ('choose', 'switch', 'end'), 30)
-            if ph == 'end': won = pg.evaluate('B.over') == 'win'; break
+            if ph == 'end': won = pg.evaluate('activeBattle.over') == 'win'; break
             if ph == 'switch': pg.evaluate("document.querySelector('[data-a=bswitch]:not([disabled])').click()"); continue
             if ph == 'choose': pg.evaluate("document.querySelector('[data-a=bfight]').click();document.querySelector('[data-a=bmove]').click()")
-        pg.evaluate("battleStage.speed=1;if(B){stopTimers();B=null;battleStageStop()}render();0")
+        pg.evaluate("battleStage.speed=1;if(activeBattle){stopTimers();activeBattle=null;battleStageStop()}render();0")
         if won is None: raise Exception('the trainer battle didn’t finish in 300s')
         if not won: raise Exception('the trainer battle was lost (it should be an easy win)')
         if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))

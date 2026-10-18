@@ -3,7 +3,7 @@
 /* ---- matrices ---- */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { B, RM, SP, provide } from './hooks.js';
+import { RM, SP, activeBattle, provide } from './hooks.js';
 import { clamp, rnd } from './util.js';
 import { frameTask, userFps } from './frame-scheduler.js';
 import { ART_CACHE, artImg, artLoad, artReady, artURL, makeCanvas } from './art.js';
@@ -526,7 +526,7 @@ function rigTick(ts) {
     if ((!c.dataset.still && !RM) || !c._drawn) drawDomRig(c, ts);
   }
 }
-frameTask('rig', rigTick, () => (B ? 4 : Math.min(60, userFps() / 2)));
+frameTask('rig', rigTick, () => (activeBattle ? 4 : Math.min(60, userFps() / 2)));
 document.addEventListener(
   'pointerdown',
   ev => {

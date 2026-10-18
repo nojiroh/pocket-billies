@@ -45,9 +45,9 @@ import {
   trainerTeam,
 } from './game-data.js';
 import {
-  B,
   N,
   RM,
+  activeBattle,
   addEgg,
   addMon,
   esc,
@@ -62,7 +62,7 @@ import {
   plural,
   save,
   saveData,
-  setB,
+  setActiveBattle,
   stat,
   uiState,
   xpFor,
@@ -239,12 +239,12 @@ const ASIDE = [0, 1, 0, 1, 0],
   ];
 const AK = (si, sl) => AKS[si][sl];
 const FT = k => {
-  const sd = B && B.sides[ASIDE[k]];
+  const sd = activeBattle && activeBattle.sides[ASIDE[k]];
   return sd ? sd.f[ASL[k]] : null;
 };
 export const A = k => {
   const f = FT(k);
-  return f && f.on ? B.sides[ASIDE[k]].team[f.act] : undefined;
+  return f && f.on ? activeBattle.sides[ASIDE[k]].team[f.act] : undefined;
 };
 provide({ A }); /* to-module */
 const FV = k => FT(k).v;
@@ -252,15 +252,15 @@ provide({ FV }); /* to-module */
 /* every actor on the field, the live ones, and those of one side */
 const allK = () => {
   const o = [];
-  if (!B) return o;
-  B.sides.forEach((sd, si) => sd.f.forEach((f, sl) => o.push(AK(si, sl))));
+  if (!activeBattle) return o;
+  activeBattle.sides.forEach((sd, si) => sd.f.forEach((f, sl) => o.push(AK(si, sl))));
   return o;
 };
 export const liveK = si => allK().filter(k => (si == null || ASIDE[k] === si) && A(k) && A(k).hp > 0);
 const foeSide = k => 1 - ASIDE[k];
 export const types = k => FV(k).ov || SP[A(k).sp].types;
 const shockName = () => RB.shockName || `${RB.shockType} storm`;
-const isMulti = () => !!B && (B.sides[0].f.length > 1 || B.sides[1].f.length > 1);
+const isMulti = () => !!activeBattle && (activeBattle.sides[0].f.length > 1 || activeBattle.sides[1].f.length > 1);
 function statE(k, s2) {
   const m = A(k),
     v = FV(k);
@@ -277,7 +277,7 @@ function statE(k, s2) {
 function snapK(k) {
   const f = FT(k);
   if (!f || !f.on) return null;
-  const m = B.sides[ASIDE[k]].team[f.act];
+  const m = activeBattle.sides[ASIDE[k]].team[f.act];
   if (!m) return null;
   const a = xpFor(m.lvl),
     b = xpFor(m.lvl + 1);
@@ -302,15 +302,15 @@ export const snapAll = () => [0, 1, 2, 3, 4].map(k => (FT(k) ? snapK(k) : null))
 /* kept for older callers: the first fighter of a side */
 const snapSide = si => snapK(si);
 export function say(t, an) {
-  const ev = { t, an: an || null, s: snapAll(), mk: B.market ? { ...B.market } : null };
-  B.events.push(ev);
+  const ev = { t, an: an || null, s: snapAll(), mk: activeBattle.market ? { ...activeBattle.market } : null };
+  activeBattle.events.push(ev);
   return ev;
 }
 function upd() {
-  const e = B.events[B.events.length - 1];
+  const e = activeBattle.events[activeBattle.events.length - 1];
   if (e) {
     e.s = snapAll();
-    e.mk = B.market ? { ...B.market } : null;
+    e.mk = activeBattle.market ? { ...activeBattle.market } : null;
   }
 }
 function movePower(k, tk, M) {
@@ -339,12 +339,12 @@ function dmgCalc(k, tk, mid, src) {
   const roll = hasPassive(aty, 'volatile')
     ? RB.cryptoRollMin + rnd() * (RB.cryptoRollMax - RB.cryptoRollMin)
     : RB.rollMin + rnd() * (1 - RB.rollMin);
-  const mk = B.market && M.t === RB.shockType ? RB.oilShockMult : 1;
+  const mk = activeBattle.market && M.t === RB.shockType ? RB.oilShockMult : 1;
   let eco = 1;
   if (!src) {
     const syn = aty.filter(t => PASSIVE[t] === 'synergy');
     if (syn.length) {
-      const sd = B.sides[ASIDE[k]],
+      const sd = activeBattle.sides[ASIDE[k]],
         me = A(k);
       eco =
         1 +
@@ -430,7 +430,7 @@ function useMove(k, mid, tk0) {
   const tk = onFoe ? retarget(k, tk0) : k;
   if (onFoe && tk == null) return;
   const t = A(tk),
-    td = B.sides[ASIDE[tk]];
+    td = activeBattle.sides[ASIDE[tk]];
   /* spread moves hit every fighter on the other side (a little weaker when there's more than one) */
   const spread = onFoe && fx.spread && liveK(foeSide(k)).length > 1;
   const ev = say(`${N(u)} used ${M.n}${isMulti() && onFoe && !spread ? ` on ${N(t)}` : ''}.`, {
@@ -478,7 +478,7 @@ function useMove(k, mid, tk0) {
     }
     if (fx.delay) {
       ev.an.self = true;
-      B.sides[ASIDE[tk2]].mail.push({
+      activeBattle.sides[ASIDE[tk2]].mail.push({
         n: RB.mailTurns,
         A: statE(k, 'lev'),
         lvl: u.lvl,
@@ -570,7 +570,7 @@ function useMove(k, mid, tk0) {
     }
   }
   if (fx.market) {
-    B.market = { k: 'sand', n: RB.shockTurns };
+    activeBattle.market = { k: 'sand', n: RB.shockTurns };
     say(`A ${shockName().toLowerCase()} kicked up.`, { k: 'market' });
   }
 }
@@ -591,7 +591,7 @@ function endTurn() {
       m.hp = Math.max(0, m.hp - d);
       say(`${N(m)} is hurt by its burn.`, { k: 'hurt', si: k, fx: 'scn', dmg: d });
     }
-    if (m.hp > 0 && B.market && !ty.includes(RB.shockType)) {
+    if (m.hp > 0 && activeBattle.market && !ty.includes(RB.shockType)) {
       const d = Math.max(1, Math.floor(mx / fr));
       m.hp = Math.max(0, m.hp - d);
       say(`${N(m)} is buffeted by the ${shockName().toLowerCase()}.`, { k: 'hurt', si: k, fx: 'oil', dmg: d });
@@ -609,7 +609,7 @@ function endTurn() {
     }
   }
   for (const si of [0, 1]) {
-    const sd = B.sides[si];
+    const sd = activeBattle.sides[si];
     sd.mail = sd.mail.filter(h => {
       if (--h.n > 0) return true;
       const L = liveK(si),
@@ -631,15 +631,17 @@ function endTurn() {
       return false;
     });
   }
-  if (B.market && --B.market.n <= 0) {
-    B.market = null;
+  if (activeBattle.market && --activeBattle.market.n <= 0) {
+    activeBattle.market = null;
     say(`The ${shockName().toLowerCase()} died down.`, { k: 'marketEnd' });
   }
 }
 function award(e) {
   const P = RULES.progression,
     amt = Math.floor(
-      ((SP[e.sp].yld * e.lvl) / 7) * (B.kind === 'trainer' ? P.trainerXpMult : 1) * (e.boss ? (RB.alphaXp ?? 3) : 1)
+      ((SP[e.sp].yld * e.lvl) / 7) *
+        (activeBattle.kind === 'trainer' ? P.trainerXpMult : 1) *
+        (e.boss ? (RB.alphaXp ?? 3) : 1)
     );
   const on = liveK(0).map(k => A(k));
   on.forEach(m => {
@@ -655,7 +657,7 @@ function award(e) {
   }
 }
 function inherit(k) {
-  const sd = B.sides[ASIDE[k]];
+  const sd = activeBattle.sides[ASIDE[k]];
   if (!hasPassive(SP[A(k).sp].types, 'inherit')) return;
   const st = {};
   let any = false;
@@ -668,7 +670,7 @@ function inherit(k) {
 }
 /* who on a side could still come in: alive, not at work, not on the field and not already called in this turn */
 function bench(si, also = []) {
-  const sd = B.sides[si],
+  const sd = activeBattle.sides[si],
     on = sd.f.filter(f => f.on).map(f => f.act);
   return sd.team
     .map((m, i) => i)
@@ -678,7 +680,7 @@ function bench(si, also = []) {
     });
 }
 export function doSwitch(k, idx) {
-  const sd = B.sides[ASIDE[k]],
+  const sd = activeBattle.sides[ASIDE[k]],
     f = FT(k);
   f.act = idx;
   f.on = true;
@@ -687,7 +689,10 @@ export function doSwitch(k, idx) {
   f.v = freshV();
   sd.inh = null;
   const m = A(k);
-  say(ASIDE[k] === 0 ? `Go, ${N(m)}!` : `${B.foeName || 'The wild side'} sent out ${N(m)}.`, { k: 'enter', si: k });
+  say(ASIDE[k] === 0 ? `Go, ${N(m)}!` : `${activeBattle.foeName || 'The wild side'} sent out ${N(m)}.`, {
+    k: 'enter',
+    si: k,
+  });
   saveData.seen[m.sp] = 1;
   if (sd.rent && !hasPassive(SP[m.sp].types, 'landlord')) {
     const d = Math.max(1, Math.floor(maxHp(m) / Math.max(2, RB.rentFraction)));
@@ -713,9 +718,9 @@ export function checkFaints() {
     inherit(k);
     const nx = bench(1)[0];
     if (nx == null) f.on = false;
-    else if (!B.over) doSwitch(k, nx);
+    else if (!activeBattle.over) doSwitch(k, nx);
   }
-  if (!liveK(1).length && !B.over) B.over = 'win';
+  if (!liveK(1).length && !activeBattle.over) activeBattle.over = 'win';
   for (const k of allK().filter(k => ASIDE[k] === 0)) {
     const p = A(k),
       f = FT(k);
@@ -726,13 +731,13 @@ export function checkFaints() {
     p.sTurns = 0;
     say(`${N(p)} fainted.`, { k: 'faint', si: k });
     inherit(k);
-    const pend = (B.needSwitch || []).length;
+    const pend = (activeBattle.needSwitch || []).length;
     if (bench(0).length > pend) {
-      if (!B.over) (B.needSwitch || (B.needSwitch = [])).push(k);
+      if (!activeBattle.over) (activeBattle.needSwitch || (activeBattle.needSwitch = [])).push(k);
     } else f.on = false;
   }
-  if (!B.over && !liveK(0).length && !(B.needSwitch || []).length) B.over = 'lose';
-  if (any && !B.over && liveK(1).some(k => A(k).hp <= 0)) checkFaints();
+  if (!activeBattle.over && !liveK(0).length && !(activeBattle.needSwitch || []).length) activeBattle.over = 'lose';
+  if (any && !activeBattle.over && liveK(1).some(k => A(k).hp <= 0)) checkFaints();
   return any;
 }
 /* how much a move is worth against one target, for the computer's choices */
@@ -784,8 +789,8 @@ function aiScore(k, id, tk) {
   else if (fx.hype) s = FV(tk).hyped ? 0 : 35;
   else if (fx.heal) s = m.hp < maxHp(m) * 0.5 ? 90 : 0;
   else if (fx.protect) s = FV(k).last === id ? 0 : 12;
-  else if (fx.rent) s = B.sides[ASIDE[tk]].rent ? 0 : 30;
-  else if (fx.market) s = B.market ? 0 : 40;
+  else if (fx.rent) s = activeBattle.sides[ASIDE[tk]].rent ? 0 : 30;
+  else if (fx.market) s = activeBattle.market ? 0 : 40;
   else if (fx.selfStage) s = Object.keys(fx.selfStage).some(q => FV(k).st[q] < 2) ? 28 : 0;
   else if (fx.tgtStage) s = 22;
   else if (fx.spin) s = FV(tk).ov ? 0 : 20;
@@ -803,8 +808,8 @@ function chooseAI(k = 1) {
   if (!opts.length) return null;
   /* v34: in a double the second foe knows what its partner is about to do: no piling onto a fighter that's already
     going down, a spread move is worth more while both of yours stand, and a status move isn't doubled up */
-  const PL = B.aiPlan || (B.aiPlan = {});
-  if (B.fmt === 'double') {
+  const PL = activeBattle.aiPlan || (activeBattle.aiPlan = {});
+  if (activeBattle.fmt === 'double') {
     for (const o of opts) {
       const c = o[0],
         M = MOVES[c.mid],
@@ -817,7 +822,7 @@ function chooseAI(k = 1) {
     }
   }
   let pick;
-  if ((B.kind === 'trainer' || m.boss) && rnd() < RB.aiSmart) {
+  if ((activeBattle.kind === 'trainer' || m.boss) && rnd() < RB.aiSmart) {
     opts.sort((a, b) => b[1] - a[1]);
     pick = opts[0][0];
   } else pick = pickW(opts);
@@ -842,7 +847,7 @@ export function newBattle(kind, foe, extra) {
     n1 = fmt === 'double' ? Math.min(2, foe.length) : 1;
   const fighters = (n, list) =>
     Array.from({ length: n }, (_, sl) => ({ act: list[sl], on: list[sl] != null, v: freshV(), down: false }));
-  setB(
+  setActiveBattle(
     Object.assign(
       {
         kind,
@@ -879,7 +884,7 @@ export function newBattle(kind, foe, extra) {
       { fmt }
     )
   );
-  Object.defineProperty(B.sides[0], 'act', {
+  Object.defineProperty(activeBattle.sides[0], 'act', {
     get() {
       return this.f[0].act;
     },
@@ -888,7 +893,7 @@ export function newBattle(kind, foe, extra) {
     },
     enumerable: false,
   });
-  Object.defineProperty(B.sides[1], 'act', {
+  Object.defineProperty(activeBattle.sides[1], 'act', {
     get() {
       return this.f[0].act;
     },
@@ -956,7 +961,7 @@ export function startTrainer(id, o = {}) {
       say(l).face = { who: T.who, expr: i ? null : 'happy' };
     });
   if (T.market) {
-    B.market = { k: 'sand', n: T.market.n || RB.shockTurns };
+    activeBattle.market = { k: 'sand', n: T.market.n || RB.shockTurns };
     say(T.marketText || `The battle opened in a ${shockName().toLowerCase()}.`, { k: 'market' });
   }
   const F = liveK(1);
@@ -971,28 +976,28 @@ export function areaKey() {
 /* one turn. plan: what each of your fighters does ({who,k:'move',mid,tk} | {who,k:'switch',i} | {who,k:'item',item,uid})
    or a single {k:'run'}. An older single action ({k:'move',mid}) is your first fighter's. */
 export function runTurn(plan) {
-  B.events = [];
-  B.ev = 0;
-  B.needSwitch = [];
-  B.turn++;
-  B.aiPlan = {};
+  activeBattle.events = [];
+  activeBattle.ev = 0;
+  activeBattle.needSwitch = [];
+  activeBattle.turn++;
+  activeBattle.aiPlan = {};
   if (!Array.isArray(plan)) plan = [Object.assign({ who: 0 }, plan)];
   if (plan.some(p => p.k === 'run')) {
     say('You got away safely.', { k: 'run' });
-    B.over = 'ran';
+    activeBattle.over = 'ran';
     return play();
   }
   for (const p of plan.filter(p => p.k === 'switch')) {
     const out = A(p.who);
     if (!out) continue;
-    const free = hasPassive(types(p.who), 'pivot') && !B.sides[0].pivot;
-    if (free) B.sides[0].pivot = true;
+    const free = hasPassive(types(p.who), 'pivot') && !activeBattle.sides[0].pivot;
+    if (free) activeBattle.sides[0].pivot = true;
     say(free ? `${N(out)} darted out without losing the turn.` : `${N(out)}, come back.`, { k: 'recall', si: p.who });
     doSwitch(p.who, p.i);
     p.free = free;
   }
   checkFaints();
-  if (B.over) return play();
+  if (activeBattle.over) return play();
   if (plan.length === 1 && plan[0].k === 'switch' && plan[0].free) return play();
   for (const p of plan.filter(p => p.k === 'item')) applyItem(p.item, p.uid, true);
   const acts = [];
@@ -1013,24 +1018,24 @@ export function runTurn(plan) {
       a.r - b.r
   );
   for (const a of acts) {
-    if (B.over) break;
+    if (activeBattle.over) break;
     const u = A(a.who);
     if (!u || u.hp <= 0 || FT(a.who).down) continue;
     if (!liveK(foeSide(a.who)).length) break;
     useMove(a.who, a.mid, a.tk);
     checkFaints();
   }
-  if (!B.over) {
+  if (!activeBattle.over) {
     endTurn();
     checkFaints();
   }
   play();
 }
 export function enemyOnly() {
-  B.aiPlan = {};
+  activeBattle.aiPlan = {};
   for (const k of liveK(1)) {
     const n = A(k).boss ? (RB.alphaActs ?? 2) : 1;
-    for (let i = 0; i < n && !B.over; i++) {
+    for (let i = 0; i < n && !activeBattle.over; i++) {
       const c = chooseAI(k);
       if (c) {
         useMove(k, c.mid, c.tk);
@@ -1038,7 +1043,7 @@ export function enemyOnly() {
       }
     }
   }
-  if (!B.over) {
+  if (!activeBattle.over) {
     endTurn();
     checkFaints();
   }
@@ -1057,7 +1062,7 @@ function catchOdds(id, T, spin) {
       Sx *
       T *
       (spin ? RC.spin : 1) *
-      B.integrity *
+      activeBattle.integrity *
       (e.boss ? (RC.alpha ?? 0.4) : 1)
   );
 }
@@ -1205,21 +1210,23 @@ export function battleResize() {
   if (el.dataset.layout !== m) el.dataset.layout = m;
   requestAnimationFrame(() => {
     battleStageResize();
-    if (B && B.phase !== 'playing') paintActions();
+    if (activeBattle && activeBattle.phase !== 'playing') paintActions();
   });
 }
 export function openBattle() {
   const bs = (saveData.preferences || {}).battleSpeed;
   if (bs && !uiState.dbgSpeed) battleStage.speed = bs === 'fast' ? 1.6 : bs === 'faster' ? 2.2 : 1;
-  const area = B.area || 'grass',
-    list = saveData.team.map(m => [m.sp, m.gold, RIG_BACK_VIEW]).concat(B.sides[1].team.map(m => [m.sp, m.gold, 1]));
-  const b = B;
+  const area = activeBattle.area || 'grass',
+    list = saveData.team
+      .map(m => [m.sp, m.gold, RIG_BACK_VIEW])
+      .concat(activeBattle.sides[1].team.map(m => [m.sp, m.gold, 1]));
+  const b = activeBattle;
   Promise.all([battleStagePrepare(area), rigPreload(list)])
     .then(() => {
-      if (B !== b) return;
+      if (activeBattle !== b) return;
       const seam = battleSeamless();
       const go = () => {
-        if (B !== b) return;
+        if (activeBattle !== b) return;
         /* the battle was closed during the wipe */ document.body.classList.add('in-battle');
         render();
         battleStageStart(area);
@@ -1353,37 +1360,37 @@ function typeText(t) {
   return Math.ceil(t.length / sp) * 16;
 }
 export function play() {
-  if (!B) return;
-  B.phase = 'playing';
-  B.ev = 0;
+  if (!activeBattle) return;
+  activeBattle.phase = 'playing';
+  activeBattle.ev = 0;
   paintActions();
   stepEv();
 }
 /* while a turn plays out, the command area shows the turn so far, so nothing is missed */
 function logLine(i) {
   const el = $('#acts');
-  if (!el || B.phase !== 'playing') return;
+  if (!el || activeBattle.phase !== 'playing') return;
   let L = el.querySelector('.blog');
   if (!L) {
     el.innerHTML = '<ol class="blog" aria-hidden="true"></ol>';
     L = el.querySelector('.blog');
   }
-  const prev = B.events
+  const prev = activeBattle.events
     .slice(Math.max(0, i - 4), i)
     .map(e => `<li>${esc(e.t)}</li>`)
     .join('');
   L.innerHTML =
     prev +
-    (i < B.events.length - 1
-      ? `<li class="next">${plural(B.events.length - 1 - i, 'more line')} this turn · tap to skip ahead</li>`
+    (i < activeBattle.events.length - 1
+      ? `<li class="next">${plural(activeBattle.events.length - 1 - i, 'more line')} this turn · tap to skip ahead</li>`
       : '');
 }
 function stepEv() {
   stopTimers();
-  if (!B || !$('#msg')) return;
-  if (B.ev >= B.events.length) return afterEvents();
-  const ev = B.events[B.ev];
-  logLine(B.ev);
+  if (!activeBattle || !$('#msg')) return;
+  if (activeBattle.ev >= activeBattle.events.length) return afterEvents();
+  const ev = activeBattle.events[activeBattle.ev];
+  logLine(activeBattle.ev);
   msgFace(ev.face);
   const tt = ev.t ? typeText(ev.t) : 0,
     r = ev.an ? battleStagePlay(ev.an, ev) : { dur: 0, hit: 0 };
@@ -1405,7 +1412,7 @@ function scAfter(slot, sceneMs, realMs, fn) {
   const t0 = battleStage.t,
     r0 = performance.now();
   const tick = () => {
-    if (!B) return;
+    if (!activeBattle) return;
     const el = performance.now() - r0,
       sOk =
         !battleStage.on ||
@@ -1421,8 +1428,8 @@ function scAfter(slot, sceneMs, realMs, fn) {
   uiState[slot] = setTimeout(tick, Math.max(0, Math.min(realMs, sceneMs / battleStage.speed)));
 }
 function adv() {
-  if (!B || B.phase !== 'playing') return;
-  B.ev++;
+  if (!activeBattle || activeBattle.phase !== 'playing') return;
+  activeBattle.ev++;
   stepEv();
 }
 /* who is talking: a portrait at the start of the message box */
@@ -1444,7 +1451,7 @@ function msgFace(f) {
   m.classList.add('has-face');
 }
 export function tapMsg() {
-  if (!B || B.phase !== 'playing' || !$('#msg')) return;
+  if (!activeBattle || activeBattle.phase !== 'playing' || !$('#msg')) return;
   if (uiState.typing) {
     clearInterval(uiState.typeT);
     uiState.typing = false;
@@ -1549,7 +1556,7 @@ function paintSide(i, s, anim) {
   }
 }
 function paintParty() {
-  if (!B) return;
+  if (!activeBattle) return;
   const pip = m => `<i class="pip${m.hp <= 0 ? ' out' : ''}${m.status ? ' st' : ''}"></i>`;
   const a = $('#pips0');
   if (a)
@@ -1558,7 +1565,7 @@ function paintParty() {
       .map(pip)
       .join('');
   const b = $('#pips1');
-  if (b) b.innerHTML = B.kind === 'trainer' ? B.sides[1].team.map(pip).join('') : '';
+  if (b) b.innerHTML = activeBattle.kind === 'trainer' ? activeBattle.sides[1].team.map(pip).join('') : '';
 }
 export function paintBoxes(s, mk, anim) {
   paintSide(0, s[0], anim);
@@ -1639,64 +1646,64 @@ function hudHit(ti, an) {
   else if (an.te < 1) setTimeout(() => hudPop(ti, 'Not very effective', 'tag nve'), 90);
 }
 function afterEvents() {
-  if (!B) return;
+  if (!activeBattle) return;
   const msg = $('#msg');
   if (msg) msg.classList.remove('ready');
-  if (B.over) {
-    B.phase = 'end';
+  if (activeBattle.over) {
+    activeBattle.phase = 'end';
     paintActions();
     return;
   }
-  if (B.offer) {
-    B.phase = 'offer';
+  if (activeBattle.offer) {
+    activeBattle.phase = 'offer';
     paintActions();
     return;
   }
-  if (B.needSwitch && B.needSwitch.length) {
-    B.phase = 'switch';
-    B.cur = B.needSwitch[0];
+  if (activeBattle.needSwitch && activeBattle.needSwitch.length) {
+    activeBattle.phase = 'switch';
+    activeBattle.cur = activeBattle.needSwitch[0];
     $('#msgT').textContent = isMulti() ? 'Choose who takes the fallen one’s place.' : 'Choose who goes in next.';
     paintActions();
     return;
   }
-  B.plan = [];
-  B.cur = liveK(0)[0];
-  B.phase = 'choose';
+  activeBattle.plan = [];
+  activeBattle.cur = liveK(0)[0];
+  activeBattle.phase = 'choose';
   chooseMsg();
-  paintBoxes(snapAll(), B.market);
+  paintBoxes(snapAll(), activeBattle.market);
   boxShow(0, true);
   boxShow(1, true);
   paintActions();
-  if (B.T && B.T.tutorial && typeof battleTutor === 'function')
+  if (activeBattle.T && activeBattle.T.tutorial && typeof battleTutor === 'function')
     battleTutor(); /* v47: Hazel's tips in Blake's first battle */
 }
 /* v33: with two or three of yours out, each picks in turn; the one choosing stands in a ring */
 export function chooseMsg() {
-  const m = A(B.cur);
+  const m = A(activeBattle.cur);
   if (!m) return;
   const L = liveK(0),
-    n = L.indexOf(B.cur);
+    n = L.indexOf(activeBattle.cur);
   $('#msgT').textContent = L.length > 1 ? `What will ${N(m)} do? (${n + 1} of ${L.length})` : `What will ${N(m)} do?`;
-  if (typeof battleStageSelect === 'function') battleStageSelect(B.cur);
+  if (typeof battleStageSelect === 'function') battleStageSelect(activeBattle.cur);
 }
 export function planNext(p) {
-  B.plan.push(p);
-  const L = liveK(0).filter(k => !B.plan.some(q => q.who === k));
-  if (L.length && !B.plan.some(q => q.k === 'run')) {
-    B.cur = L[0];
-    B.phase = 'choose';
+  activeBattle.plan.push(p);
+  const L = liveK(0).filter(k => !activeBattle.plan.some(q => q.who === k));
+  if (L.length && !activeBattle.plan.some(q => q.k === 'run')) {
+    activeBattle.cur = L[0];
+    activeBattle.phase = 'choose';
     chooseMsg();
     paintActions();
     return;
   }
   if (typeof battleStageSelect === 'function') battleStageSelect(null);
-  runTurn(B.plan);
+  runTurn(activeBattle.plan);
 }
 export function planBack() {
-  const p = B.plan.pop();
+  const p = activeBattle.plan.pop();
   if (!p) return false;
-  B.cur = p.who;
-  B.phase = 'choose';
+  activeBattle.cur = p.who;
+  activeBattle.phase = 'choose';
   chooseMsg();
   paintActions();
   return true;
@@ -1710,19 +1717,19 @@ function needsTarget(mid) {
 }
 export function pickMove(mid) {
   if (needsTarget(mid)) {
-    B.mv = mid;
-    B.phase = 'target';
+    activeBattle.mv = mid;
+    activeBattle.phase = 'target';
     $('#msgT').textContent = `${MOVES[mid].n}: which one? Tap it.`;
     paintActions();
     if (typeof battleStageTargets === 'function') battleStageTargets(liveK(1));
     return;
   }
-  planNext({ who: B.cur, k: 'move', mid, tk: liveK(1)[0] });
+  planNext({ who: activeBattle.cur, k: 'move', mid, tk: liveK(1)[0] });
 }
 export function pickTarget(tk) {
-  if (!B || B.phase !== 'target') return;
+  if (!activeBattle || activeBattle.phase !== 'target') return;
   if (typeof battleStageTargets === 'function') battleStageTargets(null);
-  planNext({ who: B.cur, k: 'move', mid: B.mv, tk });
+  planNext({ who: activeBattle.cur, k: 'move', mid: activeBattle.mv, tk });
 }
 function effLabel(mid, tk) {
   const M = MOVES[mid];
@@ -1749,8 +1756,8 @@ function monPick(m, act, attrs, dis, note) {
   return `<button class="pick" ${attrs} ${dis ? 'disabled' : ''}>${bustHTML(m.sp, 40, { gold: m.gold })}<span class="pk-t"><b>${esc(N(m))}</b><span class="pk-m">${SP[m.sp].types.map(chip).join('')}<small class="tnum">Lv ${m.lvl}</small></span>${hpMini(m)}<small class="tnum">${Math.max(0, m.hp)}/${maxHp(m)}</small></span><span class="pk-s">${note || ''}</span></button>`;
 }
 function teamPick(back) {
-  const on = B.sides[0].f.filter(f => f.on).map(f => f.act),
-    called = (B.plan || []).filter(p => p.k === 'switch').map(p => p.i);
+  const on = activeBattle.sides[0].f.filter(f => f.on).map(f => f.act),
+    called = (activeBattle.plan || []).filter(p => p.k === 'switch').map(p => p.i);
   return `<div class="plist">${saveData.team
     .map((m, i) => {
       const act = (on.includes(i) && m.hp > 0) || called.includes(i);
@@ -1783,14 +1790,14 @@ export const itemIcon = (k, size = 30) => {
 };
 export function paintActions() {
   const el = $('#acts');
-  if (!el || !B) return;
-  const ph = B.phase,
-    wild = B.kind === 'wild';
+  if (!el || !activeBattle) return;
+  const ph = activeBattle.phase,
+    wild = activeBattle.kind === 'wild';
   let h = '';
   el.dataset.ph = ph;
   if (ph === 'choose') {
-    const m = A(B.cur),
-      first = !B.plan.length,
+    const m = A(activeBattle.cur),
+      first = !activeBattle.plan.length,
       coins = Object.keys(COINS).reduce((a, k) => a + (saveData.coins[k] || 0), 0),
       items = Object.keys(ITEMS)
         .filter(k => saveData.items[k] > 0 && !ITEMS[k].evoItem)
@@ -1801,20 +1808,20 @@ export function paintActions() {
   <div class="bt-row"><button class="bt coin" data-a="bcoins" ${wild && first ? '' : 'disabled'}>${uiIconHTML('coin', 18)}<b>Tax it</b><small>${wild ? (first ? coins + ' left' : 'First pick only') : 'Wild only'}</small><kbd>X</kbd></button>
   <button class="bt items" data-a="bitems">${uiIconHTML('bag', 18)}<b>Bag</b><small>${items}</small><kbd>I</kbd></button>
   <button class="bt team" data-a="bteam">${uiIconHTML('team', 18)}<b>Team</b><small>${alive}/${crew.length}</small><kbd>T</kbd></button>
-  <button class="bt run" data-a="brun" ${wild ? '' : 'disabled'}>${uiIconHTML('run', 18)}<b>Run</b><small>${wild ? 'Walk away' : 'No exit'}</small><kbd>R</kbd></button></div>${first ? '' : `<button class="bt back wide" data-a="bback">${uiIconHTML('back', 16)}<b>Back to ${esc(N(A(B.plan[B.plan.length - 1].who)))}</b><kbd>Esc</kbd></button>`}</div>`;
+  <button class="bt run" data-a="brun" ${wild ? '' : 'disabled'}>${uiIconHTML('run', 18)}<b>Run</b><small>${wild ? 'Walk away' : 'No exit'}</small><kbd>R</kbd></button></div>${first ? '' : `<button class="bt back wide" data-a="bback">${uiIconHTML('back', 16)}<b>Back to ${esc(N(A(activeBattle.plan[activeBattle.plan.length - 1].who)))}</b><kbd>Esc</kbd></button>`}</div>`;
   } else if (ph === 'fight') {
-    const m = A(B.cur);
+    const m = A(activeBattle.cur);
     h = `<div class="moves">${m.moves
       .map((id, n) => {
         const M = MOVES[id],
           c = TC[M.t],
           P = M.p ? M.p : M.fx && M.fx.vary ? 'Varies' : 'Status',
-          stab = M.t !== 'None' && types(B.cur).includes(M.t);
+          stab = M.t !== 'None' && types(activeBattle.cur).includes(M.t);
         return `<button class="mv" style="--tc:${c[0]};--tf:${c[1]}" data-a="bmove" data-m="${id}" data-tip="${esc(M.d)}"><span class="mv-top"><b>${esc(M.n)}</b><kbd>${n + 1}</kbd></span><span class="mv-meta"><span class="mv-ty">${M.t === 'None' ? 'Normal' : M.t}${stab ? ' ★' : ''}</span><span class="tnum">${P}${M.p ? ' pow' : ''}${M.p && typeof battleWeatherMult === 'function' ? (battleWeatherMult(M.t) > 1 ? ' ▲' : battleWeatherMult(M.t) < 1 ? ' ▼' : '') : ''}${M.c !== 'X' || M.a < 100 ? ` · ${M.a || 100}%` : ''}</span></span>${effLabel(id)}</button>`;
       })
       .join('')}</div>${backBtn()}`;
   } else if (ph === 'target') {
-    const mid = B.mv;
+    const mid = activeBattle.mv;
     h = `<div class="plist">${liveK(1)
       .map(k => {
         const m = A(k);
@@ -1850,15 +1857,15 @@ export function paintActions() {
         : '<p class="note">No items. Buy some at a town shop.</p>'
     }</div>${backBtn()}`;
   } else if (ph === 'itemTarget') {
-    const it = B.item;
+    const it = activeBattle.item;
     h = `<p class="note">Use ${esc(ITEMS[it].n)} on:</p><div class="plist">${saveData.team.map(m => monPick(m, false, `data-a="bitemon" data-u="${m.uid}"`, !canUse(it, m), m.hp <= 0 ? 'Fainted' : stBadge(m.status))).join('')}</div>${backBtn()}`;
   } else if (ph === 'team') h = teamPick(true);
   else if (ph === 'switch') h = teamPick(false);
   else if (ph === 'aim') {
-    h = `<div class="aim"><div class="aimcoin" id="aimCoin" role="button" tabindex="0" aria-label="Swipe up to throw">${coinHTML(B.coin, 96, 32)}<span class="aim-hint">${uiIconHTML('back', 14)}</span></div><p class="note">Swipe the coin up when the ring is small and green. A sideways swipe adds spin.</p><div class="two"><button class="bt coin" data-a="bthrow"><b>Flick it</b><kbd>Space</kbd></button><button class="bt back" data-a="baimback"><b>Put it away</b><kbd>Esc</kbd></button></div></div>`;
+    h = `<div class="aim"><div class="aimcoin" id="aimCoin" role="button" tabindex="0" aria-label="Swipe up to throw">${coinHTML(activeBattle.coin, 96, 32)}<span class="aim-hint">${uiIconHTML('back', 14)}</span></div><p class="note">Swipe the coin up when the ring is small and green. A sideways swipe adds spin.</p><div class="two"><button class="bt coin" data-a="bthrow"><b>Flick it</b><kbd>Space</kbd></button><button class="bt back" data-a="baimback"><b>Put it away</b><kbd>Esc</kbd></button></div></div>`;
   } else if (ph === 'throwing') h = `<div class="aim"><p class="note">The coin is in the air…</p></div>`;
   else if (ph === 'offer') {
-    h = `<div class="offer"><p>${uiIconHTML('coin', 16)} ${esc(N(A(1)))} is offering you <b class="tnum">$${fmt(B.offer)}</b> to let it go. Refusing gives your next throw a Focus Bonus.</p><div class="two"><button class="bt coin" data-a="boffer" data-y="1"><b>Take it</b></button><button class="bt fightish" data-a="boffer" data-y="0"><b>Refuse</b></button></div></div>`;
+    h = `<div class="offer"><p>${uiIconHTML('coin', 16)} ${esc(N(A(1)))} is offering you <b class="tnum">$${fmt(activeBattle.offer)}</b> to let it go. Refusing gives your next throw a Focus Bonus.</p><div class="two"><button class="bt coin" data-a="boffer" data-y="1"><b>Take it</b></button><button class="bt fightish" data-a="boffer" data-y="0"><b>Refuse</b></button></div></div>`;
   } else if (ph === 'end') {
     const t = {
       win: 'You won.',
@@ -1866,7 +1873,7 @@ export function paintActions() {
       caught: 'Taxed.',
       ran: 'You walked away.',
       bribed: 'You took the money.',
-    }[B.over];
+    }[activeBattle.over];
     h = `<button class="bt end wide" data-a="bend"><b>${t} Continue</b><kbd>Enter</kbd></button>`;
   }
   el.innerHTML = h;
@@ -1877,7 +1884,7 @@ export function paintActions() {
   if (ph === 'fight')
     $$('.mv', el).forEach(b => {
       const tip = () => {
-        if (B && B.phase === 'fight') $('#msgT').textContent = b.dataset.tip;
+        if (activeBattle && activeBattle.phase === 'fight') $('#msgT').textContent = b.dataset.tip;
       };
       b.addEventListener('pointerenter', tip);
       b.addEventListener('focus', tip);
@@ -1921,29 +1928,31 @@ export function showAim() {
   camAt(1, 0.45, 0.16, 0.015, 320);
   battleStageFocus('foe');
   $('#msgT').textContent =
-    B.integrity > 1 ? `Focus Bonus ×${+B.integrity.toFixed(2)} is active.` : 'Line up your throw.';
+    activeBattle.integrity > 1
+      ? `Focus Bonus ×${+activeBattle.integrity.toFixed(2)} is active.`
+      : 'Line up your throw.';
 }
 export function doThrow(spin) {
-  if (uiState.throwing || !B || B.phase !== 'aim') return;
+  if (uiState.throwing || !activeBattle || activeBattle.phase !== 'aim') return;
   uiState.throwing = true;
   const ph = battleStageRingPhase(),
     T = 1 + RC.ring * ph,
-    id = B.coin;
+    id = activeBattle.coin;
   saveData.coins[id]--;
   save();
   battleStage.ring = null;
   const res = catchRoll(id, T, spin),
     lab = ph >= 0.83 ? 'Excellent throw!' : ph >= 0.5 ? 'Great throw!' : ph >= 0.17 ? 'Nice throw.' : '';
-  B.phase = 'throwing';
+  activeBattle.phase = 'throwing';
   paintActions();
   $('#msgT').textContent = [`You flicked a ${COINS[id].n}.`, lab, spin ? 'Spin bonus!' : ''].filter(Boolean).join(' ');
   battleStageCatch(id, res, spin, caught => finishThrow(res, id, lab, spin));
 }
 function finishThrow(res, id, lab, spin) {
   uiState.throwing = false;
-  if (!B) return;
+  if (!activeBattle) return;
   const e = A(1);
-  B.events = [];
+  activeBattle.events = [];
   if (res.edge) say('It landed on its edge. Critical tax!');
   if (res.caught) {
     say(`Gotcha! ${N(e)} was taxed.`, { k: 'caught' });
@@ -1957,13 +1966,13 @@ function finishThrow(res, id, lab, spin) {
     e.hp = Math.max(1, e.hp);
     const where = addMon(e);
     if (where === 'box') say(`${N(e)} went to storage. Your team is full.`);
-    B.over = 'caught';
+    activeBattle.over = 'caught';
     save();
     return play();
   }
   say(['It broke free right away.', 'It almost stayed in.', 'So close. It wobbled twice.'][res.w]);
   if (rnd() < RC.offerChance) {
-    B.offer = Math.round((RC.offerMin + rnd() * (RC.offerMax - RC.offerMin)) / 10) * 10;
+    activeBattle.offer = Math.round((RC.offerMin + rnd() * (RC.offerMax - RC.offerMin)) / 10) * 10;
     say(`${N(e)} is offering you money to let it go.`, { k: 'cry', si: 1 });
     return play();
   }
@@ -1972,17 +1981,17 @@ function finishThrow(res, id, lab, spin) {
 }
 export function endBattle() {
   stopTimers();
-  const o = B.over,
-    kind = B.kind,
-    T = B.T,
-    tid = B.tid,
-    lead = findMon(B.lead);
+  const o = activeBattle.over,
+    kind = activeBattle.kind,
+    T = activeBattle.T,
+    tid = activeBattle.tid,
+    lead = findMon(activeBattle.lead);
   if (o === 'win' && typeof jingle === 'function') jingle(JINGLES.victory);
   if (o === 'win')
     for (const m of saveData.team)
       if (m.hp > 0 && m.job == null) m.wins = (m.wins || 0) + 1; /* v36: the Hype counter */
   if (typeof battleTipHide === 'function') battleTipHide();
-  if (kind === 'wild') saveData.queue = saveData.queue.filter(q => q.id !== B.qid);
+  if (kind === 'wild') saveData.queue = saveData.queue.filter(q => q.id !== activeBattle.qid);
   if (lead) {
     if (o === 'win') lead.streak = (lead.streak || 0) + 1;
     else if (o === 'lose') lead.streak = 0;
@@ -1993,7 +2002,7 @@ export function endBattle() {
     if (o === 'lose') for (const m of saveData.team) m.hp = Math.max(1, m.hp);
     save();
     battleLeave(() => {
-      setB(null);
+      setActiveBattle(null);
       battleStageStop();
       document.body.classList.remove('in-battle');
       uiState.tab = 'walk';
@@ -2073,7 +2082,7 @@ export function endBattle() {
   }
   save();
   battleLeave(() => {
-    setB(null);
+    setActiveBattle(null);
     battleStageStop();
     document.body.classList.remove('in-battle');
     uiState.tab = 'walk';
@@ -2093,7 +2102,8 @@ export function setEndBattle(v) {
    camera, so the battle reads from the picture itself. With two or three a side they replace the corner cards; in a
    one-on-one they do too, unless Settings → Battle HUD is set to the classic cards. Tap a foe's plate (or the foe) to
    aim at it. */
-const hudScene = () => !!B && (isMulti() || ((saveData.preferences || {}).battleHud || 'scene') !== 'classic');
+const hudScene = () =>
+  !!activeBattle && (isMulti() || ((saveData.preferences || {}).battleHud || 'scene') !== 'classic');
 function plateEl(k) {
   const L = $('#plates');
   if (!L) return null;
@@ -2169,10 +2179,10 @@ function paintPlates(s, anim) {
    Only with more than two fighters on the field, where it's hard to keep in your head. */
 function turnBar() {
   const L = $('#plates');
-  if (!L || !B) return;
+  if (!L || !activeBattle) return;
   let e = L.querySelector('.turnbar');
   const K = liveK(0).concat(liveK(1));
-  if (K.length < 3 || B.over) {
+  if (K.length < 3 || activeBattle.over) {
     if (e) e.remove();
     return;
   }
@@ -2194,8 +2204,8 @@ function turnBar() {
 /* every frame: plates ride above their billionaire; the one choosing and the ones you can aim at are marked */
 function platesTick() {
   const L = $('#plates');
-  if (!L || !B || !battleStage.L || !L.firstChild) return;
-  const tgt = B.phase === 'target',
+  if (!L || !activeBattle || !battleStage.L || !L.firstChild) return;
+  const tgt = activeBattle.phase === 'target',
     placed = [],
     tk = $('.ticker'),
     top0 = (tk ? tk.getBoundingClientRect().bottom - $('#battle').getBoundingClientRect().top : 24) + 4;
@@ -2225,14 +2235,18 @@ function platesTick() {
     }
     placed.push({ x, y, w, h });
     e.style.transform = `translate(${x.toFixed(1)}px,${y.toFixed(1)}px) translate(-50%,-100%)`;
-    e.classList.toggle('cur', (B.phase === 'choose' && B.cur === k) || (B.phase === 'fight' && B.cur === k));
+    e.classList.toggle(
+      'cur',
+      (activeBattle.phase === 'choose' && activeBattle.cur === k) ||
+        (activeBattle.phase === 'fight' && activeBattle.cur === k)
+    );
     e.classList.toggle('aim', tgt && ASIDE[k] === 1);
     e.disabled = !(tgt && ASIDE[k] === 1);
   }
 }
 /* tapping the picture while aiming picks the nearest foe */
 function stageTap(ev) {
-  if (!B || B.phase !== 'target' || !battleStage.L) return;
+  if (!activeBattle || activeBattle.phase !== 'target' || !battleStage.L) return;
   const r = $('#battle').getBoundingClientRect(),
     x = ev.clientX - r.left,
     y = ev.clientY - r.top;
@@ -2251,8 +2265,8 @@ function stageTap(ev) {
 }
 document.addEventListener('pointerup', e => {
   if (
-    B &&
-    B.phase === 'target' &&
+    activeBattle &&
+    activeBattle.phase === 'target' &&
     e.target &&
     e.target.closest &&
     e.target.closest('#stage') &&

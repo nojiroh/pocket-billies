@@ -9,7 +9,7 @@ import { expose } from './test-globals.js';
 import { STEST, closeModal, modal, postProcess, provide, render } from './hooks.js';
 import { $, clamp } from './util.js';
 import { PLACE, RULES, SP, TRAINERS, trainersAt } from './game-data.js';
-import { B, RM, esc, healAll, save, saveData, today, uiState } from './game-state.js';
+import { RM, activeBattle, esc, healAll, save, saveData, today, uiState } from './game-state.js';
 import { dressingRoom } from './dressing-room.js';
 import { baseMapId, walkView, walkablePointNear } from './walk-view.js';
 import { gpuState } from './engine/webgl.js';
@@ -69,7 +69,7 @@ function storyWorldOK() {
     walkRenderer.on &&
     walkView.ready &&
     walkView.cv &&
-    !B &&
+    !activeBattle &&
     typeof csFrame === 'function'
   );
 }
@@ -179,7 +179,7 @@ export function storyCheck() {
     (typeof STEST !== 'undefined' && STEST.on) ||
     uiState.bench ||
     !saveData.started ||
-    B ||
+    activeBattle ||
     uiState.modal ||
     uiState.tab !== 'walk' ||
     TALK.on ||
@@ -198,14 +198,15 @@ export function storyCheck() {
   STORY.pending = T.id;
   setTimeout(() => {
     STORY.pending = null;
-    if (walkView.ready && !B && uiState.tab === 'walk' && !uiState.modal && !TALK.on && !CS.on) rivalScene(T);
+    if (walkView.ready && !activeBattle && uiState.tab === 'walk' && !uiState.modal && !TALK.on && !CS.on)
+      rivalScene(T);
   }, 1400);
 }
 /* v39: the legendary encounters (rules.legends): one per scene, met when you arrive, once a day until caught */
 export function legendCheck() {
   if (
     !saveData.started ||
-    B ||
+    activeBattle ||
     uiState.modal ||
     uiState.tab !== 'walk' ||
     TALK.on ||
@@ -224,7 +225,15 @@ export function legendCheck() {
   STORY.pending = 'legend';
   setTimeout(() => {
     STORY.pending = null;
-    if (!walkView.ready || B || uiState.tab !== 'walk' || uiState.modal || TALK.on || CS.on || baseMapId() !== L.scene)
+    if (
+      !walkView.ready ||
+      activeBattle ||
+      uiState.tab !== 'walk' ||
+      uiState.modal ||
+      TALK.on ||
+      CS.on ||
+      baseMapId() !== L.scene
+    )
       return;
     F['legend_' + L.sp] = today();
     save();
@@ -271,7 +280,7 @@ export async function personTalk(P) {
 export function storyMovedCheck() {
   if (
     !saveData.started ||
-    B ||
+    activeBattle ||
     uiState.modal ||
     uiState.title ||
     TALK.on ||
@@ -328,7 +337,7 @@ function openingMark() {
 export function storyRivalBattle(o = {}) {
   const t0 = performance.now(),
     go = async () => {
-      if (B || !saveData.started) return;
+      if (activeBattle || !saveData.started) return;
       uiState.modal = null;
       if (o.talkFirst && typeof talk === 'function' && !TALK.on) {
         STORY.rivalTalk = 1;
@@ -337,15 +346,15 @@ export function storyRivalBattle(o = {}) {
         } finally {
           STORY.rivalTalk = 0;
         }
-        if (B || !saveData.started) return;
+        if (activeBattle || !saveData.started) return;
       }
       startTrainer('blake0', { talked: true });
-      if (!B) storyAfterRival(null, TRAINERS.blake0);
+      if (!activeBattle) storyAfterRival(null, TRAINERS.blake0);
     };
   /* once Sundown is on screen and settled: drawn a few times, its pictures on the card (as when the game first opens) */
   let f0 = null;
   const poll = () => {
-    if (B || !saveData.started) return;
+    if (activeBattle || !saveData.started) return;
     const on = typeof walkView !== 'undefined' && walkView.ready,
       gl = typeof walkRenderer !== 'undefined' && walkRenderer.on;
     if (on && gl && f0 == null) f0 = walkRenderer.frames;

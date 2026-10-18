@@ -10,7 +10,7 @@ import { expose } from './test-globals.js';
 import { sfx, startWild, toast, x28Event } from './hooks.js';
 import { clamp, rnd } from './util.js';
 import { GD, RULES, SP } from './game-data.js';
-import { B, RM, areaPool, pickW, save, saveData, uiState, uid } from './game-state.js';
+import { RM, activeBattle, areaPool, pickW, save, saveData, uiState, uid } from './game-state.js';
 import { uiIconHTML } from './art.js';
 import { terrainAt, walkView } from './walk-view.js';
 import {
@@ -71,7 +71,7 @@ function fishSpot() {
     !walkView.ready ||
     walkView.battle ||
     walkView.director ||
-    (typeof B !== 'undefined' && B)
+    (typeof activeBattle !== 'undefined' && activeBattle)
   )
     return null;
   const P = walkView.pl,
