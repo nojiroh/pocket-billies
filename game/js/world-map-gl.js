@@ -686,7 +686,7 @@ export function mglRender(t) {
   });
   gl.depthFunc(gl.LEQUAL);
 }
-/* phase 04d: the in-game full test (selftest.js) times the map */
+/* phase 04d: the in-game full test (self-test.js) times the map */
 export function setMglRender(v) {
   mglRender = v; // eslint-disable-line no-func-assign
   provide({ mglRender });

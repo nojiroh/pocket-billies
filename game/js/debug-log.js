@@ -3,7 +3,7 @@
    Quietly records what helps fix problems on a particular device: frame rates per screen and scene, slow frames,
    errors, the loading screen's timings, the device and graphics chip, and a small picture of the scene every few
    seconds. Settings → Export debug log saves it as one JSON file (or shares it on phones). Settings → Run the full
-   test (selftest.js) plays through everything for about two minutes, stress-tests the device and adds the results.
+   test (self-test.js) plays through everything for about two minutes, stress-tests the device and adds the results.
    Nothing here leaves the device unless the player exports it. No save data, names or step history are included. */
 const NW_BUILD = PB_VERSION;
 /* phase 04d: what the log reads and wraps in the game's modules. debug-log.js runs before them (it catches their errors),
@@ -782,4 +782,4 @@ NWLOG.diag = (since = 0) => {
   t('mb', () => (performance.memory ? Math.round(performance.memory.usedJSHeapSize / 1048576) : null));
   return o;
 };
-/* the full test (Settings → Run the full test) is in selftest.js */
+/* the full test (Settings → Run the full test) is in self-test.js */

@@ -397,7 +397,7 @@ export function save() {
       flush();
     }, 4000);
 }
-/* phase 04d: the in-game full test (selftest.js) keeps your save out of it */
+/* phase 04d: the in-game full test (self-test.js) keeps your save out of it */
 export function setSave(v) {
   save = v; // eslint-disable-line no-func-assign
   provide({ save });
