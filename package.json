@@ -14,8 +14,8 @@
     "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.logic.json",
     "test": "node --test \"tools/test/**/*.test.mjs\"",
     "check:logic": "npm test",
-    "format": "prettier --write \"game/**/*.{js,css,ts}\" \"studio/**/*.{js,css}\" \"*.js\"",
-    "format:check": "prettier --check \"game/**/*.{js,css,ts}\" \"studio/**/*.{js,css}\" \"*.js\"",
+    "format": "prettier --write \"game/**/*.{js,css,ts}\" \"studio/**/*.{js,css}\" \"tools/test/**/*.mjs\" \"*.js\"",
+    "format:check": "prettier --check \"game/**/*.{js,css,ts}\" \"studio/**/*.{js,css}\" \"tools/test/**/*.mjs\" \"*.js\"",
     "check:smoke": "python3 tools/check-quick.py --smoke",
     "check:quick": "python3 tools/check-quick.py"
   },

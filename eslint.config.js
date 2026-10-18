@@ -152,7 +152,9 @@ export default [
       'game/data/',
       'game/art/',
       'firebase/',
-      'tools/',
+      // phase 13: the unit tests are linted, the other tools are not
+      'tools/*',
+      '!tools/test/',
       'docs/',
       '.claude/',
     ],
@@ -200,6 +202,11 @@ export default [
     files: ['*.js'],
     languageOptions: { sourceType: 'module', globals: globals.node },
     rules: js.configs.recommended.rules,
+  },
+  {
+    files: ['tools/test/**/*.mjs'],
+    languageOptions: { ecmaVersion: 'latest', sourceType: 'module', globals: globals.node },
+    rules: bugRules,
   },
 ];
 
