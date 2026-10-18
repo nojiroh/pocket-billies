@@ -10,7 +10,7 @@
    Hooks: map-editor.js calls extraToolPointerDown / extraToolPointerMove / extraToolPointerUp from the map's pointer events and drawExtraTools after drawing. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
-import { VP, provide } from '../../game/js/hooks.js';
+import { previewViewport, provide } from '../../game/js/hooks.js';
 import { $ } from '../../game/js/util.js';
 import { walkView } from '../../game/js/walk-view.js';
 import { esc } from './game-stand-ins.js';
@@ -256,7 +256,7 @@ document.addEventListener(
   'keydown',
   ev => {
     if (
-      (typeof VP !== 'undefined' && VP.hover) ||
+      (typeof previewViewport !== 'undefined' && previewViewport.hover) ||
       studioState.sec !== 'scenes' ||
       ev.target.closest('input,select,textarea') ||
       $('#modal').innerHTML ||

@@ -6,7 +6,6 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
 import {
-  VP,
   blocksToolBarHTML,
   drawExtraTools,
   drawPropEditor,
@@ -17,6 +16,7 @@ import {
   extraToolPointerUp,
   mountPropTurntable,
   multiSelectCardHTML,
+  previewViewport,
   propEditorCardHTML,
   provide,
   scatterToolBarHTML,
@@ -1559,7 +1559,7 @@ function floodFillGround(sc, i, j, ch) {
 }
 document.addEventListener('keydown', ev => {
   if (
-    (typeof VP !== 'undefined' && VP.hover) ||
+    (typeof previewViewport !== 'undefined' && previewViewport.hover) ||
     studioState.sec !== 'scenes' ||
     ev.target.closest('input,select,textarea') ||
     $('#modal').innerHTML ||
