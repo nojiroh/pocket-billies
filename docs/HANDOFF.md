@@ -11,6 +11,20 @@ Newest entry on top. Every phase session ends by adding an entry here and taggin
 - Questions waiting for the owner: 
 - Next session starts with: 
 
+### Phase 16 prep - Billies rework plan, part kits, test boot - 2026-10-18
+- Changed: docs/phases/16 rewritten (7-line roster, parts, sizes, weight, Prime, decisions and open questions);
+  placeholder part kits (beasts, birds, fish; 120 parts) sliced by tools/slice-part-kit.py into game/art/next/parts
+  from tools/art-source/part-kit; recolour placeholders in game/art/next/placeholders.
+- **Test boot (on):** game/js/test-boot.js. While `TEST_BOOT_ON` is true the game skips the title and the opening and
+  opens on the starter pick; nothing is read from or written to storage (game-state.js), accounts and friends stay off
+  (account.js), the title is skipped (title.js). Turn it off by setting `TEST_BOOT_ON = false`, or open the game with
+  `?boot=normal`. The quick check, check-game.py and the art tools open `?boot=normal`, so they test the normal game.
+  Nothing was removed.
+- Verified: lint, type-check, module check, unit tests (25), format check; a headless boot reaches the starter pick in
+  about 10 s with no title, no Firebase, an existing save untouched and no storage writes after picking and saving; a
+  reload goes back to the pick; `?boot=normal` reaches the title. The full quick check was not run.
+- Next: the phase 16 prototype (parts on wild Billies, Studio support), after the plan is approved.
+
 ### Phase 04e - Modernize: TypeScript and the logic boundary - 2026-10-18
 Owner's choices (from phase 05): the recommended 04e choices made for you; no full quick check. Plan approved at the start.
 - Changed (33 commits on top of phase 05, this entry included):

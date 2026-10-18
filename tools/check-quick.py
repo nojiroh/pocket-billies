@@ -478,7 +478,7 @@ def open_game(b, base, w, h, mobile, errs):
     ctx.set_default_timeout(90000); pg = ctx.new_page(); CUR['pg'] = pg
     pg.on('pageerror', lambda e: errs.append(str(e)))
     pg.on('console', lambda m: errs.append(console_text(m)) if m.type == 'error' else None)
-    pg.goto(base + '/index.html'); pg.wait_for_selector('.ttl,.title', timeout=60000); pg.evaluate(LOW_RENDER)
+    pg.goto(base + '/index.html?boot=normal'); pg.wait_for_selector('.ttl,.title', timeout=60000); pg.evaluate(LOW_RENDER)
     return ctx, pg
 
 
@@ -2046,7 +2046,7 @@ def studio_round_trip(pw, R):
             pg.wait_for_selector('.skel', timeout=10000); time.sleep(.6); pg.click('[data-sk=close]'); time.sleep(.3)
             pg.click('#saveBtn'); time.sleep(4); pg.evaluate("openSection('rules')")
             g = ctx.new_page(); g.on('pageerror', lambda e: errs.append('game: ' + str(e))); g.on('console', lambda m: errs.append('game: ' + m.text) if m.type == 'error' else None)
-            g.goto(f'http://localhost:{port}/game/index.html')
+            g.goto(f'http://localhost:{port}/game/index.html?boot=normal')
             try: g.wait_for_selector('.ttl,.title', timeout=60000)
             except Exception: raise Exception('after saving, the game didn’t reach its title: ' + (' | '.join(errs[:4]) or g.evaluate("document.querySelector('.ld-phase')&&document.querySelector('.ld-phase').textContent")))
             seen = g.evaluate("[MOVES.lawsuit.p,!!SPECIES.checko0]")

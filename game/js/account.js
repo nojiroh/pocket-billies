@@ -8,6 +8,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { TEST_RUN, closeModal, modal, provide, render, toast } from './hooks.js';
+import { TEST_BOOT } from './test-boot.js';
 import { formatNumber } from './logic/rules.js';
 import { SAVE_NEW_MSG, SAVE_VERSION, loadSave, saveAge } from './logic/saves.js';
 import {
@@ -66,6 +67,7 @@ function accountOn() {
   return (
     !!(account.cfg && account.cfg.apiKey && account.cfg.projectId) &&
     !(typeof TEST_RUN !== 'undefined' && TEST_RUN) &&
+    !TEST_BOOT &&
     location.protocol !== 'file:'
   );
 }

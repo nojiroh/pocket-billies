@@ -698,7 +698,7 @@ const HAZEL_INTRO_LINES = [
   'Can you tell me your name? No? Classic fall-related amnesia. Very common down here. It usually comes back, a bit at a time.',
   '[happy] Let’s start with what we can see. Let me get a good look at you.',
 ];
-function introSteps() {
+export function introSteps() {
   return [
     ...INTRO_STILLS.map(s => ({ k: 'still', s })),
     ...HAZEL_INTRO_LINES.map(t => ({ k: 'gini', t })),
