@@ -29,7 +29,7 @@ import { RM, U, esc } from './game-state.js';
 import { userFps } from './frame-scheduler.js';
 import { artLoad, cnv } from './art.js';
 import { TR_PRESETS, cleanLook, humanPose, owFrames, trainerLook } from './person-art.js';
-import { drSave, dressingRoom, openDressing } from './dressing-room.js';
+import { dressingRoom, openDressing, saveDressingLook } from './dressing-room.js';
 import { drawRig, rigFrame, rigParts, rigPreload, rigTint } from './skeleton-rig.js';
 import { buzz, particleSprite } from './battle-stage.js';
 import {
@@ -713,7 +713,7 @@ async function csScript(run) {
     });
     if (CS.test)
       setTimeout(() => {
-        if (dressingRoom.on) drSave();
+        if (dressingRoom.on) saveDressingLook();
       }, 1500);
   });
   CS.dressing = false;

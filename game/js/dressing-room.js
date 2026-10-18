@@ -14,45 +14,45 @@ import { cnv, uiIco } from './art.js';
 import { TR_PRESETS, WD, cleanLook, portraitHTML, trBox, trColorsOf, trFrame, trSliders } from './person-art.js';
 /* eslint-disable no-func-assign */
 expose({
-  DR_BUILDS: [() => DR_BUILDS],
-  DR_CROP: [() => DR_CROP],
-  DR_FACES: [() => DR_FACES],
-  DR_OUTFITS: [() => DR_OUTFITS],
-  DR_TABS: [() => DR_TABS],
-  DR_VIEWS: [() => DR_VIEWS],
+  BODY_BUILD_PRESETS: [() => BODY_BUILD_PRESETS],
+  DRESSING_TABS: [() => DRESSING_TABS],
+  DRESSING_VIEWS: [() => DRESSING_VIEWS],
+  FACE_PRESETS: [() => FACE_PRESETS],
+  OUTFIT_PRESETS: [() => OUTFIT_PRESETS],
+  THUMB_CROPS: [() => THUMB_CROPS],
+  bindDressingRoom: [() => bindDressingRoom, v => (bindDressingRoom = v)],
+  boutiqueSells: [() => boutiqueSells],
+  buyDressingItems: [() => buyDressingItems, v => (buyDressingItems = v)],
+  changeLook: [() => changeLook, v => (changeLook = v)],
   closeDressing: [() => closeDressing, v => (closeDressing = v)],
-  drBind: [() => drBind, v => (drBind = v)],
-  drBuildIs: [() => drBuildIs, v => (drBuildIs = v)],
-  drBuy: [() => drBuy, v => (drBuy = v)],
-  drColor: [() => drColor, v => (drColor = v)],
-  drColors: [() => drColors, v => (drColors = v)],
-  drFaceIs: [() => drFaceIs, v => (drFaceIs = v)],
-  drFootHTML: [() => drFootHTML, v => (drFootHTML = v)],
-  drGrid: [() => drGrid, v => (drGrid = v)],
-  drHTML: [() => drHTML, v => (drHTML = v)],
-  drItems: [() => drItems],
-  drLoop: [() => drLoop, v => (drLoop = v)],
-  drMore: [() => drMore, v => (drMore = v)],
-  drOutfitIs: [() => drOutfitIs, v => (drOutfitIs = v)],
-  drOutfitLook: [() => drOutfitLook, v => (drOutfitLook = v)],
-  drPortrait: [() => drPortrait, v => (drPortrait = v)],
-  drPush: [() => drPush, v => (drPush = v)],
-  drRandom: [() => drRandom, v => (drRandom = v)],
-  drRefresh: [() => drRefresh, v => (drRefresh = v)],
-  drSave: [() => drSave, v => (drSave = v)],
-  drSection: [() => drSection, v => (drSection = v)],
-  drSells: [() => drSells],
-  drSet: [() => drSet, v => (drSet = v)],
-  drSwatches: [() => drSwatches, v => (drSwatches = v)],
-  drTabHTML: [() => drTabHTML, v => (drTabHTML = v)],
-  drThumb: [() => drThumb, v => (drThumb = v)],
-  drThumbLook: [() => drThumbLook, v => (drThumbLook = v)],
-  drUnowned: [() => drUnowned, v => (drUnowned = v)],
+  colorSwatchesHTML: [() => colorSwatchesHTML, v => (colorSwatchesHTML = v)],
+  dressingFootHTML: [() => dressingFootHTML, v => (dressingFootHTML = v)],
+  dressingMoreHTML: [() => dressingMoreHTML, v => (dressingMoreHTML = v)],
+  dressingPreviewLoop: [() => dressingPreviewLoop, v => (dressingPreviewLoop = v)],
   dressingRoom: [() => dressingRoom],
+  dressingRoomHTML: [() => dressingRoomHTML, v => (dressingRoomHTML = v)],
+  dressingSectionHTML: [() => dressingSectionHTML, v => (dressingSectionHTML = v)],
+  dressingTabHTML: [() => dressingTabHTML, v => (dressingTabHTML = v)],
+  lookPortrait: [() => lookPortrait, v => (lookPortrait = v)],
+  lookThumbnail: [() => lookThumbnail, v => (lookThumbnail = v)],
+  lookWithOutfit: [() => lookWithOutfit, v => (lookWithOutfit = v)],
   openDressing: [() => openDressing, v => setOpenDressing(v)],
   owns: [() => owns, v => (owns = v)],
+  pushDressingUndo: [() => pushDressingUndo, v => (pushDressingUndo = v)],
+  randomizeLook: [() => randomizeLook, v => (randomizeLook = v)],
+  refreshDressingRoom: [() => refreshDressingRoom, v => (refreshDressingRoom = v)],
+  saveDressingLook: [() => saveDressingLook, v => (saveDressingLook = v)],
+  setLookColor: [() => setLookColor, v => (setLookColor = v)],
   shopName: [() => shopName],
+  unownedPieces: [() => unownedPieces, v => (unownedPieces = v)],
+  wardrobeColorsHTML: [() => wardrobeColorsHTML, v => (wardrobeColorsHTML = v)],
+  wardrobeGridHTML: [() => wardrobeGridHTML, v => (wardrobeGridHTML = v)],
+  wardrobeItemsInSlot: [() => wardrobeItemsInSlot],
   wardrobeState: [() => wardrobeState],
+  wardrobeThumbnail: [() => wardrobeThumbnail, v => (wardrobeThumbnail = v)],
+  wearsBuild: [() => wearsBuild, v => (wearsBuild = v)],
+  wearsFace: [() => wearsFace, v => (wearsFace = v)],
+  wearsOutfit: [() => wearsOutfit, v => (wearsOutfit = v)],
 });
 /* eslint-enable no-func-assign */
 provide({ openDressing });
@@ -79,7 +79,7 @@ export const dressingRoom = {
   done: null,
   flash: null,
 };
-const DR_VIEWS = [
+const DRESSING_VIEWS = [
   ['front', 0],
   ['side', 0],
   ['back', 0],
@@ -87,7 +87,7 @@ const DR_VIEWS = [
 ];
 /* v40: six choices (body, face, hair, outfit, hat, accessory). Each tab leads with ready-made picks; "More" under it opens
    every piece and colour the wardrobe has, so nothing is lost for the ones who like to fiddle. */
-const DR_TABS = [
+const DRESSING_TABS = [
   ['body', 'Body'],
   ['face', 'Face'],
   ['hair', 'Hair'],
@@ -95,7 +95,7 @@ const DR_TABS = [
   ['hat', 'Hat'],
   ['extras', 'Accessory'],
 ];
-const DR_FACES = [
+const FACE_PRESETS = [
   ['Friendly', { eyes: 'eyes_round', brows: 'brows_soft', mouth: 'mouth_smile', facial: null }],
   ['Bright', { eyes: 'eyes_wide', brows: 'brows_arched', mouth: 'mouth_grin', facial: null }],
   ['Easygoing', { eyes: 'eyes_sleepy', brows: 'brows_soft', mouth: 'mouth_neutral', facial: null }],
@@ -110,7 +110,7 @@ const DR_FACES = [
   ['Goatee', { eyes: 'eyes_sharp', brows: 'brows_thick', mouth: 'mouth_grin', facial: 'facial_goatee' }],
 ];
 /* an outfit is a top, a bottom and shoes (a jacket when it wants one), in three colourways (top colour, bottom colour) */
-const DR_OUTFITS = [
+const OUTFIT_PRESETS = [
   [
     'Everyday',
     { top: 'tee', bottom: 'jeans', shoes: 'sneakers', outer: null },
@@ -257,7 +257,7 @@ const DR_OUTFITS = [
   ],
 ];
 dressingRoom.more = {};
-const DR_BUILDS = [
+const BODY_BUILD_PRESETS = [
   ['Average', {}],
   ['Slim', { body: 0.86, shoulders: 0.94, hips: 0.95 }],
   ['Sturdy', { body: 1.28, shoulders: 1.1, hips: 1.08 }],
@@ -271,10 +271,10 @@ function owns(id) {
   const it = WD().items[id];
   return !!it && (!!it.starter || !!wardrobeState().owned[id]);
 }
-const drItems = slot => Object.entries(WD().items).filter(([k, it]) => it.slot === slot);
+const wardrobeItemsInSlot = slot => Object.entries(WD().items).filter(([k, it]) => it.slot === slot);
 const shopName = id => (SHOPS[id] && SHOPS[id].name) || 'a boutique';
 /* does the open boutique sell this item? its own stock, or (an outlet) the stock of the shops it lists in "sells" */
-const drSells = it =>
+const boutiqueSells = it =>
   !!(
     dressingRoom.shop &&
     it &&
@@ -307,11 +307,11 @@ export function openDressing(o = {}) {
   el.setAttribute('role', 'dialog');
   el.setAttribute('aria-modal', 'true');
   el.setAttribute('aria-label', dressingRoom.shop ? shopName(dressingRoom.shop) : 'Dressing room');
-  el.innerHTML = drHTML();
+  el.innerHTML = dressingRoomHTML();
   el.hidden = false;
   document.body.classList.add('dressing');
-  drBind();
-  frameTask('dress', drLoop);
+  bindDressingRoom();
+  frameTask('dress', dressingPreviewLoop);
 }
 export function closeDressing() {
   dressingRoom.on = false;
@@ -325,7 +325,7 @@ export function closeDressing() {
   U.trainerDraft = null;
 }
 /* ---------- markup ---------- */
-function drHTML() {
+function dressingRoomHTML() {
   const sh = dressingRoom.shop && SHOPS[dressingRoom.shop];
   return `<div class="dr-stage"><canvas id="drCv" aria-label="Your trainer. Drag to turn around."></canvas>
   ${sh ? `<div class="dr-keeper glass">${portraitHTML(sh.who || 'clerk', 46, 'happy')}<div><b>${esc(sh.keeper || 'Shopkeeper')}</b><p id="drLine">${esc(sh.greeting || 'Try anything on.')}</p></div></div>` : ''}
@@ -333,24 +333,26 @@ function drHTML() {
    <button class="dr-tog" data-a="dr-walk" aria-pressed="false">${uiIco('walk', 14)} Walk</button><button class="dr-tog" data-a="dr-pose" data-p="throw">Throw</button><button class="dr-tog" data-a="dr-pose" data-p="cheer">Cheer</button></div></div>
  <div class="dr-panel px"><div class="dr-top"><label class="dr-name"><span>Name</span><input id="drName" maxlength="18" autocomplete="nickname" value="${esc(dressingRoom.look.name)}"></label>
    <button class="pb small quiet" data-a="dr-rand" title="A random look from what you own">Surprise me</button><button class="mbtn sm" data-a="dr-undo" aria-label="Undo" title="Undo">↶</button><button class="mbtn sm" data-a="dr-redo" aria-label="Redo" title="Redo">↷</button></div>
-  <div class="dr-tabs" role="tablist">${DR_TABS.filter(([k]) => !(dressingRoom.mode === 'intro' && k === 'outfits'))
+  <div class="dr-tabs" role="tablist">${DRESSING_TABS.filter(
+    ([k]) => !(dressingRoom.mode === 'intro' && k === 'outfits')
+  )
     .map(
       ([k, n]) =>
         `<button role="tab" data-a="dr-tab" data-t="${k}" aria-selected="${dressingRoom.tab === k}">${n}</button>`
     )
     .join('')}</div>
-  <div class="dr-body" id="drBody">${drTabHTML()}</div>
-  <div class="dr-foot" id="drFoot">${drFootHTML()}</div></div>`;
+  <div class="dr-body" id="drBody">${dressingTabHTML()}</div>
+  <div class="dr-foot" id="drFoot">${dressingFootHTML()}</div></div>`;
 }
-function drSwatches(key, list, cur, ch) {
+function colorSwatchesHTML(key, list, cur, ch) {
   return `<div class="swatches">${list.map(c => `<button class="swatch" style="--sw:${c}" data-a="dr-col" data-k="${key}" data-c="${c}" ${ch != null ? `data-ch="${ch}"` : ''} aria-pressed="${String(cur).toLowerCase() === c.toLowerCase()}" aria-label="${c}"><span>✓</span></button>`).join('')}<label class="custom-color" title="Any colour">+<input type="color" data-dr-col="${key}" ${ch != null ? `data-ch="${ch}"` : ''} value="${cur}"></label></div>`;
 }
-function drGrid(slot, crop) {
+function wardrobeGridHTML(slot, crop) {
   const S0 = WD().slots.find(s => s.id === slot),
     cur = dressingRoom.look.wear[slot];
-  let list = drItems(slot);
+  let list = wardrobeItemsInSlot(slot);
   if (dressingRoom.mode === 'intro') list = list.filter(([k]) => owns(k));
-  if (dressingRoom.shop) list.sort((a, b) => drSells(b[1]) - drSells(a[1]) || owns(b[0]) - owns(a[0]));
+  if (dressingRoom.shop) list.sort((a, b) => boutiqueSells(b[1]) - boutiqueSells(a[1]) || owns(b[0]) - owns(a[0]));
   else list.sort((a, b) => owns(b[0]) - owns(a[0]));
   const none =
     S0 && S0.empty
@@ -359,13 +361,13 @@ function drGrid(slot, crop) {
   return `<div class="dr-grid">${none}${list
     .map(([k, it]) => {
       const own = owns(k),
-        here = drSells(it);
+        here = boutiqueSells(it);
       return `<button class="dr-it${own ? '' : ' locked'}${here && !own ? ' here' : ''}" data-a="dr-wear" data-s="${slot}" data-id="${k}" aria-pressed="${cur === k}" title="${esc(it.name)}${own ? '' : ` · $${fmt(it.price || 0)} at ${esc(shopName(it.shop))}`}">
-  <img class="dr-th" src="${drThumb(slot, k, crop)}" alt=""><b>${esc(it.name)}</b>${own ? '' : `<small>${here ? '' : uiIco('lock', 10)} $${fmt(it.price || 0)}${here ? '' : ` · ${esc(shopName(it.shop))}`}</small>`}</button>`;
+  <img class="dr-th" src="${wardrobeThumbnail(slot, k, crop)}" alt=""><b>${esc(it.name)}</b>${own ? '' : `<small>${here ? '' : uiIco('lock', 10)} $${fmt(it.price || 0)}${here ? '' : ` · ${esc(shopName(it.shop))}`}</small>`}</button>`;
     })
     .join('')}</div>`;
 }
-function drColors(slot) {
+function wardrobeColorsHTML(slot) {
   const id = dressingRoom.look.wear[slot],
     it = id && WD().items[id];
   if (!it) return '';
@@ -375,31 +377,31 @@ function drColors(slot) {
     .map((c, i) => {
       const ln = it.link && it.link[String(i + 1)];
       if (it.slot === 'hair' || it.slot === 'eyes' || ln) return '';
-      return `<div class="dr-row"><span class="dr-l">${esc(c[0])}</span>${drSwatches('item:' + id, [c[1]].concat((P.cloth || []).filter(x => x.toLowerCase() !== c[1].toLowerCase())).slice(0, 12), cur[i], i)}</div>`;
+      return `<div class="dr-row"><span class="dr-l">${esc(c[0])}</span>${colorSwatchesHTML('item:' + id, [c[1]].concat((P.cloth || []).filter(x => x.toLowerCase() !== c[1].toLowerCase())).slice(0, 12), cur[i], i)}</div>`;
     })
     .join('');
 }
-function drSection(title, html) {
+function dressingSectionHTML(title, html) {
   return `<section class="dr-sec"><h3>${title}</h3>${html}</section>`;
 }
-function drTabHTML() {
+function dressingTabHTML() {
   const L = dressingRoom.look,
     P = WD().palettes || {};
   switch (dressingRoom.tab) {
     case 'body':
       return (
         (dressingRoom.mode === 'intro'
-          ? drSection(
+          ? dressingSectionHTML(
               'Ready-made looks',
-              `<div class="dr-presets">${TR_PRESETS.map((p, j) => `<button class="dr-pre px" data-a="dr-preset" data-i="${j}" aria-label="Look ${j + 1}"><img src="${drPortrait(Object.assign({}, p, { name: dressingRoom.look.name }))}" alt=""></button>`).join('')}</div><p class="note">Start from one of these, then change anything you like.</p>`
+              `<div class="dr-presets">${TR_PRESETS.map((p, j) => `<button class="dr-pre px" data-a="dr-preset" data-i="${j}" aria-label="Look ${j + 1}"><img src="${lookPortrait(Object.assign({}, p, { name: dressingRoom.look.name }))}" alt=""></button>`).join('')}</div><p class="note">Start from one of these, then change anything you like.</p>`
             )
           : '') +
-        drSection(
+        dressingSectionHTML(
           'Build',
-          `<div class="dr-builds">${DR_BUILDS.map(([n, b]) => `<button class="pb small ${drBuildIs(b) ? 'gold' : 'quiet'}" data-a="dr-build" data-b="${n}">${n}</button>`).join('')}</div>`
+          `<div class="dr-builds">${BODY_BUILD_PRESETS.map(([n, b]) => `<button class="pb small ${wearsBuild(b) ? 'gold' : 'quiet'}" data-a="dr-build" data-b="${n}">${n}</button>`).join('')}</div>`
         ) +
-        drSection('Skin', drSwatches('skin', P.skin || [], L.skin)) +
-        drMore('body', 'Fine-tune the shape', () =>
+        dressingSectionHTML('Skin', colorSwatchesHTML('skin', P.skin || [], L.skin)) +
+        dressingMoreHTML('body', 'Fine-tune the shape', () =>
           trSliders()
             .map(
               s =>
@@ -410,37 +412,40 @@ function drTabHTML() {
       );
     case 'face':
       return (
-        drSection(
+        dressingSectionHTML(
           'Face',
-          `<div class="dr-grid">${DR_FACES.map(([n, f], j) => `<button class="dr-it" data-a="dr-face" data-i="${j}" aria-pressed="${drFaceIs(f)}" title="${n}"><img class="dr-th" src="${drThumbLook(Object.assign(JSON.parse(JSON.stringify(L)), { wear: Object.assign({}, L.wear, f) }), 'face')}" alt=""><b>${n}</b></button>`).join('')}</div>` +
-            `<div class="dr-row"><span class="dr-l">Eye colour</span>${drSwatches('eyes', P.eyes || [], L.eyes)}</div>`
+          `<div class="dr-grid">${FACE_PRESETS.map(([n, f], j) => `<button class="dr-it" data-a="dr-face" data-i="${j}" aria-pressed="${wearsFace(f)}" title="${n}"><img class="dr-th" src="${lookThumbnail(Object.assign(JSON.parse(JSON.stringify(L)), { wear: Object.assign({}, L.wear, f) }), 'face')}" alt=""><b>${n}</b></button>`).join('')}</div>` +
+            `<div class="dr-row"><span class="dr-l">Eye colour</span>${colorSwatchesHTML('eyes', P.eyes || [], L.eyes)}</div>`
         ) +
-        drMore(
+        dressingMoreHTML(
           'face',
           'Every eye, brow and mouth',
           () =>
-            drSection('Eyes', drGrid('eyes', 'face')) +
-            drSection('Brows', drGrid('brows', 'face')) +
-            drSection('Mouth', drGrid('mouth', 'face')) +
-            drSection('Facial hair & freckles', drGrid('facial', 'face') + drColors('facial'))
+            dressingSectionHTML('Eyes', wardrobeGridHTML('eyes', 'face')) +
+            dressingSectionHTML('Brows', wardrobeGridHTML('brows', 'face')) +
+            dressingSectionHTML('Mouth', wardrobeGridHTML('mouth', 'face')) +
+            dressingSectionHTML(
+              'Facial hair & freckles',
+              wardrobeGridHTML('facial', 'face') + wardrobeColorsHTML('facial')
+            )
         )
       );
     case 'hair':
       return (
-        drSection('Hairstyle', drGrid('hair', 'head')) +
-        drSection(
+        dressingSectionHTML('Hairstyle', wardrobeGridHTML('hair', 'head')) +
+        dressingSectionHTML(
           'Hair colour',
-          drSwatches('hair', P.hair || [], L.hair) +
+          colorSwatchesHTML('hair', P.hair || [], L.hair) +
             '<p class="note">Brows and facial hair follow your hair colour.</p>'
         )
       );
     case 'outfit': {
       const W = WD().items,
         O = wardrobeState().outfits;
-      let list = DR_OUTFITS.filter(([n, o]) => Object.values(o).every(id => !id || W[id]));
+      let list = OUTFIT_PRESETS.filter(([n, o]) => Object.values(o).every(id => !id || W[id]));
       if (dressingRoom.mode === 'intro') list = list.filter(([n, o]) => Object.values(o).every(id => !id || owns(id)));
       return (
-        drSection(
+        dressingSectionHTML(
           'Outfit',
           `<div class="dr-grid dr-outgrid">${list
             .map(([n, o, ways]) => {
@@ -448,59 +453,59 @@ function drTabHTML() {
                 cost = Object.values(o)
                   .filter(id => id && !owns(id))
                   .reduce((a, id) => a + (W[id].price || 0), 0);
-              return `<div class="dr-it dr-outfit${own ? '' : ' locked'}" aria-pressed="${drOutfitIs(o)}"><button class="dr-outmain" data-a="dr-outfit" data-n="${esc(n)}" data-w="0" title="${n}"><img class="dr-th" src="${drThumbLook(drOutfitLook(L, o, ways[0]), 'body')}" alt=""><b>${n}</b>${own ? '' : `<small>${uiIco('lock', 10)} $${fmt(cost)}</small>`}</button>
+              return `<div class="dr-it dr-outfit${own ? '' : ' locked'}" aria-pressed="${wearsOutfit(o)}"><button class="dr-outmain" data-a="dr-outfit" data-n="${esc(n)}" data-w="0" title="${n}"><img class="dr-th" src="${lookThumbnail(lookWithOutfit(L, o, ways[0]), 'body')}" alt=""><b>${n}</b>${own ? '' : `<small>${uiIco('lock', 10)} $${fmt(cost)}</small>`}</button>
      <span class="dr-ways">${ways.map((w, k) => `<button class="swatch" style="--sw:${w[0]}" data-a="dr-outfit" data-n="${esc(n)}" data-w="${k}" aria-label="${n}, colourway ${k + 1}"><span>✓</span></button>`).join('')}</span></div>`;
             })
             .join('')}</div>`
         ) +
         (dressingRoom.mode === 'intro'
           ? ''
-          : drSection(
+          : dressingSectionHTML(
               'Saved outfits',
               `<div class="dr-outfits">${[0, 1, 2]
                 .map(i => {
                   const o = O[i];
-                  return `<div class="dr-out px">${o ? `<img src="${drPortrait(o)}" alt="">` : '<span class="dr-empty">Empty</span>'}<b>${o ? esc(o.name || 'Outfit ' + (i + 1)) : 'Outfit ' + (i + 1)}</b><div class="racts"><button class="pb small" data-a="dr-osave" data-i="${i}">Save current here</button>${o ? `<button class="pb small gold" data-a="dr-owear" data-i="${i}">Wear</button>` : ''}</div></div>`;
+                  return `<div class="dr-out px">${o ? `<img src="${lookPortrait(o)}" alt="">` : '<span class="dr-empty">Empty</span>'}<b>${o ? esc(o.name || 'Outfit ' + (i + 1)) : 'Outfit ' + (i + 1)}</b><div class="racts"><button class="pb small" data-a="dr-osave" data-i="${i}">Save current here</button>${o ? `<button class="pb small gold" data-a="dr-owear" data-i="${i}">Wear</button>` : ''}</div></div>`;
                 })
                 .join('')}</div>`
             )) +
-        drMore(
+        dressingMoreHTML(
           'outfit',
           'Every top, bottom, jacket and shoe',
           () =>
-            drSection('Top', drGrid('top', 'body') + drColors('top')) +
-            drSection('Jacket & coat', drGrid('outer', 'body') + drColors('outer')) +
-            drSection('Bottoms', drGrid('bottom', 'legs') + drColors('bottom')) +
-            drSection('Shoes', drGrid('shoes', 'feet') + drColors('shoes'))
+            dressingSectionHTML('Top', wardrobeGridHTML('top', 'body') + wardrobeColorsHTML('top')) +
+            dressingSectionHTML('Jacket & coat', wardrobeGridHTML('outer', 'body') + wardrobeColorsHTML('outer')) +
+            dressingSectionHTML('Bottoms', wardrobeGridHTML('bottom', 'legs') + wardrobeColorsHTML('bottom')) +
+            dressingSectionHTML('Shoes', wardrobeGridHTML('shoes', 'feet') + wardrobeColorsHTML('shoes'))
         )
       );
     }
     case 'hat':
-      return drSection('Hat', drGrid('hat', 'head') + drColors('hat'));
+      return dressingSectionHTML('Hat', wardrobeGridHTML('hat', 'head') + wardrobeColorsHTML('hat'));
     case 'extras':
       return (
-        drSection('Glasses', drGrid('glasses', 'face') + drColors('glasses')) +
-        drSection('Neck', drGrid('neck', 'body') + drColors('neck')) +
-        drSection('Bag', drGrid('bag', 'body') + drColors('bag'))
+        dressingSectionHTML('Glasses', wardrobeGridHTML('glasses', 'face') + wardrobeColorsHTML('glasses')) +
+        dressingSectionHTML('Neck', wardrobeGridHTML('neck', 'body') + wardrobeColorsHTML('neck')) +
+        dressingSectionHTML('Bag', wardrobeGridHTML('bag', 'body') + wardrobeColorsHTML('bag'))
       );
   }
   return '';
 }
-function drMore(tab, label, fn) {
+function dressingMoreHTML(tab, label, fn) {
   const open = !!dressingRoom.more[tab];
   return `<section class="dr-sec dr-more"><button class="pb small ${open ? '' : 'quiet'} dr-moreb" data-a="dr-more" data-t="${tab}" aria-expanded="${open}">${open ? 'Less' : 'More'} · ${label}</button>${open ? fn() : ''}</section>`;
 }
-function drBuildIs(b) {
+function wearsBuild(b) {
   const L = dressingRoom.look.body;
   return trSliders().every(s => s.k === 'chest' || Math.abs((L[s.k] ?? s.def) - (b[s.k] ?? s.def)) < 0.005);
 }
-function drFaceIs(f) {
+function wearsFace(f) {
   return ['eyes', 'brows', 'mouth', 'facial'].every(k => (dressingRoom.look.wear[k] || null) === (f[k] || null));
 }
-function drOutfitIs(o) {
+function wearsOutfit(o) {
   return ['top', 'bottom', 'shoes', 'outer'].every(k => (dressingRoom.look.wear[k] || null) === (o[k] || null));
 }
-function drOutfitLook(L, o, way) {
+function lookWithOutfit(L, o, way) {
   const L2 = JSON.parse(JSON.stringify(L));
   Object.assign(L2.wear, o);
   const W = WD().items;
@@ -517,14 +522,14 @@ function drOutfitLook(L, o, way) {
   }
   return cleanLook(L2);
 }
-function drThumbLook(L2, crop) {
+function lookThumbnail(L2, crop) {
   const key =
     'look|' + crop + '|' + JSON.stringify([L2.wear, L2.colors, L2.skin, L2.hair, L2.eyes, L2.body.body, L2.body.chest]);
   if (dressingRoom.thumbs.has(key)) return dressingRoom.thumbs.get(key);
   L2.body.height = 1;
   if (crop !== 'body') L2.wear.hat = null;
   const f = trFrame(L2, 'front', 'idle', 0, 0),
-    [x0, y0, x1, y1] = DR_CROP[crop] || DR_CROP.body,
+    [x0, y0, x1, y1] = THUMB_CROPS[crop] || THUMB_CROPS.body,
     w = x1 - x0,
     h = y1 - y0,
     c = cnv(w, h),
@@ -534,14 +539,14 @@ function drThumbLook(L2, crop) {
   dressingRoom.thumbs.set(key, u);
   return u;
 }
-function drUnowned() {
+function unownedPieces() {
   return Object.values(dressingRoom.look.wear).filter(id => id && !owns(id));
 }
-function drFootHTML() {
-  const un = drUnowned(),
+function dressingFootHTML() {
+  const un = unownedPieces(),
     W = WD().items,
-    cost = un.filter(id => drSells(W[id])).reduce((a, id) => a + (W[id].price || 0), 0),
-    elsewhere = un.filter(id => !drSells(W[id]));
+    cost = un.filter(id => boutiqueSells(W[id])).reduce((a, id) => a + (W[id].price || 0), 0),
+    elsewhere = un.filter(id => !boutiqueSells(W[id]));
   let msg = '',
     btn = '';
   if (dressingRoom.mode === 'intro') {
@@ -565,8 +570,8 @@ function drFootHTML() {
   return `<span class="dr-msg">${msg}</span>${dressingRoom.noBack ? '' : `<button class="pb quiet" data-a="dr-cancel">${dressingRoom.mode === 'intro' ? 'Back' : dressingRoom.shop ? 'Leave' : 'Cancel'}</button>`}${btn}`;
 }
 /* ---------- thumbnails and portraits ---------- */
-const DR_CROP = new Proxy({}, { get: (t, k) => (WD().crops || {})[k] });
-function drThumb(slot, id, crop) {
+const THUMB_CROPS = new Proxy({}, { get: (t, k) => (WD().crops || {})[k] });
+function wardrobeThumbnail(slot, id, crop) {
   const L = JSON.parse(JSON.stringify(dressingRoom.look));
   L.wear[slot] = id;
   L.body.height = 1;
@@ -592,7 +597,7 @@ function drThumb(slot, id, crop) {
     ]);
   if (dressingRoom.thumbs.has(key)) return dressingRoom.thumbs.get(key);
   const f = trFrame(L, 'front', 'idle', 0, 0),
-    [x0, y0, x1, y1] = DR_CROP[crop] || DR_CROP.body,
+    [x0, y0, x1, y1] = THUMB_CROPS[crop] || THUMB_CROPS.body,
     w = x1 - x0,
     h = y1 - y0,
     c = cnv(w, h),
@@ -602,7 +607,7 @@ function drThumb(slot, id, crop) {
   dressingRoom.thumbs.set(key, u);
   return u;
 }
-export function drPortrait(look) {
+export function lookPortrait(look) {
   const L = cleanLook(look),
     f = trFrame(L, 'front', 'idle', 0, 0),
     b = trBox(f),
@@ -611,7 +616,7 @@ export function drPortrait(look) {
   return c.toDataURL();
 }
 /* ---------- the preview ---------- */
-function drLoop(ts) {
+function dressingPreviewLoop(ts) {
   const cv = $('#drCv');
   if (!dressingRoom.on || !cv || !cv.isConnected) {
     frameStop('dress');
@@ -629,7 +634,7 @@ function drLoop(ts) {
   const x = cv.getContext('2d');
   x.setTransform(1, 0, 0, 1, 0, 0);
   x.clearRect(0, 0, W, H);
-  const [view, mir] = DR_VIEWS[dressingRoom.view],
+  const [view, mir] = DRESSING_VIEWS[dressingRoom.view],
     t = ts;
   let act = 'idle',
     ph = 0;
@@ -664,33 +669,33 @@ function drLoop(ts) {
   x.drawImage(f, fx, fy, f.width * s, f.height * s);
 }
 /* ---------- changes ---------- */
-function drPush() {
+function pushDressingUndo() {
   dressingRoom.undo.push(JSON.stringify(dressingRoom.look));
   if (dressingRoom.undo.length > 60) dressingRoom.undo.shift();
   dressingRoom.redo = [];
 }
-function drRefresh(full) {
+function refreshDressingRoom(full) {
   const b = $('#drBody');
   if (b && full !== false) {
     const y = b.scrollTop;
-    b.innerHTML = drTabHTML();
+    b.innerHTML = dressingTabHTML();
     b.scrollTop = y;
   }
   const f = $('#drFoot');
-  if (f) f.innerHTML = drFootHTML();
+  if (f) f.innerHTML = dressingFootHTML();
 }
-function drSet(fn, full) {
-  drPush();
+function changeLook(fn, full) {
+  pushDressingUndo();
   fn(dressingRoom.look);
   dressingRoom.look = cleanLook(dressingRoom.look);
-  drRefresh(full);
+  refreshDressingRoom(full);
 }
-function drRandom() {
+function randomizeLook() {
   const P = WD().palettes || {},
     pk = a => a[Math.floor(rnd() * a.length)];
-  drSet(L => {
+  changeLook(L => {
     for (const s of WD().slots) {
-      const ids = drItems(s.id)
+      const ids = wardrobeItemsInSlot(s.id)
         .map(e => e[0])
         .filter(owns);
       if (
@@ -713,8 +718,8 @@ function drRandom() {
     }
   });
 }
-export function drSave() {
-  const un = drUnowned();
+export function saveDressingLook() {
+  const un = unownedPieces();
   if (un.length && dressingRoom.mode !== 'intro') {
     toast('Buy the pieces you’re trying on first.');
     return;
@@ -741,10 +746,10 @@ export function drSave() {
   render();
   toast(shop ? 'Looking sharp.' : 'Your new look is saved.');
 }
-function drBuy() {
+function buyDressingItems() {
   const W = WD().items,
-    un = drUnowned(),
-    mine = un.filter(id => drSells(W[id])),
+    un = unownedPieces(),
+    mine = un.filter(id => boutiqueSells(W[id])),
     cost = mine.reduce((a, id) => a + (W[id].price || 0), 0);
   if (un.length > mine.length) return;
   if (S.se < cost) {
@@ -768,9 +773,9 @@ function drBuy() {
   S.avatar = cleanLook(dressingRoom.look);
   save();
   dressingRoom.orig = JSON.stringify(dressingRoom.look);
-  drRefresh();
+  refreshDressingRoom();
 }
-function drBind() {
+function bindDressingRoom() {
   const el = $('#dressing'),
     cv = $('#drCv');
   cv.addEventListener('pointerdown', e => {
@@ -797,21 +802,21 @@ function drBind() {
     if (t.dataset.drSl) {
       const k = t.dataset.drSl;
       if (!dressingRoom.slT) {
-        drPush();
+        pushDressingUndo();
         dressingRoom.slT = 1;
       }
       dressingRoom.look.body[k] = +t.value;
       dressingRoom.look = cleanLook(dressingRoom.look);
     }
-    if (t.dataset.drCol) drColor(t.dataset.drCol, t.value, t.dataset.ch, false);
+    if (t.dataset.drCol) setLookColor(t.dataset.drCol, t.value, t.dataset.ch, false);
   });
   el.addEventListener('change', e => {
     if (e.target.dataset.drSl) {
       dressingRoom.slT = 0;
       dressingRoom.thumbs.clear();
-      drRefresh();
+      refreshDressingRoom();
     }
-    if (e.target.dataset.drCol) drRefresh();
+    if (e.target.dataset.drCol) refreshDressingRoom();
   });
   el.addEventListener('keydown', e => {
     if (e.key === 'Escape' && dressingRoom.mode !== 'intro' && !dressingRoom.noBack) {
@@ -820,8 +825,8 @@ function drBind() {
     }
   });
 }
-function drColor(key, c, ch, refresh = true) {
-  drPush();
+function setLookColor(key, c, ch, refresh = true) {
+  pushDressingUndo();
   const L = dressingRoom.look;
   if (key === 'skin' || key === 'hair' || key === 'eyes') L[key] = c;
   else if (key.startsWith('item:')) {
@@ -831,7 +836,7 @@ function drColor(key, c, ch, refresh = true) {
     L.colors[id] = cur;
   }
   dressingRoom.look = cleanLook(L);
-  if (refresh) drRefresh();
+  if (refresh) refreshDressingRoom();
 }
 document.addEventListener('click', ev => {
   if (!dressingRoom.on) return;
@@ -842,45 +847,45 @@ document.addEventListener('click', ev => {
     case 'dr-tab':
       dressingRoom.tab = d.t;
       $$('#dressing [data-a=dr-tab]').forEach(b => b.setAttribute('aria-selected', String(b.dataset.t === d.t)));
-      drRefresh();
+      refreshDressingRoom();
       $('#drBody').scrollTop = 0;
       break;
     case 'dr-wear':
-      drSet(L => {
+      changeLook(L => {
         L.wear[d.s] = d.id || null;
       });
-      if (d.id && !owns(d.id) && drSells(WD().items[d.id])) {
+      if (d.id && !owns(d.id) && boutiqueSells(WD().items[d.id])) {
         const l = $('#drLine');
         if (l) l.textContent = `${WD().items[d.id].name}? Good eye. $${fmt(WD().items[d.id].price || 0)}.`;
       }
       break;
     case 'dr-col':
-      drColor(d.k, d.c, d.ch);
+      setLookColor(d.k, d.c, d.ch);
       break;
     case 'dr-more':
       dressingRoom.more[d.t] = !dressingRoom.more[d.t];
-      drRefresh();
+      refreshDressingRoom();
       break;
     case 'dr-face':
       {
-        const f = DR_FACES[+d.i];
+        const f = FACE_PRESETS[+d.i];
         if (f)
-          drSet(L => {
+          changeLook(L => {
             Object.assign(L.wear, f[1]);
           });
       }
       break;
     case 'dr-outfit':
       {
-        const o = DR_OUTFITS.find(x => x[0] === d.n);
+        const o = OUTFIT_PRESETS.find(x => x[0] === d.n);
         if (o) {
           const way = o[2][+d.w] || o[2][0];
-          drSet(L => {
-            const L2 = drOutfitLook(L, o[1], way);
+          changeLook(L => {
+            const L2 = lookWithOutfit(L, o[1], way);
             L.wear = L2.wear;
             L.colors = L2.colors;
           });
-          const un = Object.values(o[1]).filter(id => id && !owns(id) && drSells(WD().items[id]));
+          const un = Object.values(o[1]).filter(id => id && !owns(id) && boutiqueSells(WD().items[id]));
           if (un.length) {
             const l = $('#drLine');
             if (l)
@@ -891,9 +896,9 @@ document.addEventListener('click', ev => {
       break;
     case 'dr-build':
       {
-        const b = DR_BUILDS.find(x => x[0] === d.b);
+        const b = BODY_BUILD_PRESETS.find(x => x[0] === d.b);
         if (b)
-          drSet(L => {
+          changeLook(L => {
             for (const s of trSliders()) if (s.k !== 'chest') L.body[s.k] = s.def;
             Object.assign(L.body, b[1]);
           });
@@ -903,7 +908,7 @@ document.addEventListener('click', ev => {
       {
         const s = trSliders().find(x => x.k === d.k);
         if (s)
-          drSet(L => {
+          changeLook(L => {
             L.body[s.k] = s.def;
           });
       }
@@ -920,13 +925,13 @@ document.addEventListener('click', ev => {
       dressingRoom.poseT = performance.now();
       break;
     case 'dr-rand':
-      drRandom();
+      randomizeLook();
       break;
     case 'dr-preset':
       {
         const p = TR_PRESETS[+d.i];
         if (p)
-          drSet(L => {
+          changeLook(L => {
             const n = L.name;
             Object.assign(L, JSON.parse(JSON.stringify(cleanLook(p))));
             L.name = n;
@@ -937,14 +942,14 @@ document.addEventListener('click', ev => {
       if (dressingRoom.undo.length) {
         dressingRoom.redo.push(JSON.stringify(dressingRoom.look));
         dressingRoom.look = JSON.parse(dressingRoom.undo.pop());
-        drRefresh();
+        refreshDressingRoom();
       }
       break;
     case 'dr-redo':
       if (dressingRoom.redo.length) {
         dressingRoom.undo.push(JSON.stringify(dressingRoom.look));
         dressingRoom.look = JSON.parse(dressingRoom.redo.pop());
-        drRefresh();
+        refreshDressingRoom();
       }
       break;
     case 'dr-osave':
@@ -952,7 +957,7 @@ document.addEventListener('click', ev => {
         const st = wardrobeState();
         st.outfits[+d.i] = JSON.parse(JSON.stringify(dressingRoom.look));
         save();
-        drRefresh();
+        refreshDressingRoom();
         toast('Outfit saved.');
       }
       break;
@@ -960,7 +965,7 @@ document.addEventListener('click', ev => {
       {
         const o = wardrobeState().outfits[+d.i];
         if (o)
-          drSet(L => {
+          changeLook(L => {
             const n = L.name;
             Object.assign(L, JSON.parse(JSON.stringify(o)));
             L.name = n;
@@ -968,10 +973,10 @@ document.addEventListener('click', ev => {
       }
       break;
     case 'dr-save':
-      drSave();
+      saveDressingLook();
       break;
     case 'dr-buy':
-      drBuy();
+      buyDressingItems();
       break;
     case 'dr-cancel':
       if (dressingRoom.mode === 'intro') {

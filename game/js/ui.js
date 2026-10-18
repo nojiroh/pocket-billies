@@ -105,7 +105,7 @@ import {
   trainerLook,
 } from './person-art.js';
 import { applyPreferences, settingsHTML } from './settings-screen.js';
-import { drPortrait, openDressing } from './dressing-room.js';
+import { lookPortrait, openDressing } from './dressing-room.js';
 import { bustHTML, sprHTML } from './skeleton-rig.js';
 import { EASE, battleStage, battleStageFocus, battleStageTargets, camHome } from './battle-stage.js';
 import {
@@ -724,7 +724,7 @@ function renderIntro() {
     const cur = JSON.stringify(cleanLook(U.trainerDraft || TR_PRESETS[0]));
     return `<header class="bar"><div><div class="sub">Your adventure, your style</div><h1 class="where">Create your trainer</h1></div></header>
   <p class="note">Pick a starting look, then make it yours: body, face, hair and clothes. You can change it any time from your Trainer card.</p>
-  <div class="tr-presets">${TR_PRESETS.map((p, j) => `<button class="tr-pre px" data-a="tr-preset" data-i="${j}" aria-pressed="${JSON.stringify(cleanLook(p)) === cur}"><img src="${drPortrait(p)}" alt="Look ${j + 1}"></button>`).join('')}</div>
+  <div class="tr-presets">${TR_PRESETS.map((p, j) => `<button class="tr-pre px" data-a="tr-preset" data-i="${j}" aria-pressed="${JSON.stringify(cleanLook(p)) === cur}"><img src="${lookPortrait(p)}" alt="Look ${j + 1}"></button>`).join('')}</div>
   <div class="tr-me px"><div class="tr-big">${humanHTML('me', 120)}</div><div class="racts"><button class="pb dark wide" data-a="tr-custom">${uiIco('profile', 16)} Customize</button><button class="pb gold wide big" data-a="tr-next">Next</button></div></div>`;
   }
   if (st && st.k === 'named') {
