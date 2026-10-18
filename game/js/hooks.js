@@ -2,8 +2,7 @@
 // LATER module, or from whichever module the page has (the shared renderer reading the game's or the Studio's
 // names). The module that declares the name hands it over with provide(): functions before it runs, everything
 // else once it has loaded. A slot no module of the page fills stays undefined (typeof checks still work).
-export let A,
-  ACC,
+export let ACC,
   ALTERNATE_PROPS,
   BATTLE_STAGES,
   BG,
@@ -99,6 +98,7 @@ export let A,
   extraToolPointerMove,
   extraToolPointerUp,
   fallPlay,
+  fighter,
   flushPropModelMeshes,
   flyDraw,
   flyTick,
@@ -215,7 +215,6 @@ export let A,
   worldPaint,
   x28Event;
 const set = {
-  A: v => (A = v),
   ACC: v => (ACC = v),
   ALTERNATE_PROPS: v => (ALTERNATE_PROPS = v),
   BATTLE_STAGES: v => (BATTLE_STAGES = v),
@@ -312,6 +311,7 @@ const set = {
   extraToolPointerMove: v => (extraToolPointerMove = v),
   extraToolPointerUp: v => (extraToolPointerUp = v),
   fallPlay: v => (fallPlay = v),
+  fighter: v => (fighter = v),
   flushPropModelMeshes: v => (flushPropModelMeshes = v),
   flyDraw: v => (flyDraw = v),
   flyTick: v => (flyTick = v),

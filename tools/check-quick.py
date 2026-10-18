@@ -953,14 +953,14 @@ def desktop_steps(b, base, R):
             if not until(pg, "activeBattle&&activeBattle.phase==='choose'", 90, tap): raise Exception(f'{kind}: never reached the move menu (phase {pg.evaluate("activeBattle&&activeBattle.phase")})')
             # the plates fade in with their billionaires; in software drawing that can take a few seconds
             until(pg, "document.querySelectorAll('#plates .bplate:not(.off):not(.gone)').length>=liveK(0).length+liveK(1).length", 12); time.sleep(.5)
-            r = pg.evaluate("JSON.stringify({fmt:activeBattle.fmt,mine:liveK(0).length,theirs:liveK(1).length,plates:document.querySelectorAll('#plates .bplate:not(.off):not(.gone)').length,boss:!!(A(1)&&A(1).boss),big:battleStage.s[1]?battleStage.s[1].big:1})")
+            r = pg.evaluate("JSON.stringify({fmt:activeBattle.fmt,mine:liveK(0).length,theirs:liveK(1).length,plates:document.querySelectorAll('#plates .bplate:not(.off):not(.gone)').length,boss:!!(fighter(1)&&fighter(1).boss),big:battleStage.s[1]?battleStage.s[1].big:1})")
             r = json.loads(r)
             if kind == 'double' and (r['fmt'] != 'double' or r['theirs'] < 2): raise Exception(f'double battle came out as {r}')
             if kind == 'alpha' and (r['fmt'] != 'alpha' or not r['boss'] or r['mine'] < 2): raise Exception(f'Alpha battle came out as {r}')
             if r['plates'] < r['mine'] + r['theirs']: raise Exception(f'{kind}: only {r["plates"]} nameplates for {r["mine"] + r["theirs"]} billionaires')
             shot(pg, f'battle-{kind}')
             # every fighter picks; with two foes the move needs a target
-            picks = pg.evaluate("""(async()=>{let n=0,aim=0;while(activeBattle&&activeBattle.phase==='choose'&&n<4){const m=A(activeBattle.cur),mid=m.moves.find(id=>MOVES[id]&&MOVES[id].c!=='X')||m.moves[0];pickMove(mid);n++;if(activeBattle.phase==='target'){aim++;await new Promise(r=>setTimeout(r,300));pickTarget(liveK(1)[liveK(1).length-1])}await new Promise(r=>setTimeout(r,60))}return [n,aim]})()""")
+            picks = pg.evaluate("""(async()=>{let n=0,aim=0;while(activeBattle&&activeBattle.phase==='choose'&&n<4){const m=fighter(activeBattle.cur),mid=m.moves.find(id=>MOVES[id]&&MOVES[id].c!=='X')||m.moves[0];pickMove(mid);n++;if(activeBattle.phase==='target'){aim++;await new Promise(r=>setTimeout(r,300));pickTarget(liveK(1)[liveK(1).length-1])}await new Promise(r=>setTimeout(r,60))}return [n,aim]})()""")
             if kind == 'double' and picks[1] < 1: raise Exception('double battle: no move asked for a target')
             if not until(pg, "activeBattle&&['choose','end','switch'].includes(activeBattle.phase)", 120, tap): raise Exception(f'{kind}: the turn never finished (phase {pg.evaluate("activeBattle&&activeBattle.phase")})')
             lines = pg.evaluate("activeBattle.events.map(e=>e.t).filter(Boolean)")
@@ -1012,7 +1012,7 @@ def desktop_steps(b, base, R):
         pg.evaluate("(()=>{const sp=Object.keys(SPECIES).find(k=>SPECIES[k].stage===0);const q={id:'cq-a34',sp,lvl:6,gold:false,no:1,alpha:true};saveData.queue.push(q);saveData.team.forEach(m=>{m.hp=maxHp(m);m.status=null});startWild(q)})()")
         tap = "activeBattle&&activeBattle.phase==='playing'&&tapMsg()"
         if not until(pg, "activeBattle&&activeBattle.phase==='choose'", 90, tap): raise Exception('Alpha battle never reached the move menu')
-        a = json.loads(pg.evaluate("(()=>{const m=A(1);m.hp=Math.floor(maxHp(m)*.55);activeBattle.events=[];alphaPhase(1);m.hp=Math.floor(maxHp(m)*.45);alphaPhase(1);const tb=document.querySelector('#plates .turnbar');paintPlates(snapAll());return JSON.stringify({ph2:!!m.boss.ph2,shield:FV(1).shield,lines:activeBattle.events.map(e=>e.t),bar:!!document.querySelector('#plates .turnbar')})})()"))
+        a = json.loads(pg.evaluate("(()=>{const m=fighter(1);m.hp=Math.floor(maxHp(m)*.55);activeBattle.events=[];alphaPhase(1);m.hp=Math.floor(maxHp(m)*.45);alphaPhase(1);const tb=document.querySelector('#plates .turnbar');paintPlates(snapAll());return JSON.stringify({ph2:!!m.boss.ph2,shield:FV(1).shield,lines:activeBattle.events.map(e=>e.t),bar:!!document.querySelector('#plates .turnbar')})})()"))
         if not a['ph2'] or a['shield'] < 1: raise Exception(f'Alpha shield phase didn’t start: {a}')
         out.append(f"Alpha below half: “{a['lines'][0][:60]}”, shield {a['shield']} turns, turn order bar {'shown' if a['bar'] else 'missing'}")
         pg.evaluate("if(activeBattle){activeBattle.over='ran';activeBattle.phase='end';endBattle()};0"); time.sleep(2.5); pg.evaluate("uiState.modal=null;uiState.mq=[];renderOv();0")
@@ -1021,7 +1021,7 @@ def desktop_steps(b, base, R):
         if tid:
             pg.evaluate(f"startTrainer('{tid}',{{talked:true,double:true}});0")
             if until(pg, "activeBattle&&activeBattle.phase==='choose'", 90, tap):
-                p = json.loads(pg.evaluate("(()=>{const me=liveK(0);if(me.length<2)return JSON.stringify({skip:1});const t=A(me[0]);const keep=t.hp;t.hp=1;let pile=0;for(let i=0;i<30;i++){activeBattle.aiPlan={};const a=chooseAI(liveK(1)[0]),b=chooseAI(liveK(1)[1]);if(a&&b&&a.tk===me[0]&&b.tk===me[0]&&MOVES[a.mid].c!=='X'&&MOVES[b.mid].c!=='X')pile++}t.hp=keep;return JSON.stringify({pile})})()"))
+                p = json.loads(pg.evaluate("(()=>{const me=liveK(0);if(me.length<2)return JSON.stringify({skip:1});const t=fighter(me[0]);const keep=t.hp;t.hp=1;let pile=0;for(let i=0;i<30;i++){activeBattle.aiPlan={};const a=chooseAI(liveK(1)[0]),b=chooseAI(liveK(1)[1]);if(a&&b&&a.tk===me[0]&&b.tk===me[0]&&MOVES[a.mid].c!=='X'&&MOVES[b.mid].c!=='X')pile++}t.hp=keep;return JSON.stringify({pile})})()"))
                 out.append('partner AI: ' + ('skipped (one fighter)' if p.get('skip') else f"both foes piled on a 1 HP target {p['pile']} of 30 times"))
             pg.evaluate("if(activeBattle){activeBattle.over='ran';activeBattle.phase='end';endBattle()};0"); time.sleep(2.5); pg.evaluate("uiState.modal=null;uiState.mq=[];renderOv();0")
         if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))

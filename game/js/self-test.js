@@ -60,7 +60,17 @@ import { SOLID_PROP_SHADERS, solidPropState } from './solid-props.js';
 import { propModelState } from './prop-models.js';
 import { buddyTap, companionSpecies, worldBillies } from './world-billies.js';
 import { seamlessRoomMap, seamlessTripView, seamlessWorld } from './seamless-world.js';
-import { A, endBattle, liveK, pickMove, pickTarget, startTrainer, startWild, stopTimers, tapMsg } from './battle.js';
+import {
+  endBattle,
+  fighter,
+  liveK,
+  pickMove,
+  pickTarget,
+  startTrainer,
+  startWild,
+  stopTimers,
+  tapMsg,
+} from './battle.js';
 import { worldMap } from './world-map.js';
 import {
   WORLD_MAP_GL_SHADERS,
@@ -766,13 +776,13 @@ async function runFullTest(mode) {
       } /* a plate shows once its fighter is drawn */
       if (kind === 'double' && (fmt !== 'double' || theirs < 2))
         throw new Error(`expected 2 against 2, got ${mine} against ${theirs} (${fmt})`);
-      if (kind === 'alpha' && (fmt !== 'alpha' || mine < 2 || !A(1).boss))
+      if (kind === 'alpha' && (fmt !== 'alpha' || mine < 2 || !fighter(1).boss))
         throw new Error(`expected your team against one Alpha, got ${mine} against ${theirs} (${fmt})`);
       if (plates < mine + theirs) throw new Error(`only ${plates} of ${mine + theirs} nameplates in the scene`);
       let picks = 0,
         aimed = 0;
       while (activeBattle && activeBattle.phase === 'choose' && picks < 4) {
-        const m = A(activeBattle.cur),
+        const m = fighter(activeBattle.cur),
           mid = m.moves.find(id => MOVES[id] && MOVES[id].c !== 'X') || m.moves[0];
         pickMove(mid);
         picks++;
@@ -1121,9 +1131,9 @@ async function runFullTest(mode) {
             if (!(await want(['choose'], 45000)))
               throw new Error(`never got to the menu (${activeBattle ? activeBattle.phase : 'no battle'})`);
             const tip = !!document.querySelector('#btip.on'),
-              foe = A(1),
+              foe = fighter(1),
               fm = foe ? foe.moves.join(',') : '';
-            pickMove(A(0).moves[0]);
+            pickMove(fighter(0).moves[0]);
             if (!(await want(['choose', 'end', 'switch'], 60000)))
               throw new Error(`the turn never finished (${activeBattle ? activeBattle.phase : 'no battle'})`);
             const tip2 = (document.querySelector('#btip') || {}).textContent || '';

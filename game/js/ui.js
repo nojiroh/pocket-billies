@@ -142,7 +142,6 @@ import {
 } from './seamless-world.js';
 import { battleGLLayout, battleGLWanted } from './battle-3d.js';
 import {
-  A,
   RC,
   applyItem,
   battleResize,
@@ -154,6 +153,7 @@ import {
   doThrow,
   endBattle,
   enemyOnly,
+  fighter,
   itemIcon,
   paintActions,
   pickMove,
@@ -2961,7 +2961,7 @@ document.addEventListener('click', ev => {
     case 'bitem':
       if (activeBattle && activeBattle.phase === 'items') {
         if (ITEMS[d.it].hpAll) {
-          planNext({ who: activeBattle.cur, k: 'item', item: d.it, uid: A(activeBattle.cur).uid });
+          planNext({ who: activeBattle.cur, k: 'item', item: d.it, uid: fighter(activeBattle.cur).uid });
           break;
         }
         activeBattle.item = d.it;
@@ -2991,7 +2991,7 @@ document.addEventListener('click', ev => {
         activeBattle.events = [];
         if (d.y === '1') {
           saveData.se += amt;
-          say(`You took $${formatNumber(amt)}. ${billyName(A(1))} scampered off.`);
+          say(`You took $${formatNumber(amt)}. ${billyName(fighter(1))} scampered off.`);
           activeBattle.over = 'bribed';
           battleStage.s[1].show = false;
           save();

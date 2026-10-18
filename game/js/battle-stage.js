@@ -11,7 +11,6 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import {
-  A,
   BATTLE_STAGES,
   HIT_EFFECTS_BY_TYPE,
   MOVES,
@@ -22,6 +21,7 @@ import {
   battleGLStart,
   battleGLStop,
   battleLayoutChanged,
+  fighter,
   gameData,
   hudHit,
   hudPop,
@@ -2113,7 +2113,7 @@ function blinkActor(i, ms = 380) {
    fighter's HP shakes it, stops time a little longer and knocks the target further back */
 function hitWeight(ti, an) {
   try {
-    const m = typeof A === 'function' ? A(ti) : null;
+    const m = typeof fighter === 'function' ? fighter(ti) : null;
     if (!m || !an || !an.dmg) return 0.3;
     return clamp(an.dmg / Math.max(1, maxHp(m)), 0, 1);
   } catch (e) {

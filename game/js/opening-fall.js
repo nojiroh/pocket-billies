@@ -22,7 +22,7 @@ import { walkView } from './walk-view.js';
 import { ensurePrograms, gpuState } from './engine/webgl.js';
 import { POST_EFFECT_SHADERS } from './engine/post-effects.js';
 import { canvasForContext, ensureWalkGl, standingHeightAt } from './walk-view-gl.js';
-import { A, endBattle, stopTimers, types } from './battle.js';
+import { endBattle, fighter, stopTimers, types } from './battle.js';
 import { LOCATION_VECTORS, WORLD_ART, vector3, worldMap, worldMapHeight, worldMapWidth } from './world-map.js';
 import { WORLD_MAP_GL_SHADERS, worldMapGl, worldMapGlRender, worldMapGlSize } from './world-map-gl.js';
 import { music, sfx } from './sound.js';
@@ -838,8 +838,8 @@ function landFrame(now, parts) {
    moves and types, switching and items, and the coin you'd throw at a wild one. Win or lose the story goes on
    (story.js: storyAfterRival) with your team healed and no fee. The self-test's run of the opening stops before it. */
 function tutorTypesTip() {
-  const me = A(0),
-    foe = A(1);
+  const me = fighter(0),
+    foe = fighter(1);
   if (!me || !foe) return null;
   const ft = types(1);
   const mine = me.moves.map(k => MOVES[k]).filter(m => m && m.p),
@@ -864,8 +864,8 @@ const TUTOR_TIPS = {
 function battleTutor() {
   if (!activeBattle || !activeBattle.T || !activeBattle.T.tutorial || activeBattle.over) return;
   const seen = activeBattle.tips || (activeBattle.tips = {}),
-    me = A(0),
-    foe = A(1),
+    me = fighter(0),
+    foe = fighter(1),
     fresh = k => !seen[k];
   let k = null;
   if (fresh('start')) k = 'start';
