@@ -71,25 +71,25 @@ import {
 import { worldMap } from './world-map.js';
 /* eslint-disable no-func-assign */
 expose({
-  DBG: [() => DBG],
-  dbgAct: [() => dbgAct, v => (dbgAct = v)],
-  dbgBtn: [() => dbgBtn],
-  dbgRefresh: [() => dbgRefresh, v => (dbgRefresh = v)],
-  dbgSel: [() => dbgSel],
-  dbgSpecies: [() => dbgSpecies, v => (dbgSpecies = v)],
+  debugAction: [() => debugAction, v => (debugAction = v)],
+  debugButtonHTML: [() => debugButtonHTML],
   debugFps: [() => debugFps, v => ((debugFps = v), provide({ debugFps }))],
   debugHTML: [() => debugHTML, v => (debugHTML = v)],
+  debugMenu: [() => debugMenu],
+  debugSelectHTML: [() => debugSelectHTML],
+  debugSpeciesOptions: [() => debugSpeciesOptions, v => (debugSpeciesOptions = v)],
   openDebug: [() => openDebug, v => (openDebug = v)],
+  refreshDebugMenu: [() => refreshDebugMenu, v => (refreshDebugMenu = v)],
   settingsReset: [() => settingsReset, v => (settingsReset = v)],
 });
 /* eslint-enable no-func-assign */
 provide({ debugFps });
 /* to-module: end */
-const DBG = { fps: false, on: /[?&]debug\b/.test(location.search) };
-const dbgSel = (id, opts, val) =>
+const debugMenu = { fps: false, on: /[?&]debug\b/.test(location.search) };
+const debugSelectHTML = (id, opts, val) =>
   `<select id="${id}">${opts.map(([v, n]) => `<option value="${escapeHtml(v)}" ${String(v) === String(val) ? 'selected' : ''}>${escapeHtml(n)}</option>`).join('')}</select>`;
-const dbgBtn = (x, l, c = '') => `<button class="pb small ${c}" data-a="dbg" data-x="${x}">${l}</button>`;
-function dbgSpecies() {
+const debugButtonHTML = (x, l, c = '') => `<button class="pb small ${c}" data-a="dbg" data-x="${x}">${l}</button>`;
+function debugSpeciesOptions() {
   return DEX_ORDER.map(id => [id, `${String(SPECIES[id].no).padStart(3, '0')} ${SPECIES[id].name}`]);
 }
 function debugHTML() {
@@ -97,8 +97,8 @@ function debugHTML() {
     node = saveData.route.node;
   return `<div class="dbg">
  <p class="note">Changes apply to this save right away. Export a backup first if you might want to undo.</p>
- <details open><summary>Performance</summary><div class="dbg-row">${dbgBtn('fps', DBG.fps ? 'Hide FPS meter' : 'Show FPS meter')}<span class="note">Screen ≈ ${FRAME.hz} Hz · cap ${userFps()} FPS · battle quality level ${battleStage.q.lvl} (0 is best)</span><button class="pb small" data-a="quicktest">Full test</button><button class="pb small" data-a="dbglog">Export debug log</button></div>
-  <div class="dbg-row">${dbgBtn('q0', 'Force best quality')}${dbgBtn('qauto', 'Automatic quality')}</div>
+ <details open><summary>Performance</summary><div class="dbg-row">${debugButtonHTML('fps', debugMenu.fps ? 'Hide FPS meter' : 'Show FPS meter')}<span class="note">Screen ≈ ${FRAME.hz} Hz · cap ${userFps()} FPS · battle quality level ${battleStage.q.lvl} (0 is best)</span><button class="pb small" data-a="quicktest">Full test</button><button class="pb small" data-a="dbglog">Export debug log</button></div>
+  <div class="dbg-row">${debugButtonHTML('q0', 'Force best quality')}${debugButtonHTML('qauto', 'Automatic quality')}</div>
   ${
     DATA_WARN.length
       ? `<p class="note">Game data warnings (${DATA_WARN.length}):</p><ul class="dbg-warn">${DATA_WARN.slice(0, 30)
@@ -106,38 +106,38 @@ function debugHTML() {
           .join('')}</ul>`
       : '<p class="note">Game data loaded with no warnings.</p>'
   }</details>
- <details><summary>Wallet and steps</summary><div class="dbg-row">${dbgBtn('se1', '+$1,000')}${dbgBtn('se10', '+$10,000')}${dbgBtn('st1', '+1,000 steps')}${dbgBtn('st10', '+10,000 steps')}</div>
-  <div class="dbg-row">${dbgBtn('coins', '+10 of every coin')}${dbgBtn('items', '+5 of every item')}${dbgBtn('newday', 'Start a new day')}</div></details>
- <details><summary>Billies</summary><div class="dbg-row">${dbgSel('dbgSp', dbgSpecies(), uiState.dbgSp || DEX_ORDER[0])}<input id="dbgLv" type="number" min="1" max="${maxLevel()}" value="${uiState.dbgLv || 10}" aria-label="Level"><label class="dbg-ck"><input id="dbgGold" type="checkbox"> Golden</label></div>
-  <div class="dbg-row">${dbgBtn('give', 'Give it to me', 'gold')}${dbgBtn('enc', 'Add as encounter')}${dbgBtn('wild', 'Battle it now', 'red')}${dbgBtn('alpha', 'As an Alpha', 'red')}</div>
-  <div class="dbg-row">${dbgBtn('heal', 'Heal everyone')}${dbgBtn('lv5', 'Team +5 levels')}${dbgBtn('evo', 'Lead evolves now')}${dbgBtn('dex', 'Fill the Field Guide')}</div></details>
- <details><summary>Trainers and world</summary><div class="dbg-row">${dbgSel(
+ <details><summary>Wallet and steps</summary><div class="dbg-row">${debugButtonHTML('se1', '+$1,000')}${debugButtonHTML('se10', '+$10,000')}${debugButtonHTML('st1', '+1,000 steps')}${debugButtonHTML('st10', '+10,000 steps')}</div>
+  <div class="dbg-row">${debugButtonHTML('coins', '+10 of every coin')}${debugButtonHTML('items', '+5 of every item')}${debugButtonHTML('newday', 'Start a new day')}</div></details>
+ <details><summary>Billies</summary><div class="dbg-row">${debugSelectHTML('dbgSp', debugSpeciesOptions(), uiState.dbgSp || DEX_ORDER[0])}<input id="dbgLv" type="number" min="1" max="${maxLevel()}" value="${uiState.dbgLv || 10}" aria-label="Level"><label class="dbg-ck"><input id="dbgGold" type="checkbox"> Golden</label></div>
+  <div class="dbg-row">${debugButtonHTML('give', 'Give it to me', 'gold')}${debugButtonHTML('enc', 'Add as encounter')}${debugButtonHTML('wild', 'Battle it now', 'red')}${debugButtonHTML('alpha', 'As an Alpha', 'red')}</div>
+  <div class="dbg-row">${debugButtonHTML('heal', 'Heal everyone')}${debugButtonHTML('lv5', 'Team +5 levels')}${debugButtonHTML('evo', 'Lead evolves now')}${debugButtonHTML('dex', 'Fill the Field Guide')}</div></details>
+ <details><summary>Trainers and world</summary><div class="dbg-row">${debugSelectHTML(
    'dbgTr',
    Object.values(TRAINERS).map(T => [T.id, T.name]),
    ''
- )}${dbgBtn('trainer', 'Battle trainer', 'red')}${dbgBtn('trainer2', 'As a double battle', 'red')}</div>
-  <div class="dbg-row">${dbgSel(
+ )}${debugButtonHTML('trainer', 'Battle trainer', 'red')}${debugButtonHTML('trainer2', 'As a double battle', 'red')}</div>
+  <div class="dbg-row">${debugSelectHTML(
     'dbgNode',
     LOCATIONS.map((r, i) => [i, `${i}. ${r.name}`]),
     node
-  )}${dbgBtn('jump', 'Go there')}</div>
-  <div class="dbg-row">${dbgBtn('seats', 'Earn every badge')}${dbgBtn('flags', 'Reset trainer wins')}${dbgBtn('fillq', 'Fill encounter queue')}${dbgBtn('clearq', 'Clear queue')}</div></details>
+  )}${debugButtonHTML('jump', 'Go there')}</div>
+  <div class="dbg-row">${debugButtonHTML('seats', 'Earn every badge')}${debugButtonHTML('flags', 'Reset trainer wins')}${debugButtonHTML('fillq', 'Fill encounter queue')}${debugButtonHTML('clearq', 'Clear queue')}</div></details>
  <details ${uiState.bench && uiState.bench.test ? 'open' : ''}><summary>Test scenes</summary><p class="note">Small places that each show one tricky situation: stairs, ledges at the limits, bridges, water, shadows, every prop, slopes, the camera in tight spots, night lights, a dense forest, tiny and huge maps, traffic, and the light lab (v44: light on the land, in a room, on props, in the air — the places the quick check measures the lighting in). Checks test the walking rules there (what should and shouldn't be reachable).</p>
-  <div class="dbg-row">${dbgSel(
+  <div class="dbg-row">${debugSelectHTML(
     'dbgTest',
     testScenes().map(k => [k, (mapById(k).name || k).replace(/^Test: /, '')]),
     uiState.dbgTest || testScenes()[0] || ''
-  )}${dbgBtn('test', 'Go there')}${dbgBtn('testchk', 'Run its checks')}${uiState.bench && uiState.bench.test ? dbgBtn('untest', 'Back to the game', 'gold') : ''}</div>
+  )}${debugButtonHTML('test', 'Go there')}${debugButtonHTML('testchk', 'Run its checks')}${uiState.bench && uiState.bench.test ? debugButtonHTML('untest', 'Back to the game', 'gold') : ''}</div>
   ${uiState.testRes ? `<ul class="dbg-warn">${uiState.testRes.map(r => `<li>${r.ok ? '✓' : '✗'} ${escapeHtml(r.what)}${r.ok ? '' : ` (expected ${r.reach ? 'reachable' : 'not reachable'})`}</li>`).join('')}</ul>` : ''}</details>
- <details><summary>Eggs and jobs</summary><div class="dbg-row">${dbgSel(
+ <details><summary>Eggs and jobs</summary><div class="dbg-row">${debugSelectHTML(
    'dbgEgg',
    EGG_TIERS.map(t => [t, t + ' km']),
    EGG_TIERS[0]
- )}${dbgBtn('egg', 'Add egg')}${dbgBtn('hatch', 'Finish all incubators')}${dbgBtn('pay', 'Pay all jobs')}</div>
-  <div class="dbg-row">${dbgBtn('idle', 'Age storage by a day')}${dbgBtn('streak', 'Lead +3 win streak')}</div></details>
- <details ${inB ? 'open' : ''}><summary>Battle${inB ? '' : ' (start one first)'}</summary><div class="dbg-row">${dbgBtn('win', 'Win now', 'gold')}${dbgBtn('lose', 'Lose now')}${dbgBtn('foe1', 'Foe to 1 HP')}${dbgBtn('catch', uiState.dbgCatch ? 'Taxing works as normal' : 'Every throw taxes')}</div>
-  <div class="dbg-row">${[1, 2, 4].map(x => dbgBtn('speed' + x, `${x}× speed`, battleStage.speed === x ? 'dark' : '')).join('')}</div></details>
- <details><summary>Save</summary><div class="dbg-row">${dbgBtn('copy', 'Copy save as text')}${dbgBtn('export', 'Download backup')}${dbgBtn('wipe', 'Erase save', 'red')}</div></details>
+ )}${debugButtonHTML('egg', 'Add egg')}${debugButtonHTML('hatch', 'Finish all incubators')}${debugButtonHTML('pay', 'Pay all jobs')}</div>
+  <div class="dbg-row">${debugButtonHTML('idle', 'Age storage by a day')}${debugButtonHTML('streak', 'Lead +3 win streak')}</div></details>
+ <details ${inB ? 'open' : ''}><summary>Battle${inB ? '' : ' (start one first)'}</summary><div class="dbg-row">${debugButtonHTML('win', 'Win now', 'gold')}${debugButtonHTML('lose', 'Lose now')}${debugButtonHTML('foe1', 'Foe to 1 HP')}${debugButtonHTML('catch', uiState.dbgCatch ? 'Taxing works as normal' : 'Every throw taxes')}</div>
+  <div class="dbg-row">${[1, 2, 4].map(x => debugButtonHTML('speed' + x, `${x}× speed`, battleStage.speed === x ? 'dark' : '')).join('')}</div></details>
+ <details><summary>Save</summary><div class="dbg-row">${debugButtonHTML('copy', 'Copy save as text')}${debugButtonHTML('export', 'Download backup')}${debugButtonHTML('wipe', 'Erase save', 'red')}</div></details>
  </div>`;
 }
 function openDebug() {
@@ -151,7 +151,7 @@ function openDebug() {
     btns: [{ l: 'Close', c: 'quiet', f: closeModal }],
   });
 }
-function dbgRefresh(msg) {
+function refreshDebugMenu(msg) {
   if (msg) toast(msg);
   if (!activeBattle) render();
   const M = uiState.modal;
@@ -165,7 +165,7 @@ function dbgRefresh(msg) {
   }
 }
 function debugFps() {
-  if (!DBG.fps) return;
+  if (!debugMenu.fps) return;
   let el = $('#fpsMeter');
   if (!el) {
     el = document.createElement('div');
@@ -175,7 +175,7 @@ function debugFps() {
   const m = FRAME.meter;
   el.textContent = `${m.fps} fps · ${m.workAvg.toFixed(1)} ms${typeof gpuState !== 'undefined' && gpuState.gpuMs ? ' · GPU ' + gpuState.gpuMs.toFixed(1) + ' ms' : ''} · Q${battleStage.q.lvl} · ${FRAME.hz} Hz`;
 }
-function dbgAct(x) {
+function debugAction(x) {
   const v = id => {
       const e = $('#' + id);
       return e ? e.value : null;
@@ -188,23 +188,23 @@ function dbgAct(x) {
   }
   switch (x) {
     case 'fps':
-      DBG.fps = !DBG.fps;
-      if (!DBG.fps) {
+      debugMenu.fps = !debugMenu.fps;
+      if (!debugMenu.fps) {
         const e = $('#fpsMeter');
         if (e) e.remove();
       } else {
         if (!battleStage.on && !worldMap.on) frameTask('meter', () => frameCount(0));
         debugFps();
       }
-      return dbgRefresh();
+      return refreshDebugMenu();
     case 'q0':
       battleStage.lockQ = true;
       battleStage.q.lvl = 0;
       if (activeBattle) battleStageResize();
-      return dbgRefresh('Battle quality locked to best.');
+      return refreshDebugMenu('Battle quality locked to best.');
     case 'qauto':
       battleStage.lockQ = false;
-      return dbgRefresh('Battle quality adapts to frame time again.');
+      return refreshDebugMenu('Battle quality adapts to frame time again.');
     case 'se1':
       saveData.se += 1000;
       break;
@@ -213,10 +213,10 @@ function dbgAct(x) {
       break;
     case 'st1':
       addSteps(1000, true);
-      return dbgRefresh();
+      return refreshDebugMenu();
     case 'st10':
       addSteps(10000, true);
-      return dbgRefresh();
+      return refreshDebugMenu();
     case 'coins':
       Object.keys(COINS).forEach(k => (saveData.coins[k] = (saveData.coins[k] || 0) + 10));
       break;
@@ -230,7 +230,7 @@ function dbgAct(x) {
       const m = makeBilly(sp, lv, { gold: $('#dbgGold').checked });
       const w = addBilly(m);
       save();
-      return dbgRefresh(`${SPECIES[sp].name} joined your ${w === 'team' ? 'team' : 'storage'}.`);
+      return refreshDebugMenu(`${SPECIES[sp].name} joined your ${w === 'team' ? 'team' : 'storage'}.`);
     }
     case 'enc': {
       saveData.queue.push({ id: newUid(), sp, lvl: lv, gold: $('#dbgGold').checked, no: ++saveData.serial });
@@ -385,13 +385,15 @@ function dbgAct(x) {
       break;
     case 'catch':
       uiState.dbgCatch = !uiState.dbgCatch;
-      return dbgRefresh(uiState.dbgCatch ? 'Every throw taxes until you turn it off.' : 'Taxing is back to normal.');
+      return refreshDebugMenu(
+        uiState.dbgCatch ? 'Every throw taxes until you turn it off.' : 'Taxing is back to normal.'
+      );
     case 'speed1':
     case 'speed2':
     case 'speed4':
       battleStage.speed = +x.slice(5);
       uiState.dbgSpeed = battleStage.speed !== 1;
-      return dbgRefresh(`Battle speed ${battleStage.speed}×.`);
+      return refreshDebugMenu(`Battle speed ${battleStage.speed}×.`);
     case 'copy':
       navigator.clipboard &&
         navigator.clipboard.writeText(JSON.stringify(saveData)).then(
@@ -408,7 +410,7 @@ function dbgAct(x) {
       return;
   }
   save();
-  dbgRefresh('Done.');
+  refreshDebugMenu('Done.');
 }
 function settingsReset() {
   modal({
@@ -445,7 +447,7 @@ function settingsReset() {
 document.addEventListener('click', ev => {
   const el = ev.target.closest('[data-a]');
   if (!el) return;
-  if (el.dataset.a === 'dbg') dbgAct(el.dataset.x);
+  if (el.dataset.a === 'dbg') debugAction(el.dataset.x);
   else if (el.dataset.a === 'debug') openDebug();
 });
 document.addEventListener('keydown', ev => {
@@ -455,7 +457,7 @@ document.addEventListener('keydown', ev => {
     else openDebug();
   }
 });
-if (DBG.on)
+if (debugMenu.on)
   addEventListener('load', () => {
     const b = document.createElement('button');
     b.className = 'dbg-fab';
