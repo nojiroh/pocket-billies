@@ -1092,7 +1092,7 @@ def desktop_steps(b, base, R):
         if still: raise Exception(f'pieces that never move: {still}')
         weak = [k for k, v in au.items() if not v or not any(n.startswith('leg') and (v['poses']['walk'].get(n, 0) > .5) for n in v['bones']) or v['poses']['hurt'].get('head', 0) < .5]
         if weak: raise Exception(f'walk or hurt leaves legs/head still for {weak}')
-        plans = pg.evaluate("Object.keys(ANIM).length")
+        plans = pg.evaluate("Object.keys(POSES_BY_PLAN).length")
         out.append(f"motion audit: every piece moves, legs walk and heads flinch on all 12; {plans} body plans")
         # split evolution: the middle stage goes to A on kilometres, to B on wins
         e = json.loads(pg.evaluate("""(()=>{const a=makeBilly('musk1',32);a.bsteps=4000;a.wins=1;const b=makeBilly('musk1',32);b.wins=5;b.bsteps=100;const ra=canEvolve(a),pa=splitPath(a),pb=splitPath(b);evolve(a);evolve(b);return JSON.stringify({ra,pa,pb,a:a.sp,b:b.sp,hint:evolutionHint(makeBilly('musk1',20))})})()"""))

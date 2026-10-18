@@ -6,15 +6,15 @@
 import { expose } from './test-globals.js';
 /* eslint-disable no-func-assign */
 expose({
-  ANIM: [() => ANIM],
-  OCTO_XS: [() => OCTO_XS],
-  WALK: [() => WALK],
+  OCTOPUS_LEG_XS: [() => OCTOPUS_LEG_XS],
+  POSES_BY_PLAN: [() => POSES_BY_PLAN],
+  WALKS_BY_PLAN: [() => WALKS_BY_PLAN],
   animFor: [() => animFor, v => (animFor = v)],
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
-const OCTO_XS = [-0.78, -0.48, -0.16, 0.16, 0.48, 0.78];
-export const ANIM = {
+const OCTOPUS_LEG_XS = [-0.78, -0.48, -0.16, 0.16, 0.48, 0.78];
+export const POSES_BY_PLAN = {
   biped(P, q) {
     const lift = q.lift || 0,
       A = {
@@ -135,7 +135,7 @@ export const ANIM = {
         let r = Math.sin(P.t / 640 + i * 1.7 + j * 0.9 + P.seed) * 0.2 * (j + 1) * 0.6 * (1 - fall * 0.7);
         if (i <= 1) r += P.aL * (j === 0 ? 0.35 : 0.25) * (i === 0 ? 1 : 0.6);
         if (i >= 4) r += P.aR * 0.25;
-        if (fall) r += (OCTO_XS[i] < 0 ? -1 : 1) * fall * 0.5 * (j === 0 ? 1 : 0.3);
+        if (fall) r += (OCTOPUS_LEG_XS[i] < 0 ? -1 : 1) * fall * 0.5 * (j === 0 ? 1 : 0.3);
         A['t' + i + j] = { r };
       }
     return A;
@@ -259,7 +259,7 @@ export const ANIM = {
 /* v34: the walk per body plan, seen from the front or the back (no side views): two-legged ones lift a foot at a
    time, four-legged ones move their legs in diagonal pairs, fliers flap harder, fish swish, snakes and worms ripple,
    octopuses stride on their tentacles, blobs bounce, shelled ones scuttle */
-const WALK = {
+const WALKS_BY_PLAN = {
   biped(A, P) {
     const s = Math.sin(P.wk),
       u = Math.max(0, s),
@@ -365,8 +365,8 @@ const WALK = {
   },
 };
 export function animFor(plan, q) {
-  const f = ANIM[plan],
-    w = WALK[plan];
+  const f = POSES_BY_PLAN[plan],
+    w = WALKS_BY_PLAN[plan];
   return (P, back) => {
     const A = f(P, q);
     if (w && P.wk != null) w(A, P, q);

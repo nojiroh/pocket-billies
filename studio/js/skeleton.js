@@ -8,7 +8,7 @@ import { expose } from '../../game/js/test-globals.js';
 import { provide } from '../../game/js/hooks.js';
 import { $, $$, clamp } from '../../game/js/util.js';
 import { hexToRgb, makeCanvas, shadeHex } from '../../game/js/art.js';
-import { ANIM } from '../../game/js/body-plan-animation.js';
+import { POSES_BY_PLAN } from '../../game/js/body-plan-animation.js';
 import { drawRig, rigAudit, rigMatrices, rigPose } from '../../game/js/skeleton-rig.js';
 import { escapeHtml } from './game-stand-ins.js';
 import {
@@ -191,7 +191,7 @@ const ROLE_HELP = {
 };
 function planRoles(plan, q) {
   try {
-    return Object.keys(ANIM[plan](neutralPose(), q || {})).sort();
+    return Object.keys(POSES_BY_PLAN[plan](neutralPose(), q || {})).sort();
   } catch (e) {
     return [];
   }
@@ -783,7 +783,7 @@ function skeletonSidePanel() {
     }
   } catch (e) {}
   h += `<div class="px-sec"><h4>Body plan</h4><label class="fld"><span>How it moves</span><select id="skPlan">${Object.keys(
-    ANIM
+    POSES_BY_PLAN
   )
     .map(k => `<option value="${k}" ${meta.plan === k ? 'selected' : ''}>${k} · ${PLAN_INFO[k] || ''}</option>`)
     .join('')}</select></label>
