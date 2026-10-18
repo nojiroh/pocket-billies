@@ -1095,7 +1095,7 @@ def desktop_steps(b, base, R):
         plans = pg.evaluate("Object.keys(ANIM).length")
         out.append(f"motion audit: every piece moves, legs walk and heads flinch on all 12; {plans} body plans")
         # split evolution: the middle stage goes to A on kilometres, to B on wins
-        e = json.loads(pg.evaluate("""(()=>{const a=makeBilly('musk1',32);a.bsteps=4000;a.wins=1;const b=makeBilly('musk1',32);b.wins=5;b.bsteps=100;const ra=evoReady(a),pa=splitPath(a),pb=splitPath(b);evolve(a);evolve(b);return JSON.stringify({ra,pa,pb,a:a.sp,b:b.sp,hint:evoHint(makeBilly('musk1',20))})})()"""))
+        e = json.loads(pg.evaluate("""(()=>{const a=makeBilly('musk1',32);a.bsteps=4000;a.wins=1;const b=makeBilly('musk1',32);b.wins=5;b.bsteps=100;const ra=canEvolve(a),pa=splitPath(a),pb=splitPath(b);evolve(a);evolve(b);return JSON.stringify({ra,pa,pb,a:a.sp,b:b.sp,hint:evolutionHint(makeBilly('musk1',20))})})()"""))
         if not (e['ra'] and e['a'] == 'musk2' and e['b'] == 'musk3'): raise Exception(f'split evolution: {e}')
         out.append(f"split at 32: Build → Marsox, Hype → Memeox (“{e['hint'][:60]}…”)")
         # a battle with the new starter on the 3D stage: the player's rig buffer has pixels

@@ -44,15 +44,15 @@ import {
   billyName,
   blockerAt,
   canEnter,
+  canEvolve,
   canRide,
   cleanName,
   collectJob,
   eggSlotCount,
   endShift,
   escapeHtml,
-  evoHint,
-  evoItemName,
-  evoReady,
+  evolutionHint,
+  evolutionItemName,
   evolve,
   findBilly,
   flushSave,
@@ -235,9 +235,8 @@ expose({
   encCard: [() => encCard, v => (encCard = v)],
   enterRoom: [() => enterRoom, v => (enterRoom = v)],
   envLine: [() => envLine, v => (envLine = v)],
-  evoMethod: [() => evoMethod, v => (evoMethod = v)],
-  evoModal: [() => evoModal, v => (evoModal = v)],
-  evoRun: [() => evoRun, v => ((evoRun = v), provide({ evoRun }))],
+  evolutionMethod: [() => evolutionMethod, v => (evolutionMethod = v)],
+  evolutionModal: [() => evolutionModal, v => (evolutionModal = v)],
   exitPrompt: [() => exitPrompt, v => (exitPrompt = v)],
   genderModal: [() => genderModal, v => (genderModal = v)],
   guideTabs: [() => guideTabs, v => (guideTabs = v)],
@@ -281,6 +280,7 @@ expose({
   roomRefresh: [() => roomRefresh, v => ((roomRefresh = v), provide({ roomRefresh }))],
   roomState: [() => roomState, v => (roomState = v)],
   roomStepIn: [() => roomStepIn, v => (roomStepIn = v)],
+  runEvolution: [() => runEvolution, v => ((runEvolution = v), provide({ runEvolution }))],
   sceneExits: [() => sceneExits, v => ((sceneExits = v), provide({ sceneExits }))],
   sceneExitsByBearing: [() => sceneExitsByBearing, v => (sceneExitsByBearing = v)],
   sceneIdAt: [() => sceneIdAt, v => ((sceneIdAt = v), provide({ sceneIdAt }))],
@@ -312,13 +312,13 @@ expose({
 provide({
   bar,
   closeModal,
-  evoRun,
   modal,
   paintMapCard,
   postProcess,
   render,
   renderOv,
   roomRefresh,
+  runEvolution,
   sceneExits,
   sceneIdAt,
   settings,
@@ -423,8 +423,8 @@ export function postProcess() {
     }
     return postProcess();
   }
-  const m = allBillies().find(evoReady);
-  if (m) evoModal(m);
+  const m = allBillies().find(canEvolve);
+  if (m) evolutionModal(m);
 }
 function genderModal() {
   modal({
@@ -452,7 +452,7 @@ function learnModal(m, mv) {
       .concat([{ l: `Don’t learn ${M.n}`, c: 'quiet', f: closeModal }]),
   });
 }
-function evoModal(m) {
+function evolutionModal(m) {
   const s = SP[m.sp],
     e = s.evo;
   const why =
@@ -469,7 +469,7 @@ function evoModal(m) {
     html: `<p>${why} Something bigger is coming.</p>`,
     lock: 1,
     btns: [
-      { l: 'Let it evolve', c: 'dark', f: () => evoRun(m) },
+      { l: 'Let it evolve', c: 'dark', f: () => runEvolution(m) },
       {
         l: 'Not yet',
         c: 'quiet',
@@ -482,7 +482,7 @@ function evoModal(m) {
     ],
   });
 }
-function evoRun(m, note) {
+function runEvolution(m, note) {
   const from = SP[m.sp],
     to = SP[from.evo && from.evo.k === 'split' && from.alt && splitPath(m) === 'B' ? from.alt : from.next],
     fromName = billyName(m);
@@ -2007,7 +2007,7 @@ function renderLedger() {
      .join('') || '<li class="lempty">No entries match.</li>'
  }</ol>`;
 }
-function evoMethod(e) {
+function evolutionMethod(e) {
   if (!e) return '';
   switch (e.k) {
     case 'lvl':
@@ -2017,7 +2017,7 @@ function evoMethod(e) {
     case 'buddy':
       return `Walk ${stepsToKm(e.steps)} km as buddy`;
     case 'item':
-      return `${evoItemName(e)} at Lv ${e.min}`;
+      return `${evolutionItemName(e)} at Lv ${e.min}`;
     case 'donate':
       return `Give away ${e.n} items`;
     case 'merge':
@@ -2063,7 +2063,7 @@ function renderDexEntry(id) {
       const sid = L.id + st,
         sn = saveData.seen[sid],
         prev = L.split && st === 3 ? L.id + '1' : L.id + (st - 1);
-      return `${st ? `<span class="evarrow"><i>→</i><small>${escapeHtml(L.split && st >= 2 ? (st === 2 ? 'Build path' : 'Hype path') : evoMethod(SP[prev].evo))}</small></span>` : ''}<button class="evnode${sid === id ? ' cur' : ''}" data-a="dex" data-s="${sid}" ${sn ? '' : 'disabled'}>${sn ? rigCanvasHTML(sid, 44) : rigCanvasHTML(sid, 44, { sil: 1, still: 1 })}<small>${sn ? escapeHtml(n) : '???'}</small></button>`;
+      return `${st ? `<span class="evarrow"><i>→</i><small>${escapeHtml(L.split && st >= 2 ? (st === 2 ? 'Build path' : 'Hype path') : evolutionMethod(SP[prev].evo))}</small></span>` : ''}<button class="evnode${sid === id ? ' cur' : ''}" data-a="dex" data-s="${sid}" ${sn ? '' : 'disabled'}>${sn ? rigCanvasHTML(sid, 44) : rigCanvasHTML(sid, 44, { sil: 1, still: 1 })}<small>${sn ? escapeHtml(n) : '???'}</small></button>`;
     })
     .join('');
   const bg = TC[s.types[0]][0],
@@ -2082,7 +2082,7 @@ function renderDexEntry(id) {
     .join('')}</div>
   <section class="paper px notes"><h3>Field notes</h3>${got ? `<p>${escapeHtml(s.blurb)}</p><p class="hand red">${escapeHtml(s.note)}</p>` : `<p>${escapeHtml(s.blurb.split('. ')[0])}. <span class="redact">██████ ████ ███████ ██</span></p><p class="hand">Tax one to complete this entry.</p>`}</section>
   <section class="paper px"><h3>Base stats</h3>${got ? `<table class="bsheet"><tbody>${STATK.map((k, i) => `<tr><td>${STATN[k]}</td><td class="tnum">${s.base[i]}</td><td><span class="bbar" style="--w:${((s.base[i] / mx) * 100).toFixed(0)}%"></span></td></tr>`).join('')}<tr class="tot"><td>Total</td><td class="tnum">${tot}</td><td></td></tr></tbody></table>` : `<p class="note">Tax one to see its stats.</p>`}</section>
-  <section class="paper px lin"><h3>Evolution</h3><div class="chain">${chain}</div><p class="note">${escapeHtml(evoHint({ sp: id, lvl: 0, bsteps: 0 }))}</p></section>
+  <section class="paper px lin"><h3>Evolution</h3><div class="chain">${chain}</div><p class="note">${escapeHtml(evolutionHint({ sp: id, lvl: 0, bsteps: 0 }))}</p></section>
   <section class="paper px"><h3>Type matchups</h3><table class="expo"><tbody><tr><td>Strong against</td><td>${strong.map(chip).join('') || '—'}</td></tr><tr><td>Weak to</td><td>${weak.map(chip).join('') || '—'}</td></tr><tr><td>Resists</td><td>${res.map(chip).join('') || '—'}</td></tr></tbody></table></section>
   <section class="paper px"><h3>Where to look</h3><table class="expo"><tbody><tr><td>Found at</td><td>${where.length ? escapeHtml(where.join(', ')) : 'Not found in the wild'}</td></tr><tr><td>Hatches from</td><td>${eggs.length ? escapeHtml(eggs.join(', ')) : '—'}</td></tr><tr><td>Tracks</td><td>${escapeHtml(TRACKS[D.plan] || 'Unremarkable')}</td></tr></tbody></table></section>
   ${got ? `<div class="sig"><span class="sigline">${escapeHtml(s.name)}</span><small>Recorded by Professor Hazel.</small></div>` : ''}
@@ -2178,7 +2178,7 @@ function billySheet(m) {
       m.nick = nn;
       save();
       if (changed && e && e.k === 'rename' && m.lvl >= e.min) {
-        evoRun(m, 'It loves its new name.');
+        runEvolution(m, 'It loves its new name.');
         return;
       }
       closeModal();
@@ -2268,7 +2268,7 @@ function billySheet(m) {
       dis: !have,
       f: () => {
         saveData.items[ik]--;
-        evoRun(m, `The ${I.n} began to glow.`);
+        runEvolution(m, `The ${I.n} began to glow.`);
       },
     });
   }
@@ -2284,7 +2284,7 @@ function billySheet(m) {
         m.donated = (m.donated || 0) + 1;
         save();
         if (m.donated >= e.n && m.lvl >= e.min) {
-          evoRun(m, 'Its kindness paid off.');
+          runEvolution(m, 'Its kindness paid off.');
           return;
         }
         toast(`${billyName(m)} gave away a ${ITEMS[it].n}. ${m.donated} of ${e.n}.`);
@@ -2315,7 +2315,7 @@ function billySheet(m) {
                 saveData.team = saveData.team.filter(x => x !== other);
                 saveData.box = saveData.box.filter(x => x !== other);
                 if (saveData.buddy === other.uid) saveData.buddy = m.uid;
-                evoRun(m, 'The two became one.');
+                runEvolution(m, 'The two became one.');
               },
             },
             { l: 'Cancel', c: 'quiet', f: closeModal },
@@ -2379,7 +2379,7 @@ function billySheet(m) {
       return `<div class="mvi"><div class="mh"><span>${M.n}</span>${chip(M.t)}</div><div class="md">${M.p ? `${M.p} power, ${M.a}% accuracy. ` : ''}${M.d}</div></div>`;
     })
     .join('')}</div></div>
-  <div class="ms-pane" data-k="evo" hidden>${evo ? `<div class="ms-line">${evo}</div>` : ''}<p class="note">${escapeHtml(evoHint(m))}</p></div>`,
+  <div class="ms-pane" data-k="evo" hidden>${evo ? `<div class="ms-line">${evo}</div>` : ''}<p class="note">${escapeHtml(evolutionHint(m))}</p></div>`,
     nick,
     btns: [{ l: 'Close', c: 'quiet', f: closeModal }],
   });

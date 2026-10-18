@@ -60,6 +60,7 @@ expose({
   billyName: [() => billyName],
   blockerAt: [() => blockerAt, v => (blockerAt = v)],
   canEnter: [() => canEnter],
+  canEvolve: [() => canEvolve, v => (canEvolve = v)],
   canLeave: [() => canLeave],
   canRide: [() => canRide],
   cleanName: [() => cleanName],
@@ -69,9 +70,8 @@ expose({
   emptyJob: [() => emptyJob],
   endShift: [() => endShift, v => (endShift = v)],
   escapeHtml: [() => escapeHtml],
-  evoHint: [() => evoHint, v => (evoHint = v)],
-  evoItemName: [() => evoItemName],
-  evoReady: [() => evoReady, v => (evoReady = v)],
+  evolutionHint: [() => evolutionHint, v => (evolutionHint = v)],
+  evolutionItemName: [() => evolutionItemName],
   evolve: [() => evolve, v => (evolve = v)],
   findBilly: [() => findBilly],
   flushSave: [() => flushSave, v => (flushSave = v)],
@@ -482,7 +482,7 @@ export function gainXp(m, amt, say) {
     }
   }
 }
-export function evoReady(m) {
+export function canEvolve(m) {
   const e = SP[m.sp].evo;
   if (!e) return false;
   if (m.evoNo != null && m.lvl <= m.evoNo) return false;
@@ -500,8 +500,8 @@ export function evoReady(m) {
       return false;
   }
 }
-export const evoItemName = e => (ITEMS[e.item || 'bell'] ? ITEMS[e.item || 'bell'].n : 'Shining Stone');
-export function evoHint(m) {
+export const evolutionItemName = e => (ITEMS[e.item || 'bell'] ? ITEMS[e.item || 'bell'].n : 'Shining Stone');
+export function evolutionHint(m) {
   const s = SP[m.sp],
     e = s.evo;
   if (!e) return s.rar === 'mythical' ? 'Does not evolve.' : 'Fully evolved.';
@@ -518,7 +518,7 @@ export function evoHint(m) {
     case 'buddy':
       return `Evolves after you walk ${stepsToKm(e.steps)} km with it as your buddy. ${stepsToKm(m.bsteps || 0)} of ${stepsToKm(e.steps)} km so far.`;
     case 'item':
-      return `Evolves when you use ${/^[AEIOU]/.test(evoItemName(e)) ? 'an' : 'a'} ${evoItemName(e)}, once it reaches level ${e.min}.`;
+      return `Evolves when you use ${/^[AEIOU]/.test(evolutionItemName(e)) ? 'an' : 'a'} ${evolutionItemName(e)}, once it reaches level ${e.min}.`;
     case 'donate':
       return `Evolves after it gives away ${e.n} items, once it reaches level ${e.min}. ${m.donated || 0} of ${e.n} given.`;
     case 'merge':

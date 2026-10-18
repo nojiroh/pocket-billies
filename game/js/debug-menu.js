@@ -4,7 +4,17 @@
    Everything here edits the current save directly; use Export first if you want a way back. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { closeModal, evoRun, modal, provide, render, renderOv, stSceneChecks, testScenes, toast } from './hooks.js';
+import {
+  closeModal,
+  modal,
+  provide,
+  render,
+  renderOv,
+  runEvolution,
+  stSceneChecks,
+  testScenes,
+  toast,
+} from './hooks.js';
 import { $, $$, clamp } from './util.js';
 import { COINS, DATA_WARN, DEX, EGGS, EGG_TIERS, ITEMS, ROUTE, RULES, SP, TRAINERS } from './game-data.js';
 import {
@@ -234,7 +244,7 @@ function dbgAct(x) {
       const m = saveData.team[0];
       if (!m || !SP[m.sp].next) return toast('Your lead doesn’t evolve.');
       closeModal();
-      evoRun(m, 'Debug menu. Nobody saw anything.');
+      runEvolution(m, 'Debug menu. Nobody saw anything.');
       return;
     }
     case 'dex':
