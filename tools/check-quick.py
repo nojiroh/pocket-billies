@@ -502,7 +502,7 @@ def wait_phase(pg, want=('choose',), sec=60):
 
 
 def play(pg):
-    pg.evaluate("if(typeof titleEnd==='function')titleEnd();uiState.pg='girl';startGame(SPECIES.scoop0?'scoop':RULES.start.starters[0]);saveData.story={met_chad:1,met_chad2:1,copperleafNote:1};Object.values(TRAINERS).forEach(T=>{if(T.intro)saveData.story['met_'+T.id]=1});uiState.modal=null;uiState.mq=[];renderOverlay();saveData.team.push(makeBilly('ek1',18));addSteps(2400,true);uiState.toastQ=[];uiState.toastOn=false;uiState.modal=null;uiState.mq=[];renderOverlay();render();0")
+    pg.evaluate("if(typeof titleEnd==='function')titleEnd();uiState.pg='girl';startGame(SPECIES.scoop0?'scoop':RULES.start.starters[0]);saveData.story={met_chad:1,met_chad2:1,copperleafNote:1};Object.values(TRAINERS).forEach(T=>{if(T.intro)saveData.story['met_'+T.id]=1});uiState.modal=null;uiState.mq=[];renderOverlay();saveData.team.push(makeBilly('swift1',18));addSteps(2400,true);uiState.toastQ=[];uiState.toastOn=false;uiState.modal=null;uiState.mq=[];renderOverlay();render();0")
     # alpha 0.2: the legendaries count as met today, so passing through their places doesn't leave one waiting in a later
     # step (the v39 step brings the volcano's back on purpose)
     pg.evaluate("for(const l of (RULES.legends||[]))saveData.story['legend_'+l.sp]=today();0")
@@ -1982,7 +1982,7 @@ def desktop_steps(b, base, R):
         shot(pg, 'battle-3d'); stage = pg.evaluate("!!battleStage.gl")
         pg.evaluate("stopTimers();activeBattle=null;battleStageStop();saveData.preferences.battleStage='classic';render();0")
         # battle animations at four times the speed (the Debug panel's speed setting), so the result comes quickly
-        pg.evaluate("battleStage.speed=4;saveData.team=[makeBilly('musk2',45),makeBilly('ek1',30)];saveData.trip.node=4;startTrainer('crude');0")
+        pg.evaluate("battleStage.speed=4;saveData.team=[makeBilly('musk2',45),makeBilly('swift1',30)];saveData.trip.node=4;startTrainer('crude');0")
         end = time.time() + 300; won = None
         while time.time() < end:
             ph = wait_phase(pg, ('choose', 'switch', 'end'), 30)
