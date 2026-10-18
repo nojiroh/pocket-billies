@@ -22,8 +22,7 @@ import { worldMapGl } from './world-map-gl.js';
 import { sfx } from './sound.js';
 /* eslint-disable no-func-assign */
 expose({
-  FLY: [() => FLY],
-  LIFT: [() => LIFT],
+  airshipFlight: [() => airshipFlight],
   flyDraw: [() => flyDraw, v => ((flyDraw = v), provide({ flyDraw }))],
   flyFare: [() => flyFare, v => (flyFare = v)],
   flyGo: [() => flyGo, v => (flyGo = v)],
@@ -32,12 +31,13 @@ expose({
   flySkip: [() => flySkip, v => (flySkip = v)],
   flyTick: [() => flyTick, v => ((flyTick = v), provide({ flyTick }))],
   flyTowns: [() => flyTowns, v => (flyTowns = v)],
-  liftGo: [() => liftGo, v => (liftGo = v)],
+  rideSkyLift: [() => rideSkyLift, v => (rideSkyLift = v)],
+  skyLift: [() => skyLift],
 });
 /* eslint-enable no-func-assign */
 provide({ flyDraw, flyTick });
 /* to-module: end */
-export const FLY = { on: false, a: -1, b: -1, t0: 0, dur: 0, lastX: null, dir: 1 };
+export const airshipFlight = { on: false, a: -1, b: -1, t0: 0, dur: 0, lastX: null, dir: 1 };
 /* where the airships go from here: the towns you've been to (and may enter), nearest first */
 function flyTowns() {
   const here = S.route.node;
@@ -59,7 +59,7 @@ function flyFare(a, b) {
   return Math.max(60, Math.round((60 + d * 6) / 10) * 10);
 }
 export function flyMenu(p) {
-  if (FLY.on || !S.started) return;
+  if (airshipFlight.on || !S.started) return;
   const L = flyTowns(),
     here = S.route.node;
   const rows = L.map(i => {
@@ -79,7 +79,7 @@ export function flyMenu(p) {
 /* buy the ticket and go: you are at the other end at once (a reload mid-flight lands you there), the flight is the
    show on the way */
 function flyGo(i) {
-  if (FLY.on || !ROUTE[i]) return;
+  if (airshipFlight.on || !ROUTE[i]) return;
   const a = S.route.node,
     f = flyFare(a, i);
   if (S.se < f) {
@@ -103,7 +103,7 @@ function flyGo(i) {
   closeModal();
   if (typeof NWLOG !== 'undefined') NWLOG.add('scene', `airship ${ROUTE[a].id} to ${ROUTE[i].id} ($${f})`);
   const d = Math.acos(clamp(vector3.dot(LOCATION_VECTORS[a], LOCATION_VECTORS[i]), -1, 1)) / RADIANS_PER_DEGREE;
-  Object.assign(FLY, {
+  Object.assign(airshipFlight, {
     on: true,
     a,
     b: i,
@@ -143,13 +143,13 @@ function flyGo(i) {
 }
 /* the map loops ask this each frame while flying: where the airship is (worldMap.me follows it, so the camera does) */
 function flyTick(ts) {
-  if (!FLY.on || !worldMap.fly) return false;
-  const k = clamp((ts - FLY.t0) / FLY.dur, 0, 1),
+  if (!airshipFlight.on || !worldMap.fly) return false;
+  const k = clamp((ts - airshipFlight.t0) / airshipFlight.dur, 0, 1),
     e = k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
   worldMap.me = vector3.norm(slerp(worldMap.fly.a, worldMap.fly.b, e));
   worldMap.face = 'up';
   worldMap.dirty = true;
-  FLY.k = k;
+  airshipFlight.k = k;
   if (k >= 1) {
     flyLand();
     return false;
@@ -158,7 +158,7 @@ function flyTick(ts) {
 }
 /* drawn instead of you on the map: the airship, lifted above the ground on an arc, its shadow on the land, the way behind */
 function flyDraw(c, t, proj) {
-  const k = FLY.k || 0,
+  const k = airshipFlight.k || 0,
     g = worldMap.me,
     H = 0.05 * Math.sin(Math.PI * Math.min(1, k * 1.15)),
     lift = vector3.mul(g, 1 - H),
@@ -190,8 +190,9 @@ function flyDraw(c, t, proj) {
     c.ellipse(qg.x, qg.y, 14, 4, 0, 0, 7);
     c.fill();
   }
-  if (FLY.lastX != null && Math.abs(q.x - FLY.lastX) > 0.3) FLY.dir = q.x < FLY.lastX ? -1 : 1;
-  FLY.lastX = q.x;
+  if (airshipFlight.lastX != null && Math.abs(q.x - airshipFlight.lastX) > 0.3)
+    airshipFlight.dir = q.x < airshipFlight.lastX ? -1 : 1;
+  airshipFlight.lastX = q.x;
   const im = typeof artImage === 'function' ? artImage('map/airship.png') : null,
     bob = Math.sin(t / 420) * 1.5;
   if (im && imageReady(im)) {
@@ -201,7 +202,7 @@ function flyDraw(c, t, proj) {
     c.imageSmoothingEnabled = false;
     c.save();
     c.translate(Math.round(q.x), Math.round(q.y + bob));
-    c.scale(FLY.dir < 0 ? -s : s, s);
+    c.scale(airshipFlight.dir < 0 ? -s : s, s);
     c.drawImage(im, -w / 2, -h);
     c.restore();
   } else {
@@ -215,17 +216,17 @@ function flyDraw(c, t, proj) {
 }
 /* landing: the walk screen in the new town, standing by its mast */
 function flyLand() {
-  if (!FLY.on || FLY.wait) return;
+  if (!airshipFlight.on || airshipFlight.wait) return;
   /* phase 04b: you land by the mast, which is in the town's own map file */
-  if (typeof sceneLite === 'function' && sceneLite(sceneIdAt(FLY.b))) {
-    FLY.wait = sceneLoad(sceneIdAt(FLY.b)).then(() => {
-      FLY.wait = null;
+  if (typeof sceneLite === 'function' && sceneLite(sceneIdAt(airshipFlight.b))) {
+    airshipFlight.wait = sceneLoad(sceneIdAt(airshipFlight.b)).then(() => {
+      airshipFlight.wait = null;
       flyLand();
     });
     return;
   }
-  const b = FLY.b;
-  FLY.on = false;
+  const b = airshipFlight.b;
+  airshipFlight.on = false;
   worldMap.fly = null;
   worldMap.me = LOCATION_VECTORS[b];
   worldMap.anim = null;
@@ -252,8 +253,8 @@ function flyLand() {
   if (typeof sfx === 'function') sfx('pop');
 }
 function flySkip() {
-  if (FLY.on) {
-    FLY.t0 = performance.now() - FLY.dur;
+  if (airshipFlight.on) {
+    airshipFlight.t0 = performance.now() - airshipFlight.dur;
     worldMap.dirty = true;
   }
 }
@@ -269,7 +270,7 @@ document.addEventListener(
       else flyGo(+el.dataset.n);
       return;
     }
-    if (FLY.on && ev.target.closest && ev.target.closest('.map-full,#flycap')) {
+    if (airshipFlight.on && ev.target.closest && ev.target.closest('.map-full,#flycap')) {
       ev.stopPropagation();
       flySkip();
     }
@@ -281,9 +282,9 @@ document.addEventListener(
    Kelpport's harbour and Pearlantis City, at the bottom of the trench, are joined by a glass lift and nothing else (no
    road, no airship). A prop with act 'lift' and to: '<place id>' takes you there: the screen sinks into blue water (or
    rises into the light), and you step out beside the lift at the other end. Free, as lifts should be. */
-export const LIFT = { on: false };
-export function liftGo(p) {
-  if (LIFT.on || !S.started || !p) return;
+export const skyLift = { on: false };
+export function rideSkyLift(p) {
+  if (skyLift.on || !S.started || !p) return;
   const to = PLACE[p.to];
   if (!to) {
     toast('The lift isn’t working.');
@@ -292,7 +293,7 @@ export function liftGo(p) {
   const i = to.node,
     a = S.route.node,
     down = !!ROUTE[i].noFly;
-  LIFT.on = true;
+  skyLift.on = true;
   const cv = document.createElement('div');
   cv.className = 'lift-veil' + (down ? ' down' : ' up');
   cv.innerHTML = `<div class="lift-cap glass"><small>Glass lift</small><b>${down ? 'Down to' : 'Up to'} ${esc(ROUTE[i].name)}</b><span class="note">${down ? 'Kelp, then dark water, then the lights of the dome.' : 'Up past the kelp, into the light.'}</span></div>`;
@@ -334,7 +335,7 @@ export function liftGo(p) {
       cv.classList.remove('in');
       setTimeout(() => {
         cv.remove();
-        LIFT.on = false;
+        skyLift.on = false;
       }, 700);
       toast(`${ROUTE[i].name}.`);
       if (typeof sfx === 'function') sfx('pop');

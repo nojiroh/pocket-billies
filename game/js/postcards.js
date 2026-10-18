@@ -14,7 +14,7 @@ import { flagPicturePath, mapById, walkView } from './walk-view.js';
 import { sfx } from './sound.js';
 import { TALK } from './talk.js';
 import { CS } from './cutscene.js';
-import { FLY } from './airship.js';
+import { airshipFlight } from './airship.js';
 /* eslint-disable no-func-assign */
 expose({
   PC: [() => PC],
@@ -91,7 +91,7 @@ export function postcardCheck() {
     (typeof TALK !== 'undefined' && TALK.on) ||
     (typeof CS !== 'undefined' && CS.on) ||
     (typeof STEST !== 'undefined' && STEST.on) ||
-    (typeof FLY !== 'undefined' && FLY.on)
+    (typeof airshipFlight !== 'undefined' && airshipFlight.on)
   ) {
     PC.calm = 0;
     return;
