@@ -11,7 +11,7 @@ import { CS, provide, sceneIdAt } from './hooks.js';
 import { clamp } from './util.js';
 import { ROUTE } from './game-data.js';
 import { B, S, U } from './game-state.js';
-import { SC } from './battle-stage.js';
+import { battleStage } from './battle-stage.js';
 import { baseMapId, bridgeAt, mapBridges, mapById, stepWallAt, terrainAt, walkData, walkView } from './walk-view.js';
 import { ENV, envHour, envState } from './environment.js';
 import { walkRenderer } from './walk-view-gl.js';
@@ -987,13 +987,13 @@ export function sfx(name, o = {}) {
 /* battle animations make their sounds */
 function sfxBattle(an, r) {
   if (!an || !AUD.ctx) return;
-  const at = (ms, f) => setTimeout(f, Math.max(0, ms / (typeof SC !== 'undefined' ? SC.speed : 1)));
+  const at = (ms, f) => setTimeout(f, Math.max(0, ms / (typeof battleStage !== 'undefined' ? battleStage.speed : 1)));
   switch (an.k) {
     case 'wild':
       sfx('enc');
       break;
     case 'cry': {
-      const s = typeof SC !== 'undefined' && SC.s[an.si || 1];
+      const s = typeof battleStage !== 'undefined' && battleStage.s[an.si || 1];
       sfx('cry', { sp: s && s.sp });
       break;
     }

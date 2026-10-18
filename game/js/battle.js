@@ -73,7 +73,7 @@ import { KBACK, bustHTML, rigPreload } from './skeleton-rig.js';
 import {
   AREAS,
   EASE,
-  SC,
+  battleStage,
   camAt,
   scCatch,
   scFocus,
@@ -1194,7 +1194,7 @@ function battleLayoutChanged(L) {
     bl.style.width = bl.style.height = s + 'px';
     bl.style.left = L.fx + 162 * L.u - s / 2 + 'px';
     bl.style.top = L.fy + 34 * L.u - s / 2 + 'px';
-    bl.hidden = !!AREAS[SC.area].indoor;
+    bl.hidden = !!AREAS[battleStage.area].indoor;
   }
 }
 export function battleResize() {
@@ -1209,7 +1209,7 @@ export function battleResize() {
 }
 export function openBattle() {
   const bs = (S.preferences || {}).battleSpeed;
-  if (bs && !U.dbgSpeed) SC.speed = bs === 'fast' ? 1.6 : bs === 'faster' ? 2.2 : 1;
+  if (bs && !U.dbgSpeed) battleStage.speed = bs === 'fast' ? 1.6 : bs === 'faster' ? 2.2 : 1;
   const area = B.area || 'grass',
     list = S.team.map(m => [m.sp, m.gold, KBACK]).concat(B.sides[1].team.map(m => [m.sp, m.gold, 1]));
   const b = B;
@@ -1332,7 +1332,7 @@ function typeText(t) {
   el.textContent = '';
   let i = 0;
   U.typing = true;
-  const sp = Math.max(1, Math.round(2 * SC.speed));
+  const sp = Math.max(1, Math.round(2 * battleStage.speed));
   U.typeT = setInterval(() => {
     i += sp;
     el.textContent = t.slice(0, i);
@@ -1381,7 +1381,7 @@ function stepEv() {
     r = ev.an ? scPlay(ev.an, ev) : { dur: 0, hit: 0 };
   if (ev.an && typeof sfxBattle === 'function') sfxBattle(ev.an, r);
   boxAnims(ev);
-  const k = 1 / SC.speed;
+  const k = 1 / battleStage.speed;
   scAfter('hpT', r.hit >= 999 ? 0 : r.hit, 0, () => paintBoxes(ev.s, ev.mk, true));
   $('#msg').classList.remove('ready');
   U.evReady = false;
@@ -1394,13 +1394,15 @@ function stepEv() {
   });
 }
 function scAfter(slot, sceneMs, realMs, fn) {
-  const t0 = SC.t,
+  const t0 = battleStage.t,
     r0 = performance.now();
   const tick = () => {
     if (!B) return;
     const el = performance.now() - r0,
       sOk =
-        !SC.on || SC.t - t0 >= sceneMs || el > (sceneMs / SC.speed) * 3 + 1500 /* never stuck on a very slow device */,
+        !battleStage.on ||
+        battleStage.t - t0 >= sceneMs ||
+        el > (sceneMs / battleStage.speed) * 3 + 1500 /* never stuck on a very slow device */,
       rOk = el >= realMs;
     if (sOk && rOk) {
       fn();
@@ -1408,7 +1410,7 @@ function scAfter(slot, sceneMs, realMs, fn) {
     }
     U[slot] = setTimeout(tick, 30);
   };
-  U[slot] = setTimeout(tick, Math.max(0, Math.min(realMs, sceneMs / SC.speed)));
+  U[slot] = setTimeout(tick, Math.max(0, Math.min(realMs, sceneMs / battleStage.speed)));
 }
 function adv() {
   if (!B || B.phase !== 'playing') return;
@@ -1524,7 +1526,7 @@ function paintSide(i, s, anim) {
     void c.offsetWidth;
     c.classList.add('hit');
   }
-  if (SC.s[i] && SC.s[i].sp === s.sp) SC.s[i].st = s.hp > 0 ? s.st : null;
+  if (battleStage.s[i] && battleStage.s[i].sp === s.sp) battleStage.s[i].st = s.hp > 0 ? s.st : null;
   if (i === 0) {
     const hn = $('#hn0');
     hn.dataset.fmt = `#/${s.max}`;
@@ -1609,13 +1611,13 @@ function tickerUpdate(s, mk) {
 /* floating numbers and tags over the billionaires */
 function hudPop(si, text, kind) {
   const L = $('#pops');
-  if (!L || !SC.L || (RM && kind === 'tag')) return;
+  if (!L || !battleStage.L || (RM && kind === 'tag')) return;
   const q = scToCss(sideTop(si));
   if (!q) return;
   const e = document.createElement('div');
   e.className = 'pop ' + kind;
   e.textContent = text;
-  e.style.left = clamp(q.x, 40, SC.L.vw - 40) + 'px';
+  e.style.left = clamp(q.x, 40, battleStage.L.vw - 40) + 'px';
   e.style.top = Math.max(30, q.y) + 'px';
   e.style.setProperty('--dx', ((rnd() - 0.5) * 36).toFixed(0) + 'px');
   L.appendChild(e);
@@ -1907,7 +1909,7 @@ function bindAim() {
   });
 }
 export function showAim() {
-  SC.ring = { t0: SC.t };
+  battleStage.ring = { t0: battleStage.t };
   camAt(1, 0.45, 0.16, 0.015, 320);
   scFocus('foe');
   $('#msgT').textContent =
@@ -1921,7 +1923,7 @@ export function doThrow(spin) {
     id = B.coin;
   S.coins[id]--;
   save();
-  SC.ring = null;
+  battleStage.ring = null;
   const res = catchRoll(id, T, spin),
     lab = ph >= 0.83 ? 'Excellent throw!' : ph >= 0.5 ? 'Great throw!' : ph >= 0.17 ? 'Nice throw.' : '';
   B.phase = 'throwing';
@@ -2150,7 +2152,7 @@ function paintPlates(s, anim) {
     num.textContent = ASIDE[k] ? (x.boss ? Math.round(p) + '%' : '') : `${Math.max(0, x.hp)}/${x.max}`;
     const xp = e.querySelector('.pl-xp i');
     if (xp) xp.style.width = x.xp * 100 + '%';
-    if (SC.s[k] && SC.s[k].sp === x.sp) SC.s[k].st = x.hp > 0 ? x.st : null;
+    if (battleStage.s[k] && battleStage.s[k].sp === x.sp) battleStage.s[k].st = x.hp > 0 ? x.st : null;
   }
   turnBar();
 }
@@ -2183,17 +2185,17 @@ function turnBar() {
 /* every frame: plates ride above their billionaire; the one choosing and the ones you can aim at are marked */
 function platesTick() {
   const L = $('#plates');
-  if (!L || !B || !SC.L || !L.firstChild) return;
+  if (!L || !B || !battleStage.L || !L.firstChild) return;
   const tgt = B.phase === 'target',
     placed = [],
     tk = $('.ticker'),
     top0 = (tk ? tk.getBoundingClientRect().bottom - $('#battle').getBoundingClientRect().top : 24) + 4;
   const list = [...L.children]
     .map(e => ({ e, k: +e.dataset.k }))
-    .sort((a, b) => (SC.s[b.k] ? sideWorld(b.k).z : 0) - (SC.s[a.k] ? sideWorld(a.k).z : 0))
+    .sort((a, b) => (battleStage.s[b.k] ? sideWorld(b.k).z : 0) - (battleStage.s[a.k] ? sideWorld(a.k).z : 0))
     .reverse();
   for (const { e, k } of list) {
-    const sd = SC.s[k];
+    const sd = battleStage.s[k];
     const vis = sd && sd.show && sd.a > 0.3 && !e.classList.contains('gone');
     e.classList.toggle('off', !vis);
     if (!vis) continue;
@@ -2201,8 +2203,8 @@ function platesTick() {
     if (!q) continue;
     const w = e.offsetWidth || 120,
       h = e.offsetHeight || 44;
-    let x = clamp(q.x, w / 2 + 6, SC.L.vw - w / 2 - 6),
-      y = clamp(q.y - 8, top0 + h, SC.L.vh - 40);
+    let x = clamp(q.x, w / 2 + 6, battleStage.L.vw - w / 2 - 6),
+      y = clamp(q.y - 8, top0 + h, battleStage.L.vh - 40);
     /* nearer plates win; a farther one that would cover it moves up (or down if there's no room) */
     for (let it = 0; it < 4; it++) {
       const hit = placed.find(r => Math.abs(r.x - x) < (r.w + w) / 2 + 4 && Math.abs(r.y - y) < (r.h + h) / 2 + 3);
@@ -2219,7 +2221,7 @@ function platesTick() {
 }
 /* tapping the picture while aiming picks the nearest foe */
 function stageTap(ev) {
-  if (!B || B.phase !== 'target' || !SC.L) return;
+  if (!B || B.phase !== 'target' || !battleStage.L) return;
   const r = $('#battle').getBoundingClientRect(),
     x = ev.clientX - r.left,
     y = ev.clientY - r.top;

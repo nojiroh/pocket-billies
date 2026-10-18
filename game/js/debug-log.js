@@ -183,7 +183,7 @@ NWLOG.ctx = () => {
     if (typeof GAME.walkView !== 'undefined' && GAME.walkView.id) c.scene = GAME.walkView.id;
     if (typeof GAME.walkRenderer !== 'undefined') c.gl = GAME.walkRenderer.on ? 1 : 0;
     if (typeof GAME.walkView !== 'undefined') c.res = Math.round((GAME.walkView.R || 1) * 100) / 100;
-    if (typeof GAME.SC !== 'undefined' && GAME.SC.q) c.bq = GAME.SC.q.lvl;
+    if (typeof GAME.battleStage !== 'undefined' && GAME.battleStage.q) c.bq = GAME.battleStage.q.lvl;
     if (typeof GAME.walkView !== 'undefined' && GAME.walkView.held) c.held = GAME.walkView.held;
     if (typeof GAME.walkRenderer !== 'undefined' && GAME.walkRenderer.on) {
       c.q = GAME.walkRenderer.qe || 0;

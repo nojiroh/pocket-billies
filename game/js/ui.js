@@ -107,7 +107,7 @@ import {
 import { applyPreferences, settingsHTML } from './settings-screen.js';
 import { drPortrait, openDressing } from './dressing-room.js';
 import { bustHTML, sprHTML } from './skeleton-rig.js';
-import { EASE, SC, camHome, scFocus, scTargets } from './battle-stage.js';
+import { EASE, battleStage, camHome, scFocus, scTargets } from './battle-stage.js';
 import {
   closedText,
   findPath,
@@ -2931,7 +2931,7 @@ document.addEventListener('click', ev => {
       break;
     case 'baimback':
       if (B && !U.throwing) {
-        SC.ring = null;
+        battleStage.ring = null;
         camHome(300);
         scFocus('wide');
         B.phase = 'choose';
@@ -2976,7 +2976,7 @@ document.addEventListener('click', ev => {
           S.se += amt;
           say(`You took $${fmt(amt)}. ${N(A(1))} scampered off.`);
           B.over = 'bribed';
-          SC.s[1].show = false;
+          battleStage.s[1].show = false;
           save();
         } else {
           B.integrity = Math.min(RC.integrityMax, B.integrity * RC.integrityStep);

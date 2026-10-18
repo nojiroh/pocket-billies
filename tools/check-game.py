@@ -131,7 +131,7 @@ def check_game(pw, base, results):
         pg.evaluate("const q={id:'t3d',sp:'tweet1',lvl:12,gold:false,no:1};S.queue=[q];startWild(q);0")
         wait_phase(pg); time.sleep(1)
         pg.screenshot(path=str(OUT / f'{name}-battle-3d.png'))
-        results.setdefault('battle3d', {})[name] = pg.evaluate("[!!SC.gl,!!walkView.battle,walkView.id]")
+        results.setdefault('battle3d', {})[name] = pg.evaluate("[!!battleStage.gl,!!walkView.battle,walkView.id]")
         pg.evaluate("stopTimers();B=null;scStop();render();0")
         pg.evaluate("S.team=[makeMon('hood2',45),makeMon('box1',30)];S.route.node=4;startTrainer('crude');0")
         won = False
@@ -169,7 +169,7 @@ def check_game(pw, base, results):
             trip = pg.evaluate("[S.route.node,S.route.plan.length,walkView.id,!!S.visited[9]]")
             pg.screenshot(path=str(OUT / f'{name}-arrived.png'))
             results.setdefault('walk', {})[name] = {'walkedTo': roam, 'tripEnd': trip, 'ok': abs(roam[0] - tgt[0]) < .8 and abs(roam[1] - tgt[1]) < .8 and trip[0] == 9 and trip[1] == 0 and trip[2] == 'pond'}
-        fps = pg.evaluate('[FRAME.meter.fps,FRAME.hz,SC.q.lvl]')
+        fps = pg.evaluate('[FRAME.meter.fps,FRAME.hz,battleStage.q.lvl]')
         results['viewports'][name] = {'bootSeconds': boot, 'errors': errs[:10], 'trainerBattleWon': won, 'battleFps': fps[0], 'displayHz': fps[1], 'qualityLevel': fps[2]}
         ctx.close()
     b.close()

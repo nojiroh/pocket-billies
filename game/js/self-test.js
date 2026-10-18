@@ -17,7 +17,7 @@ import { B, S, U, addSteps, esc, makeMon, maxHp, save, setB, setS, setSave, setT
 import { FRAME } from './frame-scheduler.js';
 import { TR_CACHE } from './person-art.js';
 import { DR, closeDressing } from './dressing-room.js';
-import { SC, scStop } from './battle-stage.js';
+import { battleStage, scStop } from './battle-stage.js';
 import {
   GROUND_CACHE,
   PROP_CLOCK,
@@ -663,7 +663,7 @@ async function runFullTest(mode) {
       const tb = performance.now();
       let ok = await want(['choose'], 45000),
         why = ok ? '' : `the battle never got to the move menu (stuck in ${B ? B.phase : 'no battle'})`;
-      const gl = !!SC.gl,
+      const gl = !!battleStage.gl,
         menuMs = Math.round(performance.now() - tb);
       if (ok) {
         const f = document.querySelector('[data-a=bfight]');

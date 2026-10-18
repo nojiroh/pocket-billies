@@ -953,7 +953,7 @@ def desktop_steps(b, base, R):
             if not until(pg, "B&&B.phase==='choose'", 90, tap): raise Exception(f'{kind}: never reached the move menu (phase {pg.evaluate("B&&B.phase")})')
             # the plates fade in with their billionaires; in software drawing that can take a few seconds
             until(pg, "document.querySelectorAll('#plates .bplate:not(.off):not(.gone)').length>=liveK(0).length+liveK(1).length", 12); time.sleep(.5)
-            r = pg.evaluate("JSON.stringify({fmt:B.fmt,mine:liveK(0).length,theirs:liveK(1).length,plates:document.querySelectorAll('#plates .bplate:not(.off):not(.gone)').length,boss:!!(A(1)&&A(1).boss),big:SC.s[1]?SC.s[1].big:1})")
+            r = pg.evaluate("JSON.stringify({fmt:B.fmt,mine:liveK(0).length,theirs:liveK(1).length,plates:document.querySelectorAll('#plates .bplate:not(.off):not(.gone)').length,boss:!!(A(1)&&A(1).boss),big:battleStage.s[1]?battleStage.s[1].big:1})")
             r = json.loads(r)
             if kind == 'double' and (r['fmt'] != 'double' or r['theirs'] < 2): raise Exception(f'double battle came out as {r}')
             if kind == 'alpha' and (r['fmt'] != 'alpha' or not r['boss'] or r['mine'] < 2): raise Exception(f'Alpha battle came out as {r}')
@@ -1904,17 +1904,17 @@ def desktop_steps(b, base, R):
         pg.evaluate("S.preferences.battleStage='scene';wipe=f=>f();S.route={node:0,prog:0,plan:[],hold:false};U.tab='walk';render();0"); time.sleep(2)
         pg.evaluate("const q={id:'t3d',sp:'knight1',lvl:12,gold:false,no:1};S.queue=[q];S.team.forEach(m=>{m.hp=maxHp(m)});startWild(q);0")
         if wait_phase(pg, sec=60) != 'choose': raise Exception('the 3D-stage battle never reached the move menu')
-        shot(pg, 'battle-3d'); stage = pg.evaluate("!!SC.gl")
+        shot(pg, 'battle-3d'); stage = pg.evaluate("!!battleStage.gl")
         pg.evaluate("stopTimers();B=null;scStop();S.preferences.battleStage='classic';render();0")
         # battle animations at four times the speed (the Debug panel's speed setting), so the result comes quickly
-        pg.evaluate("SC.speed=4;S.team=[makeMon('musk2',45),makeMon('ek1',30)];S.route.node=4;startTrainer('crude');0")
+        pg.evaluate("battleStage.speed=4;S.team=[makeMon('musk2',45),makeMon('ek1',30)];S.route.node=4;startTrainer('crude');0")
         end = time.time() + 300; won = None
         while time.time() < end:
             ph = wait_phase(pg, ('choose', 'switch', 'end'), 30)
             if ph == 'end': won = pg.evaluate('B.over') == 'win'; break
             if ph == 'switch': pg.evaluate("document.querySelector('[data-a=bswitch]:not([disabled])').click()"); continue
             if ph == 'choose': pg.evaluate("document.querySelector('[data-a=bfight]').click();document.querySelector('[data-a=bmove]').click()")
-        pg.evaluate("SC.speed=1;if(B){stopTimers();B=null;scStop()}render();0")
+        pg.evaluate("battleStage.speed=1;if(B){stopTimers();B=null;scStop()}render();0")
         if won is None: raise Exception('the trainer battle didn’t finish in 300s')
         if not won: raise Exception('the trainer battle was lost (it should be an easy win)')
         if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))

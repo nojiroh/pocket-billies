@@ -7,7 +7,7 @@ import { FRAME, userFps } from './frame-scheduler.js';
 import { artPixels, setArtPixels } from './art.js';
 import { TR_CACHE, humanFrames, setHumanFrames } from './person-art.js';
 import { openDressing, setOpenDressing } from './dressing-room.js';
-import { SC, scResize, scStart, setScResize, setScStart } from './battle-stage.js';
+import { battleStage, scResize, scStart, setScResize, setScStart } from './battle-stage.js';
 import {
   prepareMap,
   setPrepareMap,
@@ -98,11 +98,11 @@ Object.defineProperties(GAME, {
   P3D: { get: () => P3D },
   ROUTE: { get: () => ROUTE },
   S: { get: () => S },
-  SC: { get: () => SC },
   TR_CACHE: { get: () => TR_CACHE },
   U: { get: () => U },
   areaKey: { get: () => areaKey },
   artPixels: { get: () => artPixels, set: setArtPixels },
+  battleStage: { get: () => battleStage },
   bldDraw: { get: () => bldDraw, set: setBldDraw },
   bldItems: { get: () => bldItems, set: setBldItems },
   buildGrass: { get: () => buildGrass, set: setBuildGrass },

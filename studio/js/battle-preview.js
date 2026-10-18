@@ -10,8 +10,8 @@ import { COIN_ART, artLoad, hexA } from '../../game/js/art.js';
 import { setRigParts } from '../../game/js/skeleton-rig.js';
 import {
   AREAS,
-  SC,
   STAGEART,
+  battleStage,
   camAt,
   camHome,
   fgDraw,
@@ -86,12 +86,12 @@ function battleLayoutChanged(L) {
     bl.style.width = bl.style.height = s + 'px';
     bl.style.left = L.fx + 162 * L.u - s / 2 + 'px';
     bl.style.top = L.fy + 34 * L.u - s / 2 + 'px';
-    bl.hidden = !!AREAS[SC.area].indoor;
+    bl.hidden = !!AREAS[battleStage.area].indoor;
   }
 }
 function hudPop(si, text, kind) {
   const L = $('#pops');
-  if (!L || !SC.L) return;
+  if (!L || !battleStage.L) return;
   const q = scToCss(sideTop(si));
   if (!q) return;
   const e = document.createElement('div');
@@ -171,7 +171,7 @@ SECTIONS.preview = () => {
       .map(([k, n]) => `<button class="btn sm" data-act="bp" data-x="${k}">${n}</button>`)
       .join('')}</div>
    <div class="seg-row"><button class="btn sm" data-act="bp" data-x="catch">Throw: taxed</button><button class="btn sm" data-act="bp" data-x="escape">Throw: breaks free</button></div>
-   <div class="seg-row"><span class="help">Camera</span>${['wide', 'foe', 'me'].map(f => `<button class="seg sm" data-act="bp" data-x="cam-${f}">${f}</button>`).join('')}<span class="help">Speed</span>${[0.5, 1, 2].map(v => `<button class="seg sm ${SC.speed === v ? 'on' : ''}" data-act="bp" data-x="speed-${v}">${v}×</button>`).join('')}</div>`
+   <div class="seg-row"><span class="help">Camera</span>${['wide', 'foe', 'me'].map(f => `<button class="seg sm" data-act="bp" data-x="cam-${f}">${f}</button>`).join('')}<span class="help">Speed</span>${[0.5, 1, 2].map(v => `<button class="seg sm ${battleStage.speed === v ? 'on' : ''}" data-act="bp" data-x="speed-${v}">${v}×</button>`).join('')}</div>`
   )}
   ${card(
     'Stage',
@@ -219,11 +219,11 @@ async function bpStart() {
     return;
   }
   if (!$('#cvWorld')) return;
-  SC.lockQ = true;
-  SC.q.lvl = 0;
-  if (SC.gl && typeof battleGLStop === 'function') {
+  battleStage.lockQ = true;
+  battleStage.q.lvl = 0;
+  if (battleStage.gl && typeof battleGLStop === 'function') {
     battleGLStop();
-    SC.gl = false;
+    battleStage.gl = false;
   }
   scStart(BP.area);
   if (BP.stage !== 'backdrop' && ST.D.scenes && ST.D.scenes[BP.stage] && typeof battleGLAttach === 'function') {
@@ -232,13 +232,13 @@ async function bpStart() {
   if (load) load.hidden = true;
   if (!BP.ro)
     BP.ro = new ResizeObserver(() => {
-      if (SC.on && ST.sec === 'preview' && $('#battle')) scResize();
+      if (battleStage.on && ST.sec === 'preview' && $('#battle')) scResize();
     });
   BP.ro.disconnect();
   BP.ro.observe($('#battle'));
-  Object.assign(SC.s[0], { sp: BP.me, gold: BP.meGold, show: true, sc: 1, a: 1 });
-  Object.assign(SC.s[1], { sp: BP.foe, gold: BP.foeGold, show: true, sc: 1, a: 1 });
-  SC.oil = BP.shock;
+  Object.assign(battleStage.s[0], { sp: BP.me, gold: BP.meGold, show: true, sc: 1, a: 1 });
+  Object.assign(battleStage.s[1], { sp: BP.foe, gold: BP.foeGold, show: true, sc: 1, a: 1 });
+  battleStage.oil = BP.shock;
 }
 /* the engine stage: the chosen walk scene, mounted on its own canvas inside the battle stage */
 async function bpScene() {
@@ -261,17 +261,17 @@ async function bpScene() {
   const hb = mapHub(sc);
   walkView.pl.x = hb[0];
   walkView.pl.z = hb[1];
-  SC.gl = battleGLAttach({ detach: true });
-  document.body.classList.toggle('battle-3d', !!SC.gl);
+  battleStage.gl = battleGLAttach({ detach: true });
+  document.body.classList.toggle('battle-3d', !!battleStage.gl);
   scResize();
   fgDraw();
 }
 function bpApplyBackdrop() {
-  if (!SC.L || SC.area !== BP.area) return;
+  if (!battleStage.L || battleStage.area !== BP.area) return;
   const A = ST.D.backdrops[BP.area];
-  SC.skyC = A.sky.map(hexA);
-  SC.fogC = hexA(A.fog);
-  SC.floorKey = '';
+  battleStage.skyC = A.sky.map(hexA);
+  battleStage.fogC = hexA(A.fog);
+  battleStage.floorKey = '';
 }
 ST.hooks.preview = path => {
   if (path.startsWith('backdrops.')) bpApplyBackdrop();
@@ -304,15 +304,15 @@ function bpMove(si) {
   }
   scPlay(an, bpEv());
   if (onFoe && !an.miss && !an.blocked && fx.status)
-    setTimeout(() => scPlay({ k: 'status', si: 1 - si, st: fx.status }, bpEv()), 1100 / SC.speed);
+    setTimeout(() => scPlay({ k: 'status', si: 1 - si, st: fx.status }, bpEv()), 1100 / battleStage.speed);
 }
 ACTS.bp = d => {
-  if (!SC.L) return;
+  if (!battleStage.L) return;
   const x = d.x,
     ev = bpEv(),
-    later = (ms, f) => setTimeout(f, ms / SC.speed);
+    later = (ms, f) => setTimeout(f, ms / battleStage.speed);
   const reset = () => {
-    Object.assign(SC.s[0], {
+    Object.assign(battleStage.s[0], {
       sp: BP.me,
       gold: BP.meGold,
       show: true,
@@ -324,7 +324,7 @@ ACTS.bp = d => {
       ox: 0,
       act: null,
     });
-    Object.assign(SC.s[1], {
+    Object.assign(battleStage.s[1], {
       sp: BP.foe,
       gold: BP.foeGold,
       show: true,
@@ -344,20 +344,20 @@ ACTS.bp = d => {
     return;
   }
   if (x.startsWith('speed-')) {
-    SC.speed = +x.slice(6);
+    battleStage.speed = +x.slice(6);
     $$('[data-x^="speed-"]').forEach(b => b.classList.toggle('on', b.dataset.x === x));
     return;
   }
   switch (x) {
     case 'wild':
       reset();
-      SC.s[0].show = false;
+      battleStage.s[0].show = false;
       scPlay({ k: 'wild' }, ev);
       later(1350, () => scPlay({ k: 'enter', si: 0 }, ev));
       break;
     case 'trainer':
       reset();
-      SC.s[0].show = SC.s[1].show = false;
+      battleStage.s[0].show = battleStage.s[1].show = false;
       scPlay({ k: 'trainerIn', who: BP.who }, ev);
       later(1250, () => scPlay({ k: 'enter', si: 1 }, ev));
       later(2300, () => scPlay({ k: 'enter', si: 0 }, ev));
@@ -404,7 +404,7 @@ ACTS.bp = d => {
       scPlay({ k: 'lvl' }, ev);
       break;
     case 'shock':
-      BP.shock = !SC.oil;
+      BP.shock = !battleStage.oil;
       if (BP.shock) scPlay({ k: 'market' }, ev);
       else scPlay({ k: 'marketEnd' }, ev);
       break;

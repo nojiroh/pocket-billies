@@ -33,7 +33,7 @@ import {
 import { FRAME, frameCount, frameTask, userFps } from './frame-scheduler.js';
 import { uiIco } from './art.js';
 import { applyPreferences, exportSave } from './settings-screen.js';
-import { SC, scResize, scStop } from './battle-stage.js';
+import { battleStage, scResize, scStop } from './battle-stage.js';
 import { mapById } from './walk-view.js';
 import { EGL } from './engine/webgl.js';
 import { A, checkFaints, paintBoxes, play, say, snapAll, startTrainer, startWild, stopTimers } from './battle.js';
@@ -66,7 +66,7 @@ function debugHTML() {
     node = S.route.node;
   return `<div class="dbg">
  <p class="note">Changes apply to this save right away. Export a backup first if you might want to undo.</p>
- <details open><summary>Performance</summary><div class="dbg-row">${dbgBtn('fps', DBG.fps ? 'Hide FPS meter' : 'Show FPS meter')}<span class="note">Screen ≈ ${FRAME.hz} Hz · cap ${userFps()} FPS · battle quality level ${SC.q.lvl} (0 is best)</span><button class="pb small" data-a="quicktest">Full test</button><button class="pb small" data-a="dbglog">Export debug log</button></div>
+ <details open><summary>Performance</summary><div class="dbg-row">${dbgBtn('fps', DBG.fps ? 'Hide FPS meter' : 'Show FPS meter')}<span class="note">Screen ≈ ${FRAME.hz} Hz · cap ${userFps()} FPS · battle quality level ${battleStage.q.lvl} (0 is best)</span><button class="pb small" data-a="quicktest">Full test</button><button class="pb small" data-a="dbglog">Export debug log</button></div>
   <div class="dbg-row">${dbgBtn('q0', 'Force best quality')}${dbgBtn('qauto', 'Automatic quality')}</div>
   ${
     DATA_WARN.length
@@ -105,7 +105,7 @@ function debugHTML() {
  )}${dbgBtn('egg', 'Add egg')}${dbgBtn('hatch', 'Finish all incubators')}${dbgBtn('pay', 'Pay all jobs')}</div>
   <div class="dbg-row">${dbgBtn('idle', 'Age storage by a day')}${dbgBtn('streak', 'Lead +3 win streak')}</div></details>
  <details ${inB ? 'open' : ''}><summary>Battle${inB ? '' : ' (start one first)'}</summary><div class="dbg-row">${dbgBtn('win', 'Win now', 'gold')}${dbgBtn('lose', 'Lose now')}${dbgBtn('foe1', 'Foe to 1 HP')}${dbgBtn('catch', U.dbgCatch ? 'Taxing works as normal' : 'Every throw taxes')}</div>
-  <div class="dbg-row">${[1, 2, 4].map(x => dbgBtn('speed' + x, `${x}× speed`, SC.speed === x ? 'dark' : '')).join('')}</div></details>
+  <div class="dbg-row">${[1, 2, 4].map(x => dbgBtn('speed' + x, `${x}× speed`, battleStage.speed === x ? 'dark' : '')).join('')}</div></details>
  <details><summary>Save</summary><div class="dbg-row">${dbgBtn('copy', 'Copy save as text')}${dbgBtn('export', 'Download backup')}${dbgBtn('wipe', 'Erase save', 'red')}</div></details>
  </div>`;
 }
@@ -142,7 +142,7 @@ function debugFps() {
     document.body.appendChild(el);
   }
   const m = FRAME.meter;
-  el.textContent = `${m.fps} fps · ${m.workAvg.toFixed(1)} ms${typeof EGL !== 'undefined' && EGL.gpuMs ? ' · GPU ' + EGL.gpuMs.toFixed(1) + ' ms' : ''} · Q${SC.q.lvl} · ${FRAME.hz} Hz`;
+  el.textContent = `${m.fps} fps · ${m.workAvg.toFixed(1)} ms${typeof EGL !== 'undefined' && EGL.gpuMs ? ' · GPU ' + EGL.gpuMs.toFixed(1) + ' ms' : ''} · Q${battleStage.q.lvl} · ${FRAME.hz} Hz`;
 }
 function dbgAct(x) {
   const v = id => {
@@ -162,17 +162,17 @@ function dbgAct(x) {
         const e = $('#fpsMeter');
         if (e) e.remove();
       } else {
-        if (!SC.on && !MAP.on) frameTask('meter', () => frameCount(0));
+        if (!battleStage.on && !MAP.on) frameTask('meter', () => frameCount(0));
         debugFps();
       }
       return dbgRefresh();
     case 'q0':
-      SC.lockQ = true;
-      SC.q.lvl = 0;
+      battleStage.lockQ = true;
+      battleStage.q.lvl = 0;
       if (B) scResize();
       return dbgRefresh('Battle quality locked to best.');
     case 'qauto':
-      SC.lockQ = false;
+      battleStage.lockQ = false;
       return dbgRefresh('Battle quality adapts to frame time again.');
     case 'se1':
       S.se += 1000;
@@ -356,9 +356,9 @@ function dbgAct(x) {
     case 'speed1':
     case 'speed2':
     case 'speed4':
-      SC.speed = +x.slice(5);
-      U.dbgSpeed = SC.speed !== 1;
-      return dbgRefresh(`Battle speed ${SC.speed}×.`);
+      battleStage.speed = +x.slice(5);
+      U.dbgSpeed = battleStage.speed !== 1;
+      return dbgRefresh(`Battle speed ${battleStage.speed}×.`);
     case 'copy':
       navigator.clipboard &&
         navigator.clipboard.writeText(JSON.stringify(S)).then(

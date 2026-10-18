@@ -1,7 +1,7 @@
 'use strict';
 /* ================= BATTLES ON THE ENGINE =================
    A battle happens where you stand: the walk scene's canvas moves into the battle stage and keeps rendering the same
-   world through the battle camera (battle-stage.js keeps directing it: SC.V, focus, punches and shakes). The billionaires and
+   world through the battle camera (battle-stage.js keeps directing it: battleStage.V, focus, punches and shakes). The billionaires and
    trainers become lit sprites in that world, with sun shadows and contact shadows; props standing in the way are
    hidden; glowing move effects light the ground. battle-stage.js still draws the move effects themselves on its canvas
    above. The classic painted stage is used when WebGL isn't running, when the stop has no walk scene,
@@ -11,7 +11,18 @@ import { expose } from './test-globals.js';
 import { B, FV, RM, S, provide } from './hooks.js';
 import { $, clamp } from './util.js';
 import { hexA } from './art.js';
-import { ACT, FOC, POS, SC, UPP, partSpr, sideBuf, sideWorld, trainerBattleFrame, trainerMpp } from './battle-stage.js';
+import {
+  ACT,
+  FOC,
+  POS,
+  UPP,
+  battleStage,
+  partSpr,
+  sideBuf,
+  sideWorld,
+  trainerBattleFrame,
+  trainerMpp,
+} from './battle-stage.js';
 import { stopWalkView, walkData, walkView } from './walk-view.js';
 import { EGL } from './engine/webgl.js';
 import { standingHeightAt, walkRenderer } from './walk-view-gl.js';
@@ -80,8 +91,8 @@ export function battleGLAttach(o = {}) {
   cv.classList.add('dio-battle');
   cv.hidden = false;
   if (walkRenderer.ui) walkRenderer.ui.hidden = true;
-  SC.leafy = [];
-  SC.glint = [];
+  battleStage.leafy = [];
+  battleStage.glint = [];
   walkView.battle = { frame: battleGLFrame };
   BGL.on = true;
   if (typeof NWLOG !== 'undefined') NWLOG.add('battle', '3D stage in ' + walkView.id);
@@ -89,7 +100,7 @@ export function battleGLAttach(o = {}) {
 }
 export function battleGLLayout() {
   const cv = walkView.cv,
-    ref = SC.cv;
+    ref = battleStage.cv;
   if (!BGL.on || !cv || !ref) return;
   for (const k of ['left', 'top', 'width', 'height']) cv.style[k] = ref.style[k];
 }
@@ -120,13 +131,13 @@ export function battleGLStop() {
 }
 /* what the engine draws this frame, in walk-scene meters (battle space shifted by BGL.off) */
 function battleGLFrame() {
-  if (!SC.on || !SC.L) return null;
+  if (!battleStage.on || !battleStage.L) return null;
   const O = BGL.off,
     items = BGL.items,
     lights = BGL.lights;
   items.length = 0;
   lights.length = 0;
-  for (let i = 0; i < SC.s.length; i++) {
+  for (let i = 0; i < battleStage.s.length; i++) {
     const B = sideBuf(i);
     if (!B) continue;
     const w = sideWorld(i),
@@ -155,7 +166,7 @@ function battleGLFrame() {
     });
   }
   for (let i = 0; i < 2; i++) {
-    const T = SC.tr[i];
+    const T = battleStage.tr[i];
     if (!T.show || !T.who || T.a <= 0) continue;
     const f = trainerBattleFrame(i);
     if (!f) continue;
@@ -182,17 +193,17 @@ function battleGLFrame() {
     });
   }
   /* v33: a warm light picks out the one choosing */
-  if (SC.sel != null && SC.s[SC.sel] && SC.s[SC.sel].show) {
-    const w = sideWorld(SC.sel),
-      k = 0.5 + 0.12 * Math.sin(SC.t / 300);
+  if (battleStage.sel != null && battleStage.s[battleStage.sel] && battleStage.s[battleStage.sel].show) {
+    const w = sideWorld(battleStage.sel),
+      k = 0.5 + 0.12 * Math.sin(battleStage.t / 300);
     lights.push({ p: [w.x + O[0], BGL.gy + 1.4, w.z + O[1]], r: 2.2, c: [1.1 * k, 0.9 * k, 0.45 * k] });
   }
   /* v33: an Alpha glows from below */
-  for (let i = 0; i < SC.s.length; i++) {
-    const s = SC.s[i];
+  for (let i = 0; i < battleStage.s.length; i++) {
+    const s = battleStage.s[i];
     if (!s.boss || !s.show || s.a < 0.4) continue;
     const w = sideWorld(i),
-      k = 0.55 + 0.2 * Math.sin(SC.t / 260);
+      k = 0.55 + 0.2 * Math.sin(battleStage.t / 260);
     lights.push({ p: [w.x + O[0], BGL.gy + 0.5, w.z + O[1]], r: 3.2, c: [1.2 * k, 0.25 * k, 0.45 * k] });
     /* v34: its shield, while it holds: a gold light round it */ const fv =
       typeof FV === 'function' && typeof B !== 'undefined' && B
@@ -208,8 +219,8 @@ function battleGLFrame() {
       lights.push({ p: [w.x + O[0], BGL.gy + 1.2, w.z + O[1] - 0.6], r: 2.6, c: [1.3 * k, 1.05 * k, 0.35 * k] });
   }
   /* glowing move effects light what's around them */
-  for (let i = SC.parts.length - 1; i >= 0 && lights.length < 6; i--) {
-    const p = SC.parts[i];
+  for (let i = battleStage.parts.length - 1; i >= 0 && lights.length < 6; i--) {
+    const p = battleStage.parts[i];
     if (!p.glow || typeof p.col !== 'string' || p.col[0] !== '#') continue;
     const k = Math.max(0, 1 - p.age / p.life),
       c = hexA(p.col);
@@ -222,7 +233,7 @@ function battleGLFrame() {
   /* icon particles (sparks, stars, coins of effect) live in the world */
   const parts = BGL.parts || (BGL.parts = []);
   parts.length = 0;
-  for (const p of SC.parts) {
+  for (const p of battleStage.parts) {
     if (!p.spr) continue;
     let a = p.fade === false ? 1 : 1 - p.age / p.life;
     if (p.twinkle) a *= 0.5 + 0.5 * Math.sin(p.age / 120);
@@ -240,11 +251,11 @@ function battleGLFrame() {
       glow: !!p.glow,
     });
   }
-  const d = SC.dof;
+  const d = battleStage.dof;
   return {
     parts,
-    cam: SC.V,
-    L: SC.L,
+    cam: battleStage.V,
+    L: battleStage.L,
     foc: FOC,
     off: O,
     gy: BGL.gy,
