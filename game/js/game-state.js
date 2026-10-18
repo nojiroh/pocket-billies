@@ -298,10 +298,10 @@ export function migrate(o) {
   s.gameVersion = PB_VERSION;
   return s;
 }
-/* phase 02: every save says which save format it is (saveVersion; raise it when old saves can't be read any more).
+/* phase 02: every save says which save format it is (saveVersion; raise it when old saves can't be read any more; 2 since phase 05).
    A save without one (alpha 0.5 and earlier) or from a newer format is not loaded: the game says so and starts fresh.
    saveAge: null (no save), 'ok', 'old' or 'new'. A newer save is never written over (saveHold) */
-export const SAVE_VERSION = 1;
+export const SAVE_VERSION = 2;
 export let saveHold = false;
 export function saveAge(o) {
   if (!o || typeof o !== 'object') return null;
