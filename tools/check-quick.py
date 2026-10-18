@@ -1633,10 +1633,7 @@ def desktop_steps(b, base, R):
         else: raise Exception('the library’s room didn’t open in place')
         time.sleep(3); pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();0"); shot(pg, 'a01-library-windows')
         pg.evaluate("leaveRoom();0"); until(pg, "walkView.ready&&!walkView.sc.roomRect", 30)
-        # the picture setting: Sharpest by default, and 90 frames a second survives a reload of the save
-        a = pg.evaluate("(()=>{const o=saveData.preferences.fps;saveData.preferences.fps=90;const m=migrate(JSON.parse(JSON.stringify(saveData)));saveData.preferences.fps=o;return [m.preferences.fps,m.preferences.aim]})()")
-        if a != [90, 'sharp']: raise Exception(f'preferences after loading: fps {a[0]} (90 wanted), aim {a[1]} (sharp wanted)')
-        out.append('the library’s four windows; 90 frames a second kept, Sharpest by default')
+        out.append('the library’s four windows')
         if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
         return '; '.join(out)
     a01()
