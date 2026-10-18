@@ -24,7 +24,7 @@ import {
   updateNav,
 } from './hooks.js';
 import { $, clamp } from './util.js';
-import { ROUTE, RULES, SP, START_NODE, TRAINERS, TYPES, eff, placeFull } from './game-data.js';
+import { ROUTE, RULES, SPECIES, START_NODE, TRAINERS, TYPES, eff, placeFull } from './game-data.js';
 import { escapeHtml, reducedMotion, uiState } from './game-state.js';
 import { userFps } from './frame-scheduler.js';
 import { artLoad, makeCanvas } from './art.js';
@@ -470,7 +470,7 @@ function csTap(ev) {
 function csPickHTML() {
   const pk = CS.pickList,
     l = pk[CS.sel],
-    s = SP[l + '0'],
+    s = SPECIES[l + '0'],
     t = s.types[0],
     st = TYPES.filter(x => eff(t, [x]) > 1),
     wk = TYPES.filter(x => eff(x, [t]) > 1);
@@ -544,7 +544,7 @@ export async function csStart() {
   CS.hide = null;
   CS.rival = false;
   if (typeof LAND !== 'undefined') LAND.bits = [];
-  CS.pickList = RULES.start.starters.filter(l => SP[l + '0']);
+  CS.pickList = RULES.start.starters.filter(l => SPECIES[l + '0']);
   let el = $('#cs');
   if (!el) {
     el = document.createElement('div');
@@ -808,7 +808,7 @@ async function csScript(run) {
   $('#csPick').hidden = true;
   const si = CS.pickList.indexOf(l),
     star = CS.stars[si],
-    sp = SP[l + '0'];
+    sp = SPECIES[l + '0'];
   star.act = 'cheer';
   star.actT = csNow();
   CS.stars.forEach((s, i) => {

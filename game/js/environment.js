@@ -9,7 +9,7 @@
    The renderer reads environment through environmentFrame() once a frame; nothing here touches WebGL. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { RULES, SP, provide, reducedMotion, saveData, sceneIdAt } from './hooks.js';
+import { RULES, SPECIES, provide, reducedMotion, saveData, sceneIdAt } from './hooks.js';
 import { clamp } from './util.js';
 import { hexToRgb } from './art.js';
 import { mapById, walkView } from './walk-view.js';
@@ -540,7 +540,7 @@ function environmentOdds(list, sc) {
   const f = activeWildTypeBoosts(environmentState(sc2));
   if (!f.length) return list;
   return list.map(([id, w]) => {
-    const t = (typeof SP !== 'undefined' && SP[id] && SP[id].types) || [];
+    const t = (typeof SPECIES !== 'undefined' && SPECIES[id] && SPECIES[id].types) || [];
     let m = 1;
     for (const [, F] of f) for (const ty of t) if (F[ty]) m *= F[ty];
     return [id, w * m];

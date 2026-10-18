@@ -500,7 +500,7 @@ def wait_phase(pg, want=('choose',), sec=60):
 
 
 def play(pg):
-    pg.evaluate("if(typeof titleEnd==='function')titleEnd();uiState.pg='girl';startGame(SP.scoop0?'scoop':RULES.start.starters[0]);saveData.story={met_chad:1,met_chad2:1,copperleafNote:1};Object.values(TRAINERS).forEach(T=>{if(T.intro)saveData.story['met_'+T.id]=1});uiState.modal=null;uiState.mq=[];renderOv();saveData.team.push(makeBilly('ek1',18));addSteps(2400,true);uiState.toastQ=[];uiState.toastOn=false;uiState.modal=null;uiState.mq=[];renderOv();render();0")
+    pg.evaluate("if(typeof titleEnd==='function')titleEnd();uiState.pg='girl';startGame(SPECIES.scoop0?'scoop':RULES.start.starters[0]);saveData.story={met_chad:1,met_chad2:1,copperleafNote:1};Object.values(TRAINERS).forEach(T=>{if(T.intro)saveData.story['met_'+T.id]=1});uiState.modal=null;uiState.mq=[];renderOv();saveData.team.push(makeBilly('ek1',18));addSteps(2400,true);uiState.toastQ=[];uiState.toastOn=false;uiState.modal=null;uiState.mq=[];renderOv();render();0")
     # alpha 0.2: the legendaries count as met today, so passing through their places doesn't leave one waiting in a later
     # step (the v39 step brings the volcano's back on purpose)
     pg.evaluate("for(const l of (RULES.legends||[]))saveData.story['legend_'+l.sp]=today();0")
@@ -718,7 +718,7 @@ def desktop_steps(b, base, R):
             bright[name] = round(lum()); shot(pg, 'env-' + name)
         if bright['night'] > bright['day'] * .8: raise Exception(f'night isn’t darker than day (brightness {bright["night"]} vs {bright["day"]})')
         pg.evaluate("environment.force={time:23.5,weather:'clear'};0"); time.sleep(1.5); lamps = pg.evaluate("environment.lampK")
-        odds = pg.evaluate("(()=>{const ps=Object.keys(SP).find(k=>SP[k].types.includes('Psychic'));if(!ps)return [10];return environmentOdds([[ps,10]]).map(x=>+x[1].toFixed(2))})()")
+        odds = pg.evaluate("(()=>{const ps=Object.keys(SPECIES).find(k=>SPECIES[k].types.includes('Psychic'));if(!ps)return [10];return environmentOdds([[ps,10]]).map(x=>+x[1].toFixed(2))})()")
         out.append('brightness ' + ', '.join(f'{k} {v}' for k, v in bright.items()))
         # a dark cave: away from the lantern it's dim
         node = pg.evaluate("ROUTE.findIndex(r=>r.scene==='grotto')")
@@ -949,7 +949,7 @@ def desktop_steps(b, base, R):
                 if not tid: out.append('no trainer for a double battle'); continue
                 pg.evaluate(f"startTrainer('{tid}',{{talked:true,double:true}});0")
             else:
-                pg.evaluate("(()=>{const sp=Object.keys(SP).find(k=>SP[k].stage===0&&!RULES.start.starters.includes(SP[k].line));const q={id:'cq-alpha',sp,lvl:6,gold:false,no:1,alpha:true};saveData.queue.push(q);startWild(q)})()")
+                pg.evaluate("(()=>{const sp=Object.keys(SPECIES).find(k=>SPECIES[k].stage===0&&!RULES.start.starters.includes(SPECIES[k].line));const q={id:'cq-alpha',sp,lvl:6,gold:false,no:1,alpha:true};saveData.queue.push(q);startWild(q)})()")
             if not until(pg, "activeBattle&&activeBattle.phase==='choose'", 90, tap): raise Exception(f'{kind}: never reached the move menu (phase {pg.evaluate("activeBattle&&activeBattle.phase")})')
             # the plates fade in with their billionaires; in software drawing that can take a few seconds
             until(pg, "document.querySelectorAll('#plates .bplate:not(.off):not(.gone)').length>=liveK(0).length+liveK(1).length", 12); time.sleep(.5)
@@ -1003,13 +1003,13 @@ def desktop_steps(b, base, R):
         shot(pg, 'v34-city')
         out.append(f"ground {r['tp']} px a tile, {r['mb']} MB of pictures on the card; shadow cache {r['sh'][0]} kept / {r['sh'][1]} drawn; {r['grid']} props skipped by the grid; GPU {r['gpu']}")
         # walk cycles per body plan, front and back only
-        w = pg.evaluate("""(()=>{const plans={};for(const sp of Object.keys(SP)){const R=typeof rigParts==='function'?rigParts(sp,false,1):null;if(!R||plans[R.plan])continue;const a=worldBillyFrame(sp,false,'front','walk',0,1),b=worldBillyFrame(sp,false,'front','walk',280,1);if(!a||!b)continue;
+        w = pg.evaluate("""(()=>{const plans={};for(const sp of Object.keys(SPECIES)){const R=typeof rigParts==='function'?rigParts(sp,false,1):null;if(!R||plans[R.plan])continue;const a=worldBillyFrame(sp,false,'front','walk',0,1),b=worldBillyFrame(sp,false,'front','walk',280,1);if(!a||!b)continue;
           const d=(c)=>c.getContext('2d').getImageData(0,0,c.width,c.height).data;const x=d(a),y=d(b);let diff=0;for(let i=3;i<x.length;i+=16)if(x[i]!==y[i])diff++;plans[R.plan]=diff}return plans})()""")
         still = [k for k, v in w.items() if v == 0]
         if still: raise Exception(f'walk cycle doesn’t move for: {", ".join(still)}')
         out.append('walk cycles move for ' + ', '.join(sorted(w)))
         # an Alpha brought below half: the shield phase
-        pg.evaluate("(()=>{const sp=Object.keys(SP).find(k=>SP[k].stage===0);const q={id:'cq-a34',sp,lvl:6,gold:false,no:1,alpha:true};saveData.queue.push(q);saveData.team.forEach(m=>{m.hp=maxHp(m);m.status=null});startWild(q)})()")
+        pg.evaluate("(()=>{const sp=Object.keys(SPECIES).find(k=>SPECIES[k].stage===0);const q={id:'cq-a34',sp,lvl:6,gold:false,no:1,alpha:true};saveData.queue.push(q);saveData.team.forEach(m=>{m.hp=maxHp(m);m.status=null});startWild(q)})()")
         tap = "activeBattle&&activeBattle.phase==='playing'&&tapMsg()"
         if not until(pg, "activeBattle&&activeBattle.phase==='choose'", 90, tap): raise Exception('Alpha battle never reached the move menu')
         a = json.loads(pg.evaluate("(()=>{const m=A(1);m.hp=Math.floor(maxHp(m)*.55);activeBattle.events=[];alphaPhase(1);m.hp=Math.floor(maxHp(m)*.45);alphaPhase(1);const tb=document.querySelector('#plates .turnbar');paintPlates(snapAll());return JSON.stringify({ph2:!!m.boss.ph2,shield:FV(1).shield,lines:activeBattle.events.map(e=>e.t),bar:!!document.querySelector('#plates .turnbar')})})()"))
@@ -1037,7 +1037,7 @@ def desktop_steps(b, base, R):
         if kinds != {'starter': 12, 'legendary': 2, 'line3': 45, 'line2': 40, 'single': 18}: raise Exception(f'roster shape: {kinds}')
         ids = pg.evaluate("gameData.roster.map(e=>e.id)")
         if len(set(ids)) != 117: raise Exception('roster ids repeat')
-        old = pg.evaluate("Object.keys(SP)")
+        old = pg.evaluate("Object.keys(SPECIES)")
         clash = sorted(set(ids) & set(old))
         if clash: raise Exception(f'new ids clash with current species: {clash[:5]}')
         out.append('roster: 117 (12 starters, 2 legendaries, 45 in three-stage lines, 40 in two-stage, 18 singles), no id clashes')
@@ -1071,7 +1071,7 @@ def desktop_steps(b, base, R):
         st = pg.evaluate("RULES.start.starters")
         if st != ['musk', 'bezos', 'gates']: raise Exception(f'starters are {st}')
         ids = [f'{l}{i}' for l in st for i in range(4)]
-        miss = [i for i in ids if not pg.evaluate(f"!!(SP['{i}']&&RIGS['{i}']&&RIGS['{i}'].front&&RIGS['{i}'].back)")]
+        miss = [i for i in ids if not pg.evaluate(f"!!(SPECIES['{i}']&&RIGS['{i}']&&RIGS['{i}'].front&&RIGS['{i}'].back)")]
         if miss: raise Exception(f'missing species or rigs: {miss}')
         nx = ROOT / 'game' / 'art' / 'next' / 'billionaires'
         sheets = [n for n in ('emberox', 'boostox', 'marsox', 'memeox', 'cartotter', 'primotter', 'orbitotter', 'everyotter', 'kidling', 'billgoat', 'windowgoat', 'harvestgoat') if (nx / f'{n}.png').exists() and (nx / f'{n}.json').exists() and (nx / f'{n}_gold.png').exists()]
@@ -1141,7 +1141,7 @@ def desktop_steps(b, base, R):
     def v38():
         out = []
         lines = ['huang', 'ellison', 'ma', 'walton', 'bloomberg', 'jobs', 'knight', 'kroc', 'ambani', 'ortega', 'hughes', 'carnegie', 'lauren', 'ford', 'slim', 'cuban', 'pagebrin', 'thiel', 'dorsey', 'ek', 'son', 'buterin', 'saylor']
-        ids = json.loads(pg.evaluate("JSON.stringify(Object.keys(SP).filter(id=>%s.includes(SP[id].line)))" % json.dumps(lines)))
+        ids = json.loads(pg.evaluate("JSON.stringify(Object.keys(SPECIES).filter(id=>%s.includes(SPECIES[id].line)))" % json.dumps(lines)))
         if len(ids) != 61: raise Exception(f'{len(ids)} roster species in the data, not 61')
         miss = [i for i in ids if not pg.evaluate(f"!!(RIGS['{i}']&&RIGS['{i}'].front&&RIGS['{i}'].back&&RIGS['{i}'].front.sheet)")]
         if miss: raise Exception(f'missing rigs: {miss[:6]}')
@@ -1151,7 +1151,7 @@ def desktop_steps(b, base, R):
         if bad: raise Exception(f'sheets missing: {bad[:6]}')
         st = pg.evaluate("gameData.roster.filter(e=>e.state&&e.state.sheet&&e.state.rig).length")
         if st < 73: raise Exception(f'roster board marks only {st} species as drawn and rigged')
-        out.append(f'61 species in 23 lines, numbered {pg.evaluate("SP.huang0.no")} to {pg.evaluate("SP.saylor1.no")}; {len(names)} sheets (png + json + gold); roster board: {st} drawn and rigged')
+        out.append(f'61 species in 23 lines, numbered {pg.evaluate("SPECIES.huang0.no")} to {pg.evaluate("SPECIES.saylor1.no")}; {len(names)} sheets (png + json + gold); roster board: {st} drawn and rigged')
         pg.evaluate("rigPreload(%s.flatMap(id=>[[id,false,1],[id,true,1]]))" % json.dumps(ids)); time.sleep(4)
         r = json.loads(pg.evaluate("""(ids=>{const out={};for(const id of ids){const o={};for(const v of ['front','back']){const R=rigParts(id,false,1);if(!R){o[v]=null;continue}
           const c=makeCanvas(R.BW,R.BH),x=c.getContext('2d');x.clearRect(0,0,R.BW,R.BH);drawRig(x,R,rigFrame(R,null,0,1000,1),v);const d=x.getImageData(0,0,R.BW,R.BH).data;let s=0;for(let i=3;i<d.length;i+=4)if(d[i]>0)s++;o[v]=s}out[id]=o}return JSON.stringify(out)})(%s)""" % json.dumps(ids)))
@@ -1163,7 +1163,7 @@ def desktop_steps(b, base, R):
         plans = sorted(set(pg.evaluate(f"RIGS['{i}'].front.plan") for i in ids))
         out.append(f"every rig draws front and back ({min(v['front'] for v in r.values())}+ px); every piece moves; body plans {', '.join(plans)}")
         # the first twelve regions hold only new species; the rest only old ones
-        pools = json.loads(pg.evaluate("JSON.stringify(Object.fromEntries(Object.entries(POOLS).map(([k,p])=>[k,p.list.map(x=>SP[x[0]].line)])))"))
+        pools = json.loads(pg.evaluate("JSON.stringify(Object.fromEntries(Object.entries(POOLS).map(([k,p])=>[k,p.list.map(x=>SPECIES[x[0]].line)])))"))
         new_all = set(json.loads(pg.evaluate("JSON.stringify(LINES.map(l=>l.id).filter(id=>!['musk','bezos','gates'].includes(id)))")))   # v39: every line beyond the starters is new roster
         mixed = [k for k, L in pools.items() if any(l in new_all for l in L) and any(l not in new_all for l in L)]
         if mixed: raise Exception(f'pools mixing old and new species: {mixed}')
@@ -1191,11 +1191,11 @@ def desktop_steps(b, base, R):
     @step('v39/v40: the whole roster, old roster gone, legendaries, signature moves, six-choice dressing room, busts', 300)
     def v39():
         out = []
-        n = pg.evaluate("Object.keys(SP).length"); ln = pg.evaluate("LINES.length")
+        n = pg.evaluate("Object.keys(SPECIES).length"); ln = pg.evaluate("LINES.length")
         if n != 117 or ln != 58: raise Exception(f'{n} species in {ln} lines (want 117 in 58)')
-        if pg.evaluate("!!(SP.hood0||SP.goss0||SP.myth0||RIGS.hood0)"): raise Exception('old species still in the data')
+        if pg.evaluate("!!(SPECIES.hood0||SPECIES.goss0||SPECIES.myth0||RIGS.hood0)"): raise Exception('old species still in the data')
         if (GAME / 'art' / 'billionaires').exists(): raise Exception('art/billionaires still shipped')
-        ids = json.loads(pg.evaluate("JSON.stringify(Object.keys(SP))"))
+        ids = json.loads(pg.evaluate("JSON.stringify(Object.keys(SPECIES))"))
         miss = [i for i in ids if not pg.evaluate(f"!!(RIGS['{i}']&&RIGS['{i}'].front&&RIGS['{i}'].back&&RIGS['{i}'].front.sheet&&RIGS['{i}'].front.portrait)")]
         if miss: raise Exception(f'rigs or busts missing: {miss[:6]}')
         nx = ROOT / 'game' / 'art' / 'next' / 'billionaires'
@@ -1974,7 +1974,7 @@ def studio_round_trip(pw, R):
             g.goto(f'http://localhost:{port}/game/index.html')
             try: g.wait_for_selector('.ttl,.title', timeout=60000)
             except Exception: raise Exception('after saving, the game didn’t reach its title: ' + (' | '.join(errs[:4]) or g.evaluate("document.querySelector('.ld-phase')&&document.querySelector('.ld-phase').textContent")))
-            seen = g.evaluate("[MOVES.lawsuit.p,!!SP.checko0]")
+            seen = g.evaluate("[MOVES.lawsuit.p,!!SPECIES.checko0]")
             if seen != [77, True]: raise Exception(f'after saving, the game sees move power {seen[0]} and new Billie {seen[1]}')
             # v37: the save put the piece-sheet rigs back in rigs-next.js and the rest in rigs.js
             rn = (tmp / 'game' / 'art' / 'next' / 'rigs-next.js').read_text(); ro = (tmp / 'game' / 'art' / 'rigs.js').read_text()

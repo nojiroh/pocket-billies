@@ -12,7 +12,7 @@
 import { expose } from './test-globals.js';
 import { areaKey, provide, sceneIdAt, sfx } from './hooks.js';
 import { clamp } from './util.js';
-import { SP, STATUSN, TRAINERS, rivalSp, trainersAt } from './game-data.js';
+import { SPECIES, STATUSN, TRAINERS, rivalSp, trainersAt } from './game-data.js';
 import { billyName, findBilly, maxHp, nextTripNode, save, saveData, uiState } from './game-state.js';
 import { makeCanvas } from './art.js';
 import { RIG_BACK_VIEW, drawRig, rigFrame, rigParts, rigPreload } from './skeleton-rig.js';
@@ -67,7 +67,7 @@ export const worldBillies = {
 provide({ worldBillies }); /* to-module */
 const BILLY_FRAME_CACHE_MAX = 320;
 function worldBillyRig(sp, gold, view) {
-  if (!SP[sp] || typeof rigParts !== 'function') return null;
+  if (!SPECIES[sp] || typeof rigParts !== 'function') return null;
   const k = view === 'back' ? RIG_BACK_VIEW : 1;
   let R = null;
   try {
@@ -122,7 +122,7 @@ function worldBillyFrame(sp, gold, view, pose, t, seed) {
    (2, 2.25, 2.5 ...), never off by more than 6% of the height it would otherwise have, so its pixels line up with the
    props' instead of beating against them */
 function worldBillyMetersPerPixel(sp, R, big = 1) {
-  const h = clamp((SP[sp].ht || 1) * 0.9, 0.6, 2) * big,
+  const h = clamp((SPECIES[sp].ht || 1) * 0.9, 0.6, 2) * big,
     px = Math.max(20, R.geo.base - R.geo.top || R.BH * 0.7),
     m = h / px;
   const r = 1 / (m * 68),
@@ -360,7 +360,7 @@ export function companionSpecies(T) {
   const e = T.team[pet && typeof pet === 'number' ? Math.min(T.team.length - 1, pet) : 0];
   let sp = e.sp;
   if (/^@rival\d?$/.test(sp) && typeof rivalSp === 'function') sp = rivalSp(sp);
-  return SP[sp] ? sp : null;
+  return SPECIES[sp] ? sp : null;
 }
 function companionItems(out, t, npcPos) {
   const P = walkView.pl;
@@ -498,7 +498,7 @@ function warmWorldBillies() {
         if (sp) L.push([sp, false, 1]);
         for (const e of T.team || []) {
           const s2 = /^@rival\d?$/.test(e.sp) && typeof rivalSp === 'function' ? rivalSp(e.sp) : e.sp;
-          if (SP[s2]) L.push([s2, false, 1]);
+          if (SPECIES[s2]) L.push([s2, false, 1]);
         }
       }
     /* v34: what a battle here would need, loaded now while you walk (a battle used to start by loading it: 4 fps at worst) */

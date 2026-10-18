@@ -29,7 +29,7 @@ import {
   POOLS,
   ROUTE,
   RULES,
-  SP,
+  SPECIES,
   START_NODE,
   STATK,
   STEPS_PER_KM,
@@ -263,9 +263,10 @@ export function migrate(o) {
       m.boxedAt = Date.now();
     }
   }
-  if (!SP[s.starter + '0'] && s.started) s.starter = RULES.start.starters.find(l => SP[l + '0']) || LINES[0].id;
-  s.team = (s.team || []).filter(m => SP[m.sp]);
-  s.box = (s.box || []).filter(m => SP[m.sp]);
+  if (!SPECIES[s.starter + '0'] && s.started)
+    s.starter = RULES.start.starters.find(l => SPECIES[l + '0']) || LINES[0].id;
+  s.team = (s.team || []).filter(m => SPECIES[m.sp]);
+  s.box = (s.box || []).filter(m => SPECIES[m.sp]);
   [...s.team, ...s.box].forEach(m => {
     if (m.nick != null) m.nick = cleanName(m.nick, 16);
   });
@@ -273,11 +274,11 @@ export function migrate(o) {
     s.avatar.name = cleanName(s.avatar.name, 18) || 'Trainer';
   [...s.team, ...s.box].forEach(m => {
     m.moves = (m.moves || []).filter(k => MOVES[k]);
-    if (!m.moves.length) m.moves = movesAt(SP[m.sp].line, m.lvl);
+    if (!m.moves.length) m.moves = movesAt(SPECIES[m.sp].line, m.lvl);
   });
   for (const key of ['seen', 'caught'])
-    if (s[key] && typeof s[key] === 'object') for (const id of Object.keys(s[key])) if (!SP[id]) delete s[key][id];
-  s.queue = (s.queue || []).filter(q => SP[q.sp]);
+    if (s[key] && typeof s[key] === 'object') for (const id of Object.keys(s[key])) if (!SPECIES[id]) delete s[key][id];
+  s.queue = (s.queue || []).filter(q => SPECIES[q.sp]);
   s.eggs = s.eggs.filter(e => EGGS[e.tier]);
   s.jobs.forEach(j => {
     if (j.job && !JOBS[j.job]) j.job = Object.keys(JOBS)[0] || null;
@@ -427,7 +428,7 @@ export function flushSave() {
 
 /* ---------- billionaires ---------- */
 export function stat(m, k) {
-  const b = SP[m.sp].base[STATK.indexOf(k)];
+  const b = SPECIES[m.sp].base[STATK.indexOf(k)];
   let v = k === 'hp' ? Math.floor((2 * b * m.lvl) / 100) + m.lvl + 10 : Math.floor((2 * b * m.lvl) / 100) + 5;
   /* v33: an Alpha in battle is much tougher (m.boss); one you caught keeps a little of it (m.alpha) */
   if (m.boss) v = Math.floor(v * (k === 'hp' ? m.boss.hp : m.boss.st));
@@ -451,7 +452,7 @@ export function makeBilly(sp, lvl, o = {}) {
     hp: 0,
     status: null,
     sTurns: 0,
-    moves: movesAt(SP[sp].line, lvl),
+    moves: movesAt(SPECIES[sp].line, lvl),
     gold: !!o.gold,
     nick: '',
   };
@@ -462,7 +463,7 @@ export function makeBilly(sp, lvl, o = {}) {
   } catch (e) {}
   return m;
 }
-export const billyName = m => m.nick || SP[m.sp].name;
+export const billyName = m => m.nick || SPECIES[m.sp].name;
 export const allBillies = () => saveData.team.concat(saveData.box);
 export const findBilly = id => allBillies().find(m => m.uid === id);
 export function gainXp(m, amt, say) {
@@ -473,7 +474,7 @@ export function gainXp(m, amt, say) {
     m.lvl++;
     if (m.hp > 0) m.hp = Math.min(maxHp(m), m.hp + maxHp(m) - old);
     say(`${billyName(m)} grew to level ${m.lvl}.`, { k: 'lvl', uid: m.uid });
-    for (const [lv, mv] of LN[SP[m.sp].line].learn) {
+    for (const [lv, mv] of LN[SPECIES[m.sp].line].learn) {
       if (lv !== m.lvl || m.moves.includes(mv)) continue;
       if (m.moves.length < moveSlotCount()) {
         m.moves.push(mv);
@@ -483,7 +484,7 @@ export function gainXp(m, amt, say) {
   }
 }
 export function canEvolve(m) {
-  const e = SP[m.sp].evo;
+  const e = SPECIES[m.sp].evo;
   if (!e) return false;
   if (m.evoNo != null && m.lvl <= m.evoNo) return false;
   switch (e.k) {
@@ -502,16 +503,16 @@ export function canEvolve(m) {
 }
 export const evolutionItemName = e => (ITEMS[e.item || 'bell'] ? ITEMS[e.item || 'bell'].n : 'Shining Stone');
 export function evolutionHint(m) {
-  const s = SP[m.sp],
+  const s = SPECIES[m.sp],
     e = s.evo;
   if (!e) return s.rar === 'mythical' ? 'Does not evolve.' : 'Fully evolved.';
-  const nx = SP[s.next],
+  const nx = SPECIES[s.next],
     nm = saveData.seen[nx.id] ? nx.name : 'something bigger';
   switch (e.k) {
     case 'lvl':
       return `Evolves at level ${e.at} into ${nm}.`;
     case 'split': {
-      const alt = SP[s.alt],
+      const alt = SPECIES[s.alt],
         an = alt && saveData.seen[alt.id] ? alt.name : 'something else';
       return `Evolves at level ${e.at} into ${nm} or ${an}: ${splitPath(m) === 'A' ? 'the Build path is ahead' : 'the Hype path is ahead'} (${m.wins || 0} battles won, ${stepsToKm(m.bsteps || 0)} km walked as buddy${m.psteps ? ` + ${stepsToKm((m.psteps || 0) / 2)} km in the party at half weight` : ''}).`;
     }
@@ -543,7 +544,7 @@ export function evolve(m) {
   if (typeof jingle === 'function') jingle(JINGLES.evolve, 140);
   const old = maxHp(m),
     from = billyName(m),
-    s0 = SP[m.sp];
+    s0 = SPECIES[m.sp];
   m.sp = s0.evo && s0.evo.k === 'split' && s0.alt && splitPath(m) === 'B' ? s0.alt : s0.next;
   if (m.hp > 0) m.hp = Math.max(1, Math.min(maxHp(m), m.hp + maxHp(m) - old));
   saveData.caught[m.sp] = 1;
@@ -632,16 +633,16 @@ function riderOf() {
   const R = RULES.ride || { minHeight: 1.5, types: ['Water'] };
   let best = null;
   for (const m of saveData.team) {
-    const sp = SP[m.sp];
+    const sp = SPECIES[m.sp];
     if (!sp || !sp.types.some(t => (R.types || ['Water']).includes(t)) || sp.ht < (R.minHeight || 1.5)) continue;
-    if (!best || sp.ht > SP[best.sp].ht) best = m;
+    if (!best || sp.ht > SPECIES[best.sp].ht) best = m;
   }
   return best;
 }
 export const canRide = () => !!riderOf();
 export const riderName = () => {
   const m = riderOf();
-  return m ? m.nick || SP[m.sp].name : '';
+  return m ? m.nick || SPECIES[m.sp].name : '';
 };
 export const canEnter = n =>
   (!ROUTE[n].gate || saveData.seats.includes(ROUTE[n].gate)) && (!ROUTE[n].ride || canRide());
@@ -758,8 +759,8 @@ export function spawn(gentle, force) {
   const P = areaPool();
   let list = typeof environmentOdds === 'function' ? environmentOdds(P.list) : P.list;
   if (gentle) {
-    const my = SP[saveData.starter + '0'].types,
-      g = list.filter(([id]) => !SP[id].types.some(t => eff(t, my) > 1));
+    const my = SPECIES[saveData.starter + '0'].types,
+      g = list.filter(([id]) => !SPECIES[id].types.some(t => eff(t, my) > 1));
     if (g.length) list = g;
   }
   const sp = force || pickWeighted(list),
@@ -874,7 +875,7 @@ export function hatchEgg(e) {
     top = e.tier === EGG_TIERS[EGG_TIERS.length - 1];
   let sp = pickWeighted(T.list),
     gold = random() < 1 / (top ? R.goldOdds10 : R.goldOdds);
-  if (top && SP[R.mythSpecies] && random() < 1 / R.mythOdds) {
+  if (top && SPECIES[R.mythSpecies] && random() < 1 / R.mythOdds) {
     sp = R.mythSpecies;
     gold = false;
   }

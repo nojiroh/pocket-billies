@@ -11,7 +11,7 @@
 import { expose } from './test-globals.js';
 import { provide } from './hooks.js';
 import { clamp } from './util.js';
-import { MOVES, ROUTE, RULES, SP, TRAINERS, gameData, linkCost, placeKind } from './game-data.js';
+import { MOVES, ROUTE, RULES, SPECIES, TRAINERS, gameData, linkCost, placeKind } from './game-data.js';
 import { loadAllMaps } from './map-files.js';
 import {
   activeBattle,
@@ -660,11 +660,11 @@ async function runFullTest(mode) {
     /* 2. battles: on the 3D stage where you stand, then on a painted stage */
     /* v41: the wild foe is an ordinary first-stage species (the first stage-1 species used to be the legendary Oilympus since v39) */
     const foeSp =
-      Object.keys(SP).find(
-        k => SP[k].stage === 0 && SP[k].rar === 'common' && !RULES.start.starters.includes(SP[k].line)
+      Object.keys(SPECIES).find(
+        k => SPECIES[k].stage === 0 && SPECIES[k].rar === 'common' && !RULES.start.starters.includes(SPECIES[k].line)
       ) ||
-      Object.keys(SP).find(k => SP[k].stage === 0 && SP[k].rar !== 'mythical') ||
-      Object.keys(SP)[0];
+      Object.keys(SPECIES).find(k => SPECIES[k].stage === 0 && SPECIES[k].rar !== 'mythical') ||
+      Object.keys(SPECIES)[0];
     const battle = async classic => {
       uiState.bench = null;
       uiState.tab = 'walk';

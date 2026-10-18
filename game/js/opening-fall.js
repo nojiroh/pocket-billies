@@ -13,7 +13,7 @@
 import { expose } from './test-globals.js';
 import { openingDone, provide } from './hooks.js';
 import { $, clamp } from './util.js';
-import { MOVES, SP, START_NODE, eff } from './game-data.js';
+import { MOVES, SPECIES, START_NODE, eff } from './game-data.js';
 import { activeBattle, escapeHtml, maxHp, reducedMotion } from './game-state.js';
 import { artLoad } from './art.js';
 import { portraitHTML } from './person-art.js';
@@ -847,9 +847,10 @@ function tutorTypesTip() {
     strong = mine.filter(m => m.t !== 'None' && eff(m.t, ft) > 1),
     plain = mine.find(m => m.t === 'None');
   const a = `Every move has a type, shown by its colour. ${ft.join('/')} Billies take double from some types and half from others.`;
-  if (strong.length) return `${a} ${strong[0].n} is ${strong[0].t}: that one hits ${SP[foe.sp].name} hard. Use it!`;
+  if (strong.length)
+    return `${a} ${strong[0].n} is ${strong[0].t}: that one hits ${SPECIES[foe.sp].name} hard. Use it!`;
   if (weak.length)
-    return `${a} Your ${weak.map(m => m.n).join(' and ')} only half hurt${weak.length > 1 ? '' : 's'} ${SP[foe.sp].name}.${plain ? ` Plain ${plain.n} hits anything normally.` : ''}`;
+    return `${a} Your ${weak.map(m => m.n).join(' and ')} only half hurt${weak.length > 1 ? '' : 's'} ${SPECIES[foe.sp].name}.${plain ? ` Plain ${plain.n} hits anything normally.` : ''}`;
   return `${a} Watch for “Super effective” when you hit.`;
 }
 const TUTOR_TIPS = {

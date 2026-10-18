@@ -34,7 +34,7 @@ expose({
   SEATS: [() => SEATS],
   SEm: [() => SEm],
   SHOPS: [() => SHOPS],
-  SP: [() => SP],
+  SPECIES: [() => SPECIES],
   START_NODE: [() => START_NODE],
   STATK: [() => STATK],
   STATN: [() => STATN],
@@ -120,9 +120,9 @@ const LV = [
 ];
 export const LINES = gameData.lines;
 export const LN = Object.fromEntries(LINES.map(l => [l.id, l]));
-export const SP = {},
+export const SPECIES = {},
   DEX = [];
-provide({ SP }); /* to-module */
+provide({ SPECIES }); /* to-module */
 const TOT = Object.fromEntries(Object.entries(gameData.rarities).map(([k, v]) => [k, v.totals]));
 const pickI = (a, i) => a[Math.min(i, a.length - 1)];
 LINES.forEach(L => {
@@ -147,7 +147,7 @@ LINES.forEach(L => {
       last = L.split ? st0 >= 2 : st0 === L.names.length - 1,
       at = (arr, d) => (Array.isArray(arr) ? pickI(arr, st0) : d);
     const types = (at(L.types, ['None']) || ['None']).filter(t => TC[t]);
-    SP[id] = {
+    SPECIES[id] = {
       id,
       name: n,
       line: L.id,
@@ -188,7 +188,10 @@ export const FUTURE = gameData.regions;
 export const POOLS = {};
 for (const k in gameData.pools) {
   const P = gameData.pools[k];
-  POOLS[k] = { lv: P.lv, list: P.list.filter(([id]) => SP[id] || warnData(`Pool ${k} lists unknown Billie ${id}.`)) };
+  POOLS[k] = {
+    lv: P.lv,
+    list: P.list.filter(([id]) => SPECIES[id] || warnData(`Pool ${k} lists unknown Billie ${id}.`)),
+  };
   if (!POOLS[k].list.length) POOLS[k].list = [[DEX[0], 1]];
 }
 export const BACKDROPS = gameData.backdrops;
@@ -267,7 +270,7 @@ for (const k in gameData.eggs) {
   EGGS[k] = {
     need: E.need,
     lv: E.lv,
-    list: E.list.filter(([id]) => SP[id] || warnData(`Egg ${k} km lists unknown Billie ${id}.`)),
+    list: E.list.filter(([id]) => SPECIES[id] || warnData(`Egg ${k} km lists unknown Billie ${id}.`)),
   };
 }
 export const EGG_TIERS = Object.keys(EGGS)
@@ -292,7 +295,7 @@ for (const id in TRAINERS) {
   else warnData(`Trainer ${id} stands on a stop that doesn’t exist.`);
   if (!PEOPLE[T.who]) T.who = 'gini';
   T.team = (T.team || []).filter(
-    e => /^@rival\d?$/.test(e.sp) || SP[e.sp] || warnData(`Trainer ${id} has unknown Billie ${e.sp}.`)
+    e => /^@rival\d?$/.test(e.sp) || SPECIES[e.sp] || warnData(`Trainer ${id} has unknown Billie ${e.sp}.`)
   );
 }
 /* the first trainer at a stop that hands out a Board Seat (or doesn’t block the road) is that stop’s Boardroom */
@@ -307,7 +310,7 @@ export function rivalSp(code) {
   const base = RULES.start.rival[saveData.starter] || DEX[0],
     st = +(code.slice(6) || 0),
     id = base.replace(/\d+$/, '') + st;
-  return SP[id] ? id : base;
+  return SPECIES[id] ? id : base;
 }
 /* a team entry may name its moves (v47: Blake's first billionaire only knows Tackle) */
 export function trainerTeam(T) {

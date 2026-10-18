@@ -9,7 +9,7 @@
 import { expose } from './test-globals.js';
 import { sfx, startWild, toast, x28Event } from './hooks.js';
 import { clamp, random } from './util.js';
-import { RULES, SP, gameData } from './game-data.js';
+import { RULES, SPECIES, gameData } from './game-data.js';
 import { activeBattle, areaPool, newUid, pickWeighted, reducedMotion, save, saveData, uiState } from './game-state.js';
 import { uiIconHTML } from './art.js';
 import { terrainAt, walkView } from './walk-view.js';
@@ -107,7 +107,7 @@ function fishKindAt(x, z) {
 function fishPick(kind) {
   const F = (gameData.fishing || {})[kind] || (gameData.fishing || {}).pond;
   if (!F || !F.list || !F.list.length) return null;
-  const list = F.list.filter(([id]) => SP[id]);
+  const list = F.list.filter(([id]) => SPECIES[id]);
   if (!list.length) return null;
   const sp = pickWeighted(list),
     P = areaPool(),
@@ -220,7 +220,7 @@ function fishTap() {
       fishEnd('Nothing lives in this water.');
       return;
     }
-    const sp = SP[FISH.q.sp],
+    const sp = SPECIES[FISH.q.sp],
       hard = clamp(
         0.6 + (sp.stage || 0) * 0.35 + (sp.rar === 'rare' ? 0.4 : sp.rar === 'uncommon' ? 0.2 : 0),
         0.6,
@@ -375,7 +375,7 @@ function fishCaught() {
   const q = FISH.q;
   fishEnd(null);
   if (!q) return;
-  const nm = SP[q.sp].name;
+  const nm = SPECIES[q.sp].name;
   if (typeof NWLOG !== 'undefined') NWLOG.add('fish', 'caught ' + q.sp);
   saveData.stats = saveData.stats || {};
   saveData.stats.fished = (saveData.stats.fished || 0) + 1;

@@ -211,7 +211,7 @@ def check_studio(pw, results):
         g = b.new_context(viewport={'width': 1440, 'height': 900}); g.add_init_script(TEST_GLOBALS); g = g.new_page(); g.set_default_timeout(240000); gerrs = []
         g.on('pageerror', lambda e: gerrs.append(str(e))); g.on('console', lambda m: gerrs.append(m.text) if m.type == 'error' else None)
         g.goto(f'http://localhost:{port}/game/index.html'); g.wait_for_selector('.ttl,.title', timeout=30000)
-        seen = g.evaluate("[MOVES.lawsuit.p,!!SP.checko0,!!(RIGS.checko0&&RIGS.checko0.front.bones.some(b=>b.n==='headTip'))]")
+        seen = g.evaluate("[MOVES.lawsuit.p,!!SPECIES.checko0,!!(RIGS.checko0&&RIGS.checko0.front.bones.some(b=>b.n==='headTip'))]")
         results['studioSeen'] = seen
         if not seen[1]:
             results['studio'] = {'errors': (errs + gerrs + ['the new billionaire did not reach the game'])[:10], 'movePowerSaved': seen[0] == 77, 'newBillionaireInGame': False, 'builderPartInGame': seen[2]}

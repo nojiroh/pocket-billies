@@ -21,7 +21,7 @@ import {
   ROUTE,
   RULES,
   SHOPS,
-  SP,
+  SPECIES,
   START_NODE,
   STATK,
   STATN,
@@ -453,7 +453,7 @@ function learnModal(m, mv) {
   });
 }
 function evolutionModal(m) {
-  const s = SP[m.sp],
+  const s = SPECIES[m.sp],
     e = s.evo;
   const why =
     {
@@ -483,8 +483,8 @@ function evolutionModal(m) {
   });
 }
 function runEvolution(m, note) {
-  const from = SP[m.sp],
-    to = SP[from.evo && from.evo.k === 'split' && from.alt && splitPath(m) === 'B' ? from.alt : from.next],
+  const from = SPECIES[m.sp],
+    to = SPECIES[from.evo && from.evo.k === 'split' && from.alt && splitPath(m) === 'B' ? from.alt : from.next],
     fromName = billyName(m);
   uiState.modal = null;
   modal({
@@ -540,7 +540,7 @@ function hatchModal(e) {
           const box = $('#hatchBox');
           const res = hatchEgg(e);
           const m = res.m,
-            s = SP[m.sp];
+            s = SPECIES[m.sp];
           const done = () => {
             uiState.modal = null;
             modal({
@@ -731,11 +731,11 @@ function renderIntro() {
     const nm = trainerLook('me').name || 'Trainer';
     return `<div class="talk"><div class="talk-art">${humanHTML('me', 96)}</div><div class="dlg px"><p class="speaker">Professor Hazel</p><p class="line">${escapeHtml(nm)}? It suits you. If it isn’t your name, it is now. Nobody should walk the Hollow Earth alone, so here: choose your very first Billie.</p><button class="pb dark wide" data-a="intro">Choose a starter</button></div></div>`;
   }
-  const pk = RULES.start.starters.filter(l => SP[l + '0']);
+  const pk = RULES.start.starters.filter(l => SPECIES[l + '0']);
   return `<header class="bar"><div><div class="sub">Professor Hazel’s lab</div><h1 class="where">Pick your starter</h1></div></header><p class="note">Each one beats one of the others. Your rival will pick whichever beats yours.</p>
  <div class="starters">${pk
    .map((l, j) => {
-     const s = SP[l + '0'],
+     const s = SPECIES[l + '0'],
        t = s.types[0];
      const st = TYPES.filter(x => eff(t, [x]) > 1),
        wk = TYPES.filter(x => eff(x, [t]) > 1);
@@ -894,7 +894,7 @@ function buddyCard() {
   if (!m) return '';
   const a = xpFor(m.lvl),
     b = xpFor(m.lvl + 1),
-    e = SP[m.sp].evo;
+    e = SPECIES[m.sp].evo;
   const ev =
     e && e.k === 'buddy'
       ? `<div class="note">Buddy distance: ${stepsToKm(m.bsteps || 0)} of ${stepsToKm(e.steps)} km to evolve.</div>${bar((m.bsteps || 0) / e.steps, 'gold')}`
@@ -1850,7 +1850,7 @@ function paintMapCard() {
 }
 /* ---------- team: the lead up top, the party as cards, day jobs, then storage ---------- */
 const plateVars = m => {
-  const t = SP[m.sp].types;
+  const t = SPECIES[m.sp].types;
   return `--c1:${TC[t[0]][0]};--c2:${TC[t[t.length - 1]][0]}`;
 };
 const billyConditionHTML = m => (m.hp <= 0 ? '<span class="stb st-down">Fainted</span>' : stBadge(m.status));
@@ -1864,7 +1864,7 @@ const xpLeft = m => (m.lvl >= maxLevel() ? 'Max level' : `${formatNumber(xpFor(m
 const needsCare = m => m.hp < maxHp(m) || !!m.status;
 const meter = (k, inner, v) => `<div class="tm-meter"><span>${k}</span>${inner}<b class="tnum">${v}</b></div>`;
 function teamHero(m) {
-  const s = SP[m.sp],
+  const s = SPECIES[m.sp],
     mx = maxHp(m),
     bud = m.uid === saveData.buddy;
   return `<section class="tm-hero tpanel"><button class="tm-stage" data-a="mon" data-u="${m.uid}" style="${plateVars(m)}" aria-label="${escapeHtml(billyName(m))}, details"><span class="tm-ribbon">Lead</span>${m.gold ? '<span class="tm-ribbon gold">Golden</span>' : ''}${rigCanvasHTML(m.sp, 120, { gold: m.gold })}</button>
@@ -1877,7 +1877,7 @@ function teamCard(m, i) {
   const mx = maxHp(m),
     bud = m.uid === saveData.buddy;
   return `<div class="tm-card${m.hp <= 0 ? ' down' : ''}" style="--d:${i * 40}ms"><button class="tm-main" data-a="mon" data-u="${m.uid}"><span class="tm-spr" style="${plateVars(m)}">${rigCanvasHTML(m.sp, 72, { gold: m.gold })}${bud ? `<i class="tm-heart" title="Buddy">${uiIconHTML('heart', 12)}</i>` : ''}</span>
-  <span class="tm-t"><b>${escapeHtml(billyName(m))}</b><span class="tm-lv tnum">Lv ${m.lvl}</span></span><span class="row">${SP[m.sp].types.map(chip).join('')}${billyConditionHTML(m)}</span>${hpBar(m.hp, mx)}<span class="hpn tnum">${m.hp}/${mx} HP</span></button>
+  <span class="tm-t"><b>${escapeHtml(billyName(m))}</b><span class="tm-lv tnum">Lv ${m.lvl}</span></span><span class="row">${SPECIES[m.sp].types.map(chip).join('')}${billyConditionHTML(m)}</span>${hpBar(m.hp, mx)}<span class="hpn tnum">${m.hp}/${mx} HP</span></button>
   <div class="tm-quick"><button class="qk" data-a="mlead" data-u="${m.uid}" ${m.hp <= 0 ? 'disabled' : ''}>Make lead</button>${needsCare(m) ? `<button class="qk heal" data-a="mheal" data-u="${m.uid}">Heal</button>` : ''}</div></div>`;
 }
 function jobSlots() {
@@ -1904,10 +1904,10 @@ const BOXSORT = [
 function boxSection() {
   const all = saveData.box.filter(m => m.job == null),
     so = uiState.boxSort || 'new',
-    types = [...new Set(all.flatMap(m => SP[m.sp].types))].sort();
+    types = [...new Set(all.flatMap(m => SPECIES[m.sp].types))].sort();
   let f = uiState.boxF || 'all';
   if (f !== 'all' && !types.includes(f)) f = 'all';
-  let L = all.filter(m => f === 'all' || SP[m.sp].types.includes(f));
+  let L = all.filter(m => f === 'all' || SPECIES[m.sp].types.includes(f));
   L =
     so === 'lvl'
       ? L.slice().sort((a, b) => b.lvl - a.lvl)
@@ -1922,7 +1922,7 @@ function boxSection() {
   return `<section class="tpanel tm-box"><div class="sec-h"><h2>Storage</h2><span class="count tnum">${all.length}</span></div>${
     all.length
       ? `<p class="note">Billies resting here don’t battle. Tap one for details.</p>${tools}
- <div class="bx-grid">${L.map(m => `<div class="bx"><button class="bx-main" data-a="mon" data-u="${m.uid}"><span class="bx-spr" style="${plateVars(m)}">${rigCanvasHTML(m.sp, 60, { gold: m.gold })}</span><b>${escapeHtml(billyName(m))}</b><span class="bx-sub tnum">Lv ${m.lvl}<span class="bx-dots">${SP[m.sp].types.map(t => `<i style="--tc:${TC[t][0]}" title="${t}"></i>`).join('')}</span></span></button><button class="qk" data-a="mteam" data-u="${m.uid}">${full ? 'Swap in' : 'To team'}</button></div>`).join('')}</div>`
+ <div class="bx-grid">${L.map(m => `<div class="bx"><button class="bx-main" data-a="mon" data-u="${m.uid}"><span class="bx-spr" style="${plateVars(m)}">${rigCanvasHTML(m.sp, 60, { gold: m.gold })}</span><b>${escapeHtml(billyName(m))}</b><span class="bx-sub tnum">Lv ${m.lvl}<span class="bx-dots">${SPECIES[m.sp].types.map(t => `<i style="--tc:${TC[t][0]}" title="${t}"></i>`).join('')}</span></span></button><button class="qk" data-a="mteam" data-u="${m.uid}">${full ? 'Swap in' : 'To team'}</button></div>`).join('')}</div>`
       : '<div class="empty tm-empty">Storage is empty. When your team is full, new Billies you tax and hatchlings rest here.</div>'
   }</section>`;
 }
@@ -1966,7 +1966,7 @@ function guideTabs() {
     .join('')}</div>`;
 }
 function renderLedger() {
-  if (uiState.dex && SP[uiState.dex] && saveData.seen[uiState.dex]) return renderDexEntry(uiState.dex);
+  if (uiState.dex && SPECIES[uiState.dex] && saveData.seen[uiState.dex]) return renderDexEntry(uiState.dex);
   if (uiState.guideTab === 'cards' && typeof renderPostcards === 'function')
     return `<header class="bar"><div><div class="sub">Greetings from every town you’ve walked into</div><h1 class="where">Postcards</h1></div></header>${guideTabs()}${renderPostcards()}`;
   if (uiState.guideTab === 'lore' && typeof renderLore === 'function')
@@ -1978,7 +1978,7 @@ function renderLedger() {
     const st = dexStatus(id);
     if (f === 'got') return st === 'got';
     if (f === 'miss') return st !== 'got';
-    if (TYPES.includes(f)) return saveData.seen[id] && SP[id].types.includes(f);
+    if (TYPES.includes(f)) return saveData.seen[id] && SPECIES[id].types.includes(f);
     return true;
   });
   const chips =
@@ -1999,7 +1999,7 @@ function renderLedger() {
  <ol class="ledger paper px">${
    list
      .map(id => {
-       const s = SP[id],
+       const s = SPECIES[id],
          st = dexStatus(id),
          sn = st !== 'none';
        return `<li><button class="lrow ${st}" data-a="dex" data-s="${id}" aria-label="${sn ? s.name : 'Unknown'}, number ${s.no}"><span class="lno tnum">${String(s.no).padStart(3, '0')}</span><span class="lspr">${sn ? bustHTML(id, 46) : bustHTML(id, 46, { sil: 1, still: 1 })}</span><span class="ltx"><b>${sn ? escapeHtml(s.name) : 'Unknown'}</b><small>${sn ? escapeHtml(s.cat) : '—'}</small></span><span class="ltypes">${sn ? s.types.map(t => `<i style="--tc:${TC[t][0]}" title="${t}"></i>`).join('') : ''}</span><span class="lst">${st === 'got' ? `<img class="pxi" src="${coinURL('penny')}" width="18" height="18" alt="Taxed">` : st === 'seen' ? '<em>seen</em>' : ''}</span></button></li>`;
@@ -2032,7 +2032,7 @@ function evolutionMethod(e) {
   return '';
 }
 function renderDexEntry(id) {
-  const s = SP[id],
+  const s = SPECIES[id],
     got = !!saveData.caught[id],
     L = LN[s.line],
     D = (RIGS[id] && RIGS[id].front) || {},
@@ -2063,7 +2063,7 @@ function renderDexEntry(id) {
       const sid = L.id + st,
         sn = saveData.seen[sid],
         prev = L.split && st === 3 ? L.id + '1' : L.id + (st - 1);
-      return `${st ? `<span class="evarrow"><i>→</i><small>${escapeHtml(L.split && st >= 2 ? (st === 2 ? 'Build path' : 'Hype path') : evolutionMethod(SP[prev].evo))}</small></span>` : ''}<button class="evnode${sid === id ? ' cur' : ''}" data-a="dex" data-s="${sid}" ${sn ? '' : 'disabled'}>${sn ? rigCanvasHTML(sid, 44) : rigCanvasHTML(sid, 44, { sil: 1, still: 1 })}<small>${sn ? escapeHtml(n) : '???'}</small></button>`;
+      return `${st ? `<span class="evarrow"><i>→</i><small>${escapeHtml(L.split && st >= 2 ? (st === 2 ? 'Build path' : 'Hype path') : evolutionMethod(SPECIES[prev].evo))}</small></span>` : ''}<button class="evnode${sid === id ? ' cur' : ''}" data-a="dex" data-s="${sid}" ${sn ? '' : 'disabled'}>${sn ? rigCanvasHTML(sid, 44) : rigCanvasHTML(sid, 44, { sil: 1, still: 1 })}<small>${sn ? escapeHtml(n) : '???'}</small></button>`;
     })
     .join('');
   const bg = TC[s.types[0]][0],
@@ -2164,7 +2164,7 @@ function donateItem() {
   return k || null;
 }
 function billySheet(m) {
-  const s = SP[m.sp],
+  const s = SPECIES[m.sp],
     inTeam = saveData.team.includes(m),
     e = s.evo,
     mx = maxHp(m),
@@ -2347,9 +2347,9 @@ function billySheet(m) {
       ? line.names
           .map((n, i) => {
             const id = s.line + i;
-            if (!SP[id]) return '';
+            if (!SPECIES[id]) return '';
             const seen = saveData.seen[id] || saveData.caught[id] || id === m.sp;
-            return `<div class="ms-evo ${id === m.sp ? 'on' : ''}">${seen ? rigCanvasHTML(id, 64, {}) : '<span class="ms-q">?</span>'}<b>${seen ? escapeHtml(SP[id].name) : '???'}</b></div>`;
+            return `<div class="ms-evo ${id === m.sp ? 'on' : ''}">${seen ? rigCanvasHTML(id, 64, {}) : '<span class="ms-q">?</span>'}<b>${seen ? escapeHtml(SPECIES[id].name) : '???'}</b></div>`;
           })
           .join('<span class="ms-arr" aria-hidden="true">›</span>')
       : '';
@@ -2428,7 +2428,7 @@ function addPick() {
   const free = saveData.box.filter(m => m.job == null).sort((a, b) => b.lvl - a.lvl);
   modal({
     title: 'Add to your team',
-    html: `<div class="list">${free.map(m => `<button class="pickrow" data-a="tmaddon" data-u="${m.uid}">${rigCanvasHTML(m.sp, 40, { gold: m.gold })}<span class="pr-t"><b>${escapeHtml(billyName(m))}</b><small>Lv ${m.lvl}, ${SP[m.sp].types.map(t => (t === 'None' ? 'Normal' : t)).join(' and ')}</small></span></button>`).join('') || '<p>Storage is empty.</p>'}</div>`,
+    html: `<div class="list">${free.map(m => `<button class="pickrow" data-a="tmaddon" data-u="${m.uid}">${rigCanvasHTML(m.sp, 40, { gold: m.gold })}<span class="pr-t"><b>${escapeHtml(billyName(m))}</b><small>Lv ${m.lvl}, ${SPECIES[m.sp].types.map(t => (t === 'None' ? 'Normal' : t)).join(' and ')}</small></span></button>`).join('') || '<p>Storage is empty.</p>'}</div>`,
     btns: [{ l: 'Cancel', c: 'quiet', f: closeModal }],
   });
 }
@@ -2533,7 +2533,7 @@ export function startGame(l, o = {}) {
   const nE = R.starterEncounters,
     words = ['No', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten'];
   const W = {
-    title: `${SP[m.sp].name} joined your team`,
+    title: `${SPECIES[m.sp].name} joined your team`,
     top: `<div class="sheet-art">${rigCanvasHTML(m.sp, 128)}</div>`,
     html: `${nE ? `<p>${words[nE] || nE} Billie${nE === 1 ? ' is' : 's are'} already rustling in the grass. Tap one to battle it, then flick a coin.</p>` : ''}${egg ? `<p>Professor Hazel also gave you a ${R.starterEgg} km egg. It’s warming up in an incubator, and every step you walk helps it hatch.</p>` : ''}`,
     btns: [{ l: 'Let’s go', c: 'dark', f: closeModal }],

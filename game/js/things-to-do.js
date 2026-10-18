@@ -7,7 +7,7 @@
 import { expose } from './test-globals.js';
 import { bar, closeModal, modal, provide, render, roomRefresh, toast } from './hooks.js';
 import { clamp } from './util.js';
-import { COINS, ITEMS, ROUTE, RULES, SP, gameData } from './game-data.js';
+import { COINS, ITEMS, ROUTE, RULES, SPECIES, gameData } from './game-data.js';
 import { activeBattle, billyName, escapeHtml, formatNumber, save, saveData, today, uiState } from './game-state.js';
 import { makeCanvas, uiIconHTML } from './art.js';
 import {
@@ -235,8 +235,8 @@ function reqAsker() {
   return walkView.folk[0];
 }
 const x28TeamOf = t =>
-  saveData.team.find(m => m.hp > 0 && SP[m.sp].types.includes(t)) ||
-  saveData.team.find(m => SP[m.sp].types.includes(t));
+  saveData.team.find(m => m.hp > 0 && SPECIES[m.sp].types.includes(t)) ||
+  saveData.team.find(m => SPECIES[m.sp].types.includes(t));
 async function reqTalk(f) {
   if (TALK.on) return;
   const q = reqHere(),
@@ -265,7 +265,7 @@ async function reqTalk(f) {
       modal({
         title: m ? `Show ${escapeHtml(billyName(m))}?` : `No ${escapeHtml(q.t)} Billie with you`,
         html: m
-          ? `<p>${escapeHtml(billyName(m))} is a ${escapeHtml(SP[m.sp].types.join('/'))} Billie.</p>`
+          ? `<p>${escapeHtml(billyName(m))} is a ${escapeHtml(SPECIES[m.sp].types.join('/'))} Billie.</p>`
           : `<p class="note">Come back with one in your team.</p>`,
         btns: m
           ? [
@@ -666,7 +666,7 @@ function battleWeatherMult(t) {
       try {
         o = activeBattle && activeBattle.over;
         const f = activeBattle && activeBattle.sides && activeBattle.sides[1] && activeBattle.sides[1].team[0];
-        types = f ? SP[f.sp].types : null;
+        types = f ? SPECIES[f.sp].types : null;
         if (activeBattle && activeBattle.fished && o === 'caught') x28Event('fish');
       } catch (e) {}
       const r = eb.apply(this, arguments);

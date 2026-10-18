@@ -23,7 +23,7 @@ import {
   toast,
   walkRenderer,
 } from './hooks.js';
-import { JOBS, MOVES, ROUTE, RULES, SP, STATUSN } from './game-data.js';
+import { JOBS, MOVES, ROUTE, RULES, SPECIES, STATUSN } from './game-data.js';
 import {
   SAVE_NEW_MSG,
   SAVE_OLD_MSG,
@@ -120,7 +120,7 @@ function validSave(o) {
   for (const m of o.team.concat(o.box)) {
     if (
       !m ||
-      !SP[m.sp] ||
+      !SPECIES[m.sp] ||
       typeof m.uid !== 'string' ||
       ids.has(m.uid) ||
       !num(m.lvl, 1, 100) ||
@@ -149,7 +149,7 @@ function validSave(o) {
   if (
     !Array.isArray(o.queue) ||
     o.queue.length > Math.max(10, RULES.steps.maxEncounters) ||
-    o.queue.some(q => !q || !SP[q.sp] || !num(q.lvl, 1, 100))
+    o.queue.some(q => !q || !SPECIES[q.sp] || !num(q.lvl, 1, 100))
   )
     return false;
   if (!Array.isArray(o.eggs) || o.eggs.some(e => !e || !num(e.prog, 0, 1e12))) return false;

@@ -15,7 +15,7 @@ import {
   LIFE_KIND,
   SOLID_PROP_PARTS,
   SOLID_PROP_SHADERS,
-  SP,
+  SPECIES,
   WORLD_ART,
   buddyItems,
   buildingFrontPicture,
@@ -4195,8 +4195,9 @@ function rideMountItem(P, t) {
     walkRenderer.mountOn = false;
     return null;
   }
-  const m = riderOf() || saveData.team.find(x => SP[x.sp] && SP[x.sp].types.includes('Water')) || saveData.team[0];
-  if (!m || !SP[m.sp]) return null;
+  const m =
+    riderOf() || saveData.team.find(x => SPECIES[x.sp] && SPECIES[x.sp].types.includes('Water')) || saveData.team[0];
+  if (!m || !SPECIES[m.sp]) return null;
   const back = P.dir === 'up',
     R = rigParts(m.sp, m.gold, back ? 2 : 1);
   if (!R) {
@@ -4222,7 +4223,7 @@ function rideMountItem(P, t) {
   x.imageSmoothingEnabled = false;
   drawRig(x, R, rigFrame(R, null, 0, reducedMotion ? 0 : Math.floor(t / 50) * 50, 1.7), back ? 'back' : 'front');
   cv.__v++;
-  const ht = clamp(SP[m.sp].ht, 0.9, 3),
+  const ht = clamp(SPECIES[m.sp].ht, 0.9, 3),
     hm = 0.75 + ht * 0.32,
     mpp = hm / Math.max(40, R.base - (R.geo && R.geo.top != null ? R.geo.top : 0)),
     bob = reducedMotion ? 0 : Math.sin(t / 420) * 0.05,

@@ -34,7 +34,7 @@ import {
   MOVES,
   PASSIVE,
   RULES,
-  SP,
+  SPECIES,
   STATK,
   STATN,
   STATUSN,
@@ -258,7 +258,7 @@ const allK = () => {
 };
 export const liveK = si => allK().filter(k => (si == null || ASIDE[k] === si) && A(k) && A(k).hp > 0);
 const foeSide = k => 1 - ASIDE[k];
-export const types = k => FV(k).ov || SP[A(k).sp].types;
+export const types = k => FV(k).ov || SPECIES[A(k).sp].types;
 const shockName = () => RB.shockName || `${RB.shockType} storm`;
 const isMulti = () => !!activeBattle && (activeBattle.sides[0].f.length > 1 || activeBattle.sides[1].f.length > 1);
 function statE(k, s2) {
@@ -349,7 +349,7 @@ function dmgCalc(k, tk, mid, src) {
       eco =
         1 +
         RB.retailSynergy *
-          sd.team.filter(m => m !== me && m.hp > 0 && m.job == null && SP[m.sp].types.some(t => syn.includes(t)))
+          sd.team.filter(m => m !== me && m.hp > 0 && m.job == null && SPECIES[m.sp].types.some(t => syn.includes(t)))
             .length;
     }
   }
@@ -643,7 +643,7 @@ function endTurn() {
 function award(e) {
   const P = RULES.progression,
     amt = Math.floor(
-      ((SP[e.sp].yld * e.lvl) / 7) *
+      ((SPECIES[e.sp].yld * e.lvl) / 7) *
         (activeBattle.kind === 'trainer' ? P.trainerXpMult : 1) *
         (e.boss ? (RB.alphaXp ?? 3) : 1)
     );
@@ -662,7 +662,7 @@ function award(e) {
 }
 function inherit(k) {
   const sd = activeBattle.sides[ASIDE[k]];
-  if (!hasPassive(SP[A(k).sp].types, 'inherit')) return;
+  if (!hasPassive(SPECIES[A(k).sp].types, 'inherit')) return;
   const st = {};
   let any = false;
   for (const s2 in FV(k).st)
@@ -701,7 +701,7 @@ export function doSwitch(k, idx) {
     }
   );
   saveData.seen[m.sp] = 1;
-  if (sd.rent && !hasPassive(SP[m.sp].types, 'landlord')) {
+  if (sd.rent && !hasPassive(SPECIES[m.sp].types, 'landlord')) {
     const d = Math.max(1, Math.floor(maxHp(m) / Math.max(2, RB.rentFraction)));
     m.hp = Math.max(0, m.hp - d);
     say(`${billyName(m)} was hurt by the sharp stones.`, { k: 'hurt', si: k, fx: 'rent', dmg: d });
@@ -926,7 +926,7 @@ function makeAlpha(sp, lvl, o = {}) {
 export function startWild(q) {
   const foe = q.alpha ? makeAlpha(q.sp, q.lvl, { gold: q.gold }) : makeBilly(q.sp, q.lvl, { gold: q.gold });
   if (!newBattle('wild', [foe], { qid: q.id, area: areaKey(), fmt: q.alpha ? 'alpha' : 'single' })) return;
-  const nm = SP[q.sp].name;
+  const nm = SPECIES[q.sp].name;
   if (q.alpha) {
     say(`An Alpha ${q.gold ? 'Golden ' : ''}${nm} rose out of the grass!`, { k: 'wild', alpha: 1 });
     say(`“${nm}!!”`, { k: 'cry', si: 1 });
@@ -936,7 +936,7 @@ export function startWild(q) {
     say(`“${nm}!”`, { k: 'cry', si: 1 });
   }
   if (q.gold) say(`It shimmers. Golden Billies turn up once in ${formatNumber(RULES.steps.goldOdds)}.`);
-  if (RC.luxury.includes(SP[q.sp].line))
+  if (RC.luxury.includes(SPECIES[q.sp].line))
     say(`It looks too picky for ${COINS.penny ? 'a ' + COINS.penny.n : 'cheap coins'}.`);
   const K = liveK(0);
   K.forEach((k, n) => say(n ? '' : `Go, ${goNames(K)}!`, { k: 'enter', si: k, quiet: n > 0 }));
@@ -1062,11 +1062,11 @@ function catchOdds(id, T, spin) {
   const e = A(1);
   if (COINS[id] && COINS[id].m === 0) return 1;
   let C = COINS[id].m;
-  if (id === 'penny' && RC.luxury.includes(SP[e.sp].line)) C *= RC.luxuryPenny;
+  if (id === 'penny' && RC.luxury.includes(SPECIES[e.sp].line)) C *= RC.luxuryPenny;
   const Sx = e.status === 'sub' ? RC.subpoena : e.status ? RC.status : 1;
   return Math.min(
     1,
-    SP[e.sp].cr *
+    SPECIES[e.sp].cr *
       (1 - (RC.hpFactor * e.hp) / maxHp(e)) *
       C *
       Sx *
@@ -1766,7 +1766,7 @@ function hpMini(m) {
   return `<span class="hpmini"><i class="${p < 0.25 ? 'low' : p < 0.5 ? 'mid' : ''}" style="width:${p * 100}%"></i></span>`;
 }
 function billyPickHTML(m, act, attrs, dis, note) {
-  return `<button class="pick" ${attrs} ${dis ? 'disabled' : ''}>${bustHTML(m.sp, 40, { gold: m.gold })}<span class="pk-t"><b>${escapeHtml(billyName(m))}</b><span class="pk-m">${SP[m.sp].types.map(chip).join('')}<small class="tnum">Lv ${m.lvl}</small></span>${hpMini(m)}<small class="tnum">${Math.max(0, m.hp)}/${maxHp(m)}</small></span><span class="pk-s">${note || ''}</span></button>`;
+  return `<button class="pick" ${attrs} ${dis ? 'disabled' : ''}>${bustHTML(m.sp, 40, { gold: m.gold })}<span class="pk-t"><b>${escapeHtml(billyName(m))}</b><span class="pk-m">${SPECIES[m.sp].types.map(chip).join('')}<small class="tnum">Lv ${m.lvl}</small></span>${hpMini(m)}<small class="tnum">${Math.max(0, m.hp)}/${maxHp(m)}</small></span><span class="pk-s">${note || ''}</span></button>`;
 }
 function teamPick(back) {
   const on = activeBattle.sides[0].f.filter(f => f.on).map(f => f.act),

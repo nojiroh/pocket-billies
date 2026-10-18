@@ -11,7 +11,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { ACC, accOn, closeModal, modal, provide, render, sceneIdAt, toast, walkOff } from './hooks.js';
-import { ROUTE, SP } from './game-data.js';
+import { ROUTE, SPECIES } from './game-data.js';
 import { billyName, cleanName, escapeHtml, plural, saveData, uiState } from './game-state.js';
 import { owFrames, portraitHTML, trWarm } from './person-art.js';
 import { rigCanvasHTML } from './skeleton-rig.js';
@@ -348,8 +348,8 @@ export function friendsHTML() {
         p = d.partner;
       return `<div class="fr-row">
   <span class="fr-face">${typeof portraitHTML === 'function' ? portraitHTML('friend:' + u, 44) : ''}</span>
-  <span class="fr-t"><b>${escapeHtml(d.name || 'Friend')}</b><small>${a.place ? `In ${escapeHtml(a.place)} · ${frAgo(a.t)}` : 'Not seen yet'}</small>${p && SP[p.sp] ? `<small class="fr-pt">with ${escapeHtml(p.name || SP[p.sp].n)} · Lv ${p.lvl || 1}</small>` : ''}</span>
-  ${p && SP[p.sp] ? `<span class="fr-mon">${rigCanvasHTML(p.sp, 48, { gold: p.gold })}</span>` : ''}
+  <span class="fr-t"><b>${escapeHtml(d.name || 'Friend')}</b><small>${a.place ? `In ${escapeHtml(a.place)} · ${frAgo(a.t)}` : 'Not seen yet'}</small>${p && SPECIES[p.sp] ? `<small class="fr-pt">with ${escapeHtml(p.name || SPECIES[p.sp].n)} · Lv ${p.lvl || 1}</small>` : ''}</span>
+  ${p && SPECIES[p.sp] ? `<span class="fr-mon">${rigCanvasHTML(p.sp, 48, { gold: p.gold })}</span>` : ''}
   <span class="fr-acts">${a.node != null && ROUTE[a.node] ? `<button class="pb small" data-a="fr-map" data-n="${a.node}">Map</button>` : ''}<button class="pb small quiet" data-a="fr-rm" data-u="${escapeHtml(u)}" aria-label="Remove ${escapeHtml(d.name || 'friend')}">✕</button></span></div>`;
     })
     .join('');
@@ -445,7 +445,7 @@ function frWorldItems(out, t, C0) {
       im = set && set[0];
     if (im) out.push(personItem('friend', im, x, z, C0, { fr: u }));
     const p = d.partner;
-    if (p && SP[p.sp] && typeof worldBillyItem === 'function') {
+    if (p && SPECIES[p.sp] && typeof worldBillyItem === 'function') {
       const seed = u.length * 13 + 7,
         it = worldBillyItem('fpet', p.sp, !!p.gold, 'front', null, t + seed * 91, seed, x + 0.9, z + 0.2, {
           flip: P && P.x > x ? -1 : 1,

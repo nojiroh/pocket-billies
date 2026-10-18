@@ -3,7 +3,7 @@
 /* ---- matrices ---- */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { SP, activeBattle, provide, reducedMotion } from './hooks.js';
+import { SPECIES, activeBattle, provide, reducedMotion } from './hooks.js';
 import { clamp, random } from './util.js';
 import { frameTask, userFps } from './frame-scheduler.js';
 import { ART_CACHE, artImg, artLoad, artReady, artURL, makeCanvas } from './art.js';
@@ -427,7 +427,7 @@ const rigCanvasAnimator = { vis: new Set(), nodes: new Set(), io: null, mo: null
 export function rigCanvasHTML(sp, size, o = {}) {
   const w = Math.round(size * 1.25),
     h = Math.round((w * RIG_CANVAS_SIZE.h) / RIG_CANVAS_SIZE.w),
-    st = SP[sp] ? (SP[sp].rar === 'mythical' ? 2 : SP[sp].stage) : 2,
+    st = SPECIES[sp] ? (SPECIES[sp].rar === 'mythical' ? 2 : SPECIES[sp].stage) : 2,
     f = [1.3, 1.1, 1][st];
   return `<canvas class="rig${o.sil ? ' sil' : ''}" width="${RIG_CANVAS_SIZE.w * 2}" height="${RIG_CANVAS_SIZE.h * 2}" data-sp="${sp}" data-g="${o.gold ? 1 : 0}" data-v="${o.view || 'front'}"${o.still || o.sil ? ' data-still="1"' : ''}${o.act ? ` data-act="${o.act}"` : ''} style="width:${w}px;height:${h}px;margin:${-Math.round((h - size) / 2)}px ${-Math.round((w - size) / 2)}px;transform:scale(${f});transform-origin:50% 94%" aria-hidden="true"></canvas>`;
 }
@@ -446,7 +446,7 @@ export function bustHTML(sp, size, o = {}) {
 }
 function drawDomRig(c, ts) {
   const sp = c.dataset.sp;
-  if (!SP[sp]) return;
+  if (!SPECIES[sp]) return;
   const R = rigParts(sp, c.dataset.g === '1', 1);
   if (!R) return;
   const x = c.getContext('2d');

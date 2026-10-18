@@ -16,7 +16,7 @@ import {
   toast,
 } from './hooks.js';
 import { $, $$, clamp } from './util.js';
-import { COINS, DATA_WARN, DEX, EGGS, EGG_TIERS, ITEMS, ROUTE, RULES, SP, TRAINERS } from './game-data.js';
+import { COINS, DATA_WARN, DEX, EGGS, EGG_TIERS, ITEMS, ROUTE, RULES, SPECIES, TRAINERS } from './game-data.js';
 import {
   activeBattle,
   addBilly,
@@ -69,7 +69,7 @@ const dbgSel = (id, opts, val) =>
   `<select id="${id}">${opts.map(([v, n]) => `<option value="${escapeHtml(v)}" ${String(v) === String(val) ? 'selected' : ''}>${escapeHtml(n)}</option>`).join('')}</select>`;
 const dbgBtn = (x, l, c = '') => `<button class="pb small ${c}" data-a="dbg" data-x="${x}">${l}</button>`;
 function dbgSpecies() {
-  return DEX.map(id => [id, `${String(SP[id].no).padStart(3, '0')} ${SP[id].name}`]);
+  return DEX.map(id => [id, `${String(SPECIES[id].no).padStart(3, '0')} ${SPECIES[id].name}`]);
 }
 function debugHTML() {
   const inB = !!activeBattle,
@@ -209,7 +209,7 @@ function dbgAct(x) {
       const m = makeBilly(sp, lv, { gold: $('#dbgGold').checked });
       const w = addBilly(m);
       save();
-      return dbgRefresh(`${SP[sp].name} joined your ${w === 'team' ? 'team' : 'storage'}.`);
+      return dbgRefresh(`${SPECIES[sp].name} joined your ${w === 'team' ? 'team' : 'storage'}.`);
     }
     case 'enc': {
       saveData.queue.push({ id: newUid(), sp, lvl: lv, gold: $('#dbgGold').checked, no: ++saveData.serial });
@@ -242,7 +242,7 @@ function dbgAct(x) {
       break;
     case 'evo': {
       const m = saveData.team[0];
-      if (!m || !SP[m.sp].next) return toast('Your lead doesn’t evolve.');
+      if (!m || !SPECIES[m.sp].next) return toast('Your lead doesn’t evolve.');
       closeModal();
       runEvolution(m, 'Debug menu. Nobody saw anything.');
       return;

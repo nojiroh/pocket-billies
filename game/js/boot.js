@@ -6,7 +6,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { provide } from './hooks.js';
-import { DATA_WARN, RULES, SP, START_NODE, gameData } from './game-data.js';
+import { DATA_WARN, RULES, SPECIES, START_NODE, gameData } from './game-data.js';
 import { loadAllMaps, loadMapsAhead, watchMapsAhead } from './map-files.js';
 import {
   SAVE_FOUND,
@@ -164,7 +164,7 @@ function loadList() {
       if (p && !L.has(p)) L.set(p, ph);
     };
   [ICON_ATLAS, ...COIN_ART, ...EGG_ART, ...MENU_BACKGROUND_ART].forEach(p => add(p, 0));
-  for (const sp of Object.keys(SP)) {
+  for (const sp of Object.keys(SPECIES)) {
     const R = RIGS[sp];
     if (!R) continue;
     for (const v of ['front', 'back']) if (R[v]) for (const g of [0, 1]) add(rigAtlas(sp, g, v), 1);

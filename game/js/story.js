@@ -8,7 +8,7 @@
 import { expose } from './test-globals.js';
 import { STEST, closeModal, modal, postProcess, provide, render } from './hooks.js';
 import { $, clamp } from './util.js';
-import { PLACE, RULES, SP, TRAINERS, trainersAt } from './game-data.js';
+import { PLACE, RULES, SPECIES, TRAINERS, trainersAt } from './game-data.js';
 import { activeBattle, escapeHtml, healAll, reducedMotion, save, saveData, today, uiState } from './game-state.js';
 import { dressingRoom } from './dressing-room.js';
 import { baseMapId, walkView, walkablePointNear } from './walk-view.js';
@@ -219,7 +219,7 @@ export function legendCheck() {
   if (saveData.route.prog !== 0 || (saveData.route.plan && saveData.route.plan.length)) return;
   const F = storyFlags(),
     L = (RULES.legends || []).find(
-      l => l.scene === baseMapId() && SP[l.sp] && !saveData.caught[l.sp] && F['legend_' + l.sp] !== today()
+      l => l.scene === baseMapId() && SPECIES[l.sp] && !saveData.caught[l.sp] && F['legend_' + l.sp] !== today()
     );
   if (!L || STORY.pending === 'legend') return;
   STORY.pending = 'legend';
@@ -307,9 +307,9 @@ export function storyMovedCheck() {
 function blakeHello(l) {
   const T = TRAINERS.blake0 || {},
     who = T.who || 'chad',
-    sp = SP[l + '0'],
+    sp = SPECIES[l + '0'],
     rv = RULES.start.rival && RULES.start.rival[l],
-    rs = rv && SP[rv];
+    rs = rv && SPECIES[rv];
   return [
     [who, '[surprised] Professor! Professor! Did another one fall in?'],
     [
