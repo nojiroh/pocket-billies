@@ -47,7 +47,7 @@ import { VOX } from './prop-models.js';
 import { OWM, owBuddyTap, owPetSp } from './world-billies.js';
 import { WORLD, wrRoomScene, wrTripView } from './seamless-world.js';
 import { A, endBattle, liveK, pickMove, pickTarget, startTrainer, startWild, stopTimers, tapMsg } from './battle.js';
-import { MAP } from './world-map.js';
+import { worldMap } from './world-map.js';
 import { MGL, MGL_SH, MM, mglRender, mmOn, setMglRender } from './world-map-gl.js';
 import { TALK, talkHide } from './talk.js';
 import { CS, csTeardown } from './cutscene.js';
@@ -1197,21 +1197,21 @@ async function runFullTest(mode) {
         U.tab = 'map';
         render();
         await stSleep(2500);
-        if (!MAP.gl) {
+        if (!worldMap.gl) {
           U.tab = 'walk';
           render();
           return 'the map is in its simple mode here';
         }
-        const a0 = MAP.alt;
-        MAP.alt = 0.035;
-        MAP.tilt = 0.4;
+        const a0 = worldMap.alt;
+        worldMap.alt = 0.035;
+        worldMap.tilt = 0.4;
         MGL.altT = null;
-        MAP.dirty = true;
+        worldMap.dirty = true;
         await stSleep(3000);
         const n = [...MM.cache.values()].filter(e => e.m).length;
-        MAP.alt = a0;
-        MAP.tilt = 0.5733;
-        MAP.dirty = true;
+        worldMap.alt = a0;
+        worldMap.tilt = 0.5733;
+        worldMap.dirty = true;
         U.tab = 'walk';
         render();
         await stSleep(500);

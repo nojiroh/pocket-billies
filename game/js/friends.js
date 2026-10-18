@@ -18,7 +18,7 @@ import { sprHTML } from './skeleton-rig.js';
 import { directionOf, walkView } from './walk-view.js';
 import { personItem } from './walk-view-gl.js';
 import { owBuddyMon, owItem } from './world-billies.js';
-import { MAP, mapSelect } from './world-map.js';
+import { mapSelect, worldMap } from './world-map.js';
 /* eslint-disable no-func-assign */
 expose({
   FR: [() => FR],
@@ -161,7 +161,7 @@ function frWatchAll() {
             s => {
               if (s.exists) FR.data[u] = frClean(s.data());
               frRefresh();
-              if (typeof MAP !== 'undefined') MAP.dirty = true;
+              if (typeof worldMap !== 'undefined') worldMap.dirty = true;
             },
             e => frWatchErr(u, e)
           )

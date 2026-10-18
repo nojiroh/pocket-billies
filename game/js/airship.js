@@ -17,7 +17,7 @@ import { RM, S, U, canEnter, esc, fmt, save } from './game-state.js';
 import { artLoad, uiIco } from './art.js';
 import { artImage, imageReady, mapById, prepareMap, walkData } from './walk-view.js';
 import { wrHubScene } from './seamless-world.js';
-import { D2R, MAP, MNV, slerp, v3 } from './world-map.js';
+import { D2R, MNV, slerp, v3, worldMap } from './world-map.js';
 import { MGL } from './world-map-gl.js';
 import { sfx } from './sound.js';
 /* eslint-disable no-func-assign */
@@ -123,13 +123,13 @@ function flyGo(i) {
   U.mglFrom = null;
   U.tab = 'map';
   render();
-  MAP.anim = null;
-  MAP.fT = null;
-  MAP.free = false;
-  MAP.me = MNV[a];
-  MAP.focus = MNV[a];
-  MAP.fly = { a: MNV[a], b: MNV[i] };
-  MAP.dirty = true;
+  worldMap.anim = null;
+  worldMap.fT = null;
+  worldMap.free = false;
+  worldMap.me = MNV[a];
+  worldMap.focus = MNV[a];
+  worldMap.fly = { a: MNV[a], b: MNV[i] };
+  worldMap.dirty = true;
   if (typeof MGL !== 'undefined' && !MGL.flat) MGL.altT = 0.42;
   const host = $('.map-full');
   if (host && !$('#flycap')) {
@@ -141,14 +141,14 @@ function flyGo(i) {
   }
   if (typeof sfx === 'function') sfx('throw');
 }
-/* the map loops ask this each frame while flying: where the airship is (MAP.me follows it, so the camera does) */
+/* the map loops ask this each frame while flying: where the airship is (worldMap.me follows it, so the camera does) */
 function flyTick(ts) {
-  if (!FLY.on || !MAP.fly) return false;
+  if (!FLY.on || !worldMap.fly) return false;
   const k = clamp((ts - FLY.t0) / FLY.dur, 0, 1),
     e = k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
-  MAP.me = v3.norm(slerp(MAP.fly.a, MAP.fly.b, e));
-  MAP.face = 'up';
-  MAP.dirty = true;
+  worldMap.me = v3.norm(slerp(worldMap.fly.a, worldMap.fly.b, e));
+  worldMap.face = 'up';
+  worldMap.dirty = true;
   FLY.k = k;
   if (k >= 1) {
     flyLand();
@@ -159,7 +159,7 @@ function flyTick(ts) {
 /* drawn instead of you on the map: the airship, lifted above the ground on an arc, its shadow on the land, the way behind */
 function flyDraw(c, t, proj) {
   const k = FLY.k || 0,
-    g = MAP.me,
+    g = worldMap.me,
     H = 0.05 * Math.sin(Math.PI * Math.min(1, k * 1.15)),
     lift = v3.mul(g, 1 - H),
     q = proj(lift),
@@ -168,7 +168,7 @@ function flyDraw(c, t, proj) {
   const trail = [];
   for (let f = 0; f <= k + 1e-6; f += 0.02) {
     const e = f < 0.5 ? 2 * f * f : 1 - Math.pow(-2 * f + 2, 2) / 2,
-      p = v3.norm(slerp(MAP.fly.a, MAP.fly.b, e)),
+      p = v3.norm(slerp(worldMap.fly.a, worldMap.fly.b, e)),
       h = 0.05 * Math.sin(Math.PI * Math.min(1, f * 1.15)),
       qq = proj(v3.mul(p, 1 - h));
     if (qq) trail.push(qq);
@@ -226,9 +226,9 @@ function flyLand() {
   }
   const b = FLY.b;
   FLY.on = false;
-  MAP.fly = null;
-  MAP.me = MNV[b];
-  MAP.anim = null;
+  worldMap.fly = null;
+  worldMap.me = MNV[b];
+  worldMap.anim = null;
   document.body.classList.remove('flying');
   const cap = $('#flycap');
   if (cap) cap.remove();
@@ -254,7 +254,7 @@ function flyLand() {
 function flySkip() {
   if (FLY.on) {
     FLY.t0 = performance.now() - FLY.dur;
-    MAP.dirty = true;
+    worldMap.dirty = true;
   }
 }
 document.addEventListener(

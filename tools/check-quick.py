@@ -874,10 +874,10 @@ def desktop_steps(b, base, R):
         out.append('place card closes and comes back')
         # the map: drag the land, turn, zoom right down to the miniatures
         pg.evaluate("U.tab='map';render();0"); time.sleep(6)
-        if pg.evaluate("MAP.gl"):
-            f0 = pg.evaluate("JSON.stringify(MAP.focus)"); y0 = pg.evaluate("MAP.yaw")
-            pg.evaluate("mglPanTo({focus:MAP.focus||mePos(),cam:MAP.cam},-120,40);mapGLAction('mturn',{k:'1'});for(let i=0;i<20;i++)mapZoom(.8);MAP.tilt=.35;0"); time.sleep(2); shot(pg, 'map-close')
-            m = pg.evaluate("[JSON.stringify(MAP.focus),MAP.yaw,MAP.alt,MAP.free]")
+        if pg.evaluate("worldMap.gl"):
+            f0 = pg.evaluate("JSON.stringify(worldMap.focus)"); y0 = pg.evaluate("worldMap.yaw")
+            pg.evaluate("mglPanTo({focus:worldMap.focus||mePos(),cam:worldMap.cam},-120,40);mapGLAction('mturn',{k:'1'});for(let i=0;i<20;i++)mapZoom(.8);worldMap.tilt=.35;0"); time.sleep(2); shot(pg, 'map-close')
+            m = pg.evaluate("[JSON.stringify(worldMap.focus),worldMap.yaw,worldMap.alt,worldMap.free]")
             pg.evaluate("mapReset();0")
             if m[0] == f0 or abs(m[1] - y0) < .3 or m[2] > .03 or not m[3]: raise Exception(f'map camera: {m}')
             out.append(f'map pans, turns and zooms to {m[2]:.3f}')
@@ -926,8 +926,8 @@ def desktop_steps(b, base, R):
         pg.evaluate("(()=>{const sc=walkView.sc,C0=walkData().sc,b=(sc.props||[]).find(p=>{const M=C0.props[p.k];return M&&M.box&&M.door});if(!b)return;walkView.pl.route=null;const q=walkablePointNear(b.x,b.z-2.5);walkView.pl.x=q[0];walkView.pl.z=q[1];walkRenderer.zoomT=walkRenderer.zoom=.7})();0"); time.sleep(2.5); shot(pg, 'wear-building')
         # the map's 3D miniatures
         pg.evaluate("U.tab='map';render();0"); time.sleep(3)
-        if pg.evaluate("MAP.gl&&typeof mmOn==='function'&&mmOn()"):
-            pg.evaluate("MAP.alt=.04;MAP.tilt=.45;MGL.altT=null;MAP.dirty=true;0"); time.sleep(4)
+        if pg.evaluate("worldMap.gl&&typeof mmOn==='function'&&mmOn()"):
+            pg.evaluate("worldMap.alt=.04;worldMap.tilt=.45;MGL.altT=null;worldMap.dirty=true;0"); time.sleep(4)
             n = pg.evaluate("[...MM.cache.values()].filter(e=>e.m).length"); shot(pg, 'map-minis')
             pg.evaluate("mapReset();0")
             if n < 1: raise Exception('no 3D miniatures were built on the map')

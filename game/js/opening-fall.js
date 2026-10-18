@@ -23,7 +23,7 @@ import { EGL, eglPrograms } from './engine/webgl.js';
 import { EGL_POST_SH } from './engine/post-effects.js';
 import { canvasForContext, standingHeightAt, walkGlContext } from './walk-view-gl.js';
 import { A, endBattle, stopTimers, types } from './battle.js';
-import { MAP, MH, MNV, MW, WORLD_ART, v3 } from './world-map.js';
+import { MH, MNV, MW, WORLD_ART, v3, worldMap } from './world-map.js';
 import { MGL, MGL_SH, mglRender, mglSize } from './world-map-gl.js';
 import { music, sfx } from './sound.js';
 import { CS, csCaption } from './cutscene.js';
@@ -633,12 +633,12 @@ function fallCam(k) {
 export function fallMap(run, ms) {
   return new Promise(res0 => {
     const flat = MGL.flat,
-      focus = MAP.focus,
+      focus = worldMap.focus,
       res = () => {
         MGL.flat = flat;
         MGL.noClouds = false;
-        MAP.focus = focus;
-        MAP.dirty = true;
+        worldMap.focus = focus;
+        worldMap.dirty = true;
         res0();
       };
     if (typeof mglRender !== 'function' || !EGL.gl) {
@@ -653,7 +653,7 @@ export function fallMap(run, ms) {
       return;
     }
     const t0 = performance.now();
-    MAP.focus = MNV[START_NODE];
+    worldMap.focus = MNV[START_NODE];
     MGL.flat = false;
     MGL.noClouds = true;
     let capA = 0,
@@ -666,7 +666,7 @@ export function fallMap(run, ms) {
       const k = Math.min(1, (performance.now() - t0) / ms);
       try {
         mglSize();
-        MAP.cam = fallCam(k);
+        worldMap.cam = fallCam(k);
         mglRender(ts);
       } catch (e) {
         console.error(e);

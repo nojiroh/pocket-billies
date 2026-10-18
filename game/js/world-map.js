@@ -16,7 +16,6 @@ import { EASE } from './battle-stage.js';
 expose({
   D2R: [() => D2R],
   ESEG: [() => ESEG],
-  MAP: [() => MAP],
   MCL: [() => MCL],
   MH: [() => MH, v => setMH(v)],
   MLAND: [() => MLAND],
@@ -58,6 +57,7 @@ expose({
   slerp: [() => slerp, v => (slerp = v)],
   sunBlocks: [() => sunBlocks, v => (sunBlocks = v)],
   v3: [() => v3],
+  worldMap: [() => worldMap],
 });
 /* eslint-enable no-func-assign */
 provide({ onStepsAdded });
@@ -153,7 +153,7 @@ export function mapPrepare() {
     ? Promise.resolve(WTEX)
     : artPixels(WORLD_ART).then(t => {
         WTEX = t;
-        MAP.dirty = true;
+        worldMap.dirty = true;
         return t;
       });
 }
@@ -212,7 +212,7 @@ export const MLAND = [];
   });
 })();
 /* ---------- state & camera ---------- */
-export const MAP = {
+export const worldMap = {
   on: false,
   cv: null,
   ctx: null,
@@ -235,7 +235,7 @@ export const MAP = {
   fT: null,
 };
 function mapSize() {
-  const cr = MAP.cv && MAP.cv.isConnected ? MAP.cv.getBoundingClientRect() : null,
+  const cr = worldMap.cv && worldMap.cv.isConnected ? worldMap.cv.getBoundingClientRect() : null,
     w = cr && cr.width > 20 ? cr.width : innerWidth,
     h = cr && cr.height > 20 ? cr.height : innerHeight,
     H0 = clamp(Math.round(h / 3.4), 180, 300),
@@ -246,17 +246,17 @@ function mapSize() {
   if (W !== MW || H !== MH) {
     MW = W;
     MH = H;
-    MAP.img = null;
-    if (MAP.cv) {
-      MAP.cv.width = MW;
-      MAP.cv.height = MH;
+    worldMap.img = null;
+    if (worldMap.cv) {
+      worldMap.cv.width = MW;
+      worldMap.cv.height = MH;
     }
   }
-  MAP.s = w / MW;
-  MAP.dirty = true;
+  worldMap.s = w / MW;
+  worldMap.dirty = true;
 }
 export function mapFit() {
-  if (!MAP.cv || !MAP.cv.isConnected) return;
+  if (!worldMap.cv || !worldMap.cv.isConnected) return;
   mapSize();
   mapLabels();
 }
@@ -266,22 +266,26 @@ export function setMapFit(v) {
   provide({ mapFit });
 }
 export function mapCam() {
-  const P = MAP.focus || mePos(),
+  const P = worldMap.focus || mePos(),
     U = v3.mul(P, -1),
     east = v3.norm(v3.cross(P, [0, 1, 0]));
   let F = v3.norm(v3.sub(east, v3.mul(U, v3.dot(east, U))));
   const R0 = v3.norm(v3.cross(F, U)),
-    cy = Math.cos(MAP.yaw),
-    sy = Math.sin(MAP.yaw),
+    cy = Math.cos(worldMap.yaw),
+    sy = Math.sin(worldMap.yaw),
     Fa = v3.norm(v3.add(v3.mul(F, cy), v3.mul(R0, sy)));
-  /* v31: MAP.tilt is the camera's angle above the ground (default about 33 degrees, as before) */
-  const alt = MAP.alt,
-    th = MAP.tilt ?? 0.5733,
+  /* v31: worldMap.tilt is the camera's angle above the ground (default about 33 degrees, as before) */
+  const alt = worldMap.alt,
+    th = worldMap.tilt ?? 0.5733,
     dk = alt * 1.8385,
     C = v3.add(v3.add(P, v3.mul(U, dk * Math.sin(th))), v3.mul(Fa, -dk * Math.cos(th))),
     dp = v3.norm(v3.sub(P, C)),
     ds = v3.norm(v3.mul(C, -1)),
-    w = clamp((MW < MH ? MAP.look * 0.2 : MAP.look) * Math.min(1, MAP.alt / 0.3) + MAP.pitch, -0.3, 1);
+    w = clamp(
+      (MW < MH ? worldMap.look * 0.2 : worldMap.look) * Math.min(1, worldMap.alt / 0.3) + worldMap.pitch,
+      -0.3,
+      1
+    );
   const fw = v3.norm(v3.add(v3.mul(dp, 1 - w), v3.mul(ds, w))),
     rt = v3.norm(v3.cross(fw, U)),
     up = v3.cross(rt, fw);
@@ -294,15 +298,16 @@ export function mproj(cam, p) {
   return { x: MW / 2 + (cam.foc * v3.dot(d, cam.rt)) / z, y: MH / 2 - (cam.foc * v3.dot(d, cam.up)) / z, z };
 }
 function mapRender(t, lo) {
-  const c = MAP.ctx;
+  const c = worldMap.ctx;
   if (!WTEX) return;
-  if (!MAP.img || MAP.img.width !== MW || MAP.img.height !== MH) MAP.img = c.createImageData(MW, MH);
-  const buf = new Uint32Array(MAP.img.data.buffer),
+  if (!worldMap.img || worldMap.img.width !== MW || worldMap.img.height !== MH)
+    worldMap.img = c.createImageData(MW, MH);
+  const buf = new Uint32Array(worldMap.img.data.buffer),
     T = WTEX,
     cam = mapCam(),
     C = cam.C,
     cc = v3.dot(C, C);
-  MAP.cam = cam;
+  worldMap.cam = cam;
   const haze = [176, 186, 236],
     RS = 0.075,
     st = lo ? 2 : 1;
@@ -421,7 +426,7 @@ function mapRender(t, lo) {
       }
     }
   }
-  c.putImageData(MAP.img, 0, 0);
+  c.putImageData(worldMap.img, 0, 0);
   /* the planned trip, drawn over the painted trail */
   const plan = [S.route.node, ...S.route.plan];
   if (plan.length > 1) {
@@ -452,7 +457,7 @@ function mapRender(t, lo) {
     const q = mproj(cam, REGV[i]);
     if (q) L.push({ q, i, kind: 'f' });
   });
-  MAP.proj = L;
+  worldMap.proj = L;
   L.sort((a, b) => b.q.z - a.q.z);
   const dest = S.route.plan.length ? S.route.plan[S.route.plan.length - 1] : null;
   L.forEach(({ q, i, kind }) => {
@@ -530,13 +535,13 @@ function mapRender(t, lo) {
     );
     c.globalAlpha = 1;
   });
-  const pq = mproj(cam, MAP.me || mePos());
-  if (pq && MAP.fly && typeof flyDraw === 'function') flyDraw(c, t, v => mproj(cam, v));
+  const pq = mproj(cam, worldMap.me || mePos());
+  if (pq && worldMap.fly && typeof flyDraw === 'function') flyDraw(c, t, v => mproj(cam, v));
   else if (pq) {
     const fr = owFrames('me'),
-      set = fr[MAP.face] || fr.down,
-      f = MAP.moving ? set[1 + (Math.floor(t / 140) % 2)] : set[0],
-      bob = MAP.moving ? 0 : Math.floor(t / 600) % 2;
+      set = fr[worldMap.face] || fr.down,
+      f = worldMap.moving ? set[1 + (Math.floor(t / 140) % 2)] : set[0],
+      bob = worldMap.moving ? 0 : Math.floor(t / 600) % 2;
     c.fillStyle = 'rgba(20,10,40,.35)';
     c.fillRect(Math.round(pq.x) - 5, Math.round(pq.y), 10, 2);
     c.drawImage(
@@ -577,54 +582,61 @@ export function mapMount() {
         toast(e.message);
       });
   }
-  MAP.cv = cv;
-  MAP.ctx = cv.getContext('2d');
-  MAP.img = null;
+  worldMap.cv = cv;
+  worldMap.ctx = cv.getContext('2d');
+  worldMap.img = null;
   mapSize();
   cv.width = MW;
   cv.height = MH;
-  MAP.dirty = true;
+  worldMap.dirty = true;
   const to = mePos();
-  if (!MAP.me) MAP.me = to;
-  else if (v3.dot(MAP.me, to) < 0.999999) mapWalk(MAP.me, to);
-  if (!MAP.focus) MAP.focus = to;
+  if (!worldMap.me) worldMap.me = to;
+  else if (v3.dot(worldMap.me, to) < 0.999999) mapWalk(worldMap.me, to);
+  if (!worldMap.focus) worldMap.focus = to;
   if (!cv._bound) {
     cv._bound = 1;
     cv.addEventListener('pointerdown', e => {
-      MAP.drag = { x: e.clientX, y: e.clientY, yaw: MAP.yaw, pitch: MAP.pitch, moved: 0, id: e.pointerId };
+      worldMap.drag = {
+        x: e.clientX,
+        y: e.clientY,
+        yaw: worldMap.yaw,
+        pitch: worldMap.pitch,
+        moved: 0,
+        id: e.pointerId,
+      };
       cv.setPointerCapture(e.pointerId);
     });
     cv.addEventListener('pointermove', e => {
-      const D = MAP.drag;
+      const D = worldMap.drag;
       if (!D) return;
       const dx = e.clientX - D.x,
         dy = e.clientY - D.y;
       if (Math.abs(dx) + Math.abs(dy) > 4) D.moved = 1;
-      MAP.yaw = D.yaw - dx * 0.006;
-      MAP.pitch = clamp(D.pitch + dy * 0.0025, -0.44, 0.5);
+      worldMap.yaw = D.yaw - dx * 0.006;
+      worldMap.pitch = clamp(D.pitch + dy * 0.0025, -0.44, 0.5);
     });
     cv.addEventListener('pointerup', e => {
-      const D = MAP.drag;
-      MAP.drag = null;
-      MAP.dirty = true;
+      const D = worldMap.drag;
+      worldMap.drag = null;
+      worldMap.dirty = true;
       if (D && !D.moved) mapPick(e);
     });
     cv.addEventListener('pointercancel', () => {
-      MAP.drag = null;
+      worldMap.drag = null;
     });
     cv.addEventListener(
       'wheel',
       e => {
         e.preventDefault();
-        MAP.alt = clamp(MAP.alt * (e.deltaY > 0 ? 1.12 : 0.89), 0.08, 0.7);
-        MAP.dirty = true;
+        worldMap.alt = clamp(worldMap.alt * (e.deltaY > 0 ? 1.12 : 0.89), 0.08, 0.7);
+        worldMap.dirty = true;
       },
       { passive: false }
     );
   }
-  if (!MAP.on) {
-    MAP.on = true;
-    MAP.last = performance.now();
+  if (!worldMap.on) {
+    worldMap.on = true;
+    worldMap.last = performance.now();
     frameTask('map', mapLoop);
   }
 }
@@ -634,8 +646,8 @@ export function setMapMount(v) {
   provide({ mapMount });
 }
 export function mapZoom(k) {
-  MAP.alt = clamp(MAP.alt * k, 0.08, 0.7);
-  MAP.dirty = true;
+  worldMap.alt = clamp(worldMap.alt * k, 0.08, 0.7);
+  worldMap.dirty = true;
 }
 /* phase 04d: world-map-gl.js puts the 3D map in place */
 export function setMapZoom(v) {
@@ -643,13 +655,13 @@ export function setMapZoom(v) {
   provide({ mapZoom });
 }
 export function mapReset() {
-  MAP.yaw = 0;
-  MAP.pitch = 0;
-  MAP.alt = 0.32;
+  worldMap.yaw = 0;
+  worldMap.pitch = 0;
+  worldMap.alt = 0.32;
   mapFocus(mePos());
   U.mapSel = null;
   paintMapCard();
-  MAP.dirty = true;
+  worldMap.dirty = true;
 }
 /* phase 04d: world-map-gl.js puts the 3D map in place */
 export function setMapReset(v) {
@@ -657,10 +669,10 @@ export function setMapReset(v) {
   provide({ mapReset });
 }
 function mapFocus(v) {
-  MAP.fT = { from: MAP.focus || v, to: v, t0: performance.now(), dur: RM ? 1 : 700 };
+  worldMap.fT = { from: worldMap.focus || v, to: v, t0: performance.now(), dur: RM ? 1 : 700 };
 }
 export function mapWalk(from, to) {
-  MAP.anim = {
+  worldMap.anim = {
     from,
     to,
     t0: performance.now(),
@@ -668,72 +680,72 @@ export function mapWalk(from, to) {
   };
 }
 function onStepsAdded() {
-  if (U.tab !== 'map' || !MAP.cv || !MAP.cv.isConnected || MAP.fly) return;
+  if (U.tab !== 'map' || !worldMap.cv || !worldMap.cv.isConnected || worldMap.fly) return;
   const to = mePos();
-  if (MAP.me && v3.dot(MAP.me, to) < 0.999999) {
-    mapWalk(MAP.me, to);
+  if (worldMap.me && v3.dot(worldMap.me, to) < 0.999999) {
+    mapWalk(worldMap.me, to);
     if (U.mapSel == null) mapFocus(to);
   }
   paintMapCard();
 }
 function mapLoop(ts) {
-  if (!MAP.cv || !MAP.cv.isConnected) {
-    MAP.on = false;
+  if (!worldMap.cv || !worldMap.cv.isConnected) {
+    worldMap.on = false;
     frameStop('map');
     return;
   }
   let moving = false;
-  if (MAP.fly && typeof flyTick === 'function' && flyTick(ts)) moving = true;
-  if (MAP.anim) {
-    const a = MAP.anim,
+  if (worldMap.fly && typeof flyTick === 'function' && flyTick(ts)) moving = true;
+  if (worldMap.anim) {
+    const a = worldMap.anim,
       k = Math.min(1, (ts - a.t0) / a.dur);
-    MAP.me = v3.norm(slerp(a.from, a.to, EASE.io(k)));
+    worldMap.me = v3.norm(slerp(a.from, a.to, EASE.io(k)));
     moving = k < 1;
-    MAP.face = 'up';
+    worldMap.face = 'up';
     if (k >= 1) {
-      MAP.anim = null;
-      MAP.me = a.to;
+      worldMap.anim = null;
+      worldMap.me = a.to;
     }
   }
-  MAP.moving = moving;
+  worldMap.moving = moving;
   let panning = false;
-  if (MAP.fT) {
-    const a = MAP.fT,
+  if (worldMap.fT) {
+    const a = worldMap.fT,
       k = Math.min(1, (ts - a.t0) / a.dur);
-    MAP.focus = v3.norm(slerp(a.from, a.to, EASE.io(k)));
+    worldMap.focus = v3.norm(slerp(a.from, a.to, EASE.io(k)));
     panning = k < 1;
-    if (k >= 1) MAP.fT = null;
-  } else if (U.mapSel == null && MAP.me) MAP.focus = MAP.me;
-  const busy = !!(MAP.drag || moving || panning || MAP.zt);
-  if (ts - MAP.lastDraw < (busy ? 1000 / userFps() - 2 : 400) && !MAP.dirty) return;
-  MAP.lastDraw = ts;
-  MAP.dirty = false;
+    if (k >= 1) worldMap.fT = null;
+  } else if (U.mapSel == null && worldMap.me) worldMap.focus = worldMap.me;
+  const busy = !!(worldMap.drag || moving || panning || worldMap.zt);
+  if (ts - worldMap.lastDraw < (busy ? 1000 / userFps() - 2 : 400) && !worldMap.dirty) return;
+  worldMap.lastDraw = ts;
+  worldMap.dirty = false;
   const w0 = performance.now();
   mapRender(ts, busy);
   frameCount(performance.now() - w0);
   mapLabels();
-  if (busy && !MAP.drag && !moving) MAP.zt = 0;
-  if (MAP.wasBusy && !busy) MAP.dirty = true;
-  MAP.wasBusy = busy;
+  if (busy && !worldMap.drag && !moving) worldMap.zt = 0;
+  if (worldMap.wasBusy && !busy) worldMap.dirty = true;
+  worldMap.wasBusy = busy;
 }
 export function mapLabels() {
   const L = $('#maplabels');
-  if (!L || !MAP.cam) return;
-  let cr = MAP.cv && MAP.cv.getBoundingClientRect();
+  if (!L || !worldMap.cam) return;
+  let cr = worldMap.cv && worldMap.cv.getBoundingClientRect();
   if (cr && cr.width > 20 && cr.height > 20 && Math.abs(cr.width / cr.height - MW / MH) > 0.04) {
     mapSize();
-    cr = MAP.cv.getBoundingClientRect();
+    cr = worldMap.cv.getBoundingClientRect();
   }
-  const s = cr && cr.width ? cr.width / MW : MAP.s,
+  const s = cr && cr.width ? cr.width / MW : worldMap.s,
     sy = cr && cr.height ? cr.height / MH : s;
   let h = '';
   const dest = S.route.plan.length ? S.route.plan[S.route.plan.length - 1] : null;
-  (MAP.proj || []).forEach(({ q, i, kind }) => {
+  (worldMap.proj || []).forEach(({ q, i, kind }) => {
     if (q.x < -10 || q.x > MW + 10 || q.y < 0 || q.y > MH) return;
     let name,
       cls = '';
     if (kind === 'r') {
-      if (sunBlocks(MAP.cam, MNV[i])) return;
+      if (sunBlocks(worldMap.cam, MNV[i])) return;
       const far = q.z > 0.85 && i !== S.route.node && U.mapSel !== i && i !== dest;
       if (far) return;
       name = ROUTE[i].name;
@@ -743,7 +755,7 @@ export function mapLabels() {
         (i === dest ? ' dest' : '') +
         (!S.visited[i] ? ' new' : '');
     } else if (kind === 'f') {
-      if (sunBlocks(MAP.cam, REGV[i])) return;
+      if (sunBlocks(worldMap.cam, REGV[i])) return;
       if (q.z > 0.9 && U.mapSel !== 'f' + i) return;
       name = FUTURE[i].name;
       cls = ' fog' + (U.mapSel === 'f' + i ? ' sel' : '');
@@ -779,17 +791,17 @@ export function mapSelect(n) {
           : REGV[+n.slice(1)]
         : null;
   if (v) mapFocus(v);
-  MAP.dirty = true;
+  worldMap.dirty = true;
 }
 function mapPick(ev) {
-  const cv = MAP.cv;
+  const cv = worldMap.cv;
   if (!cv) return;
   const r = cv.getBoundingClientRect(),
     x = ((ev.clientX - r.left) / r.width) * MW,
     y = ((ev.clientY - r.top) / r.height) * MH;
   let best = null,
     bd = 14;
-  (MAP.proj || []).forEach(({ q, i, kind }) => {
+  (worldMap.proj || []).forEach(({ q, i, kind }) => {
     const d = Math.hypot(q.x - x, q.y - (kind === 'r' ? 3 : 0) - y);
     if (d < bd) {
       bd = d;

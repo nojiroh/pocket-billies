@@ -24,7 +24,6 @@ import { EGL_POST_SH, eglPost, eglScreenOf } from './engine/post-effects.js';
 import { rawHeightAt, walkRenderer, worldMapTexture } from './walk-view-gl.js';
 import {
   D2R,
-  MAP,
   MCL,
   MH,
   MLAND,
@@ -52,6 +51,7 @@ import {
   slerp,
   sunBlocks,
   v3,
+  worldMap,
 } from './world-map.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -215,8 +215,8 @@ function mglUV(v) {
 }
 function mglProj(v) {
   if (!MGL.flat) {
-    const q = mproj(MAP.cam, v);
-    if (!q || sunBlocks(MAP.cam, v)) return null;
+    const q = mproj(worldMap.cam, v);
+    if (!q || sunBlocks(worldMap.cam, v)) return null;
     return q;
   }
   const F = MGL.fv,
@@ -266,23 +266,23 @@ setMapMount(function () {
   const cv = $('#mapcv');
   if (!cv) return;
   if (!mapGLReady()) {
-    MAP.gl = false;
+    worldMap.gl = false;
     document.body.classList.remove('map-gl');
     return _mapMountCPU();
   }
-  MAP.gl = true;
+  worldMap.gl = true;
   document.body.classList.add('map-gl');
-  MAP.cv = cv;
-  MAP.ctx = cv.getContext('2d');
+  worldMap.cv = cv;
+  worldMap.ctx = cv.getContext('2d');
   MGL.pins = null;
   mglSize();
   const to = mePos();
-  if (!MAP.me) MAP.me = to;
-  else if (v3.dot(MAP.me, to) < 0.999999) mapWalk(MAP.me, to);
-  if (!MAP.focus) MAP.focus = to;
+  if (!worldMap.me) worldMap.me = to;
+  else if (v3.dot(worldMap.me, to) < 0.999999) mapWalk(worldMap.me, to);
+  if (!worldMap.focus) worldMap.focus = to;
   /* arriving from the walk screen: start close to you and pull back */
   if (U.mglFrom === 'walk' && !RM && !MGL.flat) {
-    MAP.alt = 0.11;
+    worldMap.alt = 0.11;
     MGL.altT = 0.32;
   }
   U.mglFrom = null;
@@ -303,51 +303,51 @@ setMapMount(function () {
     cv.addEventListener('contextmenu', e => e.preventDefault());
     cv.addEventListener('pointerdown', e => {
       pts.set(e.pointerId, [e.clientX, e.clientY]);
-      MAP.drag = {
+      worldMap.drag = {
         x: e.clientX,
         y: e.clientY,
-        yaw: MAP.yaw,
-        pitch: MAP.pitch,
-        tilt: MAP.tilt ?? 0.5733,
-        focus: MAP.focus || mePos(),
-        cam: MAP.cam,
+        yaw: worldMap.yaw,
+        pitch: worldMap.pitch,
+        tilt: worldMap.tilt ?? 0.5733,
+        focus: worldMap.focus || mePos(),
+        cam: worldMap.cam,
         fu: MGL.fv.u,
         fv: MGL.fv.v,
         moved: 0,
         id: e.pointerId,
         turn: e.button === 2 || e.shiftKey || e.ctrlKey,
         g: null,
-        alt: MAP.alt,
+        alt: worldMap.alt,
         s: MGL.fv.s,
       };
       cv.setPointerCapture(e.pointerId);
     });
     cv.addEventListener('pointermove', e => {
-      const D = MAP.drag;
+      const D = worldMap.drag;
       if (!D) return;
       if (pts.has(e.pointerId)) pts.set(e.pointerId, [e.clientX, e.clientY]);
       if (pts.size > 1) {
         const g = two();
         if (!D.g) {
           D.g = g;
-          D.alt = MAP.alt;
+          D.alt = worldMap.alt;
           D.s = MGL.fv.s;
-          D.yaw = MAP.yaw;
-          D.tilt = MAP.tilt ?? 0.5733;
+          D.yaw = worldMap.yaw;
+          D.tilt = worldMap.tilt ?? 0.5733;
         }
         const k = D.g.d / Math.max(1, g.d);
         if (MGL.flat) MGL.fv.s = clamp(D.s / k, mglFlatMin(), MW * 8);
         else {
-          MAP.alt = clamp(D.alt * k, MGL_ALT[0], MGL_ALT[1]);
+          worldMap.alt = clamp(D.alt * k, MGL_ALT[0], MGL_ALT[1]);
           let da = g.ang - D.g.ang;
           if (da > Math.PI) da -= Math.PI * 2;
           if (da < -Math.PI) da += Math.PI * 2;
-          MAP.yaw = D.yaw - da;
-          MAP.tilt = clamp(D.tilt + (g.my - D.g.my) * 0.004, MGL_TILT[0], MGL_TILT[1]);
+          worldMap.yaw = D.yaw - da;
+          worldMap.tilt = clamp(D.tilt + (g.my - D.g.my) * 0.004, MGL_TILT[0], MGL_TILT[1]);
         }
         D.moved = 1;
         MGL.altT = null;
-        MAP.dirty = true;
+        worldMap.dirty = true;
         return;
       }
       const dx = e.clientX - D.x,
@@ -358,20 +358,20 @@ setMapMount(function () {
         MGL.fv.u = D.fu - dx / MGL.fv.s;
         MGL.fv.v = clamp(D.fv - dy / (MGL.fv.s * 0.5), 0, 1);
       } else if (D.turn) {
-        MAP.yaw = D.yaw - dx * 0.006;
-        MAP.tilt = clamp(D.tilt + dy * 0.004, MGL_TILT[0], MGL_TILT[1]);
+        worldMap.yaw = D.yaw - dx * 0.006;
+        worldMap.tilt = clamp(D.tilt + dy * 0.004, MGL_TILT[0], MGL_TILT[1]);
       } else mglPanTo(D, dx, dy);
-      MAP.dirty = true;
+      worldMap.dirty = true;
     });
     const up = e => {
       pts.delete(e.pointerId);
-      const D = MAP.drag;
+      const D = worldMap.drag;
       if (pts.size) {
         if (D) D.g = null;
         return;
       }
-      MAP.drag = null;
-      MAP.dirty = true;
+      worldMap.drag = null;
+      worldMap.dirty = true;
       if (D && !D.moved && e.type === 'pointerup') mglPick(e);
     };
     cv.addEventListener('pointerup', up);
@@ -381,15 +381,15 @@ setMapMount(function () {
       e => {
         e.preventDefault();
         if (e.shiftKey && !MGL.flat) {
-          MAP.yaw += (e.deltaY || e.deltaX) * 0.003;
-          MAP.dirty = true;
+          worldMap.yaw += (e.deltaY || e.deltaX) * 0.003;
+          worldMap.dirty = true;
           return;
         }
         const k = e.deltaY > 0 ? 1.12 : 0.89;
         if (MGL.flat) MGL.fv.s = clamp(MGL.fv.s / k, mglFlatMin(), MW * 8);
-        else MAP.alt = clamp(MAP.alt * k, MGL_ALT[0], MGL_ALT[1]);
+        else worldMap.alt = clamp(worldMap.alt * k, MGL_ALT[0], MGL_ALT[1]);
         MGL.altT = null;
-        MAP.dirty = true;
+        worldMap.dirty = true;
       },
       { passive: false }
     );
@@ -397,27 +397,27 @@ setMapMount(function () {
     cv.addEventListener('keydown', e => {
       if (MGL.flat) return;
       const k = e.key,
-        D = { focus: MAP.focus || mePos(), cam: MAP.cam };
+        D = { focus: worldMap.focus || mePos(), cam: worldMap.cam };
       let used = 1;
       if (k === 'ArrowLeft' || k === 'a') mglPanTo(D, 60, 0);
       else if (k === 'ArrowRight' || k === 'd') mglPanTo(D, -60, 0);
       else if (k === 'ArrowUp' || k === 'w') mglPanTo(D, 0, 60);
       else if (k === 'ArrowDown' || k === 's') mglPanTo(D, 0, -60);
-      else if (k === 'q') MAP.yaw -= 0.2;
-      else if (k === 'e') MAP.yaw += 0.2;
+      else if (k === 'q') worldMap.yaw -= 0.2;
+      else if (k === 'e') worldMap.yaw += 0.2;
       else if (k === '+' || k === '=') mapZoom(0.8);
       else if (k === '-') mapZoom(1.25);
       else used = 0;
       if (used) {
         e.preventDefault();
-        MAP.dirty = true;
+        worldMap.dirty = true;
       }
     });
   }
   mglChrome();
-  if (!MAP.on) {
-    MAP.on = true;
-    MAP.last = performance.now();
+  if (!worldMap.on) {
+    worldMap.on = true;
+    worldMap.last = performance.now();
     frameTask('map', mapGLLoop);
   }
 });
@@ -430,19 +430,19 @@ const MGL_ALT = [0.022, 0.7],
 /* drag the land: the spot under the middle of the view slides with your finger, across the inside of the world */
 /* a smooth turn or tilt from the buttons */
 function mglEase(k, to) {
-  const from = MAP[k] ?? (k === 'tilt' ? 0.5733 : 0),
+  const from = worldMap[k] ?? (k === 'tilt' ? 0.5733 : 0),
     t0 = performance.now();
   const step = () => {
     const f = Math.min(1, (performance.now() - t0) / 380),
       e = f < 0.5 ? 2 * f * f : 1 - Math.pow(-2 * f + 2, 2) / 2;
-    MAP[k] = from + (to - from) * e;
-    MAP.dirty = true;
+    worldMap[k] = from + (to - from) * e;
+    worldMap.dirty = true;
     if (f < 1) requestAnimationFrame(step);
   };
   step();
 }
 function mglPanTo(D, dx, dy) {
-  const cam = D.cam || MAP.cam;
+  const cam = D.cam || worldMap.cam;
   if (!cam) return;
   const P0 = D.focus,
     n = v3.mul(P0, -1),
@@ -453,23 +453,23 @@ function mglPanTo(D, dx, dy) {
   const rt = tang(cam.rt),
     fw = tang(cam.fw) || tang(v3.mul(cam.up, -1));
   if (!rt || !fw) return;
-  const s = (MAP.alt * 1.84) / cam.foc;
-  MAP.focus = v3.norm(v3.add(P0, v3.add(v3.mul(rt, -dx * s), v3.mul(fw, dy * s))));
-  MAP.free = true;
-  MAP.fT = null;
+  const s = (worldMap.alt * 1.84) / cam.foc;
+  worldMap.focus = v3.norm(v3.add(P0, v3.add(v3.mul(rt, -dx * s), v3.mul(fw, dy * s))));
+  worldMap.free = true;
+  worldMap.fT = null;
 }
 const mglFlatMin = () => Math.max(MW, MH * 2) * 0.9;
 export function mglSize() {
-  const cv = MAP.cv,
+  const cv = worldMap.cv,
     r = cv && cv.isConnected ? cv.getBoundingClientRect() : null,
     w = Math.round(r && r.width > 20 ? r.width : innerWidth),
     h = Math.round(r && r.height > 20 ? r.height : innerHeight);
   if (w !== MW || h !== MH) {
     setMW(w);
     setMH(h);
-    MAP.dirty = true;
+    worldMap.dirty = true;
   }
-  MAP.s = 1;
+  worldMap.s = 1;
   const dpr = Math.min(devicePixelRatio || 1, 2);
   if (cv && (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr))) {
     cv.width = Math.round(w * dpr);
@@ -479,55 +479,55 @@ export function mglSize() {
   if (MGL.fv.s < mglFlatMin()) MGL.fv.s = mglFlatMin();
 }
 function mapGLLoop(ts) {
-  if (!MAP.cv || !MAP.cv.isConnected || !MAP.gl) {
-    MAP.on = false;
+  if (!worldMap.cv || !worldMap.cv.isConnected || !worldMap.gl) {
+    worldMap.on = false;
     frameStop('map');
     return;
   }
   if (EGL.lost) return;
   let moving = false;
-  if (MAP.fly && typeof flyTick === 'function' && flyTick(ts)) moving = true;
-  if (MAP.anim) {
-    const a = MAP.anim,
+  if (worldMap.fly && typeof flyTick === 'function' && flyTick(ts)) moving = true;
+  if (worldMap.anim) {
+    const a = worldMap.anim,
       k = Math.min(1, (ts - a.t0) / a.dur);
-    MAP.me = v3.norm(slerp(a.from, a.to, EASE.io(k)));
+    worldMap.me = v3.norm(slerp(a.from, a.to, EASE.io(k)));
     moving = k < 1;
-    MAP.face = 'up';
+    worldMap.face = 'up';
     if (k >= 1) {
-      MAP.anim = null;
-      MAP.me = a.to;
+      worldMap.anim = null;
+      worldMap.me = a.to;
     }
   }
-  MAP.moving = moving;
+  worldMap.moving = moving;
   let panning = false;
-  if (MAP.fT) {
-    const a = MAP.fT,
+  if (worldMap.fT) {
+    const a = worldMap.fT,
       k = Math.min(1, (ts - a.t0) / a.dur);
-    MAP.focus = v3.norm(slerp(a.from, a.to, EASE.io(k)));
+    worldMap.focus = v3.norm(slerp(a.from, a.to, EASE.io(k)));
     panning = k < 1;
-    if (k >= 1) MAP.fT = null;
+    if (k >= 1) worldMap.fT = null;
     if (MGL.flat) {
-      const [u, v] = mglUV(MAP.focus);
+      const [u, v] = mglUV(worldMap.focus);
       MGL.fv.u = u;
       MGL.fv.v = v;
     }
-  } else if (U.mapSel == null && MAP.me && !MGL.flat && !MAP.free) MAP.focus = MAP.me;
+  } else if (U.mapSel == null && worldMap.me && !MGL.flat && !worldMap.free) worldMap.focus = worldMap.me;
   if (MGL.altT != null) {
-    MAP.alt += (MGL.altT - MAP.alt) * Math.min(1, (ts - (MGL.lastT || ts)) / 260);
-    if (Math.abs(MGL.altT - MAP.alt) < 0.002) {
-      MAP.alt = MGL.altT;
+    worldMap.alt += (MGL.altT - worldMap.alt) * Math.min(1, (ts - (MGL.lastT || ts)) / 260);
+    if (Math.abs(MGL.altT - worldMap.alt) < 0.002) {
+      worldMap.alt = MGL.altT;
       MGL.altT = null;
     }
     panning = true;
   }
-  const busy = !!(MAP.drag || moving || panning);
-  if (ts - MAP.lastDraw < (busy ? 1000 / userFps() - 2 : 1000 / 24) && !MAP.dirty) return;
-  MAP.lastDraw = ts;
-  MAP.dirty = false;
+  const busy = !!(worldMap.drag || moving || panning);
+  if (ts - worldMap.lastDraw < (busy ? 1000 / userFps() - 2 : 1000 / 24) && !worldMap.dirty) return;
+  worldMap.lastDraw = ts;
+  worldMap.dirty = false;
   MGL.lastT = ts;
   const w0 = performance.now();
   mglSize();
-  MAP.cam = mapCam();
+  worldMap.cam = mapCam();
   mglRender(ts);
   mglOverlay(ts);
   mglPins();
@@ -543,7 +543,7 @@ function mglHeightTex() {
       MGL.hload = 1;
       artLoad([WORLD_RELIEF])
         .then(() => {
-          MAP.dirty = true;
+          worldMap.dirty = true;
         })
         .catch(() => {});
     }
@@ -564,7 +564,7 @@ export function mglRender(t) {
   ENG_CTX.look = (es && es.map) || null;
   const gl = EGL.gl,
     cv = EGL.cv,
-    cam = MAP.cam,
+    cam = worldMap.cam,
     px = MW * MH,
     R =
       Math.min(devicePixelRatio || 1, 1.75) *
@@ -674,7 +674,7 @@ export function mglRender(t) {
       gl.drawArrays(gl.TRIANGLES, 0, 6);
     }
   }
-  const P = MAP.focus || mePos(),
+  const P = worldMap.focus || mePos(),
     fd = Math.max(0.02, v3.dot(v3.sub(P, cam.C), cam.fw));
   MGL.fd = MGL.fd == null ? fd : MGL.fd + (fd - MGL.fd) * 0.2;
   eglPost(S, { near: MGL_N, far: MGL_F, df: MGL.fd * 1.6, F: (cam.foc * rw) / MW }, MGL.fd, rw, rh, {
@@ -704,7 +704,7 @@ function mglMiniImg(i) {
       MGL.miniLoad[p] = 1;
       artLoad([p])
         .then(() => {
-          MAP.dirty = true;
+          worldMap.dirty = true;
         })
         .catch(() => {});
     }
@@ -722,7 +722,7 @@ function mglLift(v) {
       artPixels(WORLD_RELIEF)
         .then(p => {
           MGL.hpix = p;
-          MAP.dirty = true;
+          worldMap.dirty = true;
         })
         .catch(() => {});
     }
@@ -754,15 +754,15 @@ function mglMiniUp(v, cam) {
   return v3.norm(v3.add(v3.mul(n, 0.62), v3.mul(bk, -0.78)));
 }
 function mglMiniTop(i) {
-  if (typeof mmOn === 'function' && mmOn() && !MGL.flat && MAP.cam) {
+  if (typeof mmOn === 'function' && mmOn() && !MGL.flat && worldMap.cam) {
     const e = MM.cache.get(i);
     if (e && e.m && e.m.top) return e.m.top;
   }
   const im = mglMiniImg(i);
-  if (!im || MGL.flat || !MAP.cam) return null;
+  if (!im || MGL.flat || !worldMap.cam) return null;
   const r = ROUTE[i],
     v = mglLift(MNV[i]);
-  return v3.add(v, v3.mul(mglMiniUp(v, MAP.cam), im.height * MINI_K * (r.town ? 1.15 : 1) * 0.92));
+  return v3.add(v, v3.mul(mglMiniUp(v, worldMap.cam), im.height * MINI_K * (r.town ? 1.15 : 1) * 0.92));
 }
 /* ---------- overlay: trip, route preview, player ---------- */
 function mglLine(c, pts, col, w, dash, off) {
@@ -799,8 +799,8 @@ function mglPath(seq, startF) {
   return pts;
 }
 function mglOverlay(t) {
-  const c = MAP.ctx,
-    cv = MAP.cv,
+  const c = worldMap.ctx,
+    cv = worldMap.cv,
     d = MGL.dpr;
   c.setTransform(1, 0, 0, 1, 0, 0);
   c.clearRect(0, 0, cv.width, cv.height);
@@ -828,14 +828,14 @@ function mglOverlay(t) {
       );
     }
   }
-  const pq = mglProj(MAP.me || mePos());
-  if (pq && MAP.fly && typeof flyDraw === 'function') flyDraw(c, t, mglProj);
+  const pq = mglProj(worldMap.me || mePos());
+  if (pq && worldMap.fly && typeof flyDraw === 'function') flyDraw(c, t, mglProj);
   else if (pq) {
     const fr = owFrames('me'),
-      set = fr[MAP.face] || fr.down,
-      f = MAP.moving ? set[1 + (Math.floor(t / 140) % 2)] : set[0],
+      set = fr[worldMap.face] || fr.down,
+      f = worldMap.moving ? set[1 + (Math.floor(t / 140) % 2)] : set[0],
       k = 2,
-      bob = MAP.moving ? 0 : Math.floor(t / 600) % 2;
+      bob = worldMap.moving ? 0 : Math.floor(t / 600) % 2;
     c.imageSmoothingEnabled = false;
     c.fillStyle = 'rgba(20,10,40,.35)';
     c.beginPath();
@@ -873,7 +873,7 @@ function mglPinState(i) {
 }
 function mglPins() {
   const host = $('#maplabels');
-  if (!host || !MAP.cam) return;
+  if (!host || !worldMap.cam) return;
   if (!MGL.pins || MGL.pins.host !== host) {
     host.innerHTML = '';
     MGL.pins = { host, el: new Map() };
@@ -938,7 +938,7 @@ function mglPins() {
     );
   }
   FUTURE.forEach((f, i) => {
-    let q = f.t === 'sun' ? (MGL.flat ? null : mproj(MAP.cam, [0, 0, 0])) : mglProj(REGV[i]);
+    let q = f.t === 'sun' ? (MGL.flat ? null : mproj(worldMap.cam, [0, 0, 0])) : mglProj(REGV[i]);
     if (q && q.z > 0.95 && U.mapSel !== 'f' + i && !MGL.flat) return put('f' + i, null);
     if (q && U.mapSel !== 'f' + i) {
       const w = f.name.length * 7 + 20,
@@ -989,7 +989,7 @@ function mglPins() {
   for (const [k, e] of E) if (!seen.has(k)) e.hidden = true;
 }
 function mglPick(ev) {
-  const r = MAP.cv.getBoundingClientRect(),
+  const r = worldMap.cv.getBoundingClientRect(),
     x = ev.clientX - r.left,
     y = ev.clientY - r.top;
   let best = null,
@@ -1005,7 +1005,7 @@ function mglPick(ev) {
   });
   if (best === null)
     FUTURE.forEach((f, i) => {
-      const q = f.t === 'sun' ? (MGL.flat ? null : mproj(MAP.cam, [0, 0, 0])) : mglProj(REGV[i]);
+      const q = f.t === 'sun' ? (MGL.flat ? null : mproj(worldMap.cam, [0, 0, 0])) : mglProj(REGV[i]);
       if (!q) return;
       const d = Math.hypot(q.x - x, q.y - y);
       if (d < bd) {
@@ -1016,38 +1016,38 @@ function mglPick(ev) {
   if (best !== null) mapSelect(best);
 }
 setMapLabels(function () {
-  if (MAP.gl) return mglPins();
+  if (worldMap.gl) return mglPins();
   return _mapLabelsCPU();
 });
 {
   const cpuFit = mapFit;
   setMapFit(function () {
-    if (MAP.gl) {
+    if (worldMap.gl) {
       mglSize();
-      MAP.dirty = true;
+      worldMap.dirty = true;
       return;
     }
     cpuFit();
   });
 }
 setMapZoom(function (k) {
-  if (!MAP.gl) return _mapZoomCPU(k);
+  if (!worldMap.gl) return _mapZoomCPU(k);
   MGL.altT = null;
   if (MGL.flat) MGL.fv.s = clamp(MGL.fv.s / k, mglFlatMin(), MW * 8);
-  else MAP.alt = clamp(MAP.alt * k, MGL_ALT[0], MGL_ALT[1]);
-  MAP.dirty = true;
+  else worldMap.alt = clamp(worldMap.alt * k, MGL_ALT[0], MGL_ALT[1]);
+  worldMap.dirty = true;
 });
 setMapReset(function () {
-  if (!MAP.gl) return _mapResetCPU();
-  MAP.free = false;
-  MAP.tilt = 0.5733;
+  if (!worldMap.gl) return _mapResetCPU();
+  worldMap.free = false;
+  worldMap.tilt = 0.5733;
   _mapResetCPU();
   if (MGL.flat) {
     const [u, v] = mglUV(mePos());
     MGL.fv.u = u;
     MGL.fv.v = v;
   }
-  MAP.dirty = true;
+  worldMap.dirty = true;
 });
 /* ---------- extra controls: places list and flat view ---------- */
 function mglChrome() {
@@ -1110,12 +1110,12 @@ function mglPlacesHTML() {
 }
 export function mapGLAction(a, d) {
   if (a === 'mturn' && !MGL.flat) {
-    mglEase('yaw', MAP.yaw + ((+d.k || 1) * Math.PI) / 4);
+    mglEase('yaw', worldMap.yaw + ((+d.k || 1) * Math.PI) / 4);
     return true;
   }
   if (a === 'mtilt' && !MGL.flat) {
     const T = [0.28, 0.5733, 1.15],
-      cur = MAP.tilt ?? 0.5733,
+      cur = worldMap.tilt ?? 0.5733,
       i = T.findIndex(v => v > cur + 0.05);
     mglEase('tilt', T[i < 0 ? 0 : i]);
     return true;
@@ -1123,13 +1123,13 @@ export function mapGLAction(a, d) {
   if (a === 'mflat') {
     MGL.flat = !MGL.flat;
     if (MGL.flat) {
-      const [u, v] = mglUV(MAP.focus || mePos());
+      const [u, v] = mglUV(worldMap.focus || mePos());
       MGL.fv.u = u;
       MGL.fv.v = v;
       MGL.fv.s = Math.max(mglFlatMin(), MGL.fv.s);
     }
     MGL.altT = null;
-    MAP.dirty = true;
+    worldMap.dirty = true;
     mglChrome();
     return true;
   }

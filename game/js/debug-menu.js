@@ -37,7 +37,7 @@ import { battleStage, battleStageResize, battleStageStop } from './battle-stage.
 import { mapById } from './walk-view.js';
 import { EGL } from './engine/webgl.js';
 import { A, checkFaints, paintBoxes, play, say, snapAll, startTrainer, startWild, stopTimers } from './battle.js';
-import { MAP } from './world-map.js';
+import { worldMap } from './world-map.js';
 /* eslint-disable no-func-assign */
 expose({
   DBG: [() => DBG],
@@ -162,7 +162,7 @@ function dbgAct(x) {
         const e = $('#fpsMeter');
         if (e) e.remove();
       } else {
-        if (!battleStage.on && !MAP.on) frameTask('meter', () => frameCount(0));
+        if (!battleStage.on && !worldMap.on) frameTask('meter', () => frameCount(0));
         debugFps();
       }
       return dbgRefresh();
