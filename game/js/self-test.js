@@ -96,10 +96,12 @@ expose({
 /* eslint-enable no-func-assign */
 provide({ runDiagnostics, testMapChecks, testMaps });
 /* to-module: end */
-const selfTest = { on: false, stop: false };
+/* phase 13: slow stretches every wait and time limit of the test, for a machine that draws a frame or two a second
+   (the checks' headless browser draws in software: selfTest.slow = 3 there); 1 on a phone or a computer */
+const selfTest = { on: false, stop: false, slow: 1 };
 provide({ selfTest }); /* to-module */
 function selfTestSleep(ms) {
-  return new Promise(r => setTimeout(r, ms));
+  return new Promise(r => setTimeout(r, ms * (selfTest.slow || 1)));
 }
 /* frame rate of one scheduler task between two moments of the debug log */
 function selfTestFrameStats(t0, t1, task) {
@@ -276,7 +278,7 @@ async function runFullTest(mode) {
         why = '',
         err = null;
       /* no step may hold the test up: past its time limit it counts as a problem and the test moves on */
-      const limit = (maxSec || Math.max(20, sec * 6)) * 1000;
+      const limit = (maxSec || Math.max(20, sec * 6)) * 1000 * (selfTest.slow || 1);
       let timer = null;
       try {
         const r = await Promise.race([
@@ -690,7 +692,7 @@ async function runFullTest(mode) {
       startWild(q);
       const g0 = selfTest.gen || 0;
       const want = async (ph, ms) => {
-        const end = performance.now() + ms;
+        const end = performance.now() + ms * (selfTest.slow || 1);
         while (performance.now() < end) {
           if (!activeBattle || (selfTest.gen || 0) !== g0) return false;
           if (ph.includes(activeBattle.phase)) return true;
@@ -751,7 +753,7 @@ async function runFullTest(mode) {
       }
       const g0 = selfTest.gen || 0;
       const want = async (ph, ms) => {
-        const end = performance.now() + ms;
+        const end = performance.now() + ms * (selfTest.slow || 1);
         while (performance.now() < end) {
           if (!activeBattle || (selfTest.gen || 0) !== g0) return false;
           if (ph.includes(activeBattle.phase)) return true;
@@ -1117,7 +1119,7 @@ async function runFullTest(mode) {
           startTrainer('blake0', { talked: true });
           const g0 = selfTest.gen || 0,
             want = async (ph, ms) => {
-              const end = performance.now() + ms;
+              const end = performance.now() + ms * (selfTest.slow || 1);
               while (performance.now() < end) {
                 if (!activeBattle || (selfTest.gen || 0) !== g0) return false;
                 if (ph.includes(activeBattle.phase)) return true;
