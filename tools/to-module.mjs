@@ -408,7 +408,9 @@ export async function run(args) {
     ];
     let body = text;
     for (const [at, str] of edits.sort((a, b) => b[0] - a[0])) body = body.slice(0, at) + str + body.slice(at);
-    const h = headerEnd(body);
+    // the generated part goes where it was (a comment right after it stays below it), else after the leading comments
+    const was = raw.indexOf(START);
+    const h = was >= 0 ? was : headerEnd(body);
     const head = body.slice(0, h).replace(/\s*$/, '');
     let out = (head ? head + '\n' : '') + lines.join('\n') + '\n' + body.slice(h).replace(/^\s*\n/, '');
     await write(f, out, raw);
