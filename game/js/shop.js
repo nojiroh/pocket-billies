@@ -9,7 +9,7 @@ import { clamp, rnd } from './util.js';
 import { COINS, ITEMS, SHOPS } from './game-data.js';
 import { S, U, esc, fmt, plural, save } from './game-state.js';
 import { coinHTML, uiIco } from './art.js';
-import { portraitHTML } from './trainer.js';
+import { portraitHTML } from './person-art.js';
 import { openDressing } from './dressing.js';
 import { buzz } from './battle-stage.js';
 import { itemIcon } from './battle.js';

@@ -68,7 +68,7 @@ import {
   xpFor,
 } from './game-state.js';
 import { artURL, coinHTML, eggHTML, iconURL, uiIco } from './art.js';
-import { portraitHTML } from './trainer.js';
+import { portraitHTML } from './person-art.js';
 import { KBACK, bustHTML, rigPreload } from './rig.js';
 import {
   AREAS,

@@ -13,7 +13,7 @@ import { expose } from './test-globals.js';
 import { ACC, accOn, closeModal, modal, provide, render, sceneIdAt, toast, walkOff } from './hooks.js';
 import { ROUTE, SP } from './game-data.js';
 import { N, S, U, cleanName, esc, plural } from './game-state.js';
-import { owFrames, portraitHTML, trWarm } from './trainer.js';
+import { owFrames, portraitHTML, trWarm } from './person-art.js';
 import { sprHTML } from './rig.js';
 import { DIO, dioDirOf } from './walk-view.js';
 import { dglPerson } from './walk-view-gl.js';

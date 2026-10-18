@@ -5,7 +5,7 @@ import { GD, ROUTE } from './game-data.js';
 import { B, S, U, save, setSave, setSetTrip, setTrip } from './game-state.js';
 import { FRAME, userFps } from './frame.js';
 import { artPixels, setArtPixels } from './art.js';
-import { TR_CACHE, humanFrames, setHumanFrames } from './trainer.js';
+import { TR_CACHE, humanFrames, setHumanFrames } from './person-art.js';
 import { openDressing, setOpenDressing } from './dressing.js';
 import { SC, scResize, scStart, setScResize, setScStart } from './battle-stage.js';
 import { DIO, dioFolkTick, dioPlayer, dioPrepare, setDioFolkTick, setDioPlayer, setDioPrepare } from './walk-view.js';

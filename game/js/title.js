@@ -12,7 +12,7 @@ import { ROUTE, START_NODE } from './game-data.js';
 import { RM, S, U, esc, flush, freshKeep, lsSet, setS } from './game-state.js';
 import { userFps } from './frame.js';
 import { uiIco } from './art.js';
-import { humanHTML } from './trainer.js';
+import { humanHTML } from './person-art.js';
 import { applyPreferences } from './settings-screen.js';
 import { DIO, dioScene, dioStop } from './walk-view.js';
 import { DGL, dioH, dioMount } from './walk-view-gl.js';

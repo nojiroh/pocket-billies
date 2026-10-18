@@ -27,7 +27,7 @@ import {
   setS,
   setSaveHold,
 } from './game-state.js';
-import { cleanTrainer } from './trainer.js';
+import { cleanTrainer } from './person-art.js';
 import { applyPreferences, settingsRefresh } from './settings-screen.js';
 import { TITLE, titleStart } from './title.js';
 import { frInit } from './friends.js';

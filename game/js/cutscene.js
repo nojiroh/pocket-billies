@@ -28,7 +28,7 @@ import { ROUTE, RULES, SP, START_NODE, TRAINERS, TYPES, eff, placeFull } from '.
 import { RM, U, esc } from './game-state.js';
 import { userFps } from './frame.js';
 import { artLoad, cnv } from './art.js';
-import { TR_PRESETS, cleanLook, humanPose, owFrames, trainerLook } from './trainer.js';
+import { TR_PRESETS, cleanLook, humanPose, owFrames, trainerLook } from './person-art.js';
 import { DR, drSave, openDressing } from './dressing.js';
 import { drawRig, rigFrame, rigParts, rigPreload, rigTint } from './rig.js';
 import { buzz, partSpr } from './battle-stage.js';

@@ -16,7 +16,7 @@ import { $, clamp } from './util.js';
 import { MOVES, SP, START_NODE, eff } from './game-data.js';
 import { B, RM, esc, maxHp } from './game-state.js';
 import { artLoad } from './art.js';
-import { portraitHTML } from './trainer.js';
+import { portraitHTML } from './person-art.js';
 import { partSpr } from './battle-stage.js';
 import { DIO } from './walk-view.js';
 import { EGL, eglPrograms } from './engine/core.js';

@@ -11,7 +11,7 @@ import { SHOPS } from './game-data.js';
 import { S, U, esc, fmt, save } from './game-state.js';
 import { frameStop, frameTask } from './frame.js';
 import { cnv, uiIco } from './art.js';
-import { TR_PRESETS, WD, cleanLook, portraitHTML, trBox, trColorsOf, trFrame, trSliders } from './trainer.js';
+import { TR_PRESETS, WD, cleanLook, portraitHTML, trBox, trColorsOf, trFrame, trSliders } from './person-art.js';
 /* eslint-disable no-func-assign */
 expose({
   DR: [() => DR],

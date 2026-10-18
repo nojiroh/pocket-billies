@@ -197,7 +197,7 @@ export function whiteOf(c) {
 function darkOf(c) {
   return c._d || (c._d = tintOf(c, '#0E1418'));
 }
-/* ---- people are drawn in code by trainer.js ---- */
+/* ---- people are drawn in code by person-art.js ---- */
 /* ---- coins and Seed Rounds ---- */
 const COIN_KINDS = typeof COINS !== 'undefined' ? Object.keys(COINS) : ['penny', 'silver', 'gold', 'tbtf'];
 export const COIN_ART = COIN_KINDS.flatMap(k => [`coins/${k}_16.png`, `coins/${k}_32.png`]);

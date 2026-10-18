@@ -43,7 +43,7 @@ import {
 import { I18N_LANGS, i18nSet } from './i18n.js';
 import { FRAME } from './frame.js';
 import { uiIco } from './art.js';
-import { cleanLook, cleanTrainer, humanHTML, lookFromOld } from './trainer.js';
+import { cleanLook, cleanTrainer, humanHTML, lookFromOld } from './person-art.js';
 /* eslint-disable no-func-assign */
 expose({
   GFX_DIALS: [() => GFX_DIALS],

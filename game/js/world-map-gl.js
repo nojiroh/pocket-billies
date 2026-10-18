@@ -15,7 +15,7 @@ import { FUTURE, LINKS, ROUTE, linkCost, placeSub } from './game-data.js';
 import { RM, S, U, canEnter, esc, fmt, nextStop, tripTo } from './game-state.js';
 import { frameCount, frameStop, frameTask, userFps } from './frame.js';
 import { artLoad, artPixels, cnv, hexA, mstamp, uiIco } from './art.js';
-import { owFrames, portraitHTML } from './trainer.js';
+import { owFrames, portraitHTML } from './person-art.js';
 import { EASE } from './battle-stage.js';
 import { DIO, dioData, dioHash, dioImg, dioOk, dioScene, dioStep } from './walk-view.js';
 import { ENG_CTX, eng, engSource } from './engine/settings.js';
