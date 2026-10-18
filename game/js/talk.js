@@ -18,7 +18,7 @@ import { soundEffect } from './sound.js';
 expose({
   FOLK_NAMES: [() => FOLK_NAMES],
   FOLK_TALK: [() => FOLK_TALK],
-  TALK_NAMES: [() => TALK_NAMES],
+  SPEAKER_NAMES: [() => SPEAKER_NAMES],
   setTalkFolk: [() => setTalkFolk, v => (setTalkFolk = v)],
   talk: [() => talk, v => (talk = v)],
   talkBox: [() => talkBox],
@@ -34,7 +34,7 @@ expose({
 provide({ talkFolk });
 /* to-module: end */
 export const talkBox = { on: false, cur: null, por: { who: null, expr: null, t: 0 }, el: null };
-const TALK_NAMES = { gini: 'Professor Hazel' };
+const SPEAKER_NAMES = { gini: 'Professor Hazel' };
 const FOLK_NAMES = [
   'Ada',
   'Bram',
@@ -66,7 +66,7 @@ function talkName(who) {
   if (who === 'me') return lookOf('me').name || 'You';
   if (typeof who === 'string' && who.startsWith('folk:')) return FOLK_NAMES[+who.slice(5) % FOLK_NAMES.length];
   return (
-    TALK_NAMES[who] ||
+    SPEAKER_NAMES[who] ||
     (typeof PEOPLE !== 'undefined' &&
       PEOPLE[who] &&
       ((PEOPLE[who].look && PEOPLE[who].look.name) || PEOPLE[who].name)) ||

@@ -29,7 +29,7 @@ import {
   cutsceneWait,
   cutsceneWalk,
 } from './cutscene.js';
-import { LORE, loreClue, loreFlags } from './lore.js';
+import { loreClue, loreData, loreFlags } from './lore.js';
 /* eslint-disable no-func-assign */
 expose({
   blakeHello: [() => blakeHello, v => ((blakeHello = v), provide({ blakeHello }))],
@@ -439,7 +439,7 @@ async function storyEnding(T) {
   const L = T.endLines || [];
   if (typeof music === 'function') music('title');
   if (L.length && typeof talk === 'function') await talk(L.map(l => [l[0], l[1]]));
-  const E = ((typeof LORE === 'function' && LORE().story) || []).find(s => s.id === 'ending');
+  const E = ((typeof loreData === 'function' && loreData().story) || []).find(s => s.id === 'ending');
   if (typeof loreClue === 'function')
     loreClue('who'); /* the last clue: its flag, "ending", is the story's last stage */
   else {

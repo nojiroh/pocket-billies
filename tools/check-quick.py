@@ -1574,7 +1574,7 @@ def desktop_steps(b, base, R):
             pg.evaluate("saveData.flags.vinylla1=1;0")
             shown = pg.evaluate(f"trainersAt({inner}).some(T=>T.id==='vinylla2')")
             if not hidden or not shown: raise Exception(f'Vinylla at the Inner Sun: hidden before the Spire {hidden}, there after {shown}')
-            E = pg.evaluate("(LORE().story||[]).find(s=>s.id==='ending').title")
+            E = pg.evaluate("(loreData().story||[]).find(s=>s.id==='ending').title")
             sheets = beat('vinylla2', (E, 'v47-ending'))
             st = pg.evaluate("[!!storyFlags().ending,loreStage()]")
             if not st[0] or st[1] != 9 or E not in sheets: raise Exception(f'the ending: flag {st[0]}, stage {st[1]}, sheets {sheets}')

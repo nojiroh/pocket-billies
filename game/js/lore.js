@@ -18,7 +18,6 @@ import { JINGLES, jingle, soundEffect } from './sound.js';
 /* eslint-disable no-func-assign */
 expose({
   CLUE_SPOTS: [() => CLUE_SPOTS],
-  LORE: [() => LORE],
   clueDraw: [() => clueDraw, v => ((clueDraw = v), provide({ clueDraw }))],
   clueSpotFind: [() => clueSpotFind, v => (clueSpotFind = v)],
   clueSpots: [() => clueSpots, v => (clueSpots = v)],
@@ -26,6 +25,7 @@ expose({
   loreCard: [() => loreCard, v => (loreCard = v)],
   loreChat: [() => loreChat, v => (loreChat = v)],
   loreClue: [() => loreClue, v => (loreClue = v)],
+  loreData: [() => loreData],
   loreFlags: [() => loreFlags, v => ((loreFlags = v), provide({ loreFlags }))],
   loreLoadingLines: [() => loreLoadingLines, v => (loreLoadingLines = v)],
   loreMet: [() => loreMet, v => (loreMet = v)],
@@ -38,7 +38,7 @@ expose({
 /* eslint-enable no-func-assign */
 provide({ clueDraw, loreFlags, mapChatLines });
 /* to-module: end */
-export const LORE = () => (typeof gameData !== 'undefined' && gameData.lore) || {};
+export const loreData = () => (typeof gameData !== 'undefined' && gameData.lore) || {};
 export function loreFlags() {
   return typeof storyFlags === 'function' ? storyFlags() : saveData.story || (saveData.story = {});
 }
@@ -71,7 +71,7 @@ function loreOpen(u) {
 }
 /* what people say here now: the lines for the latest stage reached (lore.chat), then the place's own */
 function loreChat(place) {
-  const C = (LORE().chat || {})[place];
+  const C = (loreData().chat || {})[place];
   if (!C) return [];
   const st = loreStage(),
     k = Object.keys(C)
@@ -87,7 +87,7 @@ function mapChatLines(fallback) {
 }
 /* a book or paper in a room: its pages one at a time; the Guide keeps the ones you've read */
 export function loreBook(id, page = 0) {
-  const B = (LORE().books || {})[id];
+  const B = (loreData().books || {})[id];
   if (!B) return;
   const F = loreFlags();
   if (!F['read_' + id]) {
@@ -112,7 +112,7 @@ export function loreBook(id, page = 0) {
 }
 /* something of yours, found along the way */
 export function loreClue(id) {
-  const C = (LORE().clues || []).find(c => c.id === id);
+  const C = (loreData().clues || []).find(c => c.id === id);
   if (!C) return;
   const F = loreFlags(),
     flag = C.unlock && C.unlock.startsWith('flag:') ? C.unlock.slice(5) : 'clue_' + id;
@@ -140,7 +140,7 @@ function clueSpots() {
     F = loreFlags();
   if (!sc || !id) return [];
   const out = [];
-  for (const C of LORE().clues || []) {
+  for (const C of loreData().clues || []) {
     const at = C.at;
     if (!at || at.scene !== id) continue;
     const flag = C.unlock && C.unlock.startsWith('flag:') ? C.unlock.slice(5) : 'clue_' + C.id;
@@ -217,7 +217,7 @@ function loreCard(title, text, open, sub) {
     : `<article class="lore-card locked"><h3>???</h3><p>Keep walking.</p></article>`;
 }
 export function renderLore() {
-  const L = LORE(),
+  const L = loreData(),
     st = loreStage(),
     F = loreFlags(),
     sec = uiState.loreSec || 'story';
@@ -274,7 +274,7 @@ export function renderLore() {
 }
 /* the loading screen's lines, shuffled once a session */
 export function loreLoadingLines() {
-  const L = (LORE().loading || []).slice();
+  const L = (loreData().loading || []).slice();
   for (let i = L.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [L[i], L[j]] = [L[j], L[i]];

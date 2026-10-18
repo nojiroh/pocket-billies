@@ -12,7 +12,7 @@ import { mapById, walkView } from './walk-view.js';
 import { environment } from './environment.js';
 /* eslint-disable no-func-assign */
 expose({
-  GALLERY_AT: [() => GALLERY_AT],
+  GALLERY_STATIONS: [() => GALLERY_STATIONS],
   gallery: [() => gallery],
   galleryClose: [() => galleryClose, v => (galleryClose = v)],
   galleryOpen: [() => galleryOpen, v => ((galleryOpen = v), provide({ galleryOpen }))],
@@ -21,7 +21,7 @@ expose({
 /* eslint-enable no-func-assign */
 provide({ galleryOpen });
 /* to-module: end */
-const GALLERY_AT = {
+const GALLERY_STATIONS = {
   'shadows.strength': 'grove',
   'shadows.selfShade': 'grove',
   'sun.shafts': 'grove',
@@ -61,7 +61,7 @@ function galleryOpen(gk) {
   uiState.bench = { id: 'gallery', test: 1 };
   uiState.tab = 'walk';
   render();
-  const st = (sc.stations || {})[GALLERY_AT[gk] || 'grove'] || sc.hub,
+  const st = (sc.stations || {})[GALLERY_STATIONS[gk] || 'grove'] || sc.hub,
     t0 = performance.now();
   const place = () => {
     if (!gallery.on) return;
@@ -95,7 +95,7 @@ function galleryPanel() {
     el.remove();
     return;
   }
-  const near = GRAPHICS_DIALS.flatMap(x => x[1]).filter(d => GALLERY_AT[d[0]] === GALLERY_AT[gallery.key]);
+  const near = GRAPHICS_DIALS.flatMap(x => x[1]).filter(d => GALLERY_STATIONS[d[0]] === GALLERY_STATIONS[gallery.key]);
   el.innerHTML = `<div class="gfx-ph"><b>Graphics gallery</b><button type="button" class="pb small quiet" data-a="gal-night">${gallery.night ? 'Day' : 'Night'}</button><button type="button" class="pb small" data-a="gal-leave">Leave</button></div>
   ${near.length > 1 ? `<div class="gfx-near">${near.map(d => `<button type="button" data-a="gal-pick" data-k="${d[0]}" aria-pressed="${d[0] === gallery.key}">${d[1]}</button>`).join('')}</div>` : ''}${graphicsDialHTML(D).replace(/<button type="button" class="gfx-see"[^>]*>See it<\/button>/, '')}`;
 }

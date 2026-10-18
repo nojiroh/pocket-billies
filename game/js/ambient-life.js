@@ -27,15 +27,15 @@ import {
 import { addRipple, groundHeightAt, rawHeightAt, standingHeightAt } from './walk-view-gl.js';
 /* eslint-disable no-func-assign */
 expose({
-  LIFE_FRAMES: [() => LIFE_FRAMES],
   LIFE_KIND: [() => LIFE_KIND],
   ambientLife: [() => ambientLife],
   lifeFrame: [() => lifeFrame, v => (lifeFrame = v)],
+  lifeFrameCount: [() => lifeFrameCount],
   lifeInit: [() => lifeInit, v => (lifeInit = v)],
   lifeKey: [() => lifeKey, v => (lifeKey = v)],
   lifeMeta: [() => lifeMeta, v => (lifeMeta = v)],
   lifePaths: [() => lifePaths, v => ((lifePaths = v), provide({ lifePaths }))],
-  lifeRnd: [() => lifeRnd, v => (lifeRnd = v)],
+  lifeRandom: [() => lifeRandom, v => (lifeRandom = v)],
   lifeShift: [() => lifeShift, v => (lifeShift = v)],
   lifeShore: [() => lifeShore, v => (lifeShore = v)],
   lifeSprites: [() => lifeSprites, v => ((lifeSprites = v), provide({ lifeSprites }))],
@@ -74,7 +74,7 @@ const LIFE_KIND = {
   },
 };
 provide({ LIFE_KIND }); /* to-module */
-const LIFE_FRAMES = k => {
+const lifeFrameCount = k => {
   const m = lifeMeta(k);
   return m ? m.frames || 1 : 1;
 };
@@ -113,7 +113,7 @@ function lifeFrame(key, i) {
   ambientLife.cut.set(ck, c);
   return c;
 }
-function lifeRnd(a, b) {
+function lifeRandom(a, b) {
   return hash2d(a * 131 + 7, b * 71 + 3);
 }
 function lifeKey(sc) {
@@ -131,7 +131,7 @@ function lifeInit() {
     if (!K) continue;
     for (let i = 0; i < (L.n || 1); i++) {
       n++;
-      const r = a => lifeRnd(n, a);
+      const r = a => lifeRandom(n, a);
       let x, z;
       if (L.k === 'duck') {
         if (!water.length) break;
@@ -167,8 +167,8 @@ function lifeInit() {
       } else {
         const A = L.area || [1, 1, sc.w - 1, sc.h - 1];
         for (let k = 0; k < 30; k++) {
-          x = A[0] + (A[2] - A[0]) * lifeRnd(n * 7 + k, 5);
-          z = A[1] + (A[3] - A[1]) * lifeRnd(n * 11 + k, 9);
+          x = A[0] + (A[2] - A[0]) * lifeRandom(n * 7 + k, 5);
+          z = A[1] + (A[3] - A[1]) * lifeRandom(n * 11 + k, 9);
           if (isWalkable(x, z)) break;
         }
       }
@@ -428,7 +428,7 @@ export function lifeStep(dt) {
           : (c.k === 'pigeon' || c.k === 'crow' || c.k === 'chicken' || c.k === 'sheep') &&
               Math.sin(c.t * 1.7 + c.x) > 0.3
             ? 2
-            : LIFE_FRAMES(c.k) > 3 && !K.fly && Math.sin(c.t * 1.3 + c.x) > 0.35
+            : lifeFrameCount(c.k) > 3 && !K.fly && Math.sin(c.t * 1.3 + c.x) > 0.35
               ? 3
               : 0;
       if (typeof soundEffectAt === 'function' && Math.random() < dt * 0.018)
@@ -479,7 +479,12 @@ export function lifeStep(dt) {
       c.fr =
         c.k === 'duck'
           ? Math.floor(c.t * 3) % 4
-          : LIFE_FRAMES(c.k) > 2 && !K.fly && c.k !== 'chicken' && c.k !== 'sheep' && c.k !== 'pigeon' && c.k !== 'crow'
+          : lifeFrameCount(c.k) > 2 &&
+              !K.fly &&
+              c.k !== 'chicken' &&
+              c.k !== 'sheep' &&
+              c.k !== 'pigeon' &&
+              c.k !== 'crow'
             ? 1 + (Math.floor(c.t * (c.st === 'run' ? 10 : 5)) % 2)
             : Math.floor(c.t * (c.st === 'run' ? 10 : 5)) % 2;
   }
@@ -499,7 +504,7 @@ function lifeSprites() {
       } else i = c.dz < 0 ? 1 : 2;
     }
     if (c.hide > 0) continue;
-    i = i % LIFE_FRAMES(c.key);
+    i = i % lifeFrameCount(c.key);
     const im = lifeFrame(c.key, i);
     if (!im) continue;
     let y = standingHeightAt(c.x, c.z);
