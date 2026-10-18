@@ -193,7 +193,14 @@ import {
   storyRivalBattle,
   trainerTalk,
 } from './story.js';
-import { challengeCardHTML, homeDecorate, refreshHomeFurniture, requestListHTML, stampTile } from './things-to-do.js';
+import {
+  arrivedAt,
+  challengeCardHTML,
+  homeDecorate,
+  refreshHomeFurniture,
+  requestListHTML,
+  stampTile,
+} from './things-to-do.js';
 /* eslint-disable no-func-assign */
 expose({
   BOX_SORTS: [() => BOX_SORTS],
@@ -1519,6 +1526,7 @@ export function walkCross() {
       plan = r.plan && r.plan[0] === n ? r.plan.slice(1) : [];
     saveData.trip = { node: n, plan };
     saveData.visited[n] = 1;
+    if (typeof arrivedAt === 'function') arrivedAt(n);
     uiState.roam = { id: q.id, node: n, x, z };
     uiState.backAt = null;
     if (typeof debugLog !== 'undefined') debugLog.add('travel', 'walked into ' + LOCATIONS[n].name);

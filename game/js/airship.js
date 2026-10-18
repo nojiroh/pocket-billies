@@ -9,7 +9,7 @@
    money, so your steps stay for walking new ground. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { closeModal, mapIdAt, modal, provide, render, storyFlags, toast } from './hooks.js';
+import { arrivedAt, closeModal, mapIdAt, modal, provide, render, storyFlags, toast } from './hooks.js';
 import { $, clamp } from './util.js';
 import { LOCATIONS, LOCATION_BY_ID, isTown, locationFullName } from './game-data.js';
 import { canEnter, formatNumber } from './logic/rules.js';
@@ -90,6 +90,7 @@ function startAirshipFlight(i) {
   saveData.se -= f;
   saveData.trip = { node: i, plan: [] };
   saveData.visited[i] = 1;
+  if (typeof arrivedAt === 'function') arrivedAt(i);
   uiState.inside = null;
   uiState.goingIn = null;
   uiState.backAt = null;
@@ -308,6 +309,7 @@ export function rideGlassLift(p) {
       await ready;
       saveData.trip = { node: i, plan: [] };
       saveData.visited[i] = 1;
+      if (typeof arrivedAt === 'function') arrivedAt(i);
       uiState.inside = null;
       uiState.goingIn = null;
       uiState.backAt = null;
