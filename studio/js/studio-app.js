@@ -131,7 +131,7 @@ export function getP(path, o) {
   if (path === '') return o;
   return path.split('.').reduce((a, k) => (a == null ? undefined : a[k]), o);
 }
-/* phase 04d: data-editors.js and lore.js read and write fields their own way */
+/* phase 04d: data-editors.js and lore-editor.js read and write fields their own way */
 export function setGetP(v) {
   getP = v; // eslint-disable-line no-func-assign
   provide({ getP });
@@ -156,7 +156,7 @@ export function setP(path, val, o) {
     else delete a[k];
   } else a[k] = val;
 }
-/* phase 04d: data-editors.js and lore.js read and write fields their own way */
+/* phase 04d: data-editors.js and lore-editor.js read and write fields their own way */
 export function setSetP(v) {
   setP = v; // eslint-disable-line no-func-assign
   provide({ setP });
