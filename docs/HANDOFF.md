@@ -54,6 +54,39 @@ Not a phase; plan approved at the start. Both runs passed with no errors; the ph
   - If the phone is still slow, the next renderer work is: reuse per-frame item objects, instance static sprites,
     group solid props by mesh. That is a phase of its own.
 
+### Phase 06, session 06-2b - The new opening - 2026-10-18
+Owner's choices (docs/phases/06-plan.md "The new opening"): Blake comes before you have a starter; Hazel fights him
+herself, without a Billie, in battle-screen style, absurdly overpowered, you only watch and tap; then the pick, where
+tapping Hazel gives biased hot takes; Blake's battle has no tutorial, only Hazel's meta line and wrong type tips as a
+HOT TIP over everything (the move buttons too) until tapped; she comments on lines skipped fast and on instant picks.
+Script approved in chat before building.
+- Changed:
+  - `game/js/logic/hazel.js`: every line of the new opening in one table (`HAZEL`), `hotTake`, `hazelTip` (meta, the
+    real matchup flipped, the canned bad tips; at most 4), `speedWatch` (n fast in a row: one comment each, then none),
+    `fillLine`. Unit tested (`tools/test/hazel.test.mjs`).
+  - Opening (cutscene.js): after "three of them right here", Blake runs in (4b), then Hazel's fight: Blake throws a
+    coin, Gildlet pops out (Blake's first Billie: the slug line's first form; any common first form if missing), the
+    plates (Prof. Hazel Lv ??? 9,999 HP; Gildlet Lv 4), her four moves, one hit, Gildlet drains to 0, flashes and
+    goes. Staged inside the opening rather than the battle engine (which needs a Billie team); it looks like the
+    battle screen (the 3D spot, plates, moves, a log to tap). Then the coins and the pick as before; Blake, already
+    there, takes the counter with the new lines. `blakeHello` and the talk-first path went with the old intro.
+  - Pick: a note on the card; tapping Hazel in the scene (nearer than any starter) shows the next hot take in a bubble
+    over her head (three per starter, then annoyed ones).
+  - Too fast: a tap that cuts a line short (under 0.7 s), or a fight line tapped away that fast, three times in a row
+    → a comment after the line. In Blake's battle a move picked within 1 s of the menu (or of closing her tip), twice in
+    a row → a HOT TIP comment (`tutorPicked`, from ui.js `bmove`; `activeBattle.menuT` set in battle.js).
+  - Blake's battle: `battleTutor` shows `hazelTip` each turn as a HOT TIP (`#btip.hot`): big, tilted card with a
+    wobbling badge over a dimmed screen; blocks everything until tapped. Returning players keep "Skip this battle".
+  - Styles: `game/css/opening.css`.
+- Verified: lint, type-check, modules, format, data, build; unit tests 41/41; smoke 15/15 (207 s), and the phone flow
+  now also checks that Hazel's fight ran and that Blake's battle opens on a HOT TIP (141 s). A headless play-through
+  saw every line in order, four hot takes on tapping Hazel, the HOT TIP covering the move buttons, the flipped tip
+  ("Fire beats Water") and, with instant scripted picks, "Instant picks. Bold. Reckless. Very Sterling of you."
+- Risky: on the test machine scripted clicks are slow (about 2 frames a second), so "instant" picks only fire with
+  script clicks there; on a phone they fire as designed. Try tapping through fast on your phone.
+- Next session starts with: 06-3 (dialogue box with the portrait slot, battle menus and text, Bag, the robot builder
+  shell, removing the painted battle stage and the classic HUD).
+
 ### Phase 06, session 06-2 - Team, details and the starter pick - 2026-10-18
 Built on 06-1 (PR #24) and the test boot fix (PR #19, cherry-picked). Owner's choices (docs/phases/06-plan.md):
 the lead big and the rest as rows; parts as slot rows on an S·M·L dial; weight as a Speed–Attack balance meter; a Build
