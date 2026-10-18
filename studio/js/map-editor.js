@@ -107,7 +107,6 @@ expose({
   plotSceneryPixel: [() => plotSceneryPixel, v => (plotSceneryPixel = v)],
   propAtPointer: [() => propAtPointer, v => (propAtPointer = v)],
   resizeReport: [() => resizeReport, v => (resizeReport = v)],
-  scPropSettings: [() => scPropSettings, v => (scPropSettings = v)],
   sceneryArtPaths: [() => sceneryArtPaths, v => ((sceneryArtPaths = v), provide({ sceneryArtPaths }))],
   sceneryCatalog: [() => sceneryCatalog],
   sceneryPixelCardHTML: [() => sceneryPixelCardHTML, v => (sceneryPixelCardHTML = v)],
@@ -636,45 +635,6 @@ SECTIONS.scenes = () => {
  )}
  </div></div>`;
 };
-function scPropSettings(k) {
-  const P = sceneryCatalog().props[k],
-    b = `scenery.props.${k}`;
-  return `<h4>${esc(P.name || k)} settings</h4>${grid(
-    textField('Name', `${b}.name`),
-    textField('Variant group', `${b}.group`, { opt: 1, help: 'Props in the same group are variants of each other.' }),
-    numberField('Shadow size (m)', `${b}.shadow`, { min: 0, max: 4, step: 0.05 }),
-    numberField('Sway in the wind', `${b}.sway`, { min: 0, max: 1, step: 0.05 }),
-    numberField('Solid radius (m)', `${b}.solid`, {
-      opt: 1,
-      min: 0,
-      max: 4,
-      step: 0.05,
-      help: 'People walk around this. Empty: guessed from the shadow. 0: walk through.',
-    }),
-    numberField('Footprint width (m)', `${b}.box.0`, {
-      opt: 1,
-      min: 0,
-      max: 12,
-      step: 0.1,
-      help: 'For buildings and fences: a box instead of a circle.',
-    }),
-    numberField('Footprint depth (m)', `${b}.box.1`, { opt: 1, min: 0, max: 12, step: 0.1 }),
-    numberField('Door across (px)', `${b}.door.x`, {
-      opt: 1,
-      step: 1,
-      help: 'Where people walk to when it’s tapped, from the bottom middle.',
-    }),
-    numberField('Walkable radius (m)', `${b}.walk`, {
-      opt: 1,
-      min: 0,
-      max: 4,
-      step: 0.1,
-      help: 'For stepping stones and bridges: opens water under it.',
-    }),
-    checkboxField('Lies flat on the ground', `${b}.flat`, { num: 1 })
-  )}
-  <p class="help">Effects (${(P.fx || []).map(f => f.k).join(', ') || 'none'}) are set in art/scene/props.json and the scenery catalog.</p>`;
-}
 function mapToolHint() {
   return (
     {

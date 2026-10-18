@@ -41,7 +41,6 @@ expose({
   ART_GROUPS: [() => ART_GROUPS],
   FISHING_WATERS: [() => FISHING_WATERS],
   LOCATION_KINDS: [() => LOCATION_KINDS],
-  WORLD_IMG: [() => WORLD_IMG, v => (WORLD_IMG = v)],
   bindWorldMap: [() => bindWorldMap, v => (bindWorldMap = v)],
   drawWorldMarkers: [() => drawWorldMarkers, v => (drawWorldMarkers = v)],
   locationRoads: [() => locationRoads, v => (locationRoads = v)],
@@ -86,7 +85,6 @@ const LOCATION_KINDS = [
   'vault',
   'spire',
 ];
-let WORLD_IMG = null;
 function worldMapHTML() {
   return `<div class="wmap" id="wmap"><img src="../game/art/map/world.png?v=${(studioState.D.meta || {}).artVersion || 0}" alt="" draggable="false" id="wmapImg"><svg viewBox="0 0 360 180" preserveAspectRatio="none" id="wmapSvg"></svg></div><p class="help">Drag a marker to move a stop. The painted trail and patches are part of the map art: <button class="linkish" data-act="wtab" data-t="paint">paint them under Map art</button>, where moving a stop can carry its patch along and the trail can be repainted to match.</p>`;
 }

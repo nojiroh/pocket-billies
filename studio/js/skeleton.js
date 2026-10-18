@@ -70,7 +70,6 @@ expose({
   renameBone: [() => renameBone, v => (renameBone = v)],
   reparentBone: [() => reparentBone, v => (reparentBone = v)],
   scaled: [() => scaled, v => (scaled = v)],
-  skPartFor: [() => skPartFor, v => (skPartFor = v)],
   skeletonAlphaAt: [() => skeletonAlphaAt, v => (skeletonAlphaAt = v)],
   skeletonChanged: [() => skeletonChanged, v => (skeletonChanged = v)],
   skeletonClick: [() => skeletonClick, v => (skeletonClick = v)],
@@ -941,10 +940,6 @@ function mirrorPart(meta, b, par, orig) {
   meta.bones.push(n);
   [...orig].filter(c => c.par === b.n).forEach(c => mirrorPart(meta, c, n.n, orig));
   return n;
-}
-function skPartFor(meta, i) {
-  const img = meta.imgs[i];
-  return img ? img.f.idle || img.f.main || Object.values(img.f)[0] : null;
 }
 function placeholderPart(w, h, col = '#B8A8E0') {
   const c = makeCanvas(w, h),

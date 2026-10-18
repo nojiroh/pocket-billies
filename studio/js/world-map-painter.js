@@ -14,7 +14,6 @@ import { atlasGet, loadedAtlas, markArt } from './sprites.js';
 /* eslint-disable no-func-assign */
 expose({
   DEGREES_TO_RADIANS: [() => DEGREES_TO_RADIANS],
-  MPW: [() => MPW],
   WORLD_MAP_ART_PATH: [() => WORLD_MAP_ART_PATH],
   bindPainter: [() => bindPainter, v => (bindPainter = v)],
   carryPatch: [() => carryPatch, v => (carryPatch = v)],
@@ -117,10 +116,6 @@ function trailSegments() {
   }
   return segs;
 }
-const MPW = () => {
-  const c = loadedAtlas(WORLD_MAP_ART_PATH);
-  return c ? [c.width, c.height] : [1536, 768];
-};
 function directionToTexel(v, W, H) {
   const lat = Math.asin(clamp(v[1], -1, 1)),
     lon = Math.atan2(v[2], v[0]);
