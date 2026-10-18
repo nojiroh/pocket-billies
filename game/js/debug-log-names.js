@@ -66,7 +66,7 @@ import {
   updateNearRing,
   walkRenderer,
 } from './walk-view-gl.js';
-import { bldDraw, bldItems, buildingState, setBldDraw, setBldItems } from './buildings.js';
+import { buildingItems, buildingState, drawBuildings, setBuildingItems, setDrawBuildings } from './buildings.js';
 import {
   buildSolidProp,
   buildSolidTree,
@@ -116,14 +116,14 @@ Object.defineProperties(GAME, {
   battleStage: { get: () => battleStage },
   battleStageResize: { get: () => battleStageResize, set: setBattleStageResize },
   battleStageStart: { get: () => battleStageStart, set: setBattleStageStart },
-  bldDraw: { get: () => bldDraw, set: setBldDraw },
-  bldItems: { get: () => bldItems, set: setBldItems },
   buildGrass: { get: () => buildGrass, set: setBuildGrass },
   buildSolidProp: { get: () => buildSolidProp, set: setBuildSolidProp },
   buildSolidTree: { get: () => buildSolidTree, set: setBuildSolidTree },
+  buildingItems: { get: () => buildingItems, set: setBuildingItems },
   buildingState: { get: () => buildingState },
   chalToday: { get: () => chalToday },
   csStart: { get: () => csStart, set: setCsStart },
+  drawBuildings: { get: () => drawBuildings, set: setDrawBuildings },
   drawGrass: { get: () => drawGrass, set: setDrawGrass },
   drawGround: { get: () => drawGround, set: setDrawGround },
   drawSolidProps: { get: () => drawSolidProps, set: setDrawSolidProps },

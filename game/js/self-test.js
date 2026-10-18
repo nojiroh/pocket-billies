@@ -40,7 +40,7 @@ import { EGL, eglAttrClashes } from './engine/webgl.js';
 import { EGL_POST_SH } from './engine/post-effects.js';
 import { environment } from './environment.js';
 import { WALK_SHADERS, roomDimming, standingHeightAt, walkRenderer } from './walk-view-gl.js';
-import { BLD_SH, buildingState } from './buildings.js';
+import { BUILDING_SHADERS, buildingState } from './buildings.js';
 import { STR, strHas } from './structures.js';
 import { SOLID_PROP_SHADERS, solidPropState } from './solid-props.js';
 import { propModelState } from './prop-models.js';
@@ -389,7 +389,7 @@ async function runFullTest(mode) {
         const all = Object.assign(
           {},
           typeof WALK_SHADERS !== 'undefined' ? WALK_SHADERS : {},
-          typeof BLD_SH !== 'undefined' ? BLD_SH : {},
+          typeof BUILDING_SHADERS !== 'undefined' ? BUILDING_SHADERS : {},
           typeof EGL_POST_SH !== 'undefined' ? EGL_POST_SH : {},
           typeof WORLD_MAP_GL_SHADERS !== 'undefined' ? WORLD_MAP_GL_SHADERS : {},
           typeof SOLID_PROP_SHADERS !== 'undefined' ? SOLID_PROP_SHADERS : {}
@@ -1544,7 +1544,7 @@ const DIAG_PASSES = {
   shadows: ['shadowPass'],
   ground: ['drawGround'],
   grass: ['drawGrass'],
-  props: ['drawSprites', 'drawSolidProps', 'drawPropModels', 'bldDraw', 'drawBoxFaces', 'strDraw'],
+  props: ['drawSprites', 'drawSolidProps', 'drawPropModels', 'drawBuildings', 'drawBoxFaces', 'strDraw'],
   water: ['reflectionPass', 'drawWater'],
   effects: ['effectsPass'],
   'final pass': ['eglPost'],

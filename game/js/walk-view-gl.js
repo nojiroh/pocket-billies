@@ -9,7 +9,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import {
-  BLD_SH,
+  BUILDING_SHADERS,
   GD,
   LD,
   LIFE,
@@ -20,27 +20,27 @@ import {
   SOLID_PROP_SHADERS,
   SP,
   WORLD_ART,
-  bldDraw,
-  bldFacade,
-  bldGuard,
-  bldLitF,
-  bldMeshFor,
-  bldOn,
-  bldShadow,
-  bldSmoke,
-  bldWinLit,
   buddyItems,
+  buildingFrontPicture,
+  buildingGuard,
+  buildingMesh,
   buildingState,
+  buildingsOn,
+  chimneySmoke,
   clueDraw,
   companionItems,
+  drawBuildingShadows,
+  drawBuildings,
   drawPropModelShadows,
   drawPropModels,
   drawSolidPropShadows,
   drawSolidProps,
   flushPropModelMeshes,
   frWorldItems,
+  frontWindowLight,
   lifeSprites,
   lifeStep,
+  litWindowFraction,
   noWebGL,
   propModelImageItems,
   propModelShaders,
@@ -811,7 +811,7 @@ export function walkGlContext(cv) {
     eglPrograms(WALK_SHADERS);
     eglPrograms(EGL_POST_SH);
     for (const d of [
-      typeof BLD_SH !== 'undefined' && BLD_SH,
+      typeof BUILDING_SHADERS !== 'undefined' && BUILDING_SHADERS,
       typeof SOLID_PROP_SHADERS !== 'undefined' && SOLID_PROP_SHADERS,
       typeof propModelShaders === 'function' && propModelShaders(),
     ])
@@ -3706,7 +3706,7 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
   if (typeof drawSolidProps === 'function') drawSolidProps(C, items, X, hits, labels, PPU);
   if (typeof drawPropModels === 'function') drawPropModels(C, items, X, null, null, PPU);
   drawBoxFaces(C, items, X);
-  if (typeof bldDraw === 'function') bldDraw(C, X, items, walkRenderer.bfade);
+  if (typeof drawBuildings === 'function') drawBuildings(C, X, items, walkRenderer.bfade);
   if (typeof strDraw === 'function') strDraw(C, X);
   gatherFountainBasins(items);
   if (walkRenderer.water || walkRenderer.basin) drawWater(C, X, rw, rh);
@@ -4631,7 +4631,7 @@ export function gatherFrameItems(st, C, PPU, C0) {
       mat,
       plane: S ? S.plane : M.face === 'fixed' || !!M.box || mat === 'wood' || mat === 'building',
       cross: !far && S.cross,
-      bld3: !far && !!(M.build && M.box) && typeof bldOn === 'function' && bldOn(),
+      bld3: !far && !!(M.build && M.box) && typeof buildingsOn === 'function' && buildingsOn(),
     });
     if (!far) hugSlope(out[out.length - 1], C);
     /* v46: a building whose solid or front isn't made yet (a few are made per frame) shows as its picture meanwhile, never as nothing */
@@ -4640,9 +4640,9 @@ export function gatherFrameItems(st, C, PPU, C0) {
       if (bi.bld3) {
         let E = null,
           F = null;
-        bldGuard(() => {
-          E = bldMeshFor(bi);
-          if (E && E.walls) F = bldFacade(bi.im, M.build, M);
+        buildingGuard(() => {
+          E = buildingMesh(bi);
+          if (E && E.walls) F = buildingFrontPicture(bi.im, M.build, M);
         });
         if (!E || !E.walls || !F) bi.bld3 = false;
       }
@@ -5084,8 +5084,8 @@ function walkLightContext(C, sun, dark, items, shadow, BT) {
       } else if (e.k === 'glow') G.push(at(e.x, e.y));
     }
     if (E && E.fw && !inRoom) {
-      const lf = bldLitF();
-      for (const f of E.fw) if (f[1] - it.y < 2.6 && bldWinLit(f[3], lf)) (W || (W = [])).push(f);
+      const lf = litWindowFraction();
+      for (const f of E.fw) if (f[1] - it.y < 2.6 && frontWindowLight(f[3], lf)) (W || (W = [])).push(f);
     }
     const wk = inRoom ? 0 : dark ? 1 : winDay;
     if (W && wk > 0.01) {
@@ -5304,7 +5304,7 @@ export function shadowPass(items0, sun, C) {
     gl.bindVertexArray(null);
   }
   drawShadowSprites(SH, items, sun, ca);
-  if (typeof bldShadow === 'function') bldShadow(SH, items);
+  if (typeof drawBuildingShadows === 'function') drawBuildingShadows(SH, items);
   if (typeof strShadow === 'function') strShadow(SH);
   if (typeof drawSolidPropShadows === 'function') drawSolidPropShadows(SH, items);
   if (typeof drawPropModelShadows === 'function') drawPropModelShadows(SH, items);
@@ -5349,7 +5349,7 @@ function lampShadowMaps(items, X, dark) {
       gl.bindVertexArray(null);
     }
     drawShadowSprites(SH, near, null, ca, l.p);
-    if (typeof bldShadow === 'function') bldShadow(SH, near);
+    if (typeof drawBuildingShadows === 'function') drawBuildingShadows(SH, near);
     if (typeof drawSolidPropShadows === 'function') drawSolidPropShadows(SH, near);
     if (typeof drawPropModelShadows === 'function') drawPropModelShadows(SH, near);
     eglShadowEnd();
@@ -5391,8 +5391,8 @@ function drawShadowSprites(SH, L, sun, ca, lamp) {
     }
     if (it.bld3) {
       let F = null;
-      bldGuard(() => {
-        F = eglImg(bldFacade(it.im, it.M.build, it.M));
+      buildingGuard(() => {
+        F = eglImg(buildingFrontPicture(it.im, it.M.build, it.M));
       });
       if (!F) miss++;
       if (F) {
@@ -5469,7 +5469,7 @@ function fittedShadowPass(items0, sun, C) {
         solid ? 1 : 0,
         walkRenderer.mesh && walkRenderer.mesh.n,
         sc.heights ? sc.heights.length : 0,
-        typeof bldOn === 'function' && bldOn() ? 1 : 0,
+        typeof buildingsOn === 'function' && buildingsOn() ? 1 : 0,
         typeof buildingState !== 'undefined' ? buildingState.made || 0 : 0,
       ].join('|')
     : '';
@@ -5505,8 +5505,8 @@ function fittedShadowPass(items0, sun, C) {
       /* a 3D building: its front as a cut-out here, walls and roof as geometry below */
       if (it.bld3) {
         let F = null;
-        bldGuard(() => {
-          F = eglImg(bldFacade(it.im, it.M.build, it.M));
+        buildingGuard(() => {
+          F = eglImg(buildingFrontPicture(it.im, it.M.build, it.M));
         });
         if (!F) miss++;
         if (F) {
@@ -5551,7 +5551,7 @@ function fittedShadowPass(items0, sun, C) {
     gl.drawElements(gl.TRIANGLES, walkRenderer.mesh.n, gl.UNSIGNED_INT, 0);
     gl.bindVertexArray(null);
     sprites(stat);
-    if (typeof bldShadow === 'function') bldShadow(SH, stat);
+    if (typeof drawBuildingShadows === 'function') drawBuildingShadows(SH, stat);
     if (typeof strShadow === 'function') strShadow(SH);
     if (typeof drawPropModelShadows === 'function') drawPropModelShadows(SH, stat);
     if (cache) {
@@ -5567,7 +5567,7 @@ function fittedShadowPass(items0, sun, C) {
   }
   if (cache) {
     sprites(dyn);
-    if (typeof bldShadow === 'function') bldShadow(SH, dyn);
+    if (typeof drawBuildingShadows === 'function') drawBuildingShadows(SH, dyn);
     if (typeof drawPropModelShadows === 'function') drawPropModelShadows(SH, dyn);
   }
   if (typeof drawSolidPropShadows === 'function') drawSolidPropShadows(SH, items);
@@ -7647,7 +7647,7 @@ export function effectsPass(C, items, X, dark, t, dt) {
   for (const it of items) {
     if (it.k !== 'prop' || it.far || it.layer) continue;
     const s = it.mpp,
-      chim = it.bld3 && typeof bldSmoke === 'function' ? bldSmoke(it) : null,
+      chim = it.bld3 && typeof chimneySmoke === 'function' ? chimneySmoke(it) : null,
       out = !!RR && (it.x < RR[0] || it.x > RR[0] + RR[2] || it.z < RR[1] || it.z > RR[1] + RR[3]),
       dIt = out ? (dOut > 0.4 ? dOut : 0) : dark;
     (it.M.fx || []).forEach((e, i) => {
@@ -7772,12 +7772,12 @@ export function effectsPass(C, items, X, dark, t, dt) {
     if (it.bld3 && !(sc.room && !out)) {
       const E = buildingState.mesh.get(it.p);
       if (E && E.fw) {
-        const lf = bldLitF(),
+        const lf = litWindowFraction(),
           k = dIt ? 1 : winDay,
           fl = 1 - flick * 0.1 + flick * 0.1 * Math.sin(t / 230 + it.x);
         if (k > 0.02)
           for (const f of E.fw) {
-            const w = bldWinLit(f[3], lf);
+            const w = frontWindowLight(f[3], lf);
             if (w)
               glows.push([
                 f[0] + E.fn[0] * 0.06,

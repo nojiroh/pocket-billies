@@ -579,7 +579,7 @@ def desktop_steps(b, base, R):
 
     @step('Shaders: every program compiles, no clashing inputs', 30)
     def shaders():
-        r = pg.evaluate("""(()=>{if(typeof EGL==='undefined'||!EGL.gl)return {skip:'no WebGL in this browser'};const sets={WALK_SHADERS:typeof WALK_SHADERS!=='undefined'?WALK_SHADERS:null,BLD_SH:typeof BLD_SH!=='undefined'?BLD_SH:null,EGL_POST_SH:typeof EGL_POST_SH!=='undefined'?EGL_POST_SH:null,WORLD_MAP_GL_SHADERS:typeof WORLD_MAP_GL_SHADERS!=='undefined'?WORLD_MAP_GL_SHADERS:null,SOLID_PROP_SHADERS:typeof SOLID_PROP_SHADERS!=='undefined'?SOLID_PROP_SHADERS:null};
+        r = pg.evaluate("""(()=>{if(typeof EGL==='undefined'||!EGL.gl)return {skip:'no WebGL in this browser'};const sets={WALK_SHADERS:typeof WALK_SHADERS!=='undefined'?WALK_SHADERS:null,BUILDING_SHADERS:typeof BUILDING_SHADERS!=='undefined'?BUILDING_SHADERS:null,EGL_POST_SH:typeof EGL_POST_SH!=='undefined'?EGL_POST_SH:null,WORLD_MAP_GL_SHADERS:typeof WORLD_MAP_GL_SHADERS!=='undefined'?WORLD_MAP_GL_SHADERS:null,SOLID_PROP_SHADERS:typeof SOLID_PROP_SHADERS!=='undefined'?SOLID_PROP_SHADERS:null};
          const bad=[];let n=0;for(const [name,S] of Object.entries(sets)){if(!S)continue;for(const [k,v] of Object.entries(S)){n++;const c=eglAttrClashes(v[0]);if(c.length)bad.push(k+' clash: '+c.join(','));try{if(!EGL.P[k])EGL.P[k]=eglCompile(v,k)}catch(e){bad.push(String(e.message||e).slice(0,160))}}}return {n,bad}})()""")
         if r.get('skip'): return r['skip']
         if r['bad']: raise Exception('; '.join(r['bad'][:4]))
@@ -1820,8 +1820,8 @@ def desktop_steps(b, base, R):
         pg.evaluate("walkView.pl.x=44;walkView.pl.z=10;walkView.pl.route=null;0"); time.sleep(4)
         until(pg, "typeof buildingState!=='undefined'&&buildingState.drawn>=8", 90)   # the buildings' meshes come a few a frame: give them time (5 to 8 are in view here)
         r = pg.evaluate("""(()=>{const L=walkView.sc.props.filter(p=>{const M=GD.scenery.props[p.k];return M&&(M.glow||(M.fx||[]).some(f=>f.k==='glow'))});
-          ENG_CTX.env=true;const on=typeof lampLit==='function'?L.filter(p=>lampLit(p.x,p.z,0)>.9).length:-1;ENG_CTX.env=false;let fw=0,lit=0;const lf=typeof bldLitF==='function'?bldLitF():0;
-          for(const p of walkView.sc.props){const E=typeof buildingState!=='undefined'?buildingState.mesh.get(p):null;if(E&&E.fw){fw+=E.fw.length;lit+=E.fw.filter(f=>bldWinLit(f[3],lf)).length}}
+          ENG_CTX.env=true;const on=typeof lampLit==='function'?L.filter(p=>lampLit(p.x,p.z,0)>.9).length:-1;ENG_CTX.env=false;let fw=0,lit=0;const lf=typeof litWindowFraction==='function'?litWindowFraction():0;
+          for(const p of walkView.sc.props){const E=typeof buildingState!=='undefined'?buildingState.mesh.get(p):null;if(E&&E.fw){fw+=E.fw.length;lit+=E.fw.filter(f=>frontWindowLight(f[3],lf)).length}}
           return {b:typeof buildingState!=='undefined'?buildingState.drawn:0,lamp:environment.lampK,lamps:L.length,on,fw,lit}})()""")
         if r['b'] < 4: raise Exception(f'only {r["b"]} buildings drawn in 3D')
         # alpha 0.4: at ten at night every lamp is on, and some (not all, not none) of the front windows are lit

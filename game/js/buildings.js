@@ -31,50 +31,66 @@ import { environment, environmentLitFraction } from './environment.js';
 import { setPropLookUniforms, standingHeightAt, useWalkProgram, walkRenderer, worldCurveArgs } from './walk-view-gl.js';
 /* eslint-disable no-func-assign */
 expose({
-  BLD_GLSL_RAMP: [() => BLD_GLSL_RAMP],
-  BLD_ROOM_NAMES: [() => BLD_ROOM_NAMES],
-  BLD_SH: [() => BLD_SH],
-  BLD_SIGF: [() => BLD_SIGF],
-  BLD_TEX: [() => BLD_TEX],
-  BLD_TEX_NAMES: [() => BLD_TEX_NAMES],
-  bldArt: [() => bldArt, v => (bldArt = v)],
-  bldAtlas: [() => bldAtlas, v => (bldAtlas = v)],
-  bldBudget: [() => bldBudget, v => (bldBudget = v)],
-  bldDraw: [() => bldDraw, v => setBldDraw(v)],
-  bldDraw0: [() => bldDraw0, v => (bldDraw0 = v)],
-  bldFacade: [() => bldFacade, v => ((bldFacade = v), provide({ bldFacade }))],
-  bldFree: [() => bldFree, v => (bldFree = v)],
-  bldGuard: [() => bldGuard, v => ((bldGuard = v), provide({ bldGuard }))],
-  bldHex: [() => bldHex, v => (bldHex = v)],
-  bldHexSet: [() => bldHexSet, v => (bldHexSet = v)],
-  bldItems: [() => bldItems, v => setBldItems(v)],
-  bldLitF: [() => bldLitF, v => ((bldLitF = v), provide({ bldLitF }))],
-  bldMake: [() => bldMake, v => (bldMake = v)],
-  bldMeshFor: [() => bldMeshFor, v => ((bldMeshFor = v), provide({ bldMeshFor }))],
-  bldOn: [() => bldOn],
-  bldRot: [() => bldRot, v => (bldRot = v)],
-  bldShadow: [() => bldShadow, v => ((bldShadow = v), provide({ bldShadow }))],
-  bldShadow0: [() => bldShadow0, v => (bldShadow0 = v)],
-  bldSig: [() => bldSig],
-  bldSigF: [() => bldSigF, v => ((bldSigF = v), provide({ bldSigF }))],
-  bldSmoke: [() => bldSmoke, v => ((bldSmoke = v), provide({ bldSmoke }))],
-  bldWinLit: [() => bldWinLit, v => ((bldWinLit = v), provide({ bldWinLit }))],
+  BUILDING_RAMP_GLSL: [() => BUILDING_RAMP_GLSL],
+  BUILDING_ROOM_NAMES: [() => BUILDING_ROOM_NAMES],
+  BUILDING_SHADERS: [() => BUILDING_SHADERS],
+  BUILDING_SIGNATURE_CACHE: [() => BUILDING_SIGNATURE_CACHE],
+  BUILDING_TEXTURE_NAMES: [() => BUILDING_TEXTURE_NAMES],
+  buildingArt: [() => buildingArt, v => (buildingArt = v)],
+  buildingBudgetLeft: [() => buildingBudgetLeft, v => (buildingBudgetLeft = v)],
+  buildingColor: [() => buildingColor, v => (buildingColor = v)],
+  buildingFrontPicture: [
+    () => buildingFrontPicture,
+    v => ((buildingFrontPicture = v), provide({ buildingFrontPicture })),
+  ],
+  buildingGuard: [() => buildingGuard, v => ((buildingGuard = v), provide({ buildingGuard }))],
+  buildingItems: [() => buildingItems, v => setBuildingItems(v)],
+  buildingMesh: [() => buildingMesh, v => ((buildingMesh = v), provide({ buildingMesh }))],
+  buildingRotation: [() => buildingRotation, v => (buildingRotation = v)],
+  buildingSignature: [() => buildingSignature],
   buildingState: [() => buildingState],
+  buildingTextureCell: [() => buildingTextureCell],
+  buildingTextureGrid: [() => buildingTextureGrid, v => (buildingTextureGrid = v)],
+  buildingsOn: [() => buildingsOn],
+  cachedBuildingSignature: [
+    () => cachedBuildingSignature,
+    v => ((cachedBuildingSignature = v), provide({ cachedBuildingSignature })),
+  ],
+  chimneySmoke: [() => chimneySmoke, v => ((chimneySmoke = v), provide({ chimneySmoke }))],
+  drawBuildingShadows: [() => drawBuildingShadows, v => ((drawBuildingShadows = v), provide({ drawBuildingShadows }))],
+  drawBuildingShadowsUnguarded: [() => drawBuildingShadowsUnguarded, v => (drawBuildingShadowsUnguarded = v)],
+  drawBuildings: [() => drawBuildings, v => setDrawBuildings(v)],
+  drawBuildingsUnguarded: [() => drawBuildingsUnguarded, v => (drawBuildingsUnguarded = v)],
+  freeBuildingMesh: [() => freeBuildingMesh, v => (freeBuildingMesh = v)],
+  frontWindowLight: [() => frontWindowLight, v => ((frontWindowLight = v), provide({ frontWindowLight }))],
+  hexColorSet: [() => hexColorSet, v => (hexColorSet = v)],
+  litWindowFraction: [() => litWindowFraction, v => ((litWindowFraction = v), provide({ litWindowFraction }))],
+  makeBuildingModel: [() => makeBuildingModel, v => (makeBuildingModel = v)],
 });
 /* eslint-enable no-func-assign */
-provide({ bldDraw, bldFacade, bldGuard, bldLitF, bldMeshFor, bldShadow, bldSigF, bldSmoke, bldWinLit });
-export function setBldDraw(v) {
-  bldDraw = v; // eslint-disable-line no-func-assign
-  provide({ bldDraw });
+provide({
+  buildingFrontPicture,
+  buildingGuard,
+  buildingMesh,
+  cachedBuildingSignature,
+  chimneySmoke,
+  drawBuildingShadows,
+  drawBuildings,
+  frontWindowLight,
+  litWindowFraction,
+});
+export function setBuildingItems(v) {
+  buildingItems = v; // eslint-disable-line no-func-assign
+  provide({ buildingItems });
 }
-export function setBldItems(v) {
-  bldItems = v; // eslint-disable-line no-func-assign
-  provide({ bldItems });
+export function setDrawBuildings(v) {
+  drawBuildings = v; // eslint-disable-line no-func-assign
+  provide({ drawBuildings });
 }
 /* to-module: end */
 export const buildingState = { mesh: new WeakMap(), fac: new WeakMap(), vao: null };
 provide({ buildingState }); /* to-module */
-export const BLD_TEX_NAMES = [
+export const BUILDING_TEXTURE_NAMES = [
   'Plaster',
   'Siding',
   'Brick',
@@ -98,8 +114,8 @@ export const BLD_TEX_NAMES = [
   'Stripes',
   'Rings',
 ];
-export const BLD_ROOM_NAMES = ['Living room', 'Kitchen', 'Bedroom', 'Shop', 'Office', 'Clinic', 'Lab', 'Stairs'];
-const bldSig = B =>
+export const BUILDING_ROOM_NAMES = ['Living room', 'Kitchen', 'Bedroom', 'Shop', 'Office', 'Clinic', 'Lab', 'Stairs'];
+const buildingSignature = B =>
   [
     B.kind,
     B.pitch,
@@ -119,10 +135,10 @@ const bldSig = B =>
     B.chimney && [B.chimney.x, B.chimney.top, B.chimney.w, B.chimney.lean || 0],
     B.base && [B.base.col, B.base.h],
   ].join('|');
-const bldOn = () => !buildingState.fail && eng('world', 'buildings3d') !== false;
-provide({ bldOn }); /* to-module */
+const buildingsOn = () => !buildingState.fail && eng('world', 'buildings3d') !== false;
+provide({ buildingsOn }); /* to-module */
 /* if this device can't build or draw the models, the pictures stand in from then on (and the debug log says why) */
-export function bldGuard(fn) {
+export function buildingGuard(fn) {
   if (buildingState.fail) return;
   try {
     fn();
@@ -139,27 +155,27 @@ export function bldGuard(fn) {
     } catch (e2) {}
   }
 }
-export function bldArt() {
+export function buildingArt() {
   const C = walkData().sc;
   return C.buildArt || { detail: 'scene/build/detail.png', rooms: 'scene/build/rooms.png' };
 }
 /* alpha 0.4: the texture sheet is 8 cells across and as many rows as it has (16 textures were 2 rows; the moss and solar roofs start a third) */
-export function bldAtlas(A) {
+export function buildingTextureGrid(A) {
   const im = artImage(A.detail),
     w = im && (im.naturalWidth || im.width),
     h = im && (im.naturalHeight || im.height);
   return [8, w && h ? Math.max(1, Math.round(h / (w / 8))) : 2];
 }
-const BLD_GLSL_RAMP = `vec3 rampC(vec3 b,float t){vec3 d0=mix(b*.55,vec3(.235,.165,.439),.30),d1=mix(b*.79,vec3(.376,.29,.596),.17),l3=mix(b,vec3(1.,.957,.769),.30),l4=mix(b,vec3(1.,.988,.918),.60);return t<.5?d0:t<1.5?d1:t<2.5?b:t<3.5?l3:l4;}
+const BUILDING_RAMP_GLSL = `vec3 rampC(vec3 b,float t){vec3 d0=mix(b*.55,vec3(.235,.165,.439),.30),d1=mix(b*.79,vec3(.376,.29,.596),.17),l3=mix(b,vec3(1.,.957,.769),.30),l4=mix(b,vec3(1.,.988,.918),.60);return t<.5?d0:t<1.5?d1:t<2.5?b:t<3.5?l3:l4;}
 float bayer4(vec2 p){ivec2 i=ivec2(mod(p,4.));int b[16]=int[16](0,8,2,10,12,4,14,6,3,11,1,9,15,7,13,5);return (float(b[i.y*4+i.x])+.5)/16.;}`;
-export const BLD_SH = {
+export const BUILDING_SHADERS = {
   bld: [
     `#version 300 es
 precision highp float;layout(location=0) in vec3 bPosIn;layout(location=1) in vec3 bNrmIn;layout(location=2) in vec2 bUVIn;layout(location=3) in vec3 bTexIn;layout(location=4) in vec3 bColIn;
 uniform mat4 uVP;uniform vec2 uLift;out vec3 vW;out vec3 vN;out vec2 vUV;out vec3 vTex;out vec3 vCol;${EGL_GLSL_COMMON}
 void main(){vec3 p=bPosIn;p.y+=curveY(uLift);vW=p;vN=bNrmIn;vUV=bUVIn;vTex=bTexIn;vCol=bColIn;gl_Position=uVP*vec4(p,1.);}`,
     `#version 300 es
-precision highp float;in vec3 vW;in vec3 vN;in vec2 vUV;in vec3 vTex;in vec3 vCol;out vec4 o;uniform sampler2D uDet;uniform float uFade,uBaseY;uniform vec2 uScroll,uAtl;${EGL_GLSL_LIGHT}${BLD_GLSL_RAMP}${EGL_GLSL_LOOK}uniform vec3 uBP;
+precision highp float;in vec3 vW;in vec3 vN;in vec2 vUV;in vec3 vTex;in vec3 vCol;out vec4 o;uniform sampler2D uDet;uniform float uFade,uBaseY;uniform vec2 uScroll,uAtl;${EGL_GLSL_LIGHT}${BUILDING_RAMP_GLSL}${EGL_GLSL_LOOK}uniform vec3 uBP;
 void main(){if(uFade<.99&&bayer4(gl_FragCoord.xy)>uFade)discard;
  vec2 g=(vUV+uScroll)*.5,f=vec2(fract(g.x),1.-fract(g.y)),a=(vTex.xy+f)/uAtl;float lv=textureGrad(uDet,a,dFdx(g)/uAtl,dFdy(g)/uAtl).r*4.;
  vec3 c=vTex.z>.5?vCol:rampC(vCol,floor(lv+.5));c=lookOn(c,floor(vUV*16.),clamp((vW.y-uBaseY)/4.,0.,1.),uBP);vec3 n=normalize(vN);if(uSeason.w>0.)c=mix(c,vec3(.9,.93,.98),min(1.,uSeason.w*1.4)*smoothstep(.3,.6,n.y)*smoothstep(.2,.5,lnoise(vW.xz*2.3)+uSeason.w*.6));
@@ -173,7 +189,7 @@ precision highp float;layout(location=0) in vec3 bPosIn;layout(location=1) in ve
 uniform mat4 uVP;uniform vec2 uLift;out vec3 vW;out vec3 vN;out vec2 vUV;out vec4 vWd;out vec3 vT;out vec4 vF;${EGL_GLSL_COMMON}
 void main(){vec3 p=bPosIn;p.y+=curveY(uLift);vW=p;vN=bNrmIn;vUV=bUVIn;vWd=bWIn;vT=bTIn;vF=bFIn;gl_Position=uVP*vec4(p,1.);}`,
     `#version 300 es
-precision highp float;in vec3 vW;in vec3 vN;in vec2 vUV;in vec4 vWd;in vec3 vT;in vec4 vF;out vec4 o;uniform sampler2D uRooms;uniform float uFade,uNight,uDay,uInt,uLitF;uniform vec3 uSkyR;${EGL_GLSL_LIGHT}${BLD_GLSL_RAMP}
+precision highp float;in vec3 vW;in vec3 vN;in vec2 vUV;in vec4 vWd;in vec3 vT;in vec4 vF;out vec4 o;uniform sampler2D uRooms;uniform float uFade,uNight,uDay,uInt,uLitF;uniform vec3 uSkyR;${EGL_GLSL_LIGHT}${BUILDING_RAMP_GLSL}
 void main(){if(uFade<.99&&bayer4(gl_FragCoord.xy)>uFade)discard;
  float w=vWd.x,h=vWd.y,room=vWd.z,D=vWd.w;vec3 N=normalize(vN),T=normalize(vT);vec2 p=vec2(vUV.x*w,vUV.y*h);
  vec3 d=normalize(vW-uEye);vec3 ld=vec3(dot(d,T),d.y,max(dot(d,-N),.04));
@@ -191,7 +207,7 @@ void main(){if(uFade<.99&&bayer4(gl_FragCoord.xy)>uFade)discard;
  float pf=length(fwidth(vW))*(1.+dep*1.4),lod=clamp(log2(max(pf*float(textureSize(uRooms,0).x)*.25/RW,1.)),0.,3.);
  vec3 ic=textureLod(uRooms,vec2((cell+uv.x)/4.,(room+1.-uv.y)/8.),lod).rgb;
  /* v32: each window its own light: lit or not by the hour (fewer late at night), warm lamps, cooler kitchens, the odd blue TV flicker */
- /* alpha 0.4: each window has its own seed from the mesh (0-255), the same one bldWinLit reads for its halo and its light on the ground */
+ /* alpha 0.4: each window has its own seed from the mesh (0-255), the same one frontWindowLight reads for its halo and its light on the ground */
  float wid=floor(vF.w*.5+.01),hh=(wid+.5)/256.,h2=fract(wid*.6180339+.31);float on=step(hh,uLitF)*(.62+.6*h2);
  vec3 lc=h2<.18?vec3(.62,.78,1.25)*(.85+.25*sin(uTime*.009+wid)):h2<.45?vec3(1.15,1.05,.85):vec3(1.25,1.,.7);
  /* by night a warm glow, not a white-out: the lamp's strength is capped and its brightest parts roll off softly */
@@ -213,7 +229,7 @@ void main(){if(uFade<.99&&bayer4(gl_FragCoord.xy)>uFade)discard;
 precision highp float;layout(location=0) in vec2 bCIn;uniform mat4 uVP;uniform vec3 uO,uA,uB;uniform vec2 uLift;out vec2 vUV;out vec3 vW;${EGL_GLSL_COMMON}
 void main(){vec3 p=uO+uA*bCIn.x+uB*bCIn.y;p.y+=curveY(uLift);vW=p;vUV=vec2(bCIn.x,1.-bCIn.y);gl_Position=uVP*vec4(p,1.);}`,
     `#version 300 es
-precision highp float;in vec2 vUV;in vec3 vW;out vec4 o;uniform sampler2D uTex,uNrm;uniform vec3 uN,uR;uniform float uFade,uFlipN,uBaseY,uGlassN;${EGL_GLSL_LIGHT}${BLD_GLSL_RAMP}${EGL_GLSL_LOOK}uniform vec3 uBP;
+precision highp float;in vec2 vUV;in vec3 vW;out vec4 o;uniform sampler2D uTex,uNrm;uniform vec3 uN,uR;uniform float uFade,uFlipN,uBaseY,uGlassN;${EGL_GLSL_LIGHT}${BUILDING_RAMP_GLSL}${EGL_GLSL_LOOK}uniform vec3 uBP;
 void main(){vec4 c=texture(uTex,vUV);if(c.a<.05)discard;if(uFade<.99&&bayer4(gl_FragCoord.xy)>uFade)discard;
  if(c.a>.99)c.rgb=lookOn(c.rgb,floor(vUV*vec2(textureSize(uTex,0))),1.-vUV.y,uBP);
  vec3 nn=texture(uNrm,vUV).xyz*2.-1.;vec3 n=normalize(uR*nn.x*uFlipN+vec3(0.,-nn.y,0.)+uN*max(nn.z,.2));
@@ -230,27 +246,28 @@ void main(){vec3 p=bPosIn;p.y+=curveY(uLift);gl_Position=uVP*vec4(p,1.);}`,
 precision highp float;out vec4 o;void main(){o=vec4(1.);}`,
   ],
 };
-provide({ BLD_SH }); /* to-module */
+provide({ BUILDING_SHADERS }); /* to-module */
 /* ---------- the front picture: roof cut away, glass see-through ---------- */
-function bldHexSet(L) {
+function hexColorSet(L) {
   return new Set((L || []).map(h => parseInt(h.slice(1, 7), 16)));
 }
 /* alpha 0.4.1: a building kind's signature worked out once a frame (it was joined into a long string for every building, twice a frame) */
-const BLD_SIGF = new WeakMap();
-function bldSigF(B) {
+const BUILDING_SIGNATURE_CACHE = new WeakMap();
+function cachedBuildingSignature(B) {
   const f = typeof walkRenderer !== 'undefined' ? walkRenderer.frames : 0;
-  let c = BLD_SIGF.get(B);
+  let c = BUILDING_SIGNATURE_CACHE.get(B);
   if (!c || c.f !== f) {
-    c = { f, s: bldSig(B) };
-    BLD_SIGF.set(B, c);
+    c = { f, s: buildingSignature(B) };
+    BUILDING_SIGNATURE_CACHE.set(B, c);
   }
   return c.s;
 }
-function bldFacade(im, B, M) {
+function buildingFrontPicture(im, B, M) {
   let F = buildingState.fac.get(im);
-  const v = (typeof dioArtVer === 'function' ? dioArtVer() : 0) + '|' + bldSigF(B) + '|' + M.ox + ',' + M.oy;
+  const v =
+    (typeof dioArtVer === 'function' ? dioArtVer() : 0) + '|' + cachedBuildingSignature(B) + '|' + M.ox + ',' + M.oy;
   if (F && F.v === v) return F.c;
-  if (!bldBudget()) return null;
+  if (!buildingBudgetLeft()) return null;
   buildingState.n++;
   const w = im.naturalWidth || im.width,
     h = im.naturalHeight || im.height,
@@ -264,8 +281,8 @@ function bldFacade(im, B, M) {
     return im;
   }
   const d = id.data,
-    roof = bldHexSet(B.roofRamp),
-    glass = bldHexSet(B.glass),
+    roof = hexColorSet(B.roofRamp),
+    glass = hexColorSet(B.glass),
     win = B.win || [],
     ox = M.ox,
     oy = M.oy,
@@ -300,14 +317,14 @@ function bldFacade(im, B, M) {
   return c;
 }
 /* ---------- the model ---------- */
-const BLD_TEX = i => [i % 8, Math.floor(i / 8)];
-function bldHex(h, fb) {
+const buildingTextureCell = i => [i % 8, Math.floor(i / 8)];
+function buildingColor(h, fb) {
   return hexA(typeof h === 'string' && /^#[0-9a-f]{6}/i.test(h) ? h : fb || '#C8C0B0').map(v => v / 255);
 }
 /* v37: building a model (and cutting a front) is spread over frames: the first of a frame always goes ahead, the rest only
    while the frame has spent under 5 ms on them, so a town with many buildings opens without a long frame (the sun shadow
    cache keys on buildingState.made, so it is redrawn as each one appears) */
-function bldBudget() {
+function buildingBudgetLeft() {
   const fr = typeof EGL !== 'undefined' ? EGL.fr : 0;
   if (buildingState.fr !== fr) {
     buildingState.fr = fr;
@@ -316,7 +333,7 @@ function bldBudget() {
   }
   return buildingState.n === 0 || performance.now() - buildingState.t0 < 5;
 }
-function bldMeshFor(it) {
+function buildingMesh(it) {
   const p = it.p,
     M = it.M,
     B = M.build,
@@ -334,15 +351,15 @@ function bldMeshFor(it) {
       M.box && M.box[1],
       M.box && M.box[0],
       B.__v || 0,
-      bldSigF(B),
+      cachedBuildingSignature(B),
     ];
   /* alpha 0.4.1: the building's own settings are in the key too, so an edit in the Studio's prop editor shows at once */ /* v44: the picture's size is in the key, so a mesh made before the art loaded is made again; alpha 0.4.1: compared value by value, not joined into a string every frame */ let E =
     buildingState.mesh.get(p);
   if (E && E.B === B && E.im === im && E.key && E.key.every((v, i) => v === key[i])) return E;
-  if (!bldBudget()) return null;
+  if (!buildingBudgetLeft()) return null;
   buildingState.n++;
-  if (E) bldFree(E);
-  E = bldMake(it);
+  if (E) freeBuildingMesh(E);
+  E = makeBuildingModel(it);
   if (!E.walls && !E.wins) return null;
   /* nothing to show yet (the art is still loading): try again next frame */ E.key = key;
   E.B = B;
@@ -351,7 +368,7 @@ function bldMeshFor(it) {
   buildingState.made = (buildingState.made || 0) + 1;
   return E;
 }
-function bldFree(E) {
+function freeBuildingMesh(E) {
   const gl = EGL.gl;
   for (const m of [E.walls, E.wins])
     if (m) {
@@ -364,14 +381,14 @@ function bldFree(E) {
 }
 /* alpha 0.4: p.rot, a building turned a few degrees (along a curved street, toward its square): it turns about its
    door, the middle of its front, so the door, the way in and the room behind it stay where they were */
-function bldRot(p, ax, az) {
+function buildingRotation(p, ax, az) {
   const r = ((p.rot || 0) * Math.PI) / 180;
   if (!r) return null;
   const c = Math.cos(r),
     s = Math.sin(r);
   return { c, s, ax, az, pt: (x, z) => [ax + (x - ax) * c - (z - az) * s, az + (x - ax) * s + (z - az) * c] };
 }
-function bldMake(it) {
+function makeBuildingModel(it) {
   const p = it.p,
     M = it.M,
     B = M.build,
@@ -380,7 +397,7 @@ function bldMake(it) {
     sc = p.s || 1,
     y0 = it.y,
     xw = a => it.x + a * s * f,
-    RT = bldRot(p, it.x, it.z);
+    RT = buildingRotation(p, it.x, it.z);
   let XL = xw(B.wall[0]),
     XR = xw(B.wall[1]);
   if (XL > XR) [XL, XR] = [XR, XL];
@@ -404,14 +421,14 @@ function bldMake(it) {
     o = (B.over ?? 0.25) * sc,
     pit = ((B.pitch ?? 40) * Math.PI) / 180,
     tp = Math.tan(pit);
-  const wallC = bldHex(B.wallCol),
-    roofC = bldHex(B.roofCol, '#A05040'),
-    trimC = bldHex(B.trimCol, '#7A5440'),
-    wallT = BLD_TEX(B.wallTex ?? 0),
-    roofT = BLD_TEX(B.roofTex ?? 8);
+  const wallC = buildingColor(B.wallCol),
+    roofC = buildingColor(B.roofCol, '#A05040'),
+    trimC = buildingColor(B.trimCol, '#7A5440'),
+    wallT = buildingTextureCell(B.wallTex ?? 0),
+    roofT = buildingTextureCell(B.roofTex ?? 8);
   const base = B.base || { col: '#AAA6B4', tex: 3, h: 0.28 },
-    baseC = bldHex(base.col),
-    baseT = BLD_TEX(base.tex ?? 3),
+    baseC = buildingColor(base.col),
+    baseT = buildingTextureCell(base.tex ?? 3),
     baseH = y0 + (base.h ?? 0.28) * sc;
   const V = [],
     I = [];
@@ -501,7 +518,7 @@ function bldMake(it) {
         [l, dy],
         [0, dy],
       ],
-      BLD_TEX(15),
+      buildingTextureCell(15),
       trimC
     );
   };
@@ -639,7 +656,7 @@ function bldMake(it) {
           [1, 0.1],
           [0, 0.1],
         ],
-        BLD_TEX(15),
+        buildingTextureCell(15),
         dk
       );
       poly(
@@ -656,7 +673,7 @@ function bldMake(it) {
           [1, 0.1],
           [0, 0.1],
         ],
-        BLD_TEX(15),
+        buildingTextureCell(15),
         dk
       );
       roofAt = (x, z) => {
@@ -808,7 +825,7 @@ function bldMake(it) {
         [1, 0.1],
         [0, 0.1],
       ],
-      BLD_TEX(15),
+      buildingTextureCell(15),
       dk
     );
     poly(
@@ -825,7 +842,7 @@ function bldMake(it) {
         [1, 0.1],
         [0, 0.1],
       ],
-      BLD_TEX(15),
+      buildingTextureCell(15),
       dk
     );
     wallPoly([XL, z1], [0, -1], [-1, 0, 0], rect(0, D, under, Ye));
@@ -918,7 +935,7 @@ function bldMake(it) {
         [0, D],
       ]
     );
-    const tc = BLD_TEX(15);
+    const tc = buildingTextureCell(15);
     poly(
       [
         [XL, Ye + pt, z0],
@@ -1002,7 +1019,7 @@ function bldMake(it) {
           [l, pt + 0.08],
           [0, pt + 0.08],
         ],
-        BLD_TEX(15),
+        buildingTextureCell(15),
         trimC.map(v => v * 0.85)
       );
     }
@@ -1086,8 +1103,8 @@ function bldMake(it) {
       );
     };
     if (W > 2.4 && D > 1.4) {
-      box(XL + W * 0.72, z0 + D * 0.6, 0.7, 0.6, 0.35, [0.62, 0.64, 0.7], BLD_TEX(6));
-      box(XL + W * 0.3, z0 + D * 0.7, 0.5, 0.5, 0.2, trimC, BLD_TEX(15));
+      box(XL + W * 0.72, z0 + D * 0.6, 0.7, 0.6, 0.35, [0.62, 0.64, 0.7], buildingTextureCell(6));
+      box(XL + W * 0.3, z0 + D * 0.7, 0.5, 0.5, 0.2, trimC, buildingTextureCell(15));
     }
     roofAt = () => rY;
   }
@@ -1099,8 +1116,8 @@ function bldMake(it) {
       cz = kind === 'gableF' ? z0 + D * 0.62 : zc + Math.min(0.35, D * 0.15);
     let top = y0 - C.top * s;
     top = Math.max(top, roofAt(cx, cz) + 0.55);
-    const col = bldHex(C.col, '#B06A50'),
-      tx = BLD_TEX(C.tex ?? 2),
+    const col = buildingColor(C.col, '#B06A50'),
+      tx = buildingTextureCell(C.tex ?? 2),
       xa = cx - cw / 2,
       xb = cx + cw / 2,
       za = cz - cw / 2,
@@ -1201,7 +1218,7 @@ function bldMake(it) {
           [1, 0.1],
           [0, 0.1],
         ],
-        BLD_TEX(15),
+        buildingTextureCell(15),
         trimC
       );
     poly(
@@ -1218,7 +1235,7 @@ function bldMake(it) {
         [1, 1],
         [0, 1],
       ],
-      BLD_TEX(15),
+      buildingTextureCell(15),
       [0.16, 0.13, 0.14],
       true
     );
@@ -1269,7 +1286,7 @@ function bldMake(it) {
     };
   /* alpha 0.4.1: depth on the walls. A box standing out of a wall (centre on the wall at O, along T, out along N), used
     for sills under the side and back windows, a lintel over them, posts at the corners and a plinth round the foot */
-  const slab = (O, T, N, w, h, d, col, tex = BLD_TEX(15)) => {
+  const slab = (O, T, N, w, h, d, col, tex = buildingTextureCell(15)) => {
     const P = (u, v, n) => [O[0] + T[0] * u + N[0] * n, O[1] + v, O[2] + T[2] * u + N[2] * n],
       a = -w / 2,
       b = w / 2,
@@ -1493,7 +1510,7 @@ function bldMake(it) {
   };
 }
 /* alpha 0.4: how many of the windows are lit at this hour (one by one in the evening, fewer late at night) */
-function bldLitF() {
+function litWindowFraction() {
   const h = typeof environment !== 'undefined' && ENG_CTX.env ? environment.tod : 19;
   return typeof environmentLitFraction === 'function'
     ? environmentLitFraction(h)
@@ -1508,17 +1525,17 @@ function bldLitF() {
             : 0.5;
 }
 /* a front window's light as the window shader decides it from the same seed: null when it is dark, else its strength and colour */
-function bldWinLit(seed, litF) {
+function frontWindowLight(seed, litF) {
   if ((seed + 0.5) / 256 > litF) return null;
   const h2 = (seed * 0.6180339 + 0.31) % 1;
   return { k: 0.62 + 0.6 * h2, c: h2 < 0.18 ? [0.62, 0.78, 1.25] : h2 < 0.45 ? [1.15, 1.05, 0.85] : [1.25, 1, 0.7] };
 }
 /* ---------- drawing ---------- */
-export function bldItems(items) {
-  if (!bldOn()) return [];
+export function buildingItems(items) {
+  if (!buildingsOn()) return [];
   if (!buildingState.ready) {
-    bldGuard(() => {
-      eglPrograms(BLD_SH);
+    buildingGuard(() => {
+      eglPrograms(BUILDING_SHADERS);
       buildingState.ready = 1;
     });
     if (buildingState.fail) return [];
@@ -1528,16 +1545,16 @@ export function bldItems(items) {
     if (it.bld3 && !(walkRenderer.bt && walkRenderer.bt.hide && walkRenderer.bt.hide.has(it.p))) out.push(it);
   return out;
 }
-export function bldDraw(C, X, items, fades) {
-  bldGuard(() => bldDraw0(C, X, items, fades));
+export function drawBuildings(C, X, items, fades) {
+  buildingGuard(() => drawBuildingsUnguarded(C, X, items, fades));
 }
-function bldDraw0(C, X, items, fades) {
-  const L = bldItems(items).filter(it => it.vis !== false);
+function drawBuildingsUnguarded(C, X, items, fades) {
+  const L = buildingItems(items).filter(it => it.vis !== false);
   buildingState.drawn = L.length;
   if (!L.length) return;
   const gl = EGL.gl;
-  eglPrograms(BLD_SH);
-  const A = bldArt(),
+  eglPrograms(BUILDING_SHADERS);
+  const A = buildingArt(),
     det = eglImg(artImage(A.detail), { noNormal: true }),
     rm = eglImg(artImage(A.rooms), { noNormal: true });
   if (!det || !rm) return;
@@ -1551,9 +1568,9 @@ function bldDraw0(C, X, items, fades) {
   gl.activeTexture(gl.TEXTURE0);
   gl.bindTexture(gl.TEXTURE_2D, det.t);
   gl.uniform1i(p.U.uDet, 0);
-  gl.uniform2fv(p.U.uAtl, bldAtlas(A));
+  gl.uniform2fv(p.U.uAtl, buildingTextureGrid(A));
   for (const it of L) {
-    const E = bldMeshFor(it);
+    const E = buildingMesh(it);
     if (!E || !E.walls) continue;
     gl.uniform2fv(p.U.uLift, lift(it));
     gl.uniform1f(p.U.uFade, fades.get(it) ?? 1);
@@ -1580,7 +1597,7 @@ function bldDraw0(C, X, items, fades) {
   if (p.U.uLitF)
     gl.uniform1f(
       p.U.uLitF,
-      bldLitF()
+      litWindowFraction()
     ); /* v47: windows come on one at a time in the evening and go off one at a time at night (environment.js environmentLitFraction) */
   for (const it of L) {
     const E = buildingState.mesh.get(it.p);
@@ -1611,7 +1628,7 @@ function bldDraw0(C, X, items, fades) {
   gl.uniform3f(p.U.uR, 1, 0, 0);
   for (const it of L) {
     if (!buildingState.mesh.get(it.p)) continue;
-    const F = bldFacade(it.im, it.M.build, it.M);
+    const F = buildingFrontPicture(it.im, it.M.build, it.M);
     if (!F) continue;
     F.__mat = 'building';
     const T = eglImg(F);
@@ -1644,14 +1661,14 @@ function bldDraw0(C, X, items, fades) {
   gl.disable(gl.BLEND);
 }
 /* the sun shadow map: walls, roofs and chimneys as geometry (the fronts are drawn by the caller as cut-outs) */
-function bldShadow(SH, items) {
-  bldGuard(() => bldShadow0(SH, items));
+function drawBuildingShadows(SH, items) {
+  buildingGuard(() => drawBuildingShadowsUnguarded(SH, items));
 }
-function bldShadow0(SH, items) {
-  const L = bldItems(items);
+function drawBuildingShadowsUnguarded(SH, items) {
+  const L = buildingItems(items);
   if (!L.length) return;
   const gl = EGL.gl;
-  eglPrograms(BLD_SH);
+  eglPrograms(BUILDING_SHADERS);
   const p = EGL.P.bshadow;
   gl.useProgram(p.p);
   gl.uniformMatrix4fv(p.U.uVP, false, SH.vp);
@@ -1659,7 +1676,7 @@ function bldShadow0(SH, items) {
   gl.uniform3f(p.U.uCurve, ca[0], ca[1], ca[2]);
   gl.uniform1f(p.U.uCurveD0, ca[3]);
   for (const it of L) {
-    const E = bldMeshFor(it);
+    const E = buildingMesh(it);
     if (!E || !E.walls) continue;
     gl.uniform2f(p.U.uLift, it.x, it.z);
     gl.bindVertexArray(E.walls.vao);
@@ -1667,7 +1684,7 @@ function bldShadow0(SH, items) {
   }
   gl.bindVertexArray(null);
 }
-function bldSmoke(it) {
+function chimneySmoke(it) {
   const E = it.bld3 && buildingState.mesh.get(it.p);
   return E && E.smoke;
 }

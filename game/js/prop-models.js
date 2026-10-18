@@ -22,7 +22,7 @@ import {
   windLeanAt,
   worldCurveArgs,
 } from './walk-view-gl.js';
-import { BLD_SH, bldArt, bldAtlas } from './buildings.js';
+import { BUILDING_SHADERS, buildingArt, buildingTextureGrid } from './buildings.js';
 /* eslint-disable no-func-assign */
 expose({
   LOW_POLY_TEXTURE_CELLS: [() => LOW_POLY_TEXTURE_CELLS],
@@ -1065,7 +1065,7 @@ void main(){float cr=cos(uRot),sr=sin(uRot);vec3 q0=voxSpin(mPos/256.-uSpinC)+uS
 /* the model's light: the buildings' look and textures, with the props' cel shading (three tones of sun, as the voxel
    props and the painted props have) as much as the model asks (uCel; a recipe's "cel", else .75) */
 function lowPolyFragmentShader() {
-  const f = BLD_SH.bld[1],
+  const f = BUILDING_SHADERS.bld[1],
     a = 'shade(c,n,vW,sh,ao,vec4(.1,30.,0.,.3),0.)';
   if (!f.includes(a)) return f;
   return f
@@ -1075,16 +1075,16 @@ function lowPolyFragmentShader() {
 /* the models among the items, drawn after the voxel props: L is [item, mesh] */
 /* alpha 0.4: the props' shaders with the low-poly model's, for compiling ahead when the 3D view starts (walk-view-gl.js walkGlContext) */
 function propModelShaders() {
-  if (!PROP_MODEL_SHADERS.mdl && typeof BLD_SH !== 'undefined')
+  if (!PROP_MODEL_SHADERS.mdl && typeof BUILDING_SHADERS !== 'undefined')
     PROP_MODEL_SHADERS.mdl = [lowPolyVertexShader(), lowPolyFragmentShader()];
   return PROP_MODEL_SHADERS;
 }
 function drawLowPolyModels(C, X, L) {
-  if (!L.length || typeof BLD_SH === 'undefined' || typeof bldArt !== 'function') return;
+  if (!L.length || typeof BUILDING_SHADERS === 'undefined' || typeof buildingArt !== 'function') return;
   const gl = EGL.gl;
   propModelShaders();
   eglPrograms(PROP_MODEL_SHADERS);
-  const A = bldArt(),
+  const A = buildingArt(),
     det = eglImg(artImage(A.detail), { noNormal: true });
   if (!det) return;
   const p = useWalkProgram('mdl', C, X);
@@ -1095,7 +1095,7 @@ function drawLowPolyModels(C, X, L) {
   gl.activeTexture(gl.TEXTURE0);
   gl.bindTexture(gl.TEXTURE_2D, det.t);
   gl.uniform1i(p.U.uDet, 0);
-  gl.uniform2fv(p.U.uAtl, bldAtlas(A));
+  gl.uniform2fv(p.U.uAtl, buildingTextureGrid(A));
   if (p.U.uScroll) gl.uniform2f(p.U.uScroll, 0, 0);
   for (const [it, m] of L) {
     gl.uniform1f(p.U.uFade, it.fade ?? 1);
@@ -1171,7 +1171,7 @@ function tagPropModel(it) {
   /* only a recipe that makes a solid stands in for the picture: while it loads, or if it is empty or failed, the picture draws */
   if (!rec) return;
   if (rec.kind === 'mesh' || lowPolyOn(rec)) {
-    const A = typeof bldArt === 'function' ? bldArt() : null,
+    const A = typeof buildingArt === 'function' ? buildingArt() : null,
       im = A && typeof artImage === 'function' ? artImage(A.detail) : null;
     if (!im || !(im.naturalWidth || im.width)) return;
   }

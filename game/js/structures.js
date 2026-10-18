@@ -22,7 +22,7 @@ import {
   useWalkProgram,
   worldCurveArgs,
 } from './walk-view-gl.js';
-import { BLD_SH, bldArt, bldGuard } from './buildings.js';
+import { BUILDING_SHADERS, buildingArt, buildingGuard } from './buildings.js';
 /* eslint-disable no-func-assign */
 expose({
   STR: [() => STR],
@@ -552,12 +552,12 @@ function strFree() {
   STR.parts = [];
 }
 function strDraw(C, X) {
-  if (typeof bldGuard !== 'function') return;
-  bldGuard(() => {
+  if (typeof buildingGuard !== 'function') return;
+  buildingGuard(() => {
     if (!strEnsure()) return;
     const gl = EGL.gl;
-    eglPrograms(BLD_SH);
-    const A = bldArt(),
+    eglPrograms(BUILDING_SHADERS);
+    const A = buildingArt(),
       det = eglImg(artImage(A.detail), { noNormal: true });
     if (!det) return;
     const p = useWalkProgram('bld', C, X),
@@ -587,11 +587,11 @@ function strDraw(C, X) {
   });
 }
 function strShadow(SH) {
-  if (typeof bldGuard !== 'function') return;
-  bldGuard(() => {
+  if (typeof buildingGuard !== 'function') return;
+  buildingGuard(() => {
     if (!strEnsure()) return;
     const gl = EGL.gl;
-    eglPrograms(BLD_SH);
+    eglPrograms(BUILDING_SHADERS);
     const p = EGL.P.bshadow;
     gl.useProgram(p.p);
     gl.uniformMatrix4fv(p.U.uVP, false, SH.vp);

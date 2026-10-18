@@ -12,7 +12,7 @@ import { frameStop, frameTask } from '../../game/js/frame-scheduler.js';
 import { artLoad, cnv, setArtLoad } from '../../game/js/art.js';
 import { artImage, imageReady, layerAsProp, setWalkData, walkData, walkView } from '../../game/js/walk-view.js';
 import { PROP_MATERIALS, mountWalkView, propMaterial, propVariety, walkRenderer } from '../../game/js/walk-view-gl.js';
-import { BLD_ROOM_NAMES, BLD_TEX_NAMES } from '../../game/js/buildings.js';
+import { BUILDING_ROOM_NAMES, BUILDING_TEXTURE_NAMES } from '../../game/js/buildings.js';
 import { SOLID_PROP_BODIES, SOLID_PROP_KINDS, SOLID_PROP_PARTS, solidTreeKind } from '../../game/js/solid-props.js';
 import { esc } from './game-stand-ins.js';
 import {
@@ -963,7 +963,7 @@ function pedBuildHTML(k) {
     return M.box
       ? `<h4>3D building</h4><p class="help">Shown as its picture. As a 3D building it gets real side walls, a roof at its pitch and windows you can look into.</p><button class="btn sm" data-act="pedBuildOn">Make it a 3D building</button>`
       : '';
-  const tex = BLD_TEX_NAMES.map((n, i) => [i, n]);
+  const tex = BUILDING_TEXTURE_NAMES.map((n, i) => [i, n]);
   return `<h4>3D building</h4><p class="help">The front is this picture with the roof part cut away (above the eave line) and the glass made see-through. Walls, roof and chimney are built from the settings below. The guides on the picture show the walls (green), the eave (pink) and the windows (blue).</p>
   ${grid(
     fSel('Roof', `${b}.kind`, PED_KINDS, { rr: 1 }),
@@ -981,7 +981,7 @@ function pedBuildHTML(k) {
   )}
   <div class="grid colors">${fColor('Walls', `${b}.wallCol`)}${fColor('Roof', `${b}.roofCol`)}${fColor('Trim and frames', `${b}.trimCol`)}</div>
   ${grid(fSel('Wall texture', `${b}.wallTex`, tex, { num: 1 }), fSel('Roof texture', `${b}.roofTex`, tex, { num: 1 }), fChk('Windows on the sides and back', `${b}.sideWin`, { help: 'Off: plain side walls.' }))}
-  <p class="help">${(B.win || []).length} see-through panes found in the picture (tools/build-buildings.py finds them by their glass colours). Rooms behind the glass: ${(B.rooms || [0]).map(i => BLD_ROOM_NAMES[i] || i).join(', ')}.</p>
+  <p class="help">${(B.win || []).length} see-through panes found in the picture (tools/build-buildings.py finds them by their glass colours). Rooms behind the glass: ${(B.rooms || [0]).map(i => BUILDING_ROOM_NAMES[i] || i).join(', ')}.</p>
   <div class="seg-row"><button class="btn sm subtle" data-act="pedBuildRooms">Other rooms</button><button class="btn sm subtle" data-act="pedBuildNoWin">No see-through panes</button><button class="btn sm subtle danger" data-act="pedBuildOff">Use the picture instead</button></div>`;
 }
 ACTS.pedBuildOn = () => {
@@ -1035,7 +1035,7 @@ ACTS.pedBuildRooms = () => {
   const M = pedM();
   if (!M || !M.build) return;
   const r = M.build.rooms || [0];
-  M.build.rooms = r.map(i => (i + 1) % BLD_ROOM_NAMES.length);
+  M.build.rooms = r.map(i => (i + 1) % BUILDING_ROOM_NAMES.length);
   changed();
   commit(true);
   render();

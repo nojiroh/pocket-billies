@@ -18,8 +18,8 @@ import {
   TERRAIN_MATERIALS,
   U,
   addSteps,
-  bldSigF,
   buddyTap,
+  cachedBuildingSignature,
   defaultWallMaterial,
   dioArtVer,
   environment,
@@ -445,7 +445,12 @@ export function propWithVariant(p, M) {
   if (!rf && (!V || !V.img)) return M;
   let c = BUILDING_VARIANT_CACHE.get(M);
   if (!c) BUILDING_VARIANT_CACHE.set(M, (c = new Map()));
-  const key = n + '|' + (rf ? p.roof : '') + '|' + (typeof bldSigF === 'function' ? bldSigF(M.build) : '');
+  const key =
+    n +
+    '|' +
+    (rf ? p.roof : '') +
+    '|' +
+    (typeof cachedBuildingSignature === 'function' ? cachedBuildingSignature(M.build) : '');
   if (c.has(key)) return c.get(key);
   const B = Object.assign({}, M.build);
   delete B.variants;
