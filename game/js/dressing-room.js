@@ -617,7 +617,7 @@ function wardrobeThumbnail(slot, id, crop) {
   dressingRoom.thumbs.set(key, u);
   return u;
 }
-export function lookPortrait(look) {
+function lookPortrait(look) {
   const L = cleanLook(look),
     f = personFrame(L, 'front', 'idle', 0, 0),
     b = opaqueBox(f),
