@@ -136,6 +136,10 @@ export function migrate(o) {
   if (s.avatar && typeof s.avatar === 'object' && 'name' in s.avatar)
     s.avatar.name = cleanName(s.avatar.name, 18) || 'Trainer';
   [...s.team, ...s.box].forEach(m => {
+    /* phase 08: the steps a Billie walked picked its split path; you pick it now */
+    const old = /** @type {any} */ (m);
+    delete old.bsteps;
+    delete old.psteps;
     m.moves = (m.moves || []).filter(k => MOVES[k]);
     if (!m.moves.length) m.moves = movesAt(SPECIES[m.sp].line, m.lvl);
   });

@@ -72,7 +72,6 @@ import {
   riderName,
   setTrip,
   spawn,
-  splitPath,
   stat,
   stepsToKm,
   stopTrip,
@@ -455,7 +454,7 @@ function evolutionModal(m) {
       lvl: `It just reached level ${e.at}.`,
       idle: 'It rested in storage for a whole day.',
       streak: `${e.n} wins in a row made it stronger.`,
-      split: `It just reached level ${e.at}. ${splitPath(m) === 'B' ? `It won ${m.wins || 0} battles: the Hype path.` : `It walked ${stepsToKm(m.bsteps || 0)} km with you: the Build path.`}`,
+      split: `It just reached level ${e.at}. It can take the Build path or the Hype path: you choose.`,
     }[e.k] || '';
   modal({
     title: `${escapeHtml(billyName(m))} is evolving`,
@@ -463,7 +462,17 @@ function evolutionModal(m) {
     html: `<p>${why} Something bigger is coming.</p>`,
     lock: 1,
     btns: [
-      { l: 'Let it evolve', c: 'dark', f: () => runEvolution(m) },
+      /* phase 08: a split line's middle stage evolves the way you pick */
+      ...(e.k === 'split' && s.alt
+        ? [
+            {
+              l: `Build: ${escapeHtml(SPECIES[/** @type {string} */ (s.next)].name)}`,
+              c: 'dark',
+              f: () => runEvolution(m, '', 'A'),
+            },
+            { l: `Hype: ${escapeHtml(SPECIES[s.alt].name)}`, c: 'dark', f: () => runEvolution(m, '', 'B') },
+          ]
+        : [{ l: 'Let it evolve', c: 'dark', f: () => runEvolution(m) }]),
       {
         l: 'Not yet',
         c: 'quiet',
@@ -476,9 +485,9 @@ function evolutionModal(m) {
     ],
   });
 }
-function runEvolution(m, note) {
+function runEvolution(m, note, path = 'A') {
   const from = SPECIES[m.sp],
-    to = SPECIES[from.evo && from.evo.k === 'split' && from.alt && splitPath(m) === 'B' ? from.alt : from.next],
+    to = SPECIES[from.evo && from.evo.k === 'split' && from.alt && path === 'B' ? from.alt : from.next],
     fromName = billyName(m);
   uiState.modal = null;
   modal({
@@ -502,7 +511,7 @@ function runEvolution(m, note) {
       });
       setTimeout(() => {
         box.classList.add('b', 'flash');
-        evolve(m);
+        evolve(m, path);
         save();
         setTimeout(
           () => {
@@ -1911,7 +1920,7 @@ function renderDexEntry(id) {
     .join('')}</div>
   <section class="paper px notes"><h3>Field notes</h3>${got ? `<p>${escapeHtml(s.blurb)}</p><p class="hand red">${escapeHtml(s.note)}</p>` : `<p>${escapeHtml(s.blurb.split('. ')[0])}. <span class="redact">██████ ████ ███████ ██</span></p><p class="hand">Tax one to complete this entry.</p>`}</section>
   <section class="paper px"><h3>Base stats</h3>${got ? `<table class="bsheet"><tbody>${STAT_IDS.map((k, i) => `<tr><td>${STAT_NAMES[k]}</td><td class="tnum">${s.base[i]}</td><td><span class="bbar" style="--w:${((s.base[i] / mx) * 100).toFixed(0)}%"></span></td></tr>`).join('')}<tr class="tot"><td>Total</td><td class="tnum">${tot}</td><td></td></tr></tbody></table>` : `<p class="note">Tax one to see its stats.</p>`}</section>
-  <section class="paper px lin"><h3>Evolution</h3><div class="chain">${chain}</div><p class="note">${escapeHtml(evolutionHint({ sp: id, lvl: 0, bsteps: 0 }))}</p></section>
+  <section class="paper px lin"><h3>Evolution</h3><div class="chain">${chain}</div><p class="note">${escapeHtml(evolutionHint({ sp: id, lvl: 0 }))}</p></section>
   <section class="paper px"><h3>Type matchups</h3><table class="expo"><tbody><tr><td>Strong against</td><td>${strong.map(typeBadgeHTML).join('') || '—'}</td></tr><tr><td>Weak to</td><td>${weak.map(typeBadgeHTML).join('') || '—'}</td></tr><tr><td>Resists</td><td>${res.map(typeBadgeHTML).join('') || '—'}</td></tr></tbody></table></section>
   <section class="paper px"><h3>Where to look</h3><table class="expo"><tbody><tr><td>Found at</td><td>${where.length ? escapeHtml(where.join(', ')) : 'Not found in the wild'}</td></tr><tr><td>Hatches from</td><td>${eggs.length ? escapeHtml(eggs.join(', ')) : '—'}</td></tr><tr><td>Tracks</td><td>${escapeHtml(TRACKS[D.plan] || 'Unremarkable')}</td></tr></tbody></table></section>
   ${got ? `<div class="sig"><span class="sigline">${escapeHtml(s.name)}</span><small>Recorded by Professor Hazel.</small></div>` : ''}

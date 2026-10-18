@@ -1212,9 +1212,10 @@ def desktop_steps(b, base, R):
         if weak: raise Exception(f'walk or hurt leaves legs/head still for {weak}')
         plans = pg.evaluate("Object.keys(POSES_BY_PLAN).length")
         out.append(f"motion audit: every piece moves, legs walk and heads flinch on all 12; {plans} body plans")
-        # split evolution: the middle stage goes to A on kilometres, to B on wins
-        e = json.loads(pg.evaluate("""(()=>{const a=makeBilly('musk1',32);a.bsteps=4000;a.wins=1;const b=makeBilly('musk1',32);b.wins=5;b.bsteps=100;const ra=canEvolve(a),pa=splitPath(a),pb=splitPath(b);evolve(a);evolve(b);return JSON.stringify({ra,pa,pb,a:a.sp,b:b.sp,hint:evolutionHint(makeBilly('musk1',20))})})()"""))
+        # phase 08: split evolution: the middle stage goes the way you pick in the evolution window (Build: A, Hype: B)
+        e = json.loads(pg.evaluate("""(()=>{const a=makeBilly('musk1',32),b=makeBilly('musk1',32);const ra=canEvolve(a);uiState.modal=null;uiState.mq=[];evolutionModal(a);const btns=[...document.querySelectorAll('.modal button, .sheet button')].map(x=>x.textContent.trim());closeModal();evolve(a,'A');evolve(b,'B');return JSON.stringify({ra,btns,a:a.sp,b:b.sp,hint:evolutionHint(makeBilly('musk1',20))})})()"""))
         if not (e['ra'] and e['a'] == 'musk2' and e['b'] == 'musk3'): raise Exception(f'split evolution: {e}')
+        if not any(t.startswith('Build') for t in e['btns']) or not any(t.startswith('Hype') for t in e['btns']): raise Exception(f"the evolution window doesn't offer both paths: {e['btns']}")
         out.append(f"split at 32: Build → Marsox, Hype → Memeox (“{e['hint'][:60]}…”)")
         # a battle with the new starter on the 3D stage: the player's rig buffer has pixels
         pg.evaluate("saveData.team.unshift(makeBilly('gates0',14));saveData.team[0].hp=maxHp(saveData.team[0]);saveData.preferences.battleStage='scene';const q={id:'cq36',sp:'bezos1',lvl:12,gold:false,no:1};encountersHere().push(q);startWild(q);0")
@@ -1229,7 +1230,7 @@ def desktop_steps(b, base, R):
         return '; '.join(out)
     v36()
 
-    @step('v37: 32 px ground, building budget, party steps, retired 2x art', 150)
+    @step('v37: 32 px ground, building budget, retired 2x art', 150)
     def v37():
         out = []
         if pg.evaluate("typeof artHdOf==='function'||typeof dglHdAuto==='function'||!!window.NW_HD"): raise Exception('the v34 2x pipeline is still in the build')
@@ -1245,12 +1246,6 @@ def desktop_steps(b, base, R):
         out.append(f"Marigold Town: ground {tp} px a tile; {r['made']} building models built over frames, {r['drawn']} drawn, {r['n']} buildings in the scene")
         # v47: the 16 px dial is gone; the 32 px ground is the only full-mode ground
         if pg.evaluate("engineSetting('world','nextArt')!==undefined"): raise Exception('the old 32 px ground dial is still in the settings')
-        # the party walks at half weight for the Build path
-        w = pg.evaluate("(()=>{const m=saveData.team[0];const b0=m.bsteps||0;const extra={uid:'cq37',sp:m.sp,lvl:5,hp:10,wins:0,bsteps:0,psteps:0};saveData.team.push(extra);const s0=saveData.buddy;saveData.buddy=m.uid;addSteps(2000);const ps=extra.psteps;saveData.team.pop();saveData.buddy=s0;return [m.bsteps-b0,ps]})()")
-        if w[0] < 2000 or w[1] < 2000: raise Exception(f'steps: buddy got {w[0]}, party member got {w[1]}')
-        pth = pg.evaluate("splitPath({wins:1,bsteps:0,psteps:RULES.steps.stepsPerKm*4})")
-        if pth != 'A': raise Exception(f'4 km in the party at half weight (2 km) should beat 1 win, got path {pth}')
-        out.append('party steps count at half weight for the Build path')
         if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
         return '; '.join(out)
     v37()

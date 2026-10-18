@@ -139,9 +139,6 @@ export interface Billy {
   job?: number | null;
   /** when it went into the box (for the 'idle' evolution) */
   boxedAt?: number | null;
-  /** steps walked as your buddy, and in the party */
-  bsteps?: number;
-  psteps?: number;
   /** battles won (the Hype counter), the lead's win streak, items given away */
   wins?: number;
   streak?: number;

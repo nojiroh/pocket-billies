@@ -81,6 +81,26 @@ test('rules: wild Billies live on each place’s map: full on the first visit, o
   assert.equal(here().length, 4);
 });
 
+test('rules: a split evolution goes the way you pick: Build (its next stage) or Hype (the other final)', () => {
+  const s = startedSave('sparky0', 10),
+    E = data.SPECIES.sparky0,
+    keep = [E.evo, E.alt];
+  try {
+    E.evo = { k: 'split', at: 5 };
+    E.alt = 'sprout1';
+    const a = s.team[0],
+      b = fn('makeBilly')('sparky0', 10);
+    assert.equal(fn('canEvolve')(a), true);
+    fn('evolve')(a, 'A');
+    fn('evolve')(b, 'B');
+    assert.equal(a.sp, 'sparky1');
+    assert.equal(b.sp, 'sprout1');
+    assert.match(fn('evolutionHint')(fn('makeBilly')('sparky0', 3)), /you choose/);
+  } finally {
+    [E.evo, E.alt] = keep;
+  }
+});
+
 test('rules: the other evolution kinds: a winning streak, a day resting in storage; the rest only by hand', () => {
   const s = startedSave('sparky0', 10),
     m = s.team[0],

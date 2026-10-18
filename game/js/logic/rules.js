@@ -143,8 +143,6 @@ expose({
   // @ts-expect-error -- replaced on purpose
   spawn: [() => spawn, v => (spawn = v)],
   // @ts-expect-error -- replaced on purpose
-  splitPath: [() => splitPath, v => (splitPath = v)],
-  // @ts-expect-error -- replaced on purpose
   stat: [() => stat, v => (stat = v)],
   stepsToKm: [() => stepsToKm],
   // @ts-expect-error -- replaced on purpose
@@ -349,7 +347,7 @@ export function evolutionHint(m) {
       /* SPECIES[null] is undefined, which alt && handles */
       const alt = SPECIES[/** @type {string} */ (s.alt)],
         an = alt && saveData.seen[alt.id] ? alt.name : 'something else';
-      return `Evolves at level ${e.at} into ${nm} or ${an}: ${splitPath(m) === 'A' ? 'the Build path is ahead' : 'the Hype path is ahead'} (${m.wins || 0} battles won, ${stepsToKm(m.bsteps || 0)} km walked as buddy${m.psteps ? ` + ${stepsToKm((m.psteps || 0) / 2)} km in the party at half weight` : ''}).`;
+      return `Evolves at level ${e.at} into ${nm} (the Build path) or ${an} (the Hype path): you choose.`;
     }
     case 'item':
       return `Evolves when you use ${/^[AEIOU]/.test(evolutionItemName(e)) ? 'an' : 'a'} ${evolutionItemName(e)}, once it reaches level ${e.min}.`;
@@ -366,19 +364,14 @@ export function evolutionHint(m) {
   }
   return '';
 }
-/* v36: which final a split line takes: Build (A) when the kilometres it walked as your buddy outweigh the battles it won
-   (1 km counts as one win), Hype (B) otherwise. A tie goes to Build. */
-export function splitPath(m) {
-  const wins = m.wins || 0,
-    kmW = ((m.bsteps || 0) + (m.psteps || 0) / 2) / STEPS_PER_KM;
-  return wins > kmW ? 'B' : 'A';
-}
-export function evolve(m) {
+/* phase 08: a split line's middle stage takes the path you pick when it evolves: Build (A, its next stage) or Hype
+   (B, the other final) */
+export function evolve(m, path = 'A') {
   if (typeof jingle === 'function') jingle(JINGLES.evolve, 140);
   const old = maxHp(m),
     from = billyName(m),
     s0 = SPECIES[m.sp];
-  m.sp = s0.evo && s0.evo.k === 'split' && s0.alt && splitPath(m) === 'B' ? s0.alt : s0.next;
+  m.sp = s0.evo && s0.evo.k === 'split' && s0.alt && path === 'B' ? s0.alt : s0.next;
   if (m.hp > 0) m.hp = Math.max(1, Math.min(maxHp(m), m.hp + maxHp(m) - old));
   saveData.caught[m.sp] = 1;
   saveData.seen[m.sp] = 1;
@@ -593,10 +586,6 @@ export function addSteps(n, quiet) {
   n = Math.floor(Number(n));
   if (!saveData.started || !Number.isFinite(n) || n <= 0 || n > 100000) return;
   saveData.totalSteps += n;
-  const bud = findBilly(saveData.buddy);
-  if (bud) bud.bsteps = (bud.bsteps || 0) + n;
-  /* v37: the rest of the party walks too, at half weight (for the Build path of a split evolution) */ for (const m of saveData.team)
-    if (m !== bud) m.psteps = (m.psteps || 0) + n;
   saveData.eggs.forEach(e => {
     if (e.slot != null) e.prog = Math.min(EGGS[e.tier].need, e.prog + n);
   });
