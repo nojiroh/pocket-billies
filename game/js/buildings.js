@@ -31,7 +31,6 @@ import { environment, environmentLitFraction } from './environment.js';
 import { setPropLookUniforms, standingHeightAt, useWalkProgram, walkRenderer, worldCurveArgs } from './walk-view-gl.js';
 /* eslint-disable no-func-assign */
 expose({
-  BLD: [() => BLD],
   BLD_GLSL_RAMP: [() => BLD_GLSL_RAMP],
   BLD_ROOM_NAMES: [() => BLD_ROOM_NAMES],
   BLD_SH: [() => BLD_SH],
@@ -60,6 +59,7 @@ expose({
   bldSigF: [() => bldSigF, v => ((bldSigF = v), provide({ bldSigF }))],
   bldSmoke: [() => bldSmoke, v => ((bldSmoke = v), provide({ bldSmoke }))],
   bldWinLit: [() => bldWinLit, v => ((bldWinLit = v), provide({ bldWinLit }))],
+  buildingState: [() => buildingState],
 });
 /* eslint-enable no-func-assign */
 provide({ bldDraw, bldFacade, bldGuard, bldLitF, bldMeshFor, bldShadow, bldSigF, bldSmoke, bldWinLit });
@@ -72,8 +72,8 @@ export function setBldItems(v) {
   provide({ bldItems });
 }
 /* to-module: end */
-export const BLD = { mesh: new WeakMap(), fac: new WeakMap(), vao: null };
-provide({ BLD }); /* to-module */
+export const buildingState = { mesh: new WeakMap(), fac: new WeakMap(), vao: null };
+provide({ buildingState }); /* to-module */
 export const BLD_TEX_NAMES = [
   'Plaster',
   'Siding',
@@ -119,17 +119,17 @@ const bldSig = B =>
     B.chimney && [B.chimney.x, B.chimney.top, B.chimney.w, B.chimney.lean || 0],
     B.base && [B.base.col, B.base.h],
   ].join('|');
-const bldOn = () => !BLD.fail && eng('world', 'buildings3d') !== false;
+const bldOn = () => !buildingState.fail && eng('world', 'buildings3d') !== false;
 provide({ bldOn }); /* to-module */
 /* if this device can't build or draw the models, the pictures stand in from then on (and the debug log says why) */
 export function bldGuard(fn) {
-  if (BLD.fail) return;
+  if (buildingState.fail) return;
   try {
     fn();
   } catch (e) {
-    BLD.fail = String((e && e.message) || e);
-    console.error('3D buildings off: ' + BLD.fail);
-    if (typeof NWLOG !== 'undefined') NWLOG.add('webgl', '3D buildings off: ' + BLD.fail);
+    buildingState.fail = String((e && e.message) || e);
+    console.error('3D buildings off: ' + buildingState.fail);
+    if (typeof NWLOG !== 'undefined') NWLOG.add('webgl', '3D buildings off: ' + buildingState.fail);
     try {
       const gl = EGL.gl;
       gl.bindVertexArray(null);
@@ -247,11 +247,11 @@ function bldSigF(B) {
   return c.s;
 }
 function bldFacade(im, B, M) {
-  let F = BLD.fac.get(im);
+  let F = buildingState.fac.get(im);
   const v = (typeof dioArtVer === 'function' ? dioArtVer() : 0) + '|' + bldSigF(B) + '|' + M.ox + ',' + M.oy;
   if (F && F.v === v) return F.c;
   if (!bldBudget()) return null;
-  BLD.n++;
+  buildingState.n++;
   const w = im.naturalWidth || im.width,
     h = im.naturalHeight || im.height,
     c = cnv(w, h),
@@ -296,7 +296,7 @@ function bldFacade(im, B, M) {
     }
   x.putImageData(id, 0, 0);
   c.__mat = 'building';
-  BLD.fac.set(im, { c, v });
+  buildingState.fac.set(im, { c, v });
   return c;
 }
 /* ---------- the model ---------- */
@@ -306,15 +306,15 @@ function bldHex(h, fb) {
 }
 /* v37: building a model (and cutting a front) is spread over frames: the first of a frame always goes ahead, the rest only
    while the frame has spent under 5 ms on them, so a town with many buildings opens without a long frame (the sun shadow
-   cache keys on BLD.made, so it is redrawn as each one appears) */
+   cache keys on buildingState.made, so it is redrawn as each one appears) */
 function bldBudget() {
   const fr = typeof EGL !== 'undefined' ? EGL.fr : 0;
-  if (BLD.fr !== fr) {
-    BLD.fr = fr;
-    BLD.t0 = performance.now();
-    BLD.n = 0;
+  if (buildingState.fr !== fr) {
+    buildingState.fr = fr;
+    buildingState.t0 = performance.now();
+    buildingState.n = 0;
   }
-  return BLD.n === 0 || performance.now() - BLD.t0 < 5;
+  return buildingState.n === 0 || performance.now() - buildingState.t0 < 5;
 }
 function bldMeshFor(it) {
   const p = it.p,
@@ -337,18 +337,18 @@ function bldMeshFor(it) {
       bldSigF(B),
     ];
   /* alpha 0.4.1: the building's own settings are in the key too, so an edit in the Studio's prop editor shows at once */ /* v44: the picture's size is in the key, so a mesh made before the art loaded is made again; alpha 0.4.1: compared value by value, not joined into a string every frame */ let E =
-    BLD.mesh.get(p);
+    buildingState.mesh.get(p);
   if (E && E.B === B && E.im === im && E.key && E.key.every((v, i) => v === key[i])) return E;
   if (!bldBudget()) return null;
-  BLD.n++;
+  buildingState.n++;
   if (E) bldFree(E);
   E = bldMake(it);
   if (!E.walls && !E.wins) return null;
   /* nothing to show yet (the art is still loading): try again next frame */ E.key = key;
   E.B = B;
   E.im = im;
-  BLD.mesh.set(p, E);
-  BLD.made = (BLD.made || 0) + 1;
+  buildingState.mesh.set(p, E);
+  buildingState.made = (buildingState.made || 0) + 1;
   return E;
 }
 function bldFree(E) {
@@ -1516,12 +1516,12 @@ function bldWinLit(seed, litF) {
 /* ---------- drawing ---------- */
 export function bldItems(items) {
   if (!bldOn()) return [];
-  if (!BLD.ready) {
+  if (!buildingState.ready) {
     bldGuard(() => {
       eglPrograms(BLD_SH);
-      BLD.ready = 1;
+      buildingState.ready = 1;
     });
-    if (BLD.fail) return [];
+    if (buildingState.fail) return [];
   }
   const out = [];
   for (const it of items)
@@ -1533,7 +1533,7 @@ export function bldDraw(C, X, items, fades) {
 }
 function bldDraw0(C, X, items, fades) {
   const L = bldItems(items).filter(it => it.vis !== false);
-  BLD.drawn = L.length;
+  buildingState.drawn = L.length;
   if (!L.length) return;
   const gl = EGL.gl;
   eglPrograms(BLD_SH);
@@ -1583,7 +1583,7 @@ function bldDraw0(C, X, items, fades) {
       bldLitF()
     ); /* v47: windows come on one at a time in the evening and go off one at a time at night (environment.js environmentLitFraction) */
   for (const it of L) {
-    const E = BLD.mesh.get(it.p);
+    const E = buildingState.mesh.get(it.p);
     if (!E || !E.wins) continue;
     gl.uniform2fv(p.U.uLift, lift(it));
     gl.uniform1f(p.U.uFade, fades.get(it) ?? 1);
@@ -1610,7 +1610,7 @@ function bldDraw0(C, X, items, fades) {
   gl.uniform3f(p.U.uN, 0, 0, -1);
   gl.uniform3f(p.U.uR, 1, 0, 0);
   for (const it of L) {
-    if (!BLD.mesh.get(it.p)) continue;
+    if (!buildingState.mesh.get(it.p)) continue;
     const F = bldFacade(it.im, it.M.build, it.M);
     if (!F) continue;
     F.__mat = 'building';
@@ -1668,6 +1668,6 @@ function bldShadow0(SH, items) {
   gl.bindVertexArray(null);
 }
 function bldSmoke(it) {
-  const E = it.bld3 && BLD.mesh.get(it.p);
+  const E = it.bld3 && buildingState.mesh.get(it.p);
   return E && E.smoke;
 }

@@ -9,7 +9,6 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import {
-  BLD,
   BLD_SH,
   GD,
   LD,
@@ -31,6 +30,7 @@ import {
   bldSmoke,
   bldWinLit,
   buddyItems,
+  buildingState,
   clueDraw,
   companionItems,
   drawPropModelShadows,
@@ -5073,7 +5073,7 @@ function walkLightContext(C, sun, dark, items, shadow, BT) {
       pk = (eng('lights', 'pools') ?? 1) * lb,
       G = [],
       inRoom = !!sc.room && !out,
-      E = it.bld3 && typeof BLD !== 'undefined' ? BLD.mesh.get(it.p) : null;
+      E = it.bld3 && typeof buildingState !== 'undefined' ? buildingState.mesh.get(it.p) : null;
     let W = null;
     for (const e of M.fx || []) {
       if (e.k === 'fire')
@@ -5470,7 +5470,7 @@ function fittedShadowPass(items0, sun, C) {
         walkRenderer.mesh && walkRenderer.mesh.n,
         sc.heights ? sc.heights.length : 0,
         typeof bldOn === 'function' && bldOn() ? 1 : 0,
-        typeof BLD !== 'undefined' ? BLD.made || 0 : 0,
+        typeof buildingState !== 'undefined' ? buildingState.made || 0 : 0,
       ].join('|')
     : '';
   const SF = EGL.fb.shadow;
@@ -7737,7 +7737,7 @@ export function effectsPass(C, items, X, dark, t, dt) {
         }
         (walkRenderer.fires || (walkRenderer.fires = [])).push([x, y + 0.8 * sz, z, sz]);
       } else if (e.k === 'window') {
-        if (it.bld3 && !(sc.room && !out) && BLD.mesh.get(it.p)) return;
+        if (it.bld3 && !(sc.room && !out) && buildingState.mesh.get(it.p)) return;
         const RS = sc.room && !out ? roomSkyLight() : null;
         let k = RS ? RS.I * (1 - RS.night) * 0.9 * windowLightShare(sc) : dark ? 1 : winDay;
         if (
@@ -7770,7 +7770,7 @@ export function effectsPass(C, items, X, dark, t, dt) {
     });
     /* alpha 0.4: a 3D building's front windows glow when its window shader lights them (the same seed), not by a second guess */
     if (it.bld3 && !(sc.room && !out)) {
-      const E = BLD.mesh.get(it.p);
+      const E = buildingState.mesh.get(it.p);
       if (E && E.fw) {
         const lf = bldLitF(),
           k = dIt ? 1 : winDay,

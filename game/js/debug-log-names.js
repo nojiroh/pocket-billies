@@ -66,7 +66,7 @@ import {
   updateNearRing,
   walkRenderer,
 } from './walk-view-gl.js';
-import { BLD, bldDraw, bldItems, setBldDraw, setBldItems } from './buildings.js';
+import { bldDraw, bldItems, buildingState, setBldDraw, setBldItems } from './buildings.js';
 import {
   buildSolidProp,
   buildSolidTree,
@@ -102,7 +102,6 @@ Object.defineProperties(GAME, {
   AMB: { get: () => AMB },
   AUD: { get: () => AUD },
   B: { get: () => B },
-  BLD: { get: () => BLD },
   EGL: { get: () => EGL },
   EGL_NW: { get: () => EGL_NW },
   FRAME: { get: () => FRAME },
@@ -122,6 +121,7 @@ Object.defineProperties(GAME, {
   buildGrass: { get: () => buildGrass, set: setBuildGrass },
   buildSolidProp: { get: () => buildSolidProp, set: setBuildSolidProp },
   buildSolidTree: { get: () => buildSolidTree, set: setBuildSolidTree },
+  buildingState: { get: () => buildingState },
   chalToday: { get: () => chalToday },
   csStart: { get: () => csStart, set: setCsStart },
   drawGrass: { get: () => drawGrass, set: setDrawGrass },

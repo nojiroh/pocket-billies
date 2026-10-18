@@ -40,7 +40,7 @@ import { EGL, eglAttrClashes } from './engine/webgl.js';
 import { EGL_POST_SH } from './engine/post-effects.js';
 import { environment } from './environment.js';
 import { WALK_SHADERS, roomDimming, standingHeightAt, walkRenderer } from './walk-view-gl.js';
-import { BLD, BLD_SH } from './buildings.js';
+import { BLD_SH, buildingState } from './buildings.js';
 import { STR, strHas } from './structures.js';
 import { SOLID_PROP_SHADERS, solidPropState } from './solid-props.js';
 import { propModelState } from './prop-models.js';
@@ -400,8 +400,8 @@ async function runFullTest(mode) {
           if (c.length) bad.push(k + ': ' + c.join(', '));
         }
         if (bad.length) throw new Error(bad.join('; '));
-        if (typeof BLD !== 'undefined' && BLD.fail)
-          throw new Error('3D buildings are off on this device: ' + String(BLD.fail).slice(0, 90));
+        if (typeof buildingState !== 'undefined' && buildingState.fail)
+          throw new Error('3D buildings are off on this device: ' + String(buildingState.fail).slice(0, 90));
         return Object.keys(all).length + ' shaders';
       },
       1
@@ -460,7 +460,9 @@ async function runFullTest(mode) {
           return [
             `opened in ${open != null ? open + ' ms' : 'over 3 s'}`,
             `${(sc.props || []).length} props`,
-            gl && typeof BLD !== 'undefined' && BLD.drawn ? `${BLD.drawn} 3D buildings` : '',
+            gl && typeof buildingState !== 'undefined' && buildingState.drawn
+              ? `${buildingState.drawn} 3D buildings`
+              : '',
             gl && typeof solidPropState !== 'undefined' && solidPropState.drawn
               ? `${solidPropState.drawn} solid props`
               : '',
@@ -577,7 +579,13 @@ async function runFullTest(mode) {
       let hops = 0;
       for (let q = 0; q < G.hop.length; q++) if (G.hop[q]) hops++;
       const gl = typeof walkRenderer !== 'undefined' && walkRenderer.on;
-      if (gl && typeof strHas === 'function' && strHas(sc) && !STR.mesh && !(typeof BLD !== 'undefined' && BLD.fail))
+      if (
+        gl &&
+        typeof strHas === 'function' &&
+        strHas(sc) &&
+        !STR.mesh &&
+        !(typeof buildingState !== 'undefined' && buildingState.fail)
+      )
         throw new Error('bridges and railings aren’t drawn');
       return (
         [
@@ -963,7 +971,7 @@ async function runFullTest(mode) {
               const f0 = walkRenderer.frames;
               for (let i = 0; i < 80 && walkRenderer.frames < f0 + 20; i++) await stSleep(100);
               await stSleep(300);
-              const b = typeof BLD !== 'undefined' ? BLD.drawn || 0 : 0,
+              const b = typeof buildingState !== 'undefined' ? buildingState.drawn || 0 : 0,
                 v = typeof propModelState !== 'undefined' ? propModelState.drawn || 0 : 0,
                 p = typeof solidPropState !== 'undefined' ? solidPropState.drawn || 0 : 0,
                 lm = ((walkRenderer.X && walkRenderer.X.lampSh) || []).length,

@@ -631,7 +631,7 @@ def desktop_steps(b, base, R):
         drawn = []
         for n in nodes:
             go_scene(pg, n, 75); time.sleep(.4); sid = pg.evaluate('walkView.id'); shot(pg, f'scene-{sid}')   # alpha 0.2: a place's view holds its neighbours' edges too, bigger to paint in software
-            info = pg.evaluate("[typeof walkRenderer!=='undefined'&&walkRenderer.on,typeof STR!=='undefined'&&!!STR.mesh,typeof strHas==='function'&&strHas(walkView.sc),typeof BLD!=='undefined'?(BLD.fail||''):'',typeof BLD!=='undefined'?BLD.drawn||0:0]")
+            info = pg.evaluate("[typeof walkRenderer!=='undefined'&&walkRenderer.on,typeof STR!=='undefined'&&!!STR.mesh,typeof strHas==='function'&&strHas(walkView.sc),typeof buildingState!=='undefined'?(buildingState.fail||''):'',typeof buildingState!=='undefined'?buildingState.drawn||0:0]")
             if info[0] and info[2] and not info[1]: raise Exception(f'{sid}: bridges and railings not drawn')
             if info[3]: raise Exception(f'{sid}: 3D buildings off: {info[3][:100]}')
             drawn.append(sid)
@@ -1121,7 +1121,7 @@ def desktop_steps(b, base, R):
         go_scene(pg, node); time.sleep(8)
         tp = pg.evaluate("(walkRenderer.ring&&walkRenderer.ring.TP)||(walkView.ground&&walkView.ground._TP)")
         if tp != 32: raise Exception(f'Marigold Town ground painted at {tp} px a tile')
-        r = json.loads(pg.evaluate("JSON.stringify({made:BLD.made||0,drawn:BLD.drawn||0,n:(walkView.sc.props||[]).filter(p=>{const M=GD.scenery.props[p.k];return M&&M.build}).length})"))
+        r = json.loads(pg.evaluate("JSON.stringify({made:buildingState.made||0,drawn:buildingState.drawn||0,n:(walkView.sc.props||[]).filter(p=>{const M=GD.scenery.props[p.k];return M&&M.build}).length})"))
         if r['made'] < 1: raise Exception('no 3D building model was built at Marigold Town')
         shot(pg, 'v37-sundown')
         out.append(f"Marigold Town: ground {tp} px a tile; {r['made']} building models built over frames, {r['drawn']} drawn, {r['n']} buildings in the scene")
@@ -1392,7 +1392,7 @@ def desktop_steps(b, base, R):
             shot(pg, 'v44-land')
             # 2. props: every kind draws (pictures, solids, voxels, buildings) and no draw is refused
             bench('test_light_props', 16, 20, 7, 0); time.sleep(1)
-            c = json.loads(pg.evaluate("JSON.stringify({bld:BLD.drawn,vox:propModelState.drawn,p3d:solidPropState.drawn,spr:walkRenderer.sprN||null,placed:(walkView.sc.props||[]).length,fails:[BLD.fail,propModelState.fail,solidPropState.fail].filter(Boolean)})"))
+            c = json.loads(pg.evaluate("JSON.stringify({bld:buildingState.drawn,vox:propModelState.drawn,p3d:solidPropState.drawn,spr:walkRenderer.sprN||null,placed:(walkView.sc.props||[]).length,fails:[buildingState.fail,propModelState.fail,solidPropState.fail].filter(Boolean)})"))
             if c['fails']: raise Exception('renderers off: ' + ' | '.join(c['fails']))
             if c['bld'] < 3 or c['vox'] < 4 or c['p3d'] < 1: raise Exception(f'props scene: {c}')
             shot(pg, 'v44-props'); out.append(f'props: {c["bld"]} buildings, {c["vox"]} voxel props, {c["p3d"]} solid props drawn of {c["placed"]} placed')
@@ -1818,11 +1818,11 @@ def desktop_steps(b, base, R):
         pg.evaluate("U.modal=null;U.mq=[];renderOv();environment.on=true;environment.force={time:22,weather:'clear',season:'summer'};U.tab='walk';U.inside=null;U.bench={id:'test_windows',test:1};render();0")
         if not until(pg, "!!(walkView.ready&&walkView.id==='test_windows'&&walkRenderer.frames>4)", 60): raise Exception('the windows and lamps scene didn’t open')
         pg.evaluate("walkView.pl.x=44;walkView.pl.z=10;walkView.pl.route=null;0"); time.sleep(4)
-        until(pg, "typeof BLD!=='undefined'&&BLD.drawn>=8", 90)   # the buildings' meshes come a few a frame: give them time (5 to 8 are in view here)
+        until(pg, "typeof buildingState!=='undefined'&&buildingState.drawn>=8", 90)   # the buildings' meshes come a few a frame: give them time (5 to 8 are in view here)
         r = pg.evaluate("""(()=>{const L=walkView.sc.props.filter(p=>{const M=GD.scenery.props[p.k];return M&&(M.glow||(M.fx||[]).some(f=>f.k==='glow'))});
           ENG_CTX.env=true;const on=typeof lampLit==='function'?L.filter(p=>lampLit(p.x,p.z,0)>.9).length:-1;ENG_CTX.env=false;let fw=0,lit=0;const lf=typeof bldLitF==='function'?bldLitF():0;
-          for(const p of walkView.sc.props){const E=typeof BLD!=='undefined'?BLD.mesh.get(p):null;if(E&&E.fw){fw+=E.fw.length;lit+=E.fw.filter(f=>bldWinLit(f[3],lf)).length}}
-          return {b:typeof BLD!=='undefined'?BLD.drawn:0,lamp:environment.lampK,lamps:L.length,on,fw,lit}})()""")
+          for(const p of walkView.sc.props){const E=typeof buildingState!=='undefined'?buildingState.mesh.get(p):null;if(E&&E.fw){fw+=E.fw.length;lit+=E.fw.filter(f=>bldWinLit(f[3],lf)).length}}
+          return {b:typeof buildingState!=='undefined'?buildingState.drawn:0,lamp:environment.lampK,lamps:L.length,on,fw,lit}})()""")
         if r['b'] < 4: raise Exception(f'only {r["b"]} buildings drawn in 3D')
         # alpha 0.4: at ten at night every lamp is on, and some (not all, not none) of the front windows are lit
         if r['on'] < r['lamps']: raise Exception(f'only {r["on"]} of {r["lamps"]} lamps are on at night')

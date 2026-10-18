@@ -762,7 +762,7 @@ NWLOG.diag = (since = 0) => {
     typeof GAME.walkRenderer !== 'undefined' && GAME.walkRenderer.on
       ? {
           skipped: GAME.walkRenderer.cullOf ? `${GAME.walkRenderer.culled}/${GAME.walkRenderer.cullOf}` : null,
-          buildings: typeof GAME.BLD !== 'undefined' ? GAME.BLD.drawn : null,
+          buildings: typeof GAME.buildingState !== 'undefined' ? GAME.buildingState.drawn : null,
           solid: typeof GAME.solidPropState !== 'undefined' ? GAME.solidPropState.drawn : null,
           grass: GAME.walkRenderer.grassDrawn || null,
         }
