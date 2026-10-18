@@ -42,13 +42,13 @@ import {
 expose({
   ACCOUNT_ID: [() => ACCOUNT_ID],
   ACCOUNT_KEY: [() => ACCOUNT_KEY],
-  BR: [() => BR],
   SAVE_FOUND: [() => SAVE_FOUND],
   SAVE_KEY: [() => SAVE_KEY],
   SAVE_KEY_BASE: [() => SAVE_KEY_BASE],
   SAVE_NEW_MSG: [() => SAVE_NEW_MSG],
   SAVE_OLD_MSG: [() => SAVE_OLD_MSG],
   SAVE_VERSION: [() => SAVE_VERSION],
+  STEP_BRACKETS: [() => STEP_BRACKETS],
   activeBattle: [() => activeBattle, v => setActiveBattle(v)],
   addEgg: [() => addEgg, v => (addEgg = v)],
   addMon: [() => addMon, v => (addMon = v)],
@@ -64,6 +64,7 @@ expose({
   canRide: [() => canRide],
   cleanName: [() => cleanName],
   collectJob: [() => collectJob, v => (collectJob = v)],
+  earningsBetween: [() => earningsBetween, v => (earningsBetween = v)],
   eggSlotCount: [() => eggSlotCount],
   emptyJob: [() => emptyJob],
   endShift: [() => endShift, v => (endShift = v)],
@@ -99,7 +100,6 @@ expose({
   pathFrom: [() => pathFrom],
   pickWeighted: [() => pickWeighted, v => (pickWeighted = v)],
   plural: [() => plural],
-  rate: [() => rate],
   readStoredSave: [() => readStoredSave, v => (readStoredSave = v)],
   reducedMotion: [() => reducedMotion, v => setReducedMotion(v)],
   resumeTrip: [() => resumeTrip, v => (resumeTrip = v)],
@@ -122,9 +122,9 @@ expose({
   spawn: [() => spawn, v => (spawn = v)],
   splitPath: [() => splitPath, v => (splitPath = v)],
   stat: [() => stat, v => (stat = v)],
+  stepRate: [() => stepRate],
   stepsToKm: [() => stepsToKm],
   stopTrip: [() => stopTrip, v => (stopTrip = v)],
-  taxed: [() => taxed, v => (taxed = v)],
   teamSize: [() => teamSize],
   toBox: [() => toBox, v => (toBox = v)],
   toTeam: [() => toTeam, v => (toTeam = v)],
@@ -586,12 +586,15 @@ export function addMon(m) {
 }
 
 /* ---------- steps ---------- */
-export const BR = RULES.steps.brackets.map(b => [b.upTo > 0 ? b.upTo : Infinity, b.rate]).sort((a, b) => a[0] - b[0]);
-if (!BR.length || BR[BR.length - 1][0] !== Infinity) BR.push([Infinity, BR.length ? BR[BR.length - 1][1] : 1]);
-function taxed(a, b) {
+export const STEP_BRACKETS = RULES.steps.brackets
+  .map(b => [b.upTo > 0 ? b.upTo : Infinity, b.rate])
+  .sort((a, b) => a[0] - b[0]);
+if (!STEP_BRACKETS.length || STEP_BRACKETS[STEP_BRACKETS.length - 1][0] !== Infinity)
+  STEP_BRACKETS.push([Infinity, STEP_BRACKETS.length ? STEP_BRACKETS[STEP_BRACKETS.length - 1][1] : 1]);
+function earningsBetween(a, b) {
   let se = 0,
     lo = 0;
-  for (const [hi, r] of BR) {
+  for (const [hi, r] of STEP_BRACKETS) {
     const s = Math.max(a, lo),
       e = Math.min(b, hi);
     if (e > s) se += (e - s) * r;
@@ -599,11 +602,11 @@ function taxed(a, b) {
   }
   return se;
 }
-export const rate = st => {
-  for (const [hi, r] of BR) if (st < hi) return r;
-  return BR[BR.length - 1][1];
+export const stepRate = st => {
+  for (const [hi, r] of STEP_BRACKETS) if (st < hi) return r;
+  return STEP_BRACKETS[STEP_BRACKETS.length - 1][1];
 };
-export const nextBracket = st => BR.find(([hi]) => st < hi);
+export const nextBracket = st => STEP_BRACKETS.find(([hi]) => st < hi);
 export function rollDay() {
   if (saveData.day.date !== today()) saveData.day = { date: today(), steps: 0 };
 }
@@ -779,7 +782,7 @@ export function addSteps(n, quiet) {
   rollDay();
   const a = saveData.day.steps,
     b = a + n,
-    g = taxed(a, b) + saveData.seFrac,
+    g = earningsBetween(a, b) + saveData.seFrac,
     gi = Math.floor(g);
   saveData.seFrac = g - gi;
   saveData.se += gi;

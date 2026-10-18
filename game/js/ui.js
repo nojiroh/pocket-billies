@@ -36,7 +36,7 @@ import {
   trainersAt,
 } from './game-data.js';
 import {
-  BR,
+  STEP_BRACKETS,
   activeBattle,
   addEgg,
   allMons,
@@ -70,7 +70,6 @@ import {
   nextBracket,
   nextStop,
   plural,
-  rate,
   reducedMotion,
   resumeTrip,
   riderName,
@@ -82,6 +81,7 @@ import {
   spawn,
   splitPath,
   stat,
+  stepRate,
   stepsToKm,
   stopTrip,
   teamSize,
@@ -746,7 +746,7 @@ function renderIntro() {
 const BRCOL = ['var(--ok)', 'var(--gold)', 'var(--red)', '#9B6BE0', '#4F80E8'];
 function bracketSpans() {
   let lo = 0;
-  return BR.map(([hi, r], i) => {
+  return STEP_BRACKETS.map(([hi, r], i) => {
     const top = hi === Infinity ? Math.max(lo * 1.33, lo + 5000) : hi,
       o = { lo, hi: top, r, col: BRCOL[i % BRCOL.length] };
     lo = hi;
@@ -771,9 +771,9 @@ function bracketLabels() {
     .join('');
 }
 function bracketNote(st) {
-  const r = rate(st),
+  const r = stepRate(st),
     nb = nextBracket(st),
-    i = BR.indexOf(nb);
+    i = STEP_BRACKETS.indexOf(nb);
   if (i === 0) return `Full rate for ${formatNumber(nb[0] - st)} more steps today.`;
   if (nb[0] === Infinity) return 'You’ve walked a lot today. Resting is good too.';
   return `Busy day! Steps now earn $${r} each until ${formatNumber(nb[0])}.`;
@@ -954,7 +954,7 @@ function walkHero() {
 function renderWalk() {
   rollDay();
   const st = saveData.day.steps,
-    r = rate(st),
+    r = stepRate(st),
     q = saveData.queue;
   return `${walkHero()}<div class="walk-sheet"><span class="ws-grip" aria-hidden="true"></span>
  <div class="cols"><div class="col">
