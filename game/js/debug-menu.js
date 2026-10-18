@@ -32,6 +32,7 @@ import {
   addBilly,
   addEgg,
   addSteps,
+  addWalked,
   encounterStock,
   encountersHere,
   gainXp,
@@ -100,7 +101,7 @@ function debugHTML() {
           .join('')}</ul>`
       : '<p class="note">Game data loaded with no warnings.</p>'
   }</details>
- <details><summary>Wallet and steps</summary><div class="dbg-row">${debugButtonHTML('se1', '+$1,000')}${debugButtonHTML('se10', '+$10,000')}${debugButtonHTML('st1', '+1,000 steps')}${debugButtonHTML('st10', '+10,000 steps')}</div>
+ <details><summary>Wallet and steps</summary><div class="dbg-row">${debugButtonHTML('se1', '+$1,000')}${debugButtonHTML('se10', '+$10,000')}${debugButtonHTML('st1', '+1,000 steps')}${debugButtonHTML('st10', '+10,000 steps')}${debugButtonHTML('walk1', 'Walk 1 km')}</div>
   <div class="dbg-row">${debugButtonHTML('coins', '+10 of every coin')}${debugButtonHTML('items', '+5 of every item')}</div></details>
  <details><summary>Billies</summary><div class="dbg-row">${debugSelectHTML('dbgSp', debugSpeciesOptions(), uiState.dbgSp || DEX_ORDER[0])}<input id="dbgLv" type="number" min="1" max="${maxLevel()}" value="${uiState.dbgLv || 10}" aria-label="Level"><label class="dbg-ck"><input id="dbgGold" type="checkbox"> Golden</label></div>
   <div class="dbg-row">${debugButtonHTML('give', 'Give it to me', 'gold')}${debugButtonHTML('enc', 'Add as encounter')}${debugButtonHTML('wild', 'Battle it now', 'red')}${debugButtonHTML('alpha', 'As an Alpha', 'red')}</div>
@@ -204,6 +205,10 @@ function debugAction(x) {
       break;
     case 'se10':
       saveData.se += 10000;
+      break;
+    case 'walk1':
+      /* phase 08: as if you walked a kilometre outdoors (eggs, the distance on your trainer card) */
+      addWalked(1000);
       break;
     case 'st1':
       addSteps(1000, true);

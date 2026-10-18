@@ -7,7 +7,7 @@
 import { expose } from './test-globals.js';
 import { closeModal, modal, render, toast } from './hooks.js';
 import { COINS, EGGS, ITEMS, STATUS_NAMES } from './game-data.js';
-import { billyName, formatNumber, maxHp } from './logic/rules.js';
+import { billyName, formatNumber, maxHp, metresToKm } from './logic/rules.js';
 import { applyItem, canUse, teamNeedsHp } from './logic/battle-engine.js';
 import { escapeHtml, saveData, uiState } from './game-state.js';
 import { coinHTML, eggHTML, uiIconHTML } from './art.js';
@@ -55,7 +55,7 @@ export function renderBag() {
             const E = EGGS[e.tier] || { need: 1 },
               f = Math.min(1, (e.prog || 0) / E.need),
               left = Math.max(0, E.need - (e.prog || 0));
-            return `<div class="bag-row"><span class="bag-ic">${eggHTML(e.tier, 30)}</span><span class="bag-t"><b>${escapeHtml(e.tier)} km egg</b><small>${e.slot != null ? (left ? `${formatNumber(left)} steps to go` : 'Ready to hatch') : 'Waiting for a free incubator'}</small><span class="bag-prog"><i style="width:${Math.round(f * 100)}%"></i></span></span></div>`;
+            return `<div class="bag-row"><span class="bag-ic">${eggHTML(e.tier, 30)}</span><span class="bag-t"><b>${escapeHtml(e.tier)} km egg</b><small>${e.slot != null ? (left ? `${metresToKm(left)} km to go` : 'Ready to hatch') : 'Waiting for a free incubator'}</small><span class="bag-prog"><i style="width:${Math.round(f * 100)}%"></i></span></span></div>`;
           })
           .join('')}</div>`
       : `<p class="note bag-empty">No eggs right now. Some trainers and shops give them; they hatch as you walk.</p>`;

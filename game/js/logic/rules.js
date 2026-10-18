@@ -56,6 +56,8 @@ expose({
   addEgg: [() => addEgg, v => (addEgg = v)],
   // @ts-expect-error -- replaced on purpose
   addSteps: [() => addSteps, v => ((addSteps = v), provide({ addSteps }))],
+  // @ts-expect-error -- replaced on purpose
+  addWalked: [() => addWalked, v => ((addWalked = v), provide({ addWalked }))],
   allBillies: [() => allBillies],
   // @ts-expect-error -- replaced on purpose
   autoSlot: [() => autoSlot, v => (autoSlot = v)],
@@ -108,6 +110,7 @@ expose({
   makeBilly: [() => makeBilly, v => ((makeBilly = v), provide({ makeBilly }))],
   maxHp: [() => maxHp],
   maxLevel: [() => maxLevel],
+  metresToKm: [() => metresToKm],
   moveSlotCount: [() => moveSlotCount],
   // @ts-expect-error -- replaced on purpose
   movesAt: [() => movesAt, v => (movesAt = v)],
@@ -146,13 +149,14 @@ expose({
   tripTo: [() => tripTo, v => (tripTo = v)],
   // @ts-expect-error -- replaced on purpose
   walkDistances: [() => walkDistances, v => (walkDistances = v)],
+  walkedUnsaved: [() => walkedUnsaved, v => (walkedUnsaved = v)],
   // @ts-expect-error -- replaced on purpose
   wildList: [() => wildList, v => (wildList = v)],
   wildPrize: [() => wildPrize],
   xpFor: [() => xpFor],
 });
 /* eslint-enable no-func-assign */
-provide({ addSteps, makeBilly, riderOf });
+provide({ addSteps, addWalked, makeBilly, riderOf });
 export function setSetTrip(v) {
   // @ts-expect-error -- replaced on purpose
   setTrip = v; // eslint-disable-line no-func-assign
@@ -567,9 +571,6 @@ export function addSteps(n, quiet) {
   n = Math.floor(Number(n));
   if (!saveData.started || !Number.isFinite(n) || n <= 0 || n > 100000) return;
   saveData.totalSteps += n;
-  saveData.eggs.forEach(e => {
-    if (e.slot != null) e.prog = Math.min(EGGS[e.tier].need, e.prog + n);
-  });
   if (!quiet) toast(`+${formatNumber(n)} steps`);
   save();
   if (!activeBattle) {
@@ -578,6 +579,32 @@ export function addSteps(n, quiet) {
   }
 }
 
+/* ---------- walking and eggs ---------- */
+/* phase 08: the metres you walk outdoors (walk-view.js movePlayer; not in rooms, on ladders or test benches, and not a
+   jump to a new view): the distance on your trainer card, and what hatches the eggs in your incubators (eggs.json need,
+   in metres). Saved every 20 m, and at once when an egg is ready */
+export let walkedUnsaved = 0;
+export function addWalked(m) {
+  if (!saveData.started || !Number.isFinite(m) || m <= 0 || m > 1000) return;
+  const S = saveData.stats || (saveData.stats = {});
+  S.walked = (S.walked || 0) + m;
+  let ready = false;
+  for (const e of saveData.eggs) {
+    const need = EGGS[e.tier].need;
+    if (e.slot == null || e.prog >= need) continue;
+    e.prog = Math.min(need, e.prog + m);
+    if (e.prog >= need) ready = true;
+  }
+  walkedUnsaved += m;
+  if (!ready && walkedUnsaved < 20) return;
+  walkedUnsaved = 0;
+  save();
+  if (ready && !activeBattle) {
+    render();
+    showPendingWindows();
+  }
+}
+export const metresToKm = m => (m / 1000).toFixed(1);
 /* ---------- Seed Rounds ---------- */
 export const eggSlotCount = () => Math.max(1, RULES.eggs.slots);
 export function autoSlot() {

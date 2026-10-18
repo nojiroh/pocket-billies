@@ -132,3 +132,22 @@ test('rules: the other evolution kinds: a winning streak, a day resting in stora
     E.evo = keep;
   }
 });
+
+test('rules: eggs hatch by metres walked outdoors; the distance walked counts them all', () => {
+  const s = startedSave('sparky0', 10);
+  s.eggs = [];
+  s.stats = {};
+  fn('addEgg')(2); // the fixture's egg needs 100 m
+  fn('addEgg')(2);
+  s.eggs[1].slot = null; // not in an incubator: it waits
+  fn('addWalked')(60);
+  assert.equal(s.eggs[0].prog, 60);
+  assert.equal(s.eggs[1].prog, 0);
+  assert.equal(fn('hatchable')().length, 0);
+  fn('addWalked')(60);
+  assert.equal(s.eggs[0].prog, 100, 'never past its need');
+  assert.equal(fn('hatchable')().length, 1);
+  assert.equal(s.stats.walked, 120);
+  fn('addWalked')(5000);
+  assert.equal(s.stats.walked, 120, 'a jump of kilometres is not a walk');
+});

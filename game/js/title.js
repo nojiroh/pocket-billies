@@ -20,7 +20,16 @@ import { $, clamp } from './util.js';
 import { TEST_BOOT } from './test-boot.js';
 import { LOCATIONS, START_NODE } from './game-data.js';
 import { newSaveKeepingPreferences } from './logic/saves.js';
-import { escapeHtml, flushSave, reducedMotion, saveData, setSaveData, uiState, writeStoredSave } from './game-state.js';
+import {
+  escapeHtml,
+  flushSave,
+  reducedMotion,
+  save,
+  saveData,
+  setSaveData,
+  uiState,
+  writeStoredSave,
+} from './game-state.js';
 import { userFps } from './frame-scheduler.js';
 import { uiIconHTML } from './art.js';
 import { personHTML } from './person-art.js';
@@ -31,6 +40,7 @@ import { music, musicFor } from './sound.js';
 import { cutsceneMapId, cutsceneStart, cutsceneStartName, cutsceneWanted } from './cutscene.js';
 /* eslint-disable no-func-assign */
 expose({
+  playTicks: [() => playTicks, v => (playTicks = v)],
   renderTitle: [() => renderTitle, v => (renderTitle = v)],
   titleEnd: [() => titleEnd, v => (titleEnd = v)],
   titleFrame: [() => titleFrame, v => (titleFrame = v)],
@@ -210,10 +220,13 @@ function titleNew() {
     ],
   });
 }
-/* play time: counted while the game is open and in view */
+/* play time: counted while the game is open and in view, and saved every minute (phase 08: walking saved it before) */
+let playTicks = 0;
 setInterval(() => {
-  if (typeof saveData !== 'undefined' && saveData && saveData.started && !document.hidden && !uiState.title)
+  if (typeof saveData !== 'undefined' && saveData && saveData.started && !document.hidden && !uiState.title) {
     saveData.playMs = (saveData.playMs || 0) + 15000;
+    if (++playTicks % 4 === 0) save();
+  }
 }, 15000);
 document.addEventListener(
   'click',

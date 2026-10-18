@@ -14,6 +14,7 @@ import {
   ROOM_BY_BUILDING,
   TERRAIN_MATERIALS,
   addSteps,
+  addWalked,
   artCacheVersion,
   buddyTap,
   cachedBuildingSignature,
@@ -3479,7 +3480,10 @@ function movePlayer(st, dt) {
       }
     }
     P.walk = Math.hypot(P.x - ox, P.z - oz) > 1e-4 ? 1 : 0;
-    /* alpha 0.4.1: walking yourself, the metres you walk are your steps (14 a metre): encounters, challenges, your buddy */
+    /* phase 08: the metres you walk outdoors hatch your eggs */
+    if (P.walk && !jumped && typeof addWalked === 'function' && !uiState.bench && !uiState.inside)
+      addWalked(Math.hypot(P.x - ox, P.z - oz));
+    /* alpha 0.4.1: walking yourself, the metres you walk are your steps (14 a metre) */
     if (P.walk && !jumped && typeof addSteps === 'function' && !(typeof uiState !== 'undefined' && uiState.bench)) {
       P.stepAcc = (P.stepAcc || 0) + Math.hypot(P.x - ox, P.z - oz) * 14.1;
       if (P.stepAcc >= 300) {
