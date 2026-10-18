@@ -1076,7 +1076,7 @@ function enterRoom(a, p) {
   render();
   return true;
 }
-/* v46: seamless rooms (world.js wrRoomScene). The room's view is the place's own view with the room laid in at the
+/* v46: seamless rooms (world-rules-art.js wrRoomScene). The room's view is the place's own view with the room laid in at the
    building's door, so going in and out is a shift of nothing. roomLayIn makes (and starts preparing) that view;
    it is also called when you tap a building, so the room is usually ready by the time you reach the door. */
 function roomLayIn(id, p, fresh) {
@@ -1299,7 +1299,7 @@ function walkState() {
     c = nx != null ? linkCost(node, nx) : 0,
     f = nx != null && c ? clamp(r.prog / c, 0, 1) : 0;
   let v; /* alpha 0.4.1: walking yourself, the view is always the place you're in */
-  /* v43: a trip is a walk along the road's ground (world.js): the scene with the road leaving, the road, the far scene with the road arriving */
+  /* v43: a trip is a walk along the road's ground (world-rules-art.js): the scene with the road leaving, the road, the far scene with the road arriving */
   const tv = nx != null && (r.prog > 0 || !r.hold) && typeof wrTripView === 'function' ? wrTripView(node, nx, f) : null;
   if (tv) {
     const base = tv.sc.baseId === sceneIdAt(nx) ? nx : node;
@@ -1365,7 +1365,7 @@ function walkState() {
       }
     }
   }
-  /* v46: a new view is shown only once its ground is ready on the card; until then you stay in the one on screen (world.js wrGate) */
+  /* v46: a new view is shown only once its ground is ready on the card; until then you stay in the one on screen (world-rules-art.js wrGate) */
   if (typeof wrGate === 'function' && v && v.pos && (v.mode === 'road' || v.roam)) v = wrGate(v);
   const sc = dioScene(v.id) || {},
     ex = sceneExits(v.node),
@@ -1633,7 +1633,7 @@ function walkCross() {
     return;
   }
 }
-/* alpha 0.4.1: a view that was held until it was ready (world.js wrGate) takes over as soon as it is: walking yourself,
+/* alpha 0.4.1: a view that was held until it was ready (world-rules-art.js wrGate) takes over as soon as it is: walking yourself,
    nothing else would ask for it (a trip did, with each batch of steps) */
 setInterval(() => {
   try {

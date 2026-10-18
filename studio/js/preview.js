@@ -44,7 +44,7 @@ import {
   spOpts,
 } from './studio-app.js';
 import { atlasGet, atlasPath, rigFor } from './sprites.js';
-import { AMBS } from './world.js';
+import { AMBS } from './world-rules-art.js';
 /* eslint-disable no-func-assign */
 expose({
   BP: [() => BP],
