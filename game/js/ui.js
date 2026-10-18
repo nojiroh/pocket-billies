@@ -39,7 +39,7 @@ import {
   STEP_BRACKETS,
   activeBattle,
   addEgg,
-  allMons,
+  allBillies,
   assignJob,
   billyName,
   blockerAt,
@@ -54,7 +54,7 @@ import {
   evoItemName,
   evoReady,
   evolve,
-  findMon,
+  findBilly,
   flushSave,
   formatNumber,
   gateMsg,
@@ -62,7 +62,7 @@ import {
   hatchEgg,
   hatchable,
   healAll,
-  makeMon,
+  makeBilly,
   maxHp,
   maxLevel,
   moveSlotCount,
@@ -218,6 +218,8 @@ expose({
   bgInit: [() => bgInit, v => (bgInit = v)],
   bgResize: [() => bgResize, v => (bgResize = v)],
   bgTick: [() => bgTick, v => (bgTick = v)],
+  billyConditionHTML: [() => billyConditionHTML],
+  billySheet: [() => billySheet, v => (billySheet = v)],
   boardNote: [() => boardNote, v => (boardNote = v)],
   boxSection: [() => boxSection, v => (boxSection = v)],
   bracketBars: [() => bracketBars, v => (bracketBars = v)],
@@ -253,8 +255,6 @@ expose({
   mapCardHTML: [() => mapCardHTML, v => (mapCardHTML = v)],
   meter: [() => meter],
   modal: [() => modal, v => ((modal = v), provide({ modal }))],
-  monSheet: [() => monSheet, v => (monSheet = v)],
-  monState: [() => monState],
   needsCare: [() => needsCare],
   nextModal: [() => nextModal, v => (nextModal = v)],
   nextToast: [() => nextToast, v => (nextToast = v)],
@@ -416,14 +416,14 @@ export function postProcess() {
   }
   const lq = uiState.learnQ.shift();
   if (lq) {
-    const m = findMon(lq.uid);
+    const m = findBilly(lq.uid);
     if (m && !m.moves.includes(lq.mv)) {
       learnModal(m, lq.mv);
       return;
     }
     return postProcess();
   }
-  const m = allMons().find(evoReady);
+  const m = allBillies().find(evoReady);
   if (m) evoModal(m);
 }
 function genderModal() {
@@ -890,7 +890,7 @@ function eggSlots() {
   return `<section><div class="sec-h"><h2>Eggs</h2><span class="count tnum">${saveData.eggs.length}/${RULES.eggs.capacity}</span></div><div class="slots">${slots}</div>${pipe.length ? `<div class="pipe"><span class="note">Waiting for an incubator:</span>${pipe.map(e => eggHTML(e.tier, 26)).join('')}</div>` : ''}</section>`;
 }
 function buddyCard() {
-  const m = findMon(saveData.buddy);
+  const m = findBilly(saveData.buddy);
   if (!m) return '';
   const a = xpFor(m.lvl),
     b = xpFor(m.lvl + 1),
@@ -1853,7 +1853,7 @@ const plateVars = m => {
   const t = SP[m.sp].types;
   return `--c1:${TC[t[0]][0]};--c2:${TC[t[t.length - 1]][0]}`;
 };
-const monState = m => (m.hp <= 0 ? '<span class="stb st-down">Fainted</span>' : stBadge(m.status));
+const billyConditionHTML = m => (m.hp <= 0 ? '<span class="stb st-down">Fainted</span>' : stBadge(m.status));
 const xpPart = m => {
   if (m.lvl >= maxLevel()) return 1;
   const a = xpFor(m.lvl),
@@ -1869,7 +1869,7 @@ function teamHero(m) {
     bud = m.uid === saveData.buddy;
   return `<section class="tm-hero tpanel"><button class="tm-stage" data-a="mon" data-u="${m.uid}" style="${plateVars(m)}" aria-label="${escapeHtml(billyName(m))}, details"><span class="tm-ribbon">Lead</span>${m.gold ? '<span class="tm-ribbon gold">Golden</span>' : ''}${rigCanvasHTML(m.sp, 120, { gold: m.gold })}</button>
  <div class="tm-info"><div class="tm-name"><h2>${escapeHtml(billyName(m))}</h2><span class="lv tnum">Lv ${m.lvl}</span></div>${m.nick ? `<div class="tm-sp">${escapeHtml(s.name)}</div>` : ''}
-  <div class="row">${s.types.map(chip).join('')}${monState(m)}${bud ? `<span class="badge bud">${uiIconHTML('heart', 11)} Buddy</span>` : ''}</div>
+  <div class="row">${s.types.map(chip).join('')}${billyConditionHTML(m)}${bud ? `<span class="badge bud">${uiIconHTML('heart', 11)} Buddy</span>` : ''}</div>
   ${meter('HP', hpBar(m.hp, mx), `${m.hp}/${mx}`)}${meter('XP', bar(xpPart(m), 'xpb'), xpLeft(m))}
   <div class="tm-acts">${needsCare(m) ? `<button class="pb small green" data-a="mheal" data-u="${m.uid}">${uiIconHTML('heart', 14)} Heal</button>` : ''}${bud ? '' : `<button class="pb small" data-a="mbuddy" data-u="${m.uid}">${uiIconHTML('walk', 14)} Make buddy</button>`}<button class="pb small quiet" data-a="mon" data-u="${m.uid}">Details</button></div></div></section>`;
 }
@@ -1877,7 +1877,7 @@ function teamCard(m, i) {
   const mx = maxHp(m),
     bud = m.uid === saveData.buddy;
   return `<div class="tm-card${m.hp <= 0 ? ' down' : ''}" style="--d:${i * 40}ms"><button class="tm-main" data-a="mon" data-u="${m.uid}"><span class="tm-spr" style="${plateVars(m)}">${rigCanvasHTML(m.sp, 72, { gold: m.gold })}${bud ? `<i class="tm-heart" title="Buddy">${uiIconHTML('heart', 12)}</i>` : ''}</span>
-  <span class="tm-t"><b>${escapeHtml(billyName(m))}</b><span class="tm-lv tnum">Lv ${m.lvl}</span></span><span class="row">${SP[m.sp].types.map(chip).join('')}${monState(m)}</span>${hpBar(m.hp, mx)}<span class="hpn tnum">${m.hp}/${mx} HP</span></button>
+  <span class="tm-t"><b>${escapeHtml(billyName(m))}</b><span class="tm-lv tnum">Lv ${m.lvl}</span></span><span class="row">${SP[m.sp].types.map(chip).join('')}${billyConditionHTML(m)}</span>${hpBar(m.hp, mx)}<span class="hpn tnum">${m.hp}/${mx} HP</span></button>
   <div class="tm-quick"><button class="qk" data-a="mlead" data-u="${m.uid}" ${m.hp <= 0 ? 'disabled' : ''}>Make lead</button>${needsCare(m) ? `<button class="qk heal" data-a="mheal" data-u="${m.uid}">Heal</button>` : ''}</div></div>`;
 }
 function jobSlots() {
@@ -1888,7 +1888,7 @@ function jobSlots() {
         return i !== open[0]
           ? ''
           : `<div class="job empty"><span class="job-ic">${uiIconHTML('bag', 20)}</span><div class="jt"><b>${open.length === 1 ? '1 open job' : `${open.length} open jobs`}</b><span class="note">Each pays out every ${formatNumber(JOB_STEPS)} steps.</span></div><button class="pb small" data-a="hire" data-s="${i}">Hire</button></div>`;
-      const m = findMon(j.uid),
+      const m = findBilly(j.uid),
         J = JOBS[j.job];
       if (!m) return '';
       return `<div class="job"><button class="job-spr" data-a="mon" data-u="${m.uid}" style="${plateVars(m)}" aria-label="${escapeHtml(billyName(m))}, details">${rigCanvasHTML(m.sp, 48, { gold: m.gold })}</button><div class="jt"><b>${escapeHtml(billyName(m))}</b><span class="note">${escapeHtml(J.n)}, ${escapeHtml(J.where)}. Earns ${escapeHtml(J.pay)}.</span>${bar(j.acc / JOB_STEPS, 'gold live')}<span class="note tnum">${formatNumber(JOB_STEPS - j.acc)} steps to the next pay${j.pend ? `, ${j.pend} ready` : ''}</span>
@@ -2125,7 +2125,7 @@ function renderProfile() {
     got = DEX.filter(id => saveData.caught[id]).length,
     places = ROUTE.filter((r, i) => saveData.visited[i]).length,
     bd = badgeSlots(),
-    bud = findMon(saveData.buddy);
+    bud = findBilly(saveData.buddy);
   const beat = Object.keys(saveData.flags).filter(k => TRAINERS[k] && saveData.flags[k]).length,
     since = saveData.since
       ? new Date(saveData.since).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
@@ -2163,7 +2163,7 @@ function donateItem() {
     .sort((a, b) => saveData.items[b] - saveData.items[a])[0];
   return k || null;
 }
-function monSheet(m) {
+function billySheet(m) {
   const s = SP[m.sp],
     inTeam = saveData.team.includes(m),
     e = s.evo,
@@ -2294,7 +2294,7 @@ function monSheet(m) {
     });
   }
   if (e && e.k === 'merge' && m.lvl >= e.min) {
-    const other = allMons()
+    const other = allBillies()
       .filter(o => o !== m && o.sp === m.sp && o.job == null)
       .sort((x, y) => x.lvl - y.lvl)[0];
     acts.push({
@@ -2364,7 +2364,7 @@ function monSheet(m) {
     cls: 'mon-sheet',
     acts,
     top: `<div class="ms-plate" style="${plateVars(m)}">${lead ? '<span class="tm-ribbon">Lead</span>' : ''}${bud ? `<span class="tm-ribbon bud">${uiIconHTML('heart', 11)} Buddy</span>` : ''}${m.gold ? '<span class="tm-ribbon gold">Golden</span>' : ''}${rigCanvasHTML(m.sp, 128, { gold: m.gold })}</div>`,
-    html: `<p class="row ms-chips">${s.types.map(chip).join('')}${monState(m)}<b class="lv tnum">Lv ${m.lvl}</b>${m.nick ? `<span class="ms-sp">${escapeHtml(s.name)}</span>` : ''}</p>
+    html: `<p class="row ms-chips">${s.types.map(chip).join('')}${billyConditionHTML(m)}<b class="lv tnum">Lv ${m.lvl}</b>${m.nick ? `<span class="ms-sp">${escapeHtml(s.name)}</span>` : ''}</p>
   <div class="ms-tabs" role="tablist" aria-label="About ${escapeHtml(billyName(m))}" data-on="sum">${tabs.map(([k, l]) => `<button role="tab" data-a="ms-tab" data-k="${k}" aria-selected="${k === 'sum'}">${l}</button>`).join('')}</div>
   <div class="ms-pane" data-k="sum"><div class="ms-meters">${meter('HP', hpBar(m.hp, mx), `${m.hp}/${mx}`)}${meter('XP', bar(xpPart(m), 'xpb'), xpLeft(m))}</div>
    <div class="ms-chart">${st}</div>${metR}
@@ -2409,7 +2409,7 @@ function healPick(m, back) {
         f: () => {
           if (back) {
             uiState.modal = null;
-            monSheet(m);
+            billySheet(m);
           } else closeModal();
         },
       },
@@ -2448,7 +2448,7 @@ function hireFlow(slot) {
   });
 }
 function hirePick(slot, job) {
-  const free = allMons().filter(m => m.job == null),
+  const free = allBillies().filter(m => m.job == null),
     canTeam = saveData.team.filter(x => x.job == null).length > 1;
   const list = free.filter(m => !saveData.team.includes(m) || canTeam);
   modal({
@@ -2514,7 +2514,7 @@ export function startGame(l, o = {}) {
   saveData.wardrobe = { owned: {}, outfits: [null, null, null] };
   saveData.starter = l;
   const R = RULES.start,
-    m = makeMon(l + '0', R.starterLevel);
+    m = makeBilly(l + '0', R.starterLevel);
   saveData.team = [m];
   saveData.buddy = m.uid;
   saveData.caught[m.sp] = 1;
@@ -2675,8 +2675,8 @@ document.addEventListener('click', ev => {
       trainerTalk(d.t);
       break;
     case 'mon': {
-      const m = findMon(d.u);
-      if (m) monSheet(m);
+      const m = findBilly(d.u);
+      if (m) billySheet(m);
       break;
     }
     case 'mact': {
@@ -2688,7 +2688,7 @@ document.addEventListener('click', ev => {
       if (uiState.modal && uiState.modal.nick) uiState.modal.nick.f();
       break;
     case 'mlead': {
-      const m = findMon(d.u);
+      const m = findBilly(d.u);
       if (m && saveData.team.includes(m) && m.hp > 0) {
         saveData.team.splice(saveData.team.indexOf(m), 1);
         saveData.team.unshift(m);
@@ -2699,7 +2699,7 @@ document.addEventListener('click', ev => {
       break;
     }
     case 'mbuddy': {
-      const m = findMon(d.u);
+      const m = findBilly(d.u);
       if (m) {
         saveData.buddy = m.uid;
         save();
@@ -2709,22 +2709,22 @@ document.addEventListener('click', ev => {
       break;
     }
     case 'mheal': {
-      const m = findMon(d.u);
+      const m = findBilly(d.u);
       if (m) healPick(m, false);
       break;
     }
     case 'mhealuse': {
-      const m = findMon(d.u);
+      const m = findBilly(d.u);
       if (m && applyItem(d.it, d.u, false)) {
         uiState.modal = null;
         render();
-        if (d.b) monSheet(m);
+        if (d.b) billySheet(m);
         else nextModal();
       }
       break;
     }
     case 'mteam': {
-      const m = findMon(d.u);
+      const m = findBilly(d.u);
       if (!m || m.job != null || saveData.team.includes(m)) break;
       if (saveData.team.length < teamSize()) {
         toTeam(m);
@@ -2738,7 +2738,7 @@ document.addEventListener('click', ev => {
       addPick();
       break;
     case 'tmaddon': {
-      const m = findMon(d.u);
+      const m = findBilly(d.u);
       if (m && m.job == null && !saveData.team.includes(m) && saveData.team.length < teamSize()) {
         toTeam(m);
         save();
@@ -2749,8 +2749,8 @@ document.addEventListener('click', ev => {
       break;
     }
     case 'mswap': {
-      const m = findMon(d.u),
-        o = findMon(d.o);
+      const m = findBilly(d.u),
+        o = findBilly(d.o);
       if (!m || !o || m.job != null || !saveData.team.includes(o) || saveData.team.includes(m)) break;
       const i = saveData.team.indexOf(o);
       toBox(o);
@@ -2836,7 +2836,7 @@ document.addEventListener('click', ev => {
       break;
     case 'hireon':
       if (assignJob(+d.s, d.j, d.u)) {
-        const m = findMon(d.u);
+        const m = findBilly(d.u);
         closeModal();
         render();
         toast(`${billyName(m)} started work as a ${JOBS[d.j].n.toLowerCase()}.`);

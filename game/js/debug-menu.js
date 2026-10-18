@@ -9,14 +9,14 @@ import { $, $$, clamp } from './util.js';
 import { COINS, DATA_WARN, DEX, EGGS, EGG_TIERS, ITEMS, ROUTE, RULES, SP, TRAINERS } from './game-data.js';
 import {
   activeBattle,
+  addBilly,
   addEgg,
-  addMon,
   addSteps,
   escapeHtml,
   flushSave,
   gainXp,
   healAll,
-  makeMon,
+  makeBilly,
   maxLevel,
   newSaveKeepingPreferences,
   newUid,
@@ -196,8 +196,8 @@ function dbgAct(x) {
       saveData.day = { date: today(), steps: 0 };
       break;
     case 'give': {
-      const m = makeMon(sp, lv, { gold: $('#dbgGold').checked });
-      const w = addMon(m);
+      const m = makeBilly(sp, lv, { gold: $('#dbgGold').checked });
+      const w = addBilly(m);
       save();
       return dbgRefresh(`${SP[sp].name} joined your ${w === 'team' ? 'team' : 'storage'}.`);
     }

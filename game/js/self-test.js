@@ -17,7 +17,7 @@ import {
   activeBattle,
   addSteps,
   escapeHtml,
-  makeMon,
+  makeBilly,
   maxHp,
   save,
   saveData,
@@ -729,7 +729,7 @@ async function runFullTest(mode) {
         m.hp = maxHp(m);
         m.status = null;
       });
-      while (saveData.team.filter(m => m.job == null).length < 3) saveData.team.push(makeMon(foeSp, 6));
+      while (saveData.team.filter(m => m.job == null).length < 3) saveData.team.push(makeBilly(foeSp, 6));
       if (kind === 'double') {
         const id = Object.keys(TRAINERS).find(
           k => TRAINERS[k].team.length >= 2 && !TRAINERS[k].team.some(m => String(m.sp).startsWith('@'))

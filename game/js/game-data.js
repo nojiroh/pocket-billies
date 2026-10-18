@@ -5,7 +5,7 @@
    The rest of the game reads these globals, so the file format can change without touching game code. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { makeMon, provide, saveData } from './hooks.js';
+import { makeBilly, provide, saveData } from './hooks.js';
 /* eslint-disable no-func-assign */
 expose({
   ADJ: [() => ADJ],
@@ -310,7 +310,7 @@ export function rivalSp(code) {
 /* a team entry may name its moves (v47: Blake's first billionaire only knows Tackle) */
 export function trainerTeam(T) {
   return T.team.map(e => {
-    const m = makeMon(/^@rival\d?$/.test(e.sp) ? rivalSp(e.sp) : e.sp, e.lvl),
+    const m = makeBilly(/^@rival\d?$/.test(e.sp) ? rivalSp(e.sp) : e.sp, e.lvl),
       mv = Array.isArray(e.moves) ? e.moves.filter(k => MOVES[k]) : [];
     if (mv.length) m.moves = mv;
     return m;

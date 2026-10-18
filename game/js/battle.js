@@ -46,16 +46,16 @@ import {
 } from './game-data.js';
 import {
   activeBattle,
+  addBilly,
   addEgg,
-  addMon,
   billyName,
   escapeHtml,
-  findMon,
+  findBilly,
   formatNumber,
   gainXp,
   healAll,
   hereStop,
-  makeMon,
+  makeBilly,
   maxHp,
   pickWeighted,
   plural,
@@ -127,6 +127,7 @@ expose({
   battleShell: [() => battleShell, v => (battleShell = v)],
   battleSwoop: [() => battleSwoop, v => (battleSwoop = v)],
   bench: [() => bench, v => (bench = v)],
+  billyPickHTML: [() => billyPickHTML, v => (billyPickHTML = v)],
   bindAim: [() => bindAim, v => (bindAim = v)],
   boxAnims: [() => boxAnims, v => (boxAnims = v)],
   boxShow: [() => boxShow, v => (boxShow = v)],
@@ -160,7 +161,6 @@ expose({
   liveK: [() => liveK],
   logLine: [() => logLine, v => (logLine = v)],
   makeAlpha: [() => makeAlpha, v => (makeAlpha = v)],
-  monPick: [() => monPick, v => (monPick = v)],
   movePower: [() => movePower, v => (movePower = v)],
   msgFace: [() => msgFace, v => (msgFace = v)],
   needsTarget: [() => needsTarget, v => (needsTarget = v)],
@@ -918,13 +918,13 @@ const goNames = K => {
 };
 /* an Alpha: the same billionaire, bigger, tougher and stronger for the fight (RULES.battle.alpha*) */
 function makeAlpha(sp, lvl, o = {}) {
-  const m = makeMon(sp, lvl + (RB.alphaLevels ?? 3), o);
+  const m = makeBilly(sp, lvl + (RB.alphaLevels ?? 3), o);
   m.boss = { hp: RB.alphaHp ?? 3, st: RB.alphaStats ?? 1.3 };
   m.hp = maxHp(m);
   return m;
 }
 export function startWild(q) {
-  const foe = q.alpha ? makeAlpha(q.sp, q.lvl, { gold: q.gold }) : makeMon(q.sp, q.lvl, { gold: q.gold });
+  const foe = q.alpha ? makeAlpha(q.sp, q.lvl, { gold: q.gold }) : makeBilly(q.sp, q.lvl, { gold: q.gold });
   if (!newBattle('wild', [foe], { qid: q.id, area: areaKey(), fmt: q.alpha ? 'alpha' : 'single' })) return;
   const nm = SP[q.sp].name;
   if (q.alpha) {
@@ -1100,7 +1100,7 @@ export const canUse = (it, m) => {
 };
 export function applyItem(it, id, inB) {
   const I = ITEMS[it],
-    m = findMon(id);
+    m = findBilly(id);
   if (!m || !canUse(it, m)) return false;
   saveData.items[it]--;
   const t = [];
@@ -1765,7 +1765,7 @@ function hpMini(m) {
   const p = Math.max(0, m.hp / maxHp(m));
   return `<span class="hpmini"><i class="${p < 0.25 ? 'low' : p < 0.5 ? 'mid' : ''}" style="width:${p * 100}%"></i></span>`;
 }
-function monPick(m, act, attrs, dis, note) {
+function billyPickHTML(m, act, attrs, dis, note) {
   return `<button class="pick" ${attrs} ${dis ? 'disabled' : ''}>${bustHTML(m.sp, 40, { gold: m.gold })}<span class="pk-t"><b>${escapeHtml(billyName(m))}</b><span class="pk-m">${SP[m.sp].types.map(chip).join('')}<small class="tnum">Lv ${m.lvl}</small></span>${hpMini(m)}<small class="tnum">${Math.max(0, m.hp)}/${maxHp(m)}</small></span><span class="pk-s">${note || ''}</span></button>`;
 }
 function teamPick(back) {
@@ -1775,7 +1775,7 @@ function teamPick(back) {
     .map((m, i) => {
       const act = (on.includes(i) && m.hp > 0) || called.includes(i);
       const dis = act || m.hp <= 0 || m.job != null;
-      return monPick(
+      return billyPickHTML(
         m,
         act,
         `data-a="bswitch" data-i="${i}"`,
@@ -1838,7 +1838,7 @@ export function paintActions() {
     h = `<div class="plist">${liveK(1)
       .map(k => {
         const m = A(k);
-        return monPick(
+        return billyPickHTML(
           m,
           false,
           `data-a="btarget" data-t="${k}"`,
@@ -1871,7 +1871,7 @@ export function paintActions() {
     }</div>${backBtn()}`;
   } else if (ph === 'itemTarget') {
     const it = activeBattle.item;
-    h = `<p class="note">Use ${escapeHtml(ITEMS[it].n)} on:</p><div class="plist">${saveData.team.map(m => monPick(m, false, `data-a="bitemon" data-u="${m.uid}"`, !canUse(it, m), m.hp <= 0 ? 'Fainted' : stBadge(m.status))).join('')}</div>${backBtn()}`;
+    h = `<p class="note">Use ${escapeHtml(ITEMS[it].n)} on:</p><div class="plist">${saveData.team.map(m => billyPickHTML(m, false, `data-a="bitemon" data-u="${m.uid}"`, !canUse(it, m), m.hp <= 0 ? 'Fainted' : stBadge(m.status))).join('')}</div>${backBtn()}`;
   } else if (ph === 'team') h = teamPick(true);
   else if (ph === 'switch') h = teamPick(false);
   else if (ph === 'aim') {
@@ -1977,7 +1977,7 @@ function finishThrow(res, id, lab, spin) {
       say(`${billyName(e)} is an Alpha: a little bigger and stronger than others of its kind.`);
     }
     e.hp = Math.max(1, e.hp);
-    const where = addMon(e);
+    const where = addBilly(e);
     if (where === 'box') say(`${billyName(e)} went to storage. Your team is full.`);
     activeBattle.over = 'caught';
     save();
@@ -1998,7 +1998,7 @@ export function endBattle() {
     kind = activeBattle.kind,
     T = activeBattle.T,
     tid = activeBattle.tid,
-    lead = findMon(activeBattle.lead);
+    lead = findBilly(activeBattle.lead);
   if (o === 'win' && typeof jingle === 'function') jingle(JINGLES.victory);
   if (o === 'win')
     for (const m of saveData.team)

@@ -112,7 +112,7 @@ def check_game(pw, base, results):
                     pg.evaluate('TALK.cur&&TALK.cur.tap()'); time.sleep(.8)
                 results.setdefault('rival', {})[name] = rival
                 pg.evaluate("if(activeBattle){stopTimers();activeBattle=null;battleStageStop()}render();0")
-        pg.evaluate("if(typeof titleEnd==='function')titleEnd();uiState.pg='girl';startGame('scoop');saveData.story={met_chad:1,met_chad2:1};uiState.modal=null;uiState.mq=[];renderOv();saveData.team.push(makeMon('box1',18));addSteps(2400,true);uiState.toastQ=[];uiState.toastOn=false;uiState.modal=null;uiState.mq=[];renderOv();render();0")
+        pg.evaluate("if(typeof titleEnd==='function')titleEnd();uiState.pg='girl';startGame('scoop');saveData.story={met_chad:1,met_chad2:1};uiState.modal=null;uiState.mq=[];renderOv();saveData.team.push(makeBilly('box1',18));addSteps(2400,true);uiState.toastQ=[];uiState.toastOn=false;uiState.modal=null;uiState.mq=[];renderOv();render();0")
         log(f'{name}: screens and battles')
         for tab in ['walk', 'map', 'team', 'ledger', 'profile']:
             pg.evaluate(f"uiState.tab='{tab}';render();scrollTo(0,0);0"); time.sleep(1.4 if tab == 'map' else .5)
@@ -133,7 +133,7 @@ def check_game(pw, base, results):
         pg.screenshot(path=str(OUT / f'{name}-battle-3d.png'))
         results.setdefault('battle3d', {})[name] = pg.evaluate("[!!battleStage.gl,!!walkView.battle,walkView.id]")
         pg.evaluate("stopTimers();activeBattle=null;battleStageStop();render();0")
-        pg.evaluate("saveData.team=[makeMon('hood2',45),makeMon('box1',30)];saveData.route.node=4;startTrainer('crude');0")
+        pg.evaluate("saveData.team=[makeBilly('hood2',45),makeBilly('box1',30)];saveData.route.node=4;startTrainer('crude');0")
         won = False
         for _ in range(60):
             ph = wait_phase(pg, ('choose', 'switch', 'end'))

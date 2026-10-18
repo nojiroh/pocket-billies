@@ -13,7 +13,7 @@ import { expose } from './test-globals.js';
 import { areaKey, provide, sceneIdAt, sfx } from './hooks.js';
 import { clamp } from './util.js';
 import { SP, STATUSN, TRAINERS, rivalSp, trainersAt } from './game-data.js';
-import { billyName, findMon, maxHp, nextStop, save, saveData, uiState } from './game-state.js';
+import { billyName, findBilly, maxHp, nextStop, save, saveData, uiState } from './game-state.js';
 import { makeCanvas } from './art.js';
 import { RIG_BACK_VIEW, drawRig, rigFrame, rigParts, rigPreload } from './skeleton-rig.js';
 import { battleStagePrepare } from './battle-stage.js';
@@ -162,7 +162,7 @@ export function worldBillyItem(k, sp, gold, view, pose, t, seed, x, z, o = {}) {
 /* your buddy (the one you made buddy on its sheet; it earns XP as you walk), or your lead if you haven't picked one */
 export function buddyBilly() {
   if ((saveData.preferences || {}).buddyWalk === 'off' || !saveData.team) return null;
-  let m = saveData.buddy && typeof findMon === 'function' ? findMon(saveData.buddy) : null;
+  let m = saveData.buddy && typeof findBilly === 'function' ? findBilly(saveData.buddy) : null;
   if (!m) m = saveData.team[0] || null;
   return m && m.job == null ? m : null;
 }

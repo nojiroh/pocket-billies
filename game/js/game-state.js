@@ -50,10 +50,10 @@ expose({
   SAVE_VERSION: [() => SAVE_VERSION],
   STEP_BRACKETS: [() => STEP_BRACKETS],
   activeBattle: [() => activeBattle, v => setActiveBattle(v)],
+  addBilly: [() => addBilly, v => (addBilly = v)],
   addEgg: [() => addEgg, v => (addEgg = v)],
-  addMon: [() => addMon, v => (addMon = v)],
   addSteps: [() => addSteps, v => ((addSteps = v), provide({ addSteps }))],
-  allMons: [() => allMons],
+  allBillies: [() => allBillies],
   areaPool: [() => areaPool, v => (areaPool = v)],
   assignJob: [() => assignJob, v => (assignJob = v)],
   autoSlot: [() => autoSlot, v => (autoSlot = v)],
@@ -73,7 +73,7 @@ expose({
   evoItemName: [() => evoItemName],
   evoReady: [() => evoReady, v => (evoReady = v)],
   evolve: [() => evolve, v => (evolve = v)],
-  findMon: [() => findMon],
+  findBilly: [() => findBilly],
   flushSave: [() => flushSave, v => (flushSave = v)],
   formatNumber: [() => formatNumber],
   gainXp: [() => gainXp, v => (gainXp = v)],
@@ -86,7 +86,7 @@ expose({
   hereStop: [() => hereStop],
   jobSlotCount: [() => jobSlotCount],
   loadSave: [() => loadSave, v => (loadSave = v)],
-  makeMon: [() => makeMon, v => ((makeMon = v), provide({ makeMon }))],
+  makeBilly: [() => makeBilly, v => ((makeBilly = v), provide({ makeBilly }))],
   maxHp: [() => maxHp],
   maxLevel: [() => maxLevel],
   migrate: [() => migrate, v => (migrate = v)],
@@ -137,7 +137,7 @@ expose({
   xpFor: [() => xpFor],
 });
 /* eslint-enable no-func-assign */
-provide({ addSteps, makeMon, riderOf });
+provide({ addSteps, makeBilly, riderOf });
 export function setSetTrip(v) {
   setTrip = v; // eslint-disable-line no-func-assign
   provide({ setTrip });
@@ -442,7 +442,7 @@ function movesAt(lid, lvl) {
   return out.slice(-moveSlotCount());
 }
 /* alpha 0.5: a Billie remembers where and when it joined you (shown in its details) */
-export function makeMon(sp, lvl, o = {}) {
+export function makeBilly(sp, lvl, o = {}) {
   const m = {
     uid: newUid(),
     sp,
@@ -463,8 +463,8 @@ export function makeMon(sp, lvl, o = {}) {
   return m;
 }
 export const billyName = m => m.nick || SP[m.sp].name;
-export const allMons = () => saveData.team.concat(saveData.box);
-export const findMon = id => allMons().find(m => m.uid === id);
+export const allBillies = () => saveData.team.concat(saveData.box);
+export const findBilly = id => allBillies().find(m => m.uid === id);
 export function gainXp(m, amt, say) {
   if (m.lvl >= maxLevel() || amt <= 0) return;
   m.xp += amt;
@@ -555,7 +555,7 @@ export function evolve(m) {
 }
 export function healAll() {
   if (typeof sfx === 'function') sfx('heal');
-  for (const m of allMons()) {
+  for (const m of allBillies()) {
     m.hp = maxHp(m);
     m.status = null;
     m.sTurns = 0;
@@ -573,7 +573,7 @@ export function toTeam(m) {
   if (!saveData.team.includes(m)) saveData.team.push(m);
   m.boxedAt = null;
 }
-export function addMon(m) {
+export function addBilly(m) {
   saveData.caught[m.sp] = 1;
   saveData.seen[m.sp] = 1;
   if (saveData.team.length < teamSize()) {
@@ -815,7 +815,7 @@ export function addSteps(n, quiet) {
       sp++;
     }
   }
-  const bud = findMon(saveData.buddy),
+  const bud = findBilly(saveData.buddy),
     per = Math.max(1, RULES.progression.buddyStepsPerXp);
   if (bud) bud.bsteps = (bud.bsteps || 0) + n;
   /* v37: the rest of the party walks too, at half weight (for the Build path of a split evolution) */ for (const m of saveData.team)
@@ -878,18 +878,18 @@ export function hatchEgg(e) {
     sp = R.mythSpecies;
     gold = false;
   }
-  const m = makeMon(sp, T.lv, { gold });
+  const m = makeBilly(sp, T.lv, { gold });
   saveData.eggs = saveData.eggs.filter(x => x !== e);
   saveData.hatched = (saveData.hatched || 0) + 1;
   autoSlot();
-  const where = addMon(m);
+  const where = addBilly(m);
   save();
   return { m, where };
 }
 
 /* ---------- Day Jobs ---------- */
 export function assignJob(slot, job, id) {
-  const m = findMon(id);
+  const m = findBilly(id);
   if (!m || m.job != null) return false;
   if (saveData.team.includes(m) && saveData.team.filter(x => x.job == null).length <= 1) return false;
   toBox(m);
@@ -910,13 +910,13 @@ export function collectJob(slot) {
   else if (kind === 'coin') saveData.coins[key] += amt * n;
   else saveData.se += amt * n;
   save();
-  const m = findMon(j.uid);
+  const m = findBilly(j.uid);
   return `${m ? billyName(m) : 'Your Billie'} ${J.quip} You collected ${kind === 'se' ? '$' + formatNumber(amt * n) : `${amt * n} × ${kind === 'item' ? ITEMS[key].n : COINS[key].n}`}.`;
 }
 export function endShift(slot) {
   const j = saveData.jobs[slot];
   const msg = collectJob(slot);
-  const m = findMon(j.uid);
+  const m = findBilly(j.uid);
   if (m) {
     m.job = null;
     m.boxedAt = Date.now();
