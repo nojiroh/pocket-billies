@@ -13,6 +13,7 @@ import { provide } from './hooks.js';
 import { clamp } from './util.js';
 import { LOCATIONS, MOVES, RULES, SPECIES, TRAINERS, gameData, locationKind, roadCost } from './game-data.js';
 import { addSteps, makeBilly, maxHp, setTrip, spawn } from './logic/rules.js';
+import { fighter, liveActors, startTrainer, startWild } from './logic/battle-engine.js';
 import { loadAllMaps } from './map-files.js';
 import {
   activeBattle,
@@ -56,17 +57,7 @@ import { SOLID_PROP_SHADERS, solidPropState } from './solid-props.js';
 import { propModelState } from './prop-models.js';
 import { buddyTap, companionSpecies, worldBillies } from './world-billies.js';
 import { seamlessRoomMap, seamlessTripView, seamlessWorld } from './seamless-world.js';
-import {
-  endBattle,
-  fighter,
-  liveActors,
-  pickMove,
-  pickTarget,
-  startTrainer,
-  startWild,
-  stopTimers,
-  tapMessage,
-} from './battle.js';
+import { endBattle, pickMove, pickTarget, stopTimers, tapMessage } from './battle.js';
 import { worldMap } from './world-map.js';
 import {
   WORLD_MAP_GL_SHADERS,

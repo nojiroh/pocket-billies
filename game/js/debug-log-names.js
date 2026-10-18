@@ -3,6 +3,7 @@
 // object, and a setter (the module's own) for each function it wraps. The last module of the game's page.
 import { LOCATIONS, gameData } from './game-data.js';
 import { setSetTrip, setTrip } from './logic/rules.js';
+import { battleStageKey, newBattle, setNewBattle } from './logic/battle-engine.js';
 import { activeBattle, save, saveData, setSave, uiState } from './game-state.js';
 import { frameScheduler, userFps } from './frame-scheduler.js';
 import { artPixels, setArtPixels } from './art.js';
@@ -79,17 +80,7 @@ import {
 } from './solid-props.js';
 import { ambientLife, lifeStep, setLifeStep } from './ambient-life.js';
 import { paintWorkerReport } from './ground-paint-worker.js';
-import {
-  battleStageKey,
-  endBattle,
-  newBattle,
-  openBattle,
-  paintActions,
-  setEndBattle,
-  setNewBattle,
-  setOpenBattle,
-  setPaintActions,
-} from './battle.js';
+import { endBattle, openBattle, paintActions, setEndBattle, setOpenBattle, setPaintActions } from './battle.js';
 import { setWorldMapMount, worldMapMount } from './world-map.js';
 import { setWorldMapGlRender, setWorldMapMiniBuild, worldMapGlRender, worldMapMiniBuild } from './world-map-gl.js';
 import { openShop, setOpenShop } from './shop.js';

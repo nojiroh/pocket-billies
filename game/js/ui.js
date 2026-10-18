@@ -85,6 +85,18 @@ import {
 } from './logic/rules.js';
 import { newSaveKeepingPreferences } from './logic/saves.js';
 import {
+  CATCH_RULES,
+  applyItem,
+  battleSay,
+  canUse,
+  checkFaints,
+  doSwitch,
+  enemyOnly,
+  fighter,
+  runTurn,
+  startWild,
+} from './logic/battle-engine.js';
+import {
   activeBattle,
   escapeHtml,
   flushSave,
@@ -144,19 +156,11 @@ import {
 } from './seamless-world.js';
 import { battle3dLayout, battle3dWanted } from './battle-3d.js';
 import {
-  CATCH_RULES,
-  applyItem,
   battleResize,
-  battleSay,
   battleShell,
-  canUse,
-  checkFaints,
   chooseMessage,
-  doSwitch,
   doThrow,
   endBattle,
-  enemyOnly,
-  fighter,
   itemIcon,
   paintActions,
   pickMove,
@@ -164,9 +168,7 @@ import {
   planBack,
   planNext,
   playTurnEvents,
-  runTurn,
   showAim,
-  startWild,
   tapMessage,
 } from './battle.js';
 import {

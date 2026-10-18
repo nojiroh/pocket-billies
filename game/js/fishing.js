@@ -7,10 +7,11 @@
    the place's own plus the kind's bonus. A catch starts a wild battle like any other encounter. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { recordThingsToDoEvent, soundEffect, startWild, toast } from './hooks.js';
+import { recordThingsToDoEvent, soundEffect, toast } from './hooks.js';
 import { clamp, random } from './util.js';
 import { RULES, SPECIES, gameData } from './game-data.js';
 import { encounterPoolHere, newUid, pickWeighted } from './logic/rules.js';
+import { startWild } from './logic/battle-engine.js';
 import { activeBattle, reducedMotion, save, saveData, uiState } from './game-state.js';
 import { uiIconHTML } from './art.js';
 import { terrainAt, walkView } from './walk-view.js';

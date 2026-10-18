@@ -42,6 +42,7 @@ import {
   xpFor,
 } from './logic/rules.js';
 import { newSaveKeepingPreferences } from './logic/saves.js';
+import { allSnapshots, battleSay, checkFaints, fighter, startTrainer, startWild } from './logic/battle-engine.js';
 import {
   activeBattle,
   escapeHtml,
@@ -59,17 +60,7 @@ import { applyPreferences, exportSave } from './settings-screen.js';
 import { battleStage, battleStageResize, battleStageStop } from './battle-stage.js';
 import { mapById } from './walk-view.js';
 import { gpuState } from './engine/webgl.js';
-import {
-  allSnapshots,
-  battleSay,
-  checkFaints,
-  fighter,
-  paintBoxes,
-  playTurnEvents,
-  startTrainer,
-  startWild,
-  stopTimers,
-} from './battle.js';
+import { paintBoxes, playTurnEvents, stopTimers } from './battle.js';
 import { worldMap } from './world-map.js';
 /* eslint-disable no-func-assign */
 expose({
