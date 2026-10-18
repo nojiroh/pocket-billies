@@ -219,7 +219,7 @@ export async function talkFolk(f) {
   ]);
   f.wait = 2;
 }
-/* phase 04d: extras.js answers the person who asked a favour */
+/* phase 04d: things-to-do.js answers the person who asked a favour */
 export function setTalkFolk(v) {
   talkFolk = v; // eslint-disable-line no-func-assign
   provide({ talkFolk });

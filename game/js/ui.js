@@ -181,7 +181,7 @@ import {
   storyRivalBattle,
   trainerTalk,
 } from './story.js';
-import { chalCard, homeApply, homeDecorate, reqList, stampTile } from './extras.js';
+import { chalCard, homeApply, homeDecorate, reqList, stampTile } from './things-to-do.js';
 /* eslint-disable no-func-assign */
 expose({
   BG: [() => BG],

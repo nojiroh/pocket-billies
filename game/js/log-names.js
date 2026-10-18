@@ -73,7 +73,7 @@ import { openShop, setOpenShop } from './shop.js';
 import { AMB, AUD } from './sound.js';
 import { csStart, setCsStart } from './cutscene.js';
 import { ACC } from './account.js';
-import { chalToday, stampCount } from './extras.js';
+import { chalToday, stampCount } from './things-to-do.js';
 import { render, renderOv, setRender, setRenderOv, toast } from './ui.js';
 Object.defineProperties(GAME, {
   ACC: { get: () => ACC },

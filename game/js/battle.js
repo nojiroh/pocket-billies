@@ -1233,7 +1233,7 @@ export function openBattle() {
       toast(e.message);
     });
 }
-/* phase 04d: extras.js adds the weather and its events around it */
+/* phase 04d: things-to-do.js adds the weather and its events around it */
 export function setOpenBattle(v) {
   openBattle = v; // eslint-disable-line no-func-assign
   provide({ openBattle });
@@ -2070,7 +2070,7 @@ export function endBattle() {
     if (!after.length) postProcess();
   });
 }
-/* phase 04d: extras.js adds the weather and its events around it */
+/* phase 04d: things-to-do.js adds the weather and its events around it */
 export function setEndBattle(v) {
   endBattle = v; // eslint-disable-line no-func-assign
   provide({ endBattle });
