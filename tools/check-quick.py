@@ -1101,8 +1101,8 @@ def desktop_steps(b, base, R):
         # a battle with the new starter on the 3D stage: the player's rig buffer has pixels
         pg.evaluate("S.team.unshift(makeMon('gates0',14));S.team[0].hp=maxHp(S.team[0]);S.preferences.battleStage='scene';const q={id:'cq36',sp:'bezos1',lvl:12,gold:false,no:1};S.queue.push(q);startWild(q);0")
         if not until(pg, "B&&B.phase==='choose'", 90, "B&&B.phase==='playing'&&tapMsg()"): raise Exception('the starter battle never reached the move menu')
-        until(pg, "(()=>{const a=sideBuf(0),b=sideBuf(1);return !!(a&&b)})()", 15); time.sleep(2)
-        px = json.loads(pg.evaluate("(()=>{const o={};for(const i of [0,1]){const Bf=sideBuf(i);if(!Bf){o[i]=0;continue}const d=Bf.buf.getContext('2d').getImageData(0,0,Bf.buf.width,Bf.buf.height).data;let n=0;for(let k=3;k<d.length;k+=4)if(d[k]>0)n++;o[i]=n}return JSON.stringify(o)})()"))
+        until(pg, "(()=>{const a=actorBuffer(0),b=actorBuffer(1);return !!(a&&b)})()", 15); time.sleep(2)
+        px = json.loads(pg.evaluate("(()=>{const o={};for(const i of [0,1]){const Bf=actorBuffer(i);if(!Bf){o[i]=0;continue}const d=Bf.buf.getContext('2d').getImageData(0,0,Bf.buf.width,Bf.buf.height).data;let n=0;for(let k=3;k<d.length;k+=4)if(d[k]>0)n++;o[i]=n}return JSON.stringify(o)})()"))
         shot(pg, 'v36-starter-battle')
         if px['0'] < 500 or px['1'] < 500: raise Exception(f'battle rig buffers nearly empty: {px}')
         pg.evaluate("if(B){B.over='ran';B.phase='end';endBattle()};0"); time.sleep(2.5); pg.evaluate("U.modal=null;U.mq=[];renderOv();S.team.shift();0")
@@ -1178,8 +1178,8 @@ def desktop_steps(b, base, R):
         out.append('a save is checked against the game data: a species it no longer has is dropped with its Guide marks')
         # a wild battle with a new species on the 3D stage
         pg.evaluate("(()=>{const q={id:'cq38',sp:'kroc0',lvl:8,gold:false,no:1};S.queue.push(q);S.team.forEach(m=>{m.hp=maxHp(m);m.status=null});startWild(q)})()")
-        until(pg, "(()=>{const a=sideBuf(0),b=sideBuf(1);return !!(a&&b)})()", 15); time.sleep(2)
-        px = json.loads(pg.evaluate("(()=>{const o={};for(const i of [0,1]){const Bf=sideBuf(i);if(!Bf){o[i]=0;continue}const d=Bf.buf.getContext('2d').getImageData(0,0,Bf.buf.width,Bf.buf.height).data;let n=0;for(let k=3;k<d.length;k+=4)if(d[k]>0)n++;o[i]=n}return JSON.stringify(o)})()"))
+        until(pg, "(()=>{const a=actorBuffer(0),b=actorBuffer(1);return !!(a&&b)})()", 15); time.sleep(2)
+        px = json.loads(pg.evaluate("(()=>{const o={};for(const i of [0,1]){const Bf=actorBuffer(i);if(!Bf){o[i]=0;continue}const d=Bf.buf.getContext('2d').getImageData(0,0,Bf.buf.width,Bf.buf.height).data;let n=0;for(let k=3;k<d.length;k+=4)if(d[k]>0)n++;o[i]=n}return JSON.stringify(o)})()"))
         shot(pg, 'v38-battle')
         if px['1'] < 500: raise Exception(f'the wild Frylet drew nothing on the stage: {px}')
         pg.evaluate("if(B){B.over='ran';B.phase='end';endBattle()};0"); time.sleep(2.5); pg.evaluate("U.modal=null;U.mq=[];renderOv();0")

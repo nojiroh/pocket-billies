@@ -11,6 +11,7 @@ import { setRigParts } from '../../game/js/skeleton-rig.js';
 import {
   AREAS,
   BATTLE_STAGE_ART,
+  actorTop,
   battleStage,
   battleStageCatch,
   battleStageFocus,
@@ -22,7 +23,6 @@ import {
   camAt,
   camHome,
   drawForegrounds,
-  sideTop,
 } from '../../game/js/battle-stage.js';
 import { mapHub, walkView } from '../../game/js/walk-view.js';
 import { mountWalkView } from '../../game/js/walk-view-gl.js';
@@ -92,7 +92,7 @@ function battleLayoutChanged(L) {
 function hudPop(si, text, kind) {
   const L = $('#pops');
   if (!L || !battleStage.L) return;
-  const q = battleStageToCss(sideTop(si));
+  const q = battleStageToCss(actorTop(si));
   if (!q) return;
   const e = document.createElement('div');
   e.className = 'pop ' + kind;

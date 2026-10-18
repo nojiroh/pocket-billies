@@ -73,6 +73,9 @@ import { BACK_VIEW_SCALE, bustHTML, rigPreload } from './skeleton-rig.js';
 import {
   AREAS,
   EASE,
+  actorCenter,
+  actorTop,
+  actorWorldPoint,
   battleStage,
   battleStageCatch,
   battleStageFocus,
@@ -86,9 +89,6 @@ import {
   battleStageTargets,
   battleStageToCss,
   camAt,
-  sideCenter,
-  sideTop,
-  sideWorld,
 } from './battle-stage.js';
 import { walkView } from './walk-view.js';
 import { WEATHER_NAMES, currentLocationMap, environment, environmentState } from './environment.js';
@@ -1612,7 +1612,7 @@ function tickerUpdate(s, mk) {
 function hudPop(si, text, kind) {
   const L = $('#pops');
   if (!L || !battleStage.L || (RM && kind === 'tag')) return;
-  const q = battleStageToCss(sideTop(si));
+  const q = battleStageToCss(actorTop(si));
   if (!q) return;
   const e = document.createElement('div');
   e.className = 'pop ' + kind;
@@ -2192,14 +2192,16 @@ function platesTick() {
     top0 = (tk ? tk.getBoundingClientRect().bottom - $('#battle').getBoundingClientRect().top : 24) + 4;
   const list = [...L.children]
     .map(e => ({ e, k: +e.dataset.k }))
-    .sort((a, b) => (battleStage.s[b.k] ? sideWorld(b.k).z : 0) - (battleStage.s[a.k] ? sideWorld(a.k).z : 0))
+    .sort(
+      (a, b) => (battleStage.s[b.k] ? actorWorldPoint(b.k).z : 0) - (battleStage.s[a.k] ? actorWorldPoint(a.k).z : 0)
+    )
     .reverse();
   for (const { e, k } of list) {
     const sd = battleStage.s[k];
     const vis = sd && sd.show && sd.a > 0.3 && !e.classList.contains('gone');
     e.classList.toggle('off', !vis);
     if (!vis) continue;
-    const q = battleStageToCss(sideTop(k));
+    const q = battleStageToCss(actorTop(k));
     if (!q) continue;
     const w = e.offsetWidth || 120,
       h = e.offsetHeight || 44;
@@ -2228,7 +2230,7 @@ function stageTap(ev) {
   let best = null,
     bd = 1e9;
   for (const k of liveK(1)) {
-    const c = battleStageToCss(sideCenter(k));
+    const c = battleStageToCss(actorCenter(k));
     if (!c) continue;
     const d = Math.hypot(c.x - x, (c.y - y) * 0.8);
     if (d < bd) {

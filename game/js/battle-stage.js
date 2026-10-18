@@ -81,9 +81,13 @@ expose({
   STAGE_FRAME_HEIGHT: [() => STAGE_FRAME_HEIGHT],
   STAGE_FRAME_WIDTH: [() => STAGE_FRAME_WIDTH],
   actionCenter: [() => actionCenter],
+  actorBuffer: [() => actorBuffer, v => (actorBuffer = v)],
+  actorCenter: [() => actorCenter, v => (actorCenter = v)],
   actorMetersPerPixel: [() => actorMetersPerPixel],
   actorPositions: [() => actorPositions],
   actorTeam: [() => actorTeam],
+  actorTop: [() => actorTop, v => (actorTop = v)],
+  actorWorldPoint: [() => actorWorldPoint, v => (actorWorldPoint = v)],
   addDrawItem: [() => addDrawItem, v => (addDrawItem = v)],
   addParticle: [() => addParticle, v => (addParticle = v)],
   ambient: [() => ambient, v => (ambient = v)],
@@ -113,7 +117,7 @@ expose({
   battleStageStop: [() => battleStageStop, v => (battleStageStop = v)],
   battleStageTargets: [() => battleStageTargets, v => (battleStageTargets = v)],
   battleStageToCss: [() => battleStageToCss, v => (battleStageToCss = v)],
-  blinkSide: [() => blinkSide, v => (blinkSide = v)],
+  blinkActor: [() => blinkActor, v => (blinkActor = v)],
   blurAt: [() => blurAt, v => (blurAt = v)],
   blurFloorByDepth: [() => blurFloorByDepth, v => (blurFloorByDepth = v)],
   boxBlurColumns: [() => boxBlurColumns, v => (boxBlurColumns = v)],
@@ -131,6 +135,7 @@ expose({
   castFloor: [() => castFloor, v => (castFloor = v)],
   cloudShadows: [() => cloudShadows, v => (cloudShadows = v)],
   coinArc: [() => coinArc, v => (coinArc = v)],
+  drawActor: [() => drawActor, v => (drawActor = v)],
   drawBillboard: [() => drawBillboard, v => (drawBillboard = v)],
   drawForegrounds: [() => drawForegrounds, v => (drawForegrounds = v)],
   drawList: [() => drawList],
@@ -139,7 +144,6 @@ expose({
   drawProp: [() => drawProp, v => (drawProp = v)],
   drawSelectionRing: [() => drawSelectionRing, v => (drawSelectionRing = v)],
   drawShadow: [() => drawShadow, v => (drawShadow = v)],
-  drawSide: [() => drawSide, v => (drawSide = v)],
   drawTrainer: [() => drawTrainer, v => (drawTrainer = v)],
   dueEvents: [() => dueEvents],
   floorBuffers: [() => floorBuffers, v => (floorBuffers = v)],
@@ -162,10 +166,6 @@ expose({
   ringFx: [() => ringFx, v => (ringFx = v)],
   scheduleAt: [() => scheduleAt, v => (scheduleAt = v)],
   setActorAction: [() => setActorAction, v => (setActorAction = v)],
-  sideBuf: [() => sideBuf, v => (sideBuf = v)],
-  sideCenter: [() => sideCenter, v => (sideCenter = v)],
-  sideTop: [() => sideTop, v => (sideTop = v)],
-  sideWorld: [() => sideWorld, v => (sideWorld = v)],
   softDraw: [() => softDraw, v => (softDraw = v)],
   softSmall: [() => softSmall, v => (softSmall = v)],
   speedLines: [() => speedLines, v => (speedLines = v)],
@@ -672,7 +672,7 @@ export function battleStageToCss(P) {
     y = (q.y - L.M) * L.u;
   return { x: cx + (x - cx) * z, y: cy + (y - cy) * z };
 }
-export function sideWorld(i) {
+export function actorWorldPoint(i) {
   const s = battleStage.s[i] || newActorState(),
     p = actorPositions[i] || actorPositions[actorTeam(i)],
     V = [actorPositions[1].x - actorPositions[0].x, actorPositions[1].z - actorPositions[0].z],
@@ -680,8 +680,8 @@ export function sideWorld(i) {
     u = actorMetersPerPixel[i];
   return { x: p.x + (s.ox * u * V[0]) / L, z: p.z + (s.ox * u * V[1]) / L, y: -s.oy * u };
 }
-export function sideCenter(i) {
-  const w = sideWorld(i),
+export function actorCenter(i) {
+  const w = actorWorldPoint(i),
     s = battleStage.s[i];
   let h = 1.4;
   if (s && s.sp) {
@@ -690,9 +690,9 @@ export function sideCenter(i) {
   }
   return { x: w.x, y: w.y + h, z: w.z };
 }
-export function sideTop(i) {
-  const c = sideCenter(i),
-    w = sideWorld(i);
+export function actorTop(i) {
+  const c = actorCenter(i),
+    w = actorWorldPoint(i);
   return { x: c.x, y: w.y + (c.y - w.y) * (actorTeam(i) === 0 ? 1.55 : 1.9), z: c.z };
 }
 /* ---------- frame ---------- */
@@ -847,7 +847,7 @@ function ambient(dt) {
     for (let i = 0; i < battleStage.s.length; i++) {
       const sd = battleStage.s[i];
       if (!sd.show || !sd.st || sd.a < 0.5) continue;
-      const T = sideTop(i);
+      const T = actorTop(i);
       const sp = sd.st === 'aud' ? 'bolt' : sd.st === 'sub' ? 'zz' : sd.st === 'scn' ? 'flame' : 'spark';
       addParticle({
         x: T.x + (rnd() - 0.5) * 0.6,
@@ -864,7 +864,7 @@ function ambient(dt) {
   for (let i = 0; i < battleStage.s.length; i++) {
     const sd = battleStage.s[i];
     if (sd.boss && sd.show && sd.a > 0.5 && rnd() < dt / 90) {
-      const w = sideWorld(i),
+      const w = actorWorldPoint(i),
         R = sd.sp ? rigParts(sd.sp, sd.gold, ACTOR_RIG_SCALES[i]) : null,
         hw = R ? (R.geo.hw * actorMetersPerPixel[i] * sd.big * (sd.fs || 1)) / R.k : 1,
         a = rnd() * 6.283;
@@ -887,7 +887,7 @@ function ambient(dt) {
     for (let i = 0; i < battleStage.s.length; i++) {
       const sd = battleStage.s[i];
       if (!sd.show || !sd.gold || sd.a < 0.5) continue;
-      const c = sideCenter(i);
+      const c = actorCenter(i);
       addParticle({
         x: c.x + (rnd() - 0.5) * 1.4,
         y: c.y + (rnd() - 0.4) * 1.6,
@@ -1001,8 +1001,8 @@ function camOver(C) {
   for (let i = 0; i < battleStage.s.length; i++) {
     const s = battleStage.s[i];
     if (!s.show || s.a < 0.3) continue;
-    const w = sideWorld(i),
-      c = sideCenter(i),
+    const w = actorWorldPoint(i),
+      c = actorCenter(i),
       R = s.sp ? rigParts(s.sp, s.gold, ACTOR_RIG_SCALES[i]) : null,
       hw = R
         ? (Math.max(R.geo.hw, (R.geo.base - R.geo.top) * 0.5) *
@@ -1549,7 +1549,7 @@ function softDraw(c, img, x, y, w, h, blur, slot) {
   c.imageSmoothingEnabled = prev;
 }
 /* one billionaire's current frame, drawn into its buffer (the 2D stage draws the buffer; the 3D stage uploads it) */
-export function sideBuf(i) {
+export function actorBuffer(i) {
   const s = battleStage.s[i];
   if (!s.show || !s.sp || s.a <= 0.01 || s.sc <= 0.01) return null;
   if (battleStage.t < s.blinkUntil && Math.floor(battleStage.t / 60) % 2) return null;
@@ -1576,11 +1576,11 @@ export function sideBuf(i) {
   buf.__v = (buf.__v || 0) + 1;
   return { s, k, R, P, ak, buf };
 }
-function drawSide(c, i) {
-  const B = sideBuf(i);
+function drawActor(c, i) {
+  const B = actorBuffer(i);
   if (!B) return;
   const { s, k, R, P, ak, buf } = B;
-  const w = sideWorld(i),
+  const w = actorWorldPoint(i),
     p = battleStageProject(w.x, w.y, w.z);
   if (!p) return;
   const sc = (p.s * actorMetersPerPixel[i] * s.sc * (s.big || 1) * (s.fs || 1)) / R.k,
@@ -1939,7 +1939,7 @@ function battleStageDraw() {
     if (q) addDrawItem(q.z + 1000, 1, cl, 0);
   }
   for (let i = battleStage.s.length - 1; i >= 0; i--) {
-    const w = sideWorld(i),
+    const w = actorWorldPoint(i),
       q = battleStageProject(w.x, 0, w.z);
     if (q) addDrawItem(q.z - 0.01, 2, null, i);
     const T = battleStage.tr[i];
@@ -1968,7 +1968,7 @@ function battleStageDraw() {
     else if (it.k === 1) {
       const cl = it.o;
       drawBillboard(c, cl.img, cl.x, cl.y, cl.z, 2, 0.92, cl.soft);
-    } else if (it.k === 2) drawSide(c, it.i);
+    } else if (it.k === 2) drawActor(c, it.i);
     else drawTrainer(c, it.i);
   }
   if (!partsDrawn) drawParticles(c, 0);
@@ -1982,7 +1982,7 @@ export function battleStageTargets(L) {
   battleStage.tg = L && L.length ? L.slice() : null;
 }
 function drawSelectionRing(c, i, col, pulse) {
-  const w = sideWorld(i),
+  const w = actorWorldPoint(i),
     g = battleStageProject(w.x, 0, w.z);
   if (!g) return;
   const s = battleStage.s[i],
@@ -2004,7 +2004,7 @@ function battleStageDrawEffects(c, skip0) {
     for (const k of battleStage.tg)
       if (battleStage.s[k] && battleStage.s[k].show) {
         drawSelectionRing(c, k, Math.floor(battleStage.t / 220) % 2 ? '#FF6B6B' : '#FFFFFF', 3);
-        const T = sideTop(k),
+        const T = actorTop(k),
           q = battleStageProject(T.x, T.y + 0.35 + 0.08 * Math.sin(battleStage.t / 140), T.z);
         if (q) {
           c.fillStyle = '#FF6B6B';
@@ -2033,7 +2033,7 @@ function battleStageDrawEffects(c, skip0) {
   }
   if (battleStage.ring) {
     const ph = battleStageRingPhase(),
-      o = sideCenter(1),
+      o = actorCenter(1),
       q = battleStageProject(o.x, o.y, o.z);
     if (q) {
       const r = (1.15 - ph * 0.8) * q.s;
@@ -2090,14 +2090,14 @@ function ringFx(P, col = '#FFFFFF', r0 = 0.15, r1 = 1.1, life = 380) {
   addParticle({ x: P.x, y: P.y, z: P.z, ring: 1, r0: r0 * 30, r1: r1 * 30, col, life });
 }
 function groundRing(i, col = '#FFFFFF', r1 = 1.6, life = 520) {
-  const w = sideWorld(i);
+  const w = actorWorldPoint(i);
   addParticle({ x: w.x, y: 0.02, z: w.z, ring: 1, ground: 1, r0: 6, r1: r1 * 30, col, life, layer: 2 });
 }
 function speedLines(P, col = 'rgba(255,255,255,.85)') {
   if (RM) return;
   addParticle({ x: P.x, y: P.y, z: P.z, lines: 1, col, life: 260, n: 22, seed: rnd() * 6 });
 }
-function blinkSide(i, ms = 380) {
+function blinkActor(i, ms = 380) {
   battleStage.s[i].blinkUntil = battleStage.t + ms;
 }
 /* v34: how hard a hit lands follows how much it took: a scratch barely nudges the camera, a hit that takes most of a
@@ -2112,7 +2112,7 @@ function hitWeight(ti, an) {
   }
 }
 function hitFx(ti, an) {
-  const T = sideCenter(ti),
+  const T = actorCenter(ti),
     s = battleStage.s[ti],
     ts = actorTeam(ti),
     w = hitWeight(ti, an),
@@ -2159,7 +2159,7 @@ export const camAt = (i, amt = 0.45, z = 0.14, rr = 0, d = 260, e = 'io') => {
     k = clamp(amt * 2.1, 0, 1),
     c = {};
   for (const key in homeCamera) c[key] = homeCamera[key] + (F[key] - homeCamera[key]) * k;
-  const w = sideWorld(i),
+  const w = actorWorldPoint(i),
     dx = w.x - c.x,
     dz = w.z - c.z,
     L = Math.hypot(dx, dz),
@@ -2217,7 +2217,7 @@ export function battleStagePlay(an, ev) {
           handheld(900, 1.4);
           for (let i = 0; i < 26; i++) {
             const a = rnd() * 6.283,
-              c = sideCenter(1);
+              c = actorCenter(1);
             addParticle({
               x: c.x + Math.cos(a) * 0.6,
               y: 0.2,
@@ -2246,7 +2246,7 @@ export function battleStagePlay(an, ev) {
       tween(s1, 'dark', 0, 380, 'lin', 700);
       scheduleAt(700, () => {
         setActorAction(1, 'enter', 700);
-        ringFx(sideCenter(1), '#FFFFFF', 0.1, 0.9);
+        ringFx(actorCenter(1), '#FFFFFF', 0.1, 0.9);
         groundRing(1, '#FFFFFF', 1.8);
       });
       scheduleAt(1250, () => battleStageFocus('wide'));
@@ -2286,13 +2286,13 @@ export function battleStagePlay(an, ev) {
         battleStageFocus(si === 0 ? 'me' : 'foe');
         camAt(i, 0.35, 0.1, si === 0 ? -0.012 : 0.012, 300);
       }
-      const w = sideWorld(i),
+      const w = actorWorldPoint(i),
         from = si === 0 ? throwOrigin() : { x: w.x + 2.4, y: 2.2, z: w.z + 1.6 },
         to = { x: w.x, y: 0.4, z: w.z };
       coinArc(from, to, 380, 'penny', C => {
         C.show = false;
         s.show = true;
-        const c = sideCenter(i);
+        const c = actorCenter(i);
         ringFx(c, '#FFFFFF', 0.1, si === 0 ? 1.3 : 1);
         groundRing(i, '#FFFFFF', 2);
         burst(c, 'Dynasty', 10, 2, 1);
@@ -2348,8 +2348,8 @@ export function battleStagePlay(an, ev) {
         me = battleStage.s[si],
         dir = ss === 0 ? 1 : -1;
       an.t = M.t;
-      const A = sideCenter(si),
-        T = sideCenter(ti),
+      const A = actorCenter(si),
+        T = actorCenter(ti),
         kk = 1;
       battleStageFocus(ss === 0 ? 'me' : 'foe');
       camAt(si, 0.32, 0.08, ss === 0 ? -0.012 : 0.012, 200);
@@ -2518,7 +2518,7 @@ export function battleStagePlay(an, ev) {
         ringFx(Pp, TC[M.t][0], 0.2, 1.1, 420);
         groundRing(tgt, TC[M.t][0], 1.6);
         if (!an.self) {
-          blinkSide(tgt, 240);
+          blinkActor(tgt, 240);
           setActorAction(tgt, 'dizzy', 700);
         }
       });
@@ -2527,10 +2527,10 @@ export function battleStagePlay(an, ev) {
       return { dur: 1000, hit: 600 };
     }
     case 'hurt': {
-      const T = sideCenter(an.si),
+      const T = actorCenter(an.si),
         kk = 1;
       setActorAction(an.si, 'hurt', 600);
-      blinkSide(an.si, 360);
+      blinkActor(an.si, 360);
       battleStage.shk = 2.5;
       if (an.dmg && typeof hudPop === 'function') scheduleAt(60, () => hudPop(an.si, '−' + an.dmg, 'dmg'));
       if (an.fx === 'oil')
@@ -2563,7 +2563,7 @@ export function battleStagePlay(an, ev) {
       return { dur: 560, hit: 80 };
     }
     case 'heal': {
-      const T = sideCenter(an.si),
+      const T = actorCenter(an.si),
         kk = 1;
       setActorAction(an.si, 'cheer', 700);
       for (let i = 0; i < 12; i++)
@@ -2586,7 +2586,7 @@ export function battleStagePlay(an, ev) {
       return { dur: 720, hit: 200 };
     }
     case 'stat': {
-      const T = sideCenter(an.si),
+      const T = actorCenter(an.si),
         kk = 1;
       setActorAction(an.si, an.up ? 'buff' : 'dizzy', 700);
       for (let i = 0; i < 9; i++)
@@ -2608,7 +2608,7 @@ export function battleStagePlay(an, ev) {
       return { dur: 680, hit: 0 };
     }
     case 'status': {
-      const T = sideCenter(an.si),
+      const T = actorCenter(an.si),
         kk = 1,
         sp = an.st === 'aud' ? 'bolt' : an.st === 'sub' ? 'zz' : 'flame';
       setActorAction(an.si, 'dizzy', 800);
@@ -2626,11 +2626,11 @@ export function battleStagePlay(an, ev) {
           })
         );
       battleStage.s[an.si].st = an.st;
-      blinkSide(an.si, 300);
+      blinkActor(an.si, 300);
       return { dur: 700, hit: 0 };
     }
     case 'hype': {
-      const T = sideCenter(an.si),
+      const T = actorCenter(an.si),
         kk = 1;
       setActorAction(an.si, 'dizzy', 800);
       for (let i = 0; i < 7; i++)
@@ -2687,7 +2687,7 @@ export function battleStagePlay(an, ev) {
       return { dur: 200, hit: 0 };
     }
     case 'alphaPhase': {
-      const T = sideCenter(an.si),
+      const T = actorCenter(an.si),
         s = battleStage.s[an.si];
       setActorAction(an.si, 'buff', 900);
       battleStageFocus(actorTeam(an.si) === 0 ? 'me' : 'foe');
@@ -2716,7 +2716,7 @@ export function battleStagePlay(an, ev) {
       return { dur: 1200, hit: 0 };
     }
     case 'block': {
-      const T = sideCenter(an.si);
+      const T = actorCenter(an.si);
       ringFx(T, '#FFD860', 0.25, 1.4, 380);
       return { dur: 300, hit: 0 };
     }
@@ -2734,7 +2734,7 @@ export function battleStagePlay(an, ev) {
     case 'lvl': {
       const li = an.si ?? 0;
       if (!battleStage.s[li] || !battleStage.s[li].show) return { dur: 0, hit: 0 };
-      const T = sideCenter(li);
+      const T = actorCenter(li);
       setActorAction(li, 'cheer', 900);
       battleStageFocus('me');
       camAt(li, 0.3, 0.08, -0.012, 300);
@@ -2771,8 +2771,8 @@ export function battleStagePlay(an, ev) {
 export function battleStageCatch(kind, res, spin, done) {
   battleStageFlush();
   const s1 = battleStage.s[1],
-    o = sideCenter(1),
-    w = sideWorld(1),
+    o = actorCenter(1),
+    w = actorWorldPoint(1),
     land = { x: w.x, y: 0.25, z: w.z };
   camAt(1, 0.5, 0.18, 0.02, 320);
   battleStageFocus('foe');

@@ -14,12 +14,12 @@ import { hexToRgb } from './art.js';
 import {
   FOCAL_LENGTH,
   actionCenter,
+  actorBuffer,
   actorMetersPerPixel,
   actorPositions,
+  actorWorldPoint,
   battleStage,
   particleSprite,
-  sideBuf,
-  sideWorld,
   trainerBattleFrame,
   trainerMetersPerPixel,
 } from './battle-stage.js';
@@ -138,9 +138,9 @@ function battleGLFrame() {
   items.length = 0;
   lights.length = 0;
   for (let i = 0; i < battleStage.s.length; i++) {
-    const B = sideBuf(i);
+    const B = actorBuffer(i);
     if (!B) continue;
-    const w = sideWorld(i),
+    const w = actorWorldPoint(i),
       x = w.x + O[0],
       z = w.z + O[1],
       gy = standingHeightAt(x, z),
@@ -194,7 +194,7 @@ function battleGLFrame() {
   }
   /* v33: a warm light picks out the one choosing */
   if (battleStage.sel != null && battleStage.s[battleStage.sel] && battleStage.s[battleStage.sel].show) {
-    const w = sideWorld(battleStage.sel),
+    const w = actorWorldPoint(battleStage.sel),
       k = 0.5 + 0.12 * Math.sin(battleStage.t / 300);
     lights.push({ p: [w.x + O[0], BGL.gy + 1.4, w.z + O[1]], r: 2.2, c: [1.1 * k, 0.9 * k, 0.45 * k] });
   }
@@ -202,7 +202,7 @@ function battleGLFrame() {
   for (let i = 0; i < battleStage.s.length; i++) {
     const s = battleStage.s[i];
     if (!s.boss || !s.show || s.a < 0.4) continue;
-    const w = sideWorld(i),
+    const w = actorWorldPoint(i),
       k = 0.55 + 0.2 * Math.sin(battleStage.t / 260);
     lights.push({ p: [w.x + O[0], BGL.gy + 0.5, w.z + O[1]], r: 3.2, c: [1.2 * k, 0.25 * k, 0.45 * k] });
     /* v34: its shield, while it holds: a gold light round it */ const fv =
