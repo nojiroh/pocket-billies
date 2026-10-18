@@ -69,7 +69,7 @@ SHOT_JS = """(async(a)=>{const sc=mapById(a.id),hub=a.at||mapHub(sc),x=hub[0]+(a
 
 def main():
     args = [a for a in sys.argv[1:] if not a.startswith('--')]
-    D = gamedata(); towns = [r['scene'] for r in D['route'] if r.get('kind') == 'town' and r.get('scene')]
+    D = gamedata(); towns = [r['scene'] for r in D['locations'] if r.get('kind') == 'town' and r.get('scene')]
     want = [s for s in towns if (not args or s in args) and ('--all' in sys.argv or args or not (OUT / f'{s}.webp').exists())]
     if not want: print('every town has its postcard (use --all to make them again)'); return
     OUT.mkdir(parents=True, exist_ok=True)

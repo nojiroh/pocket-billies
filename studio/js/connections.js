@@ -143,7 +143,7 @@ function connectionsTarget() {
     }
     return { kind: 'scene', id: currentMapId() };
   }
-  if (s === 'world' && studioState.sel.stop != null && D.route[studioState.sel.stop])
+  if (s === 'world' && studioState.sel.stop != null && D.locations[studioState.sel.stop])
     return { kind: 'stop', id: studioState.sel.stop };
   const m = f.match(/^(items|coins)\.([^.]+)\./);
   if (s === 'items' && m) return { kind: m[1] === 'items' ? 'item' : 'coin', id: m[2] };
@@ -219,7 +219,7 @@ function connectionNode(kind, id) {
       return {
         kind,
         id,
-        label: (D.route[id] || {}).name || 'Stop ' + (+id + 1),
+        label: (D.locations[id] || {}).name || 'Stop ' + (+id + 1),
         sub: 'Route stop ' + (+id + 1),
         go: () => openSection('world', { wtab: 'route', stop: +id }),
       };
@@ -296,7 +296,7 @@ function recordOwningPath(path) {
       return ['person', p[1]];
     case 'scenes':
       return ['scene', p[1]];
-    case 'route':
+    case 'locations':
       return ['stop', p[1]];
     case 'pools':
       return ['pool', p[1]];
@@ -347,7 +347,7 @@ function recordPath(kind, id) {
         Object.assign({}, D.scenes[id], { props: undefined, ground: undefined, heights: undefined }),
       ];
     case 'stop':
-      return ['route.' + id, D.route[id]];
+      return ['locations.' + id, D.locations[id]];
     case 'prop':
       return ['scenery.props.' + id, (D.scenery.props || {})[id]];
     default:
@@ -376,12 +376,23 @@ function connectionGraph(cur) {
     if (L) new Set(L.types.flat()).forEach(t => uses.set('type:' + t, ['type', t]));
   }
   if (cur.kind === 'scene') {
-    D.route.forEach((r, i) => {
+    D.locations.forEach((r, i) => {
       if (r.scene === cur.id) uses.delete('stop:' + i);
     });
   }
   const self = R ? R[0] : '';
-  for (const root of ['lines', 'moves', 'items', 'coins', 'trainers', 'shops', 'scenes', 'route', 'pools', 'rules']) {
+  for (const root of [
+    'lines',
+    'moves',
+    'items',
+    'coins',
+    'trainers',
+    'shops',
+    'scenes',
+    'locations',
+    'pools',
+    'rules',
+  ]) {
     walkDataStrings(D[root], root, (v, path) => {
       if (!ownIds.has(v) || (self && (path === self || path.startsWith(self + '.')))) return;
       const o = recordOwningPath(path);
@@ -394,19 +405,19 @@ function connectionGraph(cur) {
     });
   }
   if (cur.kind === 'scene') {
-    const stops = D.route.map((r, i) => (r.scene === cur.id ? i : -1)).filter(i => i >= 0);
+    const stops = D.locations.map((r, i) => (r.scene === cur.id ? i : -1)).filter(i => i >= 0);
     stops.forEach(i => usedBy.set('stop:' + i, ['stop', i]));
     (D.links || []).forEach(l => {
       const a = stops.includes(l[0]) ? l[1] : stops.includes(l[1]) ? l[0] : null;
-      if (a == null || !D.route[a]) return;
-      const s = D.route[a].scene;
+      if (a == null || !D.locations[a]) return;
+      const s = D.locations[a].scene;
       if (s && s !== cur.id) uses.set('scene:' + s, ['scene', s]);
     });
     const kinds = new Set((D.scenes[cur.id].props || []).map(p => p.k));
     [...kinds].slice(0, 24).forEach(k => uses.set('prop:' + k, ['prop', k]));
   }
   if (cur.kind === 'stop') {
-    const r = D.route[cur.id];
+    const r = D.locations[cur.id];
     if (r) {
       if (r.scene) uses.set('scene:' + r.scene, ['scene', r.scene]);
       if (r.pool) uses.set('pool:' + r.pool, ['pool', r.pool]);
@@ -414,7 +425,7 @@ function connectionGraph(cur) {
     }
     (D.links || []).forEach(l => {
       const a = l[0] === +cur.id ? l[1] : l[1] === +cur.id ? l[0] : null;
-      if (a != null && D.route[a]) uses.set('stop:' + a, ['stop', a]);
+      if (a != null && D.locations[a]) uses.set('stop:' + a, ['stop', a]);
     });
   }
   return {

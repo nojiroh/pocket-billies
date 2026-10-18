@@ -207,7 +207,7 @@ def check_data():
         # alpha 0.2: every square of the map names a ground kind (keys may now be accented letters, tools/groundkeys.py)
         bad = {ch for row in s.get('tiles', []) for ch in row} - set(SY.get('terrains', {}))
         if bad: warn.append(f'{k}: squares with no ground kind: {"".join(sorted(bad))[:12]}')
-    for r in D['route']:
+    for r in D['locations']:
         if r.get('scene') and r['scene'] not in D.get('scenes', {}): warn.append(f'{r["name"]}: missing scene {r["scene"]}')
         if r.get('scene'): need(f'map/mini/{r["scene"]}.png')   # v47: the world map asks for every stop's miniature (tools/build-map-minis.py)
     if missing: warn.append('missing pictures: ' + ', '.join(sorted(missing)[:8]))
@@ -249,7 +249,7 @@ def old_names():
         code = _re.sub(r'(?m)^\s*//.*$', '', code)
         for h in hits(code): bad.append(f'{f.relative_to(ROOT)}: {h}')
     if bad: raise Exception(f'{len(bad)} old names: ' + '; '.join(bad[:8]))
-    return f'{len(D["route"])} places by their new names; none of the {len(rx)} old names left in the data or the game\'s texts'
+    return f'{len(D["locations"])} places by their new names; none of the {len(rx)} old names left in the data or the game\'s texts'
 
 
 @step('alpha 0.4: Copperleaf Town and Route 1, the new start (from the data)', 20)
@@ -257,7 +257,7 @@ def copperleaf_data():
     """a new game starts in Copperleaf (rules.start.place); Route 1 · Hedgerow Lane joins it to Marigold Town, the exits
     facing; the lab and your room are in Copperleaf and nowhere else outdoors; Granny Juniper stands in her garden; no
     shop or clinic in the hamlet; Marigold Town's signpost names the lane; nothing solid stands on the opening's stage"""
-    D = gamedata(); R = D['route']; ix = {r['id']: i for i, r in enumerate(R)}; bad = []
+    D = gamedata(); R = D['locations']; ix = {r['id']: i for i, r in enumerate(R)}; bad = []
     start = (D['rules'].get('start') or {}).get('place')
     if start != 'copperleaf' or 'copperleaf' not in ix: raise Exception(f'a new game starts at {start!r}')
     if (R[ix.get('hedgerow', 0)] or {}).get('route') != 'Route 1': bad.append('Hedgerow Lane is not Route 1')
@@ -318,7 +318,7 @@ def check_masts():
     """every town has something to fly from (a prop with act 'fly': a mast, or a sky lift under the ground); the
     terminal's ticket window sells tickets; the mast's airship is a low-poly model with two propellers that turn"""
     D = gamedata(); bad = []; n = 0
-    for r in D['route']:
+    for r in D['locations']:
         if r.get('kind') != 'town': continue
         sc = D['scenes'][r['scene']]; f = [p for p in sc['props'] if p.get('act') == ('lift' if r.get('noFly') else 'fly')]
         if not f: bad.append(f'{r["id"]}: nowhere to fly from' if not r.get('noFly') else f'{r["id"]}: no lift')
@@ -343,7 +343,7 @@ def check_masts():
         A = (D['scenery'].get('buildArt') or {}).get('detail')
         if not A or not (GAME / 'art' / A).exists(): bad.append('the building sheet the model is painted from is missing')
     if bad: raise Exception('; '.join(bad[:6]))
-    return f'{n} masts and sky lifts in {sum(1 for r in D["route"] if r.get("kind") == "town")} towns; airship stations, no train station; the mast and its moored airship are two low-poly props ({sum(P["ni"] for P in recm["parts"]) // 3} and {sum(P["ni"] for P in rec["parts"]) // 3} triangles), the airship bobbing, two turning propellers'
+    return f'{n} masts and sky lifts in {sum(1 for r in D["locations"] if r.get("kind") == "town")} towns; airship stations, no train station; the mast and its moored airship are two low-poly props ({sum(P["ni"] for P in recm["parts"]) // 3} and {sum(P["ni"] for P in rec["parts"]) // 3} triangles), the airship bobbing, two turning propellers'
 
 
 @step('alpha 0.4: a postcard for every town; a solarpunk touch in every town; Verdigris Park (from the data)', 20)
@@ -351,7 +351,7 @@ def check_postcards():
     """every town has its postcard picture (tools/build-postcards.py); every town but the new start has something of
     the solarpunk kit or a green or solar roof (tools/build-solarpunk.py); Verdigris City has its park"""
     D = gamedata(); bad = []; n = 0; C = D['scenery']['props']; kit = {'solar_tree', 'vertical_garden', 'solar_canopy', 'heat_dome', 'floating_solar', 'light_pipe', 'wind_sail_flower', 'banner_bunting'}
-    for r in D['route']:
+    for r in D['locations']:
         if r.get('kind') != 'town': continue
         sid = r['scene']; f = GAME / 'art' / 'postcards' / f'{sid}.webp'
         if not f.exists() or f.stat().st_size < 4000: bad.append(f'{r["id"]}: no postcard')
@@ -575,7 +575,7 @@ def all_maps(pg, sec=180):
 def desktop_steps(b, base, R):
     errs = []; ctx, pg = open_game(b, base, 1100, 700, False, errs)
     play(pg); pg.evaluate("uiState.tab='team';render();0"); time.sleep(1); all_maps(pg)
-    D = gamedata(); ids = [r.get('scene') for r in D['route']]
+    D = gamedata(); ids = [r.get('scene') for r in D['locations']]
     nodes = [i for i, s in enumerate(ids) if s and (not ONLY or s in ONLY)]
 
     @step('Shaders: every program compiles, no clashing inputs', 30)
@@ -1483,7 +1483,7 @@ def desktop_steps(b, base, R):
         gives the face clue, and Vinylla waits at the Inner Sun until she's beaten on the Spire, then plays the ending;
         no two rooms share a floor"""
         import collections
-        out = []; D = gamedata(); RT = D['route']; rid = [r['id'] for r in RT]
+        out = []; D = gamedata(); RT = D['locations']; rid = [r['id'] for r in RT]
         adj = collections.defaultdict(set)
         for L in D['links']: adj[L[0]].add(L[1]); adj[L[1]].add(L[0])
         for i, r in enumerate(RT):   # alpha 0.4: a glass lift joins two places too (Kelpport and Pearlantis)

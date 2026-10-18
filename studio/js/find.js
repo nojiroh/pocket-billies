@@ -184,7 +184,7 @@ function buildSearchIndex() {
       k
     )
   );
-  (D.route || []).forEach((r, i) =>
+  (D.locations || []).forEach((r, i) =>
     add(
       r.name,
       `Route stop ${i + 1}${r.town ? ' · town' : ''}`,

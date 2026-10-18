@@ -196,7 +196,7 @@ export const currentMap = () => {
   const id = currentMapId();
   return id ? studioState.D.scenes[id] : null;
 };
-const locationsUsingMap = id => studioState.D.route.map((r, i) => [r, i]).filter(([r]) => r.scene === id);
+const locationsUsingMap = id => studioState.D.locations.map((r, i) => [r, i]).filter(([r]) => r.scene === id);
 /* ---------- section ---------- */
 SECTIONS.scenes = () => {
   const D = studioState.D,
@@ -314,7 +314,7 @@ SECTIONS.scenes = () => {
           selectField(
             'Goes to',
             `${p}.props.${mapEditor.sel}.to`,
-            (studioState.D.route || []).map(r => [r.id, r.name]),
+            (studioState.D.locations || []).map(r => [r.id, r.name]),
             { opt: 1 }
           ),
         ]
@@ -770,7 +770,7 @@ export function mapExitNames(id) {
     u = locationsUsingMap(id)[0];
   if (!u) return ex.map((e, k) => ({ i: k, name: edgeExitId(sc, k) || `Exit ${k + 1}` }));
   const i = u[1],
-    me = D.route[i],
+    me = D.locations[i],
     hub = mapHub(sc),
     pairs = [],
     out = {},
@@ -779,15 +779,15 @@ export function mapExitNames(id) {
   (D.links || []).forEach(l => {
     const o = l[0] === i ? l[1] : l[1] === i ? l[0] : null,
       J = l[3];
-    if (o == null || !D.route[o] || !J) return;
+    if (o == null || !D.locations[o] || !J) return;
     const id = l[0] === i ? J.a : J.b,
       k = id ? E.findIndex(q => q.id === id) : -1;
     if (k >= 0 && !(o in out)) out[o] = k;
   });
   (D.links || []).forEach(l => {
     const o = l[0] === i ? l[1] : l[1] === i ? l[0] : null;
-    if (o == null || !D.route[o] || o in out) return;
-    const a = Math.atan2((D.route[o].lat || 0) - (me.lat || 0), (D.route[o].lon || 0) - (me.lon || 0));
+    if (o == null || !D.locations[o] || o in out) return;
+    const a = Math.atan2((D.locations[o].lat || 0) - (me.lat || 0), (D.locations[o].lon || 0) - (me.lon || 0));
     ex.forEach((p, k) => {
       let d = Math.abs(a - Math.atan2(p[1] - hub[1], p[0] - hub[0])) % (2 * Math.PI);
       if (d > Math.PI) d = 2 * Math.PI - d;
@@ -801,7 +801,7 @@ export function mapExitNames(id) {
     out[o] = k;
     taken.add(k);
   }
-  const L = Object.entries(out).map(([o, k]) => ({ i: k, to: +o, name: D.route[o].name }));
+  const L = Object.entries(out).map(([o, k]) => ({ i: k, to: +o, name: D.locations[o].name }));
   ex.forEach((e, k) => {
     if (!L.some(x => x.i === k))
       L.push({ i: k, name: `${edgeExitId(sc, k) || 'Exit ' + (k + 1)} (no road)`, locked: true });
@@ -1901,17 +1901,17 @@ function exitChecks(sc) {
       const here = users.includes(l[0]) && J.a === e.id ? 'a' : users.includes(l[1]) && J.b === e.id ? 'b' : null;
       if (!here) return;
       const o = here === 'a' ? l[1] : l[0],
-        osc = D.scenes[(D.route[o] || {}).scene],
+        osc = D.scenes[(D.locations[o] || {}).scene],
         oid = here === 'a' ? J.b : J.a,
         oe = osc && (osc.edgeExits || []).find(q => q.id === oid);
-      if (!oe) out.push({ ok: 0, t: `${nm}: the road to ${D.route[o].name} names no exit on that side` });
+      if (!oe) out.push({ ok: 0, t: `${nm}: the road to ${D.locations[o].name} names no exit on that side` });
       else
         out.push(
           oe.side === opp[e.side]
-            ? { ok: 1, t: `${nm}: faces ${D.route[o].name}'s ${oe.id}, a straight road` }
+            ? { ok: 1, t: `${nm}: faces ${D.locations[o].name}'s ${oe.id}, a straight road` }
             : {
                 ok: 1,
-                t: `${nm} (${e.side}) meets ${D.route[o].name}'s ${oe.id} (${oe.side}): the road bends to join them`,
+                t: `${nm} (${e.side}) meets ${D.locations[o].name}'s ${oe.id} (${oe.side}): the road bends to join them`,
               }
         );
     });

@@ -895,7 +895,7 @@ export function applyGroundTone(c, v, odd, k) {
 export function mapMoodName(S) {
   if (!S) return null;
   if (S.mood) return S.mood;
-  const R = ((typeof gameData !== 'undefined' && gameData.route) || []).find(r => r.id === S.place);
+  const R = ((typeof gameData !== 'undefined' && gameData.locations) || []).find(r => r.id === S.place);
   return (R && R.mood) || null;
 }
 export function scaleColor(c, k) {

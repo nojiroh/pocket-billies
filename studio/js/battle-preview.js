@@ -109,7 +109,7 @@ function battlePreviewDefaults() {
   const D = studioState.D,
     ids = D.lines.flatMap(L => L.names.map((n, i) => L.id + i)).filter(id => studioState.rigs[id]);
   if (!battlePreview.area || !D.backdrops[battlePreview.area])
-    battlePreview.area = D.route[0].area || Object.keys(D.backdrops)[0];
+    battlePreview.area = D.locations[0].area || Object.keys(D.backdrops)[0];
   if (!battlePreview.me || !studioState.rigs[battlePreview.me])
     battlePreview.me = (D.rules.start.starters[0] || D.lines[0].id) + '0';
   if (!battlePreview.foe || !studioState.rigs[battlePreview.foe]) battlePreview.foe = ids[3] || ids[0];

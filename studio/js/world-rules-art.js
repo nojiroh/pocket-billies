@@ -96,7 +96,7 @@ function drawWorldMarkers() {
   if (!svg) return;
   const D = studioState.D;
   let h = '';
-  const pts = D.route.map(r => lonLatToWorldMapXY(r.lon || 0, r.lat || 0));
+  const pts = D.locations.map(r => lonLatToWorldMapXY(r.lon || 0, r.lat || 0));
   (D.links || []).forEach(([a, b]) => {
     if (pts[a] && pts[b])
       h += `<line x1="${pts[a][0]}" y1="${pts[a][1]}" x2="${pts[b][0]}" y2="${pts[b][1]}" class="trail"/>`;
@@ -106,7 +106,7 @@ function drawWorldMarkers() {
     const [x, y] = lonLatToWorldMapXY(g.lon, g.lat || 0);
     h += `<g class="mk reg ${studioState.sel.stop === 'r' + i ? 'on' : ''}" data-mk="r${i}" transform="translate(${x},${y})"><circle r="3.2"/><text y="-5">${escapeHtml(g.name)}</text></g>`;
   });
-  D.route.forEach((r, i) => {
+  D.locations.forEach((r, i) => {
     const [x, y] = pts[i];
     h += `<g class="mk ${r.town ? 'town' : ''} ${studioState.sel.stop === i ? 'on' : ''}" data-mk="${i}" transform="translate(${x},${y})"><circle r="${r.town ? 3.2 : 2.6}"/><text y="-5">${i + 1}. ${escapeHtml(r.name)}</text></g>`;
   });
@@ -143,7 +143,7 @@ function bindWorldMap() {
     const [x, y] = pos(ev),
       lon = Math.round(x > 180 ? x - 360 : x),
       lat = Math.round(90 - y);
-    const o = drag.startsWith('r') ? studioState.D.regions[+drag.slice(1)] : studioState.D.route[+drag];
+    const o = drag.startsWith('r') ? studioState.D.regions[+drag.slice(1)] : studioState.D.locations[+drag];
     o.lon = lon;
     o.lat = lat;
     drawWorldMarkers();
@@ -188,23 +188,23 @@ ACTIONS.wtab = d => {
 function worldLocations() {
   const D = studioState.D;
   let i = typeof studioState.sel.stop === 'number' ? studioState.sel.stop : 0;
-  if (!D.route[i]) i = 0;
+  if (!D.locations[i]) i = 0;
   studioState.sel.stop = i;
-  const r = D.route[i],
-    p = `route.${i}`,
+  const r = D.locations[i],
+    p = `locations.${i}`,
     seatIds = Object.values(D.trainers || {})
       .filter(T => T.seat)
       .map(T => [T.seat.id, `${T.seat.title || T.seat.id} (${T.name})`]);
   let acc = 0;
-  const steps = D.route.map(x => (acc += +x.cost || 0));
-  const list = `<table class="tbl route"><thead><tr><th>#</th><th>Stop</th><th>Roads to</th><th>Shop</th><th>Trainers</th><th></th></tr></thead><tbody>${D.route
+  const steps = D.locations.map(x => (acc += +x.cost || 0));
+  const list = `<table class="tbl route"><thead><tr><th>#</th><th>Stop</th><th>Roads to</th><th>Shop</th><th>Trainers</th><th></th></tr></thead><tbody>${D.locations
     .map(
       (
         x,
         j
       ) => `<tr class="${j === i ? 'on' : ''}"><td>${j + 1}</td><td><button class="linkish" data-act="pickStop" data-i="${j}">${escapeHtml(x.name)}</button>${x.town ? ' <small>town</small>' : ''}${x.gate ? ' <small class="warn">gated</small>' : ''}</td><td><small>${
         locationRoads(j)
-          .map(([o, c]) => `${escapeHtml(D.route[o].name)} (${formatThousands(c)})`)
+          .map(([o, c]) => `${escapeHtml(D.locations[o].name)} (${formatThousands(c)})`)
           .join(', ') || '<span class="warn">no roads</span>'
       }</small></td><td>${x.shop && D.shops[x.shop] ? escapeHtml(D.shops[x.shop].name) : ''}</td><td>${Object.values(
         D.trainers || {}
@@ -311,13 +311,13 @@ function locationRoads(i) {
 function roadsHTML(i) {
   const D = studioState.D,
     R = locationRoads(i),
-    opts = D.route.map((r, j) => [j, `${j + 1}. ${r.name}`]).filter(([j]) => j !== i);
+    opts = D.locations.map((r, j) => [j, `${j + 1}. ${r.name}`]).filter(([j]) => j !== i);
   return `<table class="tbl"><thead><tr><th>Road to</th><th>Steps</th><th>About</th><th>Leaves by</th><th></th></tr></thead><tbody>${R.map(
     ([o, c, k]) => {
       const side = D.links[k][0] === i ? 1 : 0,
         end = side ? 'a' : 'b',
         J = D.links[k][3] || {},
-        sc = D.scenes[(D.route[i] || {}).scene],
+        sc = D.scenes[(D.locations[i] || {}).scene],
         ids = ((sc && sc.edgeExits) || []).map(e => e.id);
       return `<tr><td><select data-p="links.${k}.${side}" data-k="num" data-rr="1">${opts.map(([j, n]) => `<option value="${j}" ${j === o ? 'selected' : ''}>${escapeHtml(n)}</option>`).join('')}</select></td><td><input type="number" min="50" step="50" data-p="links.${k}.2" data-k="num" value="${c}" class="sm-num"></td><td><small>${(c / D.rules.steps.stepsPerKm).toFixed(1)} km</small></td><td><select data-join="${k}" data-end="${end}" title="Which exit of this stop’s scene the road uses (v42 join table); ‘by direction’ matches it by compass bearing as before"><option value="">by direction</option>${ids.map(id => `<option value="${escapeHtml(id)}" ${J[end] === id ? 'selected' : ''}>${escapeHtml(id)}</option>`).join('')}</select></td><td><button class="x" data-act="roadDel" data-k="${k}" title="Remove this road">×</button></td></tr>`;
     }
@@ -367,8 +367,8 @@ ACTIONS.stopMove = d => {
   const D = studioState.D,
     i = +d.i,
     j = i + +d.d;
-  if (j < 0 || j >= D.route.length) return;
-  [D.route[i], D.route[j]] = [D.route[j], D.route[i]];
+  if (j < 0 || j >= D.locations.length) return;
+  [D.locations[i], D.locations[j]] = [D.locations[j], D.locations[i]];
   (D.links || []).forEach(l => {
     for (const q of [0, 1]) {
       if (l[q] === i) l[q] = j;
@@ -385,9 +385,9 @@ ACTIONS.stopMove = d => {
 };
 ACTIONS.stopAdd = () => {
   const D = studioState.D,
-    i = typeof studioState.sel.stop === 'number' ? studioState.sel.stop : D.route.length - 1,
-    a = D.route[i],
-    b = D.route[i + 1];
+    i = typeof studioState.sel.stop === 'number' ? studioState.sel.stop : D.locations.length - 1,
+    a = D.locations[i],
+    b = D.locations[i + 1];
   const n = {
     name: 'New Stop',
     pool: a.pool,
@@ -398,7 +398,7 @@ ACTIONS.stopAdd = () => {
     lon: b ? Math.round((a.lon + b.lon) / 2) : a.lon + 8,
     lat: b ? Math.round((a.lat + b.lat) / 2) : a.lat,
   };
-  D.route.splice(i + 1, 0, n);
+  D.locations.splice(i + 1, 0, n);
   Object.values(D.trainers || {}).forEach(T => {
     if (T.node > i) T.node++;
   });
@@ -413,16 +413,16 @@ ACTIONS.stopAdd = () => {
 ACTIONS.stopDel = async () => {
   const D = studioState.D,
     i = studioState.sel.stop;
-  if (D.route.length < 2) return toast('The route needs at least one stop.');
+  if (D.locations.length < 2) return toast('The route needs at least one stop.');
   const T = Object.values(D.trainers || {}).filter(t => t.node === i);
   if (
     !(await ask(
-      `Delete ${escapeHtml(D.route[i].name)}?${T.length ? ` ${T.map(t => escapeHtml(t.name)).join(', ')} move to the previous stop.` : ''}`,
+      `Delete ${escapeHtml(D.locations[i].name)}?${T.length ? ` ${T.map(t => escapeHtml(t.name)).join(', ')} move to the previous stop.` : ''}`,
       'Delete'
     ))
   )
     return;
-  D.route.splice(i, 1);
+  D.locations.splice(i, 1);
   Object.values(D.trainers || {}).forEach(t => {
     if (t.node >= i) t.node = Math.max(0, t.node - 1);
   });
@@ -470,7 +470,7 @@ function worldPools() {
           ) + weightTable(`pools.${k}`, P),
           {
             sub: `Used by: ${escapeHtml(
-              D.route
+              D.locations
                 .filter(r => r.pool === k)
                 .map(r => r.name)
                 .join(', ') || 'no stop'
@@ -534,7 +534,7 @@ ACTIONS.poolNew = () => {
 };
 ACTIONS.poolDel = async d => {
   const D = studioState.D;
-  if (D.route.some(r => r.pool === d.k))
+  if (D.locations.some(r => r.pool === d.k))
     return toast('A route stop still uses this pool. Pick another pool for it first.', 'err');
   if (!(await ask('Delete this pool?', 'Delete'))) return;
   delete D.pools[d.k];
@@ -665,7 +665,7 @@ function worldBackdrops() {
           `<div class="grid colors">${colorField('Sky top', `${p}.sky.0`)}${colorField('Sky middle', `${p}.sky.1`)}${colorField('Sky horizon', `${p}.sky.2`)}${colorField('Haze', `${p}.fog`)}${numberField('Haze distance', `${p}.fogD`, { min: 10, max: 300, step: 5, help: 'Smaller is hazier.' })}</div>`,
         {
           sub: `id ${escapeHtml(k)} · used by ${escapeHtml(
-            D.route
+            D.locations
               .filter(r => r.area === k)
               .map(r => r.name)
               .concat(
@@ -739,7 +739,7 @@ SECTIONS.rules = () => {
      selectField(
        'Where a new game starts',
        `${s}.place`,
-       (D.route || []).filter(r => r.town || r.kind === 'town').map(r => [r.id, r.name]),
+       (D.locations || []).filter(r => r.town || r.kind === 'town').map(r => [r.id, r.name]),
        { none: 'The first stop', opt: 1 }
      ),
      numberField('Money ($)', `${s}.se`, { min: 0, step: 50 }),

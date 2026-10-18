@@ -71,7 +71,7 @@ REWRITE = {
     'lore/chat/marketcap/0/4': 'Capshade’s market cap goes up when the spores do. Breathe out, then.',
     'lore/loading/14': 'The soup of the day in Pepperpot Town has been the same soup since 1971.',
     # the old route groups had numbers of their own (the canyon was on "Route 2")
-    'route/canyon/gateText': 'The steps down to Route 5 · Stepstone Canyon open once you earn Leader Rocco’s Ground Badge.',
+    'locations/canyon/gateText': 'The steps down to Route 5 · Stepstone Canyon open once you earn Leader Rocco’s Ground Badge.',
     'trainers/crude/seat/unlockText': 'The steps down to Route 5 · Stepstone Canyon and Lanternhall City are open. Silver Coins are now for sale.',
 }
 # and words that change with a name inside a longer text
@@ -126,13 +126,13 @@ SIGN = re.compile(r'^(.*?) this way\. (?:Route .*?|Sea Route .*?|Lake Route|Peta
 
 def main():
     head, D = load(); swap = make_swap(); changes = []
-    byname = {r['name']: r['id'] for r in D['route']}
+    byname = {r['name']: r['id'] for r in D['locations']}
     # names and route labels
-    for r in D['route']:
+    for r in D['locations']:
         if r['id'] not in NEW: continue
         new, label, _ = NEW[r['id']]
         for k, v in (('name', new), ('route', label or ('City' if new.endswith('City') else 'Town' if r.get('town') else ''))):
-            if r.get(k) != v: changes.append((f"route/{r['id']}/{k}", r.get(k), v)); r[k] = v
+            if r.get(k) != v: changes.append((f"locations/{r['id']}/{k}", r.get(k), v)); r[k] = v
         if label: r['routeName'] = label
         elif 'routeName' in r: del r['routeName']
     for sid, sc in D['scenes'].items():
@@ -144,7 +144,7 @@ def main():
             t = swap(sc['name'])
             if t != sc['name']: changes.append((f'scenes/{sid}/name', sc['name'], t)); sc['name'] = t
     # the links between places: the route they belong to (or the town they lead into)
-    rid = {r['id']: r for r in D['route']}
+    rid = {r['id']: r for r in D['locations']}
     for L in D['links']:
         m = L[3]; a, b = m.get('from'), m.get('to')
         lab = (NEW.get(b) or (None, None))[1] or (NEW.get(a) or (None, None))[1] or (NEW.get(b) or ('',))[0]
@@ -154,7 +154,7 @@ def main():
         if isinstance(v, dict):
             for k in list(v):
                 if k in ('id', 'img', 'tile', 'scene', 'k', 'from', 'to', 'art', 'banner', 'icon', 'src', 'path') and isinstance(v[k], str): continue
-                if path[:1] == ['route'] and k in ('name', 'route', 'routeName'): continue
+                if path[:1] == ['locations'] and k in ('name', 'route', 'routeName'): continue
                 if path[:1] == ['scenes'] and len(path) == 2 and k == 'name': continue
                 v[k] = walk(v[k], path + [k])
             return v
@@ -171,7 +171,7 @@ def main():
             return t
         return v
     for k in list(D):
-        if k in ('route',):
+        if k in ('locations',):
             for i, r in enumerate(D[k]):
                 for f in list(r):
                     if f in ('name', 'route', 'routeName', 'id', 'scene', 'shop', 'boutique', 'area', 'pool'): continue

@@ -215,7 +215,7 @@ ROWFILL = {'house_red', 'house_green', 'house_blue', 'house_cottage', 'house_lar
 
 
 def exits_for(s, D, i, hub, keep_roads=True, **kw):
-    Dx = {'route': D['route'], 'links': [L[:3] for L in D['links']]}
+    Dx = {'locations': D['locations'], 'links': [L[:3] for L in D['links']]}
     n0 = len(s.roads); ex = s.hub_exits(Dx, i, hub, road=None, **kw)
     if not keep_roads: del s.roads[n0:]
     return ex
@@ -839,7 +839,7 @@ def main():
     if '--map' in args: j = args.index('--map'); mp = Path(args[j + 1]); del args[j:j + 2]; mp.mkdir(parents=True, exist_ok=True)
     only = [a for a in args if not a.startswith('--')]
     head, D = load(); cat = D['scenery']['props']; CAT.update(cat); nature = nature_pool(cat)
-    for n, pl in enumerate(D['route']):
+    for n, pl in enumerate(D['locations']):
         sid = pl['scene']
         if only and sid not in only: continue
         old = D['scenes'].get(sid)

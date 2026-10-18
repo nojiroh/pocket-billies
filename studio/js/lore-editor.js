@@ -161,7 +161,7 @@ SECTIONS.lore = () => {
   if (tab === 'places') {
     sub = 'Each stop’s history, what it’s known for, its landmark and a local legend. Shown once you’ve been there.';
     const P = (L.places = L.places || {});
-    body = (D.route || [])
+    body = (D.locations || [])
       .filter(r => r.id)
       .map(r =>
         card(
@@ -186,7 +186,7 @@ SECTIONS.lore = () => {
           selectField(
             'Place',
             p + '.place',
-            (D.route || []).filter(r => r.id).map(r => [r.id, r.name]),
+            (D.locations || []).filter(r => r.id).map(r => [r.id, r.name]),
             { none: 'Anywhere', opt: 1 }
           ),
           textField('When it shows', p + '.unlock', { help: LORE_UNLOCK })
@@ -237,7 +237,7 @@ SECTIONS.lore = () => {
     sub =
       'What people say in each place, on top of the scene’s own chat. The lines for the latest stage you’ve reached are used (stage = badges, 9 after the ending).';
     const C = (L.chat = L.chat || {});
-    body = (D.route || [])
+    body = (D.locations || [])
       .filter(r => r.id)
       .map(r => {
         const st = Object.keys(C[r.id] || {}).sort((a, b) => a - b);

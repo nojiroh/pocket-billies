@@ -96,7 +96,7 @@ stands.
   `sw.js` (offline cache), `css/`, `fonts/` (SIL Open Font License).
   - `data/`: all game data and rules as JSON files, edited by the Studio (or by hand). `index.json` lists them;
     a file per map (`scenes/`), Billie line (`lines/`), trainer (`trainers/`) and person (`people/`), and one file
-    per other section (`moves.json`, `rules.json`, `route.json`, `scenery.json`...). `schema/` has their JSON
+    per other section (`moves.json`, `rules.json`, `locations.json`, `scenery.json`...). `schema/` has their JSON
     schemas. `gamedata.js` is generated from them (not in git): everything but the maps' ground and props, which the
     game fetches from each map's file when it needs it (`js/map-files.js`).
   - `art/`: pictures, `manifest.js` (atlas rectangles), `next/rigs-next.js` (skeletons).

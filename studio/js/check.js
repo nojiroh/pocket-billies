@@ -118,7 +118,7 @@ function runCheck() {
       err(`${sc.name || k}: doesn’t say what it is (kind: town, route, room or test).`, 'scenes');
       continue;
     }
-    const pl = (D.route || []).find(r => r.scene === k);
+    const pl = (D.locations || []).find(r => r.scene === k);
     if ((kd === 'town' || kd === 'route') && !pl)
       warn(`${sc.name || k} is a ${kd} scene but no stop uses it.`, 'scenes');
     if (pl && pl.kind && pl.kind !== kd)
@@ -126,14 +126,17 @@ function runCheck() {
     if (kd === 'room' && !sc.building)
       warn(`${sc.name || k} is a room but doesn’t say which building it’s the inside of.`, 'scenes');
   }
-  (D.route || []).forEach((r, i) => {
+  (D.locations || []).forEach((r, i) => {
     if (!['town', 'route'].includes(r.kind))
       err(`Stop ${i + 1}, ${r.name}: doesn’t say whether it’s a town or a route.`, 'world');
   });
   (D.links || []).forEach((L, i) => {
     const J = L[3] || {};
     if (!J.id || !J.from || !J.to)
-      warn(`Road ${i + 1} (${(D.route[L[0]] || {}).name} – ${(D.route[L[1]] || {}).name}) has no name yet.`, 'world');
+      warn(
+        `Road ${i + 1} (${(D.locations[L[0]] || {}).name} – ${(D.locations[L[1]] || {}).name}) has no name yet.`,
+        'world'
+      );
   });
   /* v26: the rooms you walk into */
   const people = new Set(Array.isArray(D.people) ? D.people.map(x => x.id) : Object.keys(D.people || {}));
@@ -155,7 +158,7 @@ function runCheck() {
       .filter(T => T.seat)
       .map(T => T.seat.id)
   );
-  D.route.forEach((r, i) => {
+  D.locations.forEach((r, i) => {
     const g = { wtab: 'route', stop: i };
     if (!D.pools[r.pool]) err(`${r.name} uses wild pool ${r.pool}, which doesn’t exist.`, 'world', g);
     if (r.area && !D.backdrops[r.area]) err(`${r.name} uses an unknown battle backdrop.`, 'world', g);
@@ -166,7 +169,7 @@ function runCheck() {
   });
   for (const [k, T] of Object.entries(D.trainers || {})) {
     const g = { trainer: k };
-    if (!D.route[T.node]) err(`${T.name} stands on a stop that doesn’t exist.`, 'trainers', g);
+    if (!D.locations[T.node]) err(`${T.name} stands on a stop that doesn’t exist.`, 'trainers', g);
     if (!T.team.length) err(`${T.name} has no team.`, 'trainers', g);
     T.team.forEach(e => {
       if (!/^@rival\d?$/.test(e.sp) && !sp.has(e.sp))
@@ -226,10 +229,12 @@ function runCheck() {
   if (!types.has(R.battle.spinType)) err('The Soak type doesn’t exist.', 'rules');
   const LK = D.links || [];
   LK.forEach((l, k) => {
-    if (!D.route[l[0]] || !D.route[l[1]])
+    if (!D.locations[l[0]] || !D.locations[l[1]])
       err(`Road ${k + 1} connects a stop that doesn’t exist.`, 'world', { wtab: 'route' });
-    else if (l[0] === l[1]) err(`${D.route[l[0]].name} has a road to itself.`, 'world', { wtab: 'route', stop: l[0] });
-    if (!(+l[2] > 0)) warn(`A road from ${(D.route[l[0]] || {}).name} has no step count.`, 'world', { wtab: 'route' });
+    else if (l[0] === l[1])
+      err(`${D.locations[l[0]].name} has a road to itself.`, 'world', { wtab: 'route', stop: l[0] });
+    if (!(+l[2] > 0))
+      warn(`A road from ${(D.locations[l[0]] || {}).name} has no step count.`, 'world', { wtab: 'route' });
   });
   if (LK.length) {
     const seen = new Set([0]),
@@ -238,19 +243,19 @@ function runCheck() {
       const a = st.pop();
       LK.forEach(([x, y]) => {
         const b = x === a ? y : y === a ? x : null;
-        if (b != null && !seen.has(b) && D.route[b]) {
+        if (b != null && !seen.has(b) && D.locations[b]) {
           seen.add(b);
           st.push(b);
         }
       });
     }
-    D.route.forEach((r, i) => {
+    D.locations.forEach((r, i) => {
       if (!seen.has(i)) warn(`No road leads to ${r.name}.`, 'world', { wtab: 'route', stop: i });
     });
   }
   const SCN = D.scenes || {},
     SY = D.scenery || { terrains: {}, props: {} };
-  D.route.forEach((r, i) => {
+  D.locations.forEach((r, i) => {
     if (r.scene && !SCN[r.scene])
       err(`${r.name} uses a walk scene that doesn’t exist.`, 'world', { wtab: 'route', stop: i });
   });
@@ -322,7 +327,7 @@ function runCheck() {
       if (!['pond', 'stream', 'canal', 'spring', 'swamp', 'lake'].includes(r.k))
         warn(`Scene ${s.name || k}: water rectangle ${n + 1} has an unknown kind “${r.k}”.`, 'scenes', g);
     });
-    const users = D.route.map((r, i) => [r, i]).filter(([r]) => r.scene === k);
+    const users = D.locations.map((r, i) => [r, i]).filter(([r]) => r.scene === k);
     users.forEach(([r, i]) => {
       const n = (D.links || []).filter(l => l[0] === i || l[1] === i).length;
       if (n > (s.exits || []).length)
@@ -341,7 +346,7 @@ function runCheck() {
           o = end === 'a' ? l[1] : l[0];
         if (!e) {
           warn(
-            `${r.name}: the road to ${(D.route[o] || {}).name} leaves by “${J[end]}”, but scene ${s.name || k} has no exit with that name.`,
+            `${r.name}: the road to ${(D.locations[o] || {}).name} leaves by “${J[end]}”, but scene ${s.name || k} has no exit with that name.`,
             'scenes',
             g
           );
@@ -455,7 +460,7 @@ ACTIONS.importData = async () => {
   if (!f) return;
   try {
     const o = JSON.parse(await f.text());
-    for (const k of ['types', 'moves', 'lines', 'route', 'rules'])
+    for (const k of ['types', 'moves', 'lines', 'locations', 'rules'])
       if (!o[k]) throw new Error(`That file has no “${k}”.`);
     if (
       !(await ask('Replace the game data in the Studio with this file? Nothing is written until you save.', 'Load it'))

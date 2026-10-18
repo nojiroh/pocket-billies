@@ -96,10 +96,10 @@ function slerpVectors(a, b, t) {
 /* the walking path, computed exactly as game/js/world-map.js does */
 function trailSegments() {
   const D = studioState.D,
-    pts = D.route
+    pts = D.locations
       .map(r => lonLatToDirection(r.lon || 0, r.lat || 0))
       .concat(D.regions.filter(f => f.t !== 'sun' && f.lon != null).map(f => lonLatToDirection(f.lon, f.lat || 0))),
-    last = D.route.length - 1,
+    last = D.locations.length - 1,
     segs = [];
   for (let i = 0; i < pts.length - 1; i++) {
     const a = pts[i],
@@ -223,7 +223,7 @@ function centerPainter(c) {
   const D = studioState.D;
   let sx = 0,
     sy = 0;
-  D.route.forEach(r => {
+  D.locations.forEach(r => {
     const a = (r.lon || 0) * DEGREES_TO_RADIANS;
     sx += Math.cos(a);
     sy += Math.sin(a);
@@ -243,7 +243,7 @@ function scrollPainterToSelection() {
     o =
       typeof sel === 'string'
         ? studioState.D.regions[+sel.slice(1)]
-        : studioState.D.route[typeof sel === 'number' ? sel : 0];
+        : studioState.D.locations[typeof sel === 'number' ? sel : 0];
   if (!o) return;
   const [u, v] = directionToTexel(lonLatToDirection(o.lon || 0, o.lat || 0), c.width, c.height);
   st.scrollLeft = painterDisplayX(u) * worldMapPainter.zoom - st.clientWidth / 2;
@@ -300,7 +300,7 @@ function drawPainterMarkers() {
     if (g.lon != null)
       h += mk(g.lon, g.lat || 0, 'r' + i, g.name, g.name, 'reg' + (studioState.sel.stop === 'r' + i ? ' on' : ''));
   });
-  D.route.forEach((r, i) => {
+  D.locations.forEach((r, i) => {
     const on = studioState.sel.stop === i;
     h += mk(
       r.lon || 0,
@@ -630,7 +630,7 @@ function bindPainter() {
     const [x, y] = pos(ev);
     if (mkEl) {
       const id = mkEl.dataset.mk,
-        o = id.startsWith('r') ? studioState.D.regions[+id.slice(1)] : studioState.D.route[+id];
+        o = id.startsWith('r') ? studioState.D.regions[+id.slice(1)] : studioState.D.locations[+id];
       studioState.sel.stop = id.startsWith('r') ? id : +id;
       stroke = { mk: o, lon0: o.lon || 0, lat0: o.lat || 0 };
       w.setPointerCapture(ev.pointerId);
@@ -827,7 +827,7 @@ function drawPainterGlobe() {
   if (!cv || !tex) return;
   const D = studioState.D,
     sel = studioState.sel.stop,
-    o = typeof sel === 'string' ? D.regions[+sel.slice(1)] : D.route[typeof sel === 'number' ? sel : 0];
+    o = typeof sel === 'string' ? D.regions[+sel.slice(1)] : D.locations[typeof sel === 'number' ? sel : 0];
   if (!o || o.lon == null) return;
   const W = tex.width,
     H = tex.height,

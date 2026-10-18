@@ -365,7 +365,7 @@ function whereCard(L, li) {
   );
 }
 const poolName = k => {
-  const r = studioState.D.route.filter(x => x.pool === k).map(x => x.name);
+  const r = studioState.D.locations.filter(x => x.pool === k).map(x => x.name);
   return r.length ? `${k} (${r.join(', ')})` : k;
 };
 const poolPercent = (P, j) => {
@@ -1147,7 +1147,7 @@ SECTIONS.shops = () => {
     .map(
       x =>
         `<button class="lcard slim ${x === k ? 'on' : ''}" data-act="pickShop" data-id="${x}"><span class="lt"><b>${escapeHtml(S[x].name)}</b><small>${S[x].kind === 'wardrobe' ? 'Boutique · ' : ''}${escapeHtml(
-          D.route
+          D.locations
             .filter(r => r.shop === x || r.boutique === x)
             .map(r => r.name)
             .join(', ') || 'Not placed on the route'
@@ -1202,7 +1202,7 @@ SECTIONS.shops = () => {
  ${card(
    'Where it is',
    `<p class="help">Open on: ${escapeHtml(
-     D.route
+     D.locations
        .filter(r => r.shop === k || r.boutique === k)
        .map(r => r.name)
        .join(', ') || 'nowhere yet'
@@ -1307,7 +1307,7 @@ ACTIONS.shopDel = async () => {
   if (!(await ask(`Delete ${escapeHtml(D.shops[k].name)}? Route stops that used it lose their shop.`, 'Delete')))
     return;
   delete D.shops[k];
-  D.route.forEach(r => {
+  D.locations.forEach(r => {
     if (r.shop === k) delete r.shop;
     if (r.boutique === k) delete r.boutique;
   });
@@ -1505,7 +1505,7 @@ SECTIONS.trainers = () => {
   const list = ks
     .map(
       x =>
-        `<button class="lcard slim ${x === k ? 'on' : ''}" data-act="pickTrainer" data-id="${x}"><span class="lt"><b>${escapeHtml(TR[x].name)}</b><small>${TR[x].tutorial ? 'The opening' : escapeHtml((D.route[TR[x].node] || {}).name || '?')}${TR[x].seat ? ' · Badge' : ''}${TR[x].blocks ? ' · blocks the road' : ''}</small></span></button>`
+        `<button class="lcard slim ${x === k ? 'on' : ''}" data-act="pickTrainer" data-id="${x}"><span class="lt"><b>${escapeHtml(TR[x].name)}</b><small>${TR[x].tutorial ? 'The opening' : escapeHtml((D.locations[TR[x].node] || {}).name || '?')}${TR[x].seat ? ' · Badge' : ''}${TR[x].blocks ? ' · blocks the road' : ''}</small></span></button>`
     )
     .join('');
   if (!T)
@@ -1548,7 +1548,7 @@ SECTIONS.trainers = () => {
      selectField(
        'Stands at',
        `${p}.node`,
-       D.route.map((r, i) => [i, `${i + 1}. ${r.name}`]),
+       D.locations.map((r, i) => [i, `${i + 1}. ${r.name}`]),
        { num: 1, rr: 1 }
      ),
      selectField(
@@ -1728,7 +1728,7 @@ ACTIONS.trainerDel = async () => {
   )
     return;
   if (T.seat)
-    D.route.forEach(r => {
+    D.locations.forEach(r => {
       if (r.gate === T.seat.id) {
         delete r.gate;
         delete r.gateText;

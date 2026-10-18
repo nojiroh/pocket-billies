@@ -189,7 +189,7 @@ LINES.forEach(L => {
   });
 });
 /* ---------- world ---------- */
-export const LOCATIONS = gameData.route;
+export const LOCATIONS = gameData.locations;
 export const REGIONS = gameData.regions;
 export const POOLS = {};
 for (const k in gameData.pools) {

@@ -31,7 +31,7 @@ def load():
 
 
 def problems(D):
-    out = []; places = D['route']; ids = {p.get('id') for p in places}
+    out = []; places = D['locations']; ids = {p.get('id') for p in places}
     for n, p in enumerate(places):
         if p.get('kind') not in ('town', 'route'): out.append(f'place {n} ({p.get("name")}): no kind')
         if p.get('id') != p.get('scene'): out.append(f'place {n} ({p.get("name")}): id {p.get("id")} is not its scene {p.get("scene")}')
@@ -55,7 +55,7 @@ def main():
     head, D = load()
     if '--check' in sys.argv:
         p = problems(D); print('\n'.join(p) or 'places, scenes and roads all say what they are'); sys.exit(1 if p else 0)
-    places, n = D['route'], 0
+    places, n = D['locations'], 0
     for p in places:
         for k, v in (('id', p.get('scene')), ('kind', 'town' if p.get('town') else 'route'), ('biome', p.get('t'))):
             if p.get(k) is None and v is not None: p[k] = v; n += 1

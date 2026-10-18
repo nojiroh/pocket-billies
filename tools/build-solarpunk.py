@@ -494,7 +494,7 @@ def main():
         s = s.resize((s.width * 2, s.height * 2), Image.NEAREST); s.save(sheet); print('sheet', sheet)
     spc = importlib.util.spec_from_file_location('clearwin', os.path.join(HERE, 'clear-windows.py')); CW = importlib.util.module_from_spec(spc); spc.loader.exec_module(CW); PPU = CW.ppu(D)
     rep = []
-    for r in D['route']:
+    for r in D['locations']:
         if r.get('kind') != 'town': continue
         sid = r['scene']; sc = D['scenes'][sid]
         if sid not in TOUCH: continue

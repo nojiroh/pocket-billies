@@ -38,7 +38,7 @@ SHOT_JS = """(async(id)=>{const sc=mapById(id);const W=sc.w,H=sc.h;
 
 def main():
     args = [a for a in sys.argv[1:] if not a.startswith('--')]
-    D = gamedata(); scenes = [r['scene'] for r in D['route'] if r.get('scene')]
+    D = gamedata(); scenes = [r['scene'] for r in D['locations'] if r.get('scene')]
     want = [s for s in scenes if (not args or s in args) and ('--all' in sys.argv or args or not (OUT / f'{s}.png').exists())]
     if not want: print('every stop has a miniature (use --all to redraw)'); return
     OUT.mkdir(parents=True, exist_ok=True)

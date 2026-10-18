@@ -625,7 +625,7 @@ def save(head, D):
 
 
 def node_index(D, nid):
-    for i, r in enumerate(D['route']):
+    for i, r in enumerate(D['locations']):
         if r.get('id') == nid: return i
     return None
 
@@ -1413,7 +1413,7 @@ def open_way(D, sid, nid, spec, rep):
     gone = [p for p in sc['props'] if on_way(p)]
     sc['props'] = [p for p in sc['props'] if p not in gone]
     pt = {'E': [W - inn, at], 'W': [inn, at], 'N': [at, H - inn], 'S': [at, inn]}[side]
-    o = D['route'][j]; say = f"{o['name']} this way. {'Route ' + o['route'].split()[-1] + '.' if o.get('route') else ''}".strip()
+    o = D['locations'][j]; say = f"{o['name']} this way. {'Route ' + o['route'].split()[-1] + '.' if o.get('route') else ''}".strip()
     sp = {'E': (W - 3.4, at + wd / 2 + .9), 'W': (3.4, at + wd / 2 + .9), 'N': (at + wd / 2 + .9, H - 3.4), 'S': (at + wd / 2 + .9, 3.4)}[side]
     sc['props'].append({'k': 'signpost', 'x': round(sp[0], 2), 'z': round(sp[1], 2), 'act': 'sign', 'say': say, TAG: 1})
     E.append({'id': eid, 'side': side, 't': round(at / (H if side in 'EW' else W), 4), 'in': inn, 'width': 2}); ex.append([round(pt[0], 2), round(pt[1], 2)])
@@ -1433,8 +1433,8 @@ def add_region(D, R, force=False, rep=None):
         if n['kind'] == 'town': e['town'] = 1
         for k in ('shop', 'boutique', 'gate', 'gateText', 'ride', 'music'):
             if n.get(k) is not None: e[k] = n[k]
-        if i is None: D['route'].append(e); rep.append(f'place {n["id"]}')
-        elif force and D['route'][i].get(TAG): D['route'][i] = e
+        if i is None: D['locations'].append(e); rep.append(f'place {n["id"]}')
+        elif force and D['locations'][i].get(TAG): D['locations'][i] = e
     # roads
     have = {L[3].get('id') for L in D['links']}
     for a, b, cost, name in R['links']:
@@ -1446,7 +1446,7 @@ def add_region(D, R, force=False, rep=None):
     for a, b, cost, name in R['links']:
         for sid, nid in ((a, b), (b, a)):
             if sid in new or nid not in new: continue
-            sc = D['scenes'].get(D['route'][node_index(D, sid)].get('scene') or sid)
+            sc = D['scenes'].get(D['locations'][node_index(D, sid)].get('scene') or sid)
             if not sc or sc.get(TAG): continue
             if (sid, nid) in WAYS_IN: open_way(D, sid, nid, WAYS_IN[(sid, nid)], rep)
             else: rep.append(f'!! {sid} has no way out planned toward {nid}')
