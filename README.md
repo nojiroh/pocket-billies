@@ -72,7 +72,8 @@ manifests, the data (`gamedata.js`, `data-files.js`, `data-fallback.js`).
 Before you push:
 
 ```sh
-npm run lint            # ESLint: undefined names (a module name used without an import), a name defined twice, likely bugs
+npm run lint            # ESLint: undefined names (a module name used without an import), a name defined twice, likely bugs;
+                        # then tools/check-names.mjs: the names follow docs/NAMING.md
 npm run check:modules   # the modules' generated parts are up to date and the load order holds (npm run modules fixes them)
 npm run format          # Prettier (npm run format:check only checks)
 npm run check:data      # the game data: files, schemas, what refers to what (a second)
@@ -110,6 +111,9 @@ stands.
 - `studio/`: Pocket Billies Studio. It imports the game's renderer modules from `../game/js/`.
 - `firebase/`: the Firestore security rules and their tests (`cd firebase && npm ci && npm test`).
 - `tools/`: `check-quick.py` (the quick check), `check-data.mjs` and `check-data-text.py` (the data checks),
-  `build-data.mjs` (makes `gamedata.js`), `to-module.mjs` (the modules' generated imports, `hooks.js` and `debug-log-names.js`), `gamedata.py` (the data for Python tools), and the Python scripts that drew
-  the art and built the scenes (the top of each says what it writes).
+  `build-data.mjs` (makes `gamedata.js`), `to-module.mjs` (the modules' generated imports, `hooks.js` and `debug-log-names.js`), `gamedata.py` (the data for Python tools),
+  `check-names.mjs` (the naming rules lint can't check), the renaming tools (`rename.mjs` for code names, prefixes,
+  files and properties, `rename-data.mjs` for data keys and sections, `rename-strings.py` for the Python tools'
+  strings, `rename-ids.mjs` for the location ids; each proves a rename changed nothing else), and the Python scripts
+  that drew the art and built the maps (the top of each says what it writes).
 - `docs/`: vision, roadmap, phases, naming, security review, handoff log, the Studio guide.

@@ -19,8 +19,15 @@ kept aside in the browser).
   still counts as before until the step-driven parts (money, encounters, eggs) are replaced.
 - Removed: the single-file Claude-artifact version, the old train station prop, the v45 backup scenes in the game data
   (1.5 MB), importing a legacy Net Worth backup.
-- Fixes: with Motion set to reduced, the camera snaps instead of gliding.
+- Fixes: with Motion set to reduced, the camera snaps instead of gliding. Puffcap Woods and Russetwood get their own
+  flower colours (they had the default ones).
 - Under the hood: the game's and the Studio's code are ES modules, and the published game loads them as one file.
   The game needs a web server (opening index.html from disk no longer works at all).
 - Under the hood: the modules no longer put their names on `window` (the game and the Studio reach each other's
   code through imports); for the console, add `?globals` to the address.
+- Under the hood: the code, the data and the files have descriptive names (docs/NAMING.md; the old -> new list is in
+  docs/archive/phase-05-renames.md). The places' ids match their names (Marigold Town is `marigold`, no longer
+  `sundown`), so a debug log, a `?scene=` link or a Studio export from an earlier build names places the old way.
+  The save format is 2: a save from an earlier 0.1.0 build doesn't load (a new game starts and the old save is kept
+  aside, as with legacy saves). No text changed, but the 43 places with a new id look a little different: the
+  pattern of their ground, their countryside, townsfolk and stamps are picked from the id.
