@@ -11,7 +11,6 @@ import {
   battleTipHide,
   battleTutor,
   battleWeatherMult,
-  chip,
   closeModal,
   jingle,
   modal,
@@ -19,10 +18,11 @@ import {
   provide,
   render,
   sfxBattle,
-  stBadge,
+  statusBadgeHTML,
   storyAfterRival,
   storyAfterWin,
   toast,
+  typeBadgeHTML,
 } from './hooks.js';
 import { $, $$, clamp, random } from './util.js';
 import {
@@ -1549,9 +1549,9 @@ function paintSide(i, s, anim) {
   if (!n) return;
   n.textContent = s.name;
   $('#l' + i).textContent = `Lv ${s.lvl}`;
-  $('#t' + i).innerHTML = s.ty.map(chip).join('');
+  $('#t' + i).innerHTML = s.ty.map(typeBadgeHTML).join('');
   $('#gp' + i).hidden = !s.gold;
-  $('#st' + i).innerHTML = s.hp <= 0 ? '<span class="stb st-down">Fainted</span>' : stBadge(s.st);
+  $('#st' + i).innerHTML = s.hp <= 0 ? '<span class="stb st-down">Fainted</span>' : statusBadgeHTML(s.st);
   $('#sg' + i).innerHTML = Object.entries(s.stg || {})
     .filter(([k, v]) => v)
     .map(([k, v]) => `<span class="stg ${v > 0 ? 'up' : 'dn'}">${statShortName(k)} ${v > 0 ? '+' : ''}${v}</span>`)
@@ -1796,7 +1796,7 @@ function hpMini(m) {
   return `<span class="hpmini"><i class="${p < 0.25 ? 'low' : p < 0.5 ? 'mid' : ''}" style="width:${p * 100}%"></i></span>`;
 }
 function billyPickHTML(m, act, attrs, dis, note) {
-  return `<button class="pick" ${attrs} ${dis ? 'disabled' : ''}>${bustHTML(m.sp, 40, { gold: m.gold })}<span class="pk-t"><b>${escapeHtml(billyName(m))}</b><span class="pk-m">${SPECIES[m.sp].types.map(chip).join('')}<small class="tnum">Lv ${m.lvl}</small></span>${hpMini(m)}<small class="tnum">${Math.max(0, m.hp)}/${maxHp(m)}</small></span><span class="pk-s">${note || ''}</span></button>`;
+  return `<button class="pick" ${attrs} ${dis ? 'disabled' : ''}>${bustHTML(m.sp, 40, { gold: m.gold })}<span class="pk-t"><b>${escapeHtml(billyName(m))}</b><span class="pk-m">${SPECIES[m.sp].types.map(typeBadgeHTML).join('')}<small class="tnum">Lv ${m.lvl}</small></span>${hpMini(m)}<small class="tnum">${Math.max(0, m.hp)}/${maxHp(m)}</small></span><span class="pk-s">${note || ''}</span></button>`;
 }
 function teamPick(back) {
   const on = activeBattle.sides[0].f.filter(f => f.on).map(f => f.act),
@@ -1818,7 +1818,7 @@ function teamPick(back) {
             ? 'At work'
             : m.hp <= 0
               ? 'Fainted'
-              : stBadge(m.status)
+              : statusBadgeHTML(m.status)
       );
     })
     .join('')}</div>${back ? backButtonHTML() : ''}`;
@@ -1901,7 +1901,7 @@ export function paintActions() {
     }</div>${backButtonHTML()}`;
   } else if (ph === 'itemTarget') {
     const it = activeBattle.item;
-    h = `<p class="note">Use ${escapeHtml(ITEMS[it].n)} on:</p><div class="plist">${saveData.team.map(m => billyPickHTML(m, false, `data-a="bitemon" data-u="${m.uid}"`, !canUse(it, m), m.hp <= 0 ? 'Fainted' : stBadge(m.status))).join('')}</div>${backButtonHTML()}`;
+    h = `<p class="note">Use ${escapeHtml(ITEMS[it].n)} on:</p><div class="plist">${saveData.team.map(m => billyPickHTML(m, false, `data-a="bitemon" data-u="${m.uid}"`, !canUse(it, m), m.hp <= 0 ? 'Fainted' : statusBadgeHTML(m.status))).join('')}</div>${backButtonHTML()}`;
   } else if (ph === 'team') h = teamPick(true);
   else if (ph === 'switch') h = teamPick(false);
   else if (ph === 'aim') {
@@ -2186,7 +2186,8 @@ function paintPlates(s, anim) {
     e.querySelector('.pl-cr').hidden = !x.alpha;
     e.classList.toggle('alpha', !!x.boss);
     e.classList.toggle('gold', !!x.gold);
-    e.querySelector('.pl-st').innerHTML = x.hp <= 0 ? '<span class="stb st-down">Fainted</span>' : stBadge(x.st);
+    e.querySelector('.pl-st').innerHTML =
+      x.hp <= 0 ? '<span class="stb st-down">Fainted</span>' : statusBadgeHTML(x.st);
     const p = Math.max(0, (x.hp / x.max) * 100),
       f = e.querySelector('.fill'),
       g = e.querySelector('.ghost');

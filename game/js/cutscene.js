@@ -13,7 +13,6 @@ import {
   FALL,
   LAND,
   blakeHello,
-  chip,
   fallPlay,
   landBurst,
   landFrame,
@@ -21,6 +20,7 @@ import {
   render,
   sceneIdAt,
   startGame,
+  typeBadgeHTML,
   updateNav,
 } from './hooks.js';
 import { $, clamp } from './util.js';
@@ -485,7 +485,7 @@ function csPickHTML() {
     t = s.types[0],
     st = TYPES.filter(x => typeEffectiveness(t, [x]) > 1),
     wk = TYPES.filter(x => typeEffectiveness(x, [t]) > 1);
-  return `<div class="cs-pk-top"><button class="mbtn" data-a="cs-prev" aria-label="Previous">‹</button><div class="cs-pk-name"><small>${CS.sel + 1} of ${pk.length}</small><b>${escapeHtml(s.name)}</b><span class="row">${chip(t)}</span></div><button class="mbtn" data-a="cs-next" aria-label="Next">›</button></div>
+  return `<div class="cs-pk-top"><button class="mbtn" data-a="cs-prev" aria-label="Previous">‹</button><div class="cs-pk-name"><small>${CS.sel + 1} of ${pk.length}</small><b>${escapeHtml(s.name)}</b><span class="row">${typeBadgeHTML(t)}</span></div><button class="mbtn" data-a="cs-next" aria-label="Next">›</button></div>
  <p class="sd">${escapeHtml(s.blurb)}</p><p class="sd">Strong against ${st.join(' and ') || 'nothing in particular'}. Weak to ${wk.join(' and ') || 'nothing in particular'}.</p>
  ${CS.confirm ? `<div class="racts"><button class="pb quiet" data-a="cs-no">Not yet</button><button class="pb gold" data-a="cs-yes">Yes, ${escapeHtml(s.name)}!</button></div>` : `<button class="pb gold wide" data-a="cs-choose">Choose ${escapeHtml(s.name)}</button>`}`;
 }

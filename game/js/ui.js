@@ -201,19 +201,18 @@ import { chalCard, homeApply, homeDecorate, reqList, stampTile } from './things-
 /* eslint-disable no-func-assign */
 expose({
   BG: [() => BG],
-  BOXSORT: [() => BOXSORT],
-  BRCOL: [() => BRCOL],
-  GINI: [() => GINI],
+  BOX_SORTS: [() => BOX_SORTS],
+  BRACKET_COLORS: [() => BRACKET_COLORS],
+  HAZEL_INTRO_LINES: [() => HAZEL_INTRO_LINES],
   INTRO_STILLS: [() => INTRO_STILLS],
-  RARN: [() => RARN],
-  ROOM_KIND: [() => ROOM_KIND],
-  ROOM_OF: [() => ROOM_OF],
+  RARITY_NAMES: [() => RARITY_NAMES],
+  ROOM_BY_BUILDING: [() => ROOM_BY_BUILDING],
+  ROOM_BY_USE: [() => ROOM_BY_USE],
   SCREENS: [() => SCREENS],
   TABS: [() => TABS],
   TRACKS: [() => TRACKS],
   addPick: [() => addPick, v => (addPick = v)],
   badgeSlots: [() => badgeSlots, v => (badgeSlots = v)],
-  bar: [() => bar, v => ((bar = v), provide({ bar }))],
   bgBuild: [() => bgBuild, v => (bgBuild = v)],
   bgInit: [() => bgInit, v => (bgInit = v)],
   bgResize: [() => bgResize, v => (bgResize = v)],
@@ -227,14 +226,13 @@ expose({
   bracketNote: [() => bracketNote, v => (bracketNote = v)],
   bracketSpans: [() => bracketSpans, v => (bracketSpans = v)],
   buddyCard: [() => buddyCard, v => (buddyCard = v)],
-  chip: [() => chip],
   closeModal: [() => closeModal, v => ((closeModal = v), provide({ closeModal }))],
   dexStatus: [() => dexStatus, v => (dexStatus = v)],
   donateItem: [() => donateItem, v => (donateItem = v)],
   eggSlots: [() => eggSlots, v => (eggSlots = v)],
-  encCard: [() => encCard, v => (encCard = v)],
+  encounterCardHTML: [() => encounterCardHTML, v => (encounterCardHTML = v)],
   enterRoom: [() => enterRoom, v => (enterRoom = v)],
-  envLine: [() => envLine, v => (envLine = v)],
+  environmentLine: [() => environmentLine, v => (environmentLine = v)],
   evolutionMethod: [() => evolutionMethod, v => (evolutionMethod = v)],
   evolutionModal: [() => evolutionModal, v => (evolutionModal = v)],
   exitPrompt: [() => exitPrompt, v => (exitPrompt = v)],
@@ -251,6 +249,7 @@ expose({
   jobSlots: [() => jobSlots, v => (jobSlots = v)],
   learnModal: [() => learnModal, v => (learnModal = v)],
   leaveRoom: [() => leaveRoom, v => (leaveRoom = v)],
+  locationCardHTML: [() => locationCardHTML, v => (locationCardHTML = v)],
   mapCardHTML: [() => mapCardHTML, v => (mapCardHTML = v)],
   meter: [() => meter],
   modal: [() => modal, v => ((modal = v), provide({ modal }))],
@@ -258,11 +257,12 @@ expose({
   nextModal: [() => nextModal, v => (nextModal = v)],
   nextToast: [() => nextToast, v => (nextToast = v)],
   nodeActions: [() => nodeActions, v => (nodeActions = v)],
-  owHTML: [() => owHTML, v => (owHTML = v)],
   paintMapCard: [() => paintMapCard, v => ((paintMapCard = v), provide({ paintMapCard }))],
   plateVars: [() => plateVars],
+  playerWalkIconHTML: [() => playerWalkIconHTML, v => (playerWalkIconHTML = v)],
   poolStrip: [() => poolStrip, v => (poolStrip = v)],
   postProcess: [() => postProcess, v => ((postProcess = v), provide({ postProcess }))],
+  progressBarHTML: [() => progressBarHTML, v => ((progressBarHTML = v), provide({ progressBarHTML }))],
   render: [() => render, v => setRender(v)],
   renderDexEntry: [() => renderDexEntry, v => (renderDexEntry = v)],
   renderIntro: [() => renderIntro, v => (renderIntro = v)],
@@ -285,8 +285,8 @@ expose({
   sceneExitsByBearing: [() => sceneExitsByBearing, v => (sceneExitsByBearing = v)],
   sceneIdAt: [() => sceneIdAt, v => ((sceneIdAt = v), provide({ sceneIdAt }))],
   settings: [() => settings, v => ((settings = v), provide({ settings }))],
-  stBadge: [() => stBadge],
   startGame: [() => startGame, v => ((startGame = v), provide({ startGame }))],
+  statusBadgeHTML: [() => statusBadgeHTML],
   stepsTo: [() => stepsTo, v => (stepsTo = v)],
   swapPick: [() => swapPick, v => (swapPick = v)],
   teamCard: [() => teamCard, v => (teamCard = v)],
@@ -297,6 +297,7 @@ expose({
   tripDest: [() => tripDest],
   tripLeft: [() => tripLeft, v => (tripLeft = v)],
   tripStatus: [() => tripStatus, v => (tripStatus = v)],
+  typeBadgeHTML: [() => typeBadgeHTML],
   updateNav: [() => updateNav, v => ((updateNav = v), provide({ updateNav }))],
   walkCross: [() => walkCross, v => (walkCross = v)],
   walkHero: [() => walkHero, v => (walkHero = v)],
@@ -304,17 +305,16 @@ expose({
   walkPick: [() => walkPick, v => (walkPick = v)],
   walkSceneSync: [() => walkSceneSync, v => (walkSceneSync = v)],
   walkState: [() => walkState, v => (walkState = v)],
-  whCard: [() => whCard, v => (whCard = v)],
   xpLeft: [() => xpLeft],
-  xpPart: [() => xpPart],
+  xpProgress: [() => xpProgress],
 });
 /* eslint-enable no-func-assign */
 provide({
-  bar,
   closeModal,
   modal,
   paintMapCard,
   postProcess,
+  progressBarHTML,
   render,
   renderOverlay,
   roomRefresh,
@@ -336,12 +336,12 @@ export function setRenderOverlay(v) {
   provide({ renderOverlay });
 }
 /* to-module: end */
-const chip = t =>
+const typeBadgeHTML = t =>
   `<span class="chip" style="--tc:${TYPE_COLORS[t][0]};--tf:${TYPE_COLORS[t][1]}">${t === 'None' ? 'Normal' : t}</span>`;
-provide({ chip }); /* to-module */
-const stBadge = st => (st ? `<span class="stb st-${st}">${STATUS_NAMES[st]}</span>` : '');
-provide({ stBadge }); /* to-module */
-function bar(p, cls = '') {
+provide({ typeBadgeHTML }); /* to-module */
+const statusBadgeHTML = st => (st ? `<span class="stb st-${st}">${STATUS_NAMES[st]}</span>` : '');
+provide({ statusBadgeHTML }); /* to-module */
+function progressBarHTML(p, cls = '') {
   return `<div class="pbar ${cls}"><i style="width:${clamp(p, 0, 1) * 100}%"></i></div>`;
 }
 function hpBar(hp, max) {
@@ -439,7 +439,7 @@ function learnModal(m, mv) {
   const M = MOVES[mv];
   modal({
     title: `${escapeHtml(billyName(m))} wants to learn ${M.n}`,
-    html: `<p>${chip(M.t)} ${M.p ? `${M.p} power` : 'Status'}. ${M.d}</p><p class="note">It already knows ${moveSlotCount()} moves. Pick one to forget, or skip this one.</p>`,
+    html: `<p>${typeBadgeHTML(M.t)} ${M.p ? `${M.p} power` : 'Status'}. ${M.d}</p><p class="note">It already knows ${moveSlotCount()} moves. Pick one to forget, or skip this one.</p>`,
     btns: m.moves
       .map(id => ({
         l: `Forget ${MOVES[id].n}`,
@@ -517,7 +517,7 @@ function runEvolution(m, note) {
             modal({
               title: `${escapeHtml(fromName)} became ${escapeHtml(to.name)}`,
               top: `<div class="evo done">${rigCanvasHTML(m.sp, 128, { gold: m.gold })}</div>`,
-              html: `<p>${escapeHtml(to.blurb)}</p><p>${to.types.map(chip).join('')}</p>${note ? `<p class="note">${note}</p>` : ''}`,
+              html: `<p>${escapeHtml(to.blurb)}</p><p>${to.types.map(typeBadgeHTML).join('')}</p>${note ? `<p class="note">${note}</p>` : ''}`,
               btns: [{ l: 'Nice', c: 'dark', f: closeModal }],
             });
           },
@@ -547,7 +547,7 @@ function hatchModal(e) {
             modal({
               title: `It’s ${/^[AEIOU]/.test(s.name) ? 'an' : 'a'} ${m.gold ? 'Golden ' : ''}${escapeHtml(s.name)}`,
               top: `<div class="hatch done">${rigCanvasHTML(m.sp, 128, { gold: m.gold })}</div>`,
-              html: `<p>${s.types.map(chip).join('')} <b class="tnum">Lv ${m.lvl}</b></p><p>${escapeHtml(s.blurb)}</p>${res.where === 'box' ? '<p class="note">It went to storage because your team is full.</p>' : ''}`,
+              html: `<p>${s.types.map(typeBadgeHTML).join('')} <b class="tnum">Lv ${m.lvl}</b></p><p>${escapeHtml(s.blurb)}</p>${res.where === 'box' ? '<p class="note">It went to storage because your team is full.</p>' : ''}`,
               btns: [{ l: 'Welcome aboard', c: 'dark', f: closeModal }],
             });
             render();
@@ -688,7 +688,7 @@ const INTRO_STILLS = [
     'Inside the planet there is another world, with the Inner Sun at its centre. You fell right across it, and landed in Copperleaf.',
   ],
 ];
-const GINI = [
+const HAZEL_INTRO_LINES = [
   '[surprised] Oh! Another one! Are you all right? That was quite a landing.',
   'You came down through the crust. Things do, now and then. Mostly furniture. You’re the first this week who can talk.',
   'Can you tell me your name? No? Classic fall-related amnesia. Very common down here. It usually comes back, a bit at a time.',
@@ -697,7 +697,7 @@ const GINI = [
 function introSteps() {
   return [
     ...INTRO_STILLS.map(s => ({ k: 'still', s })),
-    ...GINI.map(t => ({ k: 'gini', t })),
+    ...HAZEL_INTRO_LINES.map(t => ({ k: 'gini', t })),
     { k: 'trainer' },
     { k: 'named' },
     { k: 'pick' },
@@ -719,8 +719,8 @@ function renderIntro() {
   }
   if (i === 0)
     return `<div class="title"><div class="title-landscape" aria-hidden="true"></div><div class="title-coin">${coinHTML('penny', 176, 32)}</div><h1 class="logo">Pocket Billies</h1><p class="tag">A walking RPG inside the Hollow Earth, where the Billies are the wildlife. Gotta tax 'em all!</p><button class="pb gold wide big" data-a="intro">Start</button></div>`;
-  if (i <= GINI.length)
-    return `<div class="talk"><div class="talk-art">${humanHTML('gini', 96)}</div><div class="dlg px"><p class="speaker">Professor Hazel</p><p class="line" id="dlgLine">${GINI[i - 1]}</p><button class="pb dark wide" data-a="intro">Next</button></div></div>`;
+  if (i <= HAZEL_INTRO_LINES.length)
+    return `<div class="talk"><div class="talk-art">${humanHTML('gini', 96)}</div><div class="dlg px"><p class="speaker">Professor Hazel</p><p class="line" id="dlgLine">${HAZEL_INTRO_LINES[i - 1]}</p><button class="pb dark wide" data-a="intro">Next</button></div></div>`;
   if (st && st.k === 'trainer') {
     const cur = JSON.stringify(cleanLook(uiState.trainerDraft || TR_PRESETS[0]));
     return `<header class="bar"><div><div class="sub">Your adventure, your style</div><h1 class="where">Create your trainer</h1></div></header>
@@ -740,16 +740,16 @@ function renderIntro() {
        t = s.types[0];
      const st = TYPES.filter(x => typeEffectiveness(t, [x]) > 1),
        wk = TYPES.filter(x => typeEffectiveness(x, [t]) > 1);
-     return `<button class="starter px" data-a="pick" data-l="${l}" style="--d:${j * 80}ms">${rigCanvasHTML(l + '0', 104, { act: 'cheer' })}<span><span class="sn">${s.name}</span><span class="row">${chip(t)}</span><span class="sd">${s.blurb}</span><span class="sd">Strong against ${st.join(' and ')}. Weak to ${wk.join(' and ')}.</span></span></button>`;
+     return `<button class="starter px" data-a="pick" data-l="${l}" style="--d:${j * 80}ms">${rigCanvasHTML(l + '0', 104, { act: 'cheer' })}<span><span class="sn">${s.name}</span><span class="row">${typeBadgeHTML(t)}</span><span class="sd">${s.blurb}</span><span class="sd">Strong against ${st.join(' and ')}. Weak to ${wk.join(' and ')}.</span></span></button>`;
    })
    .join('')}</div>`;
 }
-const BRCOL = ['var(--ok)', 'var(--gold)', 'var(--red)', '#9B6BE0', '#4F80E8'];
+const BRACKET_COLORS = ['var(--ok)', 'var(--gold)', 'var(--red)', '#9B6BE0', '#4F80E8'];
 function bracketSpans() {
   let lo = 0;
   return STEP_BRACKETS.map(([hi, r], i) => {
     const top = hi === Infinity ? Math.max(lo * 1.33, lo + 5000) : hi,
-      o = { lo, hi: top, r, col: BRCOL[i % BRCOL.length] };
+      o = { lo, hi: top, r, col: BRACKET_COLORS[i % BRACKET_COLORS.length] };
     lo = hi;
     return o;
   });
@@ -779,7 +779,7 @@ function bracketNote(st) {
   if (nb[0] === Infinity) return 'You’ve walked a lot today. Resting is good too.';
   return `Busy day! Steps now earn $${r} each until ${formatNumber(nb[0])}.`;
 }
-function encCard(q) {
+function encounterCardHTML(q) {
   const nu = !uiState.seenEnc.has(q.id);
   uiState.seenEnc.add(q.id);
   return `<button class="enc px hidden-enc${nu ? ' pop' : ''}" data-a="enc" data-id="${q.id}" aria-label="Unknown Billie, level ${q.lvl}"><span class="no tnum">No. ${q.no}</span><span class="denom tnum">Lv ${q.lvl}</span><span class="stage-glow"></span><span class="enc-hide"><img class="pxi" src="${artURL('scene/props/tallgrass.png')}" alt=""><i>?</i></span><b>Unknown</b></button>`;
@@ -863,7 +863,7 @@ function hereCard() {
   if (st.k === 'go' || st.k === 'hold') {
     const c = roadCost(node, nx),
       f = saveData.route.prog / c;
-    prog = `<div class="nextstop"><div class="ns-top"><span>${escapeHtml(st.t)}</span><b>${escapeHtml(LOCATIONS[nx].name)}</b></div><div class="trail">${bar(f, 'trailbar live')}<span class="walker" style="left:${clamp(f, 0, 1) * 100}%">${owHTML()}</span></div><span class="note tnum">${formatNumber(tripLeft())} steps to go</span></div>`;
+    prog = `<div class="nextstop"><div class="ns-top"><span>${escapeHtml(st.t)}</span><b>${escapeHtml(LOCATIONS[nx].name)}</b></div><div class="trail">${progressBarHTML(f, 'trailbar live')}<span class="walker" style="left:${clamp(f, 0, 1) * 100}%">${playerWalkIconHTML()}</span></div><span class="note tnum">${formatNumber(tripLeft())} steps to go</span></div>`;
   } else if (st.k === 'blocked') {
     const bl = blockerAt(node);
     prog =
@@ -874,7 +874,7 @@ function hereCard() {
     prog = `<p class="note">You’re staying here. Steps still earn money, hatch eggs and bring encounters. Open the map to pick a place to walk to.</p>`;
   return `<section class="here px glass"><div class="route-art"${here.banner ? ` style="background-image:url('${artURL(here.banner)}')"` : ''}><span>${humanHTML('me', 64)}</span><button class="route-profile" data-a="customize">${escapeHtml(cleanTrainer(saveData.avatar, saveData.gender).name)} · Edit look</button></div><div class="sec-h"><div><div class="sub">${escapeHtml(locationSubtitle(here))}</div><h2>${here.name}</h2></div><button class="pb small quiet" data-a="tab" data-t="map">Open map</button></div><p class="note">${here.blurb}</p>${boardNote(node)}${prog}<div class="racts">${tripButtons()}</div>${nodeActions(node)}</section>`;
 }
-function owHTML() {
+function playerWalkIconHTML() {
   const u = owHTMLsheet('me');
   return `<span class="spr fast ow-mini" style="width:22px;height:40px"><img src="${u}" alt=""></span>`;
 }
@@ -885,7 +885,7 @@ function eggSlots() {
       if (!e)
         return `<div class="slot px empty"><span class="egg-e"></span><b>Empty incubator</b><span class="note">Win battles to find eggs.</span></div>`;
       const T = EGGS[e.tier];
-      return `<div class="slot px">${eggHTML(e.tier, 48, 'wob')}<b>${e.tier} km egg</b>${bar(e.prog / T.need, 'live')}<span class="note tnum">${stepsToKm(e.prog)} of ${e.tier} km</span></div>`;
+      return `<div class="slot px">${eggHTML(e.tier, 48, 'wob')}<b>${e.tier} km egg</b>${progressBarHTML(e.prog / T.need, 'live')}<span class="note tnum">${stepsToKm(e.prog)} of ${e.tier} km</span></div>`;
     })
     .join('');
   const pipe = saveData.eggs.filter(e => e.slot == null);
@@ -899,9 +899,9 @@ function buddyCard() {
     e = SPECIES[m.sp].evo;
   const ev =
     e && e.k === 'buddy'
-      ? `<div class="note">Buddy distance: ${stepsToKm(m.bsteps || 0)} of ${stepsToKm(e.steps)} km to evolve.</div>${bar((m.bsteps || 0) / e.steps, 'gold')}`
+      ? `<div class="note">Buddy distance: ${stepsToKm(m.bsteps || 0)} of ${stepsToKm(e.steps)} km to evolve.</div>${progressBarHTML((m.bsteps || 0) / e.steps, 'gold')}`
       : '';
-  return `<section><div class="sec-h"><h2>Buddy</h2></div><div class="buddy px" data-a="mon" data-u="${m.uid}" role="button" tabindex="0">${rigCanvasHTML(m.sp, 80, { gold: m.gold })}<div class="bd"><div class="bn">${escapeHtml(billyName(m))} <span class="lv tnum">Lv ${m.lvl}</span></div><div class="note">Earns 1 XP for every ${plural(RULES.progression.buddyStepsPerXp, 'step')}. ${formatNumber(Math.ceil((b - m.xp) * RULES.progression.buddyStepsPerXp))} more steps to level ${m.lvl + 1}.</div>${bar((m.xp - a) / (b - a), 'xpb')}${ev}</div></div></section>`;
+  return `<section><div class="sec-h"><h2>Buddy</h2></div><div class="buddy px" data-a="mon" data-u="${m.uid}" role="button" tabindex="0">${rigCanvasHTML(m.sp, 80, { gold: m.gold })}<div class="bd"><div class="bn">${escapeHtml(billyName(m))} <span class="lv tnum">Lv ${m.lvl}</span></div><div class="note">Earns 1 XP for every ${plural(RULES.progression.buddyStepsPerXp, 'step')}. ${formatNumber(Math.ceil((b - m.xp) * RULES.progression.buddyStepsPerXp))} more steps to level ${m.lvl + 1}.</div>${progressBarHTML((m.xp - a) / (b - a), 'xpb')}${ev}</div></div></section>`;
 }
 function roomHero() {
   const I = uiState.inside,
@@ -915,19 +915,19 @@ function roomHero() {
         house: 'Tap whoever lives here to chat.',
         home: 'Your room in Granny Juniper’s cottage. Decorate it with what you’ve found.',
       }[I.kind] || '';
-  return `<div class="walk-hero" id="walkHero">${whCard(escapeHtml(here.name), escapeHtml(I.name || sc.name || 'Inside'), `<p class="wh-gate">${escapeHtml(what)}</p>`, (I.kind === 'home' ? `<button class="pb small gold" data-a="decorate">Decorate</button>` : '') + `<button class="pb small" data-a="leaveroom">${uiIconHTML('door', 14)} Go outside</button>`)}
+  return `<div class="walk-hero" id="walkHero">${locationCardHTML(escapeHtml(here.name), escapeHtml(I.name || sc.name || 'Inside'), `<p class="wh-gate">${escapeHtml(what)}</p>`, (I.kind === 'home' ? `<button class="pb small gold" data-a="decorate">Decorate</button>` : '') + `<button class="pb small" data-a="leaveroom">${uiIconHTML('door', 14)} Go outside</button>`)}
  <div class="wh-foot"><div class="wh-row"><button class="pb small glass fish-btn" data-a="fish" hidden>${uiIconHTML('fish', 14)} Fish</button><button class="wh-down glass" data-a="walkdown" aria-label="Show actions">${uiIconHTML('chev', 18)}<span>Actions</span></button><span class="wh-steps glass tnum">${uiIconHTML('walk', 14)} ${formatNumber(saveData.day.steps)}</span></div></div></div>`;
 }
 /* v31: the place card: compact (where, the hour and weather, staying or walking, one main button; the rest folded
    under More), closable with ×, and brought back by tapping the place's name in the top bar. Closed stays closed. */
-function whCard(sub, name, mid, btns) {
+function locationCardHTML(sub, name, mid, btns) {
   if (saveData.preferences && saveData.preferences.cardClosed) return '';
   const all = String(btns).match(/<button[\s\S]*?<\/button>/g) || [],
     main = all[0] || '',
     more = all.slice(1).join('');
   return `<div class="wh-card glass compact"><div class="wh-top"><div class="sub">${sub}</div><button class="wh-x" data-a="card-close" aria-label="Hide this card"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></button></div><h1 class="where">${name}</h1>${mid}<div class="wh-acts">${main}${more ? `<details class="wh-more"><summary>More</summary><div class="wh-more-b">${more}</div></details>` : ''}</div></div>`;
 }
-function envLine() {
+function environmentLine() {
   if (typeof environmentLabel !== 'function' || !environment.on) return '';
   const t = environmentLabel();
   if (!t) return '';
@@ -947,9 +947,9 @@ function walkHero() {
     nx = nextTripNode();
   let next = '';
   if (st.k === 'go')
-    next = `<div class="wh-next"><span>${escapeHtml(st.t)}</span><span class="tnum">${formatNumber(st.left)} steps</span>${bar(saveData.route.prog / roadCost(node, nx), 'trailbar live')}</div>`;
+    next = `<div class="wh-next"><span>${escapeHtml(st.t)}</span><span class="tnum">${formatNumber(st.left)} steps</span>${progressBarHTML(saveData.route.prog / roadCost(node, nx), 'trailbar live')}</div>`;
   else next = `<p class="wh-gate">${escapeHtml(st.t)}</p>`;
-  return `<div class="walk-hero" id="walkHero">${whCard(escapeHtml(locationSubtitle(here)), escapeHtml(here.name), envLine() + next, tripButtons())}
+  return `<div class="walk-hero" id="walkHero">${locationCardHTML(escapeHtml(locationSubtitle(here)), escapeHtml(here.name), environmentLine() + next, tripButtons())}
  <div class="wh-foot">${q.length ? `<p class="wh-hint glass">${uiIconHTML('spark', 12)} ${plural(q.length, 'Billie')} hiding nearby. Tap a <b>?</b> to battle.</p>` : saveData.route.prog === 0 ? `<p class="wh-hint glass">${uiIconHTML('walk', 12)} Tap the ground to walk around. Tap buildings, people and signs.</p>` : ''}
   <div class="wh-row"><button class="pb small glass fish-btn" data-a="fish" hidden>${uiIconHTML('fish', 14)} Fish</button><button class="pb small glass" data-a="photo" aria-label="Photo mode">${uiIconHTML('camera', 14)}</button><button class="wh-down glass" data-a="walkdown" aria-label="Show actions">${uiIconHTML('chev', 18)}<span>Actions</span></button><span class="wh-steps glass tnum">${uiIconHTML('walk', 14)} ${formatNumber(saveData.day.steps)}</span></div></div></div>`;
 }
@@ -967,7 +967,7 @@ function renderWalk() {
  ${typeof chalCard === 'function' ? chalCard() : ''}${typeof reqList === 'function' && reqList() ? `<section class="chal px glass"><div class="sec-h"><h2>Requests you’re helping with</h2></div>${reqList()}</section>` : ''}${hereCard()}</div><div class="col">
  <section class="pending"><div class="sec-h"><h2>Encounters</h2><span class="count tnum">${q.length}/${RULES.steps.maxEncounters}</span></div>
   <p class="note">${q.length >= RULES.steps.maxEncounters ? 'Your area is full. Battle or tax a few to make room.' : `Next one in about ${formatNumber(Math.ceil((RULES.steps.encounterEverySE - saveData.meter) / r))} steps.`} You only see their level until the battle starts.</p>
-  ${q.length ? `<div class="queue">${q.map(encCard).join('')}</div>` : `<div class="empty px">No Billies nearby. Walk about ${formatNumber(RULES.steps.encounterEverySE)} steps and one will wander over.</div>`}</section>
+  ${q.length ? `<div class="queue">${q.map(encounterCardHTML).join('')}</div>` : `<div class="empty px">No Billies nearby. Walk about ${formatNumber(RULES.steps.encounterEverySE)} steps and one will wander over.</div>`}</section>
  ${eggSlots()}${buddyCard()}</div></div></div>`;
 }
 /* ---------- the walk scene behind the Walk tab ---------- */
@@ -1023,10 +1023,10 @@ function sceneExitsByBearing(node, sc, ex, out) {
 /* what the walk scene shows: the stop you're at (walk around freely), or you walking out toward the next stop
    (first half of a road) and in from the far end (second half) */
 /* v26: walking into shops, the clinic, the lab and houses. uiState.inside remembers the room and where you came in */
-const ROOM_OF = { shop: 'int_shop', clinic: 'int_clinic', lab: 'int_lab', house: 'int_house', home: 'int_home' };
+const ROOM_BY_USE = { shop: 'int_shop', clinic: 'int_clinic', lab: 'int_lab', house: 'int_house', home: 'int_home' };
 /* v46: a building's own room: one set on it in the Studio ("room"), else the room made for its kind of building
    (a bakery, an inn, a bank...), else the room for what it does (shop, clinic, lab, house) */
-const ROOM_KIND = {
+const ROOM_BY_BUILDING = {
   bakery: 'int_bakery',
   inn: 'int_inn',
   bank: 'int_bank',
@@ -1039,16 +1039,16 @@ const ROOM_KIND = {
   ski_lodge: 'int_ski_lodge',
   market_hall: 'int_market_hall',
 };
-provide({ ROOM_KIND }); /* to-module */
+provide({ ROOM_BY_BUILDING }); /* to-module */
 function roomFor(a, p) {
   if ((saveData.preferences || {}).rooms === 'quick' && a !== 'home') return null;
   if (a !== 'home' && p) {
     if (p.room && mapById(p.room)) return p.room;
     const M = walkData().sc.props[p.k],
-      k = ROOM_KIND[p.k] || (M && ROOM_KIND[M.group]);
+      k = ROOM_BY_BUILDING[p.k] || (M && ROOM_BY_BUILDING[M.group]);
     if (k && mapById(k)) return k;
   }
-  const id = ROOM_OF[a];
+  const id = ROOM_BY_USE[a];
   return id && mapById(id) ? id : null;
 }
 function enterRoom(a, p) {
@@ -1136,7 +1136,7 @@ function roomRefresh() {
   walkView.nav = null;
 }
 function roomAim(h) {
-  if (!h || h.k !== 'act' || !ROOM_OF[h.act] || uiState.inside) return;
+  if (!h || h.k !== 'act' || !ROOM_BY_USE[h.act] || uiState.inside) return;
   if (typeof isOpenNow === 'function' && !isOpenNow(openingHoursKind(h.act, h.p))) return;
   const id = roomFor(h.act, h.p);
   if (id) roomLayIn(id, h.p);
@@ -1481,7 +1481,7 @@ export function walkPick(h) {
         return;
       }
     }
-    if (ROOM_OF[a] && enterRoom(a, p)) return;
+    if (ROOM_BY_USE[a] && enterRoom(a, p)) return;
     if (a === 'shop') {
       const id = p.shop || here.shop;
       if (id && SHOPS[id]) openShop(id);
@@ -1855,8 +1855,8 @@ const plateVars = m => {
   const t = SPECIES[m.sp].types;
   return `--c1:${TYPE_COLORS[t[0]][0]};--c2:${TYPE_COLORS[t[t.length - 1]][0]}`;
 };
-const billyConditionHTML = m => (m.hp <= 0 ? '<span class="stb st-down">Fainted</span>' : stBadge(m.status));
-const xpPart = m => {
+const billyConditionHTML = m => (m.hp <= 0 ? '<span class="stb st-down">Fainted</span>' : statusBadgeHTML(m.status));
+const xpProgress = m => {
   if (m.lvl >= maxLevel()) return 1;
   const a = xpFor(m.lvl),
     b = xpFor(m.lvl + 1);
@@ -1871,15 +1871,15 @@ function teamHero(m) {
     bud = m.uid === saveData.buddy;
   return `<section class="tm-hero tpanel"><button class="tm-stage" data-a="mon" data-u="${m.uid}" style="${plateVars(m)}" aria-label="${escapeHtml(billyName(m))}, details"><span class="tm-ribbon">Lead</span>${m.gold ? '<span class="tm-ribbon gold">Golden</span>' : ''}${rigCanvasHTML(m.sp, 120, { gold: m.gold })}</button>
  <div class="tm-info"><div class="tm-name"><h2>${escapeHtml(billyName(m))}</h2><span class="lv tnum">Lv ${m.lvl}</span></div>${m.nick ? `<div class="tm-sp">${escapeHtml(s.name)}</div>` : ''}
-  <div class="row">${s.types.map(chip).join('')}${billyConditionHTML(m)}${bud ? `<span class="badge bud">${uiIconHTML('heart', 11)} Buddy</span>` : ''}</div>
-  ${meter('HP', hpBar(m.hp, mx), `${m.hp}/${mx}`)}${meter('XP', bar(xpPart(m), 'xpb'), xpLeft(m))}
+  <div class="row">${s.types.map(typeBadgeHTML).join('')}${billyConditionHTML(m)}${bud ? `<span class="badge bud">${uiIconHTML('heart', 11)} Buddy</span>` : ''}</div>
+  ${meter('HP', hpBar(m.hp, mx), `${m.hp}/${mx}`)}${meter('XP', progressBarHTML(xpProgress(m), 'xpb'), xpLeft(m))}
   <div class="tm-acts">${needsCare(m) ? `<button class="pb small green" data-a="mheal" data-u="${m.uid}">${uiIconHTML('heart', 14)} Heal</button>` : ''}${bud ? '' : `<button class="pb small" data-a="mbuddy" data-u="${m.uid}">${uiIconHTML('walk', 14)} Make buddy</button>`}<button class="pb small quiet" data-a="mon" data-u="${m.uid}">Details</button></div></div></section>`;
 }
 function teamCard(m, i) {
   const mx = maxHp(m),
     bud = m.uid === saveData.buddy;
   return `<div class="tm-card${m.hp <= 0 ? ' down' : ''}" style="--d:${i * 40}ms"><button class="tm-main" data-a="mon" data-u="${m.uid}"><span class="tm-spr" style="${plateVars(m)}">${rigCanvasHTML(m.sp, 72, { gold: m.gold })}${bud ? `<i class="tm-heart" title="Buddy">${uiIconHTML('heart', 12)}</i>` : ''}</span>
-  <span class="tm-t"><b>${escapeHtml(billyName(m))}</b><span class="tm-lv tnum">Lv ${m.lvl}</span></span><span class="row">${SPECIES[m.sp].types.map(chip).join('')}${billyConditionHTML(m)}</span>${hpBar(m.hp, mx)}<span class="hpn tnum">${m.hp}/${mx} HP</span></button>
+  <span class="tm-t"><b>${escapeHtml(billyName(m))}</b><span class="tm-lv tnum">Lv ${m.lvl}</span></span><span class="row">${SPECIES[m.sp].types.map(typeBadgeHTML).join('')}${billyConditionHTML(m)}</span>${hpBar(m.hp, mx)}<span class="hpn tnum">${m.hp}/${mx} HP</span></button>
   <div class="tm-quick"><button class="qk" data-a="mlead" data-u="${m.uid}" ${m.hp <= 0 ? 'disabled' : ''}>Make lead</button>${needsCare(m) ? `<button class="qk heal" data-a="mheal" data-u="${m.uid}">Heal</button>` : ''}</div></div>`;
 }
 function jobSlots() {
@@ -1893,12 +1893,12 @@ function jobSlots() {
       const m = findBilly(j.uid),
         J = JOBS[j.job];
       if (!m) return '';
-      return `<div class="job"><button class="job-spr" data-a="mon" data-u="${m.uid}" style="${plateVars(m)}" aria-label="${escapeHtml(billyName(m))}, details">${rigCanvasHTML(m.sp, 48, { gold: m.gold })}</button><div class="jt"><b>${escapeHtml(billyName(m))}</b><span class="note">${escapeHtml(J.n)}, ${escapeHtml(J.where)}. Earns ${escapeHtml(J.pay)}.</span>${bar(j.acc / JOB_STEPS, 'gold live')}<span class="note tnum">${formatNumber(JOB_STEPS - j.acc)} steps to the next pay${j.pend ? `, ${j.pend} ready` : ''}</span>
+      return `<div class="job"><button class="job-spr" data-a="mon" data-u="${m.uid}" style="${plateVars(m)}" aria-label="${escapeHtml(billyName(m))}, details">${rigCanvasHTML(m.sp, 48, { gold: m.gold })}</button><div class="jt"><b>${escapeHtml(billyName(m))}</b><span class="note">${escapeHtml(J.n)}, ${escapeHtml(J.where)}. Earns ${escapeHtml(J.pay)}.</span>${progressBarHTML(j.acc / JOB_STEPS, 'gold live')}<span class="note tnum">${formatNumber(JOB_STEPS - j.acc)} steps to the next pay${j.pend ? `, ${j.pend} ready` : ''}</span>
   <div class="racts"><button class="pb small ${j.pend ? 'gold' : ''}" data-a="collect" data-s="${i}" ${j.pend ? '' : 'disabled'}>Collect pay${j.pend ? ` (${j.pend})` : ''}</button><button class="pb small quiet" data-a="endshift" data-s="${i}">End shift</button></div></div></div>`;
     })
     .join('')}</div>`;
 }
-const BOXSORT = [
+const BOX_SORTS = [
   ['new', 'Newest'],
   ['lvl', 'Level'],
   ['name', 'Name'],
@@ -1919,7 +1919,7 @@ function boxSection() {
   const full = saveData.team.length >= teamSize();
   const tools =
     all.length > 3
-      ? `<div class="fchips tm-tools" role="group" aria-label="Sort and filter storage">${BOXSORT.map(([k, l]) => `<button class="fchip${so === k ? ' on' : ''}" data-a="boxsort" data-k="${k}" aria-pressed="${so === k}">${l}</button>`).join('')}${types.length > 1 ? `<span class="tm-sep" aria-hidden="true"></span><button class="fchip${f === 'all' ? ' on' : ''}" data-a="boxf" data-f="all" aria-pressed="${f === 'all'}">All types</button>${types.map(t => `<button class="fchip tdot${f === t ? ' on' : ''}" data-a="boxf" data-f="${t}" style="--tc:${TYPE_COLORS[t][0]}" aria-pressed="${f === t}"><i></i>${t === 'None' ? 'Normal' : t}</button>`).join('')}` : ''}</div>`
+      ? `<div class="fchips tm-tools" role="group" aria-label="Sort and filter storage">${BOX_SORTS.map(([k, l]) => `<button class="fchip${so === k ? ' on' : ''}" data-a="boxsort" data-k="${k}" aria-pressed="${so === k}">${l}</button>`).join('')}${types.length > 1 ? `<span class="tm-sep" aria-hidden="true"></span><button class="fchip${f === 'all' ? ' on' : ''}" data-a="boxf" data-f="all" aria-pressed="${f === 'all'}">All types</button>${types.map(t => `<button class="fchip tdot${f === t ? ' on' : ''}" data-a="boxf" data-f="${t}" style="--tc:${TYPE_COLORS[t][0]}" aria-pressed="${f === t}"><i></i>${t === 'None' ? 'Normal' : t}</button>`).join('')}` : ''}</div>`
       : '';
   return `<section class="tpanel tm-box"><div class="sec-h"><h2>Storage</h2><span class="count tnum">${all.length}</span></div>${
     all.length
@@ -1942,7 +1942,7 @@ function renderTeam() {
  <section class="tpanel tm-jobs"><div class="sec-h"><h2>Day jobs</h2><span class="count tnum">${work}/${saveData.jobs.length}</span></div><p class="note">Billies at work leave your team and earn pay while you walk.</p>${jobSlots()}</section>
  ${boxSection()}`;
 }
-const RARN = { starter: 'Starter', common: 'Common', uncommon: 'Uncommon', rare: 'Rare', mythical: 'Mythical' };
+const RARITY_NAMES = { starter: 'Starter', common: 'Common', uncommon: 'Uncommon', rare: 'Rare', mythical: 'Mythical' };
 const TRACKS = {
   biped: 'Two neat footprints, evenly spaced',
   quad: 'Four tidy paw prints',
@@ -1996,7 +1996,7 @@ function renderLedger() {
         `<button class="fchip tdot${f === t ? ' on' : ''}" data-a="dexf" data-f="${t}" style="--tc:${TYPE_COLORS[t][0]}" aria-label="${t}"><i></i>${t}</button>`
     ).join('');
   return `<header class="bar"><div><div class="sub">Professor Hazel’s records</div><h1 class="where">Field Guide</h1></div></header>${guideTabs()}
- <section class="ledsum paper px"><div class="ls-row"><div><span class="ls-k">Seen</span><b class="tnum">${seen}</b></div><div><span class="ls-k">Taxed</span><b class="tnum">${got}</b></div><div><span class="ls-k">Total</span><b class="tnum">${DEX_ORDER.length}</b></div></div>${bar(got / DEX_ORDER.length, 'gold')}<p class="hand">Keep walking. They are out there.</p></section>
+ <section class="ledsum paper px"><div class="ls-row"><div><span class="ls-k">Seen</span><b class="tnum">${seen}</b></div><div><span class="ls-k">Taxed</span><b class="tnum">${got}</b></div><div><span class="ls-k">Total</span><b class="tnum">${DEX_ORDER.length}</b></div></div>${progressBarHTML(got / DEX_ORDER.length, 'gold')}<p class="hand">Keep walking. They are out there.</p></section>
  <div class="fchips">${chips}</div>
  <ol class="ledger paper px">${
    list
@@ -2073,7 +2073,7 @@ function renderDexEntry(id) {
   return `<header class="bar dexbar"><button class="pb small quiet" data-a="dexback">‹ Guide</button><div class="dexnav"><button class="pb small quiet" data-a="dex" data-s="${prev || ''}" ${prev ? '' : 'disabled'} aria-label="Previous entry">‹</button><span class="tnum">No. ${String(s.no).padStart(3, '0')}</span><button class="pb small quiet" data-a="dex" data-s="${next || ''}" ${next ? '' : 'disabled'} aria-label="Next entry">›</button></div></header>
  <article class="dexpage">
   <div class="plate px" style="--c1:${bg};--c2:${bg2}"><div class="plate-sky"></div><div class="plate-floor"></div><div class="plate-spr">${rigCanvasHTML(id, 150, { act: 'enter' })}</div><span class="cattag">${escapeHtml(s.cat)}</span><span class="stamp ${got ? 'got' : 'seen'}">${got ? 'Taxed' : 'Seen'}</span><span class="specno tnum">Specimen ${String(s.no).padStart(3, '0')}/${String(DEX_ORDER.length).padStart(3, '0')}</span></div>
-  <h2 class="dexname">${escapeHtml(s.name)}</h2><p class="row">${s.types.map(chip).join('')}<span class="note rar">${RARN[s.rar] || ''}</span></p>
+  <h2 class="dexname">${escapeHtml(s.name)}</h2><p class="row">${s.types.map(typeBadgeHTML).join('')}<span class="note rar">${RARITY_NAMES[s.rar] || ''}</span></p>
   <div class="vitals">${[
     ['Height', typeof s.ht === 'number' ? s.ht.toFixed(1) + ' m' : s.ht],
     ['Weight', typeof s.wt === 'number' ? (s.wt >= 1000 ? formatNumber(s.wt) : s.wt) + ' kg' : s.wt],
@@ -2085,7 +2085,7 @@ function renderDexEntry(id) {
   <section class="paper px notes"><h3>Field notes</h3>${got ? `<p>${escapeHtml(s.blurb)}</p><p class="hand red">${escapeHtml(s.note)}</p>` : `<p>${escapeHtml(s.blurb.split('. ')[0])}. <span class="redact">██████ ████ ███████ ██</span></p><p class="hand">Tax one to complete this entry.</p>`}</section>
   <section class="paper px"><h3>Base stats</h3>${got ? `<table class="bsheet"><tbody>${STAT_IDS.map((k, i) => `<tr><td>${STAT_NAMES[k]}</td><td class="tnum">${s.base[i]}</td><td><span class="bbar" style="--w:${((s.base[i] / mx) * 100).toFixed(0)}%"></span></td></tr>`).join('')}<tr class="tot"><td>Total</td><td class="tnum">${tot}</td><td></td></tr></tbody></table>` : `<p class="note">Tax one to see its stats.</p>`}</section>
   <section class="paper px lin"><h3>Evolution</h3><div class="chain">${chain}</div><p class="note">${escapeHtml(evolutionHint({ sp: id, lvl: 0, bsteps: 0 }))}</p></section>
-  <section class="paper px"><h3>Type matchups</h3><table class="expo"><tbody><tr><td>Strong against</td><td>${strong.map(chip).join('') || '—'}</td></tr><tr><td>Weak to</td><td>${weak.map(chip).join('') || '—'}</td></tr><tr><td>Resists</td><td>${res.map(chip).join('') || '—'}</td></tr></tbody></table></section>
+  <section class="paper px"><h3>Type matchups</h3><table class="expo"><tbody><tr><td>Strong against</td><td>${strong.map(typeBadgeHTML).join('') || '—'}</td></tr><tr><td>Weak to</td><td>${weak.map(typeBadgeHTML).join('') || '—'}</td></tr><tr><td>Resists</td><td>${res.map(typeBadgeHTML).join('') || '—'}</td></tr></tbody></table></section>
   <section class="paper px"><h3>Where to look</h3><table class="expo"><tbody><tr><td>Found at</td><td>${where.length ? escapeHtml(where.join(', ')) : 'Not found in the wild'}</td></tr><tr><td>Hatches from</td><td>${eggs.length ? escapeHtml(eggs.join(', ')) : '—'}</td></tr><tr><td>Tracks</td><td>${escapeHtml(TRACKS[D.plan] || 'Unremarkable')}</td></tr></tbody></table></section>
   ${got ? `<div class="sig"><span class="sigline">${escapeHtml(s.name)}</span><small>Recorded by Professor Hazel.</small></div>` : ''}
  </article>`;
@@ -2133,7 +2133,7 @@ function renderProfile() {
       ? new Date(saveData.since).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
       : null;
   const tile = (ic, k, v, sub, p) =>
-    `<div class="pf-tile"><span class="pf-k">${ic}${k}</span><b class="tnum">${v}</b>${sub ? `<small>${sub}</small>` : ''}${p != null ? bar(p, 'gold') : ''}</div>`;
+    `<div class="pf-tile"><span class="pf-k">${ic}${k}</span><b class="tnum">${v}</b>${sub ? `<small>${sub}</small>` : ''}${p != null ? progressBarHTML(p, 'gold') : ''}</div>`;
   const items = Object.keys(ITEMS).filter(k => saveData.items[k] > 0);
   return `<header class="bar"><div><div class="sub">Your profile</div><h1 class="where">Trainer</h1></div><button class="pb small quiet" data-a="settings">${uiIconHTML('gear', 16)} Settings</button></header>
  <div class="pf-top"><section class="tcard">
@@ -2366,9 +2366,9 @@ function billySheet(m) {
     cls: 'mon-sheet',
     acts,
     top: `<div class="ms-plate" style="${plateVars(m)}">${lead ? '<span class="tm-ribbon">Lead</span>' : ''}${bud ? `<span class="tm-ribbon bud">${uiIconHTML('heart', 11)} Buddy</span>` : ''}${m.gold ? '<span class="tm-ribbon gold">Golden</span>' : ''}${rigCanvasHTML(m.sp, 128, { gold: m.gold })}</div>`,
-    html: `<p class="row ms-chips">${s.types.map(chip).join('')}${billyConditionHTML(m)}<b class="lv tnum">Lv ${m.lvl}</b>${m.nick ? `<span class="ms-sp">${escapeHtml(s.name)}</span>` : ''}</p>
+    html: `<p class="row ms-chips">${s.types.map(typeBadgeHTML).join('')}${billyConditionHTML(m)}<b class="lv tnum">Lv ${m.lvl}</b>${m.nick ? `<span class="ms-sp">${escapeHtml(s.name)}</span>` : ''}</p>
   <div class="ms-tabs" role="tablist" aria-label="About ${escapeHtml(billyName(m))}" data-on="sum">${tabs.map(([k, l]) => `<button role="tab" data-a="ms-tab" data-k="${k}" aria-selected="${k === 'sum'}">${l}</button>`).join('')}</div>
-  <div class="ms-pane" data-k="sum"><div class="ms-meters">${meter('HP', hpBar(m.hp, mx), `${m.hp}/${mx}`)}${meter('XP', bar(xpPart(m), 'xpb'), xpLeft(m))}</div>
+  <div class="ms-pane" data-k="sum"><div class="ms-meters">${meter('HP', hpBar(m.hp, mx), `${m.hp}/${mx}`)}${meter('XP', progressBarHTML(xpProgress(m), 'xpb'), xpLeft(m))}</div>
    <div class="ms-chart">${st}</div>${metR}
    ${m.job != null ? `<p class="note ms-job">${uiIconHTML('bag', 14)} Working as a ${escapeHtml(JOBS[saveData.jobs[m.job].job].n.toLowerCase())} right now. End the shift from Day jobs to bring it back.</p>` : ''}
    ${acts.length ? `<div class="ms-acts">${acts.map((b, i) => `<button class="pb small ${b.c || ''}" data-a="mact" data-i="${i}" ${b.dis ? 'disabled' : ''}>${b.ic ? uiIconHTML(b.ic, 15) : ''}<span>${b.l}</span></button>`).join('')}</div>` : ''}
@@ -2378,7 +2378,7 @@ function billySheet(m) {
   <div class="ms-pane" data-k="moves" hidden><div class="mvlist">${m.moves
     .map(id => {
       const M = MOVES[id];
-      return `<div class="mvi"><div class="mh"><span>${M.n}</span>${chip(M.t)}</div><div class="md">${M.p ? `${M.p} power, ${M.a}% accuracy. ` : ''}${M.d}</div></div>`;
+      return `<div class="mvi"><div class="mh"><span>${M.n}</span>${typeBadgeHTML(M.t)}</div><div class="md">${M.p ? `${M.p} power, ${M.a}% accuracy. ` : ''}${M.d}</div></div>`;
     })
     .join('')}</div></div>
   <div class="ms-pane" data-k="evo" hidden>${evo ? `<div class="ms-line">${evo}</div>` : ''}<p class="note">${escapeHtml(evolutionHint(m))}</p></div>`,

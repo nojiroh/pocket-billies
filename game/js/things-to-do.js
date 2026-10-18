@@ -5,7 +5,7 @@
    first time it's needed. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { bar, closeModal, modal, provide, render, roomRefresh, toast } from './hooks.js';
+import { closeModal, modal, progressBarHTML, provide, render, roomRefresh, toast } from './hooks.js';
 import { clamp } from './util.js';
 import { COINS, ITEMS, LOCATIONS, RULES, SPECIES, gameData } from './game-data.js';
 import { activeBattle, billyName, escapeHtml, formatNumber, save, saveData, today, uiState } from './game-state.js';
@@ -185,7 +185,7 @@ export function chalCard() {
     .map((c, i) => {
       const h = Math.min(chalHave(c), c.need),
         done = h >= c.need;
-      return `<div class="ch-row ${c.claimed ? 'claimed' : ''}"><div class="ch-t"><b>${escapeHtml(chalText(c))}</b><span class="note tnum">${formatNumber(h)} / ${formatNumber(c.need)}</span>${bar(h / c.need, done ? 'gold' : 'live')}</div>${c.claimed ? `<span class="ch-ok">Claimed</span>` : done ? `<button class="pb small gold" data-a="chal" data-i="${i}">Claim</button>` : ''}</div>`;
+      return `<div class="ch-row ${c.claimed ? 'claimed' : ''}"><div class="ch-t"><b>${escapeHtml(chalText(c))}</b><span class="note tnum">${formatNumber(h)} / ${formatNumber(c.need)}</span>${progressBarHTML(h / c.need, done ? 'gold' : 'live')}</div>${c.claimed ? `<span class="ch-ok">Claimed</span>` : done ? `<button class="pb small gold" data-a="chal" data-i="${i}">Claim</button>` : ''}</div>`;
     })
     .join('')}<p class="note">New challenges every day.</p></section>`;
 }

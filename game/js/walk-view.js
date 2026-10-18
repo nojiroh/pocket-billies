@@ -11,7 +11,7 @@
 import { expose } from './test-globals.js';
 import {
   ALTERNATE_PROPS,
-  ROOM_KIND,
+  ROOM_BY_BUILDING,
   TERRAIN_MATERIALS,
   addSteps,
   artCacheVersion,
@@ -550,7 +550,7 @@ const CLOSED_VENUE_NAMES = {
 export function openingHoursKind(a, p) {
   const C = walkData().sc,
     M = p && C.props[p.k],
-    RK = typeof ROOM_KIND !== 'undefined' ? ROOM_KIND : {};
+    RK = typeof ROOM_BY_BUILDING !== 'undefined' ? ROOM_BY_BUILDING : {};
   return p && RK[p.k] ? p.k : M && RK[M.group] ? M.group : a;
 }
 export function isOpenNow(kind) {
