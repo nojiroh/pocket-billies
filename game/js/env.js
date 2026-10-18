@@ -8,7 +8,8 @@
    others in the rain (rules.env in the game data, editable in the Studio).
    The renderer reads ENV through envFrame() once a frame; nothing here touches WebGL. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
-import { expose } from './bridge.js';
+import { expose } from './test-globals.js';
+import { RM, RULES, S, SP, provide, sceneIdAt } from './hooks.js';
 import { clamp } from './util.js';
 import { hexA } from './art.js';
 import { DIO, dioScene } from './diorama.js';
@@ -30,7 +31,7 @@ expose({
   envForecast: [() => envForecast, v => (envForecast = v)],
   envFrame: [() => envFrame, v => (envFrame = v)],
   envHash: [() => envHash, v => (envHash = v)],
-  envHere: [() => envHere, v => (envHere = v)],
+  envHere: [() => envHere, v => ((envHere = v), provide({ envHere }))],
   envHint: [() => envHint, v => (envHint = v)],
   envHistory: [() => envHistory, v => (envHistory = v)],
   envHour: [() => envHour, v => (envHour = v)],
@@ -39,18 +40,19 @@ expose({
   envLikes: [() => envLikes, v => (envLikes = v)],
   envLitFrac: [() => envLitFrac, v => (envLitFrac = v)],
   envMixHex: [() => envMixHex, v => (envMixHex = v)],
-  envOdds: [() => envOdds, v => (envOdds = v)],
+  envOdds: [() => envOdds, v => ((envOdds = v), provide({ envOdds }))],
   envPrefs: [() => envPrefs, v => (envPrefs = v)],
   envRules: [() => envRules, v => (envRules = v)],
-  envSeason: [() => envSeason, v => (envSeason = v)],
+  envSeason: [() => envSeason, v => ((envSeason = v), provide({ envSeason }))],
   envSky: [() => envSky, v => (envSky = v)],
   envSmooth: [() => envSmooth],
-  envState: [() => envState, v => (envState = v)],
-  envSun: [() => envSun, v => (envSun = v)],
+  envState: [() => envState, v => ((envState = v), provide({ envState }))],
+  envSun: [() => envSun, v => ((envSun = v), provide({ envSun }))],
   envWeatherFor: [() => envWeatherFor, v => (envWeatherFor = v)],
   envWinLit: [() => envWinLit, v => (envWinLit = v)],
 });
 /* eslint-enable no-func-assign */
+provide({ envHere, envOdds, envSeason, envState, envSun });
 /* to-module: end */
 export const ENV = {
   on: false,
@@ -76,6 +78,7 @@ export const ENV = {
   lampK: 0,
   t: 0,
 };
+provide({ ENV }); /* to-module */
 const ENV_SEASONS = [
   'winter',
   'winter',
@@ -466,6 +469,7 @@ const ENV_MOD = {
   world: { groundShine: v => v * (1 + ENV.wet * 1.6) },
   water: { ripples: v => v * (1 + ENV.rain * 0.7 + ENV.storm * 0.8) },
 };
+provide({ ENV_MOD }); /* to-module */
 /* the light of the moment: a low warm sun at dusk, the moon at night */
 function envSun(a, h, col) {
   const day = 1 - ENV.night,

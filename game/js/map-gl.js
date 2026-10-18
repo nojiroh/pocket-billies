@@ -8,7 +8,8 @@
    map.js keeps the camera, the walking animation and the picking, and still draws the map itself where WebGL isn't
    available (a lost context). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
-import { expose } from './bridge.js';
+import { expose } from './test-globals.js';
+import { FR, flyDraw, flyTick, provide } from './hooks.js';
 import { $, clamp } from './util.js';
 import { FUTURE, LINKS, ROUTE, linkCost, placeSub } from './data.js';
 import { RM, S, U, canEnter, esc, fmt, nextStop, tripTo } from './core.js';
@@ -25,15 +26,29 @@ import {
   D2R,
   MAP,
   MCL,
+  MH,
   MLAND,
   MNV,
+  MW,
   REGV,
   edgePos,
   mapCam,
+  mapFit,
+  mapLabels,
+  mapMount,
+  mapReset,
   mapSelect,
   mapWalk,
+  mapZoom,
   mePos,
   mproj,
+  setMH,
+  setMW,
+  setMapFit,
+  setMapLabels,
+  setMapMount,
+  setMapReset,
+  setMapZoom,
   slerp,
   sunBlocks,
   v3,
@@ -79,17 +94,22 @@ expose({
   mglPins: [() => mglPins, v => (mglPins = v)],
   mglPlacesHTML: [() => mglPlacesHTML, v => (mglPlacesHTML = v)],
   mglProj: [() => mglProj, v => (mglProj = v)],
-  mglRender: [() => mglRender, v => (mglRender = v)],
+  mglRender: [() => mglRender, v => setMglRender(v)],
   mglSize: [() => mglSize, v => (mglSize = v)],
   mglUV: [() => mglUV, v => (mglUV = v)],
-  mmBuild: [() => mmBuild, v => (mmBuild = v)],
+  mmBuild: [() => mmBuild, v => setMmBuild(v)],
   mmCols: [() => mmCols, v => (mmCols = v)],
   mmDraw: [() => mmDraw, v => (mmDraw = v)],
   mmGet: [() => mmGet, v => (mmGet = v)],
   mmKey: [() => mmKey, v => (mmKey = v)],
   mmOn: [() => mmOn, v => (mmOn = v)],
+  setMglRender: [() => setMglRender, v => (setMglRender = v)],
 });
 /* eslint-enable no-func-assign */
+export function setMmBuild(v) {
+  mmBuild = v; // eslint-disable-line no-func-assign
+  provide({ mmBuild });
+}
 /* to-module: end */
 export const MGL = {
   flat: false,
@@ -242,7 +262,7 @@ const _mapMountCPU = mapMount,
   _mapLabelsCPU = mapLabels,
   _mapZoomCPU = mapZoom,
   _mapResetCPU = mapReset;
-mapMount = function () {
+setMapMount(function () {
   const cv = $('#mapcv');
   if (!cv) return;
   if (!mapGLReady()) {
@@ -400,7 +420,7 @@ mapMount = function () {
     MAP.last = performance.now();
     frameTask('map', mapGLLoop);
   }
-};
+});
 const mglPinch = pts => {
   const [a, b] = [...pts.values()];
   return Math.hypot(a[0] - b[0], a[1] - b[1]);
@@ -445,8 +465,8 @@ export function mglSize() {
     w = Math.round(r && r.width > 20 ? r.width : innerWidth),
     h = Math.round(r && r.height > 20 ? r.height : innerHeight);
   if (w !== MW || h !== MH) {
-    MW = w;
-    MH = h;
+    setMW(w);
+    setMH(h);
     MAP.dirty = true;
   }
   MAP.s = 1;
@@ -665,6 +685,11 @@ export function mglRender(t) {
     sunCol: [1, 0.9, 0.7],
   });
   gl.depthFunc(gl.LEQUAL);
+}
+/* phase 04d: the in-game full test (selftest.js) times the map */
+export function setMglRender(v) {
+  mglRender = v; // eslint-disable-line no-func-assign
+  provide({ mglRender });
 }
 /* the miniatures: loaded the first time the map opens; size in world units per pixel (about 3 degrees across) */
 const MINI_K = 0.0004;
@@ -990,29 +1015,29 @@ function mglPick(ev) {
     });
   if (best !== null) mapSelect(best);
 }
-mapLabels = function () {
+setMapLabels(function () {
   if (MAP.gl) return mglPins();
   return _mapLabelsCPU();
-};
+});
 {
   const cpuFit = mapFit;
-  mapFit = function () {
+  setMapFit(function () {
     if (MAP.gl) {
       mglSize();
       MAP.dirty = true;
       return;
     }
     cpuFit();
-  };
+  });
 }
-mapZoom = function (k) {
+setMapZoom(function (k) {
   if (!MAP.gl) return _mapZoomCPU(k);
   MGL.altT = null;
   if (MGL.flat) MGL.fv.s = clamp(MGL.fv.s / k, mglFlatMin(), MW * 8);
   else MAP.alt = clamp(MAP.alt * k, MGL_ALT[0], MGL_ALT[1]);
   MAP.dirty = true;
-};
-mapReset = function () {
+});
+setMapReset(function () {
   if (!MAP.gl) return _mapResetCPU();
   MAP.free = false;
   MAP.tilt = 0.5733;
@@ -1023,7 +1048,7 @@ mapReset = function () {
     MGL.fv.v = v;
   }
   MAP.dirty = true;
-};
+});
 /* ---------- extra controls: places list and flat view ---------- */
 function mglChrome() {
   const box = $('.map-full');
@@ -1183,7 +1208,7 @@ function mmKey(sc) {
     typeof dioArtVer === 'function' ? dioArtVer() : 0,
   ].join('|');
 }
-function mmBuild(i) {
+export function mmBuild(i) {
   const r = ROUTE[i],
     sc = r && r.scene && dioScene(r.scene);
   if (!sc || !sc.w) return null;

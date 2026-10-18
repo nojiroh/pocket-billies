@@ -15,7 +15,8 @@
    stay the currency: the road is the walk you were already doing, now with ground under it. The road's ground, verges,
    trees and flowers come from a seed (the link's index), never stored. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
-import { expose } from './bridge.js';
+import { expose } from './test-globals.js';
+import { provide, sceneExits, sceneIdAt } from './hooks.js';
 import { clamp } from './util.js';
 import { ADJ, LINKS, ROUTE } from './data.js';
 import { U } from './core.js';
@@ -84,9 +85,9 @@ expose({
   wrLook: [() => wrLook, v => (wrLook = v)],
   wrLookMix: [() => wrLookMix, v => (wrLookMix = v)],
   wrLookOf: [() => wrLookOf, v => (wrLookOf = v)],
-  wrLookTick: [() => wrLookTick, v => (wrLookTick = v)],
+  wrLookTick: [() => wrLookTick, v => ((wrLookTick = v), provide({ wrLookTick }))],
   wrMixHex: [() => wrMixHex, v => (wrMixHex = v)],
-  wrNear: [() => wrNear, v => (wrNear = v)],
+  wrNear: [() => wrNear, v => ((wrNear = v), provide({ wrNear }))],
   wrNoise: [() => wrNoise, v => (wrNoise = v)],
   wrOn: [() => wrOn],
   wrPrefetch: [() => wrPrefetch, v => (wrPrefetch = v)],
@@ -103,7 +104,7 @@ expose({
   wrRoomWindows: [() => wrRoomWindows, v => (wrRoomWindows = v)],
   wrSalt: [() => wrSalt, v => (wrSalt = v)],
   wrScene: [() => wrScene, v => (wrScene = v)],
-  wrSceneById: [() => wrSceneById, v => (wrSceneById = v)],
+  wrSceneById: [() => wrSceneById, v => ((wrSceneById = v), provide({ wrSceneById }))],
   wrSeamOf: [() => wrSeamOf, v => (wrSeamOf = v)],
   wrStartU: [() => wrStartU, v => (wrStartU = v)],
   wrTile: [() => wrTile, v => (wrTile = v)],
@@ -113,8 +114,10 @@ expose({
   wrViewFor: [() => wrViewFor, v => (wrViewFor = v)],
 });
 /* eslint-enable no-func-assign */
+provide({ wrLookTick, wrNear, wrSceneById });
 /* to-module: end */
 export const WORLD = { cache: new Map(), max: 5, gen: 0, LW: 40, MID: 64, BAND: 12, on: true };
+provide({ WORLD }); /* to-module */
 export const wrOn = () => WORLD.on && !(typeof eng === 'function' && eng('world', 'seamless') === false);
 function wrRoadLen(steps) {
   return Math.max(24, Math.round((40 * steps) / 500));

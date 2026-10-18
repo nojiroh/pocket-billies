@@ -4,10 +4,11 @@
 // - no-undef finds a name that no script defines (a typo, a deleted function still called),
 // - no-redeclare (builtinGlobals) finds a name defined in two scripts, where the later one silently wins or a
 //   let/const stops the page (what tools/check-globals.py looked for line by line).
-// Phase 04c: a script may be an ES module (type="module" in the page). A module imports what it reads from earlier
-// modules (tools/to-module.mjs); everything else it reaches as a global through the window bridge, so it is linted
-// with the same list. In a module no-redeclare can't see a clash with another script, so the config itself refuses
-// a name declared by a module and by another script of the same page.
+// Phase 04c: a script may be an ES module (type="module" in the page). In a module no-redeclare can't see a clash
+// with another script, so the config itself refuses a name declared by a module and by another script of the same
+// page. Phase 04d: a module imports every other module's name it uses (tools/to-module.mjs: from the module, or from
+// game/js/hooks.js), so the globals are only the classic scripts' names; no-undef finds a module name read without
+// an import (run npm run modules), or read by a classic script.
 import js from '@eslint/js';
 import * as espree from 'espree';
 import globals from 'globals';
@@ -91,7 +92,9 @@ for (const html of APPS) {
     }
   for (const f of scripts.filter(f => typeof f === 'string')) {
     const g = sharedGlobals.get(f) || {};
-    for (const [other, names] of own) if (other !== f) for (const n of names) g[n] = 'writable';
+    // phase 04d: a module's names are not globals (the test globals are only on for the checks), so only the classic
+    // scripts' names are; a module reaches another module's names through its imports
+    for (const [other, names] of own) if (other !== f && !MODULES.has(other)) for (const n of names) g[n] = 'writable';
     sharedGlobals.set(f, g);
     ownNames.set(f, own.get(f));
   }
@@ -127,7 +130,7 @@ export default [
     rules: bugRules,
   })),
   {
-    files: ['game/js/bridge.js'],
+    files: ['game/js/test-globals.js', 'game/js/hooks.js'],
     languageOptions: { ecmaVersion: 'latest', sourceType: 'module', globals: globals.browser },
     rules: bugRules,
   },

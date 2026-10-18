@@ -4,7 +4,8 @@
    textures with automatic normal maps, render targets and the shared lighting code in GLSL.
    One engine state object, EGL, is shared by every view. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
-import { expose } from '../bridge.js';
+import { expose } from '../test-globals.js';
+import { DGL, dioArtVer, eglRestored, provide } from '../hooks.js';
 import { clamp } from '../util.js';
 import { cnv } from '../art.js';
 import { dioOk } from '../diorama.js';
@@ -25,7 +26,7 @@ expose({
   eglBindGrid: [() => eglBindGrid, v => (eglBindGrid = v)],
   eglBindQuad: [() => eglBindQuad, v => (eglBindQuad = v)],
   eglCompile: [() => eglCompile, v => (eglCompile = v)],
-  eglFinish: [() => eglFinish, v => (eglFinish = v)],
+  eglFinish: [() => eglFinish, v => setEglFinish(v)],
   eglFree: [() => eglFree, v => (eglFree = v)],
   eglGpuBegin: [() => eglGpuBegin, v => (eglGpuBegin = v)],
   eglGpuEnd: [() => eglGpuEnd, v => (eglGpuEnd = v)],
@@ -33,13 +34,13 @@ expose({
   eglImg: [() => eglImg, v => (eglImg = v)],
   eglInit: [() => eglInit, v => (eglInit = v)],
   eglMesh: [() => eglMesh, v => (eglMesh = v)],
-  eglNormWork: [() => eglNormWork, v => (eglNormWork = v)],
+  eglNormWork: [() => eglNormWork, v => setEglNormWork(v)],
   eglNormWorker: [() => eglNormWorker, v => (eglNormWorker = v)],
-  eglNormal: [() => eglNormal, v => (eglNormal = v)],
+  eglNormal: [() => eglNormal, v => setEglNormal(v)],
   eglOK: [() => eglOK, v => (eglOK = v)],
   eglPendPoll: [() => eglPendPoll, v => (eglPendPoll = v)],
   eglPrecompile: [() => eglPrecompile, v => (eglPrecompile = v)],
-  eglPrograms: [() => eglPrograms, v => (eglPrograms = v)],
+  eglPrograms: [() => eglPrograms, v => setEglPrograms(v)],
   eglStart: [() => eglStart, v => (eglStart = v)],
   eglTarget: [() => eglTarget, v => (eglTarget = v)],
   eglTexData: [() => eglTexData, v => (eglTexData = v)],
@@ -53,6 +54,22 @@ expose({
   v3n: [() => v3n],
 });
 /* eslint-enable no-func-assign */
+export function setEglFinish(v) {
+  eglFinish = v; // eslint-disable-line no-func-assign
+  provide({ eglFinish });
+}
+export function setEglNormWork(v) {
+  eglNormWork = v; // eslint-disable-line no-func-assign
+  provide({ eglNormWork });
+}
+export function setEglNormal(v) {
+  eglNormal = v; // eslint-disable-line no-func-assign
+  provide({ eglNormal });
+}
+export function setEglPrograms(v) {
+  eglPrograms = v; // eslint-disable-line no-func-assign
+  provide({ eglPrograms });
+}
 /* to-module: end */
 export const EGL = {
   ok: null,
@@ -179,6 +196,7 @@ export const smooth01 = t => {
   t = clamp(t, 0, 1);
   return t * t * (3 - 2 * t);
 };
+provide({ smooth01 }); /* to-module */
 /* ---------- shared GLSL ---------- */
 export const EGL_GLSL_COMMON = `
 uniform vec3 uCurve;uniform float uCurveD0;
@@ -334,7 +352,7 @@ function eglStart([vs, fs], name) {
   gl.linkProgram(p);
   return { p, a, b, name, gl };
 }
-function eglFinish(j) {
+export function eglFinish(j) {
   const gl = EGL.gl,
     p = j.p;
   if (!gl.getProgramParameter(p, gl.LINK_STATUS)) {
@@ -636,7 +654,7 @@ export const EGL_MATS = {
 };
 /* v32: normal maps are worked out on a helper thread (a big picture took seconds and froze the game when a scene
    opened); only reading the pixels and uploading the result happen here. Without workers it falls back to here. */
-const EGL_NW = { w: null, bad: false, id: 0, jobs: new Map(), fly: 0 };
+export const EGL_NW = { w: null, bad: false, id: 0, jobs: new Map(), fly: 0 };
 const EGL_NW_SRC = `const clamp=(v,a,b)=>v<a?a:v>b?b:v;onmessage=ev=>{const {id,w,h,pillow,detail,bm}=ev.data;let d=ev.data.d;
 /* v33: the picture can come as a bitmap and be read here, so the main thread never waits for its pixels */
 if(!d&&bm){if(typeof OffscreenCanvas==='undefined'){postMessage({id,retry:1});return}try{const oc=new OffscreenCanvas(w,h),ox=oc.getContext('2d');ox.drawImage(bm,0,0);d=ox.getImageData(0,0,w,h).data;bm.close&&bm.close()}catch(e){postMessage({id,retry:1});return}}const A=new Float32Array(w*h),Lm=new Float32Array(w*h);for(let i=0;i<w*h;i++){A[i]=d[i*4+3]>127?1:0;Lm[i]=(d[i*4]*.3+d[i*4+1]*.59+d[i*4+2]*.11)/255}
@@ -760,7 +778,7 @@ export function eglNormWork(budget) {
     }
   }
 }
-function eglNormal(im, w, h, old) {
+export function eglNormal(im, w, h, old) {
   const M = EGL_MATS[im.__mat] || EGL_MATS.plain,
     c = cnv(w, h),
     x = c.getContext('2d', { willReadFrequently: true });

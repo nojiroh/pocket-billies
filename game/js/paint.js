@@ -7,7 +7,8 @@
    Where workers aren't allowed (or one fails), painting stays on the main thread, a slice at a time, as before.
    A generator waiting on the worker yields PW_WAIT (diorama.js): the loops that step it stop for the frame. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
-import { expose } from './bridge.js';
+import { expose } from './test-globals.js';
+import { provide } from './hooks.js';
 import { clamp } from './util.js';
 import { hexA, pk, pkh } from './art.js';
 import {
@@ -51,19 +52,20 @@ expose({
   PW_KEEP: [() => PW_KEEP],
   PW_KINDS: [() => PW_KINDS],
   PW_MAIN: [() => PW_MAIN],
-  pwAll: [() => pwAll, v => (pwAll = v)],
+  pwAll: [() => pwAll, v => ((pwAll = v), provide({ pwAll }))],
   pwCtxId: [() => pwCtxId, v => (pwCtxId = v)],
-  pwOn: [() => pwOn, v => (pwOn = v)],
-  pwPaint: [() => pwPaint, v => (pwPaint = v)],
+  pwOn: [() => pwOn, v => ((pwOn = v), provide({ pwOn }))],
+  pwPaint: [() => pwPaint, v => ((pwPaint = v), provide({ pwPaint }))],
   pwSendCtx: [() => pwSendCtx, v => (pwSendCtx = v)],
   pwSendTiles: [() => pwSendTiles, v => (pwSendTiles = v)],
-  pwSettle: [() => pwSettle, v => (pwSettle = v)],
+  pwSettle: [() => pwSettle, v => ((pwSettle = v), provide({ pwSettle }))],
   pwSource: [() => pwSource, v => (pwSource = v)],
   pwState: [() => pwState, v => (pwState = v)],
   pwWake: [() => pwWake, v => (pwWake = v)],
   pwWorker: [() => pwWorker, v => (pwWorker = v)],
 });
 /* eslint-enable no-func-assign */
+provide({ pwAll, pwOn, pwPaint, pwSettle });
 /* to-module: end */
 const PW = {
   w: null,
@@ -84,6 +86,7 @@ const PW = {
   waiters: [],
   last: '',
 };
+provide({ PW }); /* to-module */
 const PW_KEEP = 4,
   PW_KINDS = new WeakMap();
 /* the helper's own part: the views it holds, the tile pictures, a queue (nearest square first; one dropped before it
@@ -374,7 +377,7 @@ function* pwAll(G) {
   }
 }
 /* for the debug log */
-function pwState() {
+export function pwState() {
   return {
     helper: PW.w ? 'on' : PW.bad ? 'off: ' + PW.why : 'not started',
     painted: PW.done,

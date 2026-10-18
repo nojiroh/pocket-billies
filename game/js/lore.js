@@ -6,7 +6,8 @@
    An entry's `unlock`: 'start', 'place:<id>' (been there), 'meet:<who>' (met them), 'flag:<name>' (a story flag),
    'badges:<n>'. The stage of the story is the number of badges (9 after the ending). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
-import { expose } from './bridge.js';
+import { expose } from './test-globals.js';
+import { closeModal, modal, provide, storyFlags } from './hooks.js';
 import { clamp } from './util.js';
 import { GD, ROUTE, TRAINERS } from './data.js';
 import { S, U, esc, save } from './core.js';
@@ -18,15 +19,15 @@ import { JINGLES, jingle, sfx } from './sound.js';
 expose({
   CLUE_SPOTS: [() => CLUE_SPOTS],
   LORE: [() => LORE],
-  clueDraw: [() => clueDraw, v => (clueDraw = v)],
+  clueDraw: [() => clueDraw, v => ((clueDraw = v), provide({ clueDraw }))],
   clueSpotFind: [() => clueSpotFind, v => (clueSpotFind = v)],
   clueSpots: [() => clueSpots, v => (clueSpots = v)],
-  dioChatLines: [() => dioChatLines, v => (dioChatLines = v)],
+  dioChatLines: [() => dioChatLines, v => ((dioChatLines = v), provide({ dioChatLines }))],
   loreBook: [() => loreBook, v => (loreBook = v)],
   loreCard: [() => loreCard, v => (loreCard = v)],
   loreChat: [() => loreChat, v => (loreChat = v)],
   loreClue: [() => loreClue, v => (loreClue = v)],
-  loreFlags: [() => loreFlags, v => (loreFlags = v)],
+  loreFlags: [() => loreFlags, v => ((loreFlags = v), provide({ loreFlags }))],
   loreLoadingLines: [() => loreLoadingLines, v => (loreLoadingLines = v)],
   loreMet: [() => loreMet, v => (loreMet = v)],
   loreNode: [() => loreNode, v => (loreNode = v)],
@@ -35,6 +36,7 @@ expose({
   renderLore: [() => renderLore, v => (renderLore = v)],
 });
 /* eslint-enable no-func-assign */
+provide({ clueDraw, dioChatLines, loreFlags });
 /* to-module: end */
 export const LORE = () => (typeof GD !== 'undefined' && GD.lore) || {};
 export function loreFlags() {

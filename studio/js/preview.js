@@ -3,9 +3,11 @@
    Runs the game's own battle stage (game/js/scene.js) inside the Studio, fed by the Studio's unsaved data and art,
    so moves, backdrops and new billionaires can be checked without starting the game. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
-import { expose } from '../../game/js/bridge.js';
+import { expose } from '../../game/js/test-globals.js';
+import { provide, scArt, scD } from '../../game/js/hooks.js';
 import { $, $$ } from '../../game/js/util.js';
 import { COIN_ART, artLoad, hexA } from '../../game/js/art.js';
+import { setRigParts } from '../../game/js/rig.js';
 import {
   AREAS,
   SC,
@@ -25,6 +27,7 @@ import {
 import { DIO, dioHubOf } from '../../game/js/diorama.js';
 import { dioMount } from '../../game/js/diorama-gl.js';
 import { battleGLAttach, battleGLStop } from '../../game/js/battle-gl.js';
+import { esc } from './shims.js';
 import {
   ACTS,
   SECTIONS,
@@ -45,20 +48,21 @@ import { AMBS } from './world.js';
 /* eslint-disable no-func-assign */
 expose({
   BP: [() => BP],
-  battleFreeArea: [() => battleFreeArea, v => (battleFreeArea = v)],
-  battleLayoutChanged: [() => battleLayoutChanged, v => (battleLayoutChanged = v)],
+  battleFreeArea: [() => battleFreeArea, v => ((battleFreeArea = v), provide({ battleFreeArea }))],
+  battleLayoutChanged: [() => battleLayoutChanged, v => ((battleLayoutChanged = v), provide({ battleLayoutChanged }))],
   bpApplyBackdrop: [() => bpApplyBackdrop, v => (bpApplyBackdrop = v)],
   bpDefaults: [() => bpDefaults, v => (bpDefaults = v)],
   bpEv: [() => bpEv],
   bpMove: [() => bpMove, v => (bpMove = v)],
   bpScene: [() => bpScene, v => (bpScene = v)],
   bpStart: [() => bpStart, v => (bpStart = v)],
-  hudHit: [() => hudHit, v => (hudHit = v)],
-  hudPop: [() => hudPop, v => (hudPop = v)],
+  hudHit: [() => hudHit, v => ((hudHit = v), provide({ hudHit }))],
+  hudPop: [() => hudPop, v => ((hudPop = v), provide({ hudPop }))],
 });
 /* eslint-enable no-func-assign */
+provide({ battleFreeArea, battleLayoutChanged, hudHit, hudPop });
 /* to-module: end */
-rigParts = (sp, gold, k) => rigFor(sp, k === 1 ? 'front' : 'back', !!gold);
+setRigParts((sp, gold, k) => rigFor(sp, k === 1 ? 'front' : 'back', !!gold));
 const BP = {
   stage: 'backdrop',
   area: null,

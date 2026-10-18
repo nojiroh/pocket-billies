@@ -1,11 +1,13 @@
 'use strict';
 /* ================= POCKET BILLIES STUDIO · editors ================= */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
-import { expose } from '../../game/js/bridge.js';
+import { expose } from '../../game/js/test-globals.js';
+import { BODY_TPL, PLAN_INFO, WDS, makeBlankBody, openSkeleton, skNeutral, wdLoad } from '../../game/js/hooks.js';
 import { $, $$ } from '../../game/js/util.js';
 import { cnv, iconURL } from '../../game/js/art.js';
 import { TR_CACHE, cleanLook, humanSheet, lookFromOld, trColorsOf, trSliders } from '../../game/js/trainer.js';
 import { drawRig, rigPose } from '../../game/js/rig.js';
+import { esc } from './shims.js';
 import {
   ACTS,
   SECTIONS,
@@ -25,12 +27,16 @@ import {
   fSel,
   fText,
   fmtN,
+  getP,
   go,
   grid,
   itemOpts,
   moveOpts,
   peopleOpts,
   render,
+  setGetP,
+  setP,
+  setSetP,
   spName,
   spOpts,
   statOpts,
@@ -1186,15 +1192,15 @@ SECTIONS.shops = () => {
 };
 /* thank-you lines are stored as an array; edit them as text */
 const _getP = getP;
-getP = function (path, o) {
+setGetP(function (path, o) {
   if (path && path.startsWith('@lines.')) {
     const s = ST.D.shops[path.slice(7)];
     return s && s.thanks ? s.thanks.join('\n') : '';
   }
   return _getP(path, o);
-};
+});
 const _setP = setP;
-setP = function (path, v, o) {
+setSetP(function (path, v, o) {
   if (path && path.startsWith('@lines.')) {
     const s = ST.D.shops[path.slice(7)];
     const a = String(v || '')
@@ -1206,7 +1212,7 @@ setP = function (path, v, o) {
     return;
   }
   return _setP(path, v, o);
-};
+});
 document.addEventListener('change', ev => {
   const el = ev.target;
   if (el.dataset.actSel === 'stockKind') {
@@ -1573,24 +1579,24 @@ SECTIONS.trainers = () => {
  ${card('Badge', seat)}</div></div>`;
 };
 const _getP2 = getP;
-getP = function (path, o) {
+setGetP(function (path, o) {
   if (path && path.startsWith('@tlines.')) {
     const T = ST.D.trainers[path.slice(8)];
     return T && T.lines ? T.lines.join('\n') : '';
   }
   return _getP2(path, o);
-};
+});
 {
   const g = getP,
     st = setP;
-  getP = function (path, o) {
+  setGetP(function (path, o) {
     if (path && path.startsWith('@tintro.')) {
       const T = ST.D.trainers[path.slice(8)];
       return T && T.intro ? T.intro.join('\n') : '';
     }
     return g(path, o);
-  };
-  setP = function (path, v, o) {
+  });
+  setSetP(function (path, v, o) {
     if (path && path.startsWith('@tintro.')) {
       const T = ST.D.trainers[path.slice(8)],
         L = String(v || '')
@@ -1602,10 +1608,10 @@ getP = function (path, o) {
       return;
     }
     return st(path, v, o);
-  };
+  });
 }
 const _setP2 = setP;
-setP = function (path, v, o) {
+setSetP(function (path, v, o) {
   if (path && path.startsWith('@tlines.')) {
     const T = ST.D.trainers[path.slice(8)];
     T.lines = String(v || '')
@@ -1615,7 +1621,7 @@ setP = function (path, v, o) {
     return;
   }
   return _setP2(path, v, o);
-};
+});
 ACTS.pickTrainer = d => {
   ST.sel.trainer = d.id;
   render();

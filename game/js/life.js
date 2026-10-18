@@ -9,7 +9,8 @@
    lizards on warm rock. Flags on a kind: flee (how close you may come), hop (bounds along), fly (takes off like a
    pigeon, frames 2-3), shore (lives at the water's edge), side (walks sideways). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
-import { expose } from './bridge.js';
+import { expose } from './test-globals.js';
+import { provide, sfxAt } from './hooks.js';
 import { clamp } from './util.js';
 import { cnv } from './art.js';
 import { DIO, dioData, dioFree, dioHash, dioImg, dioOk, dioPoly, dioPolyAt, dioStepOK } from './diorama.js';
@@ -24,17 +25,23 @@ expose({
   lifeInit: [() => lifeInit, v => (lifeInit = v)],
   lifeKey: [() => lifeKey, v => (lifeKey = v)],
   lifeMeta: [() => lifeMeta, v => (lifeMeta = v)],
-  lifePaths: [() => lifePaths, v => (lifePaths = v)],
+  lifePaths: [() => lifePaths, v => ((lifePaths = v), provide({ lifePaths }))],
   lifeRnd: [() => lifeRnd, v => (lifeRnd = v)],
   lifeShift: [() => lifeShift, v => (lifeShift = v)],
   lifeShore: [() => lifeShore, v => (lifeShore = v)],
-  lifeSprites: [() => lifeSprites, v => (lifeSprites = v)],
-  lifeStep: [() => lifeStep, v => (lifeStep = v)],
+  lifeSprites: [() => lifeSprites, v => ((lifeSprites = v), provide({ lifeSprites }))],
+  lifeStep: [() => lifeStep, v => setLifeStep(v)],
   lifeTarget: [() => lifeTarget, v => (lifeTarget = v)],
 });
 /* eslint-enable no-func-assign */
+provide({ lifePaths, lifeSprites, lifeStep });
+export function setLifeStep(v) {
+  lifeStep = v; // eslint-disable-line no-func-assign
+  provide({ lifeStep });
+}
 /* to-module: end */
-const LIFE = { id: null, key: '', list: [], cut: new Map() };
+export const LIFE = { id: null, key: '', list: [], cut: new Map() };
+provide({ LIFE }); /* to-module */
 const LIFE_KIND = {
   duck: { s: 0.62, speed: 0.35, sh: 0.22 },
   pigeon: { s: 0.62, speed: 0.7, sh: 0.16 },
@@ -56,6 +63,7 @@ const LIFE_KIND = {
     flee: 2.6,
   },
 };
+provide({ LIFE_KIND }); /* to-module */
 const LIFE_FRAMES = k => {
   const m = lifeMeta(k);
   return m ? m.frames || 1 : 1;
@@ -237,7 +245,7 @@ export function lifeShift(dx, dz, id) {
   LIFE.id = id;
   LIFE.key = DIO.sc ? lifeKey(DIO.sc) : LIFE.key;
 }
-function lifeStep(dt) {
+export function lifeStep(dt) {
   const sc = DIO.sc;
   if (!sc) return;
   /* the water may only be known a few frames after the scene opens: ducks and frogs join then */ if (

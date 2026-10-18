@@ -9,7 +9,8 @@
      requests/<from>_<to>  { from, to, fromName, toName, status: pending | accepted | declined | removed, t }
    Each player only ever writes their own users/ document; a friendship is made from the two sides of a request. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
-import { expose } from './bridge.js';
+import { expose } from './test-globals.js';
+import { ACC, accOn, closeModal, modal, provide, render, sceneIdAt, toast, walkOff } from './hooks.js';
 import { ROUTE, SP } from './data.js';
 import { N, S, U, cleanName, esc, plural } from './core.js';
 import { owFrames, portraitHTML, trWarm } from './trainer.js';
@@ -36,10 +37,11 @@ expose({
   frSync: [() => frSync, v => (frSync = v)],
   frWatchAll: [() => frWatchAll, v => (frWatchAll = v)],
   frWatchErr: [() => frWatchErr, v => (frWatchErr = v)],
-  frWorldItems: [() => frWorldItems, v => (frWorldItems = v)],
+  frWorldItems: [() => frWorldItems, v => ((frWorldItems = v), provide({ frWorldItems }))],
   friendsHTML: [() => friendsHTML, v => (friendsHTML = v)],
 });
 /* eslint-enable no-func-assign */
+provide({ frWorldItems });
 /* to-module: end */
 const FR = {
   on: false,
@@ -56,6 +58,7 @@ const FR = {
   pubSig: '',
   err: '',
 };
+provide({ FR }); /* to-module */
 const FR_ABC = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 function frOn() {
   return typeof ACC !== 'undefined' && !!ACC.user && !!ACC.db;

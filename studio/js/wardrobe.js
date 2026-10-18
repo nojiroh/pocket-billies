@@ -5,12 +5,14 @@
    Paint pieces right on the body, add pieces to any bone, set colour areas, prices and shops, and watch the trainer
    walk and pose with it. The body section edits the skin pieces, the skeleton and the body sliders. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
-import { expose } from '../../game/js/bridge.js';
+import { expose } from '../../game/js/test-globals.js';
+import { provide } from '../../game/js/hooks.js';
 import { $, $$, clamp } from '../../game/js/util.js';
 import { frameStop, frameTask } from '../../game/js/frame.js';
 import { cnv } from '../../game/js/art.js';
 import { TR_CACHE, TR_PRESETS, cleanLook, trFrame, trRig, trSliders } from '../../game/js/trainer.js';
 import { rigMatrices } from '../../game/js/rig.js';
+import { esc } from './shims.js';
 import {
   ACTS,
   SECTIONS,
@@ -52,7 +54,7 @@ expose({
   wdGrow: [() => wdGrow, v => (wdGrow = v)],
   wdItemHTML: [() => wdItemHTML, v => (wdItemHTML = v)],
   wdJoints: [() => wdJoints, v => (wdJoints = v)],
-  wdLoad: [() => wdLoad, v => (wdLoad = v)],
+  wdLoad: [() => wdLoad, v => ((wdLoad = v), provide({ wdLoad }))],
   wdLocal: [() => wdLocal, v => (wdLocal = v)],
   wdMount: [() => wdMount, v => (wdMount = v)],
   wdPick: [() => wdPick, v => (wdPick = v)],
@@ -67,6 +69,7 @@ expose({
   wdW: [() => wdW],
 });
 /* eslint-enable no-func-assign */
+provide({ wdLoad });
 /* to-module: end */
 const WDS = {
   sel: null,
@@ -84,6 +87,7 @@ const WDS = {
   test: null,
   loaded: false,
 };
+provide({ WDS }); /* to-module */
 const wdW = () => ST.D.wardrobe;
 const wdCur = () => (WDS.sel === 'body' ? wdW().body : wdW().items[WDS.sel]);
 const WD_CROP = new Proxy({}, { get: (t, k) => (wdW().crops || {})[k] });

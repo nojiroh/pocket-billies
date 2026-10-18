@@ -8,11 +8,12 @@
    afterwards. The results go into the debug log. If the app goes to the background (the screen locks), the test waits
    for you and runs that step again. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
-import { expose } from './bridge.js';
+import { expose } from './test-globals.js';
+import { provide } from './hooks.js';
 import { clamp } from './util.js';
 import { GD, MOVES, ROUTE, RULES, SP, TRAINERS, linkCost, placeKind } from './data.js';
 import { scenesAll } from './scene-files.js';
-import { U, addSteps, esc, makeMon, maxHp, setTrip, spawn } from './core.js';
+import { B, S, U, addSteps, esc, makeMon, maxHp, save, setB, setS, setSave, setTrip, spawn } from './core.js';
 import { FRAME } from './frame.js';
 import { TR_CACHE } from './trainer.js';
 import { DR, closeDressing } from './dressing.js';
@@ -47,7 +48,7 @@ import { OWM, owBuddyTap, owPetSp } from './owmon.js';
 import { WORLD, wrRoomScene, wrTripView } from './world.js';
 import { A, endBattle, liveK, pickMove, pickTarget, startTrainer, startWild, stopTimers, tapMsg } from './battle.js';
 import { MAP } from './map.js';
-import { MGL, MGL_SH, MM, mmOn } from './map-gl.js';
+import { MGL, MGL_SH, MM, mglRender, mmOn, setMglRender } from './map-gl.js';
 import { TALK, talkHide } from './talk.js';
 import { CS, csTeardown } from './cutscene.js';
 import { battleTipHide, fallGL, fallMap } from './opening.js';
@@ -62,18 +63,20 @@ expose({
   diagTimersOff: [() => diagTimersOff, v => (diagTimersOff = v)],
   diagTimersOn: [() => diagTimersOn, v => (diagTimersOn = v)],
   exportDiagReport: [() => exportDiagReport, v => (exportDiagReport = v)],
-  runDiagTest: [() => runDiagTest, v => (runDiagTest = v)],
+  runDiagTest: [() => runDiagTest, v => ((runDiagTest = v), provide({ runDiagTest }))],
   runFullTest: [() => runFullTest, v => (runFullTest = v)],
   runQuickTest: [() => runQuickTest],
   stDiagScenes: [() => stDiagScenes, v => (stDiagScenes = v)],
-  stSceneChecks: [() => stSceneChecks, v => (stSceneChecks = v)],
+  stSceneChecks: [() => stSceneChecks, v => ((stSceneChecks = v), provide({ stSceneChecks }))],
   stSleep: [() => stSleep, v => (stSleep = v)],
   stStats: [() => stStats, v => (stStats = v)],
-  testScenes: [() => testScenes, v => (testScenes = v)],
+  testScenes: [() => testScenes, v => ((testScenes = v), provide({ testScenes }))],
 });
 /* eslint-enable no-func-assign */
+provide({ runDiagTest, stSceneChecks, testScenes });
 /* to-module: end */
 const STEST = { on: false, stop: false };
+provide({ STEST }); /* to-module */
 function stSleep(ms) {
   return new Promise(r => setTimeout(r, ms));
 }
@@ -147,7 +150,7 @@ async function runFullTest(mode) {
     back = { tab: U.tab, roam: U.roam, node: S.route.node },
     realSave = save,
     engKeep = GD.engine ? JSON.stringify(GD.engine) : null;
-  save = () => {}; /* nothing the test does reaches your save */
+  setSave(() => {}); /* nothing the test does reaches your save */
   const box = document.createElement('div');
   box.className = 'nw-bench px glass';
   box.innerHTML =
@@ -674,7 +677,7 @@ async function runFullTest(mode) {
         if (!ok) why = 'a move never finished playing';
       }
       stopTimers();
-      B = null;
+      setB(null);
       scStop();
       S.preferences.battleStage = pref;
       render();
@@ -750,7 +753,7 @@ async function runFullTest(mode) {
       const turnMs = Math.round(performance.now() - tt),
         lines = B.events.length;
       stopTimers();
-      B = null;
+      setB(null);
       scStop();
       render();
       await stSleep(600);
@@ -1009,16 +1012,16 @@ async function runFullTest(mode) {
             fr = [],
             mr = mglRender;
           let last = performance.now();
-          mglRender = t => {
+          setMglRender(t => {
             const n = performance.now();
             fr.push(n - last);
             last = n;
             mr(t);
-          };
+          });
           try {
             await fallMap(run, 6000);
           } finally {
-            mglRender = mr;
+            setMglRender(mr);
             CS.on = false;
             CS.run++;
           }
@@ -1097,7 +1100,7 @@ async function runFullTest(mode) {
           } finally {
             if (B) {
               stopTimers();
-              B = null;
+              setB(null);
               scStop();
             }
             talkHide();
@@ -1363,7 +1366,7 @@ async function runFullTest(mode) {
     }
     if (B) {
       stopTimers();
-      B = null;
+      setB(null);
       scStop();
     }
     if (typeof CS !== 'undefined' && CS.on) {
@@ -1376,8 +1379,8 @@ async function runFullTest(mode) {
       STEST.offVis = null;
     }
     if (engKeep) GD.engine = JSON.parse(engKeep);
-    S = JSON.parse(keep);
-    save = realSave;
+    setS(JSON.parse(keep));
+    setSave(realSave);
     U.bench = null;
     U.roam = back.roam;
     U.tab = back.tab;
@@ -1469,6 +1472,7 @@ async function runFullTest(mode) {
   });
 }
 const runQuickTest = runFullTest;
+provide({ runQuickTest }); /* to-module */
 
 /* ================= DIAGNOSTICS TEST (alpha 0.4) =================
    Next to the full test in Settings, about two minutes: the device and how the automatic quality chose its level, six

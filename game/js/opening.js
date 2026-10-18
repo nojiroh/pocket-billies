@@ -10,7 +10,8 @@
       that fell with you still fluttering down.
    Skip ends the fall at once; without the fall, the step-by-step intro tells it in words. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
-import { expose } from './bridge.js';
+import { expose } from './test-globals.js';
+import { openingDone, provide } from './hooks.js';
 import { $, clamp } from './util.js';
 import { MOVES, SP, START_NODE, eff } from './data.js';
 import { B, RM, esc, maxHp } from './core.js';
@@ -37,8 +38,8 @@ expose({
   LAND: [() => LAND],
   TUTOR_TIPS: [() => TUTOR_TIPS],
   battleTip: [() => battleTip, v => (battleTip = v)],
-  battleTipHide: [() => battleTipHide, v => (battleTipHide = v)],
-  battleTutor: [() => battleTutor, v => (battleTutor = v)],
+  battleTipHide: [() => battleTipHide, v => ((battleTipHide = v), provide({ battleTipHide }))],
+  battleTutor: [() => battleTutor, v => ((battleTutor = v), provide({ battleTutor }))],
   fallCam: [() => fallCam, v => (fallCam = v)],
   fallCanvas: [() => fallCanvas, v => (fallCanvas = v)],
   fallCrust: [() => fallCrust, v => (fallCrust = v)],
@@ -46,19 +47,21 @@ expose({
   fallGL: [() => fallGL, v => (fallGL = v)],
   fallMap: [() => fallMap, v => (fallMap = v)],
   fallMe: [() => fallMe, v => (fallMe = v)],
-  fallPlay: [() => fallPlay, v => (fallPlay = v)],
+  fallPlay: [() => fallPlay, v => ((fallPlay = v), provide({ fallPlay }))],
   fallRnd: [() => fallRnd],
   fallSky: [() => fallSky, v => (fallSky = v)],
   fallStill: [() => fallStill, v => (fallStill = v)],
   fallStreet: [() => fallStreet, v => (fallStreet = v)],
-  landBurst: [() => landBurst, v => (landBurst = v)],
-  landFrame: [() => landFrame, v => (landFrame = v)],
+  landBurst: [() => landBurst, v => ((landBurst = v), provide({ landBurst }))],
+  landFrame: [() => landFrame, v => ((landFrame = v), provide({ landFrame }))],
   tutorSkip: [() => tutorSkip, v => (tutorSkip = v)],
   tutorTypesTip: [() => tutorTypesTip, v => (tutorTypesTip = v)],
 });
 /* eslint-enable no-func-assign */
+provide({ battleTipHide, battleTutor, fallPlay, landBurst, landFrame });
 /* to-module: end */
 const FALL = { cv: null, x: null, raf: 0, run: 0, W: 0, H: 0 };
+provide({ FALL }); /* to-module */
 const fallRnd = (a, b) => {
   let h = (a * 374761393 + b * 668265263) ^ 0x5bd1e995;
   h = Math.imul(h ^ (h >>> 13), 1274126177);
@@ -764,6 +767,7 @@ async function fallPlay(run) {
 
 /* ---- 4. the landing: dust, and the papers that fell with you, settling round you (drawn by csFrame) ---- */
 const LAND = { bits: [] };
+provide({ LAND }); /* to-module */
 function landBurst(x, z) {
   if (typeof DIO === 'undefined' || !DIO.parts) return;
   for (let i = 0; i < 30; i++) {

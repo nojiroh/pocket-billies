@@ -8,7 +8,21 @@
    spot (opening.js battleTutor, story.js storyAfterRival).
    If the cutscene can't run or stops, the older step-by-step intro in ui.js runs instead. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
-import { expose } from './bridge.js';
+import { expose } from './test-globals.js';
+import {
+  FALL,
+  LAND,
+  blakeHello,
+  chip,
+  fallPlay,
+  landBurst,
+  landFrame,
+  provide,
+  render,
+  sceneIdAt,
+  startGame,
+  updateNav,
+} from './hooks.js';
 import { $, clamp } from './util.js';
 import { ROUTE, RULES, SP, START_NODE, TRAINERS, TYPES, eff, placeFull } from './data.js';
 import { RM, U, esc } from './core.js';
@@ -55,7 +69,7 @@ expose({
   csSkip: [() => csSkip, v => (csSkip = v)],
   csSparkle: [() => csSparkle, v => (csSparkle = v)],
   csStarItem: [() => csStarItem, v => (csStarItem = v)],
-  csStart: [() => csStart, v => (csStart = v)],
+  csStart: [() => csStart, v => setCsStart(v)],
   csStartName: [() => csStartName],
   csTap: [() => csTap, v => (csTap = v)],
   csTeardown: [() => csTeardown, v => (csTeardown = v)],
@@ -64,6 +78,10 @@ expose({
   csWanted: [() => csWanted, v => (csWanted = v)],
 });
 /* eslint-enable no-func-assign */
+export function setCsStart(v) {
+  csStart = v; // eslint-disable-line no-func-assign
+  provide({ csStart });
+}
 /* to-module: end */
 export const CS = {
   on: false,
@@ -87,6 +105,7 @@ export const CS = {
   center: [10.1, 12.3],
   ui: null,
 };
+provide({ CS }); /* to-module */
 const CS_SPOT = {
   door: [7.4, 15.4],
   hazel: [9.3, 13.25],

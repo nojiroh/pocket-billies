@@ -4,7 +4,8 @@
    decorate, photo mode, and battles that feel the weather. Everything lives in S.x, which an older save gets the
    first time it's needed. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
-import { expose } from './bridge.js';
+import { expose } from './test-globals.js';
+import { bar, closeModal, modal, provide, render, roomRefresh, toast } from './hooks.js';
 import { clamp } from './util.js';
 import { COINS, GD, ITEMS, ROUTE, RULES, SP } from './data.js';
 import { B, N, S, U, esc, fmt, save, today } from './core.js';
@@ -13,9 +14,9 @@ import { DIO, dioBaseId, dioFace, dioFind, dioFreePt, dioHubOf, dioScene, dioTer
 import { eng } from './engine/settings.js';
 import { ENV, envHere, envState } from './env.js';
 import { DGL, dioH } from './diorama-gl.js';
-import { say } from './battle.js';
+import { endBattle, openBattle, say, setEndBattle, setOpenBattle } from './battle.js';
 import { sfx } from './sound.js';
-import { TALK, talk } from './talk.js';
+import { TALK, setTalkFolk, talk, talkFolk } from './talk.js';
 /* eslint-disable no-func-assign */
 expose({
   FURN: [() => FURN],
@@ -27,7 +28,7 @@ expose({
   X28_CH: [() => X28_CH],
   X28_REQ: [() => X28_REQ],
   _homeApply: [() => _homeApply, v => (_homeApply = v)],
-  battleWeatherMult: [() => battleWeatherMult, v => (battleWeatherMult = v)],
+  battleWeatherMult: [() => battleWeatherMult, v => ((battleWeatherMult = v), provide({ battleWeatherMult }))],
   battleWx: [() => battleWx, v => (battleWx = v)],
   chalCard: [() => chalCard, v => (chalCard = v)],
   chalClaim: [() => chalClaim, v => (chalClaim = v)],
@@ -41,24 +42,25 @@ expose({
   photoFilter: [() => photoFilter, v => (photoFilter = v)],
   photoShot: [() => photoShot, v => (photoShot = v)],
   photoStart: [() => photoStart, v => (photoStart = v)],
-  reqAsker: [() => reqAsker, v => (reqAsker = v)],
+  reqAsker: [() => reqAsker, v => ((reqAsker = v), provide({ reqAsker }))],
   reqHere: [() => reqHere, v => (reqHere = v)],
   reqList: [() => reqList, v => (reqList = v)],
   reqTalk: [() => reqTalk, v => (reqTalk = v)],
   stampCount: [() => stampCount],
-  stampDraw: [() => stampDraw, v => (stampDraw = v)],
+  stampDraw: [() => stampDraw, v => ((stampDraw = v), provide({ stampDraw }))],
   stampScenes: [() => stampScenes, v => (stampScenes = v)],
   stampSpots: [() => stampSpots, v => (stampSpots = v)],
   stampTile: [() => stampTile, v => (stampTile = v)],
   stampTotal: [() => stampTotal],
   x28: [() => x28, v => (x28 = v)],
-  x28Event: [() => x28Event, v => (x28Event = v)],
+  x28Event: [() => x28Event, v => ((x28Event = v), provide({ x28Event }))],
   x28Reward: [() => x28Reward, v => (x28Reward = v)],
   x28Rnd: [() => x28Rnd, v => (x28Rnd = v)],
   x28TeamOf: [() => x28TeamOf],
   x28Types: [() => x28Types],
 });
 /* eslint-enable no-func-assign */
+provide({ battleWeatherMult, reqAsker, stampDraw, x28Event });
 /* to-module: end */
 function x28() {
   const X = S.x || (S.x = {});
@@ -125,7 +127,7 @@ const X28_CH = [
   { k: 'fish', make: () => ({ need: 1 }), text: () => 'Land something with your fishing rod' },
   { k: 'stamp', make: () => ({ need: 1 }), text: () => 'Find a gold stamp' },
 ];
-function chalToday() {
+export function chalToday() {
   const X = x28(),
     d = today();
   if (!X.chal || X.chal.date !== d) {
@@ -333,7 +335,7 @@ function stampScenes() {
   return [...new Set(ROUTE.map(r => r.scene).filter(id => id && GD.scenes[id]))];
 }
 const stampTotal = () => stampScenes().length * 2;
-const stampCount = () => Object.keys(x28().stamps).length;
+export const stampCount = () => Object.keys(x28().stamps).length;
 /* where they lie: worked out once per place, on open ground you can walk to, away from where you arrive */
 function stampSpots() {
   if (typeof U !== 'undefined' && U.inside) return [];
@@ -631,17 +633,17 @@ function battleWeatherMult(t) {
 (function () {
   if (typeof openBattle === 'function') {
     const ob = openBattle;
-    openBattle = function () {
+    setOpenBattle(function () {
       try {
         const w = battleWx();
         if (w && X28_BWX_TEXT[w.k]) say(X28_BWX_TEXT[w.k]);
       } catch (e) {}
       return ob.apply(this, arguments);
-    };
+    });
   }
   if (typeof endBattle === 'function') {
     const eb = endBattle;
-    endBattle = function () {
+    setEndBattle(function () {
       let o = null,
         types = null;
       try {
@@ -656,14 +658,14 @@ function battleWeatherMult(t) {
         if (o === 'caught') x28Event('catch', { types: types || [] });
       } catch (e) {}
       return r;
-    };
+    });
   }
   if (typeof talkFolk === 'function') {
     const tf = talkFolk;
-    talkFolk = function (f) {
+    setTalkFolk(function (f) {
       if (f && f === reqAsker()) return reqTalk(f);
       return tf.apply(this, arguments);
-    };
+    });
   }
 })();
 /* the painted battle stage gets rain, snow, ash or the night drawn over it (the 3D stage has the real thing) */

@@ -7,7 +7,8 @@
    above. The classic painted stage is used when WebGL isn't running, when the stop has no walk scene,
    or when the player picks it in Settings. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
-import { expose } from './bridge.js';
+import { expose } from './test-globals.js';
+import { B, FV, RM, S, provide } from './hooks.js';
 import { $, clamp } from './util.js';
 import { hexA } from './art.js';
 import { ACT, FOC, POS, SC, UPP, partSpr, sideBuf, sideWorld, trainerBattleFrame, trainerMpp } from './scene.js';
@@ -19,12 +20,13 @@ expose({
   BGL: [() => BGL],
   battleGLAttach: [() => battleGLAttach, v => (battleGLAttach = v)],
   battleGLFrame: [() => battleGLFrame, v => (battleGLFrame = v)],
-  battleGLLayout: [() => battleGLLayout, v => (battleGLLayout = v)],
-  battleGLStart: [() => battleGLStart, v => (battleGLStart = v)],
-  battleGLStop: [() => battleGLStop, v => (battleGLStop = v)],
+  battleGLLayout: [() => battleGLLayout, v => ((battleGLLayout = v), provide({ battleGLLayout }))],
+  battleGLStart: [() => battleGLStart, v => ((battleGLStart = v), provide({ battleGLStart }))],
+  battleGLStop: [() => battleGLStop, v => ((battleGLStop = v), provide({ battleGLStop }))],
   battleGLWanted: [() => battleGLWanted, v => (battleGLWanted = v)],
 });
 /* eslint-enable no-func-assign */
+provide({ battleGLLayout, battleGLStart, battleGLStop });
 /* to-module: end */
 export const BGL = { on: false, off: [0, 0], gy: 0, hide: null, items: [], lights: [] };
 export function battleGLWanted() {

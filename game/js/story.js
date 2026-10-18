@@ -5,7 +5,8 @@
    portrait before a fight. A trainer's "intro" lines (game data) make the scene; "lines" are what they say in
    battle. S.story remembers which scenes you have seen. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
-import { expose } from './bridge.js';
+import { expose } from './test-globals.js';
+import { STEST, closeModal, modal, postProcess, provide, render } from './hooks.js';
 import { $, clamp } from './util.js';
 import { PLACE, RULES, SP, TRAINERS, trainersAt } from './data.js';
 import { B, RM, S, U, esc, healAll, save, today } from './core.js';
@@ -21,25 +22,26 @@ import { LORE, loreClue, loreFlags } from './lore.js';
 /* eslint-disable no-func-assign */
 expose({
   STORY: [() => STORY],
-  blakeHello: [() => blakeHello, v => (blakeHello = v)],
+  blakeHello: [() => blakeHello, v => ((blakeHello = v), provide({ blakeHello }))],
   csWorldBegin: [() => csWorldBegin, v => (csWorldBegin = v)],
   csWorldEnd: [() => csWorldEnd, v => (csWorldEnd = v)],
   legendCheck: [() => legendCheck, v => (legendCheck = v)],
-  openingDone: [() => openingDone, v => (openingDone = v)],
+  openingDone: [() => openingDone, v => ((openingDone = v), provide({ openingDone }))],
   openingMark: [() => openingMark, v => (openingMark = v)],
   personTalk: [() => personTalk, v => (personTalk = v)],
   rivalScene: [() => rivalScene, v => (rivalScene = v)],
-  storyAfterRival: [() => storyAfterRival, v => (storyAfterRival = v)],
-  storyAfterWin: [() => storyAfterWin, v => (storyAfterWin = v)],
+  storyAfterRival: [() => storyAfterRival, v => ((storyAfterRival = v), provide({ storyAfterRival }))],
+  storyAfterWin: [() => storyAfterWin, v => ((storyAfterWin = v), provide({ storyAfterWin }))],
   storyCheck: [() => storyCheck, v => (storyCheck = v)],
   storyEnding: [() => storyEnding, v => (storyEnding = v)],
-  storyFlags: [() => storyFlags, v => (storyFlags = v)],
+  storyFlags: [() => storyFlags, v => ((storyFlags = v), provide({ storyFlags }))],
   storyMovedCheck: [() => storyMovedCheck, v => (storyMovedCheck = v)],
   storyRivalBattle: [() => storyRivalBattle, v => (storyRivalBattle = v)],
   storyWorldOK: [() => storyWorldOK, v => (storyWorldOK = v)],
   trainerTalk: [() => trainerTalk, v => (trainerTalk = v)],
 });
 /* eslint-enable no-func-assign */
+provide({ blakeHello, openingDone, storyAfterRival, storyAfterWin, storyFlags });
 /* to-module: end */
 export function storyFlags() {
   return S.story || (S.story = {});
@@ -236,6 +238,7 @@ export function legendCheck() {
   }, 1200);
 }
 const STORY = { pending: null };
+provide({ STORY }); /* to-module */
 /* alpha 0.4: someone who only talks (scene.people: Granny Juniper): what they say the first time, then a line or two */
 export async function personTalk(P) {
   if (!P || TALK.on || (typeof CS !== 'undefined' && CS.on)) return;

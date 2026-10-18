@@ -1,7 +1,8 @@
 'use strict';
 /* ================= UI ================= */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
-import { expose } from './bridge.js';
+import { expose } from './test-globals.js';
+import { provide } from './hooks.js';
 import { $, $$, clamp, rnd } from './util.js';
 import {
   ADJ,
@@ -41,6 +42,7 @@ import {
   MAXLV,
   N,
   RM,
+  S,
   SLOTS,
   TEAM_MAX,
   U,
@@ -79,6 +81,7 @@ import {
   riderName,
   rollDay,
   save,
+  setS,
   setTrip,
   spawn,
   splitPath,
@@ -194,7 +197,7 @@ expose({
   TRACKS: [() => TRACKS],
   addPick: [() => addPick, v => (addPick = v)],
   badgeSlots: [() => badgeSlots, v => (badgeSlots = v)],
-  bar: [() => bar, v => (bar = v)],
+  bar: [() => bar, v => ((bar = v), provide({ bar }))],
   bgBuild: [() => bgBuild, v => (bgBuild = v)],
   bgInit: [() => bgInit, v => (bgInit = v)],
   bgResize: [() => bgResize, v => (bgResize = v)],
@@ -207,7 +210,7 @@ expose({
   bracketSpans: [() => bracketSpans, v => (bracketSpans = v)],
   buddyCard: [() => buddyCard, v => (buddyCard = v)],
   chip: [() => chip],
-  closeModal: [() => closeModal, v => (closeModal = v)],
+  closeModal: [() => closeModal, v => ((closeModal = v), provide({ closeModal }))],
   dexStatus: [() => dexStatus, v => (dexStatus = v)],
   donateItem: [() => donateItem, v => (donateItem = v)],
   eggSlots: [() => eggSlots, v => (eggSlots = v)],
@@ -216,7 +219,7 @@ expose({
   envLine: [() => envLine, v => (envLine = v)],
   evoMethod: [() => evoMethod, v => (evoMethod = v)],
   evoModal: [() => evoModal, v => (evoModal = v)],
-  evoRun: [() => evoRun, v => (evoRun = v)],
+  evoRun: [() => evoRun, v => ((evoRun = v), provide({ evoRun }))],
   exitPrompt: [() => exitPrompt, v => (exitPrompt = v)],
   genderModal: [() => genderModal, v => (genderModal = v)],
   guideTabs: [() => guideTabs, v => (guideTabs = v)],
@@ -233,7 +236,7 @@ expose({
   leaveRoom: [() => leaveRoom, v => (leaveRoom = v)],
   mapCardHTML: [() => mapCardHTML, v => (mapCardHTML = v)],
   meter: [() => meter],
-  modal: [() => modal, v => (modal = v)],
+  modal: [() => modal, v => ((modal = v), provide({ modal }))],
   monSheet: [() => monSheet, v => (monSheet = v)],
   monState: [() => monState],
   needsCare: [() => needsCare],
@@ -241,16 +244,16 @@ expose({
   nextToast: [() => nextToast, v => (nextToast = v)],
   nodeActions: [() => nodeActions, v => (nodeActions = v)],
   owHTML: [() => owHTML, v => (owHTML = v)],
-  paintMapCard: [() => paintMapCard, v => (paintMapCard = v)],
+  paintMapCard: [() => paintMapCard, v => ((paintMapCard = v), provide({ paintMapCard }))],
   plateVars: [() => plateVars],
   poolStrip: [() => poolStrip, v => (poolStrip = v)],
-  postProcess: [() => postProcess, v => (postProcess = v)],
-  render: [() => render, v => (render = v)],
+  postProcess: [() => postProcess, v => ((postProcess = v), provide({ postProcess }))],
+  render: [() => render, v => setRender(v)],
   renderDexEntry: [() => renderDexEntry, v => (renderDexEntry = v)],
   renderIntro: [() => renderIntro, v => (renderIntro = v)],
   renderLedger: [() => renderLedger, v => (renderLedger = v)],
   renderMap: [() => renderMap, v => (renderMap = v)],
-  renderOv: [() => renderOv, v => (renderOv = v)],
+  renderOv: [() => renderOv, v => setRenderOv(v)],
   renderProfile: [() => renderProfile, v => (renderProfile = v)],
   renderTeam: [() => renderTeam, v => (renderTeam = v)],
   renderWalk: [() => renderWalk, v => (renderWalk = v)],
@@ -259,29 +262,29 @@ expose({
   roomFor: [() => roomFor, v => (roomFor = v)],
   roomHero: [() => roomHero, v => (roomHero = v)],
   roomLayIn: [() => roomLayIn, v => (roomLayIn = v)],
-  roomRefresh: [() => roomRefresh, v => (roomRefresh = v)],
+  roomRefresh: [() => roomRefresh, v => ((roomRefresh = v), provide({ roomRefresh }))],
   roomState: [() => roomState, v => (roomState = v)],
   roomStepIn: [() => roomStepIn, v => (roomStepIn = v)],
-  sceneExits: [() => sceneExits, v => (sceneExits = v)],
+  sceneExits: [() => sceneExits, v => ((sceneExits = v), provide({ sceneExits }))],
   sceneExitsByBearing: [() => sceneExitsByBearing, v => (sceneExitsByBearing = v)],
-  sceneIdAt: [() => sceneIdAt, v => (sceneIdAt = v)],
-  settings: [() => settings, v => (settings = v)],
+  sceneIdAt: [() => sceneIdAt, v => ((sceneIdAt = v), provide({ sceneIdAt }))],
+  settings: [() => settings, v => ((settings = v), provide({ settings }))],
   stBadge: [() => stBadge],
-  startGame: [() => startGame, v => (startGame = v)],
+  startGame: [() => startGame, v => ((startGame = v), provide({ startGame }))],
   stepsTo: [() => stepsTo, v => (stepsTo = v)],
   swapPick: [() => swapPick, v => (swapPick = v)],
   teamCard: [() => teamCard, v => (teamCard = v)],
   teamHero: [() => teamHero, v => (teamHero = v)],
-  toast: [() => toast, v => (toast = v)],
+  toast: [() => toast, v => ((toast = v), provide({ toast }))],
   topbar: [() => topbar, v => (topbar = v)],
   tripButtons: [() => tripButtons, v => (tripButtons = v)],
   tripDest: [() => tripDest],
   tripLeft: [() => tripLeft, v => (tripLeft = v)],
   tripStatus: [() => tripStatus, v => (tripStatus = v)],
-  updateNav: [() => updateNav, v => (updateNav = v)],
+  updateNav: [() => updateNav, v => ((updateNav = v), provide({ updateNav }))],
   walkCross: [() => walkCross, v => (walkCross = v)],
   walkHero: [() => walkHero, v => (walkHero = v)],
-  walkOff: [() => walkOff, v => (walkOff = v)],
+  walkOff: [() => walkOff, v => ((walkOff = v), provide({ walkOff }))],
   walkPick: [() => walkPick, v => (walkPick = v)],
   walkSceneSync: [() => walkSceneSync, v => (walkSceneSync = v)],
   walkState: [() => walkState, v => (walkState = v)],
@@ -290,9 +293,37 @@ expose({
   xpPart: [() => xpPart],
 });
 /* eslint-enable no-func-assign */
+provide({
+  bar,
+  closeModal,
+  evoRun,
+  modal,
+  paintMapCard,
+  postProcess,
+  render,
+  renderOv,
+  roomRefresh,
+  sceneExits,
+  sceneIdAt,
+  settings,
+  startGame,
+  toast,
+  updateNav,
+  walkOff,
+});
+export function setRender(v) {
+  render = v; // eslint-disable-line no-func-assign
+  provide({ render });
+}
+export function setRenderOv(v) {
+  renderOv = v; // eslint-disable-line no-func-assign
+  provide({ renderOv });
+}
 /* to-module: end */
 const chip = t => `<span class="chip" style="--tc:${TC[t][0]};--tf:${TC[t][1]}">${t === 'None' ? 'Normal' : t}</span>`;
+provide({ chip }); /* to-module */
 const stBadge = st => (st ? `<span class="stb st-${st}">${STATUSN[st]}</span>` : '');
+provide({ stBadge }); /* to-module */
 function bar(p, cls = '') {
   return `<div class="pbar ${cls}"><i style="width:${clamp(p, 0, 1) * 100}%"></i></div>`;
 }
@@ -990,6 +1021,7 @@ const ROOM_KIND = {
   ski_lodge: 'int_ski_lodge',
   market_hall: 'int_market_hall',
 };
+provide({ ROOM_KIND }); /* to-module */
 function roomFor(a, p) {
   if ((S.preferences || {}).rooms === 'quick' && a !== 'home') return null;
   if (a !== 'home' && p) {
@@ -2418,7 +2450,7 @@ function settings(tab) {
                 l: 'Erase and start over',
                 c: 'red',
                 f: () => {
-                  S = freshKeep();
+                  setS(freshKeep());
                   S.savedAt = Date.now();
                   lsSet(S);
                   flush();
@@ -2443,7 +2475,7 @@ function settings(tab) {
 /* o.rival (v47, from the opening): Blake's battle comes first; the welcome sheet waits until the talk after it */
 export function startGame(l, o = {}) {
   const avatar = cleanLook(U.avatarDraft || U.trainerDraft || TR_PRESETS[0]);
-  S = freshKeep();
+  setS(freshKeep());
   S.avatar = avatar;
   U.trainerDraft = null;
   S.started = true;
@@ -3049,6 +3081,7 @@ document.addEventListener(
 
 /* ---------- animated pixel sky behind the app ---------- */
 const BG = { cv: null, x: null, last: 0, w: 160, h: 300, dark: null, base: null, isl: [], cl: [], sp: [] };
+provide({ BG }); /* to-module */
 const isDark = () => {
   const t = document.documentElement.dataset.theme;
   return t === 'dark' || (t !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches);

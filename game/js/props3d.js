@@ -11,7 +11,8 @@
    ("slab"|"block"|"puff"|"lathe"|"card") and "volDepth" (metres) override the automatic choice below; "card" keeps the
    flat picture. "lathe" turns the outline round, like a pot on a potter's wheel. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
-import { expose } from './bridge.js';
+import { expose } from './test-globals.js';
+import { RM, provide } from './hooks.js';
 import { clamp } from './util.js';
 import { cnv } from './art.js';
 import { DIO, dioHash, dioImg, dioProj } from './diorama.js';
@@ -27,25 +28,39 @@ expose({
   P3D_MATID: [() => P3D_MATID],
   P3D_PARTS: [() => P3D_PARTS],
   P3D_SH: [() => P3D_SH],
-  p3dBuild: [() => p3dBuild, v => (p3dBuild = v)],
-  p3dDraw: [() => p3dDraw, v => (p3dDraw = v)],
+  p3dBuild: [() => p3dBuild, v => setP3dBuild(v)],
+  p3dDraw: [() => p3dDraw, v => setP3dDraw(v)],
   p3dGuard: [() => p3dGuard, v => (p3dGuard = v)],
   p3dKind: [() => p3dKind, v => (p3dKind = v)],
-  p3dLod: [() => p3dLod, v => (p3dLod = v)],
+  p3dLod: [() => p3dLod, v => ((p3dLod = v), provide({ p3dLod }))],
   p3dMesh: [() => p3dMesh, v => (p3dMesh = v)],
   p3dOn: [() => p3dOn, v => (p3dOn = v)],
-  p3dShadow: [() => p3dShadow, v => (p3dShadow = v)],
+  p3dShadow: [() => p3dShadow, v => ((p3dShadow = v), provide({ p3dShadow }))],
   p3dSpec: [() => p3dSpec, v => (p3dSpec = v)],
-  p3dTag: [() => p3dTag, v => (p3dTag = v)],
+  p3dTag: [() => p3dTag, v => ((p3dTag = v), provide({ p3dTag }))],
   p3dTex: [() => p3dTex, v => (p3dTex = v)],
-  p3dTreeBuild: [() => p3dTreeBuild, v => (p3dTreeBuild = v)],
+  p3dTreeBuild: [() => p3dTreeBuild, v => setP3dTreeBuild(v)],
   p3dTreeKind: [() => p3dTreeKind, v => (p3dTreeKind = v)],
   p3dU: [() => p3dU, v => (p3dU = v)],
   p3dUpload: [() => p3dUpload, v => (p3dUpload = v)],
 });
 /* eslint-enable no-func-assign */
+provide({ p3dDraw, p3dLod, p3dShadow, p3dTag });
+export function setP3dBuild(v) {
+  p3dBuild = v; // eslint-disable-line no-func-assign
+  provide({ p3dBuild });
+}
+export function setP3dDraw(v) {
+  p3dDraw = v; // eslint-disable-line no-func-assign
+  provide({ p3dDraw });
+}
+export function setP3dTreeBuild(v) {
+  p3dTreeBuild = v; // eslint-disable-line no-func-assign
+  provide({ p3dTreeBuild });
+}
 /* to-module: end */
 export const P3D = { meshes: new WeakMap(), fail: '', drawn: 0 };
+provide({ P3D }); /* to-module */
 /* by prop group (or key): the kind of body and its depth at scale 1, in metres */
 export const P3D_AUTO = {
   crate: ['block', 0.9],
@@ -188,6 +203,7 @@ export const P3D_PARTS = {
     { r: [10, 72, 71, 100], k: 'lathe', open: 1 },
   ],
 };
+provide({ P3D_PARTS }); /* to-module */
 /* what body a prop gets: {key, parts (depths in picture pixels at scale 1)} or null for a flat picture */
 function p3dSpec(k, M, PPU) {
   if (!M) return null;
@@ -254,7 +270,7 @@ function p3dMesh(im, spec) {
   per.set(spec.key, M);
   return M;
 }
-function p3dBuild(im, parts) {
+export function p3dBuild(im, parts) {
   const TOPS = typeof eng !== 'function' || eng('world', 'texDetail') !== 0;
   const w = im.naturalWidth || im.width,
     h = im.naturalHeight || im.height;
@@ -712,7 +728,7 @@ export function p3dTreeKind(k, M) {
   if (/^(bush|bush_round|bush_berry|bush_flower|dry_bush)$/.test(g)) return 'bush';
   return null;
 }
-function p3dTreeBuild(im, kind) {
+export function p3dTreeBuild(im, kind) {
   const w = im.naturalWidth || im.width,
     h = im.naturalHeight || im.height;
   if (!w || !h) return null;
@@ -1074,6 +1090,7 @@ void main(){vec3 n;vec3 p=p3dPos(n);vUV=qUV;vId=qId;gl_Position=uVP*vec4(p,1.);}
 precision highp float;in vec2 vUV;in float vId;uniform sampler2D uTex;uniform float uClump;out vec4 o;void main(){vec4 c=textureLod(uTex,vUV,0.);if(c.a<.5)discard;if(uClump>.5){float id=floor(c.a*255.+.5)-128.;if(vId<-.5){if(id<.5)discard;}else if(abs(id-vId)>.5)discard;}o=vec4(1.);}`,
   ],
 };
+provide({ P3D_SH }); /* to-module */
 function p3dGuard(fn) {
   if (P3D.fail) return;
   try {
@@ -1176,7 +1193,7 @@ function p3dU(p, it, M) {
 function p3dTex(it, M) {
   return eglImg(M && M.tex ? M.tex : it.im);
 }
-function p3dDraw(C, items, X, hits, labels, PPU) {
+export function p3dDraw(C, items, X, hits, labels, PPU) {
   P3D.drawn = 0;
   if (!p3dOn()) return;
   p3dGuard(() => {

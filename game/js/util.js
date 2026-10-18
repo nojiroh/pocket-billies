@@ -3,7 +3,7 @@
    imports them (a direct call the engine can inline) instead of reaching a global through the window bridge (clamp in
    the ground height code was the hot one). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
-import { expose } from './bridge.js';
+import { expose } from './test-globals.js';
 expose({ $: [() => $], $$: [() => $$], clamp: [() => clamp], rnd: [() => rnd] });
 /* to-module: end */
 export const $ = (s, r = document) => r.querySelector(s);

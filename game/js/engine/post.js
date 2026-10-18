@@ -5,7 +5,8 @@
    a soft highlight roll-off instead of clipping, contrast, saturation, warmth, vignette, chromatic aberration, grain
    and a light sharpen. Also takes a small screenshot for the debug log when asked. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
-import { expose } from '../bridge.js';
+import { expose } from '../test-globals.js';
+import { RM, provide } from '../hooks.js';
 import { clamp } from '../util.js';
 import { cnv } from '../art.js';
 import { DIO } from '../diorama.js';
@@ -17,12 +18,16 @@ expose({
   EGL_GRADES: [() => EGL_GRADES],
   EGL_POST_SH: [() => EGL_POST_SH],
   eglGrade: [() => eglGrade, v => (eglGrade = v)],
-  eglPost: [() => eglPost, v => (eglPost = v)],
+  eglPost: [() => eglPost, v => setEglPost(v)],
   eglScreenOf: [() => eglScreenOf, v => (eglScreenOf = v)],
   eglSnapshot: [() => eglSnapshot, v => (eglSnapshot = v)],
   eglSunScreen: [() => eglSunScreen, v => (eglSunScreen = v)],
 });
 /* eslint-enable no-func-assign */
+export function setEglPost(v) {
+  eglPost = v; // eslint-disable-line no-func-assign
+  provide({ eglPost });
+}
 /* to-module: end */
 export const EGL_POST_SH = {
   dof: [

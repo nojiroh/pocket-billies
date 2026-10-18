@@ -2,7 +2,8 @@
 /* ================= RIG: billionaires assembled from atlas images (art/billionaires/*.png) and skeletons (art/rigs.js) ================= */
 /* ---- matrices ---- */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
-import { expose } from './bridge.js';
+import { expose } from './test-globals.js';
+import { B, RM, SP, provide } from './hooks.js';
 import { clamp, rnd } from './util.js';
 import { frameTask, userFps } from './frame.js';
 import { ART, artImg, artLoad, artReady, artURL, cnv } from './art.js';
@@ -16,7 +17,7 @@ expose({
   RIG_POSES: [() => RIG_POSES],
   bustHTML: [() => bustHTML, v => (bustHTML = v)],
   drawDomRig: [() => drawDomRig, v => (drawDomRig = v)],
-  drawRig: [() => drawRig, v => (drawRig = v)],
+  drawRig: [() => drawRig, v => ((drawRig = v), provide({ drawRig }))],
   mMul: [() => mMul],
   mR: [() => mR],
   mS: [() => mS],
@@ -25,15 +26,17 @@ expose({
   rigAudit: [() => rigAudit, v => (rigAudit = v)],
   rigFrame: [() => rigFrame, v => (rigFrame = v)],
   rigMatrices: [() => rigMatrices, v => (rigMatrices = v)],
-  rigParts: [() => rigParts, v => (rigParts = v)],
+  rigParts: [() => rigParts, v => setRigParts(v)],
   rigPose: [() => rigPose, v => (rigPose = v)],
   rigPreload: [() => rigPreload, v => (rigPreload = v)],
   rigTick: [() => rigTick, v => (rigTick = v)],
   rigTint: [() => rigTint, v => (rigTint = v)],
+  setRigParts: [() => setRigParts, v => (setRigParts = v)],
   sm: [() => sm],
   sprHTML: [() => sprHTML, v => (sprHTML = v)],
 });
 /* eslint-enable no-func-assign */
+provide({ drawRig });
 /* to-module: end */
 const mMul = (m, n) => [
   m[0] * n[0] + m[2] * n[1],
@@ -410,6 +413,11 @@ export function rigParts(sp, gold, k = 1) {
     clock: meta.clock || 0,
     lag: bones.some(b => b.lag),
   });
+}
+/* phase 04d: the Studio's battle preview draws its own billionaires (studio/js/preview.js) */
+export function setRigParts(v) {
+  rigParts = v; // eslint-disable-line no-func-assign
+  provide({ rigParts });
 }
 export function rigPreload(list) {
   return artLoad(list.map(([sp, gold, k]) => rigAtlas(sp, gold, k === 1 ? 'front' : 'back')));

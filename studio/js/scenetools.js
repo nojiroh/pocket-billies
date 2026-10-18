@@ -9,36 +9,39 @@
    - Smooth the path: turns the walker's path into a gentle curve.
    Hooks: scenes.js calls scxDown / scxMove / scxUp from the map's pointer events and scxDraw after drawing. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
-import { expose } from '../../game/js/bridge.js';
+import { expose } from '../../game/js/test-globals.js';
+import { VP, provide } from '../../game/js/hooks.js';
 import { $ } from '../../game/js/util.js';
 import { DIO } from '../../game/js/diorama.js';
+import { esc } from './shims.js';
 import { ACTS, ST, ask, changed, clone, commit, dialog, render, toast, uidKey } from './core.js';
 import { SCN, scCur, scD, scMapDraw, scPropAt, scSetTile } from './scenes.js';
 /* eslint-disable no-func-assign */
 expose({
   scxBlocks: [() => scxBlocks],
-  scxBlocksBar: [() => scxBlocksBar, v => (scxBlocksBar = v)],
+  scxBlocksBar: [() => scxBlocksBar, v => ((scxBlocksBar = v), provide({ scxBlocksBar }))],
   scxCopy: [() => scxCopy, v => (scxCopy = v)],
   scxCurve: [() => scxCurve, v => (scxCurve = v)],
   scxDeleteMulti: [() => scxDeleteMulti, v => (scxDeleteMulti = v)],
-  scxDown: [() => scxDown, v => (scxDown = v)],
-  scxDraw: [() => scxDraw, v => (scxDraw = v)],
-  scxHint: [() => scxHint, v => (scxHint = v)],
-  scxMove: [() => scxMove, v => (scxMove = v)],
-  scxMultiCard: [() => scxMultiCard, v => (scxMultiCard = v)],
+  scxDown: [() => scxDown, v => ((scxDown = v), provide({ scxDown }))],
+  scxDraw: [() => scxDraw, v => ((scxDraw = v), provide({ scxDraw }))],
+  scxHint: [() => scxHint, v => ((scxHint = v), provide({ scxHint }))],
+  scxMove: [() => scxMove, v => ((scxMove = v), provide({ scxMove }))],
+  scxMultiCard: [() => scxMultiCard, v => ((scxMultiCard = v), provide({ scxMultiCard }))],
   scxPaste: [() => scxPaste, v => (scxPaste = v)],
   scxPickKind: [() => scxPickKind, v => (scxPickKind = v)],
   scxR: [() => scxR],
   scxRoadLay: [() => scxRoadLay, v => (scxRoadLay = v)],
   scxScatter: [() => scxScatter, v => (scxScatter = v)],
-  scxScatterBar: [() => scxScatterBar, v => (scxScatterBar = v)],
+  scxScatterBar: [() => scxScatterBar, v => ((scxScatterBar = v), provide({ scxScatterBar }))],
   scxScatterKinds: [() => scxScatterKinds, v => (scxScatterKinds = v)],
   scxSelBoxes: [() => scxSelBoxes, v => (scxSelBoxes = v)],
   scxStampAt: [() => scxStampAt, v => (scxStampAt = v)],
-  scxTools: [() => scxTools, v => (scxTools = v)],
-  scxUp: [() => scxUp, v => (scxUp = v)],
+  scxTools: [() => scxTools, v => ((scxTools = v), provide({ scxTools }))],
+  scxUp: [() => scxUp, v => ((scxUp = v), provide({ scxUp }))],
 });
 /* eslint-enable no-func-assign */
+provide({ scxBlocksBar, scxDown, scxDraw, scxHint, scxMove, scxMultiCard, scxScatterBar, scxTools, scxUp });
 /* to-module: end */
 SCN.multi = SCN.multi || new Set();
 SCN.scat = SCN.scat || { dens: 0.5, mix: true, vary: 0.18 };

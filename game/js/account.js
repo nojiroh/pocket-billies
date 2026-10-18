@@ -6,13 +6,16 @@
    The first time someone signs in on a browser that already has a game, they are asked whether to bring it along.
    The Firebase project is set in js/account-config.js; without it there is no sign-in button. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
-import { expose } from './bridge.js';
+import { expose } from './test-globals.js';
+import { NW_TEST, closeModal, modal, provide, render, toast } from './hooks.js';
 import {
   ACC_ID,
   B,
   LS,
   LS_ACC,
   LS_BASE,
+  S,
+  SAVE_HOLD,
   SAVE_NEW_MSG,
   SAVE_VERSION,
   esc,
@@ -21,6 +24,8 @@ import {
   lsSet,
   save,
   saveAge,
+  setS,
+  setSaveHold,
 } from './core.js';
 import { cleanTrainer } from './trainer.js';
 import { applyPreferences, settingsRefresh } from './profile.js';
@@ -30,24 +35,25 @@ import { frInit } from './friends.js';
 expose({
   ACC: [() => ACC],
   ACC_SDK: [() => ACC_SDK],
-  accChipHTML: [() => accChipHTML, v => (accChipHTML = v)],
+  accChipHTML: [() => accChipHTML, v => ((accChipHTML = v), provide({ accChipHTML }))],
   accErr: [() => accErr, v => (accErr = v)],
   accFace: [() => accFace],
-  accFlush: [() => accFlush, v => (accFlush = v)],
+  accFlush: [() => accFlush, v => ((accFlush = v), provide({ accFlush }))],
   accG: [() => accG],
   accInit: [() => accInit, v => (accInit = v)],
-  accOn: [() => accOn, v => (accOn = v)],
+  accOn: [() => accOn, v => ((accOn = v), provide({ accOn }))],
   accPull: [() => accPull, v => (accPull = v)],
   accRefresh: [() => accRefresh, v => (accRefresh = v)],
   accScript: [() => accScript, v => (accScript = v)],
-  accSettingsHTML: [() => accSettingsHTML, v => (accSettingsHTML = v)],
+  accSettingsHTML: [() => accSettingsHTML, v => ((accSettingsHTML = v), provide({ accSettingsHTML }))],
   accSignIn: [() => accSignIn, v => (accSignIn = v)],
   accSignOut: [() => accSignOut, v => (accSignOut = v)],
   accState: [() => accState, v => (accState = v)],
 });
 /* eslint-enable no-func-assign */
+provide({ accChipHTML, accFlush, accOn, accSettingsHTML });
 /* to-module: end */
-const ACC = {
+export const ACC = {
   cfg: window.PB_FIREBASE || null,
   ready: false,
   user: null,
@@ -57,6 +63,7 @@ const ACC = {
   busy: false,
   err: '',
 };
+provide({ ACC }); /* to-module */
 const ACC_SDK = 'https://cdn.jsdelivr.net/npm/firebase@10.12.5/';
 function accOn() {
   return (
@@ -149,7 +156,7 @@ async function accPull() {
       remote = loadSave(remote);
     } catch (e) {}
     if (age === 'new') {
-      SAVE_HOLD = true;
+      setSaveHold(true);
       modal({
         title: 'Your account’s save is newer',
         html: `<p>${SAVE_NEW_MSG}</p>`,
@@ -165,7 +172,7 @@ async function accPull() {
       toast('Your account’s save is from an older version of the game, so this is a new game. Playing on replaces it.');
     }
     if (remote && remote.started && (!S.started || (remote.savedAt || 0) > (S.savedAt || 0)) && !B) {
-      S = remote;
+      setS(remote);
       S.avatar = cleanTrainer(S.avatar, S.gender);
       applyPreferences();
       lsSet(S);
@@ -190,7 +197,7 @@ async function accPull() {
           l: 'Yes, use it',
           c: 'gold',
           f: () => {
-            S = guest;
+            setS(guest);
             S.savedAt = Date.now();
             lsSet(S);
             closeModal();

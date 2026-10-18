@@ -4,9 +4,10 @@
    reset and a bigger view, the plain mouse wheel zooms, the right mouse button (or Q/E) turns all the way round, and
    W A S D or the arrow keys walk while the pointer is over the preview. Keys over the preview never reach the map tools. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
-import { expose } from '../../game/js/bridge.js';
+import { expose } from '../../game/js/test-globals.js';
+import { provide } from '../../game/js/hooks.js';
 import { $, $$, clamp } from '../../game/js/util.js';
-import { DGL } from '../../game/js/diorama-gl.js';
+import { DGL, dioMount, setDioMount } from '../../game/js/diorama-gl.js';
 /* eslint-disable no-func-assign */
 expose({
   VP: [() => VP],
@@ -19,13 +20,14 @@ expose({
 /* eslint-enable no-func-assign */
 /* to-module: end */
 const VP = { hover: false, big: null };
+provide({ VP }); /* to-module */
 if (typeof dioMount === 'function') {
   const _dm = dioMount;
-  dioMount = function (cv, id, o = {}) {
+  setDioMount(function (cv, id, o = {}) {
     const k0 = o.keys;
     o = Object.assign({}, o, { freeCam: true, keys: () => VP.hover || !!(k0 && k0()) });
     return _dm(cv, id, o);
-  };
+  });
 }
 const vpTurn = a => {
   if (typeof DGL === 'undefined') return;

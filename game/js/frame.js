@@ -3,7 +3,8 @@
    One requestAnimationFrame loop drives everything that animates (battle, world map, sprites, sky).
    Each task has its own cap; the battle and map follow the 30 / 60 / 120 FPS setting. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
-import { expose } from './bridge.js';
+import { expose } from './test-globals.js';
+import { S, debugFps } from './hooks.js';
 /* eslint-disable no-func-assign */
 expose({
   FRAME: [() => FRAME],

@@ -6,7 +6,8 @@
    "When it shows" (unlock): start · place:<stop id> · meet:<look id> · flag:<story flag> · badges:<number>.
    The stage of the story is the number of badges you have (9 after the ending). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
-import { expose } from '../../game/js/bridge.js';
+import { expose } from '../../game/js/test-globals.js';
+import { esc } from './shims.js';
 import {
   ACTS,
   SECTIONS,
@@ -18,9 +19,13 @@ import {
   fNum,
   fSel,
   fText,
+  getP,
   grid,
   peopleOpts,
   render,
+  setGetP,
+  setP,
+  setSetP,
   uidKey,
 } from './core.js';
 expose({
@@ -47,14 +52,14 @@ const LORE_UNLOCK =
 {
   const g = getP,
     st = setP;
-  getP = function (path, o) {
+  setGetP(function (path, o) {
     if (path && path.startsWith('@lines.')) {
       const v = g(path.slice(7));
       return Array.isArray(v) ? v.join('\n') : '';
     }
     return g(path, o);
-  };
-  setP = function (path, v, o) {
+  });
+  setSetP(function (path, v, o) {
     if (path && path.startsWith('@lines.')) {
       st(
         path.slice(7),
@@ -66,7 +71,7 @@ const LORE_UNLOCK =
       return;
     }
     return st(path, v, o);
-  };
+  });
 }
 const loreSceneOpts = () =>
   Object.keys(ST.D.scenes || {})

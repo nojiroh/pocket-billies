@@ -1,7 +1,8 @@
 'use strict';
 /* ================= CORE ================= */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
-import { expose } from './bridge.js';
+import { expose } from './test-globals.js';
+import { JINGLES, accFlush, envOdds, jingle, onStepsAdded, postProcess, provide, render, sfx, toast } from './hooks.js';
 import { rnd } from './util.js';
 import {
   ADJ,
@@ -29,7 +30,7 @@ import {
 /* eslint-disable no-func-assign */
 expose({
   ACC_ID: [() => ACC_ID],
-  B: [() => B, v => (B = v)],
+  B: [() => B, v => setB(v)],
   BR: [() => BR],
   EGG_SLOTS: [() => EGG_SLOTS],
   JOB_SLOTS: [() => JOB_SLOTS],
@@ -38,8 +39,8 @@ expose({
   LS_BASE: [() => LS_BASE],
   MAXLV: [() => MAXLV],
   N: [() => N],
-  RM: [() => RM, v => (RM = v)],
-  S: [() => S, v => (S = v)],
+  RM: [() => RM, v => setRM(v)],
+  S: [() => S, v => setS(v)],
   SAVE_FOUND: [() => SAVE_FOUND],
   SAVE_HOLD: [() => SAVE_HOLD, v => (SAVE_HOLD = v)],
   SAVE_NEW_MSG: [() => SAVE_NEW_MSG],
@@ -50,7 +51,7 @@ expose({
   U: [() => U],
   addEgg: [() => addEgg, v => (addEgg = v)],
   addMon: [() => addMon, v => (addMon = v)],
-  addSteps: [() => addSteps, v => (addSteps = v)],
+  addSteps: [() => addSteps, v => ((addSteps = v), provide({ addSteps }))],
   allMons: [() => allMons],
   areaPool: [() => areaPool, v => (areaPool = v)],
   assignJob: [() => assignJob, v => (assignJob = v)],
@@ -85,7 +86,7 @@ expose({
   loadSave: [() => loadSave, v => (loadSave = v)],
   lsGet: [() => lsGet, v => (lsGet = v)],
   lsSet: [() => lsSet, v => (lsSet = v)],
-  makeMon: [() => makeMon, v => (makeMon = v)],
+  makeMon: [() => makeMon, v => ((makeMon = v), provide({ makeMon }))],
   maxHp: [() => maxHp],
   migrate: [() => migrate, v => (migrate = v)],
   movesAt: [() => movesAt, v => (movesAt = v)],
@@ -97,13 +98,19 @@ expose({
   rate: [() => rate],
   resumeTrip: [() => resumeTrip, v => (resumeTrip = v)],
   riderName: [() => riderName],
-  riderOf: [() => riderOf, v => (riderOf = v)],
+  riderOf: [() => riderOf, v => ((riderOf = v), provide({ riderOf }))],
   rollDay: [() => rollDay, v => (rollDay = v)],
   routeDists: [() => routeDists, v => (routeDists = v)],
-  save: [() => save, v => (save = v)],
+  save: [() => save, v => setSave(v)],
   saveAge: [() => saveAge, v => (saveAge = v)],
   saveT: [() => saveT, v => (saveT = v)],
-  setTrip: [() => setTrip, v => (setTrip = v)],
+  setB: [() => setB, v => (setB = v)],
+  setNoSaving: [() => setNoSaving, v => (setNoSaving = v)],
+  setRM: [() => setRM, v => (setRM = v)],
+  setS: [() => setS, v => (setS = v)],
+  setSave: [() => setSave, v => (setSave = v)],
+  setSaveHold: [() => setSaveHold, v => (setSaveHold = v)],
+  setTrip: [() => setTrip, v => setSetTrip(v)],
   spawn: [() => spawn, v => (spawn = v)],
   splitPath: [() => splitPath, v => (splitPath = v)],
   stat: [() => stat, v => (stat = v)],
@@ -119,6 +126,11 @@ expose({
   xpFor: [() => xpFor],
 });
 /* eslint-enable no-func-assign */
+provide({ addSteps, makeMon, riderOf });
+export function setSetTrip(v) {
+  setTrip = v; // eslint-disable-line no-func-assign
+  provide({ setTrip });
+}
 /* to-module: end */
 export const esc = s =>
   String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
@@ -130,9 +142,11 @@ export const cleanName = (s, max) =>
     .replace(/[\u0000-\u001f\u007f<>"&`]/g, '')
     .trim()
     .slice(0, max);
+provide({ cleanName }); /* to-module */
 export const fmt = n => Math.floor(n).toLocaleString('en-US');
 export const km = st => (st / STEPS_PER_KM).toFixed(1);
 export let RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
+provide({ RM }); /* to-module */
 export const uid = () => 'm' + Date.now().toString(36) + Math.floor(rnd() * 1e8).toString(36);
 export const today = () => {
   const d = new Date();
@@ -276,7 +290,7 @@ export function migrate(o) {
    A save without one (alpha 0.5 and earlier) or from a newer format is not loaded: the game says so and starts fresh.
    saveAge: null (no save), 'ok', 'old' or 'new'. A newer save is never written over (SAVE_HOLD) */
 export const SAVE_VERSION = 1;
-let SAVE_HOLD = false;
+export let SAVE_HOLD = false;
 export function saveAge(o) {
   if (!o || typeof o !== 'object') return null;
   const v = o.saveVersion;
@@ -326,7 +340,35 @@ if (SAVE_FOUND === 'old' || SAVE_FOUND === 'new')
   } catch (e) {}
 if (SAVE_FOUND === 'new') SAVE_HOLD = true;
 export let S = loadSave(lsGet()) || fresh();
+provide({ S }); /* to-module */
 export let B = null;
+provide({ B }); /* to-module */
+/* phase 04d: other modules change the save, the battle, reduced motion and the save hold through these (an imported
+   name can't be assigned); each hands the new value to hooks.js for the modules that read it from there */
+export function setS(v) {
+  S = v;
+  provide({ S });
+}
+export function setB(v) {
+  B = v;
+  provide({ B });
+}
+export function setRM(v) {
+  RM = v;
+  provide({ RM });
+}
+export function setSaveHold(v) {
+  SAVE_HOLD = v;
+  provide({ SAVE_HOLD });
+}
+/* test mode (?test, boot.js): nothing the checks do reaches the save */
+export function setNoSaving() {
+  /* eslint-disable no-func-assign */
+  lsSet = function () {};
+  flush = async function () {};
+  /* eslint-enable no-func-assign */
+  provide({ lsSet, flush });
+}
 export const U = {
   tab: 'walk',
   lastTab: null,
@@ -342,6 +384,7 @@ export const U = {
   seenEnc: new Set(),
   mapSel: null,
 };
+provide({ U }); /* to-module */
 
 /* ---------- saving: in this browser, and on the account when signed in (account.js) ---------- */
 let saveT = null;
@@ -353,6 +396,11 @@ export function save() {
       saveT = null;
       flush();
     }, 4000);
+}
+/* phase 04d: the in-game full test (selftest.js) keeps your save out of it */
+export function setSave(v) {
+  save = v; // eslint-disable-line no-func-assign
+  provide({ save });
 }
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'hidden' && saveT) {
@@ -376,6 +424,7 @@ export function stat(m, k) {
   return v;
 }
 export const maxHp = m => stat(m, 'hp');
+provide({ maxHp }); /* to-module */
 function movesAt(lid, lvl) {
   const out = [];
   for (const [lv, mv] of LN[lid].learn) if (lv <= lvl && !out.includes(mv)) out.push(mv);
@@ -587,6 +636,7 @@ export const nextStop = () => (S.route.plan.length ? S.route.plan[0] : null);
    place to place across their edges, like a classic RPG; the steps you take in the game count as steps (encounters,
    challenges, your buddy). 'steps': your real steps carry you along the roads (the game until 0.4). */
 export const walkMode = () => ((typeof RULES !== 'undefined' && RULES.travel) || 'walk') === 'walk';
+provide({ walkMode }); /* to-module */
 const traveling = () => !walkMode() && nextStop() != null && !S.route.hold && !gateMsg();
 /* why travel can't continue right now (null when it can, or when you're staying) */
 export function gateMsg() {

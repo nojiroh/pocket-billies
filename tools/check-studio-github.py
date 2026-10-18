@@ -49,6 +49,7 @@ def main():
     with sync_playwright() as pw:
         b = pw.chromium.launch(args=['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'])
         pg = b.new_page(viewport={'width': 1400, 'height': 900})
+        pg.add_init_script('window.PB_TEST_GLOBALS=true')  # phase 04d: the modules' names on window, for evaluate()
         pg.on('console', lambda m: errs.append(m.text[:300]) if m.type == 'error' else None)
         pg.on('pageerror', lambda e: errs.append(str(e)[:400]))
         pg.route('https://api.github.com/**', api)

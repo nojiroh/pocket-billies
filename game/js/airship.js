@@ -8,7 +8,8 @@
    the flight is shown over the world map, the airship carrying you along an arc above the land, and a ticket costs
    money, so your steps stay for walking new ground. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
-import { expose } from './bridge.js';
+import { expose } from './test-globals.js';
+import { closeModal, modal, provide, render, sceneIdAt, storyFlags, toast } from './hooks.js';
 import { $, clamp } from './util.js';
 import { PLACE, ROUTE, isTown, placeFull } from './data.js';
 import { sceneLite, sceneLoad, scenesAhead } from './scene-files.js';
@@ -23,17 +24,18 @@ import { sfx } from './sound.js';
 expose({
   FLY: [() => FLY],
   LIFT: [() => LIFT],
-  flyDraw: [() => flyDraw, v => (flyDraw = v)],
+  flyDraw: [() => flyDraw, v => ((flyDraw = v), provide({ flyDraw }))],
   flyFare: [() => flyFare, v => (flyFare = v)],
   flyGo: [() => flyGo, v => (flyGo = v)],
   flyLand: [() => flyLand, v => (flyLand = v)],
   flyMenu: [() => flyMenu, v => (flyMenu = v)],
   flySkip: [() => flySkip, v => (flySkip = v)],
-  flyTick: [() => flyTick, v => (flyTick = v)],
+  flyTick: [() => flyTick, v => ((flyTick = v), provide({ flyTick }))],
   flyTowns: [() => flyTowns, v => (flyTowns = v)],
   liftGo: [() => liftGo, v => (liftGo = v)],
 });
 /* eslint-enable no-func-assign */
+provide({ flyDraw, flyTick });
 /* to-module: end */
 export const FLY = { on: false, a: -1, b: -1, t0: 0, dur: 0, lastX: null, dir: 1 };
 /* where the airships go from here: the towns you've been to (and may enter), nearest first */

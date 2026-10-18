@@ -12,7 +12,8 @@
    use the picture, so a repainted picture changes the front of the 3D building too. Engine setting world.buildings3d
    turns the models off (the pictures stand in as before). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
-import { expose } from './bridge.js';
+import { expose } from './test-globals.js';
+import { dioArtVer, provide } from './hooks.js';
 import { cnv, hexA } from './art.js';
 import { DIO, dioData, dioHash, dioImg } from './diorama.js';
 import { ENG_CTX, eng } from './engine/settings.js';
@@ -40,29 +41,39 @@ expose({
   bldArt: [() => bldArt, v => (bldArt = v)],
   bldAtlas: [() => bldAtlas, v => (bldAtlas = v)],
   bldBudget: [() => bldBudget, v => (bldBudget = v)],
-  bldDraw: [() => bldDraw, v => (bldDraw = v)],
+  bldDraw: [() => bldDraw, v => setBldDraw(v)],
   bldDraw0: [() => bldDraw0, v => (bldDraw0 = v)],
-  bldFacade: [() => bldFacade, v => (bldFacade = v)],
+  bldFacade: [() => bldFacade, v => ((bldFacade = v), provide({ bldFacade }))],
   bldFree: [() => bldFree, v => (bldFree = v)],
-  bldGuard: [() => bldGuard, v => (bldGuard = v)],
+  bldGuard: [() => bldGuard, v => ((bldGuard = v), provide({ bldGuard }))],
   bldHex: [() => bldHex, v => (bldHex = v)],
   bldHexSet: [() => bldHexSet, v => (bldHexSet = v)],
-  bldItems: [() => bldItems, v => (bldItems = v)],
-  bldLitF: [() => bldLitF, v => (bldLitF = v)],
+  bldItems: [() => bldItems, v => setBldItems(v)],
+  bldLitF: [() => bldLitF, v => ((bldLitF = v), provide({ bldLitF }))],
   bldMake: [() => bldMake, v => (bldMake = v)],
-  bldMeshFor: [() => bldMeshFor, v => (bldMeshFor = v)],
+  bldMeshFor: [() => bldMeshFor, v => ((bldMeshFor = v), provide({ bldMeshFor }))],
   bldOn: [() => bldOn],
   bldRot: [() => bldRot, v => (bldRot = v)],
-  bldShadow: [() => bldShadow, v => (bldShadow = v)],
+  bldShadow: [() => bldShadow, v => ((bldShadow = v), provide({ bldShadow }))],
   bldShadow0: [() => bldShadow0, v => (bldShadow0 = v)],
   bldSig: [() => bldSig],
-  bldSigF: [() => bldSigF, v => (bldSigF = v)],
-  bldSmoke: [() => bldSmoke, v => (bldSmoke = v)],
-  bldWinLit: [() => bldWinLit, v => (bldWinLit = v)],
+  bldSigF: [() => bldSigF, v => ((bldSigF = v), provide({ bldSigF }))],
+  bldSmoke: [() => bldSmoke, v => ((bldSmoke = v), provide({ bldSmoke }))],
+  bldWinLit: [() => bldWinLit, v => ((bldWinLit = v), provide({ bldWinLit }))],
 });
 /* eslint-enable no-func-assign */
+provide({ bldDraw, bldFacade, bldGuard, bldLitF, bldMeshFor, bldShadow, bldSigF, bldSmoke, bldWinLit });
+export function setBldDraw(v) {
+  bldDraw = v; // eslint-disable-line no-func-assign
+  provide({ bldDraw });
+}
+export function setBldItems(v) {
+  bldItems = v; // eslint-disable-line no-func-assign
+  provide({ bldItems });
+}
 /* to-module: end */
 export const BLD = { mesh: new WeakMap(), fac: new WeakMap(), vao: null };
+provide({ BLD }); /* to-module */
 export const BLD_TEX_NAMES = [
   'Plaster',
   'Siding',
@@ -109,6 +120,7 @@ const bldSig = B =>
     B.base && [B.base.col, B.base.h],
   ].join('|');
 const bldOn = () => !BLD.fail && eng('world', 'buildings3d') !== false;
+provide({ bldOn }); /* to-module */
 /* if this device can't build or draw the models, the pictures stand in from then on (and the debug log says why) */
 export function bldGuard(fn) {
   if (BLD.fail) return;
@@ -218,6 +230,7 @@ void main(){vec3 p=bPosIn;p.y+=curveY(uLift);gl_Position=uVP*vec4(p,1.);}`,
 precision highp float;out vec4 o;void main(){o=vec4(1.);}`,
   ],
 };
+provide({ BLD_SH }); /* to-module */
 /* ---------- the front picture: roof cut away, glass see-through ---------- */
 function bldHexSet(L) {
   return new Set((L || []).map(h => parseInt(h.slice(1, 7), 16)));
@@ -1501,7 +1514,7 @@ function bldWinLit(seed, litF) {
   return { k: 0.62 + 0.6 * h2, c: h2 < 0.18 ? [0.62, 0.78, 1.25] : h2 < 0.45 ? [1.15, 1.05, 0.85] : [1.25, 1, 0.7] };
 }
 /* ---------- drawing ---------- */
-function bldItems(items) {
+export function bldItems(items) {
   if (!bldOn()) return [];
   if (!BLD.ready) {
     bldGuard(() => {
@@ -1514,7 +1527,7 @@ function bldItems(items) {
   for (const it of items) if (it.bld3 && !(DGL.bt && DGL.bt.hide && DGL.bt.hide.has(it.p))) out.push(it);
   return out;
 }
-function bldDraw(C, X, items, fades) {
+export function bldDraw(C, X, items, fades) {
   bldGuard(() => bldDraw0(C, X, items, fades));
 }
 function bldDraw0(C, X, items, fades) {

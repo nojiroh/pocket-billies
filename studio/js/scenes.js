@@ -4,7 +4,23 @@
    tiles (one character per tile), a list of props, a walking path and a camera. Props and ground tiles are PNG files
    in art/scene/ that can be painted here. The live preview runs the game's own renderer on your unsaved changes. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
-import { expose } from '../../game/js/bridge.js';
+import { expose } from '../../game/js/test-globals.js';
+import {
+  VP,
+  pedCard,
+  pedDraw,
+  pedMount,
+  provide,
+  scxBlocksBar,
+  scxDown,
+  scxDraw,
+  scxHint,
+  scxMove,
+  scxMultiCard,
+  scxScatterBar,
+  scxTools,
+  scxUp,
+} from '../../game/js/hooks.js';
 import { $, $$, clamp } from '../../game/js/util.js';
 import { ART, cnv } from '../../game/js/art.js';
 import {
@@ -15,14 +31,18 @@ import {
   dioExitPoint,
   dioFind,
   dioHubOf,
+  dioImg,
   dioNav,
   dioPass,
   dioSteps,
   dioStepsNew,
   dioStepsStore,
+  setDioData,
+  setDioImg,
 } from '../../game/js/diorama.js';
 import { ENV } from '../../game/js/env.js';
 import { DGL, DGL_WALL_MATS, dioHRaw, dioMount } from '../../game/js/diorama-gl.js';
+import { esc } from './shims.js';
 import {
   ACTS,
   SECTIONS,
@@ -53,9 +73,9 @@ expose({
   SC_TER_KEYS: [() => SC_TER_KEYS],
   SC_WK: [() => SC_WK],
   blankScene: [() => blankScene, v => (blankScene = v)],
-  dioArtVer: [() => dioArtVer, v => (dioArtVer = v)],
+  dioArtVer: [() => dioArtVer, v => ((dioArtVer = v), provide({ dioArtVer }))],
   scAddProp: [() => scAddProp, v => (scAddProp = v)],
-  scArt: [() => scArt, v => (scArt = v)],
+  scArt: [() => scArt, v => ((scArt = v), provide({ scArt }))],
   scBindMap: [() => scBindMap, v => (scBindMap = v)],
   scCur: [() => scCur],
   scD: [() => scD],
@@ -106,9 +126,10 @@ expose({
   segDist: [() => segDist, v => (segDist = v)],
 });
 /* eslint-enable no-func-assign */
+provide({ dioArtVer, scArt });
 /* to-module: end */
-dioData = () => ({ scenes: (ST.D && ST.D.scenes) || {}, sc: (ST.D && ST.D.scenery) || { terrains: {}, props: {} } });
-dioImg = path => atlasNow('art/' + path) || ART.img[path];
+setDioData(() => ({ scenes: (ST.D && ST.D.scenes) || {}, sc: (ST.D && ST.D.scenery) || { terrains: {}, props: {} } }));
+setDioImg(path => atlasNow('art/' + path) || ART.img[path]);
 function dioArtVer() {
   return ATL_VER;
 }
@@ -162,6 +183,7 @@ export function scArt(C) {
   return [...L].filter(Boolean);
 }
 export const scD = () => ST.D.scenery || (ST.D.scenery = { ppu: 34, tile: 16, terrains: {}, props: {}, person: 1.75 });
+provide({ scD }); /* to-module */
 export const scId = () => {
   const S = ST.D.scenes || (ST.D.scenes = {});
   if (!S[ST.sel.scene]) ST.sel.scene = Object.keys(S)[0] || null;

@@ -6,7 +6,8 @@
    recipes. Browsers only allow sound after the player touches the page, so nothing plays until the first tap.
    Settings → Music and Sound effects set the volumes (0 mutes). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
-import { expose } from './bridge.js';
+import { expose } from './test-globals.js';
+import { CS, provide, sceneIdAt } from './hooks.js';
 import { clamp } from './util.js';
 import { ROUTE } from './data.js';
 import { B, S, U } from './core.js';
@@ -23,7 +24,7 @@ expose({
   JINGLES: [() => JINGLES],
   SCALES: [() => SCALES],
   SONGS: [() => SONGS],
-  ambApply: [() => ambApply, v => (ambApply = v)],
+  ambApply: [() => ambApply, v => ((ambApply = v), provide({ ambApply }))],
   ambBird: [() => ambBird, v => (ambBird = v)],
   ambClank: [() => ambClank, v => (ambClank = v)],
   ambFade: [() => ambFade, v => (ambFade = v)],
@@ -35,30 +36,31 @@ expose({
   ambTick: [() => ambTick, v => (ambTick = v)],
   ambUpdate: [() => ambUpdate, v => (ambUpdate = v)],
   ambWhere: [() => ambWhere, v => (ambWhere = v)],
-  audApply: [() => audApply, v => (audApply = v)],
+  audApply: [() => audApply, v => ((audApply = v), provide({ audApply }))],
   audCompose: [() => audCompose, v => (audCompose = v)],
   audInit: [() => audInit, v => (audInit = v)],
   audKick: [() => audKick, v => (audKick = v)],
   audNoise: [() => audNoise, v => (audNoise = v)],
   audPref: [() => audPref, v => (audPref = v)],
   audRng: [() => audRng, v => (audRng = v)],
-  audTest: [() => audTest, v => (audTest = v)],
+  audTest: [() => audTest, v => ((audTest = v), provide({ audTest }))],
   audTick: [() => audTick, v => (audTick = v)],
   audUnlock: [() => audUnlock, v => (audUnlock = v)],
   audVoice: [() => audVoice, v => (audVoice = v)],
-  jingle: [() => jingle, v => (jingle = v)],
+  jingle: [() => jingle, v => ((jingle = v), provide({ jingle }))],
   mtof: [() => mtof],
   music: [() => music, v => (music = v)],
   musicFor: [() => musicFor, v => (musicFor = v)],
   musicStop: [() => musicStop, v => (musicStop = v)],
   musicSync: [() => musicSync, v => (musicSync = v)],
-  sfx: [() => sfx, v => (sfx = v)],
-  sfxAt: [() => sfxAt, v => (sfxAt = v)],
-  sfxBattle: [() => sfxBattle, v => (sfxBattle = v)],
+  sfx: [() => sfx, v => ((sfx = v), provide({ sfx }))],
+  sfxAt: [() => sfxAt, v => ((sfxAt = v), provide({ sfxAt }))],
+  sfxBattle: [() => sfxBattle, v => ((sfxBattle = v), provide({ sfxBattle }))],
 });
 /* eslint-enable no-func-assign */
+provide({ ambApply, audApply, audTest, jingle, sfx, sfxAt, sfxBattle });
 /* to-module: end */
-const AUD = {
+export const AUD = {
   ctx: null,
   master: null,
   mus: null,
@@ -827,6 +829,7 @@ export const JINGLES = {
     [84, 4],
   ],
 };
+provide({ JINGLES }); /* to-module */
 /* ---------- sound effects ---------- */
 export function sfx(name, o = {}) {
   if (!AUD.ctx || AUD.ctx.state !== 'running') return;
@@ -1092,7 +1095,7 @@ document.addEventListener(
 /* v31: world sounds are half as loud by default and fade in over a few seconds when you arrive somewhere; a second
    bus carries the ambience (Settings → Sound → Ambience): birdsong by day, crickets and the odd owl at night, leaves
    in the wind near trees, a town's murmur, a cave's hum and a room's quiet with its clock ticking */
-const AMB = { bus: null, amb: null, beds: {}, flash: 0, arrive: 0, id: null, lastCall: 0, ev: {} };
+export const AMB = { bus: null, amb: null, beds: {}, flash: 0, arrive: 0, id: null, lastCall: 0, ev: {} };
 function ambFade() {
   if (!AUD.ctx) return 1;
   return clamp((AUD.ctx.currentTime - AMB.arrive) / 2.8, 0, 1);

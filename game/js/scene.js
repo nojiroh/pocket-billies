@@ -9,7 +9,30 @@
    The camera is directed (pushes and pans with the action, intro dollies, a pull-back on faints), drifts in a slow orbit while idle,
    and is guarded so the two billionaires never leave the free frame. Reduced motion keeps it on the home shot. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
-import { expose } from './bridge.js';
+import { expose } from './test-globals.js';
+import {
+  A,
+  B,
+  BACKDROPS,
+  DIO,
+  GD,
+  MOVES,
+  RM,
+  S,
+  TC,
+  TYPEFX,
+  battleFreeArea,
+  battleGLLayout,
+  battleGLStart,
+  battleGLStop,
+  battleLayoutChanged,
+  dioStop,
+  hudHit,
+  hudPop,
+  maxHp,
+  platesTick,
+  provide,
+} from './hooks.js';
 import { $, clamp, rnd } from './util.js';
 import { FRAME, frameCount, frameStop, frameTask, userFps } from './frame.js';
 import { ART, artLoad, artPixels, cnv, coinCanvas, d44, hexA, iconCanvas, mixA, pk, whiteOf } from './art.js';
@@ -63,7 +86,7 @@ expose({
   blinkSide: [() => blinkSide, v => (blinkSide = v)],
   blurAt: [() => blurAt, v => (blurAt = v)],
   burst: [() => burst, v => (burst = v)],
-  buzz: [() => buzz, v => (buzz = v)],
+  buzz: [() => buzz, v => ((buzz = v), provide({ buzz }))],
   camApply: [() => camApply, v => (camApply = v)],
   camAt: [() => camAt],
   camBusy: [() => camBusy],
@@ -118,10 +141,10 @@ expose({
   scPlay: [() => scPlay, v => (scPlay = v)],
   scPrepare: [() => scPrepare, v => (scPrepare = v)],
   scQualityR: [() => scQualityR, v => (scQualityR = v)],
-  scResize: [() => scResize, v => (scResize = v)],
+  scResize: [() => scResize, v => setScResize(v)],
   scRingPhase: [() => scRingPhase],
   scSelect: [() => scSelect, v => (scSelect = v)],
-  scStart: [() => scStart, v => (scStart = v)],
+  scStart: [() => scStart, v => setScStart(v)],
   scStop: [() => scStop, v => (scStop = v)],
   scTargets: [() => scTargets, v => (scTargets = v)],
   scToCss: [() => scToCss, v => (scToCss = v)],
@@ -142,6 +165,15 @@ expose({
   vBox: [() => vBox, v => (vBox = v)],
 });
 /* eslint-enable no-func-assign */
+provide({ buzz });
+export function setScResize(v) {
+  scResize = v; // eslint-disable-line no-func-assign
+  provide({ scResize });
+}
+export function setScStart(v) {
+  scStart = v; // eslint-disable-line no-func-assign
+  provide({ scStart });
+}
 /* to-module: end */
 export const FW = 224,
   FH = 168,

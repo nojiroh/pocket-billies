@@ -5,7 +5,8 @@
    letters (sound.js), tap or Enter to finish the line or go on. Lines may start with an expression in brackets:
    "[happy] Nice to meet you!" (happy, surprised, sad, angry, blink, talk). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
-import { expose } from './bridge.js';
+import { expose } from './test-globals.js';
+import { dioChatLines, provide } from './hooks.js';
 import { PEOPLE, TRAINERS } from './data.js';
 import { RM, S } from './core.js';
 import { frameStop, frameTask } from './frame.js';
@@ -19,9 +20,10 @@ expose({
   FOLK_TALK: [() => FOLK_TALK],
   TALK: [() => TALK],
   TALK_NAMES: [() => TALK_NAMES],
+  setTalkFolk: [() => setTalkFolk, v => (setTalkFolk = v)],
   talk: [() => talk, v => (talk = v)],
   talkEl: [() => talkEl, v => (talkEl = v)],
-  talkFolk: [() => talkFolk, v => (talkFolk = v)],
+  talkFolk: [() => talkFolk, v => setTalkFolk(v)],
   talkHazel: [() => talkHazel, v => (talkHazel = v)],
   talkHide: [() => talkHide, v => (talkHide = v)],
   talkLine: [() => talkLine, v => (talkLine = v)],
@@ -29,6 +31,7 @@ expose({
   talkTick: [() => talkTick, v => (talkTick = v)],
 });
 /* eslint-enable no-func-assign */
+provide({ talkFolk });
 /* to-module: end */
 export const TALK = { on: false, cur: null, por: { who: null, expr: null, t: 0 }, el: null };
 const TALK_NAMES = { gini: 'Professor Hazel' };
@@ -198,7 +201,7 @@ const FOLK_TALK = [
   '[happy] Lovely day under the Inner Sun.',
   'Careful in the tall grass. They hide in there.',
 ];
-async function talkFolk(f) {
+export async function talkFolk(f) {
   if (TALK.on) return;
   const sc = DIO.sc,
     L = typeof dioChatLines === 'function' ? dioChatLines(FOLK_TALK) : sc.chat && sc.chat.length ? sc.chat : FOLK_TALK,
@@ -215,6 +218,11 @@ async function talkFolk(f) {
     [who, b === a ? FOLK_TALK[0] : b],
   ]);
   f.wait = 2;
+}
+/* phase 04d: extras.js answers the person who asked a favour */
+export function setTalkFolk(v) {
+  talkFolk = v; // eslint-disable-line no-func-assign
+  provide({ talkFolk });
 }
 export async function talkHazel(p) {
   if (TALK.on) return;

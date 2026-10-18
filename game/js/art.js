@@ -3,7 +3,8 @@
    art/manifest.js lists atlas rectangles and battle layouts; art/rigs.js holds billionaire skeletons.
    Images load once and are cached; pixel arrays (for the 3D ground and the world map) are read on demand. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
-import { expose } from './bridge.js';
+import { expose } from './test-globals.js';
+import { COINS, provide } from './hooks.js';
 import { clamp } from './util.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -19,8 +20,8 @@ expose({
   UIURL: [() => UIURL],
   artBoot: [() => artBoot, v => (artBoot = v)],
   artImg: [() => artImg, v => (artImg = v)],
-  artLoad: [() => artLoad, v => (artLoad = v)],
-  artPixels: [() => artPixels, v => (artPixels = v)],
+  artLoad: [() => artLoad, v => setArtLoad(v)],
+  artPixels: [() => artPixels, v => setArtPixels(v)],
   artReady: [() => artReady],
   artURL: [() => artURL],
   cnv: [() => cnv, v => (cnv = v)],
@@ -42,12 +43,17 @@ expose({
   pkh: [() => pkh],
   rgb: [() => rgb, v => (rgb = v)],
   seeded: [() => seeded, v => (seeded = v)],
+  setArtLoad: [() => setArtLoad, v => (setArtLoad = v)],
   shadeHex: [() => shadeHex, v => (shadeHex = v)],
   tintOf: [() => tintOf, v => (tintOf = v)],
   uiIco: [() => uiIco, v => (uiIco = v)],
   whiteOf: [() => whiteOf, v => (whiteOf = v)],
 });
 /* eslint-enable no-func-assign */
+export function setArtPixels(v) {
+  artPixels = v; // eslint-disable-line no-func-assign
+  provide({ artPixels });
+}
 /* to-module: end */
 const ARTDIR = window.NW_ARTDIR || 'art/';
 /* the address of an art file; a single-file build carries its art inline in window.NW_ART */
@@ -76,6 +82,11 @@ export function artLoad(paths) {
       return ART.wait[p];
     })
   );
+}
+/* phase 04d: the Studio loads its unsaved pictures first (studio/js/propedit.js) */
+export function setArtLoad(v) {
+  artLoad = v; // eslint-disable-line no-func-assign
+  provide({ artLoad });
 }
 export const artReady = path => {
   const im = ART.img[path];

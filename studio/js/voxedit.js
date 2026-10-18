@@ -7,10 +7,12 @@
    (scenery.props.<key>.vox), so it saves with the game data; tools/build-vox-props.py wrote the first sixty as files
    and the game reads either. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
-import { expose } from '../../game/js/bridge.js';
+import { expose } from '../../game/js/test-globals.js';
+import { provide } from '../../game/js/hooks.js';
 import { cnv } from '../../game/js/art.js';
 import { dioImg } from '../../game/js/diorama.js';
 import { VOX_TEXTURES, voxInvalidate, voxRecipe } from '../../game/js/vox.js';
+import { esc } from './shims.js';
 import {
   ACTS,
   ST,
@@ -34,13 +36,14 @@ import { pedM } from './propedit.js';
 expose({
   VXE: [() => VXE],
   VXE_KINDS: [() => VXE_KINDS],
-  pedVoxHTML: [() => pedVoxHTML, v => (pedVoxHTML = v)],
+  pedVoxHTML: [() => pedVoxHTML, v => ((pedVoxHTML = v), provide({ pedVoxHTML }))],
   vxeBump: [() => vxeBump, v => (vxeBump = v)],
   vxeMainColour: [() => vxeMainColour, v => (vxeMainColour = v)],
   vxeOwn: [() => vxeOwn, v => (vxeOwn = v)],
   vxeRec: [() => vxeRec, v => (vxeRec = v)],
 });
 /* eslint-enable no-func-assign */
+provide({ pedVoxHTML });
 /* to-module: end */
 const VXE = { sel: null };
 const VXE_KINDS = [

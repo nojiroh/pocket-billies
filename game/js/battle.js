@@ -5,7 +5,25 @@
    one-on-one battle is still 0 (yours) against 1 (theirs): 0 = your first, 1 = their first, 2 = your second, 3 = their
    second, 4 = your third. Doubles (some trainers) are 0+2 against 1+3; an Alpha is fought by 0, 2 and 4 against 1. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
-import { expose } from './bridge.js';
+import { expose } from './test-globals.js';
+import {
+  JINGLES,
+  battleTipHide,
+  battleTutor,
+  battleWeatherMult,
+  chip,
+  closeModal,
+  jingle,
+  modal,
+  postProcess,
+  provide,
+  render,
+  sfxBattle,
+  stBadge,
+  storyAfterRival,
+  storyAfterWin,
+  toast,
+} from './hooks.js';
 import { $, $$, clamp, rnd } from './util.js';
 import {
   BACKDROPS,
@@ -27,6 +45,7 @@ import {
   trainerTeam,
 } from './data.js';
 import {
+  B,
   N,
   RM,
   S,
@@ -44,6 +63,7 @@ import {
   pickW,
   plural,
   save,
+  setB,
   stat,
   xpFor,
 } from './core.js';
@@ -94,11 +114,11 @@ expose({
   allK: [() => allK],
   alphaPhase: [() => alphaPhase, v => (alphaPhase = v)],
   applyItem: [() => applyItem, v => (applyItem = v)],
-  areaKey: [() => areaKey, v => (areaKey = v)],
+  areaKey: [() => areaKey, v => ((areaKey = v), provide({ areaKey }))],
   award: [() => award, v => (award = v)],
   backBtn: [() => backBtn],
-  battleFreeArea: [() => battleFreeArea, v => (battleFreeArea = v)],
-  battleLayoutChanged: [() => battleLayoutChanged, v => (battleLayoutChanged = v)],
+  battleFreeArea: [() => battleFreeArea, v => ((battleFreeArea = v), provide({ battleFreeArea }))],
+  battleLayoutChanged: [() => battleLayoutChanged, v => ((battleLayoutChanged = v), provide({ battleLayoutChanged }))],
   battleLeave: [() => battleLeave, v => (battleLeave = v)],
   battleMode: [() => battleMode, v => (battleMode = v)],
   battleResize: [() => battleResize, v => (battleResize = v)],
@@ -121,7 +141,7 @@ expose({
   doSwitch: [() => doSwitch, v => (doSwitch = v)],
   doThrow: [() => doThrow, v => (doThrow = v)],
   effLabel: [() => effLabel, v => (effLabel = v)],
-  endBattle: [() => endBattle, v => (endBattle = v)],
+  endBattle: [() => endBattle, v => setEndBattle(v)],
   endTurn: [() => endTurn, v => (endTurn = v)],
   enemyOnly: [() => enemyOnly, v => (enemyOnly = v)],
   finishThrow: [() => finishThrow, v => (finishThrow = v)],
@@ -130,8 +150,8 @@ expose({
   goNames: [() => goNames],
   hcard: [() => hcard, v => (hcard = v)],
   hpMini: [() => hpMini, v => (hpMini = v)],
-  hudHit: [() => hudHit, v => (hudHit = v)],
-  hudPop: [() => hudPop, v => (hudPop = v)],
+  hudHit: [() => hudHit, v => ((hudHit = v), provide({ hudHit }))],
+  hudPop: [() => hudPop, v => ((hudPop = v), provide({ hudPop }))],
   hudScene: [() => hudScene],
   inflict: [() => inflict, v => (inflict = v)],
   inherit: [() => inherit, v => (inherit = v)],
@@ -144,9 +164,9 @@ expose({
   movePower: [() => movePower, v => (movePower = v)],
   msgFace: [() => msgFace, v => (msgFace = v)],
   needsTarget: [() => needsTarget, v => (needsTarget = v)],
-  newBattle: [() => newBattle, v => (newBattle = v)],
-  openBattle: [() => openBattle, v => (openBattle = v)],
-  paintActions: [() => paintActions, v => (paintActions = v)],
+  newBattle: [() => newBattle, v => setNewBattle(v)],
+  openBattle: [() => openBattle, v => setOpenBattle(v)],
+  paintActions: [() => paintActions, v => setPaintActions(v)],
   paintBoxes: [() => paintBoxes, v => (paintBoxes = v)],
   paintParty: [() => paintParty, v => (paintParty = v)],
   paintPlates: [() => paintPlates, v => (paintPlates = v)],
@@ -156,12 +176,14 @@ expose({
   planBack: [() => planBack, v => (planBack = v)],
   planNext: [() => planNext, v => (planNext = v)],
   plateEl: [() => plateEl, v => (plateEl = v)],
-  platesTick: [() => platesTick, v => (platesTick = v)],
+  platesTick: [() => platesTick, v => ((platesTick = v), provide({ platesTick }))],
   play: [() => play, v => (play = v)],
   retarget: [() => retarget, v => (retarget = v)],
   runTurn: [() => runTurn, v => (runTurn = v)],
   say: [() => say, v => (say = v)],
   scAfter: [() => scAfter, v => (scAfter = v)],
+  setEndBattle: [() => setEndBattle, v => (setEndBattle = v)],
+  setOpenBattle: [() => setOpenBattle, v => (setOpenBattle = v)],
   shockName: [() => shockName],
   showAim: [() => showAim, v => (showAim = v)],
   snapAll: [() => snapAll],
@@ -170,7 +192,7 @@ expose({
   stage: [() => stage, v => (stage = v)],
   stageTap: [() => stageTap, v => (stageTap = v)],
   startTrainer: [() => startTrainer, v => (startTrainer = v)],
-  startWild: [() => startWild, v => (startWild = v)],
+  startWild: [() => startWild, v => ((startWild = v), provide({ startWild }))],
   statE: [() => statE, v => (statE = v)],
   stepEv: [() => stepEv, v => (stepEv = v)],
   stopTimers: [() => stopTimers, v => (stopTimers = v)],
@@ -186,6 +208,15 @@ expose({
   wipe: [() => wipe, v => (wipe = v)],
 });
 /* eslint-enable no-func-assign */
+provide({ areaKey, battleFreeArea, battleLayoutChanged, hudHit, hudPop, platesTick, startWild });
+export function setNewBattle(v) {
+  newBattle = v; // eslint-disable-line no-func-assign
+  provide({ newBattle });
+}
+export function setPaintActions(v) {
+  paintActions = v; // eslint-disable-line no-func-assign
+  provide({ paintActions });
+}
 /* to-module: end */
 export const RB = RULES.battle,
   RC = RULES.catching;
@@ -215,7 +246,9 @@ export const A = k => {
   const f = FT(k);
   return f && f.on ? B.sides[ASIDE[k]].team[f.act] : undefined;
 };
+provide({ A }); /* to-module */
 const FV = k => FT(k).v;
+provide({ FV }); /* to-module */
 /* every actor on the field, the live ones, and those of one side */
 const allK = () => {
   const o = [];
@@ -798,7 +831,7 @@ function chooseAI(k = 1) {
   return pick;
 }
 /* fmt: 'single', 'double' (two a side) or 'alpha' (up to three of yours against one Alpha) */
-function newBattle(kind, foe, extra) {
+export function newBattle(kind, foe, extra) {
   const able = S.team.map((m, i) => i).filter(i => S.team[i].hp > 0 && S.team[i].job == null);
   if (!able.length) {
     toast('Everyone on your team has fainted. Rest first, or use a Revive.');
@@ -809,40 +842,42 @@ function newBattle(kind, foe, extra) {
     n1 = fmt === 'double' ? Math.min(2, foe.length) : 1;
   const fighters = (n, list) =>
     Array.from({ length: n }, (_, sl) => ({ act: list[sl], on: list[sl] != null, v: freshV(), down: false }));
-  B = Object.assign(
-    {
-      kind,
-      fmt,
-      events: [],
-      ev: 0,
-      phase: 'playing',
-      market: null,
-      integrity: 1,
-      over: null,
-      needSwitch: [],
-      offer: null,
-      foeName: '',
-      lead: S.team[able[0]].uid,
-      turn: 0,
-      plan: [],
-      cur: 0,
-      sides: [
-        { team: S.team, f: fighters(n0, able), rent: false, pivot: false, mail: [], inh: null },
-        {
-          team: foe,
-          f: fighters(
-            n1,
-            foe.map((m, i) => i)
-          ),
-          rent: false,
-          pivot: false,
-          mail: [],
-          inh: null,
-        },
-      ],
-    },
-    extra,
-    { fmt }
+  setB(
+    Object.assign(
+      {
+        kind,
+        fmt,
+        events: [],
+        ev: 0,
+        phase: 'playing',
+        market: null,
+        integrity: 1,
+        over: null,
+        needSwitch: [],
+        offer: null,
+        foeName: '',
+        lead: S.team[able[0]].uid,
+        turn: 0,
+        plan: [],
+        cur: 0,
+        sides: [
+          { team: S.team, f: fighters(n0, able), rent: false, pivot: false, mail: [], inh: null },
+          {
+            team: foe,
+            f: fighters(
+              n1,
+              foe.map((m, i) => i)
+            ),
+            rent: false,
+            pivot: false,
+            mail: [],
+            inh: null,
+          },
+        ],
+      },
+      extra,
+      { fmt }
+    )
   );
   Object.defineProperty(B.sides[0], 'act', {
     get() {
@@ -1172,7 +1207,7 @@ export function battleResize() {
     if (B && B.phase !== 'playing') paintActions();
   });
 }
-function openBattle() {
+export function openBattle() {
   const bs = (S.preferences || {}).battleSpeed;
   if (bs && !U.dbgSpeed) SC.speed = bs === 'fast' ? 1.6 : bs === 'faster' ? 2.2 : 1;
   const area = B.area || 'grass',
@@ -1197,6 +1232,11 @@ function openBattle() {
       console.error(e);
       toast(e.message);
     });
+}
+/* phase 04d: extras.js adds the weather and its events around it */
+export function setOpenBattle(v) {
+  openBattle = v; // eslint-disable-line no-func-assign
+  provide({ openBattle });
 }
 /* v31: on the 3D stage a battle starts where you are, without a wipe: the camera swoops down toward the spot, the
    billionaire bursts out of the grass in a spray of leaves, then the battle's panels slide up over the same picture.
@@ -1941,7 +1981,7 @@ export function endBattle() {
     if (o === 'lose') for (const m of S.team) m.hp = Math.max(1, m.hp);
     save();
     battleLeave(() => {
-      B = null;
+      setB(null);
       scStop();
       document.body.classList.remove('in-battle');
       U.tab = 'walk';
@@ -2021,7 +2061,7 @@ export function endBattle() {
   }
   save();
   battleLeave(() => {
-    B = null;
+    setB(null);
     scStop();
     document.body.classList.remove('in-battle');
     U.tab = 'walk';
@@ -2029,6 +2069,11 @@ export function endBattle() {
     after.forEach(m => modal(m));
     if (!after.length) postProcess();
   });
+}
+/* phase 04d: extras.js adds the weather and its events around it */
+export function setEndBattle(v) {
+  endBattle = v; // eslint-disable-line no-func-assign
+  provide({ endBattle });
 }
 
 /* ================= v33: NAMEPLATES IN THE SCENE =================

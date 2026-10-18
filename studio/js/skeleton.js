@@ -4,11 +4,13 @@
    around, a parent it hangs from, a draw layer and an animation role (which motion of its body plan it follows).
    Front and back views have their own skeletons and sheets; the Gold-Plated sheets share the same layout. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
-import { expose } from '../../game/js/bridge.js';
+import { expose } from '../../game/js/test-globals.js';
+import { provide } from '../../game/js/hooks.js';
 import { $, $$, clamp } from '../../game/js/util.js';
 import { cnv, hexA, shadeHex } from '../../game/js/art.js';
 import { ANIM } from '../../game/js/anim.js';
 import { drawRig, rigAudit, rigMatrices, rigPose } from '../../game/js/rig.js';
+import { esc } from './shims.js';
 import { ST, ask, changed, clone, commit, dialog, fChk, fNum, redo, render, spName, toast, undo } from './core.js';
 import {
   PX_ED,
@@ -39,8 +41,8 @@ expose({
   imgUsers: [() => imgUsers],
   mApplyL: [() => mApplyL],
   mInv: [() => mInv],
-  makeBlankBody: [() => makeBlankBody, v => (makeBlankBody = v)],
-  openSkeleton: [() => openSkeleton, v => (openSkeleton = v)],
+  makeBlankBody: [() => makeBlankBody, v => ((makeBlankBody = v), provide({ makeBlankBody }))],
+  openSkeleton: [() => openSkeleton, v => ((openSkeleton = v), provide({ openSkeleton }))],
   planRoles: [() => planRoles, v => (planRoles = v)],
   putPart: [() => putPart, v => (putPart = v)],
   scaled: [() => scaled, v => (scaled = v)],
@@ -57,7 +59,7 @@ expose({
   skLoop: [() => skLoop, v => (skLoop = v)],
   skMeta: [() => skMeta, v => (skMeta = v)],
   skMirror: [() => skMirror, v => (skMirror = v)],
-  skNeutral: [() => skNeutral, v => (skNeutral = v)],
+  skNeutral: [() => skNeutral, v => ((skNeutral = v), provide({ skNeutral }))],
   skPartFor: [() => skPartFor, v => (skPartFor = v)],
   skPlaceholder: [() => skPlaceholder, v => (skPlaceholder = v)],
   skPose: [() => skPose, v => (skPose = v)],
@@ -71,6 +73,7 @@ expose({
   uniqBone: [() => uniqBone],
 });
 /* eslint-enable no-func-assign */
+provide({ makeBlankBody, openSkeleton, skNeutral });
 /* to-module: end */
 const SK = {
   sp: null,
@@ -105,6 +108,7 @@ const PLAN_INFO = {
   blob: 'A wobbling body with small arms',
   shell: 'A shell with a soft body and little legs',
 };
+provide({ PLAN_INFO }); /* to-module */
 const Q_FIELDS = {
   bird: [
     ['per', 'Wing beat (ms)', 60, 900, 10],
@@ -1371,6 +1375,7 @@ const BODY_TPL = {
     ],
   },
 };
+provide({ BODY_TPL }); /* to-module */
 function blobPart(w, h, col, face, back) {
   const c = cnv(w, h),
     x = c.getContext('2d'),

@@ -3,7 +3,7 @@
    (every Firebase website carries them); the database rules decide who may read and write which save.
    Left as null, the game has no accounts: one save in this browser, as before. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
-import { expose } from './bridge.js';
+import { expose } from './test-globals.js';
 /* to-module: end */
 window.PB_FIREBASE = {
   apiKey: 'AIzaSyAWb8Z6hZWj5dBzcK3lcBnN2JoZNijzgLw',

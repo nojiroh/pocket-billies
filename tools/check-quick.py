@@ -39,6 +39,8 @@ T0 = time.time()
 CLOCK = """(()=>{const D=Date,off=new D(2026,5,15,12,30,0).getTime()-D.now();class FD extends D{constructor(...a){if(a.length)super(...a);else super(D.now()+off)}static now(){return D.now()+off}}
  FD.UTC=D.UTC;FD.parse=D.parse;window.Date=FD})()"""
 NO_ACCOUNTS = "Object.defineProperty(window,'PB_FIREBASE',{get(){return null},set(){},configurable:false})"   # alpha 0.4.1: no Google sign-in during the checks
+# phase 04d: the modules' names on window (game/js/test-globals.js), only for the checks' page.evaluate() calls
+TEST_GLOBALS = "window.PB_TEST_GLOBALS=true"
 LOW_RENDER = "GD.engine=GD.engine||{};GD.engine.defaults=Object.assign({},GD.engine.defaults||{},{quality:{resolution:.34,shadowMap:1024,auto:false}});0"
 ARGS = sys.argv[1:]
 # phase 01: --smoke is the fast subset run after every change and on every push (about two minutes): the data and code
@@ -470,7 +472,7 @@ def console_text(m):
 
 
 def open_game(b, base, w, h, mobile, errs):
-    ctx = b.new_context(viewport={'width': w, 'height': h}, device_scale_factor=1, is_mobile=mobile, has_touch=mobile); ctx.add_init_script(CLOCK); ctx.add_init_script(NO_ACCOUNTS)
+    ctx = b.new_context(viewport={'width': w, 'height': h}, device_scale_factor=1, is_mobile=mobile, has_touch=mobile); ctx.add_init_script(CLOCK); ctx.add_init_script(NO_ACCOUNTS); ctx.add_init_script(TEST_GLOBALS)
     ctx.set_default_timeout(90000); pg = ctx.new_page(); CUR['pg'] = pg
     pg.on('pageerror', lambda e: errs.append(str(e)))
     pg.on('console', lambda m: errs.append(console_text(m)) if m.type == 'error' else None)
@@ -1931,7 +1933,7 @@ def studio_round_trip(pw, R):
         proc = subprocess.Popen([sys.executable, str(tmp / 'start-studio.py'), '--no-browser'], env={**os.environ, 'NETWORTH_STUDIO_PORT': str(port)}, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         b = pw.chromium.launch(args=['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist']); errs = []
         try:
-            time.sleep(1.5); ctx = b.new_context(viewport={'width': 1280, 'height': 860}); ctx.add_init_script(CLOCK); ctx.add_init_script(NO_ACCOUNTS); ctx.set_default_timeout(90000); pg = ctx.new_page()
+            time.sleep(1.5); ctx = b.new_context(viewport={'width': 1280, 'height': 860}); ctx.add_init_script(CLOCK); ctx.add_init_script(NO_ACCOUNTS); ctx.add_init_script(TEST_GLOBALS); ctx.set_default_timeout(90000); pg = ctx.new_page()
             pg.on('pageerror', lambda e: errs.append(str(e))); pg.on('console', lambda m: errs.append(m.text) if m.type == 'error' else None)
             pg.goto(f'http://localhost:{port}/studio/index.html'); pg.wait_for_selector('.split', timeout=30000); time.sleep(1)
             for sec in ['billionaires', 'moves', 'preview', 'types', 'items', 'shops', 'world', 'scenes', 'engine', 'wardrobe', 'trainers', 'lore', 'people', 'jobs', 'rules', 'art', 'check']:
@@ -2020,7 +2022,7 @@ def studio_opens(b):
     """phase 01: the Studio as GitHub Pages serves it (no Studio server): all its scripts run and it asks for a token.
     The full round trip (--studio) needs start-studio.py"""
     srv, base = serve(ROOT); errs = []
-    ctx = b.new_context(viewport={'width': 1280, 'height': 860}); ctx.add_init_script(CLOCK); ctx.add_init_script(NO_ACCOUNTS); pg = ctx.new_page()
+    ctx = b.new_context(viewport={'width': 1280, 'height': 860}); ctx.add_init_script(CLOCK); ctx.add_init_script(NO_ACCOUNTS); ctx.add_init_script(TEST_GLOBALS); pg = ctx.new_page()
     pg.on('pageerror', lambda e: errs.append(str(e))); pg.on('console', lambda m: errs.append(console_text(m)) if m.type == 'error' else None)
     try:
         pg.goto(base + '/studio/index.html'); pg.wait_for_selector('#ghTok', timeout=60000)

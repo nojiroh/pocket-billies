@@ -6,10 +6,11 @@
    The board also opens the silhouette check: the new piece sheet (art/next/billionaires/<id>.png), else a study
    (art/next/starters/<id>.png), else the current rig, drawn black at 24 px beside its neighbours. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
-import { expose } from '../../game/js/bridge.js';
+import { expose } from '../../game/js/test-globals.js';
 import { $, $$ } from '../../game/js/util.js';
 import { cnv } from '../../game/js/art.js';
 import { drawRig } from '../../game/js/rig.js';
+import { esc } from './shims.js';
 import { ACTS, SECTIONS, ST, after, changed, commit, render } from './core.js';
 import { downloadCanvas, loadImage, rigFor } from './sprites.js';
 import { skNeutral } from './skeleton.js';

@@ -3,11 +3,14 @@
    Open it from Settings, with Ctrl+Shift+D, or by adding ?debug to the address.
    Everything here edits the current save directly; use Export first if you want a way back. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
-import { expose } from './bridge.js';
+import { expose } from './test-globals.js';
+import { closeModal, evoRun, modal, provide, render, renderOv, stSceneChecks, testScenes, toast } from './hooks.js';
 import { $, $$, clamp } from './util.js';
 import { COINS, DATA_WARN, DEX, EGGS, EGG_TIERS, ITEMS, ROUTE, RULES, SP, TRAINERS } from './data.js';
 import {
+  B,
   MAXLV,
+  S,
   U,
   addEgg,
   addMon,
@@ -20,6 +23,8 @@ import {
   lsSet,
   makeMon,
   save,
+  setB,
+  setS,
   spawn,
   today,
   uid,
@@ -41,12 +46,13 @@ expose({
   dbgRefresh: [() => dbgRefresh, v => (dbgRefresh = v)],
   dbgSel: [() => dbgSel],
   dbgSpecies: [() => dbgSpecies, v => (dbgSpecies = v)],
-  debugFps: [() => debugFps, v => (debugFps = v)],
+  debugFps: [() => debugFps, v => ((debugFps = v), provide({ debugFps }))],
   debugHTML: [() => debugHTML, v => (debugHTML = v)],
   openDebug: [() => openDebug, v => (openDebug = v)],
   settingsReset: [() => settingsReset, v => (settingsReset = v)],
 });
 /* eslint-enable no-func-assign */
+provide({ debugFps });
 /* to-module: end */
 const DBG = { fps: false, on: /[?&]debug\b/.test(location.search) };
 const dbgSel = (id, opts, val) =>
@@ -382,10 +388,10 @@ function settingsReset() {
         f: () => {
           if (B) {
             stopTimers();
-            B = null;
+            setB(null);
             scStop();
           }
-          S = freshKeep();
+          setS(freshKeep());
           S.savedAt = Date.now();
           lsSet(S);
           flush();

@@ -9,7 +9,8 @@
    Frames are drawn once into small canvases and kept (an idle loop of 8, a reaction of 9), so nothing is redrawn per
    frame. A species' rig art is loaded the first time it's needed; until then it simply isn't shown. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
-import { expose } from './bridge.js';
+import { expose } from './test-globals.js';
+import { areaKey, provide, sceneIdAt, sfx } from './hooks.js';
 import { clamp } from './util.js';
 import { SP, STATUSN, TRAINERS, rivalSp, trainersAt } from './data.js';
 import { N, S, U, findMon, maxHp, nextStop, save } from './core.js';
@@ -24,22 +25,23 @@ expose({
   OWM: [() => OWM],
   OW_MAX: [() => OW_MAX],
   OW_PREP: [() => OW_PREP],
-  owBuddyItems: [() => owBuddyItems, v => (owBuddyItems = v)],
+  owBuddyItems: [() => owBuddyItems, v => ((owBuddyItems = v), provide({ owBuddyItems }))],
   owBuddyMon: [() => owBuddyMon, v => (owBuddyMon = v)],
-  owBuddyTap: [() => owBuddyTap, v => (owBuddyTap = v)],
-  owEncItem: [() => owEncItem, v => (owEncItem = v)],
+  owBuddyTap: [() => owBuddyTap, v => ((owBuddyTap = v), provide({ owBuddyTap }))],
+  owEncItem: [() => owEncItem, v => ((owEncItem = v), provide({ owEncItem }))],
   owFrame: [() => owFrame, v => (owFrame = v)],
-  owFx: [() => owFx, v => (owFx = v)],
-  owItem: [() => owItem, v => (owItem = v)],
-  owLabels: [() => owLabels, v => (owLabels = v)],
+  owFx: [() => owFx, v => ((owFx = v), provide({ owFx }))],
+  owItem: [() => owItem, v => ((owItem = v), provide({ owItem }))],
+  owLabels: [() => owLabels, v => ((owLabels = v), provide({ owLabels }))],
   owMpp: [() => owMpp, v => (owMpp = v)],
-  owPetItems: [() => owPetItems, v => (owPetItems = v)],
+  owPetItems: [() => owPetItems, v => ((owPetItems = v), provide({ owPetItems }))],
   owPetSp: [() => owPetSp, v => (owPetSp = v)],
   owRig: [() => owRig, v => (owRig = v)],
   owShift: [() => owShift, v => (owShift = v)],
-  owWarm: [() => owWarm, v => (owWarm = v)],
+  owWarm: [() => owWarm, v => ((owWarm = v), provide({ owWarm }))],
 });
 /* eslint-enable no-func-assign */
+provide({ owBuddyItems, owBuddyTap, owEncItem, owFx, owItem, owLabels, owPetItems, owWarm });
 /* to-module: end */
 export const OWM = {
   cache: new Map(),
@@ -53,6 +55,7 @@ export const OWM = {
   mons: {},
   fx: [],
 };
+provide({ OWM }); /* to-module */
 const OW_MAX = 320;
 function owRig(sp, gold, view) {
   if (!SP[sp] || typeof rigParts !== 'function') return null;

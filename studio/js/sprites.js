@@ -4,11 +4,13 @@
    parts by art/rigs.js. The Studio loads those atlases into editable canvases, assembles the skeleton exactly like
    the game does, animates previews, and provides the pixel editor, gold regeneration and recoloring. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
-import { expose } from '../../game/js/bridge.js';
+import { expose } from '../../game/js/test-globals.js';
+import { openSkeleton, provide } from '../../game/js/hooks.js';
 import { $, $$, clamp } from '../../game/js/util.js';
 import { cnv } from '../../game/js/art.js';
 import { animFor } from '../../game/js/anim.js';
 import { drawRig, rigPose } from '../../game/js/rig.js';
+import { esc } from './shims.js';
 import { ST, ask, render, spName, toast, updTop } from './core.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -33,7 +35,7 @@ expose({
   loadImage: [() => loadImage, v => (loadImage = v)],
   lumOf: [() => lumOf],
   markArt: [() => markArt, v => (markArt = v)],
-  mountPreviews: [() => mountPreviews, v => (mountPreviews = v)],
+  mountPreviews: [() => mountPreviews, v => ((mountPreviews = v), provide({ mountPreviews }))],
   openPixelEditor: [() => openPixelEditor, v => (openPixelEditor = v)],
   partsOf: [() => partsOf, v => (partsOf = v)],
   pickFile: [() => pickFile, v => (pickFile = v)],
@@ -64,9 +66,10 @@ expose({
   rampAt: [() => rampAt, v => (rampAt = v)],
   rgb2hsv: [() => rgb2hsv, v => (rgb2hsv = v)],
   rigFor: [() => rigFor, v => (rigFor = v)],
-  spriteCacheClear: [() => spriteCacheClear, v => (spriteCacheClear = v)],
+  spriteCacheClear: [() => spriteCacheClear, v => ((spriteCacheClear = v), provide({ spriteCacheClear }))],
 });
 /* eslint-enable no-func-assign */
+provide({ mountPreviews, spriteCacheClear });
 /* to-module: end */
 export const ATL = new Map(); /* path -> canvas */
 const ATL_WAIT = new Map();

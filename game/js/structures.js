@@ -8,7 +8,8 @@
                     into a cliff is a tunnel
    scene.escalators [{a:[x,z], b:[x,z], w}]                                 moving steps over a stair (bottom a, top b) */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
-import { expose } from './bridge.js';
+import { expose } from './test-globals.js';
+import { RM, provide } from './hooks.js';
 import { clamp } from './util.js';
 import { hexA } from './art.js';
 import { DIO, dioBridges, dioImg } from './diorama.js';
@@ -20,15 +21,16 @@ expose({
   STR: [() => STR],
   STR_KIND: [() => STR_KIND],
   strBuild: [() => strBuild, v => (strBuild = v)],
-  strDraw: [() => strDraw, v => (strDraw = v)],
+  strDraw: [() => strDraw, v => ((strDraw = v), provide({ strDraw }))],
   strEnsure: [() => strEnsure, v => (strEnsure = v)],
   strFree: [() => strFree, v => (strFree = v)],
   strHas: [() => strHas, v => (strHas = v)],
   strKey: [() => strKey, v => (strKey = v)],
   strN: [() => strN, v => (strN = v)],
-  strShadow: [() => strShadow, v => (strShadow = v)],
+  strShadow: [() => strShadow, v => ((strShadow = v), provide({ strShadow }))],
 });
 /* eslint-enable no-func-assign */
+provide({ strDraw, strShadow });
 /* to-module: end */
 export const STR = { key: '', mesh: null, parts: [] };
 const STR_KIND = {

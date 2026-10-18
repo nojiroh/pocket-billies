@@ -15,6 +15,9 @@ from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
+# phase 04d: the modules' names on window (game/js/test-globals.js), only for this script's page.evaluate() calls
+TEST_GLOBALS = "window.PB_TEST_GLOBALS=true"
+
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / 'validation'
 VIEWPORTS = [('phone', 390, 844, 3, True), ('tablet', 820, 1180, 2, True), ('desktop', 1440, 900, 1, False), ('phone-landscape', 844, 390, 3, True)]
@@ -61,6 +64,7 @@ def check_game(pw, base, results):
     for name, w, h, dpr, mob in VIEWPORTS:
         ctx = b.new_context(viewport={'width': w, 'height': h}, device_scale_factor=dpr, is_mobile=mob, has_touch=mob)
         ctx.set_default_timeout(240000)  # the 3D scene renders in software here, so pictures can take a while
+        ctx.add_init_script(TEST_GLOBALS)
         pg = ctx.new_page(); errs = []
         pg.on('pageerror', lambda e: errs.append(str(e)))
         pg.on('console', lambda m: errs.append(m.text) if m.type == 'error' else None)
@@ -180,7 +184,7 @@ def check_studio(pw, results):
     proc = subprocess.Popen([sys.executable, str(tmp / 'start-studio.py'), '--no-browser'], env={**os.environ, 'NETWORTH_STUDIO_PORT': str(port)}, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     try:
         time.sleep(1.5)
-        b = pw.chromium.launch(); ctx = b.new_context(viewport={'width': 1440, 'height': 900}); ctx.set_default_timeout(240000); pg = ctx.new_page(); errs = []
+        b = pw.chromium.launch(); ctx = b.new_context(viewport={'width': 1440, 'height': 900}); ctx.add_init_script(TEST_GLOBALS); ctx.set_default_timeout(240000); pg = ctx.new_page(); errs = []
         pg.on('pageerror', lambda e: errs.append(str(e)))
         pg.on('console', lambda m: errs.append(m.text) if m.type == 'error' else None)
         pg.goto(f'http://localhost:{port}/studio/index.html'); pg.wait_for_selector('.split', timeout=30000); time.sleep(1)
@@ -204,7 +208,7 @@ def check_studio(pw, results):
         pg.evaluate("document.querySelector('#main').scrollTop=0"); pg.screenshot(path=str(OUT / 'studio-mapart.png'))
         pg.click('#saveBtn'); time.sleep(5)
         pg.evaluate("go('rules')")  # leave the heavier 3D sections before opening the game
-        g = b.new_context(viewport={'width': 1440, 'height': 900}).new_page(); g.set_default_timeout(240000); gerrs = []
+        g = b.new_context(viewport={'width': 1440, 'height': 900}); g.add_init_script(TEST_GLOBALS); g = g.new_page(); g.set_default_timeout(240000); gerrs = []
         g.on('pageerror', lambda e: gerrs.append(str(e))); g.on('console', lambda m: gerrs.append(m.text) if m.type == 'error' else None)
         g.goto(f'http://localhost:{port}/game/index.html'); g.wait_for_selector('.ttl,.title', timeout=30000)
         seen = g.evaluate("[MOVES.lawsuit.p,!!SP.checko0,!!(RIGS.checko0&&RIGS.checko0.front.bones.some(b=>b.n==='headTip'))]")

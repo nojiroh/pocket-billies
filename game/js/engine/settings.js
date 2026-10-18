@@ -5,7 +5,8 @@
    (GD.engine.map). Pocket Billies Studio edits all three in its Engine section.
    A value of null means "use the scene's own field" (its haze, sky, camera…). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
-import { expose } from '../bridge.js';
+import { expose } from '../test-globals.js';
+import { ENV_MOD, GD, S, provide } from '../hooks.js';
 import { hexA } from '../art.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -13,14 +14,16 @@ expose({
   ENGINE_PRESETS: [() => ENGINE_PRESETS],
   ENGINE_SPEC: [() => ENGINE_SPEC],
   ENG_CTX: [() => ENG_CTX, v => (ENG_CTX = v)],
-  eng: [() => eng, v => (eng = v)],
+  eng: [() => eng, v => ((eng = v), provide({ eng }))],
   engGame: [() => engGame, v => (engGame = v)],
   engHex: [() => engHex, v => (engHex = v)],
   engLook: [() => engLook, v => (engLook = v)],
   engPlayer: [() => engPlayer, v => (engPlayer = v)],
-  engSource: [() => engSource, v => (engSource = v)],
+  engSource: [() => engSource, v => setEngSource(v)],
+  setEngSource: [() => setEngSource, v => (setEngSource = v)],
 });
 /* eslint-enable no-func-assign */
+provide({ eng });
 /* to-module: end */
 export const ENGINE_DEFAULTS = {
   lens: {
@@ -770,8 +773,12 @@ function engLook() {
   return null;
 }
 export let ENG_CTX = { look: null, bypass: false, env: false };
-export let engSource = () =>
-  typeof GD !== 'undefined' ? GD.engine : null; /* the Studio points this at its unsaved data */
+export let engSource = () => (typeof GD !== 'undefined' ? GD.engine : null);
+/* phase 04d: the Studio points it at its unsaved data (studio/js/engine.js) */
+export function setEngSource(v) {
+  engSource = v;
+  provide({ engSource });
+} /* the Studio points this at its unsaved data */
 function engGame() {
   const d = engSource();
   return (d && d.defaults) || null;

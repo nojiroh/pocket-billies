@@ -10,7 +10,8 @@
    for a view's maps, so nothing is drawn from half a map. If anything was put together from a map before its file came
    (the world map's miniatures, say), the views are made again once it has (WORLD.gen). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
-import { expose } from './bridge.js';
+import { expose } from './test-globals.js';
+import { S, WORLD, provide } from './hooks.js';
 import { ADJ, GD, LINKS, ROUTE, START_NODE } from './data.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -24,12 +25,14 @@ expose({
   sceneWatch: [() => sceneWatch, v => (sceneWatch = v)],
   scenesAhead: [() => scenesAhead, v => (scenesAhead = v)],
   scenesAll: [() => scenesAll, v => (scenesAll = v)],
-  scenesFor: [() => scenesFor, v => (scenesFor = v)],
+  scenesFor: [() => scenesFor, v => ((scenesFor = v), provide({ scenesFor }))],
   scenesNeed: [() => scenesNeed],
 });
 /* eslint-enable no-func-assign */
+provide({ scenesFor });
 /* to-module: end */
 const SCENE_FILES = { busy: new Map(), touched: new Set(), all: null, ms: 0, n: 0, failed: [] };
+provide({ SCENE_FILES }); /* to-module */
 const MAP_FIELDS = ['heights', 'steps', 'stepm', 'tiles', 'props'];
 export const sceneLite = id => !!(GD.scenes[id] && GD.scenes[id]._lite);
 export function sceneLoad(id) {
@@ -76,6 +79,7 @@ function sceneStale(id) {
   if (all.some(uses)) WORLD.gen++;
 }
 const scenesNeed = ids => Promise.all([...new Set(ids)].filter(Boolean).map(sceneLoad));
+provide({ scenesNeed }); /* to-module */
 const sceneNode = sid => ROUTE.findIndex(r => r.scene === sid);
 function sceneRing(node, hops = 1) {
   const seen = new Set([node]);

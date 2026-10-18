@@ -9,9 +9,10 @@
      the game changes until the repository's owner merges it (GitHub → Pull requests).
    Started from start-studio.py on your own computer, none of this is used: saves go straight into the game folder. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
-import { expose } from '../../game/js/bridge.js';
+import { expose } from '../../game/js/test-globals.js';
 import { $ } from '../../game/js/util.js';
-import { ACTS, ST, ask, boot, dialog, updTop } from './core.js';
+import { esc } from './shims.js';
+import { ACTS, ST, ask, boot, dialog, saveAll, setApi, setSaveAll, setToast, toast, updTop } from './core.js';
 /* eslint-disable no-func-assign */
 expose({
   GH: [() => GH],
@@ -347,9 +348,9 @@ async function ghPropose(summary) {
 }
 /* the Studio's own api() and saveAll() take this route when it runs from GitHub */
 if (GH.on) {
-  api = ghApi;
+  setApi(ghApi);
   const save0 = saveAll;
-  saveAll = async function () {
+  setSaveAll(async function () {
     if ($('#saveBtn').disabled) return;
     const what = await dialog(
       'Propose these changes',
@@ -368,9 +369,9 @@ if (GH.on) {
     const t0 = toast;
     let pr = null,
       err = null;
-    toast = (t, k) => {
+    setToast((t, k) => {
       if (k === 'err') t0(t, k);
-    };
+    });
     let none = false;
     try {
       await save0();
@@ -382,7 +383,7 @@ if (GH.on) {
     } catch (e) {
       err = e;
     } finally {
-      toast = t0;
+      setToast(t0);
       GH.batch = null;
       $('#saveBtn').textContent = 'Propose changes';
       $('#saveBtn').disabled = false;
@@ -400,7 +401,7 @@ if (GH.on) {
       );
     } else if (none && !(ST.dirty || ST.rigsDirty || ST.artDirty.size))
       toast('Nothing to send: everything is as it is in the game.');
-  };
+  });
   /* the Studio waits for sign-in before it loads anything */
   const boot0 = boot;
   removeEventListener('load', boot);

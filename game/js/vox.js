@@ -8,7 +8,8 @@
    shadow maps too, so its shadow has its real shape. When the Voxel props dial is off, the prop's picture draws as
    before. Picture layers are drawn by the sprite pipeline (dglItems gives them as extra items). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
-import { expose } from './bridge.js';
+import { expose } from './test-globals.js';
+import { GD, RM, provide } from './hooks.js';
 import { artImg, artURL, hexA } from './art.js';
 import { DIO, dioImg } from './diorama.js';
 import { eng } from './engine/settings.js';
@@ -28,12 +29,12 @@ expose({
   VOX_TEX: [() => VOX_TEX],
   VOX_TEXTURES: [() => VOX_TEXTURES],
   voxBob: [() => voxBob, v => (voxBob = v)],
-  voxDraw: [() => voxDraw, v => (voxDraw = v)],
+  voxDraw: [() => voxDraw, v => ((voxDraw = v), provide({ voxDraw }))],
   voxEl: [() => voxEl, v => (voxEl = v)],
-  voxFlush: [() => voxFlush, v => (voxFlush = v)],
+  voxFlush: [() => voxFlush, v => ((voxFlush = v), provide({ voxFlush }))],
   voxGuard: [() => voxGuard, v => (voxGuard = v)],
   voxHash: [() => voxHash, v => (voxHash = v)],
-  voxImageItems: [() => voxImageItems, v => (voxImageItems = v)],
+  voxImageItems: [() => voxImageItems, v => ((voxImageItems = v), provide({ voxImageItems }))],
   voxInvalidate: [() => voxInvalidate, v => (voxInvalidate = v)],
   voxKey: [() => voxKey, v => (voxKey = v)],
   voxLowPoly: [() => voxLowPoly, v => (voxLowPoly = v)],
@@ -44,21 +45,22 @@ expose({
   voxModelMesh: [() => voxModelMesh, v => (voxModelMesh = v)],
   voxModels: [() => voxModels, v => (voxModels = v)],
   voxOn: [() => voxOn, v => (voxOn = v)],
-  voxPaths: [() => voxPaths, v => (voxPaths = v)],
+  voxPaths: [() => voxPaths, v => ((voxPaths = v), provide({ voxPaths }))],
   voxRawDecode: [() => voxRawDecode, v => (voxRawDecode = v)],
   voxRawInto: [() => voxRawInto, v => (voxRawInto = v)],
   voxRecipe: [() => voxRecipe, v => (voxRecipe = v)],
   voxRes: [() => voxRes, v => (voxRes = v)],
-  voxShaders: [() => voxShaders, v => (voxShaders = v)],
-  voxShadow: [() => voxShadow, v => (voxShadow = v)],
+  voxShaders: [() => voxShaders, v => ((voxShaders = v), provide({ voxShaders }))],
+  voxShadow: [() => voxShadow, v => ((voxShadow = v), provide({ voxShadow }))],
   voxSpins: [() => voxSpins, v => (voxSpins = v)],
-  voxTag: [() => voxTag, v => (voxTag = v)],
+  voxTag: [() => voxTag, v => ((voxTag = v), provide({ voxTag }))],
   voxU: [() => voxU, v => (voxU = v)],
   voxUnkey: [() => voxUnkey, v => (voxUnkey = v)],
   voxUpModel: [() => voxUpModel, v => (voxUpModel = v)],
   voxelise: [() => voxelise, v => (voxelise = v)],
 });
 /* eslint-enable no-func-assign */
+provide({ voxDraw, voxFlush, voxImageItems, voxPaths, voxShaders, voxShadow, voxTag });
 /* to-module: end */
 export const VOX = { recipes: new Map(), meshes: new Map(), fail: '', drawn: 0, VPM: 32, res: 0, fr: -1, bt: 0 };
 const VOX_TEX = {

@@ -4,7 +4,8 @@
    pose. Items you own can be worn; the rest show their price and the boutique that sells them. Inside a boutique
    the same room has a till: try things on and buy what you're wearing. Also the "Create your trainer" step. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
-import { expose } from './bridge.js';
+import { expose } from './test-globals.js';
+import { buzz, provide, render, sfx, toast } from './hooks.js';
 import { $, $$, rnd } from './util.js';
 import { SHOPS } from './data.js';
 import { S, U, esc, fmt, save } from './core.js';
@@ -48,12 +49,17 @@ expose({
   drThumb: [() => drThumb, v => (drThumb = v)],
   drThumbLook: [() => drThumbLook, v => (drThumbLook = v)],
   drUnowned: [() => drUnowned, v => (drUnowned = v)],
-  openDressing: [() => openDressing, v => (openDressing = v)],
+  openDressing: [() => openDressing, v => setOpenDressing(v)],
   owns: [() => owns, v => (owns = v)],
   shopName: [() => shopName],
   wardrobeState: [() => wardrobeState],
 });
 /* eslint-enable no-func-assign */
+provide({ openDressing });
+export function setOpenDressing(v) {
+  openDressing = v; // eslint-disable-line no-func-assign
+  provide({ openDressing });
+}
 /* to-module: end */
 export const DR = {
   on: false,
