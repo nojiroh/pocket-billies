@@ -223,7 +223,7 @@ function flushAccountSave(now) {
   if (saveHold) return true;
   clearTimeout(account.t);
   const go = () => {
-    if (!account.user) return;
+    if (!account.user || saveHold) return;
     account.db
       .collection('saves')
       .doc(account.user.uid)

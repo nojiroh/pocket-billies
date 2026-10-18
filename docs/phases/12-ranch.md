@@ -23,3 +23,6 @@ A first customizable ranch exists in the starting town, saves and loads, tag `ph
 
 ## First reply
 Same four items as phase 01, plus a mock layout of the ranch screen and edit mode.
+
+## Testing (phase 13)
+Follow docs/TESTING.md: where new tests go, what must pass before the phase ends, and its section for phase 12.

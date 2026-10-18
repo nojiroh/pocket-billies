@@ -1,10 +1,11 @@
 'use strict';
 /* ================= FULL TEST =================
-   Settings → Run the full test (and the debug menu) plays through everything that draws, for about nine minutes:
-   every walk scene (walking, turning and zooming the camera), a battle on the 3D stage and one on a painted stage,
-   the world map in 3D and flat, the opening's fall and Blake's first battle, the dressing room and a boutique, the shop, the Team, Guide
-   and Trainer screens, then a stress test that keeps adding load (crowds, particles, extra props, maximum quality)
-   and measures how far the device keeps up. Your save is not changed: saving is paused and everything is put back
+   Settings → Run the full test (and the debug menu) plays through everything that draws, for several minutes:
+   every walk scene and room (walking, turning and zooming the camera), night, weather and seasons, a road between two
+   places, a room that opens in place, the light lab, battles on the 3D stage and on a painted stage (double and Alpha
+   too), the opening's fall and Blake's first battle, Billies in the world, the world map and its 3D miniatures, then a
+   stress test that keeps adding load (crowds, particles, extra props, maximum quality) and measures how far the device
+   keeps up. Your save is not changed: saving is paused and everything is put back
    afterwards. The results go into the debug log. If the app goes to the background (the screen locks), the test waits
    for you and runs that step again. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
@@ -18,6 +19,8 @@ import { loadAllMaps } from './map-files.js';
 import {
   activeBattle,
   escapeHtml,
+  pauseSaving,
+  resumeSaving,
   save,
   saveData,
   setActiveBattle,
@@ -93,10 +96,12 @@ expose({
 /* eslint-enable no-func-assign */
 provide({ runDiagnostics, testMapChecks, testMaps });
 /* to-module: end */
-const selfTest = { on: false, stop: false };
+/* phase 13: slow stretches every wait and time limit of the test, for a machine that draws a frame or two a second
+   (the checks' headless browser draws in software: selfTest.slow = 3 there); 1 on a phone or a computer */
+const selfTest = { on: false, stop: false, slow: 1 };
 provide({ selfTest }); /* to-module */
 function selfTestSleep(ms) {
-  return new Promise(r => setTimeout(r, ms));
+  return new Promise(r => setTimeout(r, ms * (selfTest.slow || 1)));
 }
 /* frame rate of one scheduler task between two moments of the debug log */
 function selfTestFrameStats(t0, t1, task) {
@@ -169,6 +174,7 @@ async function runFullTest(mode) {
     realSave = save,
     engKeep = gameData.engine ? JSON.stringify(gameData.engine) : null;
   setSave(() => {}); /* nothing the test does reaches your save */
+  pauseSaving(); /* phase 13: nor the account or your friends (game-state.js) */
   const box = document.createElement('div');
   box.className = 'nw-bench px glass';
   box.innerHTML =
@@ -251,13 +257,12 @@ async function runFullTest(mode) {
     while (document.hidden && !selfTest.stop) await selfTestSleep(300);
     await selfTestSleep(800); /* frames start again */
   };
+  /* v44b: selfTest.only=['light'] runs only the steps whose names hold one of those words (for diagnosis); phase 13:
+     the stress test at the end too, as 'Stress test' */
+  const wanted = name => !selfTest.only || selfTest.only.some(w => name.toLowerCase().includes(w.toLowerCase()));
   const phase = async (name, task, fn, sec, maxSec) => {
     if (selfTest.stop) return;
-    /* v44b: selfTest.only=['light'] runs only the steps whose names hold one of those words (for diagnosis) */ if (
-      selfTest.only &&
-      !selfTest.only.some(w => name.toLowerCase().includes(w.toLowerCase()))
-    )
-      return;
+    if (!wanted(name)) return;
     for (let attempt = 0; ; attempt++) {
       await awake();
       if (selfTest.stop) return;
@@ -273,7 +278,7 @@ async function runFullTest(mode) {
         why = '',
         err = null;
       /* no step may hold the test up: past its time limit it counts as a problem and the test moves on */
-      const limit = (maxSec || Math.max(20, sec * 6)) * 1000;
+      const limit = (maxSec || Math.max(20, sec * 6)) * 1000 * (selfTest.slow || 1);
       let timer = null;
       try {
         const r = await Promise.race([
@@ -687,7 +692,7 @@ async function runFullTest(mode) {
       startWild(q);
       const g0 = selfTest.gen || 0;
       const want = async (ph, ms) => {
-        const end = performance.now() + ms;
+        const end = performance.now() + ms * (selfTest.slow || 1);
         while (performance.now() < end) {
           if (!activeBattle || (selfTest.gen || 0) !== g0) return false;
           if (ph.includes(activeBattle.phase)) return true;
@@ -748,7 +753,7 @@ async function runFullTest(mode) {
       }
       const g0 = selfTest.gen || 0;
       const want = async (ph, ms) => {
-        const end = performance.now() + ms;
+        const end = performance.now() + ms * (selfTest.slow || 1);
         while (performance.now() < end) {
           if (!activeBattle || (selfTest.gen || 0) !== g0) return false;
           if (ph.includes(activeBattle.phase)) return true;
@@ -816,53 +821,61 @@ async function runFullTest(mode) {
           if (walkView.id !== 'w:marigold*')
             throw new Error('Marigold Town is not shown with its neighbours (still ' + walkView.id + ')');
           const q0 = saveData.queue,
-            t00 = performance.now() - (debugLog.t0 || 0);
+            t00 = performance.now() - (debugLog.t0 || 0),
+            travel0 = RULES.travel;
           saveData.queue = [];
-          setTrip(1);
-          render();
-          await selfTestSleep(600);
-          const views = [walkView.id];
-          let unready = 0,
-            shifts = 0,
-            worst = 0;
-          const L0 = debugLog.ev.length;
-          const per = Math.ceil(roadCost(0, 1) / 7) + 5;
-          /* alpha 0.2: a road's steps follow its walk */ for (let n = 0; n < 7; n++) {
-            addSteps(per, true);
-            uiState.modal = null;
-            uiState.mq = [];
-            renderOverlay();
+          /* phase 13: the trip is driven by steps, which only move you along a road when travel goes by steps (the
+             game walks by default since alpha 0.4.1: without this the step never arrived). Phase 08 replaces it */
+          RULES.travel = 'steps';
+          try {
+            setTrip(1);
             render();
-            const f0 = walkRenderer.frames,
-              t0 = performance.now();
-            for (let i = 0; i < 14; i++) {
-              await selfTestSleep(100);
-              if (!walkView.ready) unready++;
-              if (walkView.id !== views[views.length - 1]) {
-                views.push(walkView.id);
-                shifts++;
+            await selfTestSleep(600);
+            const views = [walkView.id];
+            let unready = 0,
+              shifts = 0,
+              worst = 0;
+            const L0 = debugLog.ev.length;
+            const per = Math.ceil(roadCost(0, 1) / 7) + 5;
+            /* alpha 0.2: a road's steps follow its walk */ for (let n = 0; n < 7; n++) {
+              addSteps(per, true);
+              uiState.modal = null;
+              uiState.mq = [];
+              renderOverlay();
+              render();
+              const f0 = walkRenderer.frames,
+                t0 = performance.now();
+              for (let i = 0; i < 14; i++) {
+                await selfTestSleep(100);
+                if (!walkView.ready) unready++;
+                if (walkView.id !== views[views.length - 1]) {
+                  views.push(walkView.id);
+                  shifts++;
+                }
               }
+              const ms = (performance.now() - t0) / Math.max(1, walkRenderer.frames - f0);
+              worst = Math.max(worst, ms);
             }
-            const ms = (performance.now() - t0) / Math.max(1, walkRenderer.frames - f0);
-            worst = Math.max(worst, ms);
+            for (let i = 0; i < 40 && !(saveData.trip.node === 1 && saveData.trip.prog === 0); i++)
+              await selfTestSleep(100);
+            saveData.queue = q0;
+            if (saveData.trip.node !== 1)
+              throw new Error('never arrived at Tallgrass Meadow (' + JSON.stringify(saveData.trip) + ')');
+            const ev = debugLog.ev.slice(L0),
+              builds = ev.filter(e => /seamless to/.test(e.msg || '')).length,
+              onSpot = ev.filter(e => /built on the spot/.test(e.msg || '')).length,
+              held = ev.filter(e => /painted .* ahead/.test(e.msg || '')).length;
+            /* v46: the worst single frame on the way (the frame log), and whether any view had to be built on the spot */
+            const sm = (debugLog.samples || []).filter(x => x && x.t >= t00),
+              wf = sm.length
+                ? Math.max(
+                    ...sm.map(x => (x.tasks && x.tasks.dio ? Math.max(x.tasks.dio.max || 0, x.tasks.dio.gap || 0) : 0))
+                  )
+                : 0;
+            return `${views.join(' → ')}; ${shifts} view changes (${builds} logged, ${held} prepared ahead, ${onSpot} built on the spot), ${unready ? unready + ' unready frames' : 'never unready'}, slowest stretch ${worst.toFixed(0)} ms a frame${wf ? ', worst frame ' + Math.round(wf) + ' ms' : ''}`;
+          } finally {
+            RULES.travel = travel0;
           }
-          for (let i = 0; i < 40 && !(saveData.trip.node === 1 && saveData.trip.prog === 0); i++)
-            await selfTestSleep(100);
-          saveData.queue = q0;
-          if (saveData.trip.node !== 1)
-            throw new Error('never arrived at Tallgrass Meadow (' + JSON.stringify(saveData.trip) + ')');
-          const ev = debugLog.ev.slice(L0),
-            builds = ev.filter(e => /seamless to/.test(e.msg || '')).length,
-            onSpot = ev.filter(e => /built on the spot/.test(e.msg || '')).length,
-            held = ev.filter(e => /painted .* ahead/.test(e.msg || '')).length;
-          /* v46: the worst single frame on the way (the frame log), and whether any view had to be built on the spot */
-          const sm = (debugLog.samples || []).filter(x => x && x.t >= t00),
-            wf = sm.length
-              ? Math.max(
-                  ...sm.map(x => (x.tasks && x.tasks.dio ? Math.max(x.tasks.dio.max || 0, x.tasks.dio.gap || 0) : 0))
-                )
-              : 0;
-          return `${views.join(' → ')}; ${shifts} view changes (${builds} logged, ${held} prepared ahead, ${onSpot} built on the spot), ${unready ? unready + ' unready frames' : 'never unready'}, slowest stretch ${worst.toFixed(0)} ms a frame${wf ? ', worst frame ' + Math.round(wf) + ' ms' : ''}`;
         },
         8,
         120
@@ -890,6 +903,11 @@ async function runFullTest(mode) {
             for (let i = 0; i < 60 && !(walkView.ready && walkView.id === 'w:marigold*'); i++) await selfTestSleep(100);
             if (walkView.id !== 'w:marigold*')
               throw new Error('Marigold Town is not shown (still ' + walkView.id + ')');
+            /* phase 13: the first frames of a place put you where you arrive; on a slow device that comes after this
+               step has put you at the shop's door, and the walk to the door then never starts */
+            const f0 = typeof walkRenderer !== 'undefined' ? walkRenderer.frames : 0;
+            for (let i = 0; i < 60 && typeof walkRenderer !== 'undefined' && walkRenderer.frames < f0 + 2; i++)
+              await selfTestSleep(100);
             const p = walkView.sc.props.find(p => p.act === 'shop' && p.k === 'shop');
             if (!p) throw new Error('no shop in Marigold Town');
             const C = walkData().sc,
@@ -1114,7 +1132,7 @@ async function runFullTest(mode) {
           startTrainer('blake0', { talked: true });
           const g0 = selfTest.gen || 0,
             want = async (ph, ms) => {
-              const end = performance.now() + ms;
+              const end = performance.now() + ms * (selfTest.slow || 1);
               while (performance.now() < end) {
                 if (!activeBattle || (selfTest.gen || 0) !== g0) return false;
                 if (ph.includes(activeBattle.phase)) return true;
@@ -1301,7 +1319,7 @@ async function runFullTest(mode) {
       1
     );
     /* 7. stress: more and more at once in Sundown, until the device can't keep up (not in the diagnostics test) */
-    if (!diag) {
+    if (!diag && wanted('Stress test')) {
       const sid = gameData.maps.marigold ? 'marigold' : scenes[0],
         sc = mapById(sid),
         folk0 = sc.folk,
@@ -1438,6 +1456,7 @@ async function runFullTest(mode) {
     if (engKeep) gameData.engine = JSON.parse(engKeep);
     setSaveData(JSON.parse(keep));
     setSave(realSave);
+    resumeSaving();
     uiState.bench = null;
     uiState.roam = back.roam;
     uiState.tab = back.tab;

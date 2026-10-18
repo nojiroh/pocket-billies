@@ -5,15 +5,16 @@
     python3 tools/check-quick.py                 # data, code, shaders, every scene once, the main flows
     python3 tools/check-quick.py --smoke         # the fast subset: data and code, Start-Game on a phone + debug log, Studio opens
     python3 tools/check-quick.py --studio        # also the Studio round trip on a temporary copy
+    python3 tools/check-quick.py --selftest      # the game's own full test and diagnostics test, whole (about 25 minutes)
     python3 tools/check-quick.py --closeups      # also close-up pictures of cliffs, stairs, bridges and water
     python3 tools/check-quick.py --scenes=verdigris,willowmere   # only these walk scenes (by id), for a change to one place
     python3 tools/check-quick.py --steps=v34,battle   # only the steps whose names hold these words
     python3 tools/check-quick.py --tests         # also draw every test scene and take its pictures (the walking checks
                                                  # of the test scenes always run; they need no drawing)
 
-What it does not do: the game's own **full test** (the debug menu: Settings → Debug, or Ctrl+Shift+D → Full test). That one measures frame rates,
-stress-tests the renderer and plays every scene for real, which only means something on a real phone or computer
-with a graphics chip, so it is run by you and sent back as a debug log. `tools/check-game.py` is the long play-test
+The game's own **full test** (Settings → Help, or the debug menu) runs here one step at a time (smoke and full) and
+whole with --selftest (nightly), stretched for software drawing (phase 13); its frame rates and the stress test only
+mean something on a real phone or computer with a graphics chip, so those come from you as a debug log. `tools/check-game.py` is the long play-test
 at four screen sizes (best run on a real computer too).
 
 How it stays quick in software: the frames are drawn at a third of the resolution with a small shadow map, scene
@@ -520,6 +521,98 @@ def go_scene(pg, node, sec=40):
     if f0 >= 0 and not until(pg, f'walkRenderer.frames>={f0 + 2}', 30): raise Exception(f'{pg.evaluate("walkView.id")} isn’t drawing (black screen)')
 
 
+def debug_picture_privacy(pg):
+    # phase 13: the debug log keeps a picture of the scene, and what the buddy says names the Billie, so in the frame that
+    # takes the picture speech is drawn after it (walk-view-gl.js). The buddy talks, the log takes its picture, and the
+    # order of drawing in that frame is read back. A window or the camera can keep the speech out of that frame (the
+    # check then proves nothing), so it tries up to three times
+    pg.evaluate("uiState.tab='walk';render();0")
+    if not until(pg, 'walkView.ready&&walkRenderer.on&&!!worldBillies.bud', 40): raise Exception('no buddy in the walk view to test the debug picture with')
+    pg.evaluate("""window.__pq={ev:[],say:drawSpeech,snap:screenSnapshot};
+      drawSpeech=(...a)=>{__pq.ev.push(['say',walkRenderer.frames]);return __pq.say(...a)};
+      screenSnapshot=(...a)=>{const b=worldBillies.bud,q=b&&worldToScreen(walkView.C,b.x,1.1,b.z);__pq.ev.push(['snap',walkRenderer.frames,{active:walkView.opt.active(),sayT:+worldBillies.sayT.toFixed(1),onScreen:!!q}]);return __pq.snap(...a)};0""")
+    seen = []
+    try:
+        for _ in range(3):
+            t0 = pg.evaluate("__pq.ev=[];__pq.t=debugLog.shot&&debugLog.shot.t;uiState.mq=[];uiState.modal=null;renderOverlay();buddyTap();worldBillies.sayT=60;debugLog.snap();__pq.t")
+            if not until(pg, f'walkRenderer.snapReq===0&&!!debugLog.shot&&debugLog.shot.t!=={json.dumps(t0)}', 30): raise Exception('the debug log took no picture')
+            f1 = pg.evaluate('walkRenderer.frames'); until(pg, f'walkRenderer.frames>{f1}', 30)
+            ev = pg.evaluate('__pq.ev'); snap = next((e for e in ev if e[0] == 'snap'), None)
+            frame = [e[0] for e in ev if snap and e[1] == snap[1]]
+            seen.append(snap[2] if snap else None)
+            if 'say' in frame:
+                if frame.index('say') < frame.index('snap'): raise Exception('the debug picture shows what the buddy says (speech drawn before the picture was taken)')
+                return
+    finally:
+        pg.evaluate("drawSpeech=__pq.say;screenSnapshot=__pq.snap;0")
+    raise Exception(f'the buddy’s speech wasn’t drawn in the frame of the debug picture (three tries: {seen})')
+
+
+# phase 13: the game's own full test (self-test.js, Settings → Help), which the owner runs on a phone, runs here too, so a
+# change that breaks it shows before the phone does. Software drawing is slow: selfTest.slow = 3 stretches its waits
+# and limits, and its frame rates mean nothing here. A step that ran out of time is a note; any other failure is a
+# problem. The game's own travel rules, not play()'s steps mode
+def start_for_in_game_test(pg):
+    travel = pg.evaluate('RULES.travel')
+    play(pg)
+    pg.evaluate(f"RULES.travel={json.dumps(travel)};uiState.mq=[];uiState.modal=null;renderOverlay();0")
+
+
+def run_in_game_test(pg, only, diag, sec):
+    pg.evaluate(f"selfTest.slow=3;selfTest.only={json.dumps(only)};{'runDiagnostics' if diag else 'runQuickTest'}();0")
+    if not until(pg, '!selfTest.on&&!!(debugLog.bench&&debugLog.bench.result)', sec): raise Exception(f'the in-game test didn’t finish in {sec} s (at {pg.evaluate("debugLog.bench&&debugLog.bench.step")})')
+    r = json.loads(pg.evaluate("JSON.stringify((({kind,seconds,errors,phases})=>({kind,seconds,errors,phases:phases.map(p=>({name:p.name,ok:p.ok,why:p.why||p.note||''}))}))(debugLog.bench.result))"))
+    late = [p for p in r['phases'] if not p['ok'] and p['why'].startswith('took longer than')]
+    bad = [p for p in r['phases'] if not p['ok'] and p not in late]
+    for p in late: notes.append(f'in-game {r["kind"]} test: {p["name"]} {p["why"]} (software drawing)')
+    if bad or r['errors']: raise Exception(f'in-game {r["kind"]} test: ' + '; '.join([f'{p["name"]}: {p["why"]}' for p in bad] + r['errors'][:4]))
+    return r
+
+
+# a stand-in account and friends list that only record what would be written, and a record of what goes into this
+# browser's storage while the test runs; save() leaves a write waiting, as a player's last move would
+SAVE_SPY = r"""(()=>{window.__st={w:[],ls:[]};account.user={uid:'check',name:'Check'};
+  account.db={collection:c=>({doc:d=>({set:o=>{__st.w.push({c,during:selfTest.on,team:o.json?JSON.parse(o.json).team.map(m=>m.uid):null});return Promise.resolve()}})})};
+  friends.on=true;friends.uid='check';friends.pubT=0;
+  const si=Storage.prototype.setItem;Storage.prototype.setItem=function(k,v){if(selfTest.on)__st.ls.push(k);return si.call(this,k,v)};
+  save();__st.team=saveData.team.map(m=>m.uid)})();0"""
+
+
+@step('In-game full test: one step headless, and nothing is saved while it runs', 120)
+def in_game_test_step(b, base, R):
+    errs = []; ctx, pg = open_game(b, base, 1100, 700, False, errs)
+    try:
+        start_for_in_game_test(pg)
+        pg.evaluate(SAVE_SPY)
+        r = run_in_game_test(pg, ['Shaders'], False, 120)
+        time.sleep(2.5)   # the account write waits 1.5 s after the test puts the save back
+        st = pg.evaluate('__st')
+        during = [w['c'] for w in st['w'] if w['during']]
+        if during or st['ls']: raise Exception(f'written while the test ran: account {during}, this browser {st["ls"]}')
+        after = [w for w in st['w'] if w['c'] == 'saves']
+        if not after or after[-1]['team'] != st['team']: raise Exception(f'the save wasn’t written back to the account as it was: {after}')
+        if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
+        return f'{", ".join(p["name"] for p in r["phases"])} passed in {r["seconds"]} s; nothing written during it, the save written back after'
+    finally:
+        ctx.close()
+
+
+@step('In-game full test and diagnostics test, whole, headless', 5400)
+def in_game_test_whole(b, base, R):
+    errs = []; ctx, pg = open_game(b, base, 1100, 700, False, errs)
+    try:
+        start_for_in_game_test(pg)
+        out = []
+        for diag in (False, True):
+            r = run_in_game_test(pg, None, diag, 3600)
+            out.append(f'{r["kind"]}: {sum(p["ok"] for p in r["phases"])} of {len(r["phases"])} steps passed in {r["seconds"]} s')
+            R['inGame' + ('Diagnostics' if diag else 'FullTest')] = r
+        if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
+        return '; '.join(out)
+    finally:
+        ctx.close()
+
+
 @step('Phone: opening, first battle, screens and a battle', 260)
 def phone_flow(b, base, R):
     errs = []; ctx, pg = open_game(b, base, 390, 844, True, errs)
@@ -553,14 +646,20 @@ def phone_flow(b, base, R):
         if wait_phase(pg) != 'choose': raise Exception('a wild battle never reached the move menu')
         shot(pg, 'phone-battle')
         pg.evaluate("stopTimers();activeBattle=null;battleStageStop();render();0")
+        # phase 13: the debug log never holds names: the trainer is called Checker, and the buddy gets a nickname it
+        # then says out loud (debug_picture_privacy); neither may be in the exported log
+        pg.evaluate("(buddyBilly()||saveData.team[0]).nick='Zorblax';0")
+        debug_picture_privacy(pg)
         # phase 01: the owner tests on a phone and sends the exported debug log, so the export must keep working. Here the
         # game saves it as a download (nothing is sent anywhere); the file must be a JSON log
         with pg.expect_download(timeout=60000) as dl:
             pg.evaluate("exportDebugLog();0")
         d = dl.value; dlog = json.loads(Path(d.path()).read_text(encoding='utf-8'))
         if not isinstance(dlog, dict) or not dlog: raise Exception('the exported debug log is empty')
+        names = [n for n in ('Checker', 'Zorblax') if n.lower() in Path(d.path()).read_text(encoding='utf-8').lower()]
+        if names: raise Exception(f'the exported debug log holds a name: {names}')
         if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
-        return f'the fall, Hazel, dressing room, starter, Blake’s first battle and the talk after, five screens, shop, battle, debug log ({len(json.dumps(dlog)) // 1024} KB)'
+        return f'the fall, Hazel, dressing room, starter, Blake’s first battle and the talk after, five screens, shop, battle, speech kept out of the debug picture, debug log ({len(json.dumps(dlog)) // 1024} KB, no names)'
     finally:
         R['phoneErrors'] = errs[:10]; ctx.close()
 
@@ -954,7 +1053,7 @@ def desktop_steps(b, base, R):
             if not until(pg, "activeBattle&&activeBattle.phase==='choose'", 90, tap): raise Exception(f'{kind}: never reached the move menu (phase {pg.evaluate("activeBattle&&activeBattle.phase")})')
             # the plates fade in with their billionaires; in software drawing that can take a few seconds
             until(pg, "document.querySelectorAll('#plates .bplate:not(.off):not(.gone)').length>=liveActors(0).length+liveActors(1).length", 12); time.sleep(.5)
-            r = pg.evaluate("JSON.stringify({fmt:activeBattle.fmt,mine:liveActors(0).length,theirs:liveActors(1).length,plates:document.querySelectorAll('#plates .bplate:not(.off):not(.gone)').length,boss:!!(fighter(1)&&fighter(1).boss),big:battleStage.s[1]?battleStage.s[1].big:1})")
+            r = pg.evaluate("JSON.stringify({fmt:activeBattle.fmt,mine:liveActors(0).length,theirs:liveActors(1).length,plates:document.querySelectorAll('#plates .bplate:not(.off):not(.gone)').length,boss:!!(fighter(1)&&fighter(1).boss),big:battleStage.s[1]?battleStage.s[1].big:1,bar:!!document.querySelector('#plates .turnbar')})")
             r = json.loads(r)
             if kind == 'double' and (r['fmt'] != 'double' or r['theirs'] < 2): raise Exception(f'double battle came out as {r}')
             if kind == 'alpha' and (r['fmt'] != 'alpha' or not r['boss'] or r['mine'] < 2): raise Exception(f'Alpha battle came out as {r}')
@@ -966,7 +1065,7 @@ def desktop_steps(b, base, R):
             if not until(pg, "activeBattle&&['choose','end','switch'].includes(activeBattle.phase)", 120, tap): raise Exception(f'{kind}: the turn never finished (phase {pg.evaluate("activeBattle&&activeBattle.phase")})')
             lines = pg.evaluate("activeBattle.events.map(e=>e.t).filter(Boolean)")
             hit_two = sum(1 for l in lines if ' used ' in l)
-            out.append(f"{kind}: {r['mine']} vs {r['theirs']}, {r['plates']} nameplates, {picks[0]} picks ({picks[1]} aimed), {hit_two} moves in the turn" + (f", Alpha {r['big']}x size" if kind == 'alpha' else ''))
+            out.append(f"{kind}: {r['mine']} vs {r['theirs']}, {r['plates']} nameplates, {picks[0]} picks ({picks[1]} aimed), {hit_two} moves in the turn" + (f", Alpha {r['big']}x size, turn order bar {'shown' if r['bar'] else 'missing'}" if kind == 'alpha' else ''))
             if kind == 'alpha':
                 pg.evaluate("(async()=>{for(let i=0;i<20&&activeBattle&&activeBattle.phase==='switch';i++){const b=document.querySelector('#acts [data-a=bswitch]:not([disabled])');if(b)b.click();await new Promise(r=>setTimeout(r,200));for(let j=0;j<40&&activeBattle&&activeBattle.phase==='playing';j++){tapMessage();await new Promise(r=>setTimeout(r,150))}}})()")
                 c = pg.evaluate("""(async()=>{if(!activeBattle||activeBattle.phase!=='choose')return 'catching skipped: the battle '+(activeBattle?'is at '+activeBattle.phase:'ended');uiState.dbgCatch=true;activeBattle.coin=Object.keys(COINS).find(k=>saveData.coins[k]>0)||Object.keys(COINS)[0];saveData.coins[activeBattle.coin]=(saveData.coins[activeBattle.coin]||0)+1;activeBattle.phase='aim';paintActions();showAim();doThrow(false);
@@ -993,7 +1092,7 @@ def desktop_steps(b, base, R):
         return '; '.join(out)
     v33()
 
-    @step('v34: shadow cache, walk cycles, Alpha shield, turn order, partner AI', 300)
+    @step('v34: shadow cache, walk cycles', 300)
     def v34():
         out = []
         # (v37: the 2x "detailed art" of v34 is retired; the ground is the 32 px tiles of v37) open a scene and read the renderer's counters
@@ -1009,22 +1108,6 @@ def desktop_steps(b, base, R):
         still = [k for k, v in w.items() if v == 0]
         if still: raise Exception(f'walk cycle doesn’t move for: {", ".join(still)}')
         out.append('walk cycles move for ' + ', '.join(sorted(w)))
-        # an Alpha brought below half: the shield phase
-        pg.evaluate("(()=>{const sp=Object.keys(SPECIES).find(k=>SPECIES[k].stage===0);const q={id:'cq-a34',sp,lvl:6,gold:false,no:1,alpha:true};saveData.queue.push(q);saveData.team.forEach(m=>{m.hp=maxHp(m);m.status=null});startWild(q)})()")
-        tap = "activeBattle&&activeBattle.phase==='playing'&&tapMessage()"
-        if not until(pg, "activeBattle&&activeBattle.phase==='choose'", 90, tap): raise Exception('Alpha battle never reached the move menu')
-        a = json.loads(pg.evaluate("(()=>{const m=fighter(1);m.hp=Math.floor(maxHp(m)*.55);activeBattle.events=[];alphaPhase(1);m.hp=Math.floor(maxHp(m)*.45);alphaPhase(1);const tb=document.querySelector('#plates .turnbar');paintPlates(allSnapshots());return JSON.stringify({ph2:!!m.boss.ph2,shield:fieldState(1).shield,lines:activeBattle.events.map(e=>e.t),bar:!!document.querySelector('#plates .turnbar')})})()"))
-        if not a['ph2'] or a['shield'] < 1: raise Exception(f'Alpha shield phase didn’t start: {a}')
-        out.append(f"Alpha below half: “{a['lines'][0][:60]}”, shield {a['shield']} turns, turn order bar {'shown' if a['bar'] else 'missing'}")
-        pg.evaluate("if(activeBattle){activeBattle.over='ran';activeBattle.phase='end';endBattle()};0"); time.sleep(2.5); pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();0")
-        # partner AI: two foes don't both hit a target the first one already finishes
-        tid = pg.evaluate("Object.keys(TRAINERS).find(k=>TRAINERS[k].team.length>=2)||''")
-        if tid:
-            pg.evaluate(f"startTrainer('{tid}',{{talked:true,double:true}});0")
-            if until(pg, "activeBattle&&activeBattle.phase==='choose'", 90, tap):
-                p = json.loads(pg.evaluate("(()=>{const me=liveActors(0);if(me.length<2)return JSON.stringify({skip:1});const t=fighter(me[0]);const keep=t.hp;t.hp=1;let pile=0;for(let i=0;i<30;i++){activeBattle.aiPlan={};const a=chooseAI(liveActors(1)[0]),b=chooseAI(liveActors(1)[1]);if(a&&b&&a.tk===me[0]&&b.tk===me[0]&&MOVES[a.mid].c!=='X'&&MOVES[b.mid].c!=='X')pile++}t.hp=keep;return JSON.stringify({pile})})()"))
-                out.append('partner AI: ' + ('skipped (one fighter)' if p.get('skip') else f"both foes piled on a 1 HP target {p['pile']} of 30 times"))
-            pg.evaluate("if(activeBattle){activeBattle.over='ran';activeBattle.phase='end';endBattle()};0"); time.sleep(2.5); pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();0")
         if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
         return '; '.join(out)
     v34()
@@ -1138,7 +1221,7 @@ def desktop_steps(b, base, R):
         return '; '.join(out)
     v37()
 
-    @step('v38: 61 roster species on piece sheets, rigs that draw, filled pools, saves checked against the data', 240)
+    @step('v38: 61 roster species on piece sheets, rigs that draw, filled pools', 240)
     def v38():
         out = []
         lines = ['huang', 'ellison', 'ma', 'walton', 'bloomberg', 'jobs', 'knight', 'kroc', 'ambani', 'ortega', 'hughes', 'carnegie', 'lauren', 'ford', 'slim', 'cuban', 'pagebrin', 'thiel', 'dorsey', 'ek', 'son', 'buterin', 'saylor']
@@ -1171,12 +1254,6 @@ def desktop_steps(b, base, R):
         new_pools = [k for k, L in pools.items() if all(l in new_all for l in L)]
         if len(new_pools) < 12: raise Exception(f'only {len(new_pools)} pools filled with the new roster')
         out.append(f'{len(new_pools)} regions filled with the new roster, {len(pools) - len(new_pools)} still old, none mixed')
-        # alpha 0.4.1: saves only need to work with this version: a save is checked against the game data, a species the
-        # data no longer has is dropped with its Guide marks, the rest loads as it was
-        m = json.loads(pg.evaluate("""(()=>{const s=migrate({started:true,team:[{uid:'g1',sp:'ghost0',lvl:7,moves:[]},{uid:'g2',sp:'walton0',lvl:6,moves:[]}],box:[],seen:{ghost0:1,walton1:1},caught:{ghost0:1},queue:[{id:'q',sp:'ghost0',lvl:5}]});
-          return JSON.stringify({team:s.team.map(m=>m.sp),moves:s.team[0].moves.length,seen:Object.keys(s.seen),caught:Object.keys(s.caught),q:s.queue.length})})()"""))
-        if m['team'] != ['walton0'] or not m['moves'] or m['seen'] != ['walton1'] or m['caught'] or m['q']: raise Exception(f'save check: {m}')
-        out.append('a save is checked against the game data: a species it no longer has is dropped with its Guide marks')
         # a wild battle with a new species on the 3D stage
         pg.evaluate("(()=>{const q={id:'cq38',sp:'kroc0',lvl:8,gold:false,no:1};saveData.queue.push(q);saveData.team.forEach(m=>{m.hp=maxHp(m);m.status=null});startWild(q)})()")
         until(pg, "(()=>{const a=actorBuffer(0),b=actorBuffer(1);return !!(a&&b)})()", 15); time.sleep(2)
@@ -1622,10 +1699,7 @@ def desktop_steps(b, base, R):
         else: raise Exception('the library’s room didn’t open in place')
         time.sleep(3); pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();0"); shot(pg, 'a01-library-windows')
         pg.evaluate("leaveRoom();0"); until(pg, "walkView.ready&&!walkView.sc.roomRect", 30)
-        # the picture setting: Sharpest by default, and 90 frames a second survives a reload of the save
-        a = pg.evaluate("(()=>{const o=saveData.preferences.fps;saveData.preferences.fps=90;const m=migrate(JSON.parse(JSON.stringify(saveData)));saveData.preferences.fps=o;return [m.preferences.fps,m.preferences.aim]})()")
-        if a != [90, 'sharp']: raise Exception(f'preferences after loading: fps {a[0]} (90 wanted), aim {a[1]} (sharp wanted)')
-        out.append('the library’s four windows; 90 frames a second kept, Sharpest by default')
+        out.append('the library’s four windows')
         if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
         return '; '.join(out)
     a01()
@@ -2059,8 +2133,11 @@ def main():
     srv, base = serve(GAME)
     with sync_playwright() as pw:
         b = pw.chromium.launch(args=['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'])
-        if '--studio-only' not in ARGS:
+        if '--selftest' in ARGS:
+            in_game_test_whole(b, base, R)
+        elif '--studio-only' not in ARGS:
             phone_flow(b, base, R)
+            in_game_test_step(b, base, R)
             if SMOKE:
                 studio_opens(b)
             else:

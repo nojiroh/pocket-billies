@@ -24,3 +24,6 @@ No innerHTML string-building of untrusted values, UI tests pass, tag `phase-06-d
 
 ## First reply
 Same four items as phase 01.
+
+## Testing (phase 13)
+Follow docs/TESTING.md: where new tests go, what must pass before the phase ends, and its section for phase 06.

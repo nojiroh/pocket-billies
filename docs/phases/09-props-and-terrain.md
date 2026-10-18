@@ -35,3 +35,6 @@ Terrain textures and the model pipeline are in use, duplicates merged, unused pr
 
 ## First reply
 Same four items as phase 01, plus the list of props the new design still needs.
+
+## Testing (phase 13)
+Follow docs/TESTING.md: where new tests go, what must pass before the phase ends, and its section for phase 09.

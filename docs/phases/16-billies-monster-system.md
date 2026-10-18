@@ -1,7 +1,7 @@
 # Phase 16 - Billies (monster system) (design first, prototype before scaling)
 
 ## Goal
-A mix of Spore-style creation and Pokemon-style named species, with funny "abominations". Phase 13's breeding unit tests and simulation must exist first. Robots are a separate system (phase 17); keep Billies and robots clearly distinct.
+A mix of Spore-style creation and Pokemon-style named species, with funny "abominations". The breeding simulation comes first: written at the start of this phase against the prototype, on phase 13's harness (tools/test/sim), with bounds agreed before the full build (decided in phase 13a: there were no breeding rules to simulate before). Robots are a separate system (phase 17); keep Billies and robots clearly distinct.
 
 ## Verify first
 - 117 species in 58 lines; each creature is ~20 puppet pieces on a skeleton with body-plan templates (quad, biped, bird, fish and others) and a Golden recolor. The rig system (rig.js, tools/build-roster-sheets.py) is the base to extend.
@@ -24,3 +24,6 @@ Prototype approved, then the full system built, simulation tests within bounds, 
 
 ## First reply
 Same four items as phase 01, plus a proposed slimmed roster list.
+
+## Testing (phase 13)
+Follow docs/TESTING.md: where new tests go, what must pass before the phase ends, and its section for phase 16.

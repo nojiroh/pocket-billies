@@ -71,8 +71,12 @@ Lint enforces what it can (see the end). Every old -> new name of phase 05 is in
   every `set[A-Z]` function as one, so other functions don't start with `set` + a capital.
 - `game/js/logic/` holds the logic that runs without a browser (`rules.js`, `saves.js`, `battle-engine.js`): no
   browser globals, imports only from logic/, `game-data.js`, `util.js`, `hooks.js` and `test-globals.js`, and it
-  reaches the page only through the seams in `hooks.js` (`npm run check:logic` lists them). Code that draws, plays
-  sound or reads the page stays outside it.
+  reaches the page only through the seams in `hooks.js` (`tools/test/logic.test.mjs` lists them). Code that draws,
+  plays sound or reads the page stays outside it.
+- `tools/test/` holds the unit tests (`npm test`): `<area>.test.mjs`, one file per area and one process each;
+  `<area>-real.test.mjs` (or a name about the data, like `world-graph`) when it runs on the game's own data
+  (`setup-real.mjs`) instead of the tests' small data set (`setup-fixture.mjs`). A snapshot sits next to its test as
+  `<file>.snapshot`.
 - No version stamps in names (`v46`, `47`, `a04`, `x28`, a `0` or `2` suffix meaning an older or newer copy).
 
 ## Kept on purpose (not internal names, or not now)

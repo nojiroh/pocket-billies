@@ -24,3 +24,6 @@ New opening plays from first launch through the fall to the arrival, skippable, 
 
 ## First reply
 Same four items as phase 01, plus a beat sheet with timings.
+
+## Testing (phase 13)
+Follow docs/TESTING.md: where new tests go, what must pass before the phase ends, and its section for phase 11.
