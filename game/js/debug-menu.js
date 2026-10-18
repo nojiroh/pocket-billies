@@ -14,12 +14,11 @@ import {
   addMon,
   addSteps,
   esc,
-  flush,
-  freshKeep,
+  flushSave,
   gainXp,
   healAll,
-  lsSet,
   makeMon,
+  newSaveKeepingPreferences,
   save,
   saveData,
   setActiveBattle,
@@ -28,6 +27,7 @@ import {
   today,
   uiState,
   uid,
+  writeStoredSave,
   xpFor,
 } from './game-state.js';
 import { FRAME, frameCount, frameTask, userFps } from './frame-scheduler.js';
@@ -393,10 +393,10 @@ function settingsReset() {
             setActiveBattle(null);
             battleStageStop();
           }
-          setSaveData(freshKeep());
+          setSaveData(newSaveKeepingPreferences());
           saveData.savedAt = Date.now();
-          lsSet(saveData);
-          flush();
+          writeStoredSave(saveData);
+          flushSave();
           uiState.intro = 0;
           uiState.pg = null;
           uiState.avatarDraft = null;

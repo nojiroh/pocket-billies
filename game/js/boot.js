@@ -13,7 +13,7 @@ import {
   SAVE_NEW_MSG,
   SAVE_OLD_MSG,
   esc,
-  fresh,
+  newSave,
   reducedMotion,
   saveData,
   setNoSaving,
@@ -744,7 +744,7 @@ const NW_TEST = (() => {
 provide({ NW_TEST }); /* to-module */
 if (NW_TEST) {
   setNoSaving();
-  setSaveData(fresh());
+  setSaveData(newSave());
 }
 function studioTestStart() {
   if (!NW_TEST) return;

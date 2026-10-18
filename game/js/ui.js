@@ -58,18 +58,17 @@ import {
   evoReady,
   evolve,
   findMon,
-  flush,
+  flushSave,
   fmt,
-  freshKeep,
   gateMsg,
   gateText,
   hatchEgg,
   hatchable,
   healAll,
   km,
-  lsSet,
   makeMon,
   maxHp,
+  newSaveKeepingPreferences,
   nextBracket,
   nextStop,
   plural,
@@ -91,6 +90,7 @@ import {
   tripTo,
   uiState,
   walkMode,
+  writeStoredSave,
   xpFor,
 } from './game-state.js';
 import { frameTask, userFps } from './frame-scheduler.js';
@@ -2481,10 +2481,10 @@ function settings(tab) {
                 l: 'Erase and start over',
                 c: 'red',
                 f: () => {
-                  setSaveData(freshKeep());
+                  setSaveData(newSaveKeepingPreferences());
                   saveData.savedAt = Date.now();
-                  lsSet(saveData);
-                  flush();
+                  writeStoredSave(saveData);
+                  flushSave();
                   uiState.intro = 0;
                   uiState.pg = null;
                   uiState.avatarDraft = null;
@@ -2506,7 +2506,7 @@ function settings(tab) {
 /* o.rival (v47, from the opening): Blake's battle comes first; the welcome sheet waits until the talk after it */
 export function startGame(l, o = {}) {
   const avatar = cleanLook(uiState.avatarDraft || uiState.trainerDraft || TR_PRESETS[0]);
-  setSaveData(freshKeep());
+  setSaveData(newSaveKeepingPreferences());
   saveData.avatar = avatar;
   uiState.trainerDraft = null;
   saveData.started = true;
@@ -2527,7 +2527,7 @@ export function startGame(l, o = {}) {
   for (let i = 0; i < R.starterEncounters; i++) spawn(true);
   const egg = R.starterEgg && EGGS[R.starterEgg] ? addEgg(R.starterEgg) : false;
   save();
-  flush();
+  flushSave();
   uiState.tab = 'walk';
   render();
   const nE = R.starterEncounters,

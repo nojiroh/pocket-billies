@@ -9,23 +9,23 @@
 import { expose } from './test-globals.js';
 import { NW_TEST, closeModal, modal, provide, render, toast } from './hooks.js';
 import {
-  ACC_ID,
-  LS,
-  LS_ACC,
-  LS_BASE,
-  SAVE_HOLD,
+  ACCOUNT_ID,
+  ACCOUNT_KEY,
+  SAVE_KEY,
+  SAVE_KEY_BASE,
   SAVE_NEW_MSG,
   SAVE_VERSION,
   activeBattle,
   esc,
   fmt,
   loadSave,
-  lsSet,
   save,
   saveAge,
   saveData,
+  saveHold,
   setSaveData,
   setSaveHold,
+  writeStoredSave,
 } from './game-state.js';
 import { cleanTrainer } from './person-art.js';
 import { applyPreferences, settingsRefresh } from './settings-screen.js';
@@ -108,16 +108,16 @@ function accState(u) {
     ? { uid: u.uid, name: u.displayName || u.email || 'Player', email: u.email || '', photo: u.photoURL || '' }
     : null;
   const want = u ? u.uid : '';
-  if (want !== ACC_ID) {
+  if (want !== ACCOUNT_ID) {
     /* a different player: keep what's here, then load theirs */
     try {
-      lsSet(saveData);
+      writeStoredSave(saveData);
     } catch (e) {}
     try {
       if (want) {
-        localStorage.setItem(LS_ACC, want);
-        if (!ACC_ID && saveData.started) localStorage.setItem('pb-offer-guest', '1');
-      } else localStorage.removeItem(LS_ACC);
+        localStorage.setItem(ACCOUNT_KEY, want);
+        if (!ACCOUNT_ID && saveData.started) localStorage.setItem('pb-offer-guest', '1');
+      } else localStorage.removeItem(ACCOUNT_KEY);
     } catch (e) {}
     location.reload();
     return;
@@ -166,7 +166,7 @@ async function accPull() {
     }
     if (age === 'old') {
       try {
-        const k = LS + '-cloud-set-aside';
+        const k = SAVE_KEY + '-cloud-set-aside';
         if (localStorage.getItem(k) == null) localStorage.setItem(k, snap.data().json);
       } catch (e) {}
       toast('Your account’s save is from an older version of the game, so this is a new game. Playing on replaces it.');
@@ -180,7 +180,7 @@ async function accPull() {
       setSaveData(remote);
       saveData.avatar = cleanTrainer(saveData.avatar, saveData.gender);
       applyPreferences();
-      lsSet(saveData);
+      writeStoredSave(saveData);
       render();
       toast('Your game is loaded from your account.');
       return;
@@ -191,7 +191,7 @@ async function accPull() {
   /* nothing online yet: a game from this browser can come along */
   let guest = null;
   try {
-    guest = loadSave(JSON.parse(localStorage.getItem(LS_BASE) || 'null'));
+    guest = loadSave(JSON.parse(localStorage.getItem(SAVE_KEY_BASE) || 'null'));
   } catch (e) {}
   if (offer && guest && guest.started && !saveData.started) {
     modal({
@@ -204,7 +204,7 @@ async function accPull() {
           f: () => {
             setSaveData(guest);
             saveData.savedAt = Date.now();
-            lsSet(saveData);
+            writeStoredSave(saveData);
             closeModal();
             accFlush(true);
             if (typeof TITLE !== 'undefined' && TITLE.on) {
@@ -223,7 +223,7 @@ async function accPull() {
 /* called by save()'s flush: writes to the account (a moment later, so a burst of saves is one write) */
 function accFlush(now) {
   if (!ACC.user || !ACC.db) return false;
-  if (SAVE_HOLD) return true;
+  if (saveHold) return true;
   clearTimeout(ACC.t);
   const go = () => {
     if (!ACC.user) return;
@@ -272,7 +272,7 @@ async function accSignOut() {
   if (!ACC.auth) return;
   try {
     save();
-    if (!SAVE_HOLD)
+    if (!saveHold)
       await new Promise(r => {
         ACC.db
           .collection('saves')

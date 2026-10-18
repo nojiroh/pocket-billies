@@ -40,16 +40,15 @@ import {
 } from './game-data.js';
 /* eslint-disable no-func-assign */
 expose({
-  ACC_ID: [() => ACC_ID],
+  ACCOUNT_ID: [() => ACCOUNT_ID],
+  ACCOUNT_KEY: [() => ACCOUNT_KEY],
   BR: [() => BR],
   EGG_SLOTS: [() => EGG_SLOTS],
   JOB_SLOTS: [() => JOB_SLOTS],
-  LS: [() => LS],
-  LS_ACC: [() => LS_ACC],
-  LS_BASE: [() => LS_BASE],
   MAXLV: [() => MAXLV],
   SAVE_FOUND: [() => SAVE_FOUND],
-  SAVE_HOLD: [() => SAVE_HOLD, v => (SAVE_HOLD = v)],
+  SAVE_KEY: [() => SAVE_KEY],
+  SAVE_KEY_BASE: [() => SAVE_KEY_BASE],
   SAVE_NEW_MSG: [() => SAVE_NEW_MSG],
   SAVE_OLD_MSG: [() => SAVE_OLD_MSG],
   SAVE_VERSION: [() => SAVE_VERSION],
@@ -78,10 +77,8 @@ expose({
   evoReady: [() => evoReady, v => (evoReady = v)],
   evolve: [() => evolve, v => (evolve = v)],
   findMon: [() => findMon],
-  flush: [() => flush, v => (flush = v)],
+  flushSave: [() => flushSave, v => (flushSave = v)],
   fmt: [() => fmt],
-  fresh: [() => fresh, v => (fresh = v)],
-  freshKeep: [() => freshKeep, v => (freshKeep = v)],
   gainXp: [() => gainXp, v => (gainXp = v)],
   gateMsg: [() => gateMsg, v => (gateMsg = v)],
   gateOwner: [() => gateOwner, v => (gateOwner = v)],
@@ -92,18 +89,19 @@ expose({
   hereStop: [() => hereStop],
   km: [() => km],
   loadSave: [() => loadSave, v => (loadSave = v)],
-  lsGet: [() => lsGet, v => (lsGet = v)],
-  lsSet: [() => lsSet, v => (lsSet = v)],
   makeMon: [() => makeMon, v => ((makeMon = v), provide({ makeMon }))],
   maxHp: [() => maxHp],
   migrate: [() => migrate, v => (migrate = v)],
   movesAt: [() => movesAt, v => (movesAt = v)],
+  newSave: [() => newSave, v => (newSave = v)],
+  newSaveKeepingPreferences: [() => newSaveKeepingPreferences, v => (newSaveKeepingPreferences = v)],
   nextBracket: [() => nextBracket],
   nextStop: [() => nextStop],
   pathFrom: [() => pathFrom],
   pickW: [() => pickW, v => (pickW = v)],
   plural: [() => plural],
   rate: [() => rate],
+  readStoredSave: [() => readStoredSave, v => (readStoredSave = v)],
   reducedMotion: [() => reducedMotion, v => setReducedMotion(v)],
   resumeTrip: [() => resumeTrip, v => (resumeTrip = v)],
   riderName: [() => riderName],
@@ -113,7 +111,8 @@ expose({
   save: [() => save, v => setSave(v)],
   saveAge: [() => saveAge, v => (saveAge = v)],
   saveData: [() => saveData, v => setSaveData(v)],
-  saveT: [() => saveT, v => (saveT = v)],
+  saveHold: [() => saveHold, v => setSaveHold(v)],
+  saveTimer: [() => saveTimer, v => (saveTimer = v)],
   setActiveBattle: [() => setActiveBattle, v => (setActiveBattle = v)],
   setNoSaving: [() => setNoSaving, v => (setNoSaving = v)],
   setReducedMotion: [() => setReducedMotion, v => (setReducedMotion = v)],
@@ -134,6 +133,7 @@ expose({
   uiState: [() => uiState],
   uid: [() => uid],
   walkMode: [() => walkMode],
+  writeStoredSave: [() => writeStoredSave, v => (writeStoredSave = v)],
   xpFor: [() => xpFor],
 });
 /* eslint-enable no-func-assign */
@@ -181,7 +181,7 @@ export const MAXLV = () => RULES.progression.maxLevel,
   TEAM_MAX = () => RULES.progression.teamSize;
 const JOB_SLOTS = () => Math.max(1, RULES.jobs.positions || 3);
 const emptyJob = () => ({ uid: null, job: null, acc: 0, pend: 0 });
-export function fresh() {
+export function newSave() {
   const R = RULES.start,
     coins = {},
     items = {};
@@ -228,9 +228,9 @@ export function fresh() {
   };
 }
 /* a new game on the same device keeps its settings (theme, motion, effects, sound…) */
-export function freshKeep() {
+export function newSaveKeepingPreferences() {
   const p = typeof saveData !== 'undefined' && saveData && saveData.preferences,
-    f = fresh();
+    f = newSave();
   if (p) f.preferences = Object.assign(f.preferences, JSON.parse(JSON.stringify(p)));
   return f;
 }
@@ -238,7 +238,7 @@ export function freshKeep() {
    the game data (things the Studio may have removed are dropped), but old formats are no longer converted */
 export function migrate(o) {
   if (!o || typeof o !== 'object') return null;
-  const f = fresh();
+  const f = newSave();
   const s = Object.assign(f, o);
   const zero = obj => Object.fromEntries(Object.keys(obj).map(k => [k, 0]));
   s.coins = Object.assign(zero(COINS), o.coins || {});
@@ -291,7 +291,7 @@ export function migrate(o) {
   s.route.hold = !!s.route.hold;
   if (!s.visited || typeof s.visited !== 'object') s.visited = {};
   s.visited[s.route.node] = 1;
-  if (s.started && !s.team.length && !s.box.length) return fresh();
+  if (s.started && !s.team.length && !s.box.length) return newSave();
   s.v = 4;
   s.saveVersion = SAVE_VERSION;
   s.gameVersion = PB_VERSION;
@@ -299,9 +299,9 @@ export function migrate(o) {
 }
 /* phase 02: every save says which save format it is (saveVersion; raise it when old saves can't be read any more).
    A save without one (alpha 0.5 and earlier) or from a newer format is not loaded: the game says so and starts fresh.
-   saveAge: null (no save), 'ok', 'old' or 'new'. A newer save is never written over (SAVE_HOLD) */
+   saveAge: null (no save), 'ok', 'old' or 'new'. A newer save is never written over (saveHold) */
 export const SAVE_VERSION = 1;
-export let SAVE_HOLD = false;
+export let saveHold = false;
 export function saveAge(o) {
   if (!o || typeof o !== 'object') return null;
   const v = o.saveVersion;
@@ -314,27 +314,27 @@ export const SAVE_OLD_MSG = 'This save is from an older version of the game and 
   SAVE_NEW_MSG = 'This save is from a newer version of the game. Reload the page to get the newest version.';
 /* alpha 0.4.1: one save per player. Without an account the save lives in this browser (the original key); a player who
    signs in with Google (js/account.js) gets their own save, kept online and copied in this browser under their id */
-export const LS_BASE = 'networth-save-v1',
-  LS_ACC = 'pb-account';
-export const ACC_ID = (() => {
+export const SAVE_KEY_BASE = 'networth-save-v1',
+  ACCOUNT_KEY = 'pb-account';
+export const ACCOUNT_ID = (() => {
   try {
-    return localStorage.getItem(LS_ACC) || '';
+    return localStorage.getItem(ACCOUNT_KEY) || '';
   } catch (e) {
     return '';
   }
 })();
-export const LS = ACC_ID ? LS_BASE + '-u-' + ACC_ID : LS_BASE;
-function lsGet() {
+export const SAVE_KEY = ACCOUNT_ID ? SAVE_KEY_BASE + '-u-' + ACCOUNT_ID : SAVE_KEY_BASE;
+function readStoredSave() {
   try {
-    return JSON.parse(localStorage.getItem(LS) || 'null');
+    return JSON.parse(localStorage.getItem(SAVE_KEY) || 'null');
   } catch (e) {
     return null;
   }
 }
-export function lsSet(o) {
-  if (SAVE_HOLD) return;
+export function writeStoredSave(o) {
+  if (saveHold) return;
   try {
-    localStorage.setItem(LS, JSON.stringify(o));
+    localStorage.setItem(SAVE_KEY, JSON.stringify(o));
   } catch (e) {
     if (typeof uiState !== 'undefined' && !uiState.saveWarning) {
       uiState.saveWarning = true;
@@ -343,14 +343,14 @@ export function lsSet(o) {
   }
 }
 /* a save here that this version can't load is kept aside in this browser (once), and the title says why it's a new game */
-export const SAVE_FOUND = saveAge(lsGet());
+export const SAVE_FOUND = saveAge(readStoredSave());
 if (SAVE_FOUND === 'old' || SAVE_FOUND === 'new')
   try {
-    const k = LS + '-set-aside';
-    if (localStorage.getItem(k) == null) localStorage.setItem(k, localStorage.getItem(LS));
+    const k = SAVE_KEY + '-set-aside';
+    if (localStorage.getItem(k) == null) localStorage.setItem(k, localStorage.getItem(SAVE_KEY));
   } catch (e) {}
-if (SAVE_FOUND === 'new') SAVE_HOLD = true;
-export let saveData = loadSave(lsGet()) || fresh();
+if (SAVE_FOUND === 'new') saveHold = true;
+export let saveData = loadSave(readStoredSave()) || newSave();
 provide({ saveData }); /* to-module */
 export let activeBattle = null;
 provide({ activeBattle }); /* to-module */
@@ -369,16 +369,16 @@ export function setReducedMotion(v) {
   provide({ reducedMotion });
 }
 export function setSaveHold(v) {
-  SAVE_HOLD = v;
-  provide({ SAVE_HOLD });
+  saveHold = v;
+  provide({ saveHold });
 }
 /* test mode (?test, boot.js): nothing the checks do reaches the save */
 export function setNoSaving() {
   /* eslint-disable no-func-assign */
-  lsSet = function () {};
-  flush = async function () {};
+  writeStoredSave = function () {};
+  flushSave = async function () {};
   /* eslint-enable no-func-assign */
-  provide({ lsSet, flush });
+  provide({ writeStoredSave, flushSave });
 }
 export const uiState = {
   tab: 'walk',
@@ -398,14 +398,14 @@ export const uiState = {
 provide({ uiState }); /* to-module */
 
 /* ---------- saving: in this browser, and on the account when signed in (account.js) ---------- */
-let saveT = null;
+let saveTimer = null;
 export function save() {
   saveData.savedAt = Date.now();
-  lsSet(saveData);
-  if (!saveT)
-    saveT = setTimeout(() => {
-      saveT = null;
-      flush();
+  writeStoredSave(saveData);
+  if (!saveTimer)
+    saveTimer = setTimeout(() => {
+      saveTimer = null;
+      flushSave();
     }, 4000);
 }
 /* phase 04d: the in-game full test (self-test.js) keeps your save out of it */
@@ -414,14 +414,14 @@ export function setSave(v) {
   provide({ save });
 }
 document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'hidden' && saveT) {
-    clearTimeout(saveT);
-    saveT = null;
-    flush();
+  if (document.visibilityState === 'hidden' && saveTimer) {
+    clearTimeout(saveTimer);
+    saveTimer = null;
+    flushSave();
   }
 });
-export function flush() {
-  if (SAVE_HOLD) return;
+export function flushSave() {
+  if (saveHold) return;
   if (typeof accFlush === 'function') accFlush();
 }
 

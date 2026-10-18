@@ -1880,7 +1880,7 @@ def desktop_steps(b, base, R):
         pg.evaluate("(()=>{const gl=typeof gpuState!=='undefined'&&gpuState.gl;if(gl&&gl.__chk){for(const k of ['useProgram','drawArrays','drawElements','drawArraysInstanced','drawElementsInstanced'])delete gl[k];delete gl.__chk}})()")
         out = []
         # alpha 0.4.1: one save per player; the account box shows in Settings → Save (a sign-in button once Firebase is set up)
-        acc = pg.evaluate("(()=>{const t=uiState.setTab;uiState.setTab='save';const h=settingsHTML();uiState.setTab=t;return {box:h.includes('acc-box'),slots:typeof slotInfo==='function',key:LS}})()")
+        acc = pg.evaluate("(()=>{const t=uiState.setTab;uiState.setTab='save';const h=settingsHTML();uiState.setTab=t;return {box:h.includes('acc-box'),slots:typeof slotInfo==='function',key:SAVE_KEY}})()")
         if acc['slots']: raise Exception('the old save slots are still there')
         if not acc['box']: raise Exception('no account box in Settings → Save')
         out.append(f'one save ({acc["key"]}), the account box in Settings')
@@ -1960,7 +1960,7 @@ def studio_round_trip(pw, R):
                     st = g.evaluate("[typeof walkView!=='undefined'&&walkView.id,GD.scenes.pond.props.length,typeof NW_TEST!=='undefined'&&!!NW_TEST]")
                     if st[0] == 'pond' and st[1] == r['n']: ok = True; break
                     time.sleep(.5)
-                saved = g.evaluate("(()=>{try{return localStorage.getItem(LS)}catch(e){return 'x'}})()")
+                saved = g.evaluate("(()=>{try{return localStorage.getItem(SAVE_KEY)}catch(e){return 'x'}})()")
                 g.close()
                 if not ok: raise Exception(f'the test run didn’t open Willowmere with the Studio’s edits ({st}, Studio has {r["n"]} props)')
                 if saved: raise Exception('the test run wrote a save')

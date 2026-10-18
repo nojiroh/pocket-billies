@@ -9,7 +9,16 @@ import { expose } from './test-globals.js';
 import { NW_TEST, accChipHTML, closeModal, modal, postProcess, render, sceneIdAt, settings } from './hooks.js';
 import { $, clamp } from './util.js';
 import { ROUTE, START_NODE } from './game-data.js';
-import { esc, flush, freshKeep, lsSet, reducedMotion, saveData, setSaveData, uiState } from './game-state.js';
+import {
+  esc,
+  flushSave,
+  newSaveKeepingPreferences,
+  reducedMotion,
+  saveData,
+  setSaveData,
+  uiState,
+  writeStoredSave,
+} from './game-state.js';
 import { userFps } from './frame-scheduler.js';
 import { uiIconHTML } from './art.js';
 import { humanHTML } from './person-art.js';
@@ -172,10 +181,10 @@ function titleNew() {
         l: 'Start a new game',
         c: 'red',
         f: () => {
-          setSaveData(freshKeep());
+          setSaveData(newSaveKeepingPreferences());
           saveData.savedAt = Date.now();
-          lsSet(saveData);
-          flush();
+          writeStoredSave(saveData);
+          flushSave();
           uiState.intro = 0;
           uiState.pg = null;
           uiState.avatarDraft = null;
