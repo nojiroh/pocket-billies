@@ -45,7 +45,7 @@ expose({
   bindWorldMap: [() => bindWorldMap, v => (bindWorldMap = v)],
   drawWorldMarkers: [() => drawWorldMarkers, v => (drawWorldMarkers = v)],
   locationRoads: [() => locationRoads, v => (locationRoads = v)],
-  lonLatToMapXY: [() => lonLatToMapXY, v => (lonLatToMapXY = v)],
+  lonLatToWorldMapXY: [() => lonLatToWorldMapXY, v => (lonLatToWorldMapXY = v)],
   roadsHTML: [() => roadsHTML, v => (roadsHTML = v)],
   weightTable: [() => weightTable, v => (weightTable = v)],
   worldBackdrops: [() => worldBackdrops, v => (worldBackdrops = v)],
@@ -90,7 +90,7 @@ let WORLD_IMG = null;
 function worldMapHTML() {
   return `<div class="wmap" id="wmap"><img src="../game/art/map/world.png?v=${(studioState.D.meta || {}).artVersion || 0}" alt="" draggable="false" id="wmapImg"><svg viewBox="0 0 360 180" preserveAspectRatio="none" id="wmapSvg"></svg></div><p class="help">Drag a marker to move a stop. The painted trail and patches are part of the map art: <button class="linkish" data-act="wtab" data-t="paint">paint them under Map art</button>, where moving a stop can carry its patch along and the trail can be repainted to match.</p>`;
 }
-function lonLatToMapXY(lon, lat) {
+function lonLatToWorldMapXY(lon, lat) {
   return [((lon % 360) + 360) % 360, 90 - lat];
 }
 function drawWorldMarkers() {
@@ -98,14 +98,14 @@ function drawWorldMarkers() {
   if (!svg) return;
   const D = studioState.D;
   let h = '';
-  const pts = D.route.map(r => lonLatToMapXY(r.lon || 0, r.lat || 0));
+  const pts = D.route.map(r => lonLatToWorldMapXY(r.lon || 0, r.lat || 0));
   (D.links || []).forEach(([a, b]) => {
     if (pts[a] && pts[b])
       h += `<line x1="${pts[a][0]}" y1="${pts[a][1]}" x2="${pts[b][0]}" y2="${pts[b][1]}" class="trail"/>`;
   });
   D.regions.forEach((g, i) => {
     if (g.lon == null) return;
-    const [x, y] = lonLatToMapXY(g.lon, g.lat || 0);
+    const [x, y] = lonLatToWorldMapXY(g.lon, g.lat || 0);
     h += `<g class="mk reg ${studioState.sel.stop === 'r' + i ? 'on' : ''}" data-mk="r${i}" transform="translate(${x},${y})"><circle r="3.2"/><text y="-5">${esc(g.name)}</text></g>`;
   });
   D.route.forEach((r, i) => {
