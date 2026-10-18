@@ -200,7 +200,6 @@ import {
 import { chalCard, homeApply, homeDecorate, reqList, stampTile } from './things-to-do.js';
 /* eslint-disable no-func-assign */
 expose({
-  BG: [() => BG],
   BOX_SORTS: [() => BOX_SORTS],
   BRACKET_COLORS: [() => BRACKET_COLORS],
   HAZEL_INTRO_LINES: [() => HAZEL_INTRO_LINES],
@@ -213,10 +212,6 @@ expose({
   TRACKS: [() => TRACKS],
   addPick: [() => addPick, v => (addPick = v)],
   badgeSlots: [() => badgeSlots, v => (badgeSlots = v)],
-  bgBuild: [() => bgBuild, v => (bgBuild = v)],
-  bgInit: [() => bgInit, v => (bgInit = v)],
-  bgResize: [() => bgResize, v => (bgResize = v)],
-  bgTick: [() => bgTick, v => (bgTick = v)],
   billyConditionHTML: [() => billyConditionHTML],
   billySheet: [() => billySheet, v => (billySheet = v)],
   boardNote: [() => boardNote, v => (boardNote = v)],
@@ -226,6 +221,7 @@ expose({
   bracketNote: [() => bracketNote, v => (bracketNote = v)],
   bracketSpans: [() => bracketSpans, v => (bracketSpans = v)],
   buddyCard: [() => buddyCard, v => (buddyCard = v)],
+  buildPixelSky: [() => buildPixelSky, v => (buildPixelSky = v)],
   closeModal: [() => closeModal, v => ((closeModal = v), provide({ closeModal }))],
   dexStatus: [() => dexStatus, v => (dexStatus = v)],
   donateItem: [() => donateItem, v => (donateItem = v)],
@@ -244,6 +240,7 @@ expose({
   hireFlow: [() => hireFlow, v => (hireFlow = v)],
   hirePick: [() => hirePick, v => (hirePick = v)],
   hpBar: [() => hpBar, v => (hpBar = v)],
+  initPixelSky: [() => initPixelSky, v => (initPixelSky = v)],
   introSteps: [() => introSteps, v => (introSteps = v)],
   isDark: [() => isDark],
   jobSlots: [() => jobSlots, v => (jobSlots = v)],
@@ -262,6 +259,8 @@ expose({
   nodeActions: [() => nodeActions, v => (nodeActions = v)],
   openSettings: [() => openSettings, v => ((openSettings = v), provide({ openSettings }))],
   paintWorldMapCard: [() => paintWorldMapCard, v => ((paintWorldMapCard = v), provide({ paintWorldMapCard }))],
+  pixelSky: [() => pixelSky],
+  pixelSkyTick: [() => pixelSkyTick, v => (pixelSkyTick = v)],
   plateVars: [() => plateVars],
   playerWalkIconHTML: [() => playerWalkIconHTML, v => (playerWalkIconHTML = v)],
   poolStrip: [() => poolStrip, v => (poolStrip = v)],
@@ -276,6 +275,7 @@ expose({
   renderTeam: [() => renderTeam, v => (renderTeam = v)],
   renderWalk: [() => renderWalk, v => (renderWalk = v)],
   renderWorldMapTab: [() => renderWorldMapTab, v => (renderWorldMapTab = v)],
+  resizePixelSky: [() => resizePixelSky, v => (resizePixelSky = v)],
   roomAct: [() => roomAct, v => (roomAct = v)],
   roomAim: [() => roomAim, v => (roomAim = v)],
   roomFor: [() => roomFor, v => (roomFor = v)],
@@ -3130,65 +3130,69 @@ document.addEventListener(
 );
 
 /* ---------- animated pixel sky behind the app ---------- */
-const BG = { cv: null, x: null, last: 0, w: 160, h: 300, dark: null, base: null, isl: [], cl: [], sp: [] };
-provide({ BG }); /* to-module */
+const pixelSky = { cv: null, x: null, last: 0, w: 160, h: 300, dark: null, base: null, isl: [], cl: [], sp: [] };
+provide({ pixelSky }); /* to-module */
 const isDark = () => {
   const t = document.documentElement.dataset.theme;
   return t === 'dark' || (t !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches);
 };
-function bgBuild() {
-  const W = BG.w,
-    H = BG.h,
-    dk = BG.dark,
+function buildPixelSky() {
+  const W = pixelSky.w,
+    H = pixelSky.h,
+    dk = pixelSky.dark,
     m = dk ? 'dark' : 'light',
     sky = ART_CACHE.img[`background/sky_${m}.png`],
     c = makeCanvas(W, H),
     x = c.getContext('2d');
   x.imageSmoothingEnabled = false;
   x.drawImage(sky, 0, 0, W, H);
-  BG.base = c;
-  BG.cl = [0, 1, 2, 3].map(i => ({
+  pixelSky.base = c;
+  pixelSky.cl = [0, 1, 2, 3].map(i => ({
     img: ART_CACHE.img[`background/cloud_${m}_${i}.png`],
     x: random() * W,
     y: 20 + i * 28 + random() * 10,
     v: 0.003 + i * 0.002,
   }));
-  BG.sp = Array.from({ length: dk ? 40 : 14 }, () => ({ x: random() * W, y: random() * H * 0.8, p: random() * 6 }));
+  pixelSky.sp = Array.from({ length: dk ? 40 : 14 }, () => ({
+    x: random() * W,
+    y: random() * H * 0.8,
+    p: random() * 6,
+  }));
 }
-export function bgInit() {
+export function initPixelSky() {
   const c = document.createElement('canvas');
   c.id = 'bgfx';
   c.setAttribute('aria-hidden', 'true');
   document.body.prepend(c);
-  BG.cv = c;
-  BG.x = c.getContext('2d');
-  bgResize();
-  window.addEventListener('resize', bgResize);
-  frameTask('bg', bgTick, () => (activeBattle ? 1 : 15));
+  pixelSky.cv = c;
+  pixelSky.x = c.getContext('2d');
+  resizePixelSky();
+  window.addEventListener('resize', resizePixelSky);
+  frameTask('bg', pixelSkyTick, () => (activeBattle ? 1 : 15));
 }
-function bgResize() {
-  BG.w = 160;
-  BG.h = Math.max(200, Math.round((160 * innerHeight) / Math.max(1, innerWidth)));
-  BG.cv.width = BG.w;
-  BG.cv.height = BG.h;
-  BG.dark = null;
+function resizePixelSky() {
+  pixelSky.w = 160;
+  pixelSky.h = Math.max(200, Math.round((160 * innerHeight) / Math.max(1, innerWidth)));
+  pixelSky.cv.width = pixelSky.w;
+  pixelSky.cv.height = pixelSky.h;
+  pixelSky.dark = null;
 }
-function bgTick(ts) {
+function pixelSkyTick(ts) {
   if (activeBattle) return;
-  BG.last = ts;
+  pixelSky.last = ts;
   const dk = isDark();
-  if (dk !== BG.dark) {
-    BG.dark = dk;
-    bgBuild();
+  if (dk !== pixelSky.dark) {
+    pixelSky.dark = dk;
+    buildPixelSky();
   }
-  if (reducedMotion && BG._still === BG.base) return;
-  BG._still = BG.base;
-  const x = BG.x,
-    W = BG.w,
-    H = BG.h,
+  if (reducedMotion && pixelSky._still === pixelSky.base) return;
+  pixelSky._still = pixelSky.base;
+  const x = pixelSky.x,
+    W = pixelSky.w,
+    H = pixelSky.h,
     t = reducedMotion ? 0 : ts;
   x.imageSmoothingEnabled = false;
-  x.drawImage(BG.base, 0, 0);
+  x.drawImage(pixelSky.base, 0, 0);
   const sx = W * 0.78,
     sy = H * 0.16,
     pr = 10 + Math.sin(t / 900) * 1.2;
@@ -3208,12 +3212,12 @@ function bgTick(ts) {
   x.beginPath();
   x.arc(Math.round(sx), Math.round(sy), 6, 0, 7);
   x.fill();
-  BG.cl.forEach(c => {
+  pixelSky.cl.forEach(c => {
     const w = c.img.width,
       xx = ((c.x + t * c.v) % (W + w)) - w;
     x.drawImage(c.img, Math.round(xx), Math.round(c.y));
   });
-  BG.sp.forEach(p => {
+  pixelSky.sp.forEach(p => {
     const a = 0.5 + 0.5 * Math.sin(t / 500 + p.p);
     if (a < 0.55) return;
     x.fillStyle = dk ? `rgba(255,240,200,${a})` : `rgba(255,255,255,${a * 0.8})`;

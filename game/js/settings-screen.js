@@ -5,7 +5,6 @@
 import { expose } from './test-globals.js';
 import {
   ACC,
-  BG,
   accSettingsHTML,
   ambApply,
   audApply,
@@ -15,6 +14,7 @@ import {
   galleryOpen,
   modal,
   openDressingRoom,
+  pixelSky,
   rebuildFromSettings,
   render,
   renderOverlay,
@@ -559,7 +559,7 @@ function setPref(k, v) {
   saveData.preferences[k] = v;
   applyPreferences();
   save();
-  if (typeof BG !== 'undefined') BG.dark = null;
+  if (typeof pixelSky !== 'undefined') pixelSky.dark = null;
   if (k === 'haptics' && v)
     try {
       navigator.vibrate(12);

@@ -36,7 +36,17 @@ import { csWanted } from './cutscene.js';
 import { TITLE, titleMount, titleStart, titleWanted } from './title.js';
 import { loreLoadingLines } from './lore.js';
 import { accInit } from './account.js';
-import { bgInit, closeModal, mapIdAt, modal, postProcess, render, renderOverlay, startGame, toast } from './ui.js';
+import {
+  closeModal,
+  initPixelSky,
+  mapIdAt,
+  modal,
+  postProcess,
+  render,
+  renderOverlay,
+  startGame,
+  toast,
+} from './ui.js';
 /* eslint-disable no-func-assign */
 expose({
   ART_VER_KEY: [() => ART_VER_KEY],
@@ -827,7 +837,7 @@ else
     .then(() => bootLoad())
     .then(async () => {
       if (typeof NWLOG !== 'undefined') NWLOG.hook();
-      bgInit();
+      initPixelSky();
       if (typeof titleWanted === 'function' && titleWanted()) titleStart();
       render();
       if (NW_TEST) studioTestStart();
