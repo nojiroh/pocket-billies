@@ -207,7 +207,7 @@ LOCATIONS.forEach((r, i) => {
     warnData(`${r.name} uses unknown pool ${r.pool}.`);
     r.pool = Object.keys(POOLS)[0];
   }
-  if (!BATTLE_STAGES[r.area]) r.area = BATTLE_STAGES[r.pool] ? r.pool : 'grass';
+  if (!BATTLE_STAGES[r.battleStage]) r.battleStage = BATTLE_STAGES[r.pool] ? r.pool : 'grass';
   r.trainers = [];
 });
 /* the walking network: links between stops (both directions); older data is a single chain */

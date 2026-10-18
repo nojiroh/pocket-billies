@@ -1428,7 +1428,7 @@ def add_region(D, R, force=False, rep=None):
     for n in R['nodes']:
         i = node_index(D, n['id'])
         cost = next((c for a, b, c, _ in R['links'] if b == n['id']), 1500)
-        e = {'name': n['name'], 'cost': cost, 'pool': n['pool'], 'route': n['route'], 't': R['t'], 'blurb': n['blurb'], 'lon': n['lon'], 'lat': n['lat'], 'area': n['area'],
+        e = {'name': n['name'], 'cost': cost, 'pool': n['pool'], 'route': n['route'], 't': R['t'], 'blurb': n['blurb'], 'lon': n['lon'], 'lat': n['lat'], 'battleStage': n['area'],
              'mapId': n['id'], 'id': n['id'], 'kind': n['kind'], 'biome': n['biome'], 'routeName': n['route'], 'mood': n.get('mood') or R['mood'], 'region': R['id'], TAG: 1}
         if n['kind'] == 'town': e['town'] = 1
         for k in ('shop', 'boutique', 'gate', 'gateText', 'ride', 'music'):

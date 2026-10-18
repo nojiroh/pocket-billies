@@ -230,7 +230,7 @@ function worldLocations() {
       ),
       selectField(
         'Battle backdrop',
-        `${p}.area`,
+        `${p}.battleStage`,
         Object.entries(D.battleStages).map(([k, v]) => [k, v.name || k])
       ),
       selectField(
@@ -391,7 +391,7 @@ ACTIONS.stopAdd = () => {
   const n = {
     name: 'New Stop',
     pool: a.pool,
-    area: a.area,
+    battleStage: a.battleStage,
     route: a.route,
     t: 'grass',
     blurb: 'Describe this place.',
@@ -666,7 +666,7 @@ function worldBackdrops() {
         {
           sub: `id ${escapeHtml(k)} · used by ${escapeHtml(
             D.locations
-              .filter(r => r.area === k)
+              .filter(r => r.battleStage === k)
               .map(r => r.name)
               .concat(
                 Object.values(D.trainers || {})

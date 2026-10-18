@@ -174,7 +174,7 @@ def main():
         if k in ('locations',):
             for i, r in enumerate(D[k]):
                 for f in list(r):
-                    if f in ('name', 'route', 'routeName', 'id', 'mapId', 'shop', 'boutique', 'area', 'pool'): continue
+                    if f in ('name', 'route', 'routeName', 'id', 'mapId', 'shop', 'boutique', 'battleStage', 'pool'): continue
                     r[f] = walk(r[f], [k, r['id'], f])
             continue
         D[k] = walk(D[k], [k])
