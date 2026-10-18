@@ -127,6 +127,26 @@ before adopting a library, so this waits for your answer.
 - A **gallery page in the Studio** shows every component in every state (empty, full, long names, dark, 320 px wide).
 - The old CSS files shrink as screens move over and are deleted when empty.
 
+## Removing the painted battle stage (owner, 2026-10-18)
+The 3D stage ("Where I stand") has replaced the old painted backdrop battle, so the painted stage goes, together with
+the classic battle HUD. This lands in session **06-3**, with the battle screens.
+
+| Question | Answer |
+|---|---|
+| Battles inside rooms (today they fall back to the painted stage: `battle3dWanted` in battle-3d.js skips `sc.room`) | The 3D stage works in rooms too: the room is the stage, like outdoors |
+| No 3D scene ready yet (a battle starting while a map loads) | The battle waits behind its intro wipe until the scene is ready; no painted fallback |
+| Settings → "Battle HUD: classic cards" | Removed too; one battle HUD, the in-scene plates |
+| Settings → "Battles happen: Where I stand / Painted stage" | Removed; the `battleStage` and `battleHud` preferences are dropped from saves |
+
+To check when it lands (verify, these are from a first look):
+- battle-stage.js draws the painted stage **and** still directs the 3D camera and draws move effects; only the painted
+  parts go.
+- `game/art/battle/` (39 files, about 1 MB): the clouds `battle/cloud_0..4.png` are also used by walk-view.js and stay
+  (or move to a shared folder); the painted stage's grounds, walls and foregrounds go.
+- `game/art/background/` is used by the title's painted landscape and the Studio (world-rules-art.js), so it stays.
+- The in-game full test's step "Battle on a painted stage" (self-test.js) and the painted-stage branch in its battle
+  check go; the quick check and smoke must not ask for the painted stage.
+
 ## Sessions
 
 Order follows the roadmap's priority on Billies and robots: the screens they need come first.
@@ -135,7 +155,7 @@ Order follows the roadmap's priority on Billies and robots: the screens they nee
 |---|---|---|
 | **06-1** | Audit (refresh the numbers above), tokens.css, motion.css, the renderer (after your decision), button, panel, sheet, pill, toast; the new message rules (toasts, inbox, one sheet on load); loader copy | Tokens in use by the bottom bar and toasts; no visible change except calmer messages |
 | **06-2** | Billie card, details sheet with parts, sizes, weight and the Prime badge (phase 16), Team screen, starter pick | Team and details on the new look; UI tests for them |
-| **06-3** | Dialogue box with portrait slot, battle menus and battle text, Bag, the robot builder shell (phase 17) | Battle reads one line at a time |
+| **06-3** | Dialogue box with portrait slot, battle menus and battle text, Bag, the robot builder shell (phase 17); remove the painted battle stage and the classic HUD (section above) | Battle reads one line at a time; every battle on the 3D stage, rooms included |
 | **06-4** | Guide, Trainer card, Settings, shops, dressing room, friends; Studio gallery; delete the emptied CSS; accessibility pass | All screens moved, no innerHTML with untrusted values, tag `phase-06-done` |
 
 Each session: lint, type-check, module check, unit tests, the UI tests for the screens it moved, screenshots of those
