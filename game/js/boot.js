@@ -35,7 +35,7 @@ import { WORLD_RELIEF } from './world-map-gl.js';
 import { cutsceneWanted } from './cutscene.js';
 import { TITLE, titleMount, titleStart, titleWanted } from './title.js';
 import { loreLoadingLines } from './lore.js';
-import { accInit } from './account.js';
+import { initAccount } from './account.js';
 import {
   closeModal,
   initPixelSky,
@@ -875,6 +875,6 @@ else
           `Pocket Billies: ${DATA_WARN.length} game data warning(s). Open the debug menu (Ctrl+Shift+D) to see them.`
         );
     });
-if (typeof accInit === 'function') accInit();
+if (typeof initAccount === 'function') initAccount();
 if ('serviceWorker' in navigator && location.protocol !== 'file:')
   addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));

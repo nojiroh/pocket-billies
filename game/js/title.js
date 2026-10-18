@@ -6,7 +6,7 @@
    Without the 3D scene the title stands on the painted landscape instead. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { NW_TEST, accChipHTML, closeModal, mapIdAt, modal, openSettings, postProcess, render } from './hooks.js';
+import { NW_TEST, accountChipHTML, closeModal, mapIdAt, modal, openSettings, postProcess, render } from './hooks.js';
 import { $, clamp } from './util.js';
 import { LOCATIONS, START_NODE } from './game-data.js';
 import {
@@ -85,7 +85,7 @@ export function renderTitle() {
     place = cont && LOCATIONS[saveData.route.node] ? LOCATIONS[saveData.route.node].name : '',
     nm = cont ? saveData.avatar.name || 'Trainer' : '';
   return `<div class="ttl${cont ? ' can-tap' : ''}" data-a="${cont ? 'ttltap' : ''}"><div class="ttl-bg" aria-hidden="true"></div>
-  <div class="ttl-acc">${typeof accChipHTML === 'function' ? accChipHTML() : ''}</div><div class="ttl-top"><h1 class="ttl-logo" aria-label="Pocket Billies"><span>POCKET</span><span>BILLIES</span></h1><p class="ttl-tag">Gotta tax 'em all!</p></div><p class="ttl-ver">${escapeHtml(PB_VERSION)}</p>
+  <div class="ttl-acc">${typeof accountChipHTML === 'function' ? accountChipHTML() : ''}</div><div class="ttl-top"><h1 class="ttl-logo" aria-label="Pocket Billies"><span>POCKET</span><span>BILLIES</span></h1><p class="ttl-tag">Gotta tax 'em all!</p></div><p class="ttl-ver">${escapeHtml(PB_VERSION)}</p>
   <div class="ttl-bottom">
    ${cont ? `<button class="ttl-cont" data-a="ttlgo"><span class="ttl-face">${humanHTML('me', 56)}</span><span class="ttl-ct"><b>Continue</b><small>${escapeHtml(nm)} · ${escapeHtml(place)}</small><small>${titlePlayTime()} played</small></span></button>` : ''}
    <div class="ttl-btns">${cont ? `<button class="pb quiet" data-a="ttlnew">New game</button>` : `<button class="pb gold big wide" data-a="intro">New game</button>`}<button class="pb quiet" data-a="ttlset">${uiIconHTML('gear', 14)} Settings</button></div>

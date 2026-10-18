@@ -449,7 +449,7 @@ NWLOG.more = () => {
       o[k] = 'error: ' + String(e.message || e).slice(0, 80);
     }
   };
-  t('account', () => (typeof GAME.ACC !== 'undefined' && GAME.ACC.user ? 'signed in' : 'this browser'));
+  t('account', () => (typeof GAME.account !== 'undefined' && GAME.account.user ? 'signed in' : 'this browser'));
   t('preferences', () => Object.assign({}, GAME.saveData.preferences || {}));
   t('saveBytes', () => JSON.stringify(GAME.saveData).length);
   t('time', () =>

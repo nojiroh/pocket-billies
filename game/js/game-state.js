@@ -4,8 +4,8 @@
 import { expose } from './test-globals.js';
 import {
   JINGLES,
-  accFlush,
   environmentOdds,
+  flushAccountSave,
   jingle,
   onStepsAdded,
   postProcess,
@@ -423,7 +423,7 @@ document.addEventListener('visibilitychange', () => {
 });
 export function flushSave() {
   if (saveHold) return;
-  if (typeof accFlush === 'function') accFlush();
+  if (typeof flushAccountSave === 'function') flushAccountSave();
 }
 
 /* ---------- billionaires ---------- */

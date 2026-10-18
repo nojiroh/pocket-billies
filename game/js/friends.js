@@ -10,7 +10,7 @@
    Each player only ever writes their own users/ document; a friendship is made from the two sides of a request. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { ACC, accOn, closeModal, mapIdAt, mapOffsetInView, modal, provide, render, toast } from './hooks.js';
+import { account, accountOn, closeModal, mapIdAt, mapOffsetInView, modal, provide, render, toast } from './hooks.js';
 import { LOCATIONS, SPECIES } from './game-data.js';
 import { billyName, cleanName, escapeHtml, plural, saveData, uiState } from './game-state.js';
 import { owFrames, portraitHTML, trWarm } from './person-art.js';
@@ -61,15 +61,15 @@ const FR = {
 provide({ FR }); /* to-module */
 const FR_ABC = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 function frOn() {
-  return typeof ACC !== 'undefined' && !!ACC.user && !!ACC.db;
+  return typeof account !== 'undefined' && !!account.user && !!account.db;
 }
 function frDb() {
-  return ACC.db;
+  return account.db;
 }
 export async function frInit() {
   if (!frOn() || FR.on) return;
   FR.on = true;
-  FR.uid = ACC.user.uid;
+  FR.uid = account.user.uid;
   const db = frDb(),
     ref = db.collection('users').doc(FR.uid);
   try {
@@ -224,7 +224,7 @@ function frPublish(now) {
   const m = typeof buddyBilly === 'function' ? buddyBilly() : saveData.team && saveData.team[0],
     pt = m ? { sp: m.sp, gold: !!m.gold, name: billyName(m), lvl: m.lvl } : null;
   const doc = {
-    name: (saveData.avatar && saveData.avatar.name) || ACC.user.name || 'Trainer',
+    name: (saveData.avatar && saveData.avatar.name) || account.user.name || 'Trainer',
     avatar: saveData.avatar || null,
     partner: pt,
     at: { node, place: r.name || '', sid, x, z, t },
@@ -284,7 +284,7 @@ async function frAdd(code) {
       .set({
         from: FR.uid,
         to,
-        fromName: (saveData.avatar && saveData.avatar.name) || ACC.user.name || 'Trainer',
+        fromName: (saveData.avatar && saveData.avatar.name) || account.user.name || 'Trainer',
         status: 'pending',
         t: Date.now(),
       });
@@ -335,7 +335,7 @@ function frAgo(t) {
 /* ---------- the Trainer screen ---------- */
 export function friendsHTML() {
   const head = `<div class="sec-h"><h2>Friends</h2>${FR.code ? `<span class="fr-code">Your code <b class="tnum">${FR.code}</b></span>` : ''}</div>`;
-  if (typeof accOn !== 'function' || !accOn())
+  if (typeof accountOn !== 'function' || !accountOn())
     return `<section class="tpanel pf-friends">${head}<p class="note">Friends work when you’re signed in, and this copy of the game has no accounts.</p></section>`;
   if (!frOn())
     return `<section class="tpanel pf-friends">${head}<p class="note">Sign in with Google to add friends: you’ll see where they are, with their partner Billie, on your map and in the world.</p><button class="pb small" data-a="acc-in">Sign in</button></section>`;

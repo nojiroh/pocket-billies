@@ -94,17 +94,17 @@ import { setWorldMapGlRender, setWorldMapMiniBuild, worldMapGlRender, worldMapMi
 import { openShop, setOpenShop } from './shop.js';
 import { AMB, AUD } from './sound.js';
 import { cutsceneStart, setCutsceneStart } from './cutscene.js';
-import { ACC } from './account.js';
+import { account } from './account.js';
 import { chalToday, stampCount } from './things-to-do.js';
 import { render, renderOverlay, setRender, setRenderOverlay, toast } from './ui.js';
 Object.defineProperties(GAME, {
-  ACC: { get: () => ACC },
   AMB: { get: () => AMB },
   AUD: { get: () => AUD },
   FRAME: { get: () => FRAME },
   LIFE: { get: () => LIFE },
   LOCATIONS: { get: () => LOCATIONS },
   TR_CACHE: { get: () => TR_CACHE },
+  account: { get: () => account },
   activeBattle: { get: () => activeBattle },
   artPixels: { get: () => artPixels, set: setArtPixels },
   battleStage: { get: () => battleStage },
