@@ -13,17 +13,15 @@ import { after, ask, card, changed, commit, formatThousands, render, studioState
 import { atlasGet, atlasNow, markArt } from './sprites.js';
 /* eslint-disable no-func-assign */
 expose({
-  D2R_: [() => D2R_],
+  DEGREES_TO_RADIANS: [() => DEGREES_TO_RADIANS],
   MPW: [() => MPW],
   WORLD_PATH: [() => WORLD_PATH],
-  c32hex: [() => c32hex],
   carryPatch: [() => carryPatch, v => (carryPatch = v)],
-  dirOf: [() => dirOf, v => (dirOf = v)],
+  directionToTexel: [() => directionToTexel, v => (directionToTexel = v)],
   eraseTrailAll: [() => eraseTrailAll, v => (eraseTrailAll = v)],
-  gamePath: [() => gamePath, v => (gamePath = v)],
-  hex32: [() => hex32],
+  hexToPixel32: [() => hexToPixel32],
   inpaint: [() => inpaint, v => (inpaint = v)],
-  llv_: [() => llv_],
+  lonLatToDirection: [() => lonLatToDirection],
   mpBind: [() => mpBind, v => (mpBind = v)],
   mpCenter: [() => mpCenter, v => (mpCenter = v)],
   mpCommitPixels: [() => mpCommitPixels, v => (mpCommitPixels = v)],
@@ -44,14 +42,16 @@ expose({
   mpUndo: [() => mpUndo, v => (mpUndo = v)],
   mpView: [() => mpView, v => (mpView = v)],
   paintTrail: [() => paintTrail, v => (paintTrail = v)],
+  pixel32ToHex: [() => pixel32ToHex],
   plotDisc: [() => plotDisc, v => (plotDisc = v)],
-  slerp_: [() => slerp_, v => (slerp_ = v)],
-  trailSet: [() => trailSet, v => (trailSet = v)],
-  uvOf: [() => uvOf, v => (uvOf = v)],
-  v3s: [() => v3s],
+  slerpVectors: [() => slerpVectors, v => (slerpVectors = v)],
+  texelToDirection: [() => texelToDirection, v => (texelToDirection = v)],
+  trailColors: [() => trailColors, v => (trailColors = v)],
+  trailSegments: [() => trailSegments, v => (trailSegments = v)],
+  vectorMath: [() => vectorMath],
   worldMapPainter: [() => worldMapPainter],
   worldPaint: [() => worldPaint, v => ((worldPaint = v), provide({ worldPaint }))],
-  wrapU: [() => wrapU],
+  wrapTexelX: [() => wrapTexelX],
 });
 /* eslint-enable no-func-assign */
 provide({ worldPaint });
@@ -71,7 +71,7 @@ const worldMapPainter = {
   trailCols: ['#8A6A3E', '#E2C48A', '#F0E6C8'],
 };
 const WORLD_PATH = 'art/map/world.png';
-const v3s = {
+const vectorMath = {
   add: (a, b) => [a[0] + b[0], a[1] + b[1], a[2] + b[2]],
   mul: (a, k) => [a[0] * k, a[1] * k, a[2] * k],
   dot: (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2],
@@ -81,36 +81,36 @@ const v3s = {
     return [a[0] / l, a[1] / l, a[2] / l];
   },
 };
-const D2R_ = Math.PI / 180;
-const llv_ = (lon, lat) => {
-  lon *= D2R_;
-  lat *= D2R_;
+const DEGREES_TO_RADIANS = Math.PI / 180;
+const lonLatToDirection = (lon, lat) => {
+  lon *= DEGREES_TO_RADIANS;
+  lat *= DEGREES_TO_RADIANS;
   return [Math.cos(lat) * Math.cos(lon), Math.sin(lat), Math.cos(lat) * Math.sin(lon)];
 };
-function slerp_(a, b, t) {
-  const d = clamp(v3s.dot(a, b), -1, 1),
+function slerpVectors(a, b, t) {
+  const d = clamp(vectorMath.dot(a, b), -1, 1),
     w = Math.acos(d);
   if (w < 1e-5) return a;
   const s = Math.sin(w);
-  return v3s.add(v3s.mul(a, Math.sin((1 - t) * w) / s), v3s.mul(b, Math.sin(t * w) / s));
+  return vectorMath.add(vectorMath.mul(a, Math.sin((1 - t) * w) / s), vectorMath.mul(b, Math.sin(t * w) / s));
 }
 /* the walking path, computed exactly as game/js/world-map.js does */
-function gamePath() {
+function trailSegments() {
   const D = studioState.D,
     pts = D.route
-      .map(r => llv_(r.lon || 0, r.lat || 0))
-      .concat(D.regions.filter(f => f.t !== 'sun' && f.lon != null).map(f => llv_(f.lon, f.lat || 0))),
+      .map(r => lonLatToDirection(r.lon || 0, r.lat || 0))
+      .concat(D.regions.filter(f => f.t !== 'sun' && f.lon != null).map(f => lonLatToDirection(f.lon, f.lat || 0))),
     last = D.route.length - 1,
     segs = [];
   for (let i = 0; i < pts.length - 1; i++) {
     const a = pts[i],
       b = pts[i + 1],
-      nrm = v3s.norm(v3s.cross(a, b)),
+      nrm = vectorMath.norm(vectorMath.cross(a, b)),
       P = [];
     for (let k = 0; k <= 40; k++) {
       const t = k / 40;
-      let p = slerp_(a, b, t);
-      p = v3s.norm(v3s.add(p, v3s.mul(nrm, Math.sin(t * Math.PI) * 0.035 * (i % 2 ? 1 : -1))));
+      let p = slerpVectors(a, b, t);
+      p = vectorMath.norm(vectorMath.add(p, vectorMath.mul(nrm, Math.sin(t * Math.PI) * 0.035 * (i % 2 ? 1 : -1))));
       P.push(p);
     }
     segs.push({ pts: P, locked: i >= last });
@@ -121,21 +121,21 @@ const MPW = () => {
   const c = atlasNow(WORLD_PATH);
   return c ? [c.width, c.height] : [1536, 768];
 };
-function uvOf(v, W, H) {
+function directionToTexel(v, W, H) {
   const lat = Math.asin(clamp(v[1], -1, 1)),
     lon = Math.atan2(v[2], v[0]);
   return [((lon / (Math.PI * 2) + 1) % 1) * W, (0.5 - lat / Math.PI) * H];
 }
-function dirOf(u, v, W, H) {
+function texelToDirection(u, v, W, H) {
   const lon = ((u + 0.5) / W) * Math.PI * 2,
     lat = (0.5 - (v + 0.5) / H) * Math.PI;
   return [Math.cos(lat) * Math.cos(lon), Math.sin(lat), Math.cos(lat) * Math.sin(lon)];
 }
-const hex32 = h => {
+const hexToPixel32 = h => {
   const n = parseInt(h.slice(1), 16);
   return ((255 << 24) | ((n & 255) << 16) | (n & 0xff00) | (n >> 16)) >>> 0;
 }; /* unsigned, like Uint32Array reads */
-const c32hex = c =>
+const pixel32ToHex = c =>
   '#' +
   [c & 255, (c >> 8) & 255, (c >> 16) & 255]
     .map(v => v.toString(16).padStart(2, '0'))
@@ -229,16 +229,16 @@ function mpCenter(c) {
   let sx = 0,
     sy = 0;
   D.route.forEach(r => {
-    const a = (r.lon || 0) * D2R_;
+    const a = (r.lon || 0) * DEGREES_TO_RADIANS;
     sx += Math.cos(a);
     sy += Math.sin(a);
   });
-  const lon = Math.atan2(sy, sx) / D2R_;
-  worldMapPainter.off = wrapU(Math.round(((lon / 360 + 1) % 1) * c.width - c.width / 2), c.width);
+  const lon = Math.atan2(sy, sx) / DEGREES_TO_RADIANS;
+  worldMapPainter.off = wrapTexelX(Math.round(((lon / 360 + 1) % 1) * c.width - c.width / 2), c.width);
 }
 const mpDisp = u => {
   const c = atlasNow(WORLD_PATH);
-  return wrapU(u - (worldMapPainter.off || 0), c ? c.width : 1536);
+  return wrapTexelX(u - (worldMapPainter.off || 0), c ? c.width : 1536);
 };
 function mpScrollTo() {
   const st = $('#mpStage'),
@@ -250,7 +250,7 @@ function mpScrollTo() {
         ? studioState.D.regions[+sel.slice(1)]
         : studioState.D.route[typeof sel === 'number' ? sel : 0];
   if (!o) return;
-  const [u, v] = uvOf(llv_(o.lon || 0, o.lat || 0), c.width, c.height);
+  const [u, v] = directionToTexel(lonLatToDirection(o.lon || 0, o.lat || 0), c.width, c.height);
   st.scrollLeft = mpDisp(u) * worldMapPainter.zoom - st.clientWidth / 2;
   st.scrollTop = v * worldMapPainter.zoom - st.clientHeight / 2;
 }
@@ -284,11 +284,11 @@ function mpMarkers() {
     D = studioState.D;
   svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
   let h = '';
-  gamePath().forEach(s => {
+  trailSegments().forEach(s => {
     let d = '',
       prev = null;
     s.pts.forEach(p => {
-      let [u, v] = uvOf(p, W, H);
+      let [u, v] = directionToTexel(p, W, H);
       u = mpDisp(u);
       d += (prev != null && Math.abs(u - prev) < W / 2 ? 'L' : 'M') + u.toFixed(1) + ' ' + v.toFixed(1);
       prev = u;
@@ -296,7 +296,7 @@ function mpMarkers() {
     h += `<path d="${d}" class="mp-path ${s.locked ? 'lk' : ''}"/>`;
   });
   const mk = (lon, lat, id, label, full, cls) => {
-    let [u, v] = uvOf(llv_(lon, lat), W, H);
+    let [u, v] = directionToTexel(lonLatToDirection(lon, lat), W, H);
     u = mpDisp(u);
     const z = worldMapPainter.zoom;
     return `<g class="mk ${cls}" data-mk="${id}" transform="translate(${u.toFixed(1)},${v.toFixed(1)})"><title>${esc(full)}</title><circle r="${(6 / z).toFixed(2)}" style="stroke-width:${(2 / z).toFixed(2)}"/><text y="${(-10 / z).toFixed(2)}" style="font-size:${(12 / z).toFixed(2)}px;stroke-width:${(3 / z).toFixed(2)}">${esc(label)}</text></g>`;
@@ -331,7 +331,7 @@ function mpPalette() {
     .sort((a, b) => b[1] - a[1])
     .slice(0, 40)
     .map(([k]) => {
-      const h = c32hex(k);
+      const h = pixel32ToHex(k);
       return `<button class="sw" style="background:${h}" data-mp="sw" data-c="${h}" title="${h}"></button>`;
     })
     .join('');
@@ -374,7 +374,7 @@ function mpRedo() {
   mpView();
   mpGlobe();
 }
-const wrapU = (u, W) => ((u % W) + W) % W;
+const wrapTexelX = (u, W) => ((u % W) + W) % W;
 /* fill masked pixels from their unmasked neighbors, wave by wave (the most common neighbor color wins) */
 function inpaint(d, W, H, mask) {
   let front = [];
@@ -388,7 +388,7 @@ function inpaint(d, W, H, mask) {
     [-1, 1],
     [1, 1],
   ];
-  const at = (x, y) => y * W + wrapU(x, W);
+  const at = (x, y) => y * W + wrapTexelX(x, W);
   for (let i = 0; i < mask.length; i++)
     if (mask[i]) {
       const x = i % W,
@@ -443,17 +443,17 @@ function inpaint(d, W, H, mask) {
     front = [...nextSet];
   }
 }
-function trailSet() {
-  return new Set(worldMapPainter.trailCols.map(hex32));
+function trailColors() {
+  return new Set(worldMapPainter.trailCols.map(hexToPixel32));
 }
 function plotDisc(P, v, rad, col) {
-  const [cu, cv] = uvOf(v, P.W, P.H),
+  const [cu, cv] = directionToTexel(v, P.W, P.H),
     lat = Math.asin(clamp(v[1], -1, 1)),
     rx = rad / Math.max(0.2, Math.cos(lat));
   for (let j = -Math.ceil(rad); j <= Math.ceil(rad); j++)
     for (let i = -Math.ceil(rx); i <= Math.ceil(rx); i++) {
       if ((i / rx) ** 2 + (j / rad) ** 2 > 1) continue;
-      const X = wrapU(Math.round(cu + i), P.W),
+      const X = wrapTexelX(Math.round(cu + i), P.W),
         Y = clamp(Math.round(cv + j), 0, P.H - 1);
       P.d[Y * P.W + X] = col;
     }
@@ -462,15 +462,18 @@ function paintTrail() {
   const P = mpData(),
     s = worldMapPainter.style;
   let n = 0;
-  gamePath().forEach(sg => {
+  trailSegments().forEach(sg => {
     for (let k = 0; k < sg.pts.length - 1; k++)
       for (let q = 0; q < 6; q++) {
-        const p = v3s.norm(v3s.add(v3s.mul(sg.pts[k], 1 - q / 6), v3s.mul(sg.pts[k + 1], q / 6)));
+        const p = vectorMath.norm(
+          vectorMath.add(vectorMath.mul(sg.pts[k], 1 - q / 6), vectorMath.mul(sg.pts[k + 1], q / 6))
+        );
         n++;
-        if (sg.locked) plotDisc(P, p, s.futureR, hex32(s.future));
+        if (sg.locked) plotDisc(P, p, s.futureR, hexToPixel32(s.future));
         else {
-          plotDisc(P, p, s.pathR, hex32(s.path));
-          if (s.dotEvery > 0 && n % s.dotEvery === 0) plotDisc(P, p, Math.max(0.5, s.pathR * 0.3), hex32(s.dots));
+          plotDisc(P, p, s.pathR, hexToPixel32(s.path));
+          if (s.dotEvery > 0 && n % s.dotEvery === 0)
+            plotDisc(P, p, Math.max(0.5, s.pathR * 0.3), hexToPixel32(s.dots));
         }
       }
   });
@@ -478,7 +481,7 @@ function paintTrail() {
 }
 function eraseTrailAll() {
   const P = mpData(),
-    T = trailSet(),
+    T = trailColors(),
     mask = new Uint8Array(P.W * P.H);
   let n = 0;
   for (let i = 0; i < P.d.length; i++)
@@ -494,12 +497,12 @@ function eraseTrailAll() {
 function carryPatch(lon0, lat0, lon1, lat1) {
   const P = mpData(),
     { W, H, d } = P,
-    R = worldMapPainter.radius * D2R_,
-    c0 = llv_(lon0, lat0),
-    c1 = llv_(lon1, lat1),
+    R = worldMapPainter.radius * DEGREES_TO_RADIANS,
+    c0 = lonLatToDirection(lon0, lat0),
+    c1 = lonLatToDirection(lon1, lat1),
     cosR = Math.cos(R),
     cosR2 = Math.cos(R * 1.35),
-    T = trailSet();
+    T = trailColors();
   const box = (lat, lon, r) => {
     const v0 = Math.max(0, Math.floor((0.5 - (lat + r) / Math.PI) * H) - 1),
       v1 = Math.min(H - 1, Math.ceil((0.5 - (lat - r) / Math.PI) * H) + 1),
@@ -508,15 +511,15 @@ function carryPatch(lon0, lat0, lon1, lat1) {
       uc = Math.round(((lon / (Math.PI * 2) + 1) % 1) * W);
     return { v0, v1, u0: uc - du, u1: uc + du };
   };
-  const L0 = lat0 * D2R_,
-    O0 = lon0 * D2R_,
+  const L0 = lat0 * DEGREES_TO_RADIANS,
+    O0 = lon0 * DEGREES_TO_RADIANS,
     b0 = box(L0, O0, R * 1.35),
     ring = new Map();
   let rn = 0;
   for (let v = b0.v0; v <= b0.v1; v++)
     for (let u = b0.u0; u <= b0.u1; u++) {
-      const x = wrapU(u, W),
-        dd = v3s.dot(dirOf(x, v, W, H), c0);
+      const x = wrapTexelX(u, W),
+        dd = vectorMath.dot(texelToDirection(x, v, W, H), c0);
       if (dd < cosR && dd >= cosR2) {
         const c = d[v * W + x];
         ring.set(c, (ring.get(c) || 0) + 1);
@@ -528,9 +531,9 @@ function carryPatch(lon0, lat0, lon1, lat1) {
     src = new Map();
   for (let v = b0.v0; v <= b0.v1; v++)
     for (let u = b0.u0; u <= b0.u1; u++) {
-      const x = wrapU(u, W),
+      const x = wrapTexelX(u, W),
         i = v * W + x;
-      if (v3s.dot(dirOf(x, v, W, H), c0) < cosR) continue;
+      if (vectorMath.dot(texelToDirection(x, v, W, H), c0) < cosR) continue;
       const c = d[i];
       if (bg.has(c) || T.has(c)) continue;
       mask[i] = 1;
@@ -538,27 +541,30 @@ function carryPatch(lon0, lat0, lon1, lat1) {
     }
   if (!src.size) return 0;
   inpaint(d, W, H, mask);
-  const axis = v3s.cross(c1, c0),
+  const axis = vectorMath.cross(c1, c0),
     s = Math.hypot(...axis),
-    cth = v3s.dot(c1, c0),
-    ax = s > 1e-9 ? v3s.mul(axis, 1 / s) : [0, 1, 0],
+    cth = vectorMath.dot(c1, c0),
+    ax = s > 1e-9 ? vectorMath.mul(axis, 1 / s) : [0, 1, 0],
     rot = p => {
-      const kxp = v3s.cross(ax, p),
-        kdp = v3s.dot(ax, p);
-      return v3s.add(v3s.add(v3s.mul(p, cth), v3s.mul(kxp, s)), v3s.mul(ax, kdp * (1 - cth)));
+      const kxp = vectorMath.cross(ax, p),
+        kdp = vectorMath.dot(ax, p);
+      return vectorMath.add(
+        vectorMath.add(vectorMath.mul(p, cth), vectorMath.mul(kxp, s)),
+        vectorMath.mul(ax, kdp * (1 - cth))
+      );
     };
-  const L1 = lat1 * D2R_,
-    O1 = lon1 * D2R_,
+  const L1 = lat1 * DEGREES_TO_RADIANS,
+    O1 = lon1 * DEGREES_TO_RADIANS,
     b1 = box(L1, O1, R);
   let n = 0;
   for (let v = b1.v0; v <= b1.v1; v++)
     for (let u = b1.u0; u <= b1.u1; u++) {
-      const x = wrapU(u, W),
-        t = dirOf(x, v, W, H);
-      if (v3s.dot(t, c1) < cosR) continue;
+      const x = wrapTexelX(u, W),
+        t = texelToDirection(x, v, W, H);
+      if (vectorMath.dot(t, c1) < cosR) continue;
       const sp = rot(t),
-        [su, sv] = uvOf(sp, W, H),
-        si = clamp(Math.floor(sv), 0, H - 1) * W + wrapU(Math.floor(su), W),
+        [su, sv] = directionToTexel(sp, W, H),
+        si = clamp(Math.floor(sv), 0, H - 1) * W + wrapTexelX(Math.floor(su), W),
         c = src.get(si);
       if (c != null) {
         d[v * W + x] = c;
@@ -572,19 +578,19 @@ function carryPatch(lon0, lat0, lon1, lat1) {
 function mpStamp(P, cx, cy, stroke) {
   const r = worldMapPainter.size / 2,
     T = worldMapPainter.tool,
-    col = hex32(worldMapPainter.color),
-    trail = T === 'trailErase' ? trailSet() : null,
+    col = hexToPixel32(worldMapPainter.color),
+    trail = T === 'trailErase' ? trailColors() : null,
     mask = T === 'terrain' || T === 'trailErase' ? new Uint8Array(P.W * P.H) : null;
   let any = false;
   for (let j = Math.floor(cy - r); j <= Math.ceil(cy + r); j++)
     for (let i = Math.floor(cx - r); i <= Math.ceil(cx + r); i++) {
       if ((i + 0.5 - cx) ** 2 + (j + 0.5 - cy) ** 2 > r * r + 0.25) continue;
       if (j < 0 || j >= P.H) continue;
-      const k = j * P.W + wrapU(i, P.W);
+      const k = j * P.W + wrapTexelX(i, P.W);
       if (T === 'brush') P.d[k] = col;
-      else if (T === 'trail') P.d[k] = hex32(worldMapPainter.style.path);
+      else if (T === 'trail') P.d[k] = hexToPixel32(worldMapPainter.style.path);
       else if (T === 'clone' && worldMapPainter.src) {
-        const sx = wrapU(Math.round(i + stroke.off[0]), P.W),
+        const sx = wrapTexelX(Math.round(i + stroke.off[0]), P.W),
           sy = clamp(Math.round(j + stroke.off[1]), 0, P.H - 1);
         P.d[k] = stroke.snap[sy * P.W + sx];
       } else if (mask && (!trail || trail.has(P.d[k]))) {
@@ -595,16 +601,16 @@ function mpStamp(P, cx, cy, stroke) {
   if (mask && any) inpaint(P.d, P.W, P.H, mask);
 }
 function mpFill(P, x, y) {
-  x = wrapU(x, P.W);
+  x = wrapTexelX(x, P.W);
   const t = P.d[y * P.W + x],
-    c = hex32(worldMapPainter.color);
+    c = hexToPixel32(worldMapPainter.color);
   if (t === c) return;
   const st = [[x, y]];
   let n = 0;
   while (st.length && n < 400000) {
     const [px, py] = st.pop();
     if (py < 0 || py >= P.H) continue;
-    const X = wrapU(px, P.W),
+    const X = wrapTexelX(px, P.W),
       i = py * P.W + X;
     if (P.d[i] !== t) continue;
     P.d[i] = c;
@@ -639,8 +645,8 @@ function mpBind() {
     }
     if (worldMapPainter.tool === 'pick' || (ev.altKey && worldMapPainter.tool !== 'clone')) {
       const P = mpData(),
-        c = P.d[clamp(Math.floor(y), 0, P.H - 1) * P.W + wrapU(Math.floor(x), P.W)];
-      mpSetColor(c32hex(c));
+        c = P.d[clamp(Math.floor(y), 0, P.H - 1) * P.W + wrapTexelX(Math.floor(x), P.W)];
+      mpSetColor(pixel32ToHex(c));
       return;
     }
     if (worldMapPainter.tool === 'clone' && (ev.altKey || ev.button === 2)) {
@@ -836,36 +842,36 @@ function mpGlobe() {
     x = cv.getContext('2d'),
     img = x.createImageData(MW, MH),
     buf = new Uint32Array(img.data.buffer);
-  const P = llv_(o.lon, o.lat || 0),
-    Q = llv_((o.lon || 0) + 2, o.lat || 0),
-    U = v3s.mul(P, -1);
-  let F = v3s.add(Q, v3s.mul(P, -1));
-  F = v3s.norm(v3s.add(F, v3s.mul(U, -v3s.dot(F, U))));
+  const P = lonLatToDirection(o.lon, o.lat || 0),
+    Q = lonLatToDirection((o.lon || 0) + 2, o.lat || 0),
+    U = vectorMath.mul(P, -1);
+  let F = vectorMath.add(Q, vectorMath.mul(P, -1));
+  F = vectorMath.norm(vectorMath.add(F, vectorMath.mul(U, -vectorMath.dot(F, U))));
   const alt = +($('#mpAlt') || { value: 0.34 }).value;
   $('#mpAltO') && ($('#mpAltO').textContent = alt.toFixed(2));
-  const C = v3s.add(v3s.add(P, v3s.mul(U, alt)), v3s.mul(F, -alt * 1.55)),
-    dp = v3s.norm(v3s.add(P, v3s.mul(C, -1))),
-    ds = v3s.norm(v3s.mul(C, -1)),
+  const C = vectorMath.add(vectorMath.add(P, vectorMath.mul(U, alt)), vectorMath.mul(F, -alt * 1.55)),
+    dp = vectorMath.norm(vectorMath.add(P, vectorMath.mul(C, -1))),
+    ds = vectorMath.norm(vectorMath.mul(C, -1)),
     w = clamp(0.44 * Math.min(1, alt / 0.3), 0, 1),
-    fw = v3s.norm(v3s.add(v3s.mul(dp, 1 - w), v3s.mul(ds, w))),
-    rt = v3s.norm(v3s.cross(fw, U)),
-    up = v3s.cross(rt, fw),
+    fw = vectorMath.norm(vectorMath.add(vectorMath.mul(dp, 1 - w), vectorMath.mul(ds, w))),
+    rt = vectorMath.norm(vectorMath.cross(fw, U)),
+    up = vectorMath.cross(rt, fw),
     foc = MW * 0.6,
-    cc = v3s.dot(C, C);
+    cc = vectorMath.dot(C, C);
   for (let j = 0; j < MH; j++)
     for (let i = 0; i < MW; i++) {
       const dx = (i + 0.5 - MW / 2) / foc,
         dy = (MH / 2 - j - 0.5) / foc,
-        d = v3s.norm([
+        d = vectorMath.norm([
           fw[0] + rt[0] * dx + up[0] * dy,
           fw[1] + rt[1] * dx + up[1] * dy,
           fw[2] + rt[2] * dx + up[2] * dy,
         ]),
-        b = v3s.dot(C, d),
+        b = vectorMath.dot(C, d),
         ts = -b + Math.sqrt(b * b - cc + 1),
-        p = v3s.add(C, v3s.mul(d, ts)),
-        [u, v] = uvOf(p, W, H);
-      let c = T[clamp(Math.floor(v), 0, H - 1) * W + wrapU(Math.floor(u), W)];
+        p = vectorMath.add(C, vectorMath.mul(d, ts)),
+        [u, v] = directionToTexel(p, W, H);
+      let c = T[clamp(Math.floor(v), 0, H - 1) * W + wrapTexelX(Math.floor(u), W)];
       const f = clamp(1 - Math.exp(-Math.max(0, ts - 0.3) * 0.72), 0, 0.86),
         r = c & 255,
         g = (c >> 8) & 255,
