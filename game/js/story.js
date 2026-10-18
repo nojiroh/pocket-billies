@@ -6,7 +6,7 @@
    battle. saveData.story remembers which scenes you have seen. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { closeModal, modal, provide, render, selfTest, showPendingWindows } from './hooks.js';
+import { closeModal, modal, notice, provide, render, selfTest, showPendingWindows } from './hooks.js';
 import { $, clamp } from './util.js';
 import { LOCATION_BY_ID, RULES, SPECIES, TRAINERS, trainersAt } from './game-data.js';
 import { healAll, today } from './logic/rules.js';
@@ -303,13 +303,16 @@ export function storyMovedCheck() {
     return;
   const F = storyFlags();
   if (F.copperleafNote) return;
-  F.copperleafNote = 1;
-  save();
   if (!LOCATION_BY_ID.copperleaf) return;
-  modal({
+  /* phase 06: a notice, not a choice: it waits behind the dot on the portrait, and counts as seen once read */
+  notice({
+    id: 'copperleaf-note',
     title: 'Copperleaf Town',
     html: '<p>Professor Hazel has moved her lab to Copperleaf Town, the hamlet up Route 1 · Hedgerow Lane, north of Marigold Town. Your room went with her: it is in Granny Juniper’s cottage there now, among the beehives.</p><p class="note">Marigold Town keeps its shop and its clinic. Copperleaf has the swing.</p>',
-    btns: [{ l: 'Good to know', c: 'dark', f: closeModal }],
+    onRead: () => {
+      F.copperleafNote = 1;
+      save();
+    },
   });
 }
 
