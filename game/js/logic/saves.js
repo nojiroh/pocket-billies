@@ -1,8 +1,10 @@
+// @ts-check
 'use strict';
 /* ================= SAVES =================
    Phase 04e: the save format, moved here from game-state.js (a new save, filling one out, the load checks) and
    settings-screen.js (the backup check). Where a save is kept (this browser, the account) stays in game-state.js
    and account.js. Logic only (game/js/logic/, see rules.js). */
+/** @import { JobSlot, SaveData } from '../../types/save-data' */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 import { saveData } from '../hooks.js';
@@ -27,11 +29,17 @@ expose({
   SAVE_NEW_MSG: [() => SAVE_NEW_MSG],
   SAVE_OLD_MSG: [() => SAVE_OLD_MSG],
   SAVE_VERSION: [() => SAVE_VERSION],
+  // @ts-expect-error -- replaced on purpose
   loadSave: [() => loadSave, v => (loadSave = v)],
+  // @ts-expect-error -- replaced on purpose
   migrate: [() => migrate, v => (migrate = v)],
+  // @ts-expect-error -- replaced on purpose
   newSave: [() => newSave, v => (newSave = v)],
+  // @ts-expect-error -- replaced on purpose
   newSaveKeepingPreferences: [() => newSaveKeepingPreferences, v => (newSaveKeepingPreferences = v)],
+  // @ts-expect-error -- replaced on purpose
   saveAge: [() => saveAge, v => (saveAge = v)],
+  // @ts-expect-error -- replaced on purpose
   validSave: [() => validSave, v => (validSave = v)],
 });
 /* eslint-enable no-func-assign */

@@ -1,8 +1,7 @@
 // @ts-check
 'use strict';
 /* ================= CORE ================= */
-/** @import { Billy, JobSlot, SaveData } from '../types/save-data' */
-/** @import { Trainer } from '../types/game-data' */
+/** @import { SaveData } from '../types/save-data' */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { flushAccountSave, provide, toast } from './hooks.js';
