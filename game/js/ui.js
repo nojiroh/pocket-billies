@@ -35,6 +35,7 @@ import {
   typeEffectiveness,
 } from './game-data.js';
 import { weightClass } from './logic/parts.js';
+import { speciesOf } from './logic/fighters.js';
 import {
   STEP_BRACKETS,
   addEgg,
@@ -448,7 +449,7 @@ function learnModal(m, mv) {
   });
 }
 function evolutionModal(m) {
-  const s = SPECIES[m.sp],
+  const s = speciesOf(m),
     e = s.evo;
   const why =
     {
@@ -478,7 +479,7 @@ function evolutionModal(m) {
   });
 }
 function runEvolution(m, note) {
-  const from = SPECIES[m.sp],
+  const from = speciesOf(m),
     to = SPECIES[from.evo && from.evo.k === 'split' && from.alt && splitPath(m) === 'B' ? from.alt : from.next],
     fromName = billyName(m);
   uiState.modal = null;
@@ -535,7 +536,7 @@ function hatchModal(e) {
           const box = $('#hatchBox');
           const res = hatchEgg(e);
           const m = res.m,
-            s = SPECIES[m.sp];
+            s = speciesOf(m);
           const done = () => {
             uiState.modal = null;
             modal({
@@ -856,7 +857,7 @@ function buddyCard() {
   if (!m) return '';
   const a = xpFor(m.lvl),
     b = xpFor(m.lvl + 1),
-    e = SPECIES[m.sp].evo;
+    e = speciesOf(m).evo;
   const ev =
     e && e.k === 'buddy'
       ? `<div class="note">Buddy distance: ${stepsToKm(m.bsteps || 0)} of ${stepsToKm(e.steps)} km to evolve.</div>${progressBarHTML((m.bsteps || 0) / e.steps, 'gold')}`
@@ -1725,7 +1726,7 @@ function paintWorldMapCard() {
 }
 /* ---------- team: the lead up top, the party as cards, day jobs, then storage ---------- */
 const plateVars = m => {
-  const t = SPECIES[m.sp].types;
+  const t = speciesOf(m).types;
   return `--c1:${TYPE_COLORS[t[0]][0]};--c2:${TYPE_COLORS[t[t.length - 1]][0]}`;
 };
 const billyConditionHTML = m => (m.hp <= 0 ? '<span class="stb st-down">Fainted</span>' : statusBadgeHTML(m.status));
@@ -1739,7 +1740,7 @@ const xpLeft = m => (m.lvl >= maxLevel() ? 'Max level' : `${formatNumber(xpFor(m
 const needsCare = m => m.hp < maxHp(m) || !!m.status;
 const meter = (k, inner, v) => `<div class="tm-meter"><span>${k}</span>${inner}<b class="tnum">${v}</b></div>`;
 function teamHero(m) {
-  const s = SPECIES[m.sp],
+  const s = speciesOf(m),
     mx = maxHp(m),
     bud = m.uid === saveData.buddy;
   return `<section class="tm-hero tpanel"><button class="tm-stage" data-a="mon" data-u="${m.uid}" style="${plateVars(m)}" aria-label="${escapeHtml(billyName(m))}, details"><span class="tm-ribbon">Lead</span>${m.gold ? '<span class="tm-ribbon gold">Golden</span>' : ''}${rigCanvasHTML(m.sp, 120, { gold: m.gold, build: m.build })}</button>
@@ -1752,7 +1753,7 @@ function teamCard(m, i) {
   const mx = maxHp(m),
     bud = m.uid === saveData.buddy;
   return `<div class="tm-card${m.hp <= 0 ? ' down' : ''}" style="--d:${i * 40}ms"><button class="tm-main" data-a="mon" data-u="${m.uid}"><span class="tm-spr" style="${plateVars(m)}">${rigCanvasHTML(m.sp, 72, { gold: m.gold, build: m.build })}${bud ? `<i class="tm-heart" title="Buddy">${uiIconHTML('heart', 12)}</i>` : ''}</span>
-  <span class="tm-t"><b>${escapeHtml(billyName(m))}</b><span class="tm-lv tnum">Lv ${m.lvl}</span></span><span class="row">${SPECIES[m.sp].types.map(typeBadgeHTML).join('')}${billyConditionHTML(m)}</span>${hpBar(m.hp, mx)}<span class="hpn tnum">${m.hp}/${mx} HP</span></button>
+  <span class="tm-t"><b>${escapeHtml(billyName(m))}</b><span class="tm-lv tnum">Lv ${m.lvl}</span></span><span class="row">${speciesOf(m).types.map(typeBadgeHTML).join('')}${billyConditionHTML(m)}</span>${hpBar(m.hp, mx)}<span class="hpn tnum">${m.hp}/${mx} HP</span></button>
   <div class="tm-quick"><button class="qk" data-a="mlead" data-u="${m.uid}" ${m.hp <= 0 ? 'disabled' : ''}>Make lead</button>${needsCare(m) ? `<button class="qk heal" data-a="mheal" data-u="${m.uid}">Heal</button>` : ''}</div></div>`;
 }
 function jobSlots() {
@@ -1779,10 +1780,10 @@ const BOX_SORTS = [
 function boxSection() {
   const all = saveData.box.filter(m => m.job == null),
     so = uiState.boxSort || 'new',
-    types = [...new Set(all.flatMap(m => SPECIES[m.sp].types))].sort();
+    types = [...new Set(all.flatMap(m => speciesOf(m).types))].sort();
   let f = uiState.boxF || 'all';
   if (f !== 'all' && !types.includes(f)) f = 'all';
-  let L = all.filter(m => f === 'all' || SPECIES[m.sp].types.includes(f));
+  let L = all.filter(m => f === 'all' || speciesOf(m).types.includes(f));
   L =
     so === 'lvl'
       ? L.slice().sort((a, b) => b.lvl - a.lvl)
@@ -1797,7 +1798,16 @@ function boxSection() {
   return `<section class="tpanel tm-box"><div class="sec-h"><h2>Storage</h2><span class="count tnum">${all.length}</span></div>${
     all.length
       ? `<p class="note">Billies resting here don’t battle. Tap one for details.</p>${tools}
- <div class="bx-grid">${L.map(m => `<div class="bx"><button class="bx-main" data-a="mon" data-u="${m.uid}"><span class="bx-spr" style="${plateVars(m)}">${rigCanvasHTML(m.sp, 60, { gold: m.gold, build: m.build })}</span><b>${escapeHtml(billyName(m))}</b><span class="bx-sub tnum">Lv ${m.lvl}<span class="bx-dots">${SPECIES[m.sp].types.map(t => `<i style="--tc:${TYPE_COLORS[t][0]}" title="${t}"></i>`).join('')}</span></span></button><button class="qk" data-a="mteam" data-u="${m.uid}">${full ? 'Swap in' : 'To team'}</button></div>`).join('')}</div>`
+ <div class="bx-grid">${L.map(
+   m =>
+     `<div class="bx"><button class="bx-main" data-a="mon" data-u="${m.uid}"><span class="bx-spr" style="${plateVars(m)}">${rigCanvasHTML(m.sp, 60, { gold: m.gold, build: m.build })}</span><b>${escapeHtml(billyName(m))}</b><span class="bx-sub tnum">Lv ${m.lvl}<span class="bx-dots">${speciesOf(
+       m
+     )
+       .types.map(t => `<i style="--tc:${TYPE_COLORS[t][0]}" title="${t}"></i>`)
+       .join(
+         ''
+       )}</span></span></button><button class="qk" data-a="mteam" data-u="${m.uid}">${full ? 'Swap in' : 'To team'}</button></div>`
+ ).join('')}</div>`
       : '<div class="empty tm-empty">Storage is empty. When your team is full, new Billies you tax and hatchlings rest here.</div>'
   }</section>`;
 }
@@ -2039,7 +2049,7 @@ function donateItem() {
   return k || null;
 }
 function billySheet(m) {
-  const s = SPECIES[m.sp],
+  const s = speciesOf(m),
     inTeam = saveData.team.includes(m),
     e = s.evo,
     mx = maxHp(m),
@@ -2303,7 +2313,18 @@ function addPick() {
   const free = saveData.box.filter(m => m.job == null).sort((a, b) => b.lvl - a.lvl);
   modal({
     title: 'Add to your team',
-    html: `<div class="list">${free.map(m => `<button class="pickrow" data-a="tmaddon" data-u="${m.uid}">${rigCanvasHTML(m.sp, 40, { gold: m.gold, build: m.build })}<span class="pr-t"><b>${escapeHtml(billyName(m))}</b><small>Lv ${m.lvl}, ${SPECIES[m.sp].types.map(t => (t === 'None' ? 'Normal' : t)).join(' and ')}</small></span></button>`).join('') || '<p>Storage is empty.</p>'}</div>`,
+    html: `<div class="list">${
+      free
+        .map(
+          m =>
+            `<button class="pickrow" data-a="tmaddon" data-u="${m.uid}">${rigCanvasHTML(m.sp, 40, { gold: m.gold, build: m.build })}<span class="pr-t"><b>${escapeHtml(billyName(m))}</b><small>Lv ${m.lvl}, ${speciesOf(
+              m
+            )
+              .types.map(t => (t === 'None' ? 'Normal' : t))
+              .join(' and ')}</small></span></button>`
+        )
+        .join('') || '<p>Storage is empty.</p>'
+    }</div>`,
     btns: [{ l: 'Cancel', c: 'quiet', f: closeModal }],
   });
 }
@@ -2408,7 +2429,7 @@ export function startGame(l, o = {}) {
   const nE = R.starterEncounters,
     words = ['No', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten'];
   const W = {
-    title: `${SPECIES[m.sp].name} joined your team`,
+    title: `${speciesOf(m).name} joined your team`,
     top: `<div class="sheet-art">${rigCanvasHTML(m.sp, 128)}</div>`,
     html: `${nE ? `<p>${words[nE] || nE} Billie${nE === 1 ? ' is' : 's are'} already rustling in the grass. Tap one to battle it, then flick a coin.</p>` : ''}${egg ? `<p>Professor Hazel also gave you a ${R.starterEgg} km egg. It’s warming up in an incubator, and every step you walk helps it hatch.</p>` : ''}`,
     btns: [{ l: 'Let’s go', c: 'dark', f: closeModal }],

@@ -48,6 +48,7 @@ import {
   typeEffectiveness,
 } from '../game-data.js';
 import { partsPrime, partsStatFactor, partsWeightRatio } from './parts.js';
+import { speciesOf } from './fighters.js';
 /* eslint-disable no-func-assign */
 expose({
   STEP_BRACKETS: [() => STEP_BRACKETS],
@@ -248,13 +249,13 @@ export const isPrime = b => partsPrime(RULES.parts, b);
 /** @param {Build} b the weight as a share of the species' own weight (1 = all M) */
 export const buildWeightRatio = b => partsWeightRatio(RULES.parts, b);
 /** @returns {number} a Billie's weight in kg (its species' weight times its build) */
-export const billyWeight = m => Math.round(SPECIES[m.sp].wt * buildWeightRatio(billyBuild(m)) * 10) / 10;
+export const billyWeight = m => Math.round(speciesOf(m).wt * buildWeightRatio(billyBuild(m)) * 10) / 10;
 /** @param {Build} b @param {string} k a stat id @returns {number} what the build does to that stat (1 = nothing) */
 export const buildStatFactor = (b, k) => partsStatFactor(RULES.parts, b, k);
 
 /* ---------- billionaires ---------- */
 export function stat(m, k) {
-  const b = SPECIES[m.sp].base[STAT_IDS.indexOf(k)];
+  const b = speciesOf(m).base[STAT_IDS.indexOf(k)];
   let v = k === 'hp' ? Math.floor((2 * b * m.lvl) / 100) + m.lvl + 10 : Math.floor((2 * b * m.lvl) / 100) + 5;
   /* phase 16: its parts (weight and Prime) */
   if (m.build) v = Math.max(1, Math.round(v * buildStatFactor(m.build, k)));
@@ -293,7 +294,7 @@ export function makeBilly(sp, lvl, o = {}) {
   } catch (e) {}
   return m;
 }
-export const billyName = m => m.nick || SPECIES[m.sp].name;
+export const billyName = m => m.nick || speciesOf(m).name;
 export const allBillies = () => saveData.team.concat(saveData.box);
 export const findBilly = id => allBillies().find(m => m.uid === id);
 export function gainXp(m, amt, say) {
@@ -304,7 +305,7 @@ export function gainXp(m, amt, say) {
     m.lvl++;
     if (m.hp > 0) m.hp = Math.min(maxHp(m), m.hp + maxHp(m) - old);
     say(`${billyName(m)} grew to level ${m.lvl}.`, { k: 'lvl', uid: m.uid });
-    for (const [lv, mv] of LINE_BY_ID[SPECIES[m.sp].line].learn) {
+    for (const [lv, mv] of LINE_BY_ID[speciesOf(m).line].learn) {
       if (lv !== m.lvl || m.moves.includes(mv)) continue;
       if (m.moves.length < moveSlotCount()) {
         m.moves.push(mv);
@@ -314,7 +315,7 @@ export function gainXp(m, amt, say) {
   }
 }
 export function canEvolve(m) {
-  const e = SPECIES[m.sp].evo;
+  const e = speciesOf(m).evo;
   if (!e) return false;
   if (m.evoNo != null && m.lvl <= m.evoNo) return false;
   switch (e.k) {
@@ -333,7 +334,7 @@ export function canEvolve(m) {
 }
 export const evolutionItemName = e => (ITEMS[e.item || 'bell'] ? ITEMS[e.item || 'bell'].n : 'Shining Stone');
 export function evolutionHint(m) {
-  const s = SPECIES[m.sp],
+  const s = speciesOf(m),
     e = s.evo;
   if (!e) return s.rar === 'mythical' ? 'Does not evolve.' : 'Fully evolved.';
   /* a species with an evolution has a next stage (game-data.js sets both, or neither) */
@@ -376,7 +377,7 @@ export function evolve(m) {
   if (typeof jingle === 'function') jingle(JINGLES.evolve, 140);
   const old = maxHp(m),
     from = billyName(m),
-    s0 = SPECIES[m.sp];
+    s0 = speciesOf(m);
   m.sp = s0.evo && s0.evo.k === 'split' && s0.alt && splitPath(m) === 'B' ? s0.alt : s0.next;
   if (m.hp > 0) m.hp = Math.max(1, Math.min(maxHp(m), m.hp + maxHp(m) - old));
   saveData.caught[m.sp] = 1;
@@ -466,16 +467,16 @@ export function riderOf() {
   /** @type {Billy | null} */
   let best = null;
   for (const m of saveData.team) {
-    const sp = SPECIES[m.sp];
+    const sp = speciesOf(m);
     if (!sp || !sp.types.some(t => (R.types || ['Water']).includes(t)) || sp.ht < (R.minHeight || 1.5)) continue;
-    if (!best || sp.ht > SPECIES[best.sp].ht) best = m;
+    if (!best || sp.ht > speciesOf(best).ht) best = m;
   }
   return best;
 }
 export const canRide = () => !!riderOf();
 export const riderName = () => {
   const m = riderOf();
-  return m ? m.nick || SPECIES[m.sp].name : '';
+  return m ? m.nick || speciesOf(m).name : '';
 };
 export const canEnter = n =>
   (!LOCATIONS[n].gate || saveData.seats.includes(LOCATIONS[n].gate)) && (!LOCATIONS[n].ride || canRide());

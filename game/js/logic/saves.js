@@ -23,6 +23,7 @@ import {
   STATUS_NAMES,
   roadCost,
 } from '../game-data.js';
+import { speciesOf } from './fighters.js';
 import { cleanName, emptyJob, jobSlotCount, movesAt, teamSize, today } from './rules.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -132,8 +133,8 @@ export function migrate(o) {
   }
   if (!SPECIES[s.starter + '0'] && s.started)
     s.starter = RULES.start.starters.find(l => SPECIES[l + '0']) || LINES[0].id;
-  s.team = (s.team || []).filter(m => SPECIES[m.sp]);
-  s.box = (s.box || []).filter(m => SPECIES[m.sp]);
+  s.team = (s.team || []).filter(m => speciesOf(m));
+  s.box = (s.box || []).filter(m => speciesOf(m));
   [...s.team, ...s.box].forEach(m => {
     if (m.nick != null) m.nick = cleanName(m.nick, 16);
   });
@@ -141,7 +142,7 @@ export function migrate(o) {
     s.avatar.name = cleanName(s.avatar.name, 18) || 'Trainer';
   [...s.team, ...s.box].forEach(m => {
     m.moves = (m.moves || []).filter(k => MOVES[k]);
-    if (!m.moves.length) m.moves = movesAt(SPECIES[m.sp].line, m.lvl);
+    if (!m.moves.length) m.moves = movesAt(speciesOf(m).line, m.lvl);
   });
   for (const key of ['seen', 'caught'])
     if (s[key] && typeof s[key] === 'object') for (const id of Object.keys(s[key])) if (!SPECIES[id]) delete s[key][id];
@@ -197,7 +198,7 @@ export function validSave(o) {
   for (const m of o.team.concat(o.box)) {
     if (
       !m ||
-      !SPECIES[m.sp] ||
+      !speciesOf(m) ||
       typeof m.uid !== 'string' ||
       ids.has(m.uid) ||
       !num(m.lvl, 1, 100) ||

@@ -30,11 +30,11 @@ import {
   ITEMS,
   MOVES,
   RULES,
-  SPECIES,
   STAT_NAMES,
   TYPE_COLORS,
   typeEffectiveness,
 } from './game-data.js';
+import { speciesOf } from './logic/fighters.js';
 import {
   addBilly,
   addEgg,
@@ -774,7 +774,7 @@ function hpMini(m) {
   return `<span class="hpmini"><i class="${p < 0.25 ? 'low' : p < 0.5 ? 'mid' : ''}" style="width:${p * 100}%"></i></span>`;
 }
 function billyPickHTML(m, act, attrs, dis, note) {
-  return `<button class="pick" ${attrs} ${dis ? 'disabled' : ''}>${bustHTML(m.sp, 40, { gold: m.gold })}<span class="pk-t"><b>${escapeHtml(billyName(m))}</b><span class="pk-m">${SPECIES[m.sp].types.map(typeBadgeHTML).join('')}<small class="tnum">Lv ${m.lvl}</small></span>${hpMini(m)}<small class="tnum">${Math.max(0, m.hp)}/${maxHp(m)}</small></span><span class="pk-s">${note || ''}</span></button>`;
+  return `<button class="pick" ${attrs} ${dis ? 'disabled' : ''}>${bustHTML(m.sp, 40, { gold: m.gold })}<span class="pk-t"><b>${escapeHtml(billyName(m))}</b><span class="pk-m">${speciesOf(m).types.map(typeBadgeHTML).join('')}<small class="tnum">Lv ${m.lvl}</small></span>${hpMini(m)}<small class="tnum">${Math.max(0, m.hp)}/${maxHp(m)}</small></span><span class="pk-s">${note || ''}</span></button>`;
 }
 function teamPick(back) {
   const on = activeBattle.sides[0].f.filter(f => f.on).map(f => f.act),

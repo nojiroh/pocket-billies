@@ -28,6 +28,7 @@ import {
   SPECIES,
   TRAINERS,
 } from './game-data.js';
+import { speciesOf } from './logic/fighters.js';
 import {
   addBilly,
   addEgg,
@@ -256,7 +257,7 @@ function debugAction(x) {
       break;
     case 'evo': {
       const m = saveData.team[0];
-      if (!m || !SPECIES[m.sp].next) return toast('Your lead doesn’t evolve.');
+      if (!m || !speciesOf(m).next) return toast('Your lead doesn’t evolve.');
       closeModal();
       runEvolution(m, 'Debug menu. Nobody saw anything.');
       return;

@@ -39,6 +39,7 @@ import {
   trainerTeam,
   typeEffectiveness,
 } from '../game-data.js';
+import { speciesOf } from './fighters.js';
 import {
   billyName,
   encounterBuild,
@@ -183,7 +184,7 @@ export const allActors = () => {
 export const liveActors = si =>
   allActors().filter(k => (si == null || ACTOR_SIDE[k] === si) && fighter(k) && fighter(k).hp > 0);
 export const foeSide = k => 1 - ACTOR_SIDE[k];
-export const actorTypes = k => fieldState(k).ov || SPECIES[fighter(k).sp].types;
+export const actorTypes = k => fieldState(k).ov || speciesOf(fighter(k)).types;
 export const shockName = () => BATTLE_RULES.shockName || `${BATTLE_RULES.shockType} storm`;
 export const isMulti = () =>
   !!activeBattle && (activeBattle.sides[0].f.length > 1 || activeBattle.sides[1].f.length > 1);
@@ -275,7 +276,7 @@ export function calcDamage(k, tk, mid, src) {
       eco =
         1 +
         BATTLE_RULES.retailSynergy *
-          sd.team.filter(m => m !== me && m.hp > 0 && m.job == null && SPECIES[m.sp].types.some(t => syn.includes(t)))
+          sd.team.filter(m => m !== me && m.hp > 0 && m.job == null && speciesOf(m).types.some(t => syn.includes(t)))
             .length;
     }
   }
@@ -590,7 +591,7 @@ export function endTurn() {
 export function award(e) {
   const P = RULES.progression,
     amt = Math.floor(
-      ((SPECIES[e.sp].yld * e.lvl) / 7) *
+      ((speciesOf(e).yld * e.lvl) / 7) *
         (activeBattle.kind === 'trainer' ? P.trainerXpMult : 1) *
         (e.boss ? (BATTLE_RULES.alphaXp ?? 3) : 1)
     );
@@ -609,7 +610,7 @@ export function award(e) {
 }
 export function inherit(k) {
   const sd = activeBattle.sides[ACTOR_SIDE[k]];
-  if (!hasPassive(SPECIES[fighter(k).sp].types, 'inherit')) return;
+  if (!hasPassive(speciesOf(fighter(k)).types, 'inherit')) return;
   const st = {};
   let any = false;
   for (const s2 in fieldState(k).st)
@@ -650,7 +651,7 @@ export function doSwitch(k, idx) {
     }
   );
   saveData.seen[m.sp] = 1;
-  if (sd.rent && !hasPassive(SPECIES[m.sp].types, 'landlord')) {
+  if (sd.rent && !hasPassive(speciesOf(m).types, 'landlord')) {
     const d = Math.max(1, Math.floor(maxHp(m) / Math.max(2, BATTLE_RULES.rentFraction)));
     m.hp = Math.max(0, m.hp - d);
     battleSay(`${billyName(m)} was hurt by the sharp stones.`, { k: 'hurt', si: k, fx: 'rent', dmg: d });
@@ -1018,11 +1019,11 @@ export function catchOdds(id, T, spin) {
   const e = fighter(1);
   if (COINS[id] && COINS[id].m === 0) return 1;
   let C = COINS[id].m;
-  if (id === 'penny' && CATCH_RULES.luxury.includes(SPECIES[e.sp].line)) C *= CATCH_RULES.luxuryPenny;
+  if (id === 'penny' && CATCH_RULES.luxury.includes(speciesOf(e).line)) C *= CATCH_RULES.luxuryPenny;
   const Sx = e.status === 'sub' ? CATCH_RULES.subpoena : e.status ? CATCH_RULES.status : 1;
   return Math.min(
     1,
-    SPECIES[e.sp].cr *
+    speciesOf(e).cr *
       (1 - (CATCH_RULES.hpFactor * e.hp) / maxHp(e)) *
       C *
       Sx *
