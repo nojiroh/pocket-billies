@@ -41,7 +41,7 @@ import { eng } from './engine/settings.js';
 import { smooth01 } from './engine/core.js';
 import { DGL, dglPrepare, dglPrepared } from './walk-view-gl.js';
 import { lifeShift } from './life.js';
-import { owShift } from './owmon.js';
+import { owShift } from './world-billies.js';
 /* eslint-disable no-func-assign */
 expose({
   WORLD: [() => WORLD],

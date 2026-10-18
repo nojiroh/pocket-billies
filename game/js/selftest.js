@@ -44,7 +44,7 @@ import { BLD, BLD_SH } from './buildings.js';
 import { STR, strHas } from './structures.js';
 import { P3D, P3D_SH } from './props3d.js';
 import { VOX } from './vox.js';
-import { OWM, owBuddyTap, owPetSp } from './owmon.js';
+import { OWM, owBuddyTap, owPetSp } from './world-billies.js';
 import { WORLD, wrRoomScene, wrTripView } from './world.js';
 import { A, endBattle, liveK, pickMove, pickTarget, startTrainer, startWild, stopTimers, tapMsg } from './battle.js';
 import { MAP } from './world-map.js';
