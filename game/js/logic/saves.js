@@ -23,7 +23,7 @@ import {
   STATUS_NAMES,
   roadCost,
 } from '../game-data.js';
-import { cleanName, emptyJob, jobSlotCount, movesAt, teamSize, today } from './rules.js';
+import { cleanName, emptyJob, jobSlotCount, movesAt, teamSize } from './rules.js';
 /* eslint-disable no-func-assign */
 expose({
   SAVE_NEW_MSG: [() => SAVE_NEW_MSG],
@@ -67,10 +67,8 @@ export function newSave() {
     seen: {},
     caught: {},
     se: R.se,
-    seFrac: 0,
     coins,
     items,
-    day: { date: today(), steps: 0 },
     totalSteps: 0,
     trip: { node: START_NODE, plan: [] },
     mapSeen: null,
@@ -148,6 +146,9 @@ export function migrate(o) {
   const oldSave = /** @type {any} */ (s);
   delete oldSave.queue;
   delete oldSave.meter;
+  /* steps no longer earn money */
+  delete oldSave.day;
+  delete oldSave.seFrac;
   if (!s.wild || typeof s.wild !== 'object') s.wild = {};
   for (const w of Object.values(s.wild)) w.list = (w.list || []).filter(q => SPECIES[q.sp]);
   s.eggs = s.eggs.filter(e => EGGS[e.tier]);
@@ -220,8 +221,6 @@ export function validSave(o) {
     !o.trip ||
     !Number.isInteger(o.trip.node) ||
     !num(o.trip.node, 0, LOCATIONS.length - 1) ||
-    !o.day ||
-    !num(o.day.steps, 0, 1e9) ||
     !num(o.se, 0, 1e12) ||
     !num(o.totalSteps, 0, 1e12)
   )
@@ -260,7 +259,7 @@ export function validSave(o) {
     Object.hasOwn(o, '__proto__')
   )
     return false;
-  if (!num(o.serial, 0, 1e12) || !num(o.seFrac, 0, 1) || !num(o.buddyRem, 0, 1e12)) return false;
+  if (!num(o.serial, 0, 1e12) || !num(o.buddyRem, 0, 1e12)) return false;
   for (const m of o.team.concat(o.box))
     if (
       typeof (m.nick || '') !== 'string' ||

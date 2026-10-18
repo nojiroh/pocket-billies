@@ -707,7 +707,6 @@ SECTIONS.rules = () => {
       selectField(`Rival’s pick if you choose ${escapeHtml(speciesName(l + '0'))}`, `${s}.rival.${l}`, speciesOptions())
     )
     .join('');
-  const brackets = `<table class="tbl"><thead><tr><th>Steps today up to</th><th>Money per step</th><th></th></tr></thead><tbody>${R.steps.brackets.map((b, i) => `<tr><td><input type="number" min="0" step="500" data-p="${st}.brackets.${i}.upTo" data-k="num" value="${b.upTo}" ${i === R.steps.brackets.length - 1 ? 'title="0 means no limit"' : ''}></td><td><input type="number" min="0" max="5" step=".05" data-p="${st}.brackets.${i}.rate" data-k="num" value="${b.rate}"></td><td><button class="x" data-act="brDel" data-i="${i}">✕</button></td></tr>`).join('')}</tbody></table><button class="btn subtle" data-act="brAdd">Add a rate bracket</button><p class="help">Daily step rate: money earned per step drops after many steps in a day. Use 0 as the last limit for “and beyond”.</p>`;
   const xpPrev = `<p class="help" id="xpPrev">${xpCurveText()}</p>`;
   const coinsStart = `<div class="grid">${Object.keys(D.coins)
     .map(c => numberField(D.coins[c].n, `${s}.coins.${c}`, { min: 0, step: 1 }))
@@ -783,8 +782,14 @@ SECTIONS.rules = () => {
        ph: '45',
        help: 'How rare an Alpha is among new encounters (once you have two Billies).',
      }),
-     numberField('Rest stop price ($)', `${st}.restCost`, { min: 0, step: 10 })
-   ) + brackets
+     numberField('Rest stop price ($)', `${st}.restCost`, { min: 0, step: 10 }),
+     numberField('Prize for beating a wild Billie', `rules.encounters.prizePerLevel`, {
+       min: 0,
+       step: 1,
+       unit: '$ a level',
+       help: 'A level 10 Billie pays ten times this.',
+     })
+   )
  )}
  ${card(
    'Leveling',
@@ -998,19 +1003,6 @@ document.addEventListener('change', ev => {
   commit(true);
   if (k === 'starter') render();
 });
-ACTIONS.brAdd = () => {
-  const b = studioState.D.rules.steps.brackets;
-  b.splice(Math.max(0, b.length - 1), 0, { upTo: (b[b.length - 2] || { upTo: 5000 }).upTo + 5000, rate: 0.25 });
-  changed();
-  render();
-};
-ACTIONS.brDel = d => {
-  const b = studioState.D.rules.steps.brackets;
-  if (b.length < 2) return;
-  b.splice(+d.i, 1);
-  changed();
-  render();
-};
 /* ================= ART FILES ================= */
 const ART_GROUPS = [
   ['billionaires', 'Billies', 'Four sheets per stage. Edit them in Billies → Edit pixels.'],

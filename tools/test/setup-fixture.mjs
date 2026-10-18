@@ -29,14 +29,10 @@ export const FIXTURE = {
     },
     steps: {
       stepsPerKm: 1000,
-      brackets: [
-        { upTo: 8000, rate: 1 },
-        { upTo: 0, rate: 0.5 },
-      ],
       goldOdds: 512,
       alphaOdds: 45,
     },
-    encounters: { route: 4, townGrass: 2, refillMs: 60000 },
+    encounters: { route: 4, townGrass: 2, refillMs: 60000, prizePerLevel: 20 },
     progression: {
       xpFactor: 0.8,
       maxLevel: 100,

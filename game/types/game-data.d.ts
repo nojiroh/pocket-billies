@@ -589,8 +589,6 @@ export interface Rules {
   };
   steps: {
     stepsPerKm: number;
-    /** what a step earns: rate up to upTo steps a day (0: no limit) */
-    brackets: { upTo: number; rate: number }[];
     goldOdds: number;
     restCost: number;
     alphaOdds: number;
@@ -603,6 +601,8 @@ export interface Rules {
     townGrass: number;
     /** play time for one more to wander over */
     refillMs: number;
+    /** prize money for beating a wild Billie, per level */
+    prizePerLevel: number;
   };
   progression: {
     xpFactor: number;

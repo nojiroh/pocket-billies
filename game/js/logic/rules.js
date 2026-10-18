@@ -53,7 +53,6 @@ import {
 import { partsPrime, partsStatFactor, partsWeightRatio } from './parts.js';
 /* eslint-disable no-func-assign */
 expose({
-  STEP_BRACKETS: [() => STEP_BRACKETS],
   // @ts-expect-error -- replaced on purpose
   addBilly: [() => addBilly, v => (addBilly = v)],
   // @ts-expect-error -- replaced on purpose
@@ -83,8 +82,6 @@ expose({
   collectJob: [() => collectJob, v => (collectJob = v)],
   // @ts-expect-error -- replaced on purpose
   dropEncounter: [() => dropEncounter, v => (dropEncounter = v)],
-  // @ts-expect-error -- replaced on purpose
-  earningsBetween: [() => earningsBetween, v => (earningsBetween = v)],
   eggSlotCount: [() => eggSlotCount],
   emptyJob: [() => emptyJob],
   // @ts-expect-error -- replaced on purpose
@@ -126,7 +123,6 @@ expose({
   // @ts-expect-error -- replaced on purpose
   movesAt: [() => movesAt, v => (movesAt = v)],
   newUid: [() => newUid],
-  nextBracket: [() => nextBracket],
   nextTripNode: [() => nextTripNode],
   partRules: [() => partRules],
   partSlots: [() => partSlots],
@@ -142,8 +138,6 @@ expose({
   // @ts-expect-error -- replaced on purpose
   rollBuild: [() => rollBuild, v => (rollBuild = v)],
   // @ts-expect-error -- replaced on purpose
-  rollDay: [() => rollDay, v => (rollDay = v)],
-  // @ts-expect-error -- replaced on purpose
   rollPartSize: [() => rollPartSize, v => (rollPartSize = v)],
   setTrip: [() => setTrip, v => setSetTrip(v)],
   // @ts-expect-error -- replaced on purpose
@@ -152,7 +146,6 @@ expose({
   splitPath: [() => splitPath, v => (splitPath = v)],
   // @ts-expect-error -- replaced on purpose
   stat: [() => stat, v => (stat = v)],
-  stepRate: [() => stepRate],
   stepsToKm: [() => stepsToKm],
   // @ts-expect-error -- replaced on purpose
   stopTrip: [() => stopTrip, v => (stopTrip = v)],
@@ -168,6 +161,7 @@ expose({
   walkDistances: [() => walkDistances, v => (walkDistances = v)],
   // @ts-expect-error -- replaced on purpose
   wildList: [() => wildList, v => (wildList = v)],
+  wildPrize: [() => wildPrize],
   xpFor: [() => xpFor],
 });
 /* eslint-enable no-func-assign */
@@ -429,31 +423,7 @@ export function addBilly(m) {
   return 'box';
 }
 
-/* ---------- steps ---------- */
-export const STEP_BRACKETS = RULES.steps.brackets
-  .map(b => [b.upTo > 0 ? b.upTo : Infinity, b.rate])
-  .sort((a, b) => a[0] - b[0]);
-if (!STEP_BRACKETS.length || STEP_BRACKETS[STEP_BRACKETS.length - 1][0] !== Infinity)
-  STEP_BRACKETS.push([Infinity, STEP_BRACKETS.length ? STEP_BRACKETS[STEP_BRACKETS.length - 1][1] : 1]);
-export function earningsBetween(a, b) {
-  let se = 0,
-    lo = 0;
-  for (const [hi, r] of STEP_BRACKETS) {
-    const s = Math.max(a, lo),
-      e = Math.min(b, hi);
-    if (e > s) se += (e - s) * r;
-    lo = hi;
-  }
-  return se;
-}
-export const stepRate = st => {
-  for (const [hi, r] of STEP_BRACKETS) if (st < hi) return r;
-  return STEP_BRACKETS[STEP_BRACKETS.length - 1][1];
-};
-export const nextBracket = st => STEP_BRACKETS.find(([hi]) => st < hi);
-export function rollDay() {
-  if (saveData.day.date !== today()) saveData.day = { date: today(), steps: 0 };
-}
+/* ---------- gates ---------- */
 export function gateOwner(seat) {
   return Object.values(TRAINERS).find(T => T.seat && T.seat.id === seat);
 }
@@ -583,6 +553,8 @@ export function encountersHere(node = saveData.trip.node) {
   }
   return w.list;
 }
+/* phase 08: the prize money for beating a wild Billie */
+export const wildPrize = lvl => Math.max(0, Math.round(lvl * (RULES.encounters.prizePerLevel || 0)));
 /* a battled (or fled-from) encounter leaves the map it was on; a map that was full starts its minute from now */
 export function dropEncounter(id) {
   for (const [k, w] of Object.entries(saveData.wild || {})) {
@@ -624,14 +596,6 @@ export function spawn(gentle, force, node = saveData.trip.node) {
 export function addSteps(n, quiet) {
   n = Math.floor(Number(n));
   if (!saveData.started || !Number.isFinite(n) || n <= 0 || n > 100000) return;
-  rollDay();
-  const a = saveData.day.steps,
-    b = a + n,
-    g = earningsBetween(a, b) + saveData.seFrac,
-    gi = Math.floor(g);
-  saveData.seFrac = g - gi;
-  saveData.se += gi;
-  saveData.day.steps = b;
   saveData.totalSteps += n;
   const bud = findBilly(saveData.buddy),
     per = Math.max(1, RULES.progression.buddyStepsPerXp);
@@ -654,7 +618,7 @@ export function addSteps(n, quiet) {
       if (j.pend < RULES.jobs.maxPending) j.pend++;
     }
   });
-  if (!quiet) toast(`+${formatNumber(n)} steps, +$${formatNumber(gi)}`);
+  if (!quiet) toast(`+${formatNumber(n)} steps`);
   notes.forEach(t => toast(t));
   save();
   if (!activeBattle) {

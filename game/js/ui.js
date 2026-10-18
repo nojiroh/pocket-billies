@@ -36,7 +36,6 @@ import {
 } from './game-data.js';
 import { weightClass } from './logic/parts.js';
 import {
-  STEP_BRACKETS,
   addEgg,
   allBillies,
   assignJob,
@@ -68,16 +67,13 @@ import {
   maxHp,
   maxLevel,
   moveSlotCount,
-  nextBracket,
   partSlots,
   plural,
   riderName,
-  rollDay,
   setTrip,
   spawn,
   splitPath,
   stat,
-  stepRate,
   stepsToKm,
   stopTrip,
   teamSize,
@@ -204,7 +200,6 @@ import {
 /* eslint-disable no-func-assign */
 expose({
   BOX_SORTS: [() => BOX_SORTS],
-  BRACKET_COLORS: [() => BRACKET_COLORS],
   HAZEL_INTRO_LINES: [() => HAZEL_INTRO_LINES],
   INTRO_STILLS: [() => INTRO_STILLS],
   PART_SIZE_NAMES: [() => PART_SIZE_NAMES],
@@ -222,10 +217,6 @@ expose({
   billySheet: [() => billySheet, v => (billySheet = v)],
   boardNote: [() => boardNote, v => (boardNote = v)],
   boxSection: [() => boxSection, v => (boxSection = v)],
-  bracketBars: [() => bracketBars, v => (bracketBars = v)],
-  bracketLabels: [() => bracketLabels, v => (bracketLabels = v)],
-  bracketNote: [() => bracketNote, v => (bracketNote = v)],
-  bracketSpans: [() => bracketSpans, v => (bracketSpans = v)],
   buddyCard: [() => buddyCard, v => (buddyCard = v)],
   buildPixelSky: [() => buildPixelSky, v => (buildPixelSky = v)],
   closeModal: [() => closeModal, v => ((closeModal = v), provide({ closeModal }))],
@@ -576,7 +567,6 @@ function hatchModal(e) {
 const TABS = ['walk', 'map', 'team', 'ledger', 'bag'],
   SCREENS = [...TABS, 'profile'];
 function topbar() {
-  rollDay();
   const shut = !!(saveData.preferences && saveData.preferences.cardClosed),
     walk = uiState.tab === 'walk';
   return `<div class="topbar glass" role="status">${walk ? `<button class="tb-where ${shut ? 'shut' : ''}" data-a="card-open" aria-expanded="${!shut}" aria-label="${shut ? 'Show' : 'Hide'} the card for ${escapeHtml(LOCATIONS[saveData.trip.node].name)}">${escapeHtml(uiState.inside && !uiState.bench && typeof roomState === 'function' && roomState() ? uiState.inside.name || LOCATIONS[saveData.trip.node].name : LOCATIONS[saveData.trip.node].name)}${uiIconHTML('chev', 12)}</button>` : `<span class="tb-where">${escapeHtml(LOCATIONS[saveData.trip.node].name)}</span>`}<span class="tb-chip tnum" title="Money">${coinHTML('penny', 16)}<small>$</small><b data-count="tse" data-to="${saveData.se}">${formatNumber(saveData.se)}</b></span><button class="tb-btn" data-a="settings" aria-label="Settings and help">${uiIconHTML('gear', 18)}</button><button class="tb-me" data-a="tab" data-t="profile" aria-label="Your trainer card" ${uiState.tab === 'profile' ? 'aria-current="page"' : ''}>${typeof portraitHTML === 'function' ? portraitHTML('me', 84) : ''}</button></div>`;
@@ -763,41 +753,6 @@ function billyPartsHTML(m) {
       ''
     )}</div><p class="note">${prime ? 'Every part is its own, at normal size: a Prime Billie, a little stronger at everything.' : 'Bigger parts make it heavier: harder hits, slower moves. With every part at normal size it would be Prime.'}</p></div>`;
 }
-const BRACKET_COLORS = ['var(--ok)', 'var(--gold)', 'var(--red)', '#9B6BE0', '#4F80E8'];
-function bracketSpans() {
-  let lo = 0;
-  return STEP_BRACKETS.map(([hi, r], i) => {
-    const top = hi === Infinity ? Math.max(lo * 1.33, lo + 5000) : hi,
-      o = { lo, hi: top, r, col: BRACKET_COLORS[i % BRACKET_COLORS.length] };
-    lo = hi;
-    return o;
-  });
-}
-function bracketBars(st) {
-  const sp = bracketSpans();
-  return sp
-    .map(
-      b =>
-        `<i style="flex:${b.hi - b.lo}"><b style="width:${clamp((st - b.lo) / (b.hi - b.lo), 0, 1) * 100}%;background:${b.col}"></b></i>`
-    )
-    .join('');
-}
-function bracketLabels() {
-  return bracketSpans()
-    .map(
-      (b, i) =>
-        `<span style="flex:${b.hi - b.lo}">${i === 0 ? `$${b.r} per step` : `$${b.r} after ${formatNumber(b.lo)}`}</span>`
-    )
-    .join('');
-}
-function bracketNote(st) {
-  const r = stepRate(st),
-    nb = nextBracket(st),
-    i = STEP_BRACKETS.indexOf(nb);
-  if (i === 0) return `Full rate for ${formatNumber(nb[0] - st)} more steps today.`;
-  if (nb[0] === Infinity) return 'You’ve walked a lot today. Resting is good too.';
-  return `Busy day! Steps now earn $${r} each until ${formatNumber(nb[0])}.`;
-}
 function encounterCardHTML(q) {
   const nu = !uiState.seenEnc.has(q.id);
   uiState.seenEnc.add(q.id);
@@ -885,7 +840,7 @@ function roomHero() {
         home: 'Your room in Granny Juniper’s cottage. Decorate it with what you’ve found.',
       }[I.kind] || '';
   return `<div class="walk-hero" id="walkHero">${locationCardHTML(escapeHtml(here.name), escapeHtml(I.name || sc.name || 'Inside'), `<p class="wh-gate">${escapeHtml(what)}</p>`, (I.kind === 'home' ? `<button class="pb small gold" data-a="decorate">Decorate</button>` : '') + `<button class="pb small" data-a="leaveroom">${uiIconHTML('door', 14)} Go outside</button>`)}
- <div class="wh-foot"><div class="wh-row"><button class="pb small glass fish-btn" data-a="fish" hidden>${uiIconHTML('fish', 14)} Fish</button><button class="wh-down glass" data-a="walkdown" aria-label="Show actions">${uiIconHTML('chev', 18)}<span>Actions</span></button><span class="wh-steps glass tnum">${uiIconHTML('walk', 14)} ${formatNumber(saveData.day.steps)}</span></div></div></div>`;
+ <div class="wh-foot"><div class="wh-row"><button class="pb small glass fish-btn" data-a="fish" hidden>${uiIconHTML('fish', 14)} Fish</button><button class="wh-down glass" data-a="walkdown" aria-label="Show actions">${uiIconHTML('chev', 18)}<span>Actions</span></button></div></div></div>`;
 }
 /* v31: the place card: compact (where, the hour and weather, staying or walking, one main button; the rest folded
    under More), closable with ×, and brought back by tapping the place's name in the top bar. Closed stays closed. */
@@ -915,19 +870,15 @@ function walkHero() {
     next = `<p class="wh-gate">${escapeHtml(tripStatus().t)}</p>`;
   return `<div class="walk-hero" id="walkHero">${locationCardHTML(escapeHtml(locationSubtitle(here)), escapeHtml(here.name), environmentLine() + next, tripButtons())}
  <div class="wh-foot">${q.length ? `<p class="wh-hint glass">${uiIconHTML('spark', 12)} ${plural(q.length, 'Billie')} hiding nearby. Tap a <b>?</b> to battle.</p>` : `<p class="wh-hint glass">${uiIconHTML('walk', 12)} Tap the ground to walk around. Tap buildings, people and signs.</p>`}
-  <div class="wh-row"><button class="pb small glass fish-btn" data-a="fish" hidden>${uiIconHTML('fish', 14)} Fish</button><button class="pb small glass" data-a="photo" aria-label="Photo mode">${uiIconHTML('camera', 14)}</button><button class="wh-down glass" data-a="walkdown" aria-label="Show actions">${uiIconHTML('chev', 18)}<span>Actions</span></button><span class="wh-steps glass tnum">${uiIconHTML('walk', 14)} ${formatNumber(saveData.day.steps)}</span></div></div></div>`;
+  <div class="wh-row"><button class="pb small glass fish-btn" data-a="fish" hidden>${uiIconHTML('fish', 14)} Fish</button><button class="pb small glass" data-a="photo" aria-label="Photo mode">${uiIconHTML('camera', 14)}</button><button class="wh-down glass" data-a="walkdown" aria-label="Show actions">${uiIconHTML('chev', 18)}<span>Actions</span></button></div></div></div>`;
 }
 function renderWalk() {
-  rollDay();
-  const st = saveData.day.steps,
-    r = stepRate(st),
-    q = encountersHere(),
+  const q = encountersHere(),
     cap = encounterStock(saveData.trip.node);
   return `${walkHero()}<div class="walk-sheet"><span class="ws-grip" aria-hidden="true"></span>
  <div class="cols"><div class="col">
- <div class="today px glass"><div class="today-top"><div><div class="big tnum" data-count="steps" data-to="${st}">${formatNumber(st)}</div><div class="lbl">steps today</div></div><div class="se"><div class="mid tnum">$<span data-count="se" data-to="${saveData.se}">${formatNumber(saveData.se)}</span></div><div class="lbl">Money</div></div></div>
-  <div class="brackets" role="img" aria-label="Earning $${r} per step">${bracketBars(st)}</div><div class="brk-l">${bracketLabels()}</div>
-  <p class="note">${bracketNote(st)}</p></div>
+ <div class="today px glass"><div class="today-top"><div class="se"><div class="mid tnum">$<span data-count="se" data-to="${saveData.se}">${formatNumber(saveData.se)}</span></div><div class="lbl">Money</div></div></div>
+  <p class="note">Beat wild Billies and trainers to earn more.</p></div>
  <section class="walkbtns"><p class="note">Walk with the joystick (drag anywhere on the scene) or tap where you want to go. The arrows at the edges lead on to the next place; the steps you take count here.</p></section>
  ${typeof challengeCardHTML === 'function' ? challengeCardHTML() : ''}${typeof requestListHTML === 'function' && requestListHTML() ? `<section class="chal px glass"><div class="sec-h"><h2>Requests you’re helping with</h2></div>${requestListHTML()}</section>` : ''}${hereCard()}</div><div class="col">
  <section class="pending"><div class="sec-h"><h2>Encounters here</h2><span class="count tnum">${q.length}/${cap}</span></div>
@@ -2027,7 +1978,7 @@ function renderProfile() {
   <div class="tc-badges"><div class="tc-bh"><span>Badges</span><b class="tnum">${bd.got} of ${bd.tot}</b></div><ol class="bdgs">${bd.html}</ol></div>
  </section>
  <section class="tpanel pf-stats"><div class="sec-h"><h2>Records</h2></div><div class="pf-grid">
-  ${tile(uiIconHTML('walk', 14), 'Steps today', formatNumber(saveData.day.steps))}${tile(uiIconHTML('walk', 14), 'Total steps', formatNumber(saveData.totalSteps))}
+  ${tile(uiIconHTML('walk', 14), 'Total steps', formatNumber(saveData.totalSteps))}
   ${tile(uiIconHTML('run', 14), 'Distance walked', `${stepsToKm(saveData.totalSteps)} km`)}${tile(uiIconHTML('map', 14), 'Places visited', `${places}/${LOCATIONS.length}`, null, places / LOCATIONS.length)}
   ${tile(uiIconHTML('ledger', 14), 'Seen', `${seen}/${DEX_ORDER.length}`, null, seen / DEX_ORDER.length)}${tile(coinHTML('penny', 14), 'Taxed', `${got}/${DEX_ORDER.length}`, null, got / DEX_ORDER.length)}
   ${tile(uiIconHTML('fight', 14), 'Trainers beaten', formatNumber(beat))}${tile(eggHTML(2, 12), 'Eggs hatched', formatNumber(saveData.hatched || 0), saveData.eggs.length ? `${plural(saveData.eggs.length, 'egg')} on the way` : 'No eggs right now')}${typeof stampTile === 'function' ? stampTile(tile) : ''}

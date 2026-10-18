@@ -40,7 +40,6 @@ import {
   maxLevel,
   newUid,
   spawn,
-  today,
   xpFor,
 } from './logic/rules.js';
 import { newSaveKeepingPreferences } from './logic/saves.js';
@@ -102,7 +101,7 @@ function debugHTML() {
       : '<p class="note">Game data loaded with no warnings.</p>'
   }</details>
  <details><summary>Wallet and steps</summary><div class="dbg-row">${debugButtonHTML('se1', '+$1,000')}${debugButtonHTML('se10', '+$10,000')}${debugButtonHTML('st1', '+1,000 steps')}${debugButtonHTML('st10', '+10,000 steps')}</div>
-  <div class="dbg-row">${debugButtonHTML('coins', '+10 of every coin')}${debugButtonHTML('items', '+5 of every item')}${debugButtonHTML('newday', 'Start a new day')}</div></details>
+  <div class="dbg-row">${debugButtonHTML('coins', '+10 of every coin')}${debugButtonHTML('items', '+5 of every item')}</div></details>
  <details><summary>Billies</summary><div class="dbg-row">${debugSelectHTML('dbgSp', debugSpeciesOptions(), uiState.dbgSp || DEX_ORDER[0])}<input id="dbgLv" type="number" min="1" max="${maxLevel()}" value="${uiState.dbgLv || 10}" aria-label="Level"><label class="dbg-ck"><input id="dbgGold" type="checkbox"> Golden</label></div>
   <div class="dbg-row">${debugButtonHTML('give', 'Give it to me', 'gold')}${debugButtonHTML('enc', 'Add as encounter')}${debugButtonHTML('wild', 'Battle it now', 'red')}${debugButtonHTML('alpha', 'As an Alpha', 'red')}</div>
   <div class="dbg-row">${debugButtonHTML('heal', 'Heal everyone')}${debugButtonHTML('lv5', 'Team +5 levels')}${debugButtonHTML('evo', 'Lead evolves now')}${debugButtonHTML('dex', 'Fill the Field Guide')}</div></details>
@@ -217,9 +216,6 @@ function debugAction(x) {
       break;
     case 'items':
       Object.keys(ITEMS).forEach(k => (saveData.items[k] = (saveData.items[k] || 0) + 5));
-      break;
-    case 'newday':
-      saveData.day = { date: today(), steps: 0 };
       break;
     case 'give': {
       const m = makeBilly(sp, lv, { gold: $('#dbgGold').checked });

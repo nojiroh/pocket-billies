@@ -46,6 +46,7 @@ import {
   maxHp,
   pickWeighted,
   plural,
+  wildPrize,
 } from './logic/rules.js';
 import {
   ACTOR_SIDE,
@@ -1048,6 +1049,14 @@ export function endBattle() {
       html: `<p>You hurried back to the clinic.</p><p>You paid $${formatNumber(fee)} for treatment, and the team is back at full HP.</p>${T ? `<p class="note">${escapeHtml(T.name)}: ${escapeHtml(T.lose || '')}</p>` : ''}`,
       btns: [{ l: 'Back to walking', c: 'dark', f: closeModal }],
     });
+  }
+  /* phase 08: beating a wild Billie pays prize money (steps paid before) */
+  if (kind === 'wild' && o === 'win') {
+    const prize = activeBattle.sides[1].team.reduce((a, m) => a + wildPrize(m.lvl), 0);
+    if (prize > 0) {
+      saveData.se += prize;
+      toast(`You earned $${formatNumber(prize)}.`);
+    }
   }
   const E = RULES.eggs;
   if (kind === 'wild' && o === 'win' && random() < E.dropChance) {

@@ -33,13 +33,9 @@ export interface SaveData {
   caught: Record<SpeciesId, number>;
   /** money, dollars */
   se: number;
-  /** the part of a dollar the last steps earned */
-  seFrac: number;
   /** how many of each coin and item you have (every key of gameData.coins and gameData.items) */
   coins: Record<DataId, number>;
   items: Record<DataId, number>;
-  /** today's steps (the earnings brackets start again each day) */
-  day: { date: string; steps: number };
   totalSteps: number;
   /** where you are and where you're going */
   trip: Trip;

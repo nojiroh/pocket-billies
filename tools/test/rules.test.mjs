@@ -28,7 +28,7 @@ test('rules: steps, trips and gates, encounters', () => {
   assert.equal(fn('tripTo')(2), null);
   s.team.push(fn('makeBilly')('drip0', 10)); // 2 m tall
   assert.equal(fn('canEnter')(2), true);
-  assert.equal(fn('earningsBetween')(7000, 9000), 1000 + 500);
+  assert.equal(fn('wildPrize')(10), 200); // a wild win pays $20 a level
   const before = fn('encountersHere')().length,
     q = fn('spawn')();
   assert.equal(fn('encountersHere')().length, before + 1);
