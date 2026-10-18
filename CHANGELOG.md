@@ -35,3 +35,13 @@ kept aside in the browser).
   browser (the page reaches it only through hooks.js; `npm run check:logic` runs it in plain Node). TypeScript checks
   the data, the save and the logic from JSDoc comments (`npm run typecheck`); nothing is compiled.
 - Studio: the hidden "With its neighbours" preview button is gone (it hadn't shown since the modules change).
+- The debug log's picture of the scene no longer shows what your buddy says (it could name your Billie).
+- The full test saves nothing while it runs, in this browser, to your account or to your friends, and puts your save
+  back after (a signed-in player's account could get the test's changed save before). Its Road step arrives again
+  (it never did since walking became the default), and its room step works on a slow device. Settings → Help says
+  what it really covers and that it takes a few minutes.
+- Under the hood: unit tests (`npm test`, tools/test/, in plain Node, about a second): the logic on a small data set
+  and on the game's own data (battles, double and Alpha battles, catching, the AI, evolution, encounters, saves), the
+  world-map graph (places, roads, exits, gates, lifts) and the expressions in dialogue. The quick check runs the
+  game's own full test one step at a time, and whole every night (`check-quick.py --selftest`); smoke checks that the
+  exported debug log holds no names. A Claude Code hook runs the fast checks after each edit.

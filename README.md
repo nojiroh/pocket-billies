@@ -79,15 +79,18 @@ npm run format          # Prettier (npm run format:check only checks)
 npm run check:data      # the game data: files, schemas, what refers to what (a second)
 npm run typecheck       # TypeScript on the files that start with // @ts-check, against game/types, then game/js/logic/
                         # again with no DOM lib (tsconfig.logic.json), a second
-npm run check:logic     # game/js/logic/ loads and runs in plain Node, with no browser (a fraction of a second)
-npm run check:smoke     # the quick check's smoke set, about two minutes
+npm test                # the unit tests (tools/test/), in plain Node with no browser: the logic on a small data set of
+                        # their own and on the game's data, the world-map graph, the expressions in dialogue (a second);
+                        # npm run check:logic is the same
+npm run check:smoke     # the quick check's smoke set, about two and a half minutes
 ```
 
 The quick check drives the game in headless Chromium. It needs Python 3 and
 `pip install -r tools/requirements-check.txt && python3 -m playwright install chromium`. `npm run check:quick` is
-the full check (about 40 minutes); results and pictures go to `validation/quick/`. GitHub runs lint, the format
-check, the data check, the build, smoke and the Firestore rules tests on every push and pull request, and the full
-check nightly.
+the full check (about 35 minutes); results and pictures go to `validation/quick/`. Both run one step of the game's own
+full test; `python3 tools/check-quick.py --selftest` runs it whole, with the diagnostics test (about 25 minutes).
+GitHub runs lint, the type check, the unit tests, the format check, the data check, the build, smoke and the Firestore
+rules tests on every push and pull request, and the full check and the whole in-game test nightly.
 
 Conventions: one rename per commit and never mixed with a behaviour change; reformatting only in separate no-op
 commits (listed in `.git-blame-ignore-revs`); names follow [docs/NAMING.md](docs/NAMING.md). The plan of work is in
@@ -114,7 +117,9 @@ stands.
     reads); `test-globals.js` puts the modules' names on `window` for the checks.
 - `studio/`: Pocket Billies Studio. It imports the game's renderer modules from `../game/js/`.
 - `firebase/`: the Firestore security rules and their tests (`cd firebase && npm ci && npm test`).
-- `tools/`: `check-quick.py` (the quick check), `check-data.mjs` and `check-data-text.py` (the data checks),
+- `tools/`: `check-quick.py` (the quick check), `test/` (the unit tests: `*.test.mjs`, with `setup-fixture.mjs` and
+  `setup-real.mjs` loading the logic on a small data set or on the game's), `check-data.mjs` and `check-data-text.py`
+  (the data checks),
   `build-data.mjs` (makes `gamedata.js`), `to-module.mjs` (the modules' generated imports, `hooks.js` and `debug-log-names.js`), `gamedata.py` (the data for Python tools),
   `check-names.mjs` (the naming rules lint can't check), the renaming tools (`rename.mjs` for code names, prefixes,
   files and properties, `rename-data.mjs` for data keys and sections, `rename-strings.py` for the Python tools'
