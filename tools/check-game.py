@@ -79,7 +79,7 @@ def check_game(pw, base, results):
                     pg.evaluate("CS.say&&CS.say.tap();CS.skip||csSkip()"); time.sleep(.5)
                 return False
             if opening['cutscene']:
-                opening['dressingRoom'] = until('DR.on'); time.sleep(1); pg.screenshot(path=str(OUT / f'{name}-opening-dress.png'))
+                opening['dressingRoom'] = until('dressingRoom.on'); time.sleep(1); pg.screenshot(path=str(OUT / f'{name}-opening-dress.png'))
                 pg.click('[data-a=dr-preset][data-i="2"]'); pg.fill('#drName', 'Checker'); pg.click('[data-a=dr-save]')
                 opening['picker'] = until('CS.choosing'); time.sleep(1.5); pg.screenshot(path=str(OUT / f'{name}-opening-pick.png'))
                 pg.click('[data-a=cs-next]'); time.sleep(.6); pg.click('[data-a=cs-choose]'); pg.click('[data-a=cs-yes]')

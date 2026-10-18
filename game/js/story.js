@@ -10,7 +10,7 @@ import { STEST, closeModal, modal, postProcess, provide, render } from './hooks.
 import { $, clamp } from './util.js';
 import { PLACE, RULES, SP, TRAINERS, trainersAt } from './game-data.js';
 import { B, RM, S, U, esc, healAll, save, today } from './game-state.js';
-import { DR } from './dressing-room.js';
+import { dressingRoom } from './dressing-room.js';
 import { baseMapId, walkView, walkablePointNear } from './walk-view.js';
 import { EGL } from './engine/webgl.js';
 import { standingHeightAt, walkRenderer } from './walk-view-gl.js';
@@ -184,7 +184,7 @@ export function storyCheck() {
     U.tab !== 'walk' ||
     TALK.on ||
     (typeof CS !== 'undefined' && CS.on) ||
-    (typeof DR !== 'undefined' && DR.on) ||
+    (typeof dressingRoom !== 'undefined' && dressingRoom.on) ||
     !storyWorldOK()
   )
     return;

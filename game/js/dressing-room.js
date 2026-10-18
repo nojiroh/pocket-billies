@@ -14,7 +14,6 @@ import { cnv, uiIco } from './art.js';
 import { TR_PRESETS, WD, cleanLook, portraitHTML, trBox, trColorsOf, trFrame, trSliders } from './person-art.js';
 /* eslint-disable no-func-assign */
 expose({
-  DR: [() => DR],
   DR_BUILDS: [() => DR_BUILDS],
   DR_CROP: [() => DR_CROP],
   DR_FACES: [() => DR_FACES],
@@ -49,6 +48,7 @@ expose({
   drThumb: [() => drThumb, v => (drThumb = v)],
   drThumbLook: [() => drThumbLook, v => (drThumbLook = v)],
   drUnowned: [() => drUnowned, v => (drUnowned = v)],
+  dressingRoom: [() => dressingRoom],
   openDressing: [() => openDressing, v => setOpenDressing(v)],
   owns: [() => owns, v => (owns = v)],
   shopName: [() => shopName],
@@ -61,7 +61,7 @@ export function setOpenDressing(v) {
   provide({ openDressing });
 }
 /* to-module: end */
-export const DR = {
+export const dressingRoom = {
   on: false,
   mode: 'edit',
   shop: null,
@@ -256,7 +256,7 @@ const DR_OUTFITS = [
     ],
   ],
 ];
-DR.more = {};
+dressingRoom.more = {};
 const DR_BUILDS = [
   ['Average', {}],
   ['Slim', { body: 0.86, shoulders: 0.94, hips: 0.95 }],
@@ -275,34 +275,38 @@ const drItems = slot => Object.entries(WD().items).filter(([k, it]) => it.slot =
 const shopName = id => (SHOPS[id] && SHOPS[id].name) || 'a boutique';
 /* does the open boutique sell this item? its own stock, or (an outlet) the stock of the shops it lists in "sells" */
 const drSells = it =>
-  !!(DR.shop && it && (it.shop === DR.shop || ((SHOPS[DR.shop] || {}).sells || []).includes(it.shop)));
+  !!(
+    dressingRoom.shop &&
+    it &&
+    (it.shop === dressingRoom.shop || ((SHOPS[dressingRoom.shop] || {}).sells || []).includes(it.shop))
+  );
 export function openDressing(o = {}) {
-  DR.on = true;
-  DR.mode = o.mode || 'edit';
-  DR.shop = o.shop || null;
-  DR.done = o.done || null;
-  DR.noBack = !!o.noBack;
-  const base = o.look || (DR.mode === 'intro' ? U.trainerDraft || TR_PRESETS[0] : S.avatar);
-  DR.look = cleanLook(JSON.parse(JSON.stringify(base)));
-  DR.orig = JSON.stringify(DR.look);
-  DR.undo = [];
-  DR.redo = [];
-  DR.tab = o.tab || (DR.shop ? 'outfit' : 'body');
-  DR.more = {};
-  DR.view = 0;
-  DR.walk = false;
-  DR.pose = null;
-  DR.thumbs.clear();
+  dressingRoom.on = true;
+  dressingRoom.mode = o.mode || 'edit';
+  dressingRoom.shop = o.shop || null;
+  dressingRoom.done = o.done || null;
+  dressingRoom.noBack = !!o.noBack;
+  const base = o.look || (dressingRoom.mode === 'intro' ? U.trainerDraft || TR_PRESETS[0] : S.avatar);
+  dressingRoom.look = cleanLook(JSON.parse(JSON.stringify(base)));
+  dressingRoom.orig = JSON.stringify(dressingRoom.look);
+  dressingRoom.undo = [];
+  dressingRoom.redo = [];
+  dressingRoom.tab = o.tab || (dressingRoom.shop ? 'outfit' : 'body');
+  dressingRoom.more = {};
+  dressingRoom.view = 0;
+  dressingRoom.walk = false;
+  dressingRoom.pose = null;
+  dressingRoom.thumbs.clear();
   let el = $('#dressing');
   if (!el) {
     el = document.createElement('div');
     el.id = 'dressing';
     document.body.appendChild(el);
   }
-  el.className = 'dr' + (DR.shop ? ' in-shop' : '') + (DR.mode === 'intro' ? ' intro' : '');
+  el.className = 'dr' + (dressingRoom.shop ? ' in-shop' : '') + (dressingRoom.mode === 'intro' ? ' intro' : '');
   el.setAttribute('role', 'dialog');
   el.setAttribute('aria-modal', 'true');
-  el.setAttribute('aria-label', DR.shop ? shopName(DR.shop) : 'Dressing room');
+  el.setAttribute('aria-label', dressingRoom.shop ? shopName(dressingRoom.shop) : 'Dressing room');
   el.innerHTML = drHTML();
   el.hidden = false;
   document.body.classList.add('dressing');
@@ -310,7 +314,7 @@ export function openDressing(o = {}) {
   frameTask('dress', drLoop);
 }
 export function closeDressing() {
-  DR.on = false;
+  dressingRoom.on = false;
   frameStop('dress');
   const el = $('#dressing');
   if (el) {
@@ -322,15 +326,18 @@ export function closeDressing() {
 }
 /* ---------- markup ---------- */
 function drHTML() {
-  const sh = DR.shop && SHOPS[DR.shop];
+  const sh = dressingRoom.shop && SHOPS[dressingRoom.shop];
   return `<div class="dr-stage"><canvas id="drCv" aria-label="Your trainer. Drag to turn around."></canvas>
   ${sh ? `<div class="dr-keeper glass">${portraitHTML(sh.who || 'clerk', 46, 'happy')}<div><b>${esc(sh.keeper || 'Shopkeeper')}</b><p id="drLine">${esc(sh.greeting || 'Try anything on.')}</p></div></div>` : ''}
   <div class="dr-viewbar glass"><button class="mbtn" data-a="dr-turn" data-d="-1" aria-label="Turn left">‹</button><button class="mbtn" data-a="dr-turn" data-d="1" aria-label="Turn right">›</button>
    <button class="dr-tog" data-a="dr-walk" aria-pressed="false">${uiIco('walk', 14)} Walk</button><button class="dr-tog" data-a="dr-pose" data-p="throw">Throw</button><button class="dr-tog" data-a="dr-pose" data-p="cheer">Cheer</button></div></div>
- <div class="dr-panel px"><div class="dr-top"><label class="dr-name"><span>Name</span><input id="drName" maxlength="18" autocomplete="nickname" value="${esc(DR.look.name)}"></label>
+ <div class="dr-panel px"><div class="dr-top"><label class="dr-name"><span>Name</span><input id="drName" maxlength="18" autocomplete="nickname" value="${esc(dressingRoom.look.name)}"></label>
    <button class="pb small quiet" data-a="dr-rand" title="A random look from what you own">Surprise me</button><button class="mbtn sm" data-a="dr-undo" aria-label="Undo" title="Undo">↶</button><button class="mbtn sm" data-a="dr-redo" aria-label="Redo" title="Redo">↷</button></div>
-  <div class="dr-tabs" role="tablist">${DR_TABS.filter(([k]) => !(DR.mode === 'intro' && k === 'outfits'))
-    .map(([k, n]) => `<button role="tab" data-a="dr-tab" data-t="${k}" aria-selected="${DR.tab === k}">${n}</button>`)
+  <div class="dr-tabs" role="tablist">${DR_TABS.filter(([k]) => !(dressingRoom.mode === 'intro' && k === 'outfits'))
+    .map(
+      ([k, n]) =>
+        `<button role="tab" data-a="dr-tab" data-t="${k}" aria-selected="${dressingRoom.tab === k}">${n}</button>`
+    )
     .join('')}</div>
   <div class="dr-body" id="drBody">${drTabHTML()}</div>
   <div class="dr-foot" id="drFoot">${drFootHTML()}</div></div>`;
@@ -340,10 +347,10 @@ function drSwatches(key, list, cur, ch) {
 }
 function drGrid(slot, crop) {
   const S0 = WD().slots.find(s => s.id === slot),
-    cur = DR.look.wear[slot];
+    cur = dressingRoom.look.wear[slot];
   let list = drItems(slot);
-  if (DR.mode === 'intro') list = list.filter(([k]) => owns(k));
-  if (DR.shop) list.sort((a, b) => drSells(b[1]) - drSells(a[1]) || owns(b[0]) - owns(a[0]));
+  if (dressingRoom.mode === 'intro') list = list.filter(([k]) => owns(k));
+  if (dressingRoom.shop) list.sort((a, b) => drSells(b[1]) - drSells(a[1]) || owns(b[0]) - owns(a[0]));
   else list.sort((a, b) => owns(b[0]) - owns(a[0]));
   const none =
     S0 && S0.empty
@@ -359,10 +366,10 @@ function drGrid(slot, crop) {
     .join('')}</div>`;
 }
 function drColors(slot) {
-  const id = DR.look.wear[slot],
+  const id = dressingRoom.look.wear[slot],
     it = id && WD().items[id];
   if (!it) return '';
-  const cur = trColorsOf(DR.look, id),
+  const cur = trColorsOf(dressingRoom.look, id),
     P = WD().palettes || {};
   return it.colors
     .map((c, i) => {
@@ -376,15 +383,15 @@ function drSection(title, html) {
   return `<section class="dr-sec"><h3>${title}</h3>${html}</section>`;
 }
 function drTabHTML() {
-  const L = DR.look,
+  const L = dressingRoom.look,
     P = WD().palettes || {};
-  switch (DR.tab) {
+  switch (dressingRoom.tab) {
     case 'body':
       return (
-        (DR.mode === 'intro'
+        (dressingRoom.mode === 'intro'
           ? drSection(
               'Ready-made looks',
-              `<div class="dr-presets">${TR_PRESETS.map((p, j) => `<button class="dr-pre px" data-a="dr-preset" data-i="${j}" aria-label="Look ${j + 1}"><img src="${drPortrait(Object.assign({}, p, { name: DR.look.name }))}" alt=""></button>`).join('')}</div><p class="note">Start from one of these, then change anything you like.</p>`
+              `<div class="dr-presets">${TR_PRESETS.map((p, j) => `<button class="dr-pre px" data-a="dr-preset" data-i="${j}" aria-label="Look ${j + 1}"><img src="${drPortrait(Object.assign({}, p, { name: dressingRoom.look.name }))}" alt=""></button>`).join('')}</div><p class="note">Start from one of these, then change anything you like.</p>`
             )
           : '') +
         drSection(
@@ -431,7 +438,7 @@ function drTabHTML() {
       const W = WD().items,
         O = wardrobeState().outfits;
       let list = DR_OUTFITS.filter(([n, o]) => Object.values(o).every(id => !id || W[id]));
-      if (DR.mode === 'intro') list = list.filter(([n, o]) => Object.values(o).every(id => !id || owns(id)));
+      if (dressingRoom.mode === 'intro') list = list.filter(([n, o]) => Object.values(o).every(id => !id || owns(id)));
       return (
         drSection(
           'Outfit',
@@ -446,7 +453,7 @@ function drTabHTML() {
             })
             .join('')}</div>`
         ) +
-        (DR.mode === 'intro'
+        (dressingRoom.mode === 'intro'
           ? ''
           : drSection(
               'Saved outfits',
@@ -480,18 +487,18 @@ function drTabHTML() {
   return '';
 }
 function drMore(tab, label, fn) {
-  const open = !!DR.more[tab];
+  const open = !!dressingRoom.more[tab];
   return `<section class="dr-sec dr-more"><button class="pb small ${open ? '' : 'quiet'} dr-moreb" data-a="dr-more" data-t="${tab}" aria-expanded="${open}">${open ? 'Less' : 'More'} · ${label}</button>${open ? fn() : ''}</section>`;
 }
 function drBuildIs(b) {
-  const L = DR.look.body;
+  const L = dressingRoom.look.body;
   return trSliders().every(s => s.k === 'chest' || Math.abs((L[s.k] ?? s.def) - (b[s.k] ?? s.def)) < 0.005);
 }
 function drFaceIs(f) {
-  return ['eyes', 'brows', 'mouth', 'facial'].every(k => (DR.look.wear[k] || null) === (f[k] || null));
+  return ['eyes', 'brows', 'mouth', 'facial'].every(k => (dressingRoom.look.wear[k] || null) === (f[k] || null));
 }
 function drOutfitIs(o) {
-  return ['top', 'bottom', 'shoes', 'outer'].every(k => (DR.look.wear[k] || null) === (o[k] || null));
+  return ['top', 'bottom', 'shoes', 'outer'].every(k => (dressingRoom.look.wear[k] || null) === (o[k] || null));
 }
 function drOutfitLook(L, o, way) {
   const L2 = JSON.parse(JSON.stringify(L));
@@ -513,7 +520,7 @@ function drOutfitLook(L, o, way) {
 function drThumbLook(L2, crop) {
   const key =
     'look|' + crop + '|' + JSON.stringify([L2.wear, L2.colors, L2.skin, L2.hair, L2.eyes, L2.body.body, L2.body.chest]);
-  if (DR.thumbs.has(key)) return DR.thumbs.get(key);
+  if (dressingRoom.thumbs.has(key)) return dressingRoom.thumbs.get(key);
   L2.body.height = 1;
   if (crop !== 'body') L2.wear.hat = null;
   const f = trFrame(L2, 'front', 'idle', 0, 0),
@@ -524,11 +531,11 @@ function drThumbLook(L2, crop) {
     x = c.getContext('2d');
   x.drawImage(f, f.ax + x0, f.ay + y0, w, h, 0, 0, w, h);
   const u = c.toDataURL();
-  DR.thumbs.set(key, u);
+  dressingRoom.thumbs.set(key, u);
   return u;
 }
 function drUnowned() {
-  return Object.values(DR.look.wear).filter(id => id && !owns(id));
+  return Object.values(dressingRoom.look.wear).filter(id => id && !owns(id));
 }
 function drFootHTML() {
   const un = drUnowned(),
@@ -537,10 +544,10 @@ function drFootHTML() {
     elsewhere = un.filter(id => !drSells(W[id]));
   let msg = '',
     btn = '';
-  if (DR.mode === 'intro') {
+  if (dressingRoom.mode === 'intro') {
     msg = 'More clothes and hairstyles are sold in the town boutiques.';
     btn = `<button class="pb gold" data-a="dr-save">This is me</button>`;
-  } else if (DR.shop) {
+  } else if (dressingRoom.shop) {
     msg = elsewhere.length
       ? `${esc(W[elsewhere[0]].name)} is sold at ${esc(shopName(W[elsewhere[0]].shop))}.`
       : cost
@@ -555,12 +562,12 @@ function drFootHTML() {
       : '';
     btn = `<button class="pb gold" data-a="dr-save" ${un.length ? 'disabled' : ''}>Save look</button>`;
   }
-  return `<span class="dr-msg">${msg}</span>${DR.noBack ? '' : `<button class="pb quiet" data-a="dr-cancel">${DR.mode === 'intro' ? 'Back' : DR.shop ? 'Leave' : 'Cancel'}</button>`}${btn}`;
+  return `<span class="dr-msg">${msg}</span>${dressingRoom.noBack ? '' : `<button class="pb quiet" data-a="dr-cancel">${dressingRoom.mode === 'intro' ? 'Back' : dressingRoom.shop ? 'Leave' : 'Cancel'}</button>`}${btn}`;
 }
 /* ---------- thumbnails and portraits ---------- */
 const DR_CROP = new Proxy({}, { get: (t, k) => (WD().crops || {})[k] });
 function drThumb(slot, id, crop) {
-  const L = JSON.parse(JSON.stringify(DR.look));
+  const L = JSON.parse(JSON.stringify(dressingRoom.look));
   L.wear[slot] = id;
   L.body.height = 1;
   if (slot !== 'hat' && crop === 'head') L.wear.hat = null;
@@ -583,7 +590,7 @@ function drThumb(slot, id, crop) {
       L.wear.hair,
       L.wear.eyes,
     ]);
-  if (DR.thumbs.has(key)) return DR.thumbs.get(key);
+  if (dressingRoom.thumbs.has(key)) return dressingRoom.thumbs.get(key);
   const f = trFrame(L, 'front', 'idle', 0, 0),
     [x0, y0, x1, y1] = DR_CROP[crop] || DR_CROP.body,
     w = x1 - x0,
@@ -592,7 +599,7 @@ function drThumb(slot, id, crop) {
     x = c.getContext('2d');
   x.drawImage(f, f.ax + x0, f.ay + y0, w, h, 0, 0, w, h);
   const u = c.toDataURL();
-  DR.thumbs.set(key, u);
+  dressingRoom.thumbs.set(key, u);
   return u;
 }
 export function drPortrait(look) {
@@ -606,7 +613,7 @@ export function drPortrait(look) {
 /* ---------- the preview ---------- */
 function drLoop(ts) {
   const cv = $('#drCv');
-  if (!DR.on || !cv || !cv.isConnected) {
+  if (!dressingRoom.on || !cv || !cv.isConnected) {
     frameStop('dress');
     return;
   }
@@ -622,27 +629,27 @@ function drLoop(ts) {
   const x = cv.getContext('2d');
   x.setTransform(1, 0, 0, 1, 0, 0);
   x.clearRect(0, 0, W, H);
-  const [view, mir] = DR_VIEWS[DR.view],
+  const [view, mir] = DR_VIEWS[dressingRoom.view],
     t = ts;
   let act = 'idle',
     ph = 0;
-  if (DR.pose) {
-    const k = (t - DR.poseT) / (DR.pose === 'throw' ? 700 : 1400);
-    if (k >= 1) DR.pose = null;
+  if (dressingRoom.pose) {
+    const k = (t - dressingRoom.poseT) / (dressingRoom.pose === 'throw' ? 700 : 1400);
+    if (k >= 1) dressingRoom.pose = null;
     else {
-      act = DR.pose;
+      act = dressingRoom.pose;
       ph = k;
     }
-  } else if (DR.walk) {
+  } else if (dressingRoom.walk) {
     act = 'walk';
     ph = (t / 760) % 1;
   }
-  const f = trFrame(DR.look, view, act, ph, t, mir),
+  const f = trFrame(dressingRoom.look, view, act, ph, t, mir),
     s = Math.max(
       1,
       Math.floor(
         Math.min(
-          (H * 0.8) / ((WD().figure || 74) * 1.18 * DR.look.body.height),
+          (H * 0.8) / ((WD().figure || 74) * 1.18 * dressingRoom.look.body.height),
           (W * 0.8) / ((WD().figure || 74) * 0.6)
         ) * 2
       ) / 2
@@ -658,9 +665,9 @@ function drLoop(ts) {
 }
 /* ---------- changes ---------- */
 function drPush() {
-  DR.undo.push(JSON.stringify(DR.look));
-  if (DR.undo.length > 60) DR.undo.shift();
-  DR.redo = [];
+  dressingRoom.undo.push(JSON.stringify(dressingRoom.look));
+  if (dressingRoom.undo.length > 60) dressingRoom.undo.shift();
+  dressingRoom.redo = [];
 }
 function drRefresh(full) {
   const b = $('#drBody');
@@ -674,8 +681,8 @@ function drRefresh(full) {
 }
 function drSet(fn, full) {
   drPush();
-  fn(DR.look);
-  DR.look = cleanLook(DR.look);
+  fn(dressingRoom.look);
+  dressingRoom.look = cleanLook(dressingRoom.look);
   drRefresh(full);
 }
 function drRandom() {
@@ -708,15 +715,15 @@ function drRandom() {
 }
 export function drSave() {
   const un = drUnowned();
-  if (un.length && DR.mode !== 'intro') {
+  if (un.length && dressingRoom.mode !== 'intro') {
     toast('Buy the pieces you’re trying on first.');
     return;
   }
-  if (DR.mode === 'intro') {
-    U.trainerDraft = cleanLook(DR.look);
+  if (dressingRoom.mode === 'intro') {
+    U.trainerDraft = cleanLook(dressingRoom.look);
     U.avatarDraft = U.trainerDraft;
-    const done = DR.done;
-    DR.on = false;
+    const done = dressingRoom.done;
+    dressingRoom.on = false;
     frameStop('dress');
     const el = $('#dressing');
     if (el) {
@@ -727,9 +734,9 @@ export function drSave() {
     if (done) done();
     return;
   }
-  S.avatar = cleanLook(DR.look);
+  S.avatar = cleanLook(dressingRoom.look);
   save();
-  const shop = DR.shop;
+  const shop = dressingRoom.shop;
   closeDressing();
   render();
   toast(shop ? 'Looking sharp.' : 'Your new look is saved.');
@@ -750,7 +757,7 @@ function drBuy() {
   for (const id of mine) st.owned[id] = 1;
   save();
   buzz && buzz(12);
-  const sh = SHOPS[DR.shop],
+  const sh = SHOPS[dressingRoom.shop],
     lines =
       sh && sh.thanks && sh.thanks.length
         ? sh.thanks
@@ -758,56 +765,56 @@ function drBuy() {
   const l = $('#drLine');
   if (l) l.textContent = lines[Math.floor(rnd() * lines.length)];
   toast(`Bought ${mine.map(id => W[id].name).join(', ')}.`);
-  S.avatar = cleanLook(DR.look);
+  S.avatar = cleanLook(dressingRoom.look);
   save();
-  DR.orig = JSON.stringify(DR.look);
+  dressingRoom.orig = JSON.stringify(dressingRoom.look);
   drRefresh();
 }
 function drBind() {
   const el = $('#dressing'),
     cv = $('#drCv');
   cv.addEventListener('pointerdown', e => {
-    DR.drag = { x: e.clientX, v: DR.view };
+    dressingRoom.drag = { x: e.clientX, v: dressingRoom.view };
     cv.setPointerCapture(e.pointerId);
   });
   cv.addEventListener('pointermove', e => {
-    if (!DR.drag) return;
-    const d = Math.round((e.clientX - DR.drag.x) / 60);
-    DR.view = (((DR.drag.v - d) % 4) + 4) % 4;
+    if (!dressingRoom.drag) return;
+    const d = Math.round((e.clientX - dressingRoom.drag.x) / 60);
+    dressingRoom.view = (((dressingRoom.drag.v - d) % 4) + 4) % 4;
   });
   cv.addEventListener('pointerup', () => {
-    DR.drag = null;
+    dressingRoom.drag = null;
   });
   cv.addEventListener('pointercancel', () => {
-    DR.drag = null;
+    dressingRoom.drag = null;
   });
   el.addEventListener('input', e => {
     const t = e.target;
     if (t.id === 'drName') {
-      DR.look.name = t.value.slice(0, 18);
+      dressingRoom.look.name = t.value.slice(0, 18);
       return;
     }
     if (t.dataset.drSl) {
       const k = t.dataset.drSl;
-      if (!DR.slT) {
+      if (!dressingRoom.slT) {
         drPush();
-        DR.slT = 1;
+        dressingRoom.slT = 1;
       }
-      DR.look.body[k] = +t.value;
-      DR.look = cleanLook(DR.look);
+      dressingRoom.look.body[k] = +t.value;
+      dressingRoom.look = cleanLook(dressingRoom.look);
     }
     if (t.dataset.drCol) drColor(t.dataset.drCol, t.value, t.dataset.ch, false);
   });
   el.addEventListener('change', e => {
     if (e.target.dataset.drSl) {
-      DR.slT = 0;
-      DR.thumbs.clear();
+      dressingRoom.slT = 0;
+      dressingRoom.thumbs.clear();
       drRefresh();
     }
     if (e.target.dataset.drCol) drRefresh();
   });
   el.addEventListener('keydown', e => {
-    if (e.key === 'Escape' && DR.mode !== 'intro' && !DR.noBack) {
+    if (e.key === 'Escape' && dressingRoom.mode !== 'intro' && !dressingRoom.noBack) {
       e.stopPropagation();
       closeDressing();
     }
@@ -815,7 +822,7 @@ function drBind() {
 }
 function drColor(key, c, ch, refresh = true) {
   drPush();
-  const L = DR.look;
+  const L = dressingRoom.look;
   if (key === 'skin' || key === 'hair' || key === 'eyes') L[key] = c;
   else if (key.startsWith('item:')) {
     const id = key.slice(5),
@@ -823,17 +830,17 @@ function drColor(key, c, ch, refresh = true) {
     cur[+ch] = c;
     L.colors[id] = cur;
   }
-  DR.look = cleanLook(L);
+  dressingRoom.look = cleanLook(L);
   if (refresh) drRefresh();
 }
 document.addEventListener('click', ev => {
-  if (!DR.on) return;
+  if (!dressingRoom.on) return;
   const el = ev.target.closest('[data-a]');
   if (!el || !el.closest('#dressing')) return;
   const d = el.dataset;
   switch (d.a) {
     case 'dr-tab':
-      DR.tab = d.t;
+      dressingRoom.tab = d.t;
       $$('#dressing [data-a=dr-tab]').forEach(b => b.setAttribute('aria-selected', String(b.dataset.t === d.t)));
       drRefresh();
       $('#drBody').scrollTop = 0;
@@ -851,7 +858,7 @@ document.addEventListener('click', ev => {
       drColor(d.k, d.c, d.ch);
       break;
     case 'dr-more':
-      DR.more[d.t] = !DR.more[d.t];
+      dressingRoom.more[d.t] = !dressingRoom.more[d.t];
       drRefresh();
       break;
     case 'dr-face':
@@ -902,15 +909,15 @@ document.addEventListener('click', ev => {
       }
       break;
     case 'dr-turn':
-      DR.view = (((DR.view + +d.d) % 4) + 4) % 4;
+      dressingRoom.view = (((dressingRoom.view + +d.d) % 4) + 4) % 4;
       break;
     case 'dr-walk':
-      DR.walk = !DR.walk;
-      el.setAttribute('aria-pressed', String(DR.walk));
+      dressingRoom.walk = !dressingRoom.walk;
+      el.setAttribute('aria-pressed', String(dressingRoom.walk));
       break;
     case 'dr-pose':
-      DR.pose = d.p;
-      DR.poseT = performance.now();
+      dressingRoom.pose = d.p;
+      dressingRoom.poseT = performance.now();
       break;
     case 'dr-rand':
       drRandom();
@@ -927,23 +934,23 @@ document.addEventListener('click', ev => {
       }
       break;
     case 'dr-undo':
-      if (DR.undo.length) {
-        DR.redo.push(JSON.stringify(DR.look));
-        DR.look = JSON.parse(DR.undo.pop());
+      if (dressingRoom.undo.length) {
+        dressingRoom.redo.push(JSON.stringify(dressingRoom.look));
+        dressingRoom.look = JSON.parse(dressingRoom.undo.pop());
         drRefresh();
       }
       break;
     case 'dr-redo':
-      if (DR.redo.length) {
-        DR.undo.push(JSON.stringify(DR.look));
-        DR.look = JSON.parse(DR.redo.pop());
+      if (dressingRoom.redo.length) {
+        dressingRoom.undo.push(JSON.stringify(dressingRoom.look));
+        dressingRoom.look = JSON.parse(dressingRoom.redo.pop());
         drRefresh();
       }
       break;
     case 'dr-osave':
       {
         const st = wardrobeState();
-        st.outfits[+d.i] = JSON.parse(JSON.stringify(DR.look));
+        st.outfits[+d.i] = JSON.parse(JSON.stringify(dressingRoom.look));
         save();
         drRefresh();
         toast('Outfit saved.');
@@ -967,9 +974,9 @@ document.addEventListener('click', ev => {
       drBuy();
       break;
     case 'dr-cancel':
-      if (DR.mode === 'intro') {
-        U.trainerDraft = cleanLook(DR.look);
-        DR.on = false;
+      if (dressingRoom.mode === 'intro') {
+        U.trainerDraft = cleanLook(dressingRoom.look);
+        dressingRoom.on = false;
         frameStop('dress');
         const e2 = $('#dressing');
         if (e2) {

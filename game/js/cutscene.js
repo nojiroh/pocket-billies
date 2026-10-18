@@ -29,7 +29,7 @@ import { RM, U, esc } from './game-state.js';
 import { userFps } from './frame-scheduler.js';
 import { artLoad, cnv } from './art.js';
 import { TR_PRESETS, cleanLook, humanPose, owFrames, trainerLook } from './person-art.js';
-import { DR, drSave, openDressing } from './dressing-room.js';
+import { drSave, dressingRoom, openDressing } from './dressing-room.js';
 import { drawRig, rigFrame, rigParts, rigPreload, rigTint } from './skeleton-rig.js';
 import { buzz, particleSprite } from './battle-stage.js';
 import {
@@ -593,7 +593,7 @@ export async function csStart() {
     keys: () => false,
     active: () => false,
     onPick: () => {},
-    cap: () => (document.hidden ? 1 : DR.on ? 4 : Math.min(60, userFps())),
+    cap: () => (document.hidden ? 1 : dressingRoom.on ? 4 : Math.min(60, userFps())),
   });
   if (!CS.on || CS.run !== run) return;
   if (!walkRenderer.on || !walkView.ready || !walkView.cv) {
@@ -713,7 +713,7 @@ async function csScript(run) {
     });
     if (CS.test)
       setTimeout(() => {
-        if (DR.on) drSave();
+        if (dressingRoom.on) drSave();
       }, 1500);
   });
   CS.dressing = false;
