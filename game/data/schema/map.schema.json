@@ -10,7 +10,7 @@
   "h": {"description": "depth in metres", "type": "integer", "minimum": 4, "maximum": 400},
   "edge": {"description": "the ground kind (a key of scenery.terrains) round the map", "type": "string", "minLength": 1, "maxLength": 1},
   "kind": {"enum": ["town", "route", "room", "test"]},
-  "place": {"type": ["string", "null"]},
+  "locationId": {"type": ["string", "null"]},
   "hub": {"$ref": "#/$defs/point"},
   "exits": {"type": "array", "items": {"$ref": "#/$defs/point"}},
   "edgeExits": {

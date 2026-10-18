@@ -30,7 +30,7 @@ def room(sid, name, floor, wall, seed, kind, keeper, spot, chat, w=W, h=H):
               look={'color': {'exposure': 1.12}, 'sun': {'height': 82, 'angle': 60, 'strength': .85, 'ambient': 1.75, 'clouds': 0, 'cloudShadows': 0, 'shafts': 0},
                     'shadows': {'strength': .35, 'softness': 2.2}, 'lights': {'brightness': 1.25, 'windowsDay': .6}, 'air': {'mist': 0}})
     c = w / 2
-    s.d.update({'room': kind, 'kind': 'room', 'building': kind, 'place': None, 'keeper': keeper, 'npcSpots': [list(spot)], 'hub': [c, 2.2], 'exits': [[c, .6]], 'wallCol': [None] * 10 + [wall, None], 'edgeExits': [{'side': 'S', 't': .5, 'in': .6, 'width': 2, 'id': 'south'}]})
+    s.d.update({'room': kind, 'kind': 'room', 'building': kind, 'locationId': None, 'keeper': keeper, 'npcSpots': [list(spot)], 'hub': [c, 2.2], 'exits': [[c, .6]], 'wallCol': [None] * 10 + [wall, None], 'edgeExits': [{'side': 'S', 't': .5, 'in': .6, 'width': 2, 'id': 'south'}]})
     # the back wall and the two side walls (the camera side stays open)
     s.terrace(-1, h - 1.4, w + 1, h + 1, WALL, wall=True, wobble=0, mat=10)
     # v47: the side walls stop where the back wall starts (overlapping, the corners stood twice as tall)

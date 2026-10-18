@@ -15,7 +15,7 @@
  "farH": 8,
  "folk": 5,
  "kind": "town",
- "place": "copperleaf",
+ "locationId": "copperleaf",
  "wind": 1,
  "v46": 46,
  "hub": [53.4,45.2],

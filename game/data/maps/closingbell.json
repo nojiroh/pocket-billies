@@ -15,7 +15,7 @@
  "farH": 7,
  "folk": 0,
  "kind": "route",
- "place": "closingbell",
+ "locationId": "closingbell",
  "grassCol": ["#9A8A40","#F0D888"],
  "wind": 1.1,
  "rays": 1,

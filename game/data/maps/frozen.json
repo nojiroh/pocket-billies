@@ -15,7 +15,7 @@
  "farH": 10,
  "folk": 0,
  "kind": "route",
- "place": "frozen",
+ "locationId": "frozen",
  "grassCol": ["#6A8A8A","#D8E8E4"],
  "wind": 1.2,
  "v46": 46,

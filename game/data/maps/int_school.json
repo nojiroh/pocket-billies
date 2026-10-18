@@ -29,7 +29,7 @@
  "room": "school",
  "kind": "room",
  "building": "school",
- "place": null,
+ "locationId": null,
  "keeper": "folk:61",
  "npcSpots": [[7,8]],
  "hub": [7,2.2],

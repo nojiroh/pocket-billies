@@ -15,7 +15,7 @@
  "farH": 4,
  "folk": 0,
  "kind": "route",
- "place": "pressing",
+ "locationId": "pressing",
  "wind": 1.2,
  "ride": 1,
  "waterKind": "sea",

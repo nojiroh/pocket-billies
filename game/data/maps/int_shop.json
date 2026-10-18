@@ -67,6 +67,6 @@
  ],
  "kind": "room",
  "building": "shop",
- "place": null,
+ "locationId": null,
  "stepsV": 1
 }

@@ -15,7 +15,7 @@
  "farH": 6,
  "folk": 10,
  "kind": "town",
- "place": "portfolio",
+ "locationId": "portfolio",
  "grassCol": ["#6A9A6A","#D8E4A8"],
  "wind": 1.1,
  "waterKind": "sea",

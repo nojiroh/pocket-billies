@@ -15,7 +15,7 @@
  "farH": 9,
  "folk": 10,
  "kind": "town",
- "place": "mintshaft",
+ "locationId": "mintshaft",
  "grassCol": ["#3A5A5A","#9AD8D0"],
  "v46": 46,
  "hub": [48,28],

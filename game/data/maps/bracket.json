@@ -15,7 +15,7 @@
  "farH": 4,
  "folk": 0,
  "kind": "route",
- "place": "bracket",
+ "locationId": "bracket",
  "grassCol": ["#8AA0C0","#F0F4FA"],
  "wind": 1.4,
  "rays": 1,

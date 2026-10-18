@@ -15,7 +15,7 @@
  "farH": 9,
  "folk": 0,
  "kind": "route",
- "place": "fallquarter",
+ "locationId": "fallquarter",
  "grassCol": ["#6A6A30","#D8A850"],
  "wind": 1.2,
  "v46": 46,

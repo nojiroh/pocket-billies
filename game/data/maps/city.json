@@ -26,7 +26,7 @@
  ],
  "cliff": "q",
  "kind": "town",
- "place": "city",
+ "locationId": "city",
  "v46": 46,
  "life": [
   {"k":"duck","n":4},

@@ -47,6 +47,6 @@
  ],
  "kind": "room",
  "building": "home",
- "place": null,
+ "locationId": null,
  "stepsV": 1
 }

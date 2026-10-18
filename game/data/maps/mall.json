@@ -23,7 +23,7 @@
   "Maison Margin is up on the mezzanine. Bring a wheelbarrow of money."
  ],
  "kind": "town",
- "place": "mall",
+ "locationId": "mall",
  "v46": 46,
  "hub": [52,12],
  "exits": [[1.1,44.7],[102.9,20]],

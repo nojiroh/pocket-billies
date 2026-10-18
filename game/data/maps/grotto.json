@@ -22,7 +22,7 @@
   "The upper ledge has the best view of the springs."
  ],
  "kind": "town",
- "place": "grotto",
+ "locationId": "grotto",
  "v46": 46,
  "hub": [52,26],
  "exits": [[1.1,36.79],[67.35,1.1],[36.73,82.9],[85.47,82.9]],

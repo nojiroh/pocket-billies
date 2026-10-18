@@ -19,7 +19,7 @@
  "flatFar": 1,
  "wind": 1,
  "kind": "route",
- "place": "lake",
+ "locationId": "lake",
  "v46": 46,
  "npcSpots": [[60.16,25.04]],
  "life": [

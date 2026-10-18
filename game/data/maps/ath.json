@@ -15,7 +15,7 @@
  "farH": 8,
  "folk": 0,
  "kind": "route",
- "place": "ath",
+ "locationId": "ath",
  "grassCol": ["#9A8A40","#F0D888"],
  "wind": 1.2,
  "rays": 1,

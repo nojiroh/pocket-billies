@@ -17,7 +17,7 @@
  "rays": 1,
  "waterKind": "swamp",
  "kind": "route",
- "place": "thicket",
+ "locationId": "thicket",
  "v46": 46,
  "life": [
   {"k":"squirrel","n":3},

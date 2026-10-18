@@ -22,7 +22,7 @@
   "The food truck moves every day. Today it’s right here."
  ],
  "kind": "town",
- "place": "foodcourt",
+ "locationId": "foodcourt",
  "v46": 46,
  "life": [
   {"k":"pigeon","n":6},

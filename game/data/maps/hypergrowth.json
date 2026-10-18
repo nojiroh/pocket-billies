@@ -15,7 +15,7 @@
  "farH": 11,
  "folk": 0,
  "kind": "route",
- "place": "hypergrowth",
+ "locationId": "hypergrowth",
  "grassCol": ["#2C6A3C","#8CC86A"],
  "rays": 1,
  "v46": 46,

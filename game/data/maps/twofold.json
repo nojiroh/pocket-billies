@@ -15,7 +15,7 @@
  "farH": 8,
  "folk": 10,
  "kind": "town",
- "place": "twofold",
+ "locationId": "twofold",
  "grassCol": ["#2F9C92","#F4A6CF"],
  "wind": 1,
  "v46": 46,

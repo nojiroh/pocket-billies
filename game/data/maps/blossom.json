@@ -15,7 +15,7 @@
  "farH": 8,
  "folk": 0,
  "kind": "route",
- "place": "blossom",
+ "locationId": "blossom",
  "grassCol": ["#3D9A84","#E9B4D2"],
  "rays": 1,
  "v46": 46,

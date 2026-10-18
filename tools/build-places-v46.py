@@ -68,7 +68,7 @@ class Place(B.Scene):
         for k, v in old.items():
             if k not in LAYOUT: self.d[k] = copy.deepcopy(v)
         self.d['w'], self.d['h'] = self.W, self.H; self.d['edge'] = self.g[0][0]
-        self.d['kind'] = 'town' if self.sid in SIZE else 'route'; self.d['place'] = self.sid
+        self.d['kind'] = 'town' if self.sid in SIZE else 'route'; self.d['locationId'] = self.sid
         self.d.pop('backup', None)
         if self.d.get('name', '').endswith(' (v45)'): self.d['name'] = self.d['name'][:-6]
         self.old = old; self.hub = hub; self.d['v46'] = 46
@@ -771,7 +771,7 @@ def finish(sc, D, i, nature, cat):
         else: J['b'] = eid
     sc['edgeExits'] = E
     # ladders where a cliff faces the camera (tools/build-v28.py's finder, reaching farther in the bigger places)
-    want = {'ridge': 2, 'canyon': 2, 'pass': 2, 'summit': 1, 'volcano': 1, 'thicket': 1}.get(sc.get('place'))
+    want = {'ridge': 2, 'canyon': 2, 'pass': 2, 'summit': 1, 'volcano': 1, 'thicket': 1}.get(sc.get('locationId'))
     sc['props'] = [p for p in sc['props'] if p['k'] != 'ladder']
     if want:
         src = V28.ladders.__code__.co_consts; hub0 = sc['hub']
@@ -779,9 +779,9 @@ def finish(sc, D, i, nature, cat):
         for x, zf, d in L:
             sc['props'].append({'k': 'ladder', 'x': round(x, 2), 'z': round(zf - .12, 2), 's': round((d + .35) / V28.LADDER_M, 2), 'act': 'climb', 'label': 'Ladder',
                                 'to': [round(x, 2), round(zf + .8, 2)], 'h': round(d, 2)})
-        if not L: print(f'    !! {sc.get("place")}: no cliff for a ladder')
+        if not L: print(f'    !! {sc.get("locationId")}: no cliff for a ladder')
     # wild growth, in plant families, on the v46 ground too
-    occ = sum(1 for p in sc['props']); grown = GW.grow_scene(sc.get('place') or '', sc, cat, nature, .55 if sc.get('kind') == 'town' else .8, random.Random(4600 + i))
+    occ = sum(1 for p in sc['props']); grown = GW.grow_scene(sc.get('locationId') or '', sc, cat, nature, .55 if sc.get('kind') == 'town' else .8, random.Random(4600 + i))
     sc['grown'] = 31
     CW.clear_scene(sc, cat, CW.ppu(D))          # alpha 0.1: what grew or was placed in front of a window moves aside
     return occ, len(grown)
@@ -850,7 +850,7 @@ def main():
         sc, info = BUILD[sid](D, n, base_old)
         occ, grown = finish(sc, D, n, nature, cat)
         if sid + '@v45' not in D['maps']:
-            bk = copy.deepcopy(old); bk['name'] = (old.get('name') or sid) + ' (v45)'; bk['kind'] = 'test'; bk['place'] = sid; bk['backup'] = 'v45'
+            bk = copy.deepcopy(old); bk['name'] = (old.get('name') or sid) + ' (v45)'; bk['kind'] = 'test'; bk['locationId'] = sid; bk['backup'] = 'v45'
             D['maps'][sid + '@v45'] = bk
         D['maps'][sid] = sc
         lab = info.get('lab')

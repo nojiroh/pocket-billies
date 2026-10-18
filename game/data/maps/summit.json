@@ -27,7 +27,7 @@
   "The cocoa stall takes coins, cards and future earnings."
  ],
  "kind": "town",
- "place": "summit",
+ "locationId": "summit",
  "v46": 46,
  "npcSpots": [[66.81,65.78]],
  "life": [

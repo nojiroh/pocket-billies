@@ -22,7 +22,7 @@ import gamedata  # noqa: E402
 
 DATA = 'game/data'
 ANY = re.compile(r'[<>`]')
-NAME_KEYS = {'id', 'name', 'n', 'names', 'title', 'place'}
+NAME_KEYS = {'id', 'name', 'n', 'names', 'title', 'locationId'}
 
 
 def walk(v, path, key, out):

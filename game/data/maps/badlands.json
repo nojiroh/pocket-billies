@@ -15,7 +15,7 @@
  "farH": 9,
  "folk": 0,
  "kind": "route",
- "place": "badlands",
+ "locationId": "badlands",
  "grassCol": ["#7A6A30","#C8A860"],
  "wind": 1.2,
  "v46": 46,

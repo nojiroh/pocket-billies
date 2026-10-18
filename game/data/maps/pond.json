@@ -16,7 +16,7 @@
  "folk": 0,
  "rays": 1,
  "kind": "route",
- "place": "pond",
+ "locationId": "pond",
  "v46": 46,
  "life": [
   {"k":"duck","n":6},

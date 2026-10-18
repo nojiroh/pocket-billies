@@ -15,7 +15,7 @@
  "farH": 10,
  "folk": 10,
  "kind": "town",
- "place": "upside",
+ "locationId": "upside",
  "grassCol": ["#5A8A5A","#B8D8A0"],
  "v46": 46,
  "hub": [48,28],

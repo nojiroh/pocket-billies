@@ -15,7 +15,7 @@
  "farH": 10,
  "folk": 10,
  "kind": "town",
- "place": "marketcap",
+ "locationId": "marketcap",
  "grassCol": ["#3C6A68","#B8E0C8"],
  "v46": 46,
  "hub": [48,28],

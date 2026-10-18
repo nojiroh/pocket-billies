@@ -29,7 +29,7 @@
  "room": "mansion",
  "kind": "room",
  "building": "mansion",
- "place": null,
+ "locationId": null,
  "keeper": "folk:91",
  "npcSpots": [[9.2,7.6]],
  "hub": [9,2.2],

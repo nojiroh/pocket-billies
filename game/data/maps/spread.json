@@ -15,7 +15,7 @@
  "farH": 9,
  "folk": 0,
  "kind": "route",
- "place": "spread",
+ "locationId": "spread",
  "grassCol": ["#2E5A6A","#8ADCE6"],
  "v46": 46,
  "hub": [68,12],

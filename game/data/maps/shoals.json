@@ -15,7 +15,7 @@
  "farH": 5,
  "folk": 0,
  "kind": "route",
- "place": "shoals",
+ "locationId": "shoals",
  "grassCol": ["#7A9A6A","#E8E0A8"],
  "wind": 1.2,
  "waterKind": "sea",

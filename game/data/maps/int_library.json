@@ -29,7 +29,7 @@
  "room": "library",
  "kind": "room",
  "building": "library",
- "place": null,
+ "locationId": null,
  "keeper": "folk:51",
  "npcSpots": [[7,7.4]],
  "hub": [7,2.2],

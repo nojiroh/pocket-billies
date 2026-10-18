@@ -29,7 +29,7 @@
  "room": "greenhouse",
  "kind": "room",
  "building": "greenhouse",
- "place": null,
+ "locationId": null,
  "keeper": "folk:111",
  "npcSpots": [[7,6.6]],
  "hub": [7,2.2],

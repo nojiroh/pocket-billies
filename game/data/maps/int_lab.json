@@ -66,6 +66,6 @@
  ],
  "kind": "room",
  "building": "lab",
- "place": null,
+ "locationId": null,
  "stepsV": 1
 }

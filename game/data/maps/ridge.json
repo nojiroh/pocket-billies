@@ -16,7 +16,7 @@
  "folk": 0,
  "wind": 1.6,
  "kind": "route",
- "place": "ridge",
+ "locationId": "ridge",
  "v46": 46,
  "life": [
   {"k":"goat","n":3},

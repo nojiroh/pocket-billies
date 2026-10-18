@@ -15,7 +15,7 @@
  "farH": 10,
  "folk": 0,
  "kind": "route",
- "place": "sporewood",
+ "locationId": "sporewood",
  "grassCol": ["#3C6A68","#B8E0C8"],
  "rays": 1,
  "v46": 46,

@@ -27,7 +27,7 @@
   "The Offshore Bank has no windows on the inside."
  ],
  "kind": "town",
- "place": "taxhaven",
+ "locationId": "taxhaven",
  "v46": 46,
  "npcSpots": [[48,31.6]],
  "life": [

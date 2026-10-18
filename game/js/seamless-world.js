@@ -686,7 +686,7 @@ function seamlessLookOf(S) {
   for (const k of LOOK_KEYS) o[k] = S[k];
   o.indoor = 0;
   o.mood = mapMoodName(S);
-  o.placeId = S.place;
+  o.placeId = S.locationId;
   /* alpha 0.2: a cave stays dark in its own view (indoor was dropped for views in v46, and the darkness with it) */ if (
     o.dark == null &&
     S.indoor &&

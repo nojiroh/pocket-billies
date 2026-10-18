@@ -1662,7 +1662,7 @@ ACTIONS.scOwnRoom = () => {
   const from = D.maps[p.room] || D.maps[kr];
   if (!from) return;
   const k = uniqueKey('int_' + id + '_' + p.k, x => !!D.maps[x]);
-  D.maps[k] = { ...clone(from), name: (from.name || k) + ' (' + (sc.name || id) + ')', place: id, vary: 0 };
+  D.maps[k] = { ...clone(from), name: (from.name || k) + ' (' + (sc.name || id) + ')', locationId: id, vary: 0 };
   p.room = k;
   if (!p.act) p.act = 'house';
   changed();

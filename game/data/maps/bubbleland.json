@@ -15,7 +15,7 @@
  "farH": 8,
  "folk": 0,
  "kind": "route",
- "place": "bubbleland",
+ "locationId": "bubbleland",
  "grassCol": ["#6A8A5A","#D0D8A0"],
  "wind": 1.1,
  "v46": 46,

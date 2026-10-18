@@ -15,7 +15,7 @@
  "farH": 4,
  "folk": 8,
  "kind": "town",
- "place": "pearlantis",
+ "locationId": "pearlantis",
  "wind": 0.35,
  "v46": 46,
  "under": 1,

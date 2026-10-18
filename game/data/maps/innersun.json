@@ -15,7 +15,7 @@
  "farH": 6,
  "folk": 0,
  "kind": "route",
- "place": "innersun",
+ "locationId": "innersun",
  "grassCol": ["#A89040","#F8E098"],
  "wind": 0.9,
  "rays": 1,

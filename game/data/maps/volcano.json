@@ -19,7 +19,7 @@
  "wind": 0.8,
  "cliff": "j",
  "kind": "route",
- "place": "volcano",
+ "locationId": "volcano",
  "v46": 46,
  "npcSpots": [[66.56,29.68]],
  "life": [

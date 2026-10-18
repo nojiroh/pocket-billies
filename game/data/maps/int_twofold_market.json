@@ -29,7 +29,7 @@
  "room": "market_hall",
  "kind": "room",
  "building": "market_hall",
- "place": null,
+ "locationId": null,
  "keeper": "folk:141",
  "npcSpots": [[9,7.8]],
  "hub": [9,2.2],

@@ -24,7 +24,7 @@
   "The sheep are called Wool, Wooler and Woolest."
  ],
  "kind": "town",
- "place": "farm",
+ "locationId": "farm",
  "v46": 46,
  "life": [
   {"k":"sheep","n":4},

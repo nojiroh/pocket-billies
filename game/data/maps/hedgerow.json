@@ -15,7 +15,7 @@
  "farH": 8,
  "folk": 0,
  "kind": "route",
- "place": "hedgerow",
+ "locationId": "hedgerow",
  "wind": 1.05,
  "v46": 46,
  "hub": [41.4,38.4],

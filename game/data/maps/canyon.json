@@ -15,7 +15,7 @@
  "farH": 8,
  "folk": 0,
  "kind": "route",
- "place": "canyon",
+ "locationId": "canyon",
  "v46": 46,
  "life": [
   {"k":"lizard","n":4}

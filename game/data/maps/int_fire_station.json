@@ -29,7 +29,7 @@
  "room": "fire_station",
  "kind": "room",
  "building": "fire_station",
- "place": null,
+ "locationId": null,
  "keeper": "folk:81",
  "npcSpots": [[5.6,7.4]],
  "hub": [7,2.2],

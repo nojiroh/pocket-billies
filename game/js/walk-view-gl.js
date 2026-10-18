@@ -5818,7 +5818,7 @@ const FLOWER_SET_BY_LOCATION = {
   farm: 'meadow',
 };
 function mapFlowers(sc) {
-  const id = (sc && (sc.place || sc.baseId)) || '',
+  const id = (sc && (sc.locationId || sc.baseId)) || '',
     k = FLOWER_SET_BY_LOCATION[id] || (sc && sc.kind === 'town' ? 'town' : 'meadow');
   return { c: FLOWER_COLORS[k].map(h => hexToRgb(h).map(v => v / 255)), glow: k === 'spore' ? 0.55 : 0 };
 }

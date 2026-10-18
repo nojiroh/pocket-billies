@@ -15,7 +15,7 @@
  "farH": 9,
  "folk": 0,
  "kind": "route",
- "place": "darkpool",
+ "locationId": "darkpool",
  "grassCol": ["#2A4A5A","#7CC8D8"],
  "waterKind": "lake",
  "v46": 46,

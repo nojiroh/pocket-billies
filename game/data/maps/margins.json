@@ -15,7 +15,7 @@
  "farH": 9,
  "folk": 0,
  "kind": "route",
- "place": "margins",
+ "locationId": "margins",
  "grassCol": ["#2C7C6E","#9FC9A6"],
  "v46": 46,
  "hub": [56,12],

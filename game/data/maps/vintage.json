@@ -15,7 +15,7 @@
  "farH": 8,
  "folk": 0,
  "kind": "route",
- "place": "vintage",
+ "locationId": "vintage",
  "grassCol": ["#7C7A34","#E8CC6A"],
  "wind": 1.1,
  "v46": 46,

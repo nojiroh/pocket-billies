@@ -64,8 +64,8 @@ def main():
     for sid, sc in D['maps'].items():
         if sc.get('kind'): continue
         if sc.get('test') or sid.startswith('test_'): sc['kind'] = 'test'
-        elif sc.get('room') or sid.startswith('int_'): sc['kind'] = 'room'; sc.setdefault('building', sc.get('room')); sc.setdefault('place', None)
-        elif sid in by_scene: sc['kind'] = by_scene[sid]['kind']; sc['place'] = sid
+        elif sc.get('room') or sid.startswith('int_'): sc['kind'] = 'room'; sc.setdefault('building', sc.get('room')); sc.setdefault('locationId', None)
+        elif sid in by_scene: sc['kind'] = by_scene[sid]['kind']; sc['locationId'] = sid
         else: print(f'  {sid}: no place uses it; left without a kind'); continue
         n += 1
     for i, L in enumerate(D['roads']):

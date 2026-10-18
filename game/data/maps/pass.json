@@ -17,7 +17,7 @@
  "wind": 1.5,
  "waterKind": "ice",
  "kind": "route",
- "place": "pass",
+ "locationId": "pass",
  "v46": 46,
  "npcSpots": [[69.76,26.96]],
  "life": [

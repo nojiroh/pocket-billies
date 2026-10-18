@@ -15,7 +15,7 @@
  "farH": 6,
  "folk": 0,
  "kind": "route",
- "place": "serverfarm",
+ "locationId": "serverfarm",
  "grassCol": ["#5A8A5A","#C8DCA0"],
  "wind": 1,
  "v46": 46,

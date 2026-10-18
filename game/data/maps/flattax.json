@@ -15,7 +15,7 @@
  "farH": 6,
  "folk": 0,
  "kind": "route",
- "place": "flattax",
+ "locationId": "flattax",
  "grassCol": ["#8A8044","#E4D488"],
  "wind": 1.3,
  "v46": 46,

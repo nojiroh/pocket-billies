@@ -27,7 +27,7 @@
   "The orchard bees only sting people who talk about interest rates."
  ],
  "kind": "town",
- "place": "sundown",
+ "locationId": "sundown",
  "v46": 46,
  "life": [
   {"k":"duck","n":3},

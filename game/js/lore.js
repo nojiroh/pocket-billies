@@ -82,7 +82,7 @@ function loreChat(place) {
 function mapChatLines(fallback) {
   const sc = (typeof walkView !== 'undefined' && walkView.sc) || {},
     own = sc.chat && sc.chat.length ? sc.chat : fallback,
-    L = loreChat(sc.placeId || sc.place);
+    L = loreChat(sc.placeId || sc.locationId);
   return L.length ? L.concat(own) : own;
 }
 /* a book or paper in a room: its pages one at a time; the Guide keeps the ones you've read */
