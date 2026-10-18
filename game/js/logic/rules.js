@@ -49,7 +49,7 @@ import {
   trainersAt,
   typeEffectiveness,
 } from '../game-data.js';
-import { partsPrime, partsStatFactor, partsWeightRatio } from './parts.js';
+import { partsLean, partsPrime, partsStatFactor, partsWeightRatio } from './parts.js';
 /* eslint-disable no-func-assign */
 expose({
   STEP_BRACKETS: [() => STEP_BRACKETS],
@@ -69,6 +69,7 @@ expose({
   billyWeight: [() => billyWeight],
   // @ts-expect-error -- replaced on purpose
   blockerAt: [() => blockerAt, v => (blockerAt = v)],
+  buildLean: [() => buildLean],
   buildStatFactor: [() => buildStatFactor],
   buildWeightRatio: [() => buildWeightRatio],
   canEnter: [() => canEnter],
@@ -260,6 +261,8 @@ export const buildWeightRatio = b => partsWeightRatio(RULES.parts, b);
 export const billyWeight = m => Math.round(SPECIES[m.sp].wt * buildWeightRatio(billyBuild(m)) * 10) / 10;
 /** @param {Build} b @param {string} k a stat id @returns {number} what the build does to that stat (1 = nothing) */
 export const buildStatFactor = (b, k) => partsStatFactor(RULES.parts, b, k);
+/** @param {Build} b phase 06: which way the build leans (attack, speed, lean, off, prime), for the Build tab */
+export const buildLean = b => partsLean(RULES.parts, b);
 
 /* ---------- billionaires ---------- */
 export function stat(m, k) {
@@ -691,8 +694,8 @@ export function addSteps(n, quiet) {
       if (j.pend < RULES.jobs.maxPending) j.pend++;
     }
   });
-  if (!quiet || sp)
-    toast(`+${formatNumber(n)} steps, +$${formatNumber(gi)}${sp ? `, ${plural(sp, 'new encounter')}` : ''}`);
+  /* phase 06-2: the money earned rises from the money chip (ui.js pbFloat), so the toast leaves it out */
+  if (!quiet || sp) toast(`+${formatNumber(n)} steps${sp ? `, ${plural(sp, 'new encounter')}` : ''}`);
   msgs.concat(notes).forEach(t => toast(t));
   save();
   if (!activeBattle) {

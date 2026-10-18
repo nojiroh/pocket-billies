@@ -2,7 +2,7 @@
 /* ================= UI ================= */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { provide } from './hooks.js';
+import { billyUnit, provide, unitBuildHTML, unitHeroHTML, unitOpenRowHTML, unitRowHTML } from './hooks.js';
 import { $, $$, clamp, random } from './util.js';
 import {
   COINS,
@@ -35,7 +35,6 @@ import {
   trainersAt,
   typeEffectiveness,
 } from './game-data.js';
-import { weightClass } from './logic/parts.js';
 import {
   STEP_BRACKETS,
   addEgg,
@@ -43,7 +42,6 @@ import {
   assignJob,
   billyBuild,
   billyName,
-  billyWeight,
   blockerAt,
   canEnter,
   canEvolve,
@@ -117,17 +115,8 @@ import {
 } from './game-state.js';
 import { frameTask, userFps } from './frame-scheduler.js';
 import { ART_CACHE, artLoad, artURL, coinHTML, coinURL, eggHTML, makeCanvas, uiIconHTML } from './art.js';
-import {
-  LOOK_PRESETS,
-  cleanLook,
-  cleanTrainer,
-  lookOf,
-  personHTML,
-  personWalkIconURL,
-  portraitHTML,
-} from './person-art.js';
+import { LOOK_PRESETS, cleanLook, cleanTrainer, personHTML, personWalkIconURL, portraitHTML } from './person-art.js';
 import { applyPreferences, settingsHTML } from './settings-screen.js';
-import { lookPortrait, openDressingRoom } from './dressing-room.js';
 import { bustHTML, rigCanvasHTML } from './skeleton-rig.js';
 import { EASE, battleStage, battleStageFocus, battleStageTargets, camHome } from './battle-stage.js';
 import {
@@ -193,7 +182,6 @@ import { openShop } from './shop.js';
 import { soundEffect } from './sound.js';
 import { talkHazel } from './talk.js';
 import { cutscene, cutsceneStart, cutsceneWanted } from './cutscene.js';
-import { fallStill } from './opening-fall.js';
 import { renderTitle, titleMount } from './title.js';
 import { loreBook, renderLore } from './lore.js';
 import { flyMenu, rideGlassLift } from './airship.js';
@@ -214,10 +202,6 @@ import { challengeCardHTML, homeDecorate, refreshHomeFurniture, requestListHTML,
 expose({
   BOX_SORTS: [() => BOX_SORTS],
   BRACKET_COLORS: [() => BRACKET_COLORS],
-  HAZEL_INTRO_LINES: [() => HAZEL_INTRO_LINES],
-  INTRO_STILLS: [() => INTRO_STILLS],
-  PART_SIZE_NAMES: [() => PART_SIZE_NAMES],
-  PART_SLOT_NAMES: [() => PART_SLOT_NAMES],
   RARITY_NAMES: [() => RARITY_NAMES],
   ROOM_BY_BUILDING: [() => ROOM_BY_BUILDING],
   ROOM_BY_USE: [() => ROOM_BY_USE],
@@ -227,7 +211,6 @@ expose({
   addPick: [() => addPick, v => (addPick = v)],
   badgeSlots: [() => badgeSlots, v => (badgeSlots = v)],
   billyConditionHTML: [() => billyConditionHTML],
-  billyPartsHTML: [() => billyPartsHTML, v => (billyPartsHTML = v)],
   billySheet: [() => billySheet, v => (billySheet = v)],
   boardNote: [() => boardNote, v => (boardNote = v)],
   boxSection: [() => boxSection, v => (boxSection = v)],
@@ -256,7 +239,6 @@ expose({
   hirePick: [() => hirePick, v => (hirePick = v)],
   hpBar: [() => hpBar, v => (hpBar = v)],
   initPixelSky: [() => initPixelSky, v => (initPixelSky = v)],
-  introSteps: [() => introSteps, v => (introSteps = v)],
   isDark: [() => isDark],
   jobSlots: [() => jobSlots, v => (jobSlots = v)],
   learnModal: [() => learnModal, v => (learnModal = v)],
@@ -307,8 +289,6 @@ expose({
   statusBadgeHTML: [() => statusBadgeHTML],
   stepsTo: [() => stepsTo, v => (stepsTo = v)],
   swapPick: [() => swapPick, v => (swapPick = v)],
-  teamCard: [() => teamCard, v => (teamCard = v)],
-  teamHero: [() => teamHero, v => (teamHero = v)],
   toast: [() => toast, v => ((toast = v), provide({ toast }))],
   toastTimer: [() => toastTimer, v => (toastTimer = v)],
   topbar: [() => topbar, v => (topbar = v)],
@@ -357,7 +337,7 @@ export function setRenderOverlay(v) {
   provide({ renderOverlay });
 }
 /* to-module: end */
-const typeBadgeHTML = t =>
+export const typeBadgeHTML = t =>
   `<span class="chip" style="--tc:${TYPE_COLORS[t][0]};--tf:${TYPE_COLORS[t][1]}">${t === 'None' ? 'Normal' : t}</span>`;
 provide({ typeBadgeHTML }); /* to-module */
 const statusBadgeHTML = st => (st ? `<span class="stb st-${st}">${STATUS_NAMES[st]}</span>` : '');
@@ -770,92 +750,13 @@ function updateNav(show) {
     else b.removeAttribute('aria-current');
   });
 }
-/* v47: the opening in pictures, when the cutscene can't run or stops (opening-fall.js draws them): the fall, Hazel, your trainer, your starter, then Blake */
-const INTRO_STILLS = [
-  [
-    'street',
-    3.2,
-    'The surface, late, after the show. You were walking home, a lanyard round your neck, your phone in your hand.',
-  ],
-  ['street', 6.35, 'Then the pavement opened.'],
-  ['crust', 1.05, 'Down through the crust: soil, rock, old pipes, a crate stamped LEGACY. Then light.'],
-  [
-    'sky',
-    0.4,
-    'Inside the planet there is another world, with the Inner Sun at its centre. You fell right across it, and landed in Copperleaf.',
-  ],
-];
-const HAZEL_INTRO_LINES = [
-  '[surprised] Oh! Another one! Are you all right? That was quite a landing.',
-  'You came down through the crust. Things do, now and then. Mostly furniture. You’re the first this week who can talk.',
-  'Can you tell me your name? No? Classic fall-related amnesia. Very common down here. It usually comes back, a bit at a time.',
-  '[happy] Let’s start with what we can see. Let me get a good look at you.',
-];
-export function introSteps() {
-  return [
-    ...INTRO_STILLS.map(s => ({ k: 'still', s })),
-    ...HAZEL_INTRO_LINES.map(t => ({ k: 'gini', t })),
-    { k: 'trainer' },
-    { k: 'named' },
-    { k: 'pick' },
-  ];
-}
+/* phase 06-2: before a game starts, only the plain title (when the 3D one can't show) or, if the 3D opening couldn't
+   start or broke, a screen to try it again. The old step-by-step intro (stills, Hazel's lines, the trainer step and a
+   list of starters) is gone: the opening cutscene is the only way in (docs/phases/06-plan.md "The new opening"). */
 function renderIntro() {
-  const i = uiState.intro,
-    L = introSteps(),
-    st = i > 0 ? L[Math.min(i, L.length) - 1] : null;
-  if (st && st.k === 'still') {
-    const [kind, t, text] = st.s,
-      src = typeof fallStill === 'function' ? fallStill(kind, t) : '';
-    return `<div class="talk intro-still">${src ? `<img class="still" src="${src}" alt="">` : ''}<div class="dlg px"><p class="line">${escapeHtml(text)}</p><button class="pb dark wide" data-a="intro">Next</button></div></div>`;
-  }
-  if (st && st.k === 'gini') {
-    const m = /^\[(\w+)\]\s*/.exec(st.t),
-      tx = m ? st.t.slice(m[0].length) : st.t;
-    return `<div class="talk"><div class="talk-art">${personHTML('gini', 96)}</div><div class="dlg px"><p class="speaker">Professor Hazel</p><p class="line" id="dlgLine">${escapeHtml(tx)}</p><button class="pb dark wide" data-a="intro">Next</button></div></div>`;
-  }
-  if (i === 0)
-    return `<div class="title"><div class="title-landscape" aria-hidden="true"></div><div class="title-coin">${coinHTML('penny', 176, 32)}</div><h1 class="logo">Pocket Billies</h1><p class="tag">A walking RPG inside the Hollow Earth, where the Billies are the wildlife. Gotta tax 'em all!</p><button class="pb gold wide big" data-a="intro">Start</button></div>`;
-  if (i <= HAZEL_INTRO_LINES.length)
-    return `<div class="talk"><div class="talk-art">${personHTML('gini', 96)}</div><div class="dlg px"><p class="speaker">Professor Hazel</p><p class="line" id="dlgLine">${HAZEL_INTRO_LINES[i - 1]}</p><button class="pb dark wide" data-a="intro">Next</button></div></div>`;
-  if (st && st.k === 'trainer') {
-    const cur = JSON.stringify(cleanLook(uiState.trainerDraft || LOOK_PRESETS[0]));
-    return `<header class="bar"><div><div class="sub">Your adventure, your style</div><h1 class="where">Create your trainer</h1></div></header>
-  <p class="note">Pick a starting look, then make it yours: body, face, hair and clothes. You can change it any time from your Trainer card.</p>
-  <div class="tr-presets">${LOOK_PRESETS.map((p, j) => `<button class="tr-pre px" data-a="tr-preset" data-i="${j}" aria-pressed="${JSON.stringify(cleanLook(p)) === cur}"><img src="${lookPortrait(p)}" alt="Look ${j + 1}"></button>`).join('')}</div>
-  <div class="tr-me px"><div class="tr-big">${personHTML('me', 120)}</div><div class="racts"><button class="pb dark wide" data-a="tr-custom">${uiIconHTML('profile', 16)} Customize</button><button class="pb gold wide big" data-a="tr-next">Next</button></div></div>`;
-  }
-  if (st && st.k === 'named') {
-    const nm = lookOf('me').name || 'Trainer';
-    return `<div class="talk"><div class="talk-art">${personHTML('me', 96)}</div><div class="dlg px"><p class="speaker">Professor Hazel</p><p class="line">${escapeHtml(nm)}? It suits you. If it isn’t your name, it is now. Nobody should walk the Hollow Earth alone, so here: choose your very first Billie.</p><button class="pb dark wide" data-a="intro">Choose a starter</button></div></div>`;
-  }
-  const pk = RULES.start.starters.filter(l => SPECIES[l + '0']);
-  return `<header class="bar"><div><div class="sub">Professor Hazel’s lab</div><h1 class="where">Pick your starter</h1></div></header><p class="note">Each one beats one of the others. Your rival will pick whichever beats yours.</p>
- <div class="starters">${pk
-   .map((l, j) => {
-     const s = SPECIES[l + '0'],
-       t = s.types[0];
-     const st = TYPES.filter(x => typeEffectiveness(t, [x]) > 1),
-       wk = TYPES.filter(x => typeEffectiveness(x, [t]) > 1);
-     return `<button class="starter px" data-a="pick" data-l="${l}" style="--d:${j * 80}ms">${rigCanvasHTML(l + '0', 104, { act: 'cheer' })}<span><span class="sn">${s.name}</span><span class="row">${typeBadgeHTML(t)}</span><span class="sd">${s.blurb}</span><span class="sd">Strong against ${st.join(' and ')}. Weak to ${wk.join(' and ')}.</span></span></button>`;
-   })
-   .join('')}</div>`;
-}
-/* phase 16: a Billie's parts, its weight and whether it is Prime (in its details, Stats) */
-const PART_SLOT_NAMES = { head: 'Head', body: 'Body', front: 'Front', back: 'Back', sig: 'Signature' },
-  PART_SIZE_NAMES = { S: 'Small', M: 'Normal', L: 'Large' };
-function billyPartsHTML(m) {
-  const b = billyBuild(m),
-    kg = billyWeight(m),
-    prime = isPrime(b);
-  return `<div class="ms-parts"><div class="ms-parts-h"><b>Parts</b><span class="tnum">${kg} kg · ${weightClass(kg)}</span>${prime ? '<span class="ms-prime">Prime</span>' : ''}</div><div class="ms-parts-row">${partSlots()
-    .map(
-      k =>
-        `<span class="ms-part sz-${escapeHtml(b[k])}"><small>${escapeHtml(PART_SLOT_NAMES[k] || k)}</small><b>${escapeHtml(PART_SIZE_NAMES[b[k]] || b[k])}</b></span>`
-    )
-    .join(
-      ''
-    )}</div><p class="note">${prime ? 'Every part is its own, at normal size: a Prime Billie, a little stronger at everything.' : 'Bigger parts make it heavier: harder hits, slower moves. With every part at normal size it would be Prime.'}</p></div>`;
+  if (uiState.openingFailed)
+    return `<div class="title opening-failed"><h1 class="logo">Pocket Billies</h1><p class="tag">The opening scene couldn’t start${uiState.openingFailed === 'stopped' ? ' (it stopped partway)' : ''}. Trying again usually works; if it keeps happening, send the debug log.</p><button class="pb gold wide big" data-a="intro">Try again</button><button class="pb quiet wide" data-a="dbglog">Export debug log</button></div>`;
+  return `<div class="title"><div class="title-landscape" aria-hidden="true"></div><div class="title-coin">${coinHTML('penny', 176, 32)}</div><h1 class="logo">Pocket Billies</h1><p class="tag">A walking RPG inside the Hollow Earth, where the Billies are the wildlife. Gotta tax 'em all!</p><button class="pb gold wide big" data-a="intro">Start</button></div>`;
 }
 const BRACKET_COLORS = ['var(--ok)', 'var(--gold)', 'var(--red)', '#9B6BE0', '#4F80E8'];
 function bracketSpans() {
@@ -1974,7 +1875,7 @@ function paintWorldMapCard() {
   if (c) c.innerHTML = worldMapCardHTML();
 }
 /* ---------- team: the lead up top, the party as cards, day jobs, then storage ---------- */
-const plateVars = m => {
+export const plateVars = m => {
   const t = SPECIES[m.sp].types;
   return `--c1:${TYPE_COLORS[t[0]][0]};--c2:${TYPE_COLORS[t[t.length - 1]][0]}`;
 };
@@ -1986,25 +1887,8 @@ const xpProgress = m => {
   return clamp((m.xp - a) / (b - a), 0, 1);
 };
 const xpLeft = m => (m.lvl >= maxLevel() ? 'Max level' : `${formatNumber(xpFor(m.lvl + 1) - m.xp)} to Lv ${m.lvl + 1}`);
-const needsCare = m => m.hp < maxHp(m) || !!m.status;
+export const needsCare = m => m.hp < maxHp(m) || !!m.status;
 const meter = (k, inner, v) => `<div class="tm-meter"><span>${k}</span>${inner}<b class="tnum">${v}</b></div>`;
-function teamHero(m) {
-  const s = SPECIES[m.sp],
-    mx = maxHp(m),
-    bud = m.uid === saveData.buddy;
-  return `<section class="tm-hero tpanel"><button class="tm-stage" data-a="mon" data-u="${m.uid}" style="${plateVars(m)}" aria-label="${escapeHtml(billyName(m))}, details"><span class="tm-ribbon">Lead</span>${m.gold ? '<span class="tm-ribbon gold">Golden</span>' : ''}${rigCanvasHTML(m.sp, 120, { gold: m.gold, build: m.build })}</button>
- <div class="tm-info"><div class="tm-name"><h2>${escapeHtml(billyName(m))}</h2><span class="lv tnum">Lv ${m.lvl}</span></div>${m.nick ? `<div class="tm-sp">${escapeHtml(s.name)}</div>` : ''}
-  <div class="row">${s.types.map(typeBadgeHTML).join('')}${billyConditionHTML(m)}${bud ? `<span class="badge bud">${uiIconHTML('heart', 11)} Buddy</span>` : ''}</div>
-  ${meter('HP', hpBar(m.hp, mx), `${m.hp}/${mx}`)}${meter('XP', progressBarHTML(xpProgress(m), 'xpb'), xpLeft(m))}
-  <div class="tm-acts">${needsCare(m) ? `<button class="pb small green" data-a="mheal" data-u="${m.uid}">${uiIconHTML('heart', 14)} Heal</button>` : ''}${bud ? '' : `<button class="pb small" data-a="mbuddy" data-u="${m.uid}">${uiIconHTML('walk', 14)} Make buddy</button>`}<button class="pb small quiet" data-a="mon" data-u="${m.uid}">Details</button></div></div></section>`;
-}
-function teamCard(m, i) {
-  const mx = maxHp(m),
-    bud = m.uid === saveData.buddy;
-  return `<div class="tm-card${m.hp <= 0 ? ' down' : ''}" style="--d:${i * 40}ms"><button class="tm-main" data-a="mon" data-u="${m.uid}"><span class="tm-spr" style="${plateVars(m)}">${rigCanvasHTML(m.sp, 72, { gold: m.gold, build: m.build })}${bud ? `<i class="tm-heart" title="Buddy">${uiIconHTML('heart', 12)}</i>` : ''}</span>
-  <span class="tm-t"><b>${escapeHtml(billyName(m))}</b><span class="tm-lv tnum">Lv ${m.lvl}</span></span><span class="row">${SPECIES[m.sp].types.map(typeBadgeHTML).join('')}${billyConditionHTML(m)}</span>${hpBar(m.hp, mx)}<span class="hpn tnum">${m.hp}/${mx} HP</span></button>
-  <div class="tm-quick"><button class="qk" data-a="mlead" data-u="${m.uid}" ${m.hp <= 0 ? 'disabled' : ''}>Make lead</button>${needsCare(m) ? `<button class="qk heal" data-a="mheal" data-u="${m.uid}">Heal</button>` : ''}</div></div>`;
-}
 function jobSlots() {
   const open = saveData.jobs.map((j, i) => (j.uid ? -1 : i)).filter(i => i >= 0);
   return `<div class="jobs">${saveData.jobs
@@ -2057,11 +1941,16 @@ function renderTeam() {
     free = saveData.box.filter(m => m.job == null).length,
     open = Math.max(0, teamSize() - saveData.team.length),
     work = saveData.jobs.filter(j => j.uid).length;
+  /* phase 06-2: the lead big, the rest as roomy rows (js/unit-card.js), the open spots last */
   const slots = open
-    ? `<div class="tm-card empty tm-open"><span class="tm-plus" aria-hidden="true">+</span><span class="tm-ot"><b>${open === 1 ? '1 open spot' : `${open} open spots`}</b><span class="note">${free ? 'Bring someone back from storage.' : 'Tax more in the grass, or hatch an egg.'}</span></span>${free ? '<button class="qk" data-a="tmadd">Add from storage</button>' : ''}</div>`
+    ? unitOpenRowHTML(
+        open,
+        free ? 'Bring someone back from storage.' : 'Tax more in the grass, or hatch an egg.',
+        free ? '<button class="pb small" data-a="tmadd">Add</button>' : ''
+      )
     : '';
   return `<header class="bar"><div><div class="sub">${saveData.team.length} of ${teamSize()} on your team</div><h1 class="where">Your team</h1></div></header>
- <div class="tm-top">${lead ? teamHero(lead) : ''}<section class="tpanel tm-party"><div class="sec-h"><h2>Party</h2><span class="count tnum">${saveData.team.length}/${teamSize()}</span></div><p class="note">Your lead goes first in battle. Tap a card for details.</p><div class="tm-grid">${rest.map(teamCard).join('')}${slots}</div></section></div>
+ <div class="u-team">${lead ? unitHeroHTML(billyUnit(lead)) : ''}${rest.length || slots ? `<div class="u-list" aria-label="Party">${rest.map((m, i) => unitRowHTML(billyUnit(m), i)).join('')}${slots}</div>` : ''}<p class="u-hint">Your lead goes first in battle. Tap anyone for details.</p></div>
  <section class="tpanel tm-jobs"><div class="sec-h"><h2>Day jobs</h2><span class="count tnum">${work}/${saveData.jobs.length}</span></div><p class="note">Billies at work leave your team and earn pay while you walk.</p>${jobSlots()}</section>
  ${boxSection()}`;
 }
@@ -2457,10 +2346,6 @@ function billySheet(m) {
         b = base[i] || 0;
       return `<div class="ms-bar"><span>${STAT_NAMES[k]}</span><i><b style="width:${Math.round(Math.min(1, b / 150) * 100)}%;--c:${['#4E9A4A', '#D9532F', '#E3A12F', '#3478C8', '#7D52C2', '#2BA7A0'][i] || '#888'}"></b></i><em class="tnum">${v}</em></div>`;
     }).join('');
-  const nums = STAT_IDS.map(
-    (k, i) =>
-      `<div class="ms-st"><span>${STAT_NAMES[k]}</span><b class="tnum">${k === 'hp' ? mx : stat(m, k)}</b><small class="tnum">base ${base[i] ?? '?'}</small></div>`
-  ).join('');
   const metR = m.met
     ? (() => {
         const r = LOCATIONS.find(x => (x.id || '') === m.met.n) || LOCATIONS[m.met.n];
@@ -2480,7 +2365,7 @@ function billySheet(m) {
       : '';
   const tabs = [
     ['sum', 'Summary'],
-    ['stats', 'Stats'],
+    ['build', 'Build'],
     ['moves', 'Moves'],
     ['evo', 'Evolves'],
   ];
@@ -2497,7 +2382,7 @@ function billySheet(m) {
    ${acts.length ? `<div class="ms-acts">${acts.map((b, i) => `<button class="pb small ${b.c || ''}" data-a="mact" data-i="${i}" ${b.dis ? 'disabled' : ''}>${b.ic ? uiIconHTML(b.ic, 15) : ''}<span>${b.l}</span></button>`).join('')}</div>` : ''}
    <p class="note ms-about">${escapeHtml(s.blurb)}</p>
    <div class="ms-nick"><label class="field-l">Nickname<input id="nick" maxlength="16" value="${escapeHtml(m.nick)}" placeholder="${escapeHtml(s.name)}" autocomplete="off" enterkeyhint="done"></label><button class="pb small" data-a="mnick">Save</button></div></div>
-  <div class="ms-pane" data-k="stats" hidden><div class="ms-stats">${nums}</div>${billyPartsHTML(m)}<p class="note">The bars on the summary show what its kind is good at; the numbers grow as it levels up.</p></div>
+  <div class="ms-pane" data-k="build" hidden>${unitBuildHTML(billyUnit(m), partSlots())}</div>
   <div class="ms-pane" data-k="moves" hidden><div class="mvlist">${m.moves
     .map(id => {
       const M = MOVES[id];
@@ -2693,40 +2578,19 @@ document.addEventListener('click', ev => {
   if (typeof worldMapGlAction === 'function' && worldMapGlAction(a, d)) return;
   switch (a) {
     case 'intro':
-      if (uiState.intro === 0 && typeof cutsceneWanted === 'function' && cutsceneWanted()) {
-        cutsceneStart();
-        break;
+      /* the opening cutscene is the only way into a new game; if it can't run, the Try again screen */
+      uiState.openingFailed = false;
+      if (typeof cutsceneWanted === 'function' && cutsceneWanted()) cutsceneStart();
+      else {
+        uiState.openingFailed = 'cant';
+        render();
       }
-      uiState.intro++;
-      render();
-      break;
-    case 'pickgender':
-      uiState.pg = d.g;
-      uiState.intro++;
-      render();
-      break;
-    case 'tr-preset':
-      uiState.trainerDraft = cleanLook(LOOK_PRESETS[+d.i]);
-      render();
-      break;
-    case 'tr-custom':
-      openDressingRoom({ mode: 'intro', done: () => render() });
-      break;
-    case 'tr-next':
-      uiState.avatarDraft = cleanLook(uiState.trainerDraft || LOOK_PRESETS[0]);
-      uiState.trainerDraft = uiState.avatarDraft;
-      uiState.intro++;
-      render();
-      scrollTo(0, 0);
       break;
     case 'setgender':
       saveData.gender = d.g;
       save();
       closeModal();
       render();
-      break;
-    case 'pick':
-      startGame(d.l, { rival: true, talkFirst: true });
       break;
     case 'tab':
       if (uiState.tab !== d.t) {
