@@ -16,7 +16,6 @@ import {
   PW,
   RM,
   ROOM_KIND,
-  SCENE_FILES,
   TERRAIN_MATERIALS,
   U,
   addSteps,
@@ -31,12 +30,13 @@ import {
   lifePaths,
   loreFlags,
   mapChatLines,
+  mapFiles,
+  mapsOfView,
+  needMaps,
   provide,
   pwPaint,
   pwSettle,
   rawHeightAt,
-  scenesFor,
-  scenesNeed,
   seamlessMapById,
   seamlessNearestRoadPoint,
   sfx,
@@ -383,7 +383,7 @@ export function mapById(id) {
     return seamlessMapById(id);
   /* v43: a window onto the seamless world */ const S = walkData().scenes;
   /* phase 04b: a map whose own file hasn't come yet (js/map-files.js) */
-  if (S[id] && S[id]._lite && typeof SCENE_FILES !== 'undefined') SCENE_FILES.touched.add(id);
+  if (S[id] && S[id]._lite && typeof mapFiles !== 'undefined') mapFiles.touched.add(id);
   return S[id] ? syncExits(S[id]) : null;
 }
 export const imageReady = im => !!(im && (im.naturalWidth || im.width));
@@ -609,7 +609,7 @@ export function mapArtPaths(sc) {
 }
 export async function prepareMap(id) {
   /* phase 04b: the maps this view is put together from, whole */
-  if (typeof scenesNeed === 'function') await scenesNeed(scenesFor(id));
+  if (typeof needMaps === 'function') await needMaps(mapsOfView(id));
   const sc = mapById(id);
   if (!sc) throw new Error('No scene ' + id);
   await artLoad(mapArtPaths(sc));

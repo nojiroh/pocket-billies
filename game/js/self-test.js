@@ -12,7 +12,7 @@ import { expose } from './test-globals.js';
 import { provide } from './hooks.js';
 import { clamp } from './util.js';
 import { GD, MOVES, ROUTE, RULES, SP, TRAINERS, linkCost, placeKind } from './game-data.js';
-import { scenesAll } from './map-files.js';
+import { loadAllMaps } from './map-files.js';
 import { B, S, U, addSteps, esc, makeMon, maxHp, save, setB, setS, setSave, setTrip, spawn } from './game-state.js';
 import { FRAME } from './frame-scheduler.js';
 import { TR_CACHE } from './person-art.js';
@@ -152,7 +152,7 @@ async function runFullTest(mode) {
   }
   STEST.on = true;
   STEST.stop = false;
-  await scenesAll(); /* phase 04b: every map whole before the test opens them */
+  await loadAllMaps(); /* phase 04b: every map whole before the test opens them */
   const keep = JSON.stringify(S),
     back = { tab: U.tab, roam: U.roam, node: S.route.node },
     realSave = save,

@@ -12,7 +12,7 @@ import { expose } from './test-globals.js';
 import { closeModal, modal, provide, render, sceneIdAt, storyFlags, toast } from './hooks.js';
 import { $, clamp } from './util.js';
 import { PLACE, ROUTE, isTown, placeFull } from './game-data.js';
-import { sceneLite, sceneLoad, scenesAhead } from './map-files.js';
+import { isLiteMap, loadMapFile, loadMapsAhead } from './map-files.js';
 import { RM, S, U, canEnter, esc, fmt, save } from './game-state.js';
 import { artLoad, uiIco } from './art.js';
 import { artImage, imageReady, mapById, prepareMap, walkData } from './walk-view.js';
@@ -218,8 +218,8 @@ function flyDraw(c, t, proj) {
 function flyLand() {
   if (!airshipFlight.on || airshipFlight.wait) return;
   /* phase 04b: you land by the mast, which is in the town's own map file */
-  if (typeof sceneLite === 'function' && sceneLite(sceneIdAt(airshipFlight.b))) {
-    airshipFlight.wait = sceneLoad(sceneIdAt(airshipFlight.b)).then(() => {
+  if (typeof isLiteMap === 'function' && isLiteMap(sceneIdAt(airshipFlight.b))) {
+    airshipFlight.wait = loadMapFile(sceneIdAt(airshipFlight.b)).then(() => {
       airshipFlight.wait = null;
       flyLand();
     });
@@ -301,7 +301,7 @@ export function rideSkyLift(p) {
   requestAnimationFrame(() => requestAnimationFrame(() => cv.classList.add('in')));
   if (typeof sfx === 'function') sfx('throw');
   const ready =
-    typeof scenesAhead === 'function' ? scenesAhead(i) : null; /* phase 04b: the lift is in the map's file */
+    typeof loadMapsAhead === 'function' ? loadMapsAhead(i) : null; /* phase 04b: the lift is in the map's file */
   setTimeout(
     async () => {
       await ready;

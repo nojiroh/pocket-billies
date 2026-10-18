@@ -7,7 +7,7 @@
 import { expose } from './test-globals.js';
 import { provide } from './hooks.js';
 import { DATA_WARN, GD, RULES, SP, START_NODE } from './game-data.js';
-import { sceneWatch, scenesAhead, scenesAll } from './map-files.js';
+import { loadAllMaps, loadMapsAhead, watchMapsAhead } from './map-files.js';
 import { RM, S, SAVE_FOUND, SAVE_NEW_MSG, SAVE_OLD_MSG, U, esc, fresh, setNoSaving, setS } from './game-state.js';
 import { ART, BG_ART, COIN_ART, EGG_ART, ICON_ATLAS, UIURL, artBoot, artImg } from './art.js';
 import { trainerArtPaths } from './person-art.js';
@@ -812,7 +812,7 @@ function noWebGL(why) {
 if (!eglOK()) noWebGL();
 else
   /* phase 04b: the maps round where you are come with the art check; the others after the loader (js/map-files.js) */
-  Promise.all([artCacheCheck(), scenesAhead(S.route ? S.route.node : START_NODE)])
+  Promise.all([artCacheCheck(), loadMapsAhead(S.route ? S.route.node : START_NODE)])
     .then(() => bootLoad())
     .then(async () => {
       if (typeof NWLOG !== 'undefined') NWLOG.hook();
@@ -826,8 +826,8 @@ else
         } catch (e) {}
       await sceneWarm();
       loaderHide();
-      sceneWatch();
-      scenesAll();
+      watchMapsAhead();
+      loadAllMaps();
       if (SAVE_FOUND === 'old' || SAVE_FOUND === 'new')
         setTimeout(
           () =>

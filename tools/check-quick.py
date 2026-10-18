@@ -567,8 +567,8 @@ def phone_flow(b, base, R):
 def all_maps(pg, sec=180):
     # phase 04b: the game fetches each map's ground and props when it is needed and the rest in the background; the
     # steps below read every map at once, so wait until all of them are whole
-    if not until(pg, "typeof scenesAll!=='function'||(scenesAll(),Object.keys(GD.scenes).every(id=>!sceneLite(id)))", sec):
-        raise Exception('the maps didn’t all load in %ds: %s' % (sec, pg.evaluate("Object.keys(GD.scenes).filter(sceneLite).join(', ')")))
+    if not until(pg, "typeof loadAllMaps!=='function'||(loadAllMaps(),Object.keys(GD.scenes).every(id=>!isLiteMap(id)))", sec):
+        raise Exception('the maps didn’t all load in %ds: %s' % (sec, pg.evaluate("Object.keys(GD.scenes).filter(isLiteMap).join(', ')")))
 
 
 def desktop_steps(b, base, R):
