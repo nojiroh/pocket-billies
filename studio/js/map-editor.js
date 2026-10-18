@@ -70,7 +70,7 @@ import { atlasGet, atlasNow, atlasVersion, fileToCanvas, markArt, pickFile } fro
 /* eslint-disable no-func-assign */
 expose({
   GROUND_KEYS: [() => GROUND_KEYS],
-  SC_WK: [() => SC_WK],
+  PAINTED_WATER_KINDS: [() => PAINTED_WATER_KINDS],
   addSceneryProp: [() => addSceneryProp, v => (addSceneryProp = v)],
   applyPreviewEnvironment: [() => applyPreviewEnvironment, v => (applyPreviewEnvironment = v)],
   artCacheVersion: [() => artCacheVersion, v => ((artCacheVersion = v), provide({ artCacheVersion }))],
@@ -80,7 +80,9 @@ expose({
   currentMapId: [() => currentMapId],
   drawEditorMap: [() => drawEditorMap, v => (drawEditorMap = v)],
   drawSceneryPixelEditor: [() => drawSceneryPixelEditor, v => (drawSceneryPixelEditor = v)],
+  drawStepsOverlay: [() => drawStepsOverlay, v => (drawStepsOverlay = v)],
   drawTileThumbs: [() => drawTileThumbs, v => (drawTileThumbs = v)],
+  drawWatersOverlay: [() => drawWatersOverlay, v => (drawWatersOverlay = v)],
   dropStaleExitJoins: [() => dropStaleExitJoins, v => (dropStaleExitJoins = v)],
   edgeExitId: [() => edgeExitId, v => (edgeExitId = v)],
   ensureHeightGrid: [() => ensureHeightGrid, v => (ensureHeightGrid = v)],
@@ -100,22 +102,12 @@ expose({
   newEdgeExitName: [() => newEdgeExitName, v => (newEdgeExitName = v)],
   openSceneryPixelEditor: [() => openSceneryPixelEditor, v => (openSceneryPixelEditor = v)],
   paintMapTile: [() => paintMapTile, v => (paintMapTile = v)],
+  paintStepCells: [() => paintStepCells, v => (paintStepCells = v)],
   parseMapLife: [() => parseMapLife, v => (parseMapLife = v)],
   plotSceneryPixel: [() => plotSceneryPixel, v => (plotSceneryPixel = v)],
   propAtPointer: [() => propAtPointer, v => (propAtPointer = v)],
   resizeReport: [() => resizeReport, v => (resizeReport = v)],
-  scDrawSteps: [() => scDrawSteps, v => (scDrawSteps = v)],
-  scDrawWaters: [() => scDrawWaters, v => (scDrawWaters = v)],
   scPropSettings: [() => scPropSettings, v => (scPropSettings = v)],
-  scStepsBar: [() => scStepsBar, v => (scStepsBar = v)],
-  scStepsDown: [() => scStepsDown, v => (scStepsDown = v)],
-  scStepsPaint: [() => scStepsPaint, v => (scStepsPaint = v)],
-  scStepsUp: [() => scStepsUp, v => (scStepsUp = v)],
-  scStepsWork: [() => scStepsWork, v => (scStepsWork = v)],
-  scWaterAt: [() => scWaterAt, v => (scWaterAt = v)],
-  scWaterBar: [() => scWaterBar, v => (scWaterBar = v)],
-  scWaterChanged: [() => scWaterChanged, v => (scWaterChanged = v)],
-  scWaterUp: [() => scWaterUp, v => (scWaterUp = v)],
   sceneryArtPaths: [() => sceneryArtPaths, v => ((sceneryArtPaths = v), provide({ sceneryArtPaths }))],
   sceneryCatalog: [() => sceneryCatalog],
   sceneryPixelCardHTML: [() => sceneryPixelCardHTML, v => (sceneryPixelCardHTML = v)],
@@ -123,7 +115,15 @@ expose({
   sceneryPixelsChanged: [() => sceneryPixelsChanged, v => (sceneryPixelsChanged = v)],
   sculptHeights: [() => sculptHeights, v => (sculptHeights = v)],
   segmentDistance: [() => segmentDistance, v => (segmentDistance = v)],
+  stepsPointerDown: [() => stepsPointerDown, v => (stepsPointerDown = v)],
+  stepsPointerUp: [() => stepsPointerUp, v => (stepsPointerUp = v)],
+  stepsToolBarHTML: [() => stepsToolBarHTML, v => (stepsToolBarHTML = v)],
   syncEdgeExits: [() => syncEdgeExits, v => (syncEdgeExits = v)],
+  waterPointerUp: [() => waterPointerUp, v => (waterPointerUp = v)],
+  waterRectAt: [() => waterRectAt, v => (waterRectAt = v)],
+  waterToolBarHTML: [() => waterToolBarHTML, v => (waterToolBarHTML = v)],
+  watersChanged: [() => watersChanged, v => (watersChanged = v)],
+  workingStepGrid: [() => workingStepGrid, v => (workingStepGrid = v)],
 });
 /* eslint-enable no-func-assign */
 provide({ artCacheVersion, sceneryArtPaths });
@@ -443,9 +443,9 @@ SECTIONS.scenes = () => {
    <label class="mp-size"><span>Brush</span><input type="range" id="scBrush" min="1" max="5" value="${mapEditor.brush}"><output id="scBrushO">${mapEditor.brush}</output></label></div>
   ${
     mapEditor.tool === 'steps'
-      ? scStepsBar()
+      ? stepsToolBarHTML()
       : mapEditor.tool === 'water'
-        ? scWaterBar(p)
+        ? waterToolBarHTML(p)
         : mapEditor.tool === 'scatter' && typeof scxScatterBar === 'function'
           ? scxScatterBar()
           : mapEditor.tool === 'stamp' && typeof scxBlocksBar === 'function'
@@ -1061,7 +1061,7 @@ export function drawEditorMap() {
         }
     }
   }
-  scDrawSteps(x, sc, Z);
+  drawStepsOverlay(x, sc, Z);
   const order = sc.props.map((p, i) => [p, i]).sort((a, b) => b[0].z - a[0].z);
   mapEditor.boxes = [];
   for (const [p, i] of order) {
@@ -1176,7 +1176,7 @@ export function drawEditorMap() {
     x.fill();
     x.stroke();
   }
-  scDrawWaters(x, sc, Z);
+  drawWatersOverlay(x, sc, Z);
   if (typeof scxDraw === 'function') scxDraw(x, sc, Z);
   const zEl = $('#scZ');
   if (zEl) zEl.textContent = Z + 'px';
@@ -1263,16 +1263,16 @@ function bindEditorMap() {
       return;
     }
     if (mapEditor.tool === 'steps') {
-      scStepsDown(sc, m, ev);
+      stepsPointerDown(sc, m, ev);
       return;
     }
     if (mapEditor.tool === 'water') {
       const R = sc.waters || [],
-        n = scWaterAt(sc, m);
+        n = waterRectAt(sc, m);
       if (n >= 0 && (ev.button === 2 || ev.altKey || mapEditor.wk === 'erase')) {
         R.splice(n, 1);
         if (!R.length) delete sc.waters;
-        scWaterChanged();
+        watersChanged();
         return;
       }
       if (mapEditor.wk === 'erase') return;
@@ -1399,7 +1399,7 @@ function bindEditorMap() {
     if (D.k === 'paint') paint(m);
     else if (D.k === 'height') sculptHeights(sc, m);
     else if (D.k === 'steps') {
-      scStepsPaint(sc, m, D);
+      paintStepCells(sc, m, D);
       drawEditorMap();
     } else if (D.k === 'stairs' || D.k === 'bridge' || D.k === 'wrect') {
       D.b = [m.x, m.z];
@@ -1445,11 +1445,11 @@ function bindEditorMap() {
     if (!D) return;
     if (typeof scxUp === 'function' && scxUp(currentMap(), D)) return;
     if (D.k === 'steps' || D.k === 'stairs' || D.k === 'bridge') {
-      scStepsUp(currentMap(), D);
+      stepsPointerUp(currentMap(), D);
       return;
     }
     if (D.k === 'wrect') {
-      scWaterUp(currentMap(), D);
+      waterPointerUp(currentMap(), D);
       return;
     }
     if (D.k === 'paint' || D.moved || D.k === 'exit' || D.k === 'height') {
@@ -2444,7 +2444,7 @@ function parseMapLife(t) {
 }
 
 /* ---------- v18: cliffs, terraces, stairs, ledges and bridges (the step field, half-metre cells) ---------- */
-function scStepsBar() {
+function stepsToolBarHTML() {
   const mats = (typeof WALL_MATERIALS !== 'undefined' ? WALL_MATERIALS : ['Scene rock'])
     .map(
       (n, i) =>
@@ -2499,14 +2499,14 @@ document.addEventListener('change', ev => {
     drawEditorMap();
   }
 });
-function scStepsWork(sc) {
+function workingStepGrid(sc) {
   if (mapEditor.stE) return mapEditor.stE;
   const E = stepGrid(sc);
   mapEditor.stE = E ? { w: E.w, h: E.h, H: new Float32Array(E.H), M: new Uint8Array(E.M) } : newStepGrid(sc);
   return mapEditor.stE;
 }
-function scStepsDown(sc, m, ev) {
-  const E = scStepsWork(sc),
+function stepsPointerDown(sc, m, ev) {
+  const E = workingStepGrid(sc),
     ci = clamp(Math.floor(m.x * 2), 0, E.w - 1),
     cj = clamp(Math.floor(m.z * 2), 0, E.h - 1);
   if (mapEditor.smode === 'cliff' && ev.shiftKey) {
@@ -2540,11 +2540,11 @@ function scStepsDown(sc, m, ev) {
     return;
   }
   mapEditor.drag = { k: 'steps', alt: ev.altKey || ev.button === 2 };
-  scStepsPaint(sc, m, mapEditor.drag);
+  paintStepCells(sc, m, mapEditor.drag);
   drawEditorMap();
 }
-function scStepsPaint(sc, m, D) {
-  const E = scStepsWork(sc),
+function paintStepCells(sc, m, D) {
+  const E = workingStepGrid(sc),
     r = Math.max(0.3, mapEditor.brush * 0.5);
   for (let j = Math.floor((m.z - r) * 2); j <= Math.ceil((m.z + r) * 2); j++)
     for (let i = Math.floor((m.x - r) * 2); i <= Math.ceil((m.x + r) * 2); i++) {
@@ -2562,7 +2562,7 @@ function scStepsPaint(sc, m, D) {
       }
     }
 }
-function scStepsUp(sc, D) {
+function stepsPointerUp(sc, D) {
   if (D.k === 'bridge') {
     mapEditor.stE = null;
     const L = Math.hypot(D.b[0] - D.a[0], D.b[1] - D.a[1]);
@@ -2585,7 +2585,7 @@ function scStepsUp(sc, D) {
     drawEditorMap();
     return;
   }
-  const E = mapEditor.stE || scStepsWork(sc);
+  const E = mapEditor.stE || workingStepGrid(sc);
   if (D.k === 'stairs') {
     /* a straight flight along the longer direction of the drag, from the ground at its start to the ground at its end */
     const ax = Math.abs(D.b[0] - D.a[0]) >= Math.abs(D.b[1] - D.a[1]) ? 'x' : 'z',
@@ -2637,7 +2637,7 @@ function scStepsUp(sc, D) {
   commit(true);
   drawEditorMap();
 }
-function scDrawSteps(x, sc, Z) {
+function drawStepsOverlay(x, sc, Z) {
   const E = mapEditor.stE || stepGrid(sc),
     hz = Z / 2,
     H = sc.h;
@@ -2767,7 +2767,7 @@ function scDrawSteps(x, sc, Z) {
 }
 
 /* ---------- v22: kinds of water, painted as rectangles over the water ---------- */
-const SC_WK = [
+const PAINTED_WATER_KINDS = [
   ['pond', 'Pond', '#4FA6C0'],
   ['stream', 'Stream', '#7FD0E6'],
   ['canal', 'Canal', '#5E8C84'],
@@ -2775,11 +2775,11 @@ const SC_WK = [
   ['swamp', 'Swamp', '#6B7A34'],
   ['lake', 'Lake', '#2E6FB0'],
 ];
-function scWaterBar(p) {
+function waterToolBarHTML(p) {
   const sc = currentMap();
   mapEditor.wk = mapEditor.wk || 'pond';
-  return `<div class="sc-hbar">${SC_WK.map(([k, n, c]) => `<button class="seg ${mapEditor.wk === k ? 'on' : ''}" data-act="scWK" data-k="${k}"><span class="sc-swatch" style="background:${c}"></span>${n}</button>`).join('')}<button class="seg ${mapEditor.wk === 'erase' ? 'on' : ''}" data-act="scWK" data-k="erase">Remove</button>
- <label class="mp-size"><span>The rest of the water</span><select id="scWDef">${[['', 'Guess (caves: spring, towns: canal, else pond)'], ...SC_WK.filter(w => w[0] !== 'stream').map(([k, n]) => [k, n])].map(([k, n]) => `<option value="${k}" ${(sc.waterKind || '') === k ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select></label>
+  return `<div class="sc-hbar">${PAINTED_WATER_KINDS.map(([k, n, c]) => `<button class="seg ${mapEditor.wk === k ? 'on' : ''}" data-act="scWK" data-k="${k}"><span class="sc-swatch" style="background:${c}"></span>${n}</button>`).join('')}<button class="seg ${mapEditor.wk === 'erase' ? 'on' : ''}" data-act="scWK" data-k="erase">Remove</button>
+ <label class="mp-size"><span>The rest of the water</span><select id="scWDef">${[['', 'Guess (caves: spring, towns: canal, else pond)'], ...PAINTED_WATER_KINDS.filter(w => w[0] !== 'stream').map(([k, n]) => [k, n])].map(([k, n]) => `<option value="${k}" ${(sc.waterKind || '') === k ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select></label>
  ${(sc.waters || []).length ? `<button class="btn sm subtle" data-act="scWClear">Remove all ${(sc.waters || []).length}</button>` : ''}</div>`;
 }
 ACTIONS.scWK = d => {
@@ -2790,7 +2790,7 @@ ACTIONS.scWClear = async () => {
   const sc = currentMap();
   if (!(await ask('Remove every water rectangle in this scene?', 'Remove'))) return;
   delete sc.waters;
-  scWaterChanged();
+  watersChanged();
   render();
 };
 document.addEventListener('change', ev => {
@@ -2799,9 +2799,9 @@ document.addEventListener('change', ev => {
   if (!sc) return;
   if (ev.target.value) sc.waterKind = ev.target.value;
   else delete sc.waterKind;
-  scWaterChanged();
+  watersChanged();
 });
-function scWaterAt(sc, m) {
+function waterRectAt(sc, m) {
   const R = sc.waters || [];
   for (let i = R.length - 1; i >= 0; i--) {
     const r = R[i];
@@ -2809,13 +2809,13 @@ function scWaterAt(sc, m) {
   }
   return -1;
 }
-function scWaterChanged() {
+function watersChanged() {
   if (typeof walkRenderer !== 'undefined') walkRenderer.hkey = '';
   changed();
   commit(true);
   drawEditorMap();
 }
-function scWaterUp(sc, D) {
+function waterPointerUp(sc, D) {
   const snap = v => Math.round(v * 2) / 2,
     x0 = snap(Math.min(D.a[0], D.b[0])),
     x1 = snap(Math.max(D.a[0], D.b[0])),
@@ -2826,14 +2826,14 @@ function scWaterUp(sc, D) {
     return;
   }
   (sc.waters || (sc.waters = [])).push({ x: x0, z: z0, w: x1 - x0, h: z1 - z0, k: mapEditor.wk || 'pond' });
-  scWaterChanged();
+  watersChanged();
 }
-function scDrawWaters(x, sc, Z) {
+function drawWatersOverlay(x, sc, Z) {
   const on = mapEditor.tool === 'water',
     H = sc.h,
     R = sc.waters || [];
   if (!R.length && !on) return;
-  const col = k => (SC_WK.find(w => w[0] === k) || SC_WK[0])[2];
+  const col = k => (PAINTED_WATER_KINDS.find(w => w[0] === k) || PAINTED_WATER_KINDS[0])[2];
   R.forEach(r => {
     const X = r.x * Z,
       Y = (H - r.z - r.h) * Z,
@@ -2855,7 +2855,7 @@ function scDrawWaters(x, sc, Z) {
       x.font = '700 11px system-ui';
       x.textAlign = 'left';
       x.textBaseline = 'top';
-      const t = (SC_WK.find(w => w[0] === r.k) || [0, r.k])[1];
+      const t = (PAINTED_WATER_KINDS.find(w => w[0] === r.k) || [0, r.k])[1];
       x.strokeText(t, X + 4, Y + 3);
       x.fillText(t, X + 4, Y + 3);
     }
