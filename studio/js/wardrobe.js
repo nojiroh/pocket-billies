@@ -38,38 +38,38 @@ import {
 import { atlasGet, atlasNow, markArt } from './sprites.js';
 /* eslint-disable no-func-assign */
 expose({
-  WD_AREA_COL: [() => WD_AREA_COL],
-  WD_CROP: [() => WD_CROP],
-  WD_EXPR: [() => WD_EXPR],
-  WD_VIEWS: [() => WD_VIEWS],
+  FACE_EXPRESSIONS: [() => FACE_EXPRESSIONS],
+  MASK_AREA_COLORS: [() => MASK_AREA_COLORS],
+  WARDROBE_CROPS: [() => WARDROBE_CROPS],
+  WARDROBE_VIEWS: [() => WARDROBE_VIEWS],
+  addPieceRegion: [() => addPieceRegion, v => (addPieceRegion = v)],
+  bindWardrobeCanvas: [() => bindWardrobeCanvas, v => (bindWardrobeCanvas = v)],
+  copyWardrobeSheets: [() => copyWardrobeSheets, v => (copyWardrobeSheets = v)],
+  currentWardrobeItem: [() => currentWardrobeItem],
+  drawWardrobeEditor: [() => drawWardrobeEditor, v => (drawWardrobeEditor = v)],
+  drawWardrobeThumbs: [() => drawWardrobeThumbs, v => (drawWardrobeThumbs = v)],
+  editedWardrobe: [() => editedWardrobe],
+  fillWardrobePixels: [() => fillWardrobePixels, v => (fillWardrobePixels = v)],
+  growPiece: [() => growPiece, v => (growPiece = v)],
+  loadWardrobe: [() => loadWardrobe, v => ((loadWardrobe = v), provide({ loadWardrobe }))],
+  mountWardrobe: [() => mountWardrobe, v => (mountWardrobe = v)],
+  pickWardrobeColor: [() => pickWardrobeColor, v => (pickWardrobeColor = v)],
+  plotWardrobePixel: [() => plotWardrobePixel, v => (plotWardrobePixel = v)],
+  pushWardrobeUndo: [() => pushWardrobeUndo, v => (pushWardrobeUndo = v)],
+  wardrobeArtChanged: [() => wardrobeArtChanged, v => (wardrobeArtChanged = v)],
+  wardrobeBodyHTML: [() => wardrobeBodyHTML, v => (wardrobeBodyHTML = v)],
   wardrobeEditor: [() => wardrobeEditor],
-  wdAddRegion: [() => wdAddRegion, v => (wdAddRegion = v)],
-  wdBind: [() => wdBind, v => (wdBind = v)],
-  wdBodyHTML: [() => wdBodyHTML, v => (wdBodyHTML = v)],
-  wdCopySheets: [() => wdCopySheets, v => (wdCopySheets = v)],
-  wdCur: [() => wdCur],
-  wdDraw: [() => wdDraw, v => (wdDraw = v)],
-  wdEditorHTML: [() => wdEditorHTML, v => (wdEditorHTML = v)],
-  wdFill: [() => wdFill, v => (wdFill = v)],
-  wdGrow: [() => wdGrow, v => (wdGrow = v)],
-  wdItemHTML: [() => wdItemHTML, v => (wdItemHTML = v)],
-  wdJoints: [() => wdJoints, v => (wdJoints = v)],
-  wdLoad: [() => wdLoad, v => ((wdLoad = v), provide({ wdLoad }))],
-  wdLocal: [() => wdLocal, v => (wdLocal = v)],
-  wdMount: [() => wdMount, v => (wdMount = v)],
-  wdPick: [() => wdPick, v => (wdPick = v)],
-  wdPlot: [() => wdPlot, v => (wdPlot = v)],
-  wdPreviewHTML: [() => wdPreviewHTML, v => (wdPreviewHTML = v)],
-  wdPvLoop: [() => wdPvLoop, v => (wdPvLoop = v)],
-  wdSheets: [() => wdSheets, v => (wdSheets = v)],
-  wdSnap: [() => wdSnap, v => (wdSnap = v)],
-  wdTestLook: [() => wdTestLook, v => (wdTestLook = v)],
-  wdThumbs: [() => wdThumbs, v => (wdThumbs = v)],
-  wdTouched: [() => wdTouched, v => (wdTouched = v)],
-  wdW: [() => wdW],
+  wardrobeEditorHTML: [() => wardrobeEditorHTML, v => (wardrobeEditorHTML = v)],
+  wardrobeItemHTML: [() => wardrobeItemHTML, v => (wardrobeItemHTML = v)],
+  wardrobeJoints: [() => wardrobeJoints, v => (wardrobeJoints = v)],
+  wardrobePointerPixel: [() => wardrobePointerPixel, v => (wardrobePointerPixel = v)],
+  wardrobePreviewHTML: [() => wardrobePreviewHTML, v => (wardrobePreviewHTML = v)],
+  wardrobePreviewLoop: [() => wardrobePreviewLoop, v => (wardrobePreviewLoop = v)],
+  wardrobeSheets: [() => wardrobeSheets, v => (wardrobeSheets = v)],
+  wardrobeTestLook: [() => wardrobeTestLook, v => (wardrobeTestLook = v)],
 });
 /* eslint-enable no-func-assign */
-provide({ wdLoad });
+provide({ loadWardrobe });
 /* to-module: end */
 const wardrobeEditor = {
   sel: null,
@@ -88,24 +88,25 @@ const wardrobeEditor = {
   loaded: false,
 };
 provide({ wardrobeEditor }); /* to-module */
-const wdW = () => studioState.D.wardrobe;
-const wdCur = () => (wardrobeEditor.sel === 'body' ? wdW().body : wdW().items[wardrobeEditor.sel]);
-const WD_CROP = new Proxy({}, { get: (t, k) => (wdW().crops || {})[k] });
-const WD_VIEWS = [
+const editedWardrobe = () => studioState.D.wardrobe;
+const currentWardrobeItem = () =>
+  wardrobeEditor.sel === 'body' ? editedWardrobe().body : editedWardrobe().items[wardrobeEditor.sel];
+const WARDROBE_CROPS = new Proxy({}, { get: (t, k) => (editedWardrobe().crops || {})[k] });
+const WARDROBE_VIEWS = [
   ['front', 'Front'],
   ['back', 'Back'],
   ['side', 'Side'],
 ];
-function wdTestLook() {
+function wardrobeTestLook() {
   const L = cleanLook(wardrobeEditor.test || TR_PRESETS[0]);
   if (wardrobeEditor.sel && wardrobeEditor.sel !== 'body') {
-    const it = wdW().items[wardrobeEditor.sel];
+    const it = editedWardrobe().items[wardrobeEditor.sel];
     if (it) L.wear[it.slot] = wardrobeEditor.sel;
   }
   return L;
 }
-async function wdLoad() {
-  const W = wdW(),
+async function loadWardrobe() {
+  const W = editedWardrobe(),
     P = [W.body.img, W.body.mask];
   for (const it of Object.values(W.items)) P.push(it.img, it.mask);
   await Promise.all(P.map(p => atlasGet('art/' + p).catch(() => null)));
@@ -113,12 +114,12 @@ async function wdLoad() {
 }
 /* ---------- section ---------- */
 SECTIONS.wardrobe = () => {
-  const W = wdW();
+  const W = editedWardrobe();
   if (!W)
     return `<div class="ed-col solo"><h2>Wardrobe</h2><p class="help">This game data has no wardrobe yet. Run <code>python3 tools/build-trainer-art.py</code>.</p></div>`;
   if (!wardrobeEditor.sel || (wardrobeEditor.sel !== 'body' && !W.items[wardrobeEditor.sel]))
     wardrobeEditor.sel = 'body';
-  after(wdMount);
+  after(mountWardrobe);
   const slots = W.slots,
     list = Object.entries(W.items)
       .filter(([k, it]) => wardrobeEditor.filter === 'all' || it.slot === wardrobeEditor.filter)
@@ -136,10 +137,10 @@ SECTIONS.wardrobe = () => {
   return `<div class="split"><aside class="list-col"><div class="list-head"><button class="btn primary" data-act="wdNew">+ New item</button>
    <select id="wdFilter"><option value="all">All items (${Object.keys(W.items).length})</option>${slots.map(s => `<option value="${s.id}" ${wardrobeEditor.filter === s.id ? 'selected' : ''}>${esc(s.name)}</option>`).join('')}</select></div>
   <div class="llist"><button class="lcard ${wardrobeEditor.sel === 'body' ? 'on' : ''}" data-act="wdPick" data-k="body"><span class="wd-th" data-th="body"></span><span class="lt"><b>Body &amp; skeleton</b><small>Skin pieces, bones, body sliders</small></span></button>${rows}</div></aside>
- <div class="ed-col">${wardrobeEditor.sel === 'body' ? wdBodyHTML() : wdItemHTML(wardrobeEditor.sel)}</div></div>`;
+ <div class="ed-col">${wardrobeEditor.sel === 'body' ? wardrobeBodyHTML() : wardrobeItemHTML(wardrobeEditor.sel)}</div></div>`;
 };
-function wdItemHTML(k) {
-  const W = wdW(),
+function wardrobeItemHTML(k) {
+  const W = editedWardrobe(),
     it = W.items[k],
     p = `wardrobe.items.${k}`,
     shops = Object.entries(studioState.D.shops || {})
@@ -168,7 +169,7 @@ function wdItemHTML(k) {
     )
     .join('');
   return `<div class="ed-head"><div><small class="mono">${esc(k)}</small><h2>${esc(it.name)}</h2>${used.length ? `<small>Worn by ${esc(used.join(', '))}</small>` : ''}</div><div class="seg-row"><button class="btn subtle" data-act="wdDup">Duplicate</button><button class="btn danger" data-act="wdDel">Delete</button></div></div>
- ${card('Preview', wdPreviewHTML(), { sub: 'The trainer from the Studio’s test look wearing this item, drawn by the game’s own renderer.' })}
+ ${card('Preview', wardrobePreviewHTML(), { sub: 'The trainer from the Studio’s test look wearing this item, drawn by the game’s own renderer.' })}
  ${card(
    'Details',
    grid(
@@ -185,10 +186,10 @@ function wdItemHTML(k) {
    )
  )}
  ${card('Colour areas', cols + (it.colors.length < 3 ? `<div class="seg-row"><button class="btn sm" data-act="wdColAdd">+ Add a colour area</button></div>` : ''), { sub: 'Players pick a colour for each area; the shading you painted is kept. Paint the areas with the “Colour area” brush below.' })}
- ${card('Pieces and pixels', wdEditorHTML(it), { sub: 'Each piece sits on one bone and moves with it. Paint on the trainer; the rest of the body is shown faintly for fitting.' })}`;
+ ${card('Pieces and pixels', wardrobeEditorHTML(it), { sub: 'Each piece sits on one bone and moves with it. Paint on the trainer; the rest of the body is shown faintly for fitting.' })}`;
 }
-function wdBodyHTML() {
-  const W = wdW();
+function wardrobeBodyHTML() {
+  const W = editedWardrobe();
   const sl = W.sliders
     .map(
       (s, i) =>
@@ -202,13 +203,13 @@ function wdBodyHTML() {
     )
     .join('');
   return `<div class="ed-head"><div><h2>Body &amp; skeleton</h2><small>Shared by every trainer, rival, shopkeeper and townsperson.</small></div></div>
- ${card('Preview', wdPreviewHTML(true), { sub: 'Try the sliders: every item stretches with the body.' })}
- ${card('Skin pieces', wdEditorHTML(W.body), { sub: 'Paint skin in the default skin colour; the game recolours it to each trainer’s skin. Clothes are drawn over these.' })}
- ${card('Skeleton · ' + WD_VIEWS.find(v => v[0] === wardrobeEditor.view)[1], `<table class="tbl"><thead><tr><th>Bone</th><th>Parent</th><th>Across</th><th>Down</th><th>Layer</th></tr></thead><tbody>${sk}</tbody></table>`, { sub: 'Where each joint sits relative to its parent, in pixels, and its drawing layer (higher is in front). The pelvis height comes from the leg length. Switch views above the pixel editor.' })}
+ ${card('Preview', wardrobePreviewHTML(true), { sub: 'Try the sliders: every item stretches with the body.' })}
+ ${card('Skin pieces', wardrobeEditorHTML(W.body), { sub: 'Paint skin in the default skin colour; the game recolours it to each trainer’s skin. Clothes are drawn over these.' })}
+ ${card('Skeleton · ' + WARDROBE_VIEWS.find(v => v[0] === wardrobeEditor.view)[1], `<table class="tbl"><thead><tr><th>Bone</th><th>Parent</th><th>Across</th><th>Down</th><th>Layer</th></tr></thead><tbody>${sk}</tbody></table>`, { sub: 'Where each joint sits relative to its parent, in pixels, and its drawing layer (higher is in front). The pelvis height comes from the leg length. Switch views above the pixel editor.' })}
  ${card('Body sliders', `<table class="tbl"><thead><tr><th>Name</th><th>Key</th><th>Lowest</th><th>Highest</th><th>Default</th></tr></thead><tbody>${sl}</tbody></table>`, { sub: 'The ranges players get in the dressing room.' })}`;
 }
-function wdPreviewHTML(body) {
-  const L = wdTestLook();
+function wardrobePreviewHTML(body) {
+  const L = wardrobeTestLook();
   return `<div class="wd-pv"><canvas id="wdPv"></canvas><div class="wd-pvside">
   <div class="seg-row">${[
     ['walk', 'Walk'],
@@ -222,7 +223,7 @@ function wdPreviewHTML(body) {
         `<button class="seg sm ${wardrobeEditor.pvAct === a ? 'on' : ''}" data-act="wdAct" data-a="${a}">${n}</button>`
     )
     .join('')}</div>
-  <div class="seg-row">${WD_EXPR.map(([k, n]) => `<button class="seg sm ${(wardrobeEditor.pvExpr || '') === k ? 'on' : ''}" data-act="wdExpr" data-e="${k}">${k ? n : 'Normal face'}</button>`).join('')}</div>
+  <div class="seg-row">${FACE_EXPRESSIONS.map(([k, n]) => `<button class="seg sm ${(wardrobeEditor.pvExpr || '') === k ? 'on' : ''}" data-act="wdExpr" data-e="${k}">${k ? n : 'Normal face'}</button>`).join('')}</div>
   <div class="seg-row"><button class="seg sm" data-act="wdTurn" data-d="-1">‹ Turn</button><button class="seg sm" data-act="wdTurn" data-d="1">Turn ›</button></div>
   ${trSliders()
     .map(
@@ -230,13 +231,13 @@ function wdPreviewHTML(body) {
         `<label class="fld range"><span>${esc(s.name)} <output>${(+L.body[s.k]).toFixed(2)}</output></span><input type="range" min="${s.min}" max="${s.max}" step=".01" value="${L.body[s.k]}" data-wd-test="${s.k}"></label>`
     )
     .join('')}
-  <div class="seg-row"><span class="help">Skin</span>${((wdW().palettes || {}).skin || []).map(c => `<button class="wd-sw" style="background:${c}" data-act="wdSkin" data-c="${c}" aria-label="${c}"></button>`).join('')}</div></div></div>`;
+  <div class="seg-row"><span class="help">Skin</span>${((editedWardrobe().palettes || {}).skin || []).map(c => `<button class="wd-sw" style="background:${c}" data-act="wdSkin" data-c="${c}" aria-label="${c}"></button>`).join('')}</div></div></div>`;
 }
-function wdEditorHTML(src) {
+function wardrobeEditorHTML(src) {
   const ps = src.pieces.map((p, i) => [p, i]).filter(([p]) => p.v === wardrobeEditor.view),
     sel = src.pieces[wardrobeEditor.piece];
   if (!sel || sel.v !== wardrobeEditor.view) wardrobeEditor.piece = ps.length ? ps[0][1] : -1;
-  const bones = wdW().skeleton[wardrobeEditor.view].map(b => b.n);
+  const bones = editedWardrobe().skeleton[wardrobeEditor.view].map(b => b.n);
   const tools = [
     ['pen', 'Pencil'],
     ['erase', 'Eraser'],
@@ -265,22 +266,22 @@ function wdEditorHTML(src) {
           )
           .join('')}</span>`;
   const P = src.pieces[wardrobeEditor.piece];
-  return `<div class="seg-row">${WD_VIEWS.map(([v, n]) => `<button class="seg ${wardrobeEditor.view === v ? 'on' : ''}" data-act="wdView" data-v="${v}">${n}</button>`).join('')}</div>
+  return `<div class="seg-row">${WARDROBE_VIEWS.map(([v, n]) => `<button class="seg ${wardrobeEditor.view === v ? 'on' : ''}" data-act="wdView" data-v="${v}">${n}</button>`).join('')}</div>
  <div class="wd-pieces">${ps.map(([p, i]) => `<button class="chk-chip ${i === wardrobeEditor.piece ? 'on' : ''}" data-act="wdPiece" data-i="${i}">${esc(p.b)}${p.x ? ' · ' + esc(p.x) : ''}${p.z != null ? ' · layer ' + p.z : ''}</button>`).join('') || '<span class="help">No pieces in this view yet.</span>'}</div>
  <div class="sc-bar"><span class="px-tools">${tools}</span><span class="colw"><input type="color" id="wdColor" value="${wardrobeEditor.color}"></span><span class="px-tools"><button class="seg" data-act="wdZoom" data-z="-1">−</button><button class="seg" data-act="wdZoom" data-z="1">+</button><button class="seg" data-act="wdUndo" title="Undo">↶</button></span></div>
  ${areas ? `<div class="sc-bar">${areas}<span class="help">Pencil and fill also mark the area you pick here.</span></div>` : ''}
  <div class="wd-stage"><canvas id="wdCv"></canvas></div>
- <div class="seg-row wd-pieceops">${P ? `<span class="help">Selected: <b>${esc(P.b)}</b>, ${P.r[2]}×${P.r[3]} px.</span><label class="fld wd-z"><span>Layer</span><input type="number" step=".05" data-p="${wardrobeEditor.sel === 'body' ? 'wardrobe.body' : 'wardrobe.items.' + wardrobeEditor.sel}.pieces.${wardrobeEditor.piece}.z" data-k="num" data-opt="1" value="${P.z ?? ''}" placeholder="auto"></label><label class="fld wd-z"><span>Shows when</span><select data-p="${wardrobeEditor.sel === 'body' ? 'wardrobe.body' : 'wardrobe.items.' + wardrobeEditor.sel}.pieces.${wardrobeEditor.piece}.x" data-k="sel" data-opt="1">${WD_EXPR.map(([k, n]) => `<option value="${k}" ${(P.x || '') === k ? 'selected' : ''}>${n}</option>`).join('')}</select></label><button class="btn sm subtle" data-act="wdPieceX" title="A copy of this piece that only shows with an expression; then repaint it">Copy for an expression</button><button class="btn sm subtle danger" data-act="wdPieceDel">Remove piece</button>` : ''}
+ <div class="seg-row wd-pieceops">${P ? `<span class="help">Selected: <b>${esc(P.b)}</b>, ${P.r[2]}×${P.r[3]} px.</span><label class="fld wd-z"><span>Layer</span><input type="number" step=".05" data-p="${wardrobeEditor.sel === 'body' ? 'wardrobe.body' : 'wardrobe.items.' + wardrobeEditor.sel}.pieces.${wardrobeEditor.piece}.z" data-k="num" data-opt="1" value="${P.z ?? ''}" placeholder="auto"></label><label class="fld wd-z"><span>Shows when</span><select data-p="${wardrobeEditor.sel === 'body' ? 'wardrobe.body' : 'wardrobe.items.' + wardrobeEditor.sel}.pieces.${wardrobeEditor.piece}.x" data-k="sel" data-opt="1">${FACE_EXPRESSIONS.map(([k, n]) => `<option value="${k}" ${(P.x || '') === k ? 'selected' : ''}>${n}</option>`).join('')}</select></label><button class="btn sm subtle" data-act="wdPieceX" title="A copy of this piece that only shows with an expression; then repaint it">Copy for an expression</button><button class="btn sm subtle danger" data-act="wdPieceDel">Remove piece</button>` : ''}
   <span class="grow"></span><label class="fld"><span>Add a piece on</span><select id="wdBone">${bones.map(b => `<option>${b}</option>`).join('')}</select></label>
   <button class="btn sm" data-act="wdAdd" data-from="body" title="Starts as the body's shape on that bone, filled with the first colour">Fitted to the body</button><button class="btn sm" data-act="wdAdd" data-from="blank">Blank</button>${wardrobeEditor.view !== 'front' ? `<button class="btn sm subtle" data-act="wdAdd" data-from="front">Copy from front</button>` : ''}</div>`;
 }
 /* ---------- mount, drawing ---------- */
-async function wdMount() {
-  if (!wardrobeEditor.loaded) await wdLoad();
+async function mountWardrobe() {
+  if (!wardrobeEditor.loaded) await loadWardrobe();
   if (studioState.sec !== 'wardrobe') return;
-  wdThumbs();
-  wdDraw();
-  wdBind();
+  drawWardrobeThumbs();
+  drawWardrobeEditor();
+  bindWardrobeCanvas();
   const f = $('#wdFilter');
   if (f)
     f.onchange = () => {
@@ -295,22 +296,22 @@ async function wdMount() {
   $$('[data-wd-test]').forEach(
     i =>
       (i.oninput = () => {
-        wardrobeEditor.test = wdTestLook();
+        wardrobeEditor.test = wardrobeTestLook();
         wardrobeEditor.test.body[i.dataset.wdTest] = +i.value;
         const o = i.parentElement.querySelector('output');
         if (o) o.textContent = (+i.value).toFixed(2);
       })
   );
-  frameTask('wdpv', wdPvLoop);
+  frameTask('wdpv', wardrobePreviewLoop);
 }
-function wdThumbs() {
+function drawWardrobeThumbs() {
   $$('[data-th]').forEach(el => {
     const k = el.dataset.th,
       L = cleanLook(TR_PRESETS[0]);
     let u = '';
     try {
       if (k !== 'body') {
-        const it = wdW().items[k];
+        const it = editedWardrobe().items[k];
         if (!it) return;
         L.wear[it.slot] = k;
       }
@@ -326,8 +327,8 @@ function wdThumbs() {
             glasses: 'face',
             bottom: 'legs',
             shoes: 'feet',
-          }[k === 'body' ? '' : wdW().items[k].slot] || 'body';
-      const [x0, y0, x1, y1] = k === 'body' ? WD_CROP.all : WD_CROP[crop],
+          }[k === 'body' ? '' : editedWardrobe().items[k].slot] || 'body';
+      const [x0, y0, x1, y1] = k === 'body' ? WARDROBE_CROPS.all : WARDROBE_CROPS[crop],
         w = x1 - x0,
         h = y1 - y0,
         c = makeCanvas(w, h);
@@ -337,7 +338,7 @@ function wdThumbs() {
     if (u) el.style.backgroundImage = `url(${u})`;
   });
 }
-function wdPvLoop(ts) {
+function wardrobePreviewLoop(ts) {
   const cv = $('#wdPv');
   if (!cv || !cv.isConnected || studioState.sec !== 'wardrobe') {
     frameStop('wdpv');
@@ -353,7 +354,7 @@ function wdPvLoop(ts) {
   }
   const x = cv.getContext('2d');
   x.clearRect(0, 0, W, H);
-  const L = wdTestLook(),
+  const L = wardrobeTestLook(),
     [view, mir] = [
       ['front', 0],
       ['side', 0],
@@ -370,8 +371,8 @@ function wdPvLoop(ts) {
         1,
         Math.floor(
           Math.min(
-            (H * 0.84) / ((wdW().figure || 74) * 1.18 * L.body.height),
-            (W * 0.8) / ((wdW().figure || 74) * 0.6)
+            (H * 0.84) / ((editedWardrobe().figure || 74) * 1.18 * L.body.height),
+            (W * 0.8) / ((editedWardrobe().figure || 74) * 0.6)
           ) * 2
         ) / 2
       );
@@ -384,26 +385,26 @@ function wdPvLoop(ts) {
   } catch (e) {}
 }
 /* where each joint sits in the standing pose with default sliders */
-function wdJoints(view) {
+function wardrobeJoints(view) {
   const L = cleanLook(TR_PRESETS[0]);
   for (const s of trSliders()) L.body[s.k] = s.def;
   L.body.chest = 1;
   const R = trRig(L, view),
     { W } = rigMatrices(R, { x: 0, y: 0, r: 0, sx: 1, sy: 1, act: 'idle', t: 0, ph: 0 }, 'front');
   const J = {};
-  for (const b of wdW().skeleton[view]) if (W[b.n]) J[b.n] = [W[b.n][4] - R.cx, W[b.n][5] - R.base];
+  for (const b of editedWardrobe().skeleton[view]) if (W[b.n]) J[b.n] = [W[b.n][4] - R.cx, W[b.n][5] - R.base];
   return J;
 }
-function wdSheets(src) {
+function wardrobeSheets(src) {
   return [atlasNow('art/' + src.img), atlasNow('art/' + src.mask)];
 }
-const WD_AREA_COL = [null, [226, 60, 60], [46, 168, 74], [58, 98, 224]];
-function wdDraw() {
+const MASK_AREA_COLORS = [null, [226, 60, 60], [46, 168, 74], [58, 98, 224]];
+function drawWardrobeEditor() {
   const cv = $('#wdCv'),
-    src = wdCur();
+    src = currentWardrobeItem();
   if (!cv || !src) return;
-  const J = wdJoints(wardrobeEditor.view),
-    Fg = wdW().figure || 74,
+  const J = wardrobeJoints(wardrobeEditor.view),
+    Fg = editedWardrobe().figure || 74,
     Z = wardrobeEditor.zoom,
     W = Math.round(Fg * 0.7),
     H = Math.round(Fg * 1.3),
@@ -414,7 +415,7 @@ function wdDraw() {
   const x = cv.getContext('2d');
   x.imageSmoothingEnabled = false;
   /* the whole trainer, faint */
-  const L = wdTestLook();
+  const L = wardrobeTestLook();
   for (const s of trSliders()) L.body[s.k] = s.def;
   L.body.chest = Math.max(0.6, L.body.chest);
   const ex = (src.pieces[wardrobeEditor.piece] || {}).x || '',
@@ -423,7 +424,7 @@ function wdDraw() {
   x.globalAlpha = 0.32;
   x.drawImage(f, f.ax + X0, f.ay + Y0, W, H, 0, 0, W * Z, H * Z);
   x.globalAlpha = 1;
-  const [img, msk] = wdSheets(src);
+  const [img, msk] = wardrobeSheets(src);
   if (!img) return;
   src.pieces.forEach((p, i) => {
     if (p.v !== wardrobeEditor.view || !J[p.b]) return;
@@ -444,7 +445,7 @@ function wdDraw() {
             const a = d[k] > 127 ? 1 : d[k + 1] > 127 ? 2 : d[k + 2] > 127 ? 3 : 0;
             if (!a) continue;
             if (wardrobeEditor.tool !== 'area' && (xx + yy) % 3) continue;
-            const c = WD_AREA_COL[a];
+            const c = MASK_AREA_COLORS[a];
             x.fillStyle = `rgba(${c[0]},${c[1]},${c[2]},${wardrobeEditor.tool === 'area' ? 0.45 : 0.3})`;
             x.fillRect(px + xx * Z, py + yy * Z, Z, Z);
           }
@@ -473,11 +474,11 @@ function wdDraw() {
   wardrobeEditor.geo = { J, X0, Y0, Z };
 }
 /* ---------- editing pixels ---------- */
-function wdLocal(ev) {
+function wardrobePointerPixel(ev) {
   const cv = $('#wdCv'),
     r = cv.getBoundingClientRect(),
     G = wardrobeEditor.geo,
-    src = wdCur(),
+    src = currentWardrobeItem(),
     P = src.pieces[wardrobeEditor.piece];
   if (!P || !G || !G.J[P.b]) return null;
   const sx = (((ev.clientX - r.left) / r.width) * cv.width) / G.Z + G.X0,
@@ -485,7 +486,7 @@ function wdLocal(ev) {
   return { x: Math.floor(sx - G.J[P.b][0] - P.o[0]), y: Math.floor(sy - G.J[P.b][1] - P.o[1]) };
 }
 /* make the piece cover local pixel (x,y): a bigger region is added at the bottom of the sheet */
-function wdGrow(src, P, x, y) {
+function growPiece(src, P, x, y) {
   if (x >= 0 && y >= 0 && x < P.r[2] && y < P.r[3]) return { dx: 0, dy: 0 };
   const pad = 2,
     nx0 = Math.min(0, x - pad),
@@ -511,8 +512,8 @@ function wdGrow(src, P, x, y) {
   P.o = [P.o[0] + nx0, P.o[1] + ny0];
   return { dx: -nx0, dy: -ny0 };
 }
-function wdSnap(src) {
-  const [a, b] = wdSheets(src);
+function pushWardrobeUndo(src) {
+  const [a, b] = wardrobeSheets(src);
   wardrobeEditor.undo.push({
     src,
     img: a.getContext('2d').getImageData(0, 0, a.width, a.height),
@@ -521,19 +522,19 @@ function wdSnap(src) {
   });
   if (wardrobeEditor.undo.length > 30) wardrobeEditor.undo.shift();
 }
-function wdPlot(l) {
-  const src = wdCur(),
+function plotWardrobePixel(l) {
+  const src = currentWardrobeItem(),
     P = src.pieces[wardrobeEditor.piece];
   if (!P) return;
   if (wardrobeEditor.tool === 'pick') {
-    wdPick(l);
+    pickWardrobeColor(l);
     return;
   }
   if (wardrobeEditor.tool === 'erase' && (l.x < 0 || l.y < 0 || l.x >= P.r[2] || l.y >= P.r[3])) return;
   if (wardrobeEditor.tool === 'area' && (l.x < 0 || l.y < 0 || l.x >= P.r[2] || l.y >= P.r[3])) return;
-  const g = wdGrow(src, P, l.x, l.y);
+  const g = growPiece(src, P, l.x, l.y);
   if (!g) return;
-  const [img, msk] = wdSheets(src),
+  const [img, msk] = wardrobeSheets(src),
     ix = img.getContext('2d'),
     mx = msk ? msk.getContext('2d') : null,
     px = P.r[0] + l.x + g.dx,
@@ -542,7 +543,7 @@ function wdPlot(l) {
     if (!mx) return;
     mx.clearRect(px, py, 1, 1);
     if (a) {
-      const c = WD_AREA_COL[a];
+      const c = MASK_AREA_COLORS[a];
       mx.fillStyle = `rgb(${c[0]},${c[1]},${c[2]})`;
       mx.fillRect(px, py, 1, 1);
     }
@@ -558,19 +559,19 @@ function wdPlot(l) {
     ix.fillRect(px, py, 1, 1);
     mark(wardrobeEditor.sel === 'body' ? 1 : wardrobeEditor.area);
   }
-  wdTouched(src);
+  wardrobeArtChanged(src);
 }
-function wdTouched(src) {
+function wardrobeArtChanged(src) {
   markArt('art/' + src.img, atlasNow('art/' + src.img));
   if (src.mask) markArt('art/' + src.mask, atlasNow('art/' + src.mask));
   changed();
   TR_CACHE.clear();
-  wdDraw();
+  drawWardrobeEditor();
 }
-function wdPick(l) {
-  const src = wdCur(),
+function pickWardrobeColor(l) {
+  const src = currentWardrobeItem(),
     P = src.pieces[wardrobeEditor.piece],
-    [img, msk] = wdSheets(src);
+    [img, msk] = wardrobeSheets(src);
   if (l.x < 0 || l.y < 0 || l.x >= P.r[2] || l.y >= P.r[3]) return;
   const d = img.getContext('2d').getImageData(P.r[0] + l.x, P.r[1] + l.y, 1, 1).data;
   if (!d[3]) return;
@@ -589,11 +590,11 @@ function wdPick(l) {
   wardrobeEditor.tool = 'pen';
   render();
 }
-function wdFill(l) {
-  const src = wdCur(),
+function fillWardrobePixels(l) {
+  const src = currentWardrobeItem(),
     P = src.pieces[wardrobeEditor.piece];
   if (l.x < 0 || l.y < 0 || l.x >= P.r[2] || l.y >= P.r[3]) return;
-  const [img, msk] = wdSheets(src),
+  const [img, msk] = wardrobeSheets(src),
     ix = img.getContext('2d'),
     [rx, ry, rw, rh] = P.r,
     D = ix.getImageData(rx, ry, rw, rh),
@@ -621,29 +622,29 @@ function wdFill(l) {
     for (const i of pts) {
       mx.clearRect(rx + (i % rw), ry + Math.floor(i / rw), 1, 1);
       if (wardrobeEditor.area) {
-        const c = WD_AREA_COL[wardrobeEditor.area];
+        const c = MASK_AREA_COLORS[wardrobeEditor.area];
         mx.fillStyle = `rgb(${c[0]},${c[1]},${c[2]})`;
         mx.fillRect(rx + (i % rw), ry + Math.floor(i / rw), 1, 1);
       }
     }
   }
-  wdTouched(src);
+  wardrobeArtChanged(src);
 }
-function wdBind() {
+function bindWardrobeCanvas() {
   const cv = $('#wdCv');
   if (!cv || cv._b) return;
   cv._b = 1;
   let down = false;
   cv.addEventListener('pointerdown', ev => {
-    const l = wdLocal(ev);
+    const l = wardrobePointerPixel(ev);
     if (!l) return;
-    const src = wdCur();
-    wdSnap(src);
+    const src = currentWardrobeItem();
+    pushWardrobeUndo(src);
     down = true;
     cv.setPointerCapture(ev.pointerId);
     const P = src.pieces[wardrobeEditor.piece];
     if (wardrobeEditor.tool === 'fill') {
-      wdFill(l);
+      fillWardrobePixels(l);
       down = false;
       return;
     }
@@ -651,11 +652,11 @@ function wdBind() {
       wardrobeEditor.drag = { x: ev.clientX, y: ev.clientY, o: P.o.slice() };
       return;
     }
-    wdPlot(l);
+    plotWardrobePixel(l);
   });
   cv.addEventListener('pointermove', ev => {
     if (!down) return;
-    const src = wdCur(),
+    const src = currentWardrobeItem(),
       P = src.pieces[wardrobeEditor.piece];
     if (wardrobeEditor.tool === 'move' && wardrobeEditor.drag) {
       const r = cv.getBoundingClientRect(),
@@ -665,12 +666,12 @@ function wdBind() {
         Math.round(wardrobeEditor.drag.o[1] + (ev.clientY - wardrobeEditor.drag.y) * k),
       ];
       TR_CACHE.clear();
-      wdDraw();
+      drawWardrobeEditor();
       return;
     }
     if (['pen', 'erase', 'area'].includes(wardrobeEditor.tool)) {
-      const l = wdLocal(ev);
-      if (l) wdPlot(l);
+      const l = wardrobePointerPixel(ev);
+      if (l) plotWardrobePixel(l);
     }
   });
   const up = () => {
@@ -685,7 +686,7 @@ function wdBind() {
   cv.addEventListener('pointercancel', up);
 }
 /* ---------- pieces ---------- */
-function wdAddRegion(src, c, m) {
+function addPieceRegion(src, c, m) {
   const out = [];
   for (const [k, pic] of [
     ['img', c],
@@ -705,11 +706,11 @@ function wdAddRegion(src, c, m) {
   return [1, out[0], c.width, c.height];
 }
 ACTIONS.wdAdd = d => {
-  const src = wdCur(),
+  const src = currentWardrobeItem(),
     bone = $('#wdBone').value,
     v = wardrobeEditor.view,
-    W = wdW();
-  wdSnap(src);
+    W = editedWardrobe();
+  pushWardrobeUndo(src);
   let c, m, o;
   const body = W.body.pieces.find(p => p.v === v && p.b === bone);
   if (d.from === 'front') {
@@ -717,7 +718,7 @@ ACTIONS.wdAdd = d => {
       src.pieces.find(p => p.v === 'front' && p.b === bone) ||
       src.pieces.find(p => p.v === 'front' && p.b.slice(0, -1) === bone.slice(0, -1));
     if (!P) return toast('There’s no front piece on that bone to copy.');
-    const [a, b] = wdSheets(src);
+    const [a, b] = wardrobeSheets(src);
     c = makeCanvas(P.r[2], P.r[3]);
     c.getContext('2d').drawImage(a, P.r[0], P.r[1], P.r[2], P.r[3], 0, 0, P.r[2], P.r[3]);
     m = makeCanvas(P.r[2], P.r[3]);
@@ -745,7 +746,7 @@ ACTIONS.wdAdd = d => {
     m = makeCanvas(12, 12);
     o = body ? [body.o[0], body.o[1]] : [-6, -6];
   }
-  const r = wdAddRegion(src, c, m),
+  const r = addPieceRegion(src, c, m),
     p = { v, b: bone, r, o };
   src.pieces.push(p);
   wardrobeEditor.piece = src.pieces.length - 1;
@@ -754,7 +755,7 @@ ACTIONS.wdAdd = d => {
   TR_CACHE.clear();
   render();
 };
-const WD_EXPR = [
+const FACE_EXPRESSIONS = [
   ['', 'Always (normal face)'],
   ['blink', 'Blinking'],
   ['happy', 'Happy'],
@@ -765,19 +766,19 @@ const WD_EXPR = [
 ];
 /* expressions: a copy of the selected piece, shown instead of the normal pieces of this item while the face makes that expression */
 ACTIONS.wdPieceX = async () => {
-  const src = wdCur(),
+  const src = currentWardrobeItem(),
     P = src.pieces[wardrobeEditor.piece];
   if (!P) return;
   const used = new Set(src.pieces.filter(q => q.v === P.v && q.b === P.b).map(q => q.x || ''));
-  const free = WD_EXPR.filter(([k]) => k && !used.has(k));
+  const free = FACE_EXPRESSIONS.filter(([k]) => k && !used.has(k));
   if (!free.length) return toast('This piece already has every expression.');
-  wdSnap(src);
-  const [a, b] = wdSheets(src),
+  pushWardrobeUndo(src);
+  const [a, b] = wardrobeSheets(src),
     c = makeCanvas(P.r[2], P.r[3]);
   c.getContext('2d').drawImage(a, P.r[0], P.r[1], P.r[2], P.r[3], 0, 0, P.r[2], P.r[3]);
   const m = makeCanvas(P.r[2], P.r[3]);
   if (b) m.getContext('2d').drawImage(b, P.r[0], P.r[1], P.r[2], P.r[3], 0, 0, P.r[2], P.r[3]);
-  const r = wdAddRegion(src, c, m),
+  const r = addPieceRegion(src, c, m),
     q = { v: P.v, b: P.b, r, o: P.o.slice(), x: free[0][0] };
   if (P.z != null) q.z = P.z;
   src.pieces.push(q);
@@ -789,9 +790,9 @@ ACTIONS.wdPieceX = async () => {
   toast(`Added a ${free[0][1].toLowerCase()} copy. Repaint it, or change when it shows.`);
 };
 ACTIONS.wdPieceDel = async () => {
-  const src = wdCur();
+  const src = currentWardrobeItem();
   if (!(await ask('Remove this piece? Its pixels stay in the picture file but aren’t used.', 'Remove'))) return;
-  wdSnap(src);
+  pushWardrobeUndo(src);
   src.pieces.splice(wardrobeEditor.piece, 1);
   wardrobeEditor.piece = -1;
   changed();
@@ -803,7 +804,7 @@ ACTIONS.wdUndo = () => {
   const u = wardrobeEditor.undo.pop();
   if (!u) return toast('Nothing to undo in this picture.');
   const src = u.src,
-    [a, b] = wdSheets(src);
+    [a, b] = wardrobeSheets(src);
   for (const [k, cv, data] of [
     ['img', a, u.img],
     ['mask', b, u.msk],
@@ -819,7 +820,7 @@ ACTIONS.wdUndo = () => {
   render();
 };
 /* ---------- items ---------- */
-async function wdCopySheets(from, to) {
+async function copyWardrobeSheets(from, to) {
   for (const k of ['img', 'mask']) {
     const s = await atlasGet('art/' + from[k]).catch(() => null);
     const n = makeCanvas(s ? s.width : 16, s ? s.height : 16);
@@ -828,7 +829,7 @@ async function wdCopySheets(from, to) {
   }
 }
 ACTIONS.wdNew = async () => {
-  const W = wdW(),
+  const W = editedWardrobe(),
     r = await dialog(
       'New wardrobe item',
       `<div class="grid"><label class="fld"><span>Name</span><input id="wnN" value="New jacket"></label><label class="fld"><span>Slot</span><select id="wnS">${W.slots.map(s => `<option value="${s.id}">${esc(s.name)}</option>`).join('')}</select></label>
@@ -857,7 +858,7 @@ ACTIONS.wdNew = async () => {
     ? Object.assign(clone(base), { name: r.n, slot: r.s, img, mask, starter: false })
     : { name: r.n, slot: r.s, img, mask, colors: [['Main', '#3E8FB0']], pieces: [], price: 300 };
   delete W.items[k].tags;
-  if (base) await wdCopySheets(base, W.items[k]);
+  if (base) await copyWardrobeSheets(base, W.items[k]);
   else {
     markArt('art/' + img, makeCanvas(4, 4));
     markArt('art/' + mask, makeCanvas(4, 4));
@@ -869,7 +870,7 @@ ACTIONS.wdNew = async () => {
   render();
 };
 ACTIONS.wdDup = async () => {
-  const W = wdW(),
+  const W = editedWardrobe(),
     it = W.items[wardrobeEditor.sel],
     k = uniqueKey(it.name + '2', x => !!W.items[x]),
     n = Object.assign(clone(it), {
@@ -879,14 +880,14 @@ ACTIONS.wdDup = async () => {
       starter: false,
     });
   W.items[k] = n;
-  await wdCopySheets(it, n);
+  await copyWardrobeSheets(it, n);
   wardrobeEditor.sel = k;
   changed();
   commit(true);
   render();
 };
 ACTIONS.wdDel = async () => {
-  const W = wdW(),
+  const W = editedWardrobe(),
     k = wardrobeEditor.sel;
   if (
     !(await ask(
@@ -926,7 +927,7 @@ ACTIONS.wdArea = d => {
 };
 ACTIONS.wdZoom = d => {
   wardrobeEditor.zoom = clamp(wardrobeEditor.zoom + +d.z, 3, 14);
-  wdDraw();
+  drawWardrobeEditor();
 };
 ACTIONS.wdExpr = d => {
   wardrobeEditor.pvExpr = d.e || null;
@@ -940,11 +941,11 @@ ACTIONS.wdTurn = d => {
   wardrobeEditor.pvView = (((wardrobeEditor.pvView + +d.d) % 4) + 4) % 4;
 };
 ACTIONS.wdSkin = d => {
-  wardrobeEditor.test = wdTestLook();
+  wardrobeEditor.test = wardrobeTestLook();
   wardrobeEditor.test.skin = d.c;
 };
 ACTIONS.wdColAdd = () => {
-  const it = wdW().items[wardrobeEditor.sel];
+  const it = editedWardrobe().items[wardrobeEditor.sel];
   if (it.colors.length < 3) {
     it.colors.push(['Detail', '#F2EEE4']);
     changed();
@@ -953,7 +954,7 @@ ACTIONS.wdColAdd = () => {
   }
 };
 ACTIONS.wdColDel = d => {
-  const it = wdW().items[wardrobeEditor.sel];
+  const it = editedWardrobe().items[wardrobeEditor.sel];
   it.colors.splice(+d.i, 1);
   if (it.link) {
     delete it.link[String(+d.i + 1)];
@@ -964,5 +965,5 @@ ACTIONS.wdColDel = d => {
 };
 studioState.hooks.wardrobe = () => {
   TR_CACHE.clear();
-  wdDraw();
+  drawWardrobeEditor();
 };

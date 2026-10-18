@@ -5,11 +5,11 @@ import { expose } from '../../game/js/test-globals.js';
 import {
   BODY_TEMPLATES,
   PLAN_INFO,
+  loadWardrobe,
   makeBlankBody,
   neutralPose,
   openSkeleton,
   wardrobeEditor,
-  wdLoad,
 } from '../../game/js/hooks.js';
 import { $, $$ } from '../../game/js/util.js';
 import { iconURL, makeCanvas } from '../../game/js/art.js';
@@ -1340,8 +1340,8 @@ SECTIONS.people = () => {
   for (const id of Object.values(L.wear || {}))
     if (id && W.items[id] && !L.colors[id]) L.colors[id] = trColorsOf(cleanLook(L), id);
   after(() => {
-    if (typeof wdLoad === 'function' && !wardrobeEditor.loaded)
-      wdLoad().then(() => {
+    if (typeof loadWardrobe === 'function' && !wardrobeEditor.loaded)
+      loadWardrobe().then(() => {
         TR_CACHE.clear();
         const b = $('#personPrev');
         if (b) b.innerHTML = personPreviewHTML(k);
