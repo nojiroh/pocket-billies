@@ -192,7 +192,6 @@ expose({
   showAim: [() => showAim, v => (showAim = v)],
   showEvent: [() => showEvent, v => (showEvent = v)],
   showSpeakerFace: [() => showSpeakerFace, v => (showSpeakerFace = v)],
-  snapSide: [() => snapSide],
   stagePlatesOn: [() => stagePlatesOn],
   stageTap: [() => stageTap, v => (stageTap = v)],
   startTrainer: [() => startTrainer, v => (startTrainer = v)],
@@ -301,8 +300,6 @@ function actorSnapshot(k) {
   };
 }
 export const allSnapshots = () => [0, 1, 2, 3, 4].map(k => (fieldSlot(k) ? actorSnapshot(k) : null));
-/* kept for older callers: the first fighter of a side */
-const snapSide = si => actorSnapshot(si);
 export function battleSay(t, an) {
   const ev = { t, an: an || null, s: allSnapshots(), mk: activeBattle.market ? { ...activeBattle.market } : null };
   activeBattle.events.push(ev);

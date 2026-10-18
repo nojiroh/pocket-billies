@@ -68,7 +68,6 @@ expose({
   recolorPiece: [() => recolorPiece, v => (recolorPiece = v)],
   rgbToHsl: [() => rgbToHsl, v => (rgbToHsl = v)],
   scaleCanvas: [() => scaleCanvas, v => (scaleCanvas = v)],
-  trainerDesign: [() => trainerDesign],
   walkFrameDrawn: [() => walkFrameDrawn, v => (walkFrameDrawn = v)],
   wardrobeData: [() => wardrobeData],
   wardrobeSlots: [() => wardrobeSlots],
@@ -297,7 +296,6 @@ export function lookOf(who) {
   const p = (typeof PEOPLE !== 'undefined' && (PEOPLE[who] || PEOPLE.gini)) || {};
   return p.look ? cleanLook(p.look) : lookFromOld(p);
 }
-const trainerDesign = lookOf;
 function folkLook(seed) {
   const r = i => {
       const x = Math.sin(seed * 12.9898 + i * 78.233) * 43758.5453;

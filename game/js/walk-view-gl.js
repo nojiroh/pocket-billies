@@ -188,7 +188,6 @@ import {
 expose({
   ALTERNATE_PROPS: [() => ALTERNATE_PROPS],
   BOBBING_PROPS: [() => BOBBING_PROPS],
-  BORDER_M: [() => BORDER_M],
   BOX_INFO_CACHE: [() => BOX_INFO_CACHE],
   EVERGREEN_PROPS: [() => EVERGREEN_PROPS],
   FIXED_BACK: [() => FIXED_BACK],
@@ -209,7 +208,6 @@ expose({
   NO_PAD_PROPS: [() => NO_PAD_PROPS],
   PREP_BUDGET_MS: [() => PREP_BUDGET_MS],
   PROP_LOOK_CACHE: [() => PROP_LOOK_CACHE],
-  PROP_MATERIALS: [() => PROP_MATERIALS],
   PROP_VARIETY_DEFAULT: [() => PROP_VARIETY_DEFAULT],
   PROP_VARIETY_RULES: [() => PROP_VARIETY_RULES],
   SLOPE_HUGGERS: [() => SLOPE_HUGGERS],
@@ -466,11 +464,9 @@ export const walkRenderer = {
 provide({ walkRenderer }); /* to-module */
 /* v46: how long a frame may spend getting the next view ready (ms) */
 const PREP_BUDGET_MS = /Android|iPhone|iPad/.test(navigator.userAgent) ? 4 : 6;
-const BORDER_M = GROUND_BORDER_M,
-  FIXED_RIGHT = [1, 0, 0],
+const FIXED_RIGHT = [1, 0, 0],
   FIXED_BACK = [0, 0, -1];
 /* which material a prop is made of: its own "mat", else guessed from its name */
-export const PROP_MATERIALS = SURFACE_MATERIALS;
 export function propMaterial(k, M) {
   if (M && M.mat && SURFACE_MATERIALS[M.mat]) return M.mat;
   const n = ((M && M.group) || '') + ' ' + k;
@@ -1290,7 +1286,7 @@ function* buildGroundMeshSteps(sc, G, T) {
   const gl = gpuState.gl,
     W = sc.w,
     H = sc.h,
-    P = BORDER_M,
+    P = GROUND_BORDER_M,
     res = 0.5,
     ter = (x, z) => {
       const i = Math.floor(x),
@@ -2213,7 +2209,7 @@ function freeNearRing(R) {
 }
 /* which squares are wanted: the 4 x 4 round the focus (a little ahead of it, the way the camera looks) */
 function wantedNearRingChunks(R, sc, fx, fz) {
-  const P = BORDER_M,
+  const P = GROUND_BORDER_M,
     cx = fx + P,
     cy = sc.h + P - fz,
     tx = cx / NEAR_RING_CHUNK_M,
@@ -2365,7 +2361,7 @@ function setNearRingUniforms(U, sc) {
   gl.bindSampler(14, null);
   gl.uniform1i(U.uRingN, 14);
   gl.activeTexture(gl.TEXTURE0);
-  const P = BORDER_M;
+  const P = GROUND_BORDER_M;
   gl.uniform3f(U.uCanvas, sc.w + 2 * P, sc.h + 2 * P, on ? 1 : 0);
   if (on) {
     gl.uniform2fv(U.uRingC, R.C);
@@ -2988,7 +2984,7 @@ function groundPixelNormal(gx, gy, m) {
 function groundNormalTexture(G, old, sc = walkView.sc) {
   const gl = gpuState.gl,
     TP = G._TP || walkData().sc.tile || 16,
-    P = BORDER_M,
+    P = GROUND_BORDER_M,
     w = G.width,
     h = G.height,
     rows = sc.tiles || [];
@@ -5669,7 +5665,7 @@ export function drawGround(C, X) {
     sc = walkView.sc,
     p = useWalkProgram('ground', C, X),
     U = p.U,
-    P = BORDER_M;
+    P = GROUND_BORDER_M;
   const wa = imageTexture(artImage(walkData().sc.wallArt || 'scene/build/walls.png'), { noNormal: true });
   gl.activeTexture(gl.TEXTURE4);
   gl.bindTexture(gl.TEXTURE_2D, wa ? wa.t : gpuState.white);

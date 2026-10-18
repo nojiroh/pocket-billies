@@ -11,7 +11,8 @@ import { $, $$, clamp } from '../../game/js/util.js';
 import { frameStop, frameTask } from '../../game/js/frame-scheduler.js';
 import { artLoad, makeCanvas, setArtLoad } from '../../game/js/art.js';
 import { artImage, imageReady, layerAsProp, setWalkData, walkData, walkView } from '../../game/js/walk-view.js';
-import { PROP_MATERIALS, mountWalkView, propMaterial, propVariety, walkRenderer } from '../../game/js/walk-view-gl.js';
+import { SURFACE_MATERIALS } from '../../game/js/engine/webgl.js';
+import { mountWalkView, propMaterial, propVariety, walkRenderer } from '../../game/js/walk-view-gl.js';
 import { BUILDING_ROOM_NAMES, BUILDING_TEXTURE_NAMES } from '../../game/js/buildings.js';
 import { SOLID_PROP_BODIES, SOLID_PROP_KINDS, SOLID_PROP_PARTS, solidTreeKind } from '../../game/js/solid-props.js';
 import { escapeHtml } from './game-stand-ins.js';
@@ -187,11 +188,13 @@ function propEditorCardHTML(k) {
       [
         '',
         'Automatic (' +
-          (typeof propMaterial === 'function' ? PROP_MATERIALS[propMaterial(k, M)].name : 'from the name') +
+          (typeof propMaterial === 'function' ? SURFACE_MATERIALS[propMaterial(k, M)].name : 'from the name') +
           ')',
       ],
     ]
-      .concat(Object.entries(typeof PROP_MATERIALS !== 'undefined' ? PROP_MATERIALS : {}).map(([k, m]) => [k, m.name]))
+      .concat(
+        Object.entries(typeof SURFACE_MATERIALS !== 'undefined' ? SURFACE_MATERIALS : {}).map(([k, m]) => [k, m.name])
+      )
       .map(([a, n]) => `<option value="${a}" ${(M.mat || '') === a ? 'selected' : ''}>${n}</option>`)
       .join('')}</select></label></div>` +
     (M.glow
