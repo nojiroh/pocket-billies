@@ -18,9 +18,10 @@ import {
   RULES,
   SPECIES,
   START_NODE,
+  STATUS_NAMES,
   roadCost,
 } from '../game-data.js';
-import { cleanName, emptyJob, jobSlotCount, movesAt, today } from './rules.js';
+import { cleanName, emptyJob, jobSlotCount, movesAt, teamSize, today } from './rules.js';
 /* eslint-disable no-func-assign */
 expose({
   SAVE_NEW_MSG: [() => SAVE_NEW_MSG],
@@ -31,6 +32,7 @@ expose({
   newSave: [() => newSave, v => (newSave = v)],
   newSaveKeepingPreferences: [() => newSaveKeepingPreferences, v => (newSaveKeepingPreferences = v)],
   saveAge: [() => saveAge, v => (saveAge = v)],
+  validSave: [() => validSave, v => (validSave = v)],
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
@@ -171,3 +173,83 @@ export function loadSave(o) {
 }
 export const SAVE_OLD_MSG = 'This save is from an older version of the game and can’t be loaded in this one.',
   SAVE_NEW_MSG = 'This save is from a newer version of the game. Reload the page to get the newest version.';
+export function validSave(o) {
+  if (!o || typeof o !== 'object' || !o.started || typeof o.starter !== 'string') return false;
+  const num = (v, min, max) => Number.isFinite(v) && v >= min && v <= max;
+  if (
+    !Array.isArray(o.team) ||
+    !Array.isArray(o.box) ||
+    !o.team.length ||
+    o.team.length > Math.max(6, teamSize()) ||
+    o.box.length > 5000
+  )
+    return false;
+  const ids = new Set();
+  for (const m of o.team.concat(o.box)) {
+    if (
+      !m ||
+      !SPECIES[m.sp] ||
+      typeof m.uid !== 'string' ||
+      ids.has(m.uid) ||
+      !num(m.lvl, 1, 100) ||
+      !Number.isInteger(m.lvl) ||
+      !num(m.hp, 0, 9999) ||
+      !num(m.xp, 0, 1e12) ||
+      !Array.isArray(m.moves) ||
+      !m.moves.length ||
+      m.moves.length > 4 ||
+      m.moves.some(k => !MOVES[k])
+    )
+      return false;
+    ids.add(m.uid);
+  }
+  if (
+    !o.trip ||
+    !Number.isInteger(o.trip.node) ||
+    !num(o.trip.node, 0, LOCATIONS.length - 1) ||
+    !num(o.trip.prog, 0, 1e9) ||
+    !o.day ||
+    !num(o.day.steps, 0, 1e9) ||
+    !num(o.se, 0, 1e12) ||
+    !num(o.totalSteps, 0, 1e12)
+  )
+    return false;
+  if (
+    !Array.isArray(o.queue) ||
+    o.queue.length > Math.max(10, RULES.steps.maxEncounters) ||
+    o.queue.some(q => !q || !SPECIES[q.sp] || !num(q.lvl, 1, 100))
+  )
+    return false;
+  if (!Array.isArray(o.eggs) || o.eggs.some(e => !e || !num(e.prog, 0, 1e12))) return false;
+  if (
+    !Array.isArray(o.jobs) ||
+    o.jobs.length > 12 ||
+    o.jobs.some(
+      j => !j || (j.uid && (!ids.has(j.uid) || !JOBS[j.job])) || !num(j.acc, 0, 1e12) || !num(j.pend, 0, 1e12)
+    )
+  )
+    return false;
+  for (const k of ['coins', 'items'])
+    if (!o[k] || typeof o[k] !== 'object' || Object.values(o[k]).some(n => !num(n, 0, 1e12))) return false;
+  const record = v => v && typeof v === 'object' && !Array.isArray(v) && !Object.hasOwn(v, '__proto__');
+  if (
+    !record(o.seen) ||
+    !record(o.caught) ||
+    !record(o.flags) ||
+    !Array.isArray(o.seats) ||
+    o.seats.some(v => typeof v !== 'string') ||
+    Object.hasOwn(o, '__proto__')
+  )
+    return false;
+  if (!num(o.meter, 0, 1e9) || !num(o.serial, 0, 1e12) || !num(o.seFrac, 0, 1) || !num(o.buddyRem, 0, 1e12))
+    return false;
+  for (const m of o.team.concat(o.box))
+    if (
+      typeof (m.nick || '') !== 'string' ||
+      (m.status != null && !STATUS_NAMES[m.status]) ||
+      (m.job != null &&
+        (!Number.isInteger(m.job) || m.job < 0 || m.job >= o.jobs.length || o.jobs[m.job].uid !== m.uid))
+    )
+      return false;
+  return true;
+}
