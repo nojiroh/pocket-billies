@@ -1,0 +1,143 @@
+/* ================= phase 06: the eight motions =================
+   Each motion is named once and used everywhere (docs/phases/06-plan.md "Motion"). Add the class (or the component
+   adds it) instead of writing new keyframes. Transforms and opacity only, so phones stay smooth.
+   Reduced motion (the phone's setting, or Settings in the game: [data-motion='reduced']) turns every one into a
+   short fade; idle and stagger stop. */
+
+/* press: every button and tappable card */
+.m-press {
+  transition: transform var(--m-fast) var(--spring);
+}
+.m-press:active {
+  transform: scale(0.96);
+  transition-duration: 80ms;
+}
+
+/* enter: fade and a small rise; list items stagger by --stagger (set --i on each, at most 8) */
+.m-enter {
+  animation: m-enter var(--m-base) var(--ease-out) both;
+  animation-delay: calc(min(var(--i, 0), 8) * var(--stagger));
+}
+@keyframes m-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+/* sheet: slides up with the spring */
+.m-sheet {
+  animation: m-sheet var(--m-slow) var(--spring) both;
+}
+@keyframes m-sheet {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+}
+
+/* pop: something new (an item, a badge, Prime) */
+.m-pop {
+  animation: m-pop var(--m-slow) var(--spring) both;
+}
+@keyframes m-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+}
+
+/* idle: Billies breathe; give each its own --phase (0 to 1) so a team never moves in step */
+.m-idle {
+  animation: m-idle 3.2s ease-in-out infinite;
+  animation-delay: calc(var(--phase, 0) * -3.2s);
+  transform-origin: 50% 100%;
+}
+@keyframes m-idle {
+  50% {
+    transform: translateY(-1px) scaleY(1.015);
+  }
+}
+
+/* count: a number that just changed (the roll itself is pbCount in js/ui-kit.js) */
+.m-count {
+  animation: m-count var(--m-base) var(--spring);
+}
+@keyframes m-count {
+  40% {
+    transform: scale(1.12);
+  }
+}
+
+/* nudge: wrong input, no red flash */
+.m-nudge {
+  animation: m-nudge 360ms var(--ease-out);
+}
+@keyframes m-nudge {
+  20%,
+  60% {
+    transform: translateX(-4px);
+  }
+  40%,
+  80% {
+    transform: translateX(4px);
+  }
+}
+
+/* done: a check mark that draws itself (an svg path with pathLength="1") */
+.m-done path {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: m-done var(--m-slow) var(--ease-out) forwards;
+}
+@keyframes m-done {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* float: an in-place number (+$120) rising from where it happened (pbFloat in js/ui-kit.js) */
+.m-float {
+  animation: m-float 1100ms var(--ease-out) forwards;
+}
+@keyframes m-float {
+  15% {
+    opacity: 1;
+    transform: translate(-50%, -6px) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translate(-50%, -34px) scale(0.96);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .m-enter,
+  .m-sheet,
+  .m-pop,
+  .m-count,
+  .m-nudge,
+  .m-float {
+    animation: m-fade 120ms linear both !important;
+  }
+  .m-idle {
+    animation: none !important;
+  }
+  .m-press:active {
+    transform: none;
+  }
+}
+[data-motion='reduced'] :is(.m-enter, .m-sheet, .m-pop, .m-count, .m-nudge, .m-float) {
+  animation: m-fade 120ms linear both !important;
+}
+[data-motion='reduced'] .m-idle {
+  animation: none !important;
+}
+[data-motion='reduced'] .m-press:active {
+  transform: none;
+}
+@keyframes m-fade {
+  from {
+    opacity: 0;
+  }
+}

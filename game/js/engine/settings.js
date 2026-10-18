@@ -178,6 +178,7 @@ export const ENGINE_DEFAULTS = {
     edgeBleed: true,
   },
 };
+provide({ ENGINE_DEFAULTS }); /* to-module */
 /* labels, ranges and help for the Studio, in display order */
 export const ENGINE_SPEC = [
   [
@@ -720,6 +721,7 @@ export const ENGINE_SPEC = [
     ],
   ],
 ];
+provide({ ENGINE_SPEC }); /* to-module */
 /* ready-made looks; a preset only lists what it changes */
 /* phase 09 batch 1: the plain look, for judging props (a scene with plain: 1, the props test map and the Studio's
    prop turntable): no depth of field, bloom, colour grade, film grain, vignette, haze, mist, clouds, sun shafts or
@@ -788,6 +790,7 @@ export const ENGINE_PRESETS = {
     },
   },
 };
+provide({ ENGINE_PRESETS }); /* to-module */
 /* the value for one dial: scene look → game-wide defaults → built-in default */
 function lookDials() {
   if (typeof engineContext !== 'undefined' && engineContext.look) return engineContext.look;

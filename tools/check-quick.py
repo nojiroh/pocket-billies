@@ -610,6 +610,43 @@ SAVE_SPY = r"""(()=>{window.__st={w:[],ls:[]};account.user={uid:'check',name:'Ch
   save();__st.team=saveData.team.map(m=>m.uid)})();0"""
 
 
+@step('Messages: toasts merge, notices wait behind the dot, choices wait for the world (phase 06)', 120)
+def messages_step(b, base, R):
+    errs = []
+    ctx = b.new_context(viewport={'width': 390, 'height': 844}, device_scale_factor=1); ctx.add_init_script(CLOCK); ctx.add_init_script(NO_ACCOUNTS); ctx.add_init_script(TEST_GLOBALS)
+    ctx.set_default_timeout(90000); pg = ctx.new_page(); CUR['pg'] = pg
+    pg.on('pageerror', lambda e: errs.append(str(e)))
+    pg.on('console', lambda m: errs.append(console_text(m)) if m.type == 'error' else None)
+    try:
+        pg.goto(base + '/index.html?fixture=town'); pg.evaluate(LOW_RENDER)
+        # a waiting choice opens only once the world shows: no loader, the walk view ready
+        pg.wait_for_function("typeof whenWorldShows==='function'", timeout=60000)
+        pg.evaluate("window.__ws=null;whenWorldShows(()=>{const l=document.getElementById('loader');__ws={ready:walkView.ready,loader:!!(l&&!l.hidden&&l.offsetParent)}},200);0")
+        if not until(pg, 'window.__ws', 90): raise Exception('whenWorldShows never ran')
+        ws = pg.evaluate('__ws')
+        if not ws['ready'] or ws['loader']: raise Exception(f'a waiting choice would open before the world shows: {ws}')
+        # toasts: the same text joins the one showing, or the one waiting
+        r = pg.evaluate("""(()=>{uiState.modal=null;uiState.mq=[];uiState.toastQ=[];uiState.toastOn=false;renderOverlay();
+          toast('Found an item');toast('Found an item');toast('Saved');toast('Saved');toast('Found an item');
+          const t=document.getElementById('toast');
+          return {on:uiState.toastOn&&[uiState.toastOn.text,uiState.toastOn.count],q:uiState.toastQ.map(x=>[x.text,x.count]),el:!!t&&t.tagName}})()""")
+        if r['on'] != ['Found an item', 3] or r['q'] != [['Saved', 2]] or r['el'] != 'PB-TOAST':
+            raise Exception(f'toasts did not merge as expected: {r}')
+        pg.evaluate("uiState.toastQ=[];uiState.toastOn=false;renderOverlay();0")
+        if pg.evaluate("!!document.getElementById('toast')"): raise Exception('clearing uiState.toastOn left the toast on screen')
+        # notices: kept once, behind the dot; opening the dot shows them and clears it
+        n = pg.evaluate("""(()=>{uiState.inbox=[];notice({id:'qc',title:'A letter',html:'<p>Hello.</p>'});notice({id:'qc',title:'A letter',html:'<p>Hello.</p>'});render();
+          const d=document.querySelector('.tb-inbox');const before=[uiState.inbox.length,d&&d.innerText.trim()];d&&d.click();
+          return {before,title:document.querySelector('#ov .sheet h2')?.textContent,after:uiState.inbox.length,dot:!!document.querySelector('.tb-inbox')}})()""")
+        if n['before'] != [1, '1'] or n['title'] != 'A letter' or n['after'] != 0 or n['dot']:
+            raise Exception(f'the inbox did not behave: {n}')
+        pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();0")
+        if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
+        return 'toasts merged (×3 showing, ×2 waiting); one notice behind the dot, opened and cleared; the choice waited for the world'
+    finally:
+        ctx.close()
+
+
 @step('In-game full test: one step headless, and nothing is saved while it runs', 120)
 def in_game_test_step(b, base, R):
     errs = []; ctx, pg = open_game(b, base, 1100, 700, False, errs)
@@ -2158,6 +2195,7 @@ def main():
             if SMOKE:
                 studio_opens(b)
             else:
+                messages_step(b, base, R)
                 try:
                     desktop_steps(b, base, R)
                 except Exception as e:

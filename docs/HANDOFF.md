@@ -72,6 +72,57 @@ covering every technique, shown on a test map. Started straight from the owner's
   Hedgerow Lane and Tallgrass Meadow, keyed as the old props (so placements keep working) or as next_* with
   placements rewritten?
 - Next session starts with: the owner's notes on the batch.
+### Phase 13 (part) - The fast check and the in-game graphics test - 2026-10-18
+Two parts, plans approved by the owner. Part 1 on branch ccr-5f324dee-5mgqdn (merged as PR #16), Part 2 on top of it.
+- Changed:
+  - Part 1: `tools/check-fast.py` (`npm run check:fast`), the fast check, only what must never break: the data, the
+    world-map graph, a town, a route, a cave and a room open and draw, a save round-trips, a battle plays to the end,
+    the game boots with no errors, the Studio loads, and the exported debug log holds no names. `game/js/fixture.js`:
+    `?fixture=<name>` (title, town, route, cave, room, battle, stored) starts a ready-made game with its own save key,
+    never signed in, with the planted names in FIXTURE_NAMES (trainer "Quillonda", nickname "Zorblax"). The CI push
+    job runs check-fast.py instead of the smoke set.
+  - Part 2: `game/js/graphics-test.js`, the in-game graphics test. A button in Settings → Help ("Run the graphics
+    test", `data-a="gfxtest"`) and one in the debug menu's Performance row. settings-screen.js (`startGraphicsTest`)
+    loads it on demand (`import()` of `js/graphics-test.js` against the page's address, so the build leaves it as its
+    own file in dist/game/js/) and hands it what it reads, so the module has no imports. Steps, all in Marigold Town:
+    the shaders (the same check as check-quick.py's Shaders step, which is unchanged), the game defaults to compare
+    with, each of the 144 ENGINE_SPEC dials on its own (through the player's expert dials, which come before a scene's
+    look; a number at the top of its range or the bottom if that is its default, on/off flipped, a choice at another
+    option, a colour at #FF4080, the light dials at night), Balanced and Beautiful, and the five ENGINE_PRESETS. Each
+    step opens the scene from scratch and counts frames for 2 s: frame rate, longest frame, time to open, errors. An
+    OK/Problem table and "Save the report" (a .json file: steps, numbers, errors, the graphics chip, screen and cores;
+    not the browser, language or time zone). The last row is the planted-name check: the planted names, the trainer's
+    name and every nickname in the save; any found is taken out and the row is a Problem.
+  - Saving paused and the save put back as in self-test.js; the save copy also brings back the player's graphics
+    settings (aim, expert dials), and the scene is made again with them, when the test ends, is stopped or fails.
+    selfTest.on is set while it runs, so the story, postcards and the full test stay out of the way.
+  - `tools/test/graphics-test.test.mjs` (6 tests): every dial gets a step at a value other than its default, the
+    names list, a clean report passes, a planted name is taken out and fails the check, the report's fields.
+  - eslint.config.js: a block for graphics-test.js (it is on no page). to-module put ENGINE_*, FIXTURE_NAMES, the
+    shader sets, gpuState, compileProgram and attributeClashes through hooks.js for settings-screen.js.
+  - Docs: TESTING.md (the graphics test and its rules), CHANGELOG.
+- Risky or unfinished:
+  - **The graphics test has never run.** As the owner asked, Claude ran it in no browser at all, not even software
+    rendering. It must be run on a real device; the first run is the owner's. The likeliest trouble: a scene that
+    takes long to open from scratch on a phone (the step limit is 30 s), and the whole run's length (153 steps, about
+    3-4 s each: probably 8-10 minutes, not measured).
+  - The spec's "Saver" preset doesn't exist: the Graphics tab has Balanced and Beautiful only (Battery saver was
+    removed in phase 03). Both are tested; Beautiful is the same look as the game defaults row.
+  - Dials a scene doesn't use (water with no water in view, lamp shadows by day) show OK without showing much.
+  - The steps read the frame count of the walk view only; the battle stage and the world map aren't in it.
+- Verified (what ran, what passed): `npm run lint`, `npm run typecheck`, `npm test` (31 tests), `npm run
+  check:modules`, `npm run format:check`, `npm run check:data`, `npm run build` (graphics-test.js in dist/game/js,
+  the bundle keeps the import as written), and `python3 tools/check-fast.py`: 11 of 11 passed in 112 s on 2 browsers
+  in this container. A planted fault (the name check turned off) fails its unit test; a planted undefined name in
+  graphics-test.js fails lint. Part 1, from its session: check-fast takes about 85 s on 2 browsers (1 browser 94.5 s,
+  4 browsers 110.8 s), and all 11 planted faults were caught.
+- Decisions I made (and why): the dials go through the player's expert dials, because a scene's own look comes
+  before the game-wide defaults and would hide some dials. Each dial moves away from its default, so every step
+  changes something. Each step opens the scene from scratch, so dials read while a scene is made count. Device
+  details are cut to the graphics chip and the screen, because the user agent, language and time zone say more
+  about the player than a graphics report needs.
+- Questions waiting for the owner: the first run on a phone, and the report it saves.
+- Next session starts with: the report from that run; then the rest of phase 13 (13b, 13c).
 ### Phase 08a-1 - tests off the steps mode, the dead steps travel mode deleted - 2026-10-18
 Plan approved at the start (docs/phases/08a-plan.md, section 08a-1, now marked done with the corrections found).
 - Changed (15 commits on c3b5de9):
@@ -166,6 +217,42 @@ Not a phase; plan approved at the start. Both runs passed with no errors; the ph
     buildGroundMeshSteps) or prepare it before the door opens (prepareMapGround).
   - If the phone is still slow, the next renderer work is: reuse per-frame item objects, instance static sprites,
     group solid props by mesh. That is a phase of its own.
+
+### Phase 06, session 06-1 - UI foundation and calmer messages - 2026-10-18
+Plan: docs/phases/06-plan.md (PR #20). Owner's choices: Lit components, Chakra Petch for long text, an inbox dot for
+notices, delete the codex prototype branch, start 06-1 now.
+- Changed:
+  - **Lit**: `tools/vendor-lit.mjs` bundles the npm package (lit 3.3.3, devDependency) into `game/vendor/lit.js`, a
+    classic script that sets `self.PB_LIT` (14 KB minified). Classic, not an import, because tools/to-module.mjs only
+    allows imports between the game's own modules; it also keeps `python3 -m http.server` working. `--check` tells
+    when it doesn't match the installed version. Ignored by ESLint and Prettier.
+  - **Tokens and motion**: `game/css/tokens.css` (space, corners, depth, type sizes, timings; colours stay in v05.css),
+    `game/css/motion.css` (the eight motions as `m-*` classes; reduced motion from the phone or `[data-motion=reduced]`
+    becomes a short fade). Loaded last; nothing older uses them yet except the bottom bar.
+  - **Components** (`game/js/ui-kit.js`): `pb-panel`, `pb-pill`, `pb-button`, `pb-sheet`, `pb-toast`, plus `pbFloat`
+    and the inbox dot. Shadow DOM with slots; a `data-a` on a `pb-button` reaches the page's click handler as before.
+    Paths differ from the plan's `game/ui/`: new code sits in game/js and game/css so lint, type and module checks
+    cover it.
+  - **Messages** (`game/js/logic/messages.js`, ui.js): toasts are a `<pb-toast id="toast">` under the top bar,
+    2.5 s, tap or swipe up to dismiss; the same text again joins the one showing or waiting ("Saved ×2"). The checks'
+    `uiState.toastQ / toastOn / renderOverlay()` still work (plain strings too). `notice()` puts a notice behind a
+    dot on the portrait (`data-a="inbox"` opens them in one sheet): the boot's "A new game / A newer save" and the
+    Copperleaf Town note (its flag is now set when read). `whenWorldShows()` holds the boot's waiting choices
+    (hatch, learn a move, evolve) until the loader, title and opening are gone and the world has shown for 1.2 s.
+    Money earned rises as "+$120" from the money chip.
+  - **Bottom bar** on the tokens: 8 px padding, 44 px buttons, press .96, tokens for corners, depth and timing.
+- Not done, on purpose: the loader tips about real steps are still true (phase 08 Part A hasn't removed steps), so
+  they stay for phase 08. The codex branch: saved as `archive/codex-playable-ui-graphics-poc`; deleting branches and
+  pushing tags are refused from Claude's sessions, so **delete `codex/playable-ui-graphics-poc` on GitHub** yourself.
+- Verified: lint, type-check, module check, format, data check, build (vendor/lit.js ships before the bundle), unit
+  tests 36/36 (new `messages.test.mjs`, fault planted once), smoke 15/15 (187 s, unchanged). New full-check step
+  "Messages" (24.7 s, not in smoke) passes, and fails with a planted inbox fault. Components checked on a scratch page
+  in both themes at 390 px (screenshots sent in chat).
+- Risky: headless software rendering freezes the page's animation clock while the 3D town draws, so the checks can't
+  see entrance animations finish (the toast reads opacity 0 there); look on your phone. Toasts that announce money
+  (for example "+$1,571 steps…") still show alongside the new "+$" float; 06-2 can trim them.
+- Questions waiting for the owner: delete the codex branch on GitHub; merge PR #19 (test boot opening) and PR #20 (plan).
+- Next session starts with: 06-2 (Billie card, details sheet with parts, sizes, weight and Prime, Team, starter pick).
 
 ### Phase 16 prep - Billies rework plan, part kits, test boot - 2026-10-18
 - Changed: docs/phases/16 rewritten (7-line roster, parts, sizes, weight, Prime, decisions and open questions);
