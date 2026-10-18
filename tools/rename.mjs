@@ -44,7 +44,8 @@ const WINDOWS = new Set(['window', 'self', 'globalThis', 'GAME']);
 const BROWSER = new Set([...Object.keys(globals.browser), ...Object.keys(globals.builtin)]);
 const GENERATED = new Set(['game/data/gamedata.js', HOOKS, LOG_NAMES]);
 // history and plans keep the names they were written with
-const HISTORY = /^(docs\/(HANDOFF\.md|archive\/|phases\/)|CHANGELOG\.md)/;
+// (and CLAUDE.md, the owner's instructions, stays as they wrote it)
+const HISTORY = /^(docs\/(HANDOFF\.md|archive\/|phases\/)|CHANGELOG\.md|CLAUDE\.md)/;
 const TEXT = new Set([
   '.js',
   '.mjs',
@@ -504,6 +505,8 @@ function verify(base, expect) {
     if (to.has(a) && to.get(a) !== b) out.problems.push(`${a} became both ${to.get(a)} and ${b}`);
     to.set(a, b);
   }
+  // a file rename may change the paths that name the file
+  if (expect && expect[0] === 'file') to.set(basename(expect[1]), basename(expect[2]));
   // a changed string is the old one with some of the renamed names in it renamed, nothing else
   const re = to.size && words(to.keys());
   for (const [x, y, where] of out.strings) {
