@@ -41,7 +41,7 @@ import { EGL_POST_SH } from './engine/post-effects.js';
 import { environment } from './environment.js';
 import { WALK_SHADERS, roomDimming, standingHeightAt, walkRenderer } from './walk-view-gl.js';
 import { BUILDING_SHADERS, buildingState } from './buildings.js';
-import { STR, strHas } from './structures.js';
+import { hasStructures, structureState } from './structures.js';
 import { SOLID_PROP_SHADERS, solidPropState } from './solid-props.js';
 import { propModelState } from './prop-models.js';
 import { buddyTap, companionSpecies, worldBillies } from './world-billies.js';
@@ -581,9 +581,9 @@ async function runFullTest(mode) {
       const gl = typeof walkRenderer !== 'undefined' && walkRenderer.on;
       if (
         gl &&
-        typeof strHas === 'function' &&
-        strHas(sc) &&
-        !STR.mesh &&
+        typeof hasStructures === 'function' &&
+        hasStructures(sc) &&
+        !structureState.mesh &&
         !(typeof buildingState !== 'undefined' && buildingState.fail)
       )
         throw new Error('bridges and railings aren’t drawn');
@@ -1544,7 +1544,7 @@ const DIAG_PASSES = {
   shadows: ['shadowPass'],
   ground: ['drawGround'],
   grass: ['drawGrass'],
-  props: ['drawSprites', 'drawSolidProps', 'drawPropModels', 'drawBuildings', 'drawBoxFaces', 'strDraw'],
+  props: ['drawSprites', 'drawSolidProps', 'drawPropModels', 'drawBuildings', 'drawBoxFaces', 'drawStructures'],
   water: ['reflectionPass', 'drawWater'],
   effects: ['effectsPass'],
   'final pass': ['eglPost'],

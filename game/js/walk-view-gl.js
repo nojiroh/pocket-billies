@@ -35,6 +35,8 @@ import {
   drawPropModels,
   drawSolidPropShadows,
   drawSolidProps,
+  drawStructureShadows,
+  drawStructures,
   flushPropModelMeshes,
   frWorldItems,
   frontWindowLight,
@@ -55,8 +57,6 @@ import {
   solidPropLevelOfDetail,
   solidPropState,
   stampDraw,
-  strDraw,
-  strShadow,
   tagPropModel,
   tagSolidProp,
   warmWorldBillies,
@@ -3707,7 +3707,7 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
   if (typeof drawPropModels === 'function') drawPropModels(C, items, X, null, null, PPU);
   drawBoxFaces(C, items, X);
   if (typeof drawBuildings === 'function') drawBuildings(C, X, items, walkRenderer.bfade);
-  if (typeof strDraw === 'function') strDraw(C, X);
+  if (typeof drawStructures === 'function') drawStructures(C, X);
   gatherFountainBasins(items);
   if (walkRenderer.water || walkRenderer.basin) drawWater(C, X, rw, rh);
   effectsPass(C, items, X, dark, t, dt);
@@ -5305,7 +5305,7 @@ export function shadowPass(items0, sun, C) {
   }
   drawShadowSprites(SH, items, sun, ca);
   if (typeof drawBuildingShadows === 'function') drawBuildingShadows(SH, items);
-  if (typeof strShadow === 'function') strShadow(SH);
+  if (typeof drawStructureShadows === 'function') drawStructureShadows(SH);
   if (typeof drawSolidPropShadows === 'function') drawSolidPropShadows(SH, items);
   if (typeof drawPropModelShadows === 'function') drawPropModelShadows(SH, items);
   eglShadowEnd();
@@ -5552,7 +5552,7 @@ function fittedShadowPass(items0, sun, C) {
     gl.bindVertexArray(null);
     sprites(stat);
     if (typeof drawBuildingShadows === 'function') drawBuildingShadows(SH, stat);
-    if (typeof strShadow === 'function') strShadow(SH);
+    if (typeof drawStructureShadows === 'function') drawStructureShadows(SH);
     if (typeof drawPropModelShadows === 'function') drawPropModelShadows(SH, stat);
     if (cache) {
       const S2 = eglTarget('shadowS', res, res, { depthOnly: true });

@@ -631,7 +631,7 @@ def desktop_steps(b, base, R):
         drawn = []
         for n in nodes:
             go_scene(pg, n, 75); time.sleep(.4); sid = pg.evaluate('walkView.id'); shot(pg, f'scene-{sid}')   # alpha 0.2: a place's view holds its neighbours' edges too, bigger to paint in software
-            info = pg.evaluate("[typeof walkRenderer!=='undefined'&&walkRenderer.on,typeof STR!=='undefined'&&!!STR.mesh,typeof strHas==='function'&&strHas(walkView.sc),typeof buildingState!=='undefined'?(buildingState.fail||''):'',typeof buildingState!=='undefined'?buildingState.drawn||0:0]")
+            info = pg.evaluate("[typeof walkRenderer!=='undefined'&&walkRenderer.on,typeof structureState!=='undefined'&&!!structureState.mesh,typeof hasStructures==='function'&&hasStructures(walkView.sc),typeof buildingState!=='undefined'?(buildingState.fail||''):'',typeof buildingState!=='undefined'?buildingState.drawn||0:0]")
             if info[0] and info[2] and not info[1]: raise Exception(f'{sid}: bridges and railings not drawn')
             if info[3]: raise Exception(f'{sid}: 3D buildings off: {info[3][:100]}')
             drawn.append(sid)
