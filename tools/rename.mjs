@@ -10,6 +10,8 @@
 //   node tools/rename.mjs file <old path> <new path>           git mv, the pages' script tags and the paths naming it
 //   node tools/rename.mjs prop <old> <new> --in game,studio,node,<files> [--strings] [--py all|<files>]
 //                              [--skip|--only <file:line,...>]  a property (a data key) where the code reads it, with
+//                              [--on <regex> [--keys <file:line,...>]]  (--on: only obj.key where obj's text matches;
+//                                                              object keys then only on the --keys lines)
 //                                                              tools/rename-data.mjs renaming it in the data
 //   node tools/rename.mjs verify [--base <rev>] [--expect name|prefix|file <old> <new> ...] (--expect last)
 //                                                              the staged changes (git add -A first) against <rev>
@@ -474,11 +476,15 @@ async function renameProp(o, n, opt) {
     walk(ast, null, (node, p) => {
       if (node.type === 'MemberExpression') {
         const pr = node.property;
+        // --on: only the members of the objects whose source text matches (gameData.route, not saveData.route)
+        if (opt.on && !opt.on.test(raw.slice(...node.object.range))) return;
         if (!node.computed && pr.name === o) put(pr.range, n, `.${o}`);
         else if (node.computed && pr.type === 'Literal' && pr.value === o)
           put([pr.range[0] + 1, pr.range[1] - 1], n, `['${o}']`);
       } else if (node.type === 'Property' && !node.computed) {
         const k = node.key;
+        // with --on, an object's own key is renamed only on the lines --keys lists (file:line)
+        if (opt.on && !(opt.keys && opt.keys.includes(`${f}:${lineOf(raw, k.range[0])}`))) return;
         const name = k.type === 'Identifier' ? k.name : k.type === 'Literal' ? k.value : null;
         if (name !== o) return;
         if (node.shorthand) put(k.range, `${n}: ${o}`, `{ ${o} }`);
@@ -699,7 +705,7 @@ const pyFiles = list =>
 
 async function main(argv) {
   const flags = new Set(['--dry', '--all', '--strings']);
-  const valued = new Set(['--in', '--skip', '--only', '--py', '--base']);
+  const valued = new Set(['--in', '--skip', '--only', '--py', '--base', '--on', '--keys']);
   const opt = {},
     args = [];
   for (let i = 0; i < argv.length; i++) {
@@ -747,6 +753,8 @@ async function main(argv) {
       strings: opt.strings,
       py: opt.py && pyFiles(opt.py),
       skip: opt.skip && opt.skip.split(','),
+      on: opt.on && new RegExp(opt.on),
+      keys: opt.keys && opt.keys.split(','),
       only: opt.only && opt.only.split(','),
       dry,
     });
