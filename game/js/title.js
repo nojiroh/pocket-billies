@@ -14,8 +14,8 @@ import { userFps } from './frame-scheduler.js';
 import { uiIco } from './art.js';
 import { humanHTML } from './person-art.js';
 import { applyPreferences } from './settings-screen.js';
-import { dioStop, mapById, walkView } from './walk-view.js';
-import { dioH, dioMount, walkRenderer } from './walk-view-gl.js';
+import { mapById, stopWalkView, walkView } from './walk-view.js';
+import { dioH, mountWalkView, walkRenderer } from './walk-view-gl.js';
 import { music, musicFor } from './sound.js';
 import { csSceneId, csStart, csStartName, csWanted } from './cutscene.js';
 /* eslint-disable no-func-assign */
@@ -106,7 +106,7 @@ export async function titleMount() {
   TITLE.t0 = performance.now();
   walkView.director = { frame: titleFrame };
   try {
-    await dioMount(cv, typeof csSceneId === 'function' ? csSceneId() : sceneIdAt(START_NODE), {
+    await mountWalkView(cv, typeof csSceneId === 'function' ? csSceneId() : sceneIdAt(START_NODE), {
       state: () => ({ who: null, npcs: [], enc: [], mode: 'line' }),
       keys: () => false,
       active: () => false,
@@ -152,7 +152,7 @@ function titleEnd() {
     walkRenderer.camT = null;
     walkRenderer.focus = null;
   }
-  if (walkView.cv) dioStop();
+  if (walkView.cv) stopWalkView();
 }
 function titleNew() {
   if (!S.started) {

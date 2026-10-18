@@ -25,12 +25,12 @@ import {
   battleGLStart,
   battleGLStop,
   battleLayoutChanged,
-  dioStop,
   hudHit,
   hudPop,
   maxHp,
   platesTick,
   provide,
+  stopWalkView,
   walkView,
 } from './hooks.js';
 import { $, clamp, rnd } from './util.js';
@@ -536,7 +536,7 @@ export function scStart(area) {
   document.body.classList.toggle('battle-3d', !!SC.gl);
   if (!SC.gl && typeof walkView !== 'undefined' && walkView.cv && typeof B !== 'undefined' && B) {
     const cv = walkView.cv;
-    dioStop();
+    stopWalkView();
     cv.hidden = true;
   }
   scResize();

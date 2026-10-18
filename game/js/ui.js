@@ -111,21 +111,21 @@ import { EASE, SC, camHome, scFocus, scTargets } from './battle-stage.js';
 import {
   closedText,
   dioClimb,
-  dioStop,
-  dioWalkTo,
   findPath,
   isOpenNow,
   mapArtPaths,
   mapById,
   mapHub,
   openKind,
+  stopWalkView,
   walkData,
+  walkTo,
   walkView,
   walkablePointNear,
 } from './walk-view.js';
 import { eng } from './engine/settings.js';
 import { ENV, envHint, envIcon, envLabel } from './environment.js';
-import { dioMount, walkRenderer } from './walk-view-gl.js';
+import { mountWalkView, walkRenderer } from './walk-view-gl.js';
 import { fishStart } from './fishing.js';
 import {
   WORLD,
@@ -1069,7 +1069,7 @@ function enterRoom(a, p) {
     U.goingIn = info;
     const P = walkView.pl,
       fr = [lay.door[0], lay.door[1] - 0.45];
-    if (Math.hypot(P.x - fr[0], P.z - fr[1]) > 1.6) dioWalkTo(walkablePointNear(fr[0], fr[1]), () => roomStepIn(info));
+    if (Math.hypot(P.x - fr[0], P.z - fr[1]) > 1.6) walkTo(walkablePointNear(fr[0], fr[1]), () => roomStepIn(info));
     else roomStepIn(info);
     return true;
   }
@@ -1158,7 +1158,7 @@ function roomStepIn(info, n = 0) {
   render();
   if (info.view)
     setTimeout(() => {
-      if (U.inside === info && walkView.id === info.view && walkView.pl && walkView.sc) dioWalkTo(mapHub(walkView.sc));
+      if (U.inside === info && walkView.id === info.view && walkView.pl && walkView.sc) walkTo(mapHub(walkView.sc));
     }, 80);
 }
 export function leaveRoom() {
@@ -1523,7 +1523,7 @@ function exitPrompt(e) {
       dx = pt[0] - hub[0],
       dz = pt[1] - hub[1],
       l = Math.hypot(dx, dz) || 1;
-    dioWalkTo(walkablePointNear(pt[0] + (dx / l) * 3.5, pt[1] + (dz / l) * 3.5));
+    walkTo(walkablePointNear(pt[0] + (dx / l) * 3.5, pt[1] + (dz / l) * 3.5));
     return;
   }
   if (tripDest() === to) {
@@ -1674,7 +1674,7 @@ function walkSceneSync() {
     if (typeof battleGLWanted === 'function' && battleGLWanted()) return;
     const cv = $('#dio');
     if (cv) cv.hidden = true;
-    if (walkView.cv) dioStop();
+    if (walkView.cv) stopWalkView();
     return;
   }
   const on = S.started && U.tab !== 'map' && !!sceneIdAt(S.route.node),
@@ -1683,7 +1683,7 @@ function walkSceneSync() {
   document.body.classList.toggle('on-walk', walk);
   document.body.classList.toggle('on-scene', on && !walk);
   if (!on) {
-    if (walkView.cv) dioStop();
+    if (walkView.cv) stopWalkView();
     if (U.tab === 'map' && S.started && typeof mapGLWanted === 'function' && mapGLWanted()) {
       if (cv) {
         cv.hidden = false;
@@ -1726,7 +1726,7 @@ function walkSceneSync() {
       cv.classList.remove('in');
       void cv.offsetWidth;
     }
-    dioMount(cv, id, {
+    mountWalkView(cv, id, {
       state: walkState,
       onPick: walkPick,
       onAim: roomAim,

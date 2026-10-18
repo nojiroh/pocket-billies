@@ -44,7 +44,7 @@ import {
   dglShadowPass,
   dglSprites,
   dglWater,
-  dioMount,
+  mountWalkView,
   setDglBuildGrass,
   setDglFxPass,
   setDglGrass,
@@ -57,7 +57,7 @@ import {
   setDglShadowPass,
   setDglSprites,
   setDglWater,
-  setDioMount,
+  setMountWalkView,
   walkRenderer,
 } from './walk-view-gl.js';
 import { BLD, bldDraw, bldItems, setBldDraw, setBldItems } from './buildings.js';
@@ -120,7 +120,6 @@ Object.defineProperties(GAME, {
   dglSprites: { get: () => dglSprites, set: setDglSprites },
   dglWater: { get: () => dglWater, set: setDglWater },
   dioFolkTick: { get: () => dioFolkTick, set: setDioFolkTick },
-  dioMount: { get: () => dioMount, set: setDioMount },
   dioPlayer: { get: () => dioPlayer, set: setDioPlayer },
   eglFinish: { get: () => eglFinish, set: setEglFinish },
   eglNormWork: { get: () => eglNormWork, set: setEglNormWork },
@@ -133,6 +132,7 @@ Object.defineProperties(GAME, {
   mapMount: { get: () => mapMount, set: setMapMount },
   mglRender: { get: () => mglRender, set: setMglRender },
   mmBuild: { get: () => mmBuild, set: setMmBuild },
+  mountWalkView: { get: () => mountWalkView, set: setMountWalkView },
   newBattle: { get: () => newBattle, set: setNewBattle },
   openBattle: { get: () => openBattle, set: setOpenBattle },
   openDressing: { get: () => openDressing, set: setOpenDressing },

@@ -17,7 +17,7 @@ import { N, S, U, findMon, maxHp, nextStop, save } from './game-state.js';
 import { cnv } from './art.js';
 import { KBACK, drawRig, rigFrame, rigParts, rigPreload } from './skeleton-rig.js';
 import { scPrepare } from './battle-stage.js';
-import { dioProj, prepareMap, walkView, walkablePointNear } from './walk-view.js';
+import { prepareMap, walkView, walkablePointNear, worldToScreen } from './walk-view.js';
 import { ENV } from './environment.js';
 import { dioH } from './walk-view-gl.js';
 /* eslint-disable no-func-assign */
@@ -462,7 +462,7 @@ function owFx(glows, dt) {
 function owLabels(C, labels) {
   const b = OWM.bud;
   if (!b || OWM.sayT <= 0 || !OWM.say) return;
-  const q = dioProj(C, b.x, 1.1, b.z);
+  const q = worldToScreen(C, b.x, 1.1, b.z);
   if (q) labels.push({ k: 'say', x: q.x, y: q.y - 6, t: OWM.say, a: Math.min(1, OWM.sayT * 3) });
 }
 /* species to warm up when a scene opens: the queue, your buddy and the trainers here */

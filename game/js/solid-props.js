@@ -15,7 +15,7 @@ import { expose } from './test-globals.js';
 import { RM, provide } from './hooks.js';
 import { clamp } from './util.js';
 import { cnv } from './art.js';
-import { artImage, dioProj, hash2d, walkView } from './walk-view.js';
+import { artImage, hash2d, walkView, worldToScreen } from './walk-view.js';
 import { eng } from './engine/settings.js';
 import { EGL, EGL_GLSL_COMMON, EGL_GLSL_LIGHT, EGL_GLSL_LOOK, EGL_MATS, eglImg, eglPrograms } from './engine/webgl.js';
 import { dglBlades, dglBudget, dglCurveArgs, dglFol, dglHit, dglLookU, dglUse, walkRenderer } from './walk-view-gl.js';
@@ -1206,7 +1206,7 @@ export function p3dDraw(C, items, X, hits, labels, PPU) {
     eglPrograms(P3D_SH);
     let p = null;
     const P = walkView.pl,
-      me = dioProj(C, P.x, 0.9, P.z);
+      me = worldToScreen(C, P.x, 0.9, P.z);
     for (const it of items) {
       if (!it.vol || it.vis === false) continue;
       const M = p3dMesh(it.im, it.vol);
@@ -1230,7 +1230,7 @@ export function p3dDraw(C, items, X, hits, labels, PPU) {
         hM = -it.oy * s;
       let fade = it.fade ?? 1;
       if (me && !walkRenderer.bt && hM > 1.6) {
-        const q = dioProj(C, it.x, 0, it.z);
+        const q = worldToScreen(C, it.x, 0, it.z);
         if (q && q.d < me.d - 0.3) {
           const half = it.w * s * 0.5 * q.s,
             top = q.y - hM * q.s;

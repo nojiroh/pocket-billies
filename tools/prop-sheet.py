@@ -52,7 +52,7 @@ with sync_playwright() as pw:
             for yaw in (-.55, .55):
                 pg.evaluate(f"walkRenderer.swoop={{x:{p['x']},z:{p['z']}-1.6}};walkRenderer.yawT=walkRenderer.yaw={yaw};walkRenderer.zoomT=walkRenderer.zoom={zm};walkRenderer.camT=null;0")
                 f0 = pg.evaluate("walkRenderer.frames"); cq.until(pg, f"walkRenderer.frames>{f0 + 1}", 20)
-                q = pg.evaluate(f"(()=>{{const C=walkView.C,M=walkData().sc.props['{p['k']}'],hm=Math.max(.6,-(M.oy||0)/(walkData().sc.ppu||34)),wm=Math.max(.6,(artImage(M.img)||{{width:40}}).width/(walkData().sc.ppu||34)),a=dioProj(C,{p['x']},0,{p['z']}),b=dioProj(C,{p['x']},hm+.3,{p['z']});return a&&b?[a.x,a.y,b.y,C.rw,C.rh,wm*a.s]:null}})()")
+                q = pg.evaluate(f"(()=>{{const C=walkView.C,M=walkData().sc.props['{p['k']}'],hm=Math.max(.6,-(M.oy||0)/(walkData().sc.ppu||34)),wm=Math.max(.6,(artImage(M.img)||{{width:40}}).width/(walkData().sc.ppu||34)),a=worldToScreen(C,{p['x']},0,{p['z']}),b=worldToScreen(C,{p['x']},hm+.3,{p['z']});return a&&b?[a.x,a.y,b.y,C.rw,C.rh,wm*a.s]:null}})()")
                 if q:
                     vw, vh = pg.viewport_size['width'], pg.viewport_size['height']; sx, sy = vw / q[3], vh / q[4]; cx = q[0] * sx; y0, y1 = q[2] * sy - 18, q[1] * sy + 32
                     hh = max(85, y1 - y0); ww = max(hh * 300 / 260, q[5] * sx * 1.3); hh = ww * 260 / 300; ym = (y0 + y1) / 2

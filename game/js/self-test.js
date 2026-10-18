@@ -23,8 +23,6 @@ import {
   PROP_CLOCK,
   actionSpot,
   dioClimbEnds,
-  dioStop,
-  dioWalkTo,
   findPath,
   mapBridges,
   mapById,
@@ -32,7 +30,9 @@ import {
   navCellAt,
   navGrid,
   stepGrid,
+  stopWalkView,
   walkData,
+  walkTo,
   walkView,
 } from './walk-view.js';
 import { eng } from './engine/settings.js';
@@ -365,7 +365,7 @@ async function runFullTest(mode) {
           a = k * 1.7,
           r = 3 + (k % 4);
         if (!walkView.pl.route)
-          dioWalkTo([clamp(hb[0] + Math.cos(a) * r, 1, sc.w - 1), clamp(hb[1] + Math.sin(a) * r * 0.7, 1, sc.h - 1)]);
+          walkTo([clamp(hb[0] + Math.cos(a) * r, 1, sc.w - 1), clamp(hb[1] + Math.sin(a) * r * 0.7, 1, sc.h - 1)]);
         if (typeof walkRenderer !== 'undefined' && walkRenderer.on) {
           walkRenderer.yawT = Math.sin(k * 0.5) * 0.45;
           walkRenderer.zoomT = 1 + Math.sin(k * 0.33) * 0.3;
@@ -1005,7 +1005,7 @@ async function runFullTest(mode) {
         async () => {
           U.bench = null;
           U.inside = null;
-          if (typeof walkView !== 'undefined' && walkView.cv) dioStop();
+          if (typeof walkView !== 'undefined' && walkView.cv) stopWalkView();
           const cv = fallGL();
           if (!cv) {
             U.tab = 'walk';
@@ -1154,7 +1154,7 @@ async function runFullTest(mode) {
           if (moved) throw new Error(moved + ' wild Billie(s) left their spot in 8 s (they should stand still)');
           const P = walkView.pl,
             hb = mapHub(walkView.sc);
-          dioWalkTo([clamp(hb[0] + 4, 1, walkView.sc.w - 1), clamp(hb[1] + 2, 1, walkView.sc.h - 1)]);
+          walkTo([clamp(hb[0] + 4, 1, walkView.sc.w - 1), clamp(hb[1] + 2, 1, walkView.sc.h - 1)]);
           await stSleep(3500);
           const b = OWM.bud,
             gap = b ? Math.hypot(b.x - P.x, b.z - P.z) : null;

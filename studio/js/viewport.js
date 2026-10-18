@@ -7,7 +7,7 @@
 import { expose } from '../../game/js/test-globals.js';
 import { provide } from '../../game/js/hooks.js';
 import { $, $$, clamp } from '../../game/js/util.js';
-import { dioMount, setDioMount, walkRenderer } from '../../game/js/walk-view-gl.js';
+import { mountWalkView, setMountWalkView, walkRenderer } from '../../game/js/walk-view-gl.js';
 /* eslint-disable no-func-assign */
 expose({
   VP: [() => VP],
@@ -21,9 +21,9 @@ expose({
 /* to-module: end */
 const VP = { hover: false, big: null };
 provide({ VP }); /* to-module */
-if (typeof dioMount === 'function') {
-  const _dm = dioMount;
-  setDioMount(function (cv, id, o = {}) {
+if (typeof mountWalkView === 'function') {
+  const _dm = mountWalkView;
+  setMountWalkView(function (cv, id, o = {}) {
     const k0 = o.keys;
     o = Object.assign({}, o, { freeCam: true, keys: () => VP.hover || !!(k0 && k0()) });
     return _dm(cv, id, o);

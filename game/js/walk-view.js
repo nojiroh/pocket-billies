@@ -55,8 +55,6 @@ expose({
   BRIDGE_ARCH: [() => BRIDGE_ARCH],
   BUILDING_VARIANT_CACHE: [() => BUILDING_VARIANT_CACHE],
   DIO_CHAT: [() => DIO_CHAT],
-  DIO_KEYS: [() => DIO_KEYS],
-  DIO_SPEED: [() => DIO_SPEED],
   EFFECT_FRAMES: [() => EFFECT_FRAMES],
   EFFECT_KINDS: [() => EFFECT_KINDS],
   FAR_GROUND_PX_PER_M: [() => FAR_GROUND_PX_PER_M],
@@ -82,6 +80,8 @@ expose({
   TONE_DIRECTIONS: [() => TONE_DIRECTIONS],
   TONE_LIGHT: [() => TONE_LIGHT],
   TONE_NONE: [() => TONE_NONE],
+  WALK_KEYS: [() => WALK_KEYS],
+  WALK_SPEED: [() => WALK_SPEED],
   actionLabel: [() => actionLabel, v => (actionLabel = v)],
   actionSpot: [() => actionSpot, v => (actionSpot = v)],
   applyGroundTone: [() => applyGroundTone, v => (applyGroundTone = v)],
@@ -96,19 +96,17 @@ expose({
   cachedGround: [() => cachedGround, v => (cachedGround = v)],
   canStepBetween: [() => canStepBetween, v => (canStepBetween = v)],
   canWalkStraight: [() => canWalkStraight, v => (canWalkStraight = v)],
+  canvasPixels: [() => canvasPixels],
+  canvasPoint: [() => canvasPoint, v => (canvasPoint = v)],
   clipSegmentToRect: [() => clipSegmentToRect, v => (clipSegmentToRect = v)],
   closedText: [() => closedText, v => (closedText = v)],
   cropGrowth: [() => cropGrowth, v => (cropGrowth = v)],
   decodeBase64Array: [() => decodeBase64Array, v => (decodeBase64Array = v)],
   dioBubble: [() => dioBubble, v => (dioBubble = v)],
-  dioCanvasXY: [() => dioCanvasXY, v => (dioCanvasXY = v)],
-  dioClick: [() => dioClick, v => (dioClick = v)],
   dioClimb: [() => dioClimb, v => (dioClimb = v)],
   dioClimbEnds: [() => dioClimbEnds, v => (dioClimbEnds = v)],
   dioClimbGo: [() => dioClimbGo, v => (dioClimbGo = v)],
   dioClimbStep: [() => dioClimbStep, v => (dioClimbStep = v)],
-  dioDirOf: [() => dioDirOf, v => (dioDirOf = v)],
-  dioFace: [() => dioFace, v => (dioFace = v)],
   dioFolkAnchors: [() => dioFolkAnchors, v => (dioFolkAnchors = v)],
   dioFolkCount: [() => dioFolkCount, v => (dioFolkCount = v)],
   dioFolkGo: [() => dioFolkGo, v => (dioFolkGo = v)],
@@ -117,28 +115,22 @@ expose({
   dioFolkStreet: [() => dioFolkStreet, v => (dioFolkStreet = v)],
   dioFolkTick: [() => dioFolkTick, v => setDioFolkTick(v)],
   dioGradeK: [() => dioGradeK, v => (dioGradeK = v)],
-  dioHitAt: [() => dioHitAt, v => (dioHitAt = v)],
   dioMix: [() => dioMix, v => (dioMix = v)],
   dioPanel: [() => dioPanel, v => (dioPanel = v)],
-  dioPick: [() => dioPick, v => (dioPick = v)],
   dioPill: [() => dioPill, v => (dioPill = v)],
   dioPillSize: [() => dioPillSize, v => (dioPillSize = v)],
   dioPlayer: [() => dioPlayer, v => setDioPlayer(v)],
   dioPlayer0: [() => dioPlayer0, v => (dioPlayer0 = v)],
   dioPlayerY: [() => dioPlayerY, v => (dioPlayerY = v)],
-  dioProj: [() => dioProj, v => setDioProj(v)],
   dioPx: [() => dioPx, v => (dioPx = v)],
   dioPxArrow: [() => dioPxArrow, v => (dioPxArrow = v)],
   dioPxFont: [() => dioPxFont, v => (dioPxFont = v)],
   dioPxTail: [() => dioPxTail, v => (dioPxTail = v)],
   dioSay: [() => dioSay, v => (dioSay = v)],
   dioSpeech: [() => dioSpeech, v => (dioSpeech = v)],
-  dioStop: [() => dioStop, v => setDioStop(v)],
   dioTag: [() => dioTag, v => (dioTag = v)],
   dioTapMark: [() => dioTapMark, v => (dioTapMark = v)],
-  dioUIpx: [() => dioUIpx],
-  dioUnproject: [() => dioUnproject, v => setDioUnproject(v)],
-  dioWalkTo: [() => dioWalkTo, v => (dioWalkTo = v)],
+  directionOf: [() => directionOf, v => (directionOf = v)],
   drawExitLabels: [() => drawExitLabels, v => (drawExitLabels = v)],
   drawExitMarks: [() => drawExitMarks, v => (drawExitMarks = v)],
   encodeBase64Array: [() => encodeBase64Array, v => (encodeBase64Array = v)],
@@ -157,8 +149,10 @@ expose({
   groundKey: [() => groundKey, v => (groundKey = v)],
   groundTileFolder: [() => groundTileFolder, v => (groundTileFolder = v)],
   groundToneAt: [() => groundToneAt, v => (groundToneAt = v)],
+  handleWalkClick: [() => handleWalkClick, v => (handleWalkClick = v)],
   hasLineOfSight: [() => hasLineOfSight, v => (hasLineOfSight = v)],
   hash2d: [() => hash2d, v => (hash2d = v)],
+  hitAt: [() => hitAt, v => (hitAt = v)],
   imageReady: [() => imageReady],
   isOpenNow: [() => isOpenNow, v => (isOpenNow = v)],
   isWalkable: [() => isWalkable, v => (isWalkable = v)],
@@ -181,6 +175,7 @@ expose({
   pathWearAmountFn: [() => pathWearAmountFn, v => (pathWearAmountFn = v)],
   pathWearFn: [() => pathWearFn, v => (pathWearFn = v)],
   pathWearLines: [() => pathWearLines, v => (pathWearLines = v)],
+  pickHit: [() => pickHit, v => (pickHit = v)],
   plainTileIndex: [() => plainTileIndex, v => (plainTileIndex = v)],
   pointAlongMapPath: [() => pointAlongMapPath, v => (pointAlongMapPath = v)],
   pointAlongPolyline: [() => pointAlongPolyline, v => (pointAlongPolyline = v)],
@@ -191,12 +186,13 @@ expose({
   propWithVariant: [() => propWithVariant, v => (propWithVariant = v)],
   scaleColor: [() => scaleColor, v => (scaleColor = v)],
   scaledTilePixels: [() => scaledTilePixels, v => (scaledTilePixels = v)],
+  screenToGround: [() => screenToGround, v => setScreenToGround(v)],
   setArtImage: [() => setArtImage, v => (setArtImage = v)],
-  setDioProj: [() => setDioProj, v => (setDioProj = v)],
-  setDioStop: [() => setDioStop, v => (setDioStop = v)],
-  setDioUnproject: [() => setDioUnproject, v => (setDioUnproject = v)],
   setNavGrid: [() => setNavGrid, v => (setNavGrid = v)],
+  setScreenToGround: [() => setScreenToGround, v => (setScreenToGround = v)],
+  setStopWalkView: [() => setStopWalkView, v => (setStopWalkView = v)],
   setWalkData: [() => setWalkData, v => (setWalkData = v)],
+  setWorldToScreen: [() => setWorldToScreen, v => (setWorldToScreen = v)],
   shapedStepCornerHeight: [() => shapedStepCornerHeight, v => (shapedStepCornerHeight = v)],
   stableCells: [() => stableCells, v => (stableCells = v)],
   stepCellAt: [() => stepCellAt, v => (stepCellAt = v)],
@@ -208,6 +204,7 @@ expose({
   stepLevelAt: [() => stepLevelAt, v => (stepLevelAt = v)],
   stepRaiseAt: [() => stepRaiseAt, v => (stepRaiseAt = v)],
   stepWallAt: [() => stepWallAt, v => (stepWallAt = v)],
+  stopWalkView: [() => stopWalkView, v => setStopWalkView(v)],
   storeStepGrid: [() => storeStepGrid, v => (storeStepGrid = v)],
   syncExits: [() => syncExits, v => (syncExits = v)],
   tallGrassProps: [() => tallGrassProps, v => (tallGrassProps = v)],
@@ -215,14 +212,17 @@ expose({
   tilePixels: [() => tilePixels, v => (tilePixels = v)],
   tileSetPixels: [() => tileSetPixels, v => (tileSetPixels = v)],
   timedPropsKey: [() => timedPropsKey, v => (timedPropsKey = v)],
+  turnToPlayer: [() => turnToPlayer, v => (turnToPlayer = v)],
   valueNoise2d: [() => valueNoise2d, v => (valueNoise2d = v)],
   walkData: [() => walkData, v => setWalkData(v)],
+  walkTo: [() => walkTo, v => (walkTo = v)],
   walkView: [() => walkView],
   walkablePointNear: [() => walkablePointNear, v => (walkablePointNear = v)],
   worldPatchTilesOn: [() => worldPatchTilesOn, v => (worldPatchTilesOn = v)],
+  worldToScreen: [() => worldToScreen, v => setWorldToScreen(v)],
 });
 /* eslint-enable no-func-assign */
-provide({ dioStop });
+provide({ stopWalkView });
 export function setDioFolkTick(v) {
   dioFolkTick = v; // eslint-disable-line no-func-assign
   provide({ dioFolkTick });
@@ -287,7 +287,7 @@ export const walkView = {
   ff: new Map(),
 };
 provide({ walkView }); /* to-module */
-const dioUIpx = n => {
+const canvasPixels = n => {
   const c = walkView.cv;
   if (!c || !c.clientWidth) return n;
   const k = c.width / c.clientWidth;
@@ -295,7 +295,7 @@ const dioUIpx = n => {
 };
 export const GROUND_BORDER_M = 8,
   NAV_CELLS_PER_M = 2,
-  DIO_SPEED = 3.4;
+  WALK_SPEED = 3.4;
 /* alpha 0.4: what a painting generator yields while the ground painter's helper thread works (ground-paint-worker.js): whatever
    steps it stops for now and comes back later */
 export const PAINT_WORKER_WAIT = { pw: 1 };
@@ -3063,27 +3063,27 @@ export function encounterSpot(sc, id, used) {
   }
   return C[h % C.length];
 }
-export function dioStop() {
+export function stopWalkView() {
   frameStop('dio');
   walkView.cv = null;
   walkView.ready = false;
   walkView.keys = {};
 }
 /* phase 04d: walk-view-gl.js puts the 3D version in place */
-export function setDioStop(v) {
-  dioStop = v; // eslint-disable-line no-func-assign
-  provide({ dioStop });
+export function setStopWalkView(v) {
+  stopWalkView = v; // eslint-disable-line no-func-assign
+  provide({ stopWalkView });
 }
-export function dioCanvasXY(ev) {
+export function canvasPoint(ev) {
   const r = walkView.cv.getBoundingClientRect();
   return [
     ((ev.clientX - r.left) / r.width) * walkView.cv.width,
     ((ev.clientY - r.top) / r.height) * walkView.cv.height,
   ];
 }
-export function dioHitAt(ev) {
+export function hitAt(ev) {
   if (!walkView.cv) return null;
-  const [x, y] = dioCanvasXY(ev);
+  const [x, y] = canvasPoint(ev);
   let best = null;
   for (const h of walkView.hits) {
     if (x >= h.x0 && x <= h.x1 && y >= h.y0 && y <= h.y1) {
@@ -3092,7 +3092,7 @@ export function dioHitAt(ev) {
   }
   return best;
 }
-export function dioUnproject(sx, sy) {
+export function screenToGround(sx, sy) {
   const C = walkView.C;
   if (!C) return null;
   const k = (C.rh / 2 - sy) / C.F,
@@ -3105,16 +3105,16 @@ export function dioUnproject(sx, sy) {
   return { x: C.cx + (sx - C.rw / 2) / s, z: C.cz + rz };
 }
 /* phase 04d: walk-view-gl.js puts the 3D version in place */
-export function setDioUnproject(v) {
-  dioUnproject = v; // eslint-disable-line no-func-assign
-  provide({ dioUnproject });
+export function setScreenToGround(v) {
+  screenToGround = v; // eslint-disable-line no-func-assign
+  provide({ screenToGround });
 }
-function dioPick(h) {
+function pickHit(h) {
   if (walkView.opt.onPick) walkView.opt.onPick(h);
 }
-export function dioClick(ev) {
+export function handleWalkClick(ev) {
   if (!walkView.ready || (walkView.opt.active && !walkView.opt.active())) return;
-  const h = dioHitAt(ev),
+  const h = hitAt(ev),
     st = walkView.st || {},
     P = walkView.pl;
   if (h && h.k === 'buddy') {
@@ -3124,14 +3124,14 @@ export function dioClick(ev) {
   if (h && h.k === 'folk') {
     if (typeof talkFolk !== 'function') {
       dioSay(h.f, true);
-      if (st.roam) dioFace(h.f);
+      if (st.roam) turnToPlayer(h.f);
       return;
     }
     const f = h.f;
     if (st.roam) {
       const g = approachPoint(f.x, f.z);
-      dioWalkTo(g, () => {
-        P.dir = dioDirOf(f.x - P.x, f.z - P.z);
+      walkTo(g, () => {
+        P.dir = directionOf(f.x - P.x, f.z - P.z);
         talkFolk(f);
       });
     } else talkFolk(f);
@@ -3145,23 +3145,23 @@ export function dioClick(ev) {
       } catch (e) {
         console.error(e);
       }
-    dioWalkTo(g, () => {
-      if (h.look) P.dir = dioDirOf(h.look[0] - P.x, h.look[1] - P.z);
-      dioPick(h);
+    walkTo(g, () => {
+      if (h.look) P.dir = directionOf(h.look[0] - P.x, h.look[1] - P.z);
+      pickHit(h);
     });
     return;
   }
   if (h) {
-    dioPick(h);
+    pickHit(h);
     return;
   }
-  const [sx, sy] = dioCanvasXY(ev),
-    g = dioUnproject(sx, sy);
+  const [sx, sy] = canvasPoint(ev),
+    g = screenToGround(sx, sy);
   if (!g) return;
-  if (st.roam) dioWalkTo([g.x, g.z]);
-  else dioPick({ k: 'ground', x: g.x, z: g.z });
+  if (st.roam) walkTo([g.x, g.z]);
+  else pickHit({ k: 'ground', x: g.x, z: g.z });
 }
-export function dioWalkTo(pt, cb) {
+export function walkTo(pt, cb) {
   const P = walkView.pl,
     r = findPath(P.x, P.z, pt[0], pt[1]);
   if (!r) {
@@ -3178,16 +3178,16 @@ export function dioWalkTo(pt, cb) {
     t: walkView.t,
   };
 }
-export function dioDirOf(mx, mz) {
+export function directionOf(mx, mz) {
   return Math.abs(mx) > Math.abs(mz) * 1.1 ? (mx > 0 ? 'sideR' : 'side') : mz > 0 ? 'up' : 'down';
 }
-export function dioFace(f) {
+export function turnToPlayer(f) {
   const P = walkView.pl;
-  f.dir = dioDirOf(P.x - f.x, P.z - f.z);
+  f.dir = directionOf(P.x - f.x, P.z - f.z);
   f.wait = Math.max(f.wait, 3);
 }
 /* keyboard: arrows or WASD while the scene is in view */
-const DIO_KEYS = {
+const WALK_KEYS = {
   ArrowLeft: 'l',
   ArrowRight: 'r',
   ArrowUp: 'u',
@@ -3202,7 +3202,7 @@ const DIO_KEYS = {
   S: 'd',
 };
 addEventListener('keydown', ev => {
-  const k = DIO_KEYS[ev.key];
+  const k = WALK_KEYS[ev.key];
   if (!k || !walkView.cv || !walkView.ready || !walkView.st.roam || (walkView.opt.active && !walkView.opt.active()))
     return;
   if (!(walkView.opt.keys && walkView.opt.keys())) return;
@@ -3214,13 +3214,13 @@ addEventListener('keydown', ev => {
   ev.preventDefault();
 });
 addEventListener('keyup', ev => {
-  const k = DIO_KEYS[ev.key];
+  const k = WALK_KEYS[ev.key];
   if (k) delete walkView.keys[k];
 });
 addEventListener('blur', () => {
   walkView.keys = {};
 });
-export function dioProj(C, x, y, z) {
+export function worldToScreen(C, x, y, z) {
   const ry = y - C.ch,
     rz = z - C.cz,
     d = -ry * C.sp + rz * C.cp;
@@ -3230,9 +3230,9 @@ export function dioProj(C, x, y, z) {
   return { x: C.rw / 2 + (x - C.cx) * s, y: C.rh / 2 - v * s, s, d };
 }
 /* phase 04d: walk-view-gl.js puts the 3D version in place */
-export function setDioProj(v) {
-  dioProj = v; // eslint-disable-line no-func-assign
-  provide({ dioProj });
+export function setWorldToScreen(v) {
+  worldToScreen = v; // eslint-disable-line no-func-assign
+  provide({ worldToScreen });
 }
 /* ---------- the player ---------- */
 export function dioPlayer(st, dt) {
@@ -3431,7 +3431,7 @@ function dioPlayer0(st, dt) {
     }
     const tgt = clamp(st.t, 0, 1) * P.line.L,
       gap = tgt - P.d,
-      sp = Math.max(DIO_SPEED, Math.abs(gap) * 0.7);
+      sp = Math.max(WALK_SPEED, Math.abs(gap) * 0.7);
     if (Math.abs(gap) > 0.01) {
       P.d += Math.sign(gap) * Math.min(Math.abs(gap), sp * dt);
       P.walk = 1;
@@ -3519,7 +3519,7 @@ function dioPlayer0(st, dt) {
         P.goal = null;
       }
       const run = km > 0.92 ? 1.3 : km < 0.5 ? 0.6 : 1,
-        s = DIO_SPEED * dt * run * dioGradeK(P.x, P.z, wx / l, wz / l);
+        s = WALK_SPEED * dt * run * dioGradeK(P.x, P.z, wx / l, wz / l);
       let nx = P.x + (wx / l) * s,
         nz = P.z + (wz / l) * s;
       if (canWalkStraight(P.x, P.z, nx, P.z)) P.x = nx;
@@ -3529,7 +3529,7 @@ function dioPlayer0(st, dt) {
     } else if (P.route) {
       const tg0 = P.route[P.ri],
         d0 = Math.hypot(tg0[0] - P.x, tg0[1] - P.z) || 1;
-      let left = DIO_SPEED * (P.rush || 1) * dt * dioGradeK(P.x, P.z, (tg0[0] - P.x) / d0, (tg0[1] - P.z) / d0);
+      let left = WALK_SPEED * (P.rush || 1) * dt * dioGradeK(P.x, P.z, (tg0[0] - P.x) / d0, (tg0[1] - P.z) / d0);
       while (left > 0 && P.route) {
         const tg = P.route[P.ri],
           dx = tg[0] - P.x,
@@ -3579,7 +3579,7 @@ function dioPlayer0(st, dt) {
     }
     if (!P.walk && P.wasWalk && walkView.opt.onMove) walkView.opt.onMove(P.x, P.z);
   }
-  if (Math.hypot(mx, mz) > 1e-6) P.dir = dioDirOf(mx, mz);
+  if (Math.hypot(mx, mz) > 1e-6) P.dir = directionOf(mx, mz);
   P.wasWalk = P.walk;
   /* grass rustle and dust */
   P.rust -= dt;
@@ -3831,7 +3831,7 @@ function dioFolkStep(dt) {
           dx = tg[0] - f.x,
           dz = tg[1] - f.z,
           d = Math.hypot(dx, dz);
-        if (d > 1e-6) f.dir = dioDirOf(dx, dz);
+        if (d > 1e-6) f.dir = directionOf(dx, dz);
         if (d <= left) {
           f.x = tg[0];
           f.z = tg[1];
@@ -3888,7 +3888,7 @@ function dioFolkStep(dt) {
     /* you come close: they turn to look, and now and then wave and say hello */
     const dP = Math.hypot(P.x - f.x, P.z - f.z);
     if (!f.route && dP < 2.6 && !f.sayT && f.wait > 0) {
-      dioFace(f);
+      turnToPlayer(f);
       const now = walkView.t / 1000;
       if (P.walk && now - f.waved > 40 && Math.random() < dt * 1.2) {
         f.waved = now;
@@ -3962,9 +3962,9 @@ export function drawExitMarks(C, st, t) {
         cx = pt[0] - ux * (2.2 - f * 1.9),
         cz = pt[1] - uz * (2.2 - f * 1.9),
         a = Math.sin(f * Math.PI) * 0.9;
-      const A = dioProj(C, cx + px * 0.42 - ux * 0.25, 0, cz + pz * 0.42 - uz * 0.25),
-        B = dioProj(C, cx + ux * 0.2, 0, cz + uz * 0.2),
-        D = dioProj(C, cx - px * 0.42 - ux * 0.25, 0, cz - pz * 0.42 - uz * 0.25);
+      const A = worldToScreen(C, cx + px * 0.42 - ux * 0.25, 0, cz + pz * 0.42 - uz * 0.25),
+        B = worldToScreen(C, cx + ux * 0.2, 0, cz + uz * 0.2),
+        D = worldToScreen(C, cx - px * 0.42 - ux * 0.25, 0, cz - pz * 0.42 - uz * 0.25);
       if (!A || !B || !D) continue;
       x.strokeStyle = `rgba(30,24,50,${a * 0.35})`;
       x.lineWidth = Math.max(3, B.s * 0.2);
@@ -3993,7 +3993,7 @@ export function drawExitLabels(C, st, hits, hub) {
   for (const e of st.exits) {
     const pt = ex[e.i];
     if (!pt) continue;
-    const q = dioProj(C, pt[0], 1.3, pt[1]);
+    const q = worldToScreen(C, pt[0], 1.3, pt[1]);
     if (!q) continue;
     const dx = pt[0] - hub[0],
       dz = pt[1] - hub[1];
@@ -4027,7 +4027,7 @@ export function dioTapMark(C, t) {
     if (age > 1) walkView.tap = null;
     return;
   }
-  const q = dioProj(C, T.x, 0, T.z);
+  const q = worldToScreen(C, T.x, 0, T.z);
   if (!q) return;
   const x = walkView.x,
     r = q.s * (0.25 + age * 0.35);
@@ -4043,7 +4043,7 @@ export function dioTapMark(C, t) {
    outline, light along the top, shade along the bottom, a drop shadow) and the pixel font (Tiny5, 8 px to the em, so
    it is drawn at whole multiples of 8), all on a whole-pixel grid. Speech keeps the reading font inside a pixel frame */
 function dioPx() {
-  return Math.max(1, Math.round(dioUIpx(13) / 7));
+  return Math.max(1, Math.round(canvasPixels(13) / 7));
 }
 function dioPxFont(u) {
   return `400 ${8 * u}px Tiny5, ui-monospace, monospace`;
@@ -4129,7 +4129,7 @@ function dioPxTail(x, cx, y, u, fill, line) {
 }
 export function dioSpeech(x, cx, cy, txt, a) {
   if (!txt) return;
-  const s = dioUIpx(12),
+  const s = canvasPixels(12),
     u = dioPx();
   x.save();
   x.globalAlpha = a;

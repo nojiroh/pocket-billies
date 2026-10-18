@@ -83,29 +83,26 @@ import {
   bigTilePath,
   bigTilesOn,
   bridgeAt,
+  canvasPoint,
   cropGrowth,
   dioBubble,
-  dioCanvasXY,
-  dioClick,
   dioClimbGo,
-  dioDirOf,
   dioFolkTick,
-  dioHitAt,
   dioPill,
   dioPlayer,
-  dioProj,
   dioSpeech,
-  dioStop,
   dioTag,
   dioTapMark,
-  dioUnproject,
+  directionOf,
   drawExitLabels,
   drawExitMarks,
   encounterSpot,
   ensureGround,
   flagPicturePath,
   groundKey,
+  handleWalkClick,
   hash2d,
+  hitAt,
   imageReady,
   isWalkable,
   layerAsProp,
@@ -118,10 +115,11 @@ import {
   prepareMap,
   propShown,
   propWithVariant,
-  setDioProj,
-  setDioStop,
-  setDioUnproject,
+  screenToGround,
   setNavGrid,
+  setScreenToGround,
+  setStopWalkView,
+  setWorldToScreen,
   shapedStepCornerHeight,
   stepCellAt,
   stepEdgeShape,
@@ -129,12 +127,14 @@ import {
   stepGridCorners,
   stepLevelAt,
   stepRaiseAt,
+  stopWalkView,
   tallGrassProps,
   terrainAt,
   valueNoise2d,
   walkData,
   walkView,
   walkablePointNear,
+  worldToScreen,
 } from './walk-view.js';
 import { ENG_CTX, eng, engHex } from './engine/settings.js';
 import {
@@ -217,10 +217,8 @@ expose({
   DIO_PAD_SKIP: [() => DIO_PAD_SKIP],
   RING_CS: [() => RING_CS],
   RING_N: [() => RING_N],
-  _dioProj2D: [() => _dioProj2D],
-  _dioStop2D: [() => _dioStop2D],
-  _dioUnproject2D: [() => _dioUnproject2D],
   baseNavGrid: [() => baseNavGrid],
+  baseStopWalkView: [() => baseStopWalkView],
   dglAdapt: [() => dglAdapt, v => setDglAdapt(v)],
   dglAltImg: [() => dglAltImg, v => (dglAltImg = v)],
   dglBasinSet: [() => dglBasinSet, v => (dglBasinSet = v)],
@@ -235,7 +233,6 @@ expose({
   dglBuildGround: [() => dglBuildGround, v => (dglBuildGround = v)],
   dglCamera: [() => dglCamera, v => (dglCamera = v)],
   dglCanvasFor: [() => dglCanvasFor, v => (dglCanvasFor = v)],
-  dglClick: [() => dglClick, v => (dglClick = v)],
   dglCull: [() => dglCull, v => (dglCull = v)],
   dglCurve: [() => dglCurve, v => (dglCurve = v)],
   dglCurveArgs: [() => dglCurveArgs, v => (dglCurveArgs = v)],
@@ -362,12 +359,15 @@ expose({
   dioH: [() => dioH, v => ((dioH = v), provide({ dioH }))],
   dioHGrid: [() => dioHGrid, v => (dioHGrid = v)],
   dioHRaw: [() => dioHRaw, v => ((dioHRaw = v), provide({ dioHRaw }))],
-  dioMount: [() => dioMount, v => setDioMount(v)],
   dioPads: [() => dioPads, v => (dioPads = v)],
   eglRestored: [() => eglRestored, v => ((eglRestored = v), provide({ eglRestored }))],
+  handleCanvasClick: [() => handleCanvasClick, v => (handleCanvasClick = v)],
+  mountWalkView: [() => mountWalkView, v => setMountWalkView(v)],
+  screenToGround2d: [() => screenToGround2d],
   setDglAdapt: [() => setDglAdapt, v => (setDglAdapt = v)],
-  setDioMount: [() => setDioMount, v => (setDioMount = v)],
+  setMountWalkView: [() => setMountWalkView, v => (setMountWalkView = v)],
   walkRenderer: [() => walkRenderer],
+  worldToScreen2d: [() => worldToScreen2d],
 });
 /* eslint-enable no-func-assign */
 provide({ dglBudget, dglRebuild, dglWallDefault, dioGroundH, dioH, dioHRaw, eglRestored });
@@ -701,12 +701,12 @@ function dglUI(cv) {
   u.hidden = false;
   return u;
 }
-const _dioStop2D = dioStop,
-  _dioProj2D = dioProj,
-  _dioUnproject2D = dioUnproject;
+const baseStopWalkView = stopWalkView,
+  worldToScreen2d = worldToScreen,
+  screenToGround2d = screenToGround;
 /* 0.1.0 alpha: the walk view is WebGL only (the Lite 2D painter is gone). Without it the game says this device can't
    run it (boot.js noWebGL); the Studio shows its own message (engine-editor.js) */
-export function dioMount(cv, id, opt = {}) {
+export function mountWalkView(cv, id, opt = {}) {
   const useGL = !EGL.fail && eglOK();
   cv = dglCanvasFor(cv, 'gl');
   if (!useGL) {
@@ -741,15 +741,15 @@ export function dioMount(cv, id, opt = {}) {
   walkView.ready = false;
   walkView.err = null;
   cv.classList.add('gl');
-  if (!dglGL(cv)) return dioMount(cv, id, opt);
+  if (!dglGL(cv)) return mountWalkView(cv, id, opt);
   const ui = dglUI(cv);
   walkView.x = ui.getContext('2d');
   walkRenderer.on = true;
   if (!cv._dioBound) {
     cv._dioBound = 1;
-    cv.addEventListener('click', dglClick);
+    cv.addEventListener('click', handleCanvasClick);
     cv.addEventListener('pointermove', ev => {
-      const h = dioHitAt(ev);
+      const h = hitAt(ev);
       cv.style.cursor = h ? 'pointer' : walkView.st.roam ? 'crosshair' : '';
     });
     dglGestures(cv);
@@ -769,9 +769,9 @@ export function dioMount(cv, id, opt = {}) {
     });
 }
 /* phase 04d: the Studio swaps in its own (studio/js/engine-editor.js and viewport.js) */
-export function setDioMount(v) {
-  dioMount = v; // eslint-disable-line no-func-assign
-  provide({ dioMount });
+export function setMountWalkView(v) {
+  mountWalkView = v; // eslint-disable-line no-func-assign
+  provide({ mountWalkView });
 }
 /* the GL context on this canvas, with the walk scene's programs (v47: also used by the opening's fall, which draws the
    world map on the same canvas before Sundown is mounted; a context made by the map alone gets the walk programs here) */
@@ -820,15 +820,15 @@ function eglRestored(cv) {
   if (walkView.id && walkView.cv === cv) {
     const id = walkView.id;
     walkView.id = null;
-    dioMount(cv, id, walkView.opt);
+    mountWalkView(cv, id, walkView.opt);
   }
 }
-setDioStop(function () {
-  _dioStop2D();
+setStopWalkView(function () {
+  baseStopWalkView();
   if (walkRenderer.ui) walkRenderer.ui.hidden = true;
 });
-setDioProj(function (C, x, y, z) {
-  if (!C || !C.gl) return _dioProj2D(C, x, y, z);
+setWorldToScreen(function (C, x, y, z) {
+  if (!C || !C.gl) return worldToScreen2d(C, x, y, z);
   const wy = dioH(x, z) + y + dglCurve(x, z),
     m = C.vp,
     cx = m[0] * x + m[4] * wy + m[8] * z + m[12],
@@ -837,9 +837,9 @@ setDioProj(function (C, x, y, z) {
   if (w < 0.2) return null;
   return { x: ((cx / w) * 0.5 + 0.5) * C.rw, y: (1 - ((cy / w) * 0.5 + 0.5)) * C.rh, s: C.F / w, d: w };
 });
-setDioUnproject(function (sx, sy) {
+setScreenToGround(function (sx, sy) {
   const C = walkView.C;
-  if (!C || !C.gl) return _dioUnproject2D(sx, sy);
+  if (!C || !C.gl) return screenToGround2d(sx, sy);
   const r = dglRay(C, sx, sy);
   let t = 0,
     prev = null;
@@ -902,7 +902,7 @@ export function dglCurve(x, z) {
 const dglFree = () => !!(walkView.opt && walkView.opt.freeCam),
   dglTurn = () => (dglFree() ? Math.PI : (eng('camera', 'turn') * Math.PI) / 180),
   dglZoomLim = v => (dglFree() ? clamp(v, 0.3, 3.2) : clamp(v, eng('camera', 'zoomMin'), eng('camera', 'zoomMax')));
-function dglClick(ev) {
+function handleCanvasClick(ev) {
   if (walkView.battle || walkView.director || !walkView.ready || (walkView.opt.active && !walkView.opt.active()))
     return;
   if (typeof S !== 'undefined') dglTiltAsk();
@@ -910,12 +910,12 @@ function dglClick(ev) {
     walkRenderer.dragged = false;
     return;
   }
-  const [sx, sy] = dioCanvasXY(ev),
-    g = dioUnproject(sx, sy);
+  const [sx, sy] = canvasPoint(ev),
+    g = screenToGround(sx, sy);
   if (g) {
     walkRenderer.focusT = { x: g.x, z: g.z, t: walkView.t };
   }
-  dioClick(ev);
+  handleWalkClick(ev);
 }
 function dglGestures(cv) {
   const pts = new Map();
@@ -3550,7 +3550,7 @@ function dglLookCamera(rw, rh, K) {
 function dglFrame(ts, dtm) {
   const cv = walkView.cv;
   if (!cv || !cv.isConnected) {
-    dioStop();
+    stopWalkView();
     return;
   }
   if (!walkView.ready || EGL.lost) return;
@@ -4734,7 +4734,8 @@ export function dglItems(st, C, PPU, C0) {
     const fr = typeof owFrames === 'function' ? owFrames(n.who) : null;
     if (!fr) return;
     trWarm(n.who);
-    const dir = Math.hypot(P.x - pos[0], P.z - pos[1]) < 4.5 ? dioDirOf(P.x - pos[0], P.z - pos[1]) : n.dir || 'down';
+    const dir =
+      Math.hypot(P.x - pos[0], P.z - pos[1]) < 4.5 ? directionOf(P.x - pos[0], P.z - pos[1]) : n.dir || 'down';
     const nset = fr[dir] || fr.down,
       nim = typeof trPick === 'function' ? trPick(nset, false, 0) : nset[0];
     if (nim) out.push(dglPerson('npc', nim, pos[0], pos[1], C0, { n }));
@@ -5884,7 +5885,7 @@ export function dglSprites(C, items, X, hits, labels, PPU) {
   gl.uniform1f(U.uEmit, 0);
   gl.uniform1f(U.uFlipN, 1);
   gl.uniform1f(U.uFixed, 0);
-  const me = dioProj(C, P.x, 0.9, P.z);
+  const me = worldToScreen(C, P.x, 0.9, P.z);
   walkRenderer.bfade = new Map();
   const sd = sun.dir,
     sl = Math.hypot(sd[0] * C.right[0] + sd[2] * C.right[2], sd[1]) || 1,
@@ -5911,7 +5912,7 @@ export function dglSprites(C, items, X, hits, labels, PPU) {
       hM = -it.oy * s;
     let fade = it.fade ?? 1;
     if (me && !walkRenderer.bt && !it.person && it.k === 'prop' && hM > 1.6) {
-      const q = dioProj(C, it.x, 0, it.z);
+      const q = worldToScreen(C, it.x, 0, it.z);
       if (q && q.d < me.d - 0.3) {
         const half = it.w * s * 0.5 * q.s,
           top = q.y - hM * q.s;
@@ -6261,7 +6262,7 @@ function dglFlat(it, T, C, X) {
   gl.useProgram(EGL.P.sprite.p);
 }
 export function dglHit(it, C, hits, labels, PPU) {
-  const q = dioProj(C, it.x, 0, it.z);
+  const q = worldToScreen(C, it.x, 0, it.z);
   if (!q) return;
   const s = it.mpp,
     k = q.s * s,

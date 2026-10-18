@@ -25,7 +25,7 @@ import {
   sideTop,
 } from '../../game/js/battle-stage.js';
 import { mapHub, walkView } from '../../game/js/walk-view.js';
-import { dioMount } from '../../game/js/walk-view-gl.js';
+import { mountWalkView } from '../../game/js/walk-view-gl.js';
 import { battleGLAttach, battleGLStop } from '../../game/js/battle-3d.js';
 import { esc } from './game-stand-ins.js';
 import {
@@ -251,7 +251,7 @@ async function bpScene() {
   let cv = document.createElement('canvas');
   cv.id = 'bpDio';
   host.insertBefore(cv, host.firstChild);
-  await dioMount(cv, id, {
+  await mountWalkView(cv, id, {
     state: () => ({ mode: 'roam', roam: true, pos: mapHub(sc), who: null, enc: [], npcs: [], exits: [] }),
     keys: () => false,
     onPick: () => {},

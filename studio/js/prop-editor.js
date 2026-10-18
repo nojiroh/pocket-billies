@@ -11,7 +11,7 @@ import { $, $$, clamp } from '../../game/js/util.js';
 import { frameStop, frameTask } from '../../game/js/frame-scheduler.js';
 import { artLoad, cnv, setArtLoad } from '../../game/js/art.js';
 import { artImage, imageReady, layerAsProp, setWalkData, walkData, walkView } from '../../game/js/walk-view.js';
-import { DGL_MATS, dglMatOf, dglVaryOf, dioMount, walkRenderer } from '../../game/js/walk-view-gl.js';
+import { DGL_MATS, dglMatOf, dglVaryOf, mountWalkView, walkRenderer } from '../../game/js/walk-view-gl.js';
 import { BLD_ROOM_NAMES, BLD_TEX_NAMES } from '../../game/js/buildings.js';
 import { P3D_AUTO, P3D_KINDS, P3D_PARTS, p3dTreeKind } from '../../game/js/solid-props.js';
 import { esc } from './game-stand-ins.js';
@@ -618,7 +618,7 @@ async function pedMount() {
   } else {
     PED.sc.props[0].k = k;
   }
-  dioMount(cv, '__prop', {
+  mountWalkView(cv, '__prop', {
     state: () => ({ mode: 'roam', roam: true, pos: PED.sc.hub, who: null, enc: [], npcs: [], exits: [] }),
     keys: () => false,
     onPick: () => {},

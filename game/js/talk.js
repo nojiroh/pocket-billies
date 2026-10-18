@@ -11,7 +11,7 @@ import { PEOPLE, TRAINERS } from './game-data.js';
 import { RM, S } from './game-state.js';
 import { frameStop, frameTask } from './frame-scheduler.js';
 import { trPortrait, trainerLook } from './person-art.js';
-import { dioFace, walkView } from './walk-view.js';
+import { turnToPlayer, walkView } from './walk-view.js';
 import { walkRenderer } from './walk-view-gl.js';
 import { sfx } from './sound.js';
 /* eslint-disable no-func-assign */
@@ -211,7 +211,7 @@ export async function talkFolk(f) {
   f.wait = 99;
   f.route = null;
   f.walk = 0;
-  dioFace(f);
+  turnToPlayer(f);
   if (typeof walkRenderer !== 'undefined') walkRenderer.focusT = { x: f.x, z: f.z, t: walkView.t };
   await talk([
     [who, a],

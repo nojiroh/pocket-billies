@@ -15,7 +15,7 @@ import { ROUTE, SP } from './game-data.js';
 import { N, S, U, cleanName, esc, plural } from './game-state.js';
 import { owFrames, portraitHTML, trWarm } from './person-art.js';
 import { sprHTML } from './skeleton-rig.js';
-import { dioDirOf, walkView } from './walk-view.js';
+import { directionOf, walkView } from './walk-view.js';
 import { dglPerson } from './walk-view-gl.js';
 import { owBuddyMon, owItem } from './world-billies.js';
 import { MAP, mapSelect } from './world-map.js';
@@ -440,7 +440,7 @@ function frWorldItems(out, t, C0) {
     if (!fr) continue;
     if (typeof trWarm === 'function') trWarm(who);
     const P = walkView.pl,
-      dir = P && Math.hypot(P.x - x, P.z - z) < 5 ? dioDirOf(P.x - x, P.z - z) : 'down',
+      dir = P && Math.hypot(P.x - x, P.z - z) < 5 ? directionOf(P.x - x, P.z - z) : 'down',
       set = fr[dir] || fr.down,
       im = set && set[0];
     if (im) out.push(dglPerson('friend', im, x, z, C0, { fr: u }));

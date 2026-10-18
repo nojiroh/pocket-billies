@@ -642,7 +642,7 @@ NWLOG.hook = () => {
     NWLOG.add('battle', `start ${kind}${typeof GAME.areaKey === 'function' ? ' at ' + GAME.areaKey() : ''}`)
   );
   wrap('endBattle', () => NWLOG.add('battle', 'end ' + ((GAME.B && GAME.B.over) || '')));
-  wrap('dioMount', (cv, id, opt) => NWLOG.add('scene', `mount ${id}`));
+  wrap('mountWalkView', (cv, id, opt) => NWLOG.add('scene', `mount ${id}`));
   wrap('setTrip', j =>
     NWLOG.add('travel', `trip to ${typeof GAME.ROUTE !== 'undefined' && GAME.ROUTE[j] ? GAME.ROUTE[j].name : j}`)
   );
@@ -665,7 +665,7 @@ NWLOG.hook = () => {
     GAME[name] = f;
   };
   for (const [n, l] of [
-    ['dioMount', 'opening a scene'],
+    ['mountWalkView', 'opening a scene'],
     ['prepareMap', 'preparing a scene'],
     ['render', 'drawing the menus'],
     ['renderOv', 'drawing a window'],

@@ -41,7 +41,7 @@ import {
   walkView,
 } from '../../game/js/walk-view.js';
 import { ENV } from '../../game/js/environment.js';
-import { DGL_WALL_MATS, dioHRaw, dioMount, walkRenderer } from '../../game/js/walk-view-gl.js';
+import { DGL_WALL_MATS, dioHRaw, mountWalkView, walkRenderer } from '../../game/js/walk-view-gl.js';
 import { esc } from './game-stand-ins.js';
 import {
   ACTS,
@@ -908,7 +908,7 @@ function scPreview() {
           { id: 'pv3', lvl: 4 },
         ]
       : [];
-  dioMount(cv, id, {
+  mountWalkView(cv, id, {
     state: () => {
       const sc = scCur();
       if (SCN.pv === 'path' || !sc)

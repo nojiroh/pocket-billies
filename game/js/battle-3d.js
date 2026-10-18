@@ -12,7 +12,7 @@ import { B, FV, RM, S, provide } from './hooks.js';
 import { $, clamp } from './util.js';
 import { hexA } from './art.js';
 import { ACT, FOC, POS, SC, UPP, partSpr, sideBuf, sideWorld, trainerBattleFrame, trainerMpp } from './battle-stage.js';
-import { dioStop, walkData, walkView } from './walk-view.js';
+import { stopWalkView, walkData, walkView } from './walk-view.js';
 import { EGL } from './engine/webgl.js';
 import { dioH, walkRenderer } from './walk-view-gl.js';
 /* eslint-disable no-func-assign */
@@ -103,7 +103,7 @@ export function battleGLStop() {
   const cv = walkView.cv;
   if (BGL.detach) {
     if (cv) {
-      dioStop();
+      stopWalkView();
       cv.remove();
     }
     return;

@@ -16,7 +16,7 @@ import {
   setEngSource,
 } from '../../game/js/engine/settings.js';
 import { EGL, eglOK } from '../../game/js/engine/webgl.js';
-import { dglAdapt, dglRebuild, dioMount, setDglAdapt, walkRenderer } from '../../game/js/walk-view-gl.js';
+import { dglAdapt, dglRebuild, mountWalkView, setDglAdapt, walkRenderer } from '../../game/js/walk-view-gl.js';
 import { esc } from './game-stand-ins.js';
 import {
   ACTS,
@@ -166,7 +166,7 @@ async function engMount() {
   await Promise.all(scArt(C).map(p => atlasGet('art/' + p).catch(() => null)));
   if (!$('#engPv')) return;
   walkView.pl.t = -1;
-  dioMount(cv, id, {
+  mountWalkView(cv, id, {
     state: () => ({
       mode: 'roam',
       roam: true,

@@ -10,7 +10,16 @@ import { clamp } from './util.js';
 import { COINS, GD, ITEMS, ROUTE, RULES, SP } from './game-data.js';
 import { B, N, S, U, esc, fmt, save, today } from './game-state.js';
 import { cnv, uiIco } from './art.js';
-import { baseMapId, dioFace, findPath, mapById, mapHub, terrainAt, walkView, walkablePointNear } from './walk-view.js';
+import {
+  baseMapId,
+  findPath,
+  mapById,
+  mapHub,
+  terrainAt,
+  turnToPlayer,
+  walkView,
+  walkablePointNear,
+} from './walk-view.js';
 import { eng } from './engine/settings.js';
 import { ENV, envHere, envState } from './environment.js';
 import { dioH, walkRenderer } from './walk-view-gl.js';
@@ -233,7 +242,7 @@ async function reqTalk(f) {
   f.wait = 99;
   f.route = null;
   f.walk = 0;
-  dioFace(f);
+  turnToPlayer(f);
   if (!q) return;
   const finish = async line => {
     q.state = 'done';

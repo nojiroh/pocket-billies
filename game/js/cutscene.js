@@ -34,17 +34,17 @@ import { drawRig, rigFrame, rigParts, rigPreload, rigTint } from './skeleton-rig
 import { buzz, partSpr } from './battle-stage.js';
 import {
   artImage,
-  dioDirOf,
-  dioProj,
-  dioStop,
+  directionOf,
   imageReady,
   mapById,
   prepareMap,
+  stopWalkView,
   walkData,
   walkView,
+  worldToScreen,
 } from './walk-view.js';
 import { EGL, eglOK } from './engine/webgl.js';
-import { dglPerson, dioH, dioMount, walkRenderer } from './walk-view-gl.js';
+import { dglPerson, dioH, mountWalkView, walkRenderer } from './walk-view-gl.js';
 import { wrRoamView } from './seamless-world.js';
 import { music, sfx } from './sound.js';
 import { TALK, talkHide, talkLine } from './talk.js';
@@ -244,7 +244,7 @@ export function csActor(id, who, at, dir) {
 export function csWalk(id, to, ms) {
   const a = CS.actors[id];
   a.walk = { x0: a.x, z0: a.z, x1: to[0], z1: to[1], t0: csNow(), dur: ms };
-  a.dir = dioDirOf(to[0] - a.x, to[1] - a.z);
+  a.dir = directionOf(to[0] - a.x, to[1] - a.z);
   return csWait(ms);
 }
 function csAct(id, act, ms) {
@@ -588,7 +588,7 @@ export async function csStart() {
   cv.hidden = false;
   cv.setAttribute('aria-label', 'Opening scene in ' + csStartName());
   walkView.director = { frame: csFrame };
-  await dioMount(cv, id, {
+  await mountWalkView(cv, id, {
     state: () => ({ who: null, npcs: [], enc: [], mode: 'line' }),
     keys: () => false,
     active: () => false,
@@ -904,7 +904,7 @@ export function csTeardown() {
   }
   if (typeof LAND !== 'undefined') LAND.bits = [];
   document.body.classList.remove('in-cs', 'cs-choosing', 'cs-dress', 'cs-falling', 'cs-dazed', 'cs-waking', 'cs-blink');
-  if (walkView.cv) dioStop();
+  if (walkView.cv) stopWalkView();
 }
 function csEnd(l) {
   if (CS.test) {
@@ -989,7 +989,7 @@ document.addEventListener('pointerup', ev => {
   let best = -1,
     bd = 1e9;
   CS.stars.forEach((s, i) => {
-    const q = dioProj(walkView.C, s.x, 0.45, s.z);
+    const q = worldToScreen(walkView.C, s.x, 0.45, s.z);
     if (!q) return;
     const d = Math.hypot(q.x - sx, q.y - sy);
     if (d < bd) {
