@@ -128,17 +128,17 @@ import { ENV, envHint, envIcon, envLabel } from './environment.js';
 import { mountWalkView, walkRenderer } from './walk-view-gl.js';
 import { fishStart } from './fishing.js';
 import {
+  seamlessDelta,
   seamlessOn,
+  seamlessRoamView,
+  seamlessTripView,
   seamlessWorld,
   shiftWalkView,
-  wrDelta,
   wrGate,
   wrGetReady,
   wrPrefetch,
-  wrRoamView,
   wrRoomId,
   wrRoomScene,
-  wrTripView,
 } from './seamless-world.js';
 import { battleGLLayout, battleGLWanted } from './battle-3d.js';
 import {
@@ -1312,7 +1312,10 @@ function walkState() {
     f = nx != null && c ? clamp(r.prog / c, 0, 1) : 0;
   let v; /* alpha 0.4.1: walking yourself, the view is always the place you're in */
   /* v43: a trip is a walk along the road's ground (seamless-world.js): the scene with the road leaving, the road, the far scene with the road arriving */
-  const tv = nx != null && (r.prog > 0 || !r.hold) && typeof wrTripView === 'function' ? wrTripView(node, nx, f) : null;
+  const tv =
+    nx != null && (r.prog > 0 || !r.hold) && typeof seamlessTripView === 'function'
+      ? seamlessTripView(node, nx, f)
+      : null;
   if (tv) {
     const base = tv.sc.baseId === sceneIdAt(nx) ? nx : node;
     v = { id: tv.id, node: base, mode: 'road', pos: tv.pos, roam: true, road: tv.u };
@@ -1343,8 +1346,8 @@ function walkState() {
         live = !!wo,
         lo = wo,
         wv =
-          typeof wrRoamView === 'function'
-            ? wrRoamView(node, live ? [walkView.pl.x - lo[0], walkView.pl.z - lo[1]] : pos)
+          typeof seamlessRoamView === 'function'
+            ? seamlessRoamView(node, live ? [walkView.pl.x - lo[0], walkView.pl.z - lo[1]] : pos)
             : null;
       if (wv) {
         const o = wv.sc.baseOff;
@@ -1714,8 +1717,8 @@ function walkSceneSync() {
   cv.hidden = false;
   const ws = walkState(),
     id = ws.id;
-  if (walkView.id !== id && walkView.cv && walkView.ready && typeof wrDelta === 'function') {
-    const d = wrDelta(walkView.id, id);
+  if (walkView.id !== id && walkView.cv && walkView.ready && typeof seamlessDelta === 'function') {
+    const d = seamlessDelta(walkView.id, id);
     /* alpha 0.2: neighbouring places share their edges, so most views share a part; a walk carries on into the next view,
      a jump somewhere else (not where you are walking to) opens it fresh */
     const walking =

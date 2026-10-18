@@ -44,6 +44,7 @@ import { lifeShift } from './ambient-life.js';
 import { shiftWorldBillies } from './world-billies.js';
 /* eslint-disable no-func-assign */
 expose({
+  HUB_ROAD_LENGTH: [() => HUB_ROAD_LENGTH],
   LOOK_KEYS: [() => LOOK_KEYS],
   LOOK_MIX_RANGE: [() => LOOK_MIX_RANGE],
   MIXED_LOOK_KEYS: [() => MIXED_LOOK_KEYS],
@@ -56,20 +57,25 @@ expose({
   SIDE_VECTORS: [() => SIDE_VECTORS],
   TUNNEL_RUN: [() => TUNNEL_RUN],
   WR_DECO: [() => WR_DECO],
-  WR_HUBL: [() => WR_HUBL],
   WR_ROOM_GAP: [() => WR_ROOM_GAP],
   WR_WIN: [() => WR_WIN],
+  seamlessCompose: [() => seamlessCompose, v => (seamlessCompose = v)],
+  seamlessComposeRoad: [() => seamlessComposeRoad, v => (seamlessComposeRoad = v)],
   seamlessCornerHeight: [() => seamlessCornerHeight, v => (seamlessCornerHeight = v)],
+  seamlessDelta: [() => seamlessDelta, v => (seamlessDelta = v)],
   seamlessEasedGround: [() => seamlessEasedGround, v => (seamlessEasedGround = v)],
   seamlessExitPath: [() => seamlessExitPath, v => (seamlessExitPath = v)],
   seamlessExitRaise: [() => seamlessExitRaise, v => (seamlessExitRaise = v)],
   seamlessHash: [() => seamlessHash, v => (seamlessHash = v)],
+  seamlessHubMap: [() => seamlessHubMap, v => (seamlessHubMap = v)],
+  seamlessHubParts: [() => seamlessHubParts, v => (seamlessHubParts = v)],
   seamlessInRect: [() => seamlessInRect],
   seamlessJoin: [() => seamlessJoin, v => (seamlessJoin = v)],
   seamlessJoinTrip: [() => seamlessJoinTrip, v => (seamlessJoinTrip = v)],
   seamlessLookMix: [() => seamlessLookMix, v => (seamlessLookMix = v)],
   seamlessLookOf: [() => seamlessLookOf, v => (seamlessLookOf = v)],
   seamlessLookTick: [() => seamlessLookTick, v => ((seamlessLookTick = v), provide({ seamlessLookTick }))],
+  seamlessMapById: [() => seamlessMapById, v => ((seamlessMapById = v), provide({ seamlessMapById }))],
   seamlessMemo: [() => seamlessMemo, v => (seamlessMemo = v)],
   seamlessMixHex: [() => seamlessMixHex, v => (seamlessMixHex = v)],
   seamlessNearestRoadPoint: [
@@ -88,36 +94,30 @@ expose({
   seamlessRoadPointAt: [() => seamlessRoadPointAt, v => (seamlessRoadPointAt = v)],
   seamlessRoadProps: [() => seamlessRoadProps, v => (seamlessRoadProps = v)],
   seamlessRoadTile: [() => seamlessRoadTile, v => (seamlessRoadTile = v)],
+  seamlessRoamView: [() => seamlessRoamView, v => (seamlessRoamView = v)],
   seamlessSalt: [() => seamlessSalt, v => (seamlessSalt = v)],
   seamlessSeamOf: [() => seamlessSeamOf, v => (seamlessSeamOf = v)],
   seamlessStartAlong: [() => seamlessStartAlong, v => (seamlessStartAlong = v)],
+  seamlessTrimCache: [() => seamlessTrimCache, v => (seamlessTrimCache = v)],
+  seamlessTripView: [() => seamlessTripView, v => (seamlessTripView = v)],
+  seamlessViewFor: [() => seamlessViewFor, v => (seamlessViewFor = v)],
+  seamlessViewMap: [() => seamlessViewMap, v => (seamlessViewMap = v)],
   seamlessWorld: [() => seamlessWorld],
   shiftWalkView: [() => shiftWalkView, v => (shiftWalkView = v)],
   wrBldWindows: [() => wrBldWindows, v => (wrBldWindows = v)],
-  wrCompose: [() => wrCompose, v => (wrCompose = v)],
-  wrComposeMulti: [() => wrComposeMulti, v => (wrComposeMulti = v)],
-  wrDelta: [() => wrDelta, v => (wrDelta = v)],
   wrGate: [() => wrGate, v => (wrGate = v)],
   wrGetReady: [() => wrGetReady, v => (wrGetReady = v)],
-  wrHubParts: [() => wrHubParts, v => (wrHubParts = v)],
-  wrHubScene: [() => wrHubScene, v => (wrHubScene = v)],
   wrPrefetch: [() => wrPrefetch, v => (wrPrefetch = v)],
   wrPrefetchView: [() => wrPrefetchView, v => (wrPrefetchView = v)],
   wrReady: [() => wrReady, v => (wrReady = v)],
-  wrRoamView: [() => wrRoamView, v => (wrRoamView = v)],
   wrRoomId: [() => wrRoomId, v => (wrRoomId = v)],
   wrRoomPlace: [() => wrRoomPlace, v => (wrRoomPlace = v)],
   wrRoomScene: [() => wrRoomScene, v => (wrRoomScene = v)],
   wrRoomWindows: [() => wrRoomWindows, v => (wrRoomWindows = v)],
-  wrScene: [() => wrScene, v => (wrScene = v)],
-  wrSceneById: [() => wrSceneById, v => ((wrSceneById = v), provide({ wrSceneById }))],
-  wrTrim: [() => wrTrim, v => (wrTrim = v)],
-  wrTripView: [() => wrTripView, v => (wrTripView = v)],
   wrVeil: [() => wrVeil, v => (wrVeil = v)],
-  wrViewFor: [() => wrViewFor, v => (wrViewFor = v)],
 });
 /* eslint-enable no-func-assign */
-provide({ seamlessLookTick, seamlessNearestRoadPoint, wrSceneById });
+provide({ seamlessLookTick, seamlessMapById, seamlessNearestRoadPoint });
 /* to-module: end */
 export const seamlessWorld = { cache: new Map(), max: 5, gen: 0, LW: 40, MID: 64, BAND: 12, on: true };
 provide({ seamlessWorld }); /* to-module */
@@ -760,7 +760,7 @@ function seamlessLookTick() {
    running on a little, then their surroundings rising gently, with trees, which you can't walk into (sc.inside).
    Where two places meet, the grounds mingle over a couple of metres. Each part is recorded with where its corner lies
    in the composite (parts), so moving from one composite to another that shares a part is a shift. */
-function wrComposeMulti(id, F) {
+function seamlessCompose(id, F) {
   const C = walkData().sc,
     x0 = Math.floor(F.box[0]),
     z0 = Math.floor(F.box[1]),
@@ -1349,8 +1349,8 @@ function seamlessSalt(id) {
   return (h * 7.31) % 997;
 }
 /* a window of one road (the long ones' middle) */
-function wrCompose(id, R, box, base, t) {
-  return wrComposeMulti(id, {
+function seamlessComposeRoad(id, R, box, base, t) {
+  return seamlessCompose(id, {
     box,
     scenes: [
       { S: R.A, id: R.aId, off: R.aOff },
@@ -1365,8 +1365,8 @@ function wrCompose(id, R, box, base, t) {
 /* v46: a place's hub view: the scene with the first stretch of every road leaving it (and whatever of the next scene
    that reaches), in the scene's own metres. You roam in it without a single switch; a trip leaves it only when the
    road runs on past what it holds. */
-const WR_HUBL = 36;
-function wrHubParts(node) {
+const HUB_ROAD_LENGTH = 36;
+function seamlessHubParts(node) {
   const sid = sceneIdAt(node),
     S = mapById(sid);
   if (!S) return null;
@@ -1402,7 +1402,7 @@ function wrHubParts(node) {
       N = atA ? R.B : R.A,
       nid = atA ? R.bId : R.aId;
     if (nid !== sid) scenes.push({ S: N, id: nid, off: [No[0] - So[0], No[1] - So[1]] });
-    for (let k = 0; k <= WR_HUBL; k += 3) {
+    for (let k = 0; k <= HUB_ROAD_LENGTH; k += 3) {
       const u = atA ? Math.min(R.Lr, k) : Math.max(0, R.Lr - k),
         p = seamlessRoadPointAt(R, u),
         x = p.x - So[0],
@@ -1459,21 +1459,21 @@ function wrHubParts(node) {
     bz = Math.floor(z0 - M); /* (the camera stops 2 m past a view's edge: 6 m of countryside round it is enough) */
   return { box: [bx, bz, Math.ceil(x1 + M) - bx, Math.ceil(z1 + M) - bz], scenes, roads, base: S, hubOf: node };
 }
-export function wrHubScene(node) {
+export function seamlessHubMap(node) {
   const sid = sceneIdAt(node),
     id = 'w:' + sid + '*',
     key = id + '|' + seamlessWorld.gen;
   let sc = seamlessWorld.cache.get(key);
   if (sc) return sc;
-  const F = wrHubParts(node);
+  const F = seamlessHubParts(node);
   if (!F) return null;
-  sc = wrComposeMulti(id, F);
+  sc = seamlessCompose(id, F);
   sc.id = id;
   seamlessWorld.cache.set(key, sc);
-  wrTrim();
+  seamlessTrimCache();
   return sc;
 }
-function wrTrim() {
+function seamlessTrimCache() {
   while (seamlessWorld.cache.size > seamlessWorld.max + LINKS.length) {
     let k0 = null;
     for (const k of seamlessWorld.cache.keys())
@@ -1486,7 +1486,7 @@ function wrTrim() {
   }
 }
 /* the view for a place on a road: the near end's hub, the far end's hub, or a window in between */
-function wrViewFor(R, u, endOnly) {
+function seamlessViewFor(R, u, endOnly) {
   const LW = seamlessWorld.LW,
     two = R.Lr <= 2 * LW - 8,
     cut = two ? R.Lr / 2 : 24;
@@ -1506,12 +1506,12 @@ function wrViewFor(R, u, endOnly) {
     off: [0, 0],
   };
 }
-function wrScene(view, R) {
-  if (view.hub != null) return wrHubScene(view.hub);
+function seamlessViewMap(view, R) {
+  if (view.hub != null) return seamlessHubMap(view.hub);
   const key = view.id + '|' + seamlessWorld.gen;
   let sc = seamlessWorld.cache.get(key);
   if (sc) return sc;
-  sc = wrCompose(view.id, R, view.box, view.base, view.t);
+  sc = seamlessComposeRoad(view.id, R, view.box, view.base, view.t);
   sc.id = view.id;
   if (view.mid) {
     sc.hub = [view.mid[0] - sc.comp.box[0], view.mid[1] - sc.comp.box[1]];
@@ -1520,12 +1520,12 @@ function wrScene(view, R) {
     sc.edgeExits = null;
   }
   seamlessWorld.cache.set(key, sc);
-  wrTrim();
+  seamlessTrimCache();
   return sc;
 }
 /* a composite by id, for mapById(): "w:<scene>*" (a place's hub), "w:road<link>@<k>" (a road's middle); the v43 ids
    "w:<scene>><link>" and "w:<scene><<link>" now mean the hub */
-function wrSceneById(id) {
+function seamlessMapById(id) {
   if (!id || !id.startsWith('w:')) return null;
   for (const [k, v] of seamlessWorld.cache) if (k === id + '|' + seamlessWorld.gen) return v;
   let m = id.match(/^(w:.+)#([^@#]+)@(-?[\d.]+),(-?[\d.]+)(?:,(-?[\d.]+))?$/);
@@ -1534,12 +1534,12 @@ function wrSceneById(id) {
   if (m) {
     const R = seamlessRoad(+m[1]);
     if (!R) return null;
-    return wrScene(wrViewFor(R, +m[2] * 24), R);
+    return seamlessViewMap(seamlessViewFor(R, +m[2] * 24), R);
   }
   m = id.match(/^w:(.+?)(\*|[<>]\d+)$/);
   if (!m) return null;
   const node = ROUTE.findIndex(r => r.scene === m[1]);
-  return node >= 0 ? wrHubScene(node) : null;
+  return node >= 0 ? seamlessHubMap(node) : null;
 }
 /* v46: seamless rooms. Walking into a building doesn't leave the place: the room is laid into the place's own view
    where the building stands, larger than the building (as in classic RPGs), with its door at the building's door.
@@ -1725,7 +1725,7 @@ export function wrRoomScene(baseId, roomId, door) {
   let B = B0,
     cx = 0,
     cz = 0;
-  const F = B0.comp && B0.comp.hubOf != null ? wrHubParts(B0.comp.hubOf) : null;
+  const F = B0.comp && B0.comp.hubOf != null ? seamlessHubParts(B0.comp.hubOf) : null;
   if (F) {
     const x0 = Math.max(0, rx - 18),
       z0 = Math.max(0, rz - 14),
@@ -1734,7 +1734,7 @@ export function wrRoomScene(baseId, roomId, door) {
     if ((x1 - x0) * (z1 - z0) < B0.w * B0.h * 0.8) {
       cx = x0;
       cz = z0;
-      B = wrComposeMulti(id, Object.assign({}, F, { box: [F.box[0] + x0, F.box[1] + z0, x1 - x0, z1 - z0] }));
+      B = seamlessCompose(id, Object.assign({}, F, { box: [F.box[0] + x0, F.box[1] + z0, x1 - x0, z1 - z0] }));
     }
   }
   const ox = rx - cx,
@@ -1886,11 +1886,11 @@ export function wrRoomScene(baseId, roomId, door) {
     name: R.name,
   });
   seamlessWorld.cache.set(key, sc);
-  wrTrim();
+  seamlessTrimCache();
   return sc;
 }
 /* where a point of one composite lands in another (both hold a scene or the road): null when they share nothing */
-export function wrDelta(fromId, toId) {
+export function seamlessDelta(fromId, toId) {
   const a = mapById(fromId),
     b = mapById(toId);
   if (!a || !b) return null;
@@ -1905,7 +1905,7 @@ export function wrDelta(fromId, toId) {
 /* --- what the walk shows (called by walkState in ui.js) --- */
 /* roaming at a stop: v46: always the place's hub view (the scene with the first stretch of each road), so walking
    round a place and up to its exits never switches views */
-export function wrRoamView(node, pos) {
+export function seamlessRoamView(node, pos) {
   if (!seamlessOn()) return null;
   const id = sceneIdAt(node),
     sc = mapById(id);
@@ -1918,13 +1918,13 @@ export function wrRoamView(node, pos) {
     sc.room
   )
     return null;
-  const hs = wrHubScene(node);
+  const hs = seamlessHubMap(node);
   if (!hs) return null;
   seamlessWorld.roam = { node };
   return { id: hs.id, sc: hs, R: null };
 }
 /* on a road: the view for your progress, and where you stand on it (in that view's metres) */
-export function wrTripView(node, nx, f) {
+export function seamlessTripView(node, nx, f) {
   if (!seamlessOn()) return null;
   const i = seamlessRoadIndex(node, nx);
   if (i < 0) return null;
@@ -1934,8 +1934,8 @@ export function wrTripView(node, nx, f) {
   if (!R) return null;
   const fwd = R.a === node,
     u = fwd ? f * R.Lr : (1 - f) * R.Lr,
-    v = wrViewFor(R, u),
-    sc = wrScene(v, R);
+    v = seamlessViewFor(R, u),
+    sc = seamlessViewMap(v, R);
   if (!sc) return null;
   const p = seamlessRoadPointAt(R, u);
   const lane = (seamlessNoise(u * 0.05, 1, R.seed + 41) - 0.5) * 1.2,
@@ -1972,7 +1972,7 @@ function seamlessJoinTrip(J, node, f) {
   const u = u0 + clamp(f, 0, 1) * (L - u0),
     inX = u < PX.len,
     vn = inX ? xn : yn,
-    sc = wrHubScene(vn);
+    sc = seamlessHubMap(vn);
   if (!sc) return null;
   const o = sc.baseOff || [0, 0],
     p = inX ? seamlessPointAlong(PX, u) : seamlessPointAlong(PY, PY.len - (u - PX.len));
@@ -2027,7 +2027,7 @@ export function wrPrefetch(R, u, fwd, tv) {
   if (!R) return;
   if (R.join) {
     /* the next place's view, from 40 m before the seam */ if (tv && tv.inX && tv.PX.len - u < 40) {
-      const sc = wrHubScene(tv.yn);
+      const sc = seamlessHubMap(tv.yn);
       if (sc && sc.id !== walkView.id) {
         const e = tv.PY.pts[tv.PY.pts.length - 1],
           o = sc.baseOff || [0, 0];
@@ -2038,9 +2038,9 @@ export function wrPrefetch(R, u, fwd, tv) {
   }
   const ahead = clamp(fwd ? u + 40 : u - 40, 0, R.Lr);
   /* v46: 40 m ahead (was 26; and near the end, the far place itself), the painting and the card both need the time */ const v =
-    wrViewFor(R, ahead);
+    seamlessViewFor(R, ahead);
   if (v.id === walkView.id) return;
-  const sc = wrScene(v, R);
+  const sc = seamlessViewMap(v, R);
   if (!sc) return;
   /* where you will be when it is shown: a little past where you are now */ const p = seamlessRoadPointAt(
       R,
@@ -2051,7 +2051,7 @@ export function wrPrefetch(R, u, fwd, tv) {
 }
 function wrPrefetchView(v, R) {
   if (v.id === walkView.id) return;
-  wrScene(v, R);
+  seamlessViewMap(v, R);
   wrGetReady(v.id);
 }
 /* v46: is a view ready to be shown at once (its ground painted and, in 3D, built on the card)? wrGetReady also starts
@@ -2114,7 +2114,7 @@ export function wrGate(v) {
     if (typeof walkRenderer !== 'undefined') walkRenderer.prepBoost = 1;
     return v;
   }
-  const d = wrDelta(walkView.id, v.id);
+  const d = seamlessDelta(walkView.id, v.id);
   if (!d) return v;
   const x = v.pos[0] - d[0],
     z = v.pos[1] - d[1],

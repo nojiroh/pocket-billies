@@ -37,6 +37,7 @@ import {
   rawHeightAt,
   scenesFor,
   scenesNeed,
+  seamlessMapById,
   seamlessNearestRoadPoint,
   sfx,
   sfxAt,
@@ -45,7 +46,6 @@ import {
   talkFolk,
   voxPaths,
   walkMode,
-  wrSceneById,
 } from './hooks.js';
 import { clamp } from './util.js';
 import { frameStop } from './frame-scheduler.js';
@@ -379,7 +379,8 @@ export function baseMapId() {
   return (walkView.sc && walkView.sc.baseId) || walkView.id;
 }
 export function mapById(id) {
-  if (id && id.charCodeAt(0) === 119 && id[1] === ':' && typeof wrSceneById === 'function') return wrSceneById(id);
+  if (id && id.charCodeAt(0) === 119 && id[1] === ':' && typeof seamlessMapById === 'function')
+    return seamlessMapById(id);
   /* v43: a window onto the seamless world */ const S = walkData().scenes;
   /* phase 04b: a map whose own file hasn't come yet (js/map-files.js) */
   if (S[id] && S[id]._lite && typeof SCENE_FILES !== 'undefined') SCENE_FILES.touched.add(id);

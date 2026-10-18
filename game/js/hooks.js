@@ -168,6 +168,7 @@ export let A,
   scxTools,
   scxUp,
   seamlessLookTick,
+  seamlessMapById,
   seamlessNearestRoadPoint,
   seamlessWorld,
   settings,
@@ -212,7 +213,6 @@ export let A,
   worldBillyItem,
   worldBillyLabels,
   worldPaint,
-  wrSceneById,
   x28Event;
 const set = {
   A: v => (A = v),
@@ -381,6 +381,7 @@ const set = {
   scxTools: v => (scxTools = v),
   scxUp: v => (scxUp = v),
   seamlessLookTick: v => (seamlessLookTick = v),
+  seamlessMapById: v => (seamlessMapById = v),
   seamlessNearestRoadPoint: v => (seamlessNearestRoadPoint = v),
   seamlessWorld: v => (seamlessWorld = v),
   settings: v => (settings = v),
@@ -425,7 +426,6 @@ const set = {
   worldBillyItem: v => (worldBillyItem = v),
   worldBillyLabels: v => (worldBillyLabels = v),
   worldPaint: v => (worldPaint = v),
-  wrSceneById: v => (wrSceneById = v),
   x28Event: v => (x28Event = v),
 };
 // a setter hands its new value over whether or not another module reads it through here

@@ -16,7 +16,7 @@ import { sceneLite, sceneLoad, scenesAhead } from './map-files.js';
 import { RM, S, U, canEnter, esc, fmt, save } from './game-state.js';
 import { artLoad, uiIco } from './art.js';
 import { artImage, imageReady, mapById, prepareMap, walkData } from './walk-view.js';
-import { wrHubScene } from './seamless-world.js';
+import { seamlessHubMap } from './seamless-world.js';
 import { LOCATION_VECTORS, RADIANS_PER_DEGREE, slerp, vector3, worldMap } from './world-map.js';
 import { worldMapGl } from './world-map-gl.js';
 import { sfx } from './sound.js';
@@ -113,9 +113,9 @@ function flyGo(i) {
     dir: 1,
   });
   if (typeof artLoad === 'function') artLoad(['map/airship.png']).catch(() => {});
-  if (typeof prepareMap === 'function' && typeof wrHubScene === 'function') {
+  if (typeof prepareMap === 'function' && typeof seamlessHubMap === 'function') {
     try {
-      const h = wrHubScene(i);
+      const h = seamlessHubMap(i);
       if (h && h.id) prepareMap(h.id);
     } catch (e) {}
   }

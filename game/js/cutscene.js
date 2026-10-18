@@ -45,7 +45,7 @@ import {
 } from './walk-view.js';
 import { EGL, eglOK } from './engine/webgl.js';
 import { mountWalkView, personItem, standingHeightAt, walkRenderer } from './walk-view-gl.js';
-import { wrRoamView } from './seamless-world.js';
+import { seamlessRoamView } from './seamless-world.js';
 import { music, sfx } from './sound.js';
 import { TALK, talkHide, talkLine } from './talk.js';
 /* eslint-disable no-func-assign */
@@ -164,7 +164,7 @@ const csEase = k => (k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2);
 export function csSceneId() {
   const id = sceneIdAt(START_NODE);
   try {
-    const v = typeof wrRoamView === 'function' ? wrRoamView(START_NODE, null) : null;
+    const v = typeof seamlessRoamView === 'function' ? seamlessRoamView(START_NODE, null) : null;
     if (v && v.id && mapById(v.id)) return v.id;
   } catch (e) {
     console.error(e);

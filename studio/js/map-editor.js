@@ -388,7 +388,7 @@ SECTIONS.scenes = () => {
  ${card(
    'Preview',
    `<div class="sc-pv"><canvas id="scPv"></canvas><div class="sc-pv-load" id="scPvLoad">Loading…</div></div>
-  <div class="seg-row"><button class="seg ${SCN.pv === 'roam' ? 'on' : ''}" data-act="scPv" data-m="roam">Walk around</button><button class="seg ${SCN.pv === 'path' ? 'on' : ''}" data-act="scPv" data-m="path">Follow the path</button><button class="btn sm subtle" data-act="scPvHub">Back to the hub</button>${typeof wrHubScene === 'function' ? `<button class="seg ${SCN.joined ? 'on' : ''}" data-act="scJoined" title="The place with its neighbours joined at its edges, as the game shows it">With its neighbours</button>` : ''}<button class="btn sm" data-act="scTestRun" title="Opens the game in a new tab, straight into this scene, with a throwaway save. Your edits show up there as you make them.">Test run in the game</button></div>
+  <div class="seg-row"><button class="seg ${SCN.pv === 'roam' ? 'on' : ''}" data-act="scPv" data-m="roam">Walk around</button><button class="seg ${SCN.pv === 'path' ? 'on' : ''}" data-act="scPv" data-m="path">Follow the path</button><button class="btn sm subtle" data-act="scPvHub">Back to the hub</button>${typeof seamlessHubMap === 'function' ? `<button class="seg ${SCN.joined ? 'on' : ''}" data-act="scJoined" title="The place with its neighbours joined at its edges, as the game shows it">With its neighbours</button>` : ''}<button class="btn sm" data-act="scTestRun" title="Opens the game in a new tab, straight into this scene, with a throwaway save. Your edits show up there as you make them.">Test run in the game</button></div>
   <div class="seg-row sc-env"><select id="scEnvT" data-act-change="scEnv" aria-label="Time of day">${[
     ['', 'Midday'],
     ['7', 'Morning'],
@@ -890,10 +890,10 @@ function scPreview() {
   /* alpha 0.4: the place with its neighbours joined at its edges, as the game shows it (saved edits; Refresh after changing the edges) */
   let id = id0,
     off = [0, 0];
-  if (SCN.joined && typeof wrHubScene === 'function') {
+  if (SCN.joined && typeof seamlessHubMap === 'function') {
     try {
       const u = scUsers(id0)[0],
-        h = u && wrHubScene(u[1]);
+        h = u && seamlessHubMap(u[1]);
       if (h && h.id) {
         id = h.id;
         off = h.baseOff || [0, 0];

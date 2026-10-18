@@ -45,7 +45,7 @@ import { STR, strHas } from './structures.js';
 import { P3D, P3D_SH } from './solid-props.js';
 import { VOX } from './prop-models.js';
 import { buddyTap, companionSpecies, worldBillies } from './world-billies.js';
-import { seamlessWorld, wrRoomScene, wrTripView } from './seamless-world.js';
+import { seamlessTripView, seamlessWorld, wrRoomScene } from './seamless-world.js';
 import { A, endBattle, liveK, pickMove, pickTarget, startTrainer, startWild, stopTimers, tapMsg } from './battle.js';
 import { worldMap } from './world-map.js';
 import {
@@ -767,7 +767,7 @@ async function runFullTest(mode) {
       return `${mine} against ${theirs} (${fmt}); ${plates} nameplates; ${picks} picks, ${aimed} aimed; the turn played ${lines} lines in ${(turnMs / 1000).toFixed(1)} s`;
     };
     /* v43: the seamless world: out of Sundown along its road and into the Long Grass, measuring every view change */
-    if (typeof wrTripView === 'function' && GD.scenes.sundown && !STEST.stop)
+    if (typeof seamlessTripView === 'function' && GD.scenes.sundown && !STEST.stop)
       await phase(
         'Road: Marigold Town to Tallgrass Meadow on the ground',
         'dio',

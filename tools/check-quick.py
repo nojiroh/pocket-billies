@@ -1288,10 +1288,10 @@ def desktop_steps(b, base, R):
         out = []
         # every road composes at both ends and in the middle: no cut tiles, offsets on whole metres, sizes the card can hold
         r = json.loads(pg.evaluate("""JSON.stringify((()=>{const out=[];let n=0,mx=0;for(let i=0;i<LINKS.length;i++){const R=seamlessRoad(i);if(!R){out.push('link '+i+': no road');continue}
-         for(const u of [0,R.Lr/2,R.Lr]){const v=wrViewFor(R,u),sc=wrScene(v,R);n++;mx=Math.max(mx,sc.w,sc.h);if((sc.w+16)*8>4096||(sc.h+16)*8>4096)out.push(v.id+': '+sc.w+'x'+sc.h+' is too big for its distant ground picture');/* v46: the near ring paints the full size round you */
+         for(const u of [0,R.Lr/2,R.Lr]){const v=seamlessViewFor(R,u),sc=seamlessViewMap(v,R);n++;mx=Math.max(mx,sc.w,sc.h);if((sc.w+16)*8>4096||(sc.h+16)*8>4096)out.push(v.id+': '+sc.w+'x'+sc.h+' is too big for its distant ground picture');/* v46: the near ring paints the full size round you */
           if(sc.tiles.length!==sc.h||sc.tiles.some(r=>r.length!==sc.w))out.push(v.id+': ragged tiles');if(!(sc.props||[]).length)out.push(v.id+': no props');
           for(const P of sc.parts)if(!P.road&&(P.ox%1||P.oz%1))out.push(v.id+': '+P.id+' off the metre grid')}
-         const a=wrScene(wrViewFor(R,0,'a'),R),b=wrScene(wrViewFor(R,0,'b'),R);const pa=a.parts.find(p=>p.id===R.aId),pb=b.parts.find(p=>p.id===R.bId);
+         const a=seamlessViewMap(seamlessViewFor(R,0,'a'),R),b=seamlessViewMap(seamlessViewFor(R,0,'b'),R);const pa=a.parts.find(p=>p.id===R.aId),pb=b.parts.find(p=>p.id===R.bId);
          const A=mapById(R.aId),B=mapById(R.bId);for(let j=0;j<4;j++){/* alpha 0.2: away from the edges, where two places' grounds mingle */let i0=Math.floor(A.w/4*j)+4,z0=Math.floor(A.h/3)+1;if(a.tiles[a.h-1-(z0+pa.oz)][i0+pa.ox]!==A.tiles[A.h-1-z0][i0])out.push(a.id+': scene tiles don’t match');i0=Math.floor(B.w/4*j)+4;z0=Math.floor(B.h/3)+1;/* v46: B's own size */if(b.tiles[b.h-1-(z0+pb.oz)][i0+pb.ox]!==B.tiles[B.h-1-z0][i0])out.push(b.id+': scene tiles don’t match')}}
          return {out:out.slice(0,6),n,mx}})())"""))
         if r['out']: raise Exception('roads: ' + '; '.join(r['out']))
@@ -1667,14 +1667,14 @@ def desktop_steps(b, base, R):
         the same tiles) wherever both show the same place; underground places are a mountain from outside, rock all
         round from inside; every exit has the walk from its hub stored (the trips follow it)"""
         r = json.loads(pg.evaluate("""JSON.stringify((()=>{const out=[],keep=walkView.sc,keepId=walkView.id;let slow=0,slowId='',n=0;
-          for(let k=0;k<ROUTE.length;k++){const t0=performance.now();let sc=null;try{sc=wrHubScene(k)}catch(e){out.push(ROUTE[k].scene+': '+e)}const ms=performance.now()-t0;if(ms>slow){slow=ms;slowId=ROUTE[k].scene}if(sc&&!sc.comp.joined&&ADJ[k].length)out.push(ROUTE[k].scene+': not joined')}/* alpha 0.4: a place reached only by a lift (Pearlantis) has no neighbour to join */
+          for(let k=0;k<ROUTE.length;k++){const t0=performance.now();let sc=null;try{sc=seamlessHubMap(k)}catch(e){out.push(ROUTE[k].scene+': '+e)}const ms=performance.now()-t0;if(ms>slow){slow=ms;slowId=ROUTE[k].scene}if(sc&&!sc.comp.joined&&ADJ[k].length)out.push(ROUTE[k].scene+': not joined')}/* alpha 0.4: a place reached only by a lift (Pearlantis) has no neighbour to join */
           const nav=sc=>{walkView.sc=sc;walkView.id=sc.id;walkView.nav=null;walkView.navSc=null;walkView.cand=null;return navGrid()};
           for(let i=0;i<LINKS.length;i++){const J=seamlessJoin(i);if(!J){out.push('link '+i+': not joined');continue}n++;
-           for(const [vn,isA] of [[J.a,1],[J.b,0]]){const sc=wrHubScene(vn),o=sc.baseOff,d=SIDE_VECTORS[J.ea.side],p=isA?[J.ea.p[0]+o[0],J.ea.p[1]+o[1]]:[J.ea.p[0]+o[0]-J.off[0],J.ea.p[1]+o[1]-J.off[1]];
+           for(const [vn,isA] of [[J.a,1],[J.b,0]]){const sc=seamlessHubMap(vn),o=sc.baseOff,d=SIDE_VECTORS[J.ea.side],p=isA?[J.ea.p[0]+o[0],J.ea.p[1]+o[1]]:[J.ea.p[0]+o[0]-J.off[0],J.ea.p[1]+o[1]-J.off[1]];
             const a=[p[0]-d[0]*4,p[1]-d[1]*4],b=[p[0]+d[0]*5.2,p[1]+d[1]*5.2],G=nav(sc),cb=Math.floor(b[1]*G.N)*G.gw+Math.floor(b[0]*G.N),ch=terrainAt(b[0],b[1]),ca=terrainAt(a[0],a[1]);
             if('wd'.includes(ch)&&!sc.ride||'wd'.includes(ca)&&!sc.ride)continue;const rt=findPath(a[0],a[1],b[0],b[1]);let L=0;if(rt)for(let q=1;q<rt.length;q++)L+=Math.hypot(rt[q][0]-rt[q-1][0],rt[q][1]-rt[q-1][1]);const e=rt&&rt[rt.length-1];
             if(!rt||Math.hypot(e[0]-b[0],e[1]-b[1])>.6||L>11.5)out.push(ROUTE[J.a].scene+' → '+ROUTE[J.b].scene+' in '+ROUTE[vn].scene+'’s view: '+(rt?L.toFixed(1)+' m to cross':'no way across'))}
-           const A=wrHubScene(J.a),B=wrHubScene(J.b),oA=A.baseOff,oB=B.baseOff,e=J.ea.p;if(A.under!==B.under)continue;let dh=0,dt=0;
+           const A=seamlessHubMap(J.a),B=seamlessHubMap(J.b),oA=A.baseOff,oB=B.baseOff,e=J.ea.p;if(A.under!==B.under)continue;let dh=0,dt=0;
            const who=(sc,x,z)=>{x+=.5;z+=.5;/* the cell's middle */for(const r of sc.stable.scenes){const k=r.clip||[r.x,r.z,r.x+r.w,r.z+r.h];if(x>=k[0]&&z>=k[1]&&x<k[2]&&z<k[3])return r.id}return null};
            for(let dz=-6;dz<=6;dz++)for(let dx=-6;dx<=6;dx++){const ax=Math.round(e[0]+dx+oA[0]),az=Math.round(e[1]+dz+oA[1]),bx=Math.round(e[0]+dx-J.off[0]+oB[0]),bz=Math.round(e[1]+dz-J.off[1]+oB[1]);
             if(ax<0||az<0||ax>=A.w||az>=A.h||bx<0||bz<0||bx>=B.w||bz>=B.h)continue;const wa=who(A,ax,az);if(!wa||wa!==who(B,bx,bz))continue;
@@ -1682,8 +1682,8 @@ def desktop_steps(b, base, R):
             if(all)dh=Math.max(dh,Math.abs(A.heights[A.h-az][ax]-B.heights[B.h-bz][bx]));if(A.tiles[A.h-1-az][ax]!==B.tiles[B.h-1-bz][bx])dt++}
            if(dh>.05||dt)out.push(ROUTE[J.a].scene+' / '+ROUTE[J.b].scene+': the two views differ near the exit ('+dh.toFixed(2)+' m, '+dt+' tiles)')}
           /* underground places */const und=ROUTE.map((r,k)=>ADJ[k].length?r.scene:null).filter(id=>id&&(GD.scenes[id]||{}).under);
-          for(const id of und){const S=GD.scenes[id];if(!(S.arches||[]).length||!S.grown2)out.push(id+': underground without tunnels');const k=ROUTE.findIndex(r=>r.scene===id),v=wrHubScene(k);if(!v.under)out.push(id+': its view isn’t underground');
-           for(const e of ADJ[k]){const w=wrHubScene(e.to);if(w.under)continue;const P=w.parts.find(q=>q.id===id);if(!P)continue;const g=S.grown2,cx=P.ox+(g.W||0)+(S.w-(g.W||0)-(g.E||0))/2,cz=P.oz+(g.S||0)+(S.h-(g.S||0)-(g.N||0))/2;
+          for(const id of und){const S=GD.scenes[id];if(!(S.arches||[]).length||!S.grown2)out.push(id+': underground without tunnels');const k=ROUTE.findIndex(r=>r.scene===id),v=seamlessHubMap(k);if(!v.under)out.push(id+': its view isn’t underground');
+           for(const e of ADJ[k]){const w=seamlessHubMap(e.to);if(w.under)continue;const P=w.parts.find(q=>q.id===id);if(!P)continue;const g=S.grown2,cx=P.ox+(g.W||0)+(S.w-(g.W||0)-(g.E||0))/2,cz=P.oz+(g.S||0)+(S.h-(g.S||0)-(g.N||0))/2;
             const c=(w.stable.scenes.find(r=>r.id===id)||{}).clip;if(!c)continue;/* the point of the cave nearest the middle of the band: under rock */const px=clamp(cx,c[0]+.5,c[2]-.5),pz=clamp(cz,c[1]+.5,c[3]-.5);
             if(px>=P.ox+(g.W||0)&&px<P.ox+S.w-(g.E||0)&&pz>=P.oz+(g.S||0)&&pz<P.oz+S.h-(g.N||0)){const t=w.tiles[w.h-1-Math.floor(pz)][Math.floor(px)];if(!'rMP'.includes(t))out.push(ROUTE[e.to].scene+' sees into '+id+'’s cave ('+t+')')}}}
           let walks=0;for(const r of ROUTE){const S=GD.scenes[r.scene];for(const e of (S&&S.edgeExits)||[]){if(!(e.path&&e.path.length>1&&e.len>0))out.push(r.scene+' '+e.id+': no stored walk');else walks++}}
