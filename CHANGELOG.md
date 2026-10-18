@@ -22,3 +22,5 @@ kept aside in the browser).
 - Fixes: with Motion set to reduced, the camera snaps instead of gliding.
 - Under the hood: the game's and the Studio's code are ES modules, and the published game loads them as one file.
   The game needs a web server (opening index.html from disk no longer works at all).
+- Under the hood: the modules no longer put their names on `window` (the game and the Studio reach each other's
+  code through imports); for the console, add `?globals` to the address.

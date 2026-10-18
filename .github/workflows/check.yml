@@ -92,7 +92,7 @@ jobs:
         run: npm run lint
       - name: Game data (files, schemas, references)
         run: npm run check:data
-      - name: Modules (imports and the window bridge up to date)
+      - name: Modules (generated imports, hooks.js and log-names.js up to date; load order)
         run: npm run check:modules
       - name: Formatting
         run: npm run format:check
