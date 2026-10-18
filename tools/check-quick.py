@@ -2026,8 +2026,8 @@ def studio_opens(b):
     pg.on('pageerror', lambda e: errs.append(str(e))); pg.on('console', lambda m: errs.append(console_text(m)) if m.type == 'error' else None)
     try:
         pg.goto(base + '/studio/index.html'); pg.wait_for_selector('#ghTok', timeout=60000)
-        ok = pg.evaluate("[typeof openSection==='function',typeof GH==='object',typeof propLook==='function']")
-        if not all(ok): raise Exception(f'Studio scripts missing (openSection, GH, the shared renderer): {ok}')
+        ok = pg.evaluate("[typeof openSection==='function',typeof githubMode==='object',typeof propLook==='function']")
+        if not all(ok): raise Exception(f'Studio scripts missing (openSection, githubMode, the shared renderer): {ok}')
         shot(pg, 'studio-sign-in')
         if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
         return 'the Studio and the shared game scripts loaded; the GitHub sign-in is showing'
