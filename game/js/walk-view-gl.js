@@ -3762,6 +3762,10 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
   const x = walkView.x;
   x.setTransform(1, 0, 0, 1, 0, 0);
   x.clearRect(0, 0, rw, rh);
+  /* phase 13: the debug log's picture is taken from this layer, and speech can name a Billie (the buddy says its
+     nickname): in that frame speech is drawn after the picture */
+  const snapping = walkRenderer.snapReq && typeof debugLog !== 'undefined',
+    sayLater = [];
   if (!BT && !(walkView.opt.active && !walkView.opt.active())) {
     drawExitMarks(C, st, t);
     drawTapMark(C, t);
@@ -3769,8 +3773,10 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
     for (const l of labels) {
       if (l.k === 'enc') drawLevelTag(x, l.x, l.y, l.e);
       else if (l.k === 'bang') drawBubble(x, l.x, l.y, '!', l.col);
-      else if (l.k === 'say') drawSpeech(x, l.x, l.y, l.t, l.a);
-      else if (l.k === 'act' && l.y > rh * 0.1)
+      else if (l.k === 'say') {
+        if (snapping) sayLater.push(l);
+        else drawSpeech(x, l.x, l.y, l.t, l.a);
+      } else if (l.k === 'act' && l.y > rh * 0.1)
         drawLabelPill(
           x,
           l.x,
@@ -3799,6 +3805,7 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
       debugLog.shot = { t: debugLog.now(), error: String(e.message || e) };
     }
   }
+  for (const l of sayLater) drawSpeech(x, l.x, l.y, l.t, l.a);
   walkRenderer.frames++;
   const work = performance.now() - w0;
   walkView.slow = walkView.slow * 0.9 + work * 0.1;

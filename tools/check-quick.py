@@ -520,6 +520,30 @@ def go_scene(pg, node, sec=40):
     if f0 >= 0 and not until(pg, f'walkRenderer.frames>={f0 + 2}', 30): raise Exception(f'{pg.evaluate("walkView.id")} isn’t drawing (black screen)')
 
 
+def debug_picture_privacy(pg):
+    # phase 13: the debug log keeps a picture of the scene, and what the buddy says names the Billie, so in the frame that
+    # takes the picture speech is drawn after it (walk-view-gl.js). The buddy talks, the log takes its picture, and the
+    # order of drawing in that frame is read back
+    pg.evaluate("uiState.mq=[];uiState.modal=null;renderOverlay();uiState.tab='walk';render();0")
+    if not until(pg, 'walkView.ready&&walkRenderer.on&&!!worldBillies.bud', 40): raise Exception('no buddy in the walk view to test the debug picture with')
+    pg.evaluate("""window.__pq={ev:[],say:drawSpeech,snap:screenSnapshot,t:debugLog.shot&&debugLog.shot.t};
+      drawSpeech=(...a)=>{__pq.ev.push(['say',walkRenderer.frames]);return __pq.say(...a)};
+      screenSnapshot=(...a)=>{__pq.ev.push(['snap',walkRenderer.frames]);return __pq.snap(...a)};buddyTap();worldBillies.sayT=60;0""")
+    try:
+        f0 = pg.evaluate('walkRenderer.frames')
+        if not until(pg, f'walkRenderer.frames>{f0 + 1}', 30): raise Exception('the walk view stopped drawing')
+        pg.evaluate('debugLog.snap();0')
+        if not until(pg, 'walkRenderer.snapReq===0&&!!debugLog.shot&&debugLog.shot.t!==__pq.t', 30): raise Exception('the debug log took no picture')
+        f1 = pg.evaluate('walkRenderer.frames'); until(pg, f'walkRenderer.frames>{f1}', 30)
+        ev = pg.evaluate('__pq.ev')
+    finally:
+        pg.evaluate("drawSpeech=__pq.say;screenSnapshot=__pq.snap;0")
+    snap = next((f for k, f in ev if k == 'snap'), None)
+    frame = [k for k, f in ev if f == snap]
+    if 'say' not in frame: raise Exception(f'the buddy’s speech wasn’t drawn in the frame of the debug picture: {ev[-8:]}')
+    if frame.index('say') < frame.index('snap'): raise Exception('the debug picture shows what the buddy says (speech drawn before the picture was taken)')
+
+
 @step('Phone: opening, first battle, screens and a battle', 260)
 def phone_flow(b, base, R):
     errs = []; ctx, pg = open_game(b, base, 390, 844, True, errs)
@@ -553,6 +577,7 @@ def phone_flow(b, base, R):
         if wait_phase(pg) != 'choose': raise Exception('a wild battle never reached the move menu')
         shot(pg, 'phone-battle')
         pg.evaluate("stopTimers();activeBattle=null;battleStageStop();render();0")
+        debug_picture_privacy(pg)
         # phase 01: the owner tests on a phone and sends the exported debug log, so the export must keep working. Here the
         # game saves it as a download (nothing is sent anywhere); the file must be a JSON log
         with pg.expect_download(timeout=60000) as dl:
@@ -560,7 +585,7 @@ def phone_flow(b, base, R):
         d = dl.value; dlog = json.loads(Path(d.path()).read_text(encoding='utf-8'))
         if not isinstance(dlog, dict) or not dlog: raise Exception('the exported debug log is empty')
         if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
-        return f'the fall, Hazel, dressing room, starter, Blake’s first battle and the talk after, five screens, shop, battle, debug log ({len(json.dumps(dlog)) // 1024} KB)'
+        return f'the fall, Hazel, dressing room, starter, Blake’s first battle and the talk after, five screens, shop, battle, speech kept out of the debug picture, debug log ({len(json.dumps(dlog)) // 1024} KB)'
     finally:
         R['phoneErrors'] = errs[:10]; ctx.close()
 
