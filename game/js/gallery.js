@@ -7,7 +7,7 @@
 import { expose } from './test-globals.js';
 import { closeModal, provide, render, renderOv, settings, toast } from './hooks.js';
 import { U } from './game-state.js';
-import { GFX_DIALS, gfxDial } from './profile.js';
+import { GFX_DIALS, gfxDial } from './settings-screen.js';
 import { DIO, dioScene } from './walk-view.js';
 import { ENV } from './env.js';
 /* eslint-disable no-func-assign */
@@ -119,7 +119,7 @@ document.addEventListener('click', ev => {
     galleryPanel();
   }
 });
-/* the dial in the panel works like the one in Settings (profile.js listens for data-eng); keep the panel's value fresh */
+/* the dial in the panel works like the one in Settings (settings-screen.js listens for data-eng); keep the panel's value fresh */
 document.addEventListener('change', ev => {
   if (GAL.on && ev.target.dataset && ev.target.dataset.eng) setTimeout(galleryPanel, 0);
 });

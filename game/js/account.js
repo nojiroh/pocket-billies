@@ -28,7 +28,7 @@ import {
   setSaveHold,
 } from './game-state.js';
 import { cleanTrainer } from './trainer.js';
-import { applyPreferences, settingsRefresh } from './profile.js';
+import { applyPreferences, settingsRefresh } from './settings-screen.js';
 import { TITLE, titleStart } from './title.js';
 import { frInit } from './friends.js';
 /* eslint-disable no-func-assign */

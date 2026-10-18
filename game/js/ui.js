@@ -96,7 +96,7 @@ import {
 import { frameTask, userFps } from './frame.js';
 import { ART, artLoad, artURL, cnv, coinHTML, coinURL, eggHTML, uiIco } from './art.js';
 import { TR_PRESETS, cleanLook, cleanTrainer, humanHTML, owHTMLsheet, portraitHTML, trainerLook } from './trainer.js';
-import { applyPreferences, settingsHTML } from './profile.js';
+import { applyPreferences, settingsHTML } from './settings-screen.js';
 import { drPortrait, openDressing } from './dressing.js';
 import { bustHTML, sprHTML } from './rig.js';
 import { EASE, SC, camHome, scFocus, scTargets } from './battle-stage.js';

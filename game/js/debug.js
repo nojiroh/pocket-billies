@@ -32,7 +32,7 @@ import {
 } from './game-state.js';
 import { FRAME, frameCount, frameTask, userFps } from './frame.js';
 import { uiIco } from './art.js';
-import { applyPreferences, exportSave } from './profile.js';
+import { applyPreferences, exportSave } from './settings-screen.js';
 import { SC, scResize, scStop } from './battle-stage.js';
 import { dioScene } from './walk-view.js';
 import { EGL } from './engine/core.js';
