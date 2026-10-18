@@ -150,6 +150,19 @@ To check when it lands (verify, these are from a first look):
 - The in-game full test's step "Battle on a painted stage" (self-test.js) and the painted-stage branch in its battle
   check go; the quick check and smoke must not ask for the painted stage.
 
+## The new opening (owner, 2026-10-18)
+| Question | Answer |
+|---|---|
+| Order of the opening | Hazel meets you; **Blake shows up before you have a starter** and wants a battle; **Hazel fights him herself, without a Billie** (a gag), in the battle screen, absurdly overpowered: his Billie goes down in one hit. You only watch and tap to go on. **Then** you pick your starter, Blake takes the one that beats yours, and his rival battle follows as today |
+| Hazel | Stays Professor Hazel, she/her |
+| Tutorial | None. In Blake's rival battle (your first real battle) Hazel only says something meta ("you probably know how these games work") and gives **bad tips about type advantages**, comically obtrusive (in your face, over the action, hard to ignore) |
+| Clicking too easily | She comments when you **skip her lines fast** (several in a row) and when you **pick moves instantly** |
+| Tapping Hazel | During the starter pick: **biased hot takes** about the starter you're looking at; more taps give other lines, then annoyed ones |
+| Fallback starter list | **Removed**, with the whole step-by-step intro it ends (stills, Hazel's lines, trainer, pick). If the 3D opening fails, a "Try again" screen like "This device can't run Pocket Billies" |
+| Starter pick card | Redone in the new look (06-2) |
+| Bots | The card and details sheet are shared by Billies and bots (parts, sizes, weight); the robot builder screen stays in 06-3 |
+| Order | Screens first (06-2), then the opening (06-2b) |
+
 ## Sessions
 
 Order follows the roadmap's priority on Billies and robots: the screens they need come first.
@@ -157,7 +170,8 @@ Order follows the roadmap's priority on Billies and robots: the screens they nee
 | Session | Does | Ends with |
 |---|---|---|
 | **06-1** ✓ (PR #24) | tokens.css, motion.css, Lit, button, panel, sheet, pill, toast; the new message rules (toasts, inbox, choices wait for the world); bottom bar on the tokens | Done 2026-10-18; see docs/HANDOFF.md |
-| **06-2** | Billie card, details sheet with parts, sizes, weight and the Prime badge (phase 16), Team screen, starter pick | Team and details on the new look; UI tests for them |
+| **06-2** | A card and details sheet shared by Billies and bots (parts, sizes, weight, the Prime badge), Team screen, the starter pick card redone, the fallback starter list and step-by-step intro removed, the old money toasts trimmed | Team, details and the pick on the new look; UI tests for them |
+| **06-2b** | The new opening (section above): Hazel fights Blake herself, then the pick (tap Hazel for hot takes), then Blake's battle with her bad, obtrusive tips and her "too fast" comments | The opening plays through; the smoke phone flow follows it |
 | **06-3** | Dialogue box with portrait slot, battle menus and battle text, Bag, the robot builder shell (phase 17); remove the painted battle stage and the classic HUD (section above) | Battle reads one line at a time; every battle on the 3D stage, rooms included |
 | **06-4** | Guide, Trainer card, Settings, shops, dressing room, friends; Studio gallery; delete the emptied CSS; accessibility pass | All screens moved, no innerHTML with untrusted values, tag `phase-06-done` |
 
