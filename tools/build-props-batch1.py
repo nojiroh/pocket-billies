@@ -471,34 +471,148 @@ def roses_recipe():
 
 
 # ---------------------------------------------------------------- Granny Juniper's cottage
+# the airship's palette (tools/build-airship.py): cream, copper, verdigris, honey wood, brass, iron, lamp yellow
+AIR = dict(cream='#F2DCA0', copper='#CE7C4C', verd='#62B098', wood='#B27648', dwood='#84543C', plank='#CC9660',
+           iron='#465470', lamp='#FFDE78', stone='#AAA6B4', brass='#E8C060', straw='#D9B26A', moss='#86B45A',
+           glass='#5E86A8')
+
+
+def disc(x, y, z, n, r, depth, col, tex='plain', name='', sides=12):
+    """A round thing facing along n (a door, a porthole): a short limb from the surface out along its normal."""
+    l = math.sqrt(sum(v * v for v in n)) or 1
+    n = [v / l for v in n]
+    return limb((x - n[0] * 0.02, y - n[1] * 0.02, z - n[2] * 0.02), (x + n[0] * depth, y + n[1] * depth, z + n[2] * depth),
+                r, r, col, tex, name, sides)
+
+
+def porthole(L, x, y, z, n, r, name):
+    """A copper-ringed round window with a brass cross, as on the airship's cabin."""
+    L.append(disc(x, y, z, n, r, 0.07, AIR['copper'], 'metal', name + ' frame', 12))
+    L.append(disc(x, y, z, n, r * 0.74, 0.1, AIR['glass'], 'plain', name + ' glass', 12))
+    l = math.sqrt(sum(v * v for v in n)) or 1
+    n = [v / l for v in n]
+    ox, oy, oz = x + n[0] * 0.11, y + n[1] * 0.11, z + n[2] * 0.11
+    side = (n[1], -n[0], 0) if abs(n[2]) < 0.9 else (1, 0, 0)
+    sl = math.hypot(*side) or 1
+    side = [v / sl for v in side]
+    up = (n[1] * side[2] - n[2] * side[1], n[2] * side[0] - n[0] * side[2], n[0] * side[1] - n[1] * side[0])
+    for d in (side, up):
+        L.append(limb((ox - d[0] * r * 0.74, oy - d[1] * r * 0.74, oz - d[2] * r * 0.74),
+                      (ox + d[0] * r * 0.74, oy + d[1] * r * 0.74, oz + d[2] * r * 0.74), 0.018, 0.018, AIR['brass'], 'metal', name + ' cross', 4))
+
+
 def cottage_recipe():
-    P = 'cottage_juniper'
-    WALL, BASE, TRIM, ROOF, CHIM, BRICK = '#F2DCA0', '#AAA6B4', '#B4703E', '#7EB254', '#9C98A8', '#B5603F'
-    w, d = 5.25, 3.2
-    L = [box(0, 0, 0, w + 0.15, d + 0.15, 0.2, BASE, 'stone', 'base'),
-         box(0, 0, 0.2, w, d, 2.26, WALL, 'grain', 'walls'),
-         box(0, 0, 2.38, w + 0.36, d + 0.36, 0.12, TRIM, 'wood', 'eaves board'),
-         {'k': 'dome', 'x': 0, 'y': 0, 'z': 2.48, 'r': 3.05, 'ry': 2.15, 'h': 2.45, 'sides': 22, 'rings': 6, 'lump': 0.04,
-          'col': ROOF, 'tex': 'leaves', 'name': 'mossy roof'},
-         box(1.82, 0.35, 3.4, 0.55, 0.55, 2.4, CHIM, 'stone', 'chimney'),
-         box(1.82, 0.35, 5.8, 0.72, 0.72, 0.12, BRICK, 'plain', 'chimney cap'),
-         {'k': 'cone', 'x': 1.82, 'y': 0.35, 'z': 5.92, 'r': 0.36, 'r1': 0.04, 'h': 0.24, 'sides': 4, 'col': BRICK, 'tex': 'plain', 'name': 'chimney hat'},
-         box(-1.75, 0.25, 4.1, 0.42, 0.42, 1.0, BRICK, 'stone', 'stove pipe')]
-    for sx in (-1, 1):  # corner posts
-        L.append(box(sx * (w / 2 - 0.05), -d / 2 + 0.05, 0.2, 0.22, 0.22, 2.2, TRIM, 'wood', 'corner post'))
-    front = -d / 2 - 0.16  # out from the wall: a picture's depth is coarser than the model's, nearer it hides
-    for name, b in (('door', (54, 139, 105, 188)), ('round window', (28, 127, 53, 153)), ('window', (117, 135, 155, 172)), ('sign', (102, 113, 122, 134))):
-        x0, y0, x1, y1 = b
-        x, z = at(P, (x0 + x1) / 2, y1 - 1)
-        L.append(img(decal(P, b, 'cottage_' + name.replace(' ', '_'), clear=(WALL,)), x, front, z, face='fixed', name=name))
-    # the skylights on the roof, set into its slope toward the camera
-    for i, b in enumerate(((60, 65, 77, 78), (113, 68, 129, 81))):
-        x0, y0, x1, y1 = b
-        x, z = at(P, (x0 + x1) / 2, y1 - 1)
-        k = min(0.95, (z + (y1 - y0) / PPM / 2 - 2.48) / 2.45)  # where the dome's front is at that height
-        L.append(img(decal(P, b, f'cottage_skylight_{i}', clear=('#7EB254', '#A5C676', '#628151')), x,
-                     -(2.15 * math.sqrt(1 - k * k) + 0.16), z, face='fixed', name='skylight'))
-    return {'ppm': PPM, 'cel': 0.7, 'layers': L}
+    """Granny Juniper's cottage in the airship's manner: few polygons and a strong, slightly chunky silhouette; the
+    building sheet's 32 px materials (stone footing, plaster, plank doors, thatch, moss, metal seams); the airship's
+    warm palette (honey wood, copper going verdigris, brass, lamp-lit glass). Everything is modelled, round door,
+    portholes and roof windows included, all round the house; only the shop sign stays a drawing."""
+    P, A = 'cottage_juniper', AIR
+    w, d, wall_top = 5.0, 3.1, 2.4
+    fy = -d / 2  # the front wall
+    L = [box(0, 0, 0, w + 0.3, d + 0.3, 0.24, A['stone'], 'stone', 'footing'),
+         box(0, 0, 0.24, w, d, wall_top - 0.24, A['cream'], 'grain', 'walls'),
+         box(0, fy - 0.25, 0, 1.3, 0.5, 0.12, A['stone'], 'stone', 'door step')]
+    for sx in (-1, 1):  # honey-wood corner posts and a wall plate under the roof
+        for sy in (-1, 1):
+            L.append(box(sx * (w / 2), sy * (d / 2), 0.24, 0.2, 0.2, wall_top - 0.24, A['wood'], 'wood', 'corner post'))
+    L.append(box(0, 0, wall_top - 0.04, w + 0.24, d + 0.24, 0.16, A['wood'], 'wood', 'wall plate'))
+    # the roof: a thatch skirt, then the mossy dome (few sides: it reads low-poly, like the balloon)
+    rz = wall_top + 0.1
+    L.append({'k': 'cone', 'x': 0, 'y': 0, 'z': rz, 'r': 3.2, 'ry': 2.3, 'r1': 2.75, 'h': 0.34, 'sides': 16,
+              'col': A['straw'], 'tex': 'hay', 'name': 'thatch skirt'})
+    dz, drx, dry, dh = rz + 0.26, 2.9, 2.08, 1.95
+    L.append({'k': 'dome', 'x': 0, 'y': 0, 'z': dz, 'r': drx, 'ry': dry, 'h': dh, 'sides': 16, 'rings': 5, 'lump': 0.05,
+              'col': A['moss'], 'tex': 'leaves', 'name': 'mossy roof'})
+
+    def on_dome(x, k):
+        """The point on the dome's front at across x and k of its height, and its outward normal."""
+        zz = dz + dh * k
+        y = -dry * math.sqrt(max(0.02, 1 - (x / drx) ** 2 - k * k))
+        return (x, y, zz), (x / drx ** 2, y / dry ** 2, (zz - dz) / dh ** 2)
+
+    for i, x in enumerate((-0.95, 0.95)):  # two roof portholes
+        (px, py, pz), n = on_dome(x, 0.42)
+        porthole(L, px, py, pz, n, 0.3, f'roof window {i + 1}')
+    # the stone chimney with a copper cap gone green, and the copper stove pipe
+    cx, cy = 1.7, 0.4
+    L += [box(cx, cy, dz + 0.9, 0.6, 0.6, 2.2, A['stone'], 'stone', 'chimney'),
+          box(cx, cy, dz + 3.1, 0.76, 0.76, 0.12, A['copper'], 'metal', 'chimney rim'),
+          limb((cx, cy, dz + 3.22), (cx, cy, dz + 3.42), 0.03, 0.03, A['iron'], 'metal', 'cap rod', 4),
+          {'k': 'cone', 'x': cx, 'y': cy, 'z': dz + 3.38, 'r': 0.5, 'r1': 0.04, 'h': 0.3, 'sides': 4, 'col': A['verd'],
+           'tex': 'metal', 'name': 'chimney hat'}]
+    px_, py_ = -1.55, 0.55
+    L += [{'k': 'cyl', 'x': px_, 'y': py_, 'z': dz + 0.8, 'r': 0.17, 'h': 1.5, 'sides': 8, 'col': A['copper'], 'tex': 'metal',
+           'name': 'stove pipe'},
+          {'k': 'cyl', 'x': px_, 'y': py_, 'z': dz + 1.4, 'r': 0.2, 'h': 0.08, 'sides': 8, 'col': A['brass'], 'tex': 'metal',
+           'name': 'pipe band'},
+          {'k': 'cone', 'x': px_, 'y': py_, 'z': dz + 2.3, 'r': 0.32, 'r1': 0.03, 'h': 0.24, 'sides': 8, 'col': A['verd'],
+           'tex': 'metal', 'name': 'pipe hat'}]
+    # a brass weathervane on top
+    tz = dz + dh
+    L += [limb((0, 0, tz - 0.1), (0, 0, tz + 0.75), 0.03, 0.025, A['iron'], 'metal', 'vane pole', 5),
+          {'k': 'sphere', 'x': 0, 'y': 0, 'z': tz + 0.66, 'r': 0.09, 'sides': 8, 'rings': 4, 'col': A['brass'], 'tex': 'metal',
+           'name': 'vane ball'},
+          box(0, 0, tz + 0.5, 0.7, 0.04, 0.06, A['copper'], 'metal', 'vane arrow'),
+          {'k': 'cone', 'x': 0.36, 'y': 0, 'z': tz + 0.45, 'r': 0.09, 'r1': 0, 'h': 0.16, 'sides': 3, 'col': A['copper'],
+           'tex': 'metal', 'name': 'vane tip'}]
+    # the round door: a dark frame, planks clipped to the circle (stepped tops, chunky), iron hinges, a brass knob
+    dx, dr = -0.6, 0.78
+    dcz = 0.24 + dr * 0.82
+    L.append(disc(dx, fy, dcz, (0, -1, 0), dr + 0.1, 0.05, A['dwood'], 'wood', 'door frame', 14))
+    pw = 0.26
+    for i in range(6):
+        x0 = dx - dr + pw * i + pw / 2
+        if abs(x0 - dx) > dr: continue
+        hh = math.sqrt(max(0, dr * dr - (x0 - dx) ** 2))
+        bot = max(0.24, dcz - hh)
+        L.append(box(x0, fy - 0.07, bot, pw - 0.03, 0.05, dcz + hh - bot, A['plank'], 'wood', 'door plank'))
+    for hz in (dcz - 0.35, dcz + 0.3):
+        L.append(box(dx - 0.12, fy - 0.1, hz, dr * 1.5, 0.03, 0.07, A['iron'], 'metal', 'hinge'))
+    L.append({'k': 'sphere', 'x': r2(dx + dr * 0.6), 'y': r2(fy - 0.13), 'z': r2(dcz - 0.06), 'r': 0.06, 'sides': 6, 'rings': 3,
+              'col': A['brass'], 'tex': 'metal', 'name': 'door knob'})
+    # portholes: one by the door, one on each side wall, one at the back
+    porthole(L, -1.85, fy, 1.6, (0, -1, 0), 0.38, 'front porthole')
+    porthole(L, -w / 2, 0, 1.45, (-1, 0, 0), 0.4, 'left porthole')
+    porthole(L, w / 2, 0, 1.45, (1, 0, 0), 0.4, 'right porthole')
+    porthole(L, 0.8, d / 2, 1.5, (0, 1, 0), 0.4, 'back porthole')
+    # the square window: wooden frame and mullions, glass, and a flower box beneath it
+    wx, wz, ww, wh = 1.2, 1.25, 1.15, 1.05
+    L.append(box(wx, fy - 0.03, wz - wh / 2, ww, 0.06, wh, A['glass'], 'plain', 'window glass'))
+    for bx, bw, bz, bh in ((wx - ww / 2, 0.1, wz - wh / 2, wh), (wx + ww / 2, 0.1, wz - wh / 2, wh), (wx, ww + 0.1, wz - wh / 2 - 0.05, 0.1),
+                           (wx, ww + 0.1, wz + wh / 2 - 0.05, 0.1), (wx, 0.06, wz - wh / 2, wh), (wx, ww, wz - 0.03, 0.06)):
+        L.append(box(bx, fy - 0.08, bz, bw, 0.08, bh, A['wood'], 'wood', 'window frame'))
+    L.append(box(wx, fy - 0.2, wz - wh / 2 - 0.3, ww + 0.2, 0.3, 0.24, A['dwood'], 'wood', 'flower box'))
+    rng = np.random.default_rng(7)
+    for i in range(7):
+        x = wx - ww / 2 + 0.05 + (ww - 0.1) * i / 6
+        L.append({'k': 'sphere', 'x': r2(x), 'y': r2(fy - 0.22), 'z': r2(wz - wh / 2 - 0.1), 'r': 0.1, 'sides': 6, 'rings': 3,
+                  'lump': 0.3, 'col': '#5E9A48', 'tex': 'leaves', 'name': 'leaves'})
+        L.append({'k': 'sphere', 'x': r2(x + rng.random() * 0.06), 'y': r2(fy - 0.28), 'z': r2(wz - wh / 2 + 0.0), 'r': 0.055,
+                  'sides': 5, 'rings': 2, 'col': ('#E87EA8', A['lamp'], '#F4F0E8')[i % 3], 'tex': 'plain', 'name': 'flower'})
+    # the shop sign: the drawing kept (its lettering is better drawn), on a modelled board hung from an iron bracket
+    sx_, sz_ = 0.3, wall_top - 0.42
+    L += [limb((sx_, fy, wall_top - 0.12), (sx_, fy - 0.42, wall_top - 0.12), 0.025, 0.025, A['iron'], 'metal', 'sign bracket', 4),
+          limb((sx_ - 0.22, fy - 0.38, wall_top - 0.12), (sx_ - 0.22, fy - 0.38, sz_ + 0.36), 0.01, 0.01, A['iron'], 'metal', 'sign chain', 4),
+          limb((sx_ + 0.22, fy - 0.38, wall_top - 0.12), (sx_ + 0.22, fy - 0.38, sz_ + 0.36), 0.01, 0.01, A['iron'], 'metal', 'sign chain', 4),
+          box(sx_, fy - 0.38, sz_ - 0.3, 0.66, 0.06, 0.66, A['wood'], 'wood', 'sign board')]
+    L.append(img(decal(P, (102, 113, 122, 134), 'cottage_sign', clear=(A['cream'],)), sx_, fy - 0.43, sz_ - 0.3,
+                 face='fixed', s=round(PPM / 20 * 0.62, 3), name='sign'))
+    # a little lamp by the door, its glass lit when the lamps come on
+    lx = dx + dr + 0.35
+    L += [limb((lx, fy, 1.95), (lx, fy - 0.3, 1.95), 0.02, 0.02, A['iron'], 'metal', 'lamp arm', 4),
+          box(lx, fy - 0.3, 1.62, 0.2, 0.2, 0.06, A['iron'], 'metal', 'lamp base'),
+          {'k': 'cone', 'x': lx, 'y': r2(fy - 0.3), 'z': 1.94, 'r': 0.15, 'r1': 0.03, 'h': 0.1, 'sides': 4, 'col': A['verd'],
+           'tex': 'metal', 'name': 'lamp roof'},
+          img(glass_sprite(), lx, fy - 0.3, 1.66, s=0.55, glow=1, recv=0, sway=0, name='lamp glass')]
+    return {'ppm': PPM, 'cel': 0.7, 'layers': sorted(L, key=lambda l: l['k'] == 'img')}
+
+
+def cottage_fx():
+    """Its lights and smoke, in pixels from its base point at 32 px to the metre (x right, y up as negative)."""
+    px = lambda m: round(m * PPM)
+    return [{'k': 'window', 'x': px(1.2), 'y': -px(1.25)}, {'k': 'window', 'x': px(-1.85), 'y': -px(1.6)},
+            {'k': 'window', 'x': px(-0.95), 'y': -px(3.6)}, {'k': 'window', 'x': px(0.95), 'y': -px(3.6)},
+            {'k': 'glow', 'x': px(0.53), 'y': -px(1.75)}, {'k': 'smoke', 'x': px(1.7), 'y': -px(6.0)}]
 
 
 # ---------------------------------------------------------------- the lantern post: a model with a glowing glass
@@ -633,7 +747,8 @@ def add_catalogue(C, B):
         pic(C, 'mushroom_blue', model=B['mushrooms'], swap={CAP: '#5492EC', SPOT: '#C8DCF8', STEM: '#B9AEDC'}),
     ])
     C['next_cottage_juniper'] = entry(C, 'cottage_juniper', name='Beekeeper’s cottage (new)', model=B['cottage'], ppm=PPM,
-                                      box=[5.3, 3.3], vary={'rot': 0, 'lean': 0})
+                                      box=[5.3, 3.4], door={'x': -19, 'y': 0}, fx=cottage_fx(), vary={'rot': 0, 'lean': 0})
+    C['next_cottage_juniper'].pop('build', None)  # a model now, not a picture made into a building
     C['next_lantern'] = entry(C, 'lantern', name='Lantern post (new)', model=B['lantern'], ppm=PPM, vary={'rot': 0, 'lean': 0})
     C['next_laundry_line'] = entry(C, 'laundry_line', name='Laundry line (new)', model=B['laundry'], ppm=PPM, vary={'rot': 0, 'lean': 0})
     # stays flat on purpose: only redrawn at the new scale, its three shapes as one prop

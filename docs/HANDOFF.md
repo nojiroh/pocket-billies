@@ -37,6 +37,13 @@ effects when looking at props.
   the Studio (GitHub stand-in): the Props list and filter, the Leaves part lists both oak pictures, painting a leaf
   picture marks it changed and bumps its version. Not done: a screenshot of the Props section with the turntable
   running (the software renderer is too slow for it), the smoke check after this part.
+- Cottage redone in the airship's manner (owner's request): fully modelled, few polygons, the sheet's materials and
+  the airship's palette. Stone footing, plaster walls with honey-wood corner posts and wall plate, a thatch skirt under
+  a 16-sided mossy dome, a round plank door (planks stepped to the circle, iron hinges, brass knob), copper-ringed
+  portholes with brass crosses (front, both sides, back, two on the roof), a square window with frame, mullions and a
+  flower box, a stone chimney with a verdigris hat, a copper stove pipe, a brass weathervane, a door lamp that lights
+  with the lamps. Only the shop sign stays a drawing. Its window, lamp and smoke effects are placed for the new model,
+  and it no longer carries the old picture's building plan. Checked with one low-resolution shot.
 - Variants count: the 11 new props have 22 looks in all: beech 1, oak 4 (oak, spreading, sapling, autumn), great oak
   1, wild roses 1, round bush 3, rocks 5 (3 shapes, mossy, snowy), mushrooms 3, cottage 1, lantern 1, washing line 1,
   tall grass 3.
