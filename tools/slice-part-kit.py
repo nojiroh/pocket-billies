@@ -90,6 +90,55 @@ def to_game_scale(img):
     return Image.fromarray(out, 'RGBA')
 
 
+def opaque(img):
+    a = np.array(img)[..., 3] > 0
+    ys, xs = np.nonzero(a)
+    return a, xs, ys
+
+
+def row_span(a, y):
+    """the leftmost and rightmost filled pixel on row y (or the nearest filled row)"""
+    for dy in range(0, a.shape[0]):
+        for yy in (y - dy, y + dy):
+            if 0 <= yy < a.shape[0] and a[yy].any():
+                xs = np.nonzero(a[yy])[0]
+                return xs.min(), xs.max(), yy
+    return 0, a.shape[1] - 1, y
+
+
+def auto_sockets(kind, slot, img, view):
+    """where this part connects, worked out from its outline (fractions of the picture)"""
+    a, xs, ys = opaque(img)
+    w, h = img.size
+    top, bot = ys.min(), ys.max()
+    f = lambda x, y: [round(x / w, 3), round(y / h, 3)]
+    if slot == 'body' and kind in ('torso',):
+        ht = bot - top
+        nx = xs[ys <= top + 2].mean()
+        sy = top + ht * 0.2
+        l, r, sy = row_span(a, round(sy))
+        hy = top + ht * 0.86
+        hl, hr, hy = row_span(a, round(hy))
+        hc, hw = (hl + hr) / 2, (hr - hl) / 2
+        ty_ = top + ht * 0.8
+        tl, tr, ty_ = row_span(a, round(ty_))
+        return {
+            'neck': f(nx, top + 1),
+            'shoulderL': f(l + 3, sy), 'shoulderR': f(r - 3, sy),
+            'hipL': f(hc - hw * 0.5, hy), 'hipR': f(hc + hw * 0.5, hy),
+            # from the front the tail grows behind the hip at the side; from behind, from the middle of the rump
+            'tail': f(tr - 4, ty_) if view == 'front' else f((tl + tr) / 2, top + ht * 0.9),
+        }
+    if slot in ('front', 'back') or kind in ('arm', 'leg', 'wing', 'frontfin', 'backfin', 'foot'):
+        sel = ys <= top + 3
+        sel_b = ys >= bot - 3
+        return {'joint': f(xs[sel].mean(), top), 'end': f(xs[sel_b].mean(), bot)}
+    if slot == 'head' and kind == 'head':
+        sel = ys >= bot - 2
+        return {'chin': f(xs[sel].mean(), bot - 1)}
+    return {}
+
+
 def main():
     with open(f'{SRC}/kits.json') as f:
         cfg = json.load(f)
@@ -106,7 +155,10 @@ def main():
                 e = manifest.setdefault(pid, {'kit': kit['name'], 'animal': animal, 'kind': kind,
                                               'slot': cfg['slots'][kind], 'pivot': cfg['pivots'][kind],
                                               'size': 'M', 'views': {}})
-                e['views'][view] = {'file': f'next/parts/{view}/{pid}.png', 'w': small.size[0], 'h': small.size[1]}
+                sk = auto_sockets(kind, cfg['slots'][kind], small, view)
+                sk.update((cfg.get('sockets', {}).get(pid, {}) or {}).get(view, {}))
+                e['views'][view] = {'file': f'next/parts/{view}/{pid}.png', 'w': small.size[0], 'h': small.size[1],
+                                    'sockets': sk}
     with open(f'{ROOT}/parts.json', 'w') as f:
         json.dump({'note': 'Placeholder part kits, phase 16. Made by tools/slice-part-kit.py from '
                            'tools/art-source/part-kit. Do not edit by hand.', 'parts': manifest}, f, indent=1)

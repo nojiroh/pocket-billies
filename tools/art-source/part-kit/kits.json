@@ -21,23 +21,208 @@
   }
  ],
  "slots": {
-  "head": "head", "ear": "head-extra", "crest": "head-extra", "dorsal": "head-extra",
+  "head": "head",
+  "ear": "head-extra",
+  "crest": "head-extra",
+  "dorsal": "head-extra",
   "torso": "body",
-  "arm": "front", "wing": "front", "frontfin": "front",
-  "leg": "back", "foot": "back", "backfin": "back",
-  "tail": "signature", "tailfin": "signature",
-  "horn": "head-extra", "spikes": "signature", "mane": "signature", "shell": "body-extra",
-  "ruff": "body-extra", "plume": "head-extra", "crown": "head-extra",
-  "sail": "signature", "spike": "head-extra", "scales": "body-extra", "lure": "head-extra"
+  "arm": "front",
+  "wing": "front",
+  "frontfin": "front",
+  "leg": "back",
+  "foot": "back",
+  "backfin": "back",
+  "tail": "signature",
+  "tailfin": "signature",
+  "horn": "head-extra",
+  "spikes": "signature",
+  "mane": "signature",
+  "shell": "body-extra",
+  "ruff": "body-extra",
+  "plume": "head-extra",
+  "crown": "head-extra",
+  "sail": "signature",
+  "spike": "head-extra",
+  "scales": "body-extra",
+  "lure": "head-extra"
  },
  "pivots": {
-  "head": [0.5, 0.92], "ear": [0.5, 0.95], "crest": [0.5, 0.95], "dorsal": [0.5, 0.95],
+  "head": [0.5, 0.92],
+  "ear": [0.5, 0.95],
+  "crest": [0.5, 0.95],
+  "dorsal": [0.5, 0.95],
   "torso": [0.5, 0.5],
-  "arm": [0.5, 0.08], "wing": [0.85, 0.08], "frontfin": [0.15, 0.1],
-  "leg": [0.5, 0.1], "foot": [0.5, 0.05], "backfin": [0.3, 0.05],
-  "tail": [0.1, 0.5], "tailfin": [0.05, 0.5],
-  "horn": [0.5, 0.95], "spikes": [0.5, 0.95], "mane": [0.5, 0.6], "shell": [0.5, 0.6],
-  "ruff": [0.5, 0.2], "plume": [0.5, 0.95], "crown": [0.5, 0.95],
-  "sail": [0.2, 0.95], "spike": [0.5, 0.95], "scales": [0.5, 0.5], "lure": [0.1, 0.95]
+  "arm": [0.5, 0.08],
+  "wing": [0.85, 0.08],
+  "frontfin": [0.15, 0.1],
+  "leg": [0.5, 0.1],
+  "foot": [0.5, 0.05],
+  "backfin": [0.3, 0.05],
+  "tail": [0.1, 0.5],
+  "tailfin": [0.05, 0.5],
+  "horn": [0.5, 0.95],
+  "spikes": [0.5, 0.95],
+  "mane": [0.5, 0.6],
+  "shell": [0.5, 0.6],
+  "ruff": [0.5, 0.2],
+  "plume": [0.5, 0.95],
+  "crown": [0.5, 0.95],
+  "sail": [0.2, 0.95],
+  "spike": [0.5, 0.95],
+  "scales": [0.5, 0.5],
+  "lure": [0.1, 0.95]
+ },
+ "_sockets_help": "Where parts connect, as fractions of the picture (x right, y down). The slicer works out a torso's neck, shoulders, hips and tail from its outline and a limb's joint from its top rows; a tail's base and tip are given here, per view (the back views of the kit are drawn mirrored). Anything listed here replaces what the slicer works out.",
+ "sockets": {
+  "fox_tail": {
+   "front": {
+    "base": [0.78, 0.25],
+    "tip": [0.14, 0.85]
+   },
+   "back": {
+    "base": [0.22, 0.25],
+    "tip": [0.86, 0.85]
+   }
+  },
+  "cat_tail": {
+   "front": {
+    "base": [0.16, 0.86],
+    "tip": [0.62, 0.3]
+   },
+   "back": {
+    "base": [0.16, 0.86],
+    "tip": [0.62, 0.3]
+   }
+  },
+  "reptile_tail": {
+   "front": {
+    "base": [0.08, 0.7],
+    "tip": [0.94, 0.1]
+   },
+   "back": {
+    "base": [0.92, 0.82],
+    "tip": [0.06, 0.12]
+   }
+  },
+  "shark_tailfin": {
+   "front": {
+    "base": [0.06, 0.5],
+    "tip": [0.95, 0.5]
+   },
+   "back": {
+    "base": [0.06, 0.5],
+    "tip": [0.95, 0.5]
+   }
+  },
+  "chick_tail": {
+   "front": {
+    "base": [0.5, 0.08],
+    "tip": [0.5, 0.95]
+   },
+   "back": {
+    "base": [0.5, 0.08],
+    "tip": [0.5, 0.95]
+   }
+  },
+  "duck_tail": {
+   "front": {
+    "base": [0.5, 0.08],
+    "tip": [0.5, 0.95]
+   },
+   "back": {
+    "base": [0.5, 0.08],
+    "tip": [0.5, 0.95]
+   }
+  },
+  "owl_tail": {
+   "front": {
+    "base": [0.5, 0.08],
+    "tip": [0.5, 0.95]
+   },
+   "back": {
+    "base": [0.5, 0.08],
+    "tip": [0.5, 0.95]
+   }
+  },
+  "sparrow_tail": {
+   "front": {
+    "base": [0.5, 0.08],
+    "tip": [0.5, 0.95]
+   },
+   "back": {
+    "base": [0.5, 0.08],
+    "tip": [0.5, 0.95]
+   }
+  },
+  "eagle_tail": {
+   "front": {
+    "base": [0.5, 0.08],
+    "tip": [0.5, 0.95]
+   },
+   "back": {
+    "base": [0.5, 0.08],
+    "tip": [0.5, 0.95]
+   }
+  },
+  "hawk_tail": {
+   "front": {
+    "base": [0.5, 0.08],
+    "tip": [0.5, 0.95]
+   },
+   "back": {
+    "base": [0.5, 0.08],
+    "tip": [0.5, 0.95]
+   }
+  },
+  "goldfish_tailfin": {
+   "front": {
+    "base": [0.06, 0.5],
+    "tip": [0.95, 0.5]
+   },
+   "back": {
+    "base": [0.06, 0.5],
+    "tip": [0.95, 0.5]
+   }
+  },
+  "carp_tailfin": {
+   "front": {
+    "base": [0.06, 0.5],
+    "tip": [0.95, 0.5]
+   },
+   "back": {
+    "base": [0.06, 0.5],
+    "tip": [0.95, 0.5]
+   }
+  },
+  "koi_tailfin": {
+   "front": {
+    "base": [0.06, 0.5],
+    "tip": [0.95, 0.5]
+   },
+   "back": {
+    "base": [0.06, 0.5],
+    "tip": [0.95, 0.5]
+   }
+  },
+  "piranha_tailfin": {
+   "front": {
+    "base": [0.06, 0.5],
+    "tip": [0.95, 0.5]
+   },
+   "back": {
+    "base": [0.06, 0.5],
+    "tip": [0.95, 0.5]
+   }
+  },
+  "betta_tailfin": {
+   "front": {
+    "base": [0.06, 0.5],
+    "tip": [0.95, 0.5]
+   },
+   "back": {
+    "base": [0.06, 0.5],
+    "tip": [0.95, 0.5]
+   }
+  }
  }
 }
