@@ -6,7 +6,7 @@
    leaves in autumn, frost in winter.
    Settings → Time of day / Weather / Season can pin any of them. Billionaires notice too: some come out at night,
    others in the rain (rules.env in the game data, editable in the Studio).
-   The renderer reads environment through envFrame() once a frame; nothing here touches WebGL. */
+   The renderer reads environment through environmentFrame() once a frame; nothing here touches WebGL. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { RM, RULES, S, SP, provide, sceneIdAt } from './hooks.js';
@@ -24,35 +24,35 @@ expose({
   WEATHER_LOOKS: [() => WEATHER_LOOKS],
   WEATHER_NAMES: [() => WEATHER_NAMES],
   WEATHER_SKY_PALETTES: [() => WEATHER_SKY_PALETTES],
-  envClimate: [() => envClimate, v => (envClimate = v)],
-  envFactors: [() => envFactors, v => (envFactors = v)],
-  envForecast: [() => envForecast, v => (envForecast = v)],
-  envFrame: [() => envFrame, v => (envFrame = v)],
-  envHash: [() => envHash, v => (envHash = v)],
-  envHere: [() => envHere, v => ((envHere = v), provide({ envHere }))],
-  envHint: [() => envHint, v => (envHint = v)],
-  envHistory: [() => envHistory, v => (envHistory = v)],
-  envHour: [() => envHour, v => (envHour = v)],
-  envIcon: [() => envIcon, v => (envIcon = v)],
-  envLabel: [() => envLabel, v => (envLabel = v)],
-  envLikes: [() => envLikes, v => (envLikes = v)],
-  envLitFrac: [() => envLitFrac, v => (envLitFrac = v)],
-  envMixHex: [() => envMixHex, v => (envMixHex = v)],
-  envOdds: [() => envOdds, v => ((envOdds = v), provide({ envOdds }))],
-  envPrefs: [() => envPrefs, v => (envPrefs = v)],
-  envRules: [() => envRules, v => (envRules = v)],
-  envSeason: [() => envSeason, v => ((envSeason = v), provide({ envSeason }))],
-  envSky: [() => envSky, v => (envSky = v)],
-  envSmooth: [() => envSmooth],
-  envState: [() => envState, v => ((envState = v), provide({ envState }))],
-  envSun: [() => envSun, v => ((envSun = v), provide({ envSun }))],
-  envWeatherFor: [() => envWeatherFor, v => (envWeatherFor = v)],
-  envWinLit: [() => envWinLit, v => (envWinLit = v)],
   environment: [() => environment],
+  environmentClimate: [() => environmentClimate, v => (environmentClimate = v)],
+  environmentFactors: [() => environmentFactors, v => (environmentFactors = v)],
+  environmentForecast: [() => environmentForecast, v => (environmentForecast = v)],
+  environmentFrame: [() => environmentFrame, v => (environmentFrame = v)],
+  environmentHash: [() => environmentHash, v => (environmentHash = v)],
+  environmentHere: [() => environmentHere, v => ((environmentHere = v), provide({ environmentHere }))],
+  environmentHint: [() => environmentHint, v => (environmentHint = v)],
+  environmentHistory: [() => environmentHistory, v => (environmentHistory = v)],
+  environmentHour: [() => environmentHour, v => (environmentHour = v)],
+  environmentIcon: [() => environmentIcon, v => (environmentIcon = v)],
+  environmentLabel: [() => environmentLabel, v => (environmentLabel = v)],
+  environmentLikes: [() => environmentLikes, v => (environmentLikes = v)],
+  environmentLitFraction: [() => environmentLitFraction, v => (environmentLitFraction = v)],
+  environmentMixHex: [() => environmentMixHex, v => (environmentMixHex = v)],
+  environmentOdds: [() => environmentOdds, v => ((environmentOdds = v), provide({ environmentOdds }))],
+  environmentPreferences: [() => environmentPreferences, v => (environmentPreferences = v)],
+  environmentRules: [() => environmentRules, v => (environmentRules = v)],
+  environmentSeason: [() => environmentSeason, v => ((environmentSeason = v), provide({ environmentSeason }))],
+  environmentSky: [() => environmentSky, v => (environmentSky = v)],
+  environmentSmoothstep: [() => environmentSmoothstep],
+  environmentState: [() => environmentState, v => ((environmentState = v), provide({ environmentState }))],
+  environmentSun: [() => environmentSun, v => ((environmentSun = v), provide({ environmentSun }))],
+  environmentWeatherFor: [() => environmentWeatherFor, v => (environmentWeatherFor = v)],
+  environmentWindowLit: [() => environmentWindowLit, v => (environmentWindowLit = v)],
   weatherHistory: [() => weatherHistory],
 });
 /* eslint-enable no-func-assign */
-provide({ envHere, envOdds, envSeason, envState, envSun });
+provide({ environmentHere, environmentOdds, environmentSeason, environmentState, environmentSun });
 /* to-module: end */
 export const environment = {
   on: false,
@@ -148,18 +148,18 @@ export const ENVIRONMENT_LIKES = {
   fog: { Psychic: 1.6, Dragon: 1.3 },
   ash: { Fire: 1.8, Ground: 1.4, Water: 0.7 },
 };
-const envSmooth = (a, b, x) => {
+const environmentSmoothstep = (a, b, x) => {
   const t = Math.max(0, Math.min(1, (x - a) / (b - a)));
   return t * t * (3 - 2 * t);
 };
-function envPrefs() {
+function environmentPreferences() {
   return (typeof S !== 'undefined' && S && S.preferences) || {};
 }
-function envRules() {
+function environmentRules() {
   return (typeof RULES !== 'undefined' && RULES && RULES.env) || {};
 }
 /* the kind of weather a scene gets: its own field, else guessed from what it is */
-function envClimate(sc) {
+function environmentClimate(sc) {
   if (!sc) return 'mild';
   if (sc.climate && CLIMATE_WEATHER_ODDS[sc.climate]) return sc.climate;
   if (sc.indoor) return 'none';
@@ -169,20 +169,20 @@ function envClimate(sc) {
   if (sc.far === 'canyon' || sc.far === 'desert' || (sc.edge === 's' && !sc.waters)) return 'dry';
   return 'mild';
 }
-function envSeason(d) {
-  const p = (environment.force && environment.force.season) || envPrefs().season;
+function environmentSeason(d) {
+  const p = (environment.force && environment.force.season) || environmentPreferences().season;
   if (p && p !== 'auto') return p;
   return SEASON_BY_MONTH[(d || new Date()).getMonth()];
 }
-export function envHour(d) {
+export function environmentHour(d) {
   const f = environment.force && environment.force.time,
-    p = f != null ? f : environment.on ? envPrefs().time || 'real' : 'day';
+    p = f != null ? f : environment.on ? environmentPreferences().time || 'real' : 'day';
   if (typeof p === 'number') return p;
   if (p !== 'real' && PINNED_HOURS[p] != null) return PINNED_HOURS[p];
   d = d || new Date();
   return d.getHours() + d.getMinutes() / 60;
 }
-function envHash(s) {
+function environmentHash(s) {
   let h = 2166136261;
   for (let i = 0; i < s.length; i++) {
     h ^= s.charCodeAt(i);
@@ -191,15 +191,15 @@ function envHash(s) {
   return ((h >>> 0) % 100000) / 100000;
 }
 /* today's weather for a kind of place: changes every three hours, the same for everyone */
-function envWeatherFor(climate, d) {
+function environmentWeatherFor(climate, d) {
   const f = environment.force && environment.force.weather;
   if (f) return f;
-  const p = envPrefs().weather;
+  const p = environmentPreferences().weather;
   if (p === 'clear' || !environment.on) return 'clear';
   if (p && p !== 'auto' && WEATHER_LOOKS[p]) return p;
   d = d || new Date();
   const odds = Object.assign({}, CLIMATE_WEATHER_ODDS[climate] || CLIMATE_WEATHER_ODDS.mild),
-    ss = envSeason(d);
+    ss = environmentSeason(d);
   if (climate === 'mild' && ss === 'winter') {
     odds.snow = (odds.rain || 0) * 0.7;
     odds.rain = (odds.rain || 0) * 0.3;
@@ -210,7 +210,7 @@ function envWeatherFor(climate, d) {
   }
   const day = Math.floor((d.getTime() - d.getTimezoneOffset() * 6e4) / 864e5),
     blk = Math.floor(d.getHours() / 3),
-    r = envHash(climate + '|' + day + '|' + blk) * Object.values(odds).reduce((a, b) => a + b, 0);
+    r = environmentHash(climate + '|' + day + '|' + blk) * Object.values(odds).reduce((a, b) => a + b, 0);
   let acc = 0;
   for (const [k, w] of Object.entries(odds)) {
     acc += w;
@@ -220,24 +220,25 @@ function envWeatherFor(climate, d) {
 }
 /* everything the renderer needs, eased so weather drifts in and out; a new scene snaps */
 /* the hour, the season and the weather for a scene right now (no easing): used for the odds in the wild and the walk card too */
-export function envState(sc, d) {
+export function environmentState(sc, d) {
   d = d || new Date();
-  const h = envHour(d),
-    ss = envSeason(d),
+  const h = environmentHour(d),
+    ss = environmentSeason(d),
     wk = ss === 'winter' ? 1 : ss === 'summer' ? -0.6 : 0,
     rise = 6 + wk * 1.1,
     set = 20.2 - wk * 1.8,
-    clim = envClimate(sc),
-    wx = sc && sc.indoor ? 'clear' : envWeatherFor(clim, d);
+    clim = environmentClimate(sc),
+    wx = sc && sc.indoor ? 'clear' : environmentWeatherFor(clim, d);
   /* 1 at full night, 0 in daylight; dusk and dawn are bells around sunset and sunrise */
-  const night = 1 - envSmooth(rise - 0.9, rise + 0.7, h) * (1 - envSmooth(set - 0.5, set + 1.1, h)),
+  const night =
+      1 - environmentSmoothstep(rise - 0.9, rise + 0.7, h) * (1 - environmentSmoothstep(set - 0.5, set + 1.1, h)),
     dusk = Math.exp(-Math.pow((h - set) / 1.0, 2)),
     dawn = Math.exp(-Math.pow((h - rise) / 0.9, 2));
   return { h, ss, rise, set, clim, wx, night, dusk, dawn };
 }
 /* v47: the share of windows lit at hour h. They come on one at a time from late afternoon and go off one at a time
    late at night (each window has its own moment, from its position), with a few early risers before dawn */
-export function envLitFrac(h) {
+export function environmentLitFraction(h) {
   h = ((h % 24) + 24) % 24;
   const sm = (a, b, x) => {
     const t = Math.min(1, Math.max(0, (x - a) / (b - a)));
@@ -252,11 +253,11 @@ export function envLitFrac(h) {
   if (h < 19.5) return 0.18 + 0.62 * sm(16, 19.5, h);
   return 0.8;
 }
-export function envWinLit(x, z, h) {
+export function environmentWindowLit(x, z, h) {
   const v = Math.sin(x * 12.9898 + z * 78.233) * 43758.5453;
-  return v - Math.floor(v) < envLitFrac(h);
+  return v - Math.floor(v) < environmentLitFraction(h);
 }
-export function envHere() {
+export function environmentHere() {
   try {
     return typeof sceneIdAt === 'function' && typeof mapById === 'function' && typeof S !== 'undefined' && S.route
       ? mapById(sceneIdAt(S.route.node))
@@ -269,7 +270,7 @@ export function envHere() {
    everyone): the ground stays wet and the puddles last for a few hours after rain; snow piles up while it snows and
    melts away over the hours after (slowly in the mountains, quickly in the sun) */
 const weatherHistory = { key: '', wet: 0, snow: 0 };
-function envHistory(clim, d) {
+function environmentHistory(clim, d) {
   const now = (d || new Date()).getTime(),
     key =
       clim + '|' + Math.floor(now / 3.6e6) + '|' + JSON.stringify(environment.force || 0) + (environment.on ? 1 : 0);
@@ -278,7 +279,7 @@ function envHistory(clim, d) {
     snow = 0;
   if (clim !== 'none')
     for (let k = 36; k >= 1; k--) {
-      const w = envWeatherFor(clim, new Date(now - k * 3.6e6));
+      const w = environmentWeatherFor(clim, new Date(now - k * 3.6e6));
       if (w === 'rain' || w === 'storm') {
         wet = 1;
         snow = Math.max(0, snow - 0.08);
@@ -294,8 +295,8 @@ function envHistory(clim, d) {
   return weatherHistory;
 }
 /* everything the renderer needs, eased so weather drifts in and out; a new scene (or a changed setting) snaps */
-export function envFrame(sc, dt) {
-  const p = envPrefs(),
+export function environmentFrame(sc, dt) {
+  const p = environmentPreferences(),
     F = environment.force || {},
     f =
       JSON.stringify([F.time, F.season, F.front ? 0 : F.weather]) +
@@ -306,7 +307,7 @@ export function envFrame(sc, dt) {
   /* alpha 0.4: the weather changing on its own (or in your settings) comes in as a front; a forced weather changes at once, unless it asks for a front (environment.force.front) */ environment.id =
     sc && sc.name;
   environment._f = f;
-  const st = envState(sc),
+  const st = environmentState(sc),
     { h, ss, rise, set, clim, wx, night, dusk, dawn } = st,
     W = WEATHER_LOOKS[wx] || WEATHER_LOOKS.clear;
   environment.tod = h;
@@ -332,8 +333,8 @@ export function envFrame(sc, dt) {
       w0: environment.wxNow,
       W0: WEATHER_LOOKS[environment.wxNow] || WEATHER_LOOKS.clear,
       t0: now,
-      dur: typeof RM !== 'undefined' && RM ? 3 : envRules().frontSecs || 75,
-      dir: envHash(wx + environment.wxNow + Math.floor(now / 600)) < 0.5 ? 1 : -1,
+      dur: typeof RM !== 'undefined' && RM ? 3 : environmentRules().frontSecs || 75,
+      dir: environmentHash(wx + environment.wxNow + Math.floor(now / 600)) < 0.5 ? 1 : -1,
     };
     environment.wxNow = wx;
   }
@@ -342,7 +343,7 @@ export function envFrame(sc, dt) {
     const fr = Math.min(1, (now - Fr.t0) / Fr.dur),
       W0 = Fr.W0,
       mx = (a, b, t) => (a || 0) + ((b || 0) - (a || 0)) * t,
-      sm = envSmooth,
+      sm = environmentSmoothstep,
       wet0 = (W0.rain || 0) + (W0.snow || 0) + (W0.ash || 0),
       wet1 = (W.rain || 0) + (W.snow || 0) + (W.ash || 0),
       into = wet1 > wet0;
@@ -395,7 +396,7 @@ export function envFrame(sc, dt) {
   for (const [a, v] of Object.entries(T))
     environment[a] +=
       (v - environment[a]) * (a === 'night' || a === 'dusk' || a === 'dawn' ? (snap ? 1 : Math.min(1, dt * 2)) : k);
-  const HI = envHistory(clim),
+  const HI = environmentHistory(clim),
     wetT = Math.max(environment.rain > 0.3 ? 1 : 0, sc && sc.indoor ? 0 : HI.wet);
   environment.snowHist = sc && sc.indoor ? 0 : HI.snow;
   environment.wet = snap
@@ -429,10 +430,10 @@ export function envFrame(sc, dt) {
   return environment;
 }
 /* colours of the sky (top, middle, horizon) after time and weather */
-function envMixHex(a, b, t) {
+function environmentMixHex(a, b, t) {
   return a.map((v, i) => v + (b[i] - v) * t);
 }
-export function envSky(sky, indoor) {
+export function environmentSky(sky, indoor) {
   const c = sky.map(s => s.slice());
   if (indoor) return c;
   const P = k => WEATHER_SKY_PALETTES[k].map(h => hexA(h).map(v => v / 255));
@@ -442,15 +443,15 @@ export function envSky(sky, indoor) {
     ni = P('night');
   for (let i = 0; i < 3; i++) {
     let v = c[i];
-    v = envMixHex(v, da[i], environment.dawn * 0.75);
-    v = envMixHex(v, du[i], environment.dusk * 0.85);
-    v = envMixHex(v, gr[i], environment.grey * 0.85);
-    v = envMixHex(
+    v = environmentMixHex(v, da[i], environment.dawn * 0.75);
+    v = environmentMixHex(v, du[i], environment.dusk * 0.85);
+    v = environmentMixHex(v, gr[i], environment.grey * 0.85);
+    v = environmentMixHex(
       v,
       ni[i].map(x => x * (1 - environment.grey * 0.25)),
       environment.night * 0.94
     );
-    if (environment.flash) v = envMixHex(v, [0.9, 0.92, 1], environment.flash * 0.5);
+    if (environment.flash) v = environmentMixHex(v, [0.9, 0.92, 1], environment.flash * 0.5);
     c[i] = v;
   }
   return c;
@@ -493,7 +494,7 @@ const WEATHER_ENGINE_MODIFIERS = {
 };
 provide({ WEATHER_ENGINE_MODIFIERS }); /* to-module */
 /* the light of the moment: a low warm sun at dusk, the moon at night */
-function envSun(a, h, col) {
+function environmentSun(a, h, col) {
   const day = 1 - environment.night,
     t = environment.tod;
   if (day > 0.02) {
@@ -513,15 +514,15 @@ function envSun(a, h, col) {
   return { a, h, col };
 }
 /* the odds of meeting each billionaire, tilted by the hour and the weather */
-function envLikes() {
+function environmentLikes() {
   const L = Object.assign({}, ENVIRONMENT_LIKES),
-    R = envRules().likes || {};
+    R = environmentRules().likes || {};
   for (const k in R) L[k] = Object.assign({}, L[k] || {}, R[k]);
   return L;
 }
 /* which of the likes apply where you are now */
-function envFactors(st) {
-  const L = envLikes(),
+function environmentFactors(st) {
+  const L = environmentLikes(),
     f = [];
   if (st.night > 0.5) f.push(['night', L.night]);
   else if (st.dusk > 0.4 || st.dawn > 0.4) f.push(['dusk', L.dusk]);
@@ -529,11 +530,11 @@ function envFactors(st) {
   if (st.wx !== 'clear' && L[st.wx]) f.push([st.wx, L[st.wx]]);
   return f.filter(x => x[1]);
 }
-function envOdds(list, sc) {
-  if (!environment.on || !list || envRules().off) return list;
-  const sc2 = sc || envHere();
+function environmentOdds(list, sc) {
+  if (!environment.on || !list || environmentRules().off) return list;
+  const sc2 = sc || environmentHere();
   if (sc2 && sc2.indoor) return list;
-  const f = envFactors(envState(sc2));
+  const f = environmentFactors(environmentState(sc2));
   if (!f.length) return list;
   return list.map(([id, w]) => {
     const t = (typeof SP !== 'undefined' && SP[id] && SP[id].types) || [];
@@ -543,9 +544,9 @@ function envOdds(list, sc) {
   });
 }
 /* a short line for the walk card: “Evening · Rain · Autumn”, its icon, and who is about */
-export function envLabel(sc) {
+export function environmentLabel(sc) {
   if (!environment.on) return '';
-  const st = envState(sc || envHere()),
+  const st = environmentState(sc || environmentHere()),
     t =
       st.night > 0.5
         ? 'Night'
@@ -561,21 +562,21 @@ export function envLabel(sc) {
   const hh = Math.floor(st.h) % 24,
     mm = Math.floor((st.h - Math.floor(st.h)) * 60),
     clock = `${hh}:${String(mm).padStart(2, '0')}`;
-  const fc = envForecast(sc || envHere());
+  const fc = environmentForecast(sc || environmentHere());
   return `${clock} ${t} · ${WEATHER_NAMES[st.wx] || 'Clear'}${fc ? ' (' + fc + ')' : ''} · ${st.ss[0].toUpperCase() + st.ss.slice(1)}`;
 }
 /* alpha 0.4: what's coming: the weather of the next few hours where it changes ("rain from 15:00", "clearing by 18:00") */
-function envForecast(sc) {
+function environmentForecast(sc) {
   if (!environment.on || (environment.force && environment.force.weather)) return '';
-  const s = sc || envHere();
+  const s = sc || environmentHere();
   if (!s || s.indoor) return '';
-  const clim = envClimate(s),
+  const clim = environmentClimate(s),
     d = new Date(),
-    now = envWeatherFor(clim, d);
+    now = environmentWeatherFor(clim, d);
   for (let k = 1; k <= 2; k++) {
     const t = new Date(d.getTime() + k * 3 * 3.6e6),
       nb = new Date(t.getFullYear(), t.getMonth(), t.getDate(), Math.floor(t.getHours() / 3) * 3),
-      w = envWeatherFor(clim, nb);
+      w = environmentWeatherFor(clim, nb);
     if (w === now) continue;
     const at = `${nb.getHours()}:00`,
       wet = x => x === 'rain' || x === 'storm' || x === 'snow' || x === 'ash';
@@ -587,8 +588,8 @@ function envForecast(sc) {
   }
   return '';
 }
-export function envIcon(sc) {
-  const st = envState(sc || envHere()),
+export function environmentIcon(sc) {
+  const st = environmentState(sc || environmentHere()),
     w = st.wx;
   return w === 'rain' || w === 'storm'
     ? 'rain'
@@ -604,11 +605,12 @@ export function envIcon(sc) {
               ? 'moon'
               : 'sun';
 }
-export function envHint(sc) {
-  if (!environment.on || envRules().off) return '';
-  const s = sc || envHere();
+export function environmentHint(sc) {
+  if (!environment.on || environmentRules().off) return '';
+  const s = sc || environmentHere();
   if (s && s.indoor) return '';
   const up = new Set();
-  for (const [, F] of envFactors(envState(s))) for (const [t, m] of Object.entries(F)) if (m > 1.2) up.add(t);
+  for (const [, F] of environmentFactors(environmentState(s)))
+    for (const [t, m] of Object.entries(F)) if (m > 1.2) up.add(t);
   return up.size ? `${[...up].join(' and ')} Billies are about.` : '';
 }

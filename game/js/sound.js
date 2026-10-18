@@ -13,7 +13,7 @@ import { ROUTE } from './game-data.js';
 import { B, S, U } from './game-state.js';
 import { battleStage } from './battle-stage.js';
 import { baseMapId, bridgeAt, mapBridges, mapById, stepWallAt, terrainAt, walkData, walkView } from './walk-view.js';
-import { envHour, envState, environment } from './environment.js';
+import { environment, environmentHour, environmentState } from './environment.js';
 import { walkRenderer } from './walk-view-gl.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -1470,7 +1470,7 @@ setInterval(() => {
 }, 200);
 /* the ambience: which beds play here, and the occasional bird, owl and clock tick */
 function ambLife(sc, E, T, pans, t) {
-  const st = E || (typeof envState === 'function' ? envState(sc) : { night: 0, dusk: 0 }),
+  const st = E || (typeof environmentState === 'function' ? environmentState(sc) : { night: 0, dusk: 0 }),
     night = st.night || 0,
     day = 1 - night,
     rain = E ? E.rain : 0,
@@ -1513,7 +1513,7 @@ function ambLife(sc, E, T, pans, t) {
       }
     }
     /* the farm's rooster at first light */
-    const hr = typeof envHour === 'function' ? envHour() : 12;
+    const hr = typeof environmentHour === 'function' ? environmentHour() : 12;
     if (sc.biome === 'farm' && hr > 5 && hr < 8.5 && Math.random() < dt * 0.03 * thru) ambBird(t, 'rooster');
     /* the scrap yard: metal shifting somewhere, the crane's cable creaking when nobody is looking */
     if (sc.biome === 'bins' && Math.random() < dt * 0.035 * thru) ambClank(t);

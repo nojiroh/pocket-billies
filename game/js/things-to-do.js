@@ -21,7 +21,7 @@ import {
   walkablePointNear,
 } from './walk-view.js';
 import { eng } from './engine/settings.js';
-import { envHere, envState, environment } from './environment.js';
+import { environment, environmentHere, environmentState } from './environment.js';
 import { standingHeightAt, walkRenderer } from './walk-view-gl.js';
 import { endBattle, openBattle, say, setEndBattle, setOpenBattle } from './battle.js';
 import { sfx } from './sound.js';
@@ -631,10 +631,11 @@ const X28_BWX_TEXT = {
 function battleWx() {
   if (typeof B === 'undefined' || !B) return null;
   if (B.wx !== undefined) return B.wx;
-  if (typeof envState !== 'function' || !environment.on || (RULES.env && RULES.env.battleOff)) return (B.wx = null);
-  const sc = envHere();
+  if (typeof environmentState !== 'function' || !environment.on || (RULES.env && RULES.env.battleOff))
+    return (B.wx = null);
+  const sc = environmentHere();
   if (!sc || sc.indoor) return (B.wx = null);
-  const st = envState(sc),
+  const st = environmentState(sc),
     k = st.night > 0.5 ? (st.wx === 'clear' ? 'night' : st.wx) : st.wx === 'clear' ? 'sunny' : st.wx,
     m = Object.assign({}, X28_BWX[k] || {}, ((RULES.env || {}).battle || {})[k] || {});
   return (B.wx = Object.keys(m).length ? { k, m } : null);

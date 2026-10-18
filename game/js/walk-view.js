@@ -22,10 +22,10 @@ import {
   buddyTap,
   defaultWallMaterial,
   dioArtVer,
-  envHere,
-  envSeason,
-  envState,
   environment,
+  environmentHere,
+  environmentSeason,
+  environmentState,
   groundHeightAt,
   lifePaths,
   loreFlags,
@@ -467,7 +467,7 @@ function propClock() {
   const d = new Date();
   PROP_CLOCK.h = typeof folkHour === 'function' ? folkHour() : 13;
   PROP_CLOCK.day = d.getDay();
-  PROP_CLOCK.ss = typeof envSeason === 'function' ? envSeason(d) : 'summer';
+  PROP_CLOCK.ss = typeof environmentSeason === 'function' ? environmentSeason(d) : 'summer';
   return PROP_CLOCK;
 }
 /* v47: crops grow between your visits: each field (a prop's "grow", from tools/build-life-v47.py) is sown, grows for
@@ -3638,9 +3638,9 @@ const FOLK_WORK =
   /shop|clinic|lab\b|lab_|bakery|inn\b|inn_|bank|library|school|station|market|stall|cafe|mart|boutique|barn|greenhouse|windmill|office|city_hall|kiosk|ski_lodge/;
 const FOLK_HOME = /house|cottage|townhouse|apartment|cave_house|chalet|villa|cabin|hut/;
 function folkHour() {
-  if (typeof envState !== 'function') return 13;
+  if (typeof environmentState !== 'function') return 13;
   try {
-    const st = envState(typeof envHere === 'function' ? envHere() : null);
+    const st = environmentState(typeof environmentHere === 'function' ? environmentHere() : null);
     return st && st.h != null ? st.h : 13;
   } catch (e) {
     return 13;

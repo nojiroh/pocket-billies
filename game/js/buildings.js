@@ -27,7 +27,7 @@ import {
   eglPrograms,
   v3n,
 } from './engine/webgl.js';
-import { envLitFrac, environment } from './environment.js';
+import { environment, environmentLitFraction } from './environment.js';
 import { setPropLookUniforms, standingHeightAt, useWalkProgram, walkRenderer, worldCurveArgs } from './walk-view-gl.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -1495,8 +1495,8 @@ function bldMake(it) {
 /* alpha 0.4: how many of the windows are lit at this hour (one by one in the evening, fewer late at night) */
 function bldLitF() {
   const h = typeof environment !== 'undefined' && ENG_CTX.env ? environment.tod : 19;
-  return typeof envLitFrac === 'function'
-    ? envLitFrac(h)
+  return typeof environmentLitFraction === 'function'
+    ? environmentLitFraction(h)
     : h >= 17 && h < 22
       ? 0.75
       : h >= 22 || h < 1
@@ -1581,7 +1581,7 @@ function bldDraw0(C, X, items, fades) {
     gl.uniform1f(
       p.U.uLitF,
       bldLitF()
-    ); /* v47: windows come on one at a time in the evening and go off one at a time at night (environment.js envLitFrac) */
+    ); /* v47: windows come on one at a time in the evening and go off one at a time at night (environment.js environmentLitFraction) */
   for (const it of L) {
     const E = BLD.mesh.get(it.p);
     if (!E || !E.wins) continue;

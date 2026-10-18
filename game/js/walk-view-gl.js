@@ -175,7 +175,15 @@ import {
   eglSun,
 } from './engine/light.js';
 import { EGL_POST_SH, eglPost, eglSnapshot, eglSunScreen } from './engine/post-effects.js';
-import { WEATHER_LOOKS, envFrame, envHere, envSky, envState, envWinLit, environment } from './environment.js';
+import {
+  WEATHER_LOOKS,
+  environment,
+  environmentFrame,
+  environmentHere,
+  environmentSky,
+  environmentState,
+  environmentWindowLit,
+} from './environment.js';
 /* eslint-disable no-func-assign */
 expose({
   ALTERNATE_PROPS: [() => ALTERNATE_PROPS],
@@ -3603,7 +3611,7 @@ function drawWalkFrame(ts, dtm) {
     PPU = C0.ppu || 34;
   /* v26: the hour, the weather and the season (environment.js) lean on the engine dials while this frame draws */
   ENG_CTX.env = typeof environment !== 'undefined' && (environment.on || !!environment.force);
-  if (ENG_CTX.env) envFrame(sc, dt);
+  if (ENG_CTX.env) environmentFrame(sc, dt);
   const gq = eglGpuBegin();
   try {
     drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0);
@@ -5022,10 +5030,10 @@ function lampLit(x, z, dark) {
   const th = 0.16 + 0.3 * hash2d(Math.round(x * 7), Math.round(z * 11));
   return Math.min(1, Math.max(0, (E.lampK - th) / 0.07));
 }
-/* an old (picture-only) house's window: lit at this hour or not (environment.js envWinLit) */
+/* an old (picture-only) house's window: lit at this hour or not (environment.js environmentWindowLit) */
 function windowLit(x, z) {
-  return typeof envWinLit === 'function' && typeof environment !== 'undefined' && ENG_CTX.env
-    ? envWinLit(x, z, environment.tod)
+  return typeof environmentWindowLit === 'function' && typeof environment !== 'undefined' && ENG_CTX.env
+    ? environmentWindowLit(x, z, environment.tod)
     : true;
 }
 function walkLightContext(C, sun, dark, items, shadow, BT) {
@@ -5154,7 +5162,7 @@ function walkLightContext(C, sun, dark, items, shadow, BT) {
   const lights = eglPickLights(L, P.x, P.z, 16),
     sky = skyColors(sc);
   let hz = hexA(eng('air', 'haze') || sc.haze || (sc.sky || [])[2] || '#EAD9C0').map(v => v / 255);
-  if (E && !sc.indoor) hz = envSky([hz, hz, hz], false)[2];
+  if (E && !sc.indoor) hz = environmentSky([hz, hz, hz], false)[2];
   const tint = sc.tint && sc.tint !== '#000000' ? hexA(sc.tint).map(v => 0.35 + (v / 255) * 1.3) : null;
   let ambTop = sc.indoor
       ? [0.62, 0.58, 0.52]
@@ -5569,7 +5577,7 @@ function fittedShadowPass(items0, sun, C) {
 /* v26: the scene's sky colours after the hour and the weather (environment.js) */
 function skyColors(sc) {
   const s = (sc.sky || ['#8CC6E6', '#BFE3EE', '#F4E8C8']).map(c => hexA(c).map(v => v / 255));
-  return typeof envSky === 'function' && ENG_CTX.env ? envSky(s, !!sc.indoor) : s;
+  return typeof environmentSky === 'function' && ENG_CTX.env ? environmentSky(s, !!sc.indoor) : s;
 }
 function drawSky(C, sun, mirror) {
   const gl = EGL.gl,
@@ -6670,7 +6678,7 @@ function roomSkyLight() {
   walkRenderer.roomSkyT = now;
   let st;
   try {
-    st = envState(envHere() || walkView.sc);
+    st = environmentState(environmentHere() || walkView.sc);
   } catch (e) {
     st = { h: 13, rise: 6, set: 20, night: 0, dusk: 0, dawn: 0, wx: 'clear' };
   }
@@ -7734,10 +7742,10 @@ export function effectsPass(C, items, X, dark, t, dt) {
         let k = RS ? RS.I * (1 - RS.night) * 0.9 * windowLightShare(sc) : dark ? 1 : winDay;
         if (
           !RS &&
-          typeof envWinLit === 'function' &&
+          typeof environmentWindowLit === 'function' &&
           typeof environment !== 'undefined' &&
           ENG_CTX.env &&
-          !envWinLit(x, z, environment.tod)
+          !environmentWindowLit(x, z, environment.tod)
         )
           k *= 0.05;
         /* v47: lit one at a time */ if (k > 0.02)

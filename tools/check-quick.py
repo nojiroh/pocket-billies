@@ -718,7 +718,7 @@ def desktop_steps(b, base, R):
             bright[name] = round(lum()); shot(pg, 'env-' + name)
         if bright['night'] > bright['day'] * .8: raise Exception(f'night isn’t darker than day (brightness {bright["night"]} vs {bright["day"]})')
         pg.evaluate("environment.force={time:23.5,weather:'clear'};0"); time.sleep(1.5); lamps = pg.evaluate("environment.lampK")
-        odds = pg.evaluate("(()=>{const ps=Object.keys(SP).find(k=>SP[k].types.includes('Psychic'));if(!ps)return [10];return envOdds([[ps,10]]).map(x=>+x[1].toFixed(2))})()")
+        odds = pg.evaluate("(()=>{const ps=Object.keys(SP).find(k=>SP[k].types.includes('Psychic'));if(!ps)return [10];return environmentOdds([[ps,10]]).map(x=>+x[1].toFixed(2))})()")
         out.append('brightness ' + ', '.join(f'{k} {v}' for k, v in bright.items()))
         # a dark cave: away from the lantern it's dim
         node = pg.evaluate("ROUTE.findIndex(r=>r.scene==='grotto')")
