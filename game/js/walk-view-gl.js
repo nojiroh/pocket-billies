@@ -191,8 +191,8 @@ expose({
   BORDER_M: [() => BORDER_M],
   BOX_INFO_CACHE: [() => BOX_INFO_CACHE],
   EVERGREEN_PROPS: [() => EVERGREEN_PROPS],
-  FIXED_FACING: [() => FIXED_FACING],
-  FIXED_FACING_BACK: [() => FIXED_FACING_BACK],
+  FIXED_BACK: [() => FIXED_BACK],
+  FIXED_RIGHT: [() => FIXED_RIGHT],
   FLOWER_COLORS: [() => FLOWER_COLORS],
   FLOWER_SET_BY_LOCATION: [() => FLOWER_SET_BY_LOCATION],
   FOLIAGE_PROPS: [() => FOLIAGE_PROPS],
@@ -467,8 +467,8 @@ provide({ walkRenderer }); /* to-module */
 /* v46: how long a frame may spend getting the next view ready (ms) */
 const PREP_BUDGET_MS = /Android|iPhone|iPad/.test(navigator.userAgent) ? 4 : 6;
 const BORDER_M = GROUND_BORDER_M,
-  FIXED_FACING = [1, 0, 0],
-  FIXED_FACING_BACK = [0, 0, -1];
+  FIXED_RIGHT = [1, 0, 0],
+  FIXED_BACK = [0, 0, -1];
 /* which material a prop is made of: its own "mat", else guessed from its name */
 export const PROP_MATERIALS = SURFACE_MATERIALS;
 export function propMaterial(k, M) {
@@ -4152,7 +4152,7 @@ function hugSlope(it, C) {
     M._hug = SLOPE_HUGGERS.test(g) && !/tree|lamp|post|sign|pole/.test(g);
   }
   if (!M._hug) return;
-  const R = it.fixed ? FIXED_FACING : C.right,
+  const R = it.fixed ? FIXED_RIGHT : C.right,
     e = 0.45,
     h = (x, z) => groundHeightAt(x, z),
     x = it.x,
@@ -5423,7 +5423,7 @@ function drawShadowSprites(SH, L, sun, ca, lamp) {
       if (!F) miss++;
       if (F) {
         gl.bindTexture(gl.TEXTURE_2D, F.t);
-        gl.uniform3fv(p.U.uRight, FIXED_FACING);
+        gl.uniform3fv(p.U.uRight, FIXED_RIGHT);
         setSpriteUniforms(p, it);
         gl.drawArrays(gl.TRIANGLES, 0, 6);
         gl.uniform3fv(p.U.uRight, Rs);
@@ -5431,7 +5431,7 @@ function drawShadowSprites(SH, L, sun, ca, lamp) {
       continue;
     }
     if (it.plane && !(solid && it.M && it.M.box)) {
-      gl.uniform3fv(p.U.uRight, FIXED_FACING);
+      gl.uniform3fv(p.U.uRight, FIXED_RIGHT);
       setSpriteUniforms(p, it);
       gl.drawArrays(gl.TRIANGLES, 0, 6);
       gl.uniform3fv(p.U.uRight, Rs);
@@ -5537,7 +5537,7 @@ function fittedShadowPass(items0, sun, C) {
         if (!F) miss++;
         if (F) {
           gl.bindTexture(gl.TEXTURE_2D, F.t);
-          gl.uniform3fv(p.U.uRight, FIXED_FACING);
+          gl.uniform3fv(p.U.uRight, FIXED_RIGHT);
           setSpriteUniforms(p, it);
           gl.drawArrays(gl.TRIANGLES, 0, 6);
           gl.uniform3fv(p.U.uRight, Rs);
@@ -5545,7 +5545,7 @@ function fittedShadowPass(items0, sun, C) {
         continue;
       }
       if (it.plane && !(solid && it.M && it.M.box)) {
-        gl.uniform3fv(p.U.uRight, FIXED_FACING);
+        gl.uniform3fv(p.U.uRight, FIXED_RIGHT);
         setSpriteUniforms(p, it);
         gl.drawArrays(gl.TRIANGLES, 0, 6);
         gl.uniform3fv(p.U.uRight, Rs);
@@ -5990,8 +5990,8 @@ export function drawSprites(C, items, X, hits, labels, PPU) {
       const ro = it.fixed && it.lk && it.lk.rot && !it.M.box && !it.bld3 ? it.lk.rot * 0.6 : 0,
         cr = Math.cos(ro),
         sr = Math.sin(ro);
-      gl.uniform3fv(U.uRight, it.fixed ? (ro ? [cr, 0, sr] : FIXED_FACING) : C.right);
-      gl.uniform3fv(U.uBack, it.fixed ? (ro ? [sr, 0, -cr] : FIXED_FACING_BACK) : C.back);
+      gl.uniform3fv(U.uRight, it.fixed ? (ro ? [cr, 0, sr] : FIXED_RIGHT) : C.right);
+      gl.uniform3fv(U.uBack, it.fixed ? (ro ? [sr, 0, -cr] : FIXED_BACK) : C.back);
     }
     gl.uniform1f(U.uFixed, it.fixed && it.plane ? 1 : 0);
     gl.uniform1f(U.uFlipN, it.flip || 1);
@@ -6489,7 +6489,7 @@ export function reflectionPass(items, C, rw, rh, X) {
     if (cut && !it.person && !mirrorInView(FR, it, L)) continue;
     const T = imageTexture(it.im);
     if (!T) continue;
-    gl.uniform3fv(U.uRight, it.fixed ? FIXED_FACING : C.right);
+    gl.uniform3fv(U.uRight, it.fixed ? FIXED_RIGHT : C.right);
     gl.uniform3f(U.uBaseP, it.x, it.y, it.z);
     setPropLookUniforms(U, it.lk);
     gl.activeTexture(gl.TEXTURE0);
