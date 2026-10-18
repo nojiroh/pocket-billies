@@ -1828,13 +1828,13 @@ def desktop_steps(b, base, R):
         if not until(pg, "walkView.ready&&(walkView.id==='int_lab'||(walkView.sc&&walkView.sc.roomOf==='int_lab'))||talkBox.on", 60): raise Exception('the lab didn’t open')
         pg.evaluate("talkHide&&talkHide();if(uiState.inside)leaveRoom();0"); until(pg, "walkView.ready&&!walkView.sc.roomRect", 30)
         out.append('the lab opens')
-        # down Route 1 to Marigold Town, on foot
-        pg.evaluate(f"saveData.trip={{node:{node},prog:0,plan:[LOCATION_BY_ID.hedgerow.node,LOCATION_BY_ID.marigold.node],hold:false}};uiState.roam=null;render();0")
-        cost = pg.evaluate(f"roadCost({node},LOCATION_BY_ID.hedgerow.node)+roadCost(LOCATION_BY_ID.hedgerow.node,LOCATION_BY_ID.marigold.node)")
-        pg.evaluate(f"addSteps({cost + 10},true);render();0"); time.sleep(1)
+        # down Route 1 to Marigold Town, on foot: over Copperleaf's edge onto Route 1, then over Route 1's into Marigold
+        pg.evaluate(f"saveData.trip={{node:{node},prog:0,plan:[LOCATION_BY_ID.hedgerow.node,LOCATION_BY_ID.marigold.node],hold:false}};render();0")
+        walked = 0
+        for n1 in pg.evaluate('[LOCATION_BY_ID.hedgerow.node,LOCATION_BY_ID.marigold.node]'): walked += cross(pg, n1)[0]
         at = pg.evaluate("LOCATIONS[saveData.trip.node].id")
-        if at != 'marigold': raise Exception(f'the trip down Route 1 ended at {at}')
-        out.append(f'Copperleaf to Marigold Town is {cost} steps on foot')
+        if at != 'marigold' or pg.evaluate('saveData.trip.plan.length'): raise Exception(f'the trip down Route 1 ended at {at} (plan {pg.evaluate("saveData.trip.plan")})')
+        out.append(f'Copperleaf to Marigold Town is {walked:.0f} m on foot')
         pg.evaluate("environment.force=null;uiState.modal=null;uiState.mq=[];renderOverlay();0")
         if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
         return '; '.join(out)
