@@ -286,7 +286,12 @@ function sendPaintWorkerView(id, sc) {
    false while a picture hasn't loaded: that rectangle is painted here meanwhile, as before */
 function sendPaintWorkerTiles(sc, TP) {
   const C = walkData().sc,
-    gen = (typeof dioArtVer === 'function' ? dioArtVer() : 0) + '|' + groundTileFolder() + '|' + (bigTilesOn() ? 1 : 0);
+    gen =
+      (typeof artCacheVersion === 'function' ? artCacheVersion() : 0) +
+      '|' +
+      groundTileFolder() +
+      '|' +
+      (bigTilesOn() ? 1 : 0);
   if (gen !== paintWorkerState.gen) {
     paintWorkerState.gen = gen;
     paintWorkerState.tiles.clear();

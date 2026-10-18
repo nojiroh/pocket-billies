@@ -13,9 +13,9 @@ import {
   PEOPLE,
   S,
   U,
+  artCacheVersion,
   artImage,
   cleanName,
-  dioArtVer,
   drawRig,
   frameBudgetLeft,
   provide,
@@ -376,7 +376,7 @@ function trainerCache(key, build) {
   }
   return v;
 }
-const trVer = () => (typeof dioArtVer === 'function' ? dioArtVer() : 0);
+const trVer = () => (typeof artCacheVersion === 'function' ? artCacheVersion() : 0);
 function trImg(path) {
   const im = typeof artImage === 'function' ? artImage(path) : ART_CACHE.img[path];
   if (!im && typeof artImg === 'function') return artImg(path);

@@ -5,7 +5,7 @@
    One engine state object, gpuState, is shared by every view. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { dioArtVer, onGlContextRestored, provide, walkRenderer } from '../hooks.js';
+import { artCacheVersion, onGlContextRestored, provide, walkRenderer } from '../hooks.js';
 import { clamp } from '../util.js';
 import { makeCanvas } from '../art.js';
 import { imageReady } from '../walk-view.js';
@@ -573,7 +573,7 @@ export function setTextureParams(o = {}) {
    from the outline) is made in the background, a few per frame, so a new scene never freezes */
 export function imageTexture(im, o = {}) {
   if (!imageReady(im)) return null;
-  const v = typeof dioArtVer === 'function' ? dioArtVer() : 0,
+  const v = typeof artCacheVersion === 'function' ? artCacheVersion() : 0,
     dv = im.__v;
   let e = gpuState.tex.get(im);
   if (e && e.v === v && e.dv === dv) {

@@ -13,7 +13,7 @@
    turns the models off (the pictures stand in as before). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { dioArtVer, provide } from './hooks.js';
+import { artCacheVersion, provide } from './hooks.js';
 import { hexToRgb, makeCanvas } from './art.js';
 import { artImage, hash2d, walkData, walkView } from './walk-view.js';
 import { engineContext, engineSetting } from './engine/settings.js';
@@ -265,7 +265,13 @@ function cachedBuildingSignature(B) {
 function buildingFrontPicture(im, B, M) {
   let F = buildingState.fac.get(im);
   const v =
-    (typeof dioArtVer === 'function' ? dioArtVer() : 0) + '|' + cachedBuildingSignature(B) + '|' + M.ox + ',' + M.oy;
+    (typeof artCacheVersion === 'function' ? artCacheVersion() : 0) +
+    '|' +
+    cachedBuildingSignature(B) +
+    '|' +
+    M.ox +
+    ',' +
+    M.oy;
   if (F && F.v === v) return F.c;
   if (!buildingBudgetLeft()) return null;
   buildingState.n++;

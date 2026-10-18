@@ -72,8 +72,8 @@ expose({
   SCN: [() => SCN],
   SC_TER_KEYS: [() => SC_TER_KEYS],
   SC_WK: [() => SC_WK],
+  artCacheVersion: [() => artCacheVersion, v => ((artCacheVersion = v), provide({ artCacheVersion }))],
   blankScene: [() => blankScene, v => (blankScene = v)],
-  dioArtVer: [() => dioArtVer, v => ((dioArtVer = v), provide({ dioArtVer }))],
   scAddProp: [() => scAddProp, v => (scAddProp = v)],
   scArt: [() => scArt, v => ((scArt = v), provide({ scArt }))],
   scBindMap: [() => scBindMap, v => (scBindMap = v)],
@@ -126,14 +126,14 @@ expose({
   segDist: [() => segDist, v => (segDist = v)],
 });
 /* eslint-enable no-func-assign */
-provide({ dioArtVer, scArt });
+provide({ artCacheVersion, scArt });
 /* to-module: end */
 setWalkData(() => ({
   scenes: (studioState.D && studioState.D.scenes) || {},
   sc: (studioState.D && studioState.D.scenery) || { terrains: {}, props: {} },
 }));
 setArtImage(path => atlasNow('art/' + path) || ART_CACHE.img[path]);
-function dioArtVer() {
+function artCacheVersion() {
   return atlasVersion;
 }
 export const SCN = {

@@ -1242,7 +1242,7 @@ function worldMapMiniKey(sc) {
     (sc.tiles || []).join('').length,
     sc.steps ? sc.steps.length : 0,
     sc.heights ? sc.heights.length : 0,
-    typeof dioArtVer === 'function' ? dioArtVer() : 0,
+    typeof artCacheVersion === 'function' ? artCacheVersion() : 0,
   ].join('|');
 }
 export function worldMapMiniBuild(i) {

@@ -17,10 +17,10 @@ import {
   TERRAIN_MATERIALS,
   U,
   addSteps,
+  artCacheVersion,
   buddyTap,
   cachedBuildingSignature,
   defaultWallMaterial,
-  dioArtVer,
   environment,
   environmentHere,
   environmentSeason,
@@ -673,7 +673,7 @@ export function groundKey(sc) {
     0,
     bigTilesOn() ? 'nx' + groundTileFolder() : '',
     Object.entries(C.terrains).map(([k, t]) => [k, t.tile, t.z, t.edge, t.vars, t.flip, t.paved, t.tone]),
-    typeof dioArtVer === 'function' ? dioArtVer() : 0,
+    typeof artCacheVersion === 'function' ? artCacheVersion() : 0,
   ]);
 }
 /* The ground picture: every tile drawn from its terrain's picture or one of its variants (picked per tile, the plain
@@ -953,7 +953,7 @@ export function tileSetPixels(T, TP) {
       '|' +
       (T.vars || []).join(',') +
       '|' +
-      (typeof dioArtVer === 'function' ? dioArtVer() : 0);
+      (typeof artCacheVersion === 'function' ? artCacheVersion() : 0);
   let L = TILE_PIXEL_CACHE.get(key);
   if (L) return L;
   if (nxOn) {
