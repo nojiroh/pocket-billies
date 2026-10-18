@@ -13,6 +13,7 @@ Needs Pillow and numpy.
 """
 import colorsys
 import json
+import math
 import os
 import re
 
@@ -108,6 +109,12 @@ def part_img(pid, view, f):
     return Image.fromarray(out, 'RGBA')
 
 
+with open('game/art/next/parts/parts.json') as _f:
+    PART_SOCKETS = {k: {v: e['views'][v].get('sockets', {}) for v in e['views']} for k, e in json.load(_f)['parts'].items()}
+# where a tail points from the front, degrees (0 = out to the right, 90 = up); the same table as tools/sample-kit-starters.py
+TAIL_AIM = {'fox_tail': 60, 'cat_tail': 45, 'reptile_tail': -15, 'shark_tailfin': 10}
+
+
 def kit_rig(line, spec, stage, pivots):
     """one stage of a kit-built Billie: a sheet with both views and its rig entry"""
     f = STAGE_SCALE[stage]
@@ -149,47 +156,61 @@ def kit_rig(line, spec, stage, pivots):
         get = {(s, m): it for it in items for s, m in [(it[1], it[2])]}
         imgs, idx = [], {}
 
-        def add(slot, mirror):
+        def socket(slot, name, mirror=False):
+            """a part's socket in pixels of its picture here (parts.json, worked out by tools/slice-part-kit.py)"""
+            _, _, _, im, _, _ = get[(slot, mirror)]
+            fx, fy = PART_SOCKETS[spec['parts'][slot][0]][view][name]
+            return ((1 - fx) if mirror else fx) * im.size[0], fy * im.size[1]
+
+        def add(slot, mirror, pivot=None):
             _, _, _, im, sx, sy = get[(slot, mirror)]
-            px, py = pivots[slot]
-            if slot in ('arm', 'leg'):   # a limb joins where its picture starts: the middle of its top rows
-                ys, xs = np.nonzero(np.array(im)[..., 3] > 0)
-                top = ys.min()
-                px, py = xs[ys <= top + 3].mean() / im.size[0], top / im.size[1]
-            elif mirror:
-                px = 1 - px
+            if pivot is None:
+                px, py = pivots[slot]
+                pivot = (((1 - px) if mirror else px) * im.size[0], py * im.size[1])
             idx[(slot, mirror)] = len(imgs)
-            imgs.append({'ox': -round(im.size[0] * px), 'oy': -round(im.size[1] * py),
-                         'f': {'main': [sx, sy, im.size[0], im.size[1]]}})
+            imgs.append({'ox': -round(pivot[0]), 'oy': -round(pivot[1]), 'f': {'main': [sx, sy, im.size[0], im.size[1]]}})
             return im.size
-        tw, th = add('torso', False)
-        tlw, tlh = add('tail', False)
-        aw, ah = add('arm', False)
-        add('arm', True)
-        hw_, hh = add('head', False)
+        # every part joins at its socket: limbs by their joint, the head by its chin, the tail by its base
+        tw, th = add('torso', False, None)
+        add('tail', False, socket('tail', 'base'))
+        add('arm', False, socket('arm', 'joint'))
+        add('arm', True, socket('arm', 'joint', True))
+        hw_, hh = add('head', False, socket('head', 'chin'))
         add('crest', False)
         if spec['legs']:
-            lw, lh = add('leg', False)
-            add('leg', True)
-        legs_up = round(lh * 0.55) if spec['legs'] else 0
-        # the torso's pivot is its middle: lift it so its bottom (or the feet) sits on the ground line
-        bones = [{'n': 'torso', 'par': 'root', 'at': [0, -round(th / 2) - legs_up], 'z': 5, 'zb': 5, 'i': idx[('torso', False)]}]
-        bones.append({'n': 'tail', 'par': 'torso', 'at': [round(tw * 0.32), round(th * 0.32)], 'z': 1, 'zb': 8,
-                      'i': idx[('tail', False)], 'lag': 1})
+            lw, lh = add('leg', False, socket('leg', 'joint'))
+            add('leg', True, socket('leg', 'joint', True))
+        T = lambda name: (socket('torso', name)[0] - tw / 2, socket('torso', name)[1] - th / 2)   # from the torso's middle
         if spec['legs']:
-            bones.append({'n': 'legL', 'par': 'torso', 'at': [-round(tw * 0.22), round(th * 0.38)], 'z': 7, 'zb': 7, 'i': idx[('leg', False)]})
-            bones.append({'n': 'legR', 'par': 'torso', 'at': [round(tw * 0.22), round(th * 0.38)], 'z': 7, 'zb': 7, 'i': idx[('leg', True)]})
+            jy = socket('leg', 'joint')[1]
+            hip_y = T('hipL')[1]
+            torso_y = -(lh - jy) - hip_y             # the feet meet the ground line
+        else:
+            torso_y = -round(th / 2)                 # a blob sits on its body
+        bones = [{'n': 'torso', 'par': 'root', 'at': [0, round(torso_y)], 'z': 5, 'zb': 5, 'i': idx[('torso', False)]}]
+        # the tail: from the torso's tail socket, turned to point the way the sample shows (TAIL_AIM)
+        tb, tt = socket('tail', 'base'), socket('tail', 'tip')
+        now = math.degrees(math.atan2(-(tt[1] - tb[1]), tt[0] - tb[0]))
+        aim = TAIL_AIM.get(spec['parts']['tail'][0], 0)
+        want = aim if view == 'front' else aim * 0.6   # the back view is drawn mirrored on screen
+        bones.append({'n': 'tail', 'par': 'torso', 'at': [round(v) for v in T('tail')], 'z': 1, 'zb': 8,
+                      'i': idx[('tail', False)], 'lag': 1, 'rr': round(-math.radians(want - now), 3)})
+        if spec['legs']:
+            bones.append({'n': 'legL', 'par': 'torso', 'at': [round(v) for v in T('hipL')], 'z': 7, 'zb': 7, 'i': idx[('leg', False)]})
+            bones.append({'n': 'legR', 'par': 'torso', 'at': [round(v) for v in T('hipR')], 'z': 7, 'zb': 7, 'i': idx[('leg', True)]})
         # the kit draws each arm as the creature's own left arm (the viewer's right, paw reaching in); mirrored on the
-        # viewer's left
-        bones.append({'n': 'armL', 'par': 'torso', 'at': [-round(tw * 0.42), -round(th * 0.28)], 'z': 8, 'zb': 2, 'i': idx[('arm', True)],
+        # viewer's left. Both hang from the torso's shoulder sockets.
+        bones.append({'n': 'armL', 'par': 'torso', 'at': [round(v) for v in T('shoulderL')], 'z': 8, 'zb': 2, 'i': idx[('arm', True)],
                       'rr': arm_rest(get[('arm', True)][3], False)})
-        bones.append({'n': 'armR', 'par': 'torso', 'at': [round(tw * 0.42), -round(th * 0.28)], 'z': 8, 'zb': 2, 'i': idx[('arm', False)],
+        bones.append({'n': 'armR', 'par': 'torso', 'at': [round(v) for v in T('shoulderR')], 'z': 8, 'zb': 2, 'i': idx[('arm', False)],
                       'rr': arm_rest(get[('arm', False)][3], True)})
-        head = {'n': 'head', 'par': 'torso', 'at': [0, -round(th * 0.42)], 'z': 9, 'zb': 9, 'i': idx[('head', False)]}
+        nx, ny = T('neck')
+        head = {'n': 'head', 'par': 'torso', 'at': [round(nx), round(ny + hh * 0.12)], 'z': 9, 'zb': 9, 'i': idx[('head', False)]}
         if view == 'front':
             head['face'] = True
         bones.append(head)
-        bones.append({'n': 'crest', 'par': 'head', 'at': [0, -round(hh * 0.78)], 'z': 10, 'zb': 10, 'i': idx[('crest', False)]})
+        chin_y = socket('head', 'chin')[1]
+        bones.append({'n': 'crest', 'par': 'head', 'at': [0, -round(chin_y * 0.92)], 'z': 10, 'zb': 10, 'i': idx[('crest', False)]})
         for b in bones:
             if b['n'] in spec['slots']:
                 b['slot'] = spec['slots'][b['n']]

@@ -139,17 +139,20 @@ def paste(canvas, im, x, y):
     canvas.alpha_composite(im, (round(x), round(y)))
 
 
-# each tail's base (where it grows from the body) and tip, as fractions of its picture, and the direction its tip
-# should point (degrees, 0 = right, 90 = up): bushy tails sweep up and out, heavy ones trail low along the ground,
-# fins stick straight out behind. A pom (None) has no direction: it just sits on the rump.
-TAILS = {
-    'fox_tail': ((0.82, 0.22), (0.12, 0.85), 55),
-    'cat_tail': ((0.12, 0.88), (0.62, 0.3), 40),
-    'reptile_tail': ((0.06, 0.72), (0.95, 0.1), 8),
-    'shark_tailfin': ((0.05, 0.5), (0.95, 0.5), 15),
-    'rabbit_tail': None,
-    'bear_tail': None,
+# where a tail points from the front (degrees, 0 = out to the right, 90 = up); from behind it mirrors. Its base and
+# tip come from parts.json sockets, so it turns around the point where it grows. Poms (not listed) just sit on the socket.
+TAIL_AIM = {
+    'fox_tail': 60,       # bushy: sweeps up beside the hip
+    'cat_tail': 45,
+    'reptile_tail': -15,  # heavy: trails out and down to the ground
+    'shark_tailfin': 10,  # a fin sticks straight out behind
 }
+with open(f'{PARTS}/parts.json') as _f:
+    _PARTS = json.load(_f)['parts']
+
+
+def sockets(pid, view):
+    return _PARTS[pid]['views'][view].get('sockets', {})
 
 
 def opaque_box(im):
@@ -178,13 +181,6 @@ def limb_angle(im, anchor):
     return math.degrees(math.atan2(-(py - anchor[1]), px - anchor[0]))
 
 
-def rest_arm(arm, out_right):
-    """an arm turned around its shoulder so it hangs down with the paw out from the body; returns it and the shoulder"""
-    sh = top_anchor(arm)
-    want = -90 + (ARM_OUT if out_right else -ARM_OUT)
-    return rotate_about(arm, sh, want - limb_angle(arm, sh))
-
-
 def rotate_about(im, base, deg):
     """turn a picture by deg (counter-clockwise) and return it with where its base point ended up"""
     w, h = im.size
@@ -196,75 +192,79 @@ def rotate_about(im, base, deg):
     return r, (r.size[0] / 2 + nx, r.size[1] / 2 + ny)
 
 
-def place_tail(pid, im):
-    """the tail turned so it points the way it should, and its base point"""
-    spec = TAILS.get(pid)
-    w, h = im.size
-    if not spec:
-        return im, (w / 2, h / 2)
-    (bx, by), (tx, ty), aim = spec
-    base, tip = (bx * w, by * h), (tx * w, ty * h)
-    now = math.degrees(math.atan2(-(tip[1] - base[1]), tip[0] - base[0]))
-    return rotate_about(im, base, aim - now)
-
-
 def build(slots, extras, stage, view):
     k = STAGE[stage]
     W, H = 150, 190
     cv = Image.new('RGBA', (W, H), (0, 0, 0, 0))
     get = lambda slot: part(slots[slot][0], view, slots[slot][1] * k, slots[slot][2], head=slot == 'head')
+    sock = lambda slot, im: {n: (v[0] * im.size[0], v[1] * im.size[1]) for n, v in sockets(slots[slot][0], view).items()}
     torso, head, arm, leg = get('torso'), get('head'), get('arm'), get('leg')
+    T, L, A, Hd = sock('torso', torso), sock('leg', leg), sock('arm', arm), sock('head', head)
     cx, ground = W / 2, H - 6
     back = view == 'back'
     tw, th = torso.size
     lw, lh = leg.size
     layers = []                               # (z, image, x, y)
-    # legs: the hips sit under the torso, far enough apart that the feet stand clear of each other
-    lax, _ = top_anchor(leg)
+    # legs hang from the torso's hips; the torso stands as high as its legs are long, so the feet meet the ground
+    (jx, jy), (ex, ey) = L['joint'], L['end']
     lx0, _, lx1, _ = opaque_box(leg)
-    hip = max(tw * 0.24, (lx1 - lx0 + 1) * 0.62)
-    ty = ground - lh * 0.62 - th              # torso top: the top of the legs tucks under it
-    layers.append((3, leg, cx - hip - lax, ground - lh))
-    layers.append((3, leg.transpose(Image.FLIP_LEFT_RIGHT), cx + hip - (lw - lax), ground - lh))
-    layers.append((5, torso, cx - tw / 2, ty))
-    # arms hang from the shoulders. The kit draws each arm as the creature's
-    # own left arm (the viewer's right): shoulder at the outer top, paw reaching in. Mirrored, it is the right arm.
-    # Each is turned at the shoulder to hang straight down with the paw a little out from the body (ARM_OUT).
-    sh_x, sh_y = tw * 0.4, ty + th * 0.12
-    left, (lsx, lsy) = rest_arm(arm.transpose(Image.FLIP_LEFT_RIGHT), False)
-    right, (rsx, rsy) = rest_arm(arm, True)
-    layers.append((2 if back else 7, left, cx - sh_x - lsx, sh_y - lsy))
-    layers.append((2 if back else 7, right, cx + sh_x - rsx, sh_y - rsy))
-    # the tail grows from the lower back: behind the body from the front, over it from behind
+    tx0 = cx - tw / 2
+    ty = ground - (lh - jy) - T['hipL'][1]    # torso top
+    hipL, hipR = tx0 + T['hipL'][0], tx0 + T['hipR'][0]
+    gap = (lx1 - lx0 + 1) * 1.15              # feet stand clear of each other
+    if hipR - hipL < gap:
+        hipL, hipR = cx - gap / 2, cx + gap / 2
+    hip_y = ty + T['hipL'][1]
+    layers.append((3, leg, hipL - jx, hip_y - jy))
+    leg_r = leg.transpose(Image.FLIP_LEFT_RIGHT)
+    layers.append((3, leg_r, hipR - (lw - jx), hip_y - jy))
+    layers.append((5, torso, tx0, ty))
+    # arms hang from the torso's shoulders: the kit draws each as the creature's own left arm (the viewer's right),
+    # turned at the joint to hang straight down with the paw ARM_OUT degrees out from the body
+    for side in ('L', 'R'):
+        im = arm if side == 'R' else arm.transpose(Image.FLIP_LEFT_RIGHT)
+        jnt = top_anchor(im)
+        im, (sx, sy) = rotate_about(im, jnt, (-90 + (ARM_OUT if side == 'R' else -ARM_OUT)) - limb_angle(im, jnt))
+        shx, shy = T['shoulder' + side]
+        layers.append((2 if back else 7, im, tx0 + shx - sx, ty + shy - sy))
+    # the tail grows from the torso's tail socket: at the side of the hip from the front, mid-rump from behind
     tpid = slots['tail'][0]
-    tail, (tbx, tby) = place_tail(tpid, get('tail'))
-    # from the front it comes out beside the hip; from behind it grows from the middle of the rump
-    if TAILS.get(tpid):
-        side = 0.46 if TAILS[tpid][2] > 30 else 0.3   # a tail that sweeps up needs the room beside the hip
-        base_x, base_y = (cx, ty + th * 0.9) if back else (cx + tw * side, ty + th * 0.86)
-    else:                                     # a pom: peeking out at the side from the front, on the rump from behind
-        base_x, base_y = (cx, ty + th * 0.86) if back else (cx + tw * 0.42, ty + th * 0.8)
-    layers.append((8 if back else 1, tail, base_x - tbx, base_y - tby))
+    tail = get('tail')
+    tsk = sock('tail', tail)
+    aim = TAIL_AIM.get(tpid)
+    if aim is None or 'base' not in tsk:      # a pom: centred on the socket
+        tail_img, (tbx, tby) = tail, (tail.size[0] / 2, tail.size[1] / 2)
+    else:
+        (bx, by), (px, py) = tsk['base'], tsk['tip']
+        now = math.degrees(math.atan2(-(py - by), px - bx))
+        # from behind it sweeps the other way (as the back views are drawn) and flatter, so it doesn't hide the back
+        want = (180 - aim * 0.6) if back else aim
+        tail_img, (tbx, tby) = rotate_about(tail, (bx, by), want - now)
+    sx, sy = T['tail']
+    layers.append((8 if back else 1, tail_img, tx0 + sx - tbx, ty + sy - tby))
+    # the head sits on the neck: its chin a little below the neck socket, so there is no gap
     hw, hh = head.size
-    hy = ty - hh * 0.82                       # head top: the neck tucks under the chin
-    layers.append((9, head, cx - hw / 2, hy))
+    nx, ny = T['neck']
+    chx, chy = Hd.get('chin', (hw / 2, hh * 0.9))
+    hx, hy = tx0 + nx - chx, ty + ny - chy + hh * 0.12
+    layers.append((9, head, hx, hy))
     for pid, anchor, f, c, pair in extras:
         e = part(pid, view, f * k, c)
         ew, eh = e.size
         if anchor == 'brow':      # horns: either side of the top of the head, curling out
-            x, y, z = cx - hw * 0.42 - ew * 0.5, hy - eh * 0.55, 10
+            x, y, z = hx + hw * 0.08 - ew * 0.5, hy - eh * 0.55, 10
         elif anchor == 'ears':
-            x, y, z = cx - hw * 0.36 - ew * 0.5, hy - eh * 0.45, 8
+            x, y, z = hx + hw * 0.14 - ew * 0.5, hy - eh * 0.45, 8
         elif anchor == 'crown':
-            x, y, z = cx - ew / 2, hy - eh * 0.55, 11
+            x, y, z = hx + hw / 2 - ew / 2, hy - eh * 0.55, 11
         elif anchor == 'chin':    # a goat's beard
-            x, y, z = cx - ew / 2, hy + hh * 0.78, 10 if not back else 4
+            x, y, z = hx + hw / 2 - ew / 2, hy + hh * 0.78, 10 if not back else 4
             e = e.transpose(Image.FLIP_TOP_BOTTOM)
         else:                     # 'back': carried on its back, behind (front view) or over it (back view)
             x, y, z = cx - ew / 2, ty - eh * 0.15, 6 if back else 4
         layers.append((z, e, x, y))
         if pair:
-            layers.append((z, e.transpose(Image.FLIP_LEFT_RIGHT), 2 * cx - x - ew, y))
+            layers.append((z, e.transpose(Image.FLIP_LEFT_RIGHT), 2 * (hx + hw / 2) - x - ew, y))
     for z, im, x, y in sorted(layers, key=lambda t: t[0]):
         paste(cv, im, x, y)
     return cv
