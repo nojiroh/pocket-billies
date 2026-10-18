@@ -71,7 +71,6 @@ expose({
   DIO_TA: [() => DIO_TA],
   DIO_TC: [() => DIO_TC],
   DIO_TD: [() => DIO_TD],
-  DIO_TILECACHE: [() => DIO_TILECACHE],
   DIO_TL: [() => DIO_TL],
   EFFECT_FRAMES: [() => EFFECT_FRAMES],
   EFFECT_KINDS: [() => EFFECT_KINDS],
@@ -82,11 +81,14 @@ expose({
   PROP_CLOCK: [() => PROP_CLOCK],
   PW_WAIT: [() => PW_WAIT],
   ROOF_STYLES: [() => ROOF_STYLES],
+  TILE_PIXEL_CACHE: [() => TILE_PIXEL_CACHE],
   actionLabel: [() => actionLabel, v => (actionLabel = v)],
   actionSpot: [() => actionSpot, v => (actionSpot = v)],
   approachPoint: [() => approachPoint, v => (approachPoint = v)],
   artImage: [() => artImage, v => setArtImage(v)],
   baseMapId: [() => baseMapId, v => (baseMapId = v)],
+  bigTilePath: [() => bigTilePath, v => (bigTilePath = v)],
+  bigTilesOn: [() => bigTilesOn],
   closedText: [() => closedText, v => (closedText = v)],
   cropGrowth: [() => cropGrowth, v => (cropGrowth = v)],
   dioB64: [() => dioB64, v => (dioB64 = v)],
@@ -131,8 +133,6 @@ expose({
   dioMix: [() => dioMix, v => (dioMix = v)],
   dioNav: [() => dioNav, v => setDioNav(v)],
   dioNearFree: [() => dioNearFree, v => (dioNearFree = v)],
-  dioNextOn: [() => dioNextOn],
-  dioNextTiles: [() => dioNextTiles, v => (dioNextTiles = v)],
   dioNoise: [() => dioNoise, v => (dioNoise = v)],
   dioPaintGen: [() => dioPaintGen, v => (dioPaintGen = v)],
   dioPanel: [() => dioPanel, v => (dioPanel = v)],
@@ -140,7 +140,6 @@ expose({
   dioPick: [() => dioPick, v => (dioPick = v)],
   dioPill: [() => dioPill, v => (dioPill = v)],
   dioPillSize: [() => dioPillSize, v => (dioPillSize = v)],
-  dioPlain47: [() => dioPlain47, v => (dioPlain47 = v)],
   dioPlayer: [() => dioPlayer, v => setDioPlayer(v)],
   dioPlayer0: [() => dioPlayer0, v => (dioPlayer0 = v)],
   dioPlayerY: [() => dioPlayerY, v => (dioPlayerY = v)],
@@ -170,13 +169,8 @@ expose({
   dioStepsNew: [() => dioStepsNew, v => (dioStepsNew = v)],
   dioStepsStore: [() => dioStepsStore, v => (dioStepsStore = v)],
   dioStop: [() => dioStop, v => setDioStop(v)],
-  dioT47: [() => dioT47, v => (dioT47 = v)],
   dioTag: [() => dioTag, v => (dioTag = v)],
   dioTapMark: [() => dioTapMark, v => (dioTapMark = v)],
-  dioTileFolder: [() => dioTileFolder, v => (dioTileFolder = v)],
-  dioTilePix: [() => dioTilePix, v => (dioTilePix = v)],
-  dioTileScale: [() => dioTileScale, v => (dioTileScale = v)],
-  dioTileSet: [() => dioTileSet, v => (dioTileSet = v)],
   dioToneAt: [() => dioToneAt, v => (dioToneAt = v)],
   dioTonePx: [() => dioTonePx, v => (dioTonePx = v)],
   dioUIpx: [() => dioUIpx],
@@ -194,6 +188,7 @@ expose({
   folkHour: [() => folkHour, v => (folkHour = v)],
   folkPhase: [() => folkPhase, v => (folkPhase = v)],
   folkTown: [() => folkTown, v => (folkTown = v)],
+  groundTileFolder: [() => groundTileFolder, v => (groundTileFolder = v)],
   imageReady: [() => imageReady],
   isOpenNow: [() => isOpenNow, v => (isOpenNow = v)],
   layerAsProp: [() => layerAsProp, v => (layerAsProp = v)],
@@ -203,11 +198,13 @@ expose({
   mapMoodName: [() => mapMoodName, v => (mapMoodName = v)],
   mapWaterCells: [() => mapWaterCells, v => (mapWaterCells = v)],
   openKind: [() => openKind, v => (openKind = v)],
+  plainTileIndex: [() => plainTileIndex, v => (plainTileIndex = v)],
   pointAlongMapPath: [() => pointAlongMapPath, v => (pointAlongMapPath = v)],
   prepareMap: [() => prepareMap, v => setPrepareMap(v)],
   propClock: [() => propClock, v => (propClock = v)],
   propShown: [() => propShown, v => (propShown = v)],
   propWithVariant: [() => propWithVariant, v => (propWithVariant = v)],
+  scaledTilePixels: [() => scaledTilePixels, v => (scaledTilePixels = v)],
   setArtImage: [() => setArtImage, v => (setArtImage = v)],
   setDioNav: [() => setDioNav, v => (setDioNav = v)],
   setDioProj: [() => setDioProj, v => (setDioProj = v)],
@@ -217,9 +214,12 @@ expose({
   syncExits: [() => syncExits, v => (syncExits = v)],
   tallGrassProps: [() => tallGrassProps, v => (tallGrassProps = v)],
   terrainAt: [() => terrainAt, v => (terrainAt = v)],
+  tilePixels: [() => tilePixels, v => (tilePixels = v)],
+  tileSetPixels: [() => tileSetPixels, v => (tileSetPixels = v)],
   timedPropsKey: [() => timedPropsKey, v => (timedPropsKey = v)],
   walkData: [() => walkData, v => setWalkData(v)],
   walkView: [() => walkView],
+  worldPatchTilesOn: [() => worldPatchTilesOn, v => (worldPatchTilesOn = v)],
 });
 /* eslint-enable no-func-assign */
 provide({ dioStop });
@@ -400,23 +400,23 @@ export function layerAsProp(M, l) {
 }
 /* the 32 px ground tiles, twelve per kind (art/next/tiles47; the v46 set in art/next/tiles is on the legacy branch) */
 /* v47: the 32 px ground is the only full-mode ground (the 16 px tiles stay for Lite mode and the Studio's tile editor) */
-export const dioNextOn = () => true;
-export function dioNextTiles(path, set) {
+export const bigTilesOn = () => true;
+export function bigTilePath(path, set) {
   const b = (path || '')
       .replace(/^.*\//, '')
       .replace(/\.png$/, '')
       .replace(/_\d+$/, ''),
-    f = set || dioTileFolder();
+    f = set || groundTileFolder();
   return [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(i => `next/${f}/${b}_${i}.png`);
 } /* v46: twelve per kind (tools/build-terrain.py) */
 /* v47: which set of twelve: the catalogue's tileSet ('tiles47', tools/build-terrain-v47.py), else the v46 set. With the
    v47 set the painter lays the soft patches itself, in world metres, picks the plain tiles evenly and never mirrors */
-export function dioTileFolder() {
+export function groundTileFolder() {
   const C = typeof walkData === 'function' && walkData();
   return (C && C.sc && C.sc.tileSet) || 'tiles47';
 }
-export function dioT47() {
-  return dioNextOn() && dioTileFolder() === 'tiles47';
+export function worldPatchTilesOn() {
+  return bigTilesOn() && groundTileFolder() === 'tiles47';
 }
 /* v43: which flag a scene flies: its own (scene/flags/<id>.png) unless it names another */
 export function flagPicturePath(sc) {
@@ -576,7 +576,7 @@ export function mapArtPaths(sc) {
     if (T) {
       L.add(T.tile);
       for (const v of T.vars || []) L.add(v);
-      if (dioNextOn()) for (const q of dioNextTiles(T.tile)) L.add(q);
+      if (bigTilesOn()) for (const q of bigTilePath(T.tile)) L.add(q);
     }
   }
   for (const p of sc.props || lite.props || []) {
@@ -637,7 +637,7 @@ export function dioNoise(x, y) {
     d = dioHash(xi + 1, yi + 1);
   return a + (b - a) * s(fx) + (c - a) * s(fy) + (a - b - c + d) * s(fx) * s(fy);
 }
-function dioTilePix(path) {
+function tilePixels(path) {
   let im = artImage(path);
   if (!imageReady(im)) return null;
   const w = im.naturalWidth || im.width,
@@ -659,7 +659,7 @@ export function dioGroundKey(sc) {
     (sc.stepm || '').length,
     sc.stepsV || 0,
     0,
-    dioNextOn() ? 'nx' + dioTileFolder() : '',
+    bigTilesOn() ? 'nx' + groundTileFolder() : '',
     Object.entries(C.terrains).map(([k, t]) => [k, t.tile, t.z, t.edge, t.vars, t.flip, t.paved, t.tone]),
     typeof dioArtVer === 'function' ? dioArtVer() : 0,
   ]);
@@ -894,7 +894,7 @@ export function dioShade(c, k) {
     Math.min(255, (c & 255) * k)
   );
 }
-export function dioPlain47(sx, sz, sa) {
+export function plainTileIndex(sx, sz, sa) {
   const h = (x, z) => Math.floor(dioHash(x * 3 + 11 + sa * 7919, z * 7 + 5) * 3),
     p = h(sx, sz),
     L = h(sx - 1, sz),
@@ -906,7 +906,7 @@ export function dioPlain47(sx, sz, sa) {
   return [0, 6, 7][p];
 }
 /* v46: tile pictures at a smaller size (each f x f block averaged), for a view's distant ground */
-function dioTileScale(t, f) {
+function scaledTilePixels(t, f) {
   if (!t || f <= 1) return t;
   const w = Math.max(1, (t.w / f) | 0),
     h = Math.max(1, (t.h / f) | 0),
@@ -928,34 +928,34 @@ function dioTileScale(t, f) {
     }
   return { w, h, d };
 }
-const DIO_TILECACHE = new Map();
-export function dioTileSet(T, TP) {
+const TILE_PIXEL_CACHE = new Map();
+export function tileSetPixels(T, TP) {
   const C = walkData().sc,
-    nxOn = dioNextOn(),
+    nxOn = bigTilesOn(),
     key =
       TP +
       '|' +
-      (nxOn ? dioTileFolder() : 0) +
+      (nxOn ? groundTileFolder() : 0) +
       '|' +
       T.tile +
       '|' +
       (T.vars || []).join(',') +
       '|' +
       (typeof dioArtVer === 'function' ? dioArtVer() : 0);
-  let L = DIO_TILECACHE.get(key);
+  let L = TILE_PIXEL_CACHE.get(key);
   if (L) return L;
   if (nxOn) {
-    const src = dioNextTiles(T.tile)
-      .map(q => dioTilePix(q))
+    const src = bigTilePath(T.tile)
+      .map(q => tilePixels(q))
       .filter(Boolean);
-    if (src.length) L = src.map(t => dioTileScale(t, Math.round(t.w / TP)));
+    if (src.length) L = src.map(t => scaledTilePixels(t, Math.round(t.w / TP)));
   }
   if (!L) {
-    const src = [dioTilePix(T.tile), ...(T.vars || []).map(q => dioTilePix(q))].filter(Boolean),
+    const src = [tilePixels(T.tile), ...(T.vars || []).map(q => tilePixels(q))].filter(Boolean),
       bw = C.tile || 16;
-    L = src.length ? src.map(t => (TP >= t.w ? t : dioTileScale(t, Math.round(t.w / TP)))) : [null];
+    L = src.length ? src.map(t => (TP >= t.w ? t : scaledTilePixels(t, Math.round(t.w / TP)))) : [null];
   }
-  if (L.every(Boolean)) DIO_TILECACHE.set(key, L);
+  if (L.every(Boolean)) TILE_PIXEL_CACHE.set(key, L);
   return L;
 }
 /* The ground picture: every tile drawn from its terrain's picture or one of its variants (picked per tile, the plain
@@ -1016,9 +1016,9 @@ export function* dioPaintGen(sc, o) {
     brkOn = brk.some((b, i) => b && used[i]),
     soilK = brkOn ? idx.u : null;
   if (soilK != null) used[soilK] = 1;
-  const pix = T.map((t, i) => (used[i] ? dioTileSet(t, TP) : [])),
+  const pix = T.map((t, i) => (used[i] ? tileSetPixels(t, TP) : [])),
     pav = T.map((t, i) => (t.paved != null ? !!t.paved : 'mbaqhe'.includes(chars[i]))),
-    t47 = dioT47(),
+    t47 = worldPatchTilesOn(),
     flip = T.map(t => !!t.flip && !t47);
   const toneK = T.map((t, i) =>
       t47 && TP >= 16 && pix[i].length >= 12 ? (t.tone != null ? +t.tone : pav[i] ? 0 : 1) : 0
@@ -1086,7 +1086,7 @@ export function* dioPaintGen(sc, o) {
           : det > 0.63
             ? DET[Math.floor(r * 7)]
             : t47
-              ? dioPlain47(sx, sz, sa)
+              ? plainTileIndex(sx, sz, sa)
               : r < 0.5
                 ? 0
                 : r < 0.75

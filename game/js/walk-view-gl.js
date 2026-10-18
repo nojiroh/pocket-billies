@@ -80,6 +80,8 @@ import {
   actionSpot,
   approachPoint,
   artImage,
+  bigTilePath,
+  bigTilesOn,
   cropGrowth,
   dioBridgeAt,
   dioBubble,
@@ -96,8 +98,6 @@ import {
   dioHash,
   dioHitAt,
   dioNav,
-  dioNextOn,
-  dioNextTiles,
   dioNoise,
   dioPaintGen,
   dioPill,
@@ -1287,8 +1287,8 @@ function* dglGroundSteps(sc, G, T) {
     tile = k => {
       const T = C0.terrains[k];
       if (!T) return null;
-      if (typeof dioNextOn === 'function' && dioNextOn()) {
-        const n = artImage(dioNextTiles(T.tile)[0]);
+      if (typeof bigTilesOn === 'function' && bigTilesOn()) {
+        const n = artImage(bigTilePath(T.tile)[0]);
         if (imageReady(n)) return n;
       }
       return artImage(T.tile);
@@ -2144,7 +2144,7 @@ const RING_N = 4,
   RING_CS = 16;
 function dglRingNew() {
   const gl = EGL.gl,
-    TP = dioNextOn() ? 32 : 16,
+    TP = bigTilesOn() ? 32 : 16,
     S = RING_N * RING_CS * TP,
     mk = (sz, lin) => {
       const t = gl.createTexture();

@@ -19,29 +19,29 @@ import {
   DIO_TD,
   DIO_TL,
   PW_WAIT,
+  bigTilesOn,
   dioClipSeg,
   dioGroundKey,
   dioHash,
-  dioNextOn,
   dioNoise,
   dioPaintGen,
-  dioPlain47,
   dioShade,
   dioStableCells,
   dioStepCH,
   dioStepCorners,
   dioStepJoined,
   dioSteps,
-  dioT47,
-  dioTileFolder,
-  dioTileSet,
   dioToneAt,
   dioTonePx,
   dioWearAmtFn,
   dioWearFn,
   dioWearLines,
+  groundTileFolder,
+  plainTileIndex,
+  tileSetPixels,
   walkData,
   walkView,
+  worldPatchTilesOn,
 } from './walk-view.js';
 import { eng } from './engine/settings.js';
 import { DGL_TERRAIN_MAT } from './walk-view-gl.js';
@@ -93,8 +93,8 @@ const PW_KEEP = 4,
    starts is skipped) and the small sizes of a picture */
 const PW_MAIN = `var DGL_TERRAIN_MAT;let CTX=null;const CTXS=new Map(),TILES=new Map(),Q=[],GONE=new Set();let busy=false;
 /* (stand-ins for walk-view.js's own, from what the main thread handed over) */
-var walkData=()=>({sc:CTX.C}),dioNextOn=()=>!!CTX.next,dioT47=()=>!!CTX.t47,dioSteps=sc=>CTX.E,dioBridges=()=>null,
- dioTileSet=(T,TP)=>TILES.get(TP+'|'+T.tile+'|'+(T.vars||[]).join(','))||[null];
+var walkData=()=>({sc:CTX.C}),bigTilesOn=()=>!!CTX.next,worldPatchTilesOn=()=>!!CTX.t47,dioSteps=sc=>CTX.E,dioBridges=()=>null,
+ tileSetPixels=(T,TP)=>TILES.get(TP+'|'+T.tile+'|'+(T.vars||[]).join(','))||[null];
 function pwMips(s,W,H,n){const out=[];for(let k=0;k<n&&W>1&&H>1;k++){const w=W>>1,h=H>>1,d=new Uint8Array(w*h*4);
  for(let y=0;y<h;y++){const r0=(y*2)*W*4,r1=r0+W*4;for(let x=0;x<w;x++){const a=r0+x*8,c=r1+x*8,o=(y*w+x)*4;
   d[o]=(s[a]+s[a+4]+s[c]+s[c+4]+2)>>2;d[o+1]=(s[a+1]+s[a+5]+s[c+1]+s[c+5]+2)>>2;d[o+2]=(s[a+2]+s[a+6]+s[c+2]+s[c+6]+2)>>2;d[o+3]=(s[a+3]+s[a+7]+s[c+3]+s[c+7]+2)>>2}}
@@ -120,7 +120,7 @@ function pwSource() {
     dioToneAt,
     dioTonePx,
     dioShade,
-    dioPlain47,
+    plainTileIndex,
     dioStableCells,
     dioWearLines,
     dioClipSeg,
@@ -263,8 +263,8 @@ function pwSendCtx(id, sc) {
       stable: S,
     },
     E: E ? { s: 'w', m0: 'w', w: E.w, h: E.h, H: E.H, M: E.M } : null,
-    t47: dioT47(),
-    next: dioNextOn(),
+    t47: worldPatchTilesOn(),
+    next: bigTilesOn(),
     mat: typeof DGL_TERRAIN_MAT !== 'undefined' ? DGL_TERRAIN_MAT : null,
   };
   PW.w.postMessage({ t: 'ctx', id, ctx });
@@ -275,7 +275,7 @@ function pwSendCtx(id, sc) {
    false while a picture hasn't loaded: that rectangle is painted here meanwhile, as before */
 function pwSendTiles(sc, TP) {
   const C = walkData().sc,
-    gen = (typeof dioArtVer === 'function' ? dioArtVer() : 0) + '|' + dioTileFolder() + '|' + (dioNextOn() ? 1 : 0);
+    gen = (typeof dioArtVer === 'function' ? dioArtVer() : 0) + '|' + groundTileFolder() + '|' + (bigTilesOn() ? 1 : 0);
   if (gen !== PW.gen) {
     PW.gen = gen;
     PW.tiles.clear();
@@ -294,7 +294,7 @@ function pwSendTiles(sc, TP) {
     if (!T) continue;
     const k = TP + '|' + T.tile + '|' + (T.vars || []).join(',');
     if (PW.tiles.get(k) === 2) continue;
-    const set = dioTileSet(T, TP),
+    const set = tileSetPixels(T, TP),
       full = set.every(Boolean);
     if (!full) {
       ok = false;
