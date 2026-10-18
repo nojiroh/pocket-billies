@@ -14,14 +14,14 @@ import { hexA } from './art.js';
 import {
   ACT,
   FOC,
-  POS,
-  UPP,
+  actorMetersPerPixel,
+  actorPositions,
   battleStage,
   partSpr,
   sideBuf,
   sideWorld,
   trainerBattleFrame,
-  trainerMpp,
+  trainerMetersPerPixel,
 } from './battle-stage.js';
 import { stopWalkView, walkData, walkView } from './walk-view.js';
 import { EGL } from './engine/webgl.js';
@@ -81,9 +81,9 @@ export function battleGLAttach(o = {}) {
       bz = p.z - BGL.off[1],
       bw = M.box ? (M.box[0] * (p.s || 1)) / 2 : 0,
       bd = M.box ? M.box[1] * (p.s || 1) : 0;
-    const zMax = Math.max(...POS.map(q => q.z)) + 1.6,
-      xMin = Math.min(...POS.map(q => q.x)) - 2.4,
-      xMax = Math.max(...POS.map(q => q.x)) + 2.2;
+    const zMax = Math.max(...actorPositions.map(q => q.z)) + 1.6,
+      xMin = Math.min(...actorPositions.map(q => q.x)) - 2.4,
+      xMax = Math.max(...actorPositions.map(q => q.x)) + 2.2;
     if (bz > -2.5 && bz - bd < zMax && bx + bw > xMin && bx - bw < xMax) hide.add(p);
   }
   BGL.hide = hide;
@@ -144,7 +144,7 @@ function battleGLFrame() {
       x = w.x + O[0],
       z = w.z + O[1],
       gy = standingHeightAt(x, z),
-      mpp = (UPP[i] * B.s.sc * (B.s.big || 1) * (B.s.fs || 1)) / B.R.k,
+      mpp = (actorMetersPerPixel[i] * B.s.sc * (B.s.big || 1) * (B.s.fs || 1)) / B.R.k,
       G = B.R.geo;
     items.push({
       k: 'rig',
@@ -170,9 +170,9 @@ function battleGLFrame() {
     if (!T.show || !T.who || T.a <= 0) continue;
     const f = trainerBattleFrame(i);
     if (!f) continue;
-    const x = POS[i].x + (i === 0 ? -1.15 : 1.25) + T.x * UPP[i] + O[0],
-      z = POS[i].z + (i === 0 ? 0.25 : 0.4) + O[1],
-      mpp = trainerMpp(i);
+    const x = actorPositions[i].x + (i === 0 ? -1.15 : 1.25) + T.x * actorMetersPerPixel[i] + O[0],
+      z = actorPositions[i].z + (i === 0 ? 0.25 : 0.4) + O[1],
+      mpp = trainerMetersPerPixel(i);
     items.push({
       k: 'rig',
       im: f,
