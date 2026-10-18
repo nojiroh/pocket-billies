@@ -13,6 +13,7 @@ expose({
   ENGINE_DEFAULTS: [() => ENGINE_DEFAULTS],
   ENGINE_PRESETS: [() => ENGINE_PRESETS],
   ENGINE_SPEC: [() => ENGINE_SPEC],
+  PLAIN_LOOK: [() => PLAIN_LOOK],
   engineColor: [() => engineColor, v => (engineColor = v)],
   engineContext: [() => engineContext, v => (engineContext = v)],
   engineDataSource: [() => engineDataSource, v => setEngineDataSource(v)],
@@ -177,6 +178,7 @@ export const ENGINE_DEFAULTS = {
     edgeBleed: true,
   },
 };
+provide({ ENGINE_DEFAULTS }); /* to-module */
 /* labels, ranges and help for the Studio, in display order */
 export const ENGINE_SPEC = [
   [
@@ -719,7 +721,28 @@ export const ENGINE_SPEC = [
     ],
   ],
 ];
+provide({ ENGINE_SPEC }); /* to-module */
 /* ready-made looks; a preset only lists what it changes */
+/* phase 09 batch 1: the plain look, for judging props (a scene with plain: 1, the props test map and the Studio's
+   prop turntable): no depth of field, bloom, colour grade, film grain, vignette, haze, mist, clouds, sun shafts or
+   weather, and the time of day and season left out, so a prop shows as it is drawn and modelled under a steady sun */
+export const PLAIN_LOOK = {
+  lens: { blur: 0, bokeh: 0, aberration: 0, vignette: 0, grain: 0, sharpen: 0 },
+  color: { exposure: 1, contrast: 1, saturation: 1, warmth: 0, bloom: 0, grade: 'none', gradeAmount: 0 },
+  sun: { clouds: 0, cloudShadows: 0, shafts: 0, glare: 0 },
+  air: {
+    mist: 0,
+    valleyMist: 0,
+    particles: 0,
+    weather: 0,
+    heat: 0,
+    wetGround: 0,
+    sunFog: 0,
+    godRays: 0,
+    lightsInAir: 0,
+    hazeDistance: 900,
+  },
+};
 export const ENGINE_PRESETS = {
   sunny: {
     name: 'Sunny',
@@ -767,6 +790,7 @@ export const ENGINE_PRESETS = {
     },
   },
 };
+provide({ ENGINE_PRESETS }); /* to-module */
 /* the value for one dial: scene look → game-wide defaults → built-in default */
 function lookDials() {
   if (typeof engineContext !== 'undefined' && engineContext.look) return engineContext.look;

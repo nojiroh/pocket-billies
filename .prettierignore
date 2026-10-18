@@ -1,6 +1,8 @@
 # Generated data: written by the Studio and the build tools in their own format
 game/data/
 game/art/
+# Bundled by tools/vendor-lit.mjs
+game/vendor/
 # Not source
 node_modules/
 dist/

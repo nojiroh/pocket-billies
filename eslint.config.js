@@ -151,6 +151,8 @@ export default [
       'validation/',
       'game/data/',
       'game/art/',
+      // phase 06: Lit, bundled by tools/vendor-lit.mjs
+      'game/vendor/',
       'firebase/',
       // phase 13: the unit tests are linted, the other tools are not
       'tools/*',
@@ -187,6 +189,12 @@ export default [
   },
   {
     files: ['game/js/test-globals.js', 'game/js/hooks.js'],
+    languageOptions: { ecmaVersion: 'latest', sourceType: 'module', globals: globals.browser },
+    rules: bugRules,
+  },
+  // phase 13: the graphics test is on no page: settings-screen.js loads it when it starts and hands it what it reads
+  {
+    files: ['game/js/graphics-test.js'],
     languageOptions: { ecmaVersion: 'latest', sourceType: 'module', globals: globals.browser },
     rules: bugRules,
   },

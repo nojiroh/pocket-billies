@@ -84,6 +84,8 @@ import {
   tripTo,
   xpFor,
 } from './logic/rules.js';
+import { TOAST_MS, toastAdd, toastItem, toastTime } from './logic/messages.js';
+import { pbFloat, pbInboxDot, pbInboxPop } from './ui-kit.js';
 import { newSaveKeepingPreferences } from './logic/saves.js';
 import {
   CATCH_RULES,
@@ -254,6 +256,8 @@ expose({
   nextModal: [() => nextModal, v => (nextModal = v)],
   nextToast: [() => nextToast, v => (nextToast = v)],
   nodeActions: [() => nodeActions, v => (nodeActions = v)],
+  notice: [() => notice, v => ((notice = v), provide({ notice }))],
+  openInbox: [() => openInbox, v => (openInbox = v)],
   openSettings: [() => openSettings, v => ((openSettings = v), provide({ openSettings }))],
   paintWorldMapCard: [() => paintWorldMapCard, v => ((paintWorldMapCard = v), provide({ paintWorldMapCard }))],
   pixelSky: [() => pixelSky],
@@ -281,12 +285,14 @@ expose({
   roomStepIn: [() => roomStepIn, v => (roomStepIn = v)],
   runEvolution: [() => runEvolution, v => ((runEvolution = v), provide({ runEvolution }))],
   showPendingWindows: [() => showPendingWindows, v => ((showPendingWindows = v), provide({ showPendingWindows }))],
+  showToast: [() => showToast, v => (showToast = v)],
   startGame: [() => startGame, v => ((startGame = v), provide({ startGame }))],
   statusBadgeHTML: [() => statusBadgeHTML],
   swapPick: [() => swapPick, v => (swapPick = v)],
   teamCard: [() => teamCard, v => (teamCard = v)],
   teamHero: [() => teamHero, v => (teamHero = v)],
   toast: [() => toast, v => ((toast = v), provide({ toast }))],
+  toastTimer: [() => toastTimer, v => (toastTimer = v)],
   topbar: [() => topbar, v => (topbar = v)],
   tripButtons: [() => tripButtons, v => (tripButtons = v)],
   tripDest: [() => tripDest],
@@ -298,6 +304,7 @@ expose({
   walkMapSync: [() => walkMapSync, v => (walkMapSync = v)],
   walkPick: [() => walkPick, v => (walkPick = v)],
   walkState: [() => walkState, v => (walkState = v)],
+  whenWorldShows: [() => whenWorldShows, v => (whenWorldShows = v)],
   worldMapCardHTML: [() => worldMapCardHTML, v => (worldMapCardHTML = v)],
   xpLeft: [() => xpLeft],
   xpProgress: [() => xpProgress],
@@ -309,6 +316,7 @@ provide({
   mapIdAt,
   mapOffsetInView,
   modal,
+  notice,
   openSettings,
   paintWorldMapCard,
   progressBarHTML,
@@ -344,20 +352,73 @@ function hpBar(hp, max) {
 }
 
 /* ---------- toasts & modals ---------- */
+/* phase 06: one toast at a time under the top bar (<pb-toast id="toast">, js/ui-kit.js); the same message again joins
+   the one showing or waiting ("Saved ×2", js/logic/messages.js); a tap or a swipe up dismisses it */
+let toastTimer = 0;
 export function toast(t) {
-  uiState.toastQ.push(t);
-  if (!uiState.toastOn) nextToast();
+  const where = toastAdd(uiState.toastOn, uiState.toastQ, String(t), Date.now());
+  if (where === 'showing') {
+    showToast();
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(nextToast, TOAST_MS);
+  } else if (!uiState.toastOn) nextToast();
 }
 function nextToast() {
+  clearTimeout(toastTimer);
   const t = uiState.toastQ.shift();
   if (!t) {
     uiState.toastOn = false;
-    renderOverlay();
+    showToast();
     return;
   }
-  uiState.toastOn = t;
-  renderOverlay();
-  setTimeout(nextToast, uiState.toastQ.length > 2 ? 1300 : 2300);
+  uiState.toastOn = toastItem(t, Date.now());
+  showToast(true);
+  toastTimer = setTimeout(nextToast, toastTime(uiState.toastQ.length));
+}
+/* the pill follows uiState.toastOn (the checks clear it and call renderOverlay); a new toast gets a new element, so it
+   drops in again, while a merge only updates the count */
+function showToast(fresh) {
+  let el = /** @type {any} */ (document.getElementById('toast'));
+  const t = uiState.toastOn;
+  if (!t) {
+    if (el) el.remove();
+    return;
+  }
+  if (el && fresh) {
+    el.remove();
+    el = null;
+  }
+  if (!el) {
+    el = document.createElement('pb-toast');
+    el.id = 'toast';
+    el.addEventListener('pb-dismiss', nextToast);
+    document.body.appendChild(el);
+  }
+  el.style.setProperty('--toast-top', document.querySelector('.topbar') ? '70px' : '12px');
+  el.text = t.text;
+  el.n = t.count;
+}
+/* phase 06: a notice that can wait (not a choice) goes behind the dot on the portrait instead of opening by itself;
+   the same id is kept once; onRead runs when it has been read */
+export function notice(n) {
+  if (uiState.inbox.some(x => x.id === n.id)) return;
+  uiState.inbox.push(n);
+  if (saveData.started && !activeBattle && uiState.intro === 0) render();
+}
+function openInbox() {
+  const L = uiState.inbox.splice(0);
+  if (!L.length) return;
+  modal({
+    title: L.length === 1 ? L[0].title : 'Waiting for you',
+    cls: 'inbox-sheet',
+    html:
+      L.length === 1
+        ? `<div class="prose">${L[0].html}</div>`
+        : `<ul class="inbox-list">${L.map((n, i) => `<li class="m-enter" style="--i:${i}"><h3>${n.title}</h3><div class="prose">${n.html}</div></li>`).join('')}</ul>`,
+    btns: [{ l: 'Got it', c: 'dark', f: closeModal }],
+  });
+  L.forEach(n => n.onRead && n.onRead());
+  render();
 }
 export function modal(o) {
   uiState.mq.push(o);
@@ -378,12 +439,12 @@ export function renderOverlay() {
   const M = uiState.modal;
   if (M)
     h += `<div class="scrim" data-a="scrim"><div class="sheet px ${M.cls || ''}" role="dialog" aria-modal="true" aria-labelledby="mt">${M.top || ''}<h2 id="mt">${M.title}</h2><div class="body">${M.html || ''}</div><div class="btns">${(M.btns || []).map((b, i) => `<button class="pb ${b.c || ''} wide" data-a="mb" data-i="${i}" ${b.dis ? 'disabled' : ''}>${b.l}</button>`).join('')}</div></div></div>`;
-  if (uiState.toastOn) h += `<div class="toast px glass" role="status">${escapeHtml(uiState.toastOn)}</div>`;
   const keep = ov.querySelector('.scrim');
   ov.innerHTML = h;
   const sc = ov.querySelector('.scrim');
   if (sc && keep && M && M === uiState._lastM) sc.classList.add('still');
   uiState._lastM = M;
+  showToast();
   if (M && M.after && !M._afterRan) {
     M._afterRan = true;
     M.after();
@@ -402,6 +463,25 @@ export function renderOverlay() {
 }
 
 /* ---------- post-step events ---------- */
+/* phase 06: runs fn once the world is on screen and the player has had a moment to see it (no loader, title or
+   opening in front of it); gives up quietly after 30 s */
+export function whenWorldShows(fn, settle = 1200) {
+  const t0 = performance.now();
+  const ready = () => {
+    const ld = document.getElementById('loader');
+    return (
+      walkView.ready &&
+      !uiState.title &&
+      !document.body.classList.contains('in-cs') &&
+      !(ld && !ld.hidden && ld.offsetParent !== null)
+    );
+  };
+  const tick = () => {
+    if (ready()) setTimeout(fn, settle);
+    else if (performance.now() - t0 < 30000) setTimeout(tick, 250);
+  };
+  tick();
+}
 export function showPendingWindows() {
   if (activeBattle || uiState.modal || !saveData.started || uiState.title) return;
   const eg = hatchable()[0];
@@ -460,6 +540,7 @@ function evolutionModal(m) {
     }[e.k] || '';
   modal({
     title: `${escapeHtml(billyName(m))} is evolving`,
+    cls: 'evo-sheet',
     top: `<div class="evo">${rigCanvasHTML(m.sp, 128, { gold: m.gold, build: m.build })}</div>`,
     html: `<p>${why} Something bigger is coming.</p>`,
     lock: 1,
@@ -570,7 +651,7 @@ function topbar() {
   rollDay();
   const shut = !!(saveData.preferences && saveData.preferences.cardClosed),
     walk = uiState.tab === 'walk';
-  return `<div class="topbar glass" role="status">${walk ? `<button class="tb-where ${shut ? 'shut' : ''}" data-a="card-open" aria-expanded="${!shut}" aria-label="${shut ? 'Show' : 'Hide'} the card for ${escapeHtml(LOCATIONS[saveData.trip.node].name)}">${escapeHtml(uiState.inside && !uiState.bench && typeof roomState === 'function' && roomState() ? uiState.inside.name || LOCATIONS[saveData.trip.node].name : LOCATIONS[saveData.trip.node].name)}${uiIconHTML('chev', 12)}</button>` : `<span class="tb-where">${escapeHtml(LOCATIONS[saveData.trip.node].name)}</span>`}<span class="tb-chip tnum" title="Money">${coinHTML('penny', 16)}<small>$</small><b data-count="tse" data-to="${saveData.se}">${formatNumber(saveData.se)}</b></span><button class="tb-btn" data-a="settings" aria-label="Settings and help">${uiIconHTML('gear', 18)}</button><button class="tb-me" data-a="tab" data-t="profile" aria-label="Your trainer card" ${uiState.tab === 'profile' ? 'aria-current="page"' : ''}>${typeof portraitHTML === 'function' ? portraitHTML('me', 84) : ''}</button></div>`;
+  return `<div class="topbar glass" role="status">${walk ? `<button class="tb-where ${shut ? 'shut' : ''}" data-a="card-open" aria-expanded="${!shut}" aria-label="${shut ? 'Show' : 'Hide'} the card for ${escapeHtml(LOCATIONS[saveData.trip.node].name)}">${escapeHtml(uiState.inside && !uiState.bench && typeof roomState === 'function' && roomState() ? uiState.inside.name || LOCATIONS[saveData.trip.node].name : LOCATIONS[saveData.trip.node].name)}${uiIconHTML('chev', 12)}</button>` : `<span class="tb-where">${escapeHtml(LOCATIONS[saveData.trip.node].name)}</span>`}<span class="tb-chip tnum" title="Money">${coinHTML('penny', 16)}<small>$</small><b data-count="tse" data-to="${saveData.se}">${formatNumber(saveData.se)}</b></span><button class="tb-btn" data-a="settings" aria-label="Settings and help">${uiIconHTML('gear', 18)}</button><button class="tb-me" data-a="tab" data-t="profile" aria-label="Your trainer card" ${uiState.tab === 'profile' ? 'aria-current="page"' : ''}>${typeof portraitHTML === 'function' ? portraitHTML('me', 84) : ''}</button>${pbInboxDot(uiState.inbox.length)}</div>`;
 }
 export function render() {
   const app = $('#app');
@@ -624,11 +705,14 @@ export function render() {
   walkMapSync();
   document.body.classList.toggle('on-map', T === 'map');
   if (T === 'map') worldMapMount();
+  pbInboxPop(uiState.inbox.length);
   $$('[data-count]').forEach(el => {
     const k = el.dataset.count,
       to = +el.dataset.to,
       from = uiState.disp[k];
     uiState.disp[k] = to;
+    /* phase 06: money earned rises from the money chip instead of a toast */
+    if (k === 'tse' && from != null && to > from) pbFloat(el.closest('.tb-chip') || el, '+$' + formatNumber(to - from));
     if (from == null || from === to || reducedMotion) {
       el.textContent = formatNumber(to);
       return;
@@ -2505,6 +2589,9 @@ document.addEventListener('click', ev => {
     }
     case 'settings':
       openSettings();
+      break;
+    case 'inbox':
+      openInbox();
       break;
     case 'card-close':
       saveData.preferences = saveData.preferences || {};
