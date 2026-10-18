@@ -37,7 +37,7 @@ import {
 import { escapeHtml, reducedMotion, uiState } from './game-state.js';
 import { userFps } from './frame-scheduler.js';
 import { artLoad, makeCanvas } from './art.js';
-import { LOOK_PRESETS, cleanLook, humanPose, lookOf, owFrames } from './person-art.js';
+import { LOOK_PRESETS, cleanLook, lookOf, personBattlePose, personWalkFrames } from './person-art.js';
 import { dressingRoom, openDressingRoom, saveDressingLook } from './dressing-room.js';
 import { drawRig, rigFrame, rigParts, rigPreload, rigTint } from './skeleton-rig.js';
 import { buzz, particleSprite } from './battle-stage.js';
@@ -276,11 +276,11 @@ function cutscenePersonItem(a, t, C0) {
     if (k >= 1) a.walk = null;
   }
   if (a.walk) {
-    const set = owFrames(a.who)[a.dir] || owFrames(a.who).down;
+    const set = personWalkFrames(a.who)[a.dir] || personWalkFrames(a.who).down;
     im = set.cyc ? set.cyc[Math.floor(t / 110) % 6] : set[1 + (Math.floor(t / 150) % 2)];
-  } else if (a.act === 'throw') im = humanPose(a.who, 'front', 'throw', clamp((now - a.actT) / 700, 0, 1));
-  else if (a.act === 'cheer' || a.act === 'react') im = humanPose(a.who, 'front', a.act, 0, now - a.actT);
-  else im = (owFrames(a.who)[a.dir] || owFrames(a.who).down)[0];
+  } else if (a.act === 'throw') im = personBattlePose(a.who, 'front', 'throw', clamp((now - a.actT) / 700, 0, 1));
+  else if (a.act === 'cheer' || a.act === 'react') im = personBattlePose(a.who, 'front', a.act, 0, now - a.actT);
+  else im = (personWalkFrames(a.who)[a.dir] || personWalkFrames(a.who).down)[0];
   return personItem('actor', im, a.x, a.z, C0, {});
 }
 /* the starter billionaires, drawn with their rigs every frame */

@@ -827,7 +827,7 @@ def desktop_steps(b, base, R):
         if not pg.evaluate("typeof shoreField==='function'"): return 'not in this build'
         out = []
         # walking left is the mirror of walking right, not the same picture
-        f = pg.evaluate("""(()=>{const fr=owFrames('me'),a=fr.side[0],b=fr.sideR[0],px=c=>{const x=c.getContext('2d');return x.getImageData(0,0,c.width,c.height).data};const A=px(a),B=px(b);let same=0,n=0;for(let i=3;i<A.length;i+=4){if(A[i]>0||B[i]>0){n++;if(A[i]===B[i]&&A[i-1]===B[i-1]&&A[i-2]===B[i-2])same++}}return [n,same]})()""")
+        f = pg.evaluate("""(()=>{const fr=personWalkFrames('me'),a=fr.side[0],b=fr.sideR[0],px=c=>{const x=c.getContext('2d');return x.getImageData(0,0,c.width,c.height).data};const A=px(a),B=px(b);let same=0,n=0;for(let i=3;i<A.length;i+=4){if(A[i]>0||B[i]>0){n++;if(A[i]===B[i]&&A[i-1]===B[i-1]&&A[i-2]===B[i-2])same++}}return [n,same]})()""")
         if f[0] and f[1] / f[0] > .97: raise Exception('walking left and walking right show the same picture')
         out.append('left and right walking frames differ')
         node = pg.evaluate("LOCATIONS.findIndex(r=>r.scene==='pond')")

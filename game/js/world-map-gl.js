@@ -24,7 +24,7 @@ import {
 } from './game-state.js';
 import { frameCount, frameStop, frameTask, userFps } from './frame-scheduler.js';
 import { artLoad, artPixels, hexToRgb, makeCanvas, uiIconHTML, worldMapStamp } from './art.js';
-import { owFrames, portraitHTML } from './person-art.js';
+import { personWalkFrames, portraitHTML } from './person-art.js';
 import { EASE } from './battle-stage.js';
 import { artImage, hash2d, imageReady, mapById, stepRaiseAt, walkData, walkView } from './walk-view.js';
 import { engineContext, engineDataSource, engineSetting } from './engine/settings.js';
@@ -867,7 +867,7 @@ function worldMapGlOverlay(t) {
   const pq = worldMapGlProject(worldMap.me || worldMapPlayerPosition());
   if (pq && worldMap.fly && typeof flyDraw === 'function') flyDraw(c, t, worldMapGlProject);
   else if (pq) {
-    const fr = owFrames('me'),
+    const fr = personWalkFrames('me'),
       set = fr[worldMap.face] || fr.down,
       f = worldMap.moving ? set[1 + (Math.floor(t / 140) % 2)] : set[0],
       k = 2,

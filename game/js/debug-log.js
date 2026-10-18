@@ -703,7 +703,7 @@ debugLog.hook = () => {
     ['battleStageStart', 'setting up the battle stage'],
     ['battleStageResize', 'laying out the battle'],
     ['paintActions', 'drawing the battle menu'],
-    ['humanFrames', 'drawing a person'],
+    ['personBattleFrames', 'drawing a person'],
     ['worldMapGlRender', 'drawing the map'],
     ['cutsceneStart', 'starting the opening'],
     ['openDressingRoom', 'opening the dressing room'],

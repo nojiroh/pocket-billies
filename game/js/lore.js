@@ -11,7 +11,7 @@ import { closeModal, modal, provide, storyFlags } from './hooks.js';
 import { clamp } from './util.js';
 import { LOCATIONS, TRAINERS, gameData } from './game-data.js';
 import { escapeHtml, save, saveData, uiState } from './game-state.js';
-import { humanHTML } from './person-art.js';
+import { personHTML } from './person-art.js';
 import { baseMapId, findPath, mapById, mapHub, walkView, walkablePointNear } from './walk-view.js';
 import { standingHeightAt, walkRenderer } from './walk-view-gl.js';
 import { JINGLES, jingle, soundEffect } from './sound.js';
@@ -246,7 +246,7 @@ export function renderLore() {
       .map(([k, p]) => {
         const o = loreOpen(p.unlock);
         return o
-          ? `<article class="lore-card person">${p.who ? `<span class="lore-face">${typeof humanHTML === 'function' ? humanHTML(p.who, 52) : ''}</span>` : ''}<div><h3>${escapeHtml(p.name)}</h3><small>${escapeHtml(p.role || '')}</small><p>${escapeHtml(p.text)}</p>${p.voice ? `<p class="hand">${escapeHtml(p.voice)}</p>` : ''}</div></article>`
+          ? `<article class="lore-card person">${p.who ? `<span class="lore-face">${typeof personHTML === 'function' ? personHTML(p.who, 52) : ''}</span>` : ''}<div><h3>${escapeHtml(p.name)}</h3><small>${escapeHtml(p.role || '')}</small><p>${escapeHtml(p.text)}</p>${p.voice ? `<p class="hand">${escapeHtml(p.voice)}</p>` : ''}</div></article>`
           : loreCard('', '', false);
       })
       .join('');

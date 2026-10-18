@@ -13,7 +13,7 @@ import { expose } from './test-globals.js';
 import { account, accountOn, closeModal, mapIdAt, mapOffsetInView, modal, provide, render, toast } from './hooks.js';
 import { LOCATIONS, SPECIES } from './game-data.js';
 import { billyName, cleanName, escapeHtml, plural, saveData, uiState } from './game-state.js';
-import { owFrames, portraitHTML, trWarm } from './person-art.js';
+import { personWalkFrames, portraitHTML, warmPerson } from './person-art.js';
 import { rigCanvasHTML } from './skeleton-rig.js';
 import { directionOf, walkView } from './walk-view.js';
 import { personItem } from './walk-view-gl.js';
@@ -422,7 +422,7 @@ function friendWorldItems(out, t, C0) {
     !walkView.sc ||
     uiState.inside ||
     uiState.bench ||
-    typeof owFrames !== 'function' ||
+    typeof personWalkFrames !== 'function' ||
     typeof mapOffsetInView !== 'function'
   )
     return;
@@ -436,12 +436,12 @@ function friendWorldItems(out, t, C0) {
       who = 'friend:' + u;
     let fr;
     try {
-      fr = owFrames(who);
+      fr = personWalkFrames(who);
     } catch (e) {
       fr = null;
     }
     if (!fr) continue;
-    if (typeof trWarm === 'function') trWarm(who);
+    if (typeof warmPerson === 'function') warmPerson(who);
     const P = walkView.pl,
       dir = P && Math.hypot(P.x - x, P.z - z) < 5 ? directionOf(P.x - x, P.z - z) : 'down',
       set = fr[dir] || fr.down,

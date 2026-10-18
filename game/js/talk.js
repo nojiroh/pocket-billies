@@ -10,7 +10,7 @@ import { mapChatLines, provide } from './hooks.js';
 import { PEOPLE, TRAINERS } from './game-data.js';
 import { reducedMotion, saveData } from './game-state.js';
 import { frameStop, frameTask } from './frame-scheduler.js';
-import { lookOf, trPortrait } from './person-art.js';
+import { drawPortrait, lookOf } from './person-art.js';
 import { turnToPlayer, walkView } from './walk-view.js';
 import { walkRenderer } from './walk-view-gl.js';
 import { soundEffect } from './sound.js';
@@ -179,7 +179,7 @@ function talkTick(ts) {
     blink = ts % 3700 < 130 && P.expr !== 'happy';
   const ex = blink ? 'blink' : typing && !P.expr && Math.floor(ts / 120) % 2 ? 'talk' : P.expr;
   try {
-    trPortrait(el.querySelector('.talk-por'), P.who, ex, ts);
+    drawPortrait(el.querySelector('.talk-por'), P.who, ex, ts);
   } catch (e) {}
 }
 document.addEventListener('keydown', ev => {

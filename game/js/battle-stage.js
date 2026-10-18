@@ -48,7 +48,7 @@ import {
   packPixel,
   whiteCopy,
 } from './art.js';
-import { humanFrames, humanPose, wardrobeData } from './person-art.js';
+import { personBattleFrames, personBattlePose, wardrobeData } from './person-art.js';
 import { drawRig, rigFrame, rigParts, rigTint } from './skeleton-rig.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -1627,9 +1627,9 @@ export function trainerBattleFrame(i) {
   const T = battleStage.tr[i];
   if (!T || !T.who) return null;
   const view = i === 0 ? 'back' : 'front';
-  if (T.act && battleStage.t - T.t0 < T.dur && typeof humanPose === 'function')
-    return humanPose(T.who, view, T.act, (battleStage.t - T.t0) / T.dur, battleStage.t - T.t0);
-  const fr = humanFrames(T.who, view);
+  if (T.act && battleStage.t - T.t0 < T.dur && typeof personBattlePose === 'function')
+    return personBattlePose(T.who, view, T.act, (battleStage.t - T.t0) / T.dur, battleStage.t - T.t0);
+  const fr = personBattleFrames(T.who, view);
   return fr[Math.floor(battleStage.t / 700) % 2];
 }
 function setTrainerAction(i, act, dur) {

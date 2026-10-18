@@ -21,7 +21,7 @@ import {
 } from './game-state.js';
 import { userFps } from './frame-scheduler.js';
 import { uiIconHTML } from './art.js';
-import { humanHTML } from './person-art.js';
+import { personHTML } from './person-art.js';
 import { applyPreferences } from './settings-screen.js';
 import { mapById, stopWalkView, walkView } from './walk-view.js';
 import { mountWalkView, standingHeightAt, walkRenderer } from './walk-view-gl.js';
@@ -87,7 +87,7 @@ export function renderTitle() {
   return `<div class="ttl${cont ? ' can-tap' : ''}" data-a="${cont ? 'ttltap' : ''}"><div class="ttl-bg" aria-hidden="true"></div>
   <div class="ttl-acc">${typeof accountChipHTML === 'function' ? accountChipHTML() : ''}</div><div class="ttl-top"><h1 class="ttl-logo" aria-label="Pocket Billies"><span>POCKET</span><span>BILLIES</span></h1><p class="ttl-tag">Gotta tax 'em all!</p></div><p class="ttl-ver">${escapeHtml(PB_VERSION)}</p>
   <div class="ttl-bottom">
-   ${cont ? `<button class="ttl-cont" data-a="ttlgo"><span class="ttl-face">${humanHTML('me', 56)}</span><span class="ttl-ct"><b>Continue</b><small>${escapeHtml(nm)} · ${escapeHtml(place)}</small><small>${titlePlayTime()} played</small></span></button>` : ''}
+   ${cont ? `<button class="ttl-cont" data-a="ttlgo"><span class="ttl-face">${personHTML('me', 56)}</span><span class="ttl-ct"><b>Continue</b><small>${escapeHtml(nm)} · ${escapeHtml(place)}</small><small>${titlePlayTime()} played</small></span></button>` : ''}
    <div class="ttl-btns">${cont ? `<button class="pb quiet" data-a="ttlnew">New game</button>` : `<button class="pb gold big wide" data-a="intro">New game</button>`}<button class="pb quiet" data-a="ttlset">${uiIconHTML('gear', 14)} Settings</button></div>
    ${cont ? '<p class="ttl-hint">Tap anywhere to continue</p>' : ''}</div></div>`;
 }

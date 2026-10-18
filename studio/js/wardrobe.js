@@ -10,7 +10,14 @@ import { provide } from '../../game/js/hooks.js';
 import { $, $$, clamp } from '../../game/js/util.js';
 import { frameStop, frameTask } from '../../game/js/frame-scheduler.js';
 import { makeCanvas } from '../../game/js/art.js';
-import { LOOK_PRESETS, PERSON_ART_CACHE, bodySliders, cleanLook, trFrame, trRig } from '../../game/js/person-art.js';
+import {
+  LOOK_PRESETS,
+  PERSON_ART_CACHE,
+  bodySliders,
+  cleanLook,
+  personFrame,
+  personRig,
+} from '../../game/js/person-art.js';
 import { rigMatrices } from '../../game/js/skeleton-rig.js';
 import { escapeHtml } from './game-stand-ins.js';
 import {
@@ -315,7 +322,7 @@ function drawWardrobeThumbs() {
         if (!it) return;
         L.wear[it.slot] = k;
       }
-      const f = trFrame(L, 'front', 'idle', 0, 0),
+      const f = personFrame(L, 'front', 'idle', 0, 0),
         crop =
           {
             hair: 'head',
@@ -366,7 +373,7 @@ function wardrobePreviewLoop(ts) {
   if (a === 'walk') ph = (ts / 760) % 1;
   else if (a === 'throw') ph = (ts / 900) % 1;
   try {
-    const f = trFrame(L, view, a, ph, ts, mir, wardrobeEditor.pvExpr || undefined),
+    const f = personFrame(L, view, a, ph, ts, mir, wardrobeEditor.pvExpr || undefined),
       s = Math.max(
         1,
         Math.floor(
@@ -389,7 +396,7 @@ function wardrobeJoints(view) {
   const L = cleanLook(LOOK_PRESETS[0]);
   for (const s of bodySliders()) L.body[s.k] = s.def;
   L.body.chest = 1;
-  const R = trRig(L, view),
+  const R = personRig(L, view),
     { W } = rigMatrices(R, { x: 0, y: 0, r: 0, sx: 1, sy: 1, act: 'idle', t: 0, ph: 0 }, 'front');
   const J = {};
   for (const b of editedWardrobe().skeleton[view]) if (W[b.n]) J[b.n] = [W[b.n][4] - R.cx, W[b.n][5] - R.base];
@@ -420,7 +427,7 @@ function drawWardrobeEditor() {
   L.body.chest = Math.max(0.6, L.body.chest);
   const ex = (src.pieces[wardrobeEditor.piece] || {}).x || '',
     hasX = !!ex && src.pieces.some(p => p.v === wardrobeEditor.view && p.x === ex);
-  const f = trFrame(L, wardrobeEditor.view, 'idle', 0, 0, 0, ex || undefined);
+  const f = personFrame(L, wardrobeEditor.view, 'idle', 0, 0, 0, ex || undefined);
   x.globalAlpha = 0.32;
   x.drawImage(f, f.ax + X0, f.ay + Y0, W, H, 0, 0, W * Z, H * Z);
   x.globalAlpha = 1;

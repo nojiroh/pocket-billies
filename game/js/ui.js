@@ -95,7 +95,15 @@ import {
 } from './game-state.js';
 import { frameTask, userFps } from './frame-scheduler.js';
 import { ART_CACHE, artLoad, artURL, coinHTML, coinURL, eggHTML, makeCanvas, uiIconHTML } from './art.js';
-import { LOOK_PRESETS, cleanLook, cleanTrainer, humanHTML, lookOf, owHTMLsheet, portraitHTML } from './person-art.js';
+import {
+  LOOK_PRESETS,
+  cleanLook,
+  cleanTrainer,
+  lookOf,
+  personHTML,
+  personWalkIconURL,
+  portraitHTML,
+} from './person-art.js';
 import { applyPreferences, settingsHTML } from './settings-screen.js';
 import { lookPortrait, openDressingRoom } from './dressing-room.js';
 import { bustHTML, rigCanvasHTML } from './skeleton-rig.js';
@@ -422,7 +430,7 @@ export function postProcess() {
 function genderModal() {
   modal({
     title: 'Are you a boy or a girl?',
-    html: `<p>Professor Hazel needs it for your trainer card.</p><div class="gpick">${['boy', 'girl'].map(g => `<button class="gcard px" data-a="setgender" data-g="${g}">${humanHTML(g, 64)}<b>${g === 'boy' ? 'Boy' : 'Girl'}</b></button>`).join('')}</div>`,
+    html: `<p>Professor Hazel needs it for your trainer card.</p><div class="gpick">${['boy', 'girl'].map(g => `<button class="gcard px" data-a="setgender" data-g="${g}">${personHTML(g, 64)}<b>${g === 'boy' ? 'Boy' : 'Girl'}</b></button>`).join('')}</div>`,
     btns: [],
     lock: 1,
   });
@@ -707,22 +715,22 @@ function renderIntro() {
   if (st && st.k === 'gini') {
     const m = /^\[(\w+)\]\s*/.exec(st.t),
       tx = m ? st.t.slice(m[0].length) : st.t;
-    return `<div class="talk"><div class="talk-art">${humanHTML('gini', 96)}</div><div class="dlg px"><p class="speaker">Professor Hazel</p><p class="line" id="dlgLine">${escapeHtml(tx)}</p><button class="pb dark wide" data-a="intro">Next</button></div></div>`;
+    return `<div class="talk"><div class="talk-art">${personHTML('gini', 96)}</div><div class="dlg px"><p class="speaker">Professor Hazel</p><p class="line" id="dlgLine">${escapeHtml(tx)}</p><button class="pb dark wide" data-a="intro">Next</button></div></div>`;
   }
   if (i === 0)
     return `<div class="title"><div class="title-landscape" aria-hidden="true"></div><div class="title-coin">${coinHTML('penny', 176, 32)}</div><h1 class="logo">Pocket Billies</h1><p class="tag">A walking RPG inside the Hollow Earth, where the Billies are the wildlife. Gotta tax 'em all!</p><button class="pb gold wide big" data-a="intro">Start</button></div>`;
   if (i <= HAZEL_INTRO_LINES.length)
-    return `<div class="talk"><div class="talk-art">${humanHTML('gini', 96)}</div><div class="dlg px"><p class="speaker">Professor Hazel</p><p class="line" id="dlgLine">${HAZEL_INTRO_LINES[i - 1]}</p><button class="pb dark wide" data-a="intro">Next</button></div></div>`;
+    return `<div class="talk"><div class="talk-art">${personHTML('gini', 96)}</div><div class="dlg px"><p class="speaker">Professor Hazel</p><p class="line" id="dlgLine">${HAZEL_INTRO_LINES[i - 1]}</p><button class="pb dark wide" data-a="intro">Next</button></div></div>`;
   if (st && st.k === 'trainer') {
     const cur = JSON.stringify(cleanLook(uiState.trainerDraft || LOOK_PRESETS[0]));
     return `<header class="bar"><div><div class="sub">Your adventure, your style</div><h1 class="where">Create your trainer</h1></div></header>
   <p class="note">Pick a starting look, then make it yours: body, face, hair and clothes. You can change it any time from your Trainer card.</p>
   <div class="tr-presets">${LOOK_PRESETS.map((p, j) => `<button class="tr-pre px" data-a="tr-preset" data-i="${j}" aria-pressed="${JSON.stringify(cleanLook(p)) === cur}"><img src="${lookPortrait(p)}" alt="Look ${j + 1}"></button>`).join('')}</div>
-  <div class="tr-me px"><div class="tr-big">${humanHTML('me', 120)}</div><div class="racts"><button class="pb dark wide" data-a="tr-custom">${uiIconHTML('profile', 16)} Customize</button><button class="pb gold wide big" data-a="tr-next">Next</button></div></div>`;
+  <div class="tr-me px"><div class="tr-big">${personHTML('me', 120)}</div><div class="racts"><button class="pb dark wide" data-a="tr-custom">${uiIconHTML('profile', 16)} Customize</button><button class="pb gold wide big" data-a="tr-next">Next</button></div></div>`;
   }
   if (st && st.k === 'named') {
     const nm = lookOf('me').name || 'Trainer';
-    return `<div class="talk"><div class="talk-art">${humanHTML('me', 96)}</div><div class="dlg px"><p class="speaker">Professor Hazel</p><p class="line">${escapeHtml(nm)}? It suits you. If it isn’t your name, it is now. Nobody should walk the Hollow Earth alone, so here: choose your very first Billie.</p><button class="pb dark wide" data-a="intro">Choose a starter</button></div></div>`;
+    return `<div class="talk"><div class="talk-art">${personHTML('me', 96)}</div><div class="dlg px"><p class="speaker">Professor Hazel</p><p class="line">${escapeHtml(nm)}? It suits you. If it isn’t your name, it is now. Nobody should walk the Hollow Earth alone, so here: choose your very first Billie.</p><button class="pb dark wide" data-a="intro">Choose a starter</button></div></div>`;
   }
   const pk = RULES.start.starters.filter(l => SPECIES[l + '0']);
   return `<header class="bar"><div><div class="sub">Professor Hazel’s lab</div><h1 class="where">Pick your starter</h1></div></header><p class="note">Each one beats one of the others. Your rival will pick whichever beats yours.</p>
@@ -864,10 +872,10 @@ function hereCard() {
         : `<p class="note gate">${escapeHtml(st.t)}</p>`;
   } else
     prog = `<p class="note">You’re staying here. Steps still earn money, hatch eggs and bring encounters. Open the map to pick a place to walk to.</p>`;
-  return `<section class="here px glass"><div class="route-art"${here.banner ? ` style="background-image:url('${artURL(here.banner)}')"` : ''}><span>${humanHTML('me', 64)}</span><button class="route-profile" data-a="customize">${escapeHtml(cleanTrainer(saveData.avatar, saveData.gender).name)} · Edit look</button></div><div class="sec-h"><div><div class="sub">${escapeHtml(locationSubtitle(here))}</div><h2>${here.name}</h2></div><button class="pb small quiet" data-a="tab" data-t="map">Open map</button></div><p class="note">${here.blurb}</p>${boardNote(node)}${prog}<div class="racts">${tripButtons()}</div>${nodeActions(node)}</section>`;
+  return `<section class="here px glass"><div class="route-art"${here.banner ? ` style="background-image:url('${artURL(here.banner)}')"` : ''}><span>${personHTML('me', 64)}</span><button class="route-profile" data-a="customize">${escapeHtml(cleanTrainer(saveData.avatar, saveData.gender).name)} · Edit look</button></div><div class="sec-h"><div><div class="sub">${escapeHtml(locationSubtitle(here))}</div><h2>${here.name}</h2></div><button class="pb small quiet" data-a="tab" data-t="map">Open map</button></div><p class="note">${here.blurb}</p>${boardNote(node)}${prog}<div class="racts">${tripButtons()}</div>${nodeActions(node)}</section>`;
 }
 function playerWalkIconHTML() {
-  const u = owHTMLsheet('me');
+  const u = personWalkIconURL('me');
   return `<span class="spr fast ow-mini" style="width:22px;height:40px"><img src="${u}" alt=""></span>`;
 }
 function eggSlots() {
@@ -2133,7 +2141,7 @@ function renderProfile() {
   return `<header class="bar"><div><div class="sub">Your profile</div><h1 class="where">Trainer</h1></div><button class="pb small quiet" data-a="settings">${uiIconHTML('gear', 16)} Settings</button></header>
  <div class="pf-top"><section class="tcard">
   <div class="tc-band"><span>Trainer card</span><span class="tnum">ID No. ${String(saveData.tid || 0).padStart(5, '0')}</span></div>
-  <div class="tc-body"><div class="tc-photo"><div class="tc-portrait">${humanHTML('me', 92)}</div><button class="pb small" data-a="customize">Edit look</button></div>
+  <div class="tc-body"><div class="tc-photo"><div class="tc-portrait">${personHTML('me', 92)}</div><button class="pb small" data-a="customize">Edit look</button></div>
    <div class="tc-info"><h2 class="tc-name">${escapeHtml(name)}</h2><dl class="tc-dl"><div><dt>Money</dt><dd class="tnum">${coinHTML('penny', 16)} $${formatNumber(saveData.se)}</dd></div><div><dt>Now in</dt><dd>${escapeHtml(LOCATIONS[saveData.route.node].name)}</dd></div>${since ? `<div><dt>Started</dt><dd>${escapeHtml(since)}</dd></div>` : ''}<div><dt>Buddy</dt><dd>${bud ? escapeHtml(billyName(bud)) : 'None yet'}</dd></div></dl></div></div>
   <div class="tc-badges"><div class="tc-bh"><span>Badges</span><b class="tnum">${bd.got} of ${bd.tot}</b></div><ol class="bdgs">${bd.html}</ol></div>
  </section>

@@ -43,7 +43,7 @@ import {
 import { I18N_LANGS, i18nSet } from './i18n.js';
 import { FRAME } from './frame-scheduler.js';
 import { uiIconHTML } from './art.js';
-import { cleanLook, cleanTrainer, humanHTML, lookFromOld } from './person-art.js';
+import { cleanLook, cleanTrainer, lookFromOld, personHTML } from './person-art.js';
 /* eslint-disable no-func-assign */
 expose({
   GRAPHICS_DIALS: [() => GRAPHICS_DIALS],
@@ -516,7 +516,7 @@ export function settingsHTML() {
         : '');
   } else if (tab === 'save')
     body =
-      `<div class="settings-profile">${humanHTML('me', 52)}<div><b>${escapeHtml(cleanTrainer(saveData.avatar, saveData.gender).name)}</b><p class="note">${formatNumber(saveData.totalSteps)} steps · ${Object.keys(saveData.caught).length} taxed</p></div></div><button class="pb dark wide" data-a="open-customize">Customize trainer</button>` +
+      `<div class="settings-profile">${personHTML('me', 52)}<div><b>${escapeHtml(cleanTrainer(saveData.avatar, saveData.gender).name)}</b><p class="note">${formatNumber(saveData.totalSteps)} steps · ${Object.keys(saveData.caught).length} taxed</p></div></div><button class="pb dark wide" data-a="open-customize">Customize trainer</button>` +
       (typeof accountSettingsHTML === 'function' ? accountSettingsHTML() : '') +
       `<p class="note">${typeof account !== 'undefined' && account.user ? 'Your progress is saved to your account, and in this browser.' : 'Your progress is saved in this browser. Sign in to keep it online, or download a backup before changing device or clearing browser data.'}</p><div class="two"><button class="pb small" data-a="export-save">Export save</button><button class="pb small" data-a="import-save">Import save</button></div>`;
   else

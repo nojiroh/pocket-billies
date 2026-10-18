@@ -15,11 +15,11 @@ import {
   LOOK_PRESETS,
   bodySliders,
   cleanLook,
+  opaqueBox,
+  personFrame,
   portraitHTML,
-  trBox,
-  trColorsOf,
-  trFrame,
   wardrobeData,
+  wornColors,
 } from './person-art.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -380,7 +380,7 @@ function wardrobeColorsHTML(slot) {
   const id = dressingRoom.look.wear[slot],
     it = id && wardrobeData().items[id];
   if (!it) return '';
-  const cur = trColorsOf(dressingRoom.look, id),
+  const cur = wornColors(dressingRoom.look, id),
     P = wardrobeData().palettes || {};
   return it.colors
     .map((c, i) => {
@@ -537,7 +537,7 @@ function lookThumbnail(L2, crop) {
   if (dressingRoom.thumbs.has(key)) return dressingRoom.thumbs.get(key);
   L2.body.height = 1;
   if (crop !== 'body') L2.wear.hat = null;
-  const f = trFrame(L2, 'front', 'idle', 0, 0),
+  const f = personFrame(L2, 'front', 'idle', 0, 0),
     [x0, y0, x1, y1] = THUMB_CROPS[crop] || THUMB_CROPS.body,
     w = x1 - x0,
     h = y1 - y0,
@@ -605,7 +605,7 @@ function wardrobeThumbnail(slot, id, crop) {
       L.wear.eyes,
     ]);
   if (dressingRoom.thumbs.has(key)) return dressingRoom.thumbs.get(key);
-  const f = trFrame(L, 'front', 'idle', 0, 0),
+  const f = personFrame(L, 'front', 'idle', 0, 0),
     [x0, y0, x1, y1] = THUMB_CROPS[crop] || THUMB_CROPS.body,
     w = x1 - x0,
     h = y1 - y0,
@@ -618,8 +618,8 @@ function wardrobeThumbnail(slot, id, crop) {
 }
 export function lookPortrait(look) {
   const L = cleanLook(look),
-    f = trFrame(L, 'front', 'idle', 0, 0),
-    b = trBox(f),
+    f = personFrame(L, 'front', 'idle', 0, 0),
+    b = opaqueBox(f),
     c = makeCanvas(b[2] + 2, b[3] + 2);
   c.getContext('2d').drawImage(f, b[0] - 1, b[1] - 1, b[2] + 2, b[3] + 2, 0, 0, b[2] + 2, b[3] + 2);
   return c.toDataURL();
@@ -658,7 +658,7 @@ function dressingPreviewLoop(ts) {
     act = 'walk';
     ph = (t / 760) % 1;
   }
-  const f = trFrame(dressingRoom.look, view, act, ph, t, mir),
+  const f = personFrame(dressingRoom.look, view, act, ph, t, mir),
     s = Math.max(
       1,
       Math.floor(
@@ -840,7 +840,7 @@ function setLookColor(key, c, ch, refresh = true) {
   if (key === 'skin' || key === 'hair' || key === 'eyes') L[key] = c;
   else if (key.startsWith('item:')) {
     const id = key.slice(5),
-      cur = trColorsOf(L, id);
+      cur = wornColors(L, id);
     cur[+ch] = c;
     L.colors[id] = cur;
   }

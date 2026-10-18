@@ -69,7 +69,7 @@ import {
 import { clamp } from './util.js';
 import { FRAME, frameCount, frameTask, userFps } from './frame-scheduler.js';
 import { hexToRgb, makeCanvas } from './art.js';
-import { folkFrames, humanPose, owFrames, trPick, trWarm } from './person-art.js';
+import { folkFrames, personBattlePose, personWalkFrames, pickWalkFrame, warmPerson } from './person-art.js';
 import { drawRig, rigFrame, rigParts, rigPreload } from './skeleton-rig.js';
 import {
   EFFECT_FRAMES,
@@ -4789,13 +4789,13 @@ export function gatherFrameItems(st, C, PPU, C0) {
       }
       walkView.npcAt[n.id] = pos;
     }
-    const fr = typeof owFrames === 'function' ? owFrames(n.who) : null;
+    const fr = typeof personWalkFrames === 'function' ? personWalkFrames(n.who) : null;
     if (!fr) return;
-    trWarm(n.who);
+    warmPerson(n.who);
     const dir =
       Math.hypot(P.x - pos[0], P.z - pos[1]) < 4.5 ? directionOf(P.x - pos[0], P.z - pos[1]) : n.dir || 'down';
     const nset = fr[dir] || fr.down,
-      nim = typeof trPick === 'function' ? trPick(nset, false, 0) : nset[0];
+      nim = typeof pickWalkFrame === 'function' ? pickWalkFrame(nset, false, 0) : nset[0];
     if (nim) out.push(personItem('npc', nim, pos[0], pos[1], C0, { n }));
     npcPos.push([n, pos]);
   });
@@ -4872,18 +4872,18 @@ export function gatherFrameItems(st, C, PPU, C0) {
     for (const f of walkView.folk) {
       const fr = folkFrames(f.seed);
       if (!fr) continue;
-      trWarm('folk:' + f.seed);
+      warmPerson('folk:' + f.seed);
       const set = fr[f.dir] || fr.down;
       let fim =
-        typeof trPick === 'function'
-          ? trPick(set, f.walk, Math.floor(t / 110) % 6)
+        typeof pickWalkFrame === 'function'
+          ? pickWalkFrame(set, f.walk, Math.floor(t / 110) % 6)
           : f.walk
             ? set.cyc
               ? set.cyc[Math.floor(t / 110) % 6]
               : set[1 + (Math.floor(t / 150) % 2)]
             : set[0];
-      /* v47: a wave hello */ if (f.waveT > 0 && typeof humanPose === 'function') {
-        const w = humanPose('folk:' + f.seed, 'front', 'cheer', 0, (1.4 - f.waveT) * 1000);
+      /* v47: a wave hello */ if (f.waveT > 0 && typeof personBattlePose === 'function') {
+        const w = personBattlePose('folk:' + f.seed, 'front', 'cheer', 0, (1.4 - f.waveT) * 1000);
         if (w) fim = w;
       }
       if (fim) out.push(personItem('folk', fim, f.x, f.z, C0, { f }));
@@ -4913,8 +4913,8 @@ export function gatherFrameItems(st, C, PPU, C0) {
     const T = new Set(out.filter(it => it.vol && it.vol.tree).map(it => it.p));
     if (T.size) for (let i = out.length - 1; i >= 0; i--) if (out[i].layer && T.has(out[i].p)) out.splice(i, 1);
   }
-  if (st.who !== null && typeof owFrames === 'function') {
-    const fr = owFrames(st.who),
+  if (st.who !== null && typeof personWalkFrames === 'function') {
+    const fr = personWalkFrames(st.who),
       set = fr[P.dir] || fr.down;
     const me = personItem(
       'me',

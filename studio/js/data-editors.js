@@ -17,9 +17,9 @@ import {
   PERSON_ART_CACHE,
   bodySliders,
   cleanLook,
-  humanSheet,
   lookFromOld,
-  trColorsOf,
+  personSheet,
+  wornColors,
 } from '../../game/js/person-art.js';
 import { drawRig, rigPose } from '../../game/js/skeleton-rig.js';
 import { escapeHtml } from './game-stand-ins.js';
@@ -1326,8 +1326,8 @@ function personLook(k) {
 function personPreviewHTML(who) {
   if (!studioState.D.people[who]) return '<p class="help">Unknown look.</p>';
   try {
-    const f = humanSheet(who, 'front'),
-      b = humanSheet(who, 'back');
+    const f = personSheet(who, 'front'),
+      b = personSheet(who, 'back');
     return `<span class="spr slow tr-por" style="width:${Math.round((132 * f.w) / f.h)}px;height:132px"><img src="${f.url}" alt=""></span><span class="spr slow tr-por" style="width:${Math.round((99 * b.w) / b.h)}px;height:99px"><img src="${b.url}" alt=""></span>`;
   } catch (e) {
     return '';
@@ -1349,7 +1349,7 @@ SECTIONS.people = () => {
     p = `people.${k}.look`;
   L.colors = L.colors || {};
   for (const id of Object.values(L.wear || {}))
-    if (id && W.items[id] && !L.colors[id]) L.colors[id] = trColorsOf(cleanLook(L), id);
+    if (id && W.items[id] && !L.colors[id]) L.colors[id] = wornColors(cleanLook(L), id);
   afterRender(() => {
     if (typeof loadWardrobe === 'function' && !wardrobeEditor.loaded)
       loadWardrobe().then(() => {

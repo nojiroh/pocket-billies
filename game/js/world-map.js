@@ -10,7 +10,7 @@ import { LOCATIONS, REGIONS, ROADS, roadCost } from './game-data.js';
 import { canEnter, escapeHtml, nextTripNode, reducedMotion, saveData, uiState } from './game-state.js';
 import { frameCount, frameStop, frameTask, userFps } from './frame-scheduler.js';
 import { artPixels, bayerThreshold, makeSeededRandom, mixRgb, packPixel, worldMapStamp } from './art.js';
-import { owFrames } from './person-art.js';
+import { personWalkFrames } from './person-art.js';
 import { EASE } from './battle-stage.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -558,7 +558,7 @@ function worldMapRender(t, lo) {
   const pq = worldMapProject(cam, worldMap.me || worldMapPlayerPosition());
   if (pq && worldMap.fly && typeof flyDraw === 'function') flyDraw(c, t, v => worldMapProject(cam, v));
   else if (pq) {
-    const fr = owFrames('me'),
+    const fr = personWalkFrames('me'),
       set = fr[worldMap.face] || fr.down,
       f = worldMap.moving ? set[1 + (Math.floor(t / 140) % 2)] : set[0],
       bob = worldMap.moving ? 0 : Math.floor(t / 600) % 2;

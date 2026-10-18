@@ -5,7 +5,7 @@ import { LOCATIONS, gameData } from './game-data.js';
 import { activeBattle, save, saveData, setSave, setSetTrip, setTrip, uiState } from './game-state.js';
 import { FRAME, userFps } from './frame-scheduler.js';
 import { artPixels, setArtPixels } from './art.js';
-import { PERSON_ART_CACHE, humanFrames, setHumanFrames } from './person-art.js';
+import { PERSON_ART_CACHE, personBattleFrames, setPersonBattleFrames } from './person-art.js';
 import { openDressingRoom, setOpenDressingRoom } from './dressing-room.js';
 import {
   battleStage,
@@ -134,7 +134,6 @@ Object.defineProperties(GAME, {
   gpuState: { get: () => gpuState },
   grassWork: { get: () => grassWork, set: setGrassWork },
   groundOcclusion: { get: () => groundOcclusion, set: setGroundOcclusion },
-  humanFrames: { get: () => humanFrames, set: setHumanFrames },
   lifeStep: { get: () => lifeStep, set: setLifeStep },
   makeNormalMap: { get: () => makeNormalMap, set: setMakeNormalMap },
   mountWalkView: { get: () => mountWalkView, set: setMountWalkView },
@@ -145,6 +144,7 @@ Object.defineProperties(GAME, {
   openShop: { get: () => openShop, set: setOpenShop },
   paintActions: { get: () => paintActions, set: setPaintActions },
   paintWorkerReport: { get: () => paintWorkerReport },
+  personBattleFrames: { get: () => personBattleFrames, set: setPersonBattleFrames },
   prepareMap: { get: () => prepareMap, set: setPrepareMap },
   reflectionPass: { get: () => reflectionPass, set: setReflectionPass },
   render: { get: () => render, set: setRender },

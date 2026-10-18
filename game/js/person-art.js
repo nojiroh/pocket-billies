@@ -31,55 +31,55 @@ expose({
   LOOK_PRESETS: [() => LOOK_PRESETS],
   PERSON_ART_CACHE: [() => PERSON_ART_CACHE],
   PERSON_ART_CACHE_MAX: [() => PERSON_ART_CACHE_MAX],
-  TRW: [() => TRW],
   bodySliders: [() => bodySliders, v => (bodySliders = v)],
+  boneKind: [() => boneKind],
+  boneScale: [() => boneScale, v => (boneScale = v)],
   cleanLook: [() => cleanLook, v => (cleanLook = v)],
   cleanTrainer: [() => cleanTrainer, v => (cleanTrainer = v)],
+  drawPortrait: [() => drawPortrait, v => (drawPortrait = v)],
   folkFrames: [() => folkFrames],
   folkLook: [() => folkLook, v => (folkLook = v)],
+  frameReady: [() => frameReady, v => (frameReady = v)],
+  headCenter: [() => headCenter, v => (headCenter = v)],
   hslToRgb: [() => hslToRgb, v => (hslToRgb = v)],
-  humanFrames: [() => humanFrames, v => setHumanFrames(v)],
-  humanHTML: [() => humanHTML, v => (humanHTML = v)],
-  humanPose: [() => humanPose, v => (humanPose = v)],
-  humanSheet: [() => humanSheet, v => (humanSheet = v)],
   imageLoaded: [() => imageLoaded],
   lookFromOld: [() => lookFromOld, v => (lookFromOld = v)],
+  lookKey: [() => lookKey, v => (lookKey = v)],
   lookOf: [() => lookOf, v => (lookOf = v)],
-  owFrames: [() => owFrames, v => (owFrames = v)],
-  owHTMLsheet: [() => owHTMLsheet, v => (owHTMLsheet = v)],
+  opaqueBox: [() => opaqueBox, v => (opaqueBox = v)],
+  personAnimation: [() => personAnimation, v => (personAnimation = v)],
   personArtCache: [() => personArtCache, v => (personArtCache = v)],
   personArtImage: [() => personArtImage, v => (personArtImage = v)],
   personArtPaths: [() => personArtPaths, v => (personArtPaths = v)],
   personArtPixels: [() => personArtPixels, v => (personArtPixels = v)],
   personArtVersion: [() => personArtVersion],
+  personBattleFrames: [() => personBattleFrames, v => setPersonBattleFrames(v)],
+  personBattlePose: [() => personBattlePose, v => (personBattlePose = v)],
+  personFrame: [() => personFrame, v => (personFrame = v)],
+  personHTML: [() => personHTML, v => (personHTML = v)],
+  personRig: [() => personRig, v => (personRig = v)],
+  personSheet: [() => personSheet, v => (personSheet = v)],
+  personWalkFrames: [() => personWalkFrames, v => (personWalkFrames = v)],
+  personWalkIconURL: [() => personWalkIconURL, v => (personWalkIconURL = v)],
+  personWarmup: [() => personWarmup],
+  pickWalkFrame: [() => pickWalkFrame, v => (pickWalkFrame = v)],
   portraitHTML: [() => portraitHTML, v => (portraitHTML = v)],
+  portraitRect: [() => portraitRect, v => (portraitRect = v)],
   portraitURL: [() => portraitURL, v => (portraitURL = v)],
+  recolorPiece: [() => recolorPiece, v => (recolorPiece = v)],
   rgbToHsl: [() => rgbToHsl, v => (rgbToHsl = v)],
-  trAnim: [() => trAnim, v => (trAnim = v)],
-  trBoneScale: [() => trBoneScale, v => (trBoneScale = v)],
-  trBox: [() => trBox, v => (trBox = v)],
-  trColorsOf: [() => trColorsOf, v => (trColorsOf = v)],
-  trFrame: [() => trFrame, v => (trFrame = v)],
-  trHeadAt: [() => trHeadAt, v => (trHeadAt = v)],
-  trKind: [() => trKind],
-  trLookKey: [() => trLookKey, v => (trLookKey = v)],
-  trPick: [() => trPick, v => (trPick = v)],
-  trPiece: [() => trPiece, v => (trPiece = v)],
-  trPortrait: [() => trPortrait, v => (trPortrait = v)],
-  trPortraitRect: [() => trPortraitRect, v => (trPortraitRect = v)],
-  trReady: [() => trReady, v => (trReady = v)],
-  trRig: [() => trRig, v => (trRig = v)],
-  trScale: [() => trScale, v => (trScale = v)],
-  trWarm: [() => trWarm, v => (trWarm = v)],
-  trWarmStep: [() => trWarmStep, v => (trWarmStep = v)],
+  scaleCanvas: [() => scaleCanvas, v => (scaleCanvas = v)],
   trainerDesign: [() => trainerDesign],
   wardrobeData: [() => wardrobeData],
   wardrobeSlots: [() => wardrobeSlots],
+  warmPerson: [() => warmPerson, v => (warmPerson = v)],
+  warmPersonStep: [() => warmPersonStep, v => (warmPersonStep = v)],
+  wornColors: [() => wornColors, v => (wornColors = v)],
 });
 /* eslint-enable no-func-assign */
-export function setHumanFrames(v) {
-  humanFrames = v; // eslint-disable-line no-func-assign
-  provide({ humanFrames });
+export function setPersonBattleFrames(v) {
+  personBattleFrames = v; // eslint-disable-line no-func-assign
+  provide({ personBattleFrames });
 }
 /* to-module: end */
 export const wardrobeData = () =>
@@ -421,7 +421,7 @@ function hslToRgb(h, s, l) {
   return [f(h + 1 / 3) * 255, f(h) * 255, f(h - 1 / 3) * 255];
 }
 /* one piece of a sheet, its colour areas moved from the default colours to the wanted ones (shading kept) */
-function trPiece(src, p, defs, want) {
+function recolorPiece(src, p, defs, want) {
   const key = 'pc|' + src.img + '|' + p.r.join(',') + '|' + want.join(',') + '|' + personArtVersion();
   return personArtCache(key, () => {
     const P = personArtPixels(src.img),
@@ -475,7 +475,7 @@ function trPiece(src, p, defs, want) {
     return c;
   });
 }
-function trScale(c, sx, sy) {
+function scaleCanvas(c, sx, sy) {
   if (!c) return null;
   if (Math.abs(sx - 1) < 0.01 && Math.abs(sy - 1) < 0.01) return c;
   const w = Math.max(1, Math.round(c.width * sx)),
@@ -487,7 +487,7 @@ function trScale(c, sx, sy) {
   return n;
 }
 /* the colours an item is worn in */
-export function trColorsOf(L, id) {
+export function wornColors(L, id) {
   const it = wardrobeData().items[id];
   if (!it) return [];
   const o = L.colors[id] || [];
@@ -500,7 +500,7 @@ export function trColorsOf(L, id) {
   });
 }
 /* ---------- the rig: per-bone stretch from the sliders ---------- */
-function trBoneScale(L, k) {
+function boneScale(L, k) {
   const B = L.body,
     Wd = B.body,
     Sh = B.shoulders,
@@ -536,23 +536,23 @@ function trBoneScale(L, k) {
       return [1, 1];
   }
 }
-const trKind = n => (['pelvis', 'torso', 'chest', 'neck', 'head'].includes(n) ? n : n.slice(0, -1));
-function trLookKey(L) {
+const boneKind = n => (['pelvis', 'torso', 'chest', 'neck', 'head'].includes(n) ? n : n.slice(0, -1));
+function lookKey(L) {
   return JSON.stringify(L);
 }
-export function trRig(L, view, expr) {
+export function personRig(L, view, expr) {
   const W = wardrobeData();
-  return personArtCache('rig|' + view + '|' + (expr || '') + '|' + trLookKey(L) + '|' + personArtVersion(), () => {
+  return personArtCache('rig|' + view + '|' + (expr || '') + '|' + lookKey(L) + '|' + personArtVersion(), () => {
     const h = L.body.height,
       sk = W.skeleton[view],
       bones = [],
       slot = {};
     for (const s of W.slots) slot[s.id] = s;
     const scale = {};
-    for (const b of sk) scale[b.n] = trBoneScale(L, trKind(b.n));
+    for (const b of sk) scale[b.n] = boneScale(L, boneKind(b.n));
     const B = L.body;
     for (const b of sk) {
-      const k = trKind(b.n),
+      const k = boneKind(b.n),
         ps = b.par ? scale[b.par] : [1, 1];
       let [ax, ay] = b.at;
       if (k === 'pelvis') {
@@ -569,12 +569,12 @@ export function trRig(L, view, expr) {
       const bn = p.b,
         s = scale[bn];
       if (!s) return;
-      if (trKind(bn) === 'chest' && L.body.chest < 0.04) return;
-      const c = trPiece(src, p, defs, want);
+      if (boneKind(bn) === 'chest' && L.body.chest < 0.04) return;
+      const c = recolorPiece(src, p, defs, want);
       if (!c) return;
       const sx = s[0] * h,
         sy = s[1] * h,
-        img = { c: trScale(c, sx, sy), ox: Math.round(p.o[0] * sx), oy: Math.round(p.o[1] * sy) };
+        img = { c: scaleCanvas(c, sx, sy), ox: Math.round(p.o[0] * sx), oy: Math.round(p.o[1] * sy) };
       bones.push({ n: bn + '#' + bones.length, par: bn, at: [0, 0], z, img });
     };
     const bz = {};
@@ -585,7 +585,7 @@ export function trRig(L, view, expr) {
         it = id && W.items[id];
       if (!it) continue;
       const defs = it.colors.map(c => c[1]),
-        want = trColorsOf(L, id);
+        want = wornColors(L, id);
       /* an expression (blink, happy, talk…) swaps in that item's pieces for it when it has them */
       const hasX = !!expr && it.pieces.some(p => p.v === view && p.x === expr);
       for (const p of it.pieces)
@@ -594,11 +594,21 @@ export function trRig(L, view, expr) {
     const F = W.figure || 74,
       BW = Math.round(F * 0.78 * h * Math.max(1, B.head)),
       BH = Math.round(F * 1.3 * h * Math.max(1, B.head * 0.9 + 0.1));
-    return { k: 1, BW, BH, cx: Math.round(BW / 2), base: BH - 6, tipX: 0, bones, view, anim: P => trAnim(P, view) };
+    return {
+      k: 1,
+      BW,
+      BH,
+      cx: Math.round(BW / 2),
+      base: BH - 6,
+      tipX: 0,
+      bones,
+      view,
+      anim: P => personAnimation(P, view),
+    };
   });
 }
 /* ---------- poses ---------- */
-function trAnim(P, view) {
+function personAnimation(P, view) {
   const K = ((wardrobeData() || {}).figure || 74) / 74,
     A = {},
     t = P.t || 0,
@@ -680,8 +690,8 @@ function trAnim(P, view) {
   return A;
 }
 /* ---------- drawing ---------- */
-export function trFrame(L, view, act, ph, t, mirror, expr) {
-  const R = trRig(L, view, expr),
+export function personFrame(L, view, act, ph, t, mirror, expr) {
+  const R = personRig(L, view, expr),
     c = makeCanvas(R.BW, R.BH),
     x = c.getContext('2d');
   x.imageSmoothingEnabled = false;
@@ -705,11 +715,11 @@ export function trFrame(L, view, act, ph, t, mirror, expr) {
   return c;
 }
 /* walk frames for the scene and map: {down,up,side(left),sideR}, each [stand, step A, step B] (+ cyc: 6 frames) */
-export function owFrames(who) {
+export function personWalkFrames(who) {
   const L = lookOf(who);
-  return personArtCache('walk|' + trLookKey(L) + '|' + personArtVersion(), () => {
+  return personArtCache('walk|' + lookKey(L) + '|' + personArtVersion(), () => {
     const out = {};
-    /* every single frame is drawn the first time it's needed (and ahead of time by trWarm), so a crowd appearing
+    /* every single frame is drawn the first time it's needed (and ahead of time by warmPerson), so a crowd appearing
     never has to draw hundreds of pictures in one frame */
     for (const [dir, view, mir] of [
       ['down', 'front', 0],
@@ -732,8 +742,8 @@ export function owFrames(who) {
           },
         });
       };
-      for (let i = 0; i < 6; i++) lazy(cyc, i, () => trFrame(L, view, 'walk', i / 6, 0, mir));
-      lazy(v, 0, () => trFrame(L, view, 'idle', 0, 0, mir));
+      for (let i = 0; i < 6; i++) lazy(cyc, i, () => personFrame(L, view, 'walk', i / 6, 0, mir));
+      lazy(v, 0, () => personFrame(L, view, 'idle', 0, 0, mir));
       lazy(v, 1, () => cyc[1]);
       lazy(v, 2, () => cyc[4]);
       Object.defineProperty(cyc, 'length', { value: 6 });
@@ -746,88 +756,89 @@ export function owFrames(who) {
 }
 /* v32: a walk frame that hasn't been drawn yet waits for a frame with time to spare: until then the person shows a
    frame that is ready (or isn't shown for a moment), instead of the scene stalling while a crowd is drawn */
-function trReady(arr, i) {
+function frameReady(arr, i) {
   return !!(arr && arr._b && arr._b[i]);
 }
-export function trPick(set, walk, k) {
+export function pickWalkFrame(set, walk, k) {
   const want = walk ? (set.cyc ? [set.cyc, k] : [set, 1]) : [set, 0];
-  if (trReady(want[0], want[1]) || typeof frameBudgetLeft !== 'function' || frameBudgetLeft()) return want[0][want[1]];
+  if (frameReady(want[0], want[1]) || typeof frameBudgetLeft !== 'function' || frameBudgetLeft())
+    return want[0][want[1]];
   for (const [a, n] of [
     [set, 3],
     [set.cyc, 6],
   ]) {
     if (!a) continue;
-    for (let i = 0; i < n; i++) if (trReady(a, i)) return a[i];
+    for (let i = 0; i < n; i++) if (frameReady(a, i)) return a[i];
   }
   return null;
 }
 /* drawing walk frames in the background, a few milliseconds per frame, before anyone needs them */
-const TRW = { q: [], seen: new Set() };
-export function trWarm(who) {
-  if (TRW.seen.has(who)) return;
-  TRW.seen.add(who);
-  if (TRW.seen.size > 600) TRW.seen.clear();
-  TRW.q.push(who);
-  if (typeof frameTask === 'function' && !TRW.on) {
-    TRW.on = true;
-    frameTask('trwarm', trWarmStep, () => 30);
+const personWarmup = { q: [], seen: new Set() };
+export function warmPerson(who) {
+  if (personWarmup.seen.has(who)) return;
+  personWarmup.seen.add(who);
+  if (personWarmup.seen.size > 600) personWarmup.seen.clear();
+  personWarmup.q.push(who);
+  if (typeof frameTask === 'function' && !personWarmup.on) {
+    personWarmup.on = true;
+    frameTask('trwarm', warmPersonStep, () => 30);
   }
 }
-function trWarmStep() {
+function warmPersonStep() {
   const t0 = performance.now();
-  while (TRW.q.length && performance.now() - t0 < 3) {
-    const who = TRW.q[0];
+  while (personWarmup.q.length && performance.now() - t0 < 3) {
+    const who = personWarmup.q[0];
     let F;
     try {
-      F = owFrames(who);
+      F = personWalkFrames(who);
     } catch (e) {
-      TRW.q.shift();
+      personWarmup.q.shift();
       continue;
     }
-    TRW.i = TRW.i || 0;
+    personWarmup.i = personWarmup.i || 0;
     const dirs = ['down', 'sideR', 'side', 'up'],
-      d = dirs[Math.floor(TRW.i / 7)],
-      k = TRW.i % 7;
+      d = dirs[Math.floor(personWarmup.i / 7)],
+      k = personWarmup.i % 7;
     try {
       const v = F[d];
       if (k === 0) v[0];
       else v.cyc[k - 1];
     } catch (e) {}
-    TRW.i++;
-    if (TRW.i >= 28) {
-      TRW.i = 0;
-      TRW.q.shift();
+    personWarmup.i++;
+    if (personWarmup.i >= 28) {
+      personWarmup.i = 0;
+      personWarmup.q.shift();
     }
   }
-  if (!TRW.q.length) {
-    TRW.on = false;
+  if (!personWarmup.q.length) {
+    personWarmup.on = false;
     frameStop('trwarm');
   }
 }
-export const folkFrames = seed => owFrames('folk:' + seed);
+export const folkFrames = seed => personWalkFrames('folk:' + seed);
 /* battle: 2 breathing frames ('back' for you, 'front' for rivals), plus poses */
-export function humanFrames(who, view) {
+export function personBattleFrames(who, view) {
   const L = lookOf(who);
-  return personArtCache('bat|' + view + '|' + trLookKey(L) + '|' + personArtVersion(), () => [
-    trFrame(L, view, 'idle', 0, 650 * Math.PI * 1.5),
-    trFrame(L, view, 'idle', 0, 650 * Math.PI * 0.5),
+  return personArtCache('bat|' + view + '|' + lookKey(L) + '|' + personArtVersion(), () => [
+    personFrame(L, view, 'idle', 0, 650 * Math.PI * 1.5),
+    personFrame(L, view, 'idle', 0, 650 * Math.PI * 0.5),
   ]);
 }
-export function humanPose(who, view, act, ph, t) {
+export function personBattlePose(who, view, act, ph, t) {
   const L = lookOf(who);
   if (act === 'throw') {
     const k = Math.round(clamp(ph, 0, 1) * 6) / 6;
-    return personArtCache('pose|' + view + '|throw|' + k + '|' + trLookKey(L) + '|' + personArtVersion(), () =>
-      trFrame(L, view, 'throw', k, 0)
+    return personArtCache('pose|' + view + '|throw|' + k + '|' + lookKey(L) + '|' + personArtVersion(), () =>
+      personFrame(L, view, 'throw', k, 0)
     );
   }
   const k = Math.floor((t || 0) / 90) % 4;
-  return personArtCache('pose|' + view + '|' + act + '|' + k + '|' + trLookKey(L) + '|' + personArtVersion(), () =>
-    trFrame(L, view, act, 0, k * 90)
+  return personArtCache('pose|' + view + '|' + act + '|' + k + '|' + lookKey(L) + '|' + personArtVersion(), () =>
+    personFrame(L, view, act, 0, k * 90)
   );
 }
 /* a crisp portrait for the interface: the standing figure cropped tight, two breathing frames side by side */
-export function trBox(c) {
+export function opaqueBox(c) {
   const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data;
   let x0 = c.width,
     y0 = c.height,
@@ -843,12 +854,15 @@ export function trBox(c) {
       }
   return x1 < x0 ? [0, 0, c.width, c.height] : [x0, y0, x1 - x0 + 1, y1 - y0 + 1];
 }
-export function humanSheet(who, view = 'front') {
+export function personSheet(who, view = 'front') {
   const L = lookOf(who);
-  return personArtCache('sheet|' + view + '|' + trLookKey(L) + '|' + personArtVersion(), () => {
-    const f = [trFrame(L, view, 'idle', 0, 650 * Math.PI * 1.5), trFrame(L, view, 'idle', 0, 650 * Math.PI * 0.5)];
-    const a = trBox(f[0]),
-      b = trBox(f[1]),
+  return personArtCache('sheet|' + view + '|' + lookKey(L) + '|' + personArtVersion(), () => {
+    const f = [
+      personFrame(L, view, 'idle', 0, 650 * Math.PI * 1.5),
+      personFrame(L, view, 'idle', 0, 650 * Math.PI * 0.5),
+    ];
+    const a = opaqueBox(f[0]),
+      b = opaqueBox(f[1]),
       x0 = Math.min(a[0], b[0]) - 1,
       y0 = Math.min(a[1], b[1]) - 1,
       x1 = Math.max(a[0] + a[2], b[0] + b[2]) + 1,
@@ -861,16 +875,16 @@ export function humanSheet(who, view = 'front') {
     return { url: c.toDataURL(), w, h };
   });
 }
-export function humanHTML(who, size, view = 'front') {
-  const s = humanSheet(who, view),
+export function personHTML(who, size, view = 'front') {
+  const s = personSheet(who, view),
     hgt = Math.round(size * 1.375),
     wid = Math.round((hgt * s.w) / s.h);
   return `<span class="spr slow tr-por" style="width:${wid}px;height:${hgt}px"><img src="${s.url}" alt=""></span>`;
 }
-export function owHTMLsheet(who) {
-  return personArtCache('walkurl|' + trLookKey(lookOf(who)) + '|' + personArtVersion(), () => {
-    const f = owFrames(who).sideR,
-      a = trBox(f[1]),
+export function personWalkIconURL(who) {
+  return personArtCache('walkurl|' + lookKey(lookOf(who)) + '|' + personArtVersion(), () => {
+    const f = personWalkFrames(who).sideR,
+      a = opaqueBox(f[1]),
       w = a[2] + 2,
       h = a[3] + 2,
       c = makeCanvas(w * 2, h),
@@ -883,7 +897,7 @@ export function owHTMLsheet(who) {
 /* the art files every look needs (loaded at start) */
 /* older code paths */
 /* a talking-head portrait for dialogue and cutscenes: head and shoulders, 1:1 pixels, any expression */
-function trHeadAt(bones) {
+function headCenter(bones) {
   const by = {};
   for (const b of bones) by[b.n] = b;
   let x = 0,
@@ -896,7 +910,7 @@ function trHeadAt(bones) {
   }
   return [x, y];
 }
-function trPortraitRect() {
+function portraitRect() {
   const W = wardrobeData(),
     b = (W.crops || {}).bust || [-31, -150, 31, -74],
     sk = W.skeleton.front,
@@ -910,14 +924,14 @@ function trPortraitRect() {
   }
   return [Math.round(b[0]), Math.round(b[1] - y), Math.round(b[2] - b[0]), Math.round(b[3] - b[1])];
 }
-export function trPortrait(cv, who, expr, t) {
+export function drawPortrait(cv, who, expr, t) {
   const W = wardrobeData();
   if (!W || !cv) return;
   const L = typeof who === 'object' ? cleanLook(who) : lookOf(who),
-    R = trRig(L, 'front', expr),
-    f = trFrame(L, 'front', 'idle', 0, t || 0, 0, expr),
-    [hx, hy] = trHeadAt(R.bones),
-    [rx, ry, w, h] = trPortraitRect();
+    R = personRig(L, 'front', expr),
+    f = personFrame(L, 'front', 'idle', 0, t || 0, 0, expr),
+    [hx, hy] = headCenter(R.bones),
+    [rx, ry, w, h] = portraitRect();
   if (cv.width !== w || cv.height !== h) {
     cv.width = w;
     cv.height = h;
@@ -929,14 +943,14 @@ export function trPortrait(cv, who, expr, t) {
 }
 function portraitURL(who, expr) {
   const L = lookOf(who);
-  return personArtCache('porurl|' + (expr || '') + '|' + trLookKey(L) + '|' + personArtVersion(), () => {
+  return personArtCache('porurl|' + (expr || '') + '|' + lookKey(L) + '|' + personArtVersion(), () => {
     const c = makeCanvas(1, 1);
-    trPortrait(c, L, expr, 0);
+    drawPortrait(c, L, expr, 0);
     return c.toDataURL();
   });
 }
 export function portraitHTML(who, size, expr) {
-  const r = trPortraitRect();
+  const r = portraitRect();
   return `<img class="pxi tr-face" src="${portraitURL(who, expr)}" width="${size}" height="${Math.round((size * r[3]) / r[2])}" alt="">`;
 }
 export function cleanTrainer(a, g) {
