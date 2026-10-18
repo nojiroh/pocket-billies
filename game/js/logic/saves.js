@@ -113,13 +113,6 @@ export function migrate(o) {
   p.effects = 'full';
   p.fps = +p.fps;
   if (!Array.isArray(s.eggs)) s.eggs = [];
-  /* phase 08: day jobs are gone (until the ranch); a Billie that was at work rests in storage */
-  delete (/** @type {any} */ (s).jobs);
-  for (const m of [...(s.team || []), ...(s.box || [])]) {
-    const old = /** @type {any} */ (m);
-    if (old.job != null) m.boxedAt = Date.now();
-    delete old.job;
-  }
   if (!SPECIES[s.starter + '0'] && s.started)
     s.starter = RULES.start.starters.find(l => SPECIES[l + '0']) || LINES[0].id;
   s.team = (s.team || []).filter(m => SPECIES[m.sp]);
@@ -130,35 +123,17 @@ export function migrate(o) {
   if (s.avatar && typeof s.avatar === 'object' && 'name' in s.avatar)
     s.avatar.name = cleanName(s.avatar.name, 18) || 'Trainer';
   [...s.team, ...s.box].forEach(m => {
-    /* phase 08: the steps a Billie walked picked its split path; you pick it now */
-    const old = /** @type {any} */ (m);
-    delete old.bsteps;
-    delete old.psteps;
     m.moves = (m.moves || []).filter(k => MOVES[k]);
     if (!m.moves.length) m.moves = movesAt(SPECIES[m.sp].line, m.lvl);
   });
   for (const key of ['seen', 'caught'])
     if (s[key] && typeof s[key] === 'object') for (const id of Object.keys(s[key])) if (!SPECIES[id]) delete s[key][id];
-  /* phase 08: encounters live on each place's map; the one queue they had before is let go */
-  const oldSave = /** @type {any} */ (s);
-  delete oldSave.queue;
-  delete oldSave.meter;
-  /* steps no longer earn money */
-  delete oldSave.day;
-  delete oldSave.seFrac;
-  delete oldSave.buddyRem;
-  delete oldSave.totalSteps;
   if (!s.wild || typeof s.wild !== 'object') s.wild = {};
   for (const w of Object.values(s.wild)) w.list = (w.list || []).filter(q => SPECIES[q.sp]);
   s.eggs = s.eggs.filter(e => EGGS[e.tier]);
   if (!s.trip || !LOCATIONS[s.trip.node]) s.trip = { node: START_NODE, plan: [] };
   s.trip.plan = (Array.isArray(s.trip.plan) ? s.trip.plan : []).filter(x => LOCATIONS[x]);
   if (s.trip.plan.length && !roadCost(s.trip.node, s.trip.plan[0])) s.trip.plan = [];
-  /* phase 08: travel is walking; a save from before still carries how far along a road its steps had taken it (a field
-     the Trip type no longer has, hence the cast) */
-  const oldTrip = /** @type {any} */ (s.trip);
-  delete oldTrip.prog;
-  delete oldTrip.hold;
   if (!s.visited || typeof s.visited !== 'object') s.visited = {};
   s.visited[s.trip.node] = 1;
   if (s.started && !s.team.length && !s.box.length) return newSave();
@@ -167,10 +142,11 @@ export function migrate(o) {
   s.gameVersion = PB_VERSION;
   return s;
 }
-/* phase 02: every save says which save format it is (saveVersion; raise it when old saves can't be read any more; 2 since phase 05).
+/* phase 02: every save says which save format it is (saveVersion; raise it when old saves can't be read any more; 2 since
+   phase 05, 3 since phase 08: steps are gone, encounters live on each map, no jobs).
    A save without one (alpha 0.5 and earlier) or from a newer format is not loaded: the game says so and starts fresh.
    saveAge: null (no save), 'ok', 'old' or 'new'. A newer save is never written over (saveHold) */
-export const SAVE_VERSION = 2;
+export const SAVE_VERSION = 3;
 /** @param {any} o @returns {'ok' | 'old' | 'new' | null} */
 export function saveAge(o) {
   if (!o || typeof o !== 'object') return null;
