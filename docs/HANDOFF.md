@@ -11,6 +11,37 @@ Newest entry on top. Every phase session ends by adding an entry here and taggin
 - Questions waiting for the owner: 
 - Next session starts with: 
 
+### Phase 09 batch 1 - ten props in the new style, test map - 2026-10-18
+Owner's choices: trees as a low-poly trunk and branches with flat leaf clumps, in one model; a first batch of ten props
+covering every technique, shown on a test map. Started straight from the owner's go-ahead in chat (no Plan Mode step).
+- Changed: prop-models.js: a `limb` shape (tapered branch, point to point) and a `dome`; round shapes take `sides`,
+  `rings`, `lump`, `facet`; textures `bark` and `rock` (cells 22 and 23 of detail-a04b.png, painted by the tool);
+  picture layers take `shadow`, `recv: 0` (no shadow-map lookup, so a crown's clumps don't stripe each other), `sway`
+  and `glow` (on with the lamps), the recipe takes `ppm`; picture layers no longer inherit the footprint `box` (it drew
+  a cottage's door pushed back inside its walls); a variant can `swap` colours and pictures. walk-view.js: plain prop
+  `variants` picked by a placement's `v`. walk-view-gl.js: a prop's own `ppm`; `lampLit` exported; the sprite shader
+  skips the shadow map for `noRecv` items. Studio model editor: Limb and Dome, their fields, sides/bands/lumpy/flat
+  faces, and a picture layer's shadow/shadows-on-it/sway/glow.
+- New: tools/build-props-batch1.py builds everything below from the old pictures, rerunnable: game/art/scene/next
+  (leaves, decals, models), the `next_*` catalogue entries in scenery.json and game/data/maps/test_props_next.json.
+  Props: next_beech; next_oak (variants: spreading, sapling, autumn = the oak with recoloured leaves); next_bush_roses;
+  next_bush_round (3 shapes); next_rocks (3 shapes, mossy, snowy = mossy with a colour swap); next_mushroom (red,
+  brown, blue by swap); next_cottage_juniper; next_lantern; next_laundry_line; next_tallgrass (stays flat, 32 px/m,
+  3 shapes). The test map has each old prop just left of its new version; debug menu > Test scenes, or
+  game/index.html?test=1&scene=test_props_next.
+- Risky or unfinished: no route uses the new props yet (swap-in waits for approval). Cottage pictures stand 0.16 m out
+  from the wall (a picture's depth is coarser than a model's; nearer, it hides), visible from a steep side angle.
+  tools/build-airship.py rewrites detail-a04b.png from detail-a04.png and would drop bark and rock: rerun
+  build-props-batch1.py after it. The new cottage keeps the old `door` (interior) and window fx. Trees cost about 10
+  sprites each (core + clumps); instancing is still to do. Not measured on a phone.
+- Verified: lint, type-check, module check, format check, data check, 32 unit tests, the smoke check (see the PR);
+  headless shots of every row by day, the trees turned, the lanterns and cottage at night.
+- Correction to my earlier count: 76 recipe files exist in scene/vox, but only 32 props link one (`model`); the
+  lantern, stump, beehive, signpost and others on the first routes still draw their picture.
+- Questions waiting for the owner: approve the batch (or which props to redo)? Then swap them in on Copperleaf,
+  Hedgerow Lane and Tallgrass Meadow, keyed as the old props (so placements keep working) or as next_* with
+  placements rewritten?
+- Next session starts with: the owner's notes on the batch.
 ### Phase 08a-1 - tests off the steps mode, the dead steps travel mode deleted - 2026-10-18
 Plan approved at the start (docs/phases/08a-plan.md, section 08a-1, now marked done with the corrections found).
 - Changed (15 commits on c3b5de9):
