@@ -11,9 +11,9 @@ import {
   ENGINE_DEFAULTS,
   ENGINE_PRESETS,
   ENGINE_SPEC,
-  ENG_CTX,
+  engineContext,
   engineSetting,
-  setEngSource,
+  setEngineDataSource,
 } from '../../game/js/engine/settings.js';
 import { EGL, eglOK } from '../../game/js/engine/webgl.js';
 import {
@@ -62,7 +62,7 @@ expose({
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
-setEngSource(() => (ST.D ? ST.D.engine : null));
+setEngineDataSource(() => (ST.D ? ST.D.engine : null));
 /* alpha 0.4.1: the Studio's previews show every setting at full effect. The game's automatic quality would step god
    rays, bloom, depth of field and ambient shading off (and lower the resolution) when the preview ran slowly, so a dial
    seemed to do nothing. Here it never steps down. */
@@ -203,7 +203,7 @@ async function engMount() {
   };
   const b = $('#engCmp'),
     on = v => {
-      ENG_CTX.bypass = v;
+      engineContext.bypass = v;
       b.classList.toggle('on', v);
     };
   b.onpointerdown = () => on(true);

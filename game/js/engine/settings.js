@@ -13,14 +13,14 @@ expose({
   ENGINE_DEFAULTS: [() => ENGINE_DEFAULTS],
   ENGINE_PRESETS: [() => ENGINE_PRESETS],
   ENGINE_SPEC: [() => ENGINE_SPEC],
-  ENG_CTX: [() => ENG_CTX, v => (ENG_CTX = v)],
-  engGame: [() => engGame, v => (engGame = v)],
-  engHex: [() => engHex, v => (engHex = v)],
-  engLook: [() => engLook, v => (engLook = v)],
-  engPlayer: [() => engPlayer, v => (engPlayer = v)],
-  engSource: [() => engSource, v => setEngSource(v)],
+  engineColor: [() => engineColor, v => (engineColor = v)],
+  engineContext: [() => engineContext, v => (engineContext = v)],
+  engineDataSource: [() => engineDataSource, v => setEngineDataSource(v)],
   engineSetting: [() => engineSetting, v => ((engineSetting = v), provide({ engineSetting }))],
-  setEngSource: [() => setEngSource, v => (setEngSource = v)],
+  gameDataDials: [() => gameDataDials, v => (gameDataDials = v)],
+  lookDials: [() => lookDials, v => (lookDials = v)],
+  playerDials: [() => playerDials, v => (playerDials = v)],
+  setEngineDataSource: [() => setEngineDataSource, v => (setEngineDataSource = v)],
 });
 /* eslint-enable no-func-assign */
 provide({ engineSetting });
@@ -768,43 +768,43 @@ export const ENGINE_PRESETS = {
   },
 };
 /* the value for one dial: scene look → game-wide defaults → built-in default */
-function engLook() {
-  if (typeof ENG_CTX !== 'undefined' && ENG_CTX.look) return ENG_CTX.look;
+function lookDials() {
+  if (typeof engineContext !== 'undefined' && engineContext.look) return engineContext.look;
   return null;
 }
-export let ENG_CTX = { look: null, bypass: false, env: false };
-export let engSource = () => (typeof GD !== 'undefined' ? GD.engine : null);
+export let engineContext = { look: null, bypass: false, env: false };
+export let engineDataSource = () => (typeof GD !== 'undefined' ? GD.engine : null);
 /* phase 04d: the Studio points it at its unsaved data (studio/js/engine-editor.js) */
-export function setEngSource(v) {
-  engSource = v;
-  provide({ engSource });
+export function setEngineDataSource(v) {
+  engineDataSource = v;
+  provide({ engineDataSource });
 } /* the Studio points this at its unsaved data */
-function engGame() {
-  const d = engSource();
+function gameDataDials() {
+  const d = engineDataSource();
   return (d && d.defaults) || null;
 }
 /* alpha 0.5: a player's own expert dials (Settings → Graphics → Expert) come first */
-function engPlayer() {
+function playerDials() {
   const p = typeof S !== 'undefined' && S && S.preferences;
   return p && p.expert && p.eng ? p.eng : null;
 }
 export function engineSetting(group, key) {
-  if (ENG_CTX.bypass) return ENGINE_DEFAULTS[group][key];
-  const L = engLook(),
-    G = engGame(),
-    P = engPlayer();
+  if (engineContext.bypass) return ENGINE_DEFAULTS[group][key];
+  const L = lookDials(),
+    G = gameDataDials(),
+    P = playerDials();
   let v = P && P[group] ? P[group][key] : undefined;
   if (v === undefined && L && L[group]) v = L[group][key];
   if (v === undefined && G && G[group]) v = G[group][key];
   if (v === undefined) v = ENGINE_DEFAULTS[group][key];
   /* v26: the time of day and the weather lean on some dials while a walk scene draws (environment.js) */
-  if (ENG_CTX.env && typeof WEATHER_ENGINE_MODIFIERS !== 'undefined') {
+  if (engineContext.env && typeof WEATHER_ENGINE_MODIFIERS !== 'undefined') {
     const m = WEATHER_ENGINE_MODIFIERS[group];
     if (m && m[key] && typeof v === 'number') v = m[key](v);
   }
   return v;
 }
-export function engHex(group, key, fb) {
+export function engineColor(group, key, fb) {
   const v = engineSetting(group, key) || fb;
   if (typeof v === 'string' && /^#[0-9a-f]{6}$/i.test(v)) return hexToRgb(v).map(x => x / 255);
   if (Array.isArray(fb)) return fb;

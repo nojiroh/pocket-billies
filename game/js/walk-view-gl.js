@@ -136,7 +136,7 @@ import {
   walkablePointNear,
   worldToScreen,
 } from './walk-view.js';
-import { ENG_CTX, engHex, engineSetting } from './engine/settings.js';
+import { engineColor, engineContext, engineSetting } from './engine/settings.js';
 import {
   EGL,
   EGL_GLSL_COMMON,
@@ -3583,7 +3583,7 @@ function drawWalkFrame(ts, dtm) {
   const w0 = performance.now(),
     gl = EGL.gl,
     sc = walkView.sc;
-  ENG_CTX.look = sc.look || null;
+  engineContext.look = sc.look || null;
   EGL.fr = (EGL.fr || 0) + 1;
   if (EGL.fr % 120 === 0) eglTexTrim();
   eglNormWork(walkView.warm ? 40 : 3);
@@ -3613,13 +3613,13 @@ function drawWalkFrame(ts, dtm) {
     C0 = walkData().sc,
     PPU = C0.ppu || 34;
   /* v26: the hour, the weather and the season (environment.js) lean on the engine dials while this frame draws */
-  ENG_CTX.env = typeof environment !== 'undefined' && (environment.on || !!environment.force);
-  if (ENG_CTX.env) environmentFrame(sc, dt);
+  engineContext.env = typeof environment !== 'undefined' && (environment.on || !!environment.force);
+  if (engineContext.env) environmentFrame(sc, dt);
   const gq = eglGpuBegin();
   try {
     drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0);
   } finally {
-    ENG_CTX.env = false;
+    engineContext.env = false;
     eglGpuEnd(gq);
   }
 }
@@ -3681,7 +3681,7 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
   } else walkView.hits = hits;
   cullItems(items, C);
   const dark0 = sc.tint && sc.tint !== '#000000' ? 1 : sc.indoor ? 0.7 : 0,
-    lk = ENG_CTX.env && !sc.indoor ? environment.lampK : 0,
+    lk = engineContext.env && !sc.indoor ? environment.lampK : 0,
     dark = Math.max(dark0, lk > 0.4 ? lk : 0);
   /* shadow map (every other frame when the device is struggling) */
   const QE = Math.max(walkRenderer.q || 0, BT && (engineSetting('quality', 'battleLite') ?? true) ? 2 : 0);
@@ -3751,7 +3751,7 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
       X,
       ivp: C.ivp,
       noVol: QE >= 3 || (!!sc.indoor && !dark),
-      volDens: sc.indoor ? 0.5 : 1 + (ENG_CTX.env ? environment.fog * 1.5 + environment.rain * 0.4 : 0),
+      volDens: sc.indoor ? 0.5 : 1 + (engineContext.env ? environment.fog * 1.5 + environment.rain * 0.4 : 0),
     });
   /* labels and markers stay sharp on the layer above */
   const x = walkView.x;
@@ -4042,7 +4042,7 @@ function heatHaze(sc) {
     /canyon|desert|mesa/.test((sc.far || '') + ' ' + (sc.name || '').toLowerCase()) ||
     (sc.edge === 's' && !sc.flatFar);
   if (!hot) return 0;
-  const E = typeof environment !== 'undefined' && ENG_CTX.env ? environment : null;
+  const E = typeof environment !== 'undefined' && engineContext.env ? environment : null;
   return E ? 0.55 * (1 - E.night) * (1 - E.grey) * (1 - Math.min(1, E.rain)) : 0.4;
 }
 /* lower the resolution when frames come late (whatever the cause), raise it again when there's room */
@@ -5046,14 +5046,14 @@ export function roomDimming(sc) {
    fails (environment.lampK: dusk, night, a grey storm, fog), so they come on one by one; in a dark place or a room, all on */
 function lampLit(x, z, dark) {
   const sc = walkView.sc,
-    E = typeof environment !== 'undefined' && ENG_CTX.env && !sc.indoor ? environment : null;
+    E = typeof environment !== 'undefined' && engineContext.env && !sc.indoor ? environment : null;
   if (!E || (sc.tint && sc.tint !== '#000000')) return dark ? 1 : 0;
   const th = 0.16 + 0.3 * hash2d(Math.round(x * 7), Math.round(z * 11));
   return Math.min(1, Math.max(0, (E.lampK - th) / 0.07));
 }
 /* an old (picture-only) house's window: lit at this hour or not (environment.js environmentWindowLit) */
 function windowLit(x, z) {
-  return typeof environmentWindowLit === 'function' && typeof environment !== 'undefined' && ENG_CTX.env
+  return typeof environmentWindowLit === 'function' && typeof environment !== 'undefined' && engineContext.env
     ? environmentWindowLit(x, z, environment.tod)
     : true;
 }
@@ -5069,7 +5069,7 @@ function walkLightContext(C, sun, dark, items, shadow, BT) {
   const L = [],
     ao = [],
     RR = sc.roomRect,
-    dOut = RR && typeof environment !== 'undefined' && ENG_CTX.env ? environment.lampK || 0 : 0;
+    dOut = RR && typeof environment !== 'undefined' && engineContext.env ? environment.lampK || 0 : 0;
   for (const it of items) {
     if (it.k !== 'prop' || it.far || it.layer) continue;
     const M = it.M,
@@ -5167,7 +5167,7 @@ function walkLightContext(C, sun, dark, items, shadow, BT) {
   ao.forEach(a => (a.d = Math.hypot(a[0] - P.x, a[1] - P.z)));
   ao.sort((a, b) => a.d - b.d);
   /* v26: dark caves (and the night) — you carry a lantern */
-  const E = typeof environment !== 'undefined' && ENG_CTX.env ? environment : null,
+  const E = typeof environment !== 'undefined' && engineContext.env ? environment : null,
     cave = (sc.dark ?? (sc.indoor && sc.far === 'cave' ? 1 : 0)) * engineSetting('air', 'caveDark'),
     night = E ? E.night : 0,
     lan = Math.max(cave, night * 0.75);
@@ -5602,7 +5602,7 @@ function fittedShadowPass(items0, sun, C) {
 /* v26: the scene's sky colours after the hour and the weather (environment.js) */
 function skyColors(sc) {
   const s = (sc.sky || ['#8CC6E6', '#BFE3EE', '#F4E8C8']).map(c => hexToRgb(c).map(v => v / 255));
-  return typeof environmentSky === 'function' && ENG_CTX.env ? environmentSky(s, !!sc.indoor) : s;
+  return typeof environmentSky === 'function' && engineContext.env ? environmentSky(s, !!sc.indoor) : s;
 }
 function drawSky(C, sun, mirror) {
   const gl = EGL.gl,
@@ -5613,7 +5613,7 @@ function drawSky(C, sun, mirror) {
   gl.useProgram(p.p);
   eglBindQuad();
   if (U.uEnv) {
-    const E = typeof environment !== 'undefined' && ENG_CTX.env ? environment : null;
+    const E = typeof environment !== 'undefined' && engineContext.env ? environment : null;
     gl.uniform4f(U.uEnv, E ? E.night : 0, E ? E.flash : 0, E ? E.grey : 0, E ? (E.rainbow || 0) * (1 - E.night) : 0);
     gl.uniform3fv(U.uMoon, sun.dir);
   }
@@ -5703,7 +5703,7 @@ export function drawGround(C, X) {
   gl.uniform4f(U.uGRect, -P, sc.h + P, 1 / (sc.w + 2 * P), 1 / (sc.h + 2 * P));
   setShoreUniforms(U, sc);
   setNearRingUniforms(U, sc);
-  if (U.uBed) gl.uniform3fv(U.uBed, engHex('water', 'bed', '#74654A'));
+  if (U.uBed) gl.uniform3fv(U.uBed, engineColor('water', 'bed', '#74654A'));
   if (U.uGAO) {
     gl.activeTexture(gl.TEXTURE8);
     gl.bindTexture(gl.TEXTURE_2D, walkRenderer.gaoTex || EGL.white);
@@ -5712,7 +5712,7 @@ export function drawGround(C, X) {
     gl.uniform3f(U.uGAOR, 1 / sc.w, 1 / sc.h, walkRenderer.gaoTex ? (engineSetting('shadows', 'groundAO') ?? 1) : 0);
   }
   if (U.uWet) {
-    const E = typeof environment !== 'undefined' && ENG_CTX.env && !sc.indoor ? environment : null,
+    const E = typeof environment !== 'undefined' && engineContext.env && !sc.indoor ? environment : null,
       sk = skyColors(sc);
     gl.uniform1f(U.uWet, E ? clamp((E.wet || 0) * (engineSetting('air', 'wetGround') ?? 1), 0, 1) : 0);
     gl.uniform1f(U.uRainK, E ? Math.min(1, E.rain || 0) : 0);
@@ -6645,8 +6645,8 @@ export function drawWater(C, X, rw, rh) {
   gl.bindTexture(gl.TEXTURE_2D, walkRenderer.water && EGL.fb.refl ? EGL.fb.refl.c : EGL.white);
   gl.uniform1i(U.uRefl, 0);
   gl.uniform2f(U.uRes, rw, rh);
-  gl.uniform3fv(U.uDeep, engHex('water', 'deep', '#1D4F78'));
-  gl.uniform3fv(U.uShallow, engHex('water', 'shallow', '#4FA6C0'));
+  gl.uniform3fv(U.uDeep, engineColor('water', 'deep', '#1D4F78'));
+  gl.uniform3fv(U.uShallow, engineColor('water', 'shallow', '#4FA6C0'));
   gl.uniform3fv(U.uSkyR, sky[1]);
   gl.uniform1f(U.uReflK, engineSetting('water', 'reflection'));
   gl.uniform1f(U.uRip, engineSetting('water', 'ripples'));
@@ -6673,7 +6673,7 @@ export function drawWater(C, X, rw, rh) {
   }
   if (walkRenderer.fallMesh) {
     const f = useWalkProgram('fall', C, X);
-    gl.uniform3fv(f.U.uShallow, engHex('water', 'shallow', '#4FA6C0'));
+    gl.uniform3fv(f.U.uShallow, engineColor('water', 'shallow', '#4FA6C0'));
     gl.disable(gl.CULL_FACE);
     gl.bindVertexArray(walkRenderer.fallMesh.vao);
     gl.drawElements(gl.TRIANGLES, walkRenderer.fallMesh.n, gl.UNSIGNED_INT, 0);
@@ -7496,7 +7496,7 @@ function drawLifeEffects(quad, glows, t, rm, dt, sc, C0) {
   const L = walkView.life;
   if (!L) return;
   const P = walkView.pl,
-    E = typeof environment !== 'undefined' && ENG_CTX.env ? environment : null,
+    E = typeof environment !== 'undefined' && engineContext.env ? environment : null,
     night = E ? E.night : 0,
     ss = E ? E.season : 'summer';
   if (!L.hv) {
@@ -7674,7 +7674,7 @@ export function effectsPass(C, items, X, dark, t, dt) {
   walkRenderer.fires = [];
   const RR = sc.roomRect,
     dOut =
-      RR && typeof environment !== 'undefined' && ENG_CTX.env
+      RR && typeof environment !== 'undefined' && engineContext.env
         ? environment.lampK || 0
         : 0; /* v46: lamps and windows outside a room laid into the place keep the outdoor hour */
   for (const it of items) {
@@ -7777,7 +7777,7 @@ export function effectsPass(C, items, X, dark, t, dt) {
           !RS &&
           typeof environmentWindowLit === 'function' &&
           typeof environment !== 'undefined' &&
-          ENG_CTX.env &&
+          engineContext.env &&
           !environmentWindowLit(x, z, environment.tod)
         )
           k *= 0.05;
@@ -7990,7 +7990,8 @@ export function effectsPass(C, items, X, dark, t, dt) {
       }
     });
   }
-  if (ENG_CTX.env && !sc.indoor && engineSetting('air', 'weather') > 0) drawWeather(quad, glows, U, R, Up, dt, rm);
+  if (engineContext.env && !sc.indoor && engineSetting('air', 'weather') > 0)
+    drawWeather(quad, glows, U, R, Up, dt, rm);
   if (!walkRenderer.bt) drawFootprints(quad, U, R, Up, dt);
   drawFountainEffects(quad, t, rm, dt);
   drawRoomEffects(C, U, items, glows, t, rm);

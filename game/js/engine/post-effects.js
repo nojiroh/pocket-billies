@@ -10,7 +10,7 @@ import { RM, provide } from '../hooks.js';
 import { clamp } from '../util.js';
 import { makeCanvas } from '../art.js';
 import { walkView } from '../walk-view.js';
-import { engHex, engineSetting } from './settings.js';
+import { engineColor, engineSetting } from './settings.js';
 import { EGL, EGL_GLSL_LIGHT, eglBindQuad, eglPrograms, eglTarget } from './webgl.js';
 import { eglLightU } from './light.js';
 /* eslint-disable no-func-assign */
@@ -336,7 +336,7 @@ export function eglPost(S, C, focusDist, rw, rh, o = {}) {
   gl.uniform1f(U.uAOK, AO ? aoK : 0);
   tex(U, 'uRays', 4, RY ? RY.c : EGL.white);
   gl.uniform1f(U.uRaysK, RY ? rk : 0);
-  const sc = o.sunCol || engHex('sun', 'color', '#FFF0D8');
+  const sc = o.sunCol || engineColor('sun', 'color', '#FFF0D8');
   gl.uniform3f(U.uRayC, sc[0], sc[1], sc[2]);
   const G = eglGrade();
   if (MO) {

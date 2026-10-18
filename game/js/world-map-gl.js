@@ -18,7 +18,7 @@ import { artLoad, artPixels, hexToRgb, makeCanvas, uiIconHTML, worldMapStamp } f
 import { owFrames, portraitHTML } from './person-art.js';
 import { EASE } from './battle-stage.js';
 import { artImage, hash2d, imageReady, mapById, stepRaiseAt, walkData, walkView } from './walk-view.js';
-import { ENG_CTX, engSource, engineSetting } from './engine/settings.js';
+import { engineContext, engineDataSource, engineSetting } from './engine/settings.js';
 import { EGL, eglBindQuad, eglFree, eglImg, eglInit, eglMesh, eglOK, eglPrograms, eglTarget } from './engine/webgl.js';
 import { EGL_POST_SH, eglPost, eglScreenOf } from './engine/post-effects.js';
 import { rawHeightAt, walkRenderer, worldMapTexture } from './walk-view-gl.js';
@@ -564,8 +564,8 @@ function worldMapGlHeightTexture() {
   return (worldMapGl.htex = t);
 }
 export function worldMapGlRender(t) {
-  const es = typeof engSource === 'function' ? engSource() : null;
-  ENG_CTX.look = (es && es.map) || null;
+  const es = typeof engineDataSource === 'function' ? engineDataSource() : null;
+  engineContext.look = (es && es.map) || null;
   const gl = EGL.gl,
     cv = EGL.cv,
     cam = worldMap.cam,

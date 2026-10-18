@@ -7,7 +7,7 @@ import { mountPreviews, provide, runCheck, scheduleCheck, spriteCacheClear } fro
 import { $, $$ } from '../../game/js/util.js';
 import { ICON_ATLAS, artLoad } from '../../game/js/art.js';
 import { battleStageStop } from '../../game/js/battle-stage.js';
-import { ENG_CTX } from '../../game/js/engine/settings.js';
+import { engineContext } from '../../game/js/engine/settings.js';
 import { esc } from './game-stand-ins.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -478,7 +478,7 @@ function renderSide() {
 }
 export function go(s, sel) {
   if (ST.sec === 'preview' && s !== 'preview' && typeof battleStageStop === 'function') battleStageStop();
-  if (typeof ENG_CTX !== 'undefined') ENG_CTX.bypass = false;
+  if (typeof engineContext !== 'undefined') engineContext.bypass = false;
   ST.sec = s;
   if (sel) Object.assign(ST.sel, sel);
   renderSide();

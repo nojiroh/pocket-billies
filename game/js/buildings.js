@@ -16,7 +16,7 @@ import { expose } from './test-globals.js';
 import { dioArtVer, provide } from './hooks.js';
 import { hexToRgb, makeCanvas } from './art.js';
 import { artImage, hash2d, walkData, walkView } from './walk-view.js';
-import { ENG_CTX, engineSetting } from './engine/settings.js';
+import { engineContext, engineSetting } from './engine/settings.js';
 import {
   EGL,
   EGL_GLSL_COMMON,
@@ -1511,7 +1511,7 @@ function makeBuildingModel(it) {
 }
 /* alpha 0.4: how many of the windows are lit at this hour (one by one in the evening, fewer late at night) */
 function litWindowFraction() {
-  const h = typeof environment !== 'undefined' && ENG_CTX.env ? environment.tod : 19;
+  const h = typeof environment !== 'undefined' && engineContext.env ? environment.tod : 19;
   return typeof environmentLitFraction === 'function'
     ? environmentLitFraction(h)
     : h >= 17 && h < 22
@@ -1590,7 +1590,9 @@ function drawBuildingsUnguarded(C, X, items, fades) {
   );
   /* alpha 0.4: a room whose lamp is off is dark at night (it showed at daylight brightness, so unlit windows looked lit) */ gl.uniform1f(
     p.U.uDay,
-    sc.indoor ? 0.7 : 1 - 0.8 * (dark ? 1 : typeof environment !== 'undefined' && ENG_CTX.env ? environment.night : 0)
+    sc.indoor
+      ? 0.7
+      : 1 - 0.8 * (dark ? 1 : typeof environment !== 'undefined' && engineContext.env ? environment.night : 0)
   );
   gl.uniform1f(
     p.U.uNight,
@@ -1620,7 +1622,7 @@ function drawBuildingsUnguarded(C, X, items, fades) {
       p.U.uGlassN,
       dark
         ? 1
-        : typeof environment !== 'undefined' && ENG_CTX.env && !sc.indoor
+        : typeof environment !== 'undefined' && engineContext.env && !sc.indoor
           ? Math.min(1, environment.lampK * 1.2)
           : 0
     );

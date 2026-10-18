@@ -8,7 +8,7 @@ import { expose } from '../test-globals.js';
 import { environment, environmentSun } from '../hooks.js';
 import { clamp } from '../util.js';
 import { walkView } from '../walk-view.js';
-import { ENG_CTX, engHex, engineSetting } from './settings.js';
+import { engineColor, engineContext, engineSetting } from './settings.js';
 import { EGL, M4, eglTarget, v3c, v3n } from './webgl.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -29,9 +29,9 @@ export function eglSun(indoor) {
   let a = engineSetting('sun', 'angle'),
     h = engineSetting('sun', 'height'),
     warm = 0,
-    col = engHex('sun', 'color', '#FFF0D8');
+    col = engineColor('sun', 'color', '#FFF0D8');
   /* v26: the time of day and the moon (environment.js), while a walk scene draws */
-  if (!indoor && typeof environment !== 'undefined' && ENG_CTX.env && (environment.on || environment.force)) {
+  if (!indoor && typeof environment !== 'undefined' && engineContext.env && (environment.on || environment.force)) {
     const e = environmentSun(a, h, col);
     a = e.a;
     h = e.h;
@@ -117,13 +117,13 @@ function eglSH(top, hor, gnd, sun, lobe = 1) {
 export function eglLightCtx(o) {
   const hz = o.haze,
     tint = o.tint;
-  const shT = engHex('shadows', 'tint', '#40507E'),
+  const shT = engineColor('shadows', 'tint', '#40507E'),
     lum = shT[0] * 0.3 + shT[1] * 0.59 + shT[2] * 0.11 || 0.3,
     hue = engineSetting('shadows', 'hue') ?? 0.6,
     shTint = shT.map(v => clamp((v / lum) * (0.35 + 0.5 * hue) + (0.6 - 0.32 * hue), 0, 2)),
     shLift = shT.map(v => (v / lum) * 0.035 * hue);
-  const sky = engHex('sun', 'ambientSky', o.ambTop),
-    gnd = engHex('sun', 'ambientGround', o.ambBot);
+  const sky = engineColor('sun', 'ambientSky', o.ambTop),
+    gnd = engineColor('sun', 'ambientGround', o.ambBot);
   const shK = engineSetting('sun', 'shAmbient') ?? 1,
     hor = o.ambHor || sky.map((v, i) => v * 0.85 + gnd[i] * 0.15);
   return {

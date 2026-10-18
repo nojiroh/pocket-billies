@@ -1820,7 +1820,7 @@ def desktop_steps(b, base, R):
         pg.evaluate("walkView.pl.x=44;walkView.pl.z=10;walkView.pl.route=null;0"); time.sleep(4)
         until(pg, "typeof buildingState!=='undefined'&&buildingState.drawn>=8", 90)   # the buildings' meshes come a few a frame: give them time (5 to 8 are in view here)
         r = pg.evaluate("""(()=>{const L=walkView.sc.props.filter(p=>{const M=GD.scenery.props[p.k];return M&&(M.glow||(M.fx||[]).some(f=>f.k==='glow'))});
-          ENG_CTX.env=true;const on=typeof lampLit==='function'?L.filter(p=>lampLit(p.x,p.z,0)>.9).length:-1;ENG_CTX.env=false;let fw=0,lit=0;const lf=typeof litWindowFraction==='function'?litWindowFraction():0;
+          engineContext.env=true;const on=typeof lampLit==='function'?L.filter(p=>lampLit(p.x,p.z,0)>.9).length:-1;engineContext.env=false;let fw=0,lit=0;const lf=typeof litWindowFraction==='function'?litWindowFraction():0;
           for(const p of walkView.sc.props){const E=typeof buildingState!=='undefined'?buildingState.mesh.get(p):null;if(E&&E.fw){fw+=E.fw.length;lit+=E.fw.filter(f=>frontWindowLight(f[3],lf)).length}}
           return {b:typeof buildingState!=='undefined'?buildingState.drawn:0,lamp:environment.lampK,lamps:L.length,on,fw,lit}})()""")
         if r['b'] < 4: raise Exception(f'only {r["b"]} buildings drawn in 3D')
