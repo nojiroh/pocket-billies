@@ -19,7 +19,17 @@ import { owFrames, portraitHTML } from './person-art.js';
 import { EASE } from './battle-stage.js';
 import { artImage, hash2d, imageReady, mapById, stepRaiseAt, walkData, walkView } from './walk-view.js';
 import { engineContext, engineDataSource, engineSetting } from './engine/settings.js';
-import { EGL, eglBindQuad, eglFree, eglImg, eglInit, eglMesh, eglOK, eglPrograms, eglTarget } from './engine/webgl.js';
+import {
+  eglBindQuad,
+  eglFree,
+  eglImg,
+  eglInit,
+  eglMesh,
+  eglOK,
+  eglPrograms,
+  eglTarget,
+  gpuState,
+} from './engine/webgl.js';
 import { POST_EFFECT_SHADERS, drawPostEffects, projectToScreenUv } from './engine/post-effects.js';
 import { rawHeightAt, walkRenderer, worldMapTexture } from './walk-view-gl.js';
 import {
@@ -169,7 +179,7 @@ void main(){vec4 c=texture(uTex,vUV);if(c.a<.5)discard;float d=length(vW-uC),fk=
 };
 /* ---------- when it runs ---------- */
 export function worldMapGlWanted() {
-  return typeof EGL !== 'undefined' && !EGL.fail && !EGL.lost && eglOK();
+  return typeof gpuState !== 'undefined' && !gpuState.fail && !gpuState.lost && eglOK();
 }
 function worldMapGlCanvas() {
   let cv = $('#dio');
@@ -183,10 +193,10 @@ function worldMapGlCanvas() {
 function worldMapGlReady() {
   if (!worldMapGlWanted()) return false;
   const cv = worldMapGlCanvas();
-  if (EGL.cv !== cv) {
+  if (gpuState.cv !== cv) {
     if (walkView.cv && walkView.cv !== cv) return false;
     if (!eglInit(cv)) {
-      EGL.fail = 1;
+      gpuState.fail = 1;
       return false;
     }
     if (typeof walkRenderer !== 'undefined') {
@@ -200,7 +210,7 @@ function worldMapGlReady() {
     eglPrograms(POST_EFFECT_SHADERS);
   } catch (e) {
     console.error(e);
-    EGL.fail = 1;
+    gpuState.fail = 1;
     return false;
   }
   cv.hidden = false;
@@ -488,7 +498,7 @@ function worldMapGlLoop(ts) {
     frameStop('map');
     return;
   }
-  if (EGL.lost) return;
+  if (gpuState.lost) return;
   let moving = false;
   if (worldMap.fly && typeof flyTick === 'function' && flyTick(ts)) moving = true;
   if (worldMap.anim) {
@@ -553,7 +563,7 @@ function worldMapGlHeightTexture() {
     }
     return null;
   }
-  const gl = EGL.gl,
+  const gl = gpuState.gl,
     t = gl.createTexture();
   gl.bindTexture(gl.TEXTURE_2D, t);
   gl.texImage2D(gl.TEXTURE_2D, 0, gl.R8, gl.RED, gl.UNSIGNED_BYTE, im);
@@ -566,8 +576,8 @@ function worldMapGlHeightTexture() {
 export function worldMapGlRender(t) {
   const es = typeof engineDataSource === 'function' ? engineDataSource() : null;
   engineContext.look = (es && es.map) || null;
-  const gl = EGL.gl,
-    cv = EGL.cv,
+  const gl = gpuState.gl,
+    cv = gpuState.cv,
     cam = worldMap.cam,
     px = worldMapWidth * worldMapHeight,
     R =
@@ -590,7 +600,7 @@ export function worldMapGlRender(t) {
   gl.disable(gl.BLEND);
   gl.disable(gl.CULL_FACE);
   const haze = [176 / 255, 186 / 255, 236 / 255];
-  let p = EGL.P.mglobe,
+  let p = gpuState.P.mglobe,
     U2 = p.U;
   gl.useProgram(p.p);
   eglBindQuad();
@@ -614,11 +624,11 @@ export function worldMapGlRender(t) {
   gl.uniform4fv(U2.uCl, cl);
   gl.uniform1i(U2.uNCl, worldMapGl.noClouds ? 0 : Math.min(16, WORLD_MAP_CLOUDS.length));
   gl.activeTexture(gl.TEXTURE0);
-  gl.bindTexture(gl.TEXTURE_2D, typeof worldMapTexture === 'function' ? worldMapTexture() : EGL.white);
+  gl.bindTexture(gl.TEXTURE_2D, typeof worldMapTexture === 'function' ? worldMapTexture() : gpuState.white);
   gl.uniform1i(U2.uWorld, 0);
   const HT = worldMapGlHeightTexture();
   gl.activeTexture(gl.TEXTURE1);
-  gl.bindTexture(gl.TEXTURE_2D, HT || EGL.white);
+  gl.bindTexture(gl.TEXTURE_2D, HT || gpuState.white);
   gl.uniform1i(U2.uHgt, 1);
   gl.uniform1f(U2.uRelief, HT ? 0.014 * engineSetting('world', 'relief') : 0);
   gl.uniform3f(U2.uSunL, -0.7, -0.7, 14 * engineSetting('world', 'reliefShade'));
@@ -626,7 +636,7 @@ export function worldMapGlRender(t) {
   gl.drawArrays(gl.TRIANGLES, 0, 6);
   gl.depthFunc(gl.LEQUAL);
   if (!worldMapGl.flat) {
-    /* landmark stamps standing on the ground */ p = EGL.P.mspr;
+    /* landmark stamps standing on the ground */ p = gpuState.P.mspr;
     U2 = p.U;
     gl.useProgram(p.p);
     const vp = worldMapGlMatrix(cam);
@@ -637,7 +647,7 @@ export function worldMapGlRender(t) {
     /* v24: a miniature of every stop's walk scene, standing on the globe where the stop is (art/map/mini, tools/build-map-minis.py) */
     const m3 = typeof worldMapMiniDraw === 'function' && worldMapMiniDraw(cam);
     if (m3) {
-      p = EGL.P.mspr;
+      p = gpuState.P.mspr;
       gl.useProgram(p.p);
       gl.uniformMatrix4fv(U2.uVP, false, vp);
       gl.uniform3fv(U2.uC, cam.C);
@@ -1500,8 +1510,8 @@ function worldMapMiniGet(i) {
   if (!sc) return null;
   const key = worldMapMiniKey(sc) + '|' + (worldMapGl.hpix ? 1 : 0),
     e = worldMapMinis.cache.get(i);
-  if (e && e.key === key && e.gl === EGL.gl) return e.m;
-  if (worldMapMinis.busy > 0) return e && e.gl === EGL.gl ? e.m : null;
+  if (e && e.key === key && e.gl === gpuState.gl) return e.m;
+  if (worldMapMinis.busy > 0) return e && e.gl === gpuState.gl ? e.m : null;
   worldMapMinis.busy = (worldMapMinis.busy || 0) + 1;
   let m = null;
   try {
@@ -1509,15 +1519,15 @@ function worldMapMiniGet(i) {
   } catch (err) {
     console.warn('mini', err);
   }
-  if (e && e.m && e.gl === EGL.gl) eglFree(e.m);
-  worldMapMinis.cache.set(i, { key, m, gl: EGL.gl });
+  if (e && e.m && e.gl === gpuState.gl) eglFree(e.m);
+  worldMapMinis.cache.set(i, { key, m, gl: gpuState.gl });
   return m;
 }
 function worldMapMiniDraw(cam) {
   if (!worldMapMinisOn() || worldMapGl.flat) return false;
-  const gl = EGL.gl;
+  const gl = gpuState.gl;
   eglPrograms({ mmini: WORLD_MAP_GL_SHADERS.mmini });
-  const p = EGL.P.mmini;
+  const p = gpuState.P.mmini;
   gl.useProgram(p.p);
   gl.uniformMatrix4fv(p.U.uVP, false, worldMapGlMatrix(cam));
   gl.uniform3fv(p.U.uC, cam.C);

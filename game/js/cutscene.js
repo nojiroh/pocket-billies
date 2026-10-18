@@ -43,7 +43,7 @@ import {
   walkView,
   worldToScreen,
 } from './walk-view.js';
-import { EGL, eglOK } from './engine/webgl.js';
+import { eglOK, gpuState } from './engine/webgl.js';
 import { mountWalkView, personItem, standingHeightAt, walkRenderer } from './walk-view-gl.js';
 import { seamlessRoamView } from './seamless-world.js';
 import { music, sfx } from './sound.js';
@@ -174,7 +174,7 @@ export function csSceneId() {
 export function csWanted() {
   return (
     typeof eglOK === 'function' &&
-    !EGL.fail &&
+    !gpuState.fail &&
     eglOK() &&
     typeof sceneIdAt === 'function' &&
     !!mapById(sceneIdAt(START_NODE))

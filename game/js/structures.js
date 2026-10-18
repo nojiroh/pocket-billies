@@ -13,7 +13,7 @@ import { RM, provide } from './hooks.js';
 import { clamp } from './util.js';
 import { hexToRgb } from './art.js';
 import { artImage, mapBridges, walkView } from './walk-view.js';
-import { EGL, eglImg, eglPrograms } from './engine/webgl.js';
+import { eglImg, eglPrograms, gpuState } from './engine/webgl.js';
 import {
   WALL_COLORS,
   defaultWallMaterial,
@@ -508,7 +508,7 @@ function buildStructures(sc) {
     end();
   }
   if (!I.length) return { mesh: null, parts: [] };
-  const gl = EGL.gl,
+  const gl = gpuState.gl,
     vao = gl.createVertexArray();
   gl.bindVertexArray(vao);
   const vb = gl.createBuffer();
@@ -551,7 +551,7 @@ function ensureStructures() {
 }
 function freeStructures() {
   if (!structureState.mesh) return;
-  const gl = EGL.gl;
+  const gl = gpuState.gl;
   try {
     gl.deleteVertexArray(structureState.mesh.vao);
     gl.deleteBuffer(structureState.mesh.vb);
@@ -564,7 +564,7 @@ function drawStructures(C, X) {
   if (typeof buildingGuard !== 'function') return;
   buildingGuard(() => {
     if (!ensureStructures()) return;
-    const gl = EGL.gl;
+    const gl = gpuState.gl;
     eglPrograms(BUILDING_SHADERS);
     const A = buildingArt(),
       det = eglImg(artImage(A.detail), { noNormal: true });
@@ -599,9 +599,9 @@ function drawStructureShadows(SH) {
   if (typeof buildingGuard !== 'function') return;
   buildingGuard(() => {
     if (!ensureStructures()) return;
-    const gl = EGL.gl;
+    const gl = gpuState.gl;
     eglPrograms(BUILDING_SHADERS);
-    const p = EGL.P.bshadow;
+    const p = gpuState.P.bshadow;
     gl.useProgram(p.p);
     gl.uniformMatrix4fv(p.U.uVP, false, SH.vp);
     const ca = worldCurveArgs(),

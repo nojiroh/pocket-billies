@@ -18,13 +18,13 @@ import { hexToRgb, makeCanvas } from './art.js';
 import { artImage, hash2d, walkData, walkView } from './walk-view.js';
 import { engineContext, engineSetting } from './engine/settings.js';
 import {
-  EGL,
   EGL_GLSL_COMMON,
   EGL_GLSL_LIGHT,
   EGL_GLSL_LOOK,
   eglBindQuad,
   eglImg,
   eglPrograms,
+  gpuState,
   v3n,
 } from './engine/webgl.js';
 import { environment, environmentLitFraction } from './environment.js';
@@ -147,7 +147,7 @@ export function buildingGuard(fn) {
     console.error('3D buildings off: ' + buildingState.fail);
     if (typeof NWLOG !== 'undefined') NWLOG.add('webgl', '3D buildings off: ' + buildingState.fail);
     try {
-      const gl = EGL.gl;
+      const gl = gpuState.gl;
       gl.bindVertexArray(null);
       gl.disable(gl.BLEND);
       gl.depthMask(true);
@@ -325,7 +325,7 @@ function buildingColor(h, fb) {
    while the frame has spent under 5 ms on them, so a town with many buildings opens without a long frame (the sun shadow
    cache keys on buildingState.made, so it is redrawn as each one appears) */
 function buildingBudgetLeft() {
-  const fr = typeof EGL !== 'undefined' ? EGL.fr : 0;
+  const fr = typeof gpuState !== 'undefined' ? gpuState.fr : 0;
   if (buildingState.fr !== fr) {
     buildingState.fr = fr;
     buildingState.t0 = performance.now();
@@ -369,7 +369,7 @@ function buildingMesh(it) {
   return E;
 }
 function freeBuildingMesh(E) {
-  const gl = EGL.gl;
+  const gl = gpuState.gl;
   for (const m of [E.walls, E.wins])
     if (m) {
       try {
@@ -1455,7 +1455,7 @@ function makeBuildingModel(it) {
       f[2] = q[1];
     }
   }
-  const gl = EGL.gl,
+  const gl = gpuState.gl,
     mk = (Vs, Is, attrs, stride) => {
       if (!Is.length) return null;
       const vao = gl.createVertexArray();
@@ -1552,7 +1552,7 @@ function drawBuildingsUnguarded(C, X, items, fades) {
   const L = buildingItems(items).filter(it => it.vis !== false);
   buildingState.drawn = L.length;
   if (!L.length) return;
-  const gl = EGL.gl;
+  const gl = gpuState.gl;
   eglPrograms(BUILDING_SHADERS);
   const A = buildingArt(),
     det = eglImg(artImage(A.detail), { noNormal: true }),
@@ -1672,9 +1672,9 @@ function drawBuildingShadows(SH, items) {
 function drawBuildingShadowsUnguarded(SH, items) {
   const L = buildingItems(items);
   if (!L.length) return;
-  const gl = EGL.gl;
+  const gl = gpuState.gl;
   eglPrograms(BUILDING_SHADERS);
-  const p = EGL.P.bshadow;
+  const p = gpuState.P.bshadow;
   gl.useProgram(p.p);
   gl.uniformMatrix4fv(p.U.uVP, false, SH.vp);
   const ca = worldCurveArgs();

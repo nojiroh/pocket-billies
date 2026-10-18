@@ -2,7 +2,7 @@
 /* ================= ENGINE CORE =================
    The WebGL2 foundation the walk scenes use (and, later, battles and the map): the context, math, shader building,
    textures with automatic normal maps, render targets and the shared lighting code in GLSL.
-   One engine state object, EGL, is shared by every view. */
+   One engine state object, gpuState, is shared by every view. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 import { dioArtVer, onGlContextRestored, provide, walkRenderer } from '../hooks.js';
@@ -12,7 +12,6 @@ import { imageReady } from '../walk-view.js';
 import { engineSetting } from './settings.js';
 /* eslint-disable no-func-assign */
 expose({
-  EGL: [() => EGL],
   EGL_ATTR_LOC: [() => EGL_ATTR_LOC],
   EGL_GLSL_COMMON: [() => EGL_GLSL_COMMON],
   EGL_GLSL_LIGHT: [() => EGL_GLSL_LIGHT],
@@ -49,6 +48,7 @@ expose({
   eglTexTrim: [() => eglTexTrim, v => (eglTexTrim = v)],
   eglWind: [() => eglWind, v => (eglWind = v)],
   eglWindBend: [() => eglWindBend, v => (eglWindBend = v)],
+  gpuState: [() => gpuState],
   smooth01: [() => smooth01],
   v3c: [() => v3c],
   v3n: [() => v3n],
@@ -71,7 +71,7 @@ export function setEglPrograms(v) {
   provide({ eglPrograms });
 }
 /* to-module: end */
-export const EGL = {
+export const gpuState = {
   ok: null,
   gl: null,
   cv: null,
@@ -88,14 +88,14 @@ export const EGL = {
   fail: 0,
 };
 export function eglOK() {
-  if (EGL.ok != null) return EGL.ok;
+  if (gpuState.ok != null) return gpuState.ok;
   try {
     const c = document.createElement('canvas');
-    EGL.ok = !!c.getContext('webgl2');
+    gpuState.ok = !!c.getContext('webgl2');
   } catch (e) {
-    EGL.ok = false;
+    gpuState.ok = false;
   }
-  return EGL.ok;
+  return gpuState.ok;
 }
 /* ---------- math (column-major 4×4) ---------- */
 export const M4 = {
@@ -322,7 +322,7 @@ vec3 lookOn(vec3 c,vec2 px,float hgt,vec3 bp){
    Shader sets that are needed later (buildings, solid props, the map) are started when a scene opens and finished a
    few at a time, so the first frame with a building in it no longer stalls while they compile. */
 function eglStart([vs, fs], name) {
-  const gl = EGL.gl,
+  const gl = gpuState.gl,
     mk = (t, src) => {
       const s = gl.createShader(t);
       gl.shaderSource(s, src);
@@ -353,7 +353,7 @@ function eglStart([vs, fs], name) {
   return { p, a, b, name, gl };
 }
 export function eglFinish(j) {
-  const gl = EGL.gl,
+  const gl = gpuState.gl,
     p = j.p;
   if (!gl.getProgramParameter(p, gl.LINK_STATUS)) {
     const e =
@@ -371,19 +371,19 @@ export function eglFinish(j) {
   return { p, U, name: j.name };
 }
 export function eglPrecompile(defs) {
-  if (!EGL.gl || !defs) return;
-  EGL.pend = EGL.pend || new Map();
+  if (!gpuState.gl || !defs) return;
+  gpuState.pend = gpuState.pend || new Map();
   for (const [k, v] of Object.entries(defs))
-    if (!EGL.P[k] && !EGL.pend.has(k))
+    if (!gpuState.P[k] && !gpuState.pend.has(k))
       try {
-        EGL.pend.set(k, eglStart(v, k));
+        gpuState.pend.set(k, eglStart(v, k));
       } catch (e) {}
 }
 export function eglPendPoll(max = 2) {
-  const M = EGL.pend;
+  const M = gpuState.pend;
   if (!M || !M.size) return;
-  const gl = EGL.gl,
-    X = EGL.pcx === undefined ? (EGL.pcx = gl.getExtension('KHR_parallel_shader_compile')) : EGL.pcx;
+  const gl = gpuState.gl,
+    X = gpuState.pcx === undefined ? (gpuState.pcx = gl.getExtension('KHR_parallel_shader_compile')) : gpuState.pcx;
   let n = 0;
   for (const [k, j] of M) {
     if (j.gl !== gl) {
@@ -393,13 +393,13 @@ export function eglPendPoll(max = 2) {
     if (X && !gl.getProgramParameter(j.p, X.COMPLETION_STATUS_KHR)) continue;
     M.delete(k);
     try {
-      if (!EGL.P[k]) EGL.P[k] = eglFinish(j);
+      if (!gpuState.P[k]) gpuState.P[k] = eglFinish(j);
     } catch (e) {}
     if (++n >= max) break;
   }
 }
 function eglCompile([vs, fs], name) {
-  const gl = EGL.gl,
+  const gl = gpuState.gl,
     mk = (t, src) => {
       const s = gl.createShader(t);
       gl.shaderSource(s, src);
@@ -459,16 +459,16 @@ export function eglAttrClashes(vs) {
 }
 export function eglPrograms(defs) {
   for (const [k, v] of Object.entries(defs))
-    if (!EGL.P[k]) {
-      const j = EGL.pend && EGL.pend.get(k);
-      if (j && j.gl === EGL.gl) {
-        EGL.pend.delete(k);
+    if (!gpuState.P[k]) {
+      const j = gpuState.pend && gpuState.pend.get(k);
+      if (j && j.gl === gpuState.gl) {
+        gpuState.pend.delete(k);
         try {
-          EGL.P[k] = eglFinish(j);
+          gpuState.P[k] = eglFinish(j);
           continue;
         } catch (e) {}
       }
-      EGL.P[k] = eglCompile(v, k);
+      gpuState.P[k] = eglCompile(v, k);
     }
 }
 /* ---------- context ---------- */
@@ -483,76 +483,76 @@ export function eglInit(cv) {
       powerPreference: 'high-performance',
     });
     if (!gl) return false;
-    EGL.gl = gl;
-    EGL.cv = cv;
-    EGL.P = {};
-    EGL.texL = new Map();
-    EGL.texB = 0;
-    EGL.gpuX = undefined;
-    EGL.gpuQ = [];
-    EGL.gpuOpen = false;
-    EGL.pend = new Map();
-    EGL.pcx = undefined;
+    gpuState.gl = gl;
+    gpuState.cv = cv;
+    gpuState.P = {};
+    gpuState.texL = new Map();
+    gpuState.texB = 0;
+    gpuState.gpuX = undefined;
+    gpuState.gpuQ = [];
+    gpuState.gpuOpen = false;
+    gpuState.pend = new Map();
+    gpuState.pcx = undefined;
     if (typeof EGL_NW !== 'undefined') {
       EGL_NW.jobs.clear();
       EGL_NW.fly = 0;
     }
-    EGL.fb = {};
-    EGL.tex = new WeakMap();
-    EGL.normQ = [];
-    EGL.hdr = !!gl.getExtension('EXT_color_buffer_float');
-    EGL.aniso = gl.getExtension('EXT_texture_filter_anisotropic');
-    EGL.anisoMax = EGL.aniso ? gl.getParameter(EGL.aniso.MAX_TEXTURE_MAX_ANISOTROPY_EXT) : 1;
+    gpuState.fb = {};
+    gpuState.tex = new WeakMap();
+    gpuState.normQ = [];
+    gpuState.hdr = !!gl.getExtension('EXT_color_buffer_float');
+    gpuState.aniso = gl.getExtension('EXT_texture_filter_anisotropic');
+    gpuState.anisoMax = gpuState.aniso ? gl.getParameter(gpuState.aniso.MAX_TEXTURE_MAX_ANISOTROPY_EXT) : 1;
     gl.getExtension('OES_texture_float_linear');
     const q = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, q);
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([0, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 1]), gl.STATIC_DRAW);
-    EGL.quad = q;
-    EGL.white = eglTexData(1, 1, new Uint8Array([255, 255, 255, 255]));
-    EGL.flatN = eglTexData(1, 1, new Uint8Array([128, 128, 255, 255]));
+    gpuState.quad = q;
+    gpuState.white = eglTexData(1, 1, new Uint8Array([255, 255, 255, 255]));
+    gpuState.flatN = eglTexData(1, 1, new Uint8Array([128, 128, 255, 255]));
     /* one depth texture read two ways: compared (soft shadow taps) and raw (blocker search) */
     /* a 1x1 "lit everywhere" depth map stands in on every shadow unit while no real map exists (shadows off, the first
      frames): a shadow sampler must always see a depth texture, or the whole draw is refused (v44) */
-    EGL.depthStub = gl.createTexture();
-    gl.bindTexture(gl.TEXTURE_2D, EGL.depthStub);
+    gpuState.depthStub = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, gpuState.depthStub);
     gl.texStorage2D(gl.TEXTURE_2D, 1, gl.DEPTH_COMPONENT16, 1, 1);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-    EGL.samp.cmp = gl.createSampler();
-    gl.samplerParameteri(EGL.samp.cmp, gl.TEXTURE_COMPARE_MODE, gl.COMPARE_REF_TO_TEXTURE);
-    gl.samplerParameteri(EGL.samp.cmp, gl.TEXTURE_COMPARE_FUNC, gl.LEQUAL);
-    gl.samplerParameteri(EGL.samp.cmp, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-    gl.samplerParameteri(EGL.samp.cmp, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-    gl.samplerParameteri(EGL.samp.cmp, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-    gl.samplerParameteri(EGL.samp.cmp, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-    EGL.samp.raw = gl.createSampler();
-    gl.samplerParameteri(EGL.samp.raw, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-    gl.samplerParameteri(EGL.samp.raw, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-    gl.samplerParameteri(EGL.samp.raw, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-    gl.samplerParameteri(EGL.samp.raw, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gpuState.samp.cmp = gl.createSampler();
+    gl.samplerParameteri(gpuState.samp.cmp, gl.TEXTURE_COMPARE_MODE, gl.COMPARE_REF_TO_TEXTURE);
+    gl.samplerParameteri(gpuState.samp.cmp, gl.TEXTURE_COMPARE_FUNC, gl.LEQUAL);
+    gl.samplerParameteri(gpuState.samp.cmp, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.samplerParameteri(gpuState.samp.cmp, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.samplerParameteri(gpuState.samp.cmp, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.samplerParameteri(gpuState.samp.cmp, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gpuState.samp.raw = gl.createSampler();
+    gl.samplerParameteri(gpuState.samp.raw, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+    gl.samplerParameteri(gpuState.samp.raw, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    gl.samplerParameteri(gpuState.samp.raw, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.samplerParameteri(gpuState.samp.raw, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
     cv.addEventListener('webglcontextlost', e => {
       e.preventDefault();
-      EGL.lost = 1;
+      gpuState.lost = 1;
       if (typeof NWLOG !== 'undefined') NWLOG.add('webgl', 'context lost');
     });
     cv.addEventListener('webglcontextrestored', () => {
-      EGL.lost = 0;
-      EGL.cv = null;
+      gpuState.lost = 0;
+      gpuState.cv = null;
       if (typeof NWLOG !== 'undefined') NWLOG.add('webgl', 'context restored');
       if (typeof onGlContextRestored === 'function') onGlContextRestored(cv);
     });
-    if (typeof NWLOG !== 'undefined') NWLOG.add('webgl', `ready${EGL.hdr ? ' (HDR)' : ''}`);
+    if (typeof NWLOG !== 'undefined') NWLOG.add('webgl', `ready${gpuState.hdr ? ' (HDR)' : ''}`);
     return true;
   } catch (e) {
     console.error('WebGL engine unavailable, using the canvas renderer:', e);
     if (typeof NWLOG !== 'undefined') NWLOG.add('webgl', 'failed: ' + (e.message || e));
-    EGL.fail = 1;
+    gpuState.fail = 1;
     return false;
   }
 }
 /* ---------- textures ---------- */
 function eglTexData(w, h, data, o = {}) {
-  const gl = EGL.gl,
+  const gl = gpuState.gl,
     t = gl.createTexture();
   gl.bindTexture(gl.TEXTURE_2D, t);
   gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, w, h, 0, gl.RGBA, gl.UNSIGNED_BYTE, data);
@@ -560,7 +560,7 @@ function eglTexData(w, h, data, o = {}) {
   return t;
 }
 export function eglTexParams(o = {}) {
-  const gl = EGL.gl,
+  const gl = gpuState.gl,
     f = o.linear ? gl.LINEAR : gl.NEAREST,
     wr = o.repeat ? gl.REPEAT : gl.CLAMP_TO_EDGE;
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, o.mip ? gl.LINEAR_MIPMAP_LINEAR : f);
@@ -575,24 +575,24 @@ export function eglImg(im, o = {}) {
   if (!imageReady(im)) return null;
   const v = typeof dioArtVer === 'function' ? dioArtVer() : 0,
     dv = im.__v;
-  let e = EGL.tex.get(im);
+  let e = gpuState.tex.get(im);
   if (e && e.v === v && e.dv === dv) {
-    e.u = EGL.fr || 0;
+    e.u = gpuState.fr || 0;
     return e;
   }
   /* a canvas redrawn every frame (a billionaire mid-animation) carries a counter in __v: re-uploaded when it changes, no mipmaps or normal map */
   if (dv !== undefined) {
-    const gl = EGL.gl,
+    const gl = gpuState.gl,
       t = e ? e.t : gl.createTexture();
     gl.bindTexture(gl.TEXTURE_2D, t);
     gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, im);
     eglTexParams({});
-    const ne = { t, n: EGL.flatN, w: im.width, h: im.height, v, dv, im, nDone: true };
-    EGL.tex.set(im, ne);
+    const ne = { t, n: gpuState.flatN, w: im.width, h: im.height, v, dv, im, nDone: true };
+    gpuState.tex.set(im, ne);
     return ne;
   }
-  const gl = EGL.gl,
+  const gl = gpuState.gl,
     w = im.naturalWidth || im.width,
     h = im.naturalHeight || im.height;
   const tU = performance.now(),
@@ -611,29 +611,29 @@ export function eglImg(im, o = {}) {
   if (!o.repeat) eglAniso();
   const ne = {
     t,
-    n: e && e.n && e.n !== EGL.flatN ? e.n : EGL.flatN,
+    n: e && e.n && e.n !== gpuState.flatN ? e.n : gpuState.flatN,
     w,
     h,
     v,
     im,
     nDone: false,
-    u: EGL.fr || 0,
+    u: gpuState.fr || 0,
     src,
     sw: w,
     sh: h,
   };
-  EGL.tex.set(im, ne);
+  gpuState.tex.set(im, ne);
   eglTexTrack(im, ne);
   if (typeof NWLOG !== 'undefined') NWLOG.mark('uploading pictures', tU, performance.now());
-  if (!o.noNormal && !im.noNormal) EGL.normQ.push(ne);
+  if (!o.noNormal && !im.noNormal) gpuState.normQ.push(ne);
   return ne;
 }
 function eglAniso() {
-  const gl = EGL.gl,
+  const gl = gpuState.gl,
     n =
-      EGL.aniso && typeof engineSetting === 'function'
+      gpuState.aniso && typeof engineSetting === 'function'
         ? Math.min(
-            EGL.anisoMax || 1,
+            gpuState.anisoMax || 1,
             engineSetting('quality', 'sharpTex') === false
               ? 1
               : typeof walkRenderer !== 'undefined' && walkRenderer.q >= 3
@@ -641,7 +641,7 @@ function eglAniso() {
                 : 8
           )
         : 1;
-  if (EGL.aniso && n > 1) gl.texParameterf(gl.TEXTURE_2D, EGL.aniso.TEXTURE_MAX_ANISOTROPY_EXT, n);
+  if (gpuState.aniso && n > 1) gl.texParameterf(gl.TEXTURE_2D, gpuState.aniso.TEXTURE_MAX_ANISOTROPY_EXT, n);
 }
 /* materials: how a picture's normal map is shaped (pillow: rounded from the outline; detail: bumps from the pixels'
    brightness) and how it takes light (spec: shine, shin: how tight the shine is, transl: light through it from
@@ -684,18 +684,18 @@ function eglNormWorker() {
         j = EGL_NW.jobs.get(id);
       EGL_NW.jobs.delete(id);
       EGL_NW.fly = Math.max(0, EGL_NW.fly - 1);
-      if (!j || j.gl !== EGL.gl || EGL.lost) return;
+      if (!j || j.gl !== gpuState.gl || gpuState.lost) return;
       const e = j.e,
-        gl = EGL.gl;
-      if (e.im && EGL.tex.get(e.im) !== e) return;
+        gl = gpuState.gl;
+      if (e.im && gpuState.tex.get(e.im) !== e) return;
       if (ev.data.retry) {
         EGL_NW.osc = false;
-        EGL.normQ.unshift(e);
+        gpuState.normQ.unshift(e);
         return;
       }
       /* no OffscreenCanvas in workers here: read the pixels on this side instead */ const tU = performance.now();
       try {
-        const t = e.n && e.n !== EGL.flatN ? e.n : gl.createTexture();
+        const t = e.n && e.n !== gpuState.flatN ? e.n : gl.createTexture();
         gl.bindTexture(gl.TEXTURE_2D, t);
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, j.w, j.h, 0, gl.RGBA, gl.UNSIGNED_BYTE, out);
         eglTexParams({ linear: true });
@@ -713,7 +713,7 @@ function eglNormWorker() {
     W.onerror = () => {
       EGL_NW.bad = true;
       EGL_NW.w = null;
-      for (const j of EGL_NW.jobs.values()) EGL.normQ.unshift(j.e);
+      for (const j of EGL_NW.jobs.values()) gpuState.normQ.unshift(j.e);
       EGL_NW.jobs.clear();
       EGL_NW.fly = 0;
     };
@@ -726,9 +726,9 @@ function eglNormWorker() {
 export function eglNormWork(budget) {
   const t0 = performance.now(),
     W = eglNormWorker();
-  while (EGL.normQ.length && performance.now() - t0 < budget && (!W || EGL_NW.fly < 10)) {
-    const e = EGL.normQ.shift();
-    if (!e || e.nDone || (e.im && EGL.tex.get(e.im) !== e)) continue;
+  while (gpuState.normQ.length && performance.now() - t0 < budget && (!W || EGL_NW.fly < 10)) {
+    const e = gpuState.normQ.shift();
+    if (!e || e.nDone || (e.im && gpuState.tex.get(e.im) !== e)) continue;
     if (e.src && e.src !== e.im) e.src.__mat = e.im.__mat;
     try {
       if (
@@ -742,12 +742,12 @@ export function eglNormWork(budget) {
           h = e.sh || e.h,
           M = EGL_MATS[e.im.__mat] || EGL_MATS.plain,
           id = ++EGL_NW.id,
-          gl0 = EGL.gl;
+          gl0 = gpuState.gl;
         EGL_NW.jobs.set(id, { e, w, h, gl: gl0 });
         EGL_NW.fly++;
         createImageBitmap(im)
           .then(bm => {
-            if (EGL.gl !== gl0 || !EGL_NW.jobs.has(id)) {
+            if (gpuState.gl !== gl0 || !EGL_NW.jobs.has(id)) {
               bm.close && bm.close();
               if (EGL_NW.jobs.delete(id)) EGL_NW.fly = Math.max(0, EGL_NW.fly - 1);
               return;
@@ -758,7 +758,7 @@ export function eglNormWork(budget) {
             EGL_NW.jobs.delete(id);
             EGL_NW.fly = Math.max(0, EGL_NW.fly - 1);
             EGL_NW.osc = false;
-            EGL.normQ.unshift(e);
+            gpuState.normQ.unshift(e);
           });
       } else if (W) {
         const im = e.src || e.im,
@@ -770,7 +770,7 @@ export function eglNormWork(budget) {
         const d = x.getImageData(0, 0, w, h).data,
           M = EGL_MATS[e.im.__mat] || EGL_MATS.plain,
           id = ++EGL_NW.id;
-        EGL_NW.jobs.set(id, { e, w, h, gl: EGL.gl });
+        EGL_NW.jobs.set(id, { e, w, h, gl: gpuState.gl });
         EGL_NW.fly++;
         W.postMessage({ id, w, h, d, pillow: M.pillow, detail: M.detail }, [d.buffer]);
       } else {
@@ -844,8 +844,8 @@ export function eglNormal(im, w, h, old) {
       out[i * 4 + 2] = ((1 / l) * 0.5 + 0.5) * 255;
       out[i * 4 + 3] = 255;
     }
-  const gl = EGL.gl,
-    t = old && old !== EGL.flatN ? old : gl.createTexture();
+  const gl = gpuState.gl,
+    t = old && old !== gpuState.flatN ? old : gl.createTexture();
   gl.bindTexture(gl.TEXTURE_2D, t);
   gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, w, h, 0, gl.RGBA, gl.UNSIGNED_BYTE, out);
   eglTexParams({ linear: true });
@@ -853,8 +853,8 @@ export function eglNormal(im, w, h, old) {
 }
 /* ---------- render targets ---------- */
 export function eglTarget(name, w, h, o = {}) {
-  const gl = EGL.gl,
-    F = EGL.fb[name];
+  const gl = gpuState.gl,
+    F = gpuState.fb[name];
   if (F && F.w === w && F.h === h) return F;
   if (F) {
     gl.deleteFramebuffer(F.f);
@@ -868,7 +868,7 @@ export function eglTarget(name, w, h, o = {}) {
   if (!o.depthOnly) {
     c = gl.createTexture();
     gl.bindTexture(gl.TEXTURE_2D, c);
-    const hdr = o.hdr && EGL.hdr;
+    const hdr = o.hdr && gpuState.hdr;
     gl.texImage2D(
       gl.TEXTURE_2D,
       0,
@@ -897,12 +897,12 @@ export function eglTarget(name, w, h, o = {}) {
     gl.drawBuffers([gl.NONE]);
     gl.readBuffer(gl.NONE);
   }
-  return (EGL.fb[name] = { f, c, d, w, h });
+  return (gpuState.fb[name] = { f, c, d, w, h });
 }
 /* v43: a quad split into a grid (for cloth that waves); the same aC attribute as the quad */
 export function eglBindGrid(nx = 16, ny = 4) {
-  const gl = EGL.gl;
-  if (!EGL.grid || EGL.gridGL !== gl) {
+  const gl = gpuState.gl;
+  if (!gpuState.grid || gpuState.gridGL !== gl) {
     const a = [];
     for (let j = 0; j < ny; j++)
       for (let i = 0; i < nx; i++) {
@@ -912,14 +912,14 @@ export function eglBindGrid(nx = 16, ny = 4) {
           y1 = (j + 1) / ny;
         a.push(x0, y0, x1, y0, x0, y1, x0, y1, x1, y0, x1, y1);
       }
-    EGL.grid = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, EGL.grid);
+    gpuState.grid = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, gpuState.grid);
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(a), gl.STATIC_DRAW);
-    EGL.gridN = nx * ny * 6;
-    EGL.gridGL = gl;
+    gpuState.gridN = nx * ny * 6;
+    gpuState.gridGL = gl;
   }
   gl.bindVertexArray(null);
-  gl.bindBuffer(gl.ARRAY_BUFFER, EGL.grid);
+  gl.bindBuffer(gl.ARRAY_BUFFER, gpuState.grid);
   gl.enableVertexAttribArray(0);
   gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
   for (let i = 1; i < 4; i++) {
@@ -928,9 +928,9 @@ export function eglBindGrid(nx = 16, ny = 4) {
   }
 }
 export function eglBindQuad() {
-  const gl = EGL.gl;
+  const gl = gpuState.gl;
   gl.bindVertexArray(null);
-  gl.bindBuffer(gl.ARRAY_BUFFER, EGL.quad);
+  gl.bindBuffer(gl.ARRAY_BUFFER, gpuState.quad);
   gl.enableVertexAttribArray(0);
   gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
   for (let i = 1; i < 4; i++) {
@@ -939,7 +939,7 @@ export function eglBindQuad() {
   }
 }
 export function eglMesh(V, I, attrs, stride) {
-  const gl = EGL.gl,
+  const gl = gpuState.gl,
     vao = gl.createVertexArray();
   gl.bindVertexArray(vao);
   const vb = gl.createBuffer();
@@ -959,7 +959,7 @@ export function eglMesh(V, I, attrs, stride) {
 }
 export function eglFree(m) {
   if (!m) return;
-  const gl = EGL.gl;
+  const gl = gpuState.gl;
   try {
     gl.deleteVertexArray(m.vao);
     gl.deleteBuffer(m.vb);
@@ -968,42 +968,42 @@ export function eglFree(m) {
 }
 
 /* v34: how long the graphics card itself takes for a frame (EXT_disjoint_timer_query_webgl2, where the browser has
-   it). A few queries are in flight at once; each answer arrives a frame or two later and goes into EGL.gpuMs (a
+   it). A few queries are in flight at once; each answer arrives a frame or two later and goes into gpuState.gpuMs (a
    running average) and the log's slow-frame causes. Off with the "Measure the graphics card" dial. */
 export function eglGpuBegin() {
-  const gl = EGL.gl;
+  const gl = gpuState.gl;
   if (!gl || !(engineSetting('quality', 'gpuTimer') ?? true)) return null;
-  if (EGL.gpuX === undefined) {
+  if (gpuState.gpuX === undefined) {
     try {
-      EGL.gpuX = gl.getExtension('EXT_disjoint_timer_query_webgl2') || null;
+      gpuState.gpuX = gl.getExtension('EXT_disjoint_timer_query_webgl2') || null;
     } catch (e) {
-      EGL.gpuX = null;
+      gpuState.gpuX = null;
     }
-    EGL.gpuQ = [];
+    gpuState.gpuQ = [];
   }
-  const X = EGL.gpuX;
+  const X = gpuState.gpuX;
   if (!X) return null;
   eglGpuPoll();
-  if (EGL.gpuQ.length >= 4 || EGL.gpuOpen) return null;
+  if (gpuState.gpuQ.length >= 4 || gpuState.gpuOpen) return null;
   const q = gl.createQuery();
   gl.beginQuery(X.TIME_ELAPSED_EXT, q);
-  EGL.gpuOpen = true;
+  gpuState.gpuOpen = true;
   return q;
 }
 export function eglGpuEnd(q) {
   if (!q) return;
-  const gl = EGL.gl,
-    X = EGL.gpuX;
+  const gl = gpuState.gl,
+    X = gpuState.gpuX;
   try {
     gl.endQuery(X.TIME_ELAPSED_EXT);
   } catch (e) {}
-  EGL.gpuOpen = false;
-  EGL.gpuQ.push(q);
+  gpuState.gpuOpen = false;
+  gpuState.gpuQ.push(q);
 }
 function eglGpuPoll() {
-  const gl = EGL.gl,
-    X = EGL.gpuX,
-    Q = EGL.gpuQ;
+  const gl = gpuState.gl,
+    X = gpuState.gpuX,
+    Q = gpuState.gpuQ;
   if (!X || !Q.length) return;
   const dis = gl.getParameter(X.GPU_DISJOINT_EXT);
   while (Q.length) {
@@ -1014,9 +1014,9 @@ function eglGpuPoll() {
     gl.deleteQuery(q);
     if (dis) continue;
     const ms = ns / 1e6;
-    EGL.gpuLast = ms;
-    EGL.gpuMs = EGL.gpuMs ? EGL.gpuMs * 0.9 + ms * 0.1 : ms;
-    EGL.gpuMax = Math.max((EGL.gpuMax || 0) * 0.995, ms);
+    gpuState.gpuLast = ms;
+    gpuState.gpuMs = gpuState.gpuMs ? gpuState.gpuMs * 0.9 + ms * 0.1 : ms;
+    gpuState.gpuMax = Math.max((gpuState.gpuMax || 0) * 0.995, ms);
   }
 }
 
@@ -1024,34 +1024,34 @@ function eglGpuPoll() {
    map); past the cap (128 MB on phones since v41, 384 MB elsewhere) the ones not drawn for the longest go first (never those used
    in the last ten seconds) and are uploaded again if they come back into view. */
 function eglTexTrack(im, e) {
-  const L = EGL.texL || (EGL.texL = new Map());
+  const L = gpuState.texL || (gpuState.texL = new Map());
   e.bytes = Math.round((e.sw || e.w || 1) * (e.sh || e.h || 1) * 4 * 1.34 * 2);
-  if (!L.has(im)) EGL.texB = (EGL.texB || 0) + e.bytes;
+  if (!L.has(im)) gpuState.texB = (gpuState.texB || 0) + e.bytes;
   L.set(im, e);
 }
 export function eglTexTrim(force) {
-  const L = EGL.texL;
+  const L = gpuState.texL;
   if (!L) return 0;
   const phone = /Android|iPhone|iPad/.test(navigator.userAgent),
     cap = (force || (phone ? 128 : 384)) * 1048576;
-  if ((EGL.texB || 0) <= cap) return 0;
-  const gl = EGL.gl,
-    now = EGL.fr || 0,
+  if ((gpuState.texB || 0) <= cap) return 0;
+  const gl = gpuState.gl,
+    now = gpuState.fr || 0,
     old = [...L.entries()].filter(([im, e]) => now - (e.u || 0) > 600).sort((a, b) => (a[1].u || 0) - (b[1].u || 0));
   let n = 0;
   for (const [im, e] of old) {
-    if (EGL.texB <= cap * 0.85) break;
+    if (gpuState.texB <= cap * 0.85) break;
     try {
-      if (EGL.tex.get(im) === e) {
+      if (gpuState.tex.get(im) === e) {
         gl.deleteTexture(e.t);
-        if (e.n && e.n !== EGL.flatN) gl.deleteTexture(e.n);
-        EGL.tex.delete(im);
+        if (e.n && e.n !== gpuState.flatN) gl.deleteTexture(e.n);
+        gpuState.tex.delete(im);
       }
     } catch (err) {}
     L.delete(im);
-    EGL.texB -= e.bytes;
+    gpuState.texB -= e.bytes;
     n++;
   }
-  EGL.texTrimmed = (EGL.texTrimmed || 0) + n;
+  gpuState.texTrimmed = (gpuState.texTrimmed || 0) + n;
   return n;
 }

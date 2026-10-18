@@ -579,8 +579,8 @@ def desktop_steps(b, base, R):
 
     @step('Shaders: every program compiles, no clashing inputs', 30)
     def shaders():
-        r = pg.evaluate("""(()=>{if(typeof EGL==='undefined'||!EGL.gl)return {skip:'no WebGL in this browser'};const sets={WALK_SHADERS:typeof WALK_SHADERS!=='undefined'?WALK_SHADERS:null,BUILDING_SHADERS:typeof BUILDING_SHADERS!=='undefined'?BUILDING_SHADERS:null,POST_EFFECT_SHADERS:typeof POST_EFFECT_SHADERS!=='undefined'?POST_EFFECT_SHADERS:null,WORLD_MAP_GL_SHADERS:typeof WORLD_MAP_GL_SHADERS!=='undefined'?WORLD_MAP_GL_SHADERS:null,SOLID_PROP_SHADERS:typeof SOLID_PROP_SHADERS!=='undefined'?SOLID_PROP_SHADERS:null};
-         const bad=[];let n=0;for(const [name,S] of Object.entries(sets)){if(!S)continue;for(const [k,v] of Object.entries(S)){n++;const c=eglAttrClashes(v[0]);if(c.length)bad.push(k+' clash: '+c.join(','));try{if(!EGL.P[k])EGL.P[k]=eglCompile(v,k)}catch(e){bad.push(String(e.message||e).slice(0,160))}}}return {n,bad}})()""")
+        r = pg.evaluate("""(()=>{if(typeof gpuState==='undefined'||!gpuState.gl)return {skip:'no WebGL in this browser'};const sets={WALK_SHADERS:typeof WALK_SHADERS!=='undefined'?WALK_SHADERS:null,BUILDING_SHADERS:typeof BUILDING_SHADERS!=='undefined'?BUILDING_SHADERS:null,POST_EFFECT_SHADERS:typeof POST_EFFECT_SHADERS!=='undefined'?POST_EFFECT_SHADERS:null,WORLD_MAP_GL_SHADERS:typeof WORLD_MAP_GL_SHADERS!=='undefined'?WORLD_MAP_GL_SHADERS:null,SOLID_PROP_SHADERS:typeof SOLID_PROP_SHADERS!=='undefined'?SOLID_PROP_SHADERS:null};
+         const bad=[];let n=0;for(const [name,S] of Object.entries(sets)){if(!S)continue;for(const [k,v] of Object.entries(S)){n++;const c=eglAttrClashes(v[0]);if(c.length)bad.push(k+' clash: '+c.join(','));try{if(!gpuState.P[k])gpuState.P[k]=eglCompile(v,k)}catch(e){bad.push(String(e.message||e).slice(0,160))}}}return {n,bad}})()""")
         if r.get('skip'): return r['skip']
         if r['bad']: raise Exception('; '.join(r['bad'][:4]))
         return f"{r['n']} programs"
@@ -918,7 +918,7 @@ def desktop_steps(b, base, R):
          const B=boxInfo(artImage(C0.props.sofa.img)),rc=B&&B.roof.getContext('2d').getImageData(0,0,B.roof.width,B.roof.height).data;let lum=0;if(rc){for(let i=0;i<rc.length;i+=4)lum+=rc[i]*.3+rc[i+1]*.59+rc[i+2]*.11;lum/=rc.length/4}
          const sc={},alts=[];for(let i=0;i<40;i++){const p={k:'stump',x:i*3.1,z:i*1.7};alts.push(alternatePropImage(p,C0.props.stump,C0,sc))}const mossy=alts.filter(a=>a===C0.props.stump_mossy.img).length;
          const plain=alternatePropImage({k:'stump',x:0,z:0,plain:true},C0.props.stump,C0,sc)===C0.props.stump.img;
-         return {miss,bad,lum:Math.round(lum),mossy,plain,det:engineSetting('world','texDetail'),aniso:!!EGL.aniso}})()""")
+         return {miss,bad,lum:Math.round(lum),mossy,plain,det:engineSetting('world','texDetail'),aniso:!!gpuState.aniso}})()""")
         if v['miss'] or v['bad']: raise Exception(f'prop variants missing or not loading: {v}')
         if v['lum'] < 45: raise Exception(f"the sofa's top is still dark (brightness {v['lum']})")
         if not (4 <= v['mossy'] <= 30) or not v['plain']: raise Exception(f'mossy twins: {v}')
@@ -998,7 +998,7 @@ def desktop_steps(b, base, R):
         # (v37: the 2x "detailed art" of v34 is retired; the ground is the 32 px tiles of v37) open a scene and read the renderer's counters
         node = pg.evaluate("ROUTE.findIndex(r=>r.scene==='city')")
         if node >= 0: go_scene(pg, node); time.sleep(6)
-        r = json.loads(pg.evaluate("JSON.stringify({tp:(walkRenderer.ring&&walkRenderer.ring.TP)||(walkView.ground&&walkView.ground._TP),mb:Math.round((EGL.texB||0)/1048576),sh:[walkRenderer.shHit||0,walkRenderer.shMiss||0],grid:walkRenderer.gridSkip||0,gpu:EGL.gpuX?'timer':'no timer'})"))
+        r = json.loads(pg.evaluate("JSON.stringify({tp:(walkRenderer.ring&&walkRenderer.ring.TP)||(walkView.ground&&walkView.ground._TP),mb:Math.round((gpuState.texB||0)/1048576),sh:[walkRenderer.shHit||0,walkRenderer.shMiss||0],grid:walkRenderer.gridSkip||0,gpu:gpuState.gpuX?'timer':'no timer'})"))
         if r['tp'] != 32: raise Exception(f'the ground isn’t painted from the 32 px tiles (tile {r["tp"]} px)')
         shot(pg, 'v34-city')
         out.append(f"ground {r['tp']} px a tile, {r['mb']} MB of pictures on the card; shadow cache {r['sh'][0]} kept / {r['sh'][1]} drawn; {r['grid']} props skipped by the grid; GPU {r['gpu']}")
@@ -1327,7 +1327,7 @@ def desktop_steps(b, base, R):
         if vx['empty']: raise Exception('empty voxel models: ' + ', '.join(vx['empty']))
         out.append(f'{vx["n"]} props with a voxel recipe, {vx["built"]} of 12 meshed on the spot, {vx["drawn"]} drawn last frame')
         # the light: SH ambient, cascades, lamp maps, god rays all on and running without errors
-        lt = json.loads(pg.evaluate("JSON.stringify({sh:!!(walkRenderer.X&&walkRenderer.X.sh),cas:!!(walkRenderer.lastShadow&&walkRenderer.lastShadow.far),vol:!!EGL.fb.vol1,ao:engineSetting('shadows','aoKind')})"))
+        lt = json.loads(pg.evaluate("JSON.stringify({sh:!!(walkRenderer.X&&walkRenderer.X.sh),cas:!!(walkRenderer.lastShadow&&walkRenderer.lastShadow.far),vol:!!gpuState.fb.vol1,ao:engineSetting('shadows','aoKind')})"))
         if not (lt['sh'] and lt['cas']): raise Exception(f'light: {lt}')
         go_scene(pg, 0); pg.evaluate("environment.force={time:22,weather:'clear',season:'summer'};0"); time.sleep(4); until(pg, "(walkRenderer.X&&walkRenderer.X.lampSh||[]).length>0", 20)
         lamps = pg.evaluate("(walkRenderer.X&&walkRenderer.X.lampSh||[]).length"); shot(pg, 'v43-night'); pg.evaluate("environment.force=null;0")
@@ -1366,9 +1366,9 @@ def desktop_steps(b, base, R):
                 c = pixels(im.crop((int(X - r), int(Y - r), int(X + r), int(Y + r)))); res.append(sum(.3 * p[0] + .59 * p[1] + .11 * p[2] for p in c) / len(c))
             return res
         # GL draw calls that WebGL refuses (a sampler fed the wrong kind of texture) show as nothing drawn; count them
-        pg.evaluate("""(()=>{const gl=EGL.gl;if(gl.__chk)return;gl.__chk={n:0,last:''};const proto=Object.getPrototypeOf(gl),ge=proto.getError;let cur=null;const ou=proto.useProgram;gl.useProgram=function(p){cur=p;return ou.call(gl,p)};
-         for(const k of ['drawArrays','drawElements','drawArraysInstanced','drawElementsInstanced']){const f=proto[k];gl[k]=function(...a){const r=f.apply(gl,a);const e=ge.call(gl);if(e){gl.__chk.n++;gl.__chk.last=k+' '+e+' '+(Object.keys(EGL.P).find(n=>EGL.P[n].p===cur)||'?')}return r}}})()""")
-        unwrap = "(()=>{const gl=EGL.gl;for(const k of ['useProgram','drawArrays','drawElements','drawArraysInstanced','drawElementsInstanced'])delete gl[k];delete gl.__chk})()"   # the error check after every draw stalls software drawing: only for this step
+        pg.evaluate("""(()=>{const gl=gpuState.gl;if(gl.__chk)return;gl.__chk={n:0,last:''};const proto=Object.getPrototypeOf(gl),ge=proto.getError;let cur=null;const ou=proto.useProgram;gl.useProgram=function(p){cur=p;return ou.call(gl,p)};
+         for(const k of ['drawArrays','drawElements','drawArraysInstanced','drawElementsInstanced']){const f=proto[k];gl[k]=function(...a){const r=f.apply(gl,a);const e=ge.call(gl);if(e){gl.__chk.n++;gl.__chk.last=k+' '+e+' '+(Object.keys(gpuState.P).find(n=>gpuState.P[n].p===cur)||'?')}return r}}})()""")
+        unwrap = "(()=>{const gl=gpuState.gl;for(const k of ['useProgram','drawArrays','drawElements','drawArraysInstanced','drawElementsInstanced'])delete gl[k];delete gl.__chk})()"   # the error check after every draw stalls software drawing: only for this step
         try:
             # 1. the land: the normal map, the slope toward the sun, the shadow of a block (the sun in the west at 17:00)
             bench('test_light_terrain', 17, 30, 11, 0); lab = pg.evaluate("walkView.sc.lab"); im1 = picture()
@@ -1415,9 +1415,9 @@ def desktop_steps(b, base, R):
             under = lum(im, [[13, 0, 8.2], [18.5, 0, 8.2]]); dark = lum(im, [[15.75, 0, 8.2]])     # lamps stand at x = 2 + 5.5 k, z = 9
             if None in under or dark[0] is None or max(under) < dark[0] * 1.1: raise Exception(f'night: no pools under the lamps: {under} vs {dark[0]} between')
             shot(pg, 'v44-night'); out.append(f'night: the ground under a lamp is {max(under) / dark[0]:.2f}× the ground between')
-            chk = json.loads(pg.evaluate("JSON.stringify(EGL.gl.__chk)"))
+            chk = json.loads(pg.evaluate("JSON.stringify(gpuState.gl.__chk)"))
         finally:   # v47: never leave the check on (a failure above used to): it stalls every later step's drawing
-            pg.evaluate("(()=>{const gl=EGL.gl;if(!gl||!gl.__chk)return;for(const k of ['useProgram','drawArrays','drawElements','drawArraysInstanced','drawElementsInstanced'])delete gl[k];delete gl.__chk})()")
+            pg.evaluate("(()=>{const gl=gpuState.gl;if(!gl||!gl.__chk)return;for(const k of ['useProgram','drawArrays','drawElements','drawArraysInstanced','drawElementsInstanced'])delete gl[k];delete gl.__chk})()")
         if chk['n']: raise Exception(f'{chk["n"]} draw calls refused by WebGL (last: {chk["last"]})')
         pg.evaluate("U.bench=null;environment.force=null;walkRenderer.yawT=0;render();0")
         if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
@@ -1877,7 +1877,7 @@ def desktop_steps(b, base, R):
 
     @step('Settings: one save and the account box, languages, text size, contrast', 90)
     def settings():
-        pg.evaluate("(()=>{const gl=typeof EGL!=='undefined'&&EGL.gl;if(gl&&gl.__chk){for(const k of ['useProgram','drawArrays','drawElements','drawArraysInstanced','drawElementsInstanced'])delete gl[k];delete gl.__chk}})()")
+        pg.evaluate("(()=>{const gl=typeof gpuState!=='undefined'&&gpuState.gl;if(gl&&gl.__chk){for(const k of ['useProgram','drawArrays','drawElements','drawArraysInstanced','drawElementsInstanced'])delete gl[k];delete gl.__chk}})()")
         out = []
         # alpha 0.4.1: one save per player; the account box shows in Settings → Save (a sign-in button once Firebase is set up)
         acc = pg.evaluate("(()=>{const t=U.setTab;U.setTab='save';const h=settingsHTML();U.setTab=t;return {box:h.includes('acc-box'),slots:typeof slotInfo==='function',key:LS}})()")

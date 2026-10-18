@@ -36,7 +36,7 @@ import {
   walkView,
 } from './walk-view.js';
 import { engineSetting } from './engine/settings.js';
-import { EGL, eglAttrClashes } from './engine/webgl.js';
+import { eglAttrClashes, gpuState } from './engine/webgl.js';
 import { POST_EFFECT_SHADERS } from './engine/post-effects.js';
 import { environment } from './environment.js';
 import { WALK_SHADERS, roomDimming, standingHeightAt, walkRenderer } from './walk-view-gl.js';
@@ -914,12 +914,12 @@ async function runFullTest(mode) {
       );
     /* v44: the light lab: the four light test scenes, each drawn for a second; what each kind of renderer drew, the
      lamps' maps at night, and whether WebGL refused a draw (a sampler fed the wrong texture shows as a thing missing) */
-    if (GD.scenes.test_light_terrain && typeof EGL !== 'undefined' && EGL.gl && !STEST.stop)
+    if (GD.scenes.test_light_terrain && typeof gpuState !== 'undefined' && gpuState.gl && !STEST.stop)
       await phase(
         'Light lab: the land, a room, props, the air',
         'dio',
         async () => {
-          const gl = EGL.gl,
+          const gl = gpuState.gl,
             proto = Object.getPrototypeOf(gl),
             ge = proto.getError,
             O = {};
@@ -1252,14 +1252,14 @@ async function runFullTest(mode) {
               ? [...seamlessWorld.cache.keys()].filter(k => k.startsWith('w:')).length
               : 0;
         const mb = performance.memory ? Math.round(performance.memory.usedJSHeapSize / 1048576) : null,
-          tex = typeof EGL !== 'undefined' && EGL.texB ? Math.round(EGL.texB / 1048576) : null,
-          ntex = typeof EGL !== 'undefined' && EGL.texL ? EGL.texL.size : null,
+          tex = typeof gpuState !== 'undefined' && gpuState.texB ? Math.round(gpuState.texB / 1048576) : null,
+          ntex = typeof gpuState !== 'undefined' && gpuState.texL ? gpuState.texL.size : null,
           grounds = typeof GROUND_CACHE !== 'undefined' ? GROUND_CACHE.size : null,
           gw =
             typeof GROUND_CACHE !== 'undefined'
               ? [...GROUND_CACHE.values()].reduce((a, g) => a + (g && g.width ? g.width * g.height * 4 : 0), 0)
               : 0,
-          lost = typeof EGL !== 'undefined' && EGL.gl && EGL.gl.isContextLost();
+          lost = typeof gpuState !== 'undefined' && gpuState.gl && gpuState.gl.isContextLost();
         if (lost) throw new Error('the WebGL context was lost during the run');
         return [
           tex != null ? `${tex} MB of pictures on the card (${ntex})` : '',
@@ -1550,7 +1550,7 @@ const DIAG_PASSES = {
   'final pass': ['drawPostEffects'],
 };
 function diagTimersOn() {
-  const gl = typeof EGL !== 'undefined' ? EGL.gl : null,
+  const gl = typeof gpuState !== 'undefined' ? gpuState.gl : null,
     ext = gl && gl.getExtension('EXT_disjoint_timer_query_webgl2'),
     T = {
       gl,

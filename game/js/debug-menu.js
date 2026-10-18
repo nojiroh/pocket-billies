@@ -35,7 +35,7 @@ import { uiIconHTML } from './art.js';
 import { applyPreferences, exportSave } from './settings-screen.js';
 import { battleStage, battleStageResize, battleStageStop } from './battle-stage.js';
 import { mapById } from './walk-view.js';
-import { EGL } from './engine/webgl.js';
+import { gpuState } from './engine/webgl.js';
 import { A, checkFaints, paintBoxes, play, say, snapAll, startTrainer, startWild, stopTimers } from './battle.js';
 import { worldMap } from './world-map.js';
 /* eslint-disable no-func-assign */
@@ -142,7 +142,7 @@ function debugFps() {
     document.body.appendChild(el);
   }
   const m = FRAME.meter;
-  el.textContent = `${m.fps} fps · ${m.workAvg.toFixed(1)} ms${typeof EGL !== 'undefined' && EGL.gpuMs ? ' · GPU ' + EGL.gpuMs.toFixed(1) + ' ms' : ''} · Q${battleStage.q.lvl} · ${FRAME.hz} Hz`;
+  el.textContent = `${m.fps} fps · ${m.workAvg.toFixed(1)} ms${typeof gpuState !== 'undefined' && gpuState.gpuMs ? ' · GPU ' + gpuState.gpuMs.toFixed(1) + ' ms' : ''} · Q${battleStage.q.lvl} · ${FRAME.hz} Hz`;
 }
 function dbgAct(x) {
   const v = id => {

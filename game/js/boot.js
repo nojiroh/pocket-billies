@@ -14,7 +14,7 @@ import { trainerArtPaths } from './person-art.js';
 import { rigAtlas } from './skeleton-rig.js';
 import { AREAS, battleStageArtFiles, battleStagePrepare } from './battle-stage.js';
 import { mapArtPaths, mapById, walkData, walkView } from './walk-view.js';
-import { EGL, eglOK } from './engine/webgl.js';
+import { eglOK, gpuState } from './engine/webgl.js';
 import { environment } from './environment.js';
 import { startTownRise, walkRenderer } from './walk-view-gl.js';
 import { seamlessWorld } from './seamless-world.js';
@@ -642,7 +642,7 @@ async function sceneWarm() {
     const ok =
       walkView.ready &&
       (typeof walkRenderer === 'undefined' || !walkRenderer.on || walkRenderer.frames > 4) &&
-      (typeof EGL === 'undefined' || !EGL.normQ || !EGL.normQ.length);
+      (typeof gpuState === 'undefined' || !gpuState.normQ || !gpuState.normQ.length);
     if (ok || !document.getElementById('dio')) break;
     await new Promise(r => setTimeout(r, 60));
   }

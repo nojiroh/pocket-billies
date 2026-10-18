@@ -17,7 +17,15 @@ import { clamp } from './util.js';
 import { makeCanvas } from './art.js';
 import { artImage, hash2d, walkView, worldToScreen } from './walk-view.js';
 import { engineSetting } from './engine/settings.js';
-import { EGL, EGL_GLSL_COMMON, EGL_GLSL_LIGHT, EGL_GLSL_LOOK, EGL_MATS, eglImg, eglPrograms } from './engine/webgl.js';
+import {
+  EGL_GLSL_COMMON,
+  EGL_GLSL_LIGHT,
+  EGL_GLSL_LOOK,
+  EGL_MATS,
+  eglImg,
+  eglPrograms,
+  gpuState,
+} from './engine/webgl.js';
 import {
   addHitTarget,
   drawRotatingBlades,
@@ -718,7 +726,7 @@ export function buildSolidProp(im, parts) {
 }
 function uploadSolidPropMesh(V, extra) {
   if (!V.length) return null;
-  const gl = EGL.gl,
+  const gl = gpuState.gl,
     vao = gl.createVertexArray();
   gl.bindVertexArray(vao);
   const vb = gl.createBuffer();
@@ -1187,7 +1195,7 @@ function solidPropLevelOfDetail(items, C) {
 }
 /* per prop: where it stands, plus (trees, rocks) a turn of up to 12 degrees, a slight lean and a shade of its own */
 function setSolidPropUniforms(p, it, M) {
-  const gl = EGL.gl,
+  const gl = gpuState.gl,
     U = p.U,
     V = it.vol,
     h1 = hash2d(Math.round(it.x * 13), Math.round(it.z * 17)),
@@ -1226,7 +1234,7 @@ export function drawSolidProps(C, items, X, hits, labels, PPU) {
   solidPropState.drawn = 0;
   if (!solidPropsOn()) return;
   solidPropGuard(() => {
-    const gl = EGL.gl;
+    const gl = gpuState.gl;
     eglPrograms(SOLID_PROP_SHADERS);
     let p = null;
     const P = walkView.pl,
@@ -1305,9 +1313,9 @@ export function drawSolidProps(C, items, X, hits, labels, PPU) {
 function drawSolidPropShadows(SH, items) {
   if (!solidPropsOn()) return;
   solidPropGuard(() => {
-    const gl = EGL.gl;
+    const gl = gpuState.gl;
     eglPrograms(SOLID_PROP_SHADERS);
-    const p = EGL.P.p3dS;
+    const p = gpuState.P.p3dS;
     gl.useProgram(p.p);
     gl.uniformMatrix4fv(p.U.uVP, false, SH.vp);
     const ca = worldCurveArgs();

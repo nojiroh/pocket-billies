@@ -13,7 +13,7 @@ import { GD, RM, provide } from './hooks.js';
 import { artImg, artURL, hexToRgb } from './art.js';
 import { artImage, walkView } from './walk-view.js';
 import { engineSetting } from './engine/settings.js';
-import { EGL, EGL_GLSL_COMMON, EGL_GLSL_LIGHT, eglImg, eglPrograms } from './engine/webgl.js';
+import { EGL_GLSL_COMMON, EGL_GLSL_LIGHT, eglImg, eglPrograms, gpuState } from './engine/webgl.js';
 import {
   addHitTarget,
   setPropLookUniforms,
@@ -577,7 +577,7 @@ function propModelMesh(path, rec) {
     propModelState.meshes.set(path, m);
     return m;
   }
-  const gl = EGL.gl,
+  const gl = gpuState.gl,
     R = voxelResolution(),
     L = rec.layers || [],
     still = L.some(l => l.spin) ? { ...rec, layers: L.filter(l => !l.spin) } : rec,
@@ -634,7 +634,7 @@ function propModelMesh(path, rec) {
 /* the turning parts of a voxel prop, drawn after its still mesh (p: the program, its uniforms set for the item) */
 function drawSpinningParts(p, m) {
   if (!m.spins || !m.spins.length) return;
-  const gl = EGL.gl,
+  const gl = gpuState.gl,
     t = (RM ? 0 : walkView.t || 0) / 1000;
   for (const s of m.spins) {
     gl.uniform4f(p.U.uSpin, s.a[0], s.a[1], s.a[2], t * s.rps * Math.PI * 2);
@@ -649,8 +649,8 @@ function flushPropModelMeshes() {
 }
 export function invalidatePropModel(path, keep) {
   const m = propModelState.meshes.get(path);
-  if (m && m.vao && typeof EGL !== 'undefined' && EGL.gl) {
-    const gl = EGL.gl;
+  if (m && m.vao && typeof gpuState !== 'undefined' && gpuState.gl) {
+    const gl = gpuState.gl;
     for (const q of [m, ...(m.more || []), ...(m.spins || [])]) {
       gl.deleteVertexArray(q.vao);
       for (const b of q.bufs || []) gl.deleteBuffer(b);
@@ -665,7 +665,7 @@ export function invalidatePropModel(path, keep) {
    "flat", the colour; then the triangles), its turning parts ("spins": a pivot c and an axis a, up as y) like the
    voxels' propellers. It stands in for the picture where the voxel props do, and casts its real shadow. */
 function uploadLowPolyMesh(vb, ib) {
-  const gl = EGL.gl,
+  const gl = gpuState.gl,
     vao = gl.createVertexArray();
   gl.bindVertexArray(vao);
   const v = gl.createBuffer();
@@ -688,7 +688,7 @@ function uploadLowPolyMesh(vb, ib) {
   return { vao, n: ib.length, el: 1, u32: ib instanceof Uint32Array, bufs: [v, e] };
 }
 function prebuiltModelMesh(rec) {
-  const gl = EGL.gl;
+  const gl = gpuState.gl;
   const mk = P => {
     const b = Uint8Array.from(atob(P.data || ''), c => c.charCodeAt(0));
     if (!P.n || b.length < P.n * 24 + P.ni * 2) return null;
@@ -1051,7 +1051,7 @@ function lowPolyOn(rec) {
   );
 }
 function drawPropModelMesh(m) {
-  const gl = EGL.gl;
+  const gl = gpuState.gl;
   gl.bindVertexArray(m.vao);
   if (m.el) gl.drawElements(gl.TRIANGLES, m.n, m.u32 ? gl.UNSIGNED_INT : gl.UNSIGNED_SHORT, 0);
   else gl.drawArrays(gl.TRIANGLES, 0, m.n);
@@ -1081,7 +1081,7 @@ function propModelShaders() {
 }
 function drawLowPolyModels(C, X, L) {
   if (!L.length || typeof BUILDING_SHADERS === 'undefined' || typeof buildingArt !== 'function') return;
-  const gl = EGL.gl;
+  const gl = gpuState.gl;
   propModelShaders();
   eglPrograms(PROP_MODEL_SHADERS);
   const A = buildingArt(),
@@ -1242,7 +1242,7 @@ function mooredBob(it) {
   ];
 }
 function setPropModelUniforms(p, it) {
-  const gl = EGL.gl,
+  const gl = gpuState.gl,
     U = p.U,
     s = (it.p.s || 1) * (it.lk ? it.lk.size : 1),
     bo = mooredBob(it);
@@ -1255,7 +1255,7 @@ function drawPropModels(C, items, X, hits, labels, PPU) {
   propModelState.drawn = 0;
   if (!propModelsOn()) return;
   propModelGuard(() => {
-    const gl = EGL.gl;
+    const gl = gpuState.gl;
     eglPrograms(PROP_MODEL_SHADERS);
     let p = null;
     const ML = [];
@@ -1294,7 +1294,7 @@ function drawPropModels(C, items, X, hits, labels, PPU) {
 function drawPropModelShadows(SH, items) {
   if (!propModelsOn()) return;
   propModelGuard(() => {
-    const gl = EGL.gl;
+    const gl = gpuState.gl;
     eglPrograms(PROP_MODEL_SHADERS);
     let p = null;
     const ca = typeof worldCurveArgs === 'function' ? worldCurveArgs() : [0, 0, 0, 1e9];
@@ -1303,7 +1303,7 @@ function drawPropModelShadows(SH, items) {
       const m = propModelMesh(it.voxPath, it.vox);
       if (!m) continue;
       if (!p) {
-        p = EGL.P.voxS;
+        p = gpuState.P.voxS;
         gl.useProgram(p.p);
         gl.uniformMatrix4fv(p.U.uVP, false, SH.vp);
         gl.uniform3f(p.U.uCurve, ca[0], ca[1], ca[2]);

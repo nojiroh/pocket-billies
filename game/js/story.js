@@ -12,7 +12,7 @@ import { PLACE, RULES, SP, TRAINERS, trainersAt } from './game-data.js';
 import { B, RM, S, U, esc, healAll, save, today } from './game-state.js';
 import { dressingRoom } from './dressing-room.js';
 import { baseMapId, walkView, walkablePointNear } from './walk-view.js';
-import { EGL } from './engine/webgl.js';
+import { gpuState } from './engine/webgl.js';
 import { standingHeightAt, walkRenderer } from './walk-view-gl.js';
 import { startTrainer, startWild } from './battle.js';
 import { music } from './sound.js';
@@ -350,7 +350,8 @@ export function storyRivalBattle(o = {}) {
       typeof walkView === 'undefined' ||
       (on &&
         (!gl ||
-          (walkRenderer.frames >= (f0 ?? 0) + 8 && (typeof EGL === 'undefined' || !EGL.normQ || !EGL.normQ.length))));
+          (walkRenderer.frames >= (f0 ?? 0) + 8 &&
+            (typeof gpuState === 'undefined' || !gpuState.normQ || !gpuState.normQ.length))));
     if ((ready && performance.now() - t0 > 900) || performance.now() - t0 > 9000) {
       go();
       return;

@@ -138,7 +138,6 @@ import {
 } from './walk-view.js';
 import { engineColor, engineContext, engineSetting } from './engine/settings.js';
 import {
-  EGL,
   EGL_GLSL_COMMON,
   EGL_GLSL_LIGHT,
   EGL_GLSL_LOOK,
@@ -162,6 +161,7 @@ import {
   eglTexTrim,
   eglWind,
   eglWindBend,
+  gpuState,
   smooth01,
   v3n,
 } from './engine/webgl.js';
@@ -723,14 +723,14 @@ const baseStopWalkView = stopWalkView,
 /* 0.1.0 alpha: the walk view is WebGL only (the Lite 2D painter is gone). Without it the game says this device can't
    run it (boot.js noWebGL); the Studio shows its own message (engine-editor.js) */
 export function mountWalkView(cv, id, opt = {}) {
-  const useGL = !EGL.fail && eglOK();
+  const useGL = !gpuState.fail && eglOK();
   cv = canvasForContext(cv, 'gl');
   if (!useGL) {
     walkRenderer.on = false;
     if (walkRenderer.ui) walkRenderer.ui.hidden = true;
     walkView.ready = false;
     walkView.err = new Error('WebGL 2 is not available');
-    if (typeof noWebGL === 'function') noWebGL(EGL.fail ? 'failed' : '');
+    if (typeof noWebGL === 'function') noWebGL(gpuState.fail ? 'failed' : '');
     return Promise.resolve();
   }
   walkView.cv = cv;
@@ -792,19 +792,19 @@ export function setMountWalkView(v) {
 /* the GL context on this canvas, with the walk scene's programs (v47: also used by the opening's fall, which draws the
    world map on the same canvas before Sundown is mounted; a context made by the map alone gets the walk programs here) */
 export function walkGlContext(cv) {
-  if (EGL.cv === cv && EGL.gl) {
-    if (!EGL.lost)
+  if (gpuState.cv === cv && gpuState.gl) {
+    if (!gpuState.lost)
       try {
         eglPrograms(WALK_SHADERS);
       } catch (e) {
         console.error(e);
-        EGL.fail = 1;
+        gpuState.fail = 1;
         return false;
       }
     return true;
   }
   if (!eglInit(cv)) {
-    EGL.fail = 1;
+    gpuState.fail = 1;
     return false;
   }
   try {
@@ -821,7 +821,7 @@ export function walkGlContext(cv) {
         ); /* alpha 0.4: the low-poly props' too (they were built on first use, in the first place with props) */
   } catch (e) {
     console.error(e);
-    EGL.fail = 1;
+    gpuState.fail = 1;
     if (typeof NWLOG !== 'undefined') NWLOG.add('webgl', 'shader failed: ' + e.message);
     return false;
   }
@@ -1287,7 +1287,7 @@ void main(){vec4 c;if(uGlow>.5){vec2 q=vUV*2.-1.;float d=dot(q,q);if(d>1.)discar
    with a fresh T it runs a few milliseconds a frame for the view that comes next (prepareMapGround), so walking from one view
    to the next finds everything ready: the textures go up to the card in strips, the mesh and water are built in slices */
 function* buildGroundSteps(sc, G, T) {
-  const gl = EGL.gl,
+  const gl = gpuState.gl,
     W = sc.w,
     H = sc.h,
     P = BORDER_M,
@@ -1317,7 +1317,7 @@ function* buildGroundSteps(sc, G, T) {
     cl = tile(sc.cliff || (sc.indoor ? 'k' : 'r')) || fe;
   T.ftex = repeatingTexture(fe, T.ftex);
   T.ctex = repeatingTexture(cl, T.ctex);
-  if (T.gntex && T.gntex !== EGL.flatN) gl.deleteTexture(T.gntex);
+  if (T.gntex && T.gntex !== gpuState.flatN) gl.deleteTexture(T.gntex);
   T.gntex = null;
   T.gntex = G._nrm ? yield* uploadTextureStrips(G.width, G.height, G._nrm, {}) : groundNormalTexture(G, null, sc);
   yield;
@@ -2114,7 +2114,7 @@ function buildGroundMesh() {
 }
 /* v46: a big texture goes up to the card a strip at a time (about 1 MB a strip), then its mipmaps are made on the card */
 function* uploadTextureStrips(w, h, data, o = {}) {
-  const gl = EGL.gl,
+  const gl = gpuState.gl,
     t = gl.createTexture();
   if (!(data instanceof Uint8Array)) {
     gl.bindTexture(gl.TEXTURE_2D, t);
@@ -2146,7 +2146,7 @@ function* uploadTextureStrips(w, h, data, o = {}) {
   return t;
 }
 function makeTextureMipmaps(t, o) {
-  const gl = EGL.gl;
+  const gl = gpuState.gl;
   gl.bindTexture(gl.TEXTURE_2D, t);
   gl.texParameteri(
     gl.TEXTURE_2D,
@@ -2165,7 +2165,7 @@ function makeTextureMipmaps(t, o) {
 const NEAR_RING_SIZE = 4,
   NEAR_RING_CHUNK_M = 16;
 function newNearRing() {
-  const gl = EGL.gl,
+  const gl = gpuState.gl,
     TP = bigTilesOn() ? 32 : 16,
     S = NEAR_RING_SIZE * NEAR_RING_CHUNK_M * TP,
     mk = (sz, lin) => {
@@ -2199,7 +2199,7 @@ function newNearRing() {
 }
 function freeNearRing(R) {
   if (!R) return;
-  const gl = EGL.gl;
+  const gl = gpuState.gl;
   for (const J of R.jobs || [])
     try {
       J.it.return();
@@ -2281,7 +2281,7 @@ function* paintRingChunk(R, sc, ci, cj, pr) {
   };
   const r = yield* typeof paintGroundOnWorker === 'function' ? paintGroundOnWorker(sc, o) : paintGroundSteps(sc, o);
   if (!R.tex) return;
-  const gl = EGL.gl,
+  const gl = gpuState.gl,
     px = R.TP * NEAR_RING_CHUNK_M,
     sx = s % NEAR_RING_SIZE,
     sy = (s / NEAR_RING_SIZE) | 0;
@@ -2353,15 +2353,15 @@ export function updateNearRing(sc, fx, fz, budget) {
 }
 function setNearRingUniforms(U, sc) {
   if (!U.uRing) return;
-  const gl = EGL.gl,
+  const gl = gpuState.gl,
     R = walkRenderer.ring,
     on = !!(R && R.tex);
   gl.activeTexture(gl.TEXTURE9);
-  gl.bindTexture(gl.TEXTURE_2D, on ? R.tex : EGL.white);
+  gl.bindTexture(gl.TEXTURE_2D, on ? R.tex : gpuState.white);
   gl.bindSampler(9, null);
   gl.uniform1i(U.uRing, 9);
   gl.activeTexture(gl.TEXTURE14);
-  gl.bindTexture(gl.TEXTURE_2D, on ? R.ntex : EGL.flatN);
+  gl.bindTexture(gl.TEXTURE_2D, on ? R.ntex : gpuState.flatN);
   gl.bindSampler(14, null);
   gl.uniform1i(U.uRingN, 14);
   gl.activeTexture(gl.TEXTURE0);
@@ -2373,7 +2373,7 @@ function setNearRingUniforms(U, sc) {
   }
 }
 function groundOcclusionTexture(r) {
-  const gl = EGL.gl,
+  const gl = gpuState.gl,
     { FW, FH, d } = r,
     t = gl.createTexture();
   gl.bindTexture(gl.TEXTURE_2D, t);
@@ -2654,7 +2654,7 @@ const WATER_KIND_INDEX = Object.fromEntries(WATER_KIND_LOOKS.map((w, i) => [w.k,
    almost every slow frame in the v33 log (up to 243 ms). The cliff-foot pass reads each spot's height once into a grid
    instead of asking the terrain nine times per texel. Until it's done the ground simply isn't darkened. */
 export function groundOcclusion(sc) {
-  const gl = EGL.gl;
+  const gl = gpuState.gl;
   if (walkRenderer.gaoTex) {
     walkRenderer.gaoTex = null;
   }
@@ -2785,7 +2785,7 @@ function* groundOcclusionSteps(sc) {
   return { FW, FH, d };
 }
 function shoreField(sc, isW, T = walkRenderer) {
-  const gl = EGL.gl,
+  const gl = gpuState.gl,
     W = sc.w,
     H = sc.h,
     R = 8,
@@ -2854,10 +2854,10 @@ function shoreField(sc, isW, T = walkRenderer) {
 /* the shoreline value at a spot (0 dry ... 0.5 the water's edge ... 1 open water); 1 where there is no field */
 function setShoreUniforms(U, sc) {
   if (!U.uShoreR) return;
-  const gl = EGL.gl,
+  const gl = gpuState.gl,
     on = !!(walkRenderer.shoreF && walkRenderer.shoreTex);
   gl.activeTexture(gl.TEXTURE5);
-  gl.bindTexture(gl.TEXTURE_2D, on ? walkRenderer.shoreTex : EGL.white);
+  gl.bindTexture(gl.TEXTURE_2D, on ? walkRenderer.shoreTex : gpuState.white);
   gl.bindSampler(5, null);
   gl.uniform1i(U.uShore, 5);
   gl.uniform3f(U.uShoreR, 1 / sc.w, 1 / sc.h, on ? 1 : 0);
@@ -2985,7 +2985,7 @@ function groundPixelNormal(gx, gy, m) {
   return [clamp(-gx * m[0] * 1.4, -0.8, 0.8), clamp(gy * m[0] * 1.4, -0.8, 0.8)];
 }
 function groundNormalTexture(G, old, sc = walkView.sc) {
-  const gl = EGL.gl,
+  const gl = gpuState.gl,
     TP = G._TP || walkData().sc.tile || 16,
     P = BORDER_M,
     w = G.width,
@@ -2993,7 +2993,7 @@ function groundNormalTexture(G, old, sc = walkView.sc) {
     rows = sc.tiles || [];
   let d;
   if (G._nrm) {
-    const t = old && old !== EGL.flatN ? old : gl.createTexture();
+    const t = old && old !== gpuState.flatN ? old : gl.createTexture();
     gl.bindTexture(gl.TEXTURE_2D, t);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, w, h, 0, gl.RGBA, gl.UNSIGNED_BYTE, G._nrm);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
@@ -3006,7 +3006,7 @@ function groundNormalTexture(G, old, sc = walkView.sc) {
   try {
     d = G._px || G.getContext('2d').getImageData(0, 0, w, h).data;
   } catch (e) {
-    return old || EGL.flatN;
+    return old || gpuState.flatN;
   }
   const L = new Float32Array(w * h);
   for (let i = 0; i < w * h; i++) L[i] = (d[i * 4] * 0.3 + d[i * 4 + 1] * 0.59 + d[i * 4 + 2] * 0.11) / 255;
@@ -3037,7 +3037,7 @@ function groundNormalTexture(G, old, sc = walkView.sc) {
       out[i * 4 + 3] = m[1] * 255;
     }
   }
-  const t = old && old !== EGL.flatN ? old : gl.createTexture();
+  const t = old && old !== gpuState.flatN ? old : gl.createTexture();
   gl.bindTexture(gl.TEXTURE_2D, t);
   gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, w, h, 0, gl.RGBA, gl.UNSIGNED_BYTE, out);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
@@ -3048,9 +3048,9 @@ function groundNormalTexture(G, old, sc = walkView.sc) {
   return t;
 }
 function repeatingTexture(im, old) {
-  const gl = EGL.gl;
-  if (!imageReady(im)) return EGL.white;
-  const t = old && old !== EGL.white ? old : gl.createTexture();
+  const gl = gpuState.gl;
+  if (!imageReady(im)) return gpuState.white;
+  const t = old && old !== gpuState.white ? old : gl.createTexture();
   gl.bindTexture(gl.TEXTURE_2D, t);
   gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, im);
   eglTexParams({ repeat: true });
@@ -3103,7 +3103,7 @@ const GRASS_KINDS = {
 /* v39: planting is spread over frames: each frame plants rows for a few milliseconds (grassWork), and the blades
    appear when the last row is in, so a big meadow no longer costs one long frame when the scene opens */
 export function buildGrass() {
-  const gl = EGL.gl,
+  const gl = gpuState.gl,
     sc = walkView.sc;
   walkRenderer.grassDrawn = 0;
   /* v46: a room has none (the count used to carry over from the last place) */ if (walkRenderer.grass) {
@@ -3579,13 +3579,13 @@ function drawWalkFrame(ts, dtm) {
     stopWalkView();
     return;
   }
-  if (!walkView.ready || EGL.lost) return;
+  if (!walkView.ready || gpuState.lost) return;
   const w0 = performance.now(),
-    gl = EGL.gl,
+    gl = gpuState.gl,
     sc = walkView.sc;
   engineContext.look = sc.look || null;
-  EGL.fr = (EGL.fr || 0) + 1;
-  if (EGL.fr % 120 === 0) eglTexTrim();
+  gpuState.fr = (gpuState.fr || 0) + 1;
+  if (gpuState.fr % 120 === 0) eglTexTrim();
   eglNormWork(walkView.warm ? 40 : 3);
   eglPendPoll(1);
   groundOcclusionWork();
@@ -3625,7 +3625,7 @@ function drawWalkFrame(ts, dtm) {
 }
 function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
   if (typeof seamlessLookTick === 'function') seamlessLookTick();
-  const gl = EGL.gl,
+  const gl = gpuState.gl,
     sc = walkView.sc,
     cv = walkView.cv;
   ensureGround();
@@ -3694,7 +3694,8 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
   const X = walkLightContext(C, sun, dark, items, shadow, BT);
   walkRenderer.X = X;
   if (dark > 0.3 && !BT && shadow) lampShadowMaps(items, X, dark);
-  if (walkRenderer.water && !(QE >= 2 && walkRenderer.frames % 2 && EGL.fb.refl)) reflectionPass(items, C, rw, rh, X);
+  if (walkRenderer.water && !(QE >= 2 && walkRenderer.frames % 2 && gpuState.fb.refl))
+    reflectionPass(items, C, rw, rh, X);
   const S = eglTarget('scene', rw, rh, { depth: true, hdr: true });
   gl.bindFramebuffer(gl.FRAMEBUFFER, S.f);
   gl.viewport(0, 0, rw, rh);
@@ -3913,7 +3914,7 @@ function swapMapCache(oldKey, key) {
   }
 }
 function freeMapCache(e) {
-  const gl = EGL.gl;
+  const gl = gpuState.gl;
   if (!e) return;
   if (e.ring) {
     freeNearRing(e.ring);
@@ -3921,7 +3922,7 @@ function freeMapCache(e) {
   }
   try {
     for (const k of ['gtex', 'ftex', 'ctex', 'gntex', 'shoreTex', 'gaoTex'])
-      if (e[k] && e[k] !== EGL.white && e[k] !== EGL.flatN) gl.deleteTexture(e[k]);
+      if (e[k] && e[k] !== gpuState.white && e[k] !== gpuState.flatN) gl.deleteTexture(e[k]);
     for (const k of ['mesh', 'water', 'fallMesh']) if (e[k]) eglFree(e[k]);
     if (e.grass) {
       gl.deleteVertexArray(e.grass.vao);
@@ -4562,7 +4563,7 @@ function computePropLook(p, M, sc) {
 }
 const NEUTRAL_LOOK = { hsv: [0, 0, 0, 0], wear: [0, 0, 0, 0], tint: [1, 1, 1, 0], mask: [0, 0] };
 export function setPropLookUniforms(U, L, bp) {
-  const gl = EGL.gl;
+  const gl = gpuState.gl;
   if (!U.uWear) return;
   L = L || NEUTRAL_LOOK;
   gl.uniform4fv(U.uWear, L.wear);
@@ -5250,15 +5251,15 @@ function walkLightContext(C, sun, dark, items, shadow, BT) {
 }
 /* ---------- passes ---------- */
 export function useWalkProgram(name, C, X) {
-  const gl = EGL.gl,
-    p = EGL.P[name];
+  const gl = gpuState.gl,
+    p = gpuState.P[name];
   gl.useProgram(p.p);
   if (p.U.uVP && C) gl.uniformMatrix4fv(p.U.uVP, false, C.vp);
   if (X) setLightUniforms(p, X);
   return p;
 }
 function setSpriteUniforms(p, it, uv) {
-  const gl = EGL.gl,
+  const gl = gpuState.gl,
     U = p.U,
     s = it.mpp;
   gl.uniform3f(U.uBase, it.x, it.y, it.z);
@@ -5314,12 +5315,12 @@ export function shadowPass(items0, sun, C) {
   const P = walkView.pl,
     R = engineSetting('shadows', 'nearRadius') ?? 13,
     res = Math.min(1024, engineSetting('quality', 'shadowMap')),
-    gl = EGL.gl,
+    gl = gpuState.gl,
     items = items0.filter(it => Math.hypot(it.x - P.x, it.z - P.z) < R + (it.w || 32) * (it.mpp || 0.03) + 3);
   const SH = beginSunShadow(P.x, P.z, R, sun, res, 'shadowN'),
     ca = worldCurveArgs();
   {
-    const p = EGL.P.shadowG;
+    const p = gpuState.P.shadowG;
     gl.useProgram(p.p);
     gl.uniformMatrix4fv(p.U.uVP, false, SH.vp);
     gl.uniform3f(p.U.uCurve, ca[0], ca[1], ca[2]);
@@ -5353,7 +5354,7 @@ function lampShadowMaps(items, X, dark) {
   X._lp = null;
   X._lc = null;
   X.lampSh = [];
-  const gl = EGL.gl,
+  const gl = gpuState.gl,
     ca = worldCurveArgs();
   cand.forEach((l, i) => {
     const SH = beginLampShadow([l.p[0], l.p[1] + 0.2, l.p[2]], 512, 'lamp' + i),
@@ -5364,7 +5365,7 @@ function lampShadowMaps(items, X, dark) {
           !(it.k === 'prop' && it.M && it.M.glow && Math.hypot(it.x - l.p[0], it.z - l.p[2]) < 0.6)
       ); /* alpha 0.4: nor its own post (it.p!==l.own): the lamp's picture turned black in its own light's shadow */
     {
-      const p = EGL.P.shadowG;
+      const p = gpuState.P.shadowG;
       gl.useProgram(p.p);
       gl.uniformMatrix4fv(p.U.uVP, false, SH.vp);
       gl.uniform3f(p.U.uCurve, ca[0], ca[1], ca[2]);
@@ -5383,8 +5384,8 @@ function lampShadowMaps(items, X, dark) {
 }
 /* the sprites of a shadow pass, each turned to face the sun (fixed ones and buildings as they stand); for a lamp, each turned to face the lamp */
 function drawShadowSprites(SH, L, sun, ca, lamp) {
-  const gl = EGL.gl,
-    p = EGL.P.shadow,
+  const gl = gpuState.gl,
+    p = gpuState.P.shadow,
     solid = engineSetting('shadows', 'buildings'),
     tr = sun ? sun.travel : [0, -1, 0],
     h = v3n([tr[0], 0, tr[2]]),
@@ -5459,7 +5460,7 @@ function fittedShadowPass(items0, sun, C) {
       walkView.R < 0.8 || (walkRenderer.q || 0) >= 2
         ? Math.min(1024, engineSetting('quality', 'shadowMap'))
         : engineSetting('quality', 'shadowMap'),
-    gl = EGL.gl;
+    gl = gpuState.gl;
   let fit = shadowMapArea(C);
   const cache = (engineSetting('quality', 'shadowCache') ?? true) && !walkRenderer.bt && !!gl.blitFramebuffer;
   if (cache) fit = [Math.round(fit[0] / 3) * 3, Math.round(fit[1] / 3) * 3, fit[2] + 3];
@@ -5498,10 +5499,10 @@ function fittedShadowPass(items0, sun, C) {
         typeof buildingState !== 'undefined' ? buildingState.made || 0 : 0,
       ].join('|')
     : '';
-  const SF = EGL.fb.shadow;
+  const SF = gpuState.fb.shadow;
   let hit = false;
-  if (cache && walkRenderer.shKey === key && EGL.fb.shadowS && EGL.fb.shadowS.w === res) {
-    gl.bindFramebuffer(gl.READ_FRAMEBUFFER, EGL.fb.shadowS.f);
+  if (cache && walkRenderer.shKey === key && gpuState.fb.shadowS && gpuState.fb.shadowS.w === res) {
+    gl.bindFramebuffer(gl.READ_FRAMEBUFFER, gpuState.fb.shadowS.f);
     gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, SF.f);
     gl.blitFramebuffer(0, 0, res, res, 0, 0, res, res, gl.DEPTH_BUFFER_BIT, gl.NEAREST);
     gl.bindFramebuffer(gl.FRAMEBUFFER, SF.f);
@@ -5510,7 +5511,7 @@ function fittedShadowPass(items0, sun, C) {
   }
   let miss = 0;
   const sprites = L => {
-    const p = EGL.P.shadow;
+    const p = gpuState.P.shadow;
     gl.useProgram(p.p);
     gl.uniformMatrix4fv(p.U.uVP, false, SH.vp);
     curve(p);
@@ -5568,7 +5569,7 @@ function fittedShadowPass(items0, sun, C) {
     }
   };
   if (!hit) {
-    let p = EGL.P.shadowG;
+    let p = gpuState.P.shadowG;
     gl.useProgram(p.p);
     gl.uniformMatrix4fv(p.U.uVP, false, SH.vp);
     curve(p);
@@ -5605,9 +5606,9 @@ function skyColors(sc) {
   return typeof environmentSky === 'function' && engineContext.env ? environmentSky(s, !!sc.indoor) : s;
 }
 function drawSky(C, sun, mirror) {
-  const gl = EGL.gl,
+  const gl = gpuState.gl,
     sc = walkView.sc,
-    p = EGL.P.sky,
+    p = gpuState.P.sky,
     U = p.U,
     sky = skyColors(sc);
   gl.useProgram(p.p);
@@ -5640,8 +5641,8 @@ function drawSky(C, sun, mirror) {
 export function worldMapTexture() {
   if (walkRenderer.wtex) return walkRenderer.wtex;
   const im = artImage(typeof WORLD_ART !== 'undefined' ? WORLD_ART : 'map/world.png');
-  if (!imageReady(im)) return EGL.white;
-  const gl = EGL.gl,
+  if (!imageReady(im)) return gpuState.white;
+  const gl = gpuState.gl,
     t = gl.createTexture();
   gl.bindTexture(gl.TEXTURE_2D, t);
   gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, im);
@@ -5653,14 +5654,14 @@ export function worldMapTexture() {
   return (walkRenderer.wtex = t);
 }
 export function drawGround(C, X) {
-  const gl = EGL.gl,
+  const gl = gpuState.gl,
     sc = walkView.sc,
     p = useWalkProgram('ground', C, X),
     U = p.U,
     P = BORDER_M;
   const wa = eglImg(artImage(walkData().sc.wallArt || 'scene/build/walls.png'), { noNormal: true });
   gl.activeTexture(gl.TEXTURE4);
-  gl.bindTexture(gl.TEXTURE_2D, wa ? wa.t : EGL.white);
+  gl.bindTexture(gl.TEXTURE_2D, wa ? wa.t : gpuState.white);
   gl.uniform1i(U.uWallA, 4);
   if (!walkRenderer.wallColF) {
     walkRenderer.wallColF = new Float32Array(36);
@@ -5696,7 +5697,7 @@ export function drawGround(C, X) {
   gl.bindTexture(gl.TEXTURE_2D, walkRenderer.ctex);
   gl.uniform1i(U.uCliff, 2);
   gl.activeTexture(gl.TEXTURE3);
-  gl.bindTexture(gl.TEXTURE_2D, walkRenderer.gntex || EGL.flatN);
+  gl.bindTexture(gl.TEXTURE_2D, walkRenderer.gntex || gpuState.flatN);
   gl.uniform1i(U.uGNrm, 3);
   gl.uniform1f(U.uGStr, engineSetting('world', 'groundBumps'));
   gl.uniform1f(U.uGShine, engineSetting('world', 'groundShine'));
@@ -5706,7 +5707,7 @@ export function drawGround(C, X) {
   if (U.uBed) gl.uniform3fv(U.uBed, engineColor('water', 'bed', '#74654A'));
   if (U.uGAO) {
     gl.activeTexture(gl.TEXTURE8);
-    gl.bindTexture(gl.TEXTURE_2D, walkRenderer.gaoTex || EGL.white);
+    gl.bindTexture(gl.TEXTURE_2D, walkRenderer.gaoTex || gpuState.white);
     gl.bindSampler(8, null);
     gl.uniform1i(U.uGAO, 8);
     gl.uniform3f(U.uGAOR, 1 / sc.w, 1 / sc.h, walkRenderer.gaoTex ? (engineSetting('shadows', 'groundAO') ?? 1) : 0);
@@ -5815,7 +5816,7 @@ function mapFlowers(sc) {
   return { c: FLOWER_COLORS[k].map(h => hexToRgb(h).map(v => v / 255)), glow: k === 'spore' ? 0.55 : 0 };
 }
 export function drawGrass(C, X) {
-  const gl = EGL.gl,
+  const gl = gpuState.gl,
     p = useWalkProgram('grass', C, X),
     U = p.U,
     sc = walkView.sc,
@@ -5922,7 +5923,7 @@ function townRiseAmount(it) {
   return 1 + (c + 1) * Math.pow(k - 1, 3) + c * Math.pow(k - 1, 2);
 }
 export function drawSprites(C, items, X, hits, labels, PPU) {
-  const gl = EGL.gl,
+  const gl = gpuState.gl,
     p = useWalkProgram('sprite', C, X),
     U = p.U,
     P = walkView.pl,
@@ -6020,7 +6021,7 @@ export function drawSprites(C, items, X, hits, labels, PPU) {
     if (it.wave) {
       gl.uniform3fv(U.uWave, it.wave);
       eglBindGrid();
-      gl.drawArrays(gl.TRIANGLES, 0, EGL.gridN);
+      gl.drawArrays(gl.TRIANGLES, 0, gpuState.gridN);
       gl.uniform3f(U.uWave, 0, 0, 0);
       eglBindQuad();
       continue;
@@ -6170,7 +6171,7 @@ function boxInfo(im) {
   return B;
 }
 function drawBoxFaces(C, items, X) {
-  const gl = EGL.gl;
+  const gl = gpuState.gl;
   let p = null;
   for (const it of items) {
     if (
@@ -6238,7 +6239,7 @@ function drawBoxFaces(C, items, X) {
   }
 }
 export function drawRotatingBlades(p, it, b, BT, rot, C, X, lift) {
-  const gl = EGL.gl,
+  const gl = gpuState.gl,
     s = it.mpp,
     lf = lift || 0,
     cx = it.x + C.right[0] * b.x * s * it.flip - C.fwd[0] * lf,
@@ -6304,7 +6305,7 @@ function landmarkTilt(P, sc) {
   return best;
 }
 function drawFlatItem(it, T, C, X) {
-  const gl = EGL.gl,
+  const gl = gpuState.gl,
     fp = useWalkProgram('fx', C, X),
     U = fp.U,
     s = it.mpp,
@@ -6328,7 +6329,7 @@ function drawFlatItem(it, T, C, X) {
   gl.bindTexture(gl.TEXTURE_2D, T.t);
   gl.uniform1i(U.uTex, 0);
   gl.drawArrays(gl.TRIANGLES, 0, 6);
-  gl.useProgram(EGL.P.sprite.p);
+  gl.useProgram(gpuState.P.sprite.p);
 }
 export function addHitTarget(it, C, hits, labels, PPU) {
   const q = worldToScreen(C, it.x, 0, it.z);
@@ -6444,7 +6445,7 @@ function mirrorInView(F, it, L) {
   return inFrustum(F, it.x, 2 * L - cy, it.z, r);
 }
 export function reflectionPass(items, C, rw, rh, X) {
-  const gl = EGL.gl,
+  const gl = gpuState.gl,
     w = Math.max(32, rw >> 1),
     h = Math.max(32, rh >> 1),
     F = eglTarget('refl', w, h, { depth: true, hdr: true });
@@ -6605,7 +6606,7 @@ export function addRipple(x, z, k) {
   if (walkRenderer.rings.length > 16) walkRenderer.rings.shift();
 }
 function setWaterUniforms(U) {
-  const gl = EGL.gl;
+  const gl = gpuState.gl;
   if (!U.uKD) return;
   gl.uniform3fv(U.uKD, WATER_KIND_UNIFORMS.D);
   gl.uniform3fv(U.uKS, WATER_KIND_UNIFORMS.S);
@@ -6636,13 +6637,13 @@ function reflectionLevel() {
   return (walkRenderer.wlevelR = best ? best.y : walkRenderer.wlevel);
 }
 export function drawWater(C, X, rw, rh) {
-  const gl = EGL.gl,
+  const gl = gpuState.gl,
     p = useWalkProgram('water', C, X),
     U = p.U,
     sc = walkView.sc,
     sky = skyColors(sc);
   gl.activeTexture(gl.TEXTURE0);
-  gl.bindTexture(gl.TEXTURE_2D, walkRenderer.water && EGL.fb.refl ? EGL.fb.refl.c : EGL.white);
+  gl.bindTexture(gl.TEXTURE_2D, walkRenderer.water && gpuState.fb.refl ? gpuState.fb.refl.c : gpuState.white);
   gl.uniform1i(U.uRefl, 0);
   gl.uniform2f(U.uRes, rw, rh);
   gl.uniform3fv(U.uDeep, engineColor('water', 'deep', '#1D4F78'));
@@ -6855,7 +6856,7 @@ function roomLights(sc, L, lb) {
 function drawRoomEffects(C, U, items, glows, t, rm) {
   const sc = walkView.sc;
   if (!sc.room || (engineSetting('lights', 'roomLight') ?? true) === false) return;
-  const gl = EGL.gl,
+  const gl = gpuState.gl,
     R = roomSkyLight(),
     gk = engineSetting('lights', 'glow'),
     ws = windowLightShare(sc);
@@ -7024,7 +7025,7 @@ function drawRoomFront(C, X) {
   if (!sc.room || (engineSetting('lights', 'roomLight') ?? true) === false) return;
   const B = roomBoxOf(sc);
   if (!B) return;
-  const gl = EGL.gl;
+  const gl = gpuState.gl;
   const Rr = sc.roomRect || [0, 0, sc.w, sc.h],
     ex = (sc.exits && sc.exits[0]) || [Rr[0] + Rr[2] / 2, Rr[1] + 0.6],
     dl = ex[0] - (sc.roomGap || 2) / 2,
@@ -7328,7 +7329,7 @@ function drawFountainEffects(quad, t, rm, dt) {
    (the bloom turns them into glows) */
 /* v26: rain, snow and falling ash around you (environment.js says how much); drops splash on the ground and ring the water */
 function drawWeather(quad, glows, U, R, Up, dt, rm) {
-  const gl = EGL.gl,
+  const gl = gpuState.gl,
     E = environment,
     BT = walkRenderer.bt,
     P = BT ? { x: BT.center[0], z: BT.center[1] } : walkView.pl,
@@ -7449,7 +7450,7 @@ function addFootprint(x, z, a, paw) {
 }
 function drawFootprints(quad, U, R, Up, dt) {
   const pl = walkView.pl,
-    gl = EGL.gl;
+    gl = gpuState.gl;
   if (walkRenderer.printId !== walkView.id) {
     walkRenderer.printId = walkView.id;
     walkRenderer.prints = [];
@@ -7635,7 +7636,7 @@ function drawLifeEffects(quad, glows, t, rm, dt, sc, C0) {
   }
 }
 export function effectsPass(C, items, X, dark, t, dt) {
-  const gl = EGL.gl,
+  const gl = gpuState.gl,
     p = useWalkProgram('fx', C, X),
     U = p.U,
     sc = walkView.sc,

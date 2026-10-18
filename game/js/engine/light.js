@@ -9,7 +9,7 @@ import { environment, environmentSun } from '../hooks.js';
 import { clamp } from '../util.js';
 import { walkView } from '../walk-view.js';
 import { engineColor, engineContext, engineSetting } from './settings.js';
-import { EGL, M4, eglTarget, v3c, v3n } from './webgl.js';
+import { M4, eglTarget, gpuState, v3c, v3n } from './webgl.js';
 /* eslint-disable no-func-assign */
 expose({
   SKY_HARMONIC_DIRECTIONS: [() => SKY_HARMONIC_DIRECTIONS],
@@ -167,7 +167,7 @@ export function lightContext(o) {
   };
 }
 export function setLightUniforms(p, X) {
-  const gl = EGL.gl,
+  const gl = gpuState.gl,
     U = p.U;
   if (!U.uEye && !U.uCurve) return;
   if (U.uCurve) {
@@ -221,11 +221,11 @@ export function setLightUniforms(p, X) {
     sampler2D there makes the card refuse the draw), with the frame's maps or a stand-in depth texture */
   const S = X.shadow;
   if (U.uShadow != null || U.uShadowD != null || U.uShadow2 != null || U.uLampSh0 != null) {
-    const D0 = (S ? S.d : EGL.fb.shadow ? EGL.fb.shadow.d : null) || EGL.depthStub,
+    const D0 = (S ? S.d : gpuState.fb.shadow ? gpuState.fb.shadow.d : null) || gpuState.depthStub,
       bindD = (u, t, cmp) => {
         gl.activeTexture(gl.TEXTURE0 + u);
         gl.bindTexture(gl.TEXTURE_2D, t);
-        gl.bindSampler(u, cmp ? EGL.samp.cmp : EGL.samp.raw);
+        gl.bindSampler(u, cmp ? gpuState.samp.cmp : gpuState.samp.raw);
       };
     bindD(6, D0, 1);
     bindD(7, D0, 0);
@@ -295,7 +295,7 @@ export function setLightUniforms(p, X) {
 }
 /* a sun shadow map covering a rectangle of the world; returns what lightContext needs */
 export function beginSunShadow(cx, cz, radius, sun, res, name = 'shadow') {
-  const gl = EGL.gl,
+  const gl = gpuState.gl,
     S = eglTarget(name, res, res, { depthOnly: true }),
     tr = sun.travel,
     dist = 60;
@@ -341,7 +341,7 @@ export function beginSunShadow(cx, cz, radius, sun, res, name = 'shadow') {
 /* v43: a lamp's shadow map: a wide-angled camera at the lamp looking straight down; what stands under the lamp throws
    its shadow outward on the ground. Perspective, so the texel is finest right under the lamp. */
 export function beginLampShadow(pos, res, name) {
-  const gl = EGL.gl,
+  const gl = gpuState.gl,
     S = eglTarget(name, res, res, { depthOnly: true }),
     view = M4.look(pos, [pos[0], pos[1] - 1, pos[2]], [0, 0, 1]),
     proj = M4.persp(2.55, 1, 0.25, 24),
@@ -360,7 +360,7 @@ export function beginLampShadow(pos, res, name) {
   return { d: S.d, vp, size: res, pen: 0, radius: 12, p: pos, lamp: true };
 }
 export function endShadow() {
-  const gl = EGL.gl;
+  const gl = gpuState.gl;
   gl.disable(gl.POLYGON_OFFSET_FILL);
   gl.colorMask(true, true, true, true);
 }

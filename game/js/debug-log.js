@@ -194,8 +194,8 @@ NWLOG.ctx = () => {
         GAME.walkRenderer.shHit = GAME.walkRenderer.shMiss = 0;
       }
     }
-    if (typeof GAME.EGL !== 'undefined' && GAME.EGL.gpuMs)
-      c.gpu = [Math.round(GAME.EGL.gpuMs * 10) / 10, Math.round(GAME.EGL.gpuMax || 0)];
+    if (typeof GAME.gpuState !== 'undefined' && GAME.gpuState.gpuMs)
+      c.gpu = [Math.round(GAME.gpuState.gpuMs * 10) / 10, Math.round(GAME.gpuState.gpuMax || 0)];
     if (NWLOG.bench && NWLOG.bench.step) c.bench = NWLOG.bench.step;
   } catch (e) {}
   return c;
@@ -370,8 +370,8 @@ NWLOG.glInfo = () => {
   }
   if (typeof GAME.walkRenderer !== 'undefined') {
     o.sceneRenderer = GAME.walkRenderer.on ? 'webgl' : 'canvas';
-    o.webglFailed = !!(typeof GAME.EGL !== 'undefined' && GAME.EGL.fail);
-    o.contextLost = !!(typeof GAME.EGL !== 'undefined' && GAME.EGL.lost);
+    o.webglFailed = !!(typeof GAME.gpuState !== 'undefined' && GAME.gpuState.fail);
+    o.contextLost = !!(typeof GAME.gpuState !== 'undefined' && GAME.gpuState.lost);
     o.frames = GAME.walkRenderer.frames;
   }
   /* alpha 0.4: the helper threads: the ground painter's (ground-paint-worker.js) and the bump maps' (engine/webgl.js) */
@@ -473,8 +473,8 @@ NWLOG.more = () => {
   t('caches', () => ({
     people: typeof GAME.TR_CACHE !== 'undefined' ? GAME.TR_CACHE.size : null,
     lifeFrames: typeof GAME.LIFE !== 'undefined' ? GAME.LIFE.cut.size : null,
-    normalsWaiting: typeof GAME.EGL !== 'undefined' && GAME.EGL.normQ ? GAME.EGL.normQ.length : null,
-    targets: typeof GAME.EGL !== 'undefined' ? Object.keys(GAME.EGL.fb || {}).length : null,
+    normalsWaiting: typeof GAME.gpuState !== 'undefined' && GAME.gpuState.normQ ? GAME.gpuState.normQ.length : null,
+    targets: typeof GAME.gpuState !== 'undefined' ? Object.keys(GAME.gpuState.fb || {}).length : null,
     prints: typeof GAME.walkRenderer !== 'undefined' && GAME.walkRenderer.prints ? GAME.walkRenderer.prints.length : 0,
   }));
   t('memoryMB', () =>
@@ -514,7 +514,7 @@ NWLOG.more = () => {
       : null
   );
   t('glExtensions', () =>
-    typeof GAME.EGL !== 'undefined' && GAME.EGL.gl ? GAME.EGL.gl.getSupportedExtensions() : null
+    typeof GAME.gpuState !== 'undefined' && GAME.gpuState.gl ? GAME.gpuState.gl.getSupportedExtensions() : null
   );
   t('audio', () =>
     typeof GAME.AUD !== 'undefined' && GAME.AUD.ctx

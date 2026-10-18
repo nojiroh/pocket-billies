@@ -15,7 +15,7 @@ import {
   engineSetting,
   setEngineDataSource,
 } from '../../game/js/engine/settings.js';
-import { EGL, eglOK } from '../../game/js/engine/webgl.js';
+import { eglOK, gpuState } from '../../game/js/engine/webgl.js';
 import {
   adaptQuality,
   mountWalkView,
@@ -217,13 +217,13 @@ async function engMount() {
     }
     if (typeof walkRenderer === 'undefined' || !walkRenderer.on) {
       m.textContent =
-        typeof EGL !== 'undefined' && (EGL.fail || !eglOK())
+        typeof gpuState !== 'undefined' && (gpuState.fail || !eglOK())
           ? 'WebGL 2 isn’t available in this browser, so there is no preview.'
           : 'Starting…';
       return;
     }
     const fps = walkRenderer.int ? Math.round(1000 / walkRenderer.int) : 0;
-    m.innerHTML = `<b>${fps}</b> fps · <b>${(walkView.slow || 0).toFixed(1)}</b> ms of work per frame · resolution <b>${Math.round((walkView.R || 1) * engineSetting('quality', 'resolution') * 100)}%</b>${EGL.hdr ? '' : ' · no HDR on this GPU'}`;
+    m.innerHTML = `<b>${fps}</b> fps · <b>${(walkView.slow || 0).toFixed(1)}</b> ms of work per frame · resolution <b>${Math.round((walkView.R || 1) * engineSetting('quality', 'resolution') * 100)}%</b>${gpuState.hdr ? '' : ' · no HDR on this GPU'}`;
   }, 500);
 }
 /* edits */

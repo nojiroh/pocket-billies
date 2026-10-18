@@ -11,7 +11,7 @@ import { clamp } from '../util.js';
 import { makeCanvas } from '../art.js';
 import { walkView } from '../walk-view.js';
 import { engineColor, engineSetting } from './settings.js';
-import { EGL, EGL_GLSL_LIGHT, eglBindQuad, eglPrograms, eglTarget } from './webgl.js';
+import { EGL_GLSL_LIGHT, eglBindQuad, eglPrograms, eglTarget, gpuState } from './webgl.js';
 import { setLightUniforms } from './light.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -156,7 +156,7 @@ void main(){vec2 uv=vUV;/* v32: heat shimmer above hot ground (lava, desert noon
 };
 /* draws the post chain from scene target S (color + depth) to the screen */
 export function drawPostEffects(S, C, focusDist, rw, rh, o = {}) {
-  const gl = EGL.gl;
+  const gl = gpuState.gl;
   eglPrograms(POST_EFFECT_SHADERS);
   gl.disable(gl.DEPTH_TEST);
   gl.disable(gl.BLEND);
@@ -164,7 +164,7 @@ export function drawPostEffects(S, C, focusDist, rw, rh, o = {}) {
   const hw = Math.max(16, rw >> 1),
     hh = Math.max(16, rh >> 1),
     use = (name, F, w, h) => {
-      const p = EGL.P[name];
+      const p = gpuState.P[name];
       gl.bindFramebuffer(gl.FRAMEBUFFER, F ? F.f : null);
       gl.viewport(0, 0, w, h);
       gl.useProgram(p.p);
@@ -207,7 +207,7 @@ export function drawPostEffects(S, C, focusDist, rw, rh, o = {}) {
     gl.uniform2f(U.uPx, 1 / rw, 1 / rh);
     gl.uniform1f(U.uT, engineSetting('color', 'bloomThreshold'));
     gl.drawArrays(gl.TRIANGLES, 0, 6);
-    chain.push(EGL.fb.b0);
+    chain.push(gpuState.fb.b0);
     for (let i = 1; i < (o.bloomN || 5); i++) {
       const pw = w,
         ph = h;
@@ -274,7 +274,7 @@ export function drawPostEffects(S, C, focusDist, rw, rh, o = {}) {
       qh = Math.max(16, hh >> 1),
       V0 = eglTarget('vol0', qw, qh, { hdr: true });
     const U = use('vol', V0, qw, qh);
-    const p = EGL.P.vol;
+    const p = gpuState.P.vol;
     setLightUniforms(p, X);
     tex(U, 'uDep', 0, S.d);
     gl.uniformMatrix4fv(U.uIVP, false, o.ivp);
@@ -295,7 +295,7 @@ export function drawPostEffects(S, C, focusDist, rw, rh, o = {}) {
   const U = use('grade', null, rw, rh);
   tex(U, 'uCol', 0, S.c);
   tex(U, 'uDof', 1, D.c);
-  tex(U, 'uBloom', 2, bk > 0.01 ? chain[0].c : EGL.white);
+  tex(U, 'uBloom', 2, bk > 0.01 ? chain[0].c : gpuState.white);
   gl.uniform2f(U.uPx, 1 / rw, 1 / rh);
   gl.uniform1f(U.uDofOn, dofOn ? 1 : 0);
   gl.uniform1f(U.uBloomK, bk > 0.01 ? bk * 0.6 : 0);
@@ -320,10 +320,10 @@ export function drawPostEffects(S, C, focusDist, rw, rh, o = {}) {
   gl.uniform1f(U.uGrain, RM ? 0 : engineSetting('lens', 'grain'));
   gl.uniform1f(U.uSharp, engineSetting('lens', 'sharpen'));
   gl.uniform1f(U.uTime, typeof walkView !== 'undefined' ? walkView.t : 0);
-  tex(U, 'uVol', 12, VO ? VO.c : EGL.white);
+  tex(U, 'uVol', 12, VO ? VO.c : gpuState.white);
   gl.bindSampler(12, null);
   gl.uniform1f(U.uVolK, VO ? 1 : 0);
-  tex(U, 'uAO', 3, AO ? AO.c : EGL.white);
+  tex(U, 'uAO', 3, AO ? AO.c : gpuState.white);
   if (U.uDep) {
     tex(U, 'uDep', 5, S.d);
     gl.uniform1f(U.uNear, C.near);
@@ -334,7 +334,7 @@ export function drawPostEffects(S, C, focusDist, rw, rh, o = {}) {
     gl.uniform1f(U.uGlare, !sp ? 0 : (engineSetting('sun', 'glare') ?? 0.6));
   }
   gl.uniform1f(U.uAOK, AO ? aoK : 0);
-  tex(U, 'uRays', 4, RY ? RY.c : EGL.white);
+  tex(U, 'uRays', 4, RY ? RY.c : gpuState.white);
   gl.uniform1f(U.uRaysK, RY ? rk : 0);
   const sc = o.sunCol || engineColor('sun', 'color', '#FFF0D8');
   gl.uniform3f(U.uRayC, sc[0], sc[1], sc[2]);
@@ -477,7 +477,7 @@ export function projectToScreenUv(m, p) {
 }
 /* a small picture of what's on screen: copied out of the frame that drew it (works where drawImage of a WebGL canvas doesn't) */
 export function screenSnapshot(rw, rh, over, max = 480) {
-  const gl = EGL.gl,
+  const gl = gpuState.gl,
     k = Math.min(1, max / Math.max(rw, rh)),
     w = Math.max(1, Math.round(rw * k)),
     h = Math.max(1, Math.round(rh * k)),

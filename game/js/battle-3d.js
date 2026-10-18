@@ -24,7 +24,7 @@ import {
   trainerMetersPerPixel,
 } from './battle-stage.js';
 import { stopWalkView, walkData, walkView } from './walk-view.js';
-import { EGL } from './engine/webgl.js';
+import { gpuState } from './engine/webgl.js';
 import { standingHeightAt, walkRenderer } from './walk-view-gl.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -46,7 +46,7 @@ export function battleGLWanted() {
     !walkRenderer.on ||
     !walkView.cv ||
     !walkView.ready ||
-    (typeof EGL !== 'undefined' && EGL.lost)
+    (typeof gpuState !== 'undefined' && gpuState.lost)
   )
     return false;
   const p = S.preferences || {};

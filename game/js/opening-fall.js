@@ -19,7 +19,7 @@ import { artLoad } from './art.js';
 import { portraitHTML } from './person-art.js';
 import { particleSprite } from './battle-stage.js';
 import { walkView } from './walk-view.js';
-import { EGL, eglPrograms } from './engine/webgl.js';
+import { eglPrograms, gpuState } from './engine/webgl.js';
 import { POST_EFFECT_SHADERS } from './engine/post-effects.js';
 import { canvasForContext, standingHeightAt, walkGlContext } from './walk-view-gl.js';
 import { A, endBattle, stopTimers, types } from './battle.js';
@@ -93,7 +93,7 @@ function fallCanvas() {
 }
 /* the walk scene's canvas, ready for the world map's renderer (the map is drawn on it before Sundown is mounted) */
 export function fallGL() {
-  if (typeof worldMapGlRender !== 'function' || typeof walkGlContext !== 'function' || EGL.fail || EGL.lost)
+  if (typeof worldMapGlRender !== 'function' || typeof walkGlContext !== 'function' || gpuState.fail || gpuState.lost)
     return null;
   let cv = $('#dio');
   if (!cv) {
@@ -642,7 +642,7 @@ export function fallMap(run, ms) {
         worldMap.dirty = true;
         res0();
       };
-    if (typeof worldMapGlRender !== 'function' || !EGL.gl) {
+    if (typeof worldMapGlRender !== 'function' || !gpuState.gl) {
       res();
       return;
     }
@@ -660,7 +660,7 @@ export function fallMap(run, ms) {
     let capA = 0,
       capB = 0;
     const step = ts => {
-      if (!CS.on || CS.run !== run || CS.skip || EGL.lost) {
+      if (!CS.on || CS.run !== run || CS.skip || gpuState.lost) {
         res();
         return;
       }
