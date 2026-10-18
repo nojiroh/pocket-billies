@@ -31,7 +31,7 @@ import { artLoad, cnv } from './art.js';
 import { TR_PRESETS, cleanLook, humanPose, owFrames, trainerLook } from './person-art.js';
 import { DR, drSave, openDressing } from './dressing-room.js';
 import { drawRig, rigFrame, rigParts, rigPreload, rigTint } from './skeleton-rig.js';
-import { buzz, partSpr } from './battle-stage.js';
+import { buzz, particleSprite } from './battle-stage.js';
 import {
   artImage,
   directionOf,
@@ -361,7 +361,7 @@ export function csFrame() {
     if (imageReady(coin)) parts.push({ im: coin, x, y, z, w: 0.24 * Math.max(0.15, sp), h: 0.24, a: 1, glow: false });
     lights.push({ p: [x, y, z], r: 1.1, c: [0.5, 0.4, 0.12] });
   }
-  const spark = typeof partSpr === 'function' ? partSpr('sparkle') : null;
+  const spark = typeof particleSprite === 'function' ? particleSprite('sparkle') : null;
   CS.fx = CS.fx.filter(f => now - f.t0 < f.life);
   for (const f of CS.fx) {
     const k = (now - f.t0) / f.life;

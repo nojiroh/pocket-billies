@@ -17,7 +17,7 @@ import {
   actorMetersPerPixel,
   actorPositions,
   battleStage,
-  partSpr,
+  particleSprite,
   sideBuf,
   sideWorld,
   trainerBattleFrame,
@@ -237,7 +237,7 @@ function battleGLFrame() {
     if (!p.spr) continue;
     let a = p.fade === false ? 1 : 1 - p.age / p.life;
     if (p.twinkle) a *= 0.5 + 0.5 * Math.sin(p.age / 120);
-    const im = partSpr(p.spr);
+    const im = particleSprite(p.spr);
     if (!im || a <= 0.01) continue;
     const s = (p.k || 1) / 30;
     parts.push({

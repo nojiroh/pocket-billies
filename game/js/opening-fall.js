@@ -17,7 +17,7 @@ import { MOVES, SP, START_NODE, eff } from './game-data.js';
 import { B, RM, esc, maxHp } from './game-state.js';
 import { artLoad } from './art.js';
 import { portraitHTML } from './person-art.js';
-import { partSpr } from './battle-stage.js';
+import { particleSprite } from './battle-stage.js';
 import { walkView } from './walk-view.js';
 import { EGL, eglPrograms } from './engine/webgl.js';
 import { EGL_POST_SH } from './engine/post-effects.js';
@@ -820,7 +820,7 @@ function landFrame(now, parts) {
         b.down = now;
       }
     }
-    const im = typeof partSpr === 'function' ? partSpr(b.k) : null;
+    const im = typeof particleSprite === 'function' ? particleSprite(b.k) : null;
     if (!im || im.width < 2) continue;
     const turn = b.down ? 1 : Math.abs(Math.cos(now / 330 + b.ph)),
       a = b.down ? 1 - (now - b.down) / 1600 : 1;

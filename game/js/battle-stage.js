@@ -42,7 +42,7 @@ import { drawRig, rigFrame, rigParts, rigTint } from './skeleton-rig.js';
 expose({
   ACTOR_RIG_SCALES: [() => ACTOR_RIG_SCALES],
   AREAS: [() => AREAS],
-  BSWAY: [() => BSWAY],
+  BATTLE_STAGE_ART: [() => BATTLE_STAGE_ART],
   CAMERA_KEYS: [() => CAMERA_KEYS],
   CANVAS_FILTER_WORKS: [() => CANVAS_FILTER_WORKS],
   CLOSE_UP_CAMERAS: [() => CLOSE_UP_CAMERAS],
@@ -51,7 +51,7 @@ expose({
   FOCUS: [() => FOCUS],
   FORMATIONS: [() => FORMATIONS],
   FORMATION_SCALES: [() => FORMATION_SCALES],
-  GLOWY: [() => GLOWY],
+  GLOWING_PARTICLES: [() => GLOWING_PARTICLES],
   GROUND_BLUR_SCALE: [() => GROUND_BLUR_SCALE],
   GROUND_CENTER_X: [() => GROUND_CENTER_X],
   GROUND_CENTER_Z: [() => GROUND_CENTER_Z],
@@ -59,23 +59,25 @@ expose({
   GROUND_SPHERE_RADIUS: [() => GROUND_SPHERE_RADIUS],
   GROUND_TEXTURE_PX_PER_METER: [() => GROUND_TEXTURE_PX_PER_METER],
   GROUND_TEXTURE_SIZE: [() => GROUND_TEXTURE_SIZE],
+  HIT_SPRITES_BY_TYPE: [() => HIT_SPRITES_BY_TYPE],
   HORIZON_IN_FRAME: [() => HORIZON_IN_FRAME],
-  LEAF: [() => LEAF],
+  LEAF_COLORS: [() => LEAF_COLORS],
+  PROP_SWAY: [() => PROP_SWAY],
   PULL_BACK_CAMERA: [() => PULL_BACK_CAMERA],
   SOFT_BLUR_PAD: [() => SOFT_BLUR_PAD],
   SPRITE_BLUR_SCALE: [() => SPRITE_BLUR_SCALE],
-  STAGEART: [() => STAGEART],
   STAGE_FRAME_HEIGHT: [() => STAGE_FRAME_HEIGHT],
   STAGE_FRAME_WIDTH: [() => STAGE_FRAME_WIDTH],
-  TFX: [() => TFX],
   actionCenter: [() => actionCenter],
   actorMetersPerPixel: [() => actorMetersPerPixel],
   actorPositions: [() => actorPositions],
   actorTeam: [() => actorTeam],
   addDrawItem: [() => addDrawItem, v => (addDrawItem = v)],
+  addParticle: [() => addParticle, v => (addParticle = v)],
   ambient: [() => ambient, v => (ambient = v)],
   artKey: [() => artKey],
   battleStage: [() => battleStage],
+  battleStageArtFiles: [() => battleStageArtFiles, v => (battleStageArtFiles = v)],
   battleStageCatch: [() => battleStageCatch, v => (battleStageCatch = v)],
   battleStageChromaticFlash: [() => battleStageChromaticFlash, v => (battleStageChromaticFlash = v)],
   battleStageDraw: [() => battleStageDraw, v => (battleStageDraw = v)],
@@ -118,7 +120,7 @@ expose({
   drawForegrounds: [() => drawForegrounds, v => (drawForegrounds = v)],
   drawList: [() => drawList],
   drawListLength: [() => drawListLength, v => (drawListLength = v)],
-  drawParts: [() => drawParts, v => (drawParts = v)],
+  drawParticles: [() => drawParticles, v => (drawParticles = v)],
   drawProp: [() => drawProp, v => (drawProp = v)],
   drawSelectionRing: [() => drawSelectionRing, v => (drawSelectionRing = v)],
   drawShadow: [() => drawShadow, v => (drawShadow = v)],
@@ -138,8 +140,7 @@ expose({
   homeCamera: [() => homeCamera],
   lightShafts: [() => lightShafts, v => (lightShafts = v)],
   newActorState: [() => newActorState],
-  part: [() => part, v => (part = v)],
-  partSpr: [() => partSpr, v => (partSpr = v)],
+  particleSprite: [() => particleSprite, v => (particleSprite = v)],
   pixRing: [() => pixRing, v => (pixRing = v)],
   propDef: [() => propDef, v => (propDef = v)],
   punch: [() => punch, v => (punch = v)],
@@ -153,7 +154,6 @@ expose({
   softDraw: [() => softDraw, v => (softDraw = v)],
   softSmall: [() => softSmall, v => (softSmall = v)],
   speedLines: [() => speedLines, v => (speedLines = v)],
-  stageArt: [() => stageArt, v => (stageArt = v)],
   stageProject: [() => stageProject],
   stageProjectInto: [() => stageProjectInto, v => (stageProjectInto = v)],
   stageProjectWith: [() => stageProjectWith, v => (stageProjectWith = v)],
@@ -161,8 +161,8 @@ expose({
   trainerAct: [() => trainerAct, v => (trainerAct = v)],
   trainerBattleFrame: [() => trainerBattleFrame, v => (trainerBattleFrame = v)],
   trainerMetersPerPixel: [() => trainerMetersPerPixel],
-  tspr: [() => tspr],
   tween: [() => tween, v => (tween = v)],
+  typeSprite: [() => typeSprite],
 });
 /* eslint-enable no-func-assign */
 provide({ buzz });
@@ -328,11 +328,11 @@ export const battleStage = {
   goldT: 0,
   speed: 1,
 };
-export const STAGEART = {};
+export const BATTLE_STAGE_ART = {};
 const artKey = area => (AREAS[area] && AREAS[area].art) || area;
 /* a prop kind is either a battle prop (art/battle/props, 30 px per meter) or one of the scene props of the walking world
    (GD.scenery.props, art/scene/props, 34 px per meter). Foliage sways a little in the wind. */
-const BSWAY = { tree: 0.3, bush: 0.2, flowers: 0.5, cactus: 0 };
+const PROP_SWAY = { tree: 0.3, bush: 0.2, flowers: 0.5, cactus: 0 };
 function propDef(kind) {
   const M = ARTMAN.battle.props[kind];
   if (M)
@@ -343,7 +343,7 @@ function propDef(kind) {
       h: M.h,
       flat: M.flat,
       k: 1,
-      sway: BSWAY[kind] || 0,
+      sway: PROP_SWAY[kind] || 0,
       shadow: null,
     };
   const G = typeof GD !== 'undefined' && GD.scenery && GD.scenery.props ? GD.scenery.props[kind] : null;
@@ -359,7 +359,7 @@ function propDef(kind) {
     shadow: G.shadow == null ? null : G.shadow,
   };
 }
-export function stageArt(area) {
+export function battleStageArtFiles(area) {
   const A = AREAS[area],
     k = artKey(area),
     M = ARTMAN.battle,
@@ -376,10 +376,10 @@ export function stageArt(area) {
 /* load (once) everything a stage needs; pixel arrays for ground, far land and walls */
 export async function battleStagePrepare(area) {
   area = AREAS[area] ? area : 'grass';
-  if (STAGEART[area]) return STAGEART[area];
+  if (BATTLE_STAGE_ART[area]) return BATTLE_STAGE_ART[area];
   const A = AREAS[area],
     k = artKey(area);
-  await artLoad(stageArt(area));
+  await artLoad(battleStageArtFiles(area));
   const near = await artPixels(`battle/${k}_ground.png`),
     far = A.far ? await artPixels(`battle/far_${A.far}.png`) : null,
     wall = A.wall ? await artPixels(`battle/${A.wall}_walls.png`) : null;
@@ -410,7 +410,7 @@ export async function battleStagePrepare(area) {
     });
   });
   const clouds = A.indoor ? [] : M.clouds.map((o, i) => mk(`battle/cloud_${i}.png`, o));
-  return (STAGEART[area] = { near, far, wall, fg: ART.img[`battle/${k}_foreground.png`], props, clouds });
+  return (BATTLE_STAGE_ART[area] = { near, far, wall, fg: ART.img[`battle/${k}_foreground.png`], props, clouds });
 }
 /* ---------- layout: where the frame goes, how big a stage pixel is ---------- */
 function battleStageResolutionScale() {
@@ -493,7 +493,7 @@ export function battleStageResize() {
 export function battleStageStart(area) {
   battleStage.area = AREAS[area] ? area : 'grass';
   const A = AREAS[battleStage.area],
-    G = STAGEART[battleStage.area];
+    G = BATTLE_STAGE_ART[battleStage.area];
   battleStage.cv = $('#cvWorld');
   battleStage.fgc = $('#cvFg');
   battleStage.near = G.near;
@@ -759,12 +759,12 @@ function battleStageFrame(ts, rawDt) {
   governor(work);
 }
 /* ambient life: motes, drips, falling leaves, glints, status fizz, gold sparkle */
-const LEAF = ['#6FAE3F', '#9CC850', '#D7B447', '#4E8A3A'];
+const LEAF_COLORS = ['#6FAE3F', '#9CC850', '#D7B447', '#4E8A3A'];
 function ambient(dt) {
   const A = AREAS[battleStage.area];
   if (battleStage.parts.length > 220) return;
   if (battleStage.oil && rnd() < dt / 18)
-    part({
+    addParticle({
       x: GROUND_CENTER_X - 7 + rnd() * 3,
       y: 0.1 + rnd() * 2.6,
       z: GROUND_CENTER_Z + (rnd() - 0.3) * 7,
@@ -779,7 +779,7 @@ function ambient(dt) {
       x = GROUND_CENTER_X + (rnd() - 0.5) * 12,
       z = GROUND_CENTER_Z + rnd() * 9 - 1.5;
     if (am === 'pollen' || am === 'spore')
-      part({
+      addParticle({
         x,
         y: 0.3 + rnd() * 2.5,
         z,
@@ -791,17 +791,17 @@ function ambient(dt) {
         size: 1,
       });
     else if (am === 'drip') {
-      if (rnd() < 0.5) part({ x, y: 4.2, z, vy: -6, life: 900, col: '#6A5446', size: 1 });
+      if (rnd() < 0.5) addParticle({ x, y: 4.2, z, vy: -6, life: 900, col: '#6A5446', size: 1 });
     } else if (am === 'sand')
-      part({ x: x - 5, y: 0.2 + rnd() * 2, z, vx: 2.5 + rnd(), life: 3000, col: '#F2D2A0', size: 1 });
+      addParticle({ x: x - 5, y: 0.2 + rnd() * 2, z, vx: 2.5 + rnd(), life: 3000, col: '#F2D2A0', size: 1 });
     else if (am !== 'none')
-      part({ x, y: 0.5 + rnd() * 3, z, vy: 0.1, life: 3000, col: '#FFFFFF', glow: 1, size: 1, twinkle: 1 });
+      addParticle({ x, y: 0.5 + rnd() * 3, z, vy: 0.1, life: 3000, col: '#FFFFFF', glow: 1, size: 1, twinkle: 1 });
   }
   /* leaves let go of the trees now and then; crystals and fountains catch the light */
   if (battleStage.leafy.length && rnd() < dt / 650) {
     const p = battleStage.leafy[Math.floor(rnd() * battleStage.leafy.length)],
       y = p.h * (0.45 + rnd() * 0.4);
-    part({
+    addParticle({
       x: p.x + (rnd() - 0.5) * p.h * 0.4,
       y,
       z: p.z + (rnd() - 0.5) * 0.6,
@@ -811,14 +811,14 @@ function ambient(dt) {
       ay: -0.08,
       vz: -0.1,
       life: 2600 + y * 500,
-      col: LEAF[Math.floor(rnd() * LEAF.length)],
+      col: LEAF_COLORS[Math.floor(rnd() * LEAF_COLORS.length)],
       size: 1 + (rnd() < 0.4 ? 1 : 0),
       floor: 1,
     });
   }
   if (battleStage.glint.length && rnd() < dt / 420) {
     const p = battleStage.glint[Math.floor(rnd() * battleStage.glint.length)];
-    part({
+    addParticle({
       x: p.x + (rnd() - 0.5) * p.h * 0.5,
       y: p.h * (0.3 + rnd() * 0.6),
       z: p.z,
@@ -837,7 +837,7 @@ function ambient(dt) {
       if (!sd.show || !sd.st || sd.a < 0.5) continue;
       const T = sideTop(i);
       const sp = sd.st === 'aud' ? 'bolt' : sd.st === 'sub' ? 'zz' : sd.st === 'scn' ? 'flame' : 'spark';
-      part({
+      addParticle({
         x: T.x + (rnd() - 0.5) * 0.6,
         y: T.y + 0.2,
         z: T.z,
@@ -856,7 +856,7 @@ function ambient(dt) {
         R = sd.sp ? rigParts(sd.sp, sd.gold, ACTOR_RIG_SCALES[i]) : null,
         hw = R ? (R.geo.hw * actorMetersPerPixel[i] * sd.big * (sd.fs || 1)) / R.k : 1,
         a = rnd() * 6.283;
-      part({
+      addParticle({
         x: w.x + Math.cos(a) * hw,
         y: 0.1 + rnd() * 0.4,
         z: w.z + Math.sin(a) * hw * 0.6,
@@ -876,7 +876,7 @@ function ambient(dt) {
       const sd = battleStage.s[i];
       if (!sd.show || !sd.gold || sd.a < 0.5) continue;
       const c = sideCenter(i);
-      part({
+      addParticle({
         x: c.x + (rnd() - 0.5) * 1.4,
         y: c.y + (rnd() - 0.4) * 1.6,
         z: c.z,
@@ -1692,10 +1692,10 @@ function pixRing(c, cx, cy, rx, ry, col, th = 1) {
       c.fillRect(Math.round(cx + Math.cos(a) * (rx - q)), Math.round(cy + Math.sin(a) * (ry - q)), 1, 1);
   }
 }
-export function partSpr(key) {
+export function particleSprite(key) {
   return iconCanvas(key);
 }
-function drawParts(c, layer) {
+function drawParticles(c, layer) {
   const L = [];
   battleStage.parts.forEach(p => {
     if ((p.layer || 2) !== layer) return;
@@ -1722,7 +1722,7 @@ function drawParts(c, layer) {
         p.ground ? 2 : Math.max(1, Math.round(k))
       );
     } else if (p.spr) {
-      const s = partSpr(p.spr),
+      const s = particleSprite(p.spr),
         kk = Math.max(1, Math.round(k * 2) / 2);
       c.drawImage(
         s,
@@ -1948,7 +1948,7 @@ function battleStageDraw() {
   for (let n = 0; n < drawListLength; n++) {
     const it = drawList[n];
     if (!partsDrawn && it.z < actorPositions[1].z + 0.5) {
-      drawParts(c, 0);
+      drawParticles(c, 0);
       partsDrawn = true;
     }
     if (it.k === 0) drawProp(c, it.o);
@@ -1958,7 +1958,7 @@ function battleStageDraw() {
     } else if (it.k === 2) drawSide(c, it.i);
     else drawTrainer(c, it.i);
   }
-  if (!partsDrawn) drawParts(c, 0);
+  if (!partsDrawn) drawParticles(c, 0);
   battleStageDrawEffects(c, 1);
 }
 /* v33: the fighter choosing stands in a gold ring; while aiming, the foes you can pick pulse */
@@ -1984,7 +1984,7 @@ function drawSelectionRing(c, i, col, pulse) {
   c.globalAlpha = 1;
 }
 function battleStageDrawEffects(c, skip0) {
-  if (!skip0) drawParts(c, 0);
+  if (!skip0) drawParticles(c, 0);
   if (battleStage.sel != null && battleStage.s[battleStage.sel] && battleStage.s[battleStage.sel].show)
     drawSelectionRing(c, battleStage.sel, '#F4C542', 1);
   if (battleStage.tg)
@@ -2037,19 +2037,19 @@ function battleStageDrawEffects(c, skip0) {
       }
     }
   }
-  drawParts(c, 1);
-  drawParts(c, 2);
+  drawParticles(c, 1);
+  drawParticles(c, 2);
 }
 export const battleStageRingPhase = () =>
   battleStage.ring ? ((battleStage.t - battleStage.ring.t0) % 1300) / 1300 : 0;
 /* ---------- effects (world space, y up) ---------- */
-function part(o) {
+function addParticle(o) {
   battleStage.parts.push(Object.assign({ vx: 0, vy: 0, vz: 0, ax: 0, ay: 0, az: 0, age: 0, life: 600, layer: 2 }, o));
 }
-const TFX = TYPEFX;
-const GLOWY = { spark: 1, star: 1, bolt: 1, bit: 1, gem: 1, pow: 1, up: 1 };
-const tspr = (t, i) => {
-  const l = TFX[t] || TFX.None;
+const HIT_SPRITES_BY_TYPE = TYPEFX;
+const GLOWING_PARTICLES = { spark: 1, star: 1, bolt: 1, bit: 1, gem: 1, pow: 1, up: 1 };
+const typeSprite = (t, i) => {
+  const l = HIT_SPRITES_BY_TYPE[t] || HIT_SPRITES_BY_TYPE.None;
   return l[i % l.length];
 };
 function burst(P, t, n = 10, sp = 2.2, k = 1) {
@@ -2057,8 +2057,8 @@ function burst(P, t, n = 10, sp = 2.2, k = 1) {
     const a = rnd() * Math.PI * 2,
       b = (rnd() - 0.3) * Math.PI * 0.6,
       v = sp * (0.5 + rnd()),
-      key = tspr(t, i);
-    part({
+      key = typeSprite(t, i);
+    addParticle({
       x: P.x,
       y: P.y,
       z: P.z,
@@ -2069,20 +2069,20 @@ function burst(P, t, n = 10, sp = 2.2, k = 1) {
       life: 460 + rnd() * 300,
       spr: key,
       k,
-      glow: GLOWY[key],
+      glow: GLOWING_PARTICLES[key],
     });
   }
 }
 function ringFx(P, col = '#FFFFFF', r0 = 0.15, r1 = 1.1, life = 380) {
-  part({ x: P.x, y: P.y, z: P.z, ring: 1, r0: r0 * 30, r1: r1 * 30, col, life });
+  addParticle({ x: P.x, y: P.y, z: P.z, ring: 1, r0: r0 * 30, r1: r1 * 30, col, life });
 }
 function groundRing(i, col = '#FFFFFF', r1 = 1.6, life = 520) {
   const w = sideWorld(i);
-  part({ x: w.x, y: 0.02, z: w.z, ring: 1, ground: 1, r0: 6, r1: r1 * 30, col, life, layer: 2 });
+  addParticle({ x: w.x, y: 0.02, z: w.z, ring: 1, ground: 1, r0: 6, r1: r1 * 30, col, life, layer: 2 });
 }
 function speedLines(P, col = 'rgba(255,255,255,.85)') {
   if (RM) return;
-  part({ x: P.x, y: P.y, z: P.z, lines: 1, col, life: 260, n: 22, seed: rnd() * 6 });
+  addParticle({ x: P.x, y: P.y, z: P.z, lines: 1, col, life: 260, n: 22, seed: rnd() * 6 });
 }
 function blinkSide(i, ms = 380) {
   battleStage.s[i].blinkUntil = battleStage.t + ms;
@@ -2205,7 +2205,7 @@ export function battleStagePlay(an, ev) {
           for (let i = 0; i < 26; i++) {
             const a = rnd() * 6.283,
               c = sideCenter(1);
-            part({
+            addParticle({
               x: c.x + Math.cos(a) * 0.6,
               y: 0.2,
               z: c.z + Math.sin(a) * 0.4,
@@ -2360,7 +2360,7 @@ export function battleStagePlay(an, ev) {
         } else
           for (let i = 0; i < 6; i++)
             scheduleAt(i * 45, () =>
-              part({
+              addParticle({
                 x: A.x,
                 y: A.y,
                 z: A.z,
@@ -2368,7 +2368,7 @@ export function battleStagePlay(an, ev) {
                 vy: (T.y - A.y) * 3.2 + 1.5,
                 vz: (T.z - A.z) * 3.2 + 1.2,
                 life: 380,
-                spr: tspr(M.t, i),
+                spr: typeSprite(M.t, i),
                 k: kk,
               })
             );
@@ -2411,7 +2411,7 @@ export function battleStagePlay(an, ev) {
         tween(me, 'oy', 0, 200, 'out', 240);
         scheduleAt(120, () => {
           for (let i = 0; i < 5; i++)
-            part({
+            addParticle({
               x: A.x,
               y: 0.15,
               z: A.z,
@@ -2441,7 +2441,7 @@ export function battleStagePlay(an, ev) {
         });
         if (beamy)
           scheduleAt(200, () =>
-            part({
+            addParticle({
               x: A.x,
               y: A.y,
               z: A.z,
@@ -2458,8 +2458,8 @@ export function battleStagePlay(an, ev) {
         for (let i = 0; i < n; i++)
           scheduleAt(160 + i * 34, () => {
             const v = 1 / 0.32,
-              key = tspr(M.t, i);
-            part({
+              key = typeSprite(M.t, i);
+            addParticle({
               x: A.x + (rnd() - 0.5) * 0.2,
               y: A.y + (rnd() - 0.5) * 0.2,
               z: A.z,
@@ -2471,7 +2471,7 @@ export function battleStagePlay(an, ev) {
               spr: key,
               k: 1.2,
               fade: false,
-              glow: GLOWY[key],
+              glow: GLOWING_PARTICLES[key],
             });
           });
         scheduleAt(330, () => toT(220));
@@ -2487,8 +2487,8 @@ export function battleStagePlay(an, ev) {
       for (let i = 0; i < 10; i++)
         scheduleAt(200 + i * 48, () => {
           const a = (i / 10) * Math.PI * 2,
-            key = tspr(M.t, i);
-          part({
+            key = typeSprite(M.t, i);
+          addParticle({
             x: Pp.x + Math.cos(a) * 0.8,
             y: Pp.y + Math.sin(a * 2) * 0.3,
             z: Pp.z + Math.sin(a) * 0.8,
@@ -2498,7 +2498,7 @@ export function battleStagePlay(an, ev) {
             life: 440,
             spr: key,
             k: tk,
-            glow: GLOWY[key],
+            glow: GLOWING_PARTICLES[key],
           });
         });
       scheduleAt(600, () => {
@@ -2522,7 +2522,7 @@ export function battleStagePlay(an, ev) {
       if (an.dmg && typeof hudPop === 'function') scheduleAt(60, () => hudPop(an.si, '−' + an.dmg, 'dmg'));
       if (an.fx === 'oil')
         for (let i = 0; i < 7; i++)
-          part({
+          addParticle({
             x: T.x - 0.8 + rnd() * 0.4,
             y: 0.2 + rnd() * 0.9,
             z: T.z + (rnd() - 0.5) * 0.5,
@@ -2536,7 +2536,7 @@ export function battleStagePlay(an, ev) {
       if (an.fx === 'scn')
         for (let i = 0; i < 4; i++)
           scheduleAt(i * 70, () =>
-            part({ x: T.x + (rnd() - 0.5) * 0.8, y: T.y + 0.6, z: T.z, vy: 1, life: 520, spr: 'flame', k: kk })
+            addParticle({ x: T.x + (rnd() - 0.5) * 0.8, y: T.y + 0.6, z: T.z, vy: 1, life: 520, spr: 'flame', k: kk })
           );
       if (an.fx === 'mail') {
         battleStageFocus(actorTeam(an.si) === 0 ? 'me' : 'foe');
@@ -2555,7 +2555,7 @@ export function battleStagePlay(an, ev) {
       setActorAction(an.si, 'cheer', 700);
       for (let i = 0; i < 12; i++)
         scheduleAt(i * 45, () =>
-          part({
+          addParticle({
             x: T.x + (rnd() - 0.5) * 1.2,
             y: 0.2,
             z: T.z + (rnd() - 0.5) * 0.6,
@@ -2578,7 +2578,7 @@ export function battleStagePlay(an, ev) {
       setActorAction(an.si, an.up ? 'buff' : 'dizzy', 700);
       for (let i = 0; i < 9; i++)
         scheduleAt(i * 55, () =>
-          part({
+          addParticle({
             x: T.x + (rnd() - 0.5) * 1.4,
             y: an.up ? 0.2 : T.y + 0.8,
             z: T.z + (rnd() - 0.5) * 0.6,
@@ -2601,7 +2601,7 @@ export function battleStagePlay(an, ev) {
       setActorAction(an.si, 'dizzy', 800);
       for (let i = 0; i < 8; i++)
         scheduleAt(i * 60, () =>
-          part({
+          addParticle({
             x: T.x + (rnd() - 0.5) * 1.2,
             y: T.y + 0.9,
             z: T.z,
@@ -2623,7 +2623,7 @@ export function battleStagePlay(an, ev) {
       for (let i = 0; i < 7; i++)
         scheduleAt(i * 60, () => {
           const a = (i / 7) * Math.PI * 2;
-          part({
+          addParticle({
             x: T.x + Math.cos(a) * 0.5,
             y: T.y + 0.8,
             z: T.z + Math.sin(a) * 0.5,
@@ -2655,7 +2655,7 @@ export function battleStagePlay(an, ev) {
     case 'market': {
       battleStage.oil = true;
       for (let i = 0; i < 40; i++)
-        part({
+        addParticle({
           x: GROUND_CENTER_X - 8 + rnd() * 4,
           y: 0.1 + rnd() * 3,
           z: GROUND_CENTER_Z + (rnd() - 0.4) * 7,
@@ -2687,7 +2687,7 @@ export function battleStagePlay(an, ev) {
       for (let i = 0; i < 24; i++)
         scheduleAt(i * 25, () => {
           const a = (i / 24) * Math.PI * 2;
-          part({
+          addParticle({
             x: T.x + Math.cos(a) * 1.1,
             y: 0.2 + rnd() * 1.4,
             z: T.z + Math.sin(a) * 0.6,
@@ -2711,7 +2711,7 @@ export function battleStagePlay(an, ev) {
       const C = battleStage.coin;
       if (C) {
         for (let i = 0; i < 10; i++)
-          part({ x: C.x, y: C.y, z: C.z, vx: (i - 4.5) * 0.5, vy: 3, ay: -6, life: 720, spr: 'spark', glow: 1 });
+          addParticle({ x: C.x, y: C.y, z: C.z, vx: (i - 4.5) * 0.5, vy: 3, ay: -6, life: 720, spr: 'spark', glow: 1 });
         tween(C, 'glow', 0.8, 120);
         tween(C, 'glow', 0, 300, 'lin', 140);
       }
@@ -2728,7 +2728,7 @@ export function battleStagePlay(an, ev) {
       ringFx(T, '#F4C542', 0.2, 1.5, 520);
       groundRing(li, '#F4C542', 2, 600);
       for (let i = 0; i < 10; i++)
-        part({
+        addParticle({
           x: T.x + (rnd() - 0.5) * 1.4,
           y: 0.2,
           z: T.z + (rnd() - 0.5) * 0.5,
@@ -2799,7 +2799,7 @@ export function battleStageCatch(kind, res, spin, done) {
           if (res.caught) {
             C.glow = 0;
             for (let i = 0; i < 12; i++)
-              part({
+              addParticle({
                 x: C.x,
                 y: C.y,
                 z: C.z,

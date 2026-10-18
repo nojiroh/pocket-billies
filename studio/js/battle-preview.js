@@ -10,7 +10,7 @@ import { COIN_ART, artLoad, hexA } from '../../game/js/art.js';
 import { setRigParts } from '../../game/js/skeleton-rig.js';
 import {
   AREAS,
-  STAGEART,
+  BATTLE_STAGE_ART,
   battleStage,
   battleStageCatch,
   battleStageFocus,
@@ -205,7 +205,7 @@ async function bpStart() {
   try {
     const art = D.backdrops[BP.area];
     if (BP._art !== BP.area + (art.art || '') + (art.wall || '') + (art.far || '') + (art.indoor || '')) {
-      delete STAGEART[BP.area];
+      delete BATTLE_STAGE_ART[BP.area];
       BP._art = BP.area + (art.art || '') + (art.wall || '') + (art.far || '') + (art.indoor || '');
     }
     await Promise.all([
