@@ -185,6 +185,7 @@ expose({
   refreshLastSnapshot: [() => refreshLastSnapshot, v => (refreshLastSnapshot = v)],
   retarget: [() => retarget, v => (retarget = v)],
   runTurn: [() => runTurn, v => (runTurn = v)],
+  screenWipe: [() => screenWipe, v => (screenWipe = v)],
   setEndBattle: [() => setEndBattle, v => (setEndBattle = v)],
   setOpenBattle: [() => setOpenBattle, v => (setOpenBattle = v)],
   shockName: [() => shockName],
@@ -205,7 +206,6 @@ expose({
   turnBar: [() => turnBar, v => (turnBar = v)],
   typeText: [() => typeText, v => (typeText = v)],
   useMove: [() => useMove, v => (useMove = v)],
-  wipe: [() => wipe, v => (wipe = v)],
 });
 /* eslint-enable no-func-assign */
 provide({ battleFreeArea, battleLayoutChanged, battleStageKey, hudHit, hudPop, platesTick, startWild });
@@ -1276,7 +1276,7 @@ export function openBattle() {
         if (seam) battleRise();
       };
       if (seam) battleSwoop(go);
-      else wipe(go);
+      else screenWipe(go);
     })
     .catch(e => {
       console.error(e);
@@ -1348,7 +1348,7 @@ function battleRise() {
 function battleLeave(mid) {
   const el = $('#battle'),
     seam = !reducedMotion && typeof battle3d !== 'undefined' && battle3d.on && el;
-  if (!seam) return wipe(mid);
+  if (!seam) return screenWipe(mid);
   el.classList.add('bt-leave');
   setTimeout(() => {
     mid();
@@ -1357,7 +1357,7 @@ function battleLeave(mid) {
     }
   }, 360);
 }
-function wipe(mid) {
+function screenWipe(mid) {
   const w = $('#wipe');
   if (reducedMotion || !w) {
     mid();

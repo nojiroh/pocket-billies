@@ -118,7 +118,7 @@ def check_game(pw, base, results):
             pg.evaluate(f"uiState.tab='{tab}';render();scrollTo(0,0);0"); time.sleep(1.4 if tab == 'map' else .5)
             pg.screenshot(path=str(OUT / f'{name}-{tab}.png'))
         pg.evaluate("uiState.tab='walk';saveData.route.node=0;render();openShop('sundown');0"); time.sleep(.5); pg.screenshot(path=str(OUT / f'{name}-shop.png'))
-        pg.evaluate("closeModal();wipe=f=>f();0")
+        pg.evaluate("closeModal();screenWipe=f=>f();0")
         areas = pg.evaluate('Object.keys(BATTLE_STAGES)') if name == 'phone' else ['grass', 'mall']
         pg.evaluate("saveData.preferences.battleStage='classic';0")  # the painted backdrops first
         for area in areas:
@@ -216,7 +216,7 @@ def check_studio(pw, results):
         if not seen[1]:
             results['studio'] = {'errors': (errs + gerrs + ['the new billionaire did not reach the game'])[:10], 'movePowerSaved': seen[0] == 77, 'newBillionaireInGame': False, 'builderPartInGame': seen[2]}
             b.close(); return
-        g.evaluate("if(typeof titleEnd==='function')titleEnd();uiState.pg='girl';startGame('scoop');uiState.modal=null;uiState.mq=[];renderOverlay();wipe=f=>f();activeBattle=null;const q={id:'tc',sp:'checko0',lvl:9,gold:false,no:1};saveData.queue=[q];startWild(q);0")
+        g.evaluate("if(typeof titleEnd==='function')titleEnd();uiState.pg='girl';startGame('scoop');uiState.modal=null;uiState.mq=[];renderOverlay();screenWipe=f=>f();activeBattle=null;const q={id:'tc',sp:'checko0',lvl:9,gold:false,no:1};saveData.queue=[q];startWild(q);0")
         wait_phase(g); time.sleep(.6); g.screenshot(path=str(OUT / 'studio-new-in-game.png'))
         results['studio'] = {'errors': (errs + gerrs)[:10], 'movePowerSaved': seen[0] == 77, 'newBillionaireInGame': seen[1], 'builderPartInGame': seen[2]}
         b.close()
