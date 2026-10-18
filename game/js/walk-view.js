@@ -32,7 +32,7 @@ import {
   mapFiles,
   mapsOfView,
   needMaps,
-  paintGroundOnWorker,
+  paintGroundRect,
   paintWorkerState,
   propModelArtPaths,
   provide,
@@ -2008,8 +2008,8 @@ export function* paintGroundSteps(sc, o) {
    renderer the distant picture (8 px a metre; the near ring paints the 16 m squares round you at full size) */
 function* paintFarGroundSteps(sc, pr = 0, rec = null) {
   const full = FAR_GROUND_PX_PER_M;
-  const r = yield* typeof paintGroundOnWorker === 'function'
-    ? paintGroundOnWorker(sc, { TP: full, margin: 0, pr, rec })
+  const r = yield* typeof paintGroundRect === 'function'
+    ? paintGroundRect(sc, { TP: full, margin: 0, pr, rec })
     : paintGroundSteps(sc, { TP: full, margin: 0 });
   const g = { width: r.w, height: r.h, _px: new Uint8Array(r.px.buffer) };
   g._nrm = r.nrm;

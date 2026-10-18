@@ -52,7 +52,7 @@ expose({
   PAINT_WORKER_VIEWS_KEPT: [() => PAINT_WORKER_VIEWS_KEPT],
   TILE_KINDS_CACHE: [() => TILE_KINDS_CACHE],
   ensurePaintWorker: [() => ensurePaintWorker, v => (ensurePaintWorker = v)],
-  paintGroundOnWorker: [() => paintGroundOnWorker, v => ((paintGroundOnWorker = v), provide({ paintGroundOnWorker }))],
+  paintGroundRect: [() => paintGroundRect, v => ((paintGroundRect = v), provide({ paintGroundRect }))],
   paintGroundTogether: [() => paintGroundTogether, v => ((paintGroundTogether = v), provide({ paintGroundTogether }))],
   paintWorkerOn: [() => paintWorkerOn, v => ((paintWorkerOn = v), provide({ paintWorkerOn }))],
   paintWorkerReport: [() => paintWorkerReport, v => (paintWorkerReport = v)],
@@ -65,7 +65,7 @@ expose({
   wakePaintWorkerWaiters: [() => wakePaintWorkerWaiters, v => (wakePaintWorkerWaiters = v)],
 });
 /* eslint-enable no-func-assign */
-provide({ paintGroundOnWorker, paintGroundTogether, paintWorkerOn, waitForPaintWorker });
+provide({ paintGroundRect, paintGroundTogether, paintWorkerOn, waitForPaintWorker });
 /* to-module: end */
 const paintWorkerState = {
   w: null,
@@ -323,7 +323,7 @@ function sendPaintWorkerTiles(sc, TP) {
   return ok;
 }
 /* paint a rectangle of a view's ground (the options of paintGroundSteps): on the helper when it can, here otherwise */
-function* paintGroundOnWorker(sc, o) {
+function* paintGroundRect(sc, o) {
   for (let attempt = 0; attempt < 2; attempt++) {
     const W = paintWorkerState.sync ? null : ensurePaintWorker();
     if (!W || !sc || !sc.tiles) break;

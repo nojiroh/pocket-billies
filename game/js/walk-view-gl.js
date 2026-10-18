@@ -44,7 +44,7 @@ import {
   lifeStep,
   litWindowFraction,
   noWebGL,
-  paintGroundOnWorker,
+  paintGroundRect,
   paintGroundTogether,
   paintWorkerOn,
   propModelImageItems,
@@ -2279,7 +2279,7 @@ function* paintNearRingChunk(R, sc, ci, cj, pr) {
     mips: 1,
     pr: pr || 0,
   };
-  const r = yield* typeof paintGroundOnWorker === 'function' ? paintGroundOnWorker(sc, o) : paintGroundSteps(sc, o);
+  const r = yield* typeof paintGroundRect === 'function' ? paintGroundRect(sc, o) : paintGroundSteps(sc, o);
   if (!R.tex) return;
   const gl = gpuState.gl,
     px = R.TP * NEAR_RING_CHUNK_M,
