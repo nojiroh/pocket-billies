@@ -1013,7 +1013,7 @@ ACTIONS.brDel = d => {
   changed();
   render();
 };
-/* ================= ART_CACHE FILES ================= */
+/* ================= ART FILES ================= */
 const ART_GROUPS = [
   ['billionaires', 'Billies', 'Four sheets per stage. Edit them in Billies → Edit pixels.'],
   ['battle', 'Battle backdrops', 'Ground, far land, walls, props, clouds, foregrounds'],
