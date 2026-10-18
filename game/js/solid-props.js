@@ -18,9 +18,9 @@ import { makeCanvas } from './art.js';
 import { artImage, hash2d, walkView, worldToScreen } from './walk-view.js';
 import { engineSetting } from './engine/settings.js';
 import {
-  GLSL_COMMON,
-  GLSL_LIGHT,
-  GLSL_LOOK,
+  COMMON_GLSL,
+  LIGHT_GLSL,
+  LOOK_GLSL,
   SURFACE_MATERIALS,
   ensurePrograms,
   gpuState,
@@ -1087,10 +1087,10 @@ vec3 p3dPos(out vec3 nOut){float h=-(uOff.y+qPos.y)*uS;vec2 lp=vec2((uOff.x+qPos
 export const SOLID_PROP_SHADERS = {
   p3d: [
     `#version 300 es
-precision highp float;${GLSL_COMMON}${SOLID_PROP_VERTEX_GLSL}out vec3 vW;out vec3 vN;out vec2 vUV;out float vFace;out float vId;
+precision highp float;${COMMON_GLSL}${SOLID_PROP_VERTEX_GLSL}out vec3 vW;out vec3 vN;out vec2 vUV;out float vFace;out float vId;
 void main(){vec3 n;vec3 p=p3dPos(n);vW=p;vN=n;vUV=qUV;vFace=qFace;vId=qId;gl_Position=uVP*vec4(p,1.);}`,
     `#version 300 es
-precision highp float;in vec3 vW;in vec3 vN;in vec2 vUV;in float vFace;in float vId;out vec4 o;uniform sampler2D uTex,uNrm;uniform float uFade,uFlip,uEmit,uRim,uClump,uRot;uniform vec4 uMat;uniform vec3 uBaseP,uVar;uniform vec4 uDet;${GLSL_LIGHT}${GLSL_LOOK}
+precision highp float;in vec3 vW;in vec3 vN;in vec2 vUV;in float vFace;in float vId;out vec4 o;uniform sampler2D uTex,uNrm;uniform float uFade,uFlip,uEmit,uRim,uClump,uRot;uniform vec4 uMat;uniform vec3 uBaseP,uVar;uniform vec4 uDet;${LIGHT_GLSL}${LOOK_GLSL}
 float bay(vec2 p){ivec2 i=ivec2(mod(p,4.));int b[16]=int[16](0,8,2,10,12,4,14,6,3,11,1,9,15,7,13,5);return (float(b[i.y*4+i.x])+.5)/16.;}
 void main(){vec4 c=(vFace>.5&&uClump<.5)?texture(uTex,vUV):textureLod(uTex,vUV,0.);if(c.a<.5)discard;
  if(uClump>.5){float id=floor(c.a*255.+.5)-128.;if(vId<-.5){if(id<.5)discard;}else if(abs(id-vId)>.5)discard;}
@@ -1116,7 +1116,7 @@ void main(){vec4 c=(vFace>.5&&uClump<.5)?texture(uTex,vUV):textureLod(uTex,vUV,0
   ],
   p3dS: [
     `#version 300 es
-precision highp float;${GLSL_COMMON}${SOLID_PROP_VERTEX_GLSL}out vec2 vUV;out float vId;
+precision highp float;${COMMON_GLSL}${SOLID_PROP_VERTEX_GLSL}out vec2 vUV;out float vId;
 void main(){vec3 n;vec3 p=p3dPos(n);vUV=qUV;vId=qId;gl_Position=uVP*vec4(p,1.);}`,
     `#version 300 es
 precision highp float;in vec2 vUV;in float vId;uniform sampler2D uTex;uniform float uClump;out vec4 o;void main(){vec4 c=textureLod(uTex,vUV,0.);if(c.a<.5)discard;if(uClump>.5){float id=floor(c.a*255.+.5)-128.;if(vId<-.5){if(id<.5)discard;}else if(abs(id-vId)>.5)discard;}o=vec4(1.);}`,

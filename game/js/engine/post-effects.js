@@ -11,7 +11,7 @@ import { clamp } from '../util.js';
 import { makeCanvas } from '../art.js';
 import { walkView } from '../walk-view.js';
 import { engineColor, engineSetting } from './settings.js';
-import { GLSL_LIGHT, bindQuad, ensurePrograms, gpuState, renderTarget } from './webgl.js';
+import { LIGHT_GLSL, bindQuad, ensurePrograms, gpuState, renderTarget } from './webgl.js';
 import { setLightUniforms } from './light.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -101,7 +101,7 @@ void main(){vec2 dv=(uSun-vUV);if(uVirt>.5)dv=normalize(dv)*.32;dv*=uLen/24.;vec
     `#version 300 es
 precision highp float;in vec2 aC;out vec2 vUV;void main(){vUV=aC;gl_Position=vec4(aC*2.-1.,0.,1.);}`,
     `#version 300 es
-precision highp float;in vec2 vUV;out vec4 o;uniform sampler2D uDep;uniform mat4 uIVP;uniform float uN,uF,uK,uLK,uDens,uMaxD;${GLSL_LIGHT}
+precision highp float;in vec2 vUV;out vec4 o;uniform sampler2D uDep;uniform mat4 uIVP;uniform float uN,uF,uK,uLK,uDens,uMaxD;${LIGHT_GLSL}
 /* v43: light in the air. From the camera to what each pixel shows, the ray is walked in twelve steps; at each the sun's
    shadow map says whether the air there is lit (the near map first, the far cascade beyond it), and the nearest lamps
    add their glow. Forward scattering (Henyey-Greenstein) makes rays toward the sun bright; the air is thickest low down. */

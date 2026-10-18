@@ -18,9 +18,9 @@ import { hexToRgb, makeCanvas } from './art.js';
 import { artImage, hash2d, walkData, walkView } from './walk-view.js';
 import { engineContext, engineSetting } from './engine/settings.js';
 import {
-  GLSL_COMMON,
-  GLSL_LIGHT,
-  GLSL_LOOK,
+  COMMON_GLSL,
+  LIGHT_GLSL,
+  LOOK_GLSL,
   bindQuad,
   ensurePrograms,
   gpuState,
@@ -172,10 +172,10 @@ export const BUILDING_SHADERS = {
   bld: [
     `#version 300 es
 precision highp float;layout(location=0) in vec3 bPosIn;layout(location=1) in vec3 bNrmIn;layout(location=2) in vec2 bUVIn;layout(location=3) in vec3 bTexIn;layout(location=4) in vec3 bColIn;
-uniform mat4 uVP;uniform vec2 uLift;out vec3 vW;out vec3 vN;out vec2 vUV;out vec3 vTex;out vec3 vCol;${GLSL_COMMON}
+uniform mat4 uVP;uniform vec2 uLift;out vec3 vW;out vec3 vN;out vec2 vUV;out vec3 vTex;out vec3 vCol;${COMMON_GLSL}
 void main(){vec3 p=bPosIn;p.y+=curveY(uLift);vW=p;vN=bNrmIn;vUV=bUVIn;vTex=bTexIn;vCol=bColIn;gl_Position=uVP*vec4(p,1.);}`,
     `#version 300 es
-precision highp float;in vec3 vW;in vec3 vN;in vec2 vUV;in vec3 vTex;in vec3 vCol;out vec4 o;uniform sampler2D uDet;uniform float uFade,uBaseY;uniform vec2 uScroll,uAtl;${GLSL_LIGHT}${BUILDING_RAMP_GLSL}${GLSL_LOOK}uniform vec3 uBP;
+precision highp float;in vec3 vW;in vec3 vN;in vec2 vUV;in vec3 vTex;in vec3 vCol;out vec4 o;uniform sampler2D uDet;uniform float uFade,uBaseY;uniform vec2 uScroll,uAtl;${LIGHT_GLSL}${BUILDING_RAMP_GLSL}${LOOK_GLSL}uniform vec3 uBP;
 void main(){if(uFade<.99&&bayer4(gl_FragCoord.xy)>uFade)discard;
  vec2 g=(vUV+uScroll)*.5,f=vec2(fract(g.x),1.-fract(g.y)),a=(vTex.xy+f)/uAtl;float lv=textureGrad(uDet,a,dFdx(g)/uAtl,dFdy(g)/uAtl).r*4.;
  vec3 c=vTex.z>.5?vCol:rampC(vCol,floor(lv+.5));c=lookOn(c,floor(vUV*16.),clamp((vW.y-uBaseY)/4.,0.,1.),uBP);vec3 n=normalize(vN);if(uSeason.w>0.)c=mix(c,vec3(.9,.93,.98),min(1.,uSeason.w*1.4)*smoothstep(.3,.6,n.y)*smoothstep(.2,.5,lnoise(vW.xz*2.3)+uSeason.w*.6));
@@ -186,10 +186,10 @@ void main(){if(uFade<.99&&bayer4(gl_FragCoord.xy)>uFade)discard;
   bwin: [
     `#version 300 es
 precision highp float;layout(location=0) in vec3 bPosIn;layout(location=1) in vec3 bNrmIn;layout(location=2) in vec2 bUVIn;layout(location=3) in vec4 bWIn;layout(location=4) in vec3 bTIn;layout(location=5) in vec4 bFIn;
-uniform mat4 uVP;uniform vec2 uLift;out vec3 vW;out vec3 vN;out vec2 vUV;out vec4 vWd;out vec3 vT;out vec4 vF;${GLSL_COMMON}
+uniform mat4 uVP;uniform vec2 uLift;out vec3 vW;out vec3 vN;out vec2 vUV;out vec4 vWd;out vec3 vT;out vec4 vF;${COMMON_GLSL}
 void main(){vec3 p=bPosIn;p.y+=curveY(uLift);vW=p;vN=bNrmIn;vUV=bUVIn;vWd=bWIn;vT=bTIn;vF=bFIn;gl_Position=uVP*vec4(p,1.);}`,
     `#version 300 es
-precision highp float;in vec3 vW;in vec3 vN;in vec2 vUV;in vec4 vWd;in vec3 vT;in vec4 vF;out vec4 o;uniform sampler2D uRooms;uniform float uFade,uNight,uDay,uInt,uLitF;uniform vec3 uSkyR;${GLSL_LIGHT}${BUILDING_RAMP_GLSL}
+precision highp float;in vec3 vW;in vec3 vN;in vec2 vUV;in vec4 vWd;in vec3 vT;in vec4 vF;out vec4 o;uniform sampler2D uRooms;uniform float uFade,uNight,uDay,uInt,uLitF;uniform vec3 uSkyR;${LIGHT_GLSL}${BUILDING_RAMP_GLSL}
 void main(){if(uFade<.99&&bayer4(gl_FragCoord.xy)>uFade)discard;
  float w=vWd.x,h=vWd.y,room=vWd.z,D=vWd.w;vec3 N=normalize(vN),T=normalize(vT);vec2 p=vec2(vUV.x*w,vUV.y*h);
  vec3 d=normalize(vW-uEye);vec3 ld=vec3(dot(d,T),d.y,max(dot(d,-N),.04));
@@ -226,10 +226,10 @@ void main(){if(uFade<.99&&bayer4(gl_FragCoord.xy)>uFade)discard;
   ],
   bfac: [
     `#version 300 es
-precision highp float;layout(location=0) in vec2 bCIn;uniform mat4 uVP;uniform vec3 uO,uA,uB;uniform vec2 uLift;out vec2 vUV;out vec3 vW;${GLSL_COMMON}
+precision highp float;layout(location=0) in vec2 bCIn;uniform mat4 uVP;uniform vec3 uO,uA,uB;uniform vec2 uLift;out vec2 vUV;out vec3 vW;${COMMON_GLSL}
 void main(){vec3 p=uO+uA*bCIn.x+uB*bCIn.y;p.y+=curveY(uLift);vW=p;vUV=vec2(bCIn.x,1.-bCIn.y);gl_Position=uVP*vec4(p,1.);}`,
     `#version 300 es
-precision highp float;in vec2 vUV;in vec3 vW;out vec4 o;uniform sampler2D uTex,uNrm;uniform vec3 uN,uR;uniform float uFade,uFlipN,uBaseY,uGlassN;${GLSL_LIGHT}${BUILDING_RAMP_GLSL}${GLSL_LOOK}uniform vec3 uBP;
+precision highp float;in vec2 vUV;in vec3 vW;out vec4 o;uniform sampler2D uTex,uNrm;uniform vec3 uN,uR;uniform float uFade,uFlipN,uBaseY,uGlassN;${LIGHT_GLSL}${BUILDING_RAMP_GLSL}${LOOK_GLSL}uniform vec3 uBP;
 void main(){vec4 c=texture(uTex,vUV);if(c.a<.05)discard;if(uFade<.99&&bayer4(gl_FragCoord.xy)>uFade)discard;
  if(c.a>.99)c.rgb=lookOn(c.rgb,floor(vUV*vec2(textureSize(uTex,0))),1.-vUV.y,uBP);
  vec3 nn=texture(uNrm,vUV).xyz*2.-1.;vec3 n=normalize(uR*nn.x*uFlipN+vec3(0.,-nn.y,0.)+uN*max(nn.z,.2));
@@ -240,7 +240,7 @@ void main(){vec4 c=texture(uTex,vUV);if(c.a<.05)discard;if(uFade<.99&&bayer4(gl_
   ],
   bshadow: [
     `#version 300 es
-precision highp float;layout(location=0) in vec3 bPosIn;uniform mat4 uVP;uniform vec2 uLift;${GLSL_COMMON}
+precision highp float;layout(location=0) in vec3 bPosIn;uniform mat4 uVP;uniform vec2 uLift;${COMMON_GLSL}
 void main(){vec3 p=bPosIn;p.y+=curveY(uLift);gl_Position=uVP*vec4(p,1.);}`,
     `#version 300 es
 precision highp float;out vec4 o;void main(){o=vec4(1.);}`,

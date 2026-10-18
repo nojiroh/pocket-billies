@@ -13,9 +13,9 @@ import { engineSetting } from './settings.js';
 /* eslint-disable no-func-assign */
 expose({
   ATTRIBUTE_LOCATIONS: [() => ATTRIBUTE_LOCATIONS],
-  GLSL_COMMON: [() => GLSL_COMMON],
-  GLSL_LIGHT: [() => GLSL_LIGHT],
-  GLSL_LOOK: [() => GLSL_LOOK],
+  COMMON_GLSL: [() => COMMON_GLSL],
+  LIGHT_GLSL: [() => LIGHT_GLSL],
+  LOOK_GLSL: [() => LOOK_GLSL],
   NORMAL_MAP_WORKER_SOURCE: [() => NORMAL_MAP_WORKER_SOURCE],
   SURFACE_MATERIALS: [() => SURFACE_MATERIALS],
   applyAnisotropy: [() => applyAnisotropy, v => (applyAnisotropy = v)],
@@ -198,7 +198,7 @@ export const smooth01 = t => {
 };
 provide({ smooth01 }); /* to-module */
 /* ---------- shared GLSL ---------- */
-export const GLSL_COMMON = `
+export const COMMON_GLSL = `
 uniform vec3 uCurve;uniform float uCurveD0;
 float curveY(vec2 p){float d=max(0.,length(p-uCurve.xy)-uCurveD0);return uCurve.z*d*d;}
 float windGust(vec2 p,float t){float a=sin(p.x*.35+p.y*.21-t*.0018)*.5+.5;float band=pow(max(0.,sin(p.x*.11+p.y*.06-t*.00055)),8.);return a*a+band*1.3;}
@@ -222,7 +222,7 @@ export function windBendAt(x, z, t, g) {
 }
 /* lighting shared by everything lit in the world: sun with soft contact-hardening shadows and cloud shadows, contact
    occlusion, point lights (window lights only light what is in front of them), sky and ground ambient, haze and mist */
-export const GLSL_LIGHT = `
+export const LIGHT_GLSL = `
 uniform vec3 uEye,uSunDir,uSunCol,uAmbTop,uAmbBot,uFogCol,uTint,uShTint;
 uniform vec4 uRoomB;uniform float uRoomDim;
 uniform vec2 uValley;uniform float uFogStart,uFogD,uTintAmt,uMist,uMistY,uTime,uShStr,uShPen,uCloudSh,uCloudSpd,uCloudCov,uContact,uAmbK,uShLite,uShPx;uniform vec3 uShLift;
@@ -300,7 +300,7 @@ vec3 fogit(vec3 c,vec3 p){float d=length(p-uEye);float f=1.-exp(-max(0.,d-uFogSt
    the colourful parts, and only within a hue window when the prop says so: leaves, not the trunk), a tint, and wear
    and tear (faded paint, dirt streaks running down and splashed at the foot, moss, hairline cracks). px is the
    position in the picture's own pixels, so the wear is as blocky as the art; hgt runs 0 at the foot to 1 at the top. */
-export const GLSL_LOOK = `
+export const LOOK_GLSL = `
 uniform vec4 uWear,uHsv,uLkTint;uniform vec2 uMaskH;
 vec3 lkHsv(vec3 c){vec4 K=vec4(0.,-1./3.,2./3.,-1.);vec4 p=mix(vec4(c.bg,K.wz),vec4(c.gb,K.xy),step(c.b,c.g));vec4 q=mix(vec4(p.xyw,c.r),vec4(c.r,p.yzx),step(p.x,c.r));float d=q.x-min(q.w,q.y);return vec3(abs(q.z+(q.w-q.y)/(6.*d+1e-10)),d/(q.x+1e-10),q.x);}
 vec3 lkRgb(vec3 c){vec3 p=abs(fract(c.xxx+vec3(1.,2./3.,1./3.))*6.-3.);return c.z*mix(vec3(1.),clamp(p-1.,0.,1.),c.y);}

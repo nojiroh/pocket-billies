@@ -13,7 +13,7 @@ import { GD, RM, provide } from './hooks.js';
 import { artImg, artURL, hexToRgb } from './art.js';
 import { artImage, walkView } from './walk-view.js';
 import { engineSetting } from './engine/settings.js';
-import { GLSL_COMMON, GLSL_LIGHT, ensurePrograms, gpuState, imageTexture } from './engine/webgl.js';
+import { COMMON_GLSL, LIGHT_GLSL, ensurePrograms, gpuState, imageTexture } from './engine/webgl.js';
 import {
   addHitTarget,
   setPropLookUniforms,
@@ -1059,7 +1059,7 @@ function drawPropModelMesh(m) {
 /* the model's program: its own vertex shader (placed, scaled, turned and spun like a voxel prop), the buildings' look */
 const lowPolyVertexShader = () => `#version 300 es
 precision highp float;layout(location=0) in vec3 mPos;layout(location=1) in vec3 mNrm;layout(location=2) in vec2 mUV;layout(location=3) in vec3 mTex;layout(location=4) in vec3 mCol;
-uniform mat4 uVP;uniform vec3 uBase,uSpinC;uniform vec4 uSpin;uniform float uS,uRot,uFlip;out vec3 vW;out vec3 vN;out vec2 vUV;out vec3 vTex;out vec3 vCol;${GLSL_COMMON}${SPIN_GLSL}
+uniform mat4 uVP;uniform vec3 uBase,uSpinC;uniform vec4 uSpin;uniform float uS,uRot,uFlip;out vec3 vW;out vec3 vN;out vec2 vUV;out vec3 vTex;out vec3 vCol;${COMMON_GLSL}${SPIN_GLSL}
 void main(){float cr=cos(uRot),sr=sin(uRot);vec3 q0=voxSpin(mPos/256.-uSpinC)+uSpinC,n0=voxSpin(mNrm);vec3 p=vec3(q0.x*uFlip,q0.y,q0.z)*uS;p=vec3(p.x*cr-p.z*sr,p.y,p.x*sr+p.z*cr);vec3 n=vec3(n0.x*uFlip,n0.y,n0.z);n=vec3(n.x*cr-n.z*sr,n.y,n.x*sr+n.z*cr);
  vec3 w=uBase+p;w.y+=curveY(uBase.xz);vW=w;vN=n;vUV=mUV/64.;vTex=mTex;vCol=mCol;gl_Position=uVP*vec4(w,1.);}`;
 /* the model's light: the buildings' look and textures, with the props' cel shading (three tones of sun, as the voxel
@@ -1118,11 +1118,11 @@ const SPIN_GLSL = `vec3 voxSpin(vec3 d){float a=uSpin.w;if(a==0.)return d;vec3 k
 const PROP_MODEL_SHADERS = {
   vox: [
     `#version 300 es
-precision highp float;layout(location=0) in vec3 qPos;layout(location=1) in vec3 qNrm;layout(location=2) in vec3 qCol;uniform mat4 uVP;uniform vec3 uBase,uSpinC;uniform vec4 uSpin;uniform float uS,uRot,uFlip,uQ;${GLSL_COMMON}out vec3 vW;out vec3 vN;out vec3 vC;${SPIN_GLSL}
+precision highp float;layout(location=0) in vec3 qPos;layout(location=1) in vec3 qNrm;layout(location=2) in vec3 qCol;uniform mat4 uVP;uniform vec3 uBase,uSpinC;uniform vec4 uSpin;uniform float uS,uRot,uFlip,uQ;${COMMON_GLSL}out vec3 vW;out vec3 vN;out vec3 vC;${SPIN_GLSL}
 void main(){float cr=cos(uRot),sr=sin(uRot);vec3 q0=voxSpin(qPos*uQ-uSpinC)+uSpinC,n0=voxSpin(qNrm);vec3 p=vec3(q0.x*uFlip,q0.y,q0.z)*uS;p=vec3(p.x*cr-p.z*sr,p.y,p.x*sr+p.z*cr);vec3 n=vec3(n0.x*uFlip,n0.y,n0.z);n=vec3(n.x*cr-n.z*sr,n.y,n.x*sr+n.z*cr);
  vec3 w=uBase+p;w.y+=curveY(uBase.xz);vW=w;vN=n;vC=qCol;gl_Position=uVP*vec4(w,1.);}`,
     `#version 300 es
-precision highp float;in vec3 vW;in vec3 vN;in vec3 vC;out vec4 o;uniform vec3 uBaseP;uniform float uFade,uEmit;${GLSL_LIGHT}
+precision highp float;in vec3 vW;in vec3 vN;in vec3 vC;out vec4 o;uniform vec3 uBaseP;uniform float uFade,uEmit;${LIGHT_GLSL}
 float bay(vec2 p){ivec2 i=ivec2(mod(p,4.));int b[16]=int[16](0,8,2,10,12,4,14,6,3,11,1,9,15,7,13,5);return (float(b[i.y*4+i.x])+.5)/16.;}
 void main(){if(uFade<.99&&bay(gl_FragCoord.xy)>uFade)discard;vec3 n=normalize(vN);vec3 c=vC;float hy=vW.y-uBaseP.y;
  float sh=shadowAtN(vW+n*.05,n,.0015),ao=mix(contactAO(vW),1.,clamp(hy*2.,0.,1.)),occ=min(sh,ao);
@@ -1132,7 +1132,7 @@ void main(){if(uFade<.99&&bay(gl_FragCoord.xy)>uFade)discard;vec3 n=normalize(vN
   ],
   voxS: [
     `#version 300 es
-precision highp float;layout(location=0) in vec3 qPos;layout(location=1) in vec3 qNrm;layout(location=2) in vec3 qCol;uniform mat4 uVP;uniform vec3 uBase,uSpinC;uniform vec4 uSpin;uniform float uS,uRot,uFlip,uQ;${GLSL_COMMON}${SPIN_GLSL}
+precision highp float;layout(location=0) in vec3 qPos;layout(location=1) in vec3 qNrm;layout(location=2) in vec3 qCol;uniform mat4 uVP;uniform vec3 uBase,uSpinC;uniform vec4 uSpin;uniform float uS,uRot,uFlip,uQ;${COMMON_GLSL}${SPIN_GLSL}
 void main(){float cr=cos(uRot),sr=sin(uRot);vec3 q0=voxSpin(qPos*uQ-uSpinC)+uSpinC;vec3 p=vec3(q0.x*uFlip,q0.y,q0.z)*uS;p=vec3(p.x*cr-p.z*sr,p.y,p.x*sr+p.z*cr);vec3 w=uBase+p;w.y+=curveY(uBase.xz);gl_Position=uVP*vec4(w,1.);}`,
     `#version 300 es
 precision highp float;out vec4 o;void main(){o=vec4(1.);}`,

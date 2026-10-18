@@ -138,9 +138,9 @@ import {
 } from './walk-view.js';
 import { engineColor, engineContext, engineSetting } from './engine/settings.js';
 import {
-  GLSL_COMMON,
-  GLSL_LIGHT,
-  GLSL_LOOK,
+  COMMON_GLSL,
+  LIGHT_GLSL,
+  LOOK_GLSL,
   SURFACE_MATERIALS,
   beginGpuTimer,
   bindGridQuad,
@@ -1051,10 +1051,10 @@ function askDeviceTilt() {
 export const WALK_SHADERS = {
   ground: [
     `#version 300 es
-precision highp float;in vec3 aPos;in vec3 aNrm;layout(location=2) in vec3 aWall;uniform mat4 uVP;out vec3 vW;out vec3 vN;out vec3 vWall;out vec4 vClip;${GLSL_COMMON}
+precision highp float;in vec3 aPos;in vec3 aNrm;layout(location=2) in vec3 aWall;uniform mat4 uVP;out vec3 vW;out vec3 vN;out vec3 vWall;out vec4 vClip;${COMMON_GLSL}
 void main(){vec3 p=aPos;p.y+=curveY(p.xz);vW=p;vN=aNrm;vWall=aWall;gl_Position=uVP*vec4(p,1.);vClip=gl_Position;}`,
     `#version 300 es
-precision highp float;in vec3 vW;in vec3 vN;in vec3 vWall;in vec4 vClip;out vec4 o;uniform sampler2D uGround,uFar,uCliff,uGNrm,uWallA;uniform vec4 uGRect;uniform vec3 uFarTint;uniform float uGStr,uGShine,uWallDef,uAspect;uniform vec3 uWallCol[12];uniform vec3 uPlC;uniform sampler2D uShore;uniform vec3 uShoreR,uBed;uniform vec4 uRoom;uniform float uRoomY;uniform sampler2D uGAO;uniform vec3 uGAOR,uSkyW;uniform float uWet,uRainK,uCausW;uniform sampler2D uRing,uRingN;uniform vec2 uRingC[16];uniform vec4 uRingBox;uniform vec3 uCanvas;${GLSL_LIGHT}
+precision highp float;in vec3 vW;in vec3 vN;in vec3 vWall;in vec4 vClip;out vec4 o;uniform sampler2D uGround,uFar,uCliff,uGNrm,uWallA;uniform vec4 uGRect;uniform vec3 uFarTint;uniform float uGStr,uGShine,uWallDef,uAspect;uniform vec3 uWallCol[12];uniform vec3 uPlC;uniform sampler2D uShore;uniform vec3 uShoreR,uBed;uniform vec4 uRoom;uniform float uRoomY;uniform sampler2D uGAO;uniform vec3 uGAOR,uSkyW;uniform float uWet,uRainK,uCausW;uniform sampler2D uRing,uRingN;uniform vec2 uRingC[16];uniform vec4 uRingBox;uniform vec3 uCanvas;${LIGHT_GLSL}
 /* v46: the near ring: the 16 m squares round you at full size (4 x 4 of them in one texture, each in the slot its
    position mod 4 gives); the view's whole ground is the small distant picture. 0 = not in the ring */
 float ringAt(vec2 cc,out vec2 ruv){ruv=vec2(0.);if(uCanvas.z<.5)return 0.;vec2 ch=floor(cc/16.),s=mod(ch,4.);int si=int(s.x+.5)+int(s.y+.5)*4;vec2 h=uRingC[si];if(abs(h.x-ch.x)>.5||abs(h.y-ch.y)>.5)return 0.;
@@ -1107,13 +1107,13 @@ if(c>0.){vec3 cx=texture(uCliff,vec2(vW.z,-vW.y)*.9).rgb,cz=texture(uCliff,vec2(
   ],
   sprite: [
     `#version 300 es
-precision highp float;in vec2 aC;uniform mat4 uVP;uniform vec3 uBase,uRight;uniform vec4 uOff;uniform vec4 uUV;uniform float uFlip,uShear,uCurveOn,uDZ,uSlope;uniform vec3 uFwd,uWave;out vec2 vUV;out vec3 vW;out float vH;out float vPx;out float vRip;${GLSL_COMMON}
+precision highp float;in vec2 aC;uniform mat4 uVP;uniform vec3 uBase,uRight;uniform vec4 uOff;uniform vec4 uUV;uniform float uFlip,uShear,uCurveOn,uDZ,uSlope;uniform vec3 uFwd,uWave;out vec2 vUV;out vec3 vW;out float vH;out float vPx;out float vRip;${COMMON_GLSL}
 void main(){vRip=0.;float px=(uOff.x+aC.x*uOff.z),py=(uOff.y+aC.y*uOff.w);float h=-py;float fh=clamp(h/max(.01,-uOff.y),0.,1.),sh=uShear*h*(.25+.75*fh);/* v43: the bend grows toward the top, like a stem */vec3 p=uBase+uFwd*uDZ+uRight*(px*uFlip+sh)+vec3(0.,h+uSlope*px*uFlip-abs(sh)*.35*fh,0.);
  /* v43: a flag: cloth that ripples from the hoist (aC.x = 0) to the free end, lifting, dipping and trailing in the wind */
  if(uWave.x>0.){float ph=aC.x*6.5-uWave.y,a=uWave.x*aC.x;p+=vec3(0.,sin(ph+.8)*a*.45,0.)+uRight*(-(aC.x*aC.x)*uWave.x*.35*(.5+.5*sin(ph-1.2)))*uFlip+uFwd*sin(ph)*a*.5;vRip=cos(ph)*a*2.2;}
  p.y+=curveY(uBase.xz)*uCurveOn;vW=p;vPx=px*uFlip+sh;vH=clamp(h/max(.01,-uOff.y),0.,1.);vUV=vec2(uUV.x+aC.x*uUV.z,uUV.y+aC.y*uUV.w);gl_Position=uVP*vec4(p,1.);}`,
     `#version 300 es
-precision highp float;in vec2 vUV;in vec3 vW;in float vH;in float vPx;in float vRip;out vec4 o;uniform sampler2D uTex,uNrm;uniform vec3 uRight,uBack,uSunH,uBaseP;uniform float uFade,uRim,uLit,uAlpha,uShade,uEmit,uFlipN,uFixed,uSelOut;uniform vec4 uMat,uUV;uniform vec3 uSelf;${GLSL_LIGHT}${GLSL_LOOK}
+precision highp float;in vec2 vUV;in vec3 vW;in float vH;in float vPx;in float vRip;out vec4 o;uniform sampler2D uTex,uNrm;uniform vec3 uRight,uBack,uSunH,uBaseP;uniform float uFade,uRim,uLit,uAlpha,uShade,uEmit,uFlipN,uFixed,uSelOut;uniform vec4 uMat,uUV;uniform vec3 uSelf;${LIGHT_GLSL}${LOOK_GLSL}
 float bayer(vec2 p){ivec2 i=ivec2(mod(p,4.));int b[16]=int[16](0,8,2,10,12,4,14,6,3,11,1,9,15,7,13,5);return (float(b[i.y*4+i.x])+.5)/16.;}
 void main(){vec4 c=texture(uTex,vUV);if(c.a<.5)discard;if(uFade<.99&&bayer(gl_FragCoord.xy)>uFade)discard;
  /* v47: one outline rule: a near-black texel on the picture's edge takes a deep shade of the colour beside it, so
@@ -1141,14 +1141,14 @@ void main(){vec4 c=texture(uTex,vUV);if(c.a<.5)discard;if(uFade<.99&&bayer(gl_Fr
   ],
   shadow: [
     `#version 300 es
-precision highp float;in vec2 aC;uniform mat4 uVP;uniform vec3 uBase,uRight;uniform vec4 uOff,uUV;uniform float uFlip,uShear;out vec2 vUV;${GLSL_COMMON}
+precision highp float;in vec2 aC;uniform mat4 uVP;uniform vec3 uBase,uRight;uniform vec4 uOff,uUV;uniform float uFlip,uShear;out vec2 vUV;${COMMON_GLSL}
 void main(){float px=(uOff.x+aC.x*uOff.z),py=(uOff.y+aC.y*uOff.w);float h=-py;float fh=clamp(h/max(.01,-uOff.y),0.,1.),sh=uShear*h*(.25+.75*fh);vec3 p=uBase+uRight*(px*uFlip+sh)+vec3(0.,h+curveY(uBase.xz)-abs(sh)*.35*fh,0.);vUV=vec2(uUV.x+aC.x*uUV.z,uUV.y+aC.y*uUV.w);gl_Position=uVP*vec4(p,1.);}`,
     `#version 300 es
 precision highp float;in vec2 vUV;uniform sampler2D uTex;out vec4 o;void main(){if(texture(uTex,vUV).a<.5)discard;o=vec4(1.);}`,
   ],
   shadowG: [
     `#version 300 es
-precision highp float;in vec3 aPos;uniform mat4 uVP;${GLSL_COMMON}
+precision highp float;in vec3 aPos;uniform mat4 uVP;${COMMON_GLSL}
 void main(){vec3 p=aPos;p.y+=curveY(p.xz);gl_Position=uVP*vec4(p,1.);}`,
     `#version 300 es
 precision highp float;out vec4 o;void main(){o=vec4(1.);}`,
@@ -1182,11 +1182,11 @@ void main(){vec4 a=uIVP*vec4(vP,-1.,1.),b=uIVP*vec4(vP,1.,1.);vec3 d=normalize(b
   ],
   water: [
     `#version 300 es
-precision highp float;in vec3 aPos;in float aShore;layout(location=2) in vec2 aFlow;layout(location=3) in vec2 aDK;uniform mat4 uVP;out vec3 vW;out float vS;out vec2 vF;out vec2 vDK;${GLSL_COMMON}
+precision highp float;in vec3 aPos;in float aShore;layout(location=2) in vec2 aFlow;layout(location=3) in vec2 aDK;uniform mat4 uVP;out vec3 vW;out float vS;out vec2 vF;out vec2 vDK;${COMMON_GLSL}
 void main(){vec3 p=aPos;p.y+=curveY(p.xz);vW=p;vS=aShore;vF=aFlow;vDK=aDK;gl_Position=uVP*vec4(p,1.);}`,
     `#version 300 es
 precision highp float;in vec3 vW;in float vS;in vec2 vF;in vec2 vDK;out vec4 o;uniform sampler2D uRefl;uniform vec2 uRes;uniform vec3 uDeep,uShallow,uSkyR;uniform float uReflK,uRip,uFoam,uGlint,uLevel,uCaus,uClar;
-uniform vec3 uKD[9],uKS[9];uniform vec4 uKA[9],uKB[9];uniform vec4 uFish[4];uniform vec4 uRings[8];uniform sampler2D uShore;uniform vec3 uShoreR;${GLSL_LIGHT}
+uniform vec3 uKD[9],uKS[9];uniform vec4 uKA[9],uKB[9];uniform vec4 uFish[4];uniform vec4 uRings[8];uniform sampler2D uShore;uniform vec3 uShoreR;${LIGHT_GLSL}
 /* sunlight focused by the ripples onto the bed: thin bright lines that wander */
 float caust(vec2 p,float t){vec2 q=p+vec2(lnoise(p*.7+t*.21),lnoise(p.yx*.7-t*.17))*1.6;float a=sin(q.x*4.1+t*.9)+sin(q.y*3.7-t*.7)+sin((q.x+q.y)*2.9+t*.5);return pow(clamp(1.-abs(a)*.42,0.,1.),5.);}
 void main(){float t=uTime*.001;int K=int(vDK.y+.5);vec4 ka=uKA[K],kb=uKB[K];float dep=clamp(vDK.x,0.,1.);
@@ -1230,17 +1230,17 @@ void main(){float t=uTime*.001;int K=int(vDK.y+.5);vec4 ka=uKA[K],kb=uKB[K];floa
   ],
   fall: [
     `#version 300 es
-precision highp float;in vec3 aPos;in float aShore;layout(location=2) in vec2 aFl;uniform mat4 uVP;out vec3 vW;out vec2 vT;${GLSL_COMMON}
+precision highp float;in vec3 aPos;in float aShore;layout(location=2) in vec2 aFl;uniform mat4 uVP;out vec3 vW;out vec2 vT;${COMMON_GLSL}
 out float vH;void main(){vec3 p=aPos;p.y+=curveY(p.xz);vW=p;vT=vec2(aFl.y,aShore*aFl.x);vH=aFl.x;gl_Position=uVP*vec4(p,1.);}`,
     `#version 300 es
-precision highp float;in vec3 vW;in vec2 vT;in float vH;out vec4 o;uniform vec3 uShallow;${GLSL_LIGHT}
+precision highp float;in vec3 vW;in vec2 vT;in float vH;out vec4 o;uniform vec3 uShallow;${LIGHT_GLSL}
 void main(){float t=uTime*.001,x=vT.x*7.,y=vT.y;float s=lnoise(vec2(x,y*2.2-t*4.5))*.6+lnoise(vec2(x*2.3+5.,y*4.-t*6.))*.4;
  vec3 c=mix(uShallow*1.1,vec3(.92,.97,1.),smoothstep(.45,.8,s));float foot=smoothstep(.3,0.,vH-y);c=mix(c,vec3(.97,.99,1.),foot*.7+smoothstep(.12,0.,y)*.4);
  float sh=shadowAt(vW,.002);vec3 L=ambient(vec3(0,0,-1),1.,sh)*1.2+uSunCol*.6*sh;o=vec4(fogit(c*L,vW),.82+foot*.15);}`,
   ],
   grass: [
     `#version 300 es
-precision highp float;in vec2 aC;in vec4 aI;in vec4 aCol;uniform mat4 uVP;uniform vec3 uRight,uPl;uniform float uT,uWind,uGust,uBend,uHK;uniform vec3 uCut;uniform vec3 uTrail[16];uniform vec3 uPush[8];out vec4 vK;out vec3 vW;out float vY;${GLSL_COMMON}
+precision highp float;in vec2 aC;in vec4 aI;in vec4 aCol;uniform mat4 uVP;uniform vec3 uRight,uPl;uniform float uT,uWind,uGust,uBend,uHK;uniform vec3 uCut;uniform vec3 uTrail[16];uniform vec3 uPush[8];out vec4 vK;out vec3 vW;out float vY;${COMMON_GLSL}
 void main(){vec2 b=aI.xy;float kind=aCol.x,h=aI.z*uHK*(uCut.z>0.?smoothstep(uCut.z*.55,uCut.z,length(b-uCut.xy)):1.),ph=aI.w;float y=aC.y;
  /* alpha 0.4: the place's one wind (windBend), the same that moves the props and the trees, a blade only a little its own */
  float gust=windGust(b,uT)*uGust;float sw=(windBend(b,uT,uGust)*2.6+sin(uT*.0041+ph*6.28)*.016)*uWind*(kind>4.5?1.3:kind>1.5&&kind<2.5?.3:1.);
@@ -1253,7 +1253,7 @@ void main(){vec2 b=aI.xy;float kind=aCol.x,h=aI.z*uHK*(uCut.z>0.?smoothstep(uCut
  float bend=y*y;vec3 p=vec3(b.x,0.,b.y)+uRight*((aC.x-.5)*wid*(1.-y*(kind>1.5&&kind<2.5?.3:1.)));p.x+=(sw*.9+push.x)*bend*h;p.z+=(sw*.25+push.y)*bend*h;p.y=aCol.z+y*h*(1.-pu*.6);
  p.y+=curveY(p.xz);vW=p;vY=y;vK=vec4(kind,aCol.y,aCol.w,gust);gl_Position=uVP*vec4(p,1.);}`,
     `#version 300 es
-precision highp float;in vec4 vK;in vec3 vW;in float vY;out vec4 o;uniform vec3 uGlo,uGhi;uniform vec3 uFlw[4];uniform float uFlwGlow;${GLSL_LIGHT}
+precision highp float;in vec4 vK;in vec3 vW;in float vY;out vec4 o;uniform vec3 uGlo,uGhi;uniform vec3 uFlw[4];uniform float uFlwGlow;${LIGHT_GLSL}
 void main(){float kind=vK.x,rn=vK.y,tint=vK.z;vec3 c=mix(uGlo,uGhi,vY)*(.86+rn*.28);vec3 dry=vec3(.78,.7,.38)*mix(.72,1.05,vY);
  if(tint>0.)c=mix(c,dry,tint*.6);else c*=vec3(1.+tint*.2,1.+tint*.06,1.+tint*.12);
  if(kind>2.5&&kind<3.5)c=mix(c,dry,.75);
@@ -1265,10 +1265,10 @@ void main(){float kind=vK.x,rn=vK.y,tint=vK.z;vec3 c=mix(uGlo,uGhi,vY)*(.86+rn*.
   ],
   face: [
     `#version 300 es
-precision highp float;in vec2 aC;uniform mat4 uVP;uniform vec3 uO,uA,uB;uniform vec4 uUV;out vec2 vUV;out vec3 vW;${GLSL_COMMON}
+precision highp float;in vec2 aC;uniform mat4 uVP;uniform vec3 uO,uA,uB;uniform vec4 uUV;out vec2 vUV;out vec3 vW;${COMMON_GLSL}
 void main(){vec3 p=uO+uA*aC.x+uB*aC.y;p.y+=curveY(uO.xz);vW=p;vUV=vec2(uUV.x+aC.x*uUV.z,uUV.y+aC.y*uUV.w);gl_Position=uVP*vec4(p,1.);}`,
     `#version 300 es
-precision highp float;in vec2 vUV;in vec3 vW;out vec4 o;uniform sampler2D uTex;uniform vec3 uN;uniform float uSpec;uniform vec3 uBP;${GLSL_LIGHT}${GLSL_LOOK}
+precision highp float;in vec2 vUV;in vec3 vW;out vec4 o;uniform sampler2D uTex;uniform vec3 uN;uniform float uSpec;uniform vec3 uBP;${LIGHT_GLSL}${LOOK_GLSL}
 void main(){vec4 c=texture(uTex,vUV);if(c.a<.5)discard;c.rgb=lookOn(c.rgb,floor(vec2(dot(vW.xz,vec2(1.)),vW.y)*16.),clamp((vW.y-uBP.y)/3.,0.,1.),uBP);vec3 n=normalize(uN);float sh=shadowAtN(vW+n*.05,n,.0012),ao=contactAO(vW),occ=min(sh,ao);
  vec3 v=normalize(uEye-vW);float sp=pow(max(dot(n,normalize(uSunDir+v)),0.),30.)*uSpec*occ;
  o=vec4(fogit(shade(c.rgb,n,vW,sh,ao,vec4(0.,1.,0.,.2),0.)+uSunCol*sp,vW),1.);}`,
@@ -1278,7 +1278,7 @@ void main(){vec4 c=texture(uTex,vUV);if(c.a<.5)discard;c.rgb=lookOn(c.rgb,floor(
 precision highp float;in vec2 aC;uniform mat4 uVP;uniform vec3 uP,uRight,uUp;uniform vec2 uS;uniform vec4 uUV;out vec2 vUV;out vec3 vW;
 void main(){vec2 c=aC-.5;vec3 p=uP+uRight*c.x*uS.x+uUp*(-c.y)*uS.y;vW=p;vUV=vec2(uUV.x+aC.x*uUV.z,uUV.y+aC.y*uUV.w);gl_Position=uVP*vec4(p,1.);}`,
     `#version 300 es
-precision highp float;in vec2 vUV;in vec3 vW;out vec4 o;uniform sampler2D uTex;uniform vec4 uCol;uniform float uGlow,uLitFx;${GLSL_LIGHT}
+precision highp float;in vec2 vUV;in vec3 vW;out vec4 o;uniform sampler2D uTex;uniform vec4 uCol;uniform float uGlow,uLitFx;${LIGHT_GLSL}
 void main(){vec4 c;if(uGlow>.5){vec2 q=vUV*2.-1.;float d=dot(q,q);if(d>1.)discard;float f=(1.-d);c=vec4(uCol.rgb*f*f*f*uCol.a,1.);}else{c=texture(uTex,vUV)*uCol;if(c.a<.02)discard;if(uLitFx>.5)c.rgb*=mix(uAmbTop,vec3(1.),.5)+uSunCol*.4;c.rgb=fogit(c.rgb,vW);}o=c;}`,
   ],
 };
