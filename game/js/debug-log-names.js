@@ -68,12 +68,12 @@ import {
 } from './walk-view-gl.js';
 import { BLD, bldDraw, bldItems, setBldDraw, setBldItems } from './buildings.js';
 import {
-  p3dBuild,
-  p3dDraw,
-  p3dTreeBuild,
-  setP3dBuild,
-  setP3dDraw,
-  setP3dTreeBuild,
+  buildSolidProp,
+  buildSolidTree,
+  drawSolidProps,
+  setBuildSolidProp,
+  setBuildSolidTree,
+  setDrawSolidProps,
   solidPropState,
 } from './solid-props.js';
 import { LIFE, lifeStep, setLifeStep } from './ambient-life.js';
@@ -120,10 +120,13 @@ Object.defineProperties(GAME, {
   bldDraw: { get: () => bldDraw, set: setBldDraw },
   bldItems: { get: () => bldItems, set: setBldItems },
   buildGrass: { get: () => buildGrass, set: setBuildGrass },
+  buildSolidProp: { get: () => buildSolidProp, set: setBuildSolidProp },
+  buildSolidTree: { get: () => buildSolidTree, set: setBuildSolidTree },
   chalToday: { get: () => chalToday },
   csStart: { get: () => csStart, set: setCsStart },
   drawGrass: { get: () => drawGrass, set: setDrawGrass },
   drawGround: { get: () => drawGround, set: setDrawGround },
+  drawSolidProps: { get: () => drawSolidProps, set: setDrawSolidProps },
   drawSprites: { get: () => drawSprites, set: setDrawSprites },
   drawWater: { get: () => drawWater, set: setDrawWater },
   effectsPass: { get: () => effectsPass, set: setEffectsPass },
@@ -144,9 +147,6 @@ Object.defineProperties(GAME, {
   openBattle: { get: () => openBattle, set: setOpenBattle },
   openDressing: { get: () => openDressing, set: setOpenDressing },
   openShop: { get: () => openShop, set: setOpenShop },
-  p3dBuild: { get: () => p3dBuild, set: setP3dBuild },
-  p3dDraw: { get: () => p3dDraw, set: setP3dDraw },
-  p3dTreeBuild: { get: () => p3dTreeBuild, set: setP3dTreeBuild },
   paintActions: { get: () => paintActions, set: setPaintActions },
   prepareMap: { get: () => prepareMap, set: setPrepareMap },
   pwState: { get: () => pwState },

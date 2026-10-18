@@ -30,48 +30,54 @@ import {
 } from './walk-view-gl.js';
 /* eslint-disable no-func-assign */
 expose({
-  P3D_AUTO: [() => P3D_AUTO],
-  P3D_GLSL_V: [() => P3D_GLSL_V],
-  P3D_KINDS: [() => P3D_KINDS],
-  P3D_MATID: [() => P3D_MATID],
-  P3D_PARTS: [() => P3D_PARTS],
-  P3D_SH: [() => P3D_SH],
-  p3dBuild: [() => p3dBuild, v => setP3dBuild(v)],
-  p3dDraw: [() => p3dDraw, v => setP3dDraw(v)],
-  p3dGuard: [() => p3dGuard, v => (p3dGuard = v)],
-  p3dKind: [() => p3dKind, v => (p3dKind = v)],
-  p3dLod: [() => p3dLod, v => ((p3dLod = v), provide({ p3dLod }))],
-  p3dMesh: [() => p3dMesh, v => (p3dMesh = v)],
-  p3dOn: [() => p3dOn, v => (p3dOn = v)],
-  p3dShadow: [() => p3dShadow, v => ((p3dShadow = v), provide({ p3dShadow }))],
-  p3dSpec: [() => p3dSpec, v => (p3dSpec = v)],
-  p3dTag: [() => p3dTag, v => ((p3dTag = v), provide({ p3dTag }))],
-  p3dTex: [() => p3dTex, v => (p3dTex = v)],
-  p3dTreeBuild: [() => p3dTreeBuild, v => setP3dTreeBuild(v)],
-  p3dTreeKind: [() => p3dTreeKind, v => (p3dTreeKind = v)],
-  p3dU: [() => p3dU, v => (p3dU = v)],
-  p3dUpload: [() => p3dUpload, v => (p3dUpload = v)],
+  SOLID_PROP_BODIES: [() => SOLID_PROP_BODIES],
+  SOLID_PROP_KINDS: [() => SOLID_PROP_KINDS],
+  SOLID_PROP_MATERIAL_IDS: [() => SOLID_PROP_MATERIAL_IDS],
+  SOLID_PROP_PARTS: [() => SOLID_PROP_PARTS],
+  SOLID_PROP_SHADERS: [() => SOLID_PROP_SHADERS],
+  SOLID_PROP_VERTEX_GLSL: [() => SOLID_PROP_VERTEX_GLSL],
+  buildSolidProp: [() => buildSolidProp, v => setBuildSolidProp(v)],
+  buildSolidTree: [() => buildSolidTree, v => setBuildSolidTree(v)],
+  drawSolidPropShadows: [
+    () => drawSolidPropShadows,
+    v => ((drawSolidPropShadows = v), provide({ drawSolidPropShadows })),
+  ],
+  drawSolidProps: [() => drawSolidProps, v => setDrawSolidProps(v)],
+  setSolidPropUniforms: [() => setSolidPropUniforms, v => (setSolidPropUniforms = v)],
+  solidPropGuard: [() => solidPropGuard, v => (solidPropGuard = v)],
+  solidPropKind: [() => solidPropKind, v => (solidPropKind = v)],
+  solidPropLevelOfDetail: [
+    () => solidPropLevelOfDetail,
+    v => ((solidPropLevelOfDetail = v), provide({ solidPropLevelOfDetail })),
+  ],
+  solidPropMesh: [() => solidPropMesh, v => (solidPropMesh = v)],
+  solidPropSpec: [() => solidPropSpec, v => (solidPropSpec = v)],
   solidPropState: [() => solidPropState],
+  solidPropTexture: [() => solidPropTexture, v => (solidPropTexture = v)],
+  solidPropsOn: [() => solidPropsOn, v => (solidPropsOn = v)],
+  solidTreeKind: [() => solidTreeKind, v => (solidTreeKind = v)],
+  tagSolidProp: [() => tagSolidProp, v => ((tagSolidProp = v), provide({ tagSolidProp }))],
+  uploadSolidPropMesh: [() => uploadSolidPropMesh, v => (uploadSolidPropMesh = v)],
 });
 /* eslint-enable no-func-assign */
-provide({ p3dDraw, p3dLod, p3dShadow, p3dTag });
-export function setP3dBuild(v) {
-  p3dBuild = v; // eslint-disable-line no-func-assign
-  provide({ p3dBuild });
+provide({ drawSolidPropShadows, drawSolidProps, solidPropLevelOfDetail, tagSolidProp });
+export function setBuildSolidProp(v) {
+  buildSolidProp = v; // eslint-disable-line no-func-assign
+  provide({ buildSolidProp });
 }
-export function setP3dDraw(v) {
-  p3dDraw = v; // eslint-disable-line no-func-assign
-  provide({ p3dDraw });
+export function setBuildSolidTree(v) {
+  buildSolidTree = v; // eslint-disable-line no-func-assign
+  provide({ buildSolidTree });
 }
-export function setP3dTreeBuild(v) {
-  p3dTreeBuild = v; // eslint-disable-line no-func-assign
-  provide({ p3dTreeBuild });
+export function setDrawSolidProps(v) {
+  drawSolidProps = v; // eslint-disable-line no-func-assign
+  provide({ drawSolidProps });
 }
 /* to-module: end */
 export const solidPropState = { meshes: new WeakMap(), fail: '', drawn: 0 };
 provide({ solidPropState }); /* to-module */
 /* by prop group (or key): the kind of body and its depth at scale 1, in metres */
-export const P3D_AUTO = {
+export const SOLID_PROP_BODIES = {
   crate: ['block', 0.9],
   crates: ['block', 1],
   bin: ['block', 1],
@@ -169,8 +175,17 @@ export const P3D_AUTO = {
   lighthouse: ['lathe', 0],
   lava_vent: ['lathe', 0],
 };
-const P3D_MATID = { plain: 0, foliage: 1, wood: 2, stone: 3, metal: 4, building: 5, cloth: 6, crystal: 7 };
-export const P3D_KINDS = [
+const SOLID_PROP_MATERIAL_IDS = {
+  plain: 0,
+  foliage: 1,
+  wood: 2,
+  stone: 3,
+  metal: 4,
+  building: 5,
+  cloth: 6,
+  crystal: 7,
+};
+export const SOLID_PROP_KINDS = [
   ['', 'Automatic'],
   ['card', 'Flat picture'],
   ['slab', 'Thin slab'],
@@ -178,7 +193,7 @@ export const P3D_KINDS = [
   ['puff', 'Rounded'],
   ['lathe', 'Round (turned)'],
 ];
-function p3dOn() {
+function solidPropsOn() {
   return typeof eng === 'function' && eng('world', 'solidProps') !== false && !solidPropState.fail;
 }
 /* v20: a prop can be built from parts: rectangles of its picture, each with its own shape. "flat" lays a band of the
@@ -186,7 +201,7 @@ function p3dOn() {
    part stay a flat picture. parts: [{r:[x0,y0,x1,y1] in picture pixels, k:'lathe'|'flat'|'slab'|'block'|'puff'|'card',
    d: depth in metres (flat: front-to-back size, default as wide as the band), y: the row a flat part lies at (default
    its bottom row), open: a turned part without a lid}] */
-export const P3D_PARTS = {
+export const SOLID_PROP_PARTS = {
   fountain: [
     { r: [52, 0, 66, 26], k: 'lathe' },
     { r: [34, 31, 85, 41], k: 'lathe', open: 1 },
@@ -212,12 +227,12 @@ export const P3D_PARTS = {
     { r: [10, 72, 71, 100], k: 'lathe', open: 1 },
   ],
 };
-provide({ P3D_PARTS }); /* to-module */
+provide({ SOLID_PROP_PARTS }); /* to-module */
 /* what body a prop gets: {key, parts (depths in picture pixels at scale 1)} or null for a flat picture */
-function p3dSpec(k, M, PPU) {
+function solidPropSpec(k, M, PPU) {
   if (!M) return null;
-  const parts = M.parts || P3D_PARTS[k],
-    tk = eng('world', 'solidTrees') !== false && !M.vol && !M.parts ? p3dTreeKind(k, M) : null;
+  const parts = M.parts || SOLID_PROP_PARTS[k],
+    tk = eng('world', 'solidTrees') !== false && !M.vol && !M.parts ? solidTreeKind(k, M) : null;
   if (tk === 'pine') return { key: 'lathe|0', parts: [{ r: null, k: 'lathe', d: 0 }], tree: 'pine', rot: 0, vary: 1 };
   if (tk) return { key: 'tree|' + tk, tree: tk, rot: 1, vary: 1, wind: 1 };
   if (parts && parts.length && !(M.vol === 'card')) {
@@ -231,7 +246,7 @@ function p3dSpec(k, M, PPU) {
     }));
     return { key: 'parts|' + JSON.stringify(P), parts: P };
   }
-  const K = p3dKind(k, M);
+  const K = solidPropKind(k, M);
   if (!K) return null;
   const nat = /rock|boulder|cactus|stalag|crystal|stump|mushroom|log|hay/.test((M.group || '') + ' ' + k);
   let d = K[1] * PPU;
@@ -248,10 +263,10 @@ function p3dSpec(k, M, PPU) {
   }
   return { key: K[0] + '|' + Math.round(d), parts: [{ r: null, k: K[0], d }], rot: nat ? 1 : 0, vary: nat ? 1 : 0 };
 }
-function p3dKind(k, M) {
+function solidPropKind(k, M) {
   if (!M) return null;
   const v = Array.isArray(M.vol) ? M.vol : M.vol ? [M.vol, M.volDepth] : null,
-    auto = P3D_AUTO[k] || P3D_AUTO[M.group || k];
+    auto = SOLID_PROP_BODIES[k] || SOLID_PROP_BODIES[M.group || k];
   if (v) {
     if (v[0] === 'card') return null;
     if (['slab', 'block', 'puff', 'lathe'].includes(v[0]))
@@ -261,7 +276,7 @@ function p3dKind(k, M) {
   return auto || null;
 }
 /* the body for one picture, built from its pixels; cached per picture and spec */
-function p3dMesh(im, spec) {
+function solidPropMesh(im, spec) {
   if (!im || !(im.naturalWidth || im.width)) return null;
   /* v44: not loaded yet: nothing is cached, the picture draws meanwhile */ let per = solidPropState.meshes.get(im);
   if (!per) {
@@ -271,7 +286,7 @@ function p3dMesh(im, spec) {
   if (per.has(spec.key)) return per.get(spec.key);
   let M = null;
   try {
-    M = spec.tree && spec.tree !== 'pine' ? p3dTreeBuild(im, spec.tree) : p3dBuild(im, spec.parts);
+    M = spec.tree && spec.tree !== 'pine' ? buildSolidTree(im, spec.tree) : buildSolidProp(im, spec.parts);
   } catch (e) {
     M = null;
     console.warn('solid prop', e);
@@ -279,7 +294,7 @@ function p3dMesh(im, spec) {
   per.set(spec.key, M);
   return M;
 }
-export function p3dBuild(im, parts) {
+export function buildSolidProp(im, parts) {
   const TOPS = typeof eng !== 'function' || eng('world', 'texDetail') !== 0;
   const w = im.naturalWidth || im.width,
     h = im.naturalHeight || im.height;
@@ -699,9 +714,9 @@ export function p3dBuild(im, parts) {
       }
     }
   }
-  return p3dUpload(V);
+  return uploadSolidPropMesh(V);
 }
-function p3dUpload(V, extra) {
+function uploadSolidPropMesh(V, extra) {
   if (!V.length) return null;
   const gl = EGL.gl,
     vao = gl.createVertexArray();
@@ -730,14 +745,14 @@ function p3dUpload(V, extra) {
    camera sees a full crown. Each clump sways on its own in the wind. Seen from the front the pieces show the picture
    exactly. A copy of the picture carries each pixel's piece in its alpha (128 + piece), so a clump never shows its
    neighbours' pixels. Pines are turned whole: their tiers become a cone. */
-export function p3dTreeKind(k, M) {
+export function solidTreeKind(k, M) {
   const g = M.group || k;
   if (/^tree_pine/.test(g)) return 'pine';
   if (/^(tree|tree_oak|tree_birch|tree_blossom|tree_fruit|tree_maple|tree_street|tree_willow)$/.test(g)) return 'tree';
   if (/^(bush|bush_round|bush_berry|bush_flower|dry_bush)$/.test(g)) return 'bush';
   return null;
 }
-export function p3dTreeBuild(im, kind) {
+export function buildSolidTree(im, kind) {
   const w = im.naturalWidth || im.width,
     h = im.naturalHeight || im.height;
   if (!w || !h) return null;
@@ -1052,19 +1067,19 @@ export function p3dTreeBuild(im, kind) {
         }
     }
   }
-  return p3dUpload(V, { tex: tc, clumps: K });
+  return uploadSolidPropMesh(V, { tex: tc, clumps: K });
 }
-const P3D_GLSL_V = `layout(location=0) in vec3 qPos;layout(location=1) in vec3 qNrm;layout(location=2) in vec2 qUV;layout(location=3) in float qFace;layout(location=4) in float qId;
+const SOLID_PROP_VERTEX_GLSL = `layout(location=0) in vec3 qPos;layout(location=1) in vec3 qNrm;layout(location=2) in vec2 qUV;layout(location=3) in float qFace;layout(location=4) in float qId;
 uniform mat4 uVP;uniform vec3 uBase;uniform vec2 uOff,uTilt;uniform float uS,uFlip,uShear,uT,uWob,uRot;
 vec3 p3dPos(out vec3 nOut){float h=-(uOff.y+qPos.y)*uS;vec2 lp=vec2((uOff.x+qPos.x)*uS*uFlip+uShear*h,qPos.z*uS);
  /* alpha 0.4: a tree's clumps bend with the place's one wind (windBend, as the grass), each with a little sway of its own */
  if(qId>.5&&uWob>0.){float hm=max(.5,-uOff.y*uS),k=clamp(h/hm,0.,1.),ph=uT*.0016+qId*1.9,wb=windBend(uBase.xz,uT,1.)*4.6;lp+=vec2(wb+sin(ph)*.22,cos(ph*.8+qId)*.1+wb*.18)*uWob*k;}
  float cr=cos(uRot),sr=sin(uRot);lp=vec2(lp.x*cr-lp.y*sr,lp.x*sr+lp.y*cr);vec3 n=vec3(qNrm.x*uFlip,-qNrm.y,qNrm.z);nOut=vec3(n.x*cr-n.z*sr,n.y,n.x*sr+n.z*cr);
  vec3 p=uBase+vec3(lp.x,h+dot(lp,uTilt),lp.y);p.y+=curveY(uBase.xz);return p;}`;
-export const P3D_SH = {
+export const SOLID_PROP_SHADERS = {
   p3d: [
     `#version 300 es
-precision highp float;${EGL_GLSL_COMMON}${P3D_GLSL_V}out vec3 vW;out vec3 vN;out vec2 vUV;out float vFace;out float vId;
+precision highp float;${EGL_GLSL_COMMON}${SOLID_PROP_VERTEX_GLSL}out vec3 vW;out vec3 vN;out vec2 vUV;out float vFace;out float vId;
 void main(){vec3 n;vec3 p=p3dPos(n);vW=p;vN=n;vUV=qUV;vFace=qFace;vId=qId;gl_Position=uVP*vec4(p,1.);}`,
     `#version 300 es
 precision highp float;in vec3 vW;in vec3 vN;in vec2 vUV;in float vFace;in float vId;out vec4 o;uniform sampler2D uTex,uNrm;uniform float uFade,uFlip,uEmit,uRim,uClump,uRot;uniform vec4 uMat;uniform vec3 uBaseP,uVar;uniform vec4 uDet;${EGL_GLSL_LIGHT}${EGL_GLSL_LOOK}
@@ -1093,14 +1108,14 @@ void main(){vec4 c=(vFace>.5&&uClump<.5)?texture(uTex,vUV):textureLod(uTex,vUV,0
   ],
   p3dS: [
     `#version 300 es
-precision highp float;${EGL_GLSL_COMMON}${P3D_GLSL_V}out vec2 vUV;out float vId;
+precision highp float;${EGL_GLSL_COMMON}${SOLID_PROP_VERTEX_GLSL}out vec2 vUV;out float vId;
 void main(){vec3 n;vec3 p=p3dPos(n);vUV=qUV;vId=qId;gl_Position=uVP*vec4(p,1.);}`,
     `#version 300 es
 precision highp float;in vec2 vUV;in float vId;uniform sampler2D uTex;uniform float uClump;out vec4 o;void main(){vec4 c=textureLod(uTex,vUV,0.);if(c.a<.5)discard;if(uClump>.5){float id=floor(c.a*255.+.5)-128.;if(vId<-.5){if(id<.5)discard;}else if(abs(id-vId)>.5)discard;}o=vec4(1.);}`,
   ],
 };
-provide({ P3D_SH }); /* to-module */
-function p3dGuard(fn) {
+provide({ SOLID_PROP_SHADERS }); /* to-module */
+function solidPropGuard(fn) {
   if (solidPropState.fail) return;
   try {
     fn();
@@ -1111,9 +1126,9 @@ function p3dGuard(fn) {
   }
 }
 /* which items get a body this frame (filled in by gatherFrameItems) */
-function p3dTag(it, PPU) {
+function tagSolidProp(it, PPU) {
   if (
-    !p3dOn() ||
+    !solidPropsOn() ||
     it.k !== 'prop' ||
     it.far ||
     it.layer ||
@@ -1129,12 +1144,12 @@ function p3dTag(it, PPU) {
     return;
   if (it.M.face === 'billboard') return;
   if (it.mat === 'building' && it.M.box && !it.M.parts) return;
-  const sp = p3dSpec(it.p.k, it.M, PPU);
+  const sp = solidPropSpec(it.p.k, it.M, PPU);
   if (sp) it.vol = sp;
 }
 /* level of detail: solid trees near the camera's focus only (the nearest few dozen within about 20 m), solid props
    within about 32 m; the rest stay pictures, which from that far look the same */
-function p3dLod(items, C) {
+function solidPropLevelOfDetail(items, C) {
   const P = walkView.pl,
     bc =
       walkRenderer.bt &&
@@ -1166,12 +1181,12 @@ function p3dLod(items, C) {
       it.vol = null;
       continue;
     }
-    /* v44: at least one body a frame, however slow the frame */ p3dMesh(it.im, it.vol);
+    /* v44: at least one body a frame, however slow the frame */ solidPropMesh(it.im, it.vol);
     built++;
   }
 }
 /* per prop: where it stands, plus (trees, rocks) a turn of up to 12 degrees, a slight lean and a shade of its own */
-function p3dU(p, it, M) {
+function setSolidPropUniforms(p, it, M) {
   const gl = EGL.gl,
     U = p.U,
     V = it.vol,
@@ -1204,27 +1219,27 @@ function p3dU(p, it, M) {
       V.vary ? 1 + (h2 - 0.5) * 0.12 : 1
     );
 }
-function p3dTex(it, M) {
+function solidPropTexture(it, M) {
   return eglImg(M && M.tex ? M.tex : it.im);
 }
-export function p3dDraw(C, items, X, hits, labels, PPU) {
+export function drawSolidProps(C, items, X, hits, labels, PPU) {
   solidPropState.drawn = 0;
-  if (!p3dOn()) return;
-  p3dGuard(() => {
+  if (!solidPropsOn()) return;
+  solidPropGuard(() => {
     const gl = EGL.gl;
-    eglPrograms(P3D_SH);
+    eglPrograms(SOLID_PROP_SHADERS);
     let p = null;
     const P = walkView.pl,
       me = worldToScreen(C, P.x, 0.9, P.z);
     for (const it of items) {
       if (!it.vol || it.vis === false) continue;
-      const M = p3dMesh(it.im, it.vol);
+      const M = solidPropMesh(it.im, it.vol);
       if (!M) {
         it.vol = null;
         if (it.p) it.p._nosolid = 1;
         /* v44: no solid could be made: the picture draws from the next frame on */ continue;
       }
-      const T = p3dTex(it, M);
+      const T = solidPropTexture(it, M);
       if (!T) continue;
       if (!p) {
         p = useWalkProgram('p3d', C, X);
@@ -1249,7 +1264,13 @@ export function p3dDraw(C, items, X, hits, labels, PPU) {
       const mt = EGL_MATS[it.mat] || EGL_MATS.plain;
       gl.uniform4f(p.U.uMat, mt.spec, mt.shin, mt.transl, mt.wrap);
       if (p.U.uDet)
-        gl.uniform4f(p.U.uDet, P3D_MATID[it.mat] || 0, eng('world', 'texDetail') ?? 1, 1 / Math.max(1e-4, it.mpp), 0);
+        gl.uniform4f(
+          p.U.uDet,
+          SOLID_PROP_MATERIAL_IDS[it.mat] || 0,
+          eng('world', 'texDetail') ?? 1,
+          1 / Math.max(1e-4, it.mpp),
+          0
+        );
       gl.uniform1f(p.U.uFade, fade);
       gl.uniform1f(p.U.uEmit, 0);
       gl.uniform1f(p.U.uRim, 0.1);
@@ -1258,7 +1279,7 @@ export function p3dDraw(C, items, X, hits, labels, PPU) {
       gl.bindTexture(gl.TEXTURE_2D, T.t);
       gl.activeTexture(gl.TEXTURE1);
       gl.bindTexture(gl.TEXTURE_2D, T.n);
-      p3dU(p, it, M);
+      setSolidPropUniforms(p, it, M);
       gl.bindVertexArray(M.vao);
       gl.drawArrays(gl.TRIANGLES, 0, M.n);
       gl.bindVertexArray(null);
@@ -1281,11 +1302,11 @@ export function p3dDraw(C, items, X, hits, labels, PPU) {
     }
   });
 }
-function p3dShadow(SH, items) {
-  if (!p3dOn()) return;
-  p3dGuard(() => {
+function drawSolidPropShadows(SH, items) {
+  if (!solidPropsOn()) return;
+  solidPropGuard(() => {
     const gl = EGL.gl;
-    eglPrograms(P3D_SH);
+    eglPrograms(SOLID_PROP_SHADERS);
     const p = EGL.P.p3dS;
     gl.useProgram(p.p);
     gl.uniformMatrix4fv(p.U.uVP, false, SH.vp);
@@ -1297,12 +1318,12 @@ function p3dShadow(SH, items) {
     gl.disable(gl.CULL_FACE);
     for (const it of items) {
       if (!it.vol) continue;
-      const M = p3dMesh(it.im, it.vol);
+      const M = solidPropMesh(it.im, it.vol);
       if (!M) continue;
-      const T = p3dTex(it, M);
+      const T = solidPropTexture(it, M);
       if (!T) continue;
       gl.bindTexture(gl.TEXTURE_2D, T.t);
-      p3dU(p, it, M);
+      setSolidPropUniforms(p, it, M);
       gl.bindVertexArray(M.vao);
       gl.drawArrays(gl.TRIANGLES, 0, M.n);
     }

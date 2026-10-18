@@ -42,7 +42,7 @@ import { environment } from './environment.js';
 import { WALK_SHADERS, roomDimming, standingHeightAt, walkRenderer } from './walk-view-gl.js';
 import { BLD, BLD_SH } from './buildings.js';
 import { STR, strHas } from './structures.js';
-import { P3D_SH, solidPropState } from './solid-props.js';
+import { SOLID_PROP_SHADERS, solidPropState } from './solid-props.js';
 import { propModelState } from './prop-models.js';
 import { buddyTap, companionSpecies, worldBillies } from './world-billies.js';
 import { seamlessRoomMap, seamlessTripView, seamlessWorld } from './seamless-world.js';
@@ -392,7 +392,7 @@ async function runFullTest(mode) {
           typeof BLD_SH !== 'undefined' ? BLD_SH : {},
           typeof EGL_POST_SH !== 'undefined' ? EGL_POST_SH : {},
           typeof WORLD_MAP_GL_SHADERS !== 'undefined' ? WORLD_MAP_GL_SHADERS : {},
-          typeof P3D_SH !== 'undefined' ? P3D_SH : {}
+          typeof SOLID_PROP_SHADERS !== 'undefined' ? SOLID_PROP_SHADERS : {}
         );
         const bad = [];
         for (const [k, v] of Object.entries(all)) {
@@ -1536,7 +1536,7 @@ const DIAG_PASSES = {
   shadows: ['shadowPass'],
   ground: ['drawGround'],
   grass: ['drawGrass'],
-  props: ['drawSprites', 'p3dDraw', 'drawPropModels', 'bldDraw', 'drawBoxFaces', 'strDraw'],
+  props: ['drawSprites', 'drawSolidProps', 'drawPropModels', 'bldDraw', 'drawBoxFaces', 'strDraw'],
   water: ['reflectionPass', 'drawWater'],
   effects: ['effectsPass'],
   'final pass': ['eglPost'],

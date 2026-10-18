@@ -13,7 +13,7 @@ import { artLoad, cnv, setArtLoad } from '../../game/js/art.js';
 import { artImage, imageReady, layerAsProp, setWalkData, walkData, walkView } from '../../game/js/walk-view.js';
 import { PROP_MATERIALS, mountWalkView, propMaterial, propVariety, walkRenderer } from '../../game/js/walk-view-gl.js';
 import { BLD_ROOM_NAMES, BLD_TEX_NAMES } from '../../game/js/buildings.js';
-import { P3D_AUTO, P3D_KINDS, P3D_PARTS, p3dTreeKind } from '../../game/js/solid-props.js';
+import { SOLID_PROP_BODIES, SOLID_PROP_KINDS, SOLID_PROP_PARTS, solidTreeKind } from '../../game/js/solid-props.js';
 import { esc } from './game-stand-ins.js';
 import {
   ACTS,
@@ -833,10 +833,10 @@ function pedVaryHTML(k) {
 function pedVolHTML(k) {
   const M = scD().props[k],
     b = `scenery.props.${k}`;
-  if (!M || M.build || typeof P3D_KINDS === 'undefined') return '';
-  const auto = P3D_AUTO[k] || P3D_AUTO[M.group || k],
-    names = Object.fromEntries(P3D_KINDS),
-    preset = P3D_PARTS[k];
+  if (!M || M.build || typeof SOLID_PROP_KINDS === 'undefined') return '';
+  const auto = SOLID_PROP_BODIES[k] || SOLID_PROP_BODIES[M.group || k],
+    names = Object.fromEntries(SOLID_PROP_KINDS),
+    preset = SOLID_PROP_PARTS[k];
   const head = `<h4>Solid shape</h4><p class="help">The picture stays the front; the body behind it is made from the picture's own pixels.`;
   if (M.parts) {
     const PK = [
@@ -859,13 +859,13 @@ function pedVolHTML(k) {
     return `${head} This prop is built from parts: rectangles of the picture in pixels (shown on the picture), each with its own shape. "Laid flat" turns a band drawn in three-quarter view (a basin's water, a table top) into a level surface. Pixels outside every part stay a flat picture.</p>${rows}
    <div class="seg-row"><button class="btn sm" data-act="pedPartAdd">+ Part</button><button class="btn sm subtle" data-act="pedPartsOff">${preset ? 'Back to the built-in parts' : 'One shape for the whole picture'}</button></div>`;
   }
-  const tk = typeof p3dTreeKind === 'function' ? p3dTreeKind(k, M) : null;
+  const tk = typeof solidTreeKind === 'function' ? solidTreeKind(k, M) : null;
   return `${head} Automatic here: ${tk === 'pine' ? 'turned whole (a cone of tiers)' : tk ? `a round trunk and a crown of leaf clumps${tk === 'bush' ? ' (no trunk)' : ''}` : preset ? `built-in parts (${preset.length})` : auto ? `${esc(names[auto[0]])}${auto[0] === 'lathe' ? '' : `, ${auto[1]} m deep`}` : 'flat picture'}.</p>
   ${grid(
     fSel(
       'Shape',
       `${b}.vol`,
-      P3D_KINDS.filter(o => o[0]),
+      SOLID_PROP_KINDS.filter(o => o[0]),
       { none: 'Automatic', opt: 1 }
     ),
     fNum('Depth (m)', `${b}.volDepth`, {
@@ -886,7 +886,7 @@ ACTS.pedPartsOn = () => {
   const im = artImage(M.img),
     w = im ? im.naturalWidth || im.width : 40,
     h = im ? im.naturalHeight || im.height : 40;
-  M.parts = clone(P3D_PARTS[SCN.ped] || [{ r: [0, 0, w, h], k: 'block', d: 0.5 }]);
+  M.parts = clone(SOLID_PROP_PARTS[SCN.ped] || [{ r: [0, 0, w, h], k: 'block', d: 0.5 }]);
   changed();
   commit(true);
   render();
@@ -926,8 +926,8 @@ ACTS.pedPartDel = d => {
     _pd();
     const M = pedM(),
       cv = $('#pedCv');
-    if (!M || !cv || typeof P3D_PARTS === 'undefined') return;
-    const P = M.parts || P3D_PARTS[SCN.ped];
+    if (!M || !cv || typeof SOLID_PROP_PARTS === 'undefined') return;
+    const P = M.parts || SOLID_PROP_PARTS[SCN.ped];
     if (!P) return;
     const Bd = pedBounds(M),
       Z = PED.zoom,

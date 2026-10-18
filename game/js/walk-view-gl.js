@@ -15,10 +15,10 @@ import {
   LD,
   LIFE,
   LIFE_KIND,
-  P3D_PARTS,
-  P3D_SH,
   RM,
   S,
+  SOLID_PROP_PARTS,
+  SOLID_PROP_SHADERS,
   SP,
   WORLD_ART,
   bldDraw,
@@ -35,15 +35,13 @@ import {
   companionItems,
   drawPropModelShadows,
   drawPropModels,
+  drawSolidPropShadows,
+  drawSolidProps,
   flushPropModelMeshes,
   frWorldItems,
   lifeSprites,
   lifeStep,
   noWebGL,
-  p3dDraw,
-  p3dLod,
-  p3dShadow,
-  p3dTag,
   propModelImageItems,
   propModelShaders,
   provide,
@@ -54,11 +52,13 @@ import {
   riderOf,
   seamlessLookTick,
   sfxAt,
+  solidPropLevelOfDetail,
   solidPropState,
   stampDraw,
   strDraw,
   strShadow,
   tagPropModel,
+  tagSolidProp,
   warmWorldBillies,
   wildBillyItem,
   worldBillies,
@@ -812,7 +812,7 @@ export function walkGlContext(cv) {
     eglPrograms(EGL_POST_SH);
     for (const d of [
       typeof BLD_SH !== 'undefined' && BLD_SH,
-      typeof P3D_SH !== 'undefined' && P3D_SH,
+      typeof SOLID_PROP_SHADERS !== 'undefined' && SOLID_PROP_SHADERS,
       typeof propModelShaders === 'function' && propModelShaders(),
     ])
       if (d)
@@ -3703,7 +3703,7 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
   drawRoomFront(C, X);
   if (walkRenderer.grass && !D.noGrass) drawGrass(C, X);
   drawSprites(C, items, X, hits, labels, PPU);
-  if (typeof p3dDraw === 'function') p3dDraw(C, items, X, hits, labels, PPU);
+  if (typeof drawSolidProps === 'function') drawSolidProps(C, items, X, hits, labels, PPU);
   if (typeof drawPropModels === 'function') drawPropModels(C, items, X, null, null, PPU);
   drawBoxFaces(C, items, X);
   if (typeof bldDraw === 'function') bldDraw(C, X, items, walkRenderer.bfade);
@@ -4880,10 +4880,10 @@ export function gatherFrameItems(st, C, PPU, C0) {
         sh: L.sh,
         aoR: Math.max(0.12, L.sh * 0.8),
       });
-  if (typeof p3dTag === 'function') {
-    for (const it of out) if (it.fixed !== false) p3dTag(it, PPU);
-    if (typeof p3dLod === 'function')
-      p3dLod(out, C); /* a solid tree has its crown in 3D: its layered crown pictures go */
+  if (typeof tagSolidProp === 'function') {
+    for (const it of out) if (it.fixed !== false) tagSolidProp(it, PPU);
+    if (typeof solidPropLevelOfDetail === 'function')
+      solidPropLevelOfDetail(out, C); /* a solid tree has its crown in 3D: its layered crown pictures go */
     const T = new Set(out.filter(it => it.vol && it.vol.tree).map(it => it.p));
     if (T.size) for (let i = out.length - 1; i >= 0; i--) if (out[i].layer && T.has(out[i].p)) out.splice(i, 1);
   }
@@ -5306,7 +5306,7 @@ export function shadowPass(items0, sun, C) {
   drawShadowSprites(SH, items, sun, ca);
   if (typeof bldShadow === 'function') bldShadow(SH, items);
   if (typeof strShadow === 'function') strShadow(SH);
-  if (typeof p3dShadow === 'function') p3dShadow(SH, items);
+  if (typeof drawSolidPropShadows === 'function') drawSolidPropShadows(SH, items);
   if (typeof drawPropModelShadows === 'function') drawPropModelShadows(SH, items);
   eglShadowEnd();
   SH.far = far;
@@ -5350,7 +5350,7 @@ function lampShadowMaps(items, X, dark) {
     }
     drawShadowSprites(SH, near, null, ca, l.p);
     if (typeof bldShadow === 'function') bldShadow(SH, near);
-    if (typeof p3dShadow === 'function') p3dShadow(SH, near);
+    if (typeof drawSolidPropShadows === 'function') drawSolidPropShadows(SH, near);
     if (typeof drawPropModelShadows === 'function') drawPropModelShadows(SH, near);
     eglShadowEnd();
     X.lampSh.push(SH);
@@ -5570,7 +5570,7 @@ function fittedShadowPass(items0, sun, C) {
     if (typeof bldShadow === 'function') bldShadow(SH, dyn);
     if (typeof drawPropModelShadows === 'function') drawPropModelShadows(SH, dyn);
   }
-  if (typeof p3dShadow === 'function') p3dShadow(SH, items);
+  if (typeof drawSolidPropShadows === 'function') drawSolidPropShadows(SH, items);
   eglShadowEnd();
   return SH;
 }
@@ -7078,13 +7078,13 @@ function drawRoomFront(C, X) {
    basin), a jet from its top and a curtain spilling over each upper bowl into the one below, with splashes and rings */
 function gatherFountainBasins(items) {
   const L = [];
-  if (typeof P3D_PARTS === 'undefined' || (eng('water', 'fountains') ?? true) === false) {
+  if (typeof SOLID_PROP_PARTS === 'undefined' || (eng('water', 'fountains') ?? true) === false) {
     updateBasinMeshes(L);
     return;
   }
   for (const it of items) {
     if (it.k !== 'prop' || !it.vol || it.far || it.layer || !it.p) continue;
-    const parts = (it.M && it.M.parts) || P3D_PARTS[it.p.k];
+    const parts = (it.M && it.M.parts) || SOLID_PROP_PARTS[it.p.k];
     if (!parts) continue;
     const fl = parts.filter(q => q.k === 'flat' && q.r);
     if (!fl.length) continue;
