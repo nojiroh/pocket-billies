@@ -69,6 +69,10 @@ Lint enforces what it can (see the end). Every old -> new name of phase 05 is in
   retired (dio, dgl, egl, mgl, mm, ow, wr, bld, p3d, vox, sc, ...) don't come back.
 - A setter that swaps a module's value is `set` + the name (`setSaveData`, `setNavGrid`); tools/to-module.mjs treats
   every `set[A-Z]` function as one, so other functions don't start with `set` + a capital.
+- `game/js/logic/` holds the logic that runs without a browser (`rules.js`, `saves.js`, `battle-engine.js`): no
+  browser globals, imports only from logic/, `game-data.js`, `util.js`, `hooks.js` and `test-globals.js`, and it
+  reaches the page only through the seams in `hooks.js` (`npm run check:logic` lists them). Code that draws, plays
+  sound or reads the page stays outside it.
 - No version stamps in names (`v46`, `47`, `a04`, `x28`, a `0` or `2` suffix meaning an older or newer copy).
 
 ## Kept on purpose (not internal names, or not now)
