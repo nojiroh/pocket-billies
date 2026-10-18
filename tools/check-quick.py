@@ -710,7 +710,7 @@ def graphics_test_ready(pg):
       finally{[walkView.sc,walkView.nav,walkView.gkey]=keep}
       const keys=new Set(plan.filter(p=>p.kind==='dial').map(p=>p.key));
       graphicsTest.result={stopped:false,seconds:1,fpsCap:60,steps:plan.map((p,i)=>Object.assign({},p,{set:undefined,fps:60,cpuMs:4+i%5,gpuMs:null})),errors:[]};
-      graphicsTest.result.settings=graphicsTestCosts(graphicsTest.result.steps);graphicsTest.result.drift=graphicsTestDrift(graphicsTest.result.steps);
+      graphicsTest.result.settings=graphicsTestCosts(graphicsTest.result.steps);graphicsTest.result.drift=graphicsTestDrift(graphicsTest.result.steps);graphicsTest.result.noise=graphicsTestNoise(graphicsTest.result.steps);
       return{bad,steps:plan.length,settings:keys.size,name:saveData.avatar.name}})()""")
     if r['bad']: raise Exception('graphics test: ' + '; '.join(r['bad'][:6]))
     with pg.expect_download(timeout=30000) as dl:

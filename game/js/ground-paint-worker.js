@@ -67,7 +67,7 @@ expose({
 /* eslint-enable no-func-assign */
 provide({ paintGroundRect, paintGroundTogether, paintWorkerOn, waitForPaintWorker });
 /* to-module: end */
-const paintWorkerState = {
+export const paintWorkerState = {
   w: null,
   bad: false,
   why: '',

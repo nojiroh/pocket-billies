@@ -34,6 +34,7 @@ import {
   drawStructureShadows,
   drawStructures,
   flushPropModelMeshes,
+  flushSolidPropMeshes,
   friendWorldItems,
   frontWindowLight,
   gameData,
@@ -54,7 +55,6 @@ import {
   saveData,
   seamlessLookTick,
   solidPropLevelOfDetail,
-  solidPropState,
   soundEffectAt,
   stampDraw,
   tagPropModel,
@@ -3883,7 +3883,7 @@ export function rebuildFromSettings() {
   walkRenderer.itemGen = (walkRenderer.itemGen || 0) + 1;
   walkView.gkey = '';
   if (typeof GROUND_CACHE !== 'undefined') GROUND_CACHE.clear();
-  if (typeof solidPropState !== 'undefined' && solidPropState.meshes) solidPropState.meshes = new WeakMap();
+  if (typeof flushSolidPropMeshes === 'function') flushSolidPropMeshes();
   if (typeof flushPropModelMeshes === 'function') flushPropModelMeshes();
 }
 export function swapMapCache(oldKey, key) {

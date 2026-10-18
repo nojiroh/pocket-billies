@@ -27,6 +27,7 @@ import { GRAPHICS_DIALS } from './settings-screen.js';
 import { mapById, mapHub, walkView } from './walk-view.js';
 import { environment } from './environment.js';
 import { rebuildFromSettings, walkRenderer } from './walk-view-gl.js';
+import { paintWorkerState } from './ground-paint-worker.js';
 import { closeModal, modal, render, renderOverlay, toast } from './ui.js';
 import {
   diagnosticsTimersOff,
@@ -46,11 +47,14 @@ expose({
   graphicsTestCosts: [() => graphicsTestCosts, v => (graphicsTestCosts = v)],
   graphicsTestDials: [() => graphicsTestDials, v => (graphicsTestDials = v)],
   graphicsTestDrift: [() => graphicsTestDrift, v => (graphicsTestDrift = v)],
+  graphicsTestFrameMs: [() => graphicsTestFrameMs],
   graphicsTestMeasure: [() => graphicsTestMeasure, v => (graphicsTestMeasure = v)],
+  graphicsTestNoise: [() => graphicsTestNoise, v => (graphicsTestNoise = v)],
   graphicsTestOpen: [() => graphicsTestOpen],
   graphicsTestPlan: [() => graphicsTestPlan, v => (graphicsTestPlan = v)],
   graphicsTestPrefs: [() => graphicsTestPrefs, v => (graphicsTestPrefs = v)],
   graphicsTestReport: [() => graphicsTestReport, v => (graphicsTestReport = v)],
+  graphicsTestSettle: [() => graphicsTestSettle, v => (graphicsTestSettle = v)],
   graphicsTestShow: [() => graphicsTestShow, v => (graphicsTestShow = v)],
   graphicsTestStand: [() => graphicsTestStand, v => (graphicsTestStand = v)],
   graphicsTestValue: [() => graphicsTestValue],
@@ -127,9 +131,12 @@ function graphicsTestPlan() {
           set: Object.fromEntries(D.map(d => [d.key, end ? d.values[d.values.length - 1] : d.values[0]])),
           rebuild: true,
         });
-    for (const k of st.dials || []) {
+    const dials = (st.dials || []).filter(k => byKey[k]);
+    for (const [i, k] of dials.entries()) {
       const d = byKey[k];
-      if (!d) continue;
+      /* the untouched look once more halfway through, so first, middle and last show how much the station wanders */
+      if (dials.length > 1 && i === Math.ceil(dials.length / 2))
+        plan.push({ station: st.id, kind: 'base', label: 'as it is, midway' });
       for (const v of d.values)
         plan.push({
           station: st.id,
@@ -274,9 +281,10 @@ async function runGraphicsBench() {
           graphicsTestStand(sc, st);
           const t1 = performance.now();
           await selfTestSleep(1000);
-          if (rb)
-            for (let i = 0; i < 70 && (walkRenderer.prep || !graphicsTestOpen()) && !graphicsTest.stop; i++)
-              await selfTestSleep(100);
+          /* a station's first step and every step that rebuilt wait until the place is ready and frames hold steady:
+             a first look came out slow while the new spot's ground was still painting, and so did the step after a
+             rebuild (the rebuild back) */
+          if (rb || p === mine[0]) await graphicsTestSettle(sc, st, rb ? 12 : 10);
           graphicsTestStand(sc, st);
           const m = await graphicsTestMeasure(3);
           got.push(
@@ -332,11 +340,35 @@ async function runGraphicsBench() {
     steps,
     settings: graphicsTestCosts(steps),
     drift: graphicsTestDrift(steps),
+    noise: graphicsTestNoise(steps),
     errors,
   };
   debugLog.bench.step = null;
   debugLog.add('bench', graphicsTest.stop ? 'graphics test stopped' : 'graphics test done');
   graphicsTestShow();
+}
+/* waits until the place is ready to measure: nothing left to prepare or paint (the ground's helper thread included),
+   then two whole seconds in a row whose frame times agree within 10 %; `sec` seconds at most in all */
+async function graphicsTestSettle(sc, st, sec) {
+  const t0 = performance.now(),
+    left = () => sec * 1000 - (performance.now() - t0),
+    busy = () =>
+      !graphicsTestOpen() ||
+      !!(typeof walkRenderer !== 'undefined' && walkRenderer.prep) ||
+      !!(typeof paintWorkerState !== 'undefined' && paintWorkerState && paintWorkerState.jobs.size);
+  while (busy() && left() > 0 && !graphicsTest.stop) await selfTestSleep(100);
+  graphicsTestStand(sc, st);
+  const a = debugLog.now();
+  while (left() > 0 && !graphicsTest.stop) {
+    await selfTestSleep(250);
+    const S = debugLog.samples
+      .filter(s => s.t - (s.dt || 1000) >= a && s.tasks.dio && s.tasks.dio.fps)
+      .map(s => 1000 / s.tasks.dio.fps);
+    if (S.length < 2 || busy()) continue;
+    const [x, y] = S.slice(-2);
+    if (Math.abs(x - y) <= Math.max(0.5, y * 0.1)) break;
+  }
+  return Math.round(performance.now() - t0);
 }
 /* one measurement with the camera still: fps and the processor's time per frame from the debug log's seconds, the
    graphics chip's time per frame from its own timers round the render passes (where the chip has them) */
@@ -361,29 +393,55 @@ const graphicsTestValue = v =>
     : typeof v === 'number' && v >= 100
       ? String(v)
       : String(+(+v).toFixed(3));
-/* per setting: its steps and what each costs over the lowest one (ms per frame), the costliest first */
+/* a frame's whole time, from the frame rate (ms) */
+const graphicsTestFrameMs = s => (s && s.fps ? Math.round((1000 / s.fps) * 10) / 10 : null);
+/* per station, how far its untouched look wandered (first, midway, last): the largest difference in ms per frame, of
+   the graphics chip's time where it has timers, else of the whole frame. A cost smaller than that is not sure */
+function graphicsTestNoise(steps) {
+  const out = {};
+  for (const st of GRAPHICS_TEST_STATIONS) {
+    const B = steps.filter(s => s.station === st.id && s.kind === 'base');
+    const ms = B.map(s => (s.gpuMs != null ? s.gpuMs : graphicsTestFrameMs(s))).filter(v => v != null);
+    if (ms.length >= 2) out[st.id] = Math.round((Math.max(...ms) - Math.min(...ms)) * 10) / 10;
+  }
+  return out;
+}
+/* per setting: its steps and what each costs over the lowest one (ms per frame), the costliest first. The cost is the
+   graphics chip's time where it has timers, else the whole frame's time from the frame rate (the processor's time
+   alone misses a device that waits on its graphics chip); `unclear` when it is within the station's noise */
 function graphicsTestCosts(steps) {
-  const by = {};
+  const by = {},
+    noise = graphicsTestNoise(steps);
   for (const s of steps) if (s.kind === 'dial') (by[s.key] = by[s.key] || []).push(s);
   const d1 = x => (x == null ? null : Math.round(x * 100) / 100);
   return Object.entries(by)
     .map(([key, L]) => {
-      const b = L[0];
-      const pts = L.map(s => ({
-        value: s.value,
-        fps: s.fps,
-        cpuMs: s.cpuMs,
-        gpuMs: s.gpuMs,
-        cpuCost: s.cpuMs != null && b.cpuMs != null ? d1(s.cpuMs - b.cpuMs) : null,
-        gpuCost: s.gpuMs != null && b.gpuMs != null ? d1(s.gpuMs - b.gpuMs) : null,
-        notMeasured: s.notMeasured,
-      }));
-      const top = pts[pts.length - 1];
+      const b = L[0],
+        bf = graphicsTestFrameMs(b);
+      const pts = L.map(s => {
+        const f = graphicsTestFrameMs(s);
+        return {
+          value: s.value,
+          fps: s.fps,
+          frameMs: f,
+          cpuMs: s.cpuMs,
+          gpuMs: s.gpuMs,
+          frameCost: f != null && bf != null ? d1(f - bf) : null,
+          cpuCost: s.cpuMs != null && b.cpuMs != null ? d1(s.cpuMs - b.cpuMs) : null,
+          gpuCost: s.gpuMs != null && b.gpuMs != null ? d1(s.gpuMs - b.gpuMs) : null,
+          notMeasured: s.notMeasured,
+        };
+      });
+      const top = pts[pts.length - 1],
+        n = noise[L[0].station] ?? null,
+        cost = d1(Math.max(top.gpuCost ?? top.frameCost ?? top.cpuCost ?? 0, 0));
       return {
         key,
         label: L[0].label,
         station: L[0].station,
-        cost: Math.max(top.gpuCost ?? -Infinity, top.cpuCost ?? -Infinity, 0),
+        cost,
+        noise: n,
+        unclear: n != null && cost <= n,
         fpsDrop: b.fps != null && top.fps != null ? d1(b.fps - top.fps) : null,
         steps: pts,
       };
@@ -408,26 +466,26 @@ function graphicsTestShow() {
   const R = graphicsTest.result;
   if (!R) return;
   const chip = R.steps.some(s => s.gpuMs != null),
-    unit = chip ? 'graphics chip' : 'processor',
+    unit = chip ? "graphics chip's time" : 'whole frame (from the frame rate: this device has no graphics-chip timers)',
     f = v => (v == null ? '–' : v),
     sgn = v => (v == null ? '–' : (v > 0 ? '+' : '') + v),
-    cost = p => (chip ? p.gpuCost : p.cpuCost);
+    cost = p => (chip ? p.gpuCost : p.frameCost);
   const rows = R.settings
     .map(
       s =>
-        `<tr><td>${escapeHtml(s.label)}<small>${s.steps.map(p => `${escapeHtml(graphicsTestValue(p.value))}: ${sgn(cost(p))}`).join(' · ')}</small></td><td class="tnum">${sgn(cost(s.steps[s.steps.length - 1]))}</td><td class="tnum">${f(s.steps[0].fps)} → ${f(s.steps[s.steps.length - 1].fps)}</td></tr>`
+        `<tr><td>${escapeHtml(s.label)}${s.unclear ? ' <em>(within noise)</em>' : ''}<small>${s.steps.map(p => `${escapeHtml(graphicsTestValue(p.value))}: ${sgn(cost(p))}`).join(' · ')}</small></td><td class="tnum">${sgn(cost(s.steps[s.steps.length - 1]))}</td><td class="tnum">${f(s.steps[0].fps)} → ${f(s.steps[s.steps.length - 1].fps)}</td></tr>`
     )
     .join('');
   const all = R.steps.filter(s => s.kind === 'all'),
     allLine = all.length
-      ? `<p class="note">Everything at once: ${all.map(s => `${escapeHtml(s.label)} ${f(s.fps)} fps (${f(chip ? s.gpuMs : s.cpuMs)} ms)`).join(', ')}.</p>`
+      ? `<p class="note">Everything at once: ${all.map(s => `${escapeHtml(s.label)} ${f(s.fps)} fps (${f(chip ? s.gpuMs : graphicsTestFrameMs(s))} ms)`).join(', ')}.</p>`
       : '',
     drift = Object.entries(R.drift)
       .filter(([, d]) => d.drifting)
       .map(([k]) => (GRAPHICS_TEST_STATIONS.find(s => s.id === k) || {}).name || k);
   modal({
     title: R.stopped ? 'Graphics test stopped' : 'What each setting costs',
-    html: `<p class="note">The extra time each setting adds to a frame on this device, in ms of the ${unit}'s time, over the setting at its lowest (a frame has ${R.fpsCap ? Math.round(1000 / R.fpsCap) : 16} ms at your ${f(R.fpsCap)} fps cap). Costliest first.${chip ? '' : ' This device has no graphics-chip timers, so the frame rate tells you more.'}</p>
+    html: `<p class="note">The extra time each setting adds to a frame on this device, in ms of the ${unit}, over the setting at its lowest (a frame has ${R.fpsCap ? Math.round(1000 / R.fpsCap) : 16} ms at your ${f(R.fpsCap)} fps cap, so nothing shows below it). Costliest first; a cost no bigger than its place's own wandering is marked “within noise”.</p>
   <table class="nb-table"><thead><tr><th>Setting</th><th>At highest</th><th>fps</th></tr></thead><tbody>${rows || '<tr><td colspan="3">Nothing was measured.</td></tr>'}</tbody></table>${allLine}
   ${drift.length ? `<p class="note">These places measured differently at the end than at the start, so their numbers are less sure (the device may have warmed up): ${drift.map(escapeHtml).join(', ')}.</p>` : ''}
   ${R.errors.length ? `<h3>Errors</h3><ul class="nb-errs">${R.errors.map(e => `<li>${escapeHtml(e)}</li>`).join('')}</ul>` : ''}<p class="note">Your settings and your save weren't changed.</p>`,
@@ -451,7 +509,7 @@ function graphicsTestReport() {
   return {
     game: 'Pocket Billies',
     kind: 'graphics',
-    format: 1,
+    format: 2,
     build: typeof BUILD_VERSION !== 'undefined' ? BUILD_VERSION : null,
     created: new Date().toISOString(),
     seconds: R.seconds,
@@ -463,6 +521,7 @@ function graphicsTestReport() {
     settings: R.settings,
     everything: R.steps.filter(s => s.kind === 'all'),
     drift: R.drift,
+    noise: R.noise,
     steps: R.steps,
     errors: R.errors,
   };
