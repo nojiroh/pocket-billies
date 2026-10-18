@@ -16,38 +16,38 @@ expose({
   DEGREES_TO_RADIANS: [() => DEGREES_TO_RADIANS],
   MPW: [() => MPW],
   WORLD_PATH: [() => WORLD_PATH],
+  bindPainter: [() => bindPainter, v => (bindPainter = v)],
   carryPatch: [() => carryPatch, v => (carryPatch = v)],
+  centerPainter: [() => centerPainter, v => (centerPainter = v)],
+  choosePainterColor: [() => choosePainterColor, v => (choosePainterColor = v)],
+  commitPainterPixels: [() => commitPainterPixels, v => (commitPainterPixels = v)],
   directionToTexel: [() => directionToTexel, v => (directionToTexel = v)],
+  drawPainterCanvas: [() => drawPainterCanvas, v => (drawPainterCanvas = v)],
+  drawPainterGlobe: [() => drawPainterGlobe, v => (drawPainterGlobe = v)],
+  drawPainterMarkers: [() => drawPainterMarkers, v => (drawPainterMarkers = v)],
   eraseTrailAll: [() => eraseTrailAll, v => (eraseTrailAll = v)],
   hexToPixel32: [() => hexToPixel32],
   inpaint: [() => inpaint, v => (inpaint = v)],
   lonLatToDirection: [() => lonLatToDirection],
-  mpBind: [() => mpBind, v => (mpBind = v)],
-  mpCenter: [() => mpCenter, v => (mpCenter = v)],
-  mpCommitPixels: [() => mpCommitPixels, v => (mpCommitPixels = v)],
-  mpData: [() => mpData, v => (mpData = v)],
-  mpDisp: [() => mpDisp],
-  mpDraw: [() => mpDraw, v => (mpDraw = v)],
-  mpFill: [() => mpFill, v => (mpFill = v)],
-  mpGlobe: [() => mpGlobe, v => (mpGlobe = v)],
-  mpHint: [() => mpHint, v => (mpHint = v)],
-  mpMarkers: [() => mpMarkers, v => (mpMarkers = v)],
-  mpMount: [() => mpMount, v => (mpMount = v)],
-  mpPalette: [() => mpPalette, v => (mpPalette = v)],
-  mpPush: [() => mpPush, v => (mpPush = v)],
-  mpRedo: [() => mpRedo, v => (mpRedo = v)],
-  mpScrollTo: [() => mpScrollTo, v => (mpScrollTo = v)],
-  mpSetColor: [() => mpSetColor, v => (mpSetColor = v)],
-  mpStamp: [() => mpStamp, v => (mpStamp = v)],
-  mpUndo: [() => mpUndo, v => (mpUndo = v)],
-  mpView: [() => mpView, v => (mpView = v)],
+  mountPainter: [() => mountPainter, v => (mountPainter = v)],
   paintTrail: [() => paintTrail, v => (paintTrail = v)],
+  painterDisplayX: [() => painterDisplayX],
+  painterFill: [() => painterFill, v => (painterFill = v)],
+  painterHint: [() => painterHint, v => (painterHint = v)],
+  painterPalette: [() => painterPalette, v => (painterPalette = v)],
+  painterPixels: [() => painterPixels, v => (painterPixels = v)],
+  painterStamp: [() => painterStamp, v => (painterStamp = v)],
   pixel32ToHex: [() => pixel32ToHex],
   plotDisc: [() => plotDisc, v => (plotDisc = v)],
+  pushPainterUndo: [() => pushPainterUndo, v => (pushPainterUndo = v)],
+  redoPainter: [() => redoPainter, v => (redoPainter = v)],
+  refreshPainterView: [() => refreshPainterView, v => (refreshPainterView = v)],
+  scrollPainterToSelection: [() => scrollPainterToSelection, v => (scrollPainterToSelection = v)],
   slerpVectors: [() => slerpVectors, v => (slerpVectors = v)],
   texelToDirection: [() => texelToDirection, v => (texelToDirection = v)],
   trailColors: [() => trailColors, v => (trailColors = v)],
   trailSegments: [() => trailSegments, v => (trailSegments = v)],
+  undoPainter: [() => undoPainter, v => (undoPainter = v)],
   vectorMath: [() => vectorMath],
   worldMapPainter: [() => worldMapPainter],
   worldPaint: [() => worldPaint, v => ((worldPaint = v), provide({ worldPaint }))],
@@ -143,7 +143,7 @@ const pixel32ToHex = c =>
     .toUpperCase();
 /* ---------- section ---------- */
 function worldPaint() {
-  after(mpMount);
+  after(mountPainter);
   const s = worldMapPainter.style;
   return `<div class="mp">${card(
     'Map art',
@@ -167,7 +167,7 @@ function worldPaint() {
   <span class="px-tools"><button class="seg" data-mp="zoom" data-z="-1">−</button><span id="mpZoom">${worldMapPainter.zoom}×</span><button class="seg" data-mp="zoom" data-z="1">+</button><button class="seg" data-mp="undo" title="Undo (Ctrl+Z)">↶</button><button class="seg" data-mp="redo" title="Redo (Ctrl+Y)">↷</button></span></div>
   <div class="mp-stage" id="mpStage"><div class="mp-wrap" id="mpWrap"><canvas id="mpCv"></canvas><svg id="mpSvg"></svg></div></div>
   <div class="mp-pal" id="mpPal"></div>
-  <p class="help" id="mpHint">${mpHint()}</p>`,
+  <p class="help" id="mpHint">${painterHint()}</p>`,
     {
       sub: 'Drag stops to move them. With “carry the painted patch” on, the area painted around a stop moves with it and the old spot is filled with the surrounding terrain.',
     }
@@ -191,7 +191,7 @@ function worldPaint() {
  )}
  ${card('On the sphere', `<div class="mp-globe"><canvas id="mpGlobe" width="240" height="300"></canvas><div><p class="help">How the selected stop looks from the game’s map camera. Click a stop on the flat map to look at it.</p><label class="fld range"><span>Height <output id="mpAltO"></output></span><input type="range" id="mpAlt" min=".08" max=".6" step=".01" value=".34"></label></div></div>`)}</div>`;
 }
-function mpHint() {
+function painterHint() {
   return {
     brush: 'Paint with the color. Alt-click to pick a color.',
     pick: 'Click to take a color from the map.',
@@ -202,7 +202,7 @@ function mpHint() {
     trail: 'Draw a trail by hand in the trail style.',
   }[worldMapPainter.tool];
 }
-async function mpMount() {
+async function mountPainter() {
   const stage = $('#mpStage');
   if (!stage) return;
   let c;
@@ -216,15 +216,15 @@ async function mpMount() {
     worldMapPainter.zoom = Math.max(1, Math.floor(((stage.clientWidth - 20) / c.width) * 2) / 2);
     worldMapPainter.zoom0 = 1;
   }
-  if (worldMapPainter.off == null) mpCenter(c);
-  mpView();
-  mpPalette();
-  mpBind();
-  mpGlobe();
-  mpScrollTo();
+  if (worldMapPainter.off == null) centerPainter(c);
+  refreshPainterView();
+  painterPalette();
+  bindPainter();
+  drawPainterGlobe();
+  scrollPainterToSelection();
 }
 /* the texture wraps around; turn it so the route sits in the middle instead of across the left/right seam */
-function mpCenter(c) {
+function centerPainter(c) {
   const D = studioState.D;
   let sx = 0,
     sy = 0;
@@ -236,11 +236,11 @@ function mpCenter(c) {
   const lon = Math.atan2(sy, sx) / DEGREES_TO_RADIANS;
   worldMapPainter.off = wrapTexelX(Math.round(((lon / 360 + 1) % 1) * c.width - c.width / 2), c.width);
 }
-const mpDisp = u => {
+const painterDisplayX = u => {
   const c = atlasNow(WORLD_PATH);
   return wrapTexelX(u - (worldMapPainter.off || 0), c ? c.width : 1536);
 };
-function mpScrollTo() {
+function scrollPainterToSelection() {
   const st = $('#mpStage'),
     c = atlasNow(WORLD_PATH);
   if (!st || !c) return;
@@ -251,10 +251,10 @@ function mpScrollTo() {
         : studioState.D.route[typeof sel === 'number' ? sel : 0];
   if (!o) return;
   const [u, v] = directionToTexel(lonLatToDirection(o.lon || 0, o.lat || 0), c.width, c.height);
-  st.scrollLeft = mpDisp(u) * worldMapPainter.zoom - st.clientWidth / 2;
+  st.scrollLeft = painterDisplayX(u) * worldMapPainter.zoom - st.clientWidth / 2;
   st.scrollTop = v * worldMapPainter.zoom - st.clientHeight / 2;
 }
-function mpDraw(c) {
+function drawPainterCanvas(c) {
   const v = $('#mpCv');
   if (!v) return;
   const x = v.getContext('2d'),
@@ -262,7 +262,7 @@ function mpDraw(c) {
   x.drawImage(c, -o, 0);
   if (o) x.drawImage(c, c.width - o, 0);
 }
-function mpView() {
+function refreshPainterView() {
   const c = atlasNow(WORLD_PATH),
     v = $('#mpCv');
   if (!c || !v) return;
@@ -270,13 +270,13 @@ function mpView() {
     v.width = c.width;
     v.height = c.height;
   }
-  mpDraw(c);
+  drawPainterCanvas(c);
   $('#mpWrap').style.width = c.width * worldMapPainter.zoom + 'px';
   $('#mpWrap').style.height = c.height * worldMapPainter.zoom + 'px';
   $('#mpZoom').textContent = worldMapPainter.zoom + '×';
-  mpMarkers();
+  drawPainterMarkers();
 }
-function mpMarkers() {
+function drawPainterMarkers() {
   const svg = $('#mpSvg'),
     c = atlasNow(WORLD_PATH);
   if (!svg || !c) return;
@@ -289,7 +289,7 @@ function mpMarkers() {
       prev = null;
     s.pts.forEach(p => {
       let [u, v] = directionToTexel(p, W, H);
-      u = mpDisp(u);
+      u = painterDisplayX(u);
       d += (prev != null && Math.abs(u - prev) < W / 2 ? 'L' : 'M') + u.toFixed(1) + ' ' + v.toFixed(1);
       prev = u;
     });
@@ -297,7 +297,7 @@ function mpMarkers() {
   });
   const mk = (lon, lat, id, label, full, cls) => {
     let [u, v] = directionToTexel(lonLatToDirection(lon, lat), W, H);
-    u = mpDisp(u);
+    u = painterDisplayX(u);
     const z = worldMapPainter.zoom;
     return `<g class="mk ${cls}" data-mk="${id}" transform="translate(${u.toFixed(1)},${v.toFixed(1)})"><title>${esc(full)}</title><circle r="${(6 / z).toFixed(2)}" style="stroke-width:${(2 / z).toFixed(2)}"/><text y="${(-10 / z).toFixed(2)}" style="font-size:${(12 / z).toFixed(2)}px;stroke-width:${(3 / z).toFixed(2)}">${esc(label)}</text></g>`;
   };
@@ -317,11 +317,11 @@ function mpMarkers() {
     );
   });
   if (worldMapPainter.src)
-    h += `<circle class="mp-src" cx="${mpDisp(worldMapPainter.src[0])}" cy="${worldMapPainter.src[1]}" r="${worldMapPainter.size}"/>`;
+    h += `<circle class="mp-src" cx="${painterDisplayX(worldMapPainter.src[0])}" cy="${worldMapPainter.src[1]}" r="${worldMapPainter.size}"/>`;
   h += `<circle id="mpCursor" class="mp-cur" r="${worldMapPainter.size / 2}" cx="-99" cy="-99"/>`;
   svg.innerHTML = h;
 }
-function mpPalette() {
+function painterPalette() {
   const c = atlasNow(WORLD_PATH);
   if (!c) return;
   const d = new Uint32Array(c.getContext('2d').getImageData(0, 0, c.width, c.height).data.buffer),
@@ -337,42 +337,42 @@ function mpPalette() {
     .join('');
 }
 /* ---------- pixels ---------- */
-function mpData() {
+function painterPixels() {
   const c = atlasNow(WORLD_PATH),
     x = c.getContext('2d'),
     img = x.getImageData(0, 0, c.width, c.height);
   return { c, x, img, d: new Uint32Array(img.data.buffer), W: c.width, H: c.height };
 }
-function mpCommitPixels(P) {
+function commitPainterPixels(P) {
   P.x.putImageData(P.img, 0, 0);
   markArt(WORLD_PATH, P.c);
-  mpView();
+  refreshPainterView();
 }
-function mpPush() {
+function pushPainterUndo() {
   const c = atlasNow(WORLD_PATH);
   worldMapPainter.undo.push(c.getContext('2d').getImageData(0, 0, c.width, c.height));
   if (worldMapPainter.undo.length > 12) worldMapPainter.undo.shift();
   worldMapPainter.redo = [];
 }
-function mpUndo() {
+function undoPainter() {
   const c = atlasNow(WORLD_PATH);
   if (!worldMapPainter.undo.length) return toast('Nothing to undo on the map.');
   const x = c.getContext('2d');
   worldMapPainter.redo.push(x.getImageData(0, 0, c.width, c.height));
   x.putImageData(worldMapPainter.undo.pop(), 0, 0);
   markArt(WORLD_PATH, c);
-  mpView();
-  mpGlobe();
+  refreshPainterView();
+  drawPainterGlobe();
 }
-function mpRedo() {
+function redoPainter() {
   const c = atlasNow(WORLD_PATH);
   if (!worldMapPainter.redo.length) return;
   const x = c.getContext('2d');
   worldMapPainter.undo.push(x.getImageData(0, 0, c.width, c.height));
   x.putImageData(worldMapPainter.redo.pop(), 0, 0);
   markArt(WORLD_PATH, c);
-  mpView();
-  mpGlobe();
+  refreshPainterView();
+  drawPainterGlobe();
 }
 const wrapTexelX = (u, W) => ((u % W) + W) % W;
 /* fill masked pixels from their unmasked neighbors, wave by wave (the most common neighbor color wins) */
@@ -459,7 +459,7 @@ function plotDisc(P, v, rad, col) {
     }
 }
 function paintTrail() {
-  const P = mpData(),
+  const P = painterPixels(),
     s = worldMapPainter.style;
   let n = 0;
   trailSegments().forEach(sg => {
@@ -477,10 +477,10 @@ function paintTrail() {
         }
       }
   });
-  mpCommitPixels(P);
+  commitPainterPixels(P);
 }
 function eraseTrailAll() {
-  const P = mpData(),
+  const P = painterPixels(),
     T = trailColors(),
     mask = new Uint8Array(P.W * P.H);
   let n = 0;
@@ -490,12 +490,12 @@ function eraseTrailAll() {
       n++;
     }
   inpaint(P.d, P.W, P.H, mask);
-  mpCommitPixels(P);
+  commitPainterPixels(P);
   return n;
 }
 /* move a stop's painted patch: keep only colors that stand out from the ring around it, rotate them to the new spot */
 function carryPatch(lon0, lat0, lon1, lat1) {
-  const P = mpData(),
+  const P = painterPixels(),
     { W, H, d } = P,
     R = worldMapPainter.radius * DEGREES_TO_RADIANS,
     c0 = lonLatToDirection(lon0, lat0),
@@ -571,11 +571,11 @@ function carryPatch(lon0, lat0, lon1, lat1) {
         n++;
       }
     }
-  mpCommitPixels(P);
+  commitPainterPixels(P);
   return n;
 }
 /* ---------- brush strokes ---------- */
-function mpStamp(P, cx, cy, stroke) {
+function painterStamp(P, cx, cy, stroke) {
   const r = worldMapPainter.size / 2,
     T = worldMapPainter.tool,
     col = hexToPixel32(worldMapPainter.color),
@@ -600,7 +600,7 @@ function mpStamp(P, cx, cy, stroke) {
     }
   if (mask && any) inpaint(P.d, P.W, P.H, mask);
 }
-function mpFill(P, x, y) {
+function painterFill(P, x, y) {
   x = wrapTexelX(x, P.W);
   const t = P.d[y * P.W + x],
     c = hexToPixel32(worldMapPainter.color);
@@ -618,7 +618,7 @@ function mpFill(P, x, y) {
     st.push([X + 1, py], [X - 1, py], [X, py + 1], [X, py - 1]);
   }
 }
-function mpBind() {
+function bindPainter() {
   const w = $('#mpWrap');
   if (!w || w._b) return;
   w._b = 1;
@@ -639,30 +639,30 @@ function mpBind() {
       studioState.sel.stop = id.startsWith('r') ? id : +id;
       stroke = { mk: o, lon0: o.lon || 0, lat0: o.lat || 0 };
       w.setPointerCapture(ev.pointerId);
-      mpMarkers();
-      mpGlobe();
+      drawPainterMarkers();
+      drawPainterGlobe();
       return;
     }
     if (worldMapPainter.tool === 'pick' || (ev.altKey && worldMapPainter.tool !== 'clone')) {
-      const P = mpData(),
+      const P = painterPixels(),
         c = P.d[clamp(Math.floor(y), 0, P.H - 1) * P.W + wrapTexelX(Math.floor(x), P.W)];
-      mpSetColor(pixel32ToHex(c));
+      choosePainterColor(pixel32ToHex(c));
       return;
     }
     if (worldMapPainter.tool === 'clone' && (ev.altKey || ev.button === 2)) {
       worldMapPainter.src = [x, y];
-      mpMarkers();
+      drawPainterMarkers();
       toast('Copying from here.');
       return;
     }
     if (worldMapPainter.tool === 'clone' && !worldMapPainter.src)
       return toast('Alt-click (or right-click) where to copy from first.');
-    mpPush();
-    const P = mpData();
+    pushPainterUndo();
+    const P = painterPixels();
     if (worldMapPainter.tool === 'fill') {
-      mpFill(P, Math.floor(x), Math.floor(y));
-      mpCommitPixels(P);
-      mpGlobe();
+      painterFill(P, Math.floor(x), Math.floor(y));
+      commitPainterPixels(P);
+      drawPainterGlobe();
       return;
     }
     stroke = {
@@ -672,9 +672,9 @@ function mpBind() {
       snap: worldMapPainter.tool === 'clone' ? P.d.slice() : null,
     };
     w.setPointerCapture(ev.pointerId);
-    mpStamp(P, x, y, stroke);
+    painterStamp(P, x, y, stroke);
     P.x.putImageData(P.img, 0, 0);
-    mpDraw(P.c);
+    drawPainterCanvas(P.c);
   });
   w.addEventListener('pointermove', ev => {
     const [x, y, xd] = pos(ev),
@@ -691,16 +691,16 @@ function mpBind() {
         lat = Math.round(90 - (y / c.height) * 180);
       stroke.mk.lon = lon;
       stroke.mk.lat = clamp(lat, -80, 80);
-      mpMarkers();
+      drawPainterMarkers();
       return;
     }
     const [lx, ly] = stroke.last,
       dist = Math.hypot(x - lx, y - ly),
       n = Math.max(1, Math.ceil(dist / Math.max(1, worldMapPainter.size / 3)));
-    for (let i = 1; i <= n; i++) mpStamp(stroke.P, lx + ((x - lx) * i) / n, ly + ((y - ly) * i) / n, stroke);
+    for (let i = 1; i <= n; i++) painterStamp(stroke.P, lx + ((x - lx) * i) / n, ly + ((y - ly) * i) / n, stroke);
     stroke.last = [x, y];
     stroke.P.x.putImageData(stroke.P.img, 0, 0);
-    mpDraw(stroke.P.c);
+    drawPainterCanvas(stroke.P.c);
   });
   const up = () => {
     const s = stroke;
@@ -709,19 +709,19 @@ function mpBind() {
     if (s.mk) {
       if (s.mk.lon !== s.lon0 || s.mk.lat !== s.lat0) {
         if (worldMapPainter.carry) {
-          mpPush();
+          pushPainterUndo();
           const n = carryPatch(s.lon0, s.lat0, s.mk.lon, s.mk.lat);
           if (n) toast('Moved the stop and its painted patch.');
         }
         changed();
         commit(true);
       }
-      mpMarkers();
-      mpGlobe();
+      drawPainterMarkers();
+      drawPainterGlobe();
       return;
     }
-    mpCommitPixels(s.P);
-    mpGlobe();
+    commitPainterPixels(s.P);
+    drawPainterGlobe();
   };
   w.addEventListener('pointerup', up);
   w.addEventListener('pointercancel', up);
@@ -731,7 +731,7 @@ function mpBind() {
       if (!ev.ctrlKey && !ev.metaKey) return;
       ev.preventDefault();
       worldMapPainter.zoom = clamp(worldMapPainter.zoom + (ev.deltaY < 0 ? 0.5 : -0.5), 0.5, 8);
-      mpView();
+      refreshPainterView();
     },
     { passive: false }
   );
@@ -739,13 +739,13 @@ function mpBind() {
     worldMapPainter.size = +e.target.value;
     $('#mpSizeO').textContent = worldMapPainter.size;
   });
-  $('#mpColor').addEventListener('input', e => mpSetColor(e.target.value));
+  $('#mpColor').addEventListener('input', e => choosePainterColor(e.target.value));
   $('#mpCarry').addEventListener('change', e => (worldMapPainter.carry = e.target.checked));
   $('#mpRad').addEventListener('input', e => {
     worldMapPainter.radius = +e.target.value;
     $('#mpRadO').textContent = worldMapPainter.radius + '°';
   });
-  $('#mpAlt').addEventListener('input', () => mpGlobe());
+  $('#mpAlt').addEventListener('input', () => drawPainterGlobe());
   $$('[data-mps]').forEach(el =>
     el.addEventListener('input', () => {
       const k = el.dataset.mps;
@@ -753,7 +753,7 @@ function mpBind() {
     })
   );
 }
-function mpSetColor(h) {
+function choosePainterColor(h) {
   worldMapPainter.color = h.toUpperCase();
   const c = $('#mpColor');
   if (c) c.value = worldMapPainter.color;
@@ -769,23 +769,23 @@ document.addEventListener('click', async ev => {
   if (a === 'tool') {
     worldMapPainter.tool = el.dataset.t;
     $$('[data-mp=tool]').forEach(b => b.classList.toggle('on', b.dataset.t === worldMapPainter.tool));
-    $('#mpHint').textContent = mpHint();
+    $('#mpHint').textContent = painterHint();
   } else if (a === 'zoom') {
     worldMapPainter.zoom = clamp(worldMapPainter.zoom + +el.dataset.z, 0.5, 8);
-    mpView();
-  } else if (a === 'undo') mpUndo();
-  else if (a === 'redo') mpRedo();
-  else if (a === 'sw') mpSetColor(el.dataset.c);
+    refreshPainterView();
+  } else if (a === 'undo') undoPainter();
+  else if (a === 'redo') redoPainter();
+  else if (a === 'sw') choosePainterColor(el.dataset.c);
   else if (a === 'paintTrail') {
-    mpPush();
+    pushPainterUndo();
     paintTrail();
-    mpGlobe();
+    drawPainterGlobe();
     toast('Trail painted along the stops. Save to game to keep it.');
   } else if (a === 'eraseTrail') {
     if (!(await ask('Replace every trail-colored pixel with the terrain around it?', 'Remove the trail'))) return;
-    mpPush();
+    pushPainterUndo();
     const n = eraseTrailAll();
-    mpGlobe();
+    drawPainterGlobe();
     toast(n ? `Removed ${formatThousands(n)} trail pixels.` : 'No trail-colored pixels found.');
   } else if (a === 'addTrailCol') {
     if (!worldMapPainter.trailCols.includes(worldMapPainter.color))
@@ -806,13 +806,13 @@ document.addEventListener(
     if (mod && k === 'z') {
       ev.preventDefault();
       ev.stopImmediatePropagation();
-      ev.shiftKey ? mpRedo() : mpUndo();
+      ev.shiftKey ? redoPainter() : undoPainter();
       return;
     }
     if (mod && k === 'y') {
       ev.preventDefault();
       ev.stopImmediatePropagation();
-      mpRedo();
+      redoPainter();
       return;
     }
     if (mod) return;
@@ -820,13 +820,13 @@ document.addEventListener(
     if (T[k]) {
       worldMapPainter.tool = T[k];
       $$('[data-mp=tool]').forEach(b => b.classList.toggle('on', b.dataset.t === worldMapPainter.tool));
-      $('#mpHint').textContent = mpHint();
+      $('#mpHint').textContent = painterHint();
     }
   },
   true
 );
 /* ---------- in-sphere preview (the game's map camera, without clouds) ---------- */
-function mpGlobe() {
+function drawPainterGlobe() {
   const cv = $('#mpGlobe'),
     tex = atlasNow(WORLD_PATH);
   if (!cv || !tex) return;
