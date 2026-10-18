@@ -1,0 +1,35 @@
+{
+ "id": "zuck",
+ "names": ["Facelet","Feedopus","Metapus"],
+ "types": [["Electric"],["Electric","Water"],["Electric","Water"]],
+ "prof": [1,0.95,1,1.2,1,1.05],
+ "rar": "uncommon",
+ "learn": [
+  [1,"handshake"],
+  [1,"movefast"],
+  [5,"disrupt"],
+  [9,"tos"],
+  [13,"shuffleplay"],
+  [18,"smartcontract"],
+  [24,"stakeineverything"],
+  [30,"autoplay"],
+  [36,"overload"],
+  [42,"cyclone"]
+ ],
+ "cat": ["Profile Billie","Feed Billie","Meta Billie"],
+ "ht": [0.3,0.9,1.6],
+ "wt": [4,30,110],
+ "hab": ["College dorm aquariums","Server rooms","A virtual reef nobody visits"],
+ "diet": ["Friend requests","Everyone's data","Whole other octopuses"],
+ "bio": [
+  "A pale octopus hatchling with short curly fur on its head and wide eyes that never blink. It pokes everything once, just to see what happens.",
+  "Each tentacle scrolls a different feed. It knows what you will look at before you do, and it gets there first.",
+  "It has built a whole reef of its own where everyone is legless and waves a lot. It is very proud of it. Its brow has grown into a ridge like a visor."
+ ],
+ "note": ["Moves fast. Breaks things.","Remembers your birthday; it was told.","Tries every hobby once, competitively."],
+ "evo": [
+  {"k":"lvl","at":16},
+  {"k":"lvl","at":36}
+ ],
+ "parody": "Mark Zuckerberg"
+}

@@ -42,6 +42,7 @@ expose({
   SEATS: [() => SEATS],
   SHOPS: [() => SHOPS],
   SPECIES: [() => SPECIES],
+  STAND_IN_LINES: [() => STAND_IN_LINES],
   START_NODE: [() => START_NODE],
   STATUS_NAMES: [() => STATUS_NAMES],
   STAT_IDS: [() => STAT_IDS],
@@ -66,6 +67,10 @@ expose({
   // @ts-expect-error -- replaced on purpose
   rivalSpecies: [() => rivalSpecies, v => (rivalSpecies = v)],
   roadCost: [() => roadCost],
+  standInList: [() => standInList],
+  // @ts-expect-error -- replaced on purpose
+  standInSpecies: [() => standInSpecies, v => (standInSpecies = v)],
+  standInsWarned: [() => standInsWarned],
   trainerById: [() => trainerById],
   // @ts-expect-error -- replaced on purpose
   trainerTeam: [() => trainerTeam, v => (trainerTeam = v)],
@@ -203,6 +208,30 @@ LINES.forEach(L => {
     DEX_ORDER.push(id);
   });
 });
+/* phase 16: a Billie from a line that is now in game/data/legacy (or missing) is stood in for by one of the new
+   lines at the same stage, so pools, eggs, trainers and legendaries further out keep working until they are redone.
+   The starters' lines never stand in. Each stand-in is listed in the data warnings. */
+export const STAND_IN_LINES = ['swift', 'kardashian', 'trump', 'zuck'].filter(l => LINE_BY_ID[l]);
+export const standInsWarned = new Set();
+export function standInSpecies(id) {
+  if (SPECIES[id] || !STAND_IN_LINES.length || typeof id !== 'string') return id;
+  const m = /^(.*?)(\d+)$/.exec(id),
+    line = m ? m[1] : id,
+    st = m ? Math.min(+m[2], 2) : 0;
+  let h = 0;
+  for (const ch of line) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  const L = LINE_BY_ID[STAND_IN_LINES[h % STAND_IN_LINES.length]],
+    to = L.id + Math.min(st, L.names.length - 1);
+  if (!SPECIES[to]) return id;
+  if (!standInsWarned.has(id)) {
+    standInsWarned.add(id);
+    warnData(`${id} is in legacy; ${SPECIES[to].name} stands in for it.`);
+  }
+  return to;
+}
+export const standInList = list => list.map(([id, w]) => [standInSpecies(id), w]);
+if (RULES.legends) for (const L of RULES.legends) L.sp = standInSpecies(L.sp);
+if (RULES.eggs && RULES.eggs.mythSpecies) RULES.eggs.mythSpecies = standInSpecies(RULES.eggs.mythSpecies);
 /* ---------- world ---------- */
 /* trainers and board are filled in below */
 export const LOCATIONS = /** @type {LocationEntry[]} */ (gameData.locations);
@@ -212,7 +241,7 @@ for (const k in gameData.pools) {
   const P = gameData.pools[k];
   POOLS[k] = {
     lv: P.lv,
-    list: P.list.filter(([id]) => SPECIES[id] || warnData(`Pool ${k} lists unknown Billie ${id}.`)),
+    list: standInList(P.list).filter(([id]) => SPECIES[id] || warnData(`Pool ${k} lists unknown Billie ${id}.`)),
   };
   if (!POOLS[k].list.length) POOLS[k].list = [[DEX_ORDER[0], 1]];
 }
@@ -294,8 +323,9 @@ for (const k in gameData.eggs) {
   EGGS[k] = {
     need: E.need,
     lv: E.lv,
-    list: E.list.filter(([id]) => SPECIES[id] || warnData(`Egg ${k} km lists unknown Billie ${id}.`)),
+    list: standInList(E.list).filter(([id]) => SPECIES[id] || warnData(`Egg ${k} km lists unknown Billie ${id}.`)),
   };
+  if (!EGGS[k].list.length) EGGS[k].list = [[DEX_ORDER[0], 1]];
 }
 export const EGG_TIERS = Object.keys(EGGS)
   .map(Number)
@@ -319,9 +349,9 @@ for (const id in TRAINERS) {
   } else if (LOCATIONS[T.node]) LOCATIONS[T.node].trainers.push(id);
   else warnData(`Trainer ${id} stands on a stop that doesn’t exist.`);
   if (!PEOPLE[T.who]) T.who = 'gini';
-  T.team = (T.team || []).filter(
-    e => /^@rival\d?$/.test(e.sp) || SPECIES[e.sp] || warnData(`Trainer ${id} has unknown Billie ${e.sp}.`)
-  );
+  T.team = (T.team || [])
+    .map(e => (/^@rival\d?$/.test(e.sp) ? e : { ...e, sp: standInSpecies(e.sp) }))
+    .filter(e => /^@rival\d?$/.test(e.sp) || SPECIES[e.sp] || warnData(`Trainer ${id} has unknown Billie ${e.sp}.`));
 }
 /* the first trainer at a stop that hands out a Board Seat (or doesn’t block the road) is that stop’s Boardroom */
 LOCATIONS.forEach(r => {

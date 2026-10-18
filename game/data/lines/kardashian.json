@@ -1,0 +1,39 @@
+{
+ "id": "kardashian",
+ "names": ["Kontourlet","Filterleon","Kardashleon"],
+ "types": [["Psychic"],["Psychic","Steel"],["Psychic","Steel"]],
+ "prof": [0.95,0.9,0.95,1.15,1.15,1.1],
+ "rar": "uncommon",
+ "learn": [
+  [1,"handshake"],
+  [1,"hype"],
+  [5,"pump"],
+  [9,"fud"],
+  [13,"gentrify"],
+  [18,"autoplay"],
+  [24,"popthecollar"],
+  [30,"hallucinate"],
+  [36,"zerotoone"],
+  [42,"visionfund"]
+ ],
+ "cat": ["Contour Billie","Filter Billie","Brand Billie"],
+ "ht": [0.2,0.6,1.1],
+ "wt": [1.5,9,25],
+ "hab": ["Mirrors with good light","Photo studios","Every screen at once"],
+ "diet": ["Sunlight at golden hour","Likes","Whole product lines"],
+ "bio": [
+  "A chameleon hatchling with a long, sleek dark crest. Its scales shade themselves darker at the edges, so it always looks its best from the front.",
+  "A glowing ring of scales on its head lights its face from every angle. It changes colour to whatever is trending before anyone else notices the trend.",
+  "It turns its own colours into a range and sells them back to the other chameleons. It is always posing; nobody has seen it from the side."
+ ],
+ "note": [
+  "Holds still for a photo, never for anything else.",
+  "Its pout is a separate muscle.",
+  "Has a shade of itself for every day of the year."
+ ],
+ "evo": [
+  {"k":"lvl","at":16},
+  {"k":"lvl","at":36}
+ ],
+ "parody": "Kim Kardashian"
+}
