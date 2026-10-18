@@ -45,7 +45,7 @@ def problems(D):
             if not pl: out.append(f'scene {sid}: kind {k} but no place uses it')
             elif pl.get('kind') != k: out.append(f'scene {sid}: kind {k} but its place is a {pl.get("kind")}')
         if k == 'room' and not sc.get('building'): out.append(f'scene {sid}: a room without a building')
-    for i, L in enumerate(D['links']):
+    for i, L in enumerate(D['roads']):
         J = L[3] if len(L) > 3 and isinstance(L[3], dict) else {}
         if not J.get('id') or J.get('from') not in ids or J.get('to') not in ids: out.append(f'road {i}: not named or its places unknown')
     return out
@@ -68,7 +68,7 @@ def main():
         elif sid in by_scene: sc['kind'] = by_scene[sid]['kind']; sc['place'] = sid
         else: print(f'  {sid}: no place uses it; left without a kind'); continue
         n += 1
-    for i, L in enumerate(D['links']):
+    for i, L in enumerate(D['roads']):
         if len(L) < 4 or not isinstance(L[3], dict): L[3:] = [{}]
         a, b, J = places[L[0]], places[L[1]], L[3]
         named = {'id': f'road:{a["id"]}-{b["id"]}', 'from': a['id'], 'to': b['id'],

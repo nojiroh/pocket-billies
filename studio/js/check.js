@@ -130,7 +130,7 @@ function runCheck() {
     if (!['town', 'route'].includes(r.kind))
       err(`Stop ${i + 1}, ${r.name}: doesn’t say whether it’s a town or a route.`, 'world');
   });
-  (D.links || []).forEach((L, i) => {
+  (D.roads || []).forEach((L, i) => {
     const J = L[3] || {};
     if (!J.id || !J.from || !J.to)
       warn(
@@ -227,7 +227,7 @@ function runCheck() {
   if (R.catching.offerMin > R.catching.offerMax) warn('Bargain: least is above most.', 'rules');
   if (!types.has(R.battle.shockType)) err('The sandstorm type doesn’t exist.', 'rules');
   if (!types.has(R.battle.spinType)) err('The Soak type doesn’t exist.', 'rules');
-  const LK = D.links || [];
+  const LK = D.roads || [];
   LK.forEach((l, k) => {
     if (!D.locations[l[0]] || !D.locations[l[1]])
       err(`Road ${k + 1} connects a stop that doesn’t exist.`, 'world', { wtab: 'route' });
@@ -329,7 +329,7 @@ function runCheck() {
     });
     const users = D.locations.map((r, i) => [r, i]).filter(([r]) => r.scene === k);
     users.forEach(([r, i]) => {
-      const n = (D.links || []).filter(l => l[0] === i || l[1] === i).length;
+      const n = (D.roads || []).filter(l => l[0] === i || l[1] === i).length;
       if (n > (s.exits || []).length)
         warn(
           `${r.name} has ${n} road${n === 1 ? '' : 's'} but its scene ${s.name || k} has ${(s.exits || []).length} exit${(s.exits || []).length === 1 ? '' : 's'}, so some roads share an exit.`,
@@ -337,7 +337,7 @@ function runCheck() {
           g
         );
       /* v42: the join table names an exit this scene has, and both ends face each other */
-      (D.links || []).forEach(l => {
+      (D.roads || []).forEach(l => {
         const J = l[3];
         if (!J) return;
         const end = l[0] === i ? 'a' : l[1] === i ? 'b' : null;

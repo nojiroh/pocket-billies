@@ -97,7 +97,7 @@ function drawWorldMarkers() {
   const D = studioState.D;
   let h = '';
   const pts = D.locations.map(r => lonLatToWorldMapXY(r.lon || 0, r.lat || 0));
-  (D.links || []).forEach(([a, b]) => {
+  (D.roads || []).forEach(([a, b]) => {
     if (pts[a] && pts[b])
       h += `<line x1="${pts[a][0]}" y1="${pts[a][1]}" x2="${pts[b][0]}" y2="${pts[b][1]}" class="trail"/>`;
   });
@@ -304,7 +304,7 @@ function worldLocations() {
   );
 }
 function locationRoads(i) {
-  return (studioState.D.links || [])
+  return (studioState.D.roads || [])
     .map((l, k) => (l[0] === i ? [l[1], l[2], k] : l[1] === i ? [l[0], l[2], k] : null))
     .filter(Boolean);
 }
@@ -314,12 +314,12 @@ function roadsHTML(i) {
     opts = D.locations.map((r, j) => [j, `${j + 1}. ${r.name}`]).filter(([j]) => j !== i);
   return `<table class="tbl"><thead><tr><th>Road to</th><th>Steps</th><th>About</th><th>Leaves by</th><th></th></tr></thead><tbody>${R.map(
     ([o, c, k]) => {
-      const side = D.links[k][0] === i ? 1 : 0,
+      const side = D.roads[k][0] === i ? 1 : 0,
         end = side ? 'a' : 'b',
-        J = D.links[k][3] || {},
+        J = D.roads[k][3] || {},
         sc = D.scenes[(D.locations[i] || {}).scene],
         ids = ((sc && sc.edgeExits) || []).map(e => e.id);
-      return `<tr><td><select data-p="links.${k}.${side}" data-k="num" data-rr="1">${opts.map(([j, n]) => `<option value="${j}" ${j === o ? 'selected' : ''}>${escapeHtml(n)}</option>`).join('')}</select></td><td><input type="number" min="50" step="50" data-p="links.${k}.2" data-k="num" value="${c}" class="sm-num"></td><td><small>${(c / D.rules.steps.stepsPerKm).toFixed(1)} km</small></td><td><select data-join="${k}" data-end="${end}" title="Which exit of this stop’s scene the road uses (v42 join table); ‘by direction’ matches it by compass bearing as before"><option value="">by direction</option>${ids.map(id => `<option value="${escapeHtml(id)}" ${J[end] === id ? 'selected' : ''}>${escapeHtml(id)}</option>`).join('')}</select></td><td><button class="x" data-act="roadDel" data-k="${k}" title="Remove this road">×</button></td></tr>`;
+      return `<tr><td><select data-p="roads.${k}.${side}" data-k="num" data-rr="1">${opts.map(([j, n]) => `<option value="${j}" ${j === o ? 'selected' : ''}>${escapeHtml(n)}</option>`).join('')}</select></td><td><input type="number" min="50" step="50" data-p="roads.${k}.2" data-k="num" value="${c}" class="sm-num"></td><td><small>${(c / D.rules.steps.stepsPerKm).toFixed(1)} km</small></td><td><select data-join="${k}" data-end="${end}" title="Which exit of this stop’s scene the road uses (v42 join table); ‘by direction’ matches it by compass bearing as before"><option value="">by direction</option>${ids.map(id => `<option value="${escapeHtml(id)}" ${J[end] === id ? 'selected' : ''}>${escapeHtml(id)}</option>`).join('')}</select></td><td><button class="x" data-act="roadDel" data-k="${k}" title="Remove this road">×</button></td></tr>`;
     }
   ).join('')}</tbody></table>
  <div class="seg-row"><select id="roadTo">${opts
@@ -332,7 +332,7 @@ ACTIONS.roadAdd = d => {
     i = +d.i,
     j = +$('#roadTo').value;
   if (!Number.isFinite(j) || j === i) return;
-  (D.links || (D.links = [])).push([i, j, 800]);
+  (D.roads || (D.roads = [])).push([i, j, 800]);
   changed();
   commit(true);
   render();
@@ -340,7 +340,7 @@ ACTIONS.roadAdd = d => {
 document.addEventListener('change', ev => {
   const t = ev.target;
   if (!t || t.dataset.join == null) return;
-  const l = studioState.D.links[+t.dataset.join];
+  const l = studioState.D.roads[+t.dataset.join];
   if (!l) return;
   const J = l[3] || {};
   if (t.value) J[t.dataset.end] = t.value;
@@ -354,7 +354,7 @@ document.addEventListener('change', ev => {
   render();
 });
 ACTIONS.roadDel = d => {
-  studioState.D.links.splice(+d.k, 1);
+  studioState.D.roads.splice(+d.k, 1);
   changed();
   commit(true);
   render();
@@ -369,7 +369,7 @@ ACTIONS.stopMove = d => {
     j = i + +d.d;
   if (j < 0 || j >= D.locations.length) return;
   [D.locations[i], D.locations[j]] = [D.locations[j], D.locations[i]];
-  (D.links || []).forEach(l => {
+  (D.roads || []).forEach(l => {
     for (const q of [0, 1]) {
       if (l[q] === i) l[q] = j;
       else if (l[q] === j) l[q] = i;
@@ -402,10 +402,10 @@ ACTIONS.stopAdd = () => {
   Object.values(D.trainers || {}).forEach(T => {
     if (T.node > i) T.node++;
   });
-  (D.links || (D.links = [])).forEach(l => {
+  (D.roads || (D.roads = [])).forEach(l => {
     for (const q of [0, 1]) if (l[q] > i) l[q]++;
   });
-  D.links.push([i, i + 1, 800]);
+  D.roads.push([i, i + 1, 800]);
   studioState.sel.stop = i + 1;
   changed();
   render();
@@ -426,7 +426,7 @@ ACTIONS.stopDel = async () => {
   Object.values(D.trainers || {}).forEach(t => {
     if (t.node >= i) t.node = Math.max(0, t.node - 1);
   });
-  D.links = (D.links || [])
+  D.roads = (D.roads || [])
     .filter(l => l[0] !== i && l[1] !== i)
     .map(l => l.map((v, q) => (q < 2 && v > i ? v - 1 : v)));
   studioState.sel.stop = Math.max(0, i - 1);

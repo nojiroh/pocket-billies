@@ -212,7 +212,7 @@ LOCATIONS.forEach((r, i) => {
 });
 /* the walking network: links between stops (both directions); older data is a single chain */
 export const ROADS = (
-  gameData.links && gameData.links.length ? gameData.links : LOCATIONS.slice(1).map((r, i) => [i, i + 1, r.cost || 500])
+  gameData.roads && gameData.roads.length ? gameData.roads : LOCATIONS.slice(1).map((r, i) => [i, i + 1, r.cost || 500])
 )
   .filter(l => LOCATIONS[l[0]] && LOCATIONS[l[1]] && l[0] !== l[1])
   .map(([a, b, c, j]) =>

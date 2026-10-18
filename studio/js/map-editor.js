@@ -776,7 +776,7 @@ export function mapExitNames(id) {
     out = {},
     E = sc.edgeExits || [];
   /* v42: the join table first: a road that names its exit here keeps it */
-  (D.links || []).forEach(l => {
+  (D.roads || []).forEach(l => {
     const o = l[0] === i ? l[1] : l[1] === i ? l[0] : null,
       J = l[3];
     if (o == null || !D.locations[o] || !J) return;
@@ -784,7 +784,7 @@ export function mapExitNames(id) {
       k = id ? E.findIndex(q => q.id === id) : -1;
     if (k >= 0 && !(o in out)) out[o] = k;
   });
-  (D.links || []).forEach(l => {
+  (D.roads || []).forEach(l => {
     const o = l[0] === i ? l[1] : l[1] === i ? l[0] : null;
     if (o == null || !D.locations[o] || o in out) return;
     const a = Math.atan2((D.locations[o].lat || 0) - (me.lat || 0), (D.locations[o].lon || 0) - (me.lon || 0));
@@ -847,7 +847,7 @@ function dropStaleExitJoins(sc) {
   const D = studioState.D,
     ids = new Set((sc.edgeExits || []).map(e => e.id)),
     users = locationsUsingMap(currentMapId()).map(([, i]) => i);
-  (D.links || []).forEach(l => {
+  (D.roads || []).forEach(l => {
     const J = l[3];
     if (!J) return;
     if (users.includes(l[0]) && J.a && !ids.has(J.a)) delete J.a;
@@ -1895,7 +1895,7 @@ function exitChecks(sc) {
           : { ok: 0, t: `${nm}: no way to walk there from the hub` }
       );
     }
-    (D.links || []).forEach(l => {
+    (D.roads || []).forEach(l => {
       const J = l[3];
       if (!J) return;
       const here = users.includes(l[0]) && J.a === e.id ? 'a' : users.includes(l[1]) && J.b === e.id ? 'b' : null;

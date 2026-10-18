@@ -407,7 +407,7 @@ function connectionGraph(cur) {
   if (cur.kind === 'scene') {
     const stops = D.locations.map((r, i) => (r.scene === cur.id ? i : -1)).filter(i => i >= 0);
     stops.forEach(i => usedBy.set('stop:' + i, ['stop', i]));
-    (D.links || []).forEach(l => {
+    (D.roads || []).forEach(l => {
       const a = stops.includes(l[0]) ? l[1] : stops.includes(l[1]) ? l[0] : null;
       if (a == null || !D.locations[a]) return;
       const s = D.locations[a].scene;
@@ -423,7 +423,7 @@ function connectionGraph(cur) {
       if (r.pool) uses.set('pool:' + r.pool, ['pool', r.pool]);
       if (r.shop) uses.set('shop:' + r.shop, ['shop', r.shop]);
     }
-    (D.links || []).forEach(l => {
+    (D.roads || []).forEach(l => {
       const a = l[0] === +cur.id ? l[1] : l[1] === +cur.id ? l[0] : null;
       if (a != null && D.locations[a]) uses.set('stop:' + a, ['stop', a]);
     });

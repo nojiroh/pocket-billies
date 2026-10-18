@@ -244,7 +244,7 @@ class Scene:
     def hub_exits(self, D, i, hub, road='p', width=1.0, signs=True, lamps=None):
         R = D['locations']; me = R[i]; self.d['hub'] = [round(hub[0], 2), round(hub[1], 2)]; ex = []
         self.clear.append((hub[0], hub[1], 1.2))
-        nb = [b if a == i else a for a, b, _c in D['links'] if i in (a, b)]
+        nb = [b if a == i else a for a, b, _c in D['roads'] if i in (a, b)]
         ang = [math.atan2(R[j].get('lat', 0) - me.get('lat', 0), R[j].get('lon', 0) - me.get('lon', 0)) for j in nb]
         # roads that leave in nearly the same direction are fanned out so their exits don't overlap (order is kept)
         for _ in range(60):
@@ -1100,7 +1100,7 @@ def city(D, i):
     for x0, x1 in STREETS: s.rect(x0 - 1.4, 33.6, x1 + 1.4, 34.5, 'q'); s.rect(x0, 33.6, x1, H, 'a')
     s.blocks.append((28, 32.4, 37, 37))
     # exits at the ends of the avenues and streets, picked by the direction of each neighbouring stop
-    R = D['locations']; me = R[i]; nb = [b if a == i else a for a, b, _c in D['links'] if i in (a, b)]
+    R = D['locations']; me = R[i]; nb = [b if a == i else a for a, b, _c in D['roads'] if i in (a, b)]
     ends = [(.6, sum(AVE_A) / 2), (W - .6, sum(AVE_A) / 2), (.6, sum(AVE_B) / 2), (W - .6, sum(AVE_B) / 2), (sum(STREETS[0]) / 2, H - .6), (sum(STREETS[1]) / 2, H - .6), (32.5, .6)]
     used = []; ex = []
     for j in nb:
@@ -1388,7 +1388,7 @@ def main():
         for k, m in cat['life'].items(): D['scenery'].setdefault('life', {}).setdefault(k, m)
     D.setdefault('scenes', {})
     if '--catalog' not in sys.argv:
-        D.setdefault('links', [])
+        D.setdefault('roads', [])
         for i, (sid, f) in enumerate(BUILD):
             if i >= len(D['locations']): break
             if rescene or sid not in D['scenes']:

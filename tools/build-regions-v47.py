@@ -1390,7 +1390,7 @@ WAYS_IN = {('mall', 'festival'): dict(side='E', at=20.0, start=66.0, ch='T', wid
 def open_way(D, sid, nid, spec, rep):
     import base64, struct
     sc = D['scenes'][sid]; i, j = node_index(D, sid), node_index(D, nid)
-    L = next(L for L in D['links'] if {L[0], L[1]} == {i, j}); J = L[3]; mine = 'a' if L[0] == i else 'b'
+    L = next(L for L in D['roads'] if {L[0], L[1]} == {i, j}); J = L[3]; mine = 'a' if L[0] == i else 'b'
     E = sc.setdefault('edgeExits', []); ex = sc.setdefault('exits', []); ids = {e['id'] for e in E}
     if J.get(mine) in ids: return
     if len(E) != len(ex): rep.append(f'!! {sid}: its exits and edge exits disagree, way to {nid} not opened'); return
@@ -1436,11 +1436,11 @@ def add_region(D, R, force=False, rep=None):
         if i is None: D['locations'].append(e); rep.append(f'place {n["id"]}')
         elif force and D['locations'][i].get(TAG): D['locations'][i] = e
     # roads
-    have = {L[3].get('id') for L in D['links']}
+    have = {L[3].get('id') for L in D['roads']}
     for a, b, cost, name in R['links']:
         ia, ib = node_index(D, a), node_index(D, b); rid = f'road:{a}-{b}'
         if rid in have: continue
-        D['links'].append([ia, ib, cost, {'a': 'south', 'b': 'north', 'id': rid, 'from': a, 'to': b, 'name': name}]); rep.append(rid)
+        D['roads'].append([ia, ib, cost, {'a': 'south', 'b': 'north', 'id': rid, 'from': a, 'to': b, 'name': name}]); rep.append(rid)
     # places already there that a road of the region leaves from get their way out
     new = {n['id'] for n in R['nodes']}
     for a, b, cost, name in R['links']:

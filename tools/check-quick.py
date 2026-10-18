@@ -218,7 +218,7 @@ def check_data():
     if warn: raise Exception('; '.join(warn[:8]))
     kinds = {}
     for s in D.get('scenes', {}).values(): kinds[s.get('kind')] = kinds.get(s.get('kind'), 0) + 1
-    return f'{len(D.get("scenes", {}))} scenes ({", ".join(f"{v} {k}s" for k, v in kinds.items())}), {len(SY.get("props", {}))} props, {len(D["links"])} named roads'
+    return f'{len(D.get("scenes", {}))} scenes ({", ".join(f"{v} {k}s" for k, v in kinds.items())}), {len(SY.get("props", {}))} props, {len(D["roads"])} named roads'
 
 
 @step('alpha 0.4: no old place name left (the game data and what the game says)', 20)
@@ -263,7 +263,7 @@ def copperleaf_data():
     if (R[ix.get('hedgerow', 0)] or {}).get('route') != 'Route 1': bad.append('Hedgerow Lane is not Route 1')
     S_ = D['scenes']; C = D['scenery']['props']
     for rid, a, b in (('road:sundown-hedgerow', 'sundown', 'hedgerow'), ('road:hedgerow-copperleaf', 'hedgerow', 'copperleaf')):
-        L = next((L for L in D['links'] if len(L) > 3 and (L[3] or {}).get('id') == rid), None)
+        L = next((L for L in D['roads'] if len(L) > 3 and (L[3] or {}).get('id') == rid), None)
         if not L: bad.append(f'no road {rid}'); continue
         sa = next((e['side'] for e in S_[a].get('edgeExits') or [] if e['id'] == L[3].get('a')), None); sb = next((e['side'] for e in S_[b].get('edgeExits') or [] if e['id'] == L[3].get('b')), None)
         if (sa, sb) != ('N', 'S'): bad.append(f'{rid}: exits {sa} and {sb} don’t face each other north to south')
@@ -1485,7 +1485,7 @@ def desktop_steps(b, base, R):
         import collections
         out = []; D = gamedata(); RT = D['locations']; rid = [r['id'] for r in RT]
         adj = collections.defaultdict(set)
-        for L in D['links']: adj[L[0]].add(L[1]); adj[L[1]].add(L[0])
+        for L in D['roads']: adj[L[0]].add(L[1]); adj[L[1]].add(L[0])
         for i, r in enumerate(RT):   # alpha 0.4: a glass lift joins two places too (Kelpport and Pearlantis)
             if r.get('lift') in rid: j = rid.index(r['lift']); adj[i].add(j); adj[j].add(i)
         seen = {0}; todo = [0]

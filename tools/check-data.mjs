@@ -93,8 +93,8 @@ route.forEach((r, i) => {
   if (r.scene && !S[r.scene]) problem('locations.json', `stop ${i} (${r.name}) has map ${r.scene}, no such map`);
   if (r.pool && !pools[r.pool]) problem('locations.json', `stop ${i} (${r.name}) has pool ${r.pool}, no such pool`);
 });
-(D.links || []).forEach((l, i) => {
-  if (!route[l[0]] || !route[l[1]]) problem('links.json', `link ${i} joins ${l[0]} and ${l[1]}, not both stops`);
+(D.roads || []).forEach((l, i) => {
+  if (!route[l[0]] || !route[l[1]]) problem('roads.json', `link ${i} joins ${l[0]} and ${l[1]}, not both stops`);
 });
 for (const [id, T] of Object.entries(D.trainers || {})) {
   if (!route[T.node]) problem(`trainers/${id}.json`, `waits at stop ${T.node}, no such stop`);
