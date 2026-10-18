@@ -822,7 +822,7 @@ export function ensureWalkGl(cv) {
   } catch (e) {
     console.error(e);
     gpuState.fail = 1;
-    if (typeof NWLOG !== 'undefined') NWLOG.add('webgl', 'shader failed: ' + e.message);
+    if (typeof debugLog !== 'undefined') debugLog.add('webgl', 'shader failed: ' + e.message);
     return false;
   }
   walkRenderer.gkey = '';
@@ -2486,8 +2486,8 @@ function groundPrepWork(budget) {
             M.delete(k);
           }
         }
-        if (typeof NWLOG !== 'undefined')
-          NWLOG.add(
+        if (typeof debugLog !== 'undefined')
+          debugLog.add(
             'scene',
             `prepared ${J.id} on the card (${Math.round(J.ms)} ms of work over ${Math.round(performance.now() - J.t0)} ms)`
           );
@@ -2497,7 +2497,8 @@ function groundPrepWork(budget) {
   } catch (e) {
     walkRenderer.prep = null;
     freeMapCacheEntry(J.T);
-    if (typeof NWLOG !== 'undefined') NWLOG.add('webgl', 'preparing ' + J.id + ' failed: ' + ((e && e.message) || e));
+    if (typeof debugLog !== 'undefined')
+      debugLog.add('webgl', 'preparing ' + J.id + ' failed: ' + ((e && e.message) || e));
     return;
   }
   J.ms += performance.now() - t0;
@@ -3793,13 +3794,13 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
       cb(null);
     }
   }
-  if (walkRenderer.snapReq && typeof NWLOG !== 'undefined') {
+  if (walkRenderer.snapReq && typeof debugLog !== 'undefined') {
     walkRenderer.snapReq = 0;
     try {
       const c = screenSnapshot(rw, rh, walkRenderer.ui);
-      NWLOG.shot = { t: NWLOG.now(), what: walkView.id, jpeg: c.toDataURL('image/jpeg', 0.72) };
+      debugLog.shot = { t: debugLog.now(), what: walkView.id, jpeg: c.toDataURL('image/jpeg', 0.72) };
     } catch (e) {
-      NWLOG.shot = { t: NWLOG.now(), error: String(e.message || e) };
+      debugLog.shot = { t: debugLog.now(), error: String(e.message || e) };
     }
   }
   walkRenderer.frames++;

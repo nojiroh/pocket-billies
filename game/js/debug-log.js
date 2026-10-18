@@ -5,13 +5,13 @@
    seconds. Settings → Export debug log saves it as one JSON file (or shares it on phones). Settings → Run the full
    test (self-test.js) plays through everything for about two minutes, stress-tests the device and adds the results.
    Nothing here leaves the device unless the player exports it. No save data, names or step history are included. */
-const NW_BUILD = PB_VERSION;
+const BUILD_VERSION = PB_VERSION;
 /* phase 04d: what the log reads and wraps in the game's modules. debug-log.js runs before them (it catches their errors),
    so js/debug-log-names.js (made by tools/to-module.mjs, the last module of the page) fills this in once they have loaded:
    a getter for each name, and a setter (the module's own setX) for each function the log wraps. Until then it is
    empty, as the names were before the modules ran. */
 const GAME = {};
-const NWLOG = {
+const debugLog = {
   t0: performance.now(),
   ev: [],
   err: [],
@@ -25,27 +25,27 @@ const NWLOG = {
   hooked: false,
   max: { ev: 400, err: 120, samples: 900 },
 };
-NWLOG.now = () => Math.round(performance.now() - NWLOG.t0);
-NWLOG.add = (kind, msg, data) => {
-  const L = NWLOG.ev;
-  L.push(Object.assign({ t: NWLOG.now(), kind, msg: String(msg).slice(0, 300) }, data || {}));
-  if (L.length > NWLOG.max.ev) L.splice(0, L.length - NWLOG.max.ev);
+debugLog.now = () => Math.round(performance.now() - debugLog.t0);
+debugLog.add = (kind, msg, data) => {
+  const L = debugLog.ev;
+  L.push(Object.assign({ t: debugLog.now(), kind, msg: String(msg).slice(0, 300) }, data || {}));
+  if (L.length > debugLog.max.ev) L.splice(0, L.length - debugLog.max.ev);
 };
-NWLOG.error = (kind, msg, stack) => {
-  const L = NWLOG.err,
+debugLog.error = (kind, msg, stack) => {
+  const L = debugLog.err,
     m = String(msg).slice(0, 500),
     last = L[L.length - 1];
   if (last && last.msg === m) {
     last.n = (last.n || 1) + 1;
     return;
   }
-  L.push({ t: NWLOG.now(), kind, msg: m, stack: stack ? String(stack).slice(0, 1500) : undefined });
-  if (L.length > NWLOG.max.err) L.splice(0, L.length - NWLOG.max.err);
+  L.push({ t: debugLog.now(), kind, msg: m, stack: stack ? String(stack).slice(0, 1500) : undefined });
+  if (L.length > debugLog.max.err) L.splice(0, L.length - debugLog.max.err);
 };
 addEventListener(
   'error',
   e => {
-    NWLOG.error(
+    debugLog.error(
       'error',
       e.message || (e.target && e.target.src ? 'Failed to load ' + e.target.src : 'error'),
       e.error && e.error.stack
@@ -55,13 +55,13 @@ addEventListener(
 );
 addEventListener('unhandledrejection', e => {
   const r = e.reason;
-  NWLOG.error('promise', (r && r.message) || String(r), r && r.stack);
+  debugLog.error('promise', (r && r.message) || String(r), r && r.stack);
 });
 for (const k of ['error', 'warn']) {
   const o = console[k].bind(console);
   console[k] = (...a) => {
     try {
-      NWLOG.error(
+      debugLog.error(
         'console.' + k,
         a
           .map(x => (x && x.message ? x.message : typeof x === 'object' ? JSON.stringify(x).slice(0, 300) : String(x)))
@@ -72,19 +72,19 @@ for (const k of ['error', 'warn']) {
     o(...a);
   };
 }
-document.addEventListener('visibilitychange', () => NWLOG.add('visibility', document.hidden ? 'hidden' : 'visible'));
+document.addEventListener('visibilitychange', () => debugLog.add('visibility', document.hidden ? 'hidden' : 'visible'));
 addEventListener('resize', () => {
-  clearTimeout(NWLOG._rz);
-  NWLOG._rz = setTimeout(() => NWLOG.add('resize', `${innerWidth}x${innerHeight}`), 400);
+  clearTimeout(debugLog._rz);
+  debugLog._rz = setTimeout(() => debugLog.add('resize', `${innerWidth}x${innerHeight}`), 400);
 });
 /* v33: what the game was busy with. Costly jobs leave a mark (what, when, how long); a slow frame or a long task is
    put down to the marks it overlaps, so the log can say "building the ground: 180 ms" instead of just "slow". */
-NWLOG.marks = [];
-NWLOG.causes = {};
-NWLOG.slow = [];
-NWLOG.prof = {};
-NWLOG.mark = (label, t0, t1) => {
-  const M = NWLOG.marks,
+debugLog.marks = [];
+debugLog.causes = {};
+debugLog.slow = [];
+debugLog.prof = {};
+debugLog.mark = (label, t0, t1) => {
+  const M = debugLog.marks,
     L = M[M.length - 1];
   if (L && L[2] === label && t0 - L[1] < 3) {
     L[1] = Math.max(L[1], t1);
@@ -94,10 +94,10 @@ NWLOG.mark = (label, t0, t1) => {
   M.push([t0, t1, label]);
   if (M.length > 600) M.splice(0, M.length - 600);
 };
-NWLOG.blame = (t0, t1) => {
+debugLog.blame = (t0, t1) => {
   const by = {},
     iv = [];
-  for (const [a, b, l] of NWLOG.marks) {
+  for (const [a, b, l] of debugLog.marks) {
     const s = Math.max(a, t0),
       e = Math.min(b, t1);
     if (e > s) {
@@ -128,25 +128,25 @@ NWLOG.blame = (t0, t1) => {
         .join(', ')
     : null;
 };
-NWLOG.cause = (label, ms) => {
-  const c = NWLOG.causes[label] || (NWLOG.causes[label] = { n: 0, ms: 0, max: 0 });
+debugLog.cause = (label, ms) => {
+  const c = debugLog.causes[label] || (debugLog.causes[label] = { n: 0, ms: 0, max: 0 });
   c.n++;
   c.ms += ms;
   c.max = Math.max(c.max, ms);
 };
 /* section timings inside a frame (CPU side), averaged per second into the samples */
-NWLOG.time = (sec, ms) => {
-  const p = NWLOG.prof[sec] || (NWLOG.prof[sec] = { n: 0, ms: 0, max: 0 });
+debugLog.time = (sec, ms) => {
+  const p = debugLog.prof[sec] || (debugLog.prof[sec] = { n: 0, ms: 0, max: 0 });
   p.n++;
   p.ms += ms;
   if (ms > p.max) p.max = ms;
 };
 /* called by the frame scheduler for every task it runs */
-NWLOG.task = (name, work, ts) => {
-  let a = NWLOG.acc.get(name);
+debugLog.task = (name, work, ts) => {
+  let a = debugLog.acc.get(name);
   if (!a) {
     a = { n: 0, w: 0, max: 0, long: 0, last: 0, gapMax: 0 };
-    NWLOG.acc.set(name, a);
+    debugLog.acc.set(name, a);
   }
   a.n++;
   a.w += work;
@@ -154,11 +154,11 @@ NWLOG.task = (name, work, ts) => {
   if (work > 33) {
     a.long++;
     const t1 = performance.now(),
-      why = NWLOG.blame(t1 - work - 2, t1 + 1) || 'drawing';
-    NWLOG.cause(why.replace(/ \d+ ms.*$/, ''), work);
-    const L = NWLOG.slow;
+      why = debugLog.blame(t1 - work - 2, t1 + 1) || 'drawing';
+    debugLog.cause(why.replace(/ \d+ ms.*$/, ''), work);
+    const L = debugLog.slow;
     L.push({
-      t: NWLOG.now(),
+      t: debugLog.now(),
       task: name,
       ms: Math.round(work),
       why,
@@ -177,11 +177,11 @@ NWLOG.task = (name, work, ts) => {
     if (g > a.gapMax) a.gapMax = g;
   }
   a.last = ts;
-  if (ts - NWLOG.secT >= 1000) {
-    NWLOG.flush(ts);
+  if (ts - debugLog.secT >= 1000) {
+    debugLog.flush(ts);
   }
 };
-NWLOG.ctx = () => {
+debugLog.ctx = () => {
   const c = {};
   try {
     c.view =
@@ -206,16 +206,16 @@ NWLOG.ctx = () => {
     }
     if (typeof GAME.gpuState !== 'undefined' && GAME.gpuState.gpuMs)
       c.gpu = [Math.round(GAME.gpuState.gpuMs * 10) / 10, Math.round(GAME.gpuState.gpuMax || 0)];
-    if (NWLOG.bench && NWLOG.bench.step) c.bench = NWLOG.bench.step;
+    if (debugLog.bench && debugLog.bench.step) c.bench = debugLog.bench.step;
   } catch (e) {}
   return c;
 };
-NWLOG.flush = ts => {
-  const dt = NWLOG.secT ? ts - NWLOG.secT : 1000;
-  NWLOG.secT = ts;
-  const c = NWLOG.ctx(),
+debugLog.flush = ts => {
+  const dt = debugLog.secT ? ts - debugLog.secT : 1000;
+  debugLog.secT = ts;
+  const c = debugLog.ctx(),
     tasks = {};
-  for (const [k, a] of NWLOG.acc) {
+  for (const [k, a] of debugLog.acc) {
     if (!a.n) continue;
     tasks[k] = {
       fps: Math.round((a.n * 1000) / Math.max(1, dt)),
@@ -227,25 +227,26 @@ NWLOG.flush = ts => {
     a.n = a.w = a.max = a.long = a.gapMax = 0;
   }
   if (!Object.keys(tasks).length) return;
-  const s = Object.assign({ t: NWLOG.now() }, c, { tasks });
+  const s = Object.assign({ t: debugLog.now() }, c, { tasks });
   const pr = {};
-  for (const [k, p] of Object.entries(NWLOG.prof)) {
+  for (const [k, p] of Object.entries(debugLog.prof)) {
     if (p.n) pr[k] = [Math.round((p.ms / p.n) * 10) / 10, Math.round(p.max)];
     p.n = p.ms = p.max = 0;
   }
   if (Object.keys(pr).length) s.prof = pr;
   if (performance.memory) s.mb = Math.round(performance.memory.usedJSHeapSize / 1048576);
-  NWLOG.samples.push(s);
-  if (NWLOG.samples.length > NWLOG.max.samples) NWLOG.samples.splice(0, NWLOG.samples.length - NWLOG.max.samples);
+  debugLog.samples.push(s);
+  if (debugLog.samples.length > debugLog.max.samples)
+    debugLog.samples.splice(0, debugLog.samples.length - debugLog.max.samples);
   /* a fresh picture of the scene now and then (reading the picture back stalls the GPU for a frame, so not often) */
-  if (!NWLOG.shotT) NWLOG.shotT = ts - 45000;
-  if (ts - NWLOG.shotT > 60000) {
-    NWLOG.shotT = ts;
-    NWLOG.snap();
+  if (!debugLog.shotT) debugLog.shotT = ts - 45000;
+  if (ts - debugLog.shotT > 60000) {
+    debugLog.shotT = ts;
+    debugLog.snap();
   }
 };
 /* the WebGL scene can only be read inside the frame that drew it, so it is captured there (walk-view-gl.js) */
-NWLOG.snap = () => {
+debugLog.snap = () => {
   try {
     if (typeof GAME.walkRenderer !== 'undefined' && GAME.walkRenderer.on && GAME.walkView.cv && GAME.walkView.ready) {
       GAME.walkRenderer.snapReq = 1;
@@ -255,10 +256,10 @@ NWLOG.snap = () => {
       typeof GAME.activeBattle !== 'undefined' && GAME.activeBattle
         ? document.getElementById('cvWorld')
         : document.getElementById('dio');
-    if (cv && cv.width && !cv.hidden) NWLOG.keepShot(cv, null);
+    if (cv && cv.width && !cv.hidden) debugLog.keepShot(cv, null);
   } catch (e) {}
 };
-NWLOG.keepShot = (cv, over) => {
+debugLog.keepShot = (cv, over) => {
   try {
     const k = Math.min(1, 640 / Math.max(cv.width, cv.height)),
       c = document.createElement('canvas');
@@ -267,8 +268,8 @@ NWLOG.keepShot = (cv, over) => {
     const x = c.getContext('2d');
     x.drawImage(cv, 0, 0, c.width, c.height);
     if (over) x.drawImage(over, 0, 0, c.width, c.height);
-    NWLOG.shot = {
-      t: NWLOG.now(),
+    debugLog.shot = {
+      t: debugLog.now(),
       what:
         typeof GAME.activeBattle !== 'undefined' && GAME.activeBattle
           ? 'battle'
@@ -276,14 +277,14 @@ NWLOG.keepShot = (cv, over) => {
       jpeg: c.toDataURL('image/jpeg', 0.72),
     };
   } catch (e) {
-    NWLOG.shot = { t: NWLOG.now(), error: String(e.message || e) };
+    debugLog.shot = { t: debugLog.now(), error: String(e.message || e) };
   }
 };
 /* one summary line per task and scene: average, worst second and slow frames */
-NWLOG.summary = (from = 0) => {
+debugLog.summary = (from = 0) => {
   const g = {},
     held = {};
-  for (const s of NWLOG.samples) {
+  for (const s of debugLog.samples) {
     if (s.t < from) continue;
     for (const [k, v] of Object.entries(s.tasks)) {
       if (!['dio', 'scene', 'map'].includes(k)) continue;
@@ -326,7 +327,7 @@ NWLOG.summary = (from = 0) => {
   if (Object.keys(held).length) out.heldBack = held;
   return out;
 };
-NWLOG.device = () => {
+debugLog.device = () => {
   const n = navigator,
     d = {
       userAgent: n.userAgent,
@@ -355,7 +356,7 @@ NWLOG.device = () => {
     };
   return d;
 };
-NWLOG.glInfo = () => {
+debugLog.glInfo = () => {
   const o = {};
   try {
     const c = document.createElement('canvas'),
@@ -394,7 +395,7 @@ NWLOG.glInfo = () => {
   } catch (e) {}
   return o;
 };
-NWLOG.state = () => {
+debugLog.state = () => {
   const s = {};
   try {
     const p = GAME.saveData.preferences || {};
@@ -425,22 +426,22 @@ NWLOG.state = () => {
 };
 /* v30: more to go on: the hour and weather, every setting, the scene's contents, caches, memory, long tasks,
    how long frames take, and the GPU's extensions */
-NWLOG.long = { n: 0, total: 0, max: 0, last: [] };
+debugLog.long = { n: 0, total: 0, max: 0, last: [] };
 try {
   new PerformanceObserver(l => {
     for (const e of l.getEntries()) {
-      const L = NWLOG.long;
+      const L = debugLog.long;
       L.n++;
       L.total += e.duration;
       L.max = Math.max(L.max, e.duration);
       const why =
-        NWLOG.blame(e.startTime, e.startTime + e.duration) || 'unknown (script or layout outside the marked jobs)';
-      L.last.push([Math.round(e.startTime - NWLOG.t0), Math.round(e.duration), why]);
+        debugLog.blame(e.startTime, e.startTime + e.duration) || 'unknown (script or layout outside the marked jobs)';
+      L.last.push([Math.round(e.startTime - debugLog.t0), Math.round(e.duration), why]);
       if (L.last.length > 40) L.last.shift();
     }
   }).observe({ type: 'longtask', buffered: true });
 } catch (e) {}
-NWLOG.more = () => {
+debugLog.more = () => {
   const o = {};
   const t = (k, f) => {
     try {
@@ -499,20 +500,20 @@ NWLOG.more = () => {
       : null
   );
   t('longTasks', () => ({
-    count: NWLOG.long.n,
-    totalMs: Math.round(NWLOG.long.total),
-    maxMs: Math.round(NWLOG.long.max),
-    last: NWLOG.long.last,
+    count: debugLog.long.n,
+    totalMs: Math.round(debugLog.long.total),
+    maxMs: Math.round(debugLog.long.max),
+    last: debugLog.long.last,
   }));
   t('slowFramesBy', () =>
     Object.fromEntries(
-      Object.entries(NWLOG.causes)
+      Object.entries(debugLog.causes)
         .sort((a, b) => b[1].ms - a[1].ms)
         .slice(0, 16)
         .map(([k, v]) => [k, { frames: v.n, totalMs: Math.round(v.ms), worstMs: Math.round(v.max) }])
     )
   );
-  t('slowFrames', () => NWLOG.slow.slice(-30));
+  t('slowFrames', () => debugLog.slow.slice(-30));
   t('frameMs', () =>
     typeof GAME.walkRenderer !== 'undefined' && GAME.walkRenderer.hist
       ? {
@@ -545,26 +546,26 @@ NWLOG.more = () => {
   );
   return o;
 };
-NWLOG.build = () => ({
+debugLog.build = () => ({
   game: 'Pocket Billies',
   kind: 'debug-log',
   format: 1,
-  build: NW_BUILD,
+  build: BUILD_VERSION,
   dataVersion: (GAME.gameData.meta && GAME.gameData.meta.version) || null,
   artVersion: (GAME.gameData.meta && GAME.gameData.meta.artVersion) || 0,
   created: new Date().toISOString(),
-  uptimeSec: Math.round(NWLOG.now() / 1000),
-  device: NWLOG.device(),
-  graphics: NWLOG.glInfo(),
-  state: NWLOG.state(),
-  more: NWLOG.more(),
-  load: NWLOG.load,
-  summary: NWLOG.summary(),
-  bench: (NWLOG.bench && NWLOG.bench.result) || null,
-  errors: NWLOG.err,
-  events: NWLOG.ev,
-  samples: NWLOG.samples,
-  screenshot: NWLOG.shot,
+  uptimeSec: Math.round(debugLog.now() / 1000),
+  device: debugLog.device(),
+  graphics: debugLog.glInfo(),
+  state: debugLog.state(),
+  more: debugLog.more(),
+  load: debugLog.load,
+  summary: debugLog.summary(),
+  bench: (debugLog.bench && debugLog.bench.result) || null,
+  errors: debugLog.err,
+  events: debugLog.ev,
+  samples: debugLog.samples,
+  screenshot: debugLog.shot,
 });
 /* save it: the share sheet on phones (send it to yourself, or to Files), a download elsewhere, the clipboard as a last resort */
 async function exportDebugLog() {
@@ -575,13 +576,13 @@ async function exportDebugLog() {
     typeof GAME.walkView !== 'undefined' &&
     GAME.walkView.ready
   ) {
-    const t0 = NWLOG.shot && NWLOG.shot.t;
-    NWLOG.snap();
+    const t0 = debugLog.shot && debugLog.shot.t;
+    debugLog.snap();
     for (let i = 0; i < 25 && GAME.walkRenderer.snapReq; i++) await new Promise(r => setTimeout(r, 60));
   }
   let data;
   try {
-    data = JSON.stringify(NWLOG.build());
+    data = JSON.stringify(debugLog.build());
   } catch (e) {
     GAME.toast('Couldn’t build the debug log: ' + (e.message || e));
     return;
@@ -589,7 +590,7 @@ async function exportDebugLog() {
   const d = new Date(),
     pad = n => String(n).padStart(2, '0'),
     name = `pocket-billies-debug-${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}.json`;
-  NWLOG.add('export', name);
+  debugLog.add('export', name);
   try {
     const f = new File([data], name, { type: 'application/json' });
     if (
@@ -624,12 +625,12 @@ async function exportDebugLog() {
   }
 }
 /* hooks into the game, installed once everything has loaded */
-NWLOG.hook = () => {
-  if (NWLOG.hooked) return;
-  NWLOG.hooked = true;
+debugLog.hook = () => {
+  if (debugLog.hooked) return;
+  debugLog.hooked = true;
   /* phase 05: a function the log should wrap or time that is gone (renamed, say) is said, not skipped in silence */
   const missing = name => {
-    NWLOG.add('log', `no function ${name} to wrap`);
+    debugLog.add('log', `no function ${name} to wrap`);
     console.error(`Pocket Billies debug log: no function ${name} to wrap`);
   };
   const wrap = (name, fn) => {
@@ -647,26 +648,26 @@ NWLOG.hook = () => {
     const v = typeof GAME.activeBattle !== 'undefined' && GAME.activeBattle ? 'battle' : GAME.uiState.tab;
     if (v !== lastTab) {
       lastTab = v;
-      NWLOG.add('screen', v);
+      debugLog.add('screen', v);
     }
   });
   wrap('newBattle', kind =>
-    NWLOG.add(
+    debugLog.add(
       'battle',
       `start ${kind}${typeof GAME.battleStageKey === 'function' ? ' at ' + GAME.battleStageKey() : ''}`
     )
   );
-  wrap('endBattle', () => NWLOG.add('battle', 'end ' + ((GAME.activeBattle && GAME.activeBattle.over) || '')));
-  wrap('mountWalkView', (cv, id, opt) => NWLOG.add('scene', `mount ${id}`));
+  wrap('endBattle', () => debugLog.add('battle', 'end ' + ((GAME.activeBattle && GAME.activeBattle.over) || '')));
+  wrap('mountWalkView', (cv, id, opt) => debugLog.add('scene', `mount ${id}`));
   wrap('setTrip', j =>
-    NWLOG.add(
+    debugLog.add(
       'travel',
       `trip to ${typeof GAME.LOCATIONS !== 'undefined' && GAME.LOCATIONS[j] ? GAME.LOCATIONS[j].name : j}`
     )
   );
-  wrap('openShop', id => NWLOG.add('shop', id));
-  wrap('worldMapMount', () => NWLOG.add('map', 'open'));
-  /* v33: costly jobs leave marks (see NWLOG.blame) */
+  wrap('openShop', id => debugLog.add('shop', id));
+  wrap('worldMapMount', () => debugLog.add('map', 'open'));
+  /* v33: costly jobs leave marks (see debugLog.blame) */
   const timed = (name, label) => {
     const o = GAME[name];
     if (typeof o !== 'function') return missing(name);
@@ -676,7 +677,7 @@ NWLOG.hook = () => {
       try {
         return o.apply(this, a);
       } finally {
-        NWLOG.mark(label, t0, performance.now());
+        debugLog.mark(label, t0, performance.now());
       }
     };
     f.__nwT = 1;
@@ -741,8 +742,8 @@ NWLOG.hook = () => {
         return o.apply(this, a);
       } finally {
         const d = performance.now() - t0;
-        NWLOG.time(l, d);
-        if (d > 12) NWLOG.mark(m || 'drawing ' + l, t0, t0 + d);
+        debugLog.time(l, d);
+        if (d > 12) debugLog.mark(m || 'drawing ' + l, t0, t0 + d);
       }
     };
     f.__nwP = 1;
@@ -750,7 +751,7 @@ NWLOG.hook = () => {
   }
 };
 /* v33: everything a test needs to explain a result: what's on screen, what the renderer is doing, what went wrong lately */
-NWLOG.diag = (since = 0) => {
+debugLog.diag = (since = 0) => {
   const o = {};
   const t = (k, f) => {
     try {
@@ -787,19 +788,19 @@ NWLOG.diag = (since = 0) => {
       : null
   );
   t('slow', () =>
-    NWLOG.slow
+    debugLog.slow
       .filter(x => x.t >= since)
       .map(x => `${x.ms} ms (${x.why})`)
       .slice(-6)
   );
   t('long', () =>
-    NWLOG.long.last
+    debugLog.long.last
       .filter(x => x[0] >= since)
       .map(x => `${x[1]} ms (${x[2]})`)
       .slice(-6)
   );
   t('errors', () =>
-    NWLOG.err
+    debugLog.err
       .filter(x => x.t >= since)
       .map(
         x =>
@@ -809,7 +810,7 @@ NWLOG.diag = (since = 0) => {
       .slice(-5)
   );
   t('events', () =>
-    NWLOG.ev
+    debugLog.ev
       .filter(x => x.t >= since)
       .slice(-5)
       .map(x => x.kind + ': ' + x.msg)

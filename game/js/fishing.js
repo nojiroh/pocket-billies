@@ -376,7 +376,7 @@ function fishCaught() {
   fishEnd(null);
   if (!q) return;
   const nm = SPECIES[q.sp].name;
-  if (typeof NWLOG !== 'undefined') NWLOG.add('fish', 'caught ' + q.sp);
+  if (typeof debugLog !== 'undefined') debugLog.add('fish', 'caught ' + q.sp);
   saveData.stats = saveData.stats || {};
   saveData.stats.fished = (saveData.stats.fished || 0) + 1;
   if (typeof x28Event === 'function') x28Event('fish');

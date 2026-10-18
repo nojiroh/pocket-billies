@@ -116,7 +116,7 @@ function stStats(t0, t1, task) {
   const f = [],
     m = [];
   let slow = 0;
-  for (const s of NWLOG.samples) {
+  for (const s of debugLog.samples) {
     if (s.t < t0 || s.t > t1) continue;
     const v = s.tasks[task];
     if (!v) continue;
@@ -199,8 +199,8 @@ async function runFullTest(mode) {
     ),
     phases = [],
     stress = [],
-    errs0 = NWLOG.err.length,
-    T0 = NWLOG.now();
+    errs0 = debugLog.err.length,
+    T0 = debugLog.now();
   const only0 = STEST.only;
   if (diag) {
     DIAGR = STD_EMPTY();
@@ -215,8 +215,8 @@ async function runFullTest(mode) {
     done += s;
     bar.style.width = Math.min(100, (done / total) * 100) + '%';
   };
-  NWLOG.bench = { step: 'start', result: null };
-  NWLOG.add('bench', 'full test start');
+  debugLog.bench = { step: 'start', result: null };
+  debugLog.add('bench', 'full test start');
   scrollTo(0, 0);
   /* v33: every step reports what it measured, not just OK: how long it took, the frame rate, slow frames and what caused
     them, what the renderer drew, and on a problem what was on screen and the last errors */
@@ -228,7 +228,7 @@ async function runFullTest(mode) {
     try {
       if (navigator.wakeLock && !document.hidden) {
         STEST.wl = await navigator.wakeLock.request('screen');
-        NWLOG.add('bench', 'the screen stays on during the test');
+        debugLog.add('bench', 'the screen stays on during the test');
       }
     } catch (e) {
       STEST.wl = null;
@@ -238,7 +238,7 @@ async function runFullTest(mode) {
   const onVis = () => {
     if (document.hidden) {
       hid++;
-      NWLOG.add('bench', 'paused: the app is in the background');
+      debugLog.add('bench', 'paused: the app is in the background');
     } else wake();
   };
   document.addEventListener('visibilitychange', onVis);
@@ -268,9 +268,9 @@ async function runFullTest(mode) {
       if (STEST.stop) return;
       const h0 = hid;
       stepEl.textContent = name;
-      NWLOG.bench.step = name;
-      const t0 = NWLOG.now(),
-        e0 = NWLOG.err.length,
+      debugLog.bench.step = name;
+      const t0 = debugLog.now(),
+        e0 = debugLog.err.length,
         w0 = performance.now(),
         mb0 = performance.memory ? performance.memory.usedJSHeapSize : 0;
       let ok = true,
@@ -306,20 +306,20 @@ async function runFullTest(mode) {
       }
       await stSleep(300);
       if (hid !== h0 && attempt < 2) {
-        NWLOG.add('bench', name + ': the app went to the background, running the step again');
+        debugLog.add('bench', name + ': the app went to the background, running the step again');
         continue;
       }
       const bg = hid !== h0; /* still interrupted after three tries: not measured */
-      if (err && !bg) NWLOG.error('test', name + ': ' + why, err && err.stack);
-      const st = stStats(t0, NWLOG.now(), task),
-        ne = NWLOG.err.slice(e0).filter(x => x.kind !== 'test');
+      if (err && !bg) debugLog.error('test', name + ': ' + why, err && err.stack);
+      const st = stStats(t0, debugLog.now(), task),
+        ne = debugLog.err.slice(e0).filter(x => x.kind !== 'test');
       if (ne.length && !bg) {
         ok = false;
         why = why || 'an error during the step: ' + ne[0].msg.slice(0, 200);
         note = note || ne[0].msg.slice(0, 140);
       }
-      const D = NWLOG.diag(t0),
-        slow = NWLOG.slow.filter(x => x.t >= t0),
+      const D = debugLog.diag(t0),
+        slow = debugLog.slow.filter(x => x.t >= t0),
         by = {};
       for (const x of slow) {
         const k = x.why.replace(/ \d+ ms.*$/, '');
@@ -436,13 +436,13 @@ async function runFullTest(mode) {
         'Device and quality',
         'dio',
         async () => {
-          const g = NWLOG.glInfo ? NWLOG.glInfo() : {},
-            ev = (NWLOG.ev || [])
+          const g = debugLog.glInfo ? debugLog.glInfo() : {},
+            ev = (debugLog.ev || [])
               .filter(e => /quality|resolution/i.test(e.kind + ' ' + (e.msg || '')))
               .slice(-6)
               .map(e => e.msg || e.kind);
           DIAGR.device = {
-            device: NWLOG.device ? NWLOG.device() : null,
+            device: debugLog.device ? debugLog.device() : null,
             graphics: g,
             auto: engineSetting('quality', 'auto') ?? null,
             resolution: typeof walkView !== 'undefined' ? walkView.R : null,
@@ -477,7 +477,7 @@ async function runFullTest(mode) {
             );
           if (typeof walkRenderer !== 'undefined' && walkRenderer.on && walkRenderer.frames === f0)
             throw new Error('the scene isn’t drawing (black screen): no frames in 3 s');
-          if (id === scenes[0]) NWLOG.snap();
+          if (id === scenes[0]) debugLog.snap();
           const g = stGeometry(),
             sc = walkView.sc,
             gl = typeof walkRenderer !== 'undefined' && walkRenderer.on;
@@ -548,9 +548,9 @@ async function runFullTest(mode) {
             environment.on = true;
             environment.force = force;
             await stSleep(1000);
-            const t0 = NWLOG.now();
+            const t0 = debugLog.now();
             await walkAbout(3);
-            return stStats(t0, NWLOG.now(), 'dio');
+            return stStats(t0, debugLog.now(), 'dio');
           };
           try {
             const a = await meas({ time: 12.5, weather: 'clear', season: 'summer' }),
@@ -822,7 +822,7 @@ async function runFullTest(mode) {
           if (walkView.id !== 'w:sundown*')
             throw new Error('Marigold Town is not shown with its neighbours (still ' + walkView.id + ')');
           const q0 = saveData.queue,
-            t00 = performance.now() - (NWLOG.t0 || 0);
+            t00 = performance.now() - (debugLog.t0 || 0);
           saveData.queue = [];
           setTrip(1);
           render();
@@ -831,7 +831,7 @@ async function runFullTest(mode) {
           let unready = 0,
             shifts = 0,
             worst = 0;
-          const L0 = NWLOG.ev.length;
+          const L0 = debugLog.ev.length;
           const per = Math.ceil(roadCost(0, 1) / 7) + 5;
           /* alpha 0.2: a road's steps follow its walk */ for (let n = 0; n < 7; n++) {
             addSteps(per, true);
@@ -856,12 +856,12 @@ async function runFullTest(mode) {
           saveData.queue = q0;
           if (saveData.route.node !== 1)
             throw new Error('never arrived at Tallgrass Meadow (' + JSON.stringify(saveData.route) + ')');
-          const ev = NWLOG.ev.slice(L0),
+          const ev = debugLog.ev.slice(L0),
             builds = ev.filter(e => /seamless to/.test(e.msg || '')).length,
             onSpot = ev.filter(e => /built on the spot/.test(e.msg || '')).length,
             held = ev.filter(e => /painted .* ahead/.test(e.msg || '')).length;
           /* v46: the worst single frame on the way (the frame log), and whether any view had to be built on the spot */
-          const sm = (NWLOG.samples || []).filter(x => x && x.t >= t00),
+          const sm = (debugLog.samples || []).filter(x => x && x.t >= t00),
             wf = sm.length
               ? Math.max(
                   ...sm.map(x => (x.tasks && x.tasks.dio ? Math.max(x.tasks.dio.max || 0, x.tasks.dio.gap || 0) : 0))
@@ -1388,13 +1388,13 @@ async function runFullTest(mode) {
           slow: 0,
           seconds: 0,
         });
-        NWLOG.error('test', 'Stress test skipped: the scene isn’t drawing');
+        debugLog.error('test', 'Stress test skipped: the scene isn’t drawing');
         steps.length = 0;
       }
       for (const [name, fn] of steps) {
         if (STEST.stop) break;
         stepEl.textContent = 'Stress test: ' + name;
-        NWLOG.bench.step = 'stress: ' + name;
+        debugLog.bench.step = 'stress: ' + name;
         try {
           fn();
         } catch (e) {}
@@ -1405,9 +1405,9 @@ async function runFullTest(mode) {
           await awake();
           stepEl.textContent = 'Stress test: ' + name;
           const h0 = hid,
-            t0 = NWLOG.now();
+            t0 = debugLog.now();
           await walkAbout(5);
-          st = stStats(t0, NWLOG.now(), 'dio');
+          st = stStats(t0, debugLog.now(), 'dio');
           if (hid === h0) break;
           st.notMeasured = a === 2 || undefined;
         } /* v47: measured again after a spell in the background */
@@ -1452,26 +1452,26 @@ async function runFullTest(mode) {
     STEST.on = false;
     box.remove();
   }
-  const errors = NWLOG.err
+  const errors = debugLog.err
       .slice(errs0)
       .filter(e => e.kind !== 'test')
       .map(e => e.msg)
       .slice(0, 12),
     okAll = phases.every(p => p.ok) && !errors.length;
   const keepUp = stress.filter(s => s.fpsAvg != null && s.fpsAvg >= 28).pop();
-  NWLOG.bench.step = null;
-  NWLOG.bench.result = {
+  debugLog.bench.step = null;
+  debugLog.bench.result = {
     kind: diag ? 'diagnostics' : 'full',
     diag: diag ? DIAGR : undefined,
     stopped: STEST.stop,
-    seconds: Math.round((NWLOG.now() - T0) / 1000),
+    seconds: Math.round((debugLog.now() - T0) / 1000),
     passed: okAll,
     phases,
     stress,
     errors,
-    device: NWLOG.device ? NWLOG.device() : null,
+    device: debugLog.device ? debugLog.device() : null,
   };
-  NWLOG.add('bench', STEST.stop ? 'stopped' : okAll ? 'passed' : 'problems found');
+  debugLog.add('bench', STEST.stop ? 'stopped' : okAll ? 'passed' : 'problems found');
   const f = v => (v == null ? '–' : v),
     ctxLine = c =>
       c
@@ -1491,7 +1491,7 @@ async function runFullTest(mode) {
         `<tr><td>${escapeHtml(p.name)}${p.note ? `<small>${escapeHtml(p.note)}</small>` : ''}${p.detail ? `<small class="nb-det">${escapeHtml(p.detail)}</small>` : ''}${!p.ok ? `<small class="nb-why">Why: ${escapeHtml(p.why || '')}${p.ctx ? `<br>Where: ${escapeHtml(ctxLine(p.ctx))}` : ''}</small>` : ''}</td><td class="tnum">${f(p.fpsAvg)}</td><td class="tnum">${f(p.fpsWorst)}</td><td class="${p.notMeasured ? 'nb-skip' : p.ok ? 'nb-ok' : 'nb-bad'}">${p.notMeasured ? 'Not measured' : p.ok ? 'OK' : 'Problem'}</td></tr>`
     )
     .join('');
-  const causes = Object.entries(NWLOG.causes)
+  const causes = Object.entries(debugLog.causes)
     .sort((a, b) => b[1].ms - a[1].ms)
     .slice(0, 6);
   const srows = stress
@@ -1651,7 +1651,7 @@ async function diagTimersOff(T) {
 }
 /* the report: what was measured, short, made to be read */
 function diagReport() {
-  const R = NWLOG.bench && NWLOG.bench.result;
+  const R = debugLog.bench && debugLog.bench.result;
   if (!R) return null;
   const P = R.phases || [];
   const pl = P.filter(p => p.name.startsWith('Walk: ')).map(p => ({
@@ -1672,7 +1672,7 @@ function diagReport() {
     game: 'Pocket Billies',
     kind: 'diagnostics',
     format: 1,
-    build: typeof NW_BUILD !== 'undefined' ? NW_BUILD : null,
+    build: typeof BUILD_VERSION !== 'undefined' ? BUILD_VERSION : null,
     created: new Date().toISOString(),
     seconds: R.seconds,
     passed: R.passed,
@@ -1695,7 +1695,7 @@ async function exportDiagReport() {
     d = new Date(),
     pad = n => String(n).padStart(2, '0'),
     name = `pocket-billies-diagnostics-${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}.json`;
-  if (typeof NWLOG !== 'undefined') NWLOG.add('export', name);
+  if (typeof debugLog !== 'undefined') debugLog.add('export', name);
   try {
     const f = new File([data], name, { type: 'application/json' });
     if (

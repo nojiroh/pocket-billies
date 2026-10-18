@@ -1130,7 +1130,7 @@ function solidPropGuard(fn) {
   } catch (e) {
     solidPropState.fail = String((e && e.message) || e);
     console.error('Solid props off: ' + solidPropState.fail);
-    if (typeof NWLOG !== 'undefined') NWLOG.add('webgl', 'Solid props off: ' + solidPropState.fail);
+    if (typeof debugLog !== 'undefined') debugLog.add('webgl', 'Solid props off: ' + solidPropState.fail);
   }
 }
 /* which items get a body this frame (filled in by gatherFrameItems) */

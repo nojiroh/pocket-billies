@@ -533,19 +533,19 @@ export function initWebgl(cv) {
     cv.addEventListener('webglcontextlost', e => {
       e.preventDefault();
       gpuState.lost = 1;
-      if (typeof NWLOG !== 'undefined') NWLOG.add('webgl', 'context lost');
+      if (typeof debugLog !== 'undefined') debugLog.add('webgl', 'context lost');
     });
     cv.addEventListener('webglcontextrestored', () => {
       gpuState.lost = 0;
       gpuState.cv = null;
-      if (typeof NWLOG !== 'undefined') NWLOG.add('webgl', 'context restored');
+      if (typeof debugLog !== 'undefined') debugLog.add('webgl', 'context restored');
       if (typeof onGlContextRestored === 'function') onGlContextRestored(cv);
     });
-    if (typeof NWLOG !== 'undefined') NWLOG.add('webgl', `ready${gpuState.hdr ? ' (HDR)' : ''}`);
+    if (typeof debugLog !== 'undefined') debugLog.add('webgl', `ready${gpuState.hdr ? ' (HDR)' : ''}`);
     return true;
   } catch (e) {
     console.error('WebGL engine unavailable, using the canvas renderer:', e);
-    if (typeof NWLOG !== 'undefined') NWLOG.add('webgl', 'failed: ' + (e.message || e));
+    if (typeof debugLog !== 'undefined') debugLog.add('webgl', 'failed: ' + (e.message || e));
     gpuState.fail = 1;
     return false;
   }
@@ -624,7 +624,7 @@ export function imageTexture(im, o = {}) {
   };
   gpuState.tex.set(im, ne);
   trackTexture(im, ne);
-  if (typeof NWLOG !== 'undefined') NWLOG.mark('uploading pictures', tU, performance.now());
+  if (typeof debugLog !== 'undefined') debugLog.mark('uploading pictures', tU, performance.now());
   if (!o.noNormal && !im.noNormal) gpuState.normQ.push(ne);
   return ne;
 }
@@ -708,7 +708,7 @@ function ensureNormalMapWorker() {
         }
       } catch (err) {}
       e.nDone = true;
-      if (typeof NWLOG !== 'undefined') NWLOG.mark('uploading bump maps', tU, performance.now());
+      if (typeof debugLog !== 'undefined') debugLog.mark('uploading bump maps', tU, performance.now());
     };
     W.onerror = () => {
       normalMapWorkerState.bad = true;

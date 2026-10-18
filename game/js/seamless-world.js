@@ -2093,8 +2093,8 @@ export function seamlessGetReady(id, urgent, focus) {
         .catch(() => {})
         .then(() => {
           seamlessWorld.busy = false;
-          if (typeof NWLOG !== 'undefined')
-            NWLOG.add('scene', `painted ${id} ahead (${Math.round(performance.now() - t0)} ms in the background)`);
+          if (typeof debugLog !== 'undefined')
+            debugLog.add('scene', `painted ${id} ahead (${Math.round(performance.now() - t0)} ms in the background)`);
         });
     }
     return false;
@@ -2137,7 +2137,7 @@ export function seamlessGate(v) {
     return v;
   if (typeof walkRenderer !== 'undefined') walkRenderer.prepBoost = room < 6 ? 4 : room < 12 ? 2 : 1;
   /* closer to the edge, bigger slices */ if (room < 0) {
-    if (typeof NWLOG !== 'undefined') NWLOG.add('scene', `${v.id} wasn't ready in time; built on the spot`);
+    if (typeof debugLog !== 'undefined') debugLog.add('scene', `${v.id} wasn't ready in time; built on the spot`);
     return v;
   }
   if (seamlessWorld.heldFor !== v.id) {
@@ -2243,6 +2243,6 @@ export function shiftWalkView(id, dx, dz) {
   walkView.nav = null;
   walkView.npcAt = {};
   P.pk = '';
-  if (typeof NWLOG !== 'undefined') NWLOG.add('scene', 'seamless to ' + id);
+  if (typeof debugLog !== 'undefined') debugLog.add('scene', 'seamless to ' + id);
   return true;
 }

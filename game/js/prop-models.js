@@ -136,7 +136,7 @@ function propModelGuard(fn) {
   } catch (e) {
     propModelState.fail = String((e && e.message) || e);
     console.error('Voxel props off: ' + propModelState.fail);
-    if (typeof NWLOG !== 'undefined') NWLOG.add('webgl', 'Voxel props off: ' + propModelState.fail);
+    if (typeof debugLog !== 'undefined') debugLog.add('webgl', 'Voxel props off: ' + propModelState.fail);
   }
 }
 /* the recipe of a prop: fetched once (inline in a single-file build), null while it loads */
@@ -158,7 +158,7 @@ export function loadPropModelRecipe(path) {
       j = JSON.parse(txt);
     } catch (e) {
       propModelState.bad = (propModelState.bad || 0) + 1;
-      if (typeof NWLOG !== 'undefined') NWLOG.add('webgl', 'voxel recipe unreadable: ' + path);
+      if (typeof debugLog !== 'undefined') debugLog.add('webgl', 'voxel recipe unreadable: ' + path);
     }
     const rec = j || { layers: [] };
     propModelState.recipes.set(path, rec);
@@ -169,15 +169,15 @@ export function loadPropModelRecipe(path) {
     .then(j => {
       if (!j) {
         propModelState.bad = (propModelState.bad || 0) + 1;
-        if (typeof NWLOG !== 'undefined') NWLOG.add('webgl', 'voxel recipe missing: ' + path);
+        if (typeof debugLog !== 'undefined') debugLog.add('webgl', 'voxel recipe missing: ' + path);
       }
       propModelState.recipes.set(path, j || { layers: [] });
       propModelState.meshes.delete(path);
     })
     .catch(e => {
       propModelState.bad = (propModelState.bad || 0) + 1;
-      if (typeof NWLOG !== 'undefined')
-        NWLOG.add('webgl', 'voxel recipe failed to load: ' + path + ' (' + ((e && e.message) || e) + ')');
+      if (typeof debugLog !== 'undefined')
+        debugLog.add('webgl', 'voxel recipe failed to load: ' + path + ' (' + ((e && e.message) || e) + ')');
       propModelState.recipes.set(path, { layers: [] });
     });
   return null;

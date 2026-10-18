@@ -1086,7 +1086,7 @@ function enterRoom(a, p) {
   uiState.inside = info;
   uiState.roam = null;
   if (typeof soundEffect === 'function') soundEffect('door');
-  if (typeof NWLOG !== 'undefined') NWLOG.add('scene', 'inside ' + id);
+  if (typeof debugLog !== 'undefined') debugLog.add('scene', 'inside ' + id);
   render();
   return true;
 }
@@ -1156,15 +1156,15 @@ function roomStepIn(info, n = 0) {
       return;
     }
     info.view = null;
-    if (typeof NWLOG !== 'undefined') NWLOG.add('scene', `room ${info.id} wasn't ready in 9 s; shown on its own`);
+    if (typeof debugLog !== 'undefined') debugLog.add('scene', `room ${info.id} wasn't ready in 9 s; shown on its own`);
   }
   uiState.goingIn = null;
   uiState.inside = info;
   uiState.roam = null;
   if (typeof walkRenderer !== 'undefined') walkRenderer.prepBoost = 1;
   if (typeof soundEffect === 'function') soundEffect('door');
-  if (typeof NWLOG !== 'undefined')
-    NWLOG.add('scene', 'inside ' + (info.view || info.id) + (n ? ` (waited ${n * 100} ms)` : ''));
+  if (typeof debugLog !== 'undefined')
+    debugLog.add('scene', 'inside ' + (info.view || info.id) + (n ? ` (waited ${n * 100} ms)` : ''));
   render();
   if (info.view)
     setTimeout(() => {
@@ -1647,7 +1647,7 @@ function walkCross() {
     uiState.roam = { id: q.id, node: n, x, z };
     uiState.arrive = null;
     uiState.backAt = null;
-    if (typeof NWLOG !== 'undefined') NWLOG.add('travel', 'walked into ' + LOCATIONS[n].name);
+    if (typeof debugLog !== 'undefined') debugLog.add('travel', 'walked into ' + LOCATIONS[n].name);
     save();
     render();
     return;

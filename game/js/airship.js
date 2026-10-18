@@ -101,7 +101,8 @@ function startAirshipFlight(i) {
   }
   save();
   closeModal();
-  if (typeof NWLOG !== 'undefined') NWLOG.add('scene', `airship ${LOCATIONS[a].id} to ${LOCATIONS[i].id} ($${f})`);
+  if (typeof debugLog !== 'undefined')
+    debugLog.add('scene', `airship ${LOCATIONS[a].id} to ${LOCATIONS[i].id} ($${f})`);
   const d = Math.acos(clamp(vector3.dot(LOCATION_VECTORS[a], LOCATION_VECTORS[i]), -1, 1)) / RADIANS_PER_DEGREE;
   Object.assign(airshipFlight, {
     on: true,
@@ -323,7 +324,7 @@ export function rideGlassLift(p) {
           bx = M.box ? M.box[0] * s : 1.2;
         uiState.roam = { id: sid, node: i, x: m.x + (bx / 2 + 0.9) * f, z: m.z - 0.9 };
       } else uiState.roam = null;
-      if (typeof NWLOG !== 'undefined') NWLOG.add('scene', `lift ${LOCATIONS[a].id} to ${LOCATIONS[i].id}`);
+      if (typeof debugLog !== 'undefined') debugLog.add('scene', `lift ${LOCATIONS[a].id} to ${LOCATIONS[i].id}`);
       uiState.tab = 'walk';
       save();
       render();

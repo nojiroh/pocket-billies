@@ -95,7 +95,7 @@ export function battle3dAttach(o = {}) {
   battleStage.glint = [];
   walkView.battle = { frame: battle3dFrame };
   battle3d.on = true;
-  if (typeof NWLOG !== 'undefined') NWLOG.add('battle', '3D stage in ' + walkView.id);
+  if (typeof debugLog !== 'undefined') debugLog.add('battle', '3D stage in ' + walkView.id);
   return true;
 }
 export function battle3dLayout() {

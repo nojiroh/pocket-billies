@@ -116,7 +116,7 @@ function postcardShow(n, first) {
   if (first) {
     postcardsOwned()[r.id] = saveData.day || Date.now();
     save();
-    if (typeof NWLOG !== 'undefined') NWLOG.add('scene', 'postcard ' + r.id);
+    if (typeof debugLog !== 'undefined') debugLog.add('scene', 'postcard ' + r.id);
   }
   postcardState.on = true;
   const old = document.querySelector('.pcard-wrap');

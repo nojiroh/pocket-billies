@@ -89,7 +89,7 @@ function frameLoop(ts) {
       console.error(name, e);
       FRAME.tasks.delete(name);
     }
-    if (typeof NWLOG !== 'undefined') NWLOG.task(name, performance.now() - a, ts);
+    if (typeof debugLog !== 'undefined') debugLog.task(name, performance.now() - a, ts);
   }
   FRAME.lastWork = performance.now() - w0;
 }

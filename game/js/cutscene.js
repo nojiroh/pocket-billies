@@ -642,7 +642,7 @@ export async function cutsceneStart() {
       );
     })
   );
-  if (typeof NWLOG !== 'undefined') NWLOG.add('scene', 'opening cutscene');
+  if (typeof debugLog !== 'undefined') debugLog.add('scene', 'opening cutscene');
   if (typeof music === 'function') music('hazel');
   /* the town's ground is laid and drawn before the white fades */
   const f0 = walkRenderer.frames,
@@ -658,7 +658,7 @@ export async function cutsceneStart() {
     await cutsceneScript(run);
   } catch (e) {
     console.error(e);
-    if (typeof NWLOG !== 'undefined') NWLOG.add('error', 'cutscene: ' + (e.message || e));
+    if (typeof debugLog !== 'undefined') debugLog.add('error', 'cutscene: ' + (e.message || e));
     if (cutscene.on && cutscene.run === run) cutsceneAbort();
   }
 }

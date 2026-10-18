@@ -61,15 +61,15 @@ CUR = {'pg': None}
 
 
 def page_diag(since=0):
-    """v33: what the game says about itself (NWLOG.diag): screen, scene, renderer, slow frames and their causes, errors"""
+    """v33: what the game says about itself (debugLog.diag): screen, scene, renderer, slow frames and their causes, errors"""
     pg = CUR['pg']
     if not pg: return None
-    try: return pg.evaluate(f"typeof NWLOG!=='undefined'&&NWLOG.diag?NWLOG.diag({int(since)}):null")
+    try: return pg.evaluate(f"typeof debugLog!=='undefined'&&debugLog.diag?debugLog.diag({int(since)}):null")
     except Exception as e: return {'unavailable': str(e).splitlines()[0][:120]}
 
 
 def page_now():
-    try: return CUR['pg'].evaluate("typeof NWLOG!=='undefined'?NWLOG.now():0") if CUR['pg'] else 0
+    try: return CUR['pg'].evaluate("typeof debugLog!=='undefined'?debugLog.now():0") if CUR['pg'] else 0
     except Exception: return 0
 
 
@@ -1453,7 +1453,7 @@ def desktop_steps(b, base, R):
             if pg.evaluate("!!(walkView.ready&&walkView.sc&&walkView.sc.roomOf==='int_shop'&&walkView.id.includes('#'))"): ok = True; break
             if pg.evaluate("!!(walkView.ready&&walkView.id==='int_shop')"): break
             time.sleep(1)
-        if not ok: raise Exception('the shop’s room didn’t open in place (' + pg.evaluate("walkView.id") + '; ' + ' | '.join(pg.evaluate("NWLOG.ev.slice(-4).map(e=>e.msg)")) + ')')
+        if not ok: raise Exception('the shop’s room didn’t open in place (' + pg.evaluate("walkView.id") + '; ' + ' | '.join(pg.evaluate("debugLog.ev.slice(-4).map(e=>e.msg)")) + ')')
         time.sleep(2); until(pg, "(roomDimming(walkView.sc)||{dim:0}).dim>.6", 15)   # alpha 0.1: the dimming fades in over the first frames drawn inside (slow here)
         r = json.loads(pg.evaluate("""JSON.stringify((()=>{const sc=walkView.sc,c=sc.roomCut,I=uiState.inside,RD=roomDimming(sc),n=navGrid(),N=NAV_CELLS_PER_M,R=sc.roomRect,blocked=(x,z)=>!!n.blk[Math.floor(z*N)*n.gw+Math.floor(x*N)];
           return {exit:[sc.exits[0][0]+c[0],sc.exits[0][1]+c[1]],door:I&&I.door,dim:RD?RD.dim:0,outBlocked:blocked(R[0]-2,R[1]+R[3]/2)&&blocked(R[0]+R[2]/2,R[1]-2),inFree:!blocked(R[0]+R[2]/2,R[1]+R[3]/2-1),shopGone:!sc.props.some(p=>p.act==='shop'&&p.k==='shop')}})())"""))

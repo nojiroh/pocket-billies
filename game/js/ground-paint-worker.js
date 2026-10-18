@@ -198,7 +198,7 @@ function ensurePaintWorker() {
       }
       paintWorkerState.jobs.clear();
       wakePaintWorkerWaiters();
-      if (typeof NWLOG !== 'undefined') NWLOG.add('webgl', 'ground painter helper: ' + paintWorkerState.why);
+      if (typeof debugLog !== 'undefined') debugLog.add('webgl', 'ground painter helper: ' + paintWorkerState.why);
     };
     paintWorkerState.w = W;
     paintWorkerState.gen = '';

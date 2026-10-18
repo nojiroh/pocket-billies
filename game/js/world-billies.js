@@ -110,7 +110,7 @@ function worldBillyFrame(sp, gold, view, pose, t, seed) {
   c.noNormal = true;
   c.__R = R;
   worldBillies.cache.set(key, c);
-  if (typeof NWLOG !== 'undefined') NWLOG.mark('drawing billionaires in the world', tD, performance.now());
+  if (typeof debugLog !== 'undefined') debugLog.mark('drawing billionaires in the world', tD, performance.now());
   if (worldBillies.cache.size > BILLY_FRAME_CACHE_MAX) {
     const k0 = worldBillies.cache.keys().next().value;
     worldBillies.cache.delete(k0);
@@ -546,8 +546,8 @@ setInterval(() => {
     const t0 = performance.now();
     prepareMap(id)
       .then(() => {
-        if (typeof NWLOG !== 'undefined')
-          NWLOG.add('scene', `prepared ${id} ahead (${Math.round(performance.now() - t0)} ms in the background)`);
+        if (typeof debugLog !== 'undefined')
+          debugLog.add('scene', `prepared ${id} ahead (${Math.round(performance.now() - t0)} ms in the background)`);
       })
       .catch(() => mapsPreparedAhead.delete(id));
   } catch (e) {}

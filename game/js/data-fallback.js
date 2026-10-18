@@ -17,7 +17,7 @@ if (!window.GAMEDATA) {
     window.GAMEDATA_FROM_FILES = Math.round(performance.now() - t0);
     const m = `data/gamedata.js is missing: read the data files instead (${window.GAMEDATA_FROM_FILES} ms)`;
     console.warn('[gamedata] ' + m);
-    if (typeof NWLOG !== 'undefined') NWLOG.add('data', m);
+    if (typeof debugLog !== 'undefined') debugLog.add('data', m);
   } catch (e) {
     console.error('[gamedata] ' + e.message);
   }

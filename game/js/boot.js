@@ -604,9 +604,9 @@ async function preloadAll(onTown) {
     console.error(e);
   }
   loaderSet(++done, total);
-  if (typeof NWLOG !== 'undefined') {
-    NWLOG.load = { ms: Math.round(performance.now() - T0), files: total, failed: fails.slice(0, 50), phases: phT };
-    NWLOG.add('load', `${total} files in ${NWLOG.load.ms} ms, ${fails.length} failed`);
+  if (typeof debugLog !== 'undefined') {
+    debugLog.load = { ms: Math.round(performance.now() - T0), files: total, failed: fails.slice(0, 50), phases: phT };
+    debugLog.add('load', `${total} files in ${debugLog.load.ms} ms, ${fails.length} failed`);
   }
   return fails;
 }
@@ -672,7 +672,7 @@ async function sceneWarm() {
     if (ok || !document.getElementById('dio')) break;
     await new Promise(r => setTimeout(r, 60));
   }
-  if (typeof NWLOG !== 'undefined') NWLOG.add('load', `scene ready in ${Math.round(performance.now() - t0)} ms`);
+  if (typeof debugLog !== 'undefined') debugLog.add('load', `scene ready in ${Math.round(performance.now() - t0)} ms`);
 }
 /* the town behind the loader: the title starts, its town is put up and grows in as the loading goes on */
 function townUp() {
@@ -821,7 +821,7 @@ try {
    screen says so and offers a retry and the debug log */
 function noWebGL(why) {
   if (document.getElementById('nogl')) return;
-  if (typeof NWLOG !== 'undefined') NWLOG.add('webgl', 'no WebGL 2: ' + (why || 'unavailable'));
+  if (typeof debugLog !== 'undefined') debugLog.add('webgl', 'no WebGL 2: ' + (why || 'unavailable'));
   const el = document.createElement('div');
   el.id = 'nogl';
   el.setAttribute('role', 'alertdialog');
@@ -841,7 +841,7 @@ else
   Promise.all([artCacheCheck(), loadMapsAhead(saveData.route ? saveData.route.node : START_NODE)])
     .then(() => bootLoad())
     .then(async () => {
-      if (typeof NWLOG !== 'undefined') NWLOG.hook();
+      if (typeof debugLog !== 'undefined') debugLog.hook();
       initPixelSky();
       if (typeof titleWanted === 'function' && titleWanted()) titleStart();
       render();

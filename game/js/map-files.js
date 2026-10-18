@@ -63,7 +63,8 @@ export function loadMapFile(id) {
     mapFiles.busy.delete(id);
     mapFiles.failed.push(id);
     console.error('[gamedata] map ' + id + ' did not load: ' + (last && last.message));
-    if (typeof NWLOG !== 'undefined') NWLOG.error('data', 'map ' + id + ' did not load: ' + (last && last.message));
+    if (typeof debugLog !== 'undefined')
+      debugLog.error('data', 'map ' + id + ' did not load: ' + (last && last.message));
   })();
   mapFiles.busy.set(id, p);
   return p;
@@ -137,8 +138,8 @@ export function loadAllMaps() {
       while (i < ids.length) await loadMapFile(ids[i++]);
     };
     await Promise.all([one(), one()]);
-    if (typeof NWLOG !== 'undefined' && ids.length)
-      NWLOG.add('data', `${ids.length} maps loaded in the background in ${Math.round(performance.now() - t0)} ms`);
+    if (typeof debugLog !== 'undefined' && ids.length)
+      debugLog.add('data', `${ids.length} maps loaded in the background in ${Math.round(performance.now() - t0)} ms`);
   })();
   return mapFiles.all;
 }

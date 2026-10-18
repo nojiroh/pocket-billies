@@ -145,7 +145,7 @@ export function buildingGuard(fn) {
   } catch (e) {
     buildingState.fail = String((e && e.message) || e);
     console.error('3D buildings off: ' + buildingState.fail);
-    if (typeof NWLOG !== 'undefined') NWLOG.add('webgl', '3D buildings off: ' + buildingState.fail);
+    if (typeof debugLog !== 'undefined') debugLog.add('webgl', '3D buildings off: ' + buildingState.fail);
     try {
       const gl = gpuState.gl;
       gl.bindVertexArray(null);

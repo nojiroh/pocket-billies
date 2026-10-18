@@ -130,7 +130,7 @@ function initSound() {
     soundEngine.waves.p25 = pw(0.25);
     soundEngine.waves.p12 = pw(0.125);
     soundEngine.waves.p50 = pw(0.5);
-    if (typeof NWLOG !== 'undefined') NWLOG.add('audio', 'ready ' + c.sampleRate + ' Hz');
+    if (typeof debugLog !== 'undefined') debugLog.add('audio', 'ready ' + c.sampleRate + ' Hz');
     return true;
   } catch (e) {
     soundEngine.ctx = null;
