@@ -25,16 +25,22 @@ import {
 import { BLD_SH, bldArt, bldAtlas } from './buildings.js';
 /* eslint-disable no-func-assign */
 expose({
+  LOW_POLY_TEXTURE_CELLS: [() => LOW_POLY_TEXTURE_CELLS],
   VOX: [() => VOX],
   VOX_GLSL_SPIN: [() => VOX_GLSL_SPIN],
   VOX_K: [() => VOX_K],
-  VOX_LP_TEX: [() => VOX_LP_TEX],
-  VOX_MDL_VS: [() => VOX_MDL_VS],
   VOX_O: [() => VOX_O],
   VOX_SH: [() => VOX_SH],
   VOX_SHAPES: [() => VOX_SHAPES],
   VOX_TEX: [() => VOX_TEX],
   VOX_TEXTURES: [() => VOX_TEXTURES],
+  drawLowPolyModels: [() => drawLowPolyModels, v => (drawLowPolyModels = v)],
+  lowPolyFragmentShader: [() => lowPolyFragmentShader, v => (lowPolyFragmentShader = v)],
+  lowPolyFromRecipe: [() => lowPolyFromRecipe, v => (lowPolyFromRecipe = v)],
+  lowPolyOn: [() => lowPolyOn, v => (lowPolyOn = v)],
+  lowPolyVertexShader: [() => lowPolyVertexShader],
+  prebuiltModelMesh: [() => prebuiltModelMesh, v => (prebuiltModelMesh = v)],
+  uploadLowPolyMesh: [() => uploadLowPolyMesh, v => (uploadLowPolyMesh = v)],
   voxBob: [() => voxBob, v => (voxBob = v)],
   voxDraw: [() => voxDraw, v => ((voxDraw = v), provide({ voxDraw }))],
   voxEl: [() => voxEl, v => (voxEl = v)],
@@ -44,13 +50,8 @@ expose({
   voxImageItems: [() => voxImageItems, v => ((voxImageItems = v), provide({ voxImageItems }))],
   voxInvalidate: [() => voxInvalidate, v => (voxInvalidate = v)],
   voxKey: [() => voxKey, v => (voxKey = v)],
-  voxLowPoly: [() => voxLowPoly, v => (voxLowPoly = v)],
-  voxLowPolyOn: [() => voxLowPolyOn, v => (voxLowPolyOn = v)],
-  voxMdlFS: [() => voxMdlFS, v => (voxMdlFS = v)],
   voxMesh: [() => voxMesh, v => (voxMesh = v)],
   voxMeshFor: [() => voxMeshFor, v => (voxMeshFor = v)],
-  voxModelMesh: [() => voxModelMesh, v => (voxModelMesh = v)],
-  voxModels: [() => voxModels, v => (voxModels = v)],
   voxOn: [() => voxOn, v => (voxOn = v)],
   voxPaths: [() => voxPaths, v => ((voxPaths = v), provide({ voxPaths }))],
   voxRawDecode: [() => voxRawDecode, v => (voxRawDecode = v)],
@@ -63,7 +64,6 @@ expose({
   voxTag: [() => voxTag, v => ((voxTag = v), provide({ voxTag }))],
   voxU: [() => voxU, v => (voxU = v)],
   voxUnkey: [() => voxUnkey, v => (voxUnkey = v)],
-  voxUpModel: [() => voxUpModel, v => (voxUpModel = v)],
   voxelise: [() => voxelise, v => (voxelise = v)],
 });
 /* eslint-enable no-func-assign */
@@ -520,18 +520,20 @@ function voxMeshFor(path, rec) {
   let m = VOX.meshes.get(path);
   if (m !== undefined) return m;
   if (rec.kind === 'mesh') {
-    m = voxModelMesh(rec);
+    m = prebuiltModelMesh(rec);
     VOX.meshes.set(path, m);
     return m;
   }
-  if (voxLowPolyOn(rec)) {
+  if (lowPolyOn(rec)) {
     const L = rec.layers || [],
-      M = voxLowPoly({ ...rec, layers: L.filter(l => !l.spin) });
-    m = M ? { ...voxUpModel(M.vb, M.ib), model: 1, lowpoly: 1, tris: M.tris, q: 1 / 256, box: M.box, spins: [] } : null;
+      M = lowPolyFromRecipe({ ...rec, layers: L.filter(l => !l.spin) });
+    m = M
+      ? { ...uploadLowPolyMesh(M.vb, M.ib), model: 1, lowpoly: 1, tris: M.tris, q: 1 / 256, box: M.box, spins: [] }
+      : null;
     if (m)
       for (const l of L)
         if (l.spin && !l.hide) {
-          const S = voxLowPoly({ layers: [{ ...l, spin: undefined }] }),
+          const S = lowPolyFromRecipe({ layers: [{ ...l, spin: undefined }] }),
             ax = l.spin.axis,
             a = Array.isArray(ax)
               ? [ax[0] || 0, ax[2] || 0, ax[1] || 0]
@@ -543,7 +545,7 @@ function voxMeshFor(path, rec) {
             al = Math.hypot(a[0], a[1], a[2]) || 1;
           if (S)
             m.spins.push({
-              ...voxUpModel(S.vb, S.ib),
+              ...uploadLowPolyMesh(S.vb, S.ib),
               c: [l.spin.x || 0, l.spin.z || 0, l.spin.y || 0],
               a: a.map(v => v / al),
               rps: l.spin.rps ?? 1.5,
@@ -639,7 +641,7 @@ export function voxInvalidate(path, keep) {
    tool packed it (24 bytes a vertex: position in 1/256 m, normal, texture coordinates in 1/64 m, the sheet's cell and
    "flat", the colour; then the triangles), its turning parts ("spins": a pivot c and an axis a, up as y) like the
    voxels' propellers. It stands in for the picture where the voxel props do, and casts its real shadow. */
-function voxUpModel(vb, ib) {
+function uploadLowPolyMesh(vb, ib) {
   const gl = EGL.gl,
     vao = gl.createVertexArray();
   gl.bindVertexArray(vao);
@@ -662,12 +664,12 @@ function voxUpModel(vb, ib) {
   gl.bindVertexArray(null);
   return { vao, n: ib.length, el: 1, u32: ib instanceof Uint32Array, bufs: [v, e] };
 }
-function voxModelMesh(rec) {
+function prebuiltModelMesh(rec) {
   const gl = EGL.gl;
   const mk = P => {
     const b = Uint8Array.from(atob(P.data || ''), c => c.charCodeAt(0));
     if (!P.n || b.length < P.n * 24 + P.ni * 2) return null;
-    return voxUpModel(b.subarray(0, P.n * 24), new Uint16Array(b.buffer, P.n * 24, P.ni));
+    return uploadLowPolyMesh(b.subarray(0, P.n * 24), new Uint16Array(b.buffer, P.n * 24, P.ni));
   };
   const parts = (rec.parts || []).map(mk).filter(Boolean);
   if (!parts.length) return null;
@@ -695,7 +697,7 @@ function voxModelMesh(rec) {
    (along a board, up a post or a stave), stone is stone blocks (rough plaster on round stones), metal is metal seams,
    cloth is cloth, hay is thatch, leaves are moss, rust is rivets, stripes are stripes, rings are a cut log's rings
    (on the top). Recipes with imported voxels stay voxels. */
-const VOX_LP_TEX = {
+const LOW_POLY_TEXTURE_CELLS = {
   plain: 15,
   wood: 14,
   grain: 0,
@@ -708,11 +710,11 @@ const VOX_LP_TEX = {
   stripes: 20,
   rings: 15,
 };
-function voxLowPoly(rec) {
+function lowPolyFromRecipe(rec) {
   const V = [],
     I = [];
   let nv = 0;
-  const T = (t, round) => (t === 'stone' && round ? 0 : (VOX_LP_TEX[t || 'plain'] ?? 15));
+  const T = (t, round) => (t === 'stone' && round ? 0 : (LOW_POLY_TEXTURE_CELLS[t || 'plain'] ?? 15));
   const vert = (p, n, uv, tex, c) => {
       V.push(p, n, uv, tex, c);
       return nv++;
@@ -1018,7 +1020,7 @@ function voxLowPoly(rec) {
     box: [x0, y0, z0, x1, y1, z1],
   };
 }
-function voxLowPolyOn(rec) {
+function lowPolyOn(rec) {
   return (
     typeof eng === 'function' &&
     !!eng('world', 'voxelLowPoly') &&
@@ -1032,14 +1034,14 @@ function voxEl(m) {
   else gl.drawArrays(gl.TRIANGLES, 0, m.n);
 }
 /* the model's program: its own vertex shader (placed, scaled, turned and spun like a voxel prop), the buildings' look */
-const VOX_MDL_VS = () => `#version 300 es
+const lowPolyVertexShader = () => `#version 300 es
 precision highp float;layout(location=0) in vec3 mPos;layout(location=1) in vec3 mNrm;layout(location=2) in vec2 mUV;layout(location=3) in vec3 mTex;layout(location=4) in vec3 mCol;
 uniform mat4 uVP;uniform vec3 uBase,uSpinC;uniform vec4 uSpin;uniform float uS,uRot,uFlip;out vec3 vW;out vec3 vN;out vec2 vUV;out vec3 vTex;out vec3 vCol;${EGL_GLSL_COMMON}${VOX_GLSL_SPIN}
 void main(){float cr=cos(uRot),sr=sin(uRot);vec3 q0=voxSpin(mPos/256.-uSpinC)+uSpinC,n0=voxSpin(mNrm);vec3 p=vec3(q0.x*uFlip,q0.y,q0.z)*uS;p=vec3(p.x*cr-p.z*sr,p.y,p.x*sr+p.z*cr);vec3 n=vec3(n0.x*uFlip,n0.y,n0.z);n=vec3(n.x*cr-n.z*sr,n.y,n.x*sr+n.z*cr);
  vec3 w=uBase+p;w.y+=curveY(uBase.xz);vW=w;vN=n;vUV=mUV/64.;vTex=mTex;vCol=mCol;gl_Position=uVP*vec4(w,1.);}`;
 /* the model's light: the buildings' look and textures, with the props' cel shading (three tones of sun, as the voxel
    props and the painted props have) as much as the model asks (uCel; a recipe's "cel", else .75) */
-function voxMdlFS() {
+function lowPolyFragmentShader() {
   const f = BLD_SH.bld[1],
     a = 'shade(c,n,vW,sh,ao,vec4(.1,30.,0.,.3),0.)';
   if (!f.includes(a)) return f;
@@ -1050,10 +1052,10 @@ function voxMdlFS() {
 /* the models among the items, drawn after the voxel props: L is [item, mesh] */
 /* alpha 0.4: the props' shaders with the low-poly model's, for compiling ahead when the 3D view starts (walk-view-gl.js walkGlContext) */
 function voxShaders() {
-  if (!VOX_SH.mdl && typeof BLD_SH !== 'undefined') VOX_SH.mdl = [VOX_MDL_VS(), voxMdlFS()];
+  if (!VOX_SH.mdl && typeof BLD_SH !== 'undefined') VOX_SH.mdl = [lowPolyVertexShader(), lowPolyFragmentShader()];
   return VOX_SH;
 }
-function voxModels(C, X, L) {
+function drawLowPolyModels(C, X, L) {
   if (!L.length || typeof BLD_SH === 'undefined' || typeof bldArt !== 'function') return;
   const gl = EGL.gl;
   voxShaders();
@@ -1143,7 +1145,7 @@ function voxTag(it) {
   }
   /* only a recipe that makes a solid stands in for the picture: while it loads, or if it is empty or failed, the picture draws */
   if (!rec) return;
-  if (rec.kind === 'mesh' || voxLowPolyOn(rec)) {
+  if (rec.kind === 'mesh' || lowPolyOn(rec)) {
     const A = typeof bldArt === 'function' ? bldArt() : null,
       im = A && typeof artImage === 'function' ? artImage(A.detail) : null;
     if (!im || !(im.naturalWidth || im.width)) return;
@@ -1260,7 +1262,7 @@ function voxDraw(C, items, X, hits, labels, PPU) {
       if (hits && !it.far) addHitTarget(it, C, hits, labels, PPU);
     }
     gl.bindVertexArray(null);
-    voxModels(C, X, ML);
+    drawLowPolyModels(C, X, ML);
     if (hits) for (const [it] of ML) if (!it.far) addHitTarget(it, C, hits, labels, PPU);
   });
 }

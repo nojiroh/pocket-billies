@@ -1763,11 +1763,11 @@ def desktop_steps(b, base, R):
         """every voxel recipe of shapes builds as a low-poly model painted from the building sheet, and as voxels at the
         art's scale (32 to the metre) when "Props as low-poly" is off; both within a budget a phone can carry; in the
         every-prop scene they draw as models"""
-        if not pg.evaluate("typeof voxLowPoly==='function'"): return 'not in this build'
+        if not pg.evaluate("typeof lowPolyFromRecipe==='function'"): return 'not in this build'
         pg.evaluate("window.__P=Object.entries(GD.scenery.props).filter(([k,M])=>typeof M.vox==='string').map(([k,M])=>M.vox);__P.forEach(p=>voxRecipe(p));0")
         until(pg, "__P.every(p=>VOX.recipes.get(p))", 30)
         r = pg.evaluate("""(()=>{let n=0,lp=0,q=0,bad=[];for(const p of __P){const rec=VOX.recipes.get(p);if(!rec||rec.kind==='mesh')continue;n++;
-          const L=voxLowPoly(rec),V=voxMesh(voxelise(rec,32),32);if(!L||!V){bad.push(p.split('/').pop());continue}lp+=L.tris;q+=V.quads}return {n,lp,q,bad,on:!!eng('world','voxelLowPoly'),res:VOX.VPM}})()""")
+          const L=lowPolyFromRecipe(rec),V=voxMesh(voxelise(rec,32),32);if(!L||!V){bad.push(p.split('/').pop());continue}lp+=L.tris;q+=V.quads}return {n,lp,q,bad,on:!!eng('world','voxelLowPoly'),res:VOX.VPM}})()""")
         if r['bad']: raise Exception(f'these recipes make nothing: {r["bad"][:6]}')
         if not r['on']: raise Exception('props aren’t low-poly by default')
         if r['res'] != 32: raise Exception(f'voxels are {r["res"]} to the metre, not 32')
