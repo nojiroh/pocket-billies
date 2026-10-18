@@ -86,14 +86,14 @@ import {
   canvasPoint,
   climbStartEnd,
   cropGrowth,
-  dioBubble,
-  dioPill,
-  dioSpeech,
-  dioTag,
-  dioTapMark,
   directionOf,
+  drawBubble,
   drawExitLabels,
   drawExitMarks,
+  drawLabelPill,
+  drawLevelTag,
+  drawSpeech,
+  drawTapMark,
   encounterSpot,
   ensureGround,
   flagPicturePath,
@@ -3733,14 +3733,14 @@ function dglFrameIn(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
   x.clearRect(0, 0, rw, rh);
   if (!BT && !(walkView.opt.active && !walkView.opt.active())) {
     drawExitMarks(C, st, t);
-    dioTapMark(C, t);
+    drawTapMark(C, t);
     if (typeof owLabels === 'function' && !BT) owLabels(C, labels);
     for (const l of labels) {
-      if (l.k === 'enc') dioTag(x, l.x, l.y, l.e);
-      else if (l.k === 'bang') dioBubble(x, l.x, l.y, '!', l.col);
-      else if (l.k === 'say') dioSpeech(x, l.x, l.y, l.t, l.a);
+      if (l.k === 'enc') drawLevelTag(x, l.x, l.y, l.e);
+      else if (l.k === 'bang') drawBubble(x, l.x, l.y, '!', l.col);
+      else if (l.k === 'say') drawSpeech(x, l.x, l.y, l.t, l.a);
       else if (l.k === 'act' && l.y > rh * 0.1)
-        dioPill(
+        drawLabelPill(
           x,
           l.x,
           l.y,

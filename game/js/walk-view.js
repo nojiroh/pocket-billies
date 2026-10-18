@@ -90,6 +90,7 @@ expose({
   baseMapId: [() => baseMapId, v => (baseMapId = v)],
   bigTilePath: [() => bigTilePath, v => (bigTilePath = v)],
   bigTilesOn: [() => bigTilesOn],
+  blendHexColor: [() => blendHexColor, v => (blendHexColor = v)],
   bridgeAt: [() => bridgeAt, v => (bridgeAt = v)],
   buildGroundAsync: [() => buildGroundAsync, v => (buildGroundAsync = v)],
   buildGroundPicture: [() => buildGroundPicture, v => (buildGroundPicture = v)],
@@ -104,21 +105,17 @@ expose({
   closedText: [() => closedText, v => (closedText = v)],
   cropGrowth: [() => cropGrowth, v => (cropGrowth = v)],
   decodeBase64Array: [() => decodeBase64Array, v => (decodeBase64Array = v)],
-  dioBubble: [() => dioBubble, v => (dioBubble = v)],
-  dioMix: [() => dioMix, v => (dioMix = v)],
-  dioPanel: [() => dioPanel, v => (dioPanel = v)],
-  dioPill: [() => dioPill, v => (dioPill = v)],
-  dioPillSize: [() => dioPillSize, v => (dioPillSize = v)],
-  dioPx: [() => dioPx, v => (dioPx = v)],
-  dioPxArrow: [() => dioPxArrow, v => (dioPxArrow = v)],
-  dioPxFont: [() => dioPxFont, v => (dioPxFont = v)],
-  dioPxTail: [() => dioPxTail, v => (dioPxTail = v)],
-  dioSpeech: [() => dioSpeech, v => (dioSpeech = v)],
-  dioTag: [() => dioTag, v => (dioTag = v)],
-  dioTapMark: [() => dioTapMark, v => (dioTapMark = v)],
   directionOf: [() => directionOf, v => (directionOf = v)],
+  drawBubble: [() => drawBubble, v => (drawBubble = v)],
   drawExitLabels: [() => drawExitLabels, v => (drawExitLabels = v)],
   drawExitMarks: [() => drawExitMarks, v => (drawExitMarks = v)],
+  drawLabelPill: [() => drawLabelPill, v => (drawLabelPill = v)],
+  drawLevelTag: [() => drawLevelTag, v => (drawLevelTag = v)],
+  drawPixelArrow: [() => drawPixelArrow, v => (drawPixelArrow = v)],
+  drawPixelPanel: [() => drawPixelPanel, v => (drawPixelPanel = v)],
+  drawSpeech: [() => drawSpeech, v => (drawSpeech = v)],
+  drawSpeechTail: [() => drawSpeechTail, v => (drawSpeechTail = v)],
+  drawTapMark: [() => drawTapMark, v => (drawTapMark = v)],
   encodeBase64Array: [() => encodeBase64Array, v => (encodeBase64Array = v)],
   encounterCandidates: [() => encounterCandidates, v => (encounterCandidates = v)],
   encounterSpot: [() => encounterSpot, v => (encounterSpot = v)],
@@ -148,6 +145,7 @@ expose({
   isOpenNow: [() => isOpenNow, v => (isOpenNow = v)],
   isWalkable: [() => isWalkable, v => (isWalkable = v)],
   keepGround: [() => keepGround, v => (keepGround = v)],
+  labelPillSize: [() => labelPillSize, v => (labelPillSize = v)],
   layerAsProp: [() => layerAsProp, v => (layerAsProp = v)],
   mapArtPaths: [() => mapArtPaths, v => (mapArtPaths = v)],
   mapBridges: [() => mapBridges, v => (mapBridges = v)],
@@ -168,6 +166,8 @@ expose({
   pathWearFn: [() => pathWearFn, v => (pathWearFn = v)],
   pathWearLines: [() => pathWearLines, v => (pathWearLines = v)],
   pickHit: [() => pickHit, v => (pickHit = v)],
+  pixelFont: [() => pixelFont, v => (pixelFont = v)],
+  pixelUnit: [() => pixelUnit, v => (pixelUnit = v)],
   plainTileIndex: [() => plainTileIndex, v => (plainTileIndex = v)],
   pointAlongMapPath: [() => pointAlongMapPath, v => (pointAlongMapPath = v)],
   pointAlongPolyline: [() => pointAlongPolyline, v => (pointAlongPolyline = v)],
@@ -3999,14 +3999,21 @@ export function drawExitLabels(C, st, hits, hub) {
       dz = pt[1] - hub[1];
     const arrow = Math.abs(dx) > Math.abs(dz) * 0.8 ? (dx > 0 ? '→' : '←') : dz > 0 ? '↑' : '↓',
       txt = dx < 0 && Math.abs(dx) > Math.abs(dz) * 0.8 ? `${arrow} ${e.name}` : `${e.name} ${arrow}`;
-    const PS = dioPillSize(x, txt, e.locked ? '🔒' : null),
+    const PS = labelPillSize(x, txt, e.locked ? '🔒' : null),
       w = PS.w,
       h = PS.h,
       top = Math.max(64, C.rh * 0.09);
     const sf = walkView.opt.safe ? walkView.opt.safe() : [0.1, 0.85],
       lx = clamp(q.x, m + w / 2, C.rw - m - w / 2),
       ly = clamp(q.y, Math.max(top, sf[0] * C.rh) + h + 4, Math.min(C.rh - m * 6, sf[1] * C.rh - 8));
-    const r = dioPill(x, lx, ly, txt, e.locked ? '#B54A55' : e.dest ? '#C99A1E' : '#2E7D5B', e.locked ? '🔒' : null);
+    const r = drawLabelPill(
+      x,
+      lx,
+      ly,
+      txt,
+      e.locked ? '#B54A55' : e.dest ? '#C99A1E' : '#2E7D5B',
+      e.locked ? '🔒' : null
+    );
     hits.push({
       k: 'exit',
       e,
@@ -4019,7 +4026,7 @@ export function drawExitLabels(C, st, hits, hub) {
     });
   }
 }
-export function dioTapMark(C, t) {
+export function drawTapMark(C, t) {
   const T = walkView.tap;
   if (!T) return;
   const age = (t - T.t) / 700;
@@ -4042,13 +4049,13 @@ export function dioTapMark(C, t) {
 /* v47: labels in the world in the game's pixel style: framed panels (square corners notched by one pixel, a dark
    outline, light along the top, shade along the bottom, a drop shadow) and the pixel font (Tiny5, 8 px to the em, so
    it is drawn at whole multiples of 8), all on a whole-pixel grid. Speech keeps the reading font inside a pixel frame */
-function dioPx() {
+function pixelUnit() {
   return Math.max(1, Math.round(canvasPixels(13) / 7));
 }
-function dioPxFont(u) {
+function pixelFont(u) {
   return `400 ${8 * u}px Tiny5, ui-monospace, monospace`;
 }
-function dioMix(c, t, k) {
+function blendHexColor(c, t, k) {
   if (typeof c !== 'string' || c[0] !== '#' || c.length < 7) return c;
   const a = [1, 3, 5].map(i => parseInt(c.slice(i, i + 2), 16)),
     b = [1, 3, 5].map(i => parseInt(t.slice(i, i + 2), 16));
@@ -4063,7 +4070,7 @@ function dioMix(c, t, k) {
       .join('')
   );
 }
-function dioPanel(x, x0, y0, w, h, u, fill, hi, lo, line) {
+function drawPixelPanel(x, x0, y0, w, h, u, fill, hi, lo, line) {
   x.fillStyle = 'rgba(20,14,36,.35)';
   x.fillRect(x0 + u, y0 + 2 * u, w, h);
   x.fillStyle = line || '#1E1830';
@@ -4081,44 +4088,44 @@ function dioPanel(x, x0, y0, w, h, u, fill, hi, lo, line) {
   }
 }
 /* a pixel arrow (the pixel font has no left or right arrow), 5 pixels tall, its bottom row on the baseline */
-function dioPxArrow(x, x0, by, u, dir) {
+function drawPixelArrow(x, x0, by, u, dir) {
   const R = ['..#..', '...#.', '#####', '...#.', '..#..'];
   for (let j = 0; j < 5; j++)
     for (let i = 0; i < 5; i++) if (R[j][dir > 0 ? i : 4 - i] === '#') x.fillRect(x0 + i * u, by - 5 * u + j * u, u, u);
 }
-function dioPillSize(x, txt, ico) {
-  const u = dioPx();
-  x.font = dioPxFont(u);
+function labelPillSize(x, txt, ico) {
+  const u = pixelUnit();
+  x.font = pixelFont(u);
   const ar = txt.includes('→') ? 1 : txt.includes('←') ? -1 : 0,
     t = ((ico ? ico + ' ' : '') + txt.replace(/[←→]/g, '')).trim(),
     tw = Math.ceil(x.measureText(t).width / u) * u;
   return { u, t, tw, ar, w: tw + u * (ar ? 17 : 10), h: u * 11 };
 }
-export function dioPill(x, cx, cy, txt, col, ico) {
+export function drawLabelPill(x, cx, cy, txt, col, ico) {
   x.save();
   x.setTransform(1, 0, 0, 1, 0, 0);
-  const S = dioPillSize(x, txt, ico),
+  const S = labelPillSize(x, txt, ico),
     u = S.u,
     w = S.w,
     h = S.h,
     x0 = Math.round(cx - w / 2),
     y0 = Math.round(cy - h);
-  dioPanel(x, x0, y0, w, h, u, col, dioMix(col, '#FFFFFF', 0.3), dioMix(col, '#000000', 0.28));
+  drawPixelPanel(x, x0, y0, w, h, u, col, blendHexColor(col, '#FFFFFF', 0.3), blendHexColor(col, '#000000', 0.28));
   x.fillStyle = '#FFFFFF';
   x.textAlign = 'left';
   x.textBaseline = 'alphabetic';
   const by = y0 + u * 8;
   let tx = x0 + u * 5;
   if (S.ar < 0) {
-    dioPxArrow(x, tx, by, u, -1);
+    drawPixelArrow(x, tx, by, u, -1);
     tx += u * 7;
   }
   x.fillText(S.t, tx, by);
-  if (S.ar > 0) dioPxArrow(x, tx + S.tw + u * 2, by, u, 1);
+  if (S.ar > 0) drawPixelArrow(x, tx + S.tw + u * 2, by, u, 1);
   x.restore();
   return [x0, y0, x0 + w, y0 + h];
 }
-function dioPxTail(x, cx, y, u, fill, line) {
+function drawSpeechTail(x, cx, y, u, fill, line) {
   x.fillStyle = line;
   x.fillRect(cx - 3 * u, y, 6 * u, u);
   x.fillRect(cx - 2 * u, y + u, 4 * u, u);
@@ -4127,10 +4134,10 @@ function dioPxTail(x, cx, y, u, fill, line) {
   x.fillRect(cx - 2 * u, y - u, 4 * u, u);
   x.fillRect(cx - u, y, 2 * u, u);
 }
-export function dioSpeech(x, cx, cy, txt, a) {
+export function drawSpeech(x, cx, cy, txt, a) {
   if (!txt) return;
   const s = canvasPixels(12),
-    u = dioPx();
+    u = pixelUnit();
   x.save();
   x.globalAlpha = a;
   x.font = `500 ${s}px Chakra Petch, system-ui, sans-serif`;
@@ -4151,45 +4158,45 @@ export function dioSpeech(x, cx, cy, txt, a) {
     x0 = Math.round(clamp(cx - w / 2, 6, walkView.cv.width - w - 6)),
     y0 = Math.round(Math.max(6, cy - h - 4 * u)),
     tc = Math.round(clamp(cx, x0 + 4 * u, x0 + w - 4 * u));
-  dioPanel(x, x0, y0, w, h, u, '#FFFDF4', '#FFFFFF', '#EDE6D6', '#2A2238');
-  dioPxTail(x, tc, y0 + h - u, u, '#FFFDF4', '#2A2238');
+  drawPixelPanel(x, x0, y0, w, h, u, '#FFFDF4', '#FFFFFF', '#EDE6D6', '#2A2238');
+  drawSpeechTail(x, tc, y0 + h - u, u, '#FFFDF4', '#2A2238');
   x.fillStyle = '#2A2238';
   x.textAlign = 'left';
   x.textBaseline = 'top';
   lines.forEach((l, i) => x.fillText(l, x0 + s * 0.6, y0 + s * 0.45 + i * s * 1.25));
   x.restore();
 }
-export function dioBubble(x, cx, cy, txt, col) {
+export function drawBubble(x, cx, cy, txt, col) {
   x.save();
   x.setTransform(1, 0, 0, 1, 0, 0);
-  const u = dioPx(),
+  const u = pixelUnit(),
     b = Math.round((Math.abs(Math.sin(walkView.t / 300)) * 3) / u) * u,
     w = u * 9,
     h = u * 11,
     x0 = Math.round(cx - w / 2),
     y0 = Math.round(cy - h - 3 * u - b);
-  dioPanel(x, x0, y0, w, h, u, '#FFFDF4', '#FFFFFF', '#EDE6D6', '#2A2238');
-  dioPxTail(x, Math.round(cx), y0 + h - u, u, '#FFFDF4', '#2A2238');
+  drawPixelPanel(x, x0, y0, w, h, u, '#FFFDF4', '#FFFFFF', '#EDE6D6', '#2A2238');
+  drawSpeechTail(x, Math.round(cx), y0 + h - u, u, '#FFFDF4', '#2A2238');
   x.fillStyle = col;
-  x.font = dioPxFont(u);
+  x.font = pixelFont(u);
   x.textAlign = 'center';
   x.textBaseline = 'alphabetic';
   x.fillText(txt, x0 + w / 2, y0 + u * 8);
   x.restore();
 }
-export function dioTag(x, cx, cy, e) {
-  const u = dioPx(),
+export function drawLevelTag(x, cx, cy, e) {
+  const u = pixelUnit(),
     txt = `Lv ${e.lvl}`;
   x.save();
-  x.font = dioPxFont(u);
+  x.font = pixelFont(u);
   const tw = Math.ceil(x.measureText(txt).width / u) * u,
     qw = Math.ceil(x.measureText('?').width / u) * u,
     w = tw + qw + u * 12,
     h = u * 11,
     x0 = Math.round(cx - w / 2),
     y0 = Math.round(cy - h - 2 * u);
-  dioPanel(x, x0, y0, w, h, u, '#251C3E', '#3A2E5C', '#18122A', '#0E0A18');
-  dioPxTail(x, Math.round(cx), y0 + h - u, u, '#251C3E', '#0E0A18');
+  drawPixelPanel(x, x0, y0, w, h, u, '#251C3E', '#3A2E5C', '#18122A', '#0E0A18');
+  drawSpeechTail(x, Math.round(cx), y0 + h - u, u, '#251C3E', '#0E0A18');
   x.textAlign = 'left';
   x.textBaseline = 'alphabetic';
   x.fillStyle = '#FFE27A';
