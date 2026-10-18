@@ -44,6 +44,12 @@ effects when looking at props.
   flower box, a stone chimney with a verdigris hat, a copper stove pipe, a brass weathervane, a door lamp that lights
   with the lamps. Only the shop sign stays a drawing. Its window, lamp and smoke effects are placed for the new model,
   and it no longer carries the old picture's building plan. Checked with one low-resolution shot.
+- Cottage, second pass (owner: more polygons, less chunky, more like the fifth-generation Pokémon games, more detail):
+  smooth 32-sided dome with moss tufts and flowers, a copper gutter and turned-out thatch lip, thatched dormer hoods
+  round the roof windows, slim posts and frames, half-timbered side walls, a stone surround and canopy on brackets
+  round the door, eight planks with iron straps, a knocker, verdigris shutters, a stone sill with honey jars, a
+  flower bed and stepping stones, a rain barrel under a copper downpipe, a woodpile and Granny Juniper's straw skep.
+  About 200 parts. One low-resolution check shot; not measured on a phone.
 - Variants count: the 11 new props have 22 looks in all: beech 1, oak 4 (oak, spreading, sapling, autumn), great oak
   1, wild roses 1, round bush 3, rocks 5 (3 shapes, mossy, snowy), mushrooms 3, cottage 1, lantern 1, washing line 1,
   tall grass 3.
