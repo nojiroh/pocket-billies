@@ -24,7 +24,7 @@ import {
 import { ART_CACHE, COIN_ART, EGG_ART, ICON_ATLAS, MENU_BACKGROUND_ART, artBoot, artImg, uiIconURL } from './art.js';
 import { personArtPaths } from './person-art.js';
 import { rigAtlas } from './skeleton-rig.js';
-import { AREAS, battleStageArtFiles, battleStagePrepare } from './battle-stage.js';
+import { AREAS, battleStagePrepare } from './battle-stage.js';
 import { mapArtPaths, mapById, walkData, walkView } from './walk-view.js';
 import { gpuState, webgl2Supported } from './engine/webgl.js';
 import { environment } from './environment.js';
@@ -179,11 +179,6 @@ function loadList() {
     const R = RIGS[sp];
     if (!R) continue;
     for (const v of ['front', 'back']) if (R[v]) for (const g of [0, 1]) add(rigAtlas(sp, g, v), 1);
-  }
-  for (const a of Object.keys(AREAS)) {
-    try {
-      battleStageArtFiles(a).forEach(p => add(p, 2));
-    } catch (e) {}
   }
   try {
     const D = walkData();

@@ -743,7 +743,7 @@ def phone_flow(b, base, R):
         for tab in ['walk', 'map', 'team', 'ledger', 'profile']:
             pg.evaluate(f"uiState.tab='{tab}';render();scrollTo(0,0);0"); time.sleep(2.5 if tab in ('walk', 'map') else .6); shot(pg, f'phone-{tab}')
         pg.evaluate("uiState.tab='walk';saveData.trip.node=0;render();openShop('marigold');0"); time.sleep(.6); shot(pg, 'phone-shop')
-        pg.evaluate("closeModal();screenWipe=f=>f();saveData.preferences.battleStage='classic';activeBattle=null;const q={id:'tq',sp:'swift1',lvl:12,gold:false,no:1};saveData.queue=[q];saveData.team.forEach(m=>{m.hp=maxHp(m)});startWild(q);0")
+        pg.evaluate("closeModal();screenWipe=f=>f();activeBattle=null;const q={id:'tq',sp:'swift1',lvl:12,gold:false,no:1};saveData.queue=[q];saveData.team.forEach(m=>{m.hp=maxHp(m)});startWild(q);0")
         if wait_phase(pg) != 'choose': raise Exception('a wild battle never reached the move menu')
         shot(pg, 'phone-battle')
         pg.evaluate("stopTimers();activeBattle=null;battleStageStop();render();0")
@@ -1015,9 +1015,9 @@ def desktop_steps(b, base, R):
             if at[3] or abs(at[0] - r[0]) > .4 or abs(at[1] - r[1]) > .4 or abs(at[2] - r[2]) > .3: raise Exception(f'climbing the ladder ended at {[round(v, 2) for v in at[:3]]}, not on top at {[round(v, 2) for v in r[:3]]}')
             out.append(f'climbed a {r[3]} m ladder')
         # rain in battle
-        go_scene(pg, 0); pg.evaluate("environment.force={time:15,weather:'rain'};saveData.preferences.battleStage='classic';const q={id:'twx',sp:'swift1',lvl:8,gold:false,no:1};saveData.queue=[q];saveData.team.forEach(m=>{m.hp=maxHp(m)});startWild(q);0")
+        go_scene(pg, 0); pg.evaluate("environment.force={time:15,weather:'rain'};const q={id:'twx',sp:'swift1',lvl:8,gold:false,no:1};saveData.queue=[q];saveData.team.forEach(m=>{m.hp=maxHp(m)});startWild(q);0")
         wait_phase(pg, sec=60); bw = pg.evaluate("(()=>{const w=battleWeather();return w?[w.k,battleWeatherMultiplier('Water'),battleWeatherMultiplier('Fire'),document.getElementById('camWorld')?document.getElementById('camWorld').dataset.wx:''] :null})()")
-        time.sleep(1); shot(pg, 'battle-rain'); pg.evaluate("stopTimers();activeBattle=null;battleStageStop();saveData.preferences.battleStage='scene';environment.force=null;render();0")
+        time.sleep(1); shot(pg, 'battle-rain'); pg.evaluate("stopTimers();activeBattle=null;battleStageStop();environment.force=null;render();0")
         if not bw or bw[0] != 'rain' or bw[1] <= 1 or bw[2] >= 1: raise Exception(f'rain didn’t change the battle ({bw})')
         out.append(f'rain in battle: Water ×{bw[1]}, Fire ×{bw[2]}')
         if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
@@ -1285,7 +1285,7 @@ def desktop_steps(b, base, R):
         if not (e['ra'] and e['a'] == 'musk2' and e['b'] == 'musk3'): raise Exception(f'split evolution: {e}')
         out.append(f"split at 32: Build → Marsox, Hype → Memeox (“{e['hint'][:60]}…”)")
         # a battle with the new starter on the 3D stage: the player's rig buffer has pixels
-        pg.evaluate("saveData.team.unshift(makeBilly('gates0',14));saveData.team[0].hp=maxHp(saveData.team[0]);saveData.preferences.battleStage='scene';const q={id:'cq36',sp:'bezos1',lvl:12,gold:false,no:1};saveData.queue.push(q);startWild(q);0")
+        pg.evaluate("saveData.team.unshift(makeBilly('gates0',14));saveData.team[0].hp=maxHp(saveData.team[0]);const q={id:'cq36',sp:'bezos1',lvl:12,gold:false,no:1};saveData.queue.push(q);startWild(q);0")
         if not until(pg, "activeBattle&&activeBattle.phase==='choose'", 90, "activeBattle&&activeBattle.phase==='playing'&&tapMessage()"): raise Exception('the starter battle never reached the move menu')
         until(pg, "(()=>{const a=actorBuffer(0),b=actorBuffer(1);return !!(a&&b)})()", 15); time.sleep(2)
         px = json.loads(pg.evaluate("(()=>{const o={};for(const i of [0,1]){const Bf=actorBuffer(i);if(!Bf){o[i]=0;continue}const d=Bf.buf.getContext('2d').getImageData(0,0,Bf.buf.width,Bf.buf.height).data;let n=0;for(let k=3;k<d.length;k+=4)if(d[k]>0)n++;o[i]=n}return JSON.stringify(o)})()"))
@@ -1726,7 +1726,7 @@ def desktop_steps(b, base, R):
             if gone: raise Exception(f'the Lore page doesn’t show {", ".join(gone[:5])}')
             out.append(f'the Lore page shows {len(names)} places')
             # the story: Cass Flow's clue, then Vinylla, hidden at the Inner Sun until she's beaten on the Spire, and the ending
-            pg.evaluate("uiState.guideTab=null;uiState.tab='team';render();saveData.preferences.battleStage='classic';screenWipe=f=>f();Object.values(TRAINERS).forEach(T=>{if(T.intro)storyFlags()['met_'+T.id]=1});"
+            pg.evaluate("uiState.guideTab=null;uiState.tab='team';render();screenWipe=f=>f();Object.values(TRAINERS).forEach(T=>{if(T.intro)storyFlags()['met_'+T.id]=1});"
                         "['oil','retail','peak','haven','bloom','vault','morel','carat'].forEach(s=>{if(!saveData.seats.includes(s))saveData.seats.push(s)});delete saveData.flags.cass;delete saveData.flags.vinylla1;delete saveData.flags.vinylla2;saveData.team.forEach(m=>{m.hp=maxHp(m)});0")
             def beat(tid, pic=None):
                 pg.evaluate(f"saveData.team.forEach(m=>{{m.hp=maxHp(m)}});startTrainer('{tid}',{{talked:true}});0")
@@ -2062,11 +2062,11 @@ def desktop_steps(b, base, R):
 
     @step('Battles: on the 3D stage, and a trainer battle played to the end', 330)
     def battles():
-        pg.evaluate("saveData.preferences.battleStage='scene';screenWipe=f=>f();saveData.trip={node:0,prog:0,plan:[],hold:false};uiState.tab='walk';render();0"); time.sleep(2)
+        pg.evaluate("screenWipe=f=>f();saveData.trip={node:0,prog:0,plan:[],hold:false};uiState.tab='walk';render();0"); time.sleep(2)
         pg.evaluate("const q={id:'t3d',sp:'swift1',lvl:12,gold:false,no:1};saveData.queue=[q];saveData.team.forEach(m=>{m.hp=maxHp(m)});startWild(q);0")
         if wait_phase(pg, sec=60) != 'choose': raise Exception('the 3D-stage battle never reached the move menu')
         shot(pg, 'battle-3d'); stage = pg.evaluate("!!battleStage.gl")
-        pg.evaluate("stopTimers();activeBattle=null;battleStageStop();saveData.preferences.battleStage='classic';render();0")
+        pg.evaluate("stopTimers();activeBattle=null;battleStageStop();render();0")
         # battle animations at four times the speed (the Debug panel's speed setting), so the result comes quickly
         pg.evaluate("battleStage.speed=4;saveData.team=[makeBilly('musk2',45),makeBilly('swift1',30)];saveData.trip.node=4;startTrainer('crude');0")
         end = time.time() + 300; won = None

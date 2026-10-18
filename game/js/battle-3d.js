@@ -4,11 +4,10 @@
    world through the battle camera (battle-stage.js keeps directing it: battleStage.V, focus, punches and shakes). The billionaires and
    trainers become lit sprites in that world, with sun shadows and contact shadows; props standing in the way are
    hidden; glowing move effects light the ground. battle-stage.js still draws the move effects themselves on its canvas
-   above. The classic painted stage is used when WebGL isn't running, when the stop has no walk scene,
-   or when the player picks it in Settings. */
+   above. phase 06-3: the only stage (the painted one is gone); a battle waits until the walk scene is ready. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { activeBattle, fieldState, provide, reducedMotion, saveData } from './hooks.js';
+import { activeBattle, fieldState, provide, reducedMotion } from './hooks.js';
 import { $, clamp } from './util.js';
 import { hexToRgb } from './art.js';
 import {
@@ -49,11 +48,9 @@ export function battle3dWanted() {
     (typeof gpuState !== 'undefined' && gpuState.lost)
   )
     return false;
-  const p = saveData.preferences || {};
-  if (p.battleStage === 'classic') return false;
-  /* v43: whatever walk scene is on screen and ready is the stage (it used to have to be the stop's own scene, so a battle on the second half of a road, or one started before the scene had opened, fell back to the painted stage) */ return (
-    !!walkView.id && !!walkView.sc && !walkView.sc.room
-  );
+  /* v43: whatever walk scene is on screen and ready is the stage. phase 06-3: rooms too, and nothing else: the
+     painted stage and the Settings choice are gone */
+  return !!walkView.id && !!walkView.sc;
 }
 function battle3dStart() {
   if (!battle3dWanted()) return false;

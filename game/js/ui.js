@@ -144,7 +144,7 @@ import {
   seamlessWorld,
   shiftWalkView,
 } from './seamless-world.js';
-import { battle3dLayout, battle3dWanted } from './battle-3d.js';
+import { battle3dLayout } from './battle-3d.js';
 import {
   battleResize,
   battleShell,
@@ -1553,17 +1553,15 @@ function walkMapSync() {
       }
       return;
     }
-    if (typeof battle3dWanted === 'function' && battle3dWanted()) return;
-    const cv = $('#dio');
-    if (cv) cv.hidden = true;
-    if (walkView.cv) stopWalkView();
-    return;
+    /* phase 06-3: the battle needs the 3D scene (there is no painted stage): keep it running, or open the one where you
+       are below; the battle joins it as soon as it is ready (battle-stage.js battleStageJoin3d) */
+    if (walkView.cv) return;
   }
-  const on = saveData.started && uiState.tab !== 'map' && !!mapIdAt(saveData.trip.node),
-    walk = on && uiState.tab === 'walk';
+  const on = saveData.started && (!!activeBattle || uiState.tab !== 'map') && !!mapIdAt(saveData.trip.node),
+    walk = on && !activeBattle && uiState.tab === 'walk';
   let cv = $('#dio');
   document.body.classList.toggle('on-walk', walk);
-  document.body.classList.toggle('on-scene', on && !walk);
+  document.body.classList.toggle('on-scene', on && !walk && !activeBattle);
   if (!on) {
     if (walkView.cv) stopWalkView();
     if (uiState.tab === 'map' && saveData.started && typeof worldMapGlWanted === 'function' && worldMapGlWanted()) {

@@ -276,7 +276,7 @@ export function setOpenBattle(v) {
 }
 /* v31: on the 3D stage a battle starts where you are, without a wipe: the camera swoops down toward the spot, the
    billionaire bursts out of the grass in a spray of leaves, then the battle's panels slide up over the same picture.
-   When it's over they slide away and the camera pulls back out. The painted stage keeps the wipe. */
+   When it's over they slide away and the camera pulls back out. */
 function battleSeamless() {
   return (
     !reducedMotion &&
@@ -1186,8 +1186,8 @@ export function setEndBattle(v) {
    camera, so the battle reads from the picture itself. With two or three a side they replace the corner cards; in a
    one-on-one they do too, unless Settings → Battle HUD is set to the classic cards. Tap a foe's plate (or the foe) to
    aim at it. */
-const stagePlatesOn = () =>
-  !!activeBattle && (isMulti() || ((saveData.preferences || {}).battleHud || 'scene') !== 'classic');
+/* phase 06-3: always the plates in the scene (the classic corner cards and their setting are gone) */
+const stagePlatesOn = () => !!activeBattle;
 function plateElement(k) {
   const L = $('#plates');
   if (!L) return null;

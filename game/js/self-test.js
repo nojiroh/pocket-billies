@@ -2,7 +2,7 @@
 /* ================= FULL TEST =================
    Settings → Run the full test (and the debug menu) plays through everything that draws, for several minutes:
    every walk scene and room (walking, turning and zooming the camera), night, weather and seasons, a road between two
-   places, a room that opens in place, the light lab, battles on the 3D stage and on a painted stage (double and Alpha
+   places, a room that opens in place, the light lab, a battle on the 3D stage (double and Alpha
    too), the opening's fall and Blake's first battle, Billies in the world, the world map and its 3D miniatures, then a
    stress test that keeps adding load (crowds, particles, extra props, maximum quality) and measures how far the device
    keeps up. Your save is not changed: saving is paused and everything is put back
@@ -704,7 +704,7 @@ async function runFullTest(mode) {
         },
         5
       );
-    /* 2. battles: on the 3D stage where you stand, then on a painted stage */
+    /* 2. a battle on the 3D stage where you stand */
     /* v41: the wild foe is an ordinary first-stage species (the first stage-1 species used to be the legendary Oilympus since v39) */
     const foeSp =
       Object.keys(SPECIES).find(
@@ -712,16 +712,15 @@ async function runFullTest(mode) {
       ) ||
       Object.keys(SPECIES).find(k => SPECIES[k].stage === 0 && SPECIES[k].rar !== 'mythical') ||
       Object.keys(SPECIES)[0];
-    const battle = async classic => {
+    /* phase 06-3: one battle, on the 3D stage (the painted stage is gone) */
+    const battle = async () => {
       uiState.bench = null;
       uiState.tab = 'walk';
       saveData.trip.node = back.node;
       render();
       await selfTestSleep(600);
       for (let i = 0; i < 40 && !(walkView.ready && walkView.id === mapIdAt(back.node)); i++) await selfTestSleep(200);
-      /* v43: the stage needs the walk scene open */ saveData.preferences = saveData.preferences || {};
-      const pref = saveData.preferences.battleStage;
-      saveData.preferences.battleStage = classic ? 'classic' : 'scene';
+      /* v43: the stage needs the walk scene open */
       saveData.team.forEach(m => {
         m.hp = maxHp(m);
       });
@@ -747,24 +746,25 @@ async function runFullTest(mode) {
       const gl = !!battleStage.gl,
         menuMs = Math.round(performance.now() - tb);
       if (ok) {
+        /* phase 06-3: the moves show on the first menu; an older build has a Fight button first */
         const f = document.querySelector('[data-a=bfight]');
         if (f) {
           f.click();
           await selfTestSleep(200);
-          const m = document.querySelector('[data-a=bmove]');
-          if (m) m.click();
         }
+        const m = document.querySelector('[data-a=bmove]');
+        if (m) m.click();
         ok = await want(['choose', 'end', 'switch'], 45000);
         if (!ok) why = 'a move never finished playing';
       }
       stopTimers();
       setActiveBattle(null);
       battleStageStop();
-      saveData.preferences.battleStage = pref;
       render();
       await selfTestSleep(600);
+      if (ok && !gl) throw new Error('the battle never got its 3D stage');
       if (!ok) throw new Error(why);
-      return `${classic ? 'painted stage' : gl ? '3D stage' : '3D stage not available here, painted stage used'}; move menu after ${(menuMs / 1000).toFixed(1)} s`;
+      return `3D stage; move menu after ${(menuMs / 1000).toFixed(1)} s`;
     };
     /* v33: team battles: a trainer's double battle and an Alpha in the grass, each played for a turn with every fighter choosing */
     const teamBattle = async kind => {
@@ -1128,8 +1128,7 @@ async function runFullTest(mode) {
         6,
         120
       );
-    await phase('Battle on the 3D stage', 'scene', () => battle(false), 7, 120);
-    await phase('Battle on a painted stage', 'scene', () => battle(true), 5, 120);
+    await phase('Battle on the 3D stage', 'scene', () => battle(), 7, 120);
     await phase('Double battle with a trainer', 'scene', () => teamBattle('double'), 8, 150);
     await phase('Alpha battle: your team against one', 'scene', () => teamBattle('alpha'), 8, 150);
     /* v47: the opening's fall across the Hollow Earth (the world map's renderer, flying past the Inner Sun), timed */

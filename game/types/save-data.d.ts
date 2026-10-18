@@ -122,7 +122,6 @@ export interface Preferences {
   control?: string;
   skipTitle?: boolean;
   cardClosed?: any;
-  battleStage?: any;
   /** the player's own engine settings: group -> setting -> value (engine/settings.js) */
   eng?: Record<string, Record<string, number>>;
   [key: string]: any;

@@ -265,28 +265,12 @@ export function settingsHTML() {
         ])
       ) +
       settingsRowHTML(
-        'Battles happen',
-        'In the 3D place you are standing, or on the classic painted stage.',
-        segmentedHTML('battleStage', p.battleStage === 'classic' ? 'classic' : 'scene', [
-          ['scene', 'Where I stand'],
-          ['classic', 'Painted stage'],
-        ])
-      ) +
-      settingsRowHTML(
         'Battle speed',
         'How fast moves play out and lines move on. Tap still skips ahead at any speed.',
         segmentedHTML('battleSpeed', p.battleSpeed || 'normal', [
           ['normal', 'Normal'],
           ['fast', 'Fast'],
           ['faster', 'Faster'],
-        ])
-      ) +
-      settingsRowHTML(
-        'Battle panels',
-        'Name, level and HP float above each Billie in the scene, or sit in the classic corner cards. Double and Alpha battles always use the scene.',
-        segmentedHTML('battleHud', p.battleHud === 'classic' ? 'classic' : 'scene', [
-          ['scene', 'In the scene'],
-          ['classic', 'Corner cards'],
         ])
       ) +
       settingsRowHTML(

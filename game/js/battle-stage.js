@@ -1,11 +1,10 @@
 'use strict';
 /* ================= BATTLE STAGE =================
-   A perspective ground cast on the inside of a sphere, billboard props, rigged billboards and 3D particles.
-   The stage fills the whole screen. A fixed 224×168 "frame" (where the two billionaires stand) is placed in the
-   space the HUD leaves free, and the world simply continues around it.
-   Depth of field is computed in the canvas: the ground is blurred per row by its distance from the focus plane,
-   sprites and props by their depth. Nothing full-screen is blurred by CSS, which keeps 120 FPS realistic.
-   Ground, walls, far land, props, clouds and foregrounds come from art/battle/*.png; props can also be scene props (art/scene/props).
+   Directs a battle on the 3D engine (battle-3d.js draws the scene where you stand, the billionaires and the trainers):
+   the timeline, the camera, particles and move effects, drawn on this canvas over the scene. A fixed 224×168 "frame"
+   (where the two billionaires stand) is placed in the space the HUD leaves free. phase 06-3: the painted stage
+   (ground, walls, far land, painted props, clouds, foregrounds) is gone; a battle stage is now a name, indoors or not
+   and its ambient particles (game/data/battleStages.json).
    The camera is directed (pushes and pans with the action, intro dollies, a pull-back on faints), drifts in a slow orbit while idle,
    and is guarded so the two billionaires never leave the free frame. Reduced motion keeps it on the home shot. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
@@ -22,7 +21,6 @@ import {
   battleFreeArea,
   battleLayoutChanged,
   fighter,
-  gameData,
   hudHit,
   hudPop,
   maxHp,
@@ -30,24 +28,10 @@ import {
   provide,
   reducedMotion,
   saveData,
-  stopWalkView,
-  walkView,
 } from './hooks.js';
 import { $, clamp, random } from './util.js';
 import { frameCount, frameScheduler, frameStop, frameTask, userFps } from './frame-scheduler.js';
-import {
-  ART_CACHE,
-  artLoad,
-  artPixels,
-  bayerThreshold,
-  coinCanvas,
-  hexToRgb,
-  iconCanvas,
-  makeCanvas,
-  mixRgb,
-  packPixel,
-  whiteCopy,
-} from './art.js';
+import { coinCanvas, iconCanvas, makeCanvas, whiteCopy } from './art.js';
 import { ROBOT_PART_BONES } from './robot-art.js';
 import { personBattleFrames, personBattlePose, wardrobeData } from './person-art.js';
 import { drawRig, rigFrame, rigParts, rigTint } from './skeleton-rig.js';
@@ -74,7 +58,6 @@ expose({
   HIT_SPRITES_BY_TYPE: [() => HIT_SPRITES_BY_TYPE],
   HORIZON_IN_FRAME: [() => HORIZON_IN_FRAME],
   LEAF_COLORS: [() => LEAF_COLORS],
-  PROP_SWAY: [() => PROP_SWAY],
   PULL_BACK_CAMERA: [() => PULL_BACK_CAMERA],
   SOFT_BLUR_PAD: [() => SOFT_BLUR_PAD],
   SPRITE_BLUR_SCALE: [() => SPRITE_BLUR_SCALE],
@@ -89,11 +72,8 @@ expose({
   actorTop: [() => actorTop, v => (actorTop = v)],
   actorWorldPoint: [() => actorWorldPoint, v => (actorWorldPoint = v)],
   adaptBattleStageQuality: [() => adaptBattleStageQuality, v => (adaptBattleStageQuality = v)],
-  addDrawItem: [() => addDrawItem, v => (addDrawItem = v)],
   addParticle: [() => addParticle, v => (addParticle = v)],
-  artKey: [() => artKey],
   battleStage: [() => battleStage],
-  battleStageArtFiles: [() => battleStageArtFiles, v => (battleStageArtFiles = v)],
   battleStageCatch: [() => battleStageCatch, v => (battleStageCatch = v)],
   battleStageChromaticFlash: [() => battleStageChromaticFlash, v => (battleStageChromaticFlash = v)],
   battleStageDraw: [() => battleStageDraw, v => (battleStageDraw = v)],
@@ -103,11 +83,11 @@ expose({
   battleStageFocus: [() => battleStageFocus, v => (battleStageFocus = v)],
   battleStageFormat: [() => battleStageFormat, v => (battleStageFormat = v)],
   battleStageFrame: [() => battleStageFrame, v => (battleStageFrame = v)],
+  battleStageJoin3d: [() => battleStageJoin3d, v => (battleStageJoin3d = v)],
   battleStageLayout: [() => battleStageLayout, v => (battleStageLayout = v)],
   battleStagePlay: [() => battleStagePlay, v => (battleStagePlay = v)],
   battleStagePrepare: [() => battleStagePrepare, v => (battleStagePrepare = v)],
   battleStageProject: [() => battleStageProject],
-  battleStageProjectInto: [() => battleStageProjectInto, v => (battleStageProjectInto = v)],
   battleStageProjectWith: [() => battleStageProjectWith, v => (battleStageProjectWith = v)],
   battleStageResize: [() => battleStageResize, v => setBattleStageResize(v)],
   battleStageResolutionScale: [() => battleStageResolutionScale, v => (battleStageResolutionScale = v)],
@@ -119,9 +99,6 @@ expose({
   battleStageToCss: [() => battleStageToCss, v => (battleStageToCss = v)],
   blinkActor: [() => blinkActor, v => (blinkActor = v)],
   blurAt: [() => blurAt, v => (blurAt = v)],
-  blurFloorByDepth: [() => blurFloorByDepth, v => (blurFloorByDepth = v)],
-  boxBlurColumns: [() => boxBlurColumns, v => (boxBlurColumns = v)],
-  boxBlurRows: [() => boxBlurRows, v => (boxBlurRows = v)],
   burst: [() => burst, v => (burst = v)],
   buzz: [() => buzz, v => ((buzz = v), provide({ buzz }))],
   camApply: [() => camApply, v => (camApply = v)],
@@ -132,25 +109,15 @@ expose({
   camUpdate: [() => camUpdate, v => (camUpdate = v)],
   cameraGuardPose: [() => cameraGuardPose],
   cameraOverflow: [() => cameraOverflow, v => (cameraOverflow = v)],
-  castFloor: [() => castFloor, v => (castFloor = v)],
-  cloudShadows: [() => cloudShadows, v => (cloudShadows = v)],
   coinArc: [() => coinArc, v => (coinArc = v)],
-  drawActor: [() => drawActor, v => (drawActor = v)],
-  drawBillboard: [() => drawBillboard, v => (drawBillboard = v)],
   drawForegrounds: [() => drawForegrounds, v => (drawForegrounds = v)],
   drawList: [() => drawList],
   drawListLength: [() => drawListLength, v => (drawListLength = v)],
   drawParticles: [() => drawParticles, v => (drawParticles = v)],
   drawPixelRing: [() => drawPixelRing, v => (drawPixelRing = v)],
-  drawProp: [() => drawProp, v => (drawProp = v)],
   drawSelectionRing: [() => drawSelectionRing, v => (drawSelectionRing = v)],
   drawShadow: [() => drawShadow, v => (drawShadow = v)],
-  drawTrainer: [() => drawTrainer, v => (drawTrainer = v)],
   dueEvents: [() => dueEvents],
-  floorBuffers: [() => floorBuffers, v => (floorBuffers = v)],
-  floorKey: [() => floorKey, v => (floorKey = v)],
-  floorLowFrom: [() => floorLowFrom, v => (floorLowFrom = v)],
-  floorUpdate: [() => floorUpdate, v => (floorUpdate = v)],
   formatFocus: [() => formatFocus],
   groundRing: [() => groundRing, v => (groundRing = v)],
   handheld: [() => handheld, v => (handheld = v)],
@@ -158,10 +125,8 @@ expose({
   hitStop: [() => hitStop, v => (hitStop = v)],
   hitWeight: [() => hitWeight, v => (hitWeight = v)],
   homeCamera: [() => homeCamera],
-  lightShafts: [() => lightShafts, v => (lightShafts = v)],
   newActorState: [() => newActorState],
   particleSprite: [() => particleSprite, v => (particleSprite = v)],
-  propDef: [() => propDef, v => (propDef = v)],
   punch: [() => punch, v => (punch = v)],
   ringFx: [() => ringFx, v => (ringFx = v)],
   scheduleAt: [() => scheduleAt, v => (scheduleAt = v)],
@@ -309,8 +274,6 @@ export const battleStage = {
   clouds: [],
   buf: [null, null],
   small: null,
-  skyC: null,
-  fogC: null,
   cam: Object.assign({}, homeCamera),
   V: Object.assign({}, homeCamera),
   drift: { w: 0, tq: -1, x: 0, y: 0, z: 0, yaw: 0, hz: 0 },
@@ -341,90 +304,11 @@ export const battleStage = {
   goldT: 0,
   speed: 1,
 };
-export const BATTLE_STAGE_ART = {};
-const artKey = area => (AREAS[area] && AREAS[area].art) || area;
-/* a prop kind is either a battle prop (art/battle/props, 30 px per meter) or one of the scene props of the walking world
-   (gameData.scenery.props, art/scene/props, 34 px per meter). Foliage sways a little in the wind. */
-const PROP_SWAY = { tree: 0.3, bush: 0.2, flowers: 0.5, cactus: 0 };
-function propDef(kind) {
-  const M = ARTMAN.battle.props[kind];
-  if (M)
-    return {
-      src: `battle/props/${kind}.png`,
-      ox: M.ox,
-      oy: M.oy,
-      h: M.h,
-      flat: M.flat,
-      k: 1,
-      sway: PROP_SWAY[kind] || 0,
-      shadow: null,
-    };
-  const G =
-    typeof gameData !== 'undefined' && gameData.scenery && gameData.scenery.props ? gameData.scenery.props[kind] : null;
-  if (!G || !G.img) return null;
-  return {
-    src: G.img,
-    ox: G.ox,
-    oy: G.oy,
-    h: 0,
-    flat: G.flat,
-    k: 30 / ((gameData.scenery && gameData.scenery.ppu) || 34),
-    sway: G.sway || 0,
-    shadow: G.shadow == null ? null : G.shadow,
-  };
-}
-export function battleStageArtFiles(area) {
-  const A = AREAS[area],
-    k = artKey(area),
-    M = ARTMAN.battle,
-    L = [`battle/${k}_ground.png`, `battle/${k}_foreground.png`];
-  if (A.wall) L.push(`battle/${A.wall}_walls.png`);
-  if (A.far) L.push(`battle/far_${A.far}.png`);
-  ((M.areas[k] || {}).props || []).forEach(p => {
-    const d = propDef(p.kind);
-    if (d) L.push(d.src);
-  });
-  if (!A.indoor) M.clouds.forEach((c, i) => L.push(`battle/cloud_${i}.png`));
-  return [...new Set(L)];
-}
-/* load (once) everything a stage needs; pixel arrays for ground, far land and walls */
+const BATTLE_STAGE_ART = {};
+/* phase 06-3: the painted stage is gone, so a stage needs no art of its own; kept as the start-up step battles await */
 export async function battleStagePrepare(area) {
   area = AREAS[area] ? area : 'grass';
-  if (BATTLE_STAGE_ART[area]) return BATTLE_STAGE_ART[area];
-  const A = AREAS[area],
-    k = artKey(area);
-  await artLoad(battleStageArtFiles(area));
-  const near = await artPixels(`battle/${k}_ground.png`),
-    far = A.far ? await artPixels(`battle/far_${A.far}.png`) : null,
-    wall = A.wall ? await artPixels(`battle/${A.wall}_walls.png`) : null;
-  const M = ARTMAN.battle,
-    mk = (p, o) => {
-      const im = ART_CACHE.img[p];
-      return { c: im, ox: o.ox, oy: o.oy, W: im.naturalWidth, H: im.naturalHeight };
-    };
-  const props = [];
-  ((M.areas[k] || {}).props || []).forEach((p, n) => {
-    const d = propDef(p.kind);
-    if (!d) return;
-    const img = mk(d.src, d);
-    if (!img.W || !img.H) return;
-    const h = d.h || (img.H * d.k) / 30;
-    props.push({
-      kind: p.kind,
-      x: p.x,
-      z: p.z,
-      h,
-      flat: d.flat,
-      k: d.k,
-      sway: d.sway,
-      ph: (n * 2.39996) % (Math.PI * 2),
-      sh: d.flat ? 0 : d.shadow != null ? d.shadow * 0.6 : 0.45 * Math.min(2, h * 0.5),
-      img,
-      soft: {},
-    });
-  });
-  const clouds = A.indoor ? [] : M.clouds.map((o, i) => mk(`battle/cloud_${i}.png`, o));
-  return (BATTLE_STAGE_ART[area] = { near, far, wall, fg: ART_CACHE.img[`battle/${k}_foreground.png`], props, clouds });
+  return (BATTLE_STAGE_ART[area] = BATTLE_STAGE_ART[area] || { props: [], clouds: [] });
 }
 /* ---------- layout: where the frame goes, how big a stage pixel is ---------- */
 function battleStageResolutionScale() {
@@ -506,27 +390,13 @@ export function battleStageResize() {
 }
 export function battleStageStart(area) {
   battleStage.area = AREAS[area] ? area : 'grass';
-  const A = AREAS[battleStage.area],
-    G = BATTLE_STAGE_ART[battleStage.area];
+  const A = AREAS[battleStage.area];
   battleStage.cv = $('#cvWorld');
   battleStage.fgc = $('#cvFg');
-  battleStage.near = G.near;
-  battleStage.far = G.far;
-  battleStage.wall = G.wall;
-  battleStage.fg = G.fg;
-  battleStage.skyC = A.sky.map(hexToRgb);
-  battleStage.fogC = hexToRgb(A.fog);
-  battleStage.props = G.props;
-  battleStage.leafy = A.indoor ? [] : G.props.filter(p => /tree|mushroom_giant/.test(p.kind) && p.z < 24);
-  battleStage.glint = G.props.filter(p => /crystal|fountain/.test(p.kind));
-  battleStage.clouds = G.clouds.map((img, i) => ({
-    img,
-    soft: {},
-    x: -14 + i * 6 + random() * 4,
-    y: 7 + random() * 5,
-    z: 10 + i * 7 + random() * 5,
-    v: 0.12 + random() * 0.12,
-  }));
+  battleStage.props = [];
+  battleStage.leafy = [];
+  battleStage.glint = [];
+  battleStage.clouds = [];
   battleStage.small = makeCanvas(10, 10);
   battleStageFormat((typeof activeBattle !== 'undefined' && activeBattle && activeBattle.fmt) || 'single');
   battleStage.tr = [
@@ -551,17 +421,9 @@ export function battleStageStart(area) {
   battleStage.q.since = performance.now();
   battleStage.gl = typeof battle3dStart === 'function' && battle3dStart();
   document.body.classList.toggle('battle-3d', !!battleStage.gl);
-  if (
-    !battleStage.gl &&
-    typeof walkView !== 'undefined' &&
-    walkView.cv &&
-    typeof activeBattle !== 'undefined' &&
-    activeBattle
-  ) {
-    const cv = walkView.cv;
-    stopWalkView();
-    cv.hidden = true;
-  }
+  /* phase 06-3: no painted stage. When the 3D scene isn't ready yet (the map still loading, a room opening), the battle
+     waits behind its wipe and joins it as soon as it is (battleStageFrame) */
+  battleStage.waitT = battleStage.gl ? 0 : performance.now();
   battleStageResize();
   battleStageFocus('wide', true);
   if (battleStage.gl) drawForegrounds();
@@ -570,11 +432,30 @@ export function battleStageStart(area) {
     frameTask('scene', battleStageFrame);
   }
 }
+/* the battle waits for the 3D scene; this joins it once it's there (and says so in the debug log if it takes long) */
+function battleStageJoin3d() {
+  if (typeof battle3dStart !== 'function' || !battle3dStart()) {
+    const w = performance.now() - battleStage.waitT;
+    if (w > 8000 && !battleStage.waitLogged && typeof debugLog !== 'undefined') {
+      battleStage.waitLogged = true;
+      debugLog.add('battle', 'still waiting for the 3D scene after 8 s');
+    }
+    return;
+  }
+  battleStage.gl = true;
+  battleStage.waitT = 0;
+  document.body.classList.add('battle-3d');
+  battleStageResize();
+  battleStageFocus('wide', true);
+  drawForegrounds();
+}
 export function battleStageStop() {
   battleStage.on = false;
   frameStop('scene');
   if (battleStage.gl && typeof battle3dStop === 'function') battle3dStop();
   battleStage.gl = false;
+  battleStage.waitT = 0;
+  battleStage.waitLogged = false;
   document.body.classList.remove('battle-3d');
 }
 function tween(o, p, to, dur, ease = 'out', delay = 0) {
@@ -759,12 +640,9 @@ function battleStageFrame(ts, rawDt) {
     P[n++] = p;
   }
   P.length = n;
-  for (const c of battleStage.clouds) {
-    c.x += c.v * s;
-    if (c.x > 18) c.x = -18;
-  }
   if (dt > 0 && !reducedMotion) spawnAmbientParticles(dt);
   battleStage.shk = Math.max(0, battleStage.shk - dt * 0.02);
+  if (!battleStage.gl && battleStage.waitT) battleStageJoin3d();
   if (battleStage.cv && battleStage.cv.isConnected) {
     camUpdate(dt);
     battleStageDraw();
@@ -1115,375 +993,12 @@ function punch(z, ms = 260, roll = 0) {
     tween(battleStage.css, 'r', 0, ms + 80, 'io', 70);
   }
 }
-/* ---------- the ground: cast once per camera/focus change ---------- */
-function floorBuffers() {
-  const L = battleStage.L,
-    W = L.LW,
-    H = L.LH;
-  if (battleStage.F && battleStage.F.W === W && battleStage.F.H === H) return battleStage.F;
-  const W2 = Math.ceil(W / 2),
-    H2 = Math.ceil(H / 2);
-  const mk = (w, h) => {
-    const c = makeCanvas(w, h),
-      x = c.getContext('2d');
-    return { c, x, img: x.createImageData(w, h) };
-  };
-  return (battleStage.F = {
-    W,
-    H,
-    W2,
-    H2,
-    base: mk(W, H),
-    soft: mk(W2, H2),
-    rowZ: new Float32Array(H),
-    rad: new Float32Array(H),
-    rh: new Float32Array(H2),
-    rr: new Float32Array(H2),
-    rp: new Float32Array((W2 + 1) * 3),
-    half: new Float32Array(W2 * H2 * 3),
-    tmp: new Float32Array(W2 * H2 * 3),
-    pre: new Float32Array(W2 * (H2 + 1) * 3),
-    blurred: false,
-  });
-}
-/* rows hidden behind the frosted dock are cast at half width: the glass blurs them anyway */
-function floorLowFrom() {
-  const L = battleStage.L;
-  if (L.lay !== 'portrait') return 1e9;
-  const d = $('#dock');
-  if (!d) return 1e9;
-  const b = $('#battle').getBoundingClientRect(),
-    top = d.getBoundingClientRect().top - b.top;
-  return Math.floor(L.M + top / L.u) + 6;
-}
-function castFloor() {
-  const L = battleStage.L,
-    F = floorBuffers(),
-    W = F.W,
-    H = F.H,
-    C = battleStage.V,
-    A = AREAS[battleStage.area],
-    cs = Math.cos(C.yaw),
-    sn = Math.sin(C.yaw),
-    h = L.h0 + C.hz,
-    cy = Math.max(0.2, C.y),
-    cx = L.cx;
-  const out = new Uint32Array(F.base.img.data.buffer),
-    NT = battleStage.near,
-    FT = battleStage.far,
-    WT = battleStage.wall,
-    fog = battleStage.fogC,
-    skyC = battleStage.skyC,
-    fogD = A.fogD || 70,
-    indoor = !!A.indoor,
-    rowZ = F.rowZ,
-    low = battleStage.lowFrom || 1e9;
-  let colLz = null;
-  if (indoor) {
-    colLz = new Float32Array(W);
-    const RW = 12.5;
-    for (let i = 0; i < W; i++) {
-      const a = (i + 0.5 - cx) / FOCAL_LENGTH,
-        dx = a * cs + sn,
-        dz = -a * sn + cs,
-        ox = C.x - GROUND_CENTER_X,
-        oz = C.z - (GROUND_CENTER_Z + 2),
-        bq = 2 * (ox * dx + oz * dz),
-        aq = dx * dx + dz * dz,
-        cq = ox * ox + oz * oz - RW * RW,
-        disc = bq * bq - 4 * aq * cq;
-      colLz[i] = disc > 0 ? (-bq + Math.sqrt(disc)) / (2 * aq) : 99;
-    }
-  }
-  const wallMid = indoor ? colLz[Math.max(0, Math.min(W - 1, Math.round(cx)))] : 0,
-    floorDark = packPixel(20, 16, 30);
-  for (let j = 0; j < H; j++) {
-    const v = (j + 0.5 - h) / FOCAL_LENGTH;
-    const lz = indoor
-      ? v > 0
-        ? cy / v
-        : 1e9
-      : GROUND_SPHERE_RADIUS * (-v + Math.sqrt(v * v + (2 * cy) / GROUND_SPHERE_RADIUS));
-    const row = j * W;
-    if (!indoor && (lz > GROUND_MAX_DEPTH || !(lz > 0))) {
-      const tt = clamp((h - j) / (h + 10), 0, 1),
-        c = mixRgb(mixRgb(fog, skyC[1], Math.min(1, tt * 1.6)), skyC[0], Math.max(0, tt * 1.6 - 0.6)),
-        pc = packPixel(c[0], c[1], c[2]);
-      out.fill(pc, row, row + W);
-      rowZ[j] = 400;
-      continue;
-    }
-    rowZ[j] = indoor && (lz > wallMid || v <= 0) ? wallMid : lz;
-    const fogk = indoor ? 0 : 1 - Math.exp(-lz / fogD),
-      k1 = 1 - fogk,
-      fr = fog[0] * fogk,
-      fg = fog[1] * fogk,
-      fb = fog[2] * fogk,
-      useFog = fogk > 0.01;
-    /* texture coordinates step linearly across a row */
-    const st = lz / FOCAL_LENGTH,
-      X0 = C.x + (0.5 - cx) * st * cs + lz * sn,
-      Z0 = C.z - (0.5 - cx) * st * sn + lz * cs,
-      dX = st * cs,
-      dZ = -st * sn,
-      step = j >= low ? 2 : 1;
-    const nearOn = lz < 26 || !FT,
-      farOn = FT && lz > 16,
-      farAll = lz >= 26,
-      farT = (lz - 16) / 10;
-    let U = (X0 - GROUND_CENTER_X) * GROUND_TEXTURE_PX_PER_METER + 256,
-      V = (Z0 - GROUND_CENTER_Z) * GROUND_TEXTURE_PX_PER_METER + 256,
-      FU = X0 * 0.5,
-      FV = Z0 * 0.5;
-    const dU = dX * GROUND_TEXTURE_PX_PER_METER * step,
-      dV = dZ * GROUND_TEXTURE_PX_PER_METER * step,
-      dFU = dX * 0.5 * step,
-      dFV = dZ * 0.5 * step;
-    for (let i = 0; i < W; i += step, U += dU, V += dV, FU += dFU, FV += dFV) {
-      if (indoor) {
-        const wl = colLz[i];
-        if (lz > wl || v <= 0) {
-          const top = h - (FOCAL_LENGTH * (4.2 - cy)) / wl,
-            bot = h + (FOCAL_LENGTH * cy) / wl;
-          let pc;
-          if (j >= top && j <= bot) {
-            const X = C.x + ((i + 0.5 - cx) / FOCAL_LENGTH) * wl * cs + wl * sn,
-              Z = C.z - ((i + 0.5 - cx) / FOCAL_LENGTH) * wl * sn + wl * cs,
-              ang = Math.atan2(Z - (GROUND_CENTER_Z + 2), X - GROUND_CENTER_X),
-              u = ((Math.floor((ang / (Math.PI * 2) + 0.5) * 1024 * 1.5) % 1024) + 1024) % 1024,
-              vv = Math.floor(((j - top) / (bot - top)) * 63);
-            pc = WT ? WT[vv * 1024 + u] : packPixel(60, 50, 80);
-          } else if (j < top) {
-            const g = clamp((top - j) / 60, 0, 1),
-              c = mixRgb(skyC[2], skyC[0], g);
-            const sk = ((i >> 3) + (j >> 3)) % 5 === 0 && g > 0.2 ? mixRgb(c, [150, 170, 230], 0.35) : c;
-            pc = packPixel(sk[0], sk[1], sk[2]);
-          } else pc = floorDark;
-          out[row + i] = pc;
-          if (step === 2 && i + 1 < W) out[row + i + 1] = pc;
-          continue;
-        }
-      }
-      let pc = 0;
-      if (nearOn) pc = NT[(Math.floor(V) & 511) * GROUND_TEXTURE_SIZE + (Math.floor(U) & 511)];
-      if (farOn && (farAll || bayerThreshold(i, j) < farT))
-        pc = FT[(Math.floor(FV) & 255) * 256 + (Math.floor(FU) & 255)];
-      if (useFog)
-        pc =
-          (255 << 24) |
-          (((((pc >> 16) & 255) * k1 + fb) & 255) << 16) |
-          (((((pc >> 8) & 255) * k1 + fg) & 255) << 8) |
-          (((pc & 255) * k1 + fr) & 255);
-      else pc |= 0xff000000;
-      out[row + i] = pc;
-      if (step === 2 && i + 1 < W) out[row + i + 1] = pc;
-    }
-  }
-  F.base.x.putImageData(F.base.img, 0, 0);
-}
 /* depth blur at half resolution, laid over the sharp ground with a per-row opacity that eases in smoothly:
    rows in focus stay crisp pixel art, rows out of focus fade into a soft copy. The soft copy is two box passes each way (≈ gaussian)
    with fractional, per-row radii (box edges are weighted, so the radius grows continuously instead of in whole-pixel steps, which
    is what made bands and blocks). Near rows also get a little extra blur in proportion to how magnified the ground texture is there,
    so its texels don't read as blocks. */
 const GROUND_BLUR_SCALE = 0.42;
-function blurFloorByDepth() {
-  const F = battleStage.F,
-    W = F.W,
-    H = F.H,
-    W2 = F.W2,
-    H2 = F.H2,
-    src = F.base.img.data,
-    rad = F.rad,
-    half = F.half,
-    tmp = F.tmp,
-    pre = F.pre,
-    rh = F.rh,
-    rr = F.rr,
-    rp = F.rp,
-    d = battleStage.dof;
-  let any = false;
-  for (let j = 0; j < H; j++) {
-    const z = F.rowZ[j];
-    let r = blurAt(z);
-    if (r > 0 && z < d.zf && z < actorPositions[0].z) {
-      const mag = FOCAL_LENGTH / Math.max(0.3, z) / GROUND_TEXTURE_PX_PER_METER;
-      r = Math.max(
-        r,
-        Math.min(3.2, mag * 0.32 * clamp((actorPositions[0].z - z) / 1.2, 0, 1) * Math.min(1, d.ap / 0.5))
-      );
-    }
-    rad[j] = r;
-    if (r >= 0.3) any = true;
-  }
-  F.blurred = any;
-  if (!any) return;
-  for (let j = 0; j < H2; j++) {
-    const ja = Math.min(H - 1, 2 * j),
-      jb = Math.min(H - 1, 2 * j + 1);
-    rh[j] = Math.max(rad[ja], rad[jb]);
-    const sg = rh[j] * GROUND_BLUR_SCALE * 0.5;
-    rr[j] = (Math.sqrt(6 * sg * sg + 1) - 1) / 2;
-    for (let i = 0; i < W2; i++) {
-      const ia = Math.min(W - 1, 2 * i),
-        ib = Math.min(W - 1, 2 * i + 1),
-        a = (ja * W + ia) * 4,
-        b = (ja * W + ib) * 4,
-        c = (jb * W + ia) * 4,
-        e = (jb * W + ib) * 4,
-        o = (j * W2 + i) * 3;
-      half[o] = (src[a] + src[b] + src[c] + src[e]) * 0.25;
-      half[o + 1] = (src[a + 1] + src[b + 1] + src[c + 1] + src[e + 1]) * 0.25;
-      half[o + 2] = (src[a + 2] + src[b + 2] + src[c + 2] + src[e + 2]) * 0.25;
-    }
-  }
-  boxBlurRows(half, tmp, W2, H2, rr, rp);
-  boxBlurRows(tmp, half, W2, H2, rr, rp);
-  boxBlurColumns(half, tmp, W2, H2, rr, pre);
-  boxBlurColumns(tmp, half, W2, H2, rr, pre);
-  const soft = F.soft.img.data;
-  for (let j = 0; j < H2; j++) {
-    const t = clamp((rh[j] - 0.3) / 0.9, 0, 1),
-      al = Math.round(t * t * (3 - 2 * t) * 255);
-    for (let i = 0; i < W2; i++) {
-      const o = (j * W2 + i) * 4,
-        q = (j * W2 + i) * 3;
-      soft[o + 3] = al;
-      if (!al) continue;
-      soft[o] = half[q];
-      soft[o + 1] = half[q + 1];
-      soft[o + 2] = half[q + 2];
-    }
-  }
-  F.soft.x.putImageData(F.soft.img, 0, 0);
-}
-/* one horizontal box pass with a fractional radius per row (edges clamp to the border pixel) */
-function boxBlurRows(S, D, W, H, rr, rp) {
-  for (let j = 0; j < H; j++) {
-    const r = rr[j],
-      row = j * W * 3;
-    if (r < 0.05) {
-      for (let k = row; k < row + W * 3; k++) D[k] = S[k];
-      continue;
-    }
-    rp[0] = rp[1] = rp[2] = 0;
-    for (let i = 0, o = 0, s = row; i < W; i++, o += 3, s += 3) {
-      rp[o + 3] = rp[o] + S[s];
-      rp[o + 4] = rp[o + 1] + S[s + 1];
-      rp[o + 5] = rp[o + 2] + S[s + 2];
-    }
-    const fl = Math.floor(-r),
-      fa = -r - fl,
-      n = 1 / (2 * r + 1),
-      last = row + (W - 1) * 3,
-      end = W * 3,
-      s0 = S[row],
-      s1 = S[row + 1],
-      s2 = S[row + 2],
-      l0 = S[last],
-      l1 = S[last + 1],
-      l2 = S[last + 2];
-    for (let i = 0; i < W; i++) {
-      const ka = i + fl,
-        b = i + 1 + r,
-        kb = Math.floor(b),
-        gb = b - kb,
-        o = row + i * 3;
-      let A0, A1, A2, B0, B1, B2;
-      if (ka < 0) {
-        const a = ka + fa;
-        A0 = a * s0;
-        A1 = a * s1;
-        A2 = a * s2;
-      } else {
-        const q = ka * 3,
-          s = row + q;
-        A0 = rp[q] + fa * S[s];
-        A1 = rp[q + 1] + fa * S[s + 1];
-        A2 = rp[q + 2] + fa * S[s + 2];
-      }
-      if (kb >= W) {
-        const e = b - W;
-        B0 = rp[end] + e * l0;
-        B1 = rp[end + 1] + e * l1;
-        B2 = rp[end + 2] + e * l2;
-      } else {
-        const q = kb * 3,
-          s = row + q;
-        B0 = rp[q] + gb * S[s];
-        B1 = rp[q + 1] + gb * S[s + 1];
-        B2 = rp[q + 2] + gb * S[s + 2];
-      }
-      D[o] = (B0 - A0) * n;
-      D[o + 1] = (B1 - A1) * n;
-      D[o + 2] = (B2 - A2) * n;
-    }
-  }
-}
-/* one vertical box pass; the radius belongs to the destination row */
-function boxBlurColumns(S, D, W, H, rr, pre) {
-  const RW = W * 3;
-  for (let i = 0; i < RW; i++) pre[i] = 0;
-  for (let j = 0; j < H; j++) {
-    const a = j * RW,
-      b = a + RW;
-    for (let k = 0; k < RW; k++) pre[b + k] = pre[a + k] + S[a + k];
-  }
-  const lastRow = (H - 1) * RW,
-    endRow = H * RW;
-  for (let j = 0; j < H; j++) {
-    const r = rr[j],
-      o = j * RW;
-    if (r < 0.05) {
-      for (let k = 0; k < RW; k++) D[o + k] = S[o + k];
-      continue;
-    }
-    const a = j - r,
-      b = j + 1 + r,
-      ka = Math.floor(a),
-      fa = a - ka,
-      kb = Math.floor(b),
-      fb = b - kb,
-      n = 1 / (2 * r + 1),
-      pa = ka * RW,
-      pb = kb * RW,
-      lowA = ka < 0,
-      highB = kb >= H,
-      eb = b - H;
-    for (let k = 0; k < RW; k++) {
-      const A = lowA ? a * S[k] : pre[pa + k] + fa * S[pa + k],
-        Bv = highB ? pre[endRow + k] + eb * S[lastRow + k] : pre[pb + k] + fb * S[pb + k];
-      D[o + k] = (Bv - A) * n;
-    }
-  }
-}
-function floorKey() {
-  const C = battleStage.V,
-    d = battleStage.dof,
-    L = battleStage.L;
-  return (
-    [C.x, C.y, C.z, C.yaw, C.hz].map(v => v.toFixed(4)).join(',') +
-    '|' +
-    d.zf.toFixed(2) +
-    ',' +
-    d.ap.toFixed(2) +
-    '|' +
-    L.ver +
-    '|' +
-    battleStage.q.lvl
-  );
-}
-function floorUpdate() {
-  const k = floorKey();
-  if (k === battleStage.floorKey && battleStage.F) return false;
-  battleStage.floorKey = k;
-  battleStage.lowFrom = floorLowFrom();
-  castFloor();
-  if (battleStage.q.lvl < 1) blurFloorByDepth();
-  else battleStage.F.blurred = false;
-  drawForegrounds();
-  return true;
-}
 /* ---------- drawing helpers ---------- */
 function drawShadow(c, X, Z, r, a) {
   const p = battleStageProject(X, 0, Z);
@@ -1588,41 +1103,6 @@ export function actorBuffer(i) {
   buf.__v = (buf.__v || 0) + 1;
   return { s, k, R, P, ak, buf };
 }
-function drawActor(c, i) {
-  const B = actorBuffer(i);
-  if (!B) return;
-  const { s, k, R, P, ak, buf } = B;
-  const w = actorWorldPoint(i),
-    p = battleStageProject(w.x, w.y, w.z);
-  if (!p) return;
-  const sc = (p.s * actorMetersPerPixel[i] * s.sc * (s.big || 1) * (s.fs || 1)) / R.k,
-    lift = Math.max(0, -P.y) + Math.max(0, -s.oy);
-  if (s.a > 0.5 && ak !== 'faint')
-    drawShadow(
-      c,
-      w.x,
-      w.z,
-      (R.geo.hw * actorMetersPerPixel[i] * 0.8) / R.k,
-      0.34 * (1 - Math.min(0.6, (lift + R.geo.lift / (k * 2)) / 60))
-    );
-  const x = Math.round(p.x - R.geo.cx * sc),
-    y = Math.round(p.y - R.geo.base * sc),
-    W = Math.round(R.BW * sc),
-    H = Math.round(R.BH * sc),
-    bl = blurAt(p.z);
-  if (AREAS[battleStage.area].indoor && s.a > 0.5 && ak !== 'faint') {
-    const gy = Math.round(battleStageProject(w.x, 0, w.z).y);
-    c.save();
-    c.globalAlpha = s.a * 0.14;
-    c.translate(0, gy * 2);
-    c.scale(1, -1);
-    c.drawImage(buf, x, y, W, H);
-    c.restore();
-  }
-  c.globalAlpha = s.a;
-  softDraw(c, buf, x, y, W, H, bl);
-  c.globalAlpha = 1;
-}
 /* the trainers: you from behind (left), the rival facing you (right); they throw coins and cheer */
 export const trainerMetersPerPixel = i =>
   (i === 0 ? 1.42 : 1.7) / ((typeof wardrobeData === 'function' && wardrobeData() && wardrobeData().figure) || 74);
@@ -1642,71 +1122,6 @@ function setTrainerAction(i, act, dur) {
     T.t0 = battleStage.t;
     T.dur = dur;
   }
-}
-function drawTrainer(c, i) {
-  const T = battleStage.tr[i];
-  if (!T.show || !T.who || T.a <= 0) return;
-  const f = trainerBattleFrame(i);
-  if (!f) return;
-  const X = actorPositions[i].x + (i === 0 ? -1.15 : 1.25) + T.x * actorMetersPerPixel[i],
-    Z = actorPositions[i].z + (i === 0 ? 0.25 : 0.4),
-    p = battleStageProject(X, 0, Z);
-  if (!p) return;
-  const sc = p.s * trainerMetersPerPixel(i),
-    w = f.width * sc,
-    h = f.height * sc,
-    ax = (f.ax ?? f.width / 2) * sc,
-    ay = (f.ay ?? f.height) * sc;
-  drawShadow(c, X, Z, i === 0 ? 0.5 : 0.35, 0.22);
-  c.globalAlpha = T.a;
-  softDraw(c, f, Math.round(p.x - ax), Math.round(p.y - ay), Math.round(w), Math.round(h), blurAt(p.z));
-  c.globalAlpha = 1;
-}
-function drawBillboard(c, img, X, Y, Z, wk, al, slot) {
-  const p = battleStageProject(X, Y, Z);
-  if (!p) return;
-  const sc = (p.s / 30) * wk;
-  if (sc > 8) return;
-  c.globalAlpha = al == null ? 1 : al;
-  softDraw(
-    c,
-    img.c,
-    Math.round(p.x + img.ox * sc),
-    Math.round(p.y + img.oy * sc),
-    Math.max(1, Math.round(img.W * sc)),
-    Math.max(1, Math.round(img.H * sc)),
-    blurAt(p.z),
-    slot
-  );
-  c.globalAlpha = 1;
-}
-/* a prop billboard (already projected into p.q this frame); foliage leans with the wind around its base */
-function drawProp(c, p) {
-  const q = p.q,
-    sc = (q.s / 30) * p.k,
-    I = p.img;
-  if (sc > 8) return;
-  const x = Math.round(q.x + I.ox * sc),
-    y = Math.round(q.y + I.oy * sc),
-    w = Math.max(1, Math.round(I.W * sc)),
-    h = Math.max(1, Math.round(I.H * sc)),
-    L = battleStage.L;
-  if (x > L.LW || x + w < 0 || y > L.LH || y + h < 0) return;
-  if (p.sh > 0 && q.z < 34) drawShadow(c, p.x, p.z, p.sh, 0.2);
-  const sw =
-    p.sway && !reducedMotion
-      ? p.sway * 0.05 * (Math.sin(battleStage.t / 1300 + p.ph) * 0.7 + Math.sin(battleStage.t / 530 + p.ph * 1.7) * 0.3)
-      : 0;
-  if (Math.abs(sw) * h < 0.35) {
-    softDraw(c, I.c, x, y, w, h, blurAt(q.z), p.soft);
-    return;
-  }
-  c.save();
-  c.translate(q.x, q.y);
-  c.transform(1, 0, -sw, 1, 0, 0);
-  c.translate(-q.x, -q.y);
-  softDraw(c, I.c, x, y, w, h, blurAt(q.z), p.soft);
-  c.restore();
 }
 function drawPixelRing(c, cx, cy, rx, ry, col, th = 1) {
   c.fillStyle = col;
@@ -1793,198 +1208,28 @@ function drawParticles(c, layer) {
   });
   c.globalAlpha = 1;
 }
-/* soft cloud shadows sliding across the ground (drawn over the cached floor, so the floor needn't be recast) */
-function cloudShadows(c) {
-  if (AREAS[battleStage.area].indoor) return;
-  c.save();
-  c.fillStyle = 'rgba(30,16,60,.16)';
-  for (const cl of battleStage.clouds) {
-    const p = battleStageProject(cl.x, 0, cl.z);
-    if (!p || p.z > 70) continue;
-    const r = 2.6 * p.s,
-      ry = r * clamp(battleStage.V.y / p.z, 0.12, 0.55);
-    if (r < 1) continue;
-    c.globalAlpha = clamp(1 - p.z / 70, 0, 1);
-    c.beginPath();
-    c.ellipse(p.x, p.y, r, ry, 0, 0, Math.PI * 2);
-    c.fill();
-  }
-  c.restore();
-}
-function lightShafts(c) {
-  if (AREAS[battleStage.area].indoor) return;
-  const L = battleStage.L,
-    t = battleStage.t,
-    bot = L.h0 + 20;
-  const g = c.createLinearGradient(0, 0, 0, bot);
-  g.addColorStop(0, 'rgba(255,246,214,.55)');
-  g.addColorStop(1, 'rgba(255,246,214,0)');
-  c.save();
-  c.globalCompositeOperation = 'lighter';
-  c.fillStyle = g;
-  const n = Math.max(4, Math.round(L.LW / 60));
-  for (let k = 0; k < n; k++) {
-    const x = L.LW * (0.08 + k / n) - battleStage.V.yaw * 300 + Math.sin(t / 3000 + k) * 6;
-    c.globalAlpha = 0.14 + 0.06 * Math.sin(t / 1700 + k * 2);
-    c.beginPath();
-    c.moveTo(x - 6, 0);
-    c.lineTo(x + 8, 0);
-    c.lineTo(x + 30, bot);
-    c.lineTo(x + 4, bot);
-    c.fill();
-  }
-  c.restore();
-}
 /* foreground: the area's grass or railings, split to the two edges of the open stage and blurred like a near lens element */
 export function drawForegrounds() {
-  const c = battleStage.fx,
-    L = battleStage.L;
-  if (!c) return;
-  if (battleStage.gl) {
-    if (battleStage.fgKey !== 'gl') {
-      battleStage.fgKey = 'gl';
-      c.setTransform(1, 0, 0, 1, 0, 0);
-      c.clearRect(0, 0, battleStage.fgc.width, battleStage.fgc.height);
-    }
-    return;
-  }
-  const R = L.R,
-    bl = blurAt(1.05),
-    key = L.ver + '|' + bl.toFixed(2) + '|' + R;
-  if (key === battleStage.fgKey) return;
-  battleStage.fgKey = key;
+  /* phase 06-3: on the 3D stage the foreground canvas stays clear (the painted stage's foregrounds are gone) */
+  const c = battleStage.fx;
+  if (!c || battleStage.fgKey === 'gl') return;
+  battleStage.fgKey = 'gl';
   c.setTransform(1, 0, 0, 1, 0, 0);
   c.clearRect(0, 0, battleStage.fgc.width, battleStage.fgc.height);
-  if (!battleStage.fg || !battleStage.fg.naturalWidth) return;
-  c.setTransform(R, 0, 0, R, 0, 0);
-  c.imageSmoothingEnabled = false;
-  /* the art stands on the screen's bottom edge. When a full-width dock covers the bottom (phones in portrait) it stands just under the
-    dock's top edge instead, and its bottom row is repeated down behind the dock, so the grass never ends in a hard line */
-  const dk = $('#dock'),
-    bb = $('#battle'),
-    dr = dk && bb ? dk.getBoundingClientRect() : null,
-    br = bb ? bb.getBoundingClientRect() : null,
-    full = !!dr && L.lay === 'portrait' && dr.left - br.left <= 4 && dr.right - br.left >= L.vw - 4;
-  const im = battleStage.fg,
-    W = im.naturalWidth,
-    H = im.naturalHeight,
-    hw = Math.floor(W / 2),
-    fr = L.free,
-    bot = full ? L.M + (fr.y + fr.h) / L.u + 8 : L.M + L.vh / L.u + 4,
-    yb = Math.round(bot - H),
-    ext = full ? Math.max(0, Math.ceil(L.M + L.vh / L.u + 10 - bot)) : 0,
-    left = Math.round(L.M + fr.x / L.u - 16),
-    right = Math.round(L.M + (fr.x + fr.w) / L.u + 16 - hw);
-  if (!battleStage.fgP || battleStage.fgP.ver !== L.ver || battleStage.fgP.im !== im) {
-    const mk = sx => {
-      const t = makeCanvas(hw, H + ext),
-        x = t.getContext('2d');
-      x.drawImage(im, sx, 0, hw, H, 0, 0, hw, H);
-      if (ext) x.drawImage(im, sx, H - 1, hw, 1, 0, H, hw, ext);
-      return t;
-    };
-    battleStage.fgP = { ver: L.ver, im, a: mk(0), b: mk(hw), sa: {}, sb: {} };
-  }
-  const P = battleStage.fgP;
-  softDraw(c, P.a, left, yb, hw, H + ext, bl, P.sa);
-  softDraw(c, P.b, right, yb, hw, H + ext, bl, P.sb);
 }
 const drawList = [];
 let drawListLength = 0;
-function addDrawItem(z, k, o, i) {
-  let it = drawList[drawListLength];
-  if (!it) it = drawList[drawListLength] = { z: 0, k: 0, o: null, i: 0 };
-  it.z = z;
-  it.k = k;
-  it.o = o;
-  it.i = i;
-  drawListLength++;
-}
-function battleStageProjectInto(o, C, X, Y, Z) {
-  const L = battleStage.L,
-    cs = Math.cos(C.yaw),
-    sn = Math.sin(C.yaw),
-    dx = X - C.x,
-    dz = Z - C.z,
-    lx = dx * cs - dz * sn,
-    lz = dx * sn + dz * cs;
-  if (lz < 0.25) return false;
-  o.x = L.cx + (FOCAL_LENGTH * lx) / lz;
-  o.y = L.h0 + C.hz - (FOCAL_LENGTH * (Y - C.y + (lz * lz) / (2 * GROUND_SPHERE_RADIUS))) / lz;
-  o.z = lz;
-  o.s = FOCAL_LENGTH / lz;
-  return true;
-}
 function battleStageDraw() {
+  /* phase 06-3: the 3D engine (battle-3d.js) draws the scene, the billionaires and the trainers; this canvas only keeps
+     the effects (the painted stage is gone) */
   const c = battleStage.cx,
-    L = battleStage.L,
-    R = L.R;
-  /* on the 3D engine (battle-3d.js) the scene, the billionaires and the trainers are drawn there; this canvas only keeps the effects */
-  if (battleStage.gl) {
-    c.setTransform(1, 0, 0, 1, 0, 0);
-    c.clearRect(0, 0, battleStage.cv.width, battleStage.cv.height);
-    c.setTransform(R, 0, 0, R, 0, 0);
-    c.imageSmoothingEnabled = false;
-    battleStageDrawEffects(c);
-    return;
-  }
-  floorUpdate();
-  const F = battleStage.F;
+    R = battleStage.L.R;
+  c.setTransform(1, 0, 0, 1, 0, 0);
+  c.clearRect(0, 0, battleStage.cv.width, battleStage.cv.height);
+  if (!battleStage.gl) return;
   c.setTransform(R, 0, 0, R, 0, 0);
   c.imageSmoothingEnabled = false;
-  c.drawImage(F.base.c, 0, 0);
-  if (F.blurred) {
-    c.imageSmoothingEnabled = true;
-    c.drawImage(F.soft.c, 0, 0, F.W2, F.H2, 0, 0, F.W2 * 2, F.H2 * 2);
-    c.imageSmoothingEnabled = false;
-  }
-  cloudShadows(c);
-  lightShafts(c);
-  /* draw list: pooled records, insertion-sorted far to near (the order barely changes between frames, so this is ~linear) */
-  drawListLength = 0;
-  const V = battleStage.V;
-  for (const p of battleStage.props) {
-    if (battleStageProjectInto(p.q || (p.q = { x: 0, y: 0, z: 0, s: 0 }), V, p.x, 0, p.z)) addDrawItem(p.q.z, 0, p, 0);
-  }
-  for (const cl of battleStage.clouds) {
-    const q = battleStageProject(cl.x, cl.y, cl.z);
-    if (q) addDrawItem(q.z + 1000, 1, cl, 0);
-  }
-  for (let i = battleStage.s.length - 1; i >= 0; i--) {
-    const w = actorWorldPoint(i),
-      q = battleStageProject(w.x, 0, w.z);
-    if (q) addDrawItem(q.z - 0.01, 2, null, i);
-    const T = battleStage.tr[i];
-    if (i < 2 && T.show) {
-      const q2 = battleStageProject(actorPositions[i].x, 0, actorPositions[i].z + (i === 0 ? 0.25 : 0.4));
-      if (q2) addDrawItem(q2.z + 0.02, 3, null, i);
-    }
-  }
-  for (let i = 1; i < drawListLength; i++) {
-    const it = drawList[i];
-    let j = i - 1;
-    while (j >= 0 && drawList[j].z < it.z) {
-      drawList[j + 1] = drawList[j];
-      j--;
-    }
-    drawList[j + 1] = it;
-  }
-  let partsDrawn = false;
-  for (let n = 0; n < drawListLength; n++) {
-    const it = drawList[n];
-    if (!partsDrawn && it.z < actorPositions[1].z + 0.5) {
-      drawParticles(c, 0);
-      partsDrawn = true;
-    }
-    if (it.k === 0) drawProp(c, it.o);
-    else if (it.k === 1) {
-      const cl = it.o;
-      drawBillboard(c, cl.img, cl.x, cl.y, cl.z, 2, 0.92, cl.soft);
-    } else if (it.k === 2) drawActor(c, it.i);
-    else drawTrainer(c, it.i);
-  }
-  if (!partsDrawn) drawParticles(c, 0);
-  battleStageDrawEffects(c, 1);
+  battleStageDrawEffects(c);
 }
 /* v33: the fighter choosing stands in a gold ring; while aiming, the foes you can pick pulse */
 export function battleStageSelect(k) {

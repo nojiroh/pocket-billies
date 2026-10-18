@@ -121,6 +121,9 @@ export function migrate(o) {
   if (p.aim !== 'smooth') p.aim = 'sharp';
   p.effects = 'full';
   p.fps = +p.fps;
+  /* phase 06-3: the painted battle stage and the corner-card HUD are gone, and so are their settings */
+  delete p.battleStage;
+  delete p.battleHud;
   if (!Array.isArray(s.eggs)) s.eggs = [];
   if (!Array.isArray(s.jobs)) s.jobs = [];
   while (s.jobs.length < jobSlotCount()) s.jobs.push(emptyJob());

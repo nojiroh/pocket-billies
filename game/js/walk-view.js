@@ -220,7 +220,6 @@ expose({
   worldToScreen: [() => worldToScreen, v => setWorldToScreen(v)],
 });
 /* eslint-enable no-func-assign */
-provide({ stopWalkView });
 export function setPrepareMap(v) {
   prepareMap = v; // eslint-disable-line no-func-assign
   provide({ prepareMap });
@@ -281,7 +280,6 @@ export const walkView = {
   chat: 0,
   ff: new Map(),
 };
-provide({ walkView }); /* to-module */
 const canvasPixels = n => {
   const c = walkView.cv;
   if (!c || !c.clientWidth) return n;
