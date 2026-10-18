@@ -37,16 +37,16 @@ import { titleMount, titleScreen, titleStart, titleWanted } from './title.js';
 import { loreLoadingLines } from './lore.js';
 import { initAccount } from './account.js';
 import {
-  closeModal,
   initPixelSky,
   introSteps,
   mapIdAt,
-  modal,
+  notice,
   render,
   renderOverlay,
   showPendingWindows,
   startGame,
   toast,
+  whenWorldShows,
 } from './ui.js';
 import { fixtureStart } from './fixture.js';
 /* eslint-disable no-func-assign */
@@ -863,17 +863,15 @@ else
       loaderHide();
       watchMapsAhead();
       loadAllMaps();
+      /* phase 06: a notice, not a choice: it waits behind the dot on the portrait */
       if (SAVE_FOUND === 'old' || SAVE_FOUND === 'new')
-        setTimeout(
-          () =>
-            modal({
-              title: SAVE_FOUND === 'old' ? 'A new game' : 'A newer save',
-              html: `<p>${SAVE_FOUND === 'old' ? SAVE_OLD_MSG + ' It is kept aside in this browser, and a new game starts here.' : SAVE_NEW_MSG}</p>`,
-              btns: [{ l: 'OK', c: 'gold', f: closeModal }],
-            }),
-          1200
-        );
-      if (saveData.started && !TEST_RUN && !FIXTURE) setTimeout(showPendingWindows, 500);
+        notice({
+          id: 'save-found',
+          title: SAVE_FOUND === 'old' ? 'A new game' : 'A newer save',
+          html: `<p>${SAVE_FOUND === 'old' ? SAVE_OLD_MSG + ' It is kept aside in this browser, and a new game starts here.' : SAVE_NEW_MSG}</p>`,
+        });
+      /* phase 06: a waiting choice (hatch, learn a move, evolve) opens only once the world is showing */
+      if (saveData.started && !TEST_RUN && !FIXTURE) whenWorldShows(showPendingWindows);
       if (TEST_BOOT && !TEST_RUN && !FIXTURE)
         setTimeout(() => toast('Test boot: starter selection, nothing is saved.'), 900);
       if (location.protocol === 'file:')
