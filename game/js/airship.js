@@ -25,7 +25,6 @@ expose({
   airshipFlight: [() => airshipFlight],
   flyDraw: [() => flyDraw, v => ((flyDraw = v), provide({ flyDraw }))],
   flyFare: [() => flyFare, v => (flyFare = v)],
-  flyGo: [() => flyGo, v => (flyGo = v)],
   flyLand: [() => flyLand, v => (flyLand = v)],
   flyMenu: [() => flyMenu, v => (flyMenu = v)],
   flySkip: [() => flySkip, v => (flySkip = v)],
@@ -33,6 +32,7 @@ expose({
   flyTowns: [() => flyTowns, v => (flyTowns = v)],
   glassLift: [() => glassLift],
   rideGlassLift: [() => rideGlassLift, v => (rideGlassLift = v)],
+  startAirshipFlight: [() => startAirshipFlight, v => (startAirshipFlight = v)],
 });
 /* eslint-enable no-func-assign */
 provide({ flyDraw, flyTick });
@@ -78,7 +78,7 @@ export function flyMenu(p) {
 }
 /* buy the ticket and go: you are at the other end at once (a reload mid-flight lands you there), the flight is the
    show on the way */
-function flyGo(i) {
+function startAirshipFlight(i) {
   if (airshipFlight.on || !ROUTE[i]) return;
   const a = S.route.node,
     f = flyFare(a, i);
@@ -267,7 +267,7 @@ document.addEventListener(
       ev.preventDefault();
       if (el.getAttribute('aria-disabled'))
         toast(`You need $${fmt(flyFare(S.route.node, +el.dataset.n))} for that ticket.`);
-      else flyGo(+el.dataset.n);
+      else startAirshipFlight(+el.dataset.n);
       return;
     }
     if (airshipFlight.on && ev.target.closest && ev.target.closest('.map-full,#flycap')) {

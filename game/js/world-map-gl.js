@@ -38,6 +38,7 @@ import {
   REGION_VECTORS,
   WORLD_MAP_CLOUDS,
   WORLD_MAP_LANDMARKS,
+  isBehindSun,
   roadPosition,
   setWorldMapFit,
   setWorldMapHeight,
@@ -47,7 +48,6 @@ import {
   setWorldMapWidth,
   setWorldMapZoom,
   slerp,
-  sunBlocks,
   vector3,
   worldMap,
   worldMapCamera,
@@ -226,7 +226,7 @@ function worldMapGlUV(v) {
 function worldMapGlProject(v) {
   if (!worldMapGl.flat) {
     const q = worldMapProject(worldMap.cam, v);
-    if (!q || sunBlocks(worldMap.cam, v)) return null;
+    if (!q || isBehindSun(worldMap.cam, v)) return null;
     return q;
   }
   const F = worldMapGl.fv,

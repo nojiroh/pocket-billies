@@ -24,6 +24,7 @@ expose({
   WORLD_MAP_LANDMARKS: [() => WORLD_MAP_LANDMARKS],
   WORLD_MAP_TEXTURE_HEIGHT: [() => WORLD_MAP_TEXTURE_HEIGHT],
   WORLD_MAP_TEXTURE_WIDTH: [() => WORLD_MAP_TEXTURE_WIDTH],
+  isBehindSun: [() => isBehindSun, v => (isBehindSun = v)],
   lonLatToUnitVector: [() => lonLatToUnitVector],
   onStepsAdded: [() => onStepsAdded, v => ((onStepsAdded = v), provide({ onStepsAdded }))],
   roadPosition: [() => roadPosition, v => (roadPosition = v)],
@@ -35,7 +36,6 @@ expose({
   setWorldMapWidth: [() => setWorldMapWidth, v => (setWorldMapWidth = v)],
   setWorldMapZoom: [() => setWorldMapZoom, v => (setWorldMapZoom = v)],
   slerp: [() => slerp, v => (slerp = v)],
-  sunBlocks: [() => sunBlocks, v => (sunBlocks = v)],
   vector3: [() => vector3],
   worldMap: [() => worldMap],
   worldMapCamera: [() => worldMapCamera, v => (worldMapCamera = v)],
@@ -473,7 +473,7 @@ function worldMapRender(t, lo) {
   const dest = S.route.plan.length ? S.route.plan[S.route.plan.length - 1] : null;
   L.forEach(({ q, i, kind }) => {
     if (kind === 'sun') return;
-    const occ = sunBlocks(cam, kind === 'r' ? LOCATION_VECTORS[i] : REGION_VECTORS[i]);
+    const occ = isBehindSun(cam, kind === 'r' ? LOCATION_VECTORS[i] : REGION_VECTORS[i]);
     if (occ) return;
     const s = clamp(0.16 / q.z, 0.6, 2.4);
     if (kind === 'r') {
@@ -533,7 +533,7 @@ function worldMapRender(t, lo) {
       q.x < worldMapWidth + 20 &&
       q.y > -20 &&
       q.y < worldMapHeight + 20 &&
-      !sunBlocks(cam, l.v)
+      !isBehindSun(cam, l.v)
     )
       LS.push([q, l]);
   });
@@ -572,7 +572,7 @@ function worldMapRender(t, lo) {
     );
   }
 }
-export function sunBlocks(cam, p) {
+export function isBehindSun(cam, p) {
   const d = vector3.sub(p, cam.C),
     L = vector3.len(d),
     u = vector3.mul(d, 1 / L),
@@ -764,7 +764,7 @@ export function worldMapLabels() {
     let name,
       cls = '';
     if (kind === 'r') {
-      if (sunBlocks(worldMap.cam, LOCATION_VECTORS[i])) return;
+      if (isBehindSun(worldMap.cam, LOCATION_VECTORS[i])) return;
       const far = q.z > 0.85 && i !== S.route.node && U.mapSel !== i && i !== dest;
       if (far) return;
       name = ROUTE[i].name;
@@ -774,7 +774,7 @@ export function worldMapLabels() {
         (i === dest ? ' dest' : '') +
         (!S.visited[i] ? ' new' : '');
     } else if (kind === 'f') {
-      if (sunBlocks(worldMap.cam, REGION_VECTORS[i])) return;
+      if (isBehindSun(worldMap.cam, REGION_VECTORS[i])) return;
       if (q.z > 0.9 && U.mapSel !== 'f' + i) return;
       name = FUTURE[i].name;
       cls = ' fog' + (U.mapSel === 'f' + i ? ' sel' : '');
