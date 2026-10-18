@@ -37,7 +37,7 @@ import { SC, scResize, scStop } from './battle-stage.js';
 import { dioScene } from './walk-view.js';
 import { EGL } from './engine/core.js';
 import { A, checkFaints, paintBoxes, play, say, snapAll, startTrainer, startWild, stopTimers } from './battle.js';
-import { MAP } from './map.js';
+import { MAP } from './world-map.js';
 /* eslint-disable no-func-assign */
 expose({
   DBG: [() => DBG],

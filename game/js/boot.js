@@ -19,7 +19,7 @@ import { ENV } from './env.js';
 import { DGL, dglRiseStart } from './walk-view-gl.js';
 import { WORLD } from './world.js';
 import { areaKey } from './battle.js';
-import { WORLD_ART, mapPrepare } from './map.js';
+import { WORLD_ART, mapPrepare } from './world-map.js';
 import { WORLD_RELIEF } from './map-gl.js';
 import { csWanted } from './cutscene.js';
 import { TITLE, titleMount, titleStart, titleWanted } from './title.js';

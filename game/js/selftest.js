@@ -47,7 +47,7 @@ import { VOX } from './vox.js';
 import { OWM, owBuddyTap, owPetSp } from './owmon.js';
 import { WORLD, wrRoomScene, wrTripView } from './world.js';
 import { A, endBattle, liveK, pickMove, pickTarget, startTrainer, startWild, stopTimers, tapMsg } from './battle.js';
-import { MAP } from './map.js';
+import { MAP } from './world-map.js';
 import { MGL, MGL_SH, MM, mglRender, mmOn, setMglRender } from './map-gl.js';
 import { TALK, talkHide } from './talk.js';
 import { CS, csTeardown } from './cutscene.js';

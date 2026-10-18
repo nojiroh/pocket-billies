@@ -94,7 +94,7 @@ function slerp_(a, b, t) {
   const s = Math.sin(w);
   return v3s.add(v3s.mul(a, Math.sin((1 - t) * w) / s), v3s.mul(b, Math.sin(t * w) / s));
 }
-/* the walking path, computed exactly as game/js/map.js does */
+/* the walking path, computed exactly as game/js/world-map.js does */
 function gamePath() {
   const D = ST.D,
     pts = D.route

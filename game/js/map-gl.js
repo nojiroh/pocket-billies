@@ -5,7 +5,7 @@
    and their shadows, and the landmark stamps standing on the ground. On top: your trip as a moving gold line, the
    route to the place you picked, step counts on the roads around it, and pins with icons for every stop (here,
    destination, visited, new, locked). A Places list finds any stop by name, and Flat shows the whole world unrolled.
-   map.js keeps the camera, the walking animation and the picking, and still draws the map itself where WebGL isn't
+   world-map.js keeps the camera, the walking animation and the picking, and still draws the map itself where WebGL isn't
    available (a lost context). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
@@ -52,7 +52,7 @@ import {
   slerp,
   sunBlocks,
   v3,
-} from './map.js';
+} from './world-map.js';
 /* eslint-disable no-func-assign */
 expose({
   MGL: [() => MGL],

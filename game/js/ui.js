@@ -159,7 +159,7 @@ import {
   startWild,
   tapMsg,
 } from './battle.js';
-import { MH, MW, mapFit, mapMount, mapReset, mapSelect, mapZoom } from './map.js';
+import { MH, MW, mapFit, mapMount, mapReset, mapSelect, mapZoom } from './world-map.js';
 import { mapGLAction, mapGLWanted } from './map-gl.js';
 import { openShop } from './shop.js';
 import { sfx } from './sound.js';

@@ -18,7 +18,7 @@ import { sprHTML } from './rig.js';
 import { DIO, dioDirOf } from './walk-view.js';
 import { dglPerson } from './walk-view-gl.js';
 import { owBuddyMon, owItem } from './owmon.js';
-import { MAP, mapSelect } from './map.js';
+import { MAP, mapSelect } from './world-map.js';
 /* eslint-disable no-func-assign */
 expose({
   FR: [() => FR],

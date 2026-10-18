@@ -23,7 +23,7 @@ import { EGL, eglPrograms } from './engine/core.js';
 import { EGL_POST_SH } from './engine/post.js';
 import { dglCanvasFor, dglGL, dioH } from './walk-view-gl.js';
 import { A, endBattle, stopTimers, types } from './battle.js';
-import { MAP, MH, MNV, MW, WORLD_ART, v3 } from './map.js';
+import { MAP, MH, MNV, MW, WORLD_ART, v3 } from './world-map.js';
 import { MGL, MGL_SH, mglRender, mglSize } from './map-gl.js';
 import { music, sfx } from './sound.js';
 import { CS, csCaption } from './cutscene.js';

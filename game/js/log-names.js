@@ -67,7 +67,7 @@ import {
   setOpenBattle,
   setPaintActions,
 } from './battle.js';
-import { mapMount, setMapMount } from './map.js';
+import { mapMount, setMapMount } from './world-map.js';
 import { mglRender, mmBuild, setMglRender, setMmBuild } from './map-gl.js';
 import { openShop, setOpenShop } from './shop.js';
 import { AMB, AUD } from './sound.js';

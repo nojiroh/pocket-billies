@@ -17,7 +17,7 @@ import { RM, S, U, canEnter, esc, fmt, save } from './core.js';
 import { artLoad, uiIco } from './art.js';
 import { dioData, dioImg, dioOk, dioPrepare, dioScene } from './walk-view.js';
 import { wrHubScene } from './world.js';
-import { D2R, MAP, MNV, slerp, v3 } from './map.js';
+import { D2R, MAP, MNV, slerp, v3 } from './world-map.js';
 import { MGL } from './map-gl.js';
 import { sfx } from './sound.js';
 /* eslint-disable no-func-assign */
