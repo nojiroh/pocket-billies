@@ -9,7 +9,7 @@
 import { expose } from './test-globals.js';
 import { FR, GD, PEOPLE, S, ST, U, cleanName, dglBudget, dioArtVer, dioImg, drawRig, provide } from './hooks.js';
 import { clamp } from './util.js';
-import { frameStop, frameTask } from './frame.js';
+import { frameStop, frameTask } from './frame-scheduler.js';
 import { ART, artImg, cnv, hexA } from './art.js';
 /* eslint-disable no-func-assign */
 expose({

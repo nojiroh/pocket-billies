@@ -9,7 +9,7 @@ import { expose } from './test-globals.js';
 import { dioChatLines, provide } from './hooks.js';
 import { PEOPLE, TRAINERS } from './game-data.js';
 import { RM, S } from './game-state.js';
-import { frameStop, frameTask } from './frame.js';
+import { frameStop, frameTask } from './frame-scheduler.js';
 import { trPortrait, trainerLook } from './person-art.js';
 import { DIO, dioFace } from './walk-view.js';
 import { DGL } from './walk-view-gl.js';

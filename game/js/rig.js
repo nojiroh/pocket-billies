@@ -5,7 +5,7 @@
 import { expose } from './test-globals.js';
 import { B, RM, SP, provide } from './hooks.js';
 import { clamp, rnd } from './util.js';
-import { frameTask, userFps } from './frame.js';
+import { frameTask, userFps } from './frame-scheduler.js';
 import { ART, artImg, artLoad, artReady, artURL, cnv } from './art.js';
 import { animFor } from './body-plan-animation.js';
 /* eslint-disable no-func-assign */

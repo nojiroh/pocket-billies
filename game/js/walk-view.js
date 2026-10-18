@@ -48,7 +48,7 @@ import {
   wrSceneById,
 } from './hooks.js';
 import { clamp } from './util.js';
-import { frameStop } from './frame.js';
+import { frameStop } from './frame-scheduler.js';
 import { ART, artLoad, cnv, pkh } from './art.js';
 /* eslint-disable no-func-assign */
 expose({

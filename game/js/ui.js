@@ -93,7 +93,7 @@ import {
   walkMode,
   xpFor,
 } from './game-state.js';
-import { frameTask, userFps } from './frame.js';
+import { frameTask, userFps } from './frame-scheduler.js';
 import { ART, artLoad, artURL, cnv, coinHTML, coinURL, eggHTML, uiIco } from './art.js';
 import {
   TR_PRESETS,

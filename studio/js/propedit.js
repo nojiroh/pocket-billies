@@ -8,7 +8,7 @@
 import { expose } from '../../game/js/test-globals.js';
 import { pedVoxHTML, provide } from '../../game/js/hooks.js';
 import { $, $$, clamp } from '../../game/js/util.js';
-import { frameStop, frameTask } from '../../game/js/frame.js';
+import { frameStop, frameTask } from '../../game/js/frame-scheduler.js';
 import { artLoad, cnv, setArtLoad } from '../../game/js/art.js';
 import { DIO, dioData, dioImg, dioLayerM, dioOk, setDioData } from '../../game/js/walk-view.js';
 import { DGL, DGL_MATS, dglMatOf, dglVaryOf, dioMount } from '../../game/js/walk-view-gl.js';

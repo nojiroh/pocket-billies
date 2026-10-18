@@ -30,7 +30,7 @@ import {
   uid,
   xpFor,
 } from './game-state.js';
-import { FRAME, frameCount, frameTask, userFps } from './frame.js';
+import { FRAME, frameCount, frameTask, userFps } from './frame-scheduler.js';
 import { uiIco } from './art.js';
 import { applyPreferences, exportSave } from './settings-screen.js';
 import { SC, scResize, scStop } from './battle-stage.js';

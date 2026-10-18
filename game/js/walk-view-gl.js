@@ -67,7 +67,7 @@ import {
   wrLookTick,
 } from './hooks.js';
 import { clamp } from './util.js';
-import { FRAME, frameCount, frameTask, userFps } from './frame.js';
+import { FRAME, frameCount, frameTask, userFps } from './frame-scheduler.js';
 import { cnv, hexA } from './art.js';
 import { dioFolkFrames, humanPose, owFrames, trPick, trWarm } from './person-art.js';
 import { drawRig, rigFrame, rigParts, rigPreload } from './rig.js';

@@ -41,7 +41,7 @@ import {
   today,
 } from './game-state.js';
 import { I18N_LANGS, i18nSet } from './i18n.js';
-import { FRAME } from './frame.js';
+import { FRAME } from './frame-scheduler.js';
 import { uiIco } from './art.js';
 import { cleanLook, cleanTrainer, humanHTML, lookFromOld } from './person-art.js';
 /* eslint-disable no-func-assign */

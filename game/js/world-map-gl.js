@@ -13,7 +13,7 @@ import { FR, flyDraw, flyTick, provide } from './hooks.js';
 import { $, clamp } from './util.js';
 import { FUTURE, LINKS, ROUTE, linkCost, placeSub } from './game-data.js';
 import { RM, S, U, canEnter, esc, fmt, nextStop, tripTo } from './game-state.js';
-import { frameCount, frameStop, frameTask, userFps } from './frame.js';
+import { frameCount, frameStop, frameTask, userFps } from './frame-scheduler.js';
 import { artLoad, artPixels, cnv, hexA, mstamp, uiIco } from './art.js';
 import { owFrames, portraitHTML } from './person-art.js';
 import { EASE } from './battle-stage.js';

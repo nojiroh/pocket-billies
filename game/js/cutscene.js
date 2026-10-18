@@ -26,7 +26,7 @@ import {
 import { $, clamp } from './util.js';
 import { ROUTE, RULES, SP, START_NODE, TRAINERS, TYPES, eff, placeFull } from './game-data.js';
 import { RM, U, esc } from './game-state.js';
-import { userFps } from './frame.js';
+import { userFps } from './frame-scheduler.js';
 import { artLoad, cnv } from './art.js';
 import { TR_PRESETS, cleanLook, humanPose, owFrames, trainerLook } from './person-art.js';
 import { DR, drSave, openDressing } from './dressing.js';

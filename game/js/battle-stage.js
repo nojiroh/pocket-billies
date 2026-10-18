@@ -34,7 +34,7 @@ import {
   provide,
 } from './hooks.js';
 import { $, clamp, rnd } from './util.js';
-import { FRAME, frameCount, frameStop, frameTask, userFps } from './frame.js';
+import { FRAME, frameCount, frameStop, frameTask, userFps } from './frame-scheduler.js';
 import { ART, artLoad, artPixels, cnv, coinCanvas, d44, hexA, iconCanvas, mixA, pk, whiteOf } from './art.js';
 import { WD, humanFrames, humanPose } from './person-art.js';
 import { drawRig, rigFrame, rigParts, rigTint } from './rig.js';

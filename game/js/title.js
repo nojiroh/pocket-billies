@@ -10,7 +10,7 @@ import { NW_TEST, accChipHTML, closeModal, modal, postProcess, render, sceneIdAt
 import { $, clamp } from './util.js';
 import { ROUTE, START_NODE } from './game-data.js';
 import { RM, S, U, esc, flush, freshKeep, lsSet, setS } from './game-state.js';
-import { userFps } from './frame.js';
+import { userFps } from './frame-scheduler.js';
 import { uiIco } from './art.js';
 import { humanHTML } from './person-art.js';
 import { applyPreferences } from './settings-screen.js';

@@ -3,7 +3,7 @@
 // object, and a setter (the module's own) for each function it wraps. The last module of the game's page.
 import { GD, ROUTE } from './game-data.js';
 import { B, S, U, save, setSave, setSetTrip, setTrip } from './game-state.js';
-import { FRAME, userFps } from './frame.js';
+import { FRAME, userFps } from './frame-scheduler.js';
 import { artPixels, setArtPixels } from './art.js';
 import { TR_CACHE, humanFrames, setHumanFrames } from './person-art.js';
 import { openDressing, setOpenDressing } from './dressing.js';
