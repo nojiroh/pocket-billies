@@ -66,7 +66,8 @@ export function stripped(text) {
     if (b < 0) throw new Error('to-module: start marker without an end marker');
     let e = b + END.length;
     while (text[e] === '\n') e++;
-    text = text.slice(0, a) + text.slice(e);
+    // phase 04e: a blank line where the generated part was, so the header ends there again (headerEnd)
+    text = text.slice(0, a) + (a > 0 ? '\n' : '') + text.slice(e);
   }
   text = text.replace(PROVIDE_LINE, '');
   const ast = espree.parse(text, { ecmaVersion: 'latest', sourceType: 'module', range: true });
