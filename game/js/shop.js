@@ -10,7 +10,7 @@ import { COINS, ITEMS, SHOPS } from './game-data.js';
 import { S, U, esc, fmt, plural, save } from './game-state.js';
 import { coinHTML, uiIconHTML } from './art.js';
 import { portraitHTML } from './person-art.js';
-import { openDressing } from './dressing-room.js';
+import { openDressingRoom } from './dressing-room.js';
 import { buzz } from './battle-stage.js';
 import { itemIcon } from './battle.js';
 /* eslint-disable no-func-assign */
@@ -80,9 +80,9 @@ function shopHTML(id) {
 export function openShop(id) {
   const sh = SHOPS[id];
   if (!sh) return;
-  if (sh.kind === 'wardrobe' && typeof openDressing === 'function') {
+  if (sh.kind === 'wardrobe' && typeof openDressingRoom === 'function') {
     if (U.modal) closeModal();
-    openDressing({ shop: id });
+    openDressingRoom({ shop: id });
     return;
   }
   U.shopLine = null;

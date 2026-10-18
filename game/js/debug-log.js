@@ -687,7 +687,7 @@ NWLOG.hook = () => {
     ['humanFrames', 'drawing a person'],
     ['worldMapGlRender', 'drawing the map'],
     ['csStart', 'starting the opening'],
-    ['openDressing', 'opening the dressing room'],
+    ['openDressingRoom', 'opening the dressing room'],
     ['artPixels', 'reading a picture'],
   ])
     timed(n, l);

@@ -105,7 +105,7 @@ import {
   trainerLook,
 } from './person-art.js';
 import { applyPreferences, settingsHTML } from './settings-screen.js';
-import { lookPortrait, openDressing } from './dressing-room.js';
+import { lookPortrait, openDressingRoom } from './dressing-room.js';
 import { bustHTML, rigCanvasHTML } from './skeleton-rig.js';
 import { EASE, battleStage, battleStageFocus, battleStageTargets, camHome } from './battle-stage.js';
 import {
@@ -2583,7 +2583,7 @@ document.addEventListener('click', ev => {
       render();
       break;
     case 'tr-custom':
-      openDressing({ mode: 'intro', done: () => render() });
+      openDressingRoom({ mode: 'intro', done: () => render() });
       break;
     case 'tr-next':
       U.avatarDraft = cleanLook(U.trainerDraft || TR_PRESETS[0]);

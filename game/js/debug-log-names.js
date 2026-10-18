@@ -6,7 +6,7 @@ import { B, S, U, save, setSave, setSetTrip, setTrip } from './game-state.js';
 import { FRAME, userFps } from './frame-scheduler.js';
 import { artPixels, setArtPixels } from './art.js';
 import { TR_CACHE, humanFrames, setHumanFrames } from './person-art.js';
-import { openDressing, setOpenDressing } from './dressing-room.js';
+import { openDressingRoom, setOpenDressingRoom } from './dressing-room.js';
 import {
   battleStage,
   battleStageResize,
@@ -144,7 +144,7 @@ Object.defineProperties(GAME, {
   newBattle: { get: () => newBattle, set: setNewBattle },
   normalMapWorkerState: { get: () => normalMapWorkerState },
   openBattle: { get: () => openBattle, set: setOpenBattle },
-  openDressing: { get: () => openDressing, set: setOpenDressing },
+  openDressingRoom: { get: () => openDressingRoom, set: setOpenDressingRoom },
   openShop: { get: () => openShop, set: setOpenShop },
   paintActions: { get: () => paintActions, set: setPaintActions },
   paintWorkerReport: { get: () => paintWorkerReport },

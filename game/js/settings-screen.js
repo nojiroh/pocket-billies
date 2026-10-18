@@ -14,7 +14,7 @@ import {
   engineSetting,
   galleryOpen,
   modal,
-  openDressing,
+  openDressingRoom,
   rebuildFromSettings,
   render,
   renderOv,
@@ -89,7 +89,7 @@ export function applyPreferences() {
   if (typeof i18nSet === 'function') i18nSet(p.lang || 'en');
 }
 function customizeTrainer() {
-  openDressing();
+  openDressingRoom();
 }
 export async function exportSave() {
   const json = JSON.stringify({ game: 'Pocket Billies', format: 1, save: S }, null, 2),

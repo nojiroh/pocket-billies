@@ -16,7 +16,7 @@ import { loadAllMaps } from './map-files.js';
 import { B, S, U, addSteps, esc, makeMon, maxHp, save, setB, setS, setSave, setTrip, spawn } from './game-state.js';
 import { FRAME } from './frame-scheduler.js';
 import { TR_CACHE } from './person-art.js';
-import { closeDressing, dressingRoom } from './dressing-room.js';
+import { closeDressingRoom, dressingRoom } from './dressing-room.js';
 import { battleStage, battleStageStop } from './battle-stage.js';
 import {
   GROUND_CACHE,
@@ -1406,7 +1406,7 @@ async function runFullTest(mode) {
       CS.test = false;
       csTeardown();
     }
-    if (typeof dressingRoom !== 'undefined' && dressingRoom.on) closeDressing();
+    if (typeof dressingRoom !== 'undefined' && dressingRoom.on) closeDressingRoom();
     if (STEST.offVis) {
       STEST.offVis();
       STEST.offVis = null;

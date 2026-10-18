@@ -24,7 +24,7 @@ expose({
   boutiqueSells: [() => boutiqueSells],
   buyDressingItems: [() => buyDressingItems, v => (buyDressingItems = v)],
   changeLook: [() => changeLook, v => (changeLook = v)],
-  closeDressing: [() => closeDressing, v => (closeDressing = v)],
+  closeDressingRoom: [() => closeDressingRoom, v => (closeDressingRoom = v)],
   colorSwatchesHTML: [() => colorSwatchesHTML, v => (colorSwatchesHTML = v)],
   dressingFootHTML: [() => dressingFootHTML, v => (dressingFootHTML = v)],
   dressingMoreHTML: [() => dressingMoreHTML, v => (dressingMoreHTML = v)],
@@ -36,7 +36,7 @@ expose({
   lookPortrait: [() => lookPortrait, v => (lookPortrait = v)],
   lookThumbnail: [() => lookThumbnail, v => (lookThumbnail = v)],
   lookWithOutfit: [() => lookWithOutfit, v => (lookWithOutfit = v)],
-  openDressing: [() => openDressing, v => setOpenDressing(v)],
+  openDressingRoom: [() => openDressingRoom, v => setOpenDressingRoom(v)],
   owns: [() => owns, v => (owns = v)],
   pushDressingUndo: [() => pushDressingUndo, v => (pushDressingUndo = v)],
   randomizeLook: [() => randomizeLook, v => (randomizeLook = v)],
@@ -55,10 +55,10 @@ expose({
   wearsOutfit: [() => wearsOutfit, v => (wearsOutfit = v)],
 });
 /* eslint-enable no-func-assign */
-provide({ openDressing });
-export function setOpenDressing(v) {
-  openDressing = v; // eslint-disable-line no-func-assign
-  provide({ openDressing });
+provide({ openDressingRoom });
+export function setOpenDressingRoom(v) {
+  openDressingRoom = v; // eslint-disable-line no-func-assign
+  provide({ openDressingRoom });
 }
 /* to-module: end */
 export const dressingRoom = {
@@ -280,7 +280,7 @@ const boutiqueSells = it =>
     it &&
     (it.shop === dressingRoom.shop || ((SHOPS[dressingRoom.shop] || {}).sells || []).includes(it.shop))
   );
-export function openDressing(o = {}) {
+export function openDressingRoom(o = {}) {
   dressingRoom.on = true;
   dressingRoom.mode = o.mode || 'edit';
   dressingRoom.shop = o.shop || null;
@@ -313,7 +313,7 @@ export function openDressing(o = {}) {
   bindDressingRoom();
   frameTask('dress', dressingPreviewLoop);
 }
-export function closeDressing() {
+export function closeDressingRoom() {
   dressingRoom.on = false;
   frameStop('dress');
   const el = $('#dressing');
@@ -742,7 +742,7 @@ export function saveDressingLook() {
   S.avatar = cleanLook(dressingRoom.look);
   save();
   const shop = dressingRoom.shop;
-  closeDressing();
+  closeDressingRoom();
   render();
   toast(shop ? 'Looking sharp.' : 'Your new look is saved.');
 }
@@ -821,7 +821,7 @@ function bindDressingRoom() {
   el.addEventListener('keydown', e => {
     if (e.key === 'Escape' && dressingRoom.mode !== 'intro' && !dressingRoom.noBack) {
       e.stopPropagation();
-      closeDressing();
+      closeDressingRoom();
     }
   });
 }
@@ -992,7 +992,7 @@ document.addEventListener('click', ev => {
         render();
         break;
       }
-      closeDressing();
+      closeDressingRoom();
       break;
   }
 });

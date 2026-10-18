@@ -29,7 +29,7 @@ import { RM, U, esc } from './game-state.js';
 import { userFps } from './frame-scheduler.js';
 import { artLoad, makeCanvas } from './art.js';
 import { TR_PRESETS, cleanLook, humanPose, owFrames, trainerLook } from './person-art.js';
-import { dressingRoom, openDressing, saveDressingLook } from './dressing-room.js';
+import { dressingRoom, openDressingRoom, saveDressingLook } from './dressing-room.js';
 import { drawRig, rigFrame, rigParts, rigPreload, rigTint } from './skeleton-rig.js';
 import { buzz, particleSprite } from './battle-stage.js';
 import {
@@ -705,7 +705,7 @@ async function csScript(run) {
   CS.dressing = true;
   body.classList.add('cs-dress');
   await new Promise(r => {
-    openDressing({
+    openDressingRoom({
       mode: 'intro',
       noBack: true,
       look: U.trainerDraft || TR_PRESETS[Math.floor(Math.random() * TR_PRESETS.length)],

@@ -1222,7 +1222,7 @@ def desktop_steps(b, base, R):
             if pg.evaluate("!!U.modal"): raise Exception('the legendary came back the same day')
             out.append('Oilympus meets you at the volcano at level 42, once a day')
         # the six-choice dressing room
-        pg.evaluate("openDressing({});0"); time.sleep(1.5)
+        pg.evaluate("openDressingRoom({});0"); time.sleep(1.5)
         tabs = json.loads(pg.evaluate("JSON.stringify([...document.querySelectorAll('[data-a=dr-tab]')].map(b=>b.dataset.t))"))
         if tabs != ['body', 'face', 'hair', 'outfit', 'hat', 'extras']: raise Exception(f'dressing room tabs: {tabs}')
         pg.evaluate("dressingRoom.tab='face';refreshDressingRoom();document.querySelectorAll('[data-a=dr-face]')[3].click();0"); time.sleep(.5)
@@ -1233,7 +1233,7 @@ def desktop_steps(b, base, R):
         o = json.loads(pg.evaluate("JSON.stringify([dressingRoom.look.wear.top,dressingRoom.look.wear.bottom,dressingRoom.look.wear.shoes,(dressingRoom.look.colors.tee||[])[0]])"))
         pg.evaluate("document.querySelector('[data-a=dr-more][data-t=outfit]').click();0"); time.sleep(.6)
         more = pg.evaluate("document.querySelectorAll('[data-a=dr-wear][data-s=top]').length")
-        shot(pg, 'v40-dressing'); pg.evaluate("closeDressing();0")
+        shot(pg, 'v40-dressing'); pg.evaluate("closeDressingRoom();0")
         if f != ['eyes_sharp', 'brows_straight', 'mouth_smirk'] or no < 12 or o != ['tee', 'jeans', 'sneakers', '#C8323C'] or more < 10: raise Exception(f'dressing room: face {f}, {no} outfits, outfit {o}, more {more}')
         out.append(f'dressing room: six tabs, 12 faces, {no} outfits in three colourways, every piece under More')
         # busts in the Guide and the switch menu
