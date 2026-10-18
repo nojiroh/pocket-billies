@@ -57,7 +57,7 @@ def main():
         pg.evaluate("if(typeof titleEnd==='function')titleEnd();U.pg='girl';startGame(SP.scoop0?'scoop':RULES.start.starters[0]);U.modal=null;U.mq=[];renderOv();U.toastQ=[];U.toastOn=false;render();0")
         pg.add_style_tag(content='body *:not(#dio){visibility:hidden!important} #dio{visibility:visible!important}')
         # v47: always at noon on a clear spring day, whatever the clock says (the light follows the time of day now)
-        pg.evaluate("if(typeof ENV!=='undefined'){ENV.on=true;ENV.force={time:12.5,season:'spring',weather:'clear'}}0")
+        pg.evaluate("if(typeof environment!=='undefined'){environment.on=true;environment.force={time:12.5,season:'spring',weather:'clear'}}0")
         for sid in want:
             t0 = time.time()
             pg.evaluate(f"U.tab='walk';U.bench={{id:'{sid}',test:1}};render();0")

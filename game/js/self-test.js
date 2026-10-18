@@ -38,7 +38,7 @@ import {
 import { eng } from './engine/settings.js';
 import { EGL, eglAttrClashes } from './engine/webgl.js';
 import { EGL_POST_SH } from './engine/post-effects.js';
-import { ENV } from './environment.js';
+import { environment } from './environment.js';
 import { WALK_SHADERS, roomDimming, standingHeightAt, walkRenderer } from './walk-view-gl.js';
 import { BLD, BLD_SH } from './buildings.js';
 import { STR, strHas } from './structures.js';
@@ -514,11 +514,11 @@ async function runFullTest(mode) {
         'Rain and night: what they cost',
         'dio',
         async () => {
-          const f0 = ENV.force,
-            on0 = ENV.on;
+          const f0 = environment.force,
+            on0 = environment.on;
           const meas = async force => {
-            ENV.on = true;
-            ENV.force = force;
+            environment.on = true;
+            environment.force = force;
             await stSleep(1000);
             const t0 = NWLOG.now();
             await walkAbout(3);
@@ -531,8 +531,8 @@ async function runFullTest(mode) {
             DIAGR.weather = { clear: a, rain: b, night: c };
             return `clear day ${a.fpsAvg} fps (${a.cpuMs} ms), rain ${b.fpsAvg} fps (${b.cpuMs} ms), night ${c.fpsAvg} fps (${c.cpuMs} ms)`;
           } finally {
-            ENV.force = f0;
-            ENV.on = on0;
+            environment.force = f0;
+            environment.on = on0;
           }
         },
         10
@@ -590,13 +590,13 @@ async function runFullTest(mode) {
       );
     }
     /* 1c. v26: night, bad weather and the seasons drawn in town, a room you walk into, and a dark cave */
-    if (typeof ENV !== 'undefined' && !STEST.stop)
+    if (typeof environment !== 'undefined' && !STEST.stop)
       await phase(
         'Night, weather, seasons and rooms',
         'dio',
         async () => {
           const sid = GD.scenes.sundown ? 'sundown' : scenes[0],
-            f0 = ENV.force,
+            f0 = environment.force,
             out = [];
           try {
             U.tab = 'walk';
@@ -610,7 +610,7 @@ async function runFullTest(mode) {
               ['autumn', { time: 12, weather: 'clear', season: 'autumn' }],
             ]) {
               if (STEST.stop) break;
-              ENV.force = f;
+              environment.force = f;
               const f1 = typeof walkRenderer !== 'undefined' ? walkRenderer.frames : 0;
               await stSleep(1600);
               if (typeof walkRenderer !== 'undefined' && walkRenderer.on && walkRenderer.frames <= f1)
@@ -618,7 +618,7 @@ async function runFullTest(mode) {
               out.push(n);
             }
           } finally {
-            ENV.force = f0;
+            environment.force = f0;
           }
           for (const id of ['int_shop', 'grotto']) {
             if (!GD.scenes[id] || STEST.stop) continue;
@@ -841,9 +841,9 @@ async function runFullTest(mode) {
         'dio',
         async () => {
           /* v47: at noon, whatever the clock says: the shop keeps opening hours now */ const f0 =
-            typeof ENV !== 'undefined' ? ENV.force : null;
-          if (typeof ENV !== 'undefined') {
-            ENV.force = Object.assign({}, f0 || {}, { time: 12.5 });
+            typeof environment !== 'undefined' ? environment.force : null;
+          if (typeof environment !== 'undefined') {
+            environment.force = Object.assign({}, f0 || {}, { time: 12.5 });
             if (typeof PROP_CLOCK !== 'undefined') PROP_CLOCK.t = 0;
           }
           try {
@@ -893,8 +893,8 @@ async function runFullTest(mode) {
               throw new Error('walking out didn’t bring the town back (' + walkView.id + ')');
             return `in ${(ms / 1000).toFixed(1)} s, doorway ${off.toFixed(2)} m from the door, town dimmed ${(RD ? RD.dim : 0).toFixed(2)}, back out at the door`;
           } finally {
-            if (typeof ENV !== 'undefined') {
-              ENV.force = f0;
+            if (typeof environment !== 'undefined') {
+              environment.force = f0;
               if (typeof PROP_CLOCK !== 'undefined') PROP_CLOCK.t = 0;
             }
           }
@@ -938,7 +938,8 @@ async function runFullTest(mode) {
               ['test_light_air', 17.5],
             ]) {
               if (STEST.stop) break;
-              if (typeof ENV !== 'undefined') ENV.force = { time: t, weather: 'clear', season: 'summer' };
+              if (typeof environment !== 'undefined')
+                environment.force = { time: t, weather: 'clear', season: 'summer' };
               U.tab = 'walk';
               U.bench = { id, test: 1 };
               render();
@@ -990,7 +991,7 @@ async function runFullTest(mode) {
             }
           } finally {
             for (const k in O) gl[k] = O[k];
-            if (typeof ENV !== 'undefined') ENV.force = null;
+            if (typeof environment !== 'undefined') environment.force = null;
             U.bench = null;
             render();
           }

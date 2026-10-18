@@ -13,7 +13,7 @@ import { ROUTE } from './game-data.js';
 import { B, S, U } from './game-state.js';
 import { battleStage } from './battle-stage.js';
 import { baseMapId, bridgeAt, mapBridges, mapById, stepWallAt, terrainAt, walkData, walkView } from './walk-view.js';
-import { ENV, envHour, envState } from './environment.js';
+import { envHour, envState, environment } from './environment.js';
 import { walkRenderer } from './walk-view-gl.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -1062,15 +1062,22 @@ setInterval(() => {
       if ((stepWallAt(P.x, P.z) & 15) === 8) ter = 'e';
     }
     if (
-      typeof ENV !== 'undefined' &&
-      ENV.on &&
+      typeof environment !== 'undefined' &&
+      environment.on &&
       walkView.sc &&
       !walkView.sc.indoor &&
-      ENV.wet > 0.5 &&
+      environment.wet > 0.5 &&
       !/[bew]/.test(ter)
     )
       ter = 'wet';
-    if (typeof ENV !== 'undefined' && ENV.on && ENV.sk && ENV.sk[3] > 0.3 && /[gGflt]/.test(ter)) ter = 'n';
+    if (
+      typeof environment !== 'undefined' &&
+      environment.on &&
+      environment.sk &&
+      environment.sk[3] > 0.3 &&
+      /[gGflt]/.test(ter)
+    )
+      ter = 'n';
     sfx('step', { ter });
   } catch (e) {}
 }, 330);
@@ -1350,7 +1357,7 @@ function ambUpdate() {
     !document.hidden &&
     typeof U !== 'undefined' &&
     (U.tab === 'walk' || (typeof B !== 'undefined' && B));
-  const E = typeof ENV !== 'undefined' && ENV.on ? ENV : null,
+  const E = typeof environment !== 'undefined' && environment.on ? environment : null,
     sc = walk ? walkView.sc : null;
   let pans = {};
   if (sc) {

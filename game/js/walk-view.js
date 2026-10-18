@@ -11,7 +11,6 @@
 import { expose } from './test-globals.js';
 import {
   ALTERNATE_PROPS,
-  ENV,
   GD,
   PW,
   RM,
@@ -26,6 +25,7 @@ import {
   envHere,
   envSeason,
   envState,
+  environment,
   groundHeightAt,
   lifePaths,
   loreFlags,
@@ -483,7 +483,13 @@ export function propShown(p) {
   if (!p || (!p.hours && !p.days && !p.season && p.grow == null && !p.dry)) return true;
   if (p.grow != null && !cropGrowth(p)) return false;
   /* v47: "dry": only while the ground is dry and clear (chalk drawings wash away in the rain and come back after) */
-  if (p.dry && typeof ENV !== 'undefined' && ENV.on && (ENV.wet > 0.25 || (ENV.sk && ENV.sk[3] > 0.3))) return false;
+  if (
+    p.dry &&
+    typeof environment !== 'undefined' &&
+    environment.on &&
+    (environment.wet > 0.25 || (environment.sk && environment.sk[3] > 0.3))
+  )
+    return false;
   if (!p.hours && !p.days && !p.season) return true;
   const T = propClock();
   if (p.hours) {

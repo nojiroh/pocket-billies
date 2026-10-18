@@ -175,7 +175,7 @@ import {
   eglSun,
 } from './engine/light.js';
 import { EGL_POST_SH, eglPost, eglSnapshot, eglSunScreen } from './engine/post-effects.js';
-import { ENV, ENV_WX, envFrame, envHere, envSky, envState, envWinLit } from './environment.js';
+import { ENV_WX, envFrame, envHere, envSky, envState, envWinLit, environment } from './environment.js';
 /* eslint-disable no-func-assign */
 expose({
   ALTERNATE_PROPS: [() => ALTERNATE_PROPS],
@@ -3602,7 +3602,7 @@ function drawWalkFrame(ts, dtm) {
     C0 = walkData().sc,
     PPU = C0.ppu || 34;
   /* v26: the hour, the weather and the season (environment.js) lean on the engine dials while this frame draws */
-  ENG_CTX.env = typeof ENV !== 'undefined' && (ENV.on || !!ENV.force);
+  ENG_CTX.env = typeof environment !== 'undefined' && (environment.on || !!environment.force);
   if (ENG_CTX.env) envFrame(sc, dt);
   const gq = eglGpuBegin();
   try {
@@ -3670,7 +3670,7 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
   } else walkView.hits = hits;
   cullItems(items, C);
   const dark0 = sc.tint && sc.tint !== '#000000' ? 1 : sc.indoor ? 0.7 : 0,
-    lk = ENG_CTX.env && !sc.indoor ? ENV.lampK : 0,
+    lk = ENG_CTX.env && !sc.indoor ? environment.lampK : 0,
     dark = Math.max(dark0, lk > 0.4 ? lk : 0);
   /* shadow map (every other frame when the device is struggling) */
   const QE = Math.max(walkRenderer.q || 0, BT && (eng('quality', 'battleLite') ?? true) ? 2 : 0);
@@ -3740,7 +3740,7 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
       X,
       ivp: C.ivp,
       noVol: QE >= 3 || (!!sc.indoor && !dark),
-      volDens: sc.indoor ? 0.5 : 1 + (ENG_CTX.env ? ENV.fog * 1.5 + ENV.rain * 0.4 : 0),
+      volDens: sc.indoor ? 0.5 : 1 + (ENG_CTX.env ? environment.fog * 1.5 + environment.rain * 0.4 : 0),
     });
   /* labels and markers stay sharp on the layer above */
   const x = walkView.x;
@@ -4031,7 +4031,7 @@ function heatHaze(sc) {
     /canyon|desert|mesa/.test((sc.far || '') + ' ' + (sc.name || '').toLowerCase()) ||
     (sc.edge === 's' && !sc.flatFar);
   if (!hot) return 0;
-  const E = typeof ENV !== 'undefined' && ENG_CTX.env ? ENV : null;
+  const E = typeof environment !== 'undefined' && ENG_CTX.env ? environment : null;
   return E ? 0.55 * (1 - E.night) * (1 - E.grey) * (1 - Math.min(1, E.rain)) : 0.4;
 }
 /* lower the resolution when frames come late (whatever the cause), raise it again when there's room */
@@ -5014,17 +5014,19 @@ export function roomDimming(sc) {
   return R && k > 0 ? { b: [R[0], R[1], R[0] + R[2], R[1] + R[3]], dim: k0 * k } : null;
 }
 /* alpha 0.4: how far a lamp is on (0-1). Outdoors with the world's hours each lamp has its own moment as the light
-   fails (ENV.lampK: dusk, night, a grey storm, fog), so they come on one by one; in a dark place or a room, all on */
+   fails (environment.lampK: dusk, night, a grey storm, fog), so they come on one by one; in a dark place or a room, all on */
 function lampLit(x, z, dark) {
   const sc = walkView.sc,
-    E = typeof ENV !== 'undefined' && ENG_CTX.env && !sc.indoor ? ENV : null;
+    E = typeof environment !== 'undefined' && ENG_CTX.env && !sc.indoor ? environment : null;
   if (!E || (sc.tint && sc.tint !== '#000000')) return dark ? 1 : 0;
   const th = 0.16 + 0.3 * hash2d(Math.round(x * 7), Math.round(z * 11));
   return Math.min(1, Math.max(0, (E.lampK - th) / 0.07));
 }
 /* an old (picture-only) house's window: lit at this hour or not (environment.js envWinLit) */
 function windowLit(x, z) {
-  return typeof envWinLit === 'function' && typeof ENV !== 'undefined' && ENG_CTX.env ? envWinLit(x, z, ENV.tod) : true;
+  return typeof envWinLit === 'function' && typeof environment !== 'undefined' && ENG_CTX.env
+    ? envWinLit(x, z, environment.tod)
+    : true;
 }
 function walkLightContext(C, sun, dark, items, shadow, BT) {
   const dark0L = dark;
@@ -5038,7 +5040,7 @@ function walkLightContext(C, sun, dark, items, shadow, BT) {
   const L = [],
     ao = [],
     RR = sc.roomRect,
-    dOut = RR && typeof ENV !== 'undefined' && ENG_CTX.env ? ENV.lampK || 0 : 0;
+    dOut = RR && typeof environment !== 'undefined' && ENG_CTX.env ? environment.lampK || 0 : 0;
   for (const it of items) {
     if (it.k !== 'prop' || it.far || it.layer) continue;
     const M = it.M,
@@ -5136,7 +5138,7 @@ function walkLightContext(C, sun, dark, items, shadow, BT) {
   ao.forEach(a => (a.d = Math.hypot(a[0] - P.x, a[1] - P.z)));
   ao.sort((a, b) => a.d - b.d);
   /* v26: dark caves (and the night) — you carry a lantern */
-  const E = typeof ENV !== 'undefined' && ENG_CTX.env ? ENV : null,
+  const E = typeof environment !== 'undefined' && ENG_CTX.env ? environment : null,
     cave = (sc.dark ?? (sc.indoor && sc.far === 'cave' ? 1 : 0)) * eng('air', 'caveDark'),
     night = E ? E.night : 0,
     lan = Math.max(cave, night * 0.75);
@@ -5578,7 +5580,7 @@ function drawSky(C, sun, mirror) {
   gl.useProgram(p.p);
   eglBindQuad();
   if (U.uEnv) {
-    const E = typeof ENV !== 'undefined' && ENG_CTX.env ? ENV : null;
+    const E = typeof environment !== 'undefined' && ENG_CTX.env ? environment : null;
     gl.uniform4f(U.uEnv, E ? E.night : 0, E ? E.flash : 0, E ? E.grey : 0, E ? (E.rainbow || 0) * (1 - E.night) : 0);
     gl.uniform3fv(U.uMoon, sun.dir);
   }
@@ -5677,7 +5679,7 @@ export function drawGround(C, X) {
     gl.uniform3f(U.uGAOR, 1 / sc.w, 1 / sc.h, walkRenderer.gaoTex ? (eng('shadows', 'groundAO') ?? 1) : 0);
   }
   if (U.uWet) {
-    const E = typeof ENV !== 'undefined' && ENG_CTX.env && !sc.indoor ? ENV : null,
+    const E = typeof environment !== 'undefined' && ENG_CTX.env && !sc.indoor ? environment : null,
       sk = skyColors(sc);
     gl.uniform1f(U.uWet, E ? clamp((E.wet || 0) * (eng('air', 'wetGround') ?? 1), 0, 1) : 0);
     gl.uniform1f(U.uRainK, E ? Math.min(1, E.rain || 0) : 0);
@@ -7286,7 +7288,7 @@ function drawFountainEffects(quad, t, rm, dt) {
 /* v26: rain, snow and falling ash around you (environment.js says how much); drops splash on the ground and ring the water */
 function drawWeather(quad, glows, U, R, Up, dt, rm) {
   const gl = EGL.gl,
-    E = ENV,
+    E = environment,
     BT = walkRenderer.bt,
     P = BT ? { x: BT.center[0], z: BT.center[1] } : walkView.pl,
     k = eng('air', 'weather') * (walkView.R < 0.75 ? 0.5 : 1);
@@ -7396,7 +7398,7 @@ function addFootprint(x, z, a, paw) {
   if (!sc || (sc.indoor && sc.far !== 'cave')) return;
   let ch = terrainAt(x, z),
     col = FOOTPRINT_COLORS[ch];
-  const E = typeof ENV !== 'undefined' && ENV.on ? ENV : null;
+  const E = typeof environment !== 'undefined' && environment.on ? environment : null;
   if (!col && E && !sc.indoor && E.sk && E.sk[3] > 0.3 && !/[wdbe]/.test(ch)) col = FOOTPRINT_COLORS.n;
   if (!col && E && !sc.indoor && E.wet > 0.5 && !/[wdb]/.test(ch)) col = [0.34, 0.36, 0.42];
   if (!col) return;
@@ -7453,7 +7455,7 @@ function drawLifeEffects(quad, glows, t, rm, dt, sc, C0) {
   const L = walkView.life;
   if (!L) return;
   const P = walkView.pl,
-    E = typeof ENV !== 'undefined' && ENG_CTX.env ? ENV : null,
+    E = typeof environment !== 'undefined' && ENG_CTX.env ? environment : null,
     night = E ? E.night : 0,
     ss = E ? E.season : 'summer';
   if (!L.hv) {
@@ -7631,8 +7633,8 @@ export function effectsPass(C, items, X, dark, t, dt) {
   walkRenderer.fires = [];
   const RR = sc.roomRect,
     dOut =
-      RR && typeof ENV !== 'undefined' && ENG_CTX.env
-        ? ENV.lampK || 0
+      RR && typeof environment !== 'undefined' && ENG_CTX.env
+        ? environment.lampK || 0
         : 0; /* v46: lamps and windows outside a room laid into the place keep the outdoor hour */
   for (const it of items) {
     if (it.k !== 'prop' || it.far || it.layer) continue;
@@ -7733,9 +7735,9 @@ export function effectsPass(C, items, X, dark, t, dt) {
         if (
           !RS &&
           typeof envWinLit === 'function' &&
-          typeof ENV !== 'undefined' &&
+          typeof environment !== 'undefined' &&
           ENG_CTX.env &&
-          !envWinLit(x, z, ENV.tod)
+          !envWinLit(x, z, environment.tod)
         )
           k *= 0.05;
         /* v47: lit one at a time */ if (k > 0.02)

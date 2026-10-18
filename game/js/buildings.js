@@ -27,7 +27,7 @@ import {
   eglPrograms,
   v3n,
 } from './engine/webgl.js';
-import { ENV, envLitFrac } from './environment.js';
+import { envLitFrac, environment } from './environment.js';
 import { setPropLookUniforms, standingHeightAt, useWalkProgram, walkRenderer, worldCurveArgs } from './walk-view-gl.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -1494,7 +1494,7 @@ function bldMake(it) {
 }
 /* alpha 0.4: how many of the windows are lit at this hour (one by one in the evening, fewer late at night) */
 function bldLitF() {
-  const h = typeof ENV !== 'undefined' && ENG_CTX.env ? ENV.tod : 19;
+  const h = typeof environment !== 'undefined' && ENG_CTX.env ? environment.tod : 19;
   return typeof envLitFrac === 'function'
     ? envLitFrac(h)
     : h >= 17 && h < 22
@@ -1573,7 +1573,7 @@ function bldDraw0(C, X, items, fades) {
   );
   /* alpha 0.4: a room whose lamp is off is dark at night (it showed at daylight brightness, so unlit windows looked lit) */ gl.uniform1f(
     p.U.uDay,
-    sc.indoor ? 0.7 : 1 - 0.8 * (dark ? 1 : typeof ENV !== 'undefined' && ENG_CTX.env ? ENV.night : 0)
+    sc.indoor ? 0.7 : 1 - 0.8 * (dark ? 1 : typeof environment !== 'undefined' && ENG_CTX.env ? environment.night : 0)
   );
   gl.uniform1f(p.U.uNight, (dark ? 1 : eng('lights', 'windowsDay') * 2.2) * eng('lights', 'brightness'));
   gl.uniform1f(p.U.uInt, eng('world', 'interiors') === false ? 0 : 1);
@@ -1598,7 +1598,11 @@ function bldDraw0(C, X, items, fades) {
   if (p.U.uGlassN)
     gl.uniform1f(
       p.U.uGlassN,
-      dark ? 1 : typeof ENV !== 'undefined' && ENG_CTX.env && !sc.indoor ? Math.min(1, ENV.lampK * 1.2) : 0
+      dark
+        ? 1
+        : typeof environment !== 'undefined' && ENG_CTX.env && !sc.indoor
+          ? Math.min(1, environment.lampK * 1.2)
+          : 0
     );
   gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
   gl.uniform1i(p.U.uTex, 0);

@@ -441,16 +441,16 @@ NWLOG.more = () => {
   t('preferences', () => Object.assign({}, GAME.S.preferences || {}));
   t('saveBytes', () => JSON.stringify(GAME.S).length);
   t('time', () =>
-    typeof GAME.ENV !== 'undefined'
+    typeof GAME.environment !== 'undefined'
       ? {
-          on: GAME.ENV.on,
-          hour: +GAME.ENV.tod.toFixed(2),
-          weather: GAME.ENV.weather,
-          season: GAME.ENV.season,
-          climate: GAME.ENV.climate,
-          night: +(GAME.ENV.night || 0).toFixed(2),
-          lamps: +(GAME.ENV.lampK || 0).toFixed(2),
-          forced: GAME.ENV.force || null,
+          on: GAME.environment.on,
+          hour: +GAME.environment.tod.toFixed(2),
+          weather: GAME.environment.weather,
+          season: GAME.environment.season,
+          climate: GAME.environment.climate,
+          night: +(GAME.environment.night || 0).toFixed(2),
+          lamps: +(GAME.environment.lampK || 0).toFixed(2),
+          forced: GAME.environment.force || null,
         }
       : null
   );

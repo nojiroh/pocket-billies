@@ -6,7 +6,7 @@
    leaves in autumn, frost in winter.
    Settings → Time of day / Weather / Season can pin any of them. Billionaires notice too: some come out at night,
    others in the rain (rules.env in the game data, editable in the Studio).
-   The renderer reads ENV through envFrame() once a frame; nothing here touches WebGL. */
+   The renderer reads environment through envFrame() once a frame; nothing here touches WebGL. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { RM, RULES, S, SP, provide, sceneIdAt } from './hooks.js';
@@ -15,7 +15,6 @@ import { hexA } from './art.js';
 import { mapById, walkView } from './walk-view.js';
 /* eslint-disable no-func-assign */
 expose({
-  ENV: [() => ENV],
   ENV_CLIMATE: [() => ENV_CLIMATE],
   ENV_HIST: [() => ENV_HIST],
   ENV_LIKES: [() => ENV_LIKES],
@@ -50,11 +49,12 @@ expose({
   envSun: [() => envSun, v => ((envSun = v), provide({ envSun }))],
   envWeatherFor: [() => envWeatherFor, v => (envWeatherFor = v)],
   envWinLit: [() => envWinLit, v => (envWinLit = v)],
+  environment: [() => environment],
 });
 /* eslint-enable no-func-assign */
 provide({ envHere, envOdds, envSeason, envState, envSun });
 /* to-module: end */
-export const ENV = {
+export const environment = {
   on: false,
   force: null,
   id: null,
@@ -78,7 +78,7 @@ export const ENV = {
   lampK: 0,
   t: 0,
 };
-provide({ ENV }); /* to-module */
+provide({ environment }); /* to-module */
 const ENV_SEASONS = [
   'winter',
   'winter',
@@ -170,13 +170,13 @@ function envClimate(sc) {
   return 'mild';
 }
 function envSeason(d) {
-  const p = (ENV.force && ENV.force.season) || envPrefs().season;
+  const p = (environment.force && environment.force.season) || envPrefs().season;
   if (p && p !== 'auto') return p;
   return ENV_SEASONS[(d || new Date()).getMonth()];
 }
 export function envHour(d) {
-  const f = ENV.force && ENV.force.time,
-    p = f != null ? f : ENV.on ? envPrefs().time || 'real' : 'day';
+  const f = environment.force && environment.force.time,
+    p = f != null ? f : environment.on ? envPrefs().time || 'real' : 'day';
   if (typeof p === 'number') return p;
   if (p !== 'real' && ENV_TIME_H[p] != null) return ENV_TIME_H[p];
   d = d || new Date();
@@ -192,10 +192,10 @@ function envHash(s) {
 }
 /* today's weather for a kind of place: changes every three hours, the same for everyone */
 function envWeatherFor(climate, d) {
-  const f = ENV.force && ENV.force.weather;
+  const f = environment.force && environment.force.weather;
   if (f) return f;
   const p = envPrefs().weather;
-  if (p === 'clear' || !ENV.on) return 'clear';
+  if (p === 'clear' || !environment.on) return 'clear';
   if (p && p !== 'auto' && ENV_WX[p]) return p;
   d = d || new Date();
   const odds = Object.assign({}, ENV_CLIMATE[climate] || ENV_CLIMATE.mild),
@@ -271,7 +271,8 @@ export function envHere() {
 const ENV_HIST = { key: '', wet: 0, snow: 0 };
 function envHistory(clim, d) {
   const now = (d || new Date()).getTime(),
-    key = clim + '|' + Math.floor(now / 3.6e6) + '|' + JSON.stringify(ENV.force || 0) + (ENV.on ? 1 : 0);
+    key =
+      clim + '|' + Math.floor(now / 3.6e6) + '|' + JSON.stringify(environment.force || 0) + (environment.on ? 1 : 0);
   if (ENV_HIST.key === key) return ENV_HIST;
   let wet = 0,
     snow = 0;
@@ -295,48 +296,48 @@ function envHistory(clim, d) {
 /* everything the renderer needs, eased so weather drifts in and out; a new scene (or a changed setting) snaps */
 export function envFrame(sc, dt) {
   const p = envPrefs(),
-    F = ENV.force || {},
+    F = environment.force || {},
     f =
       JSON.stringify([F.time, F.season, F.front ? 0 : F.weather]) +
       (p.time || '') +
       (p.season || '') +
-      (ENV.on ? 1 : 0),
-    snap = ENV.id !== (sc && sc.name) || ENV._f !== f;
-  /* alpha 0.4: the weather changing on its own (or in your settings) comes in as a front; a forced weather changes at once, unless it asks for a front (ENV.force.front) */ ENV.id =
+      (environment.on ? 1 : 0),
+    snap = environment.id !== (sc && sc.name) || environment._f !== f;
+  /* alpha 0.4: the weather changing on its own (or in your settings) comes in as a front; a forced weather changes at once, unless it asks for a front (environment.force.front) */ environment.id =
     sc && sc.name;
-  ENV._f = f;
+  environment._f = f;
   const st = envState(sc),
     { h, ss, rise, set, clim, wx, night, dusk, dawn } = st,
     W = ENV_WX[wx] || ENV_WX.clear;
-  ENV.tod = h;
-  ENV.season = ss;
-  ENV.weather = wx;
-  ENV.climate = clim;
-  ENV.rise = rise;
-  ENV.set = set;
-  ENV.raw = { night, dusk, dawn };
+  environment.tod = h;
+  environment.season = ss;
+  environment.weather = wx;
+  environment.climate = clim;
+  environment.rise = rise;
+  environment.set = set;
+  environment.raw = { night, dusk, dawn };
   const inn = sc && sc.indoor ? 0 : 1;
   /* alpha 0.4: weather comes in fronts. When the weather changes while you're in a place, the clouds build first and
     the light dims, then the rain (or snow, or ash) sweeps across the place as a curtain you can see coming; when it
-    clears, the back edge of the curtain passes the same way and the light comes back. ENV.curtain tells the rain where
-    it falls (drawWeather); after rain in daylight a rainbow stands in the sky for a few minutes (ENV.rainbow) */
+    clears, the back edge of the curtain passes the same way and the light comes back. environment.curtain tells the rain where
+    it falls (drawWeather); after rain in daylight a rainbow stands in the sky for a few minutes (environment.rainbow) */
   const now = performance.now() / 1000;
   let Wm = W,
     cur = null;
-  if (snap || !ENV.wxNow) {
-    ENV.wxNow = wx;
-    ENV.front = null;
-  } else if (wx !== ENV.wxNow) {
-    ENV.front = {
-      w0: ENV.wxNow,
-      W0: ENV_WX[ENV.wxNow] || ENV_WX.clear,
+  if (snap || !environment.wxNow) {
+    environment.wxNow = wx;
+    environment.front = null;
+  } else if (wx !== environment.wxNow) {
+    environment.front = {
+      w0: environment.wxNow,
+      W0: ENV_WX[environment.wxNow] || ENV_WX.clear,
       t0: now,
       dur: typeof RM !== 'undefined' && RM ? 3 : envRules().frontSecs || 75,
-      dir: envHash(wx + ENV.wxNow + Math.floor(now / 600)) < 0.5 ? 1 : -1,
+      dir: envHash(wx + environment.wxNow + Math.floor(now / 600)) < 0.5 ? 1 : -1,
     };
-    ENV.wxNow = wx;
+    environment.wxNow = wx;
   }
-  const Fr = ENV.front;
+  const Fr = environment.front;
   if (Fr) {
     const fr = Math.min(1, (now - Fr.t0) / Fr.dur),
       W0 = Fr.W0,
@@ -367,12 +368,12 @@ export function envFrame(sc, dt) {
         ash: Math.max(W0.ash || 0, W.ash || 0),
       };
     if (fr >= 1) {
-      ENV.front = null;
-      if (!into && (W0.rain || 0) > 0 && !W.rain && night < 0.4) ENV.rainbow = 1;
+      environment.front = null;
+      if (!into && (W0.rain || 0) > 0 && !W.rain && night < 0.4) environment.rainbow = 1;
     }
   }
-  ENV.curtain = cur && inn ? cur : null;
-  ENV.rainbow = Math.max(0, (ENV.rainbow || 0) - dt / 160) * (inn ? 1 : 0);
+  environment.curtain = cur && inn ? cur : null;
+  environment.rainbow = Math.max(0, (environment.rainbow || 0) - dt / 160) * (inn ? 1 : 0);
   /* morning mist: in the mild and coastal places the valleys fill with fog at dawn and it burns off by mid-morning */
   const mist =
     inn && (clim === 'mild' || clim === 'coast') && !(Wm.rain || Wm.snow)
@@ -392,28 +393,40 @@ export function envFrame(sc, dt) {
   };
   const k = snap ? 1 : Math.min(1, dt * (Fr ? 1.5 : 0.35));
   for (const [a, v] of Object.entries(T))
-    ENV[a] += (v - ENV[a]) * (a === 'night' || a === 'dusk' || a === 'dawn' ? (snap ? 1 : Math.min(1, dt * 2)) : k);
+    environment[a] +=
+      (v - environment[a]) * (a === 'night' || a === 'dusk' || a === 'dawn' ? (snap ? 1 : Math.min(1, dt * 2)) : k);
   const HI = envHistory(clim),
-    wetT = Math.max(ENV.rain > 0.3 ? 1 : 0, sc && sc.indoor ? 0 : HI.wet);
-  ENV.snowHist = sc && sc.indoor ? 0 : HI.snow;
-  ENV.wet = snap ? wetT : Math.max(0, Math.min(1, ENV.wet + (wetT > ENV.wet ? dt * 0.08 : -dt * 0.01)));
+    wetT = Math.max(environment.rain > 0.3 ? 1 : 0, sc && sc.indoor ? 0 : HI.wet);
+  environment.snowHist = sc && sc.indoor ? 0 : HI.snow;
+  environment.wet = snap
+    ? wetT
+    : Math.max(0, Math.min(1, environment.wet + (wetT > environment.wet ? dt * 0.08 : -dt * 0.01)));
   /* lightning: a rare flash in a storm */
-  ENV.flash = Math.max(0, ENV.flash - dt * 3.2);
+  environment.flash = Math.max(0, environment.flash - dt * 3.2);
   if (
-    ENV.storm > 0.5 &&
+    environment.storm > 0.5 &&
     !(typeof RM !== 'undefined' && RM) &&
     document.documentElement.dataset.flash !== 'off' &&
     Math.random() < dt * 0.06
   )
-    ENV.flash = 1;
+    environment.flash = 1;
   /* the season as four dials for the shaders: autumn colour, spring freshness, winter paleness, snow lying on the ground */
-  const son = ENV.on || !!(ENV.force && ENV.force.season),
-    snowLie = Math.max(clim === 'mild' && ss === 'winter' ? 0.22 : 0, ENV.snow * 0.55, ENV.snowHist || 0);
-  ENV.sk = son
+  const son = environment.on || !!(environment.force && environment.force.season),
+    snowLie = Math.max(
+      clim === 'mild' && ss === 'winter' ? 0.22 : 0,
+      environment.snow * 0.55,
+      environment.snowHist || 0
+    );
+  environment.sk = son
     ? [ss === 'autumn' ? 0.8 : 0, ss === 'spring' ? 0.8 : 0, ss === 'winter' ? 0.6 : 0, sc && sc.indoor ? 0 : snowLie]
     : [0, 0, 0, 0];
-  ENV.lampK = Math.max(ENV.night, ENV.dusk * 0.6, ENV.grey * 0.45, ENV.fog * 0.5);
-  return ENV;
+  environment.lampK = Math.max(
+    environment.night,
+    environment.dusk * 0.6,
+    environment.grey * 0.45,
+    environment.fog * 0.5
+  );
+  return environment;
 }
 /* colours of the sky (top, middle, horizon) after time and weather */
 function envMixHex(a, b, t) {
@@ -425,19 +438,19 @@ export function envSky(sky, indoor) {
   const P = k => ENV_PAL[k].map(h => hexA(h).map(v => v / 255));
   const du = P('dusk'),
     da = P('dawn'),
-    gr = P(ENV.storm > 0.5 ? 'storm' : ENV.ash > 0.5 ? 'ash' : 'grey'),
+    gr = P(environment.storm > 0.5 ? 'storm' : environment.ash > 0.5 ? 'ash' : 'grey'),
     ni = P('night');
   for (let i = 0; i < 3; i++) {
     let v = c[i];
-    v = envMixHex(v, da[i], ENV.dawn * 0.75);
-    v = envMixHex(v, du[i], ENV.dusk * 0.85);
-    v = envMixHex(v, gr[i], ENV.grey * 0.85);
+    v = envMixHex(v, da[i], environment.dawn * 0.75);
+    v = envMixHex(v, du[i], environment.dusk * 0.85);
+    v = envMixHex(v, gr[i], environment.grey * 0.85);
     v = envMixHex(
       v,
-      ni[i].map(x => x * (1 - ENV.grey * 0.25)),
-      ENV.night * 0.94
+      ni[i].map(x => x * (1 - environment.grey * 0.25)),
+      environment.night * 0.94
     );
-    if (ENV.flash) v = envMixHex(v, [0.9, 0.92, 1], ENV.flash * 0.5);
+    if (environment.flash) v = envMixHex(v, [0.9, 0.92, 1], environment.flash * 0.5);
     c[i] = v;
   }
   return c;
@@ -445,51 +458,58 @@ export function envSky(sky, indoor) {
 /* engine dials the time and weather lean on (read through eng(); see settings.js) */
 const ENV_MOD = {
   sun: {
-    strength: v => (ENV.on || ENV.force ? v * (1 - ENV.grey * 0.55) * (1 - ENV.fog * 0.25) : v),
-    clouds: v => (ENV.on || ENV.force ? Math.max(v, ENV.cloud) : v),
-    cloudShadows: v => v * (1 - ENV.grey * 0.8),
-    shafts: v => v * (1 - ENV.grey) * (1 + ENV.dusk * 0.8 + ENV.dawn * 0.5),
+    strength: v =>
+      environment.on || environment.force ? v * (1 - environment.grey * 0.55) * (1 - environment.fog * 0.25) : v,
+    clouds: v => (environment.on || environment.force ? Math.max(v, environment.cloud) : v),
+    cloudShadows: v => v * (1 - environment.grey * 0.8),
+    shafts: v => v * (1 - environment.grey) * (1 + environment.dusk * 0.8 + environment.dawn * 0.5),
   },
-  shadows: { strength: v => v * (1 - ENV.grey * 0.55 - ENV.fog * 0.2), softness: v => v * (1 + ENV.grey * 1.4) },
-  lights: { windowsDay: v => Math.max(v, ENV.lampK) },
+  shadows: {
+    strength: v => v * (1 - environment.grey * 0.55 - environment.fog * 0.2),
+    softness: v => v * (1 + environment.grey * 1.4),
+  },
+  lights: { windowsDay: v => Math.max(v, environment.lampK) },
   color: {
-    saturation: v => v * (1 - ENV.night * 0.22 - ENV.grey * 0.14),
+    saturation: v => v * (1 - environment.night * 0.22 - environment.grey * 0.14),
     exposure: v =>
       v *
-      (1 + ENV.night * 0.18 + ENV.flash * 0.6) *
+      (1 + environment.night * 0.18 + environment.flash * 0.6) *
       (typeof walkView !== 'undefined' && walkView.sc && walkView.sc.indoor
-        ? 1 - ENV.grey * 0.12 - ENV.storm * 0.06
+        ? 1 - environment.grey * 0.12 - environment.storm * 0.06
         : 1),
-    warmth: v => v + ENV.dusk * 0.22 + ENV.dawn * 0.12 - ENV.night * 0.12,
-    bloom: v => v * (1 + ENV.night * 0.5),
+    warmth: v => v + environment.dusk * 0.22 + environment.dawn * 0.12 - environment.night * 0.12,
+    bloom: v => v * (1 + environment.night * 0.5),
   },
-  air: { mist: v => v + ENV.fog * 0.18 + ENV.rain * 0.05, particles: v => v * (1 - ENV.rain * 0.6 - ENV.snow * 0.6) },
+  air: {
+    mist: v => v + environment.fog * 0.18 + environment.rain * 0.05,
+    particles: v => v * (1 - environment.rain * 0.6 - environment.snow * 0.6),
+  },
   grass: {
-    wind: v => v * (1 + ENV.storm * 1.2 + ENV.rain * 0.3),
-    gusts: v => v * (1 + ENV.storm * 1.5 + ENV.rain * 0.4),
+    wind: v => v * (1 + environment.storm * 1.2 + environment.rain * 0.3),
+    gusts: v => v * (1 + environment.storm * 1.5 + environment.rain * 0.4),
   },
-  world: { groundShine: v => v * (1 + ENV.wet * 1.6) },
-  water: { ripples: v => v * (1 + ENV.rain * 0.7 + ENV.storm * 0.8) },
+  world: { groundShine: v => v * (1 + environment.wet * 1.6) },
+  water: { ripples: v => v * (1 + environment.rain * 0.7 + environment.storm * 0.8) },
 };
 provide({ ENV_MOD }); /* to-module */
 /* the light of the moment: a low warm sun at dusk, the moon at night */
 function envSun(a, h, col) {
-  const day = 1 - ENV.night,
-    t = ENV.tod;
+  const day = 1 - environment.night,
+    t = environment.tod;
   if (day > 0.02) {
-    const span = Math.max(1, ENV.set - ENV.rise),
-      ph = clamp((t - ENV.rise) / span, 0, 1),
+    const span = Math.max(1, environment.set - environment.rise),
+      ph = clamp((t - environment.rise) / span, 0, 1),
       el = Math.sin(ph * Math.PI);
     h = clamp(12 + (h - 12) * el, 12, h);
     a = a + (ph - 0.5) * 70;
   }
-  const warm = Math.max(ENV.dusk, ENV.dawn * 0.7);
+  const warm = Math.max(environment.dusk, environment.dawn * 0.7);
   col = [col[0], col[1] * (1 - warm * 0.16), col[2] * (1 - warm * 0.38)];
   /* the moon: from high up front-left, cool and dim */
   const moon = [0.62, 0.72, 1.0];
-  col = col.map((v, i) => v * (1 - ENV.night) + moon[i] * ENV.night * 0.42);
-  h = h * (1 - ENV.night) + 48 * ENV.night;
-  a = a * (1 - ENV.night) + (a + 40) * ENV.night;
+  col = col.map((v, i) => v * (1 - environment.night) + moon[i] * environment.night * 0.42);
+  h = h * (1 - environment.night) + 48 * environment.night;
+  a = a * (1 - environment.night) + (a + 40) * environment.night;
   return { a, h, col };
 }
 /* the odds of meeting each billionaire, tilted by the hour and the weather */
@@ -510,7 +530,7 @@ function envFactors(st) {
   return f.filter(x => x[1]);
 }
 function envOdds(list, sc) {
-  if (!ENV.on || !list || envRules().off) return list;
+  if (!environment.on || !list || envRules().off) return list;
   const sc2 = sc || envHere();
   if (sc2 && sc2.indoor) return list;
   const f = envFactors(envState(sc2));
@@ -524,7 +544,7 @@ function envOdds(list, sc) {
 }
 /* a short line for the walk card: “Evening · Rain · Autumn”, its icon, and who is about */
 export function envLabel(sc) {
-  if (!ENV.on) return '';
+  if (!environment.on) return '';
   const st = envState(sc || envHere()),
     t =
       st.night > 0.5
@@ -546,7 +566,7 @@ export function envLabel(sc) {
 }
 /* alpha 0.4: what's coming: the weather of the next few hours where it changes ("rain from 15:00", "clearing by 18:00") */
 function envForecast(sc) {
-  if (!ENV.on || (ENV.force && ENV.force.weather)) return '';
+  if (!environment.on || (environment.force && environment.force.weather)) return '';
   const s = sc || envHere();
   if (!s || s.indoor) return '';
   const clim = envClimate(s),
@@ -585,7 +605,7 @@ export function envIcon(sc) {
               : 'sun';
 }
 export function envHint(sc) {
-  if (!ENV.on || envRules().off) return '';
+  if (!environment.on || envRules().off) return '';
   const s = sc || envHere();
   if (s && s.indoor) return '';
   const up = new Set();

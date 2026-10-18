@@ -15,7 +15,7 @@ import { rigAtlas } from './skeleton-rig.js';
 import { AREAS, battleStageArtFiles, battleStagePrepare } from './battle-stage.js';
 import { mapArtPaths, mapById, walkData, walkView } from './walk-view.js';
 import { EGL, eglOK } from './engine/webgl.js';
-import { ENV } from './environment.js';
+import { environment } from './environment.js';
 import { startTownRise, walkRenderer } from './walk-view-gl.js';
 import { seamlessWorld } from './seamless-world.js';
 import { areaKey } from './battle.js';
@@ -127,7 +127,7 @@ const UI_SVG = [
   'door',
 ];
 /* v26: the walk scenes follow the real clock, the weather and the season (environment.js; the Studio leaves this off) */
-if (typeof ENV !== 'undefined') ENV.on = true;
+if (typeof environment !== 'undefined') environment.on = true;
 const LOAD_PHASES = [
   'Polishing the coins',
   'Waking up the Billies',
@@ -772,7 +772,7 @@ function studioLive(D) {
       walkRenderer.farKey = '';
     }
   }
-  if (typeof ENV !== 'undefined') ENV.id = null;
+  if (typeof environment !== 'undefined') environment.id = null;
   if (!studioLive.told) {
     studioLive.told = 1;
     toast('Showing your Studio edits as you make them.');

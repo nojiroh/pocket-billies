@@ -36,7 +36,7 @@ import {
   setEglPrograms,
 } from './engine/webgl.js';
 import { eglPost, setEglPost } from './engine/post-effects.js';
-import { ENV } from './environment.js';
+import { environment } from './environment.js';
 import {
   buildGrass,
   drawGrass,
@@ -97,7 +97,6 @@ Object.defineProperties(GAME, {
   BLD: { get: () => BLD },
   EGL: { get: () => EGL },
   EGL_NW: { get: () => EGL_NW },
-  ENV: { get: () => ENV },
   FRAME: { get: () => FRAME },
   GD: { get: () => GD },
   LIFE: { get: () => LIFE },
@@ -127,6 +126,7 @@ Object.defineProperties(GAME, {
   eglPost: { get: () => eglPost, set: setEglPost },
   eglPrograms: { get: () => eglPrograms, set: setEglPrograms },
   endBattle: { get: () => endBattle, set: setEndBattle },
+  environment: { get: () => environment },
   gatherFrameItems: { get: () => gatherFrameItems, set: setGatherFrameItems },
   grassWork: { get: () => grassWork, set: setGrassWork },
   groundOcclusion: { get: () => groundOcclusion, set: setGroundOcclusion },

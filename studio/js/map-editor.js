@@ -40,7 +40,7 @@ import {
   storeStepGrid,
   walkView,
 } from '../../game/js/walk-view.js';
-import { ENV } from '../../game/js/environment.js';
+import { environment } from '../../game/js/environment.js';
 import { WALL_MATERIALS, mountWalkView, rawHeightAt, walkRenderer } from '../../game/js/walk-view-gl.js';
 import { esc } from './game-stand-ins.js';
 import {
@@ -1615,13 +1615,13 @@ ACTS.scTool = d => {
 };
 /* v26: preview the scene at another hour, in other weather or season (environment.js); nothing is saved */
 function scEnvApply() {
-  if (typeof ENV === 'undefined') return;
+  if (typeof environment === 'undefined') return;
   const e = SCN.env || {},
     f = {};
   if (e.time != null && e.time !== '') f.time = +e.time;
   if (e.weather) f.weather = e.weather;
   if (e.season) f.season = e.season;
-  ENV.force = Object.keys(f).length ? Object.assign({ time: 13, weather: 'clear', now: 1 }, f) : null;
+  environment.force = Object.keys(f).length ? Object.assign({ time: 13, weather: 'clear', now: 1 }, f) : null;
 }
 ACTS.scEnv = () => {
   SCN.env = { time: $('#scEnvT').value, weather: $('#scEnvW').value, season: $('#scEnvS').value };

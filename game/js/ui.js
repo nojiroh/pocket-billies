@@ -124,7 +124,7 @@ import {
   walkablePointNear,
 } from './walk-view.js';
 import { eng } from './engine/settings.js';
-import { ENV, envHint, envIcon, envLabel } from './environment.js';
+import { envHint, envIcon, envLabel, environment } from './environment.js';
 import { mountWalkView, walkRenderer } from './walk-view-gl.js';
 import { fishStart } from './fishing.js';
 import {
@@ -926,7 +926,7 @@ function whCard(sub, name, mid, btns) {
   return `<div class="wh-card glass compact"><div class="wh-top"><div class="sub">${sub}</div><button class="wh-x" data-a="card-close" aria-label="Hide this card"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></button></div><h1 class="where">${name}</h1>${mid}<div class="wh-acts">${main}${more ? `<details class="wh-more"><summary>More</summary><div class="wh-more-b">${more}</div></details>` : ''}</div></div>`;
 }
 function envLine() {
-  if (typeof envLabel !== 'function' || !ENV.on) return '';
+  if (typeof envLabel !== 'function' || !environment.on) return '';
   const t = envLabel();
   if (!t) return '';
   const h = envHint();

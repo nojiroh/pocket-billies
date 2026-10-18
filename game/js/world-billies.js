@@ -18,7 +18,7 @@ import { cnv } from './art.js';
 import { KBACK, drawRig, rigFrame, rigParts, rigPreload } from './skeleton-rig.js';
 import { battleStagePrepare } from './battle-stage.js';
 import { prepareMap, walkView, walkablePointNear, worldToScreen } from './walk-view.js';
-import { ENV } from './environment.js';
+import { environment } from './environment.js';
 import { standingHeightAt } from './walk-view-gl.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -272,9 +272,9 @@ function buddyItems(out, t, dt) {
   } /* left behind (a ladder, a door): catch up at once */
   /* v34: your buddy notices the weather and the hour while you stand: it shakes off the rain, hunkers down at night,
     cheers at the water's edge, now and then */
-  if (!moving && !worldBillies.react && typeof ENV !== 'undefined' && Math.random() < dt * 0.12) {
+  if (!moving && !worldBillies.react && typeof environment !== 'undefined' && Math.random() < dt * 0.12) {
     const nearW = (walkView.water || []).some(w => Math.hypot(w[0] - b.x, w[1] - b.z) < 2.2);
-    const pz = ENV.rain > 0.3 ? 'dizzy' : ENV.night > 0.6 ? 'block' : nearW ? 'cheer' : null;
+    const pz = environment.rain > 0.3 ? 'dizzy' : environment.night > 0.6 ? 'block' : nearW ? 'cheer' : null;
     if (pz) worldBillies.react = { pose: pz, t0: t };
   }
   const R = worldBillies.react,

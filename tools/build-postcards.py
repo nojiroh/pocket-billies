@@ -89,7 +89,7 @@ def main():
         pg.add_style_tag(content='body *:not(#dio){visibility:hidden!important} #dio{visibility:visible!important}')
         for sid in want:
             t0 = time.time(); v = dict(VIEW.get(sid, {})); v['id'] = sid; v['at'] = clear_view(D, sid, v); v.pop('dx', None); v.pop('dz', None)
-            pg.evaluate("((v)=>{ENV.on=true;ENV.force={time:v.time||16,season:v.season||'summer',weather:'clear'}})(%s);0" % json.dumps(v))
+            pg.evaluate("((v)=>{environment.on=true;environment.force={time:v.time||16,season:v.season||'summer',weather:'clear'}})(%s);0" % json.dumps(v))
             pg.evaluate(f"U.tab='walk';U.bench={{id:'{sid}',test:1}};render();0")
             for _ in range(160):
                 if pg.evaluate(f"!!(walkView.ready&&walkView.id==='{sid}'&&walkRenderer.frames>2)"): break

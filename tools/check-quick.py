@@ -704,7 +704,7 @@ def desktop_steps(b, base, R):
 
     @step('Time, weather and rooms: night, a storm, snow, autumn, a dark cave, walking into the shop', 240)
     def atmosphere():
-        if not pg.evaluate("typeof ENV!=='undefined'"): return 'no time and weather in this build'
+        if not pg.evaluate("typeof environment!=='undefined'"): return 'no time and weather in this build'
         go_scene(pg, 0); out = []
         def lum():
             from PIL import Image, ImageStat
@@ -713,19 +713,19 @@ def desktop_steps(b, base, R):
         bright = {}
         for name, f in (('day', "{time:13,weather:'clear',season:'summer'}"), ('night', "{time:23.5,weather:'clear',season:'summer'}"), ('storm', "{time:15,weather:'storm',season:'summer'}"),
                         ('snow', "{time:11,weather:'snow',season:'winter'}"), ('autumn', "{time:12,weather:'clear',season:'autumn'}")):
-            pg.evaluate(f"ENV.force={f};0"); f0 = pg.evaluate("walkRenderer.frames"); time.sleep(2.5)
+            pg.evaluate(f"environment.force={f};0"); f0 = pg.evaluate("walkRenderer.frames"); time.sleep(2.5)
             if not until(pg, f"walkRenderer.frames>{f0 + 1}", 20): raise Exception(f'{name}: the scene stopped drawing')
             bright[name] = round(lum()); shot(pg, 'env-' + name)
         if bright['night'] > bright['day'] * .8: raise Exception(f'night isn’t darker than day (brightness {bright["night"]} vs {bright["day"]})')
-        pg.evaluate("ENV.force={time:23.5,weather:'clear'};0"); time.sleep(1.5); lamps = pg.evaluate("ENV.lampK")
+        pg.evaluate("environment.force={time:23.5,weather:'clear'};0"); time.sleep(1.5); lamps = pg.evaluate("environment.lampK")
         odds = pg.evaluate("(()=>{const ps=Object.keys(SP).find(k=>SP[k].types.includes('Psychic'));if(!ps)return [10];return envOdds([[ps,10]]).map(x=>+x[1].toFixed(2))})()")
         out.append('brightness ' + ', '.join(f'{k} {v}' for k, v in bright.items()))
         # a dark cave: away from the lantern it's dim
         node = pg.evaluate("ROUTE.findIndex(r=>r.scene==='grotto')")
         if node >= 0:
-            pg.evaluate("ENV.force=null;0"); go_scene(pg, node); time.sleep(2); shot(pg, 'env-dark-cave'); out.append('cave drawn')
+            pg.evaluate("environment.force=null;0"); go_scene(pg, node); time.sleep(2); shot(pg, 'env-dark-cave'); out.append('cave drawn')
         # walk into the shop and out again
-        pg.evaluate("ENV.force={time:13,weather:'clear',season:'summer'};0"); go_scene(pg, 0); time.sleep(1)
+        pg.evaluate("environment.force={time:13,weather:'clear',season:'summer'};0"); go_scene(pg, 0); time.sleep(1)
         p0 = pg.evaluate("[walkView.pl.x,walkView.pl.z]")
         pg.evaluate("(()=>{const p=walkView.sc.props.find(p=>p.act==='shop'&&p.k==='shop'),C=walkData().sc,g=actionSpot(p,C.props[p.k],C.ppu||34);walkView.pl.route=null;walkView.pl.x=g[0];walkView.pl.z=g[1];walkPick({k:'act',p,act:'shop'})})();0")   # v46: as a tap does: at the door first
         if not until(pg, "walkView.ready&&(walkView.id==='int_shop'||(walkView.sc&&walkView.sc.roomOf==='int_shop'))", 60): raise Exception('walking into the shop didn’t open its room')
@@ -740,7 +740,7 @@ def desktop_steps(b, base, R):
         p1 = pg.evaluate("[walkView.pl.x,walkView.pl.z]")
         at = door or p0
         if abs(p1[0] - at[0]) > 1 or abs(p1[1] - at[1]) > 1: raise Exception(f'back outside at {p1}, not at the door ({at})')
-        pg.evaluate("ENV.force=null;0")
+        pg.evaluate("environment.force=null;0")
         if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
         return '; '.join(out) + f'; lamps {lamps:.2f} at night; Psychic odds at night ×{odds[0] / 10:.1f}; shop room opened, shopkeeper sold, back at the door'
     atmosphere()
@@ -748,7 +748,7 @@ def desktop_steps(b, base, R):
     @step('Animals, footprints and world sounds: frogs leap in, prints in the snow, the sound beds start', 150)
     def animals():
         if not pg.evaluate("typeof LIFE_KIND!=='undefined'&&!!LIFE_KIND.frog"): return 'no new animals in this build'
-        pg.evaluate("ENV.force={time:13,weather:'clear',season:'summer'};0")
+        pg.evaluate("environment.force={time:13,weather:'clear',season:'summer'};0")
         node = pg.evaluate("ROUTE.findIndex(r=>r.scene==='pond')"); go_scene(pg, node); time.sleep(3)
         kinds = pg.evaluate("[...new Set(LIFE.list.map(c=>c.k))]")
         for k in ('frog', 'rabbit'):
@@ -757,7 +757,7 @@ def desktop_steps(b, base, R):
         leapt = pg.evaluate("LIFE.list.some(c=>c.k==='frog'&&(c.hide>0||c.dive||c.st==='run'))")
         if not leapt: raise Exception('a frog didn’t leap away when you stood next to it')
         shot(pg, 'life-pond')
-        pg.evaluate("ENV.force={time:11,weather:'snow',season:'winter'};0"); go_scene(pg, 0); time.sleep(1)
+        pg.evaluate("environment.force={time:11,weather:'snow',season:'winter'};0"); go_scene(pg, 0); time.sleep(1)
         end = pg.evaluate("(()=>{const e=[walkView.pl.x-6,walkView.pl.z-1.5];walkView.pl.route=[[walkView.pl.x,walkView.pl.z],[walkView.pl.x-4,walkView.pl.z+1],e];walkView.pl.ri=1;return e})()"); time.sleep(3)
         until(pg, f"Math.hypot(walkView.pl.x-({end[0]}),walkView.pl.z-({end[1]}))<.6", 25); time.sleep(1)     # alpha 0.1: walk to the end, however slowly frames come here
         prints = pg.evaluate("(walkRenderer.prints||[]).length"); shot(pg, 'prints-snow')
@@ -765,7 +765,7 @@ def desktop_steps(b, base, R):
         pg.mouse.click(5, 300); time.sleep(1.5)
         snd = pg.evaluate("typeof AUD==='undefined'||!AUD.ctx?'no sound in this browser':AUD.ctx.state!=='running'?'sound not started ('+AUD.ctx.state+')':(typeof AMB!=='undefined'&&Object.keys(AMB.beds).length>=9?'ok':'beds missing')")
         if snd == 'beds missing': raise Exception('the world sound beds didn’t start')
-        pg.evaluate("ENV.force=null;0")
+        pg.evaluate("environment.force=null;0")
         if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
         return f'animals at the pond: {", ".join(kinds)}; a frog leapt in; {prints} footprints; world sounds: {snd}'
     animals()
@@ -774,7 +774,7 @@ def desktop_steps(b, base, R):
     def things():
         if not pg.evaluate("typeof chalToday==='function'"): return 'not in this build'
         out = []
-        pg.evaluate("ENV.force={time:13,weather:'clear',season:'summer'};0"); go_scene(pg, 0); time.sleep(2)
+        pg.evaluate("environment.force={time:13,weather:'clear',season:'summer'};0"); go_scene(pg, 0); time.sleep(2)
         n = pg.evaluate("chalToday().list.length")
         if n != 3: raise Exception(f'{n} challenges today, not 3')
         out.append('3 challenges: ' + pg.evaluate("chalToday().list.map(chalText).join('; ')"))
@@ -813,9 +813,9 @@ def desktop_steps(b, base, R):
             if at[3] or abs(at[0] - r[0]) > .4 or abs(at[1] - r[1]) > .4 or abs(at[2] - r[2]) > .3: raise Exception(f'climbing the ladder ended at {[round(v, 2) for v in at[:3]]}, not on top at {[round(v, 2) for v in r[:3]]}')
             out.append(f'climbed a {r[3]} m ladder')
         # rain in battle
-        go_scene(pg, 0); pg.evaluate("ENV.force={time:15,weather:'rain'};S.preferences.battleStage='classic';const q={id:'twx',sp:'knight1',lvl:8,gold:false,no:1};S.queue=[q];S.team.forEach(m=>{m.hp=maxHp(m)});startWild(q);0")
+        go_scene(pg, 0); pg.evaluate("environment.force={time:15,weather:'rain'};S.preferences.battleStage='classic';const q={id:'twx',sp:'knight1',lvl:8,gold:false,no:1};S.queue=[q];S.team.forEach(m=>{m.hp=maxHp(m)});startWild(q);0")
         wait_phase(pg, sec=60); bw = pg.evaluate("(()=>{const w=battleWx();return w?[w.k,battleWeatherMult('Water'),battleWeatherMult('Fire'),document.getElementById('camWorld')?document.getElementById('camWorld').dataset.wx:''] :null})()")
-        time.sleep(1); shot(pg, 'battle-rain'); pg.evaluate("stopTimers();B=null;battleStageStop();S.preferences.battleStage='scene';ENV.force=null;render();0")
+        time.sleep(1); shot(pg, 'battle-rain'); pg.evaluate("stopTimers();B=null;battleStageStop();S.preferences.battleStage='scene';environment.force=null;render();0")
         if not bw or bw[0] != 'rain' or bw[1] <= 1 or bw[2] >= 1: raise Exception(f'rain didn’t change the battle ({bw})')
         out.append(f'rain in battle: Water ×{bw[1]}, Fire ×{bw[2]}')
         if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
@@ -842,14 +842,14 @@ def desktop_steps(b, base, R):
         if not any(x.startswith('fountain') for x in bs): raise Exception(f'no fountain water in Marigold Town ({bs})')
         pg.evaluate("(()=>{const f=walkView.sc.props.find(p=>p.k==='fountain');walkView.pl.route=null;const p=walkablePointNear(f.x+.3,f.z-2.4);walkView.pl.x=p[0];walkView.pl.z=p[1]})();0"); time.sleep(2); shot(pg, 'fountain')
         out.append('basins: ' + ', '.join(bs))
-        pg.evaluate("ENV.force={time:13,weather:'clear',season:'autumn'};0"); time.sleep(2); shot(pg, 'autumn'); pg.evaluate("ENV.force=null;0")
+        pg.evaluate("environment.force={time:13,weather:'clear',season:'autumn'};0"); time.sleep(2); shot(pg, 'autumn'); pg.evaluate("environment.force=null;0")
         # rooms: light through the window by day, lamps at night, the floor ends at the door
         pg.evaluate("enterRoom('house',{});0"); until(pg, "walkView.ready&&(walkView.id==='int_house'||(walkView.sc&&walkView.sc.roomOf==='int_house'))", 30); time.sleep(1.5)
-        pg.evaluate("ENV.force={time:15.5,weather:'clear',season:'summer'};walkRenderer.roomSkyT=0;0"); time.sleep(2); shot(pg, 'room-day')
+        pg.evaluate("environment.force={time:15.5,weather:'clear',season:'summer'};walkRenderer.roomSkyT=0;0"); time.sleep(2); shot(pg, 'room-day')
         day = pg.evaluate("[walkRenderer.roomSky&&walkRenderer.roomSky.I,walkRenderer.roomSky&&walkRenderer.roomSky.lamp,(roomLamps(walkView.sc)||[]).length,!!walkRenderer.roomBox]")
-        pg.evaluate("ENV.force={time:23,weather:'clear',season:'summer'};walkRenderer.roomSkyT=0;0"); time.sleep(2); shot(pg, 'room-night')
+        pg.evaluate("environment.force={time:23,weather:'clear',season:'summer'};walkRenderer.roomSkyT=0;0"); time.sleep(2); shot(pg, 'room-night')
         night = pg.evaluate("[walkRenderer.roomSky&&walkRenderer.roomSky.night,walkRenderer.roomSky&&walkRenderer.roomSky.lamp]")
-        pg.evaluate("ENV.force=null;leaveRoom();0"); until(pg, "walkView.ready&&!walkView.sc.roomRect&&(walkView.id==='sundown'||(walkView.sc&&walkView.sc.baseId==='sundown'))", 30)
+        pg.evaluate("environment.force=null;leaveRoom();0"); until(pg, "walkView.ready&&!walkView.sc.roomRect&&(walkView.id==='sundown'||(walkView.sc&&walkView.sc.baseId==='sundown'))", 30)
         if not day[3] or not day[0] or day[0] < .2 or night[1] < .9 or day[2] < 1: raise Exception(f'room light: day {day}, night {night}')
         out.append(f'room: daylight {day[0]:.2f}, {day[2]} lamps lit at night')
         # settings in tabs, every tab fits the phone width; a switch flips
@@ -1329,9 +1329,9 @@ def desktop_steps(b, base, R):
         # the light: SH ambient, cascades, lamp maps, god rays all on and running without errors
         lt = json.loads(pg.evaluate("JSON.stringify({sh:!!(walkRenderer.X&&walkRenderer.X.sh),cas:!!(walkRenderer.lastShadow&&walkRenderer.lastShadow.far),vol:!!EGL.fb.vol1,ao:eng('shadows','aoKind')})"))
         if not (lt['sh'] and lt['cas']): raise Exception(f'light: {lt}')
-        go_scene(pg, 0); pg.evaluate("ENV.force={time:22,weather:'clear',season:'summer'};0"); time.sleep(4); until(pg, "(walkRenderer.X&&walkRenderer.X.lampSh||[]).length>0", 20)
-        lamps = pg.evaluate("(walkRenderer.X&&walkRenderer.X.lampSh||[]).length"); shot(pg, 'v43-night'); pg.evaluate("ENV.force=null;0")
-        if not lamps: raise Exception('no lamp shadow map at night in Marigold Town ' + pg.evaluate("JSON.stringify({id:walkView.id,pl:[walkView.pl.x,walkView.pl.z],n:(walkRenderer.X&&walkRenderer.X.lights||[]).length,night:ENV.night,force:ENV.force,dark:walkRenderer.dark,bt:!!walkRenderer.bt,q:eng('shadows','lampShadows'),near:(walkRenderer.X&&walkRenderer.X.lights||[]).slice(0,3).map(l=>[l.p.map(v=>+v.toFixed(1)),l.r])})"))
+        go_scene(pg, 0); pg.evaluate("environment.force={time:22,weather:'clear',season:'summer'};0"); time.sleep(4); until(pg, "(walkRenderer.X&&walkRenderer.X.lampSh||[]).length>0", 20)
+        lamps = pg.evaluate("(walkRenderer.X&&walkRenderer.X.lampSh||[]).length"); shot(pg, 'v43-night'); pg.evaluate("environment.force=null;0")
+        if not lamps: raise Exception('no lamp shadow map at night in Marigold Town ' + pg.evaluate("JSON.stringify({id:walkView.id,pl:[walkView.pl.x,walkView.pl.z],n:(walkRenderer.X&&walkRenderer.X.lights||[]).length,night:environment.night,force:environment.force,dark:walkRenderer.dark,bt:!!walkRenderer.bt,q:eng('shadows','lampShadows'),near:(walkRenderer.X&&walkRenderer.X.lights||[]).slice(0,3).map(l=>[l.p.map(v=>+v.toFixed(1)),l.r])})"))
         out.append(f'sky-shaped ambient, two shadow cascades, god rays {"on" if lt["vol"] else "off"}, {lt["ao"]} occlusion, {lamps} lamp shadow map(s) at night')
         if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
         return '; '.join(out)
@@ -1346,7 +1346,7 @@ def desktop_steps(b, base, R):
         from PIL import Image
         out = []
         def bench(id, t, x=None, z=None, yaw=0, js='0'):
-            pg.evaluate(f"ENV.force={{time:{t},weather:'clear',season:'summer'}};U.modal=null;U.mq=[];U.toastQ=[];renderOv();U.tab='walk';U.bench={{id:'{id}',test:1}};render();0")   # v46: no window from an earlier step over the picture
+            pg.evaluate(f"environment.force={{time:{t},weather:'clear',season:'summer'}};U.modal=null;U.mq=[];U.toastQ=[];renderOv();U.tab='walk';U.bench={{id:'{id}',test:1}};render();0")   # v46: no window from an earlier step over the picture
             if not until(pg, f"!!(walkView.ready&&walkView.id==='{id}')", 40): raise Exception(f'{id} didn’t open')
             f0 = pg.evaluate("walkRenderer.frames"); until(pg, f'walkRenderer.frames>={f0 + 6}', 30); time.sleep(1)
             if x is not None: pg.evaluate(f"walkView.pl.x={x};walkView.pl.z={z};walkView.pl.route=null;walkRenderer.yawT={yaw};0")
@@ -1419,7 +1419,7 @@ def desktop_steps(b, base, R):
         finally:   # v47: never leave the check on (a failure above used to): it stalls every later step's drawing
             pg.evaluate("(()=>{const gl=EGL.gl;if(!gl||!gl.__chk)return;for(const k of ['useProgram','drawArrays','drawElements','drawArraysInstanced','drawElementsInstanced'])delete gl[k];delete gl.__chk})()")
         if chk['n']: raise Exception(f'{chk["n"]} draw calls refused by WebGL (last: {chk["last"]})')
-        pg.evaluate("U.bench=null;ENV.force=null;walkRenderer.yawT=0;render();0")
+        pg.evaluate("U.bench=null;environment.force=null;walkRenderer.yawT=0;render();0")
         if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
         return '; '.join(out) + '; no draw call refused'
     v44()
@@ -1445,7 +1445,7 @@ def desktop_steps(b, base, R):
         if bad: raise Exception(f'{len(bad)} building colours don’t load: {bad[:3]}')
         out.append(f'{b["plans"]} buildings with 3D plans, {b["vars"]} colour variants load, a room for each new kind')
         # walk into the shop: the room opens in place
-        pg.evaluate("U.inside=null;U.goingIn=null;U.bench=null;U.roomWait=900;U.modal=null;U.mq=[];renderOv();ENV.force={time:13,weather:'clear',season:'summer'};0"); go_scene(pg, 0); time.sleep(2)
+        pg.evaluate("U.inside=null;U.goingIn=null;U.bench=null;U.roomWait=900;U.modal=null;U.mq=[];renderOv();environment.force={time:13,weather:'clear',season:'summer'};0"); go_scene(pg, 0); time.sleep(2)
         pg.evaluate("(()=>{const p=walkView.sc.props.find(p=>p.act==='shop'&&p.k==='shop'),C=walkData().sc,g=actionSpot(p,C.props[p.k],C.ppu||34);window.__shop=[p.x,p.z];walkView.pl.route=null;walkView.pl.x=g[0]-2;walkView.pl.z=g[1]-1.5;walkPick({k:'act',p,act:'shop'})})();0")   # a couple of steps from the door (walking is slow here)
         t0 = time.time(); ok = False
         while time.time() - t0 < 90:
@@ -1468,7 +1468,7 @@ def desktop_steps(b, base, R):
         time.sleep(1.5); shot(pg, 'v46-room-out')
         back = pg.evaluate("(()=>{const d=U.roam;const s=walkView.sc.props.some(p=>p.act==='shop');return [Math.hypot(walkView.pl.x-window.__shop[0],walkView.pl.z-window.__shop[1]),s]})()")
         if back[0] > 3 or not back[1]: raise Exception(f'outside: {back[0]:.1f} m from the shop, shop standing {back[1]}')
-        pg.evaluate("ENV.force=null;U.roomWait=null;0")
+        pg.evaluate("environment.force=null;U.roomWait=null;0")
         if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
         return '; '.join(out) + '; out again at the shop’s door'
     v46()
@@ -1527,9 +1527,9 @@ def desktop_steps(b, base, R):
             if not all(g[k] for k in ('festShut', 'festOpen', 'frozenShut', 'frozenStill', 'frozenOpen')): raise Exception(f'gates: {g}')
             out.append('every new place has its song; Fanfare Fields opens with Marina’s Water Badge, the Rimefrost Caves only with Carat’s, the last')
             # shop hours: closed at night, open at noon; then every new town's shop opens
-            pg.evaluate("U.tab='team';render();ENV.on=true;ENV.force={time:23.5,weather:'clear',season:'summer'};PROP_CLOCK.t=0;0")
+            pg.evaluate("U.tab='team';render();environment.on=true;environment.force={time:23.5,weather:'clear',season:'summer'};PROP_CLOCK.t=0;0")
             night = pg.evaluate("isOpenNow('shop')")
-            pg.evaluate("ENV.force={time:12.5,weather:'clear',season:'summer'};PROP_CLOCK.t=0;0")
+            pg.evaluate("environment.force={time:12.5,weather:'clear',season:'summer'};PROP_CLOCK.t=0;0")
             noon = pg.evaluate("isOpenNow('shop')")
             if night or not noon: raise Exception(f'shop hours: open at 23:30 {night}, open at 12:30 {noon}')
             shops = [r['shop'] for r in new if r.get('shop')]; opened = []
@@ -1580,7 +1580,7 @@ def desktop_steps(b, base, R):
             if not st[0] or st[1] != 9 or E not in sheets: raise Exception(f'the ending: flag {st[0]}, stage {st[1]}, sheets {sheets}')
             out.append(f'Cass Flow’s clue; Vinylla at the Inner Sun only after the Spire; the ending (“{E}”, stage 9)')
         finally:
-            pg.evaluate(f"(o=>{{S.seats=o.seats;S.story=o.story;S.flags=o.flags;S.visited=o.visited;if(o.beaten)S.beaten=o.beaten;U.modal=null;U.mq=[];if(typeof TALK!=='undefined')TALK.on=false;ENV.force=null;PROP_CLOCK.t=0;U.guideTab=null;U.tab='walk';renderOv();render()}})({keep});0")
+            pg.evaluate(f"(o=>{{S.seats=o.seats;S.story=o.story;S.flags=o.flags;S.visited=o.visited;if(o.beaten)S.beaten=o.beaten;U.modal=null;U.mq=[];if(typeof TALK!=='undefined')TALK.on=false;environment.force=null;PROP_CLOCK.t=0;U.guideTab=null;U.tab='walk';renderOv();render()}})({keep});0")
         if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
         return '; '.join(out)
     v47()
@@ -1649,11 +1649,11 @@ def desktop_steps(b, base, R):
         if moved: raise Exception('shaped terraces change where you can walk: ' + '; '.join(moved[:5]))
         if floating: raise Exception('props in the air: ' + '; '.join(floating[:5]))
         bench_pic = "U.modal=null;U.mq=[];renderOv();U.tab='walk';U.bench={id:'pass',test:1};render();0"
-        pg.evaluate("ENV.force={time:12.5,weather:'clear',season:'summer'};" + bench_pic)
+        pg.evaluate("environment.force={time:12.5,weather:'clear',season:'summer'};" + bench_pic)
         if until(pg, "!!(walkView.ready&&walkView.id==='pass')", 60):
             f0 = pg.evaluate("walkRenderer.frames"); until(pg, f'walkRenderer.frames>={f0 + 6}', 30); pg.evaluate("(()=>{const g=mapById('pass').grown2||{};walkView.pl.x=69.5+(g.W||0);walkView.pl.z=25+(g.S||0);walkView.pl.route=null})();0")   # alpha 0.2: the pass grew
             f1 = pg.evaluate("walkRenderer.frames"); until(pg, f'walkRenderer.frames>={f1 + 8}', 60); time.sleep(.5); shot(pg, 'a02-terrace-pass')
-        pg.evaluate("U.bench=null;ENV.force=null;render();0")
+        pg.evaluate("U.bench=null;environment.force=null;render();0")
         if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
         return f'{len(R2)} places: the same cells and exits reachable with natural terraces as without, no prop more than 15 cm off the ground'
     a02_ground()
@@ -1698,7 +1698,7 @@ def desktop_steps(b, base, R):
         door opens the lab, and a trip from Copperleaf down Route 1 arrives in Marigold Town"""
         if not pg.evaluate("typeof personTalk==='function'&&!!PLACE.copperleaf"): return 'not in this build'
         out = []; node = pg.evaluate("PLACE.copperleaf.node")
-        pg.evaluate("U.inside=null;U.goingIn=null;U.bench=null;U.modal=null;U.mq=[];renderOv();ENV.force={time:11,weather:'clear',season:'summer'};S.story=S.story||{};delete S.story.met_juniper;0")
+        pg.evaluate("U.inside=null;U.goingIn=null;U.bench=null;U.modal=null;U.mq=[];renderOv();environment.force={time:11,weather:'clear',season:'summer'};S.story=S.story||{};delete S.story.met_juniper;0")
         go_scene(pg, node); time.sleep(2)
         j = pg.evaluate("(()=>{const p=walkView.npcAt['_talk:juniper'];return p?[+p[0].toFixed(1),+p[1].toFixed(1)]:null})()")
         if not j: raise Exception('Granny Juniper isn’t standing in Copperleaf')
@@ -1720,7 +1720,7 @@ def desktop_steps(b, base, R):
         at = pg.evaluate("ROUTE[S.route.node].id")
         if at != 'sundown': raise Exception(f'the trip down Route 1 ended at {at}')
         out.append(f'Copperleaf to Marigold Town is {cost} steps on foot')
-        pg.evaluate("ENV.force=null;U.modal=null;U.mq=[];renderOv();0")
+        pg.evaluate("environment.force=null;U.modal=null;U.mq=[];renderOv();0")
         if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
         return '; '.join(out)
     a04_copperleaf()
@@ -1731,7 +1731,7 @@ def desktop_steps(b, base, R):
         been to; a ticket is paid, the flight crosses the map, and you land by the next town's mast"""
         if not pg.evaluate("typeof flyMenu==='function'&&!!PLACE.copperleaf"): return 'not in this build'
         out = []; cl = pg.evaluate("PLACE.copperleaf.node"); sd = pg.evaluate("PLACE.sundown.node")
-        pg.evaluate(f"U.inside=null;U.bench=null;U.modal=null;U.mq=[];renderOv();ENV.force={{time:11,weather:'clear',season:'summer'}};S.visited[{sd}]=1;S.se=Math.max(S.se,2000);0")
+        pg.evaluate(f"U.inside=null;U.bench=null;U.modal=null;U.mq=[];renderOv();environment.force={{time:11,weather:'clear',season:'summer'}};S.visited[{sd}]=1;S.se=Math.max(S.se,2000);0")
         go_scene(pg, cl); time.sleep(1)
         pg.evaluate("(()=>{const p=walkView.sc.props.find(p=>p.act==='fly');walkView.pl.route=null;walkView.pl.x=p.x+2.2;walkView.pl.z=p.z-1.6})();0")
         until(pg, "VOX.meshes.has('scene/models/airship.json')&&!!VOX.meshes.get('scene/models/airship.json')", 60); time.sleep(2)
@@ -1753,7 +1753,7 @@ def desktop_steps(b, base, R):
         time.sleep(1.5); d = pg.evaluate("(()=>{const sc=walkView.sc,o=sc.baseOff||[0,0],p=mapById(baseMapId()).props.find(p=>p.act==='fly');return Math.hypot(walkView.pl.x-p.x-o[0],walkView.pl.z-p.z-o[1])})()")
         if d > 5: raise Exception(f'you landed {d:.1f} m from the mast')
         out.append(f'flew to Marigold Town for ${fare}, landed {d:.1f} m from its mast')
-        pg.evaluate("ENV.force=null;0")
+        pg.evaluate("environment.force=null;0")
         if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
         return '; '.join(out)
     a04_airships()
@@ -1815,14 +1815,14 @@ def desktop_steps(b, base, R):
         """every building kind and every lamp in one scene (test_windows), opened at night: it draws, the buildings are 3D
         and the lamps are lit; then a front of rain comes in over Marigold Town and its curtain sweeps across"""
         if not pg.evaluate("!!GD.scenes.test_windows"): return 'not in this build'
-        pg.evaluate("U.modal=null;U.mq=[];renderOv();ENV.on=true;ENV.force={time:22,weather:'clear',season:'summer'};U.tab='walk';U.inside=null;U.bench={id:'test_windows',test:1};render();0")
+        pg.evaluate("U.modal=null;U.mq=[];renderOv();environment.on=true;environment.force={time:22,weather:'clear',season:'summer'};U.tab='walk';U.inside=null;U.bench={id:'test_windows',test:1};render();0")
         if not until(pg, "!!(walkView.ready&&walkView.id==='test_windows'&&walkRenderer.frames>4)", 60): raise Exception('the windows and lamps scene didn’t open')
         pg.evaluate("walkView.pl.x=44;walkView.pl.z=10;walkView.pl.route=null;0"); time.sleep(4)
         until(pg, "typeof BLD!=='undefined'&&BLD.drawn>=8", 90)   # the buildings' meshes come a few a frame: give them time (5 to 8 are in view here)
         r = pg.evaluate("""(()=>{const L=walkView.sc.props.filter(p=>{const M=GD.scenery.props[p.k];return M&&(M.glow||(M.fx||[]).some(f=>f.k==='glow'))});
           ENG_CTX.env=true;const on=typeof lampLit==='function'?L.filter(p=>lampLit(p.x,p.z,0)>.9).length:-1;ENG_CTX.env=false;let fw=0,lit=0;const lf=typeof bldLitF==='function'?bldLitF():0;
           for(const p of walkView.sc.props){const E=typeof BLD!=='undefined'?BLD.mesh.get(p):null;if(E&&E.fw){fw+=E.fw.length;lit+=E.fw.filter(f=>bldWinLit(f[3],lf)).length}}
-          return {b:typeof BLD!=='undefined'?BLD.drawn:0,lamp:ENV.lampK,lamps:L.length,on,fw,lit}})()""")
+          return {b:typeof BLD!=='undefined'?BLD.drawn:0,lamp:environment.lampK,lamps:L.length,on,fw,lit}})()""")
         if r['b'] < 4: raise Exception(f'only {r["b"]} buildings drawn in 3D')
         # alpha 0.4: at ten at night every lamp is on, and some (not all, not none) of the front windows are lit
         if r['on'] < r['lamps']: raise Exception(f'only {r["on"]} of {r["lamps"]} lamps are on at night')
@@ -1830,12 +1830,12 @@ def desktop_steps(b, base, R):
         shot(pg, 'a04-windows-night')
         # a front: the weather changes while you're in a place, the curtain comes across
         sd = pg.evaluate("PLACE.sundown.node")
-        pg.evaluate("U.bench=null;ENV.force={time:13,weather:'clear',season:'summer',front:1};0"); go_scene(pg, sd); time.sleep(2)
-        pg.evaluate("ENV.force={time:13,weather:'rain',season:'summer',front:1};0")
-        if not until(pg, "!!(ENV.front&&ENV.curtain)", 15): raise Exception('no front came in when the weather turned to rain')
-        time.sleep(3); c = pg.evaluate("({e:ENV.curtain?ENV.curtain.e:null,into:ENV.curtain?ENV.curtain.into:null,cloud:ENV.cloud})")
+        pg.evaluate("U.bench=null;environment.force={time:13,weather:'clear',season:'summer',front:1};0"); go_scene(pg, sd); time.sleep(2)
+        pg.evaluate("environment.force={time:13,weather:'rain',season:'summer',front:1};0")
+        if not until(pg, "!!(environment.front&&environment.curtain)", 15): raise Exception('no front came in when the weather turned to rain')
+        time.sleep(3); c = pg.evaluate("({e:environment.curtain?environment.curtain.e:null,into:environment.curtain?environment.curtain.into:null,cloud:environment.cloud})")
         shot(pg, 'a04-rain-front')
-        pg.evaluate("ENV.force=null;0")
+        pg.evaluate("environment.force=null;0")
         if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
         return f'{r["b"]} buildings in 3D by night, {r["on"]} of {r["lamps"]} lamps on, {r["lit"]} of {r["fw"]} front windows lit; a rain front came in (its curtain at {c["e"]:.2f}, coming in: {c["into"]})'
     a04_lights()
@@ -1844,7 +1844,7 @@ def desktop_steps(b, base, R):
     def a041_walk():
         """the classic way: RULES.travel 'walk'. The joystick moves you along the camera, the D-pad shows when chosen, and
         walking out of Copperleaf over its edge makes Route 1 where you are (the trip is only a guide now)"""
-        pg.evaluate("RULES.travel='walk';U.modal=null;U.mq=[];U.toastQ=[];renderOv();ENV.force={time:12,weather:'clear',season:'summer'};0")
+        pg.evaluate("RULES.travel='walk';U.modal=null;U.mq=[];U.toastQ=[];renderOv();environment.force={time:12,weather:'clear',season:'summer'};0")
         try:
             if pg.evaluate("walkMode()") is not True or pg.evaluate("traveling()") is not False: raise Exception('walk mode is not on')
             n0 = pg.evaluate("ROUTE.findIndex(r=>r.scene==='copperleaf')"); n1 = pg.evaluate("ROUTE.findIndex(r=>r.scene==='hedgerow')")
@@ -1872,7 +1872,7 @@ def desktop_steps(b, base, R):
             if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
             return f'the joystick moved the player {moved:.1f} m, the D-pad shows when chosen, {walked:.0f} m of walking crossed from Copperleaf onto Route 1'
         finally:
-            pg.evaluate("RULES.travel='steps';ENV.force=null;0")
+            pg.evaluate("RULES.travel='steps';environment.force=null;0")
     a041_walk()
 
     @step('Settings: one save and the account box, languages, text size, contrast', 90)

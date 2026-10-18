@@ -9,7 +9,7 @@ import { closeModal, provide, render, renderOv, settings, toast } from './hooks.
 import { U } from './game-state.js';
 import { GFX_DIALS, gfxDial } from './settings-screen.js';
 import { mapById, walkView } from './walk-view.js';
-import { ENV } from './environment.js';
+import { environment } from './environment.js';
 /* eslint-disable no-func-assign */
 expose({
   GAL: [() => GAL],
@@ -54,8 +54,8 @@ function galleryOpen(gk) {
   U.modal = null;
   U.mq = [];
   renderOv();
-  if (typeof ENV !== 'undefined')
-    ENV.force = GAL.night
+  if (typeof environment !== 'undefined')
+    environment.force = GAL.night
       ? { time: 22, weather: 'clear', season: 'summer' }
       : { time: 15, weather: 'clear', season: 'summer' };
   U.bench = { id: 'gallery', test: 1 };
@@ -103,7 +103,7 @@ function galleryClose() {
   GAL.on = false;
   const el = document.getElementById('gfxPanel');
   if (el) el.remove();
-  if (typeof ENV !== 'undefined') ENV.force = null;
+  if (typeof environment !== 'undefined') environment.force = null;
   U.bench = null;
   render();
   U.setTab = 'graphics';
@@ -116,7 +116,8 @@ document.addEventListener('click', ev => {
   if (a === 'gal-leave') galleryClose();
   else if (a === 'gal-night') {
     GAL.night = !GAL.night;
-    if (typeof ENV !== 'undefined') ENV.force = { time: GAL.night ? 22 : 15, weather: 'clear', season: 'summer' };
+    if (typeof environment !== 'undefined')
+      environment.force = { time: GAL.night ? 22 : 15, weather: 'clear', season: 'summer' };
     galleryPanel();
   } else if (a === 'gal-pick') {
     GAL.key = el.dataset.k;

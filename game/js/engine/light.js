@@ -5,7 +5,7 @@
    painted from, so shadows fall back and to the right. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { ENV, envSun } from '../hooks.js';
+import { envSun, environment } from '../hooks.js';
 import { clamp } from '../util.js';
 import { walkView } from '../walk-view.js';
 import { ENG_CTX, eng, engHex } from './settings.js';
@@ -31,7 +31,7 @@ export function eglSun(indoor) {
     warm = 0,
     col = engHex('sun', 'color', '#FFF0D8');
   /* v26: the time of day and the moon (environment.js), while a walk scene draws */
-  if (!indoor && typeof ENV !== 'undefined' && ENG_CTX.env && (ENV.on || ENV.force)) {
+  if (!indoor && typeof environment !== 'undefined' && ENG_CTX.env && (environment.on || environment.force)) {
     const e = envSun(a, h, col);
     a = e.a;
     h = e.h;
