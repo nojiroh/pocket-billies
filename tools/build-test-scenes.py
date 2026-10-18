@@ -368,7 +368,7 @@ def t_light_air():
 # ---------------------------------------------------------------- the graphics bench
 def t_graphics():
     """the Graphics test's place (docs/graphics-bench.md): nine stations, each built so one group of settings has
-    something to work on, and a fixed spot to stand and look from. The test (game/js/graphics-test.js) reads `bench`."""
+    something to work on, and a fixed spot to stand and look from. The test (game/js/graphics-bench-test.js) reads `bench`."""
     s = base('test_graphics', 'Test: graphics bench', 60, 46, 'g', 950, far='hills', look={'sun': {'angle': 35, 'height': 40}})
     s.d['farH'] = 1
     hub(s, 30, 3)

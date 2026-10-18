@@ -7,7 +7,7 @@ its numbers mean nothing. The checks never draw it either: the smoke check build
 and station spot from the data, and saves a report made from made-up numbers (graphics_test_ready in
 tools/check-quick.py); the full check walks the place's paths from the data.
 
-Code: `game/js/graphics-test.js`. Place: `test_graphics` ("Test: graphics bench"), built by
+Code: `game/js/graphics-bench-test.js`. Place: `test_graphics` ("Test: graphics bench"), built by
 `python3 tools/build-test-scenes.py --only=test_graphics`.
 
 ## The place: Graphics bench (`test_graphics`, 60 × 46 m)
