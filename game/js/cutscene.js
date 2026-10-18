@@ -29,7 +29,7 @@ import { RM, U, esc } from './game-state.js';
 import { userFps } from './frame-scheduler.js';
 import { artLoad, cnv } from './art.js';
 import { TR_PRESETS, cleanLook, humanPose, owFrames, trainerLook } from './person-art.js';
-import { DR, drSave, openDressing } from './dressing.js';
+import { DR, drSave, openDressing } from './dressing-room.js';
 import { drawRig, rigFrame, rigParts, rigPreload, rigTint } from './skeleton-rig.js';
 import { buzz, partSpr } from './battle-stage.js';
 import { DIO, dioData, dioDirOf, dioImg, dioOk, dioPrepare, dioProj, dioScene, dioStop } from './walk-view.js';

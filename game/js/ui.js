@@ -105,7 +105,7 @@ import {
   trainerLook,
 } from './person-art.js';
 import { applyPreferences, settingsHTML } from './settings-screen.js';
-import { drPortrait, openDressing } from './dressing.js';
+import { drPortrait, openDressing } from './dressing-room.js';
 import { bustHTML, sprHTML } from './skeleton-rig.js';
 import { EASE, SC, camHome, scFocus, scTargets } from './battle-stage.js';
 import {

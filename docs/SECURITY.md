@@ -10,7 +10,7 @@ decisions left open. Newest facts win: update this file when the rules, the sign
 | The Firestore rules (README) let any signed-in user read all /users and /codes | True, and worse: `allow read` also allows *listing*, so any signed-in player could download every player's name, look, last place (down to the spot they stood on) and friend list, and every code. The rules also let a sender mark their own request `accepted`, so anyone with your code could make themselves your friend. |
 | The Firebase web config is committed | True (`game/js/account-config.js`). Normal for Firebase; the key only identifies the project. Whether it is restricted can only be seen in the Google Cloud console (below). |
 | The Studio keeps the GitHub token in localStorage when "keep me signed in" is ticked | True. The box is ticked by default, and the token is a classic token with `public_repo`, which can write to *every* public repository of the admin, not just this one. |
-| ~57 innerHTML uses in game code | 58 (battle.js 14, ui.js 8, dressing.js 5, cutscene.js 4, the rest 1 to 3), plus about 50 in the Studio. Most build HTML in template strings elsewhere, so the count says little: what matters is which outside text reaches them (below). |
+| ~57 innerHTML uses in game code | 58 (battle.js 14, ui.js 8, dressing-room.js 5, cutscene.js 4, the rest 1 to 3), plus about 50 in the Studio. Most build HTML in template strings elsewhere, so the count says little: what matters is which outside text reaches them (below). |
 
 ## What changed
 

@@ -10,7 +10,7 @@ import { COINS, ITEMS, SHOPS } from './game-data.js';
 import { S, U, esc, fmt, plural, save } from './game-state.js';
 import { coinHTML, uiIco } from './art.js';
 import { portraitHTML } from './person-art.js';
-import { openDressing } from './dressing.js';
+import { openDressing } from './dressing-room.js';
 import { buzz } from './battle-stage.js';
 import { itemIcon } from './battle.js';
 /* eslint-disable no-func-assign */

@@ -16,7 +16,7 @@ import { scenesAll } from './map-files.js';
 import { B, S, U, addSteps, esc, makeMon, maxHp, save, setB, setS, setSave, setTrip, spawn } from './game-state.js';
 import { FRAME } from './frame-scheduler.js';
 import { TR_CACHE } from './person-art.js';
-import { DR, closeDressing } from './dressing.js';
+import { DR, closeDressing } from './dressing-room.js';
 import { SC, scStop } from './battle-stage.js';
 import {
   DIO,

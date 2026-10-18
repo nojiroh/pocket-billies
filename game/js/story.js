@@ -10,7 +10,7 @@ import { STEST, closeModal, modal, postProcess, provide, render } from './hooks.
 import { $, clamp } from './util.js';
 import { PLACE, RULES, SP, TRAINERS, trainersAt } from './game-data.js';
 import { B, RM, S, U, esc, healAll, save, today } from './game-state.js';
-import { DR } from './dressing.js';
+import { DR } from './dressing-room.js';
 import { DIO, dioBaseId, dioFreePt } from './walk-view.js';
 import { EGL } from './engine/core.js';
 import { DGL, dioH } from './walk-view-gl.js';
