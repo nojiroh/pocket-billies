@@ -13,7 +13,7 @@ import { cnv, uiIco } from './art.js';
 import { DIO, dioBaseId, dioFace, dioFind, dioFreePt, dioHubOf, dioScene, dioTer } from './walk-view.js';
 import { eng } from './engine/settings.js';
 import { ENV, envHere, envState } from './env.js';
-import { DGL, dioH } from './diorama-gl.js';
+import { DGL, dioH } from './walk-view-gl.js';
 import { endBattle, openBattle, say, setEndBattle, setOpenBattle } from './battle.js';
 import { sfx } from './sound.js';
 import { TALK, setTalkFolk, talk, talkFolk } from './talk.js';

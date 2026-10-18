@@ -7,7 +7,7 @@
 import { expose } from '../../game/js/test-globals.js';
 import { provide } from '../../game/js/hooks.js';
 import { $, $$, clamp } from '../../game/js/util.js';
-import { DGL, dioMount, setDioMount } from '../../game/js/diorama-gl.js';
+import { DGL, dioMount, setDioMount } from '../../game/js/walk-view-gl.js';
 /* eslint-disable no-func-assign */
 expose({
   VP: [() => VP],

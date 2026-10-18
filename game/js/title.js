@@ -15,7 +15,7 @@ import { uiIco } from './art.js';
 import { humanHTML } from './trainer.js';
 import { applyPreferences } from './profile.js';
 import { DIO, dioScene, dioStop } from './walk-view.js';
-import { DGL, dioH, dioMount } from './diorama-gl.js';
+import { DGL, dioH, dioMount } from './walk-view-gl.js';
 import { music, musicFor } from './sound.js';
 import { csSceneId, csStart, csStartName, csWanted } from './cutscene.js';
 /* eslint-disable no-func-assign */

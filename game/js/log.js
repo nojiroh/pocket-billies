@@ -234,7 +234,7 @@ NWLOG.flush = ts => {
     NWLOG.snap();
   }
 };
-/* the WebGL scene can only be read inside the frame that drew it, so it is captured there (diorama-gl.js) */
+/* the WebGL scene can only be read inside the frame that drew it, so it is captured there (walk-view-gl.js) */
 NWLOG.snap = () => {
   try {
     if (typeof GAME.DGL !== 'undefined' && GAME.DGL.on && GAME.DIO.cv && GAME.DIO.ready) {

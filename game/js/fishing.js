@@ -13,7 +13,7 @@ import { GD, RULES, SP } from './data.js';
 import { B, RM, S, U, areaPool, pickW, save, uid } from './core.js';
 import { uiIco } from './art.js';
 import { DIO, dioTer } from './walk-view.js';
-import { DGL, DGL_WKIND, dglCurve, dglRing, dglWgAt, dioH } from './diorama-gl.js';
+import { DGL, DGL_WKIND, dglCurve, dglRing, dglWgAt, dioH } from './walk-view-gl.js';
 /* eslint-disable no-func-assign */
 expose({
   FISH: [() => FISH],

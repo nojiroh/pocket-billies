@@ -14,7 +14,7 @@ import { provide, sfxAt } from './hooks.js';
 import { clamp } from './util.js';
 import { cnv } from './art.js';
 import { DIO, dioData, dioFree, dioHash, dioImg, dioOk, dioPoly, dioPolyAt, dioStepOK } from './walk-view.js';
-import { dglRing, dioGroundH, dioH, dioHRaw } from './diorama-gl.js';
+import { dglRing, dioGroundH, dioH, dioHRaw } from './walk-view-gl.js';
 /* eslint-disable no-func-assign */
 expose({
   LIFE: [() => LIFE],

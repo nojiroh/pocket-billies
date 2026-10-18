@@ -16,7 +16,7 @@ import {
   setEngSource,
 } from '../../game/js/engine/settings.js';
 import { EGL, eglOK } from '../../game/js/engine/core.js';
-import { DGL, dglAdapt, dglRebuild, dioMount, setDglAdapt } from '../../game/js/diorama-gl.js';
+import { DGL, dglAdapt, dglRebuild, dioMount, setDglAdapt } from '../../game/js/walk-view-gl.js';
 import { esc } from './shims.js';
 import {
   ACTS,

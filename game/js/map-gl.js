@@ -21,7 +21,7 @@ import { DIO, dioData, dioHash, dioImg, dioOk, dioScene, dioStep } from './walk-
 import { ENG_CTX, eng, engSource } from './engine/settings.js';
 import { EGL, eglBindQuad, eglFree, eglImg, eglInit, eglMesh, eglOK, eglPrograms, eglTarget } from './engine/core.js';
 import { EGL_POST_SH, eglPost, eglScreenOf } from './engine/post.js';
-import { DGL, dglWorldTex, dioHRaw } from './diorama-gl.js';
+import { DGL, dglWorldTex, dioHRaw } from './walk-view-gl.js';
 import {
   D2R,
   MAP,

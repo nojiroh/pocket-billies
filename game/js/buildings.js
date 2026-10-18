@@ -28,7 +28,7 @@ import {
   v3n,
 } from './engine/core.js';
 import { ENV, envLitFrac } from './env.js';
-import { DGL, dglCurveArgs, dglLookU, dglUse, dioH } from './diorama-gl.js';
+import { DGL, dglCurveArgs, dglLookU, dglUse, dioH } from './walk-view-gl.js';
 /* eslint-disable no-func-assign */
 expose({
   BLD: [() => BLD],

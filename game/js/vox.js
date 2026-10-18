@@ -14,7 +14,7 @@ import { artImg, artURL, hexA } from './art.js';
 import { DIO, dioImg } from './walk-view.js';
 import { eng } from './engine/settings.js';
 import { EGL, EGL_GLSL_COMMON, EGL_GLSL_LIGHT, eglImg, eglPrograms } from './engine/core.js';
-import { DGL, dglCurveArgs, dglHit, dglLookU, dglUse, dglWindAt } from './diorama-gl.js';
+import { DGL, dglCurveArgs, dglHit, dglLookU, dglUse, dglWindAt } from './walk-view-gl.js';
 import { BLD_SH, bldArt, bldAtlas } from './buildings.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -1041,7 +1041,7 @@ function voxMdlFS() {
     .replace('uniform vec3 uBP;', 'uniform vec3 uBP;uniform float uCel;');
 }
 /* the models among the items, drawn after the voxel props: L is [item, mesh] */
-/* alpha 0.4: the props' shaders with the low-poly model's, for compiling ahead when the 3D view starts (diorama-gl.js dglGL) */
+/* alpha 0.4: the props' shaders with the low-poly model's, for compiling ahead when the 3D view starts (walk-view-gl.js dglGL) */
 function voxShaders() {
   if (!VOX_SH.mdl && typeof BLD_SH !== 'undefined') VOX_SH.mdl = [VOX_MDL_VS(), voxMdlFS()];
   return VOX_SH;

@@ -44,7 +44,7 @@ import {
   dioWearLines,
 } from './walk-view.js';
 import { eng } from './engine/settings.js';
-import { DGL_TERRAIN_MAT } from './diorama-gl.js';
+import { DGL_TERRAIN_MAT } from './walk-view-gl.js';
 import { wrNear } from './world.js';
 /* eslint-disable no-func-assign */
 expose({

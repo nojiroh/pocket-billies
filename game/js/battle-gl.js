@@ -14,7 +14,7 @@ import { hexA } from './art.js';
 import { ACT, FOC, POS, SC, UPP, partSpr, sideBuf, sideWorld, trainerBattleFrame, trainerMpp } from './scene.js';
 import { DIO, dioData, dioStop } from './walk-view.js';
 import { EGL } from './engine/core.js';
-import { DGL, dioH } from './diorama-gl.js';
+import { DGL, dioH } from './walk-view-gl.js';
 /* eslint-disable no-func-assign */
 expose({
   BGL: [() => BGL],

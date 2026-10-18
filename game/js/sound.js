@@ -14,7 +14,7 @@ import { B, S, U } from './core.js';
 import { SC } from './scene.js';
 import { DIO, dioBaseId, dioBridgeAt, dioBridges, dioData, dioScene, dioStepM, dioTer } from './walk-view.js';
 import { ENV, envHour, envState } from './env.js';
-import { DGL } from './diorama-gl.js';
+import { DGL } from './walk-view-gl.js';
 /* eslint-disable no-func-assign */
 expose({
   AMB: [() => AMB],

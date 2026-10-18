@@ -11,7 +11,7 @@
 import { expose } from './test-globals.js';
 import { B, S, U } from './core.js';
 import { DIO } from './walk-view.js';
-import { DGL } from './diorama-gl.js';
+import { DGL } from './walk-view-gl.js';
 import { TALK } from './talk.js';
 import { CS } from './cutscene.js';
 import { FLY, LIFT } from './airship.js';

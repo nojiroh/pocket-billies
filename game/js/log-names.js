@@ -51,7 +51,7 @@ import {
   setDglSprites,
   setDglWater,
   setDioMount,
-} from './diorama-gl.js';
+} from './walk-view-gl.js';
 import { BLD, bldDraw, bldItems, setBldDraw, setBldItems } from './buildings.js';
 import { P3D, p3dBuild, p3dDraw, p3dTreeBuild, setP3dBuild, setP3dDraw, setP3dTreeBuild } from './props3d.js';
 import { LIFE, lifeStep, setLifeStep } from './life.js';

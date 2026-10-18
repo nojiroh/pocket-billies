@@ -19,7 +19,7 @@ import { KBACK, drawRig, rigFrame, rigParts, rigPreload } from './rig.js';
 import { scPrepare } from './scene.js';
 import { DIO, dioFreePt, dioPrepare, dioProj } from './walk-view.js';
 import { ENV } from './env.js';
-import { dioH } from './diorama-gl.js';
+import { dioH } from './walk-view-gl.js';
 /* eslint-disable no-func-assign */
 expose({
   OWM: [() => OWM],

@@ -1,7 +1,7 @@
 'use strict';
 /* ================= THE OPENING CUTSCENE =================
    Starts with New game on the title screen. v47: first the fall (opening.js): the surface, the crust, the inner sky.
-   Then Sundown, filmed with the walk-scene engine (diorama-gl.js DIO.director hook): you wake in the dust outside
+   Then Sundown, filmed with the walk-scene engine (walk-view-gl.js DIO.director hook): you wake in the dust outside
    Professor Hazel's lab, seen through your own eyes, and she comes running. You can't remember your name, so you
    make yourself up in the dressing room; she tells you about billionaires and throws three coins that pop open into
    the starters. Pick one, and her other student Blake runs in, takes the one that beats yours and battles you on the
@@ -34,7 +34,7 @@ import { drawRig, rigFrame, rigParts, rigPreload, rigTint } from './rig.js';
 import { buzz, partSpr } from './scene.js';
 import { DIO, dioData, dioDirOf, dioImg, dioOk, dioPrepare, dioProj, dioScene, dioStop } from './walk-view.js';
 import { EGL, eglOK } from './engine/core.js';
-import { DGL, dglPerson, dioH, dioMount } from './diorama-gl.js';
+import { DGL, dglPerson, dioH, dioMount } from './walk-view-gl.js';
 import { wrRoamView } from './world.js';
 import { music, sfx } from './sound.js';
 import { TALK, talkHide, talkLine } from './talk.js';

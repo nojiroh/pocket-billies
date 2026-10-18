@@ -13,7 +13,7 @@ import { B, RM, S, U, esc, healAll, save, today } from './core.js';
 import { DR } from './dressing.js';
 import { DIO, dioBaseId, dioFreePt } from './walk-view.js';
 import { EGL } from './engine/core.js';
-import { DGL, dioH } from './diorama-gl.js';
+import { DGL, dioH } from './walk-view-gl.js';
 import { startTrainer, startWild } from './battle.js';
 import { music } from './sound.js';
 import { TALK, talk, talkHide, talkLine } from './talk.js';

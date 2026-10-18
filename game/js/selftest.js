@@ -39,7 +39,7 @@ import { eng } from './engine/settings.js';
 import { EGL, eglAttrClashes } from './engine/core.js';
 import { EGL_POST_SH } from './engine/post.js';
 import { ENV } from './env.js';
-import { DGL, DGL_SH, dglRoomDim, dioH } from './diorama-gl.js';
+import { DGL, DGL_SH, dglRoomDim, dioH } from './walk-view-gl.js';
 import { BLD, BLD_SH } from './buildings.js';
 import { STR, strHas } from './structures.js';
 import { P3D, P3D_SH } from './props3d.js';

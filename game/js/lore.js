@@ -13,7 +13,7 @@ import { GD, ROUTE, TRAINERS } from './data.js';
 import { S, U, esc, save } from './core.js';
 import { humanHTML } from './trainer.js';
 import { DIO, dioBaseId, dioFind, dioFreePt, dioHubOf, dioScene } from './walk-view.js';
-import { DGL, dioH } from './diorama-gl.js';
+import { DGL, dioH } from './walk-view-gl.js';
 import { JINGLES, jingle, sfx } from './sound.js';
 /* eslint-disable no-func-assign */
 expose({

@@ -11,7 +11,7 @@ import { $, $$, clamp } from '../../game/js/util.js';
 import { frameStop, frameTask } from '../../game/js/frame.js';
 import { artLoad, cnv, setArtLoad } from '../../game/js/art.js';
 import { DIO, dioData, dioImg, dioLayerM, dioOk, setDioData } from '../../game/js/walk-view.js';
-import { DGL, DGL_MATS, dglMatOf, dglVaryOf, dioMount } from '../../game/js/diorama-gl.js';
+import { DGL, DGL_MATS, dglMatOf, dglVaryOf, dioMount } from '../../game/js/walk-view-gl.js';
 import { BLD_ROOM_NAMES, BLD_TEX_NAMES } from '../../game/js/buildings.js';
 import { P3D_AUTO, P3D_KINDS, P3D_PARTS, p3dTreeKind } from '../../game/js/props3d.js';
 import { esc } from './shims.js';

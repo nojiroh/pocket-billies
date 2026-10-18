@@ -966,7 +966,7 @@ export function dioTileSet(T, TP) {
    the Lite renderer (no 3D walls) also gets the wall faces painted below each edge.
    v46: any rectangle of the scene's picture (canvas cells, padding included; row 0 the far edge) at any size: TP pixels
    a metre. The 3D renderer paints a view's whole ground small (its distance) and the 16 m squares round you at full
-   size (diorama-gl.js, the near ring). Patterns and noise come from each cell's own scene or road metres. */
+   size (walk-view-gl.js, the near ring). Patterns and noise come from each cell's own scene or road metres. */
 export function* dioPaintGen(sc, o) {
   const C = dioData().sc,
     W = sc.w,
@@ -2795,7 +2795,7 @@ export function dioNav() {
   DIO.navKey = key;
   return (DIO.nav = { N, gw, gh, blk, cost, lv, hop });
 }
-/* phase 04d: diorama-gl.js puts the 3D version in place */
+/* phase 04d: walk-view-gl.js puts the 3D version in place */
 export function setDioNav(v) {
   dioNav = v; // eslint-disable-line no-func-assign
   provide({ dioNav });
@@ -3063,7 +3063,7 @@ export function dioStop() {
   DIO.ready = false;
   DIO.keys = {};
 }
-/* phase 04d: diorama-gl.js puts the 3D version in place */
+/* phase 04d: walk-view-gl.js puts the 3D version in place */
 export function setDioStop(v) {
   dioStop = v; // eslint-disable-line no-func-assign
   provide({ dioStop });
@@ -3095,7 +3095,7 @@ export function dioUnproject(sx, sy) {
   const s = C.F / d;
   return { x: C.cx + (sx - C.rw / 2) / s, z: C.cz + rz };
 }
-/* phase 04d: diorama-gl.js puts the 3D version in place */
+/* phase 04d: walk-view-gl.js puts the 3D version in place */
 export function setDioUnproject(v) {
   dioUnproject = v; // eslint-disable-line no-func-assign
   provide({ dioUnproject });
@@ -3215,7 +3215,7 @@ export function dioProj(C, x, y, z) {
     s = C.F / d;
   return { x: C.rw / 2 + (x - C.cx) * s, y: C.rh / 2 - v * s, s, d };
 }
-/* phase 04d: diorama-gl.js puts the 3D version in place */
+/* phase 04d: walk-view-gl.js puts the 3D version in place */
 export function setDioProj(v) {
   dioProj = v; // eslint-disable-line no-func-assign
   provide({ dioProj });

@@ -25,7 +25,7 @@ import {
   sideTop,
 } from '../../game/js/scene.js';
 import { DIO, dioHubOf } from '../../game/js/walk-view.js';
-import { dioMount } from '../../game/js/diorama-gl.js';
+import { dioMount } from '../../game/js/walk-view-gl.js';
 import { battleGLAttach, battleGLStop } from '../../game/js/battle-gl.js';
 import { esc } from './shims.js';
 import {
