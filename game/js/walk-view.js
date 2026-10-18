@@ -52,7 +52,6 @@ import { frameStop } from './frame-scheduler.js';
 import { ART, artLoad, cnv, pkh } from './art.js';
 /* eslint-disable no-func-assign */
 expose({
-  DIO: [() => DIO],
   DIO_BRIDGE_ARC: [() => DIO_BRIDGE_ARC],
   DIO_CHAT: [() => DIO_CHAT],
   DIO_CLK: [() => DIO_CLK],
@@ -220,6 +219,7 @@ expose({
   setDioProj: [() => setDioProj, v => (setDioProj = v)],
   setDioStop: [() => setDioStop, v => (setDioStop = v)],
   setDioUnproject: [() => setDioUnproject, v => (setDioUnproject = v)],
+  walkView: [() => walkView],
 });
 /* eslint-enable no-func-assign */
 provide({ dioStop });
@@ -236,7 +236,7 @@ export function setDioPrepare(v) {
   provide({ dioPrepare });
 }
 /* to-module: end */
-export const DIO = {
+export const walkView = {
   cv: null,
   x: null,
   id: null,
@@ -286,9 +286,9 @@ export const DIO = {
   chat: 0,
   ff: new Map(),
 };
-provide({ DIO }); /* to-module */
+provide({ walkView }); /* to-module */
 const dioUIpx = n => {
-  const c = DIO.cv;
+  const c = walkView.cv;
   if (!c || !c.clientWidth) return n;
   const k = c.width / c.clientWidth;
   return Math.round(n * k);
@@ -376,7 +376,7 @@ function dioExitsSync(sc) {
 }
 /* v43: the scene a view belongs to (a composite's base), for things that go by scene: legends, stamps, ambience */
 export function dioBaseId() {
-  return (DIO.sc && DIO.sc.baseId) || DIO.id;
+  return (walkView.sc && walkView.sc.baseId) || walkView.id;
 }
 export function dioScene(id) {
   if (id && id.charCodeAt(0) === 119 && id[1] === ':' && typeof wrSceneById === 'function') return wrSceneById(id);
@@ -2103,21 +2103,21 @@ function dioWaterOf(sc) {
   return out;
 }
 export function dioEnsureGround() {
-  const sc = DIO.sc,
+  const sc = walkView.sc,
     key = dioGroundKey(sc);
-  if (key !== DIO.gkey || !DIO.ground) {
+  if (key !== walkView.gkey || !walkView.ground) {
     const c = dioGroundCached(key);
-    DIO.ground = c || dioBuildGround(sc);
-    if (!c) dioGroundKeep(key, DIO.ground);
-    DIO.gkey = key;
-    DIO.cand = null;
-    DIO.nav = null;
-    DIO.water = dioWaterOf(sc);
+    walkView.ground = c || dioBuildGround(sc);
+    if (!c) dioGroundKeep(key, walkView.ground);
+    walkView.gkey = key;
+    walkView.cand = null;
+    walkView.nav = null;
+    walkView.water = dioWaterOf(sc);
   }
-  return DIO.ground;
+  return walkView.ground;
 }
 export function dioTer(x, z) {
-  const sc = DIO.sc,
+  const sc = walkView.sc,
     i = Math.floor(x),
     j = sc.h - 1 - Math.floor(z);
   return i < 0 || j < 0 || i >= sc.w || j >= sc.h ? sc.edge : ((sc.tiles || [])[j] || '')[i] || sc.edge;
@@ -2344,7 +2344,7 @@ export function dioStepCH(E, q, ci, cj) {
    the same for every cell of one level that shares the corner, so the ground stays joined. */
 const DIO_NATW = new Set([1, 2, 3, 9, 11]);
 export function dioShape(sc, E) {
-  if (!E || DIO.noShape) return null;
+  if (!E || walkView.noShape) return null;
   if (E.shS === E.s && E.shM === E.m0 && E.shD) return E.SH;
   E.shS = E.s;
   E.shM = E.m0;
@@ -2573,7 +2573,7 @@ export function dioShape(sc, E) {
 export function dioStepCHS(E, q, ci, cj, SH) {
   return dioStepCH(E, q, ci, cj) + (SH ? SH[q * 4 + ci + cj * 2] : 0);
 }
-export function dioStep(x, z, sc = DIO.sc) {
+export function dioStep(x, z, sc = walkView.sc) {
   const E = dioSteps(sc);
   if (!E) return 0;
   const q = dioStepCell(x, z, E);
@@ -2589,18 +2589,18 @@ export function dioStep(x, z, sc = DIO.sc) {
   return (a * (1 - fx) + b * fx) * (1 - fz) + (c * (1 - fx) + d * fx) * fz;
 }
 /* alpha 0.2: the terrace level a point is on (its cell's raise, not shaped): which samples belong to one level */
-export function dioStepLevel(x, z, sc = DIO.sc) {
+export function dioStepLevel(x, z, sc = walkView.sc) {
   const E = dioSteps(sc);
   return E ? E.H[dioStepCell(x, z, E)] : 0;
 }
-export function dioStepM(x, z, sc = DIO.sc) {
+export function dioStepM(x, z, sc = walkView.sc) {
   const E = dioSteps(sc);
   return E ? E.M[dioStepCell(x, z, E)] : 0;
 }
 /* bridges: a deck from end a to end b, w wide; its height runs from the ground at one end to the other, with a hump
    (stone), a slight crown (wood) or a sag (rope) */
 const DIO_BRIDGE_ARC = { stone: 0.5, wood: 0.12, rope: -0.32 };
-export function dioBridges(sc = DIO.sc) {
+export function dioBridges(sc = walkView.sc) {
   const L = sc && sc.bridges;
   if (!L || !L.length) return null;
   let E = DIO_STEPS.get(L);
@@ -2633,7 +2633,7 @@ export function dioBridges(sc = DIO.sc) {
   DIO_STEPS.set(L, { v: JSON.stringify(L) + (sc.stepsV || 0), list });
   return list;
 }
-export function dioBridgeAt(x, z, sc = DIO.sc) {
+export function dioBridgeAt(x, z, sc = walkView.sc) {
   const L = dioBridges(sc);
   if (!L) return null;
   for (const b of L) {
@@ -2647,16 +2647,22 @@ export function dioBridgeAt(x, z, sc = DIO.sc) {
 }
 /* ---------- where you can walk: a half-meter grid from the terrain and the props' footprints ---------- */
 export function dioNav() {
-  const sc = DIO.sc,
+  const sc = walkView.sc,
     tk = dioTimedKey(sc);
-  if (DIO.nav && DIO.navSc === sc && DIO.navG === DIO.gkey && DIO.navP === (sc.props || []).length && DIO.navT === tk)
-    return DIO.nav;
+  if (
+    walkView.nav &&
+    walkView.navSc === sc &&
+    walkView.navG === walkView.gkey &&
+    walkView.navP === (sc.props || []).length &&
+    walkView.navT === tk
+  )
+    return walkView.nav;
   const C = dioData().sc,
-    key = DIO.gkey;
-  DIO.navSc = sc;
-  DIO.navG = DIO.gkey;
-  DIO.navP = (sc.props || []).length;
-  DIO.navT = tk;
+    key = walkView.gkey;
+  walkView.navSc = sc;
+  walkView.navG = walkView.gkey;
+  walkView.navP = (sc.props || []).length;
+  walkView.navT = tk;
   const N = DIO_N,
     gw = Math.max(1, Math.round(sc.w * N)),
     gh = Math.max(1, Math.round(sc.h * N)),
@@ -2792,8 +2798,8 @@ export function dioNav() {
       else each(a.x, a.z + o - pr / 2, a.x + d, a.z + o + pr / 2, q => (blk[q] = 1));
     }
   }
-  DIO.navKey = key;
-  return (DIO.nav = { N, gw, gh, blk, cost, lv, hop });
+  walkView.navKey = key;
+  return (walkView.nav = { N, gw, gh, blk, cost, lv, hop });
 }
 /* phase 04d: walk-view-gl.js puts the 3D version in place */
 export function setDioNav(v) {
@@ -2824,7 +2830,7 @@ export function dioCell(x, z) {
 }
 export function dioFree(x, z) {
   const c = dioCell(x, z);
-  return c >= 0 && !DIO.nav.blk[c];
+  return c >= 0 && !walkView.nav.blk[c];
 }
 function dioNearFree(x, z) {
   const G = dioNav(),
@@ -2872,7 +2878,7 @@ function dioLOS(a, b, mc) {
 }
 function dioCostAt(p) {
   const c = dioCell(p[0], p[1]);
-  return c < 0 ? 1 : DIO.nav.cost[c];
+  return c < 0 ? 1 : walkView.nav.cost[c];
 }
 /* A* on the grid (8 directions, no corner cutting), then string-pulled so people walk in straight lines */
 export function dioFind(ax, az, bx, bz, o = {}) {
@@ -2888,14 +2894,14 @@ export function dioFind(ax, az, bx, bz, o = {}) {
     end = dioFree(bx, bz) ? [bx, bz] : [(b.i + 0.5) / N, (b.j + 0.5) / N];
   if (s === e || dioLOS(start, end, Math.max(dioCostAt(start), dioCostAt(end)))) return [start, end];
   const n = gw * gh;
-  if (!DIO._g || DIO._g.length !== n) {
-    DIO._g = new Float32Array(n);
-    DIO._p = new Int32Array(n);
-    DIO._c = new Uint8Array(n);
+  if (!walkView._g || walkView._g.length !== n) {
+    walkView._g = new Float32Array(n);
+    walkView._p = new Int32Array(n);
+    walkView._c = new Uint8Array(n);
   }
-  const g = DIO._g,
-    par = DIO._p,
-    cl = DIO._c;
+  const g = walkView._g,
+    par = walkView._p,
+    cl = walkView._c;
   g.fill(Infinity);
   par.fill(-1);
   cl.fill(0);
@@ -2999,11 +3005,11 @@ export function dioFind(ax, az, bx, bz, o = {}) {
 /* ---------- encounter spots: tall grass first, around where you stand ---------- */
 function dioCandidates(sc) {
   /* alpha 0.2: on a trip through a place's view, round where your steps have taken you (not the place's middle) */ const st =
-      DIO.st,
+      walkView.st,
     trip = st && st.mode === 'road' && st.pos && sc.comp && sc.comp.hubOf != null,
     ck = trip ? Math.round(st.pos[0] / 6) + ',' + Math.round(st.pos[1] / 6) : 'hub';
-  if (DIO.cand && DIO.candK === ck) return DIO.cand;
-  DIO.candK = ck;
+  if (walkView.cand && walkView.candK === ck) return walkView.cand;
+  walkView.candK = ck;
   const out = [],
     good = 'tgGfnsxCH',
     rows = sc.tiles || [],
@@ -3036,7 +3042,7 @@ function dioCandidates(sc) {
       const a = dioAlong(sc, k / 10);
       out.push([a.x, a.z + 2, 1]);
     }
-  return (DIO.cand = out);
+  return (walkView.cand = out);
 }
 export function dioEncSpot(sc, id, used) {
   const C = dioCandidates(sc);
@@ -3059,9 +3065,9 @@ export function dioEncSpot(sc, id, used) {
 }
 export function dioStop() {
   frameStop('dio');
-  DIO.cv = null;
-  DIO.ready = false;
-  DIO.keys = {};
+  walkView.cv = null;
+  walkView.ready = false;
+  walkView.keys = {};
 }
 /* phase 04d: walk-view-gl.js puts the 3D version in place */
 export function setDioStop(v) {
@@ -3069,14 +3075,17 @@ export function setDioStop(v) {
   provide({ dioStop });
 }
 export function dioCanvasXY(ev) {
-  const r = DIO.cv.getBoundingClientRect();
-  return [((ev.clientX - r.left) / r.width) * DIO.cv.width, ((ev.clientY - r.top) / r.height) * DIO.cv.height];
+  const r = walkView.cv.getBoundingClientRect();
+  return [
+    ((ev.clientX - r.left) / r.width) * walkView.cv.width,
+    ((ev.clientY - r.top) / r.height) * walkView.cv.height,
+  ];
 }
 export function dioHitAt(ev) {
-  if (!DIO.cv) return null;
+  if (!walkView.cv) return null;
   const [x, y] = dioCanvasXY(ev);
   let best = null;
-  for (const h of DIO.hits) {
+  for (const h of walkView.hits) {
     if (x >= h.x0 && x <= h.x1 && y >= h.y0 && y <= h.y1) {
       if (!best || h.z < best.z) best = h;
     }
@@ -3084,7 +3093,7 @@ export function dioHitAt(ev) {
   return best;
 }
 export function dioUnproject(sx, sy) {
-  const C = DIO.C;
+  const C = walkView.C;
   if (!C) return null;
   const k = (C.rh / 2 - sy) / C.F,
     den = C.sp - k * C.cp;
@@ -3101,13 +3110,13 @@ export function setDioUnproject(v) {
   provide({ dioUnproject });
 }
 function dioPick(h) {
-  if (DIO.opt.onPick) DIO.opt.onPick(h);
+  if (walkView.opt.onPick) walkView.opt.onPick(h);
 }
 export function dioClick(ev) {
-  if (!DIO.ready || (DIO.opt.active && !DIO.opt.active())) return;
+  if (!walkView.ready || (walkView.opt.active && !walkView.opt.active())) return;
   const h = dioHitAt(ev),
-    st = DIO.st || {},
-    P = DIO.pl;
+    st = walkView.st || {},
+    P = walkView.pl;
   if (h && h.k === 'buddy') {
     if (typeof owBuddyTap === 'function') owBuddyTap();
     return;
@@ -3130,9 +3139,9 @@ export function dioClick(ev) {
   }
   if (st.roam && h && h.go) {
     const g = h.go;
-    if (DIO.opt.onAim)
+    if (walkView.opt.onAim)
       try {
-        DIO.opt.onAim(h);
+        walkView.opt.onAim(h);
       } catch (e) {
         console.error(e);
       }
@@ -3153,7 +3162,7 @@ export function dioClick(ev) {
   else dioPick({ k: 'ground', x: g.x, z: g.z });
 }
 export function dioWalkTo(pt, cb) {
-  const P = DIO.pl,
+  const P = walkView.pl,
     r = dioFind(P.x, P.z, pt[0], pt[1]);
   if (!r) {
     if (cb) cb();
@@ -3163,13 +3172,17 @@ export function dioWalkTo(pt, cb) {
   P.ri = 1;
   P.goal = cb || null;
   P.rush = 1;
-  /* v46: a walk you start goes at walking pace */ DIO.tap = { x: r[r.length - 1][0], z: r[r.length - 1][1], t: DIO.t };
+  /* v46: a walk you start goes at walking pace */ walkView.tap = {
+    x: r[r.length - 1][0],
+    z: r[r.length - 1][1],
+    t: walkView.t,
+  };
 }
 export function dioDirOf(mx, mz) {
   return Math.abs(mx) > Math.abs(mz) * 1.1 ? (mx > 0 ? 'sideR' : 'side') : mz > 0 ? 'up' : 'down';
 }
 export function dioFace(f) {
-  const P = DIO.pl;
+  const P = walkView.pl;
   f.dir = dioDirOf(P.x - f.x, P.z - f.z);
   f.wait = Math.max(f.wait, 3);
 }
@@ -3190,21 +3203,22 @@ const DIO_KEYS = {
 };
 addEventListener('keydown', ev => {
   const k = DIO_KEYS[ev.key];
-  if (!k || !DIO.cv || !DIO.ready || !DIO.st.roam || (DIO.opt.active && !DIO.opt.active())) return;
-  if (!(DIO.opt.keys && DIO.opt.keys())) return;
+  if (!k || !walkView.cv || !walkView.ready || !walkView.st.roam || (walkView.opt.active && !walkView.opt.active()))
+    return;
+  if (!(walkView.opt.keys && walkView.opt.keys())) return;
   const t = ev.target;
   if (t && (t.isContentEditable || /INPUT|TEXTAREA|SELECT/.test(t.tagName))) return;
-  DIO.keys[k] = 1;
-  DIO.pl.route = null;
-  DIO.pl.goal = null;
+  walkView.keys[k] = 1;
+  walkView.pl.route = null;
+  walkView.pl.goal = null;
   ev.preventDefault();
 });
 addEventListener('keyup', ev => {
   const k = DIO_KEYS[ev.key];
-  if (k) delete DIO.keys[k];
+  if (k) delete walkView.keys[k];
 });
 addEventListener('blur', () => {
-  DIO.keys = {};
+  walkView.keys = {};
 });
 export function dioProj(C, x, y, z) {
   const ry = y - C.ch,
@@ -3222,7 +3236,7 @@ export function setDioProj(v) {
 }
 /* ---------- the player ---------- */
 export function dioPlayer(st, dt) {
-  if (DIO.pl.climb) {
+  if (walkView.pl.climb) {
     dioClimbStep(dt);
     return;
   }
@@ -3232,7 +3246,7 @@ export function dioPlayer(st, dt) {
 /* v28: ladders up the cliffs. A ladder prop stands at the foot of a cliff with "to" (the landing on top); tapping it
    walks you to whichever end is on your level, then you climb, hand over hand, to the other */
 export function dioClimbEnds(p) {
-  if (p._ce && p._ce.id === DIO.id && p._ce.k === DIO.gkey) return p._ce.v;
+  if (p._ce && p._ce.id === walkView.id && p._ce.k === walkView.gkey) return p._ce.v;
   const t = p.to || [p.x, p.z + 0.9],
     yt = dioH(t[0], t[1]);
   let top = null;
@@ -3250,7 +3264,7 @@ export function dioClimbEnds(p) {
   }
   const v = { bot: dioFreePt(p.x, p.z - 0.5), top: top || t };
   Object.defineProperty(p, '_ce', {
-    value: { id: DIO.id, k: DIO.gkey, v },
+    value: { id: walkView.id, k: walkView.gkey, v },
     writable: true,
     configurable: true,
     enumerable: false,
@@ -3258,13 +3272,13 @@ export function dioClimbEnds(p) {
   return v;
 }
 export function dioClimbGo(p) {
-  const P = DIO.pl,
+  const P = walkView.pl,
     E = dioClimbEnds(p),
     y = P.yv ?? dioH(P.x, P.z);
   return Math.abs(y - dioH(E.top[0], E.top[1])) < Math.abs(y - dioH(E.bot[0], E.bot[1])) ? E.top : E.bot;
 }
 export function dioClimb(p) {
-  const P = DIO.pl,
+  const P = walkView.pl,
     E = dioClimbEnds(p),
     yb = dioH(E.bot[0], E.bot[1]),
     yt = dioH(E.top[0], E.top[1]),
@@ -3285,7 +3299,7 @@ export function dioClimb(p) {
   };
 }
 function dioClimbStep(dt) {
-  const P = DIO.pl,
+  const P = walkView.pl,
     C = P.climb;
   C.t += dt / C.dur;
   const k = Math.min(1, C.t),
@@ -3317,7 +3331,7 @@ function dioClimbStep(dt) {
   P.x = x;
   P.z = z;
   P.yv = y;
-  P.yId = DIO.id;
+  P.yId = walkView.id;
   P.walk = 1;
   P.dir = k >= k1 && k < k2 ? 'up' : C.up ? 'up' : 'down';
   P.hop = null;
@@ -3330,17 +3344,17 @@ function dioClimbStep(dt) {
     P.lx = P.x;
     P.lz = P.z;
     P.ly = P.yv;
-    if (DIO.opt.onMove) DIO.opt.onMove(P.x, P.z);
+    if (walkView.opt.onMove) walkView.opt.onMove(P.x, P.z);
   }
 }
 /* the height you are drawn at: follows the ground a step at a time, and off a ledge you hop down in a little arc */
 function dioPlayerY(dt) {
-  const P = DIO.pl;
+  const P = walkView.pl;
   if (typeof dioH !== 'function') return;
   const gh = dioH(P.x, P.z);
-  if (P.yv == null || P.yId !== DIO.id || DIO.opt.instant) {
+  if (P.yv == null || P.yId !== walkView.id || walkView.opt.instant) {
     P.yv = gh;
-    P.yId = DIO.id;
+    P.yId = walkView.id;
     P.hop = null;
     return;
   }
@@ -3363,8 +3377,8 @@ function dioPlayerY(dt) {
   if (mv > 1e-3 && !P.hop) {
     const g = clamp((gh - (P.ly ?? gh)) / mv, -1, 1),
       sx =
-        DIO.C && DIO.C.right
-          ? Math.sign((P.x - P.lx) * DIO.C.right[0] + (P.z - P.lz) * DIO.C.right[2])
+        walkView.C && walkView.C.right
+          ? Math.sign((P.x - P.lx) * walkView.C.right[0] + (P.z - P.lz) * walkView.C.right[2])
           : Math.sign(P.x - P.lx);
     want = g * 0.16 * sx;
   }
@@ -3381,8 +3395,8 @@ function dioGradeK(x, z, ux, uz) {
   return clamp(1 - g * 0.75, 0.6, 1.12);
 }
 function dioPlayer0(st, dt) {
-  const P = DIO.pl,
-    sc = DIO.sc,
+  const P = walkView.pl,
+    sc = walkView.sc,
     mode = st.mode || 'line';
   let mx = 0,
     mz = 0;
@@ -3390,7 +3404,7 @@ function dioPlayer0(st, dt) {
     oz = P.z;
   if (mode === 'line') {
     const target = clamp(st.t || 0, 0, 1);
-    if (P.t < 0 || DIO.opt.instant) P.t = target;
+    if (P.t < 0 || walkView.opt.instant) P.t = target;
     const gap = target - P.t;
     P.walk = Math.abs(gap) > 0.002;
     if (P.walk) P.t += Math.sign(gap) * Math.min(Math.abs(gap), dt * 0.12);
@@ -3403,12 +3417,12 @@ function dioPlayer0(st, dt) {
     }
     P.fresh = false;
   } else if (mode === 'path') {
-    const key = JSON.stringify([DIO.id, st.from, st.to]);
+    const key = JSON.stringify([walkView.id, st.from, st.to]);
     if (P.pk !== key) {
       const r = dioFind(st.from[0], st.from[1], st.to[0], st.to[1]) || [st.from, st.to];
       P.line = dioPoly(r);
       P.d = P.fresh
-        ? Math.max(0, clamp(st.t, 0, 1) * P.line.L - (DIO.opt.instant ? 0 : 4))
+        ? Math.max(0, clamp(st.t, 0, 1) * P.line.L - (walkView.opt.instant ? 0 : 4))
         : dioPolyNear(P.line, P.x, P.z);
       P.pk = key;
       P.route = null;
@@ -3480,12 +3494,12 @@ function dioPlayer0(st, dt) {
       P.goal = null;
     }
     P.pk = 'roam';
-    const K = DIO.keys,
-      J = DIO.stick;
+    const K = walkView.keys,
+      J = walkView.stick;
     let kx = (K.r ? 1 : 0) - (K.l ? 1 : 0),
       kz = (K.u ? 1 : 0) - (K.d ? 1 : 0),
       km = Math.hypot(kx, kz) ? 1 : 0;
-    /* alpha 0.4.1: the joystick or d-pad (joystick.js): DIO.stick, screen right and up, its length how hard you push; it
+    /* alpha 0.4.1: the joystick or d-pad (joystick.js): walkView.stick, screen right and up, its length how hard you push; it
      and the arrow keys walk along the camera's own right and forward, so up is always into the screen */
     if (J && Math.hypot(J.x, J.y) > 0.12) {
       kx = J.x;
@@ -3493,7 +3507,7 @@ function dioPlayer0(st, dt) {
       km = Math.min(1, Math.hypot(J.x, J.y));
     }
     if (km) {
-      const R = DIO.C && DIO.C.right ? DIO.C.right : [1, 0, 0],
+      const R = walkView.C && walkView.C.right ? walkView.C.right : [1, 0, 0],
         rl = Math.hypot(R[0], R[2]) || 1,
         rx = R[0] / rl,
         rz = R[2] / rl,
@@ -3559,11 +3573,11 @@ function dioPlayer0(st, dt) {
         addSteps(n, true);
       }
     }
-    if (P.walk && DIO.opt.onMove && DIO.t - P.saved > 400) {
-      P.saved = DIO.t;
-      DIO.opt.onMove(P.x, P.z);
+    if (P.walk && walkView.opt.onMove && walkView.t - P.saved > 400) {
+      P.saved = walkView.t;
+      walkView.opt.onMove(P.x, P.z);
     }
-    if (!P.walk && P.wasWalk && DIO.opt.onMove) DIO.opt.onMove(P.x, P.z);
+    if (!P.walk && P.wasWalk && walkView.opt.onMove) walkView.opt.onMove(P.x, P.z);
   }
   if (Math.hypot(mx, mz) > 1e-6) P.dir = dioDirOf(mx, mz);
   P.wasWalk = P.walk;
@@ -3574,7 +3588,7 @@ function dioPlayer0(st, dt) {
     if (ch === 't') {
       P.rust = 0.18;
       for (let i = 0; i < 3; i++)
-        DIO.parts.push({
+        walkView.parts.push({
           k: 'leaf',
           x: P.x,
           z: P.z,
@@ -3589,7 +3603,7 @@ function dioPlayer0(st, dt) {
         });
     } else if ('sxk'.includes(ch)) {
       P.rust = 0.3;
-      DIO.parts.push({
+      walkView.parts.push({
         k: 'dust',
         x: P.x,
         z: P.z - 0.1,
@@ -3610,7 +3624,7 @@ function dioPlayer0(st, dt) {
    off to work; the square around noon; the streets in the afternoon; home at dusk, where they go in; only a night owl
    or two about late. Each keeps their own hours (a personal offset), so it doesn't all happen at once. When you come
    close they turn to look, and now and then wave and say hello. On routes and in rooms they wander as before.
-   DIO.folkAll is everyone; DIO.folk is who is outside (what's drawn). */
+   walkView.folkAll is everyone; walkView.folk is who is outside (what's drawn). */
 const FOLK_WORK =
   /shop|clinic|lab\b|lab_|bakery|inn\b|inn_|bank|library|school|station|market|stall|cafe|mart|boutique|barn|greenhouse|windmill|office|city_hall|kiosk|ski_lodge/;
 const FOLK_HOME = /house|cottage|townhouse|apartment|cave_house|chalet|villa|cabin|hut/;
@@ -3670,13 +3684,13 @@ function dioFolkAnchors(sc) {
   return A;
 }
 function dioFolkInit(n) {
-  const sc = DIO.sc,
+  const sc = walkView.sc,
     hub = dioHubOf(sc);
-  DIO.folk = [];
-  DIO.folkAll = [];
-  DIO.folkId = DIO.id;
+  walkView.folk = [];
+  walkView.folkAll = [];
+  walkView.folkId = walkView.id;
   let seed = 0;
-  for (const ch of DIO.id) seed = (seed * 31 + ch.charCodeAt(0)) % 9973;
+  for (const ch of walkView.id) seed = (seed * 31 + ch.charCodeAt(0)) % 9973;
   const town = folkTown(sc),
     A = town ? dioFolkAnchors(sc) : null,
     h = folkHour();
@@ -3735,13 +3749,13 @@ function dioFolkInit(n) {
         f.z = q[1];
       }
     }
-    DIO.folkAll.push(f);
+    walkView.folkAll.push(f);
   }
-  DIO.folk = DIO.folkAll.filter(f => !f.in);
+  walkView.folk = walkView.folkAll.filter(f => !f.in);
 }
 /* somewhere on the streets: another home, a place of work, the square */
 function dioFolkStreet(f) {
-  const all = DIO.folkAll || [],
+  const all = walkView.folkAll || [],
     o = all[Math.floor(Math.random() * all.length)] || f,
     L = o.A ? [o.A.home, o.A.work, o.A.hang] : [o.home],
     t = L[Math.floor(Math.random() * L.length)] || [f.x, f.z];
@@ -3751,10 +3765,10 @@ function dioSay(f, force) {
   const L =
     typeof dioChatLines === 'function'
       ? dioChatLines(DIO_CHAT)
-      : DIO.sc.chat && DIO.sc.chat.length
-        ? DIO.sc.chat
+      : walkView.sc.chat && walkView.sc.chat.length
+        ? walkView.sc.chat
         : DIO_CHAT;
-  f.say = L[(f.line + DIO.chat++) % L.length];
+  f.say = L[(f.line + walkView.chat++) % L.length];
   f.sayT = force ? 4.2 : 3.2;
 }
 function dioFolkGo(f, to, then) {
@@ -3774,9 +3788,9 @@ function folkHello() {
   return h < 11 ? 'Morning!' : h < 17 ? 'Afternoon!' : h < 21.5 ? 'Evening!' : 'Late one, eh?';
 }
 function dioFolkStep(dt) {
-  const P = DIO.pl,
+  const P = walkView.pl,
     h = folkHour(),
-    all = DIO.folkAll || DIO.folk;
+    all = walkView.folkAll || walkView.folk;
   let vis = false;
   for (const f of all) {
     f.sayT = Math.max(0, f.sayT - dt);
@@ -3860,7 +3874,7 @@ function dioFolkStep(dt) {
               f.ph === 'work' || f.ph === 'out'
                 ? f.A.work
                 : f.ph === 'owl'
-                  ? dioHubOf(DIO.sc)
+                  ? dioHubOf(walkView.sc)
                   : f.ph === 'noon'
                     ? f.A.hang
                     : f.A.hang,
@@ -3875,7 +3889,7 @@ function dioFolkStep(dt) {
     const dP = Math.hypot(P.x - f.x, P.z - f.z);
     if (!f.route && dP < 2.6 && !f.sayT && f.wait > 0) {
       dioFace(f);
-      const now = DIO.t / 1000;
+      const now = walkView.t / 1000;
       if (P.walk && now - f.waved > 40 && Math.random() < dt * 1.2) {
         f.waved = now;
         f.waveT = 1.4;
@@ -3884,9 +3898,9 @@ function dioFolkStep(dt) {
       } else if (Math.random() < dt * 0.6) dioSay(f);
     }
   }
-  if (vis) DIO.folk = all.filter(f => !f.in);
-  if (!RM && DIO.folk.length && Math.random() < dt / 8) {
-    const f = DIO.folk[Math.floor(Math.random() * DIO.folk.length)];
+  if (vis) walkView.folk = all.filter(f => !f.in);
+  if (!RM && walkView.folk.length && Math.random() < dt / 8) {
+    const f = walkView.folk[Math.floor(Math.random() * walkView.folk.length)];
     if (!f.sayT) dioSay(f);
   }
 }
@@ -3899,8 +3913,8 @@ function dioFolkCount(sc, n) {
   return M.days.includes(T.day) && h >= 7 && h < 18 ? n + (M.folk || 0) : n;
 }
 export function dioFolkTick(n, dt) {
-  n = dioFolkCount(DIO.sc, n);
-  if (DIO.folkId !== DIO.id || (DIO.folkAll || DIO.folk).length !== n) dioFolkInit(n);
+  n = dioFolkCount(walkView.sc, n);
+  if (walkView.folkId !== walkView.id || (walkView.folkAll || walkView.folk).length !== n) dioFolkInit(n);
   dioFolkStep(dt);
 }
 export function dioGrassImgs(C0) {
@@ -3911,7 +3925,7 @@ export function dioGrassImgs(C0) {
 }
 /* stand next to a thing, on the side you're coming from */
 export function dioApproach(x, z) {
-  const P = DIO.pl,
+  const P = walkView.pl,
     dx = P.x - x,
     dz = P.z - z,
     l = Math.hypot(dx, dz) || 1;
@@ -3924,10 +3938,10 @@ export function dioActSpot(p, M, PPU) {
   return dioApproach(p.x, p.z - 0.3);
 }
 export function dioExitMarks(C, st, t) {
-  const sc = DIO.sc,
+  const sc = walkView.sc,
     ex = sc.exits || [];
   if (!st.exits || !st.exits.length) return;
-  const x = DIO.x,
+  const x = walkView.x,
     hub = dioHubOf(sc);
   x.save();
   x.lineCap = 'round';
@@ -3971,10 +3985,10 @@ export function dioExitMarks(C, st, t) {
   x.restore();
 }
 export function dioExitLabels(C, st, hits, hub) {
-  const sc = DIO.sc,
+  const sc = walkView.sc,
     ex = sc.exits || [];
   if (!st.exits) return;
-  const x = DIO.x,
+  const x = walkView.x,
     m = Math.max(10, C.rw / 40);
   for (const e of st.exits) {
     const pt = ex[e.i];
@@ -3989,7 +4003,7 @@ export function dioExitLabels(C, st, hits, hub) {
       w = PS.w,
       h = PS.h,
       top = Math.max(64, C.rh * 0.09);
-    const sf = DIO.opt.safe ? DIO.opt.safe() : [0.1, 0.85],
+    const sf = walkView.opt.safe ? walkView.opt.safe() : [0.1, 0.85],
       lx = clamp(q.x, m + w / 2, C.rw - m - w / 2),
       ly = clamp(q.y, Math.max(top, sf[0] * C.rh) + h + 4, Math.min(C.rh - m * 6, sf[1] * C.rh - 8));
     const r = dioPill(x, lx, ly, txt, e.locked ? '#B54A55' : e.dest ? '#C99A1E' : '#2E7D5B', e.locked ? '🔒' : null);
@@ -4006,16 +4020,16 @@ export function dioExitLabels(C, st, hits, hub) {
   }
 }
 export function dioTapMark(C, t) {
-  const T = DIO.tap;
+  const T = walkView.tap;
   if (!T) return;
   const age = (t - T.t) / 700;
-  if (age > 1 || (!DIO.pl.route && age > 0.6)) {
-    if (age > 1) DIO.tap = null;
+  if (age > 1 || (!walkView.pl.route && age > 0.6)) {
+    if (age > 1) walkView.tap = null;
     return;
   }
   const q = dioProj(C, T.x, 0, T.z);
   if (!q) return;
-  const x = DIO.x,
+  const x = walkView.x,
     r = q.s * (0.25 + age * 0.35);
   x.save();
   x.strokeStyle = `rgba(255,255,255,${(1 - age) * 0.9})`;
@@ -4120,7 +4134,7 @@ export function dioSpeech(x, cx, cy, txt, a) {
   x.save();
   x.globalAlpha = a;
   x.font = `500 ${s}px Chakra Petch, system-ui, sans-serif`;
-  const maxW = Math.min(DIO.cv.width * 0.5, s * 16),
+  const maxW = Math.min(walkView.cv.width * 0.5, s * 16),
     words = txt.split(' '),
     lines = [];
   let cur = '';
@@ -4134,7 +4148,7 @@ export function dioSpeech(x, cx, cy, txt, a) {
   if (cur) lines.push(cur);
   const w = Math.ceil((Math.max(...lines.map(l => x.measureText(l).width)) + s * 1.2) / u) * u,
     h = Math.ceil((lines.length * s * 1.25 + s * 0.8) / u) * u,
-    x0 = Math.round(clamp(cx - w / 2, 6, DIO.cv.width - w - 6)),
+    x0 = Math.round(clamp(cx - w / 2, 6, walkView.cv.width - w - 6)),
     y0 = Math.round(Math.max(6, cy - h - 4 * u)),
     tc = Math.round(clamp(cx, x0 + 4 * u, x0 + w - 4 * u));
   dioPanel(x, x0, y0, w, h, u, '#FFFDF4', '#FFFFFF', '#EDE6D6', '#2A2238');
@@ -4149,7 +4163,7 @@ export function dioBubble(x, cx, cy, txt, col) {
   x.save();
   x.setTransform(1, 0, 0, 1, 0, 0);
   const u = dioPx(),
-    b = Math.round((Math.abs(Math.sin(DIO.t / 300)) * 3) / u) * u,
+    b = Math.round((Math.abs(Math.sin(walkView.t / 300)) * 3) / u) * u,
     w = u * 9,
     h = u * 11,
     x0 = Math.round(cx - w / 2),

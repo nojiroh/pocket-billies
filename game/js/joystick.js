@@ -6,11 +6,11 @@
      a tap (walk there, open a door, talk). A second finger turns it back into a pinch.
    - D-pad: a fixed eight-way pad in the lower left corner.
    - Tap only: neither; tap where to go.
-   Both set DIO.stick {x right, y up, length 0-1}; walk-view.js walks along the camera's own right and forward. */
+   Both set walkView.stick {x right, y up, length 0-1}; walk-view.js walks along the camera's own right and forward. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { B, S, U } from './game-state.js';
-import { DIO } from './walk-view.js';
+import { walkView } from './walk-view.js';
 import { DGL } from './walk-view-gl.js';
 import { TALK } from './talk.js';
 import { CS } from './cutscene.js';
@@ -41,18 +41,18 @@ function joyAllowed() {
     !U.title &&
     !(typeof B !== 'undefined' && B) &&
     !(typeof CS !== 'undefined' && CS.on) &&
-    typeof DIO !== 'undefined' &&
-    DIO.ready &&
-    DIO.cv &&
-    !DIO.battle &&
-    !DIO.director &&
+    typeof walkView !== 'undefined' &&
+    walkView.ready &&
+    walkView.cv &&
+    !walkView.battle &&
+    !walkView.director &&
     !(typeof FLY !== 'undefined' && FLY.on) &&
     !(typeof LIFT !== 'undefined' && LIFT.on) &&
     !(typeof TALK !== 'undefined' && TALK.on)
   );
 }
 function joySet(x, y) {
-  if (typeof DIO !== 'undefined') DIO.stick = x || y ? { x, y } : null;
+  if (typeof walkView !== 'undefined') walkView.stick = x || y ? { x, y } : null;
 }
 function joyEl() {
   if (JOY.el) return JOY.el;
@@ -185,7 +185,7 @@ setInterval(() => {
   if (show || JOY.pad) {
     const e = joyPad();
     e.classList.toggle('on', show);
-    if (!show && JOY.padId == null && typeof DIO !== 'undefined' && DIO.stick && JOY.id == null) joySet(0, 0);
+    if (!show && JOY.padId == null && typeof walkView !== 'undefined' && walkView.stick && JOY.id == null) joySet(0, 0);
   }
   if (JOY.id != null && !joyAllowed()) joyEnd();
 }, 250);

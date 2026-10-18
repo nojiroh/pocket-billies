@@ -10,7 +10,7 @@ import { clamp } from './util.js';
 import { COINS, GD, ITEMS, ROUTE, RULES, SP } from './game-data.js';
 import { B, N, S, U, esc, fmt, save, today } from './game-state.js';
 import { cnv, uiIco } from './art.js';
-import { DIO, dioBaseId, dioFace, dioFind, dioFreePt, dioHubOf, dioScene, dioTer } from './walk-view.js';
+import { dioBaseId, dioFace, dioFind, dioFreePt, dioHubOf, dioScene, dioTer, walkView } from './walk-view.js';
 import { eng } from './engine/settings.js';
 import { ENV, envHere, envState } from './environment.js';
 import { DGL, dioH } from './walk-view-gl.js';
@@ -219,10 +219,10 @@ function reqHere(node = S.route.node) {
 }
 /* the first townsperson in a town has the request; a gold ! floats over them until it's done */
 function reqAsker() {
-  if (typeof DIO === 'undefined' || !DIO.folk || !DIO.folk.length || U.inside || U.bench) return null;
+  if (typeof walkView === 'undefined' || !walkView.folk || !walkView.folk.length || U.inside || U.bench) return null;
   const q = reqHere();
   if (!q || q.state === 'done') return null;
-  return DIO.folk[0];
+  return walkView.folk[0];
 }
 const x28TeamOf = t =>
   S.team.find(m => m.hp > 0 && SP[m.sp].types.includes(t)) || S.team.find(m => SP[m.sp].types.includes(t));
@@ -340,7 +340,7 @@ export const stampCount = () => Object.keys(x28().stamps).length;
 function stampSpots() {
   if (typeof U !== 'undefined' && U.inside) return [];
   const id = dioBaseId(),
-    sc0 = DIO.sc,
+    sc0 = walkView.sc,
     sc = sc0 && sc0.baseId ? dioScene(sc0.baseId) : sc0,
     o = (sc0 && sc0.baseOff) || [0, 0];
   if (!sc || !id || sc.test || /^int_/.test(id) || !stampScenes().includes(id)) return [];
@@ -370,7 +370,7 @@ function stampSpots() {
 function stampDraw(quad, glows, t) {
   if (!S || !S.started || DGL.bt || U.bench) return;
   const X = x28(),
-    P = DIO.pl,
+    P = walkView.pl,
     sp = stampSpots();
   sp.forEach((p, i) => {
     const key = dioBaseId() + ':' + i;
@@ -520,7 +520,7 @@ function photoFilter(k) {
   if (!U.photo) return;
   U.photo.f = k;
   const F = PHOTO_FILTERS.find(f => f[0] === k);
-  if (DIO.cv) DIO.cv.style.filter = F ? F[2] : '';
+  if (walkView.cv) walkView.cv.style.filter = F ? F[2] : '';
   document.querySelectorAll('[data-a=photoF]').forEach(b => b.classList.toggle('on', b.dataset.k === k));
 }
 function photoEnd() {
@@ -528,7 +528,7 @@ function photoEnd() {
   document.body.classList.remove('photo');
   const el = document.getElementById('photoUI');
   if (el) el.remove();
-  if (DIO.cv) DIO.cv.style.filter = '';
+  if (walkView.cv) walkView.cv.style.filter = '';
   if (DGL.ui) DGL.ui.style.visibility = '';
   if (typeof DGL !== 'undefined') {
     DGL.zoomT = 1;
@@ -552,12 +552,12 @@ function photoShot() {
     /* a little caption in the corner */ x.font = `600 ${Math.max(12, Math.round(o.width / 60))}px Chakra Petch, system-ui, sans-serif`;
     x.fillStyle = 'rgba(255,255,255,.85)';
     x.textAlign = 'right';
-    x.fillText(`${(DIO.sc && DIO.sc.name) || ''} · Pocket Billies`, o.width - 12, o.height - 12);
+    x.fillText(`${(walkView.sc && walkView.sc.name) || ''} · Pocket Billies`, o.width - 12, o.height - 12);
     const url = o.toDataURL('image/png'),
       nm = `pocket-billies-${dioBaseId() || 'photo'}-${Date.now()}.png`;
     modal({
       title: 'Your photo',
-      html: `<img class="photo-prev" src="${url}" alt="Your photo of ${esc((DIO.sc && DIO.sc.name) || 'the scene')}"><p class="note">Save it, or long-press the picture to share it.</p>`,
+      html: `<img class="photo-prev" src="${url}" alt="Your photo of ${esc((walkView.sc && walkView.sc.name) || 'the scene')}"><p class="note">Save it, or long-press the picture to share it.</p>`,
       btns: [
         {
           l: 'Save picture',
@@ -672,7 +672,7 @@ function battleWeatherMult(t) {
 setInterval(() => {
   const el = document.getElementById('camWorld');
   if (!el) return;
-  const w = typeof B !== 'undefined' && B && !(typeof DIO !== 'undefined' && DIO.battle) ? battleWx() : null,
+  const w = typeof B !== 'undefined' && B && !(typeof walkView !== 'undefined' && walkView.battle) ? battleWx() : null,
     k = w ? w.k : '';
   if (el.dataset.wx !== k) el.dataset.wx = k;
 }, 500);

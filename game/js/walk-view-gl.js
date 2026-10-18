@@ -72,7 +72,6 @@ import { cnv, hexA } from './art.js';
 import { dioFolkFrames, humanPose, owFrames, trPick, trWarm } from './person-art.js';
 import { drawRig, rigFrame, rigParts, rigPreload } from './skeleton-rig.js';
 import {
-  DIO,
   DIO_FXM,
   DIO_GCACHE,
   DIO_PAD,
@@ -135,6 +134,7 @@ import {
   setDioProj,
   setDioStop,
   setDioUnproject,
+  walkView,
 } from './walk-view.js';
 import { ENG_CTX, eng, engHex } from './engine/settings.js';
 import {
@@ -481,7 +481,7 @@ function dioPads(sc) {
   const C = dioData().sc,
     ppu = C.ppu || 34,
     out = [];
-  if (DIO.noPads) return out;
+  if (walkView.noPads) return out;
   for (const p of sc.props || []) {
     const M = C.props[p.k];
     if (!M || !M.box || M.flat || M.walk || DIO_PAD_SKIP.test(p.k)) continue;
@@ -594,12 +594,12 @@ export function dioHRaw(sc, x, z) {
 /* the visible ground (smooth land plus the terrace, cliff or stair raise of its half-metre cell) and the height you
    stand at (a bridge deck where there is one; a little lower in water) */
 export function dioGroundH(x, z) {
-  const sc = DIO.sc;
+  const sc = walkView.sc;
   if (!sc) return 0;
   return dioHRaw(sc, x, z) + dioStep(x, z, sc);
 }
 export function dioH(x, z) {
-  const sc = DIO.sc;
+  const sc = walkView.sc;
   if (!sc) return 0;
   if (sc.bridges) {
     const b = dioBridgeAt(x, z, sc);
@@ -650,8 +650,13 @@ export function dglWallDefault(sc) {
 /* walking: too steep is blocked (worked out once per scene, with the rest of the walking grid) */
 const _dioNavFlat = dioNav;
 setDioNav(function () {
-  const sc = DIO.sc,
-    fresh = !(DIO.nav && DIO.navSc === sc && DIO.navG === DIO.gkey && DIO.navP === (sc.props || []).length),
+  const sc = walkView.sc,
+    fresh = !(
+      walkView.nav &&
+      walkView.navSc === sc &&
+      walkView.navG === walkView.gkey &&
+      walkView.navP === (sc.props || []).length
+    ),
     n = _dioNavFlat();
   if (!fresh || !sc.heights || !sc.heights.length || n._hk) return n;
   const { N, gw, gh, blk } = n;
@@ -707,59 +712,59 @@ export function dioMount(cv, id, opt = {}) {
   if (!useGL) {
     DGL.on = false;
     if (DGL.ui) DGL.ui.hidden = true;
-    DIO.ready = false;
-    DIO.err = new Error('WebGL 2 is not available');
+    walkView.ready = false;
+    walkView.err = new Error('WebGL 2 is not available');
     if (typeof noWebGL === 'function') noWebGL(EGL.fail ? 'failed' : '');
     return Promise.resolve();
   }
-  DIO.cv = cv;
-  DIO.opt = opt;
-  if (DIO.id !== id) {
-    DIO.id = id;
-    DIO.cam = null;
-    Object.assign(DIO.pl, { t: -1, fresh: true, pk: '', route: null, goal: null, line: null, walk: 0 });
-    DIO.gkey = '';
-    DIO.cand = null;
-    DIO.nav = null;
-    DIO.npcAt = {};
-    DIO.folk = [];
-    DIO.folkAll = [];
-    DIO.folkId = '';
-    DIO.parts = [];
-    DIO.tap = null;
+  walkView.cv = cv;
+  walkView.opt = opt;
+  if (walkView.id !== id) {
+    walkView.id = id;
+    walkView.cam = null;
+    Object.assign(walkView.pl, { t: -1, fresh: true, pk: '', route: null, goal: null, line: null, walk: 0 });
+    walkView.gkey = '';
+    walkView.cand = null;
+    walkView.nav = null;
+    walkView.npcAt = {};
+    walkView.folk = [];
+    walkView.folkAll = [];
+    walkView.folkId = '';
+    walkView.parts = [];
+    walkView.tap = null;
     DGL.gkey = '';
     DGL.focus = null;
     DGL.camT = null;
     DGL.farKey = '';
   }
-  DIO.sc = dioScene(id);
-  DIO.ready = false;
-  DIO.err = null;
+  walkView.sc = dioScene(id);
+  walkView.ready = false;
+  walkView.err = null;
   cv.classList.add('gl');
   if (!dglGL(cv)) return dioMount(cv, id, opt);
   const ui = dglUI(cv);
-  DIO.x = ui.getContext('2d');
+  walkView.x = ui.getContext('2d');
   DGL.on = true;
   if (!cv._dioBound) {
     cv._dioBound = 1;
     cv.addEventListener('click', dglClick);
     cv.addEventListener('pointermove', ev => {
       const h = dioHitAt(ev);
-      cv.style.cursor = h ? 'pointer' : DIO.st.roam ? 'crosshair' : '';
+      cv.style.cursor = h ? 'pointer' : walkView.st.roam ? 'crosshair' : '';
     });
     dglGestures(cv);
   }
   return dioPrepare(id)
     .then(sc => {
-      if (DIO.id !== id) return;
-      DIO.sc = sc;
+      if (walkView.id !== id) return;
+      walkView.sc = sc;
       dioEnsureGround();
-      DIO.ready = true;
-      frameTask('dio', dglFrame, () => (DIO.opt.cap ? DIO.opt.cap() : userFps()));
+      walkView.ready = true;
+      frameTask('dio', dglFrame, () => (walkView.opt.cap ? walkView.opt.cap() : userFps()));
       cv.classList.add('in');
     })
     .catch(e => {
-      DIO.err = e;
+      walkView.err = e;
       console.error(e);
     });
 }
@@ -812,10 +817,10 @@ export function dglGL(cv) {
   return true;
 }
 function eglRestored(cv) {
-  if (DIO.id && DIO.cv === cv) {
-    const id = DIO.id;
-    DIO.id = null;
-    dioMount(cv, id, DIO.opt);
+  if (walkView.id && walkView.cv === cv) {
+    const id = walkView.id;
+    walkView.id = null;
+    dioMount(cv, id, walkView.opt);
   }
 }
 setDioStop(function () {
@@ -833,7 +838,7 @@ setDioProj(function (C, x, y, z) {
   return { x: ((cx / w) * 0.5 + 0.5) * C.rw, y: (1 - ((cy / w) * 0.5 + 0.5)) * C.rh, s: C.F / w, d: w };
 });
 setDioUnproject(function (sx, sy) {
-  const C = DIO.C;
+  const C = walkView.C;
   if (!C || !C.gl) return _dioUnproject2D(sx, sy);
   const r = dglRay(C, sx, sy);
   let t = 0,
@@ -882,11 +887,11 @@ function dglRay(C, sx, sy) {
   return { o: p0, d: d.map(v => v / l) };
 }
 export function dglCurveArgs() {
-  const sc = DIO.sc;
+  const sc = walkView.sc;
   return [sc.w / 2, sc.h / 2, eng('world', 'curve'), Math.max(sc.w, sc.h) * 0.55 + 4];
 }
 export function dglCurve(x, z) {
-  const sc = DIO.sc;
+  const sc = walkView.sc;
   if (!sc) return 0;
   const c = dglCurveArgs(),
     d = Math.max(0, Math.hypot(x - c[0], z - c[1]) - c[3]);
@@ -894,11 +899,12 @@ export function dglCurve(x, z) {
 }
 /* ---------- input: taps (focus follows them), two-finger turn and pinch, Ctrl+wheel zoom, Q/E/R, phone tilt ---------- */
 /* alpha 0.4.1: a preview that asks for a free camera (the Studio's) turns all the way round, zooms further and zooms with the plain wheel */
-const dglFree = () => !!(DIO.opt && DIO.opt.freeCam),
+const dglFree = () => !!(walkView.opt && walkView.opt.freeCam),
   dglTurn = () => (dglFree() ? Math.PI : (eng('camera', 'turn') * Math.PI) / 180),
   dglZoomLim = v => (dglFree() ? clamp(v, 0.3, 3.2) : clamp(v, eng('camera', 'zoomMin'), eng('camera', 'zoomMax')));
 function dglClick(ev) {
-  if (DIO.battle || DIO.director || !DIO.ready || (DIO.opt.active && !DIO.opt.active())) return;
+  if (walkView.battle || walkView.director || !walkView.ready || (walkView.opt.active && !walkView.opt.active()))
+    return;
   if (typeof S !== 'undefined') dglTiltAsk();
   if (DGL.dragged) {
     DGL.dragged = false;
@@ -907,7 +913,7 @@ function dglClick(ev) {
   const [sx, sy] = dioCanvasXY(ev),
     g = dioUnproject(sx, sy);
   if (g) {
-    DGL.focusT = { x: g.x, z: g.z, t: DIO.t };
+    DGL.focusT = { x: g.x, z: g.z, t: walkView.t };
   }
   dioClick(ev);
 }
@@ -953,7 +959,7 @@ function dglGestures(cv) {
   cv.addEventListener(
     'wheel',
     ev => {
-      if (DIO.opt.active && !DIO.opt.active()) return;
+      if (walkView.opt.active && !walkView.opt.active()) return;
       if (!ev.ctrlKey && !dglFree()) return;
       ev.preventDefault();
       DGL.zoomT = dglZoomLim(DGL.zoomT * Math.exp(ev.deltaY * 0.0012));
@@ -961,8 +967,8 @@ function dglGestures(cv) {
     { passive: false }
   );
   addEventListener('keydown', ev => {
-    if (!DGL.on || !DIO.cv || (DIO.opt.active && !DIO.opt.active())) return;
-    if (dglFree() && !(DIO.opt.keys && DIO.opt.keys())) return;
+    if (!DGL.on || !walkView.cv || (walkView.opt.active && !walkView.opt.active())) return;
+    if (dglFree() && !(walkView.opt.keys && walkView.opt.keys())) return;
     const t = ev.target;
     if (t && /INPUT|TEXTAREA|SELECT/.test(t.tagName)) return;
     if (ev.key === 'q' || ev.key === 'Q') DGL.yawT = clamp(DGL.yawT - 0.12, -dglTurn(), dglTurn());
@@ -2069,7 +2075,7 @@ function* dglGroundSteps(sc, G, T) {
   }
 }
 function dglBuildGround() {
-  const it = dglGroundSteps(DIO.sc, DIO.ground, DGL);
+  const it = dglGroundSteps(walkView.sc, walkView.ground, DGL);
   let r = it.next();
   while (!r.done) r = it.next();
 }
@@ -2619,7 +2625,7 @@ export function dglGroundAO(sc) {
 function dglGaoWork(budget = 4) {
   const J = DGL.gaoJob;
   if (!J) return;
-  if (J.sc !== DIO.sc) {
+  if (J.sc !== walkView.sc) {
     DGL.gaoJob = null;
     return;
   }
@@ -2938,7 +2944,7 @@ function dglNrm(gx, gy, m) {
   }
   return [clamp(-gx * m[0] * 1.4, -0.8, 0.8), clamp(gy * m[0] * 1.4, -0.8, 0.8)];
 }
-function dglGroundNormals(G, old, sc = DIO.sc) {
+function dglGroundNormals(G, old, sc = walkView.sc) {
   const gl = EGL.gl,
     TP = G._TP || dioData().sc.tile || 16,
     P = DGL_PAD,
@@ -3058,7 +3064,7 @@ const DGL_GKIND = {
    appear when the last row is in, so a big meadow no longer costs one long frame when the scene opens */
 export function dglBuildGrass() {
   const gl = EGL.gl,
-    sc = DIO.sc;
+    sc = walkView.sc;
   DGL.grassDrawn = 0;
   /* v46: a room has none (the count used to carry over from the last place) */ if (DGL.grass) {
     gl.deleteVertexArray(DGL.grass.vao);
@@ -3255,7 +3261,7 @@ export function dglBuildGrass() {
 export function dglGrassWork(ms = 4) {
   const J = DGL.grassJob;
   if (!J) return;
-  if (J.sc !== DIO.sc) {
+  if (J.sc !== walkView.sc) {
     DGL.grassJob = null;
     return;
   }
@@ -3273,11 +3279,11 @@ export function dglGrassWork(ms = 4) {
 
 /* distant trees, rocks or cacti scattered on the land around the scene (taken from the scene's own props) */
 function dglBuildFar() {
-  const sc = DIO.sc,
+  const sc = walkView.sc,
     C0 = dioData().sc,
     pool = [],
     count = Math.round(eng('world', 'farProps'));
-  DGL.farKey = DIO.id + '|' + count;
+  DGL.farKey = walkView.id + '|' + count;
   for (const p of sc.props || []) {
     const M = C0.props[p.k];
     if (!M || M.flat || M.box || M.door) continue;
@@ -3322,9 +3328,9 @@ function dglBuildFar() {
 }
 /* ---------- camera ---------- */
 function dglCamera(rw, rh, st, dt) {
-  const sc = DIO.sc,
+  const sc = walkView.sc,
     c = sc.cam || {},
-    P = DIO.pl,
+    P = walkView.pl,
     k = Math.min(1, dt * 3.2);
   DGL.yaw += (DGL.yawT - DGL.yaw) * Math.min(1, dt * 5);
   DGL.zoom += (DGL.zoomT - DGL.zoom) * Math.min(1, dt * 5);
@@ -3349,7 +3355,7 @@ function dglCamera(rw, rh, st, dt) {
   /* v47: the camera looks up at a landmark ahead of you (dglLandmarkTilt), and settles back as you pass */
   DGL.lmT = (DGL.lmT || 0) + (dglLandmarkTilt(P, sc) - (DGL.lmT || 0)) * Math.min(1, dt * 2.4);
   /* v46: the camera's height and tilt glide when they change without a cut (into and out of a room laid into the place) */
-  if (!DGL.camT || !DGL.cpe || DIO.opt.instant) DGL.cpe = [pitch0 + (sc.indoor ? 12 : 0), h0];
+  if (!DGL.camT || !DGL.cpe || walkView.opt.instant) DGL.cpe = [pitch0 + (sc.indoor ? 12 : 0), h0];
   {
     const e = Math.min(1, dt * 3.2);
     DGL.cpe[0] += (pitch0 + (sc.indoor ? 12 : 0) - DGL.cpe[0]) * e;
@@ -3381,7 +3387,7 @@ function dglCamera(rw, rh, st, dt) {
     tx = DGL.swoop.x;
     tz = DGL.swoop.z + (rw > rh ? 1 : 0.5);
   }
-  if (!DGL.camT || DIO.opt.instant) DGL.camT = [tx, tz, dioH(tx, tz)];
+  if (!DGL.camT || walkView.opt.instant) DGL.camT = [tx, tz, dioH(tx, tz)];
   const T = DGL.camT;
   T[0] += (tx - T[0]) * k;
   T[1] += (tz - T[1]) * k;
@@ -3392,7 +3398,7 @@ function dglCamera(rw, rh, st, dt) {
       room = T[1] + 1.2;
     if (back > room) df = Math.max(4, room / Math.cos(pitch));
   }
-  const bob = P.walk && !RM ? Math.sin(DIO.t / 170) * 0.025 * eng('camera', 'sway') : 0,
+  const bob = P.walk && !RM ? Math.sin(walkView.t / 170) * 0.025 * eng('camera', 'sway') : 0,
     f = [Math.sin(yaw) * Math.cos(pitch), -Math.sin(pitch), Math.cos(yaw) * Math.cos(pitch)];
   let tgt = [T[0], T[2] + bob, T[1]];
   /* v35: pixel-grid camera (Engine > Camera > Pixel grid, off until the new art): when you stand still the camera
@@ -3525,19 +3531,19 @@ function dglLookCamera(rw, rh, K) {
 }
 /* ---------- frame ---------- */
 function dglFrame(ts, dtm) {
-  const cv = DIO.cv;
+  const cv = walkView.cv;
   if (!cv || !cv.isConnected) {
     dioStop();
     return;
   }
-  if (!DIO.ready || EGL.lost) return;
+  if (!walkView.ready || EGL.lost) return;
   const w0 = performance.now(),
     gl = EGL.gl,
-    sc = DIO.sc;
+    sc = walkView.sc;
   ENG_CTX.look = sc.look || null;
   EGL.fr = (EGL.fr || 0) + 1;
   if (EGL.fr % 120 === 0) eglTexTrim();
-  eglNormWork(DIO.warm ? 40 : 3);
+  eglNormWork(walkView.warm ? 40 : 3);
   eglPendPoll(1);
   dglGaoWork();
   dglPrepWork(DGL.bt ? 0 : DGL_PREP_MS);
@@ -3545,7 +3551,7 @@ function dglFrame(ts, dtm) {
     cssH = cv.clientHeight;
   if (!cssW || !cssH) return;
   const R0 = Math.min(devicePixelRatio || 1, 1.75) * eng('quality', 'resolution'),
-    R = R0 * Math.min(1, Math.sqrt(1.6e6 / (cssW * cssH * R0 * R0))) * DIO.R,
+    R = R0 * Math.min(1, Math.sqrt(1.6e6 / (cssW * cssH * R0 * R0))) * walkView.R,
     rw = Math.max(64, Math.min(2400, Math.round(cssW * R))),
     rh = Math.max(64, Math.round((cssH * rw) / cssW));
   if (cv.width !== rw || cv.height !== rh) {
@@ -3558,9 +3564,9 @@ function dglFrame(ts, dtm) {
     ui.height = rh;
   }
   const dms = Math.min(dtm, 60);
-  DIO.t += dms;
+  walkView.t += dms;
   const dt = dms / 1000,
-    t = DIO.t,
+    t = walkView.t,
     C0 = dioData().sc,
     PPU = C0.ppu || 34;
   /* v26: the hour, the weather and the season (environment.js) lean on the engine dials while this frame draws */
@@ -3577,49 +3583,49 @@ function dglFrame(ts, dtm) {
 function dglFrameIn(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
   if (typeof wrLookTick === 'function') wrLookTick();
   const gl = EGL.gl,
-    sc = DIO.sc,
-    cv = DIO.cv;
+    sc = walkView.sc,
+    cv = walkView.cv;
   dioEnsureGround();
-  const hk = dglHK(DIO.id, sc, DIO.gkey);
-  if (DGL.gkey !== DIO.gkey || DGL.hkey !== hk) {
+  const hk = dglHK(walkView.id, sc, walkView.gkey);
+  if (DGL.gkey !== walkView.gkey || DGL.hkey !== hk) {
     const old = DGL.hkey;
-    DGL.gkey = DIO.gkey;
+    DGL.gkey = walkView.gkey;
     DGL.hkey = hk;
-    DIO.nav = null;
+    walkView.nav = null;
     dioNav();
     dglSceneSwap(old, hk);
   }
   dioNav();
   if (DGL.grassKey !== eng('grass', 'density')) dglBuildGrass();
   else dglGrassWork(4);
-  if (DGL.farKey !== DIO.id + '|' + Math.round(eng('world', 'farProps'))) dglBuildFar();
+  if (DGL.farKey !== walkView.id + '|' + Math.round(eng('world', 'farProps'))) dglBuildFar();
   /* a battle (battle-3d.js) borrows the scene: its own camera, the fighters as lit sprites, props in the way hidden */
   const BT =
-    (DIO.battle && DIO.battle.frame ? DIO.battle.frame() : null) ||
-    (DIO.director && DIO.director.frame ? DIO.director.frame() : null);
+    (walkView.battle && walkView.battle.frame ? walkView.battle.frame() : null) ||
+    (walkView.director && walkView.director.frame ? walkView.director.frame() : null);
   DGL.bt = BT;
-  const st = BT ? { who: null, npcs: [], enc: [], battle: 1 } : DIO.opt.state ? DIO.opt.state() : { t: 0 };
+  const st = BT ? { who: null, npcs: [], enc: [], battle: 1 } : walkView.opt.state ? walkView.opt.state() : { t: 0 };
   if (!BT) {
-    DIO.st = st;
+    walkView.st = st;
     dioPlayer(st, dt);
   }
-  const P = DIO.pl;
+  const P = walkView.pl;
   if (!BT && sc.folk && st.mode && st.mode !== 'line') dioFolkTick(sc.folk, dt);
   else if (!BT) {
-    DIO.folk = [];
-    DIO.folkAll = [];
+    walkView.folk = [];
+    walkView.folkAll = [];
   }
   if (!BT && typeof lifeStep === 'function') lifeStep(dt);
   const C = BT ? (BT.look ? dglLookCamera(rw, rh, BT.look) : dglBattleCamera(rw, rh, BT)) : dglCamera(rw, rh, st, dt);
-  DIO.C = C;
+  walkView.C = C;
   const sun = dglSceneSun(sc, eglSun(!!sc.indoor));
   DGL.sun = sun;
   /* v46: the near ring follows the camera's focus (in a battle, the stage) */
   {
     const bc = BT && (BT.center || (BT.look && [BT.look.tgt[0], BT.look.tgt[2]])),
       T = DGL.camT;
-    const fx = bc ? bc[0] : T ? T[0] : DIO.pl.x,
-      fz = bc ? bc[1] : T ? T[1] : DIO.pl.z;
+    const fx = bc ? bc[0] : T ? T[0] : walkView.pl.x,
+      fz = bc ? bc[1] : T ? T[1] : walkView.pl.z;
     dglRingUpdate(sc, fx, fz, DGL_PREP_MS);
   }
   DGL.budT = performance.now();
@@ -3629,7 +3635,7 @@ function dglFrameIn(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
   if (BT) {
     items = items.filter(it => !(it.k === 'prop' && BT.hide && BT.hide.has(it.p)));
     for (const it of BT.items) items.push(it);
-  } else DIO.hits = hits;
+  } else walkView.hits = hits;
   dglCull(items, C);
   const dark0 = sc.tint && sc.tint !== '#000000' ? 1 : sc.indoor ? 0.7 : 0,
     lk = ENG_CTX.env && !sc.indoor ? ENV.lampK : 0,
@@ -3638,7 +3644,7 @@ function dglFrameIn(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
   const QE = Math.max(DGL.q || 0, BT && (eng('quality', 'battleLite') ?? true) ? 2 : 0);
   DGL.qe = QE;
   let shadow = DGL.lastShadow || null;
-  if (!((DIO.R < 0.7 || QE >= 2) && DGL.frames % 2 && shadow)) {
+  if (!((walkView.R < 0.7 || QE >= 2) && DGL.frames % 2 && shadow)) {
     shadow = dglShadowPass(items, sun, C);
     DGL.lastShadow = shadow;
   }
@@ -3669,8 +3675,8 @@ function dglFrameIn(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
   let fx = BT ? BT.center[0] : P.x,
     fz = BT ? BT.center[1] : P.z;
   const ft = BT ? null : DGL.focusT;
-  if (ft && DIO.t - ft.t < 2600) {
-    const kf = smooth01((DIO.t - ft.t) / 350) * (1 - smooth01((DIO.t - ft.t - 1800) / 800));
+  if (ft && walkView.t - ft.t < 2600) {
+    const kf = smooth01((walkView.t - ft.t) / 350) * (1 - smooth01((walkView.t - ft.t - 1800) / 800));
     fx = P.x + (ft.x - P.x) * kf;
     fz = P.z + (ft.z - P.z) * kf;
   }
@@ -3685,8 +3691,8 @@ function dglFrameIn(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
     gl.blitFramebuffer(0, 0, rw, rh, 0, 0, rw, rh, gl.COLOR_BUFFER_BIT, gl.NEAREST);
   } else
     eglPost(S, C, DGL.focus, rw, rh, {
-      blur: BT ? BT.blur : (sc.blur ?? 1) * (DIO.opt.blur ?? 1) * (st.focusY != null ? 0.6 : 1),
-      fast: DIO.R < 0.75 || QE >= 1,
+      blur: BT ? BT.blur : (sc.blur ?? 1) * (walkView.opt.blur ?? 1) * (st.focusY != null ? 0.6 : 1),
+      fast: walkView.R < 0.75 || QE >= 1,
       noAO: QE >= 1,
       noRays: QE >= 3,
       bloomN: QE >= 3 ? 3 : 5,
@@ -3701,10 +3707,10 @@ function dglFrameIn(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
       volDens: sc.indoor ? 0.5 : 1 + (ENG_CTX.env ? ENV.fog * 1.5 + ENV.rain * 0.4 : 0),
     });
   /* labels and markers stay sharp on the layer above */
-  const x = DIO.x;
+  const x = walkView.x;
   x.setTransform(1, 0, 0, 1, 0, 0);
   x.clearRect(0, 0, rw, rh);
-  if (!BT && !(DIO.opt.active && !DIO.opt.active())) {
+  if (!BT && !(walkView.opt.active && !walkView.opt.active())) {
     dioExitMarks(C, st, t);
     dioTapMark(C, t);
     if (typeof owLabels === 'function' && !BT) owLabels(C, labels);
@@ -3736,20 +3742,20 @@ function dglFrameIn(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
     DGL.snapReq = 0;
     try {
       const c = eglSnapshot(rw, rh, DGL.ui);
-      NWLOG.shot = { t: NWLOG.now(), what: DIO.id, jpeg: c.toDataURL('image/jpeg', 0.72) };
+      NWLOG.shot = { t: NWLOG.now(), what: walkView.id, jpeg: c.toDataURL('image/jpeg', 0.72) };
     } catch (e) {
       NWLOG.shot = { t: NWLOG.now(), error: String(e.message || e) };
     }
   }
   DGL.frames++;
   const work = performance.now() - w0;
-  DIO.slow = DIO.slow * 0.9 + work * 0.1;
+  walkView.slow = walkView.slow * 0.9 + work * 0.1;
   dglAdapt(dtm, work);
   /* v30: how long frames take, for the debug log */ {
     const H = DGL.hist || (DGL.hist = [0, 0, 0, 0, 0, 0]);
     H[work < 8 ? 0 : work < 16 ? 1 : work < 33 ? 2 : work < 66 ? 3 : work < 133 ? 4 : 5]++;
   }
-  if (typeof frameCount === 'function' && DIO.opt.meter) frameCount(work);
+  if (typeof frameCount === 'function' && walkView.opt.meter) frameCount(work);
 }
 /* v32: the last few scenes' ground, water and grass stay on the graphics card, so walking out of a house (or back
    from a trip) doesn't rebuild them; the oldest is let go when a fourth arrives */
@@ -3804,7 +3810,7 @@ export function dglRebuild() {
   DGL.grass = null;
   DGL.grassKey = null;
   DGL.itemGen = (DGL.itemGen || 0) + 1;
-  DIO.gkey = '';
+  walkView.gkey = '';
   if (typeof DIO_GCACHE !== 'undefined') DIO_GCACHE.clear();
   if (typeof P3D !== 'undefined' && P3D.meshes) P3D.meshes = new WeakMap();
   if (typeof voxFlush === 'function') voxFlush();
@@ -3841,7 +3847,7 @@ function dglSceneSwap(oldKey, key) {
     DGL.wlevelR = null;
     DGL.farKey = '';
     DGL.basinKey = null;
-    if (!DGL.gaoTex && DIO.sc) dglGroundAO(DIO.sc);
+    if (!DGL.gaoTex && walkView.sc) dglGroundAO(walkView.sc);
     /* v46: a view prepared ahead plants its grass now (sliced, a few ms a frame) */ if (hit.prepared) {
       DGL.grass = null;
       DGL.grassKey = null;
@@ -3999,12 +4005,12 @@ function dglHeat(sc) {
    back: resolution first, then the extras. Frames held back on purpose (a window open, another screen) don't count. */
 export function dglAdapt(dtm, work) {
   if (!eng('quality', 'auto')) {
-    DIO.R = 1;
+    walkView.R = 1;
     DGL.q = 0;
     return;
   }
-  const cap = DIO.opt.cap ? DIO.opt.cap() : 60;
-  if (cap < 30 || DIO.warm) {
+  const cap = walkView.opt.cap ? walkView.opt.cap() : 60;
+  if (cap < 30 || walkView.warm) {
     DGL.int = 0;
     return;
   }
@@ -4017,8 +4023,8 @@ export function dglAdapt(dtm, work) {
     which a phone outdoors rarely has. Now the first 3 s after a view changes don't push it down, it comes back up
     while the frames keep the beat with work under 60% of a frame, and a step that proved too much is held off for
     half a minute (no see-sawing) */
-  const slow = DGL.int > target * 1.3 || DIO.slow > target * 0.85,
-    room = DGL.int < target * 1.1 && DIO.slow < target * 0.6;
+  const slow = DGL.int > target * 1.3 || walkView.slow > target * 0.85,
+    room = DGL.int < target * 1.1 && walkView.slow < target * 0.6;
   const now = performance.now();
   if (now - (DGL.adaptT || 0) < (slow ? 1200 : 900)) return;
   DGL.adaptT = now;
@@ -4027,14 +4033,14 @@ export function dglAdapt(dtm, work) {
     laptop in the diagnostics), taking away god rays, bloom steps, depth of field or resolution doesn't help: those cost
     the graphics chip. Then only the steps that save work here are taken (shadows and reflections every other frame,
     steps 1-2), and the ones above come back. Before, such a machine sat on the lowest step with the effects off. */
-  const cpu = DIO.slow > target * 0.7;
+  const cpu = walkView.slow > target * 0.7;
   if (slow && cpu) {
     if (DGL.q > 2) {
       DGL.q = 2;
       DGL.raiseT = now;
     } else if (DGL.q < 2 && now - (DGL.swapT || 0) >= 3000) DGL.q++;
     DGL.roomN = 0;
-    if (DIO.R < 1) DIO.R = Math.min(1, DIO.R + 0.1);
+    if (walkView.R < 1) walkView.R = Math.min(1, walkView.R + 0.1);
     return;
   }
   if (slow) {
@@ -4042,10 +4048,10 @@ export function dglAdapt(dtm, work) {
     if (now - (DGL.raiseT || -1e9) < 5000) DGL.holdT = now + 30000;
     DGL.roomN = 0;
     if (DGL.q < 4) DGL.q++;
-    else if (DIO.R > 0.55) DIO.R = Math.max(0.5, DIO.R - 0.1);
+    else if (walkView.R > 0.55) walkView.R = Math.max(0.5, walkView.R - 0.1);
   } else if (room && now > (DGL.holdT || 0)) {
-    if (DIO.R < 1) {
-      DIO.R = Math.min(1, DIO.R + 0.1);
+    if (walkView.R < 1) {
+      walkView.R = Math.min(1, walkView.R + 0.1);
       DGL.raiseT = now;
     } else if (DGL.q > 0 && (DGL.roomN = (DGL.roomN || 0) + 1) >= 2) {
       DGL.q--;
@@ -4103,7 +4109,7 @@ function dglHug(it, C) {
     h = (x, z) => dioGroundH(x, z),
     x = it.x,
     z = it.z,
-    id = DIO.id,
+    id = walkView.id,
     ig = DGL.itemGen || 0;
   let c = DGL_HUGC.get(p);
   if (!c || c.id !== id || c.ig !== ig || c.x !== x || c.z !== z) {
@@ -4125,7 +4131,7 @@ function dglHug(it, C) {
 /* v24: riding. On water in a riding scene you sit on your biggest Water billionaire (rules.ride), drawn from its rig,
    facing away when you head up the screen; it bobs, and leaves ripple rings behind. */
 function dglMount(P, t) {
-  const sc = DIO.sc;
+  const sc = walkView.sc;
   if (!sc || !sc.ride || typeof riderOf !== 'function' || typeof S === 'undefined' || !S.team) return null;
   const ch = dioTer(P.x, P.z);
   if (ch !== 'w' && ch !== 'd') {
@@ -4306,7 +4312,7 @@ function dglPropGrid(sc) {
   let sig = L.length;
   for (let i = 0; i < L.length; i += Math.max(1, L.length >> 4))
     sig = (sig * 31 + ((L[i].x * 7 + L[i].z * 13) | 0)) | 0;
-  if (G && G.sc === sc && G.sig === sig && (DIO.t || 0) - G.at < 2000 && (DIO.t || 0) >= G.at) return G;
+  if (G && G.sc === sc && G.sig === sig && (walkView.t || 0) - G.at < 2000 && (walkView.t || 0) >= G.at) return G;
   const S = 6,
     m = new Map();
   for (const p of L) {
@@ -4333,12 +4339,12 @@ function dglPropGrid(sc) {
     y: (c.y0 + c.y1) / 2,
     r: Math.hypot(c.x1 - c.x0, c.z1 - c.z0, c.y1 - c.y0) / 2,
   }));
-  return (DGL.pgrid = { sc, sig, at: DIO.t || 0, cells });
+  return (DGL.pgrid = { sc, sig, at: walkView.t || 0, cells });
 }
 function dglStill(p, M, im, sc) {
-  const t = DIO.t || 0,
+  const t = walkView.t || 0,
     s = p.s || 1,
-    id = DIO.id || '',
+    id = walkView.id || '',
     src = (im && im.src) || '',
     gen = DGL.itemGen || 0;
   let c = DGL_STILL.get(p);
@@ -4400,7 +4406,7 @@ function dglLookSig(sc) {
 }
 function dglLookOf(p, M, sc) {
   const c0 = DGL_LOOK.get(p),
-    t = DIO.t || 0,
+    t = walkView.t || 0,
     sg = dglLookSig(sc);
   if (
     c0 &&
@@ -4507,9 +4513,9 @@ export function dglWindAt(x, z, t, sc, wind) {
   return eglWindBend(x, z, t, eng('grass', 'gusts')) * k;
 }
 export function dglItems(st, C, PPU, C0) {
-  const sc = DIO.sc,
-    P = DIO.pl,
-    t = DIO.t,
+  const sc = walkView.sc,
+    P = walkView.pl,
+    t = walkView.t,
     out = [],
     hub = dioHubOf(sc),
     tg = dioGrassImgs(C0),
@@ -4518,8 +4524,8 @@ export function dglItems(st, C, PPU, C0) {
     ow = typeof owItem === 'function' && !st.battle && !DGL.bt,
     npcPos = [];
   DGL.owT = t;
-  if (ow && OWM.warmId !== DIO.id) {
-    OWM.warmId = DIO.id;
+  if (ow && OWM.warmId !== walkView.id) {
+    OWM.warmId = walkView.id;
     owWarm();
   }
   const prop = (p, far) => {
@@ -4685,8 +4691,8 @@ export function dglItems(st, C, PPU, C0) {
   DGL.gridSkip = gs;
   for (const p of DGL.farProps) prop(p, 1);
   (st.npcs || []).forEach((n, i) => {
-    let pos = DIO.npcAt[n.id];
-    if (!pos && n.at) pos = DIO.npcAt[n.id] = dioFreePt(n.at[0], n.at[1]);
+    let pos = walkView.npcAt[n.id];
+    if (!pos && n.at) pos = walkView.npcAt[n.id] = dioFreePt(n.at[0], n.at[1]);
     if (!pos) {
       if (!st.mode || st.mode === 'line') {
         const a = dioAlong(sc, n.t ?? 0.7 + i * 0.08);
@@ -4702,7 +4708,7 @@ export function dglItems(st, C, PPU, C0) {
           r = 3.4 + i * 0.9;
         pos = dioFreePt(hub[0] + Math.cos(a) * r, hub[1] + Math.sin(a) * r * 0.7);
       }
-      DIO.npcAt[n.id] = pos;
+      walkView.npcAt[n.id] = pos;
     }
     const fr = typeof owFrames === 'function' ? owFrames(n.who) : null;
     if (!fr) return;
@@ -4724,10 +4730,10 @@ export function dglItems(st, C, PPU, C0) {
   const used = [];
   DGL.encPos = [];
   (st.enc || []).forEach(e => {
-    let s = DIO.enc[e.id];
-    if (!s || s.sc !== DIO.id) {
+    let s = walkView.enc[e.id];
+    if (!s || s.sc !== walkView.id) {
       const sp = dioEncSpot(sc, e.id, used);
-      s = DIO.enc[e.id] = { x: sp[0], z: sp[1], tx: sp[0], tz: sp[1], sc: DIO.id };
+      s = walkView.enc[e.id] = { x: sp[0], z: sp[1], tx: sp[0], tz: sp[1], sc: walkView.id };
     }
     /* v46: they keep their spot in the tall grass until you battle them: no wandering. They stay alive in place (a bob,
      the grass swaying round them, a peek now and then, see owEncItem) and rustle when you come close */
@@ -4736,7 +4742,7 @@ export function dglItems(st, C, PPU, C0) {
     if (!st.battle && !RM && !DGL.bt) {
       const dd = Math.min(0.1, (t - (s.lt || t)) / 1000);
       s.lt = t;
-      const P = DIO.pl;
+      const P = walkView.pl;
       if (P && typeof sfxAt === 'function' && Math.hypot(P.x - s.x, P.z - s.z) < 4 && Math.random() < dd * 0.25)
         sfxAt('rustle', s.x, s.z);
     }
@@ -4783,7 +4789,7 @@ export function dglItems(st, C, PPU, C0) {
     if (ow) owEncItem(out, e, s, t, odt);
   });
   if (!st.battle)
-    for (const f of DIO.folk) {
+    for (const f of walkView.folk) {
       const fr = dioFolkFrames(f.seed);
       if (!fr) continue;
       trWarm('folk:' + f.seed);
@@ -4846,7 +4852,7 @@ export function dglItems(st, C, PPU, C0) {
       C0,
       { shear: RM ? 0 : P.lean || 0 }
     );
-    if (P.yv != null && P.yId === DIO.id) me.y = P.yv;
+    if (P.yv != null && P.yId === walkView.id) me.y = P.yv;
     const mt = dglMount(P, t);
     if (mt) {
       out.push(mt.it);
@@ -4964,7 +4970,7 @@ export function dglRoomDim(sc) {
 /* alpha 0.4: how far a lamp is on (0-1). Outdoors with the world's hours each lamp has its own moment as the light
    fails (ENV.lampK: dusk, night, a grey storm, fog), so they come on one by one; in a dark place or a room, all on */
 function dglLampOn(x, z, dark) {
-  const sc = DIO.sc,
+  const sc = walkView.sc,
     E = typeof ENV !== 'undefined' && ENG_CTX.env && !sc.indoor ? ENV : null;
   if (!E || (sc.tint && sc.tint !== '#000000')) return dark ? 1 : 0;
   const th = 0.16 + 0.3 * dioHash(Math.round(x * 7), Math.round(z * 11));
@@ -4976,10 +4982,10 @@ function dglWinOn(x, z) {
 }
 function dglLightCtx(C, sun, dark, items, shadow, BT) {
   const dark0L = dark;
-  const sc = DIO.sc,
-    t = DIO.t,
+  const sc = walkView.sc,
+    t = walkView.t,
     R = C.right,
-    P = BT ? { x: BT.center[0], z: BT.center[1] } : DIO.pl,
+    P = BT ? { x: BT.center[0], z: BT.center[1] } : walkView.pl,
     lb = eng('lights', 'brightness'),
     flick = eng('lights', 'flicker'),
     winDay = eng('lights', 'windowsDay');
@@ -5157,7 +5163,7 @@ function dglLightCtx(C, sun, dark, items, shadow, BT) {
     mistY: (DGL.wlevel || 0) + eng('air', 'mistHeight'),
     time: t,
     indoor: sc.indoor,
-    lite: DIO.R < 0.75,
+    lite: walkView.R < 0.75,
     shadow,
     lights,
     ao: ao.slice(0, 64).map(a => [a[0], a[1], a[2], a[3]]),
@@ -5188,10 +5194,10 @@ function dglSprU(p, it, uv) {
 /* v19: the shadow map covers the ground the camera sees (plus a margin for tall things just outside), not the whole
    scene, so its texels are smaller where it matters; the radius moves in 2 m steps */
 function dglShadowRect(C) {
-  const sc = DIO.sc,
+  const sc = walkView.sc,
     full = [sc.w / 2, sc.h / 2, Math.hypot(sc.w, sc.h) / 2 + 6];
   if (!C || !eng('shadows', 'fit')) return full;
-  const P = DIO.pl,
+  const P = walkView.pl,
     y0 = dioH(P.x, P.z),
     X = [],
     Z = [];
@@ -5224,7 +5230,7 @@ function dglShadowRect(C) {
 export function dglShadowPass(items0, sun, C) {
   const far = dglShadowPassFit(items0, sun, C);
   if (!(eng('shadows', 'cascades') ?? true) || (DGL.bt && (eng('quality', 'battleLite') ?? true))) return far;
-  const P = DIO.pl,
+  const P = walkView.pl,
     R = eng('shadows', 'nearRadius') ?? 13,
     res = Math.min(1024, eng('quality', 'shadowMap')),
     gl = EGL.gl,
@@ -5256,7 +5262,7 @@ function dglLampShadows(items, X, dark) {
   const n = Math.min(2, eng('shadows', 'lampShadows') ?? 2);
   if (!n) return;
   const L = X.lights,
-    P = DIO.pl,
+    P = walkView.pl,
     cand = L.filter(l => !l.front && l.p[1] > 1.6 && l.r >= 3 && Math.hypot(l.p[0] - P.x, l.p[2] - P.z) < 22).slice(
       0,
       n
@@ -5367,8 +5373,9 @@ function dglShadowSprites(SH, L, sun, ca, lamp) {
   return miss;
 }
 function dglShadowPassFit(items0, sun, C) {
-  const sc = DIO.sc,
-    res = DIO.R < 0.8 || (DGL.q || 0) >= 2 ? Math.min(1024, eng('quality', 'shadowMap')) : eng('quality', 'shadowMap'),
+  const sc = walkView.sc,
+    res =
+      walkView.R < 0.8 || (DGL.q || 0) >= 2 ? Math.min(1024, eng('quality', 'shadowMap')) : eng('quality', 'shadowMap'),
     gl = EGL.gl;
   let fit = dglShadowRect(C);
   const cache = (eng('quality', 'shadowCache') ?? true) && !DGL.bt && !!gl.blitFramebuffer;
@@ -5397,7 +5404,7 @@ function dglShadowPassFit(items0, sun, C) {
         q(tr[1]),
         q(tr[2]),
         res,
-        DIO.id,
+        walkView.id,
         stat.length,
         stat.length ? stat[0].x + stat[stat.length - 1].z : 0,
         DGL.itemGen || 0,
@@ -5516,7 +5523,7 @@ function dglSkyCols(sc) {
 }
 function dglSky(C, sun, mirror) {
   const gl = EGL.gl,
-    sc = DIO.sc,
+    sc = walkView.sc,
     p = EGL.P.sky,
     U = p.U,
     sky = dglSkyCols(sc);
@@ -5533,7 +5540,7 @@ function dglSky(C, sun, mirror) {
   gl.uniform3fv(U.uSky2, sky[2]);
   gl.uniform3fv(U.uSunCol, sun.col);
   gl.uniform1f(U.uIndoor, sc.indoor ? 1 : 0);
-  gl.uniform1f(U.uTime, DIO.t);
+  gl.uniform1f(U.uTime, walkView.t);
   gl.uniform1f(U.uSunPulse, sun.pulse);
   gl.uniform1f(U.uMirror, mirror);
   gl.uniform1f(U.uClouds, eng('sun', 'clouds'));
@@ -5564,7 +5571,7 @@ export function dglWorldTex() {
 }
 export function dglGround(C, X) {
   const gl = EGL.gl,
-    sc = DIO.sc,
+    sc = walkView.sc,
     p = dglUse('ground', C, X),
     U = p.U,
     P = DGL_PAD;
@@ -5585,7 +5592,7 @@ export function dglGround(C, X) {
   const Pq = DGL.bt
     ? null
     : (() => {
-        const P = DIO.pl,
+        const P = walkView.pl,
           y = (P.yv ?? dioH(P.x, P.z)) + 0.9 + dglCurve(P.x, P.z),
           m = C.vp,
           cx = m[0] * P.x + m[4] * y + m[8] * P.z + m[12],
@@ -5644,12 +5651,12 @@ export function dglGround(C, X) {
 }
 /* where you walked through the grass lately (16 spots, the blades spring back over four seconds) */
 function dglTrail() {
-  const P = DIO.pl,
-    t = DIO.t,
+  const P = walkView.pl,
+    t = walkView.t,
     T = DGL.trail || (DGL.trail = []);
-  if (DGL.trailId !== DIO.id) {
+  if (DGL.trailId !== walkView.id) {
     T.length = 0;
-    DGL.trailId = DIO.id;
+    DGL.trailId = walkView.id;
   }
   const last = T[T.length - 1];
   if (P.walk && (!last || Math.hypot(last.x - P.x, last.z - P.z) > 0.3)) {
@@ -5668,7 +5675,7 @@ function dglTrail() {
 const DGL_PUSH = new Float32Array(24);
 function dglPushers() {
   const A = DGL_PUSH,
-    P = DIO.pl,
+    P = walkView.pl,
     L = [];
   A.fill(0);
   if (DGL.bt && DGL.bt.items) {
@@ -5676,7 +5683,7 @@ function dglPushers() {
   } else {
     if (typeof OWM !== 'undefined' && OWM.bud) L.push([OWM.bud.x, OWM.bud.z, 0.6]);
     if (DGL.encPos) for (const e of DGL.encPos) L.push([e[0], e[1], 0.75]);
-    for (const f of DIO.folk || []) if (Math.hypot(f.x - P.x, f.z - P.z) < 14) L.push([f.x, f.z, 0.5]);
+    for (const f of walkView.folk || []) if (Math.hypot(f.x - P.x, f.z - P.z) < 14) L.push([f.x, f.z, 0.5]);
   }
   L.sort((a, b) => Math.hypot(a[0] - P.x, a[1] - P.z) - Math.hypot(b[0] - P.x, b[1] - P.z));
   for (let i = 0; i < Math.min(8, L.length); i++) {
@@ -5727,8 +5734,8 @@ export function dglGrass(C, X) {
   const gl = EGL.gl,
     p = dglUse('grass', C, X),
     U = p.U,
-    sc = DIO.sc,
-    P = DIO.pl;
+    sc = walkView.sc,
+    P = walkView.pl;
   if (U['uFlw[0]'] || U.uFlw) {
     const F = dglFlowers(sc),
       loc = U.uFlw || U['uFlw[0]'];
@@ -5739,7 +5746,7 @@ export function dglGrass(C, X) {
   if (U.uPush) gl.uniform3fv(U.uPush, dglPushers());
   gl.uniform3fv(U.uRight, C.right);
   gl.uniform3f(U.uPl, P.x, 0, P.z);
-  gl.uniform1f(U.uT, RM ? 0 : DIO.t);
+  gl.uniform1f(U.uT, RM ? 0 : walkView.t);
   gl.uniform1f(U.uWind, (sc.wind ?? 1) * eng('grass', 'wind'));
   gl.uniform1f(U.uGust, eng('grass', 'gusts'));
   gl.uniform1f(U.uBend, eng('grass', 'bend'));
@@ -5766,7 +5773,7 @@ export function dglGrass(C, X) {
   } else {
     const F = dglFrustum(C.vp),
       far = (DGL.q || 0) >= 3 ? 38 : 1e9,
-      Pp = DIO.pl;
+      Pp = walkView.pl;
     gl.bindBuffer(gl.ARRAY_BUFFER, G.ib);
     let drawn = 0;
     for (const c of G.chunks) {
@@ -5793,7 +5800,7 @@ function dglImId(im) {
 }
 /* alpha 0.4.1: the title's town springs up out of the loading screen (dglRiseStart from js/boot.js) */
 export function dglRiseStart(load) {
-  if (RM || typeof DIO === 'undefined') return;
+  if (RM || typeof walkView === 'undefined') return;
   DGL.rise = { t0: performance.now(), c: null, load: !!load, seen: new WeakMap() };
 }
 /* how far up a thing has grown (0 to a little over 1). While the game loads, a ring round the middle of the view widens
@@ -5804,10 +5811,10 @@ function dglRiseK(it) {
   if (!R.c) {
     let c = null;
     try {
-      const fr = DIO.director && DIO.director.frame ? DIO.director.frame() : null;
+      const fr = walkView.director && walkView.director.frame ? walkView.director.frame() : null;
       c = fr && fr.center;
     } catch (e) {}
-    R.c = c || [DIO.pl.x, DIO.pl.z];
+    R.c = c || [walkView.pl.x, walkView.pl.z];
   }
   const f = typeof LD !== 'undefined' && LD.el ? LD.f : 1,
     key = it.p || it.f || it,
@@ -5834,8 +5841,8 @@ export function dglSprites(C, items, X, hits, labels, PPU) {
   const gl = EGL.gl,
     p = dglUse('sprite', C, X),
     U = p.U,
-    P = DIO.pl,
-    sc = DIO.sc,
+    P = walkView.pl,
+    sc = walkView.sc,
     sun = X.sun;
   eglBindQuad();
   if (U.uWave) gl.uniform3f(U.uWave, 0, 0, 0);
@@ -5946,7 +5953,7 @@ export function dglSprites(C, items, X, hits, labels, PPU) {
     if (it.M && it.M.blades) {
       const b = it.M.blades,
         BT = eglImg(dioImg(b.img));
-      if (BT) dglBlades(p, it, b, BT, (RM ? 0 : DIO.t / 1100) * (sc.wind || 1) * eng('grass', 'wind'), C, X);
+      if (BT) dglBlades(p, it, b, BT, (RM ? 0 : walkView.t / 1100) * (sc.wind || 1) * eng('grass', 'wind'), C, X);
     }
     if (it.M && it.M.hands && !it.far && !it.layer) dglHands(p, it, C, X);
     if (it.far || it.layer) continue;
@@ -6212,7 +6219,7 @@ function dglFlat(it, T, C, X) {
     cx = it.x + (it.ox * s + w / 2) * it.flip,
     cz = it.z - (it.oy * s + h / 2) * 0.95;
   /* v22: lily pads on water bob and turn a little */ const wet = /lily/.test((it.p && it.p.k) || '') && !RM,
-    ph = (DIO.t || 0) / 1000 + it.x * 1.3 + it.z * 0.7,
+    ph = (walkView.t || 0) / 1000 + it.x * 1.3 + it.z * 0.7,
     an = wet ? Math.sin(ph * 0.45) * 0.07 : 0,
     bob = wet ? Math.sin(ph * 1.2) * 0.012 : 0;
   gl.uniform3f(U.uP, cx, dioH(it.x, it.z) + 0.04 + bob + dglCurve(it.x, it.z), cz);
@@ -6282,7 +6289,7 @@ export function dglHit(it, C, hits, labels, PPU) {
       labels.push({ k: 'bang', x: q.x, y: box.y0 - 2, col: '#E2B92C' });
     if (it.f.sayT > 0) labels.push({ k: 'say', x: q.x, y: box.y0 - 2, t: it.f.say, a: Math.min(1, it.f.sayT * 3) });
   } else if (it.k === 'enc') {
-    const by = box.y0 - 8 - Math.abs(Math.sin(DIO.t / 380 + it.x)) * 4;
+    const by = box.y0 - 8 - Math.abs(Math.sin(walkView.t / 380 + it.x)) * 4;
     hits.push({
       k: 'enc',
       e: it.e,
@@ -6300,11 +6307,11 @@ export function dglHit(it, C, hits, labels, PPU) {
 /* alpha 0.2: is there water within 5 m to the side, 1 m in front or 9 m behind (the reflection pass asks this of
    everything it might mirror): a summed table of the view's water tiles, rebuilt when the tiles change */
 function dglWaterNear(x, z) {
-  const wt = DIO.water;
+  const wt = walkView.water;
   if (!wt || !wt.length) return false;
   let Q = DGL.wsat;
   if (!Q || Q.src !== wt) {
-    const sc = DIO.sc,
+    const sc = walkView.sc,
       W = Math.max(1, sc.w | 0),
       H = Math.max(1, sc.h | 0),
       R = W + 1,
@@ -6416,7 +6423,7 @@ export function dglWgAt(x, z) {
   return G.dep[q] > 0 || G.y[q] !== 0 ? { dep: G.dep[q], kind: G.kind[q], y: G.y[q] } : null;
 }
 function dglWaterLife() {
-  const t = (RM ? 0 : DIO.t || 0) / 1000,
+  const t = (RM ? 0 : walkView.t || 0) / 1000,
     now = performance.now() / 1000,
     dt = Math.min(0.1, Math.max(0, now - (DGL.wlT || now)));
   DGL.wlT = now;
@@ -6451,9 +6458,9 @@ function dglWaterLife() {
           }
         }
     /* v47: rings now and then round what stands in the water: rocks, posts, reeds, the legs of a jetty */
-    if (DGL.wetPropsId !== DIO.id) {
-      DGL.wetPropsId = DIO.id;
-      DGL.wetProps = (DIO.sc.props || [])
+    if (DGL.wetPropsId !== walkView.id) {
+      DGL.wetPropsId = walkView.id;
+      DGL.wetProps = (walkView.sc.props || [])
         .filter(p => {
           const M = dioData().sc.props[p.k];
           return M && !M.walk && typeof dglWgAt === 'function' && dglWgAt(p.x, p.z);
@@ -6509,7 +6516,7 @@ function dglWaterU(U) {
 function dglReflLevel() {
   const G = DGL.wlevels;
   if (!G || G.length < 2) return (DGL.wlevelR = DGL.wlevel || 0);
-  const P = DIO.pl;
+  const P = walkView.pl;
   let best = null,
     bs = -1;
   for (const g of G) {
@@ -6528,7 +6535,7 @@ export function dglWater(C, X, rw, rh) {
   const gl = EGL.gl,
     p = dglUse('water', C, X),
     U = p.U,
-    sc = DIO.sc,
+    sc = walkView.sc,
     sky = dglSkyCols(sc);
   gl.activeTexture(gl.TEXTURE0);
   gl.bindTexture(gl.TEXTURE_2D, DGL.water && EGL.fb.refl ? EGL.fb.refl.c : EGL.white);
@@ -6576,8 +6583,8 @@ export function dglWater(C, X, rw, rh) {
    faint dusty shaft from the glass to the floor, the glass itself darkening at night; pendant lamps come on in the
    evening; the floor darkens toward the walls and the walls get a skirting board (in the ground shader) */
 function dglRoomBox(sc) {
-  if (DGL.roomBoxId === DIO.id) return DGL.roomBox;
-  DGL.roomBoxId = DIO.id;
+  if (DGL.roomBoxId === walkView.id) return DGL.roomBox;
+  DGL.roomBoxId = walkView.id;
   DGL.roomBox = null;
   if (!sc.room) return null;
   const Rr = sc.roomRect || [0, 0, sc.w, sc.h],
@@ -6600,7 +6607,7 @@ function dglRoomSky() {
   DGL.roomSkyT = now;
   let st;
   try {
-    st = envState(envHere() || DIO.sc);
+    st = envState(envHere() || walkView.sc);
   } catch (e) {
     st = { h: 13, rise: 6, set: 20, night: 0, dusk: 0, dawn: 0, wx: 'clear' };
   }
@@ -6674,8 +6681,8 @@ function dglLampTex(on) {
 }
 /* two lamps on the back wall, one each side, where nothing hangs or stands against it */
 function dglRoomLamps(sc) {
-  if (DGL.lampsId === DIO.id) return DGL.lamps;
-  DGL.lampsId = DIO.id;
+  if (DGL.lampsId === walkView.id) return DGL.lamps;
+  DGL.lampsId = walkView.id;
   const B = dglRoomBox(sc);
   if (!B) return (DGL.lamps = []);
   const W = B[1] - B[0],
@@ -6738,7 +6745,7 @@ function dglRoomLights(sc, L, lb) {
     }
 }
 function dglRoomFx(C, U, items, glows, t, rm) {
-  const sc = DIO.sc;
+  const sc = walkView.sc;
   if (!sc.room || (eng('lights', 'roomLight') ?? true) === false) return;
   const gl = EGL.gl,
     R = dglRoomSky(),
@@ -6905,7 +6912,7 @@ function dglRoomFx(C, U, items, glows, t, rm) {
 /* v31: a room's front wall, cut off low like a doll's house so you see in, with the doorway left open where the exit
    is; its face runs down into the dark under the floor, so the room reads as a box that ends at its door */
 function dglRoomFront(C, X) {
-  const sc = DIO.sc;
+  const sc = walkView.sc;
   if (!sc.room || (eng('lights', 'roomLight') ?? true) === false) return;
   const B = dglRoomBox(sc);
   if (!B) return;
@@ -6921,8 +6928,8 @@ function dglRoomFront(C, X) {
     zf = Rr[1] - 0.001,
     x0 = B[0] - 0.25,
     x1 = B[1] + 0.25;
-  if (DGL.frontKey !== DIO.id) {
-    DGL.frontKey = DIO.id;
+  if (DGL.frontKey !== walkView.id) {
+    DGL.frontKey = walkView.id;
     const wc = hexA((sc.wallCol || [])[10] || '#D9B79C'),
       c = cnv(1, 32),
       x = c.getContext('2d'),
@@ -7042,7 +7049,9 @@ function dglBasins(items) {
 }
 function dglBasinSet(L) {
   const key =
-    DIO.id + '|' + L.map(b => b.B.map(q => [q.x, q.y, q.z, q.rx].map(v => v.toFixed(2)).join(',')).join(';')).join('/');
+    walkView.id +
+    '|' +
+    L.map(b => b.B.map(q => [q.x, q.y, q.z, q.rx].map(v => v.toFixed(2)).join(',')).join(';')).join('/');
   DGL.basinL = L;
   DGL.basinP = new Set(L.map(b => b.p));
   if (DGL.basinKey === key) return;
@@ -7214,8 +7223,8 @@ function dglWeather(quad, glows, U, R, Up, dt, rm) {
   const gl = EGL.gl,
     E = ENV,
     BT = DGL.bt,
-    P = BT ? { x: BT.center[0], z: BT.center[1] } : DIO.pl,
-    k = eng('air', 'weather') * (DIO.R < 0.75 ? 0.5 : 1);
+    P = BT ? { x: BT.center[0], z: BT.center[1] } : walkView.pl,
+    k = eng('air', 'weather') * (walkView.R < 0.75 ? 0.5 : 1);
   /* alpha 0.4: while a front passes, the rain is as heavy as it will be (or was) but only on its side of the curtain */
   const Cu = E.curtain,
     inC = x => !Cu || (Cu.into ? Cu.dir * (x - P.x) < Cu.e * 11 : Cu.dir * (x - P.x) > Cu.e * 11);
@@ -7231,7 +7240,7 @@ function dglWeather(quad, glows, U, R, Up, dt, rm) {
     nS = Math.round(110 * snow),
     nA = Math.round(80 * ash),
     n = nR + nS + nA,
-    wind = (DIO.sc.wind || 1) * (0.35 + E.storm * 0.9),
+    wind = (walkView.sc.wind || 1) * (0.35 + E.storm * 0.9),
     sp = rm ? 1 : 0.2;
   const home = q => {
     for (let t = 0; t < 6; t++) {
@@ -7272,8 +7281,8 @@ function dglWeather(quad, glows, U, R, Up, dt, rm) {
     } else {
       const fall = kd === 1 ? 1.05 : 0.7;
       q.y -= fall * dt * sp;
-      q.x += (Math.sin(DIO.t * 0.0011 + q.ph) * 0.45 + wind * 0.5) * dt * sp;
-      q.z += Math.cos(DIO.t * 0.0009 + q.ph * 1.3) * 0.2 * dt * sp;
+      q.x += (Math.sin(walkView.t * 0.0011 + q.ph) * 0.45 + wind * 0.5) * dt * sp;
+      q.z += Math.cos(walkView.t * 0.0009 + q.ph * 1.3) * 0.2 * dt * sp;
       if (q.y < gy) {
         home(q);
         continue;
@@ -7318,7 +7327,7 @@ const DGL_PRINT_COL = {
   U: [0.68, 0.74, 0.88],
 };
 function dglPrintAt(x, z, a, paw) {
-  const sc = DIO.sc;
+  const sc = walkView.sc;
   if (!sc || (sc.indoor && sc.far !== 'cave')) return;
   let ch = dioTer(x, z),
     col = DGL_PRINT_COL[ch];
@@ -7331,10 +7340,10 @@ function dglPrintAt(x, z, a, paw) {
   if (P.length > 140) P.splice(0, P.length - 140);
 }
 function dglPrints(quad, U, R, Up, dt) {
-  const pl = DIO.pl,
+  const pl = walkView.pl,
     gl = EGL.gl;
-  if (DGL.printId !== DIO.id) {
-    DGL.printId = DIO.id;
+  if (DGL.printId !== walkView.id) {
+    DGL.printId = walkView.id;
     DGL.prints = [];
     DGL.lastPrint = null;
   }
@@ -7376,9 +7385,9 @@ function dglPrints(quad, U, R, Up, dt) {
    (glowing moths in the Spore Forest); in autumn, leaves skittering along the streets in the wind. Each is a handful
    of sprites near you, so they cost next to nothing. */
 function dglLifeFx(quad, glows, t, rm, dt, sc, C0) {
-  const L = DIO.life;
+  const L = walkView.life;
   if (!L) return;
-  const P = DIO.pl,
+  const P = walkView.pl,
     E = typeof ENV !== 'undefined' && ENG_CTX.env ? ENV : null,
     night = E ? E.night : 0,
     ss = E ? E.season : 'summer';
@@ -7512,7 +7521,7 @@ export function dglFxPass(C, items, X, dark, t, dt) {
   const gl = EGL.gl,
     p = dglUse('fx', C, X),
     U = p.U,
-    sc = DIO.sc,
+    sc = walkView.sc,
     C0 = dioData().sc,
     rm = RM ? 0 : 1,
     R = C.right,
@@ -7712,7 +7721,7 @@ export function dglFxPass(C, items, X, dark, t, dt) {
     }
   }
   if (!sc.indoor && eng('air', 'particles') > 0) {
-    if (!DIO.life || DIO.life.id !== DIO.id) {
+    if (!walkView.life || walkView.life.id !== walkView.id) {
       const fl = [],
         tr = [];
       for (const p of sc.props || []) {
@@ -7722,13 +7731,13 @@ export function dglFxPass(C, items, X, dark, t, dt) {
         if (/flower/.test(g) || /flower/.test(p.k)) fl.push(p);
         if (/tree_(oak|fruit|birch)|^tree$/.test(g) || p.k === 'tree_oak_autumn') tr.push(p);
       }
-      DIO.life = {
-        id: DIO.id,
+      walkView.life = {
+        id: walkView.id,
         fl: fl.filter((_, i) => i % 2 === 0).slice(0, 6),
         tr: tr.filter((_, i) => i % 2 === 0).slice(0, 7),
       };
     }
-    DIO.life.fl.forEach((p, i) => {
+    walkView.life.fl.forEach((p, i) => {
       const bx = p.x + Math.sin((t * rm) / 1500 + i * 1.7) * 1.1 + Math.sin((t * rm) / 610 + i) * 0.25,
         bz = p.z + Math.cos((t * rm) / 1900 + i * 2) * 0.7;
       quad(
@@ -7742,7 +7751,7 @@ export function dglFxPass(C, items, X, dark, t, dt) {
         1
       );
     });
-    DIO.life.tr.forEach((p, i) => {
+    walkView.life.tr.forEach((p, i) => {
       const M = C0.props[p.k],
         per = 6500 + i * 700,
         ph = ((t * rm) / per + i * 0.37) % 1,
@@ -7919,7 +7928,7 @@ export function dglFxPass(C, items, X, dark, t, dt) {
       }
     }
   }
-  const PS = DIO.parts;
+  const PS = walkView.parts;
   for (let i = PS.length - 1; i >= 0; i--) {
     const q = PS[i];
     q.life += dt;

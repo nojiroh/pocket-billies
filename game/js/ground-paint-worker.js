@@ -12,7 +12,6 @@ import { provide } from './hooks.js';
 import { clamp } from './util.js';
 import { hexA, pk, pkh } from './art.js';
 import {
-  DIO,
   DIO_PAD,
   DIO_T0,
   DIO_TA,
@@ -42,6 +41,7 @@ import {
   dioWearAmtFn,
   dioWearFn,
   dioWearLines,
+  walkView,
 } from './walk-view.js';
 import { eng } from './engine/settings.js';
 import { DGL_TERRAIN_MAT } from './walk-view-gl.js';
@@ -212,7 +212,7 @@ function pwSettle() {
 }
 /* a view's id with the helper: its ground key (tiles, sizes, heights, art) and its own id */
 function pwCtxId(sc) {
-  const key = (sc.id || '') + '|' + (sc === DIO.sc && DIO.gkey ? DIO.gkey : dioGroundKey(sc));
+  const key = (sc.id || '') + '|' + (sc === walkView.sc && walkView.gkey ? walkView.gkey : dioGroundKey(sc));
   let id = PW.ids.get(key);
   if (id == null) {
     id = ++PW.ctxN;

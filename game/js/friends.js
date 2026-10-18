@@ -15,7 +15,7 @@ import { ROUTE, SP } from './game-data.js';
 import { N, S, U, cleanName, esc, plural } from './game-state.js';
 import { owFrames, portraitHTML, trWarm } from './person-art.js';
 import { sprHTML } from './skeleton-rig.js';
-import { DIO, dioDirOf } from './walk-view.js';
+import { dioDirOf, walkView } from './walk-view.js';
 import { dglPerson } from './walk-view-gl.js';
 import { owBuddyMon, owItem } from './world-billies.js';
 import { MAP, mapSelect } from './world-map.js';
@@ -416,7 +416,7 @@ document.addEventListener('click', ev => {
 function frWorldItems(out, t, C0) {
   if (
     !FR.list.length ||
-    !DIO.sc ||
+    !walkView.sc ||
     U.inside ||
     U.bench ||
     typeof owFrames !== 'function' ||
@@ -439,7 +439,7 @@ function frWorldItems(out, t, C0) {
     }
     if (!fr) continue;
     if (typeof trWarm === 'function') trWarm(who);
-    const P = DIO.pl,
+    const P = walkView.pl,
       dir = P && Math.hypot(P.x - x, P.z - z) < 5 ? dioDirOf(P.x - x, P.z - z) : 'down',
       set = fr[dir] || fr.down,
       im = set && set[0];

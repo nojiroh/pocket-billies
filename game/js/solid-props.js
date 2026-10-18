@@ -15,7 +15,7 @@ import { expose } from './test-globals.js';
 import { RM, provide } from './hooks.js';
 import { clamp } from './util.js';
 import { cnv } from './art.js';
-import { DIO, dioHash, dioImg, dioProj } from './walk-view.js';
+import { dioHash, dioImg, dioProj, walkView } from './walk-view.js';
 import { eng } from './engine/settings.js';
 import { EGL, EGL_GLSL_COMMON, EGL_GLSL_LIGHT, EGL_GLSL_LOOK, EGL_MATS, eglImg, eglPrograms } from './engine/webgl.js';
 import { DGL, dglBlades, dglBudget, dglCurveArgs, dglFol, dglHit, dglLookU, dglUse } from './walk-view-gl.js';
@@ -1126,7 +1126,7 @@ function p3dTag(it, PPU) {
 /* level of detail: solid trees near the camera's focus only (the nearest few dozen within about 20 m), solid props
    within about 32 m; the rest stay pictures, which from that far look the same */
 function p3dLod(items, C) {
-  const P = DIO.pl,
+  const P = walkView.pl,
     bc = DGL.bt && (DGL.bt.center || (DGL.bt.look && [DGL.bt.look.tgt[0], DGL.bt.look.tgt[2]])),
     fx = bc ? bc[0] : P.x,
     fz = bc ? bc[1] : P.z,
@@ -1174,8 +1174,11 @@ function p3dU(p, it, M) {
   gl.uniform1f(U.uShear, (it.shear || 0) + (V.rot ? (h2 - 0.5) * 0.07 : 0));
   if (it.lk && U.uWear) dglLookU(U, it.lk);
   if (U.uTilt) gl.uniform2f(U.uTilt, it.tilt ? it.tilt[0] : 0, it.tilt ? it.tilt[1] : 0);
-  gl.uniform1f(U.uT, RM ? 0 : DIO.t);
-  gl.uniform1f(U.uWob, V.wind ? (it.M.sway || 0.3) * 0.14 * ((DIO.sc && DIO.sc.wind) || 1) * eng('grass', 'wind') : 0);
+  gl.uniform1f(U.uT, RM ? 0 : walkView.t);
+  gl.uniform1f(
+    U.uWob,
+    V.wind ? (it.M.sway || 0.3) * 0.14 * ((walkView.sc && walkView.sc.wind) || 1) * eng('grass', 'wind') : 0
+  );
   gl.uniform1f(U.uRot, (V.rot ? (h1 - 0.5) * 0.42 : 0) + (it.lk ? it.lk.rot : 0));
   gl.uniform1f(U.uClump, M && M.tex ? 1 : 0);
   if (U.uFol) {
@@ -1200,7 +1203,7 @@ export function p3dDraw(C, items, X, hits, labels, PPU) {
     const gl = EGL.gl;
     eglPrograms(P3D_SH);
     let p = null;
-    const P = DIO.pl,
+    const P = walkView.pl,
       me = dioProj(C, P.x, 0.9, P.z);
     for (const it of items) {
       if (!it.vol || it.vis === false) continue;
@@ -1252,7 +1255,8 @@ export function p3dDraw(C, items, X, hits, labels, PPU) {
       if (it.M && it.M.blades) {
         const b = it.M.blades,
           BT = eglImg(dioImg(b.img));
-        if (BT) dglBlades(p, it, b, BT, (RM ? 0 : DIO.t / 1100) * (DIO.sc.wind || 1) * eng('grass', 'wind'), C, X);
+        if (BT)
+          dglBlades(p, it, b, BT, (RM ? 0 : walkView.t / 1100) * (walkView.sc.wind || 1) * eng('grass', 'wind'), C, X);
       }
       dglHit(it, C, hits, labels, PPU);
     }

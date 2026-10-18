@@ -13,7 +13,7 @@ import { expose } from './test-globals.js';
 import { provide, sfxAt } from './hooks.js';
 import { clamp } from './util.js';
 import { cnv } from './art.js';
-import { DIO, dioData, dioFree, dioHash, dioImg, dioOk, dioPoly, dioPolyAt, dioStepOK } from './walk-view.js';
+import { dioData, dioFree, dioHash, dioImg, dioOk, dioPoly, dioPolyAt, dioStepOK, walkView } from './walk-view.js';
 import { dglRing, dioGroundH, dioH, dioHRaw } from './walk-view-gl.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -107,15 +107,15 @@ function lifeRnd(a, b) {
   return dioHash(a * 131 + 7, b * 71 + 3);
 }
 function lifeKey(sc) {
-  return JSON.stringify(sc.life || []) + '|' + (DIO.water || []).length;
+  return JSON.stringify(sc.life || []) + '|' + (walkView.water || []).length;
 }
 function lifeInit() {
-  const sc = DIO.sc;
-  LIFE.id = DIO.id;
+  const sc = walkView.sc;
+  LIFE.id = walkView.id;
   LIFE.key = lifeKey(sc);
   LIFE.list = [];
   let n = 0;
-  const water = DIO.water || [];
+  const water = walkView.water || [];
   for (const L of sc.life || []) {
     const K = LIFE_KIND[L.k];
     if (!K) continue;
@@ -182,7 +182,7 @@ function lifeInit() {
 }
 /* a dry spot right next to the water (frogs) */
 function lifeShore(a, b) {
-  const W = DIO.water || [];
+  const W = walkView.water || [];
   if (!W.length) return null;
   for (let k = 0; k < 40; k++) {
     const w = W[Math.floor(((a * 977.13 + k * 0.618034) % 1) * W.length)];
@@ -206,9 +206,9 @@ function lifeTarget(c) {
       return;
     }
   }
-  const sc = DIO.sc;
+  const sc = walkView.sc;
   if (c.k === 'duck') {
-    const W = DIO.water;
+    const W = walkView.water;
     for (let k = 0; k < 12; k++) {
       const w = W[Math.floor(Math.random() * W.length)];
       if (Math.hypot(w[0] - c.x, w[1] - c.z) < 5) {
@@ -243,18 +243,18 @@ export function lifeShift(dx, dz, id) {
     if (a.P && a.P.p) a.P = dioPoly(a.P.p.map(([x, z]) => [x + dx, z + dz]));
   }
   LIFE.id = id;
-  LIFE.key = DIO.sc ? lifeKey(DIO.sc) : LIFE.key;
+  LIFE.key = walkView.sc ? lifeKey(walkView.sc) : LIFE.key;
 }
 export function lifeStep(dt) {
-  const sc = DIO.sc;
+  const sc = walkView.sc;
   if (!sc) return;
   /* the water may only be known a few frames after the scene opens: ducks and frogs join then */ if (
-    LIFE.id !== DIO.id ||
+    LIFE.id !== walkView.id ||
     LIFE.key !== lifeKey(sc)
   )
     lifeInit();
   if (!LIFE.list.length) return;
-  const P = DIO.pl;
+  const P = walkView.pl;
   for (const c of LIFE.list) {
     const K = LIFE_KIND[c.k];
     c.t += dt;
@@ -310,7 +310,7 @@ export function lifeStep(dt) {
     }
     /* v47: a duck paddles away from you, keeping to the water */
     if (c.k === 'duck' && dp < 1.7 && c.st !== 'run') {
-      const W = DIO.water || [];
+      const W = walkView.water || [];
       let best = null,
         bs = -1;
       for (let k = 0; k < 24 && W.length; k++) {
@@ -384,7 +384,7 @@ export function lifeStep(dt) {
       c.tx = c.x + Math.cos(a) * far;
       c.tz = c.z + Math.sin(a) * far;
       /* a frog leaps into the water instead */ if (K.shore) {
-        const W = DIO.water || [];
+        const W = walkView.water || [];
         let best = null,
           bd = 4;
         for (const w of W) {
@@ -498,5 +498,5 @@ function lifeSprites() {
   return out;
 }
 function dioHRawSafe(x, z) {
-  return typeof dioHRaw === 'function' ? dioHRaw(DIO.sc, x, z) : 0;
+  return typeof dioHRaw === 'function' ? dioHRaw(walkView.sc, x, z) : 0;
 }

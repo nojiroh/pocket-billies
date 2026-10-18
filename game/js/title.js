@@ -14,7 +14,7 @@ import { userFps } from './frame-scheduler.js';
 import { uiIco } from './art.js';
 import { humanHTML } from './person-art.js';
 import { applyPreferences } from './settings-screen.js';
-import { DIO, dioScene, dioStop } from './walk-view.js';
+import { dioScene, dioStop, walkView } from './walk-view.js';
 import { DGL, dioH, dioMount } from './walk-view-gl.js';
 import { music, musicFor } from './sound.js';
 import { csSceneId, csStart, csStartName, csWanted } from './cutscene.js';
@@ -38,8 +38,8 @@ export function titleWanted() {
 }
 /* the camera: a slow drift along the front of the town, high above the rooftops, looking up the main street */
 function titleFrame() {
-  if (!TITLE.on || !DIO.sc) return null;
-  const sc = DIO.sc,
+  if (!TITLE.on || !walkView.sc) return null;
+  const sc = walkView.sc,
     now = performance.now(),
     k = RM ? 0.5 : 0.5 - 0.5 * Math.cos(((now - TITLE.t0) / 1000) * 0.05),
     /* (in the walk view the town is one part of a bigger picture: frame the town itself) */ b = sc.baseId
@@ -104,7 +104,7 @@ export async function titleMount() {
     (typeof csStartName === 'function' ? csStartName() : 'The town') + ', from above the rooftops'
   );
   TITLE.t0 = performance.now();
-  DIO.director = { frame: titleFrame };
+  walkView.director = { frame: titleFrame };
   try {
     await dioMount(cv, typeof csSceneId === 'function' ? csSceneId() : sceneIdAt(START_NODE), {
       state: () => ({ who: null, npcs: [], enc: [], mode: 'line' }),
@@ -117,11 +117,11 @@ export async function titleMount() {
     console.error(e);
   }
   if (!TITLE.on || run !== TITLE.run) return;
-  if (!DGL.on || !DIO.ready) {
+  if (!DGL.on || !walkView.ready) {
     document.body.classList.add('ttl-flat');
     return;
   }
-  DIO.cv.classList.add('in');
+  walkView.cv.classList.add('in');
   /* the painted landscape stays in front until the town's ground is laid and drawn, then fades away */
   const t0 = performance.now(),
     poll = () => {
@@ -147,12 +147,12 @@ function titleEnd() {
   TITLE.run++;
   U.title = false;
   document.body.classList.remove('in-title', 'ttl-live', 'ttl-flat');
-  if (DIO.director && DIO.director.frame === titleFrame) {
-    DIO.director = null;
+  if (walkView.director && walkView.director.frame === titleFrame) {
+    walkView.director = null;
     DGL.camT = null;
     DGL.focus = null;
   }
-  if (DIO.cv) dioStop();
+  if (walkView.cv) dioStop();
 }
 function titleNew() {
   if (!S.started) {

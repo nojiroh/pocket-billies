@@ -22,7 +22,6 @@ import { ADJ, LINKS, ROUTE } from './game-data.js';
 import { U } from './game-state.js';
 import { artLoad, hexA } from './art.js';
 import {
-  DIO,
   DIO_GCACHE,
   DIO_STEPS,
   dioData,
@@ -36,6 +35,7 @@ import {
   dioScene,
   dioStepCell,
   dioSteps,
+  walkView,
 } from './walk-view.js';
 import { eng } from './engine/settings.js';
 import { smooth01 } from './engine/webgl.js';
@@ -729,8 +729,8 @@ function wrLookMix(A, B, f) {
   return o;
 }
 function wrLookTick() {
-  const sc = DIO.sc,
-    P = DIO.pl;
+  const sc = walkView.sc,
+    P = walkView.pl;
   if (!sc || !sc.look0 || !sc.lookSeams || !P) return;
   let best = null;
   for (const m of sc.lookSeams) {
@@ -1986,10 +1986,17 @@ function wrJoinTrip(J, node, f) {
 /* how far along the way out you stand (0 if you aren't in that place's view) */
 function wrStartU(xn, P) {
   const sid = sceneIdAt(xn);
-  if (!(DIO.ready && DIO.sc && DIO.pl && !DIO.pl.fresh && (DIO.sc.baseId || DIO.id) === sid)) return 0;
-  const o = DIO.sc.baseOff || [0, 0],
-    x = DIO.pl.x - o[0],
-    z = DIO.pl.z - o[1];
+  if (!(
+    walkView.ready &&
+    walkView.sc &&
+    walkView.pl &&
+    !walkView.pl.fresh &&
+    (walkView.sc.baseId || walkView.id) === sid
+  ))
+    return 0;
+  const o = walkView.sc.baseOff || [0, 0],
+    x = walkView.pl.x - o[0],
+    z = walkView.pl.z - o[1];
   let best = null,
     s = 0;
   for (let i = 1; i < P.pts.length; i++) {
@@ -2011,7 +2018,7 @@ export function wrPrefetch(R, u, fwd, tv) {
   if (R.join) {
     /* the next place's view, from 40 m before the seam */ if (tv && tv.inX && tv.PX.len - u < 40) {
       const sc = wrHubScene(tv.yn);
-      if (sc && sc.id !== DIO.id) {
+      if (sc && sc.id !== walkView.id) {
         const e = tv.PY.pts[tv.PY.pts.length - 1],
           o = sc.baseOff || [0, 0];
         wrGetReady(sc.id, false, [e[0] + o[0], e[1] + o[1]]);
@@ -2022,7 +2029,7 @@ export function wrPrefetch(R, u, fwd, tv) {
   const ahead = clamp(fwd ? u + 40 : u - 40, 0, R.Lr);
   /* v46: 40 m ahead (was 26; and near the end, the far place itself), the painting and the card both need the time */ const v =
     wrViewFor(R, ahead);
-  if (v.id === DIO.id) return;
+  if (v.id === walkView.id) return;
   const sc = wrScene(v, R);
   if (!sc) return;
   /* where you will be when it is shown: a little past where you are now */ const p = wrAt(
@@ -2033,14 +2040,14 @@ export function wrPrefetch(R, u, fwd, tv) {
   wrGetReady(v.id, false, [p.x - o[0] - sc.comp.box[0], p.z - o[1] - sc.comp.box[1]]);
 }
 function wrPrefetchView(v, R) {
-  if (v.id === DIO.id) return;
+  if (v.id === walkView.id) return;
   wrScene(v, R);
   wrGetReady(v.id);
 }
 /* v46: is a view ready to be shown at once (its ground painted and, in 3D, built on the card)? wrGetReady also starts
    whatever is missing: the painting in slices of about 8 ms, then the building on the card a few ms a frame (dglPrepare) */
 function wrReady(id) {
-  if (id === DIO.id) return true;
+  if (id === walkView.id) return true;
   const sc = dioScene(id);
   if (!sc) return false;
   const key = dioGroundKey(sc);
@@ -2076,23 +2083,24 @@ export function wrGetReady(id, urgent, focus) {
    well inside it (on a road the views overlap by 40 m, so there is time). If you would walk off its edge the switch
    happens anyway, built on the spot as before. */
 export function wrGate(v) {
-  if (!wrOn() || !v || v.id === DIO.id || !DIO.ready || !DIO.sc || !DIO.pl || DIO.pl.fresh) return v;
+  if (!wrOn() || !v || v.id === walkView.id || !walkView.ready || !walkView.sc || !walkView.pl || walkView.pl.fresh)
+    return v;
   if (wrGetReady(v.id, true, v.pos)) {
     WORLD.heldFor = null;
     if (typeof DGL !== 'undefined') DGL.prepBoost = 1;
     return v;
   }
-  const d = wrDelta(DIO.id, v.id);
+  const d = wrDelta(walkView.id, v.id);
   if (!d) return v;
   const x = v.pos[0] - d[0],
     z = v.pos[1] - d[1],
-    sc = DIO.sc,
+    sc = walkView.sc,
     m = 3,
     room = Math.min(x - m, z - m, sc.w - m - x, sc.h - m - z);
   /* alpha 0.2: neighbours share their edges, so a jump to the next place lands inside this view too; only a walk (a trip,
     or a few steps) waits here for the next view, a jump opens it at once */ if (
     v.mode !== 'road' &&
-    Math.hypot(x - DIO.pl.x, z - DIO.pl.z) > 25
+    Math.hypot(x - walkView.pl.x, z - walkView.pl.z) > 25
   )
     return v;
   if (typeof DGL !== 'undefined') DGL.prepBoost = room < 6 ? 4 : room < 12 ? 2 : 1;
@@ -2104,12 +2112,12 @@ export function wrGate(v) {
     WORLD.heldFor = v.id;
     WORLD.holds = (WORLD.holds || 0) + 1;
   }
-  return Object.assign({}, v, { id: DIO.id, pos: [x, z], held: v.id });
+  return Object.assign({}, v, { id: walkView.id, pos: [x, z], held: v.id });
 }
 /* move everything that is in the scene by (dx, dz) and carry on in the next composite without a cut */
 /* alpha 0.2: going into or out of an underground place the picture dips to dark for a moment (you step into a cave) */
 function wrVeil() {
-  const cv = DIO.cv;
+  const cv = walkView.cv;
   if (!cv || !cv.isConnected || (typeof U !== 'undefined' && U.photo)) return;
   let v = document.getElementById('wrVeil');
   if (!v) {
@@ -2134,8 +2142,8 @@ function wrVeil() {
 export function dioShift(id, dx, dz) {
   const sc = dioScene(id);
   if (!sc) return false;
-  const P = DIO.pl;
-  if (!!(DIO.sc && DIO.sc.under) !== !!sc.under) wrVeil();
+  const P = walkView.pl;
+  if (!!(walkView.sc && walkView.sc.under) !== !!sc.under) wrVeil();
   P.x += dx;
   P.z += dz;
   if (P.lx != null) {
@@ -2144,7 +2152,7 @@ export function dioShift(id, dx, dz) {
   }
   if (P.route) P.route = P.route.map(([x, z]) => [x + dx, z + dz]);
   if (P.line) P.line = dioPoly(P.line.p.map(([x, z]) => [x + dx, z + dz]));
-  for (const e of Object.values(DIO.enc || {})) {
+  for (const e of Object.values(walkView.enc || {})) {
     e.x += dx;
     e.z += dz;
     if (e.tx != null) {
@@ -2153,7 +2161,7 @@ export function dioShift(id, dx, dz) {
     }
     e.sc = id;
   }
-  for (const f of (DIO.folkAll && DIO.folkAll.length ? DIO.folkAll : DIO.folk) || []) {
+  for (const f of (walkView.folkAll && walkView.folkAll.length ? walkView.folkAll : walkView.folk) || []) {
     f.x += dx;
     f.z += dz;
     if (f.tx != null) {
@@ -2168,12 +2176,12 @@ export function dioShift(id, dx, dz) {
         if (a) f.A[k] = [a[0] + dx, a[1] + dz];
       }
   }
-  DIO.folkId = id;
-  if (DIO.tap) {
-    DIO.tap.x += dx;
-    DIO.tap.z += dz;
+  walkView.folkId = id;
+  if (walkView.tap) {
+    walkView.tap.x += dx;
+    walkView.tap.z += dz;
   }
-  for (const q of DIO.parts || []) {
+  for (const q of walkView.parts || []) {
     if (q.x != null) q.x += dx;
     if (q.z != null) q.z += dz;
   }
@@ -2188,20 +2196,20 @@ export function dioShift(id, dx, dz) {
     }
     DGL.encPos = [];
   }
-  if (DIO.cam) {
-    if (DIO.cam.x != null) DIO.cam.x += dx;
-    if (DIO.cam.z != null) DIO.cam.z += dz;
-    if (DIO.cam.cx != null) DIO.cam.cx += dx;
-    if (DIO.cam.cz != null) DIO.cam.cz += dz;
+  if (walkView.cam) {
+    if (walkView.cam.x != null) walkView.cam.x += dx;
+    if (walkView.cam.z != null) walkView.cam.z += dz;
+    if (walkView.cam.cx != null) walkView.cam.cx += dx;
+    if (walkView.cam.cz != null) walkView.cam.cz += dz;
   }
   if (typeof lifeShift === 'function') lifeShift(dx, dz, id);
   if (typeof owShift === 'function') owShift(dx, dz);
-  DIO.id = id;
-  DIO.sc = sc;
-  DIO.gkey = '';
-  DIO.cand = null;
-  DIO.nav = null;
-  DIO.npcAt = {};
+  walkView.id = id;
+  walkView.sc = sc;
+  walkView.gkey = '';
+  walkView.cand = null;
+  walkView.nav = null;
+  walkView.npcAt = {};
   P.pk = '';
   if (typeof NWLOG !== 'undefined') NWLOG.add('scene', 'seamless to ' + id);
   return true;

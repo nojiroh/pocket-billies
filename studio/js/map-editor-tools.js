@@ -12,7 +12,7 @@
 import { expose } from '../../game/js/test-globals.js';
 import { VP, provide } from '../../game/js/hooks.js';
 import { $ } from '../../game/js/util.js';
-import { DIO } from '../../game/js/walk-view.js';
+import { walkView } from '../../game/js/walk-view.js';
 import { esc } from './game-stand-ins.js';
 import { ACTS, ST, ask, changed, clone, commit, dialog, render, toast, uidKey } from './studio-app.js';
 import { SCN, scCur, scD, scMapDraw, scPropAt, scSetTile } from './map-editor.js';
@@ -174,8 +174,8 @@ function scxUp(sc, D) {
   }
   if (D.k === 'group') {
     if (D.moved) {
-      DIO.cand = null;
-      DIO.nav = null;
+      walkView.cand = null;
+      walkView.nav = null;
       changed();
       commit(true);
     }
@@ -183,8 +183,8 @@ function scxUp(sc, D) {
   }
   if (D.k === 'scatter') {
     if (D.n) {
-      DIO.cand = null;
-      DIO.nav = null;
+      walkView.cand = null;
+      walkView.nav = null;
       changed();
       commit(true);
       render();
@@ -213,8 +213,8 @@ function scxPaste() {
     sc.props.push(Object.assign(clone(p), { x: +(at[0] + p.x).toFixed(2), z: +(at[1] + p.z).toFixed(2) }));
   SCN.multi = new Set(sc.props.map((_, i) => i).filter(i => i >= n0));
   SCN.sel = null;
-  DIO.cand = null;
-  DIO.nav = null;
+  walkView.cand = null;
+  walkView.nav = null;
   changed();
   commit(true);
   render();
@@ -226,8 +226,8 @@ function scxDeleteMulti() {
   sc.props = sc.props.filter((_, i) => !del.has(i));
   SCN.multi = new Set();
   SCN.sel = null;
-  DIO.cand = null;
-  DIO.nav = null;
+  walkView.cand = null;
+  walkView.nav = null;
   changed();
   commit(true);
   render();
@@ -342,8 +342,8 @@ function scxStampAt(sc, b, x, z, mirror) {
     sc.props.push(q);
   }
   SCN.multi = new Set(sc.props.map((_, i) => i).filter(i => i >= n0));
-  DIO.cand = null;
-  DIO.nav = null;
+  walkView.cand = null;
+  walkView.nav = null;
   changed();
   commit(true);
   scMapDraw();
@@ -510,9 +510,9 @@ function scxRoadLay(sc) {
         any = scSetTile(sc, i, j, SCN.ter) || any;
       }
   if (any) {
-    DIO.gkey = '';
-    DIO.nav = null;
-    DIO.cand = null;
+    walkView.gkey = '';
+    walkView.nav = null;
+    walkView.cand = null;
     changed();
     commit(true);
   }
@@ -523,8 +523,8 @@ ACTS.scxSmoothPath = () => {
   const sc = scCur();
   if (!sc || !sc.path || sc.path.length < 3) return toast('The path needs at least three points to curve.');
   sc.path = scxCurve(sc.path, 1.2).map(([a, b]) => [+a.toFixed(2), +b.toFixed(2)]);
-  DIO.cand = null;
-  DIO.nav = null;
+  walkView.cand = null;
+  walkView.nav = null;
   changed();
   commit(true);
   scMapDraw();

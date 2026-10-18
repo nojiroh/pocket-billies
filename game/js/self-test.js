@@ -19,7 +19,6 @@ import { TR_CACHE } from './person-art.js';
 import { DR, closeDressing } from './dressing-room.js';
 import { SC, scStop } from './battle-stage.js';
 import {
-  DIO,
   DIO_CLK,
   DIO_GCACHE,
   dioActSpot,
@@ -34,6 +33,7 @@ import {
   dioSteps,
   dioStop,
   dioWalkTo,
+  walkView,
 } from './walk-view.js';
 import { eng } from './engine/settings.js';
 import { EGL, eglAttrClashes } from './engine/webgl.js';
@@ -104,11 +104,11 @@ function testScenes() {
 function stSceneChecks(id) {
   const sc = dioScene(id);
   if (!sc) return [];
-  const keep = [DIO.sc, DIO.nav, DIO.gkey],
+  const keep = [walkView.sc, walkView.nav, walkView.gkey],
     out = [];
-  DIO.sc = sc;
-  DIO.nav = null;
-  DIO.gkey = 'check-' + id;
+  walkView.sc = sc;
+  walkView.nav = null;
+  walkView.gkey = 'check-' + id;
   try {
     const far = (q, p) => {
       const e = q && q[q.length - 1];
@@ -123,7 +123,7 @@ function stSceneChecks(id) {
       out.push({ what: c.what, reach: c.reach, got, ok: got === !!c.reach });
     }
   } finally {
-    [DIO.sc, DIO.nav, DIO.gkey] = keep;
+    [walkView.sc, walkView.nav, walkView.gkey] = keep;
   }
   return out;
 }
@@ -359,12 +359,12 @@ async function runFullTest(mode) {
       await stSleep(500);
       k++;
       unblock();
-      if (DIO.ready && DIO.sc) {
-        const sc = DIO.sc,
+      if (walkView.ready && walkView.sc) {
+        const sc = walkView.sc,
           hb = dioHubOf(sc),
           a = k * 1.7,
           r = 3 + (k % 4);
-        if (!DIO.pl.route)
+        if (!walkView.pl.route)
           dioWalkTo([clamp(hb[0] + Math.cos(a) * r, 1, sc.w - 1), clamp(hb[1] + Math.sin(a) * r * 0.7, 1, sc.h - 1)]);
         if (typeof DGL !== 'undefined' && DGL.on) {
           DGL.yawT = Math.sin(k * 0.5) * 0.45;
@@ -414,7 +414,7 @@ async function runFullTest(mode) {
             device: NWLOG.device ? NWLOG.device() : null,
             graphics: g,
             auto: eng('quality', 'auto') ?? null,
-            resolution: typeof DIO !== 'undefined' ? DIO.R : null,
+            resolution: typeof walkView !== 'undefined' ? walkView.R : null,
             level: typeof DGL !== 'undefined' ? (DGL.q ?? null) : null,
             screenHz: typeof FRAME !== 'undefined' ? FRAME.hz : null,
             why: ev,
@@ -435,20 +435,20 @@ async function runFullTest(mode) {
           U.bench = { id };
           render();
           let open = null;
-          for (let i = 0; i < 60 && !(DIO.ready && DIO.id === id); i++) await stSleep(50);
-          open = DIO.ready && DIO.id === id ? Math.round(performance.now() - tm) : null;
+          for (let i = 0; i < 60 && !(walkView.ready && walkView.id === id); i++) await stSleep(50);
+          open = walkView.ready && walkView.id === id ? Math.round(performance.now() - tm) : null;
           await stSleep(Math.max(0, 900 - (performance.now() - tm)));
           const f0 = typeof DGL !== 'undefined' ? DGL.frames : 0;
           await walkAbout(3);
-          if (!DIO.ready || DIO.id !== id)
+          if (!walkView.ready || walkView.id !== id)
             throw new Error(
-              `the scene didn’t open (still ${DIO.id || 'nothing'}${DIO.ready ? '' : ', loading'} after ${Math.round((performance.now() - tm) / 1000)} s)`
+              `the scene didn’t open (still ${walkView.id || 'nothing'}${walkView.ready ? '' : ', loading'} after ${Math.round((performance.now() - tm) / 1000)} s)`
             );
           if (typeof DGL !== 'undefined' && DGL.on && DGL.frames === f0)
             throw new Error('the scene isn’t drawing (black screen): no frames in 3 s');
           if (id === scenes[0]) NWLOG.snap();
           const g = stGeometry(),
-            sc = DIO.sc,
+            sc = walkView.sc,
             gl = typeof DGL !== 'undefined' && DGL.on;
           return [
             `opened in ${open != null ? open + ' ms' : 'over 3 s'}`,
@@ -456,7 +456,7 @@ async function runFullTest(mode) {
             gl && typeof BLD !== 'undefined' && BLD.drawn ? `${BLD.drawn} 3D buildings` : '',
             gl && typeof P3D !== 'undefined' && P3D.drawn ? `${P3D.drawn} solid props` : '',
             gl && DGL.grassDrawn ? `${DGL.grassDrawn} grass patches` : '',
-            (DIO.folk || []).length ? `${DIO.folk.length} folk` : '',
+            (walkView.folk || []).length ? `${walkView.folk.length} folk` : '',
             typeof OWM !== 'undefined' && OWM.bud ? 'buddy along' : '',
             g || '',
           ]
@@ -481,7 +481,7 @@ async function runFullTest(mode) {
           U.bench = { id: sid };
           U.tab = 'walk';
           render();
-          for (let i = 0; i < 80 && !(DIO.ready && DIO.id === sid); i++) await stSleep(100);
+          for (let i = 0; i < 80 && !(walkView.ready && walkView.id === sid); i++) await stSleep(100);
           await stSleep(900);
           const T = diagTimersOn();
           await walkAbout(4);
@@ -531,7 +531,7 @@ async function runFullTest(mode) {
         10
       );
     function stGeometry() {
-      const sc = DIO.sc;
+      const sc = walkView.sc;
       if (!sc || (!sc.steps && !sc.bridges)) return;
       const hub = dioHubOf(sc),
         C0 = dioData().sc,
@@ -618,7 +618,7 @@ async function runFullTest(mode) {
             U.bench = { id };
             render();
             await stSleep(1400);
-            if (!DIO.ready || DIO.id !== id) throw new Error((GD.scenes[id].name || id) + ' didn’t open');
+            if (!walkView.ready || walkView.id !== id) throw new Error((GD.scenes[id].name || id) + ' didn’t open');
             out.push(id === 'grotto' ? 'a dark cave' : 'a shop you walk into');
           }
           return out.join(', ');
@@ -639,7 +639,7 @@ async function runFullTest(mode) {
       S.route.node = back.node;
       render();
       await stSleep(600);
-      for (let i = 0; i < 40 && !(DIO.ready && DIO.id === sceneIdAt(back.node)); i++) await stSleep(200);
+      for (let i = 0; i < 40 && !(walkView.ready && walkView.id === sceneIdAt(back.node)); i++) await stSleep(200);
       /* v43: the stage needs the walk scene open */ S.preferences = S.preferences || {};
       const pref = S.preferences.battleStage;
       S.preferences.battleStage = classic ? 'classic' : 'scene';
@@ -773,16 +773,16 @@ async function runFullTest(mode) {
             U.roam = { id: 'sundown', node: 0, x: h[0], z: h[1] };
           }
           render();
-          for (let i = 0; i < 60 && !(DIO.ready && DIO.id === 'w:sundown*'); i++) await stSleep(100);
-          if (DIO.id !== 'w:sundown*')
-            throw new Error('Marigold Town is not shown with its neighbours (still ' + DIO.id + ')');
+          for (let i = 0; i < 60 && !(walkView.ready && walkView.id === 'w:sundown*'); i++) await stSleep(100);
+          if (walkView.id !== 'w:sundown*')
+            throw new Error('Marigold Town is not shown with its neighbours (still ' + walkView.id + ')');
           const q0 = S.queue,
             t00 = performance.now() - (NWLOG.t0 || 0);
           S.queue = [];
           setTrip(1);
           render();
           await stSleep(600);
-          const views = [DIO.id];
+          const views = [walkView.id];
           let unready = 0,
             shifts = 0,
             worst = 0;
@@ -798,9 +798,9 @@ async function runFullTest(mode) {
               t0 = performance.now();
             for (let i = 0; i < 14; i++) {
               await stSleep(100);
-              if (!DIO.ready) unready++;
-              if (DIO.id !== views[views.length - 1]) {
-                views.push(DIO.id);
+              if (!walkView.ready) unready++;
+              if (walkView.id !== views[views.length - 1]) {
+                views.push(walkView.id);
                 shifts++;
               }
             }
@@ -847,28 +847,33 @@ async function runFullTest(mode) {
             S.route = { node: 0, prog: 0, plan: [], hold: false };
             U.roam = null;
             render();
-            for (let i = 0; i < 60 && !(DIO.ready && DIO.id === 'w:sundown*'); i++) await stSleep(100);
-            if (DIO.id !== 'w:sundown*') throw new Error('Marigold Town is not shown (still ' + DIO.id + ')');
-            const p = DIO.sc.props.find(p => p.act === 'shop' && p.k === 'shop');
+            for (let i = 0; i < 60 && !(walkView.ready && walkView.id === 'w:sundown*'); i++) await stSleep(100);
+            if (walkView.id !== 'w:sundown*') throw new Error('Marigold Town is not shown (still ' + walkView.id + ')');
+            const p = walkView.sc.props.find(p => p.act === 'shop' && p.k === 'shop');
             if (!p) throw new Error('no shop in Marigold Town');
             const C = dioData().sc,
               g = dioActSpot(p, C.props[p.k], C.ppu || 34);
-            DIO.pl.route = null;
-            DIO.pl.x = g[0];
-            DIO.pl.z = g[1];
+            walkView.pl.route = null;
+            walkView.pl.x = g[0];
+            walkView.pl.z = g[1];
             const t0 = performance.now();
             walkPick({ k: 'act', p, act: 'shop' });
-            for (let i = 0; i < 150 && !(DIO.ready && (DIO.sc.roomOf === 'int_shop' || DIO.id === 'int_shop')); i++)
+            for (
+              let i = 0;
+              i < 150 && !(walkView.ready && (walkView.sc.roomOf === 'int_shop' || walkView.id === 'int_shop'));
+              i++
+            )
               await stSleep(100);
             const ms = performance.now() - t0;
-            if (DIO.id === 'int_shop') {
+            if (walkView.id === 'int_shop') {
               leaveRoom();
               await stSleep(1500);
               return `the room wasn’t ready in time and opened on its own (${(ms / 1000).toFixed(1)} s)`;
             }
-            if (DIO.sc.roomOf !== 'int_shop') throw new Error('the shop’s room didn’t open (still ' + DIO.id + ')');
+            if (walkView.sc.roomOf !== 'int_shop')
+              throw new Error('the shop’s room didn’t open (still ' + walkView.id + ')');
             await stSleep(1200);
-            const sc = DIO.sc,
+            const sc = walkView.sc,
               c = sc.roomCut,
               I = U.inside,
               ex = [sc.exits[0][0] + c[0], sc.exits[0][1] + c[1]],
@@ -876,8 +881,9 @@ async function runFullTest(mode) {
               RD = dglRoomDim(sc);
             if (off > 0.8) throw new Error(`the room’s doorway is ${off.toFixed(1)} m from the shop’s door`);
             leaveRoom();
-            for (let i = 0; i < 60 && !(DIO.ready && DIO.id === 'w:sundown*'); i++) await stSleep(100);
-            if (DIO.id !== 'w:sundown*') throw new Error('walking out didn’t bring the town back (' + DIO.id + ')');
+            for (let i = 0; i < 60 && !(walkView.ready && walkView.id === 'w:sundown*'); i++) await stSleep(100);
+            if (walkView.id !== 'w:sundown*')
+              throw new Error('walking out didn’t bring the town back (' + walkView.id + ')');
             return `in ${(ms / 1000).toFixed(1)} s, doorway ${off.toFixed(2)} m from the door, town dimmed ${(RD ? RD.dim : 0).toFixed(2)}, back out at the door`;
           } finally {
             if (typeof ENV !== 'undefined') {
@@ -929,13 +935,15 @@ async function runFullTest(mode) {
               U.tab = 'walk';
               U.bench = { id, test: 1 };
               render();
-              for (let i = 0; i < 60 && !(DIO.ready && DIO.id === id); i++) await stSleep(100);
-              if (DIO.id !== id) throw new Error(id + ' did not open');
+              for (let i = 0; i < 60 && !(walkView.ready && walkView.id === id); i++) await stSleep(100);
+              if (walkView.id !== id) throw new Error(id + ' did not open');
               /* v44b: wait until the scene has settled: ready, every voxel recipe it uses arrived, then 20 more frames
         (the first frames after a scene opens draw voxel props as their pictures while the recipes load) */
-              for (let i = 0; i < 80 && !DIO.ready; i++) await stSleep(100);
+              for (let i = 0; i < 80 && !walkView.ready; i++) await stSleep(100);
               const C0 = dioData().sc.props,
-                vk = (DIO.sc.props || []).filter(p => C0[p.k] && typeof C0[p.k].vox === 'string').map(p => C0[p.k].vox);
+                vk = (walkView.sc.props || [])
+                  .filter(p => C0[p.k] && typeof C0[p.k].vox === 'string')
+                  .map(p => C0[p.k].vox);
               for (let i = 0; i < 60 && typeof VOX !== 'undefined' && vk.some(k => !VOX.recipes.get(k)); i++)
                 await stSleep(100);
               const f0 = DGL.frames;
@@ -945,11 +953,11 @@ async function runFullTest(mode) {
                 v = typeof VOX !== 'undefined' ? VOX.drawn || 0 : 0,
                 p = typeof P3D !== 'undefined' ? P3D.drawn || 0 : 0,
                 lm = ((DGL.X && DGL.X.lampSh) || []).length,
-                sc = DIO.sc;
+                sc = walkView.sc;
               /* what the camera can see: a phone held upright sees the middle of the scene only, so the props check counts the
         placed things whose foot is on screen and wants each of those drawn by its renderer */
               const inView = pp => {
-                const Cm = DIO.C;
+                const Cm = walkView.C;
                 if (!Cm || !Cm.vp) return true;
                 const m = Cm.vp,
                   x = pp.x,
@@ -997,7 +1005,7 @@ async function runFullTest(mode) {
         async () => {
           U.bench = null;
           U.inside = null;
-          if (typeof DIO !== 'undefined' && DIO.cv) dioStop();
+          if (typeof walkView !== 'undefined' && walkView.cv) dioStop();
           const cv = fallGL();
           if (!cv) {
             U.tab = 'walk';
@@ -1135,25 +1143,25 @@ async function runFullTest(mode) {
           const node = ROUTE.findIndex(r => r.scene === gid);
           if (node >= 0) S.route.node = node;
           render();
-          for (let i = 0; i < 80 && !(DIO.ready && DIO.id === gid); i++) await stSleep(100);
+          for (let i = 0; i < 80 && !(walkView.ready && walkView.id === gid); i++) await stSleep(100);
           await stSleep(1500);
-          const p0 = Object.fromEntries(Object.entries(DIO.enc).map(([k, v]) => [k, [v.x, v.z]]));
+          const p0 = Object.fromEntries(Object.entries(walkView.enc).map(([k, v]) => [k, [v.x, v.z]]));
           await stSleep(8000);
-          const moved = Object.entries(DIO.enc).filter(
+          const moved = Object.entries(walkView.enc).filter(
               ([k, v]) => p0[k] && Math.hypot(v.x - p0[k][0], v.z - p0[k][1]) > 0.3
             ).length,
             shown = Object.keys(OWM.mons).length;
           if (moved) throw new Error(moved + ' wild Billie(s) left their spot in 8 s (they should stand still)');
-          const P = DIO.pl,
-            hb = dioHubOf(DIO.sc);
-          dioWalkTo([clamp(hb[0] + 4, 1, DIO.sc.w - 1), clamp(hb[1] + 2, 1, DIO.sc.h - 1)]);
+          const P = walkView.pl,
+            hb = dioHubOf(walkView.sc);
+          dioWalkTo([clamp(hb[0] + 4, 1, walkView.sc.w - 1), clamp(hb[1] + 2, 1, walkView.sc.h - 1)]);
           await stSleep(3500);
           const b = OWM.bud,
             gap = b ? Math.hypot(b.x - P.x, b.z - P.z) : null;
           if (b) owBuddyTap();
           const said = OWM.say;
           const pets = Object.values(TRAINERS).filter(T => owPetSp(T)).length;
-          if (!shown) throw new Error('no Billies shown in the grass (' + (DIO.st.enc || []).length + ' hiding)');
+          if (!shown) throw new Error('no Billies shown in the grass (' + (walkView.st.enc || []).length + ' hiding)');
           if (b && gap > 4) throw new Error(`your buddy fell ${gap.toFixed(1)} m behind`);
           return `${shown} in the grass, all still on their spots after 8 s; buddy ${b ? `${gap.toFixed(1)} m behind you, said “${said.slice(0, 60)}”` : 'off'}; ${pets} trainers have a companion`;
         },
@@ -1268,7 +1276,7 @@ async function runFullTest(mode) {
           'Crowd and 600 particles',
           () => {
             for (let i = 0; i < 600; i++)
-              DIO.parts.push({
+              walkView.parts.push({
                 k: i % 2 ? 'leaf' : 'smoke',
                 fr: i % 3,
                 x: Math.random() * sc.w,
@@ -1356,7 +1364,7 @@ async function runFullTest(mode) {
       sc.folk = folk0;
       sc.props = props0;
       if (GD.engine) GD.engine.defaults = eng0;
-      DIO.parts.length = 0;
+      walkView.parts.length = 0;
     }
   } finally {
     STEST.only = only0;

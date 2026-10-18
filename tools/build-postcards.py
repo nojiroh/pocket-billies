@@ -62,7 +62,7 @@ def gamedata():
 
 
 SHOT_JS = """(async(a)=>{const sc=dioScene(a.id),hub=a.at||dioHubOf(sc),x=hub[0]+(a.dx||0),z=hub[1]+(a.dz||0),y=dioGroundH(x,z);
- const tgt=[x,y+(a.ty||1),z],eye=[x,y+(a.up||11),z-(a.back||22)];DIO.director={frame:()=>({look:{eye,tgt,fov:a.fov||36},items:[],parts:[],lights:[],hide:null,cut:0,center:[x,z]})};
+ const tgt=[x,y+(a.ty||1),z],eye=[x,y+(a.up||11),z-(a.back||22)];walkView.director={frame:()=>({look:{eye,tgt,fov:a.fov||36},items:[],parts:[],lights:[],hide:null,cut:0,center:[x,z]})};
  const f0=DGL.frames;await new Promise(r=>{const t0=performance.now();const k=()=>{if(DGL.frames>=f0+8&&(!DGL.ring||!(DGL.ring.jobs||[]).length)||performance.now()-t0>60000)r();else setTimeout(k,150)};k()});
  return true})"""
 
@@ -92,7 +92,7 @@ def main():
             pg.evaluate("((v)=>{ENV.on=true;ENV.force={time:v.time||16,season:v.season||'summer',weather:'clear'}})(%s);0" % json.dumps(v))
             pg.evaluate(f"U.tab='walk';U.bench={{id:'{sid}',test:1}};render();0")
             for _ in range(160):
-                if pg.evaluate(f"!!(DIO.ready&&DIO.id==='{sid}'&&DGL.frames>2)"): break
+                if pg.evaluate(f"!!(walkView.ready&&walkView.id==='{sid}'&&DGL.frames>2)"): break
                 time.sleep(.5)
             time.sleep(1.5)
             pg.evaluate(SHOT_JS + "(%s)" % json.dumps(v))
@@ -102,7 +102,7 @@ def main():
             im = im.resize(SIZE, Image.LANCZOS)
             im = ImageEnhance.Color(im).enhance(1.08)
             im.save(OUT / f'{sid}.webp', quality=82, method=6)
-            pg.evaluate("DIO.director=null;0")
+            pg.evaluate("walkView.director=null;0")
             print(f'  {sid}: {SIZE[0]}x{SIZE[1]} in {time.time() - t0:.0f}s', flush=True)
         (OUT / '_shot.png').unlink(missing_ok=True)
         b.close()

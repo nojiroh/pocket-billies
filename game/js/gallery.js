@@ -8,7 +8,7 @@ import { expose } from './test-globals.js';
 import { closeModal, provide, render, renderOv, settings, toast } from './hooks.js';
 import { U } from './game-state.js';
 import { GFX_DIALS, gfxDial } from './settings-screen.js';
-import { DIO, dioScene } from './walk-view.js';
+import { dioScene, walkView } from './walk-view.js';
 import { ENV } from './environment.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -65,12 +65,16 @@ function galleryOpen(gk) {
     t0 = performance.now();
   const place = () => {
     if (!GAL.on) return;
-    if (typeof DIO !== 'undefined' && DIO.ready && (DIO.id === 'gallery' || (DIO.sc && DIO.sc.baseId === 'gallery'))) {
-      const o = (DIO.sc && DIO.sc.baseOff) || [0, 0];
-      DIO.pl.x = st[0] + o[0];
-      DIO.pl.z = st[1] + o[1];
-      DIO.pl.route = null;
-      DIO.pl.fresh = false;
+    if (
+      typeof walkView !== 'undefined' &&
+      walkView.ready &&
+      (walkView.id === 'gallery' || (walkView.sc && walkView.sc.baseId === 'gallery'))
+    ) {
+      const o = (walkView.sc && walkView.sc.baseOff) || [0, 0];
+      walkView.pl.x = st[0] + o[0];
+      walkView.pl.z = st[1] + o[1];
+      walkView.pl.route = null;
+      walkView.pl.fresh = false;
       galleryPanel();
       return;
     }

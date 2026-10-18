@@ -90,7 +90,7 @@ import {
   sideTop,
   sideWorld,
 } from './battle-stage.js';
-import { DIO } from './walk-view.js';
+import { walkView } from './walk-view.js';
 import { ENV, ENV_NAMES, envHere, envState } from './environment.js';
 import { DGL, dglRing, dglWgAt } from './walk-view-gl.js';
 import { BGL, battleGLWanted } from './battle-3d.js';
@@ -1245,7 +1245,7 @@ function battleSeamless() {
   return !RM && typeof battleGLWanted === 'function' && battleGLWanted() && U.tab === 'walk' && !U.inside && !U.bench;
 }
 function battleSwoop(go) {
-  const P = DIO.pl,
+  const P = walkView.pl,
     e = U.encAt;
   U.encAt = null;
   const fx = e ? P.x * 0.6 + e[0] * 0.4 : P.x,
@@ -1258,7 +1258,7 @@ function battleSwoop(go) {
     for (let i = 0; i < 28; i++) {
       const a = Math.random() * 6.283,
         sp = 0.8 + Math.random() * 2.2;
-      DIO.parts.push({
+      walkView.parts.push({
         k: i % 4 ? 'leaf' : 'dust',
         fr: i % 3,
         x: e[0] + (Math.random() - 0.5) * 0.3,

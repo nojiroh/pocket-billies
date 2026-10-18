@@ -18,7 +18,7 @@ import { B, RM, esc, maxHp } from './game-state.js';
 import { artLoad } from './art.js';
 import { portraitHTML } from './person-art.js';
 import { partSpr } from './battle-stage.js';
-import { DIO } from './walk-view.js';
+import { walkView } from './walk-view.js';
 import { EGL, eglPrograms } from './engine/webgl.js';
 import { EGL_POST_SH } from './engine/post-effects.js';
 import { dglCanvasFor, dglGL, dioH } from './walk-view-gl.js';
@@ -769,11 +769,11 @@ async function fallPlay(run) {
 const LAND = { bits: [] };
 provide({ LAND }); /* to-module */
 function landBurst(x, z) {
-  if (typeof DIO === 'undefined' || !DIO.parts) return;
+  if (typeof walkView === 'undefined' || !walkView.parts) return;
   for (let i = 0; i < 30; i++) {
     const a = Math.random() * 6.283,
       sp = 0.5 + Math.random() * 2.2;
-    DIO.parts.push({
+    walkView.parts.push({
       k: 'dust',
       x: x + (Math.random() - 0.5) * 0.5,
       z: z + (Math.random() - 0.5) * 0.4,

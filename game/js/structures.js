@@ -12,7 +12,7 @@ import { expose } from './test-globals.js';
 import { RM, provide } from './hooks.js';
 import { clamp } from './util.js';
 import { hexA } from './art.js';
-import { DIO, dioBridges, dioImg } from './walk-view.js';
+import { dioBridges, dioImg, walkView } from './walk-view.js';
 import { EGL, eglImg, eglPrograms } from './engine/webgl.js';
 import { DGL_WALL_COL, dglCurveArgs, dglUse, dglWallDefault, dioGroundH, dioH } from './walk-view-gl.js';
 import { BLD_SH, bldArt, bldGuard } from './buildings.js';
@@ -45,7 +45,7 @@ const STR_KIND = {
 };
 function strKey(sc) {
   return (
-    DIO.id +
+    walkView.id +
     '|' +
     JSON.stringify([sc.bridges, sc.rails, sc.arches, sc.escalators]) +
     '|' +
@@ -518,7 +518,7 @@ function strBuild(sc) {
   return { mesh: { vao, vb, ib, n: I.length }, parts };
 }
 function strEnsure() {
-  const sc = DIO.sc;
+  const sc = walkView.sc;
   if (!sc || !strHas(sc)) {
     if (STR.mesh) strFree();
     STR.key = '';
@@ -554,9 +554,9 @@ function strDraw(C, X) {
       det = eglImg(dioImg(A.detail), { noNormal: true });
     if (!det) return;
     const p = dglUse('bld', C, X),
-      sc = DIO.sc,
-      P = DIO.pl,
-      t = RM ? 0 : DIO.t / 1000;
+      sc = walkView.sc,
+      P = walkView.pl,
+      t = RM ? 0 : walkView.t / 1000;
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, det.t);
     gl.uniform1i(p.U.uDet, 0);
@@ -589,7 +589,7 @@ function strShadow(SH) {
     gl.useProgram(p.p);
     gl.uniformMatrix4fv(p.U.uVP, false, SH.vp);
     const ca = dglCurveArgs(),
-      sc = DIO.sc;
+      sc = walkView.sc;
     gl.uniform3f(p.U.uCurve, ca[0], ca[1], ca[2]);
     gl.uniform1f(p.U.uCurveD0, ca[3]);
     gl.bindVertexArray(STR.mesh.vao);

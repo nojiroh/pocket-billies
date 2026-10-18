@@ -15,7 +15,7 @@
 import { expose } from './test-globals.js';
 import { dioArtVer, provide } from './hooks.js';
 import { cnv, hexA } from './art.js';
-import { DIO, dioData, dioHash, dioImg } from './walk-view.js';
+import { dioData, dioHash, dioImg, walkView } from './walk-view.js';
 import { ENG_CTX, eng } from './engine/settings.js';
 import {
   EGL,
@@ -1540,7 +1540,7 @@ function bldDraw0(C, X, items, fades) {
     det = eglImg(dioImg(A.detail), { noNormal: true }),
     rm = eglImg(dioImg(A.rooms), { noNormal: true });
   if (!det || !rm) return;
-  const sc = DIO.sc,
+  const sc = walkView.sc,
     dark = sc.tint && sc.tint !== '#000000' ? 1 : sc.indoor ? 0.7 : 0,
     lift = it => [it.x, it.z];
   gl.enable(gl.DEPTH_TEST);

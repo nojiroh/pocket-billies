@@ -12,7 +12,7 @@ import { B, FV, RM, S, provide } from './hooks.js';
 import { $, clamp } from './util.js';
 import { hexA } from './art.js';
 import { ACT, FOC, POS, SC, UPP, partSpr, sideBuf, sideWorld, trainerBattleFrame, trainerMpp } from './battle-stage.js';
-import { DIO, dioData, dioStop } from './walk-view.js';
+import { dioData, dioStop, walkView } from './walk-view.js';
 import { EGL } from './engine/webgl.js';
 import { DGL, dioH } from './walk-view-gl.js';
 /* eslint-disable no-func-assign */
@@ -30,26 +30,32 @@ provide({ battleGLLayout, battleGLStart, battleGLStop });
 /* to-module: end */
 export const BGL = { on: false, off: [0, 0], gy: 0, hide: null, items: [], lights: [] };
 export function battleGLWanted() {
-  if (typeof DGL === 'undefined' || !DGL.on || !DIO.cv || !DIO.ready || (typeof EGL !== 'undefined' && EGL.lost))
+  if (
+    typeof DGL === 'undefined' ||
+    !DGL.on ||
+    !walkView.cv ||
+    !walkView.ready ||
+    (typeof EGL !== 'undefined' && EGL.lost)
+  )
     return false;
   const p = S.preferences || {};
   if (p.battleStage === 'classic') return false;
   /* v43: whatever walk scene is on screen and ready is the stage (it used to have to be the stop's own scene, so a battle on the second half of a road, or one started before the scene had opened, fell back to the painted stage) */ return (
-    !!DIO.id && !!DIO.sc && !DIO.sc.room
+    !!walkView.id && !!walkView.sc && !walkView.sc.room
   );
 }
 function battleGLStart() {
   if (!battleGLWanted()) return false;
   return battleGLAttach();
 }
-/* the walk scene that's running (DIO) becomes the stage; o.detach removes its canvas afterwards (the Studio preview) */
+/* the walk scene that's running (walkView) becomes the stage; o.detach removes its canvas afterwards (the Studio preview) */
 export function battleGLAttach(o = {}) {
-  const cv = DIO.cv,
+  const cv = walkView.cv,
     host = $('#camWorld');
   if (!host || !cv) return false;
   BGL.detach = !!o.detach;
-  const sc = DIO.sc,
-    P = DIO.pl,
+  const sc = walkView.sc,
+    P = walkView.pl,
     C0 = dioData().sc,
     ax = clamp(P.x, 3.5, Math.max(3.5, sc.w - 3.5)),
     az = clamp(P.z, 2.5, Math.max(2.5, sc.h - 3));
@@ -76,13 +82,13 @@ export function battleGLAttach(o = {}) {
   if (DGL.ui) DGL.ui.hidden = true;
   SC.leafy = [];
   SC.glint = [];
-  DIO.battle = { frame: battleGLFrame };
+  walkView.battle = { frame: battleGLFrame };
   BGL.on = true;
-  if (typeof NWLOG !== 'undefined') NWLOG.add('battle', '3D stage in ' + DIO.id);
+  if (typeof NWLOG !== 'undefined') NWLOG.add('battle', '3D stage in ' + walkView.id);
   return true;
 }
 export function battleGLLayout() {
-  const cv = DIO.cv,
+  const cv = walkView.cv,
     ref = SC.cv;
   if (!BGL.on || !cv || !ref) return;
   for (const k of ['left', 'top', 'width', 'height']) cv.style[k] = ref.style[k];
@@ -90,11 +96,11 @@ export function battleGLLayout() {
 export function battleGLStop() {
   if (!BGL.on) return;
   BGL.on = false;
-  DIO.battle = null;
+  walkView.battle = null;
   DGL.bt = null;
   DGL.camT = null;
   DGL.focus = null;
-  const cv = DIO.cv;
+  const cv = walkView.cv;
   if (BGL.detach) {
     if (cv) {
       dioStop();

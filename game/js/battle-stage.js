@@ -14,7 +14,6 @@ import {
   A,
   B,
   BACKDROPS,
-  DIO,
   GD,
   MOVES,
   RM,
@@ -32,6 +31,7 @@ import {
   maxHp,
   platesTick,
   provide,
+  walkView,
 } from './hooks.js';
 import { $, clamp, rnd } from './util.js';
 import { FRAME, frameCount, frameStop, frameTask, userFps } from './frame-scheduler.js';
@@ -534,8 +534,8 @@ export function scStart(area) {
   SC.q.since = performance.now();
   SC.gl = typeof battleGLStart === 'function' && battleGLStart();
   document.body.classList.toggle('battle-3d', !!SC.gl);
-  if (!SC.gl && typeof DIO !== 'undefined' && DIO.cv && typeof B !== 'undefined' && B) {
-    const cv = DIO.cv;
+  if (!SC.gl && typeof walkView !== 'undefined' && walkView.cv && typeof B !== 'undefined' && B) {
+    const cv = walkView.cv;
     dioStop();
     cv.hidden = true;
   }

@@ -17,7 +17,7 @@ import { N, S, U, findMon, maxHp, nextStop, save } from './game-state.js';
 import { cnv } from './art.js';
 import { KBACK, drawRig, rigFrame, rigParts, rigPreload } from './skeleton-rig.js';
 import { scPrepare } from './battle-stage.js';
-import { DIO, dioFreePt, dioPrepare, dioProj } from './walk-view.js';
+import { dioFreePt, dioPrepare, dioProj, walkView } from './walk-view.js';
 import { ENV } from './environment.js';
 import { dioH } from './walk-view-gl.js';
 /* eslint-disable no-func-assign */
@@ -166,23 +166,23 @@ export function owShift(dx, dz) {
       b.tx += dx;
       b.tz += dz;
     }
-    b.sc = DIO.id;
+    b.sc = walkView.id;
   }
   OWM.trail = (OWM.trail || []).map(q => (Array.isArray(q) ? [q[0] + dx, q[1] + dz, ...q.slice(2)] : q));
 }
 function owBuddyItems(out, t, dt) {
-  const P = DIO.pl,
+  const P = walkView.pl,
     m = owBuddyMon();
-  if (!m || U.inside || U.bench || (DIO.st && DIO.st.battle) || !DIO.sc) {
+  if (!m || U.inside || U.bench || (walkView.st && walkView.st.battle) || !walkView.sc) {
     OWM.bud = null;
     return;
   }
   let b = OWM.bud;
-  if (!b || b.uid !== m.uid || b.sc !== DIO.id) {
+  if (!b || b.uid !== m.uid || b.sc !== walkView.id) {
     OWM.sayT = 0;
     b = OWM.bud = {
       uid: m.uid,
-      sc: DIO.id,
+      sc: walkView.id,
       x: P.x - 0.9,
       z: P.z - 0.4,
       vx: 0,
@@ -262,7 +262,7 @@ function owBuddyItems(out, t, dt) {
   /* v34: your buddy notices the weather and the hour while you stand: it shakes off the rain, hunkers down at night,
     cheers at the water's edge, now and then */
   if (!moving && !OWM.react && typeof ENV !== 'undefined' && Math.random() < dt * 0.12) {
-    const nearW = (DIO.water || []).some(w => Math.hypot(w[0] - b.x, w[1] - b.z) < 2.2);
+    const nearW = (walkView.water || []).some(w => Math.hypot(w[0] - b.x, w[1] - b.z) < 2.2);
     const pz = ENV.rain > 0.3 ? 'dizzy' : ENV.night > 0.6 ? 'block' : nearW ? 'cheer' : null;
     if (pz) OWM.react = { pose: pz, t0: t };
   }
@@ -295,7 +295,7 @@ export function owBuddyTap() {
   if (now - OWM.lastTap < 450) return;
   OWM.lastTap = now;
   const hp = m.hp / maxHp(m),
-    t = DIO.t,
+    t = walkView.t,
     bond = (m.bond = (m.bond || 0) + 1),
     n = N(m),
     q = (S.queue || []).length;
@@ -352,7 +352,7 @@ export function owPetSp(T) {
   return SP[sp] ? sp : null;
 }
 function owPetItems(out, t, npcPos) {
-  const P = DIO.pl;
+  const P = walkView.pl;
   for (const [n, pos] of npcPos) {
     const T = TRAINERS[n.id],
       sp = owPetSp(T);
@@ -374,7 +374,7 @@ function owEncItem(out, e, s, t, dt) {
   let w = OWM.mons[e.id];
   if (!w) w = OWM.mons[e.id] = { pop: 2 + Math.random() * 5, popT: 0, flip: 1, seed: e.id.length * 13 + (e.lvl || 1) };
   /* v46: it stays on its spot and turns to face you; it peeks up sooner when you come within 3 m */
-  const P = typeof DIO !== 'undefined' ? DIO.pl : null,
+  const P = typeof walkView !== 'undefined' ? walkView.pl : null,
     dx = P ? P.x - s.x : 0,
     near = P ? Math.hypot(dx, P.z - s.z) : 99;
   if (Math.abs(dx) > 0.3) w.flip = dx > 0 ? -1 : 1;
@@ -517,7 +517,7 @@ setInterval(() => {
     const nx = nextStop();
     if (nx == null) return;
     const id = sceneIdAt(nx);
-    if (!id || OW_PREP.has(id) || (typeof DIO !== 'undefined' && DIO.id === id)) return;
+    if (!id || OW_PREP.has(id) || (typeof walkView !== 'undefined' && walkView.id === id)) return;
     OW_PREP.add(id);
     if (OW_PREP.size > 6) OW_PREP.delete(OW_PREP.values().next().value);
     const t0 = performance.now();

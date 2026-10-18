@@ -12,7 +12,7 @@ import { clamp } from './util.js';
 import { GD, ROUTE, TRAINERS } from './game-data.js';
 import { S, U, esc, save } from './game-state.js';
 import { humanHTML } from './person-art.js';
-import { DIO, dioBaseId, dioFind, dioFreePt, dioHubOf, dioScene } from './walk-view.js';
+import { dioBaseId, dioFind, dioFreePt, dioHubOf, dioScene, walkView } from './walk-view.js';
 import { DGL, dioH } from './walk-view-gl.js';
 import { JINGLES, jingle, sfx } from './sound.js';
 /* eslint-disable no-func-assign */
@@ -80,7 +80,7 @@ function loreChat(place) {
   return k != null ? C[k] : [];
 }
 function dioChatLines(fallback) {
-  const sc = (typeof DIO !== 'undefined' && DIO.sc) || {},
+  const sc = (typeof walkView !== 'undefined' && walkView.sc) || {},
     own = sc.chat && sc.chat.length ? sc.chat : fallback,
     L = loreChat(sc.placeId || sc.place);
   return L.length ? L.concat(own) : own;
@@ -132,9 +132,9 @@ export function loreClue(id) {
    open ground you can walk to, beside the matching prop nearest a short walk from where you arrive */
 const CLUE_SPOTS = {};
 function clueSpots() {
-  if ((typeof U !== 'undefined' && U.inside) || typeof DIO === 'undefined' || !DIO.sc) return [];
+  if ((typeof U !== 'undefined' && U.inside) || typeof walkView === 'undefined' || !walkView.sc) return [];
   const id = dioBaseId(),
-    sc0 = DIO.sc,
+    sc0 = walkView.sc,
     sc = sc0.baseId ? dioScene(sc0.baseId) : sc0,
     o = sc0.baseOff || [0, 0],
     F = loreFlags();
@@ -162,7 +162,7 @@ function clueSpotFind(sc, at) {
     return null;
   }
   const hub = dioHubOf(sc),
-    o = (DIO.sc && DIO.sc.baseOff) || [0, 0];
+    o = (walkView.sc && walkView.sc.baseOff) || [0, 0];
   const C = (sc.props || [])
     .filter(p => re.test(p.k))
     .sort(
@@ -185,7 +185,7 @@ function clueSpotFind(sc, at) {
 /* drawn by the walk scene's effects pass, like the gold stamps but cool white: walk over it to pick it up */
 function clueDraw(quad, glows, t) {
   if (typeof S === 'undefined' || !S.started || DGL.bt || U.bench || U.modal) return;
-  const P = DIO.pl;
+  const P = walkView.pl;
   for (const c of clueSpots()) {
     const y = dioH(c.x, c.z),
       b = 0.1 + Math.sin(t / 260) * 0.05,

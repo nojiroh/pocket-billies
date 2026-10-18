@@ -11,7 +11,7 @@
 import { expose } from './test-globals.js';
 import { GD, RM, provide } from './hooks.js';
 import { artImg, artURL, hexA } from './art.js';
-import { DIO, dioImg } from './walk-view.js';
+import { dioImg, walkView } from './walk-view.js';
 import { eng } from './engine/settings.js';
 import { EGL, EGL_GLSL_COMMON, EGL_GLSL_LIGHT, eglImg, eglPrograms } from './engine/webgl.js';
 import { DGL, dglCurveArgs, dglHit, dglLookU, dglUse, dglWindAt } from './walk-view-gl.js';
@@ -603,7 +603,7 @@ function voxMeshFor(path, rec) {
 function voxSpins(p, m) {
   if (!m.spins || !m.spins.length) return;
   const gl = EGL.gl,
-    t = (RM ? 0 : DIO.t || 0) / 1000;
+    t = (RM ? 0 : walkView.t || 0) / 1000;
   for (const s of m.spins) {
     gl.uniform4f(p.U.uSpin, s.a[0], s.a[1], s.a[2], t * s.rps * Math.PI * 2);
     gl.uniform3fv(p.U.uSpinC, s.c);
@@ -1196,11 +1196,11 @@ function voxImageItems(it, out) {
 function voxBob(it) {
   const b = it.M && it.M.bob;
   if (!b || (typeof RM !== 'undefined' && RM)) return null;
-  const t = (DIO.t || 0) / 1000,
+  const t = (walkView.t || 0) / 1000,
     ph = it.x * 0.37 + it.z * 0.21,
     w =
-      typeof dglWindAt === 'function' && DIO.sc
-        ? Math.min(2, Math.abs(dglWindAt(it.x, it.z, DIO.t || 0, DIO.sc)) * 8)
+      typeof dglWindAt === 'function' && walkView.sc
+        ? Math.min(2, Math.abs(dglWindAt(it.x, it.z, walkView.t || 0, walkView.sc)) * 8)
         : 0;
   return [
     (Math.sin(t * 1.25 + ph) + Math.sin(t * 0.47 + ph * 2) * 0.4) * b * (1 + w * 0.5),

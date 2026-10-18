@@ -24,7 +24,7 @@ import {
   scToCss,
   sideTop,
 } from '../../game/js/battle-stage.js';
-import { DIO, dioHubOf } from '../../game/js/walk-view.js';
+import { dioHubOf, walkView } from '../../game/js/walk-view.js';
 import { dioMount } from '../../game/js/walk-view-gl.js';
 import { battleGLAttach, battleGLStop } from '../../game/js/battle-3d.js';
 import { esc } from './game-stand-ins.js';
@@ -257,10 +257,10 @@ async function bpScene() {
     onPick: () => {},
     cap: () => (ST.sec === 'preview' ? 60 : 0),
   });
-  if (!DIO.cv || !$('#camWorld')) return;
+  if (!walkView.cv || !$('#camWorld')) return;
   const hb = dioHubOf(sc);
-  DIO.pl.x = hb[0];
-  DIO.pl.z = hb[1];
+  walkView.pl.x = hb[0];
+  walkView.pl.z = hb[1];
   SC.gl = battleGLAttach({ detach: true });
   document.body.classList.toggle('battle-3d', !!SC.gl);
   scResize();

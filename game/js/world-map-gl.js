@@ -17,7 +17,7 @@ import { frameCount, frameStop, frameTask, userFps } from './frame-scheduler.js'
 import { artLoad, artPixels, cnv, hexA, mstamp, uiIco } from './art.js';
 import { owFrames, portraitHTML } from './person-art.js';
 import { EASE } from './battle-stage.js';
-import { DIO, dioData, dioHash, dioImg, dioOk, dioScene, dioStep } from './walk-view.js';
+import { dioData, dioHash, dioImg, dioOk, dioScene, dioStep, walkView } from './walk-view.js';
 import { ENG_CTX, eng, engSource } from './engine/settings.js';
 import { EGL, eglBindQuad, eglFree, eglImg, eglInit, eglMesh, eglOK, eglPrograms, eglTarget } from './engine/webgl.js';
 import { EGL_POST_SH, eglPost, eglScreenOf } from './engine/post-effects.js';
@@ -184,7 +184,7 @@ function mapGLReady() {
   if (!mapGLWanted()) return false;
   const cv = mapGLCanvas();
   if (EGL.cv !== cv) {
-    if (DIO.cv && DIO.cv !== cv) return false;
+    if (walkView.cv && walkView.cv !== cv) return false;
     if (!eglInit(cv)) {
       EGL.fail = 1;
       return false;

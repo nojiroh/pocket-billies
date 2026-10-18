@@ -13,7 +13,7 @@ import { ART, BG_ART, COIN_ART, EGG_ART, ICON_ATLAS, UIURL, artBoot, artImg } fr
 import { trainerArtPaths } from './person-art.js';
 import { rigAtlas } from './skeleton-rig.js';
 import { AREAS, scPrepare, stageArt } from './battle-stage.js';
-import { DIO, dioData, dioPaths, dioScene } from './walk-view.js';
+import { dioData, dioPaths, dioScene, walkView } from './walk-view.js';
 import { EGL, eglOK } from './engine/webgl.js';
 import { ENV } from './environment.js';
 import { DGL, dglRiseStart } from './walk-view-gl.js';
@@ -635,12 +635,12 @@ async function bootLoad() {
 }
 /* wait (at most 5 s) until the walk scene has drawn a few frames, so its first, slow frame happens behind the loader */
 async function sceneWarm() {
-  if (!S.started || typeof DIO === 'undefined') return;
+  if (!S.started || typeof walkView === 'undefined') return;
   const t0 = performance.now();
   if (LD.el) LD.el.querySelector('.ld-phase').textContent = 'Setting the scene';
   while (performance.now() - t0 < 5000) {
     const ok =
-      DIO.ready &&
+      walkView.ready &&
       (typeof DGL === 'undefined' || !DGL.on || DGL.frames > 4) &&
       (typeof EGL === 'undefined' || !EGL.normQ || !EGL.normQ.length);
     if (ok || !document.getElementById('dio')) break;
@@ -762,11 +762,11 @@ function studioLive(D) {
     WORLD.gen++;
     WORLD.cache.clear();
   }
-  if (typeof DIO !== 'undefined' && DIO.id && GD.scenes[DIO.id]) {
-    DIO.sc = GD.scenes[DIO.id];
-    DIO.gkey = '';
-    DIO.nav = null;
-    DIO.cand = null;
+  if (typeof walkView !== 'undefined' && walkView.id && GD.scenes[walkView.id]) {
+    walkView.sc = GD.scenes[walkView.id];
+    walkView.gkey = '';
+    walkView.nav = null;
+    walkView.cand = null;
     if (typeof DGL !== 'undefined') {
       DGL.hkey = '';
       DGL.farKey = '';

@@ -8,7 +8,15 @@ import { artPixels, setArtPixels } from './art.js';
 import { TR_CACHE, humanFrames, setHumanFrames } from './person-art.js';
 import { openDressing, setOpenDressing } from './dressing-room.js';
 import { SC, scResize, scStart, setScResize, setScStart } from './battle-stage.js';
-import { DIO, dioFolkTick, dioPlayer, dioPrepare, setDioFolkTick, setDioPlayer, setDioPrepare } from './walk-view.js';
+import {
+  dioFolkTick,
+  dioPlayer,
+  dioPrepare,
+  setDioFolkTick,
+  setDioPlayer,
+  setDioPrepare,
+  walkView,
+} from './walk-view.js';
 import {
   EGL,
   EGL_NW,
@@ -82,7 +90,6 @@ Object.defineProperties(GAME, {
   B: { get: () => B },
   BLD: { get: () => BLD },
   DGL: { get: () => DGL },
-  DIO: { get: () => DIO },
   EGL: { get: () => EGL },
   EGL_NW: { get: () => EGL_NW },
   ENV: { get: () => ENV },
@@ -146,4 +153,5 @@ Object.defineProperties(GAME, {
   stampCount: { get: () => stampCount },
   toast: { get: () => toast },
   userFps: { get: () => userFps },
+  walkView: { get: () => walkView },
 });

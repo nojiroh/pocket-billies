@@ -6,7 +6,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
 import { $ } from '../../game/js/util.js';
-import { DIO, dioHubOf } from '../../game/js/walk-view.js';
+import { dioHubOf, walkView } from '../../game/js/walk-view.js';
 import {
   ENGINE_DEFAULTS,
   ENGINE_PRESETS,
@@ -63,7 +63,7 @@ setEngSource(() => (ST.D ? ST.D.engine : null));
 if (typeof dglAdapt === 'function')
   setDglAdapt(function () {
     if (typeof DGL !== 'undefined') DGL.q = 0;
-    if (typeof DIO !== 'undefined') DIO.R = 1;
+    if (typeof walkView !== 'undefined') walkView.R = 1;
   });
 export const ENS = { scope: 'game', scene: null, open: { lens: 1, color: 1, sun: 1, shadows: 1 }, meterT: null };
 export const engD = () => ST.D.engine || (ST.D.engine = { defaults: {}, presets: {} });
@@ -165,7 +165,7 @@ async function engMount() {
   const C = scD();
   await Promise.all(scArt(C).map(p => atlasGet('art/' + p).catch(() => null)));
   if (!$('#engPv')) return;
-  DIO.pl.t = -1;
+  walkView.pl.t = -1;
   dioMount(cv, id, {
     state: () => ({
       mode: 'roam',
@@ -217,7 +217,7 @@ async function engMount() {
       return;
     }
     const fps = DGL.int ? Math.round(1000 / DGL.int) : 0;
-    m.innerHTML = `<b>${fps}</b> fps · <b>${(DIO.slow || 0).toFixed(1)}</b> ms of work per frame · resolution <b>${Math.round((DIO.R || 1) * eng('quality', 'resolution') * 100)}%</b>${EGL.hdr ? '' : ' · no HDR on this GPU'}`;
+    m.innerHTML = `<b>${fps}</b> fps · <b>${(walkView.slow || 0).toFixed(1)}</b> ms of work per frame · resolution <b>${Math.round((walkView.R || 1) * eng('quality', 'resolution') * 100)}%</b>${EGL.hdr ? '' : ' · no HDR on this GPU'}`;
   }, 500);
 }
 /* edits */

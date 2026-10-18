@@ -11,7 +11,7 @@ import { $, clamp } from './util.js';
 import { PLACE, RULES, SP, TRAINERS, trainersAt } from './game-data.js';
 import { B, RM, S, U, esc, healAll, save, today } from './game-state.js';
 import { DR } from './dressing-room.js';
-import { DIO, dioBaseId, dioFreePt } from './walk-view.js';
+import { dioBaseId, dioFreePt, walkView } from './walk-view.js';
 import { EGL } from './engine/webgl.js';
 import { DGL, dioH } from './walk-view-gl.js';
 import { startTrainer, startWild } from './battle.js';
@@ -64,7 +64,7 @@ export async function trainerTalk(id) {
   startTrainer(id, { talked: true });
 }
 function storyWorldOK() {
-  return typeof DGL !== 'undefined' && DGL.on && DIO.ready && DIO.cv && !B && typeof csFrame === 'function';
+  return typeof DGL !== 'undefined' && DGL.on && walkView.ready && walkView.cv && !B && typeof csFrame === 'function';
 }
 /* the director, borrowed for a scene in the current walk scene (no remount, no letterbox fade-in) */
 function csWorldBegin() {
@@ -90,7 +90,7 @@ function csWorldBegin() {
     '<div class="cs-bars" aria-hidden="true"><i></i><i></i></div><button class="cs-skip pb small quiet" data-a="cs-skip">Skip ›</button><div class="cs-fade" id="csFade"></div>';
   el.hidden = false;
   document.body.classList.add('in-cs', 'cs-world');
-  DIO.director = { frame: csFrame };
+  walkView.director = { frame: csFrame };
   return CS.run;
 }
 function csWorldEnd() {
@@ -100,7 +100,7 @@ function csWorldEnd() {
   CS.skip = false;
   CS.world = false;
   csFlush();
-  DIO.director = null;
+  walkView.director = null;
   DGL.bt = null;
   DGL.camT = null;
   DGL.focus = null;
@@ -116,8 +116,8 @@ function csWorldEnd() {
 async function rivalScene(T) {
   const run = csWorldBegin(),
     alive = () => CS.on && CS.run === run,
-    P = DIO.pl,
-    sc = DIO.sc,
+    P = walkView.pl,
+    sc = walkView.sc,
     F = storyFlags();
   F['met_' + T.id] = 1;
   save();
@@ -189,7 +189,7 @@ export function storyCheck() {
   STORY.pending = T.id;
   setTimeout(() => {
     STORY.pending = null;
-    if (DIO.ready && !B && U.tab === 'walk' && !U.modal && !TALK.on && !CS.on) rivalScene(T);
+    if (walkView.ready && !B && U.tab === 'walk' && !U.modal && !TALK.on && !CS.on) rivalScene(T);
   }, 1400);
 }
 /* v39: the legendary encounters (rules.legends): one per scene, met when you arrive, once a day until caught */
@@ -201,7 +201,7 @@ export function legendCheck() {
     U.tab !== 'walk' ||
     TALK.on ||
     (typeof CS !== 'undefined' && CS.on) ||
-    !DIO.ready ||
+    !walkView.ready ||
     (typeof STEST !== 'undefined' && STEST.on) ||
     U.bench
   )
@@ -215,7 +215,7 @@ export function legendCheck() {
   STORY.pending = 'legend';
   setTimeout(() => {
     STORY.pending = null;
-    if (!DIO.ready || B || U.tab !== 'walk' || U.modal || TALK.on || CS.on || dioBaseId() !== L.scene) return;
+    if (!walkView.ready || B || U.tab !== 'walk' || U.modal || TALK.on || CS.on || dioBaseId() !== L.scene) return;
     F['legend_' + L.sp] = today();
     save();
     modal({
@@ -336,11 +336,11 @@ export function storyRivalBattle(o = {}) {
   let f0 = null;
   const poll = () => {
     if (B || !S.started) return;
-    const on = typeof DIO !== 'undefined' && DIO.ready,
+    const on = typeof walkView !== 'undefined' && walkView.ready,
       gl = typeof DGL !== 'undefined' && DGL.on;
     if (on && gl && f0 == null) f0 = DGL.frames;
     const ready =
-      typeof DIO === 'undefined' ||
+      typeof walkView === 'undefined' ||
       (on && (!gl || (DGL.frames >= (f0 ?? 0) + 8 && (typeof EGL === 'undefined' || !EGL.normQ || !EGL.normQ.length))));
     if ((ready && performance.now() - t0 > 900) || performance.now() - t0 > 9000) {
       go();

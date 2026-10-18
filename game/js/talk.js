@@ -11,7 +11,7 @@ import { PEOPLE, TRAINERS } from './game-data.js';
 import { RM, S } from './game-state.js';
 import { frameStop, frameTask } from './frame-scheduler.js';
 import { trPortrait, trainerLook } from './person-art.js';
-import { DIO, dioFace } from './walk-view.js';
+import { dioFace, walkView } from './walk-view.js';
 import { DGL } from './walk-view-gl.js';
 import { sfx } from './sound.js';
 /* eslint-disable no-func-assign */
@@ -203,16 +203,16 @@ const FOLK_TALK = [
 ];
 export async function talkFolk(f) {
   if (TALK.on) return;
-  const sc = DIO.sc,
+  const sc = walkView.sc,
     L = typeof dioChatLines === 'function' ? dioChatLines(FOLK_TALK) : sc.chat && sc.chat.length ? sc.chat : FOLK_TALK,
     who = 'folk:' + f.seed,
-    a = L[(f.line + (DIO.chat = (DIO.chat || 0) + 1)) % L.length],
-    b = FOLK_TALK[(f.seed + DIO.chat) % FOLK_TALK.length];
+    a = L[(f.line + (walkView.chat = (walkView.chat || 0) + 1)) % L.length],
+    b = FOLK_TALK[(f.seed + walkView.chat) % FOLK_TALK.length];
   f.wait = 99;
   f.route = null;
   f.walk = 0;
   dioFace(f);
-  if (typeof DGL !== 'undefined') DGL.focusT = { x: f.x, z: f.z, t: DIO.t };
+  if (typeof DGL !== 'undefined') DGL.focusT = { x: f.x, z: f.z, t: walkView.t };
   await talk([
     [who, a],
     [who, b === a ? FOLK_TALK[0] : b],

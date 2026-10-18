@@ -44,15 +44,15 @@ with sync_playwright() as pw:
         W, H = int(x) + 6, 20
         props = [{'k': k, 'x': xs[i], 'z': 12} for i, k in enumerate(batch)]
         pg.evaluate(f"""GD.scenes['{sid}']={{name:'Audit',w:{W},h:{H},edge:'g',tiles:Array({H}).fill('g'.repeat({W})),props:{json.dumps(props)},cam:{{pitch:30,h:8,fov:1}},sky:['#8CC6E6','#BFE3EE','#F4E8C8'],haze:'#EAD9C0',hazeD:80,far:null,folk:0,test:1,exits:[],hub:[1,1],blur:0}};U.tab='walk';U.bench={{id:'{sid}',test:1}};render();0""")
-        cq.until(pg, f"DIO.ready&&DIO.id==='{sid}'", 60); time.sleep(2)
-        pg.evaluate("document.body.classList.add('photo');DIO.pl.route=null;DIO.pl.x=1;DIO.pl.z=1;0")
+        cq.until(pg, f"walkView.ready&&walkView.id==='{sid}'", 60); time.sleep(2)
+        pg.evaluate("document.body.classList.add('photo');walkView.pl.route=null;walkView.pl.x=1;walkView.pl.z=1;0")
         for p in props:
             row = []
             hm = SZ.get(p['k'], [0, 1, 1])[2]; zm = round(min(1.7, .62 * max(1, hm / 3.4)), 3)
             for yaw in (-.55, .55):
                 pg.evaluate(f"DGL.swoop={{x:{p['x']},z:{p['z']}-1.6}};DGL.yawT=DGL.yaw={yaw};DGL.zoomT=DGL.zoom={zm};DGL.camT=null;0")
                 f0 = pg.evaluate("DGL.frames"); cq.until(pg, f"DGL.frames>{f0 + 1}", 20)
-                q = pg.evaluate(f"(()=>{{const C=DIO.C,M=dioData().sc.props['{p['k']}'],hm=Math.max(.6,-(M.oy||0)/(dioData().sc.ppu||34)),wm=Math.max(.6,(dioImg(M.img)||{{width:40}}).width/(dioData().sc.ppu||34)),a=dioProj(C,{p['x']},0,{p['z']}),b=dioProj(C,{p['x']},hm+.3,{p['z']});return a&&b?[a.x,a.y,b.y,C.rw,C.rh,wm*a.s]:null}})()")
+                q = pg.evaluate(f"(()=>{{const C=walkView.C,M=dioData().sc.props['{p['k']}'],hm=Math.max(.6,-(M.oy||0)/(dioData().sc.ppu||34)),wm=Math.max(.6,(dioImg(M.img)||{{width:40}}).width/(dioData().sc.ppu||34)),a=dioProj(C,{p['x']},0,{p['z']}),b=dioProj(C,{p['x']},hm+.3,{p['z']});return a&&b?[a.x,a.y,b.y,C.rw,C.rh,wm*a.s]:null}})()")
                 if q:
                     vw, vh = pg.viewport_size['width'], pg.viewport_size['height']; sx, sy = vw / q[3], vh / q[4]; cx = q[0] * sx; y0, y1 = q[2] * sy - 18, q[1] * sy + 32
                     hh = max(85, y1 - y0); ww = max(hh * 300 / 260, q[5] * sx * 1.3); hh = ww * 260 / 300; ym = (y0 + y1) / 2

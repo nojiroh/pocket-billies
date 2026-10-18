@@ -10,7 +10,7 @@ import { pedVoxHTML, provide } from '../../game/js/hooks.js';
 import { $, $$, clamp } from '../../game/js/util.js';
 import { frameStop, frameTask } from '../../game/js/frame-scheduler.js';
 import { artLoad, cnv, setArtLoad } from '../../game/js/art.js';
-import { DIO, dioData, dioImg, dioLayerM, dioOk, setDioData } from '../../game/js/walk-view.js';
+import { dioData, dioImg, dioLayerM, dioOk, setDioData, walkView } from '../../game/js/walk-view.js';
 import { DGL, DGL_MATS, dglMatOf, dglVaryOf, dioMount } from '../../game/js/walk-view-gl.js';
 import { BLD_ROOM_NAMES, BLD_TEX_NAMES } from '../../game/js/buildings.js';
 import { P3D_AUTO, P3D_KINDS, P3D_PARTS, p3dTreeKind } from '../../game/js/solid-props.js';
@@ -614,7 +614,7 @@ async function pedMount() {
   if (!PED.sc || PED.id !== k) {
     PED.sc = pedScene(k);
     PED.id = k;
-    DIO.id = null;
+    walkView.id = null;
   } else {
     PED.sc.props[0].k = k;
   }
@@ -655,7 +655,7 @@ ACTS.pedClose = () => {
   if (typeof DGL !== 'undefined') {
     DGL.yawT = 0;
   }
-  DIO.id = null;
+  walkView.id = null;
   render();
 };
 ACTS.pedTool = d => {

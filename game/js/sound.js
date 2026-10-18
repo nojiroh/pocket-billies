@@ -12,7 +12,7 @@ import { clamp } from './util.js';
 import { ROUTE } from './game-data.js';
 import { B, S, U } from './game-state.js';
 import { SC } from './battle-stage.js';
-import { DIO, dioBaseId, dioBridgeAt, dioBridges, dioData, dioScene, dioStepM, dioTer } from './walk-view.js';
+import { dioBaseId, dioBridgeAt, dioBridges, dioData, dioScene, dioStepM, dioTer, walkView } from './walk-view.js';
 import { ENV, envHour, envState } from './environment.js';
 import { DGL } from './walk-view-gl.js';
 /* eslint-disable no-func-assign */
@@ -1039,15 +1039,15 @@ function sfxBattle(an, r) {
 setInterval(() => {
   try {
     if (
-      typeof DIO === 'undefined' ||
-      !DIO.ready ||
-      !DIO.pl ||
-      !DIO.pl.walk ||
+      typeof walkView === 'undefined' ||
+      !walkView.ready ||
+      !walkView.pl ||
+      !walkView.pl.walk ||
       document.hidden ||
       (typeof B !== 'undefined' && B)
     )
       return;
-    const P = DIO.pl;
+    const P = walkView.pl;
     let ter = typeof dioTer === 'function' ? dioTer(P.x, P.z) : 'g';
     /* v18: hollow boards on wooden and rope bridges, stone on stone bridges and stairs */
     if (typeof dioBridgeAt === 'function' && dioBridgeAt(P.x, P.z) != null) {
@@ -1061,7 +1061,14 @@ setInterval(() => {
     } else if (typeof dioStepM === 'function') {
       if ((dioStepM(P.x, P.z) & 15) === 8) ter = 'e';
     }
-    if (typeof ENV !== 'undefined' && ENV.on && DIO.sc && !DIO.sc.indoor && ENV.wet > 0.5 && !/[bew]/.test(ter))
+    if (
+      typeof ENV !== 'undefined' &&
+      ENV.on &&
+      walkView.sc &&
+      !walkView.sc.indoor &&
+      ENV.wet > 0.5 &&
+      !/[bew]/.test(ter)
+    )
       ter = 'wet';
     if (typeof ENV !== 'undefined' && ENV.on && ENV.sk && ENV.sk[3] > 0.3 && /[gGflt]/.test(ter)) ter = 'n';
     sfx('step', { ter });
@@ -1312,8 +1319,8 @@ function ambInit() {
 }
 /* where a sound is, as a volume and a left-right pan, from where you stand and which way the camera faces */
 function ambWhere(x, z, range) {
-  const P = DIO.pl,
-    C = DIO.C;
+  const P = walkView.pl,
+    C = walkView.C;
   if (!P) return null;
   const d = Math.hypot(x - P.x, z - P.z);
   if (d > range) return null;
@@ -1337,14 +1344,14 @@ function ambUpdate() {
     t = c.currentTime,
     T = {};
   const walk =
-    typeof DIO !== 'undefined' &&
-    DIO.ready &&
-    DIO.sc &&
+    typeof walkView !== 'undefined' &&
+    walkView.ready &&
+    walkView.sc &&
     !document.hidden &&
     typeof U !== 'undefined' &&
     (U.tab === 'walk' || (typeof B !== 'undefined' && B));
   const E = typeof ENV !== 'undefined' && ENV.on ? ENV : null,
-    sc = walk ? DIO.sc : null;
+    sc = walk ? walkView.sc : null;
   let pans = {};
   if (sc) {
     const put = (k, w, mul = 1) => {
@@ -1368,19 +1375,19 @@ function ambUpdate() {
       pans.sea = 0;
       put(
         'sea',
-        ambNearest(DIO.water, q => q, 8),
+        ambNearest(walkView.water, q => q, 8),
         0.6
       );
     } else
       put(
         'pond',
-        ambNearest(DIO.water, q => q, 6),
+        ambNearest(walkView.water, q => q, 6),
         0.22
       );
     if (sc.waterKind === 'lava')
       put(
         'lava',
-        ambNearest(DIO.water, q => q, 10),
+        ambNearest(walkView.water, q => q, 10),
         0.5
       );
     const C0 = dioData().sc,
@@ -1441,7 +1448,7 @@ function ambUpdate() {
   }
   /* the music listens: drums soften when you stand still or at night, a pad at night, muffled in the rain */
   const night = E ? (E.raw || E).night : 0,
-    moving = sc && DIO.pl && DIO.pl.walk;
+    moving = sc && walkView.pl && walkView.pl.walk;
   AUD.L = {
     drums: (moving || (typeof B !== 'undefined' && B) ? 1 : 0.45) * (1 - night * 0.4),
     pad: sc && !sc.indoor ? night : 0,
@@ -1471,7 +1478,7 @@ function ambLife(sc, E, T, pans, t) {
     town = thru > 0 && !!((node && node.town) || (!sc.indoor && (sc.far === 'town' || sc.far === 'city')));
   if (thru) {
     const C0 = dioData().sc,
-      P = DIO.pl;
+      P = walkView.pl;
     let trees = 0;
     for (const p of sc.props || []) {
       if (Math.abs(p.x - P.x) > 9 || Math.abs(p.z - P.z) > 9) continue;
@@ -1836,7 +1843,7 @@ function audTest(k) {
 }
 /* a one-off sound somewhere in the scene: animals calling, scurrying off, a frog's plop */
 function sfxAt(name, x, z, o = {}) {
-  if (!AUD.ctx || AUD.ctx.state !== 'running' || typeof DIO === 'undefined' || !DIO.ready) return;
+  if (!AUD.ctx || AUD.ctx.state !== 'running' || typeof walkView === 'undefined' || !walkView.ready) return;
   const w = ambWhere(x, z, 14);
   if (!w || w.v < 0.03) return;
   const c = AUD.ctx,

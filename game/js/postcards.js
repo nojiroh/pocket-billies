@@ -10,7 +10,7 @@ import { STEST, STORY, sceneIdAt, storyFlags, toast } from './hooks.js';
 import { ROUTE, TRAINERS, isTown, trainersAt } from './game-data.js';
 import { B, S, U, esc, save } from './game-state.js';
 import { artURL } from './art.js';
-import { DIO, dioFlagPath, dioScene } from './walk-view.js';
+import { dioFlagPath, dioScene, walkView } from './walk-view.js';
 import { sfx } from './sound.js';
 import { TALK } from './talk.js';
 import { CS } from './cutscene.js';
@@ -47,10 +47,10 @@ function pcFlag(i) {
 }
 /* the town you are standing in (in the joined world, the place under your feet), or null */
 function pcHere() {
-  if (typeof DIO === 'undefined' || !DIO.ready || !DIO.sc || !DIO.pl) return null;
-  const sc = DIO.sc,
-    P = DIO.pl,
-    parts = sc.parts || [{ id: DIO.id, ox: 0, oz: 0 }];
+  if (typeof walkView === 'undefined' || !walkView.ready || !walkView.sc || !walkView.pl) return null;
+  const sc = walkView.sc,
+    P = walkView.pl,
+    parts = sc.parts || [{ id: walkView.id, ox: 0, oz: 0 }];
   for (const q of parts) {
     const s = dioScene(q.id);
     if (!s || s.kind === 'room') continue;
@@ -71,7 +71,7 @@ function pcFree() {
   if (typeof STORY !== 'undefined' && (STORY.pending || STORY.rivalTalk)) return false;
   if (trainersAt(S.route.node).some(T => !S.flags[T.id] && T.intro && T.intro.length && !F['met_' + T.id]))
     return false;
-  if (typeof DIO !== 'undefined' && !DIO.ready) return false;
+  if (typeof walkView !== 'undefined' && !walkView.ready) return false;
   return true;
 }
 export function postcardCheck() {

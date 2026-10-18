@@ -7,7 +7,7 @@
 import { expose } from '../test-globals.js';
 import { ENV, envSun } from '../hooks.js';
 import { clamp } from '../util.js';
-import { DIO } from '../walk-view.js';
+import { walkView } from '../walk-view.js';
 import { ENG_CTX, eng, engHex } from './settings.js';
 import { EGL, M4, eglTarget, v3c, v3n } from './webgl.js';
 /* eslint-disable no-func-assign */
@@ -53,7 +53,7 @@ export function eglSun(indoor) {
     dir: toSun,
     travel: [-toSun[0], -toSun[1], -toSun[2]],
     col: col.map(v => v * k * 0.72),
-    pulse: (0.85 + 0.15 * Math.sin((typeof DIO !== 'undefined' ? DIO.t : 0) / 9000)) * eng('sun', 'innerSun'),
+    pulse: (0.85 + 0.15 * Math.sin((typeof walkView !== 'undefined' ? walkView.t : 0) / 9000)) * eng('sun', 'innerSun'),
     height: h,
     indoor,
   };

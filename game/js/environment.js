@@ -12,7 +12,7 @@ import { expose } from './test-globals.js';
 import { RM, RULES, S, SP, provide, sceneIdAt } from './hooks.js';
 import { clamp } from './util.js';
 import { hexA } from './art.js';
-import { DIO, dioScene } from './walk-view.js';
+import { dioScene, walkView } from './walk-view.js';
 /* eslint-disable no-func-assign */
 expose({
   ENV: [() => ENV],
@@ -457,7 +457,9 @@ const ENV_MOD = {
     exposure: v =>
       v *
       (1 + ENV.night * 0.18 + ENV.flash * 0.6) *
-      (typeof DIO !== 'undefined' && DIO.sc && DIO.sc.indoor ? 1 - ENV.grey * 0.12 - ENV.storm * 0.06 : 1),
+      (typeof walkView !== 'undefined' && walkView.sc && walkView.sc.indoor
+        ? 1 - ENV.grey * 0.12 - ENV.storm * 0.06
+        : 1),
     warmth: v => v + ENV.dusk * 0.22 + ENV.dawn * 0.12 - ENV.night * 0.12,
     bloom: v => v * (1 + ENV.night * 0.5),
   },

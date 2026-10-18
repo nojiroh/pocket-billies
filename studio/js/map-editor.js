@@ -24,7 +24,6 @@ import {
 import { $, $$, clamp } from '../../game/js/util.js';
 import { ART, cnv } from '../../game/js/art.js';
 import {
-  DIO,
   DIO_RISE,
   dioAlong,
   dioExitEdge,
@@ -39,6 +38,7 @@ import {
   dioStepsStore,
   setDioData,
   setDioImg,
+  walkView,
 } from '../../game/js/walk-view.js';
 import { ENV } from '../../game/js/environment.js';
 import { DGL, DGL_WALL_MATS, dioHRaw, dioMount } from '../../game/js/walk-view-gl.js';
@@ -882,7 +882,7 @@ function scPreview() {
   const cv = $('#scPv'),
     id0 = scId();
   if (!cv || !id0) return;
-  DIO.pl.t = -1;
+  walkView.pl.t = -1;
   if (SCN.pvId !== id0) {
     SCN.pvId = id0;
     SCN.pvPos = null;
@@ -957,14 +957,14 @@ function scPreview() {
 }
 ACTS.scPv = d => {
   SCN.pv = d.m;
-  DIO.pl.fresh = true;
-  DIO.pl.pk = '';
+  walkView.pl.fresh = true;
+  walkView.pl.pk = '';
   render();
 };
 ACTS.scPvHub = () => {
   SCN.pvPos = null;
-  DIO.pl.fresh = true;
-  DIO.pl.route = null;
+  walkView.pl.fresh = true;
+  walkView.pl.route = null;
 };
 /* ---------- map ---------- */
 export function scMapDraw() {
@@ -1207,7 +1207,7 @@ function scBindMap() {
         any = scSetTile(sc, m.i + a, m.j + b, SCN.ter) || any;
       }
     if (any) {
-      DIO.gkey = '';
+      walkView.gkey = '';
       scMapDraw();
     }
   };
@@ -1227,7 +1227,7 @@ function scBindMap() {
       }
       if (SCN.tool === 'fill') {
         scFlood(sc, m.i, m.j, SCN.ter);
-        DIO.gkey = '';
+        walkView.gkey = '';
         scMapDraw();
         changed();
         commit(true);
@@ -1298,8 +1298,8 @@ function scBindMap() {
       if (near >= 0 && (ev.button === 2 || ev.altKey)) {
         if (P.length > 2) {
           P.splice(near, 1);
-          DIO.cand = null;
-          DIO.nav = null;
+          walkView.cand = null;
+          walkView.nav = null;
           scMapDraw();
           changed();
           commit(true);
@@ -1359,8 +1359,8 @@ function scBindMap() {
         sc.props.push(q);
       }
       SCN.sel = sc.props.length - 1;
-      DIO.cand = null;
-      DIO.nav = null;
+      walkView.cand = null;
+      walkView.nav = null;
       changed();
       commit(true);
       render();
@@ -1392,16 +1392,16 @@ function scBindMap() {
         scExitSync(sc, D.n);
       }
       D.moved = 1;
-      DIO.cand = null;
-      DIO.nav = null;
+      walkView.cand = null;
+      walkView.nav = null;
       scMapDraw();
     } else if (D.k === 'pt') {
       const q = clamp(m.x, 0, sc.w),
         r = clamp(m.z, 0, sc.h);
       sc.path[D.n] = [+q.toFixed(2), +r.toFixed(2)];
       D.moved = 1;
-      DIO.cand = null;
-      DIO.nav = null;
+      walkView.cand = null;
+      walkView.nav = null;
       scMapDraw();
     } else if (D.k === 'prop') {
       const p = sc.props[SCN.sel];
@@ -1493,9 +1493,9 @@ function scHeightAt(sc, m) {
       H[r][i] = Math.round(clamp(n, -8, 12) * 100) / 100;
     }
   sc._hv = (sc._hv || 0) + 1;
-  /* alpha 0.2: the game's smoothed land (dioHGrid) is made again */ DIO.nav = null;
-  DIO.cand = null;
-  DIO.nav = null;
+  /* alpha 0.2: the game's smoothed land (dioHGrid) is made again */ walkView.nav = null;
+  walkView.cand = null;
+  walkView.nav = null;
   clearTimeout(SCN.hT);
   SCN.hT = setTimeout(() => {
     if (typeof DGL !== 'undefined') DGL.hkey = '';
@@ -1510,7 +1510,7 @@ ACTS.scHFlat = async () => {
   const sc = scCur();
   if (!(await ask('Make the whole scene flat?', 'Flatten'))) return;
   delete sc.heights;
-  DIO.nav = null;
+  walkView.nav = null;
   if (typeof DGL !== 'undefined') DGL.hkey = '';
   changed();
   commit(true);
@@ -1583,7 +1583,7 @@ document.addEventListener('keydown', ev => {
     ev.preventDefault();
     p.x = +(p.x + mv[0]).toFixed(2);
     p.z = +(p.z + mv[1]).toFixed(2);
-    DIO.nav = null;
+    walkView.nav = null;
     changed();
     scMapDraw();
   }
@@ -1592,9 +1592,9 @@ document.addEventListener('keydown', ev => {
 ST.hooks.scenes = path => {
   if (SCN.ped && typeof pedDraw === 'function') pedDraw();
   if (path.startsWith('scenes.') || path.startsWith('scenery.')) {
-    DIO.nav = null;
-    DIO.cand = null;
-    if (/\.(edge|w|h)$/.test(path) || path.startsWith('scenery.terrains')) DIO.gkey = '';
+    walkView.nav = null;
+    walkView.cand = null;
+    if (/\.(edge|w|h)$/.test(path) || path.startsWith('scenery.terrains')) walkView.gkey = '';
     scMapDraw();
     if (path.startsWith('scenery.terrains')) scThumbs();
   }
@@ -1856,9 +1856,9 @@ ACTS.scResize = () => {
       }
     dioStepsStore(sc, E);
   }
-  DIO.gkey = '';
-  DIO.nav = null;
-  DIO.cand = null;
+  walkView.gkey = '';
+  walkView.nav = null;
+  walkView.cand = null;
   changed();
   commit(true);
   render();
@@ -1899,14 +1899,14 @@ function scExitChecks(sc) {
     else out.push({ ok: 1, t: `${nm}: on walkable ground` });
     let path = null;
     try {
-      if (DIO.sc === sc) {
-        DIO.nav = null;
+      if (walkView.sc === sc) {
+        walkView.nav = null;
         path = dioFind(hub[0], hub[1], p[0], p[1]);
       }
     } catch (err) {
       path = null;
     }
-    if (DIO.sc === sc) {
+    if (walkView.sc === sc) {
       const end = path && path[path.length - 1];
       out.push(
         end && Math.hypot(end[0] - p[0], end[1] - p[1]) <= 1.6
@@ -1948,9 +1948,9 @@ async function scResizeReport(sc, before) {
   if (keep !== false) return;
   Object.keys(sc).forEach(k => delete sc[k]);
   Object.assign(sc, before);
-  DIO.gkey = '';
-  DIO.nav = null;
-  DIO.cand = null;
+  walkView.gkey = '';
+  walkView.nav = null;
+  walkView.cand = null;
   changed();
   commit(true);
   render();
@@ -2232,7 +2232,7 @@ function scPeDone() {
   const c = atlasNow(SCN.pe.path);
   markArt(SCN.pe.path, c);
   if (SCN.ped && typeof pedDraw === 'function') pedDraw();
-  if (SCN.pe.kind === 'tile') DIO.gkey = '';
+  if (SCN.pe.kind === 'tile') walkView.gkey = '';
   scThumbs();
   scMapDraw();
   scPePalette();
@@ -2501,7 +2501,7 @@ function scStepsDown(sc, m, ev) {
       if (k >= 0) {
         L.splice(k, 1);
         if (!L.length) delete sc.bridges;
-        DIO.nav = null;
+        walkView.nav = null;
         changed();
         commit(true);
         scMapDraw();
@@ -2555,7 +2555,7 @@ function scStepsUp(sc, D) {
           SCN.bkind === 'pier' ? { pier: 1 } : {}
         )
       );
-      DIO.nav = null;
+      walkView.nav = null;
       changed();
       commit(true);
     }
@@ -2608,8 +2608,8 @@ function scStepsUp(sc, D) {
   }
   dioStepsStore(sc, E);
   SCN.stE = null;
-  DIO.nav = null;
-  DIO.cand = null;
+  walkView.nav = null;
+  walkView.cand = null;
   changed();
   commit(true);
   scMapDraw();
@@ -2715,7 +2715,7 @@ function scDrawSteps(x, sc, Z) {
     x.setLineDash([]);
   }
   /* where you can walk: red where you can't, gold arrows where you can hop down */
-  if (SCN.walkOv && SCN.tool === 'steps' && DIO.sc === sc && !SCN.stE) {
+  if (SCN.walkOv && SCN.tool === 'steps' && walkView.sc === sc && !SCN.stE) {
     const G = dioNav(),
       k = Z / G.N;
     for (let j = 0; j < G.gh; j++)
@@ -2893,6 +2893,6 @@ ACTS.scJoined = () => {
   SCN.joined = !SCN.joined;
   SCN.pvPos = null;
   SCN.pvId = null;
-  DIO.pl.fresh = true;
+  walkView.pl.fresh = true;
   render();
 };

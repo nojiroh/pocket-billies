@@ -9,7 +9,7 @@ import { expose } from '../test-globals.js';
 import { RM, provide } from '../hooks.js';
 import { clamp } from '../util.js';
 import { cnv } from '../art.js';
-import { DIO } from '../walk-view.js';
+import { walkView } from '../walk-view.js';
 import { eng, engHex } from './settings.js';
 import { EGL, EGL_GLSL_LIGHT, eglBindQuad, eglPrograms, eglTarget } from './webgl.js';
 import { eglLightU } from './light.js';
@@ -319,7 +319,7 @@ export function eglPost(S, C, focusDist, rw, rh, o = {}) {
   gl.uniform1f(U.uCA, eng('lens', 'aberration'));
   gl.uniform1f(U.uGrain, RM ? 0 : eng('lens', 'grain'));
   gl.uniform1f(U.uSharp, eng('lens', 'sharpen'));
-  gl.uniform1f(U.uTime, typeof DIO !== 'undefined' ? DIO.t : 0);
+  gl.uniform1f(U.uTime, typeof walkView !== 'undefined' ? walkView.t : 0);
   tex(U, 'uVol', 12, VO ? VO.c : EGL.white);
   gl.bindSampler(12, null);
   gl.uniform1f(U.uVolK, VO ? 1 : 0);

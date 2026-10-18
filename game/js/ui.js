@@ -109,7 +109,6 @@ import { drPortrait, openDressing } from './dressing-room.js';
 import { bustHTML, sprHTML } from './skeleton-rig.js';
 import { EASE, SC, camHome, scFocus, scTargets } from './battle-stage.js';
 import {
-  DIO,
   dioClimb,
   dioData,
   dioFind,
@@ -122,6 +121,7 @@ import {
   openKind,
   placeClosedText,
   placeOpen,
+  walkView,
 } from './walk-view.js';
 import { eng } from './engine/settings.js';
 import { ENV, envHint, envIcon, envLabel } from './environment.js';
@@ -1043,7 +1043,7 @@ function roomFor(a, p) {
 }
 function enterRoom(a, p) {
   const id = roomFor(a, p);
-  if (!id || !DIO.pl) return false;
+  if (!id || !walkView.pl) return false;
   const here = ROUTE[S.route.node];
   const info = {
     id,
@@ -1053,8 +1053,12 @@ function enterRoom(a, p) {
     p,
     name: p.label || (a === 'shop' && SHOPS[p.shop || here.shop] ? SHOPS[p.shop || here.shop].name : null),
     back: (() => {
-      const o = (DIO.sc && DIO.sc.baseOff) || [0, 0];
-      return { id: (DIO.sc && DIO.sc.baseId) || DIO.id, x: DIO.pl.x - o[0], z: DIO.pl.z - o[1] };
+      const o = (walkView.sc && walkView.sc.baseOff) || [0, 0];
+      return {
+        id: (walkView.sc && walkView.sc.baseId) || walkView.id,
+        x: walkView.pl.x - o[0],
+        z: walkView.pl.z - o[1],
+      };
     })(),
   };
   if (id === 'int_home' && typeof homeApply === 'function') homeApply();
@@ -1063,7 +1067,7 @@ function enterRoom(a, p) {
   if (lay) {
     Object.assign(info, lay);
     U.goingIn = info;
-    const P = DIO.pl,
+    const P = walkView.pl,
       fr = [lay.door[0], lay.door[1] - 0.45];
     if (Math.hypot(P.x - fr[0], P.z - fr[1]) > 1.6) dioWalkTo(dioFreePt(fr[0], fr[1]), () => roomStepIn(info));
     else roomStepIn(info);
@@ -1083,13 +1087,13 @@ function roomLayIn(id, p, fresh) {
   if (
     typeof wrRoomScene !== 'function' ||
     !wrOn() ||
-    !DIO.ready ||
-    !DIO.sc ||
-    !DIO.sc.parts ||
-    DIO.sc.roomRect ||
+    !walkView.ready ||
+    !walkView.sc ||
+    !walkView.sc.parts ||
+    walkView.sc.roomRect ||
     typeof DGL === 'undefined' ||
     !DGL.on ||
-    !DIO.pl ||
+    !walkView.pl ||
     !p
   )
     return null;
@@ -1103,23 +1107,23 @@ function roomLayIn(id, p, fresh) {
     door = [+(p.x + dx).toFixed(1), +(+p.z).toFixed(1), +(+p.x).toFixed(1)]; /* the door, and the building's middle */
   if (fresh)
     WORLD.cache.delete(
-      wrRoomId(DIO.id, id, door) + '|' + WORLD.gen
+      wrRoomId(walkView.id, id, door) + '|' + WORLD.gen
     ); /* the room as it is now (your room's decorations) */
-  const sc = wrRoomScene(DIO.id, id, door);
+  const sc = wrRoomScene(walkView.id, id, door);
   if (!sc) return null;
   wrGetReady(sc.id, true, door);
-  return { view: sc.id, door, base: DIO.id };
+  return { view: sc.id, door, base: walkView.id };
 }
 /* the room's things changed while you're in it (your room's decorations): lay it in again */
 function roomRefresh() {
   const I = U.inside;
-  if (!I || !I.view || DIO.id !== I.view || !DIO.sc) return;
+  if (!I || !I.view || walkView.id !== I.view || !walkView.sc) return;
   WORLD.cache.delete(I.view + '|' + WORLD.gen);
   const n = wrRoomScene(I.base, I.id, I.door);
   if (!n) return;
-  DIO.sc.props = n.props;
+  walkView.sc.props = n.props;
   if (typeof DGL !== 'undefined') DGL.itemGen = (DGL.itemGen || 0) + 1;
-  DIO.nav = null;
+  walkView.nav = null;
 }
 function roomAim(h) {
   if (!h || h.k !== 'act' || !ROOM_OF[h.act] || U.inside) return;
@@ -1129,9 +1133,9 @@ function roomAim(h) {
 }
 function roomStepIn(info, n = 0) {
   if (U.goingIn !== info) return;
-  const P = DIO.pl,
+  const P = walkView.pl,
     fr = [info.door[0], info.door[1] - 0.45];
-  if (!P || DIO.id !== info.base || Math.hypot(P.x - fr[0], P.z - fr[1]) > 2.2) {
+  if (!P || walkView.id !== info.base || Math.hypot(P.x - fr[0], P.z - fr[1]) > 2.2) {
     U.goingIn = null;
     return;
   } /* you walked off, or the view moved on */
@@ -1154,7 +1158,8 @@ function roomStepIn(info, n = 0) {
   render();
   if (info.view)
     setTimeout(() => {
-      if (U.inside === info && DIO.id === info.view && DIO.pl && DIO.sc) dioWalkTo(dioHubOf(DIO.sc));
+      if (U.inside === info && walkView.id === info.view && walkView.pl && walkView.sc)
+        dioWalkTo(dioHubOf(walkView.sc));
     }, 80);
 }
 export function leaveRoom() {
@@ -1162,9 +1167,9 @@ export function leaveRoom() {
   if (!I) return;
   U.inside = null;
   if (I.view) {
-    /* out through the door: you stand in front of it, where you came in */ const P = DIO.pl,
+    /* out through the door: you stand in front of it, where you came in */ const P = walkView.pl,
       fr = [I.door[0], I.door[1] - 0.6],
-      rv = DIO.id === I.view && DIO.sc && DIO.sc.roomCut;
+      rv = walkView.id === I.view && walkView.sc && walkView.sc.roomCut;
     if (P && rv) {
       P.x = fr[0] - rv[0];
       P.z = fr[1] - rv[1];
@@ -1245,7 +1250,7 @@ function roomState() {
       return null;
     }
     const dr = sc.roomDoor || I.door,
-      pos = DIO.id === I.view && DIO.pl ? [DIO.pl.x, DIO.pl.z] : [dr[0], dr[1] - 0.45];
+      pos = walkView.id === I.view && walkView.pl ? [walkView.pl.x, walkView.pl.z] : [dr[0], dr[1] - 0.45];
     return {
       id: I.view,
       node: S.route.node,
@@ -1327,23 +1332,25 @@ function walkState() {
       v = { id, node, mode: 'path', from: pos, to: sc.exits && k != null ? sc.exits[k] : hub, t: f / 0.5 };
     } else {
       /* v43: near an exit the road leaving it is part of the view (positions are kept in the scene's own metres) */ const wo =
-          DIO.ready && DIO.pl && !DIO.pl.fresh ? walkOff(id) : null,
+          walkView.ready && walkView.pl && !walkView.pl.fresh ? walkOff(id) : null,
         live = !!wo,
         lo = wo,
         wv =
-          typeof wrRoamView === 'function' ? wrRoamView(node, live ? [DIO.pl.x - lo[0], DIO.pl.z - lo[1]] : pos) : null;
+          typeof wrRoamView === 'function'
+            ? wrRoamView(node, live ? [walkView.pl.x - lo[0], walkView.pl.z - lo[1]] : pos)
+            : null;
       if (wv) {
         const o = wv.sc.baseOff;
         v = { id: wv.id, node, mode: 'roam', pos: [pos[0] + o[0], pos[1] + o[1]], roam: true };
       } else v = { id, node, mode: 'roam', pos, roam: true };
       /* v43: arriving: you stand at the exit the road came in by and walk to the hub; if the road left you outside the scene, you start at that exit */
       if (live && sc.w && U.arrive === node) {
-        const P = DIO.pl,
+        const P = walkView.pl,
           lx = P.x - lo[0],
           lz = P.z - lo[1],
           out = lx < 0 || lz < 0 || lx > sc.w || lz > sc.h;
         U.arrive = null;
-        if (out && !(DIO.sc && DIO.sc.parts)) {
+        if (out && !(walkView.sc && walkView.sc.parts)) {
           /* v46: with the road in view you simply walk in from where you are; the snap is only for a scene shown alone */ const ex =
             (sc.exits || [])
               .slice()
@@ -1510,9 +1517,9 @@ function exitPrompt(e) {
   }
   /* alpha 0.4.1: walking yourself: tapping the way out walks you out of the place and on into the next */
   if (walkMode()) {
-    const sc = DIO.sc,
+    const sc = walkView.sc,
       pt = sc && sc.exits && sc.exits[e.i];
-    if (!pt || !DIO.pl) return;
+    if (!pt || !walkView.pl) return;
     const hub = dioHubOf(sc),
       dx = pt[0] - hub[0],
       dz = pt[1] - hub[1],
@@ -1564,9 +1571,9 @@ setInterval(() => {
    (a gate you haven't the badge for, a trainer blocking the road) turns you back at the edge. */
 /* 0.5: where a place's own ground sits in the view on screen (the view may be a neighbour's, holding this place as a part) */
 function walkOff(id) {
-  const sc = DIO.sc;
+  const sc = walkView.sc;
   if (!sc || !id) return null;
-  if ((sc.baseId || DIO.id) === id) return sc.baseOff || [0, 0];
+  if ((sc.baseId || walkView.id) === id) return sc.baseOff || [0, 0];
   const q = (sc.parts || []).find(q => q.id === id);
   return q ? [q.ox || 0, q.oz || 0] : null;
 }
@@ -1574,17 +1581,17 @@ function walkCross() {
   if (
     !walkMode() ||
     !S.started ||
-    !DIO.ready ||
-    !DIO.sc ||
-    !DIO.pl ||
+    !walkView.ready ||
+    !walkView.sc ||
+    !walkView.pl ||
     U.inside ||
     U.bench ||
     (typeof B !== 'undefined' && B) ||
     (typeof CS !== 'undefined' && CS.on)
   )
     return;
-  const sc = DIO.sc,
-    P = DIO.pl,
+  const sc = walkView.sc,
+    P = walkView.pl,
     node = S.route.node,
     parts = sc.parts;
   if (!parts) return;
@@ -1596,7 +1603,7 @@ function walkCross() {
     if (x < 0 || z < 0 || x > s.w || z > s.h) continue;
     const n = ROUTE.findIndex(r => r.scene === q.id);
     if (n < 0 || n === node) {
-      U.walkOk = [P.x, P.z, DIO.id];
+      U.walkOk = [P.x, P.z, walkView.id];
       return;
     }
     if (Math.min(x, z, s.w - x, s.h - z) < 1 || !ADJ[node].some(e => e.to === n)) return;
@@ -1608,7 +1615,7 @@ function walkCross() {
           : null;
     if (why) {
       const w = U.walkOk;
-      if (w && w[2] === DIO.id) {
+      if (w && w[2] === walkView.id) {
         P.x = w[0];
         P.z = w[1];
       }
@@ -1642,13 +1649,13 @@ setInterval(() => {
       U.tab !== 'walk' ||
       (typeof B !== 'undefined' && B) ||
       (typeof CS !== 'undefined' && CS.on) ||
-      typeof DIO === 'undefined' ||
-      !DIO.ready ||
-      !DIO.cv
+      typeof walkView === 'undefined' ||
+      !walkView.ready ||
+      !walkView.cv
     )
       return;
     const v = walkState();
-    if (v && v.id && v.id !== DIO.id && !v.held) walkSceneSync();
+    if (v && v.id && v.id !== walkView.id && !v.held) walkSceneSync();
   } catch (e) {}
 }, 400);
 function walkSceneSync() {
@@ -1656,8 +1663,8 @@ function walkSceneSync() {
   /* in a battle the scene keeps running inside the battle stage (battle-3d.js) when it can; otherwise it stops */
   if (B) {
     document.body.classList.remove('on-walk', 'on-scene');
-    if (DIO.battle) {
-      const cv = DIO.cv,
+    if (walkView.battle) {
+      const cv = walkView.cv,
         host = $('#camWorld');
       if (cv && !cv.isConnected && host) {
         host.insertBefore(cv, host.firstChild);
@@ -1668,7 +1675,7 @@ function walkSceneSync() {
     if (typeof battleGLWanted === 'function' && battleGLWanted()) return;
     const cv = $('#dio');
     if (cv) cv.hidden = true;
-    if (DIO.cv) dioStop();
+    if (walkView.cv) dioStop();
     return;
   }
   const on = S.started && U.tab !== 'map' && !!sceneIdAt(S.route.node),
@@ -1677,7 +1684,7 @@ function walkSceneSync() {
   document.body.classList.toggle('on-walk', walk);
   document.body.classList.toggle('on-scene', on && !walk);
   if (!on) {
-    if (DIO.cv) dioStop();
+    if (walkView.cv) dioStop();
     if (U.tab === 'map' && S.started && typeof mapGLWanted === 'function' && mapGLWanted()) {
       if (cv) {
         cv.hidden = false;
@@ -1700,23 +1707,23 @@ function walkSceneSync() {
   cv.hidden = false;
   const ws = walkState(),
     id = ws.id;
-  if (DIO.id !== id && DIO.cv && DIO.ready && typeof wrDelta === 'function') {
-    const d = wrDelta(DIO.id, id);
+  if (walkView.id !== id && walkView.cv && walkView.ready && typeof wrDelta === 'function') {
+    const d = wrDelta(walkView.id, id);
     /* alpha 0.2: neighbouring places share their edges, so most views share a part; a walk carries on into the next view,
      a jump somewhere else (not where you are walking to) opens it fresh */
     const walking =
       !d ||
       ws.mode === 'road' ||
       !ws.pos ||
-      !DIO.pl ||
-      Math.hypot(DIO.pl.x + d[0] - ws.pos[0], DIO.pl.z + d[1] - ws.pos[1]) < 25;
+      !walkView.pl ||
+      Math.hypot(walkView.pl.x + d[0] - ws.pos[0], walkView.pl.z + d[1] - ws.pos[1]) < 25;
     if (d && walking && dioShift(id, d[0], d[1])) {
-      artLoad(dioPaths(DIO.sc)).catch(() => {});
+      artLoad(dioPaths(walkView.sc)).catch(() => {});
       return;
     }
   }
-  if (DIO.id !== id || !DIO.cv) {
-    if (DIO.id && DIO.id !== id) {
+  if (walkView.id !== id || !walkView.cv) {
+    if (walkView.id && walkView.id !== id) {
       cv.classList.remove('in');
       void cv.offsetWidth;
     }
@@ -1728,19 +1735,24 @@ function walkSceneSync() {
         if (typeof walkCross === 'function') walkCross();
         /* after leaving a room you stand at its door: nothing in between moves that */ if (
           !U.inside &&
-          /^int_/.test(DIO.id || '')
+          /^int_/.test(walkView.id || '')
         )
           return;
         const sid = sceneIdAt(S.route.node),
           po = walkOff(sid),
-          o = po || (DIO.sc && DIO.sc.baseOff) || [0, 0],
+          o = po || (walkView.sc && walkView.sc.baseOff) || [0, 0],
           bk = U.backAt;
         if (bk) {
           if (walkOff(bk.id) && Math.hypot(x - walkOff(bk.id)[0] - bk.x, z - walkOff(bk.id)[1] - bk.z) < 0.6)
             U.backAt = null;
           else return;
         }
-        U.roam = { id: po ? sid : (DIO.sc && DIO.sc.baseId) || DIO.id, node: S.route.node, x: x - o[0], z: z - o[1] };
+        U.roam = {
+          id: po ? sid : (walkView.sc && walkView.sc.baseId) || walkView.id,
+          node: S.route.node,
+          x: x - o[0],
+          z: z - o[1],
+        };
       },
       keys: () => !U.modal && U.tab === 'walk' && scrollY < innerHeight * 0.3,
       active: () => U.tab === 'walk' && !U.modal,
@@ -1756,7 +1768,7 @@ function walkSceneSync() {
       cap: () => {
         const w = document.hidden
           ? 'hidden'
-          : DIO.battle
+          : walkView.battle
             ? ''
             : U.modal
               ? 'window'
@@ -1765,7 +1777,7 @@ function walkSceneSync() {
                 : scrollY > innerHeight * 0.7
                   ? 'scrolled'
                   : '';
-        DIO.held = w;
+        walkView.held = w;
         return w === 'hidden' ? 1 : w === 'window' ? 10 : w === 'screen' ? 24 : w === 'scrolled' ? 4 : userFps();
       },
     }).then(() => cv.classList.add('in'));

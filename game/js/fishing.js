@@ -12,7 +12,7 @@ import { clamp, rnd } from './util.js';
 import { GD, RULES, SP } from './game-data.js';
 import { B, RM, S, U, areaPool, pickW, save, uid } from './game-state.js';
 import { uiIco } from './art.js';
-import { DIO, dioTer } from './walk-view.js';
+import { dioTer, walkView } from './walk-view.js';
 import { DGL, DGL_WKIND, dglCurve, dglRing, dglWgAt, dioH } from './walk-view-gl.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -59,16 +59,16 @@ function fishRules() {
 /* the water in front of you (or close beside you): {x,z,y,kind} or null */
 function fishSpot() {
   if (
-    typeof DIO === 'undefined' ||
-    !DIO.sc ||
-    !DIO.ready ||
-    DIO.battle ||
-    DIO.director ||
+    typeof walkView === 'undefined' ||
+    !walkView.sc ||
+    !walkView.ready ||
+    walkView.battle ||
+    walkView.director ||
     (typeof B !== 'undefined' && B)
   )
     return null;
-  const P = DIO.pl,
-    sc = DIO.sc;
+  const P = walkView.pl,
+    sc = walkView.sc;
   const wet = (x, z) => {
     if (x < 0 || z < 0 || x >= sc.w || z >= sc.h) return false;
     const c = dioTer(x, z);
@@ -93,7 +93,7 @@ function fishKindAt(x, z) {
     const g = dglWgAt(x, z);
     if (g && typeof DGL_WKIND !== 'undefined' && DGL_WKIND[g.kind]) return DGL_WKIND[g.kind].k;
   }
-  const sc = DIO.sc;
+  const sc = walkView.sc;
   return sc.waterKind || (sc.indoor && sc.far === 'cave' ? 'spring' : sc.far === 'town' ? 'canal' : 'pond');
 }
 /* what bites: the kind's list, at the place's levels plus the kind's bonus */
@@ -129,7 +129,7 @@ export function fishStart() {
     toast('Walk up to some water first.');
     return;
   }
-  const P = DIO.pl;
+  const P = walkView.pl;
   Object.assign(FISH, {
     on: true,
     phase: 'cast',
@@ -281,9 +281,9 @@ function fishLoop(ts) {
 /* the rod, the line and the float, drawn over the scene */
 function fishDraw(ts) {
   const cv = FISH.cv,
-    C = DIO.C;
-  if (!cv || !C || !C.vp || !DIO.cv) return;
-  const r = DIO.cv.getBoundingClientRect();
+    C = walkView.C;
+  if (!cv || !C || !C.vp || !walkView.cv) return;
+  const r = walkView.cv.getBoundingClientRect();
   if (cv.width !== Math.round(r.width) || cv.height !== Math.round(r.height)) {
     cv.width = Math.round(r.width);
     cv.height = Math.round(r.height);
@@ -302,7 +302,7 @@ function fishDraw(ts) {
       if (w <= 0) return null;
       return [((cx / w) * 0.5 + 0.5) * cv.width, (1 - ((cy / w) * 0.5 + 0.5)) * cv.height];
     };
-  const P = DIO.pl,
+  const P = walkView.pl,
     S0 = FISH.spot,
     py = (P.yv ?? dioH(P.x, P.z)) + (typeof dglCurve === 'function' ? dglCurve(P.x, P.z) : 0),
     hx = P.x + S0.dir[0] * 0.35,

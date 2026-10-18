@@ -163,7 +163,7 @@ NWLOG.task = (name, work, ts) => {
       ms: Math.round(work),
       why,
       view: typeof GAME.B !== 'undefined' && GAME.B ? 'battle' : typeof GAME.U !== 'undefined' ? GAME.U.tab : '-',
-      scene: typeof GAME.DIO !== 'undefined' ? GAME.DIO.id : null,
+      scene: typeof GAME.walkView !== 'undefined' ? GAME.walkView.id : null,
     });
     if (L.length > 60) L.shift();
   }
@@ -180,11 +180,11 @@ NWLOG.ctx = () => {
   const c = {};
   try {
     c.view = typeof GAME.B !== 'undefined' && GAME.B ? 'battle' : typeof GAME.U !== 'undefined' ? GAME.U.tab : '-';
-    if (typeof GAME.DIO !== 'undefined' && GAME.DIO.id) c.scene = GAME.DIO.id;
+    if (typeof GAME.walkView !== 'undefined' && GAME.walkView.id) c.scene = GAME.walkView.id;
     if (typeof GAME.DGL !== 'undefined') c.gl = GAME.DGL.on ? 1 : 0;
-    if (typeof GAME.DIO !== 'undefined') c.res = Math.round((GAME.DIO.R || 1) * 100) / 100;
+    if (typeof GAME.walkView !== 'undefined') c.res = Math.round((GAME.walkView.R || 1) * 100) / 100;
     if (typeof GAME.SC !== 'undefined' && GAME.SC.q) c.bq = GAME.SC.q.lvl;
-    if (typeof GAME.DIO !== 'undefined' && GAME.DIO.held) c.held = GAME.DIO.held;
+    if (typeof GAME.walkView !== 'undefined' && GAME.walkView.held) c.held = GAME.walkView.held;
     if (typeof GAME.DGL !== 'undefined' && GAME.DGL.on) {
       c.q = GAME.DGL.qe || 0;
       if (GAME.DGL.cullOf) c.cull = [GAME.DGL.culled, GAME.DGL.cullOf];
@@ -237,7 +237,7 @@ NWLOG.flush = ts => {
 /* the WebGL scene can only be read inside the frame that drew it, so it is captured there (walk-view-gl.js) */
 NWLOG.snap = () => {
   try {
-    if (typeof GAME.DGL !== 'undefined' && GAME.DGL.on && GAME.DIO.cv && GAME.DIO.ready) {
+    if (typeof GAME.DGL !== 'undefined' && GAME.DGL.on && GAME.walkView.cv && GAME.walkView.ready) {
       GAME.DGL.snapReq = 1;
       return;
     }
@@ -260,7 +260,7 @@ NWLOG.keepShot = (cv, over) => {
       what:
         typeof GAME.B !== 'undefined' && GAME.B
           ? 'battle'
-          : (typeof GAME.DIO !== 'undefined' && GAME.DIO.id) || 'scene',
+          : (typeof GAME.walkView !== 'undefined' && GAME.walkView.id) || 'scene',
       jpeg: c.toDataURL('image/jpeg', 0.72),
     };
   } catch (e) {
@@ -399,7 +399,7 @@ NWLOG.state = () => {
     s.stop = GAME.S.route ? GAME.S.route.node : null;
     s.trip = GAME.S.route ? GAME.S.route.plan.slice() : [];
     s.tripProgress = GAME.S.route ? GAME.S.route.prog : 0;
-    s.scene = typeof GAME.DIO !== 'undefined' ? GAME.DIO.id : null;
+    s.scene = typeof GAME.walkView !== 'undefined' ? GAME.walkView.id : null;
     s.team = GAME.S.team ? GAME.S.team.length : 0;
     s.encounters = GAME.S.queue ? GAME.S.queue.length : 0;
     s.badges = (GAME.S.seats || []).length;
@@ -455,17 +455,17 @@ NWLOG.more = () => {
       : null
   );
   t('scene', () => {
-    if (typeof GAME.DIO === 'undefined' || !GAME.DIO.sc) return null;
-    const sc = GAME.DIO.sc;
+    if (typeof GAME.walkView === 'undefined' || !GAME.walkView.sc) return null;
+    const sc = GAME.walkView.sc;
     return {
-      id: GAME.DIO.id,
+      id: GAME.walkView.id,
       size: [sc.w, sc.h],
       props: (sc.props || []).length,
       life: typeof GAME.LIFE !== 'undefined' ? GAME.LIFE.list.map(c => c.k).join(' ') : '',
-      folk: (GAME.DIO.folk || []).length,
-      water: (GAME.DIO.water || []).length,
+      folk: (GAME.walkView.folk || []).length,
+      water: (GAME.walkView.water || []).length,
       ladders: (sc.props || []).filter(p => p.act === 'climb').length,
-      resolution: GAME.DIO.R,
+      resolution: GAME.walkView.R,
       inside: GAME.U.inside ? GAME.U.inside.id : null,
       room: !!sc.room,
     };
@@ -557,7 +557,7 @@ NWLOG.build = () => ({
 /* save it: the share sheet on phones (send it to yourself, or to Files), a download elsewhere, the clipboard as a last resort */
 async function exportDebugLog() {
   /* take a current picture first: the WebGL scene hands it over on its next frame */
-  if (typeof GAME.DGL !== 'undefined' && GAME.DGL.on && typeof GAME.DIO !== 'undefined' && GAME.DIO.ready) {
+  if (typeof GAME.DGL !== 'undefined' && GAME.DGL.on && typeof GAME.walkView !== 'undefined' && GAME.walkView.ready) {
     const t0 = NWLOG.shot && NWLOG.shot.t;
     NWLOG.snap();
     for (let i = 0; i < 25 && GAME.DGL.snapReq; i++) await new Promise(r => setTimeout(r, 60));
@@ -743,11 +743,13 @@ NWLOG.diag = (since = 0) => {
         ? GAME.U.tab
         : '-'
   );
-  t('scene', () => (typeof GAME.DIO !== 'undefined' ? GAME.DIO.id + (GAME.DIO.ready ? '' : ' (loading)') : null));
+  t('scene', () =>
+    typeof GAME.walkView !== 'undefined' ? GAME.walkView.id + (GAME.walkView.ready ? '' : ' (loading)') : null
+  );
   t('renderer', () =>
     typeof GAME.DGL !== 'undefined'
       ? GAME.DGL.on
-        ? `webgl q${GAME.DGL.q || 0} res ${Math.round((GAME.DIO.R || 1) * 100)}% · ${GAME.DGL.frames} frames`
+        ? `webgl q${GAME.DGL.q || 0} res ${Math.round((GAME.walkView.R || 1) * 100)}% · ${GAME.DGL.frames} frames`
         : 'canvas'
       : '-'
   );

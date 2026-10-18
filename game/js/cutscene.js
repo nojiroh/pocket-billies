@@ -1,7 +1,7 @@
 'use strict';
 /* ================= THE OPENING CUTSCENE =================
    Starts with New game on the title screen. v47: first the fall (opening-fall.js): the surface, the crust, the inner sky.
-   Then Sundown, filmed with the walk-scene engine (walk-view-gl.js DIO.director hook): you wake in the dust outside
+   Then Sundown, filmed with the walk-scene engine (walk-view-gl.js walkView.director hook): you wake in the dust outside
    Professor Hazel's lab, seen through your own eyes, and she comes running. You can't remember your name, so you
    make yourself up in the dressing room; she tells you about billionaires and throws three coins that pop open into
    the starters. Pick one, and her other student Blake runs in, takes the one that beats yours and battles you on the
@@ -32,7 +32,7 @@ import { TR_PRESETS, cleanLook, humanPose, owFrames, trainerLook } from './perso
 import { DR, drSave, openDressing } from './dressing-room.js';
 import { drawRig, rigFrame, rigParts, rigPreload, rigTint } from './skeleton-rig.js';
 import { buzz, partSpr } from './battle-stage.js';
-import { DIO, dioData, dioDirOf, dioImg, dioOk, dioPrepare, dioProj, dioScene, dioStop } from './walk-view.js';
+import { dioData, dioDirOf, dioImg, dioOk, dioPrepare, dioProj, dioScene, dioStop, walkView } from './walk-view.js';
 import { EGL, eglOK } from './engine/webgl.js';
 import { DGL, dglPerson, dioH, dioMount } from './walk-view-gl.js';
 import { wrRoamView } from './seamless-world.js';
@@ -304,10 +304,10 @@ function csStarItem(s, t) {
     person: 1,
   };
 }
-/* ---------- what the engine draws: DIO.director.frame ---------- */
+/* ---------- what the engine draws: walkView.director.frame ---------- */
 export function csFrame() {
   if (!CS.on) return null;
-  const t = DIO.t,
+  const t = walkView.t,
     C0 = dioData().sc,
     items = CS.items,
     parts = CS.parts,
@@ -577,7 +577,7 @@ export async function csStart() {
   }
   cv.hidden = false;
   cv.setAttribute('aria-label', 'Opening scene in ' + csStartName());
-  DIO.director = { frame: csFrame };
+  walkView.director = { frame: csFrame };
   await dioMount(cv, id, {
     state: () => ({ who: null, npcs: [], enc: [], mode: 'line' }),
     keys: () => false,
@@ -586,13 +586,13 @@ export async function csStart() {
     cap: () => (document.hidden ? 1 : DR.on ? 4 : Math.min(60, userFps())),
   });
   if (!CS.on || CS.run !== run) return;
-  if (!DGL.on || !DIO.ready || !DIO.cv) {
+  if (!DGL.on || !walkView.ready || !walkView.cv) {
     csAbort();
     return;
   }
-  cv = DIO.cv;
+  cv = walkView.cv;
   cv.classList.add('in');
-  const sc = DIO.sc,
+  const sc = walkView.sc,
     C0 = dioData().sc,
     o = csPlace(sc);
   const eyes = [
@@ -871,7 +871,7 @@ export function csTeardown() {
   csFlush();
   CS.choosing = false;
   CS.dressing = false;
-  DIO.director = null;
+  walkView.director = null;
   DGL.bt = null;
   DGL.camT = null;
   DGL.focus = null;
@@ -889,7 +889,7 @@ export function csTeardown() {
   }
   if (typeof LAND !== 'undefined') LAND.bits = [];
   document.body.classList.remove('in-cs', 'cs-choosing', 'cs-dress', 'cs-falling', 'cs-dazed', 'cs-waking', 'cs-blink');
-  if (DIO.cv) dioStop();
+  if (walkView.cv) dioStop();
 }
 function csEnd(l) {
   if (CS.test) {
@@ -963,18 +963,18 @@ document.addEventListener('pointerup', ev => {
   if (
     !CS.on ||
     !CS.choosing ||
-    !DIO.C ||
-    !DIO.cv ||
-    (ev.target !== DIO.cv && ev.target.id !== 'dioui' && !ev.target.classList.contains('cs'))
+    !walkView.C ||
+    !walkView.cv ||
+    (ev.target !== walkView.cv && ev.target.id !== 'dioui' && !ev.target.classList.contains('cs'))
   )
     return;
-  const r = DIO.cv.getBoundingClientRect(),
-    sx = ((ev.clientX - r.left) / r.width) * DIO.cv.width,
-    sy = ((ev.clientY - r.top) / r.height) * DIO.cv.height;
+  const r = walkView.cv.getBoundingClientRect(),
+    sx = ((ev.clientX - r.left) / r.width) * walkView.cv.width,
+    sy = ((ev.clientY - r.top) / r.height) * walkView.cv.height;
   let best = -1,
     bd = 1e9;
   CS.stars.forEach((s, i) => {
-    const q = dioProj(DIO.C, s.x, 0.45, s.z);
+    const q = dioProj(walkView.C, s.x, 0.45, s.z);
     if (!q) return;
     const d = Math.hypot(q.x - sx, q.y - sy);
     if (d < bd) {
@@ -982,7 +982,7 @@ document.addEventListener('pointerup', ev => {
       best = i;
     }
   });
-  if (best >= 0 && bd < DIO.cv.height * 0.18 && best !== CS.sel) {
+  if (best >= 0 && bd < walkView.cv.height * 0.18 && best !== CS.sel) {
     CS.sel = best;
     CS.confirm = false;
     csPickFocus();
