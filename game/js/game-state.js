@@ -283,7 +283,7 @@ export function migrate(o) {
   s.jobs.forEach(j => {
     if (j.job && !JOBS[j.job]) j.job = Object.keys(JOBS)[0] || null;
   });
-  if (!s.trip || !LOCATIONS[s.trip.node]) s.trip = { node: START_NODE, prog: 0, plan: [] };
+  if (!s.trip || !LOCATIONS[s.trip.node]) s.trip = { node: START_NODE, prog: 0, plan: [], hold: false };
   s.trip.plan = (Array.isArray(s.trip.plan) ? s.trip.plan : []).filter(x => LOCATIONS[x]);
   if (s.trip.plan.length && !roadCost(s.trip.node, s.trip.plan[0])) {
     s.trip.plan = [];
