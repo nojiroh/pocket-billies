@@ -87,7 +87,7 @@ if (!gameData)
     'The game data did not load: data/gamedata.js is missing and the data files in data/ could not be read (npm run check:data says what is wrong).'
   );
 export const DATA_WARN = [];
-const warnData = m => {
+export const warnData = m => {
   DATA_WARN.push(m);
   console.warn('[gamedata] ' + m);
 };
@@ -98,19 +98,19 @@ export const TYPES = gameData.types.map(t => t.id);
 export const TYPE_COLORS = Object.fromEntries(gameData.types.map(t => [t.id, [t.color, t.text || '#fff']]));
 provide({ TYPE_COLORS }); /* to-module */
 TYPE_COLORS.None = [gameData.untyped.color, gameData.untyped.text || '#fff'];
-const TYPE_STRONG_AGAINST = Object.fromEntries(
+export const TYPE_STRONG_AGAINST = Object.fromEntries(
   gameData.types.map(t => [t.id, (t.strong || []).filter(x => TYPE_COLORS[x])])
 );
-const TYPE_RESISTED_BY = Object.fromEntries(
+export const TYPE_RESISTED_BY = Object.fromEntries(
   gameData.types.map(t => [t.id, (t.weak || []).filter(x => TYPE_COLORS[x])])
 );
 export const PASSIVE = Object.fromEntries(gameData.types.map(t => [t.id, t.passive || '']));
-const HIT_EFFECTS_BY_TYPE = Object.fromEntries(
+export const HIT_EFFECTS_BY_TYPE = Object.fromEntries(
   gameData.types.map(t => [t.id, t.fx && t.fx.length ? t.fx : ['pow', 'star']])
 );
 provide({ HIT_EFFECTS_BY_TYPE }); /* to-module */
 HIT_EFFECTS_BY_TYPE.None = gameData.untyped.fx || ['pow', 'star'];
-const typesWith = p => TYPES.filter(t => PASSIVE[t] === p);
+export const typesWith = p => TYPES.filter(t => PASSIVE[t] === p);
 export const hasPassive = (types, p) => types.some(t => PASSIVE[t] === p);
 export function typeEffectiveness(at, defs) {
   if (at === 'None' || !TYPE_STRONG_AGAINST[at]) return 1;
@@ -137,7 +137,7 @@ for (const k in MOVES) {
 }
 /* ---------- billionaires ---------- */
 /** @type {Evolution[]} */
-const DEFAULT_EVOLUTIONS = [
+export const DEFAULT_EVOLUTIONS = [
   { k: 'lvl', at: 16 },
   { k: 'lvl', at: 36 },
 ];
@@ -146,8 +146,8 @@ export const LINE_BY_ID = Object.fromEntries(LINES.map(l => [l.id, l]));
 export const SPECIES = /** @type {Record<string, Species>} */ ({}),
   DEX_ORDER = /** @type {string[]} */ ([]);
 provide({ SPECIES }); /* to-module */
-const RARITY_STAT_TOTALS = Object.fromEntries(Object.entries(gameData.rarities).map(([k, v]) => [k, v.totals]));
-const atOrLast = (a, i) => a[Math.min(i, a.length - 1)];
+export const RARITY_STAT_TOTALS = Object.fromEntries(Object.entries(gameData.rarities).map(([k, v]) => [k, v.totals]));
+export const atOrLast = (a, i) => a[Math.min(i, a.length - 1)];
 LINES.forEach(L => {
   L.learn = (L.learn || []).filter(([lv, mv]) => {
     if (MOVES[mv]) return true;
@@ -280,7 +280,7 @@ export function isTown(nodeOrId) {
   const r = typeof nodeOrId === 'number' ? LOCATIONS[nodeOrId] : LOCATION_BY_ID[nodeOrId];
   return !!r && (r.kind ? r.kind === 'town' : !!r.town);
 }
-function roadsOf(id) {
+export function roadsOf(id) {
   const n = LOCATION_BY_ID[id] ? LOCATION_BY_ID[id].node : -1;
   return ROADS.map((L, i) => Object.assign({ i, a: L[0], b: L[1], cost: L[2] }, L[3] || {})).filter(
     R => R.a === n || R.b === n
@@ -335,7 +335,7 @@ for (const id in TRAINERS) {
 LOCATIONS.forEach(r => {
   r.board = r.trainers.find(id => TRAINERS[id].seat) || null;
 });
-const SEATS = Object.values(TRAINERS)
+export const SEATS = Object.values(TRAINERS)
   .filter(T => T.seat)
   .map(T => /** @type {Seat} */ (T.seat).id);
 /* "@rival" is the starter that beats yours; "@rival1" / "@rival2" the same line evolved */
@@ -354,7 +354,7 @@ export function trainerTeam(T) {
     return m;
   });
 }
-const trainerById = id => TRAINERS[id] || null;
+export const trainerById = id => TRAINERS[id] || null;
 /* a trainer with "after" only turns up once you've beaten that one */
 export const trainersAt = i =>
   ((LOCATIONS[i] && LOCATIONS[i].trainers) || [])

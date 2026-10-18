@@ -37,6 +37,8 @@ export const HOOKS = 'game/js/hooks.js';
 export const LOG = 'game/js/debug-log.js';
 export const LOG_NAMES = 'game/js/debug-log-names.js';
 const setterName = n => 'set' + n[0].toUpperCase() + n.slice(1);
+// phase 04e: the logic, which runs in plain Node too (tools/check-logic.mjs; eslint.config.js gives it no browser globals)
+export const LOGIC = f => f.startsWith('game/js/logic/') || f === 'game/js/game-data.js';
 // phase 04d: after a declaration another module reads through hooks.js, the tool hands the value over
 const PROVIDE_LINE = /^provide\(\{[^}]*\}\); \/\* to-module \*\/\n/gm;
 
@@ -407,7 +409,10 @@ export async function run(args) {
       );
     lines.push(END);
     // export keywords and the hand-over after each declaration hooks.js needs, last to first so the offsets hold
-    const ex = new Set([...(exportsOf.get(f) || [])].map(n => own.get(n).node));
+    // phase 04e: the logic (game/js/logic/ and game-data.js) exports every top-level name, so a unit test in plain Node
+    // can import any of them (an export changes nothing when the page runs)
+    const exported = LOGIC(f) ? [...own.keys()].filter(n => own.get(n).node) : [...(exportsOf.get(f) || [])];
+    const ex = new Set(exported.map(n => own.get(n).node));
     const after = new Map();
     for (const n of later) use(after, own.get(n).node, n);
     const edits = [
