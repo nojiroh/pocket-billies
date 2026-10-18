@@ -254,11 +254,11 @@ def old_names():
 
 @step('alpha 0.4: Copperleaf Town and Route 1, the new start (from the data)', 20)
 def copperleaf_data():
-    """a new game starts in Copperleaf (rules.start.place); Route 1 · Hedgerow Lane joins it to Marigold Town, the exits
+    """a new game starts in Copperleaf (rules.start.locationId); Route 1 · Hedgerow Lane joins it to Marigold Town, the exits
     facing; the lab and your room are in Copperleaf and nowhere else outdoors; Granny Juniper stands in her garden; no
     shop or clinic in the hamlet; Marigold Town's signpost names the lane; nothing solid stands on the opening's stage"""
     D = gamedata(); R = D['locations']; ix = {r['id']: i for i, r in enumerate(R)}; bad = []
-    start = (D['rules'].get('start') or {}).get('place')
+    start = (D['rules'].get('start') or {}).get('locationId')
     if start != 'copperleaf' or 'copperleaf' not in ix: raise Exception(f'a new game starts at {start!r}')
     if (R[ix.get('hedgerow', 0)] or {}).get('route') != 'Route 1': bad.append('Hedgerow Lane is not Route 1')
     S_ = D['maps']; C = D['scenery']['props']

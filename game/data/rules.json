@@ -9,7 +9,7 @@
   "starterEgg": 2,
   "starterEncounters": 3,
   "rival": {"hood":"scoop0","gush":"hood0","scoop":"gush0","musk":"bezos0","bezos":"gates0","gates":"musk0"},
-  "place": "copperleaf"
+  "locationId": "copperleaf"
  },
  "steps": {
   "stepsPerKm": 1333,

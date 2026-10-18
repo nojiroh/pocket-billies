@@ -235,9 +235,9 @@ export function locationFullName(n) {
   if (!n) return '';
   return !n.town && /^Route \d/.test(n.route || '') ? n.route + ' · ' + n.name : n.name;
 }
-/* alpha 0.4: where a new game starts (rules.start.place: Copperleaf Town; before alpha 0.4 the first stop, Marigold Town) */
+/* alpha 0.4: where a new game starts (rules.start.locationId: Copperleaf Town; before alpha 0.4 the first stop, Marigold Town) */
 export const START_NODE = (() => {
-  const p = RULES.start && RULES.start.place;
+  const p = RULES.start && RULES.start.locationId;
   return p && LOCATION_BY_ID[p] ? LOCATION_BY_ID[p].node : 0;
 })();
 export function locationKind(id) {

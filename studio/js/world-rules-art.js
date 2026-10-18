@@ -738,7 +738,7 @@ SECTIONS.rules = () => {
    grid(
      selectField(
        'Where a new game starts',
-       `${s}.place`,
+       `${s}.locationId`,
        (D.locations || []).filter(r => r.town || r.kind === 'town').map(r => [r.id, r.name]),
        { none: 'The first stop', opt: 1 }
      ),
