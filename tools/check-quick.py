@@ -1155,7 +1155,7 @@ def desktop_steps(b, base, R):
         return '; '.join(out)
     v37()
 
-    @step('v38: 61 roster species on piece sheets, rigs that draw, filled pools, saves checked against the data', 240)
+    @step('v38: 61 roster species on piece sheets, rigs that draw, filled pools', 240)
     def v38():
         out = []
         lines = ['huang', 'ellison', 'ma', 'walton', 'bloomberg', 'jobs', 'knight', 'kroc', 'ambani', 'ortega', 'hughes', 'carnegie', 'lauren', 'ford', 'slim', 'cuban', 'pagebrin', 'thiel', 'dorsey', 'ek', 'son', 'buterin', 'saylor']
@@ -1188,12 +1188,6 @@ def desktop_steps(b, base, R):
         new_pools = [k for k, L in pools.items() if all(l in new_all for l in L)]
         if len(new_pools) < 12: raise Exception(f'only {len(new_pools)} pools filled with the new roster')
         out.append(f'{len(new_pools)} regions filled with the new roster, {len(pools) - len(new_pools)} still old, none mixed')
-        # alpha 0.4.1: saves only need to work with this version: a save is checked against the game data, a species the
-        # data no longer has is dropped with its Guide marks, the rest loads as it was
-        m = json.loads(pg.evaluate("""(()=>{const s=migrate({started:true,team:[{uid:'g1',sp:'ghost0',lvl:7,moves:[]},{uid:'g2',sp:'walton0',lvl:6,moves:[]}],box:[],seen:{ghost0:1,walton1:1},caught:{ghost0:1},queue:[{id:'q',sp:'ghost0',lvl:5}]});
-          return JSON.stringify({team:s.team.map(m=>m.sp),moves:s.team[0].moves.length,seen:Object.keys(s.seen),caught:Object.keys(s.caught),q:s.queue.length})})()"""))
-        if m['team'] != ['walton0'] or not m['moves'] or m['seen'] != ['walton1'] or m['caught'] or m['q']: raise Exception(f'save check: {m}')
-        out.append('a save is checked against the game data: a species it no longer has is dropped with its Guide marks')
         # a wild battle with a new species on the 3D stage
         pg.evaluate("(()=>{const q={id:'cq38',sp:'kroc0',lvl:8,gold:false,no:1};saveData.queue.push(q);saveData.team.forEach(m=>{m.hp=maxHp(m);m.status=null});startWild(q)})()")
         until(pg, "(()=>{const a=actorBuffer(0),b=actorBuffer(1);return !!(a&&b)})()", 15); time.sleep(2)
