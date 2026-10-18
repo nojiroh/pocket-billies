@@ -44,6 +44,9 @@ import { lifeShift } from './ambient-life.js';
 import { shiftWorldBillies } from './world-billies.js';
 /* eslint-disable no-func-assign */
 expose({
+  LOOK_KEYS: [() => LOOK_KEYS],
+  LOOK_MIX_RANGE: [() => LOOK_MIX_RANGE],
+  MIXED_LOOK_KEYS: [() => MIXED_LOOK_KEYS],
   NEIGHBOR_BAND_DEPTH: [() => NEIGHBOR_BAND_DEPTH],
   NEIGHBOR_BAND_HALF_WIDTH: [() => NEIGHBOR_BAND_HALF_WIDTH],
   OPPOSITE_SIDE: [() => OPPOSITE_SIDE],
@@ -54,9 +57,6 @@ expose({
   TUNNEL_RUN: [() => TUNNEL_RUN],
   WR_DECO: [() => WR_DECO],
   WR_HUBL: [() => WR_HUBL],
-  WR_LOOK: [() => WR_LOOK],
-  WR_LR: [() => WR_LR],
-  WR_MIX: [() => WR_MIX],
   WR_ROOM_GAP: [() => WR_ROOM_GAP],
   WR_WIN: [() => WR_WIN],
   seamlessCornerHeight: [() => seamlessCornerHeight, v => (seamlessCornerHeight = v)],
@@ -67,7 +67,11 @@ expose({
   seamlessInRect: [() => seamlessInRect],
   seamlessJoin: [() => seamlessJoin, v => (seamlessJoin = v)],
   seamlessJoinTrip: [() => seamlessJoinTrip, v => (seamlessJoinTrip = v)],
+  seamlessLookMix: [() => seamlessLookMix, v => (seamlessLookMix = v)],
+  seamlessLookOf: [() => seamlessLookOf, v => (seamlessLookOf = v)],
+  seamlessLookTick: [() => seamlessLookTick, v => ((seamlessLookTick = v), provide({ seamlessLookTick }))],
   seamlessMemo: [() => seamlessMemo, v => (seamlessMemo = v)],
+  seamlessMixHex: [() => seamlessMixHex, v => (seamlessMixHex = v)],
   seamlessNearestRoadPoint: [
     () => seamlessNearestRoadPoint,
     v => ((seamlessNearestRoadPoint = v), provide({ seamlessNearestRoadPoint })),
@@ -80,6 +84,7 @@ expose({
   seamlessRoadHeight: [() => seamlessRoadHeight, v => (seamlessRoadHeight = v)],
   seamlessRoadIndex: [() => seamlessRoadIndex, v => (seamlessRoadIndex = v)],
   seamlessRoadLength: [() => seamlessRoadLength, v => (seamlessRoadLength = v)],
+  seamlessRoadLook: [() => seamlessRoadLook, v => (seamlessRoadLook = v)],
   seamlessRoadPointAt: [() => seamlessRoadPointAt, v => (seamlessRoadPointAt = v)],
   seamlessRoadProps: [() => seamlessRoadProps, v => (seamlessRoadProps = v)],
   seamlessRoadTile: [() => seamlessRoadTile, v => (seamlessRoadTile = v)],
@@ -96,11 +101,6 @@ expose({
   wrGetReady: [() => wrGetReady, v => (wrGetReady = v)],
   wrHubParts: [() => wrHubParts, v => (wrHubParts = v)],
   wrHubScene: [() => wrHubScene, v => (wrHubScene = v)],
-  wrLook: [() => wrLook, v => (wrLook = v)],
-  wrLookMix: [() => wrLookMix, v => (wrLookMix = v)],
-  wrLookOf: [() => wrLookOf, v => (wrLookOf = v)],
-  wrLookTick: [() => wrLookTick, v => ((wrLookTick = v), provide({ wrLookTick }))],
-  wrMixHex: [() => wrMixHex, v => (wrMixHex = v)],
   wrPrefetch: [() => wrPrefetch, v => (wrPrefetch = v)],
   wrPrefetchView: [() => wrPrefetchView, v => (wrPrefetchView = v)],
   wrReady: [() => wrReady, v => (wrReady = v)],
@@ -117,7 +117,7 @@ expose({
   wrViewFor: [() => wrViewFor, v => (wrViewFor = v)],
 });
 /* eslint-enable no-func-assign */
-provide({ seamlessNearestRoadPoint, wrLookTick, wrSceneById });
+provide({ seamlessLookTick, seamlessNearestRoadPoint, wrSceneById });
 /* to-module: end */
 export const seamlessWorld = { cache: new Map(), max: 5, gen: 0, LW: 40, MID: 64, BAND: 12, on: true };
 provide({ seamlessWorld }); /* to-module */
@@ -632,7 +632,7 @@ function seamlessRoadProps(R, box, C) {
   return out;
 }
 /* the look of a composite: the scene's own, or the two ends mixed along the road */
-function wrMixHex(a, b, t) {
+function seamlessMixHex(a, b, t) {
   const A = hexA(a),
     B = hexA(b);
   return (
@@ -647,7 +647,7 @@ function wrMixHex(a, b, t) {
       .toUpperCase()
   );
 }
-const WR_LOOK = [
+const LOOK_KEYS = [
   'sky',
   'haze',
   'hazeD',
@@ -669,20 +669,20 @@ const WR_LOOK = [
   'cliff',
   'grass',
 ];
-function wrLook(R, t) {
+function seamlessRoadLook(R, t) {
   const A = R.A,
     B = R.B,
     o = {};
-  for (const k of WR_LOOK) o[k] = t < 0.5 ? A[k] : B[k];
-  if (A.sky && B.sky) o.sky = A.sky.map((c, i) => wrMixHex(c, B.sky[i] || c, t));
-  if (A.haze && B.haze) o.haze = wrMixHex(A.haze, B.haze, t);
+  for (const k of LOOK_KEYS) o[k] = t < 0.5 ? A[k] : B[k];
+  if (A.sky && B.sky) o.sky = A.sky.map((c, i) => seamlessMixHex(c, B.sky[i] || c, t));
+  if (A.haze && B.haze) o.haze = seamlessMixHex(A.haze, B.haze, t);
   o.indoor = 0;
   o.folk = t < 0.5 ? A.folk : B.folk;
   return o;
 }
-function wrLookOf(S) {
+function seamlessLookOf(S) {
   const o = {};
-  for (const k of WR_LOOK) o[k] = S[k];
+  for (const k of LOOK_KEYS) o[k] = S[k];
   o.indoor = 0;
   o.mood = mapMoodName(S);
   o.placeId = S.place;
@@ -694,22 +694,22 @@ function wrLookOf(S) {
     o.dark = 1;
   return o;
 }
-/* alpha 0.2: the air eases from one place to the next. Within WR_LR of where two places meet, the sky, haze, darkness
-   and camera are a mix of the two (half and half on the line), worked out where you stand each frame (wrLookTick), so
+/* alpha 0.2: the air eases from one place to the next. Within LOOK_MIX_RANGE of where two places meet, the sky, haze, darkness
+   and camera are a mix of the two (half and half on the line), worked out where you stand each frame (seamlessLookTick), so
    the view you leave and the one you arrive in agree at the seam. Things that can't be mixed (the backdrop, the
    ambient bits in the air) stay the place's own. */
-const WR_LR = 14,
-  WR_MIX = ['sky', 'haze', 'hazeD', 'tint', 'dark', 'mist', 'cam', 'blur', 'wind'];
-function wrLookMix(A, B, f) {
+const LOOK_MIX_RANGE = 14,
+  MIXED_LOOK_KEYS = ['sky', 'haze', 'hazeD', 'tint', 'dark', 'mist', 'cam', 'blur', 'wind'];
+function seamlessLookMix(A, B, f) {
   const o = {};
-  for (const k of WR_MIX) o[k] = A[k];
+  for (const k of MIXED_LOOK_KEYS) o[k] = A[k];
   if (!B || f <= 0) return o;
   const n = (a, b, d) => {
       const x = a ?? d,
         y = b ?? d;
       return x == null || y == null ? (f < 0.5 ? a : b) : x + (y - x) * f;
     },
-    hx = (a, b, d) => wrMixHex(a || d, b || d, f);
+    hx = (a, b, d) => seamlessMixHex(a || d, b || d, f);
   if (A.sky && B.sky) o.sky = A.sky.map((c, i) => hx(c, B.sky[i] || c, '#8CC6E6'));
   o.haze = hx(A.haze || (A.sky || [])[2], B.haze || (B.sky || [])[2], '#EAD9C0');
   o.hazeD = n(A.hazeD, B.hazeD, 34);
@@ -731,7 +731,7 @@ function wrLookMix(A, B, f) {
   o.cam = Object.assign({}, ca, { pitch: n(ca.pitch, cb.pitch, 34), h: n(ca.h, cb.h, 9), fov: n(ca.fov, cb.fov, 1) });
   return o;
 }
-function wrLookTick() {
+function seamlessLookTick() {
   const sc = walkView.sc,
     P = walkView.pl;
   if (!sc || !sc.look0 || !sc.lookSeams || !P) return;
@@ -741,14 +741,15 @@ function wrLookTick() {
       out = Math.max(m.lo - u, u - m.hi, 0);
     if (out > 6) continue;
     const d = ((m.v ? P.x : P.z) - m.at) * m.n;
-    if (d < -WR_LR || d > WR_LR) continue;
-    const f = (d <= 0 ? 0.5 * (1 - smooth01(-d / WR_LR)) : 0.5 + 0.5 * smooth01(d / WR_LR)) * (1 - out / 6);
+    if (d < -LOOK_MIX_RANGE || d > LOOK_MIX_RANGE) continue;
+    const f =
+      (d <= 0 ? 0.5 * (1 - smooth01(-d / LOOK_MIX_RANGE)) : 0.5 + 0.5 * smooth01(d / LOOK_MIX_RANGE)) * (1 - out / 6);
     if (!best || f > best.f) best = { m, f };
   }
   const key = best ? best.m.id + ':' + best.f.toFixed(3) : '';
   if (sc._lk === key) return;
   sc._lk = key;
-  Object.assign(sc, wrLookMix(sc.look0, best ? best.m.look : null, best ? best.f : 0));
+  Object.assign(sc, seamlessLookMix(sc.look0, best ? best.m.look : null, best ? best.f : 0));
 }
 /* v46: a composite from any number of scenes and roads laid in one frame. F = {box:[x, z, w, h] in the frame,
    scenes:[{S, id, off:[x, z], clip?, side?}] (where each scene's corner lies; alpha 0.2: a neighbour shown only where it
@@ -1023,7 +1024,7 @@ function wrComposeMulti(id, F) {
     },
     indoor: 0,
   };
-  Object.assign(sc, F.look || wrLookOf(F.base));
+  Object.assign(sc, F.look || seamlessLookOf(F.base));
   sc.name = F.base.name;
   /* each place's things; of a neighbour only what stands in the stretch shown */
   const mv = q => {
@@ -1309,9 +1310,9 @@ function wrComposeMulti(id, F) {
   }
   /* you walk in the places, not out into the countryside */
   if (fill) sc.inside = SS.map(q => q.K.slice());
-  /* the air of each neighbour, for easing it in near the line (wrLookTick) */
+  /* the air of each neighbour, for easing it in near the line (seamlessLookTick) */
   if (fill) {
-    sc.look0 = wrLookMix(sc, null, 0);
+    sc.look0 = seamlessLookMix(sc, null, 0);
     sc.lookSeams = seams.map(m => ({
       id: m.q.id,
       v: m.v,
@@ -1319,7 +1320,7 @@ function wrComposeMulti(id, F) {
       n: m.n,
       lo: m.lo,
       hi: m.hi,
-      look: wrLookOf(m.q.S),
+      look: seamlessLookOf(m.q.S),
     }));
   }
   sc.under = UB ? 1 : 0;
@@ -1357,7 +1358,7 @@ function wrCompose(id, R, box, base, t) {
     ],
     roads: [{ R, off: [0, 0] }],
     base,
-    look: wrLook(R, t),
+    look: seamlessRoadLook(R, t),
     road: R.i,
   });
 }
@@ -1859,7 +1860,7 @@ export function wrRoomScene(baseId, roomId, door) {
   }
   sc = Object.assign({}, B, { tiles, heights, props, id, steps: E.s, stepm: E.m0, stepsV: 1 });
   STEP_GRID_CACHE.set(sc, E);
-  for (const k of WR_LOOK) sc[k] = R[k];
+  for (const k of LOOK_KEYS) sc[k] = R[k];
   Object.assign(sc, {
     indoor: R.indoor || 1,
     room: R.room || true,

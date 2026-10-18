@@ -48,6 +48,7 @@ import {
   pwPaint,
   reqAsker,
   riderOf,
+  seamlessLookTick,
   sfxAt,
   stampDraw,
   strDraw,
@@ -64,7 +65,6 @@ import {
   worldBillyGlows,
   worldBillyItem,
   worldBillyLabels,
-  wrLookTick,
 } from './hooks.js';
 import { clamp } from './util.js';
 import { FRAME, frameCount, frameTask, userFps } from './frame-scheduler.js';
@@ -3613,7 +3613,7 @@ function drawWalkFrame(ts, dtm) {
   }
 }
 function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
-  if (typeof wrLookTick === 'function') wrLookTick();
+  if (typeof seamlessLookTick === 'function') seamlessLookTick();
   const gl = EGL.gl,
     sc = walkView.sc,
     cv = walkView.cv;
