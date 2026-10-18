@@ -27,24 +27,24 @@ import { dirname, join, normalize, relative } from 'node:path';
 import * as prettier from 'prettier';
 
 const ROOT = join(import.meta.dirname, '..');
-const PAGES = ['game/index.html', 'studio/index.html'];
-const BRIDGE = 'game/js/test-globals.js';
-const START = '/* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */';
-const END = '/* to-module: end */';
-const HOOKS = 'game/js/hooks.js';
+export const PAGES = ['game/index.html', 'studio/index.html'];
+export const BRIDGE = 'game/js/test-globals.js';
+export const START = '/* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */';
+export const END = '/* to-module: end */';
+export const HOOKS = 'game/js/hooks.js';
 // phase 04d: the debug log (a classic script) reaches the game's modules through what this module, made by the tool
 // and the last of the game's page, puts in log.js's GAME object
-const LOG = 'game/js/log.js';
-const LOG_NAMES = 'game/js/log-names.js';
+export const LOG = 'game/js/log.js';
+export const LOG_NAMES = 'game/js/log-names.js';
 const setterName = n => 'set' + n[0].toUpperCase() + n.slice(1);
 // phase 04d: after a declaration another module reads through hooks.js, the tool hands the value over
 const PROVIDE_LINE = /^provide\(\{[^}]*\}\); \/\* to-module \*\/\n/gm;
 
 const read = f => readFileSync(join(ROOT, f), 'utf8');
-const SCRIPT_TAG = /<script([^>]*)>([\s\S]*?)<\/script>/g;
+export const SCRIPT_TAG = /<script([^>]*)>([\s\S]*?)<\/script>/g;
 
 // a page's scripts in order: { file, module } or { inline, text }
-function scriptsOf(page) {
+export function scriptsOf(page) {
   const out = [];
   let n = 0;
   for (const [, attrs, text] of read(page).matchAll(SCRIPT_TAG)) {
@@ -57,7 +57,7 @@ function scriptsOf(page) {
 }
 
 // the file without its generated part and without the `export` keywords the tool put in
-function stripped(text) {
+export function stripped(text) {
   const a = text.indexOf(START);
   if (a >= 0) {
     const b = text.indexOf(END, a);
