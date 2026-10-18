@@ -47,23 +47,23 @@ import { atlasGet, atlasPath, rigFor } from './sprites.js';
 import { AMBIENT_PARTICLES } from './world-rules-art.js';
 /* eslint-disable no-func-assign */
 expose({
-  BP: [() => BP],
+  applyBattlePreviewBackdrop: [() => applyBattlePreviewBackdrop, v => (applyBattlePreviewBackdrop = v)],
   battleFreeArea: [() => battleFreeArea, v => ((battleFreeArea = v), provide({ battleFreeArea }))],
   battleLayoutChanged: [() => battleLayoutChanged, v => ((battleLayoutChanged = v), provide({ battleLayoutChanged }))],
-  bpApplyBackdrop: [() => bpApplyBackdrop, v => (bpApplyBackdrop = v)],
-  bpDefaults: [() => bpDefaults, v => (bpDefaults = v)],
-  bpEv: [() => bpEv],
-  bpMove: [() => bpMove, v => (bpMove = v)],
-  bpScene: [() => bpScene, v => (bpScene = v)],
-  bpStart: [() => bpStart, v => (bpStart = v)],
+  battlePreview: [() => battlePreview],
+  battlePreviewDefaults: [() => battlePreviewDefaults, v => (battlePreviewDefaults = v)],
+  battlePreviewEvent: [() => battlePreviewEvent],
   hudHit: [() => hudHit, v => ((hudHit = v), provide({ hudHit }))],
   hudPop: [() => hudPop, v => ((hudPop = v), provide({ hudPop }))],
+  mountBattlePreviewMap: [() => mountBattlePreviewMap, v => (mountBattlePreviewMap = v)],
+  playBattlePreviewMove: [() => playBattlePreviewMove, v => (playBattlePreviewMove = v)],
+  startBattlePreview: [() => startBattlePreview, v => (startBattlePreview = v)],
 });
 /* eslint-enable no-func-assign */
 provide({ battleFreeArea, battleLayoutChanged, hudHit, hudPop });
 /* to-module: end */
 setRigParts((sp, gold, k) => rigFor(sp, k === 1 ? 'front' : 'back', !!gold));
-const BP = {
+const battlePreview = {
   stage: 'backdrop',
   area: null,
   me: null,
@@ -105,26 +105,28 @@ function hudPop(si, text, kind) {
 function hudHit(ti, an) {
   if (an.dmg) hudPop(ti, '−' + an.dmg, 'dmg' + (an.te > 1 ? ' se' : '') + (an.crit ? ' crit' : ''));
 }
-function bpDefaults() {
+function battlePreviewDefaults() {
   const D = studioState.D,
     ids = D.lines.flatMap(L => L.names.map((n, i) => L.id + i)).filter(id => studioState.rigs[id]);
-  if (!BP.area || !D.backdrops[BP.area]) BP.area = D.route[0].area || Object.keys(D.backdrops)[0];
-  if (!BP.me || !studioState.rigs[BP.me]) BP.me = (D.rules.start.starters[0] || D.lines[0].id) + '0';
-  if (!BP.foe || !studioState.rigs[BP.foe]) BP.foe = ids[3] || ids[0];
-  if (!BP.move || !D.moves[BP.move]) BP.move = Object.keys(D.moves)[1];
+  if (!battlePreview.area || !D.backdrops[battlePreview.area])
+    battlePreview.area = D.route[0].area || Object.keys(D.backdrops)[0];
+  if (!battlePreview.me || !studioState.rigs[battlePreview.me])
+    battlePreview.me = (D.rules.start.starters[0] || D.lines[0].id) + '0';
+  if (!battlePreview.foe || !studioState.rigs[battlePreview.foe]) battlePreview.foe = ids[3] || ids[0];
+  if (!battlePreview.move || !D.moves[battlePreview.move]) battlePreview.move = Object.keys(D.moves)[1];
 }
-const bpEv = () => ({
+const battlePreviewEvent = () => ({
   s: [
-    { sp: BP.me, gold: BP.meGold, st: null },
-    { sp: BP.foe, gold: BP.foeGold, st: null },
+    { sp: battlePreview.me, gold: battlePreview.meGold, st: null },
+    { sp: battlePreview.foe, gold: battlePreview.foeGold, st: null },
   ],
 });
 SECTIONS.preview = () => {
   const D = studioState.D;
-  bpDefaults();
-  const A = D.backdrops[BP.area],
-    p = `backdrops.${BP.area}`;
-  after(bpStart);
+  battlePreviewDefaults();
+  const A = D.backdrops[battlePreview.area],
+    p = `backdrops.${battlePreview.area}`;
+  after(startBattlePreview);
   const opt = (arr, v) =>
     arr.map(([k, n]) => `<option value="${esc(k)}" ${k === v ? 'selected' : ''}>${esc(n)}</option>`).join('');
   return `<div class="ed-col solo bp"><div class="ed-head"><div><h2>Battle preview</h2><p class="sub">The game’s real battle stage, using your unsaved changes. Art you replaced under Art files appears here after you save.</p></div></div>
@@ -132,14 +134,14 @@ SECTIONS.preview = () => {
  <aside class="bp-ctl">
   ${card(
     'Who’s fighting',
-    `<label class="fld"><span>Your Billie (back view)</span><select data-bp="me">${opt(speciesOptions(), BP.me)}</select></label><label class="fld chk"><input type="checkbox" data-bp="meGold" ${BP.meGold ? 'checked' : ''}><span>Golden</span></label>
-   <label class="fld"><span>Opponent (front view)</span><select data-bp="foe">${opt(speciesOptions(), BP.foe)}</select></label><label class="fld chk"><input type="checkbox" data-bp="foeGold" ${BP.foeGold ? 'checked' : ''}><span>Golden</span></label>
-   <div class="seg-row"><button class="btn sm" data-act="bp" data-x="wild">Wild appears</button><button class="btn sm" data-act="bp" data-x="trainer">Trainer intro</button><select data-bp="who" class="sm">${opt(peopleOptions(), BP.who)}</select></div>
+    `<label class="fld"><span>Your Billie (back view)</span><select data-bp="me">${opt(speciesOptions(), battlePreview.me)}</select></label><label class="fld chk"><input type="checkbox" data-bp="meGold" ${battlePreview.meGold ? 'checked' : ''}><span>Golden</span></label>
+   <label class="fld"><span>Opponent (front view)</span><select data-bp="foe">${opt(speciesOptions(), battlePreview.foe)}</select></label><label class="fld chk"><input type="checkbox" data-bp="foeGold" ${battlePreview.foeGold ? 'checked' : ''}><span>Golden</span></label>
+   <div class="seg-row"><button class="btn sm" data-act="bp" data-x="wild">Wild appears</button><button class="btn sm" data-act="bp" data-x="trainer">Trainer intro</button><select data-bp="who" class="sm">${opt(peopleOptions(), battlePreview.who)}</select></div>
    <div class="seg-row"><button class="btn sm" data-act="bp" data-x="enter0">Send yours out</button><button class="btn sm" data-act="bp" data-x="enter1">Send theirs out</button><button class="btn sm" data-act="bp" data-x="recall">Recall</button></div>`
   )}
   ${card(
     'Moves',
-    `<label class="fld"><span>Move</span><select data-bp="move">${opt(moveOptions(), BP.move)}</select></label><label class="fld"><span>Outcome</span><select data-bp="res">${opt(
+    `<label class="fld"><span>Move</span><select data-bp="move">${opt(moveOptions(), battlePreview.move)}</select></label><label class="fld"><span>Outcome</span><select data-bp="res">${opt(
       [
         ['hit', 'Normal hit'],
         ['se', 'Super effective'],
@@ -148,7 +150,7 @@ SECTIONS.preview = () => {
         ['miss', 'Miss'],
         ['blocked', 'Blocked by Guard'],
       ],
-      BP.res
+      battlePreview.res
     )}</select></label>
    <div class="seg-row"><button class="btn sm primary" data-act="bp" data-x="move0">You use it</button><button class="btn sm primary" data-act="bp" data-x="move1">They use it</button></div>`
   )}
@@ -175,12 +177,12 @@ SECTIONS.preview = () => {
   )}
   ${card(
     'Stage',
-    `<label class="fld"><span>Where the battle happens</span><select data-bp="stage"><option value="backdrop" ${BP.stage === 'backdrop' ? 'selected' : ''}>A painted backdrop (classic)</option>${Object.entries(
+    `<label class="fld"><span>Where the battle happens</span><select data-bp="stage"><option value="backdrop" ${battlePreview.stage === 'backdrop' ? 'selected' : ''}>A painted backdrop (classic)</option>${Object.entries(
       D.scenes || {}
     )
       .map(
         ([k, s]) =>
-          `<option value="${esc(k)}" ${BP.stage === k ? 'selected' : ''}>Walk scene: ${esc(s.name || k)}</option>`
+          `<option value="${esc(k)}" ${battlePreview.stage === k ? 'selected' : ''}>Walk scene: ${esc(s.name || k)}</option>`
       )
       .join(
         ''
@@ -190,29 +192,33 @@ SECTIONS.preview = () => {
     'Backdrop',
     `<label class="fld"><span>Battle backdrop</span><select data-bp="area">${opt(
       Object.entries(D.backdrops).map(([k, v]) => [k, v.name || k]),
-      BP.area
+      battlePreview.area
     )}</select></label>
    <div class="grid colors">${colorField('Sky top', `${p}.sky.0`)}${colorField('Sky middle', `${p}.sky.1`)}${colorField('Sky horizon', `${p}.sky.2`)}${colorField('Haze', `${p}.fog`)}</div>${rangeField('Haze distance', `${p}.fogD`, { min: 10, max: 300, step: 5 })}${selectField('In the air', `${p}.amb`, AMBIENT_PARTICLES)}
    <p class="help">Changes apply live. Ground, walls and far land are picked under World & encounters → Battle backdrops.</p>`
   )}
  </aside></div></div>`;
 };
-async function bpStart() {
+async function startBattlePreview() {
   const D = studioState.D;
   if (!$('#cvWorld')) return;
   const load = $('#bpLoad');
   if (load) load.hidden = false;
   try {
-    const art = D.backdrops[BP.area];
-    if (BP._art !== BP.area + (art.art || '') + (art.wall || '') + (art.far || '') + (art.indoor || '')) {
-      delete BATTLE_STAGE_ART[BP.area];
-      BP._art = BP.area + (art.art || '') + (art.wall || '') + (art.far || '') + (art.indoor || '');
+    const art = D.backdrops[battlePreview.area];
+    if (
+      battlePreview._art !==
+      battlePreview.area + (art.art || '') + (art.wall || '') + (art.far || '') + (art.indoor || '')
+    ) {
+      delete BATTLE_STAGE_ART[battlePreview.area];
+      battlePreview._art =
+        battlePreview.area + (art.art || '') + (art.wall || '') + (art.far || '') + (art.indoor || '');
     }
     await Promise.all([
-      battleStagePrepare(BP.area),
+      battleStagePrepare(battlePreview.area),
       artLoad(COIN_ART),
-      atlasGet(atlasPath(BP.me, 'back', BP.meGold)),
-      atlasGet(atlasPath(BP.foe, 'front', BP.foeGold)),
+      atlasGet(atlasPath(battlePreview.me, 'back', battlePreview.meGold)),
+      atlasGet(atlasPath(battlePreview.foe, 'front', battlePreview.foeGold)),
     ]);
   } catch (e) {
     if (load) load.textContent = 'Couldn’t load this stage: ' + e.message;
@@ -225,29 +231,29 @@ async function bpStart() {
     battleGLStop();
     battleStage.gl = false;
   }
-  battleStageStart(BP.area);
+  battleStageStart(battlePreview.area);
   if (
-    BP.stage !== 'backdrop' &&
+    battlePreview.stage !== 'backdrop' &&
     studioState.D.scenes &&
-    studioState.D.scenes[BP.stage] &&
+    studioState.D.scenes[battlePreview.stage] &&
     typeof battleGLAttach === 'function'
   ) {
-    await bpScene();
+    await mountBattlePreviewMap();
   }
   if (load) load.hidden = true;
-  if (!BP.ro)
-    BP.ro = new ResizeObserver(() => {
+  if (!battlePreview.ro)
+    battlePreview.ro = new ResizeObserver(() => {
       if (battleStage.on && studioState.sec === 'preview' && $('#battle')) battleStageResize();
     });
-  BP.ro.disconnect();
-  BP.ro.observe($('#battle'));
-  Object.assign(battleStage.s[0], { sp: BP.me, gold: BP.meGold, show: true, sc: 1, a: 1 });
-  Object.assign(battleStage.s[1], { sp: BP.foe, gold: BP.foeGold, show: true, sc: 1, a: 1 });
-  battleStage.oil = BP.shock;
+  battlePreview.ro.disconnect();
+  battlePreview.ro.observe($('#battle'));
+  Object.assign(battleStage.s[0], { sp: battlePreview.me, gold: battlePreview.meGold, show: true, sc: 1, a: 1 });
+  Object.assign(battleStage.s[1], { sp: battlePreview.foe, gold: battlePreview.foeGold, show: true, sc: 1, a: 1 });
+  battleStage.oil = battlePreview.shock;
 }
 /* the engine stage: the chosen walk scene, mounted on its own canvas inside the battle stage */
-async function bpScene() {
-  const id = BP.stage,
+async function mountBattlePreviewMap() {
+  const id = battlePreview.stage,
     sc = studioState.D.scenes[id],
     C = scD();
   await Promise.all(scArt(C).map(p => atlasGet('art/' + p).catch(() => null)));
@@ -271,55 +277,59 @@ async function bpScene() {
   battleStageResize();
   drawForegrounds();
 }
-function bpApplyBackdrop() {
-  if (!battleStage.L || battleStage.area !== BP.area) return;
-  const A = studioState.D.backdrops[BP.area];
+function applyBattlePreviewBackdrop() {
+  if (!battleStage.L || battleStage.area !== battlePreview.area) return;
+  const A = studioState.D.backdrops[battlePreview.area];
   battleStage.skyC = A.sky.map(hexToRgb);
   battleStage.fogC = hexToRgb(A.fog);
   battleStage.floorKey = '';
 }
 studioState.hooks.preview = path => {
-  if (path.startsWith('backdrops.')) bpApplyBackdrop();
+  if (path.startsWith('backdrops.')) applyBattlePreviewBackdrop();
 };
 document.addEventListener('change', ev => {
   const el = ev.target,
     k = el.dataset && el.dataset.bp;
   if (!k) return;
-  BP[k] = el.type === 'checkbox' ? el.checked : el.value;
+  battlePreview[k] = el.type === 'checkbox' ? el.checked : el.value;
   if (['area', 'stage'].includes(k)) {
     render();
     return;
   }
-  if (['me', 'foe', 'meGold', 'foeGold'].includes(k)) bpStart();
+  if (['me', 'foe', 'meGold', 'foeGold'].includes(k)) startBattlePreview();
 });
-function bpMove(si) {
+function playBattlePreviewMove(si) {
   const D = studioState.D,
-    M = D.moves[BP.move],
+    M = D.moves[battlePreview.move],
     fx = M.fx || {},
     onFoe = M.c !== 'X' || fx.status || fx.tgtStage || fx.hype || fx.spin || fx.wipe,
-    an = { k: 'move', si, mid: BP.move };
+    an = { k: 'move', si, mid: battlePreview.move };
   if (fx.protect) an.protect = true;
   else if (!onFoe) an.self = true;
-  else if (BP.res === 'miss') an.miss = true;
-  else if (BP.res === 'blocked') an.blocked = true;
+  else if (battlePreview.res === 'miss') an.miss = true;
+  else if (battlePreview.res === 'blocked') an.blocked = true;
   else if (M.c !== 'X') {
-    an.dmg = BP.res === 'crit' ? 48 : BP.res === 'se' ? 56 : BP.res === 'nve' ? 11 : 24;
-    an.te = BP.res === 'se' ? 2 : BP.res === 'nve' ? 0.5 : 1;
-    an.crit = BP.res === 'crit';
+    an.dmg =
+      battlePreview.res === 'crit' ? 48 : battlePreview.res === 'se' ? 56 : battlePreview.res === 'nve' ? 11 : 24;
+    an.te = battlePreview.res === 'se' ? 2 : battlePreview.res === 'nve' ? 0.5 : 1;
+    an.crit = battlePreview.res === 'crit';
   }
-  battleStagePlay(an, bpEv());
+  battleStagePlay(an, battlePreviewEvent());
   if (onFoe && !an.miss && !an.blocked && fx.status)
-    setTimeout(() => battleStagePlay({ k: 'status', si: 1 - si, st: fx.status }, bpEv()), 1100 / battleStage.speed);
+    setTimeout(
+      () => battleStagePlay({ k: 'status', si: 1 - si, st: fx.status }, battlePreviewEvent()),
+      1100 / battleStage.speed
+    );
 }
 ACTIONS.bp = d => {
   if (!battleStage.L) return;
   const x = d.x,
-    ev = bpEv(),
+    ev = battlePreviewEvent(),
     later = (ms, f) => setTimeout(f, ms / battleStage.speed);
   const reset = () => {
     Object.assign(battleStage.s[0], {
-      sp: BP.me,
-      gold: BP.meGold,
+      sp: battlePreview.me,
+      gold: battlePreview.meGold,
       show: true,
       sc: 1,
       a: 1,
@@ -330,8 +340,8 @@ ACTIONS.bp = d => {
       act: null,
     });
     Object.assign(battleStage.s[1], {
-      sp: BP.foe,
-      gold: BP.foeGold,
+      sp: battlePreview.foe,
+      gold: battlePreview.foeGold,
       show: true,
       sc: 1,
       a: 1,
@@ -363,7 +373,7 @@ ACTIONS.bp = d => {
     case 'trainer':
       reset();
       battleStage.s[0].show = battleStage.s[1].show = false;
-      battleStagePlay({ k: 'trainerIn', who: BP.who }, ev);
+      battleStagePlay({ k: 'trainerIn', who: battlePreview.who }, ev);
       later(1250, () => battleStagePlay({ k: 'enter', si: 1 }, ev));
       later(2300, () => battleStagePlay({ k: 'enter', si: 0 }, ev));
       break;
@@ -379,11 +389,11 @@ ACTIONS.bp = d => {
       break;
     case 'move0':
       reset();
-      bpMove(0);
+      playBattlePreviewMove(0);
       break;
     case 'move1':
       reset();
-      bpMove(1);
+      playBattlePreviewMove(1);
       break;
     case 'heal':
       battleStagePlay({ k: 'heal', si: 0, amt: 18 }, ev);
@@ -409,8 +419,8 @@ ACTIONS.bp = d => {
       battleStagePlay({ k: 'lvl' }, ev);
       break;
     case 'shock':
-      BP.shock = !battleStage.oil;
-      if (BP.shock) battleStagePlay({ k: 'market' }, ev);
+      battlePreview.shock = !battleStage.oil;
+      if (battlePreview.shock) battleStagePlay({ k: 'market' }, ev);
       else battleStagePlay({ k: 'marketEnd' }, ev);
       break;
     case 'faint1':
@@ -432,15 +442,15 @@ ACTIONS.bp = d => {
 };
 /* shortcuts from other sections */
 ACTIONS.bpFoe = d => {
-  BP.foe = d.sp;
+  battlePreview.foe = d.sp;
   openSection('preview');
 };
 ACTIONS.bpMove = d => {
-  BP.move = d.id;
+  battlePreview.move = d.id;
   openSection('preview');
   setTimeout(() => ACTIONS.bp({ x: 'move0' }), 900);
 };
 ACTIONS.bpArea = d => {
-  BP.area = d.k;
+  battlePreview.area = d.k;
   openSection('preview');
 };
