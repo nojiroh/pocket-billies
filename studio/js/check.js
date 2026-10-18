@@ -23,7 +23,7 @@ import {
 import { atlasPath, pickFile } from './sprites.js';
 /* eslint-disable no-func-assign */
 expose({
-  checkT: [() => checkT, v => (checkT = v)],
+  checkTimer: [() => checkTimer, v => (checkTimer = v)],
   loadBackups: [() => loadBackups, v => (loadBackups = v)],
   renderCheckList: [() => renderCheckList, v => (renderCheckList = v)],
   runCheck: [() => runCheck, v => ((runCheck = v), provide({ runCheck }))],
@@ -363,10 +363,10 @@ function runCheck() {
     });
   return P;
 }
-let checkT = null;
+let checkTimer = null;
 function scheduleCheck(now) {
-  clearTimeout(checkT);
-  checkT = setTimeout(
+  clearTimeout(checkTimer);
+  checkTimer = setTimeout(
     () => {
       const P = runCheck(),
         n = P.filter(p => p.lvl === 'error').length,
