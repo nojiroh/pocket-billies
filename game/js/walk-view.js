@@ -296,7 +296,7 @@ const dioUIpx = n => {
 export const DIO_PAD = 8,
   DIO_N = 2,
   DIO_SPEED = 3.4;
-/* alpha 0.4: what a painting generator yields while the ground painter's helper thread works (paint.js): whatever
+/* alpha 0.4: what a painting generator yields while the ground painter's helper thread works (ground-paint-worker.js): whatever
    steps it stops for now and comes back later */
 export const PW_WAIT = { pw: 1 };
 const DIO_FX = ['butterfly', 'bird', 'leaf', 'smoke', 'spray', 'sparkle', 'bee', 'fish', 'moth', 'flame'];

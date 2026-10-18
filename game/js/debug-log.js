@@ -374,7 +374,7 @@ NWLOG.glInfo = () => {
     o.contextLost = !!(typeof GAME.EGL !== 'undefined' && GAME.EGL.lost);
     o.frames = GAME.DGL.frames;
   }
-  /* alpha 0.4: the helper threads: the ground painter's (paint.js) and the bump maps' (engine/core.js) */
+  /* alpha 0.4: the helper threads: the ground painter's (ground-paint-worker.js) and the bump maps' (engine/core.js) */
   try {
     if (typeof GAME.pwState === 'function') o.groundPainter = GAME.pwState();
     if (typeof GAME.EGL_NW !== 'undefined')
