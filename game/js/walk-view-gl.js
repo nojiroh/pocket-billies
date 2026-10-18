@@ -236,7 +236,7 @@ expose({
   boxInfo: [() => boxInfo, v => (boxInfo = v)],
   buildFarProps: [() => buildFarProps, v => (buildFarProps = v)],
   buildGrass: [() => buildGrass, v => setBuildGrass(v)],
-  buildGroundMesh: [() => buildGroundMesh, v => (buildGroundMesh = v)],
+  buildGroundMesh: [() => buildGroundMesh, v => setBuildGroundMesh(v)],
   buildGroundMeshSteps: [() => buildGroundMeshSteps, v => (buildGroundMeshSteps = v)],
   buildingPads: [() => buildingPads, v => (buildingPads = v)],
   cameraTurnLimit: [() => cameraTurnLimit],
@@ -317,6 +317,7 @@ expose({
   personItem: [() => personItem, v => (personItem = v)],
   prepareMapGround: [() => prepareMapGround, v => (prepareMapGround = v)],
   propBaseHeight: [() => propBaseHeight, v => (propBaseHeight = v)],
+  propCheckedAt: [() => propCheckedAt, v => (propCheckedAt = v)],
   propGrid: [() => propGrid, v => (propGrid = v)],
   propLook: [() => propLook, v => (propLook = v)],
   propLookSettings: [() => propLookSettings, v => (propLookSettings = v)],
@@ -351,7 +352,7 @@ expose({
   standingHeightAt: [() => standingHeightAt, v => ((standingHeightAt = v), provide({ standingHeightAt }))],
   startTownRise: [() => startTownRise, v => (startTownRise = v)],
   stillPropState: [() => stillPropState, v => (stillPropState = v)],
-  swapMapCache: [() => swapMapCache, v => (swapMapCache = v)],
+  swapMapCache: [() => swapMapCache, v => setSwapMapCache(v)],
   townRiseAmount: [() => townRiseAmount, v => (townRiseAmount = v)],
   updateBasinMeshes: [() => updateBasinMeshes, v => (updateBasinMeshes = v)],
   updateNearRing: [() => updateNearRing, v => setUpdateNearRing(v)],
@@ -388,6 +389,10 @@ provide({
 export function setBuildGrass(v) {
   buildGrass = v; // eslint-disable-line no-func-assign
   provide({ buildGrass });
+}
+export function setBuildGroundMesh(v) {
+  buildGroundMesh = v; // eslint-disable-line no-func-assign
+  provide({ buildGroundMesh });
 }
 export function setDrawGrass(v) {
   drawGrass = v; // eslint-disable-line no-func-assign
@@ -428,6 +433,10 @@ export function setReflectionPass(v) {
 export function setShadowPass(v) {
   shadowPass = v; // eslint-disable-line no-func-assign
   provide({ shadowPass });
+}
+export function setSwapMapCache(v) {
+  swapMapCache = v; // eslint-disable-line no-func-assign
+  provide({ swapMapCache });
 }
 export function setUpdateNearRing(v) {
   updateNearRing = v; // eslint-disable-line no-func-assign
@@ -2103,7 +2112,7 @@ function* buildGroundMeshSteps(sc, G, T) {
     T.farKey = '';
   }
 }
-function buildGroundMesh() {
+export function buildGroundMesh() {
   const it = buildGroundMeshSteps(walkView.sc, walkView.ground, walkRenderer);
   let r = it.next();
   while (!r.done) r = it.next();
@@ -3638,6 +3647,8 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
     const old = walkRenderer.hkey;
     walkRenderer.gkey = walkView.gkey;
     walkRenderer.hkey = hk;
+    /* the ground changed: the props' heights and their grid are worked out again */
+    walkRenderer.itemGen = (walkRenderer.itemGen || 0) + 1;
     walkView.nav = null;
     navGrid();
     swapMapCache(old, hk);
@@ -3874,7 +3885,7 @@ export function rebuildFromSettings() {
   if (typeof solidPropState !== 'undefined' && solidPropState.meshes) solidPropState.meshes = new WeakMap();
   if (typeof flushPropModelMeshes === 'function') flushPropModelMeshes();
 }
-function swapMapCache(oldKey, key) {
+export function swapMapCache(oldKey, key) {
   walkRenderer.swapT = performance.now();
   const M = walkRenderer.sceneCache || (walkRenderer.sceneCache = new Map()),
     keep = engineSetting('quality', 'keepScenes') ?? 3;
@@ -4386,13 +4397,21 @@ const PROP_LOOK_CACHE = new WeakMap();
 /* v34: a still prop keeps what it worked out last frame (its look, its height on the ground, its material) and only
    checks again twice a second or when it moves, so a big scene doesn't redo hundreds of string keys every frame */
 const STILL_PROP_CACHE = new WeakMap();
+/* when a prop checked last, rounded down to its own half-second beat (set by its place): props worked out in the same
+   frame (a scene opening, the ground changing) check again spread over the next half second, not all in one frame twice
+   a second, which was a regular spike on phones */
+function propCheckedAt(p, t) {
+  return t - ((t + hash2d(Math.round(p.x * 7) + 3, Math.round(p.z * 5) + 11) * 500) % 500);
+}
 function propGrid(sc) {
   const L = sc.props || [],
     G = walkRenderer.pgrid;
+  /* made again only when a prop is added, moved or resized, or the ground changes (itemGen), not on a timer: a full
+     rebuild every 2 s was a regular spike on phones; the signature reads every prop (cheap next to the rebuild) */
   let sig = L.length;
-  for (let i = 0; i < L.length; i += Math.max(1, L.length >> 4))
-    sig = (sig * 31 + ((L[i].x * 7 + L[i].z * 13) | 0)) | 0;
-  if (G && G.sc === sc && G.sig === sig && (walkView.t || 0) - G.at < 2000 && (walkView.t || 0) >= G.at) return G;
+  for (const p of L) sig = (sig * 31 + (p.x * 7 + p.z * 13 + (p.s || 1) * 101) * 16) | 0;
+  const gen = walkRenderer.itemGen || 0;
+  if (G && G.sc === sc && G.sig === sig && G.gen === gen) return G;
   const S = 6,
     m = new Map();
   for (const p of L) {
@@ -4419,7 +4438,7 @@ function propGrid(sc) {
     y: (c.y0 + c.y1) / 2,
     r: Math.hypot(c.x1 - c.x0, c.z1 - c.z0, c.y1 - c.y0) / 2,
   }));
-  return (walkRenderer.pgrid = { sc, sig, at: walkView.t || 0, cells });
+  return (walkRenderer.pgrid = { sc, sig, gen, cells });
 }
 function stillPropState(p, M, im, sc) {
   const t = walkView.t || 0,
@@ -4442,7 +4461,8 @@ function stillPropState(p, M, im, sc) {
     t >= c.at
   )
     return c;
-  const mat = propMaterial(p.k, M);
+  const mat = propMaterial(p.k, M),
+    at = propCheckedAt(p, t);
   c = {
     k: p.k,
     x: p.x,
@@ -4451,7 +4471,7 @@ function stillPropState(p, M, im, sc) {
     id,
     src,
     gen,
-    at: t,
+    at,
     y: propBaseHeight(p, M),
     mat,
     plane: M.face === 'fixed' || !!M.box || mat === 'wood' || mat === 'building',
@@ -4500,7 +4520,7 @@ function propLook(p, M, sc) {
   )
     return c0;
   const L0 = computePropLook(p, M, sc);
-  L0.at = t;
+  L0.at = propCheckedAt(p, t);
   L0.px = p.x;
   L0.pz = p.z;
   L0.sg = sg;
