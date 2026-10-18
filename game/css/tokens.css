@@ -1,0 +1,64 @@
+/* ================= phase 06: design tokens =================
+   The one place for sizes, corners, depth, type and timing (docs/phases/06-plan.md). Colours stay where alpha 0.5
+   set them (v05.css: --text, --g-*, --gold-*, --t-*); this file names them for the new components and adds the
+   scales. Loaded after every other stylesheet. On its own it changes nothing visible: older rules move onto these
+   names screen by screen (sessions 06-2 to 06-4). */
+:root {
+  /* space: one scale; panels breathe at --s5, sections at --s6 */
+  --s1: 4px;
+  --s2: 8px;
+  --s3: 12px;
+  --s4: 16px;
+  --s5: 24px;
+  --s6: 32px;
+  --s7: 48px;
+  --gutter: 16px;
+  --pad-panel: var(--s5);
+
+  /* corners: nothing else (06-plan "Shape and depth") */
+  --r-sm: 12px; /* chips, inputs, small buttons (= v05 --r1) */
+  --r-md: 16px; /* cards, buttons (= v05 --r2) */
+  --r-lg: 22px; /* sheets, panels (= v05 --r3) */
+  --r-pill: 999px;
+
+  /* depth: flat (inside a panel), raised (cards, buttons), floating (sheets, toasts, the bottom bar) */
+  --depth-flat: none;
+  --depth-raised: var(--g-in), var(--g-sh);
+  --depth-float: var(--g-in), var(--g-sh2);
+
+  /* type: Pixelify Sans is the voice (names, headings, buttons, numbers); Chakra Petch is for long text */
+  --font-voice: 'Pixelify Sans', ui-monospace, monospace;
+  --font-prose: 'Chakra Petch', ui-sans-serif, system-ui, sans-serif;
+  --fs-caption: clamp(12px, 0.7rem + 0.3vw, 13px);
+  --fs-body: clamp(15px, 0.85rem + 0.3vw, 16px);
+  --fs-title: clamp(20px, 1rem + 1.2vw, 24px);
+  --fs-screen: clamp(28px, 1.4rem + 1.6vw, 34px);
+  --lh-prose: 1.5;
+
+  /* touch */
+  --tap: 44px;
+
+  /* motion (06-plan "Motion"): transforms and opacity only */
+  --m-fast: 140ms;
+  --m-base: 240ms;
+  --m-slow: 420ms;
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  /* --spring is v05's cubic-bezier(0.3, 1.6, 0.5, 1) */
+  --stagger: 35ms;
+
+  /* messages */
+  --toast-time: 2500ms;
+}
+@media (max-width: 359px) {
+  :root {
+    --pad-panel: var(--s4);
+  }
+}
+/* long text: descriptions, dialogue over two lines, the Guide, help */
+.prose {
+  font-family: var(--font-prose);
+  font-weight: 500;
+  font-size: var(--fs-body);
+  line-height: var(--lh-prose);
+}

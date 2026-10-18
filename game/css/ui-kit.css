@@ -1,0 +1,71 @@
+/* ================= phase 06: the UI kit's page-side styles =================
+   What js/ui-kit.js puts in the page itself rather than inside a component: the inbox dot and the rising numbers.
+   The components style themselves; only tokens from css/tokens.css. */
+
+/* the inbox dot: sits on the portrait's shoulder; its own button, so the portrait still opens the Trainer card */
+.tb-inbox {
+  position: absolute;
+  left: calc(50% + 18px);
+  top: -6px;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: var(--tap);
+  height: var(--tap);
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+.tb-inbox b {
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--r-pill);
+  background: var(--t-profile);
+  color: #fff;
+  font: 700 12px/1 var(--font-voice);
+  border: 2px solid var(--g-solid);
+  box-shadow: var(--g-sh);
+}
+
+/* the inbox sheet's list */
+.inbox-list {
+  display: grid;
+  gap: var(--s3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.inbox-list li {
+  padding: var(--s4);
+  border-radius: var(--r-md);
+  background: var(--g-bg2);
+}
+.inbox-list h3 {
+  margin: 0 0 var(--s1);
+  font: 700 16px/1.2 var(--font-voice);
+}
+.inbox-list .prose p {
+  margin: 0 0 var(--s2);
+}
+.inbox-list .prose p:last-child {
+  margin-bottom: 0;
+}
+
+/* a number rising from where something happened (pbFloat) */
+.pb-float {
+  position: fixed;
+  z-index: 45;
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(-50%, 0);
+  font: 700 15px/1 var(--font-voice);
+  color: var(--gold-b);
+  text-shadow:
+    0 1px 0 var(--g-solid),
+    0 0 6px var(--g-solid);
+  white-space: nowrap;
+}
