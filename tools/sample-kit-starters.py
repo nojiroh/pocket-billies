@@ -11,6 +11,7 @@ No clothing: every feature is an animal part. Needs Pillow and numpy.
 """
 import colorsys
 import json
+import math
 import os
 
 import numpy as np
@@ -138,28 +139,91 @@ def paste(canvas, im, x, y):
     canvas.alpha_composite(im, (round(x), round(y)))
 
 
+# each tail's base (where it grows from the body) and tip, as fractions of its picture, and the direction its tip
+# should point (degrees, 0 = right, 90 = up): bushy tails sweep up and out, heavy ones trail low along the ground,
+# fins stick straight out behind. A pom (None) has no direction: it just sits on the rump.
+TAILS = {
+    'fox_tail': ((0.82, 0.22), (0.12, 0.85), 55),
+    'cat_tail': ((0.12, 0.88), (0.62, 0.3), 40),
+    'reptile_tail': ((0.06, 0.72), (0.95, 0.1), 8),
+    'shark_tailfin': ((0.05, 0.5), (0.95, 0.5), 15),
+    'rabbit_tail': None,
+    'bear_tail': None,
+}
+
+
+def opaque_box(im):
+    ys, xs = np.nonzero(np.array(im)[..., 3] > 0)
+    return xs.min(), ys.min(), xs.max(), ys.max()
+
+
+def top_anchor(im):
+    """where a hanging limb joins the body: the middle of its topmost few rows of pixels"""
+    ys, xs = np.nonzero(np.array(im)[..., 3] > 0)
+    top = ys.min()
+    sel = ys <= top + 3
+    return xs[sel].mean(), top
+
+
+def rotate_about(im, base, deg):
+    """turn a picture by deg (counter-clockwise) and return it with where its base point ended up"""
+    w, h = im.size
+    r = im.rotate(deg, resample=Image.NEAREST, expand=True)
+    t = math.radians(deg)
+    dx, dy = base[0] - w / 2, base[1] - h / 2
+    nx = dx * math.cos(t) + dy * math.sin(t)
+    ny = -dx * math.sin(t) + dy * math.cos(t)
+    return r, (r.size[0] / 2 + nx, r.size[1] / 2 + ny)
+
+
+def place_tail(pid, im):
+    """the tail turned so it points the way it should, and its base point"""
+    spec = TAILS.get(pid)
+    w, h = im.size
+    if not spec:
+        return im, (w / 2, h / 2)
+    (bx, by), (tx, ty), aim = spec
+    base, tip = (bx * w, by * h), (tx * w, ty * h)
+    now = math.degrees(math.atan2(-(tip[1] - base[1]), tip[0] - base[0]))
+    return rotate_about(im, base, aim - now)
+
+
 def build(slots, extras, stage, view):
     k = STAGE[stage]
     W, H = 150, 190
     cv = Image.new('RGBA', (W, H), (0, 0, 0, 0))
     get = lambda slot: part(slots[slot][0], view, slots[slot][1] * k, slots[slot][2], head=slot == 'head')
-    torso, head, arm, leg, tail = get('torso'), get('head'), get('arm'), get('leg'), get('tail')
+    torso, head, arm, leg = get('torso'), get('head'), get('arm'), get('leg')
     cx, ground = W / 2, H - 6
+    back = view == 'back'
     tw, th = torso.size
     lw, lh = leg.size
-    ty = ground - lh * 0.6 - th            # torso top
-    hw, hh = head.size
-    hy = ty - hh * 0.82                    # head top
-    layers = []                            # (z, image, x, y)
-    back = view == 'back'
-    # tail sits behind on the right (front view), in front when seen from behind
-    layers.append((8 if back else 1, tail, cx + tw * 0.18, ty + th * 0.55 - tail.size[1] * 0.5))
-    layers.append((3, leg, cx - tw * 0.36, ground - lh))
-    layers.append((3, leg.transpose(Image.FLIP_LEFT_RIGHT), cx + tw * 0.36 - lw, ground - lh))
+    layers = []                               # (z, image, x, y)
+    # legs: the hips sit under the torso, far enough apart that the feet stand clear of each other
+    lax, _ = top_anchor(leg)
+    lx0, _, lx1, _ = opaque_box(leg)
+    hip = max(tw * 0.24, (lx1 - lx0 + 1) * 0.62)
+    ty = ground - lh * 0.62 - th              # torso top: the top of the legs tucks under it
+    layers.append((3, leg, cx - hip - lax, ground - lh))
+    layers.append((3, leg.transpose(Image.FLIP_LEFT_RIGHT), cx + hip - (lw - lax), ground - lh))
     layers.append((5, torso, cx - tw / 2, ty))
-    aw, ah = arm.size
-    layers.append((2 if back else 7, arm, cx - tw * 0.5 - aw * 0.45, ty + th * 0.12))
-    layers.append((2 if back else 7, arm.transpose(Image.FLIP_LEFT_RIGHT), cx + tw * 0.5 - aw * 0.55, ty + th * 0.12))
+    # arms hang from the shoulders, the hands a little out from the body
+    aax, aay = top_anchor(arm)
+    sh_x, sh_y = tw * 0.36, ty + th * 0.12
+    layers.append((2 if back else 7, arm, cx - sh_x - aax, sh_y - aay))
+    layers.append((2 if back else 7, arm.transpose(Image.FLIP_LEFT_RIGHT), cx + sh_x - (arm.size[0] - aax), sh_y - aay))
+    # the tail grows from the lower back: behind the body from the front, over it from behind
+    tpid = slots['tail'][0]
+    tail, (tbx, tby) = place_tail(tpid, get('tail'))
+    # from the front it comes out beside the hip; from behind it grows from the middle of the rump
+    if TAILS.get(tpid):
+        side = 0.46 if TAILS[tpid][2] > 30 else 0.3   # a tail that sweeps up needs the room beside the hip
+        base_x, base_y = (cx, ty + th * 0.9) if back else (cx + tw * side, ty + th * 0.86)
+    else:                                     # a pom: peeking out at the side from the front, on the rump from behind
+        base_x, base_y = (cx, ty + th * 0.86) if back else (cx + tw * 0.42, ty + th * 0.8)
+    layers.append((8 if back else 1, tail, base_x - tbx, base_y - tby))
+    hw, hh = head.size
+    hy = ty - hh * 0.82                       # head top: the neck tucks under the chin
     layers.append((9, head, cx - hw / 2, hy))
     for pid, anchor, f, c, pair in extras:
         e = part(pid, view, f * k, c)
@@ -173,13 +237,11 @@ def build(slots, extras, stage, view):
         elif anchor == 'chin':    # a goat's beard
             x, y, z = cx - ew / 2, hy + hh * 0.78, 10 if not back else 4
             e = e.transpose(Image.FLIP_TOP_BOTTOM)
-        else:                     # 'back': carried on its back, behind (front view) or in front (back view)
+        else:                     # 'back': carried on its back, behind (front view) or over it (back view)
             x, y, z = cx - ew / 2, ty - eh * 0.15, 6 if back else 4
+        layers.append((z, e, x, y))
         if pair:
-            layers.append((z, e, x, y))
             layers.append((z, e.transpose(Image.FLIP_LEFT_RIGHT), 2 * cx - x - ew, y))
-        else:
-            layers.append((z, e, x, y))
     for z, im, x, y in sorted(layers, key=lambda t: t[0]):
         paste(cv, im, x, y)
     return cv
