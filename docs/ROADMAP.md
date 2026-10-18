@@ -22,7 +22,10 @@ Do the phases in order. Each phase is one session (or a few for the big ones). E
 | 15 | 15-game-design-and-story | Design doc, story bible, organization, tax mechanics | 3-5 h doc; rest open | any (do before 16, 17) |
 | 16 | 16-billies-monster-system | Slimmed roster, parts, breeding, abominations, encounters | 6-12 h prototype; 20-40 h full | 04, 05, 13, 15 |
 | 17 | 17-robots | Medabot-inspired build-your-own robots and battles | 8-15 h prototype; 25-45 h full | 09, 13, 15 |
-| 18 | 18-friend-trading-and-battles | Async friend battles and atomic trades (Billies, robots, parts) | 10-20 h | 02, 16, 17 |
+| 18 | 18-friend-trading-and-battles | Async friend battles and atomic trades (Billies, robots, parts) | 10-20 h | 02, 16, 17, 19 |
+| 19 | 19-battle-core | Seeded RNG owned by the battle, own state, two-sided inputs, replay log, effect handlers | 10-18 h | 13, 17 prototype |
+| 20 | 20-renderer-batching | Draw counters, split walk-view-gl.js, uniform block, instancing, battle rigs on GPU, context loss | 15-30 h | 19 |
+| 21 | 21-texture-atlases-and-ktx2 | Atlas pages, build-time normal maps, KTX2 (Basis) with PNG fallback | 10-20 h | 20 |
 
 Rough total: about 190-370 hours at a careful, gated pace (plan first, approvals, tests, tags). These are guesses, not measurements, and are probably too high: the legacy game was built in about six days (file dates run 2026-10-10 to 2026-10-15) with roughly 50 releases. Treat the numbers as upper bounds and recalibrate after phases 01 and 03 using real usage. Phases 00-05 give a stable, modern, fresh base. Look at the game on my phone before starting phase 06.
 
@@ -33,7 +36,7 @@ It means the FITNESS STEP TRACKING (real-world steps driving travel, hatching an
 Old 1 -> 01, old 2 -> 02, old 3 -> 04, old 4 -> 05, old 5 (seamless maps and rooms) -> 08 Part B, old 5B -> 06, old 5C -> 09, old 6 -> 13, old 7 -> 14, old 8 -> 15, old 9 -> 16, old 10 -> 18. New: 03, 07, 10, 11, 12, 17, and 08 Part A.
 
 ## If the scope is too big
-Priority order: 01, 02, 03, the cheap parts of 04 (.gitignore, CI, README, tooling), the 04 data split, 05, 08, 07, 10, 11, 12, the 13 unit tests, then the 17 prototype and the 16 prototype. 06, 09 and 14 grow as needed. 15 happens early because the story and mechanics drive everything else. 18 comes last.
+Priority order: 01, 02, 03, the cheap parts of 04 (.gitignore, CI, README, tooling), the 04 data split, 05, 08, 07, 10, 11, 12, the 13 unit tests, then the 17 prototype and the 16 prototype. 06, 09 and 14 grow as needed. 15 happens early because the story and mechanics drive everything else. 19 comes after the phase 17 prototype and before 18; 20 and 21 follow 19 (owner, 2026-10-19). 18 comes last.
 
 ## Questions I want to be asked (do not decide these alone)
 - Version scheme after 0.1.0 alpha and the single game name (03).
@@ -51,3 +54,7 @@ Priority order: 01, 02, 03, the cheap parts of 04 (.gitignore, CI, README, tooli
 - Breeding mode: deliberate, partly random, or both (16).
 - Robots: decided 2026-10-18 (same battle system, mixed teams, body HP + breakable parts; see 17). Still open: the gem's story role, wild robots, the sim bounds (17).
 - Live real-time friend battles (18).
+- Who is trusted with a friend battle's result: server replay or clients cross-checking (18; 19 makes either possible).
+- Mid-battle quit behaviour and the Lullaby sleep length (19).
+- The walk-view-gl.js file split (20).
+- What stays out of the atlases, and UASTC vs ETC1S per kind of picture (21).
