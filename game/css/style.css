@@ -591,57 +591,11 @@ section > h2,
   color: var(--text2);
   font-size: 16px;
 }
-.nextstop {
-  margin-top: 12px;
-}
-.ns-top {
-  display: flex;
-  justify-content: space-between;
-  gap: 8px;
-  font-size: 14px;
-  color: var(--text2);
-}
-.ns-top b {
-  color: var(--text);
-  font-family: var(--disp);
-  font-weight: 400;
-  font-size: 15px;
-}
-.trail {
-  position: relative;
-  margin: 42px 16px 2px 2px;
-}
-.trail .pbar {
-  margin: 0;
-}
-.walker {
-  position: absolute;
-  top: -34px;
-  transform: translateX(-50%);
-  transition: left 1s cubic-bezier(0.3, 0.8, 0.3, 1);
-  pointer-events: none;
-}
 .racts {
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
   margin-top: 10px;
-}
-.event {
-  margin-top: 12px;
-  padding: 10px 12px;
-  background: var(--panel2);
-  box-shadow: inset 3px 0 0 var(--red);
-}
-.event b {
-  font-family: var(--disp);
-  font-weight: 400;
-  font-size: 16px;
-}
-.event p {
-  font-size: 14px;
-  margin-top: 2px;
-  color: var(--text2);
 }
 .gate {
   color: var(--red);
@@ -2169,10 +2123,6 @@ nav#nav[hidden] {
 }
 .walkbtns {
   margin-top: 16px;
-}
-.demo-note {
-  font-size: 12px;
-  text-align: center;
 }
 .here.px {
   overflow: hidden;
@@ -4263,19 +4213,6 @@ body.on-walk .wh-foot > * {
   font-size: 30px;
   margin: 2px 0 4px;
 }
-.wh-next {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 4px 10px;
-  font-size: 13px;
-  color: var(--text2);
-}
-.wh-next b {
-  color: var(--text);
-}
-.wh-next .pbar {
-  grid-column: 1/-1;
-}
 .wh-gate {
   margin: 0;
   font-size: 13px;
@@ -4432,9 +4369,6 @@ body.on-walk .wh-foot > * {
   }
   .wh-card .where {
     font-size: 20px;
-  }
-  .wh-card .wh-next {
-    display: none;
   }
   .wh-hint {
     display: none;

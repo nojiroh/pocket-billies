@@ -45,7 +45,6 @@ import {
   talkFolk,
   uiState,
   waitForPaintWorker,
-  walkMode,
 } from './hooks.js';
 import { clamp } from './util.js';
 import { frameStop } from './frame-scheduler.js';
@@ -72,6 +71,7 @@ expose({
   OPEN_HOURS: [() => OPEN_HOURS],
   PAINT_WORKER_WAIT: [() => PAINT_WORKER_WAIT],
   PROP_CLOCK: [() => PROP_CLOCK],
+  PROP_VARIANT_CACHE: [() => PROP_VARIANT_CACHE],
   ROOF_STYLES: [() => ROOF_STYLES],
   STEP_GRID_CACHE: [() => STEP_GRID_CACHE],
   TILE_PIXEL_CACHE: [() => TILE_PIXEL_CACHE],
@@ -106,7 +106,6 @@ expose({
   cropGrowth: [() => cropGrowth, v => (cropGrowth = v)],
   decodeBase64Array: [() => decodeBase64Array, v => (decodeBase64Array = v)],
   directionOf: [() => directionOf, v => (directionOf = v)],
-  distanceAlongPolyline: [() => distanceAlongPolyline, v => (distanceAlongPolyline = v)],
   drawBubble: [() => drawBubble, v => (drawBubble = v)],
   drawExitLabels: [() => drawExitLabels, v => (drawExitLabels = v)],
   drawExitMarks: [() => drawExitMarks, v => (drawExitMarks = v)],
@@ -168,6 +167,7 @@ expose({
   pickHit: [() => pickHit, v => (pickHit = v)],
   pixelFont: [() => pixelFont, v => (pixelFont = v)],
   pixelUnit: [() => pixelUnit, v => (pixelUnit = v)],
+  plainPropVariant: [() => plainPropVariant, v => (plainPropVariant = v)],
   plainTileIndex: [() => plainTileIndex, v => (plainTileIndex = v)],
   pointAlongMapPath: [() => pointAlongMapPath, v => (pointAlongMapPath = v)],
   pointAlongPolyline: [() => pointAlongPolyline, v => (pointAlongPolyline = v)],
@@ -256,9 +256,6 @@ export const walkView = {
     route: null,
     ri: 0,
     goal: null,
-    line: null,
-    d: 0,
-    pk: '',
     fresh: true,
     saved: 0,
     rust: 0,
@@ -437,7 +434,25 @@ const ROOF_STYLES = {
   solar: { roofTex: 17, roofCol: '#3A4C7E' },
   chrome: { roofTex: 12, roofCol: '#8FC4CE' },
 };
+/* phase 09 batch 1: a plain prop's variants (not a building's): variants: [{...fields}], picked by a placement's v
+   (1 is the first; 0 or none is the prop as it is). A variant replaces any of the prop's fields: its picture and
+   size (img, w, h, ox, oy), its model, a swap of colours and pictures in that model (swap), its name. */
+const PROP_VARIANT_CACHE = new WeakMap();
+function plainPropVariant(n, M) {
+  const V = M.variants[n - 1];
+  if (!V) return M;
+  let c = PROP_VARIANT_CACHE.get(M);
+  if (!c) PROP_VARIANT_CACHE.set(M, (c = new Map()));
+  let out = c.get(n);
+  if (!out) {
+    out = Object.assign({}, M, V, { _vk: n });
+    delete out.variants;
+    c.set(n, out);
+  }
+  return out;
+}
 export function propWithVariant(p, M) {
+  if (M && !M.build && M.variants && p && p.v | 0) return plainPropVariant(p.v | 0, M);
   const n = p && p.v | 0,
     rf = M && M.build && p && p.roof ? ROOF_STYLES[p.roof] : null;
   if (!M || !M.build || (!rf && (!n || !M.build.variants))) return M;
@@ -2161,27 +2176,6 @@ export function pointAlongPolyline(P, d) {
     }
   }
 }
-function distanceAlongPolyline(P, x, z) {
-  let best = 0,
-    bd = 1e9;
-  const p = P.p;
-  for (let i = 0; i < p.length - 1; i++) {
-    const a = p[i],
-      b = p[i + 1],
-      vx = b[0] - a[0],
-      vz = b[1] - a[1],
-      l2 = vx * vx + vz * vz || 1e-9,
-      k = clamp(((x - a[0]) * vx + (z - a[1]) * vz) / l2, 0, 1),
-      px = a[0] + vx * k,
-      pz = a[1] + vz * k,
-      d = Math.hypot(px - x, pz - z);
-    if (d < bd) {
-      bd = d;
-      best = P.seg[i] + Math.sqrt(l2) * k;
-    }
-  }
-  return best;
-}
 export function pointAlongMapPath(sc, t) {
   const P = polyline(
     sc.path && sc.path.length > 1
@@ -3017,16 +3011,13 @@ export function findPath(ax, az, bx, bz, o = {}) {
 }
 /* ---------- encounter spots: tall grass first, around where you stand ---------- */
 function encounterCandidates(sc) {
-  /* alpha 0.2: on a trip through a place's view, round where your steps have taken you (not the place's middle) */ const st =
-      walkView.st,
-    trip = st && st.mode === 'road' && st.pos && sc.comp && sc.comp.hubOf != null,
-    ck = trip ? Math.round(st.pos[0] / 6) + ',' + Math.round(st.pos[1] / 6) : 'hub';
+  const ck = 'hub';
   if (walkView.cand && walkView.candK === ck) return walkView.cand;
   walkView.candK = ck;
   const out = [],
     good = 'tgGfnsxCH',
     rows = sc.tiles || [],
-    hub = trip ? st.pos : mapHub(sc),
+    hub = mapHub(sc),
     ex = sc.exits || [];
   navGrid();
   for (let j = 0; j < sc.h; j++)
@@ -3417,6 +3408,8 @@ function movePlayer(st, dt) {
     mz = 0;
   const ox = P.x,
     oz = P.z;
+  /* phase 08: set when a fresh view puts you at its spawn point: that jump is not walked */
+  let jumped = false;
   if (mode === 'line') {
     const target = clamp(st.t || 0, 0, 1);
     if (P.t < 0 || walkView.opt.instant) P.t = target;
@@ -3431,84 +3424,17 @@ function movePlayer(st, dt) {
       mz = a.dz * Math.sign(gap);
     }
     P.fresh = false;
-  } else if (mode === 'path') {
-    const key = JSON.stringify([walkView.id, st.from, st.to]);
-    if (P.pk !== key) {
-      const r = findPath(st.from[0], st.from[1], st.to[0], st.to[1]) || [st.from, st.to];
-      P.line = polyline(r);
-      P.d = P.fresh
-        ? Math.max(0, clamp(st.t, 0, 1) * P.line.L - (walkView.opt.instant ? 0 : 4))
-        : distanceAlongPolyline(P.line, P.x, P.z);
-      P.pk = key;
-      P.route = null;
-      P.goal = null;
-      P.fresh = false;
-    }
-    const tgt = clamp(st.t, 0, 1) * P.line.L,
-      gap = tgt - P.d,
-      sp = Math.max(WALK_SPEED, Math.abs(gap) * 0.7);
-    if (Math.abs(gap) > 0.01) {
-      P.d += Math.sign(gap) * Math.min(Math.abs(gap), sp * dt);
-      P.walk = 1;
-    } else P.walk = 0;
-    const a = pointAlongPolyline(P.line, P.d);
-    P.x = a.x;
-    P.z = a.z;
-    mx = P.x - ox;
-    mz = P.z - oz;
   } else {
-    /* roam; v43: on a road ('road') you roam too, pulled along to where your steps have taken you */
-    if (mode !== 'road' && !P.route) P.rush = 1;
+    /* roam */
+    if (!P.route) P.rush = 1;
     if (P.fresh) {
       const p = walkablePointNear(...(st.pos || mapHub(sc)));
       P.x = p[0];
       P.z = p[1];
+      jumped = true;
       P.fresh = false;
       P.dir = 'down';
-      P.rp = null;
     }
-    if (mode === 'road' && st.pos) {
-      const rp = P.rp;
-      if (!rp || Math.hypot(rp[0] - st.pos[0], rp[1] - st.pos[1]) > 0.4) {
-        P.rp = st.pos.slice();
-        const d = Math.hypot(st.pos[0] - P.x, st.pos[1] - P.z);
-        if (d > 90) {
-          const p = walkablePointNear(st.pos[0], st.pos[1]);
-          P.x = p[0];
-          P.z = p[1];
-          P.route = null;
-          P.rush = 1;
-        } else if (d > 0.5) {
-          const r = findPath(P.x, P.z, st.pos[0], st.pos[1]);
-          if (r) {
-            P.route = r;
-            P.ri = 1;
-            P.goal = null;
-          }
-          /* alpha 0.2: a trip now runs through places, round their houses: a long way with no path found (a batch of steps came in at once) puts you there */ else if (
-            d > 24
-          ) {
-            const p = walkablePointNear(st.pos[0], st.pos[1]);
-            P.x = p[0];
-            P.z = p[1];
-            P.route = null;
-            P.rush = 1;
-          }
-        }
-      }
-      /* v46: far behind where your steps have taken you (a batch of steps arrived at once): hurry along the road instead of jumping, up to four times walking speed */
-      {
-        const d = Math.hypot(st.pos[0] - P.x, st.pos[1] - P.z);
-        P.rush = d > 8 ? Math.min(4, 1 + (d - 8) / 8) : 1;
-      }
-    } else if (P.pk && P.pk !== 'roam' && P.line && P.d < P.line.L - 0.05) {
-      /* finish the walk that was under way */ const L = P.line,
-        cum = i => (i < L.seg.length ? L.seg[i] : L.L);
-      P.route = [[P.x, P.z], ...L.p.filter((_, i) => cum(i) > P.d + 0.01)];
-      P.ri = 1;
-      P.goal = null;
-    }
-    P.pk = 'roam';
     const K = walkView.keys,
       J = walkView.stick;
     let kx = (K.r ? 1 : 0) - (K.l ? 1 : 0),
@@ -3574,13 +3500,7 @@ function movePlayer(st, dt) {
     }
     P.walk = Math.hypot(P.x - ox, P.z - oz) > 1e-4 ? 1 : 0;
     /* alpha 0.4.1: walking yourself, the metres you walk are your steps (14 a metre): encounters, challenges, your buddy */
-    if (
-      P.walk &&
-      typeof walkMode === 'function' &&
-      walkMode() &&
-      typeof addSteps === 'function' &&
-      !(typeof uiState !== 'undefined' && uiState.bench)
-    ) {
+    if (P.walk && !jumped && typeof addSteps === 'function' && !(typeof uiState !== 'undefined' && uiState.bench)) {
       P.stepAcc = (P.stepAcc || 0) + Math.hypot(P.x - ox, P.z - oz) * 14.1;
       if (P.stepAcc >= 300) {
         const n = Math.floor(P.stepAcc);
