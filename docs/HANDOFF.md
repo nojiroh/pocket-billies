@@ -39,8 +39,12 @@ Not a phase; plan approved at the start. Both runs passed with no errors; the ph
   - Auto quality was not touched. The phone sat at level 4 and 80% resolution because of these spikes; it should settle
     lower on its own, which needs a phone log to confirm.
 - Verified: lint, typecheck, check:modules, 32 unit tests and format at every commit; smoke after each code change (the
-  full-test step 4 times after the save fix); the full quick check at the end (see below); headless counts and timings
-  of gatherFrameItems before and after; a CPU profile of a place opening.
+  full-test step 4 times after the save fix); headless counts and timings of gatherFrameItems before and after; a CPU
+  profile of a place opening.
+  - The full quick check: 46 of 49 steps passed. The 3 failures are the old roster-count steps (v35, v38, v39/v40 want
+    117 species and the data has 24 after phase 16). They come from phase 16, not from this session, and need
+    replacing.
+  - There is no validation/quick-baseline, so no screenshots were compared.
 - Not verified: real-device frame rates (headless draws in software at 1-3 fps).
 - Next:
   - The owner re-runs Diagnostics on the phone and the PC and sends both logs. Look at openHitchCause, Clovercrest fps
