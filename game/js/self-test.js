@@ -43,7 +43,7 @@ import { WALK_SHADERS, roomDimming, standingHeightAt, walkRenderer } from './wal
 import { BLD, BLD_SH } from './buildings.js';
 import { STR, strHas } from './structures.js';
 import { P3D, P3D_SH } from './solid-props.js';
-import { VOX } from './prop-models.js';
+import { propModelState } from './prop-models.js';
 import { buddyTap, companionSpecies, worldBillies } from './world-billies.js';
 import { seamlessRoomMap, seamlessTripView, seamlessWorld } from './seamless-world.js';
 import { A, endBattle, liveK, pickMove, pickTarget, startTrainer, startWild, stopTimers, tapMsg } from './battle.js';
@@ -952,13 +952,17 @@ async function runFullTest(mode) {
                 vk = (walkView.sc.props || [])
                   .filter(p => C0[p.k] && typeof C0[p.k].vox === 'string')
                   .map(p => C0[p.k].vox);
-              for (let i = 0; i < 60 && typeof VOX !== 'undefined' && vk.some(k => !VOX.recipes.get(k)); i++)
+              for (
+                let i = 0;
+                i < 60 && typeof propModelState !== 'undefined' && vk.some(k => !propModelState.recipes.get(k));
+                i++
+              )
                 await stSleep(100);
               const f0 = walkRenderer.frames;
               for (let i = 0; i < 80 && walkRenderer.frames < f0 + 20; i++) await stSleep(100);
               await stSleep(300);
               const b = typeof BLD !== 'undefined' ? BLD.drawn || 0 : 0,
-                v = typeof VOX !== 'undefined' ? VOX.drawn || 0 : 0,
+                v = typeof propModelState !== 'undefined' ? propModelState.drawn || 0 : 0,
                 p = typeof P3D !== 'undefined' ? P3D.drawn || 0 : 0,
                 lm = ((walkRenderer.X && walkRenderer.X.lampSh) || []).length,
                 sc = walkView.sc;
@@ -1232,7 +1236,7 @@ async function runFullTest(mode) {
       'Memory after the run',
       'dio',
       async () => {
-        const vxn = typeof VOX !== 'undefined' ? VOX.meshes.size : 0,
+        const vxn = typeof propModelState !== 'undefined' ? propModelState.meshes.size : 0,
           wn =
             typeof seamlessWorld !== 'undefined'
               ? [...seamlessWorld.cache.keys()].filter(k => k.startsWith('w:')).length

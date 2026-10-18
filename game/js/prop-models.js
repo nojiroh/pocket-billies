@@ -26,7 +26,6 @@ import { BLD_SH, bldArt, bldAtlas } from './buildings.js';
 /* eslint-disable no-func-assign */
 expose({
   LOW_POLY_TEXTURE_CELLS: [() => LOW_POLY_TEXTURE_CELLS],
-  VOX: [() => VOX],
   VOXEL_KEY_OFFSET: [() => VOXEL_KEY_OFFSET],
   VOXEL_KEY_SPAN: [() => VOXEL_KEY_SPAN],
   VOXEL_TEXTURE_GRAIN: [() => VOXEL_TEXTURE_GRAIN],
@@ -44,6 +43,7 @@ expose({
   lowPolyOn: [() => lowPolyOn, v => (lowPolyOn = v)],
   lowPolyVertexShader: [() => lowPolyVertexShader],
   prebuiltModelMesh: [() => prebuiltModelMesh, v => (prebuiltModelMesh = v)],
+  propModelState: [() => propModelState],
   uploadLowPolyMesh: [() => uploadLowPolyMesh, v => (uploadLowPolyMesh = v)],
   voxBob: [() => voxBob, v => (voxBob = v)],
   voxDraw: [() => voxDraw, v => ((voxDraw = v), provide({ voxDraw }))],
@@ -69,7 +69,16 @@ expose({
 /* eslint-enable no-func-assign */
 provide({ voxDraw, voxFlush, voxImageItems, voxPaths, voxShaders, voxShadow, voxTag });
 /* to-module: end */
-export const VOX = { recipes: new Map(), meshes: new Map(), fail: '', drawn: 0, VPM: 32, res: 0, fr: -1, bt: 0 };
+export const propModelState = {
+  recipes: new Map(),
+  meshes: new Map(),
+  fail: '',
+  drawn: 0,
+  VPM: 32,
+  res: 0,
+  fr: -1,
+  bt: 0,
+};
 const VOXEL_TEXTURE_GRAIN = {
   plain: 0,
   grain: 0.1,
@@ -104,22 +113,22 @@ const VOX_SHAPES = [
   ['barrel', 'Barrel'],
 ];
 function voxOn() {
-  return typeof eng === 'function' && (eng('world', 'voxelProps') ?? true) && !VOX.fail;
+  return typeof eng === 'function' && (eng('world', 'voxelProps') ?? true) && !propModelState.fail;
 }
 function voxGuard(fn) {
-  if (VOX.fail) return;
+  if (propModelState.fail) return;
   try {
     return fn();
   } catch (e) {
-    VOX.fail = String((e && e.message) || e);
-    console.error('Voxel props off: ' + VOX.fail);
-    if (typeof NWLOG !== 'undefined') NWLOG.add('webgl', 'Voxel props off: ' + VOX.fail);
+    propModelState.fail = String((e && e.message) || e);
+    console.error('Voxel props off: ' + propModelState.fail);
+    if (typeof NWLOG !== 'undefined') NWLOG.add('webgl', 'Voxel props off: ' + propModelState.fail);
   }
 }
 /* the recipe of a prop: fetched once (inline in a single-file build), null while it loads */
 export function voxRecipe(path) {
-  if (VOX.recipes.has(path)) return VOX.recipes.get(path);
-  VOX.recipes.set(path, null);
+  if (propModelState.recipes.has(path)) return propModelState.recipes.get(path);
+  propModelState.recipes.set(path, null);
   const url = typeof artURL === 'function' ? artURL(path) : 'art/' + path;
   /* v46: in the single-page build the recipe is inlined as a data: link; inside the Claude app a fetch of it is refused,
     which left every recipe empty on the phone. It is decoded here directly and is ready at once. */
@@ -134,28 +143,28 @@ export function voxRecipe(path) {
         : decodeURIComponent(body);
       j = JSON.parse(txt);
     } catch (e) {
-      VOX.bad = (VOX.bad || 0) + 1;
+      propModelState.bad = (propModelState.bad || 0) + 1;
       if (typeof NWLOG !== 'undefined') NWLOG.add('webgl', 'voxel recipe unreadable: ' + path);
     }
     const rec = j || { layers: [] };
-    VOX.recipes.set(path, rec);
+    propModelState.recipes.set(path, rec);
     return rec;
   }
   fetch(url)
     .then(r => (r.ok ? r.json() : null))
     .then(j => {
       if (!j) {
-        VOX.bad = (VOX.bad || 0) + 1;
+        propModelState.bad = (propModelState.bad || 0) + 1;
         if (typeof NWLOG !== 'undefined') NWLOG.add('webgl', 'voxel recipe missing: ' + path);
       }
-      VOX.recipes.set(path, j || { layers: [] });
-      VOX.meshes.delete(path);
+      propModelState.recipes.set(path, j || { layers: [] });
+      propModelState.meshes.delete(path);
     })
     .catch(e => {
-      VOX.bad = (VOX.bad || 0) + 1;
+      propModelState.bad = (propModelState.bad || 0) + 1;
       if (typeof NWLOG !== 'undefined')
         NWLOG.add('webgl', 'voxel recipe failed to load: ' + path + ' (' + ((e && e.message) || e) + ')');
-      VOX.recipes.set(path, { layers: [] });
+      propModelState.recipes.set(path, { layers: [] });
     });
   return null;
 }
@@ -169,7 +178,7 @@ function voxelHash(a, b, c) {
    (a voxel with its six neighbours inside its own shape can never be seen), and a face toward a cell inside any shape
    is never made, so a fine model costs what its outside costs. Voxels are kept by number (voxelKey), colours as 0xRRGGBB. */
 function voxelResolution() {
-  return typeof eng === 'function' && eng('world', 'voxelChunky') ? 8 : VOX.VPM;
+  return typeof eng === 'function' && eng('world', 'voxelChunky') ? 8 : propModelState.VPM;
 }
 const VOXEL_KEY_SPAN = 4096,
   VOXEL_KEY_OFFSET = 2048;
@@ -517,11 +526,11 @@ function greedyVoxelMesh(V, R) {
 }
 /* the mesh of a recipe on the card (built once; the Studio asks for a rebuild after an edit) */
 function voxMeshFor(path, rec) {
-  let m = VOX.meshes.get(path);
+  let m = propModelState.meshes.get(path);
   if (m !== undefined) return m;
   if (rec.kind === 'mesh') {
     m = prebuiltModelMesh(rec);
-    VOX.meshes.set(path, m);
+    propModelState.meshes.set(path, m);
     return m;
   }
   if (lowPolyOn(rec)) {
@@ -551,7 +560,7 @@ function voxMeshFor(path, rec) {
               rps: l.spin.rps ?? 1.5,
             });
         }
-    VOX.meshes.set(path, m);
+    propModelState.meshes.set(path, m);
     return m;
   }
   const gl = EGL.gl,
@@ -560,7 +569,7 @@ function voxMeshFor(path, rec) {
     still = L.some(l => l.spin) ? { ...rec, layers: L.filter(l => !l.spin) } : rec,
     M = greedyVoxelMesh(voxelise(still, R), R);
   if (!M) {
-    VOX.meshes.set(path, null);
+    propModelState.meshes.set(path, null);
     return null;
   }
   const up = D => {
@@ -605,7 +614,7 @@ function voxMeshFor(path, rec) {
           rps: l.spin.rps ?? 1.5,
         });
     }
-  VOX.meshes.set(path, m);
+  propModelState.meshes.set(path, m);
   return m;
 }
 /* the turning parts of a voxel prop, drawn after its still mesh (p: the program, its uniforms set for the item) */
@@ -622,10 +631,10 @@ function drawSpinningParts(p, m) {
   gl.uniform3f(p.U.uSpinC, 0, 0, 0);
 }
 function voxFlush() {
-  for (const k of [...VOX.meshes.keys()]) voxInvalidate(k, true);
+  for (const k of [...propModelState.meshes.keys()]) voxInvalidate(k, true);
 }
 export function voxInvalidate(path, keep) {
-  const m = VOX.meshes.get(path);
+  const m = propModelState.meshes.get(path);
   if (m && m.vao && typeof EGL !== 'undefined' && EGL.gl) {
     const gl = EGL.gl;
     for (const q of [m, ...(m.more || []), ...(m.spins || [])]) {
@@ -633,8 +642,8 @@ export function voxInvalidate(path, keep) {
       for (const b of q.bufs || []) gl.deleteBuffer(b);
     }
   }
-  VOX.meshes.delete(path);
-  if (!keep && path && !path.startsWith('inline:')) VOX.recipes.delete(path);
+  propModelState.meshes.delete(path);
+  if (!keep && path && !path.startsWith('inline:')) propModelState.recipes.delete(path);
 }
 /* alpha 0.4: a low-poly model (a recipe of kind "mesh", made by tools/build-airship.py), painted with the buildings'
    32 px textures (the building sheet, scenery.buildArt.detail) in the buildings' look: each part's vertex data as the
@@ -1084,7 +1093,7 @@ function drawLowPolyModels(C, X, L) {
     voxEl(m);
     for (const q of m.more || []) voxEl(q);
     drawSpinningParts(p, m);
-    VOX.drawn++;
+    propModelState.drawn++;
   }
   gl.bindVertexArray(null);
 }
@@ -1127,21 +1136,21 @@ function voxTag(it) {
     path = spec;
   }
   const R = voxelResolution() + (eng('world', 'voxelLowPoly') ? 1000 : 0);
-  if (VOX.res !== R) {
-    if (VOX.res) voxFlush();
-    VOX.res = R;
+  if (propModelState.res !== R) {
+    if (propModelState.res) voxFlush();
+    propModelState.res = R;
   }
   /* a few new meshes a frame (about 12 ms): the rest draw as their pictures a frame or two longer */
-  if (rec && !VOX.meshes.has(path)) {
+  if (rec && !propModelState.meshes.has(path)) {
     const fr = typeof walkRenderer !== 'undefined' ? walkRenderer.frames : 0;
-    if (VOX.fr !== fr) {
-      VOX.fr = fr;
-      VOX.bt = 0;
+    if (propModelState.fr !== fr) {
+      propModelState.fr = fr;
+      propModelState.bt = 0;
     }
-    if (VOX.bt > 12) return;
+    if (propModelState.bt > 12) return;
     const t0 = performance.now();
     voxGuard(() => voxMeshFor(path, rec));
-    VOX.bt += performance.now() - t0;
+    propModelState.bt += performance.now() - t0;
   }
   /* only a recipe that makes a solid stands in for the picture: while it loads, or if it is empty or failed, the picture draws */
   if (!rec) return;
@@ -1227,7 +1236,7 @@ function voxU(p, it) {
   gl.uniform1f(U.uFlip, it.flip || 1);
 }
 function voxDraw(C, items, X, hits, labels, PPU) {
-  VOX.drawn = 0;
+  propModelState.drawn = 0;
   if (!voxOn()) return;
   voxGuard(() => {
     const gl = EGL.gl;
@@ -1258,7 +1267,7 @@ function voxDraw(C, items, X, hits, labels, PPU) {
       gl.uniform3f(p.U.uSpinC, 0, 0, 0);
       voxEl(m);
       drawSpinningParts(p, m);
-      VOX.drawn++;
+      propModelState.drawn++;
       if (hits && !it.far) addHitTarget(it, C, hits, labels, PPU);
     }
     gl.bindVertexArray(null);
@@ -1303,7 +1312,7 @@ function voxPaths(sc, C) {
     const M = C.props[p.k];
     if (!M || !M.vox) continue;
     any = true;
-    const rec = VOX.recipes.get(M.vox);
+    const rec = propModelState.recipes.get(M.vox);
     if (rec) for (const l of rec.layers || []) if (l.k === 'img' && l.img) L.push(l.img);
   }
   /* alpha 0.4: the low-poly props and models are painted from the building sheet */

@@ -1321,8 +1321,8 @@ def desktop_steps(b, base, R):
         if abs(w[0] - w[1]) < .005: raise Exception(f'the wind does not move: {w}')
         out.append('every plant sways; the encounter grass takes the wind')
         # voxel props: recipes resolve, meshes build, a few draw
-        vx = json.loads(pg.evaluate("""JSON.stringify((()=>{const C=walkData().sc.props,keys=Object.keys(C).filter(k=>C[k].vox);const out={n:keys.length,built:0,empty:[],drawn:VOX.drawn};
-         for(const k of keys.slice(0,12)){const spec=C[k].vox,rec=typeof spec==='object'?spec:VOX.recipes.get(spec);if(!rec){voxRecipe(spec);continue}const m=greedyVoxelMesh(voxelise(rec),rec.vpm||8);if(m&&m.n>0)out.built++;else out.empty.push(k)}return out})())"""))
+        vx = json.loads(pg.evaluate("""JSON.stringify((()=>{const C=walkData().sc.props,keys=Object.keys(C).filter(k=>C[k].vox);const out={n:keys.length,built:0,empty:[],drawn:propModelState.drawn};
+         for(const k of keys.slice(0,12)){const spec=C[k].vox,rec=typeof spec==='object'?spec:propModelState.recipes.get(spec);if(!rec){voxRecipe(spec);continue}const m=greedyVoxelMesh(voxelise(rec),rec.vpm||8);if(m&&m.n>0)out.built++;else out.empty.push(k)}return out})())"""))
         if vx['n'] < 30: raise Exception(f'{vx["n"]} props with a voxel recipe (want 30+)')
         if vx['empty']: raise Exception('empty voxel models: ' + ', '.join(vx['empty']))
         out.append(f'{vx["n"]} props with a voxel recipe, {vx["built"]} of 12 meshed on the spot, {vx["drawn"]} drawn last frame')
@@ -1392,7 +1392,7 @@ def desktop_steps(b, base, R):
             shot(pg, 'v44-land')
             # 2. props: every kind draws (pictures, solids, voxels, buildings) and no draw is refused
             bench('test_light_props', 16, 20, 7, 0); time.sleep(1)
-            c = json.loads(pg.evaluate("JSON.stringify({bld:BLD.drawn,vox:VOX.drawn,p3d:P3D.drawn,spr:walkRenderer.sprN||null,placed:(walkView.sc.props||[]).length,fails:[BLD.fail,VOX.fail,P3D.fail].filter(Boolean)})"))
+            c = json.loads(pg.evaluate("JSON.stringify({bld:BLD.drawn,vox:propModelState.drawn,p3d:P3D.drawn,spr:walkRenderer.sprN||null,placed:(walkView.sc.props||[]).length,fails:[BLD.fail,propModelState.fail,P3D.fail].filter(Boolean)})"))
             if c['fails']: raise Exception('renderers off: ' + ' | '.join(c['fails']))
             if c['bld'] < 3 or c['vox'] < 4 or c['p3d'] < 1: raise Exception(f'props scene: {c}')
             shot(pg, 'v44-props'); out.append(f'props: {c["bld"]} buildings, {c["vox"]} voxel props, {c["p3d"]} solid props drawn of {c["placed"]} placed')
@@ -1734,8 +1734,8 @@ def desktop_steps(b, base, R):
         pg.evaluate(f"U.inside=null;U.bench=null;U.modal=null;U.mq=[];renderOv();environment.force={{time:11,weather:'clear',season:'summer'}};S.visited[{sd}]=1;S.se=Math.max(S.se,2000);0")
         go_scene(pg, cl); time.sleep(1)
         pg.evaluate("(()=>{const p=walkView.sc.props.find(p=>p.act==='fly');walkView.pl.route=null;walkView.pl.x=p.x+2.2;walkView.pl.z=p.z-1.6})();0")
-        until(pg, "VOX.meshes.has('scene/models/airship.json')&&!!VOX.meshes.get('scene/models/airship.json')", 60); time.sleep(2)
-        v = pg.evaluate("(()=>{const m=VOX.meshes.get('scene/models/airship.json');return m?{spins:(m.spins||[]).length,model:!!m.model,tris:m.n/3,drawn:VOX.drawn}:null})()")
+        until(pg, "propModelState.meshes.has('scene/models/airship.json')&&!!propModelState.meshes.get('scene/models/airship.json')", 60); time.sleep(2)
+        v = pg.evaluate("(()=>{const m=propModelState.meshes.get('scene/models/airship.json');return m?{spins:(m.spins||[]).length,model:!!m.model,tris:m.n/3,drawn:propModelState.drawn}:null})()")
         if not v or not v['model'] or v['spins'] != 2: raise Exception(f'the airship isn’t drawn as a low-poly model with two turning propellers: {v}')
         shot(pg, 'a04-airship-mast')
         out.append(f'the airship drawn as a low-poly model ({v["tris"]:.0f} triangles, the buildings’ textures), {v["spins"]} propellers turning')
@@ -1765,16 +1765,16 @@ def desktop_steps(b, base, R):
         every-prop scene they draw as models"""
         if not pg.evaluate("typeof lowPolyFromRecipe==='function'"): return 'not in this build'
         pg.evaluate("window.__P=Object.entries(GD.scenery.props).filter(([k,M])=>typeof M.vox==='string').map(([k,M])=>M.vox);__P.forEach(p=>voxRecipe(p));0")
-        until(pg, "__P.every(p=>VOX.recipes.get(p))", 30)
-        r = pg.evaluate("""(()=>{let n=0,lp=0,q=0,bad=[];for(const p of __P){const rec=VOX.recipes.get(p);if(!rec||rec.kind==='mesh')continue;n++;
-          const L=lowPolyFromRecipe(rec),V=greedyVoxelMesh(voxelise(rec,32),32);if(!L||!V){bad.push(p.split('/').pop());continue}lp+=L.tris;q+=V.quads}return {n,lp,q,bad,on:!!eng('world','voxelLowPoly'),res:VOX.VPM}})()""")
+        until(pg, "__P.every(p=>propModelState.recipes.get(p))", 30)
+        r = pg.evaluate("""(()=>{let n=0,lp=0,q=0,bad=[];for(const p of __P){const rec=propModelState.recipes.get(p);if(!rec||rec.kind==='mesh')continue;n++;
+          const L=lowPolyFromRecipe(rec),V=greedyVoxelMesh(voxelise(rec,32),32);if(!L||!V){bad.push(p.split('/').pop());continue}lp+=L.tris;q+=V.quads}return {n,lp,q,bad,on:!!eng('world','voxelLowPoly'),res:propModelState.VPM}})()""")
         if r['bad']: raise Exception(f'these recipes make nothing: {r["bad"][:6]}')
         if not r['on']: raise Exception('props aren’t low-poly by default')
         if r['res'] != 32: raise Exception(f'voxels are {r["res"]} to the metre, not 32')
         if r['lp'] > 15000 or r['q'] > 40000: raise Exception(f'too heavy: {r["lp"]} low-poly triangles, {r["q"]} voxel quads')
         pg.evaluate("U.modal=null;U.mq=[];renderOv();U.tab='walk';U.inside=null;U.bench={id:'test_props',test:1};render();0")
         until(pg, "!!(walkView.ready&&walkView.id==='test_props')", 60); pg.evaluate("walkView.pl.x=12;walkView.pl.z=21;walkView.pl.route=null;0"); time.sleep(3)
-        m = pg.evaluate("(()=>{const v=[...VOX.meshes.values()].filter(Boolean);return {lp:v.filter(m=>m.lowpoly).length,vox:v.filter(m=>!m.model).length,drawn:VOX.drawn}})()")
+        m = pg.evaluate("(()=>{const v=[...VOX.meshes.values()].filter(Boolean);return {lp:v.filter(m=>m.lowpoly).length,vox:v.filter(m=>!m.model).length,drawn:propModelState.drawn}})()")
         if not m['lp'] or m['vox']: raise Exception(f'the every-prop scene drew {m["lp"]} low-poly props and {m["vox"]} voxel ones')
         shot(pg, 'a04-props-lowpoly')
         pg.evaluate("U.bench=null;render();0")
