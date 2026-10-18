@@ -14,7 +14,7 @@ expose({
   ENGINE_PRESETS: [() => ENGINE_PRESETS],
   ENGINE_SPEC: [() => ENGINE_SPEC],
   ENG_CTX: [() => ENG_CTX, v => (ENG_CTX = v)],
-  eng: [() => eng, v => (eng = v)],
+  eng: [() => eng, v => ((eng = v), provide({ eng }))],
   engGame: [() => engGame, v => (engGame = v)],
   engHex: [() => engHex, v => (engHex = v)],
   engLook: [() => engLook, v => (engLook = v)],

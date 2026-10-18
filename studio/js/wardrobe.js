@@ -54,7 +54,7 @@ expose({
   wdGrow: [() => wdGrow, v => (wdGrow = v)],
   wdItemHTML: [() => wdItemHTML, v => (wdItemHTML = v)],
   wdJoints: [() => wdJoints, v => (wdJoints = v)],
-  wdLoad: [() => wdLoad, v => (wdLoad = v)],
+  wdLoad: [() => wdLoad, v => ((wdLoad = v), provide({ wdLoad }))],
   wdLocal: [() => wdLocal, v => (wdLocal = v)],
   wdMount: [() => wdMount, v => (wdMount = v)],
   wdPick: [() => wdPick, v => (wdPick = v)],

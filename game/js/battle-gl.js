@@ -20,9 +20,9 @@ expose({
   BGL: [() => BGL],
   battleGLAttach: [() => battleGLAttach, v => (battleGLAttach = v)],
   battleGLFrame: [() => battleGLFrame, v => (battleGLFrame = v)],
-  battleGLLayout: [() => battleGLLayout, v => (battleGLLayout = v)],
-  battleGLStart: [() => battleGLStart, v => (battleGLStart = v)],
-  battleGLStop: [() => battleGLStop, v => (battleGLStop = v)],
+  battleGLLayout: [() => battleGLLayout, v => ((battleGLLayout = v), provide({ battleGLLayout }))],
+  battleGLStart: [() => battleGLStart, v => ((battleGLStart = v), provide({ battleGLStart }))],
+  battleGLStop: [() => battleGLStop, v => ((battleGLStop = v), provide({ battleGLStop }))],
   battleGLWanted: [() => battleGLWanted, v => (battleGLWanted = v)],
 });
 /* eslint-enable no-func-assign */

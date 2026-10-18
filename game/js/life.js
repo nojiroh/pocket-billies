@@ -25,11 +25,11 @@ expose({
   lifeInit: [() => lifeInit, v => (lifeInit = v)],
   lifeKey: [() => lifeKey, v => (lifeKey = v)],
   lifeMeta: [() => lifeMeta, v => (lifeMeta = v)],
-  lifePaths: [() => lifePaths, v => (lifePaths = v)],
+  lifePaths: [() => lifePaths, v => ((lifePaths = v), provide({ lifePaths }))],
   lifeRnd: [() => lifeRnd, v => (lifeRnd = v)],
   lifeShift: [() => lifeShift, v => (lifeShift = v)],
   lifeShore: [() => lifeShore, v => (lifeShore = v)],
-  lifeSprites: [() => lifeSprites, v => (lifeSprites = v)],
+  lifeSprites: [() => lifeSprites, v => ((lifeSprites = v), provide({ lifeSprites }))],
   lifeStep: [() => lifeStep, v => setLifeStep(v)],
   lifeTarget: [() => lifeTarget, v => (lifeTarget = v)],
 });

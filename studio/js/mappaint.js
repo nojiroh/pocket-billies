@@ -50,7 +50,7 @@ expose({
   trailSet: [() => trailSet, v => (trailSet = v)],
   uvOf: [() => uvOf, v => (uvOf = v)],
   v3s: [() => v3s],
-  worldPaint: [() => worldPaint, v => (worldPaint = v)],
+  worldPaint: [() => worldPaint, v => ((worldPaint = v), provide({ worldPaint }))],
   wrapU: [() => wrapU],
 });
 /* eslint-enable no-func-assign */

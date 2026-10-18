@@ -35,7 +35,7 @@ expose({
   loadImage: [() => loadImage, v => (loadImage = v)],
   lumOf: [() => lumOf],
   markArt: [() => markArt, v => (markArt = v)],
-  mountPreviews: [() => mountPreviews, v => (mountPreviews = v)],
+  mountPreviews: [() => mountPreviews, v => ((mountPreviews = v), provide({ mountPreviews }))],
   openPixelEditor: [() => openPixelEditor, v => (openPixelEditor = v)],
   partsOf: [() => partsOf, v => (partsOf = v)],
   pickFile: [() => pickFile, v => (pickFile = v)],
@@ -66,7 +66,7 @@ expose({
   rampAt: [() => rampAt, v => (rampAt = v)],
   rgb2hsv: [() => rgb2hsv, v => (rgb2hsv = v)],
   rigFor: [() => rigFor, v => (rigFor = v)],
-  spriteCacheClear: [() => spriteCacheClear, v => (spriteCacheClear = v)],
+  spriteCacheClear: [() => spriteCacheClear, v => ((spriteCacheClear = v), provide({ spriteCacheClear }))],
 });
 /* eslint-enable no-func-assign */
 provide({ mountPreviews, spriteCacheClear });

@@ -14,8 +14,8 @@ expose({
   checkT: [() => checkT, v => (checkT = v)],
   loadBackups: [() => loadBackups, v => (loadBackups = v)],
   renderCheckList: [() => renderCheckList, v => (renderCheckList = v)],
-  runCheck: [() => runCheck, v => (runCheck = v)],
-  scheduleCheck: [() => scheduleCheck, v => (scheduleCheck = v)],
+  runCheck: [() => runCheck, v => ((runCheck = v), provide({ runCheck }))],
+  scheduleCheck: [() => scheduleCheck, v => ((scheduleCheck = v), provide({ scheduleCheck }))],
 });
 /* eslint-enable no-func-assign */
 provide({ runCheck, scheduleCheck });

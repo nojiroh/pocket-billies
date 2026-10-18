@@ -1,11 +1,21 @@
-// Phase 04c: the window bridge. Every module puts its top-level names on window (the generated expose({...}) at the
-// top of each module, tools/to-module.mjs), as a getter and a setter of the module's own variable, so whatever still
-// reaches a name as a global works as it did with classic scripts: the classic scripts, a module's reference to a
-// later file, the Studio's stand-ins, the quick check, the console and the debug log's wrappers (setting
-// window.render replaces `render` for the module and for every module that imports it). Phase 04d replaces the
-// globals that are left with imports and explicit hooks, then this goes.
+// Phase 04c: the window bridge. Every module calls expose({...}) with its top-level names (the generated part at the
+// top of each module, tools/to-module.mjs), as a getter and a setter of the module's own variable.
+// Phase 04d: the modules reach each other only through imports, game/js/hooks.js and the setters, and the debug log
+// through game/js/log-names.js, so nothing in the game or the Studio needs these globals any more. They are put on
+// window only when asked, for the checks' page.evaluate() calls and the console:
+// - window.PB_TEST_GLOBALS = true before the page loads (the checks' init script), or
+// - ?globals in the address (on a phone: game/index.html?globals).
+// Setting a name changes the module's own variable, and hands it to hooks.js if other modules read it from there.
+const on = (() => {
+  try {
+    return !!window.PB_TEST_GLOBALS || new URLSearchParams(location.search).has('globals');
+  } catch (e) {
+    return false;
+  }
+})();
 const seen = new Set();
 export function expose(names) {
+  if (!on) return;
   for (const [k, [get, set]] of Object.entries(names)) {
     if (seen.has(k)) console.error(`Pocket Billies: two modules define ${k}; the later one wins`);
     seen.add(k);

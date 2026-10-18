@@ -36,7 +36,7 @@ import { pedM } from './propedit.js';
 expose({
   VXE: [() => VXE],
   VXE_KINDS: [() => VXE_KINDS],
-  pedVoxHTML: [() => pedVoxHTML, v => (pedVoxHTML = v)],
+  pedVoxHTML: [() => pedVoxHTML, v => ((pedVoxHTML = v), provide({ pedVoxHTML }))],
   vxeBump: [() => vxeBump, v => (vxeBump = v)],
   vxeMainColour: [() => vxeMainColour, v => (vxeMainColour = v)],
   vxeOwn: [() => vxeOwn, v => (vxeOwn = v)],

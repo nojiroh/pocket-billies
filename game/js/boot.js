@@ -52,7 +52,7 @@ expose({
   loaderLines: [() => loaderLines, v => (loaderLines = v)],
   loaderSet: [() => loaderSet, v => (loaderSet = v)],
   loaderTip: [() => loaderTip, v => (loaderTip = v)],
-  noWebGL: [() => noWebGL, v => (noWebGL = v)],
+  noWebGL: [() => noWebGL, v => ((noWebGL = v), provide({ noWebGL }))],
   preloadAll: [() => preloadAll, v => (preloadAll = v)],
   sceneWarm: [() => sceneWarm, v => (sceneWarm = v)],
   studioLive: [() => studioLive, v => (studioLive = v)],

@@ -46,7 +46,7 @@ expose({
   mapZoom: [() => mapZoom, v => setMapZoom(v)],
   mePos: [() => mePos, v => (mePos = v)],
   mproj: [() => mproj, v => (mproj = v)],
-  onStepsAdded: [() => onStepsAdded, v => (onStepsAdded = v)],
+  onStepsAdded: [() => onStepsAdded, v => ((onStepsAdded = v), provide({ onStepsAdded }))],
   pixRingM: [() => pixRingM, v => (pixRingM = v)],
   setMH: [() => setMH, v => (setMH = v)],
   setMW: [() => setMW, v => (setMW = v)],

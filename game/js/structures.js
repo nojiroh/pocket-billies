@@ -21,13 +21,13 @@ expose({
   STR: [() => STR],
   STR_KIND: [() => STR_KIND],
   strBuild: [() => strBuild, v => (strBuild = v)],
-  strDraw: [() => strDraw, v => (strDraw = v)],
+  strDraw: [() => strDraw, v => ((strDraw = v), provide({ strDraw }))],
   strEnsure: [() => strEnsure, v => (strEnsure = v)],
   strFree: [() => strFree, v => (strFree = v)],
   strHas: [() => strHas, v => (strHas = v)],
   strKey: [() => strKey, v => (strKey = v)],
   strN: [() => strN, v => (strN = v)],
-  strShadow: [() => strShadow, v => (strShadow = v)],
+  strShadow: [() => strShadow, v => ((strShadow = v), provide({ strShadow }))],
 });
 /* eslint-enable no-func-assign */
 provide({ strDraw, strShadow });

@@ -48,16 +48,16 @@ import { AMBS } from './world.js';
 /* eslint-disable no-func-assign */
 expose({
   BP: [() => BP],
-  battleFreeArea: [() => battleFreeArea, v => (battleFreeArea = v)],
-  battleLayoutChanged: [() => battleLayoutChanged, v => (battleLayoutChanged = v)],
+  battleFreeArea: [() => battleFreeArea, v => ((battleFreeArea = v), provide({ battleFreeArea }))],
+  battleLayoutChanged: [() => battleLayoutChanged, v => ((battleLayoutChanged = v), provide({ battleLayoutChanged }))],
   bpApplyBackdrop: [() => bpApplyBackdrop, v => (bpApplyBackdrop = v)],
   bpDefaults: [() => bpDefaults, v => (bpDefaults = v)],
   bpEv: [() => bpEv],
   bpMove: [() => bpMove, v => (bpMove = v)],
   bpScene: [() => bpScene, v => (bpScene = v)],
   bpStart: [() => bpStart, v => (bpStart = v)],
-  hudHit: [() => hudHit, v => (hudHit = v)],
-  hudPop: [() => hudPop, v => (hudPop = v)],
+  hudHit: [() => hudHit, v => ((hudHit = v), provide({ hudHit }))],
+  hudPop: [() => hudPop, v => ((hudPop = v), provide({ hudPop }))],
 });
 /* eslint-enable no-func-assign */
 provide({ battleFreeArea, battleLayoutChanged, hudHit, hudPop });

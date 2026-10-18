@@ -37,7 +37,7 @@ expose({
   frSync: [() => frSync, v => (frSync = v)],
   frWatchAll: [() => frWatchAll, v => (frWatchAll = v)],
   frWatchErr: [() => frWatchErr, v => (frWatchErr = v)],
-  frWorldItems: [() => frWorldItems, v => (frWorldItems = v)],
+  frWorldItems: [() => frWorldItems, v => ((frWorldItems = v), provide({ frWorldItems }))],
   friendsHTML: [() => friendsHTML, v => (friendsHTML = v)],
 });
 /* eslint-enable no-func-assign */

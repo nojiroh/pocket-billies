@@ -86,7 +86,7 @@ expose({
   blinkSide: [() => blinkSide, v => (blinkSide = v)],
   blurAt: [() => blurAt, v => (blurAt = v)],
   burst: [() => burst, v => (burst = v)],
-  buzz: [() => buzz, v => (buzz = v)],
+  buzz: [() => buzz, v => ((buzz = v), provide({ buzz }))],
   camApply: [() => camApply, v => (camApply = v)],
   camAt: [() => camAt],
   camBusy: [() => camBusy],

@@ -17,7 +17,7 @@ expose({
   RIG_POSES: [() => RIG_POSES],
   bustHTML: [() => bustHTML, v => (bustHTML = v)],
   drawDomRig: [() => drawDomRig, v => (drawDomRig = v)],
-  drawRig: [() => drawRig, v => (drawRig = v)],
+  drawRig: [() => drawRig, v => ((drawRig = v), provide({ drawRig }))],
   mMul: [() => mMul],
   mR: [() => mR],
   mS: [() => mS],

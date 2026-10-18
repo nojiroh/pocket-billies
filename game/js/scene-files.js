@@ -25,7 +25,7 @@ expose({
   sceneWatch: [() => sceneWatch, v => (sceneWatch = v)],
   scenesAhead: [() => scenesAhead, v => (scenesAhead = v)],
   scenesAll: [() => scenesAll, v => (scenesAll = v)],
-  scenesFor: [() => scenesFor, v => (scenesFor = v)],
+  scenesFor: [() => scenesFor, v => ((scenesFor = v), provide({ scenesFor }))],
   scenesNeed: [() => scenesNeed],
 });
 /* eslint-enable no-func-assign */

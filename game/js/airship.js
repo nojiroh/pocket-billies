@@ -24,13 +24,13 @@ import { sfx } from './sound.js';
 expose({
   FLY: [() => FLY],
   LIFT: [() => LIFT],
-  flyDraw: [() => flyDraw, v => (flyDraw = v)],
+  flyDraw: [() => flyDraw, v => ((flyDraw = v), provide({ flyDraw }))],
   flyFare: [() => flyFare, v => (flyFare = v)],
   flyGo: [() => flyGo, v => (flyGo = v)],
   flyLand: [() => flyLand, v => (flyLand = v)],
   flyMenu: [() => flyMenu, v => (flyMenu = v)],
   flySkip: [() => flySkip, v => (flySkip = v)],
-  flyTick: [() => flyTick, v => (flyTick = v)],
+  flyTick: [() => flyTick, v => ((flyTick = v), provide({ flyTick }))],
   flyTowns: [() => flyTowns, v => (flyTowns = v)],
   liftGo: [() => liftGo, v => (liftGo = v)],
 });

@@ -219,7 +219,13 @@ export async function run(args) {
     for (const s of scripts) {
       if (info.has(s.file)) continue;
       if (s.file === LOG_NAMES) {
-        info.set(s.file, { own: new Map(), reads: new Set(), writes: new Set(), loadReads: new Set(), fnReads: new Map() });
+        info.set(s.file, {
+          own: new Map(),
+          reads: new Set(),
+          writes: new Set(),
+          loadReads: new Set(),
+          fnReads: new Map(),
+        });
         continue;
       }
       if (s.file === 'game/data/gamedata.js') {
@@ -247,9 +253,9 @@ export async function run(args) {
   //   declares it hands it to hooks.js: functions at the top (they exist before the module runs), everything else
   //   right after its declaration, as the bridge did. Imports pointing forward would change the order the modules run in (an
   //   imported module runs first), so they go through hooks.js and the page order stays as it is;
-  // - the window bridge for now, when some file assigns to it (a copy in hooks.js would go stale), until phase 04d
-  //   gives each of those a setter or a hook of its own;
   // - a global, when only classic scripts declare it.
+  // Anything else is an error: since phase 04d the window bridge is only there for the checks and the console. A name
+  // another module assigns needs a setter in the module that declares it (setX, calling provide({ X })).
   const order = pages.flatMap(p => p.scripts.map(s => s.file));
   // names some other module assigns
   const assigned = new Set([...modules].flatMap(f => [...info.get(f).writes]));
@@ -363,10 +369,11 @@ export async function run(args) {
     // a module's own setter (setS for S) also hands the value to hooks.js, so the bridge uses it
     const setterOf = n => {
       const k = setterName(n);
-      return (own.has(k) && own.get(k).kind === 'function') || gen.includes(n) ? `v => ${k}(v)` : `v => (${n} = v)`;
+      if ((own.has(k) && own.get(k).kind === 'function') || gen.includes(n)) return `v => ${k}(v)`;
+      return hooked.has(n) ? `v => ((${n} = v), provide({ ${n} }))` : `v => (${n} = v)`;
     };
     if (names.length) {
-      // the setters replace functions on purpose: the debug log and the Studio wrap or swap them through window
+      // the setters replace functions on purpose: the checks and the console set them (only with the test globals on)
       if (fns) lines.push('/* eslint-disable no-func-assign */');
       lines.push(
         `expose({ ${names.map(n => (own.get(n).kind === 'const' ? `${n}: [() => ${n}]` : `${n}: [() => ${n}, ${setterOf(n)}]`)).join(', ')} });`
@@ -420,7 +427,7 @@ export async function run(args) {
   // log-names.js: what the debug log reads and wraps, put in log.js's GAME object
   const logOut = [
     '// Phase 04d: made by tools/to-module.mjs (npm run modules), do not edit. What the debug log (log.js, a classic',
-    '// script that runs before the modules) reads and wraps in the game\'s modules: a getter for each name in its GAME',
+    "// script that runs before the modules) reads and wraps in the game's modules: a getter for each name in its GAME",
     "// object, and a setter (the module's own) for each function it wraps. The last module of the game's page.",
     ...[...logFrom]
       .sort((a, b) => order.indexOf(a[0]) - order.indexOf(b[0]))
@@ -434,6 +441,11 @@ export async function run(args) {
     '',
   ].join('\n');
   await write(LOG_NAMES, logOut, existsSync(join(ROOT, LOG_NAMES)) ? read(LOG_NAMES) : '');
+  if (bridged.size)
+    throw new Error(
+      `to-module: these names are assigned by another module, or declared in a way hooks.js can't follow; give each a ` +
+        `setter in the module that declares it (setX, calling provide({ X })): ${[...bridged].sort().join(', ')}`
+    );
   if (check && stale.length) throw new Error('to-module: out of date (run npm run modules): ' + stale.join(', '));
 
   // 5. Phase 04d: nothing a module reads WHILE it loads (directly or through the functions it calls then) may come
@@ -460,15 +472,14 @@ export async function run(args) {
     }
   }
   if (problems.length) throw new Error('to-module: load order\n  ' + [...new Set(problems)].join('\n  '));
-  return { modules: [...modules], changed: stale, hooks: slots.length, bridged: [...bridged].sort() };
+  return { modules: [...modules], changed: stale, hooks: slots.length };
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
   run(process.argv.slice(2)).then(
     r => {
       console.log(`${r.modules.length} modules, ${r.changed.length} changed`);
-      console.log(`${r.hooks} names through hooks.js, ${r.bridged.length} still through the window bridge`);
-      if (process.argv.includes('--list')) console.log(r.bridged.join(' '));
+      console.log(`${r.hooks} names through hooks.js`);
     },
     e => {
       console.error(e.message);

@@ -15,7 +15,7 @@ expose({
   GAL: [() => GAL],
   GALLERY_AT: [() => GALLERY_AT],
   galleryClose: [() => galleryClose, v => (galleryClose = v)],
-  galleryOpen: [() => galleryOpen, v => (galleryOpen = v)],
+  galleryOpen: [() => galleryOpen, v => ((galleryOpen = v), provide({ galleryOpen }))],
   galleryPanel: [() => galleryPanel, v => (galleryPanel = v)],
 });
 /* eslint-enable no-func-assign */

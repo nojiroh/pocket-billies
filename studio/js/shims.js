@@ -6,15 +6,15 @@
 import { expose } from '../../game/js/bridge.js';
 import { ST, provide } from '../../game/js/hooks.js';
 expose({
-  B: [() => B, v => (B = v)],
+  B: [() => B, v => ((B = v), provide({ B }))],
   BACKDROPS: [() => BACKDROPS],
   MOVES: [() => MOVES],
   PEOPLE: [() => PEOPLE],
-  RM: [() => RM, v => (RM = v)],
-  S: [() => S, v => (S = v)],
+  RM: [() => RM, v => ((RM = v), provide({ RM }))],
+  S: [() => S, v => ((S = v), provide({ S }))],
   TC: [() => TC],
   TYPEFX: [() => TYPEFX],
-  U: [() => U, v => (U = v)],
+  U: [() => U, v => ((U = v), provide({ U }))],
   esc: [() => esc],
   liveMap: [() => liveMap],
 });

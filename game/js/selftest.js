@@ -63,14 +63,14 @@ expose({
   diagTimersOff: [() => diagTimersOff, v => (diagTimersOff = v)],
   diagTimersOn: [() => diagTimersOn, v => (diagTimersOn = v)],
   exportDiagReport: [() => exportDiagReport, v => (exportDiagReport = v)],
-  runDiagTest: [() => runDiagTest, v => (runDiagTest = v)],
+  runDiagTest: [() => runDiagTest, v => ((runDiagTest = v), provide({ runDiagTest }))],
   runFullTest: [() => runFullTest, v => (runFullTest = v)],
   runQuickTest: [() => runQuickTest],
   stDiagScenes: [() => stDiagScenes, v => (stDiagScenes = v)],
-  stSceneChecks: [() => stSceneChecks, v => (stSceneChecks = v)],
+  stSceneChecks: [() => stSceneChecks, v => ((stSceneChecks = v), provide({ stSceneChecks }))],
   stSleep: [() => stSleep, v => (stSleep = v)],
   stStats: [() => stStats, v => (stStats = v)],
-  testScenes: [() => testScenes, v => (testScenes = v)],
+  testScenes: [() => testScenes, v => ((testScenes = v), provide({ testScenes }))],
 });
 /* eslint-enable no-func-assign */
 provide({ runDiagTest, stSceneChecks, testScenes });

@@ -26,7 +26,7 @@ expose({
   LNK_TEXT: [() => LNK_TEXT],
   engLabel: [() => engLabel],
   linkCur: [() => linkCur, v => (linkCur = v)],
-  linkNote: [() => linkNote, v => (linkNote = v)],
+  linkNote: [() => linkNote, v => ((linkNote = v), provide({ linkNote }))],
   linkRefresh: [() => linkRefresh, v => (linkRefresh = v)],
   lnkBox: [() => lnkBox],
   lnkDial: [() => lnkDial, v => (lnkDial = v)],

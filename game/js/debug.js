@@ -46,7 +46,7 @@ expose({
   dbgRefresh: [() => dbgRefresh, v => (dbgRefresh = v)],
   dbgSel: [() => dbgSel],
   dbgSpecies: [() => dbgSpecies, v => (dbgSpecies = v)],
-  debugFps: [() => debugFps, v => (debugFps = v)],
+  debugFps: [() => debugFps, v => ((debugFps = v), provide({ debugFps }))],
   debugHTML: [() => debugHTML, v => (debugHTML = v)],
   openDebug: [() => openDebug, v => (openDebug = v)],
   settingsReset: [() => settingsReset, v => (settingsReset = v)],
