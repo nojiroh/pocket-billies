@@ -414,7 +414,7 @@ export function rigParts(sp, gold, k = 1) {
     lag: bones.some(b => b.lag),
   });
 }
-/* phase 04d: the Studio's battle preview draws its own billionaires (studio/js/preview.js) */
+/* phase 04d: the Studio's battle preview draws its own billionaires (studio/js/battle-preview.js) */
 export function setRigParts(v) {
   rigParts = v; // eslint-disable-line no-func-assign
   provide({ rigParts });
