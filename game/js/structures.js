@@ -15,9 +15,9 @@ import { hexA } from './art.js';
 import { artImage, mapBridges, walkView } from './walk-view.js';
 import { EGL, eglImg, eglPrograms } from './engine/webgl.js';
 import {
-  DGL_WALL_COL,
+  WALL_COLORS,
+  defaultWallMaterial,
   dglUse,
-  dglWallDefault,
   groundHeightAt,
   standingHeightAt,
   worldCurveArgs,
@@ -87,9 +87,9 @@ function strBuild(sc) {
     end = () => {
       part.n = I.length - part.i0;
     };
-  const wd = dglWallDefault(sc),
+  const wd = defaultWallMaterial(sc),
     rockCol =
-      sc.wallCol && sc.wallCol[wd] ? hexA(sc.wallCol[wd]).map(v => v / 255) : DGL_WALL_COL[wd] || STR_KIND.rock.col;
+      sc.wallCol && sc.wallCol[wd] ? hexA(sc.wallCol[wd]).map(v => v / 255) : WALL_COLORS[wd] || STR_KIND.rock.col;
   const poly = (P, n, uv, K, shade = 1) => {
     const b = V.length / 14,
       k = K === 'rock' ? { tex: 10, col: rockCol } : STR_KIND[K] || STR_KIND.stone,

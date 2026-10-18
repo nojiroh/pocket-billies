@@ -39,7 +39,7 @@ import { eng } from './engine/settings.js';
 import { EGL, eglAttrClashes } from './engine/webgl.js';
 import { EGL_POST_SH } from './engine/post-effects.js';
 import { ENV } from './environment.js';
-import { DGL_SH, dglRoomDim, standingHeightAt, walkRenderer } from './walk-view-gl.js';
+import { WALK_SHADERS, dglRoomDim, standingHeightAt, walkRenderer } from './walk-view-gl.js';
 import { BLD, BLD_SH } from './buildings.js';
 import { STR, strHas } from './structures.js';
 import { P3D, P3D_SH } from './solid-props.js';
@@ -381,7 +381,7 @@ async function runFullTest(mode) {
       async () => {
         const all = Object.assign(
           {},
-          typeof DGL_SH !== 'undefined' ? DGL_SH : {},
+          typeof WALK_SHADERS !== 'undefined' ? WALK_SHADERS : {},
           typeof BLD_SH !== 'undefined' ? BLD_SH : {},
           typeof EGL_POST_SH !== 'undefined' ? EGL_POST_SH : {},
           typeof MGL_SH !== 'undefined' ? MGL_SH : {},

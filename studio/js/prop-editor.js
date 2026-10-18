@@ -11,7 +11,7 @@ import { $, $$, clamp } from '../../game/js/util.js';
 import { frameStop, frameTask } from '../../game/js/frame-scheduler.js';
 import { artLoad, cnv, setArtLoad } from '../../game/js/art.js';
 import { artImage, imageReady, layerAsProp, setWalkData, walkData, walkView } from '../../game/js/walk-view.js';
-import { DGL_MATS, dglMatOf, dglVaryOf, mountWalkView, walkRenderer } from '../../game/js/walk-view-gl.js';
+import { PROP_MATERIALS, dglVaryOf, mountWalkView, propMaterial, walkRenderer } from '../../game/js/walk-view-gl.js';
 import { BLD_ROOM_NAMES, BLD_TEX_NAMES } from '../../game/js/buildings.js';
 import { P3D_AUTO, P3D_KINDS, P3D_PARTS, p3dTreeKind } from '../../game/js/solid-props.js';
 import { esc } from './game-stand-ins.js';
@@ -181,9 +181,14 @@ function pedCard(k) {
       fChk('Lies flat on the ground', `${b}.flat`, { num: 1 })
     ) +
     `<div class="grid"><label class="fld"><span>Main picture faces</span>${face(`${b}.face`, M.face)}</label><label class="fld"><span>Material</span><select data-p="${b}.mat" data-k="sel" data-opt="1">${[
-      ['', 'Automatic (' + (typeof dglMatOf === 'function' ? DGL_MATS[dglMatOf(k, M)].name : 'from the name') + ')'],
+      [
+        '',
+        'Automatic (' +
+          (typeof propMaterial === 'function' ? PROP_MATERIALS[propMaterial(k, M)].name : 'from the name') +
+          ')',
+      ],
     ]
-      .concat(Object.entries(typeof DGL_MATS !== 'undefined' ? DGL_MATS : {}).map(([k, m]) => [k, m.name]))
+      .concat(Object.entries(typeof PROP_MATERIALS !== 'undefined' ? PROP_MATERIALS : {}).map(([k, m]) => [k, m.name]))
       .map(([a, n]) => `<option value="${a}" ${(M.mat || '') === a ? 'selected' : ''}>${n}</option>`)
       .join('')}</select></label></div>` +
     (M.glow

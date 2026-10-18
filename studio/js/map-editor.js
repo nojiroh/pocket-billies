@@ -41,7 +41,7 @@ import {
   walkView,
 } from '../../game/js/walk-view.js';
 import { ENV } from '../../game/js/environment.js';
-import { DGL_WALL_MATS, mountWalkView, rawHeightAt, walkRenderer } from '../../game/js/walk-view-gl.js';
+import { WALL_MATERIALS, mountWalkView, rawHeightAt, walkRenderer } from '../../game/js/walk-view-gl.js';
 import { esc } from './game-stand-ins.js';
 import {
   ACTS,
@@ -2423,7 +2423,7 @@ function scLifeParse(t) {
 
 /* ---------- v18: cliffs, terraces, stairs, ledges and bridges (the step field, half-metre cells) ---------- */
 function scStepsBar() {
-  const mats = (typeof DGL_WALL_MATS !== 'undefined' ? DGL_WALL_MATS : ['Scene rock'])
+  const mats = (typeof WALL_MATERIALS !== 'undefined' ? WALL_MATERIALS : ['Scene rock'])
     .map(
       (n, i) =>
         `<option value="${i}" ${SCN.smat === i ? 'selected' : ''}>${i ? esc(n) : 'The scene’s own rock'}</option>`

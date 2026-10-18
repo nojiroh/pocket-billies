@@ -11,17 +11,17 @@
 import { expose } from './test-globals.js';
 import {
   DGL_ALT,
-  DGL_TERRAIN_MAT,
   ENV,
   GD,
   PW,
   RM,
   ROOM_KIND,
   SCENE_FILES,
+  TERRAIN_MATERIALS,
   U,
   addSteps,
   bldSigF,
-  dglWallDefault,
+  defaultWallMaterial,
   dioArtVer,
   envHere,
   envSeason,
@@ -1852,7 +1852,7 @@ export function* paintGroundSteps(sc, o) {
     NW = (TW / NS) | 0,
     NH = (TH / NS) | 0; /* v46: the near ring's normal map is half size: worked out at every other pixel */
   let nrm = null;
-  if (o.normals !== false && typeof DGL_TERRAIN_MAT !== 'undefined') {
+  if (o.normals !== false && typeof TERRAIN_MATERIALS !== 'undefined') {
     yield;
     nrm = new Uint8Array(NW * NH * 4);
     const Lm = new Float32Array(TW * TH);
@@ -1860,7 +1860,7 @@ export function* paintGroundSteps(sc, o) {
       const c = out[i];
       Lm[i] = ((c & 255) * 0.3 + ((c >> 8) & 255) * 0.59 + ((c >> 16) & 255) * 0.11) / 255;
     }
-    const matK = T.map((t, i) => DGL_TERRAIN_MAT[chars[i]] || [1, 0.05]),
+    const matK = T.map((t, i) => TERRAIN_MATERIALS[chars[i]] || [1, 0.05]),
       ps = TP / 32; /* the fine grain is per pixel; at small sizes it is gentler */
     /* v44: a coarser relief under the fine grain: the picture's brightness, blurred over about half a metre */
     const cs = Math.max(1, TP >> 3),
@@ -2354,7 +2354,7 @@ export function stepEdgeShape(sc, E) {
     h = E.h,
     H = E.H,
     M = E.M,
-    wd = typeof dglWallDefault === 'function' ? dglWallDefault(sc) : 1,
+    wd = typeof defaultWallMaterial === 'function' ? defaultWallMaterial(sc) : 1,
     nat = q => {
       let m = M[q] & 15;
       if (!m) m = wd;

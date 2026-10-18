@@ -178,6 +178,7 @@ import { EGL_POST_SH, eglPost, eglSnapshot, eglSunScreen } from './engine/post-e
 import { ENV, ENV_WX, envFrame, envHere, envSky, envState, envWinLit } from './environment.js';
 /* eslint-disable no-func-assign */
 expose({
+  BORDER_M: [() => BORDER_M],
   DGL_ALT: [() => DGL_ALT],
   DGL_BOB: [() => DGL_BOB],
   DGL_BOX: [() => DGL_BOX],
@@ -197,36 +198,38 @@ expose({
   DGL_KEEP: [() => DGL_KEEP],
   DGL_LK0: [() => DGL_LK0],
   DGL_LOOK: [() => DGL_LOOK],
-  DGL_MATS: [() => DGL_MATS],
   DGL_MOOD0: [() => DGL_MOOD0],
-  DGL_PAD: [() => DGL_PAD],
   DGL_PREP_MS: [() => DGL_PREP_MS],
   DGL_PRINT_COL: [() => DGL_PRINT_COL],
   DGL_PUSH: [() => DGL_PUSH],
-  DGL_SH: [() => DGL_SH],
   DGL_SINK_BOX: [() => DGL_SINK_BOX],
   DGL_STILL: [() => DGL_STILL],
-  DGL_TERRAIN_MAT: [() => DGL_TERRAIN_MAT],
   DGL_VARY_ANY: [() => DGL_VARY_ANY],
   DGL_VARY_DEF: [() => DGL_VARY_DEF],
-  DGL_WALL_COL: [() => DGL_WALL_COL],
-  DGL_WALL_MATS: [() => DGL_WALL_MATS],
   DGL_WKID: [() => DGL_WKID],
   DGL_WKIND: [() => DGL_WKIND],
   DGL_WKU: [() => DGL_WKU],
   NO_PAD_PROPS: [() => NO_PAD_PROPS],
+  PROP_MATERIALS: [() => PROP_MATERIALS],
   RING_CS: [() => RING_CS],
   RING_N: [() => RING_N],
+  TERRAIN_MATERIALS: [() => TERRAIN_MATERIALS],
+  WALK_SHADERS: [() => WALK_SHADERS],
+  WALL_COLORS: [() => WALL_COLORS],
+  WALL_MATERIALS: [() => WALL_MATERIALS],
   askDeviceTilt: [() => askDeviceTilt, v => (askDeviceTilt = v)],
   baseNavGrid: [() => baseNavGrid],
   baseStopWalkView: [() => baseStopWalkView],
   battleCamera: [() => battleCamera, v => (battleCamera = v)],
   bindGestures: [() => bindGestures, v => (bindGestures = v)],
+  buildGroundMesh: [() => buildGroundMesh, v => (buildGroundMesh = v)],
+  buildGroundSteps: [() => buildGroundSteps, v => (buildGroundSteps = v)],
   buildingPads: [() => buildingPads, v => (buildingPads = v)],
   cameraTurnLimit: [() => cameraTurnLimit],
   canvasForContext: [() => canvasForContext, v => (canvasForContext = v)],
   clampZoom: [() => clampZoom],
   cutsceneCamera: [() => cutsceneCamera, v => (cutsceneCamera = v)],
+  defaultWallMaterial: [() => defaultWallMaterial, v => ((defaultWallMaterial = v), provide({ defaultWallMaterial }))],
   dglAdapt: [() => dglAdapt, v => setDglAdapt(v)],
   dglAltImg: [() => dglAltImg, v => (dglAltImg = v)],
   dglBasinSet: [() => dglBasinSet, v => (dglBasinSet = v)],
@@ -237,7 +240,6 @@ expose({
   dglBudget: [() => dglBudget, v => ((dglBudget = v), provide({ dglBudget }))],
   dglBuildFar: [() => dglBuildFar, v => (dglBuildFar = v)],
   dglBuildGrass: [() => dglBuildGrass, v => setDglBuildGrass(v)],
-  dglBuildGround: [() => dglBuildGround, v => (dglBuildGround = v)],
   dglCull: [() => dglCull, v => (dglCull = v)],
   dglFlat: [() => dglFlat, v => (dglFlat = v)],
   dglFlowField: [() => dglFlowField, v => (dglFlowField = v)],
@@ -255,8 +257,6 @@ expose({
   dglGrassWork: [() => dglGrassWork, v => setDglGrassWork(v)],
   dglGround: [() => dglGround, v => setDglGround(v)],
   dglGroundAO: [() => dglGroundAO, v => setDglGroundAO(v)],
-  dglGroundNormals: [() => dglGroundNormals, v => (dglGroundNormals = v)],
-  dglGroundSteps: [() => dglGroundSteps, v => (dglGroundSteps = v)],
   dglHK: [() => dglHK, v => (dglHK = v)],
   dglHands: [() => dglHands, v => (dglHands = v)],
   dglHeat: [() => dglHeat, v => (dglHeat = v)],
@@ -264,7 +264,6 @@ expose({
   dglHit: [() => dglHit, v => (dglHit = v)],
   dglHug: [() => dglHug, v => (dglHug = v)],
   dglImId: [() => dglImId, v => (dglImId = v)],
-  dglImgRepeat: [() => dglImgRepeat, v => (dglImgRepeat = v)],
   dglInView: [() => dglInView, v => (dglInView = v)],
   dglItems: [() => dglItems, v => setDglItems(v)],
   dglLampOn: [() => dglLampOn, v => (dglLampOn = v)],
@@ -277,11 +276,9 @@ expose({
   dglLookOf2: [() => dglLookOf2, v => (dglLookOf2 = v)],
   dglLookSig: [() => dglLookSig, v => (dglLookSig = v)],
   dglLookU: [() => dglLookU, v => (dglLookU = v)],
-  dglMatOf: [() => dglMatOf, v => (dglMatOf = v)],
   dglMirrorInView: [() => dglMirrorInView, v => (dglMirrorInView = v)],
   dglMood: [() => dglMood, v => (dglMood = v)],
   dglMount: [() => dglMount, v => (dglMount = v)],
-  dglNrm: [() => dglNrm, v => (dglNrm = v)],
   dglPerson: [() => dglPerson, v => (dglPerson = v)],
   dglPrepAbort: [() => dglPrepAbort, v => (dglPrepAbort = v)],
   dglPrepWork: [() => dglPrepWork, v => (dglPrepWork = v)],
@@ -330,12 +327,9 @@ expose({
   dglSprU: [() => dglSprU, v => (dglSprU = v)],
   dglSprites: [() => dglSprites, v => setDglSprites(v)],
   dglStill: [() => dglStill, v => (dglStill = v)],
-  dglTexMip: [() => dglTexMip, v => (dglTexMip = v)],
-  dglTexStrips: [() => dglTexStrips, v => (dglTexStrips = v)],
   dglTrail: [() => dglTrail, v => (dglTrail = v)],
   dglUse: [() => dglUse, v => (dglUse = v)],
   dglVaryOf: [() => dglVaryOf, v => (dglVaryOf = v)],
-  dglWallDefault: [() => dglWallDefault, v => ((dglWallDefault = v), provide({ dglWallDefault }))],
   dglWater: [() => dglWater, v => setDglWater(v)],
   dglWaterKinds: [() => dglWaterKinds, v => (dglWaterKinds = v)],
   dglWaterLife: [() => dglWaterLife, v => (dglWaterLife = v)],
@@ -350,18 +344,24 @@ expose({
   dglWorldTex: [() => dglWorldTex, v => (dglWorldTex = v)],
   freeCameraOn: [() => freeCameraOn],
   groundHeightAt: [() => groundHeightAt, v => ((groundHeightAt = v), provide({ groundHeightAt }))],
+  groundNormalTexture: [() => groundNormalTexture, v => (groundNormalTexture = v)],
+  groundPixelNormal: [() => groundPixelNormal, v => (groundPixelNormal = v)],
   handleCanvasClick: [() => handleCanvasClick, v => (handleCanvasClick = v)],
   heightGrid: [() => heightGrid, v => (heightGrid = v)],
   labelLayer: [() => labelLayer, v => (labelLayer = v)],
   listenDeviceTilt: [() => listenDeviceTilt, v => (listenDeviceTilt = v)],
+  makeTextureMipmaps: [() => makeTextureMipmaps, v => (makeTextureMipmaps = v)],
   mountWalkView: [() => mountWalkView, v => setMountWalkView(v)],
   onGlContextRestored: [() => onGlContextRestored, v => ((onGlContextRestored = v), provide({ onGlContextRestored }))],
+  propMaterial: [() => propMaterial, v => (propMaterial = v)],
   rawHeightAt: [() => rawHeightAt, v => ((rawHeightAt = v), provide({ rawHeightAt }))],
+  repeatingTexture: [() => repeatingTexture, v => (repeatingTexture = v)],
   screenRay: [() => screenRay, v => (screenRay = v)],
   screenToGround2d: [() => screenToGround2d],
   setDglAdapt: [() => setDglAdapt, v => (setDglAdapt = v)],
   setMountWalkView: [() => setMountWalkView, v => (setMountWalkView = v)],
   standingHeightAt: [() => standingHeightAt, v => ((standingHeightAt = v), provide({ standingHeightAt }))],
+  uploadTextureStrips: [() => uploadTextureStrips, v => (uploadTextureStrips = v)],
   walkCamera: [() => walkCamera, v => (walkCamera = v)],
   walkGlContext: [() => walkGlContext, v => (walkGlContext = v)],
   walkRenderer: [() => walkRenderer],
@@ -370,7 +370,15 @@ expose({
   worldToScreen2d: [() => worldToScreen2d],
 });
 /* eslint-enable no-func-assign */
-provide({ dglBudget, dglRebuild, dglWallDefault, groundHeightAt, onGlContextRestored, rawHeightAt, standingHeightAt });
+provide({
+  defaultWallMaterial,
+  dglBudget,
+  dglRebuild,
+  groundHeightAt,
+  onGlContextRestored,
+  rawHeightAt,
+  standingHeightAt,
+});
 export function setDglBuildGrass(v) {
   dglBuildGrass = v; // eslint-disable-line no-func-assign
   provide({ dglBuildGrass });
@@ -450,12 +458,12 @@ export const walkRenderer = {
 provide({ walkRenderer }); /* to-module */
 /* v46: how long a frame may spend getting the next view ready (ms) */
 const DGL_PREP_MS = /Android|iPhone|iPad/.test(navigator.userAgent) ? 4 : 6;
-const DGL_PAD = GROUND_BORDER_M,
+const BORDER_M = GROUND_BORDER_M,
   DGL_FIXED = [1, 0, 0],
   DGL_FIXED_BACK = [0, 0, -1];
 /* which material a prop is made of: its own "mat", else guessed from its name */
-export const DGL_MATS = EGL_MATS;
-export function dglMatOf(k, M) {
+export const PROP_MATERIALS = EGL_MATS;
+export function propMaterial(k, M) {
   if (M && M.mat && EGL_MATS[M.mat]) return M.mat;
   const n = ((M && M.group) || '') + ' ' + k;
   if (/house|shop|clinic|lab|bunker|tent|stall|windmill|busstop|kiosk/.test(n)) return 'building';
@@ -611,7 +619,7 @@ export function standingHeightAt(x, z) {
   return h;
 }
 /* the scene's wall materials (index → colour; 0 means the scene's own rock) */
-export const DGL_WALL_MATS = [
+export const WALL_MATERIALS = [
   'Scene rock',
   'Rock',
   'Layered sandstone',
@@ -625,7 +633,7 @@ export const DGL_WALL_MATS = [
   'Concrete',
   'Dark slate',
 ];
-export const DGL_WALL_COL = [
+export const WALL_COLORS = [
   [0.47, 0.45, 0.42],
   [0.5, 0.48, 0.45],
   [0.8, 0.58, 0.38],
@@ -639,7 +647,7 @@ export const DGL_WALL_COL = [
   [0.62, 0.62, 0.6],
   [0.32, 0.33, 0.38],
 ];
-export function dglWallDefault(sc) {
+export function defaultWallMaterial(sc) {
   if (sc.cliffMat) return sc.cliffMat;
   if (sc.far === 'canyon') return 2;
   if (sc.indoor && sc.far === 'cave') return 3;
@@ -779,7 +787,7 @@ export function walkGlContext(cv) {
   if (EGL.cv === cv && EGL.gl) {
     if (!EGL.lost)
       try {
-        eglPrograms(DGL_SH);
+        eglPrograms(WALK_SHADERS);
       } catch (e) {
         console.error(e);
         EGL.fail = 1;
@@ -792,7 +800,7 @@ export function walkGlContext(cv) {
     return false;
   }
   try {
-    eglPrograms(DGL_SH);
+    eglPrograms(WALK_SHADERS);
     eglPrograms(EGL_POST_SH);
     for (const d of [
       typeof BLD_SH !== 'undefined' && BLD_SH,
@@ -1029,7 +1037,7 @@ function askDeviceTilt() {
   } catch (e) {}
 }
 /* ---------- shaders ---------- */
-export const DGL_SH = {
+export const WALK_SHADERS = {
   ground: [
     `#version 300 es
 precision highp float;in vec3 aPos;in vec3 aNrm;layout(location=2) in vec3 aWall;uniform mat4 uVP;out vec3 vW;out vec3 vN;out vec3 vWall;out vec4 vClip;${EGL_GLSL_COMMON}
@@ -1267,11 +1275,11 @@ void main(){vec4 c;if(uGlow>.5){vec2 q=vUV*2.-1.;float d=dot(q,q);if(d>1.)discar
 /* v46: the ground of a scene, built a slice at a time into T. With T = walkRenderer it runs to the end at once (opening a scene);
    with a fresh T it runs a few milliseconds a frame for the view that comes next (dglPrepare), so walking from one view
    to the next finds everything ready: the textures go up to the card in strips, the mesh and water are built in slices */
-function* dglGroundSteps(sc, G, T) {
+function* buildGroundSteps(sc, G, T) {
   const gl = EGL.gl,
     W = sc.w,
     H = sc.h,
-    P = DGL_PAD,
+    P = BORDER_M,
     res = 0.5,
     ter = (x, z) => {
       const i = Math.floor(x),
@@ -1281,7 +1289,7 @@ function* dglGroundSteps(sc, G, T) {
   walkRenderer.builds = (walkRenderer.builds || 0) + 1;
   if (T.gtex) gl.deleteTexture(T.gtex);
   T.gtex = null;
-  T.gtex = yield* dglTexStrips(G.width, G.height, G._px || G, { nearest: true });
+  T.gtex = yield* uploadTextureStrips(G.width, G.height, G._px || G, { nearest: true });
   if (T.ring) dglRingFree(T.ring);
   T.ring = null; /* v46: the near ring starts empty (dglRingUpdate, or the preparation fills it) */
   const C0 = walkData().sc,
@@ -1296,11 +1304,11 @@ function* dglGroundSteps(sc, G, T) {
     };
   const fe = tile(sc.edge) || tile('g'),
     cl = tile(sc.cliff || (sc.indoor ? 'k' : 'r')) || fe;
-  T.ftex = dglImgRepeat(fe, T.ftex);
-  T.ctex = dglImgRepeat(cl, T.ctex);
+  T.ftex = repeatingTexture(fe, T.ftex);
+  T.ctex = repeatingTexture(cl, T.ctex);
   if (T.gntex && T.gntex !== EGL.flatN) gl.deleteTexture(T.gntex);
   T.gntex = null;
-  T.gntex = G._nrm ? yield* dglTexStrips(G.width, G.height, G._nrm, {}) : dglGroundNormals(G, null, sc);
+  T.gntex = G._nrm ? yield* uploadTextureStrips(G.width, G.height, G._nrm, {}) : groundNormalTexture(G, null, sc);
   yield;
   const water = (x, z) => {
       const c = ter(x, z);
@@ -1391,7 +1399,7 @@ function* dglGroundSteps(sc, G, T) {
     by a rule of its own position and level only, so neighbouring cells and the wall between them stay joined.
     Walking still follows the half-metre cells (the moves are a quarter of a metre at most). */
   const NAT = new Set([1, 2, 3, 9, 11]),
-    wdef = dglWallDefault(sc),
+    wdef = defaultWallMaterial(sc),
     cm = new Uint8Array(nx * nz),
     crf = new Uint8Array(nx * nz);
   if (E)
@@ -2088,19 +2096,19 @@ function* dglGroundSteps(sc, G, T) {
     T.farKey = '';
   }
 }
-function dglBuildGround() {
-  const it = dglGroundSteps(walkView.sc, walkView.ground, walkRenderer);
+function buildGroundMesh() {
+  const it = buildGroundSteps(walkView.sc, walkView.ground, walkRenderer);
   let r = it.next();
   while (!r.done) r = it.next();
 }
 /* v46: a big texture goes up to the card a strip at a time (about 1 MB a strip), then its mipmaps are made on the card */
-function* dglTexStrips(w, h, data, o = {}) {
+function* uploadTextureStrips(w, h, data, o = {}) {
   const gl = EGL.gl,
     t = gl.createTexture();
   if (!(data instanceof Uint8Array)) {
     gl.bindTexture(gl.TEXTURE_2D, t);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, data);
-    dglTexMip(t, o);
+    makeTextureMipmaps(t, o);
     return t;
   }
   gl.bindTexture(gl.TEXTURE_2D, t);
@@ -2123,10 +2131,10 @@ function* dglTexStrips(w, h, data, o = {}) {
     );
     if (y + n < h) yield;
   }
-  dglTexMip(t, o);
+  makeTextureMipmaps(t, o);
   return t;
 }
-function dglTexMip(t, o) {
+function makeTextureMipmaps(t, o) {
   const gl = EGL.gl;
   gl.bindTexture(gl.TEXTURE_2D, t);
   gl.texParameteri(
@@ -2194,7 +2202,7 @@ function dglRingFree(R) {
 }
 /* which squares are wanted: the 4 x 4 round the focus (a little ahead of it, the way the camera looks) */
 function dglRingWant(R, sc, fx, fz) {
-  const P = DGL_PAD,
+  const P = BORDER_M,
     cx = fx + P,
     cy = sc.h + P - fz,
     tx = cx / RING_CS,
@@ -2339,7 +2347,7 @@ function dglRingU(U, sc) {
   gl.bindSampler(14, null);
   gl.uniform1i(U.uRingN, 14);
   gl.activeTexture(gl.TEXTURE0);
-  const P = DGL_PAD;
+  const P = BORDER_M;
   gl.uniform3f(U.uCanvas, sc.w + 2 * P, sc.h + 2 * P, on ? 1 : 0);
   if (on) {
     gl.uniform2fv(U.uRingC, R.C);
@@ -2405,7 +2413,7 @@ export function dglPrepare(id, sc, G, urgent, focus) {
     id,
     T,
     it: (function* () {
-      yield* dglGroundSteps(sc, G, T);
+      yield* buildGroundSteps(sc, G, T);
       /* v46: and the squares round where you will come in */ if (focus) {
         T.ring = dglRingNew();
         const W = dglRingWant(T.ring, sc, focus[0], focus[1]),
@@ -2886,7 +2894,7 @@ function dglFlowField(sc) {
 /* [bumpiness, shine, built]: a built surface (boards, floors, slabs, bricks, steps, asphalt) is flat; only its seams
    catch the light (v31: planks used to look rounded, because the shading painted on each plank became a curve) */
 /* v46: the twelve new kinds: clover, moss, mud, wet sand, pebbles, cobblestone, leaf litter, heather, marsh, marble, ice, crystal */
-export const DGL_TERRAIN_MAT = {
+export const TERRAIN_MATERIALS = {
   C: [0.7, 0.02],
   M: [0.6, 0.06],
   D: [0.5, 0.35],
@@ -2947,9 +2955,9 @@ export const DGL_TERRAIN_MAT = {
   9: [0.35, 0.5, 1],
   0: [0.4, 0.3, 1],
 };
-provide({ DGL_TERRAIN_MAT }); /* to-module */
+provide({ TERRAIN_MATERIALS }); /* to-module */
 /* the tilt one ground pixel gets from the brightness around it */
-function dglNrm(gx, gy, m) {
+function groundPixelNormal(gx, gy, m) {
   if (m[2]) {
     const g = Math.hypot(gx, gy);
     if (g < 0.07) return [0, 0];
@@ -2958,10 +2966,10 @@ function dglNrm(gx, gy, m) {
   }
   return [clamp(-gx * m[0] * 1.4, -0.8, 0.8), clamp(gy * m[0] * 1.4, -0.8, 0.8)];
 }
-function dglGroundNormals(G, old, sc = walkView.sc) {
+function groundNormalTexture(G, old, sc = walkView.sc) {
   const gl = EGL.gl,
     TP = G._TP || walkData().sc.tile || 16,
-    P = DGL_PAD,
+    P = BORDER_M,
     w = G.width,
     h = G.height,
     rows = sc.tiles || [];
@@ -2989,7 +2997,7 @@ function dglGroundNormals(G, old, sc = walkView.sc) {
       const i = Math.floor(X / TP) - P,
         j = Math.floor(Y / TP) - P,
         ch = i < 0 || j < 0 || i >= sc.w || j >= sc.h ? sc.edge : (rows[j] || '')[i] || sc.edge;
-      return DGL_TERRAIN_MAT[ch] || [1, 0.05];
+      return TERRAIN_MATERIALS[ch] || [1, 0.05];
     };
   for (let Y = 0; Y < h; Y++) {
     let m = mat(0, Y),
@@ -3004,7 +3012,7 @@ function dglGroundNormals(G, old, sc = walkView.sc) {
       const gx = (L[Y * w + Math.min(w - 1, X + 1)] - L[Y * w + Math.max(0, X - 1)]) * 0.5,
         gy = (L[Math.min(h - 1, Y + 1) * w + X] - L[Math.max(0, Y - 1) * w + X]) * 0.5;
       /* world x follows the picture's x; world z runs up the picture */
-      const [nx, nz] = dglNrm(gx, gy, m);
+      const [nx, nz] = groundPixelNormal(gx, gy, m);
       out[i * 4] = (nx * 0.5 + 0.5) * 255;
       out[i * 4 + 1] = (nz * 0.5 + 0.5) * 255;
       out[i * 4 + 2] = 255;
@@ -3021,7 +3029,7 @@ function dglGroundNormals(G, old, sc = walkView.sc) {
   gl.generateMipmap(gl.TEXTURE_2D);
   return t;
 }
-function dglImgRepeat(im, old) {
+function repeatingTexture(im, old) {
   const gl = EGL.gl;
   if (!imageReady(im)) return EGL.white;
   const t = old && old !== EGL.white ? old : gl.createTexture();
@@ -3879,7 +3887,7 @@ function dglSceneSwap(oldKey, key) {
       M.delete(key);
       dglSceneFree(hit);
     }
-    dglBuildGround();
+    buildGroundMesh();
   }
   while (M.size > Math.max(0, keep - 1)) {
     const k0 = M.keys().next().value;
@@ -4384,7 +4392,7 @@ function dglStill(p, M, im, sc) {
     t >= c.at
   )
     return c;
-  const mat = dglMatOf(p.k, M);
+  const mat = propMaterial(p.k, M);
   c = {
     k: p.k,
     x: p.x,
@@ -4562,7 +4570,7 @@ export function dglItems(st, C, PPU, C0) {
     const S = far ? null : dglStill(p, M, im, sc);
     const y = far ? standingHeightAt(p.x, p.z) : S.y,
       sw = far || !M.sway ? 0 : (M.sway || 0) * dglWindAt(p.x, p.z, RM ? 0 : t, sc, wind);
-    const mat = S ? S.mat : dglMatOf(p.k, M);
+    const mat = S ? S.mat : propMaterial(p.k, M);
     im.__mat = mat;
     /* v27: boats and buoys bob and roll on the water; flags, banners and washing flutter in the wind */
     let y2 = y,
@@ -5599,7 +5607,7 @@ export function dglGround(C, X) {
     sc = walkView.sc,
     p = dglUse('ground', C, X),
     U = p.U,
-    P = DGL_PAD;
+    P = BORDER_M;
   const wa = eglImg(artImage(walkData().sc.wallArt || 'scene/build/walls.png'), { noNormal: true });
   gl.activeTexture(gl.TEXTURE4);
   gl.bindTexture(gl.TEXTURE_2D, wa ? wa.t : EGL.white);
@@ -5609,11 +5617,11 @@ export function dglGround(C, X) {
   }
   const WC = sc.wallCol || [];
   for (let i = 0; i < 12; i++) {
-    const c = WC[i] ? hexA(WC[i]).map(v => v / 255) : DGL_WALL_COL[i];
+    const c = WC[i] ? hexA(WC[i]).map(v => v / 255) : WALL_COLORS[i];
     walkRenderer.wallColF.set(c, i * 3);
   }
   gl.uniform3fv(U.uWallCol, walkRenderer.wallColF);
-  gl.uniform1f(U.uWallDef, dglWallDefault(sc));
+  gl.uniform1f(U.uWallDef, defaultWallMaterial(sc));
   const Pq = walkRenderer.bt
     ? null
     : (() => {

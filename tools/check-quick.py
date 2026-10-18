@@ -579,7 +579,7 @@ def desktop_steps(b, base, R):
 
     @step('Shaders: every program compiles, no clashing inputs', 30)
     def shaders():
-        r = pg.evaluate("""(()=>{if(typeof EGL==='undefined'||!EGL.gl)return {skip:'no WebGL in this browser'};const sets={DGL_SH:typeof DGL_SH!=='undefined'?DGL_SH:null,BLD_SH:typeof BLD_SH!=='undefined'?BLD_SH:null,EGL_POST_SH:typeof EGL_POST_SH!=='undefined'?EGL_POST_SH:null,MGL_SH:typeof MGL_SH!=='undefined'?MGL_SH:null,P3D_SH:typeof P3D_SH!=='undefined'?P3D_SH:null};
+        r = pg.evaluate("""(()=>{if(typeof EGL==='undefined'||!EGL.gl)return {skip:'no WebGL in this browser'};const sets={WALK_SHADERS:typeof WALK_SHADERS!=='undefined'?WALK_SHADERS:null,BLD_SH:typeof BLD_SH!=='undefined'?BLD_SH:null,EGL_POST_SH:typeof EGL_POST_SH!=='undefined'?EGL_POST_SH:null,MGL_SH:typeof MGL_SH!=='undefined'?MGL_SH:null,P3D_SH:typeof P3D_SH!=='undefined'?P3D_SH:null};
          const bad=[];let n=0;for(const [name,S] of Object.entries(sets)){if(!S)continue;for(const [k,v] of Object.entries(S)){n++;const c=eglAttrClashes(v[0]);if(c.length)bad.push(k+' clash: '+c.join(','));try{if(!EGL.P[k])EGL.P[k]=eglCompile(v,k)}catch(e){bad.push(String(e.message||e).slice(0,160))}}}return {n,bad}})()""")
         if r.get('skip'): return r['skip']
         if r['bad']: raise Exception('; '.join(r['bad'][:4]))

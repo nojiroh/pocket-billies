@@ -44,7 +44,7 @@ import {
   worldPatchTilesOn,
 } from './walk-view.js';
 import { eng } from './engine/settings.js';
-import { DGL_TERRAIN_MAT } from './walk-view-gl.js';
+import { TERRAIN_MATERIALS } from './walk-view-gl.js';
 import { wrNear } from './seamless-world.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -91,7 +91,7 @@ const PW_KEEP = 4,
   PW_KINDS = new WeakMap();
 /* the helper's own part: the views it holds, the tile pictures, a queue (nearest square first; one dropped before it
    starts is skipped) and the small sizes of a picture */
-const PW_MAIN = `var DGL_TERRAIN_MAT;let CTX=null;const CTXS=new Map(),TILES=new Map(),Q=[],GONE=new Set();let busy=false;
+const PW_MAIN = `var TERRAIN_MATERIALS;let CTX=null;const CTXS=new Map(),TILES=new Map(),Q=[],GONE=new Set();let busy=false;
 /* (stand-ins for walk-view.js's own, from what the main thread handed over) */
 var walkData=()=>({sc:CTX.C}),bigTilesOn=()=>!!CTX.next,worldPatchTilesOn=()=>!!CTX.t47,stepGrid=sc=>CTX.E,mapBridges=()=>null,
  tileSetPixels=(T,TP)=>TILES.get(TP+'|'+T.tile+'|'+(T.vars||[]).join(','))||[null];
@@ -100,7 +100,7 @@ function pwMips(s,W,H,n){const out=[];for(let k=0;k<n&&W>1&&H>1;k++){const w=W>>
   d[o]=(s[a]+s[a+4]+s[c]+s[c+4]+2)>>2;d[o+1]=(s[a+1]+s[a+5]+s[c+1]+s[c+5]+2)>>2;d[o+2]=(s[a+2]+s[a+6]+s[c+2]+s[c+6]+2)>>2;d[o+3]=(s[a+3]+s[a+7]+s[c+3]+s[c+7]+2)>>2}}
  out.push(d);s=d;W=w;H=h}return out}
 function run(){busy=false;if(!Q.length)return;Q.sort((a,b)=>a.pr-b.pr);const m=Q.shift();if(GONE.delete(m.id)){postMessage({id:m.id,gone:1});if(Q.length){busy=true;setTimeout(run,0)}return}
- try{const c=CTXS.get(m.ctx);if(!c){postMessage({id:m.id,miss:1})}else{CTXS.delete(m.ctx);CTXS.set(m.ctx,c);CTX=c;DGL_TERRAIN_MAT=c.mat||undefined;const t0=performance.now(),it=paintGroundSteps(c.sc,m.o);let r=it.next();while(!r.done)r=it.next();
+ try{const c=CTXS.get(m.ctx);if(!c){postMessage({id:m.id,miss:1})}else{CTXS.delete(m.ctx);CTXS.set(m.ctx,c);CTX=c;TERRAIN_MATERIALS=c.mat||undefined;const t0=performance.now(),it=paintGroundSteps(c.sc,m.o);let r=it.next();while(!r.done)r=it.next();
   const v=r.value,tr=[v.px.buffer];if(v.nrm)tr.push(v.nrm.buffer);let mips=null,nmips=null;
   if(m.mips){mips=pwMips(new Uint8Array(v.px.buffer),v.w,v.h,30);for(const L of mips)tr.push(L.buffer);if(v.nrm){nmips=pwMips(v.nrm,v.nw,v.nh,30);for(const L of nmips)tr.push(L.buffer)}}
   postMessage({id:m.id,r:v,mips,nmips,ms:performance.now()-t0},tr)}}
@@ -272,7 +272,7 @@ function pwSendCtx(id, sc) {
     E: E ? { s: 'w', m0: 'w', w: E.w, h: E.h, H: E.H, M: E.M } : null,
     t47: worldPatchTilesOn(),
     next: bigTilesOn(),
-    mat: typeof DGL_TERRAIN_MAT !== 'undefined' ? DGL_TERRAIN_MAT : null,
+    mat: typeof TERRAIN_MATERIALS !== 'undefined' ? TERRAIN_MATERIALS : null,
   };
   PW.w.postMessage({ t: 'ctx', id, ctx });
   PW.sent.set(id, 1);
