@@ -1287,7 +1287,7 @@ def desktop_steps(b, base, R):
     def v43():
         out = []
         # every road composes at both ends and in the middle: no cut tiles, offsets on whole metres, sizes the card can hold
-        r = json.loads(pg.evaluate("""JSON.stringify((()=>{const out=[];let n=0,mx=0;for(let i=0;i<LINKS.length;i++){const R=wrRoad(i);if(!R){out.push('link '+i+': no road');continue}
+        r = json.loads(pg.evaluate("""JSON.stringify((()=>{const out=[];let n=0,mx=0;for(let i=0;i<LINKS.length;i++){const R=seamlessRoad(i);if(!R){out.push('link '+i+': no road');continue}
          for(const u of [0,R.Lr/2,R.Lr]){const v=wrViewFor(R,u),sc=wrScene(v,R);n++;mx=Math.max(mx,sc.w,sc.h);if((sc.w+16)*8>4096||(sc.h+16)*8>4096)out.push(v.id+': '+sc.w+'x'+sc.h+' is too big for its distant ground picture');/* v46: the near ring paints the full size round you */
           if(sc.tiles.length!==sc.h||sc.tiles.some(r=>r.length!==sc.w))out.push(v.id+': ragged tiles');if(!(sc.props||[]).length)out.push(v.id+': no props');
           for(const P of sc.parts)if(!P.road&&(P.ox%1||P.oz%1))out.push(v.id+': '+P.id+' off the metre grid')}

@@ -128,12 +128,12 @@ import { ENV, envHint, envIcon, envLabel } from './environment.js';
 import { mountWalkView, walkRenderer } from './walk-view-gl.js';
 import { fishStart } from './fishing.js';
 import {
+  seamlessOn,
   seamlessWorld,
   shiftWalkView,
   wrDelta,
   wrGate,
   wrGetReady,
-  wrOn,
   wrPrefetch,
   wrRoamView,
   wrRoomId,
@@ -1094,7 +1094,7 @@ function enterRoom(a, p) {
 function roomLayIn(id, p, fresh) {
   if (
     typeof wrRoomScene !== 'function' ||
-    !wrOn() ||
+    !seamlessOn() ||
     !walkView.ready ||
     !walkView.sc ||
     !walkView.sc.parts ||

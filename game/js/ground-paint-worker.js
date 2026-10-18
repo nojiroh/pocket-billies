@@ -45,7 +45,7 @@ import {
 } from './walk-view.js';
 import { eng } from './engine/settings.js';
 import { TERRAIN_MATERIALS } from './walk-view-gl.js';
-import { wrNear } from './seamless-world.js';
+import { seamlessNearestRoadPoint } from './seamless-world.js';
 /* eslint-disable no-func-assign */
 expose({
   PW: [() => PW],
@@ -112,7 +112,7 @@ onmessage=ev=>{const m=ev.data;
  if(m.t==='cancel'){if(Q.some(q=>q.id===m.id))GONE.add(m.id);return}
  if(m.t==='prio'){for(const q of Q)if(q.id===m.id)q.pr=m.pr;return}
  if(m.t==='paint'){Q.push(m);if(!busy){busy=true;setTimeout(run,0)}}};`;
-/* the worker's source: the painter and everything it calls, as written in walk-view.js (and wrNear, seamless-world.js) */
+/* the worker's source: the painter and everything it calls, as written in walk-view.js (and seamlessNearestRoadPoint, seamless-world.js) */
 function pwSource() {
   const fns = [
     hash2d,
@@ -130,7 +130,7 @@ function pwSource() {
     stepCornerHeight,
     stepCellsJoined,
     paintGroundSteps,
-    wrNear,
+    seamlessNearestRoadPoint,
   ];
   const consts = {
     GROUND_BORDER_M,

@@ -37,6 +37,7 @@ import {
   rawHeightAt,
   scenesFor,
   scenesNeed,
+  seamlessNearestRoadPoint,
   sfx,
   sfxAt,
   smooth01,
@@ -44,7 +45,6 @@ import {
   talkFolk,
   voxPaths,
   walkMode,
-  wrNear,
   wrSceneById,
 } from './hooks.js';
 import { clamp } from './util.js';
@@ -717,7 +717,7 @@ export function stableCells(sc, cx0, cy0, cw, ch) {
       }
       let best = null;
       for (const r of S.roads) {
-        const n = wrNear(r.R, x + 0.5 - r.o[0], z + 0.5 - r.o[1]);
+        const n = seamlessNearestRoadPoint(r.R, x + 0.5 - r.o[0], z + 0.5 - r.o[1]);
         if (!best || n.d < best.d) best = { d: n.d, r };
       }
       ox[q] = -best.r.o[0];

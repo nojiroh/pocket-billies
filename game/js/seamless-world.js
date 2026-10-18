@@ -59,96 +59,99 @@ expose({
   WR_ST: [() => WR_ST],
   WR_TUN: [() => WR_TUN],
   WR_WIN: [() => WR_WIN],
+  seamlessHash: [() => seamlessHash, v => (seamlessHash = v)],
+  seamlessInRect: [() => seamlessInRect],
+  seamlessNearestRoadPoint: [
+    () => seamlessNearestRoadPoint,
+    v => ((seamlessNearestRoadPoint = v), provide({ seamlessNearestRoadPoint })),
+  ],
+  seamlessNoise: [() => seamlessNoise, v => (seamlessNoise = v)],
+  seamlessOn: [() => seamlessOn],
+  seamlessRoad: [() => seamlessRoad, v => (seamlessRoad = v)],
+  seamlessRoadExit: [() => seamlessRoadExit, v => (seamlessRoadExit = v)],
+  seamlessRoadHeight: [() => seamlessRoadHeight, v => (seamlessRoadHeight = v)],
+  seamlessRoadIndex: [() => seamlessRoadIndex, v => (seamlessRoadIndex = v)],
+  seamlessRoadLength: [() => seamlessRoadLength, v => (seamlessRoadLength = v)],
+  seamlessRoadPointAt: [() => seamlessRoadPointAt, v => (seamlessRoadPointAt = v)],
+  seamlessRoadProps: [() => seamlessRoadProps, v => (seamlessRoadProps = v)],
+  seamlessRoadTile: [() => seamlessRoadTile, v => (seamlessRoadTile = v)],
+  seamlessSalt: [() => seamlessSalt, v => (seamlessSalt = v)],
   seamlessWorld: [() => seamlessWorld],
   shiftWalkView: [() => shiftWalkView, v => (shiftWalkView = v)],
   wrAdj: [() => wrAdj, v => (wrAdj = v)],
   wrAlongPts: [() => wrAlongPts, v => (wrAlongPts = v)],
-  wrAt: [() => wrAt, v => (wrAt = v)],
   wrBldWindows: [() => wrBldWindows, v => (wrBldWindows = v)],
   wrCompose: [() => wrCompose, v => (wrCompose = v)],
   wrComposeMulti: [() => wrComposeMulti, v => (wrComposeMulti = v)],
   wrCornerH: [() => wrCornerH, v => (wrCornerH = v)],
   wrDelta: [() => wrDelta, v => (wrDelta = v)],
-  wrExitOf: [() => wrExitOf, v => (wrExitOf = v)],
   wrExitPath: [() => wrExitPath, v => (wrExitPath = v)],
   wrFix: [() => wrFix, v => (wrFix = v)],
   wrGate: [() => wrGate, v => (wrGate = v)],
   wrGetReady: [() => wrGetReady, v => (wrGetReady = v)],
-  wrHash: [() => wrHash, v => (wrHash = v)],
-  wrHeight: [() => wrHeight, v => (wrHeight = v)],
   wrHubParts: [() => wrHubParts, v => (wrHubParts = v)],
   wrHubScene: [() => wrHubScene, v => (wrHubScene = v)],
-  wrInRect: [() => wrInRect],
   wrJoin: [() => wrJoin, v => (wrJoin = v)],
   wrJoinTrip: [() => wrJoinTrip, v => (wrJoinTrip = v)],
-  wrLinkIndex: [() => wrLinkIndex, v => (wrLinkIndex = v)],
   wrLook: [() => wrLook, v => (wrLook = v)],
   wrLookMix: [() => wrLookMix, v => (wrLookMix = v)],
   wrLookOf: [() => wrLookOf, v => (wrLookOf = v)],
   wrLookTick: [() => wrLookTick, v => ((wrLookTick = v), provide({ wrLookTick }))],
   wrMixHex: [() => wrMixHex, v => (wrMixHex = v)],
-  wrNear: [() => wrNear, v => ((wrNear = v), provide({ wrNear }))],
-  wrNoise: [() => wrNoise, v => (wrNoise = v)],
-  wrOn: [() => wrOn],
   wrPrefetch: [() => wrPrefetch, v => (wrPrefetch = v)],
   wrPrefetchView: [() => wrPrefetchView, v => (wrPrefetchView = v)],
-  wrProps: [() => wrProps, v => (wrProps = v)],
   wrRaiseAt: [() => wrRaiseAt, v => (wrRaiseAt = v)],
   wrReady: [() => wrReady, v => (wrReady = v)],
-  wrRoad: [() => wrRoad, v => (wrRoad = v)],
-  wrRoadLen: [() => wrRoadLen, v => (wrRoadLen = v)],
   wrRoamView: [() => wrRoamView, v => (wrRoamView = v)],
   wrRoomId: [() => wrRoomId, v => (wrRoomId = v)],
   wrRoomPlace: [() => wrRoomPlace, v => (wrRoomPlace = v)],
   wrRoomScene: [() => wrRoomScene, v => (wrRoomScene = v)],
   wrRoomWindows: [() => wrRoomWindows, v => (wrRoomWindows = v)],
-  wrSalt: [() => wrSalt, v => (wrSalt = v)],
   wrScene: [() => wrScene, v => (wrScene = v)],
   wrSceneById: [() => wrSceneById, v => ((wrSceneById = v), provide({ wrSceneById }))],
   wrSeamOf: [() => wrSeamOf, v => (wrSeamOf = v)],
   wrStartU: [() => wrStartU, v => (wrStartU = v)],
-  wrTile: [() => wrTile, v => (wrTile = v)],
   wrTrim: [() => wrTrim, v => (wrTrim = v)],
   wrTripView: [() => wrTripView, v => (wrTripView = v)],
   wrVeil: [() => wrVeil, v => (wrVeil = v)],
   wrViewFor: [() => wrViewFor, v => (wrViewFor = v)],
 });
 /* eslint-enable no-func-assign */
-provide({ wrLookTick, wrNear, wrSceneById });
+provide({ seamlessNearestRoadPoint, wrLookTick, wrSceneById });
 /* to-module: end */
 export const seamlessWorld = { cache: new Map(), max: 5, gen: 0, LW: 40, MID: 64, BAND: 12, on: true };
 provide({ seamlessWorld }); /* to-module */
-export const wrOn = () => seamlessWorld.on && !(typeof eng === 'function' && eng('world', 'seamless') === false);
-function wrRoadLen(steps) {
+export const seamlessOn = () => seamlessWorld.on && !(typeof eng === 'function' && eng('world', 'seamless') === false);
+function seamlessRoadLength(steps) {
   return Math.max(24, Math.round((40 * steps) / 500));
 }
-function wrLinkIndex(a, b) {
+function seamlessRoadIndex(a, b) {
   for (let i = 0; i < LINKS.length; i++) {
     const L = LINKS[i];
     if ((L[0] === a && L[1] === b) || (L[0] === b && L[1] === a)) return i;
   }
   return -1;
 }
-function wrHash(x, y, s) {
+function seamlessHash(x, y, s) {
   let h = (Math.floor(x) * 374761393 + Math.floor(y) * 668265263 + (s || 0) * 1013904223) ^ 0x5bd1e995;
   h = Math.imul(h ^ (h >>> 13), 1274126177);
   return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
 }
-function wrNoise(x, y, s) {
+function seamlessNoise(x, y, s) {
   const xi = Math.floor(x),
     yi = Math.floor(y),
     fx = x - xi,
     fy = y - yi,
     u = t => t * t * (3 - 2 * t),
-    a = wrHash(xi, yi, s),
-    b = wrHash(xi + 1, yi, s),
-    c = wrHash(xi, yi + 1, s),
-    d = wrHash(xi + 1, yi + 1, s);
+    a = seamlessHash(xi, yi, s),
+    b = seamlessHash(xi + 1, yi, s),
+    c = seamlessHash(xi, yi + 1, s),
+    d = seamlessHash(xi + 1, yi + 1, s);
   return a + (b - a) * u(fx) + (c - a) * u(fy) + (a - b - c + d) * u(fx) * u(fy);
 }
 const WR_DIR = { E: [1, 0], W: [-1, 0], N: [0, 1], S: [0, -1] };
 /* which exit of a stop's scene a link uses: the join table first, then the compass match (ui.js sceneExits) */
-function wrExitOf(node, i) {
+function seamlessRoadExit(node, i) {
   const sc = mapById(sceneIdAt(node));
   if (!sc || !(sc.exits || []).length) return null;
   const L = LINKS[i],
@@ -166,7 +169,7 @@ function wrExitOf(node, i) {
   return { k, side: e.side, p, width: e.width || 2 };
 }
 /* the road of link i: its frame, legs and ends. A = the link's first stop, B its second, whichever way you walk it */
-function wrRoad(i) {
+function seamlessRoad(i) {
   const key = 'road' + i + '|' + seamlessWorld.gen;
   let R = seamlessWorld.cache.get(key);
   if (R) return R;
@@ -175,10 +178,10 @@ function wrRoad(i) {
     b = L[1],
     A = mapById(sceneIdAt(a)),
     B = mapById(sceneIdAt(b)),
-    ea = wrExitOf(a, i),
-    eb = wrExitOf(b, i);
+    ea = seamlessRoadExit(a, i),
+    eb = seamlessRoadExit(b, i);
   if (!A || !B || !ea || !eb) return null;
-  const Lr = wrRoadLen(L[2]),
+  const Lr = seamlessRoadLength(L[2]),
     dA = WR_DIR[ea.side],
     dB = WR_DIR[eb.side],
     LW = seamlessWorld.LW;
@@ -202,7 +205,7 @@ function wrRoad(i) {
     legs.push({ d: dA, L: Lr * 0.5 }, { d: dEnd, L: Lr * 0.5 });
   } else {
     const perp = [dA[1], -dA[0]],
-      s = wrHash(i, 7, 1) < 0.5 ? 1 : -1;
+      s = seamlessHash(i, 7, 1) < 0.5 ? 1 : -1;
     legs.push({ d: dA, L: Lr * 0.34 }, { d: [perp[0] * s, perp[1] * s], L: Lr * 0.32 }, { d: dEnd, L: Lr * 0.34 });
   }
   const pts = [start.slice()];
@@ -276,7 +279,7 @@ function wrFix(key, fn) {
   return v;
 }
 function wrJoin(i) {
-  if (!wrOn() || (typeof eng === 'function' && eng('world', 'joined') === false)) return null;
+  if (!seamlessOn() || (typeof eng === 'function' && eng('world', 'joined') === false)) return null;
   return wrFix('join' + i, () => {
     const L = LINKS[i];
     if (!L) return null;
@@ -284,8 +287,8 @@ function wrJoin(i) {
       b = L[1],
       A = mapById(sceneIdAt(a)),
       B = mapById(sceneIdAt(b)),
-      ea = wrExitOf(a, i),
-      eb = wrExitOf(b, i);
+      ea = seamlessRoadExit(a, i),
+      eb = seamlessRoadExit(b, i);
     if (!A || !B || !ea || !eb || WR_OPP[ea.side] !== eb.side || sceneIdAt(a) === sceneIdAt(b)) return null;
     const off =
       ea.side === 'E'
@@ -497,7 +500,7 @@ function wrAlongPts(P, u) {
   return { x: P.pts[0][0], z: P.pts[0][1], d: [0, 1] };
 }
 /* the road point at u metres from A's edge, and the nearest road point to (x, z) in the frame */
-function wrAt(R, u) {
+function seamlessRoadPointAt(R, u) {
   u = clamp(u, 0, R.Lr);
   for (const s of R.legs)
     if (u <= s.u1 || s === R.legs[R.legs.length - 1]) {
@@ -505,7 +508,7 @@ function wrAt(R, u) {
       return { x: s.a[0] + (s.b[0] - s.a[0]) * k, z: s.a[1] + (s.b[1] - s.a[1]) * k, d: s.d };
     }
 }
-export function wrNear(R, x, z) {
+export function seamlessNearestRoadPoint(R, x, z) {
   let best = null;
   for (const s of R.legs) {
     const vx = s.b[0] - s.a[0],
@@ -520,38 +523,38 @@ export function wrNear(R, x, z) {
   }
   return best;
 }
-const wrInRect = (x, z, o, sc) => x >= o[0] && z >= o[1] && x < o[0] + sc.w && z < o[1] + sc.h;
+const seamlessInRect = (x, z, o, sc) => x >= o[0] && z >= o[1] && x < o[0] + sc.w && z < o[1] + sc.h;
 /* the road's ground at a frame point: a path down the middle, verges of grass and tall grass, then the countryside
    of the nearer scene's edge terrain. Across water (a scene whose edge is sea) the road is a sandy causeway. */
-function wrTile(R, x, z) {
-  const n = wrNear(R, x, z),
+function seamlessRoadTile(R, x, z) {
+  const n = seamlessNearestRoadPoint(R, x, z),
     d = n.d,
-    w = 1.4 + 0.5 * wrNoise(n.u * 0.11, 3, R.seed),
+    w = 1.4 + 0.5 * seamlessNoise(n.u * 0.11, 3, R.seed),
     edge = n.u < R.Lr / 2 ? R.edgeA : R.edgeB,
     wet = 'wd'.includes(edge);
   if (d < w) return 'p';
-  if (d < w + 0.9 && wrHash(x * 2, z * 2, R.seed) < 0.35) return wet ? 's' : 'g';
+  if (d < w + 0.9 && seamlessHash(x * 2, z * 2, R.seed) < 0.35) return wet ? 's' : 'g';
   if (d < 5.5) {
     if (wet) return 's';
-    const t = wrNoise(x * 0.21, z * 0.21, R.seed + 3);
+    const t = seamlessNoise(x * 0.21, z * 0.21, R.seed + 3);
     return t > 0.62 ? 't' : t < 0.18 && !wet ? 'f' : 'g';
   }
   if (d < 7 && wet) return 's';
   if (wet) return edge;
-  const t = wrNoise(x * 0.09, z * 0.09, R.seed + 5);
+  const t = seamlessNoise(x * 0.09, z * 0.09, R.seed + 5);
   return t > 0.7 && 'gGy'.includes(edge) ? 'y' : edge === 'G' || edge === 'g' ? (t < 0.3 ? 'G' : 'g') : edge;
 }
-function wrHeight(R, x, z) {
-  const n = wrNear(R, x, z),
+function seamlessRoadHeight(R, x, z) {
+  const n = seamlessNearestRoadPoint(R, x, z),
     k = smooth01((n.d - 2) / 6);
   return (
-    (wrNoise(x * 0.07, z * 0.07, R.seed + 9) - 0.5) * 0.5 * k +
-    (wrNoise(x * 0.02, z * 0.02, R.seed + 11) - 0.5) * 0.6 * k
+    (seamlessNoise(x * 0.07, z * 0.07, R.seed + 9) - 0.5) * 0.5 * k +
+    (seamlessNoise(x * 0.02, z * 0.02, R.seed + 11) - 0.5) * 0.6 * k
   );
 }
 /* props along the road: a signpost at each end, benches and stones now and then, and the countryside's growth, from the
    same families and ground letters the wild-growth pass uses */
-function wrProps(R, box, C) {
+function seamlessRoadProps(R, box, C) {
   const out = [],
     cat = C.props,
     nat =
@@ -566,14 +569,14 @@ function wrProps(R, box, C) {
     z1 = Math.ceil(box[1] + box[3]);
   for (let z = z0; z < z1; z += 2)
     for (let x = x0; x < x1; x += 2) {
-      const h = wrHash(x, z, R.seed + 21);
+      const h = seamlessHash(x, z, R.seed + 21);
       if (h > 0.42) continue;
-      const px = x + 1 + (wrHash(x, z, R.seed + 22) - 0.5) * 1.8,
-        pz = z + 1 + (wrHash(x, z, R.seed + 23) - 0.5) * 1.8;
-      if (wrInRect(px, pz, R.aOff, R.A) || wrInRect(px, pz, R.bOff, R.B)) continue;
-      const n = wrNear(R, px, pz);
+      const px = x + 1 + (seamlessHash(x, z, R.seed + 22) - 0.5) * 1.8,
+        pz = z + 1 + (seamlessHash(x, z, R.seed + 23) - 0.5) * 1.8;
+      if (seamlessInRect(px, pz, R.aOff, R.A) || seamlessInRect(px, pz, R.bOff, R.B)) continue;
+      const n = seamlessNearestRoadPoint(R, px, pz);
       if (n.d < 2.6) continue;
-      const ch = wrTile(R, px, pz);
+      const ch = seamlessRoadTile(R, px, pz);
       if ('pwd'.includes(ch)) continue;
       const fam =
         n.d < 6
@@ -591,7 +594,7 @@ function wrProps(R, box, C) {
                   : 'flowers';
       const ks = nat.filter(([k, M]) => M.family === fam && M.grow.includes(ch));
       if (!ks.length) continue;
-      let r = wrHash(x, z, R.seed + 24) * ks.reduce((s, [, M]) => s + (M.weight || 1), 0),
+      let r = seamlessHash(x, z, R.seed + 24) * ks.reduce((s, [, M]) => s + (M.weight || 1), 0),
         pick = ks[0];
       for (const q of ks) {
         r -= q[1].weight || 1;
@@ -601,15 +604,15 @@ function wrProps(R, box, C) {
         }
       }
       const q = { k: pick[0], x: +px.toFixed(2), z: +pz.toFixed(2), w: 43 };
-      const s = +(0.85 + wrHash(x, z, R.seed + 25) * 0.3).toFixed(2);
+      const s = +(0.85 + seamlessHash(x, z, R.seed + 25) * 0.3).toFixed(2);
       if (Math.abs(s - 1) > 0.02) q.s = s;
-      if (wrHash(x, z, R.seed + 26) < 0.45) q.f = 1;
+      if (seamlessHash(x, z, R.seed + 26) < 0.45) q.f = 1;
       out.push(q);
     }
   /* the road's furniture: a sign at both ends, a bench or a stone every so often */
   for (let u = 28; u < R.Lr - 20; u += 36) {
-    const h = wrHash(u, 1, R.seed + 31),
-      p = wrAt(R, u),
+    const h = seamlessHash(u, 1, R.seed + 31),
+      p = seamlessRoadPointAt(R, u),
       side = h < 0.5 ? 1 : -1,
       px = p.x - p.d[1] * 2.6 * side,
       pz = p.z + p.d[0] * 2.6 * side;
@@ -807,7 +810,7 @@ function wrComposeMulti(id, F) {
   const nearRoad = (x, z) => {
     let best = null;
     for (const q of RR) {
-      const n = wrNear(q.R, x - q.o[0], z - q.o[1]);
+      const n = seamlessNearestRoadPoint(q.R, x - q.o[0], z - q.o[1]);
       if (!best || n.d < best.n.d) best = { q, n };
     }
     return best;
@@ -873,8 +876,8 @@ function wrComposeMulti(id, F) {
       edge = S.edge || 'g',
       fx = x - q.O[0],
       fz = z - q.O[1],
-      salt = wrSalt(q.id);
-    if (n.d < 1.2 + 2.6 * wrNoise(fx * 0.23, fz * 0.23, salt + 1)) {
+      salt = seamlessSalt(q.id);
+    if (n.d < 1.2 + 2.6 * seamlessNoise(fx * 0.23, fz * 0.23, salt + 1)) {
       const rim = tileOf(
           q,
           Math.floor(clamp(n.cx, q.K[0] + 0.5, q.K[2] - 0.5)),
@@ -884,7 +887,7 @@ function wrComposeMulti(id, F) {
       if (T && !T.paved && !'pcmbaqhe'.includes(rim)) return rim;
     }
     if ('wd'.includes(edge)) return edge;
-    const u = wrNoise(fx * 0.09, fz * 0.09, salt + 5);
+    const u = seamlessNoise(fx * 0.09, fz * 0.09, salt + 5);
     return u > 0.7 && 'gGy'.includes(edge) ? 'y' : edge === 'G' || edge === 'g' ? (u < 0.3 ? 'G' : 'g') : edge;
   };
   for (let j = 0; j < h; j++) {
@@ -896,7 +899,7 @@ function wrComposeMulti(id, F) {
         q = inS(x, zz);
       let ch;
       if (q && (q.cover || q.rock) && (q.rock ? !inTun(q, x, zz) : inCover(q, x, zz))) {
-        const n = wrNoise((x - q.O[0]) * 0.19, (zz - q.O[1]) * 0.19, wrSalt(q.id) + 43);
+        const n = seamlessNoise((x - q.O[0]) * 0.19, (zz - q.O[1]) * 0.19, seamlessSalt(q.id) + 43);
         ch = q.rock ? 'r' : n > 0.72 ? 'M' : n < 0.2 ? 'P' : 'r';
       } else if (q && q.rock) ch = F.base.edge || 'k';
       else if (q) {
@@ -917,7 +920,11 @@ function wrComposeMulti(id, F) {
           if (oc === ch || !NAT(ch) || !NAT(oc)) break;
           const r = m.q.id < B0.id ? m.q : B0;
           if (
-            wrHash((i - r.O[0]) * 3 + 7, (z - r.O[1]) * 5 + 11, Math.round(wrSalt(m.q.id) + wrSalt(B0.id))) <
+            seamlessHash(
+              (i - r.O[0]) * 3 + 7,
+              (z - r.O[1]) * 5 + 11,
+              Math.round(seamlessSalt(m.q.id) + seamlessSalt(B0.id))
+            ) <
             0.5 * (1 - Math.abs(d) / 2.6)
           )
             ch = oc;
@@ -926,7 +933,7 @@ function wrComposeMulti(id, F) {
       } else if (fill) ch = UB ? 'r' : fillTile(nearK(x, zz), x, zz);
       else {
         const r = nearRoad(x, zz);
-        ch = r ? wrTile(r.q.R, x - r.q.o[0], zz - r.q.o[1]) : F.base.edge || 'g';
+        ch = r ? seamlessRoadTile(r.q.R, x - r.q.o[0], zz - r.q.o[1]) : F.base.edge || 'g';
       }
       row += ch;
     }
@@ -982,10 +989,10 @@ function wrComposeMulti(id, F) {
           ('wd'.includes(q.S.edge || 'g')
             ? 0
             : smooth01((n.d - 1) / 9) *
-              (0.8 + 1.8 * wrNoise((i - q.O[0]) * 0.07, (zc - q.O[1]) * 0.07, wrSalt(q.id) + 9)));
+              (0.8 + 1.8 * seamlessNoise((i - q.O[0]) * 0.07, (zc - q.O[1]) * 0.07, seamlessSalt(q.id) + 9)));
       } else {
         const rd = nearRoad(i, zc);
-        v = rd ? wrHeight(rd.q.R, i - rd.q.o[0], zc - rd.q.o[1]) : 0;
+        v = rd ? seamlessRoadHeight(rd.q.R, i - rd.q.o[0], zc - rd.q.o[1]) : 0;
         if (n && n.d < 6) v = rim + (v - rim) * smooth01(n.d / 5);
       }
       HV[k] = v;
@@ -1181,7 +1188,9 @@ function wrComposeMulti(id, F) {
             b = inside && EK[bj * E.w + bi] ? E.H[bj * E.w + bi] : WR_ROCK + 3;
           E.H[k] =
             Math.round(
-              (Math.max(WR_ROCK, b) + smooth01(d / 16) * (4 + 6 * wrNoise(x * 0.06, z * 0.06, wrSalt(q.id) + 47))) * 20
+              (Math.max(WR_ROCK, b) +
+                smooth01(d / 16) * (4 + 6 * seamlessNoise(x * 0.06, z * 0.06, seamlessSalt(q.id) + 47))) *
+                20
             ) / 20;
           E.M[k] = 35;
         }
@@ -1207,7 +1216,7 @@ function wrComposeMulti(id, F) {
   }
   /* the roads' countryside and furniture, kept off every scene in the view */
   for (const q of RR) {
-    for (const p of wrProps(q.R, [-q.o[0], -q.o[1], w, h], C)) {
+    for (const p of seamlessRoadProps(q.R, [-q.o[0], -q.o[1], w, h], C)) {
       const x = +(p.x + q.o[0]).toFixed(2),
         z = +(p.z + q.o[1]).toFixed(2);
       if (inS(x, z)) continue;
@@ -1230,11 +1239,11 @@ function wrComposeMulti(id, F) {
         const q = n.q,
           fx = x - q.O[0],
           fz = z - q.O[1],
-          sl = wrSalt(q.id) | 0,
-          hh = wrHash(fx, fz, sl + 21);
+          sl = seamlessSalt(q.id) | 0,
+          hh = seamlessHash(fx, fz, sl + 21);
         if (hh > 0.3) continue;
-        const px = x + 1 + (wrHash(fx, fz, sl + 22) - 0.5) * 1.6,
-          pz = z + 1 + (wrHash(fx, fz, sl + 23) - 0.5) * 1.6;
+        const px = x + 1 + (seamlessHash(fx, fz, sl + 22) - 0.5) * 1.6,
+          pz = z + 1 + (seamlessHash(fx, fz, sl + 23) - 0.5) * 1.6;
         if (inS(px, pz) || px < 0 || pz < 0 || px > w || pz > h) continue;
         const ch = (tiles[h - 1 - Math.floor(pz)] || '')[Math.floor(px)];
         if (!ch || 'pwd'.includes(ch) || (C.terrains[ch] || {}).paved) continue;
@@ -1254,7 +1263,7 @@ function wrComposeMulti(id, F) {
                     : 'flowers';
         const ks = nat.filter(([k, M]) => M.family === fam && M.grow.includes(ch));
         if (!ks.length) continue;
-        let rr = wrHash(fx, fz, sl + 24) * ks.reduce((s, [, M]) => s + (M.weight || 1), 0),
+        let rr = seamlessHash(fx, fz, sl + 24) * ks.reduce((s, [, M]) => s + (M.weight || 1), 0),
           pick = ks[0];
         for (const c of ks) {
           rr -= c[1].weight || 1;
@@ -1264,9 +1273,9 @@ function wrComposeMulti(id, F) {
           }
         }
         const o = { k: pick[0], x: +px.toFixed(2), z: +pz.toFixed(2), w: 43 },
-          s = +(0.85 + wrHash(fx, fz, sl + 25) * 0.3).toFixed(2);
+          s = +(0.85 + seamlessHash(fx, fz, sl + 25) * 0.3).toFixed(2);
         if (Math.abs(s - 1) > 0.02) o.s = s;
-        if (wrHash(fx, fz, sl + 26) < 0.45) o.f = 1;
+        if (seamlessHash(fx, fz, sl + 26) < 0.45) o.f = 1;
         sc.props.push(o);
       }
   }
@@ -1278,23 +1287,23 @@ function wrComposeMulti(id, F) {
         (seamlessWorld.nat = Object.entries(C.props)
           .filter(([k, M]) => M.family && M.grow && M.family !== 'water')
           .map(([k, M]) => [k, M])),
-      sl = wrSalt(q.id) | 0;
+      sl = seamlessSalt(q.id) | 0;
     for (let z = Math.ceil(q.cover[1]); z < q.cover[3] - 1; z += 3)
       for (let x = Math.ceil(q.cover[0]); x < q.cover[2] - 1; x += 3) {
         const fx = x - q.O[0],
           fz = z - q.O[1],
-          hh = wrHash(fx, fz, sl + 61);
+          hh = seamlessHash(fx, fz, sl + 61);
         if (hh > 0.3) continue;
-        const px = x + 1.5 + (wrHash(fx, fz, sl + 62) - 0.5) * 2,
-          pz = z + 1.5 + (wrHash(fx, fz, sl + 63) - 0.5) * 2;
+        const px = x + 1.5 + (seamlessHash(fx, fz, sl + 62) - 0.5) * 2,
+          pz = z + 1.5 + (seamlessHash(fx, fz, sl + 63) - 0.5) * 2;
         if (!inCover(q, px, pz)) continue;
         const ch = (tiles[h - 1 - Math.floor(pz)] || '')[Math.floor(px)],
           fam = hh < 0.06 ? 'trees' : hh < 0.17 ? 'rocks' : hh < 0.24 ? 'shrubs' : 'ground',
           ks = nat.filter(([k, M]) => M.family === fam && M.grow.includes(ch));
         if (!ks.length) continue;
-        const pick = ks[Math.floor(wrHash(fx, fz, sl + 64) * ks.length) % ks.length];
+        const pick = ks[Math.floor(seamlessHash(fx, fz, sl + 64) * ks.length) % ks.length];
         const o = { k: pick[0], x: +px.toFixed(2), z: +pz.toFixed(2), w: 43 };
-        if (wrHash(fx, fz, sl + 65) < 0.45) o.f = 1;
+        if (seamlessHash(fx, fz, sl + 65) < 0.45) o.f = 1;
         sc.props.push(o);
       }
   }
@@ -1324,16 +1333,16 @@ function wrComposeMulti(id, F) {
       w: q.S.w,
       h: q.S.h,
       clip: q.band ? q.K.slice() : null,
-      salt: wrSalt(q.id),
+      salt: seamlessSalt(q.id),
       hub: q.S.hub || null,
       exits: q.S.exits || [],
       worn: q.S.worn || null,
     })),
-    roads: RR.map(q => ({ o: q.o, R: q.R, salt: wrSalt('road' + q.R.i) })),
+    roads: RR.map(q => ({ o: q.o, R: q.R, salt: seamlessSalt('road' + q.R.i) })),
   };
   return sc;
 }
-function wrSalt(id) {
+function seamlessSalt(id) {
   let h = 0;
   for (const ch of String(id)) h = (h * 131 + ch.charCodeAt(0)) % 100003;
   return (h * 7.31) % 997;
@@ -1383,7 +1392,7 @@ function wrHubParts(node) {
       });
       continue;
     }
-    const R = wrRoad(e.i);
+    const R = seamlessRoad(e.i);
     if (!R) continue;
     const atA = R.a === node,
       So = atA ? R.aOff : R.bOff;
@@ -1394,7 +1403,7 @@ function wrHubParts(node) {
     if (nid !== sid) scenes.push({ S: N, id: nid, off: [No[0] - So[0], No[1] - So[1]] });
     for (let k = 0; k <= WR_HUBL; k += 3) {
       const u = atA ? Math.min(R.Lr, k) : Math.max(0, R.Lr - k),
-        p = wrAt(R, u),
+        p = seamlessRoadPointAt(R, u),
         x = p.x - So[0],
         z = p.z - So[1];
       x0 = Math.min(x0, x - seamlessWorld.BAND);
@@ -1486,7 +1495,7 @@ function wrViewFor(R, u, endOnly) {
     return { id: 'w:' + R.bId + '*', hub: R.b, off: R.bOff, base: R.B, t: 1 };
   const M = seamlessWorld.MID,
     k = Math.round(u / 24),
-    p = wrAt(R, k * 24);
+    p = seamlessRoadPointAt(R, k * 24);
   return {
     id: 'w:road' + R.i + '@' + k,
     box: [p.x - M / 2, p.z - M / 2, M, M],
@@ -1522,7 +1531,7 @@ function wrSceneById(id) {
   if (m) return wrRoomScene(m[1], m[2], m[5] != null ? [+m[3], +m[4], +m[5]] : [+m[3], +m[4]]);
   m = id.match(/^w:road(\d+)@(-?\d+)$/);
   if (m) {
-    const R = wrRoad(+m[1]);
+    const R = seamlessRoad(+m[1]);
     if (!R) return null;
     return wrScene(wrViewFor(R, +m[2] * 24), R);
   }
@@ -1732,7 +1741,7 @@ export function wrRoomScene(baseId, roomId, door) {
     W = B.w,
     H = B.h;
   /* each building's room is its own: mirrored or not and a wall colour picked by where its door is (not your room, or a room set to stay as made) */
-  const vs = wrHash(Math.round(door[0] * 10), Math.round(door[1] * 10), 977),
+  const vs = seamlessHash(Math.round(door[0] * 10), Math.round(door[1] * 10), 977),
     vary = R.room !== 'home' && R.vary !== 0,
     mir = vary && vs < 0.5,
     mx = x => (mir ? R.w - x : x),
@@ -1896,7 +1905,7 @@ export function wrDelta(fromId, toId) {
 /* roaming at a stop: v46: always the place's hub view (the scene with the first stretch of each road), so walking
    round a place and up to its exits never switches views */
 export function wrRoamView(node, pos) {
-  if (!wrOn()) return null;
+  if (!seamlessOn()) return null;
   const id = sceneIdAt(node),
     sc = mapById(id);
   if (
@@ -1915,20 +1924,20 @@ export function wrRoamView(node, pos) {
 }
 /* on a road: the view for your progress, and where you stand on it (in that view's metres) */
 export function wrTripView(node, nx, f) {
-  if (!wrOn()) return null;
-  const i = wrLinkIndex(node, nx);
+  if (!seamlessOn()) return null;
+  const i = seamlessRoadIndex(node, nx);
   if (i < 0) return null;
   const J = wrJoin(i);
   if (J) return wrJoinTrip(J, node, f);
-  const R = wrRoad(i);
+  const R = seamlessRoad(i);
   if (!R) return null;
   const fwd = R.a === node,
     u = fwd ? f * R.Lr : (1 - f) * R.Lr,
     v = wrViewFor(R, u),
     sc = wrScene(v, R);
   if (!sc) return null;
-  const p = wrAt(R, u);
-  const lane = (wrNoise(u * 0.05, 1, R.seed + 41) - 0.5) * 1.2,
+  const p = seamlessRoadPointAt(R, u);
+  const lane = (seamlessNoise(u * 0.05, 1, R.seed + 41) - 0.5) * 1.2,
     o = v.off || [0, 0];
   return {
     id: v.id,
@@ -2032,7 +2041,7 @@ export function wrPrefetch(R, u, fwd, tv) {
   if (v.id === walkView.id) return;
   const sc = wrScene(v, R);
   if (!sc) return;
-  /* where you will be when it is shown: a little past where you are now */ const p = wrAt(
+  /* where you will be when it is shown: a little past where you are now */ const p = seamlessRoadPointAt(
       R,
       clamp(fwd ? u + 12 : u - 12, 0, R.Lr)
     ),
@@ -2089,7 +2098,15 @@ export function wrGetReady(id, urgent, focus) {
    well inside it (on a road the views overlap by 40 m, so there is time). If you would walk off its edge the switch
    happens anyway, built on the spot as before. */
 export function wrGate(v) {
-  if (!wrOn() || !v || v.id === walkView.id || !walkView.ready || !walkView.sc || !walkView.pl || walkView.pl.fresh)
+  if (
+    !seamlessOn() ||
+    !v ||
+    v.id === walkView.id ||
+    !walkView.ready ||
+    !walkView.sc ||
+    !walkView.pl ||
+    walkView.pl.fresh
+  )
     return v;
   if (wrGetReady(v.id, true, v.pos)) {
     seamlessWorld.heldFor = null;
