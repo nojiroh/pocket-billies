@@ -40,7 +40,6 @@ import {
   RULES,
   SPECIES,
   STAT_IDS,
-  STEPS_PER_KM,
   TRAINERS,
   gameData,
   isTown,
@@ -136,7 +135,6 @@ expose({
   spawn: [() => spawn, v => (spawn = v)],
   // @ts-expect-error -- replaced on purpose
   stat: [() => stat, v => (stat = v)],
-  stepsToKm: [() => stepsToKm],
   // @ts-expect-error -- replaced on purpose
   stopTrip: [() => stopTrip, v => (stopTrip = v)],
   teamSize: [() => teamSize],
@@ -173,7 +171,6 @@ export const cleanName = (s, max) =>
     .slice(0, max);
 provide({ cleanName }); /* to-module */
 export const formatNumber = n => Math.floor(n).toLocaleString('en-US');
-export const stepsToKm = st => (st / STEPS_PER_KM).toFixed(1);
 export const newUid = () => 'm' + Date.now().toString(36) + Math.floor(random() * 1e8).toString(36);
 export const today = () => {
   const d = new Date();

@@ -45,7 +45,6 @@ expose({
   STATUS_NAMES: [() => STATUS_NAMES],
   STAT_IDS: [() => STAT_IDS],
   STAT_NAMES: [() => STAT_NAMES],
-  STEPS_PER_KM: [() => STEPS_PER_KM],
   TRAINERS: [() => TRAINERS],
   TYPES: [() => TYPES],
   TYPE_COLORS: [() => TYPE_COLORS],
@@ -329,7 +328,6 @@ export const roadCost = (a, b) => {
   const e = (ROADS_BY_NODE[a] || []).find(e => e.to === b);
   return e ? e.cost : null;
 };
-export const STEPS_PER_KM = RULES.steps.stepsPerKm;
 export const EGGS = /** @type {Record<string, EggTier>} */ ({});
 for (const k in gameData.eggs) {
   const E = gameData.eggs[k];

@@ -10,7 +10,6 @@
   "rival": {"hood":"scoop0","gush":"hood0","scoop":"gush0","musk":"bezos0","bezos":"gates0","gates":"musk0"},
   "locationId": "copperleaf"
  },
- "steps": {"stepsPerKm":1333},
  "encounters": {"route":4,"townGrass":2,"refillMs":60000,"prizePerLevel":20,"goldOdds":512,"alphaOdds":45},
  "progression": {"xpFactor":0.8,"maxLevel":100,"teamSize":6,"moveSlots":4,"xpYield":[55,120,190],"trainerXpMult":1.5,"teamXpShare":0.5},
  "eggs": {

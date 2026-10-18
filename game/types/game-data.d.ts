@@ -587,9 +587,6 @@ export interface Rules {
     /** where a new game starts */
     locationId: DataId;
   };
-  steps: {
-    stepsPerKm: number;
-  };
   /** phase 08: wild Billies on each place's map (rules.js encountersHere) */
   encounters: {
     /** how many a route keeps */

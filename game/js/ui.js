@@ -71,7 +71,6 @@ import {
   setTrip,
   spawn,
   stat,
-  stepsToKm,
   stopTrip,
   teamSize,
   toBox,
@@ -1960,7 +1959,7 @@ function renderProfile() {
   ${tile(uiIconHTML('ledger', 14), 'Seen', `${seen}/${DEX_ORDER.length}`, null, seen / DEX_ORDER.length)}${tile(coinHTML('penny', 14), 'Taxed', `${got}/${DEX_ORDER.length}`, null, got / DEX_ORDER.length)}
   ${tile(uiIconHTML('fight', 14), 'Trainers beaten', formatNumber(beat))}${tile(eggHTML(2, 12), 'Eggs hatched', formatNumber(saveData.hatched || 0), saveData.eggs.length ? `${plural(saveData.eggs.length, 'egg')} on the way` : 'No eggs right now')}${typeof stampTile === 'function' ? stampTile(tile) : ''}
  </div></section></div>
- <div class="pf-row">${bud ? `<section class="tpanel pf-buddy"><div class="sec-h"><h2>Buddy</h2></div><button class="pf-bud" data-a="mon" data-u="${bud.uid}"><span class="tm-spr" style="${plateVars(bud)}">${rigCanvasHTML(bud.sp, 72, { gold: bud.gold, build: bud.build })}</span><span class="pf-bt"><b>${escapeHtml(billyName(bud))}</b><span class="tnum">Lv ${bud.lvl}</span><small>You’ve walked ${stepsToKm(bud.bsteps || 0)} km together.</small></span></button></section>` : ''}
+ <div class="pf-row">${bud ? `<section class="tpanel pf-buddy"><div class="sec-h"><h2>Buddy</h2></div><button class="pf-bud" data-a="mon" data-u="${bud.uid}"><span class="tm-spr" style="${plateVars(bud)}">${rigCanvasHTML(bud.sp, 72, { gold: bud.gold, build: bud.build })}</span><span class="pf-bt"><b>${escapeHtml(billyName(bud))}</b><span class="tnum">Lv ${bud.lvl}</span><small>Gets the full XP of every battle you win.</small></span></button></section>` : ''}
  <section class="tpanel pf-bag"><div class="sec-h"><h2>Bag</h2></div>
   <div class="pf-coins">${Object.keys(COINS)
     .map(

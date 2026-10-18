@@ -27,9 +27,6 @@ export const FIXTURE = {
       rival: { sparky: 'drip0', sprout: 'sparky0', drip: 'sprout0' },
       locationId: 'meadow',
     },
-    steps: {
-      stepsPerKm: 1000,
-    },
     encounters: { route: 4, townGrass: 2, refillMs: 60000, prizePerLevel: 20, goldOdds: 512, alphaOdds: 45 },
     progression: {
       xpFactor: 0.8,

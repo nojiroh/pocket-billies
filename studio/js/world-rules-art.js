@@ -711,7 +711,6 @@ SECTIONS.rules = () => {
   const D = studioState.D,
     R = D.rules,
     s = 'rules.start',
-    st = 'rules.steps',
     pg = 'rules.progression',
     eg = 'rules.eggs',
     bt = 'rules.battle',
@@ -774,9 +773,8 @@ SECTIONS.rules = () => {
      grid(rival)
  )}
  ${card(
-   'Steps and encounters',
+   'Encounters',
    grid(
-     numberField('Steps per km', `${st}.stepsPerKm`, { min: 500, max: 3000, step: 1 }),
      numberField('Wild Billies on a route', `rules.encounters.route`, { min: 0, max: 10, step: 1 }),
      numberField('Wild Billies in a town with tall grass', `rules.encounters.townGrass`, {
        min: 0,
