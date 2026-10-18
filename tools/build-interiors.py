@@ -30,7 +30,7 @@ def room(sid, name, floor, wall, seed, kind, keeper, spot, chat, w=W, h=H):
               look={'color': {'exposure': 1.12}, 'sun': {'height': 82, 'angle': 60, 'strength': .85, 'ambient': 1.75, 'clouds': 0, 'cloudShadows': 0, 'shafts': 0},
                     'shadows': {'strength': .35, 'softness': 2.2}, 'lights': {'brightness': 1.25, 'windowsDay': .6}, 'air': {'mist': 0}})
     c = w / 2
-    s.d.update({'room': kind, 'kind': 'room', 'building': kind, 'place': None, 'keeper': keeper, 'npcSpots': [list(spot)], 'hub': [c, 2.2], 'exits': [[c, .6]], 'wallCol': [None] * 10 + [wall, None], 'edgeExits': [{'side': 'S', 't': .5, 'in': .6, 'width': 2, 'id': 'south'}]})
+    s.d.update({'room': kind, 'kind': 'room', 'building': kind, 'locationId': None, 'keeper': keeper, 'npcSpots': [list(spot)], 'hub': [c, 2.2], 'exits': [[c, .6]], 'wallCol': [None] * 10 + [wall, None], 'edgeExits': [{'side': 'S', 't': .5, 'in': .6, 'width': 2, 'id': 'south'}]})
     # the back wall and the two side walls (the camera side stays open)
     s.terrace(-1, h - 1.4, w + 1, h + 1, WALL, wall=True, wobble=0, mat=10)
     # v47: the side walls stop where the back wall starts (overlapping, the corners stood twice as tall)
@@ -137,7 +137,7 @@ def int_library():
     s = room('int_library', 'Inside the library', '%', '#D8C8A8', 2614, 'library', 'folk:51', (7, 7.4),
              ['Shh. The books are sleeping.', 'We have every billionaire’s biography. None of them are short.', 'Late fees are paid in steps.'])
     # alpha 0.1: two bookcases at the ends of the back wall and two standing in the room as stacks, so the library's
-    # four front windows have room on the back wall (world.js wrRoomWindows)
+    # four front windows have room on the back wall (seamless-world.js seamlessRoomWindows)
     for x in (1.6, 12.4): s.put('bookshelf', x, 9.0)
     for x in (2.6, 11.4): s.put('bookshelf', x, 6.9)
     s.put('reading_desk', 7, 6.4, label='Librarian'); s.put('armchair', 2.4, 4.6); s.put('armchair', 11.6, 4.6, 1, 1)
@@ -231,8 +231,8 @@ def own(s):
     return s
 
 
-def int_twofold_market():
-    s = own(room('int_twofold_market', 'Inside Twofold Market', '$', '#EAD8DC', 2631, 'market_hall', 'folk:141', (9, 7.8), [
+def int_twinpetal_market():
+    s = own(room('int_twinpetal_market', 'Inside Twofold Market', '$', '#EAD8DC', 2631, 'market_hall', 'folk:141', (9, 7.8), [
         'Tour shirts, two for the price of three.', 'Poppy never agreed to any of this. She still buys the badges.',
         'Records pressed at a plant out east. Don’t ask which one.'], w=18, h=12))
     s.put('stall_merch', 4.6, 9.4); s.put('stall_merch', 13.4, 9.4, 1, 1); s.put('shop_counter', 9, 7.0, act='shop', label='Market')
@@ -290,7 +290,7 @@ def int_night_market():
     s.put('plant_tall', 1.5, 1.8); hang(s, 'wall_clock', 7); return s.out(10)
 
 
-BUILD += [int_twofold_market, int_bullion_exchange, int_cap_market, int_assay_office, int_chandlery, int_night_market]
+BUILD += [int_twinpetal_market, int_bullion_exchange, int_cap_market, int_assay_office, int_chandlery, int_night_market]
 
 
 def repair_corners(D):
@@ -298,7 +298,7 @@ def repair_corners(D):
     their heights added up). Every step cell taller than the room's wall comes down to it; nothing else changes."""
     import base64, struct
     fixed = []
-    for sid, sc in D['scenes'].items():
+    for sid, sc in D['maps'].items():
         if sc.get('kind') != 'room' or not sc.get('steps'): continue
         raw = base64.b64decode(sc['steps']); n = len(raw) // 2; v = list(struct.unpack('<%dh' % n, raw))
         nz = [x for x in v if x > 0]
@@ -317,8 +317,8 @@ def main():
     D = json.JSONDecoder().raw_decode(src[src.index('window.GAMEDATA=') + len('window.GAMEDATA='):])[0]
     for f in BUILD:
         sid = f.__name__
-        if sid in D['scenes'] and not force: print(f'  {sid}: kept'); continue
-        sc = f(); D['scenes'][sid] = sc
+        if sid in D['maps'] and not force: print(f'  {sid}: kept'); continue
+        sc = f(); D['maps'][sid] = sc
         print(f'  {sid}: {sc["w"]}x{sc["h"]}, {len(sc.get("props", []))} props')
     fx = repair_corners(D)
     if fx: print('  corners brought down to the wall height:', ', '.join(fx))

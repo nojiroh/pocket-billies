@@ -1,7 +1,7 @@
 {
  "name": "Sommelier Sabine",
  "who": "concierge",
- "area": "esc",
+ "battleStage": "esc",
  "node": 23,
  "blocks": false,
  "team": [

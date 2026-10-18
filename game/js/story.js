@@ -3,28 +3,38 @@
    Short scenes filmed in the walk scene you are standing in, with the same director as the opening (cutscene.js):
    your rival Blake runs up the first time you reach him and talks before the battle; trainers talk with their
    portrait before a fight. A trainer's "intro" lines (game data) make the scene; "lines" are what they say in
-   battle. S.story remembers which scenes you have seen. */
+   battle. saveData.story remembers which scenes you have seen. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { STEST, closeModal, modal, postProcess, provide, render } from './hooks.js';
+import { closeModal, modal, provide, render, selfTest, showPendingWindows } from './hooks.js';
 import { $, clamp } from './util.js';
-import { PLACE, RULES, SP, TRAINERS, trainersAt } from './data.js';
-import { B, RM, S, U, esc, healAll, save, today } from './core.js';
-import { DR } from './dressing.js';
-import { DIO, dioBaseId, dioFreePt } from './diorama.js';
-import { EGL } from './engine/core.js';
-import { DGL, dioH } from './diorama-gl.js';
+import { LOCATION_BY_ID, RULES, SPECIES, TRAINERS, trainersAt } from './game-data.js';
+import { activeBattle, escapeHtml, healAll, reducedMotion, save, saveData, today, uiState } from './game-state.js';
+import { dressingRoom } from './dressing-room.js';
+import { baseMapId, walkView, walkablePointNear } from './walk-view.js';
+import { gpuState } from './engine/webgl.js';
+import { standingHeightAt, walkRenderer } from './walk-view-gl.js';
 import { startTrainer, startWild } from './battle.js';
 import { music } from './sound.js';
-import { TALK, talk, talkHide, talkLine } from './talk.js';
-import { CS, csActor, csFlush, csFrame, csHideDlg, csNow, csSay, csShot, csWait, csWalk } from './cutscene.js';
-import { LORE, loreClue, loreFlags } from './lore.js';
+import { talk, talkBox, talkHide, talkLine } from './talk.js';
+import {
+  cutscene,
+  cutsceneActor,
+  cutsceneFlush,
+  cutsceneFrame,
+  cutsceneHideDialogue,
+  cutsceneNow,
+  cutsceneSay,
+  cutsceneShot,
+  cutsceneWait,
+  cutsceneWalk,
+} from './cutscene.js';
+import { loreClue, loreData, loreFlags } from './lore.js';
 /* eslint-disable no-func-assign */
 expose({
-  STORY: [() => STORY],
   blakeHello: [() => blakeHello, v => ((blakeHello = v), provide({ blakeHello }))],
-  csWorldBegin: [() => csWorldBegin, v => (csWorldBegin = v)],
-  csWorldEnd: [() => csWorldEnd, v => (csWorldEnd = v)],
+  cutsceneWorldBegin: [() => cutsceneWorldBegin, v => (cutsceneWorldBegin = v)],
+  cutsceneWorldEnd: [() => cutsceneWorldEnd, v => (cutsceneWorldEnd = v)],
   legendCheck: [() => legendCheck, v => (legendCheck = v)],
   openingDone: [() => openingDone, v => ((openingDone = v), provide({ openingDone }))],
   openingMark: [() => openingMark, v => (openingMark = v)],
@@ -37,6 +47,7 @@ expose({
   storyFlags: [() => storyFlags, v => ((storyFlags = v), provide({ storyFlags }))],
   storyMovedCheck: [() => storyMovedCheck, v => (storyMovedCheck = v)],
   storyRivalBattle: [() => storyRivalBattle, v => (storyRivalBattle = v)],
+  storyState: [() => storyState],
   storyWorldOK: [() => storyWorldOK, v => (storyWorldOK = v)],
   trainerTalk: [() => trainerTalk, v => (trainerTalk = v)],
 });
@@ -44,41 +55,48 @@ expose({
 provide({ blakeHello, openingDone, storyAfterRival, storyAfterWin, storyFlags });
 /* to-module: end */
 export function storyFlags() {
-  return S.story || (S.story = {});
+  return saveData.story || (saveData.story = {});
 }
 /* tap a trainer in the scene, or their Battle button: they talk first, then the battle starts */
 export async function trainerTalk(id) {
   const T = TRAINERS[id];
   if (!T) return;
-  if (TALK.on || (typeof CS !== 'undefined' && CS.on)) return;
+  if (talkBox.on || (typeof cutscene !== 'undefined' && cutscene.on)) return;
   const F = storyFlags();
-  if (T.intro && T.intro.length && !F['met_' + id] && !S.flags[id] && storyWorldOK()) {
+  if (T.intro && T.intro.length && !F['met_' + id] && !saveData.flags[id] && storyWorldOK()) {
     await rivalScene(T);
     return;
   }
   const lines = (
-    S.flags[id] ? ['[happy] Back for more? All right!'] : (T.lines || []).map(l => l.replace(/^[“"]|[”"]$/g, ''))
+    saveData.flags[id] ? ['[happy] Back for more? All right!'] : (T.lines || []).map(l => l.replace(/^[“"]|[”"]$/g, ''))
   ).slice(0, 2);
   if (lines.length && typeof talk === 'function')
     await talk(lines.map((l, i) => [T.who, i ? l : l.startsWith('[') ? l : '[happy] ' + l]));
   startTrainer(id, { talked: true });
 }
 function storyWorldOK() {
-  return typeof DGL !== 'undefined' && DGL.on && DIO.ready && DIO.cv && !B && typeof csFrame === 'function';
+  return (
+    typeof walkRenderer !== 'undefined' &&
+    walkRenderer.on &&
+    walkView.ready &&
+    walkView.cv &&
+    !activeBattle &&
+    typeof cutsceneFrame === 'function'
+  );
 }
 /* the director, borrowed for a scene in the current walk scene (no remount, no letterbox fade-in) */
-function csWorldBegin() {
-  CS.on = true;
-  CS.run++;
-  CS.skip = false;
-  CS.actors = {};
-  CS.stars = [];
-  CS.coins = [];
-  CS.fx = [];
-  CS.flashes = [];
-  CS.cam = null;
-  CS.hide = null;
-  CS.world = true;
+function cutsceneWorldBegin() {
+  cutscene.on = true;
+  cutscene.run++;
+  cutscene.skip = false;
+  cutscene.actors = {};
+  cutscene.stars = [];
+  cutscene.coins = [];
+  cutscene.fx = [];
+  cutscene.flashes = [];
+  cutscene.cam = null;
+  cutscene.hide = null;
+  cutscene.world = true;
   let el = $('#cs');
   if (!el) {
     el = document.createElement('div');
@@ -90,20 +108,20 @@ function csWorldBegin() {
     '<div class="cs-bars" aria-hidden="true"><i></i><i></i></div><button class="cs-skip pb small quiet" data-a="cs-skip">Skip ›</button><div class="cs-fade" id="csFade"></div>';
   el.hidden = false;
   document.body.classList.add('in-cs', 'cs-world');
-  DIO.director = { frame: csFrame };
-  return CS.run;
+  walkView.director = { frame: cutsceneFrame };
+  return cutscene.run;
 }
-function csWorldEnd() {
+function cutsceneWorldEnd() {
   talkHide();
-  CS.on = false;
-  CS.run++;
-  CS.skip = false;
-  CS.world = false;
-  csFlush();
-  DIO.director = null;
-  DGL.bt = null;
-  DGL.camT = null;
-  DGL.focus = null;
+  cutscene.on = false;
+  cutscene.run++;
+  cutscene.skip = false;
+  cutscene.world = false;
+  cutsceneFlush();
+  walkView.director = null;
+  walkRenderer.bt = null;
+  walkRenderer.camT = null;
+  walkRenderer.focus = null;
   const el = $('#cs');
   if (el) {
     el.hidden = true;
@@ -114,10 +132,10 @@ function csWorldEnd() {
 }
 /* Blake (or any trainer with intro lines) runs up to you, talks, and the battle starts */
 async function rivalScene(T) {
-  const run = csWorldBegin(),
-    alive = () => CS.on && CS.run === run,
-    P = DIO.pl,
-    sc = DIO.sc,
+  const run = cutsceneWorldBegin(),
+    alive = () => cutscene.on && cutscene.run === run,
+    P = walkView.pl,
+    sc = walkView.sc,
     F = storyFlags();
   F['met_' + T.id] = 1;
   save();
@@ -127,108 +145,120 @@ async function rivalScene(T) {
   try {
     /* where he comes from: the side of the scene away from the camera, a little to one side of you */
     const side = P.x < sc.w / 2 ? 1 : -1,
-      to = dioFreePt(P.x + side * 1.4, P.z + 0.3),
-      from = dioFreePt(clamp(P.x + side * 7, 1, sc.w - 1), clamp(P.z + 4.5, 1, sc.h - 1));
-    csActor('me', 'me', [P.x, P.z], side > 0 ? 'sideR' : 'side');
-    csActor('rival', T.who, from, 'down');
-    CS.actors.rival.hidden = true;
+      to = walkablePointNear(P.x + side * 1.4, P.z + 0.3),
+      from = walkablePointNear(clamp(P.x + side * 7, 1, sc.w - 1), clamp(P.z + 4.5, 1, sc.h - 1));
+    cutsceneActor('me', 'me', [P.x, P.z], side > 0 ? 'sideR' : 'side');
+    cutsceneActor('rival', T.who, from, 'down');
+    cutscene.actors.rival.hidden = true;
     const mid = () => [(P.x + to[0]) / 2, (P.z + to[1]) / 2],
       m = mid(),
-      gy = dioH(m[0], m[1]);
-    csShot({ eye: [m[0], gy + 3.6, m[1] - 8.5], tgt: [m[0], gy + 1, m[1] + 1.5], fov: 38, w: 6 });
-    await csWait(300);
+      gy = standingHeightAt(m[0], m[1]);
+    cutsceneShot({ eye: [m[0], gy + 3.6, m[1] - 8.5], tgt: [m[0], gy + 1, m[1] + 1.5], fov: 38, w: 6 });
+    await cutsceneWait(300);
     if (!alive()) return;
     /* "!" and he runs in */
     await talkLine(T.who, (intro[0] || 'Hey!').replace(/^\[\w+\]\s*/, ''), 'angry', {});
     talkHide();
-    CS.actors.rival.hidden = false;
-    csShot({ eye: [m[0], gy + 2.3, m[1] - 5.2], tgt: [m[0], gy + 1.05, m[1] + 0.4], fov: 38, w: 4 }, 1600);
-    await csWalk('rival', to, 1500);
+    cutscene.actors.rival.hidden = false;
+    cutsceneShot({ eye: [m[0], gy + 2.3, m[1] - 5.2], tgt: [m[0], gy + 1.05, m[1] + 0.4], fov: 38, w: 4 }, 1600);
+    await cutsceneWalk('rival', to, 1500);
     if (!alive()) return;
-    CS.actors.rival.dir = side > 0 ? 'side' : 'sideR';
-    CS.actors.me.dir = side > 0 ? 'sideR' : 'side';
+    cutscene.actors.rival.dir = side > 0 ? 'side' : 'sideR';
+    cutscene.actors.me.dir = side > 0 ? 'sideR' : 'side';
     for (const l of intro.slice(1)) {
-      await csSay(T.who, l);
+      await cutsceneSay(T.who, l);
       if (!alive()) return;
     }
-    csHideDlg();
-    CS.actors.rival.act = 'cheer';
-    CS.actors.rival.actT = csNow();
-    await csWait(700);
+    cutsceneHideDialogue();
+    cutscene.actors.rival.act = 'cheer';
+    cutscene.actors.rival.actT = cutsceneNow();
+    await cutsceneWait(700);
     const f = $('#csFade');
     if (f) {
       f.style.background = '#0B0912';
       f.classList.add('on');
     }
-    await new Promise(r => setTimeout(r, RM ? 50 : 450));
+    await new Promise(r => setTimeout(r, reducedMotion ? 50 : 450));
   } finally {
-    csWorldEnd();
+    cutsceneWorldEnd();
   }
   startTrainer(T.id, { talked: true });
 }
 /* when you arrive somewhere a story trainer waits, the scene starts by itself */
 export function storyCheck() {
   if (
-    (typeof STEST !== 'undefined' && STEST.on) ||
-    U.bench ||
-    !S.started ||
-    B ||
-    U.modal ||
-    U.tab !== 'walk' ||
-    TALK.on ||
-    (typeof CS !== 'undefined' && CS.on) ||
-    (typeof DR !== 'undefined' && DR.on) ||
+    (typeof selfTest !== 'undefined' && selfTest.on) ||
+    uiState.bench ||
+    !saveData.started ||
+    activeBattle ||
+    uiState.modal ||
+    uiState.tab !== 'walk' ||
+    talkBox.on ||
+    (typeof cutscene !== 'undefined' && cutscene.on) ||
+    (typeof dressingRoom !== 'undefined' && dressingRoom.on) ||
     !storyWorldOK()
   )
     return;
-  if (S.route.prog !== 0 || (S.route.plan && S.route.plan.length)) return;
+  if (saveData.trip.prog !== 0 || (saveData.trip.plan && saveData.trip.plan.length)) return;
   const F = storyFlags();
-  const T = trainersAt(S.route.node).find(T => T.intro && T.intro.length && !S.flags[T.id] && !F['met_' + T.id]);
+  const T = trainersAt(saveData.trip.node).find(
+    T => T.intro && T.intro.length && !saveData.flags[T.id] && !F['met_' + T.id]
+  );
   if (!T) return;
-  if (STORY.pending === T.id) return;
-  STORY.pending = T.id;
+  if (storyState.pending === T.id) return;
+  storyState.pending = T.id;
   setTimeout(() => {
-    STORY.pending = null;
-    if (DIO.ready && !B && U.tab === 'walk' && !U.modal && !TALK.on && !CS.on) rivalScene(T);
+    storyState.pending = null;
+    if (walkView.ready && !activeBattle && uiState.tab === 'walk' && !uiState.modal && !talkBox.on && !cutscene.on)
+      rivalScene(T);
   }, 1400);
 }
 /* v39: the legendary encounters (rules.legends): one per scene, met when you arrive, once a day until caught */
 export function legendCheck() {
   if (
-    !S.started ||
-    B ||
-    U.modal ||
-    U.tab !== 'walk' ||
-    TALK.on ||
-    (typeof CS !== 'undefined' && CS.on) ||
-    !DIO.ready ||
-    (typeof STEST !== 'undefined' && STEST.on) ||
-    U.bench
+    !saveData.started ||
+    activeBattle ||
+    uiState.modal ||
+    uiState.tab !== 'walk' ||
+    talkBox.on ||
+    (typeof cutscene !== 'undefined' && cutscene.on) ||
+    !walkView.ready ||
+    (typeof selfTest !== 'undefined' && selfTest.on) ||
+    uiState.bench
   )
     return;
-  if (S.route.prog !== 0 || (S.route.plan && S.route.plan.length)) return;
+  if (saveData.trip.prog !== 0 || (saveData.trip.plan && saveData.trip.plan.length)) return;
   const F = storyFlags(),
     L = (RULES.legends || []).find(
-      l => l.scene === dioBaseId() && SP[l.sp] && !S.caught[l.sp] && F['legend_' + l.sp] !== today()
+      l => l.scene === baseMapId() && SPECIES[l.sp] && !saveData.caught[l.sp] && F['legend_' + l.sp] !== today()
     );
-  if (!L || STORY.pending === 'legend') return;
-  STORY.pending = 'legend';
+  if (!L || storyState.pending === 'legend') return;
+  storyState.pending = 'legend';
   setTimeout(() => {
-    STORY.pending = null;
-    if (!DIO.ready || B || U.tab !== 'walk' || U.modal || TALK.on || CS.on || dioBaseId() !== L.scene) return;
+    storyState.pending = null;
+    if (
+      !walkView.ready ||
+      activeBattle ||
+      uiState.tab !== 'walk' ||
+      uiState.modal ||
+      talkBox.on ||
+      cutscene.on ||
+      baseMapId() !== L.scene
+    )
+      return;
     F['legend_' + L.sp] = today();
     save();
     modal({
       title: L.title,
-      html: `<p>${esc(L.text)}</p><p class="note">${esc(L.line)}</p>`,
+      html: `<p>${escapeHtml(L.text)}</p><p class="note">${escapeHtml(L.line)}</p>`,
       btns: [
         {
           l: 'Face it',
           c: 'primary',
           f: () => {
             closeModal();
-            const q = { id: 'legend-' + L.sp, sp: L.sp, lvl: L.lvl, gold: false, no: ++S.serial, legend: true };
-            S.queue.push(q);
+            const q = { id: 'legend-' + L.sp, sp: L.sp, lvl: L.lvl, gold: false, no: ++saveData.serial, legend: true };
+            saveData.queue.push(q);
             startWild(q);
           },
         },
@@ -237,11 +267,11 @@ export function legendCheck() {
     });
   }, 1200);
 }
-const STORY = { pending: null };
-provide({ STORY }); /* to-module */
+const storyState = { pending: null };
+provide({ storyState }); /* to-module */
 /* alpha 0.4: someone who only talks (scene.people: Granny Juniper): what they say the first time, then a line or two */
 export async function personTalk(P) {
-  if (!P || TALK.on || (typeof CS !== 'undefined' && CS.on)) return;
+  if (!P || talkBox.on || (typeof cutscene !== 'undefined' && cutscene.on)) return;
   const F = storyFlags(),
     k = 'met_' + P.id,
     first = !F[k] && P.first && P.first.length;
@@ -260,21 +290,21 @@ export async function personTalk(P) {
 /* alpha 0.4: a game begun before Copperleaf: the lab and your room have moved, and you are told once */
 export function storyMovedCheck() {
   if (
-    !S.started ||
-    B ||
-    U.modal ||
-    U.title ||
-    TALK.on ||
-    (typeof CS !== 'undefined' && CS.on) ||
-    (typeof STEST !== 'undefined' && STEST.on) ||
-    U.bench
+    !saveData.started ||
+    activeBattle ||
+    uiState.modal ||
+    uiState.title ||
+    talkBox.on ||
+    (typeof cutscene !== 'undefined' && cutscene.on) ||
+    (typeof selfTest !== 'undefined' && selfTest.on) ||
+    uiState.bench
   )
     return;
   const F = storyFlags();
   if (F.copperleafNote) return;
   F.copperleafNote = 1;
   save();
-  if (!PLACE.copperleaf) return;
+  if (!LOCATION_BY_ID.copperleaf) return;
   modal({
     title: 'Copperleaf Town',
     html: '<p>Professor Hazel has moved her lab to Copperleaf Town, the hamlet up Route 1 · Hedgerow Lane, north of Marigold Town. Your room went with her: it is in Granny Juniper’s cottage there now, among the beehives.</p><p class="note">Marigold Town keeps its shop and its clinic. Copperleaf has the swing.</p>',
@@ -288,9 +318,9 @@ export function storyMovedCheck() {
 function blakeHello(l) {
   const T = TRAINERS.blake0 || {},
     who = T.who || 'chad',
-    sp = SP[l + '0'],
+    sp = SPECIES[l + '0'],
     rv = RULES.start.rival && RULES.start.rival[l],
-    rs = rv && SP[rv];
+    rs = rv && SPECIES[rv];
   return [
     [who, '[surprised] Professor! Professor! Did another one fall in?'],
     [
@@ -318,30 +348,33 @@ function openingMark() {
 export function storyRivalBattle(o = {}) {
   const t0 = performance.now(),
     go = async () => {
-      if (B || !S.started) return;
-      U.modal = null;
-      if (o.talkFirst && typeof talk === 'function' && !TALK.on) {
-        STORY.rivalTalk = 1;
+      if (activeBattle || !saveData.started) return;
+      uiState.modal = null;
+      if (o.talkFirst && typeof talk === 'function' && !talkBox.on) {
+        storyState.rivalTalk = 1;
         try {
-          await talk(blakeHello(S.starter));
+          await talk(blakeHello(saveData.starter));
         } finally {
-          STORY.rivalTalk = 0;
+          storyState.rivalTalk = 0;
         }
-        if (B || !S.started) return;
+        if (activeBattle || !saveData.started) return;
       }
       startTrainer('blake0', { talked: true });
-      if (!B) storyAfterRival(null, TRAINERS.blake0);
+      if (!activeBattle) storyAfterRival(null, TRAINERS.blake0);
     };
   /* once Sundown is on screen and settled: drawn a few times, its pictures on the card (as when the game first opens) */
   let f0 = null;
   const poll = () => {
-    if (B || !S.started) return;
-    const on = typeof DIO !== 'undefined' && DIO.ready,
-      gl = typeof DGL !== 'undefined' && DGL.on;
-    if (on && gl && f0 == null) f0 = DGL.frames;
+    if (activeBattle || !saveData.started) return;
+    const on = typeof walkView !== 'undefined' && walkView.ready,
+      gl = typeof walkRenderer !== 'undefined' && walkRenderer.on;
+    if (on && gl && f0 == null) f0 = walkRenderer.frames;
     const ready =
-      typeof DIO === 'undefined' ||
-      (on && (!gl || (DGL.frames >= (f0 ?? 0) + 8 && (typeof EGL === 'undefined' || !EGL.normQ || !EGL.normQ.length))));
+      typeof walkView === 'undefined' ||
+      (on &&
+        (!gl ||
+          (walkRenderer.frames >= (f0 ?? 0) + 8 &&
+            (typeof gpuState === 'undefined' || !gpuState.normQ || !gpuState.normQ.length))));
     if ((ready && performance.now() - t0 > 900) || performance.now() - t0 > 9000) {
       go();
       return;
@@ -359,8 +392,8 @@ async function storyAfterRival(o, T) {
   if (o) openingMark();
   T = T || TRAINERS.blake0 || {};
   const who = T.who || 'chad';
-  const W = U.welcome;
-  U.welcome = null;
+  const W = uiState.welcome;
+  uiState.welcome = null;
   const lines = [];
   if (o === 'win')
     lines.push(
@@ -389,7 +422,7 @@ async function storyAfterRival(o, T) {
   if (typeof loreFlags === 'function') loreFlags().askLongGrass = 1;
   save();
   if (W) modal(W);
-  else if (typeof postProcess === 'function') postProcess();
+  else if (typeof showPendingWindows === 'function') showPendingWindows();
 }
 /* v47 part 4: after the first win over a trainer with a story beat: a clue to who you were (Cass Flow, at the pressing
    plant), or the ending (Vinylla, at the Inner Sun): what everyone says, the last clue, and the B-side */
@@ -400,13 +433,13 @@ async function storyAfterWin(T) {
     return;
   }
   if (T.clue && typeof loreClue === 'function') loreClue(T.clue);
-  else if (typeof postProcess === 'function') postProcess();
+  else if (typeof showPendingWindows === 'function') showPendingWindows();
 }
 async function storyEnding(T) {
   const L = T.endLines || [];
   if (typeof music === 'function') music('title');
   if (L.length && typeof talk === 'function') await talk(L.map(l => [l[0], l[1]]));
-  const E = ((typeof LORE === 'function' && LORE().story) || []).find(s => s.id === 'ending');
+  const E = ((typeof loreData === 'function' && loreData().story) || []).find(s => s.id === 'ending');
   if (typeof loreClue === 'function')
     loreClue('who'); /* the last clue: its flag, "ending", is the story's last stage */
   else {
@@ -414,9 +447,9 @@ async function storyEnding(T) {
   }
   if (E)
     modal({
-      title: esc(E.title),
+      title: escapeHtml(E.title),
       cls: 'clue-sheet',
-      html: `<p>${esc(E.text)}</p><p class="note">Thank you for playing Pocket Billies. Every place, trainer and Billie is still out there: the road goes on.</p>`,
+      html: `<p>${escapeHtml(E.text)}</p><p class="note">Thank you for playing Pocket Billies. Every place, trainer and Billie is still out there: the road goes on.</p>`,
       btns: [{ l: 'Keep walking', c: 'dark', f: closeModal }],
     });
   save();

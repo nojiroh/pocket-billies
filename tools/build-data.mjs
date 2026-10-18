@@ -12,8 +12,8 @@ export const HEAD =
 
 /* Phase 04b, lazy maps: 98% of the data is the maps' ground and props. In gamedata.js a map (not a room: rooms are small
    and are laid into a place's view at once) has everything but those fields, plus `_lite`: the ground kinds and props
-   it uses, so the loader can still fetch their pictures. The game fetches the map's own file (scenes/<id>.json) when it
-   is needed (js/scene-files.js). */
+   it uses, so the loader can still fetch their pictures. The game fetches the map's own file (maps/<id>.json) when it
+   is needed (js/map-files.js). */
 export const MAP_FIELDS = ['heights', 'steps', 'stepm', 'tiles', 'props'];
 function lite(sc) {
   if (sc.kind === 'room' || sc.room) return sc;
@@ -32,7 +32,7 @@ function lite(sc) {
 
 export function buildData(out = DATA) {
   const D = readGameData();
-  D.scenes = Object.fromEntries(Object.entries(D.scenes).map(([id, sc]) => [id, lite(sc)]));
+  D.maps = Object.fromEntries(Object.entries(D.maps).map(([id, sc]) => [id, lite(sc)]));
   const text = HEAD + 'window.GAMEDATA=' + JSON.stringify(D) + ';\n';
   mkdirSync(out, { recursive: true });
   writeFileSync(join(out, 'gamedata.js'), text);

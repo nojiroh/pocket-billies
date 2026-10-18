@@ -657,40 +657,40 @@ def main():
     CP = D['scenery']['props']; E = CP.get('airship_mast')
     if E is not None:
         foot, base = feet['airship_mast']
-        E['vox'] = MODEL_REL; E['ox'] = -foot; E['oy'] = -base
+        E['model'] = MODEL_REL; E['ox'] = -foot; E['oy'] = -base
         E['fx'] = [{'k': 'glow', 'x': 0, 'y': -int(round((MAST_H + .86) * 34))}]
         E['name'] = 'Airship mast'; E['box'] = [1.8, 1.8]
         # the airship: its own prop, moored at the mast (same base point), no footprint (it flies), bobbing in the wind
         foot, base = feet['airship']
         A = CP.setdefault('airship', {})
         A.update({'name': 'Airship', 'img': 'scene/props/airship.png', 'ox': -foot, 'oy': -base, 'shadow': 1.0, 'sway': 0, 'flat': 0,
-                  'tags': ['town', 'city', 'village'], 'group': 'airship', 'vox': SHIP_REL, 'bob': .09, 'noHit': 1,
+                  'tags': ['town', 'city', 'village'], 'group': 'airship', 'model': SHIP_REL, 'bob': .09, 'noHit': 1,
                   'about': 'Moored at an airship mast: place it on the mast (same spot); it swings round the mast a little and bobs in the wind'})
         # alpha 0.4.1: the airship station (no rooms; tap it to fly) takes every mast's place in the towns, and the old
         # train station in Verdigris City goes (its terminal room with it)
         foot, base = feet['airship_station']
         S_ = CP.setdefault('airship_station', {})
         S_.update({'name': 'Airship station', 'img': 'scene/props/airship_station.png', 'ox': -foot, 'oy': -base, 'shadow': 1.0, 'sway': 0, 'flat': 0,
-                   'tags': ['town', 'city', 'village'], 'group': 'airship_station', 'vox': STATION_REL, 'box': [1.8, 1.8], 'act': 'fly',
+                   'tags': ['town', 'city', 'village'], 'group': 'airship_station', 'model': STATION_REL, 'box': [1.8, 1.8], 'act': 'fly',
                    'fx': [{'k': 'glow', 'x': int(round(x * 34)), 'y': -int(round((y + z * .5) * 34))} for x, y, z in STATION_LAMPS]
                          + [{'k': 'glow', 'x': 0, 'y': -int(round((MAST_H + .86) * 34))}],
                    'about': 'An airship station in the open: the mast with a lift, a canopy, a ticket kiosk. Tap it to fly; the airship moors at its mast (same spot)'})
         conv = 0
-        for sc in D['scenes'].values():
+        for sc in D['maps'].values():
             for q in sc.get('props') or []:
                 if q.get('k') == 'airship_mast': q['k'] = 'airship_station'; q['act'] = 'fly'; q['label'] = 'Airship station'; conv += 1
-        city = D['scenes'].get('city') or {}
+        city = D['maps'].get('verdigris') or {}
         old = [q for q in city.get('props', []) if q.get('k') == 'station']
         for q in old:
             city['props'].remove(q)
             for k, dx, dz in (('bench_wood', -1.6, 1.0), ('bench_wood', 1.6, 1.0), ('planter', -3.0, 0.4), ('planter', 3.0, 0.4), ('tree_oak', 0, 2.6)):
                 if k in CP: city['props'].append({'k': k, 'x': round(q['x'] + dx, 2), 'z': round(q['z'] + dz, 2)})
-        tw = D['scenes'].get('test_windows') or {}
+        tw = D['maps'].get('test_windows') or {}
         tw['props'] = [q for q in tw.get('props', []) if q.get('k') != 'station']
-        if 'int_station' in D['scenes']: del D['scenes']['int_station']; done.append('the terminal room (int_station) removed')
+        if 'int_station' in D['maps']: del D['maps']['int_station']; done.append('the terminal room (int_station) removed')
         if conv or old: done.append(f'{conv} masts are airship stations now; the train station in Verdigris City gave way to benches and a tree')
         n = 0
-        for sc in D['scenes'].values():
+        for sc in D['maps'].values():
             P = sc.get('props') or []
             for m in [q for q in P if q.get('k') in ('airship_mast', 'airship_station')]:
                 if not any(q.get('k') == 'airship' and abs(q['x'] - m['x']) < .05 and abs(q['z'] - m['z']) < .05 for q in P):

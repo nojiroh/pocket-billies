@@ -2,7 +2,7 @@
 """v43: voxel props. Sixty-odd manufactured things (benches, planters, lamps, crates, barrels, fences, signs, bins,
 tables, carts...) as small voxel models, written as recipes: a list of layers, each a shape (box, cylinder, sphere,
 cone, barrel) in metres with a colour and a texture, plus optional picture layers (a 2D sprite placed in the model).
-The game (game/js/vox.js) turns a recipe into voxels at eight to the metre, meshes them and draws them as cel-shaded
+The game (game/js/prop-models.js) turns a recipe into voxels at eight to the metre, meshes them and draws them as cel-shaded
 solids in the scene's light and shadow in place of the prop's picture when the Voxel props dial is on. The Studio's
 Prop builder edits the same recipes (add a layer, move it, change its colour or texture, add a picture layer), and
 can import a MagicaVoxel .vox as a raw layer. A recipe that exists on disk is kept (yours); --force rewrites.
@@ -307,7 +307,7 @@ def p_beehive(v):
 def p_flag_pole(v): v.cyl(0, 0, 0, .12, .25, R['stone'], 1, 'stone', name='foot'); v.cyl(0, 0, .12, 4.7, .04, R['white'], 3, name='mast'); v.sphere(0, 0, 4.75, .07, R['gold'], 4, name='finial')
 
 
-# ----------------------------------------------------------------------------- voxelising (the same rules as game/js/vox.js), for the sheet
+# ----------------------------------------------------------------------------- voxelising (the same rules as game/js/prop-models.js), for the sheet
 TEX = dict(plain=0, grain=.1, wood=.14, stone=.18, metal=.05, cloth=.08, hay=.22, leaves=.2, rust=.16, stripes=0, rings=0)
 def voxelise(layers):
     V = {}
@@ -372,8 +372,8 @@ def main():
     for key in PROPS:
         for T in (P, cat):
             if key not in T: continue
-            if key in SKIP: T[key].pop('vox', None); T[key].pop('voxV', None)
-            else: T[key]['vox'] = 'scene/vox/%s.json' % key; n += 1
+            if key in SKIP: T[key].pop('model', None); T[key].pop('voxV', None)
+            else: T[key]['model'] = 'scene/vox/%s.json' % key; n += 1
     bsp.write_json(META, P); gamedata.save_js(head + 'window.GAMEDATA=' + json.dumps(D, ensure_ascii=False, indent=1) + ';\n')
     print('%d voxel recipes; written now: %s; %d catalogue entries point at a recipe' % (len(PROPS), ', '.join(made) or 'none (all there)', n // 2))
     if sp:

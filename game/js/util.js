@@ -4,9 +4,9 @@
    the ground height code was the hot one). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-expose({ $: [() => $], $$: [() => $$], clamp: [() => clamp], rnd: [() => rnd] });
+expose({ $: [() => $], $$: [() => $$], clamp: [() => clamp], random: [() => random] });
 /* to-module: end */
 export const $ = (s, r = document) => r.querySelector(s);
 export const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
-export const rnd = Math.random;
+export const random = Math.random;
 export const clamp = (v, a, b) => Math.max(a, Math.min(b, v));

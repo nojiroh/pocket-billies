@@ -17,7 +17,7 @@ Everything added carries "v47life": 1, so running this again first takes the pre
 marked "keep" in the Studio is left alone.
 
     python3 tools/build-life-v47.py            # all towns
-    python3 tools/build-life-v47.py sundown    # just these
+    python3 tools/build-life-v47.py marigold    # just these
     python3 tools/build-life-v47.py --dry      # report, write nothing
     python3 tools/build-life-v47.py --map out/ # draw a top-down map of each place (worn lines in orange)
 """
@@ -113,7 +113,7 @@ def is_work(p, M): return bool(M.get('door')) and any(w == p['k'] or w == (M.get
 def dress(P, rnd):
     """signs of people round the buildings"""
     sc, cat = P.sc, P.cat; n = {'washing': 0, 'crates': 0, 'bin': 0, 'bikes': 0, 'planters': 0, 'gnomes': 0, 'bread': 0}
-    city = P.sid in ('city', 'mall') or (sc.get('biome') == 'city')
+    city = P.sid in ('verdigris', 'lanternhall') or (sc.get('biome') == 'city')
     for p in list(sc['props']):
         M = cat.get(p['k']) or {}
         if not M.get('box') or not M.get('door') or p.get(TAG): continue
@@ -165,7 +165,7 @@ def dress(P, rnd):
 
 def chalk(P, rnd):
     """chalk on the paving in front of some front doors: hopscotch or a drawing. "dry": the rain washes it away and
-    it is drawn again once the ground has dried (diorama.js dioPropOn). The pictures come from tools/build-landmarks-v47.py"""
+    it is drawn again once the ground has dried (walk-view.js propShown). The pictures come from tools/build-landmarks-v47.py"""
     if 'chalk_hopscotch' not in P.cat: return 0
     n = 0; homes = [p for p in P.sc['props'] if (P.cat.get(p['k']) or {}).get('box') and is_home(p, P.cat.get(p['k']) or {}) and not p.get(TAG)]
     rnd.shuffle(homes)
@@ -214,7 +214,7 @@ def cats(P):
 
 def worn(P, rnd):
     """the shortcuts: from the square to the doors people use most, and from doors to the nearest street, wherever
-    the straight way crosses grass. The ground painter wears them in (diorama.js dioWearLines)."""
+    the straight way crosses grass. The ground painter wears them in (walk-view.js pathWearLines)."""
     sc, cat = P.sc, P.cat; hub = sc.get('hub') or [P.W / 2, P.H / 2]; L = []
 
     def soft_share(a, b):
@@ -262,7 +262,7 @@ def worn(P, rnd):
 
 
 def crops(sc):
-    """the farm's fields grow and are harvested on rounds of their own (diorama.js dioGrowK): each crop gets its
+    """the farm's fields grow and are harvested on rounds of their own (walk-view.js cropGrowth): each crop gets its
     field's number from where it stands"""
     n = 0
     for p in sc.get('props', []):
@@ -296,14 +296,14 @@ def draw_map(sid, sc, cat, path):
 def main():
     args = sys.argv[1:]; dry = '--dry' in args; args = [a for a in args if a != '--dry']; mp = None
     if '--map' in args: j = args.index('--map'); mp = Path(args[j + 1]); del args[j:j + 2]; mp.mkdir(parents=True, exist_ok=True)
-    head, D = load(); cat = D['scenery']['props']; S = D['scenes']
+    head, D = load(); cat = D['scenery']['props']; S = D['maps']
     life = D['scenery'].setdefault('life', {})
     if 'crow' not in life: life['crow'] = {'name': 'Crow', 'img': 'scene/life/crow.png', 'w': 24, 'h': 22, 'frames': 5, 'where': 'junk'}
     for sid, sc in S.items():
         if '@' in sid or sc.get('test'): continue
-        c = crops(sc); w = crows(sc) if sid == 'scrapyard' else 0
+        c = crops(sc); w = crows(sc) if sid == 'rustgear' else 0
         if c or w: print(f'{sid}: ' + ', '.join(x for x in (f'{c} crops on a round of their own' if c else '', f'{w} crows' if w else '') if x))
-    towns = [r['scene'] for r in D['route'] if r.get('kind') == 'town' and r.get('scene') in S]
+    towns = [r['mapId'] for r in D['locations'] if r.get('kind') == 'town' and r.get('mapId') in S]
     want = args or towns
     for sid in want:
         sc = S.get(sid)
@@ -313,7 +313,7 @@ def main():
         sc.pop('worn', None); sc.pop('market', None)
         if sc.get('keep'): print(f'{sid}: kept as it is (marked keep)'); continue
         rnd = random.Random(f'life47-{sid}'); P = Place(sid, sc, cat)
-        n = dress(P, rnd); mk = market(P, rnd) if sid == 'sundown' else 0; lv = leaves(P, rnd); ct = cats(P); wl = worn(P, rnd); n['chalk'] = chalk(P, random.Random(f'chalk47-{sid}'))
+        n = dress(P, rnd); mk = market(P, rnd) if sid == 'marigold' else 0; lv = leaves(P, rnd); ct = cats(P); wl = worn(P, rnd); n['chalk'] = chalk(P, random.Random(f'chalk47-{sid}'))
         sc['props'] = sc['props'] + P.added
         print(f'{sid}: ' + ', '.join(f'{v} {k}' for k, v in n.items() if v) + (f', {mk} market things' if mk else '') + f', {lv} leaf piles, {ct} cats, {wl} worn shortcuts')
         if mp: draw_map(sid, sc, cat, mp / f'{sid}.png')

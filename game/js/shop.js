@@ -4,14 +4,14 @@
    Each shop has a keeper (drawn by the trainer renderer from PEOPLE), a greeting and a stock list. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { closeModal, modal, provide, renderOv, sfx, toast } from './hooks.js';
-import { clamp, rnd } from './util.js';
-import { COINS, ITEMS, SHOPS } from './data.js';
-import { S, U, esc, fmt, plural, save } from './core.js';
-import { coinHTML, uiIco } from './art.js';
-import { portraitHTML } from './trainer.js';
-import { openDressing } from './dressing.js';
-import { buzz } from './scene.js';
+import { closeModal, modal, provide, renderOverlay, soundEffect, toast } from './hooks.js';
+import { clamp, random } from './util.js';
+import { COINS, ITEMS, SHOPS } from './game-data.js';
+import { escapeHtml, formatNumber, plural, save, saveData, uiState } from './game-state.js';
+import { coinHTML, uiIconHTML } from './art.js';
+import { portraitHTML } from './person-art.js';
+import { openDressingRoom } from './dressing-room.js';
+import { buzz } from './battle-stage.js';
 import { itemIcon } from './battle.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -39,16 +39,26 @@ const wareInfo = w => {
   if (w.coin) {
     const c = COINS[w.coin];
     return c
-      ? { kind: 'coin', key: w.coin, n: c.n, d: c.d, base: c.price, need: c.need || 0, have: S.coins[w.coin] || 0 }
+      ? {
+          kind: 'coin',
+          key: w.coin,
+          n: c.n,
+          d: c.d,
+          base: c.price,
+          need: c.need || 0,
+          have: saveData.coins[w.coin] || 0,
+        }
       : null;
   }
   const I = ITEMS[w.item];
-  return I ? { kind: 'item', key: w.item, n: I.n, d: I.d, base: I.price, need: 0, have: S.items[w.item] || 0 } : null;
+  return I
+    ? { kind: 'item', key: w.item, n: I.n, d: I.d, base: I.price, need: 0, have: saveData.items[w.item] || 0 }
+    : null;
 };
 function shopHTML(id) {
   const sh = SHOPS[id],
-    q = U.shopQty || (U.shopQty = {}),
-    seats = S.seats.length;
+    q = uiState.shopQty || (uiState.shopQty = {}),
+    seats = saveData.seats.length;
   const rows = (sh.stock || [])
     .map((w, ix) => {
       const it = wareInfo(w);
@@ -59,36 +69,36 @@ function shopHTML(id) {
         locked = it.need && seats < it.need,
         cost = price * n,
         deal = price < it.base;
-      return `<div class="ware2${locked ? ' locked' : ''}"><span class="w-ic">${it.kind === 'coin' ? coinHTML(it.key, 36) : itemIcon(it.key, 36)}</span><span class="w-t"><b>${esc(it.n)}</b><small>${esc(it.d)}</small><small class="w-own tnum">You have ${it.have}${deal ? ` · <em>Shop price $${fmt(it.base)}</em>` : ''}</small></span>
+      return `<div class="ware2${locked ? ' locked' : ''}"><span class="w-ic">${it.kind === 'coin' ? coinHTML(it.key, 36) : itemIcon(it.key, 36)}</span><span class="w-t"><b>${escapeHtml(it.n)}</b><small>${escapeHtml(it.d)}</small><small class="w-own tnum">You have ${it.have}${deal ? ` · <em>Shop price $${formatNumber(it.base)}</em>` : ''}</small></span>
   <span class="w-buy">${
     locked
       ? `<span class="note">Needs ${plural(it.need, 'badge')}</span>`
-      : `<span class="qty"><button class="qb" data-a="shopq" data-k="${k}" data-d="-1" aria-label="One fewer" ${n <= 1 ? 'disabled' : ''}>${uiIco('minus', 10)}</button><b class="tnum">${n}</b><button class="qb" data-a="shopq" data-k="${k}" data-d="1" aria-label="One more" ${n >= 99 ? 'disabled' : ''}>${uiIco('plus', 10)}</button></span>
-  <button class="pb small ${S.se >= cost ? 'gold' : ''}" data-a="shopbuy" data-s="${id}" data-k="${k}" ${S.se >= cost ? '' : 'disabled'}>$${fmt(cost)}</button>`
+      : `<span class="qty"><button class="qb" data-a="shopq" data-k="${k}" data-d="-1" aria-label="One fewer" ${n <= 1 ? 'disabled' : ''}>${uiIconHTML('minus', 10)}</button><b class="tnum">${n}</b><button class="qb" data-a="shopq" data-k="${k}" data-d="1" aria-label="One more" ${n >= 99 ? 'disabled' : ''}>${uiIconHTML('plus', 10)}</button></span>
+  <button class="pb small ${saveData.se >= cost ? 'gold' : ''}" data-a="shopbuy" data-s="${id}" data-k="${k}" ${saveData.se >= cost ? '' : 'disabled'}>$${formatNumber(cost)}</button>`
   }</span></div>`;
     })
     .join('');
-  return `<div class="shop-head"><div class="shop-keeper">${portraitHTML(sh.who || 'clerk', 78, 'happy')}</div><div class="shop-say"><b>${esc(sh.keeper || 'Shopkeeper')}</b><p id="shopLine">${esc(U.shopLine || sh.greeting || 'Welcome in.')}</p></div></div>
- <div class="shop-bal"><span>${uiIco('coin', 14)} Money</span><b class="tnum" data-count="shopse" data-to="${S.se}">${fmt(S.se)}</b></div>
+  return `<div class="shop-head"><div class="shop-keeper">${portraitHTML(sh.who || 'clerk', 78, 'happy')}</div><div class="shop-say"><b>${escapeHtml(sh.keeper || 'Shopkeeper')}</b><p id="shopLine">${escapeHtml(uiState.shopLine || sh.greeting || 'Welcome in.')}</p></div></div>
+ <div class="shop-bal"><span>${uiIconHTML('coin', 14)} Money</span><b class="tnum" data-count="shopse" data-to="${saveData.se}">${formatNumber(saveData.se)}</b></div>
  <div class="shop-bag"><span>In your bag</span>${Object.keys(COINS)
    .map(
      k =>
-       `<span class="sb-c${S.coins[k] ? '' : ' none'}" role="img" title="${esc(COINS[k].n)}" aria-label="${esc(COINS[k].n)}: ${fmt(S.coins[k] || 0)}">${coinHTML(k, 18, 32)}<b class="tnum">${fmt(S.coins[k] || 0)}</b></span>`
+       `<span class="sb-c${saveData.coins[k] ? '' : ' none'}" role="img" title="${escapeHtml(COINS[k].n)}" aria-label="${escapeHtml(COINS[k].n)}: ${formatNumber(saveData.coins[k] || 0)}">${coinHTML(k, 18, 32)}<b class="tnum">${formatNumber(saveData.coins[k] || 0)}</b></span>`
    )
    .join('')}</div><div class="wares2">${rows || '<p class="note">The shelves are empty today.</p>'}</div>`;
 }
 export function openShop(id) {
   const sh = SHOPS[id];
   if (!sh) return;
-  if (sh.kind === 'wardrobe' && typeof openDressing === 'function') {
-    if (U.modal) closeModal();
-    openDressing({ shop: id });
+  if (sh.kind === 'wardrobe' && typeof openDressingRoom === 'function') {
+    if (uiState.modal) closeModal();
+    openDressingRoom({ shop: id });
     return;
   }
-  U.shopLine = null;
-  U.shopQty = {};
+  uiState.shopLine = null;
+  uiState.shopQty = {};
   const m = {
-    title: esc(sh.name),
+    title: escapeHtml(sh.name),
     shop: id,
     cls: 'shop-sheet',
     html: shopHTML(id),
@@ -97,10 +107,10 @@ export function openShop(id) {
   modal(m);
 }
 function shopRefresh() {
-  const M = U.modal;
+  const M = uiState.modal;
   if (!M || !M.shop) return;
   M.html = shopHTML(M.shop);
-  renderOv();
+  renderOverlay();
 }
 function shopBuy(id, k) {
   const sh = SHOPS[id],
@@ -109,23 +119,23 @@ function shopBuy(id, k) {
   if (!w) return;
   const it = wareInfo(w);
   if (!it) return;
-  const n = (U.shopQty || {})[k] || 1,
+  const n = (uiState.shopQty || {})[k] || 1,
     price = w.price ?? it.base,
     cost = price * n;
-  if (it.need && S.seats.length < it.need) return;
-  if (S.se < cost) {
+  if (it.need && saveData.seats.length < it.need) return;
+  if (saveData.se < cost) {
     toast('Not enough money. Walk a little first.');
     return;
   }
-  S.se -= cost;
-  if (typeof sfx === 'function') sfx('buy');
-  if (kind === 'coin') S.coins[key] = (S.coins[key] || 0) + n;
-  else S.items[key] = (S.items[key] || 0) + n;
+  saveData.se -= cost;
+  if (typeof soundEffect === 'function') soundEffect('buy');
+  if (kind === 'coin') saveData.coins[key] = (saveData.coins[key] || 0) + n;
+  else saveData.items[key] = (saveData.items[key] || 0) + n;
   save();
   buzz && buzz(10);
   const lines = sh.thanks && sh.thanks.length ? sh.thanks : SHOP_THANKS;
-  U.shopLine = lines[Math.floor(rnd() * lines.length)];
-  U.shopQty[k] = 1;
+  uiState.shopLine = lines[Math.floor(random() * lines.length)];
+  uiState.shopQty[k] = 1;
   shopRefresh();
   toast(`Bought ${n} × ${it.n}.`);
 }
@@ -135,7 +145,7 @@ document.addEventListener('click', ev => {
   const d = el.dataset;
   if (d.a === 'shop') openShop(d.s);
   else if (d.a === 'shopq') {
-    const q = U.shopQty || (U.shopQty = {});
+    const q = uiState.shopQty || (uiState.shopQty = {});
     q[d.k] = clamp((q[d.k] || 1) + +d.d, 1, 99);
     shopRefresh();
   } else if (d.a === 'shopbuy') shopBuy(d.s, d.k);

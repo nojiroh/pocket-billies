@@ -7,7 +7,7 @@ as game/art/postcards/<scene>.webp (480 x 320). The game lays the "Greetings fro
 
     python3 tools/build-postcards.py              # every town that has no postcard yet
     python3 tools/build-postcards.py --all        # all of them again
-    python3 tools/build-postcards.py city sundown # just these
+    python3 tools/build-postcards.py verdigris marigold # just these
 
 Needs Playwright with Chromium (software WebGL is fine, just slow: about half a minute a town)."""
 import gamedata  # phase 04b: the data files in game/data
@@ -22,18 +22,18 @@ SIZE = (480, 320)
 # each town's hour, and where the camera looks (offset from the town's middle, metres), how far back and how high
 # (ty: how high the point it looks at is, for a tall landmark; 1 m when not given)
 VIEW = {
-    'copperleaf': dict(time=9.5, at=(38, 42)), 'sundown': dict(time=16.6, at=(57, 25)), 'grotto': dict(time=12, dz=4, back=14, up=10),
-    'foodcourt': dict(time=19.4, dz=6), 'mall': dict(time=12, dz=5, back=14, up=10), 'farm': dict(time=10.5, at=(56, 33)),
-    'city': dict(time=16, at=(36, 35), back=20, up=13), 'taxhaven': dict(time=12.5, at=(80, 16)), 'summit': dict(time=11, dz=8, season='winter'),
-    'twofold': dict(time=15, at=(48, 33)), 'bullion': dict(time=17.8, dz=6), 'marketcap': dict(time=19.6, at=(48, 40), back=24),
-    'mintshaft': dict(time=12, at=(48, 35), back=16, up=10), 'portfolio': dict(time=18.3, dz=8), 'upside': dict(time=21.5, at=(48, 50), back=24, up=10),
+    'copperleaf': dict(time=9.5, at=(38, 42)), 'marigold': dict(time=16.6, at=(57, 25)), 'fizzwell': dict(time=12, dz=4, back=14, up=10),
+    'pepperpot': dict(time=19.4, dz=6), 'lanternhall': dict(time=12, dz=5, back=14, up=10), 'clovercrest': dict(time=10.5, at=(56, 33)),
+    'verdigris': dict(time=16, at=(36, 35), back=20, up=13), 'palmhaven': dict(time=12.5, at=(80, 16)), 'frostcrown': dict(time=11, dz=8, season='winter'),
+    'twinpetal': dict(time=15, at=(48, 33)), 'goldvine': dict(time=17.8, dz=6), 'capshade': dict(time=19.6, at=(48, 40), back=24),
+    'glimmershaft': dict(time=12, at=(48, 35), back=16, up=10), 'kelpport': dict(time=18.3, dz=8), 'nimbus': dict(time=21.5, at=(48, 50), back=24, up=10),
     'pearlantis': dict(time=13, at=(44, 55.5), ty=4.5, back=25, up=8)}
 
 
 def clear_view(D, sid, v):
     """a place to look at with nothing tall between the camera and it: the moored airship, a wind sail or a tower in the
     foreground would fill the card. Tries the town's own view first, then its middle, its landmarks and points round it"""
-    sc = D['scenes'][sid]; C = D['scenery']['props']; hub = sc.get('hub') or [sc['w'] / 2, sc['h'] / 2]
+    sc = D['maps'][sid]; C = D['scenery']['props']; hub = sc.get('hub') or [sc['w'] / 2, sc['h'] / 2]
     back = v.get('back', 22)
     def tall(p):
         M = C.get(p['k']) or {}
@@ -61,15 +61,15 @@ def gamedata():
     return json.JSONDecoder().raw_decode(s[s.index('window.GAMEDATA=') + 16:])[0]
 
 
-SHOT_JS = """(async(a)=>{const sc=dioScene(a.id),hub=a.at||dioHubOf(sc),x=hub[0]+(a.dx||0),z=hub[1]+(a.dz||0),y=dioGroundH(x,z);
- const tgt=[x,y+(a.ty||1),z],eye=[x,y+(a.up||11),z-(a.back||22)];DIO.director={frame:()=>({look:{eye,tgt,fov:a.fov||36},items:[],parts:[],lights:[],hide:null,cut:0,center:[x,z]})};
- const f0=DGL.frames;await new Promise(r=>{const t0=performance.now();const k=()=>{if(DGL.frames>=f0+8&&(!DGL.ring||!(DGL.ring.jobs||[]).length)||performance.now()-t0>60000)r();else setTimeout(k,150)};k()});
+SHOT_JS = """(async(a)=>{const sc=mapById(a.id),hub=a.at||mapHub(sc),x=hub[0]+(a.dx||0),z=hub[1]+(a.dz||0),y=groundHeightAt(x,z);
+ const tgt=[x,y+(a.ty||1),z],eye=[x,y+(a.up||11),z-(a.back||22)];walkView.director={frame:()=>({look:{eye,tgt,fov:a.fov||36},items:[],parts:[],lights:[],hide:null,cut:0,center:[x,z]})};
+ const f0=walkRenderer.frames;await new Promise(r=>{const t0=performance.now();const k=()=>{if(walkRenderer.frames>=f0+8&&(!walkRenderer.ring||!(walkRenderer.ring.jobs||[]).length)||performance.now()-t0>60000)r();else setTimeout(k,150)};k()});
  return true})"""
 
 
 def main():
     args = [a for a in sys.argv[1:] if not a.startswith('--')]
-    D = gamedata(); towns = [r['scene'] for r in D['route'] if r.get('kind') == 'town' and r.get('scene')]
+    D = gamedata(); towns = [r['mapId'] for r in D['locations'] if r.get('kind') == 'town' and r.get('mapId')]
     want = [s for s in towns if (not args or s in args) and ('--all' in sys.argv or args or not (OUT / f'{s}.webp').exists())]
     if not want: print('every town has its postcard (use --all to make them again)'); return
     OUT.mkdir(parents=True, exist_ok=True)
@@ -84,15 +84,15 @@ def main():
         pg = b.new_page(viewport={'width': 960, 'height': 640}); pg.set_default_timeout(240000)
         pg.add_init_script('window.PB_TEST_GLOBALS=true')  # phase 04d: the modules' names on window, for evaluate()
         pg.goto(f'http://127.0.0.1:{port}/index.html'); pg.wait_for_selector('.ttl,.title', timeout=60000)
-        pg.evaluate("GD.engine=GD.engine||{};GD.engine.defaults=Object.assign({},GD.engine.defaults||{},{quality:{resolution:1,shadowMap:2048,auto:false},lens:{blur:0,vignette:.25,grain:0,aberration:0}});0")
-        pg.evaluate("if(typeof titleEnd==='function')titleEnd();U.pg='girl';startGame(SP.scoop0?'scoop':RULES.start.starters[0]);U.modal=null;U.mq=[];renderOv();U.toastQ=[];U.toastOn=false;render();0")
+        pg.evaluate("gameData.engine=gameData.engine||{};gameData.engine.defaults=Object.assign({},gameData.engine.defaults||{},{quality:{resolution:1,shadowMap:2048,auto:false},lens:{blur:0,vignette:.25,grain:0,aberration:0}});0")
+        pg.evaluate("if(typeof titleEnd==='function')titleEnd();uiState.pg='girl';startGame(SPECIES.scoop0?'scoop':RULES.start.starters[0]);uiState.modal=null;uiState.mq=[];renderOverlay();uiState.toastQ=[];uiState.toastOn=false;render();0")
         pg.add_style_tag(content='body *:not(#dio){visibility:hidden!important} #dio{visibility:visible!important}')
         for sid in want:
             t0 = time.time(); v = dict(VIEW.get(sid, {})); v['id'] = sid; v['at'] = clear_view(D, sid, v); v.pop('dx', None); v.pop('dz', None)
-            pg.evaluate("((v)=>{ENV.on=true;ENV.force={time:v.time||16,season:v.season||'summer',weather:'clear'}})(%s);0" % json.dumps(v))
-            pg.evaluate(f"U.tab='walk';U.bench={{id:'{sid}',test:1}};render();0")
+            pg.evaluate("((v)=>{environment.on=true;environment.force={time:v.time||16,season:v.season||'summer',weather:'clear'}})(%s);0" % json.dumps(v))
+            pg.evaluate(f"uiState.tab='walk';uiState.bench={{id:'{sid}',test:1}};render();0")
             for _ in range(160):
-                if pg.evaluate(f"!!(DIO.ready&&DIO.id==='{sid}'&&DGL.frames>2)"): break
+                if pg.evaluate(f"!!(walkView.ready&&walkView.id==='{sid}'&&walkRenderer.frames>2)"): break
                 time.sleep(.5)
             time.sleep(1.5)
             pg.evaluate(SHOT_JS + "(%s)" % json.dumps(v))
@@ -102,7 +102,7 @@ def main():
             im = im.resize(SIZE, Image.LANCZOS)
             im = ImageEnhance.Color(im).enhance(1.08)
             im.save(OUT / f'{sid}.webp', quality=82, method=6)
-            pg.evaluate("DIO.director=null;0")
+            pg.evaluate("walkView.director=null;0")
             print(f'  {sid}: {SIZE[0]}x{SIZE[1]} in {time.time() - t0:.0f}s', flush=True)
         (OUT / '_shot.png').unlink(missing_ok=True)
         b.close()

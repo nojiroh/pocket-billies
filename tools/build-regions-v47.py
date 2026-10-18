@@ -67,33 +67,33 @@ BP.NEWLET.update({'B': 'v', 'Y': 's', 'W': 's', 'E': 'G'})
 LOOK = {
     # pink and teal pastures: the grass blades go from teal at the root to pink at the tip
     'meadow': dict(sky=['#86C6EE', '#C8E6F2', '#FBE4EE'], haze='#E8E2E8', hazeD=46, amb='pollen', far='hills', farH=8, grassCol=['#2F9C92', '#F4A6CF'], wind=1.1),
-    'blossom': dict(sky=['#8AC2EA', '#D2E6F2', '#FCE6EE'], haze='#EAE2E8', hazeD=42, amb='pollen', far='forest', farH=8, grassCol=['#3D9A84', '#E9B4D2'], rays=1),
+    'petalfall': dict(sky=['#8AC2EA', '#D2E6F2', '#FCE6EE'], haze='#EAE2E8', hazeD=42, amb='pollen', far='forest', farH=8, grassCol=['#3D9A84', '#E9B4D2'], rays=1),
     'mangrove': dict(sky=['#7FB6D2', '#B8D8DC', '#E6EAD4'], haze='#D2DCCE', hazeD=34, amb='spore', far='forest', farH=9, grassCol=['#2C7C6E', '#9FC9A6']),
-    'twofold': dict(sky=['#8AC8EE', '#C6E6F2', '#FCE8E2'], haze='#ECE4E2', hazeD=46, amb='pollen', far='farm', farH=8, grassCol=['#2F9C92', '#F4A6CF'], wind=1.0),
+    'twinpetal': dict(sky=['#8AC8EE', '#C6E6F2', '#FCE8E2'], haze='#ECE4E2', hazeD=46, amb='pollen', far='farm', farH=8, grassCol=['#2F9C92', '#F4A6CF'], wind=1.0),
 }
 
 MEADOWLANDS = dict(
     id='meadowlands', future='The Meadowlands', t='feedl', mood='bloom',
     moods={'bloom': {'name': 'In bloom', 'sat': 1.1, 'con': 1.0, 'warm': .12, 'lift': [.016, .008, .014], 'gain': [.02, 0, .012], 'sh': [0, .012, .02], 'hi': [.028, .006, .016]}},
     nodes=[
-        dict(id='festival', name='Festival Fields', kind='route', lon=136.6, lat=5.2, pool='festival', biome='meadow', area='grass', route='Route 8', music='variants',
+        dict(id='fanfare_fields', name='Festival Fields', kind='route', lon=136.6, lat=5.2, pool='fanfare_fields', biome='meadow', area='grass', route='Route 8', music='variants',
              blurb='Wildflower fields east of the Mall, where Vinylla’s fan festival never ends and the merch never runs out.',
              gate='haven', gateText='The road east of the Mall of the Deep opens once you hold all four badges of the ring: the last is Leader Marina’s Water Badge, in Tax Haven.'),
-        dict(id='twofold', name='Twofold', kind='town', lon=145.4, lat=13.4, pool='twofold', biome='town', area='grass', route='Route 8', shop='twofold', music='meadow',
+        dict(id='twinpetal', name='Twofold', kind='town', lon=145.4, lat=13.4, pool='twinpetal', biome='town', area='grass', route='Route 8', shop='twinpetal', music='meadow',
              blurb='A market village where everything grows back twice as fast. The merch stalls arrived on their own.'),
-        dict(id='blossom', name='Blossom Vale', kind='route', lon=139.6, lat=23.0, pool='blossom', biome='blossom', area='golf', route='Petal Path', music='meadow',
+        dict(id='petalfall', name='Blossom Vale', kind='route', lon=139.6, lat=23.0, pool='petalfall', biome='blossom', area='golf', route='Petal Path', music='meadow',
              blurb='A valley of cherry trees by a stream. The petals fall all year, and somebody sweeps them all year.'),
-        dict(id='margins', name='Mangrove Margins', kind='route', lon=154.2, lat=2.6, pool='margins', biome='mangrove', area='golf', route='Route 9', music='meadow',
+        dict(id='rootwater', name='Mangrove Margins', kind='route', lon=154.2, lat=2.6, pool='rootwater', biome='mangrove', area='golf', route='Route 9', music='meadow',
              blurb='Boardwalks through a mangrove swamp at the edge of the Meadowlands. The margins are thin here.',
              gate='bloom', gateText='The boardwalks south-east of Twofold open once you earn Leader Poppy’s Grass Badge.'),
     ],
-    links=[('mall', 'festival', 2600, 'Route 8'), ('festival', 'twofold', 1500, 'Route 8'), ('twofold', 'blossom', 1300, 'Petal Path'),
-           ('blossom', 'festival', 1400, 'Petal Path'), ('twofold', 'margins', 1700, 'Route 9')],
+    links=[('lanternhall', 'fanfare_fields', 2600, 'Route 8'), ('fanfare_fields', 'twinpetal', 1500, 'Route 8'), ('twinpetal', 'petalfall', 1300, 'Petal Path'),
+           ('petalfall', 'fanfare_fields', 1400, 'Petal Path'), ('twinpetal', 'rootwater', 1700, 'Route 9')],
     pools={
-        'festival': {'lv': [32, 36], 'list': [['bloomberg1', 30], ['jayz0', 30], ['dorsey1', 20], ['son1', 15], ['ek1', 15], ['hastings0', 8]]},
-        'twofold': {'lv': [32, 35], 'list': [['jobs0', 30], ['woods0', 30], ['ortega1', 25], ['bloomberg1', 15]]},
-        'blossom': {'lv': [33, 37], 'list': [['jobs1', 30], ['jayz0', 25], ['hughes1', 25], ['dell0', 12], ['scott0', 8]]},
-        'margins': {'lv': [35, 39], 'list': [['ek1', 30], ['spielberg0', 25], ['yanai1', 25], ['forrest0', 12], ['federer0', 8]]},
+        'fanfare_fields': {'lv': [32, 36], 'list': [['bloomberg1', 30], ['jayz0', 30], ['dorsey1', 20], ['son1', 15], ['ek1', 15], ['hastings0', 8]]},
+        'twinpetal': {'lv': [32, 35], 'list': [['jobs0', 30], ['woods0', 30], ['ortega1', 25], ['bloomberg1', 15]]},
+        'petalfall': {'lv': [33, 37], 'list': [['jobs1', 30], ['jayz0', 25], ['hughes1', 25], ['dell0', 12], ['scott0', 8]]},
+        'rootwater': {'lv': [35, 39], 'list': [['ek1', 30], ['spielberg0', 25], ['yanai1', 25], ['forrest0', 12], ['federer0', 8]]},
     },
     people={
         'poppy': {'name': 'Leader Poppy', 'look': {'name': 'Poppy', 'body': {'height': .98, 'legs': 1.0, 'shoulders': .96, 'chest': .4}, 'skin': '#E9B897', 'hair': '#E25C3A', 'eyes': '#3E8A5A',
@@ -106,57 +106,57 @@ MEADOWLANDS = dict(
                     'colors': {'tee': ['#2A2434'], 'denim_jacket': ['#E9B83C', '#B88A1E'], 'jeans': ['#2E3240', '#1E2230'], 'runners': ['#E9B83C', '#F2EEE4'], 'glasses_sun': ['#1E1A26'], 'nametag': ['#E9B83C']}}},
     },
     trainers={
-        'poppy': {'name': 'Leader Poppy', 'who': 'poppy', 'area': 'grass', 'node': 'twofold', 'blocks': False,
+        'poppy': {'name': 'Leader Poppy', 'who': 'poppy', 'battleStage': 'grass', 'node': 'twinpetal', 'blocks': False,
                   'team': [{'sp': 'bloomberg1', 'lvl': 36}, {'sp': 'jobs1', 'lvl': 36}, {'sp': 'forrest0', 'lvl': 37}, {'sp': 'ortega2', 'lvl': 38}], 'reward': 3600, 'egg': 10, 'market': None,
                   'lines': ['“Everything here grows back twice as fast. Including my temper, since the merch stalls arrived.”', '“Let’s see if your team blooms under pressure.”'],
                   'win': '“You grew on me. Twice as fast. The Grass Badge is yours.”', 'lose': '“Pull yourself up and plant again. Everything here grows back.”',
                   'hint': 'Leader Poppy’s Grass team is level 36–38. Fire and Flying moves wilt Grass billionaires.',
                   'seat': {'id': 'bloom', 'title': 'Grass Badge · 5 of 8', 'coin': 'gold', 'coins': {'gold': 3, 'tbtf': 2}, 'items': {'bailout': 2},
                            'rewardText': '2 Bailouts, 3 Gold Coins and 2 Platinum Coins', 'unlockText': 'The boardwalks of the Mangrove Margins, south-east of Twofold, are open.'}},
-        'variant_fest1': {'name': 'Variant No. 4471', 'who': 'variant', 'area': 'grass', 'node': 'festival', 'blocks': False,
+        'variant_fest1': {'name': 'Variant No. 4471', 'who': 'variant', 'battleStage': 'grass', 'node': 'fanfare_fields', 'blocks': False,
                           'team': [{'sp': 'jayz0', 'lvl': 33}, {'sp': 'dorsey1', 'lvl': 34}], 'reward': 900, 'market': None,
                           'lines': ['“I bought the festival ticket, the upgrade, the upgrade to the upgrade and the shirt that says I did.”'],
                           'win': '“That’s fine. I have a variant of that loss at home.”', 'lose': '“Collect them all! Especially the losses.”', 'hint': ''},
-        'variant_fest2': {'name': 'Variant No. 0007', 'who': 'variant', 'area': 'grass', 'node': 'festival', 'blocks': False,
+        'variant_fest2': {'name': 'Variant No. 0007', 'who': 'variant', 'battleStage': 'grass', 'node': 'fanfare_fields', 'blocks': False,
                           'team': [{'sp': 'son1', 'lvl': 34}, {'sp': 'bloomberg1', 'lvl': 34}, {'sp': 'ek1', 'lvl': 35}], 'reward': 1100, 'market': None,
                           'lines': ['“Low number, see? I was a fan before it was limited.”'],
                           'win': '“You don’t get it. Scarcity is the point.”', 'lose': '“Sold out. Like you.”', 'hint': ''},
-        'gardener': {'name': 'Gardener Gus', 'who': 'hiker', 'area': 'grass', 'node': 'blossom', 'blocks': False,
+        'gardener': {'name': 'Gardener Gus', 'who': 'hiker', 'battleStage': 'grass', 'node': 'petalfall', 'blocks': False,
                      'team': [{'sp': 'jobs1', 'lvl': 35}, {'sp': 'woods1', 'lvl': 35}], 'reward': 800, 'market': None,
                      'lines': ['“I sweep the petals every morning. They fall again by lunch. I think that’s the job.”'],
                      'win': '“Blown away. Like the petals.”', 'lose': '“Back to sweeping, then.”', 'hint': ''},
-        'birder': {'name': 'Birdwatcher Bo', 'who': 'skipper', 'area': 'golf', 'node': 'margins', 'blocks': False,
+        'birder': {'name': 'Birdwatcher Bo', 'who': 'skipper', 'battleStage': 'golf', 'node': 'rootwater', 'blocks': False,
                    'team': [{'sp': 'hughes1', 'lvl': 37}, {'sp': 'ellison1', 'lvl': 37}, {'sp': 'kashing1', 'lvl': 38}], 'reward': 1000, 'market': None,
                    'lines': ['“Shh. A Kashingcrane. They only nest where the harbour fees are low.”'],
                    'win': '“Flew the coop.”', 'lose': '“Spotted you a mile off.”', 'hint': ''},
     },
-    shops={'twofold': {'name': 'Twofold Market', 'keeper': 'Marta', 'who': 'chef', 'greeting': 'Everything grows back twice as fast here. The prices too.',
+    shops={'twinpetal': {'name': 'Twofold Market', 'keeper': 'Marta', 'who': 'chef', 'greeting': 'Everything grows back twice as fast here. The prices too.',
                        'stock': [{'item': 'pretzel', 'price': 60}, {'item': 'trailmix', 'price': 220}, {'item': 'taxbreak', 'price': 140}, {'item': 'loophole', 'price': 400}, {'item': 'bailout', 'price': 900}]}},
     lore={
-        'festival': {'history': 'Pasture until last spring, when Vinylla’s people rented it for a weekend. The weekend has not ended.',
+        'fanfare_fields': {'history': 'Pasture until last spring, when Vinylla’s people rented it for a weekend. The weekend has not ended.',
                      'known': 'The fan festival: the stage, the merch, the Variants in their gold jackets.', 'landmark': 'The stage, where Vinylla has never once appeared in person.',
                      'legend': 'They say the encore is scheduled for the day the Inner Sun goes out.'},
-        'twofold': {'history': 'A market village since before the sinkholes. Everything here grows back twice as fast, which is how it got its name and its problems.',
+        'twinpetal': {'history': 'A market village since before the sinkholes. Everything here grows back twice as fast, which is how it got its name and its problems.',
                     'known': 'Its market, its flowers, and Leader Poppy’s greenhouse arena.', 'landmark': 'The sunflower that was cut down once and grew back twice as tall.',
                     'legend': 'Plant a coin in Twofold and two grow back. Nobody has managed it, but everyone has tried.'},
-        'blossom': {'history': 'A quiet valley of cherry trees that flower all year round.', 'known': 'The petals, the stream, and the man who sweeps them.',
+        'petalfall': {'history': 'A quiet valley of cherry trees that flower all year round.', 'known': 'The petals, the stream, and the man who sweeps them.',
                     'landmark': 'The great cherry by the stream, older than anyone has counted.', 'legend': 'If a petal lands in your hand, you will forget a debt. Nobody says whose.'},
-        'margins': {'history': 'The edge of the Meadowlands, where the pastures turn to mangroves and boardwalks.', 'known': 'Boardwalks, birdwatchers and very patient frogs.',
+        'rootwater': {'history': 'The edge of the Meadowlands, where the pastures turn to mangroves and boardwalks.', 'known': 'Boardwalks, birdwatchers and very patient frogs.',
                     'landmark': 'The hut on stilts, where the warden lived before the warden was outsourced.', 'legend': 'The tide here only comes in on payday.'},
     },
     chat={
-        'twofold': {'0': ['Everything grows back twice as fast here. Weeds included.', 'Those merch stalls appeared overnight. Like mushrooms, but with prices.',
+        'twinpetal': {'0': ['Everything grows back twice as fast here. Weeds included.', 'Those merch stalls appeared overnight. Like mushrooms, but with prices.',
                           'Leader Poppy grows her team in the greenhouse. Don’t touch the glass.', 'Cut the sunflower once and it came back twice as tall. We stopped cutting it.',
                           'The Variants keep asking which of us is limited edition.']},
-        'festival': {'0': ['It’s been one long weekend for months.', 'The stage lights never go off. Neither does the merch stall.', 'Vinylla is on next! She has been on next since spring.']},
+        'fanfare_fields': {'0': ['It’s been one long weekend for months.', 'The stage lights never go off. Neither does the merch stall.', 'Vinylla is on next! She has been on next since spring.']},
     },
     story_note='The Meadowlands: Vinylla’s fan festival recruits Variants; Poppy’s Grass Badge opens the way on to Golden Hills.',
 )
 
 LOOK.update({
-    'vintage': dict(sky=['#8CC2E6', '#D4E2E6', '#F8E6C4'], haze='#E8E2D2', hazeD=60, amb='pollen', far='hills', farH=8, grassCol=['#7C7A34', '#E8CC6A'], wind=1.1),
-    'bullion': dict(sky=['#8CC2E6', '#D2E0E4', '#F8E4C0'], haze='#E8E0CE', hazeD=58, amb='pollen', far='hills', farH=8, grassCol=['#7C7A34', '#E8CC6A'], wind=1.0),
-    'flattax': dict(sky=['#8EC4EA', '#D2E6F2', '#F2F0EA'], haze='#D8E4EE', hazeD=62, amb='sand', far='hills', farH=6, grassCol=['#8A8044', '#E4D488'], wind=1.3),
+    'grapevine_hills': dict(sky=['#8CC2E6', '#D4E2E6', '#F8E6C4'], haze='#E8E2D2', hazeD=60, amb='pollen', far='hills', farH=8, grassCol=['#7C7A34', '#E8CC6A'], wind=1.1),
+    'goldvine': dict(sky=['#8CC2E6', '#D2E0E4', '#F8E4C0'], haze='#E8E0CE', hazeD=58, amb='pollen', far='hills', farH=8, grassCol=['#7C7A34', '#E8CC6A'], wind=1.0),
+    'saltpan_flats': dict(sky=['#8EC4EA', '#D2E6F2', '#F2F0EA'], haze='#D8E4EE', hazeD=62, amb='sand', far='hills', farH=6, grassCol=['#8A8044', '#E4D488'], wind=1.3),
     'badlands': dict(sky=['#86BEE6', '#D6DCD8', '#F2D8B8'], haze='#E6D0B6', hazeD=54, amb='sand', far='canyon', farH=9, grassCol=['#7A6A30', '#C8A860'], wind=1.2),
 })
 
@@ -164,22 +164,22 @@ GOLDEN_HILLS = dict(
     id='goldenhills', future='Golden Hills', t='vault', mood='gilded',
     moods={'gilded': {'name': 'Gilded', 'sat': 1.04, 'con': 1.03, 'warm': .24, 'lift': [.012, .008, 0], 'gain': [.02, .01, -.012], 'sh': [.008, .002, .014], 'hi': [.024, .016, -.01]}},
     nodes=[
-        dict(id='vintage', name='Vintage Rows', kind='route', lon=162.0, lat=9.0, pool='vintage', biome='vineyard', area='esc', route='Route 9', music='hills',
+        dict(id='grapevine_hills', name='Vintage Rows', kind='route', lon=162.0, lat=9.0, pool='grapevine_hills', biome='vineyard', area='esc', route='Route 9', music='hills',
              blurb='Vineyards on sunburnt hills. Under the rows are the old stone vaults, and in the vaults are Vinylla’s variants.'),
-        dict(id='bullion', name='Bullion Hill', kind='town', lon=170.5, lat=10.0, pool='bullion', biome='town', area='esc', route='Route 9', shop='bullion', music='hills',
+        dict(id='goldvine', name='Bullion Hill', kind='town', lon=170.5, lat=10.0, pool='goldvine', biome='town', area='esc', route='Route 9', shop='goldvine', music='hills',
              blurb='A vineyard estate with vaults under every hill. Baron Vault owns all of it, and has rented all of it out.'),
-        dict(id='flattax', name='Flat Tax Flats', kind='route', lon=166.6, lat=-4.6, pool='flattax', biome='saltflat', area='esc', route='Salt Road', music='hills',
+        dict(id='saltpan_flats', name='Flat Tax Flats', kind='route', lon=166.6, lat=-4.6, pool='saltpan_flats', biome='saltflat', area='esc', route='Salt Road', music='hills',
              blurb='Salt flats as far as you can see, and one tollbooth in the middle of them. Everyone pays the same.'),
         dict(id='badlands', name='Bear Market Badlands', kind='route', lon=179.4, lat=9.5, pool='badlands', biome='badlands', area='esc', route='Route 10', music='hills',
              blurb='Red rock and old mines. The big rock that looks like a sleeping bear has been asleep for a very long time.',
              gate='vault', gateText='The badlands east of Bullion Hill open once you earn Baron Vault’s Fire Badge.'),
     ],
-    links=[('margins', 'vintage', 1600, 'Route 9'), ('vintage', 'bullion', 1500, 'Route 9'), ('bullion', 'flattax', 1400, 'Salt Road'),
-           ('flattax', 'vintage', 1500, 'Salt Road'), ('bullion', 'badlands', 1700, 'Route 10')],
+    links=[('rootwater', 'grapevine_hills', 1600, 'Route 9'), ('grapevine_hills', 'goldvine', 1500, 'Route 9'), ('goldvine', 'saltpan_flats', 1400, 'Salt Road'),
+           ('saltpan_flats', 'grapevine_hills', 1500, 'Salt Road'), ('goldvine', 'badlands', 1700, 'Route 10')],
     pools={
-        'vintage': {'lv': [36, 40], 'list': [['lauren1', 30], ['mateschitz0', 25], ['hershey0', 20], ['schultz0', 15], ['kroc1', 15], ['jayz1', 8]]},
-        'bullion': {'lv': [36, 39], 'list': [['carnegie1', 30], ['walton1', 25], ['saylor1', 25], ['ambani1', 15]]},
-        'flattax': {'lv': [37, 41], 'list': [['rinehart1', 30], ['dangote1', 25], ['saylor1', 20], ['dalio0', 12], ['griffin0', 8]]},
+        'grapevine_hills': {'lv': [36, 40], 'list': [['lauren1', 30], ['mateschitz0', 25], ['hershey0', 20], ['schultz0', 15], ['kroc1', 15], ['jayz1', 8]]},
+        'goldvine': {'lv': [36, 39], 'list': [['carnegie1', 30], ['walton1', 25], ['saylor1', 25], ['ambani1', 15]]},
+        'saltpan_flats': {'lv': [37, 41], 'list': [['rinehart1', 30], ['dangote1', 25], ['saylor1', 20], ['dalio0', 12], ['griffin0', 8]]},
         'badlands': {'lv': [39, 43], 'list': [['ford2', 25], ['kroc2', 20], ['ambani1', 25], ['carnegie2', 10], ['mittal0', 10], ['ballmer0', 10]]},
     },
     people={
@@ -189,7 +189,7 @@ GOLDEN_HILLS = dict(
                   'colors': {'dress_shirt': ['#F4F0E4'], 'blazer': ['#7A2A3A', '#E8B83C'], 'trousers': ['#2A2430'], 'oxfords': ['#3A2418'], 'hat_tophat': ['#1E1A24', '#E8B83C'], 'chain': ['#E8B83C']}}},
     },
     trainers={
-        'vault': {'name': 'Baron Vault', 'who': 'vault', 'area': 'esc', 'node': 'bullion', 'blocks': False,
+        'vault': {'name': 'Baron Vault', 'who': 'vault', 'battleStage': 'esc', 'node': 'goldvine', 'blocks': False,
                   'team': [{'sp': 'ma1', 'lvl': 41}, {'sp': 'mittal0', 'lvl': 41}, {'sp': 'kroc2', 'lvl': 42}, {'sp': 'ma2', 'lvl': 43}], 'reward': 4200, 'egg': 10, 'market': None,
                   'lines': ['“Welcome to Bullion Hill. Everything you can see is mine, and everything you can’t see is in a vault, and also mine.”',
                             '“I rented the vaults to a pop star. And myself, as it turns out. Read the small print, child.”'],
@@ -197,41 +197,41 @@ GOLDEN_HILLS = dict(
                   'hint': 'Baron Vault’s Fire team is level 41–43. Water and Ground moves put Fire billionaires out.',
                   'seat': {'id': 'vault', 'title': 'Fire Badge · 6 of 8', 'coin': 'gold', 'coins': {'gold': 4, 'tbtf': 2}, 'items': {'parachute': 1},
                            'rewardText': 'a Golden Parachute, 4 Gold Coins and 2 Platinum Coins', 'unlockText': 'The Bear Market Badlands, east of Bullion Hill, are open.'}},
-        'variant_vault': {'name': 'Variant No. 1001', 'who': 'variant', 'area': 'esc', 'node': 'vintage', 'blocks': False,
+        'variant_vault': {'name': 'Variant No. 1001', 'who': 'variant', 'battleStage': 'esc', 'node': 'grapevine_hills', 'blocks': False,
                           'team': [{'sp': 'jayz1', 'lvl': 38}, {'sp': 'mateschitz1', 'lvl': 39}], 'reward': 1200, 'market': None,
                           'lines': ['“These vaults are full of variants. Vinyl ones. Of the same record. You wouldn’t understand.”'],
                           'win': '“My collection is incomplete without that loss.”', 'lose': '“Mint condition. Unlike your team.”', 'hint': ''},
-        'sommelier': {'name': 'Sommelier Sabine', 'who': 'concierge', 'area': 'esc', 'node': 'vintage', 'blocks': False,
+        'sommelier': {'name': 'Sommelier Sabine', 'who': 'concierge', 'battleStage': 'esc', 'node': 'grapevine_hills', 'blocks': False,
                       'team': [{'sp': 'schultz0', 'lvl': 39}, {'sp': 'hershey0', 'lvl': 39}], 'reward': 1000, 'market': None,
                       'lines': ['“Notes of oak, leather and a very aggressive pricing strategy.”'],
                       'win': '“A bold finish. Bolder than mine.”', 'lose': '“You were corked.”', 'hint': ''},
-        'accountant': {'name': 'Accountant Al', 'who': 'broker', 'area': 'esc', 'node': 'flattax', 'blocks': False,
+        'accountant': {'name': 'Accountant Al', 'who': 'broker', 'battleStage': 'esc', 'node': 'saltpan_flats', 'blocks': False,
                        'team': [{'sp': 'dalio0', 'lvl': 40}, {'sp': 'saylor1', 'lvl': 40}, {'sp': 'griffin0', 'lvl': 41}], 'reward': 1300, 'market': None,
                        'lines': ['“Flat tax! Everyone pays the same. I have a form explaining why that’s fair. It’s very long.”'],
                        'win': '“I’ll claim that as a loss.”', 'lose': '“Deducted.”', 'hint': ''},
-        'prospector': {'name': 'Prospector Pete', 'who': 'miner', 'area': 'esc', 'node': 'badlands', 'blocks': False,
+        'prospector': {'name': 'Prospector Pete', 'who': 'miner', 'battleStage': 'esc', 'node': 'badlands', 'blocks': False,
                        'team': [{'sp': 'rinehart1', 'lvl': 41}, {'sp': 'ford2', 'lvl': 42}], 'reward': 1300, 'market': None,
                        'lines': ['“Struck gold in ’98. Struck it again in ’99. It was the same gold. I keep losing it.”'],
                        'win': '“Bust!”', 'lose': '“Pay dirt.”', 'hint': ''},
     },
-    shops={'bullion': {'name': 'Bullion Exchange', 'keeper': 'Goldie', 'who': 'cashier', 'greeting': 'Gold, silver and everything priced in both. Mostly gold.',
+    shops={'goldvine': {'name': 'Bullion Exchange', 'keeper': 'Goldie', 'who': 'cashier', 'greeting': 'Gold, silver and everything priced in both. Mostly gold.',
                        'stock': [{'item': 'pretzel', 'price': 60}, {'item': 'trailmix', 'price': 220}, {'item': 'taxbreak', 'price': 140}, {'item': 'loophole', 'price': 400},
                                  {'item': 'bailout', 'price': 900}, {'item': 'parachute', 'price': 2400}]}},
     lore={
-        'vintage': {'history': 'Vineyards since before the sinkholes, planted over vaults older than that.', 'known': 'Wine nobody can afford, and the round steel doors in the hillsides.',
+        'grapevine_hills': {'history': 'Vineyards since before the sinkholes, planted over vaults older than that.', 'known': 'Wine nobody can afford, and the round steel doors in the hillsides.',
                     'landmark': 'The vault door with a gold V on its wheel. Vinylla’s, now.', 'legend': 'One vault is said to hold the first coin ever spent in the Hollow Earth. It was spent again on the rent.'},
-        'bullion': {'history': 'Baron Vault’s estate, and the village that grew up to polish it.', 'known': 'The golden bull, the manor, and vaults under every hill.',
+        'goldvine': {'history': 'Baron Vault’s estate, and the village that grew up to polish it.', 'known': 'The golden bull, the manor, and vaults under every hill.',
                     'landmark': 'The golden bull on the square, charging at nothing in particular.', 'legend': 'The bull is hollow. What is inside it is a matter for the Baron’s lawyers.'},
-        'flattax': {'history': 'Salt flats where the Baron collects a toll from everyone who crosses, at the same rate, however much they have.', 'known': 'Salt, glare, and the tollbooth.',
+        'saltpan_flats': {'history': 'Salt flats where the Baron collects a toll from everyone who crosses, at the same rate, however much they have.', 'known': 'Salt, glare, and the tollbooth.',
                     'landmark': 'The tollbooth in the middle of the flats, its barrier across nothing at all.', 'legend': 'Nobody has ever seen the toll collector. The toll is always collected.'},
         'badlands': {'history': 'Red rock country, mined out twice and abandoned three times.', 'known': 'Old mine shafts, carts on rusty rails, and Bear Rock.',
                      'landmark': 'Bear Rock, a red stone bear asleep on its paws.', 'legend': 'When Bear Rock wakes up, everything will be cheap again. Everyone is waiting.'},
     },
     chat={
-        'bullion': {'0': ['Don’t touch the bull. It’s insured for more than the village.', 'The Baron rented out the vaults. Then the manor. Then himself.',
+        'goldvine': {'0': ['Don’t touch the bull. It’s insured for more than the village.', 'The Baron rented out the vaults. Then the manor. Then himself.',
                           'Every hill here has a vault under it. Some vaults have hills in them.', 'The wine is very good. We are not allowed to drink it.',
                           'The Variants keep the vault doors shut. Something in there hums.']},
-        'vintage': {'0': ['Each row is a vintage. Each vintage is limited. You can see where this is going.']},
+        'grapevine_hills': {'0': ['Each row is a vintage. Each vintage is limited. You can see where this is going.']},
     },
 )
 
@@ -246,23 +246,23 @@ SPORE_FOREST = dict(
     id='sporeforest', future='Spore Forest', t='spore', mood='glow',
     moods={},
     nodes=[
-        dict(id='sporewood', name='Sporeholder Woods', kind='route', lon=187.6, lat=8.6, pool='sporewood', biome='spore', area='shell', route='Route 10', music='spore',
+        dict(id='puffcap', name='Sporeholder Woods', kind='route', lon=187.6, lat=8.6, pool='puffcap', biome='spore', area='shell', route='Route 10', music='spore',
              blurb='A wood of giant mushrooms puffing glittering spores. The Variants have built a mill in it.'),
-        dict(id='marketcap', name='Market Cap', kind='town', lon=195.2, lat=16.6, pool='marketcap', biome='town', area='shell', route='Route 10', shop='marketcap', music='spore',
+        dict(id='capshade', name='Market Cap', kind='town', lon=195.2, lat=16.6, pool='capshade', biome='town', area='shell', route='Route 10', shop='capshade', music='spore',
              blurb='A village in and under the mushrooms, round one mushroom so big it has a door. Its value goes up and down with the spores.'),
-        dict(id='fallquarter', name='Fall Quarter', kind='route', lon=191.0, lat=26.4, pool='fallquarter', biome='autumn', area='shell', route='Leaf Lane', music='spore', mood='harvest',
+        dict(id='russetwood', name='Fall Quarter', kind='route', lon=191.0, lat=26.4, pool='russetwood', biome='autumn', area='shell', route='Leaf Lane', music='spore', mood='harvest',
              blurb='A wood where it is always autumn. The leaves fall every quarter, on schedule.'),
-        dict(id='hypergrowth', name='Hypergrowth', kind='route', lon=203.6, lat=6.2, pool='hypergrowth', biome='jungle', area='shell', route='Route 11', music='spore', mood='green',
+        dict(id='tanglewild', name='Hypergrowth', kind='route', lon=203.6, lat=6.2, pool='tanglewild', biome='jungle', area='shell', route='Route 11', music='spore', mood='green',
              blurb='A jungle that grew over a start-up campus in a single quarter. It is still growing. So, they say, is the start-up.',
              gate='morel', gateText='The jungle east of Market Cap opens once you earn Mother Morel’s Psychic Badge.'),
     ],
-    links=[('badlands', 'sporewood', 1600, 'Route 10'), ('sporewood', 'marketcap', 1500, 'Route 10'), ('marketcap', 'fallquarter', 1300, 'Leaf Lane'),
-           ('fallquarter', 'sporewood', 1400, 'Leaf Lane'), ('marketcap', 'hypergrowth', 1700, 'Route 11')],
+    links=[('badlands', 'puffcap', 1600, 'Route 10'), ('puffcap', 'capshade', 1500, 'Route 10'), ('capshade', 'russetwood', 1300, 'Leaf Lane'),
+           ('russetwood', 'puffcap', 1400, 'Leaf Lane'), ('capshade', 'tanglewild', 1700, 'Route 11')],
     pools={
-        'sporewood': {'lv': [40, 44], 'list': [['jobs1', 30], ['thiel0', 25], ['pagebrin0', 20], ['hastings0', 12], ['son1', 15], ['altman0', 6]]},
-        'marketcap': {'lv': [40, 43], 'list': [['thiel1', 25], ['pagebrin1', 25], ['son1', 25], ['buterin1', 15]]},
-        'fallquarter': {'lv': [41, 45], 'list': [['woods1', 30], ['lauren1', 25], ['kamprad1', 20], ['forrest0', 15], ['dell0', 10]]},
-        'hypergrowth': {'lv': [43, 47], 'list': [['yiming0', 25], ['ortega2', 20], ['bloomberg2', 20], ['jobs2', 10], ['dell0', 15], ['altman0', 10]]},
+        'puffcap': {'lv': [40, 44], 'list': [['jobs1', 30], ['thiel0', 25], ['pagebrin0', 20], ['hastings0', 12], ['son1', 15], ['altman0', 6]]},
+        'capshade': {'lv': [40, 43], 'list': [['thiel1', 25], ['pagebrin1', 25], ['son1', 25], ['buterin1', 15]]},
+        'russetwood': {'lv': [41, 45], 'list': [['woods1', 30], ['lauren1', 25], ['kamprad1', 20], ['forrest0', 15], ['dell0', 10]]},
+        'tanglewild': {'lv': [43, 47], 'list': [['yiming0', 25], ['ortega2', 20], ['bloomberg2', 20], ['jobs2', 10], ['dell0', 15], ['altman0', 10]]},
     },
     people={
         'morel': {'look': {'name': 'Mother Morel', 'body': {'height': .96, 'legs': .98, 'shoulders': .96, 'chest': .4, 'body': 1.1}, 'skin': '#D9A07C', 'hair': '#B8C4B4', 'eyes': '#6A4A8A',
@@ -271,48 +271,48 @@ SPORE_FOREST = dict(
                   'colors': {'tunic': ['#7A5A9A'], 'trench': ['#5A4A3A', '#3A2A1E'], 'skirt': ['#4A6A4A'], 'sandals': ['#6A4A32'], 'hat_bucket': ['#C64A56', '#F2E8DC'], 'scarf': ['#B8E0C8']}}},
     },
     trainers={
-        'morel': {'name': 'Mother Morel', 'who': 'morel', 'area': 'shell', 'node': 'marketcap', 'blocks': False,
+        'morel': {'name': 'Mother Morel', 'who': 'morel', 'battleStage': 'shell', 'node': 'capshade', 'blocks': False,
                   'team': [{'sp': 'jobs2', 'lvl': 46}, {'sp': 'thiel1', 'lvl': 46}, {'sp': 'pagebrin1', 'lvl': 47}, {'sp': 'altman0', 'lvl': 48}], 'reward': 4800, 'egg': 10, 'market': None,
                   'lines': ['“The forest remembers every spore. The Variants are grinding up its memory to make a record shine.”', '“Breathe in. Now battle.”'],
                   'win': '“The forest thanks you. It will not say so; it is a forest. The Psychic Badge is yours.”', 'lose': '“Rest. Rot a little. Grow back.”',
                   'hint': 'Mother Morel’s Psychic team is level 46–48. Steel and Dragon billionaires shrug off Psychic moves.',
                   'seat': {'id': 'morel', 'title': 'Psychic Badge · 7 of 8', 'coin': 'gold', 'coins': {'gold': 4, 'tbtf': 2}, 'items': {'bailout': 3},
                            'rewardText': '3 Bailouts, 4 Gold Coins and 2 Platinum Coins', 'unlockText': 'The jungle of Hypergrowth, east of Market Cap, is open.'}},
-        'variant_spore': {'name': 'Variant No. 2048', 'who': 'variant', 'area': 'shell', 'node': 'sporewood', 'blocks': False,
+        'variant_spore': {'name': 'Variant No. 2048', 'who': 'variant', 'battleStage': 'shell', 'node': 'puffcap', 'blocks': False,
                           'team': [{'sp': 'son1', 'lvl': 42}, {'sp': 'hastings0', 'lvl': 43}], 'reward': 1300, 'market': None,
                           'lines': ['“Every spore we grind makes the record shine a little brighter. The forest doesn’t mind. We asked it. It didn’t answer.”'],
                           'win': '“Ground down.”', 'lose': '“Polished off.”', 'hint': ''},
-        'forager': {'name': 'Forager Fern', 'who': 'girl', 'area': 'shell', 'node': 'sporewood', 'blocks': False,
+        'forager': {'name': 'Forager Fern', 'who': 'girl', 'battleStage': 'shell', 'node': 'puffcap', 'blocks': False,
                     'team': [{'sp': 'jobs1', 'lvl': 41}, {'sp': 'pagebrin0', 'lvl': 42}], 'reward': 1100, 'market': None,
                     'lines': ['“Never eat a mushroom you can’t afford. Most of these cost more than you.”'],
                     'win': '“Picked clean.”', 'lose': '“Foraged!”', 'hint': ''},
-        'peeper': {'name': 'Leaf Peeper Lou', 'who': 'hiker', 'area': 'shell', 'node': 'fallquarter', 'blocks': False,
+        'peeper': {'name': 'Leaf Peeper Lou', 'who': 'hiker', 'battleStage': 'shell', 'node': 'russetwood', 'blocks': False,
                    'team': [{'sp': 'woods1', 'lvl': 43}, {'sp': 'kamprad1', 'lvl': 43}], 'reward': 1200, 'market': None,
                    'lines': ['“The leaves turn every quarter. I’ve been here forty quarters. I am leaving next quarter.”'],
                    'win': '“Turned over.”', 'lose': '“Fell for it.”', 'hint': ''},
-        'founder': {'name': 'Founder Finn', 'who': 'intern', 'area': 'shell', 'node': 'hypergrowth', 'blocks': False,
+        'founder': {'name': 'Founder Finn', 'who': 'intern', 'battleStage': 'shell', 'node': 'tanglewild', 'blocks': False,
                     'team': [{'sp': 'yiming0', 'lvl': 44}, {'sp': 'bloomberg2', 'lvl': 45}], 'reward': 1400, 'market': None,
                     'lines': ['“We’re pre-revenue. Pre-product. Pre-office, now the jungle has it. But the vision is huge.”'],
                     'win': '“That’s a pivot.”', 'lose': '“Disrupted!”', 'hint': ''},
     },
-    shops={'marketcap': {'name': 'Cap Market', 'keeper': 'Chanterelle', 'who': 'chef', 'greeting': 'Prices go up and down with the spores. Today they are up. They are always up today.',
+    shops={'capshade': {'name': 'Cap Market', 'keeper': 'Chanterelle', 'who': 'chef', 'greeting': 'Prices go up and down with the spores. Today they are up. They are always up today.',
                          'stock': [{'item': 'pretzel', 'price': 60}, {'item': 'trailmix', 'price': 220}, {'item': 'loophole', 'price': 400}, {'item': 'bailout', 'price': 900},
                                    {'item': 'parachute', 'price': 2400}]}},
     lore={
-        'sporewood': {'history': 'An old wood of giant mushrooms, older than the trees above it.', 'known': 'Spores that glitter in the light, and the Variants’ mill.',
+        'puffcap': {'history': 'An old wood of giant mushrooms, older than the trees above it.', 'known': 'Spores that glitter in the light, and the Variants’ mill.',
                       'landmark': 'The spore mill, where the forest is ground into the record’s shine.', 'legend': 'Breathe the spores and you will remember something that never happened to you. It will be a very good deal.'},
-        'marketcap': {'history': 'A village built in and under the mushrooms, round the one with a door.', 'known': 'Mushroom houses, treehouses, and Mother Morel.',
+        'capshade': {'history': 'A village built in and under the mushrooms, round the one with a door.', 'known': 'Mushroom houses, treehouses, and Mother Morel.',
                       'landmark': 'The colossal mushroom, whose cap shades the whole square.', 'legend': 'The great mushroom is one creature, and every mushroom in the forest is a piece of it. It knows what everything is worth.'},
-        'fallquarter': {'history': 'A wood where the year stopped in autumn.', 'known': 'Leaves, leaves, and the Ledger Oak.',
+        'russetwood': {'history': 'A wood where the year stopped in autumn.', 'known': 'Leaves, leaves, and the Ledger Oak.',
                         'landmark': 'The Ledger Oak, which drops one golden leaf for every coin spent in the Hollow Earth.', 'legend': 'Under the Ledger Oak the leaves are never raked. It would upset the books.'},
-        'hypergrowth': {'history': 'A start-up campus, until the jungle grew over it in a single quarter.', 'known': 'Vines, heat, and a white statue nobody can quite see the point of.',
+        'tanglewild': {'history': 'A start-up campus, until the jungle grew over it in a single quarter.', 'known': 'Vines, heat, and a white statue nobody can quite see the point of.',
                         'landmark': 'The unicorn statue, worth a billion once, now a trellis.', 'legend': 'The founders are still in there somewhere, pivoting.'},
     },
     chat={
-        'marketcap': {'0': ['Don’t knock on the big mushroom. It knocks back.', 'Our houses grow a room a year. Mine grew a cellar by mistake.',
+        'capshade': {'0': ['Don’t knock on the big mushroom. It knocks back.', 'Our houses grow a room a year. Mine grew a cellar by mistake.',
                             'Mother Morel says the spores remember. I hope not; I had a bad week.', 'The Variants pay well for spores. The forest has not been asked.',
                             'Market Cap goes up when the spores do. Breathe out, then.']},
-        'sporewood': {'0': ['Hold your breath near the mill. The glitter gets everywhere.']},
+        'puffcap': {'0': ['Hold your breath near the mill. The glitter gets everywhere.']},
     },
 )
 
@@ -320,30 +320,30 @@ SPORE_FOREST = dict(
 LOOK.update({
     'crystal': dict(sky=['#1E1A38', '#2E2A54', '#4A4478'], haze='#3C3A6A', hazeD=30, amb='drip', far='cave', farH=9, indoor=1, tint='#262248', grassCol=['#2E5A6A', '#8ADCE6']),
     'cavetown': dict(sky=['#221C36', '#342C50', '#54486E'], haze='#463E62', hazeD=30, amb='drip', far='cave', farH=9, indoor=1, tint='#2A2446', grassCol=['#3A5A5A', '#9AD8D0']),
-    'darkpool': dict(sky=['#141830', '#22284A', '#384070'], haze='#2E3460', hazeD=28, amb='drip', far='cave', farH=9, indoor=1, tint='#1E2244', grassCol=['#2A4A5A', '#7CC8D8'], waterKind='lake'),
+    'gloomwater': dict(sky=['#141830', '#22284A', '#384070'], haze='#2E3460', hazeD=28, amb='drip', far='cave', farH=9, indoor=1, tint='#1E2244', grassCol=['#2A4A5A', '#7CC8D8'], waterKind='lake'),
     'tundra': dict(sky=['#8AB0D6', '#C8DCEC', '#EEF2F6'], haze='#DCE6EE', hazeD=52, amb='dust', far='mountains', farH=10, grassCol=['#6A8A8A', '#D8E8E4'], wind=1.2),
 })
 
 CRYSTAL_CAVERNS = dict(
     id='crystalcaverns', future='Crystal Caverns', t='silicon', mood='crystal', moods={},
     nodes=[
-        dict(id='spread', name='The Spread', kind='route', lon=210.8, lat=2.2, pool='spread', biome='crystal', area='grotto', route='Route 11', music='crystal',
+        dict(id='prism_chasm', name='The Spread', kind='route', lon=210.8, lat=2.2, pool='prism_chasm', biome='crystal', area='grotto', route='Route 11', music='crystal',
              blurb='Chasms full of crystal, crossed on rope bridges. The Variants have set up a works on the shelf between them.'),
-        dict(id='mintshaft', name='Mintshaft', kind='town', lon=218.4, lat=9.0, pool='mintshaft', biome='cavern', area='grotto', route='Route 11', shop='mintshaft', music='crystal', mood='cave',
+        dict(id='glimmershaft', name='Mintshaft', kind='town', lon=218.4, lat=9.0, pool='glimmershaft', biome='cavern', area='grotto', route='Route 11', shop='glimmershaft', music='crystal', mood='cave',
              blurb='A mining town in a cavern, lit by lanterns and the crystals in its walls. Leader Carat runs the mine and the arena.'),
-        dict(id='darkpool', name='The Dark Pool', kind='route', lon=213.8, lat=18.4, pool='darkpool', biome='darkpool', area='lake', route='Lantern Way', music='crystal',
+        dict(id='gloomwater', name='The Dark Pool', kind='route', lon=213.8, lat=18.4, pool='gloomwater', biome='darkpool', area='lake', route='Lantern Way', music='crystal',
              blurb='An underground lake so still it looks like a hole in the floor. The old miners’ beacon still burns on the point.'),
-        dict(id='frozen', name='Frozen Assets', kind='route', lon=226.4, lat=2.6, pool='frozen', biome='tundra', area='snow', route='Route 12', music='crystal', mood='crisp',
+        dict(id='rimefrost', name='Frozen Assets', kind='route', lon=226.4, lat=2.6, pool='rimefrost', biome='tundra', area='snow', route='Route 12', music='crystal', mood='crisp',
              blurb='Ice caves opening on to a frozen plain. Something valuable is frozen in a block of ice, where nobody can spend it.',
              gate='carat', gateText='The ice caves east of Mintshaft open once you earn Leader Carat’s Electric Badge.'),
     ],
-    links=[('hypergrowth', 'spread', 1700, 'Route 11'), ('spread', 'mintshaft', 1500, 'Route 11'), ('mintshaft', 'darkpool', 1300, 'Lantern Way'),
-           ('darkpool', 'spread', 1400, 'Lantern Way'), ('mintshaft', 'frozen', 1700, 'Route 12')],
+    links=[('tanglewild', 'prism_chasm', 1700, 'Route 11'), ('prism_chasm', 'glimmershaft', 1500, 'Route 11'), ('glimmershaft', 'gloomwater', 1300, 'Lantern Way'),
+           ('gloomwater', 'prism_chasm', 1400, 'Lantern Way'), ('glimmershaft', 'rimefrost', 1700, 'Route 12')],
     pools={
-        'spread': {'lv': [44, 48], 'list': [['huang1', 30], ['slim1', 25], ['ambani1', 20], ['buterin0', 15], ['carnegie1', 10], ['vanderbilt0', 4]]},
-        'mintshaft': {'lv': [44, 47], 'list': [['slim1', 30], ['rinehart1', 25], ['ambani2', 20], ['walton1', 15], ['dyson0', 10]]},
-        'darkpool': {'lv': [45, 49], 'list': [['cuban1', 30], ['ek1', 25], ['spielberg1', 20], ['winklevoss1', 15], ['ponyma0', 5]]},
-        'frozen': {'lv': [47, 51], 'list': [['walton2', 25], ['ford1', 25], ['newell0', 20], ['slim2', 15], ['huang2', 5]]},
+        'prism_chasm': {'lv': [44, 48], 'list': [['huang1', 30], ['slim1', 25], ['ambani1', 20], ['buterin0', 15], ['carnegie1', 10], ['vanderbilt0', 4]]},
+        'glimmershaft': {'lv': [44, 47], 'list': [['slim1', 30], ['rinehart1', 25], ['ambani2', 20], ['walton1', 15], ['dyson0', 10]]},
+        'gloomwater': {'lv': [45, 49], 'list': [['cuban1', 30], ['ek1', 25], ['spielberg1', 20], ['winklevoss1', 15], ['ponyma0', 5]]},
+        'rimefrost': {'lv': [47, 51], 'list': [['walton2', 25], ['ford1', 25], ['newell0', 20], ['slim2', 15], ['huang2', 5]]},
     },
     people={
         'carat': {'look': {'name': 'Leader Carat', 'body': {'height': 1.0, 'legs': 1.0, 'shoulders': 1.02, 'chest': .3}, 'skin': '#C98E6A', 'hair': '#2A2232', 'eyes': '#3A8AA8',
@@ -353,45 +353,45 @@ CRYSTAL_CAVERNS = dict(
                              'glasses_square': ['#1E2A36'], 'chain': ['#BDEAF2']}}},
     },
     trainers={
-        'carat': {'name': 'Leader Carat', 'who': 'carat', 'area': 'grotto', 'node': 'mintshaft', 'blocks': False,
+        'carat': {'name': 'Leader Carat', 'who': 'carat', 'battleStage': 'grotto', 'node': 'glimmershaft', 'blocks': False,
                   'team': [{'sp': 'slim2', 'lvl': 51}, {'sp': 'buterin1', 'lvl': 51}, {'sp': 'dyson1', 'lvl': 52}, {'sp': 'huang2', 'lvl': 53}], 'reward': 5000, 'egg': 10, 'market': None,
                   'lines': ['“The Variants want one perfect needle, long enough to play the sun. I’m cutting it. I didn’t ask what for.”', '“I’m asking now. Show me what you’re made of.”'],
                   'win': '“Not a flaw on you. The Electric Badge is yours. And the needle? It cracked in the cold. Funny, that.”', 'lose': '“Rough cut. Polish it and come back.”',
                   'hint': 'Leader Carat’s Electric team is level 51–53. Ground billionaires don’t care how much it hums.',
                   'seat': {'id': 'carat', 'title': 'Electric Badge · 8 of 8', 'coin': 'gold', 'coins': {'gold': 5, 'tbtf': 3}, 'items': {'parachute': 1},
                            'rewardText': 'a Golden Parachute, 5 Gold Coins and 3 Platinum Coins', 'unlockText': 'The ice caves of Frozen Assets, east of Mintshaft, are open. Beyond them, the inner sea.'}},
-        'variant_needle': {'name': 'Variant No. 3301', 'who': 'variant', 'area': 'grotto', 'node': 'spread', 'blocks': False,
+        'variant_needle': {'name': 'Variant No. 3301', 'who': 'variant', 'battleStage': 'grotto', 'node': 'prism_chasm', 'blocks': False,
                            'team': [{'sp': 'buterin0', 'lvl': 46}, {'sp': 'son1', 'lvl': 47}], 'reward': 1500, 'market': None,
                            'lines': ['“The needle has to be perfect. One scratch and the sun skips.”'], 'win': '“That’s a scratch.”', 'lose': '“Flawless. Like the edition.”', 'hint': ''},
-        'geologist': {'name': 'Geologist Garnet', 'who': 'geo', 'area': 'grotto', 'node': 'spread', 'blocks': False,
+        'geologist': {'name': 'Geologist Garnet', 'who': 'geo', 'battleStage': 'grotto', 'node': 'prism_chasm', 'blocks': False,
                       'team': [{'sp': 'ambani1', 'lvl': 46}, {'sp': 'carnegie1', 'lvl': 46}, {'sp': 'slim1', 'lvl': 47}], 'reward': 1400, 'market': None,
                       'lines': ['“These crystals grew a millimetre a century. The Variants are cutting a metre a day.”'], 'win': '“Eroded.”', 'lose': '“Solid as rock.”', 'hint': ''},
-        'spelunker': {'name': 'Spelunker Stan', 'who': 'miner', 'area': 'lake', 'node': 'darkpool', 'blocks': False,
+        'spelunker': {'name': 'Spelunker Stan', 'who': 'miner', 'battleStage': 'lake', 'node': 'gloomwater', 'blocks': False,
                       'team': [{'sp': 'cuban1', 'lvl': 47}, {'sp': 'rinehart1', 'lvl': 48}], 'reward': 1400, 'market': None,
                       'lines': ['“Don’t look into the pool too long. It looks back, and it’s doing your accounts.”'], 'win': '“Lights out.”', 'lose': '“Deep, isn’t it?”', 'hint': ''},
-        'icefisher': {'name': 'Ice Fisher Ivy', 'who': 'girl', 'area': 'snow', 'node': 'frozen', 'blocks': False,
+        'icefisher': {'name': 'Ice Fisher Ivy', 'who': 'girl', 'battleStage': 'snow', 'node': 'rimefrost', 'blocks': False,
                       'team': [{'sp': 'newell0', 'lvl': 49}, {'sp': 'walton2', 'lvl': 50}, {'sp': 'ford1', 'lvl': 50}], 'reward': 1600, 'market': None,
                       'lines': ['“I fish for coins through the ice. The safe is frozen solid, but sometimes the interest leaks out.”'], 'win': '“Cold.”', 'lose': '“Liquid at last!”', 'hint': ''},
     },
-    shops={'mintshaft': {'name': 'Assay Office', 'keeper': 'Opal', 'who': 'cashier', 'greeting': 'Everything weighed, everything valued. Mostly by me.',
+    shops={'glimmershaft': {'name': 'Assay Office', 'keeper': 'Opal', 'who': 'cashier', 'greeting': 'Everything weighed, everything valued. Mostly by me.',
                          'stock': [{'item': 'pretzel', 'price': 60}, {'item': 'trailmix', 'price': 220}, {'item': 'loophole', 'price': 400}, {'item': 'bailout', 'price': 900},
                                    {'item': 'parachute', 'price': 2400}]}},
     lore={
-        'spread': {'history': 'Natural chasms lined with crystal, bridged by the first miners with rope and nerve.', 'known': 'Rope bridges, the crystal spire, and the Variants’ needle works.',
+        'prism_chasm': {'history': 'Natural chasms lined with crystal, bridged by the first miners with rope and nerve.', 'known': 'Rope bridges, the crystal spire, and the Variants’ needle works.',
                    'landmark': 'The crystal spire, taller than a house, humming a note just too low to hear.', 'legend': 'Drop a coin into the Spread and it never lands. Somewhere below, it is still earning interest.'},
-        'mintshaft': {'history': 'A mining town since the Hollow Earth was found: the crystals pay for everything, including the lanterns to see them by.',
+        'glimmershaft': {'history': 'A mining town since the Hollow Earth was found: the crystals pay for everything, including the lanterns to see them by.',
                       'known': 'The mine, the Great Geode on the square, and Leader Carat.', 'landmark': 'The Great Geode, split open on the square, so everyone can see what the town is worth.',
                       'legend': 'The first miner found the geode with one swing of a pick, and spent the rest of his life trying to find the second.'},
-        'darkpool': {'history': 'An underground lake the miners crossed by boat, steering by the beacon on the point.', 'known': 'Black water, glowing shores, and very old boats.',
+        'gloomwater': {'history': 'An underground lake the miners crossed by boat, steering by the beacon on the point.', 'known': 'Black water, glowing shores, and very old boats.',
                      'landmark': 'The miners’ beacon, a great crystal caged at the top of a timber tower.', 'legend': 'Whatever falls into the Dark Pool is written off. Nobody has ever checked.'},
-        'frozen': {'history': 'Ice caves where the cavern opens on to a frozen plain.', 'known': 'Ice spikes, snow, and the frozen assets.',
+        'rimefrost': {'history': 'Ice caves where the cavern opens on to a frozen plain.', 'known': 'Ice spikes, snow, and the frozen assets.',
                    'landmark': 'A block of ice as big as a shed with a safe frozen inside it: assets, frozen.', 'legend': 'The safe belongs to whoever thaws it. The ice belongs to the Baron. Lawyers are on their way.'},
     },
     chat={
-        'mintshaft': {'0': ['The Variants pay double for crystal now. Carat says it’s blood money. She takes it anyway, then gives it away.', 'Mind the geode. It’s worth more than the town.',
+        'glimmershaft': {'0': ['The Variants pay double for crystal now. Carat says it’s blood money. She takes it anyway, then gives it away.', 'Mind the geode. It’s worth more than the town.',
                             'Every lantern here burns crystal. The light is free; the crystal isn’t.', 'They want a needle long enough to play the sun. Who plays the sun?',
                             'Carat used to sing in the mine. She stopped when the Variants came.']},
-        'spread': {'0': ['Don’t look down. There isn’t one.']},
+        'prism_chasm': {'0': ['Don’t look down. There isn’t one.']},
     },
 )
 
@@ -406,21 +406,21 @@ LOOK.update({
 CORAL_TRENCH = dict(
     id='coraltrench', future='Coral Trench', t='trench', mood='seaside', moods={},
     nodes=[
-        dict(id='shoals', name='Shell Company Shoals', kind='route', lon=231.2, lat=0.4, pool='shoals', biome='reef', area='beach', route='Route 12', music='trench',
+        dict(id='conchshell', name='Shell Company Shoals', kind='route', lon=231.2, lat=0.4, pool='conchshell', biome='reef', area='beach', route='Route 12', music='trench',
              blurb='Tide pools and reef shallows on the shore of the inner sea, where a great many companies are registered inside one shell.'),
-        dict(id='portfolio', name='Port Folio', kind='town', lon=234.6, lat=11.8, pool='portfolio', biome='harbour', area='beach', route='Pier Road', shop='portfolio', music='trench',
+        dict(id='kelpport', name='Port Folio', kind='town', lon=234.6, lat=11.8, pool='kelpport', biome='harbour', area='beach', route='Pier Road', shop='kelpport', music='trench',
              blurb='A harbour of yachts and piers. Every boat here is diversified; most of them have never left.'),
-        dict(id='bottomline', name='Bottom Line Trench', kind='route', lon=241.4, lat=5.6, pool='bottomline', biome='trench', area='sea', route='Route 13', music='trench', mood='deepsea', ride=1,
+        dict(id='abyssal_trench', name='Bottom Line Trench', kind='route', lon=241.4, lat=5.6, pool='abyssal_trench', biome='trench', area='sea', route='Route 13', music='trench', mood='deepsea', ride=1,
              blurb='Open water over the trench, so deep the bottom line has never been found. You cross it on a Water billionaire.'),
-        dict(id='pressing', name='The Pressing Plant', kind='route', lon=247.6, lat=-1.6, pool='pressing', biome='press', area='sea', route='Route 13', music='variants', mood='deepsea', ride=1,
+        dict(id='vinyl_works', name='The Pressing Plant', kind='route', lon=247.6, lat=-1.6, pool='vinyl_works', biome='press', area='sea', route='Route 13', music='variants', mood='deepsea', ride=1,
              blurb='Sheds on piles over the trench, venting steam. Inside, Vinylla’s record is being pressed, one test copy at a time.'),
     ],
-    links=[('frozen', 'shoals', 1600, 'Route 12'), ('shoals', 'portfolio', 1300, 'Pier Road'), ('portfolio', 'bottomline', 1800, 'Route 13'), ('bottomline', 'pressing', 1600, 'Route 13')],
+    links=[('rimefrost', 'conchshell', 1600, 'Route 12'), ('conchshell', 'kelpport', 1300, 'Pier Road'), ('kelpport', 'abyssal_trench', 1800, 'Route 13'), ('abyssal_trench', 'vinyl_works', 1600, 'Route 13')],
     pools={
-        'shoals': {'lv': [48, 52], 'list': [['winklevoss1', 25], ['yanai1', 25], ['chesky0', 20], ['cuban1', 15], ['spielberg1', 10], ['federer0', 5]]},
-        'portfolio': {'lv': [48, 51], 'list': [['ellison1', 30], ['newell0', 25], ['saylor1', 25], ['winklevoss1', 20]]},
-        'bottomline': {'lv': [50, 54], 'list': [['ellison2', 25], ['spielberg1', 25], ['ek1', 25], ['ponyma0', 15], ['scott0', 10]]},
-        'pressing': {'lv': [52, 55], 'list': [['jayz1', 30], ['son1', 25], ['newell0', 25], ['schultz0', 20]]},
+        'conchshell': {'lv': [48, 52], 'list': [['winklevoss1', 25], ['yanai1', 25], ['chesky0', 20], ['cuban1', 15], ['spielberg1', 10], ['federer0', 5]]},
+        'kelpport': {'lv': [48, 51], 'list': [['ellison1', 30], ['newell0', 25], ['saylor1', 25], ['winklevoss1', 20]]},
+        'abyssal_trench': {'lv': [50, 54], 'list': [['ellison2', 25], ['spielberg1', 25], ['ek1', 25], ['ponyma0', 15], ['scott0', 10]]},
+        'vinyl_works': {'lv': [52, 55], 'list': [['jayz1', 30], ['son1', 25], ['newell0', 25], ['schultz0', 20]]},
     },
     people={
         'cass': {'look': {'name': 'Cass Flow', 'body': {'height': 1.02, 'legs': 1.02, 'shoulders': .98, 'chest': .2}, 'skin': '#E2B08C', 'hair': '#3A2A22', 'eyes': '#4A6A4A',
@@ -429,41 +429,41 @@ CORAL_TRENCH = dict(
                  'colors': {'dress_shirt': ['#F2EEE8'], 'blazer': ['#2A2434', '#E9B83C'], 'trousers': ['#2A2434'], 'oxfords': ['#1E1A22'], 'headset': ['#1E1A22'], 'nametag': ['#E9B83C']}}},
     },
     trainers={
-        'sailor': {'name': 'Sailor Sal', 'who': 'skipper', 'area': 'beach', 'node': 'shoals', 'blocks': False,
+        'sailor': {'name': 'Sailor Sal', 'who': 'skipper', 'battleStage': 'beach', 'node': 'conchshell', 'blocks': False,
                    'team': [{'sp': 'winklevoss1', 'lvl': 50}, {'sp': 'yanai1', 'lvl': 50}, {'sp': 'chesky0', 'lvl': 51}], 'reward': 1600, 'market': None,
                    'lines': ['“See that shell? Four hundred companies live in it. None of them have ever been seen.”'], 'win': '“Run aground.”', 'lose': '“Plain sailing.”', 'hint': ''},
-        'yachtbroker': {'name': 'Yacht Broker Yates', 'who': 'broker', 'area': 'beach', 'node': 'portfolio', 'blocks': False,
+        'yachtbroker': {'name': 'Yacht Broker Yates', 'who': 'broker', 'battleStage': 'beach', 'node': 'kelpport', 'blocks': False,
                         'team': [{'sp': 'saylor1', 'lvl': 51}, {'sp': 'newell0', 'lvl': 51}, {'sp': 'ellison1', 'lvl': 52}], 'reward': 1800, 'market': None,
                         'lines': ['“Every yacht in this harbour has a smaller yacht, to get to the bigger yacht. I sell the smallest ones.”'], 'win': '“Sunk cost.”', 'lose': '“Sold!”', 'hint': ''},
-        'deepdiver': {'name': 'Deep Diver Dom', 'who': 'diver', 'area': 'sea', 'node': 'bottomline', 'blocks': False,
+        'deepdiver': {'name': 'Deep Diver Dom', 'who': 'diver', 'battleStage': 'sea', 'node': 'abyssal_trench', 'blocks': False,
                   'team': [{'sp': 'ellison2', 'lvl': 52}, {'sp': 'spielberg1', 'lvl': 53}], 'reward': 1700, 'market': None,
                   'lines': ['“I’ve dived for the bottom line twenty times. It keeps moving down.”'], 'win': '“Out of air.”', 'lose': '“Deep dive!”', 'hint': ''},
-        'variant_press': {'name': 'Variant No. 7777', 'who': 'variant', 'area': 'sea', 'node': 'pressing', 'blocks': False,
+        'variant_press': {'name': 'Variant No. 7777', 'who': 'variant', 'battleStage': 'sea', 'node': 'vinyl_works', 'blocks': False,
                           'team': [{'sp': 'jayz1', 'lvl': 53}, {'sp': 'son1', 'lvl': 53}, {'sp': 'schultz0', 'lvl': 54}], 'reward': 1900, 'market': None,
                           'lines': ['“Lucky number! I got to stand by the press. I can feel it in my teeth.”'], 'win': '“Off the record.”', 'lose': '“Pressed!”', 'hint': ''},
-        'cass': {'name': 'Cass Flow', 'who': 'cass', 'area': 'sea', 'node': 'pressing', 'blocks': False, 'clue': 'face',
+        'cass': {'name': 'Cass Flow', 'who': 'cass', 'battleStage': 'sea', 'node': 'vinyl_works', 'blocks': False, 'clue': 'face',
                  'team': [{'sp': 'federer0', 'lvl': 55}, {'sp': 'scott0', 'lvl': 55}, {'sp': 'vanderbilt0', 'lvl': 56}, {'sp': 'ronaldo0', 'lvl': 57}], 'reward': 6000, 'egg': 10, 'market': None,
                  'intro': ['[angry] Stop right there. This is a closed set.', 'Wait. You? We dropped you. Down a hole. On the surface.', '[sad] You were the best sound engineer the tour ever had. Then you read the plans.',
                            '[angry] It doesn’t matter. The press is nearly done, and you’re not on the guest list.'],
                  'lines': ['“Nothing personal. It’s just the bottom line.”'], 'win': '“Fine. Go up the Spire, then. She’ll be delighted. She loves a comeback.”',
                  'lose': '“Back down the hole with you.”', 'hint': 'Cass Flow waits at the pressing plant with a team around level 55–57.'},
     },
-    shops={'portfolio': {'name': 'The Chandlery', 'keeper': 'Marlin', 'who': 'skipper', 'greeting': 'Rope, rations and risk management. The rope is the best value.',
+    shops={'kelpport': {'name': 'The Chandlery', 'keeper': 'Marlin', 'who': 'skipper', 'greeting': 'Rope, rations and risk management. The rope is the best value.',
                          'stock': [{'item': 'pretzel', 'price': 60}, {'item': 'trailmix', 'price': 220}, {'item': 'taxbreak', 'price': 140}, {'item': 'loophole', 'price': 400},
                                    {'item': 'bailout', 'price': 900}, {'item': 'parachute', 'price': 2400}]}},
     lore={
-        'shoals': {'history': 'Shallows on the inner sea, where the tide pools never quite drain.', 'known': 'Tide pools, the coral tower, and the Shell Company.',
+        'conchshell': {'history': 'Shallows on the inner sea, where the tide pools never quite drain.', 'known': 'Tide pools, the coral tower, and the Shell Company.',
                    'landmark': 'The coral tower, a reef taller than a house standing alone in the shallows.', 'legend': 'The Shell Company has four hundred directors. All of them are the same crab.'},
-        'portfolio': {'history': 'A fishing village that sold its boats for yachts, and its fish for funds.', 'known': 'Piers, yachts, and the superyacht Diversified.',
+        'kelpport': {'history': 'A fishing village that sold its boats for yachts, and its fish for funds.', 'known': 'Piers, yachts, and the superyacht Diversified.',
                       'landmark': 'The Diversified, the biggest yacht in the Hollow Earth, which has never once left the harbour.', 'legend': 'The Diversified owns a smaller yacht, which owns a smaller one, all the way down to a rubber duck.'},
-        'bottomline': {'history': 'Open water over a trench nobody has found the bottom of.', 'known': 'Kelp, buoys, and the long ride to the pressing plant.',
+        'abyssal_trench': {'history': 'Open water over a trench nobody has found the bottom of.', 'known': 'Kelp, buoys, and the long ride to the pressing plant.',
                        'landmark': 'The buoy line, marking the way to the plant for those who must not be seen going there.', 'legend': 'Somewhere below, the bottom line. Everyone talks about it; nobody has reached it.'},
-        'pressing': {'history': 'Built in a season on piles driven into the trench’s rim, with money from the festival, the vaults and the spores.',
+        'vinyl_works': {'history': 'Built in a season on piles driven into the trench’s rim, with money from the festival, the vaults and the spores.',
                      'known': 'Steam, the smell of hot vinyl, and Cass Flow’s clipboard.', 'landmark': 'The pressing plant, where the test copies of the record are made.',
                      'legend': 'Each test copy is played once, then broken. The first one ever pressed was a recording of you.'},
     },
     chat={
-        'portfolio': {'0': ['The Diversified has never left the harbour. It doesn’t need to; the harbour moved to it.', 'Every boat here is registered in the Shell Company. So is the harbour.',
+        'kelpport': {'0': ['The Diversified has never left the harbour. It doesn’t need to; the harbour moved to it.', 'Every boat here is registered in the Shell Company. So is the harbour.',
                             'Barges go out to the plant at night. Nobody rows them; they just go.', 'Cass Flow buys her coffee here. Black, like the records.',
                             'If you want to ride the trench, you’ll want a Water billionaire. A big one.']},
     },
@@ -472,29 +472,29 @@ CORAL_TRENCH = dict(
 # ------------------------------------------------------------------------------------------------ Cloud Spire
 LOOK.update({
     'server': dict(sky=['#7AB2E6', '#BCD8F0', '#EEF0F2'], haze='#DDE6EE', hazeD=54, amb='dust', far='hills', farH=6, grassCol=['#5A8A5A', '#C8DCA0'], wind=1.0),
-    'upside': dict(sky=['#6A9EE0', '#B4CCEE', '#F0E6EE'], haze='#DCDCE8', hazeD=54, amb='dust', far='town', farH=10, grassCol=['#5A8A5A', '#B8D8A0']),
+    'nimbus': dict(sky=['#6A9EE0', '#B4CCEE', '#F0E6EE'], haze='#DCDCE8', hazeD=54, amb='dust', far='town', farH=10, grassCol=['#5A8A5A', '#B8D8A0']),
     'bubble': dict(sky=['#8AB8E6', '#D0DCEC', '#F2E6EC'], haze='#E6E0E6', hazeD=48, amb='dust', far='town', farH=8, grassCol=['#6A8A5A', '#D0D8A0'], wind=1.1),
-    'bracket': dict(sky=['#4E8AE0', '#A6CCF4', '#F6F6FA'], haze='#E8EEF8', hazeD=60, amb='pollen', far='mountains', farH=4, flatFar=1, grassCol=['#8AA0C0', '#F0F4FA'], wind=1.4, rays=1),
+    'skygarden': dict(sky=['#4E8AE0', '#A6CCF4', '#F6F6FA'], haze='#E8EEF8', hazeD=60, amb='pollen', far='mountains', farH=4, flatFar=1, grassCol=['#8AA0C0', '#F0F4FA'], wind=1.4, rays=1),
 })
 
 CLOUD_SPIRE = dict(
     id='cloudspire', future='Cloud Spire', t='spire', mood='city', moods={},
     nodes=[
-        dict(id='serverfarm', name='The Server Farm', kind='route', lon=252.8, lat=-4.8, pool='serverfarm', biome='silicon', area='clear', route='Route 14', music='spire', mood='clear',
+        dict(id='circuit_terraces', name='The Server Farm', kind='route', lon=252.8, lat=-4.8, pool='circuit_terraces', biome='silicon', area='clear', route='Route 14', music='spire', mood='clear',
              blurb='Silicon flats: rows of servers humming in the fields and solar panels where the crops used to be. The Cloud is made here.'),
-        dict(id='upside', name='Upside City', kind='town', lon=258.0, lat=7.8, pool='upside', biome='city', area='clear', route='Route 14', shop='upside', music='spire',
+        dict(id='nimbus', name='Upside City', kind='town', lon=258.0, lat=7.8, pool='nimbus', biome='city', area='clear', route='Route 14', shop='nimbus', music='spire',
              blurb='The city at the foot of the Spire. Its night market never closes, because the tower’s shadow makes it night all day on one side.'),
-        dict(id='bubbleland', name='Bubbleland', kind='route', lon=263.6, lat=-3.6, pool='bubbleland', biome='park', area='clear', route='Bubble Road', music='spire', mood='dusty',
+        dict(id='fizzpop', name='Bubbleland', kind='route', lon=263.6, lat=-3.6, pool='fizzpop', biome='park', area='clear', route='Bubble Road', music='spire', mood='dusty',
              blurb='A theme park that closed the day the bubble burst. The Ferris wheel stopped with everyone’s money still at the top.'),
-        dict(id='bracket', name='Upper Bracket Walk', kind='route', lon=265.4, lat=16.8, pool='bracket', biome='sky', area='clear', route='The Spire Stairs', music='variants', mood='sky',
+        dict(id='skygarden', name='Upper Bracket Walk', kind='route', lon=265.4, lat=16.8, pool='skygarden', biome='sky', area='clear', route='The Spire Stairs', music='variants', mood='sky',
              blurb='Walkways up the Spire through the clouds, to the door of Vinylla’s penthouse.'),
     ],
-    links=[('pressing', 'serverfarm', 1700, 'Route 14'), ('serverfarm', 'upside', 1500, 'Route 14'), ('upside', 'bubbleland', 1300, 'Bubble Road'), ('upside', 'bracket', 1600, 'The Spire Stairs')],
+    links=[('vinyl_works', 'circuit_terraces', 1700, 'Route 14'), ('circuit_terraces', 'nimbus', 1500, 'Route 14'), ('nimbus', 'fizzpop', 1300, 'Bubble Road'), ('nimbus', 'skygarden', 1600, 'The Spire Stairs')],
     pools={
-        'serverfarm': {'lv': [53, 57], 'list': [['dyson1', 25], ['vanderbilt0', 15], ['altman0', 15], ['yiming0', 25], ['pagebrin1', 20]]},
-        'upside': {'lv': [53, 56], 'list': [['kashing1', 30], ['hughes2', 20], ['knight2', 20], ['jayz1', 30]]},
-        'bubbleland': {'lv': [54, 58], 'list': [['son1', 25], ['hastings0', 25], ['dorsey1', 25], ['ronaldo0', 10], ['buterin1', 15]]},
-        'bracket': {'lv': [56, 60], 'list': [['knight2', 25], ['hughes2', 20], ['griffin0', 15], ['federer0', 15], ['mateschitz1', 25]]},
+        'circuit_terraces': {'lv': [53, 57], 'list': [['dyson1', 25], ['vanderbilt0', 15], ['altman0', 15], ['yiming0', 25], ['pagebrin1', 20]]},
+        'nimbus': {'lv': [53, 56], 'list': [['kashing1', 30], ['hughes2', 20], ['knight2', 20], ['jayz1', 30]]},
+        'fizzpop': {'lv': [54, 58], 'list': [['son1', 25], ['hastings0', 25], ['dorsey1', 25], ['ronaldo0', 10], ['buterin1', 15]]},
+        'skygarden': {'lv': [56, 60], 'list': [['knight2', 25], ['hughes2', 20], ['griffin0', 15], ['federer0', 15], ['mateschitz1', 25]]},
     },
     people={
         'vinylla': {'look': {'name': 'Vinylla', 'body': {'height': 1.04, 'legs': 1.06, 'shoulders': .94, 'chest': .45}, 'skin': '#F0C8A8', 'hair': '#F4E6C8', 'eyes': '#B46AC8',
@@ -504,46 +504,46 @@ CLOUD_SPIRE = dict(
                                'glasses_sun': ['#E85AA8'], 'chain': ['#F6DC84']}}},
     },
     trainers={
-        'sysadmin': {'name': 'Sysadmin Sam', 'who': 'intern', 'area': 'clear', 'node': 'serverfarm', 'blocks': False,
+        'sysadmin': {'name': 'Sysadmin Sam', 'who': 'intern', 'battleStage': 'clear', 'node': 'circuit_terraces', 'blocks': False,
                      'team': [{'sp': 'dyson1', 'lvl': 54}, {'sp': 'yiming0', 'lvl': 55}, {'sp': 'altman0', 'lvl': 55}], 'reward': 2000, 'market': None,
                      'lines': ['“Have you tried turning the Cloud off and on again? I have. It rained for a week.”'], 'win': '“Connection lost.”', 'lose': '“Uptime!”', 'hint': ''},
-        'chad3': {'name': 'Blake', 'who': 'chad', 'area': 'clear', 'node': 'upside', 'blocks': False, 'after': 'chad2',
+        'chad3': {'name': 'Blake', 'who': 'chad', 'battleStage': 'clear', 'node': 'nimbus', 'blocks': False, 'after': 'chad2',
                   'team': [{'sp': '@rival2', 'lvl': 57}, {'sp': 'saylor1', 'lvl': 55}, {'sp': 'thiel1', 'lvl': 55}, {'sp': 'griffin0', 'lvl': 56}], 'reward': 4000, 'egg': 10, 'market': None,
                   'intro': ['[angry] There you are. Took you long enough.', 'Vinylla’s people offered to buy my team. All of it. Dad’s clone too, for the collection.',
                             '[sad] I said no. I think I said no. I’m not used to saying it.', '[angry] Battle me. If I can still beat you, I meant it.'],
                   'lines': ['“For the record: this isn’t for sale.”'], 'win': '“Okay. I meant it. Go up there and stop her. I’ll hold the stairs.”', 'lose': '“Ha! Still got it. Now go.”',
                   'hint': 'Blake waits in Upside City with his strongest team, around level 55–57.'},
-        'vip': {'name': 'Variant VIP', 'who': 'variant', 'area': 'clear', 'node': 'upside', 'blocks': False,
+        'vip': {'name': 'Variant VIP', 'who': 'variant', 'battleStage': 'clear', 'node': 'nimbus', 'blocks': False,
                 'team': [{'sp': 'kashing1', 'lvl': 55}, {'sp': 'jayz1', 'lvl': 56}], 'reward': 2000, 'market': None,
                 'lines': ['“VIP means Very Important Purchaser. I have every variant. Even the ones that don’t exist yet.”'], 'win': '“Access revoked.”', 'lose': '“Backstage!”', 'hint': ''},
-        'mascot': {'name': 'Mascot Max', 'who': 'boy', 'area': 'clear', 'node': 'bubbleland', 'blocks': False,
+        'mascot': {'name': 'Mascot Max', 'who': 'boy', 'battleStage': 'clear', 'node': 'fizzpop', 'blocks': False,
                    'team': [{'sp': 'son1', 'lvl': 55}, {'sp': 'hastings0', 'lvl': 56}, {'sp': 'dorsey1', 'lvl': 56}], 'reward': 2000, 'market': None,
                    'lines': ['“I was Bubbles the Bubble for nine years. They never told me it burst. I found out from the newspaper.”'], 'win': '“Pop.”', 'lose': '“Bubbly!”', 'hint': ''},
-        'variant_vip2': {'name': 'Variant No. 0001', 'who': 'variant', 'area': 'clear', 'node': 'bracket', 'blocks': False,
+        'variant_vip2': {'name': 'Variant No. 0001', 'who': 'variant', 'battleStage': 'clear', 'node': 'skygarden', 'blocks': False,
                          'team': [{'sp': 'knight2', 'lvl': 57}, {'sp': 'hughes2', 'lvl': 58}], 'reward': 2200, 'market': None,
                          'lines': ['“Number one. The first fan. I was here before the tower. I watched them build it round me.”'], 'win': '“...I’ll always be first.”', 'lose': '“Number one!”', 'hint': ''},
-        'vinylla1': {'name': 'Vinylla', 'who': 'vinylla', 'area': 'clear', 'node': 'bracket', 'blocks': False,
+        'vinylla1': {'name': 'Vinylla', 'who': 'vinylla', 'battleStage': 'clear', 'node': 'skygarden', 'blocks': False,
                      'team': [{'sp': 'jayz1', 'lvl': 57}, {'sp': 'ek1', 'lvl': 57}, {'sp': 'spielberg1', 'lvl': 58}, {'sp': 'scott0', 'lvl': 59}], 'reward': 8000, 'egg': 10, 'market': None,
                      'intro': ['[happy] Oh! The sound engineer. Cass said you’d bounced. I love a comeback; they chart so well.', 'You know what I’m pressing. A lid for the sun, gold on one side. Light, by subscription.',
                                '[angry] People pay for scarcity. I’m making the scarcest thing there is.', '[happy] Let’s do a little soundcheck, darling.'],
                      'lines': ['“Every limited edition needs a launch.”'], 'win': '“How rude. It doesn’t matter. The press is at the Inner Sun, and I’m late for my own release.”',
                      'lose': '“Encore declined.”', 'hint': 'Vinylla is at the top of the Upper Bracket Walk with a team around level 57–59.'},
     },
-    shops={'upside': {'name': 'Night Market', 'keeper': 'Lux', 'who': 'clerk', 'greeting': 'Open all night, all day. It’s always night on this side of the tower.',
+    shops={'nimbus': {'name': 'Night Market', 'keeper': 'Lux', 'who': 'clerk', 'greeting': 'Open all night, all day. It’s always night on this side of the tower.',
                       'stock': [{'item': 'pretzel', 'price': 60}, {'item': 'trailmix', 'price': 220}, {'item': 'taxbreak', 'price': 140}, {'item': 'loophole', 'price': 400},
                                 {'item': 'bailout', 'price': 900}, {'item': 'parachute', 'price': 2400}]}},
     lore={
-        'serverfarm': {'history': 'Farmland, until the servers proved a better crop.', 'known': 'Racks in rows, solar fields, and the Cloud.',
+        'circuit_terraces': {'history': 'Farmland, until the servers proved a better crop.', 'known': 'Racks in rows, solar fields, and the Cloud.',
                        'landmark': 'The cooling tower where the Cloud is made, and from which it rains on Tuesdays.', 'legend': 'Everything you ever saved is up there somewhere. Nobody knows the password.'},
-        'upside': {'history': 'A city that grew at the foot of the Spire, to sell things to people going up it.', 'known': 'The Spire, the night market, and the shadow.',
+        'nimbus': {'history': 'A city that grew at the foot of the Spire, to sell things to people going up it.', 'known': 'The Spire, the night market, and the shadow.',
                    'landmark': 'The Spire, one tower straight up through the clouds.', 'legend': 'The top of the Spire is above the Inner Sun’s light. Up there it is always night, and always sold out.'},
-        'bubbleland': {'history': 'A theme park built on a bubble, closed the day it burst.', 'known': 'The stopped Ferris wheel, the carousel, and the gate with a letter missing.',
+        'fizzpop': {'history': 'A theme park built on a bubble, closed the day it burst.', 'known': 'The stopped Ferris wheel, the carousel, and the gate with a letter missing.',
                        'landmark': 'The Ferris wheel, stopped with its riders’ money still at the top.', 'legend': 'On quiet nights the carousel turns by itself, and the horses come back worth less.'},
-        'bracket': {'history': 'Walkways of sky-stone up the outside of the Spire, through the clouds.', 'known': 'The view, the wind, and the door to the penthouse.',
+        'skygarden': {'history': 'Walkways of sky-stone up the outside of the Spire, through the clouds.', 'known': 'The view, the wind, and the door to the penthouse.',
                     'landmark': 'The penthouse door: a gold record in a marble frame.', 'legend': 'The Upper Bracket is where the money goes when it has nowhere left to go.'},
     },
     chat={
-        'upside': {'0': ['The Spire goes up through the clouds. Above them, they say, it’s always night and always sold out.', 'The night market never closes. Neither does the shadow.',
+        'nimbus': {'0': ['The Spire goes up through the clouds. Above them, they say, it’s always night and always sold out.', 'The night market never closes. Neither does the shadow.',
                          'Vinylla’s at the top. You can hear the bass from the market on a still night.', 'Variants queue round the tower for the release. They’ve been queuing since spring.',
                          'Bubbleland closed the day the bubble burst. The Ferris wheel stopped with the money still at the top.']},
     },
@@ -551,7 +551,7 @@ CLOUD_SPIRE = dict(
 
 # ------------------------------------------------------------------------------------------------ The Inner Sun
 LOOK.update({
-    'ath': dict(sky=['#E6B464', '#F4DCA0', '#FFF6DC'], haze='#F6E2B8', hazeD=50, amb='sand', far='canyon', farH=8, grassCol=['#9A8A40', '#F0D888'], wind=1.2, rays=1),
+    'zenith_steps': dict(sky=['#E6B464', '#F4DCA0', '#FFF6DC'], haze='#F6E2B8', hazeD=50, amb='sand', far='canyon', farH=8, grassCol=['#9A8A40', '#F0D888'], wind=1.2, rays=1),
     'bell': dict(sky=['#EAB65E', '#F6DC9C', '#FFF8E0'], haze='#F8E6BC', hazeD=52, amb='sand', far='canyon', farH=7, grassCol=['#9A8A40', '#F0D888'], wind=1.1, rays=1),
     'sun': dict(sky=['#F2C060', '#FFE6A0', '#FFFBEA'], haze='#FFF0C8', hazeD=56, amb='dust', far='canyon', farH=6, grassCol=['#A89040', '#F8E098'], wind=.9, rays=1),
 })
@@ -559,31 +559,31 @@ LOOK.update({
 INNER_SUN = dict(
     id='innersun', future=None, t='sun', mood='noon', moods={},          # the sun itself stays on the map, at the centre
     nodes=[
-        dict(id='ath', name='All-Time High', kind='route', lon=272.4, lat=13.0, pool='ath', biome='desert', area='volcano', route='The Long Way Down', music='innersun', mood='heat',
+        dict(id='zenith_steps', name='All-Time High', kind='route', lon=272.4, lat=13.0, pool='zenith_steps', biome='desert', area='volcano', route='The Long Way Down', music='innersun', mood='heat',
              blurb='A desert of sun-baked stone under the Inner Sun. Everything here peaked a long time ago.'),
-        dict(id='closingbell', name='The Closing Bell', kind='route', lon=279.8, lat=7.0, pool='closingbell', biome='desert', area='volcano', route='Sun Road', music='innersun',
+        dict(id='bellwether_rise', name='The Closing Bell', kind='route', lon=279.8, lat=7.0, pool='bellwether_rise', biome='desert', area='volcano', route='Sun Road', music='innersun',
              blurb='The road to the Inner Sun, past the great bell. When it rings, everything stops trading.'),
         dict(id='innersun', name='The Inner Sun', kind='route', lon=287.4, lat=11.0, pool='innersun', biome='sun', area='volcano', route='Sun Road', music='innersun',
              blurb='Always noon at the centre of the world. The press stands ready under the sun.'),
     ],
-    links=[('bracket', 'ath', 1800, 'The Long Way Down'), ('ath', 'closingbell', 1600, 'Sun Road'), ('closingbell', 'innersun', 1600, 'Sun Road')],
+    links=[('skygarden', 'zenith_steps', 1800, 'The Long Way Down'), ('zenith_steps', 'bellwether_rise', 1600, 'Sun Road'), ('bellwether_rise', 'innersun', 1600, 'Sun Road')],
     pools={
-        'ath': {'lv': [57, 61], 'list': [['lebron1', 25], ['ma2', 15], ['mateschitz1', 25], ['kroc2', 20], ['ballmer0', 15]]},
-        'closingbell': {'lv': [58, 62], 'list': [['ford2', 25], ['mittal0', 20], ['ronaldo0', 15], ['hershey0', 20], ['lebron1', 20]]},
+        'zenith_steps': {'lv': [57, 61], 'list': [['lebron1', 25], ['ma2', 15], ['mateschitz1', 25], ['kroc2', 20], ['ballmer0', 15]]},
+        'bellwether_rise': {'lv': [58, 62], 'list': [['ford2', 25], ['mittal0', 20], ['ronaldo0', 15], ['hershey0', 20], ['lebron1', 20]]},
         'innersun': {'lv': [60, 64], 'list': [['ma2', 25], ['lebron1', 25], ['huang2', 20], ['ronaldo0', 15], ['mittal0', 15]]},
     },
     people={},
     trainers={
-        'daytrader': {'name': 'Day Trader Dax', 'who': 'clerk', 'area': 'volcano', 'node': 'ath', 'blocks': False,
+        'daytrader': {'name': 'Day Trader Dax', 'who': 'clerk', 'battleStage': 'volcano', 'node': 'zenith_steps', 'blocks': False,
                       'team': [{'sp': 'lebron1', 'lvl': 58}, {'sp': 'ma2', 'lvl': 59}], 'reward': 2400, 'market': None,
                       'lines': ['“I bought at the all-time high. I’m waiting for it to come back. It’s been eleven years.”'], 'win': '“Correction.”', 'lose': '“To the moon!”', 'hint': ''},
-        'bellringer': {'name': 'Bell Ringer Bea', 'who': 'hiker', 'area': 'volcano', 'node': 'closingbell', 'blocks': False,
+        'bellringer': {'name': 'Bell Ringer Bea', 'who': 'hiker', 'battleStage': 'volcano', 'node': 'bellwether_rise', 'blocks': False,
                        'team': [{'sp': 'mittal0', 'lvl': 59}, {'sp': 'ford2', 'lvl': 60}, {'sp': 'ronaldo0', 'lvl': 60}], 'reward': 2600, 'market': None,
                        'lines': ['“I ring the bell when the day is done. The sun never sets here, so I just ring it when I’m tired.”'], 'win': '“Ding.”', 'lose': '“Dong!”', 'hint': ''},
-        'variant_one': {'name': 'Variant No. 1', 'who': 'variant', 'area': 'volcano', 'node': 'innersun', 'blocks': False,
+        'variant_one': {'name': 'Variant No. 1', 'who': 'variant', 'battleStage': 'volcano', 'node': 'innersun', 'blocks': False,
                         'team': [{'sp': 'son1', 'lvl': 59}, {'sp': 'jayz1', 'lvl': 59}, {'sp': 'ek1', 'lvl': 60}], 'reward': 2600, 'market': None,
                         'lines': ['“Number one. Not the first fan; the first variant. She made me before she made the record.”'], 'win': '“One of a kind. Still.”', 'lose': '“Number one!”', 'hint': ''},
-        'vinylla2': {'name': 'Vinylla', 'who': 'vinylla', 'area': 'volcano', 'node': 'innersun', 'blocks': False, 'after': 'vinylla1', 'ending': 1,
+        'vinylla2': {'name': 'Vinylla', 'who': 'vinylla', 'battleStage': 'volcano', 'node': 'innersun', 'blocks': False, 'after': 'vinylla1', 'ending': 1,
                      'team': [{'sp': 'jayz1', 'lvl': 60}, {'sp': 'ek1', 'lvl': 60}, {'sp': 'spielberg1', 'lvl': 61}, {'sp': 'scott0', 'lvl': 61}, {'sp': 'ronaldo0', 'lvl': 62}, {'sp': 'ma2', 'lvl': 63}],
                      'reward': 20000, 'egg': 10, 'market': None,
                      'intro': ['[happy] You came all this way for the release? I’m touched. Truly.', 'One turn of the press and the sun is a record. Gold on one side, darkness on the other.',
@@ -600,9 +600,9 @@ INNER_SUN = dict(
     },
     shops={},
     lore={
-        'ath': {'history': 'The desert under the Inner Sun, where everything was worth the most it would ever be worth.', 'known': 'Sun-baked stone, heat, and the ticker still running.',
+        'zenith_steps': {'history': 'The desert under the Inner Sun, where everything was worth the most it would ever be worth.', 'known': 'Sun-baked stone, heat, and the ticker still running.',
                 'landmark': 'The column of the all-time high, broken off at the top, its ticker still showing the peak.', 'legend': 'The ticker will run until the price comes back. It is very patient.'},
-        'closingbell': {'history': 'The old road to the Inner Sun, lined with the ruins of exchanges.', 'known': 'The great bell, and the long straight road.',
+        'bellwether_rise': {'history': 'The old road to the Inner Sun, lined with the ruins of exchanges.', 'known': 'The great bell, and the long straight road.',
                         'landmark': 'The Closing Bell: when it rings, everything stops trading, even the wind.', 'legend': 'The bell has rung only once. Nobody remembers what it closed.'},
         'innersun': {'history': 'The centre of the Hollow Earth, where the Inner Sun hangs at noon for ever.', 'known': 'Light, heat, and Vinylla’s press.',
                      'landmark': 'The press: a record as big as a house, waiting under the sun.', 'legend': 'Look straight up and the sun looks back. It has seen every deal ever made, and it is not impressed.'},
@@ -625,7 +625,7 @@ def save(head, D):
 
 
 def node_index(D, nid):
-    for i, r in enumerate(D['route']):
+    for i, r in enumerate(D['locations']):
         if r.get('id') == nid: return i
     return None
 
@@ -647,7 +647,7 @@ MEADOW_FLOWERS = ['@flowers', 'daisies', 'buttercups', 'poppies', 'cornflowers',
 def route_festival(D, i, old):
     """the fan festival in the wildflower fields: the festival ground off to the west of the way north, the stage at its
     back, merch stalls in a row before it, toilets and food trucks round the edges, tents on the far side"""
-    s, ex = BP.route_base('festival', D, i, old, 'E', 4721, hub=(56, 12))
+    s, ex = BP.route_base('fanfare_fields', D, i, old, 'E', 4721, hub=(56, 12))
     s.tint_ground([('g', .6, 7, 'E'), ('f', .7, 5, 'Eg'), ('C', .78, 4, 'Eg')], 21)
     # the festival ground: trampled earth and straw (nothing grows on it, no tall grass)
     s.blob(30, 38, 19, 9, 'A', .3); s.blob(30, 38, 14, 6, 'D', .35, keep='A'); s.clear.append((30, 46, 7)); s.clear.append((30, 36, 9))
@@ -674,7 +674,7 @@ def route_festival(D, i, old):
 def town_twofold(D, i, old):
     """a market village: a square of stalls round the giant sunflower, the market hall, Poppy's greenhouse arena on the
     square's north side, houses in lanes with deep gardens (everything grows back twice as fast), fields at the edges"""
-    W, H = 96, 72; s = Place('twofold', 'Twofold', 'g', 4722, W, H); hub = (48, 16); s.setup(old, hub)
+    W, H = 96, 72; s = Place('twinpetal', 'Twofold', 'g', 4722, W, H); hub = (48, 16); s.setup(old, hub)
     ex = exits_for(s, D, i, hub, keep_roads=False, lamps='lantern')
     s.blob(48, 24, 13, 6, 'K', .1); s.clear.append((48, 25.4, 2.6))
     s.street([[2, 21], [24, 21.4], [48, 21], [72, 21.4], [W - 2, 21]], 'K', 2.4, 'lantern', 12)
@@ -716,7 +716,7 @@ def town_twofold(D, i, old):
 def route_blossom(D, i, old):
     """a valley of cherry trees: a stream down the middle crossed by stepping stones and a little bridge, the great
     cherry on its bank, lanterns along the path, petals everywhere"""
-    s, ex = BP.route_base('blossom', D, i, old, 'g', 4723, hub=(56, 12))
+    s, ex = BP.route_base('petalfall', D, i, old, 'g', 4723, hub=(56, 12))
     s.tint_ground([('E', .58, 7, 'g'), ('C', .66, 5, 'gE'), ('M', .8, 4, 'g')], 41)
     s.stream([(70, 64.4), (66, 52), (60, 44), (52, 36), (46, 28), (40, 18), (34, 8), (30, -.4)], 1.4, .55)
     s.put('tree_blossom_great', 63.4, 41.6)
@@ -739,7 +739,7 @@ def route_blossom(D, i, old):
 def route_margins(D, i, old):
     """a mangrove swamp: channels of open water between marsh islands, the path on duckboards over the wet parts,
     mangroves on their roots, the stilt hut, reeds and lilies"""
-    s, ex = BP.route_base('margins', D, i, old, 'R', 4724, hub=(56, 12), path='5', amp=2.6, width=1.4)
+    s, ex = BP.route_base('rootwater', D, i, old, 'R', 4724, hub=(56, 12), path='5', amp=2.6, width=1.4)
     for (cx, cz, rx, rz) in ((26, 34, 14, 6), (84, 30, 15, 6), (54, 50, 20, 5), (14, 56, 10, 4), (98, 54, 10, 4)):
         s.blob(cx, cz, rx, rz, 'w', .3, keep='5'); s.blob(cx, cz, rx * .55, rz * .5, 'd', .3, keep='5w')
     s.tint_ground([('g', .62, 6, 'R'), ('M', .7, 5, 'Rg'), ('D', .8, 4, 'R')], 51)
@@ -777,7 +777,7 @@ def vines(s, x0, x1, z0, z1, gap=2.4, step=3.6):
 def route_vintage(D, i, old):
     """vineyards on sunburnt hills: rows of vines up the slopes either side of the track, olive trees and cypresses,
     a press yard with barrels, and at the back, set into the hill, the vault door with the gold V"""
-    s, ex = BP.route_base('vintage', D, i, old, 'B', 4731, hub=(56, 12), path='u')
+    s, ex = BP.route_base('grapevine_hills', D, i, old, 'B', 4731, hub=(56, 12), path='u')
     s.tint_ground([('g', .62, 7, 'B'), ('A', .76, 5, 'B'), ('G', .82, 4, 'B')], 61)
     s.put('vault_door_hill', 56, 56.6); s.clear.append((56, 54, 4.5))
     s.line([[56, 55], [56.4, 48], [55, 40], [56.4, 30], [58.4, 21], [59, 16]], 'u', 1.0, keep='uwd'); s.roads.append(([[56, 55], [55, 40], [58.4, 21]], 1.0))
@@ -798,7 +798,7 @@ def route_vintage(D, i, old):
 def town_bullion(D, i, old):
     """the Baron's estate village: a square with the golden bull, the manor on the rise behind it, villas and cottages
     on cypress-lined streets, vault doors in the hill at the back, vines all round"""
-    W, H = 96, 72; s = Place('bullion', 'Bullion Hill', 'B', 4732, W, H); hub = (48, 16); s.setup(old, hub)
+    W, H = 96, 72; s = Place('goldvine', 'Bullion Hill', 'B', 4732, W, H); hub = (48, 16); s.setup(old, hub)
     ex = exits_for(s, D, i, hub, keep_roads=False, lamps='streetlamp_b')
     s.blob(48, 24, 12, 5.6, 'T', .08); s.clear.append((48, 24.4, 3))
     s.street([[2, 20.6], [24, 21], [48, 20.6], [72, 21], [W - 2, 20.6]], 'K', 2.4, 'streetlamp_b', 12)
@@ -837,7 +837,7 @@ def town_bullion(D, i, old):
 def route_flattax(D, i, old):
     """salt flats: white crust to the horizon, raked salt in cones, a dead tree, bleached stones, and in the middle of
     it all the tollbooth with its barrier across nothing"""
-    s, ex = BP.route_base('flattax', D, i, old, '4', 4733, hub=(56, 12), path='A', amp=1.8, width=1.4)
+    s, ex = BP.route_base('saltpan_flats', D, i, old, '4', 4733, hub=(56, 12), path='A', amp=1.8, width=1.4)
     s.tint_ground([('A', .7, 8, '4'), ('B', .82, 6, '4A')], 81)
     s.put('tollbooth', 62, 34)
     for k in range(5):
@@ -885,7 +885,7 @@ AUTUMN = ['tree_rowan_autumn', 'tree_beech_autumn', 'tree_poplar_autumn', 'tree_
 def route_sporewood(D, i, old):
     """a wood of giant mushrooms on a soft mushroom mat, moss and forest floor, the spore mill in a clearing with the
     Variants' drums stacked by it, glowing mushrooms along the path"""
-    s, ex = BP.route_base('sporewood', D, i, old, 'J', 4741, hub=(56, 12), path='y', amp=3.0, width=1.3)
+    s, ex = BP.route_base('puffcap', D, i, old, 'J', 4741, hub=(56, 12), path='y', amp=3.0, width=1.3)
     s.tint_ground([('M', .58, 6, 'J'), ('y', .7, 5, 'J'), ('g', .82, 4, 'J')], 101)
     s.blob(78, 40, 10, 6, 'v', .3); s.clear.append((78, 42, 5))
     s.put('spore_mill', 78, 42.6)
@@ -907,7 +907,7 @@ def route_sporewood(D, i, old):
 def town_marketcap(D, i, old):
     """a village round the colossal mushroom: its stalk at the heart of a mossy square, mushroom houses in rings round
     it, treehouses at the edges, the shop, the clinic and the inn on the street in front"""
-    W, H = 96, 72; s = Place('marketcap', 'Market Cap', 'J', 4742, W, H); hub = (48, 16); s.setup(old, hub)
+    W, H = 96, 72; s = Place('capshade', 'Market Cap', 'J', 4742, W, H); hub = (48, 16); s.setup(old, hub)
     ex = exits_for(s, D, i, hub, keep_roads=False, lamps='lantern')
     s.blob(48, 30, 13, 7, 'M', .12); s.blob(48, 30, 9, 4.6, 'v', .2, keep='M'); s.clear.append((48, 33, 3.4))
     s.street([[2, 21], [24, 21.4], [48, 21], [72, 21.4], [W - 2, 21]], 'y', 2.4, 'lantern', 12)
@@ -941,7 +941,7 @@ def town_marketcap(D, i, old):
 def route_fallquarter(D, i, old):
     """a wood where it is always autumn: leaf litter, every tree turned, piles of leaves, a stream, a bench, and the
     Ledger Oak in a clearing of its own"""
-    s, ex = BP.route_base('fallquarter', D, i, old, 'L', 4743, hub=(56, 12), path='p', amp=3.0)
+    s, ex = BP.route_base('russetwood', D, i, old, 'L', 4743, hub=(56, 12), path='p', amp=3.0)
     s.tint_ground([('g', .6, 7, 'L'), ('y', .72, 5, 'L'), ('u', .84, 4, 'L')], 121)
     s.blob(34, 42, 11, 6, 'L', .2); s.clear.append((34, 42, 6))
     s.put('tree_giant_autumn', 34, 44)
@@ -964,7 +964,7 @@ def route_fallquarter(D, i, old):
 def route_hypergrowth(D, i, old):
     """jungle over a start-up campus: tall jungle trees hung with lianas, palms, huge leaves, moss, the old campus path in
     cracked concrete, and in a clearing the unicorn statue going green"""
-    s, ex = BP.route_base('hypergrowth', D, i, old, 'y', 4744, hub=(56, 12), path='i', amp=2.4, width=1.6)
+    s, ex = BP.route_base('tanglewild', D, i, old, 'y', 4744, hub=(56, 12), path='i', amp=2.4, width=1.6)
     s.tint_ground([('M', .58, 6, 'y'), ('g', .7, 5, 'y'), ('t', .9, 4, 'yg')], 131)
     s.blob(62, 40, 9, 5, 'i', .35); s.clear.append((62, 42, 5))
     s.put('unicorn_statue', 62, 43.4)
@@ -991,7 +991,7 @@ CAVE_ROCK = ['stalagmite', 'stalagmite_b', '@rocks', 'boulder']
 def route_spread(D, i, old):
     """crystal chasms: two ravines across the cavern floor, rope bridges where the way crosses them, the crystal spire on
     the shelf between, the Variants' needle works on the other side of it, crystals everywhere the light can reach"""
-    s, ex = BP.route_base('spread', D, i, old, 'k', 4751, hub=(56, 12), path='v', amp=2.2, width=1.4)
+    s, ex = BP.route_base('prism_chasm', D, i, old, 'k', 4751, hub=(56, 12), path='v', amp=2.2, width=1.4)
     s.tint_ground([('X', .6, 6, 'k'), ('r', .74, 5, 'k'), ('P', .84, 4, 'k')], 141)
     s.cliff(9, 23, 103, 27.6, -6, 0, 1.0); s.cliff(12, 43, 99, 47.4, -6, 0, 1.0)            # the chasms
     s.put('crystal_spire', 80, 35.4); s.clear.append((80, 33, 6))
@@ -1011,7 +1011,7 @@ def route_spread(D, i, old):
 def town_mintshaft(D, i, old):
     """a mining town in a cavern: the Great Geode on a square of crystal floor, the assay office, the clinic and the inn
     on the street in front, cave houses in rows behind, two mine mouths in the back wall with a headframe and carts"""
-    W, H = 96, 72; s = Place('mintshaft', 'Mintshaft', 'k', 4752, W, H); hub = (48, 16); s.setup(old, hub)
+    W, H = 96, 72; s = Place('glimmershaft', 'Mintshaft', 'k', 4752, W, H); hub = (48, 16); s.setup(old, hub)
     ex = exits_for(s, D, i, hub, keep_roads=False, lamps='lantern')
     s.blob(48, 26, 12, 5.6, 'X', .1); s.clear.append((48, 27, 3.4))
     s.street([[2, 20.6], [24, 21], [48, 20.6], [72, 21], [W - 2, 20.6]], 'v', 2.4, 'lantern', 11)
@@ -1046,7 +1046,7 @@ def town_mintshaft(D, i, old):
 def route_darkpool(D, i, old):
     """an underground lake: black water filling the cavern's middle, a shore trail round its south side, a jetty with a
     boat, the miners' beacon on the point, glowing crystals all along the water's edge"""
-    s, ex = BP.route_base('darkpool', D, i, old, 'k', 4753, hub=(56, 12), path='v', amp=1.8, width=1.3)
+    s, ex = BP.route_base('gloomwater', D, i, old, 'k', 4753, hub=(56, 12), path='v', amp=1.8, width=1.3)
     s.tint_ground([('r', .66, 6, 'k'), ('X', .78, 5, 'k')], 161)
     s.blob(56, 42, 40, 13, 'w', .25); s.blob(56, 43, 35, 10.5, 'd', .25)
     s.wind([56, 14], [26, 28], 'v', 1.2, 1.2); s.wind([56, 14], [84, 30], 'v', 1.2, 1.2)
@@ -1072,7 +1072,7 @@ def route_darkpool(D, i, old):
 def route_frozen(D, i, old):
     """a frozen plain at the mouth of the ice caves: snow, a frozen pond, ice spikes, snowy pines, the safe frozen in
     its block of ice beside the track, and an ice fisher's hole in the pond"""
-    s, ex = BP.route_base('frozen', D, i, old, 'n', 4754, hub=(56, 12), path='v', amp=2.4, width=1.3)
+    s, ex = BP.route_base('rimefrost', D, i, old, 'n', 4754, hub=(56, 12), path='v', amp=2.4, width=1.3)
     s.tint_ground([('I', .7, 6, 'n'), ('r', .78, 5, 'n'), ('g', .84, 4, 'n')], 171)
     s.blob(76, 34, 14, 6, 'I', .2); s.clear.append((76, 34, 6))
     s.put('ice_block_safe', 40, 34.4); s.clear.append((40, 32, 4.5))
@@ -1096,7 +1096,7 @@ def route_frozen(D, i, old):
 def route_shoals(D, i, old):
     """reef shallows: coral sand and tide pools, seaweed rock, the sea to the east with the coral tower standing in it,
     the Shell Company on the sand, kelp and buoys in the water, crabs and gulls"""
-    s, ex = BP.route_base('shoals', D, i, old, 'N', 4761, hub=(56, 12), path='S', amp=2.2, width=1.5)
+    s, ex = BP.route_base('conchshell', D, i, old, 'N', 4761, hub=(56, 12), path='S', amp=2.2, width=1.5)
     s.blob(100, 34, 26, 30, 'w', .3, keep='S'); s.blob(108, 34, 20, 28, 'd', .3, keep='S')
     s.tint_ground([('2', .74, 4, 'N'), ('3', .8, 4, 'N'), ('s', .82, 5, 'N')], 181)
     s.put('coral_tower', 79.4, 38.4); s.clear.append((79, 36, 5))                 # in the shallows, close enough to the beach to see
@@ -1118,7 +1118,7 @@ def town_portfolio(D, i, old):
     """a harbour town: the main street in front with the chandlery, the clinic and the inn, terraces of townhouses and
     flats on a second street behind them, the promenade along the water at the back, piers out into the harbour and
     the yachts moored between them, a little harbour park with palms on the near side of town"""
-    W, H = 96, 72; s = Place('portfolio', 'Port Folio', 'g', 4762, W, H); hub = (48, 16); s.setup(old, hub)
+    W, H = 96, 72; s = Place('kelpport', 'Port Folio', 'g', 4762, W, H); hub = (48, 16); s.setup(old, hub)
     ex = exits_for(s, D, i, hub, keep_roads=False, lamps='streetlamp_b')
     s.blob(48, 72, 70, 21, 'w', .12); s.blob(48, 74, 66, 18, 'd', .12)                            # the harbour
     for z0 in range(52, 72):
@@ -1166,7 +1166,7 @@ def town_portfolio(D, i, old):
 def route_bottomline(D, i, old):
     """open water over the trench, ridden: deep water all round, shallow lanes over sand bars, rocks breaking the
     surface, kelp forests, a line of buoys marking the way to the plant"""
-    s, ex = BP.route_base('bottomline', D, i, old, 'd', 4763, hub=(56, 14), path='S', amp=2.6, width=1.8)
+    s, ex = BP.route_base('abyssal_trench', D, i, old, 'd', 4763, hub=(56, 14), path='S', amp=2.6, width=1.8)
     s.roads.clear()
     for cx, cz, rx, rz in ((56, 14, 12, 5), (24, 36, 8, 4), (88, 30, 9, 4), (60, 52, 7, 3.4)):
         s.blob(cx, cz, rx + 3, rz + 2.4, 'w', .3); s.blob(cx, cz, rx + 1, rz + .6, '3', .3); s.blob(cx, cz, rx * .6, rz * .6, 'N', .35)
@@ -1183,7 +1183,7 @@ def route_bottomline(D, i, old):
 def route_pressing(D, i, old):
     """the pressing plant on its platform over the trench: concrete decks on piles, the plant at the back, crates of
     test pressings, drums, a crane, lamps; the water round it ridden"""
-    s, ex = BP.route_base('pressing', D, i, old, 'd', 4764, hub=(56, 29), path='S', amp=2.2, width=1.8)    # you arrive on the deck
+    s, ex = BP.route_base('vinyl_works', D, i, old, 'd', 4764, hub=(56, 29), path='S', amp=2.2, width=1.8)    # you arrive on the deck
     s.roads.clear()
     s.blob(56, 13, 13, 5, 'w', .3); s.blob(56, 13, 11, 3.6, '3', .3)
     for e in ex: s.wind([56, 29], e, 'S', 2.0, 2.4, keep='')
@@ -1210,7 +1210,7 @@ def route_pressing(D, i, old):
 def route_serverfarm(D, i, old):
     """silicon flats: fields of solar panels in rows on one side, server racks on concrete pads on the other, the Cloud's
     cooling tower behind them, fences, cable runs"""
-    s, ex = BP.route_base('serverfarm', D, i, old, 'g', 4771, hub=(56, 12), path='a', amp=2.0, width=1.6)
+    s, ex = BP.route_base('circuit_terraces', D, i, old, 'g', 4771, hub=(56, 12), path='a', amp=2.0, width=1.6)
     s.tint_ground([('u', .62, 6, 'g'), ('G', .74, 5, 'g')], 201)
     for z in frange(22, 44, 3.4):                                                                 # the solar field
         for x in frange(8, 42, 3.8):
@@ -1233,7 +1233,7 @@ def route_serverfarm(D, i, old):
 def town_upside(D, i, old):
     """the city at the foot of the Spire: the tower on its plaza at the back, the night market lane leading up to it,
     blocks of flats, offices and townhouses on paved streets, little lawns with trees, cars at the kerb"""
-    W, H = 96, 72; s = Place('upside', 'Upside City', 'q', 4772, W, H); hub = (48, 16); s.setup(old, hub)
+    W, H = 96, 72; s = Place('nimbus', 'Upside City', 'q', 4772, W, H); hub = (48, 16); s.setup(old, hub)
     ex = exits_for(s, D, i, hub, keep_roads=False, lamps='streetlamp_b')
     s.blob(48, 53, 15, 8, 'T', .06); s.clear.append((48, 52, 6.6))
     s.street([[2, 20.6], [24, 21], [48, 20.6], [72, 21], [W - 2, 20.6]], 'a', 2.6, 'streetlamp_b', 12)
@@ -1280,7 +1280,7 @@ def town_upside(D, i, old):
 def route_bubbleland(D, i, old):
     """an abandoned theme park: faded paving with grass coming through, the gate with its fallen letter where you come
     in, the stopped Ferris wheel, the carousel, empty stalls and a food truck, lamps that still come on"""
-    s, ex = BP.route_base('bubbleland', D, i, old, 'q', 4773, hub=(56, 12), path='q', amp=1.6, width=1.8)
+    s, ex = BP.route_base('fizzpop', D, i, old, 'q', 4773, hub=(56, 12), path='q', amp=1.6, width=1.8)
     s.tint_ground([('g', .58, 6, 'q'), ('G', .7, 5, 'qg'), ('u', .82, 4, 'q')], 211)
     e0 = ex[0] if ex else (30, 63)
     s.put('bubble_gate', e0[0], min(58, e0[1] - 5.2)); s.clear.append((e0[0], e0[1] - 5, 4))
@@ -1300,7 +1300,7 @@ def route_bubbleland(D, i, old):
 def route_bracket(D, i, old):
     """walkways up the outside of the Spire through the clouds: cloud-floor terraces climbing to the back, sky-stone
     paths with stairs between them, and at the top the penthouse door"""
-    s, ex = BP.route_base('bracket', D, i, old, 'U', 4774, hub=(56, 12), path='V', amp=2.0, width=1.6)
+    s, ex = BP.route_base('skygarden', D, i, old, 'U', 4774, hub=(56, 12), path='V', amp=2.0, width=1.6)
     s.wind([56, 14], [56, 56], 'V', 1.8, 2.6)
     s.terrace(-1, 28, s.W + 1, 65, 2.4, wall=False, wobble=1.2); s.terrace(-1, 44, s.W + 1, 65, 2.4, wall=False, wobble=1.2)
     s.tint_ground([('g', .7, 5, 'U'), ('G', .8, 4, 'U'), ('V', .84, 4, 'U')], 241)                 # sky gardens
@@ -1320,7 +1320,7 @@ def route_bracket(D, i, old):
 def route_ath(D, i, old):
     """a desert of sun-baked stone under the Inner Sun: gold-veined rock, sand, cacti, the broken column of the all-time
     high with its ticker still running"""
-    s, ex = BP.route_base('ath', D, i, old, 'Y', 4781, hub=(56, 12), path='A', amp=2.6, width=1.4)
+    s, ex = BP.route_base('zenith_steps', D, i, old, 'Y', 4781, hub=(56, 12), path='A', amp=2.6, width=1.4)
     s.tint_ground([('W', .62, 6, 'Y'), ('s', .72, 5, 'Y'), ('B', .82, 4, 'Y')], 221)
     s.put('ticker_column', 64, 34.4); s.clear.append((64, 33, 4))
     for cx, cz in ((24, 30), (92, 22), (40, 52), (88, 50)): s.blob(cx, cz, 7, 3.6, 'B', .3, keep='At')
@@ -1336,7 +1336,7 @@ def route_ath(D, i, old):
 def route_closingbell(D, i, old):
     """the old road to the Inner Sun: marble paving between ruined columns, the Closing Bell on its gantry beside the
     road, sun-baked stone and gold-veined rock all round"""
-    s, ex = BP.route_base('closingbell', D, i, old, 'Y', 4782, hub=(56, 14), path='T', amp=1.4, width=2.0)
+    s, ex = BP.route_base('bellwether_rise', D, i, old, 'Y', 4782, hub=(56, 14), path='T', amp=1.4, width=2.0)
     s.tint_ground([('W', .64, 6, 'Y'), ('s', .76, 5, 'Y')], 231)
     s.blob(58, 40, 10, 5, 'T', .1); s.put('closing_bell', 58, 43.6); s.clear.append((58, 40, 5.5))
     s.wind([56, 16], [57.6, 36.4], 'T', 2.0, .5)                                                   # up to the bell
@@ -1366,31 +1366,31 @@ def route_innersun(D, i, old):
     s.d['npcSpots'] = [[62.6, 46], [48, 38], [64, 38]]
     return s.out(7, 'iron'), {}
 
-BUILD = {'festival': route_festival, 'twofold': town_twofold, 'blossom': route_blossom, 'margins': route_margins,
-         'vintage': route_vintage, 'bullion': town_bullion, 'flattax': route_flattax, 'badlands': route_badlands,
-         'sporewood': route_sporewood, 'marketcap': town_marketcap, 'fallquarter': route_fallquarter, 'hypergrowth': route_hypergrowth,
-         'spread': route_spread, 'mintshaft': town_mintshaft, 'darkpool': route_darkpool, 'frozen': route_frozen,
-         'shoals': route_shoals, 'portfolio': town_portfolio, 'bottomline': route_bottomline, 'pressing': route_pressing,
-         'serverfarm': route_serverfarm, 'upside': town_upside, 'bubbleland': route_bubbleland, 'bracket': route_bracket,
-         'ath': route_ath, 'closingbell': route_closingbell, 'innersun': route_innersun}
-LOOK_OF = {'festival': 'meadow', 'twofold': 'twofold', 'blossom': 'blossom', 'margins': 'mangrove', 'vintage': 'vintage', 'bullion': 'bullion', 'flattax': 'flattax', 'badlands': 'badlands',
-           'sporewood': 'spore', 'marketcap': 'capvillage', 'fallquarter': 'fall', 'hypergrowth': 'jungle',
-           'spread': 'crystal', 'mintshaft': 'cavetown', 'darkpool': 'darkpool', 'frozen': 'tundra', 'shoals': 'reef', 'portfolio': 'harbour', 'bottomline': 'trench',
-           'pressing': 'press', 'serverfarm': 'server', 'upside': 'upside', 'bubbleland': 'bubble', 'bracket': 'bracket', 'ath': 'ath', 'closingbell': 'bell', 'innersun': 'sun'}
-TOWNS = {'twofold', 'bullion', 'marketcap', 'mintshaft', 'portfolio', 'upside'}
+BUILD = {'fanfare_fields': route_festival, 'twinpetal': town_twofold, 'petalfall': route_blossom, 'rootwater': route_margins,
+         'grapevine_hills': route_vintage, 'goldvine': town_bullion, 'saltpan_flats': route_flattax, 'badlands': route_badlands,
+         'puffcap': route_sporewood, 'capshade': town_marketcap, 'russetwood': route_fallquarter, 'tanglewild': route_hypergrowth,
+         'prism_chasm': route_spread, 'glimmershaft': town_mintshaft, 'gloomwater': route_darkpool, 'rimefrost': route_frozen,
+         'conchshell': route_shoals, 'kelpport': town_portfolio, 'abyssal_trench': route_bottomline, 'vinyl_works': route_pressing,
+         'circuit_terraces': route_serverfarm, 'nimbus': town_upside, 'fizzpop': route_bubbleland, 'skygarden': route_bracket,
+         'zenith_steps': route_ath, 'bellwether_rise': route_closingbell, 'innersun': route_innersun}
+LOOK_OF = {'fanfare_fields': 'meadow', 'twinpetal': 'twinpetal', 'petalfall': 'petalfall', 'rootwater': 'mangrove', 'grapevine_hills': 'grapevine_hills', 'goldvine': 'goldvine', 'saltpan_flats': 'saltpan_flats', 'badlands': 'badlands',
+           'puffcap': 'spore', 'capshade': 'capvillage', 'russetwood': 'fall', 'tanglewild': 'jungle',
+           'prism_chasm': 'crystal', 'glimmershaft': 'cavetown', 'gloomwater': 'gloomwater', 'rimefrost': 'tundra', 'conchshell': 'reef', 'kelpport': 'harbour', 'abyssal_trench': 'trench',
+           'vinyl_works': 'press', 'circuit_terraces': 'server', 'nimbus': 'nimbus', 'fizzpop': 'bubble', 'skygarden': 'skygarden', 'zenith_steps': 'zenith_steps', 'bellwether_rise': 'bell', 'innersun': 'sun'}
+TOWNS = {'twinpetal', 'goldvine', 'capshade', 'glimmershaft', 'kelpport', 'nimbus'}
 
 
 # ================================================================================================ ways in
 # A new region's first road leaves from a place that is already there. That place gets a way out on the side facing
 # the new region (an edge exit, a stretch of its own ground out to the edge, a signpost), and nothing else of it
 # changes. (side, where along that side in metres, where the way out starts, its ground, its width)
-WAYS_IN = {('mall', 'festival'): dict(side='E', at=20.0, start=66.0, ch='T', width=2.2)}
+WAYS_IN = {('lanternhall', 'fanfare_fields'): dict(side='E', at=20.0, start=66.0, ch='T', width=2.2)}
 
 
 def open_way(D, sid, nid, spec, rep):
     import base64, struct
-    sc = D['scenes'][sid]; i, j = node_index(D, sid), node_index(D, nid)
-    L = next(L for L in D['links'] if {L[0], L[1]} == {i, j}); J = L[3]; mine = 'a' if L[0] == i else 'b'
+    sc = D['maps'][sid]; i, j = node_index(D, sid), node_index(D, nid)
+    L = next(L for L in D['roads'] if {L[0], L[1]} == {i, j}); J = L[3]; mine = 'a' if L[0] == i else 'b'
     E = sc.setdefault('edgeExits', []); ex = sc.setdefault('exits', []); ids = {e['id'] for e in E}
     if J.get(mine) in ids: return
     if len(E) != len(ex): rep.append(f'!! {sid}: its exits and edge exits disagree, way to {nid} not opened'); return
@@ -1413,7 +1413,7 @@ def open_way(D, sid, nid, spec, rep):
     gone = [p for p in sc['props'] if on_way(p)]
     sc['props'] = [p for p in sc['props'] if p not in gone]
     pt = {'E': [W - inn, at], 'W': [inn, at], 'N': [at, H - inn], 'S': [at, inn]}[side]
-    o = D['route'][j]; say = f"{o['name']} this way. {'Route ' + o['route'].split()[-1] + '.' if o.get('route') else ''}".strip()
+    o = D['locations'][j]; say = f"{o['name']} this way. {'Route ' + o['route'].split()[-1] + '.' if o.get('route') else ''}".strip()
     sp = {'E': (W - 3.4, at + wd / 2 + .9), 'W': (3.4, at + wd / 2 + .9), 'N': (at + wd / 2 + .9, H - 3.4), 'S': (at + wd / 2 + .9, 3.4)}[side]
     sc['props'].append({'k': 'signpost', 'x': round(sp[0], 2), 'z': round(sp[1], 2), 'act': 'sign', 'say': say, TAG: 1})
     E.append({'id': eid, 'side': side, 't': round(at / (H if side in 'EW' else W), 4), 'in': inn, 'width': 2}); ex.append([round(pt[0], 2), round(pt[1], 2)])
@@ -1428,25 +1428,25 @@ def add_region(D, R, force=False, rep=None):
     for n in R['nodes']:
         i = node_index(D, n['id'])
         cost = next((c for a, b, c, _ in R['links'] if b == n['id']), 1500)
-        e = {'name': n['name'], 'cost': cost, 'pool': n['pool'], 'route': n['route'], 't': R['t'], 'blurb': n['blurb'], 'lon': n['lon'], 'lat': n['lat'], 'area': n['area'],
-             'scene': n['id'], 'id': n['id'], 'kind': n['kind'], 'biome': n['biome'], 'routeName': n['route'], 'mood': n.get('mood') or R['mood'], 'region': R['id'], TAG: 1}
+        e = {'name': n['name'], 'cost': cost, 'pool': n['pool'], 'route': n['route'], 't': R['t'], 'blurb': n['blurb'], 'lon': n['lon'], 'lat': n['lat'], 'battleStage': n['area'],
+             'mapId': n['id'], 'id': n['id'], 'kind': n['kind'], 'biome': n['biome'], 'routeName': n['route'], 'mood': n.get('mood') or R['mood'], 'region': R['id'], TAG: 1}
         if n['kind'] == 'town': e['town'] = 1
         for k in ('shop', 'boutique', 'gate', 'gateText', 'ride', 'music'):
             if n.get(k) is not None: e[k] = n[k]
-        if i is None: D['route'].append(e); rep.append(f'place {n["id"]}')
-        elif force and D['route'][i].get(TAG): D['route'][i] = e
+        if i is None: D['locations'].append(e); rep.append(f'place {n["id"]}')
+        elif force and D['locations'][i].get(TAG): D['locations'][i] = e
     # roads
-    have = {L[3].get('id') for L in D['links']}
+    have = {L[3].get('id') for L in D['roads']}
     for a, b, cost, name in R['links']:
         ia, ib = node_index(D, a), node_index(D, b); rid = f'road:{a}-{b}'
         if rid in have: continue
-        D['links'].append([ia, ib, cost, {'a': 'south', 'b': 'north', 'id': rid, 'from': a, 'to': b, 'name': name}]); rep.append(rid)
+        D['roads'].append([ia, ib, cost, {'a': 'south', 'b': 'north', 'id': rid, 'from': a, 'to': b, 'name': name}]); rep.append(rid)
     # places already there that a road of the region leaves from get their way out
     new = {n['id'] for n in R['nodes']}
     for a, b, cost, name in R['links']:
         for sid, nid in ((a, b), (b, a)):
             if sid in new or nid not in new: continue
-            sc = D['scenes'].get(D['route'][node_index(D, sid)].get('scene') or sid)
+            sc = D['maps'].get(D['locations'][node_index(D, sid)].get('mapId') or sid)
             if not sc or sc.get(TAG): continue
             if (sid, nid) in WAYS_IN: open_way(D, sid, nid, WAYS_IN[(sid, nid)], rep)
             else: rep.append(f'!! {sid} has no way out planned toward {nid}')
@@ -1461,7 +1461,7 @@ def add_region(D, R, force=False, rep=None):
         if k not in D['shops'] or force: D['shops'][k] = v
     for k, v in R.get('moods', {}).items():
         if k not in D['moods'] or force: D['moods'][k] = v
-    L = D.setdefault('lore', {}); P = L.setdefault('places', {})
+    L = D.setdefault('lore', {}); P = L.setdefault('locations', {})
     for k, v in R['lore'].items():
         if k not in P or force: P[k] = v
     C = L.setdefault('chat', {})
@@ -1499,7 +1499,7 @@ def prune_wild(sc):
     props: nothing placed by hand or by this tool's own builders)"""
     h, T = sc['h'], sc['tiles']
     def ch(x, z):
-        j, i = h - 1 - int(z), int(x)                # the game's rows run from the far edge (dioTer)
+        j, i = h - 1 - int(z), int(x)                # the game's rows run from the far edge (terrainAt)
         return T[j][i] if 0 <= j < h and 0 <= i < len(T[j]) else ''
     def ok(p):
         r = wild_rule(sc, ch(p['x'], p['z']))
@@ -1510,16 +1510,16 @@ def prune_wild(sc):
 
 
 # each region town's shop opens into a room of its own (tools/build-interiors.py makes them: run it first)
-SHOP_ROOM = {'twofold': 'int_twofold_market', 'bullion': 'int_bullion_exchange', 'marketcap': 'int_cap_market',
-             'mintshaft': 'int_assay_office', 'portfolio': 'int_chandlery', 'upside': 'int_night_market'}
+SHOP_ROOM = {'twinpetal': 'int_twinpetal_market', 'goldvine': 'int_bullion_exchange', 'capshade': 'int_cap_market',
+             'glimmershaft': 'int_assay_office', 'kelpport': 'int_chandlery', 'nimbus': 'int_night_market'}
 # every place has a resting spot and something that moves; these were built without one or the other
 REST = ('bench_wood', 'bench_metal', 'bench', 'log', 'log_mossy', 'campfire', 'picnic', 'deck_chair')
 EXTRAS = {
-    'flattax': dict(rest=['bench_wood'], life=('lizard', 3)), 'marketcap': dict(rest=['bench_wood']),
-    'spread': dict(rest=['log'], life=('lizard', 3)), 'mintshaft': dict(rest=['bench_metal']), 'darkpool': dict(rest=['log_mossy']),
-    'frozen': dict(rest=['log', 'campfire']), 'shoals': dict(rest=['deck_chair']), 'bottomline': dict(rest=['log']),
-    'pressing': dict(rest=['bench_metal']), 'serverfarm': dict(rest=['bench_metal']), 'ath': dict(rest=['bench_wood']),
-    'closingbell': dict(rest=['bench_metal']), 'innersun': dict(rest=['bench_wood'], life=('lizard', 2)), 'bracket': dict(life=('pigeon', 5)),
+    'saltpan_flats': dict(rest=['bench_wood'], life=('lizard', 3)), 'capshade': dict(rest=['bench_wood']),
+    'prism_chasm': dict(rest=['log'], life=('lizard', 3)), 'glimmershaft': dict(rest=['bench_metal']), 'gloomwater': dict(rest=['log_mossy']),
+    'rimefrost': dict(rest=['log', 'campfire']), 'conchshell': dict(rest=['deck_chair']), 'abyssal_trench': dict(rest=['log']),
+    'vinyl_works': dict(rest=['bench_metal']), 'circuit_terraces': dict(rest=['bench_metal']), 'zenith_steps': dict(rest=['bench_wood']),
+    'bellwether_rise': dict(rest=['bench_metal']), 'innersun': dict(rest=['bench_wood'], life=('lizard', 2)), 'skygarden': dict(life=('pigeon', 5)),
 }
 NO_REST = set('wdpcSTqhvaebmKI')          # water, paths, roads and paving: a bench goes beside them, not on them
 
@@ -1560,7 +1560,7 @@ def finish_v47(sid, sc, D, cat):
     adds); returns what it did"""
     out = []
     room = SHOP_ROOM.get(sid)
-    if room and room in D['scenes']:
+    if room and room in D['maps']:
         for p in sc['props']:
             if p.get('act') == 'shop' and not p.get('room'): p['room'] = room; out.append(f'shop opens into {room}')
     E = EXTRAS.get(sid) or {}
@@ -1583,7 +1583,7 @@ def build_places(D, R, cat, nature, force=False, only=None, mp=None):
     for n in R['nodes']:
         sid = n['id']
         if only and sid not in only: continue
-        old = D['scenes'].get(sid)
+        old = D['maps'].get(sid)
         if old and old.get('keep'): out.append(f'{sid}: marked keep, left alone'); continue
         if old and not force and not old.get(TAG): out.append(f'{sid}: a scene of that name is already there, left alone'); continue
         if old and not force:
@@ -1596,7 +1596,7 @@ def build_places(D, R, cat, nature, force=False, only=None, mp=None):
         sc[TAG] = 1; sc['biome'] = n['biome']
         occ, grown = BP.finish(sc, D, i, nature, cat)
         prune_wild(sc); grown = sum(1 for p in sc['props'] if p.get('w') == 42); finish_v47(sid, sc, D, cat)
-        D['scenes'][sid] = sc
+        D['maps'][sid] = sc
         tg = sum(r.count('t') for r in sc['tiles'])
         out.append(f'{sid}: {sc["w"]}×{sc["h"]}, tall grass {tg} m², {occ} placed + {grown} grown, exits {[(e["id"], e["side"]) for e in sc["edgeExits"]]}')
         if mp: BP.draw_map(sid, sc, cat, mp / f'{sid}.png')

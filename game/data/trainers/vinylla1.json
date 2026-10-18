@@ -1,7 +1,7 @@
 {
  "name": "Vinylla",
  "who": "vinylla",
- "area": "clear",
+ "battleStage": "clear",
  "node": 42,
  "blocks": false,
  "team": [

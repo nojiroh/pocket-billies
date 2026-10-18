@@ -6,116 +6,116 @@
      a tap (walk there, open a door, talk). A second finger turns it back into a pinch.
    - D-pad: a fixed eight-way pad in the lower left corner.
    - Tap only: neither; tap where to go.
-   Both set DIO.stick {x right, y up, length 0-1}; diorama.js walks along the camera's own right and forward. */
+   Both set walkView.stick {x right, y up, length 0-1}; walk-view.js walks along the camera's own right and forward. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { B, S, U } from './core.js';
-import { DIO } from './diorama.js';
-import { DGL } from './diorama-gl.js';
-import { TALK } from './talk.js';
-import { CS } from './cutscene.js';
-import { FLY, LIFT } from './airship.js';
+import { activeBattle, saveData, uiState } from './game-state.js';
+import { walkView } from './walk-view.js';
+import { walkRenderer } from './walk-view-gl.js';
+import { talkBox } from './talk.js';
+import { cutscene } from './cutscene.js';
+import { airshipFlight, glassLift } from './airship.js';
 /* eslint-disable no-func-assign */
 expose({
-  JOY: [() => JOY],
-  joyAllowed: [() => joyAllowed, v => (joyAllowed = v)],
-  joyEl: [() => joyEl, v => (joyEl = v)],
-  joyEnd: [() => joyEnd, v => (joyEnd = v)],
-  joyPad: [() => joyPad, v => (joyPad = v)],
-  joyPref: [() => joyPref, v => (joyPref = v)],
-  joySet: [() => joySet, v => (joySet = v)],
+  joystick: [() => joystick],
+  joystickAllowed: [() => joystickAllowed, v => (joystickAllowed = v)],
+  joystickDpad: [() => joystickDpad, v => (joystickDpad = v)],
+  joystickElement: [() => joystickElement, v => (joystickElement = v)],
+  joystickEnd: [() => joystickEnd, v => (joystickEnd = v)],
+  joystickInput: [() => joystickInput, v => (joystickInput = v)],
+  joystickPreference: [() => joystickPreference, v => (joystickPreference = v)],
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
-const JOY = { id: null, x0: 0, y0: 0, on: false, el: null, knob: null, pad: null, padId: null, quiet: 0 };
-function joyPref() {
-  return (typeof S !== 'undefined' && S.preferences && S.preferences.control) || 'stick';
+const joystick = { id: null, x0: 0, y0: 0, on: false, el: null, knob: null, pad: null, padId: null, quiet: 0 };
+function joystickPreference() {
+  return (typeof saveData !== 'undefined' && saveData.preferences && saveData.preferences.control) || 'stick';
 }
-function joyAllowed() {
+function joystickAllowed() {
   return (
-    typeof S !== 'undefined' &&
-    S.started &&
-    typeof U !== 'undefined' &&
-    U.tab === 'walk' &&
-    !U.modal &&
-    !U.title &&
-    !(typeof B !== 'undefined' && B) &&
-    !(typeof CS !== 'undefined' && CS.on) &&
-    typeof DIO !== 'undefined' &&
-    DIO.ready &&
-    DIO.cv &&
-    !DIO.battle &&
-    !DIO.director &&
-    !(typeof FLY !== 'undefined' && FLY.on) &&
-    !(typeof LIFT !== 'undefined' && LIFT.on) &&
-    !(typeof TALK !== 'undefined' && TALK.on)
+    typeof saveData !== 'undefined' &&
+    saveData.started &&
+    typeof uiState !== 'undefined' &&
+    uiState.tab === 'walk' &&
+    !uiState.modal &&
+    !uiState.title &&
+    !(typeof activeBattle !== 'undefined' && activeBattle) &&
+    !(typeof cutscene !== 'undefined' && cutscene.on) &&
+    typeof walkView !== 'undefined' &&
+    walkView.ready &&
+    walkView.cv &&
+    !walkView.battle &&
+    !walkView.director &&
+    !(typeof airshipFlight !== 'undefined' && airshipFlight.on) &&
+    !(typeof glassLift !== 'undefined' && glassLift.on) &&
+    !(typeof talkBox !== 'undefined' && talkBox.on)
   );
 }
-function joySet(x, y) {
-  if (typeof DIO !== 'undefined') DIO.stick = x || y ? { x, y } : null;
+function joystickInput(x, y) {
+  if (typeof walkView !== 'undefined') walkView.stick = x || y ? { x, y } : null;
 }
-function joyEl() {
-  if (JOY.el) return JOY.el;
+function joystickElement() {
+  if (joystick.el) return joystick.el;
   const e = document.createElement('div');
   e.className = 'joy';
   e.setAttribute('aria-hidden', 'true');
   e.innerHTML = '<i class="joy-knob"></i>';
   document.body.appendChild(e);
-  JOY.el = e;
-  JOY.knob = e.firstChild;
+  joystick.el = e;
+  joystick.knob = e.firstChild;
   return e;
 }
-function joyEnd() {
-  if (JOY.on) {
-    JOY.quiet = performance.now();
-    if (typeof DGL !== 'undefined') DGL.dragged = true;
+function joystickEnd() {
+  if (joystick.on) {
+    joystick.quiet = performance.now();
+    if (typeof walkRenderer !== 'undefined') walkRenderer.dragged = true;
   }
-  JOY.id = null;
-  JOY.on = false;
-  joySet(0, 0);
-  if (JOY.el) JOY.el.classList.remove('on');
+  joystick.id = null;
+  joystick.on = false;
+  joystickInput(0, 0);
+  if (joystick.el) joystick.el.classList.remove('on');
 }
 document.addEventListener(
   'pointerdown',
   ev => {
-    if (joyPref() !== 'stick' || !joyAllowed()) return;
-    if (JOY.id != null) {
-      joyEnd();
+    if (joystickPreference() !== 'stick' || !joystickAllowed()) return;
+    if (joystick.id != null) {
+      joystickEnd();
       return;
     } /* a second finger: pinch and turn instead */
     const t = ev.target;
     if (!t || t.id !== 'dio' || ev.button > 0) return;
-    JOY.id = ev.pointerId;
-    JOY.x0 = ev.clientX;
-    JOY.y0 = ev.clientY;
-    JOY.on = false;
+    joystick.id = ev.pointerId;
+    joystick.x0 = ev.clientX;
+    joystick.y0 = ev.clientY;
+    joystick.on = false;
   },
   true
 );
 document.addEventListener(
   'pointermove',
   ev => {
-    if (ev.pointerId !== JOY.id) return;
-    if (!joyAllowed()) {
-      joyEnd();
+    if (ev.pointerId !== joystick.id) return;
+    if (!joystickAllowed()) {
+      joystickEnd();
       return;
     }
-    const dx = ev.clientX - JOY.x0,
-      dy = ev.clientY - JOY.y0,
+    const dx = ev.clientX - joystick.x0,
+      dy = ev.clientY - joystick.y0,
       d = Math.hypot(dx, dy);
-    if (!JOY.on) {
+    if (!joystick.on) {
       if (d < 14) return;
-      JOY.on = true;
-      const e = joyEl();
-      e.style.left = JOY.x0 + 'px';
-      e.style.top = JOY.y0 + 'px';
+      joystick.on = true;
+      const e = joystickElement();
+      e.style.left = joystick.x0 + 'px';
+      e.style.top = joystick.y0 + 'px';
       e.classList.add('on');
     }
     const R = 56,
       k = Math.min(1, d / R),
       m = Math.min(d, R);
-    joySet((dx / d) * k, (-dy / d) * k);
-    JOY.knob.style.transform = `translate(${(dx / d) * m}px,${(dy / d) * m}px)`;
+    joystickInput((dx / d) * k, (-dy / d) * k);
+    joystick.knob.style.transform = `translate(${(dx / d) * m}px,${(dy / d) * m}px)`;
     ev.preventDefault();
   },
   { capture: true, passive: false }
@@ -124,7 +124,7 @@ for (const k of ['pointerup', 'pointercancel'])
   document.addEventListener(
     k,
     ev => {
-      if (ev.pointerId === JOY.id) joyEnd();
+      if (ev.pointerId === joystick.id) joystickEnd();
     },
     true
   );
@@ -132,7 +132,7 @@ for (const k of ['pointerup', 'pointercancel'])
 document.addEventListener(
   'click',
   ev => {
-    if (performance.now() - JOY.quiet < 350 && ev.target && ev.target.id === 'dio') {
+    if (performance.now() - joystick.quiet < 350 && ev.target && ev.target.id === 'dio') {
       ev.stopPropagation();
       ev.preventDefault();
     }
@@ -140,52 +140,53 @@ document.addEventListener(
   true
 );
 /* the d-pad */
-function joyPad() {
-  if (JOY.pad) return JOY.pad;
+function joystickDpad() {
+  if (joystick.pad) return joystick.pad;
   const e = document.createElement('div');
   e.className = 'dpad';
   e.setAttribute('role', 'group');
   e.setAttribute('aria-label', 'Walk');
   e.innerHTML = '<b class="u">▲</b><b class="l">◀</b><b class="r">▶</b><b class="d">▼</b><i></i>';
   document.body.appendChild(e);
-  JOY.pad = e;
+  joystick.pad = e;
   const at = ev => {
     const r = e.getBoundingClientRect(),
       dx = ev.clientX - (r.left + r.width / 2),
       dy = ev.clientY - (r.top + r.height / 2);
     if (Math.hypot(dx, dy) < r.width * 0.12) {
-      joySet(0, 0);
+      joystickInput(0, 0);
       return;
     }
     const a = Math.round(Math.atan2(-dy, dx) / (Math.PI / 4)) * (Math.PI / 4);
-    joySet(+Math.cos(a).toFixed(3), +Math.sin(a).toFixed(3));
+    joystickInput(+Math.cos(a).toFixed(3), +Math.sin(a).toFixed(3));
     e.dataset.dir = Math.round(a / (Math.PI / 4));
   };
   e.addEventListener('pointerdown', ev => {
-    JOY.padId = ev.pointerId;
+    joystick.padId = ev.pointerId;
     e.setPointerCapture(ev.pointerId);
     at(ev);
     ev.preventDefault();
   });
   e.addEventListener('pointermove', ev => {
-    if (ev.pointerId === JOY.padId) at(ev);
+    if (ev.pointerId === joystick.padId) at(ev);
   });
   for (const k of ['pointerup', 'pointercancel', 'lostpointercapture'])
     e.addEventListener(k, ev => {
-      if (ev.pointerId === JOY.padId) {
-        JOY.padId = null;
-        joySet(0, 0);
+      if (ev.pointerId === joystick.padId) {
+        joystick.padId = null;
+        joystickInput(0, 0);
         delete e.dataset.dir;
       }
     });
   return e;
 }
 setInterval(() => {
-  const show = joyPref() === 'dpad' && joyAllowed();
-  if (show || JOY.pad) {
-    const e = joyPad();
+  const show = joystickPreference() === 'dpad' && joystickAllowed();
+  if (show || joystick.pad) {
+    const e = joystickDpad();
     e.classList.toggle('on', show);
-    if (!show && JOY.padId == null && typeof DIO !== 'undefined' && DIO.stick && JOY.id == null) joySet(0, 0);
+    if (!show && joystick.padId == null && typeof walkView !== 'undefined' && walkView.stick && joystick.id == null)
+      joystickInput(0, 0);
   }
-  if (JOY.id != null && !joyAllowed()) joyEnd();
+  if (joystick.id != null && !joystickAllowed()) joystickEnd();
 }, 250);

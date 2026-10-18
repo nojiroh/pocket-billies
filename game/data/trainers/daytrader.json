@@ -1,7 +1,7 @@
 {
  "name": "Day Trader Dax",
  "who": "clerk",
- "area": "volcano",
+ "battleStage": "volcano",
  "node": 43,
  "blocks": false,
  "team": [

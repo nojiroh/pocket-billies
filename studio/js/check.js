@@ -5,13 +5,25 @@
 import { expose } from '../../game/js/test-globals.js';
 import { provide } from '../../game/js/hooks.js';
 import { $ } from '../../game/js/util.js';
-import { dioB64 } from '../../game/js/diorama.js';
-import { esc } from './shims.js';
-import { ACTS, SECTIONS, ST, after, api, ask, card, changed, go, render, toast } from './core.js';
+import { decodeBase64Array } from '../../game/js/walk-view.js';
+import { escapeHtml } from './game-stand-ins.js';
+import {
+  ACTIONS,
+  SECTIONS,
+  afterRender,
+  api,
+  ask,
+  card,
+  changed,
+  openSection,
+  render,
+  studioState,
+  toast,
+} from './studio-app.js';
 import { atlasPath, pickFile } from './sprites.js';
 /* eslint-disable no-func-assign */
 expose({
-  checkT: [() => checkT, v => (checkT = v)],
+  checkTimer: [() => checkTimer, v => (checkTimer = v)],
   loadBackups: [() => loadBackups, v => (loadBackups = v)],
   renderCheckList: [() => renderCheckList, v => (renderCheckList = v)],
   runCheck: [() => runCheck, v => ((runCheck = v), provide({ runCheck }))],
@@ -21,7 +33,7 @@ expose({
 provide({ runCheck, scheduleCheck });
 /* to-module: end */
 function runCheck() {
-  const D = ST.D,
+  const D = studioState.D,
     P = [],
     err = (msg, go, sel) => P.push({ lvl: 'error', msg, go, sel }),
     warn = (msg, go, sel) => P.push({ lvl: 'warn', msg, go, sel });
@@ -54,16 +66,16 @@ function runCheck() {
     L.names.forEach((n, i) => {
       const id = L.id + i;
       if (!n) err(`${L.id} stage ${i + 1} has no name.`, 'billionaires', g);
-      if (!ST.rigs[id])
+      if (!studioState.rigs[id])
         err(`${n || id} has no skeleton, so it can’t be drawn.`, 'billionaires', { line: L.id, stage: i });
       else
         ['front', 'back'].forEach(v => {
-          if (!ST.rigs[id][v]) err(`${n} has no ${v} view.`, 'billionaires', { line: L.id, stage: i });
+          if (!studioState.rigs[id][v]) err(`${n} has no ${v} view.`, 'billionaires', { line: L.id, stage: i });
         });
       ['front', 'back'].forEach(v =>
         [0, 1].forEach(gd => {
           const path = atlasPath(id, v, gd);
-          if (!ST.artDirty.has(path) && !ST.files.some(f => f.path === path))
+          if (!studioState.artDirty.has(path) && !studioState.files.some(f => f.path === path))
             err(`${n}: missing art file ${path}.`, 'billionaires', { line: L.id, stage: i });
         })
       );
@@ -100,13 +112,13 @@ function runCheck() {
     });
   }
   /* v46: every scene says what it is, and a place's scene agrees with its place */
-  for (const [k, sc] of Object.entries(D.scenes || {})) {
+  for (const [k, sc] of Object.entries(D.maps || {})) {
     const kd = sc.kind;
     if (!['town', 'route', 'room', 'test'].includes(kd)) {
       err(`${sc.name || k}: doesn’t say what it is (kind: town, route, room or test).`, 'scenes');
       continue;
     }
-    const pl = (D.route || []).find(r => r.scene === k);
+    const pl = (D.locations || []).find(r => r.mapId === k);
     if ((kd === 'town' || kd === 'route') && !pl)
       warn(`${sc.name || k} is a ${kd} scene but no stop uses it.`, 'scenes');
     if (pl && pl.kind && pl.kind !== kd)
@@ -114,24 +126,27 @@ function runCheck() {
     if (kd === 'room' && !sc.building)
       warn(`${sc.name || k} is a room but doesn’t say which building it’s the inside of.`, 'scenes');
   }
-  (D.route || []).forEach((r, i) => {
+  (D.locations || []).forEach((r, i) => {
     if (!['town', 'route'].includes(r.kind))
       err(`Stop ${i + 1}, ${r.name}: doesn’t say whether it’s a town or a route.`, 'world');
   });
-  (D.links || []).forEach((L, i) => {
+  (D.roads || []).forEach((L, i) => {
     const J = L[3] || {};
     if (!J.id || !J.from || !J.to)
-      warn(`Road ${i + 1} (${(D.route[L[0]] || {}).name} – ${(D.route[L[1]] || {}).name}) has no name yet.`, 'world');
+      warn(
+        `Road ${i + 1} (${(D.locations[L[0]] || {}).name} – ${(D.locations[L[1]] || {}).name}) has no name yet.`,
+        'world'
+      );
   });
   /* v26: the rooms you walk into */
   const people = new Set(Array.isArray(D.people) ? D.people.map(x => x.id) : Object.keys(D.people || {}));
   for (const k of ['shop', 'clinic', 'lab', 'house'])
-    if (!(D.scenes || {})['int_' + k])
+    if (!(D.maps || {})['int_' + k])
       warn(
         `There’s no room to walk into for a ${k} (scene int_${k}), so tapping one opens it straight away.`,
         'scenes'
       );
-  for (const [k, sc] of Object.entries(D.scenes || {}))
+  for (const [k, sc] of Object.entries(D.maps || {}))
     if (sc.room && sc.keeper && !String(sc.keeper).startsWith('folk:') && !people.has(sc.keeper))
       err(`${sc.name || k}: the person behind the counter (${sc.keeper}) isn’t in People.`, 'scenes');
   for (const [k, E] of Object.entries(D.eggs))
@@ -143,10 +158,10 @@ function runCheck() {
       .filter(T => T.seat)
       .map(T => T.seat.id)
   );
-  D.route.forEach((r, i) => {
+  D.locations.forEach((r, i) => {
     const g = { wtab: 'route', stop: i };
     if (!D.pools[r.pool]) err(`${r.name} uses wild pool ${r.pool}, which doesn’t exist.`, 'world', g);
-    if (r.area && !D.backdrops[r.area]) err(`${r.name} uses an unknown battle backdrop.`, 'world', g);
+    if (r.battleStage && !D.battleStages[r.battleStage]) err(`${r.name} uses an unknown battle backdrop.`, 'world', g);
     if (r.shop && !(D.shops || {})[r.shop]) err(`${r.name} uses a shop that doesn’t exist.`, 'world', g);
     if (r.gate && !seats.has(r.gate))
       err(`${r.name} is locked behind a badge nobody awards (${r.gate}). It could never open.`, 'world', g);
@@ -154,7 +169,7 @@ function runCheck() {
   });
   for (const [k, T] of Object.entries(D.trainers || {})) {
     const g = { trainer: k };
-    if (!D.route[T.node]) err(`${T.name} stands on a stop that doesn’t exist.`, 'trainers', g);
+    if (!D.locations[T.node]) err(`${T.name} stands on a stop that doesn’t exist.`, 'trainers', g);
     if (!T.team.length) err(`${T.name} has no team.`, 'trainers', g);
     T.team.forEach(e => {
       if (!/^@rival\d?$/.test(e.sp) && !sp.has(e.sp))
@@ -176,7 +191,7 @@ function runCheck() {
   {
     const LO = D.lore || {},
       books = LO.books || {};
-    for (const [k, sc] of Object.entries(D.scenes || {}))
+    for (const [k, sc] of Object.entries(D.maps || {}))
       for (const pr of sc.props || [])
         if (pr.act === 'read' && !books[pr.book])
           warn(
@@ -185,7 +200,7 @@ function runCheck() {
             { ltab: 'books' }
           );
     for (const c of LO.clues || [])
-      if (c.at && c.at.scene && !(D.scenes || {})[c.at.scene])
+      if (c.at && c.at.scene && !(D.maps || {})[c.at.scene])
         warn(`The clue “${c.title}” lies in a scene that doesn’t exist (${c.at.scene}).`, 'lore', { ltab: 'clues' });
     for (const [k, P] of Object.entries(LO.people || {}))
       if (P.who && !people.has(P.who))
@@ -212,12 +227,14 @@ function runCheck() {
   if (R.catching.offerMin > R.catching.offerMax) warn('Bargain: least is above most.', 'rules');
   if (!types.has(R.battle.shockType)) err('The sandstorm type doesn’t exist.', 'rules');
   if (!types.has(R.battle.spinType)) err('The Soak type doesn’t exist.', 'rules');
-  const LK = D.links || [];
+  const LK = D.roads || [];
   LK.forEach((l, k) => {
-    if (!D.route[l[0]] || !D.route[l[1]])
+    if (!D.locations[l[0]] || !D.locations[l[1]])
       err(`Road ${k + 1} connects a stop that doesn’t exist.`, 'world', { wtab: 'route' });
-    else if (l[0] === l[1]) err(`${D.route[l[0]].name} has a road to itself.`, 'world', { wtab: 'route', stop: l[0] });
-    if (!(+l[2] > 0)) warn(`A road from ${(D.route[l[0]] || {}).name} has no step count.`, 'world', { wtab: 'route' });
+    else if (l[0] === l[1])
+      err(`${D.locations[l[0]].name} has a road to itself.`, 'world', { wtab: 'route', stop: l[0] });
+    if (!(+l[2] > 0))
+      warn(`A road from ${(D.locations[l[0]] || {}).name} has no step count.`, 'world', { wtab: 'route' });
   });
   if (LK.length) {
     const seen = new Set([0]),
@@ -226,20 +243,20 @@ function runCheck() {
       const a = st.pop();
       LK.forEach(([x, y]) => {
         const b = x === a ? y : y === a ? x : null;
-        if (b != null && !seen.has(b) && D.route[b]) {
+        if (b != null && !seen.has(b) && D.locations[b]) {
           seen.add(b);
           st.push(b);
         }
       });
     }
-    D.route.forEach((r, i) => {
+    D.locations.forEach((r, i) => {
       if (!seen.has(i)) warn(`No road leads to ${r.name}.`, 'world', { wtab: 'route', stop: i });
     });
   }
-  const SCN = D.scenes || {},
+  const SCN = D.maps || {},
     SY = D.scenery || { terrains: {}, props: {} };
-  D.route.forEach((r, i) => {
-    if (r.scene && !SCN[r.scene])
+  D.locations.forEach((r, i) => {
+    if (r.mapId && !SCN[r.mapId])
       err(`${r.name} uses a walk scene that doesn’t exist.`, 'world', { wtab: 'route', stop: i });
   });
   for (const [k, s] of Object.entries(SCN)) {
@@ -268,7 +285,7 @@ function runCheck() {
     });
     /* v18: cliffs, stairs and bridges */
     if (s.steps) {
-      const raw = typeof dioB64 === 'function' ? dioB64(s.steps, Int16Array) : null;
+      const raw = typeof decodeBase64Array === 'function' ? decodeBase64Array(s.steps, Int16Array) : null;
       if (raw && raw.length !== s.w * 2 * s.h * 2)
         warn(
           `Scene ${s.name || k}: its cliffs and stairs were made for a different map size. Repaint them with Cliffs & stairs.`,
@@ -310,9 +327,9 @@ function runCheck() {
       if (!['pond', 'stream', 'canal', 'spring', 'swamp', 'lake'].includes(r.k))
         warn(`Scene ${s.name || k}: water rectangle ${n + 1} has an unknown kind “${r.k}”.`, 'scenes', g);
     });
-    const users = D.route.map((r, i) => [r, i]).filter(([r]) => r.scene === k);
+    const users = D.locations.map((r, i) => [r, i]).filter(([r]) => r.mapId === k);
     users.forEach(([r, i]) => {
-      const n = (D.links || []).filter(l => l[0] === i || l[1] === i).length;
+      const n = (D.roads || []).filter(l => l[0] === i || l[1] === i).length;
       if (n > (s.exits || []).length)
         warn(
           `${r.name} has ${n} road${n === 1 ? '' : 's'} but its scene ${s.name || k} has ${(s.exits || []).length} exit${(s.exits || []).length === 1 ? '' : 's'}, so some roads share an exit.`,
@@ -320,7 +337,7 @@ function runCheck() {
           g
         );
       /* v42: the join table names an exit this scene has, and both ends face each other */
-      (D.links || []).forEach(l => {
+      (D.roads || []).forEach(l => {
         const J = l[3];
         if (!J) return;
         const end = l[0] === i ? 'a' : l[1] === i ? 'b' : null;
@@ -329,7 +346,7 @@ function runCheck() {
           o = end === 'a' ? l[1] : l[0];
         if (!e) {
           warn(
-            `${r.name}: the road to ${(D.route[o] || {}).name} leaves by “${J[end]}”, but scene ${s.name || k} has no exit with that name.`,
+            `${r.name}: the road to ${(D.locations[o] || {}).name} leaves by “${J[end]}”, but scene ${s.name || k} has no exit with that name.`,
             'scenes',
             g
           );
@@ -351,10 +368,10 @@ function runCheck() {
     });
   return P;
 }
-let checkT = null;
+let checkTimer = null;
 function scheduleCheck(now) {
-  clearTimeout(checkT);
-  checkT = setTimeout(
+  clearTimeout(checkTimer);
+  checkTimer = setTimeout(
     () => {
       const P = runCheck(),
         n = P.filter(p => p.lvl === 'error').length,
@@ -362,8 +379,8 @@ function scheduleCheck(now) {
       const b = $('#checkCount');
       b.textContent = n || w || '✓';
       b.className = 'badge' + (n ? ' err' : w ? ' warn' : ' ok');
-      ST.lastCheck = P;
-      if (ST.sec === 'check' && !now) renderCheckList();
+      studioState.lastCheck = P;
+      if (studioState.sec === 'check' && !now) renderCheckList();
     },
     now ? 0 : 500
   );
@@ -375,18 +392,18 @@ function renderCheckList() {
   el.innerHTML = P.length
     ? P.map(
         (p, i) =>
-          `<li class="${p.lvl}"><span>${p.lvl === 'error' ? 'Problem' : 'Note'}</span><p>${esc(p.msg)}</p>${p.go ? `<button class="btn sm" data-act="fix" data-i="${i}">Show me</button>` : ''}</li>`
+          `<li class="${p.lvl}"><span>${p.lvl === 'error' ? 'Problem' : 'Note'}</span><p>${escapeHtml(p.msg)}</p>${p.go ? `<button class="btn sm" data-act="fix" data-i="${i}">Show me</button>` : ''}</li>`
       ).join('')
     : '<li class="ok"><span>All good</span><p>No problems found. The game will load every Billie, move and rule.</p></li>';
-  ST.lastCheck = P;
+  studioState.lastCheck = P;
 }
-ACTS.fix = d => {
-  const p = ST.lastCheck[+d.i];
-  if (p) go(p.go, p.sel || {});
+ACTIONS.fix = d => {
+  const p = studioState.lastCheck[+d.i];
+  if (p) openSection(p.go, p.sel || {});
 };
 SECTIONS.check = () => {
-  after(renderCheckList);
-  after(loadBackups);
+  afterRender(renderCheckList);
+  afterRender(loadBackups);
   return `<div class="ed-col solo"><div class="ed-head"><h2>Check & backups</h2><div class="seg-row"><button class="btn" data-act="exportData">Download game data</button><button class="btn" data-act="importData">Load game data from a file</button></div></div>
  ${card('Problems', `<ul class="checks" id="checkList"></ul>`, { sub: 'Problems are things the game will skip or patch over. Notes are worth a look.' })}
  ${card('Backups', `<p class="help">Every save keeps the previous version in the backups folder. Restoring replaces the current file (which is backed up first). Reload the Studio afterwards.</p><div id="backupList">Loading…</div>`)}</div>`;
@@ -404,7 +421,7 @@ async function loadBackups() {
         )
           .map(
             b =>
-              `<tr><td>${groups[b.kind]}</td><td class="mono">${esc(b.name)}</td><td>${new Date(b.mtime * 1000).toLocaleString()}</td><td><button class="btn sm" data-act="restore" data-k="${b.kind}" data-n="${esc(b.name)}">Restore</button></td></tr>`
+              `<tr><td>${groups[b.kind]}</td><td class="mono">${escapeHtml(b.name)}</td><td>${new Date(b.mtime * 1000).toLocaleString()}</td><td><button class="btn sm" data-act="restore" data-k="${b.kind}" data-n="${escapeHtml(b.name)}">Restore</button></td></tr>`
           )
           .join('')}</tbody></table>`
       : '<p class="help">No backups yet. They appear after your first save.</p>';
@@ -412,8 +429,8 @@ async function loadBackups() {
     el.textContent = e.message;
   }
 }
-ACTS.restore = async d => {
-  if (ST.dirty || ST.rigsDirty || ST.artDirty.size) {
+ACTIONS.restore = async d => {
+  if (studioState.dirty || studioState.rigsDirty || studioState.artDirty.size) {
     if (
       !(await ask('You have unsaved changes. Restoring will reload the Studio and they’ll be lost.', 'Restore anyway'))
     )
@@ -421,16 +438,16 @@ ACTS.restore = async d => {
   } else if (!(await ask('Restore this backup? The current file is backed up first.', 'Restore'))) return;
   try {
     const r = await api('restore', { method: 'POST', body: JSON.stringify({ kind: d.k, name: d.n }) });
-    ST.dirty = ST.rigsDirty = false;
-    ST.artDirty.clear();
+    studioState.dirty = studioState.rigsDirty = false;
+    studioState.artDirty.clear();
     toast('Restored ' + r.restored + '. Reloading…', 'ok');
     setTimeout(() => location.reload(), 800);
   } catch (e) {
     toast(e.message, 'err');
   }
 };
-ACTS.exportData = () => {
-  const b = new Blob([JSON.stringify(ST.D, (k, v) => (k[0] === '_' && k.length > 1 ? undefined : v), 1)], {
+ACTIONS.exportData = () => {
+  const b = new Blob([JSON.stringify(studioState.D, (k, v) => (k[0] === '_' && k.length > 1 ? undefined : v), 1)], {
       type: 'application/json',
     }),
     a = document.createElement('a');
@@ -438,18 +455,18 @@ ACTS.exportData = () => {
   a.download = 'pocket-billies-gamedata.json';
   a.click();
 };
-ACTS.importData = async () => {
+ACTIONS.importData = async () => {
   const f = await pickFile('.json,application/json');
   if (!f) return;
   try {
     const o = JSON.parse(await f.text());
-    for (const k of ['types', 'moves', 'lines', 'route', 'rules'])
+    for (const k of ['types', 'moves', 'lines', 'locations', 'rules'])
       if (!o[k]) throw new Error(`That file has no “${k}”.`);
     if (
       !(await ask('Replace the game data in the Studio with this file? Nothing is written until you save.', 'Load it'))
     )
       return;
-    ST.D = o;
+    studioState.D = o;
     changed();
     render();
     toast('Loaded. Review it, then save to game.');

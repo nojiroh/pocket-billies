@@ -1,7 +1,7 @@
 {
  "name": "Variant No. 3301",
  "who": "variant",
- "area": "grotto",
+ "battleStage": "grotto",
  "node": 31,
  "blocks": false,
  "team": [

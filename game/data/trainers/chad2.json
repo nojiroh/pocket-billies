@@ -1,7 +1,7 @@
 {
  "name": "Blake",
  "who": "chad",
- "area": "farm",
+ "battleStage": "farm",
  "node": 10,
  "blocks": false,
  "after": "chad",

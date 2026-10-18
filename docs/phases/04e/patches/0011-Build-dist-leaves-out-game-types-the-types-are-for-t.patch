@@ -1,0 +1,23 @@
+From c9425c31bc745b301fe66c16a88eed4100b30aef Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Sun, 18 Oct 2026 09:44:00 +0000
+Subject: [PATCH 11/22] Build: dist/ leaves out game/types (the types are for
+ the type check only)
+
+---
+ vite.config.js | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/vite.config.js b/vite.config.js
+index acf5530..136f85d 100644
+--- a/vite.config.js
++++ b/vite.config.js
+@@ -84,6 +84,8 @@ function copySite() {
+     async closeBundle() {
+       for (const p of SITE) cpSync(resolve(ROOT, p), resolve(outDir, p), { recursive: true });
+       rmSync(resolve(outDir, 'assets'), { recursive: true, force: true });
++      // phase 04e: the types are for the type check only
++      rmSync(resolve(outDir, 'game/types'), { recursive: true, force: true });
+       buildData(resolve(outDir, 'game', 'data'));
+       const sources = new Set(['game/js/test-globals.js', 'game/js/hooks.js']);
+       for (const page of PAGES) for (const f of await bundlePage(outDir, page)) sources.add(f);

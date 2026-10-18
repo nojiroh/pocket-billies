@@ -1,7 +1,7 @@
 {
  "name": "Cass Flow",
  "who": "cass",
- "area": "sea",
+ "battleStage": "sea",
  "node": 38,
  "blocks": false,
  "clue": "face",

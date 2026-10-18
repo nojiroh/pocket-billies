@@ -6,69 +6,90 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { provide } from './hooks.js';
-import { DATA_WARN, GD, RULES, SP, START_NODE } from './data.js';
-import { sceneWatch, scenesAhead, scenesAll } from './scene-files.js';
-import { RM, S, SAVE_FOUND, SAVE_NEW_MSG, SAVE_OLD_MSG, U, esc, fresh, setNoSaving, setS } from './core.js';
-import { ART, BG_ART, COIN_ART, EGG_ART, ICON_ATLAS, UIURL, artBoot, artImg } from './art.js';
-import { trainerArtPaths } from './trainer.js';
-import { rigAtlas } from './rig.js';
-import { AREAS, scPrepare, stageArt } from './scene.js';
-import { DIO, dioData, dioPaths, dioScene } from './diorama.js';
-import { EGL, eglOK } from './engine/core.js';
-import { ENV } from './env.js';
-import { DGL, dglRiseStart } from './diorama-gl.js';
-import { WORLD } from './world.js';
-import { areaKey } from './battle.js';
-import { WORLD_ART, mapPrepare } from './map.js';
-import { WORLD_RELIEF } from './map-gl.js';
-import { csWanted } from './cutscene.js';
-import { TITLE, titleMount, titleStart, titleWanted } from './title.js';
+import { DATA_WARN, RULES, SPECIES, START_NODE, gameData } from './game-data.js';
+import { loadAllMaps, loadMapsAhead, watchMapsAhead } from './map-files.js';
+import {
+  SAVE_FOUND,
+  SAVE_NEW_MSG,
+  SAVE_OLD_MSG,
+  escapeHtml,
+  newSave,
+  reducedMotion,
+  saveData,
+  setNoSaving,
+  setSaveData,
+  uiState,
+} from './game-state.js';
+import { ART_CACHE, COIN_ART, EGG_ART, ICON_ATLAS, MENU_BACKGROUND_ART, artBoot, artImg, uiIconURL } from './art.js';
+import { personArtPaths } from './person-art.js';
+import { rigAtlas } from './skeleton-rig.js';
+import { AREAS, battleStageArtFiles, battleStagePrepare } from './battle-stage.js';
+import { mapArtPaths, mapById, walkData, walkView } from './walk-view.js';
+import { gpuState, webgl2Supported } from './engine/webgl.js';
+import { environment } from './environment.js';
+import { startTownRise, walkRenderer } from './walk-view-gl.js';
+import { seamlessWorld } from './seamless-world.js';
+import { battleStageKey } from './battle.js';
+import { WORLD_ART, worldMapPrepare } from './world-map.js';
+import { WORLD_RELIEF } from './world-map-gl.js';
+import { cutsceneWanted } from './cutscene.js';
+import { titleMount, titleScreen, titleStart, titleWanted } from './title.js';
 import { loreLoadingLines } from './lore.js';
-import { accInit } from './account.js';
-import { bgInit, closeModal, modal, postProcess, render, renderOv, sceneIdAt, startGame, toast } from './ui.js';
+import { initAccount } from './account.js';
+import {
+  closeModal,
+  initPixelSky,
+  mapIdAt,
+  modal,
+  render,
+  renderOverlay,
+  showPendingWindows,
+  startGame,
+  toast,
+} from './ui.js';
 /* eslint-disable no-func-assign */
 expose({
-  ART_VER_KEY: [() => ART_VER_KEY],
-  LD: [() => LD],
-  LDW: [() => LDW],
-  LDW_C: [() => LDW_C],
+  ART_VERSION_KEY: [() => ART_VERSION_KEY],
+  LOADER_ISLAND_COLORS: [() => LOADER_ISLAND_COLORS],
   LOAD_PHASES: [() => LOAD_PHASES],
   LOAD_TIPS: [() => LOAD_TIPS],
-  NW_LINK: [() => NW_LINK, v => (NW_LINK = v)],
-  NW_TEST: [() => NW_TEST],
-  UI_SVG: [() => UI_SVG],
+  TEST_RUN: [() => TEST_RUN],
+  UI_ICONS: [() => UI_ICONS],
   artCacheCheck: [() => artCacheCheck, v => (artCacheCheck = v)],
   bootLoad: [() => bootLoad, v => (bootLoad = v)],
   idle: [() => idle],
-  ldwDraw: [() => ldwDraw, v => (ldwDraw = v)],
-  ldwInit: [() => ldwInit, v => (ldwInit = v)],
-  ldwLoop: [() => ldwLoop, v => (ldwLoop = v)],
-  ldwRnd: [() => ldwRnd, v => (ldwRnd = v)],
-  ldwThing: [() => ldwThing, v => (ldwThing = v)],
   loadList: [() => loadList, v => (loadList = v)],
   loadOne: [() => loadOne, v => (loadOne = v)],
   loadSvg: [() => loadSvg, v => (loadSvg = v)],
   loaderHide: [() => loaderHide, v => (loaderHide = v)],
+  loaderIsland: [() => loaderIsland],
+  loaderIslandDraw: [() => loaderIslandDraw, v => (loaderIslandDraw = v)],
+  loaderIslandInit: [() => loaderIslandInit, v => (loaderIslandInit = v)],
+  loaderIslandLoop: [() => loaderIslandLoop, v => (loaderIslandLoop = v)],
+  loaderIslandRandom: [() => loaderIslandRandom, v => (loaderIslandRandom = v)],
+  loaderIslandThing: [() => loaderIslandThing, v => (loaderIslandThing = v)],
   loaderLines: [() => loaderLines, v => (loaderLines = v)],
   loaderSet: [() => loaderSet, v => (loaderSet = v)],
   loaderTip: [() => loaderTip, v => (loaderTip = v)],
+  loadingScreen: [() => loadingScreen],
+  mountLoaderTown: [() => mountLoaderTown, v => (mountLoaderTown = v)],
   noWebGL: [() => noWebGL, v => ((noWebGL = v), provide({ noWebGL }))],
   preloadAll: [() => preloadAll, v => (preloadAll = v)],
-  sceneWarm: [() => sceneWarm, v => (sceneWarm = v)],
+  studioChannel: [() => studioChannel, v => (studioChannel = v)],
   studioLive: [() => studioLive, v => (studioLive = v)],
   studioTestStart: [() => studioTestStart, v => (studioTestStart = v)],
   townPaths: [() => townPaths, v => (townPaths = v)],
-  townUp: [() => townUp, v => (townUp = v)],
+  walkViewWarmup: [() => walkViewWarmup, v => (walkViewWarmup = v)],
 });
 /* eslint-enable no-func-assign */
 provide({ noWebGL });
 /* to-module: end */
-const ART_VER_KEY = 'networth-artv';
+const ART_VERSION_KEY = 'networth-artv';
 async function artCacheCheck() {
-  const v = String(GD.meta.artVersion || 0);
+  const v = String(gameData.meta.artVersion || 0);
   let old = null;
   try {
-    old = localStorage.getItem(ART_VER_KEY);
+    old = localStorage.getItem(ART_VERSION_KEY);
   } catch (e) {}
   if (old !== v) {
     try {
@@ -78,13 +99,13 @@ async function artCacheCheck() {
       }
     } catch (e) {}
     try {
-      localStorage.setItem(ART_VER_KEY, v);
+      localStorage.setItem(ART_VERSION_KEY, v);
     } catch (e) {}
   }
 }
 const idle = (fn, t = 1200) =>
   'requestIdleCallback' in window ? requestIdleCallback(fn, { timeout: t }) : setTimeout(fn, 200);
-const UI_SVG = [
+const UI_ICONS = [
   'profile',
   'house',
   'lock',
@@ -126,8 +147,8 @@ const UI_SVG = [
   'ash',
   'door',
 ];
-/* v26: the walk scenes follow the real clock, the weather and the season (env.js; the Studio leaves this off) */
-if (typeof ENV !== 'undefined') ENV.on = true;
+/* v26: the walk scenes follow the real clock, the weather and the season (environment.js; the Studio leaves this off) */
+if (typeof environment !== 'undefined') environment.on = true;
 const LOAD_PHASES = [
   'Polishing the coins',
   'Waking up the Billies',
@@ -152,20 +173,20 @@ function loadList() {
     add = (p, ph) => {
       if (p && !L.has(p)) L.set(p, ph);
     };
-  [ICON_ATLAS, ...COIN_ART, ...EGG_ART, ...BG_ART].forEach(p => add(p, 0));
-  for (const sp of Object.keys(SP)) {
+  [ICON_ATLAS, ...COIN_ART, ...EGG_ART, ...MENU_BACKGROUND_ART].forEach(p => add(p, 0));
+  for (const sp of Object.keys(SPECIES)) {
     const R = RIGS[sp];
     if (!R) continue;
     for (const v of ['front', 'back']) if (R[v]) for (const g of [0, 1]) add(rigAtlas(sp, g, v), 1);
   }
   for (const a of Object.keys(AREAS)) {
     try {
-      stageArt(a).forEach(p => add(p, 2));
+      battleStageArtFiles(a).forEach(p => add(p, 2));
     } catch (e) {}
   }
   try {
-    const D = dioData();
-    for (const id of Object.keys(D.scenes)) dioPaths(D.scenes[id]).forEach(p => add(p, 3));
+    const D = walkData();
+    for (const id of Object.keys(D.scenes)) mapArtPaths(D.scenes[id]).forEach(p => add(p, 3));
     for (const P of Object.values(D.sc.props)) {
       add(P.img, 3);
       if (P.blades) add(P.blades.img, 3);
@@ -178,25 +199,25 @@ function loadList() {
   add(WORLD_ART, 4);
   if (typeof WORLD_RELIEF !== 'undefined') add(WORLD_RELIEF, 1);
   try {
-    trainerArtPaths().forEach(p => add(p, 0));
+    personArtPaths().forEach(p => add(p, 0));
   } catch (e) {
     console.error(e);
   }
   return L;
 }
-const LD = { el: null, tipI: 0, tipT: null, shown: 0, f: 0 };
-provide({ LD }); /* to-module */
+const loadingScreen = { el: null, tipI: 0, tipT: null, shown: 0, f: 0 };
+provide({ loadingScreen }); /* to-module */
 function loaderSet(done, total, phase) {
-  const el = LD.el;
+  const el = loadingScreen.el;
   if (!el) return;
   const f = total ? done / total : 0,
     pct = Math.round(f * 100);
-  LD.f = Math.max(LD.f, f);
+  loadingScreen.f = Math.max(loadingScreen.f, f);
   const bar = el.querySelector('.ld-bar i');
   if (bar) bar.style.width = pct + '%';
-  if (LD.town) {
+  if (loadingScreen.town) {
     const cv = document.getElementById('dio');
-    if (cv) cv.style.clipPath = `circle(${Math.round(14 + LD.f * 110)}% at 50% 56%)`;
+    if (cv) cv.style.clipPath = `circle(${Math.round(14 + loadingScreen.f * 110)}% at 50% 56%)`;
   }
   el.setAttribute('aria-valuenow', pct);
   el.querySelector('.ld-count').textContent = `${pct}%`;
@@ -206,22 +227,22 @@ function loaderSet(done, total, phase) {
    Drawn by hand on a 256 x 168 canvas (no art is loaded yet): isometric ground tiles drop in from the middle outward
    as the files come in, then trees, little houses, lamps and an airship station whose ship bobs at its mast. Each
    thing waits for its share of the loading; when the load is done the whole island is there. */
-const LDW = { cv: null, x: null, tiles: [], things: [], raf: 0, last: 0 };
-function ldwRnd(i, k) {
+const loaderIsland = { cv: null, x: null, tiles: [], things: [], raf: 0, last: 0 };
+function loaderIslandRandom(i, k) {
   const v = Math.sin(i * 127.1 + k * 311.7) * 43758.5453;
   return v - Math.floor(v);
 }
-function ldwInit() {
-  const cv = LD.el && LD.el.querySelector('.ld-world');
+function loaderIslandInit() {
+  const cv = loadingScreen.el && loadingScreen.el.querySelector('.ld-world');
   if (!cv || !cv.getContext) return;
-  LDW.cv = cv;
-  LDW.x = cv.getContext('2d');
+  loaderIsland.cv = cv;
+  loaderIsland.x = cv.getContext('2d');
   const T = [];
   for (let i = -6; i <= 6; i++)
     for (let j = -6; j <= 6; j++) {
       const d = Math.hypot(i, j * 1.05);
-      if (d > 6.2 + ldwRnd(i + 20, j + 20) * 0.9) continue;
-      T.push({ i, j, d, o: d + ldwRnd(i, j) * 1.6 });
+      if (d > 6.2 + loaderIslandRandom(i + 20, j + 20) * 0.9) continue;
+      T.push({ i, j, d, o: d + loaderIslandRandom(i, j) * 1.6 });
     }
   T.sort((a, b) => a.o - b.o);
   const n = T.length,
@@ -231,12 +252,12 @@ function ldwInit() {
     t.edge = t.d > maxD - 1.3;
     t.road = (t.i === 0 || t.j === 1) && !t.edge;
     t.at = 0;
-    t.h = t.edge ? 2 : 3 + Math.round(ldwRnd(t.i, t.j + 7) * 1.2);
+    t.h = t.edge ? 2 : 3 + Math.round(loaderIslandRandom(t.i, t.j + 7) * 1.2);
   });
-  LDW.tiles = T;
+  loaderIsland.tiles = T;
   /* things on the island: what, which tile, when it may come */
   const free = T.filter(t => !t.edge && !t.road),
-    pick = k => free.splice(Math.floor(ldwRnd(k, 3) * free.length) % Math.max(1, free.length), 1)[0],
+    pick = k => free.splice(Math.floor(loaderIslandRandom(k, 3) * free.length) % Math.max(1, free.length), 1)[0],
     TH = [];
   const st = T.find(t => t.i === 2 && t.j === -2) || free[0];
   if (st && free.includes(st)) free.splice(free.indexOf(st), 1);
@@ -257,31 +278,31 @@ function ldwInit() {
     TH.push({ k: 'ship', t: st, need: 0.9 });
   }
   TH.forEach(o => (o.at = 0));
-  LDW.things = TH;
-  LDW.t0 = performance.now();
-  ldwLoop();
+  loaderIsland.things = TH;
+  loaderIsland.t0 = performance.now();
+  loaderIslandLoop();
 }
-const LDW_C = {
+const LOADER_ISLAND_COLORS = {
   grass: ['#7cc35a', '#5a9a47', '#467a3a'],
   sand: ['#ead48f', '#c9ae68', '#a98d52'],
   road: ['#d8b98a', '#b8956a', '#97764f'],
 };
-function ldwLoop() {
-  LDW.raf = requestAnimationFrame(ldwLoop);
+function loaderIslandLoop() {
+  loaderIsland.raf = requestAnimationFrame(loaderIslandLoop);
   const now = performance.now();
-  if (now - LDW.last < 32) return;
-  LDW.last = now;
+  if (now - loaderIsland.last < 32) return;
+  loaderIsland.last = now;
   try {
-    ldwDraw(now);
+    loaderIslandDraw(now);
   } catch (e) {
-    cancelAnimationFrame(LDW.raf);
+    cancelAnimationFrame(loaderIsland.raf);
   }
 }
-function ldwDraw(now) {
-  const x = LDW.x,
+function loaderIslandDraw(now) {
+  const x = loaderIsland.x,
     W = 256,
     H = 168,
-    f = LD.f,
+    f = loadingScreen.f,
     cx = 128,
     cy = 74,
     TW = 10,
@@ -295,7 +316,7 @@ function ldwDraw(now) {
       return 1 + (c + 1) * Math.pow(k - 1, 3) + c * Math.pow(k - 1, 2);
     };
   /* the sea under the island: a soft ellipse with glints */
-  const sea = ease((now - LDW.t0) / 900);
+  const sea = ease((now - loaderIsland.t0) / 900);
   x.globalAlpha = 0.55 * sea;
   x.fillStyle = '#3d7fa6';
   x.beginPath();
@@ -305,13 +326,13 @@ function ldwDraw(now) {
   x.fillStyle = '#8fd0e8';
   for (let g = 0; g < 14; g++) {
     const a = g * 0.45 + now / 2400,
-      r = 60 + 20 * ldwRnd(g, 1);
+      r = 60 + 20 * loaderIslandRandom(g, 1);
     x.fillRect(Math.round(cx + Math.cos(a) * r * 1.3), Math.round(cy + 16 + Math.sin(a) * r * 0.42), 3, 1);
   }
   x.globalAlpha = 1;
   const P = (i, j) => [cx + (i - j) * TW, cy + (i + j) * TH2];
   const L = [];
-  for (const t of LDW.tiles) {
+  for (const t of loaderIsland.tiles) {
     if (f >= t.need && !t.at) t.at = now;
     if (t.at) L.push(t);
   }
@@ -321,7 +342,7 @@ function ldwDraw(now) {
       drop = (1 - k) * -34,
       [px, py] = P(t.i, t.j),
       y = py + drop,
-      C = t.edge ? LDW_C.sand : t.road ? LDW_C.road : LDW_C.grass,
+      C = t.edge ? LOADER_ISLAND_COLORS.sand : t.road ? LOADER_ISLAND_COLORS.road : LOADER_ISLAND_COLORS.grass,
       h = t.h;
     x.globalAlpha = Math.min(1, k * 2);
     x.fillStyle = C[1];
@@ -345,19 +366,19 @@ function ldwDraw(now) {
     x.lineTo(px, y + TH2);
     x.lineTo(px - TW, y);
     x.fill();
-    if (!t.edge && !t.road && ldwRnd(t.i, t.j + 3) < 0.5) {
+    if (!t.edge && !t.road && loaderIslandRandom(t.i, t.j + 3) < 0.5) {
       x.fillStyle = '#9bd86a';
-      x.fillRect(Math.round(px - 3 + ldwRnd(t.i, t.j) * 6), Math.round(y - 1), 2, 1);
+      x.fillRect(Math.round(px - 3 + loaderIslandRandom(t.i, t.j) * 6), Math.round(y - 1), 2, 1);
     }
-    if (!t.edge && !t.road && ldwRnd(t.i + 9, t.j) < 0.18) {
-      x.fillStyle = ['#ff8fa6', '#ffe066', '#ffffff'][Math.floor(ldwRnd(t.i, t.j + 5) * 3)];
-      x.fillRect(Math.round(px + 2 - ldwRnd(t.j, t.i) * 5), Math.round(y), 1, 1);
+    if (!t.edge && !t.road && loaderIslandRandom(t.i + 9, t.j) < 0.18) {
+      x.fillStyle = ['#ff8fa6', '#ffe066', '#ffffff'][Math.floor(loaderIslandRandom(t.i, t.j + 5) * 3)];
+      x.fillRect(Math.round(px + 2 - loaderIslandRandom(t.j, t.i) * 5), Math.round(y), 1, 1);
     }
   }
   x.globalAlpha = 1;
   /* things, back to front, each springing up once its tile has landed */
   const O = [];
-  for (const o of LDW.things) {
+  for (const o of loaderIsland.things) {
     if (f >= o.need && o.t.at && now - o.t.at > 300 && !o.at) o.at = now;
     if (o.at) O.push(o);
   }
@@ -368,11 +389,11 @@ function ldwDraw(now) {
     x.save();
     x.translate(px, py);
     x.scale(1, Math.max(0.01, k));
-    ldwThing(x, o, now);
+    loaderIslandThing(x, o, now);
     x.restore();
   }
 }
-function ldwThing(x, o, now) {
+function loaderIslandThing(x, o, now) {
   const R = (a, b, w, h, c) => {
     x.fillStyle = c;
     x.fillRect(a, b, w, h);
@@ -461,32 +482,32 @@ function ldwThing(x, o, now) {
 }
 /* v47: lines from the world (lore.loading: lore, tips and jokes) between the tips, a new one every few seconds */
 function loaderLines() {
-  if (!LD.lines) {
+  if (!loadingScreen.lines) {
     const W = typeof loreLoadingLines === 'function' ? loreLoadingLines() : [],
       T = LOAD_TIPS.slice();
-    LD.lines = [];
+    loadingScreen.lines = [];
     while (W.length || T.length) {
-      if (W.length) LD.lines.push(W.shift());
-      if (W.length) LD.lines.push(W.shift());
-      if (T.length) LD.lines.push(T.shift());
+      if (W.length) loadingScreen.lines.push(W.shift());
+      if (W.length) loadingScreen.lines.push(W.shift());
+      if (T.length) loadingScreen.lines.push(T.shift());
     }
   }
-  return LD.lines;
+  return loadingScreen.lines;
 }
 function loaderTip() {
-  const p = LD.el && LD.el.querySelector('.ld-tip');
+  const p = loadingScreen.el && loadingScreen.el.querySelector('.ld-tip');
   if (!p) return;
   const L = loaderLines();
   if (!L.length) return;
   p.classList.add('out');
   setTimeout(() => {
-    p.textContent = L[LD.tipI++ % L.length];
+    p.textContent = L[loadingScreen.tipI++ % L.length];
     p.classList.remove('out');
   }, 350);
 }
 function loadOne(p) {
   artImg(p);
-  return ART.wait[p].then(async im => {
+  return ART_CACHE.wait[p].then(async im => {
     if (!(im && im.naturalWidth)) return false;
     try {
       if (im.decode) await im.decode();
@@ -499,7 +520,7 @@ function loadSvg(k) {
     const im = new Image();
     im.onload = () => res(true);
     im.onerror = () => res(false);
-    im.src = UIURL(k);
+    im.src = uiIconURL(k);
   });
 }
 /* loads phase by phase (files within a phase in parallel), then checks the world map and the scene you start in */
@@ -507,11 +528,16 @@ function loadSvg(k) {
    put up behind the loading screen and builds itself while the rest comes in (onTown) */
 function townPaths() {
   try {
-    if (!(typeof titleWanted === 'function' && titleWanted() && typeof csWanted === 'function' && csWanted()))
+    if (!(
+      typeof titleWanted === 'function' &&
+      titleWanted() &&
+      typeof cutsceneWanted === 'function' &&
+      cutsceneWanted()
+    ))
       return new Set();
-    const id = sceneIdAt(START_NODE),
-      sc = dioScene(id);
-    return sc ? new Set(dioPaths(sc)) : new Set();
+    const id = mapIdAt(START_NODE),
+      sc = mapById(id);
+    return sc ? new Set(mapArtPaths(sc)) : new Set();
   } catch (e) {
     console.error(e);
     return new Set();
@@ -525,7 +551,7 @@ async function preloadAll(onTown) {
   for (const [p, ph] of L) byPh[TP.has(p) ? 0 : ph + 1].push(p);
   const T0 = performance.now(),
     phT = [];
-  const total = L.size + UI_SVG.length + 2;
+  const total = L.size + UI_ICONS.length + 2;
   let done = 0;
   const fails = [];
   loaderSet(0, total, 0);
@@ -538,7 +564,7 @@ async function preloadAll(onTown) {
       })
     );
     if (ph === 1)
-      UI_SVG.forEach(k =>
+      UI_ICONS.forEach(k =>
         jobs.push(
           loadSvg(k).then(ok => {
             if (!ok) fails.push(`ui/${k}.svg`);
@@ -563,50 +589,51 @@ async function preloadAll(onTown) {
   /* the map needs its pixels, the first scene needs its ground built */
   if (location.protocol !== 'file:') {
     try {
-      await mapPrepare();
+      await worldMapPrepare();
     } catch (e) {
       fails.push(WORLD_ART + ' (pixels: ' + e.message + ')');
     }
   }
   loaderSet(++done, total);
   try {
-    if (S.started) {
-      const area = areaKey();
-      await scPrepare(AREAS[area] ? area : 'grass');
+    if (saveData.started) {
+      const area = battleStageKey();
+      await battleStagePrepare(AREAS[area] ? area : 'grass');
     }
   } catch (e) {
     console.error(e);
   }
   loaderSet(++done, total);
-  if (typeof NWLOG !== 'undefined') {
-    NWLOG.load = { ms: Math.round(performance.now() - T0), files: total, failed: fails.slice(0, 50), phases: phT };
-    NWLOG.add('load', `${total} files in ${NWLOG.load.ms} ms, ${fails.length} failed`);
+  if (typeof debugLog !== 'undefined') {
+    debugLog.load = { ms: Math.round(performance.now() - T0), files: total, failed: fails.slice(0, 50), phases: phT };
+    debugLog.add('load', `${total} files in ${debugLog.load.ms} ms, ${fails.length} failed`);
   }
   return fails;
 }
 async function bootLoad() {
-  LD.el = document.getElementById('loader');
-  if (!LD.el) return artBoot();
-  LD.shown = performance.now();
+  loadingScreen.el = document.getElementById('loader');
+  if (!loadingScreen.el) return artBoot();
+  loadingScreen.shown = performance.now();
   document.body.classList.add('ld-on', 'from-ld');
   try {
-    ldwInit();
+    loaderIslandInit();
   } catch (e) {
     console.error(e);
   }
-  if (typeof S !== 'undefined' && S && S.gender === 'boy') LD.el.classList.add('boy');
-  LD.tipT = setInterval(loaderTip, 3600);
+  if (typeof saveData !== 'undefined' && saveData && saveData.gender === 'boy') loadingScreen.el.classList.add('boy');
+  loadingScreen.tipT = setInterval(loaderTip, 3600);
   for (;;) {
-    const fails = await preloadAll(LD.town ? null : townUp);
+    const fails = await preloadAll(loadingScreen.town ? null : mountLoaderTown);
     if (!fails.length) break;
     console.error('Pocket Billies: art that failed to load:', fails);
-    LD.el.classList.add('failed');
-    LD.el.querySelector('.ld-phase').textContent = `${fails.length} file${fails.length === 1 ? '' : 's'} didn’t load`;
-    const box = LD.el.querySelector('.ld-fail');
+    loadingScreen.el.classList.add('failed');
+    loadingScreen.el.querySelector('.ld-phase').textContent =
+      `${fails.length} file${fails.length === 1 ? '' : 's'} didn’t load`;
+    const box = loadingScreen.el.querySelector('.ld-fail');
     box.hidden = false;
     box.innerHTML = `<b>Some art is missing or couldn’t be reached.</b><ul>${fails
       .slice(0, 30)
-      .map(f => `<li>${esc(f)}</li>`)
+      .map(f => `<li>${escapeHtml(f)}</li>`)
       .join(
         ''
       )}</ul><p>Check your connection, or that the game folder is complete. You can still play; missing pictures just won’t show.</p><div class="ld-btns"><button data-ld="retry">Try again</button><button class="q" data-ld="go">Play anyway</button></div>`;
@@ -617,60 +644,63 @@ async function bootLoad() {
       })
     );
     box.hidden = true;
-    LD.el.classList.remove('failed');
+    loadingScreen.el.classList.remove('failed');
     if (pick === 'go') break;
     for (const f of fails) {
       const p = f.split(' ')[0];
-      delete ART.img[p];
-      delete ART.wait[p];
+      delete ART_CACHE.img[p];
+      delete ART_CACHE.wait[p];
     }
   }
-  clearInterval(LD.tipT);
-  LD.f = 1;
-  LDW.doneAt = performance.now();
-  LD.el.classList.add('ready');
-  LD.el.querySelector('.ld-phase').textContent = 'Ready';
-  const wait = Math.max(RM ? 0 : 650, (RM ? 0 : 1400) - (performance.now() - LD.shown));
+  clearInterval(loadingScreen.tipT);
+  loadingScreen.f = 1;
+  loaderIsland.doneAt = performance.now();
+  loadingScreen.el.classList.add('ready');
+  loadingScreen.el.querySelector('.ld-phase').textContent = 'Ready';
+  const wait = Math.max(
+    reducedMotion ? 0 : 650,
+    (reducedMotion ? 0 : 1400) - (performance.now() - loadingScreen.shown)
+  );
   await new Promise(r => setTimeout(r, wait));
 }
 /* wait (at most 5 s) until the walk scene has drawn a few frames, so its first, slow frame happens behind the loader */
-async function sceneWarm() {
-  if (!S.started || typeof DIO === 'undefined') return;
+async function walkViewWarmup() {
+  if (!saveData.started || typeof walkView === 'undefined') return;
   const t0 = performance.now();
-  if (LD.el) LD.el.querySelector('.ld-phase').textContent = 'Setting the scene';
+  if (loadingScreen.el) loadingScreen.el.querySelector('.ld-phase').textContent = 'Setting the scene';
   while (performance.now() - t0 < 5000) {
     const ok =
-      DIO.ready &&
-      (typeof DGL === 'undefined' || !DGL.on || DGL.frames > 4) &&
-      (typeof EGL === 'undefined' || !EGL.normQ || !EGL.normQ.length);
+      walkView.ready &&
+      (typeof walkRenderer === 'undefined' || !walkRenderer.on || walkRenderer.frames > 4) &&
+      (typeof gpuState === 'undefined' || !gpuState.normQ || !gpuState.normQ.length);
     if (ok || !document.getElementById('dio')) break;
     await new Promise(r => setTimeout(r, 60));
   }
-  if (typeof NWLOG !== 'undefined') NWLOG.add('load', `scene ready in ${Math.round(performance.now() - t0)} ms`);
+  if (typeof debugLog !== 'undefined') debugLog.add('load', `scene ready in ${Math.round(performance.now() - t0)} ms`);
 }
 /* the town behind the loader: the title starts, its town is put up and grows in as the loading goes on */
-function townUp() {
-  if (LD.town) return;
-  LD.town = true;
+function mountLoaderTown() {
+  if (loadingScreen.town) return;
+  loadingScreen.town = true;
   titleStart();
   titleMount();
-  LD.el.classList.add('town');
-  if (typeof dglRiseStart === 'function') dglRiseStart(true);
+  loadingScreen.el.classList.add('town');
+  if (typeof startTownRise === 'function') startTownRise(true);
 }
 function loaderHide() {
-  const el = LD.el;
+  const el = loadingScreen.el;
   if (!el) {
     document.body.classList.remove('ld-on');
     return;
   }
-  LD.f = 1;
+  loadingScreen.f = 1;
   const end = () => {
-    cancelAnimationFrame(LDW.raf);
+    cancelAnimationFrame(loaderIsland.raf);
     el.remove();
-    LD.el = null;
+    loadingScreen.el = null;
     document.body.classList.remove('ld-on', 'ttl-reveal');
   };
-  if (!(typeof TITLE !== 'undefined' && TITLE.on)) {
+  if (!(typeof titleScreen !== 'undefined' && titleScreen.on)) {
     el.classList.add('done');
     document.body.classList.remove('ld-on');
     setTimeout(end, 900);
@@ -678,7 +708,7 @@ function loaderHide() {
   }
   /* alpha 0.4.1: the title comes out of the loader. Wait (at most 9 s) for the town behind the title to be drawn, give
     the island a moment to finish, then open the town out of it */
-  if (LD.town && !document.body.classList.contains('ttl-flat')) {
+  if (loadingScreen.town && !document.body.classList.contains('ttl-flat')) {
     const cv = document.getElementById('dio');
     if (cv) cv.style.clipPath = '';
     el.classList.add('reveal');
@@ -688,9 +718,9 @@ function loaderHide() {
         if (top) top.style.visibility = 'hidden';
         document.body.classList.remove('ld-on');
       },
-      RM ? 0 : 700
+      reducedMotion ? 0 : 700
     );
-    setTimeout(end, RM ? 300 : 1400);
+    setTimeout(end, reducedMotion ? 300 : 1400);
     return;
   }
   const t0 = performance.now(),
@@ -706,23 +736,23 @@ function loaderHide() {
       }
       document.body.classList.add('ttl-reveal');
       el.classList.add('reveal');
-      if (typeof dglRiseStart === 'function') dglRiseStart();
+      if (typeof startTownRise === 'function') startTownRise();
       setTimeout(
         () => {
           const top = el.querySelector('.ld-top');
           if (top) top.style.visibility = 'hidden';
           document.body.classList.remove('ld-on');
         },
-        RM ? 0 : 950
+        reducedMotion ? 0 : 950
       );
-      setTimeout(end, RM ? 300 : 2200);
+      setTimeout(end, reducedMotion ? 300 : 2200);
     };
-  setTimeout(go, RM ? 0 : Math.max(0, 900 - (performance.now() - (LDW.doneAt || 0))));
+  setTimeout(go, reducedMotion ? 0 : Math.max(0, 900 - (performance.now() - (loaderIsland.doneAt || 0))));
 }
 /* v29: Pocket Billies Studio and an open game tab. A test run (?test=1&scene=<id>) is a throwaway game that starts in that
    scene and never touches your save; while the Studio is open, its edits to scenes, props and the engine reach the
    game as you make them (no saving needed to see them). */
-const NW_TEST = (() => {
+const TEST_RUN = (() => {
   try {
     const q = new URLSearchParams(location.search);
     return q.get('test') ? { scene: q.get('scene') } : null;
@@ -730,58 +760,58 @@ const NW_TEST = (() => {
     return null;
   }
 })();
-provide({ NW_TEST }); /* to-module */
-if (NW_TEST) {
+provide({ TEST_RUN }); /* to-module */
+if (TEST_RUN) {
   setNoSaving();
-  setS(fresh());
+  setSaveData(newSave());
 }
 function studioTestStart() {
-  if (!NW_TEST) return;
-  U.pg = 'girl';
+  if (!TEST_RUN) return;
+  uiState.pg = 'girl';
   startGame((RULES.start.starters || [])[0]);
-  S.story = { met_chad: 1, met_chad2: 1 };
-  U.modal = null;
-  U.mq = [];
-  renderOv();
-  if (NW_TEST.scene && dioScene(NW_TEST.scene)) U.bench = { id: NW_TEST.scene };
-  U.tab = 'walk';
+  saveData.story = { met_chad: 1, met_chad2: 1 };
+  uiState.modal = null;
+  uiState.mq = [];
+  renderOverlay();
+  if (TEST_RUN.scene && mapById(TEST_RUN.scene)) uiState.bench = { id: TEST_RUN.scene };
+  uiState.tab = 'walk';
   render();
   toast(
-    `Test run${NW_TEST.scene && dioScene(NW_TEST.scene) ? ' of ' + (dioScene(NW_TEST.scene).name || NW_TEST.scene) : ''}. Nothing here is saved.`
+    `Test run${TEST_RUN.scene && mapById(TEST_RUN.scene) ? ' of ' + (mapById(TEST_RUN.scene).name || TEST_RUN.scene) : ''}. Nothing here is saved.`
   );
 }
 function studioLive(D) {
   let any = false;
-  for (const k of ['scenes', 'scenery', 'engine'])
+  for (const k of ['maps', 'scenery', 'engine'])
     if (D[k]) {
-      GD[k] = D[k];
+      gameData[k] = D[k];
       any = true;
     }
   if (!any) return;
-  if (typeof WORLD !== 'undefined') {
-    WORLD.gen++;
-    WORLD.cache.clear();
+  if (typeof seamlessWorld !== 'undefined') {
+    seamlessWorld.gen++;
+    seamlessWorld.cache.clear();
   }
-  if (typeof DIO !== 'undefined' && DIO.id && GD.scenes[DIO.id]) {
-    DIO.sc = GD.scenes[DIO.id];
-    DIO.gkey = '';
-    DIO.nav = null;
-    DIO.cand = null;
-    if (typeof DGL !== 'undefined') {
-      DGL.hkey = '';
-      DGL.farKey = '';
+  if (typeof walkView !== 'undefined' && walkView.id && gameData.maps[walkView.id]) {
+    walkView.sc = gameData.maps[walkView.id];
+    walkView.gkey = '';
+    walkView.nav = null;
+    walkView.cand = null;
+    if (typeof walkRenderer !== 'undefined') {
+      walkRenderer.hkey = '';
+      walkRenderer.farKey = '';
     }
   }
-  if (typeof ENV !== 'undefined') ENV.id = null;
+  if (typeof environment !== 'undefined') environment.id = null;
   if (!studioLive.told) {
     studioLive.told = 1;
     toast('Showing your Studio edits as you make them.');
   }
 }
-let NW_LINK = null;
+let studioChannel = null;
 try {
-  NW_LINK = new BroadcastChannel('networth-studio');
-  NW_LINK.onmessage = ev => {
+  studioChannel = new BroadcastChannel('networth-studio');
+  studioChannel.onmessage = ev => {
     const m = ev.data || {};
     if (m.type === 'data' && m.D)
       try {
@@ -795,7 +825,7 @@ try {
    screen says so and offers a retry and the debug log */
 function noWebGL(why) {
   if (document.getElementById('nogl')) return;
-  if (typeof NWLOG !== 'undefined') NWLOG.add('webgl', 'no WebGL 2: ' + (why || 'unavailable'));
+  if (typeof debugLog !== 'undefined') debugLog.add('webgl', 'no WebGL 2: ' + (why || 'unavailable'));
   const el = document.createElement('div');
   el.id = 'nogl';
   el.setAttribute('role', 'alertdialog');
@@ -809,25 +839,25 @@ function noWebGL(why) {
   });
   document.body.appendChild(el);
 }
-if (!eglOK()) noWebGL();
+if (!webgl2Supported()) noWebGL();
 else
-  /* phase 04b: the maps round where you are come with the art check; the others after the loader (js/scene-files.js) */
-  Promise.all([artCacheCheck(), scenesAhead(S.route ? S.route.node : START_NODE)])
+  /* phase 04b: the maps round where you are come with the art check; the others after the loader (js/map-files.js) */
+  Promise.all([artCacheCheck(), loadMapsAhead(saveData.trip ? saveData.trip.node : START_NODE)])
     .then(() => bootLoad())
     .then(async () => {
-      if (typeof NWLOG !== 'undefined') NWLOG.hook();
-      bgInit();
+      if (typeof debugLog !== 'undefined') debugLog.hook();
+      initPixelSky();
       if (typeof titleWanted === 'function' && titleWanted()) titleStart();
       render();
-      if (NW_TEST) studioTestStart();
-      /* an open Studio sends its unsaved edits */ if (NW_LINK)
+      if (TEST_RUN) studioTestStart();
+      /* an open Studio sends its unsaved edits */ if (studioChannel)
         try {
-          NW_LINK.postMessage({ type: 'hello' });
+          studioChannel.postMessage({ type: 'hello' });
         } catch (e) {}
-      await sceneWarm();
+      await walkViewWarmup();
       loaderHide();
-      sceneWatch();
-      scenesAll();
+      watchMapsAhead();
+      loadAllMaps();
       if (SAVE_FOUND === 'old' || SAVE_FOUND === 'new')
         setTimeout(
           () =>
@@ -838,7 +868,7 @@ else
             }),
           1200
         );
-      if (S.started && !NW_TEST) setTimeout(postProcess, 500);
+      if (saveData.started && !TEST_RUN) setTimeout(showPendingWindows, 500);
       if (location.protocol === 'file:')
         setTimeout(
           () => toast('Battles and the map need a local web server. Open the game with Start-Game (see README).'),
@@ -849,6 +879,6 @@ else
           `Pocket Billies: ${DATA_WARN.length} game data warning(s). Open the debug menu (Ctrl+Shift+D) to see them.`
         );
     });
-if (typeof accInit === 'function') accInit();
+if (typeof initAccount === 'function') initAccount();
 if ('serviceWorker' in navigator && location.protocol !== 'file:')
   addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));

@@ -1,7 +1,7 @@
 {
  "name": "Deep Diver Dom",
  "who": "diver",
- "area": "sea",
+ "battleStage": "sea",
  "node": 37,
  "blocks": false,
  "team": [

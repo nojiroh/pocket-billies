@@ -1,7 +1,7 @@
 {
  "name": "Spelunker Stan",
  "who": "miner",
- "area": "lake",
+ "battleStage": "lake",
  "node": 33,
  "blocks": false,
  "team": [

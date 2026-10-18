@@ -1,7 +1,7 @@
 {
  "name": "Variant VIP",
  "who": "variant",
- "area": "clear",
+ "battleStage": "clear",
  "node": 40,
  "blocks": false,
  "team": [

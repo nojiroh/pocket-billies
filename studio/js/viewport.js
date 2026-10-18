@@ -7,48 +7,48 @@
 import { expose } from '../../game/js/test-globals.js';
 import { provide } from '../../game/js/hooks.js';
 import { $, $$, clamp } from '../../game/js/util.js';
-import { DGL, dioMount, setDioMount } from '../../game/js/diorama-gl.js';
+import { mountWalkView, setMountWalkView, walkRenderer } from '../../game/js/walk-view-gl.js';
 /* eslint-disable no-func-assign */
 expose({
-  VP: [() => VP],
-  vpAttach: [() => vpAttach, v => (vpAttach = v)],
-  vpBig: [() => vpBig, v => (vpBig = v)],
-  vpScan: [() => vpScan, v => (vpScan = v)],
-  vpTurn: [() => vpTurn],
-  vpZoom: [() => vpZoom],
+  attachViewportBar: [() => attachViewportBar, v => (attachViewportBar = v)],
+  previewViewport: [() => previewViewport],
+  scanViewports: [() => scanViewports, v => (scanViewports = v)],
+  toggleBigViewport: [() => toggleBigViewport, v => (toggleBigViewport = v)],
+  turnViewport: [() => turnViewport],
+  zoomViewport: [() => zoomViewport],
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
-const VP = { hover: false, big: null };
-provide({ VP }); /* to-module */
-if (typeof dioMount === 'function') {
-  const _dm = dioMount;
-  setDioMount(function (cv, id, o = {}) {
+const previewViewport = { hover: false, big: null };
+provide({ previewViewport }); /* to-module */
+if (typeof mountWalkView === 'function') {
+  const _dm = mountWalkView;
+  setMountWalkView(function (cv, id, o = {}) {
     const k0 = o.keys;
-    o = Object.assign({}, o, { freeCam: true, keys: () => VP.hover || !!(k0 && k0()) });
+    o = Object.assign({}, o, { freeCam: true, keys: () => previewViewport.hover || !!(k0 && k0()) });
     return _dm(cv, id, o);
   });
 }
-const vpTurn = a => {
-  if (typeof DGL === 'undefined') return;
-  let y = DGL.yawT + a;
+const turnViewport = a => {
+  if (typeof walkRenderer === 'undefined') return;
+  let y = walkRenderer.yawT + a;
   if (y > Math.PI) {
     y -= 2 * Math.PI;
-    DGL.yaw -= 2 * Math.PI;
+    walkRenderer.yaw -= 2 * Math.PI;
   } else if (y < -Math.PI) {
     y += 2 * Math.PI;
-    DGL.yaw += 2 * Math.PI;
+    walkRenderer.yaw += 2 * Math.PI;
   }
-  DGL.yawT = y;
+  walkRenderer.yawT = y;
 };
-const vpZoom = k => {
-  if (typeof DGL !== 'undefined') DGL.zoomT = clamp(DGL.zoomT * k, 0.3, 3.2);
+const zoomViewport = k => {
+  if (typeof walkRenderer !== 'undefined') walkRenderer.zoomT = clamp(walkRenderer.zoomT * k, 0.3, 3.2);
 };
-function vpBig(el) {
+function toggleBigViewport(el) {
   const on = !el.classList.contains('vp-big');
   $$('.sc-pv.vp-big').forEach(e => e.classList.remove('vp-big'));
   if (on) el.classList.add('vp-big');
-  VP.big = on ? el : null;
+  previewViewport.big = on ? el : null;
   document.body.classList.toggle('vp-has-big', on);
   const b = el.querySelector('[data-vp="big"]');
   if (b) {
@@ -57,7 +57,7 @@ function vpBig(el) {
   }
   setTimeout(() => dispatchEvent(new Event('resize')), 30);
 }
-function vpAttach(el) {
+function attachViewportBar(el) {
   if (el._vp) return;
   el._vp = 1;
   const bar = document.createElement('div');
@@ -73,36 +73,37 @@ function vpAttach(el) {
     if (!b) return;
     ev.stopPropagation();
     const a = b.dataset.vp;
-    if (a === 'in') vpZoom(1 / 1.25);
-    else if (a === 'out') vpZoom(1.25);
-    else if (a === 'left') vpTurn(-Math.PI / 4);
-    else if (a === 'right') vpTurn(Math.PI / 4);
-    else if (a === 'reset' && typeof DGL !== 'undefined') {
-      DGL.yawT = 0;
-      DGL.zoomT = 1;
-    } else if (a === 'big') vpBig(el);
+    if (a === 'in') zoomViewport(1 / 1.25);
+    else if (a === 'out') zoomViewport(1.25);
+    else if (a === 'left') turnViewport(-Math.PI / 4);
+    else if (a === 'right') turnViewport(Math.PI / 4);
+    else if (a === 'reset' && typeof walkRenderer !== 'undefined') {
+      walkRenderer.yawT = 0;
+      walkRenderer.zoomT = 1;
+    } else if (a === 'big') toggleBigViewport(el);
   });
   bar.addEventListener('pointerdown', ev => ev.stopPropagation());
   el.addEventListener('pointerenter', () => {
-    VP.hover = true;
+    previewViewport.hover = true;
   });
   el.addEventListener('pointerleave', () => {
-    VP.hover = false;
+    previewViewport.hover = false;
   });
 } /* the wheel itself is the game's own handler, which zooms without Ctrl in a free-camera preview */
-function vpScan() {
-  $$('.sc-pv').forEach(vpAttach);
-  if (VP.big && !document.body.contains(VP.big)) {
-    VP.big = null;
+function scanViewports() {
+  $$('.sc-pv').forEach(attachViewportBar);
+  if (previewViewport.big && !document.body.contains(previewViewport.big)) {
+    previewViewport.big = null;
     document.body.classList.remove('vp-has-big');
   }
-  if (!$('.sc-pv')) VP.hover = false;
+  if (!$('.sc-pv')) previewViewport.hover = false;
 }
 document.addEventListener('keydown', ev => {
-  if (ev.key === 'Escape' && VP.big && !$('#dlg').innerHTML && !$('#modal').innerHTML) vpBig(VP.big);
+  if (ev.key === 'Escape' && previewViewport.big && !$('#dlg').innerHTML && !$('#modal').innerHTML)
+    toggleBigViewport(previewViewport.big);
 });
 addEventListener('load', () => {
   const m = $('#main');
-  if (m) new MutationObserver(() => vpScan()).observe(m, { childList: true, subtree: true });
-  vpScan();
+  if (m) new MutationObserver(() => scanViewports()).observe(m, { childList: true, subtree: true });
+  scanViewports();
 });

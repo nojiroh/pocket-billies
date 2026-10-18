@@ -4,7 +4,7 @@
 
 What changed from v46 (tools/build-terrain.py):
   - no seams and no repeats: the soft patches of light and shade are no longer in the tiles (where every tile's edge
-    cut them and every tile repeated them); the ground painter (diorama.js) lays them across the whole ground in
+    cut them and every tile repeated them); the ground painter (walk-view.js) lays them across the whole ground in
     world metres, half a step lighter or darker, round, a checker where they meet. tone_at/tone_px below are the
     same sums, so the sheets show what the game lays. Nothing drawn in a tile crosses its edge; paving rows run on
     because the stone across each edge is the same in every tile of the kind
@@ -20,7 +20,7 @@ What changed from v46 (tools/build-terrain.py):
     cover, packed paler earth), so it runs on from tile to tile; the worn tiles only carry fewer details
   - seeds are stable (the same tiles every run)
 
-Roles of the twelve (the ground painter, diorama.js, places them): 1, 7, 8 plain; 2-6, 10 details; 9 the damp
+Roles of the twelve (the ground painter, walk-view.js, places them): 1, 7, 8 plain; 2-6, 10 details; 9 the damp
 patch; 11, 12 worn. The 16 px tiles of the new kinds (scene/tiles/<name>.png and _1.._5, Lite mode and the Studio)
 are made from the 32 px ones, with the soft patches baked in (Lite has no painter patches).
 
@@ -46,7 +46,7 @@ def ramp(b):
 
 
 # ----------------------------------------------------------------------------- the painter's soft patches
-# v47: the soft patches of light and shade are no longer in the tiles: the ground painter (diorama.js, dioTone47) lays
+# v47: the soft patches of light and shade are no longer in the tiles: the ground painter (walk-view.js, dioTone47) lays
 # them across the whole ground in world metres, so they run on from tile to tile and never repeat. The same sums here,
 # for the sheets and for the 16 px tiles of Lite mode.
 def _i32(v):
@@ -1200,7 +1200,7 @@ def damp(t, R, cls):
 
 
 def worn(t, R, cls, strength):
-    """v47: the trodden track is laid by the painter in world metres (diorama.js: bare soil in patches on plant
+    """v47: the trodden track is laid by the painter in world metres (walk-view.js: bare soil in patches on plant
     cover, packed and paler earth), most along the middle of the line people walk, so it runs on from tile to tile.
     The worn tiles themselves only carry fewer details (Tile.thin). Floors and paving (never worn by the painter)
     get a soft polish, so their twelve still differ"""
@@ -1291,7 +1291,7 @@ PLAIN, DETAIL = [1, 7, 8], [2, 3, 4, 5, 6, 9, 10]
 
 
 def pick(sx, sz, v47=True):
-    """the tile the ground painter lays on the metre (sx, sz), as diorama.js picks it. v47: the three plain tiles
+    """the tile the ground painter lays on the metre (sx, sz), as walk-view.js picks it. v47: the three plain tiles
     equally often, and not the same one as the metre to the left or behind (v46 laid the first half the time)"""
     r = dio_hash(sx * 3 + 11, sz * 7 + 5)
     if dio_noise(sx / 4.7, sz / 4.7 + 31) > .63: return DETAIL[int(r * 7)]

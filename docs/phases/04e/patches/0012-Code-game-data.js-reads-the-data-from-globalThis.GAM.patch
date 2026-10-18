@@ -1,0 +1,39 @@
+From 306dbf2d7d468b07f0b410e2e72cfea9557f9b9c Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Sun, 18 Oct 2026 09:44:00 +0000
+Subject: [PATCH 12/22] Code: game-data.js reads the data from
+ globalThis.GAMEDATA, not window.GAMEDATA
+
+On a page globalThis is window, so the game reads the same object as before. In plain Node there is no window:
+a test puts its own small data on globalThis before it imports the module (phase 04e, logic without a browser).
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01LpFSn4GaodAVzjKW5J3oQR
+---
+ game/js/game-data.js | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/game/js/game-data.js b/game/js/game-data.js
+index c1a4c08..e877354 100644
+--- a/game/js/game-data.js
++++ b/game/js/game-data.js
+@@ -3,7 +3,9 @@
+ /* ================= DATA =================
+    Everything here is built from the game data (data/*.json, put together as data/gamedata.js), which Pocket Billies
+    Studio edits.
+-   The rest of the game reads these globals, so the file format can change without touching game code. */
++   The rest of the game reads these globals, so the file format can change without touching game code.
++   Phase 04e: the data is read from globalThis, the page's window; in plain Node (tools/check-logic.mjs) a test puts
++   its own small data there before it imports this module. */
+ /**
+  * @import { EggTier, Evolution, GameData, LocationData, LocationEntry, Pool, Road, RoadFromNode } from '../types/game-data'
+  * @import { Seat, Species, TrainerEntry } from '../types/game-data'
+@@ -78,7 +80,7 @@ expose({
+ /* eslint-enable no-func-assign */
+ /* to-module: end */
+ /* the check below stops the page when it is missing, so the rest can count on it */
+-export const gameData = /** @type {GameData} */ (window.GAMEDATA);
++export const gameData = /** @type {GameData} */ (globalThis.GAMEDATA);
+ provide({ gameData }); /* to-module */
+ if (!gameData)
+   throw new Error(

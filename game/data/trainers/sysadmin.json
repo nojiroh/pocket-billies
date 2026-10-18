@@ -1,7 +1,7 @@
 {
  "name": "Sysadmin Sam",
  "who": "intern",
- "area": "clear",
+ "battleStage": "clear",
  "node": 39,
  "blocks": false,
  "team": [

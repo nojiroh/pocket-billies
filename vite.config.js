@@ -17,7 +17,7 @@ const MODULE_TAG = /<script type="module" src="([^"]+)"><\/script>\n?/g;
 // tag. Each page is bundled on its own into a single file, so the modules run in the page's order (their imports only
 // point back); a shared chunk could run a Studio-and-game module before a game-only one that comes first on the page.
 // Not minified, so a stack trace in a debug log reads as the code; the source map is next to it. The classic scripts
-// (version.js, log.js, the art manifests, the data files) stay as they are; the module sources are left out of dist/.
+// (version.js, debug-log.js, the art manifests, the data files) stay as they are; the module sources are left out of dist/.
 async function bundlePage(outDir, page) {
   const file = resolve(outDir, page);
   const html = readFileSync(file, 'utf8');

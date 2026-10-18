@@ -1,0 +1,71 @@
+From 86dc23b22412badddd4142421f9a5119f00bc9b6 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Sun, 18 Oct 2026 09:43:59 +0000
+Subject: [PATCH 08/22] Types: map-files.js is type-checked
+
+// @ts-check (npm run modules marks its generated setters), and JSDoc types for mapFiles, MAP_FIELDS and the last
+fetch error. saveData comes through hooks.js, so its reads here are not checked yet. Comments only: the syntax tree
+is unchanged.
+---
+ game/js/map-files.js | 14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
+
+diff --git a/game/js/map-files.js b/game/js/map-files.js
+index 498b20e..a2efba4 100644
+--- a/game/js/map-files.js
++++ b/game/js/map-files.js
+@@ -1,3 +1,4 @@
++// @ts-check
+ 'use strict';
+ /* ================= MAP FILES (phase 04b) =================
+    data/gamedata.js has every map without its ground and props (sc._lite says which ground kinds and props it uses);
+@@ -9,6 +10,7 @@
+    The view a player can walk into next is fetched ahead (loadMapsAhead, on arriving at a place), and prepareMap waits
+    for a view's maps, so nothing is drawn from half a map. If anything was put together from a map before its file came
+    (the world map's miniatures, say), the views are made again once it has (seamlessWorld.gen). */
++/** @import { LocationNode, MapFileField } from '../types/game-data' */
+ /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
+ import { expose } from './test-globals.js';
+ import { provide, saveData, seamlessWorld } from './hooks.js';
+@@ -17,22 +19,33 @@ import { LOCATIONS, ROADS, ROADS_BY_NODE, START_NODE, gameData } from './game-da
+ expose({
+   MAP_FIELDS: [() => MAP_FIELDS],
+   isLiteMap: [() => isLiteMap],
++  // @ts-expect-error -- replaced on purpose
+   loadAllMaps: [() => loadAllMaps, v => (loadAllMaps = v)],
++  // @ts-expect-error -- replaced on purpose
+   loadMapFile: [() => loadMapFile, v => (loadMapFile = v)],
++  // @ts-expect-error -- replaced on purpose
+   loadMapsAhead: [() => loadMapsAhead, v => (loadMapsAhead = v)],
+   mapFiles: [() => mapFiles],
++  // @ts-expect-error -- replaced on purpose
+   mapsAround: [() => mapsAround, v => (mapsAround = v)],
++  // @ts-expect-error -- replaced on purpose
+   mapsOfView: [() => mapsOfView, v => ((mapsOfView = v), provide({ mapsOfView }))],
+   needMaps: [() => needMaps],
+   nodeOfMap: [() => nodeOfMap],
++  // @ts-expect-error -- replaced on purpose
+   remakeViewsOfMap: [() => remakeViewsOfMap, v => (remakeViewsOfMap = v)],
++  // @ts-expect-error -- replaced on purpose
+   watchMapsAhead: [() => watchMapsAhead, v => (watchMapsAhead = v)],
+ });
+ /* eslint-enable no-func-assign */
+ provide({ mapsOfView });
+ /* to-module: end */
++/* busy: the fetches under way or done, by map; touched: maps a view was made from while lite; all: loadAllMaps;
++   ms and n: time spent and maps loaded; failed: maps that did not load */
++/** @type {{ busy: Map<string, Promise<void>>, touched: Set<string>, all: Promise<void> | null, ms: number, n: number, failed: string[] }} */
+ const mapFiles = { busy: new Map(), touched: new Set(), all: null, ms: 0, n: 0, failed: [] };
+ provide({ mapFiles }); /* to-module */
++/** @type {MapFileField[]} */
+ const MAP_FIELDS = ['heights', 'steps', 'stepm', 'tiles', 'props'];
+ export const isLiteMap = id => !!(gameData.maps[id] && gameData.maps[id]._lite);
+ export function loadMapFile(id) {
+@@ -41,6 +54,7 @@ export function loadMapFile(id) {
+   const t0 = performance.now(),
+     sc = gameData.maps[id];
+   const p = (async () => {
++    /** @type {any} what the last try threw */
+     let last = null;
+     for (let k = 0; k < 3; k++) {
+       try {

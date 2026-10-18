@@ -103,7 +103,7 @@ for (const html of APPS) {
 // Names one page defines and the other checks for with typeof before use: the Studio's art version (the game's
 // renderers repaint when it changes), the game's walk hubs (the Studio's preview uses them when present), the Firebase
 // SDK (account.js loads it from the CDN on demand).
-const OPTIONAL = { dioArtVer: 'readonly', wrHubScene: 'readonly', firebase: 'readonly' };
+const OPTIONAL = { artCacheVersion: 'readonly', seamlessHubMap: 'readonly', firebase: 'readonly' };
 
 const optionalFor = file => Object.fromEntries(Object.entries(OPTIONAL).filter(([n]) => !ownNames.get(file).has(n)));
 
@@ -116,10 +116,26 @@ const bugRules = {
   'no-empty': 'off',
   'no-useless-assignment': 'off',
   'preserve-caught-error': 'off',
+  // phase 05 (docs/NAMING.md): camelCase or UPPER_SNAKE names; properties are data keys, so they may be anything.
+  // The rest of NAMING.md (no one- or two-letter top-level names, no retired name or prefix, kebab-case files) is
+  // tools/check-names.mjs, which npm run lint runs after ESLint
+  camelcase: ['error', { properties: 'never', ignoreDestructuring: true, ignoreImports: true }],
 };
 
 export default [
-  { ignores: ['node_modules/', 'dist/', 'validation/', 'game/data/', 'game/art/', 'firebase/', 'tools/', 'docs/'] },
+  {
+    ignores: [
+      'node_modules/',
+      'dist/',
+      'validation/',
+      'game/data/',
+      'game/art/',
+      'firebase/',
+      'tools/',
+      'docs/',
+      '.claude/',
+    ],
+  },
   ...[...sharedGlobals].map(([file, shared]) => ({
     files: [file],
     languageOptions: {

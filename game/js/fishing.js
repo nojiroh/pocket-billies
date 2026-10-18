@@ -7,16 +7,31 @@
    the place's own plus the kind's bonus. A catch starts a wild battle like any other encounter. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { sfx, startWild, toast, x28Event } from './hooks.js';
-import { clamp, rnd } from './util.js';
-import { GD, RULES, SP } from './data.js';
-import { B, RM, S, U, areaPool, pickW, save, uid } from './core.js';
-import { uiIco } from './art.js';
-import { DIO, dioTer } from './diorama.js';
-import { DGL, DGL_WKIND, dglCurve, dglRing, dglWgAt, dioH } from './diorama-gl.js';
+import { recordThingsToDoEvent, soundEffect, startWild, toast } from './hooks.js';
+import { clamp, random } from './util.js';
+import { RULES, SPECIES, gameData } from './game-data.js';
+import {
+  activeBattle,
+  encounterPoolHere,
+  newUid,
+  pickWeighted,
+  reducedMotion,
+  save,
+  saveData,
+  uiState,
+} from './game-state.js';
+import { uiIconHTML } from './art.js';
+import { terrainAt, walkView } from './walk-view.js';
+import {
+  WATER_KIND_LOOKS,
+  addRipple,
+  standingHeightAt,
+  walkRenderer,
+  waterAt,
+  worldCurveDrop,
+} from './walk-view-gl.js';
 /* eslint-disable no-func-assign */
 expose({
-  FISH: [() => FISH],
   FISH_KINDS: [() => FISH_KINDS],
   fishCaught: [() => fishCaught, v => (fishCaught = v)],
   fishDraw: [() => fishDraw, v => (fishDraw = v)],
@@ -30,10 +45,11 @@ expose({
   fishSpot: [() => fishSpot, v => (fishSpot = v)],
   fishStart: [() => fishStart, v => (fishStart = v)],
   fishTap: [() => fishTap, v => (fishTap = v)],
+  fishing: [() => fishing],
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
-const FISH = {
+const fishing = {
   on: false,
   phase: null,
   t0: 0,
@@ -59,22 +75,22 @@ function fishRules() {
 /* the water in front of you (or close beside you): {x,z,y,kind} or null */
 function fishSpot() {
   if (
-    typeof DIO === 'undefined' ||
-    !DIO.sc ||
-    !DIO.ready ||
-    DIO.battle ||
-    DIO.director ||
-    (typeof B !== 'undefined' && B)
+    typeof walkView === 'undefined' ||
+    !walkView.sc ||
+    !walkView.ready ||
+    walkView.battle ||
+    walkView.director ||
+    (typeof activeBattle !== 'undefined' && activeBattle)
   )
     return null;
-  const P = DIO.pl,
-    sc = DIO.sc;
+  const P = walkView.pl,
+    sc = walkView.sc;
   const wet = (x, z) => {
     if (x < 0 || z < 0 || x >= sc.w || z >= sc.h) return false;
-    const c = dioTer(x, z);
+    const c = terrainAt(x, z);
     return c === 'w' || c === 'd';
   };
-  if (wet(P.x, P.z) && !(typeof DGL !== 'undefined' && DGL.mountOn)) return null;
+  if (wet(P.x, P.z) && !(typeof walkRenderer !== 'undefined' && walkRenderer.mountOn)) return null;
   const f = { down: [0, -1], up: [0, 1], side: [-1, 0], sideR: [1, 0] }[P.dir] || [0, -1],
     dirs = [f, [f[1], -f[0]], [-f[1], f[0]], [0.7, 0.7], [-0.7, 0.7], [0.7, -0.7], [-0.7, -0.7], [-f[0], -f[1]]];
   for (const [dx, dz] of dirs)
@@ -84,37 +100,44 @@ function fishSpot() {
       if (!wet(x, z)) continue;
       const kind = fishKindAt(x, z);
       if (kind === 'lava') return null;
-      return { x, z, y: dioH(x, z), kind, dir: [dx, dz] };
+      return { x, z, y: standingHeightAt(x, z), kind, dir: [dx, dz] };
     }
   return null;
 }
 function fishKindAt(x, z) {
-  if (typeof dglWgAt === 'function') {
-    const g = dglWgAt(x, z);
-    if (g && typeof DGL_WKIND !== 'undefined' && DGL_WKIND[g.kind]) return DGL_WKIND[g.kind].k;
+  if (typeof waterAt === 'function') {
+    const g = waterAt(x, z);
+    if (g && typeof WATER_KIND_LOOKS !== 'undefined' && WATER_KIND_LOOKS[g.kind]) return WATER_KIND_LOOKS[g.kind].k;
   }
-  const sc = DIO.sc;
+  const sc = walkView.sc;
   return sc.waterKind || (sc.indoor && sc.far === 'cave' ? 'spring' : sc.far === 'town' ? 'canal' : 'pond');
 }
 /* what bites: the kind's list, at the place's levels plus the kind's bonus */
 function fishPick(kind) {
-  const F = (GD.fishing || {})[kind] || (GD.fishing || {}).pond;
+  const F = (gameData.fishing || {})[kind] || (gameData.fishing || {}).pond;
   if (!F || !F.list || !F.list.length) return null;
-  const list = F.list.filter(([id]) => SP[id]);
+  const list = F.list.filter(([id]) => SPECIES[id]);
   if (!list.length) return null;
-  const sp = pickW(list),
-    P = areaPool(),
+  const sp = pickWeighted(list),
+    P = encounterPoolHere(),
     lv =
       P.lv[0] +
       (F.lv ? F.lv[0] : 0) +
-      Math.floor(rnd() * (P.lv[1] + (F.lv ? F.lv[1] : 0) - (P.lv[0] + (F.lv ? F.lv[0] : 0)) + 1));
-  return { id: uid(), sp, lvl: Math.max(2, lv), gold: rnd() < 1 / fishRules().goldOdds, no: ++S.serial, fished: 1 };
+      Math.floor(random() * (P.lv[1] + (F.lv ? F.lv[1] : 0) - (P.lv[0] + (F.lv ? F.lv[0] : 0)) + 1));
+  return {
+    id: newUid(),
+    sp,
+    lvl: Math.max(2, lv),
+    gold: random() < 1 / fishRules().goldOdds,
+    no: ++saveData.serial,
+    fished: 1,
+  };
 }
 /* the Fish button on the walk screen comes and goes as you walk past water */
 function fishPoll() {
   const b = document.querySelector('[data-a=fish]');
   if (!b) return;
-  const ok = !FISH.on && U.tab === 'walk' && !U.bench && !!fishSpot();
+  const ok = !fishing.on && uiState.tab === 'walk' && !uiState.bench && !!fishSpot();
   if (b.hidden === ok) b.hidden = !ok;
 }
 setInterval(() => {
@@ -123,14 +146,14 @@ setInterval(() => {
   } catch (e) {}
 }, 450);
 export function fishStart() {
-  if (FISH.on) return;
+  if (fishing.on) return;
   const sp = fishSpot();
   if (!sp) {
     toast('Walk up to some water first.');
     return;
   }
-  const P = DIO.pl;
-  Object.assign(FISH, {
+  const P = walkView.pl;
+  Object.assign(fishing, {
     on: true,
     phase: 'cast',
     t0: performance.now(),
@@ -148,142 +171,142 @@ export function fishStart() {
   if (Math.abs(sp.dir[0]) > Math.abs(sp.dir[1])) P.dir = sp.dir[0] > 0 ? 'sideR' : 'side';
   else P.dir = sp.dir[1] > 0 ? 'up' : 'down';
   P.route = null;
-  FISH.bite = fishRules().biteMin + rnd() * (fishRules().biteMax - fishRules().biteMin);
-  const el = (FISH.el = document.createElement('div'));
+  fishing.bite = fishRules().biteMin + random() * (fishRules().biteMax - fishRules().biteMin);
+  const el = (fishing.el = document.createElement('div'));
   el.className = 'fish-ui';
   el.innerHTML = `<canvas class="fish-cv"></canvas><div class="fish-msg glass" aria-live="polite">Casting…</div>
-  <div class="fish-reel" hidden><div class="fr-bar"><div class="fr-zone"></div><div class="fr-fish">${uiIco('fish', 20)}</div></div><div class="fr-prog"><i></i></div></div>
+  <div class="fish-reel" hidden><div class="fr-bar"><div class="fr-zone"></div><div class="fr-fish">${uiIconHTML('fish', 20)}</div></div><div class="fr-prog"><i></i></div></div>
   <div class="fish-acts"><button class="pb small gold fish-tap" data-fish="tap">Strike!</button><button class="pb small glass" data-fish="stop">Stop fishing</button></div>`;
   document.body.appendChild(el);
-  FISH.cv = el.querySelector('.fish-cv');
+  fishing.cv = el.querySelector('.fish-cv');
   const down = e => {
       if (e.target.closest('[data-fish=stop]')) return;
       e.preventDefault();
-      FISH.hold = true;
+      fishing.hold = true;
       fishTap();
     },
     up = () => {
-      FISH.hold = false;
+      fishing.hold = false;
     };
   el.addEventListener('pointerdown', down);
   el.addEventListener('pointerup', up);
   el.addEventListener('pointercancel', up);
   el.addEventListener('pointerleave', up);
   el.querySelector('[data-fish=stop]').addEventListener('click', () => fishEnd('You reel in your line.'));
-  FISH.key = e => {
+  fishing.key = e => {
     if (e.code === 'Space' || e.key === ' ') {
       e.preventDefault();
       if (e.type === 'keydown') {
-        if (!FISH.hold) {
-          FISH.hold = true;
+        if (!fishing.hold) {
+          fishing.hold = true;
           fishTap();
         }
-      } else FISH.hold = false;
+      } else fishing.hold = false;
     } else if (e.key === 'Escape' && e.type === 'keydown') fishEnd('You reel in your line.');
   };
-  addEventListener('keydown', FISH.key);
-  addEventListener('keyup', FISH.key);
-  if (typeof sfx === 'function') sfx('step', { hard: 1 });
-  FISH.last = performance.now();
-  FISH.raf = requestAnimationFrame(fishLoop);
+  addEventListener('keydown', fishing.key);
+  addEventListener('keyup', fishing.key);
+  if (typeof soundEffect === 'function') soundEffect('step', { hard: 1 });
+  fishing.last = performance.now();
+  fishing.raf = requestAnimationFrame(fishLoop);
 }
 function fishMsg(t) {
-  const m = FISH.el && FISH.el.querySelector('.fish-msg');
+  const m = fishing.el && fishing.el.querySelector('.fish-msg');
   if (m && m.textContent !== t) m.textContent = t;
 }
 function fishTap() {
-  const ph = FISH.phase,
-    t = (performance.now() - FISH.t0) / 1000;
+  const ph = fishing.phase,
+    t = (performance.now() - fishing.t0) / 1000;
   if (ph === 'wait') {
     fishEnd('Too soon! The fish swam off.');
     return;
   }
   if (ph === 'bite') {
-    FISH.phase = 'reel';
-    FISH.t0 = performance.now();
-    FISH.q = fishPick(FISH.spot.kind);
-    if (!FISH.q) {
+    fishing.phase = 'reel';
+    fishing.t0 = performance.now();
+    fishing.q = fishPick(fishing.spot.kind);
+    if (!fishing.q) {
       fishEnd('Nothing lives in this water.');
       return;
     }
-    const sp = SP[FISH.q.sp],
+    const sp = SPECIES[fishing.q.sp],
       hard = clamp(
         0.6 + (sp.stage || 0) * 0.35 + (sp.rar === 'rare' ? 0.4 : sp.rar === 'uncommon' ? 0.2 : 0),
         0.6,
         1.6
       );
-    FISH.hard = hard;
-    FISH.el.querySelector('.fish-reel').hidden = false;
-    FISH.el.querySelector('.fish-tap').textContent = 'Hold to reel';
+    fishing.hard = hard;
+    fishing.el.querySelector('.fish-reel').hidden = false;
+    fishing.el.querySelector('.fish-tap').textContent = 'Hold to reel';
     fishMsg('Hold to lift the green band. Keep the fish in it!');
-    if (typeof dglRing === 'function') dglRing(FISH.spot.x, FISH.spot.z, 1);
+    if (typeof addRipple === 'function') addRipple(fishing.spot.x, fishing.spot.z, 1);
   }
 }
 function fishLoop(ts) {
-  if (!FISH.on) return;
-  const dt = Math.min(0.05, (ts - FISH.last) / 1000);
-  FISH.last = ts;
-  const t = (ts - FISH.t0) / 1000,
+  if (!fishing.on) return;
+  const dt = Math.min(0.05, (ts - fishing.last) / 1000);
+  fishing.last = ts;
+  const t = (ts - fishing.t0) / 1000,
     R = fishRules();
-  if (FISH.phase === 'cast') {
+  if (fishing.phase === 'cast') {
     if (t > 0.7) {
-      FISH.phase = 'wait';
-      FISH.t0 = ts;
+      fishing.phase = 'wait';
+      fishing.t0 = ts;
       fishMsg('Waiting for a bite… don’t tap yet.');
-      if (typeof dglRing === 'function') dglRing(FISH.spot.x, FISH.spot.z, 0.8);
+      if (typeof addRipple === 'function') addRipple(fishing.spot.x, fishing.spot.z, 0.8);
     }
-  } else if (FISH.phase === 'wait') {
-    if (t > FISH.bite) {
-      FISH.phase = 'bite';
-      FISH.t0 = ts;
+  } else if (fishing.phase === 'wait') {
+    if (t > fishing.bite) {
+      fishing.phase = 'bite';
+      fishing.t0 = ts;
       fishMsg('A bite! Tap now!');
-      if (typeof sfx === 'function') sfx('step', { hard: 1 });
-      if (typeof dglRing === 'function') dglRing(FISH.spot.x, FISH.spot.z, 1);
-    } else if (rnd() < dt * 0.6) {
-      FISH.nib = 0.18;
-      if (typeof dglRing === 'function') dglRing(FISH.spot.x, FISH.spot.z, 0.35);
+      if (typeof soundEffect === 'function') soundEffect('step', { hard: 1 });
+      if (typeof addRipple === 'function') addRipple(fishing.spot.x, fishing.spot.z, 1);
+    } else if (random() < dt * 0.6) {
+      fishing.nib = 0.18;
+      if (typeof addRipple === 'function') addRipple(fishing.spot.x, fishing.spot.z, 0.35);
     }
-  } else if (FISH.phase === 'bite') {
+  } else if (fishing.phase === 'bite') {
     if (t > R.reactTime) {
       fishEnd('It got away. Strike faster when the float goes under.');
       return;
     }
-  } else if (FISH.phase === 'reel') {
-    const hard = FISH.hard || 1;
-    FISH.zv += (FISH.hold ? 2.6 : -2.2) * dt;
-    FISH.zv *= Math.pow(0.15, dt);
-    FISH.zone = clamp(FISH.zone + FISH.zv * dt, 0, 0.7);
-    if (FISH.zone <= 0 || FISH.zone >= 0.7) FISH.zv *= -0.3;
+  } else if (fishing.phase === 'reel') {
+    const hard = fishing.hard || 1;
+    fishing.zv += (fishing.hold ? 2.6 : -2.2) * dt;
+    fishing.zv *= Math.pow(0.15, dt);
+    fishing.zone = clamp(fishing.zone + fishing.zv * dt, 0, 0.7);
+    if (fishing.zone <= 0 || fishing.zone >= 0.7) fishing.zv *= -0.3;
     const tgt =
       0.5 + 0.42 * Math.sin(t * 0.9 * hard + 1.3) * Math.sin(t * 0.37 * hard + 0.4) + 0.12 * Math.sin(t * 3.1 * hard);
-    FISH.fishY += (clamp(tgt, 0.03, 0.97) - FISH.fishY) * Math.min(1, dt * 2.6 * hard);
-    const inZone = FISH.fishY >= FISH.zone && FISH.fishY <= FISH.zone + 0.3;
-    FISH.prog = clamp(FISH.prog + (inZone ? 0.32 : -0.22 * hard) * dt, 0, 1);
-    const z = FISH.el.querySelector('.fr-zone'),
-      f = FISH.el.querySelector('.fr-fish'),
-      p = FISH.el.querySelector('.fr-prog i');
-    if (z) z.style.bottom = (FISH.zone * 100).toFixed(1) + '%';
-    if (f) f.style.bottom = (FISH.fishY * 100).toFixed(1) + '%';
+    fishing.fishY += (clamp(tgt, 0.03, 0.97) - fishing.fishY) * Math.min(1, dt * 2.6 * hard);
+    const inZone = fishing.fishY >= fishing.zone && fishing.fishY <= fishing.zone + 0.3;
+    fishing.prog = clamp(fishing.prog + (inZone ? 0.32 : -0.22 * hard) * dt, 0, 1);
+    const z = fishing.el.querySelector('.fr-zone'),
+      f = fishing.el.querySelector('.fr-fish'),
+      p = fishing.el.querySelector('.fr-prog i');
+    if (z) z.style.bottom = (fishing.zone * 100).toFixed(1) + '%';
+    if (f) f.style.bottom = (fishing.fishY * 100).toFixed(1) + '%';
     if (f) f.classList.toggle('in', inZone);
-    if (p) p.style.height = (FISH.prog * 100).toFixed(1) + '%';
-    if (FISH.prog >= 1) {
+    if (p) p.style.height = (fishing.prog * 100).toFixed(1) + '%';
+    if (fishing.prog >= 1) {
       fishCaught();
       return;
     }
-    if (FISH.prog <= 0 || t > R.reelTime) {
+    if (fishing.prog <= 0 || t > R.reelTime) {
       fishEnd('The line went slack. It got away!');
       return;
     }
   }
   fishDraw(ts);
-  FISH.raf = requestAnimationFrame(fishLoop);
+  fishing.raf = requestAnimationFrame(fishLoop);
 }
 /* the rod, the line and the float, drawn over the scene */
 function fishDraw(ts) {
-  const cv = FISH.cv,
-    C = DIO.C;
-  if (!cv || !C || !C.vp || !DIO.cv) return;
-  const r = DIO.cv.getBoundingClientRect();
+  const cv = fishing.cv,
+    C = walkView.C;
+  if (!cv || !C || !C.vp || !walkView.cv) return;
+  const r = walkView.cv.getBoundingClientRect();
   if (cv.width !== Math.round(r.width) || cv.height !== Math.round(r.height)) {
     cv.width = Math.round(r.width);
     cv.height = Math.round(r.height);
@@ -302,24 +325,30 @@ function fishDraw(ts) {
       if (w <= 0) return null;
       return [((cx / w) * 0.5 + 0.5) * cv.width, (1 - ((cy / w) * 0.5 + 0.5)) * cv.height];
     };
-  const P = DIO.pl,
-    S0 = FISH.spot,
-    py = (P.yv ?? dioH(P.x, P.z)) + (typeof dglCurve === 'function' ? dglCurve(P.x, P.z) : 0),
+  const P = walkView.pl,
+    S0 = fishing.spot,
+    py = (P.yv ?? standingHeightAt(P.x, P.z)) + (typeof worldCurveDrop === 'function' ? worldCurveDrop(P.x, P.z) : 0),
     hx = P.x + S0.dir[0] * 0.35,
     hz = P.z + S0.dir[1] * 0.35;
   const tip = [P.x + S0.dir[0] * 1.05, py + 1.75, P.z + S0.dir[1] * 1.05],
     hand = [hx, py + 0.95, hz];
   let k = 1;
-  if (FISH.phase === 'cast') k = clamp((ts - FISH.t0) / 700, 0, 1);
+  if (fishing.phase === 'cast') k = clamp((ts - fishing.t0) / 700, 0, 1);
   const dip =
-    FISH.phase === 'bite' ? 0.12 : FISH.phase === 'reel' ? 0.08 + 0.04 * Math.sin(ts / 90) : FISH.nib > 0 ? 0.05 : 0;
-  FISH.nib = Math.max(0, FISH.nib - 0.016);
+    fishing.phase === 'bite'
+      ? 0.12
+      : fishing.phase === 'reel'
+        ? 0.08 + 0.04 * Math.sin(ts / 90)
+        : fishing.nib > 0
+          ? 0.05
+          : 0;
+  fishing.nib = Math.max(0, fishing.nib - 0.016);
   const by =
       S0.y +
-      (typeof dglCurve === 'function' ? dglCurve(S0.x, S0.z) : 0) +
+      (typeof worldCurveDrop === 'function' ? worldCurveDrop(S0.x, S0.z) : 0) +
       0.03 -
       dip +
-      (RM ? 0 : Math.sin(ts / 500) * 0.015),
+      (reducedMotion ? 0 : Math.sin(ts / 500) * 0.015),
     bob = [
       tip[0] + (S0.x - tip[0]) * k,
       tip[1] + (by - tip[1]) * k + Math.sin(k * Math.PI) * 0.8,
@@ -341,16 +370,16 @@ function fishDraw(ts) {
   x.lineWidth = 1 * s;
   x.beginPath();
   x.moveTo(b[0], b[1]);
-  x.quadraticCurveTo((b[0] + c[0]) / 2, Math.max(b[1], c[1]) + (FISH.phase === 'reel' ? 0 : 18 * s), c[0], c[1]);
+  x.quadraticCurveTo((b[0] + c[0]) / 2, Math.max(b[1], c[1]) + (fishing.phase === 'reel' ? 0 : 18 * s), c[0], c[1]);
   x.stroke();
-  if (FISH.phase !== 'bite' || Math.floor(ts / 120) % 2) {
+  if (fishing.phase !== 'bite' || Math.floor(ts / 120) % 2) {
     const r2 = Math.round(3 * s);
     x.fillStyle = '#E8403A';
     x.fillRect(Math.round(c[0] - r2), Math.round(c[1] - r2 * 2), r2 * 2, r2);
     x.fillStyle = '#F4F2EC';
     x.fillRect(Math.round(c[0] - r2), Math.round(c[1] - r2), r2 * 2, r2);
   }
-  if (FISH.phase === 'bite') {
+  if (fishing.phase === 'bite') {
     x.fillStyle = '#FFE27A';
     x.font = `bold ${Math.round(22 * s)}px system-ui`;
     x.textAlign = 'center';
@@ -358,28 +387,28 @@ function fishDraw(ts) {
   }
 }
 function fishCaught() {
-  const q = FISH.q;
+  const q = fishing.q;
   fishEnd(null);
   if (!q) return;
-  const nm = SP[q.sp].name;
-  if (typeof NWLOG !== 'undefined') NWLOG.add('fish', 'caught ' + q.sp);
-  S.stats = S.stats || {};
-  S.stats.fished = (S.stats.fished || 0) + 1;
-  if (typeof x28Event === 'function') x28Event('fish');
+  const nm = SPECIES[q.sp].name;
+  if (typeof debugLog !== 'undefined') debugLog.add('fish', 'caught ' + q.sp);
+  saveData.stats = saveData.stats || {};
+  saveData.stats.fished = (saveData.stats.fished || 0) + 1;
+  if (typeof recordThingsToDoEvent === 'function') recordThingsToDoEvent('fish');
   save();
   toast(`You hooked a ${q.gold ? 'Golden ' : ''}${nm}!`);
   setTimeout(() => startWild(q), 350);
 }
 function fishEnd(msg) {
-  FISH.on = false;
-  cancelAnimationFrame(FISH.raf);
-  if (FISH.el) {
-    FISH.el.remove();
-    FISH.el = null;
+  fishing.on = false;
+  cancelAnimationFrame(fishing.raf);
+  if (fishing.el) {
+    fishing.el.remove();
+    fishing.el = null;
   }
-  FISH.cv = null;
-  removeEventListener('keydown', FISH.key);
-  removeEventListener('keyup', FISH.key);
+  fishing.cv = null;
+  removeEventListener('keydown', fishing.key);
+  removeEventListener('keyup', fishing.key);
   if (msg) toast(msg);
   fishPoll();
 }

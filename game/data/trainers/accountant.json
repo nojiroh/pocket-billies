@@ -1,7 +1,7 @@
 {
  "name": "Accountant Al",
  "who": "broker",
- "area": "esc",
+ "battleStage": "esc",
  "node": 25,
  "blocks": false,
  "team": [

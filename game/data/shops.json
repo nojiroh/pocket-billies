@@ -1,5 +1,5 @@
 {
- "sundown": {
+ "marigold": {
   "name": "Marigold General Store",
   "keeper": "Mabel Underhill",
   "who": "clerk",
@@ -13,7 +13,7 @@
    {"coin":"penny","price":300}
   ]
  },
- "grotto": {
+ "fizzwell": {
   "name": "Grotto Supply Co.",
   "keeper": "Rusty Flange",
   "who": "miner",
@@ -39,7 +39,7 @@
    {"item":"loophole","price":400}
   ]
  },
- "mall": {
+ "lanternhall": {
   "name": "Concierge Desk",
   "keeper": "Concierge Pell",
   "who": "concierge",
@@ -102,7 +102,7 @@
   "greeting": "Last season from every boutique in the inner world, all under one roof. Same prices, more mirrors.",
   "thanks": ["A city look if I ever saw one.","Walk tall, the pigeons are watching.","Come back when the window display changes."]
  },
- "taxhaven": {
+ "palmhaven": {
   "name": "Haven Duty-Free",
   "keeper": "Coral Vance",
   "who": "coral",
@@ -118,7 +118,7 @@
    {"coin":"gold","price":1950}
   ]
  },
- "summit": {
+ "frostcrown": {
   "name": "Summit Supply",
   "keeper": "Sven Peakstone",
   "who": "sven",
@@ -133,7 +133,7 @@
    {"coin":"silver","price":800}
   ]
  },
- "twofold": {
+ "twinpetal": {
   "name": "Twinpetal Market",
   "keeper": "Marta",
   "who": "chef",
@@ -146,7 +146,7 @@
    {"item":"bailout","price":900}
   ]
  },
- "bullion": {
+ "goldvine": {
   "name": "Bullion Exchange",
   "keeper": "Goldie",
   "who": "cashier",
@@ -160,7 +160,7 @@
    {"item":"parachute","price":2400}
   ]
  },
- "marketcap": {
+ "capshade": {
   "name": "Cap Market",
   "keeper": "Chanterelle",
   "who": "chef",
@@ -173,7 +173,7 @@
    {"item":"parachute","price":2400}
   ]
  },
- "mintshaft": {
+ "glimmershaft": {
   "name": "Assay Office",
   "keeper": "Opal",
   "who": "cashier",
@@ -186,7 +186,7 @@
    {"item":"parachute","price":2400}
   ]
  },
- "portfolio": {
+ "kelpport": {
   "name": "The Chandlery",
   "keeper": "Marlin",
   "who": "skipper",
@@ -200,7 +200,7 @@
    {"item":"parachute","price":2400}
   ]
  },
- "upside": {
+ "nimbus": {
   "name": "Night Market",
   "keeper": "Lux",
   "who": "clerk",

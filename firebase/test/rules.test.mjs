@@ -96,7 +96,7 @@ test('the whole friendship: ask, see it, accept, both lists, both pages', async 
 });
 test('removing a friend, and asking again later', async () => {
   await seed('requests/ann_bob', req('ann', 'bob', 'accepted'));
-  await assertSucceeds(getDoc(doc(db('bob'), 'requests/bob_ann')));               // frRemove looks at both ids
+  await assertSucceeds(getDoc(doc(db('bob'), 'requests/bob_ann')));               // removeFriend looks at both ids
   await assertSucceeds(updateDoc(doc(db('bob'), 'requests/ann_bob'), { status: 'removed', t: 3 }));
   await assertSucceeds(setDoc(doc(db('ann'), 'requests/ann_bob'), req('ann', 'bob')));
   await assertSucceeds(updateDoc(doc(db('ann'), 'requests/ann_bob'), { status: 'removed', t: 4 }));

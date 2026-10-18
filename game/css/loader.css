@@ -1,6 +1,6 @@
 /* ================= LOADING AND TITLE SCREEN =================
    alpha 0.4.1: the loading screen is the title screen. The logo stands where the title's logo stands, and below it a
-   little island builds itself as the game loads (js/boot.js, LDW): the ground drops in tile by tile, then trees,
+   little island builds itself as the game loads (js/boot.js, loaderIsland): the ground drops in tile by tile, then trees,
    houses, an airship station with its ship. When everything is in, the island grows toward you and the real town
    opens out of it in a widening circle, its trees and houses springing up from the middle; then the title's buttons
    come in under the logo. */
@@ -288,7 +288,7 @@
 #loader .ld-tip {
   margin-top: 12px;
 }
-/* alpha 0.4.1: the town itself loads in behind the logo (js/boot.js townUp): the sky goes, the island isn't needed,
+/* alpha 0.4.1: the town itself loads in behind the logo (js/boot.js mountLoaderTown): the sky goes, the island isn't needed,
    the same shading top and bottom as the title keeps the words readable */
 #loader.town {
   background: linear-gradient(

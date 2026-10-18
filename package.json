@@ -10,7 +10,7 @@
     "check:data": "node tools/check-data.mjs",
     "modules": "node tools/to-module.mjs",
     "check:modules": "node tools/to-module.mjs --check",
-    "lint": "eslint .",
+    "lint": "eslint . && node tools/check-names.mjs",
     "format": "prettier --write \"game/**/*.{js,css}\" \"studio/**/*.{js,css}\" \"*.js\"",
     "format:check": "prettier --check \"game/**/*.{js,css}\" \"studio/**/*.{js,css}\" \"*.js\"",
     "check:smoke": "python3 tools/check-quick.py --smoke",

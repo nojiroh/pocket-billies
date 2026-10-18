@@ -1,7 +1,7 @@
 {
  "name": "Leader Poppy",
  "who": "poppy",
- "area": "grass",
+ "battleStage": "grass",
  "node": 20,
  "blocks": false,
  "team": [

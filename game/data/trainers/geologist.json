@@ -1,7 +1,7 @@
 {
  "name": "Geologist Garnet",
  "who": "geo",
- "area": "grotto",
+ "battleStage": "grotto",
  "node": 31,
  "blocks": false,
  "team": [

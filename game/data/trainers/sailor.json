@@ -1,7 +1,7 @@
 {
  "name": "Sailor Sal",
  "who": "skipper",
- "area": "beach",
+ "battleStage": "beach",
  "node": 35,
  "blocks": false,
  "team": [

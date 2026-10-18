@@ -1,0 +1,57 @@
+From 0c3db04db7b6f42d151c1a4b54b47104f44afad2 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Sun, 18 Oct 2026 09:44:01 +0000
+Subject: [PATCH 15/22] Tools: a blank line ends a module's header, so a new
+ module's first moved comment stays with its code
+
+tools/to-module.mjs puts the generated part after a module's leading comments; in a module made by move-names.mjs
+those ran on into the first moved declaration's comment, which then sat above the imports. A blank line now ends the
+header (no module has one inside its header: npm run modules changes nothing), and move-names.mjs leaves one after a
+new module's header. Its list of what runs at load also shows a statement that came with a declaration.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01LpFSn4GaodAVzjKW5J3oQR
+---
+ tools/move-names.mjs | 11 +++++++++--
+ tools/to-module.mjs  |  2 ++
+ 2 files changed, 11 insertions(+), 2 deletions(-)
+
+diff --git a/tools/move-names.mjs b/tools/move-names.mjs
+index 0119245..d01cabd 100644
+--- a/tools/move-names.mjs
++++ b/tools/move-names.mjs
+@@ -154,12 +154,19 @@ export async function move(from, to, names, { after, header, withHeader, dry } =
+   if (exists) {
+     if (header || withHeader) throw new Error(`${to} exists: --header and --with-header are for a new module`);
+     target = stripped(read(to)).replace(/\s*$/, '\n') + movedText.replace(/^\s*\n/, '');
+-  } else target = "'use strict';\n" + (header ? `/* ${header} */\n` : '') + head + movedText.replace(/^\s*\n/, '');
++  }
++  // a new module: a blank line after its header, where tools/to-module.mjs puts the generated part (above the comments
++  // that came with the first moved declaration)
++  else target = "'use strict';\n" + (header ? `/* ${header} */\n` : '') + head + '\n' + movedText.replace(/^\s*\n/, '');
+   const pages = exists ? [] : pageTagsAdd(from, to, after && normalize(after), true);
+   // what runs at load in the new place, and what stays and uses a moved name
+   const fn = d => d.init && /^(Arrow)?FunctionExpression$/.test(d.init.type);
+   const atLoad = moved
+-    .filter(s => s.node.type !== 'FunctionDeclaration' && !(s.node.declarations || []).every(fn))
++    .filter(
++      s =>
++        s.node.type !== 'FunctionDeclaration' &&
++        !(s.node.type === 'VariableDeclaration' && s.node.declarations.every(fn))
++    )
+     .map(
+       s =>
+         s.names.join(', ') ||
+diff --git a/tools/to-module.mjs b/tools/to-module.mjs
+index 30732de..38f6c63 100644
+--- a/tools/to-module.mjs
++++ b/tools/to-module.mjs
+@@ -185,6 +185,8 @@ export function headerEnd(text) {
+   for (;;) {
+     const ws = text.slice(i).match(/^\s*/)[0].length;
+     const j = i + ws;
++    // phase 04e: a blank line ends the header (a moved declaration's comment at the top of a new module stays with it)
++    if (i > 0 && /\n[^\S\n]*\n/.test(text.slice(i, j))) return i;
+     if (text.startsWith('//', j)) i = text.indexOf('\n', j) < 0 ? text.length : text.indexOf('\n', j) + 1;
+     else if (text.startsWith('/*', j)) i = text.indexOf('*/', j) + 2;
+     else if (/^(['"])use strict\1;?/.test(text.slice(j)))

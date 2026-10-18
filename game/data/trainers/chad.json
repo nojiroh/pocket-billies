@@ -1,7 +1,7 @@
 {
  "name": "Blake",
  "who": "chad",
- "area": "golf",
+ "battleStage": "golf",
  "node": 2,
  "blocks": true,
  "team": [

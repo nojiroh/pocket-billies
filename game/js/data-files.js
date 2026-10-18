@@ -1,7 +1,7 @@
 'use strict';
 /* Phase 04b: the game data is many JSON files in game/data/ instead of one gamedata.js.
    - index.json says which files there are and in which order: `keys` is the order of the top-level sections; the
-     sections in `split` have one file per entry in a folder of the same name (scenes/<id>.json, lines/<id>.json, ...),
+     sections in `split` have one file per entry in a folder of the same name (maps/<id>.json, lines/<id>.json, ...),
      in the order of their `ids`; every other section is one file, <section>.json.
    - The build (tools/build-data.mjs, npm run data) puts them back together as data/gamedata.js for the game.
    - The game itself, when data/gamedata.js isn't there (the repository served as it is), reads the files with this
@@ -10,7 +10,7 @@
    This file is shared by all three: the browser (self.PB_DATA) and Node (tools/build-data.mjs runs it in a sandbox). */
 self.PB_DATA = (() => {
   // the sections with a file per entry: an array (each entry has an id) or an object (the key is the id)
-  const SPLIT = { lines: 'array', people: 'object', trainers: 'object', scenes: 'object' };
+  const SPLIT = { lines: 'array', people: 'object', trainers: 'object', maps: 'object' };
   const ID = /^[a-z0-9_]+$/;
 
   // index.json -> [{ section, id, path }] in load order

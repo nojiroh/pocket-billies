@@ -168,7 +168,7 @@ All existing pictures are unchanged. One new file:
   dressed stone, hedge, wooden boards, stone stair risers, mossy rock, concrete, dark slate. Each cell
   tiles seamlessly and is stored as five grey levels (0, 64, 128, 191, 255); the game colours each
   level through the props' 5-tone ramp in the face's colour (set per scene in `wallCol`, or the
-  defaults in `diorama-gl.js`), so one drawing serves every biome. Repaint it in any editor that keeps
+  defaults in `walk-view-gl.js`), so one drawing serves every biome. Repaint it in any editor that keeps
   those five greys; `tools/build-walls.py --force` redraws the original. The scenery catalog points to
   it as `wallArt`.
 - Bridges, railings, arches and escalators are models made at run time; they use the 3D buildings'
@@ -176,7 +176,7 @@ All existing pictures are unchanged. One new file:
 
 ## Version 19
 
-No new image files. Props get solid bodies made at run time from their own pictures (`game/js/props3d.js`):
+No new image files. Props get solid bodies made at run time from their own pictures (`game/js/solid-props.js`):
 - The front (and the back, seen from behind) is the picture itself; the edges of slabs and blocks take the
   colour one pixel inside the outline, so keep the 1-pixel dark outline: it is what tells the body's edge
   colour apart. A shape only one pixel thick uses its outline colour.
@@ -290,7 +290,7 @@ New picture files only; no existing picture was changed.
 - `data/hdart.js`: the list of 2x pictures (generated; edit the pictures, not the list).
 - You can paint over any 2x picture by hand in the Studio or any editor: it is then kept, even when its original
   changes. To redo one from its original: `python3 tools/build-hd-art.py --only scene/props/crate.png --force`.
-- Billionaire walk cycles are poses of the existing rigs (`rig.js` walk pose, per body plan in `anim.js`): no new
+- Billionaire walk cycles are poses of the existing rigs (`skeleton-rig.js` walk pose, per body plan in `body-plan-animation.js`): no new
   billionaire pictures, and no side views.
 
 ## Version 35
@@ -478,7 +478,7 @@ New files only:
 ## alpha 0.4.1
 
 - The title no longer shows the painted `background/sundown.webp`; the first town (Copperleaf) is drawn by the 3D
-  renderer and builds itself in behind the logo while the game loads (`js/boot.js`, `dglRiseK` in `js/diorama-gl.js`).
+  renderer and builds itself in behind the logo while the game loads (`js/boot.js`, `townRiseAmount` in `js/walk-view-gl.js`).
   The painting stays as the wide-screen page background behind the menus.
 - Without 3D graphics the loading screen draws a small isometric island by hand on a 256 × 168 canvas (no art files):
   ground tiles, trees, houses, lamps and an airship station, in the game's palette.

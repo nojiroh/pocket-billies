@@ -6,22 +6,22 @@
    "[happy] Nice to meet you!" (happy, surprised, sad, angry, blink, talk). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { dioChatLines, provide } from './hooks.js';
-import { PEOPLE, TRAINERS } from './data.js';
-import { RM, S } from './core.js';
-import { frameStop, frameTask } from './frame.js';
-import { trPortrait, trainerLook } from './trainer.js';
-import { DIO, dioFace } from './diorama.js';
-import { DGL } from './diorama-gl.js';
-import { sfx } from './sound.js';
+import { mapChatLines, provide } from './hooks.js';
+import { PEOPLE, TRAINERS } from './game-data.js';
+import { reducedMotion, saveData } from './game-state.js';
+import { frameStop, frameTask } from './frame-scheduler.js';
+import { drawPortrait, lookOf } from './person-art.js';
+import { turnToPlayer, walkView } from './walk-view.js';
+import { walkRenderer } from './walk-view-gl.js';
+import { soundEffect } from './sound.js';
 /* eslint-disable no-func-assign */
 expose({
   FOLK_NAMES: [() => FOLK_NAMES],
   FOLK_TALK: [() => FOLK_TALK],
-  TALK: [() => TALK],
-  TALK_NAMES: [() => TALK_NAMES],
+  SPEAKER_NAMES: [() => SPEAKER_NAMES],
   setTalkFolk: [() => setTalkFolk, v => (setTalkFolk = v)],
   talk: [() => talk, v => (talk = v)],
+  talkBox: [() => talkBox],
   talkEl: [() => talkEl, v => (talkEl = v)],
   talkFolk: [() => talkFolk, v => setTalkFolk(v)],
   talkHazel: [() => talkHazel, v => (talkHazel = v)],
@@ -33,8 +33,8 @@ expose({
 /* eslint-enable no-func-assign */
 provide({ talkFolk });
 /* to-module: end */
-export const TALK = { on: false, cur: null, por: { who: null, expr: null, t: 0 }, el: null };
-const TALK_NAMES = { gini: 'Professor Hazel' };
+export const talkBox = { on: false, cur: null, por: { who: null, expr: null, t: 0 }, el: null };
+const SPEAKER_NAMES = { gini: 'Professor Hazel' };
 const FOLK_NAMES = [
   'Ada',
   'Bram',
@@ -63,10 +63,10 @@ const FOLK_NAMES = [
   'Zeb',
 ];
 function talkName(who) {
-  if (who === 'me') return trainerLook('me').name || 'You';
+  if (who === 'me') return lookOf('me').name || 'You';
   if (typeof who === 'string' && who.startsWith('folk:')) return FOLK_NAMES[+who.slice(5) % FOLK_NAMES.length];
   return (
-    TALK_NAMES[who] ||
+    SPEAKER_NAMES[who] ||
     (typeof PEOPLE !== 'undefined' &&
       PEOPLE[who] &&
       ((PEOPLE[who].look && PEOPLE[who].look.name) || PEOPLE[who].name)) ||
@@ -75,7 +75,7 @@ function talkName(who) {
   );
 }
 function talkEl() {
-  let el = TALK.el;
+  let el = talkBox.el;
   if (el && el.isConnected) return el;
   el = document.createElement('div');
   el.id = 'talk';
@@ -85,10 +85,10 @@ function talkEl() {
     '<div class="talk-box px" role="dialog" aria-live="polite"><canvas class="talk-por" aria-hidden="true"></canvas><div class="talk-txt"><p class="talk-who"></p><p class="talk-line"></p></div><span class="talk-more" aria-hidden="true">▼</span></div>';
   el.addEventListener('click', ev => {
     if (ev.target.closest('button,a,input')) return;
-    if (TALK.cur) TALK.cur.tap();
+    if (talkBox.cur) talkBox.cur.tap();
   });
   document.body.appendChild(el);
-  TALK.el = el;
+  talkBox.el = el;
   return el;
 }
 /* one line; the box stays open for the next one until talkHide() */
@@ -108,24 +108,24 @@ export function talkLine(who, text, expr, o = {}) {
   el.querySelector('.talk-who').textContent = o.name || talkName(who);
   box.classList.remove('done');
   line.textContent = '';
-  TALK.on = true;
-  TALK.por = { who, expr: expr || null, t: 0 };
-  if (!TALK.loop) {
-    TALK.loop = true;
+  talkBox.on = true;
+  talkBox.por = { who, expr: expr || null, t: 0 };
+  if (!talkBox.loop) {
+    talkBox.loop = true;
     frameTask('talk', talkTick, () => 30);
   }
   return new Promise(res => {
     const st = { who, text, n: 0, t0: performance.now(), typing: true, res };
-    TALK.cur = st;
+    talkBox.cur = st;
     let blipN = 0;
     const step = () => {
-      if (TALK.cur !== st) return;
-      st.n = RM ? text.length : Math.min(text.length, Math.floor((performance.now() - st.t0) / 28));
+      if (talkBox.cur !== st) return;
+      st.n = reducedMotion ? text.length : Math.min(text.length, Math.floor((performance.now() - st.t0) / 28));
       line.textContent = text.slice(0, st.n);
       const b = Math.floor(st.n / 3);
       if (b > blipN && st.n < text.length) {
         blipN = b;
-        if (typeof sfx === 'function' && /\w/.test(text[st.n] || '')) sfx('blip', { who });
+        if (typeof soundEffect === 'function' && /\w/.test(text[st.n] || '')) soundEffect('blip', { who });
       }
       if (st.n >= text.length) {
         st.typing = false;
@@ -140,21 +140,21 @@ export function talkLine(who, text, expr, o = {}) {
         st.t0 = -1e9;
         return;
       }
-      if (typeof sfx === 'function') sfx('tick');
+      if (typeof soundEffect === 'function') soundEffect('tick');
       st.done();
     };
     st.done = () => {
-      if (TALK.cur !== st) return;
-      TALK.cur = null;
+      if (talkBox.cur !== st) return;
+      talkBox.cur = null;
       res();
     };
   });
 }
 export function talkHide() {
-  const el = TALK.el;
+  const el = talkBox.el;
   if (el) el.hidden = true;
-  TALK.cur = null;
-  TALK.on = false;
+  talkBox.cur = null;
+  talkBox.on = false;
   document.body.classList.remove('talking');
 }
 /* a whole conversation: [[who,text,expr],…] or [{who,text,expr}] */
@@ -166,27 +166,27 @@ export async function talk(lines, o = {}) {
   talkHide();
 }
 function talkTick(ts) {
-  const P = TALK.por,
-    el = TALK.el;
-  if (!TALK.on || !el || el.hidden || !P.who) {
-    TALK.loop = false;
+  const P = talkBox.por,
+    el = talkBox.el;
+  if (!talkBox.on || !el || el.hidden || !P.who) {
+    talkBox.loop = false;
     frameStop('talk');
     return;
   }
   if (ts - P.t < 70) return;
   P.t = ts;
-  const typing = TALK.cur && TALK.cur.typing,
+  const typing = talkBox.cur && talkBox.cur.typing,
     blink = ts % 3700 < 130 && P.expr !== 'happy';
   const ex = blink ? 'blink' : typing && !P.expr && Math.floor(ts / 120) % 2 ? 'talk' : P.expr;
   try {
-    trPortrait(el.querySelector('.talk-por'), P.who, ex, ts);
+    drawPortrait(el.querySelector('.talk-por'), P.who, ex, ts);
   } catch (e) {}
 }
 document.addEventListener('keydown', ev => {
-  if (!TALK.cur || TALK.el.hidden) return;
+  if (!talkBox.cur || talkBox.el.hidden) return;
   if (ev.key === 'Enter' || ev.key === ' ') {
     ev.preventDefault();
-    TALK.cur.tap();
+    talkBox.cur.tap();
   }
 });
 
@@ -202,33 +202,33 @@ const FOLK_TALK = [
   'Careful in the tall grass. They hide in there.',
 ];
 export async function talkFolk(f) {
-  if (TALK.on) return;
-  const sc = DIO.sc,
-    L = typeof dioChatLines === 'function' ? dioChatLines(FOLK_TALK) : sc.chat && sc.chat.length ? sc.chat : FOLK_TALK,
+  if (talkBox.on) return;
+  const sc = walkView.sc,
+    L = typeof mapChatLines === 'function' ? mapChatLines(FOLK_TALK) : sc.chat && sc.chat.length ? sc.chat : FOLK_TALK,
     who = 'folk:' + f.seed,
-    a = L[(f.line + (DIO.chat = (DIO.chat || 0) + 1)) % L.length],
-    b = FOLK_TALK[(f.seed + DIO.chat) % FOLK_TALK.length];
+    a = L[(f.line + (walkView.chat = (walkView.chat || 0) + 1)) % L.length],
+    b = FOLK_TALK[(f.seed + walkView.chat) % FOLK_TALK.length];
   f.wait = 99;
   f.route = null;
   f.walk = 0;
-  dioFace(f);
-  if (typeof DGL !== 'undefined') DGL.focusT = { x: f.x, z: f.z, t: DIO.t };
+  turnToPlayer(f);
+  if (typeof walkRenderer !== 'undefined') walkRenderer.focusT = { x: f.x, z: f.z, t: walkView.t };
   await talk([
     [who, a],
     [who, b === a ? FOLK_TALK[0] : b],
   ]);
   f.wait = 2;
 }
-/* phase 04d: extras.js answers the person who asked a favour */
+/* phase 04d: things-to-do.js answers the person who asked a favour */
 export function setTalkFolk(v) {
   talkFolk = v; // eslint-disable-line no-func-assign
   provide({ talkFolk });
 }
 export async function talkHazel(p) {
-  if (TALK.on) return;
-  const caught = Object.keys(S.caught).length,
-    badges = (S.seats || []).length,
-    nm = trainerLook('me').name || 'Trainer';
+  if (talkBox.on) return;
+  const caught = Object.keys(saveData.caught).length,
+    badges = (saveData.seats || []).length,
+    nm = lookOf('me').name || 'Trainer';
   const tips = [
     `[happy] ${nm}! How's your Index coming along? ${caught} taxed so far.`,
     caught < 5
@@ -240,7 +240,7 @@ export async function talkHazel(p) {
       ? `${badges} badge${badges > 1 ? 's' : ''} already. The arena leaders talk about you, you know.`
       : 'When your team is ready, try an arena. The first one is in Fizzwell Town.',
   ];
-  if (S.flags && S.flags.chad && !S.flags.chad2)
+  if (saveData.flags && saveData.flags.chad && !saveData.flags.chad2)
     tips.push('Blake was here earlier, bragging. He said he’d wait for you in Clovercrest Town.');
   await talk(tips.map(t => ['gini', t]));
 }

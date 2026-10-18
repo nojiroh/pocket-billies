@@ -1,7 +1,7 @@
 {
  "name": "Intern Ollie",
  "who": "intern",
- "area": "food",
+ "battleStage": "food",
  "node": 12,
  "blocks": false,
  "team": [

@@ -1,7 +1,7 @@
 {
  "name": "Variant No. 2048",
  "who": "variant",
- "area": "shell",
+ "battleStage": "shell",
  "node": 27,
  "blocks": false,
  "team": [

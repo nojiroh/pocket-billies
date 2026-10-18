@@ -1,7 +1,7 @@
 {
  "name": "Variant No. 1",
  "who": "variant",
- "area": "volcano",
+ "battleStage": "volcano",
  "node": 45,
  "blocks": false,
  "team": [

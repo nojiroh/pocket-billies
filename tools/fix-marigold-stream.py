@@ -42,7 +42,7 @@ def line_d(px, pz, pts): return min(seg_d(px, pz, a, b) for a, b in zip(pts, pts
 
 
 def fix(D):
-    sc = D['scenes']['sundown']; S = sc.get('streams') or []
+    sc = D['maps']['marigold']; S = sc.get('streams') or []
     if not S or [[round(v, 1) for v in q] for q in S[0]['pts']] != OLD: return None
     H, W = sc['h'], sc['w']; rows = [list(r) for r in sc['tiles']]
     at = lambda x, z: rows[H - 1 - z][x] if 0 <= x < W and 0 <= z < H else None
@@ -113,7 +113,7 @@ def fix(D):
 def buildings_in_water(D):
     """every building whose footprint (turned as it stands) has water in it"""
     C = D['scenery']['props']; out = []
-    for sid, sc in D['scenes'].items():
+    for sid, sc in D['maps'].items():
         if '@' in sid or not sc.get('tiles'): continue
         T = sc['tiles']; H = len(T); W = len(T[0])
         at = lambda x, z: T[H - 1 - z][x] if 0 <= x < W and 0 <= z < H else None
@@ -132,7 +132,7 @@ def buildings_in_water(D):
 
 def draw(D, path):
     from PIL import Image, ImageDraw
-    sc = D['scenes']['sundown']; T = sc['tiles']; H = sc['h']; k = 8
+    sc = D['maps']['marigold']; T = sc['tiles']; H = sc['h']; k = 8
     col = {'w': (60, 130, 200), 'd': (40, 100, 170), 's': (220, 200, 140), 'K': (150, 140, 130), 'p': (190, 150, 100), 'u': (130, 95, 65), 'l': (100, 170, 80), 'g': (90, 150, 70)}
     x0, x1, z0, z1 = 4, 40, 10, 84
     im = Image.new('RGB', ((x1 - x0) * k, (z1 - z0) * k)); d = ImageDraw.Draw(im)

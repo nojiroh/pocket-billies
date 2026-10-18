@@ -1,7 +1,7 @@
 {
  "name": "Gardener Gus",
  "who": "hiker",
- "area": "grass",
+ "battleStage": "grass",
  "node": 21,
  "blocks": false,
  "team": [

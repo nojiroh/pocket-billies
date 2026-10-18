@@ -1831,7 +1831,7 @@
    "tags": ["town","farm","junk"],
    "group": "crate",
    "solid": 0.5,
-   "vox": "scene/vox/crate.json"
+   "model": "scene/vox/crate.json"
   },
   "crates": {
    "name": "Crate stack",
@@ -1844,7 +1844,7 @@
    "tags": ["town","farm","junk"],
    "group": "crates",
    "solid": 0.8,
-   "vox": "scene/vox/crates.json"
+   "model": "scene/vox/crates.json"
   },
   "haybale": {
    "name": "Hay bale",
@@ -1857,7 +1857,7 @@
    "tags": ["farm"],
    "group": "haybale",
    "solid": 0.6,
-   "vox": "scene/vox/haybale.json"
+   "model": "scene/vox/haybale.json"
   },
   "crops": {
    "name": "Crop row",
@@ -1948,7 +1948,7 @@
    "tags": ["town","route"],
    "group": "picnic",
    "box": [2.6,1.2],
-   "vox": "scene/vox/picnic.json"
+   "model": "scene/vox/picnic.json"
   },
   "campfire": {
    "name": "Campfire",
@@ -2736,7 +2736,7 @@
    "tags": ["route","farm","town"],
    "group": "fence_wood",
    "box": [2.2,0.25],
-   "vox": "scene/vox/fence_wood.json"
+   "model": "scene/vox/fence_wood.json"
   },
   "fence_wood_post": {
    "name": "Fence post",
@@ -2749,7 +2749,7 @@
    "tags": ["route","farm","town"],
    "group": "fence_wood",
    "solid": 0.15,
-   "vox": "scene/vox/fence_wood_post.json"
+   "model": "scene/vox/fence_wood_post.json"
   },
   "barrel_wood": {
    "name": "Barrel",
@@ -2762,7 +2762,7 @@
    "tags": ["town","farm","junk"],
    "group": "crates",
    "solid": 0.4,
-   "vox": "scene/vox/barrel_wood.json"
+   "model": "scene/vox/barrel_wood.json"
   },
   "sack": {
    "name": "Grain sacks",
@@ -2855,7 +2855,7 @@
    "tags": ["town","mall","route"],
    "group": "bench_wood",
    "box": [1.6,0.6],
-   "vox": "scene/vox/bench_wood.json"
+   "model": "scene/vox/bench_wood.json"
   },
   "flowerpot": {
    "name": "Flower pot",
@@ -2868,7 +2868,7 @@
    "tags": ["town","mall"],
    "group": "flowerpot",
    "solid": 0.25,
-   "vox": "scene/vox/flowerpot.json"
+   "model": "scene/vox/flowerpot.json"
   },
   "mailbox_red": {
    "name": "Mailbox",
@@ -2881,7 +2881,7 @@
    "tags": ["town"],
    "group": "mailbox_red",
    "solid": 0.25,
-   "vox": "scene/vox/mailbox_red.json"
+   "model": "scene/vox/mailbox_red.json"
   },
   "cactus_tall": {
    "name": "Saguaro cactus",
@@ -2982,7 +2982,7 @@
    "tags": ["town","mall"],
    "group": "planter_box",
    "box": [1.5,0.5],
-   "vox": "scene/vox/planter_box.json"
+   "model": "scene/vox/planter_box.json"
   },
   "streetlamp_b": {
    "name": "Double street lamp",
@@ -3960,7 +3960,7 @@
    "tags": ["city","town"],
    "group": "hydrant",
    "solid": 0.2,
-   "vox": "scene/vox/hydrant.json"
+   "model": "scene/vox/hydrant.json"
   },
   "phone_booth": {
    "name": "Phone booth",
@@ -4021,7 +4021,7 @@
    "tags": ["city"],
    "group": "bollard",
    "solid": 0.15,
-   "vox": "scene/vox/bollard.json"
+   "model": "scene/vox/bollard.json"
   },
   "bike_rack": {
    "name": "Bike rack",
@@ -4034,7 +4034,7 @@
    "tags": ["city"],
    "group": "bike_rack",
    "solid": 0.4,
-   "vox": "scene/vox/bike_rack.json"
+   "model": "scene/vox/bike_rack.json"
   },
   "bench_metal": {
    "name": "Park bench",
@@ -4047,7 +4047,7 @@
    "tags": ["city","town"],
    "group": "bench_metal",
    "box": [1.7,0.6],
-   "vox": "scene/vox/bench_metal.json"
+   "model": "scene/vox/bench_metal.json"
   },
   "trash_city": {
    "name": "Litter bin",
@@ -4060,7 +4060,7 @@
    "tags": ["city","town"],
    "group": "trash_city",
    "solid": 0.22,
-   "vox": "scene/vox/trash_city.json"
+   "model": "scene/vox/trash_city.json"
   },
   "street_tree": {
    "name": "Street tree",
@@ -4089,7 +4089,7 @@
    "tags": ["city","town"],
    "group": "planter_round",
    "solid": 0.45,
-   "vox": "scene/vox/planter_round.json"
+   "model": "scene/vox/planter_round.json"
   },
   "banner_pole": {
    "name": "Banner lamp",
@@ -4153,7 +4153,7 @@
    "tags": ["city","town"],
    "group": "cafe_table",
    "solid": 0.55,
-   "vox": "scene/vox/cafe_table.json"
+   "model": "scene/vox/cafe_table.json"
   },
   "vending": {
    "name": "Vending machine",
@@ -4181,7 +4181,7 @@
    "tags": ["city","town"],
    "group": "mailbox_blue",
    "solid": 0.22,
-   "vox": "scene/vox/mailbox_blue.json"
+   "model": "scene/vox/mailbox_blue.json"
   },
   "flag_pole": {
    "name": "Flag pole",
@@ -4195,7 +4195,7 @@
    "group": "flag_pole",
    "solid": 0.2,
    "flag": {"dx":0.059,"h":4.59,"w":1.41,"fh":0.94},
-   "vox": "scene/vox/flag_pole.json"
+   "model": "scene/vox/flag_pole.json"
   },
   "statue_coin": {
    "name": "Golden coin sculpture",
@@ -4427,7 +4427,7 @@
    "tags": ["farm","town"],
    "group": "wheelbarrow",
    "solid": 0.4,
-   "vox": "scene/vox/wheelbarrow.json"
+   "model": "scene/vox/wheelbarrow.json"
   },
   "firewood": {
    "name": "Firewood stack",
@@ -4492,7 +4492,7 @@
    "tags": ["town","farm"],
    "group": "picket_fence",
    "box": [2.2,0.25],
-   "vox": "scene/vox/picket_fence.json"
+   "model": "scene/vox/picket_fence.json"
   },
   "stone_wall": {
    "name": "Stone wall",
@@ -4505,7 +4505,7 @@
    "tags": ["route","farm","town"],
    "group": "stone_wall",
    "box": [2.2,0.45],
-   "vox": "scene/vox/stone_wall.json"
+   "model": "scene/vox/stone_wall.json"
   },
   "dock_post": {
    "name": "Mooring post",
@@ -4518,7 +4518,7 @@
    "tags": ["water"],
    "group": "dock_post",
    "solid": 0.15,
-   "vox": "scene/vox/dock_post.json"
+   "model": "scene/vox/dock_post.json"
   },
   "tree": {
    "name": "Battle tree",
@@ -4612,7 +4612,7 @@
    "flat": 0,
    "tags": ["battle"],
    "group": "mailbox",
-   "vox": "scene/vox/mailbox.json"
+   "model": "scene/vox/mailbox.json"
   },
   "derrick": {
    "name": "Oil derrick",
@@ -4738,7 +4738,7 @@
    "flat": 0,
    "tags": ["battle"],
    "group": "trash",
-   "vox": "scene/vox/trash.json"
+   "model": "scene/vox/trash.json"
   },
   "planter": {
    "name": "Planter",
@@ -5088,7 +5088,7 @@
    "fx": [
     {"k":"glow","x":0,"y":-39}
    ],
-   "vox": "scene/vox/buoy.json"
+   "model": "scene/vox/buoy.json"
   },
   "beach_umbrella": {
    "name": "Beach umbrella",
@@ -5101,7 +5101,7 @@
    "tags": ["beach","island"],
    "group": "beach_umbrella",
    "solid": 0.2,
-   "vox": "scene/vox/beach_umbrella.json"
+   "model": "scene/vox/beach_umbrella.json"
   },
   "deck_chair": {
    "name": "Deck chair",
@@ -5114,7 +5114,7 @@
    "tags": ["beach","island"],
    "group": "deck_chair",
    "solid": 0.3,
-   "vox": "scene/vox/deck_chair.json"
+   "model": "scene/vox/deck_chair.json"
   },
   "sailboat": {
    "name": "Sailboat",
@@ -5642,7 +5642,7 @@
    "tags": ["indoor","town"],
    "group": "table_round",
    "solid": 0.5,
-   "vox": "scene/vox/table_round.json"
+   "model": "scene/vox/table_round.json"
   },
   "chair_wood": {
    "name": "Wooden chair",
@@ -5655,7 +5655,7 @@
    "tags": ["indoor","town"],
    "group": "chair_wood",
    "solid": 0.2,
-   "vox": "scene/vox/chair_wood.json"
+   "model": "scene/vox/chair_wood.json"
   },
   "sofa": {
    "name": "Sofa",
@@ -5782,7 +5782,7 @@
    "tags": ["mountains","canyon"],
    "group": "ladder",
    "solid": 0,
-   "vox": "scene/vox/ladder.json"
+   "model": "scene/vox/ladder.json"
   },
   "barrels": {
    "name": "Barrels",
@@ -5796,7 +5796,7 @@
    "group": "barrels",
    "solid": 0.7,
    "vol": ["puff",0.55],
-   "vox": "scene/vox/barrels.json"
+   "model": "scene/vox/barrels.json"
   },
   "haybale_stack": {
    "name": "Stacked hay bales",
@@ -5884,7 +5884,7 @@
    "group": "crate_stack",
    "solid": 0.9,
    "vol": ["block",0.9],
-   "vox": "scene/vox/crate_stack.json"
+   "model": "scene/vox/crate_stack.json"
   },
   "cactus_pair": {
    "name": "Cactus pair",
@@ -9373,7 +9373,7 @@
    "fx": [
     {"k":"glow","x":0,"y":-308}
    ],
-   "vox": "scene/models/airship_mast.json",
+   "model": "scene/models/airship_mast.json",
    "act": "fly"
   },
   "sky_lift": {
@@ -9584,7 +9584,7 @@
    "flat": 0,
    "tags": ["town","city","village"],
    "group": "airship",
-   "vox": "scene/models/airship.json",
+   "model": "scene/models/airship.json",
    "bob": 0.09,
    "noHit": 1,
    "about": "Moored at an airship mast: place it on the mast (same spot); it swings round the mast a little and bobs in the wind"
@@ -9599,7 +9599,7 @@
    "flat": 0,
    "tags": ["town","city","village"],
    "group": "airship_station",
-   "vox": "scene/models/airship_station.json",
+   "model": "scene/models/airship_station.json",
    "box": [1.8,1.8],
    "act": "fly",
    "fx": [
@@ -9633,6 +9633,6 @@
  },
  "buildArt": {"detail":"scene/build/detail-a04b.png","rooms":"scene/build/rooms.png"},
  "wallArt": "scene/build/walls.png",
- "flags": ["sundown","foodcourt","mall","city","taxhaven","summit"],
+ "flags": ["marigold","pepperpot","lanternhall","verdigris","palmhaven","frostcrown"],
  "tileSet": "tiles47"
 }

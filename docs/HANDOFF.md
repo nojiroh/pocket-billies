@@ -11,6 +11,115 @@ Newest entry on top. Every phase session ends by adding an entry here and taggin
 - Questions waiting for the owner: 
 - Next session starts with: 
 
+### Phase 05 - Internal renaming - 2026-10-18
+Owner's choices: phase 05 first, then 04e; "one rename" means one rename rule per commit (one name, one prefix family,
+one file, one data key or section); no confirmations, so I made the "Ask me before" calls myself (listed under
+Decisions); no full quick check for either phase; 04e starts in a new session from a plan and patches committed here.
+- Changed (295 commits; the old -> new list is docs/archive/phase-05-renames.md, the rules docs/NAMING.md):
+  - Tools, each with a proof that a rename changed nothing else: tools/rename.mjs (a name, a prefix family, a file or
+    a property, across the game, the Studio, the Node and Python tools and the current docs; `verify` compares the
+    syntax trees before and after), tools/rename-data.mjs (a data key or section; the proof is at the JSON level),
+    tools/rename-strings.py (the code names inside the Python tools' strings and comments), tools/rename-ids.mjs
+    (the location ids, with the art named by an id).
+  - 44 files: diorama -> walk-view, diorama-gl -> walk-view-gl, scene -> battle-stage, map -> world-map, owmon ->
+    world-billies, world -> seamless-world, core -> game-state, data -> game-data, log -> debug-log, selftest ->
+    self-test, props3d -> solid-props, vox -> prop-models, engine/core -> engine/webgl, and the Studio's (core ->
+    studio-app, scenes -> map-editor, voxedit -> model-editor...).
+  - 1,743 code names in 248 rename commits: the cryptic globals (S saveData, U uiState, B activeBattle, GD gameData,
+    RM reducedMotion, SC battleStage, DIO walkView, DGL walkRenderer, MAP worldMap, WORLD seamlessWorld, ST
+    studioState, NWLOG debugLog, tw, at...), the prefix families (dio, dgl, egl, mgl, mm, ow, wr, bld, p3d, vox,
+    sc, ...), and the vocabulary in NAMING.md order.
+  - Data: sections route -> locations, links -> roads, backdrops -> battleStages, scenes -> maps; keys place ->
+    locationId (maps, rules.start, legends), scene -> mapId (locations), area -> battleStage (locations, trainers),
+    vox -> model (the prop catalogue, placed props, and game/art/scene/props.json); lore.places -> lore.locations and
+    its unlocks place:<id> -> location:<id>.
+  - Save format 2 (its own commit), then saveData.route -> saveData.trip.
+  - The location ids match their names: 43 locations and their maps (sundown -> marigold, longgrass ->
+    tallgrass_meadow, grotto -> fizzwell...) and one room (int_twofold_market -> int_twinpetal_market), with their
+    roads, pools, shops, lore, map files, miniatures, postcards and flags.
+  - Lint: ESLint `camelcase`, and tools/check-names.mjs in `npm run lint` (no top-level name of one or two characters
+    but $ and $$, no retired name or prefix, kebab-case files).
+  - Not renames, each in its own commit: the debug log says when a function it should wrap or time is missing (a
+    missed rename used to drop events in silence); the diagnostics' pass timers work again without the test globals
+    (broken since 04d: the report's frame budget was empty on a phone; 10 of 13 passes timed); Puffcap Woods and
+    Russetwood get their flower colours (the table named them by ids that never existed); four unused Studio names
+    and two unused game names deleted, two aliases folded (BORDER_M, PROP_MATERIALS); the old-place-name check reads
+    game/js/engine and studio/js too; the colour mood setting's text (shown in the Studio's Engine section) names
+    Marigold Town, Thornberry Wood and Stepstone Canyon instead of the legacy "Sundown".
+  - Docs: NAMING.md final, the rename table, README (tools), CHANGELOG, and docs/phases/04e-plan.md with its 22
+    prepared commits (docs/phases/04e/patches).
+- Risky or unfinished:
+  - Your saves from earlier 0.1.0 builds don't load (format 2): a new game starts and the old save is kept aside.
+  - Ids that leave the game: a friend on an older build sees your presence by the old map id; old `?scene=` links,
+    debug logs and Studio exports name places the old way. Reload an open Studio tab before you propose a change
+    (an old tab would send the old keys; the data check refuses them).
+  - The 43 places with a new id look a little different: the pattern of their ground, their countryside, townsfolk
+    and stamps are picked from the id. Accepted (see Decisions); the local baseline pictures were renamed with the
+    ids and compared.
+  - Not renamed on purpose: generic prop fields (ox, oy, img, fx, box, group, k, s), the properties of in-memory
+    state, CSS and DOM ids, Billie line/species/move/item/coin ids, battle stage and pool ids, version-stamped data
+    markers, and every format something else reads (Firestore, localStorage, the debug log's keys, URL parameters,
+    Studio section ids, art folders). NAMING.md says where each goes.
+  - The Python art and scene builders had their strings renamed by tokenizer and pass py_compile, but they were not
+    run end to end (they redraw the art).
+  - Bundle: 1,618 KB (475 KB gzipped), 84 KB more than 04d raw (longer names) and the same gzipped.
+  - Pre-existing, not fixed: in a check run, "walk the world yourself" finds no D-pad when it runs right after the
+    postcards step or a failed step (it passes alone).
+  - Follow-ups worth doing: rules.legends[].scene and lore.clues[].at.scene are map ids and could be mapId; the
+    title picture art/background/sundown.png; tools/build-interiors.py's text 'Inside Twofold Market'; stale battle
+    stage and pool ids (shell, esc, clear, food); duplicates unitVector3, hexChannels/hexToRgb, imageLoaded/imageReady;
+    the AREAS alias (kept: the Studio's battle preview captures it at load); roadsOf() always returns [] (04e plan).
+- Verified:
+  - Every rename commit: rename verify ("a pure rename": the syntax trees differ only by the rule), ESLint, Prettier,
+    check:modules, check:data, build and py_compile; data commits: rename-data verify (JSON equal but for the key);
+    the id commit: rename-ids verify (the old data with the id map applied equals the new data, art only moved).
+  - After each batch: smoke 14/14, check-studio-github.py (18 sections, a change proposed), the paint worker check;
+    adversarial reviews after each batch found missed references, fixed in follow-up rules.
+  - Full quick check: 48/48 at ee0e06f (after the code renames). On the location id commit, all 48 steps ran: 46
+    passed; "the road east" failed on three `[...S.seats]` the S rename missed in check-quick.py (fixed, 156c092), and
+    the D-pad step after it; both passed when re-run with the fix. Not run end to end after that (your call).
+  - At the end: lint, check-names, format, check:modules, check:data and build pass; a debug log exported headless on
+    `?test=1&scene=marigold` has the same sections, keys and event kinds as the one from before phase 05, with no
+    page errors.
+  - Not done: the picture baseline in CI (made when the phase-05-done tag is pushed, or by hand), the in-game full
+    test on a phone.
+- Decisions I made (and why):
+  - road, not route, for a link between locations (pushing back on the phase file): `route` already names the
+    route-kind locations and their "Route 2" label, which players read as the area, so it stays for those. `trip`
+    for the player's travel along roads.
+  - seam for the shared strip between two maps (`border` is a CSS word everywhere).
+  - battleStage for the battle stage, BATTLE_STAGES for its data; vox -> model (prop recipes make low-poly meshes;
+    `voxel` stays for real voxels and the .vox format, and art/scene/vox/ keeps its name).
+  - Location ids from the player-facing names (a town without "Town", other places their own word, or the whole
+    name where the word alone is an everyday word or already a game name), and the new look of those places that
+    follows from the ids.
+  - Save format 2 before the first save-field rename, so old saves are set aside cleanly instead of loading half
+    renamed.
+  - Kept: the formats listed under Risky, prop fields (04e types or phase 09), roster ids (phases 15-16). The phase
+    file asked for prop fields and species/item/line ids in this pass; renaming them now would be done twice.
+  - The colour mood text in engine/settings.js (player-facing in the Studio) names the current places: you had asked
+    about "Sundown" there in 04d.
+  - No full quick check at the end, and 04e in a new session, as you asked.
+- Questions waiting for the owner:
+  - Push the tag `phase-05-done`: my push was refused (the remote hangs up on tag pushes). It goes on the commit that
+    adds this line ("Docs: HANDOFF, phase 05: the tag to push"), the branch head at the end of the session. The tag
+    push also makes the CI picture baseline; without it, run the check workflow by hand with "Make the picture
+    baseline".
+  - Still open from before: check-studio-github.py in CI (about a minute)? Studio local mode (start-studio.py); tags
+    phase-01/02/03-done and legacy-final.
+- Claims checked (CLAUDE.md asks me to treat figures as claims):
+  - gamedata.js is generated (not in git) and 0.7 MB, not ~13 MB: the maps are fetched one file each when needed.
+  - "Duplicate global functions silently override each other (camTo, dioTileHalf)": stale. camTo was defined once
+    already at the start (scene.js, now battle-stage.js) and dioTileHalf didn't exist; ESLint and the module clash
+    check refuse a duplicate.
+  - "owmon" is a file (now world-billies.js), not a prefix; the prefixes were ow/owm.
+  - The data is a file per map, Billie line, trainer and person and one per other section, not one per entity of
+    every kind.
+  - No picture baseline existed at the start of the phase; a local one was made (113 pictures) to compare against.
+- Next session starts with: 04e (docs/phases/04e-plan.md: `git am docs/phases/04e/patches/*.patch`, then step 2),
+  then `phase-04-done`. On your phone first: a new game (your save is set aside), the in-game full test and a debug
+  log from this build.
+
 ### Phase 04d - Modernize: the window bridge removed - 2026-10-18
 Owner's choices: generated hooks instead of forward imports (after the first plan failed, see Decisions); opt-in test
 globals; JSDoc + .d.ts for TypeScript; this session is the bridge only, TypeScript and boundaries are 04e, which ends

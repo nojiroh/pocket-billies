@@ -5,7 +5,7 @@ and saved as game/art/map/mini/<scene>.png. The map stands them on the globe whe
 
     python3 tools/build-map-minis.py                 # every stop's scene that has no miniature yet
     python3 tools/build-map-minis.py --all           # redraw all of them
-    python3 tools/build-map-minis.py city sundown    # just these scenes
+    python3 tools/build-map-minis.py verdigris marigold    # just these scenes
 
 Needs Playwright with Chromium (software WebGL is fine, just slow: about half a minute a scene)."""
 import gamedata  # phase 04b: the data files in game/data
@@ -25,12 +25,12 @@ def gamedata():
     return json.JSONDecoder().raw_decode(s[s.index('window.GAMEDATA=') + 16:])[0]
 
 
-SHOT_JS = """(async(id)=>{const sc=dioScene(id);const W=sc.w,H=sc.h;
- const tgt=[W/2,0,H*.5],eye=[W/2,Math.max(W,H)*.6,-H*.66];DIO.director={frame:()=>({look:{eye,tgt,fov:30,w:W*1.08},items:[],parts:[],lights:[],hide:null,cut:0,center:[W/2,H/2]})};
- const f0=DGL.frames;await new Promise(r=>{const t0=performance.now();const k=()=>{if(DGL.frames>=f0+4||performance.now()-t0>40000)r();else setTimeout(k,100)};k()});
- const C=DIO.C,cv=DIO.cv,R=cv.getBoundingClientRect(),m=C.vp;
+SHOT_JS = """(async(id)=>{const sc=mapById(id);const W=sc.w,H=sc.h;
+ const tgt=[W/2,0,H*.5],eye=[W/2,Math.max(W,H)*.6,-H*.66];walkView.director={frame:()=>({look:{eye,tgt,fov:30,w:W*1.08},items:[],parts:[],lights:[],hide:null,cut:0,center:[W/2,H/2]})};
+ const f0=walkRenderer.frames;await new Promise(r=>{const t0=performance.now();const k=()=>{if(walkRenderer.frames>=f0+4||performance.now()-t0>40000)r();else setTimeout(k,100)};k()});
+ const C=walkView.C,cv=walkView.cv,R=cv.getBoundingClientRect(),m=C.vp;
  const P=(x,y,z)=>{const cx=m[0]*x+m[4]*y+m[8]*z+m[12],cy=m[1]*x+m[5]*y+m[9]*z+m[13],w=m[3]*x+m[7]*y+m[11]*z+m[15];return [R.left+(cx/w*.5+.5)*R.width,R.top+(1-(cy/w*.5+.5))*R.height]};
- const g=(x,z)=>dioGroundH(Math.min(W-.01,Math.max(0,x)),Math.min(H-.01,Math.max(0,z)));const top=[],bot=[];const n=48;
+ const g=(x,z)=>groundHeightAt(Math.min(W-.01,Math.max(0,x)),Math.min(H-.01,Math.max(0,z)));const top=[],bot=[];const n=48;
  for(let i=0;i<=n;i++){const x=W*i/n;top.push(P(x,g(x,0),0));bot.push(P(x,g(x,0)-1.4,0))}
  const ring=[];for(let i=0;i<=n;i++)ring.push(P(W*i/n,g(W*i/n,0),0));for(let i=0;i<=n;i++)ring.push(P(W,g(W,H*i/n),H*i/n));for(let i=n;i>=0;i--)ring.push(P(W*i/n,g(W*i/n,H),H));for(let i=n;i>=0;i--)ring.push(P(0,g(0,H*i/n),H*i/n));
  return {ring,front:top,skirt:bot,rect:[R.left,R.top,R.width,R.height]}})"""
@@ -38,7 +38,7 @@ SHOT_JS = """(async(id)=>{const sc=dioScene(id);const W=sc.w,H=sc.h;
 
 def main():
     args = [a for a in sys.argv[1:] if not a.startswith('--')]
-    D = gamedata(); scenes = [r['scene'] for r in D['route'] if r.get('scene')]
+    D = gamedata(); scenes = [r['mapId'] for r in D['locations'] if r.get('mapId')]
     want = [s for s in scenes if (not args or s in args) and ('--all' in sys.argv or args or not (OUT / f'{s}.png').exists())]
     if not want: print('every stop has a miniature (use --all to redraw)'); return
     OUT.mkdir(parents=True, exist_ok=True)
@@ -53,16 +53,16 @@ def main():
         pg = b.new_page(viewport={'width': 1200, 'height': 900}); pg.set_default_timeout(240000)
         pg.add_init_script('window.PB_TEST_GLOBALS=true')  # phase 04d: the modules' names on window, for evaluate()
         pg.goto(f'http://127.0.0.1:{port}/index.html'); pg.wait_for_selector('.ttl,.title', timeout=60000)
-        pg.evaluate("GD.engine=GD.engine||{};GD.engine.defaults=Object.assign({},GD.engine.defaults||{},{quality:{resolution:1,shadowMap:2048,auto:false},lens:{blur:0,vignette:0,grain:0,aberration:0}});0")
-        pg.evaluate("if(typeof titleEnd==='function')titleEnd();U.pg='girl';startGame(SP.scoop0?'scoop':RULES.start.starters[0]);U.modal=null;U.mq=[];renderOv();U.toastQ=[];U.toastOn=false;render();0")
+        pg.evaluate("gameData.engine=gameData.engine||{};gameData.engine.defaults=Object.assign({},gameData.engine.defaults||{},{quality:{resolution:1,shadowMap:2048,auto:false},lens:{blur:0,vignette:0,grain:0,aberration:0}});0")
+        pg.evaluate("if(typeof titleEnd==='function')titleEnd();uiState.pg='girl';startGame(SPECIES.scoop0?'scoop':RULES.start.starters[0]);uiState.modal=null;uiState.mq=[];renderOverlay();uiState.toastQ=[];uiState.toastOn=false;render();0")
         pg.add_style_tag(content='body *:not(#dio){visibility:hidden!important} #dio{visibility:visible!important}')
         # v47: always at noon on a clear spring day, whatever the clock says (the light follows the time of day now)
-        pg.evaluate("if(typeof ENV!=='undefined'){ENV.on=true;ENV.force={time:12.5,season:'spring',weather:'clear'}}0")
+        pg.evaluate("if(typeof environment!=='undefined'){environment.on=true;environment.force={time:12.5,season:'spring',weather:'clear'}}0")
         for sid in want:
             t0 = time.time()
-            pg.evaluate(f"U.tab='walk';U.bench={{id:'{sid}',test:1}};render();0")
+            pg.evaluate(f"uiState.tab='walk';uiState.bench={{id:'{sid}',test:1}};render();0")
             for _ in range(160):
-                if pg.evaluate(f"!!(DIO.ready&&DIO.id==='{sid}'&&DGL.frames>2)"): break
+                if pg.evaluate(f"!!(walkView.ready&&walkView.id==='{sid}'&&walkRenderer.frames>2)"): break
                 time.sleep(.5)
             time.sleep(1.5)
             info = pg.evaluate(SHOT_JS + f"('{sid}')")

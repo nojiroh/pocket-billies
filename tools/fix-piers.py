@@ -2,7 +2,7 @@
 """alpha 0.4: jetties are flat, with water underneath. A jetty used to be a strip of Boards ground laid over the water,
 so its planks followed the pond's bed down and up again. Now every strip of boards that runs out into water becomes a
 jetty structure (scene.bridges, pier: 1): one flat wooden deck from the bank out over the water, level with the bank,
-on posts, with the water running under it (structures.js draws it, diorama.js walks on it). The squares under the
+on posts, with the water running under it (structures.js draws it, walk-view.js walks on it). The squares under the
 deck turn back into water; boards on dry land (the walk up to a jetty, a boardwalk through a marsh) stay as they are.
 
     python3 tools/fix-piers.py          # every place
@@ -84,7 +84,7 @@ def piers_of(sc):
 
 def main():
     dry = '--dry' in sys.argv; head, D = load(); n = 0
-    for sid, sc in D['scenes'].items():
+    for sid, sc in D['maps'].items():
         if '@' in sid or not sc.get('tiles') or sc.get('kind') == 'room': continue
         # boards left under a jetty already made (a row the first run missed) are water too
         rows = [list(r) for r in sc['tiles']]; H = len(rows); W = len(rows[0]); left = 0

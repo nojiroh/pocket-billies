@@ -17,7 +17,7 @@ Everything the game relies on is kept: shops (and which shop), the clinic, the l
 fountain in Sundown, the look of each place (sky, haze, music, weather, folk, what people say).
 
     python3 tools/build-places-v46.py               # rebuild every place not marked keep (backups first)
-    python3 tools/build-places-v46.py sundown farm  # just these
+    python3 tools/build-places-v46.py marigold clovercrest  # just these
     python3 tools/build-places-v46.py --dry         # build and report, write nothing
     python3 tools/build-places-v46.py --map out/    # also draw a top-down map of each place
 """
@@ -42,8 +42,8 @@ AV = 'pcwdaqhebmKTIv'            # nothing grows here (paths, plazas, water, pav
 SOFT = 'gGflytCMLHRDSPnuzjsk'     # ground where plants and grass can be
 LAYOUT = {'w', 'h', 'tiles', 'heights', 'props', 'steps', 'stepm', 'stepsV', 'exits', 'edgeExits', 'hub', 'streams', 'bridges', 'rails', 'arches',
           'escalators', 'npcSpots', 'grown', 'wild', '_exk', 'life', 'keep', 'v46'}
-SIZE = {'sundown': (96, 72), 'farm': (96, 72), 'grotto': (80, 60), 'foodcourt': (80, 60), 'mall': (80, 60), 'city': (128, 96), 'taxhaven': (96, 72),
-        'summit': (96, 72)}
+SIZE = {'marigold': (96, 72), 'clovercrest': (96, 72), 'fizzwell': (80, 60), 'pepperpot': (80, 60), 'lanternhall': (80, 60), 'verdigris': (128, 96), 'palmhaven': (96, 72),
+        'frostcrown': (96, 72)}
 ROUTE_SIZE = (112, 64)
 
 
@@ -68,7 +68,7 @@ class Place(B.Scene):
         for k, v in old.items():
             if k not in LAYOUT: self.d[k] = copy.deepcopy(v)
         self.d['w'], self.d['h'] = self.W, self.H; self.d['edge'] = self.g[0][0]
-        self.d['kind'] = 'town' if self.sid in SIZE else 'route'; self.d['place'] = self.sid
+        self.d['kind'] = 'town' if self.sid in SIZE else 'route'; self.d['locationId'] = self.sid
         self.d.pop('backup', None)
         if self.d.get('name', '').endswith(' (v45)'): self.d['name'] = self.d['name'][:-6]
         self.old = old; self.hub = hub; self.d['v46'] = 46
@@ -215,7 +215,7 @@ ROWFILL = {'house_red', 'house_green', 'house_blue', 'house_cottage', 'house_lar
 
 
 def exits_for(s, D, i, hub, keep_roads=True, **kw):
-    Dx = {'route': D['route'], 'links': [L[:3] for L in D['links']]}
+    Dx = {'locations': D['locations'], 'roads': [L[:3] for L in D['roads']]}
     n0 = len(s.roads); ex = s.hub_exits(Dx, i, hub, road=None, **kw)
     if not keep_roads: del s.roads[n0:]
     return ex
@@ -241,7 +241,7 @@ UNDER = ['@fern', '@fern', '@bush_round', '@mushroom', 'stump', 'bush_berry', 'b
 
 
 def town_sundown(D, i, old):
-    W, H = SIZE['sundown']; s = Place('sundown', 'Sundown', 'g', 4601, W, H); hub = (48, 18); s.setup(old, hub)
+    W, H = SIZE['marigold']; s = Place('marigold', 'Sundown', 'g', 4601, W, H); hub = (48, 18); s.setup(old, hub)
     s.d.update(folk=12)
     ex = exits_for(s, D, i, hub, keep_roads=False, lamps='streetlamp_b')
     # the square: cobbles round the fountain; the inn, the market hall and the bakery on its north side
@@ -293,7 +293,7 @@ def town_sundown(D, i, old):
 
 
 def town_farm(D, i, old):
-    W, H = SIZE['farm']; s = Place('farm', old.get('name', 'Hillside Farm'), 'g', 4602, W, H); hub = (48, 16); s.setup(old, hub)
+    W, H = SIZE['clovercrest']; s = Place('clovercrest', old.get('name', 'Hillside Farm'), 'g', 4602, W, H); hub = (48, 16); s.setup(old, hub)
     ex = exits_for(s, D, i, hub, keep_roads=False, lamps=None)
     # the farmyard: packed earth round the well, the lane through it, the barn, the windmill and the shop on it
     s.blob(48, 19, 11, 5, 'u', .2); s.blob(48, 19, 5, 2.6, 'v', .2); s.clear.append((48, 19.6, 2.6))
@@ -337,7 +337,7 @@ def town_farm(D, i, old):
 
 
 def town_grotto(D, i, old):
-    W, H = SIZE['grotto']; s = Place('grotto', old.get('name', 'Bubbling Grotto'), 'k', 4603, W, H); hub = (40, 14); s.setup(old, hub)
+    W, H = SIZE['fizzwell']; s = Place('fizzwell', old.get('name', 'Bubbling Grotto'), 'k', 4603, W, H); hub = (40, 14); s.setup(old, hub)
     ex = exits_for(s, D, i, hub, keep_roads=False, lamps='lantern')
     # the cave walls high all round the back and sides; a crystal-floored hall in the middle
     s.terrace(-1, 50, W + 1, H + 1, 4.5, wall=False, mat=3); s.terrace(-1, -1, 6, H + 1, 3.6, wall=False, mat=3); s.terrace(W - 6, -1, W + 1, H + 1, 3.6, wall=False, mat=3)
@@ -364,7 +364,7 @@ def town_grotto(D, i, old):
 
 
 def town_food(D, i, old):
-    W, H = SIZE['foodcourt']; s = Place('foodcourt', old.get('name', 'The Food Court'), 'g', 4604, W, H); hub = (40, 14); s.setup(old, hub)
+    W, H = SIZE['pepperpot']; s = Place('pepperpot', old.get('name', 'The Food Court'), 'g', 4604, W, H); hub = (40, 14); s.setup(old, hub)
     ex = exits_for(s, D, i, hub, keep_roads=False, lamps='streetlamp_b')
     s.blob(40, 22, 19, 8, 'h', .06); s.blob(40, 22, 8, 3.6, 'q', .06); s.clear.append((40, 22.4, 3.2))
     s.street([[3, 32], [40, 32.4], [W - 3, 32]], 'K', 2.4, 'streetlamp', 12)
@@ -393,7 +393,7 @@ def town_food(D, i, old):
 
 
 def town_mall(D, i, old):
-    W, H = SIZE['mall']; s = Place('mall', old.get('name', 'Mall of the Deep'), 'm', 4605, W, H); hub = (40, 12); s.setup(old, hub)
+    W, H = SIZE['lanternhall']; s = Place('lanternhall', old.get('name', 'Mall of the Deep'), 'm', 4605, W, H); hub = (40, 12); s.setup(old, hub)
     ex = exits_for(s, D, i, hub, keep_roads=False, signs=True)
     # two floors: the ground-floor concourse and the mezzanine up the escalators, shopfronts along both
     s.terrace(2, 36, W - 2, H + 1, 2.0, wall=False, wobble=0)
@@ -425,7 +425,7 @@ def town_mall(D, i, old):
 
 
 def town_city(D, i, old):
-    W, H = SIZE['city']; s = Place('city', old.get('name', 'Capital Gains'), 'g', 4606, W, H); hub = (64, 22); s.setup(old, hub)
+    W, H = SIZE['verdigris']; s = Place('verdigris', old.get('name', 'Capital Gains'), 'g', 4606, W, H); hub = (64, 22); s.setup(old, hub)
     ex = exits_for(s, D, i, hub, keep_roads=False, lamps='streetlamp_b')
     # avenues (asphalt with pavements) in a grid, a plaza at the front with the coin statue, a canal along the front
     s.blob(64, 24, 15, 5, 'T', .05); s.clear.append((64, 24.6, 3.4))
@@ -485,7 +485,7 @@ def town_city(D, i, old):
 
 
 def town_taxhaven(D, i, old):
-    W, H = SIZE['taxhaven']; s = Place('taxhaven', old.get('name', 'Tax Haven'), 's', 4607, W, H); hub = (48, 22); s.setup(old, hub)
+    W, H = SIZE['palmhaven']; s = Place('palmhaven', old.get('name', 'Tax Haven'), 's', 4607, W, H); hub = (48, 22); s.setup(old, hub)
     ex = exits_for(s, D, i, hub, keep_roads=False, lamps='streetlamp_b')
     # the sea along the front, wet sand, a marble promenade, the harbour square, villas and mansions up the slope
     s.rect(0, 0, W, 8, 'd'); s.blob(48, 8.6, 60, 3.6, 'w', .3); s.blob(48, 12, 60, 2.6, 'S', .35)
@@ -516,7 +516,7 @@ def town_taxhaven(D, i, old):
 
 
 def town_summit(D, i, old):
-    W, H = SIZE['summit']; s = Place('summit', old.get('name', 'Summit Capital'), 'n', 4608, W, H); hub = (48, 16); s.setup(old, hub)
+    W, H = SIZE['frostcrown']; s = Place('frostcrown', old.get('name', 'Summit Capital'), 'n', 4608, W, H); hub = (48, 16); s.setup(old, hub)
     ex = exits_for(s, D, i, hub, keep_roads=False, lamps='lantern_b')
     s.blob(48, 20, 12, 5, 'q', .1); s.clear.append((48, 20.6, 3.0))
     s.street([[4, 23], [48, 23.4], [92, 23]], 'q', 2.4, 'lantern_b', 11); s.street([[10, 40], [48, 40.4], [86, 40]], 'v', 1.8, 'lantern_b', 12)
@@ -554,7 +554,7 @@ def route_base(sid, D, i, old, base, seed, hub=(56, 14), path='p', amp=3.2, widt
 
 
 def route_grass(D, i, old):
-    s, ex = route_base('longgrass', D, i, old, 'g', 4611)
+    s, ex = route_base('tallgrass_meadow', D, i, old, 'g', 4611)
     s.tint_ground([('G', .58, 9, 'g'), ('C', .62, 6, 'gG'), ('f', .74, 4.5, 'gGC'), ('u', .84, 4, 'gG')], 3)
     s.drifts(11, (5, 9, 2.6, 4.2), density=.8)
     s.clearing(44, 22, [('bench_wood', 0, 0), ('campfire', 2.4, .8), ('log', -2.2, 1.4), ('firewood', 3.8, 1.8)])
@@ -571,7 +571,7 @@ def route_grass(D, i, old):
 
 
 def route_golf(D, i, old):
-    s, ex = route_base('golf', D, i, old, 'G', 4612, path='v')
+    s, ex = route_base('old_fairway', D, i, old, 'G', 4612, path='v')
     for cx, cz, rx, rz in ((36, 30, 16, 6), (82, 36, 14, 6), (58, 50, 12, 4)): s.blob(cx, cz, rx, rz, 'l', .14)
     bunkers = ((30, 33, 2.6, 1.4), (44, 27, 2, 1.1), (88, 39, 2.2, 1.2), (76, 33, 1.8, 1), (60, 52, 2, 1))
     for cx, cz, rx, rz in bunkers: s.blob(cx, cz, rx, rz, 's', .15)
@@ -614,7 +614,7 @@ def route_thicket(D, i, old):
 
 
 def route_canyon(D, i, old):
-    s, ex = route_base('canyon', D, i, old, 's', 4614, path='v', amp=2.6)
+    s, ex = route_base('stepstone_canyon', D, i, old, 's', 4614, path='v', amp=2.6)
     s.tint_ground([('r', .55, 7, 's'), ('P', .72, 3.5, 'sr'), ('v', .82, 4, 's')], 33)
     # terraces of red rock rising to the back, a dry riverbed of pebbles across the middle
     s.terrace(-1, 40, 44, 65, 2.4, wall=False, mat=1); s.terrace(70, 36, s.W + 1, 65, 2.8, wall=False, mat=1); s.terrace(44, 54, 70, 65, 2.0, wall=False, mat=1)
@@ -628,7 +628,7 @@ def route_canyon(D, i, old):
 
 
 def route_scrap(D, i, old):
-    s, ex = route_base('scrapyard', D, i, old, 'x', 4615, path='a', amp=2.2, width=1.6)
+    s, ex = route_base('rustgear', D, i, old, 'x', 4615, path='a', amp=2.2, width=1.6)
     s.tint_ground([('a', .62, 7, 'x'), ('D', .75, 4, 'x'), ('v', .72, 5, 'x')], 43)
     for cx, cz in ((20, 40), (36, 48), (80, 44), (96, 30), (60, 52)):
         for _ in range(9):
@@ -649,7 +649,7 @@ def route_scrap(D, i, old):
 
 
 def route_pond(D, i, old):
-    s, ex = route_base('pond', D, i, old, 'g', 4616, path='p', amp=3)
+    s, ex = route_base('willowmere', D, i, old, 'g', 4616, path='p', amp=3)
     s.pond(60, 36, 16, 8, ducks=6, reeds=30, lilies=16, dip=1.0)
     s.blob(60, 26.6, 9, 2.4, 'P', .3)
     s.tint_ground([('R', .58, 4.5, 'g'), ('M', .64, 5, 'gR'), ('G', .64, 8, 'g'), ('f', .78, 4, 'gG')], 53)
@@ -668,7 +668,7 @@ def route_pond(D, i, old):
 
 
 def route_ridge(D, i, old):
-    s, ex = route_base('ridge', D, i, old, 'H', 4617, path='v', amp=2.6)
+    s, ex = route_base('kitewind', D, i, old, 'H', 4617, path='v', amp=2.6)
     s.tint_ground([('G', .5, 7, 'H'), ('r', .58, 6, 'HG'), ('P', .78, 3.5, 'Hr')], 63)
     s.terrace(66, 34, 104, 60, 3.2, wall=False, mat=1)
     s.put('ladder', 84, 33.6, act='climb', label='Ladder'); s.wind(list(s.hub), [84, 32], 'v', 1.2, 1.2)
@@ -683,7 +683,7 @@ def route_ridge(D, i, old):
 
 
 def route_offshore(D, i, old):
-    s, ex = route_base('offshore', D, i, old, 'd', 4618, path='S', amp=2.4, width=1.6)
+    s, ex = route_base('driftwreck', D, i, old, 'd', 4618, path='S', amp=2.4, width=1.6)
     s.roads.clear()
     for cx, cz, rx, rz in ((56, 14, 14, 6), (24, 34, 10, 5), (88, 40, 12, 6), (60, 50, 8, 4)):
         s.blob(cx, cz, rx + 3, rz + 2.4, 'w', .3); s.blob(cx, cz, rx + 1.2, rz + .8, 'S', .3); s.blob(cx, cz, rx, rz, 's', .35)
@@ -698,7 +698,7 @@ def route_offshore(D, i, old):
 
 
 def route_volcano(D, i, old):
-    s, ex = route_base('volcano', D, i, old, 'z', 4619, path='v', amp=2.4)
+    s, ex = route_base('cinderpeak', D, i, old, 'z', 4619, path='v', amp=2.4)
     s.tint_ground([('j', .58, 6, 'z'), ('r', .74, 5, 'z')], 73)
     s.terrace(-1, 42, s.W + 1, 65, 3.0, wall=False, mat=6)
     s.stream([(70, s.H + .2), (72, 52), (66, 44), (60, 36), (48, 30), (30, 26), (-.4, 22)], 1.4, .25, banks='j')
@@ -712,7 +712,7 @@ def route_volcano(D, i, old):
 
 
 def route_pass(D, i, old):
-    s, ex = route_base('pass', D, i, old, 'n', 4620, path='v', amp=4.2, width=1.3)
+    s, ex = route_base('hornpass', D, i, old, 'n', 4620, path='v', amp=4.2, width=1.3)
     s.tint_ground([('H', .72, 6, 'n'), ('r', .68, 5, 'nH'), ('I', .8, 4, 'n')], 83)
     s.terrace(-1, 36, 46, 65, 2.4, wall=False, mat=1); s.terrace(70, 30, s.W + 1, 65, 2.6, wall=False, mat=1)
     s.put('ladder', 24, 35.6, act='climb', label='Ladder'); s.put('ladder', 86, 29.6, act='climb', label='Ladder')
@@ -725,7 +725,7 @@ def route_pass(D, i, old):
 
 
 def route_lake(D, i, old):
-    s, ex = route_base('lake', D, i, old, 'g', 4621, path='p', amp=2.6)
+    s, ex = route_base('mirrormere', D, i, old, 'g', 4621, path='p', amp=2.6)
     s.blob(60, 46, 50, 16, 'S', .25); s.blob(60, 50, 48, 14, 'w', .25); s.blob(60, 56, 44, 10, 'd', .3)
     s.tint_ground([('R', .6, 4.5, 'g'), ('C', .66, 6, 'gR'), ('G', .66, 8, 'g')], 93)
     s.rect(78, 33, 82, 40, 'b'); s.roads.append(([[80, 28], [80, 40]], 1.2)); s.house('house_cottage', 86, 30, 'house', say='The boathouse. Oars, nets, a very old map.', lawn=None, fence=False)
@@ -745,9 +745,9 @@ def shoulders_v46(s, ch='u'):
     B.shoulders(s, ch)
 
 
-BUILD = {'sundown': town_sundown, 'longgrass': route_grass, 'golf': route_golf, 'thicket': route_thicket, 'grotto': town_grotto, 'canyon': route_canyon,
-         'scrapyard': route_scrap, 'foodcourt': town_food, 'mall': town_mall, 'pond': route_pond, 'farm': town_farm, 'ridge': route_ridge, 'city': town_city,
-         'offshore': route_offshore, 'taxhaven': town_taxhaven, 'volcano': route_volcano, 'pass': route_pass, 'summit': town_summit, 'lake': route_lake}
+BUILD = {'marigold': town_sundown, 'tallgrass_meadow': route_grass, 'old_fairway': route_golf, 'thicket': route_thicket, 'fizzwell': town_grotto, 'stepstone_canyon': route_canyon,
+         'rustgear': route_scrap, 'pepperpot': town_food, 'lanternhall': town_mall, 'willowmere': route_pond, 'clovercrest': town_farm, 'kitewind': route_ridge, 'verdigris': town_city,
+         'driftwreck': route_offshore, 'palmhaven': town_taxhaven, 'cinderpeak': route_volcano, 'hornpass': route_pass, 'frostcrown': town_summit, 'mirrormere': route_lake}
 
 
 # ================================================================================================ after building
@@ -759,19 +759,19 @@ def finish(sc, D, i, nature, cat):
     sc['props'] = [p for p in sc['props'] if p['k'] in cat]
     # the edge exits, named, and the road table pointing at them
     W, H = sc['w'], sc['h']; exs = sc.get('exits') or []
-    nb = [(n, L[1] if L[0] == i else L[0]) for n, L in enumerate(D['links']) if i in (L[0], L[1])]
+    nb = [(n, L[1] if L[0] == i else L[0]) for n, L in enumerate(D['roads']) if i in (L[0], L[1])]
     E, used = [], {}
     for (n, j), e in zip(nb, exs):
         d = {'W': e[0], 'E': W - e[0], 'S': e[1], 'N': H - e[1]}; side = min(d, key=d.get); t = e[0] / W if side in 'NS' else e[1] / H
         base = {'N': 'north', 'S': 'south', 'E': 'east', 'W': 'west'}[side]; used[base] = used.get(base, 0) + 1
         eid = base if used[base] == 1 else base + str(used[base])
         E.append({'id': eid, 'side': side, 't': round(t, 4), 'in': round(d[side], 2), 'width': 2})
-        J = D['links'][n][3]
-        if D['links'][n][0] == i: J['a'] = eid
+        J = D['roads'][n][3]
+        if D['roads'][n][0] == i: J['a'] = eid
         else: J['b'] = eid
     sc['edgeExits'] = E
     # ladders where a cliff faces the camera (tools/build-v28.py's finder, reaching farther in the bigger places)
-    want = {'ridge': 2, 'canyon': 2, 'pass': 2, 'summit': 1, 'volcano': 1, 'thicket': 1}.get(sc.get('place'))
+    want = {'kitewind': 2, 'stepstone_canyon': 2, 'hornpass': 2, 'frostcrown': 1, 'cinderpeak': 1, 'thicket': 1}.get(sc.get('locationId'))
     sc['props'] = [p for p in sc['props'] if p['k'] != 'ladder']
     if want:
         src = V28.ladders.__code__.co_consts; hub0 = sc['hub']
@@ -779,9 +779,9 @@ def finish(sc, D, i, nature, cat):
         for x, zf, d in L:
             sc['props'].append({'k': 'ladder', 'x': round(x, 2), 'z': round(zf - .12, 2), 's': round((d + .35) / V28.LADDER_M, 2), 'act': 'climb', 'label': 'Ladder',
                                 'to': [round(x, 2), round(zf + .8, 2)], 'h': round(d, 2)})
-        if not L: print(f'    !! {sc.get("place")}: no cliff for a ladder')
+        if not L: print(f'    !! {sc.get("locationId")}: no cliff for a ladder')
     # wild growth, in plant families, on the v46 ground too
-    occ = sum(1 for p in sc['props']); grown = GW.grow_scene(sc.get('place') or '', sc, cat, nature, .55 if sc.get('kind') == 'town' else .8, random.Random(4600 + i))
+    occ = sum(1 for p in sc['props']); grown = GW.grow_scene(sc.get('locationId') or '', sc, cat, nature, .55 if sc.get('kind') == 'town' else .8, random.Random(4600 + i))
     sc['grown'] = 31
     CW.clear_scene(sc, cat, CW.ppu(D))          # alpha 0.1: what grew or was placed in front of a window moves aside
     return occ, len(grown)
@@ -839,20 +839,20 @@ def main():
     if '--map' in args: j = args.index('--map'); mp = Path(args[j + 1]); del args[j:j + 2]; mp.mkdir(parents=True, exist_ok=True)
     only = [a for a in args if not a.startswith('--')]
     head, D = load(); cat = D['scenery']['props']; CAT.update(cat); nature = nature_pool(cat)
-    for n, pl in enumerate(D['route']):
-        sid = pl['scene']
+    for n, pl in enumerate(D['locations']):
+        sid = pl['mapId']
         if only and sid not in only: continue
-        old = D['scenes'].get(sid)
+        old = D['maps'].get(sid)
         if not old or sid not in BUILD: continue
         if old.get('keep'): print(f'  {sid}: marked keep, left alone'); continue
-        base_old = D['scenes'].get(sid + '@v45') or old
-        if old.get('v46') and sid + '@v45' in D['scenes']: base_old = D['scenes'][sid + '@v45']
+        base_old = D['maps'].get(sid + '@v45') or old
+        if old.get('v46') and sid + '@v45' in D['maps']: base_old = D['maps'][sid + '@v45']
         sc, info = BUILD[sid](D, n, base_old)
         occ, grown = finish(sc, D, n, nature, cat)
-        if sid + '@v45' not in D['scenes']:
-            bk = copy.deepcopy(old); bk['name'] = (old.get('name') or sid) + ' (v45)'; bk['kind'] = 'test'; bk['place'] = sid; bk['backup'] = 'v45'
-            D['scenes'][sid + '@v45'] = bk
-        D['scenes'][sid] = sc
+        if sid + '@v45' not in D['maps']:
+            bk = copy.deepcopy(old); bk['name'] = (old.get('name') or sid) + ' (v45)'; bk['kind'] = 'test'; bk['locationId'] = sid; bk['backup'] = 'v45'
+            D['maps'][sid + '@v45'] = bk
+        D['maps'][sid] = sc
         lab = info.get('lab')
         need = lambda S: sorted({(p['act'], p.get('shop') or '') for p in S.get('props', []) if p.get('act') in ('shop', 'clinic', 'lab', 'home', 'climb')})
         lost = [x for x in need(base_old) if x not in need(sc)]

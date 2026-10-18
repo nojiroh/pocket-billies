@@ -1,7 +1,7 @@
 {
  "name": "Diver Dee",
  "who": "diver",
- "area": "sea",
+ "battleStage": "sea",
  "node": 13,
  "blocks": false,
  "team": [

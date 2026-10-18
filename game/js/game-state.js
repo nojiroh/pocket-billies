@@ -1,0 +1,930 @@
+'use strict';
+/* ================= CORE ================= */
+/* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
+import { expose } from './test-globals.js';
+import {
+  JINGLES,
+  environmentOdds,
+  flushAccountSave,
+  jingle,
+  onStepsAdded,
+  provide,
+  render,
+  showPendingWindows,
+  soundEffect,
+  toast,
+} from './hooks.js';
+import { random } from './util.js';
+import {
+  COINS,
+  EGGS,
+  EGG_TIERS,
+  ITEMS,
+  JOBS,
+  JOB_STEPS,
+  LINES,
+  LINE_BY_ID,
+  LOCATIONS,
+  MOVES,
+  POOLS,
+  ROADS_BY_NODE,
+  RULES,
+  SPECIES,
+  START_NODE,
+  STAT_IDS,
+  STEPS_PER_KM,
+  TRAINERS,
+  roadCost,
+  trainersAt,
+  typeEffectiveness,
+} from './game-data.js';
+/* eslint-disable no-func-assign */
+expose({
+  ACCOUNT_ID: [() => ACCOUNT_ID],
+  ACCOUNT_KEY: [() => ACCOUNT_KEY],
+  SAVE_FOUND: [() => SAVE_FOUND],
+  SAVE_KEY: [() => SAVE_KEY],
+  SAVE_KEY_BASE: [() => SAVE_KEY_BASE],
+  SAVE_NEW_MSG: [() => SAVE_NEW_MSG],
+  SAVE_OLD_MSG: [() => SAVE_OLD_MSG],
+  SAVE_VERSION: [() => SAVE_VERSION],
+  STEP_BRACKETS: [() => STEP_BRACKETS],
+  activeBattle: [() => activeBattle, v => setActiveBattle(v)],
+  addBilly: [() => addBilly, v => (addBilly = v)],
+  addEgg: [() => addEgg, v => (addEgg = v)],
+  addSteps: [() => addSteps, v => ((addSteps = v), provide({ addSteps }))],
+  allBillies: [() => allBillies],
+  assignJob: [() => assignJob, v => (assignJob = v)],
+  autoSlot: [() => autoSlot, v => (autoSlot = v)],
+  billyName: [() => billyName],
+  blockerAt: [() => blockerAt, v => (blockerAt = v)],
+  canEnter: [() => canEnter],
+  canEvolve: [() => canEvolve, v => (canEvolve = v)],
+  canLeave: [() => canLeave],
+  canRide: [() => canRide],
+  cleanName: [() => cleanName],
+  collectJob: [() => collectJob, v => (collectJob = v)],
+  earningsBetween: [() => earningsBetween, v => (earningsBetween = v)],
+  eggSlotCount: [() => eggSlotCount],
+  emptyJob: [() => emptyJob],
+  encounterPoolHere: [() => encounterPoolHere, v => (encounterPoolHere = v)],
+  endShift: [() => endShift, v => (endShift = v)],
+  escapeHtml: [() => escapeHtml],
+  evolutionHint: [() => evolutionHint, v => (evolutionHint = v)],
+  evolutionItemName: [() => evolutionItemName],
+  evolve: [() => evolve, v => (evolve = v)],
+  findBilly: [() => findBilly],
+  flushSave: [() => flushSave, v => (flushSave = v)],
+  formatNumber: [() => formatNumber],
+  gainXp: [() => gainXp, v => (gainXp = v)],
+  gateMsg: [() => gateMsg, v => (gateMsg = v)],
+  gateOwner: [() => gateOwner, v => (gateOwner = v)],
+  gateText: [() => gateText, v => (gateText = v)],
+  hatchEgg: [() => hatchEgg, v => (hatchEgg = v)],
+  hatchable: [() => hatchable],
+  healAll: [() => healAll, v => (healAll = v)],
+  hereLocation: [() => hereLocation],
+  jobSlotCount: [() => jobSlotCount],
+  loadSave: [() => loadSave, v => (loadSave = v)],
+  makeBilly: [() => makeBilly, v => ((makeBilly = v), provide({ makeBilly }))],
+  maxHp: [() => maxHp],
+  maxLevel: [() => maxLevel],
+  migrate: [() => migrate, v => (migrate = v)],
+  moveSlotCount: [() => moveSlotCount],
+  movesAt: [() => movesAt, v => (movesAt = v)],
+  newSave: [() => newSave, v => (newSave = v)],
+  newSaveKeepingPreferences: [() => newSaveKeepingPreferences, v => (newSaveKeepingPreferences = v)],
+  newUid: [() => newUid],
+  nextBracket: [() => nextBracket],
+  nextTripNode: [() => nextTripNode],
+  pathFrom: [() => pathFrom],
+  pickWeighted: [() => pickWeighted, v => (pickWeighted = v)],
+  plural: [() => plural],
+  readStoredSave: [() => readStoredSave, v => (readStoredSave = v)],
+  reducedMotion: [() => reducedMotion, v => setReducedMotion(v)],
+  resumeTrip: [() => resumeTrip, v => (resumeTrip = v)],
+  riderName: [() => riderName],
+  riderOf: [() => riderOf, v => ((riderOf = v), provide({ riderOf }))],
+  rollDay: [() => rollDay, v => (rollDay = v)],
+  save: [() => save, v => setSave(v)],
+  saveAge: [() => saveAge, v => (saveAge = v)],
+  saveData: [() => saveData, v => setSaveData(v)],
+  saveHold: [() => saveHold, v => setSaveHold(v)],
+  saveTimer: [() => saveTimer, v => (saveTimer = v)],
+  setActiveBattle: [() => setActiveBattle, v => (setActiveBattle = v)],
+  setNoSaving: [() => setNoSaving, v => (setNoSaving = v)],
+  setReducedMotion: [() => setReducedMotion, v => (setReducedMotion = v)],
+  setSave: [() => setSave, v => (setSave = v)],
+  setSaveData: [() => setSaveData, v => (setSaveData = v)],
+  setSaveHold: [() => setSaveHold, v => (setSaveHold = v)],
+  setTrip: [() => setTrip, v => setSetTrip(v)],
+  spawn: [() => spawn, v => (spawn = v)],
+  splitPath: [() => splitPath, v => (splitPath = v)],
+  stat: [() => stat, v => (stat = v)],
+  stepRate: [() => stepRate],
+  stepsToKm: [() => stepsToKm],
+  stopTrip: [() => stopTrip, v => (stopTrip = v)],
+  teamSize: [() => teamSize],
+  toBox: [() => toBox, v => (toBox = v)],
+  toTeam: [() => toTeam, v => (toTeam = v)],
+  today: [() => today],
+  traveling: [() => traveling],
+  tripTo: [() => tripTo, v => (tripTo = v)],
+  uiState: [() => uiState],
+  walkDistances: [() => walkDistances, v => (walkDistances = v)],
+  walkMode: [() => walkMode],
+  writeStoredSave: [() => writeStoredSave, v => (writeStoredSave = v)],
+  xpFor: [() => xpFor],
+});
+/* eslint-enable no-func-assign */
+provide({ addSteps, makeBilly, riderOf });
+export function setSetTrip(v) {
+  setTrip = v; // eslint-disable-line no-func-assign
+  provide({ setTrip });
+}
+/* to-module: end */
+export const escapeHtml = s =>
+  String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+/* phase 02: a name the player typed, or that came from a backup file or a friend, loses the characters that could
+   end a piece of HTML (< > " & `) and control characters, so it is safe in any page text or attribute */
+export const cleanName = (s, max) =>
+  String(s == null ? '' : s)
+    // eslint-disable-next-line no-control-regex -- stripping control characters is the point
+    .replace(/[\u0000-\u001f\u007f<>"&`]/g, '')
+    .trim()
+    .slice(0, max);
+provide({ cleanName }); /* to-module */
+export const formatNumber = n => Math.floor(n).toLocaleString('en-US');
+export const stepsToKm = st => (st / STEPS_PER_KM).toFixed(1);
+export let reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+provide({ reducedMotion }); /* to-module */
+export const newUid = () => 'm' + Date.now().toString(36) + Math.floor(random() * 1e8).toString(36);
+export const today = () => {
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+};
+export const plural = (n, w) => `${formatNumber(n)} ${w}${n === 1 ? '' : 's'}`;
+export function pickWeighted(list) {
+  const tot = list.reduce((a, b) => a + b[1], 0);
+  let r = random() * tot;
+  for (const [id, w] of list) {
+    r -= w;
+    if (r <= 0) return id;
+  }
+  return list[0][0];
+}
+
+/* ---------- state ---------- */
+export const xpFor = L => Math.floor(RULES.progression.xpFactor * L * L * L);
+export const maxLevel = () => RULES.progression.maxLevel,
+  moveSlotCount = () => RULES.progression.moveSlots,
+  teamSize = () => RULES.progression.teamSize;
+const jobSlotCount = () => Math.max(1, RULES.jobs.positions || 3);
+const emptyJob = () => ({ uid: null, job: null, acc: 0, pend: 0 });
+export function newSave() {
+  const R = RULES.start,
+    coins = {},
+    items = {};
+  Object.keys(COINS).forEach(k => (coins[k] = 0));
+  Object.keys(ITEMS).forEach(k => (items[k] = 0));
+  Object.assign(coins, R.coins);
+  Object.assign(items, R.items);
+  return {
+    v: 4,
+    saveVersion: SAVE_VERSION,
+    gameVersion: PB_VERSION,
+    avatar: null,
+    preferences: { theme: 'system', motion: 'system', fps: 60, effects: 'full' },
+    started: false,
+    gender: null,
+    starter: null,
+    team: [],
+    box: [],
+    seen: {},
+    caught: {},
+    se: R.se,
+    seFrac: 0,
+    coins,
+    items,
+    day: { date: today(), steps: 0 },
+    totalSteps: 0,
+    trip: { node: START_NODE, prog: 0, plan: [], hold: false },
+    mapSeen: null,
+    meter: 0,
+    queue: [],
+    buddy: null,
+    buddyRem: 0,
+    flags: {},
+    seats: [],
+    visited: { [START_NODE]: 1 },
+    serial: 300,
+    eggs: [],
+    jobs: Array.from({ length: jobSlotCount() }, emptyJob),
+    savedAt: 0,
+    /* trainer card: ID number, start date (0 = unknown, older saves) and eggs hatched */
+    tid: 10000 + Math.floor(random() * 90000),
+    since: 0,
+    hatched: 0,
+  };
+}
+/* a new game on the same device keeps its settings (theme, motion, effects, sound…) */
+export function newSaveKeepingPreferences() {
+  const p = typeof saveData !== 'undefined' && saveData && saveData.preferences,
+    f = newSave();
+  if (p) f.preferences = Object.assign(f.preferences, JSON.parse(JSON.stringify(p)));
+  return f;
+}
+/* alpha 0.4.1: saves only need to work with this version. A save is filled out with anything new and checked against
+   the game data (things the Studio may have removed are dropped), but old formats are no longer converted */
+export function migrate(o) {
+  if (!o || typeof o !== 'object') return null;
+  const f = newSave();
+  const s = Object.assign(f, o);
+  const zero = obj => Object.fromEntries(Object.keys(obj).map(k => [k, 0]));
+  s.coins = Object.assign(zero(COINS), o.coins || {});
+  s.items = Object.assign(zero(ITEMS), o.items || {});
+  s.flags = o.flags || {};
+  const p = (s.preferences = Object.assign(
+    { theme: 'system', motion: 'system', fps: 60, effects: 'full' },
+    o.preferences || {}
+  ));
+  if (![30, 60, 90, 120].includes(+p.fps)) p.fps = 60;
+  if (p.aim !== 'smooth') p.aim = 'sharp';
+  p.effects = 'full';
+  p.fps = +p.fps;
+  if (!Array.isArray(s.eggs)) s.eggs = [];
+  if (!Array.isArray(s.jobs)) s.jobs = [];
+  while (s.jobs.length < jobSlotCount()) s.jobs.push(emptyJob());
+  while (s.jobs.length > jobSlotCount()) {
+    const j = s.jobs.pop();
+    const m = [...(s.team || []), ...(s.box || [])].find(x => x.uid === j.uid);
+    if (m) {
+      m.job = null;
+      m.boxedAt = Date.now();
+    }
+  }
+  if (!SPECIES[s.starter + '0'] && s.started)
+    s.starter = RULES.start.starters.find(l => SPECIES[l + '0']) || LINES[0].id;
+  s.team = (s.team || []).filter(m => SPECIES[m.sp]);
+  s.box = (s.box || []).filter(m => SPECIES[m.sp]);
+  [...s.team, ...s.box].forEach(m => {
+    if (m.nick != null) m.nick = cleanName(m.nick, 16);
+  });
+  if (s.avatar && typeof s.avatar === 'object' && 'name' in s.avatar)
+    s.avatar.name = cleanName(s.avatar.name, 18) || 'Trainer';
+  [...s.team, ...s.box].forEach(m => {
+    m.moves = (m.moves || []).filter(k => MOVES[k]);
+    if (!m.moves.length) m.moves = movesAt(SPECIES[m.sp].line, m.lvl);
+  });
+  for (const key of ['seen', 'caught'])
+    if (s[key] && typeof s[key] === 'object') for (const id of Object.keys(s[key])) if (!SPECIES[id]) delete s[key][id];
+  s.queue = (s.queue || []).filter(q => SPECIES[q.sp]);
+  s.eggs = s.eggs.filter(e => EGGS[e.tier]);
+  s.jobs.forEach(j => {
+    if (j.job && !JOBS[j.job]) j.job = Object.keys(JOBS)[0] || null;
+  });
+  if (!s.trip || !LOCATIONS[s.trip.node]) s.trip = { node: START_NODE, prog: 0, plan: [] };
+  s.trip.plan = (Array.isArray(s.trip.plan) ? s.trip.plan : []).filter(x => LOCATIONS[x]);
+  if (s.trip.plan.length && !roadCost(s.trip.node, s.trip.plan[0])) {
+    s.trip.plan = [];
+    s.trip.prog = 0;
+  }
+  s.trip.hold = !!s.trip.hold;
+  if (!s.visited || typeof s.visited !== 'object') s.visited = {};
+  s.visited[s.trip.node] = 1;
+  if (s.started && !s.team.length && !s.box.length) return newSave();
+  s.v = 4;
+  s.saveVersion = SAVE_VERSION;
+  s.gameVersion = PB_VERSION;
+  return s;
+}
+/* phase 02: every save says which save format it is (saveVersion; raise it when old saves can't be read any more; 2 since phase 05).
+   A save without one (alpha 0.5 and earlier) or from a newer format is not loaded: the game says so and starts fresh.
+   saveAge: null (no save), 'ok', 'old' or 'new'. A newer save is never written over (saveHold) */
+export const SAVE_VERSION = 2;
+export let saveHold = false;
+export function saveAge(o) {
+  if (!o || typeof o !== 'object') return null;
+  const v = o.saveVersion;
+  return v === SAVE_VERSION ? 'ok' : Number.isInteger(v) && v > SAVE_VERSION ? 'new' : 'old';
+}
+export function loadSave(o) {
+  return saveAge(o) === 'ok' ? migrate(o) : null;
+}
+export const SAVE_OLD_MSG = 'This save is from an older version of the game and can’t be loaded in this one.',
+  SAVE_NEW_MSG = 'This save is from a newer version of the game. Reload the page to get the newest version.';
+/* alpha 0.4.1: one save per player. Without an account the save lives in this browser (the original key); a player who
+   signs in with Google (js/account.js) gets their own save, kept online and copied in this browser under their id */
+export const SAVE_KEY_BASE = 'networth-save-v1',
+  ACCOUNT_KEY = 'pb-account';
+export const ACCOUNT_ID = (() => {
+  try {
+    return localStorage.getItem(ACCOUNT_KEY) || '';
+  } catch (e) {
+    return '';
+  }
+})();
+export const SAVE_KEY = ACCOUNT_ID ? SAVE_KEY_BASE + '-u-' + ACCOUNT_ID : SAVE_KEY_BASE;
+function readStoredSave() {
+  try {
+    return JSON.parse(localStorage.getItem(SAVE_KEY) || 'null');
+  } catch (e) {
+    return null;
+  }
+}
+export function writeStoredSave(o) {
+  if (saveHold) return;
+  try {
+    localStorage.setItem(SAVE_KEY, JSON.stringify(o));
+  } catch (e) {
+    if (typeof uiState !== 'undefined' && !uiState.saveWarning) {
+      uiState.saveWarning = true;
+      setTimeout(() => toast('Browser storage is full or unavailable. Export a save backup from Settings.'), 0);
+    }
+  }
+}
+/* a save here that this version can't load is kept aside in this browser (once), and the title says why it's a new game */
+export const SAVE_FOUND = saveAge(readStoredSave());
+if (SAVE_FOUND === 'old' || SAVE_FOUND === 'new')
+  try {
+    const k = SAVE_KEY + '-set-aside';
+    if (localStorage.getItem(k) == null) localStorage.setItem(k, localStorage.getItem(SAVE_KEY));
+  } catch (e) {}
+if (SAVE_FOUND === 'new') saveHold = true;
+export let saveData = loadSave(readStoredSave()) || newSave();
+provide({ saveData }); /* to-module */
+export let activeBattle = null;
+provide({ activeBattle }); /* to-module */
+/* phase 04d: other modules change the save, the battle, reduced motion and the save hold through these (an imported
+   name can't be assigned); each hands the new value to hooks.js for the modules that read it from there */
+export function setSaveData(v) {
+  saveData = v;
+  provide({ saveData });
+}
+export function setActiveBattle(v) {
+  activeBattle = v;
+  provide({ activeBattle });
+}
+export function setReducedMotion(v) {
+  reducedMotion = v;
+  provide({ reducedMotion });
+}
+export function setSaveHold(v) {
+  saveHold = v;
+  provide({ saveHold });
+}
+/* test mode (?test, boot.js): nothing the checks do reaches the save */
+export function setNoSaving() {
+  /* eslint-disable no-func-assign */
+  writeStoredSave = function () {};
+  flushSave = async function () {};
+  /* eslint-enable no-func-assign */
+  provide({ writeStoredSave, flushSave });
+}
+export const uiState = {
+  tab: 'walk',
+  lastTab: null,
+  intro: 0,
+  modal: null,
+  mq: [],
+  learnQ: [],
+  toastQ: [],
+  toastOn: false,
+  evT: null,
+  throwing: false,
+  disp: { steps: null, se: null },
+  seenEnc: new Set(),
+  mapSel: null,
+};
+provide({ uiState }); /* to-module */
+
+/* ---------- saving: in this browser, and on the account when signed in (account.js) ---------- */
+let saveTimer = null;
+export function save() {
+  saveData.savedAt = Date.now();
+  writeStoredSave(saveData);
+  if (!saveTimer)
+    saveTimer = setTimeout(() => {
+      saveTimer = null;
+      flushSave();
+    }, 4000);
+}
+/* phase 04d: the in-game full test (self-test.js) keeps your save out of it */
+export function setSave(v) {
+  save = v; // eslint-disable-line no-func-assign
+  provide({ save });
+}
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden' && saveTimer) {
+    clearTimeout(saveTimer);
+    saveTimer = null;
+    flushSave();
+  }
+});
+export function flushSave() {
+  if (saveHold) return;
+  if (typeof flushAccountSave === 'function') flushAccountSave();
+}
+
+/* ---------- billionaires ---------- */
+export function stat(m, k) {
+  const b = SPECIES[m.sp].base[STAT_IDS.indexOf(k)];
+  let v = k === 'hp' ? Math.floor((2 * b * m.lvl) / 100) + m.lvl + 10 : Math.floor((2 * b * m.lvl) / 100) + 5;
+  /* v33: an Alpha in battle is much tougher (m.boss); one you caught keeps a little of it (m.alpha) */
+  if (m.boss) v = Math.floor(v * (k === 'hp' ? m.boss.hp : m.boss.st));
+  else if (m.alpha) v = Math.floor(v * ((RULES.battle && RULES.battle.alphaKeep) ?? 1.08));
+  return v;
+}
+export const maxHp = m => stat(m, 'hp');
+provide({ maxHp }); /* to-module */
+function movesAt(lid, lvl) {
+  const out = [];
+  for (const [lv, mv] of LINE_BY_ID[lid].learn) if (lv <= lvl && !out.includes(mv)) out.push(mv);
+  return out.slice(-moveSlotCount());
+}
+/* alpha 0.5: a Billie remembers where and when it joined you (shown in its details) */
+export function makeBilly(sp, lvl, o = {}) {
+  const m = {
+    uid: newUid(),
+    sp,
+    lvl,
+    xp: xpFor(lvl),
+    hp: 0,
+    status: null,
+    sTurns: 0,
+    moves: movesAt(SPECIES[sp].line, lvl),
+    gold: !!o.gold,
+    nick: '',
+  };
+  m.hp = maxHp(m);
+  try {
+    if (typeof saveData !== 'undefined' && saveData && saveData.trip && LOCATIONS[saveData.trip.node])
+      m.met = { n: LOCATIONS[saveData.trip.node].id || saveData.trip.node, t: Date.now() };
+  } catch (e) {}
+  return m;
+}
+export const billyName = m => m.nick || SPECIES[m.sp].name;
+export const allBillies = () => saveData.team.concat(saveData.box);
+export const findBilly = id => allBillies().find(m => m.uid === id);
+export function gainXp(m, amt, say) {
+  if (m.lvl >= maxLevel() || amt <= 0) return;
+  m.xp += amt;
+  while (m.lvl < maxLevel() && m.xp >= xpFor(m.lvl + 1)) {
+    const old = maxHp(m);
+    m.lvl++;
+    if (m.hp > 0) m.hp = Math.min(maxHp(m), m.hp + maxHp(m) - old);
+    say(`${billyName(m)} grew to level ${m.lvl}.`, { k: 'lvl', uid: m.uid });
+    for (const [lv, mv] of LINE_BY_ID[SPECIES[m.sp].line].learn) {
+      if (lv !== m.lvl || m.moves.includes(mv)) continue;
+      if (m.moves.length < moveSlotCount()) {
+        m.moves.push(mv);
+        say(`${billyName(m)} learned ${MOVES[mv].n}.`);
+      } else uiState.learnQ.push({ uid: m.uid, mv });
+    }
+  }
+}
+export function canEvolve(m) {
+  const e = SPECIES[m.sp].evo;
+  if (!e) return false;
+  if (m.evoNo != null && m.lvl <= m.evoNo) return false;
+  switch (e.k) {
+    case 'lvl':
+    case 'split':
+      return m.lvl >= e.at;
+    case 'buddy':
+      return (m.bsteps || 0) >= e.steps;
+    case 'idle':
+      return !!m.boxedAt && !m.job && saveData.box.includes(m) && Date.now() - m.boxedAt >= e.ms && m.lvl >= e.min;
+    case 'streak':
+      return (m.streak || 0) >= e.n && m.lvl >= e.min;
+    default:
+      return false;
+  }
+}
+export const evolutionItemName = e => (ITEMS[e.item || 'bell'] ? ITEMS[e.item || 'bell'].n : 'Shining Stone');
+export function evolutionHint(m) {
+  const s = SPECIES[m.sp],
+    e = s.evo;
+  if (!e) return s.rar === 'mythical' ? 'Does not evolve.' : 'Fully evolved.';
+  const nx = SPECIES[s.next],
+    nm = saveData.seen[nx.id] ? nx.name : 'something bigger';
+  switch (e.k) {
+    case 'lvl':
+      return `Evolves at level ${e.at} into ${nm}.`;
+    case 'split': {
+      const alt = SPECIES[s.alt],
+        an = alt && saveData.seen[alt.id] ? alt.name : 'something else';
+      return `Evolves at level ${e.at} into ${nm} or ${an}: ${splitPath(m) === 'A' ? 'the Build path is ahead' : 'the Hype path is ahead'} (${m.wins || 0} battles won, ${stepsToKm(m.bsteps || 0)} km walked as buddy${m.psteps ? ` + ${stepsToKm((m.psteps || 0) / 2)} km in the party at half weight` : ''}).`;
+    }
+    case 'buddy':
+      return `Evolves after you walk ${stepsToKm(e.steps)} km with it as your buddy. ${stepsToKm(m.bsteps || 0)} of ${stepsToKm(e.steps)} km so far.`;
+    case 'item':
+      return `Evolves when you use ${/^[AEIOU]/.test(evolutionItemName(e)) ? 'an' : 'a'} ${evolutionItemName(e)}, once it reaches level ${e.min}.`;
+    case 'donate':
+      return `Evolves after it gives away ${e.n} items, once it reaches level ${e.min}. ${m.donated || 0} of ${e.n} given.`;
+    case 'merge':
+      return `Evolves by combining with another ${s.name}, once it reaches level ${e.min}.`;
+    case 'idle':
+      return `Evolves after resting a full day in storage, once it reaches level ${e.min}.`;
+    case 'streak':
+      return `Evolves after winning ${e.n} battles in a row as your lead, once it reaches level ${e.min}. Streak: ${m.streak || 0}.`;
+    case 'rename':
+      return `Evolves when you give it a new nickname, once it reaches level ${e.min}.`;
+  }
+  return '';
+}
+/* v36: which final a split line takes: Build (A) when the kilometres it walked as your buddy outweigh the battles it won
+   (1 km counts as one win), Hype (B) otherwise. A tie goes to Build. */
+export function splitPath(m) {
+  const wins = m.wins || 0,
+    kmW = ((m.bsteps || 0) + (m.psteps || 0) / 2) / STEPS_PER_KM;
+  return wins > kmW ? 'B' : 'A';
+}
+export function evolve(m) {
+  if (typeof jingle === 'function') jingle(JINGLES.evolve, 140);
+  const old = maxHp(m),
+    from = billyName(m),
+    s0 = SPECIES[m.sp];
+  m.sp = s0.evo && s0.evo.k === 'split' && s0.alt && splitPath(m) === 'B' ? s0.alt : s0.next;
+  if (m.hp > 0) m.hp = Math.max(1, Math.min(maxHp(m), m.hp + maxHp(m) - old));
+  saveData.caught[m.sp] = 1;
+  saveData.seen[m.sp] = 1;
+  m.evoNo = null;
+  m.streak = 0;
+  m.donated = 0;
+  return from;
+}
+export function healAll() {
+  if (typeof soundEffect === 'function') soundEffect('heal');
+  for (const m of allBillies()) {
+    m.hp = maxHp(m);
+    m.status = null;
+    m.sTurns = 0;
+  }
+}
+export function toBox(m) {
+  const i = saveData.team.indexOf(m);
+  if (i >= 0) saveData.team.splice(i, 1);
+  if (!saveData.box.includes(m)) saveData.box.push(m);
+  m.boxedAt = Date.now();
+}
+export function toTeam(m) {
+  const i = saveData.box.indexOf(m);
+  if (i >= 0) saveData.box.splice(i, 1);
+  if (!saveData.team.includes(m)) saveData.team.push(m);
+  m.boxedAt = null;
+}
+export function addBilly(m) {
+  saveData.caught[m.sp] = 1;
+  saveData.seen[m.sp] = 1;
+  if (saveData.team.length < teamSize()) {
+    saveData.team.push(m);
+    return 'team';
+  }
+  m.boxedAt = Date.now();
+  saveData.box.push(m);
+  return 'box';
+}
+
+/* ---------- steps ---------- */
+export const STEP_BRACKETS = RULES.steps.brackets
+  .map(b => [b.upTo > 0 ? b.upTo : Infinity, b.rate])
+  .sort((a, b) => a[0] - b[0]);
+if (!STEP_BRACKETS.length || STEP_BRACKETS[STEP_BRACKETS.length - 1][0] !== Infinity)
+  STEP_BRACKETS.push([Infinity, STEP_BRACKETS.length ? STEP_BRACKETS[STEP_BRACKETS.length - 1][1] : 1]);
+function earningsBetween(a, b) {
+  let se = 0,
+    lo = 0;
+  for (const [hi, r] of STEP_BRACKETS) {
+    const s = Math.max(a, lo),
+      e = Math.min(b, hi);
+    if (e > s) se += (e - s) * r;
+    lo = hi;
+  }
+  return se;
+}
+export const stepRate = st => {
+  for (const [hi, r] of STEP_BRACKETS) if (st < hi) return r;
+  return STEP_BRACKETS[STEP_BRACKETS.length - 1][1];
+};
+export const nextBracket = st => STEP_BRACKETS.find(([hi]) => st < hi);
+export function rollDay() {
+  if (saveData.day.date !== today()) saveData.day = { date: today(), steps: 0 };
+}
+function gateOwner(seat) {
+  return Object.values(TRAINERS).find(T => T.seat && T.seat.id === seat);
+}
+export function gateText(n) {
+  if (n.gate && !saveData.seats.includes(n.gate) && n.gateText) return n.gateText;
+  if (n.ride && !canRide()) {
+    const R = RULES.ride || { minHeight: 1.5 };
+    return `To cross ${n.name} you need a Water Billie at least ${R.minHeight || 1.5} m tall in your team to ride on. Quant and Billigator are big enough.`;
+  }
+  if (n.gateText) return n.gateText;
+  const T = gateOwner(n.gate);
+  return `${n.name} opens once you earn ${T ? T.name + '’s' : 'another'} badge.`;
+}
+export function blockerAt(i) {
+  return trainersAt(i).find(T => T.blocks && !saveData.flags[T.id]) || null;
+}
+/* ---------- travel: a plan of stops to walk to, one link at a time; an empty plan means staying put ---------- */
+/* v24: lake and sea roads need a Water billionaire big enough to ride (rules.ride: types, minHeight in metres) */
+function riderOf() {
+  const R = RULES.ride || { minHeight: 1.5, types: ['Water'] };
+  let best = null;
+  for (const m of saveData.team) {
+    const sp = SPECIES[m.sp];
+    if (!sp || !sp.types.some(t => (R.types || ['Water']).includes(t)) || sp.ht < (R.minHeight || 1.5)) continue;
+    if (!best || sp.ht > SPECIES[best.sp].ht) best = m;
+  }
+  return best;
+}
+export const canRide = () => !!riderOf();
+export const riderName = () => {
+  const m = riderOf();
+  return m ? m.nick || SPECIES[m.sp].name : '';
+};
+export const canEnter = n =>
+  (!LOCATIONS[n].gate || saveData.seats.includes(LOCATIONS[n].gate)) && (!LOCATIONS[n].ride || canRide());
+const canLeave = (from, to) => !blockerAt(from) || !!saveData.visited[to];
+export const nextTripNode = () => (saveData.trip.plan.length ? saveData.trip.plan[0] : null);
+/* alpha 0.4.1: how you get about (rules.travel). 'walk': you walk yourself, with the joystick, the d-pad or a tap, from
+   place to place across their edges, like a classic RPG; the steps you take in the game count as steps (encounters,
+   challenges, your buddy). 'steps': your real steps carry you along the roads (the game until 0.4). */
+export const walkMode = () => ((typeof RULES !== 'undefined' && RULES.travel) || 'walk') === 'walk';
+provide({ walkMode }); /* to-module */
+const traveling = () => !walkMode() && nextTripNode() != null && !saveData.trip.hold && !gateMsg();
+/* why travel can't continue right now (null when it can, or when you're staying) */
+export function gateMsg() {
+  const node = saveData.trip.node,
+    nx = nextTripNode();
+  if (nx == null) return null;
+  if (saveData.trip.prog === 0 && !canLeave(node, nx)) {
+    const bl = blockerAt(node);
+    return bl.blockTitle || `${bl.name} is blocking the way.`;
+  }
+  if (!canEnter(nx)) return gateText(LOCATIONS[nx]);
+  return null;
+}
+/* shortest walk (in steps) between stops, entering only stops you may enter; returns {d,prev} */
+function walkDistances(from) {
+  const N = LOCATIONS.length,
+    d = Array(N).fill(Infinity),
+    prev = Array(N).fill(-1),
+    done = Array(N).fill(false);
+  d[from] = 0;
+  for (;;) {
+    let u = -1;
+    for (let i = 0; i < N; i++) if (!done[i] && d[i] < Infinity && (u < 0 || d[i] < d[u])) u = i;
+    if (u < 0) break;
+    done[u] = true;
+    for (const e of ROADS_BY_NODE[u]) {
+      if (!canEnter(e.to)) continue;
+      if (u !== from && blockerAt(u) && !saveData.visited[e.to]) continue;
+      const nd = d[u] + e.cost;
+      if (nd < d[e.to]) {
+        d[e.to] = nd;
+        prev[e.to] = u;
+      }
+    }
+  }
+  return { d, prev };
+}
+const pathFrom = (prev, to) => {
+  const out = [];
+  for (let x = to; x >= 0 && prev[x] >= 0; x = prev[x]) out.unshift(x);
+  return out;
+};
+/* steps from where you stand to stop j, and the plan that gets there (turning back on the current link if shorter) */
+export function tripTo(j) {
+  const r = saveData.trip,
+    node = r.node,
+    nx = nextTripNode();
+  if (nx == null || r.prog === 0) {
+    if (j === node && nx == null) return { steps: 0, plan: [], back: false };
+    const D = walkDistances(node);
+    if (D.d[j] === Infinity) return null;
+    return { steps: D.d[j], plan: pathFrom(D.prev, j), back: false };
+  }
+  const c = roadCost(node, nx),
+    A = walkDistances(nx),
+    Bk = walkDistances(node),
+    fwd = c - r.prog + A.d[j],
+    back = r.prog + Bk.d[j];
+  if (fwd === Infinity && back === Infinity) return null;
+  return fwd <= back
+    ? { steps: fwd, plan: [nx, ...pathFrom(A.prev, j)], back: false }
+    : { steps: back, plan: [node, ...pathFrom(Bk.prev, j)], back: true };
+}
+export function setTrip(j) {
+  const t = tripTo(j);
+  if (!t) return false;
+  const r = saveData.trip;
+  if (t.back && nextTripNode() != null) {
+    const nx = nextTripNode(),
+      c = roadCost(r.node, nx);
+    r.node = nx;
+    r.prog = c - r.prog;
+    t.plan.shift();
+  }
+  r.plan = t.plan;
+  r.hold = false;
+  if (!r.plan.length) r.prog = 0;
+  save();
+  return true;
+}
+export function stopTrip() {
+  const r = saveData.trip;
+  if (r.prog > 0) {
+    r.hold = true;
+  } else {
+    r.plan = [];
+    r.hold = false;
+  }
+  save();
+}
+export function resumeTrip() {
+  saveData.trip.hold = false;
+  save();
+}
+/* encounters come from where you're headed while you walk, otherwise from where you are */
+export const hereLocation = () => {
+  const nx = nextTripNode();
+  return LOCATIONS[nx != null && saveData.trip.prog > 0 && !saveData.trip.hold ? nx : saveData.trip.node];
+};
+export function encounterPoolHere() {
+  return POOLS[hereLocation().pool] || POOLS[Object.keys(POOLS)[0]];
+}
+export function spawn(gentle, force) {
+  const P = encounterPoolHere();
+  let list = typeof environmentOdds === 'function' ? environmentOdds(P.list) : P.list;
+  if (gentle) {
+    const my = SPECIES[saveData.starter + '0'].types,
+      g = list.filter(([id]) => !SPECIES[id].types.some(t => typeEffectiveness(t, my) > 1));
+    if (g.length) list = g;
+  }
+  const sp = force || pickWeighted(list),
+    lvl = P.lv[0] + Math.floor(random() * (P.lv[1] - P.lv[0] + 1));
+  const q = { id: newUid(), sp, lvl, gold: random() < 1 / RULES.steps.goldOdds, no: ++saveData.serial };
+  /* v33: now and then an Alpha (once you have two billionaires to stand with your lead) */
+  if (
+    !gentle &&
+    !force &&
+    saveData.team.filter(m => m.job == null).length >= 2 &&
+    random() < 1 / ((RULES.steps && RULES.steps.alphaOdds) || 45)
+  )
+    q.alpha = true;
+  saveData.queue.push(q);
+  return q;
+}
+export function addSteps(n, quiet) {
+  n = Math.floor(Number(n));
+  if (!saveData.started || !Number.isFinite(n) || n <= 0 || n > 100000) return;
+  rollDay();
+  const a = saveData.day.steps,
+    b = a + n,
+    g = earningsBetween(a, b) + saveData.seFrac,
+    gi = Math.floor(g);
+  saveData.seFrac = g - gi;
+  saveData.se += gi;
+  saveData.day.steps = b;
+  saveData.totalSteps += n;
+  const msgs = [];
+  if (traveling()) {
+    const r = saveData.trip;
+    r.prog += n;
+    while (r.plan.length && r.prog >= roadCost(r.node, r.plan[0])) {
+      r.prog -= roadCost(r.node, r.plan[0]);
+      r.node = r.plan.shift();
+      saveData.visited[r.node] = 1;
+      msgs.push(
+        r.plan.length ? `You passed through ${LOCATIONS[r.node].name}.` : `You arrived at ${LOCATIONS[r.node].name}.`
+      );
+      if (typeof uiState !== 'undefined') uiState.arrive = r.node;
+      /* v43: the walk screen walks you in from the exit */ if (!r.plan.length || gateMsg()) {
+        r.prog = 0;
+        break;
+      }
+    }
+    if (!r.plan.length) r.prog = 0;
+  }
+  const every = Math.max(1, RULES.steps.encounterEverySE);
+  saveData.meter += gi;
+  let sp = 0;
+  while (saveData.meter >= every) {
+    saveData.meter -= every;
+    if (saveData.queue.length < RULES.steps.maxEncounters) {
+      spawn();
+      sp++;
+    }
+  }
+  const bud = findBilly(saveData.buddy),
+    per = Math.max(1, RULES.progression.buddyStepsPerXp);
+  if (bud) bud.bsteps = (bud.bsteps || 0) + n;
+  /* v37: the rest of the party walks too, at half weight (for the Build path of a split evolution) */ for (const m of saveData.team)
+    if (m !== bud) m.psteps = (m.psteps || 0) + n;
+  saveData.buddyRem += n;
+  const xp = Math.floor(saveData.buddyRem / per);
+  saveData.buddyRem -= xp * per;
+  const notes = [];
+  if (bud && xp > 0) gainXp(bud, xp, t => notes.push(t));
+  saveData.eggs.forEach(e => {
+    if (e.slot != null) e.prog = Math.min(EGGS[e.tier].need, e.prog + n);
+  });
+  saveData.jobs.forEach(j => {
+    if (!j.uid) return;
+    j.acc += n;
+    while (j.acc >= JOB_STEPS) {
+      j.acc -= JOB_STEPS;
+      if (j.pend < RULES.jobs.maxPending) j.pend++;
+    }
+  });
+  if (!quiet || sp)
+    toast(`+${formatNumber(n)} steps, +$${formatNumber(gi)}${sp ? `, ${plural(sp, 'new encounter')}` : ''}`);
+  msgs.concat(notes).forEach(t => toast(t));
+  save();
+  if (!activeBattle) {
+    render();
+    if (typeof onStepsAdded === 'function') onStepsAdded();
+    showPendingWindows();
+  }
+}
+
+/* ---------- Seed Rounds ---------- */
+export const eggSlotCount = () => Math.max(1, RULES.eggs.slots);
+function autoSlot() {
+  for (let sl = 0; sl < eggSlotCount(); sl++) {
+    if (saveData.eggs.some(e => e.slot === sl)) continue;
+    const e = saveData.eggs.find(e => e.slot == null);
+    if (e) e.slot = sl;
+  }
+}
+export function addEgg(tier) {
+  if (!EGGS[tier]) return false;
+  if (saveData.eggs.length >= RULES.eggs.capacity) {
+    toast('You’re carrying too many eggs. Hatch a few first.');
+    return false;
+  }
+  saveData.eggs.push({ id: newUid(), tier, prog: 0, slot: null });
+  autoSlot();
+  return true;
+}
+export const hatchable = () => saveData.eggs.filter(e => e.slot != null && e.prog >= EGGS[e.tier].need);
+export function hatchEgg(e) {
+  if (typeof jingle === 'function') jingle(JINGLES.hatch);
+  const T = EGGS[e.tier],
+    R = RULES.eggs,
+    top = e.tier === EGG_TIERS[EGG_TIERS.length - 1];
+  let sp = pickWeighted(T.list),
+    gold = random() < 1 / (top ? R.goldOdds10 : R.goldOdds);
+  if (top && SPECIES[R.mythSpecies] && random() < 1 / R.mythOdds) {
+    sp = R.mythSpecies;
+    gold = false;
+  }
+  const m = makeBilly(sp, T.lv, { gold });
+  saveData.eggs = saveData.eggs.filter(x => x !== e);
+  saveData.hatched = (saveData.hatched || 0) + 1;
+  autoSlot();
+  const where = addBilly(m);
+  save();
+  return { m, where };
+}
+
+/* ---------- Day Jobs ---------- */
+export function assignJob(slot, job, id) {
+  const m = findBilly(id);
+  if (!m || m.job != null) return false;
+  if (saveData.team.includes(m) && saveData.team.filter(x => x.job == null).length <= 1) return false;
+  toBox(m);
+  m.boxedAt = null;
+  m.job = slot;
+  saveData.jobs[slot] = { uid: id, job, acc: 0, pend: 0 };
+  save();
+  return true;
+}
+export function collectJob(slot) {
+  const j = saveData.jobs[slot];
+  if (!j.uid || !j.pend) return null;
+  const J = JOBS[j.job],
+    [kind, key, amt] = J.out,
+    n = j.pend;
+  j.pend = 0;
+  if (kind === 'item') saveData.items[key] += amt * n;
+  else if (kind === 'coin') saveData.coins[key] += amt * n;
+  else saveData.se += amt * n;
+  save();
+  const m = findBilly(j.uid);
+  return `${m ? billyName(m) : 'Your Billie'} ${J.quip} You collected ${kind === 'se' ? '$' + formatNumber(amt * n) : `${amt * n} × ${kind === 'item' ? ITEMS[key].n : COINS[key].n}`}.`;
+}
+export function endShift(slot) {
+  const j = saveData.jobs[slot];
+  const msg = collectJob(slot);
+  const m = findBilly(j.uid);
+  if (m) {
+    m.job = null;
+    m.boxedAt = Date.now();
+  }
+  saveData.jobs[slot] = { uid: null, job: null, acc: 0, pend: 0 };
+  save();
+  return msg;
+}

@@ -1,7 +1,7 @@
 {
  "name": "Leader Rocco",
  "who": "crude",
- "area": "grotto",
+ "battleStage": "grotto",
  "node": 4,
  "blocks": false,
  "team": [

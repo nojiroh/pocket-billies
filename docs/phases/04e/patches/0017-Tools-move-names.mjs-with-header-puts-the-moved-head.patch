@@ -1,0 +1,36 @@
+From 06912f8f2228b0e7e5ff9666b181bae962802847 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Sun, 18 Oct 2026 09:44:01 +0000
+Subject: [PATCH 17/22] Tools: move-names.mjs --with-header puts the moved
+ heading above the new module's own comment
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01LpFSn4GaodAVzjKW5J3oQR
+---
+ tools/move-names.mjs | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/tools/move-names.mjs b/tools/move-names.mjs
+index d01cabd..1b835a9 100644
+--- a/tools/move-names.mjs
++++ b/tools/move-names.mjs
+@@ -6,8 +6,8 @@
+ //
+ // A move cuts each named declaration out of <from>, with the comments above it and any statement right after it that
+ // works on what it declares (STEP_BRACKETS.push(...) after STEP_BRACKETS), and appends them, in their order, to <to>.
+-// A new <to> starts with 'use strict', --header (a comment saying what the module is) and, with --with-header, the
+-// header comments of <from> (they described what moves); it goes on every page that loads <from>, right after
++// A new <to> starts with 'use strict', with --with-header the header comments of <from> (they described what moves),
++// and --header (a comment saying what the module is); it goes on every page that loads <from>, right after
+ // --after <script> or right before <from>. A declaration of several names (const a = 1, b = 2) moves whole: name them
+ // all. Then tools/to-module.mjs remakes the generated parts (imports, exports, hooks.js, debug-log-names.js): the code
+ // that stays imports what moved, the moved code imports what it reads. The tool lists what now runs at load in <to>
+@@ -157,7 +157,7 @@ export async function move(from, to, names, { after, header, withHeader, dry } =
+   }
+   // a new module: a blank line after its header, where tools/to-module.mjs puts the generated part (above the comments
+   // that came with the first moved declaration)
+-  else target = "'use strict';\n" + (header ? `/* ${header} */\n` : '') + head + '\n' + movedText.replace(/^\s*\n/, '');
++  else target = "'use strict';\n" + head + (header ? `/* ${header} */\n` : '') + '\n' + movedText.replace(/^\s*\n/, '');
+   const pages = exists ? [] : pageTagsAdd(from, to, after && normalize(after), true);
+   // what runs at load in the new place, and what stays and uses a moved name
+   const fn = d => d.init && /^(Arrow)?FunctionExpression$/.test(d.init.type);

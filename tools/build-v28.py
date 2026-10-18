@@ -13,7 +13,7 @@ ROOT = Path(__file__).resolve().parent.parent
 DATA = ROOT / 'game' / 'data' / 'gamedata.js'
 PROPS = json.loads((ROOT / 'game' / 'art' / 'scene' / 'props.json').read_text())
 LADDER_M = 110 / 34          # the ladder picture's height in metres at scale 1
-SCENES = {'ridge': 2, 'canyon': 2, 'pass': 2, 'summit': 1, 'volcano': 1, 'thicket': 1}
+SCENES = {'kitewind': 2, 'stepstone_canyon': 2, 'hornpass': 2, 'frostcrown': 1, 'cinderpeak': 1, 'thicket': 1}
 
 
 def grid(sc):
@@ -73,7 +73,7 @@ def main():
     s = gamedata.js_text(); i = s.index('window.GAMEDATA=')
     head, D = s[:i], json.JSONDecoder().raw_decode(s[i + 16:])[0]
     for sid, want in SCENES.items():
-        sc = D['scenes'].get(sid)
+        sc = D['maps'].get(sid)
         if not sc or any(p['k'] == 'ladder' for p in sc.get('props', [])): continue
         L = ladders(sc, want)
         for x, zf, d in L:
@@ -81,12 +81,12 @@ def main():
                                 'to': [round(x, 2), round(zf + .8, 2)], 'h': round(d, 2)})
         print(f'{sid}: {len(L)} ladder(s)', [(round(x, 1), round(zf, 1), round(d, 1)) for x, zf, d in L])
     # your house in Sundown: the house nearest where you arrive
-    sd = D['scenes'].get('sundown')
+    sd = D['maps'].get('marigold')
     if sd and not any(p.get('act') == 'home' for p in sd['props']):
         hub = sd.get('hub', [0, 0]); hs = [p for p in sd['props'] if (PROPS.get(p['k'], {}).get('group') == 'house') and p.get('act') in (None, 'house')]
         if hs:
             p = min(hs, key=lambda p: math.hypot(p['x'] - hub[0], p['z'] - hub[1])); p['act'] = 'home'; p['label'] = 'Your house'; p.pop('say', None)
-            print('sundown: your house at', p['x'], p['z'])
+            print('marigold: your house at', p['x'], p['z'])
     gamedata.save_js(head + 'window.GAMEDATA=' + json.dumps(D, ensure_ascii=False, indent=1) + ';\n')
 
 

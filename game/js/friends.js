@@ -10,40 +10,40 @@
    Each player only ever writes their own users/ document; a friendship is made from the two sides of a request. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { ACC, accOn, closeModal, modal, provide, render, sceneIdAt, toast, walkOff } from './hooks.js';
-import { ROUTE, SP } from './data.js';
-import { N, S, U, cleanName, esc, plural } from './core.js';
-import { owFrames, portraitHTML, trWarm } from './trainer.js';
-import { sprHTML } from './rig.js';
-import { DIO, dioDirOf } from './diorama.js';
-import { dglPerson } from './diorama-gl.js';
-import { owBuddyMon, owItem } from './owmon.js';
-import { MAP, mapSelect } from './map.js';
+import { account, accountOn, closeModal, mapIdAt, mapOffsetInView, modal, provide, render, toast } from './hooks.js';
+import { LOCATIONS, SPECIES } from './game-data.js';
+import { billyName, cleanName, escapeHtml, plural, saveData, uiState } from './game-state.js';
+import { personWalkFrames, portraitHTML, warmPerson } from './person-art.js';
+import { rigCanvasHTML } from './skeleton-rig.js';
+import { directionOf, walkView } from './walk-view.js';
+import { personItem } from './walk-view-gl.js';
+import { buddyBilly, worldBillyItem } from './world-billies.js';
+import { worldMap, worldMapSelect } from './world-map.js';
 /* eslint-disable no-func-assign */
 expose({
-  FR: [() => FR],
-  FR_ABC: [() => FR_ABC],
-  frAdd: [() => frAdd, v => (frAdd = v)],
-  frAgo: [() => frAgo, v => (frAgo = v)],
-  frAnswer: [() => frAnswer, v => (frAnswer = v)],
-  frClean: [() => frClean, v => (frClean = v)],
-  frDb: [() => frDb, v => (frDb = v)],
-  frErr: [() => frErr, v => (frErr = v)],
-  frInit: [() => frInit, v => (frInit = v)],
-  frOn: [() => frOn, v => (frOn = v)],
-  frPublish: [() => frPublish, v => (frPublish = v)],
-  frRefresh: [() => frRefresh, v => (frRefresh = v)],
-  frRemove: [() => frRemove, v => (frRemove = v)],
-  frSync: [() => frSync, v => (frSync = v)],
-  frWatchAll: [() => frWatchAll, v => (frWatchAll = v)],
-  frWatchErr: [() => frWatchErr, v => (frWatchErr = v)],
-  frWorldItems: [() => frWorldItems, v => ((frWorldItems = v), provide({ frWorldItems }))],
+  FRIEND_CODE_ALPHABET: [() => FRIEND_CODE_ALPHABET],
+  addFriend: [() => addFriend, v => (addFriend = v)],
+  answerFriendRequest: [() => answerFriendRequest, v => (answerFriendRequest = v)],
+  cleanFriend: [() => cleanFriend, v => (cleanFriend = v)],
+  friendWatchError: [() => friendWatchError, v => (friendWatchError = v)],
+  friendWorldItems: [() => friendWorldItems, v => ((friendWorldItems = v), provide({ friendWorldItems }))],
+  friends: [() => friends],
+  friendsDb: [() => friendsDb, v => (friendsDb = v)],
+  friendsError: [() => friendsError, v => (friendsError = v)],
   friendsHTML: [() => friendsHTML, v => (friendsHTML = v)],
+  friendsOn: [() => friendsOn, v => (friendsOn = v)],
+  initFriends: [() => initFriends, v => (initFriends = v)],
+  publishToFriends: [() => publishToFriends, v => (publishToFriends = v)],
+  refreshFriends: [() => refreshFriends, v => (refreshFriends = v)],
+  removeFriend: [() => removeFriend, v => (removeFriend = v)],
+  syncFriends: [() => syncFriends, v => (syncFriends = v)],
+  timeAgo: [() => timeAgo, v => (timeAgo = v)],
+  watchFriends: [() => watchFriends, v => (watchFriends = v)],
 });
 /* eslint-enable no-func-assign */
-provide({ frWorldItems });
+provide({ friendWorldItems });
 /* to-module: end */
-const FR = {
+const friends = {
   on: false,
   uid: null,
   me: null,
@@ -58,118 +58,121 @@ const FR = {
   pubSig: '',
   err: '',
 };
-provide({ FR }); /* to-module */
-const FR_ABC = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-function frOn() {
-  return typeof ACC !== 'undefined' && !!ACC.user && !!ACC.db;
+provide({ friends }); /* to-module */
+const FRIEND_CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+function friendsOn() {
+  return typeof account !== 'undefined' && !!account.user && !!account.db;
 }
-function frDb() {
-  return ACC.db;
+function friendsDb() {
+  return account.db;
 }
-export async function frInit() {
-  if (!frOn() || FR.on) return;
-  FR.on = true;
-  FR.uid = ACC.user.uid;
-  const db = frDb(),
-    ref = db.collection('users').doc(FR.uid);
+export async function initFriends() {
+  if (!friendsOn() || friends.on) return;
+  friends.on = true;
+  friends.uid = account.user.uid;
+  const db = friendsDb(),
+    ref = db.collection('users').doc(friends.uid);
   try {
     const s = await ref.get();
-    FR.me = s.exists ? s.data() : {};
-    FR.list = Array.isArray(FR.me.friends) ? FR.me.friends.slice() : [];
-    FR.code = FR.me.code || '';
-    if (!FR.code) {
-      for (let k = 0; k < 6 && !FR.code; k++) {
-        const c = Array.from({ length: 6 }, () => FR_ABC[Math.floor(Math.random() * FR_ABC.length)]).join('');
+    friends.me = s.exists ? s.data() : {};
+    friends.list = Array.isArray(friends.me.friends) ? friends.me.friends.slice() : [];
+    friends.code = friends.me.code || '';
+    if (!friends.code) {
+      for (let k = 0; k < 6 && !friends.code; k++) {
+        const c = Array.from(
+          { length: 6 },
+          () => FRIEND_CODE_ALPHABET[Math.floor(Math.random() * FRIEND_CODE_ALPHABET.length)]
+        ).join('');
         const cr = db.collection('codes').doc(c);
         const ex = await cr.get();
         if (ex.exists) continue;
-        await cr.set({ uid: FR.uid });
-        FR.code = c;
+        await cr.set({ uid: friends.uid });
+        friends.code = c;
       }
-      await ref.set({ code: FR.code }, { merge: true });
+      await ref.set({ code: friends.code }, { merge: true });
     }
-    frPublish(true);
-    frWatchAll();
-    FR.unsub.push(
+    publishToFriends(true);
+    watchFriends();
+    friends.unsub.push(
       db
         .collection('requests')
-        .where('to', '==', FR.uid)
+        .where('to', '==', friends.uid)
         .onSnapshot(q => {
-          FR.inc = q.docs.map(d =>
+          friends.inc = q.docs.map(d =>
             Object.assign({ id: d.id }, d.data(), { fromName: cleanName(d.data().fromName, 40) })
           );
-          frSync();
-        }, frErr)
+          syncFriends();
+        }, friendsError)
     );
-    FR.unsub.push(
+    friends.unsub.push(
       db
         .collection('requests')
-        .where('from', '==', FR.uid)
+        .where('from', '==', friends.uid)
         .onSnapshot(q => {
-          FR.out = q.docs.map(d => Object.assign({ id: d.id }, d.data()));
-          frSync();
-        }, frErr)
+          friends.out = q.docs.map(d => Object.assign({ id: d.id }, d.data()));
+          syncFriends();
+        }, friendsError)
     );
   } catch (e) {
-    frErr(e);
+    friendsError(e);
   }
-  frRefresh();
+  refreshFriends();
 }
-function frErr(e) {
+function friendsError(e) {
   console.warn('friends:', (e && e.message) || e);
-  FR.err =
+  friends.err =
     e && e.code === 'permission-denied'
       ? 'Friends need the updated database rules (see README → Friends).'
       : 'Friends are offline right now.';
-  frRefresh();
+  refreshFriends();
 }
 /* the two sides of each request decide who is a friend */
-function frSync() {
-  let L = new Set(FR.list);
-  for (const r of FR.inc) {
+function syncFriends() {
+  let L = new Set(friends.list);
+  for (const r of friends.inc) {
     if (r.status === 'accepted') L.add(r.from);
     else if (r.status === 'removed') L.delete(r.from);
   }
-  for (const r of FR.out) {
+  for (const r of friends.out) {
     if (r.status === 'accepted') L.add(r.to);
     else if (r.status === 'removed' || r.status === 'declined') L.delete(r.to);
   }
-  const nl = [...L].filter(u => u && u !== FR.uid).slice(0, 50);
-  if (nl.join() !== FR.list.join()) {
-    FR.list = nl;
-    frDb().collection('users').doc(FR.uid).set({ friends: nl }, { merge: true }).catch(frErr);
+  const nl = [...L].filter(u => u && u !== friends.uid).slice(0, 50);
+  if (nl.join() !== friends.list.join()) {
+    friends.list = nl;
+    friendsDb().collection('users').doc(friends.uid).set({ friends: nl }, { merge: true }).catch(friendsError);
   }
-  frWatchAll();
-  frRefresh();
+  watchFriends();
+  refreshFriends();
 }
-function frWatchAll() {
-  const db = frDb();
-  for (const [u, un] of FR.watch)
-    if (!FR.list.includes(u)) {
+function watchFriends() {
+  const db = friendsDb();
+  for (const [u, un] of friends.watch)
+    if (!friends.list.includes(u)) {
       un();
-      FR.watch.delete(u);
-      delete FR.data[u];
+      friends.watch.delete(u);
+      delete friends.data[u];
     }
-  for (const u of FR.list)
-    if (!FR.watch.has(u))
-      FR.watch.set(
+  for (const u of friends.list)
+    if (!friends.watch.has(u))
+      friends.watch.set(
         u,
         db
           .collection('users')
           .doc(u)
           .onSnapshot(
             s => {
-              if (s.exists) FR.data[u] = frClean(s.data());
-              frRefresh();
-              if (typeof MAP !== 'undefined') MAP.dirty = true;
+              if (s.exists) friends.data[u] = cleanFriend(s.data());
+              refreshFriends();
+              if (typeof worldMap !== 'undefined') worldMap.dirty = true;
             },
-            e => frWatchErr(u, e)
+            e => friendWatchError(u, e)
           )
       );
 }
 /* a friend's page is written by their game, or by anyone with their sign-in: take only what is drawn, in the shape
    it is drawn in (the look goes through cleanLook when it is drawn) */
-function frClean(d) {
+function cleanFriend(d) {
   d = d && typeof d === 'object' ? d : {};
   const a = d.at && typeof d.at === 'object' ? d.at : null,
     p = d.partner && typeof d.partner === 'object' ? d.partner : null,
@@ -200,57 +203,57 @@ function frClean(d) {
 }
 /* a friend's page opens to you once their game has put you on their list too (firebase/firestore.rules): until then,
    look again every minute instead of showing an error */
-function frWatchErr(u, e) {
-  FR.watch.delete(u);
-  if (!(e && e.code === 'permission-denied')) return frErr(e);
-  clearTimeout(FR.retryT);
-  FR.retryT = setTimeout(() => {
-    if (FR.on) frWatchAll();
+function friendWatchError(u, e) {
+  friends.watch.delete(u);
+  if (!(e && e.code === 'permission-denied')) return friendsError(e);
+  clearTimeout(friends.retryT);
+  friends.retryT = setTimeout(() => {
+    if (friends.on) watchFriends();
   }, 60000);
 }
 /* what friends see of you: written when it changes, at most every 20 s (where you stand, every 60 s) */
-function frPublish(now) {
-  if (!FR.on || !S.started) return;
+function publishToFriends(now) {
+  if (!friends.on || !saveData.started) return;
   const t = Date.now(),
-    node = S.route && S.route.node,
-    r = ROUTE[node] || {},
-    sid = typeof sceneIdAt === 'function' ? sceneIdAt(node) : null;
+    node = saveData.trip && saveData.trip.node,
+    r = LOCATIONS[node] || {},
+    sid = typeof mapIdAt === 'function' ? mapIdAt(node) : null;
   let x = null,
     z = null;
-  if (U.roam && U.roam.node === node && U.roam.id === sid) {
-    x = +U.roam.x.toFixed(1);
-    z = +U.roam.z.toFixed(1);
+  if (uiState.roam && uiState.roam.node === node && uiState.roam.id === sid) {
+    x = +uiState.roam.x.toFixed(1);
+    z = +uiState.roam.z.toFixed(1);
   }
-  const m = typeof owBuddyMon === 'function' ? owBuddyMon() : S.team && S.team[0],
-    pt = m ? { sp: m.sp, gold: !!m.gold, name: N(m), lvl: m.lvl } : null;
+  const m = typeof buddyBilly === 'function' ? buddyBilly() : saveData.team && saveData.team[0],
+    pt = m ? { sp: m.sp, gold: !!m.gold, name: billyName(m), lvl: m.lvl } : null;
   const doc = {
-    name: (S.avatar && S.avatar.name) || ACC.user.name || 'Trainer',
-    avatar: S.avatar || null,
+    name: (saveData.avatar && saveData.avatar.name) || account.user.name || 'Trainer',
+    avatar: saveData.avatar || null,
     partner: pt,
     at: { node, place: r.name || '', sid, x, z, t },
     v: 1,
   };
   const sig = JSON.stringify([doc.name, node, pt && pt.sp, pt && pt.lvl, pt && pt.name]),
     posSig = x == null ? '' : Math.round(x / 4) + ',' + Math.round(z / 4);
-  if (!now && sig === FR.pubSig && (posSig === FR.posSig || t - FR.pubT < 60000)) return;
-  if (!now && t - FR.pubT < 20000) return;
-  FR.pubSig = sig;
-  FR.posSig = posSig;
-  FR.pubT = t;
-  frDb().collection('users').doc(FR.uid).set(doc, { merge: true }).catch(frErr);
+  if (!now && sig === friends.pubSig && (posSig === friends.posSig || t - friends.pubT < 60000)) return;
+  if (!now && t - friends.pubT < 20000) return;
+  friends.pubSig = sig;
+  friends.posSig = posSig;
+  friends.pubT = t;
+  friendsDb().collection('users').doc(friends.uid).set(doc, { merge: true }).catch(friendsError);
 }
 setInterval(() => {
   try {
-    frPublish(false);
+    publishToFriends(false);
   } catch (e) {}
 }, 5000);
 addEventListener('pagehide', () => {
   try {
-    FR.pubT = 0;
-    frPublish(true);
+    friends.pubT = 0;
+    publishToFriends(true);
   } catch (e) {}
 });
-async function frAdd(code) {
+async function addFriend(code) {
   code = String(code || '')
     .toUpperCase()
     .replace(/[^A-Z0-9]/g, '');
@@ -258,70 +261,70 @@ async function frAdd(code) {
     toast('A friend code has 6 letters and numbers.');
     return;
   }
-  if (code === FR.code) {
+  if (code === friends.code) {
     toast('That’s your own code.');
     return;
   }
   try {
-    const s = await frDb().collection('codes').doc(code).get();
+    const s = await friendsDb().collection('codes').doc(code).get();
     if (!s.exists) {
       toast('No player has that code.');
       return;
     }
     const to = s.data().uid;
-    if (FR.list.includes(to)) {
+    if (friends.list.includes(to)) {
       toast('You’re friends already.');
       return;
     }
-    const back = FR.inc.find(r => r.from === to && r.status === 'pending');
+    const back = friends.inc.find(r => r.from === to && r.status === 'pending');
     if (back) {
-      await frAnswer(back.id, true);
+      await answerFriendRequest(back.id, true);
       return;
     }
-    await frDb()
+    await friendsDb()
       .collection('requests')
-      .doc(FR.uid + '_' + to)
+      .doc(friends.uid + '_' + to)
       .set({
-        from: FR.uid,
+        from: friends.uid,
         to,
-        fromName: (S.avatar && S.avatar.name) || ACC.user.name || 'Trainer',
+        fromName: (saveData.avatar && saveData.avatar.name) || account.user.name || 'Trainer',
         status: 'pending',
         t: Date.now(),
       });
     toast('Friend request sent.');
   } catch (e) {
-    frErr(e);
+    friendsError(e);
   }
 }
-async function frAnswer(id, yes) {
+async function answerFriendRequest(id, yes) {
   try {
-    await frDb()
+    await friendsDb()
       .collection('requests')
       .doc(id)
       .update({ status: yes ? 'accepted' : 'declined', t: Date.now() });
     if (yes) {
-      const r = FR.inc.find(r => r.id === id);
+      const r = friends.inc.find(r => r.id === id);
       toast(`You and ${(r && r.fromName) || 'your new friend'} are friends now.`);
     }
   } catch (e) {
-    frErr(e);
+    friendsError(e);
   }
 }
-async function frRemove(u) {
-  const db = frDb();
-  FR.list = FR.list.filter(x => x !== u);
-  for (const id of [FR.uid + '_' + u, u + '_' + FR.uid]) {
+async function removeFriend(u) {
+  const db = friendsDb();
+  friends.list = friends.list.filter(x => x !== u);
+  for (const id of [friends.uid + '_' + u, u + '_' + friends.uid]) {
     try {
       const s = await db.collection('requests').doc(id).get();
       if (s.exists) await db.collection('requests').doc(id).update({ status: 'removed', t: Date.now() });
     } catch (e) {}
   }
-  db.collection('users').doc(FR.uid).set({ friends: FR.list }, { merge: true }).catch(frErr);
-  frWatchAll();
-  frRefresh();
+  db.collection('users').doc(friends.uid).set({ friends: friends.list }, { merge: true }).catch(friendsError);
+  watchFriends();
+  refreshFriends();
 }
 /* ---------- how long ago ---------- */
-function frAgo(t) {
+function timeAgo(t) {
   if (!t) return '';
   const s = (Date.now() - t) / 1000;
   return s < 90
@@ -334,36 +337,36 @@ function frAgo(t) {
 }
 /* ---------- the Trainer screen ---------- */
 export function friendsHTML() {
-  const head = `<div class="sec-h"><h2>Friends</h2>${FR.code ? `<span class="fr-code">Your code <b class="tnum">${FR.code}</b></span>` : ''}</div>`;
-  if (typeof accOn !== 'function' || !accOn())
+  const head = `<div class="sec-h"><h2>Friends</h2>${friends.code ? `<span class="fr-code">Your code <b class="tnum">${friends.code}</b></span>` : ''}</div>`;
+  if (typeof accountOn !== 'function' || !accountOn())
     return `<section class="tpanel pf-friends">${head}<p class="note">Friends work when you’re signed in, and this copy of the game has no accounts.</p></section>`;
-  if (!frOn())
+  if (!friendsOn())
     return `<section class="tpanel pf-friends">${head}<p class="note">Sign in with Google to add friends: you’ll see where they are, with their partner Billie, on your map and in the world.</p><button class="pb small" data-a="acc-in">Sign in</button></section>`;
-  const inc = FR.inc.filter(r => r.status === 'pending'),
-    wait = FR.out.filter(r => r.status === 'pending');
-  const rows = FR.list
+  const inc = friends.inc.filter(r => r.status === 'pending'),
+    wait = friends.out.filter(r => r.status === 'pending');
+  const rows = friends.list
     .map(u => {
-      const d = FR.data[u] || {},
+      const d = friends.data[u] || {},
         a = d.at || {},
         p = d.partner;
       return `<div class="fr-row">
   <span class="fr-face">${typeof portraitHTML === 'function' ? portraitHTML('friend:' + u, 44) : ''}</span>
-  <span class="fr-t"><b>${esc(d.name || 'Friend')}</b><small>${a.place ? `In ${esc(a.place)} · ${frAgo(a.t)}` : 'Not seen yet'}</small>${p && SP[p.sp] ? `<small class="fr-pt">with ${esc(p.name || SP[p.sp].n)} · Lv ${p.lvl || 1}</small>` : ''}</span>
-  ${p && SP[p.sp] ? `<span class="fr-mon">${sprHTML(p.sp, 48, { gold: p.gold })}</span>` : ''}
-  <span class="fr-acts">${a.node != null && ROUTE[a.node] ? `<button class="pb small" data-a="fr-map" data-n="${a.node}">Map</button>` : ''}<button class="pb small quiet" data-a="fr-rm" data-u="${esc(u)}" aria-label="Remove ${esc(d.name || 'friend')}">✕</button></span></div>`;
+  <span class="fr-t"><b>${escapeHtml(d.name || 'Friend')}</b><small>${a.place ? `In ${escapeHtml(a.place)} · ${timeAgo(a.t)}` : 'Not seen yet'}</small>${p && SPECIES[p.sp] ? `<small class="fr-pt">with ${escapeHtml(p.name || SPECIES[p.sp].n)} · Lv ${p.lvl || 1}</small>` : ''}</span>
+  ${p && SPECIES[p.sp] ? `<span class="fr-mon">${rigCanvasHTML(p.sp, 48, { gold: p.gold })}</span>` : ''}
+  <span class="fr-acts">${a.node != null && LOCATIONS[a.node] ? `<button class="pb small" data-a="fr-map" data-n="${a.node}">Map</button>` : ''}<button class="pb small quiet" data-a="fr-rm" data-u="${escapeHtml(u)}" aria-label="Remove ${escapeHtml(d.name || 'friend')}">✕</button></span></div>`;
     })
     .join('');
   return `<section class="tpanel pf-friends">${head}
-  ${inc.map(r => `<div class="fr-row fr-req"><span class="fr-t"><b>${esc(r.fromName || 'A player')}</b><small>wants to be friends</small></span><span class="fr-acts"><button class="pb small gold" data-a="fr-yes" data-id="${esc(r.id)}">Accept</button><button class="pb small quiet" data-a="fr-no" data-id="${esc(r.id)}">No</button></span></div>`).join('')}
+  ${inc.map(r => `<div class="fr-row fr-req"><span class="fr-t"><b>${escapeHtml(r.fromName || 'A player')}</b><small>wants to be friends</small></span><span class="fr-acts"><button class="pb small gold" data-a="fr-yes" data-id="${escapeHtml(r.id)}">Accept</button><button class="pb small quiet" data-a="fr-no" data-id="${escapeHtml(r.id)}">No</button></span></div>`).join('')}
   ${rows || '<p class="note">No friends yet. Swap codes with someone and add theirs here.</p>'}
   ${wait.length ? `<p class="note">${plural(wait.length, 'request')} waiting for an answer.</p>` : ''}
   <form class="fr-add" data-a="fr-add"><input name="code" maxlength="7" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Friend code" aria-label="Friend code"><button class="pb small gold" type="submit">Add</button></form>
-  ${FR.err ? `<p class="note warn">${esc(FR.err)}</p>` : ''}</section>`;
+  ${friends.err ? `<p class="note warn">${escapeHtml(friends.err)}</p>` : ''}</section>`;
 }
-function frRefresh() {
+function refreshFriends() {
   if (
-    typeof U !== 'undefined' &&
-    U.tab === 'profile' &&
+    typeof uiState !== 'undefined' &&
+    uiState.tab === 'profile' &&
     !document.activeElement?.closest?.('.fr-add') &&
     typeof render === 'function'
   )
@@ -376,78 +379,78 @@ document.addEventListener('submit', ev => {
   const v = f.elements.code.value;
   f.elements.code.value = '';
   f.elements.code.blur();
-  frAdd(v);
+  addFriend(v);
 });
 document.addEventListener('click', ev => {
   const el = ev.target.closest && ev.target.closest('[data-a^="fr-"]');
   if (!el || el.tagName === 'FORM') return;
   const d = el.dataset;
-  if (d.a === 'fr-yes') frAnswer(d.id, true);
-  else if (d.a === 'fr-no') frAnswer(d.id, false);
+  if (d.a === 'fr-yes') answerFriendRequest(d.id, true);
+  else if (d.a === 'fr-no') answerFriendRequest(d.id, false);
   else if (d.a === 'fr-rm') {
-    const nm = (FR.data[d.u] || {}).name || 'this friend';
+    const nm = (friends.data[d.u] || {}).name || 'this friend';
     modal({
       title: 'Remove friend?',
-      html: `<p>Stop seeing ${esc(nm)} on your map? They won’t see you either.</p>`,
+      html: `<p>Stop seeing ${escapeHtml(nm)} on your map? They won’t see you either.</p>`,
       btns: [
         {
           l: 'Remove',
           c: 'quiet',
           f: () => {
             closeModal();
-            frRemove(d.u);
+            removeFriend(d.u);
           },
         },
         { l: 'Keep', c: 'gold', f: closeModal },
       ],
     });
   } else if (d.a === 'fr-map') {
-    U.tab = 'map';
+    uiState.tab = 'map';
     render();
     setTimeout(() => {
-      if (typeof mapSelect === 'function') mapSelect(+d.n);
+      if (typeof worldMapSelect === 'function') worldMapSelect(+d.n);
     }, 300);
   } else if (d.a === 'fr-pin') {
-    const f = FR.data[d.u] || {};
-    toast(`${f.name || 'Your friend'} was in ${(f.at && f.at.place) || '?'} ${frAgo(f.at && f.at.t)}.`);
+    const f = friends.data[d.u] || {};
+    toast(`${f.name || 'Your friend'} was in ${(f.at && f.at.place) || '?'} ${timeAgo(f.at && f.at.t)}.`);
   }
 });
 /* ---------- in the world: friends standing where they were last, with their partner ---------- */
-function frWorldItems(out, t, C0) {
+function friendWorldItems(out, t, C0) {
   if (
-    !FR.list.length ||
-    !DIO.sc ||
-    U.inside ||
-    U.bench ||
-    typeof owFrames !== 'function' ||
-    typeof walkOff !== 'function'
+    !friends.list.length ||
+    !walkView.sc ||
+    uiState.inside ||
+    uiState.bench ||
+    typeof personWalkFrames !== 'function' ||
+    typeof mapOffsetInView !== 'function'
   )
     return;
-  for (const u of FR.list) {
-    const d = FR.data[u];
+  for (const u of friends.list) {
+    const d = friends.data[u];
     if (!d || !d.at || d.at.x == null || !d.at.sid) continue;
-    const o = walkOff(d.at.sid);
+    const o = mapOffsetInView(d.at.sid);
     if (!o) continue;
     const x = d.at.x + o[0],
       z = d.at.z + o[1],
       who = 'friend:' + u;
     let fr;
     try {
-      fr = owFrames(who);
+      fr = personWalkFrames(who);
     } catch (e) {
       fr = null;
     }
     if (!fr) continue;
-    if (typeof trWarm === 'function') trWarm(who);
-    const P = DIO.pl,
-      dir = P && Math.hypot(P.x - x, P.z - z) < 5 ? dioDirOf(P.x - x, P.z - z) : 'down',
+    if (typeof warmPerson === 'function') warmPerson(who);
+    const P = walkView.pl,
+      dir = P && Math.hypot(P.x - x, P.z - z) < 5 ? directionOf(P.x - x, P.z - z) : 'down',
       set = fr[dir] || fr.down,
       im = set && set[0];
-    if (im) out.push(dglPerson('friend', im, x, z, C0, { fr: u }));
+    if (im) out.push(personItem('friend', im, x, z, C0, { fr: u }));
     const p = d.partner;
-    if (p && SP[p.sp] && typeof owItem === 'function') {
+    if (p && SPECIES[p.sp] && typeof worldBillyItem === 'function') {
       const seed = u.length * 13 + 7,
-        it = owItem('fpet', p.sp, !!p.gold, 'front', null, t + seed * 91, seed, x + 0.9, z + 0.2, {
+        it = worldBillyItem('fpet', p.sp, !!p.gold, 'front', null, t + seed * 91, seed, x + 0.9, z + 0.2, {
           flip: P && P.x > x ? -1 : 1,
         });
       if (it) out.push(it);

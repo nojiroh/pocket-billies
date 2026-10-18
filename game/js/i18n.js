@@ -9,14 +9,14 @@ import { expose } from './test-globals.js';
 /* eslint-disable no-func-assign */
 expose({
   I18N: [() => I18N],
-  I18N_ATTR: [() => I18N_ATTR],
-  I18N_LANG: [() => I18N_LANG, v => (I18N_LANG = v)],
+  I18N_ATTRIBUTES: [() => I18N_ATTRIBUTES],
   I18N_LANGS: [() => I18N_LANGS],
-  I18N_OBS: [() => I18N_OBS, v => (I18N_OBS = v)],
-  I18N_ORIG: [() => I18N_ORIG],
-  I18N_ROWS: [() => I18N_ROWS],
-  i18nAttr: [() => i18nAttr, v => (i18nAttr = v)],
+  I18N_ORIGINALS: [() => I18N_ORIGINALS],
+  I18N_TABLE_TEXT: [() => I18N_TABLE_TEXT],
+  i18nAttribute: [() => i18nAttribute, v => (i18nAttribute = v)],
+  i18nLanguage: [() => i18nLanguage, v => (i18nLanguage = v)],
   i18nNode: [() => i18nNode, v => (i18nNode = v)],
+  i18nObserver: [() => i18nObserver, v => (i18nObserver = v)],
   i18nSet: [() => i18nSet, v => (i18nSet = v)],
 });
 /* eslint-enable no-func-assign */
@@ -29,7 +29,7 @@ export const I18N_LANGS = [
   ['fr', 'Français'],
 ];
 /* English | Nederlands | Deutsch | Español | Français */
-const I18N_ROWS = `
+const I18N_TABLE_TEXT = `
 Walk|Lopen|Gehen|Caminar|Marcher
 Map|Kaart|Karte|Mapa|Carte
 Team|Team|Team|Equipo|Équipe
@@ -196,7 +196,7 @@ const I18N = (() => {
   I18N_LANGS.forEach(([c], i) => {
     if (i) M[c] = new Map();
   });
-  for (const line of I18N_ROWS.trim().split('\n')) {
+  for (const line of I18N_TABLE_TEXT.trim().split('\n')) {
     const p = line.split('|');
     if (p.length < I18N_LANGS.length) continue;
     I18N_LANGS.forEach(([c], i) => {
@@ -205,38 +205,38 @@ const I18N = (() => {
   }
   return M;
 })();
-let I18N_LANG = 'en',
-  I18N_OBS = null;
-const I18N_ORIG = new WeakMap(),
-  I18N_ATTR = ['aria-label', 'title', 'placeholder'];
+let i18nLanguage = 'en',
+  i18nObserver = null;
+const I18N_ORIGINALS = new WeakMap(),
+  I18N_ATTRIBUTES = ['aria-label', 'title', 'placeholder'];
 /* translate (or restore) one text node / element's attributes */
 function i18nNode(n) {
   if (n.nodeType === 3) {
-    let O = I18N_ORIG.get(n);
+    let O = I18N_ORIGINALS.get(n);
     if (O && n.nodeValue !== O.out) {
-      I18N_ORIG.delete(n);
+      I18N_ORIGINALS.delete(n);
       O = null;
     }
     /* the game changed it since */ const raw = O ? O.raw : n.nodeValue,
       t = raw.trim();
     if (!t || t.length > 80) return;
-    const tr = I18N_LANG === 'en' ? null : I18N[I18N_LANG] && I18N[I18N_LANG].get(t);
+    const tr = i18nLanguage === 'en' ? null : I18N[i18nLanguage] && I18N[i18nLanguage].get(t);
     if (tr) {
       const v = raw.replace(t, tr);
-      I18N_ORIG.set(n, { raw, out: v });
+      I18N_ORIGINALS.set(n, { raw, out: v });
       if (n.nodeValue !== v) n.nodeValue = v;
     } else if (O) {
       n.nodeValue = O.raw;
-      I18N_ORIG.delete(n);
+      I18N_ORIGINALS.delete(n);
     }
     return;
   }
   if (n.nodeType !== 1 || n.closest('canvas,script,style,[data-noi18n]')) return;
-  for (const a of I18N_ATTR) {
+  for (const a of I18N_ATTRIBUTES) {
     if (!n.hasAttribute(a)) continue;
     const key = 'data-en-' + a,
       raw = n.getAttribute(key) ?? n.getAttribute(a),
-      tr = I18N_LANG === 'en' ? null : I18N[I18N_LANG] && I18N[I18N_LANG].get(raw.trim());
+      tr = i18nLanguage === 'en' ? null : I18N[i18nLanguage] && I18N[i18nLanguage].get(raw.trim());
     if (tr) {
       if (!n.hasAttribute(key)) n.setAttribute(key, raw);
       n.setAttribute(a, tr);
@@ -251,16 +251,16 @@ function i18nNode(n) {
     if (c.nodeType === 3) {
       if (c.parentElement && !c.parentElement.closest('script,style,[data-noi18n]')) i18nNode(c);
     } else
-      for (const a of I18N_ATTR)
+      for (const a of I18N_ATTRIBUTES)
         if (c.hasAttribute && c.hasAttribute(a)) {
-          i18nAttr(c, a);
+          i18nAttribute(c, a);
         }
   }
 }
-function i18nAttr(el, a) {
+function i18nAttribute(el, a) {
   const key = 'data-en-' + a,
     raw = el.getAttribute(key) ?? el.getAttribute(a),
-    tr = I18N_LANG === 'en' ? null : I18N[I18N_LANG] && I18N[I18N_LANG].get(raw.trim());
+    tr = i18nLanguage === 'en' ? null : I18N[i18nLanguage] && I18N[i18nLanguage].get(raw.trim());
   if (tr) {
     if (!el.hasAttribute(key)) el.setAttribute(key, raw);
     if (el.getAttribute(a) !== tr) el.setAttribute(a, tr);
@@ -271,18 +271,18 @@ function i18nAttr(el, a) {
 }
 export function i18nSet(lang) {
   lang = I18N_LANGS.some(l => l[0] === lang) ? lang : 'en';
-  if (lang === I18N_LANG && I18N_OBS) return;
-  I18N_LANG = lang;
+  if (lang === i18nLanguage && i18nObserver) return;
+  i18nLanguage = lang;
   document.documentElement.lang = lang;
-  if (!I18N_OBS && lang !== 'en') {
-    I18N_OBS = new MutationObserver(ms => {
-      if (I18N_LANG === 'en') return;
+  if (!i18nObserver && lang !== 'en') {
+    i18nObserver = new MutationObserver(ms => {
+      if (i18nLanguage === 'en') return;
       for (const m of ms) {
         if (m.type === 'characterData') i18nNode(m.target);
         else for (const n of m.addedNodes) i18nNode(n);
       }
     });
-    I18N_OBS.observe(document.body, { childList: true, subtree: true, characterData: true });
+    i18nObserver.observe(document.body, { childList: true, subtree: true, characterData: true });
   }
   i18nNode(document.body);
 }

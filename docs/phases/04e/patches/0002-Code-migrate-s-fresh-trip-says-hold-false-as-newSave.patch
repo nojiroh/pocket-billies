@@ -1,0 +1,25 @@
+From d447498c7ec3898cca75d06a051f67bc985ae02d Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Sun, 18 Oct 2026 09:43:57 +0000
+Subject: [PATCH 02/22] Code: migrate()'s fresh trip says hold: false, as
+ newSave's does
+
+A save without a usable trip gets a new one; it had no hold key until the next line set it (s.trip.hold =
+!!s.trip.hold, false either way). Same result; the save's type (next commits) requires the key.
+---
+ game/js/game-state.js | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/game/js/game-state.js b/game/js/game-state.js
+index 4726ba1..ca7bd35 100644
+--- a/game/js/game-state.js
++++ b/game/js/game-state.js
+@@ -283,7 +283,7 @@ export function migrate(o) {
+   s.jobs.forEach(j => {
+     if (j.job && !JOBS[j.job]) j.job = Object.keys(JOBS)[0] || null;
+   });
+-  if (!s.trip || !LOCATIONS[s.trip.node]) s.trip = { node: START_NODE, prog: 0, plan: [] };
++  if (!s.trip || !LOCATIONS[s.trip.node]) s.trip = { node: START_NODE, prog: 0, plan: [], hold: false };
+   s.trip.plan = (Array.isArray(s.trip.plan) ? s.trip.plan : []).filter(x => LOCATIONS[x]);
+   if (s.trip.plan.length && !roadCost(s.trip.node, s.trip.plan[0])) {
+     s.trip.plan = [];

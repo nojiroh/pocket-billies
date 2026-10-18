@@ -1,7 +1,7 @@
 {
  "name": "Leaf Peeper Lou",
  "who": "hiker",
- "area": "shell",
+ "battleStage": "shell",
  "node": 29,
  "blocks": false,
  "team": [

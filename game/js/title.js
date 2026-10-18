@@ -6,48 +6,66 @@
    Without the 3D scene the title stands on the painted landscape instead. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { NW_TEST, accChipHTML, closeModal, modal, postProcess, render, sceneIdAt, settings } from './hooks.js';
+import {
+  TEST_RUN,
+  accountChipHTML,
+  closeModal,
+  mapIdAt,
+  modal,
+  openSettings,
+  render,
+  showPendingWindows,
+} from './hooks.js';
 import { $, clamp } from './util.js';
-import { ROUTE, START_NODE } from './data.js';
-import { RM, S, U, esc, flush, freshKeep, lsSet, setS } from './core.js';
-import { userFps } from './frame.js';
-import { uiIco } from './art.js';
-import { humanHTML } from './trainer.js';
-import { applyPreferences } from './profile.js';
-import { DIO, dioScene, dioStop } from './diorama.js';
-import { DGL, dioH, dioMount } from './diorama-gl.js';
+import { LOCATIONS, START_NODE } from './game-data.js';
+import {
+  escapeHtml,
+  flushSave,
+  newSaveKeepingPreferences,
+  reducedMotion,
+  saveData,
+  setSaveData,
+  uiState,
+  writeStoredSave,
+} from './game-state.js';
+import { userFps } from './frame-scheduler.js';
+import { uiIconHTML } from './art.js';
+import { personHTML } from './person-art.js';
+import { applyPreferences } from './settings-screen.js';
+import { mapById, stopWalkView, walkView } from './walk-view.js';
+import { mountWalkView, standingHeightAt, walkRenderer } from './walk-view-gl.js';
 import { music, musicFor } from './sound.js';
-import { csSceneId, csStart, csStartName, csWanted } from './cutscene.js';
+import { cutsceneMapId, cutsceneStart, cutsceneStartName, cutsceneWanted } from './cutscene.js';
 /* eslint-disable no-func-assign */
 expose({
-  TITLE: [() => TITLE],
   renderTitle: [() => renderTitle, v => (renderTitle = v)],
   titleEnd: [() => titleEnd, v => (titleEnd = v)],
   titleFrame: [() => titleFrame, v => (titleFrame = v)],
   titleMount: [() => titleMount, v => (titleMount = v)],
   titleNew: [() => titleNew, v => (titleNew = v)],
   titlePlayTime: [() => titlePlayTime, v => (titlePlayTime = v)],
+  titleScreen: [() => titleScreen],
   titleStart: [() => titleStart, v => (titleStart = v)],
   titleWanted: [() => titleWanted, v => (titleWanted = v)],
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
-export const TITLE = { on: false, t0: 0, run: 0, mounted: false };
+export const titleScreen = { on: false, t0: 0, run: 0, mounted: false };
 export function titleWanted() {
-  return !(typeof NW_TEST !== 'undefined' && NW_TEST) && !(S.preferences && S.preferences.skipTitle);
+  return !(typeof TEST_RUN !== 'undefined' && TEST_RUN) && !(saveData.preferences && saveData.preferences.skipTitle);
 }
 /* the camera: a slow drift along the front of the town, high above the rooftops, looking up the main street */
 function titleFrame() {
-  if (!TITLE.on || !DIO.sc) return null;
-  const sc = DIO.sc,
+  if (!titleScreen.on || !walkView.sc) return null;
+  const sc = walkView.sc,
     now = performance.now(),
-    k = RM ? 0.5 : 0.5 - 0.5 * Math.cos(((now - TITLE.t0) / 1000) * 0.05),
+    k = reducedMotion ? 0.5 : 0.5 - 0.5 * Math.cos(((now - titleScreen.t0) / 1000) * 0.05),
     /* (in the walk view the town is one part of a bigger picture: frame the town itself) */ b = sc.baseId
-      ? dioScene(sc.baseId) || sc
+      ? mapById(sc.baseId) || sc
       : sc,
     o = sc.baseOff || [0, 0],
     x = o[0] + b.w * (0.28 + 0.44 * k),
-    gy = dioH(clamp(x, o[0] + 1, o[0] + b.w - 1), clamp(o[1] + b.h * 0.3, o[1] + 1, o[1] + b.h - 1)),
+    gy = standingHeightAt(clamp(x, o[0] + 1, o[0] + b.w - 1), clamp(o[1] + b.h * 0.3, o[1] + 1, o[1] + b.h - 1)),
     eye = [x, gy + 17, o[1] - 4],
     tgt = [x + 5, gy + 1.2, o[1] + b.h * 0.36],
     fd = Math.hypot(tgt[0] - eye[0], tgt[1] - eye[1], tgt[2] - eye[2]);
@@ -64,7 +82,7 @@ function titleFrame() {
   };
 }
 function titlePlayTime() {
-  const m = Math.floor((S.playMs || 0) / 60000);
+  const m = Math.floor((saveData.playMs || 0) / 60000);
   return m < 1
     ? 'just started'
     : m < 60
@@ -72,26 +90,26 @@ function titlePlayTime() {
       : `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, '0')} min`;
 }
 export function renderTitle() {
-  const cont = S.started && S.avatar,
-    place = cont && ROUTE[S.route.node] ? ROUTE[S.route.node].name : '',
-    nm = cont ? S.avatar.name || 'Trainer' : '';
+  const cont = saveData.started && saveData.avatar,
+    place = cont && LOCATIONS[saveData.trip.node] ? LOCATIONS[saveData.trip.node].name : '',
+    nm = cont ? saveData.avatar.name || 'Trainer' : '';
   return `<div class="ttl${cont ? ' can-tap' : ''}" data-a="${cont ? 'ttltap' : ''}"><div class="ttl-bg" aria-hidden="true"></div>
-  <div class="ttl-acc">${typeof accChipHTML === 'function' ? accChipHTML() : ''}</div><div class="ttl-top"><h1 class="ttl-logo" aria-label="Pocket Billies"><span>POCKET</span><span>BILLIES</span></h1><p class="ttl-tag">Gotta tax 'em all!</p></div><p class="ttl-ver">${esc(PB_VERSION)}</p>
+  <div class="ttl-acc">${typeof accountChipHTML === 'function' ? accountChipHTML() : ''}</div><div class="ttl-top"><h1 class="ttl-logo" aria-label="Pocket Billies"><span>POCKET</span><span>BILLIES</span></h1><p class="ttl-tag">Gotta tax 'em all!</p></div><p class="ttl-ver">${escapeHtml(PB_VERSION)}</p>
   <div class="ttl-bottom">
-   ${cont ? `<button class="ttl-cont" data-a="ttlgo"><span class="ttl-face">${humanHTML('me', 56)}</span><span class="ttl-ct"><b>Continue</b><small>${esc(nm)} · ${esc(place)}</small><small>${titlePlayTime()} played</small></span></button>` : ''}
-   <div class="ttl-btns">${cont ? `<button class="pb quiet" data-a="ttlnew">New game</button>` : `<button class="pb gold big wide" data-a="intro">New game</button>`}<button class="pb quiet" data-a="ttlset">${uiIco('gear', 14)} Settings</button></div>
+   ${cont ? `<button class="ttl-cont" data-a="ttlgo"><span class="ttl-face">${personHTML('me', 56)}</span><span class="ttl-ct"><b>Continue</b><small>${escapeHtml(nm)} · ${escapeHtml(place)}</small><small>${titlePlayTime()} played</small></span></button>` : ''}
+   <div class="ttl-btns">${cont ? `<button class="pb quiet" data-a="ttlnew">New game</button>` : `<button class="pb gold big wide" data-a="intro">New game</button>`}<button class="pb quiet" data-a="ttlset">${uiIconHTML('gear', 14)} Settings</button></div>
    ${cont ? '<p class="ttl-hint">Tap anywhere to continue</p>' : ''}</div></div>`;
 }
 /* the scene behind the title: Sundown, drawn by the walk renderer with the title camera */
 export async function titleMount() {
-  if (TITLE.mounted || !TITLE.on) return;
-  TITLE.mounted = true;
+  if (titleScreen.mounted || !titleScreen.on) return;
+  titleScreen.mounted = true;
   if (typeof music === 'function') music('title');
-  if (typeof csWanted === 'function' && !csWanted()) {
+  if (typeof cutsceneWanted === 'function' && !cutsceneWanted()) {
     document.body.classList.add('ttl-flat');
     return;
   }
-  const run = ++TITLE.run;
+  const run = ++titleScreen.run;
   let cv = $('#dio');
   if (!cv) {
     cv = document.createElement('canvas');
@@ -101,12 +119,12 @@ export async function titleMount() {
   cv.hidden = false;
   cv.setAttribute(
     'aria-label',
-    (typeof csStartName === 'function' ? csStartName() : 'The town') + ', from above the rooftops'
+    (typeof cutsceneStartName === 'function' ? cutsceneStartName() : 'The town') + ', from above the rooftops'
   );
-  TITLE.t0 = performance.now();
-  DIO.director = { frame: titleFrame };
+  titleScreen.t0 = performance.now();
+  walkView.director = { frame: titleFrame };
   try {
-    await dioMount(cv, typeof csSceneId === 'function' ? csSceneId() : sceneIdAt(START_NODE), {
+    await mountWalkView(cv, typeof cutsceneMapId === 'function' ? cutsceneMapId() : mapIdAt(START_NODE), {
       state: () => ({ who: null, npcs: [], enc: [], mode: 'line' }),
       keys: () => false,
       active: () => false,
@@ -116,17 +134,17 @@ export async function titleMount() {
   } catch (e) {
     console.error(e);
   }
-  if (!TITLE.on || run !== TITLE.run) return;
-  if (!DGL.on || !DIO.ready) {
+  if (!titleScreen.on || run !== titleScreen.run) return;
+  if (!walkRenderer.on || !walkView.ready) {
     document.body.classList.add('ttl-flat');
     return;
   }
-  DIO.cv.classList.add('in');
+  walkView.cv.classList.add('in');
   /* the painted landscape stays in front until the town's ground is laid and drawn, then fades away */
   const t0 = performance.now(),
     poll = () => {
-      if (!TITLE.on || run !== TITLE.run) return;
-      if ((DGL.gtex && DGL.frames > 3) || performance.now() - t0 > 20000) {
+      if (!titleScreen.on || run !== titleScreen.run) return;
+      if ((walkRenderer.gtex && walkRenderer.frames > 3) || performance.now() - t0 > 20000) {
         document.body.classList.add('ttl-live');
         return;
       }
@@ -135,31 +153,31 @@ export async function titleMount() {
   poll();
 }
 export function titleStart() {
-  if (TITLE.on) return;
-  TITLE.on = true;
-  TITLE.mounted = false;
-  U.title = true;
+  if (titleScreen.on) return;
+  titleScreen.on = true;
+  titleScreen.mounted = false;
+  uiState.title = true;
   document.body.classList.add('in-title');
 }
 function titleEnd() {
-  if (!TITLE.on) return;
-  TITLE.on = false;
-  TITLE.run++;
-  U.title = false;
+  if (!titleScreen.on) return;
+  titleScreen.on = false;
+  titleScreen.run++;
+  uiState.title = false;
   document.body.classList.remove('in-title', 'ttl-live', 'ttl-flat');
-  if (DIO.director && DIO.director.frame === titleFrame) {
-    DIO.director = null;
-    DGL.camT = null;
-    DGL.focus = null;
+  if (walkView.director && walkView.director.frame === titleFrame) {
+    walkView.director = null;
+    walkRenderer.camT = null;
+    walkRenderer.focus = null;
   }
-  if (DIO.cv) dioStop();
+  if (walkView.cv) stopWalkView();
 }
 function titleNew() {
-  if (!S.started) {
+  if (!saveData.started) {
     titleEnd();
-    if (typeof csWanted === 'function' && csWanted()) csStart();
+    if (typeof cutsceneWanted === 'function' && cutsceneWanted()) cutsceneStart();
     else {
-      U.intro = 1;
+      uiState.intro = 1;
       render();
     }
     return;
@@ -172,21 +190,21 @@ function titleNew() {
         l: 'Start a new game',
         c: 'red',
         f: () => {
-          setS(freshKeep());
-          S.savedAt = Date.now();
-          lsSet(S);
-          flush();
-          U.intro = 0;
-          U.pg = null;
-          U.avatarDraft = null;
-          U.trainerDraft = null;
-          U.tab = 'walk';
+          setSaveData(newSaveKeepingPreferences());
+          saveData.savedAt = Date.now();
+          writeStoredSave(saveData);
+          flushSave();
+          uiState.intro = 0;
+          uiState.pg = null;
+          uiState.avatarDraft = null;
+          uiState.trainerDraft = null;
+          uiState.tab = 'walk';
           applyPreferences();
           closeModal();
           titleEnd();
-          if (typeof csWanted === 'function' && csWanted()) csStart();
+          if (typeof cutsceneWanted === 'function' && cutsceneWanted()) cutsceneStart();
           else {
-            U.intro = 1;
+            uiState.intro = 1;
             render();
           }
         },
@@ -197,12 +215,13 @@ function titleNew() {
 }
 /* play time: counted while the game is open and in view */
 setInterval(() => {
-  if (typeof S !== 'undefined' && S && S.started && !document.hidden && !U.title) S.playMs = (S.playMs || 0) + 15000;
+  if (typeof saveData !== 'undefined' && saveData && saveData.started && !document.hidden && !uiState.title)
+    saveData.playMs = (saveData.playMs || 0) + 15000;
 }, 15000);
 document.addEventListener(
   'click',
   ev => {
-    if (!TITLE.on) return;
+    if (!titleScreen.on) return;
     const el = ev.target.closest('[data-a]'),
       a = el && el.dataset.a;
     if (!a) return;
@@ -215,7 +234,7 @@ document.addEventListener(
       titleEnd();
       if (typeof music === 'function' && typeof musicFor === 'function') music(musicFor());
       render();
-      if (typeof postProcess === 'function') setTimeout(postProcess, 400);
+      if (typeof showPendingWindows === 'function') setTimeout(showPendingWindows, 400);
       return;
     }
     if (a === 'ttlnew') {
@@ -225,15 +244,15 @@ document.addEventListener(
     }
     if (a === 'ttlset') {
       ev.stopPropagation();
-      settings();
+      openSettings();
       return;
     }
   },
   true
 );
 document.addEventListener('keydown', ev => {
-  if (!TITLE.on || U.modal) return;
-  if ((ev.key === 'Enter' || ev.key === ' ') && S.started) {
+  if (!titleScreen.on || uiState.modal) return;
+  if ((ev.key === 'Enter' || ev.key === ' ') && saveData.started) {
     ev.preventDefault();
     titleEnd();
     render();

@@ -235,7 +235,7 @@ def gates(stage):
         parts['leaf'] = part(lf, (lf.w - 2, lf.h // 2), hx + 6, hy + hh + 2, 'head', 10, 10)
     return parts, S_, base
 
-# piece name -> animation role (anim.js), where the name itself isn't a role
+# piece name -> animation role (body-plan-animation.js), where the name itself isn't a role
 ROLES = {'quad': {'torso': 'body'}, 'biped': {}, '*': {'spark': 'tail', 'plume0': 'mane', 'plume1': 'mane', 'cloud': 'hover', 'dust': 'hover', 'bird0': 'hover', 'bird1': 'hover', 'jet': 'tail', 'neck': 'head'}}
 SPECIES = [('musk', ['emberox', 'boostox', 'marsox', 'memeox'], musk, 'quad'), ('bezos', ['cartotter', 'primotter', 'orbitotter', 'everyotter'], bezos, 'biped'), ('gates', ['kidling', 'billgoat', 'windowgoat', 'harvestgoat'], gates, 'quad')]
 
@@ -281,7 +281,7 @@ def build(sid, parts, canvas, base, plan):
             p = parts[n]; e['px'], e['py'], e['pivot'], e['par'] = p['px'], p['py'], list(p['pivot']), p['par']
             if g == 'back': e['px'] = canvas - p['px'] - r[2]; e['pivot'] = [r[2] - 1 - p['pivot'][0], p['pivot'][1]]
         lay['pieces'].append(e)
-    # rig meta (rig.js format, k = 1): bones hang from their parent by the pivot difference at rest
+    # rig meta (skeleton-rig.js format, k = 1): bones hang from their parent by the pivot difference at rest
     def meta_for(group):
         imgs = []; bones = []; idx = {}
         names = [n for n in parts if group == 'front' or n in back_names]

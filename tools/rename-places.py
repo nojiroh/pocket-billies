@@ -21,39 +21,39 @@ ARGS = sys.argv[1:]
 
 # id: (new name, route label or None for a town or city, takes "the" in running text)
 NEW = {
-    'sundown': ('Marigold Town', None, 0), 'longgrass': ('Tallgrass Meadow', 'Route 2', 0), 'golf': ('Old Fairway', 'Route 3', 1),
-    'thicket': ('Thornberry Wood', 'Route 4', 0), 'grotto': ('Fizzwell Town', None, 0), 'canyon': ('Stepstone Canyon', 'Route 5', 0),
-    'scrapyard': ('Rustgear Yard', 'Route 6', 0), 'foodcourt': ('Pepperpot Town', None, 0), 'mall': ('Lanternhall City', None, 0),
-    'pond': ('Willowmere', 'Route 7', 0), 'farm': ('Clovercrest Town', None, 0), 'ridge': ('Kitewind Ridge', 'Route 8', 0),
-    'city': ('Verdigris City', None, 0), 'offshore': ('Driftwreck Bay', 'Route 9', 0), 'taxhaven': ('Palmhaven Town', None, 0),
-    'volcano': ('Mt. Cinderpeak', 'Route 10', 0), 'pass': ('Hornpass', 'Route 11', 0), 'summit': ('Frostcrown Town', None, 0),
-    'lake': ('Mirrormere Lake', 'Route 12', 0), 'festival': ('Fanfare Fields', 'Route 13', 0), 'twofold': ('Twinpetal Town', None, 0),
-    'blossom': ('Petalfall Vale', 'Route 14', 0), 'margins': ('Rootwater Marsh', 'Route 15', 0), 'vintage': ('Grapevine Hills', 'Route 16', 0),
-    'bullion': ('Goldvine Town', None, 0), 'flattax': ('Saltpan Flats', 'Route 17', 0), 'badlands': ('Grizzle Badlands', 'Route 18', 1),
-    'sporewood': ('Puffcap Woods', 'Route 19', 0), 'marketcap': ('Capshade Town', None, 0), 'fallquarter': ('Russetwood', 'Route 20', 0),
-    'hypergrowth': ('Tanglewild Jungle', 'Route 21', 0), 'spread': ('Prism Chasm', 'Route 22', 0), 'mintshaft': ('Glimmershaft Town', None, 0),
-    'darkpool': ('Gloomwater Pool', 'Route 23', 0), 'frozen': ('Rimefrost Caves', 'Route 24', 1), 'shoals': ('Conchshell Shoals', 'Route 25', 0),
-    'portfolio': ('Kelpport City', None, 0), 'bottomline': ('Abyssal Trench', 'Route 26', 1), 'pressing': ('Vinyl Works', 'Route 27', 0),
-    'serverfarm': ('Circuit Terraces', 'Route 28', 0), 'upside': ('Nimbus City', None, 0), 'bubbleland': ('Fizzpop Fair', 'Route 29', 0),
-    'bracket': ('Skygarden Walk', 'Route 30', 0), 'ath': ('Zenith Steps', 'Route 31', 0), 'closingbell': ('Bellwether Rise', 'Route 32', 0),
+    'marigold': ('Marigold Town', None, 0), 'tallgrass_meadow': ('Tallgrass Meadow', 'Route 2', 0), 'old_fairway': ('Old Fairway', 'Route 3', 1),
+    'thicket': ('Thornberry Wood', 'Route 4', 0), 'fizzwell': ('Fizzwell Town', None, 0), 'stepstone_canyon': ('Stepstone Canyon', 'Route 5', 0),
+    'rustgear': ('Rustgear Yard', 'Route 6', 0), 'pepperpot': ('Pepperpot Town', None, 0), 'lanternhall': ('Lanternhall City', None, 0),
+    'willowmere': ('Willowmere', 'Route 7', 0), 'clovercrest': ('Clovercrest Town', None, 0), 'kitewind': ('Kitewind Ridge', 'Route 8', 0),
+    'verdigris': ('Verdigris City', None, 0), 'driftwreck': ('Driftwreck Bay', 'Route 9', 0), 'palmhaven': ('Palmhaven Town', None, 0),
+    'cinderpeak': ('Mt. Cinderpeak', 'Route 10', 0), 'hornpass': ('Hornpass', 'Route 11', 0), 'frostcrown': ('Frostcrown Town', None, 0),
+    'mirrormere': ('Mirrormere Lake', 'Route 12', 0), 'fanfare_fields': ('Fanfare Fields', 'Route 13', 0), 'twinpetal': ('Twinpetal Town', None, 0),
+    'petalfall': ('Petalfall Vale', 'Route 14', 0), 'rootwater': ('Rootwater Marsh', 'Route 15', 0), 'grapevine_hills': ('Grapevine Hills', 'Route 16', 0),
+    'goldvine': ('Goldvine Town', None, 0), 'saltpan_flats': ('Saltpan Flats', 'Route 17', 0), 'badlands': ('Grizzle Badlands', 'Route 18', 1),
+    'puffcap': ('Puffcap Woods', 'Route 19', 0), 'capshade': ('Capshade Town', None, 0), 'russetwood': ('Russetwood', 'Route 20', 0),
+    'tanglewild': ('Tanglewild Jungle', 'Route 21', 0), 'prism_chasm': ('Prism Chasm', 'Route 22', 0), 'glimmershaft': ('Glimmershaft Town', None, 0),
+    'gloomwater': ('Gloomwater Pool', 'Route 23', 0), 'rimefrost': ('Rimefrost Caves', 'Route 24', 1), 'conchshell': ('Conchshell Shoals', 'Route 25', 0),
+    'kelpport': ('Kelpport City', None, 0), 'abyssal_trench': ('Abyssal Trench', 'Route 26', 1), 'vinyl_works': ('Vinyl Works', 'Route 27', 0),
+    'circuit_terraces': ('Circuit Terraces', 'Route 28', 0), 'nimbus': ('Nimbus City', None, 0), 'fizzpop': ('Fizzpop Fair', 'Route 29', 0),
+    'skygarden': ('Skygarden Walk', 'Route 30', 0), 'zenith_steps': ('Zenith Steps', 'Route 31', 0), 'bellwether_rise': ('Bellwether Rise', 'Route 32', 0),
     'innersun': ('The Inner Sun', None, 0),
 }
 # the old names as they show in texts (longest first), with "the" before them absorbed (the new name brings its own)
 OLD = {
-    'sundown': ['Sundown'], 'longgrass': ['Long Grass'], 'golf': ['Overgrown Golf Course'], 'thicket': ['Bramble Thicket'],
-    'grotto': ['Bubbling Grotto'], 'canyon': ['Stairstep Canyon'], 'scrapyard': ['Scrap Yard'], 'foodcourt': ['Food Court'],
-    'mall': ['Mall of the Deep'], 'pond': ['Willow Pond'], 'farm': ['Hillside Farm'], 'ridge': ['Lookout Ridge'],
-    'city': ['Capital Gains'], 'offshore': ['Offshore'], 'taxhaven': ['Tax Haven'], 'volcano': ['Mount Margin Call'],
-    'pass': ['Bull Run Pass'], 'summit': ['Summit Capital'], 'lake': ['Liquidity Lake'], 'festival': ['Festival Fields'],
-    'twofold': ['Twofold'], 'blossom': ['Blossom Vale'], 'margins': ['Mangrove Margins'], 'vintage': ['Vintage Rows'],
-    'bullion': ['Bullion Hill'], 'flattax': ['Flat Tax Flats'], 'badlands': ['Bear Market Badlands'], 'sporewood': ['Sporeholder Woods'],
-    'marketcap': ['Market Cap'], 'fallquarter': ['Fall Quarter'], 'hypergrowth': ['Hypergrowth'], 'spread': ['Spread'],
-    'mintshaft': ['Mintshaft'], 'darkpool': ['Dark Pool'], 'frozen': ['Frozen Assets'], 'shoals': ['Shell Company Shoals'],
-    'portfolio': ['Port Folio'], 'bottomline': ['Bottom Line Trench'], 'pressing': ['Pressing Plant'], 'serverfarm': ['Server Farm'],
-    'upside': ['Upside City'], 'bubbleland': ['Bubbleland'], 'bracket': ['Upper Bracket Walk'], 'ath': ['All-Time High'],
+    'marigold': ['Sundown'], 'tallgrass_meadow': ['Long Grass'], 'old_fairway': ['Overgrown Golf Course'], 'thicket': ['Bramble Thicket'],
+    'fizzwell': ['Bubbling Grotto'], 'stepstone_canyon': ['Stairstep Canyon'], 'rustgear': ['Scrap Yard'], 'pepperpot': ['Food Court'],
+    'lanternhall': ['Mall of the Deep'], 'willowmere': ['Willow Pond'], 'clovercrest': ['Hillside Farm'], 'kitewind': ['Lookout Ridge'],
+    'verdigris': ['Capital Gains'], 'driftwreck': ['Offshore'], 'palmhaven': ['Tax Haven'], 'cinderpeak': ['Mount Margin Call'],
+    'hornpass': ['Bull Run Pass'], 'frostcrown': ['Summit Capital'], 'mirrormere': ['Liquidity Lake'], 'fanfare_fields': ['Festival Fields'],
+    'twinpetal': ['Twofold'], 'petalfall': ['Blossom Vale'], 'rootwater': ['Mangrove Margins'], 'grapevine_hills': ['Vintage Rows'],
+    'goldvine': ['Bullion Hill'], 'saltpan_flats': ['Flat Tax Flats'], 'badlands': ['Bear Market Badlands'], 'puffcap': ['Sporeholder Woods'],
+    'capshade': ['Market Cap'], 'russetwood': ['Fall Quarter'], 'tanglewild': ['Hypergrowth'], 'prism_chasm': ['Spread'],
+    'glimmershaft': ['Mintshaft'], 'gloomwater': ['Dark Pool'], 'rimefrost': ['Frozen Assets'], 'conchshell': ['Shell Company Shoals'],
+    'kelpport': ['Port Folio'], 'abyssal_trench': ['Bottom Line Trench'], 'vinyl_works': ['Pressing Plant'], 'circuit_terraces': ['Server Farm'],
+    'nimbus': ['Upside City'], 'fizzpop': ['Bubbleland'], 'skygarden': ['Upper Bracket Walk'], 'zenith_steps': ['All-Time High'],
 }
 # old names that are also plain words: only with their "the" (the Spread, the Offshore)
-NEEDS_THE = {'spread', 'offshore'}
+NEEDS_THE = {'prism_chasm', 'driftwreck'}
 # names that also mean something else and are left alone where they do: the bank in Palmhaven, the great bell on its rise
 KEEP = [r'Offshore Bank', r'the Closing Bell(?=[:,.]? when)', r'The Closing Bell(?=[:,.]? when)']
 # shops, jobs, rooms and props named after their place
@@ -67,11 +67,11 @@ REWRITE = {
     'trainers/morel/seat/unlockText': 'Tanglewild Jungle, east of Capshade Town, is open.',
     'trainers/carat/seat/unlockText': 'The Rimefrost Caves, east of Glimmershaft Town, are open. Beyond them, the inner sea.',
     'trainers/chad2/hint': 'Blake waits in Clovercrest Town with an evolved starter. Bring a team around level 18.',
-    'lore/places/city/known': 'Banks, towers, and Verdigris City’s famous traffic, which is mostly Billies.',
-    'lore/chat/marketcap/0/4': 'Capshade’s market cap goes up when the spores do. Breathe out, then.',
+    'lore/locations/verdigris/known': 'Banks, towers, and Verdigris City’s famous traffic, which is mostly Billies.',
+    'lore/chat/capshade/0/4': 'Capshade’s market cap goes up when the spores do. Breathe out, then.',
     'lore/loading/14': 'The soup of the day in Pepperpot Town has been the same soup since 1971.',
     # the old route groups had numbers of their own (the canyon was on "Route 2")
-    'route/canyon/gateText': 'The steps down to Route 5 · Stepstone Canyon open once you earn Leader Rocco’s Ground Badge.',
+    'locations/stepstone_canyon/gateText': 'The steps down to Route 5 · Stepstone Canyon open once you earn Leader Rocco’s Ground Badge.',
     'trainers/crude/seat/unlockText': 'The steps down to Route 5 · Stepstone Canyon and Lanternhall City are open. Silver Coins are now for sale.',
 }
 # and words that change with a name inside a longer text
@@ -126,36 +126,36 @@ SIGN = re.compile(r'^(.*?) this way\. (?:Route .*?|Sea Route .*?|Lake Route|Peta
 
 def main():
     head, D = load(); swap = make_swap(); changes = []
-    byname = {r['name']: r['id'] for r in D['route']}
+    byname = {r['name']: r['id'] for r in D['locations']}
     # names and route labels
-    for r in D['route']:
+    for r in D['locations']:
         if r['id'] not in NEW: continue
         new, label, _ = NEW[r['id']]
         for k, v in (('name', new), ('route', label or ('City' if new.endswith('City') else 'Town' if r.get('town') else ''))):
-            if r.get(k) != v: changes.append((f"route/{r['id']}/{k}", r.get(k), v)); r[k] = v
+            if r.get(k) != v: changes.append((f"locations/{r['id']}/{k}", r.get(k), v)); r[k] = v
         if label: r['routeName'] = label
         elif 'routeName' in r: del r['routeName']
-    for sid, sc in D['scenes'].items():
+    for sid, sc in D['maps'].items():
         base = sid.split('@')[0]
         if '@' in sid: continue
         if base in NEW and sc.get('name') and sc['name'] != NEW[base][0]:
-            changes.append((f'scenes/{sid}/name', sc['name'], NEW[base][0])); sc['name'] = NEW[base][0]
+            changes.append((f'maps/{sid}/name', sc['name'], NEW[base][0])); sc['name'] = NEW[base][0]
         elif base not in NEW and sc.get('name'):
             t = swap(sc['name'])
-            if t != sc['name']: changes.append((f'scenes/{sid}/name', sc['name'], t)); sc['name'] = t
+            if t != sc['name']: changes.append((f'maps/{sid}/name', sc['name'], t)); sc['name'] = t
     # the links between places: the route they belong to (or the town they lead into)
-    rid = {r['id']: r for r in D['route']}
-    for L in D['links']:
+    rid = {r['id']: r for r in D['locations']}
+    for L in D['roads']:
         m = L[3]; a, b = m.get('from'), m.get('to')
         lab = (NEW.get(b) or (None, None))[1] or (NEW.get(a) or (None, None))[1] or (NEW.get(b) or ('',))[0]
-        if lab and m.get('name') != lab: changes.append((f"links/{m.get('id')}", m.get('name'), lab)); m['name'] = lab
+        if lab and m.get('name') != lab: changes.append((f"roads/{m.get('id')}", m.get('name'), lab)); m['name'] = lab
     # every other text: signposts first, then the swap
     def walk(v, path):
         if isinstance(v, dict):
             for k in list(v):
                 if k in ('id', 'img', 'tile', 'scene', 'k', 'from', 'to', 'art', 'banner', 'icon', 'src', 'path') and isinstance(v[k], str): continue
-                if path[:1] == ['route'] and k in ('name', 'route', 'routeName'): continue
-                if path[:1] == ['scenes'] and len(path) == 2 and k == 'name': continue
+                if path[:1] == ['locations'] and k in ('name', 'route', 'routeName'): continue
+                if path[:1] == ['maps'] and len(path) == 2 and k == 'name': continue
                 v[k] = walk(v[k], path + [k])
             return v
         if isinstance(v, list): return [walk(x, path + [i]) for i, x in enumerate(v)]
@@ -171,10 +171,10 @@ def main():
             return t
         return v
     for k in list(D):
-        if k in ('route',):
+        if k in ('locations',):
             for i, r in enumerate(D[k]):
                 for f in list(r):
-                    if f in ('name', 'route', 'routeName', 'id', 'scene', 'shop', 'boutique', 'area', 'pool'): continue
+                    if f in ('name', 'route', 'routeName', 'id', 'mapId', 'shop', 'boutique', 'battleStage', 'pool'): continue
                     r[f] = walk(r[f], [k, r['id'], f])
             continue
         D[k] = walk(D[k], [k])

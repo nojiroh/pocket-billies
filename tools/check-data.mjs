@@ -24,7 +24,7 @@ const check = (schema, value, where) => {
   if (!ok) for (const e of ajv.errors.slice(0, 5)) problem(where, `${e.instancePath || '(top)'} ${e.message}`);
   return ok;
 };
-const ENTRY = { scenes: 'scene.schema.json', lines: 'line.schema.json', trainers: 'trainer.schema.json', people: 'person.schema.json' };
+const ENTRY = { maps: 'map.schema.json', lines: 'line.schema.json', trainers: 'trainer.schema.json', people: 'person.schema.json' };
 
 // the files: listed, present, JSON, laid out the Studio's way
 const index = JSON.parse(readFileSync(join(DATA, 'index.json'), 'utf8'));
@@ -76,8 +76,8 @@ for (const [section, schema] of Object.entries(ENTRY)) {
 }
 
 // what refers to what
-const S = D.scenes || {},
-  route = D.route || [],
+const S = D.maps || {},
+  route = D.locations || [],
   moves = D.moves || {},
   pools = D.pools || {},
   people = D.people || {},
@@ -90,11 +90,11 @@ for (const L of D.lines || []) {
 for (const [k, P] of Object.entries(pools))
   for (const [sp] of P.list || []) if (!species.has(sp)) problem('pools.json', `${k} has ${sp}, no such species`);
 route.forEach((r, i) => {
-  if (r.scene && !S[r.scene]) problem('route.json', `stop ${i} (${r.name}) has map ${r.scene}, no such map`);
-  if (r.pool && !pools[r.pool]) problem('route.json', `stop ${i} (${r.name}) has pool ${r.pool}, no such pool`);
+  if (r.mapId && !S[r.mapId]) problem('locations.json', `stop ${i} (${r.name}) has map ${r.mapId}, no such map`);
+  if (r.pool && !pools[r.pool]) problem('locations.json', `stop ${i} (${r.name}) has pool ${r.pool}, no such pool`);
 });
-(D.links || []).forEach((l, i) => {
-  if (!route[l[0]] || !route[l[1]]) problem('links.json', `link ${i} joins ${l[0]} and ${l[1]}, not both stops`);
+(D.roads || []).forEach((l, i) => {
+  if (!route[l[0]] || !route[l[1]]) problem('roads.json', `link ${i} joins ${l[0]} and ${l[1]}, not both stops`);
 });
 for (const [id, T] of Object.entries(D.trainers || {})) {
   if (!route[T.node]) problem(`trainers/${id}.json`, `waits at stop ${T.node}, no such stop`);
@@ -103,7 +103,7 @@ for (const [id, T] of Object.entries(D.trainers || {})) {
     if (!species.has(m.sp) && !String(m.sp).startsWith('@')) problem(`trainers/${id}.json`, `has ${m.sp}, no such species`);
 }
 for (const [id, sc] of Object.entries(S)) {
-  const where = `scenes/${id}.json`,
+  const where = `maps/${id}.json`,
     rows = sc.tiles || [];
   if (rows.length !== sc.h || rows.some(r => r.length !== sc.w)) problem(where, `the ground isn't ${sc.h} rows of ${sc.w}`);
   if (sc.heights && (sc.heights.length !== sc.h + 1 || sc.heights.some(r => r.length !== sc.w + 1)))

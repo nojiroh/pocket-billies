@@ -17,7 +17,7 @@ body.in-battle #app {
   max-width: none;
   margin: 0;
 }
-/* the zoom/roll layers pivot around the middle of the action (set from scene.js) and never show an edge */
+/* the zoom/roll layers pivot around the middle of the action (set from battle-stage.js) and never show an edge */
 .battle .cam {
   backface-visibility: hidden;
 }

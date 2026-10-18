@@ -12,8 +12,8 @@
 //   or from whichever module the page has (the shared renderer reading the game's or the Studio's names), and
 //   provide({...}) of its own names other modules read from there (functions here; other values right after their
 //   declaration, in a line ending in a to-module comment),
-// - setters for the functions the debug log wraps, when the module has none of its own (game/js/log-names.js, also
-//   written by the tool, hands them to log.js),
+// - setters for the functions the debug log wraps, when the module has none of its own (game/js/debug-log-names.js, also
+//   written by the tool, hands them to debug-log.js),
 // - expose({...}): every top-level name of the file, put on window as a getter and a setter only when the checks or
 //   the console ask for it (game/js/test-globals.js),
 // and `export` in front of each declaration another module imports. Nothing else in the file is touched.
@@ -27,24 +27,24 @@ import { dirname, join, normalize, relative } from 'node:path';
 import * as prettier from 'prettier';
 
 const ROOT = join(import.meta.dirname, '..');
-const PAGES = ['game/index.html', 'studio/index.html'];
-const BRIDGE = 'game/js/test-globals.js';
-const START = '/* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */';
-const END = '/* to-module: end */';
-const HOOKS = 'game/js/hooks.js';
+export const PAGES = ['game/index.html', 'studio/index.html'];
+export const BRIDGE = 'game/js/test-globals.js';
+export const START = '/* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */';
+export const END = '/* to-module: end */';
+export const HOOKS = 'game/js/hooks.js';
 // phase 04d: the debug log (a classic script) reaches the game's modules through what this module, made by the tool
-// and the last of the game's page, puts in log.js's GAME object
-const LOG = 'game/js/log.js';
-const LOG_NAMES = 'game/js/log-names.js';
+// and the last of the game's page, puts in debug-log.js's GAME object
+export const LOG = 'game/js/debug-log.js';
+export const LOG_NAMES = 'game/js/debug-log-names.js';
 const setterName = n => 'set' + n[0].toUpperCase() + n.slice(1);
 // phase 04d: after a declaration another module reads through hooks.js, the tool hands the value over
 const PROVIDE_LINE = /^provide\(\{[^}]*\}\); \/\* to-module \*\/\n/gm;
 
 const read = f => readFileSync(join(ROOT, f), 'utf8');
-const SCRIPT_TAG = /<script([^>]*)>([\s\S]*?)<\/script>/g;
+export const SCRIPT_TAG = /<script([^>]*)>([\s\S]*?)<\/script>/g;
 
 // a page's scripts in order: { file, module } or { inline, text }
-function scriptsOf(page) {
+export function scriptsOf(page) {
   const out = [];
   let n = 0;
   for (const [, attrs, text] of read(page).matchAll(SCRIPT_TAG)) {
@@ -57,7 +57,7 @@ function scriptsOf(page) {
 }
 
 // the file without its generated part and without the `export` keywords the tool put in
-function stripped(text) {
+export function stripped(text) {
   const a = text.indexOf(START);
   if (a >= 0) {
     const b = text.indexOf(END, a);
@@ -111,7 +111,7 @@ function analyse(text) {
 // Phase 04d: what a file reads WHILE it loads, and what each of its named functions reads when it is called. Counted:
 // the code that runs then (not the functions it only defines), the functions it calls at once or hands to a call
 // that runs them now (forEach, map), but not callbacks for later (addEventListener, setTimeout, then) or functions
-// handed to a setter (setMapMount). `typeof x` can't fail, so it doesn't count. Of the names read, only the called ones are followed into their functions.
+// handed to a setter (setWorldMapMount). `typeof x` can't fail, so it doesn't count. Of the names read, only the called ones are followed into their functions.
 // A function stored in an object or returned is not followed: the check is a safety net, not a proof.
 const LATER =
   /^(set[A-Z_$]\w*|addEventListener|setTimeout|setInterval|requestAnimationFrame|requestIdleCallback|queueMicrotask|then|catch|finally|on|once|observe)$/;
@@ -306,21 +306,21 @@ export async function run(args) {
     }
     imports.set(f, im);
   }
-  // 3b. the debug log: what log.js reads (GAME.x) and the functions it wraps (wrap('render', ...) and the timing
+  // 3b. the debug log: what debug-log.js reads (GAME.x) and the functions it wraps (wrap('render', ...) and the timing
   // lists), each from the game module that declares it. A function it wraps gets a setter in that module (its own
   // setX, or one the tool writes in the generated part), so the wrapped version is the one every module calls.
   const logText = read(LOG);
   const logReads = new Set([...logText.matchAll(/\bGAME\.([A-Za-z_$][\w$]*)/g)].map(m => m[1]));
   const logWraps = new Set([...logText.matchAll(/(?:\bwrap\(|\[)\s*'(\w+)',/g)].map(m => m[1]));
   const gamePage = pages.find(p => p.page === 'game/index.html').scripts;
-  const logFrom = new Map(); // G -> Set(names log-names.js imports)
+  const logFrom = new Map(); // G -> Set(names debug-log-names.js imports)
   const genSetters = new Map(); // G -> Set(names the tool writes a setter for)
   const logSet = new Map(); // name -> its setter
   for (const n of new Set([...logReads, ...logWraps])) {
     const d = gamePage.filter(s => info.get(s.file).own.has(n));
     if (d.length !== 1 || !d[0].module) {
-      if (logReads.has(n)) throw new Error(`to-module: log.js reads GAME.${n}, which no game module declares`);
-      continue; // a timing list may name a function that is gone; log.js skips it
+      if (logReads.has(n)) throw new Error(`to-module: debug-log.js reads GAME.${n}, which no game module declares`);
+      continue; // a timing list may name a function that is gone; debug-log.js skips it
     }
     const g = d[0].file,
       own = info.get(g).own;
@@ -332,7 +332,7 @@ export async function run(args) {
       use(logFrom, g, k);
       use(exportsOf, g, k);
     } else if (['const', 'class'].includes(own.get(n).kind))
-      throw new Error(`to-module: log.js wraps ${n}, a ${own.get(n).kind} in ${g}`);
+      throw new Error(`to-module: debug-log.js wraps ${n}, a ${own.get(n).kind} in ${g}`);
     else {
       use(genSetters, g, n);
       use(logFrom, g, k);
@@ -371,7 +371,7 @@ export async function run(args) {
       if (g !== HOOKS) lines.push(`import { ${[...names].sort().join(', ')} } from '${spec(f, g)}';`);
     const names = [...own.keys()].sort();
     const fns = names.some(n => own.get(n).kind === 'function');
-    // a module's own setter (setS for S) also hands the value to hooks.js, so the test globals use it
+    // a module's own setter (setSaveData for saveData) also hands the value to hooks.js, so the test globals use it
     const setterOf = n => {
       const k = setterName(n);
       if ((own.has(k) && own.get(k).kind === 'function') || gen.includes(n)) return `v => ${k}(v)`;
@@ -386,7 +386,7 @@ export async function run(args) {
       if (fns) lines.push('/* eslint-enable no-func-assign */');
     }
     if (early.length) lines.push(`provide({ ${early.join(', ')} });`);
-    // setters for the functions the debug log wraps (log-names.js)
+    // setters for the functions the debug log wraps (debug-log-names.js)
     for (const n of gen)
       lines.push(
         `export function ${setterName(n)}(v) {`,
@@ -429,9 +429,9 @@ export async function run(args) {
     '',
   ].join('\n');
   await write(HOOKS, hooksOut, existsSync(join(ROOT, HOOKS)) ? read(HOOKS) : '');
-  // log-names.js: what the debug log reads and wraps, put in log.js's GAME object
+  // debug-log-names.js: what the debug log reads and wraps, put in debug-log.js's GAME object
   const logOut = [
-    '// Phase 04d: made by tools/to-module.mjs (npm run modules), do not edit. What the debug log (log.js, a classic',
+    '// Phase 04d: made by tools/to-module.mjs (npm run modules), do not edit. What the debug log (debug-log.js, a classic',
     "// script that runs before the modules) reads and wraps in the game's modules: a getter for each name in its GAME",
     "// object, and a setter (the module's own) for each function it wraps. The last module of the game's page.",
     ...[...logFrom]

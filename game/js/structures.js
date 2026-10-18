@@ -9,31 +9,41 @@
    scene.escalators [{a:[x,z], b:[x,z], w}]                                 moving steps over a stair (bottom a, top b) */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { RM, provide } from './hooks.js';
+import { provide, reducedMotion } from './hooks.js';
 import { clamp } from './util.js';
-import { hexA } from './art.js';
-import { DIO, dioBridges, dioImg } from './diorama.js';
-import { EGL, eglImg, eglPrograms } from './engine/core.js';
-import { DGL_WALL_COL, dglCurveArgs, dglUse, dglWallDefault, dioGroundH, dioH } from './diorama-gl.js';
-import { BLD_SH, bldArt, bldGuard } from './buildings.js';
+import { hexToRgb } from './art.js';
+import { artImage, mapBridges, walkView } from './walk-view.js';
+import { ensurePrograms, gpuState, imageTexture } from './engine/webgl.js';
+import {
+  WALL_COLORS,
+  defaultWallMaterial,
+  groundHeightAt,
+  standingHeightAt,
+  useWalkProgram,
+  worldCurveArgs,
+} from './walk-view-gl.js';
+import { BUILDING_SHADERS, buildingArt, buildingGuard } from './buildings.js';
 /* eslint-disable no-func-assign */
 expose({
-  STR: [() => STR],
-  STR_KIND: [() => STR_KIND],
-  strBuild: [() => strBuild, v => (strBuild = v)],
-  strDraw: [() => strDraw, v => ((strDraw = v), provide({ strDraw }))],
-  strEnsure: [() => strEnsure, v => (strEnsure = v)],
-  strFree: [() => strFree, v => (strFree = v)],
-  strHas: [() => strHas, v => (strHas = v)],
-  strKey: [() => strKey, v => (strKey = v)],
-  strN: [() => strN, v => (strN = v)],
-  strShadow: [() => strShadow, v => ((strShadow = v), provide({ strShadow }))],
+  STRUCTURE_MATERIALS: [() => STRUCTURE_MATERIALS],
+  buildStructures: [() => buildStructures, v => (buildStructures = v)],
+  drawStructureShadows: [
+    () => drawStructureShadows,
+    v => ((drawStructureShadows = v), provide({ drawStructureShadows })),
+  ],
+  drawStructures: [() => drawStructures, v => ((drawStructures = v), provide({ drawStructures }))],
+  ensureStructures: [() => ensureStructures, v => (ensureStructures = v)],
+  freeStructures: [() => freeStructures, v => (freeStructures = v)],
+  hasStructures: [() => hasStructures, v => (hasStructures = v)],
+  structureKey: [() => structureKey, v => (structureKey = v)],
+  structureState: [() => structureState],
+  unitVector3: [() => unitVector3, v => (unitVector3 = v)],
 });
 /* eslint-enable no-func-assign */
-provide({ strDraw, strShadow });
+provide({ drawStructureShadows, drawStructures });
 /* to-module: end */
-export const STR = { key: '', mesh: null, parts: [] };
-const STR_KIND = {
+export const structureState = { key: '', mesh: null, parts: [] };
+const STRUCTURE_MATERIALS = {
   iron: { tex: 15, col: [0.27, 0.3, 0.38] },
   wood: { tex: 14, col: [0.6, 0.42, 0.28] },
   stone: { tex: 3, col: [0.68, 0.66, 0.62] },
@@ -43,9 +53,9 @@ const STR_KIND = {
   glass: { tex: 15, col: [0.62, 0.78, 0.84] },
   metal: { tex: 12, col: [0.6, 0.62, 0.66] },
 };
-function strKey(sc) {
+function structureKey(sc) {
   return (
-    DIO.id +
+    walkView.id +
     '|' +
     JSON.stringify([sc.bridges, sc.rails, sc.arches, sc.escalators]) +
     '|' +
@@ -56,7 +66,7 @@ function strKey(sc) {
     (sc.heights || []).length
   );
 }
-export function strHas(sc) {
+export function hasStructures(sc) {
   return !!(
     (sc.bridges && sc.bridges.length) ||
     (sc.rails && sc.rails.length) ||
@@ -64,11 +74,11 @@ export function strHas(sc) {
     (sc.escalators && sc.escalators.length)
   );
 }
-function strN(v) {
+function unitVector3(v) {
   const l = Math.hypot(v[0], v[1], v[2]) || 1;
   return [v[0] / l, v[1] / l, v[2] / l];
 }
-function strBuild(sc) {
+function buildStructures(sc) {
   const V = [],
     I = [],
     parts = [];
@@ -80,12 +90,14 @@ function strBuild(sc) {
     end = () => {
       part.n = I.length - part.i0;
     };
-  const wd = dglWallDefault(sc),
+  const wd = defaultWallMaterial(sc),
     rockCol =
-      sc.wallCol && sc.wallCol[wd] ? hexA(sc.wallCol[wd]).map(v => v / 255) : DGL_WALL_COL[wd] || STR_KIND.rock.col;
+      sc.wallCol && sc.wallCol[wd]
+        ? hexToRgb(sc.wallCol[wd]).map(v => v / 255)
+        : WALL_COLORS[wd] || STRUCTURE_MATERIALS.rock.col;
   const poly = (P, n, uv, K, shade = 1) => {
     const b = V.length / 14,
-      k = K === 'rock' ? { tex: 10, col: rockCol } : STR_KIND[K] || STR_KIND.stone,
+      k = K === 'rock' ? { tex: 10, col: rockCol } : STRUCTURE_MATERIALS[K] || STRUCTURE_MATERIALS.stone,
       tc = [k.tex % 8, Math.floor(k.tex / 8)];
     P.forEach((q, i) =>
       V.push(
@@ -124,7 +136,7 @@ function strBuild(sc) {
       h = Math.max(y1, yb) - y0;
     poly(
       c.map((q, i) => [q[0], top[i], q[1]]),
-      strN([0, 1, 0]),
+      unitVector3([0, 1, 0]),
       [
         [0, 0],
         [wid, 0],
@@ -159,8 +171,8 @@ function strBuild(sc) {
       );
     }
   };
-  const G = (x, z) => dioGroundH(x, z),
-    Hh = (x, z) => dioH(x, z);
+  const G = (x, z) => groundHeightAt(x, z),
+    Hh = (x, z) => standingHeightAt(x, z);
   /* railings: posts and a top rail following the ground (or the deck) */
   const railing = (pts, K, yf, hgt = 0.95) => {
     for (let k = 0; k < pts.length - 1; k++) {
@@ -237,7 +249,7 @@ function strBuild(sc) {
     end();
   }
   /* bridges */
-  for (const b of dioBridges(sc) || []) {
+  for (const b of mapBridges(sc) || []) {
     const K = b.kind || 'wood',
       ux = b.ux,
       uz = b.uz,
@@ -398,7 +410,11 @@ function strBuild(sc) {
         o1 = cs(a1, r2),
         dd = [ux * d, 0, uz * d],
         add = (p, q) => [p[0] + q[0], p[1] + q[1], p[2] + q[2]];
-      const nIn = strN([-(px * Math.cos((a0 + a1) / 2)), -Math.sin((a0 + a1) / 2), -(pz * Math.cos((a0 + a1) / 2))]),
+      const nIn = unitVector3([
+          -(px * Math.cos((a0 + a1) / 2)),
+          -Math.sin((a0 + a1) / 2),
+          -(pz * Math.cos((a0 + a1) / 2)),
+        ]),
         nOut = [-nIn[0], -nIn[1], -nIn[2]];
       poly(
         [i0, i1, add(i1, dd), add(i0, dd)],
@@ -492,7 +508,7 @@ function strBuild(sc) {
     end();
   }
   if (!I.length) return { mesh: null, parts: [] };
-  const gl = EGL.gl,
+  const gl = gpuState.gl,
     vao = gl.createVertexArray();
   gl.bindVertexArray(vao);
   const vb = gl.createBuffer();
@@ -517,46 +533,46 @@ function strBuild(sc) {
   gl.bindVertexArray(null);
   return { mesh: { vao, vb, ib, n: I.length }, parts };
 }
-function strEnsure() {
-  const sc = DIO.sc;
-  if (!sc || !strHas(sc)) {
-    if (STR.mesh) strFree();
-    STR.key = '';
+function ensureStructures() {
+  const sc = walkView.sc;
+  if (!sc || !hasStructures(sc)) {
+    if (structureState.mesh) freeStructures();
+    structureState.key = '';
     return false;
   }
-  const k = strKey(sc);
-  if (k === STR.key && STR.mesh) return true;
-  strFree();
-  const r = strBuild(sc);
-  STR.mesh = r.mesh;
-  STR.parts = r.parts;
-  STR.key = k;
-  return !!STR.mesh;
+  const k = structureKey(sc);
+  if (k === structureState.key && structureState.mesh) return true;
+  freeStructures();
+  const r = buildStructures(sc);
+  structureState.mesh = r.mesh;
+  structureState.parts = r.parts;
+  structureState.key = k;
+  return !!structureState.mesh;
 }
-function strFree() {
-  if (!STR.mesh) return;
-  const gl = EGL.gl;
+function freeStructures() {
+  if (!structureState.mesh) return;
+  const gl = gpuState.gl;
   try {
-    gl.deleteVertexArray(STR.mesh.vao);
-    gl.deleteBuffer(STR.mesh.vb);
-    gl.deleteBuffer(STR.mesh.ib);
+    gl.deleteVertexArray(structureState.mesh.vao);
+    gl.deleteBuffer(structureState.mesh.vb);
+    gl.deleteBuffer(structureState.mesh.ib);
   } catch (e) {}
-  STR.mesh = null;
-  STR.parts = [];
+  structureState.mesh = null;
+  structureState.parts = [];
 }
-function strDraw(C, X) {
-  if (typeof bldGuard !== 'function') return;
-  bldGuard(() => {
-    if (!strEnsure()) return;
-    const gl = EGL.gl;
-    eglPrograms(BLD_SH);
-    const A = bldArt(),
-      det = eglImg(dioImg(A.detail), { noNormal: true });
+function drawStructures(C, X) {
+  if (typeof buildingGuard !== 'function') return;
+  buildingGuard(() => {
+    if (!ensureStructures()) return;
+    const gl = gpuState.gl;
+    ensurePrograms(BUILDING_SHADERS);
+    const A = buildingArt(),
+      det = imageTexture(artImage(A.detail), { noNormal: true });
     if (!det) return;
-    const p = dglUse('bld', C, X),
-      sc = DIO.sc,
-      P = DIO.pl,
-      t = RM ? 0 : DIO.t / 1000;
+    const p = useWalkProgram('bld', C, X),
+      sc = walkView.sc,
+      P = walkView.pl,
+      t = reducedMotion ? 0 : walkView.t / 1000;
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, det.t);
     gl.uniform1i(p.U.uDet, 0);
@@ -565,8 +581,8 @@ function strDraw(C, X) {
     gl.depthMask(true);
     gl.disable(gl.BLEND);
     gl.disable(gl.CULL_FACE);
-    gl.bindVertexArray(STR.mesh.vao);
-    for (const q of STR.parts) {
+    gl.bindVertexArray(structureState.mesh.vao);
+    for (const q of structureState.parts) {
       if (!q.n) continue;
       const b = q.box,
         under = q.fadeUnder && P.x > b[0] - 0.2 && P.x < b[2] + 0.2 && P.z > b[1] - 0.2 && P.z < b[3] + 1.2;
@@ -579,21 +595,21 @@ function strDraw(C, X) {
     gl.bindVertexArray(null);
   });
 }
-function strShadow(SH) {
-  if (typeof bldGuard !== 'function') return;
-  bldGuard(() => {
-    if (!strEnsure()) return;
-    const gl = EGL.gl;
-    eglPrograms(BLD_SH);
-    const p = EGL.P.bshadow;
+function drawStructureShadows(SH) {
+  if (typeof buildingGuard !== 'function') return;
+  buildingGuard(() => {
+    if (!ensureStructures()) return;
+    const gl = gpuState.gl;
+    ensurePrograms(BUILDING_SHADERS);
+    const p = gpuState.P.bshadow;
     gl.useProgram(p.p);
     gl.uniformMatrix4fv(p.U.uVP, false, SH.vp);
-    const ca = dglCurveArgs(),
-      sc = DIO.sc;
+    const ca = worldCurveArgs(),
+      sc = walkView.sc;
     gl.uniform3f(p.U.uCurve, ca[0], ca[1], ca[2]);
     gl.uniform1f(p.U.uCurveD0, ca[3]);
-    gl.bindVertexArray(STR.mesh.vao);
-    for (const q of STR.parts) {
+    gl.bindVertexArray(structureState.mesh.vao);
+    for (const q of structureState.parts) {
       if (!q.n) continue;
       const b = q.box;
       gl.uniform2f(p.U.uLift, (b[0] + b[2]) / 2, (b[1] + b[3]) / 2);

@@ -1,7 +1,7 @@
 {
  "name": "Hiker Hal",
  "who": "hiker",
- "area": "snow",
+ "battleStage": "snow",
  "node": 16,
  "blocks": false,
  "team": [

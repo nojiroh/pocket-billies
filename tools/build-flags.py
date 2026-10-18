@@ -3,7 +3,7 @@
 
 The flag pole used to be one picture (pole and a teal flag) that swayed as a whole. Now the pole is rigid
 (art/scene/props/flag_mast.png, a new file; the old flag_pole.png stays on disk) and the cloth is a separate picture
-the game drapes from the top of the mast and waves in the wind (diorama-gl.js, item kind 'flag'). Each stop's scene
+the game drapes from the top of the mast and waves in the wind (walk-view-gl.js, item kind 'flag'). Each stop's scene
 flies its own flag: art/scene/flags/<scene>.png, 48 x 32, a two-colour field with the town's emblem, plus default.png.
 Only towns have a flag of their own (scenery.flags lists them); every other pole flies the coin ring. A scene can pick
 another with "flag": "<name>" in the Studio (Walk scenes -> Look). Existing pictures are kept.
@@ -22,8 +22,8 @@ W, H = 48, 32
 
 # only towns fly a flag: field colours (ramp keys) and the emblem for each; every other scene's pole flies the coin ring
 TOWNS = dict(
-    sundown=('coral', 'cream', 'sun'), foodcourt=('red', 'cream', 'fork'), mall=('lilac', 'marble', 'shell'),
-    city=('iron', 'gold', 'coin'), taxhaven=('mint', 'gold', 'palm'), summit=('plum', 'gold', 'star'), default=('teal', 'gold', 'coinring'))
+    marigold=('coral', 'cream', 'sun'), pepperpot=('red', 'cream', 'fork'), lanternhall=('lilac', 'marble', 'shell'),
+    verdigris=('iron', 'gold', 'coin'), palmhaven=('mint', 'gold', 'palm'), frostcrown=('plum', 'gold', 'star'), default=('teal', 'gold', 'coinring'))
 R.update({k: bsp.ramp(v) for k, v in dict(snowc=(238, 242, 248), plum=(120, 72, 140)).items()})
 
 
@@ -131,7 +131,7 @@ def flag(name):
     for y in range(H):
         for x in range(W):
             t = 2 if y < H * .5 else 1
-            if name in ('sundown', 'farm', 'lake') and y > H - 6: t = 3
+            if name in ('marigold', 'clovercrest', 'mirrormere') and y > H - 6: t = 3
             cv.px(x, y, Rb[t])
     for y in range(H): cv.px(0, y, Rb[0]); cv.px(1, y, Rb[1])      # the hoist edge
     emblem(cv, kind, Rf, Rb)

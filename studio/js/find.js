@@ -6,35 +6,35 @@
    to the setting and makes it blink. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
-import { linkNote } from '../../game/js/hooks.js';
+import { noteConnectionsField } from '../../game/js/hooks.js';
 import { $, $$ } from '../../game/js/util.js';
 import { ENGINE_SPEC } from '../../game/js/engine/settings.js';
-import { esc } from './shims.js';
-import { ACTS, NAV, SECTIONS, ST, clone, go, toast } from './core.js';
-import { ENS, engRefresh } from './engine.js';
+import { escapeHtml } from './game-stand-ins.js';
+import { ACTIONS, SECTIONS, SECTION_LIST, clone, openSection, studioState, toast } from './studio-app.js';
+import { engineEditor, refreshEngineSettings } from './engine-editor.js';
 /* eslint-disable no-func-assign */
 expose({
-  FIND: [() => FIND],
-  FIND_KIND: [() => FIND_KIND],
-  findBuild: [() => findBuild, v => (findBuild = v)],
+  FIND_KIND_LABELS: [() => FIND_KIND_LABELS],
+  buildSearchIndex: [() => buildSearchIndex, v => (buildSearchIndex = v)],
+  fieldSelector: [() => fieldSelector],
   findClose: [() => findClose, v => (findClose = v)],
   findEngine: [() => findEngine, v => (findEngine = v)],
   findField: [() => findField, v => (findField = v)],
   findFlash: [() => findFlash, v => (findFlash = v)],
-  findIdx: [() => findIdx, v => (findIdx = v)],
   findMark: [() => findMark, v => (findMark = v)],
-  findNorm: [() => findNorm],
   findOpen: [() => findOpen, v => (findOpen = v)],
   findPageFields: [() => findPageFields, v => (findPageFields = v)],
   findPick: [() => findPick, v => (findPick = v)],
   findRun: [() => findRun, v => (findRun = v)],
-  findSel: [() => findSel],
   findShow: [() => findShow, v => (findShow = v)],
+  findState: [() => findState],
+  normalizeForFind: [() => normalizeForFind],
+  searchIndex: [() => searchIndex, v => (searchIndex = v)],
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
-const FIND = { idx: null, key: '', res: [], at: 0, q: '' };
-const findNorm = s =>
+const findState = { idx: null, key: '', res: [], at: 0, q: '' };
+const normalizeForFind = s =>
   String(s || '')
     .toLowerCase()
     .normalize('NFD')
@@ -61,39 +61,39 @@ export function findFlash(sel, tries = 0) {
         f.focus({ preventScroll: true });
       } catch (e) {}
     }, 350);
-  if (typeof linkNote === 'function') linkNote(el.dataset.p || el.dataset.path || '');
+  if (typeof noteConnectionsField === 'function') noteConnectionsField(el.dataset.p || el.dataset.path || '');
 }
-export const findSel = p => `[data-p="${CSS.escape(p)}"],[data-path="${CSS.escape(p)}"]`;
+export const fieldSelector = p => `[data-p="${CSS.escape(p)}"],[data-path="${CSS.escape(p)}"]`;
 export function findField(sec, p, sel) {
-  if (ST.sec !== sec || sel) go(sec, sel);
-  findFlash(findSel(p));
+  if (studioState.sec !== sec || sel) openSection(sec, sel);
+  findFlash(fieldSelector(p));
 }
 export function findEngine(g, k) {
-  ENS.scope = 'game';
-  ENS.open[g] = 1;
-  if (ST.sec === 'engine') engRefresh();
-  else go('engine');
-  findFlash(findSel(`engine.defaults.${g}.${k}`));
+  engineEditor.scope = 'game';
+  engineEditor.open[g] = 1;
+  if (studioState.sec === 'engine') refreshEngineSettings();
+  else openSection('engine');
+  findFlash(fieldSelector(`engine.defaults.${g}.${k}`));
 }
 /* ---- the index ---- */
 function findPageFields(sec, add) {
   const S = SECTIONS[sec];
   if (!S) return;
-  const keep = ST.after,
-    keepSel = clone(ST.sel);
+  const keep = studioState.after,
+    keepSel = clone(studioState.sel);
   let html = '';
   try {
-    ST.after = [];
+    studioState.after = [];
     html = S();
   } catch (e) {
     html = '';
   } finally {
-    ST.after = keep;
-    ST.sel = keepSel;
+    studioState.after = keep;
+    studioState.sel = keepSel;
   }
   const div = document.createElement('div');
   div.innerHTML = html;
-  const nav = (NAV.find(n => n[0] === sec) || [])[1] || sec,
+  const nav = (SECTION_LIST.find(n => n[0] === sec) || [])[1] || sec,
     seen = new Set();
   div.querySelectorAll('[data-p]').forEach(el => {
     const p = el.dataset.p;
@@ -116,14 +116,21 @@ function findPageFields(sec, add) {
     );
   });
 }
-function findBuild() {
-  const D = ST.D,
+function buildSearchIndex() {
+  const D = studioState.D,
     E = [],
     add = (label, where, kind, fn, extra = '') => {
       if (label)
-        E.push({ label: String(label), where, kind, fn, t: findNorm(label), x: findNorm(where + ' ' + extra) });
+        E.push({
+          label: String(label),
+          where,
+          kind,
+          fn,
+          t: normalizeForFind(label),
+          x: normalizeForFind(where + ' ' + extra),
+        });
     };
-  NAV.forEach(([k, n, d]) => add(n, 'Section', 'section', () => go(k), d));
+  SECTION_LIST.forEach(([k, n, d]) => add(n, 'Section', 'section', () => openSection(k), d));
   if (typeof ENGINE_SPEC !== 'undefined')
     ENGINE_SPEC.forEach(([g, t, F]) =>
       F.forEach(f => {
@@ -139,13 +146,13 @@ function findBuild() {
         n,
         `Billy · ${L.id}${st}${((L.types && L.types[st]) || []).length ? ' · ' + L.types[st].join('/') : ''}`,
         'billy',
-        () => go('billionaires', { line: L.id, stage: st }),
+        () => openSection('billionaires', { line: L.id, stage: st }),
         L.id
       )
     )
   );
   Object.entries(D.moves || {}).forEach(([k, M]) =>
-    add(M.n, `Move · ${M.t || ''}`, 'move', () => go('moves', { move: k }), k)
+    add(M.n, `Move · ${M.t || ''}`, 'move', () => openSection('moves', { move: k }), k)
   );
   Object.entries(D.items || {}).forEach(([k, I]) =>
     add(I.n, 'Item', 'item', () => findField('items', `items.${k}.n`), k + ' ' + (I.d || ''))
@@ -154,27 +161,35 @@ function findBuild() {
     add(I.n, 'Tax coin', 'item', () => findField('items', `coins.${k}.n`), k)
   );
   Object.entries(D.trainers || {}).forEach(([k, T]) =>
-    add(T.name || k, 'Trainer' + (T.area ? ' · ' + T.area : ''), 'trainer', () => go('trainers', { trainer: k }), k)
+    add(
+      T.name || k,
+      'Trainer' + (T.battleStage ? ' · ' + T.battleStage : ''),
+      'trainer',
+      () => openSection('trainers', { trainer: k }),
+      k
+    )
   );
   Object.entries(D.shops || {}).forEach(([k, S]) =>
-    add(S.name || k, 'Shop' + (S.keeper ? ' · ' + S.keeper : ''), 'shop', () => go('shops', { shop: k }), k)
+    add(S.name || k, 'Shop' + (S.keeper ? ' · ' + S.keeper : ''), 'shop', () => openSection('shops', { shop: k }), k)
   );
-  Object.keys(D.people || {}).forEach(k => add(k, 'Look (People)', 'person', () => go('people', { person: k })));
-  Object.entries(D.scenes || {}).forEach(([k, s]) =>
+  Object.keys(D.people || {}).forEach(k =>
+    add(k, 'Look (People)', 'person', () => openSection('people', { person: k }))
+  );
+  Object.entries(D.maps || {}).forEach(([k, s]) =>
     add(
       s.name || k,
       `Walk scene · ${s.kind || (s.room ? 'room' : 'place')}`,
       'scene',
-      () => go('scenes', { scene: k }),
+      () => openSection('scenes', { scene: k }),
       k
     )
   );
-  (D.route || []).forEach((r, i) =>
+  (D.locations || []).forEach((r, i) =>
     add(
       r.name,
       `Route stop ${i + 1}${r.town ? ' · town' : ''}`,
       'stop',
-      () => go('world', { wtab: 'route', stop: i }),
+      () => openSection('world', { wtab: 'route', stop: i }),
       r.id || ''
     )
   );
@@ -184,23 +199,23 @@ function findBuild() {
       'Prop' + ((P.tags || []).length ? ' · ' + P.tags.slice(0, 3).join(', ') : ''),
       'prop',
       () => {
-        go('scenes');
-        if (ACTS.scEditProp) ACTS.scEditProp({ k });
+        openSection('scenes');
+        if (ACTIONS.scEditProp) ACTIONS.scEditProp({ k });
       },
       k
     )
   );
   return E;
 }
-function findIdx() {
-  const key = ST.undo.length + '|' + (ST.last || '').length;
-  if (!FIND.idx || FIND.key !== key) {
-    FIND.idx = findBuild();
-    FIND.key = key;
+function searchIndex() {
+  const key = studioState.undo.length + '|' + (studioState.last || '').length;
+  if (!findState.idx || findState.key !== key) {
+    findState.idx = buildSearchIndex();
+    findState.key = key;
   }
-  return FIND.idx;
+  return findState.idx;
 }
-const FIND_KIND = {
+const FIND_KIND_LABELS = {
   section: 'Section',
   setting: 'Setting',
   billy: 'Billy',
@@ -214,11 +229,11 @@ const FIND_KIND = {
   prop: 'Prop',
 };
 function findRun(q) {
-  const n = findNorm(q).trim(),
+  const n = normalizeForFind(q).trim(),
     W = n.split(/\s+/).filter(Boolean);
   if (!W.length) return [];
   const out = [];
-  for (const e of findIdx()) {
+  for (const e of searchIndex()) {
     let s = 0,
       ok = true;
     for (const w of W) {
@@ -246,29 +261,29 @@ function findOpen() {
   if ($('#find')) return;
   const w = document.createElement('div');
   w.id = 'find';
-  w.innerHTML = `<div class="find-scrim"></div><div class="find-box" role="dialog" aria-label="Find"><input id="findQ" type="search" placeholder="Find a setting, a Billy, a move, a place… (try “shadow”, “god rays”, “step”)" autocomplete="off" value="${esc(FIND.q)}"><div class="find-list" id="findL"></div><div class="find-foot"><kbd>↑</kbd><kbd>↓</kbd> choose · <kbd>Enter</kbd> open · <kbd>Esc</kbd> close</div></div>`;
+  w.innerHTML = `<div class="find-scrim"></div><div class="find-box" role="dialog" aria-label="Find"><input id="findQ" type="search" placeholder="Find a setting, a Billy, a move, a place… (try “shadow”, “god rays”, “step”)" autocomplete="off" value="${escapeHtml(findState.q)}"><div class="find-list" id="findL"></div><div class="find-foot"><kbd>↑</kbd><kbd>↓</kbd> choose · <kbd>Enter</kbd> open · <kbd>Esc</kbd> close</div></div>`;
   document.body.appendChild(w);
   const q = $('#findQ');
   q.focus();
   q.select();
   findShow();
   q.addEventListener('input', () => {
-    FIND.q = q.value;
-    FIND.at = 0;
+    findState.q = q.value;
+    findState.at = 0;
     findShow();
   });
   q.addEventListener('keydown', ev => {
     if (ev.key === 'ArrowDown') {
       ev.preventDefault();
-      FIND.at = Math.min(FIND.res.length - 1, FIND.at + 1);
+      findState.at = Math.min(findState.res.length - 1, findState.at + 1);
       findMark();
     } else if (ev.key === 'ArrowUp') {
       ev.preventDefault();
-      FIND.at = Math.max(0, FIND.at - 1);
+      findState.at = Math.max(0, findState.at - 1);
       findMark();
     } else if (ev.key === 'Enter') {
       ev.preventDefault();
-      findPick(FIND.at);
+      findPick(findState.at);
     } else if (ev.key === 'Escape') {
       ev.preventDefault();
       findClose();
@@ -287,13 +302,13 @@ function findClose() {
 function findShow() {
   const L = $('#findL');
   if (!L) return;
-  FIND.res = findRun(FIND.q);
-  L.innerHTML = FIND.q.trim()
-    ? FIND.res.length
-      ? FIND.res
+  findState.res = findRun(findState.q);
+  L.innerHTML = findState.q.trim()
+    ? findState.res.length
+      ? findState.res
           .map(
             (e, i) =>
-              `<button class="find-r ${i === FIND.at ? 'on' : ''}" data-i="${i}"><span class="find-k k-${e.kind}">${FIND_KIND[e.kind] || e.kind}</span><b>${esc(e.label)}</b><small>${esc(e.where)}</small></button>`
+              `<button class="find-r ${i === findState.at ? 'on' : ''}" data-i="${i}"><span class="find-k k-${e.kind}">${FIND_KIND_LABELS[e.kind] || e.kind}</span><b>${escapeHtml(e.label)}</b><small>${escapeHtml(e.where)}</small></button>`
           )
           .join('')
       : '<p class="help find-none">Nothing found. Try another word.</p>'
@@ -301,12 +316,12 @@ function findShow() {
 }
 function findMark() {
   $$('#findL .find-r').forEach((b, i) => {
-    b.classList.toggle('on', i === FIND.at);
-    if (i === FIND.at) b.scrollIntoView({ block: 'nearest' });
+    b.classList.toggle('on', i === findState.at);
+    if (i === findState.at) b.scrollIntoView({ block: 'nearest' });
   });
 }
 function findPick(i) {
-  const e = FIND.res[i];
+  const e = findState.res[i];
   if (!e) return;
   findClose();
   try {
@@ -315,7 +330,7 @@ function findPick(i) {
     toast('Couldn’t open that: ' + err.message, 'err');
   }
 }
-ACTS.find = () => findOpen();
+ACTIONS.find = () => findOpen();
 document.addEventListener('keydown', ev => {
   const mod = ev.ctrlKey || ev.metaKey;
   if (mod && ev.key.toLowerCase() === 'k') {

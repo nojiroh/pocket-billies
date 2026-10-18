@@ -1,7 +1,7 @@
 {
  "name": "Variant No. 0001",
  "who": "variant",
- "area": "clear",
+ "battleStage": "clear",
  "node": 42,
  "blocks": false,
  "team": [

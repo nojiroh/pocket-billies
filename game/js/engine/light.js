@@ -5,38 +5,38 @@
    painted from, so shadows fall back and to the right. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { ENV, envSun } from '../hooks.js';
+import { environment, environmentSun } from '../hooks.js';
 import { clamp } from '../util.js';
-import { DIO } from '../diorama.js';
-import { ENG_CTX, eng, engHex } from './settings.js';
-import { EGL, M4, eglTarget, v3c, v3n } from './core.js';
+import { walkView } from '../walk-view.js';
+import { engineColor, engineContext, engineSetting } from './settings.js';
+import { cross3, gpuState, matrix4, normalize3, renderTarget } from './webgl.js';
 /* eslint-disable no-func-assign */
 expose({
-  EGL_SH_DIRS: [() => EGL_SH_DIRS],
-  eglLampShadowBegin: [() => eglLampShadowBegin, v => (eglLampShadowBegin = v)],
-  eglLightCtx: [() => eglLightCtx, v => (eglLightCtx = v)],
-  eglLightU: [() => eglLightU, v => (eglLightU = v)],
-  eglPickLights: [() => eglPickLights, v => (eglPickLights = v)],
-  eglSH: [() => eglSH, v => (eglSH = v)],
-  eglShadowBegin: [() => eglShadowBegin, v => (eglShadowBegin = v)],
-  eglShadowEnd: [() => eglShadowEnd, v => (eglShadowEnd = v)],
-  eglSun: [() => eglSun, v => (eglSun = v)],
+  SKY_HARMONIC_DIRECTIONS: [() => SKY_HARMONIC_DIRECTIONS],
+  beginLampShadow: [() => beginLampShadow, v => (beginLampShadow = v)],
+  beginSunShadow: [() => beginSunShadow, v => (beginSunShadow = v)],
+  endShadow: [() => endShadow, v => (endShadow = v)],
+  lightContext: [() => lightContext, v => (lightContext = v)],
+  pickPointLights: [() => pickPointLights, v => (pickPointLights = v)],
+  setLightUniforms: [() => setLightUniforms, v => (setLightUniforms = v)],
+  skyHarmonics: [() => skyHarmonics, v => (skyHarmonics = v)],
+  sunLight: [() => sunLight, v => (sunLight = v)],
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
-export function eglSun(indoor) {
+export function sunLight(indoor) {
   const deg = Math.PI / 180;
-  let a = eng('sun', 'angle'),
-    h = eng('sun', 'height'),
+  let a = engineSetting('sun', 'angle'),
+    h = engineSetting('sun', 'height'),
     warm = 0,
-    col = engHex('sun', 'color', '#FFF0D8');
-  /* v26: the time of day and the moon (env.js), while a walk scene draws */
-  if (!indoor && typeof ENV !== 'undefined' && ENG_CTX.env && (ENV.on || ENV.force)) {
-    const e = envSun(a, h, col);
+    col = engineColor('sun', 'color', '#FFF0D8');
+  /* v26: the time of day and the moon (environment.js), while a walk scene draws */
+  if (!indoor && typeof environment !== 'undefined' && engineContext.env && (environment.on || environment.force)) {
+    const e = environmentSun(a, h, col);
     a = e.a;
     h = e.h;
     col = e.col;
-  } else if (eng('sun', 'clock') && !indoor) {
+  } else if (engineSetting('sun', 'clock') && !indoor) {
     const d = new Date(),
       t = d.getHours() + d.getMinutes() / 60,
       ph = Math.sin(((t - 6) / 24) * Math.PI * 2);
@@ -45,15 +45,17 @@ export function eglSun(indoor) {
     warm = clamp(0.6 - ph * 0.6, 0, 1);
   }
   const ch = Math.cos(h * deg),
-    toSun = v3n([-Math.cos(a * deg) * ch, Math.sin(h * deg), -Math.sin(a * deg) * ch]);
-  let k = eng('sun', 'strength');
+    toSun = normalize3([-Math.cos(a * deg) * ch, Math.sin(h * deg), -Math.sin(a * deg) * ch]);
+  let k = engineSetting('sun', 'strength');
   if (warm) col = [col[0], col[1] * (1 - warm * 0.12), col[2] * (1 - warm * 0.3)];
   if (indoor) k *= 0.75;
   return {
     dir: toSun,
     travel: [-toSun[0], -toSun[1], -toSun[2]],
     col: col.map(v => v * k * 0.72),
-    pulse: (0.85 + 0.15 * Math.sin((typeof DIO !== 'undefined' ? DIO.t : 0) / 9000)) * eng('sun', 'innerSun'),
+    pulse:
+      (0.85 + 0.15 * Math.sin((typeof walkView !== 'undefined' ? walkView.t : 0) / 9000)) *
+      engineSetting('sun', 'innerSun'),
     height: h,
     indoor,
   };
@@ -61,7 +63,7 @@ export function eglSun(indoor) {
 /* v43: the sky as nine spherical-harmonic coefficients. Radiance by direction: the sky's zenith colour overhead easing
    to its horizon colour, the ground's bounce below, and a broad lobe of the sun's colour round the sun (what a clear
    sky adds on that side); projected on fixed directions, convolved for irradiance in the shader (shAmb) */
-const EGL_SH_DIRS = (() => {
+const SKY_HARMONIC_DIRECTIONS = (() => {
   const N = 64,
     o = [];
   for (let i = 0; i < N; i++) {
@@ -72,13 +74,13 @@ const EGL_SH_DIRS = (() => {
   }
   return o;
 })();
-function eglSH(top, hor, gnd, sun, lobe = 1) {
+function skyHarmonics(top, hor, gnd, sun, lobe = 1) {
   const c = Array.from({ length: 9 }, () => [0, 0, 0]),
-    N = EGL_SH_DIRS.length,
+    N = SKY_HARMONIC_DIRECTIONS.length,
     w = (4 * Math.PI) / N,
     sd = sun.dir,
     sc = sun.col.map(v => v * lobe);
-  for (const d of EGL_SH_DIRS) {
+  for (const d of SKY_HARMONIC_DIRECTIONS) {
     const [x, y, z] = d;
     let L;
     if (y > 0) {
@@ -111,27 +113,27 @@ function eglSH(top, hor, gnd, sun, lobe = 1) {
   c.forEach((v, i) => f.set(v, i * 3));
   return f;
 }
-/* everything the lit shaders need this frame; built by a view, then handed to eglLightU for each program */
-export function eglLightCtx(o) {
+/* everything the lit shaders need this frame; built by a view, then handed to setLightUniforms for each program */
+export function lightContext(o) {
   const hz = o.haze,
     tint = o.tint;
-  const shT = engHex('shadows', 'tint', '#40507E'),
+  const shT = engineColor('shadows', 'tint', '#40507E'),
     lum = shT[0] * 0.3 + shT[1] * 0.59 + shT[2] * 0.11 || 0.3,
-    hue = eng('shadows', 'hue') ?? 0.6,
+    hue = engineSetting('shadows', 'hue') ?? 0.6,
     shTint = shT.map(v => clamp((v / lum) * (0.35 + 0.5 * hue) + (0.6 - 0.32 * hue), 0, 2)),
     shLift = shT.map(v => (v / lum) * 0.035 * hue);
-  const sky = engHex('sun', 'ambientSky', o.ambTop),
-    gnd = engHex('sun', 'ambientGround', o.ambBot);
-  const shK = eng('sun', 'shAmbient') ?? 1,
+  const sky = engineColor('sun', 'ambientSky', o.ambTop),
+    gnd = engineColor('sun', 'ambientGround', o.ambBot);
+  const shK = engineSetting('sun', 'shAmbient') ?? 1,
     hor = o.ambHor || sky.map((v, i) => v * 0.85 + gnd[i] * 0.15);
   return {
     eye: o.eye,
     sun: o.sun,
     ambTop: sky,
     ambBot: gnd,
-    ambK: eng('sun', 'ambient'),
-    fogSun: o.indoor ? 0 : (eng('air', 'sunFog') ?? 0.6),
-    sh: shK > 0 ? eglSH(sky, hor, gnd, o.sun, o.noSunLobe ? 0 : 1) : null,
+    ambK: engineSetting('sun', 'ambient'),
+    fogSun: o.indoor ? 0 : (engineSetting('air', 'sunFog') ?? 0.6),
+    sh: shK > 0 ? skyHarmonics(sky, hor, gnd, o.sun, o.noSunLobe ? 0 : 1) : null,
     shK,
     fog: hz,
     fogStart: o.fogStart,
@@ -140,17 +142,20 @@ export function eglLightCtx(o) {
     tintAmt: tint ? (o.indoor ? 0.3 : 0.5) : 0,
     mist: o.mist,
     mistY: o.mistY,
-    valley: o.valley && eng('air', 'valleyMist') > 0 ? [o.valley[0], o.valley[1] * eng('air', 'valleyMist')] : [0, 0],
+    valley:
+      o.valley && engineSetting('air', 'valleyMist') > 0
+        ? [o.valley[0], o.valley[1] * engineSetting('air', 'valleyMist')]
+        : [0, 0],
     time: o.time,
-    shStr: eng('shadows', 'strength'),
-    shSoft: eng('shadows', 'softness'),
+    shStr: engineSetting('shadows', 'strength'),
+    shSoft: engineSetting('shadows', 'softness'),
     shTint,
-    cloudSh: o.indoor ? 0 : eng('sun', 'cloudShadows'),
-    cloudCov: eng('sun', 'clouds') ?? 0.45,
-    cloudSpd: eng('sun', 'cloudSpeed'),
-    contact: eng('shadows', 'contact'),
+    cloudSh: o.indoor ? 0 : engineSetting('sun', 'cloudShadows'),
+    cloudCov: engineSetting('sun', 'clouds') ?? 0.45,
+    cloudSpd: engineSetting('sun', 'cloudSpeed'),
+    contact: engineSetting('shadows', 'contact'),
     shLift,
-    shPx: eng('shadows', 'pixel') ? 16 : 0,
+    shPx: engineSetting('shadows', 'pixel') ? 16 : 0,
     roomB: o.roomB || [0, 0, 0, 0],
     roomDim: o.roomDim || 0,
     shadow: o.shadow || null,
@@ -161,8 +166,8 @@ export function eglLightCtx(o) {
     season: o.season || [0, 0, 0, 0],
   };
 }
-export function eglLightU(p, X) {
-  const gl = EGL.gl,
+export function setLightUniforms(p, X) {
+  const gl = gpuState.gl,
     U = p.U;
   if (!U.uEye && !U.uCurve) return;
   if (U.uCurve) {
@@ -216,11 +221,11 @@ export function eglLightU(p, X) {
     sampler2D there makes the card refuse the draw), with the frame's maps or a stand-in depth texture */
   const S = X.shadow;
   if (U.uShadow != null || U.uShadowD != null || U.uShadow2 != null || U.uLampSh0 != null) {
-    const D0 = (S ? S.d : EGL.fb.shadow ? EGL.fb.shadow.d : null) || EGL.depthStub,
+    const D0 = (S ? S.d : gpuState.fb.shadow ? gpuState.fb.shadow.d : null) || gpuState.depthStub,
       bindD = (u, t, cmp) => {
         gl.activeTexture(gl.TEXTURE0 + u);
         gl.bindTexture(gl.TEXTURE_2D, t);
-        gl.bindSampler(u, cmp ? EGL.samp.cmp : EGL.samp.raw);
+        gl.bindSampler(u, cmp ? gpuState.samp.cmp : gpuState.samp.raw);
       };
     bindD(6, D0, 1);
     bindD(7, D0, 0);
@@ -288,18 +293,18 @@ export function eglLightU(p, X) {
     gl.uniform1i(U.uNAO, X.ao.length);
   }
 }
-/* a sun shadow map covering a rectangle of the world; returns what eglLightCtx needs */
-export function eglShadowBegin(cx, cz, radius, sun, res, name = 'shadow') {
-  const gl = EGL.gl,
-    S = eglTarget(name, res, res, { depthOnly: true }),
+/* a sun shadow map covering a rectangle of the world; returns what lightContext needs */
+export function beginSunShadow(cx, cz, radius, sun, res, name = 'shadow') {
+  const gl = gpuState.gl,
+    S = renderTarget(name, res, res, { depthOnly: true }),
     tr = sun.travel,
     dist = 60;
   /* v19: the centre moves in whole shadow-map texels (seen from the sun), so shadow edges stand still while the camera moves */
   {
-    const f = v3n(tr),
+    const f = normalize3(tr),
       upR = Math.abs(tr[1]) > 0.98 ? [0, 0, 1] : [0, 1, 0],
-      rt = v3n(v3c(f, upR)),
-      up = v3c(rt, f),
+      rt = normalize3(cross3(f, upR)),
+      up = cross3(rt, f),
       tw = (2 * radius) / res,
       a = cx * rt[0] + cz * rt[2],
       b = cx * up[0] + cz * up[2],
@@ -313,10 +318,10 @@ export function eglShadowBegin(cx, cz, radius, sun, res, name = 'shadow') {
     cz += dz + f[2] * t;
   }
   const eye = [cx - tr[0] * dist, -tr[1] * dist + 2, cz - tr[2] * dist];
-  const view = M4.look(eye, [cx, 0, cz], Math.abs(tr[1]) > 0.98 ? [0, 0, 1] : [0, 1, 0]),
+  const view = matrix4.look(eye, [cx, 0, cz], Math.abs(tr[1]) > 0.98 ? [0, 0, 1] : [0, 1, 0]),
     depth = 140,
-    proj = M4.ortho(-radius, radius, -radius, radius, 1, depth),
-    vp = M4.mul(proj, view);
+    proj = matrix4.ortho(-radius, radius, -radius, radius, 1, depth),
+    vp = matrix4.mul(proj, view);
   gl.bindSampler(6, null);
   gl.bindSampler(7, null);
   gl.bindFramebuffer(gl.FRAMEBUFFER, S.f);
@@ -330,17 +335,17 @@ export function eglShadowBegin(cx, cz, radius, sun, res, name = 'shadow') {
   gl.polygonOffset(1.1, 2);
   /* penumbra in texels per unit of depth gap: wider for a softer (or lower) sun */
   const texelWorld = (2 * radius) / res,
-    pen = (depth * 0.03 * eng('shadows', 'softness')) / texelWorld;
+    pen = (depth * 0.03 * engineSetting('shadows', 'softness')) / texelWorld;
   return { d: S.d, vp, size: res, pen, radius, cx, cz };
 }
 /* v43: a lamp's shadow map: a wide-angled camera at the lamp looking straight down; what stands under the lamp throws
    its shadow outward on the ground. Perspective, so the texel is finest right under the lamp. */
-export function eglLampShadowBegin(pos, res, name) {
-  const gl = EGL.gl,
-    S = eglTarget(name, res, res, { depthOnly: true }),
-    view = M4.look(pos, [pos[0], pos[1] - 1, pos[2]], [0, 0, 1]),
-    proj = M4.persp(2.55, 1, 0.25, 24),
-    vp = M4.mul(proj, view);
+export function beginLampShadow(pos, res, name) {
+  const gl = gpuState.gl,
+    S = renderTarget(name, res, res, { depthOnly: true }),
+    view = matrix4.look(pos, [pos[0], pos[1] - 1, pos[2]], [0, 0, 1]),
+    proj = matrix4.persp(2.55, 1, 0.25, 24),
+    vp = matrix4.mul(proj, view);
   gl.bindSampler(12, null);
   gl.bindSampler(13, null);
   gl.bindFramebuffer(gl.FRAMEBUFFER, S.f);
@@ -354,13 +359,13 @@ export function eglLampShadowBegin(pos, res, name) {
   gl.polygonOffset(1.5, 3);
   return { d: S.d, vp, size: res, pen: 0, radius: 12, p: pos, lamp: true };
 }
-export function eglShadowEnd() {
-  const gl = EGL.gl;
+export function endShadow() {
+  const gl = gpuState.gl;
   gl.disable(gl.POLYGON_OFFSET_FILL);
   gl.colorMask(true, true, true, true);
 }
 /* point lights: the nearest few, faded in and out at the limit so they never pop */
-export function eglPickLights(L, cx, cz, max = 16) {
+export function pickPointLights(L, cx, cz, max = 16) {
   L.forEach(l => (l.d = Math.hypot(l.p[0] - cx, l.p[2] - cz) * (l.front ? 1.5 : 1)));
   /* alpha 0.4: a window's soft light counts as farther off than a lamp, so the lamps round you are always lit */ L.sort(
     (a, b) => a.d - b.d

@@ -1,7 +1,7 @@
 {
  "name": "Leader Carat",
  "who": "carat",
- "area": "grotto",
+ "battleStage": "grotto",
  "node": 32,
  "blocks": false,
  "team": [

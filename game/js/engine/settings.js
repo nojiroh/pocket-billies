@@ -1,29 +1,29 @@
 'use strict';
 /* ================= ENGINE SETTINGS =================
    Every dial the renderer reads. Defaults live here; game data can override them for the whole game
-   (GD.engine.defaults), per walk scene (scenes[id].look; battles use the scene they happen in) and for the map
-   (GD.engine.map). Pocket Billies Studio edits all three in its Engine section.
+   (gameData.engine.defaults), per walk scene (scenes[id].look; battles use the scene they happen in) and for the map
+   (gameData.engine.map). Pocket Billies Studio edits all three in its Engine section.
    A value of null means "use the scene's own field" (its haze, sky, camera…). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { ENV_MOD, GD, S, provide } from '../hooks.js';
-import { hexA } from '../art.js';
+import { ENVIRONMENT_ENGINE_MODIFIERS, gameData, provide, saveData } from '../hooks.js';
+import { hexToRgb } from '../art.js';
 /* eslint-disable no-func-assign */
 expose({
   ENGINE_DEFAULTS: [() => ENGINE_DEFAULTS],
   ENGINE_PRESETS: [() => ENGINE_PRESETS],
   ENGINE_SPEC: [() => ENGINE_SPEC],
-  ENG_CTX: [() => ENG_CTX, v => (ENG_CTX = v)],
-  eng: [() => eng, v => ((eng = v), provide({ eng }))],
-  engGame: [() => engGame, v => (engGame = v)],
-  engHex: [() => engHex, v => (engHex = v)],
-  engLook: [() => engLook, v => (engLook = v)],
-  engPlayer: [() => engPlayer, v => (engPlayer = v)],
-  engSource: [() => engSource, v => setEngSource(v)],
-  setEngSource: [() => setEngSource, v => (setEngSource = v)],
+  engineColor: [() => engineColor, v => (engineColor = v)],
+  engineContext: [() => engineContext, v => (engineContext = v)],
+  engineDataSource: [() => engineDataSource, v => setEngineDataSource(v)],
+  engineSetting: [() => engineSetting, v => ((engineSetting = v), provide({ engineSetting }))],
+  gameDataDials: [() => gameDataDials, v => (gameDataDials = v)],
+  lookDials: [() => lookDials, v => (lookDials = v)],
+  playerDials: [() => playerDials, v => (playerDials = v)],
+  setEngineDataSource: [() => setEngineDataSource, v => (setEngineDataSource = v)],
 });
 /* eslint-enable no-func-assign */
-provide({ eng });
+provide({ engineSetting });
 /* to-module: end */
 export const ENGINE_DEFAULTS = {
   lens: {
@@ -483,7 +483,7 @@ export const ENGINE_SPEC = [
         0,
         1.5,
         0.05,
-        'v47: each place has its own colour mood (warm late afternoon in Sundown, cool and misty in the Thicket, hazy heat in the canyon). 0: one look everywhere.',
+        'v47: each place has its own colour mood (warm late afternoon in Marigold Town, cool and misty in Thornberry Wood, hazy heat in Stepstone Canyon). 0: one look everywhere.',
       ],
       [
         'voxelProps',
@@ -768,47 +768,47 @@ export const ENGINE_PRESETS = {
   },
 };
 /* the value for one dial: scene look → game-wide defaults → built-in default */
-function engLook() {
-  if (typeof ENG_CTX !== 'undefined' && ENG_CTX.look) return ENG_CTX.look;
+function lookDials() {
+  if (typeof engineContext !== 'undefined' && engineContext.look) return engineContext.look;
   return null;
 }
-export let ENG_CTX = { look: null, bypass: false, env: false };
-export let engSource = () => (typeof GD !== 'undefined' ? GD.engine : null);
-/* phase 04d: the Studio points it at its unsaved data (studio/js/engine.js) */
-export function setEngSource(v) {
-  engSource = v;
-  provide({ engSource });
+export let engineContext = { look: null, bypass: false, env: false };
+export let engineDataSource = () => (typeof gameData !== 'undefined' ? gameData.engine : null);
+/* phase 04d: the Studio points it at its unsaved data (studio/js/engine-editor.js) */
+export function setEngineDataSource(v) {
+  engineDataSource = v;
+  provide({ engineDataSource });
 } /* the Studio points this at its unsaved data */
-function engGame() {
-  const d = engSource();
+function gameDataDials() {
+  const d = engineDataSource();
   return (d && d.defaults) || null;
 }
 /* alpha 0.5: a player's own expert dials (Settings → Graphics → Expert) come first */
-function engPlayer() {
-  const p = typeof S !== 'undefined' && S && S.preferences;
+function playerDials() {
+  const p = typeof saveData !== 'undefined' && saveData && saveData.preferences;
   return p && p.expert && p.eng ? p.eng : null;
 }
-export function eng(group, key) {
-  if (ENG_CTX.bypass) return ENGINE_DEFAULTS[group][key];
-  const L = engLook(),
-    G = engGame(),
-    P = engPlayer();
+export function engineSetting(group, key) {
+  if (engineContext.bypass) return ENGINE_DEFAULTS[group][key];
+  const L = lookDials(),
+    G = gameDataDials(),
+    P = playerDials();
   let v = P && P[group] ? P[group][key] : undefined;
   if (v === undefined && L && L[group]) v = L[group][key];
   if (v === undefined && G && G[group]) v = G[group][key];
   if (v === undefined) v = ENGINE_DEFAULTS[group][key];
-  /* v26: the time of day and the weather lean on some dials while a walk scene draws (env.js) */
-  if (ENG_CTX.env && typeof ENV_MOD !== 'undefined') {
-    const m = ENV_MOD[group];
+  /* v26: the time of day and the weather lean on some dials while a walk scene draws (environment.js) */
+  if (engineContext.env && typeof ENVIRONMENT_ENGINE_MODIFIERS !== 'undefined') {
+    const m = ENVIRONMENT_ENGINE_MODIFIERS[group];
     if (m && m[key] && typeof v === 'number') v = m[key](v);
   }
   return v;
 }
-export function engHex(group, key, fb) {
-  const v = eng(group, key) || fb;
-  if (typeof v === 'string' && /^#[0-9a-f]{6}$/i.test(v)) return hexA(v).map(x => x / 255);
+export function engineColor(group, key, fb) {
+  const v = engineSetting(group, key) || fb;
+  if (typeof v === 'string' && /^#[0-9a-f]{6}$/i.test(v)) return hexToRgb(v).map(x => x / 255);
   if (Array.isArray(fb)) return fb;
-  /* v43: a fallback given as 0..1 numbers is used as it is (it was divided by 255, which left the ambient light at nothing) */ return hexA(
+  /* v43: a fallback given as 0..1 numbers is used as it is (it was divided by 255, which left the ambient light at nothing) */ return hexToRgb(
     fb || '#ffffff'
   ).map(x => x / 255);
 }

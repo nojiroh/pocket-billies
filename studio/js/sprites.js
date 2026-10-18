@@ -7,82 +7,82 @@
 import { expose } from '../../game/js/test-globals.js';
 import { openSkeleton, provide } from '../../game/js/hooks.js';
 import { $, $$, clamp } from '../../game/js/util.js';
-import { cnv } from '../../game/js/art.js';
-import { animFor } from '../../game/js/anim.js';
-import { drawRig, rigPose } from '../../game/js/rig.js';
-import { esc } from './shims.js';
-import { ST, ask, render, spName, toast, updTop } from './core.js';
+import { makeCanvas } from '../../game/js/art.js';
+import { animFor } from '../../game/js/body-plan-animation.js';
+import { drawRig, rigPose } from '../../game/js/skeleton-rig.js';
+import { escapeHtml } from './game-stand-ins.js';
+import { ask, render, speciesName, studioState, toast, updateTopBar } from './studio-app.js';
 /* eslint-disable no-func-assign */
 expose({
-  ATL: [() => ATL],
-  ATL_VER: [() => ATL_VER, v => (ATL_VER = v)],
-  ATL_WAIT: [() => ATL_WAIT],
-  FACE_N: [() => FACE_N],
+  ATLAS_CACHE: [() => ATLAS_CACHE],
+  ATLAS_LOADS: [() => ATLAS_LOADS],
+  FACE_FRAMES: [() => FACE_FRAMES],
   GOLD_RAMP: [() => GOLD_RAMP],
-  PREV: [() => PREV],
-  PX_ED: [() => PX_ED],
-  RIGB: [() => RIGB],
+  RIG_CACHE: [() => RIG_CACHE],
+  SPRITE_PREVIEWS: [() => SPRITE_PREVIEWS],
   atlasGet: [() => atlasGet, v => (atlasGet = v)],
-  atlasNow: [() => atlasNow],
   atlasPath: [() => atlasPath],
+  atlasVersion: [() => atlasVersion, v => (atlasVersion = v)],
+  bindPixelCanvas: [() => bindPixelCanvas, v => (bindPixelCanvas = v)],
+  bindPixelEditor: [() => bindPixelEditor, v => (bindPixelEditor = v)],
   canvasCopy: [() => canvasCopy, v => (canvasCopy = v)],
+  choosePixelColor: [() => choosePixelColor, v => (choosePixelColor = v)],
   downloadCanvas: [() => downloadCanvas, v => (downloadCanvas = v)],
-  drawPrev: [() => drawPrev, v => (drawPrev = v)],
+  drawPixelEditor: [() => drawPixelEditor, v => (drawPixelEditor = v)],
+  drawSpritePreview: [() => drawSpritePreview, v => (drawSpritePreview = v)],
   fileToCanvas: [() => fileToCanvas, v => (fileToCanvas = v)],
+  fillPixels: [() => fillPixels, v => (fillPixels = v)],
   goldFrom: [() => goldFrom, v => (goldFrom = v)],
-  hsv2rgb: [() => hsv2rgb, v => (hsv2rgb = v)],
+  hsvToRgb: [() => hsvToRgb, v => (hsvToRgb = v)],
   hueShift: [() => hueShift, v => (hueShift = v)],
   loadImage: [() => loadImage, v => (loadImage = v)],
-  lumOf: [() => lumOf],
+  loadedAtlas: [() => loadedAtlas],
+  luminance: [() => luminance],
   markArt: [() => markArt, v => (markArt = v)],
   mountPreviews: [() => mountPreviews, v => ((mountPreviews = v), provide({ mountPreviews }))],
   openPixelEditor: [() => openPixelEditor, v => (openPixelEditor = v)],
   partsOf: [() => partsOf, v => (partsOf = v)],
   pickFile: [() => pickFile, v => (pickFile = v)],
-  prevAct: [() => prevAct, v => (prevAct = v)],
-  prevCanvas: [() => prevCanvas, v => (prevCanvas = v)],
-  prevLoop: [() => prevLoop, v => (prevLoop = v)],
-  prevOn: [() => prevOn, v => (prevOn = v)],
+  pixelEditor: [() => pixelEditor],
+  pixelEditorAtlasPath: [() => pixelEditorAtlasPath, v => (pixelEditorAtlasPath = v)],
+  pixelEditorBones: [() => pixelEditorBones, v => (pixelEditorBones = v)],
+  pixelEditorCanvas: [() => pixelEditorCanvas, v => (pixelEditorCanvas = v)],
+  pixelEditorChanged: [() => pixelEditorChanged, v => (pixelEditorChanged = v)],
+  pixelEditorKeys: [() => pixelEditorKeys, v => (pixelEditorKeys = v)],
+  pixelEditorPalette: [() => pixelEditorPalette, v => (pixelEditorPalette = v)],
+  pixelEditorPoint: [() => pixelEditorPoint, v => (pixelEditorPoint = v)],
+  playSpritePreviewAction: [() => playSpritePreviewAction, v => (playSpritePreviewAction = v)],
+  plotPixel: [() => plotPixel, v => (plotPixel = v)],
+  plotPixelLine: [() => plotPixelLine, v => (plotPixelLine = v)],
   previewsDirty: [() => previewsDirty, v => (previewsDirty = v)],
-  pxBind: [() => pxBind, v => (pxBind = v)],
-  pxBindCanvas: [() => pxBindCanvas, v => (pxBindCanvas = v)],
-  pxBones: [() => pxBones, v => (pxBones = v)],
-  pxCanvas: [() => pxCanvas, v => (pxCanvas = v)],
-  pxChanged: [() => pxChanged, v => (pxChanged = v)],
-  pxDraw: [() => pxDraw, v => (pxDraw = v)],
-  pxFill: [() => pxFill, v => (pxFill = v)],
-  pxKeys: [() => pxKeys, v => (pxKeys = v)],
-  pxLine: [() => pxLine, v => (pxLine = v)],
-  pxLoad: [() => pxLoad, v => (pxLoad = v)],
-  pxLoadTools: [() => pxLoadTools, v => (pxLoadTools = v)],
-  pxPalette: [() => pxPalette, v => (pxPalette = v)],
-  pxPath: [() => pxPath, v => (pxPath = v)],
-  pxPlot: [() => pxPlot, v => (pxPlot = v)],
-  pxPos: [() => pxPos, v => (pxPos = v)],
-  pxPush: [() => pxPush, v => (pxPush = v)],
-  pxRedo: [() => pxRedo, v => (pxRedo = v)],
-  pxSetColor: [() => pxSetColor, v => (pxSetColor = v)],
-  pxUndo: [() => pxUndo, v => (pxUndo = v)],
+  pushPixelUndo: [() => pushPixelUndo, v => (pushPixelUndo = v)],
   rampAt: [() => rampAt, v => (rampAt = v)],
-  rgb2hsv: [() => rgb2hsv, v => (rgb2hsv = v)],
+  redoPixels: [() => redoPixels, v => (redoPixels = v)],
+  refreshPixelEditor: [() => refreshPixelEditor, v => (refreshPixelEditor = v)],
+  refreshPixelTools: [() => refreshPixelTools, v => (refreshPixelTools = v)],
+  rgbToHsv: [() => rgbToHsv, v => (rgbToHsv = v)],
   rigFor: [() => rigFor, v => (rigFor = v)],
   spriteCacheClear: [() => spriteCacheClear, v => ((spriteCacheClear = v), provide({ spriteCacheClear }))],
+  spritePreviewHTML: [() => spritePreviewHTML, v => (spritePreviewHTML = v)],
+  spritePreviewLoop: [() => spritePreviewLoop, v => (spritePreviewLoop = v)],
+  spritePreviewsRunning: [() => spritePreviewsRunning, v => (spritePreviewsRunning = v)],
+  undoPixels: [() => undoPixels, v => (undoPixels = v)],
 });
 /* eslint-enable no-func-assign */
 provide({ mountPreviews, spriteCacheClear });
 /* to-module: end */
-export const ATL = new Map(); /* path -> canvas */
-const ATL_WAIT = new Map();
-const RIGB = new Map(); /* key -> {ver,R} */
-export let ATL_VER = 0;
+export const ATLAS_CACHE = new Map(); /* path -> canvas */
+const ATLAS_LOADS = new Map();
+const RIG_CACHE = new Map(); /* key -> {ver,R} */
+export let atlasVersion = 0;
 export const atlasPath = (sp, view, gold) => {
-  const m = ST.rigs && ST.rigs[sp] && ST.rigs[sp][view];
+  const m = studioState.rigs && studioState.rigs[sp] && studioState.rigs[sp][view];
   if (m && m.sheet) return 'art/' + (gold ? m.sheet.replace(/\.png$/, '_gold.png') : m.sheet);
   return `art/billionaires/${sp}${view === 'back' ? '_back' : ''}${gold ? '_gold' : ''}.png`;
 };
 export function spriteCacheClear() {
-  RIGB.clear();
-  ATL_VER++;
+  RIG_CACHE.clear();
+  atlasVersion++;
 }
 export function loadImage(src) {
   return new Promise((res, rej) => {
@@ -93,41 +93,41 @@ export function loadImage(src) {
   });
 }
 export function atlasGet(path) {
-  if (ST.artDirty.has(path)) return Promise.resolve(ST.artDirty.get(path));
-  if (ATL.has(path)) return Promise.resolve(ATL.get(path));
-  if (ATL_WAIT.has(path)) return ATL_WAIT.get(path);
+  if (studioState.artDirty.has(path)) return Promise.resolve(studioState.artDirty.get(path));
+  if (ATLAS_CACHE.has(path)) return Promise.resolve(ATLAS_CACHE.get(path));
+  if (ATLAS_LOADS.has(path)) return ATLAS_LOADS.get(path);
   const p = loadImage('../game/' + path + '?v=' + Date.now())
     .then(im => {
-      const c = cnv(im.naturalWidth, im.naturalHeight);
+      const c = makeCanvas(im.naturalWidth, im.naturalHeight);
       c.getContext('2d').drawImage(im, 0, 0);
-      ATL.set(path, c);
-      ATL_WAIT.delete(path);
+      ATLAS_CACHE.set(path, c);
+      ATLAS_LOADS.delete(path);
       return c;
     })
     .catch(e => {
-      ATL_WAIT.delete(path);
+      ATLAS_LOADS.delete(path);
       throw e;
     });
-  ATL_WAIT.set(path, p);
+  ATLAS_LOADS.set(path, p);
   return p;
 }
-export const atlasNow = path => ST.artDirty.get(path) || ATL.get(path) || null;
-/* assemble a skeleton like rig.js rigParts(), but from the Studio's editable atlas */
+export const loadedAtlas = path => studioState.artDirty.get(path) || ATLAS_CACHE.get(path) || null;
+/* assemble a skeleton like skeleton-rig.js rigParts(), but from the Studio's editable atlas */
 export function rigFor(sp, view, gold) {
   const path = atlasPath(sp, view, gold),
-    atlas = atlasNow(path);
+    atlas = loadedAtlas(path);
   if (!atlas) {
     atlasGet(path).catch(() => {});
     return null;
   }
-  const meta = ST.rigs[sp] && ST.rigs[sp][view];
+  const meta = studioState.rigs[sp] && studioState.rigs[sp][view];
   if (!meta) return null;
   const key = path,
-    ver = (ST.rigVer || 0) + ':' + ATL_VER + ':' + (atlas._ver || 0),
-    hit = RIGB.get(key);
+    ver = (studioState.rigVer || 0) + ':' + atlasVersion + ':' + (atlas._ver || 0),
+    hit = RIG_CACHE.get(key);
   if (hit && hit.ver === ver) return hit.R;
   const cut = ([x, y, w, h]) => {
-    const c = cnv(Math.max(1, w), Math.max(1, h));
+    const c = makeCanvas(Math.max(1, w), Math.max(1, h));
     c.getContext('2d').drawImage(atlas, x, y, w, h, 0, 0, w, h);
     return c;
   };
@@ -151,35 +151,35 @@ export function rigFor(sp, view, gold) {
     bones,
     anim: animFor(meta.plan, meta.q || {}),
   };
-  RIGB.set(key, { ver, R });
+  RIG_CACHE.set(key, { ver, R });
   return R;
 }
 /* ---------- previews ---------- */
-const PREV = new Set();
-let prevOn = false;
-export function prevCanvas(o) {
-  return `<canvas class="spr-prev ${o.cls || ''}" data-prev='${esc(JSON.stringify(o))}' width="10" height="10"></canvas>`;
+const SPRITE_PREVIEWS = new Set();
+let spritePreviewsRunning = false;
+export function spritePreviewHTML(o) {
+  return `<canvas class="spr-prev ${o.cls || ''}" data-prev='${escapeHtml(JSON.stringify(o))}' width="10" height="10"></canvas>`;
 }
 export function mountPreviews(root = document) {
   $$('canvas[data-prev]', root).forEach(c => {
     if (c._p) return;
     const o = JSON.parse(c.dataset.prev);
     c._p = { ...o, seed: Math.random() * 6, t0: performance.now(), act: o.act || null };
-    PREV.add(c);
-    drawPrev(c, performance.now());
+    SPRITE_PREVIEWS.add(c);
+    drawSpritePreview(c, performance.now());
   });
-  if (!prevOn) {
-    prevOn = true;
-    requestAnimationFrame(prevLoop);
+  if (!spritePreviewsRunning) {
+    spritePreviewsRunning = true;
+    requestAnimationFrame(spritePreviewLoop);
   }
 }
-export function prevAct(c, act) {
+export function playSpritePreviewAction(c, act) {
   if (c && c._p) {
     c._p.act = act;
     c._p.t0 = performance.now();
   }
 }
-function drawPrev(c, ts) {
+function drawSpritePreview(c, ts) {
   const o = c._p,
     R = rigFor(o.sp, o.view || 'front', !!o.gold);
   const x = c.getContext('2d');
@@ -189,7 +189,7 @@ function drawPrev(c, ts) {
       atlasGet(atlasPath(o.sp, o.view || 'front', !!o.gold))
         .then(() => {
           o.miss = 0;
-          drawPrev(c, performance.now());
+          drawSpritePreview(c, performance.now());
         })
         .catch(() => {
           x.clearRect(0, 0, c.width, c.height);
@@ -211,26 +211,26 @@ function drawPrev(c, ts) {
   drawRig(x, R, rigPose(act, tau, o.still ? 0 : ts, o.seed), o.view || 'front');
   o.drawn = 1;
 }
-function prevLoop(ts) {
+function spritePreviewLoop(ts) {
   let any = false;
-  for (const c of PREV) {
+  for (const c of SPRITE_PREVIEWS) {
     if (!c.isConnected) {
-      PREV.delete(c);
+      SPRITE_PREVIEWS.delete(c);
       continue;
     }
     any = true;
     if (c._p.still && c._p.drawn && !c._p.dirty) continue;
     c._p.dirty = 0;
-    drawPrev(c, ts);
+    drawSpritePreview(c, ts);
   }
-  if (any) requestAnimationFrame(prevLoop);
-  else prevOn = false;
+  if (any) requestAnimationFrame(spritePreviewLoop);
+  else spritePreviewsRunning = false;
 }
 export function previewsDirty() {
-  for (const c of PREV) c._p.dirty = 1;
+  for (const c of SPRITE_PREVIEWS) c._p.dirty = 1;
 }
 /* ---------- color tools ---------- */
-const lumOf = (r, g, b) => (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+const luminance = (r, g, b) => (0.299 * r + 0.587 * g + 0.114 * b) / 255;
 const GOLD_RAMP = [
   [0, [64, 40, 14]],
   [0.35, [150, 100, 30]],
@@ -251,7 +251,7 @@ function rampAt(L) {
 }
 /* Gold-Plated version from the normal art: tint toward a gold ramp by brightness; outlines, eyes and highlights keep most of their color */
 export function goldFrom(src, strength = 0.6) {
-  const c = cnv(src.width, src.height),
+  const c = makeCanvas(src.width, src.height),
     x = c.getContext('2d');
   x.drawImage(src, 0, 0);
   const im = x.getImageData(0, 0, c.width, c.height),
@@ -261,7 +261,7 @@ export function goldFrom(src, strength = 0.6) {
     const r = d[i],
       g = d[i + 1],
       b = d[i + 2],
-      L = lumOf(r, g, b),
+      L = luminance(r, g, b),
       mx = Math.max(r, g, b),
       mn = Math.min(r, g, b),
       sat = mx ? (mx - mn) / mx : 0;
@@ -277,7 +277,7 @@ export function goldFrom(src, strength = 0.6) {
   x.putImageData(im, 0, 0);
   return c;
 }
-function rgb2hsv(r, g, b) {
+function rgbToHsv(r, g, b) {
   r /= 255;
   g /= 255;
   b /= 255;
@@ -294,7 +294,7 @@ function rgb2hsv(r, g, b) {
   }
   return [h, mx ? d / mx : 0, mx];
 }
-function hsv2rgb(h, s, v) {
+function hsvToRgb(h, s, v) {
   const c = v * s,
     x = c * (1 - Math.abs(((h / 60) % 2) - 1)),
     m = v - c;
@@ -311,7 +311,7 @@ function hsv2rgb(h, s, v) {
 }
 /* recolor: rotate the hue of colorful pixels (skin-ish and grey pixels are left alone when protectSkin is on) */
 export function hueShift(src, deg, satK = 1, protectSkin = true) {
-  const c = cnv(src.width, src.height),
+  const c = makeCanvas(src.width, src.height),
     x = c.getContext('2d');
   x.drawImage(src, 0, 0);
   if (!deg && satK === 1) return c;
@@ -319,10 +319,10 @@ export function hueShift(src, deg, satK = 1, protectSkin = true) {
     d = im.data;
   for (let i = 0; i < d.length; i += 4) {
     if (!d[i + 3]) continue;
-    const [h, s, v] = rgb2hsv(d[i], d[i + 1], d[i + 2]);
+    const [h, s, v] = rgbToHsv(d[i], d[i + 1], d[i + 2]);
     if (s < 0.12) continue;
     if (protectSkin && h > 12 && h < 42 && s < 0.55 && v > 0.45) continue;
-    const [r, g, b] = hsv2rgb((h + deg + 360) % 360, clamp(s * satK, 0, 1), v);
+    const [r, g, b] = hsvToRgb((h + deg + 360) % 360, clamp(s * satK, 0, 1), v);
     d[i] = r;
     d[i + 1] = g;
     d[i + 2] = b;
@@ -331,16 +331,16 @@ export function hueShift(src, deg, satK = 1, protectSkin = true) {
   return c;
 }
 function canvasCopy(src) {
-  const c = cnv(src.width, src.height);
+  const c = makeCanvas(src.width, src.height);
   c.getContext('2d').drawImage(src, 0, 0);
   return c;
 }
 export function markArt(path, c) {
   c._ver = (c._ver || 0) + 1;
-  ATL_VER++;
-  ST.artDirty.set(path, c);
-  ATL.set(path, c);
-  updTop();
+  atlasVersion++;
+  studioState.artDirty.set(path, c);
+  ATLAS_CACHE.set(path, c);
+  updateTopBar();
   previewsDirty();
 }
 export function downloadCanvas(c, name) {
@@ -365,7 +365,7 @@ export async function fileToCanvas(f) {
   const url = URL.createObjectURL(f);
   try {
     const im = await loadImage(url);
-    const c = cnv(im.naturalWidth, im.naturalHeight);
+    const c = makeCanvas(im.naturalWidth, im.naturalHeight);
     c.getContext('2d').drawImage(im, 0, 0);
     return c;
   } finally {
@@ -373,22 +373,27 @@ export async function fileToCanvas(f) {
   }
 }
 /* ================= PIXEL EDITOR ================= */
-export const PX_ED = {};
-const FACE_N = { idle: 'face', blink: 'blink', happy: 'happy', hurt: 'hurt', shout: 'shout', main: '' };
+export const pixelEditor = {};
+const FACE_FRAMES = { idle: 'face', blink: 'blink', happy: 'happy', hurt: 'hurt', shout: 'shout', main: '' };
 function partsOf(sp, view) {
-  const meta = ST.rigs[sp] && ST.rigs[sp][view];
+  const meta = studioState.rigs[sp] && studioState.rigs[sp][view];
   if (!meta) return [];
   const out = [];
   meta.imgs.forEach((e, i) => {
     const bones = meta.bones.filter(b => b.i === i).map(b => b.n);
     Object.entries(e.f).forEach(([v, r]) =>
-      out.push({ i, v, r, label: (bones.join(', ') || 'part ' + i) + (v !== 'main' ? ` (${FACE_N[v] || v})` : '') })
+      out.push({
+        i,
+        v,
+        r,
+        label: (bones.join(', ') || 'part ' + i) + (v !== 'main' ? ` (${FACE_FRAMES[v] || v})` : ''),
+      })
     );
   });
   return out;
 }
 export async function openPixelEditor(sp, view = 'front', gold = false, focus = null) {
-  const E = PX_ED;
+  const E = pixelEditor;
   Object.assign(E, {
     sp,
     view,
@@ -418,7 +423,7 @@ export async function openPixelEditor(sp, view = 'front', gold = false, focus = 
   }
   const m = $('#modal');
   m.innerHTML = `<div class="pxed" role="dialog" aria-modal="true" aria-label="Pixel editor">
- <header class="px-top"><b>${esc(spName(sp))}</b><span class="px-tabs">${[
+ <header class="px-top"><b>${escapeHtml(speciesName(sp))}</b><span class="px-tabs">${[
    ['front', 0, 'Front'],
    ['back', 0, 'Back'],
    ['front', 1, 'Front · golden'],
@@ -446,18 +451,18 @@ export async function openPixelEditor(sp, view = 'front', gold = false, focus = 
   <div class="px-sec"><h4>Whole sheet</h4><p class="help">Edit in another app (Aseprite, Photoshop…): download, edit, upload. Keep the size and layout so the parts line up.</p><div class="seg-row"><button class="btn" data-pe="dl">Download PNG</button><button class="btn" data-pe="ul">Upload PNG</button></div><button class="btn subtle" data-pe="revert">Revert to the saved file</button></div>
   <div class="px-sec"><h4>Skeleton</h4><p class="help">Nudge where each part attaches and how parts stack. Changes animate live.</p><div id="pxBones"></div></div>
  </aside></div></div>`;
-  pxBind();
-  pxLoad();
+  bindPixelEditor();
+  refreshPixelEditor();
 }
-function pxPath() {
-  return atlasPath(PX_ED.sp, PX_ED.view, PX_ED.gold);
+function pixelEditorAtlasPath() {
+  return atlasPath(pixelEditor.sp, pixelEditor.view, pixelEditor.gold);
 }
-function pxCanvas() {
-  return atlasNow(pxPath());
+function pixelEditorCanvas() {
+  return loadedAtlas(pixelEditorAtlasPath());
 }
-function pxLoad() {
-  const E = PX_ED,
-    c = pxCanvas();
+function refreshPixelEditor() {
+  const E = pixelEditor,
+    c = pixelEditorCanvas();
   $$('.pxed [data-pe=atlas]').forEach(b =>
     b.classList.toggle('on', b.dataset.v === E.view && (+b.dataset.g === 1) === E.gold)
   );
@@ -471,7 +476,7 @@ function pxLoad() {
   if (!$('#pxCv')) {
     $('#pxStage').innerHTML =
       '<div class="px-wrap" id="pxWrap"><canvas id="pxCv"></canvas><div class="px-grid" id="pxGrid"></div><svg id="pxParts"></svg></div>';
-    pxBindCanvas();
+    bindPixelCanvas();
   }
   if (!E.zoom) {
     const st = $('#pxStage').getBoundingClientRect();
@@ -495,9 +500,9 @@ function pxLoad() {
       }, 30);
     }
   }
-  pxDraw();
-  pxPalette();
-  pxBones();
+  drawPixelEditor();
+  pixelEditorPalette();
+  pixelEditorBones();
   const pv = $('#pxPrev');
   pv.dataset.prev = JSON.stringify({
     sp: E.sp,
@@ -507,12 +512,12 @@ function pxLoad() {
     loop: 1,
   });
   pv._p = null;
-  PREV.delete(pv);
+  SPRITE_PREVIEWS.delete(pv);
   mountPreviews($('.pxed'));
 }
-function pxDraw() {
-  const E = PX_ED,
-    c = pxCanvas(),
+function drawPixelEditor() {
+  const E = pixelEditor,
+    c = pixelEditorCanvas(),
     v = $('#pxCv');
   if (!c || !v) return;
   v.width = c.width;
@@ -540,8 +545,8 @@ function pxDraw() {
   $$('.pxed [data-pe=grid]').forEach(b => b.classList.toggle('on', E.grid));
   $$('.pxed [data-pe=parts]').forEach(b => b.classList.toggle('on', E.parts));
 }
-function pxPalette() {
-  const c = pxCanvas();
+function pixelEditorPalette() {
+  const c = pixelEditorCanvas();
   if (!c) return;
   const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data,
     cnt = new Map();
@@ -558,9 +563,9 @@ function pxPalette() {
     .map(h => `<button class="sw" style="background:${h}" data-pe="sw" data-c="${h}" title="${h}"></button>`)
     .join('');
 }
-function pxBones() {
-  const E = PX_ED,
-    meta = ST.rigs[E.sp] && ST.rigs[E.sp][E.view];
+function pixelEditorBones() {
+  const E = pixelEditor,
+    meta = studioState.rigs[E.sp] && studioState.rigs[E.sp][E.view];
   if (!meta) {
     $('#pxBones').innerHTML = '';
     return;
@@ -569,36 +574,36 @@ function pxBones() {
   $('#pxBones').innerHTML =
     `<table class="bones"><thead><tr><th>Part</th><th>X</th><th>Y</th><th>${E.view === 'back' ? 'Layer (back)' : 'Layer'}</th><th>Tilt</th></tr></thead><tbody>${meta.bones
       .map(
-        (b, i) => `<tr><td title="attached to ${esc(b.par || 'body')}">${esc(b.n)}</td>
+        (b, i) => `<tr><td title="attached to ${escapeHtml(b.par || 'body')}">${escapeHtml(b.n)}</td>
   <td><input type="number" step="0.5" data-p="${base}.${i}.at.0" data-k="num" value="${b.at[0]}"></td><td><input type="number" step="0.5" data-p="${base}.${i}.at.1" data-k="num" value="${b.at[1]}"></td>
   <td><input type="number" step="1" data-p="${base}.${i}.${E.view === 'back' && b.zb != null ? 'zb' : 'z'}" data-k="num" value="${E.view === 'back' && b.zb != null ? b.zb : b.z}"></td><td><input type="number" step="0.02" data-p="${base}.${i}.rr" data-k="num" data-opt="1" value="${b.rr || ''}" placeholder="0"></td></tr>`
       )
       .join('')}</tbody></table>`;
 }
-function pxPos(ev) {
+function pixelEditorPoint(ev) {
   const v = $('#pxCv'),
     r = v.getBoundingClientRect(),
-    c = pxCanvas();
+    c = pixelEditorCanvas();
   return [
     Math.floor(((ev.clientX - r.left) / r.width) * c.width),
     Math.floor(((ev.clientY - r.top) / r.height) * c.height),
   ];
 }
-function pxPush() {
-  const c = pxCanvas(),
-    E = PX_ED;
+function pushPixelUndo() {
+  const c = pixelEditorCanvas(),
+    E = pixelEditor;
   E.undo.push(c.getContext('2d').getImageData(0, 0, c.width, c.height));
   if (E.undo.length > 40) E.undo.shift();
   E.redo = [];
 }
-function pxChanged() {
-  const c = pxCanvas();
-  markArt(pxPath(), c);
-  pxDraw();
+function pixelEditorChanged() {
+  const c = pixelEditorCanvas();
+  markArt(pixelEditorAtlasPath(), c);
+  drawPixelEditor();
 }
-function pxPlot(x, y) {
-  const E = PX_ED,
-    c = pxCanvas(),
+function plotPixel(x, y) {
+  const E = pixelEditor,
+    c = pixelEditorCanvas(),
     cx = c.getContext('2d');
   if (x < 0 || y < 0 || x >= c.width || y >= c.height) return;
   if (E.tool === 'erase') cx.clearRect(x, y, 1, 1);
@@ -607,7 +612,7 @@ function pxPlot(x, y) {
     cx.fillRect(x, y, 1, 1);
   }
 }
-function pxLine(a, b) {
+function plotPixelLine(a, b) {
   let [x0, y0] = a;
   const [x1, y1] = b,
     dx = Math.abs(x1 - x0),
@@ -616,7 +621,7 @@ function pxLine(a, b) {
     sy = y0 < y1 ? 1 : -1;
   let e = dx + dy;
   for (;;) {
-    pxPlot(x0, y0);
+    plotPixel(x0, y0);
     if (x0 === x1 && y0 === y1) break;
     const e2 = 2 * e;
     if (e2 >= dy) {
@@ -629,9 +634,9 @@ function pxLine(a, b) {
     }
   }
 }
-function pxFill(x, y) {
-  const E = PX_ED,
-    c = pxCanvas(),
+function fillPixels(x, y) {
+  const E = pixelEditor,
+    c = pixelEditorCanvas(),
     cx = c.getContext('2d'),
     W = c.width,
     Hh = c.height,
@@ -656,54 +661,54 @@ function pxFill(x, y) {
   }
   cx.putImageData(im, 0, 0);
 }
-function pxSetColor(h) {
-  PX_ED.color = h.toUpperCase();
+function choosePixelColor(h) {
+  pixelEditor.color = h.toUpperCase();
   $('#pxColor').value = h;
-  $('#pxHex').textContent = PX_ED.color;
-  if (PX_ED.tool === 'erase' || PX_ED.tool === 'pick') {
-    PX_ED.tool = 'pen';
-    pxLoadTools();
+  $('#pxHex').textContent = pixelEditor.color;
+  if (pixelEditor.tool === 'erase' || pixelEditor.tool === 'pick') {
+    pixelEditor.tool = 'pen';
+    refreshPixelTools();
   }
 }
-function pxLoadTools() {
-  $$('.pxed [data-pe=tool]').forEach(b => b.classList.toggle('on', b.dataset.t === PX_ED.tool));
+function refreshPixelTools() {
+  $$('.pxed [data-pe=tool]').forEach(b => b.classList.toggle('on', b.dataset.t === pixelEditor.tool));
   const w = $('#pxWrap');
-  if (w) w.dataset.tool = PX_ED.tool;
+  if (w) w.dataset.tool = pixelEditor.tool;
 }
-function pxBindCanvas() {
+function bindPixelCanvas() {
   const w = $('#pxWrap');
   let down = false,
     last = null;
   w.addEventListener('pointerdown', ev => {
     if (ev.button !== 0) return;
-    const E = PX_ED,
-      p = pxPos(ev),
-      c = pxCanvas();
+    const E = pixelEditor,
+      p = pixelEditorPoint(ev),
+      c = pixelEditorCanvas();
     if (!c) return;
     w.setPointerCapture(ev.pointerId);
     if (E.tool === 'pick') {
       const d = c.getContext('2d').getImageData(p[0], p[1], 1, 1).data;
-      if (d[3]) pxSetColor('#' + [d[0], d[1], d[2]].map(v => v.toString(16).padStart(2, '0')).join(''));
+      if (d[3]) choosePixelColor('#' + [d[0], d[1], d[2]].map(v => v.toString(16).padStart(2, '0')).join(''));
       return;
     }
-    pxPush();
+    pushPixelUndo();
     if (E.tool === 'fill') {
-      pxFill(p[0], p[1]);
-      pxChanged();
+      fillPixels(p[0], p[1]);
+      pixelEditorChanged();
       return;
     }
     down = true;
     last = p;
-    pxPlot(p[0], p[1]);
-    pxDraw();
+    plotPixel(p[0], p[1]);
+    drawPixelEditor();
   });
   w.addEventListener('pointermove', ev => {
-    const E = PX_ED,
-      p = pxPos(ev);
+    const E = pixelEditor,
+      p = pixelEditorPoint(ev);
     if (down) {
-      pxLine(last, p);
+      plotPixelLine(last, p);
       last = p;
-      pxDraw();
+      drawPixelEditor();
       return;
     }
     const parts = partsOf(E.sp, E.view),
@@ -717,7 +722,7 @@ function pxBindCanvas() {
   const up = () => {
     if (down) {
       down = false;
-      pxChanged();
+      pixelEditorChanged();
     }
   };
   w.addEventListener('pointerup', up);
@@ -727,66 +732,66 @@ function pxBindCanvas() {
     ev => {
       if (!ev.ctrlKey && !ev.metaKey) return;
       ev.preventDefault();
-      PX_ED.zoom = clamp(PX_ED.zoom + (ev.deltaY < 0 ? 1 : -1), 1, 32);
-      pxDraw();
+      pixelEditor.zoom = clamp(pixelEditor.zoom + (ev.deltaY < 0 ? 1 : -1), 1, 32);
+      drawPixelEditor();
     },
     { passive: false }
   );
-  pxLoadTools();
+  refreshPixelTools();
 }
-function pxBind() {
+function bindPixelEditor() {
   const m = $('.pxed');
-  pxBindCanvas();
-  $('#pxColor').addEventListener('input', e => pxSetColor(e.target.value));
+  bindPixelCanvas();
+  $('#pxColor').addEventListener('input', e => choosePixelColor(e.target.value));
   $('#pxGoldK').addEventListener('input', e => ($('#pxGS').textContent = e.target.value + '%'));
   m.addEventListener('click', async ev => {
     const b = ev.target.closest('[data-pe]');
     if (!b) return;
-    const E = PX_ED,
+    const E = pixelEditor,
       k = b.dataset.pe;
     if (k === 'atlas') {
       E.view = b.dataset.v;
       E.gold = b.dataset.g === '1';
       E.zoom = 0;
       E.hover = null;
-      pxLoad();
+      refreshPixelEditor();
     } else if (k === 'tool') {
       E.tool = b.dataset.t;
-      pxLoadTools();
+      refreshPixelTools();
     } else if (k === 'zoom') {
       E.zoom = clamp(E.zoom + +b.dataset.z, 1, 32);
-      pxDraw();
+      drawPixelEditor();
     } else if (k === 'grid') {
       E.grid = !E.grid;
-      pxDraw();
+      drawPixelEditor();
     } else if (k === 'parts') {
       E.parts = !E.parts;
-      pxDraw();
+      drawPixelEditor();
     } else if (k === 'undo') {
-      pxUndo();
+      undoPixels();
     } else if (k === 'redo') {
-      pxRedo();
-    } else if (k === 'sw') pxSetColor(b.dataset.c);
+      redoPixels();
+    } else if (k === 'sw') choosePixelColor(b.dataset.c);
     else if (k === 'act') {
       E.act = b.dataset.a;
-      prevAct($('#pxPrev'), E.act === 'idle' ? null : E.act);
+      playSpritePreviewAction($('#pxPrev'), E.act === 'idle' ? null : E.act);
       $('#pxPrev')._p.loop = 1;
     } else if (k === 'gold') {
-      const src = atlasNow(atlasPath(E.sp, E.view, false));
+      const src = loadedAtlas(atlasPath(E.sp, E.view, false));
       if (!src) return;
       const g = goldFrom(src, +$('#pxGoldK').value / 100);
-      if (pxCanvas()) pxPush();
-      markArt(pxPath(), g);
-      pxLoad();
+      if (pixelEditorCanvas()) pushPixelUndo();
+      markArt(pixelEditorAtlasPath(), g);
+      refreshPixelEditor();
       toast('Gold sheet rebuilt. Save to game to keep it.');
     } else if (k === 'dl') {
-      const c = pxCanvas();
-      if (c) downloadCanvas(c, pxPath().split('/').pop());
+      const c = pixelEditorCanvas();
+      if (c) downloadCanvas(c, pixelEditorAtlasPath().split('/').pop());
     } else if (k === 'ul') {
       const f = await pickFile('image/png');
       if (!f) return;
       const up = await fileToCanvas(f),
-        c = pxCanvas();
+        c = pixelEditorCanvas();
       if (
         c &&
         (up.width !== c.width || up.height !== c.height) &&
@@ -796,19 +801,19 @@ function pxBind() {
         ))
       )
         return;
-      if (c) pxPush();
-      markArt(pxPath(), up);
-      pxLoad();
+      if (c) pushPixelUndo();
+      markArt(pixelEditorAtlasPath(), up);
+      refreshPixelEditor();
       toast('Sheet replaced. Save to game to keep it.');
     } else if (k === 'revert') {
-      const p = pxPath();
+      const p = pixelEditorAtlasPath();
       if (!(await ask('Throw away unsaved edits to this sheet?', 'Revert'))) return;
-      ST.artDirty.delete(p);
-      ATL.delete(p);
+      studioState.artDirty.delete(p);
+      ATLAS_CACHE.delete(p);
       await atlasGet(p).catch(() => null);
       previewsDirty();
-      updTop();
-      pxLoad();
+      updateTopBar();
+      refreshPixelEditor();
     } else if (k === 'close') {
       const back = E.back;
       $('#modal').innerHTML = '';
@@ -819,29 +824,29 @@ function pxBind() {
       openSkeleton(E.sp, E.view);
     }
   });
-  document.addEventListener('keydown', pxKeys);
+  document.addEventListener('keydown', pixelEditorKeys);
 }
-function pxUndo() {
-  const E = PX_ED,
-    c = pxCanvas();
+function undoPixels() {
+  const E = pixelEditor,
+    c = pixelEditorCanvas();
   if (!E.undo.length || !c) return;
   const x = c.getContext('2d');
   E.redo.push(x.getImageData(0, 0, c.width, c.height));
   x.putImageData(E.undo.pop(), 0, 0);
-  pxChanged();
+  pixelEditorChanged();
 }
-function pxRedo() {
-  const E = PX_ED,
-    c = pxCanvas();
+function redoPixels() {
+  const E = pixelEditor,
+    c = pixelEditorCanvas();
   if (!E.redo.length || !c) return;
   const x = c.getContext('2d');
   E.undo.push(x.getImageData(0, 0, c.width, c.height));
   x.putImageData(E.redo.pop(), 0, 0);
-  pxChanged();
+  pixelEditorChanged();
 }
-function pxKeys(ev) {
+function pixelEditorKeys(ev) {
   if (!$('.pxed:not(.skel)')) {
-    document.removeEventListener('keydown', pxKeys);
+    document.removeEventListener('keydown', pixelEditorKeys);
     return;
   }
   if (ev.target.closest('input')) return;
@@ -849,25 +854,25 @@ function pxKeys(ev) {
     mod = ev.ctrlKey || ev.metaKey;
   if (mod && k === 'z') {
     ev.preventDefault();
-    ev.shiftKey ? pxRedo() : pxUndo();
+    ev.shiftKey ? redoPixels() : undoPixels();
     return;
   }
   if (mod && k === 'y') {
     ev.preventDefault();
-    pxRedo();
+    redoPixels();
     return;
   }
   if (mod) return;
   const T = { p: 'pen', b: 'pen', e: 'erase', f: 'fill', g: 'fill', i: 'pick' };
   if (T[k]) {
-    PX_ED.tool = T[k];
-    pxLoadTools();
+    pixelEditor.tool = T[k];
+    refreshPixelTools();
   } else if (k === '+' || k === '=') {
-    PX_ED.zoom = Math.min(32, PX_ED.zoom + 1);
-    pxDraw();
+    pixelEditor.zoom = Math.min(32, pixelEditor.zoom + 1);
+    drawPixelEditor();
   } else if (k === '-') {
-    PX_ED.zoom = Math.max(1, PX_ED.zoom - 1);
-    pxDraw();
+    pixelEditor.zoom = Math.max(1, pixelEditor.zoom - 1);
+    drawPixelEditor();
   } else if (k === 'escape') {
     $('#modal').innerHTML = '';
     render();

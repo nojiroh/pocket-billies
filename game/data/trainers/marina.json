@@ -1,7 +1,7 @@
 {
  "name": "Leader Marina",
  "who": "marina",
- "area": "beach",
+ "battleStage": "beach",
  "node": 14,
  "blocks": false,
  "team": [

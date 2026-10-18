@@ -1,7 +1,7 @@
 {
  "name": "Birdwatcher Bo",
  "who": "skipper",
- "area": "golf",
+ "battleStage": "golf",
  "node": 22,
  "blocks": false,
  "team": [

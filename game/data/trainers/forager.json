@@ -1,7 +1,7 @@
 {
  "name": "Forager Fern",
  "who": "girl",
- "area": "shell",
+ "battleStage": "shell",
  "node": 27,
  "blocks": false,
  "team": [
