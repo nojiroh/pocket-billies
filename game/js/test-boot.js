@@ -1,7 +1,8 @@
 // @ts-check
 'use strict';
 /* ================= TEST BOOT (phase 16, 2026-10-18) =================
-   While this is on, the game skips the title and the opening and boots straight into starter selection. Nothing is
+   While this is on, the game skips the title and the fall and opens on the opening cutscene with Professor Hazel
+   (the dressing room keeps a random look on its own), which goes on to the coins and the starter pick. Nothing is
    loaded from or saved to this browser or an account, and accounts and friends stay off, so every load starts fresh.
    Nothing is removed: set TEST_BOOT_ON to false to get the normal game back, or open the game with ?boot=normal
    (the checks and art tools do); a ?fixture=<name> address (tools/check-fast.py) gets the normal game too. */
