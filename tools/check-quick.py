@@ -1518,8 +1518,8 @@ def desktop_steps(b, base, R):
         keep = pg.evaluate("JSON.stringify({seats:saveData.seats,story:saveData.story,flags:saveData.flags,visited:saveData.visited,beaten:saveData.beaten||null})")
         try:
             g = pg.evaluate("""(()=>{const ix=id=>LOCATIONS.findIndex(r=>r.id===id),s0=saveData.seats,o={};
-              saveData.seats=['oil','retail','peak'];o.festShut=!canEnter(ix('fanfare_fields'));saveData.seats=[...S.seats,'haven'];o.festOpen=canEnter(ix('fanfare_fields'));
-              o.frozenShut=!canEnter(ix('rimefrost'));saveData.seats=[...S.seats,'bloom','vault','morel'];o.frozenStill=!canEnter(ix('rimefrost'));saveData.seats=[...S.seats,'carat'];o.frozenOpen=canEnter(ix('rimefrost'));
+              saveData.seats=['oil','retail','peak'];o.festShut=!canEnter(ix('fanfare_fields'));saveData.seats=[...saveData.seats,'haven'];o.festOpen=canEnter(ix('fanfare_fields'));
+              o.frozenShut=!canEnter(ix('rimefrost'));saveData.seats=[...saveData.seats,'bloom','vault','morel'];o.frozenStill=!canEnter(ix('rimefrost'));saveData.seats=[...saveData.seats,'carat'];o.frozenOpen=canEnter(ix('rimefrost'));
               saveData.seats=s0;o.songs=LOCATIONS.filter(r=>!r.music||!SONGS[r.music]).filter(r=>gameData.maps[r.mapId]&&gameData.maps[r.mapId].v47region).map(r=>r.id+':'+r.music);
               /* each new town's shop opens into its own room */
               o.rooms=LOCATIONS.filter(r=>gameData.maps[r.mapId]&&gameData.maps[r.mapId].v47region&&gameData.maps[r.mapId].kind==='town').map(r=>{const p=gameData.maps[r.mapId].props.find(p=>p.act==='shop');return [r.id,p&&roomFor('shop',p)]}).filter(([k,v])=>!v||!v.startsWith('int_')||['int_shop','int_bank','int_market_hall'].includes(v)).map(x=>x.join(' → '));return o})()""")
