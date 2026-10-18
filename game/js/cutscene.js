@@ -82,7 +82,6 @@ expose({
   cutsceneScript: [() => cutsceneScript, v => (cutsceneScript = v)],
   cutsceneShot: [() => cutsceneShot, v => (cutsceneShot = v)],
   cutsceneSparkle: [() => cutsceneSparkle, v => (cutsceneSparkle = v)],
-  cutsceneSpot: [() => cutsceneSpot, v => (cutsceneSpot = v)],
   cutsceneStart: [() => cutsceneStart, v => setCutsceneStart(v)],
   cutsceneStartName: [() => cutsceneStartName],
   cutsceneStarterItem: [() => cutsceneStarterItem, v => (cutsceneStarterItem = v)],
@@ -91,6 +90,7 @@ expose({
   cutsceneWait: [() => cutsceneWait, v => (cutsceneWait = v)],
   cutsceneWalk: [() => cutsceneWalk, v => (cutsceneWalk = v)],
   cutsceneWanted: [() => cutsceneWanted, v => (cutsceneWanted = v)],
+  placeCutsceneSpots: [() => placeCutsceneSpots, v => (placeCutsceneSpots = v)],
   skipCutscene: [() => skipCutscene, v => (skipCutscene = v)],
   starterPickerFocus: [() => starterPickerFocus, v => (starterPickerFocus = v)],
   starterPickerHTML: [() => starterPickerHTML, v => (starterPickerHTML = v)],
@@ -140,7 +140,7 @@ const CUTSCENE_SPOTS = {
 };
 export const cutsceneNow = () => performance.now();
 /* v46: where the opening scene is filmed: in front of the lab's door, wherever the lab stands in Sundown */
-function cutsceneSpot(sc) {
+function placeCutsceneSpots(sc) {
   let o = [0, 0];
   cutscene.dy = 0;
   const C0 = walkData().sc,
@@ -234,7 +234,7 @@ function cutsceneCameraNow() {
 }
 export function cutsceneShot(K, ms = 0) {
   K = Object.assign({ fov: 40, w: 0 }, K);
-  /* v46: the shots were framed for the lab's door at CUTSCENE_SPOTS.door; they move with the lab (cutsceneSpot) */ if (
+  /* v46: the shots were framed for the lab's door at CUTSCENE_SPOTS.door; they move with the lab (placeCutsceneSpots) */ if (
     !K.abs &&
     cutscene.o
   ) {
@@ -616,7 +616,7 @@ export async function cutsceneStart() {
   cv.classList.add('in');
   const sc = walkView.sc,
     C0 = walkData().sc,
-    o = cutsceneSpot(sc);
+    o = placeCutsceneSpots(sc);
   const eyes = [
     [12.6, 6.2],
     [10.5, 8.4],
