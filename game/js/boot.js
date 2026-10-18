@@ -13,7 +13,7 @@ import { ART, BG_ART, COIN_ART, EGG_ART, ICON_ATLAS, UIURL, artBoot, artImg } fr
 import { trainerArtPaths } from './person-art.js';
 import { rigAtlas } from './skeleton-rig.js';
 import { AREAS, scPrepare, stageArt } from './battle-stage.js';
-import { dioData, dioPaths, dioScene, walkView } from './walk-view.js';
+import { dioPaths, dioScene, walkData, walkView } from './walk-view.js';
 import { EGL, eglOK } from './engine/webgl.js';
 import { ENV } from './environment.js';
 import { dglRiseStart, walkRenderer } from './walk-view-gl.js';
@@ -164,7 +164,7 @@ function loadList() {
     } catch (e) {}
   }
   try {
-    const D = dioData();
+    const D = walkData();
     for (const id of Object.keys(D.scenes)) dioPaths(D.scenes[id]).forEach(p => add(p, 3));
     for (const P of Object.values(D.sc.props)) {
       add(P.img, 3);

@@ -7,7 +7,7 @@
    A look: {name, body:{…sliders}, skin, hair, eyes, wear:{slot:itemId|null}, colors:{itemId:[hex,…]}}. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { FR, GD, PEOPLE, S, ST, U, cleanName, dglBudget, dioArtVer, dioImg, drawRig, provide } from './hooks.js';
+import { FR, GD, PEOPLE, S, ST, U, artImage, cleanName, dglBudget, dioArtVer, drawRig, provide } from './hooks.js';
 import { clamp } from './util.js';
 import { frameStop, frameTask } from './frame-scheduler.js';
 import { ART, artImg, cnv, hexA } from './art.js';
@@ -363,7 +363,7 @@ function trainerCache(key, build) {
 }
 const trVer = () => (typeof dioArtVer === 'function' ? dioArtVer() : 0);
 function trImg(path) {
-  const im = typeof dioImg === 'function' ? dioImg(path) : ART.img[path];
+  const im = typeof artImage === 'function' ? artImage(path) : ART.img[path];
   if (!im && typeof artImg === 'function') return artImg(path);
   return im;
 }

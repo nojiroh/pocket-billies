@@ -32,7 +32,17 @@ import { TR_PRESETS, cleanLook, humanPose, owFrames, trainerLook } from './perso
 import { DR, drSave, openDressing } from './dressing-room.js';
 import { drawRig, rigFrame, rigParts, rigPreload, rigTint } from './skeleton-rig.js';
 import { buzz, partSpr } from './battle-stage.js';
-import { dioData, dioDirOf, dioImg, dioOk, dioPrepare, dioProj, dioScene, dioStop, walkView } from './walk-view.js';
+import {
+  artImage,
+  dioDirOf,
+  dioPrepare,
+  dioProj,
+  dioScene,
+  dioStop,
+  imageReady,
+  walkData,
+  walkView,
+} from './walk-view.js';
 import { EGL, eglOK } from './engine/webgl.js';
 import { dglPerson, dioH, dioMount, walkRenderer } from './walk-view-gl.js';
 import { wrRoamView } from './seamless-world.js';
@@ -124,7 +134,7 @@ export const csNow = () => performance.now();
 function csPlace(sc) {
   let o = [0, 0];
   CS.dy = 0;
-  const C0 = dioData().sc,
+  const C0 = walkData().sc,
     L = ((sc && sc.props) || []).find(p => p.act === 'lab');
   if (L) {
     const M = C0.props[L.k] || {},
@@ -308,7 +318,7 @@ function csStarItem(s, t) {
 export function csFrame() {
   if (!CS.on) return null;
   const t = walkView.t,
-    C0 = dioData().sc,
+    C0 = walkData().sc,
     items = CS.items,
     parts = CS.parts,
     lights = CS.lights,
@@ -334,7 +344,7 @@ export function csFrame() {
     if (CS.choosing && i === CS.sel)
       lights.push({ p: [s.x, 0.35 + dioH(s.x, s.z), s.z - 0.2], r: 1.7, c: [0.55, 0.48, 0.3] });
   });
-  const coin = dioImg('coins/penny_32.png');
+  const coin = artImage('coins/penny_32.png');
   for (const c of CS.coins) {
     const k = CS.skip ? 1 : clamp((now - c.t0) / c.dur, 0, 1);
     if (k >= 1) {
@@ -348,7 +358,7 @@ export function csFrame() {
       z = c.a[2] + (c.b[2] - c.a[2]) * k,
       y = c.a[1] + (c.b[1] - c.a[1]) * k + Math.sin(k * Math.PI) * 1.25,
       sp = Math.abs(Math.cos(k * 14));
-    if (dioOk(coin)) parts.push({ im: coin, x, y, z, w: 0.24 * Math.max(0.15, sp), h: 0.24, a: 1, glow: false });
+    if (imageReady(coin)) parts.push({ im: coin, x, y, z, w: 0.24 * Math.max(0.15, sp), h: 0.24, a: 1, glow: false });
     lights.push({ p: [x, y, z], r: 1.1, c: [0.5, 0.4, 0.12] });
   }
   const spark = typeof partSpr === 'function' ? partSpr('sparkle') : null;
@@ -593,7 +603,7 @@ export async function csStart() {
   cv = walkView.cv;
   cv.classList.add('in');
   const sc = walkView.sc,
-    C0 = dioData().sc,
+    C0 = walkData().sc,
     o = csPlace(sc);
   const eyes = [
     [12.6, 6.2],

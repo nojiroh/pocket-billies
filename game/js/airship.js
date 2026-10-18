@@ -15,7 +15,7 @@ import { PLACE, ROUTE, isTown, placeFull } from './game-data.js';
 import { sceneLite, sceneLoad, scenesAhead } from './map-files.js';
 import { RM, S, U, canEnter, esc, fmt, save } from './game-state.js';
 import { artLoad, uiIco } from './art.js';
-import { dioData, dioImg, dioOk, dioPrepare, dioScene } from './walk-view.js';
+import { artImage, dioPrepare, dioScene, imageReady, walkData } from './walk-view.js';
 import { wrHubScene } from './seamless-world.js';
 import { D2R, MAP, MNV, slerp, v3 } from './world-map.js';
 import { MGL } from './world-map-gl.js';
@@ -192,9 +192,9 @@ function flyDraw(c, t, proj) {
   }
   if (FLY.lastX != null && Math.abs(q.x - FLY.lastX) > 0.3) FLY.dir = q.x < FLY.lastX ? -1 : 1;
   FLY.lastX = q.x;
-  const im = typeof dioImg === 'function' ? dioImg('map/airship.png') : null,
+  const im = typeof artImage === 'function' ? artImage('map/airship.png') : null,
     bob = Math.sin(t / 420) * 1.5;
-  if (im && dioOk(im)) {
+  if (im && imageReady(im)) {
     const w = im.naturalWidth || im.width,
       h = im.naturalHeight || im.height,
       s = 1.25;
@@ -235,8 +235,8 @@ function flyLand() {
   const sid = sceneIdAt(b),
     sc = typeof dioScene === 'function' ? dioScene(sid) : null,
     m = sc && (sc.props || []).find(p => p.act === 'fly');
-  if (m && typeof dioData === 'function') {
-    const C = dioData().sc,
+  if (m && typeof walkData === 'function') {
+    const C = walkData().sc,
       M = C.props[m.k] || {},
       ppu = C.ppu || 34,
       s = m.s || 1,
@@ -314,8 +314,8 @@ export function liftGo(p) {
       const sid = sceneIdAt(i),
         sc = typeof dioScene === 'function' ? dioScene(sid) : null,
         m = sc && (sc.props || []).find(q => q.act === 'lift');
-      if (m && typeof dioData === 'function') {
-        const C = dioData().sc,
+      if (m && typeof walkData === 'function') {
+        const C = walkData().sc,
           M = C.props[m.k] || {},
           s = m.s || 1,
           f = m.f ? -1 : 1,

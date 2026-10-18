@@ -20,7 +20,6 @@ import {
   DIO_TL,
   PW_WAIT,
   dioClipSeg,
-  dioData,
   dioGroundKey,
   dioHash,
   dioNextOn,
@@ -41,6 +40,7 @@ import {
   dioWearAmtFn,
   dioWearFn,
   dioWearLines,
+  walkData,
   walkView,
 } from './walk-view.js';
 import { eng } from './engine/settings.js';
@@ -93,7 +93,7 @@ const PW_KEEP = 4,
    starts is skipped) and the small sizes of a picture */
 const PW_MAIN = `var DGL_TERRAIN_MAT;let CTX=null;const CTXS=new Map(),TILES=new Map(),Q=[],GONE=new Set();let busy=false;
 /* (stand-ins for walk-view.js's own, from what the main thread handed over) */
-var dioData=()=>({sc:CTX.C}),dioNextOn=()=>!!CTX.next,dioT47=()=>!!CTX.t47,dioSteps=sc=>CTX.E,dioBridges=()=>null,
+var walkData=()=>({sc:CTX.C}),dioNextOn=()=>!!CTX.next,dioT47=()=>!!CTX.t47,dioSteps=sc=>CTX.E,dioBridges=()=>null,
  dioTileSet=(T,TP)=>TILES.get(TP+'|'+T.tile+'|'+(T.vars||[]).join(','))||[null];
 function pwMips(s,W,H,n){const out=[];for(let k=0;k<n&&W>1&&H>1;k++){const w=W>>1,h=H>>1,d=new Uint8Array(w*h*4);
  for(let y=0;y<h;y++){const r0=(y*2)*W*4,r1=r0+W*4;for(let x=0;x<w;x++){const a=r0+x*8,c=r1+x*8,o=(y*w+x)*4;
@@ -227,7 +227,7 @@ function pwSendCtx(id, sc) {
     PW.sent.set(id, 1);
     return;
   }
-  const C = dioData().sc,
+  const C = walkData().sc,
     E = dioSteps(sc);
   const S = sc.stable
     ? {
@@ -274,7 +274,7 @@ function pwSendCtx(id, sc) {
 /* the tile pictures of every kind the view shows, at TP pixels a metre (sent once; again when the art changes).
    false while a picture hasn't loaded: that rectangle is painted here meanwhile, as before */
 function pwSendTiles(sc, TP) {
-  const C = dioData().sc,
+  const C = walkData().sc,
     gen = (typeof dioArtVer === 'function' ? dioArtVer() : 0) + '|' + dioTileFolder() + '|' + (dioNextOn() ? 1 : 0);
   if (gen !== PW.gen) {
     PW.gen = gen;

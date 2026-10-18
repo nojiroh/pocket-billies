@@ -24,7 +24,6 @@ import { artLoad, hexA } from './art.js';
 import {
   DIO_GCACHE,
   DIO_STEPS,
-  dioData,
   dioExitEdge,
   dioGroundAsync,
   dioGroundKey,
@@ -35,6 +34,7 @@ import {
   dioScene,
   dioStepCell,
   dioSteps,
+  walkData,
   walkView,
 } from './walk-view.js';
 import { eng } from './engine/settings.js';
@@ -757,7 +757,7 @@ function wrLookTick() {
    Where two places meet, the grounds mingle over a couple of metres. Each part is recorded with where its corner lies
    in the composite (parts), so moving from one composite to another that shares a part is a shift. */
 function wrComposeMulti(id, F) {
-  const C = dioData().sc,
+  const C = walkData().sc,
     x0 = Math.floor(F.box[0]),
     z0 = Math.floor(F.box[1]),
     w = Math.ceil(F.box[2]),
@@ -1709,7 +1709,7 @@ export function wrRoomScene(baseId, roomId, door) {
   const B0 = dioScene(baseId),
     R = dioScene(roomId);
   if (!B0 || !B0.w || !R || !R.w) return null;
-  const C = dioData().sc,
+  const C = walkData().sc,
     [rx, rz] = wrRoomPlace(B0, R, door);
   /* only a window of the place round the room is made again (the rest isn't seen from inside): far less to prepare */
   let B = B0,

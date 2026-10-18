@@ -10,7 +10,7 @@
 import { expose } from '../../game/js/test-globals.js';
 import { provide } from '../../game/js/hooks.js';
 import { cnv } from '../../game/js/art.js';
-import { dioImg } from '../../game/js/walk-view.js';
+import { artImage } from '../../game/js/walk-view.js';
 import { VOX_TEXTURES, voxInvalidate, voxRecipe } from '../../game/js/prop-models.js';
 import { esc } from './game-stand-ins.js';
 import {
@@ -160,7 +160,7 @@ function pedVoxHTML(k) {
 ACTS.vxeNew = () => {
   const M = pedM();
   if (!M) return;
-  const im = dioImg(M.img),
+  const im = artImage(M.img),
     ppu = scD().ppu || 34,
     w = im ? (im.naturalWidth || im.width) / ppu : 1,
     h = im ? (im.naturalHeight || im.height) / ppu : 1;
@@ -187,7 +187,7 @@ ACTS.vxeNew = () => {
 };
 function vxeMainColour(M) {
   try {
-    const im = dioImg(M.img);
+    const im = artImage(M.img);
     if (!im) return null;
     const c = cnv(8, 8),
       x = c.getContext('2d');
@@ -313,7 +313,7 @@ ACTS.vxeImgPick = async d => {
   const c = await fileToCanvas(f);
   if (c.width > 400 || c.height > 400) return toast('Keep pictures under 400×400 pixels.', 'err');
   let n = 1;
-  while (ST.artDirty.has(`art/scene/props/${k}_vox${n}.png`) || dioImg(`scene/props/${k}_vox${n}.png`)) n++;
+  while (ST.artDirty.has(`art/scene/props/${k}_vox${n}.png`) || artImage(`scene/props/${k}_vox${n}.png`)) n++;
   const path = `scene/props/${k}_vox${n}.png`;
   markArt('art/' + path, c);
   rec.layers[+d.i].img = path;

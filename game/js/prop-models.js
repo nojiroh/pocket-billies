@@ -11,7 +11,7 @@
 import { expose } from './test-globals.js';
 import { GD, RM, provide } from './hooks.js';
 import { artImg, artURL, hexA } from './art.js';
-import { dioImg, walkView } from './walk-view.js';
+import { artImage, walkView } from './walk-view.js';
 import { eng } from './engine/settings.js';
 import { EGL, EGL_GLSL_COMMON, EGL_GLSL_LIGHT, eglImg, eglPrograms } from './engine/webgl.js';
 import { dglCurveArgs, dglHit, dglLookU, dglUse, dglWindAt, walkRenderer } from './walk-view-gl.js';
@@ -1052,7 +1052,7 @@ function voxModels(C, X, L) {
   voxShaders();
   eglPrograms(VOX_SH);
   const A = bldArt(),
-    det = eglImg(dioImg(A.detail), { noNormal: true });
+    det = eglImg(artImage(A.detail), { noNormal: true });
   if (!det) return;
   const p = dglUse('mdl', C, X);
   gl.enable(gl.DEPTH_TEST);
@@ -1138,7 +1138,7 @@ function voxTag(it) {
   if (!rec) return;
   if (rec.kind === 'mesh' || voxLowPolyOn(rec)) {
     const A = typeof bldArt === 'function' ? bldArt() : null,
-      im = A && typeof dioImg === 'function' ? dioImg(A.detail) : null;
+      im = A && typeof artImage === 'function' ? artImage(A.detail) : null;
     if (!im || !(im.naturalWidth || im.width)) return;
   }
   if (!voxGuard(() => voxMeshFor(path, rec))) return;
@@ -1156,7 +1156,7 @@ function voxImageItems(it, out) {
     sr = Math.sin(ro);
   for (const L of rec.layers || []) {
     if (L.k !== 'img' || L.hide) continue;
-    const im = typeof dioImg === 'function' ? dioImg(L.img) : null;
+    const im = typeof artImage === 'function' ? artImage(L.img) : null;
     if (!im || !(im.naturalWidth || im.width)) {
       if (typeof artImg === 'function' && L.img) artImg(L.img);
       continue;

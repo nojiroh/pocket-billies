@@ -13,7 +13,17 @@ import { expose } from './test-globals.js';
 import { provide, sfxAt } from './hooks.js';
 import { clamp } from './util.js';
 import { cnv } from './art.js';
-import { dioData, dioFree, dioHash, dioImg, dioOk, dioPoly, dioPolyAt, dioStepOK, walkView } from './walk-view.js';
+import {
+  artImage,
+  dioFree,
+  dioHash,
+  dioPoly,
+  dioPolyAt,
+  dioStepOK,
+  imageReady,
+  walkData,
+  walkView,
+} from './walk-view.js';
 import { dglRing, dioGroundH, dioH, dioHRaw } from './walk-view-gl.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -69,7 +79,7 @@ const LIFE_FRAMES = k => {
   return m ? m.frames || 1 : 1;
 };
 function lifeMeta(k) {
-  const C = dioData().sc;
+  const C = walkData().sc;
   return (C.life || {})[k] || null;
 }
 function lifePaths(sc) {
@@ -91,8 +101,8 @@ function lifePaths(sc) {
 function lifeFrame(key, i) {
   const m = lifeMeta(key);
   if (!m) return null;
-  const im = dioImg(m.img);
-  if (!dioOk(im)) return null;
+  const im = artImage(m.img);
+  if (!imageReady(im)) return null;
   const ck = key + '|' + i;
   let c = LIFE.cut.get(ck);
   if (c && c.__src === im) return c;
@@ -476,7 +486,7 @@ export function lifeStep(dt) {
 /* what to draw: {im,x,z,y,s,flip,sh} in metres */
 function lifeSprites() {
   const out = [],
-    PPU = dioData().sc.ppu || 34;
+    PPU = walkData().sc.ppu || 34;
   for (const c of LIFE.list) {
     const K = LIFE_KIND[c.k];
     let i = c.fr || 0,

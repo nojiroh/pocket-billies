@@ -12,7 +12,7 @@ import { clamp } from './util.js';
 import { ROUTE } from './game-data.js';
 import { B, S, U } from './game-state.js';
 import { SC } from './battle-stage.js';
-import { dioBaseId, dioBridgeAt, dioBridges, dioData, dioScene, dioStepM, dioTer, walkView } from './walk-view.js';
+import { dioBaseId, dioBridgeAt, dioBridges, dioScene, dioStepM, dioTer, walkData, walkView } from './walk-view.js';
 import { ENV, envHour, envState } from './environment.js';
 import { walkRenderer } from './walk-view-gl.js';
 /* eslint-disable no-func-assign */
@@ -1390,7 +1390,7 @@ function ambUpdate() {
         ambNearest(walkView.water, q => q, 10),
         0.5
       );
-    const C0 = dioData().sc,
+    const C0 = walkData().sc,
       props = sc.props || [];
     put(
       'fountain',
@@ -1477,7 +1477,7 @@ function ambLife(sc, E, T, pans, t) {
   const node = typeof ROUTE !== 'undefined' && typeof S !== 'undefined' && S.route ? ROUTE[S.route.node] : null,
     town = thru > 0 && !!((node && node.town) || (!sc.indoor && (sc.far === 'town' || sc.far === 'city')));
   if (thru) {
-    const C0 = dioData().sc,
+    const C0 = walkData().sc,
       P = walkView.pl;
     let trees = 0;
     for (const p of sc.props || []) {

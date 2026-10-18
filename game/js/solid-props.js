@@ -15,7 +15,7 @@ import { expose } from './test-globals.js';
 import { RM, provide } from './hooks.js';
 import { clamp } from './util.js';
 import { cnv } from './art.js';
-import { dioHash, dioImg, dioProj, walkView } from './walk-view.js';
+import { artImage, dioHash, dioProj, walkView } from './walk-view.js';
 import { eng } from './engine/settings.js';
 import { EGL, EGL_GLSL_COMMON, EGL_GLSL_LIGHT, EGL_GLSL_LOOK, EGL_MATS, eglImg, eglPrograms } from './engine/webgl.js';
 import { dglBlades, dglBudget, dglCurveArgs, dglFol, dglHit, dglLookU, dglUse, walkRenderer } from './walk-view-gl.js';
@@ -233,7 +233,7 @@ function p3dSpec(k, M, PPU) {
     !(Array.isArray(M.vol) && M.vol[1]) &&
     !M.volDepth
   ) {
-    const im = typeof dioImg === 'function' ? dioImg(M.img) : null,
+    const im = typeof artImage === 'function' ? artImage(M.img) : null,
       iw = im && (im.naturalWidth || im.width);
     if (iw) d = Math.max(d, iw * 0.5);
   }
@@ -1256,7 +1256,7 @@ export function p3dDraw(C, items, X, hits, labels, PPU) {
       P3D.drawn++;
       if (it.M && it.M.blades) {
         const b = it.M.blades,
-          BT = eglImg(dioImg(b.img));
+          BT = eglImg(artImage(b.img));
         if (BT)
           dglBlades(p, it, b, BT, (RM ? 0 : walkView.t / 1100) * (walkView.sc.wind || 1) * eng('grass', 'wind'), C, X);
       }

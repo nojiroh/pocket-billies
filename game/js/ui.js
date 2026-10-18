@@ -110,7 +110,6 @@ import { bustHTML, sprHTML } from './skeleton-rig.js';
 import { EASE, SC, camHome, scFocus, scTargets } from './battle-stage.js';
 import {
   dioClimb,
-  dioData,
   dioFind,
   dioFreePt,
   dioHubOf,
@@ -121,6 +120,7 @@ import {
   openKind,
   placeClosedText,
   placeOpen,
+  walkData,
   walkView,
 } from './walk-view.js';
 import { eng } from './engine/settings.js';
@@ -1034,7 +1034,7 @@ function roomFor(a, p) {
   if ((S.preferences || {}).rooms === 'quick' && a !== 'home') return null;
   if (a !== 'home' && p) {
     if (p.room && dioScene(p.room)) return p.room;
-    const M = dioData().sc.props[p.k],
+    const M = walkData().sc.props[p.k],
       k = ROOM_KIND[p.k] || (M && ROOM_KIND[M.group]);
     if (k && dioScene(k)) return k;
   }
@@ -1098,7 +1098,7 @@ function roomLayIn(id, p, fresh) {
   )
     return null;
   if (eng('world', 'seamlessRooms') === false) return null;
-  const C = dioData().sc,
+  const C = walkData().sc,
     M = C.props[p.k];
   if (!M || !M.box) return null;
   const s = p.s || 1,

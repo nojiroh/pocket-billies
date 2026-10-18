@@ -25,19 +25,19 @@ import { $, $$, clamp } from '../../game/js/util.js';
 import { ART, cnv } from '../../game/js/art.js';
 import {
   DIO_RISE,
+  artImage,
   dioAlong,
   dioExitEdge,
   dioExitPoint,
   dioFind,
   dioHubOf,
-  dioImg,
   dioNav,
   dioPass,
   dioSteps,
   dioStepsNew,
   dioStepsStore,
-  setDioData,
-  setDioImg,
+  setArtImage,
+  setWalkData,
   walkView,
 } from '../../game/js/walk-view.js';
 import { ENV } from '../../game/js/environment.js';
@@ -128,8 +128,8 @@ expose({
 /* eslint-enable no-func-assign */
 provide({ dioArtVer, scArt });
 /* to-module: end */
-setDioData(() => ({ scenes: (ST.D && ST.D.scenes) || {}, sc: (ST.D && ST.D.scenery) || { terrains: {}, props: {} } }));
-setDioImg(path => atlasNow('art/' + path) || ART.img[path]);
+setWalkData(() => ({ scenes: (ST.D && ST.D.scenes) || {}, sc: (ST.D && ST.D.scenery) || { terrains: {}, props: {} } }));
+setArtImage(path => atlasNow('art/' + path) || ART.img[path]);
 function dioArtVer() {
   return ATL_VER;
 }
@@ -767,13 +767,13 @@ function scThumbs() {
   const C = scD();
   $$('canvas[data-tile]').forEach(c => {
     const T = C.terrains[c.dataset.tile];
-    const im = T && dioImg(T.tile);
+    const im = T && artImage(T.tile);
     const x = c.getContext('2d');
     x.clearRect(0, 0, 16, 16);
     if (im && (im.width || im.naturalWidth)) x.drawImage(im, 0, 0, 16, 16);
   });
   $$('.sc-thumb[data-img]').forEach(s => {
-    const im = dioImg(s.dataset.img);
+    const im = artImage(s.dataset.img);
     s.innerHTML = '';
     if (!im) return;
     const w = im.naturalWidth || im.width,
@@ -985,7 +985,7 @@ export function scMapDraw() {
     for (let i = 0; i < W; i++) {
       const ch = row[i] || sc.edge,
         T = C.terrains[ch],
-        im = T && dioImg(T.tile);
+        im = T && artImage(T.tile);
       if (im && (im.width || im.naturalWidth)) x.drawImage(im, i * Z, j * Z, Z, Z);
       else {
         x.fillStyle = '#f0f';
@@ -1047,7 +1047,7 @@ export function scMapDraw() {
   SCN.boxes = [];
   for (const [p, i] of order) {
     const M = C.props[p.k],
-      im = M && dioImg(M.img);
+      im = M && artImage(M.img);
     const px = p.x * Z,
       py = (H - p.z) * Z;
     if (!im) {

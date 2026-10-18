@@ -82,6 +82,7 @@ expose({
   OPEN_HOURS: [() => OPEN_HOURS],
   OPEN_NAMES: [() => OPEN_NAMES],
   PW_WAIT: [() => PW_WAIT],
+  artImage: [() => artImage, v => setArtImage(v)],
   dioActLabel: [() => dioActLabel, v => (dioActLabel = v)],
   dioActSpot: [() => dioActSpot, v => (dioActSpot = v)],
   dioAlong: [() => dioAlong, v => (dioAlong = v)],
@@ -104,7 +105,6 @@ expose({
   dioClipSeg: [() => dioClipSeg, v => (dioClipSeg = v)],
   dioClock: [() => dioClock, v => (dioClock = v)],
   dioCostAt: [() => dioCostAt, v => (dioCostAt = v)],
-  dioData: [() => dioData, v => setDioData(v)],
   dioDirOf: [() => dioDirOf, v => (dioDirOf = v)],
   dioEncSpot: [() => dioEncSpot, v => (dioEncSpot = v)],
   dioEnsureGround: [() => dioEnsureGround, v => (dioEnsureGround = v)],
@@ -136,7 +136,6 @@ expose({
   dioHash: [() => dioHash, v => (dioHash = v)],
   dioHitAt: [() => dioHitAt, v => (dioHitAt = v)],
   dioHubOf: [() => dioHubOf, v => (dioHubOf = v)],
-  dioImg: [() => dioImg, v => setDioImg(v)],
   dioLOS: [() => dioLOS, v => (dioLOS = v)],
   dioLayerM: [() => dioLayerM, v => (dioLayerM = v)],
   dioMix: [() => dioMix, v => (dioMix = v)],
@@ -146,7 +145,6 @@ expose({
   dioNextOn: [() => dioNextOn],
   dioNextTiles: [() => dioNextTiles, v => (dioNextTiles = v)],
   dioNoise: [() => dioNoise, v => (dioNoise = v)],
-  dioOk: [() => dioOk],
   dioPaintGen: [() => dioPaintGen, v => (dioPaintGen = v)],
   dioPanel: [() => dioPanel, v => (dioPanel = v)],
   dioPass: [() => dioPass, v => (dioPass = v)],
@@ -210,15 +208,17 @@ expose({
   folkHour: [() => folkHour, v => (folkHour = v)],
   folkPhase: [() => folkPhase, v => (folkPhase = v)],
   folkTown: [() => folkTown, v => (folkTown = v)],
+  imageReady: [() => imageReady],
   openKind: [() => openKind, v => (openKind = v)],
   placeClosedText: [() => placeClosedText, v => (placeClosedText = v)],
   placeOpen: [() => placeOpen, v => (placeOpen = v)],
-  setDioData: [() => setDioData, v => (setDioData = v)],
-  setDioImg: [() => setDioImg, v => (setDioImg = v)],
+  setArtImage: [() => setArtImage, v => (setArtImage = v)],
   setDioNav: [() => setDioNav, v => (setDioNav = v)],
   setDioProj: [() => setDioProj, v => (setDioProj = v)],
   setDioStop: [() => setDioStop, v => (setDioStop = v)],
   setDioUnproject: [() => setDioUnproject, v => (setDioUnproject = v)],
+  setWalkData: [() => setWalkData, v => (setWalkData = v)],
+  walkData: [() => walkData, v => setWalkData(v)],
   walkView: [() => walkView],
 });
 /* eslint-enable no-func-assign */
@@ -325,18 +325,18 @@ const DIO_CHAT = [
   'Watch out, trainers like to battle anyone who looks at them.',
 ];
 /* hooks the Studio replaces to show unsaved art and data */
-export let dioData = () => ({ scenes: GD.scenes || {}, sc: GD.scenery || { terrains: {}, props: {} } });
+export let walkData = () => ({ scenes: GD.scenes || {}, sc: GD.scenery || { terrains: {}, props: {} } });
 /* phase 04d: the Studio feeds the renderer its unsaved scenes and art (studio/js/map-editor.js, prop-editor.js) */
-export function setDioData(v) {
-  dioData = v;
-  provide({ dioData });
+export function setWalkData(v) {
+  walkData = v;
+  provide({ walkData });
 }
-export let dioImg = path => ART.img[path];
-provide({ dioImg }); /* to-module */
+export let artImage = path => ART.img[path];
+provide({ artImage }); /* to-module */
 /* phase 04d: the Studio feeds the renderer its unsaved scenes and art (studio/js/map-editor.js, prop-editor.js) */
-export function setDioImg(v) {
-  dioImg = v;
-  provide({ dioImg });
+export function setArtImage(v) {
+  artImage = v;
+  provide({ artImage });
 }
 /* v42: exits are kept edge-relative (edgeExits: {id, side N/S/E/W, t along that side 0..1, in metres from the edge, width})
    so a scene can change size and its exits stay on the same edge; sc.exits (the points everything else reads) is
@@ -380,12 +380,12 @@ export function dioBaseId() {
 }
 export function dioScene(id) {
   if (id && id.charCodeAt(0) === 119 && id[1] === ':' && typeof wrSceneById === 'function') return wrSceneById(id);
-  /* v43: a window onto the seamless world */ const S = dioData().scenes;
+  /* v43: a window onto the seamless world */ const S = walkData().scenes;
   /* phase 04b: a map whose own file hasn't come yet (js/map-files.js) */
   if (S[id] && S[id]._lite && typeof SCENE_FILES !== 'undefined') SCENE_FILES.touched.add(id);
   return S[id] ? dioExitsSync(S[id]) : null;
 }
-export const dioOk = im => !!(im && (im.naturalWidth || im.width));
+export const imageReady = im => !!(im && (im.naturalWidth || im.width));
 /* a prop's extra layer as a prop of its own: same base point unless it says otherwise, shifted dx right and dy up (pixels),
    dz meters back (negative: in front). Effects, glows, labels and shadows stay with the main picture. */
 export function dioLayerM(M, l) {
@@ -412,7 +412,7 @@ export function dioNextTiles(path, set) {
 /* v47: which set of twelve: the catalogue's tileSet ('tiles47', tools/build-terrain-v47.py), else the v46 set. With the
    v47 set the painter lays the soft patches itself, in world metres, picks the plain tiles evenly and never mirrors */
 export function dioTileFolder() {
-  const C = typeof dioData === 'function' && dioData();
+  const C = typeof walkData === 'function' && walkData();
   return (C && C.sc && C.sc.tileSet) || 'tiles47';
 }
 export function dioT47() {
@@ -420,7 +420,7 @@ export function dioT47() {
 }
 /* v43: which flag a scene flies: its own (scene/flags/<id>.png) unless it names another */
 export function dioFlagPath(sc) {
-  const D = dioData(),
+  const D = walkData(),
     own = sc.baseId || Object.keys(D.scenes).find(k => D.scenes[k] === sc),
     id = sc.flag || ((D.sc.flags || []).includes(own) ? own : 'default');
   return `scene/flags/${id}.png`;
@@ -536,7 +536,7 @@ const OPEN_NAMES = {
 };
 /* v47: the kind a door keeps hours as (not game-data.js placeKind(id), the kind of a place) */
 export function openKind(a, p) {
-  const C = dioData().sc,
+  const C = walkData().sc,
     M = p && C.props[p.k],
     RK = typeof ROOM_KIND !== 'undefined' ? ROOM_KIND : {};
   return p && RK[p.k] ? p.k : M && RK[M.group] ? M.group : a;
@@ -562,7 +562,7 @@ export function dioActLabel(p, M) {
   return placeOpen(openKind(p.act, p)) ? b : 'Closed';
 }
 export function dioPaths(sc) {
-  const C = dioData().sc,
+  const C = walkData().sc,
     L = new Set([
       C.wallArt || 'scene/build/walls.png',
       'battle/cloud_0.png',
@@ -638,8 +638,8 @@ export function dioNoise(x, y) {
   return a + (b - a) * s(fx) + (c - a) * s(fy) + (a - b - c + d) * s(fx) * s(fy);
 }
 function dioTilePix(path) {
-  let im = dioImg(path);
-  if (!dioOk(im)) return null;
+  let im = artImage(path);
+  if (!imageReady(im)) return null;
   const w = im.naturalWidth || im.width,
     h = im.naturalHeight || im.height,
     c = cnv(w, h),
@@ -648,7 +648,7 @@ function dioTilePix(path) {
   return { w, h, d: new Uint32Array(x.getImageData(0, 0, w, h).data.buffer) };
 }
 export function dioGroundKey(sc) {
-  const C = dioData().sc;
+  const C = walkData().sc;
   return JSON.stringify([
     sc.w,
     sc.h,
@@ -930,7 +930,7 @@ function dioTileScale(t, f) {
 }
 const DIO_TILECACHE = new Map();
 export function dioTileSet(T, TP) {
-  const C = dioData().sc,
+  const C = walkData().sc,
     nxOn = dioNextOn(),
     key =
       TP +
@@ -968,7 +968,7 @@ export function dioTileSet(T, TP) {
    a metre. The 3D renderer paints a view's whole ground small (its distance) and the 16 m squares round you at full
    size (walk-view-gl.js, the near ring). Patterns and noise come from each cell's own scene or road metres. */
 export function* dioPaintGen(sc, o) {
-  const C = dioData().sc,
+  const C = walkData().sc,
     W = sc.w,
     H = sc.h,
     P = DIO_PAD,
@@ -2382,7 +2382,7 @@ export function dioShape(sc, E) {
       const ch = (rows[sc.h - 1 - Math.floor(j / 2)] || '')[Math.floor(i / 2)];
       if (ch === 'w' || ch === 'd') keepAt(i, j, 3);
     }
-  const C = dioData().sc;
+  const C = walkData().sc;
   for (const p of sc.props || []) {
     const P = C.props[p.k];
     if (p.act === 'climb' || /ladder/.test(p.k) || (P && P.walk)) keepAt(Math.round(p.x * 2), Math.round(p.z * 2), 4);
@@ -2657,7 +2657,7 @@ export function dioNav() {
     walkView.navT === tk
   )
     return walkView.nav;
-  const C = dioData().sc,
+  const C = walkData().sc,
     key = walkView.gkey;
   walkView.navSc = sc;
   walkView.navG = walkView.gkey;
@@ -3649,7 +3649,7 @@ function folkTown(sc) {
 }
 /* homes, places of work and places to stand about, in the town itself (not in the next place along the road) */
 function dioFolkAnchors(sc) {
-  const C0 = dioData().sc,
+  const C0 = walkData().sc,
     PPU = C0.ppu || 34,
     b = sc.baseId ? dioScene(sc.baseId) : sc,
     o = sc.baseOff || [0, 0],

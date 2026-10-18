@@ -589,7 +589,7 @@ def desktop_steps(b, base, R):
     @step('Paths: exits, doors, bridges and stairs in every scene (from the data)', 40)
     def paths():
         r = pg.evaluate("""((ids)=>{const out={},keep=[walkView.sc,walkView.nav,walkView.gkey];
-         for(const id of ids){const sc=dioScene(id);if(!sc)continue;walkView.sc=sc;walkView.nav=null;walkView.gkey='quick-'+id;const C0=dioData().sc,hub=dioHubOf(sc),bad=[],far=(q,p)=>{const e=q&&q[q.length-1];return !q||Math.hypot(e[0]-p[0],e[1]-p[1])>1.6};
+         for(const id of ids){const sc=dioScene(id);if(!sc)continue;walkView.sc=sc;walkView.nav=null;walkView.gkey='quick-'+id;const C0=walkData().sc,hub=dioHubOf(sc),bad=[],far=(q,p)=>{const e=q&&q[q.length-1];return !q||Math.hypot(e[0]-p[0],e[1]-p[1])>1.6};
           for(const e of sc.exits||[])if(far(dioFind(hub[0],hub[1],e[0],e[1]),e))bad.push('exit '+e.map(v=>v.toFixed(1)));
           for(const p of sc.props||[])if(p.act&&!(p.act==='climb'&&typeof dioClimbEnds==='function'&&[dioClimbEnds(p).bot,dioClimbEnds(p).top].some(g=>{const q=dioFind(hub[0],hub[1],g[0],g[1]),e=q&&q[q.length-1];return e&&Math.hypot(e[0]-g[0],e[1]-g[1])<=1.6}))){const g=dioActSpot(p,C0.props[p.k],C0.ppu||34);if(g&&far(dioFind(hub[0],hub[1],g[0],g[1]),g))bad.push(p.k+' @'+p.x+','+p.z)}
           for(const b of dioBridges(sc)||[]){const A=[b.a[0]-b.ux*.4,b.a[1]-b.uz*.4],B=b.pier?[b.b[0]-b.ux*.4,b.b[1]-b.uz*.4]:[b.b[0]+b.ux*.4,b.b[1]+b.uz*.4];if(far(dioFind(A[0],A[1],B[0],B[1]),B))bad.push((b.pier?'jetty ':'bridge ')+b.a)}
@@ -727,7 +727,7 @@ def desktop_steps(b, base, R):
         # walk into the shop and out again
         pg.evaluate("ENV.force={time:13,weather:'clear',season:'summer'};0"); go_scene(pg, 0); time.sleep(1)
         p0 = pg.evaluate("[walkView.pl.x,walkView.pl.z]")
-        pg.evaluate("(()=>{const p=walkView.sc.props.find(p=>p.act==='shop'&&p.k==='shop'),C=dioData().sc,g=dioActSpot(p,C.props[p.k],C.ppu||34);walkView.pl.route=null;walkView.pl.x=g[0];walkView.pl.z=g[1];walkPick({k:'act',p,act:'shop'})})();0")   # v46: as a tap does: at the door first
+        pg.evaluate("(()=>{const p=walkView.sc.props.find(p=>p.act==='shop'&&p.k==='shop'),C=walkData().sc,g=dioActSpot(p,C.props[p.k],C.ppu||34);walkView.pl.route=null;walkView.pl.x=g[0];walkView.pl.z=g[1];walkPick({k:'act',p,act:'shop'})})();0")   # v46: as a tap does: at the door first
         if not until(pg, "walkView.ready&&(walkView.id==='int_shop'||(walkView.sc&&walkView.sc.roomOf==='int_shop'))", 60): raise Exception('walking into the shop didn’t open its room')
         time.sleep(2); shot(pg, 'room-shop')
         pg.evaluate("walkPick({k:'npc',n:{id:'_keeper:int_shop'}});0"); time.sleep(.8)
@@ -791,7 +791,7 @@ def desktop_steps(b, base, R):
         home = pg.evaluate("ROUTE.findIndex(r=>r.id==='copperleaf')")
         if home < 0: home = 0
         go_scene(pg, home); time.sleep(1.5)
-        pg.evaluate("U.toastQ=[];(()=>{const p=walkView.sc.props.find(p=>p.act==='home'),C=dioData().sc,g=dioActSpot(p,C.props[p.k],C.ppu||34);walkView.pl.route=null;walkView.pl.x=g[0];walkView.pl.z=g[1];walkPick({k:'act',p,act:'home'})})();0")
+        pg.evaluate("U.toastQ=[];(()=>{const p=walkView.sc.props.find(p=>p.act==='home'),C=walkData().sc,g=dioActSpot(p,C.props[p.k],C.ppu||34);walkView.pl.route=null;walkView.pl.x=g[0];walkView.pl.z=g[1];walkPick({k:'act',p,act:'home'})})();0")
         if not until(pg, "walkView.ready&&(walkView.id==='int_home'||(walkView.sc&&walkView.sc.roomOf==='int_home'))", 60): raise Exception('your room didn’t open')
         pg.evaluate("U.modal=null;U.mq=[];renderOv();x28().home.slots[5]='table_round';x28().home.slots[10]='rug_round';homeApply();0"); time.sleep(2.5); shot(pg, 'room-home')
         if pg.evaluate("GD.scenes.int_home.props.length") < 2: raise Exception('furniture didn’t appear in your room')
@@ -904,7 +904,7 @@ def desktop_steps(b, base, R):
         if node >= 0 and b1 - b0 > 1: raise Exception(f'the ground was rebuilt {b1 - b0} times going there and back')
         out.append(f'there and back: {b1 - b0} ground build(s)')
         # wear and variety (with the dial at 0, ask dglLookOf2: dglLookOf keeps a look for the rest of the frame, the game sees the dial on the next one)
-        r = pg.evaluate("""(()=>{const sc=walkView.sc,C0=dioData().sc,P=sc.props||[],b=P.find(p=>{const M=C0.props[p.k];return M&&M.box&&M.door}),tr=P.filter(p=>/tree/.test(p.k)).slice(0,6);
+        r = pg.evaluate("""(()=>{const sc=walkView.sc,C0=walkData().sc,P=sc.props||[],b=P.find(p=>{const M=C0.props[p.k];return M&&M.box&&M.door}),tr=P.filter(p=>/tree/.test(p.k)).slice(0,6);
          const L=b?dglLookOf(b,C0.props[b.k],sc):null,T=tr.map(p=>dglLookOf(p,C0.props[p.k],sc)),sizes=new Set(T.map(l=>l.size.toFixed(3))),hues=new Set(T.map(l=>l.hsv[0].toFixed(4)));
          GD.engine.defaults.world=Object.assign(GD.engine.defaults.world||{},{wear:0});const L0=b?dglLookOf2(b,C0.props[b.k],sc):null;delete GD.engine.defaults.world.wear;
          return {w:L?L.wear.reduce((x,y)=>x+y,0):-1,w0:L0?L0.wear.reduce((x,y)=>x+y,0):-1,sizes:sizes.size,hues:hues.size,n:T.length}})()""")
@@ -913,9 +913,9 @@ def desktop_steps(b, base, R):
         if r['n'] >= 3 and (r['sizes'] < 2 or r['hues'] < 2): raise Exception(f'trees all look the same ({r})')
         out.append(f"a building's wear {r['w']:.2f} (0 with the dial at 0); {r['n']} trees in {r['sizes']} sizes and {r['hues']} shades")
         # the prop audit's fixes: new variants load, box props have a top from their picture, mossy twins, texture dials
-        v = pg.evaluate("""(async()=>{const C0=dioData().sc,K=['barrels','haybale_stack','stump_mossy','log_mossy','mushroom_ring','flowers_meadow','rocks_c','crate_stack','cactus_pair','firewood_b'],miss=K.filter(k=>!C0.props[k]);
-         await artLoad(K.filter(k=>C0.props[k]).map(k=>C0.props[k].img).concat([C0.props.sofa.img]));const bad=K.filter(k=>C0.props[k]&&!dioOk(dioImg(C0.props[k].img)));
-         const B=dglBoxInfo(dioImg(C0.props.sofa.img)),rc=B&&B.roof.getContext('2d').getImageData(0,0,B.roof.width,B.roof.height).data;let lum=0;if(rc){for(let i=0;i<rc.length;i+=4)lum+=rc[i]*.3+rc[i+1]*.59+rc[i+2]*.11;lum/=rc.length/4}
+        v = pg.evaluate("""(async()=>{const C0=walkData().sc,K=['barrels','haybale_stack','stump_mossy','log_mossy','mushroom_ring','flowers_meadow','rocks_c','crate_stack','cactus_pair','firewood_b'],miss=K.filter(k=>!C0.props[k]);
+         await artLoad(K.filter(k=>C0.props[k]).map(k=>C0.props[k].img).concat([C0.props.sofa.img]));const bad=K.filter(k=>C0.props[k]&&!imageReady(artImage(C0.props[k].img)));
+         const B=dglBoxInfo(artImage(C0.props.sofa.img)),rc=B&&B.roof.getContext('2d').getImageData(0,0,B.roof.width,B.roof.height).data;let lum=0;if(rc){for(let i=0;i<rc.length;i+=4)lum+=rc[i]*.3+rc[i+1]*.59+rc[i+2]*.11;lum/=rc.length/4}
          const sc={},alts=[];for(let i=0;i<40;i++){const p={k:'stump',x:i*3.1,z:i*1.7};alts.push(dglAltImg(p,C0.props.stump,C0,sc))}const mossy=alts.filter(a=>a===C0.props.stump_mossy.img).length;
          const plain=dglAltImg({k:'stump',x:0,z:0,plain:true},C0.props.stump,C0,sc)===C0.props.stump.img;
          return {miss,bad,lum:Math.round(lum),mossy,plain,det:eng('world','texDetail'),aniso:!!EGL.aniso}})()""")
@@ -923,7 +923,7 @@ def desktop_steps(b, base, R):
         if v['lum'] < 45: raise Exception(f"the sofa's top is still dark (brightness {v['lum']})")
         if not (4 <= v['mossy'] <= 30) or not v['plain']: raise Exception(f'mossy twins: {v}')
         out.append(f"10 new prop variants load; a sofa's top {v['lum']} bright (was black); {v['mossy']} of 40 stumps mossy; surface detail {v['det']}, sharp-at-a-slant {'on' if v['aniso'] else 'not offered by this graphics chip'}")
-        pg.evaluate("(()=>{const sc=walkView.sc,C0=dioData().sc,b=(sc.props||[]).find(p=>{const M=C0.props[p.k];return M&&M.box&&M.door});if(!b)return;walkView.pl.route=null;const q=dioFreePt(b.x,b.z-2.5);walkView.pl.x=q[0];walkView.pl.z=q[1];walkRenderer.zoomT=walkRenderer.zoom=.7})();0"); time.sleep(2.5); shot(pg, 'wear-building')
+        pg.evaluate("(()=>{const sc=walkView.sc,C0=walkData().sc,b=(sc.props||[]).find(p=>{const M=C0.props[p.k];return M&&M.box&&M.door});if(!b)return;walkView.pl.route=null;const q=dioFreePt(b.x,b.z-2.5);walkView.pl.x=q[0];walkView.pl.z=q[1];walkRenderer.zoomT=walkRenderer.zoom=.7})();0"); time.sleep(2.5); shot(pg, 'wear-building')
         # the map's 3D miniatures
         pg.evaluate("U.tab='map';render();0"); time.sleep(3)
         if pg.evaluate("MAP.gl&&typeof mmOn==='function'&&mmOn()"):
@@ -1249,7 +1249,7 @@ def desktop_steps(b, base, R):
     def v42():
         out = []
         # the seventy nature props: in the catalogue, on disk, with a family and the ground they grow on
-        nat = json.loads(pg.evaluate("JSON.stringify(Object.entries(dioData().sc.props).filter(([k,M])=>M.family).map(([k,M])=>[k,M.family,M.grow,M.img]))"))
+        nat = json.loads(pg.evaluate("JSON.stringify(Object.entries(walkData().sc.props).filter(([k,M])=>M.family).map(([k,M])=>[k,M.family,M.grow,M.img]))"))
         fams = {}
         for k, f, g, img in nat:
             fams[f] = fams.get(f, 0) + 1
@@ -1259,7 +1259,7 @@ def desktop_steps(b, base, R):
         out.append(f'{len(nat)} nature props in {len(fams)} families (' + ', '.join(f'{f} {n}' for f, n in sorted(fams.items())) + ')')
         # the wild growth: every outdoor scene grown, nothing it added stands on a path or in the sea (test scenes such as
         # alpha 0.5's Graphics gallery, test: true, are laid out by hand)
-        bad = json.loads(pg.evaluate("""JSON.stringify((()=>{const C=dioData().sc.props,out=[];for(const [id,sc] of Object.entries(GD.scenes)){if(/^(test_|int_)/.test(id)||sc.test||sc.indoor||sc.room)continue;const g=(sc.props||[]).filter(p=>p.w===42);if(sc.wild!==42||!g.length){out.push(id+': not grown');continue}
+        bad = json.loads(pg.evaluate("""JSON.stringify((()=>{const C=walkData().sc.props,out=[];for(const [id,sc] of Object.entries(GD.scenes)){if(/^(test_|int_)/.test(id)||sc.test||sc.indoor||sc.room)continue;const g=(sc.props||[]).filter(p=>p.w===42);if(sc.wild!==42||!g.length){out.push(id+': not grown');continue}
          for(const p of g){const ch=(sc.tiles[sc.h-1-Math.floor(p.z)]||'')[Math.floor(p.x)],M=C[p.k];if(!M){out.push(id+': '+p.k+' unknown');break}if('pcmbaqheo'.includes(ch)){out.push(id+': '+p.k+' on paved ground');break}if('wd'.includes(ch)&&!(M.grow||'').includes(ch)){out.push(id+': '+p.k+' in water');break}}}return out})())"""))
         if bad: raise Exception('wild growth: ' + '; '.join(bad[:4]))
         grown = pg.evaluate("Object.values(GD.scenes).reduce((n,sc)=>n+(sc.props||[]).filter(p=>p.w===42).length,0)")
@@ -1315,13 +1315,13 @@ def desktop_steps(b, base, R):
         if fl['pole']['sway'] or not fl['pole'].get('flag') or fl['ridge'] or fl['path'] != 'scene/flags/sundown.png' or fl['pathRoute'] != 'scene/flags/default.png': raise Exception(f'flags: {fl}')
         out.append(f'{len(fl["towns"])} town flags, poles rigid with a waving cloth, routes fly the coin ring')
         # wind: every plant sways
-        still = json.loads(pg.evaluate("JSON.stringify(Object.entries(dioData().sc.props).filter(([k,M])=>/^(tree|bush|flower|tulip|daisy|fern|reed|cattail|grass|tallgrass|lavender|heather|sedge|bracken|nettle|iris|bulrush)/.test(k)&&!M.flat&&!/fallen|stump|log/.test(k)&&!(M.sway>0)).map(([k])=>k))"))
+        still = json.loads(pg.evaluate("JSON.stringify(Object.entries(walkData().sc.props).filter(([k,M])=>/^(tree|bush|flower|tulip|daisy|fern|reed|cattail|grass|tallgrass|lavender|heather|sedge|bracken|nettle|iris|bulrush)/.test(k)&&!M.flat&&!/fallen|stump|log/.test(k)&&!(M.sway>0)).map(([k])=>k))"))
         if still: raise Exception('plants that never sway: ' + ', '.join(still[:8]))
         w = pg.evaluate("[dglWindAt(10,10,0,walkView.sc,1),dglWindAt(10,10,900,walkView.sc,1)]")
         if abs(w[0] - w[1]) < .005: raise Exception(f'the wind does not move: {w}')
         out.append('every plant sways; the encounter grass takes the wind')
         # voxel props: recipes resolve, meshes build, a few draw
-        vx = json.loads(pg.evaluate("""JSON.stringify((()=>{const C=dioData().sc.props,keys=Object.keys(C).filter(k=>C[k].vox);const out={n:keys.length,built:0,empty:[],drawn:VOX.drawn};
+        vx = json.loads(pg.evaluate("""JSON.stringify((()=>{const C=walkData().sc.props,keys=Object.keys(C).filter(k=>C[k].vox);const out={n:keys.length,built:0,empty:[],drawn:VOX.drawn};
          for(const k of keys.slice(0,12)){const spec=C[k].vox,rec=typeof spec==='object'?spec:VOX.recipes.get(spec);if(!rec){voxRecipe(spec);continue}const m=voxMesh(voxelise(rec),rec.vpm||8);if(m&&m.n>0)out.built++;else out.empty.push(k)}return out})())"""))
         if vx['n'] < 30: raise Exception(f'{vx["n"]} props with a voxel recipe (want 30+)')
         if vx['empty']: raise Exception('empty voxel models: ' + ', '.join(vx['empty']))
@@ -1431,22 +1431,22 @@ def desktop_steps(b, base, R):
         exactly at the shop's door, the town dimmed around it, nowhere to walk but the floor) and walking out leaves you
         at the door with the shop back"""
         out = []
-        tiles = json.loads(pg.evaluate("JSON.stringify(Object.values(dioData().sc.terrains).map(T=>dioNextTiles(T.tile)))"))
+        tiles = json.loads(pg.evaluate("JSON.stringify(Object.values(walkData().sc.terrains).map(T=>dioNextTiles(T.tile)))"))
         miss = [p for L in tiles for p in L if not (ROOT / 'game' / 'art' / p).exists()]
         short = [L[0] for L in tiles if len(L) < 12]
         if miss or short: raise Exception(f'ground tiles: {len(miss)} missing (e.g. {miss[:3]}), {len(short)} kinds with fewer than 12')
         out.append(f'{len(tiles)} ground kinds × 12 tiles')
-        b = json.loads(pg.evaluate("""(()=>{const C=dioData().sc.props,K=['bakery','inn','market_hall','bank','library','school','fire_station','mansion','barn','greenhouse','ski_lodge'],imgs=[];let plans=0,vars=0;
+        b = json.loads(pg.evaluate("""(()=>{const C=walkData().sc.props,K=['bakery','inn','market_hall','bank','library','school','fire_station','mansion','barn','greenhouse','ski_lodge'],imgs=[];let plans=0,vars=0;
           for(const [k,M] of Object.entries(C)){if(!M.build)continue;plans++;for(const v of M.build.variants||[]){vars++;imgs.push(v.img)}}
           return JSON.stringify({missing:K.filter(k=>!C[k]||!C[k].build),plans,vars,imgs,rooms:K.filter(k=>!GD.scenes['int_'+k]),v2:dioPropM({v:2},C.bakery).img})})()"""))
         if b['missing'] or b['rooms']: raise Exception(f'buildings without a plan: {b["missing"]}; kinds without a room: {b["rooms"]}')
         if not b['v2'].endswith('bakery_v2.png'): raise Exception('a placed building’s colour (v) doesn’t pick its picture: ' + b['v2'])
-        bad = pg.evaluate(f"Promise.all({json.dumps(b['imgs'])}.map(p=>artLoad([p]).then(()=>dioOk(dioImg(p))?null:p).catch(()=>p))).then(L=>L.filter(Boolean))")
+        bad = pg.evaluate(f"Promise.all({json.dumps(b['imgs'])}.map(p=>artLoad([p]).then(()=>imageReady(artImage(p))?null:p).catch(()=>p))).then(L=>L.filter(Boolean))")
         if bad: raise Exception(f'{len(bad)} building colours don’t load: {bad[:3]}')
         out.append(f'{b["plans"]} buildings with 3D plans, {b["vars"]} colour variants load, a room for each new kind')
         # walk into the shop: the room opens in place
         pg.evaluate("U.inside=null;U.goingIn=null;U.bench=null;U.roomWait=900;U.modal=null;U.mq=[];renderOv();ENV.force={time:13,weather:'clear',season:'summer'};0"); go_scene(pg, 0); time.sleep(2)
-        pg.evaluate("(()=>{const p=walkView.sc.props.find(p=>p.act==='shop'&&p.k==='shop'),C=dioData().sc,g=dioActSpot(p,C.props[p.k],C.ppu||34);window.__shop=[p.x,p.z];walkView.pl.route=null;walkView.pl.x=g[0]-2;walkView.pl.z=g[1]-1.5;walkPick({k:'act',p,act:'shop'})})();0")   # a couple of steps from the door (walking is slow here)
+        pg.evaluate("(()=>{const p=walkView.sc.props.find(p=>p.act==='shop'&&p.k==='shop'),C=walkData().sc,g=dioActSpot(p,C.props[p.k],C.ppu||34);window.__shop=[p.x,p.z];walkView.pl.route=null;walkView.pl.x=g[0]-2;walkView.pl.z=g[1]-1.5;walkPick({k:'act',p,act:'shop'})})();0")   # a couple of steps from the door (walking is slow here)
         t0 = time.time(); ok = False
         while time.time() - t0 < 90:
             pg.evaluate("walkRenderer.prepBoost=60;0")                                    # this machine draws a frame a second: let the room be prepared in big slices
@@ -1597,7 +1597,7 @@ def desktop_steps(b, base, R):
         if not g[0] or g[1]: raise Exception(f'the Guide: Taxed shown {g[0]}, Caught still shown {g[1]}')
         out.append('Pocket Billies on the page, the title screen and in the data; the Guide counts Taxed')
         pg.evaluate("U.inside=null;U.goingIn=null;U.bench=null;U.modal=null;U.mq=[];renderOv();0"); go_scene(pg, 0); time.sleep(1)
-        rows = pg.evaluate("""(()=>{const C=dioData().sc,ppu=C.ppu||34,out=[];for(const p of walkView.sc.props){const M=C.props[p.k];if(!M||!M.box||!p.act)continue;let id=null;try{id=roomFor(p.act,p)}catch(e){}if(!id||!dioScene(id)||dioScene(id).winMatch===0)continue;
+        rows = pg.evaluate("""(()=>{const C=walkData().sc,ppu=C.ppu||34,out=[];for(const p of walkView.sc.props){const M=C.props[p.k];if(!M||!M.box||!p.act)continue;let id=null;try{id=roomFor(p.act,p)}catch(e){}if(!id||!dioScene(id)||dioScene(id).winMatch===0)continue;
           const s=p.s||1,f=p.f?-1:1,dx=((M.door&&M.door.x)||0)/ppu*s*f,door=[+(p.x+dx).toFixed(1),+(+p.z).toFixed(1),+(+p.x).toFixed(1)];WORLD.cache.delete(wrRoomId(walkView.id,id,door)+'|'+WORLD.gen);
           const sc=wrRoomScene(walkView.id,id,door);if(!sc)continue;const R=sc.roomRect,inR=q=>q.x>=R[0]&&q.x<=R[0]+R[2]&&q.z>=R[1]&&q.z<=R[1]+R[3],ws=sc.props.filter(q=>q.k==='wall_window'&&inR(q)).sort((a,b)=>a.x-b.x);
           const tan=Math.tan((((dioScene(id).cam||{}).pitch||34)-3+12)*Math.PI/180),hid=ws.filter(w=>sc.props.some(q=>{if(q===w||!inR(q)||q.k==='wall_window')return false;const Q=C.props[q.k]||{};if(Q.flat)return false;const k=(q.s||1)/ppu,hw=-(Q.ox??-16)*k*.92,d=w.z-q.z;if(d<=.05)return false;
@@ -1612,7 +1612,7 @@ def desktop_steps(b, base, R):
         if lib and lib['inside'] != 4: raise Exception(f'the library shows {lib["inside"]} of its 4 windows')
         out.append(f'{len(rows)} rooms in Marigold Town: {same} show exactly their front\'s windows, the rest join a double window into one; none behind furniture')
         # walk into the library: its four windows, a picture
-        pg.evaluate("""(()=>{const p=walkView.sc.props.find(p=>p.k==='library'&&p.act),C=dioData().sc,g=dioActSpot(p,C.props[p.k],C.ppu||34);walkView.pl.route=null;walkView.pl.x=g[0]-2;walkView.pl.z=g[1]-1.5;walkPick({k:'act',p,act:p.act})})();0""")
+        pg.evaluate("""(()=>{const p=walkView.sc.props.find(p=>p.k==='library'&&p.act),C=walkData().sc,g=dioActSpot(p,C.props[p.k],C.ppu||34);walkView.pl.route=null;walkView.pl.x=g[0]-2;walkView.pl.z=g[1]-1.5;walkPick({k:'act',p,act:p.act})})();0""")
         t0 = time.time()
         while time.time() - t0 < 90:
             pg.evaluate("walkRenderer.prepBoost=60;0")
@@ -1634,7 +1634,7 @@ def desktop_steps(b, base, R):
         """the land between metre corners is smooth and terraces of rock round off at the top and fan out at the foot:
         from every place's hub you reach exactly the same half-metre cells and exits as without that shaping, and no
         prop's base is more than 15 cm above the ground under its footprint (fences and the like follow the slope)"""
-        R2 = pg.evaluate("""(()=>{const out=[],C=dioData().sc,keep=walkView.sc;
+        R2 = pg.evaluate("""(()=>{const out=[],C=walkData().sc,keep=walkView.sc;
           const reach=sc=>{walkView.nav=null;walkView.navSc=null;const G=dioNav(),gw=G.gw,gh=G.gh,h=sc.hub||[sc.w/2,sc.h/2],s=dioNearFree(h[0],h[1]);if(!s)return [0,0];const seen=new Uint8Array(gw*gh),Q=[s.j*gw+s.i];seen[Q[0]]=1;
             while(Q.length){const c=Q.pop(),i=c%gw,j=(c-i)/gw;for(const [a,b] of [[1,0],[-1,0],[0,1],[0,-1]]){const ii=i+a,jj=j+b;if(ii<0||jj<0||ii>=gw||jj>=gh)continue;const q=jj*gw+ii;if(seen[q]||G.blk[q]||!dioPass(G,c,q))continue;seen[q]=1;Q.push(q)}}
             let n=0;for(const v of seen)n+=v;let ex=0;for(const e of sc.exits||[]){const c=dioNearFree(e[0],e[1]);if(c&&seen[c.j*gw+c.i])ex++}return [n,ex]};
@@ -1709,7 +1709,7 @@ def desktop_steps(b, base, R):
         until(pg, '!TALK.on', 40, 'TALK.cur&&TALK.cur.tap()')
         if not pg.evaluate("!!storyFlags().met_juniper"): raise Exception('talking to Granny Juniper didn’t count as meeting her')
         out.append(f'Granny Juniper at {j}, she said “{first[:40]}…”')
-        pg.evaluate("U.toastQ=[];(()=>{const p=walkView.sc.props.find(p=>p.act==='lab'),C=dioData().sc,g=dioActSpot(p,C.props[p.k],C.ppu||34);walkView.pl.route=null;walkView.pl.x=g[0];walkView.pl.z=g[1];walkPick({k:'act',p,act:'lab'})})();0")
+        pg.evaluate("U.toastQ=[];(()=>{const p=walkView.sc.props.find(p=>p.act==='lab'),C=walkData().sc,g=dioActSpot(p,C.props[p.k],C.ppu||34);walkView.pl.route=null;walkView.pl.x=g[0];walkView.pl.z=g[1];walkPick({k:'act',p,act:'lab'})})();0")
         if not until(pg, "walkView.ready&&(walkView.id==='int_lab'||(walkView.sc&&walkView.sc.roomOf==='int_lab'))||TALK.on", 60): raise Exception('the lab didn’t open')
         pg.evaluate("talkHide&&talkHide();if(U.inside)leaveRoom();0"); until(pg, "walkView.ready&&!walkView.sc.roomRect", 30)
         out.append('the lab opens')

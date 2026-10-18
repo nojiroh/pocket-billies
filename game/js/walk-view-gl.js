@@ -76,6 +76,7 @@ import {
   DIO_GCACHE,
   DIO_PAD,
   PW_WAIT,
+  artImage,
   dioActLabel,
   dioActSpot,
   dioAlong,
@@ -85,7 +86,6 @@ import {
   dioCanvasXY,
   dioClick,
   dioClimbGo,
-  dioData,
   dioDirOf,
   dioEncSpot,
   dioEnsureGround,
@@ -101,14 +101,12 @@ import {
   dioHash,
   dioHitAt,
   dioHubOf,
-  dioImg,
   dioLayerM,
   dioMoodOf,
   dioNav,
   dioNextOn,
   dioNextTiles,
   dioNoise,
-  dioOk,
   dioPaintGen,
   dioPill,
   dioPlayer,
@@ -130,10 +128,12 @@ import {
   dioTapMark,
   dioTer,
   dioUnproject,
+  imageReady,
   setDioNav,
   setDioProj,
   setDioStop,
   setDioUnproject,
+  walkData,
   walkView,
 } from './walk-view.js';
 import { ENG_CTX, eng, engHex } from './engine/settings.js';
@@ -478,7 +478,7 @@ export function dglMatOf(k, M) {
 const DIO_PAD_SKIP =
   /fence|hedge|log|wall|rail|pipe|vineyard|shipwreck|yacht|boat|mesa|derrick|vault_door|mine_entrance|stilt|ferris|festival_stage/;
 function dioPads(sc) {
-  const C = dioData().sc,
+  const C = walkData().sc,
     ppu = C.ppu || 34,
     out = [];
   if (walkView.noPads) return out;
@@ -509,7 +509,7 @@ function dioHGrid(sc) {
   const now = performance.now(),
     c = sc._hg;
   if (c && now - c.t < 120 && c.H === H) return c;
-  const CP = dioData().sc.props;
+  const CP = walkData().sc.props;
   let sig = (sc._hv || 0) + '|' + (sc.props ? sc.props.length : 0);
   if (sc.props)
     for (const p of sc.props) {
@@ -1283,15 +1283,15 @@ function* dglGroundSteps(sc, G, T) {
   T.gtex = yield* dglTexStrips(G.width, G.height, G._px || G, { nearest: true });
   if (T.ring) dglRingFree(T.ring);
   T.ring = null; /* v46: the near ring starts empty (dglRingUpdate, or the preparation fills it) */
-  const C0 = dioData().sc,
+  const C0 = walkData().sc,
     tile = k => {
       const T = C0.terrains[k];
       if (!T) return null;
       if (typeof dioNextOn === 'function' && dioNextOn()) {
-        const n = dioImg(dioNextTiles(T.tile)[0]);
-        if (dioOk(n)) return n;
+        const n = artImage(dioNextTiles(T.tile)[0]);
+        if (imageReady(n)) return n;
       }
-      return dioImg(T.tile);
+      return artImage(T.tile);
     };
   const fe = tile(sc.edge) || tile('g'),
     cl = tile(sc.cliff || (sc.indoor ? 'k' : 'r')) || fe;
@@ -1816,7 +1816,7 @@ function* dglGroundSteps(sc, G, T) {
     if (r) T.gaoTex = dglGaoTex(r);
   }
   /* rocks standing in the water throw foam around themselves */
-  const C1 = dioData().sc,
+  const C1 = walkData().sc,
     rocks = [];
   for (const p of sc.props || []) {
     const M = C1.props[p.k];
@@ -2657,7 +2657,7 @@ function* dglGaoSteps(sc) {
     FW = W * R,
     FH = H * R,
     A = new Float32Array(FW * FH).fill(1),
-    C0 = dioData().sc;
+    C0 = walkData().sc;
   const dark = (x0, z0, x1, z1, f) => {
     const i0 = Math.max(0, Math.floor(x0 * R)),
       i1 = Math.min(FW - 1, Math.ceil(x1 * R)),
@@ -2957,7 +2957,7 @@ function dglNrm(gx, gy, m) {
 }
 function dglGroundNormals(G, old, sc = walkView.sc) {
   const gl = EGL.gl,
-    TP = G._TP || dioData().sc.tile || 16,
+    TP = G._TP || walkData().sc.tile || 16,
     P = DGL_PAD,
     w = G.width,
     h = G.height,
@@ -3020,7 +3020,7 @@ function dglGroundNormals(G, old, sc = walkView.sc) {
 }
 function dglImgRepeat(im, old) {
   const gl = EGL.gl;
-  if (!dioOk(im)) return EGL.white;
+  if (!imageReady(im)) return EGL.white;
   const t = old && old !== EGL.white ? old : gl.createTexture();
   gl.bindTexture(gl.TEXTURE_2D, t);
   gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, im);
@@ -3093,7 +3093,7 @@ export function dglBuildGrass() {
     dens = { t: 30, g: 4, G: 7, f: 5, l: 3, y: 2, C: 5, H: 6, R: 9, M: 1, L: 1, B: 6, E: 7, F: 1 };
   dioNav();
   const J = { sc, j: 0, k: 0, I: new Float32Array(8 * 4096), n: 0 };
-  const C0 = dioData().sc,
+  const C0 = walkData().sc,
     rows = sc.tiles || [];
   const W2 = sc.w * 2,
     H2 = sc.h * 2,
@@ -3291,7 +3291,7 @@ export function dglGrassWork(ms = 4) {
 /* distant trees, rocks or cacti scattered on the land around the scene (taken from the scene's own props) */
 function dglBuildFar() {
   const sc = walkView.sc,
-    C0 = dioData().sc,
+    C0 = walkData().sc,
     pool = [],
     count = Math.round(eng('world', 'farProps'));
   walkRenderer.farKey = walkView.id + '|' + count;
@@ -3582,7 +3582,7 @@ function dglFrame(ts, dtm) {
   walkView.t += dms;
   const dt = dms / 1000,
     t = walkView.t,
-    C0 = dioData().sc,
+    C0 = walkData().sc,
     PPU = C0.ppu || 34;
   /* v26: the hour, the weather and the season (environment.js) lean on the engine dials while this frame draws */
   ENG_CTX.env = typeof ENV !== 'undefined' && (ENV.on || !!ENV.force);
@@ -4318,8 +4318,8 @@ function dglAltImg(p, M, C0, sc) {
   const A = C0.props[L[Math.floor((h / 0.38) * L.length) % L.length]];
   const ai = A && A.img;
   if (!ai) return M.img;
-  const t = dioImg(ai);
-  return dioOk(t) ? ai : M.img;
+  const t = artImage(ai);
+  return imageReady(t) ? ai : M.img;
 }
 const DGL_LOOK = new WeakMap();
 /* v34: a still prop keeps what it worked out last frame (its look, its height on the ground, its material) and only
@@ -4550,8 +4550,8 @@ export function dglItems(st, C, PPU, C0) {
   const prop = (p, far) => {
     const M = dioPropM(p, C0.props[p.k]);
     if (!M || !dioPropOn(p)) return;
-    const im = dioImg(dglAltImg(p, M, C0, sc));
-    if (!dioOk(im)) return;
+    const im = artImage(dglAltImg(p, M, C0, sc));
+    if (!imageReady(im)) return;
     const lk = far ? null : dglLookOf(p, M, sc),
       s = ((p.s || 1) / PPU) * (lk ? lk.size : 1) * (p.grow != null ? dioGrowK(p) : 1),
       w = im.naturalWidth || im.width,
@@ -4622,9 +4622,9 @@ export function dglItems(st, C, PPU, C0) {
     /* v43: a flag pole is rigid; its cloth is a separate picture (the town's flag) draped from the top and waved by the wind */
     if (!far && M.flag) {
       const F = M.flag,
-        fi = dioImg(dioFlagPath(sc)),
-        fim = dioOk(fi) ? fi : dioImg('scene/flags/default.png');
-      if (dioOk(fim)) {
+        fi = artImage(dioFlagPath(sc)),
+        fim = imageReady(fi) ? fi : artImage('scene/flags/default.png');
+      if (imageReady(fim)) {
         const fl = p.f ? -1 : 1,
           ps = p.s || 1,
           wv = RM ? 0 : dglWindAt(p.x, p.z, t, sc, wind);
@@ -4653,8 +4653,8 @@ export function dglItems(st, C, PPU, C0) {
     /* extra layers for depth: each one a sprite of its own, dz meters behind (or in front of) the main picture */
     if (!far && M.layers)
       for (const l of M.layers) {
-        const li = l.img && dioImg(l.img);
-        if (!dioOk(li)) continue;
+        const li = l.img && artImage(l.img);
+        if (!imageReady(li)) continue;
         const LM = dioLayerM(M, l);
         /* alpha 0.4: a layer that swings from a point (the rope swing on the great oak: l.pivot metres up), a slow pendulum
       pushed a little harder by the gusts: it leans one way about the pivot and moves the other, so the pivot stays put */
@@ -4768,8 +4768,8 @@ export function dglItems(st, C, PPU, C0) {
     used.push([s.x, s.z]);
     walkRenderer.encPos.push([s.x, s.z, e.id]);
     const g = tg[Math.abs(Math.round(s.x * 7 + s.z * 3)) % tg.length];
-    const im = g && dioImg(g.img);
-    if (!dioOk(im)) return;
+    const im = g && artImage(g.img);
+    if (!imageReady(im)) return;
     const moving = Math.hypot((s.tx ?? s.x) - s.x, (s.tz ?? s.z) - s.z) > 0.05,
       ru = moving ? 0.06 * Math.sin(t / 70 + s.x) : 0,
       wv = RM ? 0 : dglWindAt(s.x, s.z, t, sc, wind);
@@ -5577,8 +5577,8 @@ function dglSky(C, sun, mirror) {
 }
 export function dglWorldTex() {
   if (walkRenderer.wtex) return walkRenderer.wtex;
-  const im = dioImg(typeof WORLD_ART !== 'undefined' ? WORLD_ART : 'map/world.png');
-  if (!dioOk(im)) return EGL.white;
+  const im = artImage(typeof WORLD_ART !== 'undefined' ? WORLD_ART : 'map/world.png');
+  if (!imageReady(im)) return EGL.white;
   const gl = EGL.gl,
     t = gl.createTexture();
   gl.bindTexture(gl.TEXTURE_2D, t);
@@ -5596,7 +5596,7 @@ export function dglGround(C, X) {
     p = dglUse('ground', C, X),
     U = p.U,
     P = DGL_PAD;
-  const wa = eglImg(dioImg(dioData().sc.wallArt || 'scene/build/walls.png'), { noNormal: true });
+  const wa = eglImg(artImage(walkData().sc.wallArt || 'scene/build/walls.png'), { noNormal: true });
   gl.activeTexture(gl.TEXTURE4);
   gl.bindTexture(gl.TEXTURE_2D, wa ? wa.t : EGL.white);
   gl.uniform1i(U.uWallA, 4);
@@ -5974,7 +5974,7 @@ export function dglSprites(C, items, X, hits, labels, PPU) {
     }
     if (it.M && it.M.blades) {
       const b = it.M.blades,
-        BT = eglImg(dioImg(b.img));
+        BT = eglImg(artImage(b.img));
       if (BT) dglBlades(p, it, b, BT, (RM ? 0 : walkView.t / 1100) * (sc.wind || 1) * eng('grass', 'wind'), C, X);
     }
     if (it.M && it.M.hands && !it.far && !it.layer) dglHands(p, it, C, X);
@@ -6199,7 +6199,7 @@ function dglHands(p, it, C, X) {
   const d = new Date(),
     sec = d.getHours() * 3600 + d.getMinutes() * 60 + d.getSeconds() + d.getMilliseconds() / 1000;
   for (const h of it.M.hands) {
-    const T = eglImg(dioImg(h.img));
+    const T = eglImg(artImage(h.img));
     if (T) dglBlades(p, it, h, T, -((sec % h.per) / h.per) * Math.PI * 2, C, X, 0.06);
   }
 }
@@ -6208,7 +6208,7 @@ function dglHands(p, it, C, X) {
    rises above what the camera shows anyway (about 5 m); up to 11 degrees */
 function dglLandmarkTilt(P, sc) {
   if (!sc || sc.indoor || !P || RM) return 0;
-  const C0 = dioData().sc;
+  const C0 = walkData().sc;
   let L = walkRenderer.lmL;
   if (!L || L.sc !== sc)
     L = walkRenderer.lmL = {
@@ -6489,7 +6489,7 @@ function dglWaterLife() {
       walkRenderer.wetPropsId = walkView.id;
       walkRenderer.wetProps = (walkView.sc.props || [])
         .filter(p => {
-          const M = dioData().sc.props[p.k];
+          const M = walkData().sc.props[p.k];
           return M && !M.walk && typeof dglWgAt === 'function' && dglWgAt(p.x, p.z);
         })
         .slice(0, 40);
@@ -6727,7 +6727,7 @@ function dglRoomLamps(sc) {
 }
 /* something tall standing right in front of a window (a fridge, a shelf) keeps its light out */
 function dglWinBlocked(sc, w) {
-  const C0 = dioData().sc;
+  const C0 = walkData().sc;
   return (sc.props || []).some(p => {
     if (p === w.p || p === w) return false;
     const M = C0.props[p.k];
@@ -7549,7 +7549,7 @@ export function dglFxPass(C, items, X, dark, t, dt) {
     p = dglUse('fx', C, X),
     U = p.U,
     sc = walkView.sc,
-    C0 = dioData().sc,
+    C0 = walkData().sc,
     rm = RM ? 0 : 1,
     R = C.right,
     Up = [0, 1, 0],
@@ -7567,7 +7567,7 @@ export function dglFxPass(C, items, X, dark, t, dt) {
   gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
   gl.depthMask(false);
   gl.enable(gl.DEPTH_TEST);
-  const fxT = k => eglImg(dioImg(`scene/fx/${k}.png`), { noNormal: true }),
+  const fxT = k => eglImg(artImage(`scene/fx/${k}.png`), { noNormal: true }),
     quad = (k, fr, x, y, z, sw, sh, a, col) => {
       const T = fxT(k);
       if (!T) return;

@@ -10,7 +10,7 @@ import { pedVoxHTML, provide } from '../../game/js/hooks.js';
 import { $, $$, clamp } from '../../game/js/util.js';
 import { frameStop, frameTask } from '../../game/js/frame-scheduler.js';
 import { artLoad, cnv, setArtLoad } from '../../game/js/art.js';
-import { dioData, dioImg, dioLayerM, dioOk, setDioData, walkView } from '../../game/js/walk-view.js';
+import { artImage, dioLayerM, imageReady, setWalkData, walkData, walkView } from '../../game/js/walk-view.js';
 import { DGL_MATS, dglMatOf, dglVaryOf, dioMount, walkRenderer } from '../../game/js/walk-view-gl.js';
 import { BLD_ROOM_NAMES, BLD_TEX_NAMES } from '../../game/js/buildings.js';
 import { P3D_AUTO, P3D_KINDS, P3D_PARTS, p3dTreeKind } from '../../game/js/solid-props.js';
@@ -77,7 +77,7 @@ function pedScene(k) {
     T = C.terrains,
     ppu = C.ppu || 34,
     tk = Object.keys(T).find(c => /grass/i.test(T[c].name)) || Object.keys(T)[0] || 'g';
-  const im = dioImg(M.img),
+  const im = artImage(M.img),
     wM = im ? (im.naturalWidth || im.width) / ppu : 2,
     hM = im ? (im.naturalHeight || im.height) / ppu : 2,
     w = Math.max(12, Math.ceil(wM + 8)),
@@ -102,8 +102,8 @@ function pedScene(k) {
   };
 }
 {
-  const base = dioData;
-  setDioData(() => {
+  const base = walkData;
+  setWalkData(() => {
     const d = base();
     if (PED.sc) d.scenes = Object.assign({}, d.scenes, { __prop: PED.sc });
     return d;
@@ -212,10 +212,10 @@ function pedCard(k) {
 }
 /* ---------- picture view ---------- */
 function pedBounds(M) {
-  const ims = [[dioImg(M.img), M.ox, M.oy]].concat(
+  const ims = [[artImage(M.img), M.ox, M.oy]].concat(
     (M.layers || []).map(l => {
       const LM = dioLayerM(M, l);
-      return [dioImg(l.img), LM.ox, LM.oy];
+      return [artImage(l.img), LM.ox, LM.oy];
     })
   );
   let x0 = -20,
@@ -223,7 +223,7 @@ function pedBounds(M) {
     x1 = 20,
     y1 = 8;
   for (const [im, ox, oy] of ims) {
-    if (!dioOk(im)) continue;
+    if (!imageReady(im)) continue;
     x0 = Math.min(x0, ox);
     y0 = Math.min(y0, oy);
     x1 = Math.max(x1, ox + (im.naturalWidth || im.width));
@@ -253,16 +253,16 @@ function pedDraw() {
   const X = v => (v - B.x0) * Z,
     Y = v => (v - B.y0) * Z;
   /* far layers first, then the main picture (depth 0), then the near ones */
-  const list = [{ im: dioImg(M.img), ox: M.ox, oy: M.oy, dz: 0, i: -1 }]
+  const list = [{ im: artImage(M.img), ox: M.ox, oy: M.oy, dz: 0, i: -1 }]
     .concat(
       (M.layers || []).map((l, i) => {
         const LM = dioLayerM(M, l);
-        return { im: dioImg(l.img), ox: LM.ox, oy: LM.oy, dz: l.dz || 0, i };
+        return { im: artImage(l.img), ox: LM.ox, oy: LM.oy, dz: l.dz || 0, i };
       })
     )
     .sort((a, b) => b.dz - a.dz);
   for (const o of list) {
-    if (!dioOk(o.im)) continue;
+    if (!imageReady(o.im)) continue;
     x.globalAlpha = PED.layer != null && PED.layer !== o.i ? 0.55 : 1;
     x.drawImage(o.im, X(o.ox), Y(o.oy), (o.im.naturalWidth || o.im.width) * Z, (o.im.naturalHeight || o.im.height) * Z);
     if (PED.layer === o.i) {
@@ -575,10 +575,10 @@ function pedBind() {
     })
   );
   $$('.ped-thumb').forEach(c => {
-    const im = dioImg(c.dataset.limg);
+    const im = artImage(c.dataset.limg);
     const x = c.getContext('2d');
     x.clearRect(0, 0, 40, 40);
-    if (dioOk(im)) {
+    if (imageReady(im)) {
       const w = im.naturalWidth || im.width,
         h = im.naturalHeight || im.height,
         s = Math.min(40 / w, 40 / h);
@@ -704,7 +704,7 @@ ACTS.pedVaryReset = () => {
 ACTS.scGlowAdd2 = () => {
   const M = pedM();
   const ppu = scD().ppu || 34,
-    im = dioImg(M.img);
+    im = artImage(M.img);
   M.glow = { c: '#FFD27A', r: 1.4, y: +((im ? (im.naturalHeight || im.height) * 0.8 : 50) / ppu).toFixed(2) };
   changed();
   commit(true);
@@ -730,7 +730,7 @@ ACTS.pedLayerAdd = async d => {
   while (L.some(l => l.img === `scene/props/${k}_layer${n}.png`)) n++;
   const path = `scene/props/${k}_layer${n}.png`;
   markArt('art/' + path, c);
-  const main = dioImg(M.img),
+  const main = artImage(M.img),
     same = main && (main.naturalWidth || main.width) === c.width && (main.naturalHeight || main.height) === c.height;
   const l = { img: path, dz: d.from === 'copy' ? -0.3 : -0.25 };
   if (!same) {
@@ -875,7 +875,7 @@ const PED_PART_COL = ['#E0457B', '#2F9F5B', '#3E8FE0', '#E8A02E', '#8E6CCB', '#1
 ACTS.pedPartsOn = () => {
   const M = pedM();
   if (!M) return;
-  const im = dioImg(M.img),
+  const im = artImage(M.img),
     w = im ? im.naturalWidth || im.width : 40,
     h = im ? im.naturalHeight || im.height : 40;
   M.parts = clone(P3D_PARTS[SCN.ped] || [{ r: [0, 0, w, h], k: 'block', d: 0.5 }]);
@@ -894,7 +894,7 @@ ACTS.pedPartsOff = () => {
 ACTS.pedPartAdd = () => {
   const M = pedM();
   if (!M || !M.parts) return;
-  const im = dioImg(M.img),
+  const im = artImage(M.img),
     w = im ? im.naturalWidth || im.width : 40,
     h = im ? im.naturalHeight || im.height : 40;
   M.parts.push({ r: [0, Math.round(h / 2), w, h], k: 'lathe' });
@@ -978,7 +978,7 @@ function pedBuildHTML(k) {
 }
 ACTS.pedBuildOn = () => {
   const M = pedM(),
-    im = dioImg(M.img);
+    im = artImage(M.img);
   if (!M || !im) return;
   const w = im.naturalWidth || im.width,
     h = im.naturalHeight || im.height,

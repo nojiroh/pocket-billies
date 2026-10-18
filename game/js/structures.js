@@ -12,7 +12,7 @@ import { expose } from './test-globals.js';
 import { RM, provide } from './hooks.js';
 import { clamp } from './util.js';
 import { hexA } from './art.js';
-import { dioBridges, dioImg, walkView } from './walk-view.js';
+import { artImage, dioBridges, walkView } from './walk-view.js';
 import { EGL, eglImg, eglPrograms } from './engine/webgl.js';
 import { DGL_WALL_COL, dglCurveArgs, dglUse, dglWallDefault, dioGroundH, dioH } from './walk-view-gl.js';
 import { BLD_SH, bldArt, bldGuard } from './buildings.js';
@@ -551,7 +551,7 @@ function strDraw(C, X) {
     const gl = EGL.gl;
     eglPrograms(BLD_SH);
     const A = bldArt(),
-      det = eglImg(dioImg(A.detail), { noNormal: true });
+      det = eglImg(artImage(A.detail), { noNormal: true });
     if (!det) return;
     const p = dglUse('bld', C, X),
       sc = walkView.sc,

@@ -15,7 +15,7 @@
 import { expose } from './test-globals.js';
 import { dioArtVer, provide } from './hooks.js';
 import { cnv, hexA } from './art.js';
-import { dioData, dioHash, dioImg, walkView } from './walk-view.js';
+import { artImage, dioHash, walkData, walkView } from './walk-view.js';
 import { ENG_CTX, eng } from './engine/settings.js';
 import {
   EGL,
@@ -140,12 +140,12 @@ export function bldGuard(fn) {
   }
 }
 export function bldArt() {
-  const C = dioData().sc;
+  const C = walkData().sc;
   return C.buildArt || { detail: 'scene/build/detail.png', rooms: 'scene/build/rooms.png' };
 }
 /* alpha 0.4: the texture sheet is 8 cells across and as many rows as it has (16 textures were 2 rows; the moss and solar roofs start a third) */
 export function bldAtlas(A) {
-  const im = dioImg(A.detail),
+  const im = artImage(A.detail),
     w = im && (im.naturalWidth || im.width),
     h = im && (im.naturalHeight || im.height);
   return [8, w && h ? Math.max(1, Math.round(h / (w / 8))) : 2];
@@ -1538,8 +1538,8 @@ function bldDraw0(C, X, items, fades) {
   const gl = EGL.gl;
   eglPrograms(BLD_SH);
   const A = bldArt(),
-    det = eglImg(dioImg(A.detail), { noNormal: true }),
-    rm = eglImg(dioImg(A.rooms), { noNormal: true });
+    det = eglImg(artImage(A.detail), { noNormal: true }),
+    rm = eglImg(artImage(A.rooms), { noNormal: true });
   if (!det || !rm) return;
   const sc = walkView.sc,
     dark = sc.tint && sc.tint !== '#000000' ? 1 : sc.indoor ? 0.7 : 0,

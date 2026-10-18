@@ -17,7 +17,7 @@ import { frameCount, frameStop, frameTask, userFps } from './frame-scheduler.js'
 import { artLoad, artPixels, cnv, hexA, mstamp, uiIco } from './art.js';
 import { owFrames, portraitHTML } from './person-art.js';
 import { EASE } from './battle-stage.js';
-import { dioData, dioHash, dioImg, dioOk, dioScene, dioStep, walkView } from './walk-view.js';
+import { artImage, dioHash, dioScene, dioStep, imageReady, walkData, walkView } from './walk-view.js';
 import { ENG_CTX, eng, engSource } from './engine/settings.js';
 import { EGL, eglBindQuad, eglFree, eglImg, eglInit, eglMesh, eglOK, eglPrograms, eglTarget } from './engine/webgl.js';
 import { EGL_POST_SH, eglPost, eglScreenOf } from './engine/post-effects.js';
@@ -537,8 +537,8 @@ function mapGLLoop(ts) {
 export const WORLD_RELIEF = 'map/world_h.png';
 function mglHeightTex() {
   if (MGL.htex !== undefined && MGL.htex) return MGL.htex;
-  const im = typeof dioImg === 'function' ? dioImg(WORLD_RELIEF) : null;
-  if (!im || !dioOk(im)) {
+  const im = typeof artImage === 'function' ? artImage(WORLD_RELIEF) : null;
+  if (!im || !imageReady(im)) {
     if (!MGL.hload) {
       MGL.hload = 1;
       artLoad([WORLD_RELIEF])
@@ -697,8 +697,8 @@ function mglMiniImg(i) {
   const r = ROUTE[i];
   if (!r || !r.scene) return null;
   const p = `map/mini/${r.scene}.png`,
-    im = typeof dioImg === 'function' ? dioImg(p) : null;
-  if (!im || !dioOk(im)) {
+    im = typeof artImage === 'function' ? artImage(p) : null;
+  if (!im || !imageReady(im)) {
     MGL.miniLoad = MGL.miniLoad || {};
     if (!MGL.miniLoad[p]) {
       MGL.miniLoad[p] = 1;
@@ -1212,7 +1212,7 @@ export function mmBuild(i) {
   const r = ROUTE[i],
     sc = r && r.scene && dioScene(r.scene);
   if (!sc || !sc.w) return null;
-  const C0 = dioData().sc,
+  const C0 = walkData().sc,
     W = sc.w,
     H = sc.h,
     town = !!r.town;
@@ -1325,12 +1325,12 @@ export function mmBuild(i) {
     if (!M) continue;
     const g = (M.group || p.k) + ' ' + p.k,
       s = p.s || 1,
-      im = dioImg(M.img),
+      im = artImage(M.img),
       hpx = -(M.oy || 0),
       hm = (hpx * s) / PPU,
       y = hAt(Math.min(W - 0.1, Math.max(0, p.x)), Math.min(H - 0.1, Math.max(0, p.z + 0.3)));
     if (p.x < 0 || p.z < 0 || p.x > W || p.z > H) continue;
-    const cols = im && dioOk(im) ? mmCols(im) : null;
+    const cols = im && imageReady(im) ? mmCols(im) : null;
     if (
       M.box &&
       (M.door ||

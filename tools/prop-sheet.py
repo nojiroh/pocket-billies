@@ -25,12 +25,12 @@ with sync_playwright() as pw:
     b = pw.chromium.launch(args=['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'])
     errs = []; ctx, pg = cq.open_game(b, base, 520, 420, False, errs)
     pg.evaluate("GD.engine.defaults.quality=Object.assign({},GD.engine.defaults.quality,{resolution:.6,auto:false});GD.engine.defaults.lens=Object.assign({},GD.engine.defaults.lens,{blur:0,grain:0});GD.engine.defaults.color=Object.assign({},GD.engine.defaults.color,{bloom:0});GD.engine.defaults.shadows=Object.assign({},GD.engine.defaults.shadows,{ao:0});GD.engine.defaults.sun=Object.assign({},GD.engine.defaults.sun,{shafts:0});GD.engine.defaults.grass=Object.assign({},GD.engine.defaults.grass,{density:0});GD.engine.defaults.world=Object.assign({},GD.engine.defaults.world,{farProps:0});GD.engine.defaults.quality=Object.assign({},GD.engine.defaults.quality,{shadowMap:1024});ENV.force={time:13,weather:'clear',season:'summer'};;0"); cq.play(pg)
-    keys = pg.evaluate("Object.keys(dioData().sc.props).filter(k=>!/^wall_|rug|ladder/.test(k))")
+    keys = pg.evaluate("Object.keys(walkData().sc.props).filter(k=>!/^wall_|rug|ladder/.test(k))")
     if ONLY: keys = [k for k in keys if k in ONLY]
     print(len(keys), 'props', flush=True)
     tiles = []; T0=time.time()
     B = 16
-    CAT = pg.evaluate("JSON.stringify(Object.fromEntries(Object.entries(dioData().sc.props).map(([k,P])=>[k,[P.box?P.box[0]:0,P.img,-(P.oy||0)]])))")
+    CAT = pg.evaluate("JSON.stringify(Object.fromEntries(Object.entries(walkData().sc.props).map(([k,P])=>[k,[P.box?P.box[0]:0,P.img,-(P.oy||0)]])))")
     SZ = {}
     for k, (bx, img, oy) in json.loads(CAT).items():
         try: w = Image.open(ROOT / 'game' / 'art' / img).size[0]
@@ -52,7 +52,7 @@ with sync_playwright() as pw:
             for yaw in (-.55, .55):
                 pg.evaluate(f"walkRenderer.swoop={{x:{p['x']},z:{p['z']}-1.6}};walkRenderer.yawT=walkRenderer.yaw={yaw};walkRenderer.zoomT=walkRenderer.zoom={zm};walkRenderer.camT=null;0")
                 f0 = pg.evaluate("walkRenderer.frames"); cq.until(pg, f"walkRenderer.frames>{f0 + 1}", 20)
-                q = pg.evaluate(f"(()=>{{const C=walkView.C,M=dioData().sc.props['{p['k']}'],hm=Math.max(.6,-(M.oy||0)/(dioData().sc.ppu||34)),wm=Math.max(.6,(dioImg(M.img)||{{width:40}}).width/(dioData().sc.ppu||34)),a=dioProj(C,{p['x']},0,{p['z']}),b=dioProj(C,{p['x']},hm+.3,{p['z']});return a&&b?[a.x,a.y,b.y,C.rw,C.rh,wm*a.s]:null}})()")
+                q = pg.evaluate(f"(()=>{{const C=walkView.C,M=walkData().sc.props['{p['k']}'],hm=Math.max(.6,-(M.oy||0)/(walkData().sc.ppu||34)),wm=Math.max(.6,(artImage(M.img)||{{width:40}}).width/(walkData().sc.ppu||34)),a=dioProj(C,{p['x']},0,{p['z']}),b=dioProj(C,{p['x']},hm+.3,{p['z']});return a&&b?[a.x,a.y,b.y,C.rw,C.rh,wm*a.s]:null}})()")
                 if q:
                     vw, vh = pg.viewport_size['width'], pg.viewport_size['height']; sx, sy = vw / q[3], vh / q[4]; cx = q[0] * sx; y0, y1 = q[2] * sy - 18, q[1] * sy + 32
                     hh = max(85, y1 - y0); ww = max(hh * 300 / 260, q[5] * sx * 1.3); hh = ww * 260 / 300; ym = (y0 + y1) / 2

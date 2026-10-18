@@ -25,7 +25,6 @@ import {
   dioBridges,
   dioCell,
   dioClimbEnds,
-  dioData,
   dioFind,
   dioHubOf,
   dioNav,
@@ -33,6 +32,7 @@ import {
   dioSteps,
   dioStop,
   dioWalkTo,
+  walkData,
   walkView,
 } from './walk-view.js';
 import { eng } from './engine/settings.js';
@@ -534,7 +534,7 @@ async function runFullTest(mode) {
       const sc = walkView.sc;
       if (!sc || (!sc.steps && !sc.bridges)) return;
       const hub = dioHubOf(sc),
-        C0 = dioData().sc,
+        C0 = walkData().sc,
         bad = [],
         far = (q, p) => {
           const end = q && q[q.length - 1];
@@ -851,7 +851,7 @@ async function runFullTest(mode) {
             if (walkView.id !== 'w:sundown*') throw new Error('Marigold Town is not shown (still ' + walkView.id + ')');
             const p = walkView.sc.props.find(p => p.act === 'shop' && p.k === 'shop');
             if (!p) throw new Error('no shop in Marigold Town');
-            const C = dioData().sc,
+            const C = walkData().sc,
               g = dioActSpot(p, C.props[p.k], C.ppu || 34);
             walkView.pl.route = null;
             walkView.pl.x = g[0];
@@ -940,7 +940,7 @@ async function runFullTest(mode) {
               /* v44b: wait until the scene has settled: ready, every voxel recipe it uses arrived, then 20 more frames
         (the first frames after a scene opens draw voxel props as their pictures while the recipes load) */
               for (let i = 0; i < 80 && !walkView.ready; i++) await stSleep(100);
-              const C0 = dioData().sc.props,
+              const C0 = walkData().sc.props,
                 vk = (walkView.sc.props || [])
                   .filter(p => C0[p.k] && typeof C0[p.k].vox === 'string')
                   .map(p => C0[p.k].vox);
@@ -1295,7 +1295,7 @@ async function runFullTest(mode) {
           'Plus 150 more trees and rocks',
           () => {
             const pool = ['tree_oak', 'tree_pine', 'tree_birch', 'boulder', 'bush_round', 'tree_oak_deep'].filter(
-              k => dioData().sc.props[k]
+              k => walkData().sc.props[k]
             );
             sc.props = props0.concat(
               Array.from({ length: 150 }, (_, i) => ({

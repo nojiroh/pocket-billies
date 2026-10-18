@@ -8,7 +8,7 @@ import { expose } from '../test-globals.js';
 import { dioArtVer, eglRestored, provide, walkRenderer } from '../hooks.js';
 import { clamp } from '../util.js';
 import { cnv } from '../art.js';
-import { dioOk } from '../walk-view.js';
+import { imageReady } from '../walk-view.js';
 import { eng } from './settings.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -572,7 +572,7 @@ export function eglTexParams(o = {}) {
 /* an image or canvas as a texture. Small or far sprites use mipmaps (no shimmer); a soft normal map ("pillow" shading
    from the outline) is made in the background, a few per frame, so a new scene never freezes */
 export function eglImg(im, o = {}) {
-  if (!dioOk(im)) return null;
+  if (!imageReady(im)) return null;
   const v = typeof dioArtVer === 'function' ? dioArtVer() : 0,
     dv = im.__v;
   let e = EGL.tex.get(im);

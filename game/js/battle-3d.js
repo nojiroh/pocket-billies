@@ -12,7 +12,7 @@ import { B, FV, RM, S, provide } from './hooks.js';
 import { $, clamp } from './util.js';
 import { hexA } from './art.js';
 import { ACT, FOC, POS, SC, UPP, partSpr, sideBuf, sideWorld, trainerBattleFrame, trainerMpp } from './battle-stage.js';
-import { dioData, dioStop, walkView } from './walk-view.js';
+import { dioStop, walkData, walkView } from './walk-view.js';
 import { EGL } from './engine/webgl.js';
 import { dioH, walkRenderer } from './walk-view-gl.js';
 /* eslint-disable no-func-assign */
@@ -56,7 +56,7 @@ export function battleGLAttach(o = {}) {
   BGL.detach = !!o.detach;
   const sc = walkView.sc,
     P = walkView.pl,
-    C0 = dioData().sc,
+    C0 = walkData().sc,
     ax = clamp(P.x, 3.5, Math.max(3.5, sc.w - 3.5)),
     az = clamp(P.z, 2.5, Math.max(2.5, sc.h - 3));
   BGL.off = [ax - ACT.x, az - ACT.z];
