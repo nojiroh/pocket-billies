@@ -151,6 +151,8 @@ export default [
       'validation/',
       'game/data/',
       'game/art/',
+      // phase 06: Lit, bundled by tools/vendor-lit.mjs
+      'game/vendor/',
       'firebase/',
       // phase 13: the unit tests are linted, the other tools are not
       'tools/*',
