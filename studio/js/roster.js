@@ -8,7 +8,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
 import { $, $$ } from '../../game/js/util.js';
-import { cnv } from '../../game/js/art.js';
+import { makeCanvas } from '../../game/js/art.js';
 import { drawRig } from '../../game/js/skeleton-rig.js';
 import { esc } from './game-stand-ins.js';
 import { ACTS, SECTIONS, ST, after, changed, commit, render } from './studio-app.js';
@@ -160,7 +160,7 @@ async function roSilhouette(id, size = 24) {
   if (!src) {
     try {
       const im = await loadImage('../game/art/next/starters/' + id + '.png');
-      const c = cnv(im.width, im.height);
+      const c = makeCanvas(im.width, im.height);
       c.getContext('2d').drawImage(im, 0, 0);
       src = c;
     } catch (e) {}
@@ -168,14 +168,14 @@ async function roSilhouette(id, size = 24) {
   if (!src) {
     const R = rigFor(roSpId(id), 'front', false);
     if (R) {
-      const c = cnv(R.BW, R.BH),
+      const c = makeCanvas(R.BW, R.BH),
         x = c.getContext('2d');
       drawRig(x, R, skNeutral(), 'front');
       src = c;
     }
   }
   if (!src) {
-    const c = cnv(size, size),
+    const c = makeCanvas(size, size),
       x = c.getContext('2d');
     x.fillStyle = '#8a8a9a';
     x.font = `700 ${size * 0.8}px sans-serif`;
@@ -200,7 +200,7 @@ async function roSilhouette(id, size = 24) {
         if (y < y0) y0 = y;
         if (y > y1) y1 = y;
       }
-  const c = cnv(size, size),
+  const c = makeCanvas(size, size),
     x = c.getContext('2d');
   if (x1 >= x0) {
     const cw = x1 - x0 + 1,
@@ -224,7 +224,7 @@ async function roSilhouette(id, size = 24) {
 }
 function roSheetSil(im, lay) {
   if (!lay || !lay.pieces) return null;
-  const c = cnv(lay.w || im.width, lay.h || im.height),
+  const c = makeCanvas(lay.w || im.width, lay.h || im.height),
     x = c.getContext('2d');
   for (const p of lay.pieces) {
     if (p.group && p.group !== 'front') continue;
@@ -249,7 +249,7 @@ async function roSilSheet() {
   const cols = 12,
     cell = 30,
     rows = Math.ceil(L.length / cols),
-    c = cnv(cols * cell + 8, rows * (cell + 12) + 8),
+    c = makeCanvas(cols * cell + 8, rows * (cell + 12) + 8),
     x = c.getContext('2d');
   x.fillStyle = '#e8e4dc';
   x.fillRect(0, 0, c.width, c.height);

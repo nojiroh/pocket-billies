@@ -14,7 +14,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { dioArtVer, provide } from './hooks.js';
-import { cnv, hexA } from './art.js';
+import { hexToRgb, makeCanvas } from './art.js';
 import { artImage, hash2d, walkData, walkView } from './walk-view.js';
 import { ENG_CTX, eng } from './engine/settings.js';
 import {
@@ -271,7 +271,7 @@ function buildingFrontPicture(im, B, M) {
   buildingState.n++;
   const w = im.naturalWidth || im.width,
     h = im.naturalHeight || im.height,
-    c = cnv(w, h),
+    c = makeCanvas(w, h),
     x = c.getContext('2d', { willReadFrequently: true });
   x.drawImage(im, 0, 0);
   let id;
@@ -319,7 +319,7 @@ function buildingFrontPicture(im, B, M) {
 /* ---------- the model ---------- */
 const buildingTextureCell = i => [i % 8, Math.floor(i / 8)];
 function buildingColor(h, fb) {
-  return hexA(typeof h === 'string' && /^#[0-9a-f]{6}/i.test(h) ? h : fb || '#C8C0B0').map(v => v / 255);
+  return hexToRgb(typeof h === 'string' && /^#[0-9a-f]{6}/i.test(h) ? h : fb || '#C8C0B0').map(v => v / 255);
 }
 /* v37: building a model (and cutting a front) is spread over frames: the first of a frame always goes ahead, the rest only
    while the frame has spent under 5 ms on them, so a town with many buildings opens without a long frame (the sun shadow
@@ -1586,7 +1586,7 @@ function drawBuildingsUnguarded(C, X, items, fades) {
   const sky = (sc.sky || ['#8CC6E6', '#BFE3EE'])[1];
   gl.uniform3fv(
     p.U.uSkyR,
-    hexA(sky).map(v => v / 255)
+    hexToRgb(sky).map(v => v / 255)
   );
   /* alpha 0.4: a room whose lamp is off is dark at night (it showed at daylight brightness, so unlit windows looked lit) */ gl.uniform1f(
     p.U.uDay,

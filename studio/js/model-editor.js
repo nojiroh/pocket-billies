@@ -9,7 +9,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
 import { provide } from '../../game/js/hooks.js';
-import { cnv } from '../../game/js/art.js';
+import { makeCanvas } from '../../game/js/art.js';
 import { artImage } from '../../game/js/walk-view.js';
 import { PROP_MODEL_TEXTURES, invalidatePropModel, loadPropModelRecipe } from '../../game/js/prop-models.js';
 import { esc } from './game-stand-ins.js';
@@ -189,7 +189,7 @@ function vxeMainColour(M) {
   try {
     const im = artImage(M.img);
     if (!im) return null;
-    const c = cnv(8, 8),
+    const c = makeCanvas(8, 8),
       x = c.getContext('2d');
     x.drawImage(im, 0, 0, 8, 8);
     const d = x.getImageData(0, 0, 8, 8).data;

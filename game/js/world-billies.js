@@ -14,7 +14,7 @@ import { areaKey, provide, sceneIdAt, sfx } from './hooks.js';
 import { clamp } from './util.js';
 import { SP, STATUSN, TRAINERS, rivalSp, trainersAt } from './game-data.js';
 import { N, S, U, findMon, maxHp, nextStop, save } from './game-state.js';
-import { cnv } from './art.js';
+import { makeCanvas } from './art.js';
 import { KBACK, drawRig, rigFrame, rigParts, rigPreload } from './skeleton-rig.js';
 import { battleStagePrepare } from './battle-stage.js';
 import { prepareMap, walkView, walkablePointNear, worldToScreen } from './walk-view.js';
@@ -99,7 +99,7 @@ function worldBillyFrame(sp, gold, view, pose, t, seed) {
     return c;
   }
   const tD = performance.now();
-  c = cnv(R.BW, R.BH);
+  c = makeCanvas(R.BW, R.BH);
   const x = c.getContext('2d');
   x.imageSmoothingEnabled = false;
   try {

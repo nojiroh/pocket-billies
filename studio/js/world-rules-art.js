@@ -4,7 +4,7 @@
 import { expose } from '../../game/js/test-globals.js';
 import { worldPaint } from '../../game/js/hooks.js';
 import { $, clamp } from '../../game/js/util.js';
-import { cnv } from '../../game/js/art.js';
+import { makeCanvas } from '../../game/js/art.js';
 import { ENVIRONMENT_LIKES } from '../../game/js/environment.js';
 import { esc } from './game-stand-ins.js';
 import {
@@ -1065,7 +1065,7 @@ ACTS.rebuildWebp = async () => {
   const im = await loadImage('../game/art/background/sundown.png?v=' + Date.now());
   const w = 1280,
     h = Math.round((im.naturalHeight * w) / im.naturalWidth),
-    c = cnv(w, h),
+    c = makeCanvas(w, h),
     x = c.getContext('2d');
   x.imageSmoothingQuality = 'high';
   x.drawImage(im, 0, 0, w, h);

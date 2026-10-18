@@ -35,7 +35,19 @@ import {
 } from './hooks.js';
 import { $, clamp, rnd } from './util.js';
 import { FRAME, frameCount, frameStop, frameTask, userFps } from './frame-scheduler.js';
-import { ART_CACHE, artLoad, artPixels, cnv, coinCanvas, d44, hexA, iconCanvas, mixA, pk, whiteOf } from './art.js';
+import {
+  ART_CACHE,
+  artLoad,
+  artPixels,
+  bayerThreshold,
+  coinCanvas,
+  hexToRgb,
+  iconCanvas,
+  makeCanvas,
+  mixRgb,
+  packPixel,
+  whiteOf,
+} from './art.js';
 import { WD, humanFrames, humanPose } from './person-art.js';
 import { drawRig, rigFrame, rigParts, rigTint } from './skeleton-rig.js';
 /* eslint-disable no-func-assign */
@@ -221,7 +233,7 @@ function battleStageFormat(f) {
   battleStage.s = actorPositions.map((p, i) =>
     Object.assign(newActorState(), { fs: (FORMATION_SCALES[f] || FORMATION_SCALES.single)[i] || 1 })
   );
-  battleStage.buf = actorPositions.map(() => cnv(10, 10));
+  battleStage.buf = actorPositions.map(() => makeCanvas(10, 10));
   battleStage.fmt = f || 'single';
   FOCUS.wide.zf = f === 'alpha' ? 5.2 : f === 'double' ? 4.6 : 4.3;
   Object.assign(
@@ -500,8 +512,8 @@ export function battleStageStart(area) {
   battleStage.far = G.far;
   battleStage.wall = G.wall;
   battleStage.fg = G.fg;
-  battleStage.skyC = A.sky.map(hexA);
-  battleStage.fogC = hexA(A.fog);
+  battleStage.skyC = A.sky.map(hexToRgb);
+  battleStage.fogC = hexToRgb(A.fog);
   battleStage.props = G.props;
   battleStage.leafy = A.indoor ? [] : G.props.filter(p => /tree|mushroom_giant/.test(p.kind) && p.z < 24);
   battleStage.glint = G.props.filter(p => /crystal|fountain/.test(p.kind));
@@ -513,7 +525,7 @@ export function battleStageStart(area) {
     z: 10 + i * 7 + rnd() * 5,
     v: 0.12 + rnd() * 0.12,
   }));
-  battleStage.small = cnv(10, 10);
+  battleStage.small = makeCanvas(10, 10);
   battleStageFormat((typeof B !== 'undefined' && B && B.fmt) || 'single');
   battleStage.tr = [
     { who: null, show: false, x: 0, a: 1 },
@@ -1102,7 +1114,7 @@ function floorBuffers() {
   const W2 = Math.ceil(W / 2),
     H2 = Math.ceil(H / 2);
   const mk = (w, h) => {
-    const c = cnv(w, h),
+    const c = makeCanvas(w, h),
       x = c.getContext('2d');
     return { c, x, img: x.createImageData(w, h) };
   };
@@ -1174,7 +1186,7 @@ function castFloor() {
     }
   }
   const wallMid = indoor ? colLz[Math.max(0, Math.min(W - 1, Math.round(cx)))] : 0,
-    floorDark = pk(20, 16, 30);
+    floorDark = packPixel(20, 16, 30);
   for (let j = 0; j < H; j++) {
     const v = (j + 0.5 - h) / FOCAL_LENGTH;
     const lz = indoor
@@ -1185,8 +1197,8 @@ function castFloor() {
     const row = j * W;
     if (!indoor && (lz > GROUND_MAX_DEPTH || !(lz > 0))) {
       const tt = clamp((h - j) / (h + 10), 0, 1),
-        c = mixA(mixA(fog, skyC[1], Math.min(1, tt * 1.6)), skyC[0], Math.max(0, tt * 1.6 - 0.6)),
-        pc = pk(c[0], c[1], c[2]);
+        c = mixRgb(mixRgb(fog, skyC[1], Math.min(1, tt * 1.6)), skyC[0], Math.max(0, tt * 1.6 - 0.6)),
+        pc = packPixel(c[0], c[1], c[2]);
       out.fill(pc, row, row + W);
       rowZ[j] = 400;
       continue;
@@ -1230,12 +1242,12 @@ function castFloor() {
               ang = Math.atan2(Z - (GROUND_CENTER_Z + 2), X - GROUND_CENTER_X),
               u = ((Math.floor((ang / (Math.PI * 2) + 0.5) * 1024 * 1.5) % 1024) + 1024) % 1024,
               vv = Math.floor(((j - top) / (bot - top)) * 63);
-            pc = WT ? WT[vv * 1024 + u] : pk(60, 50, 80);
+            pc = WT ? WT[vv * 1024 + u] : packPixel(60, 50, 80);
           } else if (j < top) {
             const g = clamp((top - j) / 60, 0, 1),
-              c = mixA(skyC[2], skyC[0], g);
-            const sk = ((i >> 3) + (j >> 3)) % 5 === 0 && g > 0.2 ? mixA(c, [150, 170, 230], 0.35) : c;
-            pc = pk(sk[0], sk[1], sk[2]);
+              c = mixRgb(skyC[2], skyC[0], g);
+            const sk = ((i >> 3) + (j >> 3)) % 5 === 0 && g > 0.2 ? mixRgb(c, [150, 170, 230], 0.35) : c;
+            pc = packPixel(sk[0], sk[1], sk[2]);
           } else pc = floorDark;
           out[row + i] = pc;
           if (step === 2 && i + 1 < W) out[row + i + 1] = pc;
@@ -1244,7 +1256,8 @@ function castFloor() {
       }
       let pc = 0;
       if (nearOn) pc = NT[(Math.floor(V) & 511) * GROUND_TEXTURE_SIZE + (Math.floor(U) & 511)];
-      if (farOn && (farAll || d44(i, j) < farT)) pc = FT[(Math.floor(FV) & 255) * 256 + (Math.floor(FU) & 255)];
+      if (farOn && (farAll || bayerThreshold(i, j) < farT))
+        pc = FT[(Math.floor(FV) & 255) * 256 + (Math.floor(FU) & 255)];
       if (useFog)
         pc =
           (255 << 24) |
@@ -1486,7 +1499,7 @@ function drawShadow(c, X, Z, r, a) {
 const SOFT_BLUR_PAD = 3,
   CANVAS_FILTER_WORKS = (() => {
     try {
-      const x = cnv(1, 1).getContext('2d');
+      const x = makeCanvas(1, 1).getContext('2d');
       x.filter = 'blur(1px)';
       return x.filter === 'blur(1px)';
     } catch (e) {
@@ -1520,7 +1533,7 @@ function softDraw(c, img, x, y, w, h, blur, slot) {
     P = SOFT_BLUR_PAD;
   let sm = battleStage.small;
   if (slot) {
-    sm = slot.c || (slot.c = cnv(sw + 2 * P + 1, sh + 2 * P + 1));
+    sm = slot.c || (slot.c = makeCanvas(sw + 2 * P + 1, sh + 2 * P + 1));
     if (slot.img !== img || slot.sw !== sw || slot.sh !== sh) {
       softSmall(sm, img, sw, sh);
       slot.img = img;
@@ -1543,7 +1556,7 @@ export function sideBuf(i) {
   const k = ACTOR_RIG_SCALES[i],
     R = rigParts(s.sp, s.gold, k),
     view = actorTeam(i) === 0 ? 'back' : 'front',
-    buf = battleStage.buf[i] || (battleStage.buf[i] = cnv(10, 10));
+    buf = battleStage.buf[i] || (battleStage.buf[i] = makeCanvas(10, 10));
   if (!R) return null;
   if (buf.width !== R.BW || buf.height !== R.BH) {
     buf.width = R.BW;
@@ -1852,7 +1865,7 @@ export function drawForegrounds() {
     right = Math.round(L.M + (fr.x + fr.w) / L.u + 16 - hw);
   if (!battleStage.fgP || battleStage.fgP.ver !== L.ver || battleStage.fgP.im !== im) {
     const mk = sx => {
-      const t = cnv(hw, H + ext),
+      const t = makeCanvas(hw, H + ext),
         x = t.getContext('2d');
       x.drawImage(im, sx, 0, hw, H, 0, 0, hw, H);
       if (ext) x.drawImage(im, sx, H - 1, hw, 1, 0, H, hw, ext);

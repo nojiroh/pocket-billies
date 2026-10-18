@@ -9,7 +9,7 @@ import { bar, closeModal, modal, provide, render, roomRefresh, toast } from './h
 import { clamp } from './util.js';
 import { COINS, GD, ITEMS, ROUTE, RULES, SP } from './game-data.js';
 import { B, N, S, U, esc, fmt, save, today } from './game-state.js';
-import { cnv, uiIco } from './art.js';
+import { makeCanvas, uiIco } from './art.js';
 import {
   baseMapId,
   findPath,
@@ -553,7 +553,7 @@ function photoShot() {
       return;
     }
     const F = PHOTO_FILTERS.find(f => f[0] === U.photo.f),
-      o = cnv(c.width, c.height),
+      o = makeCanvas(c.width, c.height),
       x = o.getContext('2d');
     if (F && F[2]) x.filter = F[2];
     x.drawImage(c, 0, 0);

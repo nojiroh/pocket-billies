@@ -20,7 +20,7 @@ import { provide, sceneExits, sceneIdAt } from './hooks.js';
 import { clamp } from './util.js';
 import { ADJ, LINKS, ROUTE } from './game-data.js';
 import { U } from './game-state.js';
-import { artLoad, hexA } from './art.js';
+import { artLoad, hexToRgb } from './art.js';
 import {
   GROUND_CACHE,
   STEP_GRID_CACHE,
@@ -633,8 +633,8 @@ function seamlessRoadProps(R, box, C) {
 }
 /* the look of a composite: the scene's own, or the two ends mixed along the road */
 function seamlessMixHex(a, b, t) {
-  const A = hexA(a),
-    B = hexA(b);
+  const A = hexToRgb(a),
+    B = hexToRgb(b);
   return (
     '#' +
     [0, 1, 2]

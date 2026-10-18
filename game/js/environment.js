@@ -11,7 +11,7 @@
 import { expose } from './test-globals.js';
 import { RM, RULES, S, SP, provide, sceneIdAt } from './hooks.js';
 import { clamp } from './util.js';
-import { hexA } from './art.js';
+import { hexToRgb } from './art.js';
 import { mapById, walkView } from './walk-view.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -436,7 +436,7 @@ function environmentMixHex(a, b, t) {
 export function environmentSky(sky, indoor) {
   const c = sky.map(s => s.slice());
   if (indoor) return c;
-  const P = k => WEATHER_SKY_PALETTES[k].map(h => hexA(h).map(v => v / 255));
+  const P = k => WEATHER_SKY_PALETTES[k].map(h => hexToRgb(h).map(v => v / 255));
   const du = P('dusk'),
     da = P('dawn'),
     gr = P(environment.storm > 0.5 ? 'storm' : environment.ash > 0.5 ? 'ash' : 'grey'),

@@ -6,7 +6,7 @@
 import { expose } from '../../game/js/test-globals.js';
 import { provide, scArt, scD } from '../../game/js/hooks.js';
 import { $, $$ } from '../../game/js/util.js';
-import { COIN_ART, artLoad, hexA } from '../../game/js/art.js';
+import { COIN_ART, artLoad, hexToRgb } from '../../game/js/art.js';
 import { setRigParts } from '../../game/js/skeleton-rig.js';
 import {
   AREAS,
@@ -269,8 +269,8 @@ async function bpScene() {
 function bpApplyBackdrop() {
   if (!battleStage.L || battleStage.area !== BP.area) return;
   const A = ST.D.backdrops[BP.area];
-  battleStage.skyC = A.sky.map(hexA);
-  battleStage.fogC = hexA(A.fog);
+  battleStage.skyC = A.sky.map(hexToRgb);
+  battleStage.fogC = hexToRgb(A.fog);
   battleStage.floorKey = '';
 }
 ST.hooks.preview = path => {

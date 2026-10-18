@@ -49,7 +49,7 @@ import {
 } from './hooks.js';
 import { clamp } from './util.js';
 import { frameStop } from './frame-scheduler.js';
-import { ART_CACHE, artLoad, cnv, pkh } from './art.js';
+import { ART_CACHE, artLoad, makeCanvas, packHexPixel } from './art.js';
 /* eslint-disable no-func-assign */
 expose({
   BRIDGE_ARCH: [() => BRIDGE_ARCH],
@@ -654,7 +654,7 @@ function tilePixels(path) {
   if (!imageReady(im)) return null;
   const w = im.naturalWidth || im.width,
     h = im.naturalHeight || im.height,
-    c = cnv(w, h),
+    c = makeCanvas(w, h),
     x = c.getContext('2d', { willReadFrequently: true });
   x.drawImage(im, 0, 0);
   return { w, h, d: new Uint32Array(x.getImageData(0, 0, w, h).data.buffer) };
@@ -1004,7 +1004,7 @@ export function* paintGroundSteps(sc, o) {
   const chars = Object.keys(C.terrains),
     idx = Object.fromEntries(chars.map((c, i) => [c, i])),
     T = chars.map(c => C.terrains[c]),
-    edge = T.map(t => pkh(t.edge || '#000000')),
+    edge = T.map(t => packHexPixel(t.edge || '#000000')),
     zz = T.map(t => t.z || 0);
   /* v47: tile sets only for the kinds this rectangle shows (78 kinds now: decoding all of them held up the first paint of a place) */
   const used = new Uint8Array(T.length);
@@ -1146,7 +1146,7 @@ export function* paintGroundSteps(sc, o) {
     TN = toneOn ? new Float32Array(KW * KH) : null;
   const wearAmt = toneOn ? pathWearAmountFn(sc) : null,
     WV = wearAmt ? new Float32Array(KW * KH) : null,
-    wear = T.map((t, i) => (toneK[i] > 0 && t.wear ? (t.wear === 'pack' ? -1 : pkh(t.wear)) : 0));
+    wear = T.map((t, i) => (toneK[i] > 0 && t.wear ? (t.wear === 'pack' ? -1 : packHexPixel(t.wear)) : 0));
   const keyOf = q => ST.ox[q] * 65536 + ST.oz[q],
     cOf = (u, v) => {
       let cy = Math.floor((v + PXO) / TP),

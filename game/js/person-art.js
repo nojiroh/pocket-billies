@@ -23,7 +23,7 @@ import {
 } from './hooks.js';
 import { clamp } from './util.js';
 import { frameStop, frameTask } from './frame-scheduler.js';
-import { ART_CACHE, artImg, cnv, hexA } from './art.js';
+import { ART_CACHE, artImg, hexToRgb, makeCanvas } from './art.js';
 /* eslint-disable no-func-assign */
 expose({
   TRW: [() => TRW],
@@ -387,7 +387,7 @@ function trPix(path) {
     if (!trOk(im)) return null;
     const w = im.naturalWidth || im.width,
       h = im.naturalHeight || im.height,
-      c = cnv(w, h),
+      c = makeCanvas(w, h),
       x = c.getContext('2d', { willReadFrequently: true });
     x.drawImage(im, 0, 0);
     return x.getImageData(0, 0, w, h);
@@ -428,16 +428,16 @@ function trPiece(src, p, defs, want) {
       M = trPix(src.mask);
     if (!P) return null;
     const [x0, y0, w, h] = p.r,
-      c = cnv(w, h),
+      c = makeCanvas(w, h),
       x = c.getContext('2d'),
       out = x.createImageData(w, h),
       o = out.data,
       D = defs.map(d => {
-        const a = hexA(d);
+        const a = hexToRgb(d);
         return rgb2hsl(a[0], a[1], a[2]);
       }),
       T = want.map(d => {
-        const a = hexA(d);
+        const a = hexToRgb(d);
         return rgb2hsl(a[0], a[1], a[2]);
       });
     for (let y = 0; y < h; y++)
@@ -480,7 +480,7 @@ function trScale(c, sx, sy) {
   if (Math.abs(sx - 1) < 0.01 && Math.abs(sy - 1) < 0.01) return c;
   const w = Math.max(1, Math.round(c.width * sx)),
     h = Math.max(1, Math.round(c.height * sy));
-  const n = cnv(w, h),
+  const n = makeCanvas(w, h),
     x = n.getContext('2d');
   x.imageSmoothingEnabled = false;
   x.drawImage(c, 0, 0, w, h);
@@ -682,14 +682,14 @@ function trAnim(P, view) {
 /* ---------- drawing ---------- */
 export function trFrame(L, view, act, ph, t, mirror, expr) {
   const R = trRig(L, view, expr),
-    c = cnv(R.BW, R.BH),
+    c = makeCanvas(R.BW, R.BH),
     x = c.getContext('2d');
   x.imageSmoothingEnabled = false;
   const P = { x: 0, y: 0, r: 0, sx: 1, sy: 1, face: null, act, ph, t };
   /* v31: drawRig sets its own transform for every part, so a mirror has to be applied to the finished picture
     (before, people walking left were drawn facing right) */
   if (mirror) {
-    const tmp = cnv(R.BW, R.BH),
+    const tmp = makeCanvas(R.BW, R.BH),
       tx = tmp.getContext('2d');
     tx.imageSmoothingEnabled = false;
     drawRig(tx, R, P, 'front');
@@ -855,7 +855,7 @@ export function humanSheet(who, view = 'front') {
       y1 = Math.max(a[1] + a[3], b[1] + b[3]) + 1,
       w = x1 - x0,
       h = y1 - y0;
-    const c = cnv(w * 2, h),
+    const c = makeCanvas(w * 2, h),
       x = c.getContext('2d');
     f.forEach((fr, i) => x.drawImage(fr, x0, y0, w, h, i * w, 0, w, h));
     return { url: c.toDataURL(), w, h };
@@ -873,7 +873,7 @@ export function owHTMLsheet(who) {
       a = trBox(f[1]),
       w = a[2] + 2,
       h = a[3] + 2,
-      c = cnv(w * 2, h),
+      c = makeCanvas(w * 2, h),
       x = c.getContext('2d');
     x.drawImage(f[1], a[0] - 1, a[1] - 1, w, h, 0, 0, w, h);
     x.drawImage(f[2], a[0] - 1, a[1] - 1, w, h, w, 0, w, h);
@@ -930,7 +930,7 @@ export function trPortrait(cv, who, expr, t) {
 function portraitURL(who, expr) {
   const L = trainerLook(who);
   return trainerCache('porurl|' + (expr || '') + '|' + trLookKey(L) + '|' + trVer(), () => {
-    const c = cnv(1, 1);
+    const c = makeCanvas(1, 1);
     trPortrait(c, L, expr, 0);
     return c.toDataURL();
   });

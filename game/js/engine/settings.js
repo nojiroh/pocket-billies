@@ -7,7 +7,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 import { GD, S, WEATHER_ENGINE_MODIFIERS, provide } from '../hooks.js';
-import { hexA } from '../art.js';
+import { hexToRgb } from '../art.js';
 /* eslint-disable no-func-assign */
 expose({
   ENGINE_DEFAULTS: [() => ENGINE_DEFAULTS],
@@ -806,9 +806,9 @@ export function eng(group, key) {
 }
 export function engHex(group, key, fb) {
   const v = eng(group, key) || fb;
-  if (typeof v === 'string' && /^#[0-9a-f]{6}$/i.test(v)) return hexA(v).map(x => x / 255);
+  if (typeof v === 'string' && /^#[0-9a-f]{6}$/i.test(v)) return hexToRgb(v).map(x => x / 255);
   if (Array.isArray(fb)) return fb;
-  /* v43: a fallback given as 0..1 numbers is used as it is (it was divided by 255, which left the ambient light at nothing) */ return hexA(
+  /* v43: a fallback given as 0..1 numbers is used as it is (it was divided by 255, which left the ambient light at nothing) */ return hexToRgb(
     fb || '#ffffff'
   ).map(x => x / 255);
 }

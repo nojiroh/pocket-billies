@@ -4,7 +4,7 @@
 import { expose } from '../../game/js/test-globals.js';
 import { BODY_TPL, PLAN_INFO, WDS, makeBlankBody, openSkeleton, skNeutral, wdLoad } from '../../game/js/hooks.js';
 import { $, $$ } from '../../game/js/util.js';
-import { cnv, iconURL } from '../../game/js/art.js';
+import { iconURL, makeCanvas } from '../../game/js/art.js';
 import { TR_CACHE, cleanLook, humanSheet, lookFromOld, trColorsOf, trSliders } from '../../game/js/person-art.js';
 import { drawRig, rigPose } from '../../game/js/skeleton-rig.js';
 import { esc } from './game-stand-ins.js';
@@ -569,7 +569,7 @@ ACTS.recolor = async d => {
     c.height = R.BH;
     const meta = ST.rigs[sp].front,
       cut = ([x, y, w, h2]) => {
-        const q = cnv(w, h2);
+        const q = makeCanvas(w, h2);
         q.getContext('2d').drawImage(tmp, x, y, w, h2, 0, 0, w, h2);
         return q;
       },
@@ -625,7 +625,7 @@ ACTS.newLine = async () => {
     c.width = R.BW;
     c.height = R.BH;
     const cut = ([x, y, w, hh]) => {
-        const q = cnv(w, hh);
+        const q = makeCanvas(w, hh);
         q.getContext('2d').drawImage(sheet, x, y, w, hh, 0, 0, w, hh);
         return q;
       },

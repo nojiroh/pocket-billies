@@ -14,7 +14,7 @@ import { $, clamp } from './util.js';
 import { FUTURE, LINKS, ROUTE, linkCost, placeSub } from './game-data.js';
 import { RM, S, U, canEnter, esc, fmt, nextStop, tripTo } from './game-state.js';
 import { frameCount, frameStop, frameTask, userFps } from './frame-scheduler.js';
-import { artLoad, artPixels, cnv, hexA, mstamp, uiIco } from './art.js';
+import { artLoad, artPixels, hexToRgb, makeCanvas, mstamp, uiIco } from './art.js';
 import { owFrames, portraitHTML } from './person-art.js';
 import { EASE } from './battle-stage.js';
 import { artImage, hash2d, imageReady, mapById, stepRaiseAt, walkData, walkView } from './walk-view.js';
@@ -1199,7 +1199,7 @@ function worldMapMiniColors(im) {
       k = Math.min(1, 64 / Math.max(w, h)),
       W = Math.max(1, Math.round(w * k)),
       H = Math.max(1, Math.round(h * k)),
-      cv = cnv(W, H),
+      cv = makeCanvas(W, H),
       x = cv.getContext('2d');
     x.drawImage(im, 0, 0, W, H);
     const d = x.getImageData(0, 0, W, H).data;
@@ -1285,7 +1285,7 @@ export function worldMapMiniBuild(i) {
   const rows = sc.tiles || [],
     tcol = ch => {
       const T = C0.terrains[ch] || C0.terrains[sc.edge] || {};
-      return hexA(T.edge || '#4A7A3C').map(c => c / 255);
+      return hexToRgb(T.edge || '#4A7A3C').map(c => c / 255);
     },
     cs = town ? 1 : 2,
     base = -1.2;

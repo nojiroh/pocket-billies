@@ -68,7 +68,7 @@ import {
 } from './hooks.js';
 import { clamp } from './util.js';
 import { FRAME, frameCount, frameTask, userFps } from './frame-scheduler.js';
-import { cnv, hexA } from './art.js';
+import { hexToRgb, makeCanvas } from './art.js';
 import { folkFrames, humanPose, owFrames, trPick, trWarm } from './person-art.js';
 import { drawRig, rigFrame, rigParts, rigPreload } from './skeleton-rig.js';
 import {
@@ -4200,7 +4200,7 @@ function rideMountItem(P, t) {
   }
   let cv = walkRenderer.mountCv;
   if (!cv || cv.width !== R.BW || cv.height !== R.BH) {
-    cv = walkRenderer.mountCv = cnv(R.BW, R.BH);
+    cv = walkRenderer.mountCv = makeCanvas(R.BW, R.BH);
     cv.__v = 0;
   }
   const x = cv.getContext('2d');
@@ -4530,7 +4530,7 @@ function computePropLook(p, M, sc) {
     on = Math.abs(hue) + Math.abs(sat) + Math.abs(val) > 0.002 ? 1 : 0;
   let tint = [1, 1, 1, 0];
   if (p.tint && p.tint !== '#000000') {
-    const t = hexA(p.tint);
+    const t = hexToRgb(p.tint);
     tint = [t[0] / 255, t[1] / 255, t[2] / 255, clamp(p.tintAmt ?? 0.6, 0, 1)];
   }
   const L = {
@@ -5121,7 +5121,7 @@ function walkLightContext(C, sun, dark, items, shadow, BT) {
       }
     }
     if (M.glow && on > 0.01) {
-      const c = hexA(M.glow.c),
+      const c = hexToRgb(M.glow.c),
         p = [it.x, it.y + M.glow.y, it.z - 0.1];
       L.push({
         p,
@@ -5161,9 +5161,9 @@ function walkLightContext(C, sun, dark, items, shadow, BT) {
   roomLights(sc, L, lb);
   const lights = eglPickLights(L, P.x, P.z, 16),
     sky = skyColors(sc);
-  let hz = hexA(eng('air', 'haze') || sc.haze || (sc.sky || [])[2] || '#EAD9C0').map(v => v / 255);
+  let hz = hexToRgb(eng('air', 'haze') || sc.haze || (sc.sky || [])[2] || '#EAD9C0').map(v => v / 255);
   if (E && !sc.indoor) hz = environmentSky([hz, hz, hz], false)[2];
-  const tint = sc.tint && sc.tint !== '#000000' ? hexA(sc.tint).map(v => 0.35 + (v / 255) * 1.3) : null;
+  const tint = sc.tint && sc.tint !== '#000000' ? hexToRgb(sc.tint).map(v => 0.35 + (v / 255) * 1.3) : null;
   let ambTop = sc.indoor
       ? [0.62, 0.58, 0.52]
       : [0.3 + sky[0][0] * 0.24, 0.32 + sky[0][1] * 0.24, 0.36 + sky[0][2] * 0.28],
@@ -5172,7 +5172,7 @@ function walkLightContext(C, sun, dark, items, shadow, BT) {
   let roomSH = null;
   if (sc.room && (eng('lights', 'roomLight') ?? true) !== false) {
     const Rk = roomSkyLight();
-    const wc = sc.wallCol && sc.wallCol[0] ? hexA(sc.wallCol[0]).map(v => v / 255) : [0.78, 0.7, 0.58];
+    const wc = sc.wallCol && sc.wallCol[0] ? hexToRgb(sc.wallCol[0]).map(v => v / 255) : [0.78, 0.7, 0.58];
     const wk = 0.3 + 0.2 * Math.max(0.25, Rk.I);
     ambTop = wc.map(v => v * wk);
     ambBot = [0.24, 0.19, 0.15];
@@ -5576,7 +5576,7 @@ function fittedShadowPass(items0, sun, C) {
 }
 /* v26: the scene's sky colours after the hour and the weather (environment.js) */
 function skyColors(sc) {
-  const s = (sc.sky || ['#8CC6E6', '#BFE3EE', '#F4E8C8']).map(c => hexA(c).map(v => v / 255));
+  const s = (sc.sky || ['#8CC6E6', '#BFE3EE', '#F4E8C8']).map(c => hexToRgb(c).map(v => v / 255));
   return typeof environmentSky === 'function' && ENG_CTX.env ? environmentSky(s, !!sc.indoor) : s;
 }
 function drawSky(C, sun, mirror) {
@@ -5642,7 +5642,7 @@ export function drawGround(C, X) {
   }
   const WC = sc.wallCol || [];
   for (let i = 0; i < 12; i++) {
-    const c = WC[i] ? hexA(WC[i]).map(v => v / 255) : WALL_COLORS[i];
+    const c = WC[i] ? hexToRgb(WC[i]).map(v => v / 255) : WALL_COLORS[i];
     walkRenderer.wallColF.set(c, i * 3);
   }
   gl.uniform3fv(U.uWallCol, walkRenderer.wallColF);
@@ -5699,7 +5699,7 @@ export function drawGround(C, X) {
     gl.uniform4f(U.uRoom, B ? B[0] : 0, B ? B[1] : 0, B ? B[2] : 0, B ? 1 : 0);
     if (U.uRoomY) gl.uniform1f(U.uRoomY, B ? standingHeightAt(sc.w / 2, 1.5) : 0);
   }
-  gl.uniform3fv(U.uFarTint, sc.farTint ? hexA(sc.farTint).map(v => v / 200) : [1, 1, 1]);
+  gl.uniform3fv(U.uFarTint, sc.farTint ? hexToRgb(sc.farTint).map(v => v / 200) : [1, 1, 1]);
   gl.enable(gl.DEPTH_TEST);
   gl.depthFunc(gl.LEQUAL);
   gl.disable(gl.BLEND);
@@ -5787,7 +5787,7 @@ const FLOWER_SET_BY_LOCATION = {
 function mapFlowers(sc) {
   const id = (sc && (sc.place || sc.baseId)) || '',
     k = FLOWER_SET_BY_LOCATION[id] || (sc && sc.kind === 'town' ? 'town' : 'meadow');
-  return { c: FLOWER_COLORS[k].map(h => hexA(h).map(v => v / 255)), glow: k === 'spore' ? 0.55 : 0 };
+  return { c: FLOWER_COLORS[k].map(h => hexToRgb(h).map(v => v / 255)), glow: k === 'spore' ? 0.55 : 0 };
 }
 export function drawGrass(C, X) {
   const gl = EGL.gl,
@@ -5814,11 +5814,11 @@ export function drawGrass(C, X) {
   const g = sc.grassCol || [eng('grass', 'low'), eng('grass', 'high')];
   gl.uniform3fv(
     U.uGlo,
-    hexA(g[0]).map(v => v / 255)
+    hexToRgb(g[0]).map(v => v / 255)
   );
   gl.uniform3fv(
     U.uGhi,
-    hexA(g[1]).map(v => v / 255)
+    hexToRgb(g[1]).map(v => v / 255)
   );
   if (U.uFol) gl.uniform2f(U.uFol, 0.75, 1);
   gl.disable(gl.CULL_FACE);
@@ -6042,7 +6042,7 @@ function boxInfo(im) {
   try {
     const w = im.naturalWidth || im.width,
       h = im.naturalHeight || im.height,
-      c = cnv(w, h),
+      c = makeCanvas(w, h),
       x = c.getContext('2d', { willReadFrequently: true });
     x.drawImage(im, 0, 0);
     const d = x.getImageData(0, 0, w, h).data,
@@ -6058,7 +6058,7 @@ function boxInfo(im) {
     }
     let ye = yb;
     while (ye > 0 && A(xl + 2, ye - 1) && A(xr - 2, ye - 1)) ye--;
-    const T = cnv(16, h),
+    const T = makeCanvas(16, h),
       tx = T.getContext('2d'),
       img = tx.createImageData(16, h),
       px = (X, Y) => {
@@ -6093,7 +6093,7 @@ function boxInfo(im) {
       })(),
       K = Math.max(2, Math.min(10, Math.round((yb - top0) * 0.3))),
       RW = Math.max(1, xr - xl + 1),
-      R = cnv(RW, K),
+      R = makeCanvas(RW, K),
       rx = R.getContext('2d'),
       rd = rx.createImageData(RW, K);
     let ar = 0,
@@ -6708,7 +6708,7 @@ function roomTexture(k) {
   const key = 'roomTex_' + k;
   if (walkRenderer[key]) return walkRenderer[key];
   const N = 64,
-    c = cnv(N, N),
+    c = makeCanvas(N, N),
     x = c.getContext('2d'),
     d = x.createImageData(N, N);
   for (let j = 0; j < N; j++)
@@ -6733,7 +6733,7 @@ function roomTexture(k) {
 function lampTexture(on) {
   const key = on ? 'lampTexOn' : 'lampTex';
   if (walkRenderer[key]) return walkRenderer[key];
-  const c = cnv(14, 18),
+  const c = makeCanvas(14, 18),
     x = c.getContext('2d'),
     P = (col, a, b, w, h) => {
       x.fillStyle = col;
@@ -7005,8 +7005,8 @@ function drawRoomFront(C, X) {
     x1 = B[1] + 0.25;
   if (walkRenderer.frontKey !== walkView.id) {
     walkRenderer.frontKey = walkView.id;
-    const wc = hexA((sc.wallCol || [])[10] || '#D9B79C'),
-      c = cnv(1, 32),
+    const wc = hexToRgb((sc.wallCol || [])[10] || '#D9B79C'),
+      c = makeCanvas(1, 32),
       x = c.getContext('2d'),
       rows = 32,
       top = Math.round((hw / (hw + deep)) * rows);
@@ -7016,7 +7016,7 @@ function drawRoomFront(C, X) {
       x.fillStyle = `rgb(${(wc[0] * k) | 0},${(wc[1] * k) | 0},${(wc[2] * k) | 0})`;
       x.fillRect(0, i, 1, 1);
     }
-    const t = cnv(4, 4),
+    const t = makeCanvas(4, 4),
       tx = t.getContext('2d');
     tx.fillStyle = '#6A5848';
     tx.fillRect(0, 0, 4, 4);
@@ -7792,7 +7792,7 @@ export function effectsPass(C, items, X, dark, t, dt) {
     }
     if (it.M.glow) {
       const g = it.M.glow,
-        c = hexA(g.c).map(v => v / 255),
+        c = hexToRgb(g.c).map(v => v / 255),
         on = lampLit(it.x, it.z, dIt);
       /* v47: "day" sets how much of it shows by day (a neon sign's halo hardly does) */ glows.push([
         it.x,

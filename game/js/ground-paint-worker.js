@@ -10,7 +10,7 @@
 import { expose } from './test-globals.js';
 import { provide } from './hooks.js';
 import { clamp } from './util.js';
-import { hexA, pk, pkh } from './art.js';
+import { hexToRgb, packHexPixel, packPixel } from './art.js';
 import {
   GROUND_BORDER_M,
   PAINT_WORKER_WAIT,
@@ -142,9 +142,9 @@ function paintWorkerSource() {
   };
   return [
     'const clamp=' + clamp.toString() + ';',
-    'const hexA=' + hexA.toString() + ';',
-    'const pk=' + pk.toString() + ';',
-    'const pkh=' + pkh.toString() + ';',
+    'const hexToRgb=' + hexToRgb.toString() + ';',
+    'const packPixel=' + packPixel.toString() + ';',
+    'const packHexPixel=' + packHexPixel.toString() + ';',
     ...Object.entries(consts).map(([k, v]) => `const ${k}=${JSON.stringify(v)};`),
     ...fns.map(f => f.toString()),
     PAINT_WORKER_MAIN,

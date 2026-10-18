@@ -27,7 +27,7 @@ import { $, clamp } from './util.js';
 import { ROUTE, RULES, SP, START_NODE, TRAINERS, TYPES, eff, placeFull } from './game-data.js';
 import { RM, U, esc } from './game-state.js';
 import { userFps } from './frame-scheduler.js';
-import { artLoad, cnv } from './art.js';
+import { artLoad, makeCanvas } from './art.js';
 import { TR_PRESETS, cleanLook, humanPose, owFrames, trainerLook } from './person-art.js';
 import { dressingRoom, openDressing, saveDressingLook } from './dressing-room.js';
 import { drawRig, rigFrame, rigParts, rigPreload, rigTint } from './skeleton-rig.js';
@@ -276,7 +276,7 @@ function csPersonItem(a, t, C0) {
 function csStarItem(s, t) {
   const R = rigParts(s.sp, false, 1);
   if (!R) return null;
-  if (!s.buf) s.buf = cnv(R.BW, R.BH);
+  if (!s.buf) s.buf = makeCanvas(R.BW, R.BH);
   const b = s.buf;
   if (b.width !== R.BW || b.height !== R.BH) {
     b.width = R.BW;

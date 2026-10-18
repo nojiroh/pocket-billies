@@ -10,7 +10,7 @@
 import { expose } from './test-globals.js';
 import { B, FV, RM, S, provide } from './hooks.js';
 import { $, clamp } from './util.js';
-import { hexA } from './art.js';
+import { hexToRgb } from './art.js';
 import {
   FOCAL_LENGTH,
   actionCenter,
@@ -223,7 +223,7 @@ function battleGLFrame() {
     const p = battleStage.parts[i];
     if (!p.glow || typeof p.col !== 'string' || p.col[0] !== '#') continue;
     const k = Math.max(0, 1 - p.age / p.life),
-      c = hexA(p.col);
+      c = hexToRgb(p.col);
     lights.push({
       p: [p.x + O[0], BGL.gy + Math.max(0.1, p.y), p.z + O[1]],
       r: 2.4,

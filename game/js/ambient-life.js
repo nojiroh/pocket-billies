@@ -12,7 +12,7 @@
 import { expose } from './test-globals.js';
 import { provide, sfxAt } from './hooks.js';
 import { clamp } from './util.js';
-import { cnv } from './art.js';
+import { makeCanvas } from './art.js';
 import {
   artImage,
   canWalkStraight,
@@ -106,7 +106,7 @@ function lifeFrame(key, i) {
   const ck = key + '|' + i;
   let c = LIFE.cut.get(ck);
   if (c && c.__src === im) return c;
-  c = cnv(m.w, m.h);
+  c = makeCanvas(m.w, m.h);
   c.getContext('2d').drawImage(im, i * m.w, 0, m.w, m.h, 0, 0, m.w, m.h);
   c.__src = im;
   c.__mat = 'plain';

@@ -7,7 +7,7 @@
 import { expose } from '../test-globals.js';
 import { dioArtVer, onGlContextRestored, provide, walkRenderer } from '../hooks.js';
 import { clamp } from '../util.js';
-import { cnv } from '../art.js';
+import { makeCanvas } from '../art.js';
 import { imageReady } from '../walk-view.js';
 import { eng } from './settings.js';
 /* eslint-disable no-func-assign */
@@ -764,7 +764,7 @@ export function eglNormWork(budget) {
         const im = e.src || e.im,
           w = e.sw || e.w,
           h = e.sh || e.h,
-          c = cnv(w, h),
+          c = makeCanvas(w, h),
           x = c.getContext('2d', { willReadFrequently: true });
         x.drawImage(im, 0, 0, w, h);
         const d = x.getImageData(0, 0, w, h).data,
@@ -784,7 +784,7 @@ export function eglNormWork(budget) {
 }
 export function eglNormal(im, w, h, old) {
   const M = EGL_MATS[im.__mat] || EGL_MATS.plain,
-    c = cnv(w, h),
+    c = makeCanvas(w, h),
     x = c.getContext('2d', { willReadFrequently: true });
   x.drawImage(im, 0, 0);
   const d = x.getImageData(0, 0, w, h).data,

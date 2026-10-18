@@ -10,7 +10,7 @@ import { clamp } from './util.js';
 expose({
   ART_CACHE: [() => ART_CACHE],
   ART_DIR: [() => ART_DIR],
-  B44: [() => B44],
+  BAYER_4X4: [() => BAYER_4X4],
   COIN_ART: [() => COIN_ART],
   COIN_KINDS: [() => COIN_KINDS],
   EGG_ART: [() => EGG_ART],
@@ -24,25 +24,25 @@ expose({
   artPixels: [() => artPixels, v => setArtPixels(v)],
   artReady: [() => artReady],
   artURL: [() => artURL],
-  cnv: [() => cnv, v => (cnv = v)],
+  bayerThreshold: [() => bayerThreshold],
   coinCanvas: [() => coinCanvas, v => (coinCanvas = v)],
   coinHTML: [() => coinHTML, v => (coinHTML = v)],
   coinURL: [() => coinURL, v => (coinURL = v)],
-  d44: [() => d44],
   darkOf: [() => darkOf, v => (darkOf = v)],
   eggCanvas: [() => eggCanvas, v => (eggCanvas = v)],
   eggHTML: [() => eggHTML, v => (eggHTML = v)],
-  hexA: [() => hexA],
+  hexChannels: [() => hexChannels, v => (hexChannels = v)],
+  hexLuminance: [() => hexLuminance, v => (hexLuminance = v)],
+  hexToRgb: [() => hexToRgb],
   iconCanvas: [() => iconCanvas, v => (iconCanvas = v)],
   iconURL: [() => iconURL, v => (iconURL = v)],
-  lum: [() => lum, v => (lum = v)],
-  mixA: [() => mixA],
+  makeCanvas: [() => makeCanvas, v => (makeCanvas = v)],
+  makeSeededRandom: [() => makeSeededRandom, v => (makeSeededRandom = v)],
   mixHex: [() => mixHex, v => (mixHex = v)],
+  mixRgb: [() => mixRgb],
   mstamp: [() => mstamp, v => (mstamp = v)],
-  pk: [() => pk],
-  pkh: [() => pkh],
-  rgb: [() => rgb, v => (rgb = v)],
-  seeded: [() => seeded, v => (seeded = v)],
+  packHexPixel: [() => packHexPixel],
+  packPixel: [() => packPixel],
   setArtLoad: [() => setArtLoad, v => (setArtLoad = v)],
   shadeHex: [() => shadeHex, v => (shadeHex = v)],
   tintOf: [() => tintOf, v => (tintOf = v)],
@@ -97,7 +97,7 @@ export async function artPixels(path) {
   if (ART_CACHE.pix[path]) return ART_CACHE.pix[path];
   await artLoad([path]);
   const im = ART_CACHE.img[path],
-    c = cnv(im.naturalWidth, im.naturalHeight),
+    c = makeCanvas(im.naturalWidth, im.naturalHeight),
     x = c.getContext('2d', { willReadFrequently: true });
   x.drawImage(im, 0, 0);
   let d;
@@ -110,41 +110,41 @@ export async function artPixels(path) {
 }
 /* ---- small color helpers shared by the renderers ---- */
 const ICON_CACHE = {};
-export function cnv(w, h) {
+export function makeCanvas(w, h) {
   const c = document.createElement('canvas');
   c.width = w;
   c.height = h;
   return c;
 }
-function rgb(h) {
+function hexChannels(h) {
   return [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
 }
 export function shadeHex(h, f) {
-  const c = rgb(h).map(v => clamp(Math.round(f > 1 ? v + (255 - v) * (f - 1) : v * f), 0, 255));
+  const c = hexChannels(h).map(v => clamp(Math.round(f > 1 ? v + (255 - v) * (f - 1) : v * f), 0, 255));
   return '#' + c.map(v => v.toString(16).padStart(2, '0')).join('');
 }
-function lum(h) {
-  const [r, g, b] = rgb(h);
+function hexLuminance(h) {
+  const [r, g, b] = hexChannels(h);
   return (0.299 * r + 0.587 * g + 0.114 * b) / 255;
 }
-export const hexA = h => {
+export const hexToRgb = h => {
   if (Array.isArray(h)) return h;
   const n = parseInt(h.slice(1, 7), 16);
   return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
 };
-export const mixA = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
+export const mixRgb = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
 function mixHex(a, b, t) {
-  const c = mixA(hexA(a), hexA(b), t);
+  const c = mixRgb(hexToRgb(a), hexToRgb(b), t);
   return '#' + c.map(v => clamp(Math.round(v), 0, 255).toString(16).padStart(2, '0')).join('');
 }
-export const pk = (r, g, b) => (255 << 24) | ((b & 255) << 16) | ((g & 255) << 8) | (r & 255);
-export const pkh = h => {
-  const c = hexA(h);
-  return pk(c[0], c[1], c[2]);
+export const packPixel = (r, g, b) => (255 << 24) | ((b & 255) << 16) | ((g & 255) << 8) | (r & 255);
+export const packHexPixel = h => {
+  const c = hexToRgb(h);
+  return packPixel(c[0], c[1], c[2]);
 };
-const B44 = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
-export const d44 = (x, y) => B44[(x & 3) + ((y & 3) << 2)] / 16;
-export function seeded(n) {
+const BAYER_4X4 = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
+export const bayerThreshold = (x, y) => BAYER_4X4[(x & 3) + ((y & 3) << 2)] / 16;
+export function makeSeededRandom(n) {
   let s = n >>> 0 || 1;
   return () => {
     s = (s * 1664525 + 1013904223) >>> 0;
@@ -157,8 +157,8 @@ export function iconCanvas(key, scale = 1) {
   const k = key + '|' + scale;
   if (ICON_CACHE[k]) return ICON_CACHE[k];
   const r = ARTMAN.icons[key];
-  if (!r) return cnv(1, 1);
-  const c = cnv(r[2] * scale, r[3] * scale),
+  if (!r) return makeCanvas(1, 1);
+  const c = makeCanvas(r[2] * scale, r[3] * scale),
     x = c.getContext('2d');
   x.imageSmoothingEnabled = false;
   if (!artReady(ICON_ATLAS)) return c;
@@ -183,7 +183,7 @@ export function uiIco(key, size = 22) {
 function tintOf(c, col) {
   const w = c.naturalWidth || c.width,
     h = c.naturalHeight || c.height,
-    t = cnv(w, h),
+    t = makeCanvas(w, h),
     x = t.getContext('2d');
   x.drawImage(c, 0, 0);
   x.globalCompositeOperation = 'source-in';

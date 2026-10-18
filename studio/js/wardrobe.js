@@ -9,7 +9,7 @@ import { expose } from '../../game/js/test-globals.js';
 import { provide } from '../../game/js/hooks.js';
 import { $, $$, clamp } from '../../game/js/util.js';
 import { frameStop, frameTask } from '../../game/js/frame-scheduler.js';
-import { cnv } from '../../game/js/art.js';
+import { makeCanvas } from '../../game/js/art.js';
 import { TR_CACHE, TR_PRESETS, cleanLook, trFrame, trRig, trSliders } from '../../game/js/person-art.js';
 import { rigMatrices } from '../../game/js/skeleton-rig.js';
 import { esc } from './game-stand-ins.js';
@@ -325,7 +325,7 @@ function wdThumbs() {
       const [x0, y0, x1, y1] = k === 'body' ? WD_CROP.all : WD_CROP[crop],
         w = x1 - x0,
         h = y1 - y0,
-        c = cnv(w, h);
+        c = makeCanvas(w, h);
       c.getContext('2d').drawImage(f, f.ax + x0, f.ay + y0, w, h, 0, 0, w, h);
       u = c.toDataURL();
     } catch (e) {}
@@ -495,7 +495,7 @@ function wdGrow(src, P, x, y) {
     const c = atlasNow('art/' + src[k]);
     if (!c) continue;
     const H = c.height,
-      n = cnv(Math.max(c.width, w + 2), H + h + 1),
+      n = makeCanvas(Math.max(c.width, w + 2), H + h + 1),
       nx = n.getContext('2d');
     nx.drawImage(c, 0, 0);
     nx.drawImage(c, P.r[0], P.r[1], P.r[2], P.r[3], 1 - nx0, H - ny0, P.r[2], P.r[3]);
@@ -690,7 +690,7 @@ function wdAddRegion(src, c, m) {
     const s = atlasNow('art/' + src[k]),
       H = s ? s.height : 0,
       W = Math.max(s ? s.width : 0, pic.width + 2),
-      n = cnv(W, H + pic.height + 1),
+      n = makeCanvas(W, H + pic.height + 1),
       x = n.getContext('2d');
     if (s) x.drawImage(s, 0, 0);
     x.drawImage(pic, 1, H);
@@ -713,22 +713,22 @@ ACTS.wdAdd = d => {
       src.pieces.find(p => p.v === 'front' && p.b.slice(0, -1) === bone.slice(0, -1));
     if (!P) return toast('There’s no front piece on that bone to copy.');
     const [a, b] = wdSheets(src);
-    c = cnv(P.r[2], P.r[3]);
+    c = makeCanvas(P.r[2], P.r[3]);
     c.getContext('2d').drawImage(a, P.r[0], P.r[1], P.r[2], P.r[3], 0, 0, P.r[2], P.r[3]);
-    m = cnv(P.r[2], P.r[3]);
+    m = makeCanvas(P.r[2], P.r[3]);
     if (b) m.getContext('2d').drawImage(b, P.r[0], P.r[1], P.r[2], P.r[3], 0, 0, P.r[2], P.r[3]);
     o = P.o.slice();
   } else if (d.from === 'body' && body) {
     const bi = atlasNow('art/' + W.body.img),
       [rx, ry, rw, rh] = body.r;
-    c = cnv(rw + 2, rh + 2);
+    c = makeCanvas(rw + 2, rh + 2);
     const x = c.getContext('2d');
     x.drawImage(bi, rx, ry, rw, rh, 1, 1, rw, rh);
     x.globalCompositeOperation = 'source-in';
     x.fillStyle = WDS.sel === 'body' ? W.body.colors[0][1] : src.colors[0][1];
     x.fillRect(0, 0, c.width, c.height);
     /* a little shading so it isn't flat: darker outline */ x.globalCompositeOperation = 'source-over';
-    m = cnv(c.width, c.height);
+    m = makeCanvas(c.width, c.height);
     const mx = m.getContext('2d');
     mx.drawImage(c, 0, 0);
     mx.globalCompositeOperation = 'source-in';
@@ -736,8 +736,8 @@ ACTS.wdAdd = d => {
     mx.fillRect(0, 0, c.width, c.height);
     o = [body.o[0] - 1, body.o[1] - 1];
   } else {
-    c = cnv(12, 12);
-    m = cnv(12, 12);
+    c = makeCanvas(12, 12);
+    m = makeCanvas(12, 12);
     o = body ? [body.o[0], body.o[1]] : [-6, -6];
   }
   const r = wdAddRegion(src, c, m),
@@ -768,9 +768,9 @@ ACTS.wdPieceX = async () => {
   if (!free.length) return toast('This piece already has every expression.');
   wdSnap(src);
   const [a, b] = wdSheets(src),
-    c = cnv(P.r[2], P.r[3]);
+    c = makeCanvas(P.r[2], P.r[3]);
   c.getContext('2d').drawImage(a, P.r[0], P.r[1], P.r[2], P.r[3], 0, 0, P.r[2], P.r[3]);
-  const m = cnv(P.r[2], P.r[3]);
+  const m = makeCanvas(P.r[2], P.r[3]);
   if (b) m.getContext('2d').drawImage(b, P.r[0], P.r[1], P.r[2], P.r[3], 0, 0, P.r[2], P.r[3]);
   const r = wdAddRegion(src, c, m),
     q = { v: P.v, b: P.b, r, o: P.o.slice(), x: free[0][0] };
@@ -804,7 +804,7 @@ ACTS.wdUndo = () => {
     ['mask', b, u.msk],
   ]) {
     if (!cv || !data) continue;
-    const n = cnv(data.width, data.height);
+    const n = makeCanvas(data.width, data.height);
     n.getContext('2d').putImageData(data, 0, 0);
     markArt('art/' + src[k], n);
   }
@@ -817,7 +817,7 @@ ACTS.wdUndo = () => {
 async function wdCopySheets(from, to) {
   for (const k of ['img', 'mask']) {
     const s = await atlasGet('art/' + from[k]).catch(() => null);
-    const n = cnv(s ? s.width : 16, s ? s.height : 16);
+    const n = makeCanvas(s ? s.width : 16, s ? s.height : 16);
     if (s) n.getContext('2d').drawImage(s, 0, 0);
     markArt('art/' + to[k], n);
   }
@@ -854,8 +854,8 @@ ACTS.wdNew = async () => {
   delete W.items[k].tags;
   if (base) await wdCopySheets(base, W.items[k]);
   else {
-    markArt('art/' + img, cnv(4, 4));
-    markArt('art/' + mask, cnv(4, 4));
+    markArt('art/' + img, makeCanvas(4, 4));
+    markArt('art/' + mask, makeCanvas(4, 4));
   }
   WDS.sel = k;
   WDS.piece = 0;

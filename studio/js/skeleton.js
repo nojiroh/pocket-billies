@@ -7,7 +7,7 @@
 import { expose } from '../../game/js/test-globals.js';
 import { provide } from '../../game/js/hooks.js';
 import { $, $$, clamp } from '../../game/js/util.js';
-import { cnv, hexA, shadeHex } from '../../game/js/art.js';
+import { hexToRgb, makeCanvas, shadeHex } from '../../game/js/art.js';
 import { ANIM } from '../../game/js/body-plan-animation.js';
 import { drawRig, rigAudit, rigMatrices, rigPose } from '../../game/js/skeleton-rig.js';
 import { esc } from './game-stand-ins.js';
@@ -251,7 +251,7 @@ function allocRect(sp, view, w, h) {
     W = Math.max(N.width, w + 2),
     Hh = N.height + h + 2;
   const grow = c => {
-    const n = cnv(W, Hh);
+    const n = makeCanvas(W, Hh);
     if (c) n.getContext('2d').drawImage(c, 0, 0);
     return n;
   };
@@ -279,19 +279,19 @@ function putPart(sp, view, rect, src) {
 }
 function cutRect(sp, view, rect, gold = false) {
   const c = atlasNow(atlasPath(sp, view, gold)),
-    o = cnv(rect[2], rect[3]);
+    o = makeCanvas(rect[2], rect[3]);
   if (c) o.getContext('2d').drawImage(c, rect[0], rect[1], rect[2], rect[3], 0, 0, rect[2], rect[3]);
   return o;
 }
 function scaled(src, k) {
-  const o = cnv(Math.max(1, Math.round(src.width * k)), Math.max(1, Math.round(src.height * k))),
+  const o = makeCanvas(Math.max(1, Math.round(src.width * k)), Math.max(1, Math.round(src.height * k))),
     x = o.getContext('2d');
   x.imageSmoothingEnabled = false;
   x.drawImage(src, 0, 0, o.width, o.height);
   return o;
 }
 function flipped(src) {
-  const o = cnv(src.width, src.height),
+  const o = makeCanvas(src.width, src.height),
     x = o.getContext('2d');
   x.translate(src.width, 0);
   x.scale(-1, 1);
@@ -443,7 +443,7 @@ function skDraw(ts) {
     c.height = Hh;
   }
   $('#skZoom').textContent = Z + '×';
-  const buf = SK.buf || (SK.buf = cnv(1, 1));
+  const buf = SK.buf || (SK.buf = makeCanvas(1, 1));
   if (buf.width !== R.BW || buf.height !== R.BH) {
     buf.width = R.BW;
     buf.height = R.BH;
@@ -943,7 +943,7 @@ function skPartFor(meta, i) {
   return img ? img.f.idle || img.f.main || Object.values(img.f)[0] : null;
 }
 function skPlaceholder(w, h, col = '#B8A8E0') {
-  const c = cnv(w, h),
+  const c = makeCanvas(w, h),
     x = c.getContext('2d');
   x.fillStyle = col;
   x.beginPath();
@@ -1218,7 +1218,7 @@ function skClick(ev) {
         v = b.face ? 'idle' : Object.keys(img.f)[0],
         r = img.f[v];
       if (c.width <= r[2] && c.height <= r[3]) {
-        const t = cnv(r[2], r[3]);
+        const t = makeCanvas(r[2], r[3]);
         t.getContext('2d').drawImage(c, 0, 0);
         putPart(SK.sp, SK.view, r, t);
       } else {
@@ -1249,7 +1249,7 @@ function skClick(ev) {
       for (const [v, rr] of Object.entries(img.f)) {
         const src = cutRect(SK.sp, SK.view, rr),
           nr = allocRect(SK.sp, SK.view, r.w, r.h),
-          t = cnv(r.w, r.h);
+          t = makeCanvas(r.w, r.h);
         t.getContext('2d').drawImage(src, 0, 0);
         putPart(SK.sp, SK.view, nr, t);
         img.f[v] = nr;
@@ -1391,13 +1391,13 @@ const BODY_TPL = {
 };
 provide({ BODY_TPL }); /* to-module */
 function blobPart(w, h, col, face, back) {
-  const c = cnv(w, h),
+  const c = makeCanvas(w, h),
     x = c.getContext('2d'),
     d = x.createImageData(w, h),
     a = d.data,
-    base = hexA(col),
-    dark = hexA(shadeHex(col, 0.62)),
-    lite = hexA(shadeHex(col, 1.25)),
+    base = hexToRgb(col),
+    dark = hexToRgb(shadeHex(col, 0.62)),
+    lite = hexToRgb(shadeHex(col, 1.25)),
     ink = [42, 30, 46];
   const inside = (i, j) => {
     const u = (i + 0.5 - w / 2) / (w / 2 - 0.5),
@@ -1506,9 +1506,9 @@ function makeBlankBody(id, plan, col, scale = 1) {
       rowH = Math.max(rowH, p.h);
     });
     const Hh = y + rowH + 1,
-      sheet = cnv(W, Hh),
+      sheet = makeCanvas(W, Hh),
       sx = sheet.getContext('2d'),
-      gold = cnv(W, Hh),
+      gold = makeCanvas(W, Hh),
       gx = gold.getContext('2d');
     pk.forEach(p => {
       sx.drawImage(p.c, p.x, p.y);
@@ -1574,7 +1574,7 @@ async function skImportSheet() {
   };
   L.forEach(put);
   for (const p of order) {
-    const c = cnv(p.w, p.h);
+    const c = makeCanvas(p.w, p.h);
     c.getContext('2d').drawImage(im, p.x, p.y, p.w, p.h, 0, 0, p.w, p.h);
     const opts = {
       name: p.n,
@@ -1586,7 +1586,7 @@ async function skImportSheet() {
     const vars = {};
     if (p.n === 'head')
       for (const f of faces) {
-        const fc = cnv(p.w, p.h),
+        const fc = makeCanvas(p.w, p.h),
           fx = fc.getContext('2d');
         fx.drawImage(c, 0, 0);
         fx.drawImage(

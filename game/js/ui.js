@@ -94,7 +94,7 @@ import {
   xpFor,
 } from './game-state.js';
 import { frameTask, userFps } from './frame-scheduler.js';
-import { ART_CACHE, artLoad, artURL, cnv, coinHTML, coinURL, eggHTML, uiIco } from './art.js';
+import { ART_CACHE, artLoad, artURL, coinHTML, coinURL, eggHTML, makeCanvas, uiIco } from './art.js';
 import {
   TR_PRESETS,
   cleanLook,
@@ -3122,7 +3122,7 @@ function bgBuild() {
     dk = BG.dark,
     m = dk ? 'dark' : 'light',
     sky = ART_CACHE.img[`background/sky_${m}.png`],
-    c = cnv(W, H),
+    c = makeCanvas(W, H),
     x = c.getContext('2d');
   x.imageSmoothingEnabled = false;
   x.drawImage(sky, 0, 0, W, H);

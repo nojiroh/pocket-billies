@@ -14,7 +14,7 @@
 import { expose } from './test-globals.js';
 import { RM, provide } from './hooks.js';
 import { clamp } from './util.js';
-import { cnv } from './art.js';
+import { makeCanvas } from './art.js';
 import { artImage, hash2d, walkView, worldToScreen } from './walk-view.js';
 import { eng } from './engine/settings.js';
 import { EGL, EGL_GLSL_COMMON, EGL_GLSL_LIGHT, EGL_GLSL_LOOK, EGL_MATS, eglImg, eglPrograms } from './engine/webgl.js';
@@ -299,7 +299,7 @@ export function buildSolidProp(im, parts) {
   const w = im.naturalWidth || im.width,
     h = im.naturalHeight || im.height;
   if (!w || !h) return null;
-  const c = cnv(w, h),
+  const c = makeCanvas(w, h),
     x = c.getContext('2d', { willReadFrequently: true });
   x.drawImage(im, 0, 0);
   const px = x.getImageData(0, 0, w, h).data;
@@ -756,7 +756,7 @@ export function buildSolidTree(im, kind) {
   const w = im.naturalWidth || im.width,
     h = im.naturalHeight || im.height;
   if (!w || !h) return null;
-  const c = cnv(w, h),
+  const c = makeCanvas(w, h),
     x = c.getContext('2d', { willReadFrequently: true });
   x.drawImage(im, 0, 0);
   const D = x.getImageData(0, 0, w, h),
@@ -876,7 +876,7 @@ export function buildSolidTree(im, kind) {
   }
   for (let i = 0; i < n; i++) id[cy[i] * w + cx[i]] = lab[i] + 1;
   /* the picture with each pixel's piece in its alpha */
-  const tc = cnv(w, h),
+  const tc = makeCanvas(w, h),
     tx = tc.getContext('2d'),
     img = tx.createImageData(w, h);
   for (let i = 0; i < w * h; i++) {

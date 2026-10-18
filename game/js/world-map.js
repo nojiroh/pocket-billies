@@ -9,7 +9,7 @@ import { $, clamp } from './util.js';
 import { FUTURE, LINKS, ROUTE, linkCost } from './game-data.js';
 import { RM, S, U, canEnter, esc, nextStop } from './game-state.js';
 import { frameCount, frameStop, frameTask, userFps } from './frame-scheduler.js';
-import { artPixels, d44, mixA, mstamp, pk, seeded } from './art.js';
+import { artPixels, bayerThreshold, makeSeededRandom, mixRgb, mstamp, packPixel } from './art.js';
 import { owFrames } from './person-art.js';
 import { EASE } from './battle-stage.js';
 /* eslint-disable no-func-assign */
@@ -162,7 +162,7 @@ export function worldMapPrepare() {
 /* clouds floating inside the sphere */
 export const WORLD_MAP_CLOUDS = [];
 (function () {
-  const R = seeded(812);
+  const R = makeSeededRandom(812);
   for (let i = 0; i < 16; i++) {
     const lon = R() * 200 - 20,
       lat = (R() - 0.5) * 50,
@@ -204,7 +204,7 @@ export const WORLD_MAP_LANDMARKS = [];
   LANDMARK_REGIONS.forEach((r, ri) => {
     if (ri < ROUTE.length && ROUTE[ri].scene) return;
     /* v24: stops have miniatures (world-map-gl.js) */ const L = KIND[r.t] || [],
-      R = seeded(ri * 131 + 9),
+      R = makeSeededRandom(ri * 131 + 9),
       n = r.t === 'mall' ? 1 : L.length ? 7 : 0;
     for (let k = 0; k < n; k++) {
       const sp = r.r * RADIANS_PER_DEGREE * 0.6,
@@ -383,13 +383,17 @@ function worldMapRender(t, lo) {
       if (sunHit && !cloud) {
         const p = vector3.add(C, vector3.mul(d, tHit)),
           nz = Math.max(0, -vector3.dot(vector3.norm(p), d));
-        col = mixA([255, 196, 90], [255, 252, 232], Math.pow(nz, 0.6));
+        col = mixRgb([255, 196, 90], [255, 252, 232], Math.pow(nz, 0.6));
         if (nz > 0.55 && (i + j) & 1 && nz < 0.62) col = [255, 236, 170];
       } else if (cloud) {
         const p = vector3.add(C, vector3.mul(d, tHit)),
           n = vector3.norm(vector3.sub(p, cloud.c)),
           lit = -vector3.dot(n, cloud.n);
-        col = mixA([196, 186, 232], [255, 255, 255], clamp(0.55 + lit * 0.6 + (d44(i, j) - 0.5) * 0.25, 0, 1));
+        col = mixRgb(
+          [196, 186, 232],
+          [255, 255, 255],
+          clamp(0.55 + lit * 0.6 + (bayerThreshold(i, j) - 0.5) * 0.25, 0, 1)
+        );
       } else {
         const p = vector3.add(C, vector3.mul(d, ts)),
           lat = Math.asin(clamp(p[1], -1, 1)),
@@ -407,22 +411,22 @@ function worldMapRender(t, lo) {
             const perp = vector3.len(vector3.sub(k.c, vector3.mul(p, cd)));
             if (perp < k.r * 1.25) {
               const e = perp / (k.r * 1.25);
-              if (e < 0.7 || d44(i, j) < (1 - e) * 3.3) {
-                col = mixA(col, [36, 26, 76], 0.42);
+              if (e < 0.7 || bayerThreshold(i, j) < (1 - e) * 3.3) {
+                col = mixRgb(col, [36, 26, 76], 0.42);
               }
               break;
             }
           }
         }
         const fogk = 1 - Math.exp(-Math.max(0, ts - 0.3) * 0.72);
-        col = mixA(col, haze, clamp(fogk + (d44(i, j) - 0.5) * 0.06, 0, 0.86));
+        col = mixRgb(col, haze, clamp(fogk + (bayerThreshold(i, j) - 0.5) * 0.06, 0, 0.86));
       }
       if ((!sunHit || cloud) && sq && b < 0) {
         const dist = Math.sqrt(Math.max(0, cc - b * b)),
           g = clamp(1 - dist / 0.42, 0, 1);
-        if (g > 0) col = mixA(col, [255, 236, 180], g * g * 0.85);
+        if (g > 0) col = mixRgb(col, [255, 236, 180], g * g * 0.85);
       }
-      const pc = pk(col[0], col[1], col[2]);
+      const pc = packPixel(col[0], col[1], col[2]);
       buf[j * worldMapWidth + i] = pc;
       if (st > 1) {
         if (i + 1 < worldMapWidth) buf[j * worldMapWidth + i + 1] = pc;

@@ -7,7 +7,7 @@
 import { expose } from '../../game/js/test-globals.js';
 import { provide } from '../../game/js/hooks.js';
 import { $, $$, clamp } from '../../game/js/util.js';
-import { cnv } from '../../game/js/art.js';
+import { makeCanvas } from '../../game/js/art.js';
 import { esc } from './game-stand-ins.js';
 import { ST, after, ask, card, changed, commit, fmtN, render, toast } from './studio-app.js';
 import { atlasGet, atlasNow, markArt } from './sprites.js';
@@ -866,7 +866,7 @@ function mpGlobe() {
         bb = (c >> 16) & 255;
       buf[j * MW + i] = (255 << 24) | ((bb + (236 - bb) * f) << 16) | ((g + (186 - g) * f) << 8) | (r + (176 - r) * f);
     }
-  const tmp = cnv(MW, MH);
+  const tmp = makeCanvas(MW, MH);
   tmp.getContext('2d').putImageData(img, 0, 0);
   x.imageSmoothingEnabled = false;
   x.drawImage(tmp, 0, 0, cv.width, cv.height);

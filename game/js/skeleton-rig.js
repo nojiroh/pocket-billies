@@ -6,7 +6,7 @@ import { expose } from './test-globals.js';
 import { B, RM, SP, provide } from './hooks.js';
 import { clamp, rnd } from './util.js';
 import { frameTask, userFps } from './frame-scheduler.js';
-import { ART_CACHE, artImg, artLoad, artReady, artURL, cnv } from './art.js';
+import { ART_CACHE, artImg, artLoad, artReady, artURL, makeCanvas } from './art.js';
 import { animFor } from './body-plan-animation.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -387,7 +387,7 @@ export function rigParts(sp, gold, k = 1) {
   if (!artReady(path)) return null;
   const atlas = ART_CACHE.img[path];
   const cut = ([x, y, w, h]) => {
-    const c = cnv(w, h);
+    const c = makeCanvas(w, h);
     c.getContext('2d').drawImage(atlas, x, y, w, h, 0, 0, w, h);
     return c;
   };
@@ -463,7 +463,7 @@ function drawDomRig(c, ts) {
   if (R.BW === c.width && R.BH === c.height) drawRig(x, R, P, c.dataset.v);
   else {
     /* v36: a rig on another canvas size (the new 96/128 px sheets, k=1) is drawn to its own size, then placed with its base line on the box's base line at 2 px a pixel */
-    const b = RIGDOM.buf || (RIGDOM.buf = cnv(1, 1));
+    const b = RIGDOM.buf || (RIGDOM.buf = makeCanvas(1, 1));
     if (b.width !== R.BW || b.height !== R.BH) {
       b.width = R.BW;
       b.height = R.BH;

@@ -1079,7 +1079,7 @@ def desktop_steps(b, base, R):
         out.append('12 starter species, 12 sheets (png + json + gold), rigs for front and back')
         pg.evaluate("rigPreload(%s.flatMap(id=>[[id,false,1],[id,false,1.4],[id,true,1]]))" % json.dumps(ids)); time.sleep(3)
         r = json.loads(pg.evaluate("""(ids=>{const out={};for(const id of ids){const o={};for(const [v,k] of [['front',1],['back',1.4]]){const R=rigParts(id,false,k);if(!R){o[v]=null;continue}
-          const c=cnv(R.BW,R.BH),x=c.getContext('2d');const n=(P)=>{x.clearRect(0,0,R.BW,R.BH);drawRig(x,R,P,v);const d=x.getImageData(0,0,R.BW,R.BH).data;let s=0;for(let i=3;i<d.length;i+=4)if(d[i]>0)s++;return s};
+          const c=makeCanvas(R.BW,R.BH),x=c.getContext('2d');const n=(P)=>{x.clearRect(0,0,R.BW,R.BH);drawRig(x,R,P,v);const d=x.getImageData(0,0,R.BW,R.BH).data;let s=0;for(let i=3;i<d.length;i+=4)if(d[i]>0)s++;return s};
           const a=n(rigFrame(R,null,0,1000,1)),b=n(rigFrame(R,null,0,1030,1)),c2=n(rigFrame(R,'hurt',60,1200,1));o[v]={px:a,sameTick:a===b,hurt:c2,clock:R.clock,lag:R.lag,sq:rigFrame(R,'hurt',60,1200,1).sq||null}}out[id]=o}return JSON.stringify(out)})(%s)""" % json.dumps(ids)))
         bad = [k for k, v in r.items() if not v['front'] or not v['back'] or v['front']['px'] < 800 or v['back']['px'] < 500]
         if bad: raise Exception(f'rigs draw nothing or too little: {bad} ({ {k: r[k] for k in bad[:2]} })')
@@ -1154,7 +1154,7 @@ def desktop_steps(b, base, R):
         out.append(f'61 species in 23 lines, numbered {pg.evaluate("SP.huang0.no")} to {pg.evaluate("SP.saylor1.no")}; {len(names)} sheets (png + json + gold); roster board: {st} drawn and rigged')
         pg.evaluate("rigPreload(%s.flatMap(id=>[[id,false,1],[id,true,1]]))" % json.dumps(ids)); time.sleep(4)
         r = json.loads(pg.evaluate("""(ids=>{const out={};for(const id of ids){const o={};for(const v of ['front','back']){const R=rigParts(id,false,1);if(!R){o[v]=null;continue}
-          const c=cnv(R.BW,R.BH),x=c.getContext('2d');x.clearRect(0,0,R.BW,R.BH);drawRig(x,R,rigFrame(R,null,0,1000,1),v);const d=x.getImageData(0,0,R.BW,R.BH).data;let s=0;for(let i=3;i<d.length;i+=4)if(d[i]>0)s++;o[v]=s}out[id]=o}return JSON.stringify(out)})(%s)""" % json.dumps(ids)))
+          const c=makeCanvas(R.BW,R.BH),x=c.getContext('2d');x.clearRect(0,0,R.BW,R.BH);drawRig(x,R,rigFrame(R,null,0,1000,1),v);const d=x.getImageData(0,0,R.BW,R.BH).data;let s=0;for(let i=3;i<d.length;i+=4)if(d[i]>0)s++;o[v]=s}out[id]=o}return JSON.stringify(out)})(%s)""" % json.dumps(ids)))
         weak = [k for k, v in r.items() if not v['front'] or v['front'] < 600 or not v['back'] or v['back'] < 400]
         if weak: raise Exception(f'rigs draw too little: {weak[:6]} ({ {k: r[k] for k in weak[:3]} })')
         au = json.loads(pg.evaluate("JSON.stringify(Object.fromEntries(%s.map(id=>[id,rigAudit(id,'front')])))" % json.dumps(ids)))

@@ -9,7 +9,7 @@ import { expose } from '../../game/js/test-globals.js';
 import { pedVoxHTML, provide } from '../../game/js/hooks.js';
 import { $, $$, clamp } from '../../game/js/util.js';
 import { frameStop, frameTask } from '../../game/js/frame-scheduler.js';
-import { artLoad, cnv, setArtLoad } from '../../game/js/art.js';
+import { artLoad, makeCanvas, setArtLoad } from '../../game/js/art.js';
 import { artImage, imageReady, layerAsProp, setWalkData, walkData, walkView } from '../../game/js/walk-view.js';
 import { PROP_MATERIALS, mountWalkView, propMaterial, propVariety, walkRenderer } from '../../game/js/walk-view-gl.js';
 import { BUILDING_ROOM_NAMES, BUILDING_TEXTURE_NAMES } from '../../game/js/buildings.js';
@@ -421,9 +421,9 @@ async function pedSplit(b) {
     x1 = Math.min(src.width, Math.ceil(Math.max(b.x0, b.x1) - M.ox)),
     y1 = Math.min(src.height, Math.ceil(Math.max(b.y0, b.y1) - M.oy));
   if (x1 - x0 < 2 || y1 - y0 < 2) return toast('Drag a bigger box around the part to split off.');
-  const lay = cnv(src.width, src.height);
+  const lay = makeCanvas(src.width, src.height);
   lay.getContext('2d').drawImage(src, x0, y0, x1 - x0, y1 - y0, x0, y0, x1 - x0, y1 - y0);
-  const main = cnv(src.width, src.height),
+  const main = makeCanvas(src.width, src.height),
     mx = main.getContext('2d');
   mx.drawImage(src, 0, 0);
   mx.clearRect(x0, y0, x1 - x0, y1 - y0);
@@ -727,7 +727,7 @@ ACTS.pedLayerAdd = async d => {
   } else {
     const src = await atlasGet('art/' + M.img).catch(() => null);
     if (!src) return toast('Could not read the main picture.', 'err');
-    c = cnv(src.width, src.height);
+    c = makeCanvas(src.width, src.height);
     c.getContext('2d').drawImage(src, 0, 0);
   }
   const L = M.layers || (M.layers = []);

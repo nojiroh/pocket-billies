@@ -11,7 +11,7 @@
 import { expose } from './test-globals.js';
 import { RM, provide } from './hooks.js';
 import { clamp } from './util.js';
-import { hexA } from './art.js';
+import { hexToRgb } from './art.js';
 import { artImage, mapBridges, walkView } from './walk-view.js';
 import { EGL, eglImg, eglPrograms } from './engine/webgl.js';
 import {
@@ -93,7 +93,7 @@ function buildStructures(sc) {
   const wd = defaultWallMaterial(sc),
     rockCol =
       sc.wallCol && sc.wallCol[wd]
-        ? hexA(sc.wallCol[wd]).map(v => v / 255)
+        ? hexToRgb(sc.wallCol[wd]).map(v => v / 255)
         : WALL_COLORS[wd] || STRUCTURE_KINDS.rock.col;
   const poly = (P, n, uv, K, shade = 1) => {
     const b = V.length / 14,

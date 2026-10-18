@@ -10,7 +10,7 @@ import { $, $$, rnd } from './util.js';
 import { SHOPS } from './game-data.js';
 import { S, U, esc, fmt, save } from './game-state.js';
 import { frameStop, frameTask } from './frame-scheduler.js';
-import { cnv, uiIco } from './art.js';
+import { makeCanvas, uiIco } from './art.js';
 import { TR_PRESETS, WD, cleanLook, portraitHTML, trBox, trColorsOf, trFrame, trSliders } from './person-art.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -532,7 +532,7 @@ function lookThumbnail(L2, crop) {
     [x0, y0, x1, y1] = THUMB_CROPS[crop] || THUMB_CROPS.body,
     w = x1 - x0,
     h = y1 - y0,
-    c = cnv(w, h),
+    c = makeCanvas(w, h),
     x = c.getContext('2d');
   x.drawImage(f, f.ax + x0, f.ay + y0, w, h, 0, 0, w, h);
   const u = c.toDataURL();
@@ -600,7 +600,7 @@ function wardrobeThumbnail(slot, id, crop) {
     [x0, y0, x1, y1] = THUMB_CROPS[crop] || THUMB_CROPS.body,
     w = x1 - x0,
     h = y1 - y0,
-    c = cnv(w, h),
+    c = makeCanvas(w, h),
     x = c.getContext('2d');
   x.drawImage(f, f.ax + x0, f.ay + y0, w, h, 0, 0, w, h);
   const u = c.toDataURL();
@@ -611,7 +611,7 @@ export function lookPortrait(look) {
   const L = cleanLook(look),
     f = trFrame(L, 'front', 'idle', 0, 0),
     b = trBox(f),
-    c = cnv(b[2] + 2, b[3] + 2);
+    c = makeCanvas(b[2] + 2, b[3] + 2);
   c.getContext('2d').drawImage(f, b[0] - 1, b[1] - 1, b[2] + 2, b[3] + 2, 0, 0, b[2] + 2, b[3] + 2);
   return c.toDataURL();
 }

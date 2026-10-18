@@ -10,7 +10,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { GD, RM, provide } from './hooks.js';
-import { artImg, artURL, hexA } from './art.js';
+import { artImg, artURL, hexToRgb } from './art.js';
 import { artImage, walkView } from './walk-view.js';
 import { eng } from './engine/settings.js';
 import { EGL, EGL_GLSL_COMMON, EGL_GLSL_LIGHT, eglImg, eglPrograms } from './engine/webgl.js';
@@ -221,7 +221,7 @@ function voxelise(rec, R) {
       addRawVoxels(V, L, R, rec);
       return;
     }
-    const c = hexA(L.col || '#888888'),
+    const c = hexToRgb(L.col || '#888888'),
       g = VOXEL_TEXTURE_GRAIN[L.tex || 'plain'] || 0,
       t = L.tex,
       x0 = L.x || 0,
@@ -750,7 +750,7 @@ function lowPolyFromRecipe(rec) {
   for (const L of rec.layers || []) {
     li3 += 31;
     if (L.k === 'img' || L.hide || L.k === 'raw') continue;
-    const c = hexA(L.col || '#888888'),
+    const c = hexToRgb(L.col || '#888888'),
       t = L.tex || 'plain',
       x0 = L.x || 0,
       y0 = L.y || 0,

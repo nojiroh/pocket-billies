@@ -7,7 +7,7 @@
 import { expose } from '../../game/js/test-globals.js';
 import { openSkeleton, provide } from '../../game/js/hooks.js';
 import { $, $$, clamp } from '../../game/js/util.js';
-import { cnv } from '../../game/js/art.js';
+import { makeCanvas } from '../../game/js/art.js';
 import { animFor } from '../../game/js/body-plan-animation.js';
 import { drawRig, rigPose } from '../../game/js/skeleton-rig.js';
 import { esc } from './game-stand-ins.js';
@@ -98,7 +98,7 @@ export function atlasGet(path) {
   if (ATL_WAIT.has(path)) return ATL_WAIT.get(path);
   const p = loadImage('../game/' + path + '?v=' + Date.now())
     .then(im => {
-      const c = cnv(im.naturalWidth, im.naturalHeight);
+      const c = makeCanvas(im.naturalWidth, im.naturalHeight);
       c.getContext('2d').drawImage(im, 0, 0);
       ATL.set(path, c);
       ATL_WAIT.delete(path);
@@ -127,7 +127,7 @@ export function rigFor(sp, view, gold) {
     hit = RIGB.get(key);
   if (hit && hit.ver === ver) return hit.R;
   const cut = ([x, y, w, h]) => {
-    const c = cnv(Math.max(1, w), Math.max(1, h));
+    const c = makeCanvas(Math.max(1, w), Math.max(1, h));
     c.getContext('2d').drawImage(atlas, x, y, w, h, 0, 0, w, h);
     return c;
   };
@@ -251,7 +251,7 @@ function rampAt(L) {
 }
 /* Gold-Plated version from the normal art: tint toward a gold ramp by brightness; outlines, eyes and highlights keep most of their color */
 export function goldFrom(src, strength = 0.6) {
-  const c = cnv(src.width, src.height),
+  const c = makeCanvas(src.width, src.height),
     x = c.getContext('2d');
   x.drawImage(src, 0, 0);
   const im = x.getImageData(0, 0, c.width, c.height),
@@ -311,7 +311,7 @@ function hsv2rgb(h, s, v) {
 }
 /* recolor: rotate the hue of colorful pixels (skin-ish and grey pixels are left alone when protectSkin is on) */
 export function hueShift(src, deg, satK = 1, protectSkin = true) {
-  const c = cnv(src.width, src.height),
+  const c = makeCanvas(src.width, src.height),
     x = c.getContext('2d');
   x.drawImage(src, 0, 0);
   if (!deg && satK === 1) return c;
@@ -331,7 +331,7 @@ export function hueShift(src, deg, satK = 1, protectSkin = true) {
   return c;
 }
 function canvasCopy(src) {
-  const c = cnv(src.width, src.height);
+  const c = makeCanvas(src.width, src.height);
   c.getContext('2d').drawImage(src, 0, 0);
   return c;
 }
@@ -365,7 +365,7 @@ export async function fileToCanvas(f) {
   const url = URL.createObjectURL(f);
   try {
     const im = await loadImage(url);
-    const c = cnv(im.naturalWidth, im.naturalHeight);
+    const c = makeCanvas(im.naturalWidth, im.naturalHeight);
     c.getContext('2d').drawImage(im, 0, 0);
     return c;
   } finally {

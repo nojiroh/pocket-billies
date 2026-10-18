@@ -22,7 +22,7 @@ import {
   scxUp,
 } from '../../game/js/hooks.js';
 import { $, $$, clamp } from '../../game/js/util.js';
-import { ART_CACHE, cnv } from '../../game/js/art.js';
+import { ART_CACHE, makeCanvas } from '../../game/js/art.js';
 import {
   MAX_STEP_RISE,
   artImage,
@@ -779,7 +779,7 @@ function scThumbs() {
     const w = im.naturalWidth || im.width,
       h = im.naturalHeight || im.height,
       k = Math.min(1, 56 / Math.max(w, h, 1)),
-      c = cnv(Math.max(1, Math.round(w * k)), Math.max(1, Math.round(h * k)));
+      c = makeCanvas(Math.max(1, Math.round(w * k)), Math.max(1, Math.round(h * k)));
     const x = c.getContext('2d');
     x.imageSmoothingEnabled = k < 1;
     x.drawImage(im, 0, 0, c.width, c.height);
@@ -1995,7 +1995,7 @@ ACTS.scNewTer = async () => {
     file = uidKey(r.n, f => Object.values(C.terrains).some(t => t.tile === `scene/tiles/${f}.png`)),
     path = `scene/tiles/${file}.png`;
   const src = await atlasGet('art/' + base.tile).catch(() => null),
-    c = cnv(16, 16);
+    c = makeCanvas(16, 16);
   if (src) c.getContext('2d').drawImage(src, 0, 0);
   markArt('art/' + path, c);
   C.terrains[r.k] = { name: r.n, tile: path, z: base.z, edge: base.edge };
@@ -2028,7 +2028,7 @@ ACTS.scNewProp = async () => {
     ]
   );
   if (!r) return;
-  const c = cnv(r.w, r.h),
+  const c = makeCanvas(r.w, r.h),
     x = c.getContext('2d');
   x.fillStyle = '#B8A8E0';
   x.fillRect(Math.round(r.w * 0.2), Math.round(r.h * 0.1), Math.round(r.w * 0.6), Math.round(r.h * 0.9));
@@ -2359,7 +2359,7 @@ ACTS.scPeResize = async () => {
       ]
     );
   if (!r) return;
-  const n = cnv(r.w, r.h),
+  const n = makeCanvas(r.w, r.h),
     dx = Math.round((r.w - c.width) / 2),
     dy = r.h - c.height;
   n.getContext('2d').drawImage(c, dx, dy);

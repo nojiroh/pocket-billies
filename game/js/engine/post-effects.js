@@ -8,7 +8,7 @@
 import { expose } from '../test-globals.js';
 import { RM, provide } from '../hooks.js';
 import { clamp } from '../util.js';
-import { cnv } from '../art.js';
+import { makeCanvas } from '../art.js';
 import { walkView } from '../walk-view.js';
 import { eng, engHex } from './settings.js';
 import { EGL, EGL_GLSL_LIGHT, eglBindQuad, eglPrograms, eglTarget } from './webgl.js';
@@ -489,7 +489,7 @@ export function eglSnapshot(rw, rh, over, max = 480) {
   const px = new Uint8Array(w * h * 4);
   gl.readPixels(0, 0, w, h, gl.RGBA, gl.UNSIGNED_BYTE, px);
   gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-  const c = cnv(w, h),
+  const c = makeCanvas(w, h),
     x = c.getContext('2d'),
     img = x.createImageData(w, h);
   for (let y = 0; y < h; y++) img.data.set(px.subarray((h - 1 - y) * w * 4, (h - y) * w * 4), y * w * 4);
