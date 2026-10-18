@@ -5,15 +5,16 @@
     python3 tools/check-quick.py                 # data, code, shaders, every scene once, the main flows
     python3 tools/check-quick.py --smoke         # the fast subset: data and code, Start-Game on a phone + debug log, Studio opens
     python3 tools/check-quick.py --studio        # also the Studio round trip on a temporary copy
+    python3 tools/check-quick.py --selftest      # the game's own full test and diagnostics test, whole (about 25 minutes)
     python3 tools/check-quick.py --closeups      # also close-up pictures of cliffs, stairs, bridges and water
     python3 tools/check-quick.py --scenes=verdigris,willowmere   # only these walk scenes (by id), for a change to one place
     python3 tools/check-quick.py --steps=v34,battle   # only the steps whose names hold these words
     python3 tools/check-quick.py --tests         # also draw every test scene and take its pictures (the walking checks
                                                  # of the test scenes always run; they need no drawing)
 
-What it does not do: the game's own **full test** (the debug menu: Settings → Debug, or Ctrl+Shift+D → Full test). That one measures frame rates,
-stress-tests the renderer and plays every scene for real, which only means something on a real phone or computer
-with a graphics chip, so it is run by you and sent back as a debug log. `tools/check-game.py` is the long play-test
+The game's own **full test** (Settings → Help, or the debug menu) runs here one step at a time (smoke and full) and
+whole with --selftest (nightly), stretched for software drawing (phase 13); its frame rates and the stress test only
+mean something on a real phone or computer with a graphics chip, so those come from you as a debug log. `tools/check-game.py` is the long play-test
 at four screen sizes (best run on a real computer too).
 
 How it stays quick in software: the frames are drawn at a third of the resolution with a small shadow map, scene
@@ -545,6 +546,71 @@ def debug_picture_privacy(pg):
     finally:
         pg.evaluate("drawSpeech=__pq.say;screenSnapshot=__pq.snap;0")
     raise Exception(f'the buddy’s speech wasn’t drawn in the frame of the debug picture (three tries: {seen})')
+
+
+# phase 13: the game's own full test (self-test.js, Settings → Help), which the owner runs on a phone, runs here too, so a
+# change that breaks it shows before the phone does. Software drawing is slow: selfTest.slow = 3 stretches its waits
+# and limits, and its frame rates mean nothing here. A step that ran out of time is a note; any other failure is a
+# problem. The game's own travel rules, not play()'s steps mode
+def start_for_in_game_test(pg):
+    travel = pg.evaluate('RULES.travel')
+    play(pg)
+    pg.evaluate(f"RULES.travel={json.dumps(travel)};uiState.mq=[];uiState.modal=null;renderOverlay();0")
+
+
+def run_in_game_test(pg, only, diag, sec):
+    pg.evaluate(f"selfTest.slow=3;selfTest.only={json.dumps(only)};{'runDiagnostics' if diag else 'runQuickTest'}();0")
+    if not until(pg, '!selfTest.on&&!!(debugLog.bench&&debugLog.bench.result)', sec): raise Exception(f'the in-game test didn’t finish in {sec} s (at {pg.evaluate("debugLog.bench&&debugLog.bench.step")})')
+    r = json.loads(pg.evaluate("JSON.stringify((({kind,seconds,errors,phases})=>({kind,seconds,errors,phases:phases.map(p=>({name:p.name,ok:p.ok,why:p.why||p.note||''}))}))(debugLog.bench.result))"))
+    late = [p for p in r['phases'] if not p['ok'] and p['why'].startswith('took longer than')]
+    bad = [p for p in r['phases'] if not p['ok'] and p not in late]
+    for p in late: notes.append(f'in-game {r["kind"]} test: {p["name"]} {p["why"]} (software drawing)')
+    if bad or r['errors']: raise Exception(f'in-game {r["kind"]} test: ' + '; '.join([f'{p["name"]}: {p["why"]}' for p in bad] + r['errors'][:4]))
+    return r
+
+
+# a stand-in account and friends list that only record what would be written, and a record of what goes into this
+# browser's storage while the test runs; save() leaves a write waiting, as a player's last move would
+SAVE_SPY = r"""(()=>{window.__st={w:[],ls:[]};account.user={uid:'check',name:'Check'};
+  account.db={collection:c=>({doc:d=>({set:o=>{__st.w.push({c,during:selfTest.on,team:o.json?JSON.parse(o.json).team.map(m=>m.uid):null});return Promise.resolve()}})})};
+  friends.on=true;friends.uid='check';friends.pubT=0;
+  const si=Storage.prototype.setItem;Storage.prototype.setItem=function(k,v){if(selfTest.on)__st.ls.push(k);return si.call(this,k,v)};
+  save();__st.team=saveData.team.map(m=>m.uid)})();0"""
+
+
+@step('In-game full test: one step headless, and nothing is saved while it runs', 120)
+def in_game_test_step(b, base, R):
+    errs = []; ctx, pg = open_game(b, base, 1100, 700, False, errs)
+    try:
+        start_for_in_game_test(pg)
+        pg.evaluate(SAVE_SPY)
+        r = run_in_game_test(pg, ['Shaders'], False, 120)
+        time.sleep(2.5)   # the account write waits 1.5 s after the test puts the save back
+        st = pg.evaluate('__st')
+        during = [w['c'] for w in st['w'] if w['during']]
+        if during or st['ls']: raise Exception(f'written while the test ran: account {during}, this browser {st["ls"]}')
+        after = [w for w in st['w'] if w['c'] == 'saves']
+        if not after or after[-1]['team'] != st['team']: raise Exception(f'the save wasn’t written back to the account as it was: {after}')
+        if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
+        return f'{", ".join(p["name"] for p in r["phases"])} passed in {r["seconds"]} s; nothing written during it, the save written back after'
+    finally:
+        ctx.close()
+
+
+@step('In-game full test and diagnostics test, whole, headless', 5400)
+def in_game_test_whole(b, base, R):
+    errs = []; ctx, pg = open_game(b, base, 1100, 700, False, errs)
+    try:
+        start_for_in_game_test(pg)
+        out = []
+        for diag in (False, True):
+            r = run_in_game_test(pg, None, diag, 3600)
+            out.append(f'{r["kind"]}: {sum(p["ok"] for p in r["phases"])} of {len(r["phases"])} steps passed in {r["seconds"]} s')
+            R['inGame' + ('Diagnostics' if diag else 'FullTest')] = r
+        if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
+        return '; '.join(out)
+    finally:
+        ctx.close()
 
 
 @step('Phone: opening, first battle, screens and a battle', 260)
@@ -2067,8 +2133,11 @@ def main():
     srv, base = serve(GAME)
     with sync_playwright() as pw:
         b = pw.chromium.launch(args=['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'])
-        if '--studio-only' not in ARGS:
+        if '--selftest' in ARGS:
+            in_game_test_whole(b, base, R)
+        elif '--studio-only' not in ARGS:
             phone_flow(b, base, R)
+            in_game_test_step(b, base, R)
             if SMOKE:
                 studio_opens(b)
             else:

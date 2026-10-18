@@ -11,6 +11,9 @@
 #   logic again with no DOM lib, tsconfig.logic.json; a second).
 #   The logic in plain Node (npm run check:logic: game/js/logic/ loads and runs with no browser, a fraction of a second).
 #   Phase 13: the unit tests (npm test: tools/test/**/*.test.mjs, node --test, a file per process; check:logic runs them).
+# - Phase 13: the game's own full test and diagnostics test, whole and headless (tools/check-quick.py --selftest, about
+#   25 minutes), nightly and by hand, in a job of its own outside the full check's time budget. Smoke and the full
+#   check run one step of it.
 # - Phase 03: the picture baseline is made on this runner (the pictures depend on the renderer) and kept as the asset
 #   quick-baseline.zip of the release baseline-<version> (version from game/version.js, e.g. baseline-0.1.0-alpha).
 #   It is made on phase-* tags and by hand (Run workflow with "Make the picture baseline"); every other full run
@@ -192,3 +195,42 @@ jobs:
           path: validation/quick/
           if-no-files-found: ignore
           retention-days: 30
+
+  selftest:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4   # tools/build-data.mjs makes data/gamedata.js from the data files
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: tools/requirements-check.txt
+      - name: Install Playwright and Pillow
+        run: pip install -r tools/requirements-check.txt
+      - name: Cache Chromium
+        id: chromium
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: chromium-${{ runner.os }}-${{ hashFiles('tools/requirements-check.txt') }}
+      - name: Install Chromium
+        if: steps.chromium.outputs.cache-hit != 'true'
+        run: python -m playwright install --with-deps chromium
+      - name: Install Chromium's system libraries
+        if: steps.chromium.outputs.cache-hit == 'true'
+        run: python -m playwright install-deps chromium
+      - name: The game's full test and diagnostics test, headless
+        run: python tools/check-quick.py --selftest
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: selftest-${{ github.run_number }}
+          path: validation/quick/
+          if-no-files-found: ignore
+          retention-days: 14
