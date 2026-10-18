@@ -26,7 +26,7 @@ import {
 } from '../../game/js/battle-stage.js';
 import { DIO, dioHubOf } from '../../game/js/walk-view.js';
 import { dioMount } from '../../game/js/walk-view-gl.js';
-import { battleGLAttach, battleGLStop } from '../../game/js/battle-gl.js';
+import { battleGLAttach, battleGLStop } from '../../game/js/battle-3d.js';
 import { esc } from './shims.js';
 import {
   ACTS,

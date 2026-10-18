@@ -3593,7 +3593,7 @@ function dglFrameIn(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
   if (DGL.grassKey !== eng('grass', 'density')) dglBuildGrass();
   else dglGrassWork(4);
   if (DGL.farKey !== DIO.id + '|' + Math.round(eng('world', 'farProps'))) dglBuildFar();
-  /* a battle (battle-gl.js) borrows the scene: its own camera, the fighters as lit sprites, props in the way hidden */
+  /* a battle (battle-3d.js) borrows the scene: its own camera, the fighters as lit sprites, props in the way hidden */
   const BT =
     (DIO.battle && DIO.battle.frame ? DIO.battle.frame() : null) ||
     (DIO.director && DIO.director.frame ? DIO.director.frame() : null);

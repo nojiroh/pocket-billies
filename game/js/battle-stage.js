@@ -1864,7 +1864,7 @@ function scDraw() {
   const c = SC.cx,
     L = SC.L,
     R = L.R;
-  /* on the 3D engine (battle-gl.js) the scene, the billionaires and the trainers are drawn there; this canvas only keeps the effects */
+  /* on the 3D engine (battle-3d.js) the scene, the billionaires and the trainers are drawn there; this canvas only keeps the effects */
   if (SC.gl) {
     c.setTransform(1, 0, 0, 1, 0, 0);
     c.clearRect(0, 0, SC.cv.width, SC.cv.height);

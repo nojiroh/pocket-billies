@@ -140,7 +140,7 @@ import {
   wrRoomScene,
   wrTripView,
 } from './seamless-world.js';
-import { battleGLLayout, battleGLWanted } from './battle-gl.js';
+import { battleGLLayout, battleGLWanted } from './battle-3d.js';
 import {
   A,
   RC,
@@ -1653,7 +1653,7 @@ setInterval(() => {
 }, 400);
 function walkSceneSync() {
   if (typeof CS !== 'undefined' && CS.on) return;
-  /* in a battle the scene keeps running inside the battle stage (battle-gl.js) when it can; otherwise it stops */
+  /* in a battle the scene keeps running inside the battle stage (battle-3d.js) when it can; otherwise it stops */
   if (B) {
     document.body.classList.remove('on-walk', 'on-scene');
     if (DIO.battle) {

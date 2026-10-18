@@ -93,7 +93,7 @@ import {
 import { DIO } from './walk-view.js';
 import { ENV, ENV_NAMES, envHere, envState } from './env.js';
 import { DGL, dglRing, dglWgAt } from './walk-view-gl.js';
-import { BGL, battleGLWanted } from './battle-gl.js';
+import { BGL, battleGLWanted } from './battle-3d.js';
 /* eslint-disable no-func-assign */
 expose({
   A: [() => A],
