@@ -895,6 +895,11 @@ async function runFullTest(mode) {
             for (let i = 0; i < 60 && !(walkView.ready && walkView.id === 'w:marigold*'); i++) await selfTestSleep(100);
             if (walkView.id !== 'w:marigold*')
               throw new Error('Marigold Town is not shown (still ' + walkView.id + ')');
+            /* phase 13: the first frames of a place put you where you arrive; on a slow device that comes after this
+               step has put you at the shop's door, and the walk to the door then never starts */
+            const f0 = typeof walkRenderer !== 'undefined' ? walkRenderer.frames : 0;
+            for (let i = 0; i < 60 && typeof walkRenderer !== 'undefined' && walkRenderer.frames < f0 + 2; i++)
+              await selfTestSleep(100);
             const p = walkView.sc.props.find(p => p.act === 'shop' && p.k === 'shop');
             if (!p) throw new Error('no shop in Marigold Town');
             const C = walkData().sc,
