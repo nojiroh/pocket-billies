@@ -7,7 +7,7 @@ import { expose } from '../../game/js/test-globals.js';
 import { provide, sceneryArtPaths, sceneryCatalog } from '../../game/js/hooks.js';
 import { $, $$ } from '../../game/js/util.js';
 import { COIN_ART, artLoad, hexToRgb } from '../../game/js/art.js';
-import { setRigParts } from '../../game/js/skeleton-rig.js';
+import { robotRigParts, setRigParts } from '../../game/js/skeleton-rig.js';
 import {
   AREAS,
   BATTLE_STAGE_ART,
@@ -62,7 +62,9 @@ expose({
 /* eslint-enable no-func-assign */
 provide({ battleFreeArea, battleLayoutChanged, hudHit, hudPop });
 /* to-module: end */
-setRigParts((sp, gold, k) => rigFor(sp, k === 1 ? 'front' : 'back', !!gold));
+setRigParts((sp, gold, k) =>
+  String(sp).startsWith('bot:') ? robotRigParts(sp, gold, k) : rigFor(sp, k === 1 ? 'front' : 'back', !!gold)
+);
 const battlePreview = {
   stage: 'backdrop',
   area: null,

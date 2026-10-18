@@ -13,7 +13,7 @@
   "team": {
    "type": "array",
    "minItems": 1,
-   "items": {"type": "object", "required": ["sp", "lvl"], "properties": {"sp": {"description": "a species id, or @rival", "type": "string"}, "lvl": {"type": "integer", "minimum": 1, "maximum": 100}}}
+   "items": {"type": "object", "required": ["sp", "lvl"], "properties": {"sp": {"description": "a species id, @rival, or robot (phase 17: robot then names its gem and parts)", "type": "string"}, "lvl": {"type": "integer", "minimum": 1, "maximum": 100}, "robot": {"description": "phase 17: a robot's gem and parts (keys of robots.json)", "type": "object", "required": ["gem", "torso", "armL", "armR", "legs"], "additionalProperties": false, "properties": {"gem": {"type": "string"}, "torso": {"type": "string"}, "armL": {"type": "string"}, "armR": {"type": "string"}, "legs": {"type": "string"}}}}}
   },
   "reward": {"type": "number", "minimum": 0},
   "lines": {"type": "array", "items": {"type": "string"}},

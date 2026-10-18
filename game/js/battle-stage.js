@@ -48,6 +48,7 @@ import {
   packPixel,
   whiteCopy,
 } from './art.js';
+import { ROBOT_PART_BONES } from './robot-art.js';
 import { personBattleFrames, personBattlePose, wardrobeData } from './person-art.js';
 import { drawRig, rigFrame, rigParts, rigTint } from './skeleton-rig.js';
 /* eslint-disable no-func-assign */
@@ -1580,6 +1581,7 @@ export function actorBuffer(i) {
     ak = a && (a.k === 'faint' || tau < a.dur) ? a.k : null;
   const P = rigFrame(R, ak, tau, Math.floor(battleStage.t / 16) * 16, s.seed);
   if (s.build) P.build = s.build;
+  if (s.dim) P.dim = s.dim;
   drawRig(bx, R, P, view);
   rigTint(bx, buf.width, buf.height, '#FFFFFF', s.white);
   rigTint(bx, buf.width, buf.height, '#0C0A16', s.dark);
@@ -2202,6 +2204,12 @@ const PULL_BACK_CAMERA = { x: 0.15, y: 1.82, z: -0.75, yaw: 0, hz: -3 };
 const throwOrigin = () => ({ x: battleStage.V.x - 0.9, y: battleStage.V.y - 0.6, z: battleStage.V.z + 0.6 });
 export function battleStagePlay(an, ev) {
   battleStageFlush();
+  /* phase 17: a robot's broken parts are drawn faint from the moment they break */
+  if (ev && ev.s)
+    ev.s.forEach((sn, i) => {
+      if (sn && battleStage.s[i] && battleStage.s[i].sp === sn.sp)
+        battleStage.s[i].dim = sn.bot && sn.bot.brk.length ? sn.bot.brk.flatMap(q => ROBOT_PART_BONES[q] || []) : null;
+    });
   const s0 = battleStage.s[0],
     s1 = battleStage.s[1];
   const syncSide = i => {
@@ -2738,6 +2746,30 @@ export function battleStagePlay(an, ev) {
       const T = actorCenter(an.si);
       ringFx(T, '#FFD860', 0.25, 1.4, 380);
       return { dur: 300, hit: 0 };
+    }
+    /* phase 17: a robot part breaks: sparks fly off it and it shudders */
+    case 'break': {
+      const T = actorCenter(an.si);
+      setActorAction(an.si, 'hurt', 600);
+      for (let i = 0; i < 16; i++) {
+        const a = random() * 6.283;
+        addParticle({
+          x: T.x + (an.part === 'armL' ? -0.3 : an.part === 'armR' ? 0.3 : 0),
+          y: an.part === 'legs' ? 0.25 : T.y,
+          z: T.z,
+          vx: Math.cos(a) * 2.2,
+          vy: 1.2 + random() * 2.4,
+          vz: Math.sin(a) * 1.2,
+          ay: -6,
+          life: 520 + random() * 300,
+          spr: 'spark',
+          k: 0.8,
+          glow: 1,
+        });
+      }
+      battleStageFlash('#FFE7A0', 0.35, 220);
+      if (typeof buzz === 'function') buzz([20, 40, 60]);
+      return { dur: 700, hit: 1 };
     }
     case 'caught': {
       const C = battleStage.coin;

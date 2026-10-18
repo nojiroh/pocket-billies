@@ -12,7 +12,7 @@
  */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { makeBilly, provide, saveData } from './hooks.js';
+import { makeBilly, makeRobot, provide, saveData } from './hooks.js';
 /* eslint-disable no-func-assign */
 expose({
   BATTLE_STAGES: [() => BATTLE_STAGES],
@@ -38,6 +38,7 @@ expose({
   REGIONS: [() => REGIONS],
   ROADS: [() => ROADS],
   ROADS_BY_NODE: [() => ROADS_BY_NODE],
+  ROBOTS: [() => ROBOTS],
   RULES: [() => RULES],
   SEATS: [() => SEATS],
   SHOPS: [() => SHOPS],
@@ -72,6 +73,8 @@ expose({
   standInSpecies: [() => standInSpecies, v => (standInSpecies = v)],
   standInsWarned: [() => standInsWarned],
   trainerById: [() => trainerById],
+  // @ts-expect-error -- replaced on purpose
+  trainerRobotOk: [() => trainerRobotOk, v => (trainerRobotOk = v)],
   // @ts-expect-error -- replaced on purpose
   trainerTeam: [() => trainerTeam, v => (trainerTeam = v)],
   trainersAt: [() => trainersAt],
@@ -138,6 +141,10 @@ for (const k in MOVES) {
   }
   if (M.a == null) M.a = 100;
 }
+/* ---------- robots (phase 17): parts and gems, put together in logic/fighters.js ---------- */
+/** @type {import('../types/game-data').RobotData} */
+export const ROBOTS = gameData.robots || { parts: {}, gems: {} };
+provide({ ROBOTS }); /* to-module */
 /* ---------- billionaires ---------- */
 /** @type {Evolution[]} */
 export const DEFAULT_EVOLUTIONS = [
@@ -350,8 +357,24 @@ for (const id in TRAINERS) {
   else warnData(`Trainer ${id} stands on a stop that doesn’t exist.`);
   if (!PEOPLE[T.who]) T.who = 'gini';
   T.team = (T.team || [])
-    .map(e => (/^@rival\d?$/.test(e.sp) ? e : { ...e, sp: standInSpecies(e.sp) }))
-    .filter(e => /^@rival\d?$/.test(e.sp) || SPECIES[e.sp] || warnData(`Trainer ${id} has unknown Billie ${e.sp}.`));
+    .map(e => (/^@rival\d?$/.test(e.sp) || e.sp === 'robot' ? e : { ...e, sp: standInSpecies(e.sp) }))
+    .filter(
+      e =>
+        /^@rival\d?$/.test(e.sp) ||
+        SPECIES[e.sp] ||
+        (e.sp === 'robot' ? trainerRobotOk(e) : false) ||
+        warnData(`Trainer ${id} has ${e.sp === 'robot' ? 'a robot with unknown parts' : 'unknown Billie ' + e.sp}.`)
+    );
+}
+/* phase 17: a trainer's robot names a known gem and a part of the right kind for each slot */
+export function trainerRobotOk(e) {
+  const R = e.robot,
+    fits = { torso: 'torso', armL: 'arm', armR: 'arm', legs: 'legs' };
+  return (
+    !!R &&
+    !!ROBOTS.gems[R.gem] &&
+    Object.entries(fits).every(([k, kind]) => ROBOTS.parts[R[k]] && ROBOTS.parts[R[k]].slot === kind)
+  );
 }
 /* the first trainer at a stop that hands out a Board Seat (or doesn’t block the road) is that stop’s Boardroom */
 LOCATIONS.forEach(r => {
@@ -370,6 +393,12 @@ export function rivalSpecies(code) {
 /* a team entry may name its moves (v47: Blake's first billionaire only knows Tackle) */
 export function trainerTeam(T) {
   return T.team.map(e => {
+    /* phase 17: a robot, built from new parts */
+    if (e.sp === 'robot' && e.robot) {
+      const R = e.robot,
+        fit = Object.fromEntries(['torso', 'armL', 'armR', 'legs'].map(k => [k, { uid: '', id: R[k], up: 0 }]));
+      return makeRobot(R.gem, fit, e.lvl);
+    }
     const m = makeBilly(/^@rival\d?$/.test(e.sp) ? rivalSpecies(e.sp) : e.sp, e.lvl),
       mv = Array.isArray(e.moves) ? e.moves.filter(k => MOVES[k]) : [];
     if (mv.length) m.moves = mv;

@@ -8,8 +8,8 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { provide } from './hooks.js';
-import { SPECIES } from './game-data.js';
 import { weightClass } from './logic/parts.js';
+import { isRobot, robotWeight, speciesOf } from './logic/fighters.js';
 import { billyBuild, billyName, billyWeight, buildLean, formatNumber, isPrime, maxHp } from './logic/rules.js';
 import { escapeHtml, saveData } from './game-state.js';
 import { uiIconHTML } from './art.js';
@@ -45,11 +45,13 @@ const BILLY_SLOT_NAMES = { head: 'Head', body: 'Body', front: 'Front', back: 'Ba
 
 /** a Billie as a unit @returns {Unit} */
 function billyUnit(m) {
-  const s = SPECIES[m.sp],
-    b = billyBuild(m),
-    kg = billyWeight(m);
+  /* phase 17 merged: robots are fighters too; speciesOf gives a robot its own made-up species (name, types) */
+  const s = speciesOf(m),
+    bot = isRobot(m),
+    b = bot ? {} : billyBuild(m),
+    kg = bot ? robotWeight(m.fit) : billyWeight(m);
   return {
-    kind: 'billy',
+    kind: bot ? 'bot' : 'billy',
     id: m.uid,
     name: billyName(m),
     sub: m.nick ? s.name : '',
@@ -63,7 +65,7 @@ function billyUnit(m) {
     lead: saveData.team[0] === m,
     buddy: saveData.buddy === m.uid,
     gold: !!m.gold,
-    prime: isPrime(b),
+    prime: !bot && isPrime(b),
     care: needsCare(m),
     build: b,
     kg,

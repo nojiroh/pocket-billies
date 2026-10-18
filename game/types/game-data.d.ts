@@ -35,6 +35,8 @@ export interface GameData {
   stats: { id: StatId; name: string }[];
   statuses: { id: string; name: string }[];
   moves: Record<MoveId, Move>;
+  /** phase 17: robot parts and gems */
+  robots?: RobotData;
   rarities: Record<string, { totals: number[] }>;
   lines: Line[];
   /** the world map's places, in node order */
@@ -166,6 +168,12 @@ export interface MoveEffect {
   hold?: number;
   missCost?: number;
   rent?: number;
+  /** phase 17: the attacker picks which part of a robot it hits */
+  aim?: number;
+  /** phase 17: a robot part hit by it loses this many times the usual part damage */
+  breaker?: number;
+  /** phase 17: restores this share of the user's robot parts' HP */
+  repair?: number;
 }
 
 /** an evolution. The data uses 'lvl' (at a level) and 'split' (a split line's middle stage, by the Hype/Build rule);
@@ -450,6 +458,8 @@ export interface Item {
   revive?: number;
   evoItem?: number;
   mint?: boolean;
+  /** phase 17: fixes a robot's parts (1 = all of their HP) */
+  repair?: number;
 }
 
 /** jobs.json: a day job a boxed Billie can take */
@@ -554,6 +564,8 @@ export interface TrainerBilly {
   sp: SpeciesId;
   lvl: number;
   moves?: MoveId[];
+  /** phase 17: with sp 'robot', its gem and parts (keys of robots.json) */
+  robot?: { gem: DataId; torso: DataId; armL: DataId; armR: DataId; legs: DataId };
 }
 
 /** a gym badge */
@@ -691,6 +703,91 @@ export interface Rules {
   legends: { sp: SpeciesId; scene: DataId; lvl: number; title: string; text: string; line: string }[];
   /** phase 16: part sizes, weight and Prime (rules.js) */
   parts: PartRules;
+  /** phase 17: robots (logic/fighters.js); missing in older data */
+  robots?: RobotRules;
+}
+
+/** rules.json robots: the numbers behind robot stats, part HP and breaking (logic/fighters.js) */
+export interface RobotRules {
+  _help?: string;
+  /** the four part slots a robot has, in order */
+  slots: RobotSlot[];
+  /** added to every stat before the parts */
+  baseStat: number;
+  /** a part's HP as a share of the robot's max HP (times the part's dur) */
+  partHpRatio: number;
+  /** a share of a hit's damage a limb loses */
+  partShare: number;
+  /** how likely a hit lands on each slot (the torso: the body only) */
+  hitWeights: Record<RobotSlot, number>;
+  /** Speed x this with broken legs */
+  legBreakSpeed: number;
+  /** each upgrade level adds this share to a part's stats */
+  upgradeStat: number;
+  maxUpgrade: number;
+  /** over the legs' carry: Speed x (carry / weight) ^ this */
+  overweightExp: number;
+  /** under the carry: up to this much faster */
+  lightBonus: number;
+  /** Attack and Sp. Atk x (weight / refWeight) ^ attackExp, capped at +-cap */
+  refWeight: number;
+  attackExp: number;
+  cap: number;
+  /** a move of the gem's type hits this many times as hard */
+  gemAffinity: number;
+  /** the XP for beating one, like a species' yield */
+  xpYield: number;
+}
+export type RobotSlot = 'torso' | 'armL' | 'armR' | 'legs';
+
+/** robots.json (phase 17): robot parts and gems */
+export interface RobotData {
+  _help?: string;
+  parts: Record<DataId, RobotPart>;
+  gems: Record<DataId, RobotGem>;
+}
+export interface RobotPart {
+  name: string;
+  /** a torso's family name */
+  short?: string;
+  /** which slot it fits: an arm fits either side */
+  slot: 'torso' | 'arm' | 'legs';
+  type: TypeId;
+  rar?: string;
+  /** kg */
+  wt: number;
+  /** its own HP x this (default 1) */
+  dur?: number;
+  /** legs: kg they carry before the robot slows down */
+  carry?: number;
+  /** the move it gives (arms and legs) */
+  move?: MoveId;
+  stats: Partial<Record<StatId, number>>;
+  /** the placeholder picture */
+  art: {
+    color: Color;
+    shape: string;
+    w?: number;
+    h?: number;
+    img?: string;
+    imgB?: string;
+    head?: string;
+    headB?: string;
+  };
+  d?: string;
+}
+export interface RobotGem {
+  name: string;
+  short?: string;
+  type: TypeId;
+  rar?: string;
+  /** its signature move */
+  move: MoveId;
+  stats: Partial<Record<StatId, number>>;
+  color: Color;
+  /** its picture on the torso's chest, a path in game/art */
+  img?: string;
+  d?: string;
 }
 
 /** rules.json parts: the slots, how likely each size is, how big it is drawn and how heavy it is */
