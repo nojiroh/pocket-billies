@@ -273,8 +273,6 @@ export interface LocationData {
   pool: DataId;
   /** its battle stage, a key of gameData.battleStages (filled in at load when unknown) */
   battleStage: DataId;
-  /** the older chain's road length to it (roads.json has the lengths) */
-  cost?: number;
   t: string;
   biome: string;
   mood: DataId;

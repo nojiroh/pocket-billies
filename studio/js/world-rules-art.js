@@ -196,8 +196,6 @@ function worldLocations() {
     seatIds = Object.values(D.trainers || {})
       .filter(T => T.seat)
       .map(T => [T.seat.id, `${T.seat.title || T.seat.id} (${T.name})`]);
-  let acc = 0;
-  const steps = D.locations.map(x => (acc += +x.cost || 0));
   const list = `<table class="tbl route"><thead><tr><th>#</th><th>Stop</th><th>Roads to</th><th>Shop</th><th>Trainers</th><th></th></tr></thead><tbody>${D.locations
     .map(
       (

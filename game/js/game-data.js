@@ -274,7 +274,7 @@ export function roadMetres(a, b, j) {
 export const ROADS = (
   gameData.roads && gameData.roads.length
     ? gameData.roads
-    : LOCATIONS.slice(1).map((r, i) => /** @type {Road} */ ([i, i + 1, r.cost || 500]))
+    : LOCATIONS.slice(1).map((r, i) => /** @type {Road} */ ([i, i + 1, 0]))
 )
   .filter(l => LOCATIONS[l[0]] && LOCATIONS[l[1]] && l[0] !== l[1])
   .map(

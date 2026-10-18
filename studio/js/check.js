@@ -175,7 +175,6 @@ function runCheck() {
     if (r.shop && !(D.shops || {})[r.shop]) err(`${r.name} uses a shop that doesn’t exist.`, 'world', g);
     if (r.gate && !seats.has(r.gate))
       err(`${r.name} is locked behind a badge nobody awards (${r.gate}). It could never open.`, 'world', g);
-    if (i && !(r.cost > 0)) warn(`${r.name} is 0 steps from the previous stop.`, 'world', g);
   });
   for (const [k, T] of Object.entries(D.trainers || {})) {
     const g = { trainer: k };
