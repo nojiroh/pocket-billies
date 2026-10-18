@@ -903,10 +903,10 @@ def desktop_steps(b, base, R):
         b1 = pg.evaluate("walkRenderer.builds||0")
         if node >= 0 and b1 - b0 > 1: raise Exception(f'the ground was rebuilt {b1 - b0} times going there and back')
         out.append(f'there and back: {b1 - b0} ground build(s)')
-        # wear and variety (with the dial at 0, ask dglLookOf2: dglLookOf keeps a look for the rest of the frame, the game sees the dial on the next one)
+        # wear and variety (with the dial at 0, ask computePropLook: propLook keeps a look for the rest of the frame, the game sees the dial on the next one)
         r = pg.evaluate("""(()=>{const sc=walkView.sc,C0=walkData().sc,P=sc.props||[],b=P.find(p=>{const M=C0.props[p.k];return M&&M.box&&M.door}),tr=P.filter(p=>/tree/.test(p.k)).slice(0,6);
-         const L=b?dglLookOf(b,C0.props[b.k],sc):null,T=tr.map(p=>dglLookOf(p,C0.props[p.k],sc)),sizes=new Set(T.map(l=>l.size.toFixed(3))),hues=new Set(T.map(l=>l.hsv[0].toFixed(4)));
-         GD.engine.defaults.world=Object.assign(GD.engine.defaults.world||{},{wear:0});const L0=b?dglLookOf2(b,C0.props[b.k],sc):null;delete GD.engine.defaults.world.wear;
+         const L=b?propLook(b,C0.props[b.k],sc):null,T=tr.map(p=>propLook(p,C0.props[p.k],sc)),sizes=new Set(T.map(l=>l.size.toFixed(3))),hues=new Set(T.map(l=>l.hsv[0].toFixed(4)));
+         GD.engine.defaults.world=Object.assign(GD.engine.defaults.world||{},{wear:0});const L0=b?computePropLook(b,C0.props[b.k],sc):null;delete GD.engine.defaults.world.wear;
          return {w:L?L.wear.reduce((x,y)=>x+y,0):-1,w0:L0?L0.wear.reduce((x,y)=>x+y,0):-1,sizes:sizes.size,hues:hues.size,n:T.length}})()""")
         if r['w'] <= 0: raise Exception(f'buildings have no wear ({r})')
         if r['w0'] != 0: raise Exception(f'Wear and tear at 0 still leaves wear ({r})')
@@ -916,8 +916,8 @@ def desktop_steps(b, base, R):
         v = pg.evaluate("""(async()=>{const C0=walkData().sc,K=['barrels','haybale_stack','stump_mossy','log_mossy','mushroom_ring','flowers_meadow','rocks_c','crate_stack','cactus_pair','firewood_b'],miss=K.filter(k=>!C0.props[k]);
          await artLoad(K.filter(k=>C0.props[k]).map(k=>C0.props[k].img).concat([C0.props.sofa.img]));const bad=K.filter(k=>C0.props[k]&&!imageReady(artImage(C0.props[k].img)));
          const B=dglBoxInfo(artImage(C0.props.sofa.img)),rc=B&&B.roof.getContext('2d').getImageData(0,0,B.roof.width,B.roof.height).data;let lum=0;if(rc){for(let i=0;i<rc.length;i+=4)lum+=rc[i]*.3+rc[i+1]*.59+rc[i+2]*.11;lum/=rc.length/4}
-         const sc={},alts=[];for(let i=0;i<40;i++){const p={k:'stump',x:i*3.1,z:i*1.7};alts.push(dglAltImg(p,C0.props.stump,C0,sc))}const mossy=alts.filter(a=>a===C0.props.stump_mossy.img).length;
-         const plain=dglAltImg({k:'stump',x:0,z:0,plain:true},C0.props.stump,C0,sc)===C0.props.stump.img;
+         const sc={},alts=[];for(let i=0;i<40;i++){const p={k:'stump',x:i*3.1,z:i*1.7};alts.push(alternatePropImage(p,C0.props.stump,C0,sc))}const mossy=alts.filter(a=>a===C0.props.stump_mossy.img).length;
+         const plain=alternatePropImage({k:'stump',x:0,z:0,plain:true},C0.props.stump,C0,sc)===C0.props.stump.img;
          return {miss,bad,lum:Math.round(lum),mossy,plain,det:eng('world','texDetail'),aniso:!!EGL.aniso}})()""")
         if v['miss'] or v['bad']: raise Exception(f'prop variants missing or not loading: {v}')
         if v['lum'] < 45: raise Exception(f"the sofa's top is still dark (brightness {v['lum']})")
@@ -1317,7 +1317,7 @@ def desktop_steps(b, base, R):
         # wind: every plant sways
         still = json.loads(pg.evaluate("JSON.stringify(Object.entries(walkData().sc.props).filter(([k,M])=>/^(tree|bush|flower|tulip|daisy|fern|reed|cattail|grass|tallgrass|lavender|heather|sedge|bracken|nettle|iris|bulrush)/.test(k)&&!M.flat&&!/fallen|stump|log/.test(k)&&!(M.sway>0)).map(([k])=>k))"))
         if still: raise Exception('plants that never sway: ' + ', '.join(still[:8]))
-        w = pg.evaluate("[dglWindAt(10,10,0,walkView.sc,1),dglWindAt(10,10,900,walkView.sc,1)]")
+        w = pg.evaluate("[windLeanAt(10,10,0,walkView.sc,1),windLeanAt(10,10,900,walkView.sc,1)]")
         if abs(w[0] - w[1]) < .005: raise Exception(f'the wind does not move: {w}')
         out.append('every plant sways; the encounter grass takes the wind')
         # voxel props: recipes resolve, meshes build, a few draw
@@ -1639,8 +1639,8 @@ def desktop_steps(b, base, R):
             while(Q.length){const c=Q.pop(),i=c%gw,j=(c-i)/gw;for(const [a,b] of [[1,0],[-1,0],[0,1],[0,-1]]){const ii=i+a,jj=j+b;if(ii<0||jj<0||ii>=gw||jj>=gh)continue;const q=jj*gw+ii;if(seen[q]||G.blk[q]||!canStepBetween(G,c,q))continue;seen[q]=1;Q.push(q)}}
             let n=0;for(const v of seen)n+=v;let ex=0;for(const e of sc.exits||[]){const c=nearestWalkableCell(e[0],e[1]);if(c&&seen[c.j*gw+c.i])ex++}return [n,ex]};
           for(const id of ROUTE.map(r=>r.scene).filter(Boolean)){const sc=mapById(id);if(!sc)continue;walkView.sc=sc;walkView.noShape=1;const a=reach(sc);walkView.noShape=0;const b=reach(sc);
-            let fl=[];for(const p of sc.props||[]){const M=C.props[p.k];if(!M||M.flat||M.walk||M.build||M.door!=null||(typeof propShown==='function'&&!propShown(p)))continue;const g=(M.group||'')+' '+p.k;if(DGL_HUG.test(g)&&!/tree|lamp|post|sign|pole/.test(g))continue;
-              const s=p.s||1,y=dglPropY(p,M),lv=stepLevelAt(p.x,p.z);let pts;if(M.box){const bw=M.box[0]*s/2,bd=M.box[1]*s;pts=[[p.x-bw,p.z-.05],[p.x+bw,p.z-.05],[p.x-bw,p.z+bd],[p.x+bw,p.z+bd]]}else{const r=Math.min(.45,(M.shadow||0)*.3*s);if(r<.08)continue;pts=[[p.x-r,p.z],[p.x+r,p.z],[p.x,p.z-r*.6],[p.x,p.z+r*.6]]}
+            let fl=[];for(const p of sc.props||[]){const M=C.props[p.k];if(!M||M.flat||M.walk||M.build||M.door!=null||(typeof propShown==='function'&&!propShown(p)))continue;const g=(M.group||'')+' '+p.k;if(SLOPE_HUGGERS.test(g)&&!/tree|lamp|post|sign|pole/.test(g))continue;
+              const s=p.s||1,y=propBaseHeight(p,M),lv=stepLevelAt(p.x,p.z);let pts;if(M.box){const bw=M.box[0]*s/2,bd=M.box[1]*s;pts=[[p.x-bw,p.z-.05],[p.x+bw,p.z-.05],[p.x-bw,p.z+bd],[p.x+bw,p.z+bd]]}else{const r=Math.min(.45,(M.shadow||0)*.3*s);if(r<.08)continue;pts=[[p.x-r,p.z],[p.x+r,p.z],[p.x,p.z-r*.6],[p.x,p.z+r*.6]]}
               let lo=1e9;for(const [x,z] of pts)if(Math.abs(stepLevelAt(x,z)-lv)<=.05)lo=Math.min(lo,standingHeightAt(x,z));if(lo<1e8&&y-lo>.15)fl.push(p.k+'@'+p.x.toFixed(1)+','+p.z.toFixed(1))}
             out.push({id,a,b,fl})}
           walkView.sc=keep;walkView.nav=null;walkView.navSc=null;return out})()""")
@@ -2026,7 +2026,7 @@ def studio_opens(b):
     pg.on('pageerror', lambda e: errs.append(str(e))); pg.on('console', lambda m: errs.append(console_text(m)) if m.type == 'error' else None)
     try:
         pg.goto(base + '/studio/index.html'); pg.wait_for_selector('#ghTok', timeout=60000)
-        ok = pg.evaluate("[typeof go==='function',typeof GH==='object',typeof dglLookOf==='function']")
+        ok = pg.evaluate("[typeof go==='function',typeof GH==='object',typeof propLook==='function']")
         if not all(ok): raise Exception(f'Studio scripts missing (go, GH, the shared renderer): {ok}')
         shot(pg, 'studio-sign-in')
         if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))

@@ -10,7 +10,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import {
-  DGL_ALT,
+  ALTERNATE_PROPS,
   ENV,
   GD,
   PW,
@@ -583,8 +583,8 @@ export function mapArtPaths(sc) {
     const P = propWithVariant(p, C.props[p.k]);
     if (P) {
       L.add(P.img);
-      if (typeof DGL_ALT !== 'undefined' && DGL_ALT[p.k])
-        for (const a of DGL_ALT[p.k]) if (C.props[a]) L.add(C.props[a].img);
+      if (typeof ALTERNATE_PROPS !== 'undefined' && ALTERNATE_PROPS[p.k])
+        for (const a of ALTERNATE_PROPS[p.k]) if (C.props[a]) L.add(C.props[a].img);
       if (P.blades) L.add(P.blades.img);
       for (const h of P.hands || []) L.add(h.img);
       for (const l of P.layers || []) if (l.img) L.add(l.img);

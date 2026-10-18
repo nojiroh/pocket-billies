@@ -20,11 +20,11 @@ import { eng } from './engine/settings.js';
 import { EGL, EGL_GLSL_COMMON, EGL_GLSL_LIGHT, EGL_GLSL_LOOK, EGL_MATS, eglImg, eglPrograms } from './engine/webgl.js';
 import {
   dglBlades,
-  dglFol,
   dglHit,
-  dglLookU,
   dglUse,
+  foliageAmount,
   frameBudgetLeft,
+  setPropLookUniforms,
   walkRenderer,
   worldCurveArgs,
 } from './walk-view-gl.js';
@@ -1183,7 +1183,7 @@ function p3dU(p, it, M) {
   gl.uniform1f(U.uS, it.mpp);
   gl.uniform1f(U.uFlip, it.flip || 1);
   gl.uniform1f(U.uShear, (it.shear || 0) + (V.rot ? (h2 - 0.5) * 0.07 : 0));
-  if (it.lk && U.uWear) dglLookU(U, it.lk);
+  if (it.lk && U.uWear) setPropLookUniforms(U, it.lk);
   if (U.uTilt) gl.uniform2f(U.uTilt, it.tilt ? it.tilt[0] : 0, it.tilt ? it.tilt[1] : 0);
   gl.uniform1f(U.uT, RM ? 0 : walkView.t);
   gl.uniform1f(
@@ -1193,7 +1193,7 @@ function p3dU(p, it, M) {
   gl.uniform1f(U.uRot, (V.rot ? (h1 - 0.5) * 0.42 : 0) + (it.lk ? it.lk.rot : 0));
   gl.uniform1f(U.uClump, M && M.tex ? 1 : 0);
   if (U.uFol) {
-    const f = dglFol(it);
+    const f = foliageAmount(it);
     gl.uniform2f(U.uFol, f[0], f[1]);
   }
   if (U.uVar)

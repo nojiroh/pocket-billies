@@ -178,38 +178,37 @@ import { EGL_POST_SH, eglPost, eglSnapshot, eglSunScreen } from './engine/post-e
 import { ENV, ENV_WX, envFrame, envHere, envSky, envState, envWinLit } from './environment.js';
 /* eslint-disable no-func-assign */
 expose({
+  ALTERNATE_PROPS: [() => ALTERNATE_PROPS],
+  BOBBING_PROPS: [() => BOBBING_PROPS],
   BORDER_M: [() => BORDER_M],
-  DGL_ALT: [() => DGL_ALT],
-  DGL_BOB: [() => DGL_BOB],
   DGL_BOX: [() => DGL_BOX],
-  DGL_EVER: [() => DGL_EVER],
-  DGL_FIXED: [() => DGL_FIXED],
-  DGL_FIXED_BACK: [() => DGL_FIXED_BACK],
-  DGL_FLAG: [() => DGL_FLAG],
-  DGL_FOL: [() => DGL_FOL],
-  DGL_HUG: [() => DGL_HUG],
-  DGL_HUGC: [() => DGL_HUGC],
   DGL_IMID: [() => DGL_IMID],
   DGL_IMN: [() => DGL_IMN, v => (DGL_IMN = v)],
-  DGL_LK0: [() => DGL_LK0],
-  DGL_LOOK: [() => DGL_LOOK],
   DGL_PRINT_COL: [() => DGL_PRINT_COL],
-  DGL_SINK_BOX: [() => DGL_SINK_BOX],
-  DGL_STILL: [() => DGL_STILL],
-  DGL_VARY_ANY: [() => DGL_VARY_ANY],
-  DGL_VARY_DEF: [() => DGL_VARY_DEF],
+  EVERGREEN_PROPS: [() => EVERGREEN_PROPS],
+  FIXED_FACING: [() => FIXED_FACING],
+  FIXED_FACING_BACK: [() => FIXED_FACING_BACK],
   FLOWER_COLORS: [() => FLOWER_COLORS],
   FLOWER_SET_BY_LOCATION: [() => FLOWER_SET_BY_LOCATION],
+  FOLIAGE_PROPS: [() => FOLIAGE_PROPS],
   FRUSTUM_PLANES: [() => FRUSTUM_PLANES],
   GRASS_KINDS: [() => GRASS_KINDS],
   GRASS_PUSHER_BUFFER: [() => GRASS_PUSHER_BUFFER],
   MAP_CACHE_KEYS: [() => MAP_CACHE_KEYS],
   NEAR_RING_CHUNK_M: [() => NEAR_RING_CHUNK_M],
   NEAR_RING_SIZE: [() => NEAR_RING_SIZE],
+  NEUTRAL_LOOK: [() => NEUTRAL_LOOK],
   NEUTRAL_MOOD: [() => NEUTRAL_MOOD],
   NO_PAD_PROPS: [() => NO_PAD_PROPS],
   PREP_BUDGET_MS: [() => PREP_BUDGET_MS],
+  PROP_LOOK_CACHE: [() => PROP_LOOK_CACHE],
   PROP_MATERIALS: [() => PROP_MATERIALS],
+  PROP_VARIETY_DEFAULT: [() => PROP_VARIETY_DEFAULT],
+  PROP_VARIETY_RULES: [() => PROP_VARIETY_RULES],
+  SLOPE_HUGGERS: [() => SLOPE_HUGGERS],
+  SLOPE_HUG_CACHE: [() => SLOPE_HUG_CACHE],
+  STILL_PROP_CACHE: [() => STILL_PROP_CACHE],
+  SUNKEN_FOOTPRINT_PROPS: [() => SUNKEN_FOOTPRINT_PROPS],
   TERRAIN_MATERIALS: [() => TERRAIN_MATERIALS],
   WALK_SHADERS: [() => WALK_SHADERS],
   WALL_COLORS: [() => WALL_COLORS],
@@ -217,9 +216,11 @@ expose({
   WATER_KIND_INDEX: [() => WATER_KIND_INDEX],
   WATER_KIND_LOOKS: [() => WATER_KIND_LOOKS],
   WATER_KIND_UNIFORMS: [() => WATER_KIND_UNIFORMS],
+  WAVING_PROPS: [() => WAVING_PROPS],
   abortGroundPrep: [() => abortGroundPrep, v => (abortGroundPrep = v)],
   adaptQuality: [() => adaptQuality, v => setAdaptQuality(v)],
   addRipple: [() => addRipple, v => (addRipple = v)],
+  alternatePropImage: [() => alternatePropImage, v => (alternatePropImage = v)],
   askDeviceTilt: [() => askDeviceTilt, v => (askDeviceTilt = v)],
   baseNavGrid: [() => baseNavGrid],
   baseStopWalkView: [() => baseStopWalkView],
@@ -234,23 +235,21 @@ expose({
   canvasForContext: [() => canvasForContext, v => (canvasForContext = v)],
   clampZoom: [() => clampZoom],
   computeFrustum: [() => computeFrustum, v => (computeFrustum = v)],
+  computePropLook: [() => computePropLook, v => (computePropLook = v)],
   cullItems: [() => cullItems, v => (cullItems = v)],
   cutsceneCamera: [() => cutsceneCamera, v => (cutsceneCamera = v)],
   defaultWallMaterial: [() => defaultWallMaterial, v => ((defaultWallMaterial = v), provide({ defaultWallMaterial }))],
-  dglAltImg: [() => dglAltImg, v => (dglAltImg = v)],
   dglBasinSet: [() => dglBasinSet, v => (dglBasinSet = v)],
   dglBasins: [() => dglBasins, v => (dglBasins = v)],
   dglBlades: [() => dglBlades, v => (dglBlades = v)],
   dglBoxFaces: [() => dglBoxFaces, v => (dglBoxFaces = v)],
   dglBoxInfo: [() => dglBoxInfo, v => (dglBoxInfo = v)],
   dglFlat: [() => dglFlat, v => (dglFlat = v)],
-  dglFol: [() => dglFol, v => (dglFol = v)],
   dglFountainFx: [() => dglFountainFx, v => (dglFountainFx = v)],
   dglFxPass: [() => dglFxPass, v => setDglFxPass(v)],
   dglGround: [() => dglGround, v => setDglGround(v)],
   dglHands: [() => dglHands, v => (dglHands = v)],
   dglHit: [() => dglHit, v => (dglHit = v)],
-  dglHug: [() => dglHug, v => (dglHug = v)],
   dglImId: [() => dglImId, v => (dglImId = v)],
   dglItems: [() => dglItems, v => setDglItems(v)],
   dglLampOn: [() => dglLampOn, v => (dglLampOn = v)],
@@ -259,16 +258,10 @@ expose({
   dglLandmarkTilt: [() => dglLandmarkTilt, v => (dglLandmarkTilt = v)],
   dglLifeFx: [() => dglLifeFx, v => (dglLifeFx = v)],
   dglLightCtx: [() => dglLightCtx, v => (dglLightCtx = v)],
-  dglLookOf: [() => dglLookOf, v => (dglLookOf = v)],
-  dglLookOf2: [() => dglLookOf2, v => (dglLookOf2 = v)],
-  dglLookSig: [() => dglLookSig, v => (dglLookSig = v)],
-  dglLookU: [() => dglLookU, v => (dglLookU = v)],
   dglMount: [() => dglMount, v => (dglMount = v)],
   dglPerson: [() => dglPerson, v => (dglPerson = v)],
   dglPrintAt: [() => dglPrintAt, v => (dglPrintAt = v)],
   dglPrints: [() => dglPrints, v => (dglPrints = v)],
-  dglPropGrid: [() => dglPropGrid, v => (dglPropGrid = v)],
-  dglPropY: [() => dglPropY, v => (dglPropY = v)],
   dglRoomBox: [() => dglRoomBox, v => (dglRoomBox = v)],
   dglRoomDim: [() => dglRoomDim, v => (dglRoomDim = v)],
   dglRoomFront: [() => dglRoomFront, v => (dglRoomFront = v)],
@@ -286,20 +279,18 @@ expose({
   dglSkyCols: [() => dglSkyCols, v => (dglSkyCols = v)],
   dglSprU: [() => dglSprU, v => (dglSprU = v)],
   dglSprites: [() => dglSprites, v => setDglSprites(v)],
-  dglStill: [() => dglStill, v => (dglStill = v)],
   dglUse: [() => dglUse, v => (dglUse = v)],
-  dglVaryOf: [() => dglVaryOf, v => (dglVaryOf = v)],
   dglWeather: [() => dglWeather, v => (dglWeather = v)],
   dglWinBlocked: [() => dglWinBlocked, v => (dglWinBlocked = v)],
   dglWinOn: [() => dglWinOn, v => (dglWinOn = v)],
   dglWinShare: [() => dglWinShare, v => (dglWinShare = v)],
-  dglWindAt: [() => dglWindAt, v => (dglWindAt = v)],
   dglWorldTex: [() => dglWorldTex, v => (dglWorldTex = v)],
   drawGrass: [() => drawGrass, v => setDrawGrass(v)],
   drawWalkFrame: [() => drawWalkFrame, v => (drawWalkFrame = v)],
   drawWalkFrameInner: [() => drawWalkFrameInner, v => (drawWalkFrameInner = v)],
   drawWater: [() => drawWater, v => setDrawWater(v)],
   easedMood: [() => easedMood, v => (easedMood = v)],
+  foliageAmount: [() => foliageAmount, v => (foliageAmount = v)],
   frameBudgetLeft: [() => frameBudgetLeft, v => ((frameBudgetLeft = v), provide({ frameBudgetLeft }))],
   freeCameraOn: [() => freeCameraOn],
   freeMapCache: [() => freeMapCache, v => (freeMapCache = v)],
@@ -320,6 +311,7 @@ expose({
   heatHaze: [() => heatHaze, v => (heatHaze = v)],
   heatSources: [() => heatSources, v => (heatSources = v)],
   heightGrid: [() => heightGrid, v => (heightGrid = v)],
+  hugSlope: [() => hugSlope, v => (hugSlope = v)],
   inFrustum: [() => inFrustum, v => (inFrustum = v)],
   isGroundPrepared: [() => isGroundPrepared, v => (isGroundPrepared = v)],
   labelLayer: [() => labelLayer, v => (labelLayer = v)],
@@ -332,7 +324,12 @@ expose({
   onGlContextRestored: [() => onGlContextRestored, v => ((onGlContextRestored = v), provide({ onGlContextRestored }))],
   paintRingChunk: [() => paintRingChunk, v => (paintRingChunk = v)],
   prepareMapGround: [() => prepareMapGround, v => (prepareMapGround = v)],
+  propBaseHeight: [() => propBaseHeight, v => (propBaseHeight = v)],
+  propGrid: [() => propGrid, v => (propGrid = v)],
+  propLook: [() => propLook, v => (propLook = v)],
+  propLookSettings: [() => propLookSettings, v => (propLookSettings = v)],
   propMaterial: [() => propMaterial, v => (propMaterial = v)],
+  propVariety: [() => propVariety, v => (propVariety = v)],
   rawHeightAt: [() => rawHeightAt, v => ((rawHeightAt = v), provide({ rawHeightAt }))],
   rebuildFromSettings: [() => rebuildFromSettings, v => ((rebuildFromSettings = v), provide({ rebuildFromSettings }))],
   reflectionLevel: [() => reflectionLevel, v => (reflectionLevel = v)],
@@ -346,12 +343,14 @@ expose({
   setAdaptQuality: [() => setAdaptQuality, v => (setAdaptQuality = v)],
   setMountWalkView: [() => setMountWalkView, v => (setMountWalkView = v)],
   setNearRingUniforms: [() => setNearRingUniforms, v => (setNearRingUniforms = v)],
+  setPropLookUniforms: [() => setPropLookUniforms, v => (setPropLookUniforms = v)],
   setShoreUniforms: [() => setShoreUniforms, v => (setShoreUniforms = v)],
   setWaterUniforms: [() => setWaterUniforms, v => (setWaterUniforms = v)],
   shoreAt: [() => shoreAt, v => (shoreAt = v)],
   shoreField: [() => shoreField, v => (shoreField = v)],
   standingHeightAt: [() => standingHeightAt, v => ((standingHeightAt = v), provide({ standingHeightAt }))],
   startTownRise: [() => startTownRise, v => (startTownRise = v)],
+  stillPropState: [() => stillPropState, v => (stillPropState = v)],
   swapMapCache: [() => swapMapCache, v => (swapMapCache = v)],
   townRiseAmount: [() => townRiseAmount, v => (townRiseAmount = v)],
   updateNearRing: [() => updateNearRing, v => setUpdateNearRing(v)],
@@ -365,6 +364,7 @@ expose({
   waterKindLookup: [() => waterKindLookup, v => (waterKindLookup = v)],
   waterLife: [() => waterLife, v => (waterLife = v)],
   waterNear: [() => waterNear, v => (waterNear = v)],
+  windLeanAt: [() => windLeanAt, v => (windLeanAt = v)],
   worldCurveArgs: [() => worldCurveArgs, v => (worldCurveArgs = v)],
   worldCurveDrop: [() => worldCurveDrop, v => (worldCurveDrop = v)],
   worldToScreen2d: [() => worldToScreen2d],
@@ -459,8 +459,8 @@ provide({ walkRenderer }); /* to-module */
 /* v46: how long a frame may spend getting the next view ready (ms) */
 const PREP_BUDGET_MS = /Android|iPhone|iPad/.test(navigator.userAgent) ? 4 : 6;
 const BORDER_M = GROUND_BORDER_M,
-  DGL_FIXED = [1, 0, 0],
-  DGL_FIXED_BACK = [0, 0, -1];
+  FIXED_FACING = [1, 0, 0],
+  FIXED_FACING_BACK = [0, 0, -1];
 /* which material a prop is made of: its own "mat", else guessed from its name */
 export const PROP_MATERIALS = EGL_MATS;
 export function propMaterial(k, M) {
@@ -4106,23 +4106,23 @@ export function setAdaptQuality(v) {
 /* v23: low, wide things (fences, benches, logs, rocks, hedges, planters) follow the slope they stand on: a picture's two
    ends sit on the ground (a vertical skew along its width), a solid prop tilts with the ground. Upright things (trees,
    lamps, signs, people, buildings) stay plumb. Steps of a cliff aren't a slope: anything steeper than 35° stays level. */
-const DGL_HUG =
+const SLOPE_HUGGERS =
   /fence|bench|log|rock|boulder|stone|hedge|planter|crate|pipe|rail|wall|bush|flower|hay|pumpkin|melon|crop|tire|planks|stump|vineyard/;
 /* v26: how much a thing is leaves or grass (it turns with the seasons; evergreens hardly) and whether snow settles on it */
-const DGL_FOL =
+const FOLIAGE_PROPS =
     /tree_(oak|fruit|birch|maple|willow|blossom)|street_tree|^tree$|bush|hedge|tallgrass|reeds|cattail|flowers|fern|crops|vine|ivy|lily|grass/,
-  DGL_EVER = /pine|palm|cactus|dead|snow/;
-export function dglFol(it) {
+  EVERGREEN_PROPS = /pine|palm|cactus|dead|snow/;
+export function foliageAmount(it) {
   if (!it || it.k !== 'prop' || it.person || !it.M) return [0, 0];
   const M = it.M;
   if (M._fol) return M._fol;
   const g = (M.group || '') + ' ' + ((it.p && it.p.k) || '');
   return (M._fol = [
-    DGL_EVER.test(g)
+    EVERGREEN_PROPS.test(g)
       ? 0.3
       : /tallgrass|reeds|cattail|grass|fern|flowers|crops|lily/.test(g)
         ? 0.7
-        : DGL_FOL.test(g)
+        : FOLIAGE_PROPS.test(g)
           ? 1
           : 0,
     it.flat || /puddle|crosswalk|manhole|lily|fallen/.test(g) ? 0 : 1,
@@ -4130,31 +4130,31 @@ export function dglFol(it) {
 }
 /* alpha 0.4.1: worked out once per prop and kept (the ground doesn't move): six height samples a prop every frame were
    a quarter of gathering the frame's items in a big place; the slope across the view again only when the camera turns */
-const DGL_HUGC = new WeakMap();
-function dglHug(it, C) {
+const SLOPE_HUG_CACHE = new WeakMap();
+function hugSlope(it, C) {
   if (!it || it.bld3 || it.flat || !eng('world', 'hugSlopes')) return;
   const M = it.M,
     p = it.p;
   if (M._hugK !== p.k) {
     M._hugK = p.k;
     const g = (M.group || '') + ' ' + p.k;
-    M._hug = DGL_HUG.test(g) && !/tree|lamp|post|sign|pole/.test(g);
+    M._hug = SLOPE_HUGGERS.test(g) && !/tree|lamp|post|sign|pole/.test(g);
   }
   if (!M._hug) return;
-  const R = it.fixed ? DGL_FIXED : C.right,
+  const R = it.fixed ? FIXED_FACING : C.right,
     e = 0.45,
     h = (x, z) => groundHeightAt(x, z),
     x = it.x,
     z = it.z,
     id = walkView.id,
     ig = walkRenderer.itemGen || 0;
-  let c = DGL_HUGC.get(p);
+  let c = SLOPE_HUG_CACHE.get(p);
   if (!c || c.id !== id || c.ig !== ig || c.x !== x || c.z !== z) {
     const gx = (h(x + e, z) - h(x - e, z)) / (2 * e),
       gz = (h(x, z + e) - h(x, z - e)) / (2 * e),
       gm = Math.hypot(gx, gz);
     c = { id, ig, x, z, tilt: gm < 0.7 && gm > 0.02 ? [gx, gz] : null, rx: NaN, rz: NaN, slope: null };
-    DGL_HUGC.set(p, c);
+    SLOPE_HUG_CACHE.set(p, c);
   }
   if (c.rx !== R[0] || c.rz !== R[2]) {
     const s = (h(x + R[0] * e, z + R[2] * e) - h(x - R[0] * e, z - R[2] * e)) / (2 * e);
@@ -4239,7 +4239,7 @@ function dglMount(P, t) {
    placed prop ("vary", "wear", "tint"), scaled by the scene ("variety", "wear") and the Engine dials (World →
    Variety, Wear and tear, Prop turning). Each placed prop draws its own values from where it stands, so a scene
    looks the same every visit. */
-const DGL_VARY_DEF = [
+const PROP_VARIETY_RULES = [
   [/tree|palm|street_tree/, { size: 0.14, hue: 9, sat: 0.12, val: 0.1, rot: 0, lean: 1.5, mask: [104, 47], wear: {} }],
   [
     /bush|hedge|fern|tallgrass|reeds|cattail|crops|vine|ivy/,
@@ -4303,14 +4303,23 @@ const DGL_VARY_DEF = [
     },
   ],
 ];
-const DGL_VARY_ANY = { size: 0.06, hue: 7, sat: 0.06, val: 0.06, rot: 5, lean: 1, mask: null, wear: { dirt: 0.12 } };
-export function dglVaryOf(k, M) {
+const PROP_VARIETY_DEFAULT = {
+  size: 0.06,
+  hue: 7,
+  sat: 0.06,
+  val: 0.06,
+  rot: 5,
+  lean: 1,
+  mask: null,
+  wear: { dirt: 0.12 },
+};
+export function propVariety(k, M) {
   const mk =
     M && M.vary ? JSON.stringify(M.vary) + JSON.stringify(M.wear || 0) : M && M.wear ? JSON.stringify(M.wear) : '';
   if (M && M._vy && M._vyk === mk) return M._vy;
   const g = ((M && M.group) || '') + ' ' + k;
-  let d = DGL_VARY_ANY;
-  for (const [re, v] of DGL_VARY_DEF)
+  let d = PROP_VARIETY_DEFAULT;
+  for (const [re, v] of PROP_VARIETY_RULES)
     if (re.test(g)) {
       d = v;
       break;
@@ -4325,10 +4334,10 @@ export function dglVaryOf(k, M) {
 }
 /* v32: a stump or log here and there is drawn with its mossy twin (same size and footprint), so a wood isn't a row of
    copies. Prop variety at 0, "Exactly as drawn" on the prop, or alt:0 on it keeps the picture as placed. */
-const DGL_ALT = { stump: ['stump_mossy'], log: ['log_mossy'] };
-provide({ DGL_ALT }); /* to-module */
-function dglAltImg(p, M, C0, sc) {
-  const L = DGL_ALT[p.k];
+const ALTERNATE_PROPS = { stump: ['stump_mossy'], log: ['log_mossy'] };
+provide({ ALTERNATE_PROPS }); /* to-module */
+function alternatePropImage(p, M, C0, sc) {
+  const L = ALTERNATE_PROPS[p.k];
   if (!L || p.v || p.plain || p.alt === 0 || !((eng('world', 'variety') ?? 1) > 0) || (sc && sc.variety === 0))
     return M.img;
   const h = hash2d(Math.round(p.x * 23) + 5, Math.round(p.z * 19) + 11);
@@ -4339,11 +4348,11 @@ function dglAltImg(p, M, C0, sc) {
   const t = artImage(ai);
   return imageReady(t) ? ai : M.img;
 }
-const DGL_LOOK = new WeakMap();
+const PROP_LOOK_CACHE = new WeakMap();
 /* v34: a still prop keeps what it worked out last frame (its look, its height on the ground, its material) and only
    checks again twice a second or when it moves, so a big scene doesn't redo hundreds of string keys every frame */
-const DGL_STILL = new WeakMap();
-function dglPropGrid(sc) {
+const STILL_PROP_CACHE = new WeakMap();
+function propGrid(sc) {
   const L = sc.props || [],
     G = walkRenderer.pgrid;
   let sig = L.length;
@@ -4378,13 +4387,13 @@ function dglPropGrid(sc) {
   }));
   return (walkRenderer.pgrid = { sc, sig, at: walkView.t || 0, cells });
 }
-function dglStill(p, M, im, sc) {
+function stillPropState(p, M, im, sc) {
   const t = walkView.t || 0,
     s = p.s || 1,
     id = walkView.id || '',
     src = (im && im.src) || '',
     gen = walkRenderer.itemGen || 0;
-  let c = DGL_STILL.get(p);
+  let c = STILL_PROP_CACHE.get(p);
   /* alpha 0.4.1: compared field by field (a key string was built for every prop every frame) */
   if (
     c &&
@@ -4409,7 +4418,7 @@ function dglStill(p, M, im, sc) {
     src,
     gen,
     at: t,
-    y: dglPropY(p, M),
+    y: propBaseHeight(p, M),
     mat,
     plane: M.face === 'fixed' || !!M.box || mat === 'wood' || mat === 'building',
     cross:
@@ -4417,14 +4426,14 @@ function dglStill(p, M, im, sc) {
       !M.flat &&
       mat === 'foliage' &&
       /tree|flower|fern|tallgrass|reed|cattail|crop/.test((M.group || '') + p.k),
-    bob: DGL_BOB.test(p.k),
-    flag: DGL_FLAG.test(p.k),
+    bob: BOBBING_PROPS.test(p.k),
+    flag: WAVING_PROPS.test(p.k),
   };
-  DGL_STILL.set(p, c);
+  STILL_PROP_CACHE.set(p, c);
   return c;
 }
 /* alpha 0.4.1: the settings a prop's look depends on, read once a frame rather than once a prop */
-function dglLookSig(sc) {
+function propLookSettings(sc) {
   if (walkRenderer._lsF === walkRenderer.frames && walkRenderer._lsSc === sc) return walkRenderer._ls;
   walkRenderer._lsF = walkRenderer.frames;
   walkRenderer._lsSc = sc;
@@ -4441,10 +4450,10 @@ function dglLookSig(sc) {
     ',' +
     (sc.lookSeed || 0));
 }
-function dglLookOf(p, M, sc) {
-  const c0 = DGL_LOOK.get(p),
+function propLook(p, M, sc) {
+  const c0 = PROP_LOOK_CACHE.get(p),
     t = walkView.t || 0,
-    sg = dglLookSig(sc);
+    sg = propLookSettings(sc);
   if (
     c0 &&
     c0.at !== undefined &&
@@ -4456,7 +4465,7 @@ function dglLookOf(p, M, sc) {
     c0.gen === (walkRenderer.itemGen || 0)
   )
     return c0;
-  const L0 = dglLookOf2(p, M, sc);
+  const L0 = computePropLook(p, M, sc);
   L0.at = t;
   L0.px = p.x;
   L0.pz = p.z;
@@ -4464,7 +4473,7 @@ function dglLookOf(p, M, sc) {
   L0.gen = walkRenderer.itemGen || 0;
   return L0;
 }
-function dglLookOf2(p, M, sc) {
+function computePropLook(p, M, sc) {
   const E = [eng('world', 'variety') ?? 1, eng('world', 'wear') ?? 1, eng('world', 'propTurn') ?? 1],
     key =
       p.k +
@@ -4490,9 +4499,9 @@ function dglLookOf2(p, M, sc) {
       (M && M._vyk !== undefined ? M._vyk : '') +
       (M && M.vary ? JSON.stringify(M.vary) : '') +
       (M && M.wear ? JSON.stringify(M.wear) : '');
-  const c = DGL_LOOK.get(p);
+  const c = PROP_LOOK_CACHE.get(p);
   if (c && c.key === key) return c;
-  const V = Object.assign({}, dglVaryOf(p.k, M), p.vary || {}),
+  const V = Object.assign({}, propVariety(p.k, M), p.vary || {}),
     sd = (sc.lookSeed || 0) * 101,
     r = n => hash2d(Math.round(p.x * 31) + n * 17 + sd, Math.round(p.z * 29) + n * 7 + sd) * 2 - 1,
     vk = p.plain ? 0 : E[0] * (sc.variety ?? 1);
@@ -4527,25 +4536,25 @@ function dglLookOf2(p, M, sc) {
     rot: p.plain ? 0 : ((V.rot || 0) * E[2] * r(5) * Math.PI) / 180,
     lean: p.plain ? 0 : ((V.lean || 0) * E[2] * r(6) * Math.PI) / 180,
   };
-  DGL_LOOK.set(p, L);
+  PROP_LOOK_CACHE.set(p, L);
   return L;
 }
-const DGL_LK0 = { hsv: [0, 0, 0, 0], wear: [0, 0, 0, 0], tint: [1, 1, 1, 0], mask: [0, 0] };
-export function dglLookU(U, L, bp) {
+const NEUTRAL_LOOK = { hsv: [0, 0, 0, 0], wear: [0, 0, 0, 0], tint: [1, 1, 1, 0], mask: [0, 0] };
+export function setPropLookUniforms(U, L, bp) {
   const gl = EGL.gl;
   if (!U.uWear) return;
-  L = L || DGL_LK0;
+  L = L || NEUTRAL_LOOK;
   gl.uniform4fv(U.uWear, L.wear);
   gl.uniform4fv(U.uHsv, L.hsv);
   gl.uniform4fv(U.uLkTint, L.tint);
   gl.uniform2fv(U.uMaskH, L.mask);
   if (U.uBP && bp) gl.uniform3fv(U.uBP, bp);
 }
-const DGL_BOB = /sailboat|rowboat|buoy/,
-  DGL_FLAG = /banner|laundry|beach_umbrella|ski_sign/;
+const BOBBING_PROPS = /sailboat|rowboat|buoy/,
+  WAVING_PROPS = /banner|laundry|beach_umbrella|ski_sign/;
 /* v43: one wind for every plant: a slow lean that drifts across the scene, a faster flutter, and the gust bands
    (eglWind) that travel over the grass; the result is a lean of the top of the sprite as a fraction of its height */
-export function dglWindAt(x, z, t, sc, wind) {
+export function windLeanAt(x, z, t, sc, wind) {
   const k = (sc.wind || 1) * (wind == null ? eng('grass', 'wind') : wind);
   return eglWindBend(x, z, t, eng('grass', 'gusts')) * k;
 }
@@ -4568,15 +4577,15 @@ export function dglItems(st, C, PPU, C0) {
   const prop = (p, far) => {
     const M = propWithVariant(p, C0.props[p.k]);
     if (!M || !propShown(p)) return;
-    const im = artImage(dglAltImg(p, M, C0, sc));
+    const im = artImage(alternatePropImage(p, M, C0, sc));
     if (!imageReady(im)) return;
-    const lk = far ? null : dglLookOf(p, M, sc),
+    const lk = far ? null : propLook(p, M, sc),
       s = ((p.s || 1) / PPU) * (lk ? lk.size : 1) * (p.grow != null ? cropGrowth(p) : 1),
       w = im.naturalWidth || im.width,
       h = im.naturalHeight || im.height;
-    const S = far ? null : dglStill(p, M, im, sc);
+    const S = far ? null : stillPropState(p, M, im, sc);
     const y = far ? standingHeightAt(p.x, p.z) : S.y,
-      sw = far || !M.sway ? 0 : (M.sway || 0) * dglWindAt(p.x, p.z, RM ? 0 : t, sc, wind);
+      sw = far || !M.sway ? 0 : (M.sway || 0) * windLeanAt(p.x, p.z, RM ? 0 : t, sc, wind);
     const mat = S ? S.mat : propMaterial(p.k, M);
     im.__mat = mat;
     /* v27: boats and buoys bob and roll on the water; flags, banners and washing flutter in the wind */
@@ -4617,7 +4626,7 @@ export function dglItems(st, C, PPU, C0) {
       cross: !far && S.cross,
       bld3: !far && !!(M.build && M.box) && typeof bldOn === 'function' && bldOn(),
     });
-    if (!far) dglHug(out[out.length - 1], C);
+    if (!far) hugSlope(out[out.length - 1], C);
     /* v46: a building whose solid or front isn't made yet (a few are made per frame) shows as its picture meanwhile, never as nothing */
     if (!far) {
       const bi = out[out.length - 1];
@@ -4645,7 +4654,7 @@ export function dglItems(st, C, PPU, C0) {
       if (imageReady(fim)) {
         const fl = p.f ? -1 : 1,
           ps = p.s || 1,
-          wv = RM ? 0 : dglWindAt(p.x, p.z, t, sc, wind);
+          wv = RM ? 0 : windLeanAt(p.x, p.z, t, sc, wind);
         out.push({
           k: 'flag',
           p,
@@ -4715,7 +4724,7 @@ export function dglItems(st, C, PPU, C0) {
   /* v34: props sit in a grid of 6 m squares; a square well outside the view (8 m of slack for shadows and lamp light)
     isn't looked at at all this frame */
   /* alpha 0.4: in a 3D battle too (it gathered every prop of the place each frame: 6 to 9 ms on a phone) */
-  const GR = dglPropGrid(sc),
+  const GR = propGrid(sc),
     F = C.vp && (eng('quality', 'cull') ?? true) ? computeFrustum(C.vp) : null;
   let gs = 0;
   for (const c of GR.cells) {
@@ -4791,7 +4800,7 @@ export function dglItems(st, C, PPU, C0) {
     if (!imageReady(im)) return;
     const moving = Math.hypot((s.tx ?? s.x) - s.x, (s.tz ?? s.z) - s.z) > 0.05,
       ru = moving ? 0.06 * Math.sin(t / 70 + s.x) : 0,
-      wv = RM ? 0 : dglWindAt(s.x, s.z, t, sc, wind);
+      wv = RM ? 0 : windLeanAt(s.x, s.z, t, sc, wind);
     out.push({
       k: 'enc',
       e,
@@ -4905,10 +4914,10 @@ export function dglItems(st, C, PPU, C0) {
 /* a prop's base height: on a slope the lowest point under it on its own terrace (so it never floats on the downhill
    side), rocks and boulders sunk a little into the ground */
 /* alpha 0.2: a rock formation or a hill-built thing with a footprint stands at the lowest point under it (it sinks into the slope, it never hangs over it) */
-const DGL_SINK_BOX = /mesa|vault_door|mine_entrance|shipwreck|stilt|spore_mill/;
-function dglPropY(p, M) {
+const SUNKEN_FOOTPRINT_PROPS = /mesa|vault_door|mine_entrance|shipwreck|stilt|spore_mill/;
+function propBaseHeight(p, M) {
   const y0 = standingHeightAt(p.x, p.z);
-  if (M.box && DGL_SINK_BOX.test(p.k)) {
+  if (M.box && SUNKEN_FOOTPRINT_PROPS.test(p.k)) {
     const s = p.s || 1,
       bw = (M.box[0] * s) / 2,
       bd = M.box[1] * s,
@@ -5379,7 +5388,7 @@ function dglShadowSprites(SH, L, sun, ca, lamp) {
       if (!F) miss++;
       if (F) {
         gl.bindTexture(gl.TEXTURE_2D, F.t);
-        gl.uniform3fv(p.U.uRight, DGL_FIXED);
+        gl.uniform3fv(p.U.uRight, FIXED_FACING);
         dglSprU(p, it);
         gl.drawArrays(gl.TRIANGLES, 0, 6);
         gl.uniform3fv(p.U.uRight, Rs);
@@ -5387,7 +5396,7 @@ function dglShadowSprites(SH, L, sun, ca, lamp) {
       continue;
     }
     if (it.plane && !(solid && it.M && it.M.box)) {
-      gl.uniform3fv(p.U.uRight, DGL_FIXED);
+      gl.uniform3fv(p.U.uRight, FIXED_FACING);
       dglSprU(p, it);
       gl.drawArrays(gl.TRIANGLES, 0, 6);
       gl.uniform3fv(p.U.uRight, Rs);
@@ -5493,7 +5502,7 @@ function dglShadowPassFit(items0, sun, C) {
         if (!F) miss++;
         if (F) {
           gl.bindTexture(gl.TEXTURE_2D, F.t);
-          gl.uniform3fv(p.U.uRight, DGL_FIXED);
+          gl.uniform3fv(p.U.uRight, FIXED_FACING);
           dglSprU(p, it);
           gl.drawArrays(gl.TRIANGLES, 0, 6);
           gl.uniform3fv(p.U.uRight, Rs);
@@ -5501,7 +5510,7 @@ function dglShadowPassFit(items0, sun, C) {
         continue;
       }
       if (it.plane && !(solid && it.M && it.M.box)) {
-        gl.uniform3fv(p.U.uRight, DGL_FIXED);
+        gl.uniform3fv(p.U.uRight, FIXED_FACING);
         dglSprU(p, it);
         gl.drawArrays(gl.TRIANGLES, 0, 6);
         gl.uniform3fv(p.U.uRight, Rs);
@@ -5946,20 +5955,21 @@ export function dglSprites(C, items, X, hits, labels, PPU) {
       const ro = it.fixed && it.lk && it.lk.rot && !it.M.box && !it.bld3 ? it.lk.rot * 0.6 : 0,
         cr = Math.cos(ro),
         sr = Math.sin(ro);
-      gl.uniform3fv(U.uRight, it.fixed ? (ro ? [cr, 0, sr] : DGL_FIXED) : C.right);
-      gl.uniform3fv(U.uBack, it.fixed ? (ro ? [sr, 0, -cr] : DGL_FIXED_BACK) : C.back);
+      gl.uniform3fv(U.uRight, it.fixed ? (ro ? [cr, 0, sr] : FIXED_FACING) : C.right);
+      gl.uniform3fv(U.uBack, it.fixed ? (ro ? [sr, 0, -cr] : FIXED_FACING_BACK) : C.back);
     }
     gl.uniform1f(U.uFixed, it.fixed && it.plane ? 1 : 0);
     gl.uniform1f(U.uFlipN, it.flip || 1);
-    dglLookU(U, it.lk);
+    setPropLookUniforms(U, it.lk);
     const mt = EGL_MATS[it.mat] || EGL_MATS[it.person ? 'cloth' : 'plain'];
     gl.uniform4f(U.uMat, mt.spec, mt.shin, mt.transl, mt.wrap);
     if (U.uFol) {
-      const f = dglFol(it);
+      const f = foliageAmount(it);
       gl.uniform2f(U.uFol, f[0], f[1]);
     }
     if (U.uSelf) {
-      const k = selfK > 0 && it.k === 'prop' && !it.fixed && !it.far && hM > 1.2 && dglFol(it)[0] > 0 ? selfK : 0;
+      const k =
+        selfK > 0 && it.k === 'prop' && !it.fixed && !it.far && hM > 1.2 && foliageAmount(it)[0] > 0 ? selfK : 0;
       gl.uniform3f(U.uSelf, k, selfD[0] * (it.flip || 1), selfD[1]);
     }
     gl.uniform1f(U.uEmit, it.glow ? it.glow * 1.6 : 0);
@@ -6159,7 +6169,7 @@ function dglBoxFaces(C, items, X) {
     if (!ST || !RT) continue;
     const mat = EGL_MATS.building;
     gl.uniform1f(p.U.uSpec, mat.spec * 0.5);
-    dglLookU(p.U, it.lk, [it.x, it.y, it.z]);
+    setPropLookUniforms(p.U, it.lk, [it.x, it.y, it.z]);
     gl.bindTexture(gl.TEXTURE_2D, ST.t);
     /* left wall (faces -x) and right wall (faces +x); the picture's left half of the texture belongs to its left edge */
     const lu = f > 0 ? 0 : 0.5,
@@ -6435,9 +6445,9 @@ export function reflectionPass(items, C, rw, rh, X) {
     if (cut && !it.person && !mirrorInView(FR, it, L)) continue;
     const T = eglImg(it.im);
     if (!T) continue;
-    gl.uniform3fv(U.uRight, it.fixed ? DGL_FIXED : C.right);
+    gl.uniform3fv(U.uRight, it.fixed ? FIXED_FACING : C.right);
     gl.uniform3f(U.uBaseP, it.x, it.y, it.z);
-    dglLookU(U, it.lk);
+    setPropLookUniforms(U, it.lk);
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, T.t);
     gl.activeTexture(gl.TEXTURE1);
@@ -7009,7 +7019,7 @@ function dglRoomFront(C, X) {
   if (!F || !T) return;
   const p = dglUse('face', C, X);
   eglBindQuad();
-  dglLookU(p.U, null, [0, 0, 0]);
+  setPropLookUniforms(p.U, null, [0, 0, 0]);
   gl.uniform1i(p.U.uTex, 0);
   gl.activeTexture(gl.TEXTURE0);
   gl.uniform1f(p.U.uSpec, 0.05);

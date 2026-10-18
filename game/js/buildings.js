@@ -28,7 +28,7 @@ import {
   v3n,
 } from './engine/webgl.js';
 import { ENV, envLitFrac } from './environment.js';
-import { dglLookU, dglUse, standingHeightAt, walkRenderer, worldCurveArgs } from './walk-view-gl.js';
+import { dglUse, setPropLookUniforms, standingHeightAt, walkRenderer, worldCurveArgs } from './walk-view-gl.js';
 /* eslint-disable no-func-assign */
 expose({
   BLD: [() => BLD],
@@ -1558,7 +1558,7 @@ function bldDraw0(C, X, items, fades) {
     gl.uniform2fv(p.U.uLift, lift(it));
     gl.uniform1f(p.U.uFade, fades.get(it) ?? 1);
     gl.uniform1f(p.U.uBaseY, E.y0);
-    if (typeof dglLookU === 'function') dglLookU(p.U, it.lk, [it.x, it.y, it.z]);
+    if (typeof setPropLookUniforms === 'function') setPropLookUniforms(p.U, it.lk, [it.x, it.y, it.z]);
     gl.bindVertexArray(E.walls.vao);
     gl.drawElements(gl.TRIANGLES, E.walls.n, gl.UNSIGNED_INT, 0);
   }
@@ -1630,7 +1630,7 @@ function bldDraw0(C, X, items, fades) {
     gl.uniform1f(p.U.uFade, fades.get(it) ?? 1);
     gl.uniform1f(p.U.uFlipN, it.flip);
     gl.uniform1f(p.U.uBaseY, it.y);
-    if (typeof dglLookU === 'function') dglLookU(p.U, it.lk, [it.x, it.y, it.z]);
+    if (typeof setPropLookUniforms === 'function') setPropLookUniforms(p.U, it.lk, [it.x, it.y, it.z]);
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, T.t);
     gl.activeTexture(gl.TEXTURE1);

@@ -14,7 +14,7 @@ import { artImg, artURL, hexA } from './art.js';
 import { artImage, walkView } from './walk-view.js';
 import { eng } from './engine/settings.js';
 import { EGL, EGL_GLSL_COMMON, EGL_GLSL_LIGHT, eglImg, eglPrograms } from './engine/webgl.js';
-import { dglHit, dglLookU, dglUse, dglWindAt, walkRenderer, worldCurveArgs } from './walk-view-gl.js';
+import { dglHit, dglUse, setPropLookUniforms, walkRenderer, windLeanAt, worldCurveArgs } from './walk-view-gl.js';
 import { BLD_SH, bldArt, bldAtlas } from './buildings.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -1068,7 +1068,7 @@ function voxModels(C, X, L) {
     gl.uniform1f(p.U.uFade, it.fade ?? 1);
     gl.uniform1f(p.U.uBaseY, it.y);
     if (p.U.uCel) gl.uniform1f(p.U.uCel, it.vox && it.vox.cel != null ? it.vox.cel : 0.75);
-    if (typeof dglLookU === 'function') dglLookU(p.U, it.lk, [it.x, it.y, it.z]);
+    if (typeof setPropLookUniforms === 'function') setPropLookUniforms(p.U, it.lk, [it.x, it.y, it.z]);
     voxU(p, it);
     gl.uniform4f(p.U.uSpin, 1, 0, 0, 0);
     gl.uniform3f(p.U.uSpinC, 0, 0, 0);
@@ -1199,8 +1199,8 @@ function voxBob(it) {
   const t = (walkView.t || 0) / 1000,
     ph = it.x * 0.37 + it.z * 0.21,
     w =
-      typeof dglWindAt === 'function' && walkView.sc
-        ? Math.min(2, Math.abs(dglWindAt(it.x, it.z, walkView.t || 0, walkView.sc)) * 8)
+      typeof windLeanAt === 'function' && walkView.sc
+        ? Math.min(2, Math.abs(windLeanAt(it.x, it.z, walkView.t || 0, walkView.sc)) * 8)
         : 0;
   return [
     (Math.sin(t * 1.25 + ph) + Math.sin(t * 0.47 + ph * 2) * 0.4) * b * (1 + w * 0.5),

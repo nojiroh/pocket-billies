@@ -11,7 +11,7 @@ import { $, $$, clamp } from '../../game/js/util.js';
 import { frameStop, frameTask } from '../../game/js/frame-scheduler.js';
 import { artLoad, cnv, setArtLoad } from '../../game/js/art.js';
 import { artImage, imageReady, layerAsProp, setWalkData, walkData, walkView } from '../../game/js/walk-view.js';
-import { PROP_MATERIALS, dglVaryOf, mountWalkView, propMaterial, walkRenderer } from '../../game/js/walk-view-gl.js';
+import { PROP_MATERIALS, mountWalkView, propMaterial, propVariety, walkRenderer } from '../../game/js/walk-view-gl.js';
 import { BLD_ROOM_NAMES, BLD_TEX_NAMES } from '../../game/js/buildings.js';
 import { P3D_AUTO, P3D_KINDS, P3D_PARTS, p3dTreeKind } from '../../game/js/solid-props.js';
 import { esc } from './game-stand-ins.js';
@@ -791,7 +791,10 @@ ACTS.pedLayerPx = d => {
 function pedVaryHTML(k) {
   const M = scD().props[k],
     b = `scenery.props.${k}`,
-    D = typeof dglVaryOf === 'function' ? dglVaryOf(k, Object.assign({}, M, { vary: null, wear: null })) : { wear: {} },
+    D =
+      typeof propVariety === 'function'
+        ? propVariety(k, Object.assign({}, M, { vary: null, wear: null }))
+        : { wear: {} },
     W = D.wear || {};
   return (
     `<h4>Variety and wear</h4><p class="help">Each placed copy draws its own values from where it stands, so a row of these doesn't look stamped out. Colour changes touch only the colourful parts (paint, leaves), not outlines, wood grain or faces; a hue window narrows them further (leaves but not trunks).</p>` +
