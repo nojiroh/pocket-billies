@@ -24,7 +24,7 @@ import {
 import { ART_CACHE, COIN_ART, EGG_ART, ICON_ATLAS, MENU_BACKGROUND_ART, artBoot, artImg, uiIconURL } from './art.js';
 import { personArtPaths } from './person-art.js';
 import { rigAtlas } from './skeleton-rig.js';
-import { AREAS, battleStageArtFiles, battleStagePrepare } from './battle-stage.js';
+import { AREAS, battleStagePrepare } from './battle-stage.js';
 import { mapArtPaths, mapById, walkData, walkView } from './walk-view.js';
 import { gpuState, webgl2Supported } from './engine/webgl.js';
 import { environment } from './environment.js';
@@ -37,16 +37,15 @@ import { titleMount, titleScreen, titleStart, titleWanted } from './title.js';
 import { loreLoadingLines } from './lore.js';
 import { initAccount } from './account.js';
 import {
-  closeModal,
   initPixelSky,
-  introSteps,
   mapIdAt,
-  modal,
+  notice,
   render,
   renderOverlay,
   showPendingWindows,
   startGame,
   toast,
+  whenWorldShows,
 } from './ui.js';
 import { fixtureStart } from './fixture.js';
 /* eslint-disable no-func-assign */
@@ -180,11 +179,6 @@ function loadList() {
     const R = RIGS[sp];
     if (!R) continue;
     for (const v of ['front', 'back']) if (R[v]) for (const g of [0, 1]) add(rigAtlas(sp, g, v), 1);
-  }
-  for (const a of Object.keys(AREAS)) {
-    try {
-      battleStageArtFiles(a).forEach(p => add(p, 2));
-    } catch (e) {}
   }
   try {
     const D = walkData();
@@ -851,10 +845,9 @@ else
       initPixelSky();
       if (typeof titleWanted === 'function' && titleWanted()) titleStart();
       /* phase 16 test boot (js/test-boot.js): no title; the opening cutscene starts on Hazel's scene (below), or,
-         where it can't run, the step-by-step intro starts on her first line */
+         where it can't run, the Try again screen */
       const quickOpening = TEST_BOOT && !TEST_RUN && !FIXTURE && !saveData.started;
-      if (quickOpening && !(typeof cutsceneWanted === 'function' && cutsceneWanted()))
-        uiState.intro = introSteps().findIndex(s => s.k === 'gini') + 1;
+      if (quickOpening && !(typeof cutsceneWanted === 'function' && cutsceneWanted())) uiState.openingFailed = 'cant';
       render();
       if (TEST_RUN) studioTestStart();
       if (FIXTURE) fixtureStart();
@@ -868,17 +861,15 @@ else
         cutsceneStart({ quick: true });
       watchMapsAhead();
       loadAllMaps();
+      /* phase 06: a notice, not a choice: it waits behind the dot on the portrait */
       if (SAVE_FOUND === 'old' || SAVE_FOUND === 'new')
-        setTimeout(
-          () =>
-            modal({
-              title: SAVE_FOUND === 'old' ? 'A new game' : 'A newer save',
-              html: `<p>${SAVE_FOUND === 'old' ? SAVE_OLD_MSG + ' It is kept aside in this browser, and a new game starts here.' : SAVE_NEW_MSG}</p>`,
-              btns: [{ l: 'OK', c: 'gold', f: closeModal }],
-            }),
-          1200
-        );
-      if (saveData.started && !TEST_RUN && !FIXTURE) setTimeout(showPendingWindows, 500);
+        notice({
+          id: 'save-found',
+          title: SAVE_FOUND === 'old' ? 'A new game' : 'A newer save',
+          html: `<p>${SAVE_FOUND === 'old' ? SAVE_OLD_MSG + ' It is kept aside in this browser, and a new game starts here.' : SAVE_NEW_MSG}</p>`,
+        });
+      /* phase 06: a waiting choice (hatch, learn a move, evolve) opens only once the world is showing */
+      if (saveData.started && !TEST_RUN && !FIXTURE) whenWorldShows(showPendingWindows);
       if (TEST_BOOT && !TEST_RUN && !FIXTURE)
         setTimeout(() => toast('Test boot: the opening with Professor Hazel, nothing is saved.'), 900);
       if (location.protocol === 'file:')

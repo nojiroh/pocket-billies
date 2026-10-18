@@ -39,8 +39,10 @@ import {
   trainerTeam,
   typeEffectiveness,
 } from '../game-data.js';
+import { ROBOT_LIMBS, ROBOT_SLOT_NAMES, isRobot, moveSources, robotGemDef, robotRules, speciesOf } from './fighters.js';
 import {
   billyName,
+  brokenParts,
   encounterBuild,
   findBilly,
   formatNumber,
@@ -48,8 +50,14 @@ import {
   hereLocation,
   makeBilly,
   maxHp,
+  moveUsable,
+  partBroken,
+  partHpLeft,
+  partMaxHp,
+  partsDamaged,
   pickWeighted,
   plural,
+  repairParts,
   stat,
   xpFor,
 } from './rules.js';
@@ -64,6 +72,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   actorSnapshot: [() => actorSnapshot, v => (actorSnapshot = v)],
   actorTypes: [() => actorTypes],
+  // @ts-expect-error -- replaced on purpose
+  aiAimPart: [() => aiAimPart, v => (aiAimPart = v)],
   // @ts-expect-error -- replaced on purpose
   aiDamage: [() => aiDamage, v => (aiDamage = v)],
   // @ts-expect-error -- replaced on purpose
@@ -107,6 +117,8 @@ expose({
   fieldState: [() => fieldState],
   fighter: [() => fighter],
   foeSide: [() => foeSide],
+  // @ts-expect-error -- replaced on purpose
+  hitPart: [() => hitPart, v => (hitPart = v)],
   // @ts-expect-error -- replaced on purpose
   inflict: [() => inflict, v => (inflict = v)],
   // @ts-expect-error -- replaced on purpose
@@ -183,7 +195,7 @@ export const allActors = () => {
 export const liveActors = si =>
   allActors().filter(k => (si == null || ACTOR_SIDE[k] === si) && fighter(k) && fighter(k).hp > 0);
 export const foeSide = k => 1 - ACTOR_SIDE[k];
-export const actorTypes = k => fieldState(k).ov || SPECIES[fighter(k).sp].types;
+export const actorTypes = k => fieldState(k).ov || speciesOf(fighter(k)).types;
 export const shockName = () => BATTLE_RULES.shockName || `${BATTLE_RULES.shockType} storm`;
 export const isMulti = () =>
   !!activeBattle && (activeBattle.sides[0].f.length > 1 || activeBattle.sides[1].f.length > 1);
@@ -199,6 +211,8 @@ export function effectiveStat(k, s2) {
       x *= 1 + BATTLE_RULES.financeRamp * Math.min(BATTLE_RULES.financeRampTurns, v.turnsIn);
   }
   if (s2 === 'hus' && m.status === 'aud') x *= 0.5;
+  /* phase 17: a robot with broken legs is slow */
+  if (s2 === 'hus' && partBroken(m, 'legs')) x *= robotRules().legBreakSpeed;
   return Math.max(1, x);
 }
 export function actorSnapshot(k) {
@@ -224,6 +238,13 @@ export function actorSnapshot(k) {
     ty: actorTypes(k).slice(),
     xp: clamp((m.xp - a) / (b - a), 0, 1),
     stg: { ...f.v.st },
+    /* phase 17: a robot's limbs: which are broken (the stage dims them) and how much HP each has left (0 to 1) */
+    bot: isRobot(m)
+      ? {
+          brk: brokenParts(m),
+          ph: Object.fromEntries(ROBOT_LIMBS.map(q => [q, partHpLeft(m, q) / partMaxHp(m, q)])),
+        }
+      : null,
   };
 }
 export const allSnapshots = () => [0, 1, 2, 3, 4].map(k => (fieldSlot(k) ? actorSnapshot(k) : null));
@@ -275,15 +296,19 @@ export function calcDamage(k, tk, mid, src) {
       eco =
         1 +
         BATTLE_RULES.retailSynergy *
-          sd.team.filter(m => m !== me && m.hp > 0 && SPECIES[m.sp].types.some(t => syn.includes(t))).length;
+          sd.team.filter(m => m !== me && m.hp > 0 && speciesOf(m).types.some(t => syn.includes(t))).length;
     }
   }
   const wx =
     typeof battleWeatherMultiplier === 'function'
       ? battleWeatherMultiplier(M.t)
       : 1; /* v28: the weather where you stand */
+  /* phase 17: a robot's move of its gem's type hits harder */
+  const me = src ? null : fighter(k),
+    gem = isRobot(me) ? robotGemDef(me.gem) : null,
+    gx = gem && gem.type === M.t ? robotRules().gemAffinity : 1;
   return {
-    dmg: Math.max(1, Math.floor(base * stab * te * roll * (crit ? BATTLE_RULES.critMult : 1) * mk * eco * wx)),
+    dmg: Math.max(1, Math.floor(base * stab * te * roll * (crit ? BATTLE_RULES.critMult : 1) * mk * eco * wx * gx)),
     te,
     crit,
   };
@@ -331,11 +356,21 @@ export function retarget(k, tk) {
   if (!L.length) return null;
   return L[Math.floor(random() * L.length)];
 }
-export function useMove(k, mid, tk0) {
+/* phase 17: part is the robot part an aimed move goes for (the player picks it, or the AI) */
+export function useMove(k, mid, tk0, part) {
   const u = fighter(k),
     v = fieldState(k),
     M = MOVES[mid],
     fx = M.fx || {};
+  /* phase 17: the part that gives the move broke earlier this turn (or before): the move fails */
+  if (!moveUsable(u, mid)) {
+    const src = moveSources(u.gem, u.fit, mid)[0];
+    battleSay(`${billyName(u)}’s ${ROBOT_SLOT_NAMES[src] || 'part'} is broken. It can’t use ${M.n}.`, {
+      k: 'status',
+      si: k,
+    });
+    return;
+  }
   if (u.status === 'sub') {
     u.sTurns--;
     if (u.sTurns > 0) {
@@ -439,10 +474,14 @@ export function useMove(k, mid, tk0) {
       }
       t2.hp = Math.max(0, t2.hp - r.dmg);
       alphaPhase(tk2);
-      if (tk2 === tk) Object.assign(ev.an, { dmg: r.dmg, te: r.te, crit: r.crit });
+      /* phase 17: a hit on a robot also lands on one of its parts (an aimed move on the one picked) */
+      const hit = isRobot(t2) && t2.hp > 0 ? hitPart(tk2, r.dmg, M, tk2 === tk ? part : null) : null;
+      if (tk2 === tk) Object.assign(ev.an, { dmg: r.dmg, te: r.te, crit: r.crit, part: hit || undefined });
       else
         battleSay(`${billyName(t2)} was hit too.`, { k: 'hurt', si: tk2, dmg: r.dmg, te: r.te, fx: 'spread', t: M.t });
       refreshLastSnapshot();
+      if (hit && hit !== 'torso' && partBroken(t2, hit))
+        battleSay(`${billyName(t2)}’s ${ROBOT_SLOT_NAMES[hit]} broke!`, { k: 'break', si: tk2, part: hit });
       if (r.shield) battleSay(`The shield took the edge off.`, { k: 'block', si: tk2 });
       if (r.crit) battleSay('A critical hit!', { k: 'crit', si: tk2 });
       if (r.te > 1) battleSay('It’s super effective!');
@@ -498,6 +537,9 @@ export function useMove(k, mid, tk0) {
       st: fx.selfStatus,
     });
   }
+  /* phase 17: a robot patches its parts up */
+  if (fx.repair && isRobot(u) && repairParts(u, fx.repair))
+    battleSay(`${billyName(u)} patched up its parts.`, { k: 'heal', si: k, amt: 0 });
   if (M.c === 'X' && fx.heal) {
     if (u.hp >= maxHp(u)) battleSay('But its HP is already full.');
     else {
@@ -589,7 +631,7 @@ export function endTurn() {
 export function award(e) {
   const P = RULES.progression,
     amt = Math.floor(
-      ((SPECIES[e.sp].yld * e.lvl) / 7) *
+      ((speciesOf(e).yld * e.lvl) / 7) *
         (activeBattle.kind === 'trainer' ? P.trainerXpMult : 1) *
         (e.boss ? (BATTLE_RULES.alphaXp ?? 3) : 1)
     );
@@ -614,7 +656,7 @@ export function award(e) {
 }
 export function inherit(k) {
   const sd = activeBattle.sides[ACTOR_SIDE[k]];
-  if (!hasPassive(SPECIES[fighter(k).sp].types, 'inherit')) return;
+  if (!hasPassive(speciesOf(fighter(k)).types, 'inherit')) return;
   const st = {};
   let any = false;
   for (const s2 in fieldState(k).st)
@@ -654,8 +696,8 @@ export function doSwitch(k, idx) {
       si: k,
     }
   );
-  saveData.seen[m.sp] = 1;
-  if (sd.rent && !hasPassive(SPECIES[m.sp].types, 'landlord')) {
+  if (!isRobot(m)) saveData.seen[m.sp] = 1;
+  if (sd.rent && !hasPassive(speciesOf(m).types, 'landlord')) {
     const d = Math.max(1, Math.floor(maxHp(m) / Math.max(2, BATTLE_RULES.rentFraction)));
     m.hp = Math.max(0, m.hp - d);
     battleSay(`${billyName(m)} was hurt by the sharp stones.`, { k: 'hurt', si: k, fx: 'rent', dmg: d });
@@ -769,8 +811,8 @@ export function chooseAI(k = 1) {
   const T = liveActors(foeSide(k));
   if (!T.length) return null;
   const opts = [];
-  for (const id of m.moves.filter(id => MOVES[id]))
-    for (const tk of T) opts.push([{ mid: id, tk }, aiScore(k, id, tk)]);
+  for (const id of m.moves.filter(id => MOVES[id] && moveUsable(m, id)))
+    for (const tk of T) opts.push([{ mid: id, tk, part: aiAimPart(id, tk) }, aiScore(k, id, tk)]);
   if (!opts.length) return null;
   /* v34: in a double the second foe knows what its partner is about to do: no piling onto a fighter that's already
     going down, a spread move is worth more while both of yours stand, and a status move isn't doubled up */
@@ -800,6 +842,34 @@ export function chooseAI(k = 1) {
     } else if ((M.fx || {}).status) PL['st' + pick.tk] = 1;
   }
   return pick;
+}
+/* phase 17: which robot part the computer aims an aimed move at: the weakest limb still standing, so it breaks */
+export function aiAimPart(mid, tk) {
+  const t = fighter(tk),
+    M = MOVES[mid];
+  if (!t || !isRobot(t) || !(M.fx && M.fx.aim)) return undefined;
+  const L = ROBOT_LIMBS.filter(q => !partBroken(t, q));
+  if (!L.length) return undefined;
+  return L.reduce((a, b) => (partHpLeft(t, b) < partHpLeft(t, a) ? b : a));
+}
+/* phase 17: a hit on a robot lands on one part: the one an aimed move picked if it still stands, else by
+   RULES.robots.hitWeights (the torso is the body only). The limb loses the damage (x partShare, x the move's breaker).
+   Returns the slot hit. */
+export function hitPart(tk, dmg, M, aim) {
+  const t = fighter(tk),
+    R = robotRules(),
+    fx = M.fx || {};
+  let slot = aim && fx.aim && ROBOT_LIMBS.includes(aim) && !partBroken(t, aim) ? aim : null;
+  if (!slot) {
+    const W = /** @type {[string, number][]} */ ([['torso', R.hitWeights.torso ?? 0.25]]);
+    for (const q of ROBOT_LIMBS) if (!partBroken(t, q)) W.push([q, R.hitWeights[q] ?? 0.25]);
+    slot = pickWeighted(W);
+  }
+  if (slot === 'torso') return slot;
+  const d = Math.max(1, Math.round(dmg * R.partShare * (fx.breaker || 1)));
+  t.partDmg = t.partDmg || {};
+  t.partDmg[slot] = (t.partDmg[slot] || 0) + d;
+  return slot;
 }
 /* fmt: 'single', 'double' (two a side) or 'alpha' (up to three of yours against one Alpha) */
 export function newBattle(kind, foe, extra) {
@@ -868,7 +938,9 @@ export function newBattle(kind, foe, extra) {
     },
     enumerable: false,
   });
-  foe.forEach(m => (saveData.seen[m.sp] = 1));
+  foe.forEach(m => {
+    if (!isRobot(m)) saveData.seen[m.sp] = 1;
+  });
   return true;
 }
 export const joinNames = K => {
@@ -971,12 +1043,12 @@ export function runTurn(plan) {
   if (plan.length === 1 && plan[0].k === 'switch' && plan[0].free) return playTurnEvents();
   for (const p of plan.filter(p => p.k === 'item')) applyItem(p.item, p.uid, true);
   const acts = [];
-  for (const p of plan.filter(p => p.k === 'move')) acts.push({ who: p.who, mid: p.mid, tk: p.tk });
+  for (const p of plan.filter(p => p.k === 'move')) acts.push({ who: p.who, mid: p.mid, tk: p.tk, part: p.part });
   for (const k of liveActors(1)) {
     const n = fighter(k).boss ? (BATTLE_RULES.alphaActs ?? 2) : 1;
     for (let i = 0; i < n; i++) {
       const c = chooseAI(k);
-      if (c) acts.push({ who: k, mid: c.mid, tk: c.tk, boss2: i > 0 });
+      if (c) acts.push({ who: k, mid: c.mid, tk: c.tk, part: c.part, boss2: i > 0 });
     }
   }
   acts.forEach(a => (a.r = random()));
@@ -992,7 +1064,7 @@ export function runTurn(plan) {
     const u = fighter(a.who);
     if (!u || u.hp <= 0 || fieldSlot(a.who).down) continue;
     if (!liveActors(foeSide(a.who)).length) break;
-    useMove(a.who, a.mid, a.tk);
+    useMove(a.who, a.mid, a.tk, a.part);
     checkFaints();
   }
   if (!activeBattle.over) {
@@ -1022,11 +1094,11 @@ export function catchOdds(id, T, spin) {
   const e = fighter(1);
   if (COINS[id] && COINS[id].m === 0) return 1;
   let C = COINS[id].m;
-  if (id === 'penny' && CATCH_RULES.luxury.includes(SPECIES[e.sp].line)) C *= CATCH_RULES.luxuryPenny;
+  if (id === 'penny' && CATCH_RULES.luxury.includes(speciesOf(e).line)) C *= CATCH_RULES.luxuryPenny;
   const Sx = e.status === 'sub' ? CATCH_RULES.subpoena : e.status ? CATCH_RULES.status : 1;
   return Math.min(
     1,
-    SPECIES[e.sp].cr *
+    speciesOf(e).cr *
       (1 - (CATCH_RULES.hpFactor * e.hp) / maxHp(e)) *
       C *
       Sx *
@@ -1053,6 +1125,8 @@ export const canUse = (it, m) => {
   if (I.revive) return m.hp <= 0;
   if (m.hp <= 0) return false;
   if (I.hpAll) return teamNeedsHp();
+  /* phase 17: a repair kit fixes a robot's damaged parts */
+  if (I.repair) return partsDamaged(m);
   const hurt = m.hp < maxHp(m);
   if (I.cure) return (I.cure === 'any' ? !!m.status : m.status === I.cure) || (!!I.hp && hurt);
   if (I.hp) return hurt;
@@ -1078,6 +1152,7 @@ export function applyItem(it, id, inB) {
       m.sTurns = 0;
       t.push(`${billyName(m)} is no longer ${(STATUS_NAMES[was] || 'troubled').toLowerCase()}.`);
     }
+    if (I.repair && repairParts(m, I.repair)) t.push(`${billyName(m)}’s parts were fixed.`);
     if (I.hp) {
       const g = Math.min(I.hp, maxHp(m) - m.hp);
       if (g > 0) {

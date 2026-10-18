@@ -20,6 +20,7 @@ node_modules/
 validation/quick/
 validation/quick-baseline/
 validation/fast/
+validation/sim/
 results.json
 test-results/
 playwright-report/

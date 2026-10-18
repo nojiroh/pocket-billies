@@ -30,11 +30,11 @@ import {
   ITEMS,
   MOVES,
   RULES,
-  SPECIES,
   STAT_NAMES,
   TYPE_COLORS,
   typeEffectiveness,
 } from './game-data.js';
+import { ROBOT_LIMBS, ROBOT_SLOT_NAMES, isRobot, robotPartDef, speciesOf } from './logic/fighters.js';
 import {
   addBilly,
   addEgg,
@@ -45,6 +45,10 @@ import {
   formatNumber,
   healAll,
   maxHp,
+  moveUsable,
+  partBroken,
+  partHpLeft,
+  partMaxHp,
   pickWeighted,
   plural,
   wildPrize,
@@ -98,6 +102,7 @@ import { addRipple, walkRenderer, waterAt } from './walk-view-gl.js';
 import { battle3d, battle3dWanted } from './battle-3d.js';
 /* eslint-disable no-func-assign */
 expose({
+  ROBOT_PART_SHORT: [() => ROBOT_PART_SHORT],
   TICKER_LAST: [() => TICKER_LAST],
   afterEvents: [() => afterEvents, v => (afterEvents = v)],
   afterStageTime: [() => afterStageTime, v => (afterStageTime = v)],
@@ -121,12 +126,16 @@ expose({
   effectivenessLabel: [() => effectivenessLabel, v => (effectivenessLabel = v)],
   endBattle: [() => endBattle, v => setEndBattle(v)],
   finishThrow: [() => finishThrow, v => (finishThrow = v)],
+  floatPos: [() => floatPos],
+  floatTick: [() => floatTick, v => (floatTick = v)],
   hpMini: [() => hpMini, v => (hpMini = v)],
   hudCardHTML: [() => hudCardHTML, v => (hudCardHTML = v)],
   hudHit: [() => hudHit, v => ((hudHit = v), provide({ hudHit }))],
   hudPop: [() => hudPop, v => ((hudPop = v), provide({ hudPop }))],
   itemIcon: [() => itemIcon],
   logLine: [() => logLine, v => (logLine = v)],
+  moveTilesHTML: [() => moveTilesHTML, v => (moveTilesHTML = v)],
+  needsPart: [() => needsPart, v => (needsPart = v)],
   needsTarget: [() => needsTarget, v => (needsTarget = v)],
   nextEvent: [() => nextEvent, v => (nextEvent = v)],
   openBattle: [() => openBattle, v => setOpenBattle(v)],
@@ -136,12 +145,15 @@ expose({
   paintPlates: [() => paintPlates, v => (paintPlates = v)],
   paintSide: [() => paintSide, v => (paintSide = v)],
   pickMove: [() => pickMove, v => (pickMove = v)],
+  pickPart: [() => pickPart, v => (pickPart = v)],
   pickTarget: [() => pickTarget, v => (pickTarget = v)],
+  pickTargetOrPart: [() => pickTargetOrPart, v => (pickTargetOrPart = v)],
   planBack: [() => planBack, v => (planBack = v)],
   planNext: [() => planNext, v => (planNext = v)],
   plateElement: [() => plateElement, v => (plateElement = v)],
   platesTick: [() => platesTick, v => ((platesTick = v), provide({ platesTick }))],
   playTurnEvents: [() => playTurnEvents, v => ((playTurnEvents = v), provide({ playTurnEvents }))],
+  robotPartsHTML: [() => robotPartsHTML, v => (robotPartsHTML = v)],
   screenWipe: [() => screenWipe, v => (screenWipe = v)],
   setEndBattle: [() => setEndBattle, v => (setEndBattle = v)],
   setOpenBattle: [() => setOpenBattle, v => (setOpenBattle = v)],
@@ -174,6 +186,7 @@ function hudCardHTML(i) {
   return `<div class="hc-row"><b class="hc-n" id="n${i}"></b><span class="hc-gp" id="gp${i}" hidden>${uiIconHTML('spark', 12)}</span><span class="hc-lv tnum" id="l${i}"></span></div>
  <div class="hc-row2"><span class="hc-t" id="t${i}"></span><span class="hc-st" id="st${i}"></span><span class="hc-sg" id="sg${i}"></span></div>
  <div class="hpbar"><span class="hpl">HP</span><div class="hpt"><i class="ghost" id="g${i}"></i><i class="fill" id="h${i}"></i></div></div>
+ <div class="hc-parts" id="pp${i}" hidden></div>
  <div class="hc-row3">${i === 0 ? '<span class="hc-num tnum" id="hn0"></span>' : ''}<span class="hc-pips" id="pips${i}"></span></div>${i === 0 ? '<div class="xpbar"><i id="x0"></i></div>' : ''}`;
 }
 export function battleShell() {
@@ -205,13 +218,16 @@ function battleFreeArea(vw, vh, lay) {
     dock = r('#dock'),
     foe = r('#hb1'),
     tk = r('.ticker');
+  /* phase 06-3: with the cards floating in the scene the dock has no fixed place, so the action is framed in a fixed
+     share of the screen (above the cards in portrait, left of them in landscape) */
+  const floating = $('#battle').classList.contains('ui3d');
   if (lay === 'landscape') {
     const y0 = (tk ? tk.bottom - b.top : 0) + 4,
-      x1 = (dock ? dock.left - b.left : vw) - 8;
+      x1 = (floating ? vw * 0.62 : dock ? dock.left - b.left : vw) - 8;
     return { x: 0, y: y0, w: Math.max(160, x1), h: Math.max(120, vh - 8 - y0) };
   }
   const y0 = (foe ? foe.bottom - b.top : 64) + 2,
-    y1 = (dock ? dock.top - b.top : vh * 0.62) - 4;
+    y1 = (floating ? vh * 0.6 : dock ? dock.top - b.top : vh * 0.62) - 4;
   return { x: 0, y: y0, w: vw, h: Math.max(120, y1 - y0) };
 }
 function battleLayoutChanged(L) {
@@ -269,7 +285,7 @@ export function setOpenBattle(v) {
 }
 /* v31: on the 3D stage a battle starts where you are, without a wipe: the camera swoops down toward the spot, the
    billionaire bursts out of the grass in a spray of leaves, then the battle's panels slide up over the same picture.
-   When it's over they slide away and the camera pulls back out. The painted stage keeps the wipe. */
+   When it's over they slide away and the camera pulls back out. */
 function battleSeamless() {
   return (
     !reducedMotion &&
@@ -563,6 +579,12 @@ function paintSide(i, s, anim) {
     c.classList.add('hit');
   }
   if (battleStage.s[i] && battleStage.s[i].sp === s.sp) battleStage.s[i].st = s.hp > 0 ? s.st : null;
+  /* phase 17: a robot's limbs, each with its own small HP bar */
+  const pp = $('#pp' + i);
+  if (pp) {
+    pp.hidden = !s.bot;
+    pp.innerHTML = s.bot ? robotPartsHTML(s.bot) : '';
+  }
   if (i === 0) {
     const hn = $('#hn0');
     hn.dataset.fmt = `#/${s.max}`;
@@ -688,6 +710,7 @@ function afterEvents() {
   activeBattle.plan = [];
   activeBattle.cur = liveActors(0)[0];
   activeBattle.phase = 'choose';
+  activeBattle.menuT = performance.now(); /* phase 06-2b: for Hazel's "instant picks" comment (opening-fall.js) */
   chooseMessage();
   paintBoxes(allSnapshots(), activeBattle.market);
   boxShow(0, true);
@@ -736,6 +759,7 @@ function needsTarget(mid) {
   return onFoe && !fx.spread && liveActors(1).length > 1;
 }
 export function pickMove(mid) {
+  if (!moveUsable(fighter(activeBattle.cur), mid)) return;
   if (needsTarget(mid)) {
     activeBattle.mv = mid;
     activeBattle.phase = 'target';
@@ -744,12 +768,28 @@ export function pickMove(mid) {
     if (typeof battleStageTargets === 'function') battleStageTargets(liveActors(1));
     return;
   }
-  planNext({ who: activeBattle.cur, k: 'move', mid, tk: liveActors(1)[0] });
+  pickTargetOrPart(mid, liveActors(1)[0]);
 }
 export function pickTarget(tk) {
   if (!activeBattle || activeBattle.phase !== 'target') return;
   if (typeof battleStageTargets === 'function') battleStageTargets(null);
-  planNext({ who: activeBattle.cur, k: 'move', mid: activeBattle.mv, tk });
+  pickTargetOrPart(activeBattle.mv, tk);
+}
+/* phase 17: an aimed move at a robot asks which part next; anything else is planned now */
+function pickTargetOrPart(mid, tk) {
+  if (needsPart(mid, tk)) {
+    activeBattle.mv = mid;
+    activeBattle.tk = tk;
+    activeBattle.phase = 'part';
+    $('#msgT').textContent = `${MOVES[mid].n}: aim at which part of ${billyName(fighter(tk))}?`;
+    paintActions();
+    return;
+  }
+  planNext({ who: activeBattle.cur, k: 'move', mid, tk });
+}
+export function pickPart(part) {
+  if (!activeBattle || activeBattle.phase !== 'part') return;
+  planNext({ who: activeBattle.cur, k: 'move', mid: activeBattle.mv, tk: activeBattle.tk, part });
 }
 function effectivenessLabel(mid, tk) {
   const M = MOVES[mid];
@@ -768,12 +808,28 @@ function effectivenessLabel(mid, tk) {
       ? '<em class="nve">Not very effective</em>'
       : '';
 }
+/* phase 17: a robot's three limbs as small bars (L arm, R arm, legs), a broken one crossed out */
+const ROBOT_PART_SHORT = { armL: 'L', armR: 'R', legs: 'Lg' };
+function robotPartsHTML(bot) {
+  return Object.entries(bot.ph)
+    .map(([q, f]) => {
+      const p = Math.max(0, Math.min(1, f)) * 100;
+      return `<span class="hp-part${f <= 0 ? ' broken' : ''}" title="${ROBOT_SLOT_NAMES[q]}${f <= 0 ? ' (broken)' : ''}"><b>${ROBOT_PART_SHORT[q]}</b><i><u class="${p < 34 ? 'low' : ''}" style="width:${p}%"></u></i></span>`;
+    })
+    .join('');
+}
+/* phase 17: does this move ask which robot part to go for? (an aimed move at a robot with a limb still standing) */
+function needsPart(mid, tk) {
+  const M = MOVES[mid],
+    t = fighter(tk);
+  return !!(M.fx && M.fx.aim && t && isRobot(t) && ROBOT_LIMBS.some(q => !partBroken(t, q)));
+}
 function hpMini(m) {
   const p = Math.max(0, m.hp / maxHp(m));
   return `<span class="hpmini"><i class="${p < 0.25 ? 'low' : p < 0.5 ? 'mid' : ''}" style="width:${p * 100}%"></i></span>`;
 }
 function billyPickHTML(m, act, attrs, dis, note) {
-  return `<button class="pick" ${attrs} ${dis ? 'disabled' : ''}>${bustHTML(m.sp, 40, { gold: m.gold })}<span class="pk-t"><b>${escapeHtml(billyName(m))}</b><span class="pk-m">${SPECIES[m.sp].types.map(typeBadgeHTML).join('')}<small class="tnum">Lv ${m.lvl}</small></span>${hpMini(m)}<small class="tnum">${Math.max(0, m.hp)}/${maxHp(m)}</small></span><span class="pk-s">${note || ''}</span></button>`;
+  return `<button class="pick" ${attrs} ${dis ? 'disabled' : ''}>${bustHTML(m.sp, 40, { gold: m.gold })}<span class="pk-t"><b>${escapeHtml(billyName(m))}</b><span class="pk-m">${speciesOf(m).types.map(typeBadgeHTML).join('')}<small class="tnum">Lv ${m.lvl}</small></span>${hpMini(m)}<small class="tnum">${Math.max(0, m.hp)}/${maxHp(m)}</small></span><span class="pk-s">${note || ''}</span></button>`;
 }
 function teamPick(back) {
   const on = activeBattle.sides[0].f.filter(f => f.on).map(f => f.act),
@@ -800,6 +856,22 @@ export const itemIcon = (k, size = 30) => {
     ? `<img class="pxi" src="${artURL(I.img)}" width="${size}" height="${size}" alt="">`
     : `<img class="pxi" src="${iconURL('i_' + (I.icon || k))}" width="${size}" height="${size}" alt="">`;
 };
+/* phase 06-3: the move tiles, shown on the first menu (no Fight button first) and after Back from aiming */
+function moveTilesHTML(m) {
+  return `<div class="moves">${m.moves
+    .map((id, n) => {
+      const M = MOVES[id],
+        c = TYPE_COLORS[M.t],
+        P = M.p ? M.p : M.fx && M.fx.vary ? 'Varies' : 'Status',
+        stab = M.t !== 'None' && actorTypes(activeBattle.cur).includes(M.t),
+        /* phase 17: a robot can't use the move of a broken part */
+        off = !moveUsable(m, id);
+      if (off)
+        return `<button class="mv off" style="--tc:${c[0]};--tf:${c[1]}" disabled data-tip="${escapeHtml(M.d)}"><span class="mv-top"><b>${escapeHtml(M.n)}</b><kbd>${n + 1}</kbd></span><span class="mv-meta"><span class="mv-ty">Part broken</span></span></button>`;
+      return `<button class="mv" style="--tc:${c[0]};--tf:${c[1]}" data-a="bmove" data-m="${id}" data-tip="${escapeHtml(M.d)}"><span class="mv-top"><b>${escapeHtml(M.n)}</b><kbd>${n + 1}</kbd></span><span class="mv-meta"><span class="mv-ty">${M.t === 'None' ? 'Normal' : M.t}${stab ? ' ★' : ''}</span><span class="tnum">${P}${M.p ? ' pow' : ''}${M.p && typeof battleWeatherMultiplier === 'function' ? (battleWeatherMultiplier(M.t) > 1 ? ' ▲' : battleWeatherMultiplier(M.t) < 1 ? ' ▼' : '') : ''}${M.c !== 'X' || M.a < 100 ? ` · ${M.a || 100}%` : ''}</span></span>${effectivenessLabel(id)}</button>`;
+    })
+    .join('')}</div>`;
+}
 export function paintActions() {
   const el = $('#acts');
   if (!el || !activeBattle) return;
@@ -816,22 +888,21 @@ export function paintActions() {
         .reduce((a, k) => a + saveData.items[k], 0),
       crew = saveData.team,
       alive = crew.filter(x => x.hp > 0).length;
-    h = `<div class="c-choose"><button class="bt fight" data-a="bfight"><span class="bt-i">${uiIconHTML('fight', 24)}</span><span class="bt-t"><b>Fight</b><small>${plural(m.moves.length, 'move')}</small></span><kbd>F</kbd></button>
+    h = `<div class="c-choose">${moveTilesHTML(m)}
   <div class="bt-row"><button class="bt coin" data-a="bcoins" ${wild && first ? '' : 'disabled'}>${uiIconHTML('coin', 18)}<b>Tax it</b><small>${wild ? (first ? coins + ' left' : 'First pick only') : 'Wild only'}</small><kbd>X</kbd></button>
   <button class="bt items" data-a="bitems">${uiIconHTML('bag', 18)}<b>Bag</b><small>${items}</small><kbd>I</kbd></button>
   <button class="bt team" data-a="bteam">${uiIconHTML('team', 18)}<b>Team</b><small>${alive}/${crew.length}</small><kbd>T</kbd></button>
   <button class="bt run" data-a="brun" ${wild ? '' : 'disabled'}>${uiIconHTML('run', 18)}<b>Run</b><small>${wild ? 'Walk away' : 'No exit'}</small><kbd>R</kbd></button></div>${first ? '' : `<button class="bt back wide" data-a="bback">${uiIconHTML('back', 16)}<b>Back to ${escapeHtml(billyName(fighter(activeBattle.plan[activeBattle.plan.length - 1].who)))}</b><kbd>Esc</kbd></button>`}</div>`;
+  } else if (ph === 'part') {
+    const t = fighter(activeBattle.tk);
+    h = `<div class="plist">${ROBOT_LIMBS.map(q => {
+      const left = partHpLeft(t, q),
+        mx = partMaxHp(t, q),
+        P = t.fit && robotPartDef(t.fit[q].id);
+      return `<button class="pick part-pick" data-a="bpart" data-p="${q}" ${left <= 0 ? 'disabled' : ''}><span class="pk-t"><b>${escapeHtml(ROBOT_SLOT_NAMES[q][0].toUpperCase() + ROBOT_SLOT_NAMES[q].slice(1))}</b><small>${escapeHtml(P ? P.name : '')}${P && P.move && MOVES[P.move] ? ` · gives ${escapeHtml(MOVES[P.move].n)}` : ''}</small><span class="hpmini"><i class="${left / mx < 0.34 ? 'low' : ''}" style="width:${(left / mx) * 100}%"></i></span></span><span class="pk-s tnum">${left <= 0 ? 'Broken' : `${left}/${mx}`}</span></button>`;
+    }).join('')}</div>${backButtonHTML()}`;
   } else if (ph === 'fight') {
-    const m = fighter(activeBattle.cur);
-    h = `<div class="moves">${m.moves
-      .map((id, n) => {
-        const M = MOVES[id],
-          c = TYPE_COLORS[M.t],
-          P = M.p ? M.p : M.fx && M.fx.vary ? 'Varies' : 'Status',
-          stab = M.t !== 'None' && actorTypes(activeBattle.cur).includes(M.t);
-        return `<button class="mv" style="--tc:${c[0]};--tf:${c[1]}" data-a="bmove" data-m="${id}" data-tip="${escapeHtml(M.d)}"><span class="mv-top"><b>${escapeHtml(M.n)}</b><kbd>${n + 1}</kbd></span><span class="mv-meta"><span class="mv-ty">${M.t === 'None' ? 'Normal' : M.t}${stab ? ' ★' : ''}</span><span class="tnum">${P}${M.p ? ' pow' : ''}${M.p && typeof battleWeatherMultiplier === 'function' ? (battleWeatherMultiplier(M.t) > 1 ? ' ▲' : battleWeatherMultiplier(M.t) < 1 ? ' ▼' : '') : ''}${M.c !== 'X' || M.a < 100 ? ` · ${M.a || 100}%` : ''}</span></span>${effectivenessLabel(id)}</button>`;
-      })
-      .join('')}</div>${backButtonHTML()}`;
+    h = `${moveTilesHTML(fighter(activeBattle.cur))}${backButtonHTML()}`;
   } else if (ph === 'target') {
     const mid = activeBattle.mv;
     h = `<div class="plist">${liveActors(1)
@@ -1121,8 +1192,8 @@ export function setEndBattle(v) {
    camera, so the battle reads from the picture itself. With two or three a side they replace the corner cards; in a
    one-on-one they do too, unless Settings → Battle HUD is set to the classic cards. Tap a foe's plate (or the foe) to
    aim at it. */
-const stagePlatesOn = () =>
-  !!activeBattle && (isMulti() || ((saveData.preferences || {}).battleHud || 'scene') !== 'classic');
+/* phase 06-3: always the plates in the scene (the classic corner cards and their setting are gone) */
+const stagePlatesOn = () => !!activeBattle;
 function plateElement(k) {
   const L = $('#plates');
   if (!L) return null;
@@ -1222,7 +1293,68 @@ function turnBar() {
   if (e.innerHTML !== html) e.innerHTML = '<b>Order</b>' + html;
 }
 /* every frame: plates ride above their billionaire; the one choosing and the ones you can aim at are marked */
+/* phase 06-3: the battle cards live in the scene. The text floats over the ground between the fighters, the menu beside
+   the one choosing; both follow the camera (which holds still while you choose, battle-stage.js camUpdate), keep a
+   readable size, stay in the lower part of the screen within thumb reach, and are page elements, so the scene's
+   lighting never touches them (css/battle-ui.css) */
+const floatPos = { acts: null, msg: null };
+function floatTick() {
+  const B = $('#battle'),
+    acts = $('#acts'),
+    msg = $('#msg');
+  if (!B || !acts || !msg || !activeBattle || !battleStage.L || !battleStage.gl) {
+    if (B && B.classList.contains('ui3d')) {
+      B.classList.remove('ui3d');
+      battleStageResize();
+    }
+    floatPos.acts = floatPos.msg = null;
+    return;
+  }
+  if (!B.classList.contains('ui3d')) {
+    B.classList.add('ui3d');
+    battleStageResize();
+  }
+  const ph = activeBattle.phase;
+  battleStage.calm = ph !== 'playing' && ph !== 'end';
+  const L = battleStage.L,
+    vw = L.vw,
+    vh = L.vh,
+    pad = 16,
+    land = L.lay === 'landscape',
+    tk = $('.ticker'),
+    top0 = (tk ? tk.getBoundingClientRect().bottom - B.getBoundingClientRect().top : 24) + 8,
+    who = activeBattle.cur != null && battleStage.s[activeBattle.cur] ? activeBattle.cur : 0,
+    w0 = actorWorldPoint(who),
+    a = battleStageToCss({ x: w0.x, y: 0, z: w0.z }),
+    p0 = actorWorldPoint(0),
+    p1 = actorWorldPoint(1),
+    mid = battleStageToCss({ x: (p0.x + p1.x) / 2, y: 0, z: (p0.z + p1.z) / 2 }),
+    hasActs = !!acts.firstChild && ph !== 'playing';
+  /* a column under the one choosing: its feet, then the text, then the menu, in the lower part of the screen (the
+     right third in landscape), so neither card covers a fighter and both stay within thumb reach */
+  const cw = Math.min(vw - 2 * pad, land ? 360 : 400);
+  acts.style.width = msg.style.width = cw + 'px';
+  const ah = hasActs ? acts.offsetHeight : 0,
+    mh = msg.offsetHeight,
+    gap = 8,
+    colH = mh + (hasActs ? gap + ah : 0);
+  let x = land ? vw - cw - pad : a ? a.x - cw * 0.3 : (vw - cw) / 2,
+    y = land ? (mid ? mid.y - colH / 2 : top0) : a ? a.y + 12 : vh - colH - pad;
+  x = clamp(x, pad, vw - cw - pad);
+  y = clamp(y, land ? top0 : vh * 0.42, vh - colH - pad - 8);
+  const mx = x,
+    my = y,
+    ax = x,
+    ay = y + mh + gap;
+  const ease = (o, x, y) => (o ? { x: o.x + (x - o.x) * 0.3, y: o.y + (y - o.y) * 0.3 } : { x, y });
+  floatPos.acts = ease(floatPos.acts, ax, ay);
+  floatPos.msg = ease(floatPos.msg, mx, my);
+  acts.style.transform = `translate(${floatPos.acts.x.toFixed(1)}px, ${floatPos.acts.y.toFixed(1)}px)`;
+  msg.style.transform = `translate(${floatPos.msg.x.toFixed(1)}px, ${floatPos.msg.y.toFixed(1)}px)`;
+  acts.classList.toggle('empty', !hasActs);
+}
 function platesTick() {
+  floatTick();
   const L = $('#plates');
   if (!L || !activeBattle || !battleStage.L || !L.firstChild) return;
   const tgt = activeBattle.phase === 'target',

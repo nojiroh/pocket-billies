@@ -187,7 +187,7 @@ function titleNew() {
     titleEnd();
     if (typeof cutsceneWanted === 'function' && cutsceneWanted()) cutsceneStart();
     else {
-      uiState.intro = 1;
+      uiState.openingFailed = 'cant';
       render();
     }
     return;
@@ -214,7 +214,7 @@ function titleNew() {
           titleEnd();
           if (typeof cutsceneWanted === 'function' && cutsceneWanted()) cutsceneStart();
           else {
-            uiState.intro = 1;
+            uiState.openingFailed = 'cant';
             render();
           }
         },

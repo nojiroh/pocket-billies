@@ -3155,3 +3155,63 @@ body.vp-has-big::after {
   margin: 6px 0;
   font-weight: 600;
 }
+
+/* ===================== phase 17: Robots ===================== */
+.rb-prev {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin: 8px 0;
+}
+.rb-cv {
+  image-rendering: pixelated;
+  background: radial-gradient(circle at 50% 80%, rgba(255, 255, 255, 0.08), transparent 70%);
+  border-radius: 10px;
+}
+.rb-stats {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  margin: 6px 0;
+}
+.rb-stats span {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 4px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.15);
+}
+.rb-th {
+  width: 32px;
+  height: 32px;
+  flex: none;
+  object-fit: contain;
+  image-rendering: pixelated;
+  border-radius: 6px;
+}
+.rb-pics {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 6px 0;
+}
+.rb-pics figure {
+  margin: 0;
+  text-align: center;
+  font-size: 11px;
+}
+.rb-pic {
+  width: 96px;
+  height: 96px;
+  object-fit: contain;
+  image-rendering: pixelated;
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 8px;
+}
+.tr-robot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}

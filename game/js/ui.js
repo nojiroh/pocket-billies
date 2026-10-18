@@ -2,7 +2,15 @@
 /* ================= UI ================= */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { provide } from './hooks.js';
+import {
+  billyUnit,
+  provide,
+  unitBotBuildHTML,
+  unitBuildHTML,
+  unitHeroHTML,
+  unitOpenRowHTML,
+  unitRowHTML,
+} from './hooks.js';
 import { $, $$, clamp, random } from './util.js';
 import {
   COINS,
@@ -32,13 +40,12 @@ import {
   trainersAt,
   typeEffectiveness,
 } from './game-data.js';
-import { weightClass } from './logic/parts.js';
+import { isRobot, speciesOf } from './logic/fighters.js';
 import {
   addEgg,
   allBillies,
   billyBuild,
   billyName,
-  billyWeight,
   blockerAt,
   canEnter,
   canEvolve,
@@ -78,6 +85,8 @@ import {
   tripTo,
   xpFor,
 } from './logic/rules.js';
+import { TOAST_MS, toastAdd, toastItem, toastTime } from './logic/messages.js';
+import { pbFloat, pbInboxDot, pbInboxPop } from './ui-kit.js';
 import { newSaveKeepingPreferences } from './logic/saves.js';
 import {
   CATCH_RULES,
@@ -104,9 +113,8 @@ import {
 } from './game-state.js';
 import { frameTask, userFps } from './frame-scheduler.js';
 import { ART_CACHE, artLoad, artURL, coinHTML, coinURL, eggHTML, makeCanvas, uiIconHTML } from './art.js';
-import { LOOK_PRESETS, cleanLook, cleanTrainer, lookOf, personHTML, portraitHTML } from './person-art.js';
+import { LOOK_PRESETS, cleanLook, cleanTrainer, personHTML, portraitHTML } from './person-art.js';
 import { applyPreferences, settingsHTML } from './settings-screen.js';
-import { lookPortrait, openDressingRoom } from './dressing-room.js';
 import { bustHTML, rigCanvasHTML } from './skeleton-rig.js';
 import { EASE, battleStage, battleStageFocus, battleStageTargets, camHome } from './battle-stage.js';
 import {
@@ -138,7 +146,7 @@ import {
   seamlessWorld,
   shiftWalkView,
 } from './seamless-world.js';
-import { battle3dLayout, battle3dWanted } from './battle-3d.js';
+import { battle3dLayout } from './battle-3d.js';
 import {
   battleResize,
   battleShell,
@@ -148,6 +156,7 @@ import {
   itemIcon,
   paintActions,
   pickMove,
+  pickPart,
   pickTarget,
   planBack,
   planNext,
@@ -169,7 +178,7 @@ import { openShop } from './shop.js';
 import { soundEffect } from './sound.js';
 import { talkHazel } from './talk.js';
 import { cutscene, cutsceneStart, cutsceneWanted } from './cutscene.js';
-import { fallStill } from './opening-fall.js';
+import { tutorPicked } from './opening-fall.js';
 import { renderTitle, titleMount } from './title.js';
 import { loreBook, renderLore } from './lore.js';
 import { flyMenu, rideGlassLift } from './airship.js';
@@ -193,13 +202,10 @@ import {
   requestListHTML,
   stampTile,
 } from './things-to-do.js';
+import { workshopAction, workshopSectionHTML } from './workshop.js';
 /* eslint-disable no-func-assign */
 expose({
   BOX_SORTS: [() => BOX_SORTS],
-  HAZEL_INTRO_LINES: [() => HAZEL_INTRO_LINES],
-  INTRO_STILLS: [() => INTRO_STILLS],
-  PART_SIZE_NAMES: [() => PART_SIZE_NAMES],
-  PART_SLOT_NAMES: [() => PART_SLOT_NAMES],
   RARITY_NAMES: [() => RARITY_NAMES],
   ROOM_BY_BUILDING: [() => ROOM_BY_BUILDING],
   ROOM_BY_USE: [() => ROOM_BY_USE],
@@ -209,7 +215,6 @@ expose({
   addPick: [() => addPick, v => (addPick = v)],
   badgeSlots: [() => badgeSlots, v => (badgeSlots = v)],
   billyConditionHTML: [() => billyConditionHTML],
-  billyPartsHTML: [() => billyPartsHTML, v => (billyPartsHTML = v)],
   billySheet: [() => billySheet, v => (billySheet = v)],
   boardNote: [() => boardNote, v => (boardNote = v)],
   boxSection: [() => boxSection, v => (boxSection = v)],
@@ -232,7 +237,6 @@ expose({
   hereCard: [() => hereCard, v => (hereCard = v)],
   hpBar: [() => hpBar, v => (hpBar = v)],
   initPixelSky: [() => initPixelSky, v => (initPixelSky = v)],
-  introSteps: [() => introSteps, v => (introSteps = v)],
   isDark: [() => isDark],
   learnModal: [() => learnModal, v => (learnModal = v)],
   leaveRoom: [() => leaveRoom, v => (leaveRoom = v)],
@@ -247,6 +251,8 @@ expose({
   nextModal: [() => nextModal, v => (nextModal = v)],
   nextToast: [() => nextToast, v => (nextToast = v)],
   nodeActions: [() => nodeActions, v => (nodeActions = v)],
+  notice: [() => notice, v => ((notice = v), provide({ notice }))],
+  openInbox: [() => openInbox, v => (openInbox = v)],
   openSettings: [() => openSettings, v => ((openSettings = v), provide({ openSettings }))],
   paintWorldMapCard: [() => paintWorldMapCard, v => ((paintWorldMapCard = v), provide({ paintWorldMapCard }))],
   pixelSky: [() => pixelSky],
@@ -274,12 +280,12 @@ expose({
   roomStepIn: [() => roomStepIn, v => (roomStepIn = v)],
   runEvolution: [() => runEvolution, v => ((runEvolution = v), provide({ runEvolution }))],
   showPendingWindows: [() => showPendingWindows, v => ((showPendingWindows = v), provide({ showPendingWindows }))],
+  showToast: [() => showToast, v => (showToast = v)],
   startGame: [() => startGame, v => ((startGame = v), provide({ startGame }))],
   statusBadgeHTML: [() => statusBadgeHTML],
   swapPick: [() => swapPick, v => (swapPick = v)],
-  teamCard: [() => teamCard, v => (teamCard = v)],
-  teamHero: [() => teamHero, v => (teamHero = v)],
   toast: [() => toast, v => ((toast = v), provide({ toast }))],
+  toastTimer: [() => toastTimer, v => (toastTimer = v)],
   topbar: [() => topbar, v => (topbar = v)],
   tripButtons: [() => tripButtons, v => (tripButtons = v)],
   tripDest: [() => tripDest],
@@ -291,6 +297,7 @@ expose({
   walkMapSync: [() => walkMapSync, v => (walkMapSync = v)],
   walkPick: [() => walkPick, v => (walkPick = v)],
   walkState: [() => walkState, v => (walkState = v)],
+  whenWorldShows: [() => whenWorldShows, v => (whenWorldShows = v)],
   worldMapCardHTML: [() => worldMapCardHTML, v => (worldMapCardHTML = v)],
   xpLeft: [() => xpLeft],
   xpProgress: [() => xpProgress],
@@ -302,6 +309,7 @@ provide({
   mapIdAt,
   mapOffsetInView,
   modal,
+  notice,
   openSettings,
   paintWorldMapCard,
   progressBarHTML,
@@ -323,7 +331,7 @@ export function setRenderOverlay(v) {
   provide({ renderOverlay });
 }
 /* to-module: end */
-const typeBadgeHTML = t =>
+export const typeBadgeHTML = t =>
   `<span class="chip" style="--tc:${TYPE_COLORS[t][0]};--tf:${TYPE_COLORS[t][1]}">${t === 'None' ? 'Normal' : t}</span>`;
 provide({ typeBadgeHTML }); /* to-module */
 const statusBadgeHTML = st => (st ? `<span class="stb st-${st}">${STATUS_NAMES[st]}</span>` : '');
@@ -337,20 +345,73 @@ function hpBar(hp, max) {
 }
 
 /* ---------- toasts & modals ---------- */
+/* phase 06: one toast at a time under the top bar (<pb-toast id="toast">, js/ui-kit.js); the same message again joins
+   the one showing or waiting ("Saved ×2", js/logic/messages.js); a tap or a swipe up dismisses it */
+let toastTimer = 0;
 export function toast(t) {
-  uiState.toastQ.push(t);
-  if (!uiState.toastOn) nextToast();
+  const where = toastAdd(uiState.toastOn, uiState.toastQ, String(t), Date.now());
+  if (where === 'showing') {
+    showToast();
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(nextToast, TOAST_MS);
+  } else if (!uiState.toastOn) nextToast();
 }
 function nextToast() {
+  clearTimeout(toastTimer);
   const t = uiState.toastQ.shift();
   if (!t) {
     uiState.toastOn = false;
-    renderOverlay();
+    showToast();
     return;
   }
-  uiState.toastOn = t;
-  renderOverlay();
-  setTimeout(nextToast, uiState.toastQ.length > 2 ? 1300 : 2300);
+  uiState.toastOn = toastItem(t, Date.now());
+  showToast(true);
+  toastTimer = setTimeout(nextToast, toastTime(uiState.toastQ.length));
+}
+/* the pill follows uiState.toastOn (the checks clear it and call renderOverlay); a new toast gets a new element, so it
+   drops in again, while a merge only updates the count */
+function showToast(fresh) {
+  let el = /** @type {any} */ (document.getElementById('toast'));
+  const t = uiState.toastOn;
+  if (!t) {
+    if (el) el.remove();
+    return;
+  }
+  if (el && fresh) {
+    el.remove();
+    el = null;
+  }
+  if (!el) {
+    el = document.createElement('pb-toast');
+    el.id = 'toast';
+    el.addEventListener('pb-dismiss', nextToast);
+    document.body.appendChild(el);
+  }
+  el.style.setProperty('--toast-top', document.querySelector('.topbar') ? '70px' : '12px');
+  el.text = t.text;
+  el.n = t.count;
+}
+/* phase 06: a notice that can wait (not a choice) goes behind the dot on the portrait instead of opening by itself;
+   the same id is kept once; onRead runs when it has been read */
+export function notice(n) {
+  if (uiState.inbox.some(x => x.id === n.id)) return;
+  uiState.inbox.push(n);
+  if (saveData.started && !activeBattle && uiState.intro === 0) render();
+}
+function openInbox() {
+  const L = uiState.inbox.splice(0);
+  if (!L.length) return;
+  modal({
+    title: L.length === 1 ? L[0].title : 'Waiting for you',
+    cls: 'inbox-sheet',
+    html:
+      L.length === 1
+        ? `<div class="prose">${L[0].html}</div>`
+        : `<ul class="inbox-list">${L.map((n, i) => `<li class="m-enter" style="--i:${i}"><h3>${n.title}</h3><div class="prose">${n.html}</div></li>`).join('')}</ul>`,
+    btns: [{ l: 'Got it', c: 'dark', f: closeModal }],
+  });
+  L.forEach(n => n.onRead && n.onRead());
+  render();
 }
 export function modal(o) {
   uiState.mq.push(o);
@@ -371,12 +432,12 @@ export function renderOverlay() {
   const M = uiState.modal;
   if (M)
     h += `<div class="scrim" data-a="scrim"><div class="sheet px ${M.cls || ''}" role="dialog" aria-modal="true" aria-labelledby="mt">${M.top || ''}<h2 id="mt">${M.title}</h2><div class="body">${M.html || ''}</div><div class="btns">${(M.btns || []).map((b, i) => `<button class="pb ${b.c || ''} wide" data-a="mb" data-i="${i}" ${b.dis ? 'disabled' : ''}>${b.l}</button>`).join('')}</div></div></div>`;
-  if (uiState.toastOn) h += `<div class="toast px glass" role="status">${escapeHtml(uiState.toastOn)}</div>`;
   const keep = ov.querySelector('.scrim');
   ov.innerHTML = h;
   const sc = ov.querySelector('.scrim');
   if (sc && keep && M && M === uiState._lastM) sc.classList.add('still');
   uiState._lastM = M;
+  showToast();
   if (M && M.after && !M._afterRan) {
     M._afterRan = true;
     M.after();
@@ -395,6 +456,25 @@ export function renderOverlay() {
 }
 
 /* ---------- post-step events ---------- */
+/* phase 06: runs fn once the world is on screen and the player has had a moment to see it (no loader, title or
+   opening in front of it); gives up quietly after 30 s */
+export function whenWorldShows(fn, settle = 1200) {
+  const t0 = performance.now();
+  const ready = () => {
+    const ld = document.getElementById('loader');
+    return (
+      walkView.ready &&
+      !uiState.title &&
+      !document.body.classList.contains('in-cs') &&
+      !(ld && !ld.hidden && ld.offsetParent !== null)
+    );
+  };
+  const tick = () => {
+    if (ready()) setTimeout(fn, settle);
+    else if (performance.now() - t0 < 30000) setTimeout(tick, 250);
+  };
+  tick();
+}
 export function showPendingWindows() {
   if (activeBattle || uiState.modal || !saveData.started || uiState.title) return;
   const eg = hatchable()[0];
@@ -441,7 +521,7 @@ function learnModal(m, mv) {
   });
 }
 function evolutionModal(m) {
-  const s = SPECIES[m.sp],
+  const s = speciesOf(m),
     e = s.evo;
   const why =
     {
@@ -452,6 +532,7 @@ function evolutionModal(m) {
     }[e.k] || '';
   modal({
     title: `${escapeHtml(billyName(m))} is evolving`,
+    cls: 'evo-sheet',
     top: `<div class="evo">${rigCanvasHTML(m.sp, 128, { gold: m.gold, build: m.build })}</div>`,
     html: `<p>${why} Something bigger is coming.</p>`,
     lock: 1,
@@ -480,7 +561,7 @@ function evolutionModal(m) {
   });
 }
 function runEvolution(m, note, path = 'A') {
-  const from = SPECIES[m.sp],
+  const from = speciesOf(m),
     to = SPECIES[from.evo && from.evo.k === 'split' && from.alt && path === 'B' ? from.alt : from.next],
     fromName = billyName(m);
   uiState.modal = null;
@@ -537,7 +618,7 @@ function hatchModal(e) {
           const box = $('#hatchBox');
           const res = hatchEgg(e);
           const m = res.m,
-            s = SPECIES[m.sp];
+            s = speciesOf(m);
           const done = () => {
             uiState.modal = null;
             modal({
@@ -571,7 +652,7 @@ const TABS = ['walk', 'map', 'team', 'ledger', 'bag'],
 function topbar() {
   const shut = !!(saveData.preferences && saveData.preferences.cardClosed),
     walk = uiState.tab === 'walk';
-  return `<div class="topbar glass" role="status">${walk ? `<button class="tb-where ${shut ? 'shut' : ''}" data-a="card-open" aria-expanded="${!shut}" aria-label="${shut ? 'Show' : 'Hide'} the card for ${escapeHtml(LOCATIONS[saveData.trip.node].name)}">${escapeHtml(uiState.inside && !uiState.bench && typeof roomState === 'function' && roomState() ? uiState.inside.name || LOCATIONS[saveData.trip.node].name : LOCATIONS[saveData.trip.node].name)}${uiIconHTML('chev', 12)}</button>` : `<span class="tb-where">${escapeHtml(LOCATIONS[saveData.trip.node].name)}</span>`}<span class="tb-chip tnum" title="Money">${coinHTML('penny', 16)}<small>$</small><b data-count="tse" data-to="${saveData.se}">${formatNumber(saveData.se)}</b></span><button class="tb-btn" data-a="settings" aria-label="Settings and help">${uiIconHTML('gear', 18)}</button><button class="tb-me" data-a="tab" data-t="profile" aria-label="Your trainer card" ${uiState.tab === 'profile' ? 'aria-current="page"' : ''}>${typeof portraitHTML === 'function' ? portraitHTML('me', 84) : ''}</button></div>`;
+  return `<div class="topbar glass" role="status">${walk ? `<button class="tb-where ${shut ? 'shut' : ''}" data-a="card-open" aria-expanded="${!shut}" aria-label="${shut ? 'Show' : 'Hide'} the card for ${escapeHtml(LOCATIONS[saveData.trip.node].name)}">${escapeHtml(uiState.inside && !uiState.bench && typeof roomState === 'function' && roomState() ? uiState.inside.name || LOCATIONS[saveData.trip.node].name : LOCATIONS[saveData.trip.node].name)}${uiIconHTML('chev', 12)}</button>` : `<span class="tb-where">${escapeHtml(LOCATIONS[saveData.trip.node].name)}</span>`}<span class="tb-chip tnum" title="Money">${coinHTML('penny', 16)}<small>$</small><b data-count="tse" data-to="${saveData.se}">${formatNumber(saveData.se)}</b></span><button class="tb-btn" data-a="settings" aria-label="Settings and help">${uiIconHTML('gear', 18)}</button><button class="tb-me" data-a="tab" data-t="profile" aria-label="Your trainer card" ${uiState.tab === 'profile' ? 'aria-current="page"' : ''}>${typeof portraitHTML === 'function' ? portraitHTML('me', 84) : ''}</button>${pbInboxDot(uiState.inbox.length)}</div>`;
 }
 export function render() {
   const app = $('#app');
@@ -625,11 +706,14 @@ export function render() {
   walkMapSync();
   document.body.classList.toggle('on-map', T === 'map');
   if (T === 'map') worldMapMount();
+  pbInboxPop(uiState.inbox.length);
   $$('[data-count]').forEach(el => {
     const k = el.dataset.count,
       to = +el.dataset.to,
       from = uiState.disp[k];
     uiState.disp[k] = to;
+    /* phase 06: money earned rises from the money chip instead of a toast */
+    if (k === 'tse' && from != null && to > from) pbFloat(el.closest('.tb-chip') || el, '+$' + formatNumber(to - from));
     if (from == null || from === to || reducedMotion) {
       el.textContent = formatNumber(to);
       return;
@@ -668,92 +752,13 @@ function updateNav(show) {
     else b.removeAttribute('aria-current');
   });
 }
-/* v47: the opening in pictures, when the cutscene can't run or stops (opening-fall.js draws them): the fall, Hazel, your trainer, your starter, then Blake */
-const INTRO_STILLS = [
-  [
-    'street',
-    3.2,
-    'The surface, late, after the show. You were walking home, a lanyard round your neck, your phone in your hand.',
-  ],
-  ['street', 6.35, 'Then the pavement opened.'],
-  ['crust', 1.05, 'Down through the crust: soil, rock, old pipes, a crate stamped LEGACY. Then light.'],
-  [
-    'sky',
-    0.4,
-    'Inside the planet there is another world, with the Inner Sun at its centre. You fell right across it, and landed in Copperleaf.',
-  ],
-];
-const HAZEL_INTRO_LINES = [
-  '[surprised] Oh! Another one! Are you all right? That was quite a landing.',
-  'You came down through the crust. Things do, now and then. Mostly furniture. You’re the first this week who can talk.',
-  'Can you tell me your name? No? Classic fall-related amnesia. Very common down here. It usually comes back, a bit at a time.',
-  '[happy] Let’s start with what we can see. Let me get a good look at you.',
-];
-export function introSteps() {
-  return [
-    ...INTRO_STILLS.map(s => ({ k: 'still', s })),
-    ...HAZEL_INTRO_LINES.map(t => ({ k: 'gini', t })),
-    { k: 'trainer' },
-    { k: 'named' },
-    { k: 'pick' },
-  ];
-}
+/* phase 06-2: before a game starts, only the plain title (when the 3D one can't show) or, if the 3D opening couldn't
+   start or broke, a screen to try it again. The old step-by-step intro (stills, Hazel's lines, the trainer step and a
+   list of starters) is gone: the opening cutscene is the only way in (docs/phases/06-plan.md "The new opening"). */
 function renderIntro() {
-  const i = uiState.intro,
-    L = introSteps(),
-    st = i > 0 ? L[Math.min(i, L.length) - 1] : null;
-  if (st && st.k === 'still') {
-    const [kind, t, text] = st.s,
-      src = typeof fallStill === 'function' ? fallStill(kind, t) : '';
-    return `<div class="talk intro-still">${src ? `<img class="still" src="${src}" alt="">` : ''}<div class="dlg px"><p class="line">${escapeHtml(text)}</p><button class="pb dark wide" data-a="intro">Next</button></div></div>`;
-  }
-  if (st && st.k === 'gini') {
-    const m = /^\[(\w+)\]\s*/.exec(st.t),
-      tx = m ? st.t.slice(m[0].length) : st.t;
-    return `<div class="talk"><div class="talk-art">${personHTML('gini', 96)}</div><div class="dlg px"><p class="speaker">Professor Hazel</p><p class="line" id="dlgLine">${escapeHtml(tx)}</p><button class="pb dark wide" data-a="intro">Next</button></div></div>`;
-  }
-  if (i === 0)
-    return `<div class="title"><div class="title-landscape" aria-hidden="true"></div><div class="title-coin">${coinHTML('penny', 176, 32)}</div><h1 class="logo">Pocket Billies</h1><p class="tag">A walking RPG inside the Hollow Earth, where the Billies are the wildlife. Gotta tax 'em all!</p><button class="pb gold wide big" data-a="intro">Start</button></div>`;
-  if (i <= HAZEL_INTRO_LINES.length)
-    return `<div class="talk"><div class="talk-art">${personHTML('gini', 96)}</div><div class="dlg px"><p class="speaker">Professor Hazel</p><p class="line" id="dlgLine">${HAZEL_INTRO_LINES[i - 1]}</p><button class="pb dark wide" data-a="intro">Next</button></div></div>`;
-  if (st && st.k === 'trainer') {
-    const cur = JSON.stringify(cleanLook(uiState.trainerDraft || LOOK_PRESETS[0]));
-    return `<header class="bar"><div><div class="sub">Your adventure, your style</div><h1 class="where">Create your trainer</h1></div></header>
-  <p class="note">Pick a starting look, then make it yours: body, face, hair and clothes. You can change it any time from your Trainer card.</p>
-  <div class="tr-presets">${LOOK_PRESETS.map((p, j) => `<button class="tr-pre px" data-a="tr-preset" data-i="${j}" aria-pressed="${JSON.stringify(cleanLook(p)) === cur}"><img src="${lookPortrait(p)}" alt="Look ${j + 1}"></button>`).join('')}</div>
-  <div class="tr-me px"><div class="tr-big">${personHTML('me', 120)}</div><div class="racts"><button class="pb dark wide" data-a="tr-custom">${uiIconHTML('profile', 16)} Customize</button><button class="pb gold wide big" data-a="tr-next">Next</button></div></div>`;
-  }
-  if (st && st.k === 'named') {
-    const nm = lookOf('me').name || 'Trainer';
-    return `<div class="talk"><div class="talk-art">${personHTML('me', 96)}</div><div class="dlg px"><p class="speaker">Professor Hazel</p><p class="line">${escapeHtml(nm)}? It suits you. If it isn’t your name, it is now. Nobody should walk the Hollow Earth alone, so here: choose your very first Billie.</p><button class="pb dark wide" data-a="intro">Choose a starter</button></div></div>`;
-  }
-  const pk = RULES.start.starters.filter(l => SPECIES[l + '0']);
-  return `<header class="bar"><div><div class="sub">Professor Hazel’s lab</div><h1 class="where">Pick your starter</h1></div></header><p class="note">Each one beats one of the others. Your rival will pick whichever beats yours.</p>
- <div class="starters">${pk
-   .map((l, j) => {
-     const s = SPECIES[l + '0'],
-       t = s.types[0];
-     const st = TYPES.filter(x => typeEffectiveness(t, [x]) > 1),
-       wk = TYPES.filter(x => typeEffectiveness(x, [t]) > 1);
-     return `<button class="starter px" data-a="pick" data-l="${l}" style="--d:${j * 80}ms">${rigCanvasHTML(l + '0', 104, { act: 'cheer' })}<span><span class="sn">${s.name}</span><span class="row">${typeBadgeHTML(t)}</span><span class="sd">${s.blurb}</span><span class="sd">Strong against ${st.join(' and ')}. Weak to ${wk.join(' and ')}.</span></span></button>`;
-   })
-   .join('')}</div>`;
-}
-/* phase 16: a Billie's parts, its weight and whether it is Prime (in its details, Stats) */
-const PART_SLOT_NAMES = { head: 'Head', body: 'Body', front: 'Front', back: 'Back', sig: 'Signature' },
-  PART_SIZE_NAMES = { S: 'Small', M: 'Normal', L: 'Large' };
-function billyPartsHTML(m) {
-  const b = billyBuild(m),
-    kg = billyWeight(m),
-    prime = isPrime(b);
-  return `<div class="ms-parts"><div class="ms-parts-h"><b>Parts</b><span class="tnum">${kg} kg · ${weightClass(kg)}</span>${prime ? '<span class="ms-prime">Prime</span>' : ''}</div><div class="ms-parts-row">${partSlots()
-    .map(
-      k =>
-        `<span class="ms-part sz-${escapeHtml(b[k])}"><small>${escapeHtml(PART_SLOT_NAMES[k] || k)}</small><b>${escapeHtml(PART_SIZE_NAMES[b[k]] || b[k])}</b></span>`
-    )
-    .join(
-      ''
-    )}</div><p class="note">${prime ? 'Every part is its own, at normal size: a Prime Billie, a little stronger at everything.' : 'Bigger parts make it heavier: harder hits, slower moves. With every part at normal size it would be Prime.'}</p></div>`;
+  if (uiState.openingFailed)
+    return `<div class="title opening-failed"><h1 class="logo">Pocket Billies</h1><p class="tag">The opening scene couldn’t start${uiState.openingFailed === 'stopped' ? ' (it stopped partway)' : ''}. Trying again usually works; if it keeps happening, send the debug log.</p><button class="pb gold wide big" data-a="intro">Try again</button><button class="pb quiet wide" data-a="dbglog">Export debug log</button></div>`;
+  return `<div class="title"><div class="title-landscape" aria-hidden="true"></div><div class="title-coin">${coinHTML('penny', 176, 32)}</div><h1 class="logo">Pocket Billies</h1><p class="tag">A walking RPG inside the Hollow Earth, where the Billies are the wildlife. Gotta tax 'em all!</p><button class="pb gold wide big" data-a="intro">Start</button></div>`;
 }
 function encounterCardHTML(q) {
   const nu = !uiState.seenEnc.has(q.id);
@@ -1515,17 +1520,15 @@ function walkMapSync() {
       }
       return;
     }
-    if (typeof battle3dWanted === 'function' && battle3dWanted()) return;
-    const cv = $('#dio');
-    if (cv) cv.hidden = true;
-    if (walkView.cv) stopWalkView();
-    return;
+    /* phase 06-3: the battle needs the 3D scene (there is no painted stage): keep it running, or open the one where you
+       are below; the battle joins it as soon as it is ready (battle-stage.js battleStageJoin3d) */
+    if (walkView.cv) return;
   }
-  const on = saveData.started && uiState.tab !== 'map' && !!mapIdAt(saveData.trip.node),
-    walk = on && uiState.tab === 'walk';
+  const on = saveData.started && (!!activeBattle || uiState.tab !== 'map') && !!mapIdAt(saveData.trip.node),
+    walk = on && !activeBattle && uiState.tab === 'walk';
   let cv = $('#dio');
   document.body.classList.toggle('on-walk', walk);
-  document.body.classList.toggle('on-scene', on && !walk);
+  document.body.classList.toggle('on-scene', on && !walk && !activeBattle);
   if (!on) {
     if (walkView.cv) stopWalkView();
     if (uiState.tab === 'map' && saveData.started && typeof worldMapGlWanted === 'function' && worldMapGlWanted()) {
@@ -1683,10 +1686,11 @@ function paintWorldMapCard() {
   if (c) c.innerHTML = worldMapCardHTML();
 }
 /* ---------- team: the lead up top, the party as cards, then storage ---------- */
-const plateVars = m => {
-  const t = SPECIES[m.sp].types;
+export const plateVars = m => {
+  const t = speciesOf(m).types;
   return `--c1:${TYPE_COLORS[t[0]][0]};--c2:${TYPE_COLORS[t[t.length - 1]][0]}`;
 };
+provide({ plateVars }); /* to-module */
 const billyConditionHTML = m => (m.hp <= 0 ? '<span class="stb st-down">Fainted</span>' : statusBadgeHTML(m.status));
 const xpProgress = m => {
   if (m.lvl >= maxLevel()) return 1;
@@ -1695,25 +1699,8 @@ const xpProgress = m => {
   return clamp((m.xp - a) / (b - a), 0, 1);
 };
 const xpLeft = m => (m.lvl >= maxLevel() ? 'Max level' : `${formatNumber(xpFor(m.lvl + 1) - m.xp)} to Lv ${m.lvl + 1}`);
-const needsCare = m => m.hp < maxHp(m) || !!m.status;
+export const needsCare = m => m.hp < maxHp(m) || !!m.status;
 const meter = (k, inner, v) => `<div class="tm-meter"><span>${k}</span>${inner}<b class="tnum">${v}</b></div>`;
-function teamHero(m) {
-  const s = SPECIES[m.sp],
-    mx = maxHp(m),
-    bud = m.uid === saveData.buddy;
-  return `<section class="tm-hero tpanel"><button class="tm-stage" data-a="mon" data-u="${m.uid}" style="${plateVars(m)}" aria-label="${escapeHtml(billyName(m))}, details"><span class="tm-ribbon">Lead</span>${m.gold ? '<span class="tm-ribbon gold">Golden</span>' : ''}${rigCanvasHTML(m.sp, 120, { gold: m.gold, build: m.build })}</button>
- <div class="tm-info"><div class="tm-name"><h2>${escapeHtml(billyName(m))}</h2><span class="lv tnum">Lv ${m.lvl}</span></div>${m.nick ? `<div class="tm-sp">${escapeHtml(s.name)}</div>` : ''}
-  <div class="row">${s.types.map(typeBadgeHTML).join('')}${billyConditionHTML(m)}${bud ? `<span class="badge bud">${uiIconHTML('heart', 11)} Buddy</span>` : ''}</div>
-  ${meter('HP', hpBar(m.hp, mx), `${m.hp}/${mx}`)}${meter('XP', progressBarHTML(xpProgress(m), 'xpb'), xpLeft(m))}
-  <div class="tm-acts">${needsCare(m) ? `<button class="pb small green" data-a="mheal" data-u="${m.uid}">${uiIconHTML('heart', 14)} Heal</button>` : ''}${bud ? '' : `<button class="pb small" data-a="mbuddy" data-u="${m.uid}">${uiIconHTML('walk', 14)} Make buddy</button>`}<button class="pb small quiet" data-a="mon" data-u="${m.uid}">Details</button></div></div></section>`;
-}
-function teamCard(m, i) {
-  const mx = maxHp(m),
-    bud = m.uid === saveData.buddy;
-  return `<div class="tm-card${m.hp <= 0 ? ' down' : ''}" style="--d:${i * 40}ms"><button class="tm-main" data-a="mon" data-u="${m.uid}"><span class="tm-spr" style="${plateVars(m)}">${rigCanvasHTML(m.sp, 72, { gold: m.gold, build: m.build })}${bud ? `<i class="tm-heart" title="Buddy">${uiIconHTML('heart', 12)}</i>` : ''}</span>
-  <span class="tm-t"><b>${escapeHtml(billyName(m))}</b><span class="tm-lv tnum">Lv ${m.lvl}</span></span><span class="row">${SPECIES[m.sp].types.map(typeBadgeHTML).join('')}${billyConditionHTML(m)}</span>${hpBar(m.hp, mx)}<span class="hpn tnum">${m.hp}/${mx} HP</span></button>
-  <div class="tm-quick"><button class="qk" data-a="mlead" data-u="${m.uid}" ${m.hp <= 0 ? 'disabled' : ''}>Make lead</button>${needsCare(m) ? `<button class="qk heal" data-a="mheal" data-u="${m.uid}">Heal</button>` : ''}</div></div>`;
-}
 const BOX_SORTS = [
   ['new', 'Newest'],
   ['lvl', 'Level'],
@@ -1722,10 +1709,10 @@ const BOX_SORTS = [
 function boxSection() {
   const all = saveData.box,
     so = uiState.boxSort || 'new',
-    types = [...new Set(all.flatMap(m => SPECIES[m.sp].types))].sort();
+    types = [...new Set(all.flatMap(m => speciesOf(m).types))].sort();
   let f = uiState.boxF || 'all';
   if (f !== 'all' && !types.includes(f)) f = 'all';
-  let L = all.filter(m => f === 'all' || SPECIES[m.sp].types.includes(f));
+  let L = all.filter(m => f === 'all' || speciesOf(m).types.includes(f));
   L =
     so === 'lvl'
       ? L.slice().sort((a, b) => b.lvl - a.lvl)
@@ -1740,7 +1727,16 @@ function boxSection() {
   return `<section class="tpanel tm-box"><div class="sec-h"><h2>Storage</h2><span class="count tnum">${all.length}</span></div>${
     all.length
       ? `<p class="note">Billies resting here don’t battle. Tap one for details.</p>${tools}
- <div class="bx-grid">${L.map(m => `<div class="bx"><button class="bx-main" data-a="mon" data-u="${m.uid}"><span class="bx-spr" style="${plateVars(m)}">${rigCanvasHTML(m.sp, 60, { gold: m.gold, build: m.build })}</span><b>${escapeHtml(billyName(m))}</b><span class="bx-sub tnum">Lv ${m.lvl}<span class="bx-dots">${SPECIES[m.sp].types.map(t => `<i style="--tc:${TYPE_COLORS[t][0]}" title="${t}"></i>`).join('')}</span></span></button><button class="qk" data-a="mteam" data-u="${m.uid}">${full ? 'Swap in' : 'To team'}</button></div>`).join('')}</div>`
+ <div class="bx-grid">${L.map(
+   m =>
+     `<div class="bx"><button class="bx-main" data-a="mon" data-u="${m.uid}"><span class="bx-spr" style="${plateVars(m)}">${rigCanvasHTML(m.sp, 60, { gold: m.gold, build: m.build })}</span><b>${escapeHtml(billyName(m))}</b><span class="bx-sub tnum">Lv ${m.lvl}<span class="bx-dots">${speciesOf(
+       m
+     )
+       .types.map(t => `<i style="--tc:${TYPE_COLORS[t][0]}" title="${t}"></i>`)
+       .join(
+         ''
+       )}</span></span></button><button class="qk" data-a="mteam" data-u="${m.uid}">${full ? 'Swap in' : 'To team'}</button></div>`
+ ).join('')}</div>`
       : '<div class="empty tm-empty">Storage is empty. When your team is full, new Billies you tax and hatchlings rest here.</div>'
   }</section>`;
 }
@@ -1749,11 +1745,17 @@ function renderTeam() {
     rest = saveData.team.slice(1),
     free = saveData.box.length,
     open = Math.max(0, teamSize() - saveData.team.length);
+  /* phase 06-2: the lead big, the rest as roomy rows (js/unit-card.js), the open spots last */
   const slots = open
-    ? `<div class="tm-card empty tm-open"><span class="tm-plus" aria-hidden="true">+</span><span class="tm-ot"><b>${open === 1 ? '1 open spot' : `${open} open spots`}</b><span class="note">${free ? 'Bring someone back from storage.' : 'Tax more in the grass, or hatch an egg.'}</span></span>${free ? '<button class="qk" data-a="tmadd">Add from storage</button>' : ''}</div>`
+    ? unitOpenRowHTML(
+        open,
+        free ? 'Bring someone back from storage.' : 'Tax more in the grass, or hatch an egg.',
+        free ? '<button class="pb small" data-a="tmadd">Add</button>' : ''
+      )
     : '';
   return `<header class="bar"><div><div class="sub">${saveData.team.length} of ${teamSize()} on your team</div><h1 class="where">Your team</h1></div></header>
- <div class="tm-top">${lead ? teamHero(lead) : ''}<section class="tpanel tm-party"><div class="sec-h"><h2>Party</h2><span class="count tnum">${saveData.team.length}/${teamSize()}</span></div><p class="note">Your lead goes first in battle. Tap a card for details.</p><div class="tm-grid">${rest.map(teamCard).join('')}${slots}</div></section></div>
+ <div class="u-team">${lead ? unitHeroHTML(billyUnit(lead)) : ''}${rest.length || slots ? `<div class="u-list" aria-label="Party">${rest.map((m, i) => unitRowHTML(billyUnit(m), i)).join('')}${slots}</div>` : ''}<p class="u-hint">Your lead goes first in battle. Tap anyone for details.</p></div>
+${workshopSectionHTML()}
  ${boxSection()}`;
 }
 const RARITY_NAMES = { starter: 'Starter', common: 'Common', uncommon: 'Uncommon', rare: 'Rare', mythical: 'Mythical' };
@@ -1977,7 +1979,7 @@ function donateItem() {
   return k || null;
 }
 function billySheet(m) {
-  const s = SPECIES[m.sp],
+  const s = speciesOf(m),
     inTeam = saveData.team.includes(m),
     e = s.evo,
     mx = maxHp(m),
@@ -2145,10 +2147,6 @@ function billySheet(m) {
         b = base[i] || 0;
       return `<div class="ms-bar"><span>${STAT_NAMES[k]}</span><i><b style="width:${Math.round(Math.min(1, b / 150) * 100)}%;--c:${['#4E9A4A', '#D9532F', '#E3A12F', '#3478C8', '#7D52C2', '#2BA7A0'][i] || '#888'}"></b></i><em class="tnum">${v}</em></div>`;
     }).join('');
-  const nums = STAT_IDS.map(
-    (k, i) =>
-      `<div class="ms-st"><span>${STAT_NAMES[k]}</span><b class="tnum">${k === 'hp' ? mx : stat(m, k)}</b><small class="tnum">base ${base[i] ?? '?'}</small></div>`
-  ).join('');
   const metR = m.met
     ? (() => {
         const r = LOCATIONS.find(x => (x.id || '') === m.met.n) || LOCATIONS[m.met.n];
@@ -2168,7 +2166,7 @@ function billySheet(m) {
       : '';
   const tabs = [
     ['sum', 'Summary'],
-    ['stats', 'Stats'],
+    ['build', 'Build'],
     ['moves', 'Moves'],
     ['evo', 'Evolves'],
   ];
@@ -2176,7 +2174,7 @@ function billySheet(m) {
     title: escapeHtml(billyName(m)),
     cls: 'mon-sheet',
     acts,
-    top: `<div class="ms-plate" style="${plateVars(m)}">${lead ? '<span class="tm-ribbon">Lead</span>' : ''}${bud ? `<span class="tm-ribbon bud">${uiIconHTML('heart', 11)} Buddy</span>` : ''}${m.gold ? '<span class="tm-ribbon gold">Golden</span>' : ''}${isPrime(billyBuild(m)) ? '<span class="tm-ribbon prime">Prime</span>' : ''}${rigCanvasHTML(m.sp, 128, { gold: m.gold, build: m.build })}</div>`,
+    top: `<div class="ms-plate" style="${plateVars(m)}">${lead ? '<span class="tm-ribbon">Lead</span>' : ''}${bud ? `<span class="tm-ribbon bud">${uiIconHTML('heart', 11)} Buddy</span>` : ''}${m.gold ? '<span class="tm-ribbon gold">Golden</span>' : ''}${!isRobot(m) && isPrime(billyBuild(m)) ? '<span class="tm-ribbon prime">Prime</span>' : ''}${rigCanvasHTML(m.sp, 128, { gold: m.gold, build: m.build })}</div>`,
     html: `<p class="row ms-chips">${s.types.map(typeBadgeHTML).join('')}${billyConditionHTML(m)}<b class="lv tnum">Lv ${m.lvl}</b>${m.nick ? `<span class="ms-sp">${escapeHtml(s.name)}</span>` : ''}</p>
   <div class="ms-tabs" role="tablist" aria-label="About ${escapeHtml(billyName(m))}" data-on="sum">${tabs.map(([k, l]) => `<button role="tab" data-a="ms-tab" data-k="${k}" aria-selected="${k === 'sum'}">${l}</button>`).join('')}</div>
   <div class="ms-pane" data-k="sum"><div class="ms-meters">${meter('HP', hpBar(m.hp, mx), `${m.hp}/${mx}`)}${meter('XP', progressBarHTML(xpProgress(m), 'xpb'), xpLeft(m))}</div>
@@ -2184,7 +2182,7 @@ function billySheet(m) {
    ${acts.length ? `<div class="ms-acts">${acts.map((b, i) => `<button class="pb small ${b.c || ''}" data-a="mact" data-i="${i}" ${b.dis ? 'disabled' : ''}>${b.ic ? uiIconHTML(b.ic, 15) : ''}<span>${b.l}</span></button>`).join('')}</div>` : ''}
    <p class="note ms-about">${escapeHtml(s.blurb)}</p>
    <div class="ms-nick"><label class="field-l">Nickname<input id="nick" maxlength="16" value="${escapeHtml(m.nick)}" placeholder="${escapeHtml(s.name)}" autocomplete="off" enterkeyhint="done"></label><button class="pb small" data-a="mnick">Save</button></div></div>
-  <div class="ms-pane" data-k="stats" hidden><div class="ms-stats">${nums}</div>${billyPartsHTML(m)}<p class="note">The bars on the summary show what its kind is good at; the numbers grow as it levels up.</p></div>
+  <div class="ms-pane" data-k="build" hidden>${isRobot(m) ? unitBotBuildHTML(m) : unitBuildHTML(billyUnit(m), partSlots())}</div>
   <div class="ms-pane" data-k="moves" hidden><div class="mvlist">${m.moves
     .map(id => {
       const M = MOVES[id];
@@ -2240,7 +2238,18 @@ function addPick() {
   const free = saveData.box.slice().sort((a, b) => b.lvl - a.lvl);
   modal({
     title: 'Add to your team',
-    html: `<div class="list">${free.map(m => `<button class="pickrow" data-a="tmaddon" data-u="${m.uid}">${rigCanvasHTML(m.sp, 40, { gold: m.gold, build: m.build })}<span class="pr-t"><b>${escapeHtml(billyName(m))}</b><small>Lv ${m.lvl}, ${SPECIES[m.sp].types.map(t => (t === 'None' ? 'Normal' : t)).join(' and ')}</small></span></button>`).join('') || '<p>Storage is empty.</p>'}</div>`,
+    html: `<div class="list">${
+      free
+        .map(
+          m =>
+            `<button class="pickrow" data-a="tmaddon" data-u="${m.uid}">${rigCanvasHTML(m.sp, 40, { gold: m.gold, build: m.build })}<span class="pr-t"><b>${escapeHtml(billyName(m))}</b><small>Lv ${m.lvl}, ${speciesOf(
+              m
+            )
+              .types.map(t => (t === 'None' ? 'Normal' : t))
+              .join(' and ')}</small></span></button>`
+        )
+        .join('') || '<p>Storage is empty.</p>'
+    }</div>`,
     btns: [{ l: 'Cancel', c: 'quiet', f: closeModal }],
   });
 }
@@ -2318,7 +2327,7 @@ export function startGame(l, o = {}) {
   const nE = R.starterEncounters,
     words = ['No', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten'];
   const W = {
-    title: `${SPECIES[m.sp].name} joined your team`,
+    title: `${speciesOf(m).name} joined your team`,
     top: `<div class="sheet-art">${rigCanvasHTML(m.sp, 128)}</div>`,
     html: `${nE ? `<p>${words[nE] || nE} Billie${nE === 1 ? ' is' : 's are'} already rustling in the grass. Tap one to battle it, then flick a coin.</p>` : ''}${egg ? `<p>Professor Hazel also gave you a ${eggKm(R.starterEgg)} km egg. It’s warming up in an incubator, and every step you walk helps it hatch.</p>` : ''}`,
     btns: [{ l: 'Let’s go', c: 'dark', f: closeModal }],
@@ -2353,40 +2362,19 @@ document.addEventListener('click', ev => {
   if (typeof worldMapGlAction === 'function' && worldMapGlAction(a, d)) return;
   switch (a) {
     case 'intro':
-      if (uiState.intro === 0 && typeof cutsceneWanted === 'function' && cutsceneWanted()) {
-        cutsceneStart();
-        break;
+      /* the opening cutscene is the only way into a new game; if it can't run, the Try again screen */
+      uiState.openingFailed = false;
+      if (typeof cutsceneWanted === 'function' && cutsceneWanted()) cutsceneStart();
+      else {
+        uiState.openingFailed = 'cant';
+        render();
       }
-      uiState.intro++;
-      render();
-      break;
-    case 'pickgender':
-      uiState.pg = d.g;
-      uiState.intro++;
-      render();
-      break;
-    case 'tr-preset':
-      uiState.trainerDraft = cleanLook(LOOK_PRESETS[+d.i]);
-      render();
-      break;
-    case 'tr-custom':
-      openDressingRoom({ mode: 'intro', done: () => render() });
-      break;
-    case 'tr-next':
-      uiState.avatarDraft = cleanLook(uiState.trainerDraft || LOOK_PRESETS[0]);
-      uiState.trainerDraft = uiState.avatarDraft;
-      uiState.intro++;
-      render();
-      scrollTo(0, 0);
       break;
     case 'setgender':
       saveData.gender = d.g;
       save();
       closeModal();
       render();
-      break;
-    case 'pick':
-      startGame(d.l, { rival: true, talkFirst: true });
       break;
     case 'tab':
       if (uiState.tab !== d.t) {
@@ -2415,6 +2403,9 @@ document.addEventListener('click', ev => {
     }
     case 'settings':
       openSettings();
+      break;
+    case 'inbox':
+      openInbox();
       break;
     case 'card-close':
       saveData.preferences = saveData.preferences || {};
@@ -2621,10 +2612,25 @@ document.addEventListener('click', ev => {
       }
       break;
     case 'bmove':
-      if (activeBattle && activeBattle.phase === 'fight') pickMove(d.m);
+      /* phase 06-3: the moves are on the first menu too */
+      if (activeBattle && (activeBattle.phase === 'fight' || activeBattle.phase === 'choose')) {
+        activeBattle.phase = 'fight';
+        if (typeof tutorPicked === 'function') tutorPicked();
+        pickMove(d.m);
+      }
       break;
     case 'btarget':
       if (activeBattle && activeBattle.phase === 'target' && d.t != null) pickTarget(+d.t);
+      break;
+    case 'wsopen':
+    case 'wsslot':
+    case 'wsfit':
+    case 'wsup':
+    case 'wsbuild':
+      workshopAction(a, d);
+      break;
+    case 'bpart':
+      if (activeBattle && activeBattle.phase === 'part' && d.p) pickPart(d.p);
       break;
     case 'bcoins':
       if (activeBattle && activeBattle.phase === 'choose') {
@@ -2654,8 +2660,9 @@ document.addEventListener('click', ev => {
           planBack();
           break;
         }
-        activeBattle.phase = activeBattle.phase === 'target' ? 'fight' : 'choose';
-        if (activeBattle.phase === 'choose') chooseMessage();
+        /* phase 06-3: the first menu has the moves, so Back always goes there */
+        activeBattle.phase = 'choose';
+        chooseMessage();
         paintActions();
       }
       break;
@@ -2759,8 +2766,11 @@ document.addEventListener('keydown', ev => {
     return;
   }
   if (ph === 'choose') {
-    if (k === 'f') click('[data-a=bfight]');
-    else if (k === 'x' || k === 'c') click('[data-a=bcoins]');
+    /* phase 06-3: 1-4 pick a move straight from the first menu */
+    if (/^[1-9]$/.test(k)) {
+      const b = $$('#acts [data-a=bmove]')[+k - 1];
+      if (b) b.click();
+    } else if (k === 'x' || k === 'c') click('[data-a=bcoins]');
     else if (k === 'i') click('[data-a=bitems]');
     else if (k === 't') click('[data-a=bteam]');
     else if (k === 'r') click('[data-a=brun]');

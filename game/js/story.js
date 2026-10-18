@@ -6,7 +6,7 @@
    battle. saveData.story remembers which scenes you have seen. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { closeModal, modal, provide, render, selfTest, showPendingWindows } from './hooks.js';
+import { closeModal, modal, notice, provide, render, selfTest, showPendingWindows } from './hooks.js';
 import { $, clamp } from './util.js';
 import { LOCATION_BY_ID, RULES, SPECIES, TRAINERS, trainersAt } from './game-data.js';
 import { encountersHere, healAll, today } from './logic/rules.js';
@@ -33,7 +33,6 @@ import {
 import { loreClue, loreData, loreFlags } from './lore.js';
 /* eslint-disable no-func-assign */
 expose({
-  blakeHello: [() => blakeHello, v => ((blakeHello = v), provide({ blakeHello }))],
   cutsceneWorldBegin: [() => cutsceneWorldBegin, v => (cutsceneWorldBegin = v)],
   cutsceneWorldEnd: [() => cutsceneWorldEnd, v => (cutsceneWorldEnd = v)],
   legendCheck: [() => legendCheck, v => (legendCheck = v)],
@@ -53,7 +52,7 @@ expose({
   trainerTalk: [() => trainerTalk, v => (trainerTalk = v)],
 });
 /* eslint-enable no-func-assign */
-provide({ blakeHello, openingDone, storyAfterRival, storyAfterWin, storyFlags });
+provide({ openingDone, storyAfterRival, storyAfterWin, storyFlags });
 /* to-module: end */
 export function storyFlags() {
   return saveData.story || (saveData.story = {});
@@ -303,36 +302,22 @@ export function storyMovedCheck() {
     return;
   const F = storyFlags();
   if (F.copperleafNote) return;
-  F.copperleafNote = 1;
-  save();
   if (!LOCATION_BY_ID.copperleaf) return;
-  modal({
+  /* phase 06: a notice, not a choice: it waits behind the dot on the portrait, and counts as seen once read */
+  notice({
+    id: 'copperleaf-note',
     title: 'Copperleaf Town',
     html: '<p>Professor Hazel has moved her lab to Copperleaf Town, the hamlet up Route 1 · Hedgerow Lane, north of Marigold Town. Your room went with her: it is in Granny Juniper’s cottage there now, among the beehives.</p><p class="note">Marigold Town keeps its shop and its clinic. Copperleaf has the swing.</p>',
-    btns: [{ l: 'Good to know', c: 'dark', f: closeModal }],
+    onRead: () => {
+      F.copperleafNote = 1;
+      save();
+    },
   });
 }
 
 /* ================= v47: BLAKE'S FIRST BATTLE, AND WHAT COMES AFTER =================
    The opening ends with Blake wanting a battle (cutscene.js); it starts as soon as Sundown is back on screen. */
 /* what Blake says when he runs in (the opening's scene, or the step-by-step intro's conversation before the battle) */
-function blakeHello(l) {
-  const T = TRAINERS.blake0 || {},
-    who = T.who || 'chad',
-    sp = SPECIES[l + '0'],
-    rv = RULES.start.rival && RULES.start.rival[l],
-    rs = rv && SPECIES[rv];
-  return [
-    [who, '[surprised] Professor! Professor! Did another one fall in?'],
-    [
-      who,
-      '[happy] I’m Blake. Blake Sterling. My father is Sterling Sterling the Third. Sterling Capital? You’ve heard of it. Everyone’s heard of it.',
-    ],
-    ...(rs && sp ? [[who, `And I picked ${rs.name}. It beats ${sp.name}. No offence. Well, a little offence.`]] : []),
-    ['gini', 'Blake. They fell out of the sky ten minutes ago.'],
-    [who, '[angry] Then it’s a fair fight. Mine only knows Tackle so far. Come on, surface stray. Battle me!'],
-  ];
-}
 /* this device has seen Blake's first battle through once: next time it can be skipped */
 function openingDone() {
   try {
@@ -351,15 +336,6 @@ export function storyRivalBattle(o = {}) {
     go = async () => {
       if (activeBattle || !saveData.started) return;
       uiState.modal = null;
-      if (o.talkFirst && typeof talk === 'function' && !talkBox.on) {
-        storyState.rivalTalk = 1;
-        try {
-          await talk(blakeHello(saveData.starter));
-        } finally {
-          storyState.rivalTalk = 0;
-        }
-        if (activeBattle || !saveData.started) return;
-      }
       startTrainer('blake0', { talked: true });
       if (!activeBattle) storyAfterRival(null, TRAINERS.blake0);
     };

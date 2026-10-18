@@ -321,32 +321,33 @@ html[data-contrast='high'] .px {
   flex: none;
 }
 
-/* ---------- the bottom bar: every screen its own colour; the open one rises out of the glass ---------- */
+/* ---------- the bottom bar: every screen its own colour; the open one rises out of the glass (phase 06: on the tokens) ---------- */
 nav#nav .in {
-  border-radius: var(--r3) !important;
+  border-radius: var(--r-lg) !important;
   background: var(--g-bg) !important;
   border: 1px solid var(--g-bd);
-  box-shadow: var(--g-in), var(--g-sh2) !important;
-  padding: 6px !important;
-  gap: 2px;
+  box-shadow: var(--depth-float) !important;
+  padding: var(--s2) !important;
+  gap: var(--s1);
 }
 nav#nav .ind {
   display: none !important;
 }
 nav#nav button {
   position: relative;
-  border-radius: var(--r2);
-  font: 600 13px/1 var(--disp) !important;
+  min-height: var(--tap);
+  border-radius: var(--r-md);
+  font: 600 13px/1 var(--font-voice) !important;
   transition:
-    transform 0.2s var(--spring),
-    background 0.2s,
-    box-shadow 0.2s;
+    transform var(--m-base) var(--spring),
+    background var(--m-base),
+    box-shadow var(--m-base);
   color: var(--text2);
 }
 nav#nav button svg,
 nav#nav button img,
 nav#nav button .ico {
-  transition: transform 0.22s var(--spring);
+  transition: transform var(--m-base) var(--spring);
 }
 nav#nav button[data-t='walk'] {
   --tc: var(--t-walk);
@@ -372,15 +373,14 @@ nav#nav button > :first-child {
   }
 }
 nav#nav button:active {
-  transform: scale(0.94);
+  transform: scale(0.96);
+  transition-duration: 80ms;
 }
 nav#nav button[aria-current='page'] {
   background: rgba(255, 255, 255, 0.94);
   color: var(--tc);
-  transform: translateY(-8px);
-  box-shadow:
-    0 12px 20px -8px rgba(46, 33, 64, 0.5),
-    inset 0 1px 0 #fff;
+  transform: translateY(calc(-1 * var(--s2)));
+  box-shadow: var(--depth-raised);
 }
 nav#nav button[aria-current='page']::after {
   content: '';
@@ -400,6 +400,17 @@ nav#nav button[aria-current='page']::after {
 }
 :root[data-theme='dark'] nav#nav button[aria-current='page'] {
   background: rgba(255, 255, 255, 0.14);
+}
+
+[data-motion='reduced'] nav#nav button,
+[data-motion='reduced'] nav#nav button[aria-current='page'] {
+  transform: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  nav#nav button,
+  nav#nav button[aria-current='page'] {
+    transform: none;
+  }
 }
 
 /* ---------- screens: a touch of spring when they come in ---------- */

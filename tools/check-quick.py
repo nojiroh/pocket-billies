@@ -611,6 +611,73 @@ SAVE_SPY = r"""(()=>{window.__st={w:[],ls:[]};account.user={uid:'check',name:'Ch
   save();__st.team=saveData.team.map(m=>m.uid)})();0"""
 
 
+@step('Messages: toasts merge, notices wait behind the dot, choices wait for the world (phase 06)', 120)
+def messages_step(b, base, R):
+    errs = []
+    ctx = b.new_context(viewport={'width': 390, 'height': 844}, device_scale_factor=1); ctx.add_init_script(CLOCK); ctx.add_init_script(NO_ACCOUNTS); ctx.add_init_script(TEST_GLOBALS)
+    ctx.set_default_timeout(90000); pg = ctx.new_page(); CUR['pg'] = pg
+    pg.on('pageerror', lambda e: errs.append(str(e)))
+    pg.on('console', lambda m: errs.append(console_text(m)) if m.type == 'error' else None)
+    try:
+        pg.goto(base + '/index.html?fixture=town'); pg.evaluate(LOW_RENDER)
+        # a waiting choice opens only once the world shows: no loader, the walk view ready
+        pg.wait_for_function("typeof whenWorldShows==='function'", timeout=60000)
+        pg.evaluate("window.__ws=null;whenWorldShows(()=>{const l=document.getElementById('loader');__ws={ready:walkView.ready,loader:!!(l&&!l.hidden&&l.offsetParent)}},200);0")
+        if not until(pg, 'window.__ws', 90): raise Exception('whenWorldShows never ran')
+        ws = pg.evaluate('__ws')
+        if not ws['ready'] or ws['loader']: raise Exception(f'a waiting choice would open before the world shows: {ws}')
+        # toasts: the same text joins the one showing, or the one waiting
+        r = pg.evaluate("""(()=>{uiState.modal=null;uiState.mq=[];uiState.toastQ=[];uiState.toastOn=false;renderOverlay();
+          toast('Found an item');toast('Found an item');toast('Saved');toast('Saved');toast('Found an item');
+          const t=document.getElementById('toast');
+          return {on:uiState.toastOn&&[uiState.toastOn.text,uiState.toastOn.count],q:uiState.toastQ.map(x=>[x.text,x.count]),el:!!t&&t.tagName}})()""")
+        if r['on'] != ['Found an item', 3] or r['q'] != [['Saved', 2]] or r['el'] != 'PB-TOAST':
+            raise Exception(f'toasts did not merge as expected: {r}')
+        pg.evaluate("uiState.toastQ=[];uiState.toastOn=false;renderOverlay();0")
+        if pg.evaluate("!!document.getElementById('toast')"): raise Exception('clearing uiState.toastOn left the toast on screen')
+        # notices: kept once, behind the dot; opening the dot shows them and clears it
+        n = pg.evaluate("""(()=>{uiState.inbox=[];notice({id:'qc',title:'A letter',html:'<p>Hello.</p>'});notice({id:'qc',title:'A letter',html:'<p>Hello.</p>'});render();
+          const d=document.querySelector('.tb-inbox');const before=[uiState.inbox.length,d&&d.innerText.trim()];d&&d.click();
+          return {before,title:document.querySelector('#ov .sheet h2')?.textContent,after:uiState.inbox.length,dot:!!document.querySelector('.tb-inbox')}})()""")
+        if n['before'] != [1, '1'] or n['title'] != 'A letter' or n['after'] != 0 or n['dot']:
+            raise Exception(f'the inbox did not behave: {n}')
+        pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();0")
+        if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
+        return 'toasts merged (×3 showing, ×2 waiting); one notice behind the dot, opened and cleared; the choice waited for the world'
+    finally:
+        ctx.close()
+
+
+@step('Team: the lead card, the rows, a Billie’s details and its Build tab (phase 06-2)', 120)
+def team_step(b, base, R):
+    errs = []
+    ctx = b.new_context(viewport={'width': 390, 'height': 844}, device_scale_factor=1); ctx.add_init_script(CLOCK); ctx.add_init_script(NO_ACCOUNTS); ctx.add_init_script(TEST_GLOBALS)
+    ctx.set_default_timeout(90000); pg = ctx.new_page(); CUR['pg'] = pg
+    pg.on('pageerror', lambda e: errs.append(str(e)))
+    pg.on('console', lambda m: errs.append(console_text(m)) if m.type == 'error' else None)
+    try:
+        pg.goto(base + '/index.html?fixture=town'); pg.evaluate(LOW_RENDER)
+        if not until(pg, "typeof walkView!=='undefined'&&walkView.ready", 90): raise Exception('the town never opened')
+        t = pg.evaluate("""(()=>{uiState.modal=null;uiState.mq=[];renderOverlay();
+          const x=makeBilly(Object.keys(SPECIES).find(k=>/0$/.test(k)),8);x.build={head:'L',body:'L',front:'M',back:'S',sig:'M'};saveData.team.push(x);
+          uiState.tab='team';render();
+          return {hero:!!document.querySelector('.u-hero [data-a=mon]'),rows:document.querySelectorAll('.u-list .u-row[data-a=mon]').length,team:saveData.team.length}})()""")
+        if not t['hero'] or t['rows'] != t['team'] - 1: raise Exception(f'the Team screen is not the lead card plus one row each: {t}')
+        pg.click('.u-list .u-row[data-a=mon] >> nth=-1')
+        if not until(pg, "!!document.querySelector('#ov .mon-sheet')", 10): raise Exception('a row did not open its details')
+        pg.click('#ov [data-a=ms-tab][data-k=build]')
+        d = pg.evaluate("""(()=>{const on=[...document.querySelectorAll('.u-slots .u-dial .on')].map(e=>e.textContent);
+          return {slots:document.querySelectorAll('.u-slots li').length,want:partSlots().length,on,bal:!!document.querySelector('.u-bal-track i'),
+            pane:!document.querySelector('.ms-pane[data-k=build]').hidden}})()""")
+        if d['slots'] != d['want'] or d['on'] != ['L', 'L', 'M', 'S', 'M'] or not d['bal'] or not d['pane']:
+            raise Exception(f'the Build tab does not show the parts: {d}')
+        pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();0")
+        if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
+        return f'lead card and {t["rows"]} rows; a row opens its details; Build shows {d["slots"]} slots (L L M S M) and the balance'
+    finally:
+        ctx.close()
+
+
 @step('In-game full test: one step headless, and nothing is saved while it runs', 120)
 def in_game_test_step(b, base, R):
     errs = []; ctx, pg = open_game(b, base, 1100, 700, False, errs)
@@ -660,12 +727,14 @@ def phone_flow(b, base, R):
         pg.click('[data-a=cs-next]'); time.sleep(.5); pg.click('[data-a=cs-choose]'); pg.click('[data-a=cs-yes]')
         if not until(pg, 'saveData.started', 40, skip): raise Exception('the game didn’t start after picking a starter')
         R['opening'] = pg.evaluate('[saveData.starter,saveData.avatar.name,saveData.team.length,LOCATIONS[saveData.trip.node].id]')
+        # phase 06-2b: Blake came before the pick and Hazel fought his first Billie herself
+        if not pg.evaluate('!!cutscene.foeName'): raise Exception('Hazel’s fight against Blake never ran in the opening')
         if R['opening'][3] != 'copperleaf': raise Exception(f'the game started at {R["opening"][3]}, not in Copperleaf')
         # v47: Blake battles you on the spot, with Hazel's tips; win or lose, he talks, Hazel heals you, the welcome sheet
         if not until(pg, "!!activeBattle&&activeBattle.phase==='choose'", 120): raise Exception('Blake’s first battle never reached the move menu')
-        R['rivalBattle'] = pg.evaluate("({tutorial:!!(activeBattle.T&&activeBattle.T.tutorial),foe:activeBattle.foeName,moves:activeBattle.sides[1].team[0].moves,tip:!!document.querySelector('#btip.on')})")
+        R['rivalBattle'] = pg.evaluate("({tutorial:!!(activeBattle.T&&activeBattle.T.tutorial),foe:activeBattle.foeName,moves:activeBattle.sides[1].team[0].moves,tip:!!document.querySelector('#btip.on'),hot:!!document.querySelector('#btip.hot.on')})")
         shot(pg, 'phone-rival-battle')
-        if not R['rivalBattle']['tutorial'] or not R['rivalBattle']['tip']: raise Exception(f'Blake’s first battle isn’t the tutorial one: {R["rivalBattle"]}')
+        if not R['rivalBattle']['tutorial'] or not R['rivalBattle']['hot']: raise Exception(f'Blake’s first battle doesn’t open on Hazel’s HOT TIP: {R["rivalBattle"]}')
         pg.evaluate("activeBattle.over='win';stopTimers();endBattle();0")
         if not until(pg, '!!talkBox.cur', 40): raise Exception('nobody spoke after Blake’s battle')
         if not until(pg, '!talkBox.on&&!!uiState.modal', 60, 'talkBox.cur&&talkBox.cur.tap()'): raise Exception('the talk after Blake’s battle never ended')
@@ -675,7 +744,7 @@ def phone_flow(b, base, R):
         for tab in ['walk', 'map', 'team', 'ledger', 'profile']:
             pg.evaluate(f"uiState.tab='{tab}';render();scrollTo(0,0);0"); time.sleep(2.5 if tab in ('walk', 'map') else .6); shot(pg, f'phone-{tab}')
         pg.evaluate("uiState.tab='walk';saveData.trip.node=0;render();openShop('marigold');0"); time.sleep(.6); shot(pg, 'phone-shop')
-        pg.evaluate("closeModal();screenWipe=f=>f();saveData.preferences.battleStage='classic';activeBattle=null;const q={id:'tq',sp:'swift1',lvl:12,gold:false,no:1};encountersHere().splice(0,1e9,q);saveData.team.forEach(m=>{m.hp=maxHp(m)});startWild(q);0")
+        pg.evaluate("closeModal();screenWipe=f=>f();activeBattle=null;const q={id:'tq',sp:'swift1',lvl:12,gold:false,no:1};encountersHere().splice(0,1e9,q);saveData.team.forEach(m=>{m.hp=maxHp(m)});startWild(q);0")
         if wait_phase(pg) != 'choose': raise Exception('a wild battle never reached the move menu')
         shot(pg, 'phone-battle')
         pg.evaluate("stopTimers();activeBattle=null;battleStageStop();render();0")
@@ -692,7 +761,7 @@ def phone_flow(b, base, R):
         names = [n for n in ('Checker', 'Zorblax') if n.lower() in Path(d.path()).read_text(encoding='utf-8').lower()]
         if names: raise Exception(f'the exported debug log holds a name: {names}')
         if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
-        return f'the fall, Hazel, dressing room, starter, Blake’s first battle and the talk after, five screens, shop, battle, speech kept out of the debug picture, debug log ({len(json.dumps(dlog)) // 1024} KB, no names)'
+        return f'the fall, Hazel, dressing room, Hazel’s fight, starter, Blake’s first battle (HOT TIP) and the talk after, five screens, shop, battle, speech kept out of the debug picture, debug log ({len(json.dumps(dlog)) // 1024} KB, no names)'
     finally:
         R['phoneErrors'] = errs[:10]; ctx.close()
 
@@ -947,9 +1016,9 @@ def desktop_steps(b, base, R):
             if at[3] or abs(at[0] - r[0]) > .4 or abs(at[1] - r[1]) > .4 or abs(at[2] - r[2]) > .3: raise Exception(f'climbing the ladder ended at {[round(v, 2) for v in at[:3]]}, not on top at {[round(v, 2) for v in r[:3]]}')
             out.append(f'climbed a {r[3]} m ladder')
         # rain in battle
-        go_scene(pg, 0); pg.evaluate("environment.force={time:15,weather:'rain'};saveData.preferences.battleStage='classic';const q={id:'twx',sp:'swift1',lvl:8,gold:false,no:1};encountersHere().splice(0,1e9,q);saveData.team.forEach(m=>{m.hp=maxHp(m)});startWild(q);0")
+        go_scene(pg, 0); pg.evaluate("environment.force={time:15,weather:'rain'};const q={id:'twx',sp:'swift1',lvl:8,gold:false,no:1};encountersHere().splice(0,1e9,q);saveData.team.forEach(m=>{m.hp=maxHp(m)});startWild(q);0")
         wait_phase(pg, sec=60); bw = pg.evaluate("(()=>{const w=battleWeather();return w?[w.k,battleWeatherMultiplier('Water'),battleWeatherMultiplier('Fire'),document.getElementById('camWorld')?document.getElementById('camWorld').dataset.wx:''] :null})()")
-        time.sleep(1); shot(pg, 'battle-rain'); pg.evaluate("stopTimers();activeBattle=null;battleStageStop();saveData.preferences.battleStage='scene';environment.force=null;render();0")
+        time.sleep(1); shot(pg, 'battle-rain'); pg.evaluate("stopTimers();activeBattle=null;battleStageStop();environment.force=null;render();0")
         if not bw or bw[0] != 'rain' or bw[1] <= 1 or bw[2] >= 1: raise Exception(f'rain didn’t change the battle ({bw})')
         out.append(f'rain in battle: Water ×{bw[1]}, Fire ×{bw[2]}')
         if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
@@ -1218,7 +1287,7 @@ def desktop_steps(b, base, R):
         if not any(t.startswith('Build') for t in e['btns']) or not any(t.startswith('Hype') for t in e['btns']): raise Exception(f"the evolution window doesn't offer both paths: {e['btns']}")
         out.append(f"split at 32: Build → Marsox, Hype → Memeox (“{e['hint'][:60]}…”)")
         # a battle with the new starter on the 3D stage: the player's rig buffer has pixels
-        pg.evaluate("saveData.team.unshift(makeBilly('gates0',14));saveData.team[0].hp=maxHp(saveData.team[0]);saveData.preferences.battleStage='scene';const q={id:'cq36',sp:'bezos1',lvl:12,gold:false,no:1};encountersHere().push(q);startWild(q);0")
+        pg.evaluate("saveData.team.unshift(makeBilly('gates0',14));saveData.team[0].hp=maxHp(saveData.team[0]);const q={id:'cq36',sp:'bezos1',lvl:12,gold:false,no:1};encountersHere().push(q);startWild(q);0")
         if not until(pg, "activeBattle&&activeBattle.phase==='choose'", 90, "activeBattle&&activeBattle.phase==='playing'&&tapMessage()"): raise Exception('the starter battle never reached the move menu')
         until(pg, "(()=>{const a=actorBuffer(0),b=actorBuffer(1);return !!(a&&b)})()", 15); time.sleep(2)
         px = json.loads(pg.evaluate("(()=>{const o={};for(const i of [0,1]){const Bf=actorBuffer(i);if(!Bf){o[i]=0;continue}const d=Bf.buf.getContext('2d').getImageData(0,0,Bf.buf.width,Bf.buf.height).data;let n=0;for(let k=3;k<d.length;k+=4)if(d[k]>0)n++;o[i]=n}return JSON.stringify(o)})()"))
@@ -1653,7 +1722,7 @@ def desktop_steps(b, base, R):
             if gone: raise Exception(f'the Lore page doesn’t show {", ".join(gone[:5])}')
             out.append(f'the Lore page shows {len(names)} places')
             # the story: Cass Flow's clue, then Vinylla, hidden at the Inner Sun until she's beaten on the Spire, and the ending
-            pg.evaluate("uiState.guideTab=null;uiState.tab='team';render();saveData.preferences.battleStage='classic';screenWipe=f=>f();Object.values(TRAINERS).forEach(T=>{if(T.intro)storyFlags()['met_'+T.id]=1});"
+            pg.evaluate("uiState.guideTab=null;uiState.tab='team';render();screenWipe=f=>f();Object.values(TRAINERS).forEach(T=>{if(T.intro)storyFlags()['met_'+T.id]=1});"
                         "['oil','retail','peak','haven','bloom','vault','morel','carat'].forEach(s=>{if(!saveData.seats.includes(s))saveData.seats.push(s)});delete saveData.flags.cass;delete saveData.flags.vinylla1;delete saveData.flags.vinylla2;saveData.team.forEach(m=>{m.hp=maxHp(m)});0")
             def beat(tid, pic=None):
                 pg.evaluate(f"saveData.team.forEach(m=>{{m.hp=maxHp(m)}});startTrainer('{tid}',{{talked:true}});0")
@@ -1989,11 +2058,11 @@ def desktop_steps(b, base, R):
 
     @step('Battles: on the 3D stage, and a trainer battle played to the end', 330)
     def battles():
-        pg.evaluate("saveData.preferences.battleStage='scene';screenWipe=f=>f();saveData.trip={node:0,plan:[]};uiState.tab='walk';render();0"); time.sleep(2)
+        pg.evaluate("screenWipe=f=>f();saveData.trip={node:0,plan:[]};uiState.tab='walk';render();0"); time.sleep(2)
         pg.evaluate("const q={id:'t3d',sp:'swift1',lvl:12,gold:false,no:1};encountersHere().splice(0,1e9,q);saveData.team.forEach(m=>{m.hp=maxHp(m)});startWild(q);0")
         if wait_phase(pg, sec=60) != 'choose': raise Exception('the 3D-stage battle never reached the move menu')
         shot(pg, 'battle-3d'); stage = pg.evaluate("!!battleStage.gl")
-        pg.evaluate("stopTimers();activeBattle=null;battleStageStop();saveData.preferences.battleStage='classic';render();0")
+        pg.evaluate("stopTimers();activeBattle=null;battleStageStop();render();0")
         # battle animations at four times the speed (the Debug panel's speed setting), so the result comes quickly
         pg.evaluate("battleStage.speed=4;saveData.team=[makeBilly('musk2',45),makeBilly('swift1',30)];saveData.trip.node=4;startTrainer('crude');0")
         end = time.time() + 300; won = None
@@ -2001,7 +2070,7 @@ def desktop_steps(b, base, R):
             ph = wait_phase(pg, ('choose', 'switch', 'end'), 30)
             if ph == 'end': won = pg.evaluate('activeBattle.over') == 'win'; break
             if ph == 'switch': pg.evaluate("document.querySelector('[data-a=bswitch]:not([disabled])').click()"); continue
-            if ph == 'choose': pg.evaluate("document.querySelector('[data-a=bfight]').click();document.querySelector('[data-a=bmove]').click()")
+            if ph == 'choose': pg.evaluate("document.querySelector('[data-a=bfight]')?.click();document.querySelector('[data-a=bmove]').click()")
         pg.evaluate("battleStage.speed=1;if(activeBattle){stopTimers();activeBattle=null;battleStageStop()}render();0")
         if won is None: raise Exception('the trainer battle didn’t finish in 300s')
         if not won: raise Exception('the trainer battle was lost (it should be an easy win)')
@@ -2154,6 +2223,8 @@ def main():
             if SMOKE:
                 studio_opens(b)
             else:
+                messages_step(b, base, R)
+                team_step(b, base, R)
                 try:
                     desktop_steps(b, base, R)
                 except Exception as e:

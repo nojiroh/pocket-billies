@@ -1,0 +1,214 @@
+{
+ "_help": "Phase 17 robots. A robot is a gem (its level, XP and signature move) with four parts fitted: a torso (with the head), a left arm, a right arm and legs. Any arm fits either side. stats are added to every robot stat floor (rules.json robots.baseStat), in the stats.json ids. move is the move the part gives. Torso and legs give the robot its two types. wt is kg; legs carry kg before the robot slows down. dur scales the part's own HP. art is the picture: img and imgB (front and back, in game/art) and for a torso head and headB; without them the game draws a stand-in from the colour, shape and size. A gem's img is drawn on the torso's chest.",
+ "parts": {
+  "bulwark": {
+   "name": "Bulwark Frame",
+   "short": "Bulwark",
+   "slot": "torso",
+   "type": "Steel",
+   "rar": "common",
+   "wt": 50,
+   "dur": 1.2,
+   "stats": {"hp":45,"law":45,"pr":30},
+   "art": {
+    "color": "#8C97A6",
+    "shape": "block",
+    "w": 30,
+    "h": 26,
+    "img": "robots/bulwark.png",
+    "imgB": "robots/bulwark_back.png",
+    "head": "robots/bulwark_head.png",
+    "headB": "robots/bulwark_head_back.png"
+   },
+   "d": "A heavy armoured frame. Slow, but it takes a beating."
+  },
+  "kiln": {
+   "name": "Kiln Frame",
+   "short": "Kiln",
+   "slot": "torso",
+   "type": "Fire",
+   "rar": "common",
+   "wt": 42,
+   "dur": 1,
+   "stats": {"hp":35,"law":25,"pr":25,"lob":20,"lev":15},
+   "art": {
+    "color": "#C4583A",
+    "shape": "barrel",
+    "w": 28,
+    "h": 26,
+    "img": "robots/kiln.png",
+    "imgB": "robots/kiln_back.png",
+    "head": "robots/kiln_head.png",
+    "headB": "robots/kiln_head_back.png"
+   },
+   "d": "A round furnace frame that runs hot."
+  },
+  "vane": {
+   "name": "Vane Frame",
+   "short": "Vane",
+   "slot": "torso",
+   "type": "Flying",
+   "rar": "common",
+   "wt": 30,
+   "dur": 0.9,
+   "stats": {"hp":30,"law":20,"pr":25,"hus":30,"lob":15},
+   "art": {
+    "color": "#6FB3D9",
+    "shape": "slim",
+    "w": 22,
+    "h": 28,
+    "img": "robots/vane.png",
+    "imgB": "robots/vane_back.png",
+    "head": "robots/vane_head.png",
+    "headB": "robots/vane_head_back.png"
+   },
+   "d": "A light frame with fins. Fast and fragile."
+  },
+  "piston": {
+   "name": "Piston Arm",
+   "slot": "arm",
+   "type": "Steel",
+   "rar": "common",
+   "wt": 14,
+   "dur": 1,
+   "move": "pistonjab",
+   "stats": {"lev":35,"law":15},
+   "art": {"color":"#9AA3AE","shape":"fist","w":10,"h":20,"img":"robots/piston.png","imgB":"robots/piston_back.png"},
+   "d": "A straight punch on a steam piston."
+  },
+  "auger": {
+   "name": "Auger Arm",
+   "slot": "arm",
+   "type": "Ground",
+   "rar": "common",
+   "wt": 16,
+   "dur": 1,
+   "move": "augerbore",
+   "stats": {"lev":40,"hus":10},
+   "art": {"color":"#B08A4E","shape":"drill","w":10,"h":22,"img":"robots/auger.png","imgB":"robots/auger_back.png"},
+   "d": "A drill that aims for joints."
+  },
+  "clamp": {
+   "name": "Clamp Arm",
+   "slot": "arm",
+   "type": "Steel",
+   "rar": "common",
+   "wt": 15,
+   "dur": 1.2,
+   "move": "gripcrush",
+   "stats": {"lev":25,"law":25},
+   "art": {"color":"#7D8B70","shape":"claw","w":12,"h":20,"img":"robots/clamp.png","imgB":"robots/clamp_back.png"},
+   "d": "A grabbing claw that tears parts off."
+  },
+  "cinder": {
+   "name": "Cinder Cannon",
+   "slot": "arm",
+   "type": "Fire",
+   "rar": "common",
+   "wt": 13,
+   "dur": 0.9,
+   "move": "cindershot",
+   "stats": {"lob":40,"hus":10},
+   "art": {"color":"#D9673E","shape":"cannon","w":11,"h":21,"img":"robots/cinder.png","imgB":"robots/cinder_back.png"},
+   "d": "A short cannon that spits hot slag."
+  },
+  "tesla": {
+   "name": "Tesla Coil",
+   "slot": "arm",
+   "type": "Electric",
+   "rar": "common",
+   "wt": 11,
+   "dur": 0.9,
+   "move": "arcwhip",
+   "stats": {"lob":35,"pr":15},
+   "art": {"color":"#C9B23A","shape":"coil","w":10,"h":20,"img":"robots/tesla.png","imgB":"robots/tesla_back.png"},
+   "d": "A coil that lashes out with arcs."
+  },
+  "hydrant": {
+   "name": "Hydrant Arm",
+   "slot": "arm",
+   "type": "Water",
+   "rar": "common",
+   "wt": 13,
+   "dur": 1,
+   "move": "jetblast",
+   "stats": {"lob":35,"pr":15},
+   "art": {"color":"#3E8FD9","shape":"cannon","w":11,"h":21,"img":"robots/hydrant.png","imgB":"robots/hydrant_back.png"},
+   "d": "A high-pressure jet you can aim at a part."
+  },
+  "treads": {
+   "name": "Crawler Treads",
+   "slot": "legs",
+   "type": "Ground",
+   "rar": "common",
+   "wt": 30,
+   "dur": 1.3,
+   "carry": 140,
+   "move": "anchor",
+   "stats": {"hp":20,"law":25,"pr":20,"hus":5},
+   "art": {"color":"#5E5A52","shape":"treads","w":30,"h":12,"img":"robots/treads.png","imgB":"robots/treads_back.png"},
+   "d": "Tank treads. They carry anything, slowly."
+  },
+  "striders": {
+   "name": "Strider Legs",
+   "slot": "legs",
+   "type": "Electric",
+   "rar": "common",
+   "wt": 20,
+   "dur": 1,
+   "carry": 100,
+   "move": "dashkick",
+   "stats": {"hus":40,"lev":10,"hp":10,"law":10,"pr":10},
+   "art": {"color":"#8E7FBF","shape":"legs","w":26,"h":16,"img":"robots/striders.png","imgB":"robots/striders_back.png"},
+   "d": "Two springy legs."
+  },
+  "hover": {
+   "name": "Hover Skirt",
+   "slot": "legs",
+   "type": "Flying",
+   "rar": "common",
+   "wt": 14,
+   "dur": 0.8,
+   "carry": 80,
+   "move": "skimguard",
+   "stats": {"hus":50,"pr":15,"hp":5,"law":5},
+   "art": {"color":"#7AC9C4","shape":"hover","w":28,"h":10,"img":"robots/hover.png","imgB":"robots/hover_back.png"},
+   "d": "A fan skirt that floats. Light loads only."
+  }
+ },
+ "gems": {
+  "ember": {
+   "name": "Ember Gem",
+   "short": "Ember",
+   "type": "Fire",
+   "rar": "common",
+   "move": "flarecore",
+   "stats": {"lob":20,"lev":10,"hus":10},
+   "color": "#FF7A3D",
+   "d": "A warm gem. Its robots hit hard and burn bright.",
+   "img": "robots/gem_ember.png"
+  },
+  "tide": {
+   "name": "Tide Gem",
+   "short": "Tide",
+   "type": "Water",
+   "rar": "common",
+   "move": "selfrepair",
+   "stats": {"hp":20,"pr":20},
+   "color": "#3DB8FF",
+   "d": "A calm gem. Its robots patch themselves up.",
+   "img": "robots/gem_tide.png"
+  },
+  "volt": {
+   "name": "Volt Gem",
+   "short": "Volt",
+   "type": "Electric",
+   "rar": "common",
+   "move": "overclock",
+   "stats": {"hus":20,"lev":10,"lob":10},
+   "color": "#F5D33D",
+   "d": "A restless gem. Its robots wind themselves up.",
+   "img": "robots/gem_volt.png"
+  }
+ }
+}

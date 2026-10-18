@@ -94,3 +94,20 @@ test('simulation: 20000 wild builds', () => {
   assert.ok(Math.abs(got - want) < 0.01, `Prime came out ${got}, expected about ${want}`);
   assert.ok(lo >= 1 - P.cap - 1e-9 && hi <= 1 + P.cap + 1e-9, `factors ran from ${lo} to ${hi}`);
 });
+
+test('the Build tab balance: all M leans nowhere; big parts lean to attack, small to speed', () => {
+  const lean = fn('buildLean');
+  const m = lean(allSize('M'));
+  assert.deepEqual([m.attack, m.speed, m.lean, m.off, m.prime], [0, 0, 0, 0, true]);
+  const big = lean(allSize('L')),
+    small = lean(allSize('S'));
+  assert.ok(big.attack > 0 && big.speed < 0 && big.lean > 0, `all L leans to attack: ${JSON.stringify(big)}`);
+  assert.ok(small.attack < 0 && small.speed > 0 && small.lean < 0, `all S leans to speed: ${JSON.stringify(small)}`);
+  assert.ok(Math.abs(big.lean) <= 1 && Math.abs(small.lean) <= 1);
+  assert.equal(big.off, P.slots.length);
+  assert.equal(lean({ ...allSize('M'), body: 'L' }).off, 1);
+  // the meter's numbers are the ones the stats use (before Prime)
+  const b = { ...allSize('M'), body: 'L' };
+  assert.ok(Math.abs(1 + lean(b).attack - fn('buildStatFactor')(b, 'lev')) < 1e-9);
+  assert.ok(Math.abs(1 + lean(b).speed - fn('buildStatFactor')(b, 'hus')) < 1e-9);
+});

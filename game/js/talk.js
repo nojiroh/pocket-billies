@@ -33,7 +33,14 @@ expose({
 /* eslint-enable no-func-assign */
 provide({ talkFolk });
 /* to-module: end */
-export const talkBox = { on: false, cur: null, por: { who: null, expr: null, t: 0 }, el: null };
+/* onType (phase 06-3): functions called for each character typed, ({ who, ch, n, done }); phase 07's mouths use it */
+export const talkBox = {
+  on: false,
+  cur: null,
+  por: { who: null, expr: null, t: 0 },
+  el: null,
+  onType: /** @type {((e: { who: string, ch: string, n: number, done: boolean }) => void)[]} */ ([]),
+};
 const SPEAKER_NAMES = { gini: 'Professor Hazel' };
 const FOLK_NAMES = [
   'Ada',
@@ -82,7 +89,8 @@ function talkEl() {
   el.className = 'talk-layer';
   el.hidden = true;
   el.innerHTML =
-    '<div class="talk-box px" role="dialog" aria-live="polite"><canvas class="talk-por" aria-hidden="true"></canvas><div class="talk-txt"><p class="talk-who"></p><p class="talk-line"></p></div><span class="talk-more" aria-hidden="true">▼</span></div>';
+    /* phase 06-3: the portrait framed in its own 96×96 slot inside the box, a name tag over the line (css/dialogue.css) */
+    '<div class="talk-box px" role="dialog" aria-live="polite"><span class="talk-slot"><canvas class="talk-por" aria-hidden="true"></canvas></span><div class="talk-txt"><p class="talk-who"></p><p class="talk-line"></p></div><span class="talk-more" aria-hidden="true">▼</span></div>';
   el.addEventListener('click', ev => {
     if (ev.target.closest('button,a,input')) return;
     if (talkBox.cur) talkBox.cur.tap();
@@ -120,8 +128,13 @@ export function talkLine(who, text, expr, o = {}) {
     let blipN = 0;
     const step = () => {
       if (talkBox.cur !== st) return;
+      const n0 = st.n;
       st.n = reducedMotion ? text.length : Math.min(text.length, Math.floor((performance.now() - st.t0) / 28));
       line.textContent = text.slice(0, st.n);
+      /* phase 06-3: the typing hook (phase 07's mouth animation listens here): each new character, who says it */
+      if (talkBox.onType.length)
+        for (let i = n0; i < st.n; i++)
+          for (const f of talkBox.onType) f({ who, ch: text[i], n: i + 1, done: i + 1 >= text.length });
       const b = Math.floor(st.n / 3);
       if (b > blipN && st.n < text.length) {
         blipN = b;

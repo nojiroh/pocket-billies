@@ -7,7 +7,8 @@
 import { expose } from './test-globals.js';
 import { closeModal, modal, progressBarHTML, provide, render, roomRefresh, toast } from './hooks.js';
 import { clamp } from './util.js';
-import { COINS, ITEMS, LOCATIONS, ROADS_BY_NODE, RULES, SPECIES, gameData, isTown } from './game-data.js';
+import { COINS, ITEMS, LOCATIONS, ROADS_BY_NODE, RULES, gameData, isTown } from './game-data.js';
+import { speciesOf } from './logic/fighters.js';
 import { billyName, formatNumber, today } from './logic/rules.js';
 import { battleSay } from './logic/battle-engine.js';
 import { activeBattle, escapeHtml, save, saveData, uiState } from './game-state.js';
@@ -292,8 +293,8 @@ function requestAsker() {
   return walkView.folk[0];
 }
 const teamBillyOfType = t =>
-  saveData.team.find(m => m.hp > 0 && SPECIES[m.sp].types.includes(t)) ||
-  saveData.team.find(m => SPECIES[m.sp].types.includes(t));
+  saveData.team.find(m => m.hp > 0 && speciesOf(m).types.includes(t)) ||
+  saveData.team.find(m => speciesOf(m).types.includes(t));
 async function requestTalk(f) {
   if (talkBox.on) return;
   const q = requestHere(),
@@ -322,7 +323,7 @@ async function requestTalk(f) {
       modal({
         title: m ? `Show ${escapeHtml(billyName(m))}?` : `No ${escapeHtml(q.t)} Billie with you`,
         html: m
-          ? `<p>${escapeHtml(billyName(m))} is a ${escapeHtml(SPECIES[m.sp].types.join('/'))} Billie.</p>`
+          ? `<p>${escapeHtml(billyName(m))} is a ${escapeHtml(speciesOf(m).types.join('/'))} Billie.</p>`
           : `<p class="note">Come back with one in your team.</p>`,
         btns: m
           ? [
@@ -724,7 +725,7 @@ function battleWeatherMultiplier(t) {
       try {
         o = activeBattle && activeBattle.over;
         const f = activeBattle && activeBattle.sides && activeBattle.sides[1] && activeBattle.sides[1].team[0];
-        types = f ? SPECIES[f.sp].types : null;
+        types = f ? speciesOf(f).types : null;
         if (activeBattle && activeBattle.fished && o === 'caught') recordThingsToDoEvent('fish');
       } catch (e) {}
       const r = eb.apply(this, arguments);

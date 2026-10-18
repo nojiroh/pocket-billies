@@ -148,12 +148,17 @@ export const uiState = {
   tab: 'walk',
   lastTab: null,
   intro: 0,
+  /* phase 06-2: the opening couldn't start ('cant') or broke ('stopped'): the Try again screen */
+  openingFailed: /** @type {false | 'cant' | 'stopped'} */ (false),
   modal: null,
   mq: [],
   /* moves waiting to be learned in place of another */
   learnQ: /** @type {{ uid: string, mv: string }[]} */ ([]),
-  toastQ: [],
-  toastOn: false,
+  /* phase 06: toasts (js/logic/messages.js); older code may push plain strings */
+  toastQ: /** @type {Array<import('./logic/messages.js').Toast | string>} */ ([]),
+  toastOn: /** @type {false | import('./logic/messages.js').Toast} */ (false),
+  /* phase 06: notices that can wait, behind the dot on the portrait (ui.js notice) */
+  inbox: /** @type {{ id: string, title: string, html: string, onRead?: () => void }[]} */ ([]),
   evT: null,
   throwing: false,
   disp: { steps: null, se: null },

@@ -1,0 +1,277 @@
+/* ================= phase 06-2b: the new opening =================
+   Hazel's fight against Blake (plates, her moves, the log), her hot-take bubble during the pick, the note on the pick
+   card, and her HOT TIP in Blake's battle. Only tokens from css/tokens.css. */
+
+/* ---------- Hazel's fight: the battle plates over the opening, a log to tap through ---------- */
+.cs-fight {
+  position: fixed;
+  inset: 0;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+  padding: calc(7vh + var(--s4)) var(--gutter) calc(var(--gutter) + env(safe-area-inset-bottom, 0px));
+  cursor: pointer;
+}
+.cs-fight[hidden] {
+  display: none;
+}
+body.cs-fighting .cs-skip {
+  display: none;
+}
+.csf-plates {
+  margin-bottom: auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--s3);
+}
+.csf-plate {
+  display: grid;
+  gap: 6px;
+  padding: var(--s3) var(--s4);
+  border: 1px solid var(--g-bd);
+  border-radius: var(--r-md);
+  background: var(--g-bg);
+  -webkit-backdrop-filter: var(--g-blur);
+  backdrop-filter: var(--g-blur);
+  box-shadow: var(--depth-float);
+  animation: m-enter var(--m-base) var(--ease-out) both;
+}
+.csf-plate.foe {
+  animation-delay: 80ms;
+}
+.csf-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s2);
+  min-width: 0;
+}
+.csf-top b {
+  overflow: hidden;
+  font: 700 15px/1.2 var(--font-voice);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.csf-top span,
+.csf-plate small {
+  font: 600 var(--fs-caption) / 1 var(--font-voice);
+  color: var(--text2);
+}
+.csf-plate small {
+  justify-self: end;
+}
+.csf-hp {
+  position: relative;
+  display: block;
+  height: 8px;
+  border-radius: var(--r-pill);
+  background: color-mix(in srgb, var(--text) 10%, transparent);
+  overflow: hidden;
+}
+.csf-hp i {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: inherit;
+  background: var(--ok);
+  transition: width 900ms var(--ease-out);
+}
+.csf-plate.me .csf-hp i {
+  background: linear-gradient(90deg, var(--gold-a), var(--gold-b));
+}
+/* her moves, shown for a moment: the one she picks lit gold */
+.csf-moves {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--s2);
+  animation: m-enter var(--m-base) var(--ease-out) both;
+}
+.csf-moves[hidden] {
+  display: none;
+}
+.csf-moves span {
+  display: grid;
+  place-items: center;
+  height: var(--tap);
+  border-radius: var(--r-md);
+  font: 600 14px/1.2 var(--font-voice);
+  background: var(--g-bg);
+  box-shadow: var(--depth-raised);
+}
+.csf-moves span.on {
+  color: var(--goldink, #3a2408);
+  background: linear-gradient(180deg, var(--gold-a), var(--gold-b));
+}
+.csf-log {
+  display: grid;
+  gap: var(--s1);
+  min-height: 92px;
+  padding: var(--s4) var(--s5);
+  border: 1px solid var(--g-bd);
+  border-radius: var(--r-lg);
+  background: var(--g-solid);
+  box-shadow: var(--depth-float);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+.csf-t {
+  font: 600 17px/1.4 var(--font-voice);
+}
+.csf-log small {
+  justify-self: end;
+  font: 600 var(--fs-caption) / 1 var(--font-voice);
+  color: var(--text2);
+}
+
+/* ---------- the pick: Hazel's hot takes in a bubble over her head ---------- */
+.cs-bubble {
+  position: fixed;
+  z-index: 4;
+  max-width: min(260px, calc(100vw - 2 * var(--gutter)));
+  padding: var(--s3) var(--s4);
+  border-radius: var(--r-md);
+  background: var(--g-solid);
+  box-shadow: var(--depth-float);
+  font: 500 var(--fs-body) / 1.4 var(--font-prose);
+  color: var(--text);
+  transform: translate(-50%, calc(-100% - 10px));
+  pointer-events: none;
+}
+.cs-bubble[hidden] {
+  display: none;
+}
+.cs-bubble::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -7px;
+  width: 14px;
+  height: 14px;
+  margin-left: -7px;
+  background: inherit;
+  transform: rotate(45deg);
+  border-radius: 2px;
+}
+.cs-bubble.m-pop {
+  animation: bubble-pop var(--m-slow) var(--spring) both;
+}
+@keyframes bubble-pop {
+  from {
+    opacity: 0;
+    transform: translate(-50%, calc(-100% - 10px)) scale(0.8);
+  }
+}
+.pk-note {
+  margin: var(--s3) 0 0;
+  font: 600 var(--fs-caption) / 1.3 var(--font-voice);
+  color: var(--text2);
+  text-align: center;
+}
+
+/* ---------- Blake's battle: Hazel's HOT TIP, in the way on purpose ---------- */
+.btip.hot {
+  inset: 0;
+  top: 0;
+  left: 0;
+  z-index: 60;
+  width: auto;
+  display: grid;
+  place-items: center;
+  padding: var(--gutter);
+  border-radius: 0;
+  background: var(--scrim);
+  -webkit-backdrop-filter: blur(2px);
+  backdrop-filter: blur(2px);
+  box-shadow: none;
+  transform: none;
+}
+.btip.hot.on {
+  transform: none;
+}
+.btip.hot.off {
+  transform: none;
+}
+.btip-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: var(--s4);
+  width: min(440px, 100%);
+  padding: var(--s6) var(--pad-panel) var(--pad-panel);
+  border-radius: var(--r-lg);
+  background: var(--g-solid);
+  box-shadow:
+    0 0 0 4px var(--gold-b),
+    var(--depth-float);
+  transform: rotate(-1.5deg);
+}
+.btip-card.m-pop {
+  animation: hot-pop 560ms var(--spring) both;
+}
+@keyframes hot-pop {
+  0% {
+    opacity: 0;
+    transform: rotate(-8deg) scale(0.6);
+  }
+  60% {
+    opacity: 1;
+    transform: rotate(2deg) scale(1.06);
+  }
+  100% {
+    transform: rotate(-1.5deg) scale(1);
+  }
+}
+.btip-hot {
+  position: absolute;
+  top: calc(-1 * var(--s4));
+  left: 50%;
+  padding: var(--s2) var(--s4);
+  border-radius: var(--r-pill);
+  font: 700 20px/1 var(--font-voice);
+  letter-spacing: 0.04em;
+  color: var(--goldink, #3a2408);
+  background: linear-gradient(180deg, var(--gold-a), var(--gold-b));
+  box-shadow: var(--g-sh);
+  transform: translateX(-50%) rotate(3deg);
+  animation: hot-wobble 1.6s ease-in-out infinite;
+}
+@keyframes hot-wobble {
+  50% {
+    transform: translateX(-50%) rotate(-3deg) scale(1.06);
+  }
+}
+.btip.hot .btip-face {
+  width: 72px;
+  height: 86px;
+  border-radius: var(--r-md);
+}
+.btip.hot .btip-t {
+  font: 500 var(--fs-body) / var(--lh-prose) var(--font-prose);
+}
+.btip.hot .btip-t b {
+  font: 700 17px/1.2 var(--font-voice);
+  color: var(--text);
+  margin-bottom: var(--s1);
+}
+.btip.hot .btip-b {
+  grid-column: 1 / -1;
+  justify-self: start;
+}
+.btip-dismiss {
+  grid-column: 1 / -1;
+  justify-self: center;
+  font: 600 var(--fs-caption) / 1 var(--font-voice);
+  color: var(--text2);
+}
+@media (prefers-reduced-motion: reduce) {
+  .btip-card.m-pop,
+  .btip-hot,
+  .cs-bubble.m-pop {
+    animation: none;
+  }
+}
+[data-motion='reduced'] :is(.btip-card.m-pop, .btip-hot, .cs-bubble.m-pop) {
+  animation: none;
+}

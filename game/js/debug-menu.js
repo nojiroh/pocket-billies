@@ -6,6 +6,7 @@
 import { expose } from './test-globals.js';
 import {
   closeModal,
+  giveRobotKit,
   modal,
   provide,
   render,
@@ -28,6 +29,7 @@ import {
   SPECIES,
   TRAINERS,
 } from './game-data.js';
+import { speciesOf } from './logic/fighters.js';
 import {
   addBilly,
   addEgg,
@@ -105,7 +107,8 @@ function debugHTML() {
   <div class="dbg-row">${debugButtonHTML('coins', '+10 of every coin')}${debugButtonHTML('items', '+5 of every item')}</div></details>
  <details><summary>Billies</summary><div class="dbg-row">${debugSelectHTML('dbgSp', debugSpeciesOptions(), uiState.dbgSp || DEX_ORDER[0])}<input id="dbgLv" type="number" min="1" max="${maxLevel()}" value="${uiState.dbgLv || 10}" aria-label="Level"><label class="dbg-ck"><input id="dbgGold" type="checkbox"> Golden</label></div>
   <div class="dbg-row">${debugButtonHTML('give', 'Give it to me', 'gold')}${debugButtonHTML('enc', 'Add as encounter')}${debugButtonHTML('wild', 'Battle it now', 'red')}${debugButtonHTML('alpha', 'As an Alpha', 'red')}</div>
-  <div class="dbg-row">${debugButtonHTML('heal', 'Heal everyone')}${debugButtonHTML('lv5', 'Team +5 levels')}${debugButtonHTML('evo', 'Lead evolves now')}${debugButtonHTML('dex', 'Fill the Field Guide')}</div></details>
+  <div class="dbg-row">${debugButtonHTML('heal', 'Heal everyone')}${debugButtonHTML('lv5', 'Team +5 levels')}${debugButtonHTML('evo', 'Lead evolves now')}${debugButtonHTML('dex', 'Fill the Field Guide')}</div>
+  <div class="dbg-row">${debugButtonHTML('bots', 'Give the robot kit (phase 17)', 'gold')}</div><p class="note">Two robots and one of every robot part and gem. Battle Tinker Rho (under Trainers) for a mixed team.</p></details>
  <details><summary>Trainers and world</summary><div class="dbg-row">${debugSelectHTML(
    'dbgTr',
    Object.values(TRAINERS).map(T => [T.id, T.name]),
@@ -245,6 +248,12 @@ function debugAction(x) {
     case 'heal':
       healAll();
       break;
+    case 'bots':
+      giveRobotKit();
+      save();
+      return refreshDebugMenu(
+        'Two robots joined you, with a spare of every part. Refit them in the Workshop on the Team screen.'
+      );
     case 'lv5':
       saveData.team.forEach(m => {
         const t = Math.min(maxLevel(), m.lvl + 5);
@@ -253,7 +262,7 @@ function debugAction(x) {
       break;
     case 'evo': {
       const m = saveData.team[0];
-      if (!m || !SPECIES[m.sp].next) return toast('Your lead doesn’t evolve.');
+      if (!m || !speciesOf(m).next) return toast('Your lead doesn’t evolve.');
       closeModal();
       runEvolution(m, 'Debug menu. Nobody saw anything.');
       return;

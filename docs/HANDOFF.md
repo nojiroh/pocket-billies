@@ -79,6 +79,39 @@ Plan approved at the start (docs/phases/08a-plan.md, section 08a-2, now marked d
     for the starter egg, and a debug log.
 - Next session starts with: "start 08a-3" (docs/phases/08a-plan.md, section 08a-3). First check where the UI
   phase (06) stands: 08a-3 rewrites the same widgets and CSS.
+### Phase 17 - Robots, prototype (in progress, not tagged) - 2026-10-18
+Plan agreed in chat (docs/phases/17-robots.md, rewritten first: robots battle in the same system as Billies, mixed
+teams, body HP + breakable parts, moves from parts, torso + legs types, some moves aim, gem levels + part upgrades,
+parts healed like HP). Branch `phase-17-robots` (from `phase-17-plan`).
+- Changed:
+  - Refactor first, no behaviour change: every species read for a team member goes through `speciesOf(m)`
+    (`logic/fighters.js`); tests identical.
+  - Robots as team members (`kind: 'robot'`, `gem`, `fit`, `partDmg`; `sp` made from the gem and parts, e.g.
+    `bot:volt.vane.tesla.auger.striders`, so art and screens can draw one from its sp). Species data worked out from
+    the parts (`robotSpeciesFor`), arithmetic in `logic/robot-math.js` (shared with the Studio, like parts.js).
+  - Battle: hits land on a part (rules.json robots.hitWeights; aimed moves pick), limbs break, broken arm = no move,
+    broken legs = half Speed, gem-type moves x1.2, Self-Repair, Repair Kit, AI aims at the weakest limb and skips
+    broken moves. Robots aren't added to the Guide's seen/caught.
+  - Screens: `robot-art.js` (rig from part pictures, stand-ins without), stage dims broken parts and sparks on a
+    break, HUD limb bars, part picker, Workshop panel + refit sheet (`workshop.js`), robot parts in the details sheet.
+  - Studio: Robots section (`studio/js/robots-editor.js`), robot fields in Moves, Items, Trainers; the battle
+    preview draws robots (`robotRigParts`).
+  - Data: robots.json + schema, rules.json robots, 12 moves, Repair Kit, trainer `tinker`, art in game/art/robots/.
+- Risky or unfinished: no in-world way to get robots yet (debug menu only); 3D assembly preview, paint, loadouts,
+  crafting, sourcing from chests/trainers, wild robots, the socket standard for the low-poly art: not built. Robots
+  as your walking buddy don't show in the world (world-billies.js only knows Billies). Hazel's battle tips say
+  "Billies" for robots. The sim bounds are not agreed.
+- Verified: lint, typecheck, `npm test` (44 pass: 11 robot tests, 1 sim test), check:data, modules --check, smoke
+  (`check-quick.py --smoke`, all 15 steps). A headless phone run: kit, workshop refit, Tinker Rho's mixed battle with
+  an aimed move breaking an arm, no console errors. The Studio's Robots and Trainers sections in a headless browser.
+  Full sim: robots 48% against Billies of the same level after raising the stat floor 15 -> 38.
+- Decisions I made (and why): 6 generic arms (the socket standard says any arm fits any torso, so left and right
+  arms needn't differ); torso hits (25%) so parts don't break every other hit; new robots at your strongest member's
+  level; free upgrades until the workshop has a place.
+- Questions waiting for the owner: the "Ask me before" list in docs/phases/17-robots.md, plus how the first robot
+  is found, and the balance bounds.
+- Next session starts with: the owner plays the prototype (debug menu -> Give the robot kit, battle Tinker Rho)
+  and answers the open questions; then sourcing, the workshop's place, and the art pipeline.
 
 ### Phase 08a-1 - tests off the steps mode, the dead steps travel mode deleted - 2026-10-18
 Plan approved at the start (docs/phases/08a-plan.md, section 08a-1, now marked done with the corrections found).
@@ -174,6 +207,142 @@ Not a phase; plan approved at the start. Both runs passed with no errors; the ph
     buildGroundMeshSteps) or prepare it before the door opens (prepareMapGround).
   - If the phone is still slow, the next renderer work is: reuse per-frame item objects, instance static sprites,
     group solid props by mesh. That is a phase of its own.
+
+### Phase 06, session 06-3 - Robots merged, battles on the 3D stage only, UI in the scene - 2026-10-19
+Owner's asks: merge what's on GitHub for the bots; remove the painted battle stage (3D in rooms too, wait for the
+scene, the classic HUD too); the battle UI lives in the 3D scene and ignores its lighting so it stays readable.
+Owner's choices: the portrait inside the dialogue box; moves on the first battle menu; robot builds as slot rows with
+a carry meter; battle cards floating in the scene, a calm camera while choosing, readable and thumb-reachable first.
+- Merged: `main` (phase 16 rework, 08a-1, PRs #19, #20, #22, #23) and `phase-17-robots` (robot data, engine,
+  fighters, workshop, Studio Robots section, sims; it had no PR). Conflicts kept 06-2's screens (no step-by-step
+  intro, the shared unit card) and gave robots a place in them: `billyUnit` reads `speciesOf`, knows a robot's weight;
+  the Build tab shows a robot's build; the Workshop section stays on the Team screen.
+- Changed:
+  - **Painted stage removed.** Every battle is on the 3D stage, rooms included. A battle that starts before the scene
+    is ready waits behind its wipe and joins it (`battleStageJoin3d`); `walkMapSync` keeps or opens the walk scene for
+    a battle, even from the Map tab. Gone: the painted drawing (floor, blur, painted props, clouds, light shafts,
+    sprites), its backgrounds (grounds, foregrounds, walls, far land: `game/art/battle/*_ground` etc.), the manifest's
+    `battle.areas` and `tools/build-battle-props.py`; the Settings rows "Battles happen" and "Battle panels" and their
+    preferences (deleted from old saves); the corner-card HUD (plates always); the in-game test's painted battle.
+    Kept: the battle props and clouds (the walking world uses them). A battle stage is now a name, indoors or not and
+    its ambient particles (`battleStages.json`, the Studio card and preview to match).
+  - **Battle UI in the scene** (`floatTick` in battle.js, `css/battle-ui.css`): on the 3D stage the text and the
+    menu are cards anchored in the world, a column under the one choosing (its feet, the text, the menu), following
+    the camera, which holds still while you choose (`battleStage.calm`). Page elements, so the scene's lighting never
+    touches them. The action is framed in a fixed share of the screen above them.
+  - **Moves on the first menu**: four type-coloured tiles, then Tax it, Bag, Team, Run; 1-4 pick a move; Back goes
+    to the first menu. The checks and the in-game test no longer expect a Fight button.
+  - **Dialogue box** (`css/dialogue.css`): the portrait in a 96×96 slot inside the box, a gold name tag, the line in
+    the reading font. `talkBox.onType`: a typing hook per character for phase 07's mouths.
+  - **Robots**: a Build tab of slot rows (part, type, move, Broken/Damaged) and a weight-against-legs meter; the
+    Workshop refit sheet on the new look; the Workshop section as unit rows. **Bag**: a screen title, roomy rows, a
+    floating use panel.
+- Verified: lint, type-check, modules, format, data, build; unit tests 53/53 (the robot tests and sims included);
+  smoke 15/15 (208 s; it was about 200 s with the painted stage); full-check steps Messages and Team pass. Headless:
+  a battle in a room (the shop) and one started from the Map tab both run on the 3D stage; the floating cards keep
+  clear of the fighters; screens looked at in both themes at 390 px.
+- Risky: the full check (not run whole) and the in-game test now play every battle in 3D, so they are slower on the
+  test machine. The leftover classic HUD code (`paintBoxes`, `.hcard`) is hidden, not deleted (06-4 cleanup).
+  Look on your phone at the floating battle cards while moves play out (the test machine freezes animations).
+- Next session starts with: 06-4 (Guide, Trainer card, Settings, shops, dressing room, friends; Studio gallery;
+  delete the emptied CSS and the hidden HUD code; accessibility pass; tag `phase-06-done`).
+
+### Phase 06, session 06-2b - The new opening - 2026-10-18
+Owner's choices (docs/phases/06-plan.md "The new opening"): Blake comes before you have a starter; Hazel fights him
+herself, without a Billie, in battle-screen style, absurdly overpowered, you only watch and tap; then the pick, where
+tapping Hazel gives biased hot takes; Blake's battle has no tutorial, only Hazel's meta line and wrong type tips as a
+HOT TIP over everything (the move buttons too) until tapped; she comments on lines skipped fast and on instant picks.
+Script approved in chat before building.
+- Changed:
+  - `game/js/logic/hazel.js`: every line of the new opening in one table (`HAZEL`), `hotTake`, `hazelTip` (meta, the
+    real matchup flipped, the canned bad tips; at most 4), `speedWatch` (n fast in a row: one comment each, then none),
+    `fillLine`. Unit tested (`tools/test/hazel.test.mjs`).
+  - Opening (cutscene.js): after "three of them right here", Blake runs in (4b), then Hazel's fight: Blake throws a
+    coin, Gildlet pops out (Blake's first Billie: the slug line's first form; any common first form if missing), the
+    plates (Prof. Hazel Lv ??? 9,999 HP; Gildlet Lv 4), her four moves, one hit, Gildlet drains to 0, flashes and
+    goes. Staged inside the opening rather than the battle engine (which needs a Billie team); it looks like the
+    battle screen (the 3D spot, plates, moves, a log to tap). Then the coins and the pick as before; Blake, already
+    there, takes the counter with the new lines. `blakeHello` and the talk-first path went with the old intro.
+  - Pick: a note on the card; tapping Hazel in the scene (nearer than any starter) shows the next hot take in a bubble
+    over her head (three per starter, then annoyed ones).
+  - Too fast: a tap that cuts a line short (under 0.7 s), or a fight line tapped away that fast, three times in a row
+    → a comment after the line. In Blake's battle a move picked within 1 s of the menu (or of closing her tip), twice in
+    a row → a HOT TIP comment (`tutorPicked`, from ui.js `bmove`; `activeBattle.menuT` set in battle.js).
+  - Blake's battle: `battleTutor` shows `hazelTip` each turn as a HOT TIP (`#btip.hot`): big, tilted card with a
+    wobbling badge over a dimmed screen; blocks everything until tapped. Returning players keep "Skip this battle".
+  - Styles: `game/css/opening.css`.
+- Verified: lint, type-check, modules, format, data, build; unit tests 41/41; smoke 15/15 (207 s), and the phone flow
+  now also checks that Hazel's fight ran and that Blake's battle opens on a HOT TIP (141 s). A headless play-through
+  saw every line in order, four hot takes on tapping Hazel, the HOT TIP covering the move buttons, the flipped tip
+  ("Fire beats Water") and, with instant scripted picks, "Instant picks. Bold. Reckless. Very Sterling of you."
+- Risky: on the test machine scripted clicks are slow (about 2 frames a second), so "instant" picks only fire with
+  script clicks there; on a phone they fire as designed. Try tapping through fast on your phone.
+- Next session starts with: 06-3 (dialogue box with the portrait slot, battle menus and text, Bag, the robot builder
+  shell, removing the painted battle stage and the classic HUD).
+
+### Phase 06, session 06-2 - Team, details and the starter pick - 2026-10-18
+Built on 06-1 (PR #24) and the test boot fix (PR #19, cherry-picked). Owner's choices (docs/phases/06-plan.md):
+the lead big and the rest as rows; parts as slot rows on an S·M·L dial; weight as a Speed–Attack balance meter; a Build
+tab; the card and details shared by Billies and bots; the fallback starter list removed; screens before the new opening.
+- Changed:
+  - `game/js/unit-card.js` + `game/css/units.css`: one "unit" model (billyUnit now; a botUnit in phase 17) drawn by
+    unitHeroHTML (the lead), unitRowHTML (everyone else), unitOpenRowHTML (open spots) and unitBuildHTML (the Build
+    tab). Markup in the page (the rig canvases need it), names escaped, tokens only.
+  - Team screen: the lead's card, then one roomy row per Billie (sprite, name, level, types, HP); tap for details.
+    Day jobs and Storage are unchanged below (jobs go with phase 08).
+  - Details sheet: a floating card clear of the edges; tabs Summary · Build · Moves · Evolves (the Stats tab's numbers
+    were the same as the Summary's bars, minus "base"). Build: each slot's size on S·M·L (off-size in gold), weight
+    and class, the Speed–Attack meter with its percentages, and Prime or how many parts are off.
+  - `buildLean` (rules.js, from `partsLean` in logic/parts.js): attack and speed change, lean, parts off, Prime; unit
+    tested against the stat factors.
+  - The opening's starter pick card redone: arrows either side of the name, position dots, the blurb in the reading
+    font, "Strong against / Weak to" as type pills, one gold button (Not yet / Yes on confirm). Same data-a buttons.
+  - Removed: the step-by-step intro (stills, Hazel's lines, trainer step, the starter list) and `fallStill`. If the
+    opening can't start or breaks, a Try again screen with Export debug log (`uiState.openingFailed`).
+  - The step toast no longer repeats the money ("+$" rises from the money chip instead).
+- Verified: lint, type-check, modules, format, data, build; unit tests 37/37 (new Build balance test); smoke 15/15
+  (203 s; the phone flow plays the opening through the new card). New full-check step "Team" passes (31 s). Screens
+  looked at in both themes at 390 px (sent in chat).
+- Not cleaned yet: the CSS of the old intro, team cards and Stats tab (`.talk`, `.tr-*`, `.starters`, `.tm-*`,
+  `.ms-stats`, `.ms-parts`) is unused now; 06-4 deletes emptied CSS.
+- Next session starts with: 06-2b, the new opening (Hazel fights Blake herself, tap Hazel for hot takes during the
+  pick, Blake's battle with her bad, obtrusive tips and "too fast" comments).
+
+### Phase 06, session 06-1 - UI foundation and calmer messages - 2026-10-18
+Plan: docs/phases/06-plan.md (PR #20). Owner's choices: Lit components, Chakra Petch for long text, an inbox dot for
+notices, delete the codex prototype branch, start 06-1 now.
+- Changed:
+  - **Lit**: `tools/vendor-lit.mjs` bundles the npm package (lit 3.3.3, devDependency) into `game/vendor/lit.js`, a
+    classic script that sets `self.PB_LIT` (14 KB minified). Classic, not an import, because tools/to-module.mjs only
+    allows imports between the game's own modules; it also keeps `python3 -m http.server` working. `--check` tells
+    when it doesn't match the installed version. Ignored by ESLint and Prettier.
+  - **Tokens and motion**: `game/css/tokens.css` (space, corners, depth, type sizes, timings; colours stay in v05.css),
+    `game/css/motion.css` (the eight motions as `m-*` classes; reduced motion from the phone or `[data-motion=reduced]`
+    becomes a short fade). Loaded last; nothing older uses them yet except the bottom bar.
+  - **Components** (`game/js/ui-kit.js`): `pb-panel`, `pb-pill`, `pb-button`, `pb-sheet`, `pb-toast`, plus `pbFloat`
+    and the inbox dot. Shadow DOM with slots; a `data-a` on a `pb-button` reaches the page's click handler as before.
+    Paths differ from the plan's `game/ui/`: new code sits in game/js and game/css so lint, type and module checks
+    cover it.
+  - **Messages** (`game/js/logic/messages.js`, ui.js): toasts are a `<pb-toast id="toast">` under the top bar,
+    2.5 s, tap or swipe up to dismiss; the same text again joins the one showing or waiting ("Saved ×2"). The checks'
+    `uiState.toastQ / toastOn / renderOverlay()` still work (plain strings too). `notice()` puts a notice behind a
+    dot on the portrait (`data-a="inbox"` opens them in one sheet): the boot's "A new game / A newer save" and the
+    Copperleaf Town note (its flag is now set when read). `whenWorldShows()` holds the boot's waiting choices
+    (hatch, learn a move, evolve) until the loader, title and opening are gone and the world has shown for 1.2 s.
+    Money earned rises as "+$120" from the money chip.
+  - **Bottom bar** on the tokens: 8 px padding, 44 px buttons, press .96, tokens for corners, depth and timing.
+- Not done, on purpose: the loader tips about real steps are still true (phase 08 Part A hasn't removed steps), so
+  they stay for phase 08. The codex branch: saved as `archive/codex-playable-ui-graphics-poc`; deleting branches and
+  pushing tags are refused from Claude's sessions, so **delete `codex/playable-ui-graphics-poc` on GitHub** yourself.
+- Verified: lint, type-check, module check, format, data check, build (vendor/lit.js ships before the bundle), unit
+  tests 36/36 (new `messages.test.mjs`, fault planted once), smoke 15/15 (187 s, unchanged). New full-check step
+  "Messages" (24.7 s, not in smoke) passes, and fails with a planted inbox fault. Components checked on a scratch page
+  in both themes at 390 px (screenshots sent in chat).
+- Risky: headless software rendering freezes the page's animation clock while the 3D town draws, so the checks can't
+  see entrance animations finish (the toast reads opacity 0 there); look on your phone. Toasts that announce money
+  (for example "+$1,571 steps…") still show alongside the new "+$" float; 06-2 can trim them.
+- Questions waiting for the owner: delete the codex branch on GitHub; merge PR #19 (test boot opening) and PR #20 (plan).
+- Next session starts with: 06-2 (Billie card, details sheet with parts, sizes, weight and Prime, Team, starter pick).
 
 ### Phase 16 prep - Billies rework plan, part kits, test boot - 2026-10-18
 - Changed: docs/phases/16 rewritten (7-line roster, parts, sizes, weight, Prime, decisions and open questions);
