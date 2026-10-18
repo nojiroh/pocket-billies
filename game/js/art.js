@@ -83,7 +83,7 @@ export function artLoad(paths) {
     })
   );
 }
-/* phase 04d: the Studio loads its unsaved pictures first (studio/js/propedit.js) */
+/* phase 04d: the Studio loads its unsaved pictures first (studio/js/prop-editor.js) */
 export function setArtLoad(v) {
   artLoad = v; // eslint-disable-line no-func-assign
   provide({ artLoad });

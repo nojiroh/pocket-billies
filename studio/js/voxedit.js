@@ -31,7 +31,7 @@ import {
 } from './studio-app.js';
 import { fileToCanvas, markArt, pickFile } from './sprites.js';
 import { SCN, scD } from './scenes.js';
-import { pedM } from './propedit.js';
+import { pedM } from './prop-editor.js';
 /* eslint-disable no-func-assign */
 expose({
   VXE: [() => VXE],

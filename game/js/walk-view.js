@@ -326,14 +326,14 @@ const DIO_CHAT = [
 ];
 /* hooks the Studio replaces to show unsaved art and data */
 export let dioData = () => ({ scenes: GD.scenes || {}, sc: GD.scenery || { terrains: {}, props: {} } });
-/* phase 04d: the Studio feeds the renderer its unsaved scenes and art (studio/js/scenes.js, propedit.js) */
+/* phase 04d: the Studio feeds the renderer its unsaved scenes and art (studio/js/scenes.js, prop-editor.js) */
 export function setDioData(v) {
   dioData = v;
   provide({ dioData });
 }
 export let dioImg = path => ART.img[path];
 provide({ dioImg }); /* to-module */
-/* phase 04d: the Studio feeds the renderer its unsaved scenes and art (studio/js/scenes.js, propedit.js) */
+/* phase 04d: the Studio feeds the renderer its unsaved scenes and art (studio/js/scenes.js, prop-editor.js) */
 export function setDioImg(v) {
   dioImg = v;
   provide({ dioImg });
