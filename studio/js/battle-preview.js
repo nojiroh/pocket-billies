@@ -34,8 +34,8 @@ import {
   after,
   card,
   colorField,
-  go,
   moveOptions,
+  openSection,
   peopleOptions,
   rangeField,
   render,
@@ -433,14 +433,14 @@ ACTS.bp = d => {
 /* shortcuts from other sections */
 ACTS.bpFoe = d => {
   BP.foe = d.sp;
-  go('preview');
+  openSection('preview');
 };
 ACTS.bpMove = d => {
   BP.move = d.id;
-  go('preview');
+  openSection('preview');
   setTimeout(() => ACTS.bp({ x: 'move0' }), 900);
 };
 ACTS.bpArea = d => {
   BP.area = d.k;
-  go('preview');
+  openSection('preview');
 };

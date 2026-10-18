@@ -7,7 +7,19 @@ import { provide } from '../../game/js/hooks.js';
 import { $ } from '../../game/js/util.js';
 import { decodeBase64Array } from '../../game/js/walk-view.js';
 import { esc } from './game-stand-ins.js';
-import { ACTS, SECTIONS, after, api, ask, card, changed, go, render, studioState, toast } from './studio-app.js';
+import {
+  ACTS,
+  SECTIONS,
+  after,
+  api,
+  ask,
+  card,
+  changed,
+  openSection,
+  render,
+  studioState,
+  toast,
+} from './studio-app.js';
 import { atlasPath, pickFile } from './sprites.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -382,7 +394,7 @@ function renderCheckList() {
 }
 ACTS.fix = d => {
   const p = studioState.lastCheck[+d.i];
-  if (p) go(p.go, p.sel || {});
+  if (p) openSection(p.go, p.sel || {});
 };
 SECTIONS.check = () => {
   after(renderCheckList);

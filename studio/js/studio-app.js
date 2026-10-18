@@ -34,13 +34,13 @@ expose({
   fieldOutputId: [() => fieldOutputId],
   foldedSectionGroups: [() => foldedSectionGroups],
   formatThousands: [() => formatThousands],
-  go: [() => go, v => (go = v)],
   grid: [() => grid],
   helpHTML: [() => helpHTML],
   itemOptions: [() => itemOptions],
   moveOptions: [() => moveOptions],
   numberField: [() => numberField, v => (numberField = v)],
   onField: [() => onField, v => (onField = v)],
+  openSection: [() => openSection, v => (openSection = v)],
   peopleOptions: [() => peopleOptions],
   rangeField: [() => rangeField, v => (rangeField = v)],
   readField: [() => readField, v => (readField = v)],
@@ -269,7 +269,7 @@ export async function saveAll() {
         'Review problems'
       ))
     ) {
-      go('check');
+      openSection('check');
       return;
     }
     let n = 0;
@@ -484,7 +484,7 @@ function renderSide() {
     }).join('') +
     `<div class="side-foot"><small><kbd>Ctrl K</kbd> finds any setting · <kbd>Ctrl L</kbd> shows connections · <kbd>Ctrl S</kbd> saves.<br>Saves go to <code>game/data</code> and <code>game/art</code>, with backups in <code>backups/</code>.</small></div>`;
 }
-export function go(s, sel) {
+export function openSection(s, sel) {
   if (studioState.sec === 'preview' && s !== 'preview' && typeof battleStageStop === 'function') battleStageStop();
   if (typeof engineContext !== 'undefined') engineContext.bypass = false;
   studioState.sec = s;
@@ -536,11 +536,11 @@ document.addEventListener('click', ev => {
   const el = ev.target.closest('[data-act]');
   if (!el) return;
   const a = el.dataset.act;
-  if (a === 'go') return go(el.dataset.s);
+  if (a === 'go') return openSection(el.dataset.s);
   if (a === 'undo') return undo();
   if (a === 'redo') return redo();
   if (a === 'save') return saveAll();
-  if (a === 'goCheck') return go('check');
+  if (a === 'goCheck') return openSection('check');
   if (a === 'play') {
     window.open('../game/index.html?debug', 'networth-game');
     return;

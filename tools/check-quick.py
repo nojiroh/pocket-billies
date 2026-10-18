@@ -1937,7 +1937,7 @@ def studio_round_trip(pw, R):
             pg.on('pageerror', lambda e: errs.append(str(e))); pg.on('console', lambda m: errs.append(m.text) if m.type == 'error' else None)
             pg.goto(f'http://localhost:{port}/studio/index.html'); pg.wait_for_selector('.split', timeout=30000); time.sleep(1)
             for sec in ['billionaires', 'moves', 'preview', 'types', 'items', 'shops', 'world', 'scenes', 'engine', 'wardrobe', 'trainers', 'lore', 'people', 'jobs', 'rules', 'art', 'check']:
-                pg.evaluate(f"go('{sec}')"); time.sleep(1.6 if sec in ('preview', 'scenes', 'engine') else .4)
+                pg.evaluate(f"openSection('{sec}')"); time.sleep(1.6 if sec in ('preview', 'scenes', 'engine') else .4)
                 if sec in ('scenes', 'check'): shot(pg, f'studio-{sec}')
                 if sec == 'lore':   # v47: every tab of Lore & story opens
                     for t in ['world', 'story', 'people', 'places', 'legends', 'clues', 'books', 'loading', 'chat']:
@@ -1946,14 +1946,14 @@ def studio_round_trip(pw, R):
             # v29 scene tools: scatter, copy and paste, a block stamp, a curved road, a smooth path; then a test run that sees the edits live
             extra = ''
             if pg.evaluate("typeof scxScatter==='function'"):
-                pg.evaluate("go('scenes');ACTS.scPick({k:'pond'});0"); time.sleep(2.5)
+                pg.evaluate("openSection('scenes');ACTS.scPick({k:'pond'});0"); time.sleep(2.5)
                 r = pg.evaluate("""(()=>{const sc=scCur(),n0=sc.props.length,t0=sc.tiles.join('');SCN.prop=Object.keys(scD().props).find(k=>/bush|flower/.test(k));SCN.scat.dens=1.5;SCN.brush=3;
                   const D={n:0};for(let i=0;i<4;i++)scxScatter(sc,{x:6+i,z:6},D);const n1=sc.props.length;SCN.multi=new Set([0,1]);scxCopy();SCN.mouse=[sc.w/2,sc.h/2];scxPaste();const n2=sc.props.length;
                   scxStampAt(sc,{name:'t',props:[{k:sc.props[0].k,x:0,z:0},{k:sc.props[1].k,x:1,z:0}]},4,4,false);const n3=sc.props.length;
                   SCN.ter='p';SCN.road=[[2,3],[sc.w/2,sc.h/2],[sc.w-3,4]];scxRoadLay(sc);const roadOk=sc.tiles.join('')!==t0;const p0=(sc.path||[]).length;ACTS.scxSmoothPath();changed();
                   return {scattered:n1-n0,pasted:n2-n1,stamped:n3-n2,road:roadOk,path:[p0,(sc.path||[]).length],n:sc.props.length}})()""")
                 if r['scattered'] < 3 or r['pasted'] != 2 or r['stamped'] != 2 or not r['road']: raise Exception(f'scene tools: {r}')
-                pg.evaluate("go('rules');0")          # the Studio's scene preview would otherwise share the software renderer with the test run
+                pg.evaluate("openSection('rules');0")          # the Studio's scene preview would otherwise share the software renderer with the test run
                 g = ctx.new_page(); g.goto(f'http://localhost:{port}/game/index.html?test=1&scene=pond'); g.wait_for_selector('#walkHero', timeout=240000)
                 ok = False
                 for _ in range(120):
@@ -1965,11 +1965,11 @@ def studio_round_trip(pw, R):
                 if not ok: raise Exception(f'the test run didn’t open Willowmere with the Studio’s edits ({st}, Studio has {r["n"]} props)')
                 if saved: raise Exception('the test run wrote a save')
                 extra = f"; scene tools: {r['scattered']} scattered, 2 pasted, a block stamped, a road laid, path {r['path'][0]}→{r['path'][1]} points; a test run opened Willowmere with the unsaved edits and saved nothing"
-            pg.evaluate("go('rules')"); time.sleep(.5)
-            pg.evaluate("go('moves',{move:'lawsuit'})"); pg.fill('input[data-p="moves.lawsuit.p"]', '77'); pg.dispatch_event('input[data-p="moves.lawsuit.p"]', 'change')
-            pg.evaluate("go('billionaires')"); pg.click('[data-act=newLine]'); time.sleep(.5); pg.fill('#nwName', 'Checko'); pg.click('.dlg-btns .btn.primary')
+            pg.evaluate("openSection('rules')"); time.sleep(.5)
+            pg.evaluate("openSection('moves',{move:'lawsuit'})"); pg.fill('input[data-p="moves.lawsuit.p"]', '77'); pg.dispatch_event('input[data-p="moves.lawsuit.p"]', 'change')
+            pg.evaluate("openSection('billionaires')"); pg.click('[data-act=newLine]'); time.sleep(.5); pg.fill('#nwName', 'Checko'); pg.click('.dlg-btns .btn.primary')
             pg.wait_for_selector('.skel', timeout=10000); time.sleep(.6); pg.click('[data-sk=close]'); time.sleep(.3)
-            pg.click('#saveBtn'); time.sleep(4); pg.evaluate("go('rules')")
+            pg.click('#saveBtn'); time.sleep(4); pg.evaluate("openSection('rules')")
             g = ctx.new_page(); g.on('pageerror', lambda e: errs.append('game: ' + str(e))); g.on('console', lambda m: errs.append('game: ' + m.text) if m.type == 'error' else None)
             g.goto(f'http://localhost:{port}/game/index.html')
             try: g.wait_for_selector('.ttl,.title', timeout=60000)
@@ -2026,8 +2026,8 @@ def studio_opens(b):
     pg.on('pageerror', lambda e: errs.append(str(e))); pg.on('console', lambda m: errs.append(console_text(m)) if m.type == 'error' else None)
     try:
         pg.goto(base + '/studio/index.html'); pg.wait_for_selector('#ghTok', timeout=60000)
-        ok = pg.evaluate("[typeof go==='function',typeof GH==='object',typeof propLook==='function']")
-        if not all(ok): raise Exception(f'Studio scripts missing (go, GH, the shared renderer): {ok}')
+        ok = pg.evaluate("[typeof openSection==='function',typeof GH==='object',typeof propLook==='function']")
+        if not all(ok): raise Exception(f'Studio scripts missing (openSection, GH, the shared renderer): {ok}')
         shot(pg, 'studio-sign-in')
         if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
         return 'the Studio and the shared game scripts loaded; the GitHub sign-in is showing'

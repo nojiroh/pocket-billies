@@ -13,7 +13,7 @@ import { provide } from '../../game/js/hooks.js';
 import { $ } from '../../game/js/util.js';
 import { ENGINE_DEFAULTS, ENGINE_PRESETS, ENGINE_SPEC } from '../../game/js/engine/settings.js';
 import { esc } from './game-stand-ins.js';
-import { ACTS, go, render, setRender, speciesName, studioState } from './studio-app.js';
+import { ACTS, openSection, render, setRender, speciesName, studioState } from './studio-app.js';
 import { curLine } from './data-editors.js';
 import { SCN, scId } from './map-editor.js';
 import { ENS, engD, engFmt } from './engine-editor.js';
@@ -158,11 +158,18 @@ function lnkNode(kind, id) {
         id,
         label: speciesName(id),
         sub: 'Billy',
-        go: () => go('billionaires', { line: L ? L.id : studioState.sel.line, stage: L ? +id.slice(L.id.length) : 0 }),
+        go: () =>
+          openSection('billionaires', { line: L ? L.id : studioState.sel.line, stage: L ? +id.slice(L.id.length) : 0 }),
       };
     }
     case 'move':
-      return { kind, id, label: (D.moves[id] || {}).n || id, sub: 'Move', go: () => go('moves', { move: id }) };
+      return {
+        kind,
+        id,
+        label: (D.moves[id] || {}).n || id,
+        sub: 'Move',
+        go: () => openSection('moves', { move: id }),
+      };
     case 'item':
       return {
         kind,
@@ -185,19 +192,25 @@ function lnkNode(kind, id) {
         id,
         label: (D.trainers[id] || {}).name || id,
         sub: 'Trainer',
-        go: () => go('trainers', { trainer: id }),
+        go: () => openSection('trainers', { trainer: id }),
       };
     case 'shop':
-      return { kind, id, label: (D.shops[id] || {}).name || id, sub: 'Shop', go: () => go('shops', { shop: id }) };
+      return {
+        kind,
+        id,
+        label: (D.shops[id] || {}).name || id,
+        sub: 'Shop',
+        go: () => openSection('shops', { shop: id }),
+      };
     case 'person':
-      return { kind, id, label: id, sub: 'Look', go: () => go('people', { person: id }) };
+      return { kind, id, label: id, sub: 'Look', go: () => openSection('people', { person: id }) };
     case 'scene':
       return {
         kind,
         id,
         label: (D.scenes[id] || {}).name || id,
         sub: 'Walk scene',
-        go: () => go('scenes', { scene: id }),
+        go: () => openSection('scenes', { scene: id }),
       };
     case 'stop':
       return {
@@ -205,10 +218,10 @@ function lnkNode(kind, id) {
         id,
         label: (D.route[id] || {}).name || 'Stop ' + (+id + 1),
         sub: 'Route stop ' + (+id + 1),
-        go: () => go('world', { wtab: 'route', stop: +id }),
+        go: () => openSection('world', { wtab: 'route', stop: +id }),
       };
     case 'pool':
-      return { kind, id, label: id, sub: 'Wild encounters', go: () => go('world', { wtab: 'pools' }) };
+      return { kind, id, label: id, sub: 'Wild encounters', go: () => openSection('world', { wtab: 'pools' }) };
     case 'prop':
       return {
         kind,
@@ -216,12 +229,12 @@ function lnkNode(kind, id) {
         label: ((D.scenery.props || {})[id] || {}).name || id,
         sub: 'Prop',
         go: () => {
-          go('scenes');
+          openSection('scenes');
           if (ACTS.scEditProp) ACTS.scEditProp({ k: id });
         },
       };
     case 'type':
-      return { kind, id, label: id, sub: 'Type', go: () => go('types') };
+      return { kind, id, label: id, sub: 'Type', go: () => openSection('types') };
     case 'rules':
       return { kind, id, label: 'Rules', sub: id, go: () => findField('rules', id) };
     case 'dial':
@@ -424,7 +437,7 @@ function lnkDial(gk) {
         ENS.scene = s;
         studioState.sel.scene = s;
         ENS.open[g] = 1;
-        go('engine');
+        openSection('engine');
         findFlash(findSel(`scenes.${s}.look.${g}.${k}`));
       },
     }));
@@ -436,7 +449,7 @@ function lnkDial(gk) {
         id: n,
         label: 'Look: ' + (P.name || n),
         sub: 'sets it to ' + engFmt(P.v[g][k], 0.01),
-        go: () => go('engine'),
+        go: () => openSection('engine'),
       })),
   ];
   const chain = [
@@ -459,7 +472,7 @@ function lnkDial(gk) {
       go: () => {
         ENS.scope = 'map';
         ENS.open[g] = 1;
-        go('engine');
+        openSection('engine');
       },
     });
   const needs = (ENG_NEEDS[gk] || []).map(x => lnkNode('dial', x)),

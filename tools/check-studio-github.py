@@ -63,7 +63,7 @@ def main():
         sections = pg.evaluate("typeof SECTIONS==='object'?Object.keys(SECTIONS):[]")
         for k in sections:
             n = len(errs)
-            pg.evaluate(f"void go({json.dumps(k)})")
+            pg.evaluate(f"void openSection({json.dumps(k)})")
             time.sleep(1)
             if len(errs) > n: errs[n:] = [f'{k}: {e}' for e in errs[n:]]
         print(f'{len(sections)} sections opened', flush=True)

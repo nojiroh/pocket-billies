@@ -21,11 +21,11 @@ import {
   colorField,
   dialog,
   formatThousands,
-  go,
   grid,
   itemOptions,
   moveOptions,
   numberField,
+  openSection,
   peopleOptions,
   rangeField,
   readPath,
@@ -862,7 +862,7 @@ ACTS.pickMove = d => {
   render();
 };
 ACTS.gotoLine = d => {
-  go('billionaires', { line: d.id, stage: 0 });
+  openSection('billionaires', { line: d.id, stage: 0 });
 };
 ACTS.moveNew = () => {
   const D = studioState.D,
@@ -1419,7 +1419,7 @@ ACTS.personDel = async () => {
 };
 ACTS.wdGo = d => {
   WDS.sel = d.k;
-  go('wardrobe');
+  openSection('wardrobe');
 };
 /* ================= JOBS ================= */
 SECTIONS.jobs = () => {

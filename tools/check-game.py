@@ -189,25 +189,25 @@ def check_studio(pw, results):
         pg.on('console', lambda m: errs.append(m.text) if m.type == 'error' else None)
         pg.goto(f'http://localhost:{port}/studio/index.html'); pg.wait_for_selector('.split', timeout=30000); time.sleep(1)
         for sec in ['billionaires', 'moves', 'preview', 'types', 'items', 'shops', 'world', 'scenes', 'engine', 'wardrobe', 'trainers', 'people', 'jobs', 'rules', 'art', 'check']:
-            pg.evaluate(f"go('{sec}')"); time.sleep(2 if sec in ('preview', 'scenes', 'engine') else .6); pg.screenshot(path=str(OUT / f'studio-{sec}.png'))
-        pg.evaluate("go('scenes');SCN.tool='steps';SCN.smode='stairs';SCN.walkOv=true;render()"); time.sleep(3); pg.evaluate("scMapDraw()"); time.sleep(.5)
+            pg.evaluate(f"openSection('{sec}')"); time.sleep(2 if sec in ('preview', 'scenes', 'engine') else .6); pg.screenshot(path=str(OUT / f'studio-{sec}.png'))
+        pg.evaluate("openSection('scenes');SCN.tool='steps';SCN.smode='stairs';SCN.walkOv=true;render()"); time.sleep(3); pg.evaluate("scMapDraw()"); time.sleep(.5)
         pg.screenshot(path=str(OUT / 'studio-scenes-steps.png'))
-        pg.evaluate("SCN.tool='paint';SCN.walkOv=false;go('rules')"); time.sleep(.6)
-        pg.evaluate("go('moves',{move:'lawsuit'})"); pg.fill('input[data-p="moves.lawsuit.p"]', '77'); pg.dispatch_event('input[data-p="moves.lawsuit.p"]', 'change')
+        pg.evaluate("SCN.tool='paint';SCN.walkOv=false;openSection('rules')"); time.sleep(.6)
+        pg.evaluate("openSection('moves',{move:'lawsuit'})"); pg.fill('input[data-p="moves.lawsuit.p"]', '77'); pg.dispatch_event('input[data-p="moves.lawsuit.p"]', 'change')
         # a new billionaire from a blank body, finished in the skeleton builder
-        pg.evaluate("go('billionaires')"); pg.click('[data-act=newLine]'); time.sleep(.5); pg.fill('#nwName', 'Checko'); pg.click('.dlg-btns .btn.primary')
+        pg.evaluate("openSection('billionaires')"); pg.click('[data-act=newLine]'); time.sleep(.5); pg.fill('#nwName', 'Checko'); pg.click('.dlg-btns .btn.primary')
         pg.wait_for_selector('.skel', timeout=10000); time.sleep(1)
         pg.click('[data-sk=sel][data-n=head]'); pg.click('[data-sk=child]'); time.sleep(.4)
         pg.screenshot(path=str(OUT / 'studio-skeleton.png'))
         pg.click('[data-sk=close]'); time.sleep(.4)
         # the battle preview, with the new billionaire as the opponent
-        pg.evaluate("BP.foe='checko1';go('preview')"); time.sleep(2.5); pg.evaluate("ACTS.bp({x:'move1'})"); time.sleep(.6)
+        pg.evaluate("BP.foe='checko1';openSection('preview')"); time.sleep(2.5); pg.evaluate("ACTS.bp({x:'move1'})"); time.sleep(.6)
         pg.screenshot(path=str(OUT / 'studio-preview-new.png'))
         # map art: repaint the trail along the stops
-        pg.evaluate("go('world',{wtab:'paint'})"); time.sleep(2.5); pg.click('[data-mp=paintTrail]'); time.sleep(1)
+        pg.evaluate("openSection('world',{wtab:'paint'})"); time.sleep(2.5); pg.click('[data-mp=paintTrail]'); time.sleep(1)
         pg.evaluate("document.querySelector('#main').scrollTop=0"); pg.screenshot(path=str(OUT / 'studio-mapart.png'))
         pg.click('#saveBtn'); time.sleep(5)
-        pg.evaluate("go('rules')")  # leave the heavier 3D sections before opening the game
+        pg.evaluate("openSection('rules')")  # leave the heavier 3D sections before opening the game
         g = b.new_context(viewport={'width': 1440, 'height': 900}); g.add_init_script(TEST_GLOBALS); g = g.new_page(); g.set_default_timeout(240000); gerrs = []
         g.on('pageerror', lambda e: gerrs.append(str(e))); g.on('console', lambda m: gerrs.append(m.text) if m.type == 'error' else None)
         g.goto(f'http://localhost:{port}/game/index.html'); g.wait_for_selector('.ttl,.title', timeout=30000)

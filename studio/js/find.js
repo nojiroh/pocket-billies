@@ -10,7 +10,7 @@ import { linkNote } from '../../game/js/hooks.js';
 import { $, $$ } from '../../game/js/util.js';
 import { ENGINE_SPEC } from '../../game/js/engine/settings.js';
 import { esc } from './game-stand-ins.js';
-import { ACTS, SECTIONS, SECTION_LIST, clone, go, studioState, toast } from './studio-app.js';
+import { ACTS, SECTIONS, SECTION_LIST, clone, openSection, studioState, toast } from './studio-app.js';
 import { ENS, engRefresh } from './engine-editor.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -65,14 +65,14 @@ export function findFlash(sel, tries = 0) {
 }
 export const findSel = p => `[data-p="${CSS.escape(p)}"],[data-path="${CSS.escape(p)}"]`;
 export function findField(sec, p, sel) {
-  if (studioState.sec !== sec || sel) go(sec, sel);
+  if (studioState.sec !== sec || sel) openSection(sec, sel);
   findFlash(findSel(p));
 }
 export function findEngine(g, k) {
   ENS.scope = 'game';
   ENS.open[g] = 1;
   if (studioState.sec === 'engine') engRefresh();
-  else go('engine');
+  else openSection('engine');
   findFlash(findSel(`engine.defaults.${g}.${k}`));
 }
 /* ---- the index ---- */
@@ -123,7 +123,7 @@ function findBuild() {
       if (label)
         E.push({ label: String(label), where, kind, fn, t: findNorm(label), x: findNorm(where + ' ' + extra) });
     };
-  SECTION_LIST.forEach(([k, n, d]) => add(n, 'Section', 'section', () => go(k), d));
+  SECTION_LIST.forEach(([k, n, d]) => add(n, 'Section', 'section', () => openSection(k), d));
   if (typeof ENGINE_SPEC !== 'undefined')
     ENGINE_SPEC.forEach(([g, t, F]) =>
       F.forEach(f => {
@@ -139,13 +139,13 @@ function findBuild() {
         n,
         `Billy · ${L.id}${st}${((L.types && L.types[st]) || []).length ? ' · ' + L.types[st].join('/') : ''}`,
         'billy',
-        () => go('billionaires', { line: L.id, stage: st }),
+        () => openSection('billionaires', { line: L.id, stage: st }),
         L.id
       )
     )
   );
   Object.entries(D.moves || {}).forEach(([k, M]) =>
-    add(M.n, `Move · ${M.t || ''}`, 'move', () => go('moves', { move: k }), k)
+    add(M.n, `Move · ${M.t || ''}`, 'move', () => openSection('moves', { move: k }), k)
   );
   Object.entries(D.items || {}).forEach(([k, I]) =>
     add(I.n, 'Item', 'item', () => findField('items', `items.${k}.n`), k + ' ' + (I.d || ''))
@@ -154,18 +154,26 @@ function findBuild() {
     add(I.n, 'Tax coin', 'item', () => findField('items', `coins.${k}.n`), k)
   );
   Object.entries(D.trainers || {}).forEach(([k, T]) =>
-    add(T.name || k, 'Trainer' + (T.area ? ' · ' + T.area : ''), 'trainer', () => go('trainers', { trainer: k }), k)
+    add(
+      T.name || k,
+      'Trainer' + (T.area ? ' · ' + T.area : ''),
+      'trainer',
+      () => openSection('trainers', { trainer: k }),
+      k
+    )
   );
   Object.entries(D.shops || {}).forEach(([k, S]) =>
-    add(S.name || k, 'Shop' + (S.keeper ? ' · ' + S.keeper : ''), 'shop', () => go('shops', { shop: k }), k)
+    add(S.name || k, 'Shop' + (S.keeper ? ' · ' + S.keeper : ''), 'shop', () => openSection('shops', { shop: k }), k)
   );
-  Object.keys(D.people || {}).forEach(k => add(k, 'Look (People)', 'person', () => go('people', { person: k })));
+  Object.keys(D.people || {}).forEach(k =>
+    add(k, 'Look (People)', 'person', () => openSection('people', { person: k }))
+  );
   Object.entries(D.scenes || {}).forEach(([k, s]) =>
     add(
       s.name || k,
       `Walk scene · ${s.kind || (s.room ? 'room' : 'place')}`,
       'scene',
-      () => go('scenes', { scene: k }),
+      () => openSection('scenes', { scene: k }),
       k
     )
   );
@@ -174,7 +182,7 @@ function findBuild() {
       r.name,
       `Route stop ${i + 1}${r.town ? ' · town' : ''}`,
       'stop',
-      () => go('world', { wtab: 'route', stop: i }),
+      () => openSection('world', { wtab: 'route', stop: i }),
       r.id || ''
     )
   );
@@ -184,7 +192,7 @@ function findBuild() {
       'Prop' + ((P.tags || []).length ? ' · ' + P.tags.slice(0, 3).join(', ') : ''),
       'prop',
       () => {
-        go('scenes');
+        openSection('scenes');
         if (ACTS.scEditProp) ACTS.scEditProp({ k });
       },
       k
