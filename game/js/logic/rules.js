@@ -466,13 +466,13 @@ export const pathFrom = (prev, to) => {
   for (let x = to; x >= 0 && prev[x] >= 0; x = prev[x]) out.unshift(x);
   return out;
 };
-/* steps from where you stand to stop j, and the plan that gets there */
+/* metres from where you stand to stop j, and the plan that gets there */
 export function tripTo(j) {
   const node = saveData.trip.node;
-  if (j === node) return { steps: 0, plan: [] };
+  if (j === node) return { metres: 0, plan: [] };
   const D = walkDistances(node);
   if (D.d[j] === Infinity) return null;
-  return { steps: D.d[j], plan: pathFrom(D.prev, j) };
+  return { metres: D.d[j], plan: pathFrom(D.prev, j) };
 }
 export function setTrip(j) {
   const t = tripTo(j);

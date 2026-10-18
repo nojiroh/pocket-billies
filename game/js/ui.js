@@ -1656,7 +1656,7 @@ function worldMapCardHTML() {
     status = st.k === 'stay' ? 'You are here.' : st.t + '.';
     btns = st.k === 'stay' ? '' : tripButtons();
   } else if (sel === dest) {
-    status = `${st.t}. ${distanceText((tripTo(sel) || { steps: 0 }).steps)} to go.`;
+    status = `${st.t}. ${distanceText((tripTo(sel) || { metres: 0 }).metres)} to go.`;
     btns = tripButtons();
   } else {
     const t = tripTo(sel),
@@ -1664,7 +1664,7 @@ function worldMapCardHTML() {
     if (locked) status = 'Locked. ' + gateText(n);
     else if (!t) status = 'You can’t get there from here yet.';
     else {
-      status = `${distanceText(t.steps)} on foot${
+      status = `${distanceText(t.metres)} on foot${
         t.plan.length > 1
           ? ` · via ${t.plan
               .slice(0, -1)

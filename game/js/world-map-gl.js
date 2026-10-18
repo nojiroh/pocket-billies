@@ -1119,7 +1119,7 @@ function worldMapGlLocationListHTML() {
         : locked
           ? 'Locked'
           : t
-            ? `${distanceText(t.steps)}${saveData.visited[i] ? '' : ' · new'}`
+            ? `${distanceText(t.metres)}${saveData.visited[i] ? '' : ' · new'}`
             : 'No road yet';
     return {
       i,
@@ -1127,10 +1127,10 @@ function worldMapGlLocationListHTML() {
       st,
       sub,
       g: i === saveData.trip.node ? 0 : locked ? 3 : saveData.visited[i] ? 1 : 2,
-      steps: t ? t.steps : 1e9,
+      metres: t ? t.metres : 1e9,
     };
   });
-  rows.sort((a, b) => a.g - b.g || a.steps - b.steps);
+  rows.sort((a, b) => a.g - b.g || a.metres - b.metres);
   const G = ['Here', 'Visited', 'Not visited yet', 'Locked'];
   let h =
       '<div class="mpl-head"><b>Places</b><button class="mbtn sm" data-a="mlist" aria-label="Close">×</button></div><div class="mpl-body">',
