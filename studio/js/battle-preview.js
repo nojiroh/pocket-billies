@@ -108,8 +108,8 @@ function hudHit(ti, an) {
 function battlePreviewDefaults() {
   const D = studioState.D,
     ids = D.lines.flatMap(L => L.names.map((n, i) => L.id + i)).filter(id => studioState.rigs[id]);
-  if (!battlePreview.area || !D.backdrops[battlePreview.area])
-    battlePreview.area = D.locations[0].area || Object.keys(D.backdrops)[0];
+  if (!battlePreview.area || !D.battleStages[battlePreview.area])
+    battlePreview.area = D.locations[0].area || Object.keys(D.battleStages)[0];
   if (!battlePreview.me || !studioState.rigs[battlePreview.me])
     battlePreview.me = (D.rules.start.starters[0] || D.lines[0].id) + '0';
   if (!battlePreview.foe || !studioState.rigs[battlePreview.foe]) battlePreview.foe = ids[3] || ids[0];
@@ -124,8 +124,8 @@ const battlePreviewEvent = () => ({
 SECTIONS.preview = () => {
   const D = studioState.D;
   battlePreviewDefaults();
-  const A = D.backdrops[battlePreview.area],
-    p = `backdrops.${battlePreview.area}`;
+  const A = D.battleStages[battlePreview.area],
+    p = `battleStages.${battlePreview.area}`;
   afterRender(startBattlePreview);
   const opt = (arr, v) =>
     arr
@@ -193,7 +193,7 @@ SECTIONS.preview = () => {
   ${card(
     'Backdrop',
     `<label class="fld"><span>Battle backdrop</span><select data-bp="area">${opt(
-      Object.entries(D.backdrops).map(([k, v]) => [k, v.name || k]),
+      Object.entries(D.battleStages).map(([k, v]) => [k, v.name || k]),
       battlePreview.area
     )}</select></label>
    <div class="grid colors">${colorField('Sky top', `${p}.sky.0`)}${colorField('Sky middle', `${p}.sky.1`)}${colorField('Sky horizon', `${p}.sky.2`)}${colorField('Haze', `${p}.fog`)}</div>${rangeField('Haze distance', `${p}.fogD`, { min: 10, max: 300, step: 5 })}${selectField('In the air', `${p}.amb`, AMBIENT_PARTICLES)}
@@ -207,7 +207,7 @@ async function startBattlePreview() {
   const load = $('#bpLoad');
   if (load) load.hidden = false;
   try {
-    const art = D.backdrops[battlePreview.area];
+    const art = D.battleStages[battlePreview.area];
     if (
       battlePreview._art !==
       battlePreview.area + (art.art || '') + (art.wall || '') + (art.far || '') + (art.indoor || '')
@@ -281,13 +281,13 @@ async function mountBattlePreviewMap() {
 }
 function applyBattlePreviewBackdrop() {
   if (!battleStage.L || battleStage.area !== battlePreview.area) return;
-  const A = studioState.D.backdrops[battlePreview.area];
+  const A = studioState.D.battleStages[battlePreview.area];
   battleStage.skyC = A.sky.map(hexToRgb);
   battleStage.fogC = hexToRgb(A.fog);
   battleStage.floorKey = '';
 }
 studioState.hooks.preview = path => {
-  if (path.startsWith('backdrops.')) applyBattlePreviewBackdrop();
+  if (path.startsWith('battleStages.')) applyBattlePreviewBackdrop();
 };
 document.addEventListener('change', ev => {
   const el = ev.target,

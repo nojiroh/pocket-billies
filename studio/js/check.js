@@ -161,7 +161,7 @@ function runCheck() {
   D.locations.forEach((r, i) => {
     const g = { wtab: 'route', stop: i };
     if (!D.pools[r.pool]) err(`${r.name} uses wild pool ${r.pool}, which doesn’t exist.`, 'world', g);
-    if (r.area && !D.backdrops[r.area]) err(`${r.name} uses an unknown battle backdrop.`, 'world', g);
+    if (r.area && !D.battleStages[r.area]) err(`${r.name} uses an unknown battle backdrop.`, 'world', g);
     if (r.shop && !(D.shops || {})[r.shop]) err(`${r.name} uses a shop that doesn’t exist.`, 'world', g);
     if (r.gate && !seats.has(r.gate))
       err(`${r.name} is locked behind a badge nobody awards (${r.gate}). It could never open.`, 'world', g);

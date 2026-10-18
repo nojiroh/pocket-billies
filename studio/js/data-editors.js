@@ -1554,7 +1554,7 @@ SECTIONS.trainers = () => {
      selectField(
        'Battle backdrop',
        `${p}.area`,
-       Object.entries(D.backdrops).map(([b, v]) => [b, v.name || b])
+       Object.entries(D.battleStages).map(([b, v]) => [b, v.name || b])
      ),
      numberField('Reward ($)', `${p}.reward`, { min: 0, step: 50 }),
      selectField(

@@ -309,7 +309,7 @@ def main():
     CAT = catalog(man)
     gd = gamedata.js_text()
     gdj = json.loads(gd[gd.index('window.GAMEDATA=') + len('window.GAMEDATA='):].rstrip().rstrip(';'))
-    backs = gdj['backdrops']
+    backs = gdj['battleStages']
     out = src
     for area, A in backs.items():
         art = A.get('art') or area

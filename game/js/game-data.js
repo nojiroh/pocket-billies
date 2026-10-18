@@ -200,7 +200,7 @@ for (const k in gameData.pools) {
   };
   if (!POOLS[k].list.length) POOLS[k].list = [[DEX_ORDER[0], 1]];
 }
-export const BATTLE_STAGES = gameData.backdrops;
+export const BATTLE_STAGES = gameData.battleStages;
 provide({ BATTLE_STAGES }); /* to-module */
 LOCATIONS.forEach((r, i) => {
   if (!POOLS[r.pool]) {

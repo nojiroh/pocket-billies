@@ -52,7 +52,7 @@ const liveMap = f =>
       },
     }
   );
-const BATTLE_STAGES = liveMap(D => D.backdrops),
+const BATTLE_STAGES = liveMap(D => D.battleStages),
   MOVES = liveMap(D => D.moves),
   PEOPLE = liveMap(D => D.people);
 provide({ BATTLE_STAGES, MOVES, PEOPLE }); /* to-module */

@@ -231,7 +231,7 @@ function worldLocations() {
       selectField(
         'Battle backdrop',
         `${p}.area`,
-        Object.entries(D.backdrops).map(([k, v]) => [k, v.name || k])
+        Object.entries(D.battleStages).map(([k, v]) => [k, v.name || k])
       ),
       selectField(
         'Walk scene',
@@ -631,9 +631,9 @@ function worldBackdrops() {
           .map(f => f.path.split('/').pop().replace('_walls.png', ''))
       ),
     ];
-  return Object.entries(D.backdrops)
+  return Object.entries(D.battleStages)
     .map(([k, b]) => {
-      const p = `backdrops.${k}`,
+      const p = `battleStages.${k}`,
         art = b.art || k;
       return card(
         escapeHtml(b.name || k),
@@ -683,10 +683,10 @@ function worldBackdrops() {
 }
 ACTIONS.bdDup = d => {
   const D = studioState.D,
-    k = uniqueKey(d.k + 'b', x => !!D.backdrops[x]);
-  D.backdrops[k] = clone(D.backdrops[d.k]);
-  D.backdrops[k].name = (D.backdrops[k].name || d.k) + ' (copy)';
-  D.backdrops[k].art = D.backdrops[d.k].art || d.k;
+    k = uniqueKey(d.k + 'b', x => !!D.battleStages[x]);
+  D.battleStages[k] = clone(D.battleStages[d.k]);
+  D.battleStages[k].name = (D.battleStages[k].name || d.k) + ' (copy)';
+  D.battleStages[k].art = D.battleStages[d.k].art || d.k;
   changed();
   render();
 };
