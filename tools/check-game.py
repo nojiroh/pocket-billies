@@ -122,7 +122,7 @@ def check_game(pw, base, results):
         areas = pg.evaluate('Object.keys(BATTLE_STAGES)') if name == 'phone' else ['grass', 'mall']
         pg.evaluate("saveData.preferences.battleStage='classic';0")  # the painted backdrops first
         for area in areas:
-            pg.evaluate(f"activeBattle=null;const q={{id:'t{area}',sp:'tweet1',lvl:12,gold:false,no:1}};saveData.queue=[q];saveData.team.forEach(m=>{{m.hp=maxHp(m)}});const f=areaKey;areaKey=()=>'{area}';startWild(q);areaKey=f;0")
+            pg.evaluate(f"activeBattle=null;const q={{id:'t{area}',sp:'tweet1',lvl:12,gold:false,no:1}};saveData.queue=[q];saveData.team.forEach(m=>{{m.hp=maxHp(m)}});const f=battleStageKey;battleStageKey=()=>'{area}';startWild(q);battleStageKey=f;0")
             wait_phase(pg); time.sleep(.6)
             pg.screenshot(path=str(OUT / f'{name}-battle-{area}.png'))
             pg.evaluate("stopTimers();activeBattle=null;battleStageStop();render();0")

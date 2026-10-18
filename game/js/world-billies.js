@@ -10,7 +10,7 @@
    frame. A species' rig art is loaded the first time it's needed; until then it simply isn't shown. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { areaKey, provide, sceneIdAt, sfx } from './hooks.js';
+import { battleStageKey, provide, sceneIdAt, sfx } from './hooks.js';
 import { clamp } from './util.js';
 import { SPECIES, STATUS_NAMES, TRAINERS, rivalSpecies, trainersAt } from './game-data.js';
 import { billyName, findBilly, maxHp, nextTripNode, save, saveData, uiState } from './game-state.js';
@@ -516,10 +516,10 @@ function warmWorldBillies() {
             .catch(() => {}),
         600
       );
-    if (typeof battleStagePrepare === 'function' && typeof areaKey === 'function')
+    if (typeof battleStagePrepare === 'function' && typeof battleStageKey === 'function')
       setTimeout(() => {
         try {
-          battleStagePrepare(areaKey()).catch(() => {});
+          battleStagePrepare(battleStageKey()).catch(() => {});
         } catch (e) {}
       }, 1500);
   } catch (e) {}

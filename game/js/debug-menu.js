@@ -59,11 +59,11 @@ import { mapById } from './walk-view.js';
 import { gpuState } from './engine/webgl.js';
 import {
   allSnapshots,
+  battleSay,
   checkFaints,
   fighter,
   paintBoxes,
   play,
-  say,
   startTrainer,
   startWild,
   stopTimers,
@@ -374,7 +374,7 @@ function dbgAct(x) {
       closeModal();
       activeBattle.events = [];
       saveData.team.forEach(m => (m.hp = 0));
-      say('Your team fainted. (Debug.)');
+      battleSay('Your team fainted. (Debug.)');
       activeBattle.over = 'lose';
       play();
       return;

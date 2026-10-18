@@ -651,7 +651,10 @@ NWLOG.hook = () => {
     }
   });
   wrap('newBattle', kind =>
-    NWLOG.add('battle', `start ${kind}${typeof GAME.areaKey === 'function' ? ' at ' + GAME.areaKey() : ''}`)
+    NWLOG.add(
+      'battle',
+      `start ${kind}${typeof GAME.battleStageKey === 'function' ? ' at ' + GAME.battleStageKey() : ''}`
+    )
   );
   wrap('endBattle', () => NWLOG.add('battle', 'end ' + ((GAME.activeBattle && GAME.activeBattle.over) || '')));
   wrap('mountWalkView', (cv, id, opt) => NWLOG.add('scene', `mount ${id}`));

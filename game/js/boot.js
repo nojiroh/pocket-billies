@@ -29,7 +29,7 @@ import { gpuState, webgl2Supported } from './engine/webgl.js';
 import { environment } from './environment.js';
 import { startTownRise, walkRenderer } from './walk-view-gl.js';
 import { seamlessWorld } from './seamless-world.js';
-import { areaKey } from './battle.js';
+import { battleStageKey } from './battle.js';
 import { WORLD_ART, worldMapPrepare } from './world-map.js';
 import { WORLD_RELIEF } from './world-map-gl.js';
 import { csWanted } from './cutscene.js';
@@ -582,7 +582,7 @@ async function preloadAll(onTown) {
   loaderSet(++done, total);
   try {
     if (saveData.started) {
-      const area = areaKey();
+      const area = battleStageKey();
       await battleStagePrepare(AREAS[area] ? area : 'grass');
     }
   } catch (e) {

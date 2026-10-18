@@ -79,7 +79,7 @@ import {
 import { LIFE, lifeStep, setLifeStep } from './ambient-life.js';
 import { paintWorkerReport } from './ground-paint-worker.js';
 import {
-  areaKey,
+  battleStageKey,
   endBattle,
   newBattle,
   openBattle,
@@ -106,9 +106,9 @@ Object.defineProperties(GAME, {
   LOCATIONS: { get: () => LOCATIONS },
   TR_CACHE: { get: () => TR_CACHE },
   activeBattle: { get: () => activeBattle },
-  areaKey: { get: () => areaKey },
   artPixels: { get: () => artPixels, set: setArtPixels },
   battleStage: { get: () => battleStage },
+  battleStageKey: { get: () => battleStageKey },
   battleStageResize: { get: () => battleStageResize, set: setBattleStageResize },
   battleStageStart: { get: () => battleStageStart, set: setBattleStageStart },
   buildGrass: { get: () => buildGrass, set: setBuildGrass },

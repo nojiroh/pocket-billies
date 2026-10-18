@@ -142,9 +142,10 @@ import {
 } from './seamless-world.js';
 import { battleGLLayout, battleGLWanted } from './battle-3d.js';
 import {
-  RC,
+  CATCH_RULES,
   applyItem,
   battleResize,
+  battleSay,
   battleShell,
   canUse,
   checkFaints,
@@ -162,7 +163,6 @@ import {
   planNext,
   play,
   runTurn,
-  say,
   showAim,
   startWild,
   tapMsg,
@@ -2991,13 +2991,16 @@ document.addEventListener('click', ev => {
         activeBattle.events = [];
         if (d.y === '1') {
           saveData.se += amt;
-          say(`You took $${formatNumber(amt)}. ${billyName(fighter(1))} scampered off.`);
+          battleSay(`You took $${formatNumber(amt)}. ${billyName(fighter(1))} scampered off.`);
           activeBattle.over = 'bribed';
           battleStage.s[1].show = false;
           save();
         } else {
-          activeBattle.integrity = Math.min(RC.integrityMax, activeBattle.integrity * RC.integrityStep);
-          say(`You refused. Focus Bonus ×${+activeBattle.integrity.toFixed(2)} on your next throw.`);
+          activeBattle.integrity = Math.min(
+            CATCH_RULES.integrityMax,
+            activeBattle.integrity * CATCH_RULES.integrityStep
+          );
+          battleSay(`You refused. Focus Bonus ×${+activeBattle.integrity.toFixed(2)} on your next throw.`);
           enemyOnly();
         }
         play();

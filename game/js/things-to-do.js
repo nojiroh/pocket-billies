@@ -23,7 +23,7 @@ import {
 import { engineSetting } from './engine/settings.js';
 import { currentLocationMap, environment, environmentState } from './environment.js';
 import { standingHeightAt, walkRenderer } from './walk-view-gl.js';
-import { endBattle, openBattle, say, setEndBattle, setOpenBattle } from './battle.js';
+import { battleSay, endBattle, openBattle, setEndBattle, setOpenBattle } from './battle.js';
 import { sfx } from './sound.js';
 import { TALK, setTalkFolk, talk, talkFolk } from './talk.js';
 /* eslint-disable no-func-assign */
@@ -653,7 +653,7 @@ function battleWeatherMult(t) {
     setOpenBattle(function () {
       try {
         const w = battleWx();
-        if (w && X28_BWX_TEXT[w.k]) say(X28_BWX_TEXT[w.k]);
+        if (w && X28_BWX_TEXT[w.k]) battleSay(X28_BWX_TEXT[w.k]);
       } catch (e) {}
       return ob.apply(this, arguments);
     });
