@@ -591,7 +591,7 @@ async function main(argv) {
     all = argv.includes('--all');
   const ii = argv.indexOf('--in');
   const only = ii >= 0 ? argv[ii + 1].split(',') : null;
-  const args = argv.filter((a, i) => a !== '--dry' && a !== '--all' && i !== ii && i !== ii + 1);
+  const args = argv.filter((a, i) => a !== '--dry' && a !== '--all' && (ii < 0 || (i !== ii && i !== ii + 1)));
   const [cmd, ...rest] = args;
   if (cmd === 'name' || cmd === 'prefix') {
     if (!rest.length || rest.length % 2) throw new Error(`${cmd} takes <old> <new> pairs`);
