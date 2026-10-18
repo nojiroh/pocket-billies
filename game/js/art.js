@@ -1,5 +1,5 @@
 'use strict';
-/* ================= ART: every picture in the game comes from a file in art/ =================
+/* ================= ART_CACHE: every picture in the game comes from a file in art/ =================
    art/manifest.js lists atlas rectangles and battle layouts; art/rigs.js holds billionaire skeletons.
    Images load once and are cached; pixel arrays (for the 3D ground and the world map) are read on demand. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
@@ -8,15 +8,15 @@ import { COINS, provide } from './hooks.js';
 import { clamp } from './util.js';
 /* eslint-disable no-func-assign */
 expose({
-  ART: [() => ART],
-  ARTDIR: [() => ARTDIR],
+  ART_CACHE: [() => ART_CACHE],
+  ART_DIR: [() => ART_DIR],
   B44: [() => B44],
-  BG_ART: [() => BG_ART],
   COIN_ART: [() => COIN_ART],
   COIN_KINDS: [() => COIN_KINDS],
   EGG_ART: [() => EGG_ART],
   ICON_ATLAS: [() => ICON_ATLAS],
-  PX: [() => PX],
+  ICON_CACHE: [() => ICON_CACHE],
+  MENU_BACKGROUND_ART: [() => MENU_BACKGROUND_ART],
   UIURL: [() => UIURL],
   artBoot: [() => artBoot, v => (artBoot = v)],
   artImg: [() => artImg, v => (artImg = v)],
@@ -55,17 +55,17 @@ export function setArtPixels(v) {
   provide({ artPixels });
 }
 /* to-module: end */
-const ARTDIR = window.NW_ARTDIR || 'art/';
+const ART_DIR = window.NW_ARTDIR || 'art/';
 /* the address of an art file; a single-file build carries its art inline in window.NW_ART */
-export const artURL = p => (window.NW_ART && window.NW_ART[p]) || ARTDIR + p;
-export const ART = { img: {}, wait: {}, pix: {} };
+export const artURL = p => (window.NW_ART && window.NW_ART[p]) || ART_DIR + p;
+export const ART_CACHE = { img: {}, wait: {}, pix: {} };
 export function artImg(path) {
-  if (ART.img[path]) return ART.img[path];
+  if (ART_CACHE.img[path]) return ART_CACHE.img[path];
   const im = new Image();
   im.decoding = 'async';
   im.__path = path;
-  ART.img[path] = im;
-  ART.wait[path] = new Promise(res => {
+  ART_CACHE.img[path] = im;
+  ART_CACHE.wait[path] = new Promise(res => {
     im.onload = () => res(im);
     im.onerror = () => {
       console.error('Missing art file: ' + path);
@@ -79,7 +79,7 @@ export function artLoad(paths) {
   return Promise.all(
     paths.map(p => {
       artImg(p);
-      return ART.wait[p];
+      return ART_CACHE.wait[p];
     })
   );
 }
@@ -89,14 +89,14 @@ export function setArtLoad(v) {
   provide({ artLoad });
 }
 export const artReady = path => {
-  const im = ART.img[path];
+  const im = ART_CACHE.img[path];
   return !!(im && im.complete && im.naturalWidth);
 };
 /* pixel data as packed RGBA words; needs the page to be served over http(s) */
 export async function artPixels(path) {
-  if (ART.pix[path]) return ART.pix[path];
+  if (ART_CACHE.pix[path]) return ART_CACHE.pix[path];
   await artLoad([path]);
-  const im = ART.img[path],
+  const im = ART_CACHE.img[path],
     c = cnv(im.naturalWidth, im.naturalHeight),
     x = c.getContext('2d', { willReadFrequently: true });
   x.drawImage(im, 0, 0);
@@ -106,10 +106,10 @@ export async function artPixels(path) {
   } catch (e) {
     throw new Error('The browser blocked reading ' + path + '. Open the game through a local web server (see README).');
   }
-  return (ART.pix[path] = new Uint32Array(d.buffer.slice(0)));
+  return (ART_CACHE.pix[path] = new Uint32Array(d.buffer.slice(0)));
 }
 /* ---- small color helpers shared by the renderers ---- */
-const PX = {};
+const ICON_CACHE = {};
 export function cnv(w, h) {
   const c = document.createElement('canvas');
   c.width = w;
@@ -155,19 +155,19 @@ export function seeded(n) {
 export const ICON_ATLAS = 'icons/icons.png';
 export function iconCanvas(key, scale = 1) {
   const k = key + '|' + scale;
-  if (PX[k]) return PX[k];
+  if (ICON_CACHE[k]) return ICON_CACHE[k];
   const r = ARTMAN.icons[key];
   if (!r) return cnv(1, 1);
   const c = cnv(r[2] * scale, r[3] * scale),
     x = c.getContext('2d');
   x.imageSmoothingEnabled = false;
   if (!artReady(ICON_ATLAS)) return c;
-  x.drawImage(ART.img[ICON_ATLAS], r[0], r[1], r[2], r[3], 0, 0, r[2] * scale, r[3] * scale);
-  return (PX[k] = c);
+  x.drawImage(ART_CACHE.img[ICON_ATLAS], r[0], r[1], r[2], r[3], 0, 0, r[2] * scale, r[3] * scale);
+  return (ICON_CACHE[k] = c);
 }
 export function iconURL(key, scale = 1) {
   const k = 'u' + key + scale;
-  return PX[k] || (PX[k] = iconCanvas(key, scale).toDataURL());
+  return ICON_CACHE[k] || (ICON_CACHE[k] = iconCanvas(key, scale).toDataURL());
 }
 export function mstamp(k) {
   return iconCanvas('map_' + k);
@@ -175,7 +175,7 @@ export function mstamp(k) {
 export const UIURL = k =>
   window.NW_ART && window.NW_ART[`ui/${k}.svg`]
     ? window.NW_ART[`ui/${k}.svg`]
-    : new URL(`${ARTDIR}ui/${k}.svg`, document.baseURI).href;
+    : new URL(`${ART_DIR}ui/${k}.svg`, document.baseURI).href;
 export function uiIco(key, size = 22) {
   return `<i class="uico" style="--ico:url('${UIURL(key)}');width:${size}px;height:${size}px" aria-hidden="true"></i>`;
 }
@@ -202,7 +202,7 @@ function darkOf(c) {
 const COIN_KINDS = typeof COINS !== 'undefined' ? Object.keys(COINS) : ['penny', 'silver', 'gold', 'tbtf'];
 export const COIN_ART = COIN_KINDS.flatMap(k => [`coins/${k}_16.png`, `coins/${k}_32.png`]);
 export function coinCanvas(kind = 'penny', size = 16) {
-  return ART.img[`coins/${kind}_${size >= 32 ? 32 : 16}.png`] || artImg(`coins/${kind}_16.png`);
+  return ART_CACHE.img[`coins/${kind}_${size >= 32 ? 32 : 16}.png`] || artImg(`coins/${kind}_16.png`);
 }
 export function coinURL(kind, size = 16) {
   return artURL(`coins/${kind}_${size >= 32 ? 32 : 16}.png`);
@@ -212,17 +212,17 @@ export function coinHTML(kind, css = 32, size = 16) {
 }
 export const EGG_ART = [2, 5, 10].flatMap(t => [`eggs/egg_${t}.png`, `eggs/egg_${t}_cracked.png`]);
 function eggCanvas(tier, crack) {
-  return ART.img[`eggs/egg_${tier}${crack ? '_cracked' : ''}.png`];
+  return ART_CACHE.img[`eggs/egg_${tier}${crack ? '_cracked' : ''}.png`];
 }
 export function eggHTML(tier, css = 40, cls = '') {
   return `<img class="pxi ${cls}" src="${artURL(`eggs/egg_${tier}.png`)}" width="${css}" height="${Math.round((css * 24) / 20)}" alt="">`;
 }
 /* ---- menu background ---- */
-export const BG_ART = ['light', 'dark'].flatMap(m => [
+export const MENU_BACKGROUND_ART = ['light', 'dark'].flatMap(m => [
   `background/sky_${m}.png`,
   ...[0, 1, 2, 3].map(i => `background/cloud_${m}_${i}.png`),
 ]);
 /* everything the menus need before the first screen draws */
 export function artBoot() {
-  return artLoad([ICON_ATLAS, ...COIN_ART, ...EGG_ART, ...BG_ART]);
+  return artLoad([ICON_ATLAS, ...COIN_ART, ...EGG_ART, ...MENU_BACKGROUND_ART]);
 }

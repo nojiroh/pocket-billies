@@ -9,7 +9,7 @@ import { provide } from './hooks.js';
 import { DATA_WARN, GD, RULES, SP, START_NODE } from './game-data.js';
 import { loadAllMaps, loadMapsAhead, watchMapsAhead } from './map-files.js';
 import { RM, S, SAVE_FOUND, SAVE_NEW_MSG, SAVE_OLD_MSG, U, esc, fresh, setNoSaving, setS } from './game-state.js';
-import { ART, BG_ART, COIN_ART, EGG_ART, ICON_ATLAS, UIURL, artBoot, artImg } from './art.js';
+import { ART_CACHE, COIN_ART, EGG_ART, ICON_ATLAS, MENU_BACKGROUND_ART, UIURL, artBoot, artImg } from './art.js';
 import { trainerArtPaths } from './person-art.js';
 import { rigAtlas } from './skeleton-rig.js';
 import { AREAS, battleStageArtFiles, battleStagePrepare } from './battle-stage.js';
@@ -152,7 +152,7 @@ function loadList() {
     add = (p, ph) => {
       if (p && !L.has(p)) L.set(p, ph);
     };
-  [ICON_ATLAS, ...COIN_ART, ...EGG_ART, ...BG_ART].forEach(p => add(p, 0));
+  [ICON_ATLAS, ...COIN_ART, ...EGG_ART, ...MENU_BACKGROUND_ART].forEach(p => add(p, 0));
   for (const sp of Object.keys(SP)) {
     const R = RIGS[sp];
     if (!R) continue;
@@ -486,7 +486,7 @@ function loaderTip() {
 }
 function loadOne(p) {
   artImg(p);
-  return ART.wait[p].then(async im => {
+  return ART_CACHE.wait[p].then(async im => {
     if (!(im && im.naturalWidth)) return false;
     try {
       if (im.decode) await im.decode();
@@ -621,8 +621,8 @@ async function bootLoad() {
     if (pick === 'go') break;
     for (const f of fails) {
       const p = f.split(' ')[0];
-      delete ART.img[p];
-      delete ART.wait[p];
+      delete ART_CACHE.img[p];
+      delete ART_CACHE.wait[p];
     }
   }
   clearInterval(LD.tipT);

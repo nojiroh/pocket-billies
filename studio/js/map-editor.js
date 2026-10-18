@@ -22,7 +22,7 @@ import {
   scxUp,
 } from '../../game/js/hooks.js';
 import { $, $$, clamp } from '../../game/js/util.js';
-import { ART, cnv } from '../../game/js/art.js';
+import { ART_CACHE, cnv } from '../../game/js/art.js';
 import {
   MAX_STEP_RISE,
   artImage,
@@ -129,7 +129,7 @@ expose({
 provide({ dioArtVer, scArt });
 /* to-module: end */
 setWalkData(() => ({ scenes: (ST.D && ST.D.scenes) || {}, sc: (ST.D && ST.D.scenery) || { terrains: {}, props: {} } }));
-setArtImage(path => atlasNow('art/' + path) || ART.img[path]);
+setArtImage(path => atlasNow('art/' + path) || ART_CACHE.img[path]);
 function dioArtVer() {
   return ATL_VER;
 }

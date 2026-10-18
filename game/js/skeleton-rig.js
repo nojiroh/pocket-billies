@@ -6,7 +6,7 @@ import { expose } from './test-globals.js';
 import { B, RM, SP, provide } from './hooks.js';
 import { clamp, rnd } from './util.js';
 import { frameTask, userFps } from './frame-scheduler.js';
-import { ART, artImg, artLoad, artReady, artURL, cnv } from './art.js';
+import { ART_CACHE, artImg, artLoad, artReady, artURL, cnv } from './art.js';
 import { animFor } from './body-plan-animation.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -385,7 +385,7 @@ export function rigParts(sp, gold, k = 1) {
   const path = rigAtlas(sp, gold, view);
   artImg(path);
   if (!artReady(path)) return null;
-  const atlas = ART.img[path];
+  const atlas = ART_CACHE.img[path];
   const cut = ([x, y, w, h]) => {
     const c = cnv(w, h);
     c.getContext('2d').drawImage(atlas, x, y, w, h, 0, 0, w, h);

@@ -49,7 +49,7 @@ import {
 } from './hooks.js';
 import { clamp } from './util.js';
 import { frameStop } from './frame-scheduler.js';
-import { ART, artLoad, cnv, pkh } from './art.js';
+import { ART_CACHE, artLoad, cnv, pkh } from './art.js';
 /* eslint-disable no-func-assign */
 expose({
   BRIDGE_ARCH: [() => BRIDGE_ARCH],
@@ -331,7 +331,7 @@ export function setWalkData(v) {
   walkData = v;
   provide({ walkData });
 }
-export let artImage = path => ART.img[path];
+export let artImage = path => ART_CACHE.img[path];
 provide({ artImage }); /* to-module */
 /* phase 04d: the Studio feeds the renderer its unsaved scenes and art (studio/js/map-editor.js, prop-editor.js) */
 export function setArtImage(v) {

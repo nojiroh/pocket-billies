@@ -23,7 +23,7 @@ import {
 } from './hooks.js';
 import { clamp } from './util.js';
 import { frameStop, frameTask } from './frame-scheduler.js';
-import { ART, artImg, cnv, hexA } from './art.js';
+import { ART_CACHE, artImg, cnv, hexA } from './art.js';
 /* eslint-disable no-func-assign */
 expose({
   TRW: [() => TRW],
@@ -376,7 +376,7 @@ function trainerCache(key, build) {
 }
 const trVer = () => (typeof dioArtVer === 'function' ? dioArtVer() : 0);
 function trImg(path) {
-  const im = typeof artImage === 'function' ? artImage(path) : ART.img[path];
+  const im = typeof artImage === 'function' ? artImage(path) : ART_CACHE.img[path];
   if (!im && typeof artImg === 'function') return artImg(path);
   return im;
 }

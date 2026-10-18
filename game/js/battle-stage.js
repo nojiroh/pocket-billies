@@ -35,7 +35,7 @@ import {
 } from './hooks.js';
 import { $, clamp, rnd } from './util.js';
 import { FRAME, frameCount, frameStop, frameTask, userFps } from './frame-scheduler.js';
-import { ART, artLoad, artPixels, cnv, coinCanvas, d44, hexA, iconCanvas, mixA, pk, whiteOf } from './art.js';
+import { ART_CACHE, artLoad, artPixels, cnv, coinCanvas, d44, hexA, iconCanvas, mixA, pk, whiteOf } from './art.js';
 import { WD, humanFrames, humanPose } from './person-art.js';
 import { drawRig, rigFrame, rigParts, rigTint } from './skeleton-rig.js';
 /* eslint-disable no-func-assign */
@@ -385,7 +385,7 @@ export async function battleStagePrepare(area) {
     wall = A.wall ? await artPixels(`battle/${A.wall}_walls.png`) : null;
   const M = ARTMAN.battle,
     mk = (p, o) => {
-      const im = ART.img[p];
+      const im = ART_CACHE.img[p];
       return { c: im, ox: o.ox, oy: o.oy, W: im.naturalWidth, H: im.naturalHeight };
     };
   const props = [];
@@ -410,7 +410,7 @@ export async function battleStagePrepare(area) {
     });
   });
   const clouds = A.indoor ? [] : M.clouds.map((o, i) => mk(`battle/cloud_${i}.png`, o));
-  return (BATTLE_STAGE_ART[area] = { near, far, wall, fg: ART.img[`battle/${k}_foreground.png`], props, clouds });
+  return (BATTLE_STAGE_ART[area] = { near, far, wall, fg: ART_CACHE.img[`battle/${k}_foreground.png`], props, clouds });
 }
 /* ---------- layout: where the frame goes, how big a stage pixel is ---------- */
 function battleStageResolutionScale() {
