@@ -764,7 +764,7 @@ export interface RobotPart {
   move?: MoveId;
   stats: Partial<Record<StatId, number>>;
   /** the placeholder picture */
-  art: { color: Color; shape: string; w?: number; h?: number };
+  art: { color: Color; shape: string; w?: number; h?: number; img?: string; imgB?: string; head?: string; headB?: string };
   d?: string;
 }
 export interface RobotGem {
@@ -776,6 +776,8 @@ export interface RobotGem {
   move: MoveId;
   stats: Partial<Record<StatId, number>>;
   color: Color;
+  /** its picture on the torso's chest, a path in game/art */
+  img?: string;
   d?: string;
 }
 

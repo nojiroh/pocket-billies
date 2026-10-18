@@ -45,6 +45,7 @@
      "move": {"description": "its signature move", "type": "string"},
      "stats": {"$ref": "#/$defs/stats"},
      "color": {"type": "string", "pattern": "^#[0-9A-Fa-f]{6}$"},
+     "img": {"description": "its picture on the torso's chest, a path in game/art", "type": "string"},
      "d": {"type": "string"}
     }
    }
@@ -65,7 +66,11 @@
     "color": {"type": "string", "pattern": "^#[0-9A-Fa-f]{6}$"},
     "shape": {"enum": ["block", "barrel", "slim", "fist", "drill", "claw", "cannon", "coil", "treads", "legs", "hover"]},
     "w": {"type": "integer", "minimum": 4, "maximum": 48},
-    "h": {"type": "integer", "minimum": 4, "maximum": 48}
+    "h": {"type": "integer", "minimum": 4, "maximum": 48},
+    "img": {"description": "the front picture, a path in game/art", "type": "string"},
+    "imgB": {"description": "the back picture", "type": "string"},
+    "head": {"description": "a torso's head, front", "type": "string"},
+    "headB": {"description": "a torso's head, back", "type": "string"}
    }
   }
  }

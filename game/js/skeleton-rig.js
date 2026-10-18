@@ -7,7 +7,7 @@ import { ROBOTS, RULES, SPECIES, activeBattle, provide, reducedMotion } from './
 import { clamp, random } from './util.js';
 import { frameTask, userFps } from './frame-scheduler.js';
 import { ART_CACHE, artImg, artLoad, artReady, artURL, makeCanvas } from './art.js';
-import { robotRig } from './robot-art.js';
+import { robotArtFiles, robotRig } from './robot-art.js';
 import { animFor } from './body-plan-animation.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -461,7 +461,11 @@ export function rigParts(sp, gold, k = 1) {
      own copy (robotRigData) */
   if (typeof sp === 'string' && sp.startsWith('bot:')) {
     const R = robotRig(sp, robotRigData || (typeof ROBOTS !== 'undefined' ? ROBOTS : null));
-    return R ? (RIG_PARTS_CACHE[key] = Object.assign(R, { anim: animFor(R.plan, R.q), lag: false })) : null;
+    if (!R) return null;
+    Object.assign(R, { anim: animFor(R.plan, R.q), lag: false });
+    /* while its pictures load it is drawn with stand-ins and asked for again */
+    if (!R.wait) RIG_PARTS_CACHE[key] = R;
+    return R;
   }
   const meta = RIGS[sp] && RIGS[sp][view];
   if (!meta) return null;
@@ -509,7 +513,13 @@ export function setRigParts(v) {
   provide({ rigParts });
 }
 export function rigPreload(list) {
-  return artLoad(list.map(([sp, gold, k]) => rigAtlas(sp, gold, k === 1 ? 'front' : 'back')));
+  /* phase 17: a robot loads its parts' pictures */
+  const D = robotRigData || (typeof ROBOTS !== 'undefined' ? ROBOTS : null);
+  return artLoad(
+    list.flatMap(([sp, gold, k]) =>
+      String(sp).startsWith('bot:') ? robotArtFiles(sp, D) : [rigAtlas(sp, gold, k === 1 ? 'front' : 'back')]
+    )
+  );
 }
 /* ---- DOM animator: every <canvas class="rig"> on screen ---- */
 const rigCanvasAnimator = { vis: new Set(), nodes: new Set(), io: null, mo: null, last: 0 };
