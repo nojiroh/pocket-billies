@@ -152,7 +152,11 @@ def kit_rig(line, spec, stage, pivots):
         def add(slot, mirror):
             _, _, _, im, sx, sy = get[(slot, mirror)]
             px, py = pivots[slot]
-            if mirror:
+            if slot in ('arm', 'leg'):   # a limb joins where its picture starts: the middle of its top rows
+                ys, xs = np.nonzero(np.array(im)[..., 3] > 0)
+                top = ys.min()
+                px, py = xs[ys <= top + 3].mean() / im.size[0], top / im.size[1]
+            elif mirror:
                 px = 1 - px
             idx[(slot, mirror)] = len(imgs)
             imgs.append({'ox': -round(im.size[0] * px), 'oy': -round(im.size[1] * py),
@@ -175,8 +179,12 @@ def kit_rig(line, spec, stage, pivots):
         if spec['legs']:
             bones.append({'n': 'legL', 'par': 'torso', 'at': [-round(tw * 0.22), round(th * 0.38)], 'z': 7, 'zb': 7, 'i': idx[('leg', False)]})
             bones.append({'n': 'legR', 'par': 'torso', 'at': [round(tw * 0.22), round(th * 0.38)], 'z': 7, 'zb': 7, 'i': idx[('leg', True)]})
-        bones.append({'n': 'armL', 'par': 'torso', 'at': [-round(tw * 0.42), -round(th * 0.28)], 'z': 8, 'zb': 2, 'i': idx[('arm', False)]})
-        bones.append({'n': 'armR', 'par': 'torso', 'at': [round(tw * 0.42), -round(th * 0.28)], 'z': 8, 'zb': 2, 'i': idx[('arm', True)]})
+        # the kit draws each arm as the creature's own left arm (the viewer's right, paw reaching in); mirrored on the
+        # viewer's left
+        bones.append({'n': 'armL', 'par': 'torso', 'at': [-round(tw * 0.42), -round(th * 0.28)], 'z': 8, 'zb': 2, 'i': idx[('arm', True)],
+                      'rr': arm_rest(get[('arm', True)][3], False)})
+        bones.append({'n': 'armR', 'par': 'torso', 'at': [round(tw * 0.42), -round(th * 0.28)], 'z': 8, 'zb': 2, 'i': idx[('arm', False)],
+                      'rr': arm_rest(get[('arm', False)][3], True)})
         head = {'n': 'head', 'par': 'torso', 'at': [0, -round(th * 0.42)], 'z': 9, 'zb': 9, 'i': idx[('head', False)]}
         if view == 'front':
             head['face'] = True
@@ -205,6 +213,22 @@ def kit_rig(line, spec, stage, pivots):
                       'size': [512, H], 'imgs': imgs, 'bones': bones, 'clock': 12,
                       'sheet': f"next/billionaires/{spec['names'][stage]}.png", 'placeholder': 'part kit'}
     return sheet, rigs
+
+
+ARM_OUT = 15   # how an arm rests: hanging straight down, the paw this many degrees out from the body
+
+
+def arm_rest(im, out_right):
+    """the rest tilt (radians, as a rig bone's rr: positive turns clockwise on screen) that hangs an arm straight down
+    with its paw ARM_OUT degrees out from the body; the idle animation sways around it"""
+    import math
+    ys, xs = np.nonzero(np.array(im)[..., 3] > 0)
+    top, bot = ys.min(), ys.max()
+    sx, sy = xs[ys <= top + 3].mean(), top
+    px, py = xs[ys >= bot - 3].mean(), bot
+    now = math.degrees(math.atan2(-(py - sy), px - sx))
+    want = -90 + (ARM_OUT if out_right else -ARM_OUT)
+    return round(-math.radians(want - now), 3)
 
 
 def kit_layout(name, rig):

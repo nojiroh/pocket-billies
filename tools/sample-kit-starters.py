@@ -165,6 +165,26 @@ def top_anchor(im):
     return xs[sel].mean(), top
 
 
+# how an arm rests: hanging straight down, the paw this many degrees out from the body
+ARM_OUT = 15
+
+
+def limb_angle(im, anchor):
+    """the direction from a limb's joint to its far end (the middle of its bottom rows), in degrees, 90 = up"""
+    ys, xs = np.nonzero(np.array(im)[..., 3] > 0)
+    bot = ys.max()
+    sel = ys >= bot - 3
+    px, py = xs[sel].mean(), bot
+    return math.degrees(math.atan2(-(py - anchor[1]), px - anchor[0]))
+
+
+def rest_arm(arm, out_right):
+    """an arm turned around its shoulder so it hangs down with the paw out from the body; returns it and the shoulder"""
+    sh = top_anchor(arm)
+    want = -90 + (ARM_OUT if out_right else -ARM_OUT)
+    return rotate_about(arm, sh, want - limb_angle(arm, sh))
+
+
 def rotate_about(im, base, deg):
     """turn a picture by deg (counter-clockwise) and return it with where its base point ended up"""
     w, h = im.size
@@ -207,11 +227,14 @@ def build(slots, extras, stage, view):
     layers.append((3, leg, cx - hip - lax, ground - lh))
     layers.append((3, leg.transpose(Image.FLIP_LEFT_RIGHT), cx + hip - (lw - lax), ground - lh))
     layers.append((5, torso, cx - tw / 2, ty))
-    # arms hang from the shoulders, the hands a little out from the body
-    aax, aay = top_anchor(arm)
-    sh_x, sh_y = tw * 0.36, ty + th * 0.12
-    layers.append((2 if back else 7, arm, cx - sh_x - aax, sh_y - aay))
-    layers.append((2 if back else 7, arm.transpose(Image.FLIP_LEFT_RIGHT), cx + sh_x - (arm.size[0] - aax), sh_y - aay))
+    # arms hang from the shoulders. The kit draws each arm as the creature's
+    # own left arm (the viewer's right): shoulder at the outer top, paw reaching in. Mirrored, it is the right arm.
+    # Each is turned at the shoulder to hang straight down with the paw a little out from the body (ARM_OUT).
+    sh_x, sh_y = tw * 0.4, ty + th * 0.12
+    left, (lsx, lsy) = rest_arm(arm.transpose(Image.FLIP_LEFT_RIGHT), False)
+    right, (rsx, rsy) = rest_arm(arm, True)
+    layers.append((2 if back else 7, left, cx - sh_x - lsx, sh_y - lsy))
+    layers.append((2 if back else 7, right, cx + sh_x - rsx, sh_y - rsy))
     # the tail grows from the lower back: behind the body from the front, over it from behind
     tpid = slots['tail'][0]
     tail, (tbx, tby) = place_tail(tpid, get('tail'))
