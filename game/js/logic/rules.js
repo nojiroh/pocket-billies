@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 /* ================= RULES =================
    Phase 04e: the game's rules outside battle, moved here from game-state.js: a Billie's stats, levels, moves and
@@ -7,6 +8,8 @@
    tables come from game-data.js; the save, the battle and the interface state (saveData, activeBattle, uiState), and
    what the rules tell the interface (save, toast, render), come through hooks.js, filled by game-state.js and ui.js on
    the page or by a test in Node. */
+/** @import { Billy, JobSlot } from '../../types/save-data' */
+/** @import { Trainer } from '../../types/game-data' */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 import {
@@ -49,67 +52,100 @@ import {
 /* eslint-disable no-func-assign */
 expose({
   STEP_BRACKETS: [() => STEP_BRACKETS],
+  // @ts-expect-error -- replaced on purpose
   addBilly: [() => addBilly, v => (addBilly = v)],
+  // @ts-expect-error -- replaced on purpose
   addEgg: [() => addEgg, v => (addEgg = v)],
+  // @ts-expect-error -- replaced on purpose
   addSteps: [() => addSteps, v => ((addSteps = v), provide({ addSteps }))],
   allBillies: [() => allBillies],
+  // @ts-expect-error -- replaced on purpose
   assignJob: [() => assignJob, v => (assignJob = v)],
+  // @ts-expect-error -- replaced on purpose
   autoSlot: [() => autoSlot, v => (autoSlot = v)],
   billyName: [() => billyName],
+  // @ts-expect-error -- replaced on purpose
   blockerAt: [() => blockerAt, v => (blockerAt = v)],
   canEnter: [() => canEnter],
+  // @ts-expect-error -- replaced on purpose
   canEvolve: [() => canEvolve, v => (canEvolve = v)],
   canLeave: [() => canLeave],
   canRide: [() => canRide],
   cleanName: [() => cleanName],
+  // @ts-expect-error -- replaced on purpose
   collectJob: [() => collectJob, v => (collectJob = v)],
+  // @ts-expect-error -- replaced on purpose
   earningsBetween: [() => earningsBetween, v => (earningsBetween = v)],
   eggSlotCount: [() => eggSlotCount],
   emptyJob: [() => emptyJob],
+  // @ts-expect-error -- replaced on purpose
   encounterPoolHere: [() => encounterPoolHere, v => (encounterPoolHere = v)],
+  // @ts-expect-error -- replaced on purpose
   endShift: [() => endShift, v => (endShift = v)],
+  // @ts-expect-error -- replaced on purpose
   evolutionHint: [() => evolutionHint, v => (evolutionHint = v)],
   evolutionItemName: [() => evolutionItemName],
+  // @ts-expect-error -- replaced on purpose
   evolve: [() => evolve, v => (evolve = v)],
   findBilly: [() => findBilly],
   formatNumber: [() => formatNumber],
+  // @ts-expect-error -- replaced on purpose
   gainXp: [() => gainXp, v => (gainXp = v)],
+  // @ts-expect-error -- replaced on purpose
   gateMsg: [() => gateMsg, v => (gateMsg = v)],
+  // @ts-expect-error -- replaced on purpose
   gateOwner: [() => gateOwner, v => (gateOwner = v)],
+  // @ts-expect-error -- replaced on purpose
   gateText: [() => gateText, v => (gateText = v)],
+  // @ts-expect-error -- replaced on purpose
   hatchEgg: [() => hatchEgg, v => (hatchEgg = v)],
   hatchable: [() => hatchable],
+  // @ts-expect-error -- replaced on purpose
   healAll: [() => healAll, v => (healAll = v)],
   hereLocation: [() => hereLocation],
   jobSlotCount: [() => jobSlotCount],
+  // @ts-expect-error -- replaced on purpose
   makeBilly: [() => makeBilly, v => ((makeBilly = v), provide({ makeBilly }))],
   maxHp: [() => maxHp],
   maxLevel: [() => maxLevel],
   moveSlotCount: [() => moveSlotCount],
+  // @ts-expect-error -- replaced on purpose
   movesAt: [() => movesAt, v => (movesAt = v)],
   newUid: [() => newUid],
   nextBracket: [() => nextBracket],
   nextTripNode: [() => nextTripNode],
   pathFrom: [() => pathFrom],
+  // @ts-expect-error -- replaced on purpose
   pickWeighted: [() => pickWeighted, v => (pickWeighted = v)],
   plural: [() => plural],
+  // @ts-expect-error -- replaced on purpose
   resumeTrip: [() => resumeTrip, v => (resumeTrip = v)],
   riderName: [() => riderName],
+  // @ts-expect-error -- replaced on purpose
   riderOf: [() => riderOf, v => ((riderOf = v), provide({ riderOf }))],
+  // @ts-expect-error -- replaced on purpose
   rollDay: [() => rollDay, v => (rollDay = v)],
   setTrip: [() => setTrip, v => setSetTrip(v)],
+  // @ts-expect-error -- replaced on purpose
   spawn: [() => spawn, v => (spawn = v)],
+  // @ts-expect-error -- replaced on purpose
   splitPath: [() => splitPath, v => (splitPath = v)],
+  // @ts-expect-error -- replaced on purpose
   stat: [() => stat, v => (stat = v)],
   stepRate: [() => stepRate],
   stepsToKm: [() => stepsToKm],
+  // @ts-expect-error -- replaced on purpose
   stopTrip: [() => stopTrip, v => (stopTrip = v)],
   teamSize: [() => teamSize],
+  // @ts-expect-error -- replaced on purpose
   toBox: [() => toBox, v => (toBox = v)],
+  // @ts-expect-error -- replaced on purpose
   toTeam: [() => toTeam, v => (toTeam = v)],
   today: [() => today],
   traveling: [() => traveling],
+  // @ts-expect-error -- replaced on purpose
   tripTo: [() => tripTo, v => (tripTo = v)],
+  // @ts-expect-error -- replaced on purpose
   walkDistances: [() => walkDistances, v => (walkDistances = v)],
   walkMode: [() => walkMode],
   xpFor: [() => xpFor],
@@ -117,6 +153,7 @@ expose({
 /* eslint-enable no-func-assign */
 provide({ addSteps, makeBilly, riderOf });
 export function setSetTrip(v) {
+  // @ts-expect-error -- replaced on purpose
   setTrip = v; // eslint-disable-line no-func-assign
   provide({ setTrip });
 }
