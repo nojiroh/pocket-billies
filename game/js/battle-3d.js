@@ -12,8 +12,8 @@ import { B, FV, RM, S, provide } from './hooks.js';
 import { $, clamp } from './util.js';
 import { hexA } from './art.js';
 import {
-  ACT,
   FOCAL_LENGTH,
+  actionCenter,
   actorMetersPerPixel,
   actorPositions,
   battleStage,
@@ -70,7 +70,7 @@ export function battleGLAttach(o = {}) {
     C0 = walkData().sc,
     ax = clamp(P.x, 3.5, Math.max(3.5, sc.w - 3.5)),
     az = clamp(P.z, 2.5, Math.max(2.5, sc.h - 3));
-  BGL.off = [ax - ACT.x, az - ACT.z];
+  BGL.off = [ax - actionCenter.x, az - actionCenter.z];
   BGL.gy = standingHeightAt(ax, az);
   /* clear the lane between the camera and the two billionaires */
   const hide = new Set();
@@ -264,6 +264,6 @@ function battleGLFrame() {
     lights,
     focus: d.zf,
     blur: RM ? 0 : clamp(d.ap / 1.35, 0, 1) * 0.8,
-    center: [ACT.x + O[0], ACT.z + O[1]],
+    center: [actionCenter.x + O[0], actionCenter.z + O[1]],
   };
 }

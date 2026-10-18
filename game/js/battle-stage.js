@@ -40,23 +40,20 @@ import { WD, humanFrames, humanPose } from './person-art.js';
 import { drawRig, rigFrame, rigParts, rigTint } from './skeleton-rig.js';
 /* eslint-disable no-func-assign */
 expose({
-  ACT: [() => ACT],
   ACTOR_RIG_SCALES: [() => ACTOR_RIG_SCALES],
   AREAS: [() => AREAS],
   BSWAY: [() => BSWAY],
-  CAMK: [() => CAMK],
-  CAMPOS: [() => CAMPOS],
+  CAMERA_KEYS: [() => CAMERA_KEYS],
   CANFILTER: [() => CANFILTER],
+  CLOSE_UP_CAMERAS: [() => CLOSE_UP_CAMERAS],
   DOFG: [() => DOFG],
   DOFK: [() => DOFK],
   DRAWL: [() => DRAWL],
   EASE: [() => EASE],
   FOCAL_LENGTH: [() => FOCAL_LENGTH],
-  FOCAM: [() => FOCAM],
   FOCUS: [() => FOCUS],
   FORMATIONS: [() => FORMATIONS],
   FORMATION_SCALES: [() => FORMATION_SCALES],
-  GB: [() => GB],
   GLOWY: [() => GLOWY],
   GROUND_CENTER_X: [() => GROUND_CENTER_X],
   GROUND_CENTER_Z: [() => GROUND_CENTER_Z],
@@ -64,16 +61,16 @@ expose({
   GROUND_SPHERE_RADIUS: [() => GROUND_SPHERE_RADIUS],
   GROUND_TEXTURE_PX_PER_METER: [() => GROUND_TEXTURE_PX_PER_METER],
   GROUND_TEXTURE_SIZE: [() => GROUND_TEXTURE_SIZE],
-  HOMECAM: [() => HOMECAM],
   HORIZON_IN_FRAME: [() => HORIZON_IN_FRAME],
   LEAF: [() => LEAF],
   NIT: [() => NIT, v => (NIT = v)],
-  PULLCAM: [() => PULLCAM],
+  PULL_BACK_CAMERA: [() => PULL_BACK_CAMERA],
   SOFTPAD: [() => SOFTPAD],
   STAGEART: [() => STAGEART],
   STAGE_FRAME_HEIGHT: [() => STAGE_FRAME_HEIGHT],
   STAGE_FRAME_WIDTH: [() => STAGE_FRAME_WIDTH],
   TFX: [() => TFX],
+  actionCenter: [() => actionCenter],
   actorMetersPerPixel: [() => actorMetersPerPixel],
   actorPositions: [() => actorPositions],
   actorTeam: [() => actorTeam],
@@ -111,6 +108,7 @@ expose({
   camOver: [() => camOver, v => (camOver = v)],
   camTo: [() => camTo, v => (camTo = v)],
   camUpdate: [() => camUpdate, v => (camUpdate = v)],
+  cameraGuardPose: [() => cameraGuardPose],
   castFloor: [() => castFloor, v => (castFloor = v)],
   cloudShadows: [() => cloudShadows, v => (cloudShadows = v)],
   coinArc: [() => coinArc, v => (coinArc = v)],
@@ -134,6 +132,7 @@ expose({
   hitFx: [() => hitFx, v => (hitFx = v)],
   hitStop: [() => hitStop, v => (hitStop = v)],
   hitWeight: [() => hitWeight, v => (hitWeight = v)],
+  homeCamera: [() => homeCamera],
   itemAdd: [() => itemAdd, v => (itemAdd = v)],
   lightShafts: [() => lightShafts, v => (lightShafts = v)],
   newActorState: [() => newActorState],
@@ -157,6 +156,7 @@ expose({
   stageProject: [() => stageProject],
   stageProjectInto: [() => stageProjectInto, v => (stageProjectInto = v)],
   stageProjectWith: [() => stageProjectWith, v => (stageProjectWith = v)],
+  throwOrigin: [() => throwOrigin],
   trainerAct: [() => trainerAct, v => (trainerAct = v)],
   trainerBattleFrame: [() => trainerBattleFrame, v => (trainerBattleFrame = v)],
   trainerMetersPerPixel: [() => trainerMetersPerPixel],
@@ -225,20 +225,20 @@ function battleStageFormat(f) {
   battleStage.fmt = f || 'single';
   FOCUS.wide.zf = f === 'alpha' ? 5.2 : f === 'double' ? 4.6 : 4.3;
   Object.assign(
-    HOMECAM,
+    homeCamera,
     { single: { x: 0, y: 1.6, z: 0 }, double: { x: 0.15, y: 1.82, z: -0.85 }, alpha: { x: 0.05, y: 1.95, z: -1.15 } }[
       battleStage.fmt
     ] || { x: 0, y: 1.6, z: 0 }
   );
-  ACT.x = (actorPositions[0].x + actorPositions[1].x) / 2;
-  ACT.z = (actorPositions[0].z + actorPositions[1].z) / 2;
+  actionCenter.x = (actorPositions[0].x + actorPositions[1].x) / 2;
+  actionCenter.z = (actorPositions[0].z + actorPositions[1].z) / 2;
   FOCUS.foe.zf = actorPositions[1].z;
   FOCUS.me.zf = actorPositions[0].z;
   battleStage.sel = null;
   battleStage.tg = null;
 }
-const HOMECAM = { x: 0, y: 1.6, z: 0, yaw: 0, hz: 0 };
-const FOCAM = [
+const homeCamera = { x: 0, y: 1.6, z: 0, yaw: 0, hz: 0 };
+const CLOSE_UP_CAMERAS = [
   { x: -0.5, y: 1.78, z: -0.55, yaw: -0.11, hz: -8 },
   { x: 0.8, y: 1.4, z: 1.1, yaw: 0.09, hz: 8 },
 ];
@@ -298,8 +298,8 @@ export const battleStage = {
   small: null,
   skyC: null,
   fogC: null,
-  cam: Object.assign({}, HOMECAM),
-  V: Object.assign({}, HOMECAM),
+  cam: Object.assign({}, homeCamera),
+  V: Object.assign({}, homeCamera),
   drift: { w: 0, tq: -1, x: 0, y: 0, z: 0, yaw: 0, hz: 0 },
   hand: { a: 0 },
   camT: 0,
@@ -522,8 +522,8 @@ export function battleStageStart(area) {
   battleStage.tws = [];
   battleStage.evs = [];
   battleStage.parts = [];
-  battleStage.cam = Object.assign({}, HOMECAM);
-  Object.assign(battleStage.V, HOMECAM);
+  battleStage.cam = Object.assign({}, homeCamera);
+  Object.assign(battleStage.V, homeCamera);
   Object.assign(battleStage.drift, { w: 0, tq: -1, x: 0, y: 0, z: 0, yaw: 0, hz: 0 });
   battleStage.hand.a = 0;
   battleStage.camT = 0;
@@ -955,8 +955,11 @@ function camApply() {
 /* ---------- camera life ----------
    battleStage.cam is the directed camera (camTo/camAt/camHome tween it); battleStage.V is the one rendered: the directed camera plus a slow idle orbit
    around the middle of the action while nothing happens. A guard keeps both billionaires inside the free frame. */
-export const CAMK = ['x', 'y', 'z', 'yaw', 'hz'],
-  ACT = { x: (actorPositions[0].x + actorPositions[1].x) / 2, z: (actorPositions[0].z + actorPositions[1].z) / 2 };
+export const CAMERA_KEYS = ['x', 'y', 'z', 'yaw', 'hz'],
+  actionCenter = {
+    x: (actorPositions[0].x + actorPositions[1].x) / 2,
+    z: (actorPositions[0].z + actorPositions[1].z) / 2,
+  };
 function stageProjectWith(C, X, Y, Z) {
   const L = battleStage.L,
     cs = Math.cos(C.yaw),
@@ -1033,38 +1036,38 @@ function camUpdate(dt) {
       k = D.w;
     const dx = 0.34 * Math.sin(ts * 0.37) + 0.08 * Math.sin(ts * 0.83 + 1.1);
     D.x = dx * k;
-    D.yaw = (-dx / ACT.z) * 0.82 * k;
+    D.yaw = (-dx / actionCenter.z) * 0.82 * k;
     D.z = 0.24 * Math.sin(ts * 0.23 + 1.3) * k;
     D.y = 0.07 * Math.sin(ts * 0.29 + 0.4) * k;
     D.hz = 1.4 * Math.sin(ts * 0.19 + 2.1) * k;
-    for (const p of CAMK) V[p] = C[p] + D[p];
+    for (const p of CAMERA_KEYS) V[p] = C[p] + D[p];
     /* guard: never frame the billionaires worse than the home shot does. First the orbit gives way, then a directed push stops short */
-    const lim = camOver(HOMECAM) + 0.5;
+    const lim = camOver(homeCamera) + 0.5;
     if (camOver(V) > lim && camOver(C) <= lim) {
       let lo = 0,
         hi = 1;
       for (let it = 0; it < 5; it++) {
         const m = (lo + hi) / 2;
-        for (const p of CAMK) V[p] = C[p] + D[p] * m;
+        for (const p of CAMERA_KEYS) V[p] = C[p] + D[p] * m;
         if (camOver(V) <= lim) lo = m;
         else hi = m;
       }
-      for (const p of CAMK) V[p] = C[p] + D[p] * lo;
+      for (const p of CAMERA_KEYS) V[p] = C[p] + D[p] * lo;
     } else if (camOver(V) > lim) {
       let lo = 0,
         hi = 1;
-      for (const p of CAMK) GB[p] = V[p];
+      for (const p of CAMERA_KEYS) cameraGuardPose[p] = V[p];
       for (let it = 0; it < 6; it++) {
         const m = (lo + hi) / 2;
-        for (const p of CAMK) V[p] = GB[p] + (HOMECAM[p] - GB[p]) * m;
+        for (const p of CAMERA_KEYS) V[p] = cameraGuardPose[p] + (homeCamera[p] - cameraGuardPose[p]) * m;
         if (camOver(V) <= lim) hi = m;
         else lo = m;
       }
-      for (const p of CAMK) V[p] = GB[p] + (HOMECAM[p] - GB[p]) * hi;
+      for (const p of CAMERA_KEYS) V[p] = cameraGuardPose[p] + (homeCamera[p] - cameraGuardPose[p]) * hi;
     }
   }
 }
-const GB = { x: 0, y: 0, z: 0, yaw: 0, hz: 0 };
+const cameraGuardPose = { x: 0, y: 0, z: 0, yaw: 0, hz: 0 };
 function camTo(c, d = 260, e = 'io', delay = 0) {
   if (RM) {
     scheduleAt(delay, () => {
@@ -2133,16 +2136,16 @@ function hitFx(ti, an) {
   if (typeof hudHit === 'function') hudHit(ti, an);
 }
 export function camHome(d = 420, delay = 0) {
-  camTo(HOMECAM, d, 'io', delay);
+  camTo(homeCamera, d, 'io', delay);
   if (!RM) tween(battleStage.css, 'r', 0, d, 'io', delay);
 }
 /* push in toward a side. Under reduced motion the camera stays on the wide shot */
 export const camAt = (i, amt = 0.45, z = 0.14, rr = 0, d = 260, e = 'io') => {
   if (RM) return;
-  const F = FOCAM[actorTeam(i)],
+  const F = CLOSE_UP_CAMERAS[actorTeam(i)],
     k = clamp(amt * 2.1, 0, 1),
     c = {};
-  for (const key in HOMECAM) c[key] = HOMECAM[key] + (F[key] - HOMECAM[key]) * k;
+  for (const key in homeCamera) c[key] = homeCamera[key] + (F[key] - homeCamera[key]) * k;
   const w = sideWorld(i),
     dx = w.x - c.x,
     dz = w.z - c.z,
@@ -2172,8 +2175,8 @@ function coinArc(from, to, dur, kind, onLand, spin) {
   step();
   return C;
 }
-const PULLCAM = { x: 0.15, y: 1.82, z: -0.75, yaw: 0, hz: -3 };
-const CAMPOS = () => ({ x: battleStage.V.x - 0.9, y: battleStage.V.y - 0.6, z: battleStage.V.z + 0.6 });
+const PULL_BACK_CAMERA = { x: 0.15, y: 1.82, z: -0.75, yaw: 0, hz: -3 };
+const throwOrigin = () => ({ x: battleStage.V.x - 0.9, y: battleStage.V.y - 0.6, z: battleStage.V.z + 0.6 });
 export function battleStagePlay(an, ev) {
   battleStageFlush();
   const s0 = battleStage.s[0],
@@ -2271,7 +2274,7 @@ export function battleStagePlay(an, ev) {
         camAt(i, 0.35, 0.1, si === 0 ? -0.012 : 0.012, 300);
       }
       const w = sideWorld(i),
-        from = si === 0 ? CAMPOS() : { x: w.x + 2.4, y: 2.2, z: w.z + 1.6 },
+        from = si === 0 ? throwOrigin() : { x: w.x + 2.4, y: 2.2, z: w.z + 1.6 },
         to = { x: w.x, y: 0.4, z: w.z };
       coinArc(from, to, 380, 'penny', C => {
         C.show = false;
@@ -2308,7 +2311,7 @@ export function battleStagePlay(an, ev) {
       setActorAction(i, 'faint', 99999);
       battleStageFocus(si === 0 ? 'me' : 'foe');
       camAt(i, 0.3, 0.08, si === 0 ? 0.02 : -0.02, 500);
-      if (!RM) camTo(PULLCAM, 520, 'io', 480);
+      if (!RM) camTo(PULL_BACK_CAMERA, 520, 'io', 480);
       tween(s, 'oy', 10, 500, 'in', 450);
       tween(s, 'a', 0, 420, 'in', 560);
       scheduleAt(700, () => groundRing(i, '#C8C0E0', 1.6, 500));
@@ -2761,7 +2764,7 @@ export function battleStageCatch(kind, res, spin, done) {
   camAt(1, 0.5, 0.18, 0.02, 320);
   battleStageFocus('foe');
   coinArc(
-    CAMPOS(),
+    throwOrigin(),
     { x: o.x, y: o.y, z: o.z },
     480,
     kind,
