@@ -102,7 +102,7 @@ export async function api(path, opt = {}) {
   if (!r.ok) throw new Error((j && j.error) || r.statusText);
   return j;
 }
-/* phase 04d: github.js takes the GitHub route, links.js redraws the links */
+/* phase 04d: github.js takes the GitHub route, connections.js redraws the links */
 export function setApi(v) {
   api = v; // eslint-disable-line no-func-assign
   provide({ api });
@@ -299,7 +299,7 @@ export async function saveAll() {
     btn.textContent = 'Save to game';
   }
 }
-/* phase 04d: github.js takes the GitHub route, links.js redraws the links */
+/* phase 04d: github.js takes the GitHub route, connections.js redraws the links */
 export function setSaveAll(v) {
   saveAll = v; // eslint-disable-line no-func-assign
   provide({ saveAll });
@@ -313,7 +313,7 @@ export function toast(t, k = '') {
   setTimeout(() => el.classList.add('out'), 2600);
   setTimeout(() => el.remove(), 3000);
 }
-/* phase 04d: github.js takes the GitHub route, links.js redraws the links */
+/* phase 04d: github.js takes the GitHub route, connections.js redraws the links */
 export function setToast(v) {
   toast = v; // eslint-disable-line no-func-assign
   provide({ toast });
@@ -506,7 +506,7 @@ export function render() {
   ST.after.forEach(f => f());
   mountPreviews(m);
 }
-/* phase 04d: github.js takes the GitHub route, links.js redraws the links */
+/* phase 04d: github.js takes the GitHub route, connections.js redraws the links */
 export function setRender(v) {
   render = v; // eslint-disable-line no-func-assign
   provide({ render });
