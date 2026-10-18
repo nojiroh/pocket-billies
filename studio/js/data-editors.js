@@ -101,6 +101,7 @@ expose({
   renameType: [() => renameType, v => (renameType = v)],
   selectedLineIndex: [() => selectedLineIndex],
   statsCard: [() => statsCard, v => (statsCard = v)],
+  trainerRobotHTML: [() => trainerRobotHTML, v => (trainerRobotHTML = v)],
   whereCard: [() => whereCard, v => (whereCard = v)],
   writePathBeforeShopThanks: [() => writePathBeforeShopThanks],
   writePathBeforeTrainerLines: [() => writePathBeforeTrainerLines],
@@ -836,6 +837,7 @@ SECTIONS.moves = () => {
   )}
   ${checkboxField('Blocks one attack (fails twice in a row)', `${p}.fx.protect`, { num: 1 })}${checkboxField('Delayed attack (lands a few turns later)', `${p}.fx.delay`, { num: 1 })}${checkboxField('Doubles each turn it’s used in a row', `${p}.fx.hold`, { num: 1 })}
   ${checkboxField('Confuses the target (it may hit itself)', `${p}.fx.hype`, { num: 1 })}${checkboxField(`Soak: turns the target ${escapeHtml(D.rules.battle.spinType)} type`, `${p}.fx.spin`, { num: 1 })}${checkboxField('Removes the target’s stat boosts', `${p}.fx.wipe`, { num: 1 })}
+  ${checkboxField('Robots: aims at a part the attacker picks', `${p}.fx.aim`, { num: 1, help: 'Phase 17. On a robot the player (or the computer) picks the arm or legs to hit.' })}${numberField('Robots: part damage ×', `${p}.fx.breaker`, { opt: 1, min: 0.5, max: 4, step: 0.25, help: 'A robot part it hits loses this many times the usual damage.' })}${numberField('Robots: repairs its parts', `${p}.fx.repair`, { opt: 1, min: 0, max: 1, step: 0.05, help: 'Fixes this share of each of its own parts’ HP (1 = all).' })}
   ${checkboxField('Scatters sharp stones on the other side', `${p}.fx.rent`, { num: 1 })}${checkboxField(`Starts a sandstorm (${escapeHtml(D.rules.battle.shockType)} moves hit harder)`, `${p}.fx.market`, { num: 1 })}</div>`;
   return `<div class="split"><aside class="list-col"><div class="list-head"><input type="search" placeholder="Search moves" data-search="mq" data-list="moveList" value="${escapeHtml(studioState.sel.mq || '')}"><button class="btn primary" data-act="moveNew">+ New move</button></div><div class="llist" id="moveList">${SIDE_LIST_RENDERERS.mq()}</div></aside>
  <div class="ed-col"><div class="ed-head"><div><small class="mono">${escapeHtml(k)}</small><h2>${escapeHtml(M.n)}</h2></div><div class="seg-row"><button class="btn" data-act="bpMove" data-id="${escapeHtml(k)}" title="Play this move on the battle stage">▶ Preview animation</button><button class="btn subtle" data-act="moveDup">Duplicate</button><button class="btn danger" data-act="moveDel">Delete</button></div></div>
@@ -1089,7 +1091,7 @@ SECTIONS.items = () => {
       { rr: 1 }
     )
   )}
-  ${grid(numberField('Restores HP', `${p}.hp`, { opt: 1, min: 0, step: 5 }), numberField('Restores everyone', `${p}.hpAll`, { opt: 1, min: 0, step: 5, help: 'Heals the whole team at once.' }), selectField('Cures', `${p}.cure`, [['any', 'Any status'], ...statusOptions()], { none: 'Nothing', opt: 1 }), numberField('Revives at', `${p}.revive`, { opt: 1, min: 0, max: 1, step: 0.05, help: 'Fraction of max HP after fainting (1 = full).' }), checkboxField('Evolution item (not used in battle)', `${p}.evoItem`, { num: 1 }))}
+  ${grid(numberField('Restores HP', `${p}.hp`, { opt: 1, min: 0, step: 5 }), numberField('Restores everyone', `${p}.hpAll`, { opt: 1, min: 0, step: 5, help: 'Heals the whole team at once.' }), selectField('Cures', `${p}.cure`, [['any', 'Any status'], ...statusOptions()], { none: 'Nothing', opt: 1 }), numberField('Revives at', `${p}.revive`, { opt: 1, min: 0, max: 1, step: 0.05, help: 'Fraction of max HP after fainting (1 = full).' }), checkboxField('Evolution item (not used in battle)', `${p}.evoItem`, { num: 1 }), numberField('Repairs robot parts', `${p}.repair`, { opt: 1, min: 0, max: 1, step: 0.05, help: 'Phase 17: fixes this share of each part of one robot (1 = all).' }))}
   ${textField('Description', `${p}.d`, { area: 1, rows: 2 })}<div class="seg-row"><button class="btn subtle" data-act="itemImg" data-k="${k}">Upload a custom icon</button>${I.img ? `<button class="btn subtle" data-act="itemImgOff" data-k="${k}">Use an atlas icon</button>` : ''}<span class="grow"></span><button class="btn danger subtle" data-act="itemDel" data-k="${k}">Delete</button></div></div></div>`;
     })
     .join('');
@@ -1515,12 +1517,13 @@ SECTIONS.trainers = () => {
       ['@rival', 'Rival pick (beats the player’s starter)'],
       ['@rival1', 'Rival pick, evolved once'],
       ['@rival2', 'Rival pick, evolved twice'],
+      ['robot', 'A robot (pick its gem and parts)'],
       ...speciesOptions(),
     ];
   const team = T.team
     .map(
       (e, i) =>
-        `<tr><td><select data-p="${p}.team.${i}.sp" data-k="sel">${spo.map(([v, n]) => `<option value="${v}" ${v === e.sp ? 'selected' : ''}>${escapeHtml(n)}</option>`).join('')}</select></td><td><input type="number" min="1" max="100" data-p="${p}.team.${i}.lvl" data-k="num" value="${e.lvl}"></td><td><button class="x" data-act="teamDel" data-i="${i}">✕</button></td></tr>`
+        `<tr><td><select data-p="${p}.team.${i}.sp" data-k="sel" data-rr="1">${spo.map(([v, n]) => `<option value="${v}" ${v === e.sp ? 'selected' : ''}>${escapeHtml(n)}</option>`).join('')}</select>${trainerRobotHTML(e, `${p}.team.${i}`)}</td><td><input type="number" min="1" max="100" data-p="${p}.team.${i}.lvl" data-k="num" value="${e.lvl}"></td><td><button class="x" data-act="teamDel" data-i="${i}">✕</button></td></tr>`
     )
     .join('');
   const seat = T.seat
@@ -1648,6 +1651,43 @@ ACTIONS.pickTrainer = d => {
   studioState.sel.trainer = d.id;
   render();
 };
+/* phase 17: a trainer's robot: its gem and a part for each slot (robots.json). Picking "A robot" fills in the first
+   of each; picking a Billie again drops them */
+function trainerRobotHTML(e, p) {
+  const R = studioState.D.robots || { parts: {}, gems: {} };
+  if (e.sp !== 'robot') {
+    if (e.robot) delete e.robot;
+    return '';
+  }
+  const first = kind => (Object.entries(R.parts).find(([, P]) => P.slot === kind) || [])[0];
+  if (!e.robot)
+    e.robot = {
+      gem: Object.keys(R.gems)[0],
+      torso: first('torso'),
+      armL: first('arm'),
+      armR: first('arm'),
+      legs: first('legs'),
+    };
+  const opts = (k, kind) =>
+    (kind === 'gem' ? Object.entries(R.gems) : Object.entries(R.parts).filter(([, P]) => P.slot === kind))
+      .map(
+        ([id, P]) =>
+          `<option value="${escapeHtml(id)}" ${e.robot[k] === id ? 'selected' : ''}>${escapeHtml(P.name)}</option>`
+      )
+      .join('');
+  return `<div class="tr-robot">${[
+    ['gem', 'gem', 'Gem'],
+    ['torso', 'torso', 'Torso'],
+    ['armL', 'arm', 'Left arm'],
+    ['armR', 'arm', 'Right arm'],
+    ['legs', 'legs', 'Legs'],
+  ]
+    .map(
+      ([k, kind, l]) =>
+        `<label class="mini"><span>${l}</span><select data-p="${p}.robot.${k}" data-k="sel">${opts(k, kind)}</select></label>`
+    )
+    .join('')}</div>`;
+}
 ACTIONS.teamAdd = () => {
   const T = studioState.D.trainers[studioState.sel.trainer];
   T.team.push({ sp: studioState.D.lines[0].id + '0', lvl: (T.team[T.team.length - 1] || { lvl: 10 }).lvl });

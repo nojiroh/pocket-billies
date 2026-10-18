@@ -41,6 +41,7 @@ expose({
   rigTick: [() => rigTick, v => (rigTick = v)],
   rigTint: [() => rigTint, v => (rigTint = v)],
   robotRigData: [() => robotRigData, v => setRobotRigData(v)],
+  robotRigParts: [() => robotRigParts, v => (robotRigParts = v)],
   setRigParts: [() => setRigParts, v => (setRigParts = v)],
   setRobotRigData: [() => setRobotRigData, v => (setRobotRigData = v)],
   smoothStepUnclamped: [() => smoothStepUnclamped],
@@ -457,16 +458,8 @@ export function rigParts(sp, gold, k = 1) {
   const view = k === 1 ? 'front' : 'back',
     key = sp + (gold ? 'g' : '') + view;
   if (RIG_PARTS_CACHE[key]) return RIG_PARTS_CACHE[key];
-  /* phase 17: a robot is drawn from its parts (robot-art.js); the game hands over robots.json as ROBOTS, the Studio its
-     own copy (robotRigData) */
-  if (typeof sp === 'string' && sp.startsWith('bot:')) {
-    const R = robotRig(sp, robotRigData || (typeof ROBOTS !== 'undefined' ? ROBOTS : null));
-    if (!R) return null;
-    Object.assign(R, { anim: animFor(R.plan, R.q), lag: false });
-    /* while its pictures load it is drawn with stand-ins and asked for again */
-    if (!R.wait) RIG_PARTS_CACHE[key] = R;
-    return R;
-  }
+  /* phase 17: a robot is drawn from its parts */
+  if (typeof sp === 'string' && sp.startsWith('bot:')) return robotRigParts(sp, gold, k);
   const meta = RIGS[sp] && RIGS[sp][view];
   if (!meta) return null;
   const path = rigAtlas(sp, gold, view);
@@ -501,9 +494,20 @@ export function rigParts(sp, gold, k = 1) {
     lag: bones.some(b => b.lag),
   });
 }
+/* phase 17: a robot's rig, drawn from its parts (robot-art.js); the game hands over robots.json as ROBOTS, the Studio
+   its own copy (setRobotRigData). While its pictures load it is drawn with stand-ins and asked for again. */
+export function robotRigParts(sp, gold, k = 1) {
+  const key = sp + (k === 1 ? 'front' : 'back');
+  if (RIG_PARTS_CACHE[key]) return RIG_PARTS_CACHE[key];
+  const R = robotRig(sp, robotRigData || (typeof ROBOTS !== 'undefined' ? ROBOTS : null));
+  if (!R) return null;
+  Object.assign(R, { anim: animFor(R.plan, R.q), lag: false });
+  if (!R.wait) RIG_PARTS_CACHE[key] = R;
+  return R;
+}
 /* phase 17: the Studio draws robots from the robots.json it is editing; after an edit, the robots are drawn again */
 let robotRigData = null;
-function setRobotRigData(D) {
+export function setRobotRigData(D) {
   robotRigData = D;
   for (const k of Object.keys(RIG_PARTS_CACHE)) if (k.startsWith('bot:')) delete RIG_PARTS_CACHE[k];
 }

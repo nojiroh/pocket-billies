@@ -16,6 +16,14 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 import { MOVES, ROBOTS, RULES, SPECIES, STAT_IDS } from '../game-data.js';
+import {
+  robotMathAttack,
+  robotMathBase,
+  robotMathMoves,
+  robotMathSpeed,
+  robotMathTypes,
+  robotMathWeight,
+} from './robot-math.js';
 /* eslint-disable no-func-assign */
 expose({
   DEFAULT_ROBOT_RULES: [() => DEFAULT_ROBOT_RULES],
@@ -32,15 +40,12 @@ expose({
   moveSources: [() => moveSources, v => (moveSources = v)],
   newPart: [() => newPart],
   partFits: [() => partFits],
-  // @ts-expect-error -- replaced on purpose
-  robotAttackFactor: [() => robotAttackFactor, v => (robotAttackFactor = v)],
-  // @ts-expect-error -- replaced on purpose
-  robotBase: [() => robotBase, v => (robotBase = v)],
+  robotAttackFactor: [() => robotAttackFactor],
+  robotBase: [() => robotBase],
   robotGemDef: [() => robotGemDef],
   // @ts-expect-error -- replaced on purpose
   robotIdsFromSp: [() => robotIdsFromSp, v => (robotIdsFromSp = v)],
-  // @ts-expect-error -- replaced on purpose
-  robotMoves: [() => robotMoves, v => (robotMoves = v)],
+  robotMoves: [() => robotMoves],
   // @ts-expect-error -- replaced on purpose
   robotName: [() => robotName, v => (robotName = v)],
   robotPartDef: [() => robotPartDef],
@@ -49,10 +54,8 @@ expose({
   robotSp: [() => robotSp, v => (robotSp = v)],
   // @ts-expect-error -- replaced on purpose
   robotSpeciesFor: [() => robotSpeciesFor, v => (robotSpeciesFor = v)],
-  // @ts-expect-error -- replaced on purpose
-  robotSpeedFactor: [() => robotSpeedFactor, v => (robotSpeedFactor = v)],
-  // @ts-expect-error -- replaced on purpose
-  robotTypes: [() => robotTypes, v => (robotTypes = v)],
+  robotSpeedFactor: [() => robotSpeedFactor],
+  robotTypes: [() => robotTypes],
   robotViewsClear: [() => robotViewsClear],
   robotWeight: [() => robotWeight],
   // @ts-expect-error -- replaced on purpose
@@ -123,57 +126,19 @@ export function validRobot(gem, fit) {
   return !!gem && !!ROBOTS.gems[gem] && !!fit && ROBOT_SLOTS.every(k => !!fit[k] && partFits(fit[k].id, k));
 }
 /** @param {RobotFit} fit @returns {number} kg */
-export const robotWeight = fit => ROBOT_SLOTS.reduce((a, k) => a + (ROBOTS.parts[fit[k].id].wt || 0), 0);
+export const robotWeight = fit => robotMathWeight(ROBOTS, fit);
 /** what weight against the legs' carry does to Speed (1 = nothing) @param {RobotFit} fit */
-export function robotSpeedFactor(fit) {
-  const R = robotRules(),
-    w = robotWeight(fit),
-    carry = ROBOTS.parts[fit.legs.id].carry || 100;
-  return w > carry ? Math.pow(carry / w, R.overweightExp) : 1 + R.lightBonus * (1 - w / carry);
-}
+export const robotSpeedFactor = fit => robotMathSpeed(ROBOTS, robotRules(), fit);
 /** what weight does to Attack and Sp. Atk (1 = nothing) @param {RobotFit} fit */
-export function robotAttackFactor(fit) {
-  const R = robotRules();
-  return Math.min(1 + R.cap, Math.max(1 - R.cap, Math.pow(robotWeight(fit) / R.refWeight, R.attackExp)));
-}
-/** a robot's base stats (stats.json order) before its level, like a species' base
+export const robotAttackFactor = fit => robotMathAttack(ROBOTS, robotRules(), fit);
+/** a robot's base stats (stats.json order) before its level, like a species' base (logic/robot-math.js)
  * @param {string} gem @param {RobotFit} fit @returns {number[]} */
-export function robotBase(gem, fit) {
-  const R = robotRules(),
-    /** @type {Record<string, number>} */
-    v = Object.fromEntries(STAT_IDS.map(k => [k, R.baseStat]));
-  for (const k of ROBOT_SLOTS) {
-    const S = /** @type {Record<string, number>} */ (ROBOTS.parts[fit[k].id].stats),
-      f = 1 + R.upgradeStat * Math.max(0, Math.min(R.maxUpgrade, fit[k].up || 0));
-    for (const s in S) if (s in v) v[s] += (S[s] || 0) * f;
-  }
-  const G = /** @type {Record<string, number>} */ (ROBOTS.gems[gem].stats);
-  for (const s in G) if (s in v) v[s] += G[s] || 0;
-  v.hus *= robotSpeedFactor(fit);
-  const af = robotAttackFactor(fit);
-  v.lev *= af;
-  v.lob *= af;
-  return STAT_IDS.map(k => Math.max(1, Math.round(v[k])));
-}
+export const robotBase = (gem, fit) => robotMathBase(ROBOTS, robotRules(), STAT_IDS, gem, fit);
 /** its types: the torso's, then the legs' when different @param {RobotFit} fit @returns {string[]} */
-export function robotTypes(fit) {
-  const a = ROBOTS.parts[fit.torso.id].type,
-    b = ROBOTS.parts[fit.legs.id].type;
-  return a === b ? [a] : [a, b];
-}
+export const robotTypes = fit => robotMathTypes(ROBOTS, fit);
 /** its moves: the left arm's, the right arm's, the legs', then the gem's (two arms giving the same move give it once)
  * @param {string} gem @param {RobotFit} fit @returns {string[]} */
-export function robotMoves(gem, fit) {
-  const out = /** @type {string[]} */ ([]);
-  for (const id of [
-    ROBOTS.parts[fit.armL.id].move,
-    ROBOTS.parts[fit.armR.id].move,
-    ROBOTS.parts[fit.legs.id].move,
-    ROBOTS.gems[gem].move,
-  ])
-    if (id && MOVES[id] && !out.includes(id)) out.push(id);
-  return out;
-}
+export const robotMoves = (gem, fit) => robotMathMoves(ROBOTS, MOVES, gem, fit);
 /** which of a robot's slots give a move ('gem' for its gem) @param {string} gem @param {RobotFit} fit @param {string} mid */
 export function moveSources(gem, fit, mid) {
   const out = /** @type {string[]} */ ([]);
