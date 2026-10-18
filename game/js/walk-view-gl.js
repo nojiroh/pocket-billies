@@ -5800,7 +5800,7 @@ const FLOWER_SET_BY_LOCATION = {
   twinpetal: 'pastel',
   fanfare_fields: 'pastel',
   petalfall: 'pastel',
-  sporeholder: 'spore',
+  puffcap: 'spore',
   capshade: 'spore',
   hedgerow: 'meadow',
   tallgrass_meadow: 'meadow',
@@ -5813,7 +5813,7 @@ const FLOWER_SET_BY_LOCATION = {
   goldvine: 'warm',
   badlands: 'warm',
   saltpan_flats: 'warm',
-  fall: 'warm',
+  russetwood: 'warm',
   stepstone_canyon: 'warm',
   clovercrest: 'meadow',
 };
