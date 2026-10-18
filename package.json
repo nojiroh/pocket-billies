@@ -16,6 +16,7 @@
     "check:logic": "npm test",
     "format": "prettier --write \"game/**/*.{js,css,ts}\" \"studio/**/*.{js,css}\" \"tools/test/**/*.mjs\" \"*.js\"",
     "format:check": "prettier --check \"game/**/*.{js,css,ts}\" \"studio/**/*.{js,css}\" \"tools/test/**/*.mjs\" \"*.js\"",
+    "check:fast": "python3 tools/check-fast.py",
     "check:smoke": "python3 tools/check-quick.py --smoke",
     "check:quick": "python3 tools/check-quick.py"
   },
