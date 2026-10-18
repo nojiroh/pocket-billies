@@ -245,6 +245,8 @@ same commit, and updates the quick-check steps, self-test checks and debug-menu 
     starts.
 
 ### 08a-3: UI, text, Studio, run
+Note (2026-10-18): the UI phase (06) is being built at the same time on its own branch and reworks these screens.
+Before starting, see whether 06 has merged; build 08a-3 on top of it, or ask the owner which goes first.
 Already done in 08a-2: the .wh-steps chips, the Today card's steps and brackets (the card shows only the money), the
 trainer card's "Steps today" and "Total steps" tiles, the restore / account-merge / Settings profile lines (they say
 km walked), egg labels, the Studio's step fields. Left: the CSS, the text below, and the Studio's "Rest stop price"

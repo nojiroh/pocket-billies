@@ -43,6 +43,14 @@ Plan approved at the start (docs/phases/08a-plan.md, section 08a-2, now marked d
     the Studio road table shows the measured length (read-only). `tripTo().steps` renamed `metres`.
   - Save format 3. The migrate lines for step-era fields went with it (a format 2 save is never migrated now).
 - Risky or unfinished:
+  - **The UI phase (06) is being built at the same time, on its own branch.** This session changed screen code it
+    will also touch: ui.js (about 240 lines: walk card and Today card, Encounters section, buddy card, evolution
+    window, team screen without the Day jobs panel, trainer card tiles, map card), things-to-do.js (challenges,
+    letter), battle.js (prize toast, switch list), bag.js (egg rows), settings-screen.js, world-map-gl.js (Places
+    list, road chips), debug-menu.js. Whichever branch merges second must merge, not overwrite: keep 06's structure
+    and carry 08a-2's content into it (no steps, "Encounters here N/stock", the Build/Hype buttons, no jobs, km
+    walked, "N m" road lengths). 08a-3 (step widgets, CSS, text) touches the same screens, so start it on top of
+    06 if 06 lands first, or agree the order with the owner.
   - Your phone and cloud saves start over. A save is kept aside only if no set-aside copy exists yet: a phone that
     kept one at the phase 05 bump does not keep this one (old saves don't matter, CLAUDE.md).
   - The walk card's encounter count updates when the screen redraws; the play-time tick (every 15 s) redraws it
@@ -69,7 +77,8 @@ Plan approved at the start (docs/phases/08a-plan.md, section 08a-2, now marked d
   - The tags `phase-05-done` and `phase-04-done` still need pushing from your machine (08a-1).
   - On your phone: a new game (format 3), walk a route (encounters fill, a win pays), the debug "Walk 1 km" twice
     for the starter egg, and a debug log.
-- Next session starts with: "start 08a-3" (docs/phases/08a-plan.md, section 08a-3).
+- Next session starts with: "start 08a-3" (docs/phases/08a-plan.md, section 08a-3). First check where the UI
+  phase (06) stands: 08a-3 rewrites the same widgets and CSS.
 
 ### Phase 08a-1 - tests off the steps mode, the dead steps travel mode deleted - 2026-10-18
 Plan approved at the start (docs/phases/08a-plan.md, section 08a-1, now marked done with the corrections found).
