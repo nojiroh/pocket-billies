@@ -11,7 +11,7 @@ import { clamp } from '../util.js';
 import { cnv } from '../art.js';
 import { DIO } from '../walk-view.js';
 import { eng, engHex } from './settings.js';
-import { EGL, EGL_GLSL_LIGHT, eglBindQuad, eglPrograms, eglTarget } from './core.js';
+import { EGL, EGL_GLSL_LIGHT, eglBindQuad, eglPrograms, eglTarget } from './webgl.js';
 import { eglLightU } from './light.js';
 /* eslint-disable no-func-assign */
 expose({

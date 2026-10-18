@@ -20,7 +20,7 @@ import {
   setEglNormWork,
   setEglNormal,
   setEglPrograms,
-} from './engine/core.js';
+} from './engine/webgl.js';
 import { eglPost, setEglPost } from './engine/post.js';
 import { ENV } from './environment.js';
 import {

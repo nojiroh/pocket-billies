@@ -164,7 +164,7 @@ import {
   eglWindBend,
   smooth01,
   v3n,
-} from './engine/core.js';
+} from './engine/webgl.js';
 import {
   eglLampShadowBegin,
   eglLightCtx,

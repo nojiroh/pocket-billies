@@ -38,7 +38,7 @@ import {
   dioSteps,
 } from './walk-view.js';
 import { eng } from './engine/settings.js';
-import { smooth01 } from './engine/core.js';
+import { smooth01 } from './engine/webgl.js';
 import { DGL, dglPrepare, dglPrepared } from './walk-view-gl.js';
 import { lifeShift } from './ambient-life.js';
 import { owShift } from './world-billies.js';

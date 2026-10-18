@@ -19,7 +19,7 @@ import { artLoad } from './art.js';
 import { portraitHTML } from './person-art.js';
 import { partSpr } from './battle-stage.js';
 import { DIO } from './walk-view.js';
-import { EGL, eglPrograms } from './engine/core.js';
+import { EGL, eglPrograms } from './engine/webgl.js';
 import { EGL_POST_SH } from './engine/post.js';
 import { dglCanvasFor, dglGL, dioH } from './walk-view-gl.js';
 import { A, endBattle, stopTimers, types } from './battle.js';

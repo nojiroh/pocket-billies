@@ -17,7 +17,7 @@ import { clamp } from './util.js';
 import { cnv } from './art.js';
 import { DIO, dioHash, dioImg, dioProj } from './walk-view.js';
 import { eng } from './engine/settings.js';
-import { EGL, EGL_GLSL_COMMON, EGL_GLSL_LIGHT, EGL_GLSL_LOOK, EGL_MATS, eglImg, eglPrograms } from './engine/core.js';
+import { EGL, EGL_GLSL_COMMON, EGL_GLSL_LIGHT, EGL_GLSL_LOOK, EGL_MATS, eglImg, eglPrograms } from './engine/webgl.js';
 import { DGL, dglBlades, dglBudget, dglCurveArgs, dglFol, dglHit, dglLookU, dglUse } from './walk-view-gl.js';
 /* eslint-disable no-func-assign */
 expose({

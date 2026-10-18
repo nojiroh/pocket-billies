@@ -12,7 +12,7 @@ import { PLACE, RULES, SP, TRAINERS, trainersAt } from './game-data.js';
 import { B, RM, S, U, esc, healAll, save, today } from './game-state.js';
 import { DR } from './dressing-room.js';
 import { DIO, dioBaseId, dioFreePt } from './walk-view.js';
-import { EGL } from './engine/core.js';
+import { EGL } from './engine/webgl.js';
 import { DGL, dioH } from './walk-view-gl.js';
 import { startTrainer, startWild } from './battle.js';
 import { music } from './sound.js';

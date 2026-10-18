@@ -13,7 +13,7 @@ import { $, clamp } from './util.js';
 import { hexA } from './art.js';
 import { ACT, FOC, POS, SC, UPP, partSpr, sideBuf, sideWorld, trainerBattleFrame, trainerMpp } from './battle-stage.js';
 import { DIO, dioData, dioStop } from './walk-view.js';
-import { EGL } from './engine/core.js';
+import { EGL } from './engine/webgl.js';
 import { DGL, dioH } from './walk-view-gl.js';
 /* eslint-disable no-func-assign */
 expose({

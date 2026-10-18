@@ -35,7 +35,7 @@ import { uiIco } from './art.js';
 import { applyPreferences, exportSave } from './settings-screen.js';
 import { SC, scResize, scStop } from './battle-stage.js';
 import { dioScene } from './walk-view.js';
-import { EGL } from './engine/core.js';
+import { EGL } from './engine/webgl.js';
 import { A, checkFaints, paintBoxes, play, say, snapAll, startTrainer, startWild, stopTimers } from './battle.js';
 import { MAP } from './world-map.js';
 /* eslint-disable no-func-assign */

@@ -33,7 +33,7 @@ import { DR, drSave, openDressing } from './dressing-room.js';
 import { drawRig, rigFrame, rigParts, rigPreload, rigTint } from './skeleton-rig.js';
 import { buzz, partSpr } from './battle-stage.js';
 import { DIO, dioData, dioDirOf, dioImg, dioOk, dioPrepare, dioProj, dioScene, dioStop } from './walk-view.js';
-import { EGL, eglOK } from './engine/core.js';
+import { EGL, eglOK } from './engine/webgl.js';
 import { DGL, dglPerson, dioH, dioMount } from './walk-view-gl.js';
 import { wrRoamView } from './seamless-world.js';
 import { music, sfx } from './sound.js';

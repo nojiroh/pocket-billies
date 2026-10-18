@@ -36,7 +36,7 @@ import {
   dioWalkTo,
 } from './walk-view.js';
 import { eng } from './engine/settings.js';
-import { EGL, eglAttrClashes } from './engine/core.js';
+import { EGL, eglAttrClashes } from './engine/webgl.js';
 import { EGL_POST_SH } from './engine/post.js';
 import { ENV } from './environment.js';
 import { DGL, DGL_SH, dglRoomDim, dioH } from './walk-view-gl.js';

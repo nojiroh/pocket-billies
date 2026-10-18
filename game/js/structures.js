@@ -13,7 +13,7 @@ import { RM, provide } from './hooks.js';
 import { clamp } from './util.js';
 import { hexA } from './art.js';
 import { DIO, dioBridges, dioImg } from './walk-view.js';
-import { EGL, eglImg, eglPrograms } from './engine/core.js';
+import { EGL, eglImg, eglPrograms } from './engine/webgl.js';
 import { DGL_WALL_COL, dglCurveArgs, dglUse, dglWallDefault, dioGroundH, dioH } from './walk-view-gl.js';
 import { BLD_SH, bldArt, bldGuard } from './buildings.js';
 /* eslint-disable no-func-assign */

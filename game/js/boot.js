@@ -14,7 +14,7 @@ import { trainerArtPaths } from './person-art.js';
 import { rigAtlas } from './skeleton-rig.js';
 import { AREAS, scPrepare, stageArt } from './battle-stage.js';
 import { DIO, dioData, dioPaths, dioScene } from './walk-view.js';
-import { EGL, eglOK } from './engine/core.js';
+import { EGL, eglOK } from './engine/webgl.js';
 import { ENV } from './environment.js';
 import { DGL, dglRiseStart } from './walk-view-gl.js';
 import { WORLD } from './seamless-world.js';

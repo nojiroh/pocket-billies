@@ -26,7 +26,7 @@ import {
   eglImg,
   eglPrograms,
   v3n,
-} from './engine/core.js';
+} from './engine/webgl.js';
 import { ENV, envLitFrac } from './environment.js';
 import { DGL, dglCurveArgs, dglLookU, dglUse, dioH } from './walk-view-gl.js';
 /* eslint-disable no-func-assign */
