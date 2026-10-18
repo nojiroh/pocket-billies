@@ -164,7 +164,13 @@ export interface Billy {
   alpha?: boolean;
   /** an Alpha in battle: its HP and stat multipliers (battle.js; not kept after the battle) */
   boss?: { hp: number; st: number };
+  /** phase 16: the size of each part (rules.js rollBuild); missing means all M */
+  build?: Build;
 }
+
+/** phase 16: a part size per slot (RULES.parts) */
+export type PartSize = 'S' | 'M' | 'L';
+export type Build = Record<string, PartSize>;
 
 /** a Billie waiting in the grass (game-state.js spawn) */
 export interface Encounter {
@@ -175,6 +181,8 @@ export interface Encounter {
   /** its encounter number (serial) */
   no: number;
   alpha?: boolean;
+  /** phase 16: its part sizes, rolled when it appears (rules.js encounterBuild) */
+  build?: Build;
 }
 
 /** an egg (game-state.js addEgg) */

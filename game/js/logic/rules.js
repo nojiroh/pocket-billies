@@ -49,6 +49,7 @@ import {
   trainersAt,
   typeEffectiveness,
 } from '../game-data.js';
+import { partsPrime, partsStatFactor, partsWeightRatio } from './parts.js';
 /* eslint-disable no-func-assign */
 expose({
   STEP_BRACKETS: [() => STEP_BRACKETS],
@@ -63,14 +64,20 @@ expose({
   assignJob: [() => assignJob, v => (assignJob = v)],
   // @ts-expect-error -- replaced on purpose
   autoSlot: [() => autoSlot, v => (autoSlot = v)],
+  billyBuild: [() => billyBuild],
   billyName: [() => billyName],
+  billyWeight: [() => billyWeight],
   // @ts-expect-error -- replaced on purpose
   blockerAt: [() => blockerAt, v => (blockerAt = v)],
+  buildStatFactor: [() => buildStatFactor],
+  buildWeightRatio: [() => buildWeightRatio],
   canEnter: [() => canEnter],
   // @ts-expect-error -- replaced on purpose
   canEvolve: [() => canEvolve, v => (canEvolve = v)],
   canLeave: [() => canLeave],
   canRide: [() => canRide],
+  // @ts-expect-error -- replaced on purpose
+  cleanBuild: [() => cleanBuild, v => (cleanBuild = v)],
   cleanName: [() => cleanName],
   // @ts-expect-error -- replaced on purpose
   collectJob: [() => collectJob, v => (collectJob = v)],
@@ -78,6 +85,8 @@ expose({
   earningsBetween: [() => earningsBetween, v => (earningsBetween = v)],
   eggSlotCount: [() => eggSlotCount],
   emptyJob: [() => emptyJob],
+  // @ts-expect-error -- replaced on purpose
+  encounterBuild: [() => encounterBuild, v => (encounterBuild = v)],
   // @ts-expect-error -- replaced on purpose
   encounterPoolHere: [() => encounterPoolHere, v => (encounterPoolHere = v)],
   // @ts-expect-error -- replaced on purpose
@@ -103,6 +112,7 @@ expose({
   // @ts-expect-error -- replaced on purpose
   healAll: [() => healAll, v => (healAll = v)],
   hereLocation: [() => hereLocation],
+  isPrime: [() => isPrime],
   jobSlotCount: [() => jobSlotCount],
   // @ts-expect-error -- replaced on purpose
   makeBilly: [() => makeBilly, v => ((makeBilly = v), provide({ makeBilly }))],
@@ -114,17 +124,25 @@ expose({
   newUid: [() => newUid],
   nextBracket: [() => nextBracket],
   nextTripNode: [() => nextTripNode],
+  partRules: [() => partRules],
+  partSlots: [() => partSlots],
   pathFrom: [() => pathFrom],
   // @ts-expect-error -- replaced on purpose
   pickWeighted: [() => pickWeighted, v => (pickWeighted = v)],
   plural: [() => plural],
+  // @ts-expect-error -- replaced on purpose
+  primeBuild: [() => primeBuild, v => (primeBuild = v)],
   // @ts-expect-error -- replaced on purpose
   resumeTrip: [() => resumeTrip, v => (resumeTrip = v)],
   riderName: [() => riderName],
   // @ts-expect-error -- replaced on purpose
   riderOf: [() => riderOf, v => ((riderOf = v), provide({ riderOf }))],
   // @ts-expect-error -- replaced on purpose
+  rollBuild: [() => rollBuild, v => (rollBuild = v)],
+  // @ts-expect-error -- replaced on purpose
   rollDay: [() => rollDay, v => (rollDay = v)],
+  // @ts-expect-error -- replaced on purpose
+  rollPartSize: [() => rollPartSize, v => (rollPartSize = v)],
   setTrip: [() => setTrip, v => setSetTrip(v)],
   // @ts-expect-error -- replaced on purpose
   spawn: [() => spawn, v => (spawn = v)],
@@ -194,10 +212,61 @@ export const jobSlotCount = () => Math.max(1, RULES.jobs.positions || 3);
 /** @returns {JobSlot} */
 export const emptyJob = () => ({ uid: null, job: null, acc: 0, pend: 0 });
 
+/* ---------- parts (phase 16, docs/phases/16) ----------
+   Every Billie has a size (S, M or L) for each part slot: head, body, front, back and sig (its signature part). Wild
+   ones roll their sizes; starters and trainers have all M, which makes them Prime. Bigger parts weigh more: more
+   Attack and Sp. Atk, less Speed, capped. The numbers are in rules.json "parts" (the Studio's Parts section). */
+/** @import { Build, PartSize } from '../../types/save-data' */
+export const partRules = () => RULES.parts;
+export const partSlots = () => (RULES.parts ? RULES.parts.slots : []);
+/** @returns {Build} all M: a Prime build */
+export function primeBuild() {
+  /** @type {Build} */
+  const b = {};
+  for (const k of partSlots()) b[k] = 'M';
+  return b;
+}
+/** @returns {PartSize} one size, by the odds */
+export function rollPartSize() {
+  const S = RULES.parts.sizes,
+    list = /** @type {[string, number][]} */ (Object.keys(S).map(k => [k, S[k].odds]));
+  return /** @type {PartSize} */ (pickWeighted(list));
+}
+/** @returns {Build} a wild Billie's sizes */
+export function rollBuild() {
+  /** @type {Build} */
+  const b = {};
+  for (const k of partSlots()) b[k] = rollPartSize();
+  return b;
+}
+/** @param {any} b @returns {Build} a build with every slot, unknown sizes as M (an old save, hand-made data) */
+export function cleanBuild(b) {
+  const out = primeBuild(),
+    S = RULES.parts ? RULES.parts.sizes : {};
+  if (b && typeof b === 'object') for (const k in out) if (S[b[k]]) out[k] = b[k];
+  return out;
+}
+/** an encounter keeps the sizes it appeared with; one queued before parts existed gets them now */
+export function encounterBuild(q) {
+  if (!q.build) q.build = rollBuild();
+  return cleanBuild(q.build);
+}
+export const billyBuild = m => cleanBuild(m && m.build);
+/** @param {Build} b */
+export const isPrime = b => partsPrime(RULES.parts, b);
+/** @param {Build} b the weight as a share of the species' own weight (1 = all M) */
+export const buildWeightRatio = b => partsWeightRatio(RULES.parts, b);
+/** @returns {number} a Billie's weight in kg (its species' weight times its build) */
+export const billyWeight = m => Math.round(SPECIES[m.sp].wt * buildWeightRatio(billyBuild(m)) * 10) / 10;
+/** @param {Build} b @param {string} k a stat id @returns {number} what the build does to that stat (1 = nothing) */
+export const buildStatFactor = (b, k) => partsStatFactor(RULES.parts, b, k);
+
 /* ---------- billionaires ---------- */
 export function stat(m, k) {
   const b = SPECIES[m.sp].base[STAT_IDS.indexOf(k)];
   let v = k === 'hp' ? Math.floor((2 * b * m.lvl) / 100) + m.lvl + 10 : Math.floor((2 * b * m.lvl) / 100) + 5;
+  /* phase 16: its parts (weight and Prime) */
+  if (m.build) v = Math.max(1, Math.round(v * buildStatFactor(m.build, k)));
   /* v33: an Alpha in battle is much tougher (m.boss); one you caught keeps a little of it (m.alpha) */
   if (m.boss) v = Math.floor(v * (k === 'hp' ? m.boss.hp : m.boss.st));
   else if (m.alpha) v = Math.floor(v * ((RULES.battle && RULES.battle.alphaKeep) ?? 1.08));
@@ -223,6 +292,8 @@ export function makeBilly(sp, lvl, o = {}) {
     moves: movesAt(SPECIES[sp].line, lvl),
     gold: !!o.gold,
     nick: '',
+    /* phase 16: sizes given (a wild one's), rolled (o.wild) or all M (starters, trainers) */
+    build: o.build ? cleanBuild(o.build) : o.wild ? rollBuild() : primeBuild(),
   };
   m.hp = maxHp(m);
   try {
@@ -538,7 +609,14 @@ export function spawn(gentle, force) {
   }
   const sp = force || pickWeighted(list),
     lvl = P.lv[0] + Math.floor(random() * (P.lv[1] - P.lv[0] + 1));
-  const q = { id: newUid(), sp, lvl, gold: random() < 1 / RULES.steps.goldOdds, no: ++saveData.serial };
+  const q = {
+    id: newUid(),
+    sp,
+    lvl,
+    gold: random() < 1 / RULES.steps.goldOdds,
+    no: ++saveData.serial,
+    build: rollBuild(),
+  };
   /* v33: now and then an Alpha (once you have two billionaires to stand with your lead) */
   if (
     !gentle &&
@@ -655,7 +733,7 @@ export function hatchEgg(e) {
     sp = R.mythSpecies;
     gold = false;
   }
-  const m = makeBilly(sp, T.lv, { gold });
+  const m = makeBilly(sp, T.lv, { gold, wild: true });
   saveData.eggs = saveData.eggs.filter(x => x !== e);
   saveData.hatched = (saveData.hatched || 0) + 1;
   autoSlot();

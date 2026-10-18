@@ -41,6 +41,7 @@ import {
 } from '../game-data.js';
 import {
   billyName,
+  encounterBuild,
   findBilly,
   formatNumber,
   gainXp,
@@ -217,6 +218,7 @@ export function actorSnapshot(k) {
     max: maxHp(m),
     st: m.status,
     gold: m.gold,
+    build: m.build,
     alpha: !!(m.boss || m.alpha),
     boss: !!m.boss,
     ty: actorTypes(k).slice(),
@@ -876,7 +878,8 @@ export function makeAlpha(sp, lvl, o = {}) {
   return m;
 }
 export function startWild(q) {
-  const foe = q.alpha ? makeAlpha(q.sp, q.lvl, { gold: q.gold }) : makeBilly(q.sp, q.lvl, { gold: q.gold });
+  const o = { gold: q.gold, build: encounterBuild(q) },
+    foe = q.alpha ? makeAlpha(q.sp, q.lvl, o) : makeBilly(q.sp, q.lvl, o);
   if (!newBattle('wild', [foe], { qid: q.id, area: battleStageKey(), fmt: q.alpha ? 'alpha' : 'single' })) return;
   const nm = SPECIES[q.sp].name;
   if (q.alpha) {

@@ -121,5 +121,19 @@
    "text": "Coins drift down from the summit like leaves. A golden shape with wings lands in front of you and waits, as if it has all the time in the world.",
    "line": "“Take some. There is always more. Now show me what you have.”"
   }
- ]
+ ],
+ "parts": {
+  "_help": "Phase 16 parts. Every Billie has a size per slot. Wild ones roll each slot by odds; starters and trainers are all M. Weight = species weight x sum(share x size weight). Attack and Sp. Atk x ratio^attackExp, Speed x ratio^speedExp, each capped at +-cap. All M is Prime: every stat x (1 + primeBonus). scale is how big the piece is drawn.",
+  "slots": ["head","body","front","back","sig"],
+  "share": {"head":0.15,"body":0.4,"front":0.15,"back":0.15,"sig":0.15},
+  "sizes": {
+   "S": {"odds":0.2,"scale":0.85,"weight":0.75},
+   "M": {"odds":0.6,"scale":1,"weight":1},
+   "L": {"odds":0.2,"scale":1.2,"weight":1.35}
+  },
+  "attackExp": 0.5,
+  "speedExp": -0.6,
+  "cap": 0.2,
+  "primeBonus": 0.1
+ }
 }
