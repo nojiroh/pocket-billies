@@ -54,10 +54,10 @@ expose({
   graphicsTestShow: [() => graphicsTestShow, v => (graphicsTestShow = v)],
   graphicsTestStand: [() => graphicsTestStand, v => (graphicsTestStand = v)],
   graphicsTestValue: [() => graphicsTestValue],
-  runGraphicsTest: [() => runGraphicsTest, v => ((runGraphicsTest = v), provide({ runGraphicsTest }))],
+  runGraphicsBench: [() => runGraphicsBench, v => ((runGraphicsBench = v), provide({ runGraphicsBench }))],
 });
 /* eslint-enable no-func-assign */
-provide({ runGraphicsTest });
+provide({ runGraphicsBench });
 /* to-module: end */
 /* the hidden settings it measures besides the Expert dials: [group.key, label, values or [min, max, step], rebuild] */
 const GRAPHICS_TEST_HIDDEN = [
@@ -172,7 +172,7 @@ function graphicsTestStand(sc, st) {
 const graphicsTestOpen = () =>
   walkView.ready && (walkView.id === GRAPHICS_TEST_MAP || (walkView.sc && walkView.sc.baseId === GRAPHICS_TEST_MAP));
 
-async function runGraphicsTest() {
+async function runGraphicsBench() {
   if (graphicsTest.on || selfTest.on) return;
   if (typeof activeBattle !== 'undefined' && activeBattle) {
     toast('Finish the battle first.');

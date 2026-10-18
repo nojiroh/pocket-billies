@@ -18,7 +18,7 @@ import {
   render,
   renderOverlay,
   runDiagnostics,
-  runGraphicsTest,
+  runGraphicsBench,
   runQuickTest,
   testVolume,
   toast,
@@ -559,7 +559,7 @@ document.addEventListener('click', ev => {
       uiState.modal = null;
       uiState.mq = [];
       renderOverlay();
-      runGraphicsTest();
+      runGraphicsBench();
       break;
     case 'import-save':
       importSave();
