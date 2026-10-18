@@ -178,6 +178,7 @@ precision highp float;in vec2 vUV;in vec3 vW;out vec4 o;uniform sampler2D uTex;u
 void main(){vec4 c=texture(uTex,vUV);if(c.a<.5)discard;float d=length(vW-uC),fk=1.-exp(-max(0.,d-.3)*.72);o=vec4(mix(c.rgb*.97,uHaze,clamp(fk,0.,.86)),1.);}`,
   ],
 };
+provide({ WORLD_MAP_GL_SHADERS }); /* to-module */
 /* ---------- when it runs ---------- */
 export function worldMapGlWanted() {
   return typeof gpuState !== 'undefined' && !gpuState.fail && !gpuState.lost && webgl2Supported();

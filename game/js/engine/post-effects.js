@@ -154,6 +154,7 @@ void main(){vec2 uv=vUV;/* v32: heat shimmer above hot ground (lava, desert noon
  c*=1.-uVig*pow(length(d*vec2(1.,.85))*1.25,2.6);c+=(h(vUV*1000.+uTime*.001)-.5)*uGrain;/* v34: a fixed half-step dither against banding in sky gradients, fog and dusk light */{vec2 q=floor(gl_FragCoord.xy);float bd=fract(52.9829189*fract(dot(q,vec2(.06711056,.00583715))));c+=(bd-.5)/255.;}o=vec4(c,1.);}`,
   ],
 };
+provide({ POST_EFFECT_SHADERS }); /* to-module */
 /* draws the post chain from scene target S (color + depth) to the screen */
 export function drawPostEffects(S, C, focusDist, rw, rh, o = {}) {
   const gl = gpuState.gl;
