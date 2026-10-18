@@ -1957,7 +1957,7 @@ def studio_round_trip(pw, R):
                 g = ctx.new_page(); g.goto(f'http://localhost:{port}/game/index.html?test=1&scene=pond'); g.wait_for_selector('#walkHero', timeout=240000)
                 ok = False
                 for _ in range(120):
-                    st = g.evaluate("[typeof walkView!=='undefined'&&walkView.id,gameData.scenes.pond.props.length,typeof NW_TEST!=='undefined'&&!!NW_TEST]")
+                    st = g.evaluate("[typeof walkView!=='undefined'&&walkView.id,gameData.scenes.pond.props.length,typeof TEST_RUN!=='undefined'&&!!TEST_RUN]")
                     if st[0] == 'pond' and st[1] == r['n']: ok = True; break
                     time.sleep(.5)
                 saved = g.evaluate("(()=>{try{return localStorage.getItem(SAVE_KEY)}catch(e){return 'x'}})()")

@@ -10,7 +10,6 @@
 import { expose } from './test-globals.js';
 import {
   BUILDING_SHADERS,
-  LD,
   LIFE,
   LIFE_KIND,
   SOLID_PROP_PARTS,
@@ -41,6 +40,7 @@ import {
   lifeSprites,
   lifeStep,
   litWindowFraction,
+  loadingScreen,
   noWebGL,
   paintGroundRect,
   paintGroundTogether,
@@ -5912,7 +5912,7 @@ function townRiseAmount(it) {
     } catch (e) {}
     R.c = c || [walkView.pl.x, walkView.pl.z];
   }
-  const f = typeof LD !== 'undefined' && LD.el ? LD.f : 1,
+  const f = typeof loadingScreen !== 'undefined' && loadingScreen.el ? loadingScreen.f : 1,
     key = it.p || it.f || it,
     d = Math.hypot(it.x - R.c[0], it.z - R.c[1]);
   let t0 = R.seen.get(key);

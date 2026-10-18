@@ -7,7 +7,7 @@
    The Firebase project is set in js/account-config.js; without it there is no sign-in button. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { NW_TEST, closeModal, modal, provide, render, toast } from './hooks.js';
+import { TEST_RUN, closeModal, modal, provide, render, toast } from './hooks.js';
 import {
   ACCOUNT_ID,
   ACCOUNT_KEY,
@@ -68,7 +68,7 @@ const FIREBASE_SDK_URL = 'https://cdn.jsdelivr.net/npm/firebase@10.12.5/';
 function accountOn() {
   return (
     !!(account.cfg && account.cfg.apiKey && account.cfg.projectId) &&
-    !(typeof NW_TEST !== 'undefined' && NW_TEST) &&
+    !(typeof TEST_RUN !== 'undefined' && TEST_RUN) &&
     location.protocol !== 'file:'
   );
 }

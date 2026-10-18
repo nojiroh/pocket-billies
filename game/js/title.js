@@ -6,7 +6,7 @@
    Without the 3D scene the title stands on the painted landscape instead. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { NW_TEST, accountChipHTML, closeModal, mapIdAt, modal, openSettings, postProcess, render } from './hooks.js';
+import { TEST_RUN, accountChipHTML, closeModal, mapIdAt, modal, openSettings, postProcess, render } from './hooks.js';
 import { $, clamp } from './util.js';
 import { LOCATIONS, START_NODE } from './game-data.js';
 import {
@@ -43,7 +43,7 @@ expose({
 /* to-module: end */
 export const TITLE = { on: false, t0: 0, run: 0, mounted: false };
 export function titleWanted() {
-  return !(typeof NW_TEST !== 'undefined' && NW_TEST) && !(saveData.preferences && saveData.preferences.skipTitle);
+  return !(typeof TEST_RUN !== 'undefined' && TEST_RUN) && !(saveData.preferences && saveData.preferences.skipTitle);
 }
 /* the camera: a slow drift along the front of the town, high above the rooftops, looking up the main street */
 function titleFrame() {
