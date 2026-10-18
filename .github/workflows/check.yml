@@ -10,6 +10,7 @@
 #   Phase 04e: the type check (npm run typecheck: TypeScript on the files that start with // @ts-check, then the
 #   logic again with no DOM lib, tsconfig.logic.json; a second).
 #   The logic in plain Node (npm run check:logic: game/js/logic/ loads and runs with no browser, a fraction of a second).
+#   Phase 13: the unit tests (npm test: tools/test/**/*.test.mjs, node --test, a file per process; check:logic runs them).
 # - Phase 03: the picture baseline is made on this runner (the pictures depend on the renderer) and kept as the asset
 #   quick-baseline.zip of the release baseline-<version> (version from game/version.js, e.g. baseline-0.1.0-alpha).
 #   It is made on phase-* tags and by hand (Run workflow with "Make the picture baseline"); every other full run
@@ -95,8 +96,8 @@ jobs:
         run: npm run lint
       - name: Types (the files that start with // @ts-check, against game/types)
         run: npm run typecheck
-      - name: Logic in plain Node (game/js/logic/, no browser)
-        run: npm run check:logic
+      - name: Unit tests (tools/test/, plain Node, no browser)
+        run: npm test
       - name: Game data (files, schemas, references)
         run: npm run check:data
       - name: Modules (generated imports, hooks.js and debug-log-names.js up to date; load order)
