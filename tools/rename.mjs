@@ -48,8 +48,8 @@ const WINDOWS = new Set(['window', 'self', 'globalThis', 'GAME']);
 const BROWSER = new Set([...Object.keys(globals.browser), ...Object.keys(globals.builtin)]);
 const GENERATED = new Set(['game/data/gamedata.js', HOOKS, LOG_NAMES]);
 // history and plans keep the names they were written with
-// (and CLAUDE.md, the owner's instructions, stays as they wrote it)
-const HISTORY = /^(docs\/(HANDOFF\.md|archive\/|phases\/)|CHANGELOG\.md|CLAUDE\.md)/;
+// (and CLAUDE.md, the owner's instructions, stays as they wrote it; docs/NAMING.md lists old names on purpose)
+const HISTORY = /^(docs\/(HANDOFF\.md|NAMING\.md|archive\/|phases\/)|CHANGELOG\.md|CLAUDE\.md)/;
 const TEXT = new Set([
   '.js',
   '.mjs',
