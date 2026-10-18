@@ -1,0 +1,29 @@
+// Phase 04e: the type check (npm run typecheck). TypeScript reads the game's JavaScript as it is: nothing is
+// compiled or emitted, the game and the build don't use TypeScript.
+// - A file is checked only when it starts with // @ts-check (checkJs is off); its types come from JSDoc comments and
+//   from game/types/*.d.ts (the game data, the save, the classic scripts' globals).
+// - Every module is read, so a checked file sees the real types of what it imports. Names imported from
+//   game/js/hooks.js have no type (its slots are filled at run time), so they are not checked.
+// - js/debug-log.js is left out: its top-level debugLog would clash with game/types/globals.d.ts.
+// - After adding // @ts-check to a module, run npm run modules: in a checked file, tools/to-module.mjs marks the
+//   generated setters that replace a function (TypeScript refuses those otherwise).
+{
+  "compilerOptions": {
+    "allowJs": true,
+    "checkJs": false,
+    "noEmit": true,
+    "target": "es2023",
+    "lib": ["es2023", "dom", "dom.iterable"],
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    // null and undefined are checked; a parameter without a JSDoc type is any (for now)
+    "strict": true,
+    "noImplicitAny": false,
+    // check game/types, not TypeScript's own lib files
+    "skipLibCheck": false,
+    "skipDefaultLibCheck": true,
+    "types": []
+  },
+  "include": ["game/js/**/*.js", "game/types/*.d.ts"],
+  "exclude": ["game/js/debug-log.js"]
+}
