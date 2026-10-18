@@ -11,7 +11,7 @@ import {
   audApply,
   audTest,
   closeModal,
-  eng,
+  engineSetting,
   galleryOpen,
   modal,
   openDressing,
@@ -294,7 +294,7 @@ export const GFX_DIALS = [
 export function gfxDial([gk, label, help, cost, min, max, step]) {
   const [g, k] = gk.split('.'),
     own = ((S.preferences.eng || {})[g] || {})[k],
-    v = own != null ? own : eng(g, k);
+    v = own != null ? own : engineSetting(g, k);
   return `<div class="gfx-dial"><div class="gfx-h"><b>${label}</b><span class="gfx-cost c-${cost}">${cost === 'high' ? 'Costs a lot' : cost === 'medium' ? 'Costs some' : 'Costs little'}</span>${own != null ? `<button type="button" class="gfx-reset" data-a="gfx-reset" data-k="${gk}" aria-label="Back to the game’s value">↺</button>` : ''}<button type="button" class="gfx-see" data-a="gfx-see" data-k="${gk}">See it</button></div>
  <input type="range" min="${min}" max="${max}" step="${step}" value="${v}" data-eng="${gk}" aria-label="${esc(label)}"><small>${help}</small></div>`;
 }

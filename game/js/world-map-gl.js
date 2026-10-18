@@ -18,7 +18,7 @@ import { artLoad, artPixels, hexToRgb, makeCanvas, uiIconHTML, worldMapStamp } f
 import { owFrames, portraitHTML } from './person-art.js';
 import { EASE } from './battle-stage.js';
 import { artImage, hash2d, imageReady, mapById, stepRaiseAt, walkData, walkView } from './walk-view.js';
-import { ENG_CTX, eng, engSource } from './engine/settings.js';
+import { ENG_CTX, engSource, engineSetting } from './engine/settings.js';
 import { EGL, eglBindQuad, eglFree, eglImg, eglInit, eglMesh, eglOK, eglPrograms, eglTarget } from './engine/webgl.js';
 import { EGL_POST_SH, eglPost, eglScreenOf } from './engine/post-effects.js';
 import { rawHeightAt, walkRenderer, worldMapTexture } from './walk-view-gl.js';
@@ -620,8 +620,8 @@ export function worldMapGlRender(t) {
   gl.activeTexture(gl.TEXTURE1);
   gl.bindTexture(gl.TEXTURE_2D, HT || EGL.white);
   gl.uniform1i(U2.uHgt, 1);
-  gl.uniform1f(U2.uRelief, HT ? 0.014 * eng('world', 'relief') : 0);
-  gl.uniform3f(U2.uSunL, -0.7, -0.7, 14 * eng('world', 'reliefShade'));
+  gl.uniform1f(U2.uRelief, HT ? 0.014 * engineSetting('world', 'relief') : 0);
+  gl.uniform3f(U2.uSunL, -0.7, -0.7, 14 * engineSetting('world', 'reliefShade'));
   gl.activeTexture(gl.TEXTURE0);
   gl.drawArrays(gl.TRIANGLES, 0, 6);
   gl.depthFunc(gl.LEQUAL);
@@ -727,7 +727,7 @@ function worldMapGlMiniPicture(i) {
 }
 /* the land's height under a point (the same relief the globe shader marches), so a miniature stands on the hills, not inside them */
 function worldMapGlLift(v) {
-  const R = eng('world', 'relief') * 0.014;
+  const R = engineSetting('world', 'relief') * 0.014;
   if (!R) return v;
   if (!worldMapGl.hpix) {
     if (!worldMapGl.hpl) {
@@ -1186,7 +1186,7 @@ precision highp float;in vec3 aPos;in vec3 aUV;uniform mat4 uVP;out vec3 vW;out 
 precision highp float;in vec3 vW;in vec3 vC;out vec4 o;uniform vec3 uC,uHaze;void main(){float d=length(vW-uC),fk=1.-exp(-max(0.,d-.3)*.72);o=vec4(mix(vC,uHaze,clamp(fk,0.,.86)),1.);}`,
 ];
 export function worldMapMinisOn() {
-  return worldMapMinis.on && (eng('world', 'mini3d') ?? true) !== false;
+  return worldMapMinis.on && (engineSetting('world', 'mini3d') ?? true) !== false;
 }
 /* average colours of a picture's upper and lower parts (roof and walls of a building, crown and trunk of a tree) */
 function worldMapMiniColors(im) {

@@ -20,7 +20,7 @@ import {
   walkView,
   walkablePointNear,
 } from './walk-view.js';
-import { eng } from './engine/settings.js';
+import { engineSetting } from './engine/settings.js';
 import { environment, environmentHere, environmentState } from './environment.js';
 import { standingHeightAt, walkRenderer } from './walk-view-gl.js';
 import { endBattle, openBattle, say, setEndBattle, setOpenBattle } from './battle.js';
@@ -593,11 +593,11 @@ document.addEventListener('click', ev => {
   else if (a === 'photoZoom') {
     walkRenderer.zoomT = clamp(
       walkRenderer.zoomT + +el.dataset.d * 0.15,
-      eng('camera', 'zoomMin'),
-      eng('camera', 'zoomMax')
+      engineSetting('camera', 'zoomMin'),
+      engineSetting('camera', 'zoomMax')
     );
   } else if (a === 'photoTurn') {
-    const lim = (eng('camera', 'turn') * Math.PI) / 180;
+    const lim = (engineSetting('camera', 'turn') * Math.PI) / 180;
     walkRenderer.yawT = clamp(walkRenderer.yawT + +el.dataset.d * 0.2, -lim, lim);
   } else if (a === 'photoLabels') {
     if (walkRenderer.ui)

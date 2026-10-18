@@ -37,7 +37,7 @@ import {
   walkData,
   walkView,
 } from './walk-view.js';
-import { eng } from './engine/settings.js';
+import { engineSetting } from './engine/settings.js';
 import { smooth01 } from './engine/webgl.js';
 import { isGroundPrepared, prepareMapGround, walkRenderer } from './walk-view-gl.js';
 import { lifeShift } from './ambient-life.js';
@@ -121,7 +121,8 @@ provide({ seamlessLookTick, seamlessMapById, seamlessNearestRoadPoint });
 /* to-module: end */
 export const seamlessWorld = { cache: new Map(), max: 5, gen: 0, LW: 40, MID: 64, BAND: 12, on: true };
 provide({ seamlessWorld }); /* to-module */
-export const seamlessOn = () => seamlessWorld.on && !(typeof eng === 'function' && eng('world', 'seamless') === false);
+export const seamlessOn = () =>
+  seamlessWorld.on && !(typeof engineSetting === 'function' && engineSetting('world', 'seamless') === false);
 function seamlessRoadLength(steps) {
   return Math.max(24, Math.round((40 * steps) / 500));
 }
@@ -279,7 +280,7 @@ function seamlessMemo(key, fn) {
   return v;
 }
 function seamlessJoin(i) {
-  if (!seamlessOn() || (typeof eng === 'function' && eng('world', 'joined') === false)) return null;
+  if (!seamlessOn() || (typeof engineSetting === 'function' && engineSetting('world', 'joined') === false)) return null;
   return seamlessMemo('join' + i, () => {
     const L = LINKS[i];
     if (!L) return null;
@@ -723,7 +724,9 @@ function seamlessLookMix(A, B, f) {
       : A.tint;
   o.dark = n(A.dark, B.dark, 0);
   o.mist =
-    A.mist == null && B.mist == null ? A.mist : n(A.mist, B.mist, typeof eng === 'function' ? eng('air', 'mist') : 0);
+    A.mist == null && B.mist == null
+      ? A.mist
+      : n(A.mist, B.mist, typeof engineSetting === 'function' ? engineSetting('air', 'mist') : 0);
   o.blur = n(A.blur, B.blur, 1);
   o.wind = n(A.wind, B.wind, 1);
   const ca = A.cam || {},

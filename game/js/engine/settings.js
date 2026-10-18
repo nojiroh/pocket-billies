@@ -14,16 +14,16 @@ expose({
   ENGINE_PRESETS: [() => ENGINE_PRESETS],
   ENGINE_SPEC: [() => ENGINE_SPEC],
   ENG_CTX: [() => ENG_CTX, v => (ENG_CTX = v)],
-  eng: [() => eng, v => ((eng = v), provide({ eng }))],
   engGame: [() => engGame, v => (engGame = v)],
   engHex: [() => engHex, v => (engHex = v)],
   engLook: [() => engLook, v => (engLook = v)],
   engPlayer: [() => engPlayer, v => (engPlayer = v)],
   engSource: [() => engSource, v => setEngSource(v)],
+  engineSetting: [() => engineSetting, v => ((engineSetting = v), provide({ engineSetting }))],
   setEngSource: [() => setEngSource, v => (setEngSource = v)],
 });
 /* eslint-enable no-func-assign */
-provide({ eng });
+provide({ engineSetting });
 /* to-module: end */
 export const ENGINE_DEFAULTS = {
   lens: {
@@ -788,7 +788,7 @@ function engPlayer() {
   const p = typeof S !== 'undefined' && S && S.preferences;
   return p && p.expert && p.eng ? p.eng : null;
 }
-export function eng(group, key) {
+export function engineSetting(group, key) {
   if (ENG_CTX.bypass) return ENGINE_DEFAULTS[group][key];
   const L = engLook(),
     G = engGame(),
@@ -805,7 +805,7 @@ export function eng(group, key) {
   return v;
 }
 export function engHex(group, key, fb) {
-  const v = eng(group, key) || fb;
+  const v = engineSetting(group, key) || fb;
   if (typeof v === 'string' && /^#[0-9a-f]{6}$/i.test(v)) return hexToRgb(v).map(x => x / 255);
   if (Array.isArray(fb)) return fb;
   /* v43: a fallback given as 0..1 numbers is used as it is (it was divided by 255, which left the ambient light at nothing) */ return hexToRgb(

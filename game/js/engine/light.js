@@ -8,7 +8,7 @@ import { expose } from '../test-globals.js';
 import { environment, environmentSun } from '../hooks.js';
 import { clamp } from '../util.js';
 import { walkView } from '../walk-view.js';
-import { ENG_CTX, eng, engHex } from './settings.js';
+import { ENG_CTX, engHex, engineSetting } from './settings.js';
 import { EGL, M4, eglTarget, v3c, v3n } from './webgl.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -26,8 +26,8 @@ expose({
 /* to-module: end */
 export function eglSun(indoor) {
   const deg = Math.PI / 180;
-  let a = eng('sun', 'angle'),
-    h = eng('sun', 'height'),
+  let a = engineSetting('sun', 'angle'),
+    h = engineSetting('sun', 'height'),
     warm = 0,
     col = engHex('sun', 'color', '#FFF0D8');
   /* v26: the time of day and the moon (environment.js), while a walk scene draws */
@@ -36,7 +36,7 @@ export function eglSun(indoor) {
     a = e.a;
     h = e.h;
     col = e.col;
-  } else if (eng('sun', 'clock') && !indoor) {
+  } else if (engineSetting('sun', 'clock') && !indoor) {
     const d = new Date(),
       t = d.getHours() + d.getMinutes() / 60,
       ph = Math.sin(((t - 6) / 24) * Math.PI * 2);
@@ -46,14 +46,16 @@ export function eglSun(indoor) {
   }
   const ch = Math.cos(h * deg),
     toSun = v3n([-Math.cos(a * deg) * ch, Math.sin(h * deg), -Math.sin(a * deg) * ch]);
-  let k = eng('sun', 'strength');
+  let k = engineSetting('sun', 'strength');
   if (warm) col = [col[0], col[1] * (1 - warm * 0.12), col[2] * (1 - warm * 0.3)];
   if (indoor) k *= 0.75;
   return {
     dir: toSun,
     travel: [-toSun[0], -toSun[1], -toSun[2]],
     col: col.map(v => v * k * 0.72),
-    pulse: (0.85 + 0.15 * Math.sin((typeof walkView !== 'undefined' ? walkView.t : 0) / 9000)) * eng('sun', 'innerSun'),
+    pulse:
+      (0.85 + 0.15 * Math.sin((typeof walkView !== 'undefined' ? walkView.t : 0) / 9000)) *
+      engineSetting('sun', 'innerSun'),
     height: h,
     indoor,
   };
@@ -117,20 +119,20 @@ export function eglLightCtx(o) {
     tint = o.tint;
   const shT = engHex('shadows', 'tint', '#40507E'),
     lum = shT[0] * 0.3 + shT[1] * 0.59 + shT[2] * 0.11 || 0.3,
-    hue = eng('shadows', 'hue') ?? 0.6,
+    hue = engineSetting('shadows', 'hue') ?? 0.6,
     shTint = shT.map(v => clamp((v / lum) * (0.35 + 0.5 * hue) + (0.6 - 0.32 * hue), 0, 2)),
     shLift = shT.map(v => (v / lum) * 0.035 * hue);
   const sky = engHex('sun', 'ambientSky', o.ambTop),
     gnd = engHex('sun', 'ambientGround', o.ambBot);
-  const shK = eng('sun', 'shAmbient') ?? 1,
+  const shK = engineSetting('sun', 'shAmbient') ?? 1,
     hor = o.ambHor || sky.map((v, i) => v * 0.85 + gnd[i] * 0.15);
   return {
     eye: o.eye,
     sun: o.sun,
     ambTop: sky,
     ambBot: gnd,
-    ambK: eng('sun', 'ambient'),
-    fogSun: o.indoor ? 0 : (eng('air', 'sunFog') ?? 0.6),
+    ambK: engineSetting('sun', 'ambient'),
+    fogSun: o.indoor ? 0 : (engineSetting('air', 'sunFog') ?? 0.6),
     sh: shK > 0 ? eglSH(sky, hor, gnd, o.sun, o.noSunLobe ? 0 : 1) : null,
     shK,
     fog: hz,
@@ -140,17 +142,20 @@ export function eglLightCtx(o) {
     tintAmt: tint ? (o.indoor ? 0.3 : 0.5) : 0,
     mist: o.mist,
     mistY: o.mistY,
-    valley: o.valley && eng('air', 'valleyMist') > 0 ? [o.valley[0], o.valley[1] * eng('air', 'valleyMist')] : [0, 0],
+    valley:
+      o.valley && engineSetting('air', 'valleyMist') > 0
+        ? [o.valley[0], o.valley[1] * engineSetting('air', 'valleyMist')]
+        : [0, 0],
     time: o.time,
-    shStr: eng('shadows', 'strength'),
-    shSoft: eng('shadows', 'softness'),
+    shStr: engineSetting('shadows', 'strength'),
+    shSoft: engineSetting('shadows', 'softness'),
     shTint,
-    cloudSh: o.indoor ? 0 : eng('sun', 'cloudShadows'),
-    cloudCov: eng('sun', 'clouds') ?? 0.45,
-    cloudSpd: eng('sun', 'cloudSpeed'),
-    contact: eng('shadows', 'contact'),
+    cloudSh: o.indoor ? 0 : engineSetting('sun', 'cloudShadows'),
+    cloudCov: engineSetting('sun', 'clouds') ?? 0.45,
+    cloudSpd: engineSetting('sun', 'cloudSpeed'),
+    contact: engineSetting('shadows', 'contact'),
     shLift,
-    shPx: eng('shadows', 'pixel') ? 16 : 0,
+    shPx: engineSetting('shadows', 'pixel') ? 16 : 0,
     roomB: o.roomB || [0, 0, 0, 0],
     roomDim: o.roomDim || 0,
     shadow: o.shadow || null,
@@ -330,7 +335,7 @@ export function eglShadowBegin(cx, cz, radius, sun, res, name = 'shadow') {
   gl.polygonOffset(1.1, 2);
   /* penumbra in texels per unit of depth gap: wider for a softer (or lower) sun */
   const texelWorld = (2 * radius) / res,
-    pen = (depth * 0.03 * eng('shadows', 'softness')) / texelWorld;
+    pen = (depth * 0.03 * engineSetting('shadows', 'softness')) / texelWorld;
   return { d: S.d, vp, size: res, pen, radius, cx, cz };
 }
 /* v43: a lamp's shadow map: a wide-angled camera at the lamp looking straight down; what stands under the lamp throws

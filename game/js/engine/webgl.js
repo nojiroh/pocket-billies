@@ -9,7 +9,7 @@ import { dioArtVer, onGlContextRestored, provide, walkRenderer } from '../hooks.
 import { clamp } from '../util.js';
 import { makeCanvas } from '../art.js';
 import { imageReady } from '../walk-view.js';
-import { eng } from './settings.js';
+import { engineSetting } from './settings.js';
 /* eslint-disable no-func-assign */
 expose({
   EGL: [() => EGL],
@@ -631,10 +631,10 @@ export function eglImg(im, o = {}) {
 function eglAniso() {
   const gl = EGL.gl,
     n =
-      EGL.aniso && typeof eng === 'function'
+      EGL.aniso && typeof engineSetting === 'function'
         ? Math.min(
             EGL.anisoMax || 1,
-            eng('quality', 'sharpTex') === false
+            engineSetting('quality', 'sharpTex') === false
               ? 1
               : typeof walkRenderer !== 'undefined' && walkRenderer.q >= 3
                 ? 2
@@ -700,7 +700,7 @@ function eglNormWorker() {
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, j.w, j.h, 0, gl.RGBA, gl.UNSIGNED_BYTE, out);
         eglTexParams({ linear: true });
         e.n = t;
-        if (col && e.t && eng('quality', 'edgeBleed') !== false) {
+        if (col && e.t && engineSetting('quality', 'edgeBleed') !== false) {
           gl.bindTexture(gl.TEXTURE_2D, e.t);
           gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, j.w, j.h, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(col.buffer));
           gl.generateMipmap(gl.TEXTURE_2D);
@@ -972,7 +972,7 @@ export function eglFree(m) {
    running average) and the log's slow-frame causes. Off with the "Measure the graphics card" dial. */
 export function eglGpuBegin() {
   const gl = EGL.gl;
-  if (!gl || !(eng('quality', 'gpuTimer') ?? true)) return null;
+  if (!gl || !(engineSetting('quality', 'gpuTimer') ?? true)) return null;
   if (EGL.gpuX === undefined) {
     try {
       EGL.gpuX = gl.getExtension('EXT_disjoint_timer_query_webgl2') || null;

@@ -43,7 +43,7 @@ import {
   walkView,
   worldPatchTilesOn,
 } from './walk-view.js';
-import { eng } from './engine/settings.js';
+import { engineSetting } from './engine/settings.js';
 import { TERRAIN_MATERIALS } from './walk-view-gl.js';
 import { seamlessNearestRoadPoint } from './seamless-world.js';
 /* eslint-disable no-func-assign */
@@ -155,7 +155,10 @@ function paintWorkerOn() {
 }
 function ensurePaintWorker() {
   if (paintWorkerState.w || paintWorkerState.bad) return paintWorkerState.w;
-  if (typeof Worker === 'undefined' || (typeof eng === 'function' && eng('quality', 'paintWorker') === false)) {
+  if (
+    typeof Worker === 'undefined' ||
+    (typeof engineSetting === 'function' && engineSetting('quality', 'paintWorker') === false)
+  ) {
     paintWorkerState.bad = true;
     paintWorkerState.why = typeof Worker === 'undefined' ? 'no workers here' : 'turned off';
     return null;

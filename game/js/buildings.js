@@ -16,7 +16,7 @@ import { expose } from './test-globals.js';
 import { dioArtVer, provide } from './hooks.js';
 import { hexToRgb, makeCanvas } from './art.js';
 import { artImage, hash2d, walkData, walkView } from './walk-view.js';
-import { ENG_CTX, eng } from './engine/settings.js';
+import { ENG_CTX, engineSetting } from './engine/settings.js';
 import {
   EGL,
   EGL_GLSL_COMMON,
@@ -135,7 +135,7 @@ const buildingSignature = B =>
     B.chimney && [B.chimney.x, B.chimney.top, B.chimney.w, B.chimney.lean || 0],
     B.base && [B.base.col, B.base.h],
   ].join('|');
-const buildingsOn = () => !buildingState.fail && eng('world', 'buildings3d') !== false;
+const buildingsOn = () => !buildingState.fail && engineSetting('world', 'buildings3d') !== false;
 provide({ buildingsOn }); /* to-module */
 /* if this device can't build or draw the models, the pictures stand in from then on (and the debug log says why) */
 export function buildingGuard(fn) {
@@ -1592,8 +1592,11 @@ function drawBuildingsUnguarded(C, X, items, fades) {
     p.U.uDay,
     sc.indoor ? 0.7 : 1 - 0.8 * (dark ? 1 : typeof environment !== 'undefined' && ENG_CTX.env ? environment.night : 0)
   );
-  gl.uniform1f(p.U.uNight, (dark ? 1 : eng('lights', 'windowsDay') * 2.2) * eng('lights', 'brightness'));
-  gl.uniform1f(p.U.uInt, eng('world', 'interiors') === false ? 0 : 1);
+  gl.uniform1f(
+    p.U.uNight,
+    (dark ? 1 : engineSetting('lights', 'windowsDay') * 2.2) * engineSetting('lights', 'brightness')
+  );
+  gl.uniform1f(p.U.uInt, engineSetting('world', 'interiors') === false ? 0 : 1);
   if (p.U.uLitF)
     gl.uniform1f(
       p.U.uLitF,

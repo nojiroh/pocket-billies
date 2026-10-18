@@ -10,7 +10,7 @@ import { RM, provide } from '../hooks.js';
 import { clamp } from '../util.js';
 import { makeCanvas } from '../art.js';
 import { walkView } from '../walk-view.js';
-import { eng, engHex } from './settings.js';
+import { engHex, engineSetting } from './settings.js';
 import { EGL, EGL_GLSL_LIGHT, eglBindQuad, eglPrograms, eglTarget } from './webgl.js';
 import { eglLightU } from './light.js';
 /* eslint-disable no-func-assign */
@@ -176,7 +176,7 @@ export function eglPost(S, C, focusDist, rw, rh, o = {}) {
       gl.uniform1i(U[name], unit);
     };
   /* depth of field */
-  const blur = (o.blur ?? 1) * eng('lens', 'blur'),
+  const blur = (o.blur ?? 1) * engineSetting('lens', 'blur'),
     dofOn = blur > 0.01 && !o.noDof,
     D = eglTarget('dof', hw, hh, { hdr: true });
   if (dofOn) {
@@ -187,16 +187,16 @@ export function eglPost(S, C, focusDist, rw, rh, o = {}) {
     gl.uniform1f(U.uN, C.near);
     gl.uniform1f(U.uF, C.far);
     gl.uniform1f(U.uFocus, focusDist);
-    gl.uniform1f(U.uBand, C.df * eng('lens', 'focusBand'));
-    gl.uniform1f(U.uRampF, C.df * eng('lens', 'blurFar'));
-    gl.uniform1f(U.uRampN, C.df * eng('lens', 'blurNear'));
+    gl.uniform1f(U.uBand, C.df * engineSetting('lens', 'focusBand'));
+    gl.uniform1f(U.uRampF, C.df * engineSetting('lens', 'blurFar'));
+    gl.uniform1f(U.uRampN, C.df * engineSetting('lens', 'blurNear'));
     gl.uniform1f(U.uMaxR, Math.max(3, hh / 70) * blur);
-    gl.uniform1f(U.uBokeh, eng('lens', 'bokeh'));
+    gl.uniform1f(U.uBokeh, engineSetting('lens', 'bokeh'));
     gl.uniform1i(U.uTaps, o.fast ? 14 : 28);
     gl.drawArrays(gl.TRIANGLES, 0, 6);
   }
   /* bloom: bright pass at half size, down to 1/16, back up */
-  const bk = eng('color', 'bloom') * (o.bloom ?? 1),
+  const bk = engineSetting('color', 'bloom') * (o.bloom ?? 1),
     chain = [];
   let src = S.c,
     w = hw,
@@ -205,7 +205,7 @@ export function eglPost(S, C, focusDist, rw, rh, o = {}) {
     let U = use('bright', eglTarget('b0', w, h, { hdr: true }), w, h);
     tex(U, 'uCol', 0, S.c);
     gl.uniform2f(U.uPx, 1 / rw, 1 / rh);
-    gl.uniform1f(U.uT, eng('color', 'bloomThreshold'));
+    gl.uniform1f(U.uT, engineSetting('color', 'bloomThreshold'));
     gl.drawArrays(gl.TRIANGLES, 0, 6);
     chain.push(EGL.fb.b0);
     for (let i = 1; i < (o.bloomN || 5); i++) {
@@ -227,13 +227,13 @@ export function eglPost(S, C, focusDist, rw, rh, o = {}) {
         U2 = use('up', F, F.w, F.h);
       tex(U2, 'uCol', 0, chain[i].c);
       gl.uniform2f(U2.uPx, 1 / chain[i].w, 1 / chain[i].h);
-      gl.uniform1f(U2.uR, eng('color', 'bloomSize'));
+      gl.uniform1f(U2.uR, engineSetting('color', 'bloomSize'));
       gl.drawArrays(gl.TRIANGLES, 0, 6);
     }
     gl.disable(gl.BLEND);
   }
   /* ambient occlusion from the depth buffer: dark creases where things meet */
-  const aoK = o.noAO ? 0 : eng('shadows', 'ao');
+  const aoK = o.noAO ? 0 : engineSetting('shadows', 'ao');
   let AO = null;
   if (aoK > 0.01) {
     AO = eglTarget('ao', hw, hh);
@@ -242,14 +242,14 @@ export function eglPost(S, C, focusDist, rw, rh, o = {}) {
     gl.uniform2f(U.uPx, 1 / hw, 1 / hh);
     gl.uniform1f(U.uN, C.near);
     gl.uniform1f(U.uF, C.far);
-    gl.uniform1f(U.uR, eng('shadows', 'aoRadius'));
+    gl.uniform1f(U.uR, engineSetting('shadows', 'aoRadius'));
     gl.uniform1f(U.uFoc, (C.F || hh) * 0.5);
-    gl.uniform1f(U.uRange, Math.max(0.3, eng('shadows', 'aoRadius') * 1.6));
-    gl.uniform1f(U.uKind, (eng('shadows', 'aoKind') || 'horizon') === 'horizon' ? 1 : 0);
+    gl.uniform1f(U.uRange, Math.max(0.3, engineSetting('shadows', 'aoRadius') * 1.6));
+    gl.uniform1f(U.uKind, (engineSetting('shadows', 'aoKind') || 'horizon') === 'horizon' ? 1 : 0);
     gl.drawArrays(gl.TRIANGLES, 0, 6);
   }
   /* light shafts: the sky and the brightest spots smeared toward the sun's place on screen */
-  const rk = o.sun && !o.noRays ? eng('sun', 'shafts') * (o.sun[2] ?? 1) : 0;
+  const rk = o.sun && !o.noRays ? engineSetting('sun', 'shafts') * (o.sun[2] ?? 1) : 0;
   let RY = null;
   if (rk > 0.01) {
     const qw = Math.max(16, hw >> 1),
@@ -259,15 +259,15 @@ export function eglPost(S, C, focusDist, rw, rh, o = {}) {
     tex(U, 'uCol', 0, S.c);
     tex(U, 'uDep', 1, S.d);
     gl.uniform2f(U.uSun, o.sun[0], o.sun[1]);
-    gl.uniform1f(U.uLen, eng('sun', 'shaftLength'));
+    gl.uniform1f(U.uLen, engineSetting('sun', 'shaftLength'));
     gl.uniform1f(U.uVirt, o.sun[3] ? 1 : 0);
     gl.uniform1f(U.uAsp, rw / rh);
     gl.drawArrays(gl.TRIANGLES, 0, 6);
   }
   /* v43: god rays and lamps in the air: a march through the sun's shadow maps at quarter size, then softened */
   const X = o.X,
-    gk = X && !o.noVol ? (eng('air', 'godRays') ?? 0.6) * (X.sun && X.sun.indoor ? 0 : 1) : 0,
-    lk = X && !o.noVol ? (eng('air', 'lightsInAir') ?? 0.7) : 0;
+    gk = X && !o.noVol ? (engineSetting('air', 'godRays') ?? 0.6) * (X.sun && X.sun.indoor ? 0 : 1) : 0,
+    lk = X && !o.noVol ? (engineSetting('air', 'lightsInAir') ?? 0.7) : 0;
   let VO = null;
   if (X && (gk > 0.01 || lk > 0.01) && X.shadow) {
     const qw = Math.max(16, hw >> 1),
@@ -299,26 +299,26 @@ export function eglPost(S, C, focusDist, rw, rh, o = {}) {
   gl.uniform2f(U.uPx, 1 / rw, 1 / rh);
   gl.uniform1f(U.uDofOn, dofOn ? 1 : 0);
   gl.uniform1f(U.uBloomK, bk > 0.01 ? bk * 0.6 : 0);
-  gl.uniform1f(U.uExp, eng('color', 'exposure'));
+  gl.uniform1f(U.uExp, engineSetting('color', 'exposure'));
   if (U.uTone) {
-    const tm = eng('color', 'tone') || 'soft';
+    const tm = engineSetting('color', 'tone') || 'soft';
     gl.uniform1f(U.uTone, tm === 'film' ? 1 : tm === 'punchy' ? 2 : 0);
-    gl.uniform1f(U.uHeat, RM ? 0 : (o.heat || 0) * (eng('air', 'heat') ?? 1));
+    gl.uniform1f(U.uHeat, RM ? 0 : (o.heat || 0) * (engineSetting('air', 'heat') ?? 1));
   }
   if (U.uHeatN) {
     const hs = RM ? null : o.heatS;
     gl.uniform1f(U.uHeatN, hs ? hs.length / 4 : 0);
     if (hs && hs.length) gl.uniform4fv(U.uHeatS, hs);
   }
-  gl.uniform1f(U.uShoulder, eng('color', 'shoulder'));
+  gl.uniform1f(U.uShoulder, engineSetting('color', 'shoulder'));
   const MO = o.mood;
-  gl.uniform1f(U.uCon, eng('color', 'contrast') * (MO ? MO.con : 1));
-  gl.uniform1f(U.uSat, eng('color', 'saturation') * (MO ? MO.sat : 1));
-  gl.uniform1f(U.uWarm, eng('color', 'warmth') + (MO ? MO.warm : 0));
-  gl.uniform1f(U.uVig, eng('lens', 'vignette'));
-  gl.uniform1f(U.uCA, eng('lens', 'aberration'));
-  gl.uniform1f(U.uGrain, RM ? 0 : eng('lens', 'grain'));
-  gl.uniform1f(U.uSharp, eng('lens', 'sharpen'));
+  gl.uniform1f(U.uCon, engineSetting('color', 'contrast') * (MO ? MO.con : 1));
+  gl.uniform1f(U.uSat, engineSetting('color', 'saturation') * (MO ? MO.sat : 1));
+  gl.uniform1f(U.uWarm, engineSetting('color', 'warmth') + (MO ? MO.warm : 0));
+  gl.uniform1f(U.uVig, engineSetting('lens', 'vignette'));
+  gl.uniform1f(U.uCA, engineSetting('lens', 'aberration'));
+  gl.uniform1f(U.uGrain, RM ? 0 : engineSetting('lens', 'grain'));
+  gl.uniform1f(U.uSharp, engineSetting('lens', 'sharpen'));
   gl.uniform1f(U.uTime, typeof walkView !== 'undefined' ? walkView.t : 0);
   tex(U, 'uVol', 12, VO ? VO.c : EGL.white);
   gl.bindSampler(12, null);
@@ -328,10 +328,10 @@ export function eglPost(S, C, focusDist, rw, rh, o = {}) {
     tex(U, 'uDep', 5, S.d);
     gl.uniform1f(U.uNear, C.near);
     gl.uniform1f(U.uFar, C.far);
-    gl.uniform1f(U.uInk, eng('color', 'ink') ?? 0.35);
+    gl.uniform1f(U.uInk, engineSetting('color', 'ink') ?? 0.35);
     const sp = o.sun;
     gl.uniform3f(U.uSunP, sp ? sp[0] : 0, sp ? sp[1] : 0, sp ? sp[2] * (sp[3] ? -1 : 1) : 0);
-    gl.uniform1f(U.uGlare, !sp ? 0 : (eng('sun', 'glare') ?? 0.6));
+    gl.uniform1f(U.uGlare, !sp ? 0 : (engineSetting('sun', 'glare') ?? 0.6));
   }
   gl.uniform1f(U.uAOK, AO ? aoK : 0);
   tex(U, 'uRays', 4, RY ? RY.c : EGL.white);
@@ -433,8 +433,8 @@ const EGL_GRADES = {
   },
 };
 function eglGrade() {
-  const g = EGL_GRADES[eng('color', 'grade')] || EGL_GRADES.none,
-    k = clamp(eng('color', 'gradeAmount'), 0, 1.5),
+  const g = EGL_GRADES[engineSetting('color', 'grade')] || EGL_GRADES.none,
+    k = clamp(engineSetting('color', 'gradeAmount'), 0, 1.5),
     m = (v, d) => (v || [d, d, d]).map(x => d + (x - d) * k);
   return { lift: m(g.lift, 0), gamma: m(g.gamma, 1), gain: m(g.gain, 1), sh: m(g.sh, 0), hi: m(g.hi, 0) };
 }

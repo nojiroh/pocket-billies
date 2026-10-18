@@ -12,7 +12,7 @@ import {
   ENGINE_PRESETS,
   ENGINE_SPEC,
   ENG_CTX,
-  eng,
+  engineSetting,
   setEngSource,
 } from '../../game/js/engine/settings.js';
 import { EGL, eglOK } from '../../game/js/engine/webgl.js';
@@ -223,7 +223,7 @@ async function engMount() {
       return;
     }
     const fps = walkRenderer.int ? Math.round(1000 / walkRenderer.int) : 0;
-    m.innerHTML = `<b>${fps}</b> fps · <b>${(walkView.slow || 0).toFixed(1)}</b> ms of work per frame · resolution <b>${Math.round((walkView.R || 1) * eng('quality', 'resolution') * 100)}%</b>${EGL.hdr ? '' : ' · no HDR on this GPU'}`;
+    m.innerHTML = `<b>${fps}</b> fps · <b>${(walkView.slow || 0).toFixed(1)}</b> ms of work per frame · resolution <b>${Math.round((walkView.R || 1) * engineSetting('quality', 'resolution') * 100)}%</b>${EGL.hdr ? '' : ' · no HDR on this GPU'}`;
   }, 500);
 }
 /* edits */

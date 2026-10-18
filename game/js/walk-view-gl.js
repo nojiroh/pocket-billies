@@ -136,7 +136,7 @@ import {
   walkablePointNear,
   worldToScreen,
 } from './walk-view.js';
-import { ENG_CTX, eng, engHex } from './engine/settings.js';
+import { ENG_CTX, engHex, engineSetting } from './engine/settings.js';
 import {
   EGL,
   EGL_GLSL_COMMON,
@@ -904,7 +904,7 @@ function screenRay(C, sx, sy) {
 }
 export function worldCurveArgs() {
   const sc = walkView.sc;
-  return [sc.w / 2, sc.h / 2, eng('world', 'curve'), Math.max(sc.w, sc.h) * 0.55 + 4];
+  return [sc.w / 2, sc.h / 2, engineSetting('world', 'curve'), Math.max(sc.w, sc.h) * 0.55 + 4];
 }
 export function worldCurveDrop(x, z) {
   const sc = walkView.sc;
@@ -916,8 +916,11 @@ export function worldCurveDrop(x, z) {
 /* ---------- input: taps (focus follows them), two-finger turn and pinch, Ctrl+wheel zoom, Q/E/R, phone tilt ---------- */
 /* alpha 0.4.1: a preview that asks for a free camera (the Studio's) turns all the way round, zooms further and zooms with the plain wheel */
 const freeCameraOn = () => !!(walkView.opt && walkView.opt.freeCam),
-  cameraTurnLimit = () => (freeCameraOn() ? Math.PI : (eng('camera', 'turn') * Math.PI) / 180),
-  clampZoom = v => (freeCameraOn() ? clamp(v, 0.3, 3.2) : clamp(v, eng('camera', 'zoomMin'), eng('camera', 'zoomMax')));
+  cameraTurnLimit = () => (freeCameraOn() ? Math.PI : (engineSetting('camera', 'turn') * Math.PI) / 180),
+  clampZoom = v =>
+    freeCameraOn()
+      ? clamp(v, 0.3, 3.2)
+      : clamp(v, engineSetting('camera', 'zoomMin'), engineSetting('camera', 'zoomMax'));
 function handleCanvasClick(ev) {
   if (walkView.battle || walkView.director || !walkView.ready || (walkView.opt.active && !walkView.opt.active()))
     return;
@@ -1334,7 +1337,7 @@ function* buildGroundSteps(sc, G, T) {
         if (water(x + a, z + b)) n++;
       return h - n * 0.12;
     };
-  const hk = eng('world', 'farHills'),
+  const hk = engineSetting('world', 'farHills'),
     farH = (x, z) => {
       const dx = Math.max(0, -x, x - W),
         dz = Math.max(0, -z, z - H),
@@ -2393,7 +2396,7 @@ function groundCacheKey(id, sc, gkey) {
     '|' +
     JSON.stringify(sc.waters || 0) +
     (sc.waterKind || '') +
-    (eng('water', 'kinds') ? 1 : 0) +
+    (engineSetting('water', 'kinds') ? 1 : 0) +
     (sc.flatFar ? 'F' : '') +
     (sc.ride ? 'R' : '')
   );
@@ -2473,7 +2476,7 @@ function groundPrepWork(budget) {
         walkRenderer.prep = null;
         J.ms += performance.now() - t0;
         const M = walkRenderer.sceneCache || (walkRenderer.sceneCache = new Map()),
-          keep = eng('quality', 'keepScenes') ?? 3;
+          keep = engineSetting('quality', 'keepScenes') ?? 3;
         M.delete(J.hk);
         M.set(J.hk, J.T);
         for (const k of [...M.keys()]) {
@@ -2656,7 +2659,7 @@ export function groundOcclusion(sc) {
     walkRenderer.gaoTex = null;
   }
   walkRenderer.gaoJob = null;
-  if ((eng('shadows', 'groundAO') ?? 1) <= 0) return;
+  if ((engineSetting('shadows', 'groundAO') ?? 1) <= 0) return;
   walkRenderer.gaoJob = { sc, it: groundOcclusionSteps(sc) };
 }
 function groundOcclusionWork(budget = 4) {
@@ -2797,7 +2800,7 @@ function shoreField(sc, isW, T = walkRenderer) {
       for (let j = tj * R; j < tj * R + R; j++) m.fill(1, j * FW + ti * R, j * FW + ti * R + R);
     }
   T.shoreF = null;
-  if (!any || !(eng('water', 'shore') ?? true)) {
+  if (!any || !(engineSetting('water', 'shore') ?? true)) {
     if (T.shoreTex) {
       gl.deleteTexture(T.shoreTex);
       T.shoreTex = null;
@@ -2867,7 +2870,7 @@ function shoreAt(x, z) {
   return F.d[j * F.FW + i] / 255;
 }
 function waterKindLookup(sc) {
-  if (!eng('water', 'kinds')) return () => 0;
+  if (!engineSetting('water', 'kinds')) return () => 0;
   const R = sc.waters || [],
     def = WATER_KIND_INDEX[sc.waterKind] ?? (sc.indoor && sc.far === 'cave' ? 3 : sc.far === 'town' ? 2 : 0);
   return (x, z, run) => {
@@ -3110,11 +3113,11 @@ export function buildGrass() {
   }
   walkRenderer.grass = null;
   walkRenderer.grassJob = null;
-  walkRenderer.grassKey = eng('grass', 'density');
+  walkRenderer.grassKey = engineSetting('grass', 'density');
   if (sc.indoor && !sc.grass) return;
   /* alpha 0.4: the blades go straight into a growing Float32Array (8 numbers each) instead of a plain array of numbers:
     planting a big place made several MB of garbage, and a phone's clean-up of it was the worst hitch on arrival */
-  const dk = eng('grass', 'density'),
+  const dk = engineSetting('grass', 'density'),
     rnd = (a, b) => hash2d(a * 7 + 3, b * 13 + 5),
     dens = { t: 30, g: 4, G: 7, f: 5, l: 3, y: 2, C: 5, H: 6, R: 9, M: 1, L: 1, B: 6, E: 7, F: 1 };
   navGrid();
@@ -3319,7 +3322,7 @@ function buildFarProps() {
   const sc = walkView.sc,
     C0 = walkData().sc,
     pool = [],
-    count = Math.round(eng('world', 'farProps'));
+    count = Math.round(engineSetting('world', 'farProps'));
   walkRenderer.farKey = walkView.id + '|' + count;
   for (const p of sc.props || []) {
     const M = C0.props[p.k];
@@ -3376,17 +3379,17 @@ function walkCamera(rw, rh, st, dt) {
   walkRenderer.px = P.x;
   walkRenderer.pz = P.z;
   const sp = Math.hypot(vx, vz) / Math.max(dt, 1e-3),
-    ld = P.walk && sp < 12 ? eng('camera', 'lead') : 0,
+    ld = P.walk && sp < 12 ? engineSetting('camera', 'lead') : 0,
     vl = Math.max(1e-4, Math.hypot(vx, vz));
   walkRenderer.lead[0] += ((ld ? (vx / vl) * ld : 0) - walkRenderer.lead[0]) * Math.min(1, dt * 1.6);
   walkRenderer.lead[1] += ((ld ? (vz / vl) * ld : 0) - walkRenderer.lead[1]) * Math.min(1, dt * 1.6);
-  const tk = eng('camera', 'tilt'),
+  const tk = engineSetting('camera', 'tilt'),
     tilt = [
       (walkRenderer.tiltX + (walkRenderer.mouse ? walkRenderer.mouse[0] * 0.35 : 0)) * tk,
       (walkRenderer.tiltY + (walkRenderer.mouse ? walkRenderer.mouse[1] * 0.25 : 0)) * tk,
     ];
-  const pitch0 = eng('camera', 'pitch') ?? (c.pitch || 34) + eng('camera', 'pitchAdd'),
-    h0 = (eng('camera', 'height') ?? (c.h || 9)) * eng('camera', 'distance');
+  const pitch0 = engineSetting('camera', 'pitch') ?? (c.pitch || 34) + engineSetting('camera', 'pitchAdd'),
+    h0 = (engineSetting('camera', 'height') ?? (c.h || 9)) * engineSetting('camera', 'distance');
   const hb = groundHeightAt(P.x, Math.min(sc.h - 0.5, P.z + 3.5)) - groundHeightAt(P.x, P.z);
   walkRenderer.upT =
     (walkRenderer.upT || 0) + (clamp((hb - 0.8) * 3.2, 0, 9) - (walkRenderer.upT || 0)) * Math.min(1, dt * 2);
@@ -3406,7 +3409,7 @@ function walkCamera(rw, rh, st, dt) {
       ((pe + (walkRenderer.zoom - 1) * 14 - tilt[1] * 3 + walkRenderer.upT - walkRenderer.lmT) * Math.PI) / 180,
     yaw = walkRenderer.yaw + tilt[0] * 0.07;
   let df = (he / Math.sin(((pe - (sc.indoor ? 12 : 0)) * Math.PI) / 180)) * walkRenderer.zoom;
-  const visW = Math.min(sc.w * 0.95, Math.max(11, (rw / rh) * 15)) / ((c.fov || 1) * eng('camera', 'fov')),
+  const visW = Math.min(sc.w * 0.95, Math.max(11, (rw / rh) * 15)) / ((c.fov || 1) * engineSetting('camera', 'fov')),
     half = visW / 2;
   let tx = P.x + walkRenderer.lead[0],
     tz = P.z + walkRenderer.lead[1];
@@ -3438,12 +3441,12 @@ function walkCamera(rw, rh, st, dt) {
       room = T[1] + 1.2;
     if (back > room) df = Math.max(4, room / Math.cos(pitch));
   }
-  const bob = P.walk && !RM ? Math.sin(walkView.t / 170) * 0.025 * eng('camera', 'sway') : 0,
+  const bob = P.walk && !RM ? Math.sin(walkView.t / 170) * 0.025 * engineSetting('camera', 'sway') : 0,
     f = [Math.sin(yaw) * Math.cos(pitch), -Math.sin(pitch), Math.cos(yaw) * Math.cos(pitch)];
   let tgt = [T[0], T[2] + bob, T[1]];
   /* v35: pixel-grid camera (Engine > Camera > Pixel grid, off until the new art): when you stand still the camera
     target settles onto the art grid (1/32 m), so still pictures sit on whole pixels and don't shimmer */
-  if (eng('camera', 'pixelGrid') && !P.walk && !P.route && !st.focus && !walkRenderer.swoop && !RM) {
+  if (engineSetting('camera', 'pixelGrid') && !P.walk && !P.route && !st.focus && !walkRenderer.swoop && !RM) {
     const g = 1 / 32,
       sn = v => Math.round(v / g) * g,
       dx = sn(tgt[0]) - tgt[0],
@@ -3590,7 +3593,7 @@ function drawWalkFrame(ts, dtm) {
   const cssW = cv.clientWidth,
     cssH = cv.clientHeight;
   if (!cssW || !cssH) return;
-  const R0 = Math.min(devicePixelRatio || 1, 1.75) * eng('quality', 'resolution'),
+  const R0 = Math.min(devicePixelRatio || 1, 1.75) * engineSetting('quality', 'resolution'),
     R = R0 * Math.min(1, Math.sqrt(1.6e6 / (cssW * cssH * R0 * R0))) * walkView.R,
     rw = Math.max(64, Math.min(2400, Math.round(cssW * R))),
     rh = Math.max(64, Math.round((cssH * rw) / cssW));
@@ -3636,9 +3639,9 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
     swapMapCache(old, hk);
   }
   navGrid();
-  if (walkRenderer.grassKey !== eng('grass', 'density')) buildGrass();
+  if (walkRenderer.grassKey !== engineSetting('grass', 'density')) buildGrass();
   else grassWork(4);
-  if (walkRenderer.farKey !== walkView.id + '|' + Math.round(eng('world', 'farProps'))) buildFarProps();
+  if (walkRenderer.farKey !== walkView.id + '|' + Math.round(engineSetting('world', 'farProps'))) buildFarProps();
   /* a battle (battle-3d.js) borrows the scene: its own camera, the fighters as lit sprites, props in the way hidden */
   const BT =
     (walkView.battle && walkView.battle.frame ? walkView.battle.frame() : null) ||
@@ -3681,7 +3684,7 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
     lk = ENG_CTX.env && !sc.indoor ? environment.lampK : 0,
     dark = Math.max(dark0, lk > 0.4 ? lk : 0);
   /* shadow map (every other frame when the device is struggling) */
-  const QE = Math.max(walkRenderer.q || 0, BT && (eng('quality', 'battleLite') ?? true) ? 2 : 0);
+  const QE = Math.max(walkRenderer.q || 0, BT && (engineSetting('quality', 'battleLite') ?? true) ? 2 : 0);
   walkRenderer.qe = QE;
   let shadow = walkRenderer.lastShadow || null;
   if (!((walkView.R < 0.7 || QE >= 2) && walkRenderer.frames % 2 && shadow)) {
@@ -3862,7 +3865,7 @@ export function rebuildFromSettings() {
 function swapMapCache(oldKey, key) {
   walkRenderer.swapT = performance.now();
   const M = walkRenderer.sceneCache || (walkRenderer.sceneCache = new Map()),
-    keep = eng('quality', 'keepScenes') ?? 3;
+    keep = engineSetting('quality', 'keepScenes') ?? 3;
   if (oldKey && walkRenderer.mesh && keep > 0) {
     const e = {};
     for (const k of MAP_CACHE_KEYS) {
@@ -3883,7 +3886,7 @@ function swapMapCache(oldKey, key) {
   }
   const hit = M.get(key);
   if (walkRenderer.prep && walkRenderer.prep.hk === key) abortGroundPrep(); /* v46: about to build it anyway */
-  if (hit && (hit.prepared || hit.grassKey === eng('grass', 'density'))) {
+  if (hit && (hit.prepared || hit.grassKey === engineSetting('grass', 'density'))) {
     M.delete(key);
     for (const k of MAP_CACHE_KEYS) walkRenderer[k] = hit[k];
     walkRenderer.rings = [];
@@ -3963,7 +3966,7 @@ function cullItems(items, C) {
   const F = computeFrustum(C.vp);
   let n = 0,
     k = 0;
-  const on = eng('quality', 'cull') ?? true;
+  const on = engineSetting('quality', 'cull') ?? true;
   for (const it of items) {
     if (!on || it.person || it.k === 'enc' || it.k === 'enc2') {
       it.vis = true;
@@ -3994,10 +3997,10 @@ export function frameBudgetLeft() {
    about two seconds when you walk from one place into the next, and is off with the setting off */
 const NEUTRAL_MOOD = { sat: 1, con: 1, warm: 0, lift: [0, 0, 0], gain: [0, 0, 0], sh: [0, 0, 0], hi: [0, 0, 0] };
 function easedMood(sc) {
-  const on = (eng('world', 'moods') ?? 1) > 0,
+  const on = (engineSetting('world', 'moods') ?? 1) > 0,
     Mo = (typeof GD !== 'undefined' && GD.moods) || {},
     T0 = on && sc ? Mo[sc.mood || mapMoodName(sc)] : null,
-    k = eng('world', 'moods') ?? 1;
+    k = engineSetting('world', 'moods') ?? 1;
   const T = Object.assign({}, NEUTRAL_MOOD);
   if (T0)
     for (const f of ['sat', 'con', 'warm']) if (T0[f] != null) T[f] = f === 'warm' ? T0[f] * k : 1 + (T0[f] - 1) * k;
@@ -4048,7 +4051,7 @@ function heatHaze(sc) {
    light shafts, no grass far away; 4: no depth of field); only then the resolution drops. With room to spare it climbs
    back: resolution first, then the extras. Frames held back on purpose (a window open, another screen) don't count. */
 export function adaptQuality(dtm, work) {
-  if (!eng('quality', 'auto')) {
+  if (!engineSetting('quality', 'auto')) {
     walkView.R = 1;
     walkRenderer.q = 0;
     return;
@@ -4139,7 +4142,7 @@ export function foliageAmount(it) {
    a quarter of gathering the frame's items in a big place; the slope across the view again only when the camera turns */
 const SLOPE_HUG_CACHE = new WeakMap();
 function hugSlope(it, C) {
-  if (!it || it.bld3 || it.flat || !eng('world', 'hugSlopes')) return;
+  if (!it || it.bld3 || it.flat || !engineSetting('world', 'hugSlopes')) return;
   const M = it.M,
     p = it.p;
   if (M._hugK !== p.k) {
@@ -4345,7 +4348,14 @@ const ALTERNATE_PROPS = { stump: ['stump_mossy'], log: ['log_mossy'] };
 provide({ ALTERNATE_PROPS }); /* to-module */
 function alternatePropImage(p, M, C0, sc) {
   const L = ALTERNATE_PROPS[p.k];
-  if (!L || p.v || p.plain || p.alt === 0 || !((eng('world', 'variety') ?? 1) > 0) || (sc && sc.variety === 0))
+  if (
+    !L ||
+    p.v ||
+    p.plain ||
+    p.alt === 0 ||
+    !((engineSetting('world', 'variety') ?? 1) > 0) ||
+    (sc && sc.variety === 0)
+  )
     return M.img;
   const h = hash2d(Math.round(p.x * 23) + 5, Math.round(p.z * 19) + 11);
   if (h > 0.38) return M.img;
@@ -4445,11 +4455,11 @@ function propLookSettings(sc) {
   walkRenderer._lsF = walkRenderer.frames;
   walkRenderer._lsSc = sc;
   return (walkRenderer._ls =
-    (eng('world', 'variety') ?? 1) +
+    (engineSetting('world', 'variety') ?? 1) +
     ',' +
-    (eng('world', 'wear') ?? 1) +
+    (engineSetting('world', 'wear') ?? 1) +
     ',' +
-    (eng('world', 'propTurn') ?? 1) +
+    (engineSetting('world', 'propTurn') ?? 1) +
     ',' +
     (sc.variety ?? 1) +
     ',' +
@@ -4481,7 +4491,11 @@ function propLook(p, M, sc) {
   return L0;
 }
 function computePropLook(p, M, sc) {
-  const E = [eng('world', 'variety') ?? 1, eng('world', 'wear') ?? 1, eng('world', 'propTurn') ?? 1],
+  const E = [
+      engineSetting('world', 'variety') ?? 1,
+      engineSetting('world', 'wear') ?? 1,
+      engineSetting('world', 'propTurn') ?? 1,
+    ],
     key =
       p.k +
       '|' +
@@ -4562,8 +4576,8 @@ const BOBBING_PROPS = /sailboat|rowboat|buoy/,
 /* v43: one wind for every plant: a slow lean that drifts across the scene, a faster flutter, and the gust bands
    (eglWind) that travel over the grass; the result is a lean of the top of the sprite as a fraction of its height */
 export function windLeanAt(x, z, t, sc, wind) {
-  const k = (sc.wind || 1) * (wind == null ? eng('grass', 'wind') : wind);
-  return eglWindBend(x, z, t, eng('grass', 'gusts')) * k;
+  const k = (sc.wind || 1) * (wind == null ? engineSetting('grass', 'wind') : wind);
+  return eglWindBend(x, z, t, engineSetting('grass', 'gusts')) * k;
 }
 export function gatherFrameItems(st, C, PPU, C0) {
   const sc = walkView.sc,
@@ -4572,7 +4586,7 @@ export function gatherFrameItems(st, C, PPU, C0) {
     out = [],
     hub = mapHub(sc),
     tg = tallGrassProps(C0),
-    wind = eng('grass', 'wind'),
+    wind = engineSetting('grass', 'wind'),
     odt = Math.min(0.1, Math.max(0, (t - (walkRenderer.owT ?? t)) / 1000)),
     ow = typeof worldBillyItem === 'function' && !st.battle && !walkRenderer.bt,
     npcPos = [];
@@ -4732,7 +4746,7 @@ export function gatherFrameItems(st, C, PPU, C0) {
     isn't looked at at all this frame */
   /* alpha 0.4: in a 3D battle too (it gathered every prop of the place each frame: 6 to 9 ms on a phone) */
   const GR = propGrid(sc),
-    F = C.vp && (eng('quality', 'cull') ?? true) ? computeFrustum(C.vp) : null;
+    F = C.vp && (engineSetting('quality', 'cull') ?? true) ? computeFrustum(C.vp) : null;
   let gs = 0;
   for (const c of GR.cells) {
     if (F && !inFrustum(F, c.x, c.y + worldCurveDrop(c.x, c.z), c.z, c.r + 8)) {
@@ -4982,13 +4996,20 @@ export function personItem(k, im, x, z, C0, extra) {
 /* v43: the light that stands in for the sun in a room: daylight through the windows, from the front at a slant (roomSkyLight
    says how bright and from which side), so shadows fall into the room; it is what the shadow maps are drawn from too */
 function mapSun(sc, sun) {
-  if (!sc || !sc.room || (eng('lights', 'roomLight') ?? true) === false) return sun;
+  if (!sc || !sc.room || (engineSetting('lights', 'roomLight') ?? true) === false) return sun;
   const Rk = roomSkyLight(),
     wd = v3n([Rk.dx * 0.45, 0.6, -0.7]);
   return Object.assign({}, sun, {
     dir: wd,
     travel: [-wd[0], -wd[1], -wd[2]],
-    col: Rk.c.map(v => v * Math.max(0.25, Rk.I) * 0.3 * (eng('lights', 'windowLight') ?? 1) * eng('sun', 'strength')),
+    col: Rk.c.map(
+      v =>
+        v *
+        Math.max(0.25, Rk.I) *
+        0.3 *
+        (engineSetting('lights', 'windowLight') ?? 1) *
+        engineSetting('sun', 'strength')
+    ),
     indoor: true,
     room: true,
   });
@@ -4997,7 +5018,7 @@ function mapSun(sc, sun) {
    out it brightens again over 0.7 s, as your eyes adjust */
 export function roomDimming(sc) {
   const now = performance.now(),
-    k0 = eng('world', 'roomDim') ?? 0.68;
+    k0 = engineSetting('world', 'roomDim') ?? 0.68;
   let R = sc.roomRect,
     k = 0;
   if (R) {
@@ -5042,9 +5063,9 @@ function walkLightContext(C, sun, dark, items, shadow, BT) {
     t = walkView.t,
     R = C.right,
     P = BT ? { x: BT.center[0], z: BT.center[1] } : walkView.pl,
-    lb = eng('lights', 'brightness'),
-    flick = eng('lights', 'flicker'),
-    winDay = eng('lights', 'windowsDay');
+    lb = engineSetting('lights', 'brightness'),
+    flick = engineSetting('lights', 'flicker'),
+    winDay = engineSetting('lights', 'windowsDay');
   const L = [],
     ao = [],
     RR = sc.roomRect,
@@ -5070,7 +5091,7 @@ function walkLightContext(C, sun, dark, items, shadow, BT) {
      from its lit ground-floor windows (the upper floors' never reached the ground) */
     const fl = 1 - flick * 0.15 + flick * 0.15 * Math.sin(t / 170 + it.x * 3) * Math.sin(t / 97 + it.z),
       on = lampLit(it.x, it.z, dark),
-      pk = (eng('lights', 'pools') ?? 1) * lb,
+      pk = (engineSetting('lights', 'pools') ?? 1) * lb,
       G = [],
       inRoom = !!sc.room && !out,
       E = it.bld3 && typeof buildingState !== 'undefined' ? buildingState.mesh.get(it.p) : null;
@@ -5147,7 +5168,7 @@ function walkLightContext(C, sun, dark, items, shadow, BT) {
   ao.sort((a, b) => a.d - b.d);
   /* v26: dark caves (and the night) — you carry a lantern */
   const E = typeof environment !== 'undefined' && ENG_CTX.env ? environment : null,
-    cave = (sc.dark ?? (sc.indoor && sc.far === 'cave' ? 1 : 0)) * eng('air', 'caveDark'),
+    cave = (sc.dark ?? (sc.indoor && sc.far === 'cave' ? 1 : 0)) * engineSetting('air', 'caveDark'),
     night = E ? E.night : 0,
     lan = Math.max(cave, night * 0.75);
   if (lan > 0.02) {
@@ -5161,7 +5182,7 @@ function walkLightContext(C, sun, dark, items, shadow, BT) {
   roomLights(sc, L, lb);
   const lights = eglPickLights(L, P.x, P.z, 16),
     sky = skyColors(sc);
-  let hz = hexToRgb(eng('air', 'haze') || sc.haze || (sc.sky || [])[2] || '#EAD9C0').map(v => v / 255);
+  let hz = hexToRgb(engineSetting('air', 'haze') || sc.haze || (sc.sky || [])[2] || '#EAD9C0').map(v => v / 255);
   if (E && !sc.indoor) hz = environmentSky([hz, hz, hz], false)[2];
   const tint = sc.tint && sc.tint !== '#000000' ? hexToRgb(sc.tint).map(v => 0.35 + (v / 255) * 1.3) : null;
   let ambTop = sc.indoor
@@ -5170,7 +5191,7 @@ function walkLightContext(C, sun, dark, items, shadow, BT) {
     ambBot = sc.indoor ? [0.38, 0.31, 0.25] : [0.3, 0.32, 0.24];
   /* v43: a room is lit by its windows: the daylight comes in from the front at a slant (roomSkyLight says how bright and from which side), warm walls and a dark floor make the ambient, no sun lobe; the lamps do the rest after dark */
   let roomSH = null;
-  if (sc.room && (eng('lights', 'roomLight') ?? true) !== false) {
+  if (sc.room && (engineSetting('lights', 'roomLight') ?? true) !== false) {
     const Rk = roomSkyLight();
     const wc = sc.wallCol && sc.wallCol[0] ? hexToRgb(sc.wallCol[0]).map(v => v / 255) : [0.78, 0.7, 0.58];
     const wk = 0.3 + 0.2 * Math.max(0.25, Rk.I);
@@ -5211,12 +5232,12 @@ function walkLightContext(C, sun, dark, items, shadow, BT) {
     ambHor,
     noSunLobe: !!roomSH,
     haze: hz,
-    fogStart: C.df * eng('air', 'hazeStart') * (E && !sc.indoor ? 1 - E.fog * 0.35 : 1),
-    fogD: (eng('air', 'hazeDistance') ?? (sc.hazeD || 34)) * 1.15 * fogK,
+    fogStart: C.df * engineSetting('air', 'hazeStart') * (E && !sc.indoor ? 1 - E.fog * 0.35 : 1),
+    fogD: (engineSetting('air', 'hazeDistance') ?? (sc.hazeD || 34)) * 1.15 * fogK,
     tint,
     valley: walkRenderer.valley || null,
-    mist: sc.mist != null ? sc.mist + (E && !sc.indoor ? E.fog * 0.18 : 0) : eng('air', 'mist'),
-    mistY: (walkRenderer.wlevel || 0) + eng('air', 'mistHeight'),
+    mist: sc.mist != null ? sc.mist + (E && !sc.indoor ? E.fog * 0.18 : 0) : engineSetting('air', 'mist'),
+    mistY: (walkRenderer.wlevel || 0) + engineSetting('air', 'mistHeight'),
     time: t,
     indoor: sc.indoor,
     lite: walkView.R < 0.75,
@@ -5252,7 +5273,7 @@ function setSpriteUniforms(p, it, uv) {
 function shadowMapArea(C) {
   const sc = walkView.sc,
     full = [sc.w / 2, sc.h / 2, Math.hypot(sc.w, sc.h) / 2 + 6];
-  if (!C || !eng('shadows', 'fit')) return full;
+  if (!C || !engineSetting('shadows', 'fit')) return full;
   const P = walkView.pl,
     y0 = standingHeightAt(P.x, P.z),
     X = [],
@@ -5285,10 +5306,14 @@ function shadowMapArea(C) {
    square round you at a finer texel, drawn every frame from the things in it, so shadows near you are crisp */
 export function shadowPass(items0, sun, C) {
   const far = fittedShadowPass(items0, sun, C);
-  if (!(eng('shadows', 'cascades') ?? true) || (walkRenderer.bt && (eng('quality', 'battleLite') ?? true))) return far;
+  if (
+    !(engineSetting('shadows', 'cascades') ?? true) ||
+    (walkRenderer.bt && (engineSetting('quality', 'battleLite') ?? true))
+  )
+    return far;
   const P = walkView.pl,
-    R = eng('shadows', 'nearRadius') ?? 13,
-    res = Math.min(1024, eng('quality', 'shadowMap')),
+    R = engineSetting('shadows', 'nearRadius') ?? 13,
+    res = Math.min(1024, engineSetting('quality', 'shadowMap')),
     gl = EGL.gl,
     items = items0.filter(it => Math.hypot(it.x - P.x, it.z - P.z) < R + (it.w || 32) * (it.mpp || 0.03) + 3);
   const SH = eglShadowBegin(P.x, P.z, R, sun, res, 'shadowN'),
@@ -5315,7 +5340,7 @@ export function shadowPass(items0, sun, C) {
 /* v43: shadow maps for the two nearest lamps after dark (the ones that hang high: street lamps, lanterns, windows don't
    count). The lamps are moved to the front of the light list so the shader knows which they are. */
 function lampShadowMaps(items, X, dark) {
-  const n = Math.min(2, eng('shadows', 'lampShadows') ?? 2);
+  const n = Math.min(2, engineSetting('shadows', 'lampShadows') ?? 2);
   if (!n) return;
   const L = X.lights,
     P = walkView.pl,
@@ -5360,7 +5385,7 @@ function lampShadowMaps(items, X, dark) {
 function drawShadowSprites(SH, L, sun, ca, lamp) {
   const gl = EGL.gl,
     p = EGL.P.shadow,
-    solid = eng('shadows', 'buildings'),
+    solid = engineSetting('shadows', 'buildings'),
     tr = sun ? sun.travel : [0, -1, 0],
     h = v3n([tr[0], 0, tr[2]]),
     Rs0 = Math.hypot(tr[0], tr[2]) < 0.05 ? [1, 0, 0] : [-h[2], 0, h[0]];
@@ -5432,11 +5457,11 @@ function fittedShadowPass(items0, sun, C) {
   const sc = walkView.sc,
     res =
       walkView.R < 0.8 || (walkRenderer.q || 0) >= 2
-        ? Math.min(1024, eng('quality', 'shadowMap'))
-        : eng('quality', 'shadowMap'),
+        ? Math.min(1024, engineSetting('quality', 'shadowMap'))
+        : engineSetting('quality', 'shadowMap'),
     gl = EGL.gl;
   let fit = shadowMapArea(C);
-  const cache = (eng('quality', 'shadowCache') ?? true) && !walkRenderer.bt && !!gl.blitFramebuffer;
+  const cache = (engineSetting('quality', 'shadowCache') ?? true) && !walkRenderer.bt && !!gl.blitFramebuffer;
   if (cache) fit = [Math.round(fit[0] / 3) * 3, Math.round(fit[1] / 3) * 3, fit[2] + 3];
   const items = items0.filter(
     it => Math.hypot(it.x - fit[0], it.z - fit[1]) < fit[2] + (it.w || 32) * (it.mpp || 0.03) + 4
@@ -5447,7 +5472,7 @@ function fittedShadowPass(items0, sun, C) {
       gl.uniform3f(P.U.uCurve, ca[0], ca[1], ca[2]);
       gl.uniform1f(P.U.uCurveD0, ca[3]);
     };
-  const solid = eng('shadows', 'buildings'),
+  const solid = engineSetting('shadows', 'buildings'),
     tr = sun.travel,
     h = v3n([tr[0], 0, tr[2]]),
     Rs = Math.hypot(tr[0], tr[2]) < 0.05 ? [1, 0, 0] : [-h[2], 0, h[0]];
@@ -5601,8 +5626,8 @@ function drawSky(C, sun, mirror) {
   gl.uniform1f(U.uTime, walkView.t);
   gl.uniform1f(U.uSunPulse, sun.pulse);
   gl.uniform1f(U.uMirror, mirror);
-  gl.uniform1f(U.uClouds, eng('sun', 'clouds'));
-  gl.uniform1f(U.uCloudSpd, eng('sun', 'cloudSpeed'));
+  gl.uniform1f(U.uClouds, engineSetting('sun', 'clouds'));
+  gl.uniform1f(U.uCloudSpd, engineSetting('sun', 'cloudSpeed'));
   gl.activeTexture(gl.TEXTURE0);
   gl.bindTexture(gl.TEXTURE_2D, worldMapTexture());
   gl.uniform1i(U.uWorld, 0);
@@ -5673,8 +5698,8 @@ export function drawGround(C, X) {
   gl.activeTexture(gl.TEXTURE3);
   gl.bindTexture(gl.TEXTURE_2D, walkRenderer.gntex || EGL.flatN);
   gl.uniform1i(U.uGNrm, 3);
-  gl.uniform1f(U.uGStr, eng('world', 'groundBumps'));
-  gl.uniform1f(U.uGShine, eng('world', 'groundShine'));
+  gl.uniform1f(U.uGStr, engineSetting('world', 'groundBumps'));
+  gl.uniform1f(U.uGShine, engineSetting('world', 'groundShine'));
   gl.uniform4f(U.uGRect, -P, sc.h + P, 1 / (sc.w + 2 * P), 1 / (sc.h + 2 * P));
   setShoreUniforms(U, sc);
   setNearRingUniforms(U, sc);
@@ -5684,18 +5709,18 @@ export function drawGround(C, X) {
     gl.bindTexture(gl.TEXTURE_2D, walkRenderer.gaoTex || EGL.white);
     gl.bindSampler(8, null);
     gl.uniform1i(U.uGAO, 8);
-    gl.uniform3f(U.uGAOR, 1 / sc.w, 1 / sc.h, walkRenderer.gaoTex ? (eng('shadows', 'groundAO') ?? 1) : 0);
+    gl.uniform3f(U.uGAOR, 1 / sc.w, 1 / sc.h, walkRenderer.gaoTex ? (engineSetting('shadows', 'groundAO') ?? 1) : 0);
   }
   if (U.uWet) {
     const E = typeof environment !== 'undefined' && ENG_CTX.env && !sc.indoor ? environment : null,
       sk = skyColors(sc);
-    gl.uniform1f(U.uWet, E ? clamp((E.wet || 0) * (eng('air', 'wetGround') ?? 1), 0, 1) : 0);
+    gl.uniform1f(U.uWet, E ? clamp((E.wet || 0) * (engineSetting('air', 'wetGround') ?? 1), 0, 1) : 0);
     gl.uniform1f(U.uRainK, E ? Math.min(1, E.rain || 0) : 0);
     gl.uniform3fv(U.uSkyW, sk[1]);
-    gl.uniform1f(U.uCausW, eng('water', 'wallLight') ?? 1);
+    gl.uniform1f(U.uCausW, engineSetting('water', 'wallLight') ?? 1);
   }
   if (U.uRoom) {
-    const B = sc.room && (eng('lights', 'roomLight') ?? true) !== false ? roomBoxOf(sc) : null;
+    const B = sc.room && (engineSetting('lights', 'roomLight') ?? true) !== false ? roomBoxOf(sc) : null;
     gl.uniform4f(U.uRoom, B ? B[0] : 0, B ? B[1] : 0, B ? B[2] : 0, B ? 1 : 0);
     if (U.uRoomY) gl.uniform1f(U.uRoomY, B ? standingHeightAt(sc.w / 2, 1.5) : 0);
   }
@@ -5806,12 +5831,12 @@ export function drawGrass(C, X) {
   gl.uniform3fv(U.uRight, C.right);
   gl.uniform3f(U.uPl, P.x, 0, P.z);
   gl.uniform1f(U.uT, RM ? 0 : walkView.t);
-  gl.uniform1f(U.uWind, (sc.wind ?? 1) * eng('grass', 'wind'));
-  gl.uniform1f(U.uGust, eng('grass', 'gusts'));
-  gl.uniform1f(U.uBend, eng('grass', 'bend'));
-  gl.uniform1f(U.uHK, eng('grass', 'height'));
+  gl.uniform1f(U.uWind, (sc.wind ?? 1) * engineSetting('grass', 'wind'));
+  gl.uniform1f(U.uGust, engineSetting('grass', 'gusts'));
+  gl.uniform1f(U.uBend, engineSetting('grass', 'bend'));
+  gl.uniform1f(U.uHK, engineSetting('grass', 'height'));
   gl.uniform3f(U.uCut, C.eye[0], C.eye[2], walkRenderer.bt ? (walkRenderer.bt.cut ?? 3.2) : 0);
-  const g = sc.grassCol || [eng('grass', 'low'), eng('grass', 'high')];
+  const g = sc.grassCol || [engineSetting('grass', 'low'), engineSetting('grass', 'high')];
   gl.uniform3fv(
     U.uGlo,
     hexToRgb(g[0]).map(v => v / 255)
@@ -5824,7 +5849,7 @@ export function drawGrass(C, X) {
   gl.disable(gl.CULL_FACE);
   const G = walkRenderer.grass;
   gl.bindVertexArray(G.vao);
-  if (!G.chunks || !(eng('quality', 'cull') ?? true)) {
+  if (!G.chunks || !(engineSetting('quality', 'cull') ?? true)) {
     gl.bindBuffer(gl.ARRAY_BUFFER, G.ib);
     gl.vertexAttribPointer(1, 4, gl.FLOAT, false, 32, 0);
     gl.vertexAttribPointer(2, 4, gl.FLOAT, false, 32, 16);
@@ -5905,7 +5930,7 @@ export function drawSprites(C, items, X, hits, labels, PPU) {
     sun = X.sun;
   eglBindQuad();
   if (U.uWave) gl.uniform3f(U.uWave, 0, 0, 0);
-  if (U.uSelOut) gl.uniform1f(U.uSelOut, eng('color', 'outlines') ?? 1);
+  if (U.uSelOut) gl.uniform1f(U.uSelOut, engineSetting('color', 'outlines') ?? 1);
   const sh = v3n([sun.dir[0], 0, sun.dir[2]]);
   gl.uniform3fv(U.uRight, C.right);
   gl.uniform3fv(U.uBack, C.back);
@@ -5925,8 +5950,8 @@ export function drawSprites(C, items, X, hits, labels, PPU) {
     sl = Math.hypot(sd[0] * C.right[0] + sd[2] * C.right[2], sd[1]) || 1,
     selfD = [(sd[0] * C.right[0] + sd[2] * C.right[2]) / sl, -sd[1] / sl],
     selfK =
-      sd[1] > 0.05 && (eng('shadows', 'selfShade') ?? 0.7) > 0
-        ? (eng('shadows', 'selfShade') ?? 0.7) * eng('shadows', 'strength') * Math.min(1, sd[1] * 4)
+      sd[1] > 0.05 && (engineSetting('shadows', 'selfShade') ?? 0.7) > 0
+        ? (engineSetting('shadows', 'selfShade') ?? 0.7) * engineSetting('shadows', 'strength') * Math.min(1, sd[1] * 4)
         : 0;
   gl.enable(gl.DEPTH_TEST);
   gl.depthMask(true);
@@ -6014,7 +6039,15 @@ export function drawSprites(C, items, X, hits, labels, PPU) {
       const b = it.M.blades,
         BT = eglImg(artImage(b.img));
       if (BT)
-        drawRotatingBlades(p, it, b, BT, (RM ? 0 : walkView.t / 1100) * (sc.wind || 1) * eng('grass', 'wind'), C, X);
+        drawRotatingBlades(
+          p,
+          it,
+          b,
+          BT,
+          (RM ? 0 : walkView.t / 1100) * (sc.wind || 1) * engineSetting('grass', 'wind'),
+          C,
+          X
+        );
     }
     if (it.M && it.M.hands && !it.far && !it.layer) drawClockHands(p, it, C, X);
     if (it.far || it.layer) continue;
@@ -6448,7 +6481,7 @@ export function reflectionPass(items, C, rw, rh, X) {
   /* alpha 0.2: near water by a summed table (a joined view can hold thousands of water tiles, and walking them all for
     every thing cost the iPad about 10 ms a frame), and only what shows in the water: its mirror image in view */
   const FR = computeFrustum(C.vp),
-    cut = eng('quality', 'cull') ?? true;
+    cut = engineSetting('quality', 'cull') ?? true;
   for (const it of items) {
     if (it.flat || it.far) continue;
     if (!waterNear(it.x, it.z)) continue;
@@ -6495,7 +6528,7 @@ function waterLife() {
   walkRenderer.wlT = now;
   const fish = new Float32Array(16),
     rings = new Float32Array(32);
-  if (eng('water', 'fish'))
+  if (engineSetting('water', 'fish'))
     (walkRenderer.fishHomes || []).forEach((h, i) => {
       const sp = 0.35 + 0.12 * Math.sin(i * 2.3),
         a = (t * sp) / Math.max(0.5, h[3]) + i * 1.9,
@@ -6518,7 +6551,7 @@ function waterLife() {
         if (typeof sfxAt === 'function') sfxAt('plop', x, z);
       }
     });
-  if (eng('water', 'rings') && !walkRenderer.bt && !RM) {
+  if (engineSetting('water', 'rings') && !walkRenderer.bt && !RM) {
     if (typeof LIFE !== 'undefined')
       for (const c of LIFE.list || [])
         if (c.k === 'duck') {
@@ -6578,8 +6611,8 @@ function setWaterUniforms(U) {
   gl.uniform3fv(U.uKS, WATER_KIND_UNIFORMS.S);
   gl.uniform4fv(U.uKA, WATER_KIND_UNIFORMS.A);
   gl.uniform4fv(U.uKB, WATER_KIND_UNIFORMS.B);
-  gl.uniform1f(U.uCaus, eng('water', 'caustics'));
-  gl.uniform1f(U.uClar, eng('water', 'clarity'));
+  gl.uniform1f(U.uCaus, engineSetting('water', 'caustics'));
+  gl.uniform1f(U.uClar, engineSetting('water', 'clarity'));
   const L = waterLife();
   gl.uniform4fv(U.uFish, L.fish);
   gl.uniform4fv(U.uRings, L.rings);
@@ -6615,10 +6648,10 @@ export function drawWater(C, X, rw, rh) {
   gl.uniform3fv(U.uDeep, engHex('water', 'deep', '#1D4F78'));
   gl.uniform3fv(U.uShallow, engHex('water', 'shallow', '#4FA6C0'));
   gl.uniform3fv(U.uSkyR, sky[1]);
-  gl.uniform1f(U.uReflK, eng('water', 'reflection'));
-  gl.uniform1f(U.uRip, eng('water', 'ripples'));
-  gl.uniform1f(U.uFoam, eng('water', 'foam'));
-  gl.uniform1f(U.uGlint, eng('water', 'glints'));
+  gl.uniform1f(U.uReflK, engineSetting('water', 'reflection'));
+  gl.uniform1f(U.uRip, engineSetting('water', 'ripples'));
+  gl.uniform1f(U.uFoam, engineSetting('water', 'foam'));
+  gl.uniform1f(U.uGlint, engineSetting('water', 'glints'));
   gl.uniform1f(U.uLevel, walkRenderer.wlevelR ?? walkRenderer.wlevel ?? 0);
   setWaterUniforms(U);
   setShoreUniforms(U, sc);
@@ -6789,7 +6822,7 @@ function windowLightShare(sc) {
   return walkRenderer.ws;
 }
 function roomLights(sc, L, lb) {
-  if (!sc.room || (eng('lights', 'roomLight') ?? true) === false) return;
+  if (!sc.room || (engineSetting('lights', 'roomLight') ?? true) === false) return;
   const R = roomSkyLight(),
     B = roomBoxOf(sc),
     ws = windowLightShare(sc);
@@ -6821,10 +6854,10 @@ function roomLights(sc, L, lb) {
 }
 function drawRoomEffects(C, U, items, glows, t, rm) {
   const sc = walkView.sc;
-  if (!sc.room || (eng('lights', 'roomLight') ?? true) === false) return;
+  if (!sc.room || (engineSetting('lights', 'roomLight') ?? true) === false) return;
   const gl = EGL.gl,
     R = roomSkyLight(),
-    gk = eng('lights', 'glow'),
+    gk = engineSetting('lights', 'glow'),
     ws = windowLightShare(sc);
   const draw = (cv, x, y, z, r, u, sw, sh, col, a) => {
     const T = eglImg(cv, { noNormal: true });
@@ -6988,7 +7021,7 @@ function drawRoomEffects(C, U, items, glows, t, rm) {
    is; its face runs down into the dark under the floor, so the room reads as a box that ends at its door */
 function drawRoomFront(C, X) {
   const sc = walkView.sc;
-  if (!sc.room || (eng('lights', 'roomLight') ?? true) === false) return;
+  if (!sc.room || (engineSetting('lights', 'roomLight') ?? true) === false) return;
   const B = roomBoxOf(sc);
   if (!B) return;
   const gl = EGL.gl;
@@ -7078,7 +7111,7 @@ function drawRoomFront(C, X) {
    basin), a jet from its top and a curtain spilling over each upper bowl into the one below, with splashes and rings */
 function gatherFountainBasins(items) {
   const L = [];
-  if (typeof SOLID_PROP_PARTS === 'undefined' || (eng('water', 'fountains') ?? true) === false) {
+  if (typeof SOLID_PROP_PARTS === 'undefined' || (engineSetting('water', 'fountains') ?? true) === false) {
     updateBasinMeshes(L);
     return;
   }
@@ -7299,7 +7332,7 @@ function drawWeather(quad, glows, U, R, Up, dt, rm) {
     E = environment,
     BT = walkRenderer.bt,
     P = BT ? { x: BT.center[0], z: BT.center[1] } : walkView.pl,
-    k = eng('air', 'weather') * (walkView.R < 0.75 ? 0.5 : 1);
+    k = engineSetting('air', 'weather') * (walkView.R < 0.75 ? 0.5 : 1);
   /* alpha 0.4: while a front passes, the rain is as heavy as it will be (or was) but only on its side of the curtain */
   const Cu = E.curtain,
     inC = x => !Cu || (Cu.into ? Cu.dir * (x - P.x) < Cu.e * 11 : Cu.dir * (x - P.x) > Cu.e * 11);
@@ -7610,10 +7643,10 @@ export function effectsPass(C, items, X, dark, t, dt) {
     rm = RM ? 0 : 1,
     R = C.right,
     Up = [0, 1, 0],
-    lb = eng('lights', 'brightness'),
-    gk = eng('lights', 'glow'),
-    winDay = eng('lights', 'windowsDay'),
-    flick = eng('lights', 'flicker');
+    lb = engineSetting('lights', 'brightness'),
+    gk = engineSetting('lights', 'glow'),
+    winDay = engineSetting('lights', 'windowsDay'),
+    flick = engineSetting('lights', 'flicker');
   eglBindQuad();
   gl.uniform3fv(U.uRight, R);
   gl.uniform3fv(U.uUp, Up);
@@ -7804,7 +7837,7 @@ export function effectsPass(C, items, X, dark, t, dt) {
       ]);
     }
   }
-  if (!sc.indoor && eng('air', 'particles') > 0) {
+  if (!sc.indoor && engineSetting('air', 'particles') > 0) {
     if (!walkView.life || walkView.life.id !== walkView.id) {
       const fl = [],
         tr = [];
@@ -7895,7 +7928,12 @@ export function effectsPass(C, items, X, dark, t, dt) {
     }
   }
   /* v22: leaves riding the streams (lying flat on the water), and steam breathing off warm springs */
-  if (walkRenderer.streamCells && walkRenderer.streamCells.length && eng('water', 'leaves') && !walkRenderer.bt) {
+  if (
+    walkRenderer.streamCells &&
+    walkRenderer.streamCells.length &&
+    engineSetting('water', 'leaves') &&
+    !walkRenderer.bt
+  ) {
     const S = walkRenderer.streamCells,
       n = Math.min(10, Math.ceil(S.length / 12));
     if (!walkRenderer.leaves || walkRenderer.leaves.length !== n)
@@ -7931,7 +7969,7 @@ export function effectsPass(C, items, X, dark, t, dt) {
     gl.uniform3fv(U.uRight, R);
     gl.uniform3fv(U.uUp, Up);
   }
-  if (walkRenderer.springCells && walkRenderer.springCells.length && eng('water', 'steam')) {
+  if (walkRenderer.springCells && walkRenderer.springCells.length && engineSetting('water', 'steam')) {
     walkRenderer.springCells.forEach(([x, z, dp], k) => {
       const g = waterAt(x, z),
         y = g ? g.y : standingHeightAt(x, z);
@@ -7952,7 +7990,7 @@ export function effectsPass(C, items, X, dark, t, dt) {
       }
     });
   }
-  if (ENG_CTX.env && !sc.indoor && eng('air', 'weather') > 0) drawWeather(quad, glows, U, R, Up, dt, rm);
+  if (ENG_CTX.env && !sc.indoor && engineSetting('air', 'weather') > 0) drawWeather(quad, glows, U, R, Up, dt, rm);
   if (!walkRenderer.bt) drawFootprints(quad, U, R, Up, dt);
   drawFountainEffects(quad, t, rm, dt);
   drawRoomEffects(C, U, items, glows, t, rm);

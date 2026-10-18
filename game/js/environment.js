@@ -456,7 +456,7 @@ export function environmentSky(sky, indoor) {
   }
   return c;
 }
-/* engine dials the time and weather lean on (read through eng(); see settings.js) */
+/* engine dials the time and weather lean on (read through engineSetting(); see settings.js) */
 const WEATHER_ENGINE_MODIFIERS = {
   sun: {
     strength: v =>

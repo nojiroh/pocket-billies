@@ -35,7 +35,7 @@ import {
   walkTo,
   walkView,
 } from './walk-view.js';
-import { eng } from './engine/settings.js';
+import { engineSetting } from './engine/settings.js';
 import { EGL, eglAttrClashes } from './engine/webgl.js';
 import { EGL_POST_SH } from './engine/post-effects.js';
 import { environment } from './environment.js';
@@ -420,7 +420,7 @@ async function runFullTest(mode) {
           DIAGR.device = {
             device: NWLOG.device ? NWLOG.device() : null,
             graphics: g,
-            auto: eng('quality', 'auto') ?? null,
+            auto: engineSetting('quality', 'auto') ?? null,
             resolution: typeof walkView !== 'undefined' ? walkView.R : null,
             level: typeof walkRenderer !== 'undefined' ? (walkRenderer.q ?? null) : null,
             screenHz: typeof FRAME !== 'undefined' ? FRAME.hz : null,

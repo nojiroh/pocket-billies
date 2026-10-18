@@ -16,7 +16,7 @@ import { RM, provide } from './hooks.js';
 import { clamp } from './util.js';
 import { makeCanvas } from './art.js';
 import { artImage, hash2d, walkView, worldToScreen } from './walk-view.js';
-import { eng } from './engine/settings.js';
+import { engineSetting } from './engine/settings.js';
 import { EGL, EGL_GLSL_COMMON, EGL_GLSL_LIGHT, EGL_GLSL_LOOK, EGL_MATS, eglImg, eglPrograms } from './engine/webgl.js';
 import {
   addHitTarget,
@@ -194,7 +194,7 @@ export const SOLID_PROP_KINDS = [
   ['lathe', 'Round (turned)'],
 ];
 function solidPropsOn() {
-  return typeof eng === 'function' && eng('world', 'solidProps') !== false && !solidPropState.fail;
+  return typeof engineSetting === 'function' && engineSetting('world', 'solidProps') !== false && !solidPropState.fail;
 }
 /* v20: a prop can be built from parts: rectangles of its picture, each with its own shape. "flat" lays a band of the
    picture down as a horizontal surface (a basin's water, a table top drawn in three-quarter view); pixels outside every
@@ -232,7 +232,7 @@ provide({ SOLID_PROP_PARTS }); /* to-module */
 function solidPropSpec(k, M, PPU) {
   if (!M) return null;
   const parts = M.parts || SOLID_PROP_PARTS[k],
-    tk = eng('world', 'solidTrees') !== false && !M.vol && !M.parts ? solidTreeKind(k, M) : null;
+    tk = engineSetting('world', 'solidTrees') !== false && !M.vol && !M.parts ? solidTreeKind(k, M) : null;
   if (tk === 'pine') return { key: 'lathe|0', parts: [{ r: null, k: 'lathe', d: 0 }], tree: 'pine', rot: 0, vary: 1 };
   if (tk) return { key: 'tree|' + tk, tree: tk, rot: 1, vary: 1, wind: 1 };
   if (parts && parts.length && !(M.vol === 'card')) {
@@ -295,7 +295,7 @@ function solidPropMesh(im, spec) {
   return M;
 }
 export function buildSolidProp(im, parts) {
-  const TOPS = typeof eng !== 'function' || eng('world', 'texDetail') !== 0;
+  const TOPS = typeof engineSetting !== 'function' || engineSetting('world', 'texDetail') !== 0;
   const w = im.naturalWidth || im.width,
     h = im.naturalHeight || im.height;
   if (!w || !h) return null;
@@ -1156,8 +1156,8 @@ function solidPropLevelOfDetail(items, C) {
       (walkRenderer.bt.center || (walkRenderer.bt.look && [walkRenderer.bt.look.tgt[0], walkRenderer.bt.look.tgt[2]])),
     fx = bc ? bc[0] : P.x,
     fz = bc ? bc[1] : P.z,
-    tr = eng('world', 'treeDetail') ?? 20,
-    cap = Math.round(eng('world', 'treeCount') ?? 40),
+    tr = engineSetting('world', 'treeDetail') ?? 20,
+    cap = Math.round(engineSetting('world', 'treeCount') ?? 40),
     T = [];
   for (const it of items) {
     if (!it.vol) continue;
@@ -1203,7 +1203,7 @@ function setSolidPropUniforms(p, it, M) {
   gl.uniform1f(U.uT, RM ? 0 : walkView.t);
   gl.uniform1f(
     U.uWob,
-    V.wind ? (it.M.sway || 0.3) * 0.14 * ((walkView.sc && walkView.sc.wind) || 1) * eng('grass', 'wind') : 0
+    V.wind ? (it.M.sway || 0.3) * 0.14 * ((walkView.sc && walkView.sc.wind) || 1) * engineSetting('grass', 'wind') : 0
   );
   gl.uniform1f(U.uRot, (V.rot ? (h1 - 0.5) * 0.42 : 0) + (it.lk ? it.lk.rot : 0));
   gl.uniform1f(U.uClump, M && M.tex ? 1 : 0);
@@ -1267,7 +1267,7 @@ export function drawSolidProps(C, items, X, hits, labels, PPU) {
         gl.uniform4f(
           p.U.uDet,
           SOLID_PROP_MATERIAL_IDS[it.mat] || 0,
-          eng('world', 'texDetail') ?? 1,
+          engineSetting('world', 'texDetail') ?? 1,
           1 / Math.max(1e-4, it.mpp),
           0
         );
@@ -1293,7 +1293,7 @@ export function drawSolidProps(C, items, X, hits, labels, PPU) {
             it,
             b,
             BT,
-            (RM ? 0 : walkView.t / 1100) * (walkView.sc.wind || 1) * eng('grass', 'wind'),
+            (RM ? 0 : walkView.t / 1100) * (walkView.sc.wind || 1) * engineSetting('grass', 'wind'),
             C,
             X
           );

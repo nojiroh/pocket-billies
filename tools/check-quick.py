@@ -918,7 +918,7 @@ def desktop_steps(b, base, R):
          const B=boxInfo(artImage(C0.props.sofa.img)),rc=B&&B.roof.getContext('2d').getImageData(0,0,B.roof.width,B.roof.height).data;let lum=0;if(rc){for(let i=0;i<rc.length;i+=4)lum+=rc[i]*.3+rc[i+1]*.59+rc[i+2]*.11;lum/=rc.length/4}
          const sc={},alts=[];for(let i=0;i<40;i++){const p={k:'stump',x:i*3.1,z:i*1.7};alts.push(alternatePropImage(p,C0.props.stump,C0,sc))}const mossy=alts.filter(a=>a===C0.props.stump_mossy.img).length;
          const plain=alternatePropImage({k:'stump',x:0,z:0,plain:true},C0.props.stump,C0,sc)===C0.props.stump.img;
-         return {miss,bad,lum:Math.round(lum),mossy,plain,det:eng('world','texDetail'),aniso:!!EGL.aniso}})()""")
+         return {miss,bad,lum:Math.round(lum),mossy,plain,det:engineSetting('world','texDetail'),aniso:!!EGL.aniso}})()""")
         if v['miss'] or v['bad']: raise Exception(f'prop variants missing or not loading: {v}')
         if v['lum'] < 45: raise Exception(f"the sofa's top is still dark (brightness {v['lum']})")
         if not (4 <= v['mossy'] <= 30) or not v['plain']: raise Exception(f'mossy twins: {v}')
@@ -1054,7 +1054,7 @@ def desktop_steps(b, base, R):
         pal = {tuple(c) for c in pixels(Image.open(nx / 'palette.png').convert('RGB'))}
         if len(pal) < 150: raise Exception(f'palette has {len(pal)} distinct colours')
         # the pixel-grid camera dial: off by default, and turning it on keeps the scene drawing
-        if pg.evaluate("eng('camera','pixelGrid')!==false"): raise Exception('pixelGrid should be off by default')
+        if pg.evaluate("engineSetting('camera','pixelGrid')!==false"): raise Exception('pixelGrid should be off by default')
         pg.evaluate("GD.engine.defaults.camera=Object.assign({},GD.engine.defaults.camera||{},{pixelGrid:true});0"); time.sleep(2)
         fr = pg.evaluate("walkRenderer.frames||0")
         if not until(pg, f"(walkRenderer.frames||0)>{fr + 1}", 30): raise Exception('no frames drawn with the pixel-grid camera on')   # alpha 0.1: a frame can take seconds here
@@ -1126,7 +1126,7 @@ def desktop_steps(b, base, R):
         shot(pg, 'v37-sundown')
         out.append(f"Marigold Town: ground {tp} px a tile; {r['made']} building models built over frames, {r['drawn']} drawn, {r['n']} buildings in the scene")
         # v47: the 16 px dial is gone; the 32 px ground is the only full-mode ground
-        if pg.evaluate("eng('world','nextArt')!==undefined"): raise Exception('the old 32 px ground dial is still in the settings')
+        if pg.evaluate("engineSetting('world','nextArt')!==undefined"): raise Exception('the old 32 px ground dial is still in the settings')
         # the party walks at half weight for the Build path
         w = pg.evaluate("(()=>{const m=S.team[0];const b0=m.bsteps||0;const extra={uid:'cq37',sp:m.sp,lvl:5,hp:10,wins:0,bsteps:0,psteps:0};S.team.push(extra);const s0=S.buddy;S.buddy=m.uid;addSteps(2000);const ps=extra.psteps;S.team.pop();S.buddy=s0;return [m.bsteps-b0,ps]})()")
         if w[0] < 2000 or w[1] < 2000: raise Exception(f'steps: buddy got {w[0]}, party member got {w[1]}')
@@ -1327,11 +1327,11 @@ def desktop_steps(b, base, R):
         if vx['empty']: raise Exception('empty voxel models: ' + ', '.join(vx['empty']))
         out.append(f'{vx["n"]} props with a voxel recipe, {vx["built"]} of 12 meshed on the spot, {vx["drawn"]} drawn last frame')
         # the light: SH ambient, cascades, lamp maps, god rays all on and running without errors
-        lt = json.loads(pg.evaluate("JSON.stringify({sh:!!(walkRenderer.X&&walkRenderer.X.sh),cas:!!(walkRenderer.lastShadow&&walkRenderer.lastShadow.far),vol:!!EGL.fb.vol1,ao:eng('shadows','aoKind')})"))
+        lt = json.loads(pg.evaluate("JSON.stringify({sh:!!(walkRenderer.X&&walkRenderer.X.sh),cas:!!(walkRenderer.lastShadow&&walkRenderer.lastShadow.far),vol:!!EGL.fb.vol1,ao:engineSetting('shadows','aoKind')})"))
         if not (lt['sh'] and lt['cas']): raise Exception(f'light: {lt}')
         go_scene(pg, 0); pg.evaluate("environment.force={time:22,weather:'clear',season:'summer'};0"); time.sleep(4); until(pg, "(walkRenderer.X&&walkRenderer.X.lampSh||[]).length>0", 20)
         lamps = pg.evaluate("(walkRenderer.X&&walkRenderer.X.lampSh||[]).length"); shot(pg, 'v43-night'); pg.evaluate("environment.force=null;0")
-        if not lamps: raise Exception('no lamp shadow map at night in Marigold Town ' + pg.evaluate("JSON.stringify({id:walkView.id,pl:[walkView.pl.x,walkView.pl.z],n:(walkRenderer.X&&walkRenderer.X.lights||[]).length,night:environment.night,force:environment.force,dark:walkRenderer.dark,bt:!!walkRenderer.bt,q:eng('shadows','lampShadows'),near:(walkRenderer.X&&walkRenderer.X.lights||[]).slice(0,3).map(l=>[l.p.map(v=>+v.toFixed(1)),l.r])})"))
+        if not lamps: raise Exception('no lamp shadow map at night in Marigold Town ' + pg.evaluate("JSON.stringify({id:walkView.id,pl:[walkView.pl.x,walkView.pl.z],n:(walkRenderer.X&&walkRenderer.X.lights||[]).length,night:environment.night,force:environment.force,dark:walkRenderer.dark,bt:!!walkRenderer.bt,q:engineSetting('shadows','lampShadows'),near:(walkRenderer.X&&walkRenderer.X.lights||[]).slice(0,3).map(l=>[l.p.map(v=>+v.toFixed(1)),l.r])})"))
         out.append(f'sky-shaped ambient, two shadow cascades, god rays {"on" if lt["vol"] else "off"}, {lt["ao"]} occlusion, {lamps} lamp shadow map(s) at night')
         if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
         return '; '.join(out)
@@ -1767,7 +1767,7 @@ def desktop_steps(b, base, R):
         pg.evaluate("window.__P=Object.entries(GD.scenery.props).filter(([k,M])=>typeof M.vox==='string').map(([k,M])=>M.vox);__P.forEach(p=>loadPropModelRecipe(p));0")
         until(pg, "__P.every(p=>propModelState.recipes.get(p))", 30)
         r = pg.evaluate("""(()=>{let n=0,lp=0,q=0,bad=[];for(const p of __P){const rec=propModelState.recipes.get(p);if(!rec||rec.kind==='mesh')continue;n++;
-          const L=lowPolyFromRecipe(rec),V=greedyVoxelMesh(voxelise(rec,32),32);if(!L||!V){bad.push(p.split('/').pop());continue}lp+=L.tris;q+=V.quads}return {n,lp,q,bad,on:!!eng('world','voxelLowPoly'),res:propModelState.VPM}})()""")
+          const L=lowPolyFromRecipe(rec),V=greedyVoxelMesh(voxelise(rec,32),32);if(!L||!V){bad.push(p.split('/').pop());continue}lp+=L.tris;q+=V.quads}return {n,lp,q,bad,on:!!engineSetting('world','voxelLowPoly'),res:propModelState.VPM}})()""")
         if r['bad']: raise Exception(f'these recipes make nothing: {r["bad"][:6]}')
         if not r['on']: raise Exception('props aren’t low-poly by default')
         if r['res'] != 32: raise Exception(f'voxels are {r["res"]} to the metre, not 32')

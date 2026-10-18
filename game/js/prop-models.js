@@ -12,7 +12,7 @@ import { expose } from './test-globals.js';
 import { GD, RM, provide } from './hooks.js';
 import { artImg, artURL, hexToRgb } from './art.js';
 import { artImage, walkView } from './walk-view.js';
-import { eng } from './engine/settings.js';
+import { engineSetting } from './engine/settings.js';
 import { EGL, EGL_GLSL_COMMON, EGL_GLSL_LIGHT, eglImg, eglPrograms } from './engine/webgl.js';
 import {
   addHitTarget,
@@ -127,7 +127,7 @@ const PROP_MODEL_SHAPES = [
   ['barrel', 'Barrel'],
 ];
 function propModelsOn() {
-  return typeof eng === 'function' && (eng('world', 'voxelProps') ?? true) && !propModelState.fail;
+  return typeof engineSetting === 'function' && (engineSetting('world', 'voxelProps') ?? true) && !propModelState.fail;
 }
 function propModelGuard(fn) {
   if (propModelState.fail) return;
@@ -192,7 +192,7 @@ function voxelHash(a, b, c) {
    (a voxel with its six neighbours inside its own shape can never be seen), and a face toward a cell inside any shape
    is never made, so a fine model costs what its outside costs. Voxels are kept by number (voxelKey), colours as 0xRRGGBB. */
 function voxelResolution() {
-  return typeof eng === 'function' && eng('world', 'voxelChunky') ? 8 : propModelState.VPM;
+  return typeof engineSetting === 'function' && engineSetting('world', 'voxelChunky') ? 8 : propModelState.VPM;
 }
 const VOXEL_KEY_SPAN = 4096,
   VOXEL_KEY_OFFSET = 2048;
@@ -1045,8 +1045,8 @@ function lowPolyFromRecipe(rec) {
 }
 function lowPolyOn(rec) {
   return (
-    typeof eng === 'function' &&
-    !!eng('world', 'voxelLowPoly') &&
+    typeof engineSetting === 'function' &&
+    !!engineSetting('world', 'voxelLowPoly') &&
     !(rec.layers || []).some(l => l.k === 'raw' && !l.hide)
   );
 }
@@ -1151,7 +1151,7 @@ function tagPropModel(it) {
     rec = loadPropModelRecipe(spec);
     path = spec;
   }
-  const R = voxelResolution() + (eng('world', 'voxelLowPoly') ? 1000 : 0);
+  const R = voxelResolution() + (engineSetting('world', 'voxelLowPoly') ? 1000 : 0);
   if (propModelState.res !== R) {
     if (propModelState.res) flushPropModelMeshes();
     propModelState.res = R;
