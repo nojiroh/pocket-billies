@@ -563,6 +563,7 @@ def cross_to(pg, n):
         w, v, u = cross(pg, n1); walked += w; unready += u; views += v if not views else [x for x in v if x != views[-1]]
     return walked, views, unready
 
+
 def debug_picture_privacy(pg):
     # phase 13: the debug log keeps a picture of the scene, and what the buddy says names the Billie, so in the frame that
     # takes the picture speech is drawn after it (walk-view-gl.js). The buddy talks, the log takes its picture, and the
