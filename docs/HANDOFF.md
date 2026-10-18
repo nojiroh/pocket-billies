@@ -140,6 +140,45 @@ Not a phase; plan approved at the start. Both runs passed with no errors; the ph
   - If the phone is still slow, the next renderer work is: reuse per-frame item objects, instance static sprites,
     group solid props by mesh. That is a phase of its own.
 
+### Phase 06, session 06-3 - Robots merged, battles on the 3D stage only, UI in the scene - 2026-10-19
+Owner's asks: merge what's on GitHub for the bots; remove the painted battle stage (3D in rooms too, wait for the
+scene, the classic HUD too); the battle UI lives in the 3D scene and ignores its lighting so it stays readable.
+Owner's choices: the portrait inside the dialogue box; moves on the first battle menu; robot builds as slot rows with
+a carry meter; battle cards floating in the scene, a calm camera while choosing, readable and thumb-reachable first.
+- Merged: `main` (phase 16 rework, 08a-1, PRs #19, #20, #22, #23) and `phase-17-robots` (robot data, engine,
+  fighters, workshop, Studio Robots section, sims; it had no PR). Conflicts kept 06-2's screens (no step-by-step
+  intro, the shared unit card) and gave robots a place in them: `billyUnit` reads `speciesOf`, knows a robot's weight;
+  the Build tab shows a robot's build; the Workshop section stays on the Team screen.
+- Changed:
+  - **Painted stage removed.** Every battle is on the 3D stage, rooms included. A battle that starts before the scene
+    is ready waits behind its wipe and joins it (`battleStageJoin3d`); `walkMapSync` keeps or opens the walk scene for
+    a battle, even from the Map tab. Gone: the painted drawing (floor, blur, painted props, clouds, light shafts,
+    sprites), its backgrounds (grounds, foregrounds, walls, far land: `game/art/battle/*_ground` etc.), the manifest's
+    `battle.areas` and `tools/build-battle-props.py`; the Settings rows "Battles happen" and "Battle panels" and their
+    preferences (deleted from old saves); the corner-card HUD (plates always); the in-game test's painted battle.
+    Kept: the battle props and clouds (the walking world uses them). A battle stage is now a name, indoors or not and
+    its ambient particles (`battleStages.json`, the Studio card and preview to match).
+  - **Battle UI in the scene** (`floatTick` in battle.js, `css/battle-ui.css`): on the 3D stage the text and the
+    menu are cards anchored in the world, a column under the one choosing (its feet, the text, the menu), following
+    the camera, which holds still while you choose (`battleStage.calm`). Page elements, so the scene's lighting never
+    touches them. The action is framed in a fixed share of the screen above them.
+  - **Moves on the first menu**: four type-coloured tiles, then Tax it, Bag, Team, Run; 1-4 pick a move; Back goes
+    to the first menu. The checks and the in-game test no longer expect a Fight button.
+  - **Dialogue box** (`css/dialogue.css`): the portrait in a 96×96 slot inside the box, a gold name tag, the line in
+    the reading font. `talkBox.onType`: a typing hook per character for phase 07's mouths.
+  - **Robots**: a Build tab of slot rows (part, type, move, Broken/Damaged) and a weight-against-legs meter; the
+    Workshop refit sheet on the new look; the Workshop section as unit rows. **Bag**: a screen title, roomy rows, a
+    floating use panel.
+- Verified: lint, type-check, modules, format, data, build; unit tests 53/53 (the robot tests and sims included);
+  smoke 15/15 (208 s; it was about 200 s with the painted stage); full-check steps Messages and Team pass. Headless:
+  a battle in a room (the shop) and one started from the Map tab both run on the 3D stage; the floating cards keep
+  clear of the fighters; screens looked at in both themes at 390 px.
+- Risky: the full check (not run whole) and the in-game test now play every battle in 3D, so they are slower on the
+  test machine. The leftover classic HUD code (`paintBoxes`, `.hcard`) is hidden, not deleted (06-4 cleanup).
+  Look on your phone at the floating battle cards while moves play out (the test machine freezes animations).
+- Next session starts with: 06-4 (Guide, Trainer card, Settings, shops, dressing room, friends; Studio gallery;
+  delete the emptied CSS and the hidden HUD code; accessibility pass; tag `phase-06-done`).
+
 ### Phase 06, session 06-2b - The new opening - 2026-10-18
 Owner's choices (docs/phases/06-plan.md "The new opening"): Blake comes before you have a starter; Hazel fights him
 herself, without a Billie, in battle-screen style, absurdly overpowered, you only watch and tap; then the pick, where
