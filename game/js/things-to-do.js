@@ -53,6 +53,10 @@ expose({
   photoShot: [() => photoShot, v => (photoShot = v)],
   photoStart: [() => photoStart, v => (photoStart = v)],
   placeHomeFurniture: [() => placeHomeFurniture, v => (placeHomeFurniture = v)],
+  recordThingsToDoEvent: [
+    () => recordThingsToDoEvent,
+    v => ((recordThingsToDoEvent = v), provide({ recordThingsToDoEvent })),
+  ],
   refreshHomeFurniture: [() => refreshHomeFurniture, v => (refreshHomeFurniture = v)],
   requestAsker: [() => requestAsker, v => ((requestAsker = v), provide({ requestAsker }))],
   requestHere: [() => requestHere, v => (requestHere = v)],
@@ -67,12 +71,11 @@ expose({
   stampTotal: [() => stampTotal],
   teamBillyOfType: [() => teamBillyOfType],
   thingsToDo: [() => thingsToDo, v => (thingsToDo = v)],
-  thingsToDoEvent: [() => thingsToDoEvent, v => ((thingsToDoEvent = v), provide({ thingsToDoEvent }))],
   thingsToDoReward: [() => thingsToDoReward, v => (thingsToDoReward = v)],
   typeIds: [() => typeIds],
 });
 /* eslint-enable no-func-assign */
-provide({ battleWeatherMultiplier, requestAsker, stampDraw, thingsToDoEvent });
+provide({ battleWeatherMultiplier, recordThingsToDoEvent, requestAsker, stampDraw });
 /* to-module: end */
 function thingsToDo() {
   const X = saveData.x || (saveData.x = {});
@@ -157,7 +160,7 @@ export function challengesToday() {
 const challengeProgress = c => (c.k === 'steps' ? saveData.day.steps : c.have);
 const challengeText = c => (CHALLENGE_KINDS.find(t => t.k === c.k) || { text: () => c.k }).text(c);
 /* something happened: a catch (with its types), a win, a fish landed, a stamp found */
-function thingsToDoEvent(k, o = {}) {
+function recordThingsToDoEvent(k, o = {}) {
   if (!saveData || !saveData.started) return;
   const C = challengesToday();
   let ch = false;
@@ -397,7 +400,7 @@ function stampDraw(quad, glows, t) {
       X.stamps[key] = today();
       const n = stampCount();
       if (typeof soundEffect === 'function') soundEffect('coin');
-      thingsToDoEvent('stamp');
+      recordThingsToDoEvent('stamp');
       let msg = `Gold stamp found! ${n} of ${stampTotal()}.`;
       if (n % 3 === 0) {
         const nu = FURNITURE.find(f => !X.home.own.includes(f[0]));
@@ -670,12 +673,12 @@ function battleWeatherMultiplier(t) {
         o = activeBattle && activeBattle.over;
         const f = activeBattle && activeBattle.sides && activeBattle.sides[1] && activeBattle.sides[1].team[0];
         types = f ? SPECIES[f.sp].types : null;
-        if (activeBattle && activeBattle.fished && o === 'caught') thingsToDoEvent('fish');
+        if (activeBattle && activeBattle.fished && o === 'caught') recordThingsToDoEvent('fish');
       } catch (e) {}
       const r = eb.apply(this, arguments);
       try {
-        if (o === 'win') thingsToDoEvent('win');
-        if (o === 'caught') thingsToDoEvent('catch', { types: types || [] });
+        if (o === 'win') recordThingsToDoEvent('win');
+        if (o === 'caught') recordThingsToDoEvent('catch', { types: types || [] });
       } catch (e) {}
       return r;
     });
