@@ -31,27 +31,27 @@ import {
   MW,
   REGV,
   edgePos,
-  mapCam,
-  mapFit,
-  mapLabels,
-  mapMount,
-  mapReset,
-  mapSelect,
-  mapWalk,
-  mapZoom,
-  mePos,
-  mproj,
   setMH,
   setMW,
-  setMapFit,
-  setMapLabels,
-  setMapMount,
-  setMapReset,
-  setMapZoom,
+  setWorldMapFit,
+  setWorldMapLabels,
+  setWorldMapMount,
+  setWorldMapReset,
+  setWorldMapZoom,
   slerp,
   sunBlocks,
   v3,
   worldMap,
+  worldMapCamera,
+  worldMapFit,
+  worldMapLabels,
+  worldMapMount,
+  worldMapPlayerPosition,
+  worldMapProject,
+  worldMapReset,
+  worldMapSelect,
+  worldMapWalk,
+  worldMapZoom,
 } from './world-map.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -64,10 +64,10 @@ expose({
   MINI_K: [() => MINI_K],
   MM: [() => MM],
   WORLD_RELIEF: [() => WORLD_RELIEF],
-  _mapLabelsCPU: [() => _mapLabelsCPU],
-  _mapMountCPU: [() => _mapMountCPU],
-  _mapResetCPU: [() => _mapResetCPU],
-  _mapZoomCPU: [() => _mapZoomCPU],
+  cpuWorldMapLabels: [() => cpuWorldMapLabels],
+  cpuWorldMapMount: [() => cpuWorldMapMount],
+  cpuWorldMapReset: [() => cpuWorldMapReset],
+  cpuWorldMapZoom: [() => cpuWorldMapZoom],
   mapGLAction: [() => mapGLAction, v => (mapGLAction = v)],
   mapGLCanvas: [() => mapGLCanvas, v => (mapGLCanvas = v)],
   mapGLLoop: [() => mapGLLoop, v => (mapGLLoop = v)],
@@ -215,7 +215,7 @@ function mglUV(v) {
 }
 function mglProj(v) {
   if (!MGL.flat) {
-    const q = mproj(worldMap.cam, v);
+    const q = worldMapProject(worldMap.cam, v);
     if (!q || sunBlocks(worldMap.cam, v)) return null;
     return q;
   }
@@ -258,17 +258,17 @@ function mglMat(cam) {
   return m;
 }
 /* ---------- mount and loop ---------- */
-const _mapMountCPU = mapMount,
-  _mapLabelsCPU = mapLabels,
-  _mapZoomCPU = mapZoom,
-  _mapResetCPU = mapReset;
-setMapMount(function () {
+const cpuWorldMapMount = worldMapMount,
+  cpuWorldMapLabels = worldMapLabels,
+  cpuWorldMapZoom = worldMapZoom,
+  cpuWorldMapReset = worldMapReset;
+setWorldMapMount(function () {
   const cv = $('#mapcv');
   if (!cv) return;
   if (!mapGLReady()) {
     worldMap.gl = false;
     document.body.classList.remove('map-gl');
-    return _mapMountCPU();
+    return cpuWorldMapMount();
   }
   worldMap.gl = true;
   document.body.classList.add('map-gl');
@@ -276,9 +276,9 @@ setMapMount(function () {
   worldMap.ctx = cv.getContext('2d');
   MGL.pins = null;
   mglSize();
-  const to = mePos();
+  const to = worldMapPlayerPosition();
   if (!worldMap.me) worldMap.me = to;
-  else if (v3.dot(worldMap.me, to) < 0.999999) mapWalk(worldMap.me, to);
+  else if (v3.dot(worldMap.me, to) < 0.999999) worldMapWalk(worldMap.me, to);
   if (!worldMap.focus) worldMap.focus = to;
   /* arriving from the walk screen: start close to you and pull back */
   if (U.mglFrom === 'walk' && !RM && !MGL.flat) {
@@ -309,7 +309,7 @@ setMapMount(function () {
         yaw: worldMap.yaw,
         pitch: worldMap.pitch,
         tilt: worldMap.tilt ?? 0.5733,
-        focus: worldMap.focus || mePos(),
+        focus: worldMap.focus || worldMapPlayerPosition(),
         cam: worldMap.cam,
         fu: MGL.fv.u,
         fv: MGL.fv.v,
@@ -397,7 +397,7 @@ setMapMount(function () {
     cv.addEventListener('keydown', e => {
       if (MGL.flat) return;
       const k = e.key,
-        D = { focus: worldMap.focus || mePos(), cam: worldMap.cam };
+        D = { focus: worldMap.focus || worldMapPlayerPosition(), cam: worldMap.cam };
       let used = 1;
       if (k === 'ArrowLeft' || k === 'a') mglPanTo(D, 60, 0);
       else if (k === 'ArrowRight' || k === 'd') mglPanTo(D, -60, 0);
@@ -405,8 +405,8 @@ setMapMount(function () {
       else if (k === 'ArrowDown' || k === 's') mglPanTo(D, 0, -60);
       else if (k === 'q') worldMap.yaw -= 0.2;
       else if (k === 'e') worldMap.yaw += 0.2;
-      else if (k === '+' || k === '=') mapZoom(0.8);
-      else if (k === '-') mapZoom(1.25);
+      else if (k === '+' || k === '=') worldMapZoom(0.8);
+      else if (k === '-') worldMapZoom(1.25);
       else used = 0;
       if (used) {
         e.preventDefault();
@@ -527,7 +527,7 @@ function mapGLLoop(ts) {
   MGL.lastT = ts;
   const w0 = performance.now();
   mglSize();
-  worldMap.cam = mapCam();
+  worldMap.cam = worldMapCamera();
   mglRender(ts);
   mglOverlay(ts);
   mglPins();
@@ -674,7 +674,7 @@ export function mglRender(t) {
       gl.drawArrays(gl.TRIANGLES, 0, 6);
     }
   }
-  const P = worldMap.focus || mePos(),
+  const P = worldMap.focus || worldMapPlayerPosition(),
     fd = Math.max(0.02, v3.dot(v3.sub(P, cam.C), cam.fw));
   MGL.fd = MGL.fd == null ? fd : MGL.fd + (fd - MGL.fd) * 0.2;
   eglPost(S, { near: MGL_N, far: MGL_F, df: MGL.fd * 1.6, F: (cam.foc * rw) / MW }, MGL.fd, rw, rh, {
@@ -828,7 +828,7 @@ function mglOverlay(t) {
       );
     }
   }
-  const pq = mglProj(worldMap.me || mePos());
+  const pq = mglProj(worldMap.me || worldMapPlayerPosition());
   if (pq && worldMap.fly && typeof flyDraw === 'function') flyDraw(c, t, mglProj);
   else if (pq) {
     const fr = owFrames('me'),
@@ -938,7 +938,7 @@ function mglPins() {
     );
   }
   FUTURE.forEach((f, i) => {
-    let q = f.t === 'sun' ? (MGL.flat ? null : mproj(worldMap.cam, [0, 0, 0])) : mglProj(REGV[i]);
+    let q = f.t === 'sun' ? (MGL.flat ? null : worldMapProject(worldMap.cam, [0, 0, 0])) : mglProj(REGV[i]);
     if (q && q.z > 0.95 && U.mapSel !== 'f' + i && !MGL.flat) return put('f' + i, null);
     if (q && U.mapSel !== 'f' + i) {
       const w = f.name.length * 7 + 20,
@@ -1005,7 +1005,7 @@ function mglPick(ev) {
   });
   if (best === null)
     FUTURE.forEach((f, i) => {
-      const q = f.t === 'sun' ? (MGL.flat ? null : mproj(worldMap.cam, [0, 0, 0])) : mglProj(REGV[i]);
+      const q = f.t === 'sun' ? (MGL.flat ? null : worldMapProject(worldMap.cam, [0, 0, 0])) : mglProj(REGV[i]);
       if (!q) return;
       const d = Math.hypot(q.x - x, q.y - y);
       if (d < bd) {
@@ -1013,15 +1013,15 @@ function mglPick(ev) {
         best = 'f' + i;
       }
     });
-  if (best !== null) mapSelect(best);
+  if (best !== null) worldMapSelect(best);
 }
-setMapLabels(function () {
+setWorldMapLabels(function () {
   if (worldMap.gl) return mglPins();
-  return _mapLabelsCPU();
+  return cpuWorldMapLabels();
 });
 {
-  const cpuFit = mapFit;
-  setMapFit(function () {
+  const cpuFit = worldMapFit;
+  setWorldMapFit(function () {
     if (worldMap.gl) {
       mglSize();
       worldMap.dirty = true;
@@ -1030,20 +1030,20 @@ setMapLabels(function () {
     cpuFit();
   });
 }
-setMapZoom(function (k) {
-  if (!worldMap.gl) return _mapZoomCPU(k);
+setWorldMapZoom(function (k) {
+  if (!worldMap.gl) return cpuWorldMapZoom(k);
   MGL.altT = null;
   if (MGL.flat) MGL.fv.s = clamp(MGL.fv.s / k, mglFlatMin(), MW * 8);
   else worldMap.alt = clamp(worldMap.alt * k, MGL_ALT[0], MGL_ALT[1]);
   worldMap.dirty = true;
 });
-setMapReset(function () {
-  if (!worldMap.gl) return _mapResetCPU();
+setWorldMapReset(function () {
+  if (!worldMap.gl) return cpuWorldMapReset();
   worldMap.free = false;
   worldMap.tilt = 0.5733;
-  _mapResetCPU();
+  cpuWorldMapReset();
   if (MGL.flat) {
-    const [u, v] = mglUV(mePos());
+    const [u, v] = mglUV(worldMapPlayerPosition());
     MGL.fv.u = u;
     MGL.fv.v = v;
   }
@@ -1123,7 +1123,7 @@ export function mapGLAction(a, d) {
   if (a === 'mflat') {
     MGL.flat = !MGL.flat;
     if (MGL.flat) {
-      const [u, v] = mglUV(worldMap.focus || mePos());
+      const [u, v] = mglUV(worldMap.focus || worldMapPlayerPosition());
       MGL.fv.u = u;
       MGL.fv.v = v;
       MGL.fv.s = Math.max(mglFlatMin(), MGL.fv.s);

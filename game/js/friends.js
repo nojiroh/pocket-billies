@@ -18,7 +18,7 @@ import { sprHTML } from './skeleton-rig.js';
 import { directionOf, walkView } from './walk-view.js';
 import { personItem } from './walk-view-gl.js';
 import { owBuddyMon, owItem } from './world-billies.js';
-import { mapSelect, worldMap } from './world-map.js';
+import { worldMap, worldMapSelect } from './world-map.js';
 /* eslint-disable no-func-assign */
 expose({
   FR: [() => FR],
@@ -405,7 +405,7 @@ document.addEventListener('click', ev => {
     U.tab = 'map';
     render();
     setTimeout(() => {
-      if (typeof mapSelect === 'function') mapSelect(+d.n);
+      if (typeof worldMapSelect === 'function') worldMapSelect(+d.n);
     }, 300);
   } else if (d.a === 'fr-pin') {
     const f = FR.data[d.u] || {};

@@ -29,35 +29,35 @@ expose({
   WTEX: [() => WTEX, v => (WTEX = v)],
   edgePos: [() => edgePos, v => (edgePos = v)],
   llv: [() => llv],
-  mapCam: [() => mapCam, v => (mapCam = v)],
-  mapFit: [() => mapFit, v => setMapFit(v)],
-  mapFocus: [() => mapFocus, v => (mapFocus = v)],
-  mapLabels: [() => mapLabels, v => setMapLabels(v)],
-  mapLoop: [() => mapLoop, v => (mapLoop = v)],
-  mapMount: [() => mapMount, v => setMapMount(v)],
-  mapPick: [() => mapPick, v => (mapPick = v)],
-  mapPrepare: [() => mapPrepare, v => (mapPrepare = v)],
-  mapRender: [() => mapRender, v => (mapRender = v)],
-  mapReset: [() => mapReset, v => setMapReset(v)],
-  mapSelect: [() => mapSelect, v => (mapSelect = v)],
-  mapSize: [() => mapSize, v => (mapSize = v)],
-  mapWalk: [() => mapWalk, v => (mapWalk = v)],
-  mapZoom: [() => mapZoom, v => setMapZoom(v)],
-  mePos: [() => mePos, v => (mePos = v)],
-  mproj: [() => mproj, v => (mproj = v)],
   onStepsAdded: [() => onStepsAdded, v => ((onStepsAdded = v), provide({ onStepsAdded }))],
-  pixRingM: [() => pixRingM, v => (pixRingM = v)],
   setMH: [() => setMH, v => (setMH = v)],
   setMW: [() => setMW, v => (setMW = v)],
-  setMapFit: [() => setMapFit, v => (setMapFit = v)],
-  setMapLabels: [() => setMapLabels, v => (setMapLabels = v)],
-  setMapMount: [() => setMapMount, v => (setMapMount = v)],
-  setMapReset: [() => setMapReset, v => (setMapReset = v)],
-  setMapZoom: [() => setMapZoom, v => (setMapZoom = v)],
+  setWorldMapFit: [() => setWorldMapFit, v => (setWorldMapFit = v)],
+  setWorldMapLabels: [() => setWorldMapLabels, v => (setWorldMapLabels = v)],
+  setWorldMapMount: [() => setWorldMapMount, v => (setWorldMapMount = v)],
+  setWorldMapReset: [() => setWorldMapReset, v => (setWorldMapReset = v)],
+  setWorldMapZoom: [() => setWorldMapZoom, v => (setWorldMapZoom = v)],
   slerp: [() => slerp, v => (slerp = v)],
   sunBlocks: [() => sunBlocks, v => (sunBlocks = v)],
   v3: [() => v3],
   worldMap: [() => worldMap],
+  worldMapCamera: [() => worldMapCamera, v => (worldMapCamera = v)],
+  worldMapFit: [() => worldMapFit, v => setWorldMapFit(v)],
+  worldMapFocus: [() => worldMapFocus, v => (worldMapFocus = v)],
+  worldMapLabels: [() => worldMapLabels, v => setWorldMapLabels(v)],
+  worldMapLoop: [() => worldMapLoop, v => (worldMapLoop = v)],
+  worldMapMount: [() => worldMapMount, v => setWorldMapMount(v)],
+  worldMapPick: [() => worldMapPick, v => (worldMapPick = v)],
+  worldMapPixelRing: [() => worldMapPixelRing, v => (worldMapPixelRing = v)],
+  worldMapPlayerPosition: [() => worldMapPlayerPosition, v => (worldMapPlayerPosition = v)],
+  worldMapPrepare: [() => worldMapPrepare, v => (worldMapPrepare = v)],
+  worldMapProject: [() => worldMapProject, v => (worldMapProject = v)],
+  worldMapRender: [() => worldMapRender, v => (worldMapRender = v)],
+  worldMapReset: [() => worldMapReset, v => setWorldMapReset(v)],
+  worldMapSelect: [() => worldMapSelect, v => (worldMapSelect = v)],
+  worldMapSize: [() => worldMapSize, v => (worldMapSize = v)],
+  worldMapWalk: [() => worldMapWalk, v => (worldMapWalk = v)],
+  worldMapZoom: [() => worldMapZoom, v => setWorldMapZoom(v)],
 });
 /* eslint-enable no-func-assign */
 provide({ onStepsAdded });
@@ -138,7 +138,7 @@ export function edgePos(a, b, f) {
     u = (g - p0.l) / (p1.l - p0.l || 1);
   return v3.norm(v3.add(v3.mul(p0.p, 1 - u), v3.mul(p1.p, u)));
 }
-export function mePos() {
+export function worldMapPlayerPosition() {
   const r = S.route,
     nx = nextStop();
   if (nx == null || !r.prog) return MNV[r.node];
@@ -148,7 +148,7 @@ export function mePos() {
 export const WORLD_ART = 'map/world.png';
 provide({ WORLD_ART }); /* to-module */
 let WTEX = null;
-export function mapPrepare() {
+export function worldMapPrepare() {
   return WTEX
     ? Promise.resolve(WTEX)
     : artPixels(WORLD_ART).then(t => {
@@ -234,7 +234,7 @@ export const worldMap = {
   focus: null,
   fT: null,
 };
-function mapSize() {
+function worldMapSize() {
   const cr = worldMap.cv && worldMap.cv.isConnected ? worldMap.cv.getBoundingClientRect() : null,
     w = cr && cr.width > 20 ? cr.width : innerWidth,
     h = cr && cr.height > 20 ? cr.height : innerHeight,
@@ -255,18 +255,18 @@ function mapSize() {
   worldMap.s = w / MW;
   worldMap.dirty = true;
 }
-export function mapFit() {
+export function worldMapFit() {
   if (!worldMap.cv || !worldMap.cv.isConnected) return;
-  mapSize();
-  mapLabels();
+  worldMapSize();
+  worldMapLabels();
 }
 /* phase 04d: world-map-gl.js puts the 3D map in place */
-export function setMapFit(v) {
-  mapFit = v; // eslint-disable-line no-func-assign
-  provide({ mapFit });
+export function setWorldMapFit(v) {
+  worldMapFit = v; // eslint-disable-line no-func-assign
+  provide({ worldMapFit });
 }
-export function mapCam() {
-  const P = worldMap.focus || mePos(),
+export function worldMapCamera() {
+  const P = worldMap.focus || worldMapPlayerPosition(),
     U = v3.mul(P, -1),
     east = v3.norm(v3.cross(P, [0, 1, 0]));
   let F = v3.norm(v3.sub(east, v3.mul(U, v3.dot(east, U))));
@@ -291,20 +291,20 @@ export function mapCam() {
     up = v3.cross(rt, fw);
   return { C, fw, rt, up, P, foc: Math.min(MW * 0.62, MH * 0.47) };
 }
-export function mproj(cam, p) {
+export function worldMapProject(cam, p) {
   const d = v3.sub(p, cam.C),
     z = v3.dot(d, cam.fw);
   if (z < 0.004) return null;
   return { x: MW / 2 + (cam.foc * v3.dot(d, cam.rt)) / z, y: MH / 2 - (cam.foc * v3.dot(d, cam.up)) / z, z };
 }
-function mapRender(t, lo) {
+function worldMapRender(t, lo) {
   const c = worldMap.ctx;
   if (!WTEX) return;
   if (!worldMap.img || worldMap.img.width !== MW || worldMap.img.height !== MH)
     worldMap.img = c.createImageData(MW, MH);
   const buf = new Uint32Array(worldMap.img.data.buffer),
     T = WTEX,
-    cam = mapCam(),
+    cam = worldMapCamera(),
     C = cam.C,
     cc = v3.dot(C, C);
   worldMap.cam = cam;
@@ -317,8 +317,8 @@ function mapRender(t, lo) {
       la = k.lat * D2R,
       cv = [Math.cos(la) * Math.cos(a) * k.alt, Math.sin(la) * k.alt, Math.cos(la) * Math.sin(a) * k.alt],
       n = v3.norm(cv),
-      q = mproj(cam, cv),
-      qs = mproj(cam, n);
+      q = worldMapProject(cam, cv),
+      qs = worldMapProject(cam, n);
     const o = { c: cv, r: k.r, n, b: null, sb: null };
     if (q) {
       const R = (k.r * cam.foc) / q.z + 2;
@@ -330,7 +330,7 @@ function mapRender(t, lo) {
     }
     if (o.b || o.sb) cl.push(o);
   });
-  const sq = mproj(cam, [0, 0, 0]),
+  const sq = worldMapProject(cam, [0, 0, 0]),
     sR = sq ? (0.42 * cam.foc) / sq.z + 4 : 0;
   for (let j = 0; j < MH; j += st) {
     const rowC = cl.filter(k => k.b && j >= k.b[2] && j <= k.b[3]),
@@ -437,7 +437,7 @@ function mapRender(t, lo) {
       for (let f = 0; f <= 1; f += 0.04) {
         if (k === 0 && f < S.route.prog / linkCost(a, b)) continue;
         if (Math.floor(f * 25 + t / 120) % 3 === 0) continue;
-        const q = mproj(cam, edgePos(a, b, f));
+        const q = worldMapProject(cam, edgePos(a, b, f));
         if (q && q.z < 1.4) c.fillRect(Math.round(q.x), Math.round(q.y), 1, 1);
       }
     }
@@ -445,16 +445,16 @@ function mapRender(t, lo) {
   /* markers, landmarks, player */
   const L = [];
   ROUTE.forEach((n, i) => {
-    const q = mproj(cam, MNV[i]);
+    const q = worldMapProject(cam, MNV[i]);
     if (q) L.push({ q, i, kind: 'r' });
   });
   FUTURE.forEach((f, i) => {
     if (f.t === 'sun') {
-      const q = mproj(cam, [0, 0, 0]);
+      const q = worldMapProject(cam, [0, 0, 0]);
       if (q) L.push({ q, i, kind: 'sun' });
       return;
     }
-    const q = mproj(cam, REGV[i]);
+    const q = worldMapProject(cam, REGV[i]);
     if (q) L.push({ q, i, kind: 'f' });
   });
   worldMap.proj = L;
@@ -496,7 +496,7 @@ function mapRender(t, lo) {
       }
       if (U.mapSel === i || i === dest) {
         const rr = Math.round(5 * s + Math.sin(t / 200) * 1.5);
-        pixRingM(c, x, y - r * 2, rr, i === dest && U.mapSel !== i ? '#FFE27A' : '#FFFFFF');
+        worldMapPixelRing(c, x, y - r * 2, rr, i === dest && U.mapSel !== i ? '#FFE27A' : '#FFFFFF');
       }
     } else {
       const x = Math.round(q.x),
@@ -505,16 +505,16 @@ function mapRender(t, lo) {
       c.fillRect(x - 1, y - 1, 3, 3);
       c.fillStyle = '#5A5080';
       c.fillRect(x, y, 1, 1);
-      if (U.mapSel === 'f' + i) pixRingM(c, x, y, Math.round(5 * s + Math.sin(t / 200) * 1.5), '#FFFFFF');
+      if (U.mapSel === 'f' + i) worldMapPixelRing(c, x, y, Math.round(5 * s + Math.sin(t / 200) * 1.5), '#FFFFFF');
     }
   });
-  const sq2 = mproj(cam, [0, 0, 0]);
+  const sq2 = worldMapProject(cam, [0, 0, 0]);
   const sunI = FUTURE.findIndex(f => f.t === 'sun');
   if (sq2 && sunI >= 0 && U.mapSel === 'f' + sunI)
-    pixRingM(c, Math.round(sq2.x), Math.round(sq2.y), Math.round(12 + Math.sin(t / 200) * 2), '#FFFFFF');
+    worldMapPixelRing(c, Math.round(sq2.x), Math.round(sq2.y), Math.round(12 + Math.sin(t / 200) * 2), '#FFFFFF');
   const LS = [];
   MLAND.forEach(l => {
-    const q = mproj(cam, l.v);
+    const q = worldMapProject(cam, l.v);
     if (q && q.z < 1.25 && q.x > -20 && q.x < MW + 20 && q.y > -20 && q.y < MH + 20 && !sunBlocks(cam, l.v))
       LS.push([q, l]);
   });
@@ -535,8 +535,8 @@ function mapRender(t, lo) {
     );
     c.globalAlpha = 1;
   });
-  const pq = mproj(cam, worldMap.me || mePos());
-  if (pq && worldMap.fly && typeof flyDraw === 'function') flyDraw(c, t, v => mproj(cam, v));
+  const pq = worldMapProject(cam, worldMap.me || worldMapPlayerPosition());
+  if (pq && worldMap.fly && typeof flyDraw === 'function') flyDraw(c, t, v => worldMapProject(cam, v));
   else if (pq) {
     const fr = owFrames('me'),
       set = fr[worldMap.face] || fr.down,
@@ -563,19 +563,19 @@ export function sunBlocks(cam, p) {
   const t0 = -b - Math.sqrt(q);
   return t0 > 0 && t0 < L;
 }
-function pixRingM(c, cx, cy, r, col) {
+function worldMapPixelRing(c, cx, cy, r, col) {
   c.fillStyle = col;
   for (let a = 0; a < 360; a += Math.max(4, 60 / r)) {
     const rad = (a * Math.PI) / 180;
     c.fillRect(Math.round(cx + Math.cos(rad) * r), Math.round(cy + Math.sin(rad) * r), 1, 1);
   }
 }
-export function mapMount() {
+export function worldMapMount() {
   const cv = $('#mapcv');
   if (!cv) return;
   if (!WTEX) {
     document.body.classList.add('map-loading');
-    mapPrepare()
+    worldMapPrepare()
       .then(() => document.body.classList.remove('map-loading'))
       .catch(e => {
         console.error(e);
@@ -585,13 +585,13 @@ export function mapMount() {
   worldMap.cv = cv;
   worldMap.ctx = cv.getContext('2d');
   worldMap.img = null;
-  mapSize();
+  worldMapSize();
   cv.width = MW;
   cv.height = MH;
   worldMap.dirty = true;
-  const to = mePos();
+  const to = worldMapPlayerPosition();
   if (!worldMap.me) worldMap.me = to;
-  else if (v3.dot(worldMap.me, to) < 0.999999) mapWalk(worldMap.me, to);
+  else if (v3.dot(worldMap.me, to) < 0.999999) worldMapWalk(worldMap.me, to);
   if (!worldMap.focus) worldMap.focus = to;
   if (!cv._bound) {
     cv._bound = 1;
@@ -619,7 +619,7 @@ export function mapMount() {
       const D = worldMap.drag;
       worldMap.drag = null;
       worldMap.dirty = true;
-      if (D && !D.moved) mapPick(e);
+      if (D && !D.moved) worldMapPick(e);
     });
     cv.addEventListener('pointercancel', () => {
       worldMap.drag = null;
@@ -637,41 +637,41 @@ export function mapMount() {
   if (!worldMap.on) {
     worldMap.on = true;
     worldMap.last = performance.now();
-    frameTask('map', mapLoop);
+    frameTask('map', worldMapLoop);
   }
 }
 /* phase 04d: world-map-gl.js puts the 3D map in place */
-export function setMapMount(v) {
-  mapMount = v; // eslint-disable-line no-func-assign
-  provide({ mapMount });
+export function setWorldMapMount(v) {
+  worldMapMount = v; // eslint-disable-line no-func-assign
+  provide({ worldMapMount });
 }
-export function mapZoom(k) {
+export function worldMapZoom(k) {
   worldMap.alt = clamp(worldMap.alt * k, 0.08, 0.7);
   worldMap.dirty = true;
 }
 /* phase 04d: world-map-gl.js puts the 3D map in place */
-export function setMapZoom(v) {
-  mapZoom = v; // eslint-disable-line no-func-assign
-  provide({ mapZoom });
+export function setWorldMapZoom(v) {
+  worldMapZoom = v; // eslint-disable-line no-func-assign
+  provide({ worldMapZoom });
 }
-export function mapReset() {
+export function worldMapReset() {
   worldMap.yaw = 0;
   worldMap.pitch = 0;
   worldMap.alt = 0.32;
-  mapFocus(mePos());
+  worldMapFocus(worldMapPlayerPosition());
   U.mapSel = null;
   paintMapCard();
   worldMap.dirty = true;
 }
 /* phase 04d: world-map-gl.js puts the 3D map in place */
-export function setMapReset(v) {
-  mapReset = v; // eslint-disable-line no-func-assign
-  provide({ mapReset });
+export function setWorldMapReset(v) {
+  worldMapReset = v; // eslint-disable-line no-func-assign
+  provide({ worldMapReset });
 }
-function mapFocus(v) {
+function worldMapFocus(v) {
   worldMap.fT = { from: worldMap.focus || v, to: v, t0: performance.now(), dur: RM ? 1 : 700 };
 }
-export function mapWalk(from, to) {
+export function worldMapWalk(from, to) {
   worldMap.anim = {
     from,
     to,
@@ -681,14 +681,14 @@ export function mapWalk(from, to) {
 }
 function onStepsAdded() {
   if (U.tab !== 'map' || !worldMap.cv || !worldMap.cv.isConnected || worldMap.fly) return;
-  const to = mePos();
+  const to = worldMapPlayerPosition();
   if (worldMap.me && v3.dot(worldMap.me, to) < 0.999999) {
-    mapWalk(worldMap.me, to);
-    if (U.mapSel == null) mapFocus(to);
+    worldMapWalk(worldMap.me, to);
+    if (U.mapSel == null) worldMapFocus(to);
   }
   paintMapCard();
 }
-function mapLoop(ts) {
+function worldMapLoop(ts) {
   if (!worldMap.cv || !worldMap.cv.isConnected) {
     worldMap.on = false;
     frameStop('map');
@@ -721,19 +721,19 @@ function mapLoop(ts) {
   worldMap.lastDraw = ts;
   worldMap.dirty = false;
   const w0 = performance.now();
-  mapRender(ts, busy);
+  worldMapRender(ts, busy);
   frameCount(performance.now() - w0);
-  mapLabels();
+  worldMapLabels();
   if (busy && !worldMap.drag && !moving) worldMap.zt = 0;
   if (worldMap.wasBusy && !busy) worldMap.dirty = true;
   worldMap.wasBusy = busy;
 }
-export function mapLabels() {
+export function worldMapLabels() {
   const L = $('#maplabels');
   if (!L || !worldMap.cam) return;
   let cr = worldMap.cv && worldMap.cv.getBoundingClientRect();
   if (cr && cr.width > 20 && cr.height > 20 && Math.abs(cr.width / cr.height - MW / MH) > 0.04) {
-    mapSize();
+    worldMapSize();
     cr = worldMap.cv.getBoundingClientRect();
   }
   const s = cr && cr.width ? cr.width / MW : worldMap.s,
@@ -774,14 +774,14 @@ export function mapLabels() {
   }
 }
 /* phase 04d: world-map-gl.js puts the 3D map in place */
-export function setMapLabels(v) {
-  mapLabels = v; // eslint-disable-line no-func-assign
-  provide({ mapLabels });
+export function setWorldMapLabels(v) {
+  worldMapLabels = v; // eslint-disable-line no-func-assign
+  provide({ worldMapLabels });
 }
-export function mapSelect(n) {
+export function worldMapSelect(n) {
   U.mapSel = n;
   paintMapCard();
-  mapLabels();
+  worldMapLabels();
   const v =
     typeof n === 'number'
       ? MNV[n]
@@ -790,10 +790,10 @@ export function mapSelect(n) {
           ? null
           : REGV[+n.slice(1)]
         : null;
-  if (v) mapFocus(v);
+  if (v) worldMapFocus(v);
   worldMap.dirty = true;
 }
-function mapPick(ev) {
+function worldMapPick(ev) {
   const cv = worldMap.cv;
   if (!cv) return;
   const r = cv.getBoundingClientRect(),
@@ -808,5 +808,5 @@ function mapPick(ev) {
       best = kind === 'r' ? i : 'f' + i;
     }
   });
-  if (best !== null) mapSelect(best);
+  if (best !== null) worldMapSelect(best);
 }

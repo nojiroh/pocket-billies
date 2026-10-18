@@ -876,9 +876,9 @@ def desktop_steps(b, base, R):
         pg.evaluate("U.tab='map';render();0"); time.sleep(6)
         if pg.evaluate("worldMap.gl"):
             f0 = pg.evaluate("JSON.stringify(worldMap.focus)"); y0 = pg.evaluate("worldMap.yaw")
-            pg.evaluate("mglPanTo({focus:worldMap.focus||mePos(),cam:worldMap.cam},-120,40);mapGLAction('mturn',{k:'1'});for(let i=0;i<20;i++)mapZoom(.8);worldMap.tilt=.35;0"); time.sleep(2); shot(pg, 'map-close')
+            pg.evaluate("mglPanTo({focus:worldMap.focus||worldMapPlayerPosition(),cam:worldMap.cam},-120,40);mapGLAction('mturn',{k:'1'});for(let i=0;i<20;i++)worldMapZoom(.8);worldMap.tilt=.35;0"); time.sleep(2); shot(pg, 'map-close')
             m = pg.evaluate("[JSON.stringify(worldMap.focus),worldMap.yaw,worldMap.alt,worldMap.free]")
-            pg.evaluate("mapReset();0")
+            pg.evaluate("worldMapReset();0")
             if m[0] == f0 or abs(m[1] - y0) < .3 or m[2] > .03 or not m[3]: raise Exception(f'map camera: {m}')
             out.append(f'map pans, turns and zooms to {m[2]:.3f}')
         pg.evaluate("U.tab='walk';render();0"); time.sleep(.5)
@@ -929,7 +929,7 @@ def desktop_steps(b, base, R):
         if pg.evaluate("worldMap.gl&&typeof mmOn==='function'&&mmOn()"):
             pg.evaluate("worldMap.alt=.04;worldMap.tilt=.45;MGL.altT=null;worldMap.dirty=true;0"); time.sleep(4)
             n = pg.evaluate("[...MM.cache.values()].filter(e=>e.m).length"); shot(pg, 'map-minis')
-            pg.evaluate("mapReset();0")
+            pg.evaluate("worldMapReset();0")
             if n < 1: raise Exception('no 3D miniatures were built on the map')
             out.append(f'{n} 3D miniatures on the map')
         pg.evaluate("U.tab='walk';render();0"); time.sleep(.5)

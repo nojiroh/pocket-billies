@@ -81,7 +81,7 @@ import {
   setOpenBattle,
   setPaintActions,
 } from './battle.js';
-import { mapMount, setMapMount } from './world-map.js';
+import { setWorldMapMount, worldMapMount } from './world-map.js';
 import { mglRender, mmBuild, setMglRender, setMmBuild } from './world-map-gl.js';
 import { openShop, setOpenShop } from './shop.js';
 import { AMB, AUD } from './sound.js';
@@ -132,7 +132,6 @@ Object.defineProperties(GAME, {
   groundOcclusion: { get: () => groundOcclusion, set: setGroundOcclusion },
   humanFrames: { get: () => humanFrames, set: setHumanFrames },
   lifeStep: { get: () => lifeStep, set: setLifeStep },
-  mapMount: { get: () => mapMount, set: setMapMount },
   mglRender: { get: () => mglRender, set: setMglRender },
   mmBuild: { get: () => mmBuild, set: setMmBuild },
   mountWalkView: { get: () => mountWalkView, set: setMountWalkView },
@@ -160,4 +159,5 @@ Object.defineProperties(GAME, {
   userFps: { get: () => userFps },
   walkRenderer: { get: () => walkRenderer },
   walkView: { get: () => walkView },
+  worldMapMount: { get: () => worldMapMount, set: setWorldMapMount },
 });

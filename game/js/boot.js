@@ -19,7 +19,7 @@ import { ENV } from './environment.js';
 import { startTownRise, walkRenderer } from './walk-view-gl.js';
 import { WORLD } from './seamless-world.js';
 import { areaKey } from './battle.js';
-import { WORLD_ART, mapPrepare } from './world-map.js';
+import { WORLD_ART, worldMapPrepare } from './world-map.js';
 import { WORLD_RELIEF } from './world-map-gl.js';
 import { csWanted } from './cutscene.js';
 import { TITLE, titleMount, titleStart, titleWanted } from './title.js';
@@ -563,7 +563,7 @@ async function preloadAll(onTown) {
   /* the map needs its pixels, the first scene needs its ground built */
   if (location.protocol !== 'file:') {
     try {
-      await mapPrepare();
+      await worldMapPrepare();
     } catch (e) {
       fails.push(WORLD_ART + ' (pixels: ' + e.message + ')');
     }

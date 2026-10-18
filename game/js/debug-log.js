@@ -647,7 +647,7 @@ NWLOG.hook = () => {
     NWLOG.add('travel', `trip to ${typeof GAME.ROUTE !== 'undefined' && GAME.ROUTE[j] ? GAME.ROUTE[j].name : j}`)
   );
   wrap('openShop', id => NWLOG.add('shop', id));
-  wrap('mapMount', () => NWLOG.add('map', 'open'));
+  wrap('worldMapMount', () => NWLOG.add('map', 'open'));
   /* v33: costly jobs leave marks (see NWLOG.blame) */
   const timed = (name, label) => {
     const o = GAME[name];

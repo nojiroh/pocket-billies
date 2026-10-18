@@ -167,7 +167,7 @@ import {
   startWild,
   tapMsg,
 } from './battle.js';
-import { MH, MW, mapFit, mapMount, mapReset, mapSelect, mapZoom } from './world-map.js';
+import { MH, MW, worldMapFit, worldMapMount, worldMapReset, worldMapSelect, worldMapZoom } from './world-map.js';
 import { mapGLAction, mapGLWanted } from './world-map-gl.js';
 import { openShop } from './shop.js';
 import { sfx } from './sound.js';
@@ -620,7 +620,7 @@ export function render() {
   updateNav(true);
   walkSceneSync();
   document.body.classList.toggle('on-map', T === 'map');
-  if (T === 'map') mapMount();
+  if (T === 'map') worldMapMount();
   $$('[data-count]').forEach(el => {
     const k = el.dataset.count,
       to = +el.dataset.to,
@@ -2758,7 +2758,7 @@ document.addEventListener('click', ev => {
       render();
       break;
     case 'msel':
-      mapSelect(d.n.startsWith('f') ? d.n : +d.n);
+      worldMapSelect(d.n.startsWith('f') ? d.n : +d.n);
       break;
     case 'travel': {
       const j = +d.n;
@@ -2812,10 +2812,10 @@ document.addEventListener('click', ev => {
       break;
     }
     case 'mzoom':
-      mapZoom(d.k === 'in' ? 0.8 : 1.25);
+      worldMapZoom(d.k === 'in' ? 0.8 : 1.25);
       break;
     case 'mreset':
-      mapReset();
+      worldMapReset();
       break;
     case 'hire':
       hireFlow(+d.s);
@@ -3057,7 +3057,7 @@ document.addEventListener('keydown', ev => {
 });
 window.addEventListener('resize', () => {
   if (B) battleResize();
-  else if (U.tab === 'map' && S.started) mapFit();
+  else if (U.tab === 'map' && S.started) worldMapFit();
 });
 
 /* ---------- tilt ---------- */

@@ -111,7 +111,7 @@ function analyse(text) {
 // Phase 04d: what a file reads WHILE it loads, and what each of its named functions reads when it is called. Counted:
 // the code that runs then (not the functions it only defines), the functions it calls at once or hands to a call
 // that runs them now (forEach, map), but not callbacks for later (addEventListener, setTimeout, then) or functions
-// handed to a setter (setMapMount). `typeof x` can't fail, so it doesn't count. Of the names read, only the called ones are followed into their functions.
+// handed to a setter (setWorldMapMount). `typeof x` can't fail, so it doesn't count. Of the names read, only the called ones are followed into their functions.
 // A function stored in an object or returned is not followed: the check is a safety net, not a proof.
 const LATER =
   /^(set[A-Z_$]\w*|addEventListener|setTimeout|setInterval|requestAnimationFrame|requestIdleCallback|queueMicrotask|then|catch|finally|on|once|observe)$/;
