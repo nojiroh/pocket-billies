@@ -40,7 +40,6 @@ expose({
   drawPortrait: [() => drawPortrait, v => (drawPortrait = v)],
   folkFrames: [() => folkFrames],
   folkLook: [() => folkLook, v => (folkLook = v)],
-  frameReady: [() => frameReady, v => (frameReady = v)],
   headCenter: [() => headCenter, v => (headCenter = v)],
   hslToRgb: [() => hslToRgb, v => (hslToRgb = v)],
   imageLoaded: [() => imageLoaded],
@@ -70,6 +69,7 @@ expose({
   rgbToHsl: [() => rgbToHsl, v => (rgbToHsl = v)],
   scaleCanvas: [() => scaleCanvas, v => (scaleCanvas = v)],
   trainerDesign: [() => trainerDesign],
+  walkFrameDrawn: [() => walkFrameDrawn, v => (walkFrameDrawn = v)],
   wardrobeData: [() => wardrobeData],
   wardrobeSlots: [() => wardrobeSlots],
   warmPerson: [() => warmPerson, v => (warmPerson = v)],
@@ -756,19 +756,19 @@ export function personWalkFrames(who) {
 }
 /* v32: a walk frame that hasn't been drawn yet waits for a frame with time to spare: until then the person shows a
    frame that is ready (or isn't shown for a moment), instead of the scene stalling while a crowd is drawn */
-function frameReady(arr, i) {
+function walkFrameDrawn(arr, i) {
   return !!(arr && arr._b && arr._b[i]);
 }
 export function pickWalkFrame(set, walk, k) {
   const want = walk ? (set.cyc ? [set.cyc, k] : [set, 1]) : [set, 0];
-  if (frameReady(want[0], want[1]) || typeof frameBudgetLeft !== 'function' || frameBudgetLeft())
+  if (walkFrameDrawn(want[0], want[1]) || typeof frameBudgetLeft !== 'function' || frameBudgetLeft())
     return want[0][want[1]];
   for (const [a, n] of [
     [set, 3],
     [set.cyc, 6],
   ]) {
     if (!a) continue;
-    for (let i = 0; i < n; i++) if (frameReady(a, i)) return a[i];
+    for (let i = 0; i < n; i++) if (walkFrameDrawn(a, i)) return a[i];
   }
   return null;
 }
