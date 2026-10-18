@@ -703,7 +703,7 @@ NWLOG.hook = () => {
     ['drawGround', 'ground'],
     ['reflectionPass', 'reflections'],
     ['drawWater', 'water'],
-    ['dglFxPass', 'effects'],
+    ['effectsPass', 'effects'],
     /* alpha 0.2: the rest of a frame's work, so a slow frame names it (a slow frame used to say only "drawing") */
     ['updateNearRing', 'near ring', 'painting the ground nearby'],
     ['grassWork', 'grass rows', 'planting the grass'],

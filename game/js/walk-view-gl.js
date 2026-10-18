@@ -182,13 +182,13 @@ expose({
   BOBBING_PROPS: [() => BOBBING_PROPS],
   BORDER_M: [() => BORDER_M],
   BOX_INFO_CACHE: [() => BOX_INFO_CACHE],
-  DGL_PRINT_COL: [() => DGL_PRINT_COL],
   EVERGREEN_PROPS: [() => EVERGREEN_PROPS],
   FIXED_FACING: [() => FIXED_FACING],
   FIXED_FACING_BACK: [() => FIXED_FACING_BACK],
   FLOWER_COLORS: [() => FLOWER_COLORS],
   FLOWER_SET_BY_LOCATION: [() => FLOWER_SET_BY_LOCATION],
   FOLIAGE_PROPS: [() => FOLIAGE_PROPS],
+  FOOTPRINT_COLORS: [() => FOOTPRINT_COLORS],
   FRUSTUM_PLANES: [() => FRUSTUM_PLANES],
   GRASS_KINDS: [() => GRASS_KINDS],
   GRASS_PUSHER_BUFFER: [() => GRASS_PUSHER_BUFFER],
@@ -218,6 +218,7 @@ expose({
   WAVING_PROPS: [() => WAVING_PROPS],
   abortGroundPrep: [() => abortGroundPrep, v => (abortGroundPrep = v)],
   adaptQuality: [() => adaptQuality, v => setAdaptQuality(v)],
+  addFootprint: [() => addFootprint, v => (addFootprint = v)],
   addHitTarget: [() => addHitTarget, v => (addHitTarget = v)],
   addRipple: [() => addRipple, v => (addRipple = v)],
   alternatePropImage: [() => alternatePropImage, v => (alternatePropImage = v)],
@@ -240,19 +241,14 @@ expose({
   cullItems: [() => cullItems, v => (cullItems = v)],
   cutsceneCamera: [() => cutsceneCamera, v => (cutsceneCamera = v)],
   defaultWallMaterial: [() => defaultWallMaterial, v => ((defaultWallMaterial = v), provide({ defaultWallMaterial }))],
-  dglBasinSet: [() => dglBasinSet, v => (dglBasinSet = v)],
-  dglBasins: [() => dglBasins, v => (dglBasins = v)],
-  dglFountainFx: [() => dglFountainFx, v => (dglFountainFx = v)],
-  dglFxPass: [() => dglFxPass, v => setDglFxPass(v)],
-  dglLifeFx: [() => dglLifeFx, v => (dglLifeFx = v)],
-  dglPrintAt: [() => dglPrintAt, v => (dglPrintAt = v)],
-  dglPrints: [() => dglPrints, v => (dglPrints = v)],
-  dglWeather: [() => dglWeather, v => (dglWeather = v)],
   drawBoxFaces: [() => drawBoxFaces, v => (drawBoxFaces = v)],
   drawClockHands: [() => drawClockHands, v => (drawClockHands = v)],
   drawFlatItem: [() => drawFlatItem, v => (drawFlatItem = v)],
+  drawFootprints: [() => drawFootprints, v => (drawFootprints = v)],
+  drawFountainEffects: [() => drawFountainEffects, v => (drawFountainEffects = v)],
   drawGrass: [() => drawGrass, v => setDrawGrass(v)],
   drawGround: [() => drawGround, v => setDrawGround(v)],
+  drawLifeEffects: [() => drawLifeEffects, v => (drawLifeEffects = v)],
   drawRoomEffects: [() => drawRoomEffects, v => (drawRoomEffects = v)],
   drawRoomFront: [() => drawRoomFront, v => (drawRoomFront = v)],
   drawRotatingBlades: [() => drawRotatingBlades, v => (drawRotatingBlades = v)],
@@ -262,13 +258,16 @@ expose({
   drawWalkFrame: [() => drawWalkFrame, v => (drawWalkFrame = v)],
   drawWalkFrameInner: [() => drawWalkFrameInner, v => (drawWalkFrameInner = v)],
   drawWater: [() => drawWater, v => setDrawWater(v)],
+  drawWeather: [() => drawWeather, v => (drawWeather = v)],
   easedMood: [() => easedMood, v => (easedMood = v)],
+  effectsPass: [() => effectsPass, v => setEffectsPass(v)],
   fittedShadowPass: [() => fittedShadowPass, v => (fittedShadowPass = v)],
   foliageAmount: [() => foliageAmount, v => (foliageAmount = v)],
   frameBudgetLeft: [() => frameBudgetLeft, v => ((frameBudgetLeft = v), provide({ frameBudgetLeft }))],
   freeCameraOn: [() => freeCameraOn],
   freeMapCache: [() => freeMapCache, v => (freeMapCache = v)],
   freeNearRing: [() => freeNearRing, v => (freeNearRing = v)],
+  gatherFountainBasins: [() => gatherFountainBasins, v => (gatherFountainBasins = v)],
   gatherFrameItems: [() => gatherFrameItems, v => setGatherFrameItems(v)],
   grassPushers: [() => grassPushers, v => (grassPushers = v)],
   grassTrail: [() => grassTrail, v => (grassTrail = v)],
@@ -347,6 +346,7 @@ expose({
   stillPropState: [() => stillPropState, v => (stillPropState = v)],
   swapMapCache: [() => swapMapCache, v => (swapMapCache = v)],
   townRiseAmount: [() => townRiseAmount, v => (townRiseAmount = v)],
+  updateBasinMeshes: [() => updateBasinMeshes, v => (updateBasinMeshes = v)],
   updateNearRing: [() => updateNearRing, v => setUpdateNearRing(v)],
   uploadTextureStrips: [() => uploadTextureStrips, v => (uploadTextureStrips = v)],
   useWalkProgram: [() => useWalkProgram, v => (useWalkProgram = v)],
@@ -383,10 +383,6 @@ export function setBuildGrass(v) {
   buildGrass = v; // eslint-disable-line no-func-assign
   provide({ buildGrass });
 }
-export function setDglFxPass(v) {
-  dglFxPass = v; // eslint-disable-line no-func-assign
-  provide({ dglFxPass });
-}
 export function setDrawGrass(v) {
   drawGrass = v; // eslint-disable-line no-func-assign
   provide({ drawGrass });
@@ -402,6 +398,10 @@ export function setDrawSprites(v) {
 export function setDrawWater(v) {
   drawWater = v; // eslint-disable-line no-func-assign
   provide({ drawWater });
+}
+export function setEffectsPass(v) {
+  effectsPass = v; // eslint-disable-line no-func-assign
+  provide({ effectsPass });
 }
 export function setGatherFrameItems(v) {
   gatherFrameItems = v; // eslint-disable-line no-func-assign
@@ -3700,9 +3700,9 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
   drawBoxFaces(C, items, X);
   if (typeof bldDraw === 'function') bldDraw(C, X, items, walkRenderer.bfade);
   if (typeof strDraw === 'function') strDraw(C, X);
-  dglBasins(items);
+  gatherFountainBasins(items);
   if (walkRenderer.water || walkRenderer.basin) drawWater(C, X, rw, rh);
-  dglFxPass(C, items, X, dark, t, dt);
+  effectsPass(C, items, X, dark, t, dt);
   /* focus: on you, or on what you tapped for a moment */
   let fx = BT ? BT.center[0] : P.x,
     fz = BT ? BT.center[1] : P.z;
@@ -7066,10 +7066,10 @@ function drawRoomFront(C, X) {
 }
 /* v31: water in fountains and wells. Each solid prop built from parts gets a disc of real water on every flat part (a
    basin), a jet from its top and a curtain spilling over each upper bowl into the one below, with splashes and rings */
-function dglBasins(items) {
+function gatherFountainBasins(items) {
   const L = [];
   if (typeof P3D_PARTS === 'undefined' || (eng('water', 'fountains') ?? true) === false) {
-    dglBasinSet(L);
+    updateBasinMeshes(L);
     return;
   }
   for (const it of items) {
@@ -7110,9 +7110,9 @@ function dglBasins(items) {
       spout: !well && B.length > 1 && tp ? [X((tp.r[0] + tp.r[2]) / 2), Y(tp.r[1] + 2), it.z] : null,
     });
   }
-  dglBasinSet(L);
+  updateBasinMeshes(L);
 }
-function dglBasinSet(L) {
+function updateBasinMeshes(L) {
   const key =
     walkView.id +
     '|' +
@@ -7178,7 +7178,7 @@ function dglBasinSet(L) {
     32
   );
 }
-function dglFountainFx(quad, t, rm, dt) {
+function drawFountainEffects(quad, t, rm, dt) {
   const L = walkRenderer.basinL;
   if (!L || !L.length) return;
   const T = t * rm,
@@ -7284,7 +7284,7 @@ function dglFountainFx(quad, t, rm, dt) {
 /* smoke, spray, sparks, sparkles, butterflies, leaves, kicked-up grass; lamps, windows and fires as small bright cores
    (the bloom turns them into glows) */
 /* v26: rain, snow and falling ash around you (environment.js says how much); drops splash on the ground and ring the water */
-function dglWeather(quad, glows, U, R, Up, dt, rm) {
+function drawWeather(quad, glows, U, R, Up, dt, rm) {
   const gl = EGL.gl,
     E = ENV,
     BT = walkRenderer.bt,
@@ -7377,7 +7377,7 @@ function dglWeather(quad, glows, U, R, Up, dt, rm) {
   }
 }
 /* v27: footprints in snow, sand, ash and mud (and anywhere after rain): yours and the animals', fading in half a minute */
-const DGL_PRINT_COL = {
+const FOOTPRINT_COLORS = {
   n: [0.62, 0.68, 0.86],
   s: [0.58, 0.46, 0.3],
   z: [0.16, 0.14, 0.14],
@@ -7391,20 +7391,20 @@ const DGL_PRINT_COL = {
   4: [0.78, 0.76, 0.72],
   U: [0.68, 0.74, 0.88],
 };
-function dglPrintAt(x, z, a, paw) {
+function addFootprint(x, z, a, paw) {
   const sc = walkView.sc;
   if (!sc || (sc.indoor && sc.far !== 'cave')) return;
   let ch = terrainAt(x, z),
-    col = DGL_PRINT_COL[ch];
+    col = FOOTPRINT_COLORS[ch];
   const E = typeof ENV !== 'undefined' && ENV.on ? ENV : null;
-  if (!col && E && !sc.indoor && E.sk && E.sk[3] > 0.3 && !/[wdbe]/.test(ch)) col = DGL_PRINT_COL.n;
+  if (!col && E && !sc.indoor && E.sk && E.sk[3] > 0.3 && !/[wdbe]/.test(ch)) col = FOOTPRINT_COLORS.n;
   if (!col && E && !sc.indoor && E.wet > 0.5 && !/[wdb]/.test(ch)) col = [0.34, 0.36, 0.42];
   if (!col) return;
   const P = walkRenderer.prints || (walkRenderer.prints = []);
   P.push({ x, z, y: standingHeightAt(x, z), a, paw, age: 0, col });
   if (P.length > 140) P.splice(0, P.length - 140);
 }
-function dglPrints(quad, U, R, Up, dt) {
+function drawFootprints(quad, U, R, Up, dt) {
   const pl = walkView.pl,
     gl = EGL.gl;
   if (walkRenderer.printId !== walkView.id) {
@@ -7417,7 +7417,7 @@ function dglPrints(quad, U, R, Up, dt) {
     if (!L || Math.hypot(pl.x - L[0], pl.z - L[1]) > 0.36) {
       const a = L ? Math.atan2(pl.z - L[1], pl.x - L[0]) : 0,
         side = (walkRenderer.printSide = -(walkRenderer.printSide || 1));
-      dglPrintAt(pl.x - Math.sin(a) * 0.08 * side, pl.z + Math.cos(a) * 0.08 * side, a, 0);
+      addFootprint(pl.x - Math.sin(a) * 0.08 * side, pl.z + Math.cos(a) * 0.08 * side, a, 0);
       walkRenderer.lastPrint = [pl.x, pl.z];
     }
   }
@@ -7426,7 +7426,7 @@ function dglPrints(quad, U, R, Up, dt) {
       const K = LIFE_KIND[c.k];
       if (!K || K.fly || c.k === 'car' || c.k === 'duck' || c.hide > 0 || c.st === 'idle') continue;
       if (!c._lp || Math.hypot(c.x - c._lp[0], c.z - c._lp[1]) > 0.3) {
-        dglPrintAt(c.x, c.z, Math.atan2(c.tz - c.z, c.tx - c.x), 1);
+        addFootprint(c.x, c.z, Math.atan2(c.tz - c.z, c.tx - c.x), 1);
         c._lp = [c.x, c.z];
       }
     }
@@ -7449,7 +7449,7 @@ function dglPrints(quad, U, R, Up, dt) {
 /* v47: a living world, in the effects pass. Bees round the hives by day; fireflies over the grass on warm nights
    (glowing moths in the Spore Forest); in autumn, leaves skittering along the streets in the wind. Each is a handful
    of sprites near you, so they cost next to nothing. */
-function dglLifeFx(quad, glows, t, rm, dt, sc, C0) {
+function drawLifeEffects(quad, glows, t, rm, dt, sc, C0) {
   const L = walkView.life;
   if (!L) return;
   const P = walkView.pl,
@@ -7591,7 +7591,7 @@ function dglLifeFx(quad, glows, t, rm, dt, sc, C0) {
     }
   }
 }
-export function dglFxPass(C, items, X, dark, t, dt) {
+export function effectsPass(C, items, X, dark, t, dt) {
   const gl = EGL.gl,
     p = useWalkProgram('fx', C, X),
     U = p.U,
@@ -7843,7 +7843,7 @@ export function dglFxPass(C, items, X, dark, t, dt) {
         Math.min(1, (1 - ph) * 4) * Math.min(1, ph * 8)
       );
     });
-    dglLifeFx(quad, glows, t, rm, dt, sc, C0);
+    drawLifeEffects(quad, glows, t, rm, dt, sc, C0);
   }
   /* v18: spray and mist where water falls over a step */
   if (walkRenderer.falls && walkRenderer.falls.length) {
@@ -7942,9 +7942,9 @@ export function dglFxPass(C, items, X, dark, t, dt) {
       }
     });
   }
-  if (ENG_CTX.env && !sc.indoor && eng('air', 'weather') > 0) dglWeather(quad, glows, U, R, Up, dt, rm);
-  if (!walkRenderer.bt) dglPrints(quad, U, R, Up, dt);
-  dglFountainFx(quad, t, rm, dt);
+  if (ENG_CTX.env && !sc.indoor && eng('air', 'weather') > 0) drawWeather(quad, glows, U, R, Up, dt, rm);
+  if (!walkRenderer.bt) drawFootprints(quad, U, R, Up, dt);
+  drawFountainEffects(quad, t, rm, dt);
   drawRoomEffects(C, U, items, glows, t, rm);
   gl.uniform3fv(U.uRight, R);
   gl.uniform3fv(U.uUp, Up);

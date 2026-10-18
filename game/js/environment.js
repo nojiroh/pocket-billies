@@ -319,7 +319,7 @@ export function envFrame(sc, dt) {
   /* alpha 0.4: weather comes in fronts. When the weather changes while you're in a place, the clouds build first and
     the light dims, then the rain (or snow, or ash) sweeps across the place as a curtain you can see coming; when it
     clears, the back edge of the curtain passes the same way and the light comes back. ENV.curtain tells the rain where
-    it falls (dglWeather); after rain in daylight a rainbow stands in the sky for a few minutes (ENV.rainbow) */
+    it falls (drawWeather); after rain in daylight a rainbow stands in the sky for a few minutes (ENV.rainbow) */
   const now = performance.now() / 1000;
   let Wm = W,
     cur = null;

@@ -1521,7 +1521,7 @@ const DIAG_PASSES = {
   grass: ['drawGrass'],
   props: ['drawSprites', 'p3dDraw', 'voxDraw', 'bldDraw', 'drawBoxFaces', 'strDraw'],
   water: ['reflectionPass', 'drawWater'],
-  effects: ['dglFxPass'],
+  effects: ['effectsPass'],
   'final pass': ['eglPost'],
 };
 function diagTimersOn() {
