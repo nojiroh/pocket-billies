@@ -8,7 +8,7 @@ import { expose } from '../../game/js/test-globals.js';
 import { openSkeleton, provide } from '../../game/js/hooks.js';
 import { $, $$, clamp } from '../../game/js/util.js';
 import { cnv } from '../../game/js/art.js';
-import { animFor } from '../../game/js/anim.js';
+import { animFor } from '../../game/js/body-plan-animation.js';
 import { drawRig, rigPose } from '../../game/js/rig.js';
 import { esc } from './shims.js';
 import { ST, ask, render, spName, toast, updTop } from './core.js';

@@ -7,7 +7,7 @@ import { B, RM, SP, provide } from './hooks.js';
 import { clamp, rnd } from './util.js';
 import { frameTask, userFps } from './frame.js';
 import { ART, artImg, artLoad, artReady, artURL, cnv } from './art.js';
-import { animFor } from './anim.js';
+import { animFor } from './body-plan-animation.js';
 /* eslint-disable no-func-assign */
 expose({
   KBACK: [() => KBACK],
@@ -282,7 +282,7 @@ export function rigPose(act, tau, t, seed) {
       if (tau < 500) P.face = 'happy';
       break;
     }
-    /* v34: walking, looped (tau runs on). Front and back views only: the body plan decides what moves (anim.js reads P.wk) */
+    /* v34: walking, looped (tau runs on). Front and back views only: the body plan decides what moves (body-plan-animation.js reads P.wk) */
     case 'walk': {
       const c = (tau / (P.wper || 560)) * Math.PI * 2,
         sn = Math.sin(c);

@@ -235,7 +235,7 @@ def gates(stage):
         parts['leaf'] = part(lf, (lf.w - 2, lf.h // 2), hx + 6, hy + hh + 2, 'head', 10, 10)
     return parts, S_, base
 
-# piece name -> animation role (anim.js), where the name itself isn't a role
+# piece name -> animation role (body-plan-animation.js), where the name itself isn't a role
 ROLES = {'quad': {'torso': 'body'}, 'biped': {}, '*': {'spark': 'tail', 'plume0': 'mane', 'plume1': 'mane', 'cloud': 'hover', 'dust': 'hover', 'bird0': 'hover', 'bird1': 'hover', 'jet': 'tail', 'neck': 'head'}}
 SPECIES = [('musk', ['emberox', 'boostox', 'marsox', 'memeox'], musk, 'quad'), ('bezos', ['cartotter', 'primotter', 'orbitotter', 'everyotter'], bezos, 'biped'), ('gates', ['kidling', 'billgoat', 'windowgoat', 'harvestgoat'], gates, 'quad')]
 

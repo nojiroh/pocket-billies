@@ -290,7 +290,7 @@ New picture files only; no existing picture was changed.
 - `data/hdart.js`: the list of 2x pictures (generated; edit the pictures, not the list).
 - You can paint over any 2x picture by hand in the Studio or any editor: it is then kept, even when its original
   changes. To redo one from its original: `python3 tools/build-hd-art.py --only scene/props/crate.png --force`.
-- Billionaire walk cycles are poses of the existing rigs (`rig.js` walk pose, per body plan in `anim.js`): no new
+- Billionaire walk cycles are poses of the existing rigs (`rig.js` walk pose, per body plan in `body-plan-animation.js`): no new
   billionaire pictures, and no side views.
 
 ## Version 35
