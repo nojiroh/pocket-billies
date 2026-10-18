@@ -540,8 +540,11 @@ debugLog.more = () => {
       : null
   );
   t('today', () =>
-    typeof GAME.chalToday === 'function' && GAME.saveData.started
-      ? { challenges: GAME.chalToday().list.map(c => [c.k, c.have, c.need, c.claimed]), stamps: GAME.stampCount() }
+    typeof GAME.challengesToday === 'function' && GAME.saveData.started
+      ? {
+          challenges: GAME.challengesToday().list.map(c => [c.k, c.have, c.need, c.claimed]),
+          stamps: GAME.stampCount(),
+        }
       : null
   );
   return o;

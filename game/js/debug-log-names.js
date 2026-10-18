@@ -95,7 +95,7 @@ import { openShop, setOpenShop } from './shop.js';
 import { ambience, soundEngine } from './sound.js';
 import { cutsceneStart, setCutsceneStart } from './cutscene.js';
 import { account } from './account.js';
-import { chalToday, stampCount } from './things-to-do.js';
+import { challengesToday, stampCount } from './things-to-do.js';
 import { render, renderOverlay, setRender, setRenderOverlay, toast } from './ui.js';
 Object.defineProperties(GAME, {
   FRAME: { get: () => FRAME },
@@ -115,7 +115,7 @@ Object.defineProperties(GAME, {
   buildSolidTree: { get: () => buildSolidTree, set: setBuildSolidTree },
   buildingItems: { get: () => buildingItems, set: setBuildingItems },
   buildingState: { get: () => buildingState },
-  chalToday: { get: () => chalToday },
+  challengesToday: { get: () => challengesToday },
   cutsceneStart: { get: () => cutsceneStart, set: setCutsceneStart },
   drawBuildings: { get: () => drawBuildings, set: setDrawBuildings },
   drawGrass: { get: () => drawGrass, set: setDrawGrass },

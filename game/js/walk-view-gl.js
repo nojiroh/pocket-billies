@@ -49,7 +49,7 @@ import {
   propModelShaders,
   provide,
   reducedMotion,
-  reqAsker,
+  requestAsker,
   riderOf,
   saveData,
   seamlessLookTick,
@@ -6391,7 +6391,7 @@ export function addHitTarget(it, C, hits, labels, PPU) {
     if (!it.n.done) labels.push({ k: 'bang', x: q.x, y: box.y0, col: it.n.col || '#D9434B' });
   } else if (it.k === 'folk') {
     hits.push({ k: 'folk', f: it.f, ...box, x0: q.x - 16 * k, x1: q.x + 16 * k, z: q.d });
-    if (typeof reqAsker === 'function' && it.f === reqAsker() && !(it.f.sayT > 0))
+    if (typeof requestAsker === 'function' && it.f === requestAsker() && !(it.f.sayT > 0))
       labels.push({ k: 'bang', x: q.x, y: box.y0 - 2, col: '#E2B92C' });
     if (it.f.sayT > 0) labels.push({ k: 'say', x: q.x, y: box.y0 - 2, t: it.f.say, a: Math.min(1, it.f.sayT * 3) });
   } else if (it.k === 'enc') {

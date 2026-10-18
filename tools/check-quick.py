@@ -772,15 +772,15 @@ def desktop_steps(b, base, R):
 
     @step('Things to do: challenges, a request, a gold stamp, your room, a photo, a ladder, weather in battle', 240)
     def things():
-        if not pg.evaluate("typeof chalToday==='function'"): return 'not in this build'
+        if not pg.evaluate("typeof challengesToday==='function'"): return 'not in this build'
         out = []
         pg.evaluate("environment.force={time:13,weather:'clear',season:'summer'};0"); go_scene(pg, 0); time.sleep(2)
-        n = pg.evaluate("chalToday().list.length")
+        n = pg.evaluate("challengesToday().list.length")
         if n != 3: raise Exception(f'{n} challenges today, not 3')
-        out.append('3 challenges: ' + pg.evaluate("chalToday().list.map(chalText).join('; ')"))
-        q = pg.evaluate("(()=>{const q=reqHere();return q?q.k+' '+q.t:null})()")
+        out.append('3 challenges: ' + pg.evaluate("challengesToday().list.map(challengeText).join('; ')"))
+        q = pg.evaluate("(()=>{const q=requestHere();return q?q.k+' '+q.t:null})()")
         if not q: raise Exception('no request in Marigold Town today')
-        out.append('request: ' + q + (' (someone is asking)' if pg.evaluate("!!reqAsker()") else ''))
+        out.append('request: ' + q + (' (someone is asking)' if pg.evaluate("!!requestAsker()") else ''))
         # a gold stamp: stand on one
         spots = pg.evaluate("stampSpots()")
         if len(spots) < 1: raise Exception('no gold stamps in Marigold Town')

@@ -29,39 +29,39 @@ import { TALK, setTalkFolk, talk, talkFolk } from './talk.js';
 /* eslint-disable no-func-assign */
 expose({
   CHALLENGE_KINDS: [() => CHALLENGE_KINDS],
-  FURN: [() => FURN],
+  FURNITURE: [() => FURNITURE],
   HOME_SLOTS: [() => HOME_SLOTS],
   PHOTO_FILTERS: [() => PHOTO_FILTERS],
   REQUEST_KINDS: [() => REQUEST_KINDS],
   STAMP_SPOTS: [() => STAMP_SPOTS],
   WEATHER_BATTLE_NOTES: [() => WEATHER_BATTLE_NOTES],
   WEATHER_TYPE_BOOSTS: [() => WEATHER_TYPE_BOOSTS],
-  _homeApply: [() => _homeApply, v => (_homeApply = v)],
+  applyHomeFurniture: [() => applyHomeFurniture, v => (applyHomeFurniture = v)],
   battleWeather: [() => battleWeather, v => (battleWeather = v)],
   battleWeatherMultiplier: [
     () => battleWeatherMultiplier,
     v => ((battleWeatherMultiplier = v), provide({ battleWeatherMultiplier })),
   ],
-  chalCard: [() => chalCard, v => (chalCard = v)],
-  chalClaim: [() => chalClaim, v => (chalClaim = v)],
-  chalHave: [() => chalHave],
-  chalText: [() => chalText],
-  chalToday: [() => chalToday, v => (chalToday = v)],
-  furnFits: [() => furnFits],
+  challengeCardHTML: [() => challengeCardHTML, v => (challengeCardHTML = v)],
+  challengeProgress: [() => challengeProgress],
+  challengeText: [() => challengeText],
+  challengesToday: [() => challengesToday, v => (challengesToday = v)],
+  claimChallenge: [() => claimChallenge, v => (claimChallenge = v)],
+  furnitureFits: [() => furnitureFits],
   homeApply: [() => homeApply, v => (homeApply = v)],
   homeDecorate: [() => homeDecorate, v => (homeDecorate = v)],
   photoEnd: [() => photoEnd, v => (photoEnd = v)],
   photoFilter: [() => photoFilter, v => (photoFilter = v)],
   photoShot: [() => photoShot, v => (photoShot = v)],
   photoStart: [() => photoStart, v => (photoStart = v)],
-  reqAsker: [() => reqAsker, v => ((reqAsker = v), provide({ reqAsker }))],
-  reqHere: [() => reqHere, v => (reqHere = v)],
-  reqList: [() => reqList, v => (reqList = v)],
-  reqTalk: [() => reqTalk, v => (reqTalk = v)],
+  requestAsker: [() => requestAsker, v => ((requestAsker = v), provide({ requestAsker }))],
+  requestHere: [() => requestHere, v => (requestHere = v)],
+  requestListHTML: [() => requestListHTML, v => (requestListHTML = v)],
+  requestTalk: [() => requestTalk, v => (requestTalk = v)],
   seededRandom: [() => seededRandom, v => (seededRandom = v)],
   stampCount: [() => stampCount],
   stampDraw: [() => stampDraw, v => ((stampDraw = v), provide({ stampDraw }))],
-  stampScenes: [() => stampScenes, v => (stampScenes = v)],
+  stampMaps: [() => stampMaps, v => (stampMaps = v)],
   stampSpots: [() => stampSpots, v => (stampSpots = v)],
   stampTile: [() => stampTile, v => (stampTile = v)],
   stampTotal: [() => stampTotal],
@@ -72,7 +72,7 @@ expose({
   typeIds: [() => typeIds],
 });
 /* eslint-enable no-func-assign */
-provide({ battleWeatherMultiplier, reqAsker, stampDraw, thingsToDoEvent });
+provide({ battleWeatherMultiplier, requestAsker, stampDraw, thingsToDoEvent });
 /* to-module: end */
 function thingsToDo() {
   const X = saveData.x || (saveData.x = {});
@@ -139,7 +139,7 @@ const CHALLENGE_KINDS = [
   { k: 'fish', make: () => ({ need: 1 }), text: () => 'Land something with your fishing rod' },
   { k: 'stamp', make: () => ({ need: 1 }), text: () => 'Find a gold stamp' },
 ];
-export function chalToday() {
+export function challengesToday() {
   const X = thingsToDo(),
     d = today();
   if (!X.chal || X.chal.date !== d) {
@@ -154,12 +154,12 @@ export function chalToday() {
   }
   return X.chal;
 }
-const chalHave = c => (c.k === 'steps' ? saveData.day.steps : c.have);
-const chalText = c => (CHALLENGE_KINDS.find(t => t.k === c.k) || { text: () => c.k }).text(c);
+const challengeProgress = c => (c.k === 'steps' ? saveData.day.steps : c.have);
+const challengeText = c => (CHALLENGE_KINDS.find(t => t.k === c.k) || { text: () => c.k }).text(c);
 /* something happened: a catch (with its types), a win, a fish landed, a stamp found */
 function thingsToDoEvent(k, o = {}) {
   if (!saveData || !saveData.started) return;
-  const C = chalToday();
+  const C = challengesToday();
   let ch = false;
   for (const c of C.list) {
     if (c.claimed) continue;
@@ -168,9 +168,9 @@ function thingsToDoEvent(k, o = {}) {
     if (c.k === 'catchT' && !(o.types || []).includes(c.t)) continue;
     c.have++;
     ch = true;
-    if (chalHave(c) >= c.need && !c.told) {
+    if (challengeProgress(c) >= c.need && !c.told) {
       c.told = 1;
-      toast(`Challenge done: ${chalText(c)}. Claim it on the Walk tab.`);
+      toast(`Challenge done: ${challengeText(c)}. Claim it on the Walk tab.`);
     }
   }
   if (k === 'catch')
@@ -181,20 +181,20 @@ function thingsToDoEvent(k, o = {}) {
       }
   if (ch) save();
 }
-export function chalCard() {
+export function challengeCardHTML() {
   if (!saveData.started) return '';
-  const C = chalToday();
+  const C = challengesToday();
   return `<section class="chal px glass"><div class="sec-h"><h2>Today’s challenges</h2><span class="count tnum">${C.list.filter(c => c.claimed).length}/${C.list.length}</span></div>${C.list
     .map((c, i) => {
-      const h = Math.min(chalHave(c), c.need),
+      const h = Math.min(challengeProgress(c), c.need),
         done = h >= c.need;
-      return `<div class="ch-row ${c.claimed ? 'claimed' : ''}"><div class="ch-t"><b>${escapeHtml(chalText(c))}</b><span class="note tnum">${formatNumber(h)} / ${formatNumber(c.need)}</span>${progressBarHTML(h / c.need, done ? 'gold' : 'live')}</div>${c.claimed ? `<span class="ch-ok">Claimed</span>` : done ? `<button class="pb small gold" data-a="chal" data-i="${i}">Claim</button>` : ''}</div>`;
+      return `<div class="ch-row ${c.claimed ? 'claimed' : ''}"><div class="ch-t"><b>${escapeHtml(challengeText(c))}</b><span class="note tnum">${formatNumber(h)} / ${formatNumber(c.need)}</span>${progressBarHTML(h / c.need, done ? 'gold' : 'live')}</div>${c.claimed ? `<span class="ch-ok">Claimed</span>` : done ? `<button class="pb small gold" data-a="chal" data-i="${i}">Claim</button>` : ''}</div>`;
     })
     .join('')}<p class="note">New challenges every day.</p></section>`;
 }
-function chalClaim(i) {
-  const c = chalToday().list[+i];
-  if (!c || c.claimed || chalHave(c) < c.need) return;
+function claimChallenge(i) {
+  const c = challengesToday().list[+i];
+  if (!c || c.claimed || challengeProgress(c) < c.need) return;
   c.claimed = true;
   const got = thingsToDoReward(1.4);
   save();
@@ -209,7 +209,7 @@ const REQUEST_KINDS = {
     `Could you take my letter for a walk? It needs ${formatNumber(q.n)} steps of fresh air. Bring it back to me after.`,
   catch: q => `I’d love to see a ${q.t} Billie. Tax one and come back to show me?`,
 };
-function reqHere(node = saveData.route.node) {
+function requestHere(node = saveData.route.node) {
   const R = LOCATIONS[node];
   if (!R || !R.town || !saveData.started) return null;
   const X = thingsToDo(),
@@ -230,19 +230,19 @@ function reqHere(node = saveData.route.node) {
   return q;
 }
 /* the first townsperson in a town has the request; a gold ! floats over them until it's done */
-function reqAsker() {
+function requestAsker() {
   if (typeof walkView === 'undefined' || !walkView.folk || !walkView.folk.length || uiState.inside || uiState.bench)
     return null;
-  const q = reqHere();
+  const q = requestHere();
   if (!q || q.state === 'done') return null;
   return walkView.folk[0];
 }
 const teamBillyOfType = t =>
   saveData.team.find(m => m.hp > 0 && SPECIES[m.sp].types.includes(t)) ||
   saveData.team.find(m => SPECIES[m.sp].types.includes(t));
-async function reqTalk(f) {
+async function requestTalk(f) {
   if (TALK.on) return;
-  const q = reqHere(),
+  const q = requestHere(),
     who = 'folk:' + f.seed;
   f.wait = 99;
   f.route = null;
@@ -324,7 +324,7 @@ async function reqTalk(f) {
   f.wait = 2;
 }
 /* requests you've taken on, wherever you are */
-export function reqList() {
+export function requestListHTML() {
   const X = thingsToDo();
   return Object.entries(X.reqs)
     .filter(([, q]) => q.state === 'accepted')
@@ -345,10 +345,10 @@ export function reqList() {
 
 /* ---------- gold stamps: two in every place ---------- */
 const STAMP_SPOTS = {};
-function stampScenes() {
+function stampMaps() {
   return [...new Set(LOCATIONS.map(r => r.scene).filter(id => id && gameData.scenes[id]))];
 }
-const stampTotal = () => stampScenes().length * 2;
+const stampTotal = () => stampMaps().length * 2;
 export const stampCount = () => Object.keys(thingsToDo().stamps).length;
 /* where they lie: worked out once per place, on open ground you can walk to, away from where you arrive */
 function stampSpots() {
@@ -357,7 +357,7 @@ function stampSpots() {
     sc0 = walkView.sc,
     sc = sc0 && sc0.baseId ? mapById(sc0.baseId) : sc0,
     o = (sc0 && sc0.baseOff) || [0, 0];
-  if (!sc || !id || sc.test || /^int_/.test(id) || !stampScenes().includes(id)) return [];
+  if (!sc || !id || sc.test || /^int_/.test(id) || !stampMaps().includes(id)) return [];
   if (STAMP_SPOTS[id])
     return o[0] || o[1] ? STAMP_SPOTS[id].map(p => [p[0] + o[0], p[1] + o[1], ...p.slice(2)]) : STAMP_SPOTS[id];
   const r = seededRandom('stamp' + id),
@@ -400,7 +400,7 @@ function stampDraw(quad, glows, t) {
       thingsToDoEvent('stamp');
       let msg = `Gold stamp found! ${n} of ${stampTotal()}.`;
       if (n % 3 === 0) {
-        const nu = FURN.find(f => !X.home.own.includes(f[0]));
+        const nu = FURNITURE.find(f => !X.home.own.includes(f[0]));
         if (nu) {
           X.home.own.push(nu[0]);
           msg += ` New for your room: ${nu[1]}.`;
@@ -422,7 +422,7 @@ export function stampTile(tile) {
 }
 
 /* ---------- your room (alpha 0.4: in Granny Juniper's cottage in Copperleaf) ---------- */
-const FURN = [
+const FURNITURE = [
   ['rug_round', 'Round rug'],
   ['plant_tall', 'Potted plant'],
   ['chair_wood', 'Wooden chair'],
@@ -454,12 +454,12 @@ const HOME_SLOTS = [
   { x: 9.8, z: 9.45, n: 'On the wall, right', wall: 1 },
   { x: 7, z: 3.9, n: 'Floor (rug)', rug: 1 },
 ];
-const furnFits = (k, s) => (s.wall ? /^wall_/.test(k) : s.rug ? /^rug_/.test(k) : !/^wall_|^rug_/.test(k));
+const furnitureFits = (k, s) => (s.wall ? /^wall_/.test(k) : s.rug ? /^rug_/.test(k) : !/^wall_|^rug_/.test(k));
 export function homeApply() {
-  _homeApply();
+  applyHomeFurniture();
   if (typeof roomRefresh === 'function') roomRefresh();
 }
-function _homeApply() {
+function applyHomeFurniture() {
   const sc = gameData.scenes.int_home;
   if (!sc) return;
   if (!sc.props0) sc.props0 = (sc.props || []).slice();
@@ -467,7 +467,7 @@ function _homeApply() {
   sc.props = sc.props0.concat(
     HOME_SLOTS.map((s, i) => {
       const k = X.home.slots[i];
-      return k && furnFits(k, s) ? { k, x: s.x, z: s.z } : null;
+      return k && furnitureFits(k, s) ? { k, x: s.x, z: s.z } : null;
     }).filter(Boolean)
   );
 }
@@ -475,12 +475,12 @@ export function homeDecorate() {
   const X = thingsToDo(),
     own = X.home.own;
   const row = (s, i) => {
-    const opts = own.filter(k => furnFits(k, s));
-    return `<label class="fld"><span>${escapeHtml(s.n)}</span><select data-home="${i}"><option value="">Nothing</option>${opts.map(k => `<option value="${k}" ${X.home.slots[i] === k ? 'selected' : ''}>${escapeHtml((FURN.find(f => f[0] === k) || [k, k])[1])}</option>`).join('')}</select></label>`;
+    const opts = own.filter(k => furnitureFits(k, s));
+    return `<label class="fld"><span>${escapeHtml(s.n)}</span><select data-home="${i}"><option value="">Nothing</option>${opts.map(k => `<option value="${k}" ${X.home.slots[i] === k ? 'selected' : ''}>${escapeHtml((FURNITURE.find(f => f[0] === k) || [k, k])[1])}</option>`).join('')}</select></label>`;
   };
   modal({
     title: 'Decorate your room',
-    html: `<p class="note">You have ${own.length} of ${FURN.length} pieces. Every third gold stamp you find brings a new one.</p><div class="home-grid">${HOME_SLOTS.map(row).join('')}</div>`,
+    html: `<p class="note">You have ${own.length} of ${FURNITURE.length} pieces. Every third gold stamp you find brings a new one.</p><div class="home-grid">${HOME_SLOTS.map(row).join('')}</div>`,
     btns: [
       {
         l: 'Done',
@@ -609,7 +609,7 @@ document.addEventListener('click', ev => {
       walkRenderer.ui.style.visibility = walkRenderer.ui.style.visibility === 'hidden' ? '' : 'hidden';
   } else if (a === 'photoShot') photoShot();
   else if (a === 'photoEnd') photoEnd();
-  else if (a === 'chal') chalClaim(el.dataset.i);
+  else if (a === 'chal') claimChallenge(el.dataset.i);
   else if (a === 'photo') photoStart();
   else if (a === 'decorate') homeDecorate();
 });
@@ -683,7 +683,7 @@ function battleWeatherMultiplier(t) {
   if (typeof talkFolk === 'function') {
     const tf = talkFolk;
     setTalkFolk(function (f) {
-      if (f && f === reqAsker()) return reqTalk(f);
+      if (f && f === requestAsker()) return requestTalk(f);
       return tf.apply(this, arguments);
     });
   }
