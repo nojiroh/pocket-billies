@@ -42,7 +42,7 @@ import {
   writePath,
 } from './studio-app.js';
 import { atlasGet } from './sprites.js';
-import { scExitNames, sceneryArtPaths, sceneryCatalog } from './map-editor.js';
+import { mapExitNames, sceneryArtPaths, sceneryCatalog } from './map-editor.js';
 /* eslint-disable no-func-assign */
 expose({
   ENS: [() => ENS],
@@ -184,7 +184,7 @@ async function engMount() {
         { id: 'pv2', lvl: 7 },
       ],
       npcs: [],
-      exits: typeof scExitNames === 'function' ? scExitNames(id) : [],
+      exits: typeof mapExitNames === 'function' ? mapExitNames(id) : [],
     }),
     onMove: (x, z) => {
       ENS.pos = [id, [x, z]];

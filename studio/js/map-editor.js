@@ -76,21 +76,21 @@ expose({
   blankMap: [() => blankMap, v => (blankMap = v)],
   currentMap: [() => currentMap],
   currentMapId: [() => currentMapId],
+  dropStaleExitJoins: [() => dropStaleExitJoins, v => (dropStaleExitJoins = v)],
+  edgeExitId: [() => edgeExitId, v => (edgeExitId = v)],
+  exitChecks: [() => exitChecks, v => (exitChecks = v)],
   isGroundKey: [() => isGroundKey],
   locationsUsingMap: [() => locationsUsingMap],
   mapEditor: [() => mapEditor],
+  mapExitNames: [() => mapExitNames, v => (mapExitNames = v)],
   mapLifeText: [() => mapLifeText, v => (mapLifeText = v)],
+  newEdgeExitName: [() => newEdgeExitName, v => (newEdgeExitName = v)],
   parseMapLife: [() => parseMapLife, v => (parseMapLife = v)],
+  resizeReport: [() => resizeReport, v => (resizeReport = v)],
   scBindMap: [() => scBindMap, v => (scBindMap = v)],
   scDrawSteps: [() => scDrawSteps, v => (scDrawSteps = v)],
   scDrawWaters: [() => scDrawWaters, v => (scDrawWaters = v)],
   scEnvApply: [() => scEnvApply, v => (scEnvApply = v)],
-  scExitChecks: [() => scExitChecks, v => (scExitChecks = v)],
-  scExitId: [() => scExitId, v => (scExitId = v)],
-  scExitJoinsDrop: [() => scExitJoinsDrop, v => (scExitJoinsDrop = v)],
-  scExitName: [() => scExitName, v => (scExitName = v)],
-  scExitNames: [() => scExitNames, v => (scExitNames = v)],
-  scExitSync: [() => scExitSync, v => (scExitSync = v)],
   scFlood: [() => scFlood, v => (scFlood = v)],
   scHGrid: [() => scHGrid, v => (scHGrid = v)],
   scHeightAt: [() => scHeightAt, v => (scHeightAt = v)],
@@ -109,7 +109,6 @@ expose({
   scPreview: [() => scPreview, v => (scPreview = v)],
   scPropAt: [() => scPropAt, v => (scPropAt = v)],
   scPropSettings: [() => scPropSettings, v => (scPropSettings = v)],
-  scResizeReport: [() => scResizeReport, v => (scResizeReport = v)],
   scSetTile: [() => scSetTile, v => (scSetTile = v)],
   scStepsBar: [() => scStepsBar, v => (scStepsBar = v)],
   scStepsDown: [() => scStepsDown, v => (scStepsDown = v)],
@@ -124,6 +123,7 @@ expose({
   sceneryArtPaths: [() => sceneryArtPaths, v => ((sceneryArtPaths = v), provide({ sceneryArtPaths }))],
   sceneryCatalog: [() => sceneryCatalog],
   segDist: [() => segDist, v => (segDist = v)],
+  syncEdgeExits: [() => syncEdgeExits, v => (syncEdgeExits = v)],
 });
 /* eslint-enable no-func-assign */
 provide({ artCacheVersion, sceneryArtPaths });
@@ -803,12 +803,12 @@ function scThumbs() {
     s.appendChild(c);
   });
 }
-export function scExitNames(id) {
+export function mapExitNames(id) {
   const D = studioState.D,
     sc = D.scenes[id],
     ex = (sc && sc.exits) || [],
     u = locationsUsingMap(id)[0];
-  if (!u) return ex.map((e, k) => ({ i: k, name: scExitId(sc, k) || `Exit ${k + 1}` }));
+  if (!u) return ex.map((e, k) => ({ i: k, name: edgeExitId(sc, k) || `Exit ${k + 1}` }));
   const i = u[1],
     me = D.route[i],
     hub = mapHub(sc),
@@ -844,16 +844,16 @@ export function scExitNames(id) {
   const L = Object.entries(out).map(([o, k]) => ({ i: k, to: +o, name: D.route[o].name }));
   ex.forEach((e, k) => {
     if (!L.some(x => x.i === k))
-      L.push({ i: k, name: `${scExitId(sc, k) || 'Exit ' + (k + 1)} (no road)`, locked: true });
+      L.push({ i: k, name: `${edgeExitId(sc, k) || 'Exit ' + (k + 1)} (no road)`, locked: true });
   });
   return L;
 }
-/* v42: edge-relative exits. scExitSync keeps sc.edgeExits in step with sc.exits after the exits tool moved, added or removed one */
-function scExitId(sc, k) {
+/* v42: edge-relative exits. syncEdgeExits keeps sc.edgeExits in step with sc.exits after the exits tool moved, added or removed one */
+function edgeExitId(sc, k) {
   const e = sc && sc.edgeExits && sc.edgeExits[k];
   return e ? e.id : null;
 }
-function scExitName(sc, side) {
+function newEdgeExitName(sc, side) {
   const base = { N: 'north', S: 'south', E: 'east', W: 'west' }[side] || 'exit',
     used = new Set((sc.edgeExits || []).map(e => e.id));
   let n = base,
@@ -861,11 +861,11 @@ function scExitName(sc, side) {
   while (used.has(n)) n = base + i++;
   return n;
 }
-function scExitSync(sc, k, removed) {
+function syncEdgeExits(sc, k, removed) {
   const E = sc.edgeExits || (sc.edgeExits = []);
   if (removed != null) {
     E.splice(removed, 1);
-    scExitJoinsDrop(sc);
+    dropStaleExitJoins(sc);
     sc._exk = '';
     return;
   }
@@ -873,17 +873,17 @@ function scExitSync(sc, k, removed) {
     const old = E[k],
       e = exitEdge(sc, sc.exits[k], old);
     if (!e.id || (old && old.side !== e.side && E.some((q, j) => j !== k && q.id === e.id)))
-      e.id = scExitName(sc, e.side);
+      e.id = newEdgeExitName(sc, e.side);
     E[k] = e;
   } else
     sc.exits.forEach((p, j) => {
       const e = exitEdge(sc, p, E[j]);
-      if (!e.id) e.id = scExitName(sc, e.side);
+      if (!e.id) e.id = newEdgeExitName(sc, e.side);
       E[j] = e;
     });
   sc._exk = sc.w + 'x' + sc.h + '/' + E.length;
 }
-function scExitJoinsDrop(sc) {
+function dropStaleExitJoins(sc) {
   const D = studioState.D,
     ids = new Set((sc.edgeExits || []).map(e => e.id)),
     users = locationsUsingMap(currentMapId()).map(([, i]) => i);
@@ -949,7 +949,7 @@ function scPreview() {
         who: 'boy',
         enc: enc(),
         npcs: mapEditor.npc ? [{ who: 'gini', id: 'pv', done: false }] : [],
-        exits: scExitNames(id),
+        exits: mapExitNames(id),
       };
     },
     onMove: (x, z) => {
@@ -1290,7 +1290,7 @@ function scBindMap() {
       const n = E.findIndex(hit);
       if (n >= 0 && (ev.button === 2 || ev.altKey)) {
         E.splice(n, 1);
-        scExitSync(sc, null, n);
+        syncEdgeExits(sc, null, n);
         scMapDraw();
         changed();
         commit(true);
@@ -1301,7 +1301,7 @@ function scBindMap() {
         return;
       }
       E.push([+m.x.toFixed(2), +m.z.toFixed(2)]);
-      scExitSync(sc, E.length - 1);
+      syncEdgeExits(sc, E.length - 1);
       mapEditor.drag = { k: 'exit', n: E.length - 1 };
       scMapDraw();
       return;
@@ -1410,7 +1410,7 @@ function scBindMap() {
       if (D.k === 'hub') sc.hub = [q, r];
       else {
         sc.exits[D.n] = [q, r];
-        scExitSync(sc, D.n);
+        syncEdgeExits(sc, D.n);
       }
       D.moved = 1;
       walkView.cand = null;
@@ -1864,7 +1864,7 @@ ACTIONS.scResize = () => {
   }
   if (sc.hub) sc.hub = [clamp(sc.hub[0], 0.3, w - 0.3), clamp(sc.hub[1], 0.3, h - 0.3)];
   if (sc.exits) sc.exits = sc.exits.map(([x, z]) => [clamp(x, 0.3, w - 0.3), clamp(z, 0.3, h - 0.3)]);
-  if (sc.edgeExits) scExitSync(sc);
+  if (sc.edgeExits) syncEdgeExits(sc);
   /* cliffs and stairs: the near rows and left columns stay where they are */
   if (oldE) {
     delete sc.steps;
@@ -1883,11 +1883,11 @@ ACTIONS.scResize = () => {
   changed();
   commit(true);
   render();
-  scResizeReport(sc, before);
+  resizeReport(sc, before);
 };
 /* v42: after a resize, three checks on every exit: it stands on walkable ground, the hub can reach it, and the exit it is
    joined to on the far side faces this one. Problems are listed; the resize can be undone from the same dialog. */
-function scExitChecks(sc) {
+function exitChecks(sc) {
   const D = studioState.D,
     C = sceneryCatalog(),
     out = [],
@@ -1958,8 +1958,8 @@ function scExitChecks(sc) {
   });
   return out;
 }
-async function scResizeReport(sc, before) {
-  const r = scExitChecks(sc),
+async function resizeReport(sc, before) {
+  const r = exitChecks(sc),
     bad = r.filter(x => !x.ok).length;
   const html = `<p class="help">${sc.w} × ${sc.h} m. ${bad ? `${bad} thing${bad > 1 ? 's' : ''} to look at:` : 'Every exit checks out.'}</p><ul class="exit-chk">${r.map(x => `<li class="${x.ok ? 'ok' : 'bad'}">${x.ok ? '✓' : '!'} ${esc(x.t)}</li>`).join('')}</ul>`;
   const keep = await dialog('Map resized', html, [
