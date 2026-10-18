@@ -70,7 +70,7 @@ expose({
 /** the numbers when rules.json has no robots section (older data, the tests' small fixture) */
 export const DEFAULT_ROBOT_RULES = /** @type {RobotRules} */ ({
   slots: ['torso', 'armL', 'armR', 'legs'],
-  baseStat: 15,
+  baseStat: 38,
   partHpRatio: 0.4,
   partShare: 1,
   hitWeights: { torso: 0.25, armL: 0.25, armR: 0.25, legs: 0.25 },

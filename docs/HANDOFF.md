@@ -11,6 +11,40 @@ Newest entry on top. Every phase session ends by adding an entry here and taggin
 - Questions waiting for the owner: 
 - Next session starts with: 
 
+### Phase 17 - Robots, prototype (in progress, not tagged) - 2026-10-18
+Plan agreed in chat (docs/phases/17-robots.md, rewritten first: robots battle in the same system as Billies, mixed
+teams, body HP + breakable parts, moves from parts, torso + legs types, some moves aim, gem levels + part upgrades,
+parts healed like HP). Branch `phase-17-robots` (from `phase-17-plan`).
+- Changed:
+  - Refactor first, no behaviour change: every species read for a team member goes through `speciesOf(m)`
+    (`logic/fighters.js`); tests identical.
+  - Robots as team members (`kind: 'robot'`, `gem`, `fit`, `partDmg`; `sp` made from the gem and parts, e.g.
+    `bot:volt.vane.tesla.auger.striders`, so art and screens can draw one from its sp). Species data worked out from
+    the parts (`robotSpeciesFor`), arithmetic in `logic/robot-math.js` (shared with the Studio, like parts.js).
+  - Battle: hits land on a part (rules.json robots.hitWeights; aimed moves pick), limbs break, broken arm = no move,
+    broken legs = half Speed, gem-type moves x1.2, Self-Repair, Repair Kit, AI aims at the weakest limb and skips
+    broken moves. Robots aren't added to the Guide's seen/caught.
+  - Screens: `robot-art.js` (rig from part pictures, stand-ins without), stage dims broken parts and sparks on a
+    break, HUD limb bars, part picker, Workshop panel + refit sheet (`workshop.js`), robot parts in the details sheet.
+  - Studio: Robots section (`studio/js/robots-editor.js`), robot fields in Moves, Items, Trainers; the battle
+    preview draws robots (`robotRigParts`).
+  - Data: robots.json + schema, rules.json robots, 12 moves, Repair Kit, trainer `tinker`, art in game/art/robots/.
+- Risky or unfinished: no in-world way to get robots yet (debug menu only); 3D assembly preview, paint, loadouts,
+  crafting, sourcing from chests/trainers, wild robots, the socket standard for the low-poly art: not built. Robots
+  as your walking buddy don't show in the world (world-billies.js only knows Billies). Hazel's battle tips say
+  "Billies" for robots. The sim bounds are not agreed.
+- Verified: lint, typecheck, `npm test` (44 pass: 11 robot tests, 1 sim test), check:data, modules --check, smoke
+  (`check-quick.py --smoke`, all 15 steps). A headless phone run: kit, workshop refit, Tinker Rho's mixed battle with
+  an aimed move breaking an arm, no console errors. The Studio's Robots and Trainers sections in a headless browser.
+  Full sim: robots 48% against Billies of the same level after raising the stat floor 15 -> 38.
+- Decisions I made (and why): 6 generic arms (the socket standard says any arm fits any torso, so left and right
+  arms needn't differ); torso hits (25%) so parts don't break every other hit; new robots at your strongest member's
+  level; free upgrades until the workshop has a place.
+- Questions waiting for the owner: the "Ask me before" list in docs/phases/17-robots.md, plus how the first robot
+  is found, and the balance bounds.
+- Next session starts with: the owner plays the prototype (debug menu -> Give the robot kit, battle Tinker Rho)
+  and answers the open questions; then sourcing, the workshop's place, and the art pipeline.
+
 ### Phase 08a-1 - tests off the steps mode, the dead steps travel mode deleted - 2026-10-18
 Plan approved at the start (docs/phases/08a-plan.md, section 08a-1, now marked done with the corrections found).
 - Changed (15 commits on c3b5de9):

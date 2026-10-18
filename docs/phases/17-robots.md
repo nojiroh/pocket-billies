@@ -146,11 +146,34 @@ restore part HP (one part or all). Clinic and rest fix everything, as with Billi
 - The 243-build simulation (task 10) passing the agreed bounds.
 - If it is not fun, rethink before scaling.
 
+## Prototype status (2026-10-18)
+Built on branch `phase-17-robots` (see docs/HANDOFF.md for the details):
+- Engine: `logic/fighters.js` (a member's species data: Billie or robot), `logic/robot-math.js` (shared with the
+  Studio), robot rules in `rules.js` (make, refit, build, upgrade, part HP, repair) and `battle-engine.js` (part hits,
+  aimed moves, breaking, gem type bonus, AI aiming). Saves keep robots and spare parts (`saveData.parts`).
+- Data: `robots.json` (3 torsos, **6 arms that fit either side** instead of 3 left and 3 right, 3 legs, 3 gems),
+  `rules.json robots`, 12 robot moves, a Repair Kit, Tinker Rho (a tutorial trainer with a mixed team).
+- Screens: robots drawn from part pictures (owner's placeholder sheet, `game/art/robots/`) at sockets on the biped
+  skeleton; battle HUD limb bars, greyed moves for broken parts, a part picker for aimed moves; a Workshop panel on
+  the Team screen with a refit sheet (2D preview, stat changes per spare, free upgrades, build from spares). Debug
+  menu: "Give the robot kit"; battle Tinker Rho under Trainers.
+- Studio: a Robots section (parts, gems, pictures, rules, Try a build), robot fields in Moves, Items and Trainers.
+- Simulation: `node tools/test/sim/robot-sim.mjs`, all 972 builds. With the stat floor at 38 robots win **48%**
+  against Billies of the same level (it was 24% at 15); parts average 44% to 60% against the reference robots; the
+  best build beats 92% of the 24 reference robots.
+
+Choices made for the prototype, to confirm or change:
+- A hit can land on the torso (body only, 25%) as well as a limb; evasion isn't modelled (the engine has none).
+- A new robot starts at your strongest team member's level (at least 5). Upgrades are free; crafting comes with the
+  workshop's place. Paint and saved loadouts are not built yet.
+- The numbers in rules.json robots are placeholders (stat floor tuned once, above).
+
 ## Ask me before
 - The numbers in "Design" that feel like rules: part HP ratio, weight curve, leg-break penalty, the sim bounds.
 - The gem's role beyond level and signature move: personality, story, ties to the organization (phase 15).
 - Where the workshop lives (ranch or a town, phase 12).
 - Whether wild robots exist (encounters that drop parts) or robots only come from building.
+- How you get your first robot and parts in the game (today only from the debug menu).
 - Whether a robot's moves get one-per-part forever, or upgraded arms can choose between two moves.
 - The prototype result before scaling up.
 

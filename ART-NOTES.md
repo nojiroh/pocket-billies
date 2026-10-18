@@ -486,3 +486,14 @@ New files only:
   sharing the mast's foot as their base point; the airship bobs (`bob` in the catalogue).
 - Buildings gain sills and lintels at the side and back windows, corner posts and a plinth, all in the building's own
   trim and base colours (`js/buildings.js`).
+
+## Robots (phase 17, placeholder)
+
+`game/art/robots/` holds one picture per robot part and view (`<part>.png`, `<part>_back.png`; a torso's head as
+`<torso>_head.png`; a gem as `gem_<gem>.png`), sliced from the owner's placeholder sheet at its pixel grid (about 5
+sheet pixels to one, a gem 9) with the alpha cut at half. robots.json names them per part (`art.img`, `art.imgB`,
+`art.head`, `art.headB`; a gem's `img`). `game/js/robot-art.js` stacks them on the biped skeleton at their sockets:
+the legs' hip knob under the torso, the head's neck on the torso's top, each arm's shoulder knob at the torso's side
+(about 62% up), the gem in the chest socket (half way up, front only). Any arm fits either side. A part without a
+picture is drawn as a stand-in from its colour and shape. They are stand-ins for the modular low-poly parts of the
+art pipeline (phase 17 task 11).
