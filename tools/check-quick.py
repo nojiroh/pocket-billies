@@ -502,13 +502,11 @@ def wait_phase(pg, want=('choose',), sec=60):
 
 
 def play(pg):
-    pg.evaluate("if(typeof titleEnd==='function')titleEnd();uiState.pg='girl';startGame(SPECIES.scoop0?'scoop':RULES.start.starters[0]);saveData.story={met_chad:1,met_chad2:1,copperleafNote:1};Object.values(TRAINERS).forEach(T=>{if(T.intro)saveData.story['met_'+T.id]=1});uiState.modal=null;uiState.mq=[];renderOverlay();saveData.team.push(makeBilly('swift1',18));addSteps(2400,true);uiState.toastQ=[];uiState.toastOn=false;uiState.modal=null;uiState.mq=[];renderOverlay();render();0")
+    # phase 08: the money, four encounters, egg progress and buddy XP that 2,400 steps used to bring are given directly
+    pg.evaluate("if(typeof titleEnd==='function')titleEnd();uiState.pg='girl';startGame(SPECIES.scoop0?'scoop':RULES.start.starters[0]);saveData.story={met_chad:1,met_chad2:1,copperleafNote:1};Object.values(TRAINERS).forEach(T=>{if(T.intro)saveData.story['met_'+T.id]=1});uiState.modal=null;uiState.mq=[];renderOverlay();saveData.team.push(makeBilly('swift1',18));saveData.se+=2400;for(let i=0;i<4;i++)spawn();saveData.eggs.forEach(e=>{if(e.slot!=null)e.prog=2400});gainXp(findBilly(saveData.buddy)||saveData.team[0],480,()=>{});uiState.toastQ=[];uiState.toastOn=false;uiState.modal=null;uiState.mq=[];renderOverlay();render();0")
     # alpha 0.2: the legendaries count as met today, so passing through their places doesn't leave one waiting in a later
     # step (the v39 step brings the volcano's back on purpose)
     pg.evaluate("for(const l of (RULES.legends||[]))saveData.story['legend_'+l.sp]=today();0")
-    # alpha 0.4.1: the game walks by default now (RULES.travel 'walk'); the older steps test trips made with real steps, so
-    # they run in 'steps' mode. The walking step (a041_walk) switches back
-    pg.evaluate("RULES.travel='steps';0")
 
 
 def go_scene(pg, node, sec=40):
@@ -527,12 +525,6 @@ def go_scene(pg, node, sec=40):
 # way: game time is too slow here to walk it for real). Returns the metres walked, the views seen on the way and how
 # often the view was not ready (a remount instead of a shift)
 def cross(pg, n1, sec=90):
-    travel = pg.evaluate("(()=>{const t=RULES.travel;RULES.travel='walk';return t})()")   # until play() leaves the steps mode
-    try: return cross_walk(pg, n1, sec)
-    finally: pg.evaluate(f"RULES.travel={json.dumps(travel)};0")
-
-
-def cross_walk(pg, n1, sec):
     if not until(pg, 'walkView.ready', sec): raise Exception(f'the view {pg.evaluate("walkView.id")} never got ready to walk from')
     r = pg.evaluate(f"""(()=>{{const v=walkState(),e=(v.exits||[]).find(e=>e.to==={n1});if(!e)return 'no exit to '+LOCATIONS[{n1}].name+' from '+LOCATIONS[saveData.trip.node].name;const sc=walkView.sc,pt=sc.exits[e.i],hub=mapHub(sc),dx=pt[0]-hub[0],dz=pt[1]-hub[1],l=Math.hypot(dx,dz)||1,tg=[pt[0]+dx/l*6,pt[1]+dz/l*6];
       const P=walkView.pl,R=findPath(P.x,P.z,tg[0],tg[1],{{max:1e6}});return R?{{R}}:'no path to the exit to '+LOCATIONS[{n1}].name}})()""")
@@ -556,7 +548,7 @@ def cross_walk(pg, n1, sec):
 
 # phase 08: a trip of several roads, walked: the guide is set to n, then each place on its plan is crossed into in turn
 def cross_to(pg, n):
-    plan = pg.evaluate(f"(()=>{{const t=RULES.travel;RULES.travel='walk';setTrip({n});RULES.travel=t;return saveData.trip.plan.slice()}})()")
+    plan = pg.evaluate(f"(()=>{{setTrip({n});return saveData.trip.plan.slice()}})()")
     if not plan: raise Exception(f'no way to {pg.evaluate(f"LOCATIONS[{n}].name")}')
     walked = 0; views = []; unready = 0
     for n1 in plan:
@@ -594,11 +586,10 @@ def debug_picture_privacy(pg):
 # phase 13: the game's own full test (self-test.js, Settings → Help), which the owner runs on a phone, runs here too, so a
 # change that breaks it shows before the phone does. Software drawing is slow: selfTest.slow = 3 stretches its waits
 # and limits, and its frame rates mean nothing here. A step that ran out of time is a note; any other failure is a
-# problem. The game's own travel rules, not play()'s steps mode
+# problem
 def start_for_in_game_test(pg):
-    travel = pg.evaluate('RULES.travel')
     play(pg)
-    pg.evaluate(f"RULES.travel={json.dumps(travel)};uiState.mq=[];uiState.modal=null;renderOverlay();0")
+    pg.evaluate("uiState.mq=[];uiState.modal=null;renderOverlay();0")
 
 
 def run_in_game_test(pg, only, diag, sec):
@@ -1960,7 +1951,7 @@ def desktop_steps(b, base, R):
     def a041_walk():
         """the classic way: RULES.travel 'walk'. The joystick moves you along the camera, the D-pad shows when chosen, and
         walking out of Copperleaf over its edge makes Route 1 where you are (the trip is only a guide now)"""
-        pg.evaluate("RULES.travel='walk';uiState.modal=null;uiState.mq=[];uiState.toastQ=[];renderOverlay();environment.force={time:12,weather:'clear',season:'summer'};0")
+        pg.evaluate("uiState.modal=null;uiState.mq=[];uiState.toastQ=[];renderOverlay();environment.force={time:12,weather:'clear',season:'summer'};0")
         try:
             if pg.evaluate("walkMode()") is not True or pg.evaluate("traveling()") is not False: raise Exception('walk mode is not on')
             n0 = pg.evaluate("LOCATIONS.findIndex(r=>r.mapId==='copperleaf')"); n1 = pg.evaluate("LOCATIONS.findIndex(r=>r.mapId==='hedgerow')")
@@ -1972,23 +1963,12 @@ def desktop_steps(b, base, R):
             pg.evaluate("saveData.preferences.control='dpad';renderOverlay();render();0"); time.sleep(.8)
             dp = pg.evaluate("!!document.querySelector('.dpad')"); pg.evaluate("saveData.preferences.control='stick';renderOverlay();render();0")
             if not dp: raise Exception('no D-pad when the D-pad is chosen')
-            st0 = pg.evaluate("saveData.totalSteps")
-            r = pg.evaluate(f"""(()=>{{const v=walkState(),e=(v.exits||[]).find(e=>e.to==={n1});if(!e)return 'no exit to Route 1';const sc=walkView.sc,pt=sc.exits[e.i],hub=mapHub(sc),dx=pt[0]-hub[0],dz=pt[1]-hub[1],l=Math.hypot(dx,dz)||1,tg=[pt[0]+dx/l*6,pt[1]+dz/l*6];
-              const P=walkView.pl,R=findPath(P.x,P.z,tg[0],tg[1])||[[P.x,P.z],tg];return {{R}}}})()""")
-            if isinstance(r, str): raise Exception(r)
-            crossed = False; R = r['R']; walked = 0
-            for a, bb in zip(R, R[1:]):
-                d = ((bb[0] - a[0]) ** 2 + (bb[1] - a[1]) ** 2) ** .5; k = max(1, int(d / .8))
-                for j in range(1, k + 1):
-                    x = a[0] + (bb[0] - a[0]) * j / k; z = a[1] + (bb[1] - a[1]) * j / k; walked += d / k
-                    if pg.evaluate(f"(()=>{{walkView.pl.x={x};walkView.pl.z={z};walkView.pl.route=null;walkCross();return saveData.trip.node==={n1}}})()"): crossed = True; break
-                if crossed: break
-            if not crossed: raise Exception(f'walked {walked:.0f} m toward Route 1 and never crossed onto it')
+            walked = cross(pg, n1)[0]
             shot(pg, 'a041-walked-to-route1')
             if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
             return f'the joystick moved the player {moved:.1f} m, the D-pad shows when chosen, {walked:.0f} m of walking crossed from Copperleaf onto Route 1'
         finally:
-            pg.evaluate("RULES.travel='steps';environment.force=null;0")
+            pg.evaluate("environment.force=null;0")
     a041_walk()
 
     @step('Settings: one save and the account box, languages, text size, contrast', 90)
