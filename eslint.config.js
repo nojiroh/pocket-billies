@@ -92,7 +92,7 @@ for (const html of APPS) {
     }
   for (const f of scripts.filter(f => typeof f === 'string')) {
     const g = sharedGlobals.get(f) || {};
-    // phase 04d: a module's names are not globals (the bridge is only on for the checks), so only the classic
+    // phase 04d: a module's names are not globals (the test globals are only on for the checks), so only the classic
     // scripts' names are; a module reaches another module's names through its imports
     for (const [other, names] of own) if (other !== f && !MODULES.has(other)) for (const n of names) g[n] = 'writable';
     sharedGlobals.set(f, g);
@@ -130,7 +130,7 @@ export default [
     rules: bugRules,
   })),
   {
-    files: ['game/js/bridge.js', 'game/js/hooks.js'],
+    files: ['game/js/test-globals.js', 'game/js/hooks.js'],
     languageOptions: { ecmaVersion: 'latest', sourceType: 'module', globals: globals.browser },
     rules: bugRules,
   },

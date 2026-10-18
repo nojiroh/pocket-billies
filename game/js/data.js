@@ -4,7 +4,7 @@
    Studio edits.
    The rest of the game reads these globals, so the file format can change without touching game code. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
-import { expose } from './bridge.js';
+import { expose } from './test-globals.js';
 import { S, makeMon, provide } from './hooks.js';
 /* eslint-disable no-func-assign */
 expose({

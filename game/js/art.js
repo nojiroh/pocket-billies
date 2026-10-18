@@ -3,7 +3,7 @@
    art/manifest.js lists atlas rectangles and battle layouts; art/rigs.js holds billionaire skeletons.
    Images load once and are cached; pixel arrays (for the 3D ground and the world map) are read on demand. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
-import { expose } from './bridge.js';
+import { expose } from './test-globals.js';
 import { COINS, provide } from './hooks.js';
 import { clamp } from './util.js';
 /* eslint-disable no-func-assign */

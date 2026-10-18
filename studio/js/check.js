@@ -2,7 +2,7 @@
 /* ================= POCKET BILLIES STUDIO · checks and backups =================
    The game repairs or skips anything broken when it loads, but these checks point at it first. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
-import { expose } from '../../game/js/bridge.js';
+import { expose } from '../../game/js/test-globals.js';
 import { provide } from '../../game/js/hooks.js';
 import { $ } from '../../game/js/util.js';
 import { dioB64 } from '../../game/js/diorama.js';

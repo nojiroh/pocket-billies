@@ -7,7 +7,7 @@
    above. The classic painted stage is used when WebGL isn't running, when the stop has no walk scene,
    or when the player picks it in Settings. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
-import { expose } from './bridge.js';
+import { expose } from './test-globals.js';
 import { B, FV, RM, S, provide } from './hooks.js';
 import { $, clamp } from './util.js';
 import { hexA } from './art.js';

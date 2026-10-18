@@ -8,7 +8,7 @@
    - an engine dial: where its value comes from (built in, the whole game, a scene's own look, presets), which dials
      it needs to do anything, which dials only matter when it is on, and when the game's automatic quality turns it off */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
-import { expose } from '../../game/js/bridge.js';
+import { expose } from '../../game/js/test-globals.js';
 import { provide } from '../../game/js/hooks.js';
 import { $ } from '../../game/js/util.js';
 import { ENGINE_DEFAULTS, ENGINE_PRESETS, ENGINE_SPEC } from '../../game/js/engine/settings.js';

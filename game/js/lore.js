@@ -6,7 +6,7 @@
    An entry's `unlock`: 'start', 'place:<id>' (been there), 'meet:<who>' (met them), 'flag:<name>' (a story flag),
    'badges:<n>'. The stage of the story is the number of badges (9 after the ending). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
-import { expose } from './bridge.js';
+import { expose } from './test-globals.js';
 import { closeModal, modal, provide, storyFlags } from './hooks.js';
 import { clamp } from './util.js';
 import { GD, ROUTE, TRAINERS } from './data.js';

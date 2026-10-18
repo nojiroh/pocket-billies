@@ -15,7 +15,7 @@ from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-# phase 04d: the modules' names on window (game/js/bridge.js), only for this script's page.evaluate() calls
+# phase 04d: the modules' names on window (game/js/test-globals.js), only for this script's page.evaluate() calls
 TEST_GLOBALS = "window.PB_TEST_GLOBALS=true"
 
 ROOT = Path(__file__).resolve().parent.parent

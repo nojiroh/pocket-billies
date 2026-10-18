@@ -7,7 +7,7 @@
    Where workers aren't allowed (or one fails), painting stays on the main thread, a slice at a time, as before.
    A generator waiting on the worker yields PW_WAIT (diorama.js): the loops that step it stop for the frame. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
-import { expose } from './bridge.js';
+import { expose } from './test-globals.js';
 import { provide } from './hooks.js';
 import { clamp } from './util.js';
 import { hexA, pk, pkh } from './art.js';

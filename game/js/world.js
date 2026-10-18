@@ -15,7 +15,7 @@
    stay the currency: the road is the walk you were already doing, now with ground under it. The road's ground, verges,
    trees and flowers come from a seed (the link's index), never stored. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
-import { expose } from './bridge.js';
+import { expose } from './test-globals.js';
 import { provide, sceneExits, sceneIdAt } from './hooks.js';
 import { clamp } from './util.js';
 import { ADJ, LINKS, ROUTE } from './data.js';

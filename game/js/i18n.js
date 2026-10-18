@@ -5,7 +5,7 @@
    shown translated (and switched back when you choose English again), so nothing else in the game has to change.
    To add a language, add a column: a code in I18N_LANGS and one more string in each row. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
-import { expose } from './bridge.js';
+import { expose } from './test-globals.js';
 /* eslint-disable no-func-assign */
 expose({
   I18N: [() => I18N],

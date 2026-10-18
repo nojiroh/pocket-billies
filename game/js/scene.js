@@ -9,7 +9,7 @@
    The camera is directed (pushes and pans with the action, intro dollies, a pull-back on faints), drifts in a slow orbit while idle,
    and is guarded so the two billionaires never leave the free frame. Reduced motion keeps it on the home shot. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
-import { expose } from './bridge.js';
+import { expose } from './test-globals.js';
 import {
   A,
   B,

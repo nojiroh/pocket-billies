@@ -5,7 +5,7 @@
    letters (sound.js), tap or Enter to finish the line or go on. Lines may start with an expression in brackets:
    "[happy] Nice to meet you!" (happy, surprised, sad, angry, blink, talk). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
-import { expose } from './bridge.js';
+import { expose } from './test-globals.js';
 import { dioChatLines, provide } from './hooks.js';
 import { PEOPLE, TRAINERS } from './data.js';
 import { RM, S } from './core.js';

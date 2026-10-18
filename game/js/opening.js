@@ -10,7 +10,7 @@
       that fell with you still fluttering down.
    Skip ends the fall at once; without the fall, the step-by-step intro tells it in words. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
-import { expose } from './bridge.js';
+import { expose } from './test-globals.js';
 import { openingDone, provide } from './hooks.js';
 import { $, clamp } from './util.js';
 import { MOVES, SP, START_NODE, eff } from './data.js';

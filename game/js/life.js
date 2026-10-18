@@ -9,7 +9,7 @@
    lizards on warm rock. Flags on a kind: flee (how close you may come), hop (bounds along), fly (takes off like a
    pigeon, frames 2-3), shore (lives at the water's edge), side (walks sideways). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
-import { expose } from './bridge.js';
+import { expose } from './test-globals.js';
 import { provide, sfxAt } from './hooks.js';
 import { clamp } from './util.js';
 import { cnv } from './art.js';

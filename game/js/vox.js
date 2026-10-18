@@ -8,7 +8,7 @@
    shadow maps too, so its shadow has its real shape. When the Voxel props dial is off, the prop's picture draws as
    before. Picture layers are drawn by the sprite pipeline (dglItems gives them as extra items). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
-import { expose } from './bridge.js';
+import { expose } from './test-globals.js';
 import { GD, RM, provide } from './hooks.js';
 import { artImg, artURL, hexA } from './art.js';
 import { DIO, dioImg } from './diorama.js';

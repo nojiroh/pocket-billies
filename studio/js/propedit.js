@@ -5,7 +5,7 @@
    layers placed in front of or behind the main one for depth; which way each layer faces; glowing layers; and a 3D
    turntable that shows the result in the game's renderer while you work. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
-import { expose } from '../../game/js/bridge.js';
+import { expose } from '../../game/js/test-globals.js';
 import { pedVoxHTML, provide } from '../../game/js/hooks.js';
 import { $, $$, clamp } from '../../game/js/util.js';
 import { frameStop, frameTask } from '../../game/js/frame.js';

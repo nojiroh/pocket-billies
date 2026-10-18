@@ -2,7 +2,7 @@
 /* Focused additions to the existing UI and save system. */
 /* the host page (an artifact viewer, for example) may set its own light/dark attribute; "Match device" leaves it alone */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
-import { expose } from './bridge.js';
+import { expose } from './test-globals.js';
 import {
   ACC,
   BG,

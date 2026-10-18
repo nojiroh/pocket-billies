@@ -6,7 +6,7 @@
    "When it shows" (unlock): start · place:<stop id> · meet:<look id> · flag:<story flag> · badges:<number>.
    The stage of the story is the number of badges you have (9 after the ending). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
-import { expose } from '../../game/js/bridge.js';
+import { expose } from '../../game/js/test-globals.js';
 import { esc } from './shims.js';
 import {
   ACTS,

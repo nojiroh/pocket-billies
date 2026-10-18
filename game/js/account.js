@@ -6,7 +6,7 @@
    The first time someone signs in on a browser that already has a game, they are asked whether to bring it along.
    The Firebase project is set in js/account-config.js; without it there is no sign-in button. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
-import { expose } from './bridge.js';
+import { expose } from './test-globals.js';
 import { NW_TEST, closeModal, modal, provide, render, toast } from './hooks.js';
 import {
   ACC_ID,

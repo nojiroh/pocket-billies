@@ -8,7 +8,7 @@
    the flight is shown over the world map, the airship carrying you along an arc above the land, and a ticket costs
    money, so your steps stay for walking new ground. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
-import { expose } from './bridge.js';
+import { expose } from './test-globals.js';
 import { closeModal, modal, provide, render, sceneIdAt, storyFlags, toast } from './hooks.js';
 import { $, clamp } from './util.js';
 import { PLACE, ROUTE, isTown, placeFull } from './data.js';

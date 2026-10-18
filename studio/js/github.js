@@ -9,7 +9,7 @@
      the game changes until the repository's owner merges it (GitHub → Pull requests).
    Started from start-studio.py on your own computer, none of this is used: saves go straight into the game folder. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
-import { expose } from '../../game/js/bridge.js';
+import { expose } from '../../game/js/test-globals.js';
 import { $ } from '../../game/js/util.js';
 import { esc } from './shims.js';
 import { ACTS, ST, ask, boot, dialog, saveAll, setApi, setSaveAll, setToast, toast, updTop } from './core.js';

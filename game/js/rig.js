@@ -2,7 +2,7 @@
 /* ================= RIG: billionaires assembled from atlas images (art/billionaires/*.png) and skeletons (art/rigs.js) ================= */
 /* ---- matrices ---- */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
-import { expose } from './bridge.js';
+import { expose } from './test-globals.js';
 import { B, RM, SP, provide } from './hooks.js';
 import { clamp, rnd } from './util.js';
 import { frameTask, userFps } from './frame.js';

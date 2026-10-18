@@ -8,7 +8,7 @@
    chimneys smoke, fountains splash, windmills turn, butterflies and leaves drift by.
    Scenes and the prop catalog live in game data (scenes, scenery) and are edited in Pocket Billies Studio. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
-import { expose } from './bridge.js';
+import { expose } from './test-globals.js';
 import {
   DGL_ALT,
   DGL_TERRAIN_MAT,

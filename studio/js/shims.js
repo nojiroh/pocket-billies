@@ -3,7 +3,7 @@
    What the game's renderers read from the game (the save, the menus' state, the battle, reduced motion, esc and the
    data tables) when they run inside the Studio. Phase 04d: was an inline script in studio/index.html. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
-import { expose } from '../../game/js/bridge.js';
+import { expose } from '../../game/js/test-globals.js';
 import { ST, provide } from '../../game/js/hooks.js';
 expose({
   B: [() => B, v => ((B = v), provide({ B }))],

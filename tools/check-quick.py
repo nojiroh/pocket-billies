@@ -39,7 +39,7 @@ T0 = time.time()
 CLOCK = """(()=>{const D=Date,off=new D(2026,5,15,12,30,0).getTime()-D.now();class FD extends D{constructor(...a){if(a.length)super(...a);else super(D.now()+off)}static now(){return D.now()+off}}
  FD.UTC=D.UTC;FD.parse=D.parse;window.Date=FD})()"""
 NO_ACCOUNTS = "Object.defineProperty(window,'PB_FIREBASE',{get(){return null},set(){},configurable:false})"   # alpha 0.4.1: no Google sign-in during the checks
-# phase 04d: the modules' names on window (game/js/bridge.js), only for the checks' page.evaluate() calls
+# phase 04d: the modules' names on window (game/js/test-globals.js), only for the checks' page.evaluate() calls
 TEST_GLOBALS = "window.PB_TEST_GLOBALS=true"
 LOW_RENDER = "GD.engine=GD.engine||{};GD.engine.defaults=Object.assign({},GD.engine.defaults||{},{quality:{resolution:.34,shadowMap:1024,auto:false}});0"
 ARGS = sys.argv[1:]

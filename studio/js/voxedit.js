@@ -7,7 +7,7 @@
    (scenery.props.<key>.vox), so it saves with the game data; tools/build-vox-props.py wrote the first sixty as files
    and the game reads either. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
-import { expose } from '../../game/js/bridge.js';
+import { expose } from '../../game/js/test-globals.js';
 import { provide } from '../../game/js/hooks.js';
 import { cnv } from '../../game/js/art.js';
 import { dioImg } from '../../game/js/diorama.js';

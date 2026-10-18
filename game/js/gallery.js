@@ -4,7 +4,7 @@
    you stand at the station for that dial, and a panel over the scene holds the dial itself, so you can switch it and
    watch what changes. Day and night swap at a tap (lamps need the dark). "Leave" brings you back to your settings. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
-import { expose } from './bridge.js';
+import { expose } from './test-globals.js';
 import { closeModal, provide, render, renderOv, settings, toast } from './hooks.js';
 import { U } from './core.js';
 import { GFX_DIALS, gfxDial } from './profile.js';

@@ -4,7 +4,7 @@
    shadows, lights, haze, grass, water, camera and quality. Set them for the whole game, or override them for one walk
    scene. The live preview runs the game's renderer on your unsaved values, so every change shows immediately. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
-import { expose } from '../../game/js/bridge.js';
+import { expose } from '../../game/js/test-globals.js';
 import { $ } from '../../game/js/util.js';
 import { DIO, dioHubOf } from '../../game/js/diorama.js';
 import {

@@ -3,7 +3,7 @@
    Each function maps the shared pose channels P (from rigPose) to per-bone offsets for one body plan.
    q holds the few per-species numbers the motion needs (hover height, flap speed and so on). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
-import { expose } from './bridge.js';
+import { expose } from './test-globals.js';
 /* eslint-disable no-func-assign */
 expose({
   ANIM: [() => ANIM],

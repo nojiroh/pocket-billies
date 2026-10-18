@@ -4,7 +4,7 @@
    uses (billionaires, battle stages, walk scenes, the world map, icons) behind the loading screen, so nothing pops in
    later and a missing file shows up right away. Then draw the game. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
-import { expose } from './bridge.js';
+import { expose } from './test-globals.js';
 import { provide } from './hooks.js';
 import { DATA_WARN, GD, RULES, SP, START_NODE } from './data.js';
 import { sceneWatch, scenesAhead, scenesAll } from './scene-files.js';

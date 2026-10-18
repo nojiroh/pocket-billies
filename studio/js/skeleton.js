@@ -4,7 +4,7 @@
    around, a parent it hangs from, a draw layer and an animation role (which motion of its body plan it follows).
    Front and back views have their own skeletons and sheets; the Gold-Plated sheets share the same layout. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
-import { expose } from '../../game/js/bridge.js';
+import { expose } from '../../game/js/test-globals.js';
 import { provide } from '../../game/js/hooks.js';
 import { $, $$, clamp } from '../../game/js/util.js';
 import { cnv, hexA, shadeHex } from '../../game/js/art.js';

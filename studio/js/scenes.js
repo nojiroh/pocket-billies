@@ -4,7 +4,7 @@
    tiles (one character per tile), a list of props, a walking path and a camera. Props and ground tiles are PNG files
    in art/scene/ that can be painted here. The live preview runs the game's own renderer on your unsaved changes. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
-import { expose } from '../../game/js/bridge.js';
+import { expose } from '../../game/js/test-globals.js';
 import {
   VP,
   pedCard,

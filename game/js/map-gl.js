@@ -8,7 +8,7 @@
    map.js keeps the camera, the walking animation and the picking, and still draws the map itself where WebGL isn't
    available (a lost context). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
-import { expose } from './bridge.js';
+import { expose } from './test-globals.js';
 import { FR, flyDraw, flyTick, provide } from './hooks.js';
 import { $, clamp } from './util.js';
 import { FUTURE, LINKS, ROUTE, linkCost, placeSub } from './data.js';

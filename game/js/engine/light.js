@@ -4,7 +4,7 @@
    contact-shadow list and the point lights. The sun comes from the top left by default, the same side the pixel art is
    painted from, so shadows fall back and to the right. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
-import { expose } from '../bridge.js';
+import { expose } from '../test-globals.js';
 import { ENV, envSun } from '../hooks.js';
 import { clamp } from '../util.js';
 import { DIO } from '../diorama.js';

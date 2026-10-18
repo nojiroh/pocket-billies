@@ -8,13 +8,18 @@
 // A module keeps its code as it was. The tool writes, between the to-module markers at the top of the file:
 // - imports of the names it reads from EARLIER modules of its page(s): only from a module that every page loading
 //   this file loads before it, and only names this file never assigns to (an import is read-only),
-// - expose({...}): every top-level name of the file, put on window as a getter and a setter of the module's own
-//   variable (game/js/bridge.js). Everything that still reaches a name as a global keeps working: classic scripts, a
-//   module's reference to a LATER file (the classic scripts could only do that at run time, too), the Studio's
-//   stand-ins, the quick check, the console, and the debug log's wrappers (window.render = wrapped changes `render`
-//   for every module that imports it, as replacing the global did).
+// - phase 04d: imports from game/js/hooks.js (which the tool also writes) of the names it reads from a LATER module,
+//   or from whichever module the page has (the shared renderer reading the game's or the Studio's names), and
+//   provide({...}) of its own names other modules read from there (functions here; other values right after their
+//   declaration, in a line ending in a to-module comment),
+// - setters for the functions the debug log wraps, when the module has none of its own (game/js/log-names.js, also
+//   written by the tool, hands them to log.js),
+// - expose({...}): every top-level name of the file, put on window as a getter and a setter only when the checks or
+//   the console ask for it (game/js/test-globals.js),
 // and `export` in front of each declaration another module imports. Nothing else in the file is touched.
-// Modules run after every classic script, in page order; imports only point back, so the order stays the page order.
+// Modules run after every classic script, in page order; imports only point back (forward names go through
+// hooks.js), so the order stays the page order. The tool checks that nothing a module reads while it loads comes from
+// a module that hasn't run yet.
 import * as espree from 'espree';
 import * as eslintScope from 'eslint-scope';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
@@ -23,7 +28,7 @@ import * as prettier from 'prettier';
 
 const ROOT = join(import.meta.dirname, '..');
 const PAGES = ['game/index.html', 'studio/index.html'];
-const BRIDGE = 'game/js/bridge.js';
+const BRIDGE = 'game/js/test-globals.js';
 const START = '/* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */';
 const END = '/* to-module: end */';
 const HOOKS = 'game/js/hooks.js';
@@ -254,7 +259,7 @@ export async function run(args) {
   //   right after its declaration, as the bridge did. Imports pointing forward would change the order the modules run in (an
   //   imported module runs first), so they go through hooks.js and the page order stays as it is;
   // - a global, when only classic scripts declare it.
-  // Anything else is an error: since phase 04d the window bridge is only there for the checks and the console. A name
+  // Anything else is an error: since phase 04d the test globals (expose) are only there for the checks and the console. A name
   // another module assigns needs a setter in the module that declares it (setX, calling provide({ X })).
   const order = pages.flatMap(p => p.scripts.map(s => s.file));
   // names some other module assigns
@@ -366,7 +371,7 @@ export async function run(args) {
       if (g !== HOOKS) lines.push(`import { ${[...names].sort().join(', ')} } from '${spec(f, g)}';`);
     const names = [...own.keys()].sort();
     const fns = names.some(n => own.get(n).kind === 'function');
-    // a module's own setter (setS for S) also hands the value to hooks.js, so the bridge uses it
+    // a module's own setter (setS for S) also hands the value to hooks.js, so the test globals use it
     const setterOf = n => {
       const k = setterName(n);
       if ((own.has(k) && own.get(k).kind === 'function') || gen.includes(n)) return `v => ${k}(v)`;

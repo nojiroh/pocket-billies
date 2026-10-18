@@ -10,7 +10,7 @@
    for a view's maps, so nothing is drawn from half a map. If anything was put together from a map before its file came
    (the world map's miniatures, say), the views are made again once it has (WORLD.gen). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
-import { expose } from './bridge.js';
+import { expose } from './test-globals.js';
 import { S, WORLD, provide } from './hooks.js';
 import { ADJ, GD, LINKS, ROUTE, START_NODE } from './data.js';
 /* eslint-disable no-func-assign */

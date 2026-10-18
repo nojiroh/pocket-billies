@@ -4,7 +4,7 @@
    textures with automatic normal maps, render targets and the shared lighting code in GLSL.
    One engine state object, EGL, is shared by every view. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
-import { expose } from '../bridge.js';
+import { expose } from '../test-globals.js';
 import { DGL, dioArtVer, eglRestored, provide } from '../hooks.js';
 import { clamp } from '../util.js';
 import { cnv } from '../art.js';

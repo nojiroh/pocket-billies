@@ -6,7 +6,7 @@
    mask, and stretched by the body sliders (height, legs, arms, body, shoulders, hips, chest, head).
    A look: {name, body:{…sliders}, skin, hair, eyes, wear:{slot:itemId|null}, colors:{itemId:[hex,…]}}. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
-import { expose } from './bridge.js';
+import { expose } from './test-globals.js';
 import { FR, GD, PEOPLE, S, ST, U, cleanName, dglBudget, dioArtVer, dioImg, drawRig, provide } from './hooks.js';
 import { clamp } from './util.js';
 import { frameStop, frameTask } from './frame.js';

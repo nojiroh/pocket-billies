@@ -8,7 +8,7 @@
    others in the rain (rules.env in the game data, editable in the Studio).
    The renderer reads ENV through envFrame() once a frame; nothing here touches WebGL. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
-import { expose } from './bridge.js';
+import { expose } from './test-globals.js';
 import { RM, RULES, S, SP, provide, sceneIdAt } from './hooks.js';
 import { clamp } from './util.js';
 import { hexA } from './art.js';

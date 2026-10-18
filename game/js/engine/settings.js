@@ -5,7 +5,7 @@
    (GD.engine.map). Pocket Billies Studio edits all three in its Engine section.
    A value of null means "use the scene's own field" (its haze, sky, camera…). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
-import { expose } from '../bridge.js';
+import { expose } from '../test-globals.js';
 import { ENV_MOD, GD, S, provide } from '../hooks.js';
 import { hexA } from '../art.js';
 /* eslint-disable no-func-assign */

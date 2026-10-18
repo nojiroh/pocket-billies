@@ -12,7 +12,7 @@
    use the picture, so a repainted picture changes the front of the 3D building too. Engine setting world.buildings3d
    turns the models off (the pictures stand in as before). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
-import { expose } from './bridge.js';
+import { expose } from './test-globals.js';
 import { dioArtVer, provide } from './hooks.js';
 import { cnv, hexA } from './art.js';
 import { DIO, dioData, dioHash, dioImg } from './diorama.js';

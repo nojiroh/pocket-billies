@@ -7,7 +7,7 @@
    mist, cloud shadows, and a lens with depth of field. Every dial is an engine setting (Studio → Engine).
    Same scenes, walking and taps as js/diorama.js (scene data, paths, the player); this file draws them. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
-import { expose } from './bridge.js';
+import { expose } from './test-globals.js';
 import {
   BLD,
   BLD_SH,

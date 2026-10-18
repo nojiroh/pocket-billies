@@ -3,7 +3,7 @@
    Runs the game's own battle stage (game/js/scene.js) inside the Studio, fed by the Studio's unsaved data and art,
    so moves, backdrops and new billionaires can be checked without starting the game. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
-import { expose } from '../../game/js/bridge.js';
+import { expose } from '../../game/js/test-globals.js';
 import { provide, scArt, scD } from '../../game/js/hooks.js';
 import { $, $$ } from '../../game/js/util.js';
 import { COIN_ART, artLoad, hexA } from '../../game/js/art.js';

@@ -4,7 +4,7 @@
    parts by art/rigs.js. The Studio loads those atlases into editable canvases, assembles the skeleton exactly like
    the game does, animates previews, and provides the pixel editor, gold regeneration and recoloring. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
-import { expose } from '../../game/js/bridge.js';
+import { expose } from '../../game/js/test-globals.js';
 import { openSkeleton, provide } from '../../game/js/hooks.js';
 import { $, $$, clamp } from '../../game/js/util.js';
 import { cnv } from '../../game/js/art.js';

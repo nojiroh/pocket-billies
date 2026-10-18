@@ -1,7 +1,7 @@
 'use strict';
 /* ================= CORE ================= */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
-import { expose } from './bridge.js';
+import { expose } from './test-globals.js';
 import { JINGLES, accFlush, envOdds, jingle, onStepsAdded, postProcess, provide, render, sfx, toast } from './hooks.js';
 import { rnd } from './util.js';
 import {

@@ -8,7 +8,7 @@
    spot (opening.js battleTutor, story.js storyAfterRival).
    If the cutscene can't run or stops, the older step-by-step intro in ui.js runs instead. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
-import { expose } from './bridge.js';
+import { expose } from './test-globals.js';
 import {
   FALL,
   LAND,

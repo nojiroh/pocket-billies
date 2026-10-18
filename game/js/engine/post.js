@@ -5,7 +5,7 @@
    a soft highlight roll-off instead of clipping, contrast, saturation, warmth, vignette, chromatic aberration, grain
    and a light sharpen. Also takes a small screenshot for the debug log when asked. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
-import { expose } from '../bridge.js';
+import { expose } from '../test-globals.js';
 import { RM, provide } from '../hooks.js';
 import { clamp } from '../util.js';
 import { cnv } from '../art.js';
