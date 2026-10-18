@@ -28,7 +28,7 @@ idle life everywhere; messages that appear at the edge, say their piece and leav
 | Eight different corner radii (2, 6, 8, 10, 12, 14, 999 px, 50%) next to the 0.5 tokens `--r1..3` | all | Edges don't match from screen to screen |
 | Tight padding: the most used values are `10px 12px` and `8px 10px` | cards, lists, settings | Feels cramped on a phone; little room to breathe |
 | Long text set in the pixel font, 15.5 px, full width | starter cards, battle log, Guide | Pixel fonts tire the eye in paragraphs; the starter card has five lines of description plus two lines of type facts |
-| Pop-ups stack on load: the evolution sheet opens over a blurred, unreadable screen; more windows follow (`showPendingWindows`) | town after loading | The first thing a player sees is a wall, not the world |
+| A choice opens right after loading: `showPendingWindows` (hatch, learn a move, evolve) runs 500 ms after boot, so the evolution sheet covers a blurred world before you've seen it. (Corrected: modals already queue one at a time, ui.js `modal`/`nextModal`; they don't stack) | town after loading | The first thing a player sees is a wall, not the world |
 | 72 `@keyframes`, several doing the same thing under different names (`pop`, `nwPop`; `rise`, `nwFadeUp`, `csUp`; `breathe`, `nwIdle`), reduced-motion handled per file | all | Motion feels different from screen to screen and is hard to tune |
 | The battle text log stacks every line at the bottom of the screen | battle | Reads like a log file; the important line isn't the loudest |
 | Loader tip still says real steps move you along | loader | Stale since phase 08 Part A (steps removed) |
@@ -161,9 +161,11 @@ Order follows the roadmap's priority on Billies and robots: the screens they nee
 Each session: lint, type-check, module check, unit tests, the UI tests for the screens it moved, screenshots of those
 screens at 390 px in both themes attached to the handoff.
 
-## Decisions waiting for you
-1. Rendering: **Lit components** (recommended) or plain lit-html templates?
-2. Paragraph font: **Chakra Petch for long text** (recommended) or Pixelify Sans everywhere at a larger size?
-3. Things that can wait go to an **inbox dot** on your portrait instead of opening on load: OK?
-4. The `codex/playable-ui-graphics-poc` branch: merge, take ideas from it, or delete before the split starts?
-5. Start 06-1 now (before the phase 16 prototype's Studio work) or after it?
+## Your decisions (2026-10-18)
+| Question | Answer |
+|---|---|
+| Rendering | **Lit components**. Lit is bundled once into `game/vendor/lit.js` (a script in tools/ makes it from the npm package), so the game still runs from `npm run dev`, the build and a plain `python3 -m http.server` |
+| Long text | **Chakra Petch** (already in game/fonts). Pixelify Sans stays for names, headings, buttons and numbers |
+| Things that can wait | **Inbox dot** on your trainer portrait. Only real choices (evolve, learn a move, trade, spend) open a sheet, one at a time, after the world is showing |
+| codex/playable-ui-graphics-poc | **Delete.** Saved as the branch `archive/codex-playable-ui-graphics-poc` (tag pushes and branch deletes are refused from Claude's sessions); delete the codex branch on GitHub |
+| When | Start 06-1 now |
