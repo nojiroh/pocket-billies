@@ -783,7 +783,7 @@ function nodeActions(i) {
     x += `<button class="pb small" data-a="shop" data-s="${n.boutique}">${uiIconHTML('profile', 16)} ${escapeHtml(SHOPS[n.boutique].name)}</button>`;
   x += n.town
     ? '<button class="pb small" data-a="clinic">Rest at the clinic, free</button>'
-    : `<button class="pb small quiet" data-a="rest">Rest stop, $${formatNumber(RULES.steps.restCost)}</button>`;
+    : `<button class="pb small quiet" data-a="rest">Rest stop, $${formatNumber(RULES.battle.restCost)}</button>`;
   trainersAt(i).forEach(T => {
     const done = saveData.flags[T.id];
     if (T.blocks && done && !T.seat) return;
@@ -2444,7 +2444,7 @@ document.addEventListener('click', ev => {
       toast('The clinic patched everyone up. No charge.');
       break;
     case 'rest': {
-      const c = RULES.steps.restCost;
+      const c = RULES.battle.restCost;
       if (saveData.se < c) {
         toast(`A rest stop costs $${formatNumber(c)}. Walk a bit first.`);
         break;

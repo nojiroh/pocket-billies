@@ -588,7 +588,6 @@ export interface Rules {
   };
   steps: {
     stepsPerKm: number;
-    restCost: number;
   };
   /** phase 08: wild Billies on each place's map (rules.js encountersHere) */
   encounters: {
@@ -647,6 +646,8 @@ export interface Rules {
     stageMax: number;
     aiSmart: number;
     loseFee: number;
+    /** what a rest stop costs (it heals the team) */
+    restCost: number;
     shockType: TypeId;
     shockTurns: number;
     shockName: string;

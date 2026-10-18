@@ -781,7 +781,7 @@ SECTIONS.rules = () => {
        ph: '45',
        help: 'How rare an Alpha is among new encounters (once you have two Billies).',
      }),
-     numberField('Rest stop price ($)', `${st}.restCost`, { min: 0, step: 10 }),
+     numberField('Rest stop price ($)', `${bt}.restCost`, { min: 0, step: 10 }),
      numberField('Prize for beating a wild Billie', `rules.encounters.prizePerLevel`, {
        min: 0,
        step: 1,
