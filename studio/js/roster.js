@@ -13,7 +13,7 @@ import { drawRig } from '../../game/js/skeleton-rig.js';
 import { esc } from './game-stand-ins.js';
 import { ACTIONS, SECTIONS, after, changed, commit, render, studioState } from './studio-app.js';
 import { downloadCanvas, loadImage, rigFor } from './sprites.js';
-import { skNeutral } from './skeleton.js';
+import { neutralPose } from './skeleton.js';
 /* eslint-disable no-func-assign */
 expose({
   RO: [() => RO],
@@ -170,7 +170,7 @@ async function roSilhouette(id, size = 24) {
     if (R) {
       const c = makeCanvas(R.BW, R.BH),
         x = c.getContext('2d');
-      drawRig(x, R, skNeutral(), 'front');
+      drawRig(x, R, neutralPose(), 'front');
       src = c;
     }
   }

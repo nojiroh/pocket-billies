@@ -2,7 +2,15 @@
 /* ================= POCKET BILLIES STUDIO · editors ================= */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
-import { BODY_TEMPLATES, PLAN_INFO, WDS, makeBlankBody, openSkeleton, skNeutral, wdLoad } from '../../game/js/hooks.js';
+import {
+  BODY_TEMPLATES,
+  PLAN_INFO,
+  WDS,
+  makeBlankBody,
+  neutralPose,
+  openSkeleton,
+  wdLoad,
+} from '../../game/js/hooks.js';
 import { $, $$ } from '../../game/js/util.js';
 import { iconURL, makeCanvas } from '../../game/js/art.js';
 import { TR_CACHE, cleanLook, humanSheet, lookFromOld, trColorsOf, trSliders } from '../../game/js/person-art.js';
@@ -642,7 +650,7 @@ ACTIONS.newLine = async () => {
     drawRig(
       x,
       { ...R, bones: meta.bones.map(b => Object.assign({}, b, { img: b.i >= 0 ? imgs[b.i] : null })) },
-      skNeutral(),
+      neutralPose(),
       'front'
     );
   };

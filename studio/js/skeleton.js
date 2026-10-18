@@ -47,47 +47,47 @@ expose({
   PLAN_INFO: [() => PLAN_INFO],
   PLAN_MOTION_FIELDS: [() => PLAN_MOTION_FIELDS],
   ROLE_HELP: [() => ROLE_HELP],
+  addPart: [() => addPart, v => (addPart = v)],
   allocRect: [() => allocRect, v => (allocRect = v)],
+  applyBodyPlan: [() => applyBodyPlan, v => (applyBodyPlan = v)],
   applyLinear2x2: [() => applyLinear2x2],
+  bindSkeletonCanvas: [() => bindSkeletonCanvas, v => (bindSkeletonCanvas = v)],
   blobPart: [() => blobPart, v => (blobPart = v)],
   bonesUsingImage: [() => bonesUsingImage],
   cutRect: [() => cutRect, v => (cutRect = v)],
+  drawSkeleton: [() => drawSkeleton, v => (drawSkeleton = v)],
   flipped: [() => flipped, v => (flipped = v)],
+  importPieceSheet: [() => importPieceSheet, v => (importPieceSheet = v)],
   invert2x2: [() => invert2x2],
+  loadSkeletonView: [() => loadSkeletonView, v => (loadSkeletonView = v)],
   makeBlankBody: [() => makeBlankBody, v => ((makeBlankBody = v), provide({ makeBlankBody }))],
+  mirrorPart: [() => mirrorPart, v => (mirrorPart = v)],
+  neutralPose: [() => neutralPose, v => ((neutralPose = v), provide({ neutralPose }))],
   openSkeleton: [() => openSkeleton, v => ((openSkeleton = v), provide({ openSkeleton }))],
+  placeholderPart: [() => placeholderPart, v => (placeholderPart = v)],
   planRoles: [() => planRoles, v => (planRoles = v)],
   putPart: [() => putPart, v => (putPart = v)],
+  renameBone: [() => renameBone, v => (renameBone = v)],
+  reparentBone: [() => reparentBone, v => (reparentBone = v)],
   scaled: [() => scaled, v => (scaled = v)],
-  skAddPart: [() => skAddPart, v => (skAddPart = v)],
-  skAlphaAt: [() => skAlphaAt, v => (skAlphaAt = v)],
-  skBindCanvas: [() => skBindCanvas, v => (skBindCanvas = v)],
-  skClick: [() => skClick, v => (skClick = v)],
-  skDone: [() => skDone, v => (skDone = v)],
-  skDraw: [() => skDraw, v => (skDraw = v)],
-  skGeo: [() => skGeo, v => (skGeo = v)],
-  skHit: [() => skHit, v => (skHit = v)],
-  skImportSheet: [() => skImportSheet, v => (skImportSheet = v)],
-  skLoadView: [() => skLoadView, v => (skLoadView = v)],
-  skLoop: [() => skLoop, v => (skLoop = v)],
-  skMeta: [() => skMeta, v => (skMeta = v)],
-  skMirror: [() => skMirror, v => (skMirror = v)],
-  skNeutral: [() => skNeutral, v => ((skNeutral = v), provide({ skNeutral }))],
   skPartFor: [() => skPartFor, v => (skPartFor = v)],
-  skPlaceholder: [() => skPlaceholder, v => (skPlaceholder = v)],
-  skPose: [() => skPose, v => (skPose = v)],
-  skRename: [() => skRename, v => (skRename = v)],
-  skReparent: [() => skReparent, v => (skReparent = v)],
-  skSetPlan: [() => skSetPlan, v => (skSetPlan = v)],
-  skSide: [() => skSide, v => (skSide = v)],
-  skTopo: [() => skTopo, v => (skTopo = v)],
-  skTree: [() => skTree, v => (skTree = v)],
+  skeletonAlphaAt: [() => skeletonAlphaAt, v => (skeletonAlphaAt = v)],
+  skeletonChanged: [() => skeletonChanged, v => (skeletonChanged = v)],
+  skeletonClick: [() => skeletonClick, v => (skeletonClick = v)],
   skeletonEditor: [() => skeletonEditor],
+  skeletonFraming: [() => skeletonFraming, v => (skeletonFraming = v)],
+  skeletonHitTest: [() => skeletonHitTest, v => (skeletonHitTest = v)],
+  skeletonLoop: [() => skeletonLoop, v => (skeletonLoop = v)],
+  skeletonMeta: [() => skeletonMeta, v => (skeletonMeta = v)],
+  skeletonPose: [() => skeletonPose, v => (skeletonPose = v)],
+  skeletonSidePanel: [() => skeletonSidePanel, v => (skeletonSidePanel = v)],
+  skeletonTree: [() => skeletonTree, v => (skeletonTree = v)],
+  sortBonesParentsFirst: [() => sortBonesParentsFirst, v => (sortBonesParentsFirst = v)],
   swapLeftRight: [() => swapLeftRight],
   uniqueBoneName: [() => uniqueBoneName],
 });
 /* eslint-enable no-func-assign */
-provide({ makeBlankBody, openSkeleton, skNeutral });
+provide({ makeBlankBody, neutralPose, openSkeleton });
 /* to-module: end */
 const skeletonEditor = {
   sp: null,
@@ -192,15 +192,15 @@ const ROLE_HELP = {
 };
 function planRoles(plan, q) {
   try {
-    return Object.keys(ANIM[plan](skNeutral(), q || {})).sort();
+    return Object.keys(ANIM[plan](neutralPose(), q || {})).sort();
   } catch (e) {
     return [];
   }
 }
-function skMeta(view = skeletonEditor.view) {
+function skeletonMeta(view = skeletonEditor.view) {
   return studioState.rigs[skeletonEditor.sp] && studioState.rigs[skeletonEditor.sp][view];
 }
-export function skNeutral() {
+export function neutralPose() {
   const P = rigPose(null, 0, 0, 0);
   Object.assign(P, {
     sy: 1,
@@ -216,8 +216,8 @@ export function skNeutral() {
   });
   return P;
 }
-function skPose(ts, tickOff = 0) {
-  if (!skeletonEditor.anim) return skNeutral();
+function skeletonPose(ts, tickOff = 0) {
+  if (!skeletonEditor.anim) return neutralPose();
   let tau = ts - skeletonEditor.t0;
   if (skeletonEditor.paused) tau = (skeletonEditor.tick * 1000) / 12;
   if (skeletonEditor.grid12 || skeletonEditor.paused) tau = Math.floor(tau / (1000 / 12)) * (1000 / 12);
@@ -300,7 +300,7 @@ function flipped(src) {
   return o;
 }
 /* keep parents ahead of their children in the list (the game assembles bones in order) */
-function skTopo(meta) {
+function sortBonesParentsFirst(meta) {
   const out = [],
     seen = new Set(),
     byPar = {};
@@ -325,13 +325,13 @@ function skTopo(meta) {
   meta.bones = out;
 }
 /* shadow width, body center and top for battle framing */
-function skGeo(sp) {
+function skeletonFraming(sp) {
   for (const view of ['front', 'back']) {
     const meta = studioState.rigs[sp] && studioState.rigs[sp][view];
     if (!meta) continue;
     const R = rigFor(sp, view, false);
     if (!R) continue;
-    const { list } = rigMatrices(R, skNeutral(), view);
+    const { list } = rigMatrices(R, neutralPose(), view);
     let x0 = 1e9,
       x1 = -1e9,
       y0 = 1e9,
@@ -409,29 +409,29 @@ async function openSkeleton(sp, view = 'front') {
     skeletonEditor.anim = true;
     $('[data-sk=anim]').classList.add('on');
     skeletonEditor.tick = +e.target.value;
-    skDraw();
+    drawSkeleton();
   });
-  m.querySelector('.skel').addEventListener('click', skClick);
-  skBindCanvas();
-  skLoadView();
+  m.querySelector('.skel').addEventListener('click', skeletonClick);
+  bindSkeletonCanvas();
+  loadSkeletonView();
   cancelAnimationFrame(skeletonEditor.raf);
-  skeletonEditor.raf = requestAnimationFrame(skLoop);
+  skeletonEditor.raf = requestAnimationFrame(skeletonLoop);
 }
-function skLoadView() {
+function loadSkeletonView() {
   $$('[data-sk=view]').forEach(b => b.classList.toggle('on', b.dataset.v === skeletonEditor.view));
-  const meta = skMeta();
+  const meta = skeletonMeta();
   if (skeletonEditor.sel && !meta.bones.some(b => b.n === skeletonEditor.sel)) skeletonEditor.sel = null;
-  skTree();
-  skSide();
-  skDraw(performance.now());
+  skeletonTree();
+  skeletonSidePanel();
+  drawSkeleton(performance.now());
 }
-function skLoop(ts) {
+function skeletonLoop(ts) {
   if (!$('.skel')) return;
-  if ((skeletonEditor.anim && !skeletonEditor.paused) || skeletonEditor.drag) skDraw(ts);
-  skeletonEditor.raf = requestAnimationFrame(skLoop);
+  if ((skeletonEditor.anim && !skeletonEditor.paused) || skeletonEditor.drag) drawSkeleton(ts);
+  skeletonEditor.raf = requestAnimationFrame(skeletonLoop);
 }
 /* ---------- canvas ---------- */
-function skDraw(ts) {
+function drawSkeleton(ts) {
   const c = $('#skCv');
   if (!c) return;
   const R = rigFor(skeletonEditor.sp, skeletonEditor.view, false);
@@ -464,7 +464,7 @@ function skDraw(ts) {
       [-1, 0.32],
     ]) {
       bx.clearRect(0, 0, R.BW, R.BH);
-      drawRig(bx, R, skPose(now, off), skeletonEditor.view);
+      drawRig(bx, R, skeletonPose(now, off), skeletonEditor.view);
       bx.save();
       bx.globalCompositeOperation = 'source-atop';
       bx.fillStyle = off === -1 ? '#C8323C' : '#1F6E6F';
@@ -476,7 +476,7 @@ function skDraw(ts) {
     }
     bx.clearRect(0, 0, R.BW, R.BH);
   }
-  const P = skPose(now);
+  const P = skeletonPose(now);
   drawRig(bx, R, P, skeletonEditor.view);
   x.drawImage(buf, 0, 0, W, Hh);
   const tk = $('#skTick');
@@ -494,7 +494,7 @@ function skDraw(ts) {
   x.stroke();
   x.setLineDash([]);
   const { W: Wm, list } = rigMatrices(R, P, skeletonEditor.view),
-    meta = skMeta();
+    meta = skeletonMeta();
   if (skeletonEditor.sel) {
     const e = list.find(l => l[5].n === skeletonEditor.sel);
     if (e) {
@@ -552,7 +552,7 @@ function skDraw(ts) {
   x.lineTo(rm[4] * Z, rm[5] * Z + 8);
   x.stroke();
 }
-function skAlphaAt(c, x, y) {
+function skeletonAlphaAt(c, x, y) {
   let d = skeletonEditor.alpha.get(c);
   if (!d) {
     d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data;
@@ -563,10 +563,10 @@ function skAlphaAt(c, x, y) {
   if (x < 0 || y < 0 || x >= c.width || y >= c.height) return 0;
   return d[(y * c.width + x) * 4 + 3];
 }
-function skHit(bx, by) {
+function skeletonHitTest(bx, by) {
   const R = rigFor(skeletonEditor.sp, skeletonEditor.view, false),
-    { W, list } = rigMatrices(R, skNeutral(), skeletonEditor.view),
-    meta = skMeta();
+    { W, list } = rigMatrices(R, neutralPose(), skeletonEditor.view),
+    meta = skeletonMeta();
   for (const b of meta.bones) {
     const m = W[b.n];
     if (m && Math.hypot(m[4] - bx, m[5] - by) * skeletonEditor.zoom < 9) return { b, mode: 'pivot' };
@@ -581,13 +581,13 @@ function skHit(bx, by) {
       ly >= img.oy &&
       lx < img.ox + c.width &&
       ly < img.oy + c.height &&
-      skAlphaAt(c, lx - img.ox, ly - img.oy) > 20
+      skeletonAlphaAt(c, lx - img.ox, ly - img.oy) > 20
     )
       return { b: meta.bones.find(x => x.n === b.n) || b, mode: 'part' };
   }
   return null;
 }
-function skBindCanvas() {
+function bindSkeletonCanvas() {
   const c = $('#skCv');
   const pos = ev => {
     const r = c.getBoundingClientRect();
@@ -598,27 +598,27 @@ function skBindCanvas() {
   };
   c.addEventListener('pointerdown', ev => {
     const [x, y] = pos(ev),
-      h = skHit(x, y);
+      h = skeletonHitTest(x, y);
     if (!h) {
       skeletonEditor.sel = null;
-      skTree();
-      skSide();
-      skDraw();
+      skeletonTree();
+      skeletonSidePanel();
+      drawSkeleton();
       return;
     }
     c.setPointerCapture(ev.pointerId);
     skeletonEditor.sel = h.b.n;
     let mode = ev.shiftKey ? 'rotate' : h.mode;
-    const meta = skMeta();
+    const meta = skeletonMeta();
     if (mode === 'pivot' && h.b.i >= 0 && bonesUsingImage(meta, h.b.i).length > 1) {
       meta.imgs.push(clone(meta.imgs[h.b.i]));
       h.b.i = meta.imgs.length - 1;
       studioState.rigVer = (studioState.rigVer || 0) + 1;
     }
     skeletonEditor.drag = { b: h.b, mode, last: [x, y], ang: null, moved: false };
-    skTree();
-    skSide();
-    skDraw();
+    skeletonTree();
+    skeletonSidePanel();
+    drawSkeleton();
   });
   c.addEventListener('pointermove', ev => {
     const D = skeletonEditor.drag;
@@ -629,11 +629,11 @@ function skBindCanvas() {
     if (!dx && !dy) return;
     D.last = [x, y];
     D.moved = true;
-    const meta = skMeta(),
+    const meta = skeletonMeta(),
       b = D.b,
       k = meta.k,
       R = rigFor(skeletonEditor.sp, skeletonEditor.view, false),
-      { W } = rigMatrices(R, skNeutral(), skeletonEditor.view);
+      { W } = rigMatrices(R, neutralPose(), skeletonEditor.view);
     const pm = W[b.par || 'root'] || W.root,
       pinv = invert2x2(pm),
       [pdx, pdy] = applyLinear2x2(pinv, dx, dy);
@@ -672,12 +672,12 @@ function skBindCanvas() {
     const D = skeletonEditor.drag;
     skeletonEditor.drag = null;
     if (D && D.moved) {
-      skGeo(skeletonEditor.sp);
+      skeletonFraming(skeletonEditor.sp);
       changed(true);
       commit(true);
-      skSide();
+      skeletonSidePanel();
     }
-    skDraw();
+    drawSkeleton();
   };
   c.addEventListener('pointerup', up);
   c.addEventListener('pointercancel', up);
@@ -687,14 +687,14 @@ function skBindCanvas() {
       if (!ev.ctrlKey && !ev.metaKey) return;
       ev.preventDefault();
       skeletonEditor.zoom = clamp(skeletonEditor.zoom + (ev.deltaY < 0 ? 0.5 : -0.5), 1, 8);
-      skDraw();
+      drawSkeleton();
     },
     { passive: false }
   );
 }
 /* ---------- part list ---------- */
-function skTree() {
-  const meta = skMeta(),
+function skeletonTree() {
+  const meta = skeletonMeta(),
     roles = planRoles(meta.plan, meta.q),
     kids = {};
   meta.bones.forEach(b => {
@@ -712,8 +712,8 @@ function skTree() {
   $('#skTree').innerHTML = (kids.root || []).map(b => row(b, 0)).join('');
 }
 /* ---------- properties ---------- */
-function skSide() {
-  const meta = skMeta(),
+function skeletonSidePanel() {
+  const meta = skeletonMeta(),
     base = `@rigs.${skeletonEditor.sp}.${skeletonEditor.view}`,
     roles = planRoles(meta.plan, meta.q),
     side = $('#skSide');
@@ -803,43 +803,43 @@ function skSide() {
     pc.getContext('2d').drawImage(src, 0, 0);
   }
   const nm = $('#skName');
-  if (nm) nm.addEventListener('change', () => skRename(nm.value));
+  if (nm) nm.addEventListener('change', () => renameBone(nm.value));
   const par = $('#skPar');
-  if (par) par.addEventListener('change', () => skReparent(par.value));
+  if (par) par.addEventListener('change', () => reparentBone(par.value));
   const ro = $('#skRole');
   if (ro)
     ro.addEventListener('change', () => {
-      const b = skMeta().bones.find(x => x.n === skeletonEditor.sel);
+      const b = skeletonMeta().bones.find(x => x.n === skeletonEditor.sel);
       if (ro.value) b.a = ro.value;
       else delete b.a;
-      skDone();
+      skeletonChanged();
     });
-  $('#skPlan').addEventListener('change', e => skSetPlan(e.target.value));
+  $('#skPlan').addEventListener('change', e => applyBodyPlan(e.target.value));
 }
 studioState.hooks._skel = null;
-function skDone() {
+function skeletonChanged() {
   studioState.rigVer = (studioState.rigVer || 0) + 1;
-  skGeo(skeletonEditor.sp);
+  skeletonFraming(skeletonEditor.sp);
   changed(true);
   commit(true);
-  skTree();
-  skSide();
-  skDraw();
+  skeletonTree();
+  skeletonSidePanel();
+  drawSkeleton();
   previewsDirty();
 }
 /* field edits inside the builder go through the normal data binding; refresh the drawing after them */
 document.addEventListener('input', ev => {
   if (ev.target.closest('.skel') && ev.target.dataset.p) {
     studioState.rigVer = (studioState.rigVer || 0) + 1;
-    skDraw();
+    drawSkeleton();
   }
 });
 document.addEventListener('change', ev => {
   if (ev.target.closest('.skel') && ev.target.dataset.p) {
-    skGeo(skeletonEditor.sp);
-    skTree();
-    if (ev.target.type === 'checkbox') skSide();
-    skDraw();
+    skeletonFraming(skeletonEditor.sp);
+    skeletonTree();
+    if (ev.target.type === 'checkbox') skeletonSidePanel();
+    drawSkeleton();
   }
 });
 /* undo and redo work inside the builder too */
@@ -853,7 +853,7 @@ document.addEventListener(
       ev.preventDefault();
       ev.stopImmediatePropagation();
       k === 'y' || ev.shiftKey ? redo() : undo();
-      skLoadView();
+      loadSkeletonView();
     } else if (!mod && (k === 'delete' || k === 'backspace') && skeletonEditor.sel) {
       ev.preventDefault();
       $('[data-sk=del]') && $('[data-sk=del]').click();
@@ -862,9 +862,9 @@ document.addEventListener(
   true
 );
 /* ---------- edits ---------- */
-function skRename(n) {
+function renameBone(n) {
   n = n.trim().replace(/[^A-Za-z0-9_]/g, '');
-  const meta = skMeta(),
+  const meta = skeletonMeta(),
     b = meta.bones.find(x => x.n === skeletonEditor.sel);
   if (!n || n === b.n) return;
   if (meta.bones.some(x => x.n === n)) return toast('Another part already has that name.', 'err');
@@ -875,24 +875,24 @@ function skRename(n) {
   });
   b.n = n;
   skeletonEditor.sel = n;
-  skDone();
+  skeletonChanged();
 }
-function skReparent(p) {
-  const meta = skMeta(),
+function reparentBone(p) {
+  const meta = skeletonMeta(),
     b = meta.bones.find(x => x.n === skeletonEditor.sel),
     R = rigFor(skeletonEditor.sp, skeletonEditor.view, false),
-    { W } = rigMatrices(R, skNeutral(), skeletonEditor.view),
+    { W } = rigMatrices(R, neutralPose(), skeletonEditor.view),
     me = W[b.n],
     np = W[p] || W.root;
   const inv = invert2x2(np),
     [lx, ly] = applyLinear2x2(inv, me[4] - np[4], me[5] - np[5]);
   b.par = p === 'root' ? 'root' : p;
   b.at = [+(lx / meta.k).toFixed(3), +(ly / meta.k).toFixed(3)];
-  skTopo(meta);
-  skDone();
+  sortBonesParentsFirst(meta);
+  skeletonChanged();
 }
-function skSetPlan(plan) {
-  const meta = skMeta();
+function applyBodyPlan(plan) {
+  const meta = skeletonMeta();
   meta.plan = plan;
   meta.q = meta.q || {};
   (PLAN_MOTION_FIELDS[plan] || []).forEach(([k, l, mn, mx]) => {
@@ -903,7 +903,7 @@ function skSetPlan(plan) {
     other.plan = plan;
     other.q = clone(meta.q);
   }
-  skDone();
+  skeletonChanged();
   toast('Body plan changed for both views. Parts move when their names match the plan’s roles.');
 }
 /* mirror a part and everything hanging from it: left/right names swap, pictures flip, positions and tilts reflect */
@@ -912,7 +912,7 @@ const swapLeftRight = n =>
     .replace(/L(\d*)$/, '\u0000$1')
     .replace(/R(\d*)$/, 'L$1')
     .replace('\u0000', 'R');
-function skMirror(meta, b, par, orig) {
+function mirrorPart(meta, b, par, orig) {
   const roles = planRoles(meta.plan, meta.q),
     sw = swapLeftRight(b.n),
     n = clone(b),
@@ -939,14 +939,14 @@ function skMirror(meta, b, par, orig) {
     n.i = meta.imgs.length - 1;
   }
   meta.bones.push(n);
-  [...orig].filter(c => c.par === b.n).forEach(c => skMirror(meta, c, n.n, orig));
+  [...orig].filter(c => c.par === b.n).forEach(c => mirrorPart(meta, c, n.n, orig));
   return n;
 }
 function skPartFor(meta, i) {
   const img = meta.imgs[i];
   return img ? img.f.idle || img.f.main || Object.values(img.f)[0] : null;
 }
-function skPlaceholder(w, h, col = '#B8A8E0') {
+function placeholderPart(w, h, col = '#B8A8E0') {
   const c = makeCanvas(w, h),
     x = c.getContext('2d');
   x.fillStyle = col;
@@ -962,8 +962,8 @@ function skPlaceholder(w, h, col = '#B8A8E0') {
   return c;
 }
 /* add a part: a new picture strip, a new bone, optionally mirrored into the other view */
-function skAddPart(src, opts = {}) {
-  const meta = skMeta(),
+function addPart(src, opts = {}) {
+  const meta = skeletonMeta(),
     sp = skeletonEditor.sp,
     view = skeletonEditor.view,
     k = meta.k;
@@ -989,7 +989,7 @@ function skAddPart(src, opts = {}) {
   if (opts.abs) {
     try {
       const R = rigFor(sp, view, false),
-        { W } = rigMatrices(R, skNeutral(), view),
+        { W } = rigMatrices(R, neutralPose(), view),
         pm = W[par] || W.root;
       at = [(at[0] - pm[4]) / k, (at[1] - pm[5]) / k];
     } catch (e) {
@@ -1001,7 +1001,7 @@ function skAddPart(src, opts = {}) {
   const b = { n: name, par, at, z, zb, i: meta.imgs.length - 1 };
   if (opts.faces) b.face = true;
   meta.bones.push(b);
-  skTopo(meta);
+  sortBonesParentsFirst(meta);
   if (skeletonEditor.both && !opts.abs) {
     const ov = view === 'front' ? 'back' : 'front',
       om = studioState.rigs[sp][ov];
@@ -1018,29 +1018,29 @@ function skAddPart(src, opts = {}) {
         zb,
         i: om.imgs.length - 1,
       });
-      skTopo(om);
+      sortBonesParentsFirst(om);
     }
   }
   skeletonEditor.sel = name;
-  skDone();
+  skeletonChanged();
   return b;
 }
-function skClick(ev) {
+function skeletonClick(ev) {
   const el = ev.target.closest('[data-sk]');
   if (!el) return;
   const a = el.dataset.sk,
-    meta = skMeta(),
+    meta = skeletonMeta(),
     b = skeletonEditor.sel && meta.bones.find(x => x.n === skeletonEditor.sel);
   const run = {
     view: () => {
       skeletonEditor.view = el.dataset.v;
-      skLoadView();
+      loadSkeletonView();
     },
     anim: () => {
       skeletonEditor.anim = !skeletonEditor.anim;
       el.classList.toggle('on', skeletonEditor.anim);
       skeletonEditor.t0 = performance.now();
-      skDraw();
+      drawSkeleton();
     },
     act: () => {
       skeletonEditor.anim = true;
@@ -1051,7 +1051,7 @@ function skClick(ev) {
     grid12: () => {
       skeletonEditor.grid12 = !skeletonEditor.grid12;
       el.classList.toggle('on', skeletonEditor.grid12);
-      skDraw();
+      drawSkeleton();
     },
     pause: () => {
       skeletonEditor.paused = !skeletonEditor.paused;
@@ -1061,7 +1061,7 @@ function skClick(ev) {
         $('[data-sk=anim]').classList.add('on');
         skeletonEditor.tick = Math.floor(((performance.now() - skeletonEditor.t0) / (1000 / 12)) % 24);
       } else skeletonEditor.t0 = performance.now() - (skeletonEditor.tick * 1000) / 12;
-      skDraw();
+      drawSkeleton();
     },
     tick: () => {
       skeletonEditor.paused = true;
@@ -1069,23 +1069,23 @@ function skClick(ev) {
       skeletonEditor.anim = true;
       $('[data-sk=anim]').classList.add('on');
       skeletonEditor.tick = (skeletonEditor.tick + +el.dataset.d + 24) % 24;
-      skDraw();
+      drawSkeleton();
     },
     onion: () => {
       skeletonEditor.onion = !skeletonEditor.onion;
       el.classList.toggle('on', skeletonEditor.onion);
-      skDraw();
+      drawSkeleton();
     },
-    importSheet: () => skImportSheet(),
+    importSheet: () => importPieceSheet(),
     zoom: () => {
       skeletonEditor.zoom = clamp(skeletonEditor.zoom + +el.dataset.z, 1, 8);
-      skDraw();
+      drawSkeleton();
     },
     sel: () => {
       skeletonEditor.sel = el.dataset.n;
-      skTree();
-      skSide();
-      skDraw();
+      skeletonTree();
+      skeletonSidePanel();
+      drawSkeleton();
     },
     close: () => {
       cancelAnimationFrame(skeletonEditor.raf);
@@ -1107,7 +1107,7 @@ function skClick(ev) {
         pixelEditor.back = () => {
           openSkeleton(sp, v).then(() => {
             skeletonEditor.sel = b.n;
-            skLoadView();
+            loadSkeletonView();
           });
         };
       });
@@ -1130,7 +1130,7 @@ function skClick(ev) {
         ]
       );
       if (!r) return;
-      skAddPart(skPlaceholder(r.w, r.h), { name: r.n.replace(/[^A-Za-z0-9_]/g, '') || 'part' });
+      addPart(placeholderPart(r.w, r.h), { name: r.n.replace(/[^A-Za-z0-9_]/g, '') || 'part' });
       toast('Part added. Click “Paint this part” to draw it.');
     },
     addPng: async () => {
@@ -1138,7 +1138,7 @@ function skClick(ev) {
       if (!f) return;
       const c = await fileToCanvas(f);
       if (c.width > 256 || c.height > 256) return toast('Keep parts under 256×256 pixels.', 'err');
-      skAddPart(c, {
+      addPart(c, {
         name:
           f.name
             .replace(/\.png$/i, '')
@@ -1148,7 +1148,7 @@ function skClick(ev) {
     },
     child: () => {
       if (!b) return;
-      skAddPart(skPlaceholder(Math.round(8 * meta.k), Math.round(8 * meta.k)), {
+      addPart(placeholderPart(Math.round(8 * meta.k), Math.round(8 * meta.k)), {
         par: b.n,
         at: [0, -4],
         name: b.n + 'Tip',
@@ -1162,16 +1162,16 @@ function skClick(ev) {
       if (planRoles(meta.plan, meta.q).includes(b.a || b.n)) n.a = b.a || b.n;
       n.at = [+(b.at[0] + 3).toFixed(3), b.at[1]];
       meta.bones.push(n);
-      skTopo(meta);
+      sortBonesParentsFirst(meta);
       skeletonEditor.sel = n.n;
-      skDone();
+      skeletonChanged();
     },
     mirror: () => {
       if (!b) return;
-      const n = skMirror(meta, b, b.par || 'root', new Set(meta.bones));
-      skTopo(meta);
+      const n = mirrorPart(meta, b, b.par || 'root', new Set(meta.bones));
+      sortBonesParentsFirst(meta);
       skeletonEditor.sel = n.n;
-      skDone();
+      skeletonChanged();
       toast('Mirrored copy added' + (meta.bones.some(x => x.par === n.n) ? ' with its child parts' : '') + '.');
     },
     del: async () => {
@@ -1188,7 +1188,7 @@ function skClick(ev) {
         });
       meta.bones = meta.bones.filter(x => x !== b);
       skeletonEditor.sel = null;
-      skDone();
+      skeletonChanged();
     },
     unshare: () => {
       if (!b) return;
@@ -1201,17 +1201,17 @@ function skClick(ev) {
       }
       meta.imgs.push({ ox: img.ox, oy: img.oy, f });
       b.i = meta.imgs.length - 1;
-      skDone();
+      skeletonChanged();
       toast('It has its own picture now.');
     },
     givePic: () => {
       if (!b) return;
-      const src = skPlaceholder(Math.round(10 * meta.k), Math.round(10 * meta.k)),
+      const src = placeholderPart(Math.round(10 * meta.k), Math.round(10 * meta.k)),
         r = allocRect(skeletonEditor.sp, skeletonEditor.view, src.width, src.height);
       putPart(skeletonEditor.sp, skeletonEditor.view, r, src);
       meta.imgs.push({ ox: -src.width / 2, oy: -src.height / 2, f: { main: r } });
       b.i = meta.imgs.length - 1;
-      skDone();
+      skeletonChanged();
     },
     replace: async () => {
       if (!b) return;
@@ -1230,7 +1230,7 @@ function skClick(ev) {
         putPart(skeletonEditor.sp, skeletonEditor.view, nr, c);
         img.f[v] = nr;
       }
-      skDone();
+      skeletonChanged();
       toast('Picture replaced' + (b.face ? ' (the open-eyes expression)' : '') + '.');
     },
     resize: async () => {
@@ -1258,7 +1258,7 @@ function skClick(ev) {
         putPart(skeletonEditor.sp, skeletonEditor.view, nr, t);
         img.f[v] = nr;
       }
-      skDone();
+      skeletonChanged();
     },
     faces: () => {
       if (!b) return;
@@ -1275,7 +1275,7 @@ function skClick(ev) {
           img.f[v] = nr;
         }
       b.face = 1;
-      skDone();
+      skeletonChanged();
       toast('Expression pictures added as copies. Paint the eyes and mouth for each one.');
     },
     copyView: async () => {
@@ -1315,10 +1315,10 @@ function skClick(ev) {
         else delete t.a;
         if (b2.face) t.face = 1;
       }
-      skTopo(om);
+      sortBonesParentsFirst(om);
       om.plan = meta.plan;
       om.q = clone(meta.q || {});
-      skDone();
+      skeletonChanged();
       toast(`Copied to the ${ov} view.`);
     },
   };
@@ -1525,7 +1525,7 @@ function makeBlankBody(id, plan, col, scale = 1) {
   }
   studioState.rigs[id] = rig;
   studioState.rigVer = (studioState.rigVer || 0) + 1;
-  skGeo(id);
+  skeletonFraming(id);
 }
 
 /* ---------- v35: a piece sheet in, as parts ----------
@@ -1533,7 +1533,7 @@ function makeBlankBody(id, plan, col, scale = 1) {
    {"w":96,"h":96,"pieces":[{"n":"head","x":0,"y":0,"w":40,"h":36,"px":28,"py":4,"par":"torso","group":"front"|"back",
      "face":"idle"|"blink"|"happy"|"hurt" (face pieces go onto the head as its face variants), "pivot":[20,34]}]}
    px,py = where the piece sits on the canvas at rest (so the rig can be built from it); par = the part it hangs from. */
-async function skImportSheet() {
+async function importPieceSheet() {
   const png = await pickFile('image/png');
   if (!png) return;
   const json = await pickFile('application/json,.json');
@@ -1553,7 +1553,7 @@ async function skImportSheet() {
     toast('No pieces for the ' + view + ' view in that layout.', 'err');
     return;
   }
-  const meta = skMeta();
+  const meta = skeletonMeta();
   if (
     meta.bones.length &&
     !(await ask(
@@ -1609,7 +1609,7 @@ async function skImportSheet() {
     skeletonEditor.sel = opts.par === 'root' ? null : opts.par;
     opts.abs = true;
     spriteCacheClear();
-    skAddPart(c, Object.assign(opts, Object.keys(vars).length ? { faces: vars } : {}));
+    addPart(c, Object.assign(opts, Object.keys(vars).length ? { faces: vars } : {}));
   }
   if (lay.w && lay.h) {
     meta.BW = lay.w;
@@ -1617,6 +1617,6 @@ async function skImportSheet() {
     meta.cx = lay.cx ?? lay.w / 2;
     meta.base = lay.base ?? lay.h - 2;
   }
-  skDone();
+  skeletonChanged();
   toast(`${order.length} pieces imported as parts${faces.length ? ' with ' + faces.length + ' face pieces' : ''}.`);
 }
