@@ -103,19 +103,23 @@ provide({ selfTest }); /* to-module */
 function selfTestSleep(ms) {
   return new Promise(r => setTimeout(r, ms * (selfTest.slow || 1)));
 }
-/* frame rate of one scheduler task between two moments of the debug log */
-function selfTestFrameStats(t0, t1, task) {
-  const f = [],
-    m = [];
-  let slow = 0;
+/* frame rate of one scheduler task between two moments of the debug log; whole: only the seconds that start after t0;
+   trim: drop the task's first and last second (it starts and stops partway through them, so they read low) */
+function selfTestFrameStats(t0, t1, task, o) {
+  const whole = o && o.whole,
+    S = [];
   for (const s of debugLog.samples) {
     if (s.t < t0 || s.t > t1) continue;
-    const v = s.tasks[task];
-    if (!v) continue;
-    f.push(v.fps);
-    m.push(v.ms);
-    slow += v.long;
+    if (whole && s.t - (s.dt || 1000) < t0) continue;
+    if (s.tasks[task]) S.push(s.tasks[task]);
   }
+  if (o && o.trim && S.length >= 3) {
+    S.pop();
+    S.shift();
+  }
+  const f = S.map(v => v.fps),
+    m = S.map(v => v.ms),
+    slow = S.reduce((a, v) => a + v.long, 0);
   if (!f.length) return { fpsAvg: null, fpsWorst: null, cpuMs: null, slow: 0, seconds: 0 };
   const avg = a => Math.round((a.reduce((x, y) => x + y, 0) / a.length) * 10) / 10;
   return { fpsAvg: avg(f), fpsWorst: Math.min(...f), cpuMs: avg(m), slow, seconds: f.length };
@@ -260,6 +264,12 @@ async function runFullTest(mode) {
   /* v44b: selfTest.only=['light'] runs only the steps whose names hold one of those words (for diagnosis); phase 13:
      the stress test at the end too, as 'Stress test' */
   const wanted = name => !selfTest.only || selfTest.only.some(w => name.toLowerCase().includes(w.toLowerCase()));
+  /* a step that opens a place calls measureFromHere() once it is open: the frame rate and slow frames count from there,
+     and the slow frames before it are its opening hitch */
+  let measureFrom = 0;
+  const measureFromHere = () => {
+    measureFrom = debugLog.now();
+  };
   const phase = async (name, task, fn, sec, maxSec) => {
     if (selfTest.stop) return;
     if (!wanted(name)) return;
@@ -267,6 +277,7 @@ async function runFullTest(mode) {
       await awake();
       if (selfTest.stop) return;
       const h0 = hid;
+      measureFrom = 0;
       stepEl.textContent = name;
       debugLog.bench.step = name;
       const t0 = debugLog.now(),
@@ -311,7 +322,8 @@ async function runFullTest(mode) {
       }
       const bg = hid !== h0; /* still interrupted after three tries: not measured */
       if (err && !bg) debugLog.error('test', name + ': ' + why, err && err.stack);
-      const st = selfTestFrameStats(t0, debugLog.now(), task),
+      const m0 = Math.max(t0, measureFrom),
+        st = selfTestFrameStats(m0, debugLog.now(), task, measureFrom ? { whole: true } : { trim: true }),
         ne = debugLog.err.slice(e0).filter(x => x.kind !== 'test');
       if (ne.length && !bg) {
         ok = false;
@@ -319,7 +331,9 @@ async function runFullTest(mode) {
         note = note || ne[0].msg.slice(0, 140);
       }
       const D = debugLog.diag(t0),
-        slow = debugLog.slow.filter(x => x.t >= t0),
+        slow = debugLog.slow.filter(x => x.t >= m0),
+        hitch = debugLog.slow.filter(x => x.t >= t0 && x.t < m0),
+        openHitchMs = hitch.reduce((a, x) => Math.max(a, x.ms), 0),
         by = {};
       for (const x of slow) {
         const k = x.why.replace(/ \d+ ms.*$/, '');
@@ -334,6 +348,7 @@ async function runFullTest(mode) {
       const detail = [
         `${((performance.now() - w0) / 1000).toFixed(1)} s`,
         st.fpsAvg != null ? `${st.fpsAvg} fps (worst ${st.fpsWorst})` : null,
+        openHitchMs ? `opening hitch ${openHitchMs} ms` : null,
         slow.length
           ? `${slow.length} slow frame${slow.length > 1 ? 's' : ''} up to ${worst} ms${top ? ': ' + top : ''}`
           : 'no slow frames',
@@ -363,6 +378,10 @@ async function runFullTest(mode) {
             ctx: ok ? undefined : D,
             slowCauses: by,
             worstFrameMs: worst || undefined,
+            openHitchMs: openHitchMs || undefined,
+            openHitchCause: hitch.length
+              ? hitch.reduce((a, x) => (x.ms > a.ms ? x : a)).why.replace(/ \d+ ms.*$/, '')
+              : undefined,
             ms: Math.round(performance.now() - w0),
             retries: attempt || undefined,
             notMeasured: bg || undefined,
@@ -468,7 +487,8 @@ async function runFullTest(mode) {
           let open = null;
           for (let i = 0; i < 60 && !(walkView.ready && walkView.id === id); i++) await selfTestSleep(50);
           open = walkView.ready && walkView.id === id ? Math.round(performance.now() - tm) : null;
-          await selfTestSleep(Math.max(0, 900 - (performance.now() - tm)));
+          await selfTestSleep(Math.max(500, 900 - (performance.now() - tm)));
+          measureFromHere();
           const f0 = typeof walkRenderer !== 'undefined' ? walkRenderer.frames : 0;
           await walkAbout(3);
           if (!walkView.ready || walkView.id !== id)
@@ -1675,18 +1695,32 @@ function diagnosticsSummary() {
     fps: p.fpsAvg,
     worstFps: p.fpsWorst,
     worstFrameMs: p.worstFrameMs || null,
+    openHitchMs: p.openHitchMs || null,
+    openHitchCause: p.openHitchCause || null,
     slow: p.slowCauses,
     ok: p.ok,
     why: p.why,
   }));
   const one = n => {
     const p = P.find(q => q.name.startsWith(n));
-    return p ? { note: p.note, detail: p.detail, ok: p.ok, why: p.why, fps: p.fpsAvg } : null;
+    return p
+      ? {
+          note: p.note,
+          detail: p.detail,
+          ok: p.ok,
+          why: p.why,
+          fps: p.fpsAvg,
+          worstFps: p.fpsWorst,
+          worstFrameMs: p.worstFrameMs || null,
+        }
+      : null;
   };
   return {
     game: 'Pocket Billies',
     kind: 'diagnostics',
-    format: 1,
+    /* format 2: a place's fps and slow frames count from once it is open, its opening hitch is apart; the first and
+       last second of the other steps are left out */
+    format: 2,
     build: typeof BUILD_VERSION !== 'undefined' ? BUILD_VERSION : null,
     created: new Date().toISOString(),
     seconds: R.seconds,

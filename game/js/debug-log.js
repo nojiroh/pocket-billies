@@ -227,7 +227,7 @@ debugLog.flush = ts => {
     a.n = a.w = a.max = a.long = a.gapMax = 0;
   }
   if (!Object.keys(tasks).length) return;
-  const s = Object.assign({ t: debugLog.now() }, c, { tasks });
+  const s = Object.assign({ t: debugLog.now(), dt: Math.round(dt) }, c, { tasks });
   const pr = {};
   for (const [k, p] of Object.entries(debugLog.prof)) {
     if (p.n) pr[k] = [Math.round((p.ms / p.n) * 10) / 10, Math.round(p.max)];
