@@ -24,7 +24,7 @@ import { EGL_POST_SH } from './engine/post-effects.js';
 import { canvasForContext, standingHeightAt, walkGlContext } from './walk-view-gl.js';
 import { A, endBattle, stopTimers, types } from './battle.js';
 import { LOCATION_VECTORS, WORLD_ART, vector3, worldMap, worldMapHeight, worldMapWidth } from './world-map.js';
-import { MGL, MGL_SH, mglRender, mglSize } from './world-map-gl.js';
+import { MGL_SH, mglRender, mglSize, worldMapGl } from './world-map-gl.js';
 import { music, sfx } from './sound.js';
 import { CS, csCaption } from './cutscene.js';
 /* eslint-disable no-func-assign */
@@ -632,11 +632,11 @@ function fallCam(k) {
 }
 export function fallMap(run, ms) {
   return new Promise(res0 => {
-    const flat = MGL.flat,
+    const flat = worldMapGl.flat,
       focus = worldMap.focus,
       res = () => {
-        MGL.flat = flat;
-        MGL.noClouds = false;
+        worldMapGl.flat = flat;
+        worldMapGl.noClouds = false;
         worldMap.focus = focus;
         worldMap.dirty = true;
         res0();
@@ -654,8 +654,8 @@ export function fallMap(run, ms) {
     }
     const t0 = performance.now();
     worldMap.focus = LOCATION_VECTORS[START_NODE];
-    MGL.flat = false;
-    MGL.noClouds = true;
+    worldMapGl.flat = false;
+    worldMapGl.noClouds = true;
     let capA = 0,
       capB = 0;
     const step = ts => {

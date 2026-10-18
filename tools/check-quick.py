@@ -927,7 +927,7 @@ def desktop_steps(b, base, R):
         # the map's 3D miniatures
         pg.evaluate("U.tab='map';render();0"); time.sleep(3)
         if pg.evaluate("worldMap.gl&&typeof mmOn==='function'&&mmOn()"):
-            pg.evaluate("worldMap.alt=.04;worldMap.tilt=.45;MGL.altT=null;worldMap.dirty=true;0"); time.sleep(4)
+            pg.evaluate("worldMap.alt=.04;worldMap.tilt=.45;worldMapGl.altT=null;worldMap.dirty=true;0"); time.sleep(4)
             n = pg.evaluate("[...MM.cache.values()].filter(e=>e.m).length"); shot(pg, 'map-minis')
             pg.evaluate("worldMapReset();0")
             if n < 1: raise Exception('no 3D miniatures were built on the map')

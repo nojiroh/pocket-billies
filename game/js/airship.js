@@ -18,7 +18,7 @@ import { artLoad, uiIco } from './art.js';
 import { artImage, imageReady, mapById, prepareMap, walkData } from './walk-view.js';
 import { wrHubScene } from './seamless-world.js';
 import { LOCATION_VECTORS, RADIANS_PER_DEGREE, slerp, vector3, worldMap } from './world-map.js';
-import { MGL } from './world-map-gl.js';
+import { worldMapGl } from './world-map-gl.js';
 import { sfx } from './sound.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -130,7 +130,7 @@ function flyGo(i) {
   worldMap.focus = LOCATION_VECTORS[a];
   worldMap.fly = { a: LOCATION_VECTORS[a], b: LOCATION_VECTORS[i] };
   worldMap.dirty = true;
-  if (typeof MGL !== 'undefined' && !MGL.flat) MGL.altT = 0.42;
+  if (typeof worldMapGl !== 'undefined' && !worldMapGl.flat) worldMapGl.altT = 0.42;
   const host = $('.map-full');
   if (host && !$('#flycap')) {
     const c = document.createElement('div');
@@ -245,7 +245,7 @@ function flyLand() {
     U.roam = { id: sid, node: b, x: m.x + (bx / 2 + 0.9) * f, z: m.z - 0.9 };
   }
   U.tab = 'walk';
-  if (typeof MGL !== 'undefined') MGL.altT = null;
+  if (typeof worldMapGl !== 'undefined') worldMapGl.altT = null;
   save();
   render();
   toast(`Welcome to ${ROUTE[b].name}.`);

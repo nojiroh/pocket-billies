@@ -48,7 +48,7 @@ import { OWM, owBuddyTap, owPetSp } from './world-billies.js';
 import { WORLD, wrRoomScene, wrTripView } from './seamless-world.js';
 import { A, endBattle, liveK, pickMove, pickTarget, startTrainer, startWild, stopTimers, tapMsg } from './battle.js';
 import { worldMap } from './world-map.js';
-import { MGL, MGL_SH, MM, mglRender, mmOn, setMglRender } from './world-map-gl.js';
+import { MGL_SH, MM, mglRender, mmOn, setMglRender, worldMapGl } from './world-map-gl.js';
 import { TALK, talkHide } from './talk.js';
 import { CS, csTeardown } from './cutscene.js';
 import { battleTipHide, fallGL, fallMap } from './opening-fall.js';
@@ -1205,7 +1205,7 @@ async function runFullTest(mode) {
         const a0 = worldMap.alt;
         worldMap.alt = 0.035;
         worldMap.tilt = 0.4;
-        MGL.altT = null;
+        worldMapGl.altT = null;
         worldMap.dirty = true;
         await stSleep(3000);
         const n = [...MM.cache.values()].filter(e => e.m).length;
