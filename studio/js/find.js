@@ -14,27 +14,27 @@ import { ACTIONS, SECTIONS, SECTION_LIST, clone, openSection, studioState, toast
 import { engineEditor, refreshEngineSettings } from './engine-editor.js';
 /* eslint-disable no-func-assign */
 expose({
-  FIND: [() => FIND],
-  FIND_KIND: [() => FIND_KIND],
-  findBuild: [() => findBuild, v => (findBuild = v)],
+  FIND_KIND_LABELS: [() => FIND_KIND_LABELS],
+  buildSearchIndex: [() => buildSearchIndex, v => (buildSearchIndex = v)],
+  fieldSelector: [() => fieldSelector],
   findClose: [() => findClose, v => (findClose = v)],
   findEngine: [() => findEngine, v => (findEngine = v)],
   findField: [() => findField, v => (findField = v)],
   findFlash: [() => findFlash, v => (findFlash = v)],
-  findIdx: [() => findIdx, v => (findIdx = v)],
   findMark: [() => findMark, v => (findMark = v)],
-  findNorm: [() => findNorm],
   findOpen: [() => findOpen, v => (findOpen = v)],
   findPageFields: [() => findPageFields, v => (findPageFields = v)],
   findPick: [() => findPick, v => (findPick = v)],
   findRun: [() => findRun, v => (findRun = v)],
-  findSel: [() => findSel],
   findShow: [() => findShow, v => (findShow = v)],
+  findState: [() => findState],
+  normalizeForFind: [() => normalizeForFind],
+  searchIndex: [() => searchIndex, v => (searchIndex = v)],
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
-const FIND = { idx: null, key: '', res: [], at: 0, q: '' };
-const findNorm = s =>
+const findState = { idx: null, key: '', res: [], at: 0, q: '' };
+const normalizeForFind = s =>
   String(s || '')
     .toLowerCase()
     .normalize('NFD')
@@ -63,17 +63,17 @@ export function findFlash(sel, tries = 0) {
     }, 350);
   if (typeof linkNote === 'function') linkNote(el.dataset.p || el.dataset.path || '');
 }
-export const findSel = p => `[data-p="${CSS.escape(p)}"],[data-path="${CSS.escape(p)}"]`;
+export const fieldSelector = p => `[data-p="${CSS.escape(p)}"],[data-path="${CSS.escape(p)}"]`;
 export function findField(sec, p, sel) {
   if (studioState.sec !== sec || sel) openSection(sec, sel);
-  findFlash(findSel(p));
+  findFlash(fieldSelector(p));
 }
 export function findEngine(g, k) {
   engineEditor.scope = 'game';
   engineEditor.open[g] = 1;
   if (studioState.sec === 'engine') refreshEngineSettings();
   else openSection('engine');
-  findFlash(findSel(`engine.defaults.${g}.${k}`));
+  findFlash(fieldSelector(`engine.defaults.${g}.${k}`));
 }
 /* ---- the index ---- */
 function findPageFields(sec, add) {
@@ -116,12 +116,19 @@ function findPageFields(sec, add) {
     );
   });
 }
-function findBuild() {
+function buildSearchIndex() {
   const D = studioState.D,
     E = [],
     add = (label, where, kind, fn, extra = '') => {
       if (label)
-        E.push({ label: String(label), where, kind, fn, t: findNorm(label), x: findNorm(where + ' ' + extra) });
+        E.push({
+          label: String(label),
+          where,
+          kind,
+          fn,
+          t: normalizeForFind(label),
+          x: normalizeForFind(where + ' ' + extra),
+        });
     };
   SECTION_LIST.forEach(([k, n, d]) => add(n, 'Section', 'section', () => openSection(k), d));
   if (typeof ENGINE_SPEC !== 'undefined')
@@ -200,15 +207,15 @@ function findBuild() {
   );
   return E;
 }
-function findIdx() {
+function searchIndex() {
   const key = studioState.undo.length + '|' + (studioState.last || '').length;
-  if (!FIND.idx || FIND.key !== key) {
-    FIND.idx = findBuild();
-    FIND.key = key;
+  if (!findState.idx || findState.key !== key) {
+    findState.idx = buildSearchIndex();
+    findState.key = key;
   }
-  return FIND.idx;
+  return findState.idx;
 }
-const FIND_KIND = {
+const FIND_KIND_LABELS = {
   section: 'Section',
   setting: 'Setting',
   billy: 'Billy',
@@ -222,11 +229,11 @@ const FIND_KIND = {
   prop: 'Prop',
 };
 function findRun(q) {
-  const n = findNorm(q).trim(),
+  const n = normalizeForFind(q).trim(),
     W = n.split(/\s+/).filter(Boolean);
   if (!W.length) return [];
   const out = [];
-  for (const e of findIdx()) {
+  for (const e of searchIndex()) {
     let s = 0,
       ok = true;
     for (const w of W) {
@@ -254,29 +261,29 @@ function findOpen() {
   if ($('#find')) return;
   const w = document.createElement('div');
   w.id = 'find';
-  w.innerHTML = `<div class="find-scrim"></div><div class="find-box" role="dialog" aria-label="Find"><input id="findQ" type="search" placeholder="Find a setting, a Billy, a move, a place… (try “shadow”, “god rays”, “step”)" autocomplete="off" value="${esc(FIND.q)}"><div class="find-list" id="findL"></div><div class="find-foot"><kbd>↑</kbd><kbd>↓</kbd> choose · <kbd>Enter</kbd> open · <kbd>Esc</kbd> close</div></div>`;
+  w.innerHTML = `<div class="find-scrim"></div><div class="find-box" role="dialog" aria-label="Find"><input id="findQ" type="search" placeholder="Find a setting, a Billy, a move, a place… (try “shadow”, “god rays”, “step”)" autocomplete="off" value="${esc(findState.q)}"><div class="find-list" id="findL"></div><div class="find-foot"><kbd>↑</kbd><kbd>↓</kbd> choose · <kbd>Enter</kbd> open · <kbd>Esc</kbd> close</div></div>`;
   document.body.appendChild(w);
   const q = $('#findQ');
   q.focus();
   q.select();
   findShow();
   q.addEventListener('input', () => {
-    FIND.q = q.value;
-    FIND.at = 0;
+    findState.q = q.value;
+    findState.at = 0;
     findShow();
   });
   q.addEventListener('keydown', ev => {
     if (ev.key === 'ArrowDown') {
       ev.preventDefault();
-      FIND.at = Math.min(FIND.res.length - 1, FIND.at + 1);
+      findState.at = Math.min(findState.res.length - 1, findState.at + 1);
       findMark();
     } else if (ev.key === 'ArrowUp') {
       ev.preventDefault();
-      FIND.at = Math.max(0, FIND.at - 1);
+      findState.at = Math.max(0, findState.at - 1);
       findMark();
     } else if (ev.key === 'Enter') {
       ev.preventDefault();
-      findPick(FIND.at);
+      findPick(findState.at);
     } else if (ev.key === 'Escape') {
       ev.preventDefault();
       findClose();
@@ -295,13 +302,13 @@ function findClose() {
 function findShow() {
   const L = $('#findL');
   if (!L) return;
-  FIND.res = findRun(FIND.q);
-  L.innerHTML = FIND.q.trim()
-    ? FIND.res.length
-      ? FIND.res
+  findState.res = findRun(findState.q);
+  L.innerHTML = findState.q.trim()
+    ? findState.res.length
+      ? findState.res
           .map(
             (e, i) =>
-              `<button class="find-r ${i === FIND.at ? 'on' : ''}" data-i="${i}"><span class="find-k k-${e.kind}">${FIND_KIND[e.kind] || e.kind}</span><b>${esc(e.label)}</b><small>${esc(e.where)}</small></button>`
+              `<button class="find-r ${i === findState.at ? 'on' : ''}" data-i="${i}"><span class="find-k k-${e.kind}">${FIND_KIND_LABELS[e.kind] || e.kind}</span><b>${esc(e.label)}</b><small>${esc(e.where)}</small></button>`
           )
           .join('')
       : '<p class="help find-none">Nothing found. Try another word.</p>'
@@ -309,12 +316,12 @@ function findShow() {
 }
 function findMark() {
   $$('#findL .find-r').forEach((b, i) => {
-    b.classList.toggle('on', i === FIND.at);
-    if (i === FIND.at) b.scrollIntoView({ block: 'nearest' });
+    b.classList.toggle('on', i === findState.at);
+    if (i === findState.at) b.scrollIntoView({ block: 'nearest' });
   });
 }
 function findPick(i) {
-  const e = FIND.res[i];
+  const e = findState.res[i];
   if (!e) return;
   findClose();
   try {

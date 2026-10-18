@@ -17,7 +17,7 @@ import { ACTIONS, openSection, render, setRender, speciesName, studioState } fro
 import { selectedLineIndex } from './data-editors.js';
 import { currentMapId, mapEditor } from './map-editor.js';
 import { engineData, engineEditor, formatDialValue } from './engine-editor.js';
-import { findEngine, findField, findFlash, findSel } from './find.js';
+import { fieldSelector, findEngine, findField, findFlash } from './find.js';
 /* eslint-disable no-func-assign */
 expose({
   ENG_NEEDS: [() => ENG_NEEDS],
@@ -438,7 +438,7 @@ function lnkDial(gk) {
         studioState.sel.scene = s;
         engineEditor.open[g] = 1;
         openSection('engine');
-        findFlash(findSel(`scenes.${s}.look.${g}.${k}`));
+        findFlash(fieldSelector(`scenes.${s}.look.${g}.${k}`));
       },
     }));
   const pre = [
