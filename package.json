@@ -10,7 +10,7 @@
     "check:data": "node tools/check-data.mjs",
     "modules": "node tools/to-module.mjs",
     "check:modules": "node tools/to-module.mjs --check",
-    "lint": "eslint . && node tools/check-names.mjs",
+    "lint": "eslint --cache --cache-strategy content . && node tools/check-names.mjs",
     "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.logic.json",
     "check:logic": "node --test tools/check-logic.mjs",
     "format": "prettier --write \"game/**/*.{js,css,ts}\" \"studio/**/*.{js,css}\" \"*.js\"",

@@ -34,3 +34,6 @@ dist/
 
 # Game data for the game, generated from game/data/*.json by tools/build-data.mjs (phase 04b)
 game/data/gamedata.js
+
+# ESLint cache (npm run lint, phase 04e)
+.eslintcache
