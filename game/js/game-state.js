@@ -48,7 +48,6 @@ expose({
   LS_ACC: [() => LS_ACC],
   LS_BASE: [() => LS_BASE],
   MAXLV: [() => MAXLV],
-  N: [() => N],
   SAVE_FOUND: [() => SAVE_FOUND],
   SAVE_HOLD: [() => SAVE_HOLD, v => (SAVE_HOLD = v)],
   SAVE_NEW_MSG: [() => SAVE_NEW_MSG],
@@ -64,6 +63,7 @@ expose({
   areaPool: [() => areaPool, v => (areaPool = v)],
   assignJob: [() => assignJob, v => (assignJob = v)],
   autoSlot: [() => autoSlot, v => (autoSlot = v)],
+  billyName: [() => billyName],
   blockerAt: [() => blockerAt, v => (blockerAt = v)],
   canEnter: [() => canEnter],
   canLeave: [() => canLeave],
@@ -462,7 +462,7 @@ export function makeMon(sp, lvl, o = {}) {
   } catch (e) {}
   return m;
 }
-export const N = m => m.nick || SP[m.sp].name;
+export const billyName = m => m.nick || SP[m.sp].name;
 export const allMons = () => saveData.team.concat(saveData.box);
 export const findMon = id => allMons().find(m => m.uid === id);
 export function gainXp(m, amt, say) {
@@ -472,12 +472,12 @@ export function gainXp(m, amt, say) {
     const old = maxHp(m);
     m.lvl++;
     if (m.hp > 0) m.hp = Math.min(maxHp(m), m.hp + maxHp(m) - old);
-    say(`${N(m)} grew to level ${m.lvl}.`, { k: 'lvl', uid: m.uid });
+    say(`${billyName(m)} grew to level ${m.lvl}.`, { k: 'lvl', uid: m.uid });
     for (const [lv, mv] of LN[SP[m.sp].line].learn) {
       if (lv !== m.lvl || m.moves.includes(mv)) continue;
       if (m.moves.length < SLOTS()) {
         m.moves.push(mv);
-        say(`${N(m)} learned ${MOVES[mv].n}.`);
+        say(`${billyName(m)} learned ${MOVES[mv].n}.`);
       } else uiState.learnQ.push({ uid: m.uid, mv });
     }
   }
@@ -542,7 +542,7 @@ export function splitPath(m) {
 export function evolve(m) {
   if (typeof jingle === 'function') jingle(JINGLES.evolve, 140);
   const old = maxHp(m),
-    from = N(m),
+    from = billyName(m),
     s0 = SP[m.sp];
   m.sp = s0.evo && s0.evo.k === 'split' && s0.alt && splitPath(m) === 'B' ? s0.alt : s0.next;
   if (m.hp > 0) m.hp = Math.max(1, Math.min(maxHp(m), m.hp + maxHp(m) - old));
@@ -907,7 +907,7 @@ export function collectJob(slot) {
   else saveData.se += amt * n;
   save();
   const m = findMon(j.uid);
-  return `${m ? N(m) : 'Your Billie'} ${J.quip} You collected ${kind === 'se' ? '$' + fmt(amt * n) : `${amt * n} × ${kind === 'item' ? ITEMS[key].n : COINS[key].n}`}.`;
+  return `${m ? billyName(m) : 'Your Billie'} ${J.quip} You collected ${kind === 'se' ? '$' + fmt(amt * n) : `${amt * n} × ${kind === 'item' ? ITEMS[key].n : COINS[key].n}`}.`;
 }
 export function endShift(slot) {
   const j = saveData.jobs[slot];

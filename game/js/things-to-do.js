@@ -8,7 +8,7 @@ import { expose } from './test-globals.js';
 import { bar, closeModal, modal, provide, render, roomRefresh, toast } from './hooks.js';
 import { clamp } from './util.js';
 import { COINS, GD, ITEMS, ROUTE, RULES, SP } from './game-data.js';
-import { N, activeBattle, esc, fmt, save, saveData, today, uiState } from './game-state.js';
+import { activeBattle, billyName, esc, fmt, save, saveData, today, uiState } from './game-state.js';
 import { makeCanvas, uiIconHTML } from './art.js';
 import {
   baseMapId,
@@ -263,14 +263,14 @@ async function reqTalk(f) {
     if (q.k === 'show') {
       const m = x28TeamOf(q.t);
       modal({
-        title: m ? `Show ${esc(N(m))}?` : `No ${esc(q.t)} Billie with you`,
+        title: m ? `Show ${esc(billyName(m))}?` : `No ${esc(q.t)} Billie with you`,
         html: m
-          ? `<p>${esc(N(m))} is a ${esc(SP[m.sp].types.join('/'))} Billie.</p>`
+          ? `<p>${esc(billyName(m))} is a ${esc(SP[m.sp].types.join('/'))} Billie.</p>`
           : `<p class="note">Come back with one in your team.</p>`,
         btns: m
           ? [
               {
-                l: `Show ${esc(N(m))}`,
+                l: `Show ${esc(billyName(m))}`,
                 c: 'gold',
                 f: () => {
                   closeModal();
@@ -314,7 +314,7 @@ async function reqTalk(f) {
       await talk([[who, `Still hoping you’ll tax a ${q.t} Billie for me.`]]);
     } else if (q.k === 'show') {
       const m = x28TeamOf(q.t);
-      if (m) return finish(`Wow, ${N(m)}! Thank you for showing me.`);
+      if (m) return finish(`Wow, ${billyName(m)}! Thank you for showing me.`);
       await talk([[who, `I’d still love to see a ${q.t} Billie.`]]);
     }
   }

@@ -45,10 +45,10 @@ import {
   trainerTeam,
 } from './game-data.js';
 import {
-  N,
   activeBattle,
   addEgg,
   addMon,
+  billyName,
   esc,
   findMon,
   fmt,
@@ -285,7 +285,7 @@ function snapK(k) {
     k,
     uid: m.uid,
     sp: m.sp,
-    name: N(m),
+    name: billyName(m),
     lvl: m.lvl,
     hp: m.hp,
     max: maxHp(m),
@@ -364,9 +364,9 @@ function stage(k, obj) {
     const d = obj[s2],
       o = v.st[s2] || 0;
     v.st[s2] = clamp(o + d, -RB.stageMax, RB.stageMax);
-    if (v.st[s2] === o) say(`${N(m)}’s ${STATN[s2]} won’t go any ${d > 0 ? 'higher' : 'lower'}.`);
+    if (v.st[s2] === o) say(`${billyName(m)}’s ${STATN[s2]} won’t go any ${d > 0 ? 'higher' : 'lower'}.`);
     else
-      say(`${N(m)}’s ${STATN[s2]} ${d > 0 ? 'rose' : 'fell'}${Math.abs(d) > 1 ? ' sharply' : ''}.`, {
+      say(`${billyName(m)}’s ${STATN[s2]} ${d > 0 ? 'rose' : 'fell'}${Math.abs(d) > 1 ? ' sharply' : ''}.`, {
         k: 'stat',
         si: k,
         up: d > 0,
@@ -376,17 +376,17 @@ function stage(k, obj) {
 function inflict(tk, st, loud) {
   const t = A(tk);
   if (t.status) {
-    if (loud) say(`But ${N(t)} is already ${(STATUSN[t.status] || 'affected').toLowerCase()}.`);
+    if (loud) say(`But ${billyName(t)} is already ${(STATUSN[t.status] || 'affected').toLowerCase()}.`);
     return;
   }
   if (t.boss && st === 'sub' && rnd() < (RB.alphaSleepResist ?? 0.5)) {
-    say(`${N(t)} shrugged it off. Alphas don’t nod off easily.`);
+    say(`${billyName(t)} shrugged it off. Alphas don’t nod off easily.`);
     return;
   }
   t.status = st;
   if (st === 'sub') t.sTurns = RB.subpoenaMin + Math.floor(rnd() * (RB.subpoenaMax - RB.subpoenaMin + 1));
   say(
-    `${N(t)} ${st === 'aud' ? 'is paralyzed. It may be unable to move' : st === 'sub' ? 'fell asleep' : st === 'scn' ? 'was burned' : 'is ' + (STATUSN[st] || st)}.`,
+    `${billyName(t)} ${st === 'aud' ? 'is paralyzed. It may be unable to move' : st === 'sub' ? 'fell asleep' : st === 'scn' ? 'was burned' : 'is ' + (STATUSN[st] || st)}.`,
     { k: 'status', si: tk, st }
   );
 }
@@ -406,14 +406,14 @@ function useMove(k, mid, tk0) {
   if (u.status === 'sub') {
     u.sTurns--;
     if (u.sTurns > 0) {
-      say(`${N(u)} is fast asleep.`, { k: 'status', si: k, st: 'sub' });
+      say(`${billyName(u)} is fast asleep.`, { k: 'status', si: k, st: 'sub' });
       return;
     }
     u.status = null;
-    say(`${N(u)} woke up.`);
+    say(`${billyName(u)} woke up.`);
   }
   if (u.status === 'aud' && rnd() < RB.auditSkip) {
-    say(`${N(u)} is paralyzed and can’t move.`, { k: 'status', si: k, st: 'aud' });
+    say(`${billyName(u)} is paralyzed and can’t move.`, { k: 'status', si: k, st: 'aud' });
     return;
   }
   if (v.hyped > 0) {
@@ -421,10 +421,10 @@ function useMove(k, mid, tk0) {
     if (rnd() < RB.hypeSelfHit) {
       const dm = Math.max(1, Math.floor(((0.4 * u.lvl + 2) * 40 * statE(k, 'lev')) / statE(k, 'law') / 50 + 2));
       u.hp = Math.max(0, u.hp - dm);
-      say(`${N(u)} is confused and hurt itself.`, { k: 'hurt', si: k, dmg: dm });
+      say(`${billyName(u)} is confused and hurt itself.`, { k: 'hurt', si: k, dmg: dm });
       return;
     }
-    if (v.hyped === 0) say(`${N(u)} snapped out of its confusion.`);
+    if (v.hyped === 0) say(`${billyName(u)} snapped out of its confusion.`);
   }
   const onFoe = M.c !== 'X' || fx.status || fx.tgtStage || fx.hype || fx.spin || fx.wipe;
   const tk = onFoe ? retarget(k, tk0) : k;
@@ -433,7 +433,7 @@ function useMove(k, mid, tk0) {
     td = activeBattle.sides[ASIDE[tk]];
   /* spread moves hit every fighter on the other side (a little weaker when there's more than one) */
   const spread = onFoe && fx.spread && liveK(foeSide(k)).length > 1;
-  const ev = say(`${N(u)} used ${M.n}${isMulti() && onFoe && !spread ? ` on ${N(t)}` : ''}.`, {
+  const ev = say(`${billyName(u)} used ${M.n}${isMulti() && onFoe && !spread ? ` on ${billyName(t)}` : ''}.`, {
     k: 'move',
     si: k,
     ti: tk,
@@ -451,7 +451,7 @@ function useMove(k, mid, tk0) {
     v.last = mid;
     v.protect = true;
     ev.an.protect = true;
-    say(`${N(u)} braced itself.`);
+    say(`${billyName(u)} braced itself.`);
     return;
   }
   v.last = mid;
@@ -463,16 +463,20 @@ function useMove(k, mid, tk0) {
     if (!t2 || t2.hp <= 0) continue;
     if (onFoe && fv2.protect) {
       if (tk2 === tk) ev.an.blocked = true;
-      say(`${N(t2)} protected itself.`, tk2 === tk ? null : { k: 'hurt', si: tk2, dmg: 0, fx: 'block' });
+      say(`${billyName(t2)} protected itself.`, tk2 === tk ? null : { k: 'hurt', si: tk2, dmg: 0, fx: 'block' });
       continue;
     }
     if (onFoe && M.a && rnd() * 100 >= M.a) {
       if (tk2 === tk) ev.an.miss = true;
-      say(`${N(u)} missed${spread ? ' ' + N(t2) : ''}.`);
+      say(`${billyName(u)} missed${spread ? ' ' + billyName(t2) : ''}.`);
       if (fx.missCost && tk2 === targets[0]) {
         const dm = Math.floor(maxHp(u) * fx.missCost);
         u.hp = Math.max(0, u.hp - dm);
-        say(`${N(u)} crashed and lost ${Math.round(fx.missCost * 100)}% of its HP.`, { k: 'hurt', si: k, dmg: dm });
+        say(`${billyName(u)} crashed and lost ${Math.round(fx.missCost * 100)}% of its HP.`, {
+          k: 'hurt',
+          si: k,
+          dmg: dm,
+        });
       }
       continue;
     }
@@ -483,11 +487,11 @@ function useMove(k, mid, tk0) {
         A: statE(k, 'lev'),
         lvl: u.lvl,
         ty: types(k).slice(),
-        from: N(u),
+        from: billyName(u),
         mid,
         side: ASIDE[k],
       });
-      say(`${N(u)} foresaw an attack. It lands in ${plural(RB.mailTurns, 'turn')}.`);
+      say(`${billyName(u)} foresaw an attack. It lands in ${plural(RB.mailTurns, 'turn')}.`);
       continue;
     }
     if (M.c !== 'X') {
@@ -500,7 +504,7 @@ function useMove(k, mid, tk0) {
       t2.hp = Math.max(0, t2.hp - r.dmg);
       alphaPhase(tk2);
       if (tk2 === tk) Object.assign(ev.an, { dmg: r.dmg, te: r.te, crit: r.crit });
-      else say(`${N(t2)} was hit too.`, { k: 'hurt', si: tk2, dmg: r.dmg, te: r.te, fx: 'spread', t: M.t });
+      else say(`${billyName(t2)} was hit too.`, { k: 'hurt', si: tk2, dmg: r.dmg, te: r.te, fx: 'spread', t: M.t });
       upd();
       if (r.shield) say(`The shield took the edge off.`, { k: 'block', si: tk2 });
       if (r.crit) say('A critical hit!', { k: 'crit', si: tk2 });
@@ -509,12 +513,12 @@ function useMove(k, mid, tk0) {
       if (fx.drain && u.hp < maxHp(u)) {
         const g = Math.max(1, Math.floor(r.dmg * fx.drain));
         u.hp = Math.min(maxHp(u), u.hp + g);
-        say(`${N(u)} drained some HP.`, { k: 'heal', si: k, amt: g });
+        say(`${billyName(u)} drained some HP.`, { k: 'heal', si: k, amt: g });
       }
       if (fx.heal && u.hp < maxHp(u)) {
         const g = Math.floor(maxHp(u) * fx.heal);
         u.hp = Math.min(maxHp(u), u.hp + g);
-        say(`${N(u)} restored some HP.`, { k: 'heal', si: k, amt: g });
+        say(`${billyName(u)} restored some HP.`, { k: 'heal', si: k, amt: g });
       }
     }
     if (t2.hp > 0 && onFoe) {
@@ -524,13 +528,13 @@ function useMove(k, mid, tk0) {
         if (fv2.hyped > 0) say('But it failed.');
         else {
           fv2.hyped = RB.hypeTurns;
-          say(`${N(t2)} became confused.`, { k: 'hype', si: tk2 });
+          say(`${billyName(t2)} became confused.`, { k: 'hype', si: tk2 });
         }
       }
       if (fx.spin) {
         fv2.ov = [RB.spinType];
         fv2.ovT = RB.spinTurns;
-        say(`${N(t2)} was soaked and became ${RB.spinType} type.`, { k: 'stat', si: tk2, up: false });
+        say(`${billyName(t2)} was soaked and became ${RB.spinType} type.`, { k: 'stat', si: tk2, up: false });
       }
       if (fx.wipe) {
         let any = false;
@@ -539,7 +543,7 @@ function useMove(k, mid, tk0) {
             fv2.st[s2] = 0;
             any = true;
           }
-        say(any ? `${N(t2)}’s stat boosts were wiped away.` : `${N(t2)} had no boosts to wipe.`);
+        say(any ? `${billyName(t2)}’s stat boosts were wiped away.` : `${billyName(t2)} had no boosts to wipe.`);
       }
     }
   }
@@ -547,7 +551,7 @@ function useMove(k, mid, tk0) {
   if (fx.selfStage && (!fx.selfChance || rnd() * 100 < fx.selfChance)) stage(k, fx.selfStage);
   if (fx.selfStatus && u.hp > 0 && !u.status && rnd() * 100 < (fx.selfChance || 100)) {
     u.status = fx.selfStatus;
-    say(`${N(u)} hurt itself and is now ${(STATUSN[fx.selfStatus] || 'troubled').toLowerCase()}.`, {
+    say(`${billyName(u)} hurt itself and is now ${(STATUSN[fx.selfStatus] || 'troubled').toLowerCase()}.`, {
       k: 'status',
       si: k,
       st: fx.selfStatus,
@@ -558,7 +562,7 @@ function useMove(k, mid, tk0) {
     else {
       const g = Math.min(maxHp(u) - u.hp, Math.floor(maxHp(u) * fx.heal));
       u.hp += g;
-      say(`${N(u)} restored its health.`, { k: 'heal', si: k, amt: g });
+      say(`${billyName(u)} restored its health.`, { k: 'heal', si: k, amt: g });
     }
   }
   if (fx.rent) {
@@ -584,28 +588,28 @@ function endTurn() {
       mx = maxHp(m);
     if (f.v && f.v.shield > 0) {
       f.v.shield--;
-      if (!f.v.shield) say(`${N(m)}’s shield fades.`, { k: 'stat', si: k, up: false });
+      if (!f.v.shield) say(`${billyName(m)}’s shield fades.`, { k: 'stat', si: k, up: false });
     }
     if (m.status === 'scn') {
       const d = Math.max(1, Math.floor(mx / fr));
       m.hp = Math.max(0, m.hp - d);
-      say(`${N(m)} is hurt by its burn.`, { k: 'hurt', si: k, fx: 'scn', dmg: d });
+      say(`${billyName(m)} is hurt by its burn.`, { k: 'hurt', si: k, fx: 'scn', dmg: d });
     }
     if (m.hp > 0 && activeBattle.market && !ty.includes(RB.shockType)) {
       const d = Math.max(1, Math.floor(mx / fr));
       m.hp = Math.max(0, m.hp - d);
-      say(`${N(m)} is buffeted by the ${shockName().toLowerCase()}.`, { k: 'hurt', si: k, fx: 'oil', dmg: d });
+      say(`${billyName(m)} is buffeted by the ${shockName().toLowerCase()}.`, { k: 'hurt', si: k, fx: 'oil', dmg: d });
     }
     if (m.hp > 0 && hasPassive(ty, 'subsidy') && m.hp < mx) {
       const g = Math.min(mx - m.hp, Math.max(1, Math.floor(mx / fr)));
       m.hp += g;
-      say(`${N(m)} regrew a little HP.`, { k: 'heal', si: k, amt: g });
+      say(`${billyName(m)} regrew a little HP.`, { k: 'heal', si: k, amt: g });
     }
     f.v.turnsIn++;
     f.v.protect = false;
     if (f.v.ovT > 0 && --f.v.ovT === 0) {
       f.v.ov = null;
-      say(`${N(m)} dried off and is back to its own type.`);
+      say(`${billyName(m)} dried off and is back to its own type.`);
     }
   }
   for (const si of [0, 1]) {
@@ -618,7 +622,7 @@ function endTurn() {
       if (t && t.hp > 0) {
         const r = dmgCalc(AK(1 - si, 0), tk, h.mid || 'twoday', h);
         t.hp = Math.max(0, t.hp - r.dmg);
-        say(`${h.from}’s ${(MOVES[h.mid] || MOVES.twoday || { n: 'attack' }).n} struck ${N(t)}.`, {
+        say(`${h.from}’s ${(MOVES[h.mid] || MOVES.twoday || { n: 'attack' }).n} struck ${billyName(t)}.`, {
           k: 'hurt',
           si: tk,
           fx: 'mail',
@@ -646,7 +650,7 @@ function award(e) {
   const on = liveK(0).map(k => A(k));
   on.forEach(m => {
     const k = allK().find(q => A(q) === m);
-    say(`${N(m)} gained ${fmt(amt)} XP.`, { k: 'xp', si: k });
+    say(`${billyName(m)} gained ${fmt(amt)} XP.`, { k: 'xp', si: k });
     gainXp(m, amt, say);
   });
   const share = Math.floor(amt * P.teamXpShare),
@@ -689,19 +693,22 @@ export function doSwitch(k, idx) {
   f.v = freshV();
   sd.inh = null;
   const m = A(k);
-  say(ASIDE[k] === 0 ? `Go, ${N(m)}!` : `${activeBattle.foeName || 'The wild side'} sent out ${N(m)}.`, {
-    k: 'enter',
-    si: k,
-  });
+  say(
+    ASIDE[k] === 0 ? `Go, ${billyName(m)}!` : `${activeBattle.foeName || 'The wild side'} sent out ${billyName(m)}.`,
+    {
+      k: 'enter',
+      si: k,
+    }
+  );
   saveData.seen[m.sp] = 1;
   if (sd.rent && !hasPassive(SP[m.sp].types, 'landlord')) {
     const d = Math.max(1, Math.floor(maxHp(m) / Math.max(2, RB.rentFraction)));
     m.hp = Math.max(0, m.hp - d);
-    say(`${N(m)} was hurt by the sharp stones.`, { k: 'hurt', si: k, fx: 'rent', dmg: d });
+    say(`${billyName(m)} was hurt by the sharp stones.`, { k: 'hurt', si: k, fx: 'rent', dmg: d });
   }
   if (inh) {
     Object.assign(f.v.st, inh);
-    say(`${N(m)} took up its teammate’s boosts.`, { k: 'stat', si: k, up: true });
+    say(`${billyName(m)} took up its teammate’s boosts.`, { k: 'stat', si: k, up: true });
   }
 }
 export function checkFaints() {
@@ -713,7 +720,7 @@ export function checkFaints() {
     f.down = true;
     any = true;
     e.status = null;
-    say(`${N(e)} fainted.`, { k: 'faint', si: k });
+    say(`${billyName(e)} fainted.`, { k: 'faint', si: k });
     award(e);
     inherit(k);
     const nx = bench(1)[0];
@@ -729,7 +736,7 @@ export function checkFaints() {
     any = true;
     p.status = null;
     p.sTurns = 0;
-    say(`${N(p)} fainted.`, { k: 'faint', si: k });
+    say(`${billyName(p)} fainted.`, { k: 'faint', si: k });
     inherit(k);
     const pend = (activeBattle.needSwitch || []).length;
     if (bench(0).length > pend) {
@@ -749,7 +756,7 @@ function alphaPhase(k) {
   m.boss.ph2 = true;
   const v = FV(k);
   v.shield = RB.alphaShieldTurns ?? 2;
-  say(`${N(m)} is furious! A golden shield rises around it.`, { k: 'alphaPhase', si: k });
+  say(`${billyName(m)} is furious! A golden shield rises around it.`, { k: 'alphaPhase', si: k });
   stage(k, { lev: 1, lob: 1 });
 }
 /* a rough damage figure for the AI (no rolls): how much of the target's HP a move would take */
@@ -906,7 +913,7 @@ export function newBattle(kind, foe, extra) {
   return true;
 }
 const goNames = K => {
-  const n = K.map(k => N(A(k)));
+  const n = K.map(k => billyName(A(k)));
   return n.length < 2 ? n[0] : n.slice(0, -1).join(', ') + ' and ' + n[n.length - 1];
 };
 /* an Alpha: the same billionaire, bigger, tougher and stronger for the fight (RULES.battle.alpha*) */
@@ -992,7 +999,10 @@ export function runTurn(plan) {
     if (!out) continue;
     const free = hasPassive(types(p.who), 'pivot') && !activeBattle.sides[0].pivot;
     if (free) activeBattle.sides[0].pivot = true;
-    say(free ? `${N(out)} darted out without losing the turn.` : `${N(out)}, come back.`, { k: 'recall', si: p.who });
+    say(free ? `${billyName(out)} darted out without losing the turn.` : `${billyName(out)}, come back.`, {
+      k: 'recall',
+      si: p.who,
+    });
     doSwitch(p.who, p.i);
     p.free = free;
   }
@@ -1099,21 +1109,21 @@ export function applyItem(it, id, inB) {
     m.hp = Math.max(1, Math.floor(maxHp(m) * I.revive));
     m.status = null;
     m.sTurns = 0;
-    t.push(`${N(m)} was revived.`);
+    t.push(`${billyName(m)} was revived.`);
     healed = m.hp;
   } else {
     if (I.cure && m.status && (I.cure === 'any' || m.status === I.cure)) {
       const was = m.status;
       m.status = null;
       m.sTurns = 0;
-      t.push(`${N(m)} is no longer ${(STATUSN[was] || 'troubled').toLowerCase()}.`);
+      t.push(`${billyName(m)} is no longer ${(STATUSN[was] || 'troubled').toLowerCase()}.`);
     }
     if (I.hp) {
       const g = Math.min(I.hp, maxHp(m) - m.hp);
       if (g > 0) {
         m.hp += g;
         healed = g;
-        t.push(`${N(m)} recovered ${g} HP.`);
+        t.push(`${billyName(m)} recovered ${g} HP.`);
       }
     }
     if (I.hpAll) {
@@ -1683,7 +1693,8 @@ export function chooseMsg() {
   if (!m) return;
   const L = liveK(0),
     n = L.indexOf(activeBattle.cur);
-  $('#msgT').textContent = L.length > 1 ? `What will ${N(m)} do? (${n + 1} of ${L.length})` : `What will ${N(m)} do?`;
+  $('#msgT').textContent =
+    L.length > 1 ? `What will ${billyName(m)} do? (${n + 1} of ${L.length})` : `What will ${billyName(m)} do?`;
   if (typeof battleStageSelect === 'function') battleStageSelect(activeBattle.cur);
 }
 export function planNext(p) {
@@ -1740,8 +1751,8 @@ function effLabel(mid, tk) {
     const e = eff(M.t, types(F[0]));
     return e > 1 ? '<em class="se">Super effective</em>' : e < 1 ? '<em class="nve">Not very effective</em>' : '';
   }
-  const se = F.filter(k => eff(M.t, types(k)) > 1).map(k => N(A(k))),
-    nv = F.filter(k => eff(M.t, types(k)) < 1).map(k => N(A(k)));
+  const se = F.filter(k => eff(M.t, types(k)) > 1).map(k => billyName(A(k))),
+    nv = F.filter(k => eff(M.t, types(k)) < 1).map(k => billyName(A(k)));
   return se.length
     ? `<em class="se">Super effective on ${esc(se.join(', '))}</em>`
     : nv.length === F.length
@@ -1753,7 +1764,7 @@ function hpMini(m) {
   return `<span class="hpmini"><i class="${p < 0.25 ? 'low' : p < 0.5 ? 'mid' : ''}" style="width:${p * 100}%"></i></span>`;
 }
 function monPick(m, act, attrs, dis, note) {
-  return `<button class="pick" ${attrs} ${dis ? 'disabled' : ''}>${bustHTML(m.sp, 40, { gold: m.gold })}<span class="pk-t"><b>${esc(N(m))}</b><span class="pk-m">${SP[m.sp].types.map(chip).join('')}<small class="tnum">Lv ${m.lvl}</small></span>${hpMini(m)}<small class="tnum">${Math.max(0, m.hp)}/${maxHp(m)}</small></span><span class="pk-s">${note || ''}</span></button>`;
+  return `<button class="pick" ${attrs} ${dis ? 'disabled' : ''}>${bustHTML(m.sp, 40, { gold: m.gold })}<span class="pk-t"><b>${esc(billyName(m))}</b><span class="pk-m">${SP[m.sp].types.map(chip).join('')}<small class="tnum">Lv ${m.lvl}</small></span>${hpMini(m)}<small class="tnum">${Math.max(0, m.hp)}/${maxHp(m)}</small></span><span class="pk-s">${note || ''}</span></button>`;
 }
 function teamPick(back) {
   const on = activeBattle.sides[0].f.filter(f => f.on).map(f => f.act),
@@ -1808,7 +1819,7 @@ export function paintActions() {
   <div class="bt-row"><button class="bt coin" data-a="bcoins" ${wild && first ? '' : 'disabled'}>${uiIconHTML('coin', 18)}<b>Tax it</b><small>${wild ? (first ? coins + ' left' : 'First pick only') : 'Wild only'}</small><kbd>X</kbd></button>
   <button class="bt items" data-a="bitems">${uiIconHTML('bag', 18)}<b>Bag</b><small>${items}</small><kbd>I</kbd></button>
   <button class="bt team" data-a="bteam">${uiIconHTML('team', 18)}<b>Team</b><small>${alive}/${crew.length}</small><kbd>T</kbd></button>
-  <button class="bt run" data-a="brun" ${wild ? '' : 'disabled'}>${uiIconHTML('run', 18)}<b>Run</b><small>${wild ? 'Walk away' : 'No exit'}</small><kbd>R</kbd></button></div>${first ? '' : `<button class="bt back wide" data-a="bback">${uiIconHTML('back', 16)}<b>Back to ${esc(N(A(activeBattle.plan[activeBattle.plan.length - 1].who)))}</b><kbd>Esc</kbd></button>`}</div>`;
+  <button class="bt run" data-a="brun" ${wild ? '' : 'disabled'}>${uiIconHTML('run', 18)}<b>Run</b><small>${wild ? 'Walk away' : 'No exit'}</small><kbd>R</kbd></button></div>${first ? '' : `<button class="bt back wide" data-a="bback">${uiIconHTML('back', 16)}<b>Back to ${esc(billyName(A(activeBattle.plan[activeBattle.plan.length - 1].who)))}</b><kbd>Esc</kbd></button>`}</div>`;
   } else if (ph === 'fight') {
     const m = A(activeBattle.cur);
     h = `<div class="moves">${m.moves
@@ -1865,7 +1876,7 @@ export function paintActions() {
     h = `<div class="aim"><div class="aimcoin" id="aimCoin" role="button" tabindex="0" aria-label="Swipe up to throw">${coinHTML(activeBattle.coin, 96, 32)}<span class="aim-hint">${uiIconHTML('back', 14)}</span></div><p class="note">Swipe the coin up when the ring is small and green. A sideways swipe adds spin.</p><div class="two"><button class="bt coin" data-a="bthrow"><b>Flick it</b><kbd>Space</kbd></button><button class="bt back" data-a="baimback"><b>Put it away</b><kbd>Esc</kbd></button></div></div>`;
   } else if (ph === 'throwing') h = `<div class="aim"><p class="note">The coin is in the air…</p></div>`;
   else if (ph === 'offer') {
-    h = `<div class="offer"><p>${uiIconHTML('coin', 16)} ${esc(N(A(1)))} is offering you <b class="tnum">$${fmt(activeBattle.offer)}</b> to let it go. Refusing gives your next throw a Focus Bonus.</p><div class="two"><button class="bt coin" data-a="boffer" data-y="1"><b>Take it</b></button><button class="bt fightish" data-a="boffer" data-y="0"><b>Refuse</b></button></div></div>`;
+    h = `<div class="offer"><p>${uiIconHTML('coin', 16)} ${esc(billyName(A(1)))} is offering you <b class="tnum">$${fmt(activeBattle.offer)}</b> to let it go. Refusing gives your next throw a Focus Bonus.</p><div class="two"><button class="bt coin" data-a="boffer" data-y="1"><b>Take it</b></button><button class="bt fightish" data-a="boffer" data-y="0"><b>Refuse</b></button></div></div>`;
   } else if (ph === 'end') {
     const t = {
       win: 'You won.',
@@ -1955,17 +1966,17 @@ function finishThrow(res, id, lab, spin) {
   activeBattle.events = [];
   if (res.edge) say('It landed on its edge. Critical tax!');
   if (res.caught) {
-    say(`Gotcha! ${N(e)} was taxed.`, { k: 'caught' });
+    say(`Gotcha! ${billyName(e)} was taxed.`, { k: 'caught' });
     if (e.boss) {
       const f = e.hp / maxHp(e);
       delete e.boss;
       e.alpha = true;
       e.hp = Math.max(1, Math.round(maxHp(e) * f));
-      say(`${N(e)} is an Alpha: a little bigger and stronger than others of its kind.`);
+      say(`${billyName(e)} is an Alpha: a little bigger and stronger than others of its kind.`);
     }
     e.hp = Math.max(1, e.hp);
     const where = addMon(e);
-    if (where === 'box') say(`${N(e)} went to storage. Your team is full.`);
+    if (where === 'box') say(`${billyName(e)} went to storage. Your team is full.`);
     activeBattle.over = 'caught';
     save();
     return play();
@@ -1973,7 +1984,7 @@ function finishThrow(res, id, lab, spin) {
   say(['It broke free right away.', 'It almost stayed in.', 'So close. It wobbled twice.'][res.w]);
   if (rnd() < RC.offerChance) {
     activeBattle.offer = Math.round((RC.offerMin + rnd() * (RC.offerMax - RC.offerMin)) / 10) * 10;
-    say(`${N(e)} is offering you money to let it go.`, { k: 'cry', si: 1 });
+    say(`${billyName(e)} is offering you money to let it go.`, { k: 'cry', si: 1 });
     return play();
   }
   enemyOnly();
@@ -2197,7 +2208,7 @@ function turnBar() {
     const m = A(k),
       mine = ASIDE[k] === 0,
       n = A(k).boss ? (RB.alphaActs ?? 2) : 1;
-    return `<span class="tb ${mine ? 'me' : 'foe'}${A(k).boss ? ' alpha' : ''}" title="${esc(N(m))}">${esc(N(m).split(' ')[0])}${n > 1 ? ' ×' + n : ''}</span>`;
+    return `<span class="tb ${mine ? 'me' : 'foe'}${A(k).boss ? ' alpha' : ''}" title="${esc(billyName(m))}">${esc(billyName(m).split(' ')[0])}${n > 1 ? ' ×' + n : ''}</span>`;
   }).join('<i>›</i>');
   if (e.innerHTML !== html) e.innerHTML = '<b>Order</b>' + html;
 }

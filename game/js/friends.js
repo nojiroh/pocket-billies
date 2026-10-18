@@ -12,7 +12,7 @@
 import { expose } from './test-globals.js';
 import { ACC, accOn, closeModal, modal, provide, render, sceneIdAt, toast, walkOff } from './hooks.js';
 import { ROUTE, SP } from './game-data.js';
-import { N, cleanName, esc, plural, saveData, uiState } from './game-state.js';
+import { billyName, cleanName, esc, plural, saveData, uiState } from './game-state.js';
 import { owFrames, portraitHTML, trWarm } from './person-art.js';
 import { rigCanvasHTML } from './skeleton-rig.js';
 import { directionOf, walkView } from './walk-view.js';
@@ -222,7 +222,7 @@ function frPublish(now) {
     z = +uiState.roam.z.toFixed(1);
   }
   const m = typeof buddyBilly === 'function' ? buddyBilly() : saveData.team && saveData.team[0],
-    pt = m ? { sp: m.sp, gold: !!m.gold, name: N(m), lvl: m.lvl } : null;
+    pt = m ? { sp: m.sp, gold: !!m.gold, name: billyName(m), lvl: m.lvl } : null;
   const doc = {
     name: (saveData.avatar && saveData.avatar.name) || ACC.user.name || 'Trainer',
     avatar: saveData.avatar || null,

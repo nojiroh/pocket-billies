@@ -7,7 +7,7 @@
 import { expose } from './test-globals.js';
 import { closeModal, modal, render, toast } from './hooks.js';
 import { COINS, EGGS, ITEMS, STATUSN } from './game-data.js';
-import { N, esc, fmt, maxHp, saveData, uiState } from './game-state.js';
+import { billyName, esc, fmt, maxHp, saveData, uiState } from './game-state.js';
 import { coinHTML, eggHTML, uiIconHTML } from './art.js';
 import { bustHTML } from './skeleton-rig.js';
 import { applyItem, canUse, itemIcon, teamNeedsHp } from './battle.js';
@@ -116,7 +116,7 @@ document.addEventListener('click', ev => {
     }
     modal({
       title: `Use ${esc(I.n)} on…`,
-      html: `<div class="list">${L.map(m => `<button class="pickrow" data-a="bag-on" data-k="${esc(k)}" data-u="${m.uid}">${bustHTML(m.sp, 40, { gold: m.gold })}<span><b>${esc(N(m))}</b><small class="tnum">HP ${m.hp}/${maxHp(m)}${m.status ? ' · ' + esc(STATUSN[m.status] || m.status) : ''}</small></span></button>`).join('')}</div>`,
+      html: `<div class="list">${L.map(m => `<button class="pickrow" data-a="bag-on" data-k="${esc(k)}" data-u="${m.uid}">${bustHTML(m.sp, 40, { gold: m.gold })}<span><b>${esc(billyName(m))}</b><small class="tnum">HP ${m.hp}/${maxHp(m)}${m.status ? ' · ' + esc(STATUSN[m.status] || m.status) : ''}</small></span></button>`).join('')}</div>`,
       btns: [{ l: 'Never mind', c: 'quiet', f: closeModal }],
     });
     return;

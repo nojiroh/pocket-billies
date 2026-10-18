@@ -39,13 +39,13 @@ import {
   BR,
   EGG_SLOTS,
   MAXLV,
-  N,
   SLOTS,
   TEAM_MAX,
   activeBattle,
   addEgg,
   allMons,
   assignJob,
+  billyName,
   blockerAt,
   canEnter,
   canRide,
@@ -437,7 +437,7 @@ function genderModal() {
 function learnModal(m, mv) {
   const M = MOVES[mv];
   modal({
-    title: `${esc(N(m))} wants to learn ${M.n}`,
+    title: `${esc(billyName(m))} wants to learn ${M.n}`,
     html: `<p>${chip(M.t)} ${M.p ? `${M.p} power` : 'Status'}. ${M.d}</p><p class="note">It already knows ${SLOTS()} moves. Pick one to forget, or skip this one.</p>`,
     btns: m.moves
       .map(id => ({
@@ -445,7 +445,7 @@ function learnModal(m, mv) {
         f: () => {
           m.moves[m.moves.indexOf(id)] = mv;
           save();
-          toast(`${N(m)} learned ${M.n}.`);
+          toast(`${billyName(m)} learned ${M.n}.`);
           closeModal();
         },
       }))
@@ -464,7 +464,7 @@ function evoModal(m) {
       split: `It just reached level ${e.at}. ${splitPath(m) === 'B' ? `It won ${m.wins || 0} battles: the Hype path.` : `It walked ${km(m.bsteps || 0)} km with you: the Build path.`}`,
     }[e.k] || '';
   modal({
-    title: `${esc(N(m))} is evolving`,
+    title: `${esc(billyName(m))} is evolving`,
     top: `<div class="evo">${rigCanvasHTML(m.sp, 128, { gold: m.gold })}</div>`,
     html: `<p>${why} Something bigger is coming.</p>`,
     lock: 1,
@@ -485,7 +485,7 @@ function evoModal(m) {
 function evoRun(m, note) {
   const from = SP[m.sp],
     to = SP[from.evo && from.evo.k === 'split' && from.alt && splitPath(m) === 'B' ? from.alt : from.next],
-    fromName = N(m);
+    fromName = billyName(m);
   uiState.modal = null;
   modal({
     title: `What? ${esc(fromName)} is evolving!`,
@@ -899,7 +899,7 @@ function buddyCard() {
     e && e.k === 'buddy'
       ? `<div class="note">Buddy distance: ${km(m.bsteps || 0)} of ${km(e.steps)} km to evolve.</div>${bar((m.bsteps || 0) / e.steps, 'gold')}`
       : '';
-  return `<section><div class="sec-h"><h2>Buddy</h2></div><div class="buddy px" data-a="mon" data-u="${m.uid}" role="button" tabindex="0">${rigCanvasHTML(m.sp, 80, { gold: m.gold })}<div class="bd"><div class="bn">${esc(N(m))} <span class="lv tnum">Lv ${m.lvl}</span></div><div class="note">Earns 1 XP for every ${plural(RULES.progression.buddyStepsPerXp, 'step')}. ${fmt(Math.ceil((b - m.xp) * RULES.progression.buddyStepsPerXp))} more steps to level ${m.lvl + 1}.</div>${bar((m.xp - a) / (b - a), 'xpb')}${ev}</div></div></section>`;
+  return `<section><div class="sec-h"><h2>Buddy</h2></div><div class="buddy px" data-a="mon" data-u="${m.uid}" role="button" tabindex="0">${rigCanvasHTML(m.sp, 80, { gold: m.gold })}<div class="bd"><div class="bn">${esc(billyName(m))} <span class="lv tnum">Lv ${m.lvl}</span></div><div class="note">Earns 1 XP for every ${plural(RULES.progression.buddyStepsPerXp, 'step')}. ${fmt(Math.ceil((b - m.xp) * RULES.progression.buddyStepsPerXp))} more steps to level ${m.lvl + 1}.</div>${bar((m.xp - a) / (b - a), 'xpb')}${ev}</div></div></section>`;
 }
 function roomHero() {
   const I = uiState.inside,
@@ -1867,8 +1867,8 @@ function teamHero(m) {
   const s = SP[m.sp],
     mx = maxHp(m),
     bud = m.uid === saveData.buddy;
-  return `<section class="tm-hero tpanel"><button class="tm-stage" data-a="mon" data-u="${m.uid}" style="${plateVars(m)}" aria-label="${esc(N(m))}, details"><span class="tm-ribbon">Lead</span>${m.gold ? '<span class="tm-ribbon gold">Golden</span>' : ''}${rigCanvasHTML(m.sp, 120, { gold: m.gold })}</button>
- <div class="tm-info"><div class="tm-name"><h2>${esc(N(m))}</h2><span class="lv tnum">Lv ${m.lvl}</span></div>${m.nick ? `<div class="tm-sp">${esc(s.name)}</div>` : ''}
+  return `<section class="tm-hero tpanel"><button class="tm-stage" data-a="mon" data-u="${m.uid}" style="${plateVars(m)}" aria-label="${esc(billyName(m))}, details"><span class="tm-ribbon">Lead</span>${m.gold ? '<span class="tm-ribbon gold">Golden</span>' : ''}${rigCanvasHTML(m.sp, 120, { gold: m.gold })}</button>
+ <div class="tm-info"><div class="tm-name"><h2>${esc(billyName(m))}</h2><span class="lv tnum">Lv ${m.lvl}</span></div>${m.nick ? `<div class="tm-sp">${esc(s.name)}</div>` : ''}
   <div class="row">${s.types.map(chip).join('')}${monState(m)}${bud ? `<span class="badge bud">${uiIconHTML('heart', 11)} Buddy</span>` : ''}</div>
   ${meter('HP', hpBar(m.hp, mx), `${m.hp}/${mx}`)}${meter('XP', bar(xpPart(m), 'xpb'), xpLeft(m))}
   <div class="tm-acts">${needsCare(m) ? `<button class="pb small green" data-a="mheal" data-u="${m.uid}">${uiIconHTML('heart', 14)} Heal</button>` : ''}${bud ? '' : `<button class="pb small" data-a="mbuddy" data-u="${m.uid}">${uiIconHTML('walk', 14)} Make buddy</button>`}<button class="pb small quiet" data-a="mon" data-u="${m.uid}">Details</button></div></div></section>`;
@@ -1877,7 +1877,7 @@ function teamCard(m, i) {
   const mx = maxHp(m),
     bud = m.uid === saveData.buddy;
   return `<div class="tm-card${m.hp <= 0 ? ' down' : ''}" style="--d:${i * 40}ms"><button class="tm-main" data-a="mon" data-u="${m.uid}"><span class="tm-spr" style="${plateVars(m)}">${rigCanvasHTML(m.sp, 72, { gold: m.gold })}${bud ? `<i class="tm-heart" title="Buddy">${uiIconHTML('heart', 12)}</i>` : ''}</span>
-  <span class="tm-t"><b>${esc(N(m))}</b><span class="tm-lv tnum">Lv ${m.lvl}</span></span><span class="row">${SP[m.sp].types.map(chip).join('')}${monState(m)}</span>${hpBar(m.hp, mx)}<span class="hpn tnum">${m.hp}/${mx} HP</span></button>
+  <span class="tm-t"><b>${esc(billyName(m))}</b><span class="tm-lv tnum">Lv ${m.lvl}</span></span><span class="row">${SP[m.sp].types.map(chip).join('')}${monState(m)}</span>${hpBar(m.hp, mx)}<span class="hpn tnum">${m.hp}/${mx} HP</span></button>
   <div class="tm-quick"><button class="qk" data-a="mlead" data-u="${m.uid}" ${m.hp <= 0 ? 'disabled' : ''}>Make lead</button>${needsCare(m) ? `<button class="qk heal" data-a="mheal" data-u="${m.uid}">Heal</button>` : ''}</div></div>`;
 }
 function jobSlots() {
@@ -1891,7 +1891,7 @@ function jobSlots() {
       const m = findMon(j.uid),
         J = JOBS[j.job];
       if (!m) return '';
-      return `<div class="job"><button class="job-spr" data-a="mon" data-u="${m.uid}" style="${plateVars(m)}" aria-label="${esc(N(m))}, details">${rigCanvasHTML(m.sp, 48, { gold: m.gold })}</button><div class="jt"><b>${esc(N(m))}</b><span class="note">${esc(J.n)}, ${esc(J.where)}. Earns ${esc(J.pay)}.</span>${bar(j.acc / JOB_STEPS, 'gold live')}<span class="note tnum">${fmt(JOB_STEPS - j.acc)} steps to the next pay${j.pend ? `, ${j.pend} ready` : ''}</span>
+      return `<div class="job"><button class="job-spr" data-a="mon" data-u="${m.uid}" style="${plateVars(m)}" aria-label="${esc(billyName(m))}, details">${rigCanvasHTML(m.sp, 48, { gold: m.gold })}</button><div class="jt"><b>${esc(billyName(m))}</b><span class="note">${esc(J.n)}, ${esc(J.where)}. Earns ${esc(J.pay)}.</span>${bar(j.acc / JOB_STEPS, 'gold live')}<span class="note tnum">${fmt(JOB_STEPS - j.acc)} steps to the next pay${j.pend ? `, ${j.pend} ready` : ''}</span>
   <div class="racts"><button class="pb small ${j.pend ? 'gold' : ''}" data-a="collect" data-s="${i}" ${j.pend ? '' : 'disabled'}>Collect pay${j.pend ? ` (${j.pend})` : ''}</button><button class="pb small quiet" data-a="endshift" data-s="${i}">End shift</button></div></div></div>`;
     })
     .join('')}</div>`;
@@ -1912,7 +1912,7 @@ function boxSection() {
     so === 'lvl'
       ? L.slice().sort((a, b) => b.lvl - a.lvl)
       : so === 'name'
-        ? L.slice().sort((a, b) => N(a).localeCompare(N(b)))
+        ? L.slice().sort((a, b) => billyName(a).localeCompare(billyName(b)))
         : L.slice().reverse();
   const full = saveData.team.length >= TEAM_MAX();
   const tools =
@@ -1922,7 +1922,7 @@ function boxSection() {
   return `<section class="tpanel tm-box"><div class="sec-h"><h2>Storage</h2><span class="count tnum">${all.length}</span></div>${
     all.length
       ? `<p class="note">Billies resting here don’t battle. Tap one for details.</p>${tools}
- <div class="bx-grid">${L.map(m => `<div class="bx"><button class="bx-main" data-a="mon" data-u="${m.uid}"><span class="bx-spr" style="${plateVars(m)}">${rigCanvasHTML(m.sp, 60, { gold: m.gold })}</span><b>${esc(N(m))}</b><span class="bx-sub tnum">Lv ${m.lvl}<span class="bx-dots">${SP[m.sp].types.map(t => `<i style="--tc:${TC[t][0]}" title="${t}"></i>`).join('')}</span></span></button><button class="qk" data-a="mteam" data-u="${m.uid}">${full ? 'Swap in' : 'To team'}</button></div>`).join('')}</div>`
+ <div class="bx-grid">${L.map(m => `<div class="bx"><button class="bx-main" data-a="mon" data-u="${m.uid}"><span class="bx-spr" style="${plateVars(m)}">${rigCanvasHTML(m.sp, 60, { gold: m.gold })}</span><b>${esc(billyName(m))}</b><span class="bx-sub tnum">Lv ${m.lvl}<span class="bx-dots">${SP[m.sp].types.map(t => `<i style="--tc:${TC[t][0]}" title="${t}"></i>`).join('')}</span></span></button><button class="qk" data-a="mteam" data-u="${m.uid}">${full ? 'Swap in' : 'To team'}</button></div>`).join('')}</div>`
       : '<div class="empty tm-empty">Storage is empty. When your team is full, new Billies you tax and hatchlings rest here.</div>'
   }</section>`;
 }
@@ -2137,7 +2137,7 @@ function renderProfile() {
  <div class="pf-top"><section class="tcard">
   <div class="tc-band"><span>Trainer card</span><span class="tnum">ID No. ${String(saveData.tid || 0).padStart(5, '0')}</span></div>
   <div class="tc-body"><div class="tc-photo"><div class="tc-portrait">${humanHTML('me', 92)}</div><button class="pb small" data-a="customize">Edit look</button></div>
-   <div class="tc-info"><h2 class="tc-name">${esc(name)}</h2><dl class="tc-dl"><div><dt>Money</dt><dd class="tnum">${coinHTML('penny', 16)} $${fmt(saveData.se)}</dd></div><div><dt>Now in</dt><dd>${esc(ROUTE[saveData.route.node].name)}</dd></div>${since ? `<div><dt>Started</dt><dd>${esc(since)}</dd></div>` : ''}<div><dt>Buddy</dt><dd>${bud ? esc(N(bud)) : 'None yet'}</dd></div></dl></div></div>
+   <div class="tc-info"><h2 class="tc-name">${esc(name)}</h2><dl class="tc-dl"><div><dt>Money</dt><dd class="tnum">${coinHTML('penny', 16)} $${fmt(saveData.se)}</dd></div><div><dt>Now in</dt><dd>${esc(ROUTE[saveData.route.node].name)}</dd></div>${since ? `<div><dt>Started</dt><dd>${esc(since)}</dd></div>` : ''}<div><dt>Buddy</dt><dd>${bud ? esc(billyName(bud)) : 'None yet'}</dd></div></dl></div></div>
   <div class="tc-badges"><div class="tc-bh"><span>Badges</span><b class="tnum">${bd.got} of ${bd.tot}</b></div><ol class="bdgs">${bd.html}</ol></div>
  </section>
  <section class="tpanel pf-stats"><div class="sec-h"><h2>Records</h2></div><div class="pf-grid">
@@ -2146,7 +2146,7 @@ function renderProfile() {
   ${tile(uiIconHTML('ledger', 14), 'Seen', `${seen}/${DEX.length}`, null, seen / DEX.length)}${tile(coinHTML('penny', 14), 'Taxed', `${got}/${DEX.length}`, null, got / DEX.length)}
   ${tile(uiIconHTML('fight', 14), 'Trainers beaten', fmt(beat))}${tile(eggHTML(2, 12), 'Eggs hatched', fmt(saveData.hatched || 0), saveData.eggs.length ? `${plural(saveData.eggs.length, 'egg')} on the way` : 'No eggs right now')}${typeof stampTile === 'function' ? stampTile(tile) : ''}
  </div></section></div>
- <div class="pf-row">${bud ? `<section class="tpanel pf-buddy"><div class="sec-h"><h2>Buddy</h2></div><button class="pf-bud" data-a="mon" data-u="${bud.uid}"><span class="tm-spr" style="${plateVars(bud)}">${rigCanvasHTML(bud.sp, 72, { gold: bud.gold })}</span><span class="pf-bt"><b>${esc(N(bud))}</b><span class="tnum">Lv ${bud.lvl}</span><small>You’ve walked ${km(bud.bsteps || 0)} km together.</small></span></button></section>` : ''}
+ <div class="pf-row">${bud ? `<section class="tpanel pf-buddy"><div class="sec-h"><h2>Buddy</h2></div><button class="pf-bud" data-a="mon" data-u="${bud.uid}"><span class="tm-spr" style="${plateVars(bud)}">${rigCanvasHTML(bud.sp, 72, { gold: bud.gold })}</span><span class="pf-bt"><b>${esc(billyName(bud))}</b><span class="tnum">Lv ${bud.lvl}</span><small>You’ve walked ${km(bud.bsteps || 0)} km together.</small></span></button></section>` : ''}
  <section class="tpanel pf-bag"><div class="sec-h"><h2>Bag</h2></div>
   <div class="pf-coins">${Object.keys(COINS)
     .map(
@@ -2197,7 +2197,7 @@ function monSheet(m) {
         save();
         closeModal();
         render();
-        toast(`${N(m)} leads the team now.`);
+        toast(`${billyName(m)} leads the team now.`);
       },
     });
   if (!bud)
@@ -2209,7 +2209,7 @@ function monSheet(m) {
         save();
         closeModal();
         render();
-        toast(`${N(m)} is your buddy now.`);
+        toast(`${billyName(m)} is your buddy now.`);
       },
     });
   if (needsCare(m))
@@ -2231,7 +2231,7 @@ function monSheet(m) {
         save();
         closeModal();
         render();
-        toast(`${N(m)} is resting in storage.`);
+        toast(`${billyName(m)} is resting in storage.`);
       },
     });
   if (!inTeam && m.job == null)
@@ -2245,7 +2245,7 @@ function monSheet(m) {
               save();
               closeModal();
               render();
-              toast(`${N(m)} joined your team.`);
+              toast(`${billyName(m)} joined your team.`);
             },
           }
         : {
@@ -2287,7 +2287,7 @@ function monSheet(m) {
           evoRun(m, 'Its kindness paid off.');
           return;
         }
-        toast(`${N(m)} gave away a ${ITEMS[it].n}. ${m.donated} of ${e.n}.`);
+        toast(`${billyName(m)} gave away a ${ITEMS[it].n}. ${m.donated} of ${e.n}.`);
         closeModal();
         render();
       },
@@ -2306,7 +2306,7 @@ function monSheet(m) {
         uiState.modal = null;
         modal({
           title: `Combine two ${s.name}s?`,
-          html: `<p>${esc(N(other))} (Lv ${other.lvl}) will join with ${esc(N(m))}. This can’t be undone.</p>`,
+          html: `<p>${esc(billyName(other))} (Lv ${other.lvl}) will join with ${esc(billyName(m))}. This can’t be undone.</p>`,
           btns: [
             {
               l: 'Combine them',
@@ -2360,12 +2360,12 @@ function monSheet(m) {
     ['evo', 'Evolves'],
   ];
   modal({
-    title: esc(N(m)),
+    title: esc(billyName(m)),
     cls: 'mon-sheet',
     acts,
     top: `<div class="ms-plate" style="${plateVars(m)}">${lead ? '<span class="tm-ribbon">Lead</span>' : ''}${bud ? `<span class="tm-ribbon bud">${uiIconHTML('heart', 11)} Buddy</span>` : ''}${m.gold ? '<span class="tm-ribbon gold">Golden</span>' : ''}${rigCanvasHTML(m.sp, 128, { gold: m.gold })}</div>`,
     html: `<p class="row ms-chips">${s.types.map(chip).join('')}${monState(m)}<b class="lv tnum">Lv ${m.lvl}</b>${m.nick ? `<span class="ms-sp">${esc(s.name)}</span>` : ''}</p>
-  <div class="ms-tabs" role="tablist" aria-label="About ${esc(N(m))}" data-on="sum">${tabs.map(([k, l]) => `<button role="tab" data-a="ms-tab" data-k="${k}" aria-selected="${k === 'sum'}">${l}</button>`).join('')}</div>
+  <div class="ms-tabs" role="tablist" aria-label="About ${esc(billyName(m))}" data-on="sum">${tabs.map(([k, l]) => `<button role="tab" data-a="ms-tab" data-k="${k}" aria-selected="${k === 'sum'}">${l}</button>`).join('')}</div>
   <div class="ms-pane" data-k="sum"><div class="ms-meters">${meter('HP', hpBar(m.hp, mx), `${m.hp}/${mx}`)}${meter('XP', bar(xpPart(m), 'xpb'), xpLeft(m))}</div>
    <div class="ms-chart">${st}</div>${metR}
    ${m.job != null ? `<p class="note ms-job">${uiIconHTML('bag', 14)} Working as a ${esc(JOBS[saveData.jobs[m.job].job].n.toLowerCase())} right now. End the shift from Day jobs to bring it back.</p>` : ''}
@@ -2396,7 +2396,7 @@ document.addEventListener('click', ev => {
 function healPick(m, back) {
   const its = Object.keys(ITEMS).filter(k => canUse(k, m));
   modal({
-    title: `Heal ${esc(N(m))}`,
+    title: `Heal ${esc(billyName(m))}`,
     html: `<div class="ms-meters">${meter('HP', hpBar(m.hp, maxHp(m)), `${m.hp}/${maxHp(m)}`)}</div>${
       its.length
         ? `<div class="list">${its.map(k => `<button class="pickrow" data-a="mhealuse" data-u="${m.uid}" data-it="${k}"${back ? ' data-b="1"' : ''}>${itemIcon(k, 34)}<span class="pr-t"><b>${esc(ITEMS[k].n)}</b><small>${esc(ITEMS[k].d)}</small></span><span class="pr-n tnum">×${saveData.items[k]}</span></button>`).join('')}</div>`
@@ -2419,8 +2419,8 @@ function healPick(m, back) {
 /* the team is full: pick who goes to storage so another can join */
 function swapPick(m) {
   modal({
-    title: `Swap in ${esc(N(m))}`,
-    html: `<p class="note">Your team is full. Pick who rests in storage instead.</p><div class="list">${saveData.team.map((o, i) => `<button class="pickrow" data-a="mswap" data-u="${m.uid}" data-o="${o.uid}">${rigCanvasHTML(o.sp, 40, { gold: o.gold })}<span class="pr-t"><b>${esc(N(o))}</b><small>Lv ${o.lvl}${i === 0 ? ', your lead' : ''}${o.uid === saveData.buddy ? ', buddy' : ''}</small></span></button>`).join('')}</div>`,
+    title: `Swap in ${esc(billyName(m))}`,
+    html: `<p class="note">Your team is full. Pick who rests in storage instead.</p><div class="list">${saveData.team.map((o, i) => `<button class="pickrow" data-a="mswap" data-u="${m.uid}" data-o="${o.uid}">${rigCanvasHTML(o.sp, 40, { gold: o.gold })}<span class="pr-t"><b>${esc(billyName(o))}</b><small>Lv ${o.lvl}${i === 0 ? ', your lead' : ''}${o.uid === saveData.buddy ? ', buddy' : ''}</small></span></button>`).join('')}</div>`,
     btns: [{ l: 'Cancel', c: 'quiet', f: closeModal }],
   });
 }
@@ -2428,7 +2428,7 @@ function addPick() {
   const free = saveData.box.filter(m => m.job == null).sort((a, b) => b.lvl - a.lvl);
   modal({
     title: 'Add to your team',
-    html: `<div class="list">${free.map(m => `<button class="pickrow" data-a="tmaddon" data-u="${m.uid}">${rigCanvasHTML(m.sp, 40, { gold: m.gold })}<span class="pr-t"><b>${esc(N(m))}</b><small>Lv ${m.lvl}, ${SP[m.sp].types.map(t => (t === 'None' ? 'Normal' : t)).join(' and ')}</small></span></button>`).join('') || '<p>Storage is empty.</p>'}</div>`,
+    html: `<div class="list">${free.map(m => `<button class="pickrow" data-a="tmaddon" data-u="${m.uid}">${rigCanvasHTML(m.sp, 40, { gold: m.gold })}<span class="pr-t"><b>${esc(billyName(m))}</b><small>Lv ${m.lvl}, ${SP[m.sp].types.map(t => (t === 'None' ? 'Normal' : t)).join(' and ')}</small></span></button>`).join('') || '<p>Storage is empty.</p>'}</div>`,
     btns: [{ l: 'Cancel', c: 'quiet', f: closeModal }],
   });
 }
@@ -2454,7 +2454,7 @@ function hirePick(slot, job) {
   modal({
     title: `Who becomes the ${JOBS[job].n.toLowerCase()}?`,
     html: list.length
-      ? `<div class="list">${list.map(m => `<button class="pickrow px" data-a="hireon" data-s="${slot}" data-j="${job}" data-u="${m.uid}">${rigCanvasHTML(m.sp, 40, { gold: m.gold })}<span class="pr-t"><b>${esc(N(m))}</b><small>${saveData.team.includes(m) ? 'On your team' : 'In storage'}, Lv ${m.lvl}</small></span></button>`).join('')}</div>`
+      ? `<div class="list">${list.map(m => `<button class="pickrow px" data-a="hireon" data-s="${slot}" data-j="${job}" data-u="${m.uid}">${rigCanvasHTML(m.sp, 40, { gold: m.gold })}<span class="pr-t"><b>${esc(billyName(m))}</b><small>${saveData.team.includes(m) ? 'On your team' : 'In storage'}, Lv ${m.lvl}</small></span></button>`).join('')}</div>`
       : '<p>Tax another Billie first. Your last one has to stay on the team.</p>',
     btns: [{ l: 'Cancel', c: 'quiet', f: closeModal }],
   });
@@ -2694,7 +2694,7 @@ document.addEventListener('click', ev => {
         saveData.team.unshift(m);
         save();
         render();
-        toast(`${N(m)} leads the team now.`);
+        toast(`${billyName(m)} leads the team now.`);
       }
       break;
     }
@@ -2704,7 +2704,7 @@ document.addEventListener('click', ev => {
         saveData.buddy = m.uid;
         save();
         render();
-        toast(`${N(m)} is your buddy now.`);
+        toast(`${billyName(m)} is your buddy now.`);
       }
       break;
     }
@@ -2730,7 +2730,7 @@ document.addEventListener('click', ev => {
         toTeam(m);
         save();
         render();
-        toast(`${N(m)} joined your team.`);
+        toast(`${billyName(m)} joined your team.`);
       } else swapPick(m);
       break;
     }
@@ -2744,7 +2744,7 @@ document.addEventListener('click', ev => {
         save();
         closeModal();
         render();
-        toast(`${N(m)} joined your team.`);
+        toast(`${billyName(m)} joined your team.`);
       }
       break;
     }
@@ -2760,7 +2760,7 @@ document.addEventListener('click', ev => {
       save();
       closeModal();
       render();
-      toast(`${N(m)} swapped in for ${N(o)}.`);
+      toast(`${billyName(m)} swapped in for ${billyName(o)}.`);
       break;
     }
     case 'boxsort':
@@ -2839,7 +2839,7 @@ document.addEventListener('click', ev => {
         const m = findMon(d.u);
         closeModal();
         render();
-        toast(`${N(m)} started work as a ${JOBS[d.j].n.toLowerCase()}.`);
+        toast(`${billyName(m)} started work as a ${JOBS[d.j].n.toLowerCase()}.`);
       }
       break;
     case 'collect': {
@@ -2989,7 +2989,7 @@ document.addEventListener('click', ev => {
         activeBattle.events = [];
         if (d.y === '1') {
           saveData.se += amt;
-          say(`You took $${fmt(amt)}. ${N(A(1))} scampered off.`);
+          say(`You took $${fmt(amt)}. ${billyName(A(1))} scampered off.`);
           activeBattle.over = 'bribed';
           battleStage.s[1].show = false;
           save();

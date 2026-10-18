@@ -13,7 +13,7 @@ import { expose } from './test-globals.js';
 import { areaKey, provide, sceneIdAt, sfx } from './hooks.js';
 import { clamp } from './util.js';
 import { SP, STATUSN, TRAINERS, rivalSp, trainersAt } from './game-data.js';
-import { N, findMon, maxHp, nextStop, save, saveData, uiState } from './game-state.js';
+import { billyName, findMon, maxHp, nextStop, save, saveData, uiState } from './game-state.js';
 import { makeCanvas } from './art.js';
 import { RIG_BACK_VIEW, drawRig, rigFrame, rigParts, rigPreload } from './skeleton-rig.js';
 import { battleStagePrepare } from './battle-stage.js';
@@ -308,7 +308,7 @@ export function buddyTap() {
   const hp = m.hp / maxHp(m),
     t = walkView.t,
     bond = (m.bond = (m.bond || 0) + 1),
-    n = N(m),
+    n = billyName(m),
     q = (saveData.queue || []).length;
   const lines =
     hp <= 0
