@@ -125,7 +125,7 @@ import {
 } from './walk-view.js';
 import { eng } from './engine/settings.js';
 import { ENV, envHint, envIcon, envLabel } from './environment.js';
-import { DGL, dioMount } from './walk-view-gl.js';
+import { dioMount, walkRenderer } from './walk-view-gl.js';
 import { fishStart } from './fishing.js';
 import {
   WORLD,
@@ -1091,8 +1091,8 @@ function roomLayIn(id, p, fresh) {
     !walkView.sc ||
     !walkView.sc.parts ||
     walkView.sc.roomRect ||
-    typeof DGL === 'undefined' ||
-    !DGL.on ||
+    typeof walkRenderer === 'undefined' ||
+    !walkRenderer.on ||
     !walkView.pl ||
     !p
   )
@@ -1122,7 +1122,7 @@ function roomRefresh() {
   const n = wrRoomScene(I.base, I.id, I.door);
   if (!n) return;
   walkView.sc.props = n.props;
-  if (typeof DGL !== 'undefined') DGL.itemGen = (DGL.itemGen || 0) + 1;
+  if (typeof walkRenderer !== 'undefined') walkRenderer.itemGen = (walkRenderer.itemGen || 0) + 1;
   walkView.nav = null;
 }
 function roomAim(h) {
@@ -1140,7 +1140,7 @@ function roomStepIn(info, n = 0) {
     return;
   } /* you walked off, or the view moved on */
   if (!wrGetReady(info.view, true, info.door)) {
-    if (typeof DGL !== 'undefined') DGL.prepBoost = Math.max(DGL.prepBoost || 1, 3);
+    if (typeof walkRenderer !== 'undefined') walkRenderer.prepBoost = Math.max(walkRenderer.prepBoost || 1, 3);
     /* you're standing at the door: bigger slices */ if (n < (U.roomWait || 90)) {
       setTimeout(() => roomStepIn(info, n + 1), 100);
       return;
@@ -1151,7 +1151,7 @@ function roomStepIn(info, n = 0) {
   U.goingIn = null;
   U.inside = info;
   U.roam = null;
-  if (typeof DGL !== 'undefined') DGL.prepBoost = 1;
+  if (typeof walkRenderer !== 'undefined') walkRenderer.prepBoost = 1;
   if (typeof sfx === 'function') sfx('door');
   if (typeof NWLOG !== 'undefined')
     NWLOG.add('scene', 'inside ' + (info.view || info.id) + (n ? ` (waited ${n * 100} ms)` : ''));

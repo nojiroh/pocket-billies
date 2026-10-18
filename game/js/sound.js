@@ -14,7 +14,7 @@ import { B, S, U } from './game-state.js';
 import { SC } from './battle-stage.js';
 import { dioBaseId, dioBridgeAt, dioBridges, dioData, dioScene, dioStepM, dioTer, walkView } from './walk-view.js';
 import { ENV, envHour, envState } from './environment.js';
-import { DGL } from './walk-view-gl.js';
+import { walkRenderer } from './walk-view-gl.js';
 /* eslint-disable no-func-assign */
 expose({
   AMB: [() => AMB],
@@ -1362,12 +1362,12 @@ function ambUpdate() {
     };
     put(
       'stream',
-      ambNearest(DGL.streamCells, q => q, 10),
+      ambNearest(walkRenderer.streamCells, q => q, 10),
       0.5
     );
     put(
       'falls',
-      ambNearest(DGL.falls, q => [q[0], q[2]], 14),
+      ambNearest(walkRenderer.falls, q => [q[0], q[2]], 14),
       0.7
     );
     if (sc.flatFar || sc.waterKind === 'sea' || sc.far === 'sea') {

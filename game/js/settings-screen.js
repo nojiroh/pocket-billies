@@ -6,7 +6,6 @@ import { expose } from './test-globals.js';
 import {
   ACC,
   BG,
-  DGL,
   accSettingsHTML,
   ambApply,
   audApply,
@@ -22,6 +21,7 @@ import {
   runDiagTest,
   runQuickTest,
   toast,
+  walkRenderer,
 } from './hooks.js';
 import { JOBS, MOVES, ROUTE, RULES, SP, STATUSN } from './game-data.js';
 import {
@@ -550,8 +550,8 @@ function setPref(k, v) {
         if (typeof DeviceOrientationEvent !== 'undefined' && DeviceOrientationEvent.requestPermission)
           DeviceOrientationEvent.requestPermission().catch(() => {});
       } catch (e) {}
-    if (!v && typeof DGL !== 'undefined') {
-      DGL.tiltX = DGL.tiltY = 0;
+    if (!v && typeof walkRenderer !== 'undefined') {
+      walkRenderer.tiltX = walkRenderer.tiltY = 0;
     }
   }
   S.preferences[k] = v;

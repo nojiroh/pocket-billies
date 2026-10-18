@@ -16,7 +16,7 @@ import { AREAS, scPrepare, stageArt } from './battle-stage.js';
 import { dioData, dioPaths, dioScene, walkView } from './walk-view.js';
 import { EGL, eglOK } from './engine/webgl.js';
 import { ENV } from './environment.js';
-import { DGL, dglRiseStart } from './walk-view-gl.js';
+import { dglRiseStart, walkRenderer } from './walk-view-gl.js';
 import { WORLD } from './seamless-world.js';
 import { areaKey } from './battle.js';
 import { WORLD_ART, mapPrepare } from './world-map.js';
@@ -641,7 +641,7 @@ async function sceneWarm() {
   while (performance.now() - t0 < 5000) {
     const ok =
       walkView.ready &&
-      (typeof DGL === 'undefined' || !DGL.on || DGL.frames > 4) &&
+      (typeof walkRenderer === 'undefined' || !walkRenderer.on || walkRenderer.frames > 4) &&
       (typeof EGL === 'undefined' || !EGL.normQ || !EGL.normQ.length);
     if (ok || !document.getElementById('dio')) break;
     await new Promise(r => setTimeout(r, 60));
@@ -767,9 +767,9 @@ function studioLive(D) {
     walkView.gkey = '';
     walkView.nav = null;
     walkView.cand = null;
-    if (typeof DGL !== 'undefined') {
-      DGL.hkey = '';
-      DGL.farKey = '';
+    if (typeof walkRenderer !== 'undefined') {
+      walkRenderer.hkey = '';
+      walkRenderer.farKey = '';
     }
   }
   if (typeof ENV !== 'undefined') ENV.id = null;

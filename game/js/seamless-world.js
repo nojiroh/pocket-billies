@@ -39,7 +39,7 @@ import {
 } from './walk-view.js';
 import { eng } from './engine/settings.js';
 import { smooth01 } from './engine/webgl.js';
-import { DGL, dglPrepare, dglPrepared } from './walk-view-gl.js';
+import { dglPrepare, dglPrepared, walkRenderer } from './walk-view-gl.js';
 import { lifeShift } from './ambient-life.js';
 import { owShift } from './world-billies.js';
 /* eslint-disable no-func-assign */
@@ -2052,7 +2052,12 @@ function wrReady(id) {
   if (!sc) return false;
   const key = dioGroundKey(sc);
   if (!DIO_GCACHE.has(key)) return false;
-  return typeof DGL === 'undefined' || !DGL.on || typeof dglPrepared !== 'function' || dglPrepared(id, sc, key);
+  return (
+    typeof walkRenderer === 'undefined' ||
+    !walkRenderer.on ||
+    typeof dglPrepared !== 'function' ||
+    dglPrepared(id, sc, key)
+  );
 }
 export function wrGetReady(id, urgent, focus) {
   if (wrReady(id)) return true;
@@ -2087,7 +2092,7 @@ export function wrGate(v) {
     return v;
   if (wrGetReady(v.id, true, v.pos)) {
     WORLD.heldFor = null;
-    if (typeof DGL !== 'undefined') DGL.prepBoost = 1;
+    if (typeof walkRenderer !== 'undefined') walkRenderer.prepBoost = 1;
     return v;
   }
   const d = wrDelta(walkView.id, v.id);
@@ -2103,7 +2108,7 @@ export function wrGate(v) {
     Math.hypot(x - walkView.pl.x, z - walkView.pl.z) > 25
   )
     return v;
-  if (typeof DGL !== 'undefined') DGL.prepBoost = room < 6 ? 4 : room < 12 ? 2 : 1;
+  if (typeof walkRenderer !== 'undefined') walkRenderer.prepBoost = room < 6 ? 4 : room < 12 ? 2 : 1;
   /* closer to the edge, bigger slices */ if (room < 0) {
     if (typeof NWLOG !== 'undefined') NWLOG.add('scene', `${v.id} wasn't ready in time; built on the spot`);
     return v;
@@ -2185,16 +2190,16 @@ export function dioShift(id, dx, dz) {
     if (q.x != null) q.x += dx;
     if (q.z != null) q.z += dz;
   }
-  if (typeof DGL !== 'undefined') {
-    if (DGL.camT) {
-      DGL.camT[0] += dx;
-      DGL.camT[1] += dz;
+  if (typeof walkRenderer !== 'undefined') {
+    if (walkRenderer.camT) {
+      walkRenderer.camT[0] += dx;
+      walkRenderer.camT[1] += dz;
     }
-    if (DGL.focusT) {
-      DGL.focusT.x += dx;
-      DGL.focusT.z += dz;
+    if (walkRenderer.focusT) {
+      walkRenderer.focusT.x += dx;
+      walkRenderer.focusT.z += dz;
     }
-    DGL.encPos = [];
+    walkRenderer.encPos = [];
   }
   if (walkView.cam) {
     if (walkView.cam.x != null) walkView.cam.x += dx;

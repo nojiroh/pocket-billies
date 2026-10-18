@@ -7,7 +7,7 @@
 import { expose } from '../../game/js/test-globals.js';
 import { provide } from '../../game/js/hooks.js';
 import { $, $$, clamp } from '../../game/js/util.js';
-import { DGL, dioMount, setDioMount } from '../../game/js/walk-view-gl.js';
+import { dioMount, setDioMount, walkRenderer } from '../../game/js/walk-view-gl.js';
 /* eslint-disable no-func-assign */
 expose({
   VP: [() => VP],
@@ -30,19 +30,19 @@ if (typeof dioMount === 'function') {
   });
 }
 const vpTurn = a => {
-  if (typeof DGL === 'undefined') return;
-  let y = DGL.yawT + a;
+  if (typeof walkRenderer === 'undefined') return;
+  let y = walkRenderer.yawT + a;
   if (y > Math.PI) {
     y -= 2 * Math.PI;
-    DGL.yaw -= 2 * Math.PI;
+    walkRenderer.yaw -= 2 * Math.PI;
   } else if (y < -Math.PI) {
     y += 2 * Math.PI;
-    DGL.yaw += 2 * Math.PI;
+    walkRenderer.yaw += 2 * Math.PI;
   }
-  DGL.yawT = y;
+  walkRenderer.yawT = y;
 };
 const vpZoom = k => {
-  if (typeof DGL !== 'undefined') DGL.zoomT = clamp(DGL.zoomT * k, 0.3, 3.2);
+  if (typeof walkRenderer !== 'undefined') walkRenderer.zoomT = clamp(walkRenderer.zoomT * k, 0.3, 3.2);
 };
 function vpBig(el) {
   const on = !el.classList.contains('vp-big');
@@ -77,9 +77,9 @@ function vpAttach(el) {
     else if (a === 'out') vpZoom(1.25);
     else if (a === 'left') vpTurn(-Math.PI / 4);
     else if (a === 'right') vpTurn(Math.PI / 4);
-    else if (a === 'reset' && typeof DGL !== 'undefined') {
-      DGL.yawT = 0;
-      DGL.zoomT = 1;
+    else if (a === 'reset' && typeof walkRenderer !== 'undefined') {
+      walkRenderer.yawT = 0;
+      walkRenderer.zoomT = 1;
     } else if (a === 'big') vpBig(el);
   });
   bar.addEventListener('pointerdown', ev => ev.stopPropagation());

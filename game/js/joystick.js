@@ -11,7 +11,7 @@
 import { expose } from './test-globals.js';
 import { B, S, U } from './game-state.js';
 import { walkView } from './walk-view.js';
-import { DGL } from './walk-view-gl.js';
+import { walkRenderer } from './walk-view-gl.js';
 import { TALK } from './talk.js';
 import { CS } from './cutscene.js';
 import { FLY, LIFT } from './airship.js';
@@ -68,7 +68,7 @@ function joyEl() {
 function joyEnd() {
   if (JOY.on) {
     JOY.quiet = performance.now();
-    if (typeof DGL !== 'undefined') DGL.dragged = true;
+    if (typeof walkRenderer !== 'undefined') walkRenderer.dragged = true;
   }
   JOY.id = null;
   JOY.on = false;

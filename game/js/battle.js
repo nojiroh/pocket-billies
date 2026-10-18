@@ -92,7 +92,7 @@ import {
 } from './battle-stage.js';
 import { walkView } from './walk-view.js';
 import { ENV, ENV_NAMES, envHere, envState } from './environment.js';
-import { DGL, dglRing, dglWgAt } from './walk-view-gl.js';
+import { dglRing, dglWgAt, walkRenderer } from './walk-view-gl.js';
 import { BGL, battleGLWanted } from './battle-3d.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -1250,8 +1250,8 @@ function battleSwoop(go) {
   U.encAt = null;
   const fx = e ? P.x * 0.6 + e[0] * 0.4 : P.x,
     fz = e ? P.z * 0.6 + e[1] * 0.4 : P.z;
-  DGL.swoop = { x: fx, z: fz, z0: DGL.zoomT };
-  DGL.zoomT = Math.max(0.42, DGL.zoomT * 0.5);
+  walkRenderer.swoop = { x: fx, z: fz, z0: walkRenderer.zoomT };
+  walkRenderer.zoomT = Math.max(0.42, walkRenderer.zoomT * 0.5);
   P.route = null;
   P.walk = 0;
   if (e) {
@@ -1275,9 +1275,9 @@ function battleSwoop(go) {
     if (typeof dglRing === 'function' && typeof dglWgAt === 'function' && dglWgAt(e[0], e[1])) dglRing(e[0], e[1], 1);
   }
   setTimeout(() => {
-    const S0 = DGL.swoop;
-    DGL.swoop = null;
-    if (S0) DGL.zoomT = S0.z0;
+    const S0 = walkRenderer.swoop;
+    walkRenderer.swoop = null;
+    if (S0) walkRenderer.zoomT = S0.z0;
     go();
   }, 720);
 }
@@ -1294,8 +1294,8 @@ function battleLeave(mid) {
   el.classList.add('bt-leave');
   setTimeout(() => {
     mid();
-    if (typeof DGL !== 'undefined') {
-      DGL.zoom = Math.max(0.42, (DGL.zoomT || 1) * 0.55);
+    if (typeof walkRenderer !== 'undefined') {
+      walkRenderer.zoom = Math.max(0.42, (walkRenderer.zoomT || 1) * 0.55);
     }
   }, 360);
 }

@@ -178,7 +178,6 @@ import { EGL_POST_SH, eglPost, eglSnapshot, eglSunScreen } from './engine/post-e
 import { ENV, ENV_WX, envFrame, envHere, envSky, envState, envWinLit } from './environment.js';
 /* eslint-disable no-func-assign */
 expose({
-  DGL: [() => DGL],
   DGL_ALT: [() => DGL_ALT],
   DGL_BOB: [() => DGL_BOB],
   DGL_BOX: [() => DGL_BOX],
@@ -368,6 +367,7 @@ expose({
   eglRestored: [() => eglRestored, v => ((eglRestored = v), provide({ eglRestored }))],
   setDglAdapt: [() => setDglAdapt, v => (setDglAdapt = v)],
   setDioMount: [() => setDioMount, v => (setDioMount = v)],
+  walkRenderer: [() => walkRenderer],
 });
 /* eslint-enable no-func-assign */
 provide({ dglBudget, dglRebuild, dglWallDefault, dioGroundH, dioH, dioHRaw, eglRestored });
@@ -420,7 +420,7 @@ export function setDglWater(v) {
   provide({ dglWater });
 }
 /* to-module: end */
-export const DGL = {
+export const walkRenderer = {
   on: false,
   ui: null,
   gkey: '',
@@ -447,7 +447,7 @@ export const DGL = {
   fail: 0,
   lost: 0,
 };
-provide({ DGL }); /* to-module */
+provide({ walkRenderer }); /* to-module */
 /* v46: how long a frame may spend getting the next view ready (ms) */
 const DGL_PREP_MS = /Android|iPhone|iPad/.test(navigator.userAgent) ? 4 : 6;
 const DGL_PAD = DIO_PAD,
@@ -690,12 +690,12 @@ export function dglCanvasFor(cv, type) {
   return n;
 }
 function dglUI(cv) {
-  let u = DGL.ui;
+  let u = walkRenderer.ui;
   if (!u || !u.isConnected) {
     u = document.getElementById('dioui') || document.createElement('canvas');
     u.id = 'dioui';
     u.setAttribute('aria-hidden', 'true');
-    DGL.ui = u;
+    walkRenderer.ui = u;
   }
   if (u.previousElementSibling !== cv) cv.after(u);
   u.hidden = false;
@@ -710,8 +710,8 @@ export function dioMount(cv, id, opt = {}) {
   const useGL = !EGL.fail && eglOK();
   cv = dglCanvasFor(cv, 'gl');
   if (!useGL) {
-    DGL.on = false;
-    if (DGL.ui) DGL.ui.hidden = true;
+    walkRenderer.on = false;
+    if (walkRenderer.ui) walkRenderer.ui.hidden = true;
     walkView.ready = false;
     walkView.err = new Error('WebGL 2 is not available');
     if (typeof noWebGL === 'function') noWebGL(EGL.fail ? 'failed' : '');
@@ -732,10 +732,10 @@ export function dioMount(cv, id, opt = {}) {
     walkView.folkId = '';
     walkView.parts = [];
     walkView.tap = null;
-    DGL.gkey = '';
-    DGL.focus = null;
-    DGL.camT = null;
-    DGL.farKey = '';
+    walkRenderer.gkey = '';
+    walkRenderer.focus = null;
+    walkRenderer.camT = null;
+    walkRenderer.farKey = '';
   }
   walkView.sc = dioScene(id);
   walkView.ready = false;
@@ -744,7 +744,7 @@ export function dioMount(cv, id, opt = {}) {
   if (!dglGL(cv)) return dioMount(cv, id, opt);
   const ui = dglUI(cv);
   walkView.x = ui.getContext('2d');
-  DGL.on = true;
+  walkRenderer.on = true;
   if (!cv._dioBound) {
     cv._dioBound = 1;
     cv.addEventListener('click', dglClick);
@@ -809,11 +809,11 @@ export function dglGL(cv) {
     if (typeof NWLOG !== 'undefined') NWLOG.add('webgl', 'shader failed: ' + e.message);
     return false;
   }
-  DGL.gkey = '';
-  DGL.farKey = '';
-  DGL.sceneCache = null;
-  DGL.wtex = null;
-  for (const k of DGL_KEEP) DGL[k] = null;
+  walkRenderer.gkey = '';
+  walkRenderer.farKey = '';
+  walkRenderer.sceneCache = null;
+  walkRenderer.wtex = null;
+  for (const k of DGL_KEEP) walkRenderer[k] = null;
   return true;
 }
 function eglRestored(cv) {
@@ -825,7 +825,7 @@ function eglRestored(cv) {
 }
 setDioStop(function () {
   _dioStop2D();
-  if (DGL.ui) DGL.ui.hidden = true;
+  if (walkRenderer.ui) walkRenderer.ui.hidden = true;
 });
 setDioProj(function (C, x, y, z) {
   if (!C || !C.gl) return _dioProj2D(C, x, y, z);
@@ -906,14 +906,14 @@ function dglClick(ev) {
   if (walkView.battle || walkView.director || !walkView.ready || (walkView.opt.active && !walkView.opt.active()))
     return;
   if (typeof S !== 'undefined') dglTiltAsk();
-  if (DGL.dragged) {
-    DGL.dragged = false;
+  if (walkRenderer.dragged) {
+    walkRenderer.dragged = false;
     return;
   }
   const [sx, sy] = dioCanvasXY(ev),
     g = dioUnproject(sx, sy);
   if (g) {
-    DGL.focusT = { x: g.x, z: g.z, t: walkView.t };
+    walkRenderer.focusT = { x: g.x, z: g.z, t: walkView.t };
   }
   dioClick(ev);
 }
@@ -924,17 +924,26 @@ function dglGestures(cv) {
     pts.set(ev.pointerId, [ev.clientX, ev.clientY]);
     if (pts.size === 2) {
       const [a, b] = [...pts.values()];
-      g0 = { d: Math.hypot(a[0] - b[0], a[1] - b[1]), yaw: DGL.yawT, zoom: DGL.zoomT, cx: (a[0] + b[0]) / 2 };
+      g0 = {
+        d: Math.hypot(a[0] - b[0], a[1] - b[1]),
+        yaw: walkRenderer.yawT,
+        zoom: walkRenderer.zoomT,
+        cx: (a[0] + b[0]) / 2,
+      };
     }
     if (ev.button === 2 || ev.button === 1) {
-      DGL.drag = { x: ev.clientX, yaw: DGL.yawT };
+      walkRenderer.drag = { x: ev.clientX, yaw: walkRenderer.yawT };
       ev.preventDefault();
     }
   });
   cv.addEventListener('pointermove', ev => {
-    if (DGL.drag) {
-      DGL.yawT = clamp(DGL.drag.yaw + (ev.clientX - DGL.drag.x) * 0.006, -dglTurn(), dglTurn());
-      DGL.dragged = true;
+    if (walkRenderer.drag) {
+      walkRenderer.yawT = clamp(
+        walkRenderer.drag.yaw + (ev.clientX - walkRenderer.drag.x) * 0.006,
+        -dglTurn(),
+        dglTurn()
+      );
+      walkRenderer.dragged = true;
       return;
     }
     if (!pts.has(ev.pointerId)) return;
@@ -943,15 +952,15 @@ function dglGestures(cv) {
       const [a, b] = [...pts.values()],
         d = Math.hypot(a[0] - b[0], a[1] - b[1]),
         cx = (a[0] + b[0]) / 2;
-      DGL.zoomT = dglZoomLim((g0.zoom * g0.d) / Math.max(20, d));
-      DGL.yawT = clamp(g0.yaw + (cx - g0.cx) * 0.006, -dglTurn(), dglTurn());
-      DGL.dragged = true;
+      walkRenderer.zoomT = dglZoomLim((g0.zoom * g0.d) / Math.max(20, d));
+      walkRenderer.yawT = clamp(g0.yaw + (cx - g0.cx) * 0.006, -dglTurn(), dglTurn());
+      walkRenderer.dragged = true;
     }
   });
   const up = ev => {
     pts.delete(ev.pointerId);
     if (pts.size < 2) g0 = null;
-    if (DGL.drag && (ev.button === 2 || ev.button === 1 || !ev.buttons)) DGL.drag = null;
+    if (walkRenderer.drag && (ev.button === 2 || ev.button === 1 || !ev.buttons)) walkRenderer.drag = null;
   };
   cv.addEventListener('pointerup', up);
   cv.addEventListener('pointercancel', up);
@@ -962,49 +971,51 @@ function dglGestures(cv) {
       if (walkView.opt.active && !walkView.opt.active()) return;
       if (!ev.ctrlKey && !dglFree()) return;
       ev.preventDefault();
-      DGL.zoomT = dglZoomLim(DGL.zoomT * Math.exp(ev.deltaY * 0.0012));
+      walkRenderer.zoomT = dglZoomLim(walkRenderer.zoomT * Math.exp(ev.deltaY * 0.0012));
     },
     { passive: false }
   );
   addEventListener('keydown', ev => {
-    if (!DGL.on || !walkView.cv || (walkView.opt.active && !walkView.opt.active())) return;
+    if (!walkRenderer.on || !walkView.cv || (walkView.opt.active && !walkView.opt.active())) return;
     if (dglFree() && !(walkView.opt.keys && walkView.opt.keys())) return;
     const t = ev.target;
     if (t && /INPUT|TEXTAREA|SELECT/.test(t.tagName)) return;
-    if (ev.key === 'q' || ev.key === 'Q') DGL.yawT = clamp(DGL.yawT - 0.12, -dglTurn(), dglTurn());
-    else if (ev.key === 'e' || ev.key === 'E') DGL.yawT = clamp(DGL.yawT + 0.12, -dglTurn(), dglTurn());
+    if (ev.key === 'q' || ev.key === 'Q') walkRenderer.yawT = clamp(walkRenderer.yawT - 0.12, -dglTurn(), dglTurn());
+    else if (ev.key === 'e' || ev.key === 'E')
+      walkRenderer.yawT = clamp(walkRenderer.yawT + 0.12, -dglTurn(), dglTurn());
     else if (ev.key === 'r' || ev.key === 'R') {
-      DGL.yawT = 0;
-      DGL.zoomT = 1;
+      walkRenderer.yawT = 0;
+      walkRenderer.zoomT = 1;
     }
   });
   addEventListener(
     'pointermove',
     ev => {
-      if (ev.pointerType === 'mouse') DGL.mouse = [ev.clientX / innerWidth - 0.5, ev.clientY / innerHeight - 0.5];
+      if (ev.pointerType === 'mouse')
+        walkRenderer.mouse = [ev.clientX / innerWidth - 0.5, ev.clientY / innerHeight - 0.5];
     },
     { passive: true }
   );
   dglTiltListen();
 }
 function dglTiltListen() {
-  if (DGL._tl) return;
-  DGL._tl = 1;
+  if (walkRenderer._tl) return;
+  walkRenderer._tl = 1;
   addEventListener('deviceorientation', ev => {
     if (ev.beta == null) return;
     const p = (typeof S !== 'undefined' && S && S.preferences) || {};
     if (p.tilt === false) return;
-    if (!DGL.orient) DGL.orient = { b: ev.beta, g: ev.gamma };
-    const o = DGL.orient;
+    if (!walkRenderer.orient) walkRenderer.orient = { b: ev.beta, g: ev.gamma };
+    const o = walkRenderer.orient;
     o.b += (ev.beta - o.b) * 0.01;
     o.g += (ev.gamma - o.g) * 0.01;
-    DGL.tiltX = clamp((ev.gamma - o.g) / 30, -1, 1);
-    DGL.tiltY = clamp((ev.beta - o.b) / 30, -1, 1);
+    walkRenderer.tiltX = clamp((ev.gamma - o.g) / 30, -1, 1);
+    walkRenderer.tiltY = clamp((ev.beta - o.b) / 30, -1, 1);
   });
 }
 function dglTiltAsk() {
-  if (DGL._asked) return;
-  DGL._asked = 1;
+  if (walkRenderer._asked) return;
+  walkRenderer._asked = 1;
   try {
     if (
       typeof DeviceOrientationEvent !== 'undefined' &&
@@ -1252,7 +1263,7 @@ void main(){vec4 c;if(uGlow>.5){vec2 q=vUV*2.-1.;float d=dot(q,q);if(d>1.)discar
   ],
 };
 /* ---------- ground mesh: the scene at half-meter resolution, then a coarse ring of distant land curving up ---------- */
-/* v46: the ground of a scene, built a slice at a time into T. With T = DGL it runs to the end at once (opening a scene);
+/* v46: the ground of a scene, built a slice at a time into T. With T = walkRenderer it runs to the end at once (opening a scene);
    with a fresh T it runs a few milliseconds a frame for the view that comes next (dglPrepare), so walking from one view
    to the next finds everything ready: the textures go up to the card in strips, the mesh and water are built in slices */
 function* dglGroundSteps(sc, G, T) {
@@ -1266,7 +1277,7 @@ function* dglGroundSteps(sc, G, T) {
         j = sc.h - 1 - Math.floor(z);
       return i < 0 || j < 0 || i >= sc.w || j >= sc.h ? sc.edge : ((sc.tiles || [])[j] || '')[i] || sc.edge;
     };
-  DGL.builds = (DGL.builds || 0) + 1;
+  walkRenderer.builds = (walkRenderer.builds || 0) + 1;
   if (T.gtex) gl.deleteTexture(T.gtex);
   T.gtex = null;
   T.gtex = yield* dglTexStrips(G.width, G.height, G._px || G, { nearest: true });
@@ -1799,7 +1810,7 @@ function* dglGroundSteps(sc, G, T) {
     darkens a wet rim just outside it and paints a bed under it */
   dglShoreField(sc, isW, T);
   yield;
-  if (T === DGL) dglGroundAO(sc);
+  if (T === walkRenderer) dglGroundAO(sc);
   else {
     const r = yield* dglGaoSteps(sc);
     if (r) T.gaoTex = dglGaoTex(r);
@@ -2069,13 +2080,13 @@ function* dglGroundSteps(sc, G, T) {
         24
       )
     : null;
-  if (T === DGL) {
+  if (T === walkRenderer) {
     dglBuildGrass();
     T.farKey = '';
   }
 }
 function dglBuildGround() {
-  const it = dglGroundSteps(walkView.sc, walkView.ground, DGL);
+  const it = dglGroundSteps(walkView.sc, walkView.ground, walkRenderer);
   let r = it.next();
   while (!r.done) r = it.next();
 }
@@ -2273,11 +2284,11 @@ function* dglRingChunk(R, sc, ci, cj, pr) {
 /* each frame: keep the ring round the camera's focus, painting what is missing a few ms at a time (more while the
    squares right round you are still missing, so a scene never opens blurred for long) */
 export function dglRingUpdate(sc, fx, fz, budget) {
-  if (!DGL.on || !sc) return;
-  let R = DGL.ring;
+  if (!walkRenderer.on || !sc) return;
+  let R = walkRenderer.ring;
   if (!R) {
-    if (!DGL.gtex) return;
-    R = DGL.ring = dglRingNew();
+    if (!walkRenderer.gtex) return;
+    R = walkRenderer.ring = dglRingNew();
   }
   const W = dglRingWant(R, sc, fx, fz);
   const t0 = performance.now();
@@ -2314,7 +2325,7 @@ export function dglRingUpdate(sc, fx, fz, budget) {
 function dglRingU(U, sc) {
   if (!U.uRing) return;
   const gl = EGL.gl,
-    R = DGL.ring,
+    R = walkRenderer.ring,
     on = !!(R && R.tex);
   gl.activeTexture(gl.TEXTURE9);
   gl.bindTexture(gl.TEXTURE_2D, on ? R.tex : EGL.white);
@@ -2362,23 +2373,23 @@ function dglHK(id, sc, gkey) {
   );
 }
 /* v46: get a view's ground ready before it is shown: built a few ms a frame (dglPrepWork) and kept with the scenes you
-   left (DGL.sceneCache), so the switch to it is a swap of a few references. Returns true when it is ready. */
+   left (walkRenderer.sceneCache), so the switch to it is a swap of a few references. Returns true when it is ready. */
 export function dglPrepared(id, sc, gkey) {
-  const M = DGL.sceneCache;
+  const M = walkRenderer.sceneCache;
   return !!(M && M.has(dglHK(id, sc, gkey || dioGroundKey(sc))));
 }
 export function dglPrepare(id, sc, G, urgent, focus) {
-  if (!DGL.on || !G) return false;
+  if (!walkRenderer.on || !G) return false;
   const gkey = dioGroundKey(sc),
     hk = dglHK(id, sc, gkey);
-  if (DGL.sceneCache && DGL.sceneCache.has(hk)) return true;
-  if (DGL.hkey === hk) return true;
-  if (DGL.prep) {
-    if (DGL.prep.hk === hk) {
-      if (urgent) DGL.prep.urgent = 1;
+  if (walkRenderer.sceneCache && walkRenderer.sceneCache.has(hk)) return true;
+  if (walkRenderer.hkey === hk) return true;
+  if (walkRenderer.prep) {
+    if (walkRenderer.prep.hk === hk) {
+      if (urgent) walkRenderer.prep.urgent = 1;
       return false;
     }
-    if (!urgent || DGL.prep.urgent) return false;
+    if (!urgent || walkRenderer.prep.urgent) return false;
     dglPrepAbort();
   }
   /* a view needed now goes first; one only looked ahead to waits its turn */ const T = {
@@ -2386,7 +2397,7 @@ export function dglPrepare(id, sc, G, urgent, focus) {
     grass: null,
     grassKey: null,
   };
-  DGL.prep = {
+  walkRenderer.prep = {
     hk,
     id,
     T,
@@ -2411,31 +2422,31 @@ export function dglPrepare(id, sc, G, urgent, focus) {
   return false;
 }
 function dglPrepAbort() {
-  const J = DGL.prep;
+  const J = walkRenderer.prep;
   if (!J) return;
-  DGL.prep = null;
+  walkRenderer.prep = null;
   try {
     J.it.return();
   } catch (e) {}
   dglSceneFree(J.T);
 }
 function dglPrepWork(budget) {
-  const J = DGL.prep;
+  const J = walkRenderer.prep;
   if (!J) return;
-  if (DGL.hkey === J.hk) {
+  if (walkRenderer.hkey === J.hk) {
     dglPrepAbort();
     return;
   }
-  if (J.urgent && budget) budget *= 2 * (DGL.prepBoost || 1);
+  if (J.urgent && budget) budget *= 2 * (walkRenderer.prepBoost || 1);
   const t0 = performance.now();
   try {
     while (performance.now() - t0 < budget) {
       const r = J.it.next();
       if (!r.done && r.value === PW_WAIT) break;
       /* (waiting on the helper thread) */ if (r.done) {
-        DGL.prep = null;
+        walkRenderer.prep = null;
         J.ms += performance.now() - t0;
-        const M = DGL.sceneCache || (DGL.sceneCache = new Map()),
+        const M = walkRenderer.sceneCache || (walkRenderer.sceneCache = new Map()),
           keep = eng('quality', 'keepScenes') ?? 3;
         M.delete(J.hk);
         M.set(J.hk, J.T);
@@ -2455,7 +2466,7 @@ function dglPrepWork(budget) {
       }
     }
   } catch (e) {
-    DGL.prep = null;
+    walkRenderer.prep = null;
     dglSceneFree(J.T);
     if (typeof NWLOG !== 'undefined') NWLOG.add('webgl', 'preparing ' + J.id + ' failed: ' + ((e && e.message) || e));
     return;
@@ -2615,26 +2626,26 @@ const DGL_WKID = Object.fromEntries(DGL_WKIND.map((w, i) => [w.k, i]));
    instead of asking the terrain nine times per texel. Until it's done the ground simply isn't darkened. */
 export function dglGroundAO(sc) {
   const gl = EGL.gl;
-  if (DGL.gaoTex) {
-    DGL.gaoTex = null;
+  if (walkRenderer.gaoTex) {
+    walkRenderer.gaoTex = null;
   }
-  DGL.gaoJob = null;
+  walkRenderer.gaoJob = null;
   if ((eng('shadows', 'groundAO') ?? 1) <= 0) return;
-  DGL.gaoJob = { sc, it: dglGaoSteps(sc) };
+  walkRenderer.gaoJob = { sc, it: dglGaoSteps(sc) };
 }
 function dglGaoWork(budget = 4) {
-  const J = DGL.gaoJob;
+  const J = walkRenderer.gaoJob;
   if (!J) return;
   if (J.sc !== walkView.sc) {
-    DGL.gaoJob = null;
+    walkRenderer.gaoJob = null;
     return;
   }
   const t0 = performance.now();
   while (performance.now() - t0 < budget) {
     const r = J.it.next();
     if (r.done) {
-      DGL.gaoJob = null;
-      if (r.value) DGL.gaoTex = dglGaoTex(r.value);
+      walkRenderer.gaoJob = null;
+      if (r.value) walkRenderer.gaoTex = dglGaoTex(r.value);
       return;
     }
   }
@@ -2744,7 +2755,7 @@ function* dglGaoSteps(sc) {
   }
   return { FW, FH, d };
 }
-function dglShoreField(sc, isW, T = DGL) {
+function dglShoreField(sc, isW, T = walkRenderer) {
   const gl = EGL.gl,
     W = sc.w,
     H = sc.h,
@@ -2815,15 +2826,15 @@ function dglShoreField(sc, isW, T = DGL) {
 function dglShoreU(U, sc) {
   if (!U.uShoreR) return;
   const gl = EGL.gl,
-    on = !!(DGL.shoreF && DGL.shoreTex);
+    on = !!(walkRenderer.shoreF && walkRenderer.shoreTex);
   gl.activeTexture(gl.TEXTURE5);
-  gl.bindTexture(gl.TEXTURE_2D, on ? DGL.shoreTex : EGL.white);
+  gl.bindTexture(gl.TEXTURE_2D, on ? walkRenderer.shoreTex : EGL.white);
   gl.bindSampler(5, null);
   gl.uniform1i(U.uShore, 5);
   gl.uniform3f(U.uShoreR, 1 / sc.w, 1 / sc.h, on ? 1 : 0);
 }
 function dglShoreAt(x, z) {
-  const F = DGL.shoreF;
+  const F = walkRenderer.shoreF;
   if (!F) return 1;
   const i = clamp(Math.floor(x * 8), 0, F.FW - 1),
     j = clamp(Math.floor(z * 8), 0, F.FH - 1);
@@ -3065,15 +3076,15 @@ const DGL_GKIND = {
 export function dglBuildGrass() {
   const gl = EGL.gl,
     sc = walkView.sc;
-  DGL.grassDrawn = 0;
-  /* v46: a room has none (the count used to carry over from the last place) */ if (DGL.grass) {
-    gl.deleteVertexArray(DGL.grass.vao);
-    gl.deleteBuffer(DGL.grass.ib);
-    gl.deleteBuffer(DGL.grass.vb);
+  walkRenderer.grassDrawn = 0;
+  /* v46: a room has none (the count used to carry over from the last place) */ if (walkRenderer.grass) {
+    gl.deleteVertexArray(walkRenderer.grass.vao);
+    gl.deleteBuffer(walkRenderer.grass.ib);
+    gl.deleteBuffer(walkRenderer.grass.vb);
   }
-  DGL.grass = null;
-  DGL.grassJob = null;
-  DGL.grassKey = eng('grass', 'density');
+  walkRenderer.grass = null;
+  walkRenderer.grassJob = null;
+  walkRenderer.grassKey = eng('grass', 'density');
   if (sc.indoor && !sc.grass) return;
   /* alpha 0.4: the blades go straight into a growing Float32Array (8 numbers each) instead of a plain array of numbers:
     planting a big place made several MB of garbage, and a phone's clean-up of it was the worst hitch on arrival */
@@ -3253,16 +3264,16 @@ export function dglBuildGrass() {
     gl.vertexAttribPointer(2, 4, gl.FLOAT, false, 32, 16);
     gl.vertexAttribDivisor(2, 1);
     gl.bindVertexArray(null);
-    DGL.grass = { vao, vb, ib, n: I.length / 8, chunks };
+    walkRenderer.grass = { vao, vb, ib, n: I.length / 8, chunks };
   };
-  DGL.grassJob = J;
+  walkRenderer.grassJob = J;
   dglGrassWork(12);
 }
 export function dglGrassWork(ms = 4) {
-  const J = DGL.grassJob;
+  const J = walkRenderer.grassJob;
   if (!J) return;
   if (J.sc !== walkView.sc) {
-    DGL.grassJob = null;
+    walkRenderer.grassJob = null;
     return;
   }
   const t0 = performance.now(),
@@ -3272,7 +3283,7 @@ export function dglGrassWork(ms = 4) {
     J.j++;
   }
   if (J.j >= sc.h) {
-    DGL.grassJob = null;
+    walkRenderer.grassJob = null;
     J.done();
   }
 }
@@ -3283,7 +3294,7 @@ function dglBuildFar() {
     C0 = dioData().sc,
     pool = [],
     count = Math.round(eng('world', 'farProps'));
-  DGL.farKey = walkView.id + '|' + count;
+  walkRenderer.farKey = walkView.id + '|' + count;
   for (const p of sc.props || []) {
     const M = C0.props[p.k];
     if (!M || M.flat || M.box || M.door) continue;
@@ -3294,7 +3305,7 @@ function dglBuildFar() {
     )
       pool.push(p.k);
   }
-  DGL.farProps = [];
+  walkRenderer.farProps = [];
   if (!pool.length) return;
   const W = sc.w,
     H = sc.h;
@@ -3316,7 +3327,7 @@ function dglBuildFar() {
       z = -2 + a * (H + 30);
     }
     if (z < -1) continue;
-    DGL.farProps.push({
+    walkRenderer.farProps.push({
       k: pool[Math.floor(dioHash(k, 29) * pool.length) % pool.length],
       x,
       z,
@@ -3332,44 +3343,48 @@ function dglCamera(rw, rh, st, dt) {
     c = sc.cam || {},
     P = walkView.pl,
     k = Math.min(1, dt * 3.2);
-  DGL.yaw += (DGL.yawT - DGL.yaw) * Math.min(1, dt * 5);
-  DGL.zoom += (DGL.zoomT - DGL.zoom) * Math.min(1, dt * 5);
-  const vx = P.x - (DGL.px ?? P.x),
-    vz = P.z - (DGL.pz ?? P.z);
-  DGL.px = P.x;
-  DGL.pz = P.z;
+  walkRenderer.yaw += (walkRenderer.yawT - walkRenderer.yaw) * Math.min(1, dt * 5);
+  walkRenderer.zoom += (walkRenderer.zoomT - walkRenderer.zoom) * Math.min(1, dt * 5);
+  const vx = P.x - (walkRenderer.px ?? P.x),
+    vz = P.z - (walkRenderer.pz ?? P.z);
+  walkRenderer.px = P.x;
+  walkRenderer.pz = P.z;
   const sp = Math.hypot(vx, vz) / Math.max(dt, 1e-3),
     ld = P.walk && sp < 12 ? eng('camera', 'lead') : 0,
     vl = Math.max(1e-4, Math.hypot(vx, vz));
-  DGL.lead[0] += ((ld ? (vx / vl) * ld : 0) - DGL.lead[0]) * Math.min(1, dt * 1.6);
-  DGL.lead[1] += ((ld ? (vz / vl) * ld : 0) - DGL.lead[1]) * Math.min(1, dt * 1.6);
+  walkRenderer.lead[0] += ((ld ? (vx / vl) * ld : 0) - walkRenderer.lead[0]) * Math.min(1, dt * 1.6);
+  walkRenderer.lead[1] += ((ld ? (vz / vl) * ld : 0) - walkRenderer.lead[1]) * Math.min(1, dt * 1.6);
   const tk = eng('camera', 'tilt'),
     tilt = [
-      (DGL.tiltX + (DGL.mouse ? DGL.mouse[0] * 0.35 : 0)) * tk,
-      (DGL.tiltY + (DGL.mouse ? DGL.mouse[1] * 0.25 : 0)) * tk,
+      (walkRenderer.tiltX + (walkRenderer.mouse ? walkRenderer.mouse[0] * 0.35 : 0)) * tk,
+      (walkRenderer.tiltY + (walkRenderer.mouse ? walkRenderer.mouse[1] * 0.25 : 0)) * tk,
     ];
   const pitch0 = eng('camera', 'pitch') ?? (c.pitch || 34) + eng('camera', 'pitchAdd'),
     h0 = (eng('camera', 'height') ?? (c.h || 9)) * eng('camera', 'distance');
   const hb = dioGroundH(P.x, Math.min(sc.h - 0.5, P.z + 3.5)) - dioGroundH(P.x, P.z);
-  DGL.upT = (DGL.upT || 0) + (clamp((hb - 0.8) * 3.2, 0, 9) - (DGL.upT || 0)) * Math.min(1, dt * 2);
+  walkRenderer.upT =
+    (walkRenderer.upT || 0) + (clamp((hb - 0.8) * 3.2, 0, 9) - (walkRenderer.upT || 0)) * Math.min(1, dt * 2);
   /* v47: the camera looks up at a landmark ahead of you (dglLandmarkTilt), and settles back as you pass */
-  DGL.lmT = (DGL.lmT || 0) + (dglLandmarkTilt(P, sc) - (DGL.lmT || 0)) * Math.min(1, dt * 2.4);
+  walkRenderer.lmT =
+    (walkRenderer.lmT || 0) + (dglLandmarkTilt(P, sc) - (walkRenderer.lmT || 0)) * Math.min(1, dt * 2.4);
   /* v46: the camera's height and tilt glide when they change without a cut (into and out of a room laid into the place) */
-  if (!DGL.camT || !DGL.cpe || walkView.opt.instant) DGL.cpe = [pitch0 + (sc.indoor ? 12 : 0), h0];
+  if (!walkRenderer.camT || !walkRenderer.cpe || walkView.opt.instant)
+    walkRenderer.cpe = [pitch0 + (sc.indoor ? 12 : 0), h0];
   {
     const e = Math.min(1, dt * 3.2);
-    DGL.cpe[0] += (pitch0 + (sc.indoor ? 12 : 0) - DGL.cpe[0]) * e;
-    DGL.cpe[1] += (h0 - DGL.cpe[1]) * e;
+    walkRenderer.cpe[0] += (pitch0 + (sc.indoor ? 12 : 0) - walkRenderer.cpe[0]) * e;
+    walkRenderer.cpe[1] += (h0 - walkRenderer.cpe[1]) * e;
   }
-  const pe = DGL.cpe[0],
-    he = DGL.cpe[1];
-  const pitch = ((pe + (DGL.zoom - 1) * 14 - tilt[1] * 3 + DGL.upT - DGL.lmT) * Math.PI) / 180,
-    yaw = DGL.yaw + tilt[0] * 0.07;
-  let df = (he / Math.sin(((pe - (sc.indoor ? 12 : 0)) * Math.PI) / 180)) * DGL.zoom;
+  const pe = walkRenderer.cpe[0],
+    he = walkRenderer.cpe[1];
+  const pitch =
+      ((pe + (walkRenderer.zoom - 1) * 14 - tilt[1] * 3 + walkRenderer.upT - walkRenderer.lmT) * Math.PI) / 180,
+    yaw = walkRenderer.yaw + tilt[0] * 0.07;
+  let df = (he / Math.sin(((pe - (sc.indoor ? 12 : 0)) * Math.PI) / 180)) * walkRenderer.zoom;
   const visW = Math.min(sc.w * 0.95, Math.max(11, (rw / rh) * 15)) / ((c.fov || 1) * eng('camera', 'fov')),
     half = visW / 2;
-  let tx = P.x + DGL.lead[0],
-    tz = P.z + DGL.lead[1];
+  let tx = P.x + walkRenderer.lead[0],
+    tz = P.z + walkRenderer.lead[1];
   tx = sc.w > visW ? clamp(tx, half - 2, sc.w - half + 2) : sc.w / 2;
   tz = clamp(tz, 0, sc.h - 2) + (rw > rh ? 2.0 : 1.0);
   if (sc.room) {
@@ -3383,12 +3398,12 @@ function dglCamera(rw, rh, st, dt) {
     tx = st.focus.x;
     tz = st.focus.z;
   }
-  if (DGL.swoop) {
-    tx = DGL.swoop.x;
-    tz = DGL.swoop.z + (rw > rh ? 1 : 0.5);
+  if (walkRenderer.swoop) {
+    tx = walkRenderer.swoop.x;
+    tz = walkRenderer.swoop.z + (rw > rh ? 1 : 0.5);
   }
-  if (!DGL.camT || walkView.opt.instant) DGL.camT = [tx, tz, dioH(tx, tz)];
-  const T = DGL.camT;
+  if (!walkRenderer.camT || walkView.opt.instant) walkRenderer.camT = [tx, tz, dioH(tx, tz)];
+  const T = walkRenderer.camT;
   T[0] += (tx - T[0]) * k;
   T[1] += (tz - T[1]) * k;
   T[2] += ((P.yv ?? dioH(P.x, P.z)) - T[2]) * k;
@@ -3403,7 +3418,7 @@ function dglCamera(rw, rh, st, dt) {
   let tgt = [T[0], T[2] + bob, T[1]];
   /* v35: pixel-grid camera (Engine > Camera > Pixel grid, off until the new art): when you stand still the camera
     target settles onto the art grid (1/32 m), so still pictures sit on whole pixels and don't shimmer */
-  if (eng('camera', 'pixelGrid') && !P.walk && !P.route && !st.focus && !DGL.swoop && !RM) {
+  if (eng('camera', 'pixelGrid') && !P.walk && !P.route && !st.focus && !walkRenderer.swoop && !RM) {
     const g = 1 / 32,
       sn = v => Math.round(v / g) * g,
       dx = sn(tgt[0]) - tgt[0],
@@ -3413,7 +3428,7 @@ function dglCamera(rw, rh, st, dt) {
     }
   }
   const eye = [tgt[0] - f[0] * df, tgt[1] - f[1] * df, tgt[2] - f[2] * df];
-  const hfov = Math.min(1.3, 2 * Math.atan((visW * DGL.zoom) / 2 / df)),
+  const hfov = Math.min(1.3, 2 * Math.atan((visW * walkRenderer.zoom) / 2 / df)),
     vfov = 2 * Math.atan((Math.tan(hfov / 2) * rh) / rw);
   const proj = M4.persp(vfov, rw / rh, 0.5, 420);
   proj[0] = -proj[0];
@@ -3546,7 +3561,7 @@ function dglFrame(ts, dtm) {
   eglNormWork(walkView.warm ? 40 : 3);
   eglPendPoll(1);
   dglGaoWork();
-  dglPrepWork(DGL.bt ? 0 : DGL_PREP_MS);
+  dglPrepWork(walkRenderer.bt ? 0 : DGL_PREP_MS);
   const cssW = cv.clientWidth,
     cssH = cv.clientHeight;
   if (!cssW || !cssH) return;
@@ -3558,7 +3573,7 @@ function dglFrame(ts, dtm) {
     cv.width = rw;
     cv.height = rh;
   }
-  const ui = DGL.ui;
+  const ui = walkRenderer.ui;
   if (ui.width !== rw || ui.height !== rh) {
     ui.width = rw;
     ui.height = rh;
@@ -3587,23 +3602,23 @@ function dglFrameIn(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
     cv = walkView.cv;
   dioEnsureGround();
   const hk = dglHK(walkView.id, sc, walkView.gkey);
-  if (DGL.gkey !== walkView.gkey || DGL.hkey !== hk) {
-    const old = DGL.hkey;
-    DGL.gkey = walkView.gkey;
-    DGL.hkey = hk;
+  if (walkRenderer.gkey !== walkView.gkey || walkRenderer.hkey !== hk) {
+    const old = walkRenderer.hkey;
+    walkRenderer.gkey = walkView.gkey;
+    walkRenderer.hkey = hk;
     walkView.nav = null;
     dioNav();
     dglSceneSwap(old, hk);
   }
   dioNav();
-  if (DGL.grassKey !== eng('grass', 'density')) dglBuildGrass();
+  if (walkRenderer.grassKey !== eng('grass', 'density')) dglBuildGrass();
   else dglGrassWork(4);
-  if (DGL.farKey !== walkView.id + '|' + Math.round(eng('world', 'farProps'))) dglBuildFar();
+  if (walkRenderer.farKey !== walkView.id + '|' + Math.round(eng('world', 'farProps'))) dglBuildFar();
   /* a battle (battle-3d.js) borrows the scene: its own camera, the fighters as lit sprites, props in the way hidden */
   const BT =
     (walkView.battle && walkView.battle.frame ? walkView.battle.frame() : null) ||
     (walkView.director && walkView.director.frame ? walkView.director.frame() : null);
-  DGL.bt = BT;
+  walkRenderer.bt = BT;
   const st = BT ? { who: null, npcs: [], enc: [], battle: 1 } : walkView.opt.state ? walkView.opt.state() : { t: 0 };
   if (!BT) {
     walkView.st = st;
@@ -3619,16 +3634,16 @@ function dglFrameIn(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
   const C = BT ? (BT.look ? dglLookCamera(rw, rh, BT.look) : dglBattleCamera(rw, rh, BT)) : dglCamera(rw, rh, st, dt);
   walkView.C = C;
   const sun = dglSceneSun(sc, eglSun(!!sc.indoor));
-  DGL.sun = sun;
+  walkRenderer.sun = sun;
   /* v46: the near ring follows the camera's focus (in a battle, the stage) */
   {
     const bc = BT && (BT.center || (BT.look && [BT.look.tgt[0], BT.look.tgt[2]])),
-      T = DGL.camT;
+      T = walkRenderer.camT;
     const fx = bc ? bc[0] : T ? T[0] : walkView.pl.x,
       fz = bc ? bc[1] : T ? T[1] : walkView.pl.z;
     dglRingUpdate(sc, fx, fz, DGL_PREP_MS);
   }
-  DGL.budT = performance.now();
+  walkRenderer.budT = performance.now();
   let items = dglItems(st, C, PPU, C0);
   const hits = [],
     labels = [];
@@ -3641,40 +3656,40 @@ function dglFrameIn(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
     lk = ENG_CTX.env && !sc.indoor ? ENV.lampK : 0,
     dark = Math.max(dark0, lk > 0.4 ? lk : 0);
   /* shadow map (every other frame when the device is struggling) */
-  const QE = Math.max(DGL.q || 0, BT && (eng('quality', 'battleLite') ?? true) ? 2 : 0);
-  DGL.qe = QE;
-  let shadow = DGL.lastShadow || null;
-  if (!((walkView.R < 0.7 || QE >= 2) && DGL.frames % 2 && shadow)) {
+  const QE = Math.max(walkRenderer.q || 0, BT && (eng('quality', 'battleLite') ?? true) ? 2 : 0);
+  walkRenderer.qe = QE;
+  let shadow = walkRenderer.lastShadow || null;
+  if (!((walkView.R < 0.7 || QE >= 2) && walkRenderer.frames % 2 && shadow)) {
     shadow = dglShadowPass(items, sun, C);
-    DGL.lastShadow = shadow;
+    walkRenderer.lastShadow = shadow;
   }
   const X = dglLightCtx(C, sun, dark, items, shadow, BT);
-  DGL.X = X;
+  walkRenderer.X = X;
   if (dark > 0.3 && !BT && shadow) dglLampShadows(items, X, dark);
-  if (DGL.water && !(QE >= 2 && DGL.frames % 2 && EGL.fb.refl)) dglReflPass(items, C, rw, rh, X);
+  if (walkRenderer.water && !(QE >= 2 && walkRenderer.frames % 2 && EGL.fb.refl)) dglReflPass(items, C, rw, rh, X);
   const S = eglTarget('scene', rw, rh, { depth: true, hdr: true });
   gl.bindFramebuffer(gl.FRAMEBUFFER, S.f);
   gl.viewport(0, 0, rw, rh);
   gl.clearColor(0, 0, 0, 1);
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-  const D = DGL.dbg || {};
+  const D = walkRenderer.dbg || {};
   dglSky(C, sun, 0);
   dglGround(C, X);
   dglRoomFront(C, X);
-  if (DGL.grass && !D.noGrass) dglGrass(C, X);
+  if (walkRenderer.grass && !D.noGrass) dglGrass(C, X);
   dglSprites(C, items, X, hits, labels, PPU);
   if (typeof p3dDraw === 'function') p3dDraw(C, items, X, hits, labels, PPU);
   if (typeof voxDraw === 'function') voxDraw(C, items, X, null, null, PPU);
   dglBoxFaces(C, items, X);
-  if (typeof bldDraw === 'function') bldDraw(C, X, items, DGL.bfade);
+  if (typeof bldDraw === 'function') bldDraw(C, X, items, walkRenderer.bfade);
   if (typeof strDraw === 'function') strDraw(C, X);
   dglBasins(items);
-  if (DGL.water || DGL.basin) dglWater(C, X, rw, rh);
+  if (walkRenderer.water || walkRenderer.basin) dglWater(C, X, rw, rh);
   dglFxPass(C, items, X, dark, t, dt);
   /* focus: on you, or on what you tapped for a moment */
   let fx = BT ? BT.center[0] : P.x,
     fz = BT ? BT.center[1] : P.z;
-  const ft = BT ? null : DGL.focusT;
+  const ft = BT ? null : walkRenderer.focusT;
   if (ft && walkView.t - ft.t < 2600) {
     const kf = smooth01((walkView.t - ft.t) / 350) * (1 - smooth01((walkView.t - ft.t - 1800) / 800));
     fx = P.x + (ft.x - P.x) * kf;
@@ -3684,13 +3699,17 @@ function dglFrameIn(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
     v = [fx - C.eye[0], fy - C.eye[1], fz - C.eye[2]],
     dir = v3n([C.tgt[0] - C.eye[0], C.tgt[1] - C.eye[1], C.tgt[2] - C.eye[2]]),
     fd = v[0] * dir[0] + v[1] * dir[1] + v[2] * dir[2];
-  DGL.focus = BT ? BT.focus : DGL.focus == null ? fd : DGL.focus + (fd - DGL.focus) * 0.12;
+  walkRenderer.focus = BT
+    ? BT.focus
+    : walkRenderer.focus == null
+      ? fd
+      : walkRenderer.focus + (fd - walkRenderer.focus) * 0.12;
   if (D.noPost) {
     gl.bindFramebuffer(gl.READ_FRAMEBUFFER, S.f);
     gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, null);
     gl.blitFramebuffer(0, 0, rw, rh, 0, 0, rw, rh, gl.COLOR_BUFFER_BIT, gl.NEAREST);
   } else
-    eglPost(S, C, DGL.focus, rw, rh, {
+    eglPost(S, C, walkRenderer.focus, rw, rh, {
       blur: BT ? BT.blur : (sc.blur ?? 1) * (walkView.opt.blur ?? 1) * (st.focusY != null ? 0.6 : 1),
       fast: walkView.R < 0.75 || QE >= 1,
       noAO: QE >= 1,
@@ -3729,30 +3748,30 @@ function dglFrameIn(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
     }
     dioExitLabels(C, st, hits, dioHubOf(sc));
   }
-  /* v28: photo mode asks for the picture as it is drawn (before the browser clears it) */ if (DGL.photoReq) {
-    const cb = DGL.photoReq;
-    DGL.photoReq = null;
+  /* v28: photo mode asks for the picture as it is drawn (before the browser clears it) */ if (walkRenderer.photoReq) {
+    const cb = walkRenderer.photoReq;
+    walkRenderer.photoReq = null;
     try {
       cb(eglSnapshot(rw, rh, null, 2048));
     } catch (e) {
       cb(null);
     }
   }
-  if (DGL.snapReq && typeof NWLOG !== 'undefined') {
-    DGL.snapReq = 0;
+  if (walkRenderer.snapReq && typeof NWLOG !== 'undefined') {
+    walkRenderer.snapReq = 0;
     try {
-      const c = eglSnapshot(rw, rh, DGL.ui);
+      const c = eglSnapshot(rw, rh, walkRenderer.ui);
       NWLOG.shot = { t: NWLOG.now(), what: walkView.id, jpeg: c.toDataURL('image/jpeg', 0.72) };
     } catch (e) {
       NWLOG.shot = { t: NWLOG.now(), error: String(e.message || e) };
     }
   }
-  DGL.frames++;
+  walkRenderer.frames++;
   const work = performance.now() - w0;
   walkView.slow = walkView.slow * 0.9 + work * 0.1;
   dglAdapt(dtm, work);
   /* v30: how long frames take, for the debug log */ {
-    const H = DGL.hist || (DGL.hist = [0, 0, 0, 0, 0, 0]);
+    const H = walkRenderer.hist || (walkRenderer.hist = [0, 0, 0, 0, 0, 0]);
     H[work < 8 ? 0 : work < 16 ? 1 : work < 33 ? 2 : work < 66 ? 3 : work < 133 ? 4 : 5]++;
   }
   if (typeof frameCount === 'function' && walkView.opt.meter) frameCount(work);
@@ -3786,44 +3805,44 @@ const DGL_KEEP = [
 /* alpha 0.4.1: everything built from the settings once (the ground and its relief, the grass, far props, solid props and
    trees) made again, for a dial changed in the Studio (or Settings) that those depend on */
 export function dglRebuild() {
-  if (typeof DGL === 'undefined' || !DGL.on) return;
+  if (typeof walkRenderer === 'undefined' || !walkRenderer.on) return;
   try {
-    if (DGL.sceneCache) {
-      for (const e of DGL.sceneCache.values()) dglSceneFree(e);
-      DGL.sceneCache.clear();
+    if (walkRenderer.sceneCache) {
+      for (const e of walkRenderer.sceneCache.values()) dglSceneFree(e);
+      walkRenderer.sceneCache.clear();
     }
-    if (DGL.mesh) {
+    if (walkRenderer.mesh) {
       const e = {};
       for (const k of DGL_KEEP) {
-        e[k] = DGL[k];
-        DGL[k] = null;
+        e[k] = walkRenderer[k];
+        walkRenderer[k] = null;
       }
       dglSceneFree(e);
     }
-    if (DGL.prep) dglPrepAbort();
+    if (walkRenderer.prep) dglPrepAbort();
   } catch (e) {
     console.warn(e);
   }
-  DGL.hkey = '';
-  DGL.gkey = '';
-  DGL.farKey = '';
-  DGL.grass = null;
-  DGL.grassKey = null;
-  DGL.itemGen = (DGL.itemGen || 0) + 1;
+  walkRenderer.hkey = '';
+  walkRenderer.gkey = '';
+  walkRenderer.farKey = '';
+  walkRenderer.grass = null;
+  walkRenderer.grassKey = null;
+  walkRenderer.itemGen = (walkRenderer.itemGen || 0) + 1;
   walkView.gkey = '';
   if (typeof DIO_GCACHE !== 'undefined') DIO_GCACHE.clear();
   if (typeof P3D !== 'undefined' && P3D.meshes) P3D.meshes = new WeakMap();
   if (typeof voxFlush === 'function') voxFlush();
 }
 function dglSceneSwap(oldKey, key) {
-  DGL.swapT = performance.now();
-  const M = DGL.sceneCache || (DGL.sceneCache = new Map()),
+  walkRenderer.swapT = performance.now();
+  const M = walkRenderer.sceneCache || (walkRenderer.sceneCache = new Map()),
     keep = eng('quality', 'keepScenes') ?? 3;
-  if (oldKey && DGL.mesh && keep > 0) {
+  if (oldKey && walkRenderer.mesh && keep > 0) {
     const e = {};
     for (const k of DGL_KEEP) {
-      e[k] = DGL[k];
-      DGL[k] = null;
+      e[k] = walkRenderer[k];
+      walkRenderer[k] = null;
     }
     if (e.ring) {
       dglRingFree(e.ring);
@@ -3833,24 +3852,24 @@ function dglSceneSwap(oldKey, key) {
       oldKey
     );
     M.set(oldKey, e);
-  } else if (DGL.ring) {
-    dglRingFree(DGL.ring);
-    DGL.ring = null;
+  } else if (walkRenderer.ring) {
+    dglRingFree(walkRenderer.ring);
+    walkRenderer.ring = null;
   }
   const hit = M.get(key);
-  if (DGL.prep && DGL.prep.hk === key) dglPrepAbort(); /* v46: about to build it anyway */
+  if (walkRenderer.prep && walkRenderer.prep.hk === key) dglPrepAbort(); /* v46: about to build it anyway */
   if (hit && (hit.prepared || hit.grassKey === eng('grass', 'density'))) {
     M.delete(key);
-    for (const k of DGL_KEEP) DGL[k] = hit[k];
-    DGL.rings = [];
-    DGL.leaves = null;
-    DGL.wlevelR = null;
-    DGL.farKey = '';
-    DGL.basinKey = null;
-    if (!DGL.gaoTex && walkView.sc) dglGroundAO(walkView.sc);
+    for (const k of DGL_KEEP) walkRenderer[k] = hit[k];
+    walkRenderer.rings = [];
+    walkRenderer.leaves = null;
+    walkRenderer.wlevelR = null;
+    walkRenderer.farKey = '';
+    walkRenderer.basinKey = null;
+    if (!walkRenderer.gaoTex && walkView.sc) dglGroundAO(walkView.sc);
     /* v46: a view prepared ahead plants its grass now (sliced, a few ms a frame) */ if (hit.prepared) {
-      DGL.grass = null;
-      DGL.grassKey = null;
+      walkRenderer.grass = null;
+      walkRenderer.grassKey = null;
     }
   } else {
     if (hit) {
@@ -3936,13 +3955,13 @@ function dglCull(items, C) {
     k++;
     if (!it.vis) n++;
   }
-  DGL.culled = n;
-  DGL.cullOf = k;
+  walkRenderer.culled = n;
+  walkRenderer.cullOf = k;
 }
 /* v32: a per-frame time budget for one-off work (solid bodies, outlines of buildings): past it, things stay pictures
    for a frame or two instead of freezing the scene while they are worked out */
 export function dglBudget() {
-  return performance.now() - (DGL.budT || 0) < (DGL.budMs ?? 7);
+  return performance.now() - (walkRenderer.budT || 0) < (walkRenderer.budMs ?? 7);
 }
 /* v32: how much heat shimmer: over lava always, over desert sand and canyons in the heat of the day */
 /* v47: a mood per place (warm late afternoon in Sundown, cool and misty in the Thicket, hazy heat in the canyon...):
@@ -3958,10 +3977,10 @@ function dglMood(sc) {
   if (T0)
     for (const f of ['sat', 'con', 'warm']) if (T0[f] != null) T[f] = f === 'warm' ? T0[f] * k : 1 + (T0[f] - 1) * k;
   if (T0) for (const f of ['lift', 'gain', 'sh', 'hi']) if (T0[f]) T[f] = T0[f].map(v => v * k);
-  const M = DGL.mood || (DGL.mood = JSON.parse(JSON.stringify(T))),
+  const M = walkRenderer.mood || (walkRenderer.mood = JSON.parse(JSON.stringify(T))),
     now = performance.now(),
-    dt = Math.min(0.1, (now - (DGL.moodT || now)) / 1000);
-  DGL.moodT = now;
+    dt = Math.min(0.1, (now - (walkRenderer.moodT || now)) / 1000);
+  walkRenderer.moodT = now;
   const e = 1 - Math.exp(-dt * 1.6);
   for (const f of ['sat', 'con', 'warm']) M[f] += (T[f] - M[f]) * e;
   for (const f of ['lift', 'gain', 'sh', 'hi']) for (let i = 0; i < 3; i++) M[f][i] += (T[f][i] - M[f][i]) * e;
@@ -3969,7 +3988,7 @@ function dglMood(sc) {
 }
 /* alpha 0.4: where the fires are on screen, for the small shimmer above each (up to six, nearest first in the list) */
 function dglHeatSrc(C) {
-  const F = DGL.fires || [];
+  const F = walkRenderer.fires || [];
   if (!F.length || !C || !C.vp) return null;
   const m = C.vp,
     out = [];
@@ -4006,57 +4025,57 @@ function dglHeat(sc) {
 export function dglAdapt(dtm, work) {
   if (!eng('quality', 'auto')) {
     walkView.R = 1;
-    DGL.q = 0;
+    walkRenderer.q = 0;
     return;
   }
   const cap = walkView.opt.cap ? walkView.opt.cap() : 60;
   if (cap < 30 || walkView.warm) {
-    DGL.int = 0;
+    walkRenderer.int = 0;
     return;
   }
   /* alpha 0.1: the picture stays sharp at 60 frames a second; only Smoothest (preferences.aim) trades sharpness for more */
   const smooth = typeof S !== 'undefined' && S && S.preferences && S.preferences.aim === 'smooth',
     target = 1000 / Math.min(cap, FRAME.hz || 60, smooth ? 999 : 60);
-  DGL.int = DGL.int ? DGL.int * 0.92 + dtm * 0.08 : dtm;
+  walkRenderer.int = walkRenderer.int ? walkRenderer.int * 0.92 + dtm * 0.08 : dtm;
   /* alpha 0.4: in every log the picture sat on the lowest step outdoors most of the time: a place's first seconds
     (its ground painting, its grass planting) pushed it down, and it only came back up on frames under 8 ms of work,
     which a phone outdoors rarely has. Now the first 3 s after a view changes don't push it down, it comes back up
     while the frames keep the beat with work under 60% of a frame, and a step that proved too much is held off for
     half a minute (no see-sawing) */
-  const slow = DGL.int > target * 1.3 || walkView.slow > target * 0.85,
-    room = DGL.int < target * 1.1 && walkView.slow < target * 0.6;
+  const slow = walkRenderer.int > target * 1.3 || walkView.slow > target * 0.85,
+    room = walkRenderer.int < target * 1.1 && walkView.slow < target * 0.6;
   const now = performance.now();
-  if (now - (DGL.adaptT || 0) < (slow ? 1200 : 900)) return;
-  DGL.adaptT = now;
-  DGL.q = DGL.q || 0;
+  if (now - (walkRenderer.adaptT || 0) < (slow ? 1200 : 900)) return;
+  walkRenderer.adaptT = now;
+  walkRenderer.q = walkRenderer.q || 0;
   /* alpha 0.4.1: when the frame's own work on the main thread is what holds it back (a big place in a wide window, the
     laptop in the diagnostics), taking away god rays, bloom steps, depth of field or resolution doesn't help: those cost
     the graphics chip. Then only the steps that save work here are taken (shadows and reflections every other frame,
     steps 1-2), and the ones above come back. Before, such a machine sat on the lowest step with the effects off. */
   const cpu = walkView.slow > target * 0.7;
   if (slow && cpu) {
-    if (DGL.q > 2) {
-      DGL.q = 2;
-      DGL.raiseT = now;
-    } else if (DGL.q < 2 && now - (DGL.swapT || 0) >= 3000) DGL.q++;
-    DGL.roomN = 0;
+    if (walkRenderer.q > 2) {
+      walkRenderer.q = 2;
+      walkRenderer.raiseT = now;
+    } else if (walkRenderer.q < 2 && now - (walkRenderer.swapT || 0) >= 3000) walkRenderer.q++;
+    walkRenderer.roomN = 0;
     if (walkView.R < 1) walkView.R = Math.min(1, walkView.R + 0.1);
     return;
   }
   if (slow) {
-    if (now - (DGL.swapT || 0) < 3000) return;
-    if (now - (DGL.raiseT || -1e9) < 5000) DGL.holdT = now + 30000;
-    DGL.roomN = 0;
-    if (DGL.q < 4) DGL.q++;
+    if (now - (walkRenderer.swapT || 0) < 3000) return;
+    if (now - (walkRenderer.raiseT || -1e9) < 5000) walkRenderer.holdT = now + 30000;
+    walkRenderer.roomN = 0;
+    if (walkRenderer.q < 4) walkRenderer.q++;
     else if (walkView.R > 0.55) walkView.R = Math.max(0.5, walkView.R - 0.1);
-  } else if (room && now > (DGL.holdT || 0)) {
+  } else if (room && now > (walkRenderer.holdT || 0)) {
     if (walkView.R < 1) {
       walkView.R = Math.min(1, walkView.R + 0.1);
-      DGL.raiseT = now;
-    } else if (DGL.q > 0 && (DGL.roomN = (DGL.roomN || 0) + 1) >= 2) {
-      DGL.q--;
-      DGL.roomN = 0;
-      DGL.raiseT = now;
+      walkRenderer.raiseT = now;
+    } else if (walkRenderer.q > 0 && (walkRenderer.roomN = (walkRenderer.roomN || 0) + 1) >= 2) {
+      walkRenderer.q--;
+      walkRenderer.roomN = 0;
+      walkRenderer.raiseT = now;
     }
   }
 }
@@ -4110,7 +4129,7 @@ function dglHug(it, C) {
     x = it.x,
     z = it.z,
     id = walkView.id,
-    ig = DGL.itemGen || 0;
+    ig = walkRenderer.itemGen || 0;
   let c = DGL_HUGC.get(p);
   if (!c || c.id !== id || c.ig !== ig || c.x !== x || c.z !== z) {
     const gx = (h(x + e, z) - h(x - e, z)) / (2 * e),
@@ -4135,7 +4154,7 @@ function dglMount(P, t) {
   if (!sc || !sc.ride || typeof riderOf !== 'function' || typeof S === 'undefined' || !S.team) return null;
   const ch = dioTer(P.x, P.z);
   if (ch !== 'w' && ch !== 'd') {
-    DGL.mountOn = false;
+    walkRenderer.mountOn = false;
     return null;
   }
   const m = riderOf() || S.team.find(x => SP[x.sp] && SP[x.sp].types.includes('Water')) || S.team[0];
@@ -4143,20 +4162,20 @@ function dglMount(P, t) {
   const back = P.dir === 'up',
     R = rigParts(m.sp, m.gold, back ? 2 : 1);
   if (!R) {
-    if (!DGL.mountLoad) {
-      DGL.mountLoad = 1;
+    if (!walkRenderer.mountLoad) {
+      walkRenderer.mountLoad = 1;
       rigPreload([
         [m.sp, m.gold, 1],
         [m.sp, m.gold, 2],
       ]).then(() => {
-        DGL.mountLoad = 0;
+        walkRenderer.mountLoad = 0;
       });
     }
     return null;
   }
-  let cv = DGL.mountCv;
+  let cv = walkRenderer.mountCv;
   if (!cv || cv.width !== R.BW || cv.height !== R.BH) {
-    cv = DGL.mountCv = cnv(R.BW, R.BH);
+    cv = walkRenderer.mountCv = cnv(R.BW, R.BH);
     cv.__v = 0;
   }
   const x = cv.getContext('2d');
@@ -4170,11 +4189,11 @@ function dglMount(P, t) {
     mpp = hm / Math.max(40, R.base - (R.geo && R.geo.top != null ? R.geo.top : 0)),
     bob = RM ? 0 : Math.sin(t / 420) * 0.05,
     y = dioH(P.x, P.z) + bob - 0.08;
-  if (!RM && P.walk && (!DGL.wakeT || t - DGL.wakeT > 320)) {
-    DGL.wakeT = t;
+  if (!RM && P.walk && (!walkRenderer.wakeT || t - walkRenderer.wakeT > 320)) {
+    walkRenderer.wakeT = t;
     dglRing(P.x, P.z - 0.1, 0.9);
   }
-  DGL.mountOn = true;
+  walkRenderer.mountOn = true;
   return {
     it: {
       k: 'life',
@@ -4308,7 +4327,7 @@ const DGL_LOOK = new WeakMap();
 const DGL_STILL = new WeakMap();
 function dglPropGrid(sc) {
   const L = sc.props || [],
-    G = DGL.pgrid;
+    G = walkRenderer.pgrid;
   let sig = L.length;
   for (let i = 0; i < L.length; i += Math.max(1, L.length >> 4))
     sig = (sig * 31 + ((L[i].x * 7 + L[i].z * 13) | 0)) | 0;
@@ -4339,14 +4358,14 @@ function dglPropGrid(sc) {
     y: (c.y0 + c.y1) / 2,
     r: Math.hypot(c.x1 - c.x0, c.z1 - c.z0, c.y1 - c.y0) / 2,
   }));
-  return (DGL.pgrid = { sc, sig, at: walkView.t || 0, cells });
+  return (walkRenderer.pgrid = { sc, sig, at: walkView.t || 0, cells });
 }
 function dglStill(p, M, im, sc) {
   const t = walkView.t || 0,
     s = p.s || 1,
     id = walkView.id || '',
     src = (im && im.src) || '',
-    gen = DGL.itemGen || 0;
+    gen = walkRenderer.itemGen || 0;
   let c = DGL_STILL.get(p);
   /* alpha 0.4.1: compared field by field (a key string was built for every prop every frame) */
   if (
@@ -4388,10 +4407,10 @@ function dglStill(p, M, im, sc) {
 }
 /* alpha 0.4.1: the settings a prop's look depends on, read once a frame rather than once a prop */
 function dglLookSig(sc) {
-  if (DGL._lsF === DGL.frames && DGL._lsSc === sc) return DGL._ls;
-  DGL._lsF = DGL.frames;
-  DGL._lsSc = sc;
-  return (DGL._ls =
+  if (walkRenderer._lsF === walkRenderer.frames && walkRenderer._lsSc === sc) return walkRenderer._ls;
+  walkRenderer._lsF = walkRenderer.frames;
+  walkRenderer._lsSc = sc;
+  return (walkRenderer._ls =
     (eng('world', 'variety') ?? 1) +
     ',' +
     (eng('world', 'wear') ?? 1) +
@@ -4416,7 +4435,7 @@ function dglLookOf(p, M, sc) {
     c0.px === p.x &&
     c0.pz === p.z &&
     c0.sg === sg &&
-    c0.gen === (DGL.itemGen || 0)
+    c0.gen === (walkRenderer.itemGen || 0)
   )
     return c0;
   const L0 = dglLookOf2(p, M, sc);
@@ -4424,7 +4443,7 @@ function dglLookOf(p, M, sc) {
   L0.px = p.x;
   L0.pz = p.z;
   L0.sg = sg;
-  L0.gen = DGL.itemGen || 0;
+  L0.gen = walkRenderer.itemGen || 0;
   return L0;
 }
 function dglLookOf2(p, M, sc) {
@@ -4520,10 +4539,10 @@ export function dglItems(st, C, PPU, C0) {
     hub = dioHubOf(sc),
     tg = dioGrassImgs(C0),
     wind = eng('grass', 'wind'),
-    odt = Math.min(0.1, Math.max(0, (t - (DGL.owT ?? t)) / 1000)),
-    ow = typeof owItem === 'function' && !st.battle && !DGL.bt,
+    odt = Math.min(0.1, Math.max(0, (t - (walkRenderer.owT ?? t)) / 1000)),
+    ow = typeof owItem === 'function' && !st.battle && !walkRenderer.bt,
     npcPos = [];
-  DGL.owT = t;
+  walkRenderer.owT = t;
   if (ow && OWM.warmId !== walkView.id) {
     OWM.warmId = walkView.id;
     owWarm();
@@ -4688,8 +4707,8 @@ export function dglItems(st, C, PPU, C0) {
     }
     for (const p of c.list) prop(p);
   }
-  DGL.gridSkip = gs;
-  for (const p of DGL.farProps) prop(p, 1);
+  walkRenderer.gridSkip = gs;
+  for (const p of walkRenderer.farProps) prop(p, 1);
   (st.npcs || []).forEach((n, i) => {
     let pos = walkView.npcAt[n.id];
     if (!pos && n.at) pos = walkView.npcAt[n.id] = dioFreePt(n.at[0], n.at[1]);
@@ -4728,7 +4747,7 @@ export function dglItems(st, C, PPU, C0) {
       } catch (e) {}
   }
   const used = [];
-  DGL.encPos = [];
+  walkRenderer.encPos = [];
   (st.enc || []).forEach(e => {
     let s = walkView.enc[e.id];
     if (!s || s.sc !== walkView.id) {
@@ -4739,7 +4758,7 @@ export function dglItems(st, C, PPU, C0) {
      the grass swaying round them, a peek now and then, see owEncItem) and rustle when you come close */
     s.tx = s.x;
     s.tz = s.z;
-    if (!st.battle && !RM && !DGL.bt) {
+    if (!st.battle && !RM && !walkRenderer.bt) {
       const dd = Math.min(0.1, (t - (s.lt || t)) / 1000);
       s.lt = t;
       const P = walkView.pl;
@@ -4747,7 +4766,7 @@ export function dglItems(st, C, PPU, C0) {
         sfxAt('rustle', s.x, s.z);
     }
     used.push([s.x, s.z]);
-    DGL.encPos.push([s.x, s.z, e.id]);
+    walkRenderer.encPos.push([s.x, s.z, e.id]);
     const g = tg[Math.abs(Math.round(s.x * 7 + s.z * 3)) % tg.length];
     const im = g && dioImg(g.img);
     if (!dioOk(im)) return;
@@ -4947,23 +4966,23 @@ export function dglRoomDim(sc) {
   let R = sc.roomRect,
     k = 0;
   if (R) {
-    if (DGL.roomIn !== sc.id) {
-      DGL.roomIn = sc.id;
-      DGL.roomT0 = now;
-      DGL.roomLast = R;
-      DGL.roomOutT = 0;
+    if (walkRenderer.roomIn !== sc.id) {
+      walkRenderer.roomIn = sc.id;
+      walkRenderer.roomT0 = now;
+      walkRenderer.roomLast = R;
+      walkRenderer.roomOutT = 0;
     }
-    k = smooth01((now - DGL.roomT0) / 600);
-  } else if (DGL.roomIn) {
-    DGL.roomIn = null;
-    DGL.roomOutT = now;
+    k = smooth01((now - walkRenderer.roomT0) / 600);
+  } else if (walkRenderer.roomIn) {
+    walkRenderer.roomIn = null;
+    walkRenderer.roomOutT = now;
   }
-  if (!R && DGL.roomOutT && DGL.roomLast) {
-    const t = (now - DGL.roomOutT) / 700;
+  if (!R && walkRenderer.roomOutT && walkRenderer.roomLast) {
+    const t = (now - walkRenderer.roomOutT) / 700;
     if (t < 1) {
-      R = DGL.roomLast;
+      R = walkRenderer.roomLast;
       k = (1 - smooth01(t)) * 0.7;
-    } else DGL.roomOutT = 0;
+    } else walkRenderer.roomOutT = 0;
   }
   return R && k > 0 ? { b: [R[0], R[1], R[0] + R[2], R[1] + R[3]], dim: k0 * k } : null;
 }
@@ -5158,9 +5177,9 @@ function dglLightCtx(C, sun, dark, items, shadow, BT) {
     fogStart: C.df * eng('air', 'hazeStart') * (E && !sc.indoor ? 1 - E.fog * 0.35 : 1),
     fogD: (eng('air', 'hazeDistance') ?? (sc.hazeD || 34)) * 1.15 * fogK,
     tint,
-    valley: DGL.valley || null,
+    valley: walkRenderer.valley || null,
     mist: sc.mist != null ? sc.mist + (E && !sc.indoor ? E.fog * 0.18 : 0) : eng('air', 'mist'),
-    mistY: (DGL.wlevel || 0) + eng('air', 'mistHeight'),
+    mistY: (walkRenderer.wlevel || 0) + eng('air', 'mistHeight'),
     time: t,
     indoor: sc.indoor,
     lite: walkView.R < 0.75,
@@ -5229,7 +5248,7 @@ function dglShadowRect(C) {
    square round you at a finer texel, drawn every frame from the things in it, so shadows near you are crisp */
 export function dglShadowPass(items0, sun, C) {
   const far = dglShadowPassFit(items0, sun, C);
-  if (!(eng('shadows', 'cascades') ?? true) || (DGL.bt && (eng('quality', 'battleLite') ?? true))) return far;
+  if (!(eng('shadows', 'cascades') ?? true) || (walkRenderer.bt && (eng('quality', 'battleLite') ?? true))) return far;
   const P = walkView.pl,
     R = eng('shadows', 'nearRadius') ?? 13,
     res = Math.min(1024, eng('quality', 'shadowMap')),
@@ -5243,8 +5262,8 @@ export function dglShadowPass(items0, sun, C) {
     gl.uniformMatrix4fv(p.U.uVP, false, SH.vp);
     gl.uniform3f(p.U.uCurve, ca[0], ca[1], ca[2]);
     gl.uniform1f(p.U.uCurveD0, ca[3]);
-    gl.bindVertexArray(DGL.mesh.vao);
-    gl.drawElements(gl.TRIANGLES, DGL.mesh.n, gl.UNSIGNED_INT, 0);
+    gl.bindVertexArray(walkRenderer.mesh.vao);
+    gl.drawElements(gl.TRIANGLES, walkRenderer.mesh.n, gl.UNSIGNED_INT, 0);
     gl.bindVertexArray(null);
   }
   dglShadowSprites(SH, items, sun, ca);
@@ -5288,8 +5307,8 @@ function dglLampShadows(items, X, dark) {
       gl.uniformMatrix4fv(p.U.uVP, false, SH.vp);
       gl.uniform3f(p.U.uCurve, ca[0], ca[1], ca[2]);
       gl.uniform1f(p.U.uCurveD0, ca[3]);
-      gl.bindVertexArray(DGL.mesh.vao);
-      gl.drawElements(gl.TRIANGLES, DGL.mesh.n, gl.UNSIGNED_INT, 0);
+      gl.bindVertexArray(walkRenderer.mesh.vao);
+      gl.drawElements(gl.TRIANGLES, walkRenderer.mesh.n, gl.UNSIGNED_INT, 0);
       gl.bindVertexArray(null);
     }
     dglShadowSprites(SH, near, null, ca, l.p);
@@ -5375,10 +5394,12 @@ function dglShadowSprites(SH, L, sun, ca, lamp) {
 function dglShadowPassFit(items0, sun, C) {
   const sc = walkView.sc,
     res =
-      walkView.R < 0.8 || (DGL.q || 0) >= 2 ? Math.min(1024, eng('quality', 'shadowMap')) : eng('quality', 'shadowMap'),
+      walkView.R < 0.8 || (walkRenderer.q || 0) >= 2
+        ? Math.min(1024, eng('quality', 'shadowMap'))
+        : eng('quality', 'shadowMap'),
     gl = EGL.gl;
   let fit = dglShadowRect(C);
-  const cache = (eng('quality', 'shadowCache') ?? true) && !DGL.bt && !!gl.blitFramebuffer;
+  const cache = (eng('quality', 'shadowCache') ?? true) && !walkRenderer.bt && !!gl.blitFramebuffer;
   if (cache) fit = [Math.round(fit[0] / 3) * 3, Math.round(fit[1] / 3) * 3, fit[2] + 3];
   const items = items0.filter(
     it => Math.hypot(it.x - fit[0], it.z - fit[1]) < fit[2] + (it.w || 32) * (it.mpp || 0.03) + 4
@@ -5407,9 +5428,9 @@ function dglShadowPassFit(items0, sun, C) {
         walkView.id,
         stat.length,
         stat.length ? stat[0].x + stat[stat.length - 1].z : 0,
-        DGL.itemGen || 0,
+        walkRenderer.itemGen || 0,
         solid ? 1 : 0,
-        DGL.mesh && DGL.mesh.n,
+        walkRenderer.mesh && walkRenderer.mesh.n,
         sc.heights ? sc.heights.length : 0,
         typeof bldOn === 'function' && bldOn() ? 1 : 0,
         typeof BLD !== 'undefined' ? BLD.made || 0 : 0,
@@ -5417,13 +5438,13 @@ function dglShadowPassFit(items0, sun, C) {
     : '';
   const SF = EGL.fb.shadow;
   let hit = false;
-  if (cache && DGL.shKey === key && EGL.fb.shadowS && EGL.fb.shadowS.w === res) {
+  if (cache && walkRenderer.shKey === key && EGL.fb.shadowS && EGL.fb.shadowS.w === res) {
     gl.bindFramebuffer(gl.READ_FRAMEBUFFER, EGL.fb.shadowS.f);
     gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, SF.f);
     gl.blitFramebuffer(0, 0, res, res, 0, 0, res, res, gl.DEPTH_BUFFER_BIT, gl.NEAREST);
     gl.bindFramebuffer(gl.FRAMEBUFFER, SF.f);
     hit = true;
-    DGL.shHit = (DGL.shHit || 0) + 1;
+    walkRenderer.shHit = (walkRenderer.shHit || 0) + 1;
   }
   let miss = 0;
   const sprites = L => {
@@ -5489,8 +5510,8 @@ function dglShadowPassFit(items0, sun, C) {
     gl.useProgram(p.p);
     gl.uniformMatrix4fv(p.U.uVP, false, SH.vp);
     curve(p);
-    gl.bindVertexArray(DGL.mesh.vao);
-    gl.drawElements(gl.TRIANGLES, DGL.mesh.n, gl.UNSIGNED_INT, 0);
+    gl.bindVertexArray(walkRenderer.mesh.vao);
+    gl.drawElements(gl.TRIANGLES, walkRenderer.mesh.n, gl.UNSIGNED_INT, 0);
     gl.bindVertexArray(null);
     sprites(stat);
     if (typeof bldShadow === 'function') bldShadow(SH, stat);
@@ -5503,8 +5524,8 @@ function dglShadowPassFit(items0, sun, C) {
       gl.blitFramebuffer(0, 0, res, res, 0, 0, res, res, gl.DEPTH_BUFFER_BIT, gl.NEAREST);
       gl.bindFramebuffer(gl.FRAMEBUFFER, SF.f);
       gl.viewport(0, 0, res, res);
-      DGL.shKey = miss ? '' : key;
-      DGL.shMiss = (DGL.shMiss || 0) + 1;
+      walkRenderer.shKey = miss ? '' : key;
+      walkRenderer.shMiss = (walkRenderer.shMiss || 0) + 1;
     }
   }
   if (cache) {
@@ -5555,7 +5576,7 @@ function dglSky(C, sun, mirror) {
   gl.enable(gl.DEPTH_TEST);
 }
 export function dglWorldTex() {
-  if (DGL.wtex) return DGL.wtex;
+  if (walkRenderer.wtex) return walkRenderer.wtex;
   const im = dioImg(typeof WORLD_ART !== 'undefined' ? WORLD_ART : 'map/world.png');
   if (!dioOk(im)) return EGL.white;
   const gl = EGL.gl,
@@ -5567,7 +5588,7 @@ export function dglWorldTex() {
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
   gl.generateMipmap(gl.TEXTURE_2D);
-  return (DGL.wtex = t);
+  return (walkRenderer.wtex = t);
 }
 export function dglGround(C, X) {
   const gl = EGL.gl,
@@ -5579,17 +5600,17 @@ export function dglGround(C, X) {
   gl.activeTexture(gl.TEXTURE4);
   gl.bindTexture(gl.TEXTURE_2D, wa ? wa.t : EGL.white);
   gl.uniform1i(U.uWallA, 4);
-  if (!DGL.wallColF) {
-    DGL.wallColF = new Float32Array(36);
+  if (!walkRenderer.wallColF) {
+    walkRenderer.wallColF = new Float32Array(36);
   }
   const WC = sc.wallCol || [];
   for (let i = 0; i < 12; i++) {
     const c = WC[i] ? hexA(WC[i]).map(v => v / 255) : DGL_WALL_COL[i];
-    DGL.wallColF.set(c, i * 3);
+    walkRenderer.wallColF.set(c, i * 3);
   }
-  gl.uniform3fv(U.uWallCol, DGL.wallColF);
+  gl.uniform3fv(U.uWallCol, walkRenderer.wallColF);
   gl.uniform1f(U.uWallDef, dglWallDefault(sc));
-  const Pq = DGL.bt
+  const Pq = walkRenderer.bt
     ? null
     : (() => {
         const P = walkView.pl,
@@ -5604,16 +5625,16 @@ export function dglGround(C, X) {
   gl.uniform1f(U.uAspect, C.rw / C.rh);
   if (U.uFol) gl.uniform2f(U.uFol, 0.6, sc.indoor ? 0 : 1);
   gl.activeTexture(gl.TEXTURE0);
-  gl.bindTexture(gl.TEXTURE_2D, DGL.gtex);
+  gl.bindTexture(gl.TEXTURE_2D, walkRenderer.gtex);
   gl.uniform1i(U.uGround, 0);
   gl.activeTexture(gl.TEXTURE1);
-  gl.bindTexture(gl.TEXTURE_2D, DGL.ftex);
+  gl.bindTexture(gl.TEXTURE_2D, walkRenderer.ftex);
   gl.uniform1i(U.uFar, 1);
   gl.activeTexture(gl.TEXTURE2);
-  gl.bindTexture(gl.TEXTURE_2D, DGL.ctex);
+  gl.bindTexture(gl.TEXTURE_2D, walkRenderer.ctex);
   gl.uniform1i(U.uCliff, 2);
   gl.activeTexture(gl.TEXTURE3);
-  gl.bindTexture(gl.TEXTURE_2D, DGL.gntex || EGL.flatN);
+  gl.bindTexture(gl.TEXTURE_2D, walkRenderer.gntex || EGL.flatN);
   gl.uniform1i(U.uGNrm, 3);
   gl.uniform1f(U.uGStr, eng('world', 'groundBumps'));
   gl.uniform1f(U.uGShine, eng('world', 'groundShine'));
@@ -5623,10 +5644,10 @@ export function dglGround(C, X) {
   if (U.uBed) gl.uniform3fv(U.uBed, engHex('water', 'bed', '#74654A'));
   if (U.uGAO) {
     gl.activeTexture(gl.TEXTURE8);
-    gl.bindTexture(gl.TEXTURE_2D, DGL.gaoTex || EGL.white);
+    gl.bindTexture(gl.TEXTURE_2D, walkRenderer.gaoTex || EGL.white);
     gl.bindSampler(8, null);
     gl.uniform1i(U.uGAO, 8);
-    gl.uniform3f(U.uGAOR, 1 / sc.w, 1 / sc.h, DGL.gaoTex ? (eng('shadows', 'groundAO') ?? 1) : 0);
+    gl.uniform3f(U.uGAOR, 1 / sc.w, 1 / sc.h, walkRenderer.gaoTex ? (eng('shadows', 'groundAO') ?? 1) : 0);
   }
   if (U.uWet) {
     const E = typeof ENV !== 'undefined' && ENG_CTX.env && !sc.indoor ? ENV : null,
@@ -5645,18 +5666,18 @@ export function dglGround(C, X) {
   gl.enable(gl.DEPTH_TEST);
   gl.depthFunc(gl.LEQUAL);
   gl.disable(gl.BLEND);
-  gl.bindVertexArray(DGL.mesh.vao);
-  gl.drawElements(gl.TRIANGLES, DGL.mesh.n, gl.UNSIGNED_INT, 0);
+  gl.bindVertexArray(walkRenderer.mesh.vao);
+  gl.drawElements(gl.TRIANGLES, walkRenderer.mesh.n, gl.UNSIGNED_INT, 0);
   gl.bindVertexArray(null);
 }
 /* where you walked through the grass lately (16 spots, the blades spring back over four seconds) */
 function dglTrail() {
   const P = walkView.pl,
     t = walkView.t,
-    T = DGL.trail || (DGL.trail = []);
-  if (DGL.trailId !== walkView.id) {
+    T = walkRenderer.trail || (walkRenderer.trail = []);
+  if (walkRenderer.trailId !== walkView.id) {
     T.length = 0;
-    DGL.trailId = walkView.id;
+    walkRenderer.trailId = walkView.id;
   }
   const last = T[T.length - 1];
   if (P.walk && (!last || Math.hypot(last.x - P.x, last.z - P.z) > 0.3)) {
@@ -5664,7 +5685,7 @@ function dglTrail() {
     if (T.length > 16) T.shift();
   }
   const a = new Float32Array(48),
-    E = (DGL.encPos || []).slice(0, 4),
+    E = (walkRenderer.encPos || []).slice(0, 4),
     T2 = T.slice(-(16 - E.length));
   T2.forEach((q, i) => a.set([q.x, q.z, Math.max(0, 1 - (t - q.t) / 4000)], i * 3));
   E.forEach((e, k) => a.set([e[0], e[1], 0.85], (T2.length + k) * 3));
@@ -5678,11 +5699,12 @@ function dglPushers() {
     P = walkView.pl,
     L = [];
   A.fill(0);
-  if (DGL.bt && DGL.bt.items) {
-    for (const it of DGL.bt.items) if (it.k === 'rig') L.push([it.x, it.z, Math.max(0.45, (it.aoR || 0.4) * 1.3)]);
+  if (walkRenderer.bt && walkRenderer.bt.items) {
+    for (const it of walkRenderer.bt.items)
+      if (it.k === 'rig') L.push([it.x, it.z, Math.max(0.45, (it.aoR || 0.4) * 1.3)]);
   } else {
     if (typeof OWM !== 'undefined' && OWM.bud) L.push([OWM.bud.x, OWM.bud.z, 0.6]);
-    if (DGL.encPos) for (const e of DGL.encPos) L.push([e[0], e[1], 0.75]);
+    if (walkRenderer.encPos) for (const e of walkRenderer.encPos) L.push([e[0], e[1], 0.75]);
     for (const f of walkView.folk || []) if (Math.hypot(f.x - P.x, f.z - P.z) < 14) L.push([f.x, f.z, 0.5]);
   }
   L.sort((a, b) => Math.hypot(a[0] - P.x, a[1] - P.z) - Math.hypot(b[0] - P.x, b[1] - P.z));
@@ -5742,7 +5764,7 @@ export function dglGrass(C, X) {
     gl.uniform3fv(loc, new Float32Array(F.c.flat()));
     gl.uniform1f(U.uFlwGlow, F.glow);
   }
-  if (U.uTrail) gl.uniform3fv(U.uTrail, DGL.bt ? new Float32Array(48) : dglTrail());
+  if (U.uTrail) gl.uniform3fv(U.uTrail, walkRenderer.bt ? new Float32Array(48) : dglTrail());
   if (U.uPush) gl.uniform3fv(U.uPush, dglPushers());
   gl.uniform3fv(U.uRight, C.right);
   gl.uniform3f(U.uPl, P.x, 0, P.z);
@@ -5751,7 +5773,7 @@ export function dglGrass(C, X) {
   gl.uniform1f(U.uGust, eng('grass', 'gusts'));
   gl.uniform1f(U.uBend, eng('grass', 'bend'));
   gl.uniform1f(U.uHK, eng('grass', 'height'));
-  gl.uniform3f(U.uCut, C.eye[0], C.eye[2], DGL.bt ? (DGL.bt.cut ?? 3.2) : 0);
+  gl.uniform3f(U.uCut, C.eye[0], C.eye[2], walkRenderer.bt ? (walkRenderer.bt.cut ?? 3.2) : 0);
   const g = sc.grassCol || [eng('grass', 'low'), eng('grass', 'high')];
   gl.uniform3fv(
     U.uGlo,
@@ -5763,7 +5785,7 @@ export function dglGrass(C, X) {
   );
   if (U.uFol) gl.uniform2f(U.uFol, 0.75, 1);
   gl.disable(gl.CULL_FACE);
-  const G = DGL.grass;
+  const G = walkRenderer.grass;
   gl.bindVertexArray(G.vao);
   if (!G.chunks || !(eng('quality', 'cull') ?? true)) {
     gl.bindBuffer(gl.ARRAY_BUFFER, G.ib);
@@ -5772,7 +5794,7 @@ export function dglGrass(C, X) {
     gl.drawArraysInstanced(gl.TRIANGLES, 0, 3, G.n);
   } else {
     const F = dglFrustum(C.vp),
-      far = (DGL.q || 0) >= 3 ? 38 : 1e9,
+      far = (walkRenderer.q || 0) >= 3 ? 38 : 1e9,
       Pp = walkView.pl;
     gl.bindBuffer(gl.ARRAY_BUFFER, G.ib);
     let drawn = 0;
@@ -5784,7 +5806,7 @@ export function dglGrass(C, X) {
       gl.drawArraysInstanced(gl.TRIANGLES, 0, 3, c.n);
       drawn += c.n;
     }
-    DGL.grassDrawn = drawn;
+    walkRenderer.grassDrawn = drawn;
   }
   gl.bindVertexArray(null);
 }
@@ -5801,12 +5823,12 @@ function dglImId(im) {
 /* alpha 0.4.1: the title's town springs up out of the loading screen (dglRiseStart from js/boot.js) */
 export function dglRiseStart(load) {
   if (RM || typeof walkView === 'undefined') return;
-  DGL.rise = { t0: performance.now(), c: null, load: !!load, seen: new WeakMap() };
+  walkRenderer.rise = { t0: performance.now(), c: null, load: !!load, seen: new WeakMap() };
 }
 /* how far up a thing has grown (0 to a little over 1). While the game loads, a ring round the middle of the view widens
    with the loading and each thing starts to grow when the ring reaches it */
 function dglRiseK(it) {
-  const R = DGL.rise,
+  const R = walkRenderer.rise,
     now = performance.now();
   if (!R.c) {
     let c = null;
@@ -5827,7 +5849,7 @@ function dglRiseK(it) {
   }
   if (f >= 1 && !R.done) R.done = now;
   if (R.done && now - R.done > 3500) {
-    DGL.rise = null;
+    walkRenderer.rise = null;
     return 1;
   }
   const t = (now - t0) / 1000;
@@ -5861,7 +5883,7 @@ export function dglSprites(C, items, X, hits, labels, PPU) {
   gl.uniform1f(U.uFlipN, 1);
   gl.uniform1f(U.uFixed, 0);
   const me = dioProj(C, P.x, 0.9, P.z);
-  DGL.bfade = new Map();
+  walkRenderer.bfade = new Map();
   const sd = sun.dir,
     sl = Math.hypot(sd[0] * C.right[0] + sd[2] * C.right[2], sd[1]) || 1,
     selfD = [(sd[0] * C.right[0] + sd[2] * C.right[2]) / sl, -sd[1] / sl],
@@ -5886,7 +5908,7 @@ export function dglSprites(C, items, X, hits, labels, PPU) {
     const s = it.mpp,
       hM = -it.oy * s;
     let fade = it.fade ?? 1;
-    if (me && !DGL.bt && !it.person && it.k === 'prop' && hM > 1.6) {
+    if (me && !walkRenderer.bt && !it.person && it.k === 'prop' && hM > 1.6) {
       const q = dioProj(C, it.x, 0, it.z);
       if (q && q.d < me.d - 0.3) {
         const half = it.w * s * 0.5 * q.s,
@@ -5894,10 +5916,10 @@ export function dglSprites(C, items, X, hits, labels, PPU) {
         if (me.x > q.x - half && me.x < q.x + half && me.y > top && me.y < q.y) fade = 0.4;
       }
     }
-    const rk = DGL.rise ? dglRiseK(it) : 1;
+    const rk = walkRenderer.rise ? dglRiseK(it) : 1;
     if (rk < 0.002 && !it.person) continue;
     if (it.bld3) {
-      DGL.bfade.set(it, fade * Math.min(1, rk));
+      walkRenderer.bfade.set(it, fade * Math.min(1, rk));
       dglHit(it, C, hits, labels, PPU);
       continue;
     }
@@ -6092,7 +6114,7 @@ function dglBoxFaces(C, items, X) {
       it.vol
     )
       continue;
-    if (DGL.bt && DGL.bt.hide && DGL.bt.hide.has(it.p)) continue;
+    if (walkRenderer.bt && walkRenderer.bt.hide && walkRenderer.bt.hide.has(it.p)) continue;
     if (!DGL_BOX.has(it.im) && !dglBudget()) continue;
     const B = dglBoxInfo(it.im);
     if (!B) continue;
@@ -6187,9 +6209,9 @@ function dglHands(p, it, C, X) {
 function dglLandmarkTilt(P, sc) {
   if (!sc || sc.indoor || !P || RM) return 0;
   const C0 = dioData().sc;
-  let L = DGL.lmL;
+  let L = walkRenderer.lmL;
   if (!L || L.sc !== sc)
-    L = DGL.lmL = {
+    L = walkRenderer.lmL = {
       sc,
       list: (sc.props || []).filter(p => {
         const M = C0.props[p.k];
@@ -6309,7 +6331,7 @@ export function dglHit(it, C, hits, labels, PPU) {
 function dglWaterNear(x, z) {
   const wt = walkView.water;
   if (!wt || !wt.length) return false;
-  let Q = DGL.wsat;
+  let Q = walkRenderer.wsat;
   if (!Q || Q.src !== wt) {
     const sc = walkView.sc,
       W = Math.max(1, sc.w | 0),
@@ -6326,7 +6348,7 @@ function dglWaterNear(x, z) {
         const q = k * R + i;
         S[q] += S[q - 1] + S[q - R] - S[q - R - 1];
       }
-    Q = DGL.wsat = { src: wt, S, W, H };
+    Q = walkRenderer.wsat = { src: wt, S, W, H };
   }
   const i0 = Math.max(0, Math.floor(x - 5.5) + 1),
     i1 = Math.min(Q.W - 1, Math.ceil(x + 4.5) - 1),
@@ -6414,7 +6436,7 @@ DGL_WKIND.forEach((k, i) => {
   DGL_WKU.B.set([k.glow, k.murk, k.weed, k.mode || 0], i * 4);
 });
 export function dglWgAt(x, z) {
-  const G = DGL.wgrid;
+  const G = walkRenderer.wgrid;
   if (!G) return null;
   const i = Math.floor(x * 2),
     j = Math.floor(z * 2);
@@ -6425,12 +6447,12 @@ export function dglWgAt(x, z) {
 function dglWaterLife() {
   const t = (RM ? 0 : walkView.t || 0) / 1000,
     now = performance.now() / 1000,
-    dt = Math.min(0.1, Math.max(0, now - (DGL.wlT || now)));
-  DGL.wlT = now;
+    dt = Math.min(0.1, Math.max(0, now - (walkRenderer.wlT || now)));
+  walkRenderer.wlT = now;
   const fish = new Float32Array(16),
     rings = new Float32Array(32);
   if (eng('water', 'fish'))
-    (DGL.fishHomes || []).forEach((h, i) => {
+    (walkRenderer.fishHomes || []).forEach((h, i) => {
       const sp = 0.35 + 0.12 * Math.sin(i * 2.3),
         a = (t * sp) / Math.max(0.5, h[3]) + i * 1.9,
         r = h[3] * (0.75 + 0.25 * Math.sin(t * 0.13 + i)),
@@ -6440,14 +6462,19 @@ function dglWaterLife() {
       fish[i * 4 + 1] = z;
       fish[i * 4 + 2] = Math.atan2(Math.cos(a) * 0.8, -Math.sin(a));
       fish[i * 4 + 3] = 0.75 + (0.25 * ((i * 7) % 3)) / 2;
-      if (!DGL.bt && Math.random() < dt * 0.06) dglRing(x, z, 0.7);
-      /* v27: now and then one jumps clear of the water */ if (!DGL.bt && !RM && Math.random() < dt * 0.012) {
+      if (!walkRenderer.bt && Math.random() < dt * 0.06) dglRing(x, z, 0.7);
+      /* v27: now and then one jumps clear of the water */ if (!walkRenderer.bt && !RM && Math.random() < dt * 0.012) {
         dglRing(x, z, 0.9);
-        (DGL.splash = DGL.splash || []).push({ x, z, y: DGL.wlevelR ?? DGL.wlevel ?? 0, a: 0 });
+        (walkRenderer.splash = walkRenderer.splash || []).push({
+          x,
+          z,
+          y: walkRenderer.wlevelR ?? walkRenderer.wlevel ?? 0,
+          a: 0,
+        });
         if (typeof sfxAt === 'function') sfxAt('plop', x, z);
       }
     });
-  if (eng('water', 'rings') && !DGL.bt && !RM) {
+  if (eng('water', 'rings') && !walkRenderer.bt && !RM) {
     if (typeof LIFE !== 'undefined')
       for (const c of LIFE.list || [])
         if (c.k === 'duck') {
@@ -6458,21 +6485,21 @@ function dglWaterLife() {
           }
         }
     /* v47: rings now and then round what stands in the water: rocks, posts, reeds, the legs of a jetty */
-    if (DGL.wetPropsId !== walkView.id) {
-      DGL.wetPropsId = walkView.id;
-      DGL.wetProps = (walkView.sc.props || [])
+    if (walkRenderer.wetPropsId !== walkView.id) {
+      walkRenderer.wetPropsId = walkView.id;
+      walkRenderer.wetProps = (walkView.sc.props || [])
         .filter(p => {
           const M = dioData().sc.props[p.k];
           return M && !M.walk && typeof dglWgAt === 'function' && dglWgAt(p.x, p.z);
         })
         .slice(0, 40);
     }
-    const WP = DGL.wetProps;
+    const WP = walkRenderer.wetProps;
     if (WP && WP.length && Math.random() < dt * Math.min(2.5, WP.length * 0.35)) {
       const p = WP[Math.floor(Math.random() * WP.length)];
       dglRing(p.x + (Math.random() - 0.5) * 0.3, p.z + (Math.random() - 0.5) * 0.3, 0.45 + Math.random() * 0.25);
     }
-    const G = DGL.wgrid;
+    const G = walkRenderer.wgrid;
     if (G && Math.random() < dt * 1.4) {
       for (let k = 0; k < 6; k++) {
         const i = Math.floor(Math.random() * G.W2),
@@ -6490,15 +6517,15 @@ function dglWaterLife() {
       }
     }
   }
-  const R = DGL.rings || [];
+  const R = walkRenderer.rings || [];
   for (const r of R) r[2] += dt;
-  DGL.rings = R.filter(r => r[2] < 2.4);
-  DGL.rings.slice(-8).forEach((r, i) => rings.set(r, i * 4));
+  walkRenderer.rings = R.filter(r => r[2] < 2.4);
+  walkRenderer.rings.slice(-8).forEach((r, i) => rings.set(r, i * 4));
   return { fish, rings };
 }
 export function dglRing(x, z, k) {
-  (DGL.rings = DGL.rings || []).push([x, z, 0, k]);
-  if (DGL.rings.length > 16) DGL.rings.shift();
+  (walkRenderer.rings = walkRenderer.rings || []).push([x, z, 0, k]);
+  if (walkRenderer.rings.length > 16) walkRenderer.rings.shift();
 }
 function dglWaterU(U) {
   const gl = EGL.gl;
@@ -6514,8 +6541,8 @@ function dglWaterU(U) {
   gl.uniform4fv(U.uRings, L.rings);
 }
 function dglReflLevel() {
-  const G = DGL.wlevels;
-  if (!G || G.length < 2) return (DGL.wlevelR = DGL.wlevel || 0);
+  const G = walkRenderer.wlevels;
+  if (!G || G.length < 2) return (walkRenderer.wlevelR = walkRenderer.wlevel || 0);
   const P = walkView.pl;
   let best = null,
     bs = -1;
@@ -6529,7 +6556,7 @@ function dglReflLevel() {
       best = g;
     }
   }
-  return (DGL.wlevelR = best ? best.y : DGL.wlevel);
+  return (walkRenderer.wlevelR = best ? best.y : walkRenderer.wlevel);
 }
 export function dglWater(C, X, rw, rh) {
   const gl = EGL.gl,
@@ -6538,7 +6565,7 @@ export function dglWater(C, X, rw, rh) {
     sc = walkView.sc,
     sky = dglSkyCols(sc);
   gl.activeTexture(gl.TEXTURE0);
-  gl.bindTexture(gl.TEXTURE_2D, DGL.water && EGL.fb.refl ? EGL.fb.refl.c : EGL.white);
+  gl.bindTexture(gl.TEXTURE_2D, walkRenderer.water && EGL.fb.refl ? EGL.fb.refl.c : EGL.white);
   gl.uniform1i(U.uRefl, 0);
   gl.uniform2f(U.uRes, rw, rh);
   gl.uniform3fv(U.uDeep, engHex('water', 'deep', '#1D4F78'));
@@ -6548,31 +6575,31 @@ export function dglWater(C, X, rw, rh) {
   gl.uniform1f(U.uRip, eng('water', 'ripples'));
   gl.uniform1f(U.uFoam, eng('water', 'foam'));
   gl.uniform1f(U.uGlint, eng('water', 'glints'));
-  gl.uniform1f(U.uLevel, DGL.wlevelR ?? DGL.wlevel ?? 0);
+  gl.uniform1f(U.uLevel, walkRenderer.wlevelR ?? walkRenderer.wlevel ?? 0);
   dglWaterU(U);
   dglShoreU(U, sc);
   gl.enable(gl.BLEND);
   gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
   gl.depthMask(false);
-  if (DGL.water) {
-    gl.bindVertexArray(DGL.water.vao);
-    gl.drawElements(gl.TRIANGLES, DGL.water.n, gl.UNSIGNED_INT, 0);
+  if (walkRenderer.water) {
+    gl.bindVertexArray(walkRenderer.water.vao);
+    gl.drawElements(gl.TRIANGLES, walkRenderer.water.n, gl.UNSIGNED_INT, 0);
     gl.bindVertexArray(null);
   }
   /* v31: fountain and well basins: the same moving water, mirror off (they sit above the pond level), no shoreline */
-  if (DGL.basin) {
+  if (walkRenderer.basin) {
     gl.uniform1f(U.uLevel, -99);
     if (U.uShoreR) gl.uniform3f(U.uShoreR, 1, 1, 0);
-    gl.bindVertexArray(DGL.basin.vao);
-    gl.drawElements(gl.TRIANGLES, DGL.basin.n, gl.UNSIGNED_INT, 0);
+    gl.bindVertexArray(walkRenderer.basin.vao);
+    gl.drawElements(gl.TRIANGLES, walkRenderer.basin.n, gl.UNSIGNED_INT, 0);
     gl.bindVertexArray(null);
   }
-  if (DGL.fallMesh) {
+  if (walkRenderer.fallMesh) {
     const f = dglUse('fall', C, X);
     gl.uniform3fv(f.U.uShallow, engHex('water', 'shallow', '#4FA6C0'));
     gl.disable(gl.CULL_FACE);
-    gl.bindVertexArray(DGL.fallMesh.vao);
-    gl.drawElements(gl.TRIANGLES, DGL.fallMesh.n, gl.UNSIGNED_INT, 0);
+    gl.bindVertexArray(walkRenderer.fallMesh.vao);
+    gl.drawElements(gl.TRIANGLES, walkRenderer.fallMesh.n, gl.UNSIGNED_INT, 0);
     gl.bindVertexArray(null);
   }
   gl.depthMask(true);
@@ -6583,9 +6610,9 @@ export function dglWater(C, X, rw, rh) {
    faint dusty shaft from the glass to the floor, the glass itself darkening at night; pendant lamps come on in the
    evening; the floor darkens toward the walls and the walls get a skirting board (in the ground shader) */
 function dglRoomBox(sc) {
-  if (DGL.roomBoxId === walkView.id) return DGL.roomBox;
-  DGL.roomBoxId = walkView.id;
-  DGL.roomBox = null;
+  if (walkRenderer.roomBoxId === walkView.id) return walkRenderer.roomBox;
+  walkRenderer.roomBoxId = walkView.id;
+  walkRenderer.roomBox = null;
   if (!sc.room) return null;
   const Rr = sc.roomRect || [0, 0, sc.w, sc.h],
     X0 = Rr[0],
@@ -6599,12 +6626,12 @@ function dglRoomBox(sc) {
   while (x0 > X0 && !hi(x0 - 0.05, Z0 + H * 0.5)) x0 -= 0.05;
   while (x1 < X0 + W && !hi(x1 + 0.05, Z0 + H * 0.5)) x1 += 0.05;
   while (zb < Z0 + H && !hi(X0 + W / 2, zb + 0.05)) zb += 0.05;
-  return (DGL.roomBox = [x0, x1, zb]);
+  return (walkRenderer.roomBox = [x0, x1, zb]);
 }
 function dglRoomSky() {
   const now = performance.now();
-  if (DGL.roomSkyT && now - DGL.roomSkyT < 500) return DGL.roomSky;
-  DGL.roomSkyT = now;
+  if (walkRenderer.roomSkyT && now - walkRenderer.roomSkyT < 500) return walkRenderer.roomSky;
+  walkRenderer.roomSkyT = now;
   let st;
   try {
     st = envState(envHere() || walkView.sc);
@@ -6622,7 +6649,7 @@ function dglRoomSky() {
     c = dayC.map((v, i) => v * day + moonC[i] * st.night);
   const elev = (14 + 48 * el) * day + 45 * st.night,
     dx = (ph - 0.5) * 1.5 * day - 0.35 * st.night;
-  return (DGL.roomSky = {
+  return (walkRenderer.roomSky = {
     c,
     I: Math.max(...c),
     tan: Math.tan((elev * Math.PI) / 180),
@@ -6635,7 +6662,7 @@ function dglRoomSky() {
 }
 function dglRoomTex(k) {
   const key = 'roomTex_' + k;
-  if (DGL[key]) return DGL[key];
+  if (walkRenderer[key]) return walkRenderer[key];
   const N = 64,
     c = cnv(N, N),
     x = c.getContext('2d'),
@@ -6657,11 +6684,11 @@ function dglRoomTex(k) {
       d.data[q + 3] = Math.round(clamp(a, 0, 1) * 255);
     }
   x.putImageData(d, 0, 0);
-  return (DGL[key] = c);
+  return (walkRenderer[key] = c);
 }
 function dglLampTex(on) {
   const key = on ? 'lampTexOn' : 'lampTex';
-  if (DGL[key]) return DGL[key];
+  if (walkRenderer[key]) return walkRenderer[key];
   const c = cnv(14, 18),
     x = c.getContext('2d'),
     P = (col, a, b, w, h) => {
@@ -6677,14 +6704,14 @@ function dglLampTex(on) {
   P('#9C8052', 2, 7, 10, 1);
   P(on ? '#FFF8DA' : '#B8AA90', 5, 8, 4, 1);
   P(on ? '#FFFFFF' : '#F2EAD6', 4, 1, 2, 3);
-  return (DGL[key] = c);
+  return (walkRenderer[key] = c);
 }
 /* two lamps on the back wall, one each side, where nothing hangs or stands against it */
 function dglRoomLamps(sc) {
-  if (DGL.lampsId === walkView.id) return DGL.lamps;
-  DGL.lampsId = walkView.id;
+  if (walkRenderer.lampsId === walkView.id) return walkRenderer.lamps;
+  walkRenderer.lampsId = walkView.id;
   const B = dglRoomBox(sc);
-  if (!B) return (DGL.lamps = []);
+  if (!B) return (walkRenderer.lamps = []);
   const W = B[1] - B[0],
     near = (sc.props || []).filter(p => p.z > B[2] - 1.6),
     free = x => near.every(p => Math.abs(p.x - x) > 0.95),
@@ -6696,7 +6723,7 @@ function dglRoomLamps(sc) {
     const f = side.find(f => free(B[0] + W * f));
     out.push(f != null ? [B[0] + W * f, B[2] - 0.06, 2.05] : [B[0] + W * side[0], B[2] - 0.06, 2.75]);
   }
-  return (DGL.lamps = out);
+  return (walkRenderer.lamps = out);
 }
 /* something tall standing right in front of a window (a fridge, a shelf) keeps its light out */
 function dglWinBlocked(sc, w) {
@@ -6711,11 +6738,11 @@ function dglWinBlocked(sc, w) {
 /* alpha 0.1: a room with many windows (it shows its building's own) shares their daylight, as if it had two or so: the
    back wall doesn't wash out to white */
 function dglWinShare(sc) {
-  if (DGL.wsP !== sc.props) {
-    DGL.wsP = sc.props;
-    DGL.ws = Math.min(1, 2.2 / Math.max(1, (sc.props || []).filter(p => /wall_window/.test(p.k)).length));
+  if (walkRenderer.wsP !== sc.props) {
+    walkRenderer.wsP = sc.props;
+    walkRenderer.ws = Math.min(1, 2.2 / Math.max(1, (sc.props || []).filter(p => /wall_window/.test(p.k)).length));
   }
-  return DGL.ws;
+  return walkRenderer.ws;
 }
 function dglRoomLights(sc, L, lb) {
   if (!sc.room || (eng('lights', 'roomLight') ?? true) === false) return;
@@ -6928,8 +6955,8 @@ function dglRoomFront(C, X) {
     zf = Rr[1] - 0.001,
     x0 = B[0] - 0.25,
     x1 = B[1] + 0.25;
-  if (DGL.frontKey !== walkView.id) {
-    DGL.frontKey = walkView.id;
+  if (walkRenderer.frontKey !== walkView.id) {
+    walkRenderer.frontKey = walkView.id;
     const wc = hexA((sc.wallCol || [])[10] || '#D9B79C'),
       c = cnv(1, 32),
       x = c.getContext('2d'),
@@ -6947,10 +6974,10 @@ function dglRoomFront(C, X) {
     tx.fillRect(0, 0, 4, 4);
     tx.fillStyle = '#8A7662';
     tx.fillRect(0, 0, 4, 1);
-    DGL.frontTex = [c, t];
+    walkRenderer.frontTex = [c, t];
   }
-  const F = eglImg(DGL.frontTex[0], { noNormal: true }),
-    T = eglImg(DGL.frontTex[1], { noNormal: true });
+  const F = eglImg(walkRenderer.frontTex[0], { noNormal: true }),
+    T = eglImg(walkRenderer.frontTex[1], { noNormal: true });
   if (!F || !T) return;
   const p = dglUse('face', C, X);
   eglBindQuad();
@@ -7052,12 +7079,12 @@ function dglBasinSet(L) {
     walkView.id +
     '|' +
     L.map(b => b.B.map(q => [q.x, q.y, q.z, q.rx].map(v => v.toFixed(2)).join(',')).join(';')).join('/');
-  DGL.basinL = L;
-  DGL.basinP = new Set(L.map(b => b.p));
-  if (DGL.basinKey === key) return;
-  DGL.basinKey = key;
-  eglFree(DGL.basin);
-  DGL.basin = null;
+  walkRenderer.basinL = L;
+  walkRenderer.basinP = new Set(L.map(b => b.p));
+  if (walkRenderer.basinKey === key) return;
+  walkRenderer.basinKey = key;
+  eglFree(walkRenderer.basin);
+  walkRenderer.basin = null;
   if (!L.length) return;
   const V = [],
     I = [],
@@ -7101,7 +7128,7 @@ function dglBasinSet(L) {
         }
       }
     }
-  DGL.basin = eglMesh(
+  walkRenderer.basin = eglMesh(
     new Float32Array(V),
     new Uint32Array(I),
     [
@@ -7114,7 +7141,7 @@ function dglBasinSet(L) {
   );
 }
 function dglFountainFx(quad, t, rm, dt) {
-  const L = DGL.basinL;
+  const L = walkRenderer.basinL;
   if (!L || !L.length) return;
   const T = t * rm,
     col = [0.93, 0.98, 1];
@@ -7222,7 +7249,7 @@ function dglFountainFx(quad, t, rm, dt) {
 function dglWeather(quad, glows, U, R, Up, dt, rm) {
   const gl = EGL.gl,
     E = ENV,
-    BT = DGL.bt,
+    BT = walkRenderer.bt,
     P = BT ? { x: BT.center[0], z: BT.center[1] } : walkView.pl,
     k = eng('air', 'weather') * (walkView.R < 0.75 ? 0.5 : 1);
   /* alpha 0.4: while a front passes, the rain is as heavy as it will be (or was) but only on its side of the curtain */
@@ -7232,10 +7259,10 @@ function dglWeather(quad, glows, U, R, Up, dt, rm) {
     snow = (Cu ? Cu.snow : E.snow) * k,
     ash = (Cu ? Cu.ash : E.ash) * k;
   if (rain + snow + ash < 0.03) {
-    if (DGL.wx) DGL.wx.p.length = 0;
+    if (walkRenderer.wx) walkRenderer.wx.p.length = 0;
     return;
   }
-  const W = DGL.wx || (DGL.wx = { p: [], sp: [] }),
+  const W = walkRenderer.wx || (walkRenderer.wx = { p: [], sp: [] }),
     nR = Math.round(130 * rain),
     nS = Math.round(110 * snow),
     nA = Math.round(80 * ash),
@@ -7304,7 +7331,7 @@ function dglWeather(quad, glows, U, R, Up, dt, rm) {
     const f = s.a / 0.28;
     quad('spray', 2, s.x, s.y + 0.04 + f * 0.06, s.z, 0.1 + f * 0.14, 0.05 + f * 0.05, (1 - f) * 0.45, [0.85, 0.9, 1]);
   }
-  if (rain > 0 && DGL.wgrid && !RM && Math.random() < dt * rain * 18) {
+  if (rain > 0 && walkRenderer.wgrid && !RM && Math.random() < dt * rain * 18) {
     const x = P.x + (Math.random() - 0.5) * 16,
       z = P.z - 3 + Math.random() * 12,
       g = dglWgAt(x, z);
@@ -7335,25 +7362,25 @@ function dglPrintAt(x, z, a, paw) {
   if (!col && E && !sc.indoor && E.sk && E.sk[3] > 0.3 && !/[wdbe]/.test(ch)) col = DGL_PRINT_COL.n;
   if (!col && E && !sc.indoor && E.wet > 0.5 && !/[wdb]/.test(ch)) col = [0.34, 0.36, 0.42];
   if (!col) return;
-  const P = DGL.prints || (DGL.prints = []);
+  const P = walkRenderer.prints || (walkRenderer.prints = []);
   P.push({ x, z, y: dioH(x, z), a, paw, age: 0, col });
   if (P.length > 140) P.splice(0, P.length - 140);
 }
 function dglPrints(quad, U, R, Up, dt) {
   const pl = walkView.pl,
     gl = EGL.gl;
-  if (DGL.printId !== walkView.id) {
-    DGL.printId = walkView.id;
-    DGL.prints = [];
-    DGL.lastPrint = null;
+  if (walkRenderer.printId !== walkView.id) {
+    walkRenderer.printId = walkView.id;
+    walkRenderer.prints = [];
+    walkRenderer.lastPrint = null;
   }
   if (pl.walk && !pl.yv) {
-    const L = DGL.lastPrint;
+    const L = walkRenderer.lastPrint;
     if (!L || Math.hypot(pl.x - L[0], pl.z - L[1]) > 0.36) {
       const a = L ? Math.atan2(pl.z - L[1], pl.x - L[0]) : 0,
-        side = (DGL.printSide = -(DGL.printSide || 1));
+        side = (walkRenderer.printSide = -(walkRenderer.printSide || 1));
       dglPrintAt(pl.x - Math.sin(a) * 0.08 * side, pl.z + Math.cos(a) * 0.08 * side, a, 0);
-      DGL.lastPrint = [pl.x, pl.z];
+      walkRenderer.lastPrint = [pl.x, pl.z];
     }
   }
   if (typeof LIFE !== 'undefined')
@@ -7365,7 +7392,7 @@ function dglPrints(quad, U, R, Up, dt) {
         c._lp = [c.x, c.z];
       }
     }
-  const P = DGL.prints;
+  const P = walkRenderer.prints;
   if (!P || !P.length) return;
   for (let i = P.length - 1; i >= 0; i--) {
     if ((P[i].age += dt) > 30) P.splice(i, 1);
@@ -7554,7 +7581,7 @@ export function dglFxPass(C, items, X, dark, t, dt) {
       gl.drawArrays(gl.TRIANGLES, 0, 6);
     };
   const glows = [];
-  DGL.fires = [];
+  walkRenderer.fires = [];
   const RR = sc.roomRect,
     dOut =
       RR && typeof ENV !== 'undefined' && ENG_CTX.env
@@ -7590,7 +7617,7 @@ export function dglFxPass(C, items, X, dark, t, dt) {
           );
         }
       else if (e.k === 'spray') {
-        if (DGL.basinP && DGL.basinP.has(it.p)) return;
+        if (walkRenderer.basinP && walkRenderer.basinP.has(it.p)) return;
         for (let n = 0; n < 14; n++) {
           const ph = ((t * rm) / 1100 + n / 14) % 1,
             an = n * 2.4 + sd,
@@ -7651,7 +7678,7 @@ export function dglFxPass(C, items, X, dark, t, dt) {
             [1.35, 1.2, 1.05]
           );
         }
-        (DGL.fires || (DGL.fires = [])).push([x, y + 0.8 * sz, z, sz]);
+        (walkRenderer.fires || (walkRenderer.fires = [])).push([x, y + 0.8 * sz, z, sz]);
       } else if (e.k === 'window') {
         if (it.bld3 && !(sc.room && !out) && BLD.mesh.get(it.p)) return;
         const RS = sc.room && !out ? dglRoomSky() : null;
@@ -7772,8 +7799,8 @@ export function dglFxPass(C, items, X, dark, t, dt) {
     dglLifeFx(quad, glows, t, rm, dt, sc, C0);
   }
   /* v18: spray and mist where water falls over a step */
-  if (DGL.falls && DGL.falls.length) {
-    const F = DGL.falls,
+  if (walkRenderer.falls && walkRenderer.falls.length) {
+    const F = walkRenderer.falls,
       stp = Math.max(1, Math.ceil(F.length / 40));
     for (let k = 0; k < F.length; k += stp) {
       const [x, y, z, dh] = F[k],
@@ -7811,12 +7838,13 @@ export function dglFxPass(C, items, X, dark, t, dt) {
     }
   }
   /* v22: leaves riding the streams (lying flat on the water), and steam breathing off warm springs */
-  if (DGL.streamCells && DGL.streamCells.length && eng('water', 'leaves') && !DGL.bt) {
-    const S = DGL.streamCells,
+  if (walkRenderer.streamCells && walkRenderer.streamCells.length && eng('water', 'leaves') && !walkRenderer.bt) {
+    const S = walkRenderer.streamCells,
       n = Math.min(10, Math.ceil(S.length / 12));
-    if (!DGL.leaves || DGL.leaves.length !== n) DGL.leaves = Array.from({ length: n }, (_, i) => ({ age: 99, i }));
+    if (!walkRenderer.leaves || walkRenderer.leaves.length !== n)
+      walkRenderer.leaves = Array.from({ length: n }, (_, i) => ({ age: 99, i }));
     gl.uniform3f(U.uUp, 0, 0, 1);
-    for (const L of DGL.leaves) {
+    for (const L of walkRenderer.leaves) {
       if (L.age > 16 || !L.ok) {
         const c = S[Math.floor(Math.random() * S.length)];
         Object.assign(L, {
@@ -7828,7 +7856,7 @@ export function dglFxPass(C, items, X, dark, t, dt) {
           ok: true,
         });
       }
-      const f = DGL.flowAt(L.x, L.z);
+      const f = walkRenderer.flowAt(L.x, L.z);
       L.age += dt;
       if (!rm) {
         L.x += (f[0] * L.sp + Math.sin(L.age * 1.3 + L.i) * 0.05) * dt;
@@ -7846,8 +7874,8 @@ export function dglFxPass(C, items, X, dark, t, dt) {
     gl.uniform3fv(U.uRight, R);
     gl.uniform3fv(U.uUp, Up);
   }
-  if (DGL.springCells && DGL.springCells.length && eng('water', 'steam')) {
-    DGL.springCells.forEach(([x, z, dp], k) => {
+  if (walkRenderer.springCells && walkRenderer.springCells.length && eng('water', 'steam')) {
+    walkRenderer.springCells.forEach(([x, z, dp], k) => {
       const g = dglWgAt(x, z),
         y = g ? g.y : dioH(x, z);
       for (let n = 0; n < 2; n++) {
@@ -7868,16 +7896,16 @@ export function dglFxPass(C, items, X, dark, t, dt) {
     });
   }
   if (ENG_CTX.env && !sc.indoor && eng('air', 'weather') > 0) dglWeather(quad, glows, U, R, Up, dt, rm);
-  if (!DGL.bt) dglPrints(quad, U, R, Up, dt);
+  if (!walkRenderer.bt) dglPrints(quad, U, R, Up, dt);
   dglFountainFx(quad, t, rm, dt);
   dglRoomFx(C, U, items, glows, t, rm);
   gl.uniform3fv(U.uRight, R);
   gl.uniform3fv(U.uUp, Up);
   if (typeof stampDraw === 'function') stampDraw(quad, glows, t);
   if (typeof clueDraw === 'function') clueDraw(quad, glows, t);
-  if (typeof owFx === 'function' && !DGL.bt) owFx(glows, dt);
-  if (!DGL.bt && DGL.encPos)
-    DGL.encPos.forEach(([x, z, id], k) => {
+  if (typeof owFx === 'function' && !walkRenderer.bt) owFx(glows, dt);
+  if (!walkRenderer.bt && walkRenderer.encPos)
+    walkRenderer.encPos.forEach(([x, z, id], k) => {
       const ph = (t / 1000 + k * 1.7) % 6;
       if (ph > 1.1) return;
       const a = Math.sin((ph / 1.1) * Math.PI),
@@ -7888,12 +7916,12 @@ export function dglFxPass(C, items, X, dark, t, dt) {
       glows.push([x - ex, y, z - ez - 0.15, 0.035, c, 1.6 * a]);
       glows.push([x + ex, y, z + ez - 0.15, 0.035, c, 1.6 * a]);
     });
-  if (DGL.splash && DGL.splash.length) {
-    for (let i = DGL.splash.length - 1; i >= 0; i--) {
-      const q = DGL.splash[i];
+  if (walkRenderer.splash && walkRenderer.splash.length) {
+    for (let i = walkRenderer.splash.length - 1; i >= 0; i--) {
+      const q = walkRenderer.splash[i];
       q.a += dt;
       if (q.a > 0.7) {
-        DGL.splash.splice(i, 1);
+        walkRenderer.splash.splice(i, 1);
         continue;
       }
       for (let n = 0; n < 8; n++) {
@@ -7948,7 +7976,7 @@ export function dglFxPass(C, items, X, dark, t, dt) {
   }
   /* bright cores, added in HDR: the bloom spreads them into soft glows */
   /* battle move effects as sprites in the world: hidden behind things, blurred by depth, glowing ones bloom */
-  const BP = DGL.bt && DGL.bt.parts;
+  const BP = walkRenderer.bt && walkRenderer.bt.parts;
   if (BP && BP.length) {
     gl.uniform1f(U.uLitFx, 0);
     gl.uniform1f(U.uGlow, 0);

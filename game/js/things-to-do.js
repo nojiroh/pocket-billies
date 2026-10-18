@@ -13,7 +13,7 @@ import { cnv, uiIco } from './art.js';
 import { dioBaseId, dioFace, dioFind, dioFreePt, dioHubOf, dioScene, dioTer, walkView } from './walk-view.js';
 import { eng } from './engine/settings.js';
 import { ENV, envHere, envState } from './environment.js';
-import { DGL, dioH } from './walk-view-gl.js';
+import { dioH, walkRenderer } from './walk-view-gl.js';
 import { endBattle, openBattle, say, setEndBattle, setOpenBattle } from './battle.js';
 import { sfx } from './sound.js';
 import { TALK, setTalkFolk, talk, talkFolk } from './talk.js';
@@ -368,7 +368,7 @@ function stampSpots() {
 }
 /* drawn by the walk scene's effects pass: a gold glint you pick up by walking over it */
 function stampDraw(quad, glows, t) {
-  if (!S || !S.started || DGL.bt || U.bench) return;
+  if (!S || !S.started || walkRenderer.bt || U.bench) return;
   const X = x28(),
     P = walkView.pl,
     sp = stampSpots();
@@ -499,14 +499,14 @@ const PHOTO_FILTERS = [
   ['dream', 'Dreamy', 'saturate(1.2) brightness(1.08) blur(.6px)'],
 ];
 function photoStart() {
-  if (typeof DGL === 'undefined' || !DGL.on) {
+  if (typeof walkRenderer === 'undefined' || !walkRenderer.on) {
     toast('Photo mode needs the 3D scene (Settings → Visual effects → Full).');
     return;
   }
   if (U.photo) return;
   U.photo = { f: 'none' };
   document.body.classList.add('photo');
-  if (DGL.ui) DGL.ui.style.visibility = 'hidden';
+  if (walkRenderer.ui) walkRenderer.ui.style.visibility = 'hidden';
   const el = document.createElement('div');
   el.className = 'photo-ui glass';
   el.id = 'photoUI';
@@ -529,16 +529,16 @@ function photoEnd() {
   const el = document.getElementById('photoUI');
   if (el) el.remove();
   if (walkView.cv) walkView.cv.style.filter = '';
-  if (DGL.ui) DGL.ui.style.visibility = '';
-  if (typeof DGL !== 'undefined') {
-    DGL.zoomT = 1;
-    DGL.yawT = 0;
+  if (walkRenderer.ui) walkRenderer.ui.style.visibility = '';
+  if (typeof walkRenderer !== 'undefined') {
+    walkRenderer.zoomT = 1;
+    walkRenderer.yawT = 0;
   }
 }
 function photoShot() {
-  if (!U.photo || typeof DGL === 'undefined') return;
+  if (!U.photo || typeof walkRenderer === 'undefined') return;
   if (typeof sfx === 'function') sfx('pop');
-  DGL.photoReq = c => {
+  walkRenderer.photoReq = c => {
     if (!c) {
       toast('The picture couldn’t be taken on this device.');
       return;
@@ -582,12 +582,17 @@ document.addEventListener('click', ev => {
   const a = el.dataset.a;
   if (a === 'photoF') photoFilter(el.dataset.k);
   else if (a === 'photoZoom') {
-    DGL.zoomT = clamp(DGL.zoomT + +el.dataset.d * 0.15, eng('camera', 'zoomMin'), eng('camera', 'zoomMax'));
+    walkRenderer.zoomT = clamp(
+      walkRenderer.zoomT + +el.dataset.d * 0.15,
+      eng('camera', 'zoomMin'),
+      eng('camera', 'zoomMax')
+    );
   } else if (a === 'photoTurn') {
     const lim = (eng('camera', 'turn') * Math.PI) / 180;
-    DGL.yawT = clamp(DGL.yawT + +el.dataset.d * 0.2, -lim, lim);
+    walkRenderer.yawT = clamp(walkRenderer.yawT + +el.dataset.d * 0.2, -lim, lim);
   } else if (a === 'photoLabels') {
-    if (DGL.ui) DGL.ui.style.visibility = DGL.ui.style.visibility === 'hidden' ? '' : 'hidden';
+    if (walkRenderer.ui)
+      walkRenderer.ui.style.visibility = walkRenderer.ui.style.visibility === 'hidden' ? '' : 'hidden';
   } else if (a === 'photoShot') photoShot();
   else if (a === 'photoEnd') photoEnd();
   else if (a === 'chal') chalClaim(el.dataset.i);

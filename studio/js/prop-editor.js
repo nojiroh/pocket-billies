@@ -11,7 +11,7 @@ import { $, $$, clamp } from '../../game/js/util.js';
 import { frameStop, frameTask } from '../../game/js/frame-scheduler.js';
 import { artLoad, cnv, setArtLoad } from '../../game/js/art.js';
 import { dioData, dioImg, dioLayerM, dioOk, setDioData, walkView } from '../../game/js/walk-view.js';
-import { DGL, DGL_MATS, dglMatOf, dglVaryOf, dioMount } from '../../game/js/walk-view-gl.js';
+import { DGL_MATS, dglMatOf, dglVaryOf, dioMount, walkRenderer } from '../../game/js/walk-view-gl.js';
 import { BLD_ROOM_NAMES, BLD_TEX_NAMES } from '../../game/js/buildings.js';
 import { P3D_AUTO, P3D_KINDS, P3D_PARTS, p3dTreeKind } from '../../game/js/solid-props.js';
 import { esc } from './game-stand-ins.js';
@@ -633,7 +633,8 @@ async function pedMount() {
       frameStop('pedSpin');
       return;
     }
-    if (PED.spin && typeof DGL !== 'undefined' && !DGL.drag) DGL.yawT = Math.sin(performance.now() / 2600) * 0.6;
+    if (PED.spin && typeof walkRenderer !== 'undefined' && !walkRenderer.drag)
+      walkRenderer.yawT = Math.sin(performance.now() / 2600) * 0.6;
   });
 }
 /* ---------- actions ---------- */
@@ -652,8 +653,8 @@ ACTS.pedOpen = d => {
 ACTS.pedClose = () => {
   SCN.ped = null;
   PED.sel = null;
-  if (typeof DGL !== 'undefined') {
-    DGL.yawT = 0;
+  if (typeof walkRenderer !== 'undefined') {
+    walkRenderer.yawT = 0;
   }
   walkView.id = null;
   render();
@@ -682,7 +683,7 @@ ACTS.pedZoom = d => {
 };
 ACTS.pedSpin = () => {
   PED.spin = !PED.spin;
-  if (!PED.spin && typeof DGL !== 'undefined') DGL.yawT = 0;
+  if (!PED.spin && typeof walkRenderer !== 'undefined') walkRenderer.yawT = 0;
   render();
 };
 ACTS.pedGlowDel = () => {

@@ -14,7 +14,7 @@ import { hexA } from './art.js';
 import { ACT, FOC, POS, SC, UPP, partSpr, sideBuf, sideWorld, trainerBattleFrame, trainerMpp } from './battle-stage.js';
 import { dioData, dioStop, walkView } from './walk-view.js';
 import { EGL } from './engine/webgl.js';
-import { DGL, dioH } from './walk-view-gl.js';
+import { dioH, walkRenderer } from './walk-view-gl.js';
 /* eslint-disable no-func-assign */
 expose({
   BGL: [() => BGL],
@@ -31,8 +31,8 @@ provide({ battleGLLayout, battleGLStart, battleGLStop });
 export const BGL = { on: false, off: [0, 0], gy: 0, hide: null, items: [], lights: [] };
 export function battleGLWanted() {
   if (
-    typeof DGL === 'undefined' ||
-    !DGL.on ||
+    typeof walkRenderer === 'undefined' ||
+    !walkRenderer.on ||
     !walkView.cv ||
     !walkView.ready ||
     (typeof EGL !== 'undefined' && EGL.lost)
@@ -79,7 +79,7 @@ export function battleGLAttach(o = {}) {
   host.insertBefore(cv, host.firstChild);
   cv.classList.add('dio-battle');
   cv.hidden = false;
-  if (DGL.ui) DGL.ui.hidden = true;
+  if (walkRenderer.ui) walkRenderer.ui.hidden = true;
   SC.leafy = [];
   SC.glint = [];
   walkView.battle = { frame: battleGLFrame };
@@ -97,9 +97,9 @@ export function battleGLStop() {
   if (!BGL.on) return;
   BGL.on = false;
   walkView.battle = null;
-  DGL.bt = null;
-  DGL.camT = null;
-  DGL.focus = null;
+  walkRenderer.bt = null;
+  walkRenderer.camT = null;
+  walkRenderer.focus = null;
   const cv = walkView.cv;
   if (BGL.detach) {
     if (cv) {
@@ -113,9 +113,9 @@ export function battleGLStop() {
     for (const k of ['left', 'top', 'width', 'height']) cv.style[k] = '';
     document.body.prepend(cv);
   }
-  if (DGL.ui) {
-    DGL.ui.hidden = false;
-    if (cv) cv.after(DGL.ui);
+  if (walkRenderer.ui) {
+    walkRenderer.ui.hidden = false;
+    if (cv) cv.after(walkRenderer.ui);
   }
 }
 /* what the engine draws this frame, in walk-scene meters (battle space shifted by BGL.off) */

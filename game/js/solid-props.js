@@ -18,7 +18,7 @@ import { cnv } from './art.js';
 import { dioHash, dioImg, dioProj, walkView } from './walk-view.js';
 import { eng } from './engine/settings.js';
 import { EGL, EGL_GLSL_COMMON, EGL_GLSL_LIGHT, EGL_GLSL_LOOK, EGL_MATS, eglImg, eglPrograms } from './engine/webgl.js';
-import { DGL, dglBlades, dglBudget, dglCurveArgs, dglFol, dglHit, dglLookU, dglUse } from './walk-view-gl.js';
+import { dglBlades, dglBudget, dglCurveArgs, dglFol, dglHit, dglLookU, dglUse, walkRenderer } from './walk-view-gl.js';
 /* eslint-disable no-func-assign */
 expose({
   P3D: [() => P3D],
@@ -1127,7 +1127,9 @@ function p3dTag(it, PPU) {
    within about 32 m; the rest stay pictures, which from that far look the same */
 function p3dLod(items, C) {
   const P = walkView.pl,
-    bc = DGL.bt && (DGL.bt.center || (DGL.bt.look && [DGL.bt.look.tgt[0], DGL.bt.look.tgt[2]])),
+    bc =
+      walkRenderer.bt &&
+      (walkRenderer.bt.center || (walkRenderer.bt.look && [walkRenderer.bt.look.tgt[0], walkRenderer.bt.look.tgt[2]])),
     fx = bc ? bc[0] : P.x,
     fz = bc ? bc[1] : P.z,
     tr = eng('world', 'treeDetail') ?? 20,
@@ -1227,7 +1229,7 @@ export function p3dDraw(C, items, X, hits, labels, PPU) {
       const s = it.mpp,
         hM = -it.oy * s;
       let fade = it.fade ?? 1;
-      if (me && !DGL.bt && hM > 1.6) {
+      if (me && !walkRenderer.bt && hM > 1.6) {
         const q = dioProj(C, it.x, 0, it.z);
         if (q && q.d < me.d - 0.3) {
           const half = it.w * s * 0.5 * q.s,

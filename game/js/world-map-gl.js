@@ -21,7 +21,7 @@ import { dioData, dioHash, dioImg, dioOk, dioScene, dioStep, walkView } from './
 import { ENG_CTX, eng, engSource } from './engine/settings.js';
 import { EGL, eglBindQuad, eglFree, eglImg, eglInit, eglMesh, eglOK, eglPrograms, eglTarget } from './engine/webgl.js';
 import { EGL_POST_SH, eglPost, eglScreenOf } from './engine/post-effects.js';
-import { DGL, dglWorldTex, dioHRaw } from './walk-view-gl.js';
+import { dglWorldTex, dioHRaw, walkRenderer } from './walk-view-gl.js';
 import {
   D2R,
   MAP,
@@ -189,10 +189,10 @@ function mapGLReady() {
       EGL.fail = 1;
       return false;
     }
-    if (typeof DGL !== 'undefined') {
-      DGL.gkey = '';
-      DGL.farKey = '';
-      DGL.wtex = null;
+    if (typeof walkRenderer !== 'undefined') {
+      walkRenderer.gkey = '';
+      walkRenderer.farKey = '';
+      walkRenderer.wtex = null;
     }
   }
   try {

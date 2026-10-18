@@ -39,7 +39,7 @@ import { eng } from './engine/settings.js';
 import { EGL, eglAttrClashes } from './engine/webgl.js';
 import { EGL_POST_SH } from './engine/post-effects.js';
 import { ENV } from './environment.js';
-import { DGL, DGL_SH, dglRoomDim, dioH } from './walk-view-gl.js';
+import { DGL_SH, dglRoomDim, dioH, walkRenderer } from './walk-view-gl.js';
 import { BLD, BLD_SH } from './buildings.js';
 import { STR, strHas } from './structures.js';
 import { P3D, P3D_SH } from './solid-props.js';
@@ -366,9 +366,9 @@ async function runFullTest(mode) {
           r = 3 + (k % 4);
         if (!walkView.pl.route)
           dioWalkTo([clamp(hb[0] + Math.cos(a) * r, 1, sc.w - 1), clamp(hb[1] + Math.sin(a) * r * 0.7, 1, sc.h - 1)]);
-        if (typeof DGL !== 'undefined' && DGL.on) {
-          DGL.yawT = Math.sin(k * 0.5) * 0.45;
-          DGL.zoomT = 1 + Math.sin(k * 0.33) * 0.3;
+        if (typeof walkRenderer !== 'undefined' && walkRenderer.on) {
+          walkRenderer.yawT = Math.sin(k * 0.5) * 0.45;
+          walkRenderer.zoomT = 1 + Math.sin(k * 0.33) * 0.3;
         }
       }
     }
@@ -415,7 +415,7 @@ async function runFullTest(mode) {
             graphics: g,
             auto: eng('quality', 'auto') ?? null,
             resolution: typeof walkView !== 'undefined' ? walkView.R : null,
-            level: typeof DGL !== 'undefined' ? (DGL.q ?? null) : null,
+            level: typeof walkRenderer !== 'undefined' ? (walkRenderer.q ?? null) : null,
             screenHz: typeof FRAME !== 'undefined' ? FRAME.hz : null,
             why: ev,
           };
@@ -438,24 +438,24 @@ async function runFullTest(mode) {
           for (let i = 0; i < 60 && !(walkView.ready && walkView.id === id); i++) await stSleep(50);
           open = walkView.ready && walkView.id === id ? Math.round(performance.now() - tm) : null;
           await stSleep(Math.max(0, 900 - (performance.now() - tm)));
-          const f0 = typeof DGL !== 'undefined' ? DGL.frames : 0;
+          const f0 = typeof walkRenderer !== 'undefined' ? walkRenderer.frames : 0;
           await walkAbout(3);
           if (!walkView.ready || walkView.id !== id)
             throw new Error(
               `the scene didn’t open (still ${walkView.id || 'nothing'}${walkView.ready ? '' : ', loading'} after ${Math.round((performance.now() - tm) / 1000)} s)`
             );
-          if (typeof DGL !== 'undefined' && DGL.on && DGL.frames === f0)
+          if (typeof walkRenderer !== 'undefined' && walkRenderer.on && walkRenderer.frames === f0)
             throw new Error('the scene isn’t drawing (black screen): no frames in 3 s');
           if (id === scenes[0]) NWLOG.snap();
           const g = stGeometry(),
             sc = walkView.sc,
-            gl = typeof DGL !== 'undefined' && DGL.on;
+            gl = typeof walkRenderer !== 'undefined' && walkRenderer.on;
           return [
             `opened in ${open != null ? open + ' ms' : 'over 3 s'}`,
             `${(sc.props || []).length} props`,
             gl && typeof BLD !== 'undefined' && BLD.drawn ? `${BLD.drawn} 3D buildings` : '',
             gl && typeof P3D !== 'undefined' && P3D.drawn ? `${P3D.drawn} solid props` : '',
-            gl && DGL.grassDrawn ? `${DGL.grassDrawn} grass patches` : '',
+            gl && walkRenderer.grassDrawn ? `${walkRenderer.grassDrawn} grass patches` : '',
             (walkView.folk || []).length ? `${walkView.folk.length} folk` : '',
             typeof OWM !== 'undefined' && OWM.bud ? 'buddy along' : '',
             g || '',
@@ -466,9 +466,9 @@ async function runFullTest(mode) {
         4
       );
     }
-    if (typeof DGL !== 'undefined') {
-      DGL.yawT = 0;
-      DGL.zoomT = 1;
+    if (typeof walkRenderer !== 'undefined') {
+      walkRenderer.yawT = 0;
+      walkRenderer.zoomT = 1;
     }
     /* alpha 0.4, diagnostics: where a frame's time goes in the busiest town (the processor's time for each pass, and the
      graphics chip's own timers where it has them), then what rain and night cost there */
@@ -567,7 +567,7 @@ async function runFullTest(mode) {
         G = dioNav();
       let hops = 0;
       for (let q = 0; q < G.hop.length; q++) if (G.hop[q]) hops++;
-      const gl = typeof DGL !== 'undefined' && DGL.on;
+      const gl = typeof walkRenderer !== 'undefined' && walkRenderer.on;
       if (gl && typeof strHas === 'function' && strHas(sc) && !STR.mesh && !(typeof BLD !== 'undefined' && BLD.fail))
         throw new Error('bridges and railings aren’t drawn');
       return (
@@ -575,7 +575,7 @@ async function runFullTest(mode) {
           E ? 'cliffs' : '',
           (sc.bridges || []).length ? `${sc.bridges.length} bridge${sc.bridges.length > 1 ? 's' : ''}` : '',
           hops ? 'ledges' : '',
-          gl && DGL.falls && DGL.falls.length ? 'waterfalls' : '',
+          gl && walkRenderer.falls && walkRenderer.falls.length ? 'waterfalls' : '',
           (sc.escalators || []).length ? 'escalators' : '',
         ]
           .filter(Boolean)
@@ -604,9 +604,9 @@ async function runFullTest(mode) {
             ]) {
               if (STEST.stop) break;
               ENV.force = f;
-              const f1 = typeof DGL !== 'undefined' ? DGL.frames : 0;
+              const f1 = typeof walkRenderer !== 'undefined' ? walkRenderer.frames : 0;
               await stSleep(1600);
-              if (typeof DGL !== 'undefined' && DGL.on && DGL.frames <= f1)
+              if (typeof walkRenderer !== 'undefined' && walkRenderer.on && walkRenderer.frames <= f1)
                 throw new Error(n + ': the scene stopped drawing');
               out.push(n);
             }
@@ -794,7 +794,7 @@ async function runFullTest(mode) {
             U.mq = [];
             renderOv();
             render();
-            const f0 = DGL.frames,
+            const f0 = walkRenderer.frames,
               t0 = performance.now();
             for (let i = 0; i < 14; i++) {
               await stSleep(100);
@@ -804,7 +804,7 @@ async function runFullTest(mode) {
                 shifts++;
               }
             }
-            const ms = (performance.now() - t0) / Math.max(1, DGL.frames - f0);
+            const ms = (performance.now() - t0) / Math.max(1, walkRenderer.frames - f0);
             worst = Math.max(worst, ms);
           }
           for (let i = 0; i < 40 && !(S.route.node === 1 && S.route.prog === 0); i++) await stSleep(100);
@@ -946,13 +946,13 @@ async function runFullTest(mode) {
                   .map(p => C0[p.k].vox);
               for (let i = 0; i < 60 && typeof VOX !== 'undefined' && vk.some(k => !VOX.recipes.get(k)); i++)
                 await stSleep(100);
-              const f0 = DGL.frames;
-              for (let i = 0; i < 80 && DGL.frames < f0 + 20; i++) await stSleep(100);
+              const f0 = walkRenderer.frames;
+              for (let i = 0; i < 80 && walkRenderer.frames < f0 + 20; i++) await stSleep(100);
               await stSleep(300);
               const b = typeof BLD !== 'undefined' ? BLD.drawn || 0 : 0,
                 v = typeof VOX !== 'undefined' ? VOX.drawn || 0 : 0,
                 p = typeof P3D !== 'undefined' ? P3D.drawn || 0 : 0,
-                lm = ((DGL.X && DGL.X.lampSh) || []).length,
+                lm = ((walkRenderer.X && walkRenderer.X.lampSh) || []).length,
                 sc = walkView.sc;
               /* what the camera can see: a phone held upright sees the middle of the scene only, so the props check counts the
         placed things whose foot is on screen and wants each of those drawn by its renderer */
@@ -1321,10 +1321,10 @@ async function runFullTest(mode) {
         ],
       ];
       const drawing = async () => {
-        if (!(typeof DGL !== 'undefined' && DGL.on)) return true;
-        const f = DGL.frames;
+        if (!(typeof walkRenderer !== 'undefined' && walkRenderer.on)) return true;
+        const f = walkRenderer.frames;
         await stSleep(1500);
-        return DGL.frames > f;
+        return walkRenderer.frames > f;
       };
       if (!(await drawing())) {
         stress.push({
@@ -1368,9 +1368,9 @@ async function runFullTest(mode) {
     }
   } finally {
     STEST.only = only0;
-    if (typeof DGL !== 'undefined') {
-      DGL.yawT = 0;
-      DGL.zoomT = 1;
+    if (typeof walkRenderer !== 'undefined') {
+      walkRenderer.yawT = 0;
+      walkRenderer.zoomT = 1;
     }
     if (B) {
       stopTimers();
@@ -1527,7 +1527,15 @@ const DIAG_PASSES = {
 function diagTimersOn() {
   const gl = typeof EGL !== 'undefined' ? EGL.gl : null,
     ext = gl && gl.getExtension('EXT_disjoint_timer_query_webgl2'),
-    T = { gl, ext, orig: {}, cpu: {}, q: [], active: false, f0: typeof DGL !== 'undefined' ? DGL.frames : 0 };
+    T = {
+      gl,
+      ext,
+      orig: {},
+      cpu: {},
+      q: [],
+      active: false,
+      f0: typeof walkRenderer !== 'undefined' ? walkRenderer.frames : 0,
+    };
   for (const [grp, names] of Object.entries(DIAG_PASSES)) {
     T.cpu[grp] = 0;
     for (const n of names) {
@@ -1564,7 +1572,7 @@ function diagTimersOn() {
 }
 async function diagTimersOff(T) {
   for (const [n, o] of Object.entries(T.orig)) GAME[n] = o;
-  const frames = Math.max(1, (typeof DGL !== 'undefined' ? DGL.frames : 0) - T.f0),
+  const frames = Math.max(1, (typeof walkRenderer !== 'undefined' ? walkRenderer.frames : 0) - T.f0),
     cpu = {};
   for (const [k, v] of Object.entries(T.cpu)) if (v > 0) cpu[k] = Math.round((v / frames) * 100) / 100;
   let gpu = null;

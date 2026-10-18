@@ -50,8 +50,8 @@ with sync_playwright() as pw:
             row = []
             hm = SZ.get(p['k'], [0, 1, 1])[2]; zm = round(min(1.7, .62 * max(1, hm / 3.4)), 3)
             for yaw in (-.55, .55):
-                pg.evaluate(f"DGL.swoop={{x:{p['x']},z:{p['z']}-1.6}};DGL.yawT=DGL.yaw={yaw};DGL.zoomT=DGL.zoom={zm};DGL.camT=null;0")
-                f0 = pg.evaluate("DGL.frames"); cq.until(pg, f"DGL.frames>{f0 + 1}", 20)
+                pg.evaluate(f"walkRenderer.swoop={{x:{p['x']},z:{p['z']}-1.6}};walkRenderer.yawT=walkRenderer.yaw={yaw};walkRenderer.zoomT=walkRenderer.zoom={zm};walkRenderer.camT=null;0")
+                f0 = pg.evaluate("walkRenderer.frames"); cq.until(pg, f"walkRenderer.frames>{f0 + 1}", 20)
                 q = pg.evaluate(f"(()=>{{const C=walkView.C,M=dioData().sc.props['{p['k']}'],hm=Math.max(.6,-(M.oy||0)/(dioData().sc.ppu||34)),wm=Math.max(.6,(dioImg(M.img)||{{width:40}}).width/(dioData().sc.ppu||34)),a=dioProj(C,{p['x']},0,{p['z']}),b=dioProj(C,{p['x']},hm+.3,{p['z']});return a&&b?[a.x,a.y,b.y,C.rw,C.rh,wm*a.s]:null}})()")
                 if q:
                     vw, vh = pg.viewport_size['width'], pg.viewport_size['height']; sx, sy = vw / q[3], vh / q[4]; cx = q[0] * sx; y0, y1 = q[2] * sy - 18, q[1] * sy + 32
@@ -69,7 +69,7 @@ with sync_playwright() as pw:
         for j, t in enumerate(bt): S.paste(t.resize((303, 139)), ((j % 2) * 303, (j // 2) * 140))
         S.save(OUT / f'sheet-{bi // B:02d}.png')
         print('batch', bi, 'done', flush=True)
-    pg.evaluate("DGL.swoop=null;0")
+    pg.evaluate("walkRenderer.swoop=null;0")
     # sheets of 12
     for si in range(0, len(tiles), 12):
         S = Image.new('RGB', (606 * 2, 278 * 6), (20, 20, 24))

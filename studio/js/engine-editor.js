@@ -16,7 +16,7 @@ import {
   setEngSource,
 } from '../../game/js/engine/settings.js';
 import { EGL, eglOK } from '../../game/js/engine/webgl.js';
-import { DGL, dglAdapt, dglRebuild, dioMount, setDglAdapt } from '../../game/js/walk-view-gl.js';
+import { dglAdapt, dglRebuild, dioMount, setDglAdapt, walkRenderer } from '../../game/js/walk-view-gl.js';
 import { esc } from './game-stand-ins.js';
 import {
   ACTS,
@@ -62,7 +62,7 @@ setEngSource(() => (ST.D ? ST.D.engine : null));
    seemed to do nothing. Here it never steps down. */
 if (typeof dglAdapt === 'function')
   setDglAdapt(function () {
-    if (typeof DGL !== 'undefined') DGL.q = 0;
+    if (typeof walkRenderer !== 'undefined') walkRenderer.q = 0;
     if (typeof walkView !== 'undefined') walkView.R = 1;
   });
 export const ENS = { scope: 'game', scene: null, open: { lens: 1, color: 1, sun: 1, shadows: 1 }, meterT: null };
@@ -209,14 +209,14 @@ async function engMount() {
       clearInterval(ENS.meterT);
       return;
     }
-    if (typeof DGL === 'undefined' || !DGL.on) {
+    if (typeof walkRenderer === 'undefined' || !walkRenderer.on) {
       m.textContent =
         typeof EGL !== 'undefined' && (EGL.fail || !eglOK())
           ? 'WebGL 2 isn’t available in this browser, so there is no preview.'
           : 'Starting…';
       return;
     }
-    const fps = DGL.int ? Math.round(1000 / DGL.int) : 0;
+    const fps = walkRenderer.int ? Math.round(1000 / walkRenderer.int) : 0;
     m.innerHTML = `<b>${fps}</b> fps · <b>${(walkView.slow || 0).toFixed(1)}</b> ms of work per frame · resolution <b>${Math.round((walkView.R || 1) * eng('quality', 'resolution') * 100)}%</b>${EGL.hdr ? '' : ' · no HDR on this GPU'}`;
   }, 500);
 }
@@ -342,9 +342,9 @@ ACTS.engPresetDel = async d => {
    click one to apply it */
 function engGrab() {
   return new Promise(res => {
-    if (typeof DGL === 'undefined' || !DGL.on) return res(null);
+    if (typeof walkRenderer === 'undefined' || !walkRenderer.on) return res(null);
     let done = false;
-    DGL.photoReq = c => {
+    walkRenderer.photoReq = c => {
       done = true;
       if (!c) return res(null);
       const k = Math.min(1, 320 / c.width),
@@ -356,7 +356,7 @@ function engGrab() {
     };
     setTimeout(() => {
       if (!done) {
-        DGL.photoReq = null;
+        walkRenderer.photoReq = null;
         res(null);
       }
     }, 4000);

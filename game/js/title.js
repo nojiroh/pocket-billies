@@ -15,7 +15,7 @@ import { uiIco } from './art.js';
 import { humanHTML } from './person-art.js';
 import { applyPreferences } from './settings-screen.js';
 import { dioScene, dioStop, walkView } from './walk-view.js';
-import { DGL, dioH, dioMount } from './walk-view-gl.js';
+import { dioH, dioMount, walkRenderer } from './walk-view-gl.js';
 import { music, musicFor } from './sound.js';
 import { csSceneId, csStart, csStartName, csWanted } from './cutscene.js';
 /* eslint-disable no-func-assign */
@@ -117,7 +117,7 @@ export async function titleMount() {
     console.error(e);
   }
   if (!TITLE.on || run !== TITLE.run) return;
-  if (!DGL.on || !walkView.ready) {
+  if (!walkRenderer.on || !walkView.ready) {
     document.body.classList.add('ttl-flat');
     return;
   }
@@ -126,7 +126,7 @@ export async function titleMount() {
   const t0 = performance.now(),
     poll = () => {
       if (!TITLE.on || run !== TITLE.run) return;
-      if ((DGL.gtex && DGL.frames > 3) || performance.now() - t0 > 20000) {
+      if ((walkRenderer.gtex && walkRenderer.frames > 3) || performance.now() - t0 > 20000) {
         document.body.classList.add('ttl-live');
         return;
       }
@@ -149,8 +149,8 @@ function titleEnd() {
   document.body.classList.remove('in-title', 'ttl-live', 'ttl-flat');
   if (walkView.director && walkView.director.frame === titleFrame) {
     walkView.director = null;
-    DGL.camT = null;
-    DGL.focus = null;
+    walkRenderer.camT = null;
+    walkRenderer.focus = null;
   }
   if (walkView.cv) dioStop();
 }

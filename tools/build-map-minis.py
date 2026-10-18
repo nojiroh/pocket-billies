@@ -27,7 +27,7 @@ def gamedata():
 
 SHOT_JS = """(async(id)=>{const sc=dioScene(id);const W=sc.w,H=sc.h;
  const tgt=[W/2,0,H*.5],eye=[W/2,Math.max(W,H)*.6,-H*.66];walkView.director={frame:()=>({look:{eye,tgt,fov:30,w:W*1.08},items:[],parts:[],lights:[],hide:null,cut:0,center:[W/2,H/2]})};
- const f0=DGL.frames;await new Promise(r=>{const t0=performance.now();const k=()=>{if(DGL.frames>=f0+4||performance.now()-t0>40000)r();else setTimeout(k,100)};k()});
+ const f0=walkRenderer.frames;await new Promise(r=>{const t0=performance.now();const k=()=>{if(walkRenderer.frames>=f0+4||performance.now()-t0>40000)r();else setTimeout(k,100)};k()});
  const C=walkView.C,cv=walkView.cv,R=cv.getBoundingClientRect(),m=C.vp;
  const P=(x,y,z)=>{const cx=m[0]*x+m[4]*y+m[8]*z+m[12],cy=m[1]*x+m[5]*y+m[9]*z+m[13],w=m[3]*x+m[7]*y+m[11]*z+m[15];return [R.left+(cx/w*.5+.5)*R.width,R.top+(1-(cy/w*.5+.5))*R.height]};
  const g=(x,z)=>dioGroundH(Math.min(W-.01,Math.max(0,x)),Math.min(H-.01,Math.max(0,z)));const top=[],bot=[];const n=48;
@@ -62,7 +62,7 @@ def main():
             t0 = time.time()
             pg.evaluate(f"U.tab='walk';U.bench={{id:'{sid}',test:1}};render();0")
             for _ in range(160):
-                if pg.evaluate(f"!!(walkView.ready&&walkView.id==='{sid}'&&DGL.frames>2)"): break
+                if pg.evaluate(f"!!(walkView.ready&&walkView.id==='{sid}'&&walkRenderer.frames>2)"): break
                 time.sleep(.5)
             time.sleep(1.5)
             info = pg.evaluate(SHOT_JS + f"('{sid}')")

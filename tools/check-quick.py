@@ -515,8 +515,8 @@ def go_scene(pg, node, sec=40):
     pg.evaluate(f"U.inside=null;U.tab='walk';S.route={{node:{node},prog:0,plan:[],hold:false}};S.visited[{node}]=1;U.roam=null;if(typeof walkView!=='undefined'&&walkView.pl)walkView.pl.fresh=true;render();0")
     if not until(pg, f'!!(walkView.ready&&(walkView.id===ROUTE[{node}].scene||(walkView.sc&&walkView.sc.baseId===ROUTE[{node}].scene)))', sec):   # v43: the hub may sit near an exit, so the view may be the scene with its road
         raise Exception(f'{pg.evaluate(f"ROUTE[{node}].scene")} didn’t open in {sec}s')
-    f0 = pg.evaluate("typeof DGL!=='undefined'&&DGL.on?DGL.frames:-1")
-    if f0 >= 0 and not until(pg, f'DGL.frames>={f0 + 2}', 30): raise Exception(f'{pg.evaluate("walkView.id")} isn’t drawing (black screen)')
+    f0 = pg.evaluate("typeof walkRenderer!=='undefined'&&walkRenderer.on?walkRenderer.frames:-1")
+    if f0 >= 0 and not until(pg, f'walkRenderer.frames>={f0 + 2}', 30): raise Exception(f'{pg.evaluate("walkView.id")} isn’t drawing (black screen)')
 
 
 @step('Phone: opening, first battle, screens and a battle', 260)
@@ -616,12 +616,12 @@ def desktop_steps(b, base, R):
             for id in tests:
                 pg.evaluate(f"U.tab='walk';U.bench={{id:'{id}',test:1}};render();0")
                 if not until(pg, f"!!(walkView.ready&&walkView.id==='{id}')", 40): raise Exception(f'{id} didn’t open')
-                f0 = pg.evaluate("typeof DGL!=='undefined'&&DGL.on?DGL.frames:-1")
-                if f0 >= 0 and not until(pg, f'DGL.frames>={f0 + 2}', 30): raise Exception(f'{id} isn’t drawing')
+                f0 = pg.evaluate("typeof walkRenderer!=='undefined'&&walkRenderer.on?walkRenderer.frames:-1")
+                if f0 >= 0 and not until(pg, f'walkRenderer.frames>={f0 + 2}', 30): raise Exception(f'{id} isn’t drawing')
                 for sh in pg.evaluate(f"GD.scenes['{id}'].shots||[]"):
-                    pg.evaluate(f"walkView.pl.x={sh['x']};walkView.pl.z={sh['z']};walkView.pl.route=null;if(typeof DGL!=='undefined')DGL.yawT={sh.get('yaw', 0)};0"); time.sleep(2.2)
+                    pg.evaluate(f"walkView.pl.x={sh['x']};walkView.pl.z={sh['z']};walkView.pl.route=null;if(typeof walkRenderer!=='undefined')walkRenderer.yawT={sh.get('yaw', 0)};0"); time.sleep(2.2)
                     shot(pg, f"{id}-{sh['label']}"); n += 1
-            pg.evaluate("U.bench=null;if(typeof DGL!=='undefined')DGL.yawT=0;render();0")
+            pg.evaluate("U.bench=null;if(typeof walkRenderer!=='undefined')walkRenderer.yawT=0;render();0")
             if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
             return f'{len(tests)} test scenes, {n} pictures'
         test_draw()
@@ -631,7 +631,7 @@ def desktop_steps(b, base, R):
         drawn = []
         for n in nodes:
             go_scene(pg, n, 75); time.sleep(.4); sid = pg.evaluate('walkView.id'); shot(pg, f'scene-{sid}')   # alpha 0.2: a place's view holds its neighbours' edges too, bigger to paint in software
-            info = pg.evaluate("[typeof DGL!=='undefined'&&DGL.on,typeof STR!=='undefined'&&!!STR.mesh,typeof strHas==='function'&&strHas(walkView.sc),typeof BLD!=='undefined'?(BLD.fail||''):'',typeof BLD!=='undefined'?BLD.drawn||0:0]")
+            info = pg.evaluate("[typeof walkRenderer!=='undefined'&&walkRenderer.on,typeof STR!=='undefined'&&!!STR.mesh,typeof strHas==='function'&&strHas(walkView.sc),typeof BLD!=='undefined'?(BLD.fail||''):'',typeof BLD!=='undefined'?BLD.drawn||0:0]")
             if info[0] and info[2] and not info[1]: raise Exception(f'{sid}: bridges and railings not drawn')
             if info[3]: raise Exception(f'{sid}: 3D buildings off: {info[3][:100]}')
             drawn.append(sid)
@@ -664,7 +664,7 @@ def desktop_steps(b, base, R):
         until(pg, "walkView.ready&&!!walkView.ground&&(!walkView.opt.active||walkView.opt.active())", 20); time.sleep(.5)
         # the camera eases toward you after a scene opens, slowly when drawing is slow: tap only once the target holds still on screen
         # (v47: and once it has finished looking up at a landmark nearby, the clock tower on Marigold's square)
-        until(pg, "Math.abs((DGL.lmT||0)-(typeof dglLandmarkTilt==='function'?dglLandmarkTilt(walkView.pl,walkView.sc):0))<.1", 40)
+        until(pg, "Math.abs((walkRenderer.lmT||0)-(typeof dglLandmarkTilt==='function'?dglLandmarkTilt(walkView.pl,walkView.sc):0))<.1", 40)
         last = None
         for _ in range(20):
             pt = pg.evaluate(PROJ % json.dumps(tgt))
@@ -695,7 +695,7 @@ def desktop_steps(b, base, R):
     @step('Crowd: forty people in town draw about as fast as a few', 90)
     def crowd():
         go_scene(pg, 0); time.sleep(3)
-        rate = "(()=>{const f0=DGL.frames,t0=performance.now();return new Promise(r=>setTimeout(()=>r((DGL.frames-f0)/(performance.now()-t0)*1000),5000))})()"
+        rate = "(()=>{const f0=walkRenderer.frames,t0=performance.now();return new Promise(r=>setTimeout(()=>r((walkRenderer.frames-f0)/(performance.now()-t0)*1000),5000))})()"
         a = pg.evaluate(rate); n0 = pg.evaluate("walkView.sc.folk"); pg.evaluate("walkView.sc.folk=40;0"); time.sleep(6)
         b2 = pg.evaluate(rate); size = pg.evaluate("typeof TR_CACHE!=='undefined'?TR_CACHE.size:0"); pg.evaluate(f"walkView.sc.folk={n0 or 0};0")
         if b2 < a * .45: raise Exception(f'{a:.1f} frames a second with {n0} people, {b2:.1f} with 40')
@@ -713,8 +713,8 @@ def desktop_steps(b, base, R):
         bright = {}
         for name, f in (('day', "{time:13,weather:'clear',season:'summer'}"), ('night', "{time:23.5,weather:'clear',season:'summer'}"), ('storm', "{time:15,weather:'storm',season:'summer'}"),
                         ('snow', "{time:11,weather:'snow',season:'winter'}"), ('autumn', "{time:12,weather:'clear',season:'autumn'}")):
-            pg.evaluate(f"ENV.force={f};0"); f0 = pg.evaluate("DGL.frames"); time.sleep(2.5)
-            if not until(pg, f"DGL.frames>{f0 + 1}", 20): raise Exception(f'{name}: the scene stopped drawing')
+            pg.evaluate(f"ENV.force={f};0"); f0 = pg.evaluate("walkRenderer.frames"); time.sleep(2.5)
+            if not until(pg, f"walkRenderer.frames>{f0 + 1}", 20): raise Exception(f'{name}: the scene stopped drawing')
             bright[name] = round(lum()); shot(pg, 'env-' + name)
         if bright['night'] > bright['day'] * .8: raise Exception(f'night isn’t darker than day (brightness {bright["night"]} vs {bright["day"]})')
         pg.evaluate("ENV.force={time:23.5,weather:'clear'};0"); time.sleep(1.5); lamps = pg.evaluate("ENV.lampK")
@@ -736,7 +736,7 @@ def desktop_steps(b, base, R):
         door = pg.evaluate("U.inside&&U.inside.door?[U.inside.door[0],U.inside.door[1]-.6]:null")      # v46: a room laid into the place: you come out at its door
         pg.evaluate("leaveRoom();0")
         if not until(pg, "walkView.ready&&!walkView.sc.roomRect&&(walkView.id===ROUTE[0].scene||(walkView.sc&&walkView.sc.baseId===ROUTE[0].scene))", 30): raise Exception('going outside didn’t bring you back to town (' + pg.evaluate("walkView.id") + ')')
-        f0 = pg.evaluate("DGL.frames"); until(pg, f"DGL.frames>{f0 + 2}", 20)          # you're placed on the first frame
+        f0 = pg.evaluate("walkRenderer.frames"); until(pg, f"walkRenderer.frames>{f0 + 2}", 20)          # you're placed on the first frame
         p1 = pg.evaluate("[walkView.pl.x,walkView.pl.z]")
         at = door or p0
         if abs(p1[0] - at[0]) > 1 or abs(p1[1] - at[1]) > 1: raise Exception(f'back outside at {p1}, not at the door ({at})')
@@ -760,7 +760,7 @@ def desktop_steps(b, base, R):
         pg.evaluate("ENV.force={time:11,weather:'snow',season:'winter'};0"); go_scene(pg, 0); time.sleep(1)
         end = pg.evaluate("(()=>{const e=[walkView.pl.x-6,walkView.pl.z-1.5];walkView.pl.route=[[walkView.pl.x,walkView.pl.z],[walkView.pl.x-4,walkView.pl.z+1],e];walkView.pl.ri=1;return e})()"); time.sleep(3)
         until(pg, f"Math.hypot(walkView.pl.x-({end[0]}),walkView.pl.z-({end[1]}))<.6", 25); time.sleep(1)     # alpha 0.1: walk to the end, however slowly frames come here
-        prints = pg.evaluate("(DGL.prints||[]).length"); shot(pg, 'prints-snow')
+        prints = pg.evaluate("(walkRenderer.prints||[]).length"); shot(pg, 'prints-snow')
         if prints < 4: raise Exception(f'only {prints} footprints after a walk in the snow')
         pg.mouse.click(5, 300); time.sleep(1.5)
         snd = pg.evaluate("typeof AUD==='undefined'||!AUD.ctx?'no sound in this browser':AUD.ctx.state!=='running'?'sound not started ('+AUD.ctx.state+')':(typeof AMB!=='undefined'&&Object.keys(AMB.beds).length>=9?'ok':'beds missing')")
@@ -797,7 +797,7 @@ def desktop_steps(b, base, R):
         if pg.evaluate("GD.scenes.int_home.props.length") < 2: raise Exception('furniture didn’t appear in your room')
         pg.evaluate("leaveRoom();0"); until(pg, f"walkView.ready&&!walkView.sc.roomRect&&(walkView.id===ROUTE[{home}].scene||(walkView.sc&&walkView.sc.baseId===ROUTE[{home}].scene))", 30); time.sleep(1.5)
         # a photo
-        pg.evaluate("window.__ph=null;photoStart();DGL.photoReq=c=>{window.__ph=c?c.width:0};0"); until(pg, "window.__ph!==null", 15)
+        pg.evaluate("window.__ph=null;photoStart();walkRenderer.photoReq=c=>{window.__ph=c?c.width:0};0"); until(pg, "window.__ph!==null", 15)
         w = pg.evaluate("window.__ph"); pg.evaluate("photoEnd();0")
         if not w: raise Exception('photo mode didn’t take a picture')
         out.append(f'photo {w}px wide')
@@ -833,22 +833,22 @@ def desktop_steps(b, base, R):
         node = pg.evaluate("ROUTE.findIndex(r=>r.scene==='pond')")
         if node >= 0:
             go_scene(pg, node); time.sleep(1)
-            sh = pg.evaluate("[!!DGL.shoreF,!!DGL.shoreTex,DGL.shoreF?DGL.shoreF.FW:0]")
+            sh = pg.evaluate("[!!walkRenderer.shoreF,!!walkRenderer.shoreTex,walkRenderer.shoreF?walkRenderer.shoreF.FW:0]")
             if not sh[0] or not sh[1]: raise Exception(f'no shoreline field at Willowmere ({sh})')
             pg.evaluate("(()=>{const w=walkView.water[Math.floor(walkView.water.length*.3)];walkView.pl.route=null;const p=dioFreePt(w[0]-1.5,w[1]-1.5);walkView.pl.x=p[0];walkView.pl.z=p[1]})();0"); time.sleep(2); shot(pg, 'water-edge')
             out.append(f'shoreline field {sh[2]} samples wide')
-        go_scene(pg, 0); until(pg, "(DGL.basinL||[]).some(b=>/^fountain/.test(b.p.k))", 90); time.sleep(.5)   # solids build one a frame at least, slowly in software
-        bs = pg.evaluate("(DGL.basinL||[]).map(b=>b.p.k+':'+b.B.length)")
+        go_scene(pg, 0); until(pg, "(walkRenderer.basinL||[]).some(b=>/^fountain/.test(b.p.k))", 90); time.sleep(.5)   # solids build one a frame at least, slowly in software
+        bs = pg.evaluate("(walkRenderer.basinL||[]).map(b=>b.p.k+':'+b.B.length)")
         if not any(x.startswith('fountain') for x in bs): raise Exception(f'no fountain water in Marigold Town ({bs})')
         pg.evaluate("(()=>{const f=walkView.sc.props.find(p=>p.k==='fountain');walkView.pl.route=null;const p=dioFreePt(f.x+.3,f.z-2.4);walkView.pl.x=p[0];walkView.pl.z=p[1]})();0"); time.sleep(2); shot(pg, 'fountain')
         out.append('basins: ' + ', '.join(bs))
         pg.evaluate("ENV.force={time:13,weather:'clear',season:'autumn'};0"); time.sleep(2); shot(pg, 'autumn'); pg.evaluate("ENV.force=null;0")
         # rooms: light through the window by day, lamps at night, the floor ends at the door
         pg.evaluate("enterRoom('house',{});0"); until(pg, "walkView.ready&&(walkView.id==='int_house'||(walkView.sc&&walkView.sc.roomOf==='int_house'))", 30); time.sleep(1.5)
-        pg.evaluate("ENV.force={time:15.5,weather:'clear',season:'summer'};DGL.roomSkyT=0;0"); time.sleep(2); shot(pg, 'room-day')
-        day = pg.evaluate("[DGL.roomSky&&DGL.roomSky.I,DGL.roomSky&&DGL.roomSky.lamp,(dglRoomLamps(walkView.sc)||[]).length,!!DGL.roomBox]")
-        pg.evaluate("ENV.force={time:23,weather:'clear',season:'summer'};DGL.roomSkyT=0;0"); time.sleep(2); shot(pg, 'room-night')
-        night = pg.evaluate("[DGL.roomSky&&DGL.roomSky.night,DGL.roomSky&&DGL.roomSky.lamp]")
+        pg.evaluate("ENV.force={time:15.5,weather:'clear',season:'summer'};walkRenderer.roomSkyT=0;0"); time.sleep(2); shot(pg, 'room-day')
+        day = pg.evaluate("[walkRenderer.roomSky&&walkRenderer.roomSky.I,walkRenderer.roomSky&&walkRenderer.roomSky.lamp,(dglRoomLamps(walkView.sc)||[]).length,!!walkRenderer.roomBox]")
+        pg.evaluate("ENV.force={time:23,weather:'clear',season:'summer'};walkRenderer.roomSkyT=0;0"); time.sleep(2); shot(pg, 'room-night')
+        night = pg.evaluate("[walkRenderer.roomSky&&walkRenderer.roomSky.night,walkRenderer.roomSky&&walkRenderer.roomSky.lamp]")
         pg.evaluate("ENV.force=null;leaveRoom();0"); until(pg, "walkView.ready&&!walkView.sc.roomRect&&(walkView.id==='sundown'||(walkView.sc&&walkView.sc.baseId==='sundown'))", 30)
         if not day[3] or not day[0] or day[0] < .2 or night[1] < .9 or day[2] < 1: raise Exception(f'room light: day {day}, night {night}')
         out.append(f'room: daylight {day[0]:.2f}, {day[2]} lamps lit at night')
@@ -893,14 +893,14 @@ def desktop_steps(b, base, R):
         # what's off screen is skipped (Verdigris City is the biggest scene)
         node = pg.evaluate("ROUTE.findIndex(r=>r.scene==='city')")
         if node >= 0:
-            go_scene(pg, node); until(pg, "!!DGL.grass&&!DGL.grassJob", 60); f0 = pg.evaluate("DGL.frames"); until(pg, f"DGL.frames>{f0 + 2}", 20)   # v46: the grass of a big view is still being planted for a while
-            c = pg.evaluate("[DGL.culled||0,DGL.cullOf||0,DGL.grassDrawn||0,DGL.grass?DGL.grass.n:0]")
+            go_scene(pg, node); until(pg, "!!walkRenderer.grass&&!walkRenderer.grassJob", 60); f0 = pg.evaluate("walkRenderer.frames"); until(pg, f"walkRenderer.frames>{f0 + 2}", 20)   # v46: the grass of a big view is still being planted for a while
+            c = pg.evaluate("[walkRenderer.culled||0,walkRenderer.cullOf||0,walkRenderer.grassDrawn||0,walkRenderer.grass?walkRenderer.grass.n:0]")
             if not c[1] or c[0] <= 0: raise Exception(f'nothing was skipped in Verdigris City ({c})')
             out.append(f'Verdigris City: {c[0]} of {c[1]} things and {c[3] - c[2]} of {c[3]} grass blades off screen skipped')
         # going back to a scene seen a moment ago doesn't rebuild its ground
-        go_scene(pg, 0); b0 = pg.evaluate("DGL.builds||0")
+        go_scene(pg, 0); b0 = pg.evaluate("walkRenderer.builds||0")
         if node >= 0: go_scene(pg, node); go_scene(pg, 0)
-        b1 = pg.evaluate("DGL.builds||0")
+        b1 = pg.evaluate("walkRenderer.builds||0")
         if node >= 0 and b1 - b0 > 1: raise Exception(f'the ground was rebuilt {b1 - b0} times going there and back')
         out.append(f'there and back: {b1 - b0} ground build(s)')
         # wear and variety (with the dial at 0, ask dglLookOf2: dglLookOf keeps a look for the rest of the frame, the game sees the dial on the next one)
@@ -923,7 +923,7 @@ def desktop_steps(b, base, R):
         if v['lum'] < 45: raise Exception(f"the sofa's top is still dark (brightness {v['lum']})")
         if not (4 <= v['mossy'] <= 30) or not v['plain']: raise Exception(f'mossy twins: {v}')
         out.append(f"10 new prop variants load; a sofa's top {v['lum']} bright (was black); {v['mossy']} of 40 stumps mossy; surface detail {v['det']}, sharp-at-a-slant {'on' if v['aniso'] else 'not offered by this graphics chip'}")
-        pg.evaluate("(()=>{const sc=walkView.sc,C0=dioData().sc,b=(sc.props||[]).find(p=>{const M=C0.props[p.k];return M&&M.box&&M.door});if(!b)return;walkView.pl.route=null;const q=dioFreePt(b.x,b.z-2.5);walkView.pl.x=q[0];walkView.pl.z=q[1];DGL.zoomT=DGL.zoom=.7})();0"); time.sleep(2.5); shot(pg, 'wear-building')
+        pg.evaluate("(()=>{const sc=walkView.sc,C0=dioData().sc,b=(sc.props||[]).find(p=>{const M=C0.props[p.k];return M&&M.box&&M.door});if(!b)return;walkView.pl.route=null;const q=dioFreePt(b.x,b.z-2.5);walkView.pl.x=q[0];walkView.pl.z=q[1];walkRenderer.zoomT=walkRenderer.zoom=.7})();0"); time.sleep(2.5); shot(pg, 'wear-building')
         # the map's 3D miniatures
         pg.evaluate("U.tab='map';render();0"); time.sleep(3)
         if pg.evaluate("MAP.gl&&typeof mmOn==='function'&&mmOn()"):
@@ -998,7 +998,7 @@ def desktop_steps(b, base, R):
         # (v37: the 2x "detailed art" of v34 is retired; the ground is the 32 px tiles of v37) open a scene and read the renderer's counters
         node = pg.evaluate("ROUTE.findIndex(r=>r.scene==='city')")
         if node >= 0: go_scene(pg, node); time.sleep(6)
-        r = json.loads(pg.evaluate("JSON.stringify({tp:(DGL.ring&&DGL.ring.TP)||(walkView.ground&&walkView.ground._TP),mb:Math.round((EGL.texB||0)/1048576),sh:[DGL.shHit||0,DGL.shMiss||0],grid:DGL.gridSkip||0,gpu:EGL.gpuX?'timer':'no timer'})"))
+        r = json.loads(pg.evaluate("JSON.stringify({tp:(walkRenderer.ring&&walkRenderer.ring.TP)||(walkView.ground&&walkView.ground._TP),mb:Math.round((EGL.texB||0)/1048576),sh:[walkRenderer.shHit||0,walkRenderer.shMiss||0],grid:walkRenderer.gridSkip||0,gpu:EGL.gpuX?'timer':'no timer'})"))
         if r['tp'] != 32: raise Exception(f'the ground isn’t painted from the 32 px tiles (tile {r["tp"]} px)')
         shot(pg, 'v34-city')
         out.append(f"ground {r['tp']} px a tile, {r['mb']} MB of pictures on the card; shadow cache {r['sh'][0]} kept / {r['sh'][1]} drawn; {r['grid']} props skipped by the grid; GPU {r['gpu']}")
@@ -1056,8 +1056,8 @@ def desktop_steps(b, base, R):
         # the pixel-grid camera dial: off by default, and turning it on keeps the scene drawing
         if pg.evaluate("eng('camera','pixelGrid')!==false"): raise Exception('pixelGrid should be off by default')
         pg.evaluate("GD.engine.defaults.camera=Object.assign({},GD.engine.defaults.camera||{},{pixelGrid:true});0"); time.sleep(2)
-        fr = pg.evaluate("DGL.frames||0")
-        if not until(pg, f"(DGL.frames||0)>{fr + 1}", 30): raise Exception('no frames drawn with the pixel-grid camera on')   # alpha 0.1: a frame can take seconds here
+        fr = pg.evaluate("walkRenderer.frames||0")
+        if not until(pg, f"(walkRenderer.frames||0)>{fr + 1}", 30): raise Exception('no frames drawn with the pixel-grid camera on')   # alpha 0.1: a frame can take seconds here
         pg.evaluate("delete GD.engine.defaults.camera.pixelGrid;0")
         out.append('pixel-grid camera: off by default, draws when on')
         if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
@@ -1119,7 +1119,7 @@ def desktop_steps(b, base, R):
         node = pg.evaluate("ROUTE.findIndex(r=>r.scene==='sundown')")
         if node < 0: raise Exception('no Marigold Town')
         go_scene(pg, node); time.sleep(8)
-        tp = pg.evaluate("(DGL.ring&&DGL.ring.TP)||(walkView.ground&&walkView.ground._TP)")
+        tp = pg.evaluate("(walkRenderer.ring&&walkRenderer.ring.TP)||(walkView.ground&&walkView.ground._TP)")
         if tp != 32: raise Exception(f'Marigold Town ground painted at {tp} px a tile')
         r = json.loads(pg.evaluate("JSON.stringify({made:BLD.made||0,drawn:BLD.drawn||0,n:(walkView.sc.props||[]).filter(p=>{const M=GD.scenery.props[p.k];return M&&M.build}).length})"))
         if r['made'] < 1: raise Exception('no 3D building model was built at Marigold Town')
@@ -1327,11 +1327,11 @@ def desktop_steps(b, base, R):
         if vx['empty']: raise Exception('empty voxel models: ' + ', '.join(vx['empty']))
         out.append(f'{vx["n"]} props with a voxel recipe, {vx["built"]} of 12 meshed on the spot, {vx["drawn"]} drawn last frame')
         # the light: SH ambient, cascades, lamp maps, god rays all on and running without errors
-        lt = json.loads(pg.evaluate("JSON.stringify({sh:!!(DGL.X&&DGL.X.sh),cas:!!(DGL.lastShadow&&DGL.lastShadow.far),vol:!!EGL.fb.vol1,ao:eng('shadows','aoKind')})"))
+        lt = json.loads(pg.evaluate("JSON.stringify({sh:!!(walkRenderer.X&&walkRenderer.X.sh),cas:!!(walkRenderer.lastShadow&&walkRenderer.lastShadow.far),vol:!!EGL.fb.vol1,ao:eng('shadows','aoKind')})"))
         if not (lt['sh'] and lt['cas']): raise Exception(f'light: {lt}')
-        go_scene(pg, 0); pg.evaluate("ENV.force={time:22,weather:'clear',season:'summer'};0"); time.sleep(4); until(pg, "(DGL.X&&DGL.X.lampSh||[]).length>0", 20)
-        lamps = pg.evaluate("(DGL.X&&DGL.X.lampSh||[]).length"); shot(pg, 'v43-night'); pg.evaluate("ENV.force=null;0")
-        if not lamps: raise Exception('no lamp shadow map at night in Marigold Town ' + pg.evaluate("JSON.stringify({id:walkView.id,pl:[walkView.pl.x,walkView.pl.z],n:(DGL.X&&DGL.X.lights||[]).length,night:ENV.night,force:ENV.force,dark:DGL.dark,bt:!!DGL.bt,q:eng('shadows','lampShadows'),near:(DGL.X&&DGL.X.lights||[]).slice(0,3).map(l=>[l.p.map(v=>+v.toFixed(1)),l.r])})"))
+        go_scene(pg, 0); pg.evaluate("ENV.force={time:22,weather:'clear',season:'summer'};0"); time.sleep(4); until(pg, "(walkRenderer.X&&walkRenderer.X.lampSh||[]).length>0", 20)
+        lamps = pg.evaluate("(walkRenderer.X&&walkRenderer.X.lampSh||[]).length"); shot(pg, 'v43-night'); pg.evaluate("ENV.force=null;0")
+        if not lamps: raise Exception('no lamp shadow map at night in Marigold Town ' + pg.evaluate("JSON.stringify({id:walkView.id,pl:[walkView.pl.x,walkView.pl.z],n:(walkRenderer.X&&walkRenderer.X.lights||[]).length,night:ENV.night,force:ENV.force,dark:walkRenderer.dark,bt:!!walkRenderer.bt,q:eng('shadows','lampShadows'),near:(walkRenderer.X&&walkRenderer.X.lights||[]).slice(0,3).map(l=>[l.p.map(v=>+v.toFixed(1)),l.r])})"))
         out.append(f'sky-shaped ambient, two shadow cascades, god rays {"on" if lt["vol"] else "off"}, {lt["ao"]} occlusion, {lamps} lamp shadow map(s) at night')
         if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
         return '; '.join(out)
@@ -1348,11 +1348,11 @@ def desktop_steps(b, base, R):
         def bench(id, t, x=None, z=None, yaw=0, js='0'):
             pg.evaluate(f"ENV.force={{time:{t},weather:'clear',season:'summer'}};U.modal=null;U.mq=[];U.toastQ=[];renderOv();U.tab='walk';U.bench={{id:'{id}',test:1}};render();0")   # v46: no window from an earlier step over the picture
             if not until(pg, f"!!(walkView.ready&&walkView.id==='{id}')", 40): raise Exception(f'{id} didn’t open')
-            f0 = pg.evaluate("DGL.frames"); until(pg, f'DGL.frames>={f0 + 6}', 30); time.sleep(1)
-            if x is not None: pg.evaluate(f"walkView.pl.x={x};walkView.pl.z={z};walkView.pl.route=null;DGL.yawT={yaw};0")
+            f0 = pg.evaluate("walkRenderer.frames"); until(pg, f'walkRenderer.frames>={f0 + 6}', 30); time.sleep(1)
+            if x is not None: pg.evaluate(f"walkView.pl.x={x};walkView.pl.z={z};walkView.pl.route=null;walkRenderer.yawT={yaw};0")
             # v47: wait for frames, not a fixed time: the camera eases to where you stand and the shadow map follows it
             # a few frames later (a slow machine with many places visited draws a frame a second or less)
-            pg.evaluate(js); f1 = pg.evaluate("DGL.frames"); until(pg, f'DGL.frames>={f1 + 8}', 60); time.sleep(.5)
+            pg.evaluate(js); f1 = pg.evaluate("walkRenderer.frames"); until(pg, f'walkRenderer.frames>={f1 + 8}', 60); time.sleep(.5)
         def picture():
             pg.evaluate("U.modal=null;U.mq=[];renderOv();document.body.classList.add('photo');0"); time.sleep(.4)
             im = Image.open(io.BytesIO(pg.screenshot())).convert('RGB'); pg.evaluate("document.body.classList.remove('photo');0"); return im
@@ -1392,7 +1392,7 @@ def desktop_steps(b, base, R):
             shot(pg, 'v44-land')
             # 2. props: every kind draws (pictures, solids, voxels, buildings) and no draw is refused
             bench('test_light_props', 16, 20, 7, 0); time.sleep(1)
-            c = json.loads(pg.evaluate("JSON.stringify({bld:BLD.drawn,vox:VOX.drawn,p3d:P3D.drawn,spr:DGL.sprN||null,placed:(walkView.sc.props||[]).length,fails:[BLD.fail,VOX.fail,P3D.fail].filter(Boolean)})"))
+            c = json.loads(pg.evaluate("JSON.stringify({bld:BLD.drawn,vox:VOX.drawn,p3d:P3D.drawn,spr:walkRenderer.sprN||null,placed:(walkView.sc.props||[]).length,fails:[BLD.fail,VOX.fail,P3D.fail].filter(Boolean)})"))
             if c['fails']: raise Exception('renderers off: ' + ' | '.join(c['fails']))
             if c['bld'] < 3 or c['vox'] < 4 or c['p3d'] < 1: raise Exception(f'props scene: {c}')
             shot(pg, 'v44-props'); out.append(f'props: {c["bld"]} buildings, {c["vox"]} voxel props, {c["p3d"]} solid props drawn of {c["placed"]} placed')
@@ -1419,7 +1419,7 @@ def desktop_steps(b, base, R):
         finally:   # v47: never leave the check on (a failure above used to): it stalls every later step's drawing
             pg.evaluate("(()=>{const gl=EGL.gl;if(!gl||!gl.__chk)return;for(const k of ['useProgram','drawArrays','drawElements','drawArraysInstanced','drawElementsInstanced'])delete gl[k];delete gl.__chk})()")
         if chk['n']: raise Exception(f'{chk["n"]} draw calls refused by WebGL (last: {chk["last"]})')
-        pg.evaluate("U.bench=null;ENV.force=null;DGL.yawT=0;render();0")
+        pg.evaluate("U.bench=null;ENV.force=null;walkRenderer.yawT=0;render();0")
         if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
         return '; '.join(out) + '; no draw call refused'
     v44()
@@ -1449,7 +1449,7 @@ def desktop_steps(b, base, R):
         pg.evaluate("(()=>{const p=walkView.sc.props.find(p=>p.act==='shop'&&p.k==='shop'),C=dioData().sc,g=dioActSpot(p,C.props[p.k],C.ppu||34);window.__shop=[p.x,p.z];walkView.pl.route=null;walkView.pl.x=g[0]-2;walkView.pl.z=g[1]-1.5;walkPick({k:'act',p,act:'shop'})})();0")   # a couple of steps from the door (walking is slow here)
         t0 = time.time(); ok = False
         while time.time() - t0 < 90:
-            pg.evaluate("DGL.prepBoost=60;0")                                    # this machine draws a frame a second: let the room be prepared in big slices
+            pg.evaluate("walkRenderer.prepBoost=60;0")                                    # this machine draws a frame a second: let the room be prepared in big slices
             if pg.evaluate("!!(walkView.ready&&walkView.sc&&walkView.sc.roomOf==='int_shop'&&walkView.id.includes('#'))"): ok = True; break
             if pg.evaluate("!!(walkView.ready&&walkView.id==='int_shop')"): break
             time.sleep(1)
@@ -1615,7 +1615,7 @@ def desktop_steps(b, base, R):
         pg.evaluate("""(()=>{const p=walkView.sc.props.find(p=>p.k==='library'&&p.act),C=dioData().sc,g=dioActSpot(p,C.props[p.k],C.ppu||34);walkView.pl.route=null;walkView.pl.x=g[0]-2;walkView.pl.z=g[1]-1.5;walkPick({k:'act',p,act:p.act})})();0""")
         t0 = time.time()
         while time.time() - t0 < 90:
-            pg.evaluate("DGL.prepBoost=60;0")
+            pg.evaluate("walkRenderer.prepBoost=60;0")
             if pg.evaluate("!!(walkView.ready&&walkView.sc&&walkView.sc.roomOf==='int_library')"): break
             time.sleep(1)
         else: raise Exception('the library’s room didn’t open in place')
@@ -1651,8 +1651,8 @@ def desktop_steps(b, base, R):
         bench_pic = "U.modal=null;U.mq=[];renderOv();U.tab='walk';U.bench={id:'pass',test:1};render();0"
         pg.evaluate("ENV.force={time:12.5,weather:'clear',season:'summer'};" + bench_pic)
         if until(pg, "!!(walkView.ready&&walkView.id==='pass')", 60):
-            f0 = pg.evaluate("DGL.frames"); until(pg, f'DGL.frames>={f0 + 6}', 30); pg.evaluate("(()=>{const g=dioScene('pass').grown2||{};walkView.pl.x=69.5+(g.W||0);walkView.pl.z=25+(g.S||0);walkView.pl.route=null})();0")   # alpha 0.2: the pass grew
-            f1 = pg.evaluate("DGL.frames"); until(pg, f'DGL.frames>={f1 + 8}', 60); time.sleep(.5); shot(pg, 'a02-terrace-pass')
+            f0 = pg.evaluate("walkRenderer.frames"); until(pg, f'walkRenderer.frames>={f0 + 6}', 30); pg.evaluate("(()=>{const g=dioScene('pass').grown2||{};walkView.pl.x=69.5+(g.W||0);walkView.pl.z=25+(g.S||0);walkView.pl.route=null})();0")   # alpha 0.2: the pass grew
+            f1 = pg.evaluate("walkRenderer.frames"); until(pg, f'walkRenderer.frames>={f1 + 8}', 60); time.sleep(.5); shot(pg, 'a02-terrace-pass')
         pg.evaluate("U.bench=null;ENV.force=null;render();0")
         if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
         return f'{len(R2)} places: the same cells and exits reachable with natural terraces as without, no prop more than 15 cm off the ground'
@@ -1816,7 +1816,7 @@ def desktop_steps(b, base, R):
         and the lamps are lit; then a front of rain comes in over Marigold Town and its curtain sweeps across"""
         if not pg.evaluate("!!GD.scenes.test_windows"): return 'not in this build'
         pg.evaluate("U.modal=null;U.mq=[];renderOv();ENV.on=true;ENV.force={time:22,weather:'clear',season:'summer'};U.tab='walk';U.inside=null;U.bench={id:'test_windows',test:1};render();0")
-        if not until(pg, "!!(walkView.ready&&walkView.id==='test_windows'&&DGL.frames>4)", 60): raise Exception('the windows and lamps scene didn’t open')
+        if not until(pg, "!!(walkView.ready&&walkView.id==='test_windows'&&walkRenderer.frames>4)", 60): raise Exception('the windows and lamps scene didn’t open')
         pg.evaluate("walkView.pl.x=44;walkView.pl.z=10;walkView.pl.route=null;0"); time.sleep(4)
         until(pg, "typeof BLD!=='undefined'&&BLD.drawn>=8", 90)   # the buildings' meshes come a few a frame: give them time (5 to 8 are in view here)
         r = pg.evaluate("""(()=>{const L=walkView.sc.props.filter(p=>{const M=GD.scenery.props[p.k];return M&&(M.glow||(M.fx||[]).some(f=>f.k==='glow'))});
@@ -1850,7 +1850,7 @@ def desktop_steps(b, base, R):
             n0 = pg.evaluate("ROUTE.findIndex(r=>r.scene==='copperleaf')"); n1 = pg.evaluate("ROUTE.findIndex(r=>r.scene==='hedgerow')")
             if n0 < 0 or n1 < 0: return 'no Copperleaf or Hedgerow Lane in this build'
             go_scene(pg, n0, 150); time.sleep(2)
-            p0 = pg.evaluate("[walkView.pl.x,walkView.pl.z]"); pg.evaluate("walkView.stick={x:0,y:1};0"); f0 = pg.evaluate("DGL.frames"); until(pg, f"DGL.frames>={f0 + 4}", 120)
+            p0 = pg.evaluate("[walkView.pl.x,walkView.pl.z]"); pg.evaluate("walkView.stick={x:0,y:1};0"); f0 = pg.evaluate("walkRenderer.frames"); until(pg, f"walkRenderer.frames>={f0 + 4}", 120)
             pg.evaluate("walkView.stick=null;0"); p1 = pg.evaluate("[walkView.pl.x,walkView.pl.z]"); moved = ((p1[0] - p0[0]) ** 2 + (p1[1] - p0[1]) ** 2) ** .5
             if moved < .2: raise Exception(f'the joystick moved the player {moved:.2f} m')
             pg.evaluate("S.preferences.control='dpad';renderOv();render();0"); time.sleep(.8)

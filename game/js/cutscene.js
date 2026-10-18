@@ -34,7 +34,7 @@ import { drawRig, rigFrame, rigParts, rigPreload, rigTint } from './skeleton-rig
 import { buzz, partSpr } from './battle-stage.js';
 import { dioData, dioDirOf, dioImg, dioOk, dioPrepare, dioProj, dioScene, dioStop, walkView } from './walk-view.js';
 import { EGL, eglOK } from './engine/webgl.js';
-import { DGL, dglPerson, dioH, dioMount } from './walk-view-gl.js';
+import { dglPerson, dioH, dioMount, walkRenderer } from './walk-view-gl.js';
 import { wrRoamView } from './seamless-world.js';
 import { music, sfx } from './sound.js';
 import { TALK, talkHide, talkLine } from './talk.js';
@@ -586,7 +586,7 @@ export async function csStart() {
     cap: () => (document.hidden ? 1 : DR.on ? 4 : Math.min(60, userFps())),
   });
   if (!CS.on || CS.run !== run) return;
-  if (!DGL.on || !walkView.ready || !walkView.cv) {
+  if (!walkRenderer.on || !walkView.ready || !walkView.cv) {
     csAbort();
     return;
   }
@@ -623,9 +623,14 @@ export async function csStart() {
   if (typeof NWLOG !== 'undefined') NWLOG.add('scene', 'opening cutscene');
   if (typeof music === 'function') music('hazel');
   /* the town's ground is laid and drawn before the white fades */
-  const f0 = DGL.frames,
+  const f0 = walkRenderer.frames,
     t0 = performance.now();
-  while (CS.on && CS.run === run && !(DGL.gtex && DGL.frames >= f0 + 3) && performance.now() - t0 < 15000)
+  while (
+    CS.on &&
+    CS.run === run &&
+    !(walkRenderer.gtex && walkRenderer.frames >= f0 + 3) &&
+    performance.now() - t0 < 15000
+  )
     await new Promise(r => setTimeout(r, 120));
   try {
     await csScript(run);
@@ -872,9 +877,9 @@ export function csTeardown() {
   CS.choosing = false;
   CS.dressing = false;
   walkView.director = null;
-  DGL.bt = null;
-  DGL.camT = null;
-  DGL.focus = null;
+  walkRenderer.bt = null;
+  walkRenderer.camT = null;
+  walkRenderer.focus = null;
   const el = $('#cs');
   if (el) {
     el.hidden = true;

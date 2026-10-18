@@ -181,17 +181,17 @@ NWLOG.ctx = () => {
   try {
     c.view = typeof GAME.B !== 'undefined' && GAME.B ? 'battle' : typeof GAME.U !== 'undefined' ? GAME.U.tab : '-';
     if (typeof GAME.walkView !== 'undefined' && GAME.walkView.id) c.scene = GAME.walkView.id;
-    if (typeof GAME.DGL !== 'undefined') c.gl = GAME.DGL.on ? 1 : 0;
+    if (typeof GAME.walkRenderer !== 'undefined') c.gl = GAME.walkRenderer.on ? 1 : 0;
     if (typeof GAME.walkView !== 'undefined') c.res = Math.round((GAME.walkView.R || 1) * 100) / 100;
     if (typeof GAME.SC !== 'undefined' && GAME.SC.q) c.bq = GAME.SC.q.lvl;
     if (typeof GAME.walkView !== 'undefined' && GAME.walkView.held) c.held = GAME.walkView.held;
-    if (typeof GAME.DGL !== 'undefined' && GAME.DGL.on) {
-      c.q = GAME.DGL.qe || 0;
-      if (GAME.DGL.cullOf) c.cull = [GAME.DGL.culled, GAME.DGL.cullOf];
-      if (GAME.DGL.gridSkip) c.grid = GAME.DGL.gridSkip;
-      if (GAME.DGL.shHit !== undefined || GAME.DGL.shMiss !== undefined) {
-        c.shc = [GAME.DGL.shHit || 0, GAME.DGL.shMiss || 0];
-        GAME.DGL.shHit = GAME.DGL.shMiss = 0;
+    if (typeof GAME.walkRenderer !== 'undefined' && GAME.walkRenderer.on) {
+      c.q = GAME.walkRenderer.qe || 0;
+      if (GAME.walkRenderer.cullOf) c.cull = [GAME.walkRenderer.culled, GAME.walkRenderer.cullOf];
+      if (GAME.walkRenderer.gridSkip) c.grid = GAME.walkRenderer.gridSkip;
+      if (GAME.walkRenderer.shHit !== undefined || GAME.walkRenderer.shMiss !== undefined) {
+        c.shc = [GAME.walkRenderer.shHit || 0, GAME.walkRenderer.shMiss || 0];
+        GAME.walkRenderer.shHit = GAME.walkRenderer.shMiss = 0;
       }
     }
     if (typeof GAME.EGL !== 'undefined' && GAME.EGL.gpuMs)
@@ -237,8 +237,8 @@ NWLOG.flush = ts => {
 /* the WebGL scene can only be read inside the frame that drew it, so it is captured there (walk-view-gl.js) */
 NWLOG.snap = () => {
   try {
-    if (typeof GAME.DGL !== 'undefined' && GAME.DGL.on && GAME.walkView.cv && GAME.walkView.ready) {
-      GAME.DGL.snapReq = 1;
+    if (typeof GAME.walkRenderer !== 'undefined' && GAME.walkRenderer.on && GAME.walkView.cv && GAME.walkView.ready) {
+      GAME.walkRenderer.snapReq = 1;
       return;
     }
     const cv =
@@ -368,11 +368,11 @@ NWLOG.glInfo = () => {
   } catch (e) {
     o.error = String(e.message || e);
   }
-  if (typeof GAME.DGL !== 'undefined') {
-    o.sceneRenderer = GAME.DGL.on ? 'webgl' : 'canvas';
+  if (typeof GAME.walkRenderer !== 'undefined') {
+    o.sceneRenderer = GAME.walkRenderer.on ? 'webgl' : 'canvas';
     o.webglFailed = !!(typeof GAME.EGL !== 'undefined' && GAME.EGL.fail);
     o.contextLost = !!(typeof GAME.EGL !== 'undefined' && GAME.EGL.lost);
-    o.frames = GAME.DGL.frames;
+    o.frames = GAME.walkRenderer.frames;
   }
   /* alpha 0.4: the helper threads: the ground painter's (ground-paint-worker.js) and the bump maps' (engine/webgl.js) */
   try {
@@ -475,7 +475,7 @@ NWLOG.more = () => {
     lifeFrames: typeof GAME.LIFE !== 'undefined' ? GAME.LIFE.cut.size : null,
     normalsWaiting: typeof GAME.EGL !== 'undefined' && GAME.EGL.normQ ? GAME.EGL.normQ.length : null,
     targets: typeof GAME.EGL !== 'undefined' ? Object.keys(GAME.EGL.fb || {}).length : null,
-    prints: typeof GAME.DGL !== 'undefined' && GAME.DGL.prints ? GAME.DGL.prints.length : 0,
+    prints: typeof GAME.walkRenderer !== 'undefined' && GAME.walkRenderer.prints ? GAME.walkRenderer.prints.length : 0,
   }));
   t('memoryMB', () =>
     performance.memory
@@ -502,14 +502,14 @@ NWLOG.more = () => {
   );
   t('slowFrames', () => NWLOG.slow.slice(-30));
   t('frameMs', () =>
-    typeof GAME.DGL !== 'undefined' && GAME.DGL.hist
+    typeof GAME.walkRenderer !== 'undefined' && GAME.walkRenderer.hist
       ? {
-          under8: GAME.DGL.hist[0],
-          under16: GAME.DGL.hist[1],
-          under33: GAME.DGL.hist[2],
-          under66: GAME.DGL.hist[3],
-          under133: GAME.DGL.hist[4],
-          over133: GAME.DGL.hist[5],
+          under8: GAME.walkRenderer.hist[0],
+          under16: GAME.walkRenderer.hist[1],
+          under33: GAME.walkRenderer.hist[2],
+          under66: GAME.walkRenderer.hist[3],
+          under133: GAME.walkRenderer.hist[4],
+          over133: GAME.walkRenderer.hist[5],
         }
       : null
   );
@@ -557,10 +557,15 @@ NWLOG.build = () => ({
 /* save it: the share sheet on phones (send it to yourself, or to Files), a download elsewhere, the clipboard as a last resort */
 async function exportDebugLog() {
   /* take a current picture first: the WebGL scene hands it over on its next frame */
-  if (typeof GAME.DGL !== 'undefined' && GAME.DGL.on && typeof GAME.walkView !== 'undefined' && GAME.walkView.ready) {
+  if (
+    typeof GAME.walkRenderer !== 'undefined' &&
+    GAME.walkRenderer.on &&
+    typeof GAME.walkView !== 'undefined' &&
+    GAME.walkView.ready
+  ) {
     const t0 = NWLOG.shot && NWLOG.shot.t;
     NWLOG.snap();
-    for (let i = 0; i < 25 && GAME.DGL.snapReq; i++) await new Promise(r => setTimeout(r, 60));
+    for (let i = 0; i < 25 && GAME.walkRenderer.snapReq; i++) await new Promise(r => setTimeout(r, 60));
   }
   let data;
   try {
@@ -747,19 +752,19 @@ NWLOG.diag = (since = 0) => {
     typeof GAME.walkView !== 'undefined' ? GAME.walkView.id + (GAME.walkView.ready ? '' : ' (loading)') : null
   );
   t('renderer', () =>
-    typeof GAME.DGL !== 'undefined'
-      ? GAME.DGL.on
-        ? `webgl q${GAME.DGL.q || 0} res ${Math.round((GAME.walkView.R || 1) * 100)}% · ${GAME.DGL.frames} frames`
+    typeof GAME.walkRenderer !== 'undefined'
+      ? GAME.walkRenderer.on
+        ? `webgl q${GAME.walkRenderer.q || 0} res ${Math.round((GAME.walkView.R || 1) * 100)}% · ${GAME.walkRenderer.frames} frames`
         : 'canvas'
       : '-'
   );
   t('drawn', () =>
-    typeof GAME.DGL !== 'undefined' && GAME.DGL.on
+    typeof GAME.walkRenderer !== 'undefined' && GAME.walkRenderer.on
       ? {
-          skipped: GAME.DGL.cullOf ? `${GAME.DGL.culled}/${GAME.DGL.cullOf}` : null,
+          skipped: GAME.walkRenderer.cullOf ? `${GAME.walkRenderer.culled}/${GAME.walkRenderer.cullOf}` : null,
           buildings: typeof GAME.BLD !== 'undefined' ? GAME.BLD.drawn : null,
           solid: typeof GAME.P3D !== 'undefined' ? GAME.P3D.drawn : null,
-          grass: GAME.DGL.grassDrawn || null,
+          grass: GAME.walkRenderer.grassDrawn || null,
         }
       : null
   );

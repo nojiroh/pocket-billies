@@ -32,7 +32,6 @@ import {
 import { eglPost, setEglPost } from './engine/post-effects.js';
 import { ENV } from './environment.js';
 import {
-  DGL,
   dglBuildGrass,
   dglFxPass,
   dglGrass,
@@ -59,6 +58,7 @@ import {
   setDglSprites,
   setDglWater,
   setDioMount,
+  walkRenderer,
 } from './walk-view-gl.js';
 import { BLD, bldDraw, bldItems, setBldDraw, setBldItems } from './buildings.js';
 import { P3D, p3dBuild, p3dDraw, p3dTreeBuild, setP3dBuild, setP3dDraw, setP3dTreeBuild } from './solid-props.js';
@@ -89,7 +89,6 @@ Object.defineProperties(GAME, {
   AUD: { get: () => AUD },
   B: { get: () => B },
   BLD: { get: () => BLD },
-  DGL: { get: () => DGL },
   EGL: { get: () => EGL },
   EGL_NW: { get: () => EGL_NW },
   ENV: { get: () => ENV },
@@ -153,5 +152,6 @@ Object.defineProperties(GAME, {
   stampCount: { get: () => stampCount },
   toast: { get: () => toast },
   userFps: { get: () => userFps },
+  walkRenderer: { get: () => walkRenderer },
   walkView: { get: () => walkView },
 });

@@ -13,7 +13,7 @@ import { GD, ROUTE, TRAINERS } from './game-data.js';
 import { S, U, esc, save } from './game-state.js';
 import { humanHTML } from './person-art.js';
 import { dioBaseId, dioFind, dioFreePt, dioHubOf, dioScene, walkView } from './walk-view.js';
-import { DGL, dioH } from './walk-view-gl.js';
+import { dioH, walkRenderer } from './walk-view-gl.js';
 import { JINGLES, jingle, sfx } from './sound.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -184,7 +184,7 @@ function clueSpotFind(sc, at) {
 }
 /* drawn by the walk scene's effects pass, like the gold stamps but cool white: walk over it to pick it up */
 function clueDraw(quad, glows, t) {
-  if (typeof S === 'undefined' || !S.started || DGL.bt || U.bench || U.modal) return;
+  if (typeof S === 'undefined' || !S.started || walkRenderer.bt || U.bench || U.modal) return;
   const P = walkView.pl;
   for (const c of clueSpots()) {
     const y = dioH(c.x, c.z),

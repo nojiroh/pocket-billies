@@ -28,7 +28,7 @@ import {
   v3n,
 } from './engine/webgl.js';
 import { ENV, envLitFrac } from './environment.js';
-import { DGL, dglCurveArgs, dglLookU, dglUse, dioH } from './walk-view-gl.js';
+import { dglCurveArgs, dglLookU, dglUse, dioH, walkRenderer } from './walk-view-gl.js';
 /* eslint-disable no-func-assign */
 expose({
   BLD: [() => BLD],
@@ -238,7 +238,7 @@ function bldHexSet(L) {
 /* alpha 0.4.1: a building kind's signature worked out once a frame (it was joined into a long string for every building, twice a frame) */
 const BLD_SIGF = new WeakMap();
 function bldSigF(B) {
-  const f = typeof DGL !== 'undefined' ? DGL.frames : 0;
+  const f = typeof walkRenderer !== 'undefined' ? walkRenderer.frames : 0;
   let c = BLD_SIGF.get(B);
   if (!c || c.f !== f) {
     c = { f, s: bldSig(B) };
@@ -1524,7 +1524,8 @@ export function bldItems(items) {
     if (BLD.fail) return [];
   }
   const out = [];
-  for (const it of items) if (it.bld3 && !(DGL.bt && DGL.bt.hide && DGL.bt.hide.has(it.p))) out.push(it);
+  for (const it of items)
+    if (it.bld3 && !(walkRenderer.bt && walkRenderer.bt.hide && walkRenderer.bt.hide.has(it.p))) out.push(it);
   return out;
 }
 export function bldDraw(C, X, items, fades) {

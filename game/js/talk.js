@@ -12,7 +12,7 @@ import { RM, S } from './game-state.js';
 import { frameStop, frameTask } from './frame-scheduler.js';
 import { trPortrait, trainerLook } from './person-art.js';
 import { dioFace, walkView } from './walk-view.js';
-import { DGL } from './walk-view-gl.js';
+import { walkRenderer } from './walk-view-gl.js';
 import { sfx } from './sound.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -212,7 +212,7 @@ export async function talkFolk(f) {
   f.route = null;
   f.walk = 0;
   dioFace(f);
-  if (typeof DGL !== 'undefined') DGL.focusT = { x: f.x, z: f.z, t: walkView.t };
+  if (typeof walkRenderer !== 'undefined') walkRenderer.focusT = { x: f.x, z: f.z, t: walkView.t };
   await talk([
     [who, a],
     [who, b === a ? FOLK_TALK[0] : b],

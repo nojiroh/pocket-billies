@@ -5,7 +5,7 @@
    One engine state object, EGL, is shared by every view. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { DGL, dioArtVer, eglRestored, provide } from '../hooks.js';
+import { dioArtVer, eglRestored, provide, walkRenderer } from '../hooks.js';
 import { clamp } from '../util.js';
 import { cnv } from '../art.js';
 import { dioOk } from '../walk-view.js';
@@ -634,7 +634,11 @@ function eglAniso() {
       EGL.aniso && typeof eng === 'function'
         ? Math.min(
             EGL.anisoMax || 1,
-            eng('quality', 'sharpTex') === false ? 1 : typeof DGL !== 'undefined' && DGL.q >= 3 ? 2 : 8
+            eng('quality', 'sharpTex') === false
+              ? 1
+              : typeof walkRenderer !== 'undefined' && walkRenderer.q >= 3
+                ? 2
+                : 8
           )
         : 1;
   if (EGL.aniso && n > 1) gl.texParameterf(gl.TEXTURE_2D, EGL.aniso.TEXTURE_MAX_ANISOTROPY_EXT, n);

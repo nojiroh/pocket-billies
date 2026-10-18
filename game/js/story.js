@@ -13,7 +13,7 @@ import { B, RM, S, U, esc, healAll, save, today } from './game-state.js';
 import { DR } from './dressing-room.js';
 import { dioBaseId, dioFreePt, walkView } from './walk-view.js';
 import { EGL } from './engine/webgl.js';
-import { DGL, dioH } from './walk-view-gl.js';
+import { dioH, walkRenderer } from './walk-view-gl.js';
 import { startTrainer, startWild } from './battle.js';
 import { music } from './sound.js';
 import { TALK, talk, talkHide, talkLine } from './talk.js';
@@ -64,7 +64,14 @@ export async function trainerTalk(id) {
   startTrainer(id, { talked: true });
 }
 function storyWorldOK() {
-  return typeof DGL !== 'undefined' && DGL.on && walkView.ready && walkView.cv && !B && typeof csFrame === 'function';
+  return (
+    typeof walkRenderer !== 'undefined' &&
+    walkRenderer.on &&
+    walkView.ready &&
+    walkView.cv &&
+    !B &&
+    typeof csFrame === 'function'
+  );
 }
 /* the director, borrowed for a scene in the current walk scene (no remount, no letterbox fade-in) */
 function csWorldBegin() {
@@ -101,9 +108,9 @@ function csWorldEnd() {
   CS.world = false;
   csFlush();
   walkView.director = null;
-  DGL.bt = null;
-  DGL.camT = null;
-  DGL.focus = null;
+  walkRenderer.bt = null;
+  walkRenderer.camT = null;
+  walkRenderer.focus = null;
   const el = $('#cs');
   if (el) {
     el.hidden = true;
@@ -337,11 +344,13 @@ export function storyRivalBattle(o = {}) {
   const poll = () => {
     if (B || !S.started) return;
     const on = typeof walkView !== 'undefined' && walkView.ready,
-      gl = typeof DGL !== 'undefined' && DGL.on;
-    if (on && gl && f0 == null) f0 = DGL.frames;
+      gl = typeof walkRenderer !== 'undefined' && walkRenderer.on;
+    if (on && gl && f0 == null) f0 = walkRenderer.frames;
     const ready =
       typeof walkView === 'undefined' ||
-      (on && (!gl || (DGL.frames >= (f0 ?? 0) + 8 && (typeof EGL === 'undefined' || !EGL.normQ || !EGL.normQ.length))));
+      (on &&
+        (!gl ||
+          (walkRenderer.frames >= (f0 ?? 0) + 8 && (typeof EGL === 'undefined' || !EGL.normQ || !EGL.normQ.length))));
     if ((ready && performance.now() - t0 > 900) || performance.now() - t0 > 9000) {
       go();
       return;

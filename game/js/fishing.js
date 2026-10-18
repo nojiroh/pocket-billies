@@ -13,7 +13,7 @@ import { GD, RULES, SP } from './game-data.js';
 import { B, RM, S, U, areaPool, pickW, save, uid } from './game-state.js';
 import { uiIco } from './art.js';
 import { dioTer, walkView } from './walk-view.js';
-import { DGL, DGL_WKIND, dglCurve, dglRing, dglWgAt, dioH } from './walk-view-gl.js';
+import { DGL_WKIND, dglCurve, dglRing, dglWgAt, dioH, walkRenderer } from './walk-view-gl.js';
 /* eslint-disable no-func-assign */
 expose({
   FISH: [() => FISH],
@@ -74,7 +74,7 @@ function fishSpot() {
     const c = dioTer(x, z);
     return c === 'w' || c === 'd';
   };
-  if (wet(P.x, P.z) && !(typeof DGL !== 'undefined' && DGL.mountOn)) return null;
+  if (wet(P.x, P.z) && !(typeof walkRenderer !== 'undefined' && walkRenderer.mountOn)) return null;
   const f = { down: [0, -1], up: [0, 1], side: [-1, 0], sideR: [1, 0] }[P.dir] || [0, -1],
     dirs = [f, [f[1], -f[0]], [-f[1], f[0]], [0.7, 0.7], [-0.7, 0.7], [0.7, -0.7], [-0.7, -0.7], [-f[0], -f[1]]];
   for (const [dx, dz] of dirs)

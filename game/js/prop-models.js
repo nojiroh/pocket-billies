@@ -14,7 +14,7 @@ import { artImg, artURL, hexA } from './art.js';
 import { dioImg, walkView } from './walk-view.js';
 import { eng } from './engine/settings.js';
 import { EGL, EGL_GLSL_COMMON, EGL_GLSL_LIGHT, eglImg, eglPrograms } from './engine/webgl.js';
-import { DGL, dglCurveArgs, dglHit, dglLookU, dglUse, dglWindAt } from './walk-view-gl.js';
+import { dglCurveArgs, dglHit, dglLookU, dglUse, dglWindAt, walkRenderer } from './walk-view-gl.js';
 import { BLD_SH, bldArt, bldAtlas } from './buildings.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -1124,7 +1124,7 @@ function voxTag(it) {
   }
   /* a few new meshes a frame (about 12 ms): the rest draw as their pictures a frame or two longer */
   if (rec && !VOX.meshes.has(path)) {
-    const fr = typeof DGL !== 'undefined' ? DGL.frames : 0;
+    const fr = typeof walkRenderer !== 'undefined' ? walkRenderer.frames : 0;
     if (VOX.fr !== fr) {
       VOX.fr = fr;
       VOX.bt = 0;
