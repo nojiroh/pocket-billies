@@ -201,7 +201,7 @@ expose({
   GRASS_KINDS: [() => GRASS_KINDS],
   GRASS_PUSHER_BUFFER: [() => GRASS_PUSHER_BUFFER],
   IMAGE_IDS: [() => IMAGE_IDS],
-  MAP_CACHE_KEYS: [() => MAP_CACHE_KEYS],
+  MAP_CACHE_FIELDS: [() => MAP_CACHE_FIELDS],
   NEAR_RING_CHUNK_M: [() => NEAR_RING_CHUNK_M],
   NEAR_RING_SIZE: [() => NEAR_RING_SIZE],
   NEUTRAL_LOOK: [() => NEUTRAL_LOOK],
@@ -273,14 +273,13 @@ expose({
   foliageAmount: [() => foliageAmount, v => (foliageAmount = v)],
   frameBudgetLeft: [() => frameBudgetLeft, v => ((frameBudgetLeft = v), provide({ frameBudgetLeft }))],
   freeCameraOn: [() => freeCameraOn],
-  freeMapCache: [() => freeMapCache, v => (freeMapCache = v)],
+  freeMapCacheEntry: [() => freeMapCacheEntry, v => (freeMapCacheEntry = v)],
   freeNearRing: [() => freeNearRing, v => (freeNearRing = v)],
   gatherFountainBasins: [() => gatherFountainBasins, v => (gatherFountainBasins = v)],
   gatherFrameItems: [() => gatherFrameItems, v => setGatherFrameItems(v)],
   grassPushers: [() => grassPushers, v => (grassPushers = v)],
   grassTrail: [() => grassTrail, v => (grassTrail = v)],
   grassWork: [() => grassWork, v => setGrassWork(v)],
-  groundCacheKey: [() => groundCacheKey, v => (groundCacheKey = v)],
   groundHeightAt: [() => groundHeightAt, v => ((groundHeightAt = v), provide({ groundHeightAt }))],
   groundNormalTexture: [() => groundNormalTexture, v => (groundNormalTexture = v)],
   groundOcclusion: [() => groundOcclusion, v => setGroundOcclusion(v)],
@@ -305,6 +304,7 @@ expose({
   landmarkTilt: [() => landmarkTilt, v => (landmarkTilt = v)],
   listenDeviceTilt: [() => listenDeviceTilt, v => (listenDeviceTilt = v)],
   makeTextureMipmaps: [() => makeTextureMipmaps, v => (makeTextureMipmaps = v)],
+  mapCacheKey: [() => mapCacheKey, v => (mapCacheKey = v)],
   mapFlowers: [() => mapFlowers, v => (mapFlowers = v)],
   mapSun: [() => mapSun, v => (mapSun = v)],
   mirrorInView: [() => mirrorInView, v => (mirrorInView = v)],
@@ -829,7 +829,7 @@ export function walkGlContext(cv) {
   walkRenderer.farKey = '';
   walkRenderer.sceneCache = null;
   walkRenderer.wtex = null;
-  for (const k of MAP_CACHE_KEYS) walkRenderer[k] = null;
+  for (const k of MAP_CACHE_FIELDS) walkRenderer[k] = null;
   return true;
 }
 function onGlContextRestored(cv) {
@@ -2384,7 +2384,7 @@ function groundOcclusionTexture(r) {
   return t;
 }
 /* v46: the frame's key for a view's ground (its mesh, water and textures are kept under it, swapMapCache) */
-function groundCacheKey(id, sc, gkey) {
+function mapCacheKey(id, sc, gkey) {
   return (
     id +
     '|' +
@@ -2405,12 +2405,12 @@ function groundCacheKey(id, sc, gkey) {
    left (walkRenderer.sceneCache), so the switch to it is a swap of a few references. Returns true when it is ready. */
 export function isGroundPrepared(id, sc, gkey) {
   const M = walkRenderer.sceneCache;
-  return !!(M && M.has(groundCacheKey(id, sc, gkey || groundKey(sc))));
+  return !!(M && M.has(mapCacheKey(id, sc, gkey || groundKey(sc))));
 }
 export function prepareMapGround(id, sc, G, urgent, focus) {
   if (!walkRenderer.on || !G) return false;
   const gkey = groundKey(sc),
-    hk = groundCacheKey(id, sc, gkey);
+    hk = mapCacheKey(id, sc, gkey);
   if (walkRenderer.sceneCache && walkRenderer.sceneCache.has(hk)) return true;
   if (walkRenderer.hkey === hk) return true;
   if (walkRenderer.prep) {
@@ -2457,7 +2457,7 @@ function abortGroundPrep() {
   try {
     J.it.return();
   } catch (e) {}
-  freeMapCache(J.T);
+  freeMapCacheEntry(J.T);
 }
 function groundPrepWork(budget) {
   const J = walkRenderer.prep;
@@ -2482,7 +2482,7 @@ function groundPrepWork(budget) {
         for (const k of [...M.keys()]) {
           if (M.size <= Math.max(1, keep - 1)) break;
           if (k !== J.hk) {
-            freeMapCache(M.get(k));
+            freeMapCacheEntry(M.get(k));
             M.delete(k);
           }
         }
@@ -2496,7 +2496,7 @@ function groundPrepWork(budget) {
     }
   } catch (e) {
     walkRenderer.prep = null;
-    freeMapCache(J.T);
+    freeMapCacheEntry(J.T);
     if (typeof NWLOG !== 'undefined') NWLOG.add('webgl', 'preparing ' + J.id + ' failed: ' + ((e && e.message) || e));
     return;
   }
@@ -3629,7 +3629,7 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
     sc = walkView.sc,
     cv = walkView.cv;
   ensureGround();
-  const hk = groundCacheKey(walkView.id, sc, walkView.gkey);
+  const hk = mapCacheKey(walkView.id, sc, walkView.gkey);
   if (walkRenderer.gkey !== walkView.gkey || walkRenderer.hkey !== hk) {
     const old = walkRenderer.hkey;
     walkRenderer.gkey = walkView.gkey;
@@ -3807,7 +3807,7 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
 }
 /* v32: the last few scenes' ground, water and grass stay on the graphics card, so walking out of a house (or back
    from a trip) doesn't rebuild them; the oldest is let go when a fourth arrives */
-const MAP_CACHE_KEYS = [
+const MAP_CACHE_FIELDS = [
   'ring',
   'gaoTex',
   'gtex',
@@ -3837,16 +3837,16 @@ export function rebuildFromSettings() {
   if (typeof walkRenderer === 'undefined' || !walkRenderer.on) return;
   try {
     if (walkRenderer.sceneCache) {
-      for (const e of walkRenderer.sceneCache.values()) freeMapCache(e);
+      for (const e of walkRenderer.sceneCache.values()) freeMapCacheEntry(e);
       walkRenderer.sceneCache.clear();
     }
     if (walkRenderer.mesh) {
       const e = {};
-      for (const k of MAP_CACHE_KEYS) {
+      for (const k of MAP_CACHE_FIELDS) {
         e[k] = walkRenderer[k];
         walkRenderer[k] = null;
       }
-      freeMapCache(e);
+      freeMapCacheEntry(e);
     }
     if (walkRenderer.prep) abortGroundPrep();
   } catch (e) {
@@ -3869,7 +3869,7 @@ function swapMapCache(oldKey, key) {
     keep = engineSetting('quality', 'keepScenes') ?? 3;
   if (oldKey && walkRenderer.mesh && keep > 0) {
     const e = {};
-    for (const k of MAP_CACHE_KEYS) {
+    for (const k of MAP_CACHE_FIELDS) {
       e[k] = walkRenderer[k];
       walkRenderer[k] = null;
     }
@@ -3889,7 +3889,7 @@ function swapMapCache(oldKey, key) {
   if (walkRenderer.prep && walkRenderer.prep.hk === key) abortGroundPrep(); /* v46: about to build it anyway */
   if (hit && (hit.prepared || hit.grassKey === engineSetting('grass', 'density'))) {
     M.delete(key);
-    for (const k of MAP_CACHE_KEYS) walkRenderer[k] = hit[k];
+    for (const k of MAP_CACHE_FIELDS) walkRenderer[k] = hit[k];
     walkRenderer.rings = [];
     walkRenderer.leaves = null;
     walkRenderer.wlevelR = null;
@@ -3903,17 +3903,17 @@ function swapMapCache(oldKey, key) {
   } else {
     if (hit) {
       M.delete(key);
-      freeMapCache(hit);
+      freeMapCacheEntry(hit);
     }
     buildGroundMesh();
   }
   while (M.size > Math.max(0, keep - 1)) {
     const k0 = M.keys().next().value;
-    freeMapCache(M.get(k0));
+    freeMapCacheEntry(M.get(k0));
     M.delete(k0);
   }
 }
-function freeMapCache(e) {
+function freeMapCacheEntry(e) {
   const gl = gpuState.gl;
   if (!e) return;
   if (e.ring) {
