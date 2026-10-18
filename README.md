@@ -125,4 +125,5 @@ stands.
   files and properties, `rename-data.mjs` for data keys and sections, `rename-strings.py` for the Python tools'
   strings, `rename-ids.mjs` for the location ids; each proves a rename changed nothing else), and the Python scripts
   that drew the art and built the maps (the top of each says what it writes).
-- `docs/`: vision, roadmap, phases, naming, security review, handoff log, the Studio guide.
+- `docs/`: vision, roadmap, phases, naming, testing (`TESTING.md`: the tiers and what every phase tests), security
+  review, handoff log, the Studio guide.
