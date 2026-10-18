@@ -1,44 +1,44 @@
 /* Pocket Billies: the ground painter's helper thread.
    alpha 0.4: painting the ground was the biggest cause of slow frames in the 14 Oct logs (iPad, Android phone and a
    Windows laptop alike): the 16 m squares of the near ring as you walk, and a view's whole distant ground when it
-   opens. The very same painter (dioPaintGen and its helpers, sent to the worker as their source text, so there is one
+   opens. The very same painter (paintGroundSteps and its helpers, sent to the worker as their source text, so there is one
    copy of the code) now runs on a Web Worker. The main thread hands it a view once and the tile pictures once, then
    asks for rectangles and gets the pixels back, the near ring's with their smaller sizes (mipmaps) made there too.
    Where workers aren't allowed (or one fails), painting stays on the main thread, a slice at a time, as before.
-   A generator waiting on the worker yields PW_WAIT (walk-view.js): the loops that step it stop for the frame. */
+   A generator waiting on the worker yields PAINT_WORKER_WAIT (walk-view.js): the loops that step it stop for the frame. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { provide } from './hooks.js';
 import { clamp } from './util.js';
 import { hexA, pk, pkh } from './art.js';
 import {
-  DIO_PAD,
-  DIO_T0,
-  DIO_TA,
-  DIO_TC,
-  DIO_TD,
-  DIO_TL,
-  PW_WAIT,
+  GROUND_BORDER_M,
+  PAINT_WORKER_WAIT,
+  TONE_AMOUNT,
+  TONE_DARK,
+  TONE_DIRECTIONS,
+  TONE_LIGHT,
+  TONE_NONE,
+  applyGroundTone,
   bigTilesOn,
-  dioClipSeg,
+  clipSegmentToRect,
   dioGroundKey,
-  dioHash,
-  dioNoise,
-  dioPaintGen,
-  dioShade,
-  dioStableCells,
   dioStepCH,
   dioStepCorners,
   dioStepJoined,
   dioSteps,
-  dioToneAt,
-  dioTonePx,
-  dioWearAmtFn,
-  dioWearFn,
-  dioWearLines,
   groundTileFolder,
+  groundToneAt,
+  hash2d,
+  paintGroundSteps,
+  pathWearAmountFn,
+  pathWearFn,
+  pathWearLines,
   plainTileIndex,
+  scaleColor,
+  stableCells,
   tileSetPixels,
+  valueNoise2d,
   walkData,
   walkView,
   worldPatchTilesOn,
@@ -100,7 +100,7 @@ function pwMips(s,W,H,n){const out=[];for(let k=0;k<n&&W>1&&H>1;k++){const w=W>>
   d[o]=(s[a]+s[a+4]+s[c]+s[c+4]+2)>>2;d[o+1]=(s[a+1]+s[a+5]+s[c+1]+s[c+5]+2)>>2;d[o+2]=(s[a+2]+s[a+6]+s[c+2]+s[c+6]+2)>>2;d[o+3]=(s[a+3]+s[a+7]+s[c+3]+s[c+7]+2)>>2}}
  out.push(d);s=d;W=w;H=h}return out}
 function run(){busy=false;if(!Q.length)return;Q.sort((a,b)=>a.pr-b.pr);const m=Q.shift();if(GONE.delete(m.id)){postMessage({id:m.id,gone:1});if(Q.length){busy=true;setTimeout(run,0)}return}
- try{const c=CTXS.get(m.ctx);if(!c){postMessage({id:m.id,miss:1})}else{CTXS.delete(m.ctx);CTXS.set(m.ctx,c);CTX=c;DGL_TERRAIN_MAT=c.mat||undefined;const t0=performance.now(),it=dioPaintGen(c.sc,m.o);let r=it.next();while(!r.done)r=it.next();
+ try{const c=CTXS.get(m.ctx);if(!c){postMessage({id:m.id,miss:1})}else{CTXS.delete(m.ctx);CTXS.set(m.ctx,c);CTX=c;DGL_TERRAIN_MAT=c.mat||undefined;const t0=performance.now(),it=paintGroundSteps(c.sc,m.o);let r=it.next();while(!r.done)r=it.next();
   const v=r.value,tr=[v.px.buffer];if(v.nrm)tr.push(v.nrm.buffer);let mips=null,nmips=null;
   if(m.mips){mips=pwMips(new Uint8Array(v.px.buffer),v.w,v.h,30);for(const L of mips)tr.push(L.buffer);if(v.nrm){nmips=pwMips(v.nrm,v.nw,v.nh,30);for(const L of nmips)tr.push(L.buffer)}}
   postMessage({id:m.id,r:v,mips,nmips,ms:performance.now()-t0},tr)}}
@@ -115,24 +115,31 @@ onmessage=ev=>{const m=ev.data;
 /* the worker's source: the painter and everything it calls, as written in walk-view.js (and wrNear, seamless-world.js) */
 function pwSource() {
   const fns = [
-    dioHash,
-    dioNoise,
-    dioToneAt,
-    dioTonePx,
-    dioShade,
+    hash2d,
+    valueNoise2d,
+    groundToneAt,
+    applyGroundTone,
+    scaleColor,
     plainTileIndex,
-    dioStableCells,
-    dioWearLines,
-    dioClipSeg,
-    dioWearAmtFn,
-    dioWearFn,
+    stableCells,
+    pathWearLines,
+    clipSegmentToRect,
+    pathWearAmountFn,
+    pathWearFn,
     dioStepCorners,
     dioStepCH,
     dioStepJoined,
-    dioPaintGen,
+    paintGroundSteps,
     wrNear,
   ];
-  const consts = { DIO_PAD, DIO_TC, DIO_TD, DIO_TL, DIO_TA, DIO_T0 };
+  const consts = {
+    GROUND_BORDER_M,
+    TONE_DIRECTIONS,
+    TONE_DARK,
+    TONE_LIGHT,
+    TONE_AMOUNT,
+    TONE_NONE,
+  };
   return [
     'const clamp=' + clamp.toString() + ';',
     'const hexA=' + hexA.toString() + ';',
@@ -306,7 +313,7 @@ function pwSendTiles(sc, TP) {
   if (L.length) PW.w.postMessage({ t: 'tiles', gen, L });
   return ok;
 }
-/* paint a rectangle of a view's ground (the options of dioPaintGen): on the helper when it can, here otherwise */
+/* paint a rectangle of a view's ground (the options of paintGroundSteps): on the helper when it can, here otherwise */
 function* pwPaint(sc, o) {
   for (let attempt = 0; attempt < 2; attempt++) {
     const W = PW.sync ? null : pwWorker();
@@ -337,7 +344,7 @@ function* pwPaint(sc, o) {
       break;
     }
     try {
-      while (!job.done) yield PW_WAIT;
+      while (!job.done) yield PAINT_WORKER_WAIT;
     } finally {
       if (!job.done) {
         PW.jobs.delete(id);
@@ -352,7 +359,7 @@ function* pwPaint(sc, o) {
     /* the helper had let the view go: hand it over again */ break;
   }
   PW.local++;
-  return yield* dioPaintGen(sc, o);
+  return yield* paintGroundSteps(sc, o);
 }
 /* several paintings at once (the squares round where you will come in): all are queued on the helper together */
 function* pwAll(G) {
@@ -365,9 +372,9 @@ function* pwAll(G) {
         if (r.done) {
           L.splice(k, 1);
           moved = true;
-        } else if (r.value !== PW_WAIT) moved = true;
+        } else if (r.value !== PAINT_WORKER_WAIT) moved = true;
       }
-      if (L.length) yield moved ? undefined : PW_WAIT;
+      if (L.length) yield moved ? undefined : PAINT_WORKER_WAIT;
     }
   } finally {
     for (const g of L)

@@ -15,7 +15,7 @@
 import { expose } from './test-globals.js';
 import { dioArtVer, provide } from './hooks.js';
 import { cnv, hexA } from './art.js';
-import { artImage, dioHash, walkData, walkView } from './walk-view.js';
+import { artImage, hash2d, walkData, walkView } from './walk-view.js';
 import { ENG_CTX, eng } from './engine/settings.js';
 import {
   EGL,
@@ -1228,7 +1228,7 @@ function bldMake(it) {
   const WV = [],
     WI = [],
     rooms = B.rooms && B.rooms.length ? B.rooms : [0],
-    h3 = (a, b) => dioHash(Math.round(a * 13 + p.x * 7), Math.round(b * 17 + p.z * 5)),
+    h3 = (a, b) => hash2d(Math.round(a * 13 + p.x * 7), Math.round(b * 17 + p.z * 5)),
     Dr = Math.min(2.4, Math.max(1, D * 0.8));
   const FW = [],
     win = (O, T, N, w, h, room, frame, fc) => {

@@ -17,7 +17,7 @@ import { frameCount, frameStop, frameTask, userFps } from './frame-scheduler.js'
 import { artLoad, artPixels, cnv, hexA, mstamp, uiIco } from './art.js';
 import { owFrames, portraitHTML } from './person-art.js';
 import { EASE } from './battle-stage.js';
-import { artImage, dioHash, dioStep, imageReady, mapById, walkData, walkView } from './walk-view.js';
+import { artImage, dioStep, hash2d, imageReady, mapById, walkData, walkView } from './walk-view.js';
 import { ENG_CTX, eng, engSource } from './engine/settings.js';
 import { EGL, eglBindQuad, eglFree, eglImg, eglInit, eglMesh, eglOK, eglPrograms, eglTarget } from './engine/webgl.js';
 import { EGL_POST_SH, eglPost, eglScreenOf } from './engine/post-effects.js';
@@ -1318,7 +1318,7 @@ export function mmBuild(i) {
   const props = (sc.props || [])
     .slice()
     .sort(
-      (a, b) => dioHash(Math.round(a.x * 7), Math.round(a.z * 5)) - dioHash(Math.round(b.x * 7), Math.round(b.z * 5))
+      (a, b) => hash2d(Math.round(a.x * 7), Math.round(a.z * 5)) - hash2d(Math.round(b.x * 7), Math.round(b.z * 5))
     );
   for (const p of props) {
     const M = C0.props[p.k];

@@ -16,10 +16,10 @@ import { cnv } from './art.js';
 import {
   artImage,
   dioFree,
-  dioHash,
   dioPoly,
   dioPolyAt,
   dioStepOK,
+  hash2d,
   imageReady,
   walkData,
   walkView,
@@ -114,7 +114,7 @@ function lifeFrame(key, i) {
   return c;
 }
 function lifeRnd(a, b) {
-  return dioHash(a * 131 + 7, b * 71 + 3);
+  return hash2d(a * 131 + 7, b * 71 + 3);
 }
 function lifeKey(sc) {
   return JSON.stringify(sc.life || []) + '|' + (walkView.water || []).length;

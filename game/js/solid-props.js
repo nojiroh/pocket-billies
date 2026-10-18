@@ -15,7 +15,7 @@ import { expose } from './test-globals.js';
 import { RM, provide } from './hooks.js';
 import { clamp } from './util.js';
 import { cnv } from './art.js';
-import { artImage, dioHash, dioProj, walkView } from './walk-view.js';
+import { artImage, dioProj, hash2d, walkView } from './walk-view.js';
 import { eng } from './engine/settings.js';
 import { EGL, EGL_GLSL_COMMON, EGL_GLSL_LIGHT, EGL_GLSL_LOOK, EGL_MATS, eglImg, eglPrograms } from './engine/webgl.js';
 import { dglBlades, dglBudget, dglCurveArgs, dglFol, dglHit, dglLookU, dglUse, walkRenderer } from './walk-view-gl.js';
@@ -1166,9 +1166,9 @@ function p3dU(p, it, M) {
   const gl = EGL.gl,
     U = p.U,
     V = it.vol,
-    h1 = dioHash(Math.round(it.x * 13), Math.round(it.z * 17)),
-    h2 = dioHash(Math.round(it.z * 11) + 7, Math.round(it.x * 5) + 3),
-    h3 = dioHash(Math.round(it.x * 7) + 1, Math.round(it.z * 3) + 9);
+    h1 = hash2d(Math.round(it.x * 13), Math.round(it.z * 17)),
+    h2 = hash2d(Math.round(it.z * 11) + 7, Math.round(it.x * 5) + 3),
+    h3 = hash2d(Math.round(it.x * 7) + 1, Math.round(it.z * 3) + 9);
   gl.uniform3f(U.uBase, it.x, it.y, it.z);
   gl.uniform2f(U.uOff, it.ox, it.oy);
   gl.uniform1f(U.uS, it.mpp);

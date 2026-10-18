@@ -73,9 +73,9 @@ import { dioFolkFrames, humanPose, owFrames, trPick, trWarm } from './person-art
 import { drawRig, rigFrame, rigParts, rigPreload } from './skeleton-rig.js';
 import {
   DIO_GCACHE,
-  DIO_PAD,
   EFFECT_FRAMES,
-  PW_WAIT,
+  GROUND_BORDER_M,
+  PAINT_WORKER_WAIT,
   actionLabel,
   actionSpot,
   approachPoint,
@@ -95,11 +95,8 @@ import {
   dioFree,
   dioFreePt,
   dioGroundKey,
-  dioHash,
   dioHitAt,
   dioNav,
-  dioNoise,
-  dioPaintGen,
   dioPill,
   dioPlayer,
   dioProj,
@@ -118,11 +115,13 @@ import {
   drawExitLabels,
   drawExitMarks,
   flagPicturePath,
+  hash2d,
   imageReady,
   layerAsProp,
   mapById,
   mapHub,
   mapMoodName,
+  paintGroundSteps,
   pointAlongMapPath,
   prepareMap,
   propShown,
@@ -133,6 +132,7 @@ import {
   setDioUnproject,
   tallGrassProps,
   terrainAt,
+  valueNoise2d,
   walkData,
   walkView,
 } from './walk-view.js';
@@ -450,7 +450,7 @@ export const walkRenderer = {
 provide({ walkRenderer }); /* to-module */
 /* v46: how long a frame may spend getting the next view ready (ms) */
 const DGL_PREP_MS = /Android|iPhone|iPad/.test(navigator.userAgent) ? 4 : 6;
-const DGL_PAD = DIO_PAD,
+const DGL_PAD = GROUND_BORDER_M,
   DGL_FIXED = [1, 0, 0],
   DGL_FIXED_BACK = [0, 0, -1];
 /* which material a prop is made of: its own "mat", else guessed from its name */
@@ -1326,7 +1326,7 @@ function* dglGroundSteps(sc, G, T) {
       const e = dioHRaw(sc, clamp(x, 0, W), clamp(z, 0, H));
       if (sc.flatFar) return e - 0.25 - smooth01(out / 30) * 0.3;
       const k = smooth01(out / 12),
-        n = (dioNoise(x * 0.06, z * 0.06) - 0.4) * 7 + (dioNoise(x * 0.17 + 5, z * 0.17) - 0.5) * 2.5;
+        n = (valueNoise2d(x * 0.06, z * 0.06) - 0.4) * 7 + (valueNoise2d(x * 0.17 + 5, z * 0.17) - 0.5) * 2.5;
       if (sc.room && !sc.roomRect && z < 0 && x > -2 && x < W + 2) return e - 3.2;
       /* v31: a room's floor ends at its front edge (the door); below is the cut */ return sc.indoor && !sc.roomRect
         ? e + smooth01((out - 1.5) / 5) * 16 + n * 0.6 * k
@@ -2250,7 +2250,7 @@ function* dglRingChunk(R, sc, ci, cj, pr) {
     mips: 1,
     pr: pr || 0,
   };
-  const r = yield* typeof pwPaint === 'function' ? pwPaint(sc, o) : dioPaintGen(sc, o);
+  const r = yield* typeof pwPaint === 'function' ? pwPaint(sc, o) : paintGroundSteps(sc, o);
   if (!R.tex) return;
   const gl = EGL.gl,
     px = R.TP * RING_CS,
@@ -2317,7 +2317,7 @@ export function dglRingUpdate(sc, fx, fz, budget) {
       if (r.done) {
         R.jobs.splice(k, 1);
         moved = true;
-      } else if (r.value !== PW_WAIT) moved = true;
+      } else if (r.value !== PAINT_WORKER_WAIT) moved = true;
     }
     if (!moved) break;
   }
@@ -2442,7 +2442,7 @@ function dglPrepWork(budget) {
   try {
     while (performance.now() - t0 < budget) {
       const r = J.it.next();
-      if (!r.done && r.value === PW_WAIT) break;
+      if (!r.done && r.value === PAINT_WORKER_WAIT) break;
       /* (waiting on the helper thread) */ if (r.done) {
         walkRenderer.prep = null;
         J.ms += performance.now() - t0;
@@ -2808,7 +2808,7 @@ function dglShoreField(sc, isW, T = walkRenderer) {
         z = (j + 0.5) / R;
       /* the bank wanders a little: only near the edge, so open water and dry land stay as they are */
       const e = f * (1 - f) * 4,
-        nz = (dioNoise(x * 1.1 + 3.7, z * 1.1) - 0.5) * 0.34 + (dioNoise(x * 3.3, z * 3.3 + 9.1) - 0.5) * 0.12;
+        nz = (valueNoise2d(x * 1.1 + 3.7, z * 1.1) - 0.5) * 0.34 + (valueNoise2d(x * 3.3, z * 3.3 + 9.1) - 0.5) * 0.12;
       d[q] = Math.round(clamp(f + nz * e, 0, 1) * 255);
     }
   if (!T.shoreTex) T.shoreTex = gl.createTexture();
@@ -3089,7 +3089,7 @@ export function dglBuildGrass() {
   /* alpha 0.4: the blades go straight into a growing Float32Array (8 numbers each) instead of a plain array of numbers:
     planting a big place made several MB of garbage, and a phone's clean-up of it was the worst hitch on arrival */
   const dk = eng('grass', 'density'),
-    rnd = (a, b) => dioHash(a * 7 + 3, b * 13 + 5),
+    rnd = (a, b) => hash2d(a * 7 + 3, b * 13 + 5),
     dens = { t: 30, g: 4, G: 7, f: 5, l: 3, y: 2, C: 5, H: 6, R: 9, M: 1, L: 1, B: 6, E: 7, F: 1 };
   dioNav();
   const J = { sc, j: 0, k: 0, I: new Float32Array(8 * 4096), n: 0 };
@@ -3171,7 +3171,7 @@ export function dglBuildGrass() {
               z = z0 + rnd(J.k, 2);
             if (!near(x, z, 0.35, 'gGflt')) continue;
             if (!dioFree(x, z) || occ[Math.floor(z * 2) * W2 + Math.floor(x * 2)]) continue;
-            add(x, z, 0.08 + rnd(J.k, 4) * 0.1, 0, (dioNoise(x * 0.18, z * 0.18) - 0.5) * 1.2);
+            add(x, z, 0.08 + rnd(J.k, 4) * 0.1, 0, (valueNoise2d(x * 0.18, z * 0.18) - 0.5) * 1.2);
           }
         }
         continue;
@@ -3188,7 +3188,7 @@ export function dglBuildGrass() {
           ch === 't' ? 0.45 + rnd(J.k, 3) * 0.35 : kind === 2 ? 0.06 + rnd(J.k, 4) * 0.06 : 0.12 + rnd(J.k, 4) * 0.18;
         if (ch !== 't' && near(x, z, 0.55, 'puvcqhab')) h *= 0.5;
         if (tall[q]) h *= 1.4;
-        let tint = (dioNoise(x * 0.16 + 3, z * 0.16 + 7) - 0.45) * 1.5;
+        let tint = (valueNoise2d(x * 0.16 + 3, z * 0.16 + 7) - 0.45) * 1.5;
         if (near(x, z, 1.4, 'wd')) tint = Math.min(tint, 0) - 0.7;
         add(x, z, h, kind, clamp(tint, -1, 1));
       }
@@ -3312,9 +3312,9 @@ function dglBuildFar() {
   let k = 0;
   for (let n = 0; n < (sc.indoor ? Math.min(40, count) : count); n++) {
     k++;
-    const a = dioHash(k, 11),
-      b = dioHash(k, 17),
-      side = dioHash(k, 23);
+    const a = hash2d(k, 11),
+      b = hash2d(k, 17),
+      side = hash2d(k, 23);
     let x, z;
     if (side < 0.45) {
       x = -4 + a * (W + 8);
@@ -3328,11 +3328,11 @@ function dglBuildFar() {
     }
     if (z < -1) continue;
     walkRenderer.farProps.push({
-      k: pool[Math.floor(dioHash(k, 29) * pool.length) % pool.length],
+      k: pool[Math.floor(hash2d(k, 29) * pool.length) % pool.length],
       x,
       z,
-      s: 0.9 + dioHash(k, 31) * 0.6,
-      f: dioHash(k, 37) < 0.5 ? 1 : 0,
+      s: 0.9 + hash2d(k, 31) * 0.6,
+      f: hash2d(k, 37) < 0.5 ? 1 : 0,
       far: 1,
     });
   }
@@ -4313,7 +4313,7 @@ function dglAltImg(p, M, C0, sc) {
   const L = DGL_ALT[p.k];
   if (!L || p.v || p.plain || p.alt === 0 || !((eng('world', 'variety') ?? 1) > 0) || (sc && sc.variety === 0))
     return M.img;
-  const h = dioHash(Math.round(p.x * 23) + 5, Math.round(p.z * 19) + 11);
+  const h = hash2d(Math.round(p.x * 23) + 5, Math.round(p.z * 19) + 11);
   if (h > 0.38) return M.img;
   const A = C0.props[L[Math.floor((h / 0.38) * L.length) % L.length]];
   const ai = A && A.img;
@@ -4476,14 +4476,14 @@ function dglLookOf2(p, M, sc) {
   if (c && c.key === key) return c;
   const V = Object.assign({}, dglVaryOf(p.k, M), p.vary || {}),
     sd = (sc.lookSeed || 0) * 101,
-    r = n => dioHash(Math.round(p.x * 31) + n * 17 + sd, Math.round(p.z * 29) + n * 7 + sd) * 2 - 1,
+    r = n => hash2d(Math.round(p.x * 31) + n * 17 + sd, Math.round(p.z * 29) + n * 7 + sd) * 2 - 1,
     vk = p.plain ? 0 : E[0] * (sc.variety ?? 1);
   let W = Object.assign({}, V.wear);
   if (typeof p.wear === 'number') for (const k in W) W[k] *= p.wear;
   else if (p.wear && typeof p.wear === 'object') Object.assign(W, p.wear);
   const wk = E[1] * (sc.wear ?? 1),
     dry = /[sznj]/.test(sc.edge || '') || /desert|volcano|canyon/.test(sc.far || '') ? 0.25 : 1,
-    jit = n => 0.55 + 0.9 * dioHash(Math.round(p.x * 13) + n * 5, Math.round(p.z * 11) + n * 3);
+    jit = n => 0.55 + 0.9 * hash2d(Math.round(p.x * 13) + n * 5, Math.round(p.z * 11) + n * 3);
   const wear = [
     (W.dirt || 0) * wk * jit(1),
     (W.moss || 0) * wk * jit(2) * dry,
@@ -4992,7 +4992,7 @@ function dglLampOn(x, z, dark) {
   const sc = walkView.sc,
     E = typeof ENV !== 'undefined' && ENG_CTX.env && !sc.indoor ? ENV : null;
   if (!E || (sc.tint && sc.tint !== '#000000')) return dark ? 1 : 0;
-  const th = 0.16 + 0.3 * dioHash(Math.round(x * 7), Math.round(z * 11));
+  const th = 0.16 + 0.3 * hash2d(Math.round(x * 7), Math.round(z * 11));
   return Math.min(1, Math.max(0, (E.lampK - th) / 0.07));
 }
 /* an old (picture-only) house's window: lit at this hour or not (environment.js envWinLit) */

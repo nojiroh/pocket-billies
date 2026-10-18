@@ -63,32 +63,34 @@ expose({
   DIO_KEYS: [() => DIO_KEYS],
   DIO_N: [() => DIO_N],
   DIO_NATW: [() => DIO_NATW],
-  DIO_PAD: [() => DIO_PAD],
   DIO_RISE: [() => DIO_RISE],
   DIO_SPEED: [() => DIO_SPEED],
   DIO_STEPS: [() => DIO_STEPS],
-  DIO_T0: [() => DIO_T0],
-  DIO_TA: [() => DIO_TA],
-  DIO_TC: [() => DIO_TC],
-  DIO_TD: [() => DIO_TD],
-  DIO_TL: [() => DIO_TL],
   EFFECT_FRAMES: [() => EFFECT_FRAMES],
   EFFECT_KINDS: [() => EFFECT_KINDS],
   FOLK_HOME: [() => FOLK_HOME],
   FOLK_WORK: [() => FOLK_WORK],
+  GROUND_BORDER_M: [() => GROUND_BORDER_M],
   OPEN_HOURS: [() => OPEN_HOURS],
   OPEN_NAMES: [() => OPEN_NAMES],
+  PAINT_WORKER_WAIT: [() => PAINT_WORKER_WAIT],
   PROP_CLOCK: [() => PROP_CLOCK],
-  PW_WAIT: [() => PW_WAIT],
   ROOF_STYLES: [() => ROOF_STYLES],
   TILE_PIXEL_CACHE: [() => TILE_PIXEL_CACHE],
+  TONE_AMOUNT: [() => TONE_AMOUNT],
+  TONE_DARK: [() => TONE_DARK],
+  TONE_DIRECTIONS: [() => TONE_DIRECTIONS],
+  TONE_LIGHT: [() => TONE_LIGHT],
+  TONE_NONE: [() => TONE_NONE],
   actionLabel: [() => actionLabel, v => (actionLabel = v)],
   actionSpot: [() => actionSpot, v => (actionSpot = v)],
+  applyGroundTone: [() => applyGroundTone, v => (applyGroundTone = v)],
   approachPoint: [() => approachPoint, v => (approachPoint = v)],
   artImage: [() => artImage, v => setArtImage(v)],
   baseMapId: [() => baseMapId, v => (baseMapId = v)],
   bigTilePath: [() => bigTilePath, v => (bigTilePath = v)],
   bigTilesOn: [() => bigTilesOn],
+  clipSegmentToRect: [() => clipSegmentToRect, v => (clipSegmentToRect = v)],
   closedText: [() => closedText, v => (closedText = v)],
   cropGrowth: [() => cropGrowth, v => (cropGrowth = v)],
   dioB64: [() => dioB64, v => (dioB64 = v)],
@@ -105,7 +107,6 @@ expose({
   dioClimbEnds: [() => dioClimbEnds, v => (dioClimbEnds = v)],
   dioClimbGo: [() => dioClimbGo, v => (dioClimbGo = v)],
   dioClimbStep: [() => dioClimbStep, v => (dioClimbStep = v)],
-  dioClipSeg: [() => dioClipSeg, v => (dioClipSeg = v)],
   dioCostAt: [() => dioCostAt, v => (dioCostAt = v)],
   dioDirOf: [() => dioDirOf, v => (dioDirOf = v)],
   dioEncSpot: [() => dioEncSpot, v => (dioEncSpot = v)],
@@ -127,14 +128,11 @@ expose({
   dioGroundGen: [() => dioGroundGen, v => (dioGroundGen = v)],
   dioGroundKeep: [() => dioGroundKeep, v => (dioGroundKeep = v)],
   dioGroundKey: [() => dioGroundKey, v => (dioGroundKey = v)],
-  dioHash: [() => dioHash, v => (dioHash = v)],
   dioHitAt: [() => dioHitAt, v => (dioHitAt = v)],
   dioLOS: [() => dioLOS, v => (dioLOS = v)],
   dioMix: [() => dioMix, v => (dioMix = v)],
   dioNav: [() => dioNav, v => setDioNav(v)],
   dioNearFree: [() => dioNearFree, v => (dioNearFree = v)],
-  dioNoise: [() => dioNoise, v => (dioNoise = v)],
-  dioPaintGen: [() => dioPaintGen, v => (dioPaintGen = v)],
   dioPanel: [() => dioPanel, v => (dioPanel = v)],
   dioPass: [() => dioPass, v => (dioPass = v)],
   dioPick: [() => dioPick, v => (dioPick = v)],
@@ -152,10 +150,8 @@ expose({
   dioPxFont: [() => dioPxFont, v => (dioPxFont = v)],
   dioPxTail: [() => dioPxTail, v => (dioPxTail = v)],
   dioSay: [() => dioSay, v => (dioSay = v)],
-  dioShade: [() => dioShade, v => (dioShade = v)],
   dioShape: [() => dioShape, v => (dioShape = v)],
   dioSpeech: [() => dioSpeech, v => (dioSpeech = v)],
-  dioStableCells: [() => dioStableCells, v => (dioStableCells = v)],
   dioStep: [() => dioStep, v => (dioStep = v)],
   dioStepCH: [() => dioStepCH, v => (dioStepCH = v)],
   dioStepCHS: [() => dioStepCHS, v => (dioStepCHS = v)],
@@ -171,14 +167,9 @@ expose({
   dioStop: [() => dioStop, v => setDioStop(v)],
   dioTag: [() => dioTag, v => (dioTag = v)],
   dioTapMark: [() => dioTapMark, v => (dioTapMark = v)],
-  dioToneAt: [() => dioToneAt, v => (dioToneAt = v)],
-  dioTonePx: [() => dioTonePx, v => (dioTonePx = v)],
   dioUIpx: [() => dioUIpx],
   dioUnproject: [() => dioUnproject, v => setDioUnproject(v)],
   dioWalkTo: [() => dioWalkTo, v => (dioWalkTo = v)],
-  dioWearAmtFn: [() => dioWearAmtFn, v => (dioWearAmtFn = v)],
-  dioWearFn: [() => dioWearFn, v => (dioWearFn = v)],
-  dioWearLines: [() => dioWearLines, v => (dioWearLines = v)],
   drawExitLabels: [() => drawExitLabels, v => (drawExitLabels = v)],
   drawExitMarks: [() => drawExitMarks, v => (drawExitMarks = v)],
   exitEdge: [() => exitEdge, v => (exitEdge = v)],
@@ -189,6 +180,8 @@ expose({
   folkPhase: [() => folkPhase, v => (folkPhase = v)],
   folkTown: [() => folkTown, v => (folkTown = v)],
   groundTileFolder: [() => groundTileFolder, v => (groundTileFolder = v)],
+  groundToneAt: [() => groundToneAt, v => (groundToneAt = v)],
+  hash2d: [() => hash2d, v => (hash2d = v)],
   imageReady: [() => imageReady],
   isOpenNow: [() => isOpenNow, v => (isOpenNow = v)],
   layerAsProp: [() => layerAsProp, v => (layerAsProp = v)],
@@ -198,12 +191,17 @@ expose({
   mapMoodName: [() => mapMoodName, v => (mapMoodName = v)],
   mapWaterCells: [() => mapWaterCells, v => (mapWaterCells = v)],
   openKind: [() => openKind, v => (openKind = v)],
+  paintGroundSteps: [() => paintGroundSteps, v => (paintGroundSteps = v)],
+  pathWearAmountFn: [() => pathWearAmountFn, v => (pathWearAmountFn = v)],
+  pathWearFn: [() => pathWearFn, v => (pathWearFn = v)],
+  pathWearLines: [() => pathWearLines, v => (pathWearLines = v)],
   plainTileIndex: [() => plainTileIndex, v => (plainTileIndex = v)],
   pointAlongMapPath: [() => pointAlongMapPath, v => (pointAlongMapPath = v)],
   prepareMap: [() => prepareMap, v => setPrepareMap(v)],
   propClock: [() => propClock, v => (propClock = v)],
   propShown: [() => propShown, v => (propShown = v)],
   propWithVariant: [() => propWithVariant, v => (propWithVariant = v)],
+  scaleColor: [() => scaleColor, v => (scaleColor = v)],
   scaledTilePixels: [() => scaledTilePixels, v => (scaledTilePixels = v)],
   setArtImage: [() => setArtImage, v => (setArtImage = v)],
   setDioNav: [() => setDioNav, v => (setDioNav = v)],
@@ -211,12 +209,14 @@ expose({
   setDioStop: [() => setDioStop, v => (setDioStop = v)],
   setDioUnproject: [() => setDioUnproject, v => (setDioUnproject = v)],
   setWalkData: [() => setWalkData, v => (setWalkData = v)],
+  stableCells: [() => stableCells, v => (stableCells = v)],
   syncExits: [() => syncExits, v => (syncExits = v)],
   tallGrassProps: [() => tallGrassProps, v => (tallGrassProps = v)],
   terrainAt: [() => terrainAt, v => (terrainAt = v)],
   tilePixels: [() => tilePixels, v => (tilePixels = v)],
   tileSetPixels: [() => tileSetPixels, v => (tileSetPixels = v)],
   timedPropsKey: [() => timedPropsKey, v => (timedPropsKey = v)],
+  valueNoise2d: [() => valueNoise2d, v => (valueNoise2d = v)],
   walkData: [() => walkData, v => setWalkData(v)],
   walkView: [() => walkView],
   worldPatchTilesOn: [() => worldPatchTilesOn, v => (worldPatchTilesOn = v)],
@@ -293,12 +293,12 @@ const dioUIpx = n => {
   const k = c.width / c.clientWidth;
   return Math.round(n * k);
 };
-export const DIO_PAD = 8,
+export const GROUND_BORDER_M = 8,
   DIO_N = 2,
   DIO_SPEED = 3.4;
 /* alpha 0.4: what a painting generator yields while the ground painter's helper thread works (ground-paint-worker.js): whatever
    steps it stops for now and comes back later */
-export const PW_WAIT = { pw: 1 };
+export const PAINT_WORKER_WAIT = { pw: 1 };
 const EFFECT_KINDS = ['butterfly', 'bird', 'leaf', 'smoke', 'spray', 'sparkle', 'bee', 'fish', 'moth', 'flame'];
 export const EFFECT_FRAMES = {
   flame: [12, 18, 4],
@@ -620,21 +620,21 @@ export async function prepareMap(id) {
   return sc;
 }
 /* ---------- ground texture ---------- */
-export function dioHash(x, y) {
+export function hash2d(x, y) {
   let h = (x * 374761393 + y * 668265263) ^ 0x5bd1e995;
   h = Math.imul(h ^ (h >>> 13), 1274126177);
   return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
 }
-export function dioNoise(x, y) {
+export function valueNoise2d(x, y) {
   const xi = Math.floor(x),
     yi = Math.floor(y),
     fx = x - xi,
     fy = y - yi,
     s = t => t * t * (3 - 2 * t),
-    a = dioHash(xi, yi),
-    b = dioHash(xi + 1, yi),
-    c = dioHash(xi, yi + 1),
-    d = dioHash(xi + 1, yi + 1);
+    a = hash2d(xi, yi),
+    b = hash2d(xi + 1, yi),
+    c = hash2d(xi, yi + 1),
+    d = hash2d(xi + 1, yi + 1);
   return a + (b - a) * s(fx) + (c - a) * s(fy) + (a - b - c + d) * s(fx) * s(fy);
 }
 function tilePixels(path) {
@@ -654,7 +654,7 @@ export function dioGroundKey(sc) {
     sc.h,
     sc.edge,
     sc.tiles,
-    dioWearLines(sc).length,
+    pathWearLines(sc).length,
     (sc.steps || '').length,
     (sc.stepm || '').length,
     sc.stepsV || 0,
@@ -674,8 +674,8 @@ export function dioGroundKey(sc) {
    sampled on a coarse grid (several times faster), and keeps the last few scenes' pictures for instant revisits. */
 /* v46: which ground pattern each cell takes. Inside a scene its own metres, on a road the road's frame, so a spot
    looks the same in every view it appears in (sc.stable, set by seamless-world.js); a plain scene uses its own metres. */
-export function dioStableCells(sc, cx0, cy0, cw, ch) {
-  const P = DIO_PAD,
+export function stableCells(sc, cx0, cy0, cw, ch) {
+  const P = GROUND_BORDER_M,
     H = sc.h,
     S = sc.stable,
     ox = new Int32Array(cw * ch),
@@ -729,7 +729,7 @@ export function dioStableCells(sc, cx0, cy0, cw, ch) {
 /* v46: worn ground: within about 0.7 m of the straight lines from a scene's hub to each of its exits, wobbling a
    little, natural ground shows its trodden tiles. Each scene's lines are in its own metres (sc.stable), so every view
    of it wears the same. (x, z) are view metres; (sx, sz) the cell's stable metres */
-export function dioWearLines(sc) {
+export function pathWearLines(sc) {
   const S = sc.stable,
     L = [];
   const add = (hub, exits, ox, oz, worn, clip) => {
@@ -738,7 +738,7 @@ export function dioWearLines(sc) {
         L.push([a, b, c, d]);
         return;
       }
-      const s = dioClipSeg(a, b, c, d, clip);
+      const s = clipSegmentToRect(a, b, c, d, clip);
       if (s) L.push(s);
     };
     if (hub) for (const e of exits || []) put(hub[0] + ox, hub[1] + oz, e[0] + ox, e[1] + oz);
@@ -751,7 +751,7 @@ export function dioWearLines(sc) {
   return L;
 }
 /* the part of segment (x0, z0)-(x1, z1) inside rect k = [x0, z0, x1, z1], or null */
-export function dioClipSeg(x0, z0, x1, z1, k) {
+export function clipSegmentToRect(x0, z0, x1, z1, k) {
   let t0 = 0,
     t1 = 1;
   const dx = x1 - x0,
@@ -779,8 +779,8 @@ export function dioClipSeg(x0, z0, x1, z1, k) {
 }
 /* v47: how worn the ground is at (x, z) (view metres; sx, sz its stable metres): 1 along the middle of a line people
    walk, fading to 0 at its edge, about 0.45 to 0.95 m out (the same reach as the worn tiles) */
-export function dioWearAmtFn(sc) {
-  const L = dioWearLines(sc);
+export function pathWearAmountFn(sc) {
+  const L = pathWearLines(sc);
   if (!L.length) return null;
   /* v47b: the lines as a flat table with their boxes (1 m round each), and nothing further than a metre worked out */
   const n = L.length,
@@ -820,14 +820,14 @@ export function dioWearAmtFn(sc) {
       if (e < d) d = e;
     }
     if (d >= 0.95) return 0;
-    const r = 0.45 + 0.5 * dioNoise(sx * 0.4 + 3, sz * 0.4);
+    const r = 0.45 + 0.5 * valueNoise2d(sx * 0.4 + 3, sz * 0.4);
     if (d >= r) return 0;
     const q = Math.min(1, (r - d) / (r * 0.65));
     return q * q * (3 - 2 * q);
   };
 }
-export function dioWearFn(sc, wx0, wy0) {
-  const L = dioWearLines(sc);
+export function pathWearFn(sc, wx0, wy0) {
+  const L = pathWearLines(sc);
   if (!L.length) return () => false;
   return (x, z, sx, sz) => {
     for (const [ax, az, bx, bz] of L) {
@@ -836,7 +836,7 @@ export function dioWearFn(sc, wx0, wy0) {
         l2 = vx * vx + vz * vz || 1,
         t = Math.max(0, Math.min(1, ((x - ax) * vx + (z - az) * vz) / l2)),
         d = Math.hypot(ax + vx * t - x, az + vz * t - z);
-      if (d < 0.45 + 0.5 * dioNoise(sx * 0.4 + 3, sz * 0.4)) return true;
+      if (d < 0.45 + 0.5 * valueNoise2d(sx * 0.4 + 3, sz * 0.4)) return true;
     }
     return false;
   };
@@ -845,20 +845,20 @@ export function dioWearFn(sc, wx0, wy0) {
    cut at every tile's edge and repeated with the tile): a quarter of natural ground half a step darker and a touch
    richer, a fifth lighter and a touch paler, a checker where they meet. A kind's `tone` scales them (paved: none).
    The same sums as tools/build-terrain-v47.py (tone_at, tone_px), so its sheets show what the game lays */
-export const DIO_TC = [Math.cos(0.52), Math.sin(0.52), Math.cos(-0.35), Math.sin(-0.35)],
-  DIO_TD = [0.895, 0.905, 0.935],
-  DIO_TL = [1.05, 1.05, 1.04],
-  DIO_TA = [5, 4, 1],
-  DIO_T0 = [0, 0, 0];
-export function dioToneAt(x, z) {
-  const C = DIO_TC,
+export const TONE_DIRECTIONS = [Math.cos(0.52), Math.sin(0.52), Math.cos(-0.35), Math.sin(-0.35)],
+  TONE_DARK = [0.895, 0.905, 0.935],
+  TONE_LIGHT = [1.05, 1.05, 1.04],
+  TONE_AMOUNT = [5, 4, 1],
+  TONE_NONE = [0, 0, 0];
+export function groundToneAt(x, z) {
+  const C = TONE_DIRECTIONS,
     u = x * C[0] - z * C[1],
     w = x * C[1] + z * C[0],
     u2 = x * C[2] - z * C[3],
     w2 = x * C[3] + z * C[2];
-  return 0.62 * dioNoise(u * 3.1, w * 3.1) + 0.38 * dioNoise(u2 * 6.3 + 17.3, w2 * 6.3 + 4.1);
+  return 0.62 * valueNoise2d(u * 3.1, w * 3.1) + 0.38 * valueNoise2d(u2 * 6.3 + 17.3, w2 * 6.3 + 4.1);
 }
-export function dioTonePx(c, v, odd, k) {
+export function applyGroundTone(c, v, odd, k) {
   const dark = v < 0.372 || (v < 0.408 && !odd);
   if (!dark && !(v > 0.653 || (v > 0.617 && !odd))) return c;
   /* (written out without a small function per pixel: this runs for about half the natural ground) */
@@ -867,8 +867,8 @@ export function dioTonePx(c, v, odd, k) {
     b = (c >> 16) & 255,
     l = 0.3 * r + 0.59 * g + 0.11 * b,
     s = dark ? 1.12 : 0.92,
-    F = dark ? DIO_TD : DIO_TL,
-    A = dark ? DIO_T0 : DIO_TA;
+    F = dark ? TONE_DARK : TONE_LIGHT,
+    A = dark ? TONE_NONE : TONE_AMOUNT;
   let yr = r + ((l + (r - l) * s) * F[0] + A[0] - r) * k,
     yg = g + ((l + (g - l) * s) * F[1] + A[1] - g) * k,
     yb = b + ((l + (b - l) * s) * F[2] + A[2] - b) * k;
@@ -886,7 +886,7 @@ export function mapMoodName(S) {
   const R = ((typeof GD !== 'undefined' && GD.route) || []).find(r => r.id === S.place);
   return (R && R.mood) || null;
 }
-export function dioShade(c, k) {
+export function scaleColor(c, k) {
   return (
     (c & 0xff000000) |
     (Math.min(255, ((c >> 16) & 255) * k) << 16) |
@@ -895,7 +895,7 @@ export function dioShade(c, k) {
   );
 }
 export function plainTileIndex(sx, sz, sa) {
-  const h = (x, z) => Math.floor(dioHash(x * 3 + 11 + sa * 7919, z * 7 + 5) * 3),
+  const h = (x, z) => Math.floor(hash2d(x * 3 + 11 + sa * 7919, z * 7 + 5) * 3),
     p = h(sx, sz),
     L = h(sx - 1, sz),
     U = h(sx, sz - 1);
@@ -967,11 +967,11 @@ export function tileSetPixels(T, TP) {
    v46: any rectangle of the scene's picture (canvas cells, padding included; row 0 the far edge) at any size: TP pixels
    a metre. The 3D renderer paints a view's whole ground small (its distance) and the 16 m squares round you at full
    size (walk-view-gl.js, the near ring). Patterns and noise come from each cell's own scene or road metres. */
-export function* dioPaintGen(sc, o) {
+export function* paintGroundSteps(sc, o) {
   const C = walkData().sc,
     W = sc.w,
     H = sc.h,
-    P = DIO_PAD,
+    P = GROUND_BORDER_M,
     TP = o.TP,
     rows = sc.tiles || [],
     CWf = W + 2 * P,
@@ -1046,11 +1046,11 @@ export function* dioPaintGen(sc, o) {
     pick = new Uint8Array(CW * CH),
     fl = new Uint8Array(CW * CH),
     cellK = new Uint8Array(CW * CH),
-    ST = dioStableCells(sc, wx0, wy0, CW, CH);
+    ST = stableCells(sc, wx0, wy0, CW, CH);
   /* v46: with twelve tiles a kind, each has a role: plain ones (0, 6, 7) over most of the ground, the touched ones
     (1-5, 8, 9) gathered in slow patches of detail, the worn ones (10, 11) along the lines people walk */
   const DET = [1, 2, 3, 4, 5, 8, 9],
-    wornAt = dioWearFn(sc, wx0, wy0);
+    wornAt = pathWearFn(sc, wx0, wy0);
   /* alpha 0.4: the cells on such an edge, one bit per neighbour across it (left, right, up, down, then the corners):
     breaking paving with natural ground beside it, or natural ground beside breaking paving */
   const ND = [
@@ -1074,10 +1074,10 @@ export function* dioPaintGen(sc, o) {
         sx = gx - P + ST.ox[q],
         sz = H - 1 - (gy - P) + ST.oz[q],
         sa = ST.salt[q],
-        r = dioHash(sx * 3 + 11 + sa * 7919, sz * 7 + 5);
+        r = hash2d(sx * 3 + 11 + sa * 7919, sz * 7 + 5);
       cellK[q] = k;
       if (n >= 12) {
-        const det = dioNoise(sx / 4.7 + sa * 0.013, sz / 4.7 + 31),
+        const det = valueNoise2d(sx / 4.7 + sa * 0.013, sz / 4.7 + 31),
           wr = !pav[k] && wornAt(gx - P + 0.5, H - (gy - P) - 0.5, sx, sz);
         pick[q] = wr
           ? r < 0.5
@@ -1093,7 +1093,7 @@ export function* dioPaintGen(sc, o) {
                   ? 6
                   : 7;
       } else pick[q] = n > 1 && r > 0.4 ? 1 + Math.min(n - 2, Math.floor(((r - 0.4) / 0.6) * (n - 1))) : 0;
-      fl[q] = flip[k] ? Math.floor(dioHash(sx + 71 + sa * 104729, sz + 13) * 4) : 0;
+      fl[q] = flip[k] ? Math.floor(hash2d(sx + 71 + sa * 104729, sz + 13) * 4) : 0;
     }
   if (brkOn) {
     PB = new Uint8Array(CW * CH);
@@ -1132,7 +1132,7 @@ export function* dioPaintGen(sc, o) {
   const KW = (TW >> 2) + 2,
     KH = (TH >> 2) + 2,
     TN = toneOn ? new Float32Array(KW * KH) : null;
-  const wearAmt = toneOn ? dioWearAmtFn(sc) : null,
+  const wearAmt = toneOn ? pathWearAmountFn(sc) : null,
     WV = wearAmt ? new Float32Array(KW * KH) : null,
     wear = T.map((t, i) => (toneK[i] > 0 && t.wear ? (t.wear === 'pack' ? -1 : pkh(t.wear)) : 0));
   const keyOf = q => ST.ox[q] * 65536 + ST.oz[q],
@@ -1147,7 +1147,7 @@ export function* dioPaintGen(sc, o) {
     for (let q = 1; q < CW * CH && oneKey; q++) if (keyOf(q) !== k0) oneKey = false;
   } /* v47b: a plain scene has one set of metres: no seams to blend */
   const toneField = (u, v, q, xs, zs) => {
-    if (oneKey) return dioToneAt(xs, zs);
+    if (oneKey) return groundToneAt(xs, zs);
     const k0 = keyOf(q),
       [cx, cy] = cOf(u, v);
     let acc = 0,
@@ -1174,12 +1174,12 @@ export function* dioPaintGen(sc, o) {
                   : v - ((iy + 1) * TP - PXO),
           w = 0.5 * Math.max(0, 1 - e / TP / 2);
         if (w > 0) {
-          acc += w * dioToneAt(xsOf(u, qq), -zsOf(v, qq));
+          acc += w * groundToneAt(xsOf(u, qq), -zsOf(v, qq));
           wt += w;
         }
         break;
       }
-    const t0 = dioToneAt(xs, zs);
+    const t0 = groundToneAt(xs, zs);
     if (!wt) return t0;
     const W = Math.min(0.5, wt);
     return t0 * (1 - W) + (acc / wt) * W;
@@ -1204,13 +1204,13 @@ export function* dioPaintGen(sc, o) {
         q = cellOf(u, v),
         xs = xsOf(u, q),
         zs = -zsOf(v, q);
-      const fr = (dioHash(Math.round(xs * 16), Math.round(zs * 16)) - 0.5) * 0.3,
-        fr2 = (dioHash(Math.round(xs * 16) + 7, Math.round(zs * 16) + 3) - 0.5) * 0.3;
+      const fr = (hash2d(Math.round(xs * 16), Math.round(zs * 16)) - 0.5) * 0.3,
+        fr2 = (hash2d(Math.round(xs * 16) + 7, Math.round(zs * 16) + 3) - 0.5) * 0.3;
       /* v46: a speckled fringe about 0.3 m wide where two kinds of ground meet */ JX[y * JW + x] =
-        (dioNoise(xs * 1.2, zs * 1.2) - 0.5) * 1.15 + (dioNoise(xs * 4.4 + 5.1, zs * 4.4) - 0.5) * 0.4 + fr;
+        (valueNoise2d(xs * 1.2, zs * 1.2) - 0.5) * 1.15 + (valueNoise2d(xs * 4.4 + 5.1, zs * 4.4) - 0.5) * 0.4 + fr;
       JY[y * JW + x] =
-        (dioNoise(xs * 1.2 + 31.7, zs * 1.2 + 11.3) - 0.5) * 1.15 +
-        (dioNoise(xs * 4.4 + 17, zs * 4.4 + 3) - 0.5) * 0.4 +
+        (valueNoise2d(xs * 1.2 + 31.7, zs * 1.2 + 11.3) - 0.5) * 1.15 +
+        (valueNoise2d(xs * 4.4 + 17, zs * 4.4 + 3) - 0.5) * 0.4 +
         fr2;
     }
     if (y % 64 === 63) yield;
@@ -1220,8 +1220,8 @@ export function* dioPaintGen(sc, o) {
     MH = Math.ceil(TH / G) + 2,
     MF = new Float32Array(MW * MH),
     MU = new Float32Array(MW * MH);
-  const mfAt = (xs, zs) => dioNoise(xs / 3.1, zs / 3.1) * 0.6 + dioNoise(xs / 1.3 + 9, zs / 1.3 + 4) * 0.4,
-    muAt = (xs, zs) => (dioNoise(xs / 7.3 + 40, zs / 7.3 + 17) - 0.5) * 0.16;
+  const mfAt = (xs, zs) => valueNoise2d(xs / 3.1, zs / 3.1) * 0.6 + valueNoise2d(xs / 1.3 + 9, zs / 1.3 + 4) * 0.4,
+    muAt = (xs, zs) => (valueNoise2d(xs / 7.3 + 40, zs / 7.3 + 17) - 0.5) * 0.16;
   for (let y = 0; y < MH; y++) {
     for (let x = 0; x < MW; x++) {
       const u = x * G,
@@ -1399,8 +1399,8 @@ export function* dioPaintGen(sc, o) {
               zs = zsOf(v, q0),
               sv =
                 (ownP ? d : -d) +
-                (dioNoise(xs * 2.6 + 7.7, zs * 2.6 + 1.3) - 0.5) * 0.36 +
-                (dioNoise(xs * 6.1, zs * 6.1 + 5) - 0.5) * (brk[kp] === 2 ? 0.22 : 0.1);
+                (valueNoise2d(xs * 2.6 + 7.7, zs * 2.6 + 1.3) - 0.5) * 0.36 +
+                (valueNoise2d(xs * 6.1, zs * 6.1 + 5) - 0.5) * (brk[kp] === 2 ? 0.22 : 0.1);
             bandPush(v * TW + u, sv, nb, st);
           }
         }
@@ -1461,7 +1461,7 @@ export function* dioPaintGen(sc, o) {
       const mu = mi % TW,
         mv = (mi - mu) / TW,
         q0 = Math.floor((mv + PXO) / TP) * CW + UC[mu],
-        rk = dioHash(Math.round(xsOf(mu, q0) * TP) * 7 + 5, Math.round(zsOf(mv, q0) * TP) * 3 + 11);
+        rk = hash2d(Math.round(xsOf(mu, q0) * TP) * 7 + 5, Math.round(zsOf(mv, q0) * TP) * 3 + 11);
       const k = sum / t + (rk - 0.5) * 0.34 > 0 ? 1 : 0;
       for (let a = 0; a < t; a++) keep[Qb[a]] = k;
     }
@@ -1583,21 +1583,21 @@ export function* dioPaintGen(sc, o) {
           q = c0,
           X = wx0 * TP + PXO + u + ST.ox[q] * TP,
           Y = wy0 * TP + PXO + v - ST.oz[q] * TP,
-          h = dioHash(X * 5 + 3, Y * 3 + 17),
+          h = hash2d(X * 5 + 3, Y * 3 + 17),
           gw = T[kn].grow,
           wetN = 'wd'.includes(chars[kn]),
           plant = gw === 'plant' || gw === 'litter';
         const soil = () => {
           const S = soilK != null && pix[soilK][0];
-          if (!S) return dioShade(c, 0.78);
+          if (!S) return scaleColor(c, 0.78);
           const sp = S.d[(v % S.h) * S.w + (u % S.w)],
             m = 0.5; /* half soil, half the ground it is in, a little dark */
-          return dioShade(
+          return scaleColor(
             0xff000000 |
               (((((sp >> 16) & 255) * m + ((c >> 16) & 255) * (1 - m)) | 0) << 16) |
               (((((sp >> 8) & 255) * m + ((c >> 8) & 255) * (1 - m)) | 0) << 8) |
               (((sp & 255) * m + (c & 255) * (1 - m)) | 0),
-            0.8 + 0.12 * dioHash(X + 1, Y + 2)
+            0.8 + 0.12 * hash2d(X + 1, Y + 2)
           );
         };
         if (!pav[k]) {
@@ -1611,7 +1611,7 @@ export function* dioPaintGen(sc, o) {
             eb < 128
           ) {
             const a = (eb - 1) / 126;
-            c = dioShade(c, 1 - 0.12 * a);
+            c = scaleColor(c, 1 - 0.12 * a);
             if (plant && h < a * 0.3) c = soil();
           }
         } else {
@@ -1622,7 +1622,7 @@ export function* dioPaintGen(sc, o) {
               const N = pix[kn][Math.min(pix[kn].length - 1, pick[c0])] || pix[kn][0];
               if (N) {
                 const sp = N.d[(v % N.h) * N.w + (u % N.w)];
-                c = dioShade(sp, gw === 'plant' ? 0.84 : 0.9);
+                c = scaleColor(sp, gw === 'plant' ? 0.84 : 0.9);
               }
             }
           }
@@ -1656,7 +1656,7 @@ export function* dioPaintGen(sc, o) {
           tv = (TN[j] * (1 - tx) + TN[j + 1] * tx) * (1 - ty) + (TN[j + KW] * (1 - tx) + TN[j + KW + 1] * tx) * ty,
           odd = (u + v) & 1;
         if (tv < 0.408 || tv > 0.617)
-          c = dioTonePx(c, tv, odd, toneK[k]); /* (the light and dark bands; most of the ground is between) */
+          c = applyGroundTone(c, tv, odd, toneK[k]); /* (the light and dark bands; most of the ground is between) */
         /* v47: the worn track: bare soil in patches (plants) or packed and paler (earth), most along the middle of the line */
         if (WV && wear[k] && (WV[j] > 0 || WV[j + 1] > 0 || WV[j + KW] > 0 || WV[j + KW + 1] > 0)) {
           const wv =
@@ -1698,7 +1698,7 @@ export function* dioPaintGen(sc, o) {
           q = c0,
           X = wx0 * TP + PXO + u + ST.ox[q] * TP,
           Y = wy0 * TP + PXO + v - ST.oz[q] * TP,
-          h = dioHash(X * 3 + 7, (Y >> (g === 1 ? 1 : 0)) * 5 + 11);
+          h = hash2d(X * 3 + 7, (Y >> (g === 1 ? 1 : 0)) * 5 + 11);
         const ts = pix[S][0];
         if (ts) {
           const sc_ = ts.d[(v % ts.h) * ts.w + (u % ts.w)],
@@ -1708,9 +1708,9 @@ export function* dioPaintGen(sc, o) {
               (l < lumK[k] * 0.9 && h < EDGE_P[d] * 1.5) ||
               (d < 3 && h < EDGE_P[d] * 0.35)
             )
-              c = dioShade(sc_, d < 2 ? 0.92 : 0.8);
+              c = scaleColor(sc_, d < 2 ? 0.92 : 0.8);
           } else if (g === 1) {
-            if (h < EDGE_P[d]) c = dioShade(sc_, Y & 1 ? 0.86 : 1.04);
+            if (h < EDGE_P[d]) c = scaleColor(sc_, Y & 1 ? 0.86 : 1.04);
           } else if (g === 2) {
             if (h < EDGE_P[d] * 1.15) c = sc_;
           } else if (h < EDGE_P[d] * 0.5) c = sc_;
@@ -1778,7 +1778,7 @@ export function* dioPaintGen(sc, o) {
             v = (i / TW) | 0,
             q = cellOf(u, v),
             k = 1 - d / R,
-            f = 1 - 0.26 * k * k * (0.8 + 0.4 * dioHash(Math.round(xsOf(u, q) * TP), Math.round(zsOf(v, q) * TP))),
+            f = 1 - 0.26 * k * k * (0.8 + 0.4 * hash2d(Math.round(xsOf(u, q) * TP), Math.round(zsOf(v, q) * TP))),
             c = out[i];
           out[i] =
             (c & 0xff000000) |
@@ -1998,7 +1998,7 @@ function* dioGroundGen(sc, pr = 0, rec = null) {
   const full = DIO_FAR_TP;
   const r = yield* typeof pwPaint === 'function'
     ? pwPaint(sc, { TP: full, margin: 0, pr, rec })
-    : dioPaintGen(sc, { TP: full, margin: 0 });
+    : paintGroundSteps(sc, { TP: full, margin: 0 });
   const g = { width: r.w, height: r.h, _px: new Uint8Array(r.px.buffer) };
   g._nrm = r.nrm;
   g._avg = r.avg;
@@ -2066,7 +2066,7 @@ export async function dioGroundAsync(sc, pr = 0) {
       for (;;) {
         r = it.next();
         if (r.done) break;
-        if (r.value === PW_WAIT) {
+        if (r.value === PAINT_WORKER_WAIT) {
           await pwSettle();
           t0 = performance.now();
           continue;
@@ -3715,7 +3715,7 @@ function dioFolkInit(n) {
       waved: -99,
     };
     if (A) {
-      const pick = (L, m) => L[Math.floor(dioHash(seed + m, i * 7 + m) * L.length) % L.length].slice();
+      const pick = (L, m) => L[Math.floor(hash2d(seed + m, i * 7 + m) * L.length) % L.length].slice();
       /* alpha 0.4: a hash, not seed+i*m (with five workplaces and m=5 everyone went to the same door) */ f.A = {
         home: pick(A.home, 7),
         work: pick(A.work, 5),

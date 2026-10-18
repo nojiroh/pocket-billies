@@ -214,7 +214,7 @@ def cats(P):
 
 def worn(P, rnd):
     """the shortcuts: from the square to the doors people use most, and from doors to the nearest street, wherever
-    the straight way crosses grass. The ground painter wears them in (walk-view.js dioWearLines)."""
+    the straight way crosses grass. The ground painter wears them in (walk-view.js pathWearLines)."""
     sc, cat = P.sc, P.cat; hub = sc.get('hub') or [P.W / 2, P.H / 2]; L = []
 
     def soft_share(a, b):
