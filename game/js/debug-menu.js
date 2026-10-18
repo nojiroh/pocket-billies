@@ -10,7 +10,6 @@ import { COINS, DATA_WARN, DEX, EGGS, EGG_TIERS, ITEMS, ROUTE, RULES, SP, TRAINE
 import {
   B,
   MAXLV,
-  S,
   U,
   addEgg,
   addMon,
@@ -23,8 +22,9 @@ import {
   lsSet,
   makeMon,
   save,
+  saveData,
   setB,
-  setS,
+  setSaveData,
   spawn,
   today,
   uid,
@@ -63,7 +63,7 @@ function dbgSpecies() {
 }
 function debugHTML() {
   const inB = !!B,
-    node = S.route.node;
+    node = saveData.route.node;
   return `<div class="dbg">
  <p class="note">Changes apply to this save right away. Export a backup first if you might want to undo.</p>
  <details open><summary>Performance</summary><div class="dbg-row">${dbgBtn('fps', DBG.fps ? 'Hide FPS meter' : 'Show FPS meter')}<span class="note">Screen ≈ ${FRAME.hz} Hz · cap ${userFps()} FPS · battle quality level ${battleStage.q.lvl} (0 is best)</span><button class="pb small" data-a="quicktest">Full test</button><button class="pb small" data-a="dbglog">Export debug log</button></div>
@@ -175,10 +175,10 @@ function dbgAct(x) {
       battleStage.lockQ = false;
       return dbgRefresh('Battle quality adapts to frame time again.');
     case 'se1':
-      S.se += 1000;
+      saveData.se += 1000;
       break;
     case 'se10':
-      S.se += 10000;
+      saveData.se += 10000;
       break;
     case 'st1':
       addSteps(1000, true);
@@ -187,13 +187,13 @@ function dbgAct(x) {
       addSteps(10000, true);
       return dbgRefresh();
     case 'coins':
-      Object.keys(COINS).forEach(k => (S.coins[k] = (S.coins[k] || 0) + 10));
+      Object.keys(COINS).forEach(k => (saveData.coins[k] = (saveData.coins[k] || 0) + 10));
       break;
     case 'items':
-      Object.keys(ITEMS).forEach(k => (S.items[k] = (S.items[k] || 0) + 5));
+      Object.keys(ITEMS).forEach(k => (saveData.items[k] = (saveData.items[k] || 0) + 5));
       break;
     case 'newday':
-      S.day = { date: today(), steps: 0 };
+      saveData.day = { date: today(), steps: 0 };
       break;
     case 'give': {
       const m = makeMon(sp, lv, { gold: $('#dbgGold').checked });
@@ -202,21 +202,21 @@ function dbgAct(x) {
       return dbgRefresh(`${SP[sp].name} joined your ${w === 'team' ? 'team' : 'storage'}.`);
     }
     case 'enc': {
-      S.queue.push({ id: uid(), sp, lvl: lv, gold: $('#dbgGold').checked, no: ++S.serial });
+      saveData.queue.push({ id: uid(), sp, lvl: lv, gold: $('#dbgGold').checked, no: ++saveData.serial });
       break;
     }
     case 'alpha': {
       if (B) return toast('Finish the current battle first.');
-      const q = { id: uid(), sp, lvl: lv, gold: $('#dbgGold').checked, no: ++S.serial, alpha: true };
-      S.queue.push(q);
+      const q = { id: uid(), sp, lvl: lv, gold: $('#dbgGold').checked, no: ++saveData.serial, alpha: true };
+      saveData.queue.push(q);
       closeModal();
       startWild(q);
       return;
     }
     case 'wild': {
       if (B) return toast('Finish the current battle first.');
-      const q = { id: uid(), sp, lvl: lv, gold: $('#dbgGold').checked, no: ++S.serial };
-      S.queue.push(q);
+      const q = { id: uid(), sp, lvl: lv, gold: $('#dbgGold').checked, no: ++saveData.serial };
+      saveData.queue.push(q);
       closeModal();
       startWild(q);
       return;
@@ -225,13 +225,13 @@ function dbgAct(x) {
       healAll();
       break;
     case 'lv5':
-      S.team.forEach(m => {
+      saveData.team.forEach(m => {
         const t = Math.min(MAXLV(), m.lvl + 5);
         gainXp(m, xpFor(t) - m.xp, () => {});
       });
       break;
     case 'evo': {
-      const m = S.team[0];
+      const m = saveData.team[0];
       if (!m || !SP[m.sp].next) return toast('Your lead doesn’t evolve.');
       closeModal();
       evoRun(m, 'Debug menu. Nobody saw anything.');
@@ -239,8 +239,8 @@ function dbgAct(x) {
     }
     case 'dex':
       DEX.forEach(id => {
-        S.seen[id] = 1;
-        S.caught[id] = 1;
+        saveData.seen[id] = 1;
+        saveData.caught[id] = 1;
       });
       break;
     case 'trainer2': {
@@ -284,47 +284,47 @@ function dbgAct(x) {
     }
     case 'jump': {
       const n = clamp(+v('dbgNode'), 0, ROUTE.length - 1);
-      S.route = { node: n, prog: 0, plan: [], hold: false };
-      S.visited[n] = 1;
-      S.mapSeen = null;
+      saveData.route = { node: n, prog: 0, plan: [], hold: false };
+      saveData.visited[n] = 1;
+      saveData.mapSeen = null;
       break;
     }
     case 'seats':
       Object.values(TRAINERS).forEach(T => {
-        if (T.seat && !S.seats.includes(T.seat.id)) S.seats.push(T.seat.id);
-        S.flags[T.id] = 1;
+        if (T.seat && !saveData.seats.includes(T.seat.id)) saveData.seats.push(T.seat.id);
+        saveData.flags[T.id] = 1;
       });
       break;
     case 'flags':
-      S.flags = {};
-      S.seats = [];
+      saveData.flags = {};
+      saveData.seats = [];
       break;
     case 'fillq':
-      while (S.queue.length < RULES.steps.maxEncounters) spawn();
+      while (saveData.queue.length < RULES.steps.maxEncounters) spawn();
       break;
     case 'clearq':
-      S.queue = [];
+      saveData.queue = [];
       break;
     case 'egg':
       addEgg(+v('dbgEgg'));
       break;
     case 'hatch':
-      S.eggs.forEach(e => {
+      saveData.eggs.forEach(e => {
         if (e.slot != null) e.prog = EGGS[e.tier].need;
       });
       break;
     case 'pay':
-      S.jobs.forEach(j => {
+      saveData.jobs.forEach(j => {
         if (j.uid) j.pend = Math.max(j.pend, 3);
       });
       break;
     case 'idle':
-      S.box.forEach(m => {
+      saveData.box.forEach(m => {
         if (m.boxedAt) m.boxedAt -= 864e5;
       });
       break;
     case 'streak':
-      if (S.team[0]) S.team[0].streak = (S.team[0].streak || 0) + 3;
+      if (saveData.team[0]) saveData.team[0].streak = (saveData.team[0].streak || 0) + 3;
       break;
     case 'win':
       if (!B || B.phase === 'playing' || B.over) return toast('Wait for your turn in a battle.');
@@ -340,7 +340,7 @@ function dbgAct(x) {
       if (!B || B.phase === 'playing' || B.over) return toast('Wait for your turn in a battle.');
       closeModal();
       B.events = [];
-      S.team.forEach(m => (m.hp = 0));
+      saveData.team.forEach(m => (m.hp = 0));
       say('Your team fainted. (Debug.)');
       B.over = 'lose';
       play();
@@ -361,7 +361,7 @@ function dbgAct(x) {
       return dbgRefresh(`Battle speed ${battleStage.speed}×.`);
     case 'copy':
       navigator.clipboard &&
-        navigator.clipboard.writeText(JSON.stringify(S)).then(
+        navigator.clipboard.writeText(JSON.stringify(saveData)).then(
           () => toast('Save copied.'),
           () => toast('The browser blocked the clipboard.')
         );
@@ -391,9 +391,9 @@ function settingsReset() {
             setB(null);
             battleStageStop();
           }
-          setS(freshKeep());
-          S.savedAt = Date.now();
-          lsSet(S);
+          setSaveData(freshKeep());
+          saveData.savedAt = Date.now();
+          lsSet(saveData);
           flush();
           U.intro = 0;
           U.pg = null;

@@ -5,7 +5,7 @@
    The rest of the game reads these globals, so the file format can change without touching game code. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { S, makeMon, provide } from './hooks.js';
+import { makeMon, provide, saveData } from './hooks.js';
 /* eslint-disable no-func-assign */
 expose({
   ADJ: [() => ADJ],
@@ -302,7 +302,7 @@ const SEATS = Object.values(TRAINERS)
   .map(T => T.seat.id);
 /* "@rival" is the starter that beats yours; "@rival1" / "@rival2" the same line evolved */
 export function rivalSp(code) {
-  const base = RULES.start.rival[S.starter] || DEX[0],
+  const base = RULES.start.rival[saveData.starter] || DEX[0],
     st = +(code.slice(6) || 0),
     id = base.replace(/\d+$/, '') + st;
   return SP[id] ? id : base;
@@ -321,4 +321,4 @@ const trainerById = id => TRAINERS[id] || null;
 export const trainersAt = i =>
   ((ROUTE[i] && ROUTE[i].trainers) || [])
     .map(id => TRAINERS[id])
-    .filter(T => !T.after || (typeof S !== 'undefined' && S.flags && S.flags[T.after]));
+    .filter(T => !T.after || (typeof saveData !== 'undefined' && saveData.flags && saveData.flags[T.after]));

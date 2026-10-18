@@ -13,7 +13,7 @@ import { closeModal, modal, provide, render, sceneIdAt, storyFlags, toast } from
 import { $, clamp } from './util.js';
 import { PLACE, ROUTE, isTown, placeFull } from './game-data.js';
 import { isLiteMap, loadMapFile, loadMapsAhead } from './map-files.js';
-import { RM, S, U, canEnter, esc, fmt, save } from './game-state.js';
+import { RM, U, canEnter, esc, fmt, save, saveData } from './game-state.js';
 import { artLoad, uiIconHTML } from './art.js';
 import { artImage, imageReady, mapById, prepareMap, walkData } from './walk-view.js';
 import { seamlessHubMap } from './seamless-world.js';
@@ -40,14 +40,14 @@ provide({ flyDraw, flyTick });
 export const airshipFlight = { on: false, a: -1, b: -1, t0: 0, dur: 0, lastX: null, dir: 1 };
 /* where the airships go from here: the towns you've been to (and may enter), nearest first */
 function flyTowns() {
-  const here = S.route.node;
+  const here = saveData.route.node;
   return ROUTE.map((r, i) => i)
     .filter(
       i =>
         i !== here &&
         isTown(i) &&
         !ROUTE[i].noFly &&
-        S.visited[i] &&
+        saveData.visited[i] &&
         sceneIdAt(i) &&
         (typeof canEnter !== 'function' || canEnter(i))
     )
@@ -59,19 +59,19 @@ function flyFare(a, b) {
   return Math.max(60, Math.round((60 + d * 6) / 10) * 10);
 }
 export function flyMenu(p) {
-  if (airshipFlight.on || !S.started) return;
+  if (airshipFlight.on || !saveData.started) return;
   const L = flyTowns(),
-    here = S.route.node;
+    here = saveData.route.node;
   const rows = L.map(i => {
     const f = flyFare(here, i),
-      ok = S.se >= f;
+      ok = saveData.se >= f;
     return `<button class="pickrow fly-row${ok ? '' : ' off'}" data-a="flyto" data-n="${i}"${ok ? '' : ' aria-disabled="true"'}><span class="fly-ico">${uiIconHTML('house', 18)}</span><span class="pr-t"><b>${esc(placeFull(ROUTE[i]))}</b><small>${esc(ROUTE[i].blurb || '')}</small></span><span class="fly-fare tnum">$${fmt(f)}</span></button>`;
   }).join('');
   modal({
     title: esc((p && p.label) || 'Airship mast'),
     cls: 'fly-sheet',
     html: L.length
-      ? `<p class="note">The airships fly to the towns you’ve been to. A ticket is paid in money, so your steps stay for walking new ground. You have $${fmt(S.se)}.</p><div class="list">${rows}</div>`
+      ? `<p class="note">The airships fly to the towns you’ve been to. A ticket is paid in money, so your steps stay for walking new ground. You have $${fmt(saveData.se)}.</p><div class="list">${rows}</div>`
       : `<p>The airships fly to the towns you’ve already been to. Walk on to another town, and you can fly back here from its mast whenever you like.</p>`,
     btns: [{ l: 'Not now', c: 'quiet', f: closeModal }],
   });
@@ -80,15 +80,15 @@ export function flyMenu(p) {
    show on the way */
 function startAirshipFlight(i) {
   if (airshipFlight.on || !ROUTE[i]) return;
-  const a = S.route.node,
+  const a = saveData.route.node,
     f = flyFare(a, i);
-  if (S.se < f) {
-    toast(`A ticket to ${ROUTE[i].name} costs $${fmt(f)}. You have $${fmt(S.se)}.`);
+  if (saveData.se < f) {
+    toast(`A ticket to ${ROUTE[i].name} costs $${fmt(f)}. You have $${fmt(saveData.se)}.`);
     return;
   }
-  S.se -= f;
-  S.route = { node: i, prog: 0, plan: [], hold: false };
-  S.visited[i] = 1;
+  saveData.se -= f;
+  saveData.route = { node: i, prog: 0, plan: [], hold: false };
+  saveData.visited[i] = 1;
   U.inside = null;
   U.goingIn = null;
   U.backAt = null;
@@ -266,7 +266,7 @@ document.addEventListener(
       ev.stopPropagation();
       ev.preventDefault();
       if (el.getAttribute('aria-disabled'))
-        toast(`You need $${fmt(flyFare(S.route.node, +el.dataset.n))} for that ticket.`);
+        toast(`You need $${fmt(flyFare(saveData.route.node, +el.dataset.n))} for that ticket.`);
       else startAirshipFlight(+el.dataset.n);
       return;
     }
@@ -284,14 +284,14 @@ document.addEventListener(
    rises into the light), and you step out beside the lift at the other end. Free, as lifts should be. */
 export const glassLift = { on: false };
 export function rideGlassLift(p) {
-  if (glassLift.on || !S.started || !p) return;
+  if (glassLift.on || !saveData.started || !p) return;
   const to = PLACE[p.to];
   if (!to) {
     toast('The lift isn’t working.');
     return;
   }
   const i = to.node,
-    a = S.route.node,
+    a = saveData.route.node,
     down = !!ROUTE[i].noFly;
   glassLift.on = true;
   const cv = document.createElement('div');
@@ -305,8 +305,8 @@ export function rideGlassLift(p) {
   setTimeout(
     async () => {
       await ready;
-      S.route = { node: i, prog: 0, plan: [], hold: false };
-      S.visited[i] = 1;
+      saveData.route = { node: i, prog: 0, plan: [], hold: false };
+      saveData.visited[i] = 1;
       U.inside = null;
       U.goingIn = null;
       U.backAt = null;

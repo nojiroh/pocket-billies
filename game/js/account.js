@@ -14,7 +14,6 @@ import {
   LS,
   LS_ACC,
   LS_BASE,
-  S,
   SAVE_HOLD,
   SAVE_NEW_MSG,
   SAVE_VERSION,
@@ -24,7 +23,8 @@ import {
   lsSet,
   save,
   saveAge,
-  setS,
+  saveData,
+  setSaveData,
   setSaveHold,
 } from './game-state.js';
 import { cleanTrainer } from './person-art.js';
@@ -111,12 +111,12 @@ function accState(u) {
   if (want !== ACC_ID) {
     /* a different player: keep what's here, then load theirs */
     try {
-      lsSet(S);
+      lsSet(saveData);
     } catch (e) {}
     try {
       if (want) {
         localStorage.setItem(LS_ACC, want);
-        if (!ACC_ID && S.started) localStorage.setItem('pb-offer-guest', '1');
+        if (!ACC_ID && saveData.started) localStorage.setItem('pb-offer-guest', '1');
       } else localStorage.removeItem(LS_ACC);
     } catch (e) {}
     location.reload();
@@ -171,16 +171,16 @@ async function accPull() {
       } catch (e) {}
       toast('Your account’s save is from an older version of the game, so this is a new game. Playing on replaces it.');
     }
-    if (remote && remote.started && (!S.started || (remote.savedAt || 0) > (S.savedAt || 0)) && !B) {
-      setS(remote);
-      S.avatar = cleanTrainer(S.avatar, S.gender);
+    if (remote && remote.started && (!saveData.started || (remote.savedAt || 0) > (saveData.savedAt || 0)) && !B) {
+      setSaveData(remote);
+      saveData.avatar = cleanTrainer(saveData.avatar, saveData.gender);
       applyPreferences();
-      lsSet(S);
+      lsSet(saveData);
       render();
       toast('Your game is loaded from your account.');
       return;
     }
-    if (S.started) accFlush(true);
+    if (saveData.started) accFlush(true);
     return;
   }
   /* nothing online yet: a game from this browser can come along */
@@ -188,7 +188,7 @@ async function accPull() {
   try {
     guest = loadSave(JSON.parse(localStorage.getItem(LS_BASE) || 'null'));
   } catch (e) {}
-  if (offer && guest && guest.started && !S.started) {
+  if (offer && guest && guest.started && !saveData.started) {
     modal({
       title: 'Bring your game along?',
       html: `<p>This browser has a game with ${esc((guest.avatar && guest.avatar.name) || 'your trainer')} (${fmt(guest.totalSteps || 0)} steps). Use it as the game on your account, ${esc(ACC.user.name)}?</p>`,
@@ -197,9 +197,9 @@ async function accPull() {
           l: 'Yes, use it',
           c: 'gold',
           f: () => {
-            setS(guest);
-            S.savedAt = Date.now();
-            lsSet(S);
+            setSaveData(guest);
+            saveData.savedAt = Date.now();
+            lsSet(saveData);
             closeModal();
             accFlush(true);
             if (typeof TITLE !== 'undefined' && TITLE.on) {
@@ -213,7 +213,7 @@ async function accPull() {
         { l: 'No, start fresh', c: 'quiet', f: closeModal },
       ],
     });
-  } else if (S.started) accFlush(true);
+  } else if (saveData.started) accFlush(true);
 }
 /* called by save()'s flush: writes to the account (a moment later, so a burst of saves is one write) */
 function accFlush(now) {
@@ -226,10 +226,10 @@ function accFlush(now) {
       .collection('saves')
       .doc(ACC.user.uid)
       .set({
-        json: JSON.stringify(S),
-        savedAt: S.savedAt || Date.now(),
+        json: JSON.stringify(saveData),
+        savedAt: saveData.savedAt || Date.now(),
         saveVersion: SAVE_VERSION,
-        name: (S.avatar && S.avatar.name) || '',
+        name: (saveData.avatar && saveData.avatar.name) || '',
         game: 'Pocket Billies',
       })
       .catch(accErr);
@@ -273,10 +273,10 @@ async function accSignOut() {
           .collection('saves')
           .doc(ACC.user.uid)
           .set({
-            json: JSON.stringify(S),
-            savedAt: S.savedAt || Date.now(),
+            json: JSON.stringify(saveData),
+            savedAt: saveData.savedAt || Date.now(),
             saveVersion: SAVE_VERSION,
-            name: (S.avatar && S.avatar.name) || '',
+            name: (saveData.avatar && saveData.avatar.name) || '',
             game: 'Pocket Billies',
           })
           .then(r, r);

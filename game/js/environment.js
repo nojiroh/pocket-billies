@@ -9,7 +9,7 @@
    The renderer reads environment through environmentFrame() once a frame; nothing here touches WebGL. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { RM, RULES, S, SP, provide, sceneIdAt } from './hooks.js';
+import { RM, RULES, SP, provide, saveData, sceneIdAt } from './hooks.js';
 import { clamp } from './util.js';
 import { hexToRgb } from './art.js';
 import { mapById, walkView } from './walk-view.js';
@@ -153,7 +153,7 @@ const environmentSmoothstep = (a, b, x) => {
   return t * t * (3 - 2 * t);
 };
 function environmentPreferences() {
-  return (typeof S !== 'undefined' && S && S.preferences) || {};
+  return (typeof saveData !== 'undefined' && saveData && saveData.preferences) || {};
 }
 function environmentRules() {
   return (typeof RULES !== 'undefined' && RULES && RULES.env) || {};
@@ -259,8 +259,11 @@ export function environmentWindowLit(x, z, h) {
 }
 export function currentLocationMap() {
   try {
-    return typeof sceneIdAt === 'function' && typeof mapById === 'function' && typeof S !== 'undefined' && S.route
-      ? mapById(sceneIdAt(S.route.node))
+    return typeof sceneIdAt === 'function' &&
+      typeof mapById === 'function' &&
+      typeof saveData !== 'undefined' &&
+      saveData.route
+      ? mapById(sceneIdAt(saveData.route.node))
       : null;
   } catch (e) {
     return null;

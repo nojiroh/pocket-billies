@@ -11,7 +11,7 @@
    (the world map's miniatures, say), the views are made again once it has (seamlessWorld.gen). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { S, provide, seamlessWorld } from './hooks.js';
+import { provide, saveData, seamlessWorld } from './hooks.js';
 import { ADJ, GD, LINKS, ROUTE, START_NODE } from './game-data.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -119,7 +119,7 @@ export function loadMapsAhead(node) {
 export function watchMapsAhead() {
   let at = null;
   setInterval(() => {
-    const n = typeof S !== 'undefined' && S && S.route ? S.route.node : null;
+    const n = typeof saveData !== 'undefined' && saveData && saveData.route ? saveData.route.node : null;
     if (n == null || n === at) return;
     at = n;
     loadMapsAhead(n);
@@ -128,7 +128,7 @@ export function watchMapsAhead() {
 export function loadAllMaps() {
   if (mapFiles.all) return mapFiles.all;
   const t0 = performance.now(),
-    here = typeof S !== 'undefined' && S && S.route ? S.route.node : START_NODE,
+    here = typeof saveData !== 'undefined' && saveData && saveData.route ? saveData.route.node : START_NODE,
     near = mapsAround(here, 3),
     ids = [...new Set([...near, ...Object.keys(GD.scenes)])].filter(isLiteMap);
   mapFiles.all = (async () => {

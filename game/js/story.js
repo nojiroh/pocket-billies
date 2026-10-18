@@ -3,13 +3,13 @@
    Short scenes filmed in the walk scene you are standing in, with the same director as the opening (cutscene.js):
    your rival Blake runs up the first time you reach him and talks before the battle; trainers talk with their
    portrait before a fight. A trainer's "intro" lines (game data) make the scene; "lines" are what they say in
-   battle. S.story remembers which scenes you have seen. */
+   battle. saveData.story remembers which scenes you have seen. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { STEST, closeModal, modal, postProcess, provide, render } from './hooks.js';
 import { $, clamp } from './util.js';
 import { PLACE, RULES, SP, TRAINERS, trainersAt } from './game-data.js';
-import { B, RM, S, U, esc, healAll, save, today } from './game-state.js';
+import { B, RM, U, esc, healAll, save, saveData, today } from './game-state.js';
 import { dressingRoom } from './dressing-room.js';
 import { baseMapId, walkView, walkablePointNear } from './walk-view.js';
 import { gpuState } from './engine/webgl.js';
@@ -44,7 +44,7 @@ expose({
 provide({ blakeHello, openingDone, storyAfterRival, storyAfterWin, storyFlags });
 /* to-module: end */
 export function storyFlags() {
-  return S.story || (S.story = {});
+  return saveData.story || (saveData.story = {});
 }
 /* tap a trainer in the scene, or their Battle button: they talk first, then the battle starts */
 export async function trainerTalk(id) {
@@ -52,12 +52,12 @@ export async function trainerTalk(id) {
   if (!T) return;
   if (TALK.on || (typeof CS !== 'undefined' && CS.on)) return;
   const F = storyFlags();
-  if (T.intro && T.intro.length && !F['met_' + id] && !S.flags[id] && storyWorldOK()) {
+  if (T.intro && T.intro.length && !F['met_' + id] && !saveData.flags[id] && storyWorldOK()) {
     await rivalScene(T);
     return;
   }
   const lines = (
-    S.flags[id] ? ['[happy] Back for more? All right!'] : (T.lines || []).map(l => l.replace(/^[“"]|[”"]$/g, ''))
+    saveData.flags[id] ? ['[happy] Back for more? All right!'] : (T.lines || []).map(l => l.replace(/^[“"]|[”"]$/g, ''))
   ).slice(0, 2);
   if (lines.length && typeof talk === 'function')
     await talk(lines.map((l, i) => [T.who, i ? l : l.startsWith('[') ? l : '[happy] ' + l]));
@@ -178,7 +178,7 @@ export function storyCheck() {
   if (
     (typeof STEST !== 'undefined' && STEST.on) ||
     U.bench ||
-    !S.started ||
+    !saveData.started ||
     B ||
     U.modal ||
     U.tab !== 'walk' ||
@@ -188,9 +188,11 @@ export function storyCheck() {
     !storyWorldOK()
   )
     return;
-  if (S.route.prog !== 0 || (S.route.plan && S.route.plan.length)) return;
+  if (saveData.route.prog !== 0 || (saveData.route.plan && saveData.route.plan.length)) return;
   const F = storyFlags();
-  const T = trainersAt(S.route.node).find(T => T.intro && T.intro.length && !S.flags[T.id] && !F['met_' + T.id]);
+  const T = trainersAt(saveData.route.node).find(
+    T => T.intro && T.intro.length && !saveData.flags[T.id] && !F['met_' + T.id]
+  );
   if (!T) return;
   if (STORY.pending === T.id) return;
   STORY.pending = T.id;
@@ -202,7 +204,7 @@ export function storyCheck() {
 /* v39: the legendary encounters (rules.legends): one per scene, met when you arrive, once a day until caught */
 export function legendCheck() {
   if (
-    !S.started ||
+    !saveData.started ||
     B ||
     U.modal ||
     U.tab !== 'walk' ||
@@ -213,10 +215,10 @@ export function legendCheck() {
     U.bench
   )
     return;
-  if (S.route.prog !== 0 || (S.route.plan && S.route.plan.length)) return;
+  if (saveData.route.prog !== 0 || (saveData.route.plan && saveData.route.plan.length)) return;
   const F = storyFlags(),
     L = (RULES.legends || []).find(
-      l => l.scene === baseMapId() && SP[l.sp] && !S.caught[l.sp] && F['legend_' + l.sp] !== today()
+      l => l.scene === baseMapId() && SP[l.sp] && !saveData.caught[l.sp] && F['legend_' + l.sp] !== today()
     );
   if (!L || STORY.pending === 'legend') return;
   STORY.pending = 'legend';
@@ -234,8 +236,8 @@ export function legendCheck() {
           c: 'primary',
           f: () => {
             closeModal();
-            const q = { id: 'legend-' + L.sp, sp: L.sp, lvl: L.lvl, gold: false, no: ++S.serial, legend: true };
-            S.queue.push(q);
+            const q = { id: 'legend-' + L.sp, sp: L.sp, lvl: L.lvl, gold: false, no: ++saveData.serial, legend: true };
+            saveData.queue.push(q);
             startWild(q);
           },
         },
@@ -267,7 +269,7 @@ export async function personTalk(P) {
 /* alpha 0.4: a game begun before Copperleaf: the lab and your room have moved, and you are told once */
 export function storyMovedCheck() {
   if (
-    !S.started ||
+    !saveData.started ||
     B ||
     U.modal ||
     U.title ||
@@ -325,16 +327,16 @@ function openingMark() {
 export function storyRivalBattle(o = {}) {
   const t0 = performance.now(),
     go = async () => {
-      if (B || !S.started) return;
+      if (B || !saveData.started) return;
       U.modal = null;
       if (o.talkFirst && typeof talk === 'function' && !TALK.on) {
         STORY.rivalTalk = 1;
         try {
-          await talk(blakeHello(S.starter));
+          await talk(blakeHello(saveData.starter));
         } finally {
           STORY.rivalTalk = 0;
         }
-        if (B || !S.started) return;
+        if (B || !saveData.started) return;
       }
       startTrainer('blake0', { talked: true });
       if (!B) storyAfterRival(null, TRAINERS.blake0);
@@ -342,7 +344,7 @@ export function storyRivalBattle(o = {}) {
   /* once Sundown is on screen and settled: drawn a few times, its pictures on the card (as when the game first opens) */
   let f0 = null;
   const poll = () => {
-    if (B || !S.started) return;
+    if (B || !saveData.started) return;
     const on = typeof walkView !== 'undefined' && walkView.ready,
       gl = typeof walkRenderer !== 'undefined' && walkRenderer.on;
     if (on && gl && f0 == null) f0 = walkRenderer.frames;

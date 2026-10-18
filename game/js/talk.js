@@ -8,7 +8,7 @@
 import { expose } from './test-globals.js';
 import { mapChatLines, provide } from './hooks.js';
 import { PEOPLE, TRAINERS } from './game-data.js';
-import { RM, S } from './game-state.js';
+import { RM, saveData } from './game-state.js';
 import { frameStop, frameTask } from './frame-scheduler.js';
 import { trPortrait, trainerLook } from './person-art.js';
 import { turnToPlayer, walkView } from './walk-view.js';
@@ -226,8 +226,8 @@ export function setTalkFolk(v) {
 }
 export async function talkHazel(p) {
   if (TALK.on) return;
-  const caught = Object.keys(S.caught).length,
-    badges = (S.seats || []).length,
+  const caught = Object.keys(saveData.caught).length,
+    badges = (saveData.seats || []).length,
     nm = trainerLook('me').name || 'Trainer';
   const tips = [
     `[happy] ${nm}! How's your Index coming along? ${caught} taxed so far.`,
@@ -240,7 +240,7 @@ export async function talkHazel(p) {
       ? `${badges} badge${badges > 1 ? 's' : ''} already. The arena leaders talk about you, you know.`
       : 'When your team is ready, try an arena. The first one is in Fizzwell Town.',
   ];
-  if (S.flags && S.flags.chad && !S.flags.chad2)
+  if (saveData.flags && saveData.flags.chad && !saveData.flags.chad2)
     tips.push('Blake was here earlier, bragging. He said he’d wait for you in Clovercrest Town.');
   await talk(tips.map(t => ['gini', t]));
 }

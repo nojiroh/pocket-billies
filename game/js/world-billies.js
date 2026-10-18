@@ -13,7 +13,7 @@ import { expose } from './test-globals.js';
 import { areaKey, provide, sceneIdAt, sfx } from './hooks.js';
 import { clamp } from './util.js';
 import { SP, STATUSN, TRAINERS, rivalSp, trainersAt } from './game-data.js';
-import { N, S, U, findMon, maxHp, nextStop, save } from './game-state.js';
+import { N, U, findMon, maxHp, nextStop, save, saveData } from './game-state.js';
 import { makeCanvas } from './art.js';
 import { RIG_BACK_VIEW, drawRig, rigFrame, rigParts, rigPreload } from './skeleton-rig.js';
 import { battleStagePrepare } from './battle-stage.js';
@@ -161,9 +161,9 @@ export function worldBillyItem(k, sp, gold, view, pose, t, seed, x, z, o = {}) {
 /* ---------- the buddy ---------- */
 /* your buddy (the one you made buddy on its sheet; it earns XP as you walk), or your lead if you haven't picked one */
 export function buddyBilly() {
-  if ((S.preferences || {}).buddyWalk === 'off' || !S.team) return null;
-  let m = S.buddy && typeof findMon === 'function' ? findMon(S.buddy) : null;
-  if (!m) m = S.team[0] || null;
+  if ((saveData.preferences || {}).buddyWalk === 'off' || !saveData.team) return null;
+  let m = saveData.buddy && typeof findMon === 'function' ? findMon(saveData.buddy) : null;
+  if (!m) m = saveData.team[0] || null;
   return m && m.job == null ? m : null;
 }
 export function shiftWorldBillies(dx, dz) {
@@ -309,7 +309,7 @@ export function buddyTap() {
     t = walkView.t,
     bond = (m.bond = (m.bond || 0) + 1),
     n = N(m),
-    q = (S.queue || []).length;
+    q = (saveData.queue || []).length;
   const lines =
     hp <= 0
       ? [`${n} has fainted. It needs a rest at a clinic.`]
@@ -486,14 +486,14 @@ function worldBillyLabels(C, labels) {
 function warmWorldBillies() {
   try {
     const L = [];
-    for (const q of S.queue || []) L.push([q.sp, q.gold, 1]);
+    for (const q of saveData.queue || []) L.push([q.sp, q.gold, 1]);
     const m = buddyBilly();
     if (m) {
       L.push([m.sp, m.gold, 1]);
       L.push([m.sp, m.gold, RIG_BACK_VIEW]);
     }
     if (typeof trainersAt === 'function')
-      for (const T of trainersAt(S.route.node)) {
+      for (const T of trainersAt(saveData.route.node)) {
         const sp = companionSpecies(T);
         if (sp) L.push([sp, false, 1]);
         for (const e of T.team || []) {
@@ -502,7 +502,7 @@ function warmWorldBillies() {
         }
       }
     /* v34: what a battle here would need, loaded now while you walk (a battle used to start by loading it: 4 fps at worst) */
-    for (const m of S.team.slice(0, 3)) L.push([m.sp, m.gold, RIG_BACK_VIEW]);
+    for (const m of saveData.team.slice(0, 3)) L.push([m.sp, m.gold, RIG_BACK_VIEW]);
     if (L.length && typeof rigPreload === 'function')
       setTimeout(
         () =>
@@ -529,7 +529,13 @@ function warmWorldBillies() {
 const mapsPreparedAhead = new Set();
 setInterval(() => {
   try {
-    if (typeof S === 'undefined' || !S.started || !S.route || !(S.route.prog > 0) || typeof nextStop !== 'function')
+    if (
+      typeof saveData === 'undefined' ||
+      !saveData.started ||
+      !saveData.route ||
+      !(saveData.route.prog > 0) ||
+      typeof nextStop !== 'function'
+    )
       return;
     const nx = nextStop();
     if (nx == null) return;

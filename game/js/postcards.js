@@ -3,12 +3,12 @@
    The first time you walk into a town, its postcard slides in: the town at its best hour (art/postcards/<scene>.webp,
    made by tools/build-postcards.py from the game's own renderer), "Greetings from" in a hand and the town's name in
    big letters, a stamp with the town's flag. It goes into the Guide, on its Postcards page, the moment it comes; tap it or wait and it slides away. On later visits
-   a small stamp shows in the corner for a moment. S.cards keeps them: {town id: the day you got it}. */
+   a small stamp shows in the corner for a moment. saveData.cards keeps them: {town id: the day you got it}. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { STEST, STORY, sceneIdAt, storyFlags, toast } from './hooks.js';
 import { ROUTE, TRAINERS, isTown, trainersAt } from './game-data.js';
-import { B, S, U, esc, save } from './game-state.js';
+import { B, U, esc, save, saveData } from './game-state.js';
 import { artURL } from './art.js';
 import { flagPicturePath, mapById, walkView } from './walk-view.js';
 import { sfx } from './sound.js';
@@ -33,7 +33,7 @@ expose({
 /* to-module: end */
 const PC = { last: null, on: false };
 function pcCards() {
-  return S.cards || (S.cards = {});
+  return saveData.cards || (saveData.cards = {});
 }
 function pcTowns() {
   return ROUTE.map((r, i) => i).filter(i => isTown(i) && sceneIdAt(i));
@@ -69,7 +69,9 @@ function pcFree() {
   const F = typeof storyFlags === 'function' ? storyFlags() : {};
   if (TRAINERS.blake0 && !F.rival0 && !F.met_blake0) return false;
   if (typeof STORY !== 'undefined' && (STORY.pending || STORY.rivalTalk)) return false;
-  if (trainersAt(S.route.node).some(T => !S.flags[T.id] && T.intro && T.intro.length && !F['met_' + T.id]))
+  if (
+    trainersAt(saveData.route.node).some(T => !saveData.flags[T.id] && T.intro && T.intro.length && !F['met_' + T.id])
+  )
     return false;
   if (typeof walkView !== 'undefined' && !walkView.ready) return false;
   return true;
@@ -80,7 +82,7 @@ export function postcardCheck() {
     return;
   }
   if (
-    !S.started ||
+    !saveData.started ||
     (typeof B !== 'undefined' && B) ||
     U.modal ||
     U.title ||
@@ -112,7 +114,7 @@ function postcardShow(n, first) {
   const r = ROUTE[n];
   if (!r) return;
   if (first) {
-    pcCards()[r.id] = S.day || Date.now();
+    pcCards()[r.id] = saveData.day || Date.now();
     save();
     if (typeof NWLOG !== 'undefined') NWLOG.add('scene', 'postcard ' + r.id);
   }

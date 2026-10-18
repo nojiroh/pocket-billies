@@ -7,7 +7,7 @@ import { expose } from './test-globals.js';
 import { closeModal, modal, provide, renderOv, sfx, toast } from './hooks.js';
 import { clamp, rnd } from './util.js';
 import { COINS, ITEMS, SHOPS } from './game-data.js';
-import { S, U, esc, fmt, plural, save } from './game-state.js';
+import { U, esc, fmt, plural, save, saveData } from './game-state.js';
 import { coinHTML, uiIconHTML } from './art.js';
 import { portraitHTML } from './person-art.js';
 import { openDressingRoom } from './dressing-room.js';
@@ -39,16 +39,26 @@ const wareInfo = w => {
   if (w.coin) {
     const c = COINS[w.coin];
     return c
-      ? { kind: 'coin', key: w.coin, n: c.n, d: c.d, base: c.price, need: c.need || 0, have: S.coins[w.coin] || 0 }
+      ? {
+          kind: 'coin',
+          key: w.coin,
+          n: c.n,
+          d: c.d,
+          base: c.price,
+          need: c.need || 0,
+          have: saveData.coins[w.coin] || 0,
+        }
       : null;
   }
   const I = ITEMS[w.item];
-  return I ? { kind: 'item', key: w.item, n: I.n, d: I.d, base: I.price, need: 0, have: S.items[w.item] || 0 } : null;
+  return I
+    ? { kind: 'item', key: w.item, n: I.n, d: I.d, base: I.price, need: 0, have: saveData.items[w.item] || 0 }
+    : null;
 };
 function shopHTML(id) {
   const sh = SHOPS[id],
     q = U.shopQty || (U.shopQty = {}),
-    seats = S.seats.length;
+    seats = saveData.seats.length;
   const rows = (sh.stock || [])
     .map((w, ix) => {
       const it = wareInfo(w);
@@ -64,16 +74,16 @@ function shopHTML(id) {
     locked
       ? `<span class="note">Needs ${plural(it.need, 'badge')}</span>`
       : `<span class="qty"><button class="qb" data-a="shopq" data-k="${k}" data-d="-1" aria-label="One fewer" ${n <= 1 ? 'disabled' : ''}>${uiIconHTML('minus', 10)}</button><b class="tnum">${n}</b><button class="qb" data-a="shopq" data-k="${k}" data-d="1" aria-label="One more" ${n >= 99 ? 'disabled' : ''}>${uiIconHTML('plus', 10)}</button></span>
-  <button class="pb small ${S.se >= cost ? 'gold' : ''}" data-a="shopbuy" data-s="${id}" data-k="${k}" ${S.se >= cost ? '' : 'disabled'}>$${fmt(cost)}</button>`
+  <button class="pb small ${saveData.se >= cost ? 'gold' : ''}" data-a="shopbuy" data-s="${id}" data-k="${k}" ${saveData.se >= cost ? '' : 'disabled'}>$${fmt(cost)}</button>`
   }</span></div>`;
     })
     .join('');
   return `<div class="shop-head"><div class="shop-keeper">${portraitHTML(sh.who || 'clerk', 78, 'happy')}</div><div class="shop-say"><b>${esc(sh.keeper || 'Shopkeeper')}</b><p id="shopLine">${esc(U.shopLine || sh.greeting || 'Welcome in.')}</p></div></div>
- <div class="shop-bal"><span>${uiIconHTML('coin', 14)} Money</span><b class="tnum" data-count="shopse" data-to="${S.se}">${fmt(S.se)}</b></div>
+ <div class="shop-bal"><span>${uiIconHTML('coin', 14)} Money</span><b class="tnum" data-count="shopse" data-to="${saveData.se}">${fmt(saveData.se)}</b></div>
  <div class="shop-bag"><span>In your bag</span>${Object.keys(COINS)
    .map(
      k =>
-       `<span class="sb-c${S.coins[k] ? '' : ' none'}" role="img" title="${esc(COINS[k].n)}" aria-label="${esc(COINS[k].n)}: ${fmt(S.coins[k] || 0)}">${coinHTML(k, 18, 32)}<b class="tnum">${fmt(S.coins[k] || 0)}</b></span>`
+       `<span class="sb-c${saveData.coins[k] ? '' : ' none'}" role="img" title="${esc(COINS[k].n)}" aria-label="${esc(COINS[k].n)}: ${fmt(saveData.coins[k] || 0)}">${coinHTML(k, 18, 32)}<b class="tnum">${fmt(saveData.coins[k] || 0)}</b></span>`
    )
    .join('')}</div><div class="wares2">${rows || '<p class="note">The shelves are empty today.</p>'}</div>`;
 }
@@ -112,15 +122,15 @@ function shopBuy(id, k) {
   const n = (U.shopQty || {})[k] || 1,
     price = w.price ?? it.base,
     cost = price * n;
-  if (it.need && S.seats.length < it.need) return;
-  if (S.se < cost) {
+  if (it.need && saveData.seats.length < it.need) return;
+  if (saveData.se < cost) {
     toast('Not enough money. Walk a little first.');
     return;
   }
-  S.se -= cost;
+  saveData.se -= cost;
   if (typeof sfx === 'function') sfx('buy');
-  if (kind === 'coin') S.coins[key] = (S.coins[key] || 0) + n;
-  else S.items[key] = (S.items[key] || 0) + n;
+  if (kind === 'coin') saveData.coins[key] = (saveData.coins[key] || 0) + n;
+  else saveData.items[key] = (saveData.items[key] || 0) + n;
   save();
   buzz && buzz(10);
   const lines = sh.thanks && sh.thanks.length ? sh.thanks : SHOP_THANKS;

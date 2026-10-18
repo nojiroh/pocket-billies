@@ -42,7 +42,6 @@ import {
   MAXLV,
   N,
   RM,
-  S,
   SLOTS,
   TEAM_MAX,
   U,
@@ -81,7 +80,8 @@ import {
   riderName,
   rollDay,
   save,
-  setS,
+  saveData,
+  setSaveData,
   setTrip,
   spawn,
   splitPath,
@@ -408,7 +408,7 @@ export function renderOv() {
 
 /* ---------- post-step events ---------- */
 export function postProcess() {
-  if (B || U.modal || !S.started || U.title) return;
+  if (B || U.modal || !saveData.started || U.title) return;
   const eg = hatchable()[0];
   if (eg) {
     hatchModal(eg);
@@ -573,9 +573,9 @@ const TABS = ['walk', 'map', 'team', 'ledger', 'bag'],
   SCREENS = [...TABS, 'profile'];
 function topbar() {
   rollDay();
-  const shut = !!(S.preferences && S.preferences.cardClosed),
+  const shut = !!(saveData.preferences && saveData.preferences.cardClosed),
     walk = U.tab === 'walk';
-  return `<div class="topbar glass" role="status">${walk ? `<button class="tb-where ${shut ? 'shut' : ''}" data-a="card-open" aria-expanded="${!shut}" aria-label="${shut ? 'Show' : 'Hide'} the card for ${esc(ROUTE[S.route.node].name)}">${esc(U.inside && !U.bench && typeof roomState === 'function' && roomState() ? U.inside.name || ROUTE[S.route.node].name : ROUTE[S.route.node].name)}${uiIconHTML('chev', 12)}</button>` : `<span class="tb-where">${esc(ROUTE[S.route.node].name)}</span>`}<span class="tb-chip tnum" title="Money">${coinHTML('penny', 16)}<small>$</small><b data-count="tse" data-to="${S.se}">${fmt(S.se)}</b></span><button class="tb-btn" data-a="settings" aria-label="Settings and help">${uiIconHTML('gear', 18)}</button><button class="tb-me" data-a="tab" data-t="profile" aria-label="Your trainer card" ${U.tab === 'profile' ? 'aria-current="page"' : ''}>${typeof portraitHTML === 'function' ? portraitHTML('me', 84) : ''}</button></div>`;
+  return `<div class="topbar glass" role="status">${walk ? `<button class="tb-where ${shut ? 'shut' : ''}" data-a="card-open" aria-expanded="${!shut}" aria-label="${shut ? 'Show' : 'Hide'} the card for ${esc(ROUTE[saveData.route.node].name)}">${esc(U.inside && !U.bench && typeof roomState === 'function' && roomState() ? U.inside.name || ROUTE[saveData.route.node].name : ROUTE[saveData.route.node].name)}${uiIconHTML('chev', 12)}</button>` : `<span class="tb-where">${esc(ROUTE[saveData.route.node].name)}</span>`}<span class="tb-chip tnum" title="Money">${coinHTML('penny', 16)}<small>$</small><b data-count="tse" data-to="${saveData.se}">${fmt(saveData.se)}</b></span><button class="tb-btn" data-a="settings" aria-label="Settings and help">${uiIconHTML('gear', 18)}</button><button class="tb-me" data-a="tab" data-t="profile" aria-label="Your trainer card" ${U.tab === 'profile' ? 'aria-current="page"' : ''}>${typeof portraitHTML === 'function' ? portraitHTML('me', 84) : ''}</button></div>`;
 }
 export function render() {
   const app = $('#app');
@@ -587,7 +587,7 @@ export function render() {
     titleMount();
     return;
   }
-  if (!S.started) {
+  if (!saveData.started) {
     if (typeof CS !== 'undefined' && CS.on) {
       app.innerHTML = '';
       updateNav(false);
@@ -788,16 +788,16 @@ function stepsTo(j) {
   return t ? t.steps : Infinity;
 }
 function tripLeft() {
-  const r = S.route;
+  const r = saveData.route;
   if (!r.plan.length) return 0;
   let n = linkCost(r.node, r.plan[0]) - r.prog;
   for (let k = 0; k < r.plan.length - 1; k++) n += linkCost(r.plan[k], r.plan[k + 1]);
   return Math.max(0, n);
 }
-const tripDest = () => (S.route.plan.length ? S.route.plan[S.route.plan.length - 1] : null);
+const tripDest = () => (saveData.route.plan.length ? saveData.route.plan[saveData.route.plan.length - 1] : null);
 /* one line about travel: where you're headed, why you're stopped, or that you're staying */
 function tripStatus() {
-  const r = S.route,
+  const r = saveData.route,
     d = tripDest(),
     gm = gateMsg();
   if (d == null) return { k: 'stay', t: walkMode() ? `In ${ROUTE[r.node].name}` : `Staying in ${ROUTE[r.node].name}` };
@@ -814,7 +814,7 @@ function tripStatus() {
   return { k: 'go', t: `Walking to ${ROUTE[d].name}${via}`, left: tripLeft() };
 }
 function tripButtons() {
-  const r = S.route,
+  const r = saveData.route,
     st = tripStatus();
   if (st.k === 'guide')
     return `<button class="pb small" data-a="stoptrip">Stop guiding me</button><button class="pb small quiet" data-a="tab" data-t="map">Change plans</button>`;
@@ -828,7 +828,7 @@ function tripButtons() {
 }
 function nodeActions(i) {
   const n = ROUTE[i],
-    node = S.route.node;
+    node = saveData.route.node;
   let x = '';
   if (i !== node) return '';
   if (n.shop && SHOPS[n.shop])
@@ -839,38 +839,38 @@ function nodeActions(i) {
     ? '<button class="pb small" data-a="clinic">Rest at the clinic, free</button>'
     : `<button class="pb small quiet" data-a="rest">Rest stop, $${fmt(RULES.steps.restCost)}</button>`;
   trainersAt(i).forEach(T => {
-    const done = S.flags[T.id];
+    const done = saveData.flags[T.id];
     if (T.blocks && done && !T.seat) return;
     x += `<button class="pb small ${done ? 'quiet' : 'red'}" data-a="trainer" data-t="${T.id}">${done ? 'Rematch' : T.seat ? 'Challenge' : 'Battle'} ${esc(T.name)}</button>`;
   });
   return `<div class="racts">${x}</div>`;
 }
 function boardNote(i) {
-  if (S.route.node !== i) return '';
+  if (saveData.route.node !== i) return '';
   return trainersAt(i)
-    .filter(T => T.hint && !S.flags[T.id])
+    .filter(T => T.hint && !saveData.flags[T.id])
     .map(T => `<p class="note">${esc(T.hint)}</p>`)
     .join('');
 }
 function hereCard() {
-  const node = S.route.node,
+  const node = saveData.route.node,
     here = ROUTE[node],
     st = tripStatus(),
     nx = nextStop();
   let prog = '';
   if (st.k === 'go' || st.k === 'hold') {
     const c = linkCost(node, nx),
-      f = S.route.prog / c;
+      f = saveData.route.prog / c;
     prog = `<div class="nextstop"><div class="ns-top"><span>${esc(st.t)}</span><b>${esc(ROUTE[nx].name)}</b></div><div class="trail">${bar(f, 'trailbar live')}<span class="walker" style="left:${clamp(f, 0, 1) * 100}%">${owHTML()}</span></div><span class="note tnum">${fmt(tripLeft())} steps to go</span></div>`;
   } else if (st.k === 'blocked') {
     const bl = blockerAt(node);
     prog =
-      bl && S.route.prog === 0
+      bl && saveData.route.prog === 0
         ? `<div class="event"><b>${esc(bl.blockTitle || bl.name + ' is blocking the way')}</b><p>${esc(bl.blockText || 'Beat them to keep walking.')}</p></div>`
         : `<p class="note gate">${esc(st.t)}</p>`;
   } else
     prog = `<p class="note">You’re staying here. Steps still earn money, hatch eggs and bring encounters. Open the map to pick a place to walk to.</p>`;
-  return `<section class="here px glass"><div class="route-art"${here.banner ? ` style="background-image:url('${artURL(here.banner)}')"` : ''}><span>${humanHTML('me', 64)}</span><button class="route-profile" data-a="customize">${esc(cleanTrainer(S.avatar, S.gender).name)} · Edit look</button></div><div class="sec-h"><div><div class="sub">${esc(placeSub(here))}</div><h2>${here.name}</h2></div><button class="pb small quiet" data-a="tab" data-t="map">Open map</button></div><p class="note">${here.blurb}</p>${boardNote(node)}${prog}<div class="racts">${tripButtons()}</div>${nodeActions(node)}</section>`;
+  return `<section class="here px glass"><div class="route-art"${here.banner ? ` style="background-image:url('${artURL(here.banner)}')"` : ''}><span>${humanHTML('me', 64)}</span><button class="route-profile" data-a="customize">${esc(cleanTrainer(saveData.avatar, saveData.gender).name)} · Edit look</button></div><div class="sec-h"><div><div class="sub">${esc(placeSub(here))}</div><h2>${here.name}</h2></div><button class="pb small quiet" data-a="tab" data-t="map">Open map</button></div><p class="note">${here.blurb}</p>${boardNote(node)}${prog}<div class="racts">${tripButtons()}</div>${nodeActions(node)}</section>`;
 }
 function owHTML() {
   const u = owHTMLsheet('me');
@@ -879,18 +879,18 @@ function owHTML() {
 function eggSlots() {
   const slots = Array.from({ length: EGG_SLOTS() }, (_, i) => i)
     .map(sl => {
-      const e = S.eggs.find(x => x.slot === sl);
+      const e = saveData.eggs.find(x => x.slot === sl);
       if (!e)
         return `<div class="slot px empty"><span class="egg-e"></span><b>Empty incubator</b><span class="note">Win battles to find eggs.</span></div>`;
       const T = EGGS[e.tier];
       return `<div class="slot px">${eggHTML(e.tier, 48, 'wob')}<b>${e.tier} km egg</b>${bar(e.prog / T.need, 'live')}<span class="note tnum">${km(e.prog)} of ${e.tier} km</span></div>`;
     })
     .join('');
-  const pipe = S.eggs.filter(e => e.slot == null);
-  return `<section><div class="sec-h"><h2>Eggs</h2><span class="count tnum">${S.eggs.length}/${RULES.eggs.capacity}</span></div><div class="slots">${slots}</div>${pipe.length ? `<div class="pipe"><span class="note">Waiting for an incubator:</span>${pipe.map(e => eggHTML(e.tier, 26)).join('')}</div>` : ''}</section>`;
+  const pipe = saveData.eggs.filter(e => e.slot == null);
+  return `<section><div class="sec-h"><h2>Eggs</h2><span class="count tnum">${saveData.eggs.length}/${RULES.eggs.capacity}</span></div><div class="slots">${slots}</div>${pipe.length ? `<div class="pipe"><span class="note">Waiting for an incubator:</span>${pipe.map(e => eggHTML(e.tier, 26)).join('')}</div>` : ''}</section>`;
 }
 function buddyCard() {
-  const m = findMon(S.buddy);
+  const m = findMon(saveData.buddy);
   if (!m) return '';
   const a = xpFor(m.lvl),
     b = xpFor(m.lvl + 1),
@@ -904,7 +904,7 @@ function buddyCard() {
 function roomHero() {
   const I = U.inside,
     sc = mapById(I.id) || {},
-    here = ROUTE[S.route.node],
+    here = ROUTE[saveData.route.node],
     what =
       {
         shop: 'Tap the counter to shop.',
@@ -914,12 +914,12 @@ function roomHero() {
         home: 'Your room in Granny Juniper’s cottage. Decorate it with what you’ve found.',
       }[I.kind] || '';
   return `<div class="walk-hero" id="walkHero">${whCard(esc(here.name), esc(I.name || sc.name || 'Inside'), `<p class="wh-gate">${esc(what)}</p>`, (I.kind === 'home' ? `<button class="pb small gold" data-a="decorate">Decorate</button>` : '') + `<button class="pb small" data-a="leaveroom">${uiIconHTML('door', 14)} Go outside</button>`)}
- <div class="wh-foot"><div class="wh-row"><button class="pb small glass fish-btn" data-a="fish" hidden>${uiIconHTML('fish', 14)} Fish</button><button class="wh-down glass" data-a="walkdown" aria-label="Show actions">${uiIconHTML('chev', 18)}<span>Actions</span></button><span class="wh-steps glass tnum">${uiIconHTML('walk', 14)} ${fmt(S.day.steps)}</span></div></div></div>`;
+ <div class="wh-foot"><div class="wh-row"><button class="pb small glass fish-btn" data-a="fish" hidden>${uiIconHTML('fish', 14)} Fish</button><button class="wh-down glass" data-a="walkdown" aria-label="Show actions">${uiIconHTML('chev', 18)}<span>Actions</span></button><span class="wh-steps glass tnum">${uiIconHTML('walk', 14)} ${fmt(saveData.day.steps)}</span></div></div></div>`;
 }
 /* v31: the place card: compact (where, the hour and weather, staying or walking, one main button; the rest folded
    under More), closable with ×, and brought back by tapping the place's name in the top bar. Closed stays closed. */
 function whCard(sub, name, mid, btns) {
-  if (S.preferences && S.preferences.cardClosed) return '';
+  if (saveData.preferences && saveData.preferences.cardClosed) return '';
   const all = String(btns).match(/<button[\s\S]*?<\/button>/g) || [],
     main = all[0] || '',
     more = all.slice(1).join('');
@@ -938,33 +938,33 @@ function walkHero() {
     /* v20: a test scene from the debug menu */ const sc = mapById(U.bench.id);
     return `<div class="walk-hero" id="walkHero"><div class="wh-card glass">${U.bench.id === 'gallery' ? `<div class="sub">Settings</div><h1 class="where">Graphics gallery</h1><p class="wh-gate">Walk to a signpost, then move the dial below and watch what changes.</p>` : `<div class="sub">Test scene</div><h1 class="where">${esc((sc.name || U.bench.id).replace(/^Test: /, ''))}</h1><p class="wh-gate">${(sc.checks || []).length} walking checks. Debug menu → Test scenes runs them.</p>`}<div class="wh-acts"><button class="pb small gold" ${U.bench.id === 'gallery' ? 'data-a="gal-leave"' : 'data-a="dbg" data-x="untest"'}>${U.bench.id === 'gallery' ? 'Back to Settings' : 'Back to the game'}</button></div></div></div>`;
   }
-  const node = S.route.node,
+  const node = saveData.route.node,
     here = ROUTE[node],
-    q = S.queue,
+    q = saveData.queue,
     st = tripStatus(),
     nx = nextStop();
   let next = '';
   if (st.k === 'go')
-    next = `<div class="wh-next"><span>${esc(st.t)}</span><span class="tnum">${fmt(st.left)} steps</span>${bar(S.route.prog / linkCost(node, nx), 'trailbar live')}</div>`;
+    next = `<div class="wh-next"><span>${esc(st.t)}</span><span class="tnum">${fmt(st.left)} steps</span>${bar(saveData.route.prog / linkCost(node, nx), 'trailbar live')}</div>`;
   else next = `<p class="wh-gate">${esc(st.t)}</p>`;
   return `<div class="walk-hero" id="walkHero">${whCard(esc(placeSub(here)), esc(here.name), envLine() + next, tripButtons())}
- <div class="wh-foot">${q.length ? `<p class="wh-hint glass">${uiIconHTML('spark', 12)} ${plural(q.length, 'Billie')} hiding nearby. Tap a <b>?</b> to battle.</p>` : S.route.prog === 0 ? `<p class="wh-hint glass">${uiIconHTML('walk', 12)} Tap the ground to walk around. Tap buildings, people and signs.</p>` : ''}
-  <div class="wh-row"><button class="pb small glass fish-btn" data-a="fish" hidden>${uiIconHTML('fish', 14)} Fish</button><button class="pb small glass" data-a="photo" aria-label="Photo mode">${uiIconHTML('camera', 14)}</button><button class="wh-down glass" data-a="walkdown" aria-label="Show actions">${uiIconHTML('chev', 18)}<span>Actions</span></button><span class="wh-steps glass tnum">${uiIconHTML('walk', 14)} ${fmt(S.day.steps)}</span></div></div></div>`;
+ <div class="wh-foot">${q.length ? `<p class="wh-hint glass">${uiIconHTML('spark', 12)} ${plural(q.length, 'Billie')} hiding nearby. Tap a <b>?</b> to battle.</p>` : saveData.route.prog === 0 ? `<p class="wh-hint glass">${uiIconHTML('walk', 12)} Tap the ground to walk around. Tap buildings, people and signs.</p>` : ''}
+  <div class="wh-row"><button class="pb small glass fish-btn" data-a="fish" hidden>${uiIconHTML('fish', 14)} Fish</button><button class="pb small glass" data-a="photo" aria-label="Photo mode">${uiIconHTML('camera', 14)}</button><button class="wh-down glass" data-a="walkdown" aria-label="Show actions">${uiIconHTML('chev', 18)}<span>Actions</span></button><span class="wh-steps glass tnum">${uiIconHTML('walk', 14)} ${fmt(saveData.day.steps)}</span></div></div></div>`;
 }
 function renderWalk() {
   rollDay();
-  const st = S.day.steps,
+  const st = saveData.day.steps,
     r = rate(st),
-    q = S.queue;
+    q = saveData.queue;
   return `${walkHero()}<div class="walk-sheet"><span class="ws-grip" aria-hidden="true"></span>
  <div class="cols"><div class="col">
- <div class="today px glass"><div class="today-top"><div><div class="big tnum" data-count="steps" data-to="${st}">${fmt(st)}</div><div class="lbl">steps today</div></div><div class="se"><div class="mid tnum">$<span data-count="se" data-to="${S.se}">${fmt(S.se)}</span></div><div class="lbl">Money</div></div></div>
+ <div class="today px glass"><div class="today-top"><div><div class="big tnum" data-count="steps" data-to="${st}">${fmt(st)}</div><div class="lbl">steps today</div></div><div class="se"><div class="mid tnum">$<span data-count="se" data-to="${saveData.se}">${fmt(saveData.se)}</span></div><div class="lbl">Money</div></div></div>
   <div class="brackets" role="img" aria-label="Earning $${r} per step">${bracketBars(st)}</div><div class="brk-l">${bracketLabels()}</div>
   <p class="note">${bracketNote(st)}</p></div>
  ${walkMode() ? `<section class="walkbtns"><p class="note">Walk with the joystick (drag anywhere on the scene) or tap where you want to go. The arrows at the edges lead on to the next place; the steps you take count here.</p></section>` : ''}
  ${typeof chalCard === 'function' ? chalCard() : ''}${typeof reqList === 'function' && reqList() ? `<section class="chal px glass"><div class="sec-h"><h2>Requests you’re helping with</h2></div>${reqList()}</section>` : ''}${hereCard()}</div><div class="col">
  <section class="pending"><div class="sec-h"><h2>Encounters</h2><span class="count tnum">${q.length}/${RULES.steps.maxEncounters}</span></div>
-  <p class="note">${q.length >= RULES.steps.maxEncounters ? 'Your area is full. Battle or tax a few to make room.' : `Next one in about ${fmt(Math.ceil((RULES.steps.encounterEverySE - S.meter) / r))} steps.`} You only see their level until the battle starts.</p>
+  <p class="note">${q.length >= RULES.steps.maxEncounters ? 'Your area is full. Battle or tax a few to make room.' : `Next one in about ${fmt(Math.ceil((RULES.steps.encounterEverySE - saveData.meter) / r))} steps.`} You only see their level until the battle starts.</p>
   ${q.length ? `<div class="queue">${q.map(encCard).join('')}</div>` : `<div class="empty px">No Billies nearby. Walk about ${fmt(RULES.steps.encounterEverySE)} steps and one will wander over.</div>`}</section>
  ${eggSlots()}${buddyCard()}</div></div></div>`;
 }
@@ -1039,7 +1039,7 @@ const ROOM_KIND = {
 };
 provide({ ROOM_KIND }); /* to-module */
 function roomFor(a, p) {
-  if ((S.preferences || {}).rooms === 'quick' && a !== 'home') return null;
+  if ((saveData.preferences || {}).rooms === 'quick' && a !== 'home') return null;
   if (a !== 'home' && p) {
     if (p.room && mapById(p.room)) return p.room;
     const M = walkData().sc.props[p.k],
@@ -1052,11 +1052,11 @@ function roomFor(a, p) {
 function enterRoom(a, p) {
   const id = roomFor(a, p);
   if (!id || !walkView.pl) return false;
-  const here = ROUTE[S.route.node];
+  const here = ROUTE[saveData.route.node];
   const info = {
     id,
     kind: a,
-    node: S.route.node,
+    node: saveData.route.node,
     shop: a === 'shop' ? p.shop || here.shop || null : null,
     p,
     name: p.label || (a === 'shop' && SHOPS[p.shop || here.shop] ? SHOPS[p.shop || here.shop].name : null),
@@ -1222,7 +1222,7 @@ function roomAct(h) {
     return;
   }
   if (pa === 'shop' && I.kind !== 'shop') {
-    const here = ROUTE[S.route.node],
+    const here = ROUTE[saveData.route.node],
       id = h.p.shop || here.shop;
     if (id && SHOPS[id]) openShop(id);
     else toast(h.p.say || 'Nothing for sale today.');
@@ -1246,7 +1246,7 @@ function roomAct(h) {
 function roomState() {
   const I = U.inside;
   if (!I) return null;
-  if (I.node !== S.route.node) {
+  if (I.node !== saveData.route.node) {
     U.inside = null;
     return null;
   }
@@ -1260,7 +1260,7 @@ function roomState() {
       pos = walkView.id === I.view && walkView.pl ? [walkView.pl.x, walkView.pl.z] : [dr[0], dr[1] - 0.45];
     return {
       id: I.view,
-      node: S.route.node,
+      node: saveData.route.node,
       mode: 'roam',
       pos,
       roam: true,
@@ -1278,7 +1278,7 @@ function roomState() {
   const pos = U.roam && U.roam.id === I.id ? [U.roam.x, U.roam.z] : mapHub(sc);
   return {
     id: I.id,
-    node: S.route.node,
+    node: saveData.route.node,
     mode: 'roam',
     pos,
     roam: true,
@@ -1295,7 +1295,7 @@ function walkState() {
     const sc = mapById(U.bench.id);
     return {
       id: U.bench.id,
-      node: S.route.node,
+      node: saveData.route.node,
       mode: 'roam',
       pos: mapHub(sc),
       roam: true,
@@ -1305,7 +1305,7 @@ function walkState() {
       exits: [],
     };
   }
-  const r = S.route,
+  const r = saveData.route,
     node = r.node,
     nx = walkMode() ? null : nextStop(),
     c = nx != null ? linkCost(node, nx) : 0,
@@ -1387,25 +1387,25 @@ function walkState() {
   const sc = mapById(v.id) || {},
     ex = sceneExits(v.node),
     bl = blockerAt(v.node),
-    dest = v.node === node ? (walkMode() ? (S.route.plan[0] ?? null) : nextStop()) : null;
+    dest = v.node === node ? (walkMode() ? (saveData.route.plan[0] ?? null) : nextStop()) : null;
   v.exits = ADJ[v.node]
     .map(e => ({
       i: ex[e.to],
       to: e.to,
       name: ROUTE[e.to].name,
       dest: e.to === dest,
-      locked: !canEnter(e.to) || (!!bl && !S.visited[e.to]),
+      locked: !canEnter(e.to) || (!!bl && !saveData.visited[e.to]),
     }))
     .filter(e => e.i != null);
   v.npcs = trainersAt(v.node)
-    .filter(T => !(T.blocks && S.flags[T.id] && !T.seat))
+    .filter(T => !(T.blocks && saveData.flags[T.id] && !T.seat))
     .map(T => {
       let exit = null;
-      if (T.blocks && !S.flags[T.id]) {
-        const e = v.exits.find(e => !S.visited[e.to]);
+      if (T.blocks && !saveData.flags[T.id]) {
+        const e = v.exits.find(e => !saveData.visited[e.to]);
         if (e && sc.exits) exit = sc.exits[e.i];
       }
-      return { who: T.who, id: T.id, done: !!S.flags[T.id], exit, dir: 'down' };
+      return { who: T.who, id: T.id, done: !!saveData.flags[T.id], exit, dir: 'down' };
     });
   /* alpha 0.4: people who only talk (Granny Juniper in her garden): the place's own (scene.people), in the view's metres */
   {
@@ -1426,11 +1426,11 @@ function walkState() {
           });
   }
   v.who = 'me';
-  v.enc = S.queue.map(q => ({ id: q.id, lvl: q.lvl, sp: q.sp, gold: q.gold, alpha: !!q.alpha }));
+  v.enc = saveData.queue.map(q => ({ id: q.id, lvl: q.lvl, sp: q.sp, gold: q.gold, alpha: !!q.alpha }));
   return v;
 }
 export function walkPick(h) {
-  const node = S.route.node,
+  const node = saveData.route.node,
     here = ROUTE[node];
   if (U.inside) {
     if (h.k === 'exit') {
@@ -1443,7 +1443,7 @@ export function walkPick(h) {
     }
   }
   if (h.k === 'enc') {
-    const q = S.queue.find(x => x.id === h.e.id);
+    const q = saveData.queue.find(x => x.id === h.e.id);
     if (q) {
       U.encAt = h.look || null;
       startWild(q);
@@ -1521,7 +1521,7 @@ function exitPrompt(e) {
     return;
   }
   if (e.locked) {
-    const bl = blockerAt(S.route.node);
+    const bl = blockerAt(saveData.route.node);
     toast(bl ? `${bl.name} is blocking the way. Beat them first.` : 'That road is closed.');
     return;
   }
@@ -1548,7 +1548,7 @@ function exitPrompt(e) {
   }
   modal({
     title: `Walk to ${esc(o.name)}?`,
-    html: `<p class="note">${esc(o.blurb || '')}</p><p><b class="tnum">${fmt(t.steps)} steps</b> · about ${km(t.steps)} km${S.visited[to] ? '' : ' · somewhere new'}</p>${poolStrip(o.pool)}<p class="note">Your real steps walk you there. You can stop or change plans any time.</p>`,
+    html: `<p class="note">${esc(o.blurb || '')}</p><p><b class="tnum">${fmt(t.steps)} steps</b> · about ${km(t.steps)} km${saveData.visited[to] ? '' : ' · somewhere new'}</p>${poolStrip(o.pool)}<p class="note">Your real steps walk you there. You can stop or change plans any time.</p>`,
     btns: [
       {
         l: `${uiIconHTML('walk', 16)} Start walking`,
@@ -1590,7 +1590,7 @@ function walkOff(id) {
 function walkCross() {
   if (
     !walkMode() ||
-    !S.started ||
+    !saveData.started ||
     !walkView.ready ||
     !walkView.sc ||
     !walkView.pl ||
@@ -1602,7 +1602,7 @@ function walkCross() {
     return;
   const sc = walkView.sc,
     P = walkView.pl,
-    node = S.route.node,
+    node = saveData.route.node,
     parts = sc.parts;
   if (!parts) return;
   for (const q of parts) {
@@ -1620,7 +1620,7 @@ function walkCross() {
     const bl = blockerAt(node),
       why = !canEnter(n)
         ? gateText(ROUTE[n])
-        : bl && !S.visited[n]
+        : bl && !saveData.visited[n]
           ? `${bl.name} is blocking the way. Beat them first.`
           : null;
     if (why) {
@@ -1637,10 +1637,10 @@ function walkCross() {
       }
       return;
     }
-    const r = S.route,
+    const r = saveData.route,
       plan = r.plan && r.plan[0] === n ? r.plan.slice(1) : [];
-    S.route = { node: n, prog: 0, plan, hold: false };
-    S.visited[n] = 1;
+    saveData.route = { node: n, prog: 0, plan, hold: false };
+    saveData.visited[n] = 1;
     U.roam = { id: q.id, node: n, x, z };
     U.arrive = null;
     U.backAt = null;
@@ -1655,7 +1655,7 @@ function walkCross() {
 setInterval(() => {
   try {
     if (
-      !S.started ||
+      !saveData.started ||
       U.tab !== 'walk' ||
       (typeof B !== 'undefined' && B) ||
       (typeof CS !== 'undefined' && CS.on) ||
@@ -1688,14 +1688,14 @@ function walkSceneSync() {
     if (walkView.cv) stopWalkView();
     return;
   }
-  const on = S.started && U.tab !== 'map' && !!sceneIdAt(S.route.node),
+  const on = saveData.started && U.tab !== 'map' && !!sceneIdAt(saveData.route.node),
     walk = on && U.tab === 'walk';
   let cv = $('#dio');
   document.body.classList.toggle('on-walk', walk);
   document.body.classList.toggle('on-scene', on && !walk);
   if (!on) {
     if (walkView.cv) stopWalkView();
-    if (U.tab === 'map' && S.started && typeof worldMapGlWanted === 'function' && worldMapGlWanted()) {
+    if (U.tab === 'map' && saveData.started && typeof worldMapGlWanted === 'function' && worldMapGlWanted()) {
       if (cv) {
         cv.hidden = false;
         cv.classList.add('in');
@@ -1748,7 +1748,7 @@ function walkSceneSync() {
           /^int_/.test(walkView.id || '')
         )
           return;
-        const sid = sceneIdAt(S.route.node),
+        const sid = sceneIdAt(saveData.route.node),
           po = walkOff(sid),
           o = po || (walkView.sc && walkView.sc.baseOff) || [0, 0],
           bk = U.backAt;
@@ -1759,7 +1759,7 @@ function walkSceneSync() {
         }
         U.roam = {
           id: po ? sid : (walkView.sc && walkView.sc.baseId) || walkView.id,
-          node: S.route.node,
+          node: saveData.route.node,
           x: x - o[0],
           z: z - o[1],
         };
@@ -1802,16 +1802,16 @@ function renderMap() {
 function poolStrip(pool) {
   const P = POOLS[pool];
   if (!P) return '';
-  return `<div class="poolstrip">${P.list.map(([id]) => (S.seen[id] ? rigCanvasHTML(id, 36) : rigCanvasHTML(id, 36, { sil: 1, still: 1 }))).join('')}</div>`;
+  return `<div class="poolstrip">${P.list.map(([id]) => (saveData.seen[id] ? rigCanvasHTML(id, 36) : rigCanvasHTML(id, 36, { sil: 1, still: 1 }))).join('')}</div>`;
 }
 function mapCardHTML() {
-  const sel = U.mapSel == null ? S.route.node : U.mapSel;
+  const sel = U.mapSel == null ? saveData.route.node : U.mapSel;
   if (typeof sel === 'string') {
     const f = FUTURE[+sel.slice(1)];
     return `<div class="mc-top"><h2>${esc(f.name)}</h2><span class="sub">${f.t === 'sun' ? 'Center of the world' : 'Unexplored'}</span></div><p>${esc(f.blurb || '')}</p><p class="note">${f.t === 'sun' ? 'Visible from everywhere in the Hollow Earth.' : 'No trainer from Marigold Town has walked this far yet. The road opens in a later version.'}</p>`;
   }
   const n = ROUTE[sel],
-    node = S.route.node,
+    node = saveData.route.node,
     dest = tripDest(),
     st = tripStatus(),
     here = sel === node;
@@ -1836,7 +1836,7 @@ function mapCardHTML() {
               .map(i => esc(ROUTE[i].name))
               .join(', ')}`
           : ''
-      }${S.visited[sel] ? '' : ' · new place'}.`;
+      }${saveData.visited[sel] ? '' : ' · new place'}.`;
       btns = `<button class="pb small gold" data-a="travel" data-n="${sel}">${uiIconHTML('walk', 16)} Travel here</button>`;
     }
   }
@@ -1865,7 +1865,7 @@ const meter = (k, inner, v) => `<div class="tm-meter"><span>${k}</span>${inner}<
 function teamHero(m) {
   const s = SP[m.sp],
     mx = maxHp(m),
-    bud = m.uid === S.buddy;
+    bud = m.uid === saveData.buddy;
   return `<section class="tm-hero tpanel"><button class="tm-stage" data-a="mon" data-u="${m.uid}" style="${plateVars(m)}" aria-label="${esc(N(m))}, details"><span class="tm-ribbon">Lead</span>${m.gold ? '<span class="tm-ribbon gold">Golden</span>' : ''}${rigCanvasHTML(m.sp, 120, { gold: m.gold })}</button>
  <div class="tm-info"><div class="tm-name"><h2>${esc(N(m))}</h2><span class="lv tnum">Lv ${m.lvl}</span></div>${m.nick ? `<div class="tm-sp">${esc(s.name)}</div>` : ''}
   <div class="row">${s.types.map(chip).join('')}${monState(m)}${bud ? `<span class="badge bud">${uiIconHTML('heart', 11)} Buddy</span>` : ''}</div>
@@ -1874,14 +1874,14 @@ function teamHero(m) {
 }
 function teamCard(m, i) {
   const mx = maxHp(m),
-    bud = m.uid === S.buddy;
+    bud = m.uid === saveData.buddy;
   return `<div class="tm-card${m.hp <= 0 ? ' down' : ''}" style="--d:${i * 40}ms"><button class="tm-main" data-a="mon" data-u="${m.uid}"><span class="tm-spr" style="${plateVars(m)}">${rigCanvasHTML(m.sp, 72, { gold: m.gold })}${bud ? `<i class="tm-heart" title="Buddy">${uiIconHTML('heart', 12)}</i>` : ''}</span>
   <span class="tm-t"><b>${esc(N(m))}</b><span class="tm-lv tnum">Lv ${m.lvl}</span></span><span class="row">${SP[m.sp].types.map(chip).join('')}${monState(m)}</span>${hpBar(m.hp, mx)}<span class="hpn tnum">${m.hp}/${mx} HP</span></button>
   <div class="tm-quick"><button class="qk" data-a="mlead" data-u="${m.uid}" ${m.hp <= 0 ? 'disabled' : ''}>Make lead</button>${needsCare(m) ? `<button class="qk heal" data-a="mheal" data-u="${m.uid}">Heal</button>` : ''}</div></div>`;
 }
 function jobSlots() {
-  const open = S.jobs.map((j, i) => (j.uid ? -1 : i)).filter(i => i >= 0);
-  return `<div class="jobs">${S.jobs
+  const open = saveData.jobs.map((j, i) => (j.uid ? -1 : i)).filter(i => i >= 0);
+  return `<div class="jobs">${saveData.jobs
     .map((j, i) => {
       if (!j.uid)
         return i !== open[0]
@@ -1901,7 +1901,7 @@ const BOXSORT = [
   ['name', 'Name'],
 ];
 function boxSection() {
-  const all = S.box.filter(m => m.job == null),
+  const all = saveData.box.filter(m => m.job == null),
     so = U.boxSort || 'new',
     types = [...new Set(all.flatMap(m => SP[m.sp].types))].sort();
   let f = U.boxF || 'all';
@@ -1913,7 +1913,7 @@ function boxSection() {
       : so === 'name'
         ? L.slice().sort((a, b) => N(a).localeCompare(N(b)))
         : L.slice().reverse();
-  const full = S.team.length >= TEAM_MAX();
+  const full = saveData.team.length >= TEAM_MAX();
   const tools =
     all.length > 3
       ? `<div class="fchips tm-tools" role="group" aria-label="Sort and filter storage">${BOXSORT.map(([k, l]) => `<button class="fchip${so === k ? ' on' : ''}" data-a="boxsort" data-k="${k}" aria-pressed="${so === k}">${l}</button>`).join('')}${types.length > 1 ? `<span class="tm-sep" aria-hidden="true"></span><button class="fchip${f === 'all' ? ' on' : ''}" data-a="boxf" data-f="all" aria-pressed="${f === 'all'}">All types</button>${types.map(t => `<button class="fchip tdot${f === t ? ' on' : ''}" data-a="boxf" data-f="${t}" style="--tc:${TC[t][0]}" aria-pressed="${f === t}"><i></i>${t === 'None' ? 'Normal' : t}</button>`).join('')}` : ''}</div>`
@@ -1926,17 +1926,17 @@ function boxSection() {
   }</section>`;
 }
 function renderTeam() {
-  const lead = S.team[0],
-    rest = S.team.slice(1),
-    free = S.box.filter(m => m.job == null).length,
-    open = Math.max(0, TEAM_MAX() - S.team.length),
-    work = S.jobs.filter(j => j.uid).length;
+  const lead = saveData.team[0],
+    rest = saveData.team.slice(1),
+    free = saveData.box.filter(m => m.job == null).length,
+    open = Math.max(0, TEAM_MAX() - saveData.team.length),
+    work = saveData.jobs.filter(j => j.uid).length;
   const slots = open
     ? `<div class="tm-card empty tm-open"><span class="tm-plus" aria-hidden="true">+</span><span class="tm-ot"><b>${open === 1 ? '1 open spot' : `${open} open spots`}</b><span class="note">${free ? 'Bring someone back from storage.' : 'Tax more in the grass, or hatch an egg.'}</span></span>${free ? '<button class="qk" data-a="tmadd">Add from storage</button>' : ''}</div>`
     : '';
-  return `<header class="bar"><div><div class="sub">${S.team.length} of ${TEAM_MAX()} on your team</div><h1 class="where">Your team</h1></div></header>
- <div class="tm-top">${lead ? teamHero(lead) : ''}<section class="tpanel tm-party"><div class="sec-h"><h2>Party</h2><span class="count tnum">${S.team.length}/${TEAM_MAX()}</span></div><p class="note">Your lead goes first in battle. Tap a card for details.</p><div class="tm-grid">${rest.map(teamCard).join('')}${slots}</div></section></div>
- <section class="tpanel tm-jobs"><div class="sec-h"><h2>Day jobs</h2><span class="count tnum">${work}/${S.jobs.length}</span></div><p class="note">Billies at work leave your team and earn pay while you walk.</p>${jobSlots()}</section>
+  return `<header class="bar"><div><div class="sub">${saveData.team.length} of ${TEAM_MAX()} on your team</div><h1 class="where">Your team</h1></div></header>
+ <div class="tm-top">${lead ? teamHero(lead) : ''}<section class="tpanel tm-party"><div class="sec-h"><h2>Party</h2><span class="count tnum">${saveData.team.length}/${TEAM_MAX()}</span></div><p class="note">Your lead goes first in battle. Tap a card for details.</p><div class="tm-grid">${rest.map(teamCard).join('')}${slots}</div></section></div>
+ <section class="tpanel tm-jobs"><div class="sec-h"><h2>Day jobs</h2><span class="count tnum">${work}/${saveData.jobs.length}</span></div><p class="note">Billies at work leave your team and earn pay while you walk.</p>${jobSlots()}</section>
  ${boxSection()}`;
 }
 const RARN = { starter: 'Starter', common: 'Common', uncommon: 'Uncommon', rare: 'Rare', mythical: 'Mythical' };
@@ -1952,7 +1952,7 @@ const TRACKS = {
   shell: 'A slow, shiny trail',
 };
 function dexStatus(id) {
-  return S.caught[id] ? 'got' : S.seen[id] ? 'seen' : 'none';
+  return saveData.caught[id] ? 'got' : saveData.seen[id] ? 'seen' : 'none';
 }
 function guideTabs() {
   const t = U.guideTab || 'dex';
@@ -1965,19 +1965,19 @@ function guideTabs() {
     .join('')}</div>`;
 }
 function renderLedger() {
-  if (U.dex && SP[U.dex] && S.seen[U.dex]) return renderDexEntry(U.dex);
+  if (U.dex && SP[U.dex] && saveData.seen[U.dex]) return renderDexEntry(U.dex);
   if (U.guideTab === 'cards' && typeof renderPostcards === 'function')
     return `<header class="bar"><div><div class="sub">Greetings from every town you’ve walked into</div><h1 class="where">Postcards</h1></div></header>${guideTabs()}${renderPostcards()}`;
   if (U.guideTab === 'lore' && typeof renderLore === 'function')
     return `<header class="bar"><div><div class="sub">The world, the story, the people</div><h1 class="where">Lore</h1></div></header>${guideTabs()}${renderLore()}`;
-  const seen = DEX.filter(id => S.seen[id]).length,
-    got = DEX.filter(id => S.caught[id]).length,
+  const seen = DEX.filter(id => saveData.seen[id]).length,
+    got = DEX.filter(id => saveData.caught[id]).length,
     f = U.dexF || 'all';
   const list = DEX.filter(id => {
     const st = dexStatus(id);
     if (f === 'got') return st === 'got';
     if (f === 'miss') return st !== 'got';
-    if (TYPES.includes(f)) return S.seen[id] && SP[id].types.includes(f);
+    if (TYPES.includes(f)) return saveData.seen[id] && SP[id].types.includes(f);
     return true;
   });
   const chips =
@@ -2032,11 +2032,11 @@ function evoMethod(e) {
 }
 function renderDexEntry(id) {
   const s = SP[id],
-    got = !!S.caught[id],
+    got = !!saveData.caught[id],
     L = LN[s.line],
     D = (RIGS[id] && RIGS[id].front) || {},
     idx = DEX.indexOf(id);
-  const seenList = DEX.filter(x => S.seen[x]),
+  const seenList = DEX.filter(x => saveData.seen[x]),
     si = seenList.indexOf(id),
     prev = seenList[si - 1],
     next = seenList[si + 1];
@@ -2060,7 +2060,7 @@ function renderDexEntry(id) {
   const chain = L.names
     .map((n, st) => {
       const sid = L.id + st,
-        sn = S.seen[sid],
+        sn = saveData.seen[sid],
         prev = L.split && st === 3 ? L.id + '1' : L.id + (st - 1);
       return `${st ? `<span class="evarrow"><i>→</i><small>${esc(L.split && st >= 2 ? (st === 2 ? 'Build path' : 'Hype path') : evoMethod(SP[prev].evo))}</small></span>` : ''}<button class="evnode${sid === id ? ' cur' : ''}" data-a="dex" data-s="${sid}" ${sn ? '' : 'disabled'}>${sn ? rigCanvasHTML(sid, 44) : rigCanvasHTML(sid, 44, { sil: 1, still: 1 })}<small>${sn ? esc(n) : '???'}</small></button>`;
     })
@@ -2099,7 +2099,7 @@ function badgeSlots() {
     name: String(T.seat.title || 'Badge').split(' · ')[0],
     leader: T.name,
     coin: COINS[T.seat.coin] ? T.seat.coin : 'penny',
-    got: S.seats.includes(T.seat.id),
+    got: saveData.seats.includes(T.seat.id),
   }));
   return {
     got: known.filter(b => b.got).length,
@@ -2119,56 +2119,56 @@ function badgeSlots() {
   };
 }
 function renderProfile() {
-  const name = cleanTrainer(S.avatar, S.gender).name,
-    seen = DEX.filter(id => S.seen[id]).length,
-    got = DEX.filter(id => S.caught[id]).length,
-    places = ROUTE.filter((r, i) => S.visited[i]).length,
+  const name = cleanTrainer(saveData.avatar, saveData.gender).name,
+    seen = DEX.filter(id => saveData.seen[id]).length,
+    got = DEX.filter(id => saveData.caught[id]).length,
+    places = ROUTE.filter((r, i) => saveData.visited[i]).length,
     bd = badgeSlots(),
-    bud = findMon(S.buddy);
-  const beat = Object.keys(S.flags).filter(k => TRAINERS[k] && S.flags[k]).length,
-    since = S.since
-      ? new Date(S.since).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
+    bud = findMon(saveData.buddy);
+  const beat = Object.keys(saveData.flags).filter(k => TRAINERS[k] && saveData.flags[k]).length,
+    since = saveData.since
+      ? new Date(saveData.since).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
       : null;
   const tile = (ic, k, v, sub, p) =>
     `<div class="pf-tile"><span class="pf-k">${ic}${k}</span><b class="tnum">${v}</b>${sub ? `<small>${sub}</small>` : ''}${p != null ? bar(p, 'gold') : ''}</div>`;
-  const items = Object.keys(ITEMS).filter(k => S.items[k] > 0);
+  const items = Object.keys(ITEMS).filter(k => saveData.items[k] > 0);
   return `<header class="bar"><div><div class="sub">Your profile</div><h1 class="where">Trainer</h1></div><button class="pb small quiet" data-a="settings">${uiIconHTML('gear', 16)} Settings</button></header>
  <div class="pf-top"><section class="tcard">
-  <div class="tc-band"><span>Trainer card</span><span class="tnum">ID No. ${String(S.tid || 0).padStart(5, '0')}</span></div>
+  <div class="tc-band"><span>Trainer card</span><span class="tnum">ID No. ${String(saveData.tid || 0).padStart(5, '0')}</span></div>
   <div class="tc-body"><div class="tc-photo"><div class="tc-portrait">${humanHTML('me', 92)}</div><button class="pb small" data-a="customize">Edit look</button></div>
-   <div class="tc-info"><h2 class="tc-name">${esc(name)}</h2><dl class="tc-dl"><div><dt>Money</dt><dd class="tnum">${coinHTML('penny', 16)} $${fmt(S.se)}</dd></div><div><dt>Now in</dt><dd>${esc(ROUTE[S.route.node].name)}</dd></div>${since ? `<div><dt>Started</dt><dd>${esc(since)}</dd></div>` : ''}<div><dt>Buddy</dt><dd>${bud ? esc(N(bud)) : 'None yet'}</dd></div></dl></div></div>
+   <div class="tc-info"><h2 class="tc-name">${esc(name)}</h2><dl class="tc-dl"><div><dt>Money</dt><dd class="tnum">${coinHTML('penny', 16)} $${fmt(saveData.se)}</dd></div><div><dt>Now in</dt><dd>${esc(ROUTE[saveData.route.node].name)}</dd></div>${since ? `<div><dt>Started</dt><dd>${esc(since)}</dd></div>` : ''}<div><dt>Buddy</dt><dd>${bud ? esc(N(bud)) : 'None yet'}</dd></div></dl></div></div>
   <div class="tc-badges"><div class="tc-bh"><span>Badges</span><b class="tnum">${bd.got} of ${bd.tot}</b></div><ol class="bdgs">${bd.html}</ol></div>
  </section>
  <section class="tpanel pf-stats"><div class="sec-h"><h2>Records</h2></div><div class="pf-grid">
-  ${tile(uiIconHTML('walk', 14), 'Steps today', fmt(S.day.steps))}${tile(uiIconHTML('walk', 14), 'Total steps', fmt(S.totalSteps))}
-  ${tile(uiIconHTML('run', 14), 'Distance walked', `${km(S.totalSteps)} km`)}${tile(uiIconHTML('map', 14), 'Places visited', `${places}/${ROUTE.length}`, null, places / ROUTE.length)}
+  ${tile(uiIconHTML('walk', 14), 'Steps today', fmt(saveData.day.steps))}${tile(uiIconHTML('walk', 14), 'Total steps', fmt(saveData.totalSteps))}
+  ${tile(uiIconHTML('run', 14), 'Distance walked', `${km(saveData.totalSteps)} km`)}${tile(uiIconHTML('map', 14), 'Places visited', `${places}/${ROUTE.length}`, null, places / ROUTE.length)}
   ${tile(uiIconHTML('ledger', 14), 'Seen', `${seen}/${DEX.length}`, null, seen / DEX.length)}${tile(coinHTML('penny', 14), 'Taxed', `${got}/${DEX.length}`, null, got / DEX.length)}
-  ${tile(uiIconHTML('fight', 14), 'Trainers beaten', fmt(beat))}${tile(eggHTML(2, 12), 'Eggs hatched', fmt(S.hatched || 0), S.eggs.length ? `${plural(S.eggs.length, 'egg')} on the way` : 'No eggs right now')}${typeof stampTile === 'function' ? stampTile(tile) : ''}
+  ${tile(uiIconHTML('fight', 14), 'Trainers beaten', fmt(beat))}${tile(eggHTML(2, 12), 'Eggs hatched', fmt(saveData.hatched || 0), saveData.eggs.length ? `${plural(saveData.eggs.length, 'egg')} on the way` : 'No eggs right now')}${typeof stampTile === 'function' ? stampTile(tile) : ''}
  </div></section></div>
  <div class="pf-row">${bud ? `<section class="tpanel pf-buddy"><div class="sec-h"><h2>Buddy</h2></div><button class="pf-bud" data-a="mon" data-u="${bud.uid}"><span class="tm-spr" style="${plateVars(bud)}">${rigCanvasHTML(bud.sp, 72, { gold: bud.gold })}</span><span class="pf-bt"><b>${esc(N(bud))}</b><span class="tnum">Lv ${bud.lvl}</span><small>You’ve walked ${km(bud.bsteps || 0)} km together.</small></span></button></section>` : ''}
  <section class="tpanel pf-bag"><div class="sec-h"><h2>Bag</h2></div>
   <div class="pf-coins">${Object.keys(COINS)
     .map(
       k =>
-        `<span class="pf-coin${S.coins[k] ? '' : ' none'}" title="${esc(COINS[k].n)}">${coinHTML(k, 22, 32)}<small>${esc(COINS[k].n.replace(/ Coins?$/, ''))}</small><b class="tnum">${fmt(S.coins[k] || 0)}</b></span>`
+        `<span class="pf-coin${saveData.coins[k] ? '' : ' none'}" title="${esc(COINS[k].n)}">${coinHTML(k, 22, 32)}<small>${esc(COINS[k].n.replace(/ Coins?$/, ''))}</small><b class="tnum">${fmt(saveData.coins[k] || 0)}</b></span>`
     )
     .join('')}</div>
-  ${items.length ? `<ul class="pf-items">${items.map(k => `<li>${itemIcon(k, 24)}<span>${esc(ITEMS[k].n)}</span><b class="tnum">×${fmt(S.items[k])}</b></li>`).join('')}</ul>` : '<p class="note">No items yet.</p>'}
+  ${items.length ? `<ul class="pf-items">${items.map(k => `<li>${itemIcon(k, 24)}<span>${esc(ITEMS[k].n)}</span><b class="tnum">×${fmt(saveData.items[k])}</b></li>`).join('')}</ul>` : '<p class="note">No items yet.</p>'}
   <p class="note">Buy coins and items at a town shop.</p></section></div>${typeof friendsHTML === 'function' ? friendsHTML() : ''}`;
 }
 function donateItem() {
   const k = Object.keys(ITEMS)
-    .filter(k => !ITEMS[k].evoItem && S.items[k] > 0)
-    .sort((a, b) => S.items[b] - S.items[a])[0];
+    .filter(k => !ITEMS[k].evoItem && saveData.items[k] > 0)
+    .sort((a, b) => saveData.items[b] - saveData.items[a])[0];
   return k || null;
 }
 function monSheet(m) {
   const s = SP[m.sp],
-    inTeam = S.team.includes(m),
+    inTeam = saveData.team.includes(m),
     e = s.evo,
     mx = maxHp(m),
-    lead = S.team[0] === m,
-    bud = S.buddy === m.uid,
+    lead = saveData.team[0] === m,
+    bud = saveData.buddy === m.uid,
     acts = [];
   const nick = {
     f: () => {
@@ -2191,8 +2191,8 @@ function monSheet(m) {
       l: m.hp > 0 ? 'Make lead' : 'Fainted, can’t lead',
       dis: m.hp <= 0,
       f: () => {
-        S.team.splice(S.team.indexOf(m), 1);
-        S.team.unshift(m);
+        saveData.team.splice(saveData.team.indexOf(m), 1);
+        saveData.team.unshift(m);
         save();
         closeModal();
         render();
@@ -2204,7 +2204,7 @@ function monSheet(m) {
       ic: 'walk',
       l: 'Make buddy',
       f: () => {
-        S.buddy = m.uid;
+        saveData.buddy = m.uid;
         save();
         closeModal();
         render();
@@ -2221,7 +2221,7 @@ function monSheet(m) {
         healPick(m, true);
       },
     });
-  if (inTeam && S.team.length > 1)
+  if (inTeam && saveData.team.length > 1)
     acts.push({
       ic: 'bag',
       l: 'Move to storage',
@@ -2235,7 +2235,7 @@ function monSheet(m) {
     });
   if (!inTeam && m.job == null)
     acts.push(
-      S.team.length < TEAM_MAX()
+      saveData.team.length < TEAM_MAX()
         ? {
             ic: 'team',
             l: 'Move to team',
@@ -2259,14 +2259,14 @@ function monSheet(m) {
   if (e && e.k === 'item' && m.lvl >= e.min) {
     const ik = e.item || 'bell',
       I = ITEMS[ik] || { n: 'Shining Stone' },
-      have = S.items[ik] || 0;
+      have = saveData.items[ik] || 0;
     acts.push({
       ic: 'spark',
       l: have ? `Use ${I.n} (${have} left)` : `Use ${I.n} (you have none)`,
       c: have ? 'gold' : '',
       dis: !have,
       f: () => {
-        S.items[ik]--;
+        saveData.items[ik]--;
         evoRun(m, `The ${I.n} began to glow.`);
       },
     });
@@ -2279,7 +2279,7 @@ function monSheet(m) {
       l: it ? `Give away a ${ITEMS[it].n}` : 'Give away an item (you have none)',
       dis: !it,
       f: () => {
-        S.items[it]--;
+        saveData.items[it]--;
         m.donated = (m.donated || 0) + 1;
         save();
         if (m.donated >= e.n && m.lvl >= e.min) {
@@ -2311,9 +2311,9 @@ function monSheet(m) {
               l: 'Combine them',
               c: 'dark',
               f: () => {
-                S.team = S.team.filter(x => x !== other);
-                S.box = S.box.filter(x => x !== other);
-                if (S.buddy === other.uid) S.buddy = m.uid;
+                saveData.team = saveData.team.filter(x => x !== other);
+                saveData.box = saveData.box.filter(x => x !== other);
+                if (saveData.buddy === other.uid) saveData.buddy = m.uid;
                 evoRun(m, 'The two became one.');
               },
             },
@@ -2347,7 +2347,7 @@ function monSheet(m) {
           .map((n, i) => {
             const id = s.line + i;
             if (!SP[id]) return '';
-            const seen = S.seen[id] || S.caught[id] || id === m.sp;
+            const seen = saveData.seen[id] || saveData.caught[id] || id === m.sp;
             return `<div class="ms-evo ${id === m.sp ? 'on' : ''}">${seen ? rigCanvasHTML(id, 64, {}) : '<span class="ms-q">?</span>'}<b>${seen ? esc(SP[id].name) : '???'}</b></div>`;
           })
           .join('<span class="ms-arr" aria-hidden="true">›</span>')
@@ -2367,7 +2367,7 @@ function monSheet(m) {
   <div class="ms-tabs" role="tablist" aria-label="About ${esc(N(m))}" data-on="sum">${tabs.map(([k, l]) => `<button role="tab" data-a="ms-tab" data-k="${k}" aria-selected="${k === 'sum'}">${l}</button>`).join('')}</div>
   <div class="ms-pane" data-k="sum"><div class="ms-meters">${meter('HP', hpBar(m.hp, mx), `${m.hp}/${mx}`)}${meter('XP', bar(xpPart(m), 'xpb'), xpLeft(m))}</div>
    <div class="ms-chart">${st}</div>${metR}
-   ${m.job != null ? `<p class="note ms-job">${uiIconHTML('bag', 14)} Working as a ${esc(JOBS[S.jobs[m.job].job].n.toLowerCase())} right now. End the shift from Day jobs to bring it back.</p>` : ''}
+   ${m.job != null ? `<p class="note ms-job">${uiIconHTML('bag', 14)} Working as a ${esc(JOBS[saveData.jobs[m.job].job].n.toLowerCase())} right now. End the shift from Day jobs to bring it back.</p>` : ''}
    ${acts.length ? `<div class="ms-acts">${acts.map((b, i) => `<button class="pb small ${b.c || ''}" data-a="mact" data-i="${i}" ${b.dis ? 'disabled' : ''}>${b.ic ? uiIconHTML(b.ic, 15) : ''}<span>${b.l}</span></button>`).join('')}</div>` : ''}
    <p class="note ms-about">${esc(s.blurb)}</p>
    <div class="ms-nick"><label class="field-l">Nickname<input id="nick" maxlength="16" value="${esc(m.nick)}" placeholder="${esc(s.name)}" autocomplete="off" enterkeyhint="done"></label><button class="pb small" data-a="mnick">Save</button></div></div>
@@ -2398,7 +2398,7 @@ function healPick(m, back) {
     title: `Heal ${esc(N(m))}`,
     html: `<div class="ms-meters">${meter('HP', hpBar(m.hp, maxHp(m)), `${m.hp}/${maxHp(m)}`)}</div>${
       its.length
-        ? `<div class="list">${its.map(k => `<button class="pickrow" data-a="mhealuse" data-u="${m.uid}" data-it="${k}"${back ? ' data-b="1"' : ''}>${itemIcon(k, 34)}<span class="pr-t"><b>${esc(ITEMS[k].n)}</b><small>${esc(ITEMS[k].d)}</small></span><span class="pr-n tnum">×${S.items[k]}</span></button>`).join('')}</div>`
+        ? `<div class="list">${its.map(k => `<button class="pickrow" data-a="mhealuse" data-u="${m.uid}" data-it="${k}"${back ? ' data-b="1"' : ''}>${itemIcon(k, 34)}<span class="pr-t"><b>${esc(ITEMS[k].n)}</b><small>${esc(ITEMS[k].d)}</small></span><span class="pr-n tnum">×${saveData.items[k]}</span></button>`).join('')}</div>`
         : `<p>None of your items can help right now.</p><p class="note">Rest at a town clinic for free, or buy Potions at a town shop.</p>`
     }`,
     btns: [
@@ -2419,12 +2419,12 @@ function healPick(m, back) {
 function swapPick(m) {
   modal({
     title: `Swap in ${esc(N(m))}`,
-    html: `<p class="note">Your team is full. Pick who rests in storage instead.</p><div class="list">${S.team.map((o, i) => `<button class="pickrow" data-a="mswap" data-u="${m.uid}" data-o="${o.uid}">${rigCanvasHTML(o.sp, 40, { gold: o.gold })}<span class="pr-t"><b>${esc(N(o))}</b><small>Lv ${o.lvl}${i === 0 ? ', your lead' : ''}${o.uid === S.buddy ? ', buddy' : ''}</small></span></button>`).join('')}</div>`,
+    html: `<p class="note">Your team is full. Pick who rests in storage instead.</p><div class="list">${saveData.team.map((o, i) => `<button class="pickrow" data-a="mswap" data-u="${m.uid}" data-o="${o.uid}">${rigCanvasHTML(o.sp, 40, { gold: o.gold })}<span class="pr-t"><b>${esc(N(o))}</b><small>Lv ${o.lvl}${i === 0 ? ', your lead' : ''}${o.uid === saveData.buddy ? ', buddy' : ''}</small></span></button>`).join('')}</div>`,
     btns: [{ l: 'Cancel', c: 'quiet', f: closeModal }],
   });
 }
 function addPick() {
-  const free = S.box.filter(m => m.job == null).sort((a, b) => b.lvl - a.lvl);
+  const free = saveData.box.filter(m => m.job == null).sort((a, b) => b.lvl - a.lvl);
   modal({
     title: 'Add to your team',
     html: `<div class="list">${free.map(m => `<button class="pickrow" data-a="tmaddon" data-u="${m.uid}">${rigCanvasHTML(m.sp, 40, { gold: m.gold })}<span class="pr-t"><b>${esc(N(m))}</b><small>Lv ${m.lvl}, ${SP[m.sp].types.map(t => (t === 'None' ? 'Normal' : t)).join(' and ')}</small></span></button>`).join('') || '<p>Storage is empty.</p>'}</div>`,
@@ -2448,12 +2448,12 @@ function hireFlow(slot) {
 }
 function hirePick(slot, job) {
   const free = allMons().filter(m => m.job == null),
-    canTeam = S.team.filter(x => x.job == null).length > 1;
-  const list = free.filter(m => !S.team.includes(m) || canTeam);
+    canTeam = saveData.team.filter(x => x.job == null).length > 1;
+  const list = free.filter(m => !saveData.team.includes(m) || canTeam);
   modal({
     title: `Who becomes the ${JOBS[job].n.toLowerCase()}?`,
     html: list.length
-      ? `<div class="list">${list.map(m => `<button class="pickrow px" data-a="hireon" data-s="${slot}" data-j="${job}" data-u="${m.uid}">${rigCanvasHTML(m.sp, 40, { gold: m.gold })}<span class="pr-t"><b>${esc(N(m))}</b><small>${S.team.includes(m) ? 'On your team' : 'In storage'}, Lv ${m.lvl}</small></span></button>`).join('')}</div>`
+      ? `<div class="list">${list.map(m => `<button class="pickrow px" data-a="hireon" data-s="${slot}" data-j="${job}" data-u="${m.uid}">${rigCanvasHTML(m.sp, 40, { gold: m.gold })}<span class="pr-t"><b>${esc(N(m))}</b><small>${saveData.team.includes(m) ? 'On your team' : 'In storage'}, Lv ${m.lvl}</small></span></button>`).join('')}</div>`
       : '<p>Tax another Billie first. Your last one has to stay on the team.</p>',
     btns: [{ l: 'Cancel', c: 'quiet', f: closeModal }],
   });
@@ -2480,9 +2480,9 @@ function settings(tab) {
                 l: 'Erase and start over',
                 c: 'red',
                 f: () => {
-                  setS(freshKeep());
-                  S.savedAt = Date.now();
-                  lsSet(S);
+                  setSaveData(freshKeep());
+                  saveData.savedAt = Date.now();
+                  lsSet(saveData);
                   flush();
                   U.intro = 0;
                   U.pg = null;
@@ -2505,23 +2505,23 @@ function settings(tab) {
 /* o.rival (v47, from the opening): Blake's battle comes first; the welcome sheet waits until the talk after it */
 export function startGame(l, o = {}) {
   const avatar = cleanLook(U.avatarDraft || U.trainerDraft || TR_PRESETS[0]);
-  setS(freshKeep());
-  S.avatar = avatar;
+  setSaveData(freshKeep());
+  saveData.avatar = avatar;
   U.trainerDraft = null;
-  S.started = true;
-  S.gender = 'me';
-  S.wardrobe = { owned: {}, outfits: [null, null, null] };
-  S.starter = l;
+  saveData.started = true;
+  saveData.gender = 'me';
+  saveData.wardrobe = { owned: {}, outfits: [null, null, null] };
+  saveData.starter = l;
   const R = RULES.start,
     m = makeMon(l + '0', R.starterLevel);
-  S.team = [m];
-  S.buddy = m.uid;
-  S.caught[m.sp] = 1;
-  S.seen[m.sp] = 1;
-  S.since = Date.now();
-  S.route = { node: START_NODE, prog: 0, plan: [], hold: false };
-  S.visited = { [START_NODE]: 1 };
-  S.mapSeen = null;
+  saveData.team = [m];
+  saveData.buddy = m.uid;
+  saveData.caught[m.sp] = 1;
+  saveData.seen[m.sp] = 1;
+  saveData.since = Date.now();
+  saveData.route = { node: START_NODE, prog: 0, plan: [], hold: false };
+  saveData.visited = { [START_NODE]: 1 };
+  saveData.mapSeen = null;
   if (typeof storyFlags === 'function') storyFlags().copperleafNote = 1;
   for (let i = 0; i < R.starterEncounters; i++) spawn(true);
   const egg = R.starterEgg && EGGS[R.starterEgg] ? addEgg(R.starterEgg) : false;
@@ -2593,7 +2593,7 @@ document.addEventListener('click', ev => {
       scrollTo(0, 0);
       break;
     case 'setgender':
-      S.gender = d.g;
+      saveData.gender = d.g;
       save();
       closeModal();
       render();
@@ -2629,8 +2629,8 @@ document.addEventListener('click', ev => {
       settings();
       break;
     case 'card-close':
-      S.preferences = S.preferences || {};
-      S.preferences.cardClosed = true;
+      saveData.preferences = saveData.preferences || {};
+      saveData.preferences.cardClosed = true;
       save();
       render();
       requestAnimationFrame(() => {
@@ -2639,13 +2639,13 @@ document.addEventListener('click', ev => {
       });
       break;
     case 'card-open':
-      S.preferences = S.preferences || {};
-      S.preferences.cardClosed = !S.preferences.cardClosed;
+      saveData.preferences = saveData.preferences || {};
+      saveData.preferences.cardClosed = !saveData.preferences.cardClosed;
       save();
       render();
       break;
     case 'enc': {
-      const q = S.queue.find(x => x.id === d.id);
+      const q = saveData.queue.find(x => x.id === d.id);
       if (q) startWild(q);
       break;
     }
@@ -2657,11 +2657,11 @@ document.addEventListener('click', ev => {
       break;
     case 'rest': {
       const c = RULES.steps.restCost;
-      if (S.se < c) {
+      if (saveData.se < c) {
         toast(`A rest stop costs $${fmt(c)}. Walk a bit first.`);
         break;
       }
-      S.se -= c;
+      saveData.se -= c;
       healAll();
       save();
       render();
@@ -2686,9 +2686,9 @@ document.addEventListener('click', ev => {
       break;
     case 'mlead': {
       const m = findMon(d.u);
-      if (m && S.team.includes(m) && m.hp > 0) {
-        S.team.splice(S.team.indexOf(m), 1);
-        S.team.unshift(m);
+      if (m && saveData.team.includes(m) && m.hp > 0) {
+        saveData.team.splice(saveData.team.indexOf(m), 1);
+        saveData.team.unshift(m);
         save();
         render();
         toast(`${N(m)} leads the team now.`);
@@ -2698,7 +2698,7 @@ document.addEventListener('click', ev => {
     case 'mbuddy': {
       const m = findMon(d.u);
       if (m) {
-        S.buddy = m.uid;
+        saveData.buddy = m.uid;
         save();
         render();
         toast(`${N(m)} is your buddy now.`);
@@ -2722,8 +2722,8 @@ document.addEventListener('click', ev => {
     }
     case 'mteam': {
       const m = findMon(d.u);
-      if (!m || m.job != null || S.team.includes(m)) break;
-      if (S.team.length < TEAM_MAX()) {
+      if (!m || m.job != null || saveData.team.includes(m)) break;
+      if (saveData.team.length < TEAM_MAX()) {
         toTeam(m);
         save();
         render();
@@ -2736,7 +2736,7 @@ document.addEventListener('click', ev => {
       break;
     case 'tmaddon': {
       const m = findMon(d.u);
-      if (m && m.job == null && !S.team.includes(m) && S.team.length < TEAM_MAX()) {
+      if (m && m.job == null && !saveData.team.includes(m) && saveData.team.length < TEAM_MAX()) {
         toTeam(m);
         save();
         closeModal();
@@ -2748,11 +2748,11 @@ document.addEventListener('click', ev => {
     case 'mswap': {
       const m = findMon(d.u),
         o = findMon(d.o);
-      if (!m || !o || m.job != null || !S.team.includes(o) || S.team.includes(m)) break;
-      const i = S.team.indexOf(o);
+      if (!m || !o || m.job != null || !saveData.team.includes(o) || saveData.team.includes(m)) break;
+      const i = saveData.team.indexOf(o);
       toBox(o);
-      S.box.splice(S.box.indexOf(m), 1);
-      S.team.splice(i, 0, m);
+      saveData.box.splice(saveData.box.indexOf(m), 1);
+      saveData.team.splice(i, 0, m);
       m.boxedAt = null;
       save();
       closeModal();
@@ -2789,18 +2789,18 @@ document.addEventListener('click', ev => {
     case 'stoptrip':
       stopTrip();
       toast(
-        S.route.prog > 0
+        saveData.route.prog > 0
           ? 'You stopped walking. Steps won’t move you until you carry on.'
-          : `You’re staying in ${ROUTE[S.route.node].name}.`
+          : `You’re staying in ${ROUTE[saveData.route.node].name}.`
       );
       render();
       break;
     case 'stay':
-      S.route.plan = [];
-      S.route.prog = 0;
-      S.route.hold = false;
+      saveData.route.plan = [];
+      saveData.route.prog = 0;
+      saveData.route.hold = false;
       save();
-      toast(`You’re staying in ${ROUTE[S.route.node].name}.`);
+      toast(`You’re staying in ${ROUTE[saveData.route.node].name}.`);
       render();
       break;
     case 'resumetrip':
@@ -2808,7 +2808,7 @@ document.addEventListener('click', ev => {
       render();
       break;
     case 'turnback': {
-      const r = S.route,
+      const r = saveData.route,
         nx = nextStop();
       if (nx != null && r.prog > 0) {
         const c = linkCost(r.node, nx);
@@ -2853,7 +2853,7 @@ document.addEventListener('click', ev => {
     }
     case 'dex': {
       if (!d.s) break;
-      if (!S.seen[d.s]) {
+      if (!saveData.seen[d.s]) {
         toast('Not seen yet. Keep walking.');
         break;
       }
@@ -2933,7 +2933,7 @@ document.addEventListener('click', ev => {
       }
       break;
     case 'bcoin':
-      if (B && B.phase === 'coins' && S.coins[d.c] > 0) {
+      if (B && B.phase === 'coins' && saveData.coins[d.c] > 0) {
         B.coin = d.c;
         B.phase = 'aim';
         paintActions();
@@ -2984,7 +2984,7 @@ document.addEventListener('click', ev => {
         B.offer = null;
         B.events = [];
         if (d.y === '1') {
-          S.se += amt;
+          saveData.se += amt;
           say(`You took $${fmt(amt)}. ${N(A(1))} scampered off.`);
           B.over = 'bribed';
           battleStage.s[1].show = false;
@@ -3068,7 +3068,7 @@ document.addEventListener('keydown', ev => {
 });
 window.addEventListener('resize', () => {
   if (B) battleResize();
-  else if (U.tab === 'map' && S.started) worldMapFit();
+  else if (U.tab === 'map' && saveData.started) worldMapFit();
 });
 
 /* ---------- tilt ---------- */

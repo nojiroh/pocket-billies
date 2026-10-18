@@ -13,7 +13,21 @@ import { provide } from './hooks.js';
 import { clamp } from './util.js';
 import { GD, MOVES, ROUTE, RULES, SP, TRAINERS, linkCost, placeKind } from './game-data.js';
 import { loadAllMaps } from './map-files.js';
-import { B, S, U, addSteps, esc, makeMon, maxHp, save, setB, setS, setSave, setTrip, spawn } from './game-state.js';
+import {
+  B,
+  U,
+  addSteps,
+  esc,
+  makeMon,
+  maxHp,
+  save,
+  saveData,
+  setB,
+  setSave,
+  setSaveData,
+  setTrip,
+  spawn,
+} from './game-state.js';
 import { FRAME } from './frame-scheduler.js';
 import { TR_CACHE } from './person-art.js';
 import { closeDressingRoom, dressingRoom } from './dressing-room.js';
@@ -141,7 +155,7 @@ async function runFullTest(mode) {
     toast('Finish the battle first.');
     return;
   }
-  if (!S.started) {
+  if (!saveData.started) {
     toast('Start a game first.');
     return;
   }
@@ -153,8 +167,8 @@ async function runFullTest(mode) {
   STEST.on = true;
   STEST.stop = false;
   await loadAllMaps(); /* phase 04b: every map whole before the test opens them */
-  const keep = JSON.stringify(S),
-    back = { tab: U.tab, roam: U.roam, node: S.route.node },
+  const keep = JSON.stringify(saveData),
+    back = { tab: U.tab, roam: U.roam, node: saveData.route.node },
     realSave = save,
     engKeep = GD.engine ? JSON.stringify(GD.engine) : null;
   setSave(() => {}); /* nothing the test does reaches your save */
@@ -653,18 +667,18 @@ async function runFullTest(mode) {
     const battle = async classic => {
       U.bench = null;
       U.tab = 'walk';
-      S.route.node = back.node;
+      saveData.route.node = back.node;
       render();
       await stSleep(600);
       for (let i = 0; i < 40 && !(walkView.ready && walkView.id === sceneIdAt(back.node)); i++) await stSleep(200);
-      /* v43: the stage needs the walk scene open */ S.preferences = S.preferences || {};
-      const pref = S.preferences.battleStage;
-      S.preferences.battleStage = classic ? 'classic' : 'scene';
-      S.team.forEach(m => {
+      /* v43: the stage needs the walk scene open */ saveData.preferences = saveData.preferences || {};
+      const pref = saveData.preferences.battleStage;
+      saveData.preferences.battleStage = classic ? 'classic' : 'scene';
+      saveData.team.forEach(m => {
         m.hp = maxHp(m);
       });
       const q = { id: 'selftest', sp: foeSp, lvl: 5, gold: false, no: 1 };
-      S.queue = [q].concat(S.queue || []);
+      saveData.queue = [q].concat(saveData.queue || []);
       startWild(q);
       const g0 = STEST.gen || 0;
       const want = async (ph, ms) => {
@@ -696,7 +710,7 @@ async function runFullTest(mode) {
       stopTimers();
       setB(null);
       battleStageStop();
-      S.preferences.battleStage = pref;
+      saveData.preferences.battleStage = pref;
       render();
       await stSleep(600);
       if (!ok) throw new Error(why);
@@ -706,14 +720,14 @@ async function runFullTest(mode) {
     const teamBattle = async kind => {
       U.bench = null;
       U.tab = 'walk';
-      S.route.node = back.node;
+      saveData.route.node = back.node;
       render();
       await stSleep(1200);
-      S.team.forEach(m => {
+      saveData.team.forEach(m => {
         m.hp = maxHp(m);
         m.status = null;
       });
-      while (S.team.filter(m => m.job == null).length < 3) S.team.push(makeMon(foeSp, 6));
+      while (saveData.team.filter(m => m.job == null).length < 3) saveData.team.push(makeMon(foeSp, 6));
       if (kind === 'double') {
         const id = Object.keys(TRAINERS).find(
           k => TRAINERS[k].team.length >= 2 && !TRAINERS[k].team.some(m => String(m.sp).startsWith('@'))
@@ -722,7 +736,7 @@ async function runFullTest(mode) {
         startTrainer(id, { talked: true, double: true });
       } else {
         const q = { id: 'selftest-alpha', sp: foeSp, lvl: 5, gold: false, no: 1, alpha: true };
-        S.queue = [q].concat(S.queue || []);
+        saveData.queue = [q].concat(saveData.queue || []);
         startWild(q);
       }
       const g0 = STEST.gen || 0;
@@ -784,7 +798,7 @@ async function runFullTest(mode) {
         async () => {
           U.bench = null;
           U.tab = 'walk';
-          S.route = { node: 0, prog: 0, plan: [], hold: false };
+          saveData.route = { node: 0, prog: 0, plan: [], hold: false };
           {
             const h = mapHub(GD.scenes.sundown);
             U.roam = { id: 'sundown', node: 0, x: h[0], z: h[1] };
@@ -793,9 +807,9 @@ async function runFullTest(mode) {
           for (let i = 0; i < 60 && !(walkView.ready && walkView.id === 'w:sundown*'); i++) await stSleep(100);
           if (walkView.id !== 'w:sundown*')
             throw new Error('Marigold Town is not shown with its neighbours (still ' + walkView.id + ')');
-          const q0 = S.queue,
+          const q0 = saveData.queue,
             t00 = performance.now() - (NWLOG.t0 || 0);
-          S.queue = [];
+          saveData.queue = [];
           setTrip(1);
           render();
           await stSleep(600);
@@ -824,10 +838,10 @@ async function runFullTest(mode) {
             const ms = (performance.now() - t0) / Math.max(1, walkRenderer.frames - f0);
             worst = Math.max(worst, ms);
           }
-          for (let i = 0; i < 40 && !(S.route.node === 1 && S.route.prog === 0); i++) await stSleep(100);
-          S.queue = q0;
-          if (S.route.node !== 1)
-            throw new Error('never arrived at Tallgrass Meadow (' + JSON.stringify(S.route) + ')');
+          for (let i = 0; i < 40 && !(saveData.route.node === 1 && saveData.route.prog === 0); i++) await stSleep(100);
+          saveData.queue = q0;
+          if (saveData.route.node !== 1)
+            throw new Error('never arrived at Tallgrass Meadow (' + JSON.stringify(saveData.route) + ')');
           const ev = NWLOG.ev.slice(L0),
             builds = ev.filter(e => /seamless to/.test(e.msg || '')).length,
             onSpot = ev.filter(e => /built on the spot/.test(e.msg || '')).length,
@@ -861,7 +875,7 @@ async function runFullTest(mode) {
             U.inside = null;
             U.goingIn = null;
             U.tab = 'walk';
-            S.route = { node: 0, prog: 0, plan: [], hold: false };
+            saveData.route = { node: 0, prog: 0, plan: [], hold: false };
             U.roam = null;
             render();
             for (let i = 0; i < 60 && !(walkView.ready && walkView.id === 'w:sundown*'); i++) await stSleep(100);
@@ -1075,15 +1089,15 @@ async function runFullTest(mode) {
           U.bench = null;
           U.inside = null;
           U.tab = 'walk';
-          S.route.node = back.node;
+          saveData.route.node = back.node;
           render();
           await stSleep(1200);
           let od = null;
           try {
             od = localStorage.getItem('nw-opening-done');
           } catch (e) {}
-          const story0 = JSON.stringify(S.story || {});
-          S.team.forEach(m => {
+          const story0 = JSON.stringify(saveData.story || {});
+          saveData.team.forEach(m => {
             m.hp = maxHp(m);
             m.status = null;
           });
@@ -1120,8 +1134,8 @@ async function runFullTest(mode) {
               }
               await stSleep(200);
             }
-            const st = (S.story || {}).rival0,
-              healed = S.team.every(m => m.hp === maxHp(m));
+            const st = (saveData.story || {}).rival0,
+              healed = saveData.team.every(m => m.hp === maxHp(m));
             if (!tip) throw new Error('Hazel’s first tip didn’t show');
             if (!said) throw new Error('nobody spoke after the battle');
             if (st !== 'win') throw new Error('the story didn’t carry on (rival0 ' + st + ')');
@@ -1135,7 +1149,7 @@ async function runFullTest(mode) {
             }
             talkHide();
             if (typeof battleTipHide === 'function') battleTipHide();
-            S.story = JSON.parse(story0);
+            saveData.story = JSON.parse(story0);
             U.welcome = null;
             U.modal = null;
             U.mq = [];
@@ -1158,12 +1172,12 @@ async function runFullTest(mode) {
         'dio',
         async () => {
           const gid = GD.scenes.longgrass ? 'longgrass' : scenes[0];
-          S.queue = (S.queue || []).slice(0, 0);
+          saveData.queue = (saveData.queue || []).slice(0, 0);
           for (let i = 0; i < 3; i++) spawn(false);
           U.tab = 'walk';
           U.bench = null;
           const node = ROUTE.findIndex(r => r.scene === gid);
-          if (node >= 0) S.route.node = node;
+          if (node >= 0) saveData.route.node = node;
           render();
           for (let i = 0; i < 80 && !(walkView.ready && walkView.id === gid); i++) await stSleep(100);
           await stSleep(1500);
@@ -1412,7 +1426,7 @@ async function runFullTest(mode) {
       STEST.offVis = null;
     }
     if (engKeep) GD.engine = JSON.parse(engKeep);
-    setS(JSON.parse(keep));
+    setSaveData(JSON.parse(keep));
     setSave(realSave);
     U.bench = null;
     U.roam = back.roam;

@@ -11,19 +11,19 @@ expose({
   MOVES: [() => MOVES],
   PEOPLE: [() => PEOPLE],
   RM: [() => RM, v => ((RM = v), provide({ RM }))],
-  S: [() => S, v => ((S = v), provide({ S }))],
   TC: [() => TC],
   TYPEFX: [() => TYPEFX],
   U: [() => U, v => ((U = v), provide({ U }))],
   esc: [() => esc],
   liveMap: [() => liveMap],
+  saveData: [() => saveData, v => ((saveData = v), provide({ saveData }))],
 });
 /* to-module: end */
-var S = { preferences: {}, gender: 'boy', avatar: null },
+var saveData = { preferences: {}, gender: 'boy', avatar: null },
   U = {},
   B = null,
   RM = false;
-provide({ B, RM, S, U }); /* to-module */
+provide({ B, RM, U, saveData }); /* to-module */
 export const esc = s =>
   String(s == null ? '' : s).replace(
     /[&<>"']/g,

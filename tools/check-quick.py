@@ -500,10 +500,10 @@ def wait_phase(pg, want=('choose',), sec=60):
 
 
 def play(pg):
-    pg.evaluate("if(typeof titleEnd==='function')titleEnd();U.pg='girl';startGame(SP.scoop0?'scoop':RULES.start.starters[0]);S.story={met_chad:1,met_chad2:1,copperleafNote:1};Object.values(TRAINERS).forEach(T=>{if(T.intro)S.story['met_'+T.id]=1});U.modal=null;U.mq=[];renderOv();S.team.push(makeMon('ek1',18));addSteps(2400,true);U.toastQ=[];U.toastOn=false;U.modal=null;U.mq=[];renderOv();render();0")
+    pg.evaluate("if(typeof titleEnd==='function')titleEnd();U.pg='girl';startGame(SP.scoop0?'scoop':RULES.start.starters[0]);saveData.story={met_chad:1,met_chad2:1,copperleafNote:1};Object.values(TRAINERS).forEach(T=>{if(T.intro)saveData.story['met_'+T.id]=1});U.modal=null;U.mq=[];renderOv();saveData.team.push(makeMon('ek1',18));addSteps(2400,true);U.toastQ=[];U.toastOn=false;U.modal=null;U.mq=[];renderOv();render();0")
     # alpha 0.2: the legendaries count as met today, so passing through their places doesn't leave one waiting in a later
     # step (the v39 step brings the volcano's back on purpose)
-    pg.evaluate("for(const l of (RULES.legends||[]))S.story['legend_'+l.sp]=today();0")
+    pg.evaluate("for(const l of (RULES.legends||[]))saveData.story['legend_'+l.sp]=today();0")
     # alpha 0.4.1: the game walks by default now (RULES.travel 'walk'); the older steps test trips made with real steps, so
     # they run in 'steps' mode. The walking step (a041_walk) switches back
     pg.evaluate("RULES.travel='steps';0")
@@ -512,7 +512,7 @@ def play(pg):
 def go_scene(pg, node, sec=40):
     # alpha 0.4: a jump, not a walk: a neighbour whose middle is near this view's would otherwise wait for its view to be
     # prepared a few milliseconds a frame (seamless-world.js seamlessGate), which at a frame every few seconds here takes minutes
-    pg.evaluate(f"U.inside=null;U.tab='walk';S.route={{node:{node},prog:0,plan:[],hold:false}};S.visited[{node}]=1;U.roam=null;if(typeof walkView!=='undefined'&&walkView.pl)walkView.pl.fresh=true;render();0")
+    pg.evaluate(f"U.inside=null;U.tab='walk';saveData.route={{node:{node},prog:0,plan:[],hold:false}};saveData.visited[{node}]=1;U.roam=null;if(typeof walkView!=='undefined'&&walkView.pl)walkView.pl.fresh=true;render();0")
     if not until(pg, f'!!(walkView.ready&&(walkView.id===ROUTE[{node}].scene||(walkView.sc&&walkView.sc.baseId===ROUTE[{node}].scene)))', sec):   # v43: the hub may sit near an exit, so the view may be the scene with its road
         raise Exception(f'{pg.evaluate(f"ROUTE[{node}].scene")} didn’t open in {sec}s')
     f0 = pg.evaluate("typeof walkRenderer!=='undefined'&&walkRenderer.on?walkRenderer.frames:-1")
@@ -531,8 +531,8 @@ def phone_flow(b, base, R):
         if not until(pg, 'CS.choosing', 60, skip): raise Exception('never reached the starter picker')
         shot(pg, 'phone-opening-pick')
         pg.click('[data-a=cs-next]'); time.sleep(.5); pg.click('[data-a=cs-choose]'); pg.click('[data-a=cs-yes]')
-        if not until(pg, 'S.started', 40, skip): raise Exception('the game didn’t start after picking a starter')
-        R['opening'] = pg.evaluate('[S.starter,S.avatar.name,S.team.length,ROUTE[S.route.node].id]')
+        if not until(pg, 'saveData.started', 40, skip): raise Exception('the game didn’t start after picking a starter')
+        R['opening'] = pg.evaluate('[saveData.starter,saveData.avatar.name,saveData.team.length,ROUTE[saveData.route.node].id]')
         if R['opening'][3] != 'copperleaf': raise Exception(f'the game started at {R["opening"][3]}, not in Copperleaf')
         # v47: Blake battles you on the spot, with Hazel's tips; win or lose, he talks, Hazel heals you, the welcome sheet
         if not until(pg, "!!B&&B.phase==='choose'", 120): raise Exception('Blake’s first battle never reached the move menu')
@@ -542,13 +542,13 @@ def phone_flow(b, base, R):
         pg.evaluate("B.over='win';stopTimers();endBattle();0")
         if not until(pg, '!!TALK.cur', 40): raise Exception('nobody spoke after Blake’s battle')
         if not until(pg, '!TALK.on&&!!U.modal', 60, 'TALK.cur&&TALK.cur.tap()'): raise Exception('the talk after Blake’s battle never ended')
-        R['afterRival'] = pg.evaluate("({story:S.story.rival0,hp:S.team.map(m=>m.hp===maxHp(m)),welcome:U.modal&&U.modal.title})")
+        R['afterRival'] = pg.evaluate("({story:saveData.story.rival0,hp:saveData.team.map(m=>m.hp===maxHp(m)),welcome:U.modal&&U.modal.title})")
         pg.evaluate("closeModal();0")
         play(pg)
         for tab in ['walk', 'map', 'team', 'ledger', 'profile']:
             pg.evaluate(f"U.tab='{tab}';render();scrollTo(0,0);0"); time.sleep(2.5 if tab in ('walk', 'map') else .6); shot(pg, f'phone-{tab}')
-        pg.evaluate("U.tab='walk';S.route.node=0;render();openShop('sundown');0"); time.sleep(.6); shot(pg, 'phone-shop')
-        pg.evaluate("closeModal();wipe=f=>f();S.preferences.battleStage='classic';B=null;const q={id:'tq',sp:'knight1',lvl:12,gold:false,no:1};S.queue=[q];S.team.forEach(m=>{m.hp=maxHp(m)});startWild(q);0")
+        pg.evaluate("U.tab='walk';saveData.route.node=0;render();openShop('sundown');0"); time.sleep(.6); shot(pg, 'phone-shop')
+        pg.evaluate("closeModal();wipe=f=>f();saveData.preferences.battleStage='classic';B=null;const q={id:'tq',sp:'knight1',lvl:12,gold:false,no:1};saveData.queue=[q];saveData.team.forEach(m=>{m.hp=maxHp(m)});startWild(q);0")
         if wait_phase(pg) != 'choose': raise Exception('a wild battle never reached the move menu')
         shot(pg, 'phone-battle')
         pg.evaluate("stopTimers();B=null;battleStageStop();render();0")
@@ -655,7 +655,7 @@ def desktop_steps(b, base, R):
         tgt = pg.evaluate("(()=>{const h=mapHub(walkView.sc);return walkablePointNear(h[0]-3.5,h[1]-1)})()")   # v46: a few steps from where you stand (the places are bigger now)   # v46: the hub view holds the scene at its baseOff; v40: a short walk; software drawing throttles game time, so a long one can outlast the wait
         # the camera eases in after a scene opens, and a story message can be up: let both settle, then tap (twice if the first missed)
         time.sleep(2.5); pg.evaluate("U.toastQ=[];U.modal=null;U.mq=[];renderOv();0")
-        pg.evaluate("S.queue=[];if(B){B.over='ran';B.phase='end';endBattle()}U.modal=null;U.mq=[];renderOv();0"); time.sleep(.5)   # v40: no hidden encounters near the tap (a tap on one starts a battle)
+        pg.evaluate("saveData.queue=[];if(B){B.over='ran';B.phase='end';endBattle()}U.modal=null;U.mq=[];renderOv();0"); time.sleep(.5)   # v40: no hidden encounters near the tap (a tap on one starts a battle)
         # townsfolk wander about: none may stand where the tap lands (a tap on a person starts a chat instead)
         pg.evaluate("(t=>{for(const f of walkView.folk||[])if(Math.hypot(f.x-t[0],f.z-t[1])<3.5){f.x=Math.min(walkView.sc.w-1,f.x+7);f.tx=f.x;f.tz=f.z}})(%s);0" % json.dumps(tgt)); time.sleep(.3)
         # v47: and no billionaire hiding in the open nearby (its marker and label are a big target, and a tap on it starts a battle)
@@ -685,9 +685,9 @@ def desktop_steps(b, base, R):
         until(pg, '!walkView.pl.route', 45)
         roam = pg.evaluate("[+walkView.pl.x.toFixed(1),+walkView.pl.z.toFixed(1)]")
         pg.evaluate("if(typeof TALK!=='undefined'&&TALK.on&&typeof talkHide==='function')talkHide();0")
-        if abs(roam[0] - tgt[0]) > .8 or abs(roam[1] - tgt[1]) > .8: raise Exception(f'tapped {tgt}, ended at {roam} ({pg.evaluate("JSON.stringify({mode:walkView.opt.state&&walkView.opt.state().mode,route:S.route,battle:!!B,modal:U.modal&&U.modal.title,talk:TALK.on,cs:typeof CS!==\"undefined\"&&CS.on,climb:!!walkView.pl.climb,keys:Object.keys(walkView.keys||{})})")})')
+        if abs(roam[0] - tgt[0]) > .8 or abs(roam[1] - tgt[1]) > .8: raise Exception(f'tapped {tgt}, ended at {roam} ({pg.evaluate("JSON.stringify({mode:walkView.opt.state&&walkView.opt.state().mode,route:saveData.route,battle:!!B,modal:U.modal&&U.modal.title,talk:TALK.on,cs:typeof CS!==\"undefined\"&&CS.on,climb:!!walkView.pl.climb,keys:Object.keys(walkView.keys||{})})")})')
         pg.evaluate("(()=>{const n=tripTo(9).steps;setTrip(9);addSteps(n,true)})();U.toastQ=[];U.modal=null;U.mq=[];renderOv();render();0")   # alpha 0.2: the steps a trip costs follow the walk
-        if not until(pg, "S.route.node===9&&!S.route.plan.length&&(walkView.id==='pond'||(walkView.sc&&walkView.sc.baseId==='pond'))", 30): raise Exception('the trip to Willowmere didn’t arrive (' + pg.evaluate("JSON.stringify([S.route,walkView.id])") + ')')   # v43: you arrive at the exit, with the road still in view
+        if not until(pg, "saveData.route.node===9&&!saveData.route.plan.length&&(walkView.id==='pond'||(walkView.sc&&walkView.sc.baseId==='pond'))", 30): raise Exception('the trip to Willowmere didn’t arrive (' + pg.evaluate("JSON.stringify([saveData.route,walkView.id])") + ')')   # v43: you arrive at the exit, with the road still in view
         shot(pg, 'arrived')
         return f'walked to {roam}, arrived at Willowmere'
     walking()
@@ -813,9 +813,9 @@ def desktop_steps(b, base, R):
             if at[3] or abs(at[0] - r[0]) > .4 or abs(at[1] - r[1]) > .4 or abs(at[2] - r[2]) > .3: raise Exception(f'climbing the ladder ended at {[round(v, 2) for v in at[:3]]}, not on top at {[round(v, 2) for v in r[:3]]}')
             out.append(f'climbed a {r[3]} m ladder')
         # rain in battle
-        go_scene(pg, 0); pg.evaluate("environment.force={time:15,weather:'rain'};S.preferences.battleStage='classic';const q={id:'twx',sp:'knight1',lvl:8,gold:false,no:1};S.queue=[q];S.team.forEach(m=>{m.hp=maxHp(m)});startWild(q);0")
+        go_scene(pg, 0); pg.evaluate("environment.force={time:15,weather:'rain'};saveData.preferences.battleStage='classic';const q={id:'twx',sp:'knight1',lvl:8,gold:false,no:1};saveData.queue=[q];saveData.team.forEach(m=>{m.hp=maxHp(m)});startWild(q);0")
         wait_phase(pg, sec=60); bw = pg.evaluate("(()=>{const w=battleWx();return w?[w.k,battleWeatherMult('Water'),battleWeatherMult('Fire'),document.getElementById('camWorld')?document.getElementById('camWorld').dataset.wx:''] :null})()")
-        time.sleep(1); shot(pg, 'battle-rain'); pg.evaluate("stopTimers();B=null;battleStageStop();S.preferences.battleStage='scene';environment.force=null;render();0")
+        time.sleep(1); shot(pg, 'battle-rain'); pg.evaluate("stopTimers();B=null;battleStageStop();saveData.preferences.battleStage='scene';environment.force=null;render();0")
         if not bw or bw[0] != 'rain' or bw[1] <= 1 or bw[2] >= 1: raise Exception(f'rain didn’t change the battle ({bw})')
         out.append(f'rain in battle: Water ×{bw[1]}, Fire ×{bw[2]}')
         if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
@@ -863,7 +863,7 @@ def desktop_steps(b, base, R):
             if t == 'graphics': shot(pg, 'settings-graphics')
         if len(names) < 5 or any(n == 0 for n, _ in tabs) or any(o > 4 for _, o in tabs): raise Exception(f'settings tabs {names}: {tabs}')
         pg.evaluate("document.querySelector('[data-a=set-tab][data-k=game]').click();0"); time.sleep(.2)
-        c0 = pg.evaluate("S.preferences.contrast||'normal'"); pg.evaluate("document.querySelector('[data-pref-set=contrast]').click();0"); time.sleep(.2); c1 = pg.evaluate("S.preferences.contrast")
+        c0 = pg.evaluate("saveData.preferences.contrast||'normal'"); pg.evaluate("document.querySelector('[data-pref-set=contrast]').click();0"); time.sleep(.2); c1 = pg.evaluate("saveData.preferences.contrast")
         pg.evaluate("document.querySelector('[data-pref-set=contrast]').click();U.modal=null;U.mq=[];renderOv();0")
         if c0 == c1: raise Exception('the High contrast switch did nothing')
         out.append(f'{len(names)} settings tabs, switches work')
@@ -941,7 +941,7 @@ def desktop_steps(b, base, R):
     def v33():
         if not pg.evaluate("typeof liveK==='function'&&typeof worldBillyItem==='function'"): return 'not in this build'
         out = []
-        pg.evaluate("S.team.forEach(m=>{m.hp=maxHp(m);m.status=null;m.lvl=Math.max(m.lvl,12)});while(S.team.filter(m=>m.job==null).length<3)S.team.push(makeMon(DEX[(S.team.length*5+3)%DEX.length],10));S.team.forEach(m=>m.hp=maxHp(m));0")
+        pg.evaluate("saveData.team.forEach(m=>{m.hp=maxHp(m);m.status=null;m.lvl=Math.max(m.lvl,12)});while(saveData.team.filter(m=>m.job==null).length<3)saveData.team.push(makeMon(DEX[(saveData.team.length*5+3)%DEX.length],10));saveData.team.forEach(m=>m.hp=maxHp(m));0")
         tap = "B&&B.phase==='playing'&&tapMsg()"
         for kind in ('double', 'alpha'):
             if kind == 'double':
@@ -949,7 +949,7 @@ def desktop_steps(b, base, R):
                 if not tid: out.append('no trainer for a double battle'); continue
                 pg.evaluate(f"startTrainer('{tid}',{{talked:true,double:true}});0")
             else:
-                pg.evaluate("(()=>{const sp=Object.keys(SP).find(k=>SP[k].stage===0&&!RULES.start.starters.includes(SP[k].line));const q={id:'cq-alpha',sp,lvl:6,gold:false,no:1,alpha:true};S.queue.push(q);startWild(q)})()")
+                pg.evaluate("(()=>{const sp=Object.keys(SP).find(k=>SP[k].stage===0&&!RULES.start.starters.includes(SP[k].line));const q={id:'cq-alpha',sp,lvl:6,gold:false,no:1,alpha:true};saveData.queue.push(q);startWild(q)})()")
             if not until(pg, "B&&B.phase==='choose'", 90, tap): raise Exception(f'{kind}: never reached the move menu (phase {pg.evaluate("B&&B.phase")})')
             # the plates fade in with their billionaires; in software drawing that can take a few seconds
             until(pg, "document.querySelectorAll('#plates .bplate:not(.off):not(.gone)').length>=liveK(0).length+liveK(1).length", 12); time.sleep(.5)
@@ -968,12 +968,12 @@ def desktop_steps(b, base, R):
             out.append(f"{kind}: {r['mine']} vs {r['theirs']}, {r['plates']} nameplates, {picks[0]} picks ({picks[1]} aimed), {hit_two} moves in the turn" + (f", Alpha {r['big']}x size" if kind == 'alpha' else ''))
             if kind == 'alpha':
                 pg.evaluate("(async()=>{for(let i=0;i<20&&B&&B.phase==='switch';i++){const b=document.querySelector('#acts [data-a=bswitch]:not([disabled])');if(b)b.click();await new Promise(r=>setTimeout(r,200));for(let j=0;j<40&&B&&B.phase==='playing';j++){tapMsg();await new Promise(r=>setTimeout(r,150))}}})()")
-                c = pg.evaluate("""(async()=>{if(!B||B.phase!=='choose')return 'catching skipped: the battle '+(B?'is at '+B.phase:'ended');U.dbgCatch=true;B.coin=Object.keys(COINS).find(k=>S.coins[k]>0)||Object.keys(COINS)[0];S.coins[B.coin]=(S.coins[B.coin]||0)+1;B.phase='aim';paintActions();showAim();doThrow(false);
-                  for(let i=0;i<120&&B&&B.phase!=='end';i++){if(B.phase==='playing')tapMsg();await new Promise(r=>setTimeout(r,250))}U.dbgCatch=false;const m=S.team.concat(S.box).find(m=>m.alpha);return m?`caught: Alpha flag kept, boss boost dropped (${m.hp}/${maxHp(m)} HP)`:'not caught'})()""")
+                c = pg.evaluate("""(async()=>{if(!B||B.phase!=='choose')return 'catching skipped: the battle '+(B?'is at '+B.phase:'ended');U.dbgCatch=true;B.coin=Object.keys(COINS).find(k=>saveData.coins[k]>0)||Object.keys(COINS)[0];saveData.coins[B.coin]=(saveData.coins[B.coin]||0)+1;B.phase='aim';paintActions();showAim();doThrow(false);
+                  for(let i=0;i<120&&B&&B.phase!=='end';i++){if(B.phase==='playing')tapMsg();await new Promise(r=>setTimeout(r,250))}U.dbgCatch=false;const m=saveData.team.concat(saveData.box).find(m=>m.alpha);return m?`caught: Alpha flag kept, boss boost dropped (${m.hp}/${maxHp(m)} HP)`:'not caught'})()""")
                 out.append(c)
             pg.evaluate("if(B){B.over=B.over||'ran';B.phase='end';endBattle()};0"); time.sleep(2.5); pg.evaluate("U.modal=null;U.mq=[];renderOv();0")
         # the world: billionaires waiting in the grass (one an Alpha; v46: each keeps its spot), the buddy, a trainer's companion
-        pg.evaluate("S.queue=[];for(let i=0;i<3;i++){const q=spawn(false);if(!i)q.alpha=true};S.buddy=S.team[1].uid;save();0")
+        pg.evaluate("saveData.queue=[];for(let i=0;i<3;i++){const q=spawn(false);if(!i)q.alpha=true};saveData.buddy=saveData.team[1].uid;save();0")
         node = pg.evaluate("ROUTE.findIndex(r=>r.scene==='longgrass')")
         go_scene(pg, node); time.sleep(4)
         w0 = pg.evaluate("JSON.stringify(Object.fromEntries(Object.entries(walkView.enc).map(([k,v])=>[k,[v.x,v.z]])))"); time.sleep(5)
@@ -1009,7 +1009,7 @@ def desktop_steps(b, base, R):
         if still: raise Exception(f'walk cycle doesn’t move for: {", ".join(still)}')
         out.append('walk cycles move for ' + ', '.join(sorted(w)))
         # an Alpha brought below half: the shield phase
-        pg.evaluate("(()=>{const sp=Object.keys(SP).find(k=>SP[k].stage===0);const q={id:'cq-a34',sp,lvl:6,gold:false,no:1,alpha:true};S.queue.push(q);S.team.forEach(m=>{m.hp=maxHp(m);m.status=null});startWild(q)})()")
+        pg.evaluate("(()=>{const sp=Object.keys(SP).find(k=>SP[k].stage===0);const q={id:'cq-a34',sp,lvl:6,gold:false,no:1,alpha:true};saveData.queue.push(q);saveData.team.forEach(m=>{m.hp=maxHp(m);m.status=null});startWild(q)})()")
         tap = "B&&B.phase==='playing'&&tapMsg()"
         if not until(pg, "B&&B.phase==='choose'", 90, tap): raise Exception('Alpha battle never reached the move menu')
         a = json.loads(pg.evaluate("(()=>{const m=A(1);m.hp=Math.floor(maxHp(m)*.55);B.events=[];alphaPhase(1);m.hp=Math.floor(maxHp(m)*.45);alphaPhase(1);const tb=document.querySelector('#plates .turnbar');paintPlates(snapAll());return JSON.stringify({ph2:!!m.boss.ph2,shield:FV(1).shield,lines:B.events.map(e=>e.t),bar:!!document.querySelector('#plates .turnbar')})})()"))
@@ -1099,13 +1099,13 @@ def desktop_steps(b, base, R):
         if not (e['ra'] and e['a'] == 'musk2' and e['b'] == 'musk3'): raise Exception(f'split evolution: {e}')
         out.append(f"split at 32: Build → Marsox, Hype → Memeox (“{e['hint'][:60]}…”)")
         # a battle with the new starter on the 3D stage: the player's rig buffer has pixels
-        pg.evaluate("S.team.unshift(makeMon('gates0',14));S.team[0].hp=maxHp(S.team[0]);S.preferences.battleStage='scene';const q={id:'cq36',sp:'bezos1',lvl:12,gold:false,no:1};S.queue.push(q);startWild(q);0")
+        pg.evaluate("saveData.team.unshift(makeMon('gates0',14));saveData.team[0].hp=maxHp(saveData.team[0]);saveData.preferences.battleStage='scene';const q={id:'cq36',sp:'bezos1',lvl:12,gold:false,no:1};saveData.queue.push(q);startWild(q);0")
         if not until(pg, "B&&B.phase==='choose'", 90, "B&&B.phase==='playing'&&tapMsg()"): raise Exception('the starter battle never reached the move menu')
         until(pg, "(()=>{const a=actorBuffer(0),b=actorBuffer(1);return !!(a&&b)})()", 15); time.sleep(2)
         px = json.loads(pg.evaluate("(()=>{const o={};for(const i of [0,1]){const Bf=actorBuffer(i);if(!Bf){o[i]=0;continue}const d=Bf.buf.getContext('2d').getImageData(0,0,Bf.buf.width,Bf.buf.height).data;let n=0;for(let k=3;k<d.length;k+=4)if(d[k]>0)n++;o[i]=n}return JSON.stringify(o)})()"))
         shot(pg, 'v36-starter-battle')
         if px['0'] < 500 or px['1'] < 500: raise Exception(f'battle rig buffers nearly empty: {px}')
-        pg.evaluate("if(B){B.over='ran';B.phase='end';endBattle()};0"); time.sleep(2.5); pg.evaluate("U.modal=null;U.mq=[];renderOv();S.team.shift();0")
+        pg.evaluate("if(B){B.over='ran';B.phase='end';endBattle()};0"); time.sleep(2.5); pg.evaluate("U.modal=null;U.mq=[];renderOv();saveData.team.shift();0")
         out.append(f"3D-stage battle Kidling vs Primotter: both puppets drawn ({px['0']} / {px['1']} px)")
         if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
         return '; '.join(out)
@@ -1128,7 +1128,7 @@ def desktop_steps(b, base, R):
         # v47: the 16 px dial is gone; the 32 px ground is the only full-mode ground
         if pg.evaluate("engineSetting('world','nextArt')!==undefined"): raise Exception('the old 32 px ground dial is still in the settings')
         # the party walks at half weight for the Build path
-        w = pg.evaluate("(()=>{const m=S.team[0];const b0=m.bsteps||0;const extra={uid:'cq37',sp:m.sp,lvl:5,hp:10,wins:0,bsteps:0,psteps:0};S.team.push(extra);const s0=S.buddy;S.buddy=m.uid;addSteps(2000);const ps=extra.psteps;S.team.pop();S.buddy=s0;return [m.bsteps-b0,ps]})()")
+        w = pg.evaluate("(()=>{const m=saveData.team[0];const b0=m.bsteps||0;const extra={uid:'cq37',sp:m.sp,lvl:5,hp:10,wins:0,bsteps:0,psteps:0};saveData.team.push(extra);const s0=saveData.buddy;saveData.buddy=m.uid;addSteps(2000);const ps=extra.psteps;saveData.team.pop();saveData.buddy=s0;return [m.bsteps-b0,ps]})()")
         if w[0] < 2000 or w[1] < 2000: raise Exception(f'steps: buddy got {w[0]}, party member got {w[1]}')
         pth = pg.evaluate("splitPath({wins:1,bsteps:0,psteps:RULES.steps.stepsPerKm*4})")
         if pth != 'A': raise Exception(f'4 km in the party at half weight (2 km) should beat 1 win, got path {pth}')
@@ -1177,7 +1177,7 @@ def desktop_steps(b, base, R):
         if m['team'] != ['walton0'] or not m['moves'] or m['seen'] != ['walton1'] or m['caught'] or m['q']: raise Exception(f'save check: {m}')
         out.append('a save is checked against the game data: a species it no longer has is dropped with its Guide marks')
         # a wild battle with a new species on the 3D stage
-        pg.evaluate("(()=>{const q={id:'cq38',sp:'kroc0',lvl:8,gold:false,no:1};S.queue.push(q);S.team.forEach(m=>{m.hp=maxHp(m);m.status=null});startWild(q)})()")
+        pg.evaluate("(()=>{const q={id:'cq38',sp:'kroc0',lvl:8,gold:false,no:1};saveData.queue.push(q);saveData.team.forEach(m=>{m.hp=maxHp(m);m.status=null});startWild(q)})()")
         until(pg, "(()=>{const a=actorBuffer(0),b=actorBuffer(1);return !!(a&&b)})()", 15); time.sleep(2)
         px = json.loads(pg.evaluate("(()=>{const o={};for(const i of [0,1]){const Bf=actorBuffer(i);if(!Bf){o[i]=0;continue}const d=Bf.buf.getContext('2d').getImageData(0,0,Bf.buf.width,Bf.buf.height).data;let n=0;for(let k=3;k<d.length;k+=4)if(d[k]>0)n++;o[i]=n}return JSON.stringify(o)})()"))
         shot(pg, 'v38-battle')
@@ -1212,8 +1212,8 @@ def desktop_steps(b, base, R):
         # the legendary at the volcano
         node = pg.evaluate("ROUTE.findIndex(r=>r.scene==='volcano')")
         if node >= 0:
-            pg.evaluate("delete S.story['legend_rockefeller0'];delete S.caught.rockefeller0;STORY.pending=null;U.modal=null;U.mq=[];if(TALK.on&&typeof talkHide==='function')talkHide();renderOv();0"); go_scene(pg, node); time.sleep(3)
-            if not until(pg, "!!U.modal&&/leaking/.test(U.modal.title||'')", 40): raise Exception(f"the legendary at the volcano did not show up ({pg.evaluate('JSON.stringify({ready:walkView.ready,id:walkView.id,tab:U.tab,modal:U.modal&&U.modal.title,talk:TALK.on,cs:CS.on,pend:STORY.pending,flag:S.story.legend_rockefeller0,route:S.route,b:!!B})')})")
+            pg.evaluate("delete saveData.story['legend_rockefeller0'];delete saveData.caught.rockefeller0;STORY.pending=null;U.modal=null;U.mq=[];if(TALK.on&&typeof talkHide==='function')talkHide();renderOv();0"); go_scene(pg, node); time.sleep(3)
+            if not until(pg, "!!U.modal&&/leaking/.test(U.modal.title||'')", 40): raise Exception(f"the legendary at the volcano did not show up ({pg.evaluate('JSON.stringify({ready:walkView.ready,id:walkView.id,tab:U.tab,modal:U.modal&&U.modal.title,talk:TALK.on,cs:CS.on,pend:STORY.pending,flag:saveData.story.legend_rockefeller0,route:saveData.route,b:!!B})')})")
             pg.evaluate("U.modal.btns[0].f();0"); until(pg, "!!B", 6); time.sleep(2)
             foe = pg.evaluate("B&&B.sides[1].team.map(m=>[m.sp,m.lvl])[0]")
             if foe != ['rockefeller0', 42]: raise Exception(f'legendary battle foe: {foe}')
@@ -1237,7 +1237,7 @@ def desktop_steps(b, base, R):
         if f != ['eyes_sharp', 'brows_straight', 'mouth_smirk'] or no < 12 or o != ['tee', 'jeans', 'sneakers', '#C8323C'] or more < 10: raise Exception(f'dressing room: face {f}, {no} outfits, outfit {o}, more {more}')
         out.append(f'dressing room: six tabs, 12 faces, {no} outfits in three colourways, every piece under More')
         # busts in the Guide and the switch menu
-        pg.evaluate("S.seen['walton0']=1;U.tab='ledger';render();0"); time.sleep(1)
+        pg.evaluate("saveData.seen['walton0']=1;U.tab='ledger';render();0"); time.sleep(1)
         busts = pg.evaluate("document.querySelectorAll('.ledger .bust').length"); pg.evaluate("U.tab='walk';render();0")
         if busts < 100: raise Exception(f'the Guide shows {busts} busts')
         out.append(f'{busts} busts in the Guide')
@@ -1299,12 +1299,12 @@ def desktop_steps(b, base, R):
         # a trip seen on the ground: leave Marigold Town, cross the road, arrive at Tallgrass Meadow without a remount
         go_scene(pg, 0); pg.evaluate("(()=>{const h=mapHub(mapById('sundown'));U.roam={id:'sundown',node:0,x:h[0],z:h[1]}})();render();0")   # alpha 0.2: places grew; start at the hub
         if not until(pg, "walkView.id==='w:sundown*'&&walkView.ready", 30): raise Exception('Marigold Town is not shown with its roads (' + pg.evaluate('walkView.id') + ')')   # v46: a place is always shown with the first stretch of its roads
-        pg.evaluate("S.queue=[];setTrip(1);render();0"); time.sleep(1); ids = []
+        pg.evaluate("saveData.queue=[];setTrip(1);render();0"); time.sleep(1); ids = []
         per = pg.evaluate("Math.ceil(linkCost(0,1)/6)+5")   # alpha 0.2: a road's steps follow its walk
         for n in range(6):
             pg.evaluate(f"addSteps({per},true);U.modal=null;U.mq=[];renderOv();render();0"); time.sleep(2.5); ids.append(pg.evaluate("walkView.id"))
             if pg.evaluate("!walkView.ready"): raise Exception('the view went unready mid-road (a remount instead of a shift)')
-        if not until(pg, "S.route.node===1&&S.route.prog===0&&walkView.id.startsWith('w:longgrass')", 20): raise Exception(f'the walk to Tallgrass Meadow did not end on its ground ({ids})')
+        if not until(pg, "saveData.route.node===1&&saveData.route.prog===0&&walkView.id.startsWith('w:longgrass')", 20): raise Exception(f'the walk to Tallgrass Meadow did not end on its ground ({ids})')
         shot(pg, 'v43-road')
         views = [i for k, i in enumerate(ids) if k == 0 or ids[k - 1] != i]
         out.append('walked Marigold Town → Tallgrass Meadow on the ground: ' + ' → '.join(views + [pg.evaluate("walkView.id")]))
@@ -1514,12 +1514,12 @@ def desktop_steps(b, base, R):
         bad += [f'rooms sharing a floor ({k}): {", ".join(v)}' for k, v in floors.items() if len(v) > 1]
         if bad: raise Exception('; '.join(bad[:6]))
         out.append(f'{len(RT)} places, all on the roads; {len(new)} new ones with mood, lore, landmark, somewhere to sit and animals, each new town’s shop a room of its own; {len(floors)} rooms, a floor each')
-        keep = pg.evaluate("JSON.stringify({seats:S.seats,story:S.story,flags:S.flags,visited:S.visited,beaten:S.beaten||null})")
+        keep = pg.evaluate("JSON.stringify({seats:saveData.seats,story:saveData.story,flags:saveData.flags,visited:saveData.visited,beaten:saveData.beaten||null})")
         try:
-            g = pg.evaluate("""(()=>{const ix=id=>ROUTE.findIndex(r=>r.id===id),s0=S.seats,o={};
-              S.seats=['oil','retail','peak'];o.festShut=!canEnter(ix('festival'));S.seats=[...S.seats,'haven'];o.festOpen=canEnter(ix('festival'));
-              o.frozenShut=!canEnter(ix('frozen'));S.seats=[...S.seats,'bloom','vault','morel'];o.frozenStill=!canEnter(ix('frozen'));S.seats=[...S.seats,'carat'];o.frozenOpen=canEnter(ix('frozen'));
-              S.seats=s0;o.songs=ROUTE.filter(r=>!r.music||!SONGS[r.music]).filter(r=>GD.scenes[r.scene]&&GD.scenes[r.scene].v47region).map(r=>r.id+':'+r.music);
+            g = pg.evaluate("""(()=>{const ix=id=>ROUTE.findIndex(r=>r.id===id),s0=saveData.seats,o={};
+              saveData.seats=['oil','retail','peak'];o.festShut=!canEnter(ix('festival'));saveData.seats=[...S.seats,'haven'];o.festOpen=canEnter(ix('festival'));
+              o.frozenShut=!canEnter(ix('frozen'));saveData.seats=[...S.seats,'bloom','vault','morel'];o.frozenStill=!canEnter(ix('frozen'));saveData.seats=[...S.seats,'carat'];o.frozenOpen=canEnter(ix('frozen'));
+              saveData.seats=s0;o.songs=ROUTE.filter(r=>!r.music||!SONGS[r.music]).filter(r=>GD.scenes[r.scene]&&GD.scenes[r.scene].v47region).map(r=>r.id+':'+r.music);
               /* each new town's shop opens into its own room */
               o.rooms=ROUTE.filter(r=>GD.scenes[r.scene]&&GD.scenes[r.scene].v47region&&GD.scenes[r.scene].kind==='town').map(r=>{const p=GD.scenes[r.scene].props.find(p=>p.act==='shop');return [r.id,p&&roomFor('shop',p)]}).filter(([k,v])=>!v||!v.startsWith('int_')||['int_shop','int_bank','int_market_hall'].includes(v)).map(x=>x.join(' → '));return o})()""")
             if g['rooms']: raise Exception(f'new towns whose shop doesn’t open into a room of its own: {", ".join(g["rooms"])}')
@@ -1540,7 +1540,7 @@ def desktop_steps(b, base, R):
             if len(opened) != len(shops): raise Exception(f'shops that didn’t open: {sorted(set(shops) - set(opened))}')
             out.append(f'shops closed at 23:30, open at 12:30; {len(opened)} new shops open')
             # the Guide's Lore page shows the places you've been
-            pg.evaluate("ROUTE.forEach((r,i)=>{S.visited[i]=1});U.tab='ledger';U.dex=null;U.guideTab='lore';U.loreSec='places';render();scrollTo(0,0);0")
+            pg.evaluate("ROUTE.forEach((r,i)=>{saveData.visited[i]=1});U.tab='ledger';U.dex=null;U.guideTab='lore';U.loreSec='places';render();scrollTo(0,0);0")
             names = pg.evaluate("[...document.querySelectorAll('.lore .lore-card h3')].map(e=>e.textContent)")
             until(pg, "(m=>!!m&&getComputedStyle(m).opacity==='1')(document.querySelector('main.screen.s-ledger'))", 15)   # the screen fades in (slowly here)
             pg.evaluate("U.modal=null;U.mq=[];renderOv();0"); time.sleep(.6)                                   # an egg hatching or the like, not over the page
@@ -1549,10 +1549,10 @@ def desktop_steps(b, base, R):
             if gone: raise Exception(f'the Lore page doesn’t show {", ".join(gone[:5])}')
             out.append(f'the Lore page shows {len(names)} places')
             # the story: Cass Flow's clue, then Vinylla, hidden at the Inner Sun until she's beaten on the Spire, and the ending
-            pg.evaluate("U.guideTab=null;U.tab='team';render();S.preferences.battleStage='classic';wipe=f=>f();Object.values(TRAINERS).forEach(T=>{if(T.intro)storyFlags()['met_'+T.id]=1});"
-                        "['oil','retail','peak','haven','bloom','vault','morel','carat'].forEach(s=>{if(!S.seats.includes(s))S.seats.push(s)});delete S.flags.cass;delete S.flags.vinylla1;delete S.flags.vinylla2;S.team.forEach(m=>{m.hp=maxHp(m)});0")
+            pg.evaluate("U.guideTab=null;U.tab='team';render();saveData.preferences.battleStage='classic';wipe=f=>f();Object.values(TRAINERS).forEach(T=>{if(T.intro)storyFlags()['met_'+T.id]=1});"
+                        "['oil','retail','peak','haven','bloom','vault','morel','carat'].forEach(s=>{if(!saveData.seats.includes(s))saveData.seats.push(s)});delete saveData.flags.cass;delete saveData.flags.vinylla1;delete saveData.flags.vinylla2;saveData.team.forEach(m=>{m.hp=maxHp(m)});0")
             def beat(tid, pic=None):
-                pg.evaluate(f"S.team.forEach(m=>{{m.hp=maxHp(m)}});startTrainer('{tid}',{{talked:true}});0")
+                pg.evaluate(f"saveData.team.forEach(m=>{{m.hp=maxHp(m)}});startTrainer('{tid}',{{talked:true}});0")
                 if wait_phase(pg, ('choose',), 90) != 'choose': raise Exception(f'{tid}: the battle never reached the move menu')
                 pg.evaluate("B.over='win';stopTimers();endBattle();0")
                 if not until(pg, '!!U.modal', 30): raise Exception(f'{tid}: no sheet after the win')
@@ -1571,7 +1571,7 @@ def desktop_steps(b, base, R):
             if not pg.evaluate("!!storyFlags().metCass"): raise Exception('beating Cass Flow didn’t give the face clue (metCass)')
             inner = rid.index('innersun')
             hidden = pg.evaluate(f"!trainersAt({inner}).some(T=>T.id==='vinylla2')")
-            pg.evaluate("S.flags.vinylla1=1;0")
+            pg.evaluate("saveData.flags.vinylla1=1;0")
             shown = pg.evaluate(f"trainersAt({inner}).some(T=>T.id==='vinylla2')")
             if not hidden or not shown: raise Exception(f'Vinylla at the Inner Sun: hidden before the Spire {hidden}, there after {shown}')
             E = pg.evaluate("(LORE().story||[]).find(s=>s.id==='ending').title")
@@ -1580,7 +1580,7 @@ def desktop_steps(b, base, R):
             if not st[0] or st[1] != 9 or E not in sheets: raise Exception(f'the ending: flag {st[0]}, stage {st[1]}, sheets {sheets}')
             out.append(f'Cass Flow’s clue; Vinylla at the Inner Sun only after the Spire; the ending (“{E}”, stage 9)')
         finally:
-            pg.evaluate(f"(o=>{{S.seats=o.seats;S.story=o.story;S.flags=o.flags;S.visited=o.visited;if(o.beaten)S.beaten=o.beaten;U.modal=null;U.mq=[];if(typeof TALK!=='undefined')TALK.on=false;environment.force=null;PROP_CLOCK.t=0;U.guideTab=null;U.tab='walk';renderOv();render()}})({keep});0")
+            pg.evaluate(f"(o=>{{saveData.seats=o.seats;saveData.story=o.story;saveData.flags=o.flags;saveData.visited=o.visited;if(o.beaten)saveData.beaten=o.beaten;U.modal=null;U.mq=[];if(typeof TALK!=='undefined')TALK.on=false;environment.force=null;PROP_CLOCK.t=0;U.guideTab=null;U.tab='walk';renderOv();render()}})({keep});0")
         if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
         return '; '.join(out)
     v47()
@@ -1622,7 +1622,7 @@ def desktop_steps(b, base, R):
         time.sleep(3); pg.evaluate("U.modal=null;U.mq=[];renderOv();0"); shot(pg, 'a01-library-windows')
         pg.evaluate("leaveRoom();0"); until(pg, "walkView.ready&&!walkView.sc.roomRect", 30)
         # the picture setting: Sharpest by default, and 90 frames a second survives a reload of the save
-        a = pg.evaluate("(()=>{const o=S.preferences.fps;S.preferences.fps=90;const m=migrate(JSON.parse(JSON.stringify(S)));S.preferences.fps=o;return [m.preferences.fps,m.preferences.aim]})()")
+        a = pg.evaluate("(()=>{const o=saveData.preferences.fps;saveData.preferences.fps=90;const m=migrate(JSON.parse(JSON.stringify(saveData)));saveData.preferences.fps=o;return [m.preferences.fps,m.preferences.aim]})()")
         if a != [90, 'sharp']: raise Exception(f'preferences after loading: fps {a[0]} (90 wanted), aim {a[1]} (sharp wanted)')
         out.append('the library’s four windows; 90 frames a second kept, Sharpest by default')
         if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
@@ -1698,7 +1698,7 @@ def desktop_steps(b, base, R):
         door opens the lab, and a trip from Copperleaf down Route 1 arrives in Marigold Town"""
         if not pg.evaluate("typeof personTalk==='function'&&!!PLACE.copperleaf"): return 'not in this build'
         out = []; node = pg.evaluate("PLACE.copperleaf.node")
-        pg.evaluate("U.inside=null;U.goingIn=null;U.bench=null;U.modal=null;U.mq=[];renderOv();environment.force={time:11,weather:'clear',season:'summer'};S.story=S.story||{};delete S.story.met_juniper;0")
+        pg.evaluate("U.inside=null;U.goingIn=null;U.bench=null;U.modal=null;U.mq=[];renderOv();environment.force={time:11,weather:'clear',season:'summer'};saveData.story=saveData.story||{};delete saveData.story.met_juniper;0")
         go_scene(pg, node); time.sleep(2)
         j = pg.evaluate("(()=>{const p=walkView.npcAt['_talk:juniper'];return p?[+p[0].toFixed(1),+p[1].toFixed(1)]:null})()")
         if not j: raise Exception('Granny Juniper isn’t standing in Copperleaf')
@@ -1714,10 +1714,10 @@ def desktop_steps(b, base, R):
         pg.evaluate("talkHide&&talkHide();if(U.inside)leaveRoom();0"); until(pg, "walkView.ready&&!walkView.sc.roomRect", 30)
         out.append('the lab opens')
         # down Route 1 to Marigold Town, on foot
-        pg.evaluate(f"S.route={{node:{node},prog:0,plan:[PLACE.hedgerow.node,PLACE.sundown.node],hold:false}};U.roam=null;render();0")
+        pg.evaluate(f"saveData.route={{node:{node},prog:0,plan:[PLACE.hedgerow.node,PLACE.sundown.node],hold:false}};U.roam=null;render();0")
         cost = pg.evaluate(f"linkCost({node},PLACE.hedgerow.node)+linkCost(PLACE.hedgerow.node,PLACE.sundown.node)")
         pg.evaluate(f"addSteps({cost + 10},true);render();0"); time.sleep(1)
-        at = pg.evaluate("ROUTE[S.route.node].id")
+        at = pg.evaluate("ROUTE[saveData.route.node].id")
         if at != 'sundown': raise Exception(f'the trip down Route 1 ended at {at}')
         out.append(f'Copperleaf to Marigold Town is {cost} steps on foot')
         pg.evaluate("environment.force=null;U.modal=null;U.mq=[];renderOv();0")
@@ -1731,7 +1731,7 @@ def desktop_steps(b, base, R):
         been to; a ticket is paid, the flight crosses the map, and you land by the next town's mast"""
         if not pg.evaluate("typeof flyMenu==='function'&&!!PLACE.copperleaf"): return 'not in this build'
         out = []; cl = pg.evaluate("PLACE.copperleaf.node"); sd = pg.evaluate("PLACE.sundown.node")
-        pg.evaluate(f"U.inside=null;U.bench=null;U.modal=null;U.mq=[];renderOv();environment.force={{time:11,weather:'clear',season:'summer'}};S.visited[{sd}]=1;S.se=Math.max(S.se,2000);0")
+        pg.evaluate(f"U.inside=null;U.bench=null;U.modal=null;U.mq=[];renderOv();environment.force={{time:11,weather:'clear',season:'summer'}};saveData.visited[{sd}]=1;saveData.se=Math.max(saveData.se,2000);0")
         go_scene(pg, cl); time.sleep(1)
         pg.evaluate("(()=>{const p=walkView.sc.props.find(p=>p.act==='fly');walkView.pl.route=null;walkView.pl.x=p.x+2.2;walkView.pl.z=p.z-1.6})();0")
         until(pg, "propModelState.meshes.has('scene/models/airship.json')&&!!propModelState.meshes.get('scene/models/airship.json')", 60); time.sleep(2)
@@ -1742,12 +1742,12 @@ def desktop_steps(b, base, R):
         pg.evaluate("flyMenu(walkView.sc.props.find(p=>p.act==='fly'));0")
         rows = pg.evaluate("[...document.querySelectorAll('[data-a=flyto]')].map(b=>+b.dataset.n)")
         if sd not in rows: raise Exception(f'Marigold Town isn’t on the mast’s list: {rows}')
-        se0 = pg.evaluate("S.se"); fare = pg.evaluate(f"flyFare({cl},{sd})")
+        se0 = pg.evaluate("saveData.se"); fare = pg.evaluate(f"flyFare({cl},{sd})")
         pg.evaluate(f"document.querySelector('[data-a=flyto][data-n=\"{sd}\"]').click();0")
         if not until(pg, "airshipFlight.on&&U.tab==='map'", 10): raise Exception('the flight didn’t start')
         time.sleep(2.5); shot(pg, 'a04-airship-flight')
         if not until(pg, "!airshipFlight.on&&U.tab==='walk'", 30, "flySkip()"): raise Exception('the flight never landed')
-        r = pg.evaluate("[ROUTE[S.route.node].id,S.se]")
+        r = pg.evaluate("[ROUTE[saveData.route.node].id,saveData.se]")
         if r[0] != 'sundown' or se0 - r[1] != fare: raise Exception(f'landed at {r[0]}, paid {se0 - r[1]} (the fare is {fare})')
         if not until(pg, f"!!(walkView.ready&&(walkView.sc.baseId||walkView.id)===ROUTE[{sd}].scene)", 60): raise Exception('Marigold Town didn’t open after landing')
         time.sleep(1.5); d = pg.evaluate("(()=>{const sc=walkView.sc,o=sc.baseOff||[0,0],p=mapById(baseMapId()).props.find(p=>p.act==='fly');return Math.hypot(walkView.pl.x-p.x-o[0],walkView.pl.z-p.z-o[1])})()")
@@ -1789,7 +1789,7 @@ def desktop_steps(b, base, R):
         if not pg.evaluate("typeof postcardCheck==='function'"): return 'not in this build'
         sd = pg.evaluate("PLACE.sundown.node")
         # alpha 0.5: no postcard before Blake's first battle (pcFree); the checks skip the opening, so mark it as played
-        pg.evaluate("U.modal=null;U.mq=[];renderOv();U.bench=null;S.cards={};PC.last=null;PC.on=false;Object.assign(storyFlags(),{rival0:'win',met_blake0:1});0")
+        pg.evaluate("U.modal=null;U.mq=[];renderOv();U.bench=null;saveData.cards={};PC.last=null;PC.on=false;Object.assign(storyFlags(),{rival0:'win',met_blake0:1});0")
         go_scene(pg, sd)
         if not until(pg, "!!document.querySelector('.pcard-wrap.in')", 12, "postcardCheck()"): raise Exception('no postcard came on walking into Marigold Town')
         time.sleep(1.2)
@@ -1797,7 +1797,7 @@ def desktop_steps(b, base, R):
         if not ok: raise Exception('the postcard’s picture didn’t load')
         shot(pg, 'a04-postcard')
         pg.evaluate("(()=>{const w=document.querySelector('.pcard-wrap');if(w)w.click()})();0"); time.sleep(.8)   # it may have slid away by itself (9 s)
-        got = pg.evaluate("Object.keys(S.cards||{})")
+        got = pg.evaluate("Object.keys(saveData.cards||{})")
         if got != ['sundown']: raise Exception(f'the Guide keeps {got}')
         pg.evaluate("U.tab='ledger';U.guideTab='cards';render();0"); time.sleep(.6)
         n = pg.evaluate("document.querySelectorAll('.pc-thumb:not(.none)').length")
@@ -1853,10 +1853,10 @@ def desktop_steps(b, base, R):
             p0 = pg.evaluate("[walkView.pl.x,walkView.pl.z]"); pg.evaluate("walkView.stick={x:0,y:1};0"); f0 = pg.evaluate("walkRenderer.frames"); until(pg, f"walkRenderer.frames>={f0 + 4}", 120)
             pg.evaluate("walkView.stick=null;0"); p1 = pg.evaluate("[walkView.pl.x,walkView.pl.z]"); moved = ((p1[0] - p0[0]) ** 2 + (p1[1] - p0[1]) ** 2) ** .5
             if moved < .2: raise Exception(f'the joystick moved the player {moved:.2f} m')
-            pg.evaluate("S.preferences.control='dpad';renderOv();render();0"); time.sleep(.8)
-            dp = pg.evaluate("!!document.querySelector('.dpad')"); pg.evaluate("S.preferences.control='stick';renderOv();render();0")
+            pg.evaluate("saveData.preferences.control='dpad';renderOv();render();0"); time.sleep(.8)
+            dp = pg.evaluate("!!document.querySelector('.dpad')"); pg.evaluate("saveData.preferences.control='stick';renderOv();render();0")
             if not dp: raise Exception('no D-pad when the D-pad is chosen')
-            st0 = pg.evaluate("S.totalSteps")
+            st0 = pg.evaluate("saveData.totalSteps")
             r = pg.evaluate(f"""(()=>{{const v=walkState(),e=(v.exits||[]).find(e=>e.to==={n1});if(!e)return 'no exit to Route 1';const sc=walkView.sc,pt=sc.exits[e.i],hub=mapHub(sc),dx=pt[0]-hub[0],dz=pt[1]-hub[1],l=Math.hypot(dx,dz)||1,tg=[pt[0]+dx/l*6,pt[1]+dz/l*6];
               const P=walkView.pl,R=findPath(P.x,P.z,tg[0],tg[1])||[[P.x,P.z],tg];return {{R}}}})()""")
             if isinstance(r, str): raise Exception(r)
@@ -1865,7 +1865,7 @@ def desktop_steps(b, base, R):
                 d = ((bb[0] - a[0]) ** 2 + (bb[1] - a[1]) ** 2) ** .5; k = max(1, int(d / .8))
                 for j in range(1, k + 1):
                     x = a[0] + (bb[0] - a[0]) * j / k; z = a[1] + (bb[1] - a[1]) * j / k; walked += d / k
-                    if pg.evaluate(f"(()=>{{walkView.pl.x={x};walkView.pl.z={z};walkView.pl.route=null;walkCross();return S.route.node==={n1}}})()"): crossed = True; break
+                    if pg.evaluate(f"(()=>{{walkView.pl.x={x};walkView.pl.z={z};walkView.pl.route=null;walkCross();return saveData.route.node==={n1}}})()"): crossed = True; break
                 if crossed: break
             if not crossed: raise Exception(f'walked {walked:.0f} m toward Route 1 and never crossed onto it')
             shot(pg, 'a041-walked-to-route1')
@@ -1884,15 +1884,15 @@ def desktop_steps(b, base, R):
         if acc['slots']: raise Exception('the old save slots are still there')
         if not acc['box']: raise Exception('no account box in Settings → Save')
         out.append(f'one save ({acc["key"]}), the account box in Settings')
-        pg.evaluate("S.preferences.lang='nl';applyPreferences();U.tab='walk';render();0"); time.sleep(1)
+        pg.evaluate("saveData.preferences.lang='nl';applyPreferences();U.tab='walk';render();0"); time.sleep(1)
         nl = pg.evaluate("[...document.querySelectorAll('nav#nav button')].map(b=>b.textContent.trim()).join(',')")
-        pg.evaluate("S.preferences.lang='en';applyPreferences();render();0"); time.sleep(.5)
+        pg.evaluate("saveData.preferences.lang='en';applyPreferences();render();0"); time.sleep(.5)
         en = pg.evaluate("[...document.querySelectorAll('nav#nav button')].map(b=>b.textContent.trim()).join(',')")
         if 'Lopen' not in nl or 'Walk' not in en: raise Exception(f'language switch: Dutch tabs “{nl}”, back to English “{en}”')
         out.append(f'Dutch tabs: {nl}')
-        pg.evaluate("S.preferences.textSize='xlarge';S.preferences.contrast='high';applyPreferences();0"); time.sleep(.6); shot(pg, 'settings-large-contrast')
+        pg.evaluate("saveData.preferences.textSize='xlarge';saveData.preferences.contrast='high';applyPreferences();0"); time.sleep(.6); shot(pg, 'settings-large-contrast')
         a = pg.evaluate("[document.documentElement.dataset.text,document.documentElement.dataset.contrast]")
-        pg.evaluate("S.preferences.textSize='normal';S.preferences.contrast='normal';applyPreferences();0")
+        pg.evaluate("saveData.preferences.textSize='normal';saveData.preferences.contrast='normal';applyPreferences();0")
         if a != ['xlarge', 'high']: raise Exception(f'text size and contrast didn’t apply ({a})')
         out.append('larger text and high contrast apply')
         if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
@@ -1901,13 +1901,13 @@ def desktop_steps(b, base, R):
 
     @step('Battles: on the 3D stage, and a trainer battle played to the end', 330)
     def battles():
-        pg.evaluate("S.preferences.battleStage='scene';wipe=f=>f();S.route={node:0,prog:0,plan:[],hold:false};U.tab='walk';render();0"); time.sleep(2)
-        pg.evaluate("const q={id:'t3d',sp:'knight1',lvl:12,gold:false,no:1};S.queue=[q];S.team.forEach(m=>{m.hp=maxHp(m)});startWild(q);0")
+        pg.evaluate("saveData.preferences.battleStage='scene';wipe=f=>f();saveData.route={node:0,prog:0,plan:[],hold:false};U.tab='walk';render();0"); time.sleep(2)
+        pg.evaluate("const q={id:'t3d',sp:'knight1',lvl:12,gold:false,no:1};saveData.queue=[q];saveData.team.forEach(m=>{m.hp=maxHp(m)});startWild(q);0")
         if wait_phase(pg, sec=60) != 'choose': raise Exception('the 3D-stage battle never reached the move menu')
         shot(pg, 'battle-3d'); stage = pg.evaluate("!!battleStage.gl")
-        pg.evaluate("stopTimers();B=null;battleStageStop();S.preferences.battleStage='classic';render();0")
+        pg.evaluate("stopTimers();B=null;battleStageStop();saveData.preferences.battleStage='classic';render();0")
         # battle animations at four times the speed (the Debug panel's speed setting), so the result comes quickly
-        pg.evaluate("battleStage.speed=4;S.team=[makeMon('musk2',45),makeMon('ek1',30)];S.route.node=4;startTrainer('crude');0")
+        pg.evaluate("battleStage.speed=4;saveData.team=[makeMon('musk2',45),makeMon('ek1',30)];saveData.route.node=4;startTrainer('crude');0")
         end = time.time() + 300; won = None
         while time.time() < end:
             ph = wait_phase(pg, ('choose', 'switch', 'end'), 30)

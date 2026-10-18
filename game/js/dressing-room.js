@@ -8,7 +8,7 @@ import { expose } from './test-globals.js';
 import { buzz, provide, render, sfx, toast } from './hooks.js';
 import { $, $$, rnd } from './util.js';
 import { SHOPS } from './game-data.js';
-import { S, U, esc, fmt, save } from './game-state.js';
+import { U, esc, fmt, save, saveData } from './game-state.js';
 import { frameStop, frameTask } from './frame-scheduler.js';
 import { makeCanvas, uiIconHTML } from './art.js';
 import { TR_PRESETS, WD, cleanLook, portraitHTML, trBox, trColorsOf, trFrame, trSliders } from './person-art.js';
@@ -266,7 +266,7 @@ const BODY_BUILD_PRESETS = [
   ['Tall', { height: 1.1, legs: 1.1 }],
   ['Petite', { height: 0.9, legs: 0.94, head: 1.05 }],
 ];
-const wardrobeState = () => S.wardrobe || (S.wardrobe = { owned: {}, outfits: [null, null, null] });
+const wardrobeState = () => saveData.wardrobe || (saveData.wardrobe = { owned: {}, outfits: [null, null, null] });
 function owns(id) {
   const it = WD().items[id];
   return !!it && (!!it.starter || !!wardrobeState().owned[id]);
@@ -286,7 +286,7 @@ export function openDressingRoom(o = {}) {
   dressingRoom.shop = o.shop || null;
   dressingRoom.done = o.done || null;
   dressingRoom.noBack = !!o.noBack;
-  const base = o.look || (dressingRoom.mode === 'intro' ? U.trainerDraft || TR_PRESETS[0] : S.avatar);
+  const base = o.look || (dressingRoom.mode === 'intro' ? U.trainerDraft || TR_PRESETS[0] : saveData.avatar);
   dressingRoom.look = cleanLook(JSON.parse(JSON.stringify(base)));
   dressingRoom.orig = JSON.stringify(dressingRoom.look);
   dressingRoom.undo = [];
@@ -556,10 +556,10 @@ function dressingFootHTML() {
     msg = elsewhere.length
       ? `${esc(W[elsewhere[0]].name)} is sold at ${esc(shopName(W[elsewhere[0]].shop))}.`
       : cost
-        ? `You have $${fmt(S.se)}.`
+        ? `You have $${fmt(saveData.se)}.`
         : 'Pick anything to try it on.';
     btn = cost
-      ? `<button class="pb gold" data-a="dr-buy" ${S.se >= cost && !elsewhere.length ? '' : 'disabled'}>Buy and wear · $${fmt(cost)}</button>`
+      ? `<button class="pb gold" data-a="dr-buy" ${saveData.se >= cost && !elsewhere.length ? '' : 'disabled'}>Buy and wear · $${fmt(cost)}</button>`
       : `<button class="pb gold" data-a="dr-save" ${elsewhere.length ? 'disabled' : ''}>Wear this</button>`;
   } else {
     msg = un.length
@@ -739,7 +739,7 @@ export function saveDressingLook() {
     if (done) done();
     return;
   }
-  S.avatar = cleanLook(dressingRoom.look);
+  saveData.avatar = cleanLook(dressingRoom.look);
   save();
   const shop = dressingRoom.shop;
   closeDressingRoom();
@@ -752,11 +752,11 @@ function buyDressingItems() {
     mine = un.filter(id => boutiqueSells(W[id])),
     cost = mine.reduce((a, id) => a + (W[id].price || 0), 0);
   if (un.length > mine.length) return;
-  if (S.se < cost) {
+  if (saveData.se < cost) {
     toast('Not enough money. Walk a little first.');
     return;
   }
-  S.se -= cost;
+  saveData.se -= cost;
   if (typeof sfx === 'function') sfx('buy');
   const st = wardrobeState();
   for (const id of mine) st.owned[id] = 1;
@@ -770,7 +770,7 @@ function buyDressingItems() {
   const l = $('#drLine');
   if (l) l.textContent = lines[Math.floor(rnd() * lines.length)];
   toast(`Bought ${mine.map(id => W[id].name).join(', ')}.`);
-  S.avatar = cleanLook(dressingRoom.look);
+  saveData.avatar = cleanLook(dressingRoom.look);
   save();
   dressingRoom.orig = JSON.stringify(dressingRoom.look);
   refreshDressingRoom();

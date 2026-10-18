@@ -10,7 +10,7 @@ import { expose } from './test-globals.js';
 import { CS, provide, sceneIdAt } from './hooks.js';
 import { clamp } from './util.js';
 import { ROUTE } from './game-data.js';
-import { B, S, U } from './game-state.js';
+import { B, U, saveData } from './game-state.js';
 import { battleStage } from './battle-stage.js';
 import { baseMapId, bridgeAt, mapBridges, mapById, stepWallAt, terrainAt, walkData, walkView } from './walk-view.js';
 import { environment, environmentHour, environmentState } from './environment.js';
@@ -76,7 +76,7 @@ export const AUD = {
   lastStep: 0,
 };
 function audPref(k, def) {
-  const p = (typeof S !== 'undefined' && S && S.preferences) || {};
+  const p = (typeof saveData !== 'undefined' && saveData && saveData.preferences) || {};
   return p[k] == null ? def : +p[k];
 }
 function audInit() {
@@ -143,7 +143,7 @@ function audApply() {
   const m = audPref('music', 0.55),
     f = audPref('sfx', 0.8),
     t = AUD.ctx.currentTime,
-    mv = S.preferences && S.preferences.mute ? 0 : audPref('master', 1);
+    mv = saveData.preferences && saveData.preferences.mute ? 0 : audPref('master', 1);
   AUD.master.gain.setTargetAtTime(0.9 * mv * mv, t, 0.05);
   AUD.mus.gain.setTargetAtTime(m * m, t, 0.05);
   AUD.fx.gain.setTargetAtTime(f * f, t, 0.05);
@@ -743,13 +743,13 @@ function audTick() {
 }
 /* the music that fits where you are */
 export function musicFor() {
-  if (typeof S === 'undefined' || !S || !S.started) return 'hazel';
+  if (typeof saveData === 'undefined' || !saveData || !saveData.started) return 'hazel';
   if (typeof B !== 'undefined' && B)
     return B.kind === 'trainer' ? (B.T && B.T.who === 'chad' ? 'rival' : 'trainer') : 'wild';
   if (U.tab === 'map') return 'map';
-  const id = typeof sceneIdAt === 'function' ? sceneIdAt(S.route.node) : null,
+  const id = typeof sceneIdAt === 'function' ? sceneIdAt(saveData.route.node) : null,
     sc = id && mapById(id),
-    r = ROUTE[S.route.node];
+    r = ROUTE[saveData.route.node];
   if (sc && sc.indoor) return /mall|food/.test(id) ? 'mall' : 'cave';
   if (r && r.music && SONGS[r.music]) return r.music;
   /* v47: a place's own song */ if (/mall|food/.test(id || '')) return 'mall';
@@ -1085,8 +1085,8 @@ setInterval(() => {
 document.addEventListener('input', ev => {
   const k = ev.target.dataset && ev.target.dataset.preference;
   if (k !== 'music' && k !== 'sfx' && k !== 'world') return;
-  S.preferences = S.preferences || {};
-  S.preferences[k] = +ev.target.value / 100;
+  saveData.preferences = saveData.preferences || {};
+  saveData.preferences[k] = +ev.target.value / 100;
   audApply();
   if (typeof ambApply === 'function') ambApply();
   if (k === 'sfx') sfx('tick');
@@ -1481,7 +1481,10 @@ function ambLife(sc, E, T, pans, t) {
     ss = st.season || st.ss;
   /* v47: a room laid into a place hears the place outside, quieter and through the walls (the low-pass in ambUpdate) */
   const thru = !sc.indoor ? 1 : sc.roomRect ? 0.45 : 0;
-  const node = typeof ROUTE !== 'undefined' && typeof S !== 'undefined' && S.route ? ROUTE[S.route.node] : null,
+  const node =
+      typeof ROUTE !== 'undefined' && typeof saveData !== 'undefined' && saveData.route
+        ? ROUTE[saveData.route.node]
+        : null,
     town = thru > 0 && !!((node && node.town) || (!sc.indoor && (sc.far === 'town' || sc.far === 'city')));
   if (thru) {
     const C0 = walkData().sc,

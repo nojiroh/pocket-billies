@@ -7,7 +7,7 @@ import { expose } from './test-globals.js';
 import { flyDraw, flyTick, paintMapCard, provide, toast } from './hooks.js';
 import { $, clamp } from './util.js';
 import { FUTURE, LINKS, ROUTE, linkCost } from './game-data.js';
-import { RM, S, U, canEnter, esc, nextStop } from './game-state.js';
+import { RM, U, canEnter, esc, nextStop, saveData } from './game-state.js';
 import { frameCount, frameStop, frameTask, userFps } from './frame-scheduler.js';
 import { artPixels, bayerThreshold, makeSeededRandom, mixRgb, packPixel, worldMapStamp } from './art.js';
 import { owFrames } from './person-art.js';
@@ -141,7 +141,7 @@ export function roadPosition(a, b, f) {
   return vector3.norm(vector3.add(vector3.mul(p0.p, 1 - u), vector3.mul(p1.p, u)));
 }
 export function worldMapPlayerPosition() {
-  const r = S.route,
+  const r = saveData.route,
     nx = nextStop();
   if (nx == null || !r.prog) return LOCATION_VECTORS[r.node];
   return roadPosition(r.node, nx, clamp(r.prog / linkCost(r.node, nx), 0, 1));
@@ -439,14 +439,14 @@ function worldMapRender(t, lo) {
   }
   c.putImageData(worldMap.img, 0, 0);
   /* the planned trip, drawn over the painted trail */
-  const plan = [S.route.node, ...S.route.plan];
+  const plan = [saveData.route.node, ...saveData.route.plan];
   if (plan.length > 1) {
-    c.fillStyle = S.route.hold ? 'rgba(255,255,255,.75)' : '#FFE27A';
+    c.fillStyle = saveData.route.hold ? 'rgba(255,255,255,.75)' : '#FFE27A';
     for (let k = 0; k < plan.length - 1; k++) {
       const a = plan[k],
         b = plan[k + 1];
       for (let f = 0; f <= 1; f += 0.04) {
-        if (k === 0 && f < S.route.prog / linkCost(a, b)) continue;
+        if (k === 0 && f < saveData.route.prog / linkCost(a, b)) continue;
         if (Math.floor(f * 25 + t / 120) % 3 === 0) continue;
         const q = worldMapProject(cam, roadPosition(a, b, f));
         if (q && q.z < 1.4) c.fillRect(Math.round(q.x), Math.round(q.y), 1, 1);
@@ -470,7 +470,7 @@ function worldMapRender(t, lo) {
   });
   worldMap.proj = L;
   L.sort((a, b) => b.q.z - a.q.z);
-  const dest = S.route.plan.length ? S.route.plan[S.route.plan.length - 1] : null;
+  const dest = saveData.route.plan.length ? saveData.route.plan[saveData.route.plan.length - 1] : null;
   L.forEach(({ q, i, kind }) => {
     if (kind === 'sun') return;
     const occ = isBehindSun(cam, kind === 'r' ? LOCATION_VECTORS[i] : REGION_VECTORS[i]);
@@ -478,10 +478,10 @@ function worldMapRender(t, lo) {
     const s = clamp(0.16 / q.z, 0.6, 2.4);
     if (kind === 'r') {
       const n = ROUTE[i],
-        reached = !!S.visited[i],
+        reached = !!saveData.visited[i],
         locked = !canEnter(i),
         col =
-          i === S.route.node
+          i === saveData.route.node
             ? '#F4C542'
             : i === dest
               ? '#FFE27A'
@@ -502,7 +502,7 @@ function worldMapRender(t, lo) {
       c.fillStyle = '#1A1430';
       c.fillRect(x, y - r * 2 + r, 1, r * 2);
       if (n.board || n.shop) {
-        c.fillStyle = n.board ? (S.flags[n.board] ? '#F4C542' : '#D9434B') : '#5DD6A0';
+        c.fillStyle = n.board ? (saveData.flags[n.board] ? '#F4C542' : '#D9434B') : '#5DD6A0';
         c.fillRect(x + r + 1, y - r * 4 - 2, Math.max(2, r + 1), Math.max(2, r));
       }
       if (U.mapSel === i || i === dest) {
@@ -758,21 +758,21 @@ export function worldMapLabels() {
   const s = cr && cr.width ? cr.width / worldMapWidth : worldMap.s,
     sy = cr && cr.height ? cr.height / worldMapHeight : s;
   let h = '';
-  const dest = S.route.plan.length ? S.route.plan[S.route.plan.length - 1] : null;
+  const dest = saveData.route.plan.length ? saveData.route.plan[saveData.route.plan.length - 1] : null;
   (worldMap.proj || []).forEach(({ q, i, kind }) => {
     if (q.x < -10 || q.x > worldMapWidth + 10 || q.y < 0 || q.y > worldMapHeight) return;
     let name,
       cls = '';
     if (kind === 'r') {
       if (isBehindSun(worldMap.cam, LOCATION_VECTORS[i])) return;
-      const far = q.z > 0.85 && i !== S.route.node && U.mapSel !== i && i !== dest;
+      const far = q.z > 0.85 && i !== saveData.route.node && U.mapSel !== i && i !== dest;
       if (far) return;
       name = ROUTE[i].name;
       cls =
-        (i === S.route.node ? ' here' : '') +
+        (i === saveData.route.node ? ' here' : '') +
         (U.mapSel === i ? ' sel' : '') +
         (i === dest ? ' dest' : '') +
-        (!S.visited[i] ? ' new' : '');
+        (!saveData.visited[i] ? ' new' : '');
     } else if (kind === 'f') {
       if (isBehindSun(worldMap.cam, REGION_VECTORS[i])) return;
       if (q.z > 0.9 && U.mapSel !== 'f' + i) return;

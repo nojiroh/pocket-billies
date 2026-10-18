@@ -17,7 +17,6 @@ import {
   GD,
   MOVES,
   RM,
-  S,
   TC,
   TYPEFX,
   battleFreeArea,
@@ -30,6 +29,7 @@ import {
   maxHp,
   platesTick,
   provide,
+  saveData,
   stopWalkView,
   walkView,
 } from './hooks.js';
@@ -654,7 +654,7 @@ function hitStop(ms) {
 }
 export function buzz(p) {
   try {
-    if ((S.preferences || {}).haptics !== false && navigator.vibrate) navigator.vibrate(p);
+    if ((saveData.preferences || {}).haptics !== false && navigator.vibrate) navigator.vibrate(p);
   } catch (e) {}
 }
 /* ---------- projection ---------- */

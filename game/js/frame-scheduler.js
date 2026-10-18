@@ -4,7 +4,7 @@
    Each task has its own cap; the battle and map follow the 30 / 60 / 120 FPS setting. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { S, debugFps } from './hooks.js';
+import { debugFps, saveData } from './hooks.js';
 /* eslint-disable no-func-assign */
 expose({
   FRAME: [() => FRAME],
@@ -27,7 +27,7 @@ export const FRAME = {
   meter: { t0: 0, n: 0, fps: 0, work: 0, workAvg: 0 },
 };
 export function userFps() {
-  const p = (typeof S !== 'undefined' && S && S.preferences) || {};
+  const p = (typeof saveData !== 'undefined' && saveData && saveData.preferences) || {};
   const f = +p.fps;
   return f === 30 || f === 90 || f === 120 ? f : 60;
 }

@@ -8,7 +8,18 @@ import { expose } from './test-globals.js';
 import { provide } from './hooks.js';
 import { DATA_WARN, GD, RULES, SP, START_NODE } from './game-data.js';
 import { loadAllMaps, loadMapsAhead, watchMapsAhead } from './map-files.js';
-import { RM, S, SAVE_FOUND, SAVE_NEW_MSG, SAVE_OLD_MSG, U, esc, fresh, setNoSaving, setS } from './game-state.js';
+import {
+  RM,
+  SAVE_FOUND,
+  SAVE_NEW_MSG,
+  SAVE_OLD_MSG,
+  U,
+  esc,
+  fresh,
+  saveData,
+  setNoSaving,
+  setSaveData,
+} from './game-state.js';
 import { ART_CACHE, COIN_ART, EGG_ART, ICON_ATLAS, MENU_BACKGROUND_ART, artBoot, artImg, uiIconURL } from './art.js';
 import { trainerArtPaths } from './person-art.js';
 import { rigAtlas } from './skeleton-rig.js';
@@ -570,7 +581,7 @@ async function preloadAll(onTown) {
   }
   loaderSet(++done, total);
   try {
-    if (S.started) {
+    if (saveData.started) {
       const area = areaKey();
       await battleStagePrepare(AREAS[area] ? area : 'grass');
     }
@@ -594,7 +605,7 @@ async function bootLoad() {
   } catch (e) {
     console.error(e);
   }
-  if (typeof S !== 'undefined' && S && S.gender === 'boy') LD.el.classList.add('boy');
+  if (typeof saveData !== 'undefined' && saveData && saveData.gender === 'boy') LD.el.classList.add('boy');
   LD.tipT = setInterval(loaderTip, 3600);
   for (;;) {
     const fails = await preloadAll(LD.town ? null : townUp);
@@ -635,7 +646,7 @@ async function bootLoad() {
 }
 /* wait (at most 5 s) until the walk scene has drawn a few frames, so its first, slow frame happens behind the loader */
 async function sceneWarm() {
-  if (!S.started || typeof walkView === 'undefined') return;
+  if (!saveData.started || typeof walkView === 'undefined') return;
   const t0 = performance.now();
   if (LD.el) LD.el.querySelector('.ld-phase').textContent = 'Setting the scene';
   while (performance.now() - t0 < 5000) {
@@ -733,13 +744,13 @@ const NW_TEST = (() => {
 provide({ NW_TEST }); /* to-module */
 if (NW_TEST) {
   setNoSaving();
-  setS(fresh());
+  setSaveData(fresh());
 }
 function studioTestStart() {
   if (!NW_TEST) return;
   U.pg = 'girl';
   startGame((RULES.start.starters || [])[0]);
-  S.story = { met_chad: 1, met_chad2: 1 };
+  saveData.story = { met_chad: 1, met_chad2: 1 };
   U.modal = null;
   U.mq = [];
   renderOv();
@@ -812,7 +823,7 @@ function noWebGL(why) {
 if (!webgl2Supported()) noWebGL();
 else
   /* phase 04b: the maps round where you are come with the art check; the others after the loader (js/map-files.js) */
-  Promise.all([artCacheCheck(), loadMapsAhead(S.route ? S.route.node : START_NODE)])
+  Promise.all([artCacheCheck(), loadMapsAhead(saveData.route ? saveData.route.node : START_NODE)])
     .then(() => bootLoad())
     .then(async () => {
       if (typeof NWLOG !== 'undefined') NWLOG.hook();
@@ -838,7 +849,7 @@ else
             }),
           1200
         );
-      if (S.started && !NW_TEST) setTimeout(postProcess, 500);
+      if (saveData.started && !NW_TEST) setTimeout(postProcess, 500);
       if (location.protocol === 'file:')
         setTimeout(
           () => toast('Battles and the map need a local web server. Open the game with Start-Game (see README).'),

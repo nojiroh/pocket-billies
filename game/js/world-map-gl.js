@@ -12,7 +12,7 @@ import { expose } from './test-globals.js';
 import { FR, flyDraw, flyTick, provide } from './hooks.js';
 import { $, clamp } from './util.js';
 import { FUTURE, LINKS, ROUTE, linkCost, placeSub } from './game-data.js';
-import { RM, S, U, canEnter, esc, fmt, nextStop, tripTo } from './game-state.js';
+import { RM, U, canEnter, esc, fmt, nextStop, saveData, tripTo } from './game-state.js';
 import { frameCount, frameStop, frameTask, userFps } from './frame-scheduler.js';
 import { artLoad, artPixels, hexToRgb, makeCanvas, uiIconHTML, worldMapStamp } from './art.js';
 import { owFrames, portraitHTML } from './person-art.js';
@@ -832,7 +832,7 @@ function worldMapGlOverlay(t) {
   c.setTransform(1, 0, 0, 1, 0, 0);
   c.clearRect(0, 0, cv.width, cv.height);
   c.setTransform(d, 0, 0, d, 0, 0);
-  const r = S.route,
+  const r = saveData.route,
     plan = [r.node, ...r.plan];
   if (plan.length > 1) {
     const pts = worldMapGlPath(plan, r.prog / linkCost(plan[0], plan[1]));
@@ -883,17 +883,17 @@ function worldMapGlOverlay(t) {
 /* ---------- pins and road chips (HTML, so they're crisp and easy to tap) ---------- */
 function worldMapGlPinState(i) {
   const n = ROUTE[i],
-    dest = S.route.plan.length ? S.route.plan[S.route.plan.length - 1] : null,
+    dest = saveData.route.plan.length ? saveData.route.plan[saveData.route.plan.length - 1] : null,
     locked = !canEnter(i);
-  const ico = i === S.route.node ? 'walk' : locked ? 'lock' : i === dest ? 'flag' : n.town ? 'house' : 'leaf';
+  const ico = i === saveData.route.node ? 'walk' : locked ? 'lock' : i === dest ? 'flag' : n.town ? 'house' : 'leaf';
   return {
     ico,
     cls:
       'mpin' +
-      (i === S.route.node ? ' here' : '') +
+      (i === saveData.route.node ? ' here' : '') +
       (U.mapSel === i ? ' sel' : '') +
       (i === dest ? ' dest' : '') +
-      (!S.visited[i] && !locked ? ' new' : '') +
+      (!saveData.visited[i] && !locked ? ' new' : '') +
       (locked ? ' locked' : '') +
       (n.town ? ' town' : ''),
   };
@@ -934,19 +934,19 @@ function worldMapGlPins() {
       e.style.transform = tf;
     }
   };
-  const sel = U.mapSel == null ? S.route.node : U.mapSel,
-    dest = S.route.plan.length ? S.route.plan[S.route.plan.length - 1] : null;
+  const sel = U.mapSel == null ? saveData.route.node : U.mapSel,
+    dest = saveData.route.plan.length ? saveData.route.plan[saveData.route.plan.length - 1] : null;
   const placed = [],
-    pr = i => (i === S.route.node ? 0 : i === U.mapSel ? 1 : i === dest ? 2 : S.visited[i] ? 3 : 4),
+    pr = i => (i === saveData.route.node ? 0 : i === U.mapSel ? 1 : i === dest ? 2 : saveData.visited[i] ? 3 : 4),
     order = ROUTE.map((n, i) => i).sort((a, b) => pr(a) - pr(b));
   for (const i of order) {
     const n = ROUTE[i],
       tv = worldMapGlMiniTop(i);
     let q = worldMapGlProject(tv || LOCATION_VECTORS[i]);
-    const far = q && q.z > 0.9 && i !== S.route.node && i !== sel && i !== dest && !worldMapGl.flat;
+    const far = q && q.z > 0.9 && i !== saveData.route.node && i !== sel && i !== dest && !worldMapGl.flat;
     const st = worldMapGlPinState(i);
     if (far) q = null;
-    if (q && i === S.route.node) q = { x: q.x, y: q.y - 44, z: q.z }; /* above your character */
+    if (q && i === saveData.route.node) q = { x: q.x, y: q.y - 44, z: q.z }; /* above your character */
     let mini = false;
     if (q) {
       const w = n.name.length * 7.4 + 40,
@@ -987,7 +987,7 @@ function worldMapGlPins() {
     );
   });
   /* step counts on the roads around the picked place, and along the trip */
-  const plan = [S.route.node, ...S.route.plan],
+  const plan = [saveData.route.node, ...saveData.route.plan],
     onPlan = new Set();
   for (let k = 0; k < plan.length - 1; k++)
     onPlan.add(Math.min(plan[k], plan[k + 1]) + '-' + Math.max(plan[k], plan[k + 1]));
@@ -1119,17 +1119,24 @@ function worldMapGlChrome() {
 function worldMapGlLocationListHTML() {
   const rows = ROUTE.map((n, i) => {
     const st = worldMapGlPinState(i),
-      t = i === S.route.node ? null : tripTo(i),
+      t = i === saveData.route.node ? null : tripTo(i),
       locked = st.cls.includes('locked');
     const sub =
-      i === S.route.node
+      i === saveData.route.node
         ? 'You are here'
         : locked
           ? 'Locked'
           : t
-            ? `${fmt(t.steps)} steps${S.visited[i] ? '' : ' · new'}`
+            ? `${fmt(t.steps)} steps${saveData.visited[i] ? '' : ' · new'}`
             : 'No road yet';
-    return { i, n, st, sub, g: i === S.route.node ? 0 : locked ? 3 : S.visited[i] ? 1 : 2, steps: t ? t.steps : 1e9 };
+    return {
+      i,
+      n,
+      st,
+      sub,
+      g: i === saveData.route.node ? 0 : locked ? 3 : saveData.visited[i] ? 1 : 2,
+      steps: t ? t.steps : 1e9,
+    };
   });
   rows.sort((a, b) => a.g - b.g || a.steps - b.steps);
   const G = ['Here', 'Visited', 'Not visited yet', 'Locked'];

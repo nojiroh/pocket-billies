@@ -6,7 +6,7 @@
    A value of null means "use the scene's own field" (its haze, sky, camera…). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { ENVIRONMENT_ENGINE_MODIFIERS, GD, S, provide } from '../hooks.js';
+import { ENVIRONMENT_ENGINE_MODIFIERS, GD, provide, saveData } from '../hooks.js';
 import { hexToRgb } from '../art.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -785,7 +785,7 @@ function gameDataDials() {
 }
 /* alpha 0.5: a player's own expert dials (Settings → Graphics → Expert) come first */
 function playerDials() {
-  const p = typeof S !== 'undefined' && S && S.preferences;
+  const p = typeof saveData !== 'undefined' && saveData && saveData.preferences;
   return p && p.expert && p.eng ? p.eng : null;
 }
 export function engineSetting(group, key) {

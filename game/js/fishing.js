@@ -10,7 +10,7 @@ import { expose } from './test-globals.js';
 import { sfx, startWild, toast, x28Event } from './hooks.js';
 import { clamp, rnd } from './util.js';
 import { GD, RULES, SP } from './game-data.js';
-import { B, RM, S, U, areaPool, pickW, save, uid } from './game-state.js';
+import { B, RM, U, areaPool, pickW, save, saveData, uid } from './game-state.js';
 import { uiIconHTML } from './art.js';
 import { terrainAt, walkView } from './walk-view.js';
 import {
@@ -115,7 +115,14 @@ function fishPick(kind) {
       P.lv[0] +
       (F.lv ? F.lv[0] : 0) +
       Math.floor(rnd() * (P.lv[1] + (F.lv ? F.lv[1] : 0) - (P.lv[0] + (F.lv ? F.lv[0] : 0)) + 1));
-  return { id: uid(), sp, lvl: Math.max(2, lv), gold: rnd() < 1 / fishRules().goldOdds, no: ++S.serial, fished: 1 };
+  return {
+    id: uid(),
+    sp,
+    lvl: Math.max(2, lv),
+    gold: rnd() < 1 / fishRules().goldOdds,
+    no: ++saveData.serial,
+    fished: 1,
+  };
 }
 /* the Fish button on the walk screen comes and goes as you walk past water */
 function fishPoll() {
@@ -370,8 +377,8 @@ function fishCaught() {
   if (!q) return;
   const nm = SP[q.sp].name;
   if (typeof NWLOG !== 'undefined') NWLOG.add('fish', 'caught ' + q.sp);
-  S.stats = S.stats || {};
-  S.stats.fished = (S.stats.fished || 0) + 1;
+  saveData.stats = saveData.stats || {};
+  saveData.stats.fished = (saveData.stats.fished || 0) + 1;
   if (typeof x28Event === 'function') x28Event('fish');
   save();
   toast(`You hooked a ${q.gold ? 'Golden ' : ''}${nm}!`);

@@ -51,7 +51,6 @@ expose({
   MAXLV: [() => MAXLV],
   N: [() => N],
   RM: [() => RM, v => setRM(v)],
-  S: [() => S, v => setS(v)],
   SAVE_FOUND: [() => SAVE_FOUND],
   SAVE_HOLD: [() => SAVE_HOLD, v => (SAVE_HOLD = v)],
   SAVE_NEW_MSG: [() => SAVE_NEW_MSG],
@@ -114,12 +113,13 @@ expose({
   routeDists: [() => routeDists, v => (routeDists = v)],
   save: [() => save, v => setSave(v)],
   saveAge: [() => saveAge, v => (saveAge = v)],
+  saveData: [() => saveData, v => setSaveData(v)],
   saveT: [() => saveT, v => (saveT = v)],
   setB: [() => setB, v => (setB = v)],
   setNoSaving: [() => setNoSaving, v => (setNoSaving = v)],
   setRM: [() => setRM, v => (setRM = v)],
-  setS: [() => setS, v => (setS = v)],
   setSave: [() => setSave, v => (setSave = v)],
+  setSaveData: [() => setSaveData, v => (setSaveData = v)],
   setSaveHold: [() => setSaveHold, v => (setSaveHold = v)],
   setTrip: [() => setTrip, v => setSetTrip(v)],
   spawn: [() => spawn, v => (spawn = v)],
@@ -229,7 +229,7 @@ export function fresh() {
 }
 /* a new game on the same device keeps its settings (theme, motion, effects, sound…) */
 export function freshKeep() {
-  const p = typeof S !== 'undefined' && S && S.preferences,
+  const p = typeof saveData !== 'undefined' && saveData && saveData.preferences,
     f = fresh();
   if (p) f.preferences = Object.assign(f.preferences, JSON.parse(JSON.stringify(p)));
   return f;
@@ -350,15 +350,15 @@ if (SAVE_FOUND === 'old' || SAVE_FOUND === 'new')
     if (localStorage.getItem(k) == null) localStorage.setItem(k, localStorage.getItem(LS));
   } catch (e) {}
 if (SAVE_FOUND === 'new') SAVE_HOLD = true;
-export let S = loadSave(lsGet()) || fresh();
-provide({ S }); /* to-module */
+export let saveData = loadSave(lsGet()) || fresh();
+provide({ saveData }); /* to-module */
 export let B = null;
 provide({ B }); /* to-module */
 /* phase 04d: other modules change the save, the battle, reduced motion and the save hold through these (an imported
    name can't be assigned); each hands the new value to hooks.js for the modules that read it from there */
-export function setS(v) {
-  S = v;
-  provide({ S });
+export function setSaveData(v) {
+  saveData = v;
+  provide({ saveData });
 }
 export function setB(v) {
   B = v;
@@ -400,8 +400,8 @@ provide({ U }); /* to-module */
 /* ---------- saving: in this browser, and on the account when signed in (account.js) ---------- */
 let saveT = null;
 export function save() {
-  S.savedAt = Date.now();
-  lsSet(S);
+  saveData.savedAt = Date.now();
+  lsSet(saveData);
   if (!saveT)
     saveT = setTimeout(() => {
       saveT = null;
@@ -457,13 +457,13 @@ export function makeMon(sp, lvl, o = {}) {
   };
   m.hp = maxHp(m);
   try {
-    if (typeof S !== 'undefined' && S && S.route && ROUTE[S.route.node])
-      m.met = { n: ROUTE[S.route.node].id || S.route.node, t: Date.now() };
+    if (typeof saveData !== 'undefined' && saveData && saveData.route && ROUTE[saveData.route.node])
+      m.met = { n: ROUTE[saveData.route.node].id || saveData.route.node, t: Date.now() };
   } catch (e) {}
   return m;
 }
 export const N = m => m.nick || SP[m.sp].name;
-export const allMons = () => S.team.concat(S.box);
+export const allMons = () => saveData.team.concat(saveData.box);
 export const findMon = id => allMons().find(m => m.uid === id);
 export function gainXp(m, amt, say) {
   if (m.lvl >= MAXLV() || amt <= 0) return;
@@ -493,7 +493,7 @@ export function evoReady(m) {
     case 'buddy':
       return (m.bsteps || 0) >= e.steps;
     case 'idle':
-      return !!m.boxedAt && !m.job && S.box.includes(m) && Date.now() - m.boxedAt >= e.ms && m.lvl >= e.min;
+      return !!m.boxedAt && !m.job && saveData.box.includes(m) && Date.now() - m.boxedAt >= e.ms && m.lvl >= e.min;
     case 'streak':
       return (m.streak || 0) >= e.n && m.lvl >= e.min;
     default:
@@ -506,13 +506,13 @@ export function evoHint(m) {
     e = s.evo;
   if (!e) return s.rar === 'mythical' ? 'Does not evolve.' : 'Fully evolved.';
   const nx = SP[s.next],
-    nm = S.seen[nx.id] ? nx.name : 'something bigger';
+    nm = saveData.seen[nx.id] ? nx.name : 'something bigger';
   switch (e.k) {
     case 'lvl':
       return `Evolves at level ${e.at} into ${nm}.`;
     case 'split': {
       const alt = SP[s.alt],
-        an = alt && S.seen[alt.id] ? alt.name : 'something else';
+        an = alt && saveData.seen[alt.id] ? alt.name : 'something else';
       return `Evolves at level ${e.at} into ${nm} or ${an}: ${splitPath(m) === 'A' ? 'the Build path is ahead' : 'the Hype path is ahead'} (${m.wins || 0} battles won, ${km(m.bsteps || 0)} km walked as buddy${m.psteps ? ` + ${km((m.psteps || 0) / 2)} km in the party at half weight` : ''}).`;
     }
     case 'buddy':
@@ -546,8 +546,8 @@ export function evolve(m) {
     s0 = SP[m.sp];
   m.sp = s0.evo && s0.evo.k === 'split' && s0.alt && splitPath(m) === 'B' ? s0.alt : s0.next;
   if (m.hp > 0) m.hp = Math.max(1, Math.min(maxHp(m), m.hp + maxHp(m) - old));
-  S.caught[m.sp] = 1;
-  S.seen[m.sp] = 1;
+  saveData.caught[m.sp] = 1;
+  saveData.seen[m.sp] = 1;
   m.evoNo = null;
   m.streak = 0;
   m.donated = 0;
@@ -562,26 +562,26 @@ export function healAll() {
   }
 }
 export function toBox(m) {
-  const i = S.team.indexOf(m);
-  if (i >= 0) S.team.splice(i, 1);
-  if (!S.box.includes(m)) S.box.push(m);
+  const i = saveData.team.indexOf(m);
+  if (i >= 0) saveData.team.splice(i, 1);
+  if (!saveData.box.includes(m)) saveData.box.push(m);
   m.boxedAt = Date.now();
 }
 export function toTeam(m) {
-  const i = S.box.indexOf(m);
-  if (i >= 0) S.box.splice(i, 1);
-  if (!S.team.includes(m)) S.team.push(m);
+  const i = saveData.box.indexOf(m);
+  if (i >= 0) saveData.box.splice(i, 1);
+  if (!saveData.team.includes(m)) saveData.team.push(m);
   m.boxedAt = null;
 }
 export function addMon(m) {
-  S.caught[m.sp] = 1;
-  S.seen[m.sp] = 1;
-  if (S.team.length < TEAM_MAX()) {
-    S.team.push(m);
+  saveData.caught[m.sp] = 1;
+  saveData.seen[m.sp] = 1;
+  if (saveData.team.length < TEAM_MAX()) {
+    saveData.team.push(m);
     return 'team';
   }
   m.boxedAt = Date.now();
-  S.box.push(m);
+  saveData.box.push(m);
   return 'box';
 }
 
@@ -605,13 +605,13 @@ export const rate = st => {
 };
 export const nextBracket = st => BR.find(([hi]) => st < hi);
 export function rollDay() {
-  if (S.day.date !== today()) S.day = { date: today(), steps: 0 };
+  if (saveData.day.date !== today()) saveData.day = { date: today(), steps: 0 };
 }
 function gateOwner(seat) {
   return Object.values(TRAINERS).find(T => T.seat && T.seat.id === seat);
 }
 export function gateText(n) {
-  if (n.gate && !S.seats.includes(n.gate) && n.gateText) return n.gateText;
+  if (n.gate && !saveData.seats.includes(n.gate) && n.gateText) return n.gateText;
   if (n.ride && !canRide()) {
     const R = RULES.ride || { minHeight: 1.5 };
     return `To cross ${n.name} you need a Water Billie at least ${R.minHeight || 1.5} m tall in your team to ride on. Quant and Billigator are big enough.`;
@@ -621,14 +621,14 @@ export function gateText(n) {
   return `${n.name} opens once you earn ${T ? T.name + '’s' : 'another'} badge.`;
 }
 export function blockerAt(i) {
-  return trainersAt(i).find(T => T.blocks && !S.flags[T.id]) || null;
+  return trainersAt(i).find(T => T.blocks && !saveData.flags[T.id]) || null;
 }
 /* ---------- travel: a plan of stops to walk to, one link at a time; an empty plan means staying put ---------- */
 /* v24: lake and sea roads need a Water billionaire big enough to ride (rules.ride: types, minHeight in metres) */
 function riderOf() {
   const R = RULES.ride || { minHeight: 1.5, types: ['Water'] };
   let best = null;
-  for (const m of S.team) {
+  for (const m of saveData.team) {
     const sp = SP[m.sp];
     if (!sp || !sp.types.some(t => (R.types || ['Water']).includes(t)) || sp.ht < (R.minHeight || 1.5)) continue;
     if (!best || sp.ht > SP[best.sp].ht) best = m;
@@ -640,21 +640,22 @@ export const riderName = () => {
   const m = riderOf();
   return m ? m.nick || SP[m.sp].name : '';
 };
-export const canEnter = n => (!ROUTE[n].gate || S.seats.includes(ROUTE[n].gate)) && (!ROUTE[n].ride || canRide());
-const canLeave = (from, to) => !blockerAt(from) || !!S.visited[to];
-export const nextStop = () => (S.route.plan.length ? S.route.plan[0] : null);
+export const canEnter = n =>
+  (!ROUTE[n].gate || saveData.seats.includes(ROUTE[n].gate)) && (!ROUTE[n].ride || canRide());
+const canLeave = (from, to) => !blockerAt(from) || !!saveData.visited[to];
+export const nextStop = () => (saveData.route.plan.length ? saveData.route.plan[0] : null);
 /* alpha 0.4.1: how you get about (rules.travel). 'walk': you walk yourself, with the joystick, the d-pad or a tap, from
    place to place across their edges, like a classic RPG; the steps you take in the game count as steps (encounters,
    challenges, your buddy). 'steps': your real steps carry you along the roads (the game until 0.4). */
 export const walkMode = () => ((typeof RULES !== 'undefined' && RULES.travel) || 'walk') === 'walk';
 provide({ walkMode }); /* to-module */
-const traveling = () => !walkMode() && nextStop() != null && !S.route.hold && !gateMsg();
+const traveling = () => !walkMode() && nextStop() != null && !saveData.route.hold && !gateMsg();
 /* why travel can't continue right now (null when it can, or when you're staying) */
 export function gateMsg() {
-  const node = S.route.node,
+  const node = saveData.route.node,
     nx = nextStop();
   if (nx == null) return null;
-  if (S.route.prog === 0 && !canLeave(node, nx)) {
+  if (saveData.route.prog === 0 && !canLeave(node, nx)) {
     const bl = blockerAt(node);
     return bl.blockTitle || `${bl.name} is blocking the way.`;
   }
@@ -675,7 +676,7 @@ function routeDists(from) {
     done[u] = true;
     for (const e of ADJ[u]) {
       if (!canEnter(e.to)) continue;
-      if (u !== from && blockerAt(u) && !S.visited[e.to]) continue;
+      if (u !== from && blockerAt(u) && !saveData.visited[e.to]) continue;
       const nd = d[u] + e.cost;
       if (nd < d[e.to]) {
         d[e.to] = nd;
@@ -692,7 +693,7 @@ const pathFrom = (prev, to) => {
 };
 /* steps from where you stand to stop j, and the plan that gets there (turning back on the current link if shorter) */
 export function tripTo(j) {
-  const r = S.route,
+  const r = saveData.route,
     node = r.node,
     nx = nextStop();
   if (nx == null || r.prog === 0) {
@@ -714,7 +715,7 @@ export function tripTo(j) {
 export function setTrip(j) {
   const t = tripTo(j);
   if (!t) return false;
-  const r = S.route;
+  const r = saveData.route;
   if (t.back && nextStop() != null) {
     const nx = nextStop(),
       c = linkCost(r.node, nx);
@@ -729,7 +730,7 @@ export function setTrip(j) {
   return true;
 }
 export function stopTrip() {
-  const r = S.route;
+  const r = saveData.route;
   if (r.prog > 0) {
     r.hold = true;
   } else {
@@ -739,13 +740,13 @@ export function stopTrip() {
   save();
 }
 export function resumeTrip() {
-  S.route.hold = false;
+  saveData.route.hold = false;
   save();
 }
 /* encounters come from where you're headed while you walk, otherwise from where you are */
 export const hereStop = () => {
   const nx = nextStop();
-  return ROUTE[nx != null && S.route.prog > 0 && !S.route.hold ? nx : S.route.node];
+  return ROUTE[nx != null && saveData.route.prog > 0 && !saveData.route.hold ? nx : saveData.route.node];
 };
 export function areaPool() {
   return POOLS[hereStop().pool] || POOLS[Object.keys(POOLS)[0]];
@@ -754,44 +755,44 @@ export function spawn(gentle, force) {
   const P = areaPool();
   let list = typeof environmentOdds === 'function' ? environmentOdds(P.list) : P.list;
   if (gentle) {
-    const my = SP[S.starter + '0'].types,
+    const my = SP[saveData.starter + '0'].types,
       g = list.filter(([id]) => !SP[id].types.some(t => eff(t, my) > 1));
     if (g.length) list = g;
   }
   const sp = force || pickW(list),
     lvl = P.lv[0] + Math.floor(rnd() * (P.lv[1] - P.lv[0] + 1));
-  const q = { id: uid(), sp, lvl, gold: rnd() < 1 / RULES.steps.goldOdds, no: ++S.serial };
+  const q = { id: uid(), sp, lvl, gold: rnd() < 1 / RULES.steps.goldOdds, no: ++saveData.serial };
   /* v33: now and then an Alpha (once you have two billionaires to stand with your lead) */
   if (
     !gentle &&
     !force &&
-    S.team.filter(m => m.job == null).length >= 2 &&
+    saveData.team.filter(m => m.job == null).length >= 2 &&
     rnd() < 1 / ((RULES.steps && RULES.steps.alphaOdds) || 45)
   )
     q.alpha = true;
-  S.queue.push(q);
+  saveData.queue.push(q);
   return q;
 }
 export function addSteps(n, quiet) {
   n = Math.floor(Number(n));
-  if (!S.started || !Number.isFinite(n) || n <= 0 || n > 100000) return;
+  if (!saveData.started || !Number.isFinite(n) || n <= 0 || n > 100000) return;
   rollDay();
-  const a = S.day.steps,
+  const a = saveData.day.steps,
     b = a + n,
-    g = taxed(a, b) + S.seFrac,
+    g = taxed(a, b) + saveData.seFrac,
     gi = Math.floor(g);
-  S.seFrac = g - gi;
-  S.se += gi;
-  S.day.steps = b;
-  S.totalSteps += n;
+  saveData.seFrac = g - gi;
+  saveData.se += gi;
+  saveData.day.steps = b;
+  saveData.totalSteps += n;
   const msgs = [];
   if (traveling()) {
-    const r = S.route;
+    const r = saveData.route;
     r.prog += n;
     while (r.plan.length && r.prog >= linkCost(r.node, r.plan[0])) {
       r.prog -= linkCost(r.node, r.plan[0]);
       r.node = r.plan.shift();
-      S.visited[r.node] = 1;
+      saveData.visited[r.node] = 1;
       msgs.push(r.plan.length ? `You passed through ${ROUTE[r.node].name}.` : `You arrived at ${ROUTE[r.node].name}.`);
       if (typeof U !== 'undefined') U.arrive = r.node;
       /* v43: the walk screen walks you in from the exit */ if (!r.plan.length || gateMsg()) {
@@ -802,29 +803,29 @@ export function addSteps(n, quiet) {
     if (!r.plan.length) r.prog = 0;
   }
   const every = Math.max(1, RULES.steps.encounterEverySE);
-  S.meter += gi;
+  saveData.meter += gi;
   let sp = 0;
-  while (S.meter >= every) {
-    S.meter -= every;
-    if (S.queue.length < RULES.steps.maxEncounters) {
+  while (saveData.meter >= every) {
+    saveData.meter -= every;
+    if (saveData.queue.length < RULES.steps.maxEncounters) {
       spawn();
       sp++;
     }
   }
-  const bud = findMon(S.buddy),
+  const bud = findMon(saveData.buddy),
     per = Math.max(1, RULES.progression.buddyStepsPerXp);
   if (bud) bud.bsteps = (bud.bsteps || 0) + n;
-  /* v37: the rest of the party walks too, at half weight (for the Build path of a split evolution) */ for (const m of S.team)
+  /* v37: the rest of the party walks too, at half weight (for the Build path of a split evolution) */ for (const m of saveData.team)
     if (m !== bud) m.psteps = (m.psteps || 0) + n;
-  S.buddyRem += n;
-  const xp = Math.floor(S.buddyRem / per);
-  S.buddyRem -= xp * per;
+  saveData.buddyRem += n;
+  const xp = Math.floor(saveData.buddyRem / per);
+  saveData.buddyRem -= xp * per;
   const notes = [];
   if (bud && xp > 0) gainXp(bud, xp, t => notes.push(t));
-  S.eggs.forEach(e => {
+  saveData.eggs.forEach(e => {
     if (e.slot != null) e.prog = Math.min(EGGS[e.tier].need, e.prog + n);
   });
-  S.jobs.forEach(j => {
+  saveData.jobs.forEach(j => {
     if (!j.uid) return;
     j.acc += n;
     while (j.acc >= JOB_STEPS) {
@@ -846,22 +847,22 @@ export function addSteps(n, quiet) {
 export const EGG_SLOTS = () => Math.max(1, RULES.eggs.slots);
 function autoSlot() {
   for (let sl = 0; sl < EGG_SLOTS(); sl++) {
-    if (S.eggs.some(e => e.slot === sl)) continue;
-    const e = S.eggs.find(e => e.slot == null);
+    if (saveData.eggs.some(e => e.slot === sl)) continue;
+    const e = saveData.eggs.find(e => e.slot == null);
     if (e) e.slot = sl;
   }
 }
 export function addEgg(tier) {
   if (!EGGS[tier]) return false;
-  if (S.eggs.length >= RULES.eggs.capacity) {
+  if (saveData.eggs.length >= RULES.eggs.capacity) {
     toast('You’re carrying too many eggs. Hatch a few first.');
     return false;
   }
-  S.eggs.push({ id: uid(), tier, prog: 0, slot: null });
+  saveData.eggs.push({ id: uid(), tier, prog: 0, slot: null });
   autoSlot();
   return true;
 }
-export const hatchable = () => S.eggs.filter(e => e.slot != null && e.prog >= EGGS[e.tier].need);
+export const hatchable = () => saveData.eggs.filter(e => e.slot != null && e.prog >= EGGS[e.tier].need);
 export function hatchEgg(e) {
   if (typeof jingle === 'function') jingle(JINGLES.hatch);
   const T = EGGS[e.tier],
@@ -874,8 +875,8 @@ export function hatchEgg(e) {
     gold = false;
   }
   const m = makeMon(sp, T.lv, { gold });
-  S.eggs = S.eggs.filter(x => x !== e);
-  S.hatched = (S.hatched || 0) + 1;
+  saveData.eggs = saveData.eggs.filter(x => x !== e);
+  saveData.hatched = (saveData.hatched || 0) + 1;
   autoSlot();
   const where = addMon(m);
   save();
@@ -886,37 +887,37 @@ export function hatchEgg(e) {
 export function assignJob(slot, job, id) {
   const m = findMon(id);
   if (!m || m.job != null) return false;
-  if (S.team.includes(m) && S.team.filter(x => x.job == null).length <= 1) return false;
+  if (saveData.team.includes(m) && saveData.team.filter(x => x.job == null).length <= 1) return false;
   toBox(m);
   m.boxedAt = null;
   m.job = slot;
-  S.jobs[slot] = { uid: id, job, acc: 0, pend: 0 };
+  saveData.jobs[slot] = { uid: id, job, acc: 0, pend: 0 };
   save();
   return true;
 }
 export function collectJob(slot) {
-  const j = S.jobs[slot];
+  const j = saveData.jobs[slot];
   if (!j.uid || !j.pend) return null;
   const J = JOBS[j.job],
     [kind, key, amt] = J.out,
     n = j.pend;
   j.pend = 0;
-  if (kind === 'item') S.items[key] += amt * n;
-  else if (kind === 'coin') S.coins[key] += amt * n;
-  else S.se += amt * n;
+  if (kind === 'item') saveData.items[key] += amt * n;
+  else if (kind === 'coin') saveData.coins[key] += amt * n;
+  else saveData.se += amt * n;
   save();
   const m = findMon(j.uid);
   return `${m ? N(m) : 'Your Billie'} ${J.quip} You collected ${kind === 'se' ? '$' + fmt(amt * n) : `${amt * n} × ${kind === 'item' ? ITEMS[key].n : COINS[key].n}`}.`;
 }
 export function endShift(slot) {
-  const j = S.jobs[slot];
+  const j = saveData.jobs[slot];
   const msg = collectJob(slot);
   const m = findMon(j.uid);
   if (m) {
     m.job = null;
     m.boxedAt = Date.now();
   }
-  S.jobs[slot] = { uid: null, job: null, acc: 0, pend: 0 };
+  saveData.jobs[slot] = { uid: null, job: null, acc: 0, pend: 0 };
   save();
   return msg;
 }

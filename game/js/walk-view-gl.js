@@ -15,7 +15,6 @@ import {
   LIFE,
   LIFE_KIND,
   RM,
-  S,
   SOLID_PROP_PARTS,
   SOLID_PROP_SHADERS,
   SP,
@@ -52,6 +51,7 @@ import {
   provide,
   reqAsker,
   riderOf,
+  saveData,
   seamlessLookTick,
   sfxAt,
   solidPropLevelOfDetail,
@@ -924,7 +924,7 @@ const freeCameraOn = () => !!(walkView.opt && walkView.opt.freeCam),
 function handleCanvasClick(ev) {
   if (walkView.battle || walkView.director || !walkView.ready || (walkView.opt.active && !walkView.opt.active()))
     return;
-  if (typeof S !== 'undefined') askDeviceTilt();
+  if (typeof saveData !== 'undefined') askDeviceTilt();
   if (walkRenderer.dragged) {
     walkRenderer.dragged = false;
     return;
@@ -1023,7 +1023,7 @@ function listenDeviceTilt() {
   walkRenderer._tl = 1;
   addEventListener('deviceorientation', ev => {
     if (ev.beta == null) return;
-    const p = (typeof S !== 'undefined' && S && S.preferences) || {};
+    const p = (typeof saveData !== 'undefined' && saveData && saveData.preferences) || {};
     if (p.tilt === false) return;
     if (!walkRenderer.orient) walkRenderer.orient = { b: ev.beta, g: ev.gamma };
     const o = walkRenderer.orient;
@@ -1041,7 +1041,7 @@ function askDeviceTilt() {
       typeof DeviceOrientationEvent !== 'undefined' &&
       typeof DeviceOrientationEvent.requestPermission === 'function'
     ) {
-      const p = (S && S.preferences) || {};
+      const p = (saveData && saveData.preferences) || {};
       if (p.tilt === false) return;
       DeviceOrientationEvent.requestPermission().catch(() => {});
     }
@@ -4063,7 +4063,8 @@ export function adaptQuality(dtm, work) {
     return;
   }
   /* alpha 0.1: the picture stays sharp at 60 frames a second; only Smoothest (preferences.aim) trades sharpness for more */
-  const smooth = typeof S !== 'undefined' && S && S.preferences && S.preferences.aim === 'smooth',
+  const smooth =
+      typeof saveData !== 'undefined' && saveData && saveData.preferences && saveData.preferences.aim === 'smooth',
     target = 1000 / Math.min(cap, FRAME.hz || 60, smooth ? 999 : 60);
   walkRenderer.int = walkRenderer.int ? walkRenderer.int * 0.92 + dtm * 0.08 : dtm;
   /* alpha 0.4: in every log the picture sat on the lowest step outdoors most of the time: a place's first seconds
@@ -4180,13 +4181,14 @@ function hugSlope(it, C) {
    facing away when you head up the screen; it bobs, and leaves ripple rings behind. */
 function rideMountItem(P, t) {
   const sc = walkView.sc;
-  if (!sc || !sc.ride || typeof riderOf !== 'function' || typeof S === 'undefined' || !S.team) return null;
+  if (!sc || !sc.ride || typeof riderOf !== 'function' || typeof saveData === 'undefined' || !saveData.team)
+    return null;
   const ch = terrainAt(P.x, P.z);
   if (ch !== 'w' && ch !== 'd') {
     walkRenderer.mountOn = false;
     return null;
   }
-  const m = riderOf() || S.team.find(x => SP[x.sp] && SP[x.sp].types.includes('Water')) || S.team[0];
+  const m = riderOf() || saveData.team.find(x => SP[x.sp] && SP[x.sp].types.includes('Water')) || saveData.team[0];
   if (!m || !SP[m.sp]) return null;
   const back = P.dir === 'up',
     R = rigParts(m.sp, m.gold, back ? 2 : 1);

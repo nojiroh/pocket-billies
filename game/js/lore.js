@@ -10,7 +10,7 @@ import { expose } from './test-globals.js';
 import { closeModal, modal, provide, storyFlags } from './hooks.js';
 import { clamp } from './util.js';
 import { GD, ROUTE, TRAINERS } from './game-data.js';
-import { S, U, esc, save } from './game-state.js';
+import { U, esc, save, saveData } from './game-state.js';
 import { humanHTML } from './person-art.js';
 import { baseMapId, findPath, mapById, mapHub, walkView, walkablePointNear } from './walk-view.js';
 import { standingHeightAt, walkRenderer } from './walk-view-gl.js';
@@ -40,19 +40,19 @@ provide({ clueDraw, loreFlags, mapChatLines });
 /* to-module: end */
 export const LORE = () => (typeof GD !== 'undefined' && GD.lore) || {};
 export function loreFlags() {
-  return typeof storyFlags === 'function' ? storyFlags() : S.story || (S.story = {});
+  return typeof storyFlags === 'function' ? storyFlags() : saveData.story || (saveData.story = {});
 }
 function loreStage() {
-  return loreFlags().ending ? 9 : (S.seats || []).length;
+  return loreFlags().ending ? 9 : (saveData.seats || []).length;
 }
 function loreNode(id) {
   return ROUTE.findIndex(r => r.id === id || r.scene === id);
 }
 function loreMet(k) {
   const F = loreFlags();
-  if (F['met_' + k] || S.flags[k]) return true;
+  if (F['met_' + k] || saveData.flags[k]) return true;
   for (const [id, T] of Object.entries(typeof TRAINERS !== 'undefined' ? TRAINERS : {}))
-    if (T.who === k && (S.flags[id] || F['met_' + id])) return true;
+    if (T.who === k && (saveData.flags[id] || F['met_' + id])) return true;
   return false;
 }
 function loreOpen(u) {
@@ -62,11 +62,11 @@ function loreOpen(u) {
     v = u.slice(i + 1);
   if (k === 'place') {
     const n = loreNode(v);
-    return n >= 0 && !!S.visited[n];
+    return n >= 0 && !!saveData.visited[n];
   }
   if (k === 'meet') return loreMet(v);
   if (k === 'flag') return !!loreFlags()[v];
-  if (k === 'badges') return (S.seats || []).length >= +v;
+  if (k === 'badges') return (saveData.seats || []).length >= +v;
   return false;
 }
 /* what people say here now: the lines for the latest stage reached (lore.chat), then the place's own */
@@ -184,7 +184,7 @@ function clueSpotFind(sc, at) {
 }
 /* drawn by the walk scene's effects pass, like the gold stamps but cool white: walk over it to pick it up */
 function clueDraw(quad, glows, t) {
-  if (typeof S === 'undefined' || !S.started || walkRenderer.bt || U.bench || U.modal) return;
+  if (typeof saveData === 'undefined' || !saveData.started || walkRenderer.bt || U.bench || U.modal) return;
   const P = walkView.pl;
   for (const c of clueSpots()) {
     const y = standingHeightAt(c.x, c.z),
@@ -254,7 +254,7 @@ export function renderLore() {
     body = ROUTE.map((r, i) => {
       const P = (L.places || {})[r.id];
       if (!P) return '';
-      const o = !!S.visited[i];
+      const o = !!saveData.visited[i];
       return o
         ? `<article class="lore-card"><h3>${esc(r.name)}</h3><p>${esc(P.history)}</p><p><b>Known for</b> ${esc(P.known)}</p><p><b>Landmark</b> ${esc(P.landmark)}</p><p class="hand">${esc(P.legend)}</p></article>`
         : loreCard('', '', false);

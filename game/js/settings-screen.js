@@ -26,7 +26,6 @@ import {
 import { JOBS, MOVES, ROUTE, RULES, SP, STATUSN } from './game-data.js';
 import {
   RM,
-  S,
   SAVE_NEW_MSG,
   SAVE_OLD_MSG,
   TEAM_MAX,
@@ -36,8 +35,9 @@ import {
   migrate,
   save,
   saveAge,
+  saveData,
   setRM,
-  setS,
+  setSaveData,
   today,
 } from './game-state.js';
 import { I18N_LANGS, i18nSet } from './i18n.js';
@@ -69,7 +69,7 @@ expose({
 const HOST_THEME = document.documentElement.dataset.theme;
 let themeOwned = false;
 export function applyPreferences() {
-  const p = S.preferences || {},
+  const p = saveData.preferences || {},
     root = document.documentElement;
   if (['light', 'dark'].includes(p.theme)) {
     root.dataset.theme = p.theme;
@@ -92,7 +92,7 @@ function customizeTrainer() {
   openDressingRoom();
 }
 export async function exportSave() {
-  const json = JSON.stringify({ game: 'Pocket Billies', format: 1, save: S }, null, 2),
+  const json = JSON.stringify({ game: 'Pocket Billies', format: 1, save: saveData }, null, 2),
     name = 'pocket-billies-save-' + today() + '.json';
   const blob = new Blob([json], { type: 'application/json' }),
     url = URL.createObjectURL(blob),
@@ -210,8 +210,8 @@ function importSave() {
             l: 'Restore backup',
             c: 'dark',
             f: () => {
-              setS(next);
-              S.avatar = cleanTrainer(S.avatar, S.gender);
+              setSaveData(next);
+              saveData.avatar = cleanTrainer(saveData.avatar, saveData.gender);
               U.trainerDraft = null;
               U.tab = 'walk';
               U.dex = null;
@@ -293,7 +293,7 @@ export const GFX_DIALS = [
 ];
 export function gfxDial([gk, label, help, cost, min, max, step]) {
   const [g, k] = gk.split('.'),
-    own = ((S.preferences.eng || {})[g] || {})[k],
+    own = ((saveData.preferences.eng || {})[g] || {})[k],
     v = own != null ? own : engineSetting(g, k);
   return `<div class="gfx-dial"><div class="gfx-h"><b>${label}</b><span class="gfx-cost c-${cost}">${cost === 'high' ? 'Costs a lot' : cost === 'medium' ? 'Costs some' : 'Costs little'}</span>${own != null ? `<button type="button" class="gfx-reset" data-a="gfx-reset" data-k="${gk}" aria-label="Back to the game’s value">↺</button>` : ''}<button type="button" class="gfx-see" data-a="gfx-see" data-k="${gk}">See it</button></div>
  <input type="range" min="${min}" max="${max}" step="${step}" value="${v}" data-eng="${gk}" aria-label="${esc(label)}"><small>${help}</small></div>`;
@@ -308,7 +308,7 @@ function setSw(k, on, onV, offV) {
   return `<button type="button" class="sw ${on ? 'on' : ''}" role="switch" aria-checked="${!!on}" aria-label="${esc(k)}" data-pref-set="${k}" data-v="${esc(String(on ? offV : onV))}"><i></i></button>`;
 }
 function setVol(k, label, hint, def) {
-  const p = S.preferences || {},
+  const p = saveData.preferences || {},
     v = Math.round((p[k] ?? def) * 100);
   return setRow(
     label,
@@ -317,7 +317,7 @@ function setVol(k, label, hint, def) {
   );
 }
 export function settingsHTML() {
-  const p = S.preferences || {},
+  const p = saveData.preferences || {},
     tab = SET_TABS.some(t => t[0] === U.setTab) ? U.setTab : 'game',
     hz = FRAME.hz || 60;
   let body = '';
@@ -505,7 +505,7 @@ export function settingsHTML() {
         : '');
   } else if (tab === 'save')
     body =
-      `<div class="settings-profile">${humanHTML('me', 52)}<div><b>${esc(cleanTrainer(S.avatar, S.gender).name)}</b><p class="note">${fmt(S.totalSteps)} steps · ${Object.keys(S.caught).length} taxed</p></div></div><button class="pb dark wide" data-a="open-customize">Customize trainer</button>` +
+      `<div class="settings-profile">${humanHTML('me', 52)}<div><b>${esc(cleanTrainer(saveData.avatar, saveData.gender).name)}</b><p class="note">${fmt(saveData.totalSteps)} steps · ${Object.keys(saveData.caught).length} taxed</p></div></div><button class="pb dark wide" data-a="open-customize">Customize trainer</button>` +
       (typeof accSettingsHTML === 'function' ? accSettingsHTML() : '') +
       `<p class="note">${typeof ACC !== 'undefined' && ACC.user ? 'Your progress is saved to your account, and in this browser.' : 'Your progress is saved in this browser. Sign in to keep it online, or download a backup before changing device or clearing browser data.'}</p><div class="two"><button class="pb small" data-a="export-save">Export save</button><button class="pb small" data-a="import-save">Import save</button></div>`;
   else
@@ -514,28 +514,28 @@ export function settingsHTML() {
 }
 /* one preference changed, from a switch, a segment, a slider or a menu */
 function setPref(k, v) {
-  S.preferences = S.preferences || {};
+  saveData.preferences = saveData.preferences || {};
   if (k === 'master') v = +v / 100;
   if (k === 'mute') {
     v = v === '1';
-    S.preferences.mute = v;
+    saveData.preferences.mute = v;
     save();
     if (typeof audApply === 'function') audApply();
     return;
   }
   if (k === 'expert') {
-    S.preferences.expert = v === '1';
+    saveData.preferences.expert = v === '1';
     save();
     return;
   }
   if (k === 'graphics') {
-    S.preferences.aim = v === 'best' ? 'sharp' : 'smooth';
+    saveData.preferences.aim = v === 'best' ? 'sharp' : 'smooth';
     return setPref('effects', 'full');
   }
   if (k === 'fps') v = +v;
   if (k === 'music' || k === 'sfx' || k === 'world' || k === 'amb') v = +v / 100;
   if (k === 'master') {
-    S.preferences.master = v;
+    saveData.preferences.master = v;
     applyPreferences();
     save();
     if (typeof audApply === 'function') audApply();
@@ -554,7 +554,7 @@ function setPref(k, v) {
       walkRenderer.tiltX = walkRenderer.tiltY = 0;
     }
   }
-  S.preferences[k] = v;
+  saveData.preferences[k] = v;
   applyPreferences();
   save();
   if (typeof BG !== 'undefined') BG.dark = null;
@@ -643,8 +643,8 @@ document.addEventListener('click', ev => {
       break;
   }
 });
-S.avatar = cleanLook(lookFromOld(S.avatar, S.gender));
-if (!S.gender || S.gender === 'boy' || S.gender === 'girl') S.gender = 'me';
+saveData.avatar = cleanLook(lookFromOld(saveData.avatar, saveData.gender));
+if (!saveData.gender || saveData.gender === 'boy' || saveData.gender === 'girl') saveData.gender = 'me';
 applyPreferences();
 
 /* alpha 0.5: the expert graphics dials: a change shows at once (the ground, grass and far things are rebuilt when they need it) */
@@ -652,8 +652,8 @@ document.addEventListener('input', ev => {
   const el = ev.target;
   if (!el.dataset || !el.dataset.eng) return;
   const [g, k] = el.dataset.eng.split('.');
-  S.preferences.eng = S.preferences.eng || {};
-  (S.preferences.eng[g] = S.preferences.eng[g] || {})[k] = +el.value;
+  saveData.preferences.eng = saveData.preferences.eng || {};
+  (saveData.preferences.eng[g] = saveData.preferences.eng[g] || {})[k] = +el.value;
   const D = GFX_DIALS.flatMap(x => x[1]).find(d => d[0] === el.dataset.eng);
   if (D && D[7] && typeof rebuildFromSettings === 'function') {
     clearTimeout(setPref.rb);
@@ -672,15 +672,15 @@ document.addEventListener('click', ev => {
   const a = el.dataset.a;
   if (a === 'gfx-reset') {
     const [g, k] = el.dataset.k.split('.');
-    if (S.preferences.eng && S.preferences.eng[g]) {
-      delete S.preferences.eng[g][k];
-      if (!Object.keys(S.preferences.eng[g]).length) delete S.preferences.eng[g];
+    if (saveData.preferences.eng && saveData.preferences.eng[g]) {
+      delete saveData.preferences.eng[g][k];
+      if (!Object.keys(saveData.preferences.eng[g]).length) delete saveData.preferences.eng[g];
     }
     save();
     if (typeof rebuildFromSettings === 'function') rebuildFromSettings();
     settingsRefresh();
   } else if (a === 'gfx-resetall') {
-    delete S.preferences.eng;
+    delete saveData.preferences.eng;
     save();
     if (typeof rebuildFromSettings === 'function') rebuildFromSettings();
     settingsRefresh();

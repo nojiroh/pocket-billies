@@ -371,7 +371,7 @@ export async function run(args) {
       if (g !== HOOKS) lines.push(`import { ${[...names].sort().join(', ')} } from '${spec(f, g)}';`);
     const names = [...own.keys()].sort();
     const fns = names.some(n => own.get(n).kind === 'function');
-    // a module's own setter (setS for S) also hands the value to hooks.js, so the test globals use it
+    // a module's own setter (setSaveData for saveData) also hands the value to hooks.js, so the test globals use it
     const setterOf = n => {
       const k = setterName(n);
       if ((own.has(k) && own.get(k).kind === 'function') || gen.includes(n)) return `v => ${k}(v)`;

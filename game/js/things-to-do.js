@@ -1,14 +1,14 @@
 'use strict';
 /* ================= THINGS TO DO (v28) =================
    Daily challenges, townsfolk with requests, two gold stamps hidden in every place, your own room (in Copperleaf since alpha 0.4) to
-   decorate, photo mode, and battles that feel the weather. Everything lives in S.x, which an older save gets the
+   decorate, photo mode, and battles that feel the weather. Everything lives in saveData.x, which an older save gets the
    first time it's needed. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { bar, closeModal, modal, provide, render, roomRefresh, toast } from './hooks.js';
 import { clamp } from './util.js';
 import { COINS, GD, ITEMS, ROUTE, RULES, SP } from './game-data.js';
-import { B, N, S, U, esc, fmt, save, today } from './game-state.js';
+import { B, N, U, esc, fmt, save, saveData, today } from './game-state.js';
 import { makeCanvas, uiIconHTML } from './art.js';
 import {
   baseMapId,
@@ -72,7 +72,7 @@ expose({
 provide({ battleWeatherMult, reqAsker, stampDraw, x28Event });
 /* to-module: end */
 function x28() {
-  const X = S.x || (S.x = {});
+  const X = saveData.x || (saveData.x = {});
   X.stamps = X.stamps || {};
   X.reqs = X.reqs || {};
   X.home = X.home || { slots: {}, own: ['rug_round', 'plant_tall', 'chair_wood', 'table_round'] };
@@ -96,19 +96,19 @@ const x28Types = () => (GD.types || []).map(t => t.id);
 function x28Reward(k = 1) {
   const R = [],
     m = Math.round(((150 + Math.random() * 350) * k) / 10) * 10;
-  S.se += m;
+  saveData.se += m;
   R.push('$' + fmt(m));
   if (Math.random() < 0.6) {
     const it = Object.keys(ITEMS).filter(i => !['bell', 'parachute'].includes(i));
     const i = it[Math.floor(Math.random() * it.length)];
     if (i) {
-      S.items[i] = (S.items[i] || 0) + 1;
+      saveData.items[i] = (saveData.items[i] || 0) + 1;
       R.push(ITEMS[i].n);
     }
   } else {
     const c = Math.random() < 0.75 ? 'silver' : 'gold';
     if (COINS[c]) {
-      S.coins[c] = (S.coins[c] || 0) + (c === 'silver' ? 3 : 1);
+      saveData.coins[c] = (saveData.coins[c] || 0) + (c === 'silver' ? 3 : 1);
       R.push((c === 'silver' ? '3 × ' : '') + COINS[c].n);
     }
   }
@@ -151,11 +151,11 @@ export function chalToday() {
   }
   return X.chal;
 }
-const chalHave = c => (c.k === 'steps' ? S.day.steps : c.have);
+const chalHave = c => (c.k === 'steps' ? saveData.day.steps : c.have);
 const chalText = c => (X28_CH.find(t => t.k === c.k) || { text: () => c.k }).text(c);
 /* something happened: a catch (with its types), a win, a fish landed, a stamp found */
 function x28Event(k, o = {}) {
-  if (!S || !S.started) return;
+  if (!saveData || !saveData.started) return;
   const C = chalToday();
   let ch = false;
   for (const c of C.list) {
@@ -179,7 +179,7 @@ function x28Event(k, o = {}) {
   if (ch) save();
 }
 export function chalCard() {
-  if (!S.started) return '';
+  if (!saveData.started) return '';
   const C = chalToday();
   return `<section class="chal px glass"><div class="sec-h"><h2>Today’s challenges</h2><span class="count tnum">${C.list.filter(c => c.claimed).length}/${C.list.length}</span></div>${C.list
     .map((c, i) => {
@@ -206,9 +206,9 @@ const X28_REQ = {
     `Could you take my letter for a walk? It needs ${fmt(q.n)} steps of fresh air. Bring it back to me after.`,
   catch: q => `I’d love to see a ${q.t} Billie. Tax one and come back to show me?`,
 };
-function reqHere(node = S.route.node) {
+function reqHere(node = saveData.route.node) {
   const R = ROUTE[node];
-  if (!R || !R.town || !S.started) return null;
+  if (!R || !R.town || !saveData.started) return null;
   const X = x28(),
     d = today();
   let q = X.reqs[node];
@@ -234,7 +234,8 @@ function reqAsker() {
   return walkView.folk[0];
 }
 const x28TeamOf = t =>
-  S.team.find(m => m.hp > 0 && SP[m.sp].types.includes(t)) || S.team.find(m => SP[m.sp].types.includes(t));
+  saveData.team.find(m => m.hp > 0 && SP[m.sp].types.includes(t)) ||
+  saveData.team.find(m => SP[m.sp].types.includes(t));
 async function reqTalk(f) {
   if (TALK.on) return;
   const q = reqHere(),
@@ -289,7 +290,7 @@ async function reqTalk(f) {
             c: 'gold',
             f: () => {
               q.state = 'accepted';
-              q.base = S.totalSteps;
+              q.base = saveData.totalSteps;
               q.have = 0;
               save();
               closeModal();
@@ -304,7 +305,7 @@ async function reqTalk(f) {
   }
   if (q.state === 'accepted') {
     if (q.k === 'steps') {
-      const left = q.n - (S.totalSteps - (q.base || 0));
+      const left = q.n - (saveData.totalSteps - (q.base || 0));
       if (left <= 0) return finish('The letter looks so refreshed! Thank you.');
       await talk([[who, `Only ${fmt(left)} more steps for my letter. It’s enjoying the walk.`]]);
     } else if (q.k === 'catch') {
@@ -327,7 +328,7 @@ export function reqList() {
       const where = ROUTE[+n] ? ROUTE[+n].name : '';
       const txt =
         q.k === 'steps'
-          ? `Walk ${fmt(Math.max(0, q.n - (S.totalSteps - (q.base || 0))))} more steps for a letter`
+          ? `Walk ${fmt(Math.max(0, q.n - (saveData.totalSteps - (q.base || 0))))} more steps for a letter`
           : q.k === 'catch'
             ? q.have
               ? `Show your ${q.t} Billie`
@@ -377,7 +378,7 @@ function stampSpots() {
 }
 /* drawn by the walk scene's effects pass: a gold glint you pick up by walking over it */
 function stampDraw(quad, glows, t) {
-  if (!S || !S.started || walkRenderer.bt || U.bench) return;
+  if (!saveData || !saveData.started || walkRenderer.bt || U.bench) return;
   const X = x28(),
     P = walkView.pl,
     sp = stampSpots();

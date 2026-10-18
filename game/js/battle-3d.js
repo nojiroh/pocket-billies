@@ -8,7 +8,7 @@
    or when the player picks it in Settings. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { B, FV, RM, S, provide } from './hooks.js';
+import { B, FV, RM, provide, saveData } from './hooks.js';
 import { $, clamp } from './util.js';
 import { hexToRgb } from './art.js';
 import {
@@ -49,7 +49,7 @@ export function battleGLWanted() {
     (typeof gpuState !== 'undefined' && gpuState.lost)
   )
     return false;
-  const p = S.preferences || {};
+  const p = saveData.preferences || {};
   if (p.battleStage === 'classic') return false;
   /* v43: whatever walk scene is on screen and ready is the stage (it used to have to be the stop's own scene, so a battle on the second half of a road, or one started before the scene had opened, fell back to the painted stage) */ return (
     !!walkView.id && !!walkView.sc && !walkView.sc.room

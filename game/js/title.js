@@ -9,7 +9,7 @@ import { expose } from './test-globals.js';
 import { NW_TEST, accChipHTML, closeModal, modal, postProcess, render, sceneIdAt, settings } from './hooks.js';
 import { $, clamp } from './util.js';
 import { ROUTE, START_NODE } from './game-data.js';
-import { RM, S, U, esc, flush, freshKeep, lsSet, setS } from './game-state.js';
+import { RM, U, esc, flush, freshKeep, lsSet, saveData, setSaveData } from './game-state.js';
 import { userFps } from './frame-scheduler.js';
 import { uiIconHTML } from './art.js';
 import { humanHTML } from './person-art.js';
@@ -34,7 +34,7 @@ expose({
 /* to-module: end */
 export const TITLE = { on: false, t0: 0, run: 0, mounted: false };
 export function titleWanted() {
-  return !(typeof NW_TEST !== 'undefined' && NW_TEST) && !(S.preferences && S.preferences.skipTitle);
+  return !(typeof NW_TEST !== 'undefined' && NW_TEST) && !(saveData.preferences && saveData.preferences.skipTitle);
 }
 /* the camera: a slow drift along the front of the town, high above the rooftops, looking up the main street */
 function titleFrame() {
@@ -64,7 +64,7 @@ function titleFrame() {
   };
 }
 function titlePlayTime() {
-  const m = Math.floor((S.playMs || 0) / 60000);
+  const m = Math.floor((saveData.playMs || 0) / 60000);
   return m < 1
     ? 'just started'
     : m < 60
@@ -72,9 +72,9 @@ function titlePlayTime() {
       : `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, '0')} min`;
 }
 export function renderTitle() {
-  const cont = S.started && S.avatar,
-    place = cont && ROUTE[S.route.node] ? ROUTE[S.route.node].name : '',
-    nm = cont ? S.avatar.name || 'Trainer' : '';
+  const cont = saveData.started && saveData.avatar,
+    place = cont && ROUTE[saveData.route.node] ? ROUTE[saveData.route.node].name : '',
+    nm = cont ? saveData.avatar.name || 'Trainer' : '';
   return `<div class="ttl${cont ? ' can-tap' : ''}" data-a="${cont ? 'ttltap' : ''}"><div class="ttl-bg" aria-hidden="true"></div>
   <div class="ttl-acc">${typeof accChipHTML === 'function' ? accChipHTML() : ''}</div><div class="ttl-top"><h1 class="ttl-logo" aria-label="Pocket Billies"><span>POCKET</span><span>BILLIES</span></h1><p class="ttl-tag">Gotta tax 'em all!</p></div><p class="ttl-ver">${esc(PB_VERSION)}</p>
   <div class="ttl-bottom">
@@ -155,7 +155,7 @@ function titleEnd() {
   if (walkView.cv) stopWalkView();
 }
 function titleNew() {
-  if (!S.started) {
+  if (!saveData.started) {
     titleEnd();
     if (typeof csWanted === 'function' && csWanted()) csStart();
     else {
@@ -172,9 +172,9 @@ function titleNew() {
         l: 'Start a new game',
         c: 'red',
         f: () => {
-          setS(freshKeep());
-          S.savedAt = Date.now();
-          lsSet(S);
+          setSaveData(freshKeep());
+          saveData.savedAt = Date.now();
+          lsSet(saveData);
           flush();
           U.intro = 0;
           U.pg = null;
@@ -197,7 +197,8 @@ function titleNew() {
 }
 /* play time: counted while the game is open and in view */
 setInterval(() => {
-  if (typeof S !== 'undefined' && S && S.started && !document.hidden && !U.title) S.playMs = (S.playMs || 0) + 15000;
+  if (typeof saveData !== 'undefined' && saveData && saveData.started && !document.hidden && !U.title)
+    saveData.playMs = (saveData.playMs || 0) + 15000;
 }, 15000);
 document.addEventListener(
   'click',
@@ -233,7 +234,7 @@ document.addEventListener(
 );
 document.addEventListener('keydown', ev => {
   if (!TITLE.on || U.modal) return;
-  if ((ev.key === 'Enter' || ev.key === ' ') && S.started) {
+  if ((ev.key === 'Enter' || ev.key === ' ') && saveData.started) {
     ev.preventDefault();
     titleEnd();
     render();

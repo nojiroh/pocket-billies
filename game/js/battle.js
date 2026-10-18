@@ -48,7 +48,6 @@ import {
   B,
   N,
   RM,
-  S,
   U,
   addEgg,
   addMon,
@@ -63,6 +62,7 @@ import {
   pickW,
   plural,
   save,
+  saveData,
   setB,
   stat,
   xpFor,
@@ -648,7 +648,7 @@ function award(e) {
     gainXp(m, amt, say);
   });
   const share = Math.floor(amt * P.teamXpShare),
-    rest = S.team.filter(m => !on.includes(m) && m.hp > 0 && m.job == null);
+    rest = saveData.team.filter(m => !on.includes(m) && m.hp > 0 && m.job == null);
   if (rest.length && share > 0) {
     rest.forEach(m => gainXp(m, share, () => {}));
     say(`The rest of the team gained ${fmt(share)} XP.`);
@@ -688,7 +688,7 @@ export function doSwitch(k, idx) {
   sd.inh = null;
   const m = A(k);
   say(ASIDE[k] === 0 ? `Go, ${N(m)}!` : `${B.foeName || 'The wild side'} sent out ${N(m)}.`, { k: 'enter', si: k });
-  S.seen[m.sp] = 1;
+  saveData.seen[m.sp] = 1;
   if (sd.rent && !hasPassive(SP[m.sp].types, 'landlord')) {
     const d = Math.max(1, Math.floor(maxHp(m) / Math.max(2, RB.rentFraction)));
     m.hp = Math.max(0, m.hp - d);
@@ -832,7 +832,7 @@ function chooseAI(k = 1) {
 }
 /* fmt: 'single', 'double' (two a side) or 'alpha' (up to three of yours against one Alpha) */
 export function newBattle(kind, foe, extra) {
-  const able = S.team.map((m, i) => i).filter(i => S.team[i].hp > 0 && S.team[i].job == null);
+  const able = saveData.team.map((m, i) => i).filter(i => saveData.team[i].hp > 0 && saveData.team[i].job == null);
   if (!able.length) {
     toast('Everyone on your team has fainted. Rest first, or use a Revive.');
     return false;
@@ -856,12 +856,12 @@ export function newBattle(kind, foe, extra) {
         needSwitch: [],
         offer: null,
         foeName: '',
-        lead: S.team[able[0]].uid,
+        lead: saveData.team[able[0]].uid,
         turn: 0,
         plan: [],
         cur: 0,
         sides: [
-          { team: S.team, f: fighters(n0, able), rent: false, pivot: false, mail: [], inh: null },
+          { team: saveData.team, f: fighters(n0, able), rent: false, pivot: false, mail: [], inh: null },
           {
             team: foe,
             f: fighters(
@@ -897,7 +897,7 @@ export function newBattle(kind, foe, extra) {
     },
     enumerable: false,
   });
-  foe.forEach(m => (S.seen[m.sp] = 1));
+  foe.forEach(m => (saveData.seen[m.sp] = 1));
   return true;
 }
 const goNames = K => {
@@ -938,7 +938,8 @@ export function startTrainer(id, o = {}) {
     toast(`${T.name} has no team yet. Add one in Pocket Billies Studio.`);
     return;
   }
-  const dbl = (T.double || o.double) && team.length >= 2 && S.team.filter(m => m.hp > 0 && m.job == null).length >= 1;
+  const dbl =
+    (T.double || o.double) && team.length >= 2 && saveData.team.filter(m => m.hp > 0 && m.job == null).length >= 1;
   if (
     !newBattle('trainer', team, {
       tid: id,
@@ -1070,10 +1071,10 @@ function catchRoll(id, T, spin) {
   while (w < 3 && rnd() < q) w++;
   return { caught: w === 3, w, edge: false, P };
 }
-export const teamNeedsHp = () => S.team.some(m => m.hp > 0 && m.hp < maxHp(m) && m.job == null);
+export const teamNeedsHp = () => saveData.team.some(m => m.hp > 0 && m.hp < maxHp(m) && m.job == null);
 export const canUse = (it, m) => {
   const I = ITEMS[it];
-  if (!I || !S.items[it] || I.evoItem) return false;
+  if (!I || !saveData.items[it] || I.evoItem) return false;
   if (I.revive) return m.hp <= 0;
   if (m.hp <= 0) return false;
   if (I.hpAll) return teamNeedsHp();
@@ -1086,7 +1087,7 @@ export function applyItem(it, id, inB) {
   const I = ITEMS[it],
     m = findMon(id);
   if (!m || !canUse(it, m)) return false;
-  S.items[it]--;
+  saveData.items[it]--;
   const t = [];
   let healed = 0;
   if (I.revive) {
@@ -1112,7 +1113,7 @@ export function applyItem(it, id, inB) {
     }
     if (I.hpAll) {
       let n = 0;
-      S.team.forEach(x => {
+      saveData.team.forEach(x => {
         if (x.hp > 0 && x.job == null) {
           const g = Math.min(I.hpAll, maxHp(x) - x.hp);
           if (g > 0) {
@@ -1208,10 +1209,10 @@ export function battleResize() {
   });
 }
 export function openBattle() {
-  const bs = (S.preferences || {}).battleSpeed;
+  const bs = (saveData.preferences || {}).battleSpeed;
   if (bs && !U.dbgSpeed) battleStage.speed = bs === 'fast' ? 1.6 : bs === 'faster' ? 2.2 : 1;
   const area = B.area || 'grass',
-    list = S.team.map(m => [m.sp, m.gold, RIG_BACK_VIEW]).concat(B.sides[1].team.map(m => [m.sp, m.gold, 1]));
+    list = saveData.team.map(m => [m.sp, m.gold, RIG_BACK_VIEW]).concat(B.sides[1].team.map(m => [m.sp, m.gold, 1]));
   const b = B;
   Promise.all([battleStagePrepare(area), rigPreload(list)])
     .then(() => {
@@ -1545,7 +1546,7 @@ function paintParty() {
   const pip = m => `<i class="pip${m.hp <= 0 ? ' out' : ''}${m.status ? ' st' : ''}"></i>`;
   const a = $('#pips0');
   if (a)
-    a.innerHTML = S.team
+    a.innerHTML = saveData.team
       .filter(m => m.job == null)
       .map(pip)
       .join('');
@@ -1603,7 +1604,7 @@ function tickerUpdate(s, mk) {
   })();
   items.push(
     `<span class="tki"><b>INNER SUN</b> ${sunTxt}</span>`,
-    `<span class="tki"><b>MONEY</b> $${fmt(S.se)}</span>`
+    `<span class="tki"><b>MONEY</b> $${fmt(saveData.se)}</span>`
   );
   const h = items.join('<i>•</i>');
   el.innerHTML = h + '<i>•</i>' + h + '<i>•</i>';
@@ -1743,7 +1744,7 @@ function monPick(m, act, attrs, dis, note) {
 function teamPick(back) {
   const on = B.sides[0].f.filter(f => f.on).map(f => f.act),
     called = (B.plan || []).filter(p => p.k === 'switch').map(p => p.i);
-  return `<div class="plist">${S.team
+  return `<div class="plist">${saveData.team
     .map((m, i) => {
       const act = (on.includes(i) && m.hp > 0) || called.includes(i);
       const dis = act || m.hp <= 0 || m.job != null;
@@ -1783,11 +1784,11 @@ export function paintActions() {
   if (ph === 'choose') {
     const m = A(B.cur),
       first = !B.plan.length,
-      coins = Object.keys(COINS).reduce((a, k) => a + (S.coins[k] || 0), 0),
+      coins = Object.keys(COINS).reduce((a, k) => a + (saveData.coins[k] || 0), 0),
       items = Object.keys(ITEMS)
-        .filter(k => S.items[k] > 0 && !ITEMS[k].evoItem)
-        .reduce((a, k) => a + S.items[k], 0),
-      crew = S.team.filter(x => x.job == null),
+        .filter(k => saveData.items[k] > 0 && !ITEMS[k].evoItem)
+        .reduce((a, k) => a + saveData.items[k], 0),
+      crew = saveData.team.filter(x => x.job == null),
       alive = crew.filter(x => x.hp > 0).length;
     h = `<div class="c-choose"><button class="bt fight" data-a="bfight"><span class="bt-i">${uiIconHTML('fight', 24)}</span><span class="bt-t"><b>Fight</b><small>${plural(m.moves.length, 'move')}</small></span><kbd>F</kbd></button>
   <div class="bt-row"><button class="bt coin" data-a="bcoins" ${wild && first ? '' : 'disabled'}>${uiIconHTML('coin', 18)}<b>Tax it</b><small>${wild ? (first ? coins + ' left' : 'First pick only') : 'Wild only'}</small><kbd>X</kbd></button>
@@ -1823,27 +1824,27 @@ export function paintActions() {
     h = `<div class="coins">${Object.keys(COINS)
       .map((k, n) => {
         const c = COINS[k],
-          have = S.coins[k] || 0,
+          have = saveData.coins[k] || 0,
           odds = Math.round(catchOdds(k, 1 + RC.ring * 0.5, false) * 100);
         return `<button class="ccard" data-a="bcoin" data-c="${k}" ${have ? '' : 'disabled'}>${coinHTML(k, 34)}<span class="cc-t"><b>${esc(c.n)}</b><small class="tnum">${c.m === 0 ? 'Guaranteed' : `~${odds}% tax`} · ${have} left</small></span><span class="cc-bar"><i style="width:${c.m === 0 ? 100 : clamp(odds, 2, 100)}%"></i></span></button>`;
       })
       .join('')}</div>${backBtn()}`;
   } else if (ph === 'items') {
-    const its = Object.keys(ITEMS).filter(k => S.items[k] > 0 && !ITEMS[k].evoItem);
+    const its = Object.keys(ITEMS).filter(k => saveData.items[k] > 0 && !ITEMS[k].evoItem);
     h = `<div class="plist">${
       its.length
         ? its
             .map(k => {
               const I = ITEMS[k],
-                ok = I.hpAll ? teamNeedsHp() : S.team.some(m => canUse(k, m));
-              return `<button class="pick" data-a="bitem" data-it="${k}" ${ok ? '' : 'disabled'}>${itemIcon(k, 32)}<span class="pk-t"><b>${esc(I.n)}</b><small>${esc(I.d)}</small></span><span class="pk-s tnum">×${S.items[k]}</span></button>`;
+                ok = I.hpAll ? teamNeedsHp() : saveData.team.some(m => canUse(k, m));
+              return `<button class="pick" data-a="bitem" data-it="${k}" ${ok ? '' : 'disabled'}>${itemIcon(k, 32)}<span class="pk-t"><b>${esc(I.n)}</b><small>${esc(I.d)}</small></span><span class="pk-s tnum">×${saveData.items[k]}</span></button>`;
             })
             .join('')
         : '<p class="note">No items. Buy some at a town shop.</p>'
     }</div>${backBtn()}`;
   } else if (ph === 'itemTarget') {
     const it = B.item;
-    h = `<p class="note">Use ${esc(ITEMS[it].n)} on:</p><div class="plist">${S.team.map(m => monPick(m, false, `data-a="bitemon" data-u="${m.uid}"`, !canUse(it, m), m.hp <= 0 ? 'Fainted' : stBadge(m.status))).join('')}</div>${backBtn()}`;
+    h = `<p class="note">Use ${esc(ITEMS[it].n)} on:</p><div class="plist">${saveData.team.map(m => monPick(m, false, `data-a="bitemon" data-u="${m.uid}"`, !canUse(it, m), m.hp <= 0 ? 'Fainted' : stBadge(m.status))).join('')}</div>${backBtn()}`;
   } else if (ph === 'team') h = teamPick(true);
   else if (ph === 'switch') h = teamPick(false);
   else if (ph === 'aim') {
@@ -1921,7 +1922,7 @@ export function doThrow(spin) {
   const ph = battleStageRingPhase(),
     T = 1 + RC.ring * ph,
     id = B.coin;
-  S.coins[id]--;
+  saveData.coins[id]--;
   save();
   battleStage.ring = null;
   const res = catchRoll(id, T, spin),
@@ -1971,17 +1972,18 @@ export function endBattle() {
     lead = findMon(B.lead);
   if (o === 'win' && typeof jingle === 'function') jingle(JINGLES.victory);
   if (o === 'win')
-    for (const m of S.team) if (m.hp > 0 && m.job == null) m.wins = (m.wins || 0) + 1; /* v36: the Hype counter */
+    for (const m of saveData.team)
+      if (m.hp > 0 && m.job == null) m.wins = (m.wins || 0) + 1; /* v36: the Hype counter */
   if (typeof battleTipHide === 'function') battleTipHide();
-  if (kind === 'wild') S.queue = S.queue.filter(q => q.id !== B.qid);
+  if (kind === 'wild') saveData.queue = saveData.queue.filter(q => q.id !== B.qid);
   if (lead) {
     if (o === 'win') lead.streak = (lead.streak || 0) + 1;
     else if (o === 'lose') lead.streak = 0;
   }
   /* v47: Blake's first battle, in the opening: no fee and no sheet, win or lose; the story picks it up (story.js) */
   if (T && T.tutorial) {
-    if (o === 'win') S.flags[tid] = 1;
-    if (o === 'lose') for (const m of S.team) m.hp = Math.max(1, m.hp);
+    if (o === 'win') saveData.flags[tid] = 1;
+    if (o === 'lose') for (const m of saveData.team) m.hp = Math.max(1, m.hp);
     save();
     battleLeave(() => {
       setB(null);
@@ -1999,8 +2001,8 @@ export function endBattle() {
   }
   const after = [];
   if (o === 'lose') {
-    const fee = Math.floor(S.se * RB.loseFee);
-    S.se -= fee;
+    const fee = Math.floor(saveData.se * RB.loseFee);
+    saveData.se -= fee;
     healAll();
     after.push({
       title: 'Your team fainted',
@@ -2023,18 +2025,18 @@ export function endBattle() {
       });
   }
   if (kind === 'trainer' && o === 'win') {
-    S.se += T.reward || 0;
-    const first = !S.flags[tid];
-    S.flags[tid] = 1;
+    saveData.se += T.reward || 0;
+    const first = !saveData.flags[tid];
+    saveData.flags[tid] = 1;
     let extra = '';
     if (first && T.egg && addEgg(T.egg)) extra += ` and a ${T.egg} km egg`;
     const st = T.seat;
     if (st) {
-      const nu = !S.seats.includes(st.id);
+      const nu = !saveData.seats.includes(st.id);
       if (nu) {
-        S.seats.push(st.id);
-        for (const k in st.coins || {}) S.coins[k] = (S.coins[k] || 0) + st.coins[k];
-        for (const k in st.items || {}) S.items[k] = (S.items[k] || 0) + st.items[k];
+        saveData.seats.push(st.id);
+        for (const k in st.coins || {}) saveData.coins[k] = (saveData.coins[k] || 0) + st.coins[k];
+        for (const k in st.items || {}) saveData.items[k] = (saveData.items[k] || 0) + st.items[k];
       }
       after.push({
         title: nu ? esc(st.title || 'Badge') : 'Rematch won',
@@ -2084,7 +2086,7 @@ export function setEndBattle(v) {
    camera, so the battle reads from the picture itself. With two or three a side they replace the corner cards; in a
    one-on-one they do too, unless Settings → Battle HUD is set to the classic cards. Tap a foe's plate (or the foe) to
    aim at it. */
-const hudScene = () => !!B && (isMulti() || ((S.preferences || {}).battleHud || 'scene') !== 'classic');
+const hudScene = () => !!B && (isMulti() || ((saveData.preferences || {}).battleHud || 'scene') !== 'classic');
 function plateEl(k) {
   const L = $('#plates');
   if (!L) return null;

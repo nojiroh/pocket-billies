@@ -385,7 +385,7 @@ NWLOG.glInfo = () => {
 NWLOG.state = () => {
   const s = {};
   try {
-    const p = GAME.S.preferences || {};
+    const p = GAME.saveData.preferences || {};
     s.preferences = {
       theme: p.theme || 'system',
       motion: p.motion || 'system',
@@ -393,17 +393,17 @@ NWLOG.state = () => {
       effects: p.effects || 'full',
       tilt: p.tilt !== false,
     };
-    s.started = !!GAME.S.started;
+    s.started = !!GAME.saveData.started;
     s.tab = GAME.U.tab;
     s.battle = !!GAME.B;
-    s.stop = GAME.S.route ? GAME.S.route.node : null;
-    s.trip = GAME.S.route ? GAME.S.route.plan.slice() : [];
-    s.tripProgress = GAME.S.route ? GAME.S.route.prog : 0;
+    s.stop = GAME.saveData.route ? GAME.saveData.route.node : null;
+    s.trip = GAME.saveData.route ? GAME.saveData.route.plan.slice() : [];
+    s.tripProgress = GAME.saveData.route ? GAME.saveData.route.prog : 0;
     s.scene = typeof GAME.walkView !== 'undefined' ? GAME.walkView.id : null;
-    s.team = GAME.S.team ? GAME.S.team.length : 0;
-    s.encounters = GAME.S.queue ? GAME.S.queue.length : 0;
-    s.badges = (GAME.S.seats || []).length;
-    s.visited = Object.keys(GAME.S.visited || {}).length;
+    s.team = GAME.saveData.team ? GAME.saveData.team.length : 0;
+    s.encounters = GAME.saveData.queue ? GAME.saveData.queue.length : 0;
+    s.badges = (GAME.saveData.seats || []).length;
+    s.visited = Object.keys(GAME.saveData.visited || {}).length;
     s.frameHz = GAME.FRAME.hz;
     s.fpsCap = GAME.userFps();
   } catch (e) {
@@ -438,8 +438,8 @@ NWLOG.more = () => {
     }
   };
   t('account', () => (typeof GAME.ACC !== 'undefined' && GAME.ACC.user ? 'signed in' : 'this browser'));
-  t('preferences', () => Object.assign({}, GAME.S.preferences || {}));
-  t('saveBytes', () => JSON.stringify(GAME.S).length);
+  t('preferences', () => Object.assign({}, GAME.saveData.preferences || {}));
+  t('saveBytes', () => JSON.stringify(GAME.saveData).length);
   t('time', () =>
     typeof GAME.environment !== 'undefined'
       ? {
@@ -527,7 +527,7 @@ NWLOG.more = () => {
       : null
   );
   t('today', () =>
-    typeof GAME.chalToday === 'function' && GAME.S.started
+    typeof GAME.chalToday === 'function' && GAME.saveData.started
       ? { challenges: GAME.chalToday().list.map(c => [c.k, c.have, c.need, c.claimed]), stamps: GAME.stampCount() }
       : null
   );

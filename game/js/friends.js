@@ -12,7 +12,7 @@
 import { expose } from './test-globals.js';
 import { ACC, accOn, closeModal, modal, provide, render, sceneIdAt, toast, walkOff } from './hooks.js';
 import { ROUTE, SP } from './game-data.js';
-import { N, S, U, cleanName, esc, plural } from './game-state.js';
+import { N, U, cleanName, esc, plural, saveData } from './game-state.js';
 import { owFrames, portraitHTML, trWarm } from './person-art.js';
 import { rigCanvasHTML } from './skeleton-rig.js';
 import { directionOf, walkView } from './walk-view.js';
@@ -210,9 +210,9 @@ function frWatchErr(u, e) {
 }
 /* what friends see of you: written when it changes, at most every 20 s (where you stand, every 60 s) */
 function frPublish(now) {
-  if (!FR.on || !S.started) return;
+  if (!FR.on || !saveData.started) return;
   const t = Date.now(),
-    node = S.route && S.route.node,
+    node = saveData.route && saveData.route.node,
     r = ROUTE[node] || {},
     sid = typeof sceneIdAt === 'function' ? sceneIdAt(node) : null;
   let x = null,
@@ -221,11 +221,11 @@ function frPublish(now) {
     x = +U.roam.x.toFixed(1);
     z = +U.roam.z.toFixed(1);
   }
-  const m = typeof buddyBilly === 'function' ? buddyBilly() : S.team && S.team[0],
+  const m = typeof buddyBilly === 'function' ? buddyBilly() : saveData.team && saveData.team[0],
     pt = m ? { sp: m.sp, gold: !!m.gold, name: N(m), lvl: m.lvl } : null;
   const doc = {
-    name: (S.avatar && S.avatar.name) || ACC.user.name || 'Trainer',
-    avatar: S.avatar || null,
+    name: (saveData.avatar && saveData.avatar.name) || ACC.user.name || 'Trainer',
+    avatar: saveData.avatar || null,
     partner: pt,
     at: { node, place: r.name || '', sid, x, z, t },
     v: 1,
@@ -284,7 +284,7 @@ async function frAdd(code) {
       .set({
         from: FR.uid,
         to,
-        fromName: (S.avatar && S.avatar.name) || ACC.user.name || 'Trainer',
+        fromName: (saveData.avatar && saveData.avatar.name) || ACC.user.name || 'Trainer',
         status: 'pending',
         t: Date.now(),
       });
