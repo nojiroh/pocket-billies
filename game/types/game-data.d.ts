@@ -764,7 +764,16 @@ export interface RobotPart {
   move?: MoveId;
   stats: Partial<Record<StatId, number>>;
   /** the placeholder picture */
-  art: { color: Color; shape: string; w?: number; h?: number; img?: string; imgB?: string; head?: string; headB?: string };
+  art: {
+    color: Color;
+    shape: string;
+    w?: number;
+    h?: number;
+    img?: string;
+    imgB?: string;
+    head?: string;
+    headB?: string;
+  };
   d?: string;
 }
 export interface RobotGem {
