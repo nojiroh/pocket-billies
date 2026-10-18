@@ -19,7 +19,7 @@ import { KBACK, drawRig, rigFrame, rigParts, rigPreload } from './skeleton-rig.j
 import { scPrepare } from './battle-stage.js';
 import { prepareMap, walkView, walkablePointNear, worldToScreen } from './walk-view.js';
 import { ENV } from './environment.js';
-import { dioH } from './walk-view-gl.js';
+import { standingHeightAt } from './walk-view-gl.js';
 /* eslint-disable no-func-assign */
 expose({
   OWM: [() => OWM],
@@ -126,7 +126,7 @@ export function owItem(k, sp, gold, view, pose, t, seed, x, z, o = {}) {
   if (!im) return null;
   const R = im.__R,
     mpp = owMpp(sp, R, o.big || 1),
-    gy = dioH(x, z);
+    gy = standingHeightAt(x, z);
   return Object.assign(
     {
       k,
@@ -455,7 +455,7 @@ function owFx(glows, dt) {
     }
     q.y += q.vy * dt;
     const a = Math.sin((q.age / q.max) * Math.PI);
-    glows.push([q.x, dioH(q.x, q.z) + q.y, q.z, 0.05, q.c, 1.4 * a]);
+    glows.push([q.x, standingHeightAt(q.x, q.z) + q.y, q.z, 0.05, q.c, 1.4 * a]);
   }
 }
 /* labels: what your buddy just said */

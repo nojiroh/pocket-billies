@@ -13,7 +13,7 @@ import { B, RM, S, U, esc, healAll, save, today } from './game-state.js';
 import { DR } from './dressing-room.js';
 import { baseMapId, walkView, walkablePointNear } from './walk-view.js';
 import { EGL } from './engine/webgl.js';
-import { dioH, walkRenderer } from './walk-view-gl.js';
+import { standingHeightAt, walkRenderer } from './walk-view-gl.js';
 import { startTrainer, startWild } from './battle.js';
 import { music } from './sound.js';
 import { TALK, talk, talkHide, talkLine } from './talk.js';
@@ -141,7 +141,7 @@ async function rivalScene(T) {
     CS.actors.rival.hidden = true;
     const mid = () => [(P.x + to[0]) / 2, (P.z + to[1]) / 2],
       m = mid(),
-      gy = dioH(m[0], m[1]);
+      gy = standingHeightAt(m[0], m[1]);
     csShot({ eye: [m[0], gy + 3.6, m[1] - 8.5], tgt: [m[0], gy + 1, m[1] + 1.5], fov: 38, w: 6 });
     await csWait(300);
     if (!alive()) return;

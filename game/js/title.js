@@ -15,7 +15,7 @@ import { uiIco } from './art.js';
 import { humanHTML } from './person-art.js';
 import { applyPreferences } from './settings-screen.js';
 import { mapById, stopWalkView, walkView } from './walk-view.js';
-import { dioH, mountWalkView, walkRenderer } from './walk-view-gl.js';
+import { mountWalkView, standingHeightAt, walkRenderer } from './walk-view-gl.js';
 import { music, musicFor } from './sound.js';
 import { csSceneId, csStart, csStartName, csWanted } from './cutscene.js';
 /* eslint-disable no-func-assign */
@@ -47,7 +47,7 @@ function titleFrame() {
       : sc,
     o = sc.baseOff || [0, 0],
     x = o[0] + b.w * (0.28 + 0.44 * k),
-    gy = dioH(clamp(x, o[0] + 1, o[0] + b.w - 1), clamp(o[1] + b.h * 0.3, o[1] + 1, o[1] + b.h - 1)),
+    gy = standingHeightAt(clamp(x, o[0] + 1, o[0] + b.w - 1), clamp(o[1] + b.h * 0.3, o[1] + 1, o[1] + b.h - 1)),
     eye = [x, gy + 17, o[1] - 4],
     tgt = [x + 5, gy + 1.2, o[1] + b.h * 0.36],
     fd = Math.hypot(tgt[0] - eye[0], tgt[1] - eye[1], tgt[2] - eye[2]);

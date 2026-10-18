@@ -23,12 +23,10 @@ import {
   bldSigF,
   dglWallDefault,
   dioArtVer,
-  dioGroundH,
-  dioH,
-  dioHRaw,
   envHere,
   envSeason,
   envState,
+  groundHeightAt,
   lifePaths,
   loreFlags,
   mapChatLines,
@@ -36,11 +34,13 @@ import {
   provide,
   pwPaint,
   pwSettle,
+  rawHeightAt,
   scenesFor,
   scenesNeed,
   sfx,
   sfxAt,
   smooth01,
+  standingHeightAt,
   talkFolk,
   voxPaths,
   walkMode,
@@ -2611,7 +2611,7 @@ export function mapBridges(sc = walkView.sc) {
       len = Math.hypot(c[0] - a[0], c[1] - a[1]) || 1,
       ux = (c[0] - a[0]) / len,
       uz = (c[1] - a[1]) / len,
-      g = (x, z) => dioHRaw(sc, x, z) + stepRaiseAt(x, z, sc);
+      g = (x, z) => rawHeightAt(sc, x, z) + stepRaiseAt(x, z, sc);
     /* alpha 0.4: a jetty (pier: 1): one flat deck from the bank (a) out over the water (b), level with the bank and never
      closer than a hand's breadth above the water, so there is always water underneath it */
     if (b.pier) {
@@ -2764,7 +2764,7 @@ export function navGrid() {
       const ec = E ? stepCellAt(x, z, E) : 0,
         SH = E ? stepEdgeShape(sc, E) : null;
       let h =
-        dioHRaw(sc, x, z) +
+        rawHeightAt(sc, x, z) +
         (E ? E.H[ec] + (SH ? (SH[ec * 4] + SH[ec * 4 + 1] + SH[ec * 4 + 2] + SH[ec * 4 + 3]) / 4 : 0) : 0);
       if (BR) {
         const d = bridgeAt(x, z, sc);
@@ -3248,14 +3248,14 @@ export function updatePlayer(st, dt) {
 export function climbEnds(p) {
   if (p._ce && p._ce.id === walkView.id && p._ce.k === walkView.gkey) return p._ce.v;
   const t = p.to || [p.x, p.z + 0.9],
-    yt = dioH(t[0], t[1]);
+    yt = standingHeightAt(t[0], t[1]);
   let top = null;
   /* the landing on top: open ground at the top's height, a little back from the edge if the edge itself is too narrow */
   for (const dz of [0, 0.4, 0.8, 1.2, 1.6, 2.2]) {
     for (const dx of [0, -0.4, 0.4, -0.8, 0.8]) {
       const x = t[0] + dx,
         z = t[1] + dz;
-      if (isWalkable(x, z) && Math.abs(dioH(x, z) - yt) < 0.35) {
+      if (isWalkable(x, z) && Math.abs(standingHeightAt(x, z) - yt) < 0.35) {
         top = [x, z];
         break;
       }
@@ -3274,15 +3274,17 @@ export function climbEnds(p) {
 export function climbStartEnd(p) {
   const P = walkView.pl,
     E = climbEnds(p),
-    y = P.yv ?? dioH(P.x, P.z);
-  return Math.abs(y - dioH(E.top[0], E.top[1])) < Math.abs(y - dioH(E.bot[0], E.bot[1])) ? E.top : E.bot;
+    y = P.yv ?? standingHeightAt(P.x, P.z);
+  return Math.abs(y - standingHeightAt(E.top[0], E.top[1])) < Math.abs(y - standingHeightAt(E.bot[0], E.bot[1]))
+    ? E.top
+    : E.bot;
 }
 export function startClimb(p) {
   const P = walkView.pl,
     E = climbEnds(p),
-    yb = dioH(E.bot[0], E.bot[1]),
-    yt = dioH(E.top[0], E.top[1]),
-    y = P.yv ?? dioH(P.x, P.z),
+    yb = standingHeightAt(E.bot[0], E.bot[1]),
+    yt = standingHeightAt(E.top[0], E.top[1]),
+    y = P.yv ?? standingHeightAt(P.x, P.z),
     up = Math.abs(y - yb) <= Math.abs(y - yt);
   P.route = null;
   P.goal = null;
@@ -3350,8 +3352,8 @@ function stepClimb(dt) {
 /* the height you are drawn at: follows the ground a step at a time, and off a ledge you hop down in a little arc */
 function updatePlayerHeight(dt) {
   const P = walkView.pl;
-  if (typeof dioH !== 'function') return;
-  const gh = dioH(P.x, P.z);
+  if (typeof standingHeightAt !== 'function') return;
+  const gh = standingHeightAt(P.x, P.z);
   if (P.yv == null || P.yId !== walkView.id || walkView.opt.instant) {
     P.yv = gh;
     P.yId = walkView.id;
@@ -3389,8 +3391,8 @@ function updatePlayerHeight(dt) {
 }
 /* v23: how the ground ahead changes your pace: up to 40% slower up a steep ramp or stairs, up to 12% quicker going down */
 function slopeSpeedFactor(x, z, ux, uz) {
-  if (typeof dioGroundH !== 'function') return 1;
-  const g = (dioGroundH(x + ux * 0.35, z + uz * 0.35) - dioGroundH(x, z)) / 0.35;
+  if (typeof groundHeightAt !== 'function') return 1;
+  const g = (groundHeightAt(x + ux * 0.35, z + uz * 0.35) - groundHeightAt(x, z)) / 0.35;
   if (!(Math.abs(g) < 1.2)) return 1;
   return clamp(1 - g * 0.75, 0.6, 1.12);
 }

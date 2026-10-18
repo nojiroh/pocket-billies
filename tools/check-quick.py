@@ -47,7 +47,7 @@ ARGS = sys.argv[1:]
 # checks, Start-Game on a phone (with the debug log export) and the Studio opening. The full check runs nightly and per phase
 SMOKE = '--smoke' in ARGS
 # where a point of the walk scene is on screen (the same projection the renderer uses)
-PROJ = "(([x,z])=>{const C=walkView.C,r=walkView.cv.getBoundingClientRect(),y=dioH(x,z)+(typeof dglCurve==='function'?dglCurve(x,z):0);if(C.vp){const m=C.vp,cx=m[0]*x+m[4]*y+m[8]*z+m[12],cy=m[1]*x+m[5]*y+m[9]*z+m[13],w=m[3]*x+m[7]*y+m[11]*z+m[15];return [r.left+(cx/w*.5+.5)*r.width,r.top+(1-(cy/w*.5+.5))*r.height]}const q=worldToScreen(C,x,y,z);return [r.left+q.x/walkView.cv.width*r.width,r.top+q.y/walkView.cv.height*r.height]})(%s)"
+PROJ = "(([x,z])=>{const C=walkView.C,r=walkView.cv.getBoundingClientRect(),y=standingHeightAt(x,z)+(typeof dglCurve==='function'?dglCurve(x,z):0);if(C.vp){const m=C.vp,cx=m[0]*x+m[4]*y+m[8]*z+m[12],cy=m[1]*x+m[5]*y+m[9]*z+m[13],w=m[3]*x+m[7]*y+m[11]*z+m[15];return [r.left+(cx/w*.5+.5)*r.width,r.top+(1-(cy/w*.5+.5))*r.height]}const q=worldToScreen(C,x,y,z);return [r.left+q.x/walkView.cv.width*r.width,r.top+q.y/walkView.cv.height*r.height]})(%s)"
 ONLY = next((a.split('=', 1)[1].split(',') for a in ARGS if a.startswith('--scenes=')), None)
 STEPS = next((a.split('=', 1)[1].split(',') for a in ARGS if a.startswith('--steps=')), None)
 problems, notes, steps = [], [], []
@@ -805,7 +805,7 @@ def desktop_steps(b, base, R):
         node = pg.evaluate("ROUTE.findIndex(r=>r.scene==='ridge')")
         if node >= 0:
             go_scene(pg, node); time.sleep(1.5)
-            r = pg.evaluate("(()=>{const p=walkView.sc.props.find(p=>p.act==='climb');if(!p)return null;const E=climbEnds(p);walkView.pl.route=null;walkView.pl.x=E.bot[0];walkView.pl.z=E.bot[1];walkView.pl.yv=dioH(E.bot[0],E.bot[1]);return [E.top[0],E.top[1],dioH(E.top[0],E.top[1]),p.h]})()")
+            r = pg.evaluate("(()=>{const p=walkView.sc.props.find(p=>p.act==='climb');if(!p)return null;const E=climbEnds(p);walkView.pl.route=null;walkView.pl.x=E.bot[0];walkView.pl.z=E.bot[1];walkView.pl.yv=standingHeightAt(E.bot[0],E.bot[1]);return [E.top[0],E.top[1],standingHeightAt(E.top[0],E.top[1]),p.h]})()")
             if not r: raise Exception('no ladder at Kitewind Ridge')
             time.sleep(1); pg.evaluate("walkPick({k:'act',p:walkView.sc.props.find(p=>p.act==='climb'),act:'climb'});0"); time.sleep(1)
             until(pg, '!walkView.pl.climb', 60); time.sleep(.5); shot(pg, 'ladder-top')          # the climb runs on game time, slow in software drawing
@@ -1377,7 +1377,7 @@ def desktop_steps(b, base, R):
             d = pixels(ImageChops.difference(im1, im0)); bump = sum(sum(p) for p in d) / (3 * len(d))
             if bump < .6: raise Exception(f'the ground normal map changes the picture by only {bump:.2f}/255 (not in use?)')
             rx, z0, z1 = lab['ridge']; zz = 16
-            hy = lambda x, z: pg.evaluate(f"dioH({x},{z})")
+            hy = lambda x, z: pg.evaluate(f"standingHeightAt({x},{z})")
             west, east, top = lum(im1, [[rx - 2.4, hy(rx - 2.4, zz), zz], [rx + 2.4, hy(rx + 2.4, zz), zz], [rx, hy(rx, zz), zz]])
             if west is None or east is None or west < east * 1.1: raise Exception(f'the slope facing the sun is not brighter: west {west and round(west)}, east {east and round(east)}, top {top and round(top)}')
             bench('test_light_terrain', 17, 9, 17, 0); im2 = picture(); bx0, bz0, bx1, bz1, bh = lab['block']
@@ -1641,7 +1641,7 @@ def desktop_steps(b, base, R):
           for(const id of ROUTE.map(r=>r.scene).filter(Boolean)){const sc=mapById(id);if(!sc)continue;walkView.sc=sc;walkView.noShape=1;const a=reach(sc);walkView.noShape=0;const b=reach(sc);
             let fl=[];for(const p of sc.props||[]){const M=C.props[p.k];if(!M||M.flat||M.walk||M.build||M.door!=null||(typeof propShown==='function'&&!propShown(p)))continue;const g=(M.group||'')+' '+p.k;if(DGL_HUG.test(g)&&!/tree|lamp|post|sign|pole/.test(g))continue;
               const s=p.s||1,y=dglPropY(p,M),lv=stepLevelAt(p.x,p.z);let pts;if(M.box){const bw=M.box[0]*s/2,bd=M.box[1]*s;pts=[[p.x-bw,p.z-.05],[p.x+bw,p.z-.05],[p.x-bw,p.z+bd],[p.x+bw,p.z+bd]]}else{const r=Math.min(.45,(M.shadow||0)*.3*s);if(r<.08)continue;pts=[[p.x-r,p.z],[p.x+r,p.z],[p.x,p.z-r*.6],[p.x,p.z+r*.6]]}
-              let lo=1e9;for(const [x,z] of pts)if(Math.abs(stepLevelAt(x,z)-lv)<=.05)lo=Math.min(lo,dioH(x,z));if(lo<1e8&&y-lo>.15)fl.push(p.k+'@'+p.x.toFixed(1)+','+p.z.toFixed(1))}
+              let lo=1e9;for(const [x,z] of pts)if(Math.abs(stepLevelAt(x,z)-lv)<=.05)lo=Math.min(lo,standingHeightAt(x,z));if(lo<1e8&&y-lo>.15)fl.push(p.k+'@'+p.x.toFixed(1)+','+p.z.toFixed(1))}
             out.push({id,a,b,fl})}
           walkView.sc=keep;walkView.nav=null;walkView.navSc=null;return out})()""")
         moved = [f"{r['id']} ({r['a'][0]}→{r['b'][0]} cells, exits {r['a'][1]}→{r['b'][1]})" for r in R2 if r['a'] != r['b']]

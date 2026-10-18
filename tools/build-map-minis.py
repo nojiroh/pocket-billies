@@ -30,7 +30,7 @@ SHOT_JS = """(async(id)=>{const sc=mapById(id);const W=sc.w,H=sc.h;
  const f0=walkRenderer.frames;await new Promise(r=>{const t0=performance.now();const k=()=>{if(walkRenderer.frames>=f0+4||performance.now()-t0>40000)r();else setTimeout(k,100)};k()});
  const C=walkView.C,cv=walkView.cv,R=cv.getBoundingClientRect(),m=C.vp;
  const P=(x,y,z)=>{const cx=m[0]*x+m[4]*y+m[8]*z+m[12],cy=m[1]*x+m[5]*y+m[9]*z+m[13],w=m[3]*x+m[7]*y+m[11]*z+m[15];return [R.left+(cx/w*.5+.5)*R.width,R.top+(1-(cy/w*.5+.5))*R.height]};
- const g=(x,z)=>dioGroundH(Math.min(W-.01,Math.max(0,x)),Math.min(H-.01,Math.max(0,z)));const top=[],bot=[];const n=48;
+ const g=(x,z)=>groundHeightAt(Math.min(W-.01,Math.max(0,x)),Math.min(H-.01,Math.max(0,z)));const top=[],bot=[];const n=48;
  for(let i=0;i<=n;i++){const x=W*i/n;top.push(P(x,g(x,0),0));bot.push(P(x,g(x,0)-1.4,0))}
  const ring=[];for(let i=0;i<=n;i++)ring.push(P(W*i/n,g(W*i/n,0),0));for(let i=0;i<=n;i++)ring.push(P(W,g(W,H*i/n),H*i/n));for(let i=n;i>=0;i--)ring.push(P(W*i/n,g(W*i/n,H),H));for(let i=n;i>=0;i--)ring.push(P(0,g(0,H*i/n),H*i/n));
  return {ring,front:top,skirt:bot,rect:[R.left,R.top,R.width,R.height]}})"""

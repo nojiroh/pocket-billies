@@ -41,7 +41,7 @@ import {
   walkView,
 } from '../../game/js/walk-view.js';
 import { ENV } from '../../game/js/environment.js';
-import { DGL_WALL_MATS, dioHRaw, mountWalkView, walkRenderer } from '../../game/js/walk-view-gl.js';
+import { DGL_WALL_MATS, mountWalkView, rawHeightAt, walkRenderer } from '../../game/js/walk-view-gl.js';
 import { esc } from './game-stand-ins.js';
 import {
   ACTS,
@@ -1011,7 +1011,7 @@ export function scMapDraw() {
     const strong = SCN.tool === 'height';
     for (let j = 0; j < H; j++)
       for (let i = 0; i < W; i++) {
-        const h = dioHRaw(sc, i + 0.5, H - j - 0.5);
+        const h = rawHeightAt(sc, i + 0.5, H - j - 0.5);
         if (Math.abs(h) < 0.05) continue;
         x.fillStyle =
           h > 0
@@ -1024,9 +1024,9 @@ export function scMapDraw() {
       x.lineWidth = 1;
       for (let j = 0; j < H; j++)
         for (let i = 0; i < W; i++) {
-          const a = Math.floor(dioHRaw(sc, i + 0.5, H - j - 0.5)),
-            b = Math.floor(dioHRaw(sc, i + 1.5, H - j - 0.5)),
-            c = Math.floor(dioHRaw(sc, i + 0.5, H - j + 0.5));
+          const a = Math.floor(rawHeightAt(sc, i + 0.5, H - j - 0.5)),
+            b = Math.floor(rawHeightAt(sc, i + 1.5, H - j - 0.5)),
+            c = Math.floor(rawHeightAt(sc, i + 0.5, H - j + 0.5));
           if (a !== b) {
             x.beginPath();
             x.moveTo((i + 1) * Z, j * Z);
@@ -1238,7 +1238,7 @@ function scBindMap() {
       return;
     }
     if (SCN.tool === 'height') {
-      SCN.hflat = dioHRaw(sc, m.x, m.z);
+      SCN.hflat = rawHeightAt(sc, m.x, m.z);
       SCN.drag = { k: 'height' };
       scHeightAt(sc, m);
       return;
@@ -1493,7 +1493,7 @@ function scHeightAt(sc, m) {
       H[r][i] = Math.round(clamp(n, -8, 12) * 100) / 100;
     }
   sc._hv = (sc._hv || 0) + 1;
-  /* alpha 0.2: the game's smoothed land (dioHGrid) is made again */ walkView.nav = null;
+  /* alpha 0.2: the game's smoothed land (heightGrid) is made again */ walkView.nav = null;
   walkView.cand = null;
   walkView.nav = null;
   clearTimeout(SCN.hT);
@@ -2577,7 +2577,7 @@ function scStepsUp(sc, D) {
       tot = (a, b) => {
         const [i, j] = cell(a, b),
           q = clamp(j, 0, E.h - 1) * E.w + clamp(i, 0, E.w - 1);
-        return dioHRaw(sc, (i + 0.5) / 2, (j + 0.5) / 2) + E.H[q];
+        return rawHeightAt(sc, (i + 0.5) / 2, (j + 0.5) / 2) + E.H[q];
       };
     if (n < 1) {
       toast('Drag further: from the low ground, across the slope, to the high ground.');
@@ -2594,7 +2594,7 @@ function scStepsUp(sc, D) {
         const [i, j] = cell(a, b);
         if (i < 0 || j < 0 || i >= E.w || j >= E.h) continue;
         const q = j * E.w + i;
-        E.H[q] = Math.round((y - dioHRaw(sc, (i + 0.5) / 2, (j + 0.5) / 2)) * 20) / 20;
+        E.H[q] = Math.round((y - rawHeightAt(sc, (i + 0.5) / 2, (j + 0.5) / 2)) * 20) / 20;
         E.M[q] = D.ramp ? (E.M[q] & 15) | 32 : SCN.smat || 8;
       }
     }

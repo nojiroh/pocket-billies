@@ -13,7 +13,7 @@ import { GD, ROUTE, TRAINERS } from './game-data.js';
 import { S, U, esc, save } from './game-state.js';
 import { humanHTML } from './person-art.js';
 import { baseMapId, findPath, mapById, mapHub, walkView, walkablePointNear } from './walk-view.js';
-import { dioH, walkRenderer } from './walk-view-gl.js';
+import { standingHeightAt, walkRenderer } from './walk-view-gl.js';
 import { JINGLES, jingle, sfx } from './sound.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -187,7 +187,7 @@ function clueDraw(quad, glows, t) {
   if (typeof S === 'undefined' || !S.started || walkRenderer.bt || U.bench || U.modal) return;
   const P = walkView.pl;
   for (const c of clueSpots()) {
-    const y = dioH(c.x, c.z),
+    const y = standingHeightAt(c.x, c.z),
       b = 0.1 + Math.sin(t / 260) * 0.05,
       pulse = 0.5 + 0.5 * Math.sin(t / 420);
     quad('sparkle', Math.floor(t / 110) % 4, c.x, y + 0.34 + b, c.z, 0.72, 0.72, 1, [0.86, 0.96, 1]);

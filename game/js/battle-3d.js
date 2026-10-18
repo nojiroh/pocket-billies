@@ -14,7 +14,7 @@ import { hexA } from './art.js';
 import { ACT, FOC, POS, SC, UPP, partSpr, sideBuf, sideWorld, trainerBattleFrame, trainerMpp } from './battle-stage.js';
 import { stopWalkView, walkData, walkView } from './walk-view.js';
 import { EGL } from './engine/webgl.js';
-import { dioH, walkRenderer } from './walk-view-gl.js';
+import { standingHeightAt, walkRenderer } from './walk-view-gl.js';
 /* eslint-disable no-func-assign */
 expose({
   BGL: [() => BGL],
@@ -60,7 +60,7 @@ export function battleGLAttach(o = {}) {
     ax = clamp(P.x, 3.5, Math.max(3.5, sc.w - 3.5)),
     az = clamp(P.z, 2.5, Math.max(2.5, sc.h - 3));
   BGL.off = [ax - ACT.x, az - ACT.z];
-  BGL.gy = dioH(ax, az);
+  BGL.gy = standingHeightAt(ax, az);
   /* clear the lane between the camera and the two billionaires */
   const hide = new Set();
   for (const p of sc.props || []) {
@@ -132,7 +132,7 @@ function battleGLFrame() {
     const w = sideWorld(i),
       x = w.x + O[0],
       z = w.z + O[1],
-      gy = dioH(x, z),
+      gy = standingHeightAt(x, z),
       mpp = (UPP[i] * B.s.sc * (B.s.big || 1) * (B.s.fs || 1)) / B.R.k,
       G = B.R.geo;
     items.push({
@@ -167,7 +167,7 @@ function battleGLFrame() {
       im: f,
       x,
       z,
-      y: dioH(x, z),
+      y: standingHeightAt(x, z),
       mpp,
       ox: -(f.ax ?? f.width / 2),
       oy: -(f.ay ?? f.height),

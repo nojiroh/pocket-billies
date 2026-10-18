@@ -13,7 +13,7 @@ import { GD, RULES, SP } from './game-data.js';
 import { B, RM, S, U, areaPool, pickW, save, uid } from './game-state.js';
 import { uiIco } from './art.js';
 import { terrainAt, walkView } from './walk-view.js';
-import { DGL_WKIND, dglCurve, dglRing, dglWgAt, dioH, walkRenderer } from './walk-view-gl.js';
+import { DGL_WKIND, dglCurve, dglRing, dglWgAt, standingHeightAt, walkRenderer } from './walk-view-gl.js';
 /* eslint-disable no-func-assign */
 expose({
   FISH: [() => FISH],
@@ -84,7 +84,7 @@ function fishSpot() {
       if (!wet(x, z)) continue;
       const kind = fishKindAt(x, z);
       if (kind === 'lava') return null;
-      return { x, z, y: dioH(x, z), kind, dir: [dx, dz] };
+      return { x, z, y: standingHeightAt(x, z), kind, dir: [dx, dz] };
     }
   return null;
 }
@@ -304,7 +304,7 @@ function fishDraw(ts) {
     };
   const P = walkView.pl,
     S0 = FISH.spot,
-    py = (P.yv ?? dioH(P.x, P.z)) + (typeof dglCurve === 'function' ? dglCurve(P.x, P.z) : 0),
+    py = (P.yv ?? standingHeightAt(P.x, P.z)) + (typeof dglCurve === 'function' ? dglCurve(P.x, P.z) : 0),
     hx = P.x + S0.dir[0] * 0.35,
     hz = P.z + S0.dir[1] * 0.35;
   const tip = [P.x + S0.dir[0] * 1.05, py + 1.75, P.z + S0.dir[1] * 1.05],

@@ -39,7 +39,7 @@ import { eng } from './engine/settings.js';
 import { EGL, eglAttrClashes } from './engine/webgl.js';
 import { EGL_POST_SH } from './engine/post-effects.js';
 import { ENV } from './environment.js';
-import { DGL_SH, dglRoomDim, dioH, walkRenderer } from './walk-view-gl.js';
+import { DGL_SH, dglRoomDim, standingHeightAt, walkRenderer } from './walk-view-gl.js';
 import { BLD, BLD_SH } from './buildings.js';
 import { STR, strHas } from './structures.js';
 import { P3D, P3D_SH } from './solid-props.js';
@@ -962,7 +962,7 @@ async function runFullTest(mode) {
                 const m = Cm.vp,
                   x = pp.x,
                   z = pp.z,
-                  y = dioH(x, z),
+                  y = standingHeightAt(x, z),
                   X = m[0] * x + m[4] * y + m[8] * z + m[12],
                   Y = m[1] * x + m[5] * y + m[9] * z + m[13],
                   W = m[3] * x + m[7] * y + m[11] * z + m[15];

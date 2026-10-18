@@ -21,7 +21,7 @@ import { partSpr } from './battle-stage.js';
 import { walkView } from './walk-view.js';
 import { EGL, eglPrograms } from './engine/webgl.js';
 import { EGL_POST_SH } from './engine/post-effects.js';
-import { dglCanvasFor, dglGL, dioH } from './walk-view-gl.js';
+import { dglCanvasFor, dglGL, standingHeightAt } from './walk-view-gl.js';
 import { A, endBattle, stopTimers, types } from './battle.js';
 import { MAP, MH, MNV, MW, WORLD_ART, v3 } from './world-map.js';
 import { MGL, MGL_SH, mglRender, mglSize } from './world-map-gl.js';
@@ -787,7 +787,7 @@ function landBurst(x, z) {
     });
   }
   const now = performance.now(),
-    y0 = dioH(x, z),
+    y0 = standingHeightAt(x, z),
     ic = ['paper', 'paper', 'tag', 'paper', 'floppy', 'paper', 'paper', 'bit'];
   LAND.bits = [];
   for (let i = 0; i < 10; i++)
@@ -810,7 +810,7 @@ function landFrame(now, parts) {
     if (now < b.t0) continue;
     const dt = b.last ? Math.min(0.25, (now - b.last) / 1000) : 0;
     b.last = now;
-    const gy = dioH(b.x, b.z) + 0.03;
+    const gy = standingHeightAt(b.x, b.z) + 0.03;
     if (!b.down) {
       b.y += b.vy * dt;
       b.x += Math.sin(now / 520 + b.ph) * 0.45 * dt;

@@ -61,7 +61,7 @@ def gamedata():
     return json.JSONDecoder().raw_decode(s[s.index('window.GAMEDATA=') + 16:])[0]
 
 
-SHOT_JS = """(async(a)=>{const sc=mapById(a.id),hub=a.at||mapHub(sc),x=hub[0]+(a.dx||0),z=hub[1]+(a.dz||0),y=dioGroundH(x,z);
+SHOT_JS = """(async(a)=>{const sc=mapById(a.id),hub=a.at||mapHub(sc),x=hub[0]+(a.dx||0),z=hub[1]+(a.dz||0),y=groundHeightAt(x,z);
  const tgt=[x,y+(a.ty||1),z],eye=[x,y+(a.up||11),z-(a.back||22)];walkView.director={frame:()=>({look:{eye,tgt,fov:a.fov||36},items:[],parts:[],lights:[],hide:null,cut:0,center:[x,z]})};
  const f0=walkRenderer.frames;await new Promise(r=>{const t0=performance.now();const k=()=>{if(walkRenderer.frames>=f0+8&&(!walkRenderer.ring||!(walkRenderer.ring.jobs||[]).length)||performance.now()-t0>60000)r();else setTimeout(k,150)};k()});
  return true})"""

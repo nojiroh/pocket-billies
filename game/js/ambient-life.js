@@ -24,13 +24,12 @@ import {
   walkData,
   walkView,
 } from './walk-view.js';
-import { dglRing, dioGroundH, dioH, dioHRaw } from './walk-view-gl.js';
+import { dglRing, groundHeightAt, rawHeightAt, standingHeightAt } from './walk-view-gl.js';
 /* eslint-disable no-func-assign */
 expose({
   LIFE: [() => LIFE],
   LIFE_FRAMES: [() => LIFE_FRAMES],
   LIFE_KIND: [() => LIFE_KIND],
-  dioHRawSafe: [() => dioHRawSafe, v => (dioHRawSafe = v)],
   lifeFrame: [() => lifeFrame, v => (lifeFrame = v)],
   lifeInit: [() => lifeInit, v => (lifeInit = v)],
   lifeKey: [() => lifeKey, v => (lifeKey = v)],
@@ -42,6 +41,7 @@ expose({
   lifeSprites: [() => lifeSprites, v => ((lifeSprites = v), provide({ lifeSprites }))],
   lifeStep: [() => lifeStep, v => setLifeStep(v)],
   lifeTarget: [() => lifeTarget, v => (lifeTarget = v)],
+  rawHeightAtSafe: [() => rawHeightAtSafe, v => (rawHeightAtSafe = v)],
 });
 /* eslint-enable no-func-assign */
 provide({ lifePaths, lifeSprites, lifeStep });
@@ -501,12 +501,13 @@ function lifeSprites() {
     i = i % LIFE_FRAMES(c.key);
     const im = lifeFrame(c.key, i);
     if (!im) continue;
-    let y = dioH(c.x, c.z);
-    if (c.k === 'duck') y = (typeof dioGroundH === 'function' ? dioGroundH(c.x, c.z) : dioHRawSafe(c.x, c.z)) - 0.1;
+    let y = standingHeightAt(c.x, c.z);
+    if (c.k === 'duck')
+      y = (typeof groundHeightAt === 'function' ? groundHeightAt(c.x, c.z) : rawHeightAtSafe(c.x, c.z)) - 0.1;
     out.push({ c, im, x: c.x, z: c.z, y: y + (c.alt || 0), mpp: K.s / PPU, flip, sh: c.alt > 0.3 ? 0 : K.sh });
   }
   return out;
 }
-function dioHRawSafe(x, z) {
-  return typeof dioHRaw === 'function' ? dioHRaw(walkView.sc, x, z) : 0;
+function rawHeightAtSafe(x, z) {
+  return typeof rawHeightAt === 'function' ? rawHeightAt(walkView.sc, x, z) : 0;
 }

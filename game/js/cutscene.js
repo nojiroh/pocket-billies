@@ -44,7 +44,7 @@ import {
   worldToScreen,
 } from './walk-view.js';
 import { EGL, eglOK } from './engine/webgl.js';
-import { dglPerson, dioH, mountWalkView, walkRenderer } from './walk-view-gl.js';
+import { dglPerson, mountWalkView, standingHeightAt, walkRenderer } from './walk-view-gl.js';
 import { wrRoamView } from './seamless-world.js';
 import { music, sfx } from './sound.js';
 import { TALK, talkHide, talkLine } from './talk.js';
@@ -141,7 +141,7 @@ function csPlace(sc) {
       dx = (((M.door && M.door.x) || 0) / (C0.ppu || 34)) * (L.s || 1) * (L.f ? -1 : 1);
     o = [L.x + dx - CS_SPOT.door[0], L.z - CS_SPOT.door[1]];
     /* alpha 0.4: the shots were framed for a lab on ground half a metre up (Marigold Town's); they rise and fall with the ground at the door */
-    if (typeof dioH === 'function') CS.dy = dioH(L.x + dx, L.z - 0.6) - 0.5;
+    if (typeof standingHeightAt === 'function') CS.dy = standingHeightAt(L.x + dx, L.z - 0.6) - 0.5;
   }
   CS.o = o;
   const sh = p => [p[0] + o[0], p[1] + o[1]];
@@ -294,7 +294,7 @@ function csStarItem(s, t) {
   const G = R.geo,
     pop = s.pop >= 1 ? 1 : s.pop <= 0 ? 0 : 1 + Math.sin(s.pop * Math.PI) * 0.25 - (1 - s.pop) * 0.9,
     mpp = (0.88 / (G.base - G.top)) * Math.max(0.01, pop),
-    y = dioH(s.x, s.z) + (s.hop || 0);
+    y = standingHeightAt(s.x, s.z) + (s.hop || 0);
   return {
     k: 'rig',
     im: b,
@@ -342,7 +342,7 @@ export function csFrame() {
       if (it) items.push(it);
     }
     if (CS.choosing && i === CS.sel)
-      lights.push({ p: [s.x, 0.35 + dioH(s.x, s.z), s.z - 0.2], r: 1.7, c: [0.55, 0.48, 0.3] });
+      lights.push({ p: [s.x, 0.35 + standingHeightAt(s.x, s.z), s.z - 0.2], r: 1.7, c: [0.55, 0.48, 0.3] });
   });
   const coin = artImage('coins/penny_32.png');
   for (const c of CS.coins) {
@@ -655,7 +655,7 @@ async function csScript(run) {
     A = CS.A || CS_SPOT,
     O = CS.o || [0, 0],
     M = A.me,
-    gy = dioH(M[0], M[1]),
+    gy = standingHeightAt(M[0], M[1]),
     body = document.body,
     fade = $('#csFade');
   const pov = (h, tgt, fov, ms) => csShot({ eye: [M[0] + 0.06, gy + h, M[1] - 0.32], tgt, fov, w: 1.3, abs: 1 }, ms);
@@ -674,12 +674,12 @@ async function csScript(run) {
   if (!alive()) return;
   body.classList.add('cs-waking');
   body.classList.remove('cs-dazed');
-  const dy = dioH(A.door[0], A.door[1]);
+  const dy = standingHeightAt(A.door[0], A.door[1]);
   pov(0.62, [A.door[0], dy + 1.25, A.door[1]], 52, 3200);
   await csWait(2600);
   if (!alive()) return;
   /* 2. the Professor comes running */
-  const hy = dioH(A.hazel[0], A.hazel[1]);
+  const hy = standingHeightAt(A.hazel[0], A.hazel[1]);
   csActor('gini', 'gini', A.door, 'down');
   pov(0.78, [A.hazel[0], hy + 1.08, A.hazel[1]], 58, 1900);
   await csWalk('gini', A.hazel, 1500);
@@ -769,12 +769,12 @@ async function csScript(run) {
       };
     CS.stars.push(s);
     CS.coins.push({
-      a: [CS.actors.gini.x + 0.2, dioH(A.hazel[0], A.hazel[1]) + 1.35, CS.actors.gini.z - 0.1],
-      b: [p[0], dioH(p[0], p[1]) + 0.1, p[1]],
+      a: [CS.actors.gini.x + 0.2, standingHeightAt(A.hazel[0], A.hazel[1]) + 1.35, CS.actors.gini.z - 0.1],
+      b: [p[0], standingHeightAt(p[0], p[1]) + 0.1, p[1]],
       t0: csNow() + i * 140,
       dur: 650,
       onLand() {
-        const y = dioH(p[0], p[1]) + 0.3;
+        const y = standingHeightAt(p[0], p[1]) + 0.3;
         s.popT = csNow();
         if (typeof sfx === 'function') sfx('pop');
         s.act = 'enter';
@@ -842,7 +842,7 @@ async function csScript(run) {
   }
   csHideDlg();
   csActor('rival', T0.who || 'chad', A.blakeFrom, 'side');
-  const by = dioH(A.blake[0], A.blake[1]);
+  const by = standingHeightAt(A.blake[0], A.blake[1]);
   csShot(
     {
       eye: [(A.hazel[0] + A.blake[0]) / 2, by + 1.9, A.me[1] - 5.2],

@@ -22,7 +22,7 @@ import {
 } from './walk-view.js';
 import { eng } from './engine/settings.js';
 import { ENV, envHere, envState } from './environment.js';
-import { dioH, walkRenderer } from './walk-view-gl.js';
+import { standingHeightAt, walkRenderer } from './walk-view-gl.js';
 import { endBattle, openBattle, say, setEndBattle, setOpenBattle } from './battle.js';
 import { sfx } from './sound.js';
 import { TALK, setTalkFolk, talk, talkFolk } from './talk.js';
@@ -384,7 +384,7 @@ function stampDraw(quad, glows, t) {
   sp.forEach((p, i) => {
     const key = baseMapId() + ':' + i;
     if (X.stamps[key]) return;
-    const y = dioH(p[0], p[1]),
+    const y = standingHeightAt(p[0], p[1]),
       b = 0.12 + Math.sin(t / 300 + i) * 0.04;
     quad('sparkle', Math.floor(t / 120 + i) % 4, p[0], y + 0.25 + b, p[1], 0.42, 0.42, 1, [1, 0.9, 0.5]);
     glows.push([p[0], y + 0.2 + b, p[1], 0.22, [1, 0.8, 0.3], 1.3]);

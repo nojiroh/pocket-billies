@@ -21,7 +21,7 @@ import { artImage, hash2d, imageReady, mapById, stepRaiseAt, walkData, walkView 
 import { ENG_CTX, eng, engSource } from './engine/settings.js';
 import { EGL, eglBindQuad, eglFree, eglImg, eglInit, eglMesh, eglOK, eglPrograms, eglTarget } from './engine/webgl.js';
 import { EGL_POST_SH, eglPost, eglScreenOf } from './engine/post-effects.js';
-import { dglWorldTex, dioHRaw, walkRenderer } from './walk-view-gl.js';
+import { dglWorldTex, rawHeightAt, walkRenderer } from './walk-view-gl.js';
 import {
   D2R,
   MAP,
@@ -1264,7 +1264,7 @@ export function mmBuild(i) {
     base = -1.2;
   const hAt = (x, z) => {
     const ch = (rows[H - 1 - Math.floor(z)] || '')[Math.floor(x)] || sc.edge;
-    let h = dioHRaw(sc, x, z) + stepRaiseAt(x, z, sc);
+    let h = rawHeightAt(sc, x, z) + stepRaiseAt(x, z, sc);
     if (ch === 'w' || ch === 'd') h -= 0.35;
     return h;
   };

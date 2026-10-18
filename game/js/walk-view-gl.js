@@ -214,11 +214,12 @@ expose({
   DGL_WKID: [() => DGL_WKID],
   DGL_WKIND: [() => DGL_WKIND],
   DGL_WKU: [() => DGL_WKU],
-  DIO_PAD_SKIP: [() => DIO_PAD_SKIP],
+  NO_PAD_PROPS: [() => NO_PAD_PROPS],
   RING_CS: [() => RING_CS],
   RING_N: [() => RING_N],
   baseNavGrid: [() => baseNavGrid],
   baseStopWalkView: [() => baseStopWalkView],
+  buildingPads: [() => buildingPads, v => (buildingPads = v)],
   dglAdapt: [() => dglAdapt, v => setDglAdapt(v)],
   dglAltImg: [() => dglAltImg, v => (dglAltImg = v)],
   dglBasinSet: [() => dglBasinSet, v => (dglBasinSet = v)],
@@ -355,22 +356,21 @@ expose({
   dglWindAt: [() => dglWindAt, v => (dglWindAt = v)],
   dglWorldTex: [() => dglWorldTex, v => (dglWorldTex = v)],
   dglZoomLim: [() => dglZoomLim],
-  dioGroundH: [() => dioGroundH, v => ((dioGroundH = v), provide({ dioGroundH }))],
-  dioH: [() => dioH, v => ((dioH = v), provide({ dioH }))],
-  dioHGrid: [() => dioHGrid, v => (dioHGrid = v)],
-  dioHRaw: [() => dioHRaw, v => ((dioHRaw = v), provide({ dioHRaw }))],
-  dioPads: [() => dioPads, v => (dioPads = v)],
   eglRestored: [() => eglRestored, v => ((eglRestored = v), provide({ eglRestored }))],
+  groundHeightAt: [() => groundHeightAt, v => ((groundHeightAt = v), provide({ groundHeightAt }))],
   handleCanvasClick: [() => handleCanvasClick, v => (handleCanvasClick = v)],
+  heightGrid: [() => heightGrid, v => (heightGrid = v)],
   mountWalkView: [() => mountWalkView, v => setMountWalkView(v)],
+  rawHeightAt: [() => rawHeightAt, v => ((rawHeightAt = v), provide({ rawHeightAt }))],
   screenToGround2d: [() => screenToGround2d],
   setDglAdapt: [() => setDglAdapt, v => (setDglAdapt = v)],
   setMountWalkView: [() => setMountWalkView, v => (setMountWalkView = v)],
+  standingHeightAt: [() => standingHeightAt, v => ((standingHeightAt = v), provide({ standingHeightAt }))],
   walkRenderer: [() => walkRenderer],
   worldToScreen2d: [() => worldToScreen2d],
 });
 /* eslint-enable no-func-assign */
-provide({ dglBudget, dglRebuild, dglWallDefault, dioGroundH, dioH, dioHRaw, eglRestored });
+provide({ dglBudget, dglRebuild, dglWallDefault, eglRestored, groundHeightAt, rawHeightAt, standingHeightAt });
 export function setDglBuildGrass(v) {
   dglBuildGrass = v; // eslint-disable-line no-func-assign
   provide({ dglBuildGrass });
@@ -473,18 +473,18 @@ export function dglMatOf(k, M) {
 /* ---------- heights ---------- */
 /* alpha 0.2: the land between the metre corners is a smooth curve (Catmull-Rom, kept between its four corners so it
    never overshoots) instead of a straight blend, so there is no crease at every metre and the light flows over hills.
-   Before that, the ground is levelled under buildings, benches, stalls and the like (dioPads): flat under the
+   Before that, the ground is levelled under buildings, benches, stalls and the like (buildingPads): flat under the
    footprint, easing back into the land around it, so nothing stands on a slope with a corner in the air. */
-const DIO_PAD_SKIP =
+const NO_PAD_PROPS =
   /fence|hedge|log|wall|rail|pipe|vineyard|shipwreck|yacht|boat|mesa|derrick|vault_door|mine_entrance|stilt|ferris|festival_stage/;
-function dioPads(sc) {
+function buildingPads(sc) {
   const C = walkData().sc,
     ppu = C.ppu || 34,
     out = [];
   if (walkView.noPads) return out;
   for (const p of sc.props || []) {
     const M = C.props[p.k];
-    if (!M || !M.box || M.flat || M.walk || DIO_PAD_SKIP.test(p.k)) continue;
+    if (!M || !M.box || M.flat || M.walk || NO_PAD_PROPS.test(p.k)) continue;
     const s = p.s || 1,
       bw = (M.box[0] * s) / 2,
       bd = M.box[1] * s,
@@ -503,7 +503,7 @@ function dioPads(sc) {
   }
   return out.sort((a, b) => b.a - a.a);
 }
-function dioHGrid(sc) {
+function heightGrid(sc) {
   const H = sc.heights;
   if (!H || !H.length) return null;
   const now = performance.now(),
@@ -551,7 +551,7 @@ function dioHGrid(sc) {
       g = (a, b) => G[b * (W + 1) + a];
     return (g(i, j) * (1 - u) + g(i + 1, j) * u) * (1 - v) + (g(i, j + 1) * (1 - u) + g(i + 1, j + 1) * u) * v;
   };
-  for (const P of dioPads(sc)) {
+  for (const P of buildingPads(sc)) {
     const tg = bil(P.ax, P.az);
     for (let b = Math.max(0, Math.floor(P.z0 - P.m)); b <= Math.min(Hh, Math.ceil(P.z1 + P.m)); b++)
       for (let a = Math.max(0, Math.floor(P.x0 - P.m)); a <= Math.min(W, Math.ceil(P.x1 + P.m)); a++) {
@@ -566,8 +566,8 @@ function dioHGrid(sc) {
   }
   return (sc._hg = { H, sig, t: now, G, W, Hh });
 }
-export function dioHRaw(sc, x, z) {
-  const Q = dioHGrid(sc);
+export function rawHeightAt(sc, x, z) {
+  const Q = heightGrid(sc);
   if (!Q) return 0;
   const W = Q.W,
     Hh = Q.Hh,
@@ -593,19 +593,19 @@ export function dioHRaw(sc, x, z) {
 }
 /* the visible ground (smooth land plus the terrace, cliff or stair raise of its half-metre cell) and the height you
    stand at (a bridge deck where there is one; a little lower in water) */
-export function dioGroundH(x, z) {
+export function groundHeightAt(x, z) {
   const sc = walkView.sc;
   if (!sc) return 0;
-  return dioHRaw(sc, x, z) + stepRaiseAt(x, z, sc);
+  return rawHeightAt(sc, x, z) + stepRaiseAt(x, z, sc);
 }
-export function dioH(x, z) {
+export function standingHeightAt(x, z) {
   const sc = walkView.sc;
   if (!sc) return 0;
   if (sc.bridges) {
     const b = bridgeAt(x, z, sc);
     if (b != null) return b;
   }
-  let h = dioGroundH(x, z);
+  let h = groundHeightAt(x, z);
   const ch = terrainAt(x, z);
   if (ch === 'w' || ch === 'd') h -= 0.12;
   return h;
@@ -665,8 +665,8 @@ setNavGrid(function () {
       const x = (i + 0.5) / N,
         z = (j + 0.5) / N,
         e = 0.3,
-        gx = (dioHRaw(sc, x + e, z) - dioHRaw(sc, x - e, z)) / (2 * e),
-        gz = (dioHRaw(sc, x, z + e) - dioHRaw(sc, x, z - e)) / (2 * e);
+        gx = (rawHeightAt(sc, x + e, z) - rawHeightAt(sc, x - e, z)) / (2 * e),
+        gz = (rawHeightAt(sc, x, z + e) - rawHeightAt(sc, x, z - e)) / (2 * e);
       if (Math.hypot(gx, gz) > 1.05) blk[j * gw + i] = 1;
     }
   n._hk = 1;
@@ -829,7 +829,7 @@ setStopWalkView(function () {
 });
 setWorldToScreen(function (C, x, y, z) {
   if (!C || !C.gl) return worldToScreen2d(C, x, y, z);
-  const wy = dioH(x, z) + y + dglCurve(x, z),
+  const wy = standingHeightAt(x, z) + y + dglCurve(x, z),
     m = C.vp,
     cx = m[0] * x + m[4] * wy + m[8] * z + m[12],
     cy = m[1] * x + m[5] * wy + m[9] * z + m[13],
@@ -848,7 +848,7 @@ setScreenToGround(function (sx, sy) {
     const x = r.o[0] + r.d[0] * t,
       y = r.o[1] + r.d[1] * t,
       z = r.o[2] + r.d[2] * t,
-      g = dioH(x, z);
+      g = standingHeightAt(x, z);
     if (y <= g) {
       if (prev) {
         let a = prev,
@@ -858,7 +858,7 @@ setScreenToGround(function (sx, sy) {
             yy = r.o[1] + r.d[1] * m,
             xx = r.o[0] + r.d[0] * m,
             zz = r.o[2] + r.d[2] * m;
-          if (yy <= dioH(xx, zz)) b = m;
+          if (yy <= standingHeightAt(xx, zz)) b = m;
           else a = m;
         }
         t = b;
@@ -1306,7 +1306,7 @@ function* dglGroundSteps(sc, G, T) {
       return c === 'w' || c === 'd';
     },
     hAt = (x, z) => {
-      let h = dioHRaw(sc, x, z);
+      let h = rawHeightAt(sc, x, z);
       let n = 0;
       for (const [a, b] of [
         [-0.3, -0.3],
@@ -1322,8 +1322,8 @@ function* dglGroundSteps(sc, G, T) {
       const dx = Math.max(0, -x, x - W),
         dz = Math.max(0, -z, z - H),
         out = Math.hypot(dx, dz);
-      if (out <= 0) return dioHRaw(sc, x, z);
-      const e = dioHRaw(sc, clamp(x, 0, W), clamp(z, 0, H));
+      if (out <= 0) return rawHeightAt(sc, x, z);
+      const e = rawHeightAt(sc, clamp(x, 0, W), clamp(z, 0, H));
       if (sc.flatFar) return e - 0.25 - smooth01(out / 30) * 0.3;
       const k = smooth01(out / 12),
         n = (valueNoise2d(x * 0.06, z * 0.06) - 0.4) * 7 + (valueNoise2d(x * 0.17 + 5, z * 0.17) - 0.5) * 2.5;
@@ -1677,7 +1677,7 @@ function* dglGroundSteps(sc, G, T) {
       n = 0;
     for (let j = 0; j < E.h; j += 2)
       for (let i = 0; i < E.w; i += 2) {
-        const y = dioHRaw(sc, (i + 0.5) / 2, (j + 0.5) / 2) + E.H[j * E.w + i];
+        const y = rawHeightAt(sc, (i + 0.5) / 2, (j + 0.5) / 2) + E.H[j * E.w + i];
         if (y < lo) lo = y;
         sum += y;
         n++;
@@ -1692,7 +1692,7 @@ function* dglGroundSteps(sc, G, T) {
       const c = ter(x, z);
       return c === 'w' || c === 'd';
     },
-    wlev = (x, z) => dioHRaw(sc, x, z) + stp(x, z) - 0.12,
+    wlev = (x, z) => rawHeightAt(sc, x, z) + stp(x, z) - 0.12,
     flowAt = dglFlowField(sc);
   const W2 = W * 2,
     H2 = H * 2,
@@ -1895,7 +1895,7 @@ function* dglGroundSteps(sc, G, T) {
         const rf = rocks.length && (kd === 1 || kd === 5 || kd === 0) ? rockFoam(vx, vz) : 0;
         wv.push(
           vx,
-          run ? dioHRaw(sc, vx, vz) + sc0 - 0.12 : y,
+          run ? rawHeightAt(sc, vx, vz) + sc0 - 0.12 : y,
           vz,
           T.shoreF ? rf * (kd === 1 ? 1 : 0.6) : Math.max(Math.min(1, sh / 2), rf * (kd === 1 ? 1 : 0.6)),
           fw[0],
@@ -1920,7 +1920,7 @@ function* dglGroundSteps(sc, G, T) {
           y2 = i + di >= 0 && j + dj >= 0 && i + di < W2 && j + dj < H2 ? wy[nq2] : wlev(nx2, nz2);
         if (run) {
           if (sc0 - stp(nx2, nz2) < 0.15) continue;
-          const eh = dioHRaw(sc, cx + di * 0.25, cz + dj * 0.25);
+          const eh = rawHeightAt(sc, cx + di * 0.25, cz + dj * 0.25);
           yt = eh + sc0 - 0.12;
           y2 = eh + stp(nx2, nz2) - 0.12;
         } else if (y - y2 < 0.15) continue;
@@ -1988,7 +1988,7 @@ function* dglGroundSteps(sc, G, T) {
         ]) {
           const vx = i * 0.5 + a * 0.5,
             vz = j * 0.5 + c * 0.5;
-          wv.push(vx, run ? dioHRaw(sc, vx, vz) + s0 - 0.12 : wy[nq], vz, 0, fw[0], fw[1], 0, wk[nq]);
+          wv.push(vx, run ? rawHeightAt(sc, vx, vz) + s0 - 0.12 : wy[nq], vz, 0, fw[0], fw[1], 0, wk[nq]);
         }
         wi.push(b0, b0 + 2, b0 + 1, b0 + 1, b0 + 2, b0 + 3);
       }
@@ -3156,7 +3156,7 @@ export function dglBuildGrass() {
     I[o + 3] = rnd(J.k, 5);
     I[o + 4] = kind;
     I[o + 5] = rnd(J.k, 6);
-    I[o + 6] = dioHRaw(sc, x, z) + stepRaiseAt(x, z, sc);
+    I[o + 6] = rawHeightAt(sc, x, z) + stepRaiseAt(x, z, sc);
     I[o + 7] = tint;
     J.n++;
   };
@@ -3363,7 +3363,7 @@ function dglCamera(rw, rh, st, dt) {
     ];
   const pitch0 = eng('camera', 'pitch') ?? (c.pitch || 34) + eng('camera', 'pitchAdd'),
     h0 = (eng('camera', 'height') ?? (c.h || 9)) * eng('camera', 'distance');
-  const hb = dioGroundH(P.x, Math.min(sc.h - 0.5, P.z + 3.5)) - dioGroundH(P.x, P.z);
+  const hb = groundHeightAt(P.x, Math.min(sc.h - 0.5, P.z + 3.5)) - groundHeightAt(P.x, P.z);
   walkRenderer.upT =
     (walkRenderer.upT || 0) + (clamp((hb - 0.8) * 3.2, 0, 9) - (walkRenderer.upT || 0)) * Math.min(1, dt * 2);
   /* v47: the camera looks up at a landmark ahead of you (dglLandmarkTilt), and settles back as you pass */
@@ -3404,11 +3404,11 @@ function dglCamera(rw, rh, st, dt) {
     tx = walkRenderer.swoop.x;
     tz = walkRenderer.swoop.z + (rw > rh ? 1 : 0.5);
   }
-  if (!walkRenderer.camT || walkView.opt.instant) walkRenderer.camT = [tx, tz, dioH(tx, tz)];
+  if (!walkRenderer.camT || walkView.opt.instant) walkRenderer.camT = [tx, tz, standingHeightAt(tx, tz)];
   const T = walkRenderer.camT;
   T[0] += (tx - T[0]) * k;
   T[1] += (tz - T[1]) * k;
-  T[2] += ((P.yv ?? dioH(P.x, P.z)) - T[2]) * k;
+  T[2] += ((P.yv ?? standingHeightAt(P.x, P.z)) - T[2]) * k;
   /* indoors the camera stays inside the room: never farther back than just past the near wall */
   if (sc.indoor && !sc.room) {
     const back = Math.cos(pitch) * df,
@@ -3466,7 +3466,7 @@ function dglBattleCamera(rw, rh, BT) {
     O = BT.off,
     ex = c.x + O[0],
     ez = c.z + O[1],
-    ey = Math.max(BT.gy + c.y, dioH(ex, ez) + 0.4),
+    ey = Math.max(BT.gy + c.y, standingHeightAt(ex, ez) + 0.4),
     e = [ex, ey, ez],
     cs = Math.cos(c.yaw),
     sn = Math.sin(c.yaw),
@@ -3697,7 +3697,7 @@ function dglFrameIn(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
     fx = P.x + (ft.x - P.x) * kf;
     fz = P.z + (ft.z - P.z) * kf;
   }
-  const fy = dioH(fx, fz) + 0.8,
+  const fy = standingHeightAt(fx, fz) + 0.8,
     v = [fx - C.eye[0], fy - C.eye[1], fz - C.eye[2]],
     dir = v3n([C.tgt[0] - C.eye[0], C.tgt[1] - C.eye[1], C.tgt[2] - C.eye[2]]),
     fd = v[0] * dir[0] + v[1] * dir[1] + v[2] * dir[2];
@@ -4127,7 +4127,7 @@ function dglHug(it, C) {
   if (!M._hug) return;
   const R = it.fixed ? DGL_FIXED : C.right,
     e = 0.45,
-    h = (x, z) => dioGroundH(x, z),
+    h = (x, z) => groundHeightAt(x, z),
     x = it.x,
     z = it.z,
     id = walkView.id,
@@ -4190,7 +4190,7 @@ function dglMount(P, t) {
     hm = 0.75 + ht * 0.32,
     mpp = hm / Math.max(40, R.base - (R.geo && R.geo.top != null ? R.geo.top : 0)),
     bob = RM ? 0 : Math.sin(t / 420) * 0.05,
-    y = dioH(P.x, P.z) + bob - 0.08;
+    y = standingHeightAt(P.x, P.z) + bob - 0.08;
   if (!RM && P.walk && (!walkRenderer.wakeT || t - walkRenderer.wakeT > 320)) {
     walkRenderer.wakeT = t;
     dglRing(P.x, P.z - 0.1, 0.9);
@@ -4345,7 +4345,7 @@ function dglPropGrid(sc) {
     }
     c.list.push(p);
     const r = 2.5 * (p.s || 1),
-      y = typeof dioH === 'function' ? dioH(p.x, p.z) : 0;
+      y = typeof standingHeightAt === 'function' ? standingHeightAt(p.x, p.z) : 0;
     c.x0 = Math.min(c.x0, p.x - r);
     c.x1 = Math.max(c.x1, p.x + r);
     c.z0 = Math.min(c.z0, p.z - r);
@@ -4559,7 +4559,7 @@ export function dglItems(st, C, PPU, C0) {
       w = im.naturalWidth || im.width,
       h = im.naturalHeight || im.height;
     const S = far ? null : dglStill(p, M, im, sc);
-    const y = far ? dioH(p.x, p.z) : S.y,
+    const y = far ? standingHeightAt(p.x, p.z) : S.y,
       sw = far || !M.sway ? 0 : (M.sway || 0) * dglWindAt(p.x, p.z, RM ? 0 : t, sc, wind);
     const mat = S ? S.mat : dglMatOf(p.k, M);
     im.__mat = mat;
@@ -4782,7 +4782,7 @@ export function dglItems(st, C, PPU, C0) {
       im,
       x: s.x + ru * 0.5,
       z: s.z,
-      y: dioH(s.x, s.z),
+      y: standingHeightAt(s.x, s.z),
       mpp: 1.25 / PPU,
       ox: g.ox,
       oy: g.oy,
@@ -4798,7 +4798,7 @@ export function dglItems(st, C, PPU, C0) {
       im,
       x: s.x + 0.18,
       z: s.z - 0.12,
-      y: dioH(s.x, s.z),
+      y: standingHeightAt(s.x, s.z),
       mpp: 1.1 / PPU,
       ox: g.ox,
       oy: g.oy,
@@ -4891,7 +4891,7 @@ export function dglItems(st, C, PPU, C0) {
 /* alpha 0.2: a rock formation or a hill-built thing with a footprint stands at the lowest point under it (it sinks into the slope, it never hangs over it) */
 const DGL_SINK_BOX = /mesa|vault_door|mine_entrance|shipwreck|stilt|spore_mill/;
 function dglPropY(p, M) {
-  const y0 = dioH(p.x, p.z);
+  const y0 = standingHeightAt(p.x, p.z);
   if (M.box && DGL_SINK_BOX.test(p.k)) {
     const s = p.s || 1,
       bw = (M.box[0] * s) / 2,
@@ -4904,7 +4904,7 @@ function dglPropY(p, M) {
       [p.x - bw, p.z + bd],
       [p.x + bw, p.z + bd],
     ])
-      if (Math.abs(stepLevelAt(x, z) - lv) <= 0.05) y = Math.min(y, dioH(x, z));
+      if (Math.abs(stepLevelAt(x, z) - lv) <= 0.05) y = Math.min(y, standingHeightAt(x, z));
     return y;
   }
   if (M.box || M.flat || M.walk) return y0;
@@ -4919,7 +4919,7 @@ function dglPropY(p, M) {
     [0, r * 0.6],
   ]) {
     if (Math.abs(stepLevelAt(p.x + a, p.z + b) - s0) > 0.05) continue;
-    y = Math.min(y, dioH(p.x + a, p.z + b));
+    y = Math.min(y, standingHeightAt(p.x + a, p.z + b));
   }
   const g = (M.group || '') + ' ' + p.k;
   return y - (M.sink ?? (/rock|boulder|stone_|pebble|stalag/.test(g) ? 0.07 : 0));
@@ -4932,7 +4932,7 @@ export function dglPerson(k, im, x, z, C0, extra) {
       im,
       x,
       z,
-      y: dioH(x, z),
+      y: standingHeightAt(x, z),
       mpp,
       ox: -(im.ax ?? 16),
       oy: -(im.ay ?? 40),
@@ -5117,7 +5117,7 @@ function dglLightCtx(C, sun, dark, items, shadow, BT) {
     night = E ? E.night : 0,
     lan = Math.max(cave, night * 0.75);
   if (lan > 0.02) {
-    const y = dioH(P.x, P.z) + 1.5;
+    const y = standingHeightAt(P.x, P.z) + 1.5;
     L.push({
       p: [P.x, y, P.z - 0.25],
       r: cave > 0.02 ? 6.8 : 5,
@@ -5220,7 +5220,7 @@ function dglShadowRect(C) {
     full = [sc.w / 2, sc.h / 2, Math.hypot(sc.w, sc.h) / 2 + 6];
   if (!C || !eng('shadows', 'fit')) return full;
   const P = walkView.pl,
-    y0 = dioH(P.x, P.z),
+    y0 = standingHeightAt(P.x, P.z),
     X = [],
     Z = [];
   for (const [sx, sy] of [
@@ -5617,7 +5617,7 @@ export function dglGround(C, X) {
     ? null
     : (() => {
         const P = walkView.pl,
-          y = (P.yv ?? dioH(P.x, P.z)) + 0.9 + dglCurve(P.x, P.z),
+          y = (P.yv ?? standingHeightAt(P.x, P.z)) + 0.9 + dglCurve(P.x, P.z),
           m = C.vp,
           cx = m[0] * P.x + m[4] * y + m[8] * P.z + m[12],
           cy = m[1] * P.x + m[5] * y + m[9] * P.z + m[13],
@@ -5663,7 +5663,7 @@ export function dglGround(C, X) {
   if (U.uRoom) {
     const B = sc.room && (eng('lights', 'roomLight') ?? true) !== false ? dglRoomBox(sc) : null;
     gl.uniform4f(U.uRoom, B ? B[0] : 0, B ? B[1] : 0, B ? B[2] : 0, B ? 1 : 0);
-    if (U.uRoomY) gl.uniform1f(U.uRoomY, B ? dioH(sc.w / 2, 1.5) : 0);
+    if (U.uRoomY) gl.uniform1f(U.uRoomY, B ? standingHeightAt(sc.w / 2, 1.5) : 0);
   }
   gl.uniform3fv(U.uFarTint, sc.farTint ? hexA(sc.farTint).map(v => v / 200) : [1, 1, 1]);
   gl.enable(gl.DEPTH_TEST);
@@ -6247,7 +6247,7 @@ function dglFlat(it, T, C, X) {
     ph = (walkView.t || 0) / 1000 + it.x * 1.3 + it.z * 0.7,
     an = wet ? Math.sin(ph * 0.45) * 0.07 : 0,
     bob = wet ? Math.sin(ph * 1.2) * 0.012 : 0;
-  gl.uniform3f(U.uP, cx, dioH(it.x, it.z) + 0.04 + bob + dglCurve(it.x, it.z), cz);
+  gl.uniform3f(U.uP, cx, standingHeightAt(it.x, it.z) + 0.04 + bob + dglCurve(it.x, it.z), cz);
   gl.uniform3f(U.uRight, it.flip * Math.cos(an), 0, Math.sin(an));
   gl.uniform3f(U.uUp, -Math.sin(an) * it.flip, 0, Math.cos(an));
   gl.uniform2f(U.uS, w, h * 0.95);
@@ -6756,9 +6756,13 @@ function dglRoomLights(sc, L, lb) {
   /* alpha 0.4: the wall lamp's light a little out from the wall (it burned the wall white round it) and a soft pool of it on the floor */
   for (const [x, z, ly] of dglRoomLamps(sc))
     if (R.lamp > 0.02) {
-      L.push({ p: [x, dioH(x, z - 0.9) + ly, z - 0.9], r: 6, c: [1.4, 1.04, 0.66].map(v => v * R.lamp * lb) });
       L.push({
-        p: [x, dioH(x, z - 1.9) + 0.3, z - 1.9],
+        p: [x, standingHeightAt(x, z - 0.9) + ly, z - 0.9],
+        r: 6,
+        c: [1.4, 1.04, 0.66].map(v => v * R.lamp * lb),
+      });
+      L.push({
+        p: [x, standingHeightAt(x, z - 1.9) + 0.3, z - 1.9],
         r: 3.4,
         pool: 1,
         c: [0.85, 0.64, 0.4].map(v => v * R.lamp * lb),
@@ -6803,7 +6807,7 @@ function dglRoomFx(C, U, items, glows, t, rm) {
       gx1 = it.x + (it.ox + 48) * s * f,
       yt = it.y - (it.oy + 5) * s,
       yb = it.y - (it.oy + 41) * s,
-      fy = dioH(it.x, it.z - 1),
+      fy = standingHeightAt(it.x, it.z - 1),
       zw = it.z - 0.04,
       cx = (gx0 + gx1) / 2,
       gw = Math.abs(gx1 - gx0),
@@ -6910,7 +6914,7 @@ function dglRoomFx(C, U, items, glows, t, rm) {
   /* daylight (or moonlight) spilling in through the open doorway */
   {
     const ex = (sc.exits && sc.exits[0]) || [sc.w / 2, 0.6],
-      fy = dioH(ex[0], 0.8);
+      fy = standingHeightAt(ex[0], 0.8);
     if (R.I > 0.03) {
       gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
       draw(
@@ -6931,7 +6935,7 @@ function dglRoomFx(C, U, items, glows, t, rm) {
   /* wall lamps, lit in the evening */
   const LT = dglLampTex(R.lamp > 0.3);
   for (const [x, z, ly] of dglRoomLamps(sc)) {
-    const y = dioH(x, z - 0.5) + ly;
+    const y = standingHeightAt(x, z - 0.5) + ly;
     draw(LT, x, y, z, [1, 0, 0], [0, 1, 0], 0.33, 0.42, [1, 1, 1], 1);
     if (R.lamp > 0.02) {
       glows.push([x, y + 0.06, z - 0.03, 0.07 * gk, [1, 0.86, 0.58], 2.4 * R.lamp]);
@@ -6951,7 +6955,7 @@ function dglRoomFront(C, X) {
     ex = (sc.exits && sc.exits[0]) || [Rr[0] + Rr[2] / 2, Rr[1] + 0.6],
     dl = ex[0] - (sc.roomGap || 2) / 2,
     dr = ex[0] + (sc.roomGap || 2) / 2,
-    fy = dioH(Rr[0] + Rr[2] / 2, Rr[1] + 1.5),
+    fy = standingHeightAt(Rr[0] + Rr[2] / 2, Rr[1] + 1.5),
     hw = 0.36,
     th = 0.2,
     deep = sc.roomRect ? 0.4 : 3.2,
@@ -7278,7 +7282,7 @@ function dglWeather(quad, glows, U, R, Up, dt, rm) {
       if (inC(q.x)) break;
     }
     q.z = P.z - 5 + Math.random() * 19;
-    q.y = dioH(q.x, q.z) + 3 + Math.random() * 5;
+    q.y = standingHeightAt(q.x, q.z) + 3 + Math.random() * 5;
   };
   while (W.p.length < n) {
     const q = { ph: Math.random() * 6.3 };
@@ -7297,7 +7301,7 @@ function dglWeather(quad, glows, U, R, Up, dt, rm) {
       home(q);
       if (!inC(q.x)) continue;
     }
-    const gy = dioH(q.x, q.z);
+    const gy = standingHeightAt(q.x, q.z);
     if (kd === 0) {
       q.y -= 9 * dt * sp;
       q.x += wind * 1.8 * dt * sp;
@@ -7366,7 +7370,7 @@ function dglPrintAt(x, z, a, paw) {
   if (!col && E && !sc.indoor && E.wet > 0.5 && !/[wdb]/.test(ch)) col = [0.34, 0.36, 0.42];
   if (!col) return;
   const P = walkRenderer.prints || (walkRenderer.prints = []);
-  P.push({ x, z, y: dioH(x, z), a, paw, age: 0, col });
+  P.push({ x, z, y: standingHeightAt(x, z), a, paw, age: 0, col });
   if (P.length > 140) P.splice(0, P.length - 140);
 }
 function dglPrints(quad, U, R, Up, dt) {
@@ -7445,7 +7449,7 @@ function dglLifeFx(quad, glows, t, rm, dt, sc, C0) {
           'bee',
           Math.floor((t * rm) / 60 + n) % 2,
           x,
-          dioH(x, z) + 0.5 + 0.3 * Math.sin(a * 2.1 + n),
+          standingHeightAt(x, z) + 0.5 + 0.3 * Math.sin(a * 2.1 + n),
           z,
           0.15,
           0.12,
@@ -7463,7 +7467,7 @@ function dglLifeFx(quad, glows, t, rm, dt, sc, C0) {
       const sd = p.x * 3.1 + p.z * 1.7,
         x = p.x + Math.sin((t * rm) / 2300 + sd) * 1.2,
         z = p.z - 0.3 + Math.cos((t * rm) / 2900 + sd * 1.3) * 0.8,
-        y = dioH(x, z) + 0.5 + 0.4 * Math.sin((t * rm) / 1700 + sd),
+        y = standingHeightAt(x, z) + 0.5 + 0.4 * Math.sin((t * rm) / 1700 + sd),
         bl = Math.max(0, Math.sin((t * rm) / (moth ? 900 : 600) + sd * 5));
       if (moth) {
         quad('moth', Math.floor((t * rm) / 90 + i) % 2, x, y + 0.2, z, 0.22, 0.16, 0.9 * k);
@@ -7505,7 +7509,16 @@ function dglLifeFx(quad, glows, t, rm, dt, sc, C0) {
       q.z += q.vz * dt;
       const hop = Math.max(0, Math.sin(q.life * 7 + i)) * 0.06 * gust,
         a = Math.min(1, q.life * 3, (q.max - q.life) * 2);
-      quad('leaf', (q.fr + Math.floor(q.life * 6)) % 3, q.x, dioH(q.x, q.z) + 0.04 + hop, q.z, 0.15, 0.15, a);
+      quad(
+        'leaf',
+        (q.fr + Math.floor(q.life * 6)) % 3,
+        q.x,
+        standingHeightAt(q.x, q.z) + 0.04 + hop,
+        q.z,
+        0.15,
+        0.15,
+        a
+      );
     }
   }
   /* v47: dust kicked up from dry ground as you walk (earth, paths, dirt, sand, gravel, scrap, ash), not when it is wet or snowy */
@@ -7537,7 +7550,7 @@ function dglLifeFx(quad, glows, t, rm, dt, sc, C0) {
         'smoke',
         Math.min(3, Math.floor(f * 4)),
         q.x,
-        dioH(q.x, q.z) + 0.06 + f * 0.22,
+        standingHeightAt(q.x, q.z) + 0.06 + f * 0.22,
         q.z,
         0.2 + f * 0.32,
         0.2 + f * 0.32,
@@ -7774,7 +7787,7 @@ export function dglFxPass(C, items, X, dark, t, dt) {
         'butterfly',
         Math.floor((t * rm) / 110 + i) % 2,
         bx,
-        dioH(bx, bz) + 0.55 + 0.35 * Math.sin((t * rm) / 480 + i * 3),
+        standingHeightAt(bx, bz) + 0.55 + 0.35 * Math.sin((t * rm) / 480 + i * 3),
         bz,
         0.3,
         0.26,
@@ -7792,7 +7805,7 @@ export function dglFxPass(C, items, X, dark, t, dt) {
         'leaf',
         Math.floor((t * rm) / 220 + i) % 3,
         bx,
-        dioH(bx, bz) + top * (1 - ph),
+        standingHeightAt(bx, bz) + top * (1 - ph),
         bz,
         0.18,
         0.18,
@@ -7880,7 +7893,7 @@ export function dglFxPass(C, items, X, dark, t, dt) {
   if (walkRenderer.springCells && walkRenderer.springCells.length && eng('water', 'steam')) {
     walkRenderer.springCells.forEach(([x, z, dp], k) => {
       const g = dglWgAt(x, z),
-        y = g ? g.y : dioH(x, z);
+        y = g ? g.y : standingHeightAt(x, z);
       for (let n = 0; n < 2; n++) {
         const ph = ((t * rm) / 5200 + n / 2 + k * 0.37) % 1,
           sz = 0.5 + ph * 1.3;
@@ -7912,7 +7925,7 @@ export function dglFxPass(C, items, X, dark, t, dt) {
       const ph = (t / 1000 + k * 1.7) % 6;
       if (ph > 1.1) return;
       const a = Math.sin((ph / 1.1) * Math.PI),
-        y = dioH(x, z) + 0.38,
+        y = standingHeightAt(x, z) + 0.38,
         ex = R[0] * 0.07,
         ez = R[2] * 0.07,
         c = [1, 0.95, 0.62];
@@ -7972,7 +7985,7 @@ export function dglFxPass(C, items, X, dark, t, dt) {
     q.vy -= q.g * dt;
     q.y = Math.max(0, q.y + q.vy * dt);
     const a = 1 - q.life / q.max,
-      gy = dioH(q.x, q.z);
+      gy = standingHeightAt(q.x, q.z);
     if (q.k === 'leaf') quad('leaf', q.fr, q.x, gy + q.y, q.z, 0.16, 0.16, a);
     else
       quad('smoke', 1, q.x, gy + q.y + 0.1, q.z, 0.25 + q.life * 0.6, 0.25 + q.life * 0.6, a * 0.35, [0.95, 0.9, 0.8]);

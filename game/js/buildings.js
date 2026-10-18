@@ -28,7 +28,7 @@ import {
   v3n,
 } from './engine/webgl.js';
 import { ENV, envLitFrac } from './environment.js';
-import { dglCurveArgs, dglLookU, dglUse, dioH, walkRenderer } from './walk-view-gl.js';
+import { dglCurveArgs, dglLookU, dglUse, standingHeightAt, walkRenderer } from './walk-view-gl.js';
 /* eslint-disable no-func-assign */
 expose({
   BLD: [() => BLD],
@@ -398,7 +398,7 @@ function bldMake(it) {
     [XR, z1],
   ]) {
     const q = RT ? RT.pt(a, b) : [a, b];
-    under = Math.min(under, dioH(q[0], q[1]) - 0.5);
+    under = Math.min(under, standingHeightAt(q[0], q[1]) - 0.5);
   }
   const Ye = y0 - B.eave * s,
     o = (B.over ?? 0.25) * sc,

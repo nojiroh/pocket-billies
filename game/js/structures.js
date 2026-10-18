@@ -14,7 +14,14 @@ import { clamp } from './util.js';
 import { hexA } from './art.js';
 import { artImage, mapBridges, walkView } from './walk-view.js';
 import { EGL, eglImg, eglPrograms } from './engine/webgl.js';
-import { DGL_WALL_COL, dglCurveArgs, dglUse, dglWallDefault, dioGroundH, dioH } from './walk-view-gl.js';
+import {
+  DGL_WALL_COL,
+  dglCurveArgs,
+  dglUse,
+  dglWallDefault,
+  groundHeightAt,
+  standingHeightAt,
+} from './walk-view-gl.js';
 import { BLD_SH, bldArt, bldGuard } from './buildings.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -159,8 +166,8 @@ function strBuild(sc) {
       );
     }
   };
-  const G = (x, z) => dioGroundH(x, z),
-    Hh = (x, z) => dioH(x, z);
+  const G = (x, z) => groundHeightAt(x, z),
+    Hh = (x, z) => standingHeightAt(x, z);
   /* railings: posts and a top rail following the ground (or the deck) */
   const railing = (pts, K, yf, hgt = 0.95) => {
     for (let k = 0; k < pts.length - 1; k++) {
