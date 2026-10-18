@@ -8,10 +8,10 @@
    - scenesAll(): every map, a couple at a time, nearest first (started once the game has loaded).
    The view a player can walk into next is fetched ahead (scenesAhead, on arriving at a place), and prepareMap waits
    for a view's maps, so nothing is drawn from half a map. If anything was put together from a map before its file came
-   (the world map's miniatures, say), the views are made again once it has (WORLD.gen). */
+   (the world map's miniatures, say), the views are made again once it has (seamlessWorld.gen). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { S, WORLD, provide } from './hooks.js';
+import { S, provide, seamlessWorld } from './hooks.js';
 import { ADJ, GD, LINKS, ROUTE, START_NODE } from './game-data.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -70,13 +70,13 @@ export function sceneLoad(id) {
 }
 /* a view put together while this map was still without its ground: make the views again */
 function sceneStale(id) {
-  if (!SCENE_FILES.touched.has(id) || typeof WORLD === 'undefined') return;
+  if (!SCENE_FILES.touched.has(id) || typeof seamlessWorld === 'undefined') return;
   const uses = v =>
     v &&
     typeof v === 'object' &&
     (v.baseId === id || v.aId === id || v.bId === id || (v.parts || []).some(p => p && p.id === id));
-  const all = [...WORLD.cache.values(), ...(WORLD.fix ? WORLD.fix.values() : [])];
-  if (all.some(uses)) WORLD.gen++;
+  const all = [...seamlessWorld.cache.values(), ...(seamlessWorld.fix ? seamlessWorld.fix.values() : [])];
+  if (all.some(uses)) seamlessWorld.gen++;
 }
 const scenesNeed = ids => Promise.all([...new Set(ids)].filter(Boolean).map(sceneLoad));
 provide({ scenesNeed }); /* to-module */

@@ -45,7 +45,7 @@ import { STR, strHas } from './structures.js';
 import { P3D, P3D_SH } from './solid-props.js';
 import { VOX } from './prop-models.js';
 import { buddyTap, companionSpecies, worldBillies } from './world-billies.js';
-import { WORLD, wrRoomScene, wrTripView } from './seamless-world.js';
+import { seamlessWorld, wrRoomScene, wrTripView } from './seamless-world.js';
 import { A, endBattle, liveK, pickMove, pickTarget, startTrainer, startWild, stopTimers, tapMsg } from './battle.js';
 import { worldMap } from './world-map.js';
 import {
@@ -1232,7 +1232,10 @@ async function runFullTest(mode) {
       'dio',
       async () => {
         const vxn = typeof VOX !== 'undefined' ? VOX.meshes.size : 0,
-          wn = typeof WORLD !== 'undefined' ? [...WORLD.cache.keys()].filter(k => k.startsWith('w:')).length : 0;
+          wn =
+            typeof seamlessWorld !== 'undefined'
+              ? [...seamlessWorld.cache.keys()].filter(k => k.startsWith('w:')).length
+              : 0;
         const mb = performance.memory ? Math.round(performance.memory.usedJSHeapSize / 1048576) : null,
           tex = typeof EGL !== 'undefined' && EGL.texB ? Math.round(EGL.texB / 1048576) : null,
           ntex = typeof EGL !== 'undefined' && EGL.texL ? EGL.texL.size : null,

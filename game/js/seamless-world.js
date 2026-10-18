@@ -44,7 +44,6 @@ import { lifeShift } from './ambient-life.js';
 import { shiftWorldBillies } from './world-billies.js';
 /* eslint-disable no-func-assign */
 expose({
-  WORLD: [() => WORLD],
   WR_DECO: [() => WR_DECO],
   WR_DIR: [() => WR_DIR],
   WR_HUBL: [() => WR_HUBL],
@@ -60,6 +59,7 @@ expose({
   WR_ST: [() => WR_ST],
   WR_TUN: [() => WR_TUN],
   WR_WIN: [() => WR_WIN],
+  seamlessWorld: [() => seamlessWorld],
   shiftWalkView: [() => shiftWalkView, v => (shiftWalkView = v)],
   wrAdj: [() => wrAdj, v => (wrAdj = v)],
   wrAlongPts: [() => wrAlongPts, v => (wrAlongPts = v)],
@@ -116,9 +116,9 @@ expose({
 /* eslint-enable no-func-assign */
 provide({ wrLookTick, wrNear, wrSceneById });
 /* to-module: end */
-export const WORLD = { cache: new Map(), max: 5, gen: 0, LW: 40, MID: 64, BAND: 12, on: true };
-provide({ WORLD }); /* to-module */
-export const wrOn = () => WORLD.on && !(typeof eng === 'function' && eng('world', 'seamless') === false);
+export const seamlessWorld = { cache: new Map(), max: 5, gen: 0, LW: 40, MID: 64, BAND: 12, on: true };
+provide({ seamlessWorld }); /* to-module */
+export const wrOn = () => seamlessWorld.on && !(typeof eng === 'function' && eng('world', 'seamless') === false);
 function wrRoadLen(steps) {
   return Math.max(24, Math.round((40 * steps) / 500));
 }
@@ -167,8 +167,8 @@ function wrExitOf(node, i) {
 }
 /* the road of link i: its frame, legs and ends. A = the link's first stop, B its second, whichever way you walk it */
 function wrRoad(i) {
-  const key = 'road' + i + '|' + WORLD.gen;
-  let R = WORLD.cache.get(key);
+  const key = 'road' + i + '|' + seamlessWorld.gen;
+  let R = seamlessWorld.cache.get(key);
   if (R) return R;
   const L = LINKS[i],
     a = L[0],
@@ -181,7 +181,7 @@ function wrRoad(i) {
   const Lr = wrRoadLen(L[2]),
     dA = WR_DIR[ea.side],
     dB = WR_DIR[eb.side],
-    LW = WORLD.LW;
+    LW = seamlessWorld.LW;
   /* A sits at (ax, az): room on its west or south for the road when the exit is on that side */
   const ax = ea.side === 'W' ? LW : 0,
     az = ea.side === 'S' ? LW : 0;
@@ -249,7 +249,7 @@ function wrRoad(i) {
     edgeA: A.edge || 'g',
     edgeB: B.edge || 'g',
   };
-  WORLD.cache.set(key, R);
+  seamlessWorld.cache.set(key, R);
   return R;
 }
 /* ---------- alpha 0.2: places joined edge to edge ----------
@@ -266,13 +266,13 @@ const WR_OPP = { E: 'W', W: 'E', N: 'S', S: 'N' },
   WR_JW = 26;
 /* what doesn't change from view to view (joins, seams, each place's eased ground), kept until the data changes */
 function wrFix(key, fn) {
-  if (WORLD.fixGen !== WORLD.gen) {
-    WORLD.fix = new Map();
-    WORLD.fixGen = WORLD.gen;
+  if (seamlessWorld.fixGen !== seamlessWorld.gen) {
+    seamlessWorld.fix = new Map();
+    seamlessWorld.fixGen = seamlessWorld.gen;
   }
-  if (WORLD.fix.has(key)) return WORLD.fix.get(key);
+  if (seamlessWorld.fix.has(key)) return seamlessWorld.fix.get(key);
   const v = fn();
-  WORLD.fix.set(key, v);
+  seamlessWorld.fix.set(key, v);
   return v;
 }
 function wrJoin(i) {
@@ -429,7 +429,7 @@ function wrAdj(S, sid) {
         }
       /* the lower side rises to the exit that is up on a rim */
       const up = isA ? Q.dE : -Q.dE;
-      if (up > 0.05 && !WORLD.noLift) {
+      if (up > 0.05 && !seamlessWorld.noLift) {
         if (!E) {
           E = {
             w: W * 2,
@@ -555,8 +555,8 @@ function wrProps(R, box, C) {
   const out = [],
     cat = C.props,
     nat =
-      WORLD.nat ||
-      (WORLD.nat = Object.entries(cat)
+      seamlessWorld.nat ||
+      (seamlessWorld.nat = Object.entries(cat)
         .filter(([k, M]) => M.family && M.grow && M.family !== 'water')
         .map(([k, M]) => [k, M]));
   if (!nat.length) return out;
@@ -1219,8 +1219,8 @@ function wrComposeMulti(id, F) {
   /* alpha 0.2: the countryside's growth, thicker away from the places (trees frame the view) */
   if (fill && !UB) {
     const nat =
-      WORLD.nat ||
-      (WORLD.nat = Object.entries(C.props)
+      seamlessWorld.nat ||
+      (seamlessWorld.nat = Object.entries(C.props)
         .filter(([k, M]) => M.family && M.grow && M.family !== 'water')
         .map(([k, M]) => [k, M]));
     for (let z = 0; z < h; z += 2)
@@ -1274,8 +1274,8 @@ function wrComposeMulti(id, F) {
   for (const q of SS) {
     if (!q.cover) continue;
     const nat =
-        WORLD.nat ||
-        (WORLD.nat = Object.entries(C.props)
+        seamlessWorld.nat ||
+        (seamlessWorld.nat = Object.entries(C.props)
           .filter(([k, M]) => M.family && M.grow && M.family !== 'water')
           .map(([k, M]) => [k, M])),
       sl = wrSalt(q.id) | 0;
@@ -1397,10 +1397,10 @@ function wrHubParts(node) {
         p = wrAt(R, u),
         x = p.x - So[0],
         z = p.z - So[1];
-      x0 = Math.min(x0, x - WORLD.BAND);
-      z0 = Math.min(z0, z - WORLD.BAND);
-      x1 = Math.max(x1, x + WORLD.BAND);
-      z1 = Math.max(z1, z + WORLD.BAND);
+      x0 = Math.min(x0, x - seamlessWorld.BAND);
+      z0 = Math.min(z0, z - seamlessWorld.BAND);
+      x1 = Math.max(x1, x + seamlessWorld.BAND);
+      z1 = Math.max(z1, z + seamlessWorld.BAND);
     }
   }
   /* alpha 0.2: each neighbour shows where it meets the place, WR_JW either side of its exit (past the place's corner
@@ -1452,39 +1452,39 @@ function wrHubParts(node) {
 export function wrHubScene(node) {
   const sid = sceneIdAt(node),
     id = 'w:' + sid + '*',
-    key = id + '|' + WORLD.gen;
-  let sc = WORLD.cache.get(key);
+    key = id + '|' + seamlessWorld.gen;
+  let sc = seamlessWorld.cache.get(key);
   if (sc) return sc;
   const F = wrHubParts(node);
   if (!F) return null;
   sc = wrComposeMulti(id, F);
   sc.id = id;
-  WORLD.cache.set(key, sc);
+  seamlessWorld.cache.set(key, sc);
   wrTrim();
   return sc;
 }
 function wrTrim() {
-  while (WORLD.cache.size > WORLD.max + LINKS.length) {
+  while (seamlessWorld.cache.size > seamlessWorld.max + LINKS.length) {
     let k0 = null;
-    for (const k of WORLD.cache.keys())
+    for (const k of seamlessWorld.cache.keys())
       if (!k.startsWith('road')) {
         k0 = k;
         break;
       }
     if (!k0) break;
-    WORLD.cache.delete(k0);
+    seamlessWorld.cache.delete(k0);
   }
 }
 /* the view for a place on a road: the near end's hub, the far end's hub, or a window in between */
 function wrViewFor(R, u, endOnly) {
-  const LW = WORLD.LW,
+  const LW = seamlessWorld.LW,
     two = R.Lr <= 2 * LW - 8,
     cut = two ? R.Lr / 2 : 24;
   if (endOnly === 'a' || (!endOnly && u <= cut))
     return { id: 'w:' + R.aId + '*', hub: R.a, off: R.aOff, base: R.A, t: 0 };
   if (endOnly === 'b' || (!endOnly && u >= R.Lr - cut))
     return { id: 'w:' + R.bId + '*', hub: R.b, off: R.bOff, base: R.B, t: 1 };
-  const M = WORLD.MID,
+  const M = seamlessWorld.MID,
     k = Math.round(u / 24),
     p = wrAt(R, k * 24);
   return {
@@ -1498,8 +1498,8 @@ function wrViewFor(R, u, endOnly) {
 }
 function wrScene(view, R) {
   if (view.hub != null) return wrHubScene(view.hub);
-  const key = view.id + '|' + WORLD.gen;
-  let sc = WORLD.cache.get(key);
+  const key = view.id + '|' + seamlessWorld.gen;
+  let sc = seamlessWorld.cache.get(key);
   if (sc) return sc;
   sc = wrCompose(view.id, R, view.box, view.base, view.t);
   sc.id = view.id;
@@ -1509,7 +1509,7 @@ function wrScene(view, R) {
     sc.exits = [];
     sc.edgeExits = null;
   }
-  WORLD.cache.set(key, sc);
+  seamlessWorld.cache.set(key, sc);
   wrTrim();
   return sc;
 }
@@ -1517,7 +1517,7 @@ function wrScene(view, R) {
    "w:<scene>><link>" and "w:<scene><<link>" now mean the hub */
 function wrSceneById(id) {
   if (!id || !id.startsWith('w:')) return null;
-  for (const [k, v] of WORLD.cache) if (k === id + '|' + WORLD.gen) return v;
+  for (const [k, v] of seamlessWorld.cache) if (k === id + '|' + seamlessWorld.gen) return v;
   let m = id.match(/^(w:.+)#([^@#]+)@(-?[\d.]+),(-?[\d.]+)(?:,(-?[\d.]+))?$/);
   if (m) return wrRoomScene(m[1], m[2], m[5] != null ? [+m[3], +m[4], +m[5]] : [+m[3], +m[4]]);
   m = id.match(/^w:road(\d+)@(-?\d+)$/);
@@ -1703,8 +1703,8 @@ export function wrRoomId(baseId, roomId, door) {
 }
 export function wrRoomScene(baseId, roomId, door) {
   const id = wrRoomId(baseId, roomId, door),
-    key = id + '|' + WORLD.gen;
-  let sc = WORLD.cache.get(key);
+    key = id + '|' + seamlessWorld.gen;
+  let sc = seamlessWorld.cache.get(key);
   if (sc) return sc;
   const B0 = mapById(baseId),
     R = mapById(roomId);
@@ -1875,7 +1875,7 @@ export function wrRoomScene(baseId, roomId, door) {
     arches: (B.arches || []).filter(o => !hits(o.x - 1, o.z - 1, o.x + 1, o.z + 1)),
     name: R.name,
   });
-  WORLD.cache.set(key, sc);
+  seamlessWorld.cache.set(key, sc);
   wrTrim();
   return sc;
 }
@@ -1910,7 +1910,7 @@ export function wrRoamView(node, pos) {
     return null;
   const hs = wrHubScene(node);
   if (!hs) return null;
-  WORLD.roam = { node };
+  seamlessWorld.roam = { node };
   return { id: hs.id, sc: hs, R: null };
 }
 /* on a road: the view for your progress, and where you stand on it (in that view's metres) */
@@ -1952,13 +1952,13 @@ function wrJoinTrip(J, node, f) {
     PX = wrExitPath(X, (fwd ? J.ea : J.eb).k),
     PY = wrExitPath(Y, (fwd ? J.eb : J.ea).k),
     L = Math.max(1, PX.len + PY.len);
-  const T = WORLD.trip;
+  const T = seamlessWorld.trip;
   let u0 = 0;
   if (T && T.i === J.i && T.node === node) u0 = T.u0;
   else if (f <= 0) {
     u0 = wrStartU(xn, PX);
-    WORLD.trip = { i: J.i, node, u0 };
-  } else WORLD.trip = null;
+    seamlessWorld.trip = { i: J.i, node, u0 };
+  } else seamlessWorld.trip = null;
   const u = u0 + clamp(f, 0, 1) * (L - u0),
     inX = u < PX.len,
     vn = inX ? xn : yn,
@@ -2066,15 +2066,15 @@ export function wrGetReady(id, urgent, focus) {
   const key = groundKey(sc),
     G = GROUND_CACHE.get(key);
   if (!G) {
-    if (!WORLD.busy) {
-      WORLD.busy = true;
-      WORLD.busyId = id;
+    if (!seamlessWorld.busy) {
+      seamlessWorld.busy = true;
+      seamlessWorld.busyId = id;
       const t0 = performance.now();
       artLoad(mapArtPaths(sc))
         .then(() => buildGroundAsync(sc, urgent ? -5 : 10))
         .catch(() => {})
         .then(() => {
-          WORLD.busy = false;
+          seamlessWorld.busy = false;
           if (typeof NWLOG !== 'undefined')
             NWLOG.add('scene', `painted ${id} ahead (${Math.round(performance.now() - t0)} ms in the background)`);
         });
@@ -2092,7 +2092,7 @@ export function wrGate(v) {
   if (!wrOn() || !v || v.id === walkView.id || !walkView.ready || !walkView.sc || !walkView.pl || walkView.pl.fresh)
     return v;
   if (wrGetReady(v.id, true, v.pos)) {
-    WORLD.heldFor = null;
+    seamlessWorld.heldFor = null;
     if (typeof walkRenderer !== 'undefined') walkRenderer.prepBoost = 1;
     return v;
   }
@@ -2114,9 +2114,9 @@ export function wrGate(v) {
     if (typeof NWLOG !== 'undefined') NWLOG.add('scene', `${v.id} wasn't ready in time; built on the spot`);
     return v;
   }
-  if (WORLD.heldFor !== v.id) {
-    WORLD.heldFor = v.id;
-    WORLD.holds = (WORLD.holds || 0) + 1;
+  if (seamlessWorld.heldFor !== v.id) {
+    seamlessWorld.heldFor = v.id;
+    seamlessWorld.holds = (seamlessWorld.holds || 0) + 1;
   }
   return Object.assign({}, v, { id: walkView.id, pos: [x, z], held: v.id });
 }

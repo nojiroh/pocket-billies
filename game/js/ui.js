@@ -128,7 +128,7 @@ import { ENV, envHint, envIcon, envLabel } from './environment.js';
 import { mountWalkView, walkRenderer } from './walk-view-gl.js';
 import { fishStart } from './fishing.js';
 import {
-  WORLD,
+  seamlessWorld,
   shiftWalkView,
   wrDelta,
   wrGate,
@@ -1114,8 +1114,8 @@ function roomLayIn(id, p, fresh) {
     dx = (((M.door && M.door.x) || 0) / (C.ppu || 34)) * s * f,
     door = [+(p.x + dx).toFixed(1), +(+p.z).toFixed(1), +(+p.x).toFixed(1)]; /* the door, and the building's middle */
   if (fresh)
-    WORLD.cache.delete(
-      wrRoomId(walkView.id, id, door) + '|' + WORLD.gen
+    seamlessWorld.cache.delete(
+      wrRoomId(walkView.id, id, door) + '|' + seamlessWorld.gen
     ); /* the room as it is now (your room's decorations) */
   const sc = wrRoomScene(walkView.id, id, door);
   if (!sc) return null;
@@ -1126,7 +1126,7 @@ function roomLayIn(id, p, fresh) {
 function roomRefresh() {
   const I = U.inside;
   if (!I || !I.view || walkView.id !== I.view || !walkView.sc) return;
-  WORLD.cache.delete(I.view + '|' + WORLD.gen);
+  seamlessWorld.cache.delete(I.view + '|' + seamlessWorld.gen);
   const n = wrRoomScene(I.base, I.id, I.door);
   if (!n) return;
   walkView.sc.props = n.props;

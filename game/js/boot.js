@@ -17,7 +17,7 @@ import { mapArtPaths, mapById, walkData, walkView } from './walk-view.js';
 import { EGL, eglOK } from './engine/webgl.js';
 import { ENV } from './environment.js';
 import { startTownRise, walkRenderer } from './walk-view-gl.js';
-import { WORLD } from './seamless-world.js';
+import { seamlessWorld } from './seamless-world.js';
 import { areaKey } from './battle.js';
 import { WORLD_ART, worldMapPrepare } from './world-map.js';
 import { WORLD_RELIEF } from './world-map-gl.js';
@@ -758,9 +758,9 @@ function studioLive(D) {
       any = true;
     }
   if (!any) return;
-  if (typeof WORLD !== 'undefined') {
-    WORLD.gen++;
-    WORLD.cache.clear();
+  if (typeof seamlessWorld !== 'undefined') {
+    seamlessWorld.gen++;
+    seamlessWorld.cache.clear();
   }
   if (typeof walkView !== 'undefined' && walkView.id && GD.scenes[walkView.id]) {
     walkView.sc = GD.scenes[walkView.id];
