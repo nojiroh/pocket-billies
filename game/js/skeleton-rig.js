@@ -10,7 +10,7 @@ import { ART_CACHE, artImg, artLoad, artReady, artURL, makeCanvas } from './art.
 import { animFor } from './body-plan-animation.js';
 /* eslint-disable no-func-assign */
 expose({
-  BACK_VIEW_SCALE: [() => BACK_VIEW_SCALE],
+  RIG_BACK_VIEW: [() => RIG_BACK_VIEW],
   RIG_CANVAS_SIZE: [() => RIG_CANVAS_SIZE],
   RIG_PARTS_CACHE: [() => RIG_PARTS_CACHE],
   RIG_POSES: [() => RIG_POSES],
@@ -331,7 +331,7 @@ export function rigFrame(R, act, tau, t, seed) {
    fails a species whose legs, head or tail never move. */
 const RIG_POSES = ['idle', 'walk', 'attack', 'cast', 'hurt', 'faint', 'cheer', 'buff', 'dizzy'];
 export function rigAudit(sp, view = 'front') {
-  const R = rigParts(sp, false, view === 'back' ? BACK_VIEW_SCALE : 1);
+  const R = rigParts(sp, false, view === 'back' ? RIG_BACK_VIEW : 1);
   if (!R) return null;
   const out = {};
   for (const act of RIG_POSES) {
@@ -364,7 +364,7 @@ export function rigAudit(sp, view = 'front') {
   return { plan: R.plan, clock: R.clock || 0, bones, poses: out, still };
 } /* v38: a bone without a picture (the hover bone of fish and fliers) is not audited */
 export const RIG_CANVAS_SIZE = { w: 112, h: 104 },
-  BACK_VIEW_SCALE = 1.4;
+  RIG_BACK_VIEW = 1.4;
 const RIG_PARTS_CACHE = {};
 /* v36: the new piece sheets (art/next/billionaires, rigs in art/next/rigs-next.js) hold both views on one picture */
 if (typeof window !== 'undefined' && window.RIGS_NEXT) {
