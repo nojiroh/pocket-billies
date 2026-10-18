@@ -5,10 +5,10 @@ import { expose } from '../../game/js/test-globals.js';
 import {
   BODY_TEMPLATES,
   PLAN_INFO,
-  WDS,
   makeBlankBody,
   neutralPose,
   openSkeleton,
+  wardrobeEditor,
   wdLoad,
 } from '../../game/js/hooks.js';
 import { $, $$ } from '../../game/js/util.js';
@@ -1340,7 +1340,7 @@ SECTIONS.people = () => {
   for (const id of Object.values(L.wear || {}))
     if (id && W.items[id] && !L.colors[id]) L.colors[id] = trColorsOf(cleanLook(L), id);
   after(() => {
-    if (typeof wdLoad === 'function' && !WDS.loaded)
+    if (typeof wdLoad === 'function' && !wardrobeEditor.loaded)
       wdLoad().then(() => {
         TR_CACHE.clear();
         const b = $('#personPrev');
@@ -1426,7 +1426,7 @@ ACTIONS.personDel = async () => {
   render();
 };
 ACTIONS.wdGo = d => {
-  WDS.sel = d.k;
+  wardrobeEditor.sel = d.k;
   openSection('wardrobe');
 };
 /* ================= JOBS ================= */
