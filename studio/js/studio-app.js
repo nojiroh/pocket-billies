@@ -427,7 +427,8 @@ const RANGE_FORMATS = { pct: v => Math.round(v * 100) + '%', x: v => '×' + (+v)
 /* ---------- navigation ---------- */
 export const SECTION_LIST = [
   ['billionaires', 'Billies', 'The creatures: names, stats, moves, evolution, sprite art'],
-  ['roster', 'Roster board', 'The 117 new Billies of the big art update and how far each is'],
+  ['roster', 'Roster board', 'The Billies in the game and how far their art is'],
+  ['parts', 'Parts', 'Part sizes, weight and Prime Billies'],
   ['moves', 'Moves', 'Attacks and their effects'],
   ['preview', 'Battle preview', 'Watch moves, backdrops and Billies on the real battle stage'],
   ['types', 'Types', 'Colors, matchups and type abilities'],
@@ -448,7 +449,7 @@ export const SECTION_LIST = [
 /* alpha 0.4.1: the sections in five groups that fold away; the one you're in always shows. The descriptions show as
    a tooltip and under the section you're in, so the list is short enough to see at once */
 const SECTION_GROUPS = [
-  ['Billies & battles', ['billionaires', 'roster', 'moves', 'preview', 'types']],
+  ['Billies & battles', ['billionaires', 'parts', 'roster', 'moves', 'preview', 'types']],
   ['World & places', ['scenes', 'engine', 'world']],
   ['People & story', ['trainers', 'people', 'wardrobe', 'lore']],
   ['Money', ['items', 'shops', 'jobs']],

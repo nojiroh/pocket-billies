@@ -35,12 +35,15 @@ import {
   trainersAt,
   typeEffectiveness,
 } from './game-data.js';
+import { weightClass } from './logic/parts.js';
 import {
   STEP_BRACKETS,
   addEgg,
   allBillies,
   assignJob,
+  billyBuild,
   billyName,
+  billyWeight,
   blockerAt,
   canEnter,
   canEvolve,
@@ -48,6 +51,7 @@ import {
   cleanName,
   collectJob,
   eggSlotCount,
+  encounterBuild,
   endShift,
   evolutionHint,
   evolutionItemName,
@@ -59,12 +63,14 @@ import {
   hatchEgg,
   hatchable,
   healAll,
+  isPrime,
   makeBilly,
   maxHp,
   maxLevel,
   moveSlotCount,
   nextBracket,
   nextTripNode,
+  partSlots,
   plural,
   resumeTrip,
   riderName,
@@ -208,6 +214,8 @@ expose({
   BRACKET_COLORS: [() => BRACKET_COLORS],
   HAZEL_INTRO_LINES: [() => HAZEL_INTRO_LINES],
   INTRO_STILLS: [() => INTRO_STILLS],
+  PART_SIZE_NAMES: [() => PART_SIZE_NAMES],
+  PART_SLOT_NAMES: [() => PART_SLOT_NAMES],
   RARITY_NAMES: [() => RARITY_NAMES],
   ROOM_BY_BUILDING: [() => ROOM_BY_BUILDING],
   ROOM_BY_USE: [() => ROOM_BY_USE],
@@ -217,6 +225,7 @@ expose({
   addPick: [() => addPick, v => (addPick = v)],
   badgeSlots: [() => badgeSlots, v => (badgeSlots = v)],
   billyConditionHTML: [() => billyConditionHTML],
+  billyPartsHTML: [() => billyPartsHTML, v => (billyPartsHTML = v)],
   billySheet: [() => billySheet, v => (billySheet = v)],
   boardNote: [() => boardNote, v => (boardNote = v)],
   boxSection: [() => boxSection, v => (boxSection = v)],
@@ -470,7 +479,7 @@ function evolutionModal(m) {
     }[e.k] || '';
   modal({
     title: `${escapeHtml(billyName(m))} is evolving`,
-    top: `<div class="evo">${rigCanvasHTML(m.sp, 128, { gold: m.gold })}</div>`,
+    top: `<div class="evo">${rigCanvasHTML(m.sp, 128, { gold: m.gold, build: m.build })}</div>`,
     html: `<p>${why} Something bigger is coming.</p>`,
     lock: 1,
     btns: [
@@ -520,7 +529,7 @@ function runEvolution(m, note) {
             uiState.modal = null;
             modal({
               title: `${escapeHtml(fromName)} became ${escapeHtml(to.name)}`,
-              top: `<div class="evo done">${rigCanvasHTML(m.sp, 128, { gold: m.gold })}</div>`,
+              top: `<div class="evo done">${rigCanvasHTML(m.sp, 128, { gold: m.gold, build: m.build })}</div>`,
               html: `<p>${escapeHtml(to.blurb)}</p><p>${to.types.map(typeBadgeHTML).join('')}</p>${note ? `<p class="note">${note}</p>` : ''}`,
               btns: [{ l: 'Nice', c: 'dark', f: closeModal }],
             });
@@ -550,7 +559,7 @@ function hatchModal(e) {
             uiState.modal = null;
             modal({
               title: `It’s ${/^[AEIOU]/.test(s.name) ? 'an' : 'a'} ${m.gold ? 'Golden ' : ''}${escapeHtml(s.name)}`,
-              top: `<div class="hatch done">${rigCanvasHTML(m.sp, 128, { gold: m.gold })}</div>`,
+              top: `<div class="hatch done">${rigCanvasHTML(m.sp, 128, { gold: m.gold, build: m.build })}</div>`,
               html: `<p>${s.types.map(typeBadgeHTML).join('')} <b class="tnum">Lv ${m.lvl}</b></p><p>${escapeHtml(s.blurb)}</p>${res.where === 'box' ? '<p class="note">It went to storage because your team is full.</p>' : ''}`,
               btns: [{ l: 'Welcome aboard', c: 'dark', f: closeModal }],
             });
@@ -698,7 +707,7 @@ const HAZEL_INTRO_LINES = [
   'Can you tell me your name? No? Classic fall-related amnesia. Very common down here. It usually comes back, a bit at a time.',
   '[happy] Let’s start with what we can see. Let me get a good look at you.',
 ];
-function introSteps() {
+export function introSteps() {
   return [
     ...INTRO_STILLS.map(s => ({ k: 'still', s })),
     ...HAZEL_INTRO_LINES.map(t => ({ k: 'gini', t })),
@@ -747,6 +756,22 @@ function renderIntro() {
      return `<button class="starter px" data-a="pick" data-l="${l}" style="--d:${j * 80}ms">${rigCanvasHTML(l + '0', 104, { act: 'cheer' })}<span><span class="sn">${s.name}</span><span class="row">${typeBadgeHTML(t)}</span><span class="sd">${s.blurb}</span><span class="sd">Strong against ${st.join(' and ')}. Weak to ${wk.join(' and ')}.</span></span></button>`;
    })
    .join('')}</div>`;
+}
+/* phase 16: a Billie's parts, its weight and whether it is Prime (in its details, Stats) */
+const PART_SLOT_NAMES = { head: 'Head', body: 'Body', front: 'Front', back: 'Back', sig: 'Signature' },
+  PART_SIZE_NAMES = { S: 'Small', M: 'Normal', L: 'Large' };
+function billyPartsHTML(m) {
+  const b = billyBuild(m),
+    kg = billyWeight(m),
+    prime = isPrime(b);
+  return `<div class="ms-parts"><div class="ms-parts-h"><b>Parts</b><span class="tnum">${kg} kg · ${weightClass(kg)}</span>${prime ? '<span class="ms-prime">Prime</span>' : ''}</div><div class="ms-parts-row">${partSlots()
+    .map(
+      k =>
+        `<span class="ms-part sz-${escapeHtml(b[k])}"><small>${escapeHtml(PART_SLOT_NAMES[k] || k)}</small><b>${escapeHtml(PART_SIZE_NAMES[b[k]] || b[k])}</b></span>`
+    )
+    .join(
+      ''
+    )}</div><p class="note">${prime ? 'Every part is its own, at normal size: a Prime Billie, a little stronger at everything.' : 'Bigger parts make it heavier: harder hits, slower moves. With every part at normal size it would be Prime.'}</p></div>`;
 }
 const BRACKET_COLORS = ['var(--ok)', 'var(--gold)', 'var(--red)', '#9B6BE0', '#4F80E8'];
 function bracketSpans() {
@@ -905,7 +930,7 @@ function buddyCard() {
     e && e.k === 'buddy'
       ? `<div class="note">Buddy distance: ${stepsToKm(m.bsteps || 0)} of ${stepsToKm(e.steps)} km to evolve.</div>${progressBarHTML((m.bsteps || 0) / e.steps, 'gold')}`
       : '';
-  return `<section><div class="sec-h"><h2>Buddy</h2></div><div class="buddy px" data-a="mon" data-u="${m.uid}" role="button" tabindex="0">${rigCanvasHTML(m.sp, 80, { gold: m.gold })}<div class="bd"><div class="bn">${escapeHtml(billyName(m))} <span class="lv tnum">Lv ${m.lvl}</span></div><div class="note">Earns 1 XP for every ${plural(RULES.progression.buddyStepsPerXp, 'step')}. ${formatNumber(Math.ceil((b - m.xp) * RULES.progression.buddyStepsPerXp))} more steps to level ${m.lvl + 1}.</div>${progressBarHTML((m.xp - a) / (b - a), 'xpb')}${ev}</div></div></section>`;
+  return `<section><div class="sec-h"><h2>Buddy</h2></div><div class="buddy px" data-a="mon" data-u="${m.uid}" role="button" tabindex="0">${rigCanvasHTML(m.sp, 80, { gold: m.gold, build: m.build })}<div class="bd"><div class="bn">${escapeHtml(billyName(m))} <span class="lv tnum">Lv ${m.lvl}</span></div><div class="note">Earns 1 XP for every ${plural(RULES.progression.buddyStepsPerXp, 'step')}. ${formatNumber(Math.ceil((b - m.xp) * RULES.progression.buddyStepsPerXp))} more steps to level ${m.lvl + 1}.</div>${progressBarHTML((m.xp - a) / (b - a), 'xpb')}${ev}</div></div></section>`;
 }
 function roomHero() {
   const I = uiState.inside,
@@ -1433,7 +1458,14 @@ function walkState() {
           });
   }
   v.who = 'me';
-  v.enc = saveData.queue.map(q => ({ id: q.id, lvl: q.lvl, sp: q.sp, gold: q.gold, alpha: !!q.alpha }));
+  v.enc = saveData.queue.map(q => ({
+    id: q.id,
+    lvl: q.lvl,
+    sp: q.sp,
+    gold: q.gold,
+    alpha: !!q.alpha,
+    build: encounterBuild(q),
+  }));
   return v;
 }
 export function walkPick(h) {
@@ -1876,7 +1908,7 @@ function teamHero(m) {
   const s = SPECIES[m.sp],
     mx = maxHp(m),
     bud = m.uid === saveData.buddy;
-  return `<section class="tm-hero tpanel"><button class="tm-stage" data-a="mon" data-u="${m.uid}" style="${plateVars(m)}" aria-label="${escapeHtml(billyName(m))}, details"><span class="tm-ribbon">Lead</span>${m.gold ? '<span class="tm-ribbon gold">Golden</span>' : ''}${rigCanvasHTML(m.sp, 120, { gold: m.gold })}</button>
+  return `<section class="tm-hero tpanel"><button class="tm-stage" data-a="mon" data-u="${m.uid}" style="${plateVars(m)}" aria-label="${escapeHtml(billyName(m))}, details"><span class="tm-ribbon">Lead</span>${m.gold ? '<span class="tm-ribbon gold">Golden</span>' : ''}${rigCanvasHTML(m.sp, 120, { gold: m.gold, build: m.build })}</button>
  <div class="tm-info"><div class="tm-name"><h2>${escapeHtml(billyName(m))}</h2><span class="lv tnum">Lv ${m.lvl}</span></div>${m.nick ? `<div class="tm-sp">${escapeHtml(s.name)}</div>` : ''}
   <div class="row">${s.types.map(typeBadgeHTML).join('')}${billyConditionHTML(m)}${bud ? `<span class="badge bud">${uiIconHTML('heart', 11)} Buddy</span>` : ''}</div>
   ${meter('HP', hpBar(m.hp, mx), `${m.hp}/${mx}`)}${meter('XP', progressBarHTML(xpProgress(m), 'xpb'), xpLeft(m))}
@@ -1885,7 +1917,7 @@ function teamHero(m) {
 function teamCard(m, i) {
   const mx = maxHp(m),
     bud = m.uid === saveData.buddy;
-  return `<div class="tm-card${m.hp <= 0 ? ' down' : ''}" style="--d:${i * 40}ms"><button class="tm-main" data-a="mon" data-u="${m.uid}"><span class="tm-spr" style="${plateVars(m)}">${rigCanvasHTML(m.sp, 72, { gold: m.gold })}${bud ? `<i class="tm-heart" title="Buddy">${uiIconHTML('heart', 12)}</i>` : ''}</span>
+  return `<div class="tm-card${m.hp <= 0 ? ' down' : ''}" style="--d:${i * 40}ms"><button class="tm-main" data-a="mon" data-u="${m.uid}"><span class="tm-spr" style="${plateVars(m)}">${rigCanvasHTML(m.sp, 72, { gold: m.gold, build: m.build })}${bud ? `<i class="tm-heart" title="Buddy">${uiIconHTML('heart', 12)}</i>` : ''}</span>
   <span class="tm-t"><b>${escapeHtml(billyName(m))}</b><span class="tm-lv tnum">Lv ${m.lvl}</span></span><span class="row">${SPECIES[m.sp].types.map(typeBadgeHTML).join('')}${billyConditionHTML(m)}</span>${hpBar(m.hp, mx)}<span class="hpn tnum">${m.hp}/${mx} HP</span></button>
   <div class="tm-quick"><button class="qk" data-a="mlead" data-u="${m.uid}" ${m.hp <= 0 ? 'disabled' : ''}>Make lead</button>${needsCare(m) ? `<button class="qk heal" data-a="mheal" data-u="${m.uid}">Heal</button>` : ''}</div></div>`;
 }
@@ -1900,7 +1932,7 @@ function jobSlots() {
       const m = findBilly(j.uid),
         J = JOBS[j.job];
       if (!m) return '';
-      return `<div class="job"><button class="job-spr" data-a="mon" data-u="${m.uid}" style="${plateVars(m)}" aria-label="${escapeHtml(billyName(m))}, details">${rigCanvasHTML(m.sp, 48, { gold: m.gold })}</button><div class="jt"><b>${escapeHtml(billyName(m))}</b><span class="note">${escapeHtml(J.n)}, ${escapeHtml(J.where)}. Earns ${escapeHtml(J.pay)}.</span>${progressBarHTML(j.acc / JOB_STEPS, 'gold live')}<span class="note tnum">${formatNumber(JOB_STEPS - j.acc)} steps to the next pay${j.pend ? `, ${j.pend} ready` : ''}</span>
+      return `<div class="job"><button class="job-spr" data-a="mon" data-u="${m.uid}" style="${plateVars(m)}" aria-label="${escapeHtml(billyName(m))}, details">${rigCanvasHTML(m.sp, 48, { gold: m.gold, build: m.build })}</button><div class="jt"><b>${escapeHtml(billyName(m))}</b><span class="note">${escapeHtml(J.n)}, ${escapeHtml(J.where)}. Earns ${escapeHtml(J.pay)}.</span>${progressBarHTML(j.acc / JOB_STEPS, 'gold live')}<span class="note tnum">${formatNumber(JOB_STEPS - j.acc)} steps to the next pay${j.pend ? `, ${j.pend} ready` : ''}</span>
   <div class="racts"><button class="pb small ${j.pend ? 'gold' : ''}" data-a="collect" data-s="${i}" ${j.pend ? '' : 'disabled'}>Collect pay${j.pend ? ` (${j.pend})` : ''}</button><button class="pb small quiet" data-a="endshift" data-s="${i}">End shift</button></div></div></div>`;
     })
     .join('')}</div>`;
@@ -1931,7 +1963,7 @@ function boxSection() {
   return `<section class="tpanel tm-box"><div class="sec-h"><h2>Storage</h2><span class="count tnum">${all.length}</span></div>${
     all.length
       ? `<p class="note">Billies resting here don’t battle. Tap one for details.</p>${tools}
- <div class="bx-grid">${L.map(m => `<div class="bx"><button class="bx-main" data-a="mon" data-u="${m.uid}"><span class="bx-spr" style="${plateVars(m)}">${rigCanvasHTML(m.sp, 60, { gold: m.gold })}</span><b>${escapeHtml(billyName(m))}</b><span class="bx-sub tnum">Lv ${m.lvl}<span class="bx-dots">${SPECIES[m.sp].types.map(t => `<i style="--tc:${TYPE_COLORS[t][0]}" title="${t}"></i>`).join('')}</span></span></button><button class="qk" data-a="mteam" data-u="${m.uid}">${full ? 'Swap in' : 'To team'}</button></div>`).join('')}</div>`
+ <div class="bx-grid">${L.map(m => `<div class="bx"><button class="bx-main" data-a="mon" data-u="${m.uid}"><span class="bx-spr" style="${plateVars(m)}">${rigCanvasHTML(m.sp, 60, { gold: m.gold, build: m.build })}</span><b>${escapeHtml(billyName(m))}</b><span class="bx-sub tnum">Lv ${m.lvl}<span class="bx-dots">${SPECIES[m.sp].types.map(t => `<i style="--tc:${TYPE_COLORS[t][0]}" title="${t}"></i>`).join('')}</span></span></button><button class="qk" data-a="mteam" data-u="${m.uid}">${full ? 'Swap in' : 'To team'}</button></div>`).join('')}</div>`
       : '<div class="empty tm-empty">Storage is empty. When your team is full, new Billies you tax and hatchlings rest here.</div>'
   }</section>`;
 }
@@ -2155,7 +2187,7 @@ function renderProfile() {
   ${tile(uiIconHTML('ledger', 14), 'Seen', `${seen}/${DEX_ORDER.length}`, null, seen / DEX_ORDER.length)}${tile(coinHTML('penny', 14), 'Taxed', `${got}/${DEX_ORDER.length}`, null, got / DEX_ORDER.length)}
   ${tile(uiIconHTML('fight', 14), 'Trainers beaten', formatNumber(beat))}${tile(eggHTML(2, 12), 'Eggs hatched', formatNumber(saveData.hatched || 0), saveData.eggs.length ? `${plural(saveData.eggs.length, 'egg')} on the way` : 'No eggs right now')}${typeof stampTile === 'function' ? stampTile(tile) : ''}
  </div></section></div>
- <div class="pf-row">${bud ? `<section class="tpanel pf-buddy"><div class="sec-h"><h2>Buddy</h2></div><button class="pf-bud" data-a="mon" data-u="${bud.uid}"><span class="tm-spr" style="${plateVars(bud)}">${rigCanvasHTML(bud.sp, 72, { gold: bud.gold })}</span><span class="pf-bt"><b>${escapeHtml(billyName(bud))}</b><span class="tnum">Lv ${bud.lvl}</span><small>You’ve walked ${stepsToKm(bud.bsteps || 0)} km together.</small></span></button></section>` : ''}
+ <div class="pf-row">${bud ? `<section class="tpanel pf-buddy"><div class="sec-h"><h2>Buddy</h2></div><button class="pf-bud" data-a="mon" data-u="${bud.uid}"><span class="tm-spr" style="${plateVars(bud)}">${rigCanvasHTML(bud.sp, 72, { gold: bud.gold, build: bud.build })}</span><span class="pf-bt"><b>${escapeHtml(billyName(bud))}</b><span class="tnum">Lv ${bud.lvl}</span><small>You’ve walked ${stepsToKm(bud.bsteps || 0)} km together.</small></span></button></section>` : ''}
  <section class="tpanel pf-bag"><div class="sec-h"><h2>Bag</h2></div>
   <div class="pf-coins">${Object.keys(COINS)
     .map(
@@ -2372,7 +2404,7 @@ function billySheet(m) {
     title: escapeHtml(billyName(m)),
     cls: 'mon-sheet',
     acts,
-    top: `<div class="ms-plate" style="${plateVars(m)}">${lead ? '<span class="tm-ribbon">Lead</span>' : ''}${bud ? `<span class="tm-ribbon bud">${uiIconHTML('heart', 11)} Buddy</span>` : ''}${m.gold ? '<span class="tm-ribbon gold">Golden</span>' : ''}${rigCanvasHTML(m.sp, 128, { gold: m.gold })}</div>`,
+    top: `<div class="ms-plate" style="${plateVars(m)}">${lead ? '<span class="tm-ribbon">Lead</span>' : ''}${bud ? `<span class="tm-ribbon bud">${uiIconHTML('heart', 11)} Buddy</span>` : ''}${m.gold ? '<span class="tm-ribbon gold">Golden</span>' : ''}${isPrime(billyBuild(m)) ? '<span class="tm-ribbon prime">Prime</span>' : ''}${rigCanvasHTML(m.sp, 128, { gold: m.gold, build: m.build })}</div>`,
     html: `<p class="row ms-chips">${s.types.map(typeBadgeHTML).join('')}${billyConditionHTML(m)}<b class="lv tnum">Lv ${m.lvl}</b>${m.nick ? `<span class="ms-sp">${escapeHtml(s.name)}</span>` : ''}</p>
   <div class="ms-tabs" role="tablist" aria-label="About ${escapeHtml(billyName(m))}" data-on="sum">${tabs.map(([k, l]) => `<button role="tab" data-a="ms-tab" data-k="${k}" aria-selected="${k === 'sum'}">${l}</button>`).join('')}</div>
   <div class="ms-pane" data-k="sum"><div class="ms-meters">${meter('HP', hpBar(m.hp, mx), `${m.hp}/${mx}`)}${meter('XP', progressBarHTML(xpProgress(m), 'xpb'), xpLeft(m))}</div>
@@ -2381,7 +2413,7 @@ function billySheet(m) {
    ${acts.length ? `<div class="ms-acts">${acts.map((b, i) => `<button class="pb small ${b.c || ''}" data-a="mact" data-i="${i}" ${b.dis ? 'disabled' : ''}>${b.ic ? uiIconHTML(b.ic, 15) : ''}<span>${b.l}</span></button>`).join('')}</div>` : ''}
    <p class="note ms-about">${escapeHtml(s.blurb)}</p>
    <div class="ms-nick"><label class="field-l">Nickname<input id="nick" maxlength="16" value="${escapeHtml(m.nick)}" placeholder="${escapeHtml(s.name)}" autocomplete="off" enterkeyhint="done"></label><button class="pb small" data-a="mnick">Save</button></div></div>
-  <div class="ms-pane" data-k="stats" hidden><div class="ms-stats">${nums}</div><p class="note">The bars on the summary show what its kind is good at; the numbers grow as it levels up.</p></div>
+  <div class="ms-pane" data-k="stats" hidden><div class="ms-stats">${nums}</div>${billyPartsHTML(m)}<p class="note">The bars on the summary show what its kind is good at; the numbers grow as it levels up.</p></div>
   <div class="ms-pane" data-k="moves" hidden><div class="mvlist">${m.moves
     .map(id => {
       const M = MOVES[id];
@@ -2429,7 +2461,7 @@ function healPick(m, back) {
 function swapPick(m) {
   modal({
     title: `Swap in ${escapeHtml(billyName(m))}`,
-    html: `<p class="note">Your team is full. Pick who rests in storage instead.</p><div class="list">${saveData.team.map((o, i) => `<button class="pickrow" data-a="mswap" data-u="${m.uid}" data-o="${o.uid}">${rigCanvasHTML(o.sp, 40, { gold: o.gold })}<span class="pr-t"><b>${escapeHtml(billyName(o))}</b><small>Lv ${o.lvl}${i === 0 ? ', your lead' : ''}${o.uid === saveData.buddy ? ', buddy' : ''}</small></span></button>`).join('')}</div>`,
+    html: `<p class="note">Your team is full. Pick who rests in storage instead.</p><div class="list">${saveData.team.map((o, i) => `<button class="pickrow" data-a="mswap" data-u="${m.uid}" data-o="${o.uid}">${rigCanvasHTML(o.sp, 40, { gold: o.gold, build: o.build })}<span class="pr-t"><b>${escapeHtml(billyName(o))}</b><small>Lv ${o.lvl}${i === 0 ? ', your lead' : ''}${o.uid === saveData.buddy ? ', buddy' : ''}</small></span></button>`).join('')}</div>`,
     btns: [{ l: 'Cancel', c: 'quiet', f: closeModal }],
   });
 }
@@ -2437,7 +2469,7 @@ function addPick() {
   const free = saveData.box.filter(m => m.job == null).sort((a, b) => b.lvl - a.lvl);
   modal({
     title: 'Add to your team',
-    html: `<div class="list">${free.map(m => `<button class="pickrow" data-a="tmaddon" data-u="${m.uid}">${rigCanvasHTML(m.sp, 40, { gold: m.gold })}<span class="pr-t"><b>${escapeHtml(billyName(m))}</b><small>Lv ${m.lvl}, ${SPECIES[m.sp].types.map(t => (t === 'None' ? 'Normal' : t)).join(' and ')}</small></span></button>`).join('') || '<p>Storage is empty.</p>'}</div>`,
+    html: `<div class="list">${free.map(m => `<button class="pickrow" data-a="tmaddon" data-u="${m.uid}">${rigCanvasHTML(m.sp, 40, { gold: m.gold, build: m.build })}<span class="pr-t"><b>${escapeHtml(billyName(m))}</b><small>Lv ${m.lvl}, ${SPECIES[m.sp].types.map(t => (t === 'None' ? 'Normal' : t)).join(' and ')}</small></span></button>`).join('') || '<p>Storage is empty.</p>'}</div>`,
     btns: [{ l: 'Cancel', c: 'quiet', f: closeModal }],
   });
 }
@@ -2463,7 +2495,7 @@ function hirePick(slot, job) {
   modal({
     title: `Who becomes the ${JOBS[job].n.toLowerCase()}?`,
     html: list.length
-      ? `<div class="list">${list.map(m => `<button class="pickrow px" data-a="hireon" data-s="${slot}" data-j="${job}" data-u="${m.uid}">${rigCanvasHTML(m.sp, 40, { gold: m.gold })}<span class="pr-t"><b>${escapeHtml(billyName(m))}</b><small>${saveData.team.includes(m) ? 'On your team' : 'In storage'}, Lv ${m.lvl}</small></span></button>`).join('')}</div>`
+      ? `<div class="list">${list.map(m => `<button class="pickrow px" data-a="hireon" data-s="${slot}" data-j="${job}" data-u="${m.uid}">${rigCanvasHTML(m.sp, 40, { gold: m.gold, build: m.build })}<span class="pr-t"><b>${escapeHtml(billyName(m))}</b><small>${saveData.team.includes(m) ? 'On your team' : 'In storage'}, Lv ${m.lvl}</small></span></button>`).join('')}</div>`
       : '<p>Tax another Billie first. Your last one has to stay on the team.</p>',
     btns: [{ l: 'Cancel', c: 'quiet', f: closeModal }],
   });

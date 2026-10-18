@@ -3,13 +3,15 @@
 /* ---- matrices ---- */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { SPECIES, activeBattle, provide, reducedMotion } from './hooks.js';
+import { RULES, SPECIES, activeBattle, provide, reducedMotion } from './hooks.js';
 import { clamp, random } from './util.js';
 import { frameTask, userFps } from './frame-scheduler.js';
 import { ART_CACHE, artImg, artLoad, artReady, artURL, makeCanvas } from './art.js';
 import { animFor } from './body-plan-animation.js';
 /* eslint-disable no-func-assign */
 expose({
+  BONE_SLOT_RULES: [() => BONE_SLOT_RULES],
+  GROUNDED: [() => GROUNDED],
   RIG_BACK_VIEW: [() => RIG_BACK_VIEW],
   RIG_CANVAS_SIZE: [() => RIG_CANVAS_SIZE],
   RIG_PARTS_CACHE: [() => RIG_PARTS_CACHE],
@@ -18,11 +20,16 @@ expose({
   affineRotate: [() => affineRotate],
   affineScale: [() => affineScale],
   affineTranslate: [() => affineTranslate],
+  boneSlot: [() => boneSlot, v => (boneSlot = v)],
+  buildCode: [() => buildCode, v => (buildCode = v)],
+  buildFromCode: [() => buildFromCode, v => (buildFromCode = v)],
+  buildScales: [() => buildScales, v => (buildScales = v)],
   bustHTML: [() => bustHTML, v => (bustHTML = v)],
   drawDomRig: [() => drawDomRig, v => (drawDomRig = v)],
   drawRig: [() => drawRig, v => ((drawRig = v), provide({ drawRig }))],
   rigAtlas: [() => rigAtlas, v => (rigAtlas = v)],
   rigAudit: [() => rigAudit, v => (rigAudit = v)],
+  rigBuildScales: [() => rigBuildScales, v => (rigBuildScales = v)],
   rigCanvasAnimator: [() => rigCanvasAnimator],
   rigCanvasHTML: [() => rigCanvasHTML, v => (rigCanvasHTML = v)],
   rigFrame: [() => rigFrame, v => (rigFrame = v)],
@@ -53,15 +60,72 @@ const affineTranslate = (x, y) => [1, 0, 0, 1, x, y],
     return [c, s, -s, c, 0, 0];
   },
   affineScale = (x, y) => [x, 0, 0, y, 0, 0];
+/* ---- parts (phase 16): which slot a bone belongs to, and how big a build draws it ---- */
+/* by name; the Studio's skeleton builder can set b.slot on a bone instead. A bone with no slot (ears on a head, a
+   spark on a tail) takes its parent's size; effects (cloud, dust, puddle, fly) stay as they are */
+const BONE_SLOT_RULES = [
+  [/^(head|mane|face)$/, 'head'],
+  [/^(torso|body|abdomen|shell|coil|pot)$/, 'body'],
+  [/^(legF[FN]|arm[LR]|wing[LR]|claw[LR]|leaf[LR]\d|leg[LR][01]|n\d)$/, 'front'],
+  [/^(legB[FN]|leg[LR]|thigh[LR]|foot[LR]|l\d|leg[LR][23])$/, 'back'],
+  [/^(tail|plume\d|spark\d?|bird\d|jet|tree|mound|pebble|stone\d|gull[LR])$/, 'sig'],
+];
+export function boneSlot(b) {
+  if (b.slot !== undefined) return b.slot || null;
+  for (const [re, sl] of BONE_SLOT_RULES) if (re.test(b.n)) return sl;
+  return null;
+}
+/* the slots that stand on the ground: legs (and a quad's front legs) */
+const GROUNDED = { quad: ['front', 'back'], insect: ['front', 'back'], crab: ['front', 'back'] };
+/** a build ({ head: 'L', ... }) as draw scales per slot, or null when it changes nothing */
+function buildScales(build) {
+  if (!build || typeof RULES === 'undefined' || !RULES.parts) return null;
+  const S = RULES.parts.sizes,
+    out = {};
+  let any = false;
+  for (const k of RULES.parts.slots) {
+    out[k] = (S[build[k]] || S.M).scale;
+    if (out[k] !== 1) any = true;
+  }
+  return any ? out : null;
+}
+/* each bone's scale, and how far the figure must rise so its feet stay on the ground line */
+function rigBuildScales(R, SZ) {
+  const S = { root: 1 },
+    Y = { root: 0 },
+    Y0 = { root: 0 },
+    ground = GROUNDED[R.plan] || ['back'];
+  let low = -Infinity,
+    low0 = -Infinity;
+  for (const b of R.bones) {
+    const ps = S[b.par || 'root'] ?? 1,
+      sl = boneSlot(b),
+      sc = sl && SZ[sl] != null ? SZ[sl] : ps;
+    S[b.n] = sc;
+    Y[b.n] = (Y[b.par || 'root'] ?? 0) + b.at[1] * R.k * ps;
+    Y0[b.n] = (Y0[b.par || 'root'] ?? 0) + b.at[1] * R.k;
+    const img = b.img;
+    if (img && ground.includes(sl)) {
+      const c = img.c || (img.v && Object.values(img.v)[0]),
+        bottom = img.oy + (c ? c.height : 0);
+      low = Math.max(low, Y[b.n] + bottom * sc);
+      low0 = Math.max(low0, Y0[b.n] + bottom);
+    }
+  }
+  return { S, lift: low > -Infinity && low0 > -Infinity ? low - low0 : 0 };
+}
 /* ---- skeleton drawing ---- */
-/* bone world matrices for a pose; a bone animates by its role (b.a) or, by default, its name */
+/* bone world matrices for a pose; a bone animates by its role (b.a) or, by default, its name. P.build (phase 16) draws
+   each part at its size: the piece scales around its pivot and what hangs on it moves out with it */
 export function rigMatrices(R, P, view) {
   const back = view === 'back',
     k = R.k,
     A = R.anim(P, back) || {},
     A0 = P.prev && R.lag ? R.anim(P.prev, back) || {} : null;
-  const root = A.root || {};
-  let M = affineTranslate(R.cx, R.base);
+  const root = A.root || {},
+    SZ = buildScales(P.build),
+    BS = SZ ? rigBuildScales(R, SZ) : null;
+  let M = affineTranslate(R.cx, R.base - (BS ? BS.lift : 0));
   if (back) M = affineMultiply(M, affineScale(-1, 1));
   M = affineMultiply(M, affineTranslate(((P.x || 0) + (root.dx || 0)) * k, ((P.y || 0) + (root.dy || 0)) * k));
   if (P.r || root.r) {
@@ -80,7 +144,8 @@ export function rigMatrices(R, P, view) {
       W[b.n] = pm;
       continue;
     }
-    let m = affineMultiply(pm, affineTranslate(b.at[0] * k, b.at[1] * k));
+    const ps = BS ? (BS.S[b.par || 'root'] ?? 1) : 1;
+    let m = affineMultiply(pm, affineTranslate(b.at[0] * k * ps, b.at[1] * k * ps));
     if (a.dx || a.dy) m = affineMultiply(m, affineTranslate((a.dx || 0) * k, (a.dy || 0) * k));
     const r = (b.rr || 0) + (a.r || 0);
     if (r) m = affineMultiply(m, affineRotate(r));
@@ -88,8 +153,16 @@ export function rigMatrices(R, P, view) {
     W[b.n] = m;
     const img = back && b.imgB ? b.imgB : b.img;
     if (!img || (back && b.hideB)) continue;
-    const z = back && b.zb != null ? b.zb : b.z;
-    list.push([z, m, img, a.v || (b.face ? P.face : null) || (img.v && P.sq && img.v[P.sq] ? P.sq : null), a.al, b]);
+    const z = back && b.zb != null ? b.zb : b.z,
+      sc = BS ? BS.S[b.n] : 1;
+    list.push([
+      z,
+      sc !== 1 ? affineMultiply(m, affineScale(sc, sc)) : m,
+      img,
+      a.v || (b.face ? P.face : null) || (img.v && P.sq && img.v[P.sq] ? P.sq : null),
+      a.al,
+      b,
+    ]);
   }
   list.sort((p, q) => p[0] - q[0]);
   return { W, list };
@@ -424,12 +497,23 @@ export function rigPreload(list) {
 }
 /* ---- DOM animator: every <canvas class="rig"> on screen ---- */
 const rigCanvasAnimator = { vis: new Set(), nodes: new Set(), io: null, mo: null, last: 0 };
+/* a build as a short code for a data attribute ("MLSMM", in RULES.parts.slots order), and back */
+export function buildCode(build) {
+  if (!build || typeof RULES === 'undefined' || !RULES.parts) return '';
+  return RULES.parts.slots.map(k => (/^[A-Z]{1,2}$/.test(build[k]) ? build[k] : 'M')[0]).join('');
+}
+function buildFromCode(code) {
+  if (!code || typeof RULES === 'undefined' || !RULES.parts) return null;
+  const out = {};
+  RULES.parts.slots.forEach((k, i) => (out[k] = RULES.parts.sizes[code[i]] ? code[i] : 'M'));
+  return out;
+}
 export function rigCanvasHTML(sp, size, o = {}) {
   const w = Math.round(size * 1.25),
     h = Math.round((w * RIG_CANVAS_SIZE.h) / RIG_CANVAS_SIZE.w),
     st = SPECIES[sp] ? (SPECIES[sp].rar === 'mythical' ? 2 : SPECIES[sp].stage) : 2,
     f = [1.3, 1.1, 1][st];
-  return `<canvas class="rig${o.sil ? ' sil' : ''}" width="${RIG_CANVAS_SIZE.w * 2}" height="${RIG_CANVAS_SIZE.h * 2}" data-sp="${sp}" data-g="${o.gold ? 1 : 0}" data-v="${o.view || 'front'}"${o.still || o.sil ? ' data-still="1"' : ''}${o.act ? ` data-act="${o.act}"` : ''} style="width:${w}px;height:${h}px;margin:${-Math.round((h - size) / 2)}px ${-Math.round((w - size) / 2)}px;transform:scale(${f});transform-origin:50% 94%" aria-hidden="true"></canvas>`;
+  return `<canvas class="rig${o.sil ? ' sil' : ''}" width="${RIG_CANVAS_SIZE.w * 2}" height="${RIG_CANVAS_SIZE.h * 2}" data-sp="${sp}" data-g="${o.gold ? 1 : 0}" data-v="${o.view || 'front'}"${o.build ? ` data-b="${buildCode(o.build)}"` : ''}${o.still || o.sil ? ' data-still="1"' : ''}${o.act ? ` data-act="${o.act}"` : ''} style="width:${w}px;height:${h}px;margin:${-Math.round((h - size) / 2)}px ${-Math.round((w - size) / 2)}px;transform:scale(${f});transform-origin:50% 94%" aria-hidden="true"></canvas>`;
 }
 /* v39: the 64x64 bust from a species' piece sheet (rig meta "portrait"), as an <img> cropped by CSS; falls back to the
    rest-pose rig for a species without one */
@@ -466,6 +550,7 @@ function drawDomRig(c, ts) {
     c.dataset.still || reducedMotion ? 0 : Math.floor(ts / 50) * 50,
     c._seed
   );
+  if (c.dataset.b) P.build = buildFromCode(c.dataset.b);
   if (R.BW === c.width && R.BH === c.height) drawRig(x, R, P, c.dataset.v);
   else {
     /* v36: a rig on another canvas size (the new 96/128 px sheets, k=1) is drawn to its own size, then placed with its base line on the box's base line at 2 px a pixel */

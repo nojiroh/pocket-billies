@@ -690,6 +690,22 @@ export interface Rules {
   fishing: { biteMin: number; biteMax: number; reactTime: number; reelTime: number; goldOdds: number };
   /** the legendary encounters, one per map (scene is a map id) */
   legends: { sp: SpeciesId; scene: DataId; lvl: number; title: string; text: string; line: string }[];
+  /** phase 16: part sizes, weight and Prime (rules.js) */
+  parts: PartRules;
+}
+
+/** rules.json parts: the slots, how likely each size is, how big it is drawn and how heavy it is */
+export interface PartRules {
+  slots: string[];
+  /** each slot's share of the species' weight (they add up to 1) */
+  share: Record<string, number>;
+  sizes: Record<string, { odds: number; scale: number; weight: number }>;
+  attackExp: number;
+  speedExp: number;
+  /** the most a stat moves either way from weight (0.2 = 20%) */
+  cap: number;
+  /** a Prime Billie's bonus on every stat */
+  primeBonus: number;
 }
 
 /* ---------- looks: battle stages, scenery, moods, engine, wardrobe ---------- */

@@ -17,6 +17,7 @@ import {
   showPendingWindows,
 } from './hooks.js';
 import { $, clamp } from './util.js';
+import { TEST_BOOT } from './test-boot.js';
 import { LOCATIONS, START_NODE } from './game-data.js';
 import { newSaveKeepingPreferences } from './logic/saves.js';
 import { escapeHtml, flushSave, reducedMotion, saveData, setSaveData, uiState, writeStoredSave } from './game-state.js';
@@ -44,7 +45,11 @@ expose({
 /* to-module: end */
 export const titleScreen = { on: false, t0: 0, run: 0, mounted: false };
 export function titleWanted() {
-  return !(typeof TEST_RUN !== 'undefined' && TEST_RUN) && !(saveData.preferences && saveData.preferences.skipTitle);
+  return (
+    !(typeof TEST_RUN !== 'undefined' && TEST_RUN) &&
+    !TEST_BOOT &&
+    !(saveData.preferences && saveData.preferences.skipTitle)
+  );
 }
 /* the camera: a slow drift along the front of the town, high above the rooftops, looking up the main street */
 function titleFrame() {

@@ -1,19 +1,30 @@
 {
  "grass": {
   "lv": [3,5],
-  "list": [["walton0",40],["ek0",40],["dorsey0",35],["knight0",20],["bloomberg0",15],["huang0",12]]
+  "list": [["swift0",26],["kardashian0",26],["zuck0",24],["trump0",16],["musk0",3],["bezos0",3],["gates0",3]]
  },
  "old_fairway": {
   "lv": [5,8],
-  "list": [["knight0",40],["lauren0",35],["dorsey0",30],["walton0",25],["ortega0",20],["jobs0",8]]
+  "list": [["trump0",30],["swift0",22],["kardashian0",20],["zuck0",20],["trump1",4],["musk0",2],["bezos0",2],["gates0",2]]
  },
  "shell": {
   "lv": [7,10],
-  "list": [["ortega0",40],["carnegie0",35],["kroc0",30],["ma0",25],["bloomberg0",15],["thiel0",6]]
+  "list": [["zuck0",24],["kardashian0",22],["swift0",20],["trump0",16],["zuck1",5],["kardashian1",5],["swift1",5],["trump1",3]]
  },
  "fizzwell": {
   "lv": [9,12],
-  "list": [["huang0",40],["slim0",35],["carnegie0",30],["thiel0",12],["ma0",20],["buterin0",6]]
+  "list": [
+   ["swift1",22],
+   ["kardashian1",22],
+   ["zuck1",22],
+   ["trump1",14],
+   ["swift0",6],
+   ["kardashian0",6],
+   ["zuck0",6],
+   ["musk1",2],
+   ["bezos1",2],
+   ["gates1",2]
+  ]
  },
  "esc": {
   "lv": [11,14],
@@ -181,6 +192,6 @@
  },
  "hedgerow": {
   "lv": [2,4],
-  "list": [["walton0",40],["ek0",40],["dorsey0",30],["knight0",14]]
+  "list": [["swift0",30],["kardashian0",30],["zuck0",25],["trump0",15]]
  }
 }

@@ -1,0 +1,35 @@
+{
+ "id": "trump",
+ "names": ["Gildlet","Gildslug","Tremendoslug"],
+ "types": [["Ground"],["Ground","Steel"],["Ground","Steel"]],
+ "prof": [1.35,1.25,1.2,0.8,0.95,0.45],
+ "rar": "uncommon",
+ "learn": [
+  [1,"handshake"],
+  [1,"eviction"],
+  [5,"renthike"],
+  [9,"foreclose"],
+  [13,"bulk"],
+  [18,"towerdrop"],
+  [24,"rollback"],
+  [30,"concretepour"],
+  [36,"statesizedpit"],
+  [42,"margincall"]
+ ],
+ "cat": ["Gilded Billie","Tower Billie","Tremendous Billie"],
+ "ht": [0.5,1.4,2.6],
+ "wt": [60,450,1800],
+ "hab": ["Lobbies with gold taps","Golf courses","The top floor, always"],
+ "diet": ["Gold leaf","Well-done steak with ketchup","Its own name in lights"],
+ "bio": [
+  "A slug with a golden fur crest swept over its head and an orange-tan hide. It leaves a shiny trail and says the trail is the best trail anyone has ever seen.",
+  "It has grown so heavy it no longer moves for anyone. It puts its name on every rock it sits on, then charges the other slugs to sit there.",
+  "A vast, gold-flecked slug that fills a whole hall. Its tiny arms wave at a crowd only it can see. It calls everything tremendous, mostly itself."
+ ],
+ "note": ["Squints when it smiles.","Counts the crowd, then adds a few.","Plays golf with its tail and wins every time."],
+ "evo": [
+  {"k":"lvl","at":16},
+  {"k":"lvl","at":36}
+ ],
+ "parody": "Donald Trump"
+}

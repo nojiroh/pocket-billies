@@ -11,6 +11,37 @@ Newest entry on top. Every phase session ends by adding an entry here and taggin
 - Questions waiting for the owner: 
 - Next session starts with: 
 
+### Phase 16 prep - Billies rework plan, part kits, test boot - 2026-10-18
+- Changed: docs/phases/16 rewritten (7-line roster, parts, sizes, weight, Prime, decisions and open questions);
+  placeholder part kits (beasts, birds, fish; 120 parts) sliced by tools/slice-part-kit.py into game/art/next/parts
+  from tools/art-source/part-kit; recolour placeholders in game/art/next/placeholders.
+- **Test boot (on):** game/js/test-boot.js. While `TEST_BOOT_ON` is true the game skips the title and the opening and
+  opens on the starter pick; nothing is read from or written to storage (game-state.js), accounts and friends stay off
+  (account.js), the title is skipped (title.js). Turn it off by setting `TEST_BOOT_ON = false`, or open the game with
+  `?boot=normal`. The quick check, check-game.py and the art tools open `?boot=normal`, so they test the normal game.
+  Nothing was removed.
+- Verified: lint, type-check, module check, unit tests (25), format check; a headless boot reaches the starter pick in
+  about 10 s with no title, no Firebase, an existing save untouched and no storage writes after picking and saving; a
+  reload goes back to the pick; `?boot=normal` reaches the title. The full quick check was not run.
+- Next: the phase 16 prototype (parts on wild Billies, Studio support), after the plan is approved.
+
+### Phase 16 prototype, part 1 - parts, roster trim, Studio - 2026-10-18
+Owner's choices: wild Billies get their own parts at random sizes; the weight formula as proposed (±20%); Prime about
+1 in 12 (M 60%); old lines to a legacy folder; the 4 new lines now with placeholder art; only the starting area's pools.
+- Changed: parts on every Billie (rules.js, logic/parts.js, rules.json "parts"); drawn at size by the rig
+  (skeleton-rig.js) wherever a Billie shows; a Parts panel and Prime ribbon in a Billie's details; 55 lines to
+  game/data/legacy (roster tracker too); swift, kardashian, trump, zuck lines with placeholder sheets and rigs
+  (tools/build-rework-placeholders.py); starting-area pools use the 7 lines; legacy species named elsewhere get a
+  same-stage stand-in at load; Studio Parts section, Part slot picker, build previews and Check rules.
+- Risky: every area past Fizzwell and all trainers still name legacy species, so they show stand-ins (one of the four new
+  lines) until redone. Trainers, starters and the rival are Prime, so they are 10% stronger than before. The kit-built
+  rigs (Trump, Zuckerberg) are rough; the Studio can fix their sockets.
+- Verified: lint, type-check, module and data checks, 32 unit tests (7 new, with a 20,000-roll simulation); headless:
+  wild spawns roll builds, a wild battle carries the build to the stage and stats, the details panel shows it, sizes
+  draw with the feet on the ground; check-studio-github.py (19 sections, a save proposed, no errors); the Studio's
+  Parts section, its live readouts and checks, and the slot picker. The full quick check was not run.
+- Next: the starter split by body size, the 7 passives, quirks and Prime moves, a breed function and one abomination.
+
 ### Phase 04e - Modernize: TypeScript and the logic boundary - 2026-10-18
 Owner's choices (from phase 05): the recommended 04e choices made for you; no full quick check. Plan approved at the start.
 - Changed (33 commits on top of phase 05, this entry included):

@@ -10,6 +10,7 @@ expose({
   HIT_EFFECTS_BY_TYPE: [() => HIT_EFFECTS_BY_TYPE],
   MOVES: [() => MOVES],
   PEOPLE: [() => PEOPLE],
+  RULES: [() => RULES],
   TYPE_COLORS: [() => TYPE_COLORS],
   activeBattle: [() => activeBattle, v => ((activeBattle = v), provide({ activeBattle }))],
   escapeHtml: [() => escapeHtml],
@@ -54,8 +55,10 @@ const liveMap = f =>
   );
 const BATTLE_STAGES = liveMap(D => D.battleStages),
   MOVES = liveMap(D => D.moves),
-  PEOPLE = liveMap(D => D.people);
-provide({ BATTLE_STAGES, MOVES, PEOPLE }); /* to-module */
+  PEOPLE = liveMap(D => D.people),
+  /* phase 16: the rig drawing reads RULES.parts (part sizes) */
+  RULES = liveMap(D => D.rules);
+provide({ BATTLE_STAGES, MOVES, PEOPLE, RULES }); /* to-module */
 const TYPE_COLORS = liveMap(D => {
   const o = Object.fromEntries(D.types.map(t => [t.id, [t.color, t.text || '#fff']]));
   o.None = [(D.untyped || {}).color || '#9a9a9a', (D.untyped || {}).text || '#fff'];
