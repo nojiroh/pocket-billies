@@ -478,16 +478,21 @@ function cutsceneTap(ev) {
 }
 
 /* ---------- the starter picker ---------- */
+/* phase 06-2: the pick card on the new look: arrows either side of the name, dots for where you are, the blurb in the
+   reading font, what it beats and what beats it as type pills, one gold button (css/units.css "starter pick") */
 function starterPickerHTML() {
   const pk = cutscene.pickList,
     l = pk[cutscene.sel],
     s = SPECIES[l + '0'],
     t = s.types[0],
     st = TYPES.filter(x => typeEffectiveness(t, [x]) > 1),
-    wk = TYPES.filter(x => typeEffectiveness(x, [t]) > 1);
-  return `<div class="cs-pk-top"><button class="mbtn" data-a="cs-prev" aria-label="Previous">‹</button><div class="cs-pk-name"><small>${cutscene.sel + 1} of ${pk.length}</small><b>${escapeHtml(s.name)}</b><span class="row">${typeBadgeHTML(t)}</span></div><button class="mbtn" data-a="cs-next" aria-label="Next">›</button></div>
- <p class="sd">${escapeHtml(s.blurb)}</p><p class="sd">Strong against ${st.join(' and ') || 'nothing in particular'}. Weak to ${wk.join(' and ') || 'nothing in particular'}.</p>
- ${cutscene.confirm ? `<div class="racts"><button class="pb quiet" data-a="cs-no">Not yet</button><button class="pb gold" data-a="cs-yes">Yes, ${escapeHtml(s.name)}!</button></div>` : `<button class="pb gold wide" data-a="cs-choose">Choose ${escapeHtml(s.name)}</button>`}`;
+    wk = TYPES.filter(x => typeEffectiveness(x, [t]) > 1),
+    pills = L => (L.length ? L.map(typeBadgeHTML).join('') : '<span class="pk-none">nothing in particular</span>');
+  return `<div class="pk-top"><button class="pk-arrow" data-a="cs-prev" aria-label="Previous starter">‹</button><div class="pk-name"><b>${escapeHtml(s.name)}</b><span class="pk-types">${typeBadgeHTML(t)}</span></div><button class="pk-arrow" data-a="cs-next" aria-label="Next starter">›</button></div>
+ <div class="pk-dots" role="img" aria-label="${cutscene.sel + 1} of ${pk.length}">${pk.map((_, i) => `<i class="${i === cutscene.sel ? 'on' : ''}"></i>`).join('')}</div>
+ <p class="pk-blurb">${escapeHtml(s.blurb)}</p>
+ <div class="pk-match"><div><span class="pk-k">Strong against</span><span class="pk-ts">${pills(st)}</span></div><div><span class="pk-k">Weak to</span><span class="pk-ts">${pills(wk)}</span></div></div>
+ ${cutscene.confirm ? `<div class="pk-acts"><button class="pb quiet" data-a="cs-no">Not yet</button><button class="pb gold" data-a="cs-yes">Yes, ${escapeHtml(s.name)}!</button></div>` : `<button class="pb gold wide pk-go" data-a="cs-choose">Choose ${escapeHtml(s.name)}</button>`}`;
 }
 function starterPickerFocus() {
   const s = cutscene.stars[cutscene.sel];
@@ -938,10 +943,11 @@ function cutsceneEnd(l) {
   cutsceneTeardown();
   startGame(l, { rival });
 }
-/* no WebGL after all: the step-by-step intro */
+/* the opening couldn't run (no 3D view) or broke: phase 06-2, a Try again screen (ui.js renderIntro); the old
+   step-by-step intro is gone */
 function cutsceneAbort() {
   cutsceneTeardown();
-  uiState.intro = 1;
+  uiState.openingFailed = 'stopped';
   render();
 }
 

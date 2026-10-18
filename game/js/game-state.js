@@ -148,6 +148,8 @@ export const uiState = {
   tab: 'walk',
   lastTab: null,
   intro: 0,
+  /* phase 06-2: the opening couldn't start ('cant') or broke ('stopped'): the Try again screen */
+  openingFailed: /** @type {false | 'cant' | 'stopped'} */ (false),
   modal: null,
   mq: [],
   /* moves waiting to be learned in place of another */

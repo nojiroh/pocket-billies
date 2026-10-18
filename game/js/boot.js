@@ -38,7 +38,6 @@ import { loreLoadingLines } from './lore.js';
 import { initAccount } from './account.js';
 import {
   initPixelSky,
-  introSteps,
   mapIdAt,
   notice,
   render,
@@ -851,10 +850,9 @@ else
       initPixelSky();
       if (typeof titleWanted === 'function' && titleWanted()) titleStart();
       /* phase 16 test boot (js/test-boot.js): no title; the opening cutscene starts on Hazel's scene (below), or,
-         where it can't run, the step-by-step intro starts on her first line */
+         where it can't run, the Try again screen */
       const quickOpening = TEST_BOOT && !TEST_RUN && !FIXTURE && !saveData.started;
-      if (quickOpening && !(typeof cutsceneWanted === 'function' && cutsceneWanted()))
-        uiState.intro = introSteps().findIndex(s => s.k === 'gini') + 1;
+      if (quickOpening && !(typeof cutsceneWanted === 'function' && cutsceneWanted())) uiState.openingFailed = 'cant';
       render();
       if (TEST_RUN) studioTestStart();
       if (FIXTURE) fixtureStart();

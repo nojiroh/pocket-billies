@@ -35,7 +35,6 @@ expose({
   FALL_LEG_PIXELS: [() => FALL_LEG_PIXELS],
   FALL_PALETTE: [() => FALL_PALETTE],
   FALL_PLAYER_PIXELS: [() => FALL_PLAYER_PIXELS],
-  FALL_STILLS: [() => FALL_STILLS],
   TUTOR_TIPS: [() => TUTOR_TIPS],
   battleTip: [() => battleTip, v => (battleTip = v)],
   battleTipHide: [() => battleTipHide, v => ((battleTipHide = v), provide({ battleTipHide }))],
@@ -49,7 +48,6 @@ expose({
   fallPlay: [() => fallPlay, v => ((fallPlay = v), provide({ fallPlay }))],
   fallRandom: [() => fallRandom],
   fallSky: [() => fallSky, v => (fallSky = v)],
-  fallStill: [() => fallStill, v => (fallStill = v)],
   fallStreet: [() => fallStreet, v => (fallStreet = v)],
   fallWorldMapCanvas: [() => fallWorldMapCanvas, v => (fallWorldMapCanvas = v)],
   landing: [() => landing],
@@ -577,28 +575,6 @@ function fallSky(t) {
   x.rotate(((Math.round(t * 2) % 4) * Math.PI) / 2);
   drawFallingPlayer(-3, -8, 1, false);
   x.restore();
-}
-/* one still picture of the fall, as an image (cached): 'street', 'crust' or 'sky' at time t */
-const FALL_STILLS = {};
-export function fallStill(kind, t, w = 200, h = 124) {
-  const key = kind + '|' + t + '|' + w + 'x' + h;
-  if (FALL_STILLS[key]) return FALL_STILLS[key];
-  const keep = { cv: openingFall.cv, x: openingFall.x, W: openingFall.W, H: openingFall.H },
-    cv = document.createElement('canvas');
-  cv.width = w;
-  cv.height = h;
-  Object.assign(openingFall, { cv, x: cv.getContext('2d'), W: w, H: h });
-  openingFall.x.imageSmoothingEnabled = false;
-  try {
-    ({ street: fallStreet, crust: fallCrust, sky: fallSky })[kind](t);
-    FALL_STILLS[key] = cv.toDataURL();
-  } catch (e) {
-    console.error(e);
-    FALL_STILLS[key] = '';
-  } finally {
-    Object.assign(openingFall, keep);
-  }
-  return FALL_STILLS[key];
 }
 /* ---- 3. the inner sky: across the Hollow Earth, past the Inner Sun, down to Sundown ---- */
 function fallCamera(k) {
