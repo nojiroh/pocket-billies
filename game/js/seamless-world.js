@@ -25,7 +25,6 @@ import {
   DIO_STEPS,
   GROUND_CACHE,
   buildGroundAsync,
-  dioPoly,
   dioStepCell,
   dioSteps,
   exitEdge,
@@ -34,6 +33,7 @@ import {
   mapById,
   mapHub,
   mapMoodName,
+  polyline,
   walkData,
   walkView,
 } from './walk-view.js';
@@ -2156,7 +2156,7 @@ export function shiftWalkView(id, dx, dz) {
     P.lz += dz;
   }
   if (P.route) P.route = P.route.map(([x, z]) => [x + dx, z + dz]);
-  if (P.line) P.line = dioPoly(P.line.p.map(([x, z]) => [x + dx, z + dz]));
+  if (P.line) P.line = polyline(P.line.p.map(([x, z]) => [x + dx, z + dz]));
   for (const e of Object.values(walkView.enc || {})) {
     e.x += dx;
     e.z += dz;

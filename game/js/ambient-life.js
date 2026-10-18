@@ -16,11 +16,11 @@ import { cnv } from './art.js';
 import {
   artImage,
   dioFree,
-  dioPoly,
-  dioPolyAt,
   dioStepOK,
   hash2d,
   imageReady,
+  pointAlongPolyline,
+  polyline,
   walkData,
   walkView,
 } from './walk-view.js';
@@ -146,9 +146,9 @@ function lifeInit() {
         z = p[1];
       } else if (L.k === 'car') {
         if (!L.path || L.path.length < 2) break;
-        const P = dioPoly(L.loop !== false ? [...L.path, L.path[0]] : L.path);
+        const P = polyline(L.loop !== false ? [...L.path, L.path[0]] : L.path);
         const d = (P.L * i) / (L.n || 1);
-        const q = dioPolyAt(P, d);
+        const q = pointAlongPolyline(P, d);
         x = q.x;
         z = q.z;
         LIFE.list.push({
@@ -250,7 +250,7 @@ export function lifeShift(dx, dz, id) {
       a.tz += dz;
     }
     if (a.area) a.area = [a.area[0] + dx, a.area[1] + dz, a.area[2] + dx, a.area[3] + dz];
-    if (a.P && a.P.p) a.P = dioPoly(a.P.p.map(([x, z]) => [x + dx, z + dz]));
+    if (a.P && a.P.p) a.P = polyline(a.P.p.map(([x, z]) => [x + dx, z + dz]));
   }
   LIFE.id = id;
   LIFE.key = walkView.sc ? lifeKey(walkView.sc) : LIFE.key;
@@ -270,7 +270,7 @@ export function lifeStep(dt) {
     c.t += dt;
     if (c.k === 'car') {
       /* stop for you, and for the car in front */
-      const q = dioPolyAt(c.P, c.d),
+      const q = pointAlongPolyline(c.P, c.d),
         hl = Math.hypot(q.dx, q.dz) || 1,
         hx = q.dx / hl,
         hz = q.dz / hl;
@@ -288,7 +288,7 @@ export function lifeStep(dt) {
       c.cur = c.cur ?? c.v;
       c.cur += ((blocked ? 0 : c.v) - c.cur) * Math.min(1, dt * (blocked ? 6 : 1.5));
       c.d = (c.d + c.cur * dt) % c.P.L;
-      const n = dioPolyAt(c.P, c.d);
+      const n = pointAlongPolyline(c.P, c.d);
       c.x = n.x;
       c.z = n.z;
       c.dx = n.dx;

@@ -137,9 +137,6 @@ expose({
   dioPlayer: [() => dioPlayer, v => setDioPlayer(v)],
   dioPlayer0: [() => dioPlayer0, v => (dioPlayer0 = v)],
   dioPlayerY: [() => dioPlayerY, v => (dioPlayerY = v)],
-  dioPoly: [() => dioPoly, v => (dioPoly = v)],
-  dioPolyAt: [() => dioPolyAt, v => (dioPolyAt = v)],
-  dioPolyNear: [() => dioPolyNear, v => (dioPolyNear = v)],
   dioProj: [() => dioProj, v => setDioProj(v)],
   dioPx: [() => dioPx, v => (dioPx = v)],
   dioPxArrow: [() => dioPxArrow, v => (dioPxArrow = v)],
@@ -190,6 +187,7 @@ expose({
   mapHub: [() => mapHub, v => (mapHub = v)],
   mapMoodName: [() => mapMoodName, v => (mapMoodName = v)],
   mapWaterCells: [() => mapWaterCells, v => (mapWaterCells = v)],
+  nearestOnPolyline: [() => nearestOnPolyline, v => (nearestOnPolyline = v)],
   openKind: [() => openKind, v => (openKind = v)],
   paintGroundSteps: [() => paintGroundSteps, v => (paintGroundSteps = v)],
   pathWearAmountFn: [() => pathWearAmountFn, v => (pathWearAmountFn = v)],
@@ -197,6 +195,8 @@ expose({
   pathWearLines: [() => pathWearLines, v => (pathWearLines = v)],
   plainTileIndex: [() => plainTileIndex, v => (plainTileIndex = v)],
   pointAlongMapPath: [() => pointAlongMapPath, v => (pointAlongMapPath = v)],
+  pointAlongPolyline: [() => pointAlongPolyline, v => (pointAlongPolyline = v)],
+  polyline: [() => polyline, v => (polyline = v)],
   prepareMap: [() => prepareMap, v => setPrepareMap(v)],
   propClock: [() => propClock, v => (propClock = v)],
   propShown: [() => propShown, v => (propShown = v)],
@@ -2123,7 +2123,7 @@ export function terrainAt(x, z) {
   return i < 0 || j < 0 || i >= sc.w || j >= sc.h ? sc.edge : ((sc.tiles || [])[j] || '')[i] || sc.edge;
 }
 /* ---------- polylines ---------- */
-export function dioPoly(pts) {
+export function polyline(pts) {
   let L = 0;
   const seg = [];
   for (let i = 0; i < pts.length - 1; i++) {
@@ -2132,7 +2132,7 @@ export function dioPoly(pts) {
   }
   return { p: pts, seg, L };
 }
-export function dioPolyAt(P, d) {
+export function pointAlongPolyline(P, d) {
   const p = P.p;
   if (p.length < 2) return { x: p[0][0], z: p[0][1], dx: 0, dz: 0 };
   d = clamp(d, 0, P.L);
@@ -2148,7 +2148,7 @@ export function dioPolyAt(P, d) {
     }
   }
 }
-function dioPolyNear(P, x, z) {
+function nearestOnPolyline(P, x, z) {
   let best = 0,
     bd = 1e9;
   const p = P.p;
@@ -2170,7 +2170,7 @@ function dioPolyNear(P, x, z) {
   return best;
 }
 export function pointAlongMapPath(sc, t) {
-  const P = dioPoly(
+  const P = polyline(
     sc.path && sc.path.length > 1
       ? sc.path
       : [
@@ -2178,7 +2178,7 @@ export function pointAlongMapPath(sc, t) {
           [sc.w, sc.h * 0.4],
         ]
   );
-  return dioPolyAt(P, clamp(t, 0, 1) * P.L);
+  return pointAlongPolyline(P, clamp(t, 0, 1) * P.L);
 }
 export function mapHub(sc) {
   if (sc.hub) return sc.hub;
@@ -3420,10 +3420,10 @@ function dioPlayer0(st, dt) {
     const key = JSON.stringify([walkView.id, st.from, st.to]);
     if (P.pk !== key) {
       const r = dioFind(st.from[0], st.from[1], st.to[0], st.to[1]) || [st.from, st.to];
-      P.line = dioPoly(r);
+      P.line = polyline(r);
       P.d = P.fresh
         ? Math.max(0, clamp(st.t, 0, 1) * P.line.L - (walkView.opt.instant ? 0 : 4))
-        : dioPolyNear(P.line, P.x, P.z);
+        : nearestOnPolyline(P.line, P.x, P.z);
       P.pk = key;
       P.route = null;
       P.goal = null;
@@ -3436,7 +3436,7 @@ function dioPlayer0(st, dt) {
       P.d += Math.sign(gap) * Math.min(Math.abs(gap), sp * dt);
       P.walk = 1;
     } else P.walk = 0;
-    const a = dioPolyAt(P.line, P.d);
+    const a = pointAlongPolyline(P.line, P.d);
     P.x = a.x;
     P.z = a.z;
     mx = P.x - ox;
