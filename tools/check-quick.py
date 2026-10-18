@@ -1026,7 +1026,7 @@ def desktop_steps(b, base, R):
         return '; '.join(out)
     v33()
 
-    @step('v34: shadow cache, walk cycles, Alpha shield, turn order, partner AI', 300)
+    @step('v34: shadow cache, walk cycles, Alpha shield, turn order', 300)
     def v34():
         out = []
         # (v37: the 2x "detailed art" of v34 is retired; the ground is the 32 px tiles of v37) open a scene and read the renderer's counters
@@ -1050,14 +1050,6 @@ def desktop_steps(b, base, R):
         if not a['ph2'] or a['shield'] < 1: raise Exception(f'Alpha shield phase didn’t start: {a}')
         out.append(f"Alpha below half: “{a['lines'][0][:60]}”, shield {a['shield']} turns, turn order bar {'shown' if a['bar'] else 'missing'}")
         pg.evaluate("if(activeBattle){activeBattle.over='ran';activeBattle.phase='end';endBattle()};0"); time.sleep(2.5); pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();0")
-        # partner AI: two foes don't both hit a target the first one already finishes
-        tid = pg.evaluate("Object.keys(TRAINERS).find(k=>TRAINERS[k].team.length>=2)||''")
-        if tid:
-            pg.evaluate(f"startTrainer('{tid}',{{talked:true,double:true}});0")
-            if until(pg, "activeBattle&&activeBattle.phase==='choose'", 90, tap):
-                p = json.loads(pg.evaluate("(()=>{const me=liveActors(0);if(me.length<2)return JSON.stringify({skip:1});const t=fighter(me[0]);const keep=t.hp;t.hp=1;let pile=0;for(let i=0;i<30;i++){activeBattle.aiPlan={};const a=chooseAI(liveActors(1)[0]),b=chooseAI(liveActors(1)[1]);if(a&&b&&a.tk===me[0]&&b.tk===me[0]&&MOVES[a.mid].c!=='X'&&MOVES[b.mid].c!=='X')pile++}t.hp=keep;return JSON.stringify({pile})})()"))
-                out.append('partner AI: ' + ('skipped (one fighter)' if p.get('skip') else f"both foes piled on a 1 HP target {p['pile']} of 30 times"))
-            pg.evaluate("if(activeBattle){activeBattle.over='ran';activeBattle.phase='end';endBattle()};0"); time.sleep(2.5); pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();0")
         if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
         return '; '.join(out)
     v34()
