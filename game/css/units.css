@@ -515,3 +515,248 @@
 [data-motion='reduced'] .cs .cs-pick {
   animation: none;
 }
+
+/* ---------- robots (06-3): slot rows, the carry meter, the Workshop ---------- */
+.u-bot-slots li {
+  grid-template-columns: 5.5em minmax(0, 1fr);
+  padding: var(--s2) var(--s3) var(--s2) var(--s4);
+}
+.u-part {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+.u-part b {
+  font: 700 15px/1.2 var(--font-voice);
+}
+.u-part-m {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s1) var(--s2);
+  font: 500 var(--fs-caption) / 1.2 var(--font-prose);
+  color: var(--text2);
+}
+.u-brk {
+  padding: 1px 8px;
+  border-radius: var(--r-pill);
+  font: 700 var(--fs-caption) / 1.4 var(--font-voice);
+  color: #fff;
+  background: var(--red);
+}
+.u-brk.dmg {
+  color: var(--goldink, #3a2408);
+  background: var(--gold-b);
+}
+.u-carry {
+  display: grid;
+  gap: var(--s2);
+  padding: var(--s4);
+  border-radius: var(--r-md);
+  background: var(--g-bg2);
+}
+.u-carry-h {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s3);
+}
+.u-carry-h b {
+  font: 700 15px/1 var(--font-voice);
+}
+.u-carry-h span {
+  font: 600 var(--fs-caption) / 1.2 var(--font-voice);
+  color: var(--text2);
+}
+/* the track runs from empty to 1.5× what the legs carry; the notch is the limit */
+.u-carry-track {
+  position: relative;
+  height: 10px;
+  border-radius: var(--r-pill);
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--ok) 45%, transparent) 0 66.7%,
+    color-mix(in srgb, var(--red) 45%, transparent) 66.7%
+  );
+}
+.u-carry-cap {
+  position: absolute;
+  top: -4px;
+  bottom: -4px;
+  width: 2px;
+  margin-left: -1px;
+  background: var(--text);
+}
+.u-carry-at {
+  position: absolute;
+  top: 50%;
+  width: 18px;
+  height: 18px;
+  margin: -9px 0 0 -9px;
+  border-radius: 50%;
+  background: var(--g-solid);
+  box-shadow:
+    0 0 0 3px var(--text),
+    var(--g-sh);
+}
+.u-carry-at.over {
+  box-shadow:
+    0 0 0 3px var(--red),
+    var(--g-sh);
+}
+.u-carry-n {
+  display: flex;
+  justify-content: space-between;
+  font: 700 14px/1 var(--font-voice);
+  color: var(--text2);
+}
+.u-carry-n .up {
+  color: var(--ok);
+}
+.u-carry-n .dn {
+  color: var(--red);
+}
+
+/* the Workshop's refit sheet: a floating card like the details sheet, readable stats, roomy slot rows */
+.scrim .sheet.ws-sheet {
+  width: calc(100% - 2 * var(--gutter));
+  max-width: 520px;
+  margin: 0 var(--gutter) calc(var(--gutter) + env(safe-area-inset-bottom, 0px));
+  padding: var(--s5) var(--pad-panel) var(--pad-panel) !important;
+  border-radius: var(--r-lg) !important;
+  box-shadow: var(--depth-float) !important;
+}
+.sheet.ws-sheet .ws-top {
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr);
+  gap: var(--s4);
+  align-items: start;
+  margin-bottom: var(--s4);
+}
+.sheet.ws-sheet .ws-big {
+  border-radius: var(--r-md);
+}
+.sheet.ws-sheet .ws-info {
+  display: grid;
+  gap: var(--s3);
+}
+.sheet.ws-sheet .ws-info .row {
+  margin: 0;
+}
+.sheet.ws-sheet .ws-stats {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--s2);
+}
+.sheet.ws-sheet .ws-stats span {
+  display: grid;
+  gap: 2px;
+  padding: var(--s2) var(--s3);
+  border-radius: var(--r-sm);
+  background: var(--g-bg2);
+}
+.sheet.ws-sheet .ws-stats small {
+  font: 600 var(--fs-caption) / 1 var(--font-voice);
+  color: var(--text2);
+}
+.sheet.ws-sheet .ws-stats b {
+  font: 700 17px/1.1 var(--font-voice);
+}
+.sheet.ws-sheet .ws-slots {
+  display: grid;
+  gap: var(--s2);
+}
+.sheet.ws-sheet .ws-slot {
+  min-height: 64px;
+  padding: var(--s3) var(--s4);
+  border-radius: var(--r-md);
+  background: var(--g-bg2);
+  box-shadow: none;
+}
+.sheet.ws-sheet .ws-slot.on {
+  box-shadow: 0 0 0 2px var(--gold-b);
+}
+.sheet.ws-sheet .ws-pick {
+  margin-top: var(--s3);
+  padding: var(--s4);
+  border-radius: var(--r-md);
+  background: var(--g-bg2);
+}
+
+/* ---------- the Bag (06-3): pockets as big tabs, each item its own roomy row, the use panel floating ---------- */
+.bag-pockets {
+  margin: var(--s4) 0 var(--s4);
+  padding: var(--s1) !important;
+  border-radius: var(--r-lg) !important;
+}
+.bag-pockets button {
+  min-height: 56px;
+  border-radius: var(--r-md) !important;
+}
+.bag-list {
+  display: grid;
+  gap: var(--s2);
+  padding: 0 !important;
+  background: none !important;
+  box-shadow: none !important;
+  border: 0 !important;
+}
+.bag-row {
+  min-height: 64px;
+  padding: var(--s3) var(--s4) !important;
+  border: 1px solid var(--g-bd) !important;
+  border-radius: var(--r-md) !important;
+  background: var(--g-bg) !important;
+  -webkit-backdrop-filter: var(--g-blur);
+  backdrop-filter: var(--g-blur);
+  box-shadow: var(--depth-raised) !important;
+  transition: transform var(--m-fast) var(--spring);
+}
+.bag-row + .bag-row {
+  border-top: 1px solid var(--g-bd) !important;
+}
+.bag-row:active {
+  transform: scale(0.98);
+}
+.bag-row.on {
+  box-shadow:
+    0 0 0 2px var(--t-bag),
+    var(--depth-raised) !important;
+}
+.bag-row .bag-t small {
+  font: 500 var(--fs-caption) / 1.35 var(--font-prose);
+}
+.bag-act {
+  position: sticky;
+  bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+  z-index: 2;
+  margin-top: var(--s4);
+  padding: var(--s4) !important;
+  border-radius: var(--r-lg) !important;
+  background: var(--g-solid) !important;
+  box-shadow: var(--depth-float) !important;
+  animation: m-enter var(--m-base) var(--ease-out) both;
+}
+.bag-act .pb {
+  min-height: var(--tap);
+}
+.bag-empty {
+  padding: var(--s5);
+  border-radius: var(--r-md);
+  background: var(--g-bg2);
+  font: 500 var(--fs-body) / var(--lh-prose) var(--font-prose);
+  text-align: center;
+}
+/* a long name wraps rather than being cut off (robots' names are two words) */
+.u-row .u-head {
+  align-items: flex-start;
+}
+.u-row .u-head b {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.15;
+}
+.u-row .u-lv {
+  padding-top: 2px;
+}

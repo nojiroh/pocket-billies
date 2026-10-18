@@ -8,9 +8,28 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { provide } from './hooks.js';
+import { MOVES } from './game-data.js';
 import { weightClass } from './logic/parts.js';
-import { isRobot, robotWeight, speciesOf } from './logic/fighters.js';
-import { billyBuild, billyName, billyWeight, buildLean, formatNumber, isPrime, maxHp } from './logic/rules.js';
+import {
+  ROBOT_SLOTS,
+  isRobot,
+  robotAttackFactor,
+  robotGemDef,
+  robotPartDef,
+  robotSpeedFactor,
+  robotWeight,
+  speciesOf,
+} from './logic/fighters.js';
+import {
+  billyBuild,
+  billyName,
+  billyWeight,
+  buildLean,
+  formatNumber,
+  isPrime,
+  maxHp,
+  partBroken,
+} from './logic/rules.js';
 import { escapeHtml, saveData } from './game-state.js';
 import { uiIconHTML } from './art.js';
 import { rigCanvasHTML } from './skeleton-rig.js';
@@ -18,11 +37,15 @@ import { needsCare, plateVars, typeBadgeHTML } from './ui.js';
 /* eslint-disable no-func-assign */
 expose({
   BILLY_SLOT_NAMES: [() => BILLY_SLOT_NAMES],
+  BOT_SLOT_TITLES: [() => BOT_SLOT_TITLES],
   SIZE_KEYS: [() => SIZE_KEYS],
   SIZE_WORDS: [() => SIZE_WORDS],
   billyUnit: [() => billyUnit, v => ((billyUnit = v), provide({ billyUnit }))],
   unitBalanceHTML: [() => unitBalanceHTML, v => (unitBalanceHTML = v)],
+  unitBotBuildHTML: [() => unitBotBuildHTML, v => ((unitBotBuildHTML = v), provide({ unitBotBuildHTML }))],
+  unitBotSlotsHTML: [() => unitBotSlotsHTML, v => (unitBotSlotsHTML = v)],
   unitBuildHTML: [() => unitBuildHTML, v => ((unitBuildHTML = v), provide({ unitBuildHTML }))],
+  unitCarryHTML: [() => unitCarryHTML, v => ((unitCarryHTML = v), provide({ unitCarryHTML }))],
   unitHeroHTML: [() => unitHeroHTML, v => ((unitHeroHTML = v), provide({ unitHeroHTML }))],
   unitHpHTML: [() => unitHpHTML, v => (unitHpHTML = v)],
   unitOpenRowHTML: [() => unitOpenRowHTML, v => ((unitOpenRowHTML = v), provide({ unitOpenRowHTML }))],
@@ -30,7 +53,7 @@ expose({
   unitTagsHTML: [() => unitTagsHTML, v => (unitTagsHTML = v)],
 });
 /* eslint-enable no-func-assign */
-provide({ billyUnit, unitBuildHTML, unitHeroHTML, unitOpenRowHTML, unitRowHTML });
+provide({ billyUnit, unitBotBuildHTML, unitBuildHTML, unitCarryHTML, unitHeroHTML, unitOpenRowHTML, unitRowHTML });
 /* to-module: end */
 /** @typedef {{
  *   kind: 'billy' | 'bot', id: string, name: string, sub: string, lvl: number, types: string[],
@@ -92,8 +115,8 @@ function unitHeroHTML(u) {
 }
 
 /** one row in a team or a list: tap for details */
-function unitRowHTML(u, i) {
-  return `<button class="u-row m-press m-enter${u.down ? ' down' : ''}" style="--i:${i}" data-a="mon" data-u="${escapeHtml(u.id)}" aria-label="${escapeHtml(u.name)}, level ${u.lvl}, details"><span class="u-spr" style="${u.plate}"><span class="m-idle" style="--phase:${((i * 0.37) % 1).toFixed(2)}">${u.art(64)}</span></span>
+function unitRowHTML(u, i, act = 'mon', label = 'details') {
+  return `<button class="u-row m-press m-enter${u.down ? ' down' : ''}" style="--i:${i}" data-a="${act}" data-u="${escapeHtml(u.id)}" aria-label="${escapeHtml(u.name)}, level ${u.lvl}, ${label}"><span class="u-spr" style="${u.plate}"><span class="m-idle" style="--phase:${((i * 0.37) % 1).toFixed(2)}">${u.art(64)}</span></span>
   <span class="u-mid"><span class="u-head"><b>${escapeHtml(u.name)}</b><span class="u-lv tnum">Lv ${u.lvl}</span></span><span class="u-types">${u.types.map(typeBadgeHTML).join('')}${u.buddy ? `<i class="u-heart" title="Buddy">${uiIconHTML('heart', 12)}</i>` : ''}${u.prime ? '<span class="u-tag prime">Prime</span>' : ''}</span></span>
   <span class="u-right">${unitHpHTML(u)}</span></button>`;
 }
@@ -123,4 +146,34 @@ function unitBuildHTML(u, slots) {
     .join('')}</ul>
   ${unitBalanceHTML(L)}
   <p class="u-prime ${L.prime ? 'yes' : ''}">${L.prime ? `<span class="u-tag prime">Prime</span> Every part at its own normal size: a little stronger at everything.` : `Not Prime: ${L.off === 1 ? '1 part' : `${L.off} parts`} off normal size. Bigger parts hit harder but slow it down.`}</p></div>`;
+}
+
+/* ---------- robots (phase 17 merged, 06-3): the same build view, in slots ---------- */
+/** weight against what the legs carry: Speed and Attack, like a Billie's balance */
+function unitCarryHTML(fit) {
+  const w = robotWeight(fit),
+    carry = (robotPartDef(fit.legs.id) || {}).carry || 100,
+    sf = robotSpeedFactor(fit),
+    af = robotAttackFactor(fit),
+    pct = f => `${f > 1 ? '+' : f < 1 ? '−' : '±'}${Math.round(Math.abs(f - 1) * 100)}%`,
+    at = Math.max(0, Math.min(1, w / carry / 1.5));
+  return `<div class="u-carry" role="img" aria-label="${w} kilograms, the legs carry ${carry}: speed ${pct(sf)}, attack ${pct(af)}"><div class="u-carry-h"><b>Weight</b><span class="tnum">${formatNumber(w)} kg · legs carry ${formatNumber(carry)} kg</span></div><span class="u-carry-track"><i class="u-carry-cap" style="left:${((1 / 1.5) * 100).toFixed(1)}%"></i><i class="u-carry-at${w > carry ? ' over' : ''}" style="left:${(at * 100).toFixed(1)}%"></i></span><div class="u-carry-n"><span class="tnum ${sf > 1 ? 'up' : sf < 1 ? 'dn' : ''}">Speed ${pct(sf)}</span><span class="tnum ${af > 1 ? 'up' : af < 1 ? 'dn' : ''}">Attack ${pct(af)}</span></div></div>`;
+}
+const BOT_SLOT_TITLES = { torso: 'Torso', armL: 'Left arm', armR: 'Right arm', legs: 'Legs', gem: 'Gem' };
+/** one row per slot: part, type, the move it gives, broken or damaged */
+function unitBotSlotsHTML(m) {
+  const fit = m.fit;
+  return `<ul class="u-slots u-bot-slots">${[...ROBOT_SLOTS, 'gem']
+    .map(k => {
+      const P = k === 'gem' ? robotGemDef(m.gem) : robotPartDef(fit[k].id),
+        mv = k === 'torso' ? null : MOVES[P.move],
+        brk = k !== 'torso' && k !== 'gem' && partBroken(m, k),
+        dmg = !brk && k !== 'torso' && k !== 'gem' && ((m.partDmg && m.partDmg[k]) || 0) > 0;
+      return `<li><span class="u-slot-n">${BOT_SLOT_TITLES[k]}</span><span class="u-part"><b>${escapeHtml(P.name)}</b><span class="u-part-m">${typeBadgeHTML(P.type)}${mv ? `<span>${escapeHtml(mv.n)}</span>` : ''}${brk ? '<span class="u-brk">Broken</span>' : dmg ? '<span class="u-brk dmg">Damaged</span>' : ''}</span></span></li>`;
+    })
+    .join('')}</ul>`;
+}
+/** a robot's Build tab */
+function unitBotBuildHTML(m) {
+  return `<div class="u-build"><div class="u-build-h"><b>Build</b><span class="tnum">Lv ${m.lvl}</span></div>${unitBotSlotsHTML(m)}${unitCarryHTML(m.fit)}<p class="u-prime">Refit it in the Workshop on your Team screen: every part gives its move and its type.</p></div>`;
 }

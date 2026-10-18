@@ -7,7 +7,19 @@
    Where the workshop lives in the world is the owner's call: until then it is a panel on the Team screen. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { closeModal, modal, plateVars, provide, render, renderOverlay, toast, typeBadgeHTML } from './hooks.js';
+import {
+  billyUnit,
+  closeModal,
+  modal,
+  plateVars,
+  provide,
+  render,
+  renderOverlay,
+  toast,
+  typeBadgeHTML,
+  unitCarryHTML,
+  unitRowHTML,
+} from './hooks.js';
 import { MOVES, ROBOTS, STAT_IDS } from './game-data.js';
 import {
   ROBOT_SLOTS,
@@ -19,7 +31,6 @@ import {
   robotGemDef,
   robotPartDef,
   robotRules,
-  robotSpeedFactor,
   robotWeight,
   speciesOf,
 } from './logic/fighters.js';
@@ -102,16 +113,11 @@ export function workshopSectionHTML() {
   if (!bots.length && !saveData.parts.length) return '';
   const spares = saveData.parts.length;
   return `<section class="tpanel tm-ws"><div class="sec-h"><h2>Workshop</h2><span class="count tnum">${bots.length} robot${bots.length === 1 ? '' : 's'}</span></div><p class="note">Robots battle beside your Billies. Their moves come from their parts: swap an arm and the move changes. A broken part is fixed when you heal.</p>
- <div class="ws-grid">${bots
-   .map(
-     m =>
-       `<div class="ws-bot"><button class="ws-spr" data-a="wsopen" data-u="${m.uid}" style="${plateVars(m)}" aria-label="Refit ${escapeHtml(billyName(m))}">${rigCanvasHTML(m.sp, 60)}</button><span class="ws-t"><b>${escapeHtml(billyName(m))}</b><span class="tnum">Lv ${m.lvl}${saveData.box.includes(m) ? ' · in storage' : ''}</span><span class="row">${speciesOf(m).types.map(typeBadgeHTML).join('')}</span></span><button class="qk" data-a="wsopen" data-u="${m.uid}">Refit</button></div>`
-   )
-   .join('')}</div>
+ <div class="u-list">${bots.map((m, i) => unitRowHTML(billyUnit(m), i, 'wsopen', 'refit')).join('')}</div>
  <p class="note tnum">${spares ? `${spares} spare part${spares === 1 ? '' : 's'}.` : 'No spare parts.'} Parts are found, crafted or won from trainers.</p>${wsCanBuild() ? '<button class="pb small" data-a="wsbuild">Build a robot from spares</button>' : ''}</section>`;
 }
 /** a robot's parts in its details sheet (in place of a Billie's part sizes) */
-export function robotPartsPanelHTML(m) {
+function robotPartsPanelHTML(m) {
   const fit = m.fit,
     w = robotWeight(fit),
     carry = robotPartDef(fit.legs.id).carry || 0;
@@ -129,9 +135,6 @@ export function robotPartsPanelHTML(m) {
 function workshopHTML(m) {
   const S = uiState.ws || {},
     fit = m.fit,
-    w = robotWeight(fit),
-    carry = robotPartDef(fit.legs.id).carry || 100,
-    sf = robotSpeedFactor(fit),
     sp = speciesOf(m);
   const rows = WS_SLOTS.map(k => {
     const p = k === 'gem' ? { id: m.gem, up: 0 } : fit[k],
@@ -157,7 +160,7 @@ function workshopHTML(m) {
         ''
       )}${cur ? `<div class="ws-upg"><span class="note">Upgrade the fitted ${escapeHtml(ROBOT_SLOT_NAMES[S.slot])} (${cur.up || 0} of ${max}). Free in the prototype.</span><button class="pb small quiet" data-a="wsup" ${(cur.up || 0) >= max ? 'disabled' : ''}>Upgrade</button></div>` : ''}</div>`;
   }
-  return `<div class="ws-top"><div class="ws-big" style="${plateVars(m)}">${rigCanvasHTML(m.sp, 112)}</div><div class="ws-info"><p class="row">${sp.types.map(typeBadgeHTML).join('')}<b class="lv tnum">Lv ${m.lvl}</b></p><p class="note tnum">${w} kg, legs carry ${carry} kg: Speed ${sf >= 1 ? '+' : '−'}${Math.abs(Math.round((sf - 1) * 100))}%</p><div class="ws-stats">${STAT_IDS.map(k => `<span><small>${wsShortStat[k]}</small><b class="tnum">${k === 'hp' ? maxHp(m) : stat(m, k)}</b></span>`).join('')}</div></div></div>
+  return `<div class="ws-top"><div class="ws-big" style="${plateVars(m)}">${rigCanvasHTML(m.sp, 112)}</div><div class="ws-info"><p class="row">${sp.types.map(typeBadgeHTML).join('')}<b class="lv tnum">Lv ${m.lvl}</b></p><div class="ws-stats">${STAT_IDS.map(k => `<span><small>${wsShortStat[k]}</small><b class="tnum">${k === 'hp' ? maxHp(m) : stat(m, k)}</b></span>`).join('')}</div></div></div>${unitCarryHTML(fit)}
  <div class="ws-slots">${rows}</div>${pick}`;
 }
 /** opens the refit sheet for a robot */

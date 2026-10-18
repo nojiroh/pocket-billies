@@ -2,7 +2,15 @@
 /* ================= UI ================= */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { billyUnit, provide, unitBuildHTML, unitHeroHTML, unitOpenRowHTML, unitRowHTML } from './hooks.js';
+import {
+  billyUnit,
+  provide,
+  unitBotBuildHTML,
+  unitBuildHTML,
+  unitHeroHTML,
+  unitOpenRowHTML,
+  unitRowHTML,
+} from './hooks.js';
 import { $, $$, clamp, random } from './util.js';
 import {
   COINS,
@@ -193,7 +201,7 @@ import {
   trainerTalk,
 } from './story.js';
 import { challengeCardHTML, homeDecorate, refreshHomeFurniture, requestListHTML, stampTile } from './things-to-do.js';
-import { robotPartsPanelHTML, workshopAction, workshopSectionHTML } from './workshop.js';
+import { workshopAction, workshopSectionHTML } from './workshop.js';
 /* eslint-disable no-func-assign */
 expose({
   BOX_SORTS: [() => BOX_SORTS],
@@ -2237,7 +2245,7 @@ function billySheet(m) {
    ${acts.length ? `<div class="ms-acts">${acts.map((b, i) => `<button class="pb small ${b.c || ''}" data-a="mact" data-i="${i}" ${b.dis ? 'disabled' : ''}>${b.ic ? uiIconHTML(b.ic, 15) : ''}<span>${b.l}</span></button>`).join('')}</div>` : ''}
    <p class="note ms-about">${escapeHtml(s.blurb)}</p>
    <div class="ms-nick"><label class="field-l">Nickname<input id="nick" maxlength="16" value="${escapeHtml(m.nick)}" placeholder="${escapeHtml(s.name)}" autocomplete="off" enterkeyhint="done"></label><button class="pb small" data-a="mnick">Save</button></div></div>
-  <div class="ms-pane" data-k="build" hidden>${isRobot(m) ? robotPartsPanelHTML(m) : unitBuildHTML(billyUnit(m), partSlots())}</div>
+  <div class="ms-pane" data-k="build" hidden>${isRobot(m) ? unitBotBuildHTML(m) : unitBuildHTML(billyUnit(m), partSlots())}</div>
   <div class="ms-pane" data-k="moves" hidden><div class="mvlist">${m.moves
     .map(id => {
       const M = MOVES[id];
