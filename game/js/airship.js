@@ -9,7 +9,7 @@
    money, so your steps stay for walking new ground. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { closeModal, modal, provide, render, sceneIdAt, storyFlags, toast } from './hooks.js';
+import { closeModal, mapIdAt, modal, provide, render, storyFlags, toast } from './hooks.js';
 import { $, clamp } from './util.js';
 import { LOCATIONS, LOCATION_BY_ID, isTown, locationFullName } from './game-data.js';
 import { isLiteMap, loadMapFile, loadMapsAhead } from './map-files.js';
@@ -48,7 +48,7 @@ function flyTowns() {
         isTown(i) &&
         !LOCATIONS[i].noFly &&
         saveData.visited[i] &&
-        sceneIdAt(i) &&
+        mapIdAt(i) &&
         (typeof canEnter !== 'function' || canEnter(i))
     )
     .sort((x, y) => flyFare(here, x) - flyFare(here, y));
@@ -218,8 +218,8 @@ function flyDraw(c, t, proj) {
 function flyLand() {
   if (!airshipFlight.on || airshipFlight.wait) return;
   /* phase 04b: you land by the mast, which is in the town's own map file */
-  if (typeof isLiteMap === 'function' && isLiteMap(sceneIdAt(airshipFlight.b))) {
-    airshipFlight.wait = loadMapFile(sceneIdAt(airshipFlight.b)).then(() => {
+  if (typeof isLiteMap === 'function' && isLiteMap(mapIdAt(airshipFlight.b))) {
+    airshipFlight.wait = loadMapFile(mapIdAt(airshipFlight.b)).then(() => {
       airshipFlight.wait = null;
       flyLand();
     });
@@ -233,7 +233,7 @@ function flyLand() {
   document.body.classList.remove('flying');
   const cap = $('#flycap');
   if (cap) cap.remove();
-  const sid = sceneIdAt(b),
+  const sid = mapIdAt(b),
     sc = typeof mapById === 'function' ? mapById(sid) : null,
     m = sc && (sc.props || []).find(p => p.act === 'fly');
   if (m && typeof walkData === 'function') {
@@ -312,7 +312,7 @@ export function rideGlassLift(p) {
       uiState.backAt = null;
       uiState.arrive = null;
       uiState.mapSel = null;
-      const sid = sceneIdAt(i),
+      const sid = mapIdAt(i),
         sc = typeof mapById === 'function' ? mapById(sid) : null,
         m = sc && (sc.props || []).find(q => q.act === 'lift');
       if (m && typeof walkData === 'function') {

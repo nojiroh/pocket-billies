@@ -854,7 +854,7 @@ def desktop_steps(b, base, R):
         out.append(f'room: daylight {day[0]:.2f}, {day[2]} lamps lit at night')
         # settings in tabs, every tab fits the phone width; a switch flips
         # a message waiting on screen (an egg hatching, in steps mode) would queue Settings behind it
-        pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();uiState.tab='walk';render();settings('game');0"); time.sleep(.6); tabs = []
+        pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();uiState.tab='walk';render();openSettings('game');0"); time.sleep(.6); tabs = []
         # alpha 0.5: the tabs are whatever the game lists (sound, graphics, game, save, help); contrast is under Game
         names = pg.evaluate("SET_TABS.map(t=>t[0])")
         for t in names:
@@ -1271,7 +1271,7 @@ def desktop_steps(b, base, R):
         n_ex = pg.evaluate("Object.values(gameData.scenes).reduce((n,sc)=>n+((sc.edgeExits||[]).length),0)")
         # the join table: every road's ends name an exit of their place (alpha 0.2: the names decide; tools/join-places.py on the legacy branch
         # moved exits so the two ends of a road face each other, so the old compass match no longer has a say)
-        diff = json.loads(pg.evaluate("""JSON.stringify((()=>{const out=[];let joined=0;for(let n=0;n<LOCATIONS.length;n++){const sc=mapById(sceneIdAt(n));if(!sc||!(sc.exits||[]).length)continue;const a=sceneExits(n);for(const e of ROADS_BY_NODE[n]){const L=ROADS[e.i],id=L[3]&&(L[0]===n?L[3].a:L[3].b);if(id&&(sc.edgeExits||[]).some(q=>q.id===id))joined++;else out.push(LOCATIONS[n].name+' -> '+LOCATIONS[e.to].name+': no exit named '+id);if(a[e.to]==null)out.push(LOCATIONS[n].name+' -> '+LOCATIONS[e.to].name+': no exit')}}return {out,joined}})())"""))
+        diff = json.loads(pg.evaluate("""JSON.stringify((()=>{const out=[];let joined=0;for(let n=0;n<LOCATIONS.length;n++){const sc=mapById(mapIdAt(n));if(!sc||!(sc.exits||[]).length)continue;const a=mapExits(n);for(const e of ROADS_BY_NODE[n]){const L=ROADS[e.i],id=L[3]&&(L[0]===n?L[3].a:L[3].b);if(id&&(sc.edgeExits||[]).some(q=>q.id===id))joined++;else out.push(LOCATIONS[n].name+' -> '+LOCATIONS[e.to].name+': no exit named '+id);if(a[e.to]==null)out.push(LOCATIONS[n].name+' -> '+LOCATIONS[e.to].name+': no exit')}}return {out,joined}})())"""))
         if diff['out']: raise Exception('join table: ' + '; '.join(diff['out'][:4]))
         out.append(f'{n_ex} edge-relative exits, {diff["joined"]} road ends joined by name')
         # a resize keeps exits on their edge: grow a copy of Tallgrass Meadow by 6 m each way, then shrink it back

@@ -36,7 +36,7 @@ import { csWanted } from './cutscene.js';
 import { TITLE, titleMount, titleStart, titleWanted } from './title.js';
 import { loreLoadingLines } from './lore.js';
 import { accInit } from './account.js';
-import { bgInit, closeModal, modal, postProcess, render, renderOverlay, sceneIdAt, startGame, toast } from './ui.js';
+import { bgInit, closeModal, mapIdAt, modal, postProcess, render, renderOverlay, startGame, toast } from './ui.js';
 /* eslint-disable no-func-assign */
 expose({
   ART_VER_KEY: [() => ART_VER_KEY],
@@ -520,7 +520,7 @@ function townPaths() {
   try {
     if (!(typeof titleWanted === 'function' && titleWanted() && typeof csWanted === 'function' && csWanted()))
       return new Set();
-    const id = sceneIdAt(START_NODE),
+    const id = mapIdAt(START_NODE),
       sc = mapById(id);
     return sc ? new Set(mapArtPaths(sc)) : new Set();
   } catch (e) {

@@ -9,7 +9,7 @@
    The renderer reads environment through environmentFrame() once a frame; nothing here touches WebGL. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { RULES, SPECIES, provide, reducedMotion, saveData, sceneIdAt } from './hooks.js';
+import { RULES, SPECIES, mapIdAt, provide, reducedMotion, saveData } from './hooks.js';
 import { clamp } from './util.js';
 import { hexToRgb } from './art.js';
 import { mapById, walkView } from './walk-view.js';
@@ -259,11 +259,11 @@ export function environmentWindowLit(x, z, h) {
 }
 export function currentLocationMap() {
   try {
-    return typeof sceneIdAt === 'function' &&
+    return typeof mapIdAt === 'function' &&
       typeof mapById === 'function' &&
       typeof saveData !== 'undefined' &&
       saveData.route
-      ? mapById(sceneIdAt(saveData.route.node))
+      ? mapById(mapIdAt(saveData.route.node))
       : null;
   } catch (e) {
     return null;

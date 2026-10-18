@@ -6,7 +6,7 @@
    Without the 3D scene the title stands on the painted landscape instead. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { NW_TEST, accChipHTML, closeModal, modal, postProcess, render, sceneIdAt, settings } from './hooks.js';
+import { NW_TEST, accChipHTML, closeModal, mapIdAt, modal, openSettings, postProcess, render } from './hooks.js';
 import { $, clamp } from './util.js';
 import { LOCATIONS, START_NODE } from './game-data.js';
 import {
@@ -115,7 +115,7 @@ export async function titleMount() {
   TITLE.t0 = performance.now();
   walkView.director = { frame: titleFrame };
   try {
-    await mountWalkView(cv, typeof csSceneId === 'function' ? csSceneId() : sceneIdAt(START_NODE), {
+    await mountWalkView(cv, typeof csSceneId === 'function' ? csSceneId() : mapIdAt(START_NODE), {
       state: () => ({ who: null, npcs: [], enc: [], mode: 'line' }),
       keys: () => false,
       active: () => false,
@@ -235,7 +235,7 @@ document.addEventListener(
     }
     if (a === 'ttlset') {
       ev.stopPropagation();
-      settings();
+      openSettings();
       return;
     }
   },

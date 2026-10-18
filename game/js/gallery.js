@@ -5,7 +5,7 @@
    watch what changes. Day and night swap at a tap (lamps need the dark). "Leave" brings you back to your settings. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { closeModal, provide, render, renderOverlay, settings, toast } from './hooks.js';
+import { closeModal, openSettings, provide, render, renderOverlay, toast } from './hooks.js';
 import { uiState } from './game-state.js';
 import { GFX_DIALS, gfxDial } from './settings-screen.js';
 import { mapById, walkView } from './walk-view.js';
@@ -107,7 +107,7 @@ function galleryClose() {
   uiState.bench = null;
   render();
   uiState.setTab = 'graphics';
-  settings();
+  openSettings();
 }
 document.addEventListener('click', ev => {
   const el = ev.target.closest && ev.target.closest('[data-a^="gal-"]');

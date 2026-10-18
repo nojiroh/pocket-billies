@@ -6,7 +6,7 @@
    a small stamp shows in the corner for a moment. saveData.cards keeps them: {town id: the day you got it}. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { STEST, STORY, sceneIdAt, storyFlags, toast } from './hooks.js';
+import { STEST, STORY, mapIdAt, storyFlags, toast } from './hooks.js';
 import { LOCATIONS, TRAINERS, isTown, trainersAt } from './game-data.js';
 import { activeBattle, escapeHtml, save, saveData, uiState } from './game-state.js';
 import { artURL } from './art.js';
@@ -36,13 +36,13 @@ function pcCards() {
   return saveData.cards || (saveData.cards = {});
 }
 function pcTowns() {
-  return LOCATIONS.map((r, i) => i).filter(i => isTown(i) && sceneIdAt(i));
+  return LOCATIONS.map((r, i) => i).filter(i => isTown(i) && mapIdAt(i));
 }
 function pcImg(i) {
-  return 'postcards/' + sceneIdAt(i) + '.webp';
+  return 'postcards/' + mapIdAt(i) + '.webp';
 }
 function pcFlag(i) {
-  const sc = typeof mapById === 'function' ? mapById(sceneIdAt(i)) : null;
+  const sc = typeof mapById === 'function' ? mapById(mapIdAt(i)) : null;
   return sc && typeof flagPicturePath === 'function' ? flagPicturePath(sc) : 'scene/flags/default.png';
 }
 /* the town you are standing in (in the joined world, the place under your feet), or null */

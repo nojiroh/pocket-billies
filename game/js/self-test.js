@@ -83,7 +83,7 @@ import {
 import { TALK, talkHide } from './talk.js';
 import { CS, csTeardown } from './cutscene.js';
 import { battleTipHide, fallGL, fallMap } from './opening-fall.js';
-import { closeModal, leaveRoom, modal, render, renderOverlay, sceneIdAt, toast, walkPick } from './ui.js';
+import { closeModal, leaveRoom, mapIdAt, modal, render, renderOverlay, toast, walkPick } from './ui.js';
 /* eslint-disable no-func-assign */
 expose({
   DIAGR: [() => DIAGR, v => (DIAGR = v)],
@@ -681,7 +681,7 @@ async function runFullTest(mode) {
       saveData.route.node = back.node;
       render();
       await stSleep(600);
-      for (let i = 0; i < 40 && !(walkView.ready && walkView.id === sceneIdAt(back.node)); i++) await stSleep(200);
+      for (let i = 0; i < 40 && !(walkView.ready && walkView.id === mapIdAt(back.node)); i++) await stSleep(200);
       /* v43: the stage needs the walk scene open */ saveData.preferences = saveData.preferences || {};
       const pref = saveData.preferences.battleStage;
       saveData.preferences.battleStage = classic ? 'classic' : 'scene';

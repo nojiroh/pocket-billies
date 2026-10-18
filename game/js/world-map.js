@@ -4,7 +4,7 @@
    Tap a place to see it; travel there, stay, stop or turn back from the card. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { flyDraw, flyTick, paintMapCard, provide, toast } from './hooks.js';
+import { flyDraw, flyTick, paintWorldMapCard, provide, toast } from './hooks.js';
 import { $, clamp } from './util.js';
 import { LOCATIONS, REGIONS, ROADS, roadCost } from './game-data.js';
 import { canEnter, escapeHtml, nextTripNode, reducedMotion, saveData, uiState } from './game-state.js';
@@ -680,7 +680,7 @@ export function worldMapReset() {
   worldMap.alt = 0.32;
   worldMapFocus(worldMapPlayerPosition());
   uiState.mapSel = null;
-  paintMapCard();
+  paintWorldMapCard();
   worldMap.dirty = true;
 }
 /* phase 04d: world-map-gl.js puts the 3D map in place */
@@ -706,7 +706,7 @@ function onStepsAdded() {
     worldMapWalk(worldMap.me, to);
     if (uiState.mapSel == null) worldMapFocus(to);
   }
-  paintMapCard();
+  paintWorldMapCard();
 }
 function worldMapLoop(ts) {
   if (!worldMap.cv || !worldMap.cv.isConnected) {
@@ -800,7 +800,7 @@ export function setWorldMapLabels(v) {
 }
 export function worldMapSelect(n) {
   uiState.mapSel = n;
-  paintMapCard();
+  paintWorldMapCard();
   worldMapLabels();
   const v =
     typeof n === 'number'

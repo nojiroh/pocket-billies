@@ -16,7 +16,7 @@
    trees and flowers come from a seed (the link's index), never stored. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { provide, sceneExits, sceneIdAt } from './hooks.js';
+import { mapExits, mapIdAt, provide } from './hooks.js';
 import { clamp } from './util.js';
 import { LOCATIONS, ROADS, ROADS_BY_NODE } from './game-data.js';
 import { uiState } from './game-state.js';
@@ -151,18 +151,18 @@ function seamlessNoise(x, y, s) {
   return a + (b - a) * u(fx) + (c - a) * u(fy) + (a - b - c + d) * u(fx) * u(fy);
 }
 const SIDE_VECTORS = { E: [1, 0], W: [-1, 0], N: [0, 1], S: [0, -1] };
-/* which exit of a stop's scene a link uses: the join table first, then the compass match (ui.js sceneExits) */
+/* which exit of a stop's scene a link uses: the join table first, then the compass match (ui.js mapExits) */
 function seamlessRoadExit(node, i) {
-  const sc = mapById(sceneIdAt(node));
+  const sc = mapById(mapIdAt(node));
   if (!sc || !(sc.exits || []).length) return null;
   const L = ROADS[i],
     J = L[3],
     id = J ? (L[0] === node ? J.a : J.b) : null,
     E = sc.edgeExits || [];
   let k = id ? E.findIndex(q => q.id === id) : -1;
-  if (k < 0 && typeof sceneExits === 'function') {
+  if (k < 0 && typeof mapExits === 'function') {
     const to = L[0] === node ? L[1] : L[0];
-    k = sceneExits(node)[to] ?? -1;
+    k = mapExits(node)[to] ?? -1;
   }
   if (k < 0) return null;
   const e = E[k] || exitEdge(sc, sc.exits[k]),
@@ -177,8 +177,8 @@ function seamlessRoad(i) {
   const L = ROADS[i],
     a = L[0],
     b = L[1],
-    A = mapById(sceneIdAt(a)),
-    B = mapById(sceneIdAt(b)),
+    A = mapById(mapIdAt(a)),
+    B = mapById(mapIdAt(b)),
     ea = seamlessRoadExit(a, i),
     eb = seamlessRoadExit(b, i);
   if (!A || !B || !ea || !eb) return null;
@@ -238,8 +238,8 @@ function seamlessRoad(i) {
     b,
     A: A,
     B: B,
-    aId: sceneIdAt(a),
-    bId: sceneIdAt(b),
+    aId: mapIdAt(a),
+    bId: mapIdAt(b),
     ea,
     eb,
     Lr,
@@ -286,11 +286,11 @@ function seamlessJoin(i) {
     if (!L) return null;
     const a = L[0],
       b = L[1],
-      A = mapById(sceneIdAt(a)),
-      B = mapById(sceneIdAt(b)),
+      A = mapById(mapIdAt(a)),
+      B = mapById(mapIdAt(b)),
       ea = seamlessRoadExit(a, i),
       eb = seamlessRoadExit(b, i);
-    if (!A || !B || !ea || !eb || OPPOSITE_SIDE[ea.side] !== eb.side || sceneIdAt(a) === sceneIdAt(b)) return null;
+    if (!A || !B || !ea || !eb || OPPOSITE_SIDE[ea.side] !== eb.side || mapIdAt(a) === mapIdAt(b)) return null;
     const off =
       ea.side === 'E'
         ? [A.w, Math.round(ea.p[1] - eb.p[1])]
@@ -299,7 +299,7 @@ function seamlessJoin(i) {
           : ea.side === 'N'
             ? [Math.round(ea.p[0] - eb.p[0]), A.h]
             : [Math.round(ea.p[0] - eb.p[0]), -B.h];
-    return { join: 1, i, a, b, A, B, aId: sceneIdAt(a), bId: sceneIdAt(b), ea, eb, off, seed: i * 131 + 7 };
+    return { join: 1, i, a, b, A, B, aId: mapIdAt(a), bId: mapIdAt(b), ea, eb, off, seed: i * 131 + 7 };
   });
 }
 /* The seam of join i. The stretch of edge the two places share near the exit (lo..hi, in A's metres along the edge;
@@ -399,7 +399,7 @@ function seamlessEasedGround(S, sid) {
   return seamlessMemo('adj' + sid, () => {
     const L = [];
     for (let i = 0; i < ROADS.length; i++) {
-      if (sceneIdAt(ROADS[i][0]) !== sid && sceneIdAt(ROADS[i][1]) !== sid) continue; /* only this place's seams */
+      if (mapIdAt(ROADS[i][0]) !== sid && mapIdAt(ROADS[i][1]) !== sid) continue; /* only this place's seams */
       const Q = seamlessSeamOf(i);
       if (!Q) continue;
       if (Q.aId === sid) L.push([Q, 1]);
@@ -1370,7 +1370,7 @@ function seamlessComposeRoad(id, R, box, base, t) {
    road runs on past what it holds. */
 const HUB_ROAD_LENGTH = 36;
 function seamlessHubParts(node) {
-  const sid = sceneIdAt(node),
+  const sid = mapIdAt(node),
     S = mapById(sid);
   if (!S) return null;
   const scenes = [{ S, id: sid, off: [0, 0] }],
@@ -1463,7 +1463,7 @@ function seamlessHubParts(node) {
   return { box: [bx, bz, Math.ceil(x1 + M) - bx, Math.ceil(z1 + M) - bz], scenes, roads, base: S, hubOf: node };
 }
 export function seamlessHubMap(node) {
-  const sid = sceneIdAt(node),
+  const sid = mapIdAt(node),
     id = 'w:' + sid + '*',
     key = id + '|' + seamlessWorld.gen;
   let sc = seamlessWorld.cache.get(key);
@@ -1915,7 +1915,7 @@ export function seamlessDelta(fromId, toId) {
    round a place and up to its exits never switches views */
 export function seamlessRoamView(node, pos) {
   if (!seamlessOn()) return null;
-  const id = sceneIdAt(node),
+  const id = mapIdAt(node),
     sc = mapById(id);
   if (
     !sc ||
@@ -2003,7 +2003,7 @@ function seamlessJoinTrip(J, node, f) {
 }
 /* how far along the way out you stand (0 if you aren't in that place's view) */
 function seamlessStartAlong(xn, P) {
-  const sid = sceneIdAt(xn);
+  const sid = mapIdAt(xn);
   if (!(
     walkView.ready &&
     walkView.sc &&

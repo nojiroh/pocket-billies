@@ -10,7 +10,7 @@
    Each player only ever writes their own users/ document; a friendship is made from the two sides of a request. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { ACC, accOn, closeModal, modal, provide, render, sceneIdAt, toast, walkOff } from './hooks.js';
+import { ACC, accOn, closeModal, mapIdAt, mapOffsetInView, modal, provide, render, toast } from './hooks.js';
 import { LOCATIONS, SPECIES } from './game-data.js';
 import { billyName, cleanName, escapeHtml, plural, saveData, uiState } from './game-state.js';
 import { owFrames, portraitHTML, trWarm } from './person-art.js';
@@ -214,7 +214,7 @@ function frPublish(now) {
   const t = Date.now(),
     node = saveData.route && saveData.route.node,
     r = LOCATIONS[node] || {},
-    sid = typeof sceneIdAt === 'function' ? sceneIdAt(node) : null;
+    sid = typeof mapIdAt === 'function' ? mapIdAt(node) : null;
   let x = null,
     z = null;
   if (uiState.roam && uiState.roam.node === node && uiState.roam.id === sid) {
@@ -420,13 +420,13 @@ function frWorldItems(out, t, C0) {
     uiState.inside ||
     uiState.bench ||
     typeof owFrames !== 'function' ||
-    typeof walkOff !== 'function'
+    typeof mapOffsetInView !== 'function'
   )
     return;
   for (const u of FR.list) {
     const d = FR.data[u];
     if (!d || !d.at || d.at.x == null || !d.at.sid) continue;
-    const o = walkOff(d.at.sid);
+    const o = mapOffsetInView(d.at.sid);
     if (!o) continue;
     const x = d.at.x + o[0],
       z = d.at.z + o[1],

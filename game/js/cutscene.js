@@ -16,9 +16,9 @@ import {
   fallPlay,
   landBurst,
   landFrame,
+  mapIdAt,
   provide,
   render,
-  sceneIdAt,
   startGame,
   typeBadgeHTML,
   updateNav,
@@ -171,7 +171,7 @@ const csEase = k => (k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2);
    with the first stretch of each road. So nothing is built again between the title, the opening, Blake's battle
    and your first steps (it was a pause of most of a second as the battle began) */
 export function csSceneId() {
-  const id = sceneIdAt(START_NODE);
+  const id = mapIdAt(START_NODE);
   try {
     const v = typeof seamlessRoamView === 'function' ? seamlessRoamView(START_NODE, null) : null;
     if (v && v.id && mapById(v.id)) return v.id;
@@ -185,8 +185,8 @@ export function csWanted() {
     typeof webgl2Supported === 'function' &&
     !gpuState.fail &&
     webgl2Supported() &&
-    typeof sceneIdAt === 'function' &&
-    !!mapById(sceneIdAt(START_NODE))
+    typeof mapIdAt === 'function' &&
+    !!mapById(mapIdAt(START_NODE))
   );
 }
 /* alpha 0.4: the start's name, for the opening's caption (Copperleaf Town) */

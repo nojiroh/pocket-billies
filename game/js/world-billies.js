@@ -10,7 +10,7 @@
    frame. A species' rig art is loaded the first time it's needed; until then it simply isn't shown. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { battleStageKey, provide, sceneIdAt, sfx } from './hooks.js';
+import { battleStageKey, mapIdAt, provide, sfx } from './hooks.js';
 import { clamp } from './util.js';
 import { SPECIES, STATUS_NAMES, TRAINERS, rivalSpecies, trainersAt } from './game-data.js';
 import { billyName, findBilly, maxHp, nextTripNode, save, saveData, uiState } from './game-state.js';
@@ -539,7 +539,7 @@ setInterval(() => {
       return;
     const nx = nextTripNode();
     if (nx == null) return;
-    const id = sceneIdAt(nx);
+    const id = mapIdAt(nx);
     if (!id || mapsPreparedAhead.has(id) || (typeof walkView !== 'undefined' && walkView.id === id)) return;
     mapsPreparedAhead.add(id);
     if (mapsPreparedAhead.size > 6) mapsPreparedAhead.delete(mapsPreparedAhead.values().next().value);

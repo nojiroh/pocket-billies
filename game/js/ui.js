@@ -250,14 +250,18 @@ expose({
   learnModal: [() => learnModal, v => (learnModal = v)],
   leaveRoom: [() => leaveRoom, v => (leaveRoom = v)],
   locationCardHTML: [() => locationCardHTML, v => (locationCardHTML = v)],
-  mapCardHTML: [() => mapCardHTML, v => (mapCardHTML = v)],
+  mapExits: [() => mapExits, v => ((mapExits = v), provide({ mapExits }))],
+  mapExitsByBearing: [() => mapExitsByBearing, v => (mapExitsByBearing = v)],
+  mapIdAt: [() => mapIdAt, v => ((mapIdAt = v), provide({ mapIdAt }))],
+  mapOffsetInView: [() => mapOffsetInView, v => ((mapOffsetInView = v), provide({ mapOffsetInView }))],
   meter: [() => meter],
   modal: [() => modal, v => ((modal = v), provide({ modal }))],
   needsCare: [() => needsCare],
   nextModal: [() => nextModal, v => (nextModal = v)],
   nextToast: [() => nextToast, v => (nextToast = v)],
   nodeActions: [() => nodeActions, v => (nodeActions = v)],
-  paintMapCard: [() => paintMapCard, v => ((paintMapCard = v), provide({ paintMapCard }))],
+  openSettings: [() => openSettings, v => ((openSettings = v), provide({ openSettings }))],
+  paintWorldMapCard: [() => paintWorldMapCard, v => ((paintWorldMapCard = v), provide({ paintWorldMapCard }))],
   plateVars: [() => plateVars],
   playerWalkIconHTML: [() => playerWalkIconHTML, v => (playerWalkIconHTML = v)],
   poolStrip: [() => poolStrip, v => (poolStrip = v)],
@@ -265,13 +269,13 @@ expose({
   progressBarHTML: [() => progressBarHTML, v => ((progressBarHTML = v), provide({ progressBarHTML }))],
   render: [() => render, v => setRender(v)],
   renderDexEntry: [() => renderDexEntry, v => (renderDexEntry = v)],
+  renderGuide: [() => renderGuide, v => (renderGuide = v)],
   renderIntro: [() => renderIntro, v => (renderIntro = v)],
-  renderLedger: [() => renderLedger, v => (renderLedger = v)],
-  renderMap: [() => renderMap, v => (renderMap = v)],
   renderOverlay: [() => renderOverlay, v => setRenderOverlay(v)],
   renderProfile: [() => renderProfile, v => (renderProfile = v)],
   renderTeam: [() => renderTeam, v => (renderTeam = v)],
   renderWalk: [() => renderWalk, v => (renderWalk = v)],
+  renderWorldMapTab: [() => renderWorldMapTab, v => (renderWorldMapTab = v)],
   roomAct: [() => roomAct, v => (roomAct = v)],
   roomAim: [() => roomAim, v => (roomAim = v)],
   roomFor: [() => roomFor, v => (roomFor = v)],
@@ -281,10 +285,6 @@ expose({
   roomState: [() => roomState, v => (roomState = v)],
   roomStepIn: [() => roomStepIn, v => (roomStepIn = v)],
   runEvolution: [() => runEvolution, v => ((runEvolution = v), provide({ runEvolution }))],
-  sceneExits: [() => sceneExits, v => ((sceneExits = v), provide({ sceneExits }))],
-  sceneExitsByBearing: [() => sceneExitsByBearing, v => (sceneExitsByBearing = v)],
-  sceneIdAt: [() => sceneIdAt, v => ((sceneIdAt = v), provide({ sceneIdAt }))],
-  settings: [() => settings, v => ((settings = v), provide({ settings }))],
   startGame: [() => startGame, v => ((startGame = v), provide({ startGame }))],
   statusBadgeHTML: [() => statusBadgeHTML],
   stepsTo: [() => stepsTo, v => (stepsTo = v)],
@@ -301,31 +301,31 @@ expose({
   updateNav: [() => updateNav, v => ((updateNav = v), provide({ updateNav }))],
   walkCross: [() => walkCross, v => (walkCross = v)],
   walkHero: [() => walkHero, v => (walkHero = v)],
-  walkOff: [() => walkOff, v => ((walkOff = v), provide({ walkOff }))],
+  walkMapSync: [() => walkMapSync, v => (walkMapSync = v)],
   walkPick: [() => walkPick, v => (walkPick = v)],
-  walkSceneSync: [() => walkSceneSync, v => (walkSceneSync = v)],
   walkState: [() => walkState, v => (walkState = v)],
+  worldMapCardHTML: [() => worldMapCardHTML, v => (worldMapCardHTML = v)],
   xpLeft: [() => xpLeft],
   xpProgress: [() => xpProgress],
 });
 /* eslint-enable no-func-assign */
 provide({
   closeModal,
+  mapExits,
+  mapIdAt,
+  mapOffsetInView,
   modal,
-  paintMapCard,
+  openSettings,
+  paintWorldMapCard,
   postProcess,
   progressBarHTML,
   render,
   renderOverlay,
   roomRefresh,
   runEvolution,
-  sceneExits,
-  sceneIdAt,
-  settings,
   startGame,
   toast,
   updateNav,
-  walkOff,
 });
 export function setRender(v) {
   render = v; // eslint-disable-line no-func-assign
@@ -598,14 +598,14 @@ export function render() {
     uiState.lastTab = null;
     updateNav(false);
     document.body.classList.remove('on-map');
-    walkSceneSync();
+    walkMapSync();
     return;
   }
   if (activeBattle) {
     app.innerHTML = battleShell();
     updateNav(false);
     document.body.classList.remove('on-map');
-    walkSceneSync();
+    walkMapSync();
     return;
   }
   if (!SCREENS.includes(uiState.tab)) uiState.tab = 'walk';
@@ -614,20 +614,20 @@ export function render() {
       T === 'team'
         ? renderTeam()
         : T === 'ledger'
-          ? renderLedger()
+          ? renderGuide()
           : T === 'profile'
             ? renderProfile()
             : T === 'bag'
               ? renderBag()
               : T === 'map'
-                ? renderMap()
+                ? renderWorldMapTab()
                 : renderWalk();
   const enter = uiState.lastTab !== T,
     dir = uiState.lastTab && enter ? (SCREENS.indexOf(T) > SCREENS.indexOf(uiState.lastTab) ? ' fromR' : ' fromL') : '';
   uiState.lastTab = T;
   app.innerHTML = `${topbar()}<main class="screen s-${T}${enter ? ' enter' + dir : ''}">${body}</main>`;
   updateNav(true);
-  walkSceneSync();
+  walkMapSync();
   document.body.classList.toggle('on-map', T === 'map');
   if (T === 'map') worldMapMount();
   $$('[data-count]').forEach(el => {
@@ -971,7 +971,7 @@ function renderWalk() {
  ${eggSlots()}${buddyCard()}</div></div></div>`;
 }
 /* ---------- the walk scene behind the Walk tab ---------- */
-export function sceneIdAt(i) {
+export function mapIdAt(i) {
   const S0 = gameData.scenes || {},
     r = LOCATIONS[i];
   if (r && r.scene && S0[r.scene]) return r.scene;
@@ -979,8 +979,8 @@ export function sceneIdAt(i) {
 }
 /* which road leaves a stop's scene through which exit: matched by compass direction on the world map */
 /* v42: the join table first (a road names the exit at each end, by id); roads without one fall back to the bearing */
-function sceneExits(node) {
-  const sc = mapById(sceneIdAt(node)),
+function mapExits(node) {
+  const sc = mapById(mapIdAt(node)),
     ex = (sc && sc.exits) || [],
     out = {};
   if (!sc || !ex.length) return out;
@@ -993,9 +993,9 @@ function sceneExits(node) {
       k = id ? E.findIndex(q => q.id === id) : -1;
     if (k >= 0) out[e.to] = k;
   }
-  return sceneExitsByBearing(node, sc, ex, out);
+  return mapExitsByBearing(node, sc, ex, out);
 }
-function sceneExitsByBearing(node, sc, ex, out) {
+function mapExitsByBearing(node, sc, ex, out) {
   out = out || {};
   const hub = mapHub(sc),
     me = LOCATIONS[node],
@@ -1320,17 +1320,17 @@ function walkState() {
       ? seamlessTripView(node, nx, f)
       : null;
   if (tv) {
-    const base = tv.sc.baseId === sceneIdAt(nx) ? nx : node;
+    const base = tv.sc.baseId === mapIdAt(nx) ? nx : node;
     v = { id: tv.id, node: base, mode: 'road', pos: tv.pos, roam: true, road: tv.u };
     if (typeof seamlessPrefetch === 'function') seamlessPrefetch(tv.R, tv.u, tv.fwd, tv);
   } else if (nx != null && r.prog > 0 && f >= 0.5) {
-    const id = sceneIdAt(nx),
+    const id = mapIdAt(nx),
       sc = mapById(id) || {},
       hub = sc.w ? mapHub(sc) : [0, 0],
-      k = sceneExits(nx)[node];
+      k = mapExits(nx)[node];
     v = { id, node: nx, mode: 'path', from: sc.exits && k != null ? sc.exits[k] : hub, to: hub, t: (f - 0.5) / 0.5 };
   } else {
-    const id = sceneIdAt(node),
+    const id = mapIdAt(node),
       sc = mapById(id) || {},
       hub = sc.w ? mapHub(sc) : [0, 0],
       bk = uiState.backAt,
@@ -1341,11 +1341,11 @@ function walkState() {
             ? [uiState.roam.x, uiState.roam.z]
             : hub;
     if (nx != null && r.prog > 0) {
-      const k = sceneExits(node)[nx];
+      const k = mapExits(node)[nx];
       v = { id, node, mode: 'path', from: pos, to: sc.exits && k != null ? sc.exits[k] : hub, t: f / 0.5 };
     } else {
       /* v43: near an exit the road leaving it is part of the view (positions are kept in the scene's own metres) */ const wo =
-          walkView.ready && walkView.pl && !walkView.pl.fresh ? walkOff(id) : null,
+          walkView.ready && walkView.pl && !walkView.pl.fresh ? mapOffsetInView(id) : null,
         live = !!wo,
         lo = wo,
         wv =
@@ -1388,7 +1388,7 @@ function walkState() {
   /* v46: a new view is shown only once its ground is ready on the card; until then you stay in the one on screen (seamless-world.js seamlessGate) */
   if (typeof seamlessGate === 'function' && v && v.pos && (v.mode === 'road' || v.roam)) v = seamlessGate(v);
   const sc = mapById(v.id) || {},
-    ex = sceneExits(v.node),
+    ex = mapExits(v.node),
     bl = blockerAt(v.node),
     dest = v.node === node ? (walkMode() ? (saveData.route.plan[0] ?? null) : nextTripNode()) : null;
   v.exits = ROADS_BY_NODE[v.node]
@@ -1415,7 +1415,7 @@ function walkState() {
     const bid = sc.baseId || v.id,
       base = mapById(bid),
       o = sc.baseOff || [0, 0];
-    if (base && bid === sceneIdAt(v.node))
+    if (base && bid === mapIdAt(v.node))
       for (const P of base.people || [])
         if (PEOPLE[P.who])
           v.npcs.push({
@@ -1583,7 +1583,7 @@ setInterval(() => {
    once you are a metre into a neighbour, that place is where you are (its view takes over without a cut). A closed way
    (a gate you haven't the badge for, a trainer blocking the road) turns you back at the edge. */
 /* 0.5: where a place's own ground sits in the view on screen (the view may be a neighbour's, holding this place as a part) */
-function walkOff(id) {
+function mapOffsetInView(id) {
   const sc = walkView.sc;
   if (!sc || !id) return null;
   if ((sc.baseId || walkView.id) === id) return sc.baseOff || [0, 0];
@@ -1668,10 +1668,10 @@ setInterval(() => {
     )
       return;
     const v = walkState();
-    if (v && v.id && v.id !== walkView.id && !v.held) walkSceneSync();
+    if (v && v.id && v.id !== walkView.id && !v.held) walkMapSync();
   } catch (e) {}
 }, 400);
-function walkSceneSync() {
+function walkMapSync() {
   if (typeof CS !== 'undefined' && CS.on) return;
   /* in a battle the scene keeps running inside the battle stage (battle-3d.js) when it can; otherwise it stops */
   if (activeBattle) {
@@ -1691,7 +1691,7 @@ function walkSceneSync() {
     if (walkView.cv) stopWalkView();
     return;
   }
-  const on = saveData.started && uiState.tab !== 'map' && !!sceneIdAt(saveData.route.node),
+  const on = saveData.started && uiState.tab !== 'map' && !!mapIdAt(saveData.route.node),
     walk = on && uiState.tab === 'walk';
   let cv = $('#dio');
   document.body.classList.toggle('on-walk', walk);
@@ -1751,12 +1751,15 @@ function walkSceneSync() {
           /^int_/.test(walkView.id || '')
         )
           return;
-        const sid = sceneIdAt(saveData.route.node),
-          po = walkOff(sid),
+        const sid = mapIdAt(saveData.route.node),
+          po = mapOffsetInView(sid),
           o = po || (walkView.sc && walkView.sc.baseOff) || [0, 0],
           bk = uiState.backAt;
         if (bk) {
-          if (walkOff(bk.id) && Math.hypot(x - walkOff(bk.id)[0] - bk.x, z - walkOff(bk.id)[1] - bk.z) < 0.6)
+          if (
+            mapOffsetInView(bk.id) &&
+            Math.hypot(x - mapOffsetInView(bk.id)[0] - bk.x, z - mapOffsetInView(bk.id)[1] - bk.z) < 0.6
+          )
             uiState.backAt = null;
           else return;
         }
@@ -1796,18 +1799,18 @@ function walkSceneSync() {
     }).then(() => cv.classList.add('in'));
   }
 }
-function renderMap() {
+function renderWorldMapTab() {
   return `<div class="map-full"><canvas id="mapcv" width="${worldMapWidth}" height="${worldMapHeight}" aria-label="World map. Drag to look around, tap a place."></canvas><div id="maplabels"></div>
  <div class="map-head glass"><div class="sub">The Hollow Earth</div><h1 class="where">World map</h1><p class="map-trip ${tripStatus().k}">${escapeHtml(tripStatus().t)}</p></div>
  <div class="mapctl"><button class="mbtn" data-a="mzoom" data-k="in" aria-label="Zoom in">+</button><button class="mbtn" data-a="mzoom" data-k="out" aria-label="Zoom out">−</button><button class="mbtn" data-a="mreset" aria-label="Back to you">${uiIconHTML('walk', 16)}</button></div>
- <div class="mapcard px glass" id="mapcard">${mapCardHTML()}</div></div>`;
+ <div class="mapcard px glass" id="mapcard">${worldMapCardHTML()}</div></div>`;
 }
 function poolStrip(pool) {
   const P = POOLS[pool];
   if (!P) return '';
   return `<div class="poolstrip">${P.list.map(([id]) => (saveData.seen[id] ? rigCanvasHTML(id, 36) : rigCanvasHTML(id, 36, { sil: 1, still: 1 }))).join('')}</div>`;
 }
-function mapCardHTML() {
+function worldMapCardHTML() {
   const sel = uiState.mapSel == null ? saveData.route.node : uiState.mapSel;
   if (typeof sel === 'string') {
     const f = REGIONS[+sel.slice(1)];
@@ -1846,9 +1849,9 @@ function mapCardHTML() {
   const nb = ROADS_BY_NODE[sel].map(e => LOCATIONS[e.to].name);
   return `<div class="mc-top"><h2>${escapeHtml(n.name)}</h2><span class="sub">${escapeHtml(locationSubtitle(n))}</span></div><p class="note">${escapeHtml(n.blurb || '')}</p>${n.ride && canRide() ? `<p class="note ride">${uiIconHTML('drop', 14)} You ride across on ${escapeHtml(riderName())}.</p>` : ''}<p class="status">${status}</p>${btns ? `<div class="racts">${btns}</div>` : ''}${poolStrip(n.pool)}<p class="note mc-nb">Roads to ${nb.map(escapeHtml).join(', ')}.</p>${nodeActions(sel)}`;
 }
-function paintMapCard() {
+function paintWorldMapCard() {
   const c = $('#mapcard');
-  if (c) c.innerHTML = mapCardHTML();
+  if (c) c.innerHTML = worldMapCardHTML();
 }
 /* ---------- team: the lead up top, the party as cards, day jobs, then storage ---------- */
 const plateVars = m => {
@@ -1967,7 +1970,7 @@ function guideTabs() {
     .map(([k, n]) => `<button class="${k === t ? 'on' : ''}" data-a="guidetab" data-k="${k}">${n}</button>`)
     .join('')}</div>`;
 }
-function renderLedger() {
+function renderGuide() {
   if (uiState.dex && SPECIES[uiState.dex] && saveData.seen[uiState.dex]) return renderDexEntry(uiState.dex);
   if (uiState.guideTab === 'cards' && typeof renderPostcards === 'function')
     return `<header class="bar"><div><div class="sub">Greetings from every town you’ve walked into</div><h1 class="where">Postcards</h1></div></header>${guideTabs()}${renderPostcards()}`;
@@ -2461,7 +2464,7 @@ function hirePick(slot, job) {
     btns: [{ l: 'Cancel', c: 'quiet', f: closeModal }],
   });
 }
-function settings(tab) {
+function openSettings(tab) {
   if (tab) uiState.setTab = tab;
   modal({
     title: 'Settings',
@@ -2631,7 +2634,7 @@ document.addEventListener('click', ev => {
       break;
     }
     case 'settings':
-      settings();
+      openSettings();
       break;
     case 'card-close':
       saveData.preferences = saveData.preferences || {};

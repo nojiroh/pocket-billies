@@ -7,7 +7,7 @@
    Settings → Music and Sound effects set the volumes (0 mutes). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { CS, provide, sceneIdAt } from './hooks.js';
+import { CS, mapIdAt, provide } from './hooks.js';
 import { clamp } from './util.js';
 import { LOCATIONS } from './game-data.js';
 import { activeBattle, saveData, uiState } from './game-state.js';
@@ -751,7 +751,7 @@ export function musicFor() {
         : 'trainer'
       : 'wild';
   if (uiState.tab === 'map') return 'map';
-  const id = typeof sceneIdAt === 'function' ? sceneIdAt(saveData.route.node) : null,
+  const id = typeof mapIdAt === 'function' ? mapIdAt(saveData.route.node) : null,
     sc = id && mapById(id),
     r = LOCATIONS[saveData.route.node];
   if (sc && sc.indoor) return /mall|food/.test(id) ? 'mall' : 'cave';
