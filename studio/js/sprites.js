@@ -30,10 +30,10 @@ expose({
   drawSpritePreview: [() => drawSpritePreview, v => (drawSpritePreview = v)],
   fileToCanvas: [() => fileToCanvas, v => (fileToCanvas = v)],
   goldFrom: [() => goldFrom, v => (goldFrom = v)],
-  hsv2rgb: [() => hsv2rgb, v => (hsv2rgb = v)],
+  hsvToRgb: [() => hsvToRgb, v => (hsvToRgb = v)],
   hueShift: [() => hueShift, v => (hueShift = v)],
   loadImage: [() => loadImage, v => (loadImage = v)],
-  lumOf: [() => lumOf],
+  luminance: [() => luminance],
   markArt: [() => markArt, v => (markArt = v)],
   mountPreviews: [() => mountPreviews, v => ((mountPreviews = v), provide({ mountPreviews }))],
   openPixelEditor: [() => openPixelEditor, v => (openPixelEditor = v)],
@@ -61,7 +61,7 @@ expose({
   pxSetColor: [() => pxSetColor, v => (pxSetColor = v)],
   pxUndo: [() => pxUndo, v => (pxUndo = v)],
   rampAt: [() => rampAt, v => (rampAt = v)],
-  rgb2hsv: [() => rgb2hsv, v => (rgb2hsv = v)],
+  rgbToHsv: [() => rgbToHsv, v => (rgbToHsv = v)],
   rigFor: [() => rigFor, v => (rigFor = v)],
   spriteCacheClear: [() => spriteCacheClear, v => ((spriteCacheClear = v), provide({ spriteCacheClear }))],
   spritePreviewHTML: [() => spritePreviewHTML, v => (spritePreviewHTML = v)],
@@ -230,7 +230,7 @@ export function previewsDirty() {
   for (const c of SPRITE_PREVIEWS) c._p.dirty = 1;
 }
 /* ---------- color tools ---------- */
-const lumOf = (r, g, b) => (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+const luminance = (r, g, b) => (0.299 * r + 0.587 * g + 0.114 * b) / 255;
 const GOLD_RAMP = [
   [0, [64, 40, 14]],
   [0.35, [150, 100, 30]],
@@ -261,7 +261,7 @@ export function goldFrom(src, strength = 0.6) {
     const r = d[i],
       g = d[i + 1],
       b = d[i + 2],
-      L = lumOf(r, g, b),
+      L = luminance(r, g, b),
       mx = Math.max(r, g, b),
       mn = Math.min(r, g, b),
       sat = mx ? (mx - mn) / mx : 0;
@@ -277,7 +277,7 @@ export function goldFrom(src, strength = 0.6) {
   x.putImageData(im, 0, 0);
   return c;
 }
-function rgb2hsv(r, g, b) {
+function rgbToHsv(r, g, b) {
   r /= 255;
   g /= 255;
   b /= 255;
@@ -294,7 +294,7 @@ function rgb2hsv(r, g, b) {
   }
   return [h, mx ? d / mx : 0, mx];
 }
-function hsv2rgb(h, s, v) {
+function hsvToRgb(h, s, v) {
   const c = v * s,
     x = c * (1 - Math.abs(((h / 60) % 2) - 1)),
     m = v - c;
@@ -319,10 +319,10 @@ export function hueShift(src, deg, satK = 1, protectSkin = true) {
     d = im.data;
   for (let i = 0; i < d.length; i += 4) {
     if (!d[i + 3]) continue;
-    const [h, s, v] = rgb2hsv(d[i], d[i + 1], d[i + 2]);
+    const [h, s, v] = rgbToHsv(d[i], d[i + 1], d[i + 2]);
     if (s < 0.12) continue;
     if (protectSkin && h > 12 && h < 42 && s < 0.55 && v > 0.45) continue;
-    const [r, g, b] = hsv2rgb((h + deg + 360) % 360, clamp(s * satK, 0, 1), v);
+    const [r, g, b] = hsvToRgb((h + deg + 360) % 360, clamp(s * satK, 0, 1), v);
     d[i] = r;
     d[i + 1] = g;
     d[i + 2] = b;
