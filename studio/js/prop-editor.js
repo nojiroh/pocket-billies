@@ -6,7 +6,7 @@
    turntable that shows the result in the game's renderer while you work. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
-import { pedVoxHTML, provide } from '../../game/js/hooks.js';
+import { modelEditorHTML, provide } from '../../game/js/hooks.js';
 import { $, $$, clamp } from '../../game/js/util.js';
 import { frameStop, frameTask } from '../../game/js/frame-scheduler.js';
 import { artLoad, makeCanvas, setArtLoad } from '../../game/js/art.js';
@@ -211,7 +211,7 @@ function propEditorCardHTML(k) {
    <div class="seg-row"><button class="seg ${propEditor.spin ? 'on' : ''}" data-act="pedSpin">Turn slowly</button><span class="help">Drag the turntable to turn it yourself. It turns as far as the game camera can; layers show their depth.</span></div></div></div>
   <div class="ped-r"><h4>Layers</h4><p class="help">Extra pictures drawn in front of or behind the main one. Put a porch, a sign or leaves on their own layer and give them a little depth, and the prop gains real depth when the camera moves. A glowing layer lights itself (windows at night, crystals).</p>
    ${rows || '<p class="help"><i>No extra layers yet.</i></p>'}<div class="seg-row"><button class="btn sm" data-act="pedLayerAdd" data-from="png">+ Layer from PNG</button><button class="btn sm" data-act="pedLayerAdd" data-from="copy">+ Copy of the main picture</button><button class="btn sm subtle" data-act="scEditProp" data-k="${esc(k)}">Edit the main picture’s pixels</button></div>
-   <h4>Settings</h4>${set}${propVaryHTML(k)}${typeof pedVoxHTML === 'function' ? pedVoxHTML(k) : ''}${solidBodyHTML(k)}${buildingPlanHTML(k)}</div></div>`,
+   <h4>Settings</h4>${set}${propVaryHTML(k)}${typeof modelEditorHTML === 'function' ? modelEditorHTML(k) : ''}${solidBodyHTML(k)}${buildingPlanHTML(k)}</div></div>`,
     {
       acts: `<button class="btn sm primary" data-act="pedClose">Done</button>`,
       sub: 'Changes show in the turntable and in every scene right away.',

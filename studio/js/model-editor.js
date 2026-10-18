@@ -34,19 +34,19 @@ import { mapEditor, sceneryCatalog } from './map-editor.js';
 import { editedProp } from './prop-editor.js';
 /* eslint-disable no-func-assign */
 expose({
-  VXE: [() => VXE],
-  VXE_KINDS: [() => VXE_KINDS],
-  pedVoxHTML: [() => pedVoxHTML, v => ((pedVoxHTML = v), provide({ pedVoxHTML }))],
-  vxeBump: [() => vxeBump, v => (vxeBump = v)],
-  vxeMainColour: [() => vxeMainColour, v => (vxeMainColour = v)],
-  vxeOwn: [() => vxeOwn, v => (vxeOwn = v)],
-  vxeRec: [() => vxeRec, v => (vxeRec = v)],
+  MODEL_LAYER_KINDS: [() => MODEL_LAYER_KINDS],
+  mainPictureColor: [() => mainPictureColor, v => (mainPictureColor = v)],
+  modelChanged: [() => modelChanged, v => (modelChanged = v)],
+  modelEditor: [() => modelEditor],
+  modelEditorHTML: [() => modelEditorHTML, v => ((modelEditorHTML = v), provide({ modelEditorHTML }))],
+  modelRecipeOf: [() => modelRecipeOf, v => (modelRecipeOf = v)],
+  ownModelRecipe: [() => ownModelRecipe, v => (ownModelRecipe = v)],
 });
 /* eslint-enable no-func-assign */
-provide({ pedVoxHTML });
+provide({ modelEditorHTML });
 /* to-module: end */
-const VXE = { sel: null };
-const VXE_KINDS = [
+const modelEditor = { sel: null };
+const MODEL_LAYER_KINDS = [
   ['box', 'Box'],
   ['cyl', 'Cylinder'],
   ['sphere', 'Sphere'],
@@ -55,52 +55,52 @@ const VXE_KINDS = [
   ['img', 'Picture'],
   ['raw', 'Imported voxels'],
 ];
-function vxeRec(M) {
+function modelRecipeOf(M) {
   if (!M || !M.vox) return null;
   if (typeof M.vox === 'object') return M.vox;
   const r = typeof loadPropModelRecipe === 'function' ? loadPropModelRecipe(M.vox) : null;
   return r;
 }
 /* the recipe is edited in place: a file-based one is pulled into the catalogue entry first */
-function vxeOwn(M) {
+function ownModelRecipe(M) {
   if (typeof M.vox === 'string') {
-    const r = vxeRec(M);
+    const r = modelRecipeOf(M);
     if (!r) return null;
     M.voxFile = M.vox;
     M.vox = JSON.parse(JSON.stringify(r));
   }
   return M.vox;
 }
-function vxeBump(M) {
+function modelChanged(M) {
   M.voxV = (M.voxV || 0) + 1;
   if (typeof invalidatePropModel === 'function') invalidatePropModel('inline:' + mapEditor.ped + '#' + (M.voxV - 1));
   changed();
   commit(true);
 }
-function pedVoxHTML(k) {
+function modelEditorHTML(k) {
   const M = sceneryCatalog().props[k],
     b = `scenery.props.${k}.vox`;
   if (!M || M.build) return '';
-  const rec = vxeRec(M);
+  const rec = modelRecipeOf(M);
   const head = `<h4>3D model</h4>`;
   if (!M.vox)
     return `${head}<p class="help">Give this prop a real 3D body: shapes you place with sliders (drawn as low-poly painted with the buildings’ 32 px textures, or as voxels one to a pixel of the art with Engine › World › Props as low-poly off), voxels imported from MagicaVoxel, and pictures set in the model. With the Voxel props dial on, the game draws the model instead of the picture, cel-shaded in the scene's light; the picture stays for the map, the Studio lists and the dial off.</p>
   <div class="seg-row"><button class="btn sm" data-act="vxeNew">Start a model from the picture</button><button class="btn sm subtle" data-act="vxeImport">Import a .vox</button></div>`;
   if (!rec) {
     setTimeout(() => {
-      if (mapEditor.ped === k && vxeRec(M)) render();
+      if (mapEditor.ped === k && modelRecipeOf(M)) render();
     }, 400);
     return `${head}<p class="help">Loading ${esc(String(M.vox))}…</p>`;
   }
   if (rec.kind === 'mesh')
     return `<h4>3D model</h4><p class="help">A low-poly model painted with the buildings’ 32 px textures${rec.about ? ' (' + esc(rec.about) + ')' : ''}. A tool makes its shape, so it isn’t edited here; the turntable shows it as the game draws it.</p>`;
-  if (typeof M.vox === 'string') vxeOwn(M); /* edited in the catalogue entry from here on */
+  if (typeof M.vox === 'string') ownModelRecipe(M); /* edited in the catalogue entry from here on */
   const L = rec.layers || [],
-    names = Object.fromEntries(VXE_KINDS),
+    names = Object.fromEntries(MODEL_LAYER_KINDS),
     tex = typeof PROP_MODEL_TEXTURES !== 'undefined' ? PROP_MODEL_TEXTURES : [['plain', 'Plain']];
   const rows = L.map((l, i) => {
     const p = `${b}.layers.${i}`,
-      on = VXE.sel === i,
+      on = modelEditor.sel === i,
       kind = l.k || 'box';
     const title = `<div class="vxe-lh"><b>${i + 1}. ${esc(l.name || names[kind] || kind)}</b><small>${esc(names[kind] || kind)}</small><span class="grow"></span>
    <button class="btn sm subtle" data-act="vxeSel" data-i="${i}">${on ? 'Close' : 'Edit'}</button><button class="btn sm subtle" data-act="vxeMove" data-i="${i}" data-d="-1" title="Up">↑</button><button class="btn sm subtle" data-act="vxeMove" data-i="${i}" data-d="1" title="Down">↓</button><button class="btn sm subtle" data-act="vxeDup" data-i="${i}" title="Duplicate">⧉</button><button class="btn sm danger subtle" data-act="vxeDel" data-i="${i}">Remove</button></div>`;
@@ -134,7 +134,7 @@ function pedVoxHTML(k) {
       body = `<div class="grid">${selectField(
         'Shape',
         `${p}.k`,
-        VXE_KINDS.filter(q => !['img', 'raw'].includes(q[0]))
+        MODEL_LAYER_KINDS.filter(q => !['img', 'raw'].includes(q[0]))
       )}${textField('Name', `${p}.name`, { opt: 1 })}${colorField('Colour', `${p}.col`)}${selectField('Texture', `${p}.tex`, tex, { opt: 1 })}${checkboxField('Hidden', `${p}.hide`, { num: 1 })}</div><div class="grid">${pos}</div><div class="grid">${size}</div>`;
     }
     /* alpha 0.4: a part that turns (a propeller, a windmill's sails, a wheel): about which way, through which point, how fast */
@@ -176,16 +176,16 @@ ACTIONS.vxeNew = () => {
         w: +w.toFixed(2),
         d: +Math.max(0.2, w * 0.35).toFixed(2),
         h: +h.toFixed(2),
-        col: vxeMainColour(M) || '#A08060',
+        col: mainPictureColor(M) || '#A08060',
         tex: 'plain',
       },
     ],
   };
-  VXE.sel = 0;
-  vxeBump(M);
+  modelEditor.sel = 0;
+  modelChanged(M);
   render();
 };
-function vxeMainColour(M) {
+function mainPictureColor(M) {
   try {
     const im = artImage(M.img);
     if (!im) return null;
@@ -216,7 +216,7 @@ function vxeMainColour(M) {
 }
 ACTIONS.vxeAdd = d => {
   const M = editedProp(),
-    rec = vxeOwn(M);
+    rec = ownModelRecipe(M);
   if (!rec) return;
   const L = rec.layers || (rec.layers = []),
     top = L.reduce((m, l) => Math.max(m, (l.z || 0) + (l.h || (l.r ? 2 * l.r : 0) || 0)), 0),
@@ -235,45 +235,45 @@ ACTIONS.vxeAdd = d => {
     base.tex = 'plain';
   }
   L.push(base);
-  VXE.sel = L.length - 1;
-  vxeBump(M);
+  modelEditor.sel = L.length - 1;
+  modelChanged(M);
   render();
 };
 ACTIONS.vxeSel = d => {
-  VXE.sel = VXE.sel === +d.i ? null : +d.i;
+  modelEditor.sel = modelEditor.sel === +d.i ? null : +d.i;
   render();
 };
 ACTIONS.vxeMove = d => {
   const M = editedProp(),
-    rec = vxeOwn(M);
+    rec = ownModelRecipe(M);
   if (!rec) return;
   const i = +d.i,
     j = i + +d.d;
   if (j < 0 || j >= rec.layers.length) return;
   [rec.layers[i], rec.layers[j]] = [rec.layers[j], rec.layers[i]];
-  if (VXE.sel === i) VXE.sel = j;
-  vxeBump(M);
+  if (modelEditor.sel === i) modelEditor.sel = j;
+  modelChanged(M);
   render();
 };
 ACTIONS.vxeDup = d => {
   const M = editedProp(),
-    rec = vxeOwn(M);
+    rec = ownModelRecipe(M);
   if (!rec) return;
   const i = +d.i,
     c = JSON.parse(JSON.stringify(rec.layers[i]));
   if (c.k !== 'img' && c.k !== 'raw') c.x = +((c.x || 0) + 0.1).toFixed(2);
   rec.layers.splice(i + 1, 0, c);
-  VXE.sel = i + 1;
-  vxeBump(M);
+  modelEditor.sel = i + 1;
+  modelChanged(M);
   render();
 };
 ACTIONS.vxeDel = d => {
   const M = editedProp(),
-    rec = vxeOwn(M);
+    rec = ownModelRecipe(M);
   if (!rec) return;
   rec.layers.splice(+d.i, 1);
-  VXE.sel = null;
-  vxeBump(M);
+  modelEditor.sel = null;
+  modelChanged(M);
   render();
 };
 ACTIONS.vxeOff = async () => {
@@ -288,14 +288,14 @@ ACTIONS.vxeOff = async () => {
     return;
   delete M.vox;
   delete M.voxV;
-  VXE.sel = null;
+  modelEditor.sel = null;
   changed();
   commit(true);
   render();
 };
 ACTIONS.vxeExport = () => {
   const M = editedProp(),
-    rec = vxeRec(M);
+    rec = modelRecipeOf(M);
   if (!rec) return;
   const b = new Blob([JSON.stringify(rec)], { type: 'application/json' }),
     a = document.createElement('a');
@@ -305,7 +305,7 @@ ACTIONS.vxeExport = () => {
 };
 ACTIONS.vxeImgPick = async d => {
   const M = editedProp(),
-    rec = vxeOwn(M),
+    rec = ownModelRecipe(M),
     k = mapEditor.ped;
   if (!rec) return;
   const f = await pickFile('image/png');
@@ -317,7 +317,7 @@ ACTIONS.vxeImgPick = async d => {
   const path = `scene/props/${k}_vox${n}.png`;
   markArt('art/' + path, c);
   rec.layers[+d.i].img = path;
-  vxeBump(M);
+  modelChanged(M);
   render();
 };
 /* MagicaVoxel import: SIZE + XYZI + RGBA chunks of the first model; the voxels become one raw layer, centred on the base point */
@@ -362,7 +362,7 @@ ACTIONS.vxeImport = async () => {
     const col = pal[c - 1] || [200, 200, 200];
     s += String.fromCharCode(x, y, z, col[0], col[1], col[2]);
   }
-  const rec = M.vox && typeof M.vox === 'object' ? M.vox : vxeOwn(M) || (M.vox = { vpm: 32, layers: [] });
+  const rec = M.vox && typeof M.vox === 'object' ? M.vox : ownModelRecipe(M) || (M.vox = { vpm: 32, layers: [] });
   rec.layers.push({
     k: 'raw',
     name: f.name.replace(/\.vox$/i, ''),
@@ -377,8 +377,8 @@ ACTIONS.vxeImport = async () => {
     oz: 0,
     data: btoa(s),
   });
-  VXE.sel = rec.layers.length - 1;
-  vxeBump(M);
+  modelEditor.sel = rec.layers.length - 1;
+  modelChanged(M);
   render();
   toast(`${xyzi.length} voxels imported (${size ? size.join('×') : '?'}).`);
 };
@@ -389,8 +389,8 @@ document.addEventListener('input', ev => {
   if (!t.dataset.p.startsWith(`scenery.props.${mapEditor.ped}.vox`)) return;
   const M = editedProp();
   if (!M) return;
-  clearTimeout(VXE.t);
-  VXE.t = setTimeout(() => {
+  clearTimeout(modelEditor.t);
+  modelEditor.t = setTimeout(() => {
     M.voxV = (M.voxV || 0) + 1;
     if (typeof invalidatePropModel === 'function') invalidatePropModel('inline:' + mapEditor.ped + '#' + (M.voxV - 1));
   }, 60);
@@ -399,7 +399,7 @@ document.addEventListener('input', ev => {
 /* alpha 0.4: a layer that turns, or stops turning */
 ACTIONS.vxeSpin = d => {
   const M = sceneryCatalog().props[mapEditor.ped],
-    rec = M && vxeOwn(M);
+    rec = M && ownModelRecipe(M);
   if (!rec) return;
   const l = rec.layers[+d.i];
   if (!l) return;
@@ -412,6 +412,6 @@ ACTIONS.vxeSpin = d => {
       axis: 'x',
       rps: 1.5,
     };
-  vxeBump(M);
+  modelChanged(M);
   render();
 };
