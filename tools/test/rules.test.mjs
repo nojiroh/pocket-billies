@@ -2,7 +2,7 @@
 // setup-fixture.mjs.
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { fn, startedSave } from './setup-fixture.mjs';
+import { data, fn, reseed, startedSave } from './setup-fixture.mjs';
 
 test('rules: stats, levels, moves, evolution', () => {
   const m = startedSave('sparky0', 10).team[0];
@@ -40,4 +40,52 @@ test('rules: steps, trips and gates, encounters', () => {
     ]),
     'a'
   );
+});
+
+test('rules: encounters follow the place’s pool (its species by weight, its levels); a gentle one spares your starter', () => {
+  const s = startedSave('sparky0', 10); // a Fire starter, in the meadow (Sprout 60, Drip 40, levels 3 to 5)
+  reseed();
+  const n = { sprout0: 0, drip0: 0 };
+  for (let i = 0; i < 2000; i++) {
+    const q = fn('spawn')();
+    n[q.sp]++;
+    assert.ok(q.lvl >= 3 && q.lvl <= 5, `level ${q.lvl}`);
+    s.queue.length = 0;
+  }
+  assert.equal(n.sprout0 + n.drip0, 2000, JSON.stringify(n));
+  assert.ok(Math.abs(n.drip0 / 2000 - 0.4) < 0.04, JSON.stringify(n));
+  // a gentle encounter is nothing strong against your starter: Water beats Fire, so only Sprout
+  for (let i = 0; i < 200; i++) assert.equal(fn('spawn')(true).sp, 'sprout0');
+});
+
+test('rules: the other evolution kinds: a winning streak, a day resting in storage; the rest only by hand', () => {
+  const s = startedSave('sparky0', 10),
+    m = s.team[0],
+    E = data.SPECIES.sparky0,
+    keep = E.evo,
+    canEvolve = fn('canEvolve');
+  try {
+    E.evo = { k: 'streak', n: 3, min: 5 };
+    m.streak = 2;
+    assert.equal(canEvolve(m), false);
+    m.streak = 3;
+    assert.equal(canEvolve(m), true);
+    E.evo = { k: 'idle', ms: 86400000, min: 5 };
+    s.box.push(m);
+    m.boxedAt = Date.now() - 1000;
+    assert.equal(canEvolve(m), false);
+    m.boxedAt = Date.now() - 86400000 - 1000;
+    assert.equal(canEvolve(m), true);
+    m.lvl = 4;
+    assert.equal(canEvolve(m), false, 'below its level it waits');
+    m.lvl = 10;
+    // an item, gifts, a merge or a new nickname: the interface does those; the rules only say how
+    for (const k of ['item', 'donate', 'merge', 'rename']) {
+      E.evo = { k, n: 2, min: 5 };
+      assert.equal(canEvolve(m), false, k);
+      assert.match(fn('evolutionHint')(m), /level 5/, k);
+    }
+  } finally {
+    E.evo = keep;
+  }
 });
