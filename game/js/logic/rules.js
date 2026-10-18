@@ -17,7 +17,6 @@ import {
   activeBattle,
   environmentOdds,
   jingle,
-  onStepsAdded,
   provide,
   render,
   save,
@@ -74,7 +73,6 @@ expose({
   canEnter: [() => canEnter],
   // @ts-expect-error -- replaced on purpose
   canEvolve: [() => canEvolve, v => (canEvolve = v)],
-  canLeave: [() => canLeave],
   canRide: [() => canRide],
   // @ts-expect-error -- replaced on purpose
   cleanBuild: [() => cleanBuild, v => (cleanBuild = v)],
@@ -100,8 +98,6 @@ expose({
   formatNumber: [() => formatNumber],
   // @ts-expect-error -- replaced on purpose
   gainXp: [() => gainXp, v => (gainXp = v)],
-  // @ts-expect-error -- replaced on purpose
-  gateMsg: [() => gateMsg, v => (gateMsg = v)],
   // @ts-expect-error -- replaced on purpose
   gateOwner: [() => gateOwner, v => (gateOwner = v)],
   // @ts-expect-error -- replaced on purpose
@@ -132,8 +128,6 @@ expose({
   plural: [() => plural],
   // @ts-expect-error -- replaced on purpose
   primeBuild: [() => primeBuild, v => (primeBuild = v)],
-  // @ts-expect-error -- replaced on purpose
-  resumeTrip: [() => resumeTrip, v => (resumeTrip = v)],
   riderName: [() => riderName],
   // @ts-expect-error -- replaced on purpose
   riderOf: [() => riderOf, v => ((riderOf = v), provide({ riderOf }))],
@@ -160,12 +154,10 @@ expose({
   // @ts-expect-error -- replaced on purpose
   toTeam: [() => toTeam, v => (toTeam = v)],
   today: [() => today],
-  traveling: [() => traveling],
   // @ts-expect-error -- replaced on purpose
   tripTo: [() => tripTo, v => (tripTo = v)],
   // @ts-expect-error -- replaced on purpose
   walkDistances: [() => walkDistances, v => (walkDistances = v)],
-  walkMode: [() => walkMode],
   xpFor: [() => xpFor],
 });
 /* eslint-enable no-func-assign */
@@ -488,27 +480,7 @@ export const riderName = () => {
 };
 export const canEnter = n =>
   (!LOCATIONS[n].gate || saveData.seats.includes(LOCATIONS[n].gate)) && (!LOCATIONS[n].ride || canRide());
-export const canLeave = (from, to) => !blockerAt(from) || !!saveData.visited[to];
 export const nextTripNode = () => (saveData.trip.plan.length ? saveData.trip.plan[0] : null);
-/* alpha 0.4.1: how you get about (rules.travel). 'walk': you walk yourself, with the joystick, the d-pad or a tap, from
-   place to place across their edges, like a classic RPG; the steps you take in the game count as steps (encounters,
-   challenges, your buddy). 'steps': your real steps carry you along the roads (the game until 0.4). */
-export const walkMode = () => ((typeof RULES !== 'undefined' && RULES.travel) || 'walk') === 'walk';
-provide({ walkMode }); /* to-module */
-export const traveling = () => !walkMode() && nextTripNode() != null && !saveData.trip.hold && !gateMsg();
-/* why travel can't continue right now (null when it can, or when you're staying) */
-export function gateMsg() {
-  const node = saveData.trip.node,
-    nx = nextTripNode();
-  if (nx == null) return null;
-  if (saveData.trip.prog === 0 && !canLeave(node, nx)) {
-    /* canLeave was false, so a trainer blocks this location */
-    const bl = /** @type {Trainer} */ (blockerAt(node));
-    return bl.blockTitle || `${bl.name} is blocking the way.`;
-  }
-  if (!canEnter(nx)) return gateText(LOCATIONS[nx]);
-  return null;
-}
 /* shortest walk (in steps) between stops, entering only stops you may enter; returns {d,prev} */
 export function walkDistances(from) {
   const N = LOCATIONS.length,
@@ -578,16 +550,7 @@ export function setTrip(j) {
   return true;
 }
 export function stopTrip() {
-  const r = saveData.trip;
-  if (r.prog > 0) {
-    r.hold = true;
-  } else {
-    r.plan = [];
-    r.hold = false;
-  }
-  save();
-}
-export function resumeTrip() {
+  saveData.trip.plan = [];
   saveData.trip.hold = false;
   save();
 }
@@ -640,26 +603,6 @@ export function addSteps(n, quiet) {
   saveData.se += gi;
   saveData.day.steps = b;
   saveData.totalSteps += n;
-  const msgs = [];
-  if (traveling()) {
-    const r = saveData.trip;
-    r.prog += n;
-    /* each hop of a plan is a road (only the first is checked when a save loads) */
-    while (r.plan.length && r.prog >= /** @type {number} */ (roadCost(r.node, r.plan[0]))) {
-      r.prog -= /** @type {number} */ (roadCost(r.node, r.plan[0]));
-      r.node = /** @type {number} */ (r.plan.shift());
-      saveData.visited[r.node] = 1;
-      msgs.push(
-        r.plan.length ? `You passed through ${LOCATIONS[r.node].name}.` : `You arrived at ${LOCATIONS[r.node].name}.`
-      );
-      if (typeof uiState !== 'undefined') uiState.arrive = r.node;
-      /* v43: the walk screen walks you in from the exit */ if (!r.plan.length || gateMsg()) {
-        r.prog = 0;
-        break;
-      }
-    }
-    if (!r.plan.length) r.prog = 0;
-  }
   const every = Math.max(1, RULES.steps.encounterEverySE);
   saveData.meter += gi;
   let sp = 0;
@@ -693,11 +636,10 @@ export function addSteps(n, quiet) {
   });
   if (!quiet || sp)
     toast(`+${formatNumber(n)} steps, +$${formatNumber(gi)}${sp ? `, ${plural(sp, 'new encounter')}` : ''}`);
-  msgs.concat(notes).forEach(t => toast(t));
+  notes.forEach(t => toast(t));
   save();
   if (!activeBattle) {
     render();
-    if (typeof onStepsAdded === 'function') onStepsAdded();
     showPendingWindows();
   }
 }

@@ -1947,11 +1947,10 @@ def desktop_steps(b, base, R):
 
     @step('alpha 0.4.1: walk the world yourself — the joystick, the D-pad, walking over the edge from Copperleaf onto Route 1, steps counted', 300)
     def a041_walk():
-        """the classic way: RULES.travel 'walk'. The joystick moves you along the camera, the D-pad shows when chosen, and
+        """the classic way (the only way since phase 08). The joystick moves you along the camera, the D-pad shows when chosen, and
         walking out of Copperleaf over its edge makes Route 1 where you are (the trip is only a guide now)"""
         pg.evaluate("uiState.modal=null;uiState.mq=[];uiState.toastQ=[];renderOverlay();environment.force={time:12,weather:'clear',season:'summer'};0")
         try:
-            if pg.evaluate("walkMode()") is not True or pg.evaluate("traveling()") is not False: raise Exception('walk mode is not on')
             n0 = pg.evaluate("LOCATIONS.findIndex(r=>r.mapId==='copperleaf')"); n1 = pg.evaluate("LOCATIONS.findIndex(r=>r.mapId==='hedgerow')")
             if n0 < 0 or n1 < 0: return 'no Copperleaf or Hedgerow Lane in this build'
             go_scene(pg, n0, 150); time.sleep(2)

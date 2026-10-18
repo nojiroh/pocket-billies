@@ -31,7 +31,6 @@ import {
   TYPE_COLORS,
   gameData,
   locationSubtitle,
-  roadCost,
   trainersAt,
   typeEffectiveness,
 } from './game-data.js';
@@ -58,7 +57,6 @@ import {
   evolve,
   findBilly,
   formatNumber,
-  gateMsg,
   gateText,
   hatchEgg,
   hatchable,
@@ -69,10 +67,8 @@ import {
   maxLevel,
   moveSlotCount,
   nextBracket,
-  nextTripNode,
   partSlots,
   plural,
-  resumeTrip,
   riderName,
   rollDay,
   setTrip,
@@ -86,7 +82,6 @@ import {
   toBox,
   toTeam,
   tripTo,
-  walkMode,
   xpFor,
 } from './logic/rules.js';
 import { newSaveKeepingPreferences } from './logic/saves.js';
@@ -115,22 +110,13 @@ import {
 } from './game-state.js';
 import { frameTask, userFps } from './frame-scheduler.js';
 import { ART_CACHE, artLoad, artURL, coinHTML, coinURL, eggHTML, makeCanvas, uiIconHTML } from './art.js';
-import {
-  LOOK_PRESETS,
-  cleanLook,
-  cleanTrainer,
-  lookOf,
-  personHTML,
-  personWalkIconURL,
-  portraitHTML,
-} from './person-art.js';
+import { LOOK_PRESETS, cleanLook, cleanTrainer, lookOf, personHTML, portraitHTML } from './person-art.js';
 import { applyPreferences, settingsHTML } from './settings-screen.js';
 import { lookPortrait, openDressingRoom } from './dressing-room.js';
 import { bustHTML, rigCanvasHTML } from './skeleton-rig.js';
 import { EASE, battleStage, battleStageFocus, battleStageTargets, camHome } from './battle-stage.js';
 import {
   closedText,
-  findPath,
   isOpenNow,
   mapArtPaths,
   mapById,
@@ -152,11 +138,9 @@ import {
   seamlessGate,
   seamlessGetReady,
   seamlessOn,
-  seamlessPrefetch,
   seamlessRoamView,
   seamlessRoomId,
   seamlessRoomMap,
-  seamlessTripView,
   seamlessWorld,
   shiftWalkView,
 } from './seamless-world.js';
@@ -275,7 +259,6 @@ expose({
   pixelSky: [() => pixelSky],
   pixelSkyTick: [() => pixelSkyTick, v => (pixelSkyTick = v)],
   plateVars: [() => plateVars],
-  playerWalkIconHTML: [() => playerWalkIconHTML, v => (playerWalkIconHTML = v)],
   poolStrip: [() => poolStrip, v => (poolStrip = v)],
   progressBarHTML: [() => progressBarHTML, v => ((progressBarHTML = v), provide({ progressBarHTML }))],
   render: [() => render, v => setRender(v)],
@@ -300,7 +283,6 @@ expose({
   showPendingWindows: [() => showPendingWindows, v => ((showPendingWindows = v), provide({ showPendingWindows }))],
   startGame: [() => startGame, v => ((startGame = v), provide({ startGame }))],
   statusBadgeHTML: [() => statusBadgeHTML],
-  stepsTo: [() => stepsTo, v => (stepsTo = v)],
   swapPick: [() => swapPick, v => (swapPick = v)],
   teamCard: [() => teamCard, v => (teamCard = v)],
   teamHero: [() => teamHero, v => (teamHero = v)],
@@ -308,7 +290,6 @@ expose({
   topbar: [() => topbar, v => (topbar = v)],
   tripButtons: [() => tripButtons, v => (tripButtons = v)],
   tripDest: [() => tripDest],
-  tripLeft: [() => tripLeft, v => (tripLeft = v)],
   tripStatus: [() => tripStatus, v => (tripStatus = v)],
   typeBadgeHTML: [() => typeBadgeHTML],
   updateNav: [() => updateNav, v => ((updateNav = v), provide({ updateNav }))],
@@ -813,49 +794,17 @@ function encounterCardHTML(q) {
   uiState.seenEnc.add(q.id);
   return `<button class="enc px hidden-enc${nu ? ' pop' : ''}" data-a="enc" data-id="${q.id}" aria-label="Unknown Billie, level ${q.lvl}"><span class="no tnum">No. ${q.no}</span><span class="denom tnum">Lv ${q.lvl}</span><span class="stage-glow"></span><span class="enc-hide"><img class="pxi" src="${artURL('scene/props/tallgrass.png')}" alt=""><i>?</i></span><b>Unknown</b></button>`;
 }
-function stepsTo(j) {
-  const t = tripTo(j);
-  return t ? t.steps : Infinity;
-}
-function tripLeft() {
-  const r = saveData.trip;
-  if (!r.plan.length) return 0;
-  let n = roadCost(r.node, r.plan[0]) - r.prog;
-  for (let k = 0; k < r.plan.length - 1; k++) n += roadCost(r.plan[k], r.plan[k + 1]);
-  return Math.max(0, n);
-}
 const tripDest = () => (saveData.trip.plan.length ? saveData.trip.plan[saveData.trip.plan.length - 1] : null);
-/* one line about travel: where you're headed, why you're stopped, or that you're staying */
+/* one line about travel: where you're headed (the gold arrows guide you), or where you are */
 function tripStatus() {
-  const r = saveData.trip,
-    d = tripDest(),
-    gm = gateMsg();
-  if (d == null)
-    return { k: 'stay', t: walkMode() ? `In ${LOCATIONS[r.node].name}` : `Staying in ${LOCATIONS[r.node].name}` };
-  if (walkMode()) return { k: 'guide', t: `Heading for ${LOCATIONS[d].name}: follow the gold arrows` };
-  if (gm) return { k: 'blocked', t: gm };
-  if (r.hold) return { k: 'hold', t: `Stopped on the way to ${LOCATIONS[d].name}` };
-  const via =
-    r.plan.length > 1
-      ? ` via ${r.plan
-          .slice(0, -1)
-          .map(i => LOCATIONS[i].name)
-          .join(', ')}`
-      : '';
-  return { k: 'go', t: `Walking to ${LOCATIONS[d].name}${via}`, left: tripLeft() };
+  const d = tripDest();
+  if (d == null) return { k: 'stay', t: `In ${LOCATIONS[saveData.trip.node].name}` };
+  return { k: 'guide', t: `Heading for ${LOCATIONS[d].name}: follow the gold arrows` };
 }
 function tripButtons() {
-  const r = saveData.trip,
-    st = tripStatus();
-  if (st.k === 'guide')
+  if (tripStatus().k === 'guide')
     return `<button class="pb small" data-a="stoptrip">Stop guiding me</button><button class="pb small quiet" data-a="tab" data-t="map">Change plans</button>`;
-  if (st.k === 'stay')
-    return `<button class="pb small gold" data-a="tab" data-t="map">${uiIconHTML('map', 16)} Choose where to go</button>`;
-  if (st.k === 'hold')
-    return `<button class="pb small gold" data-a="resumetrip">Keep walking</button>${r.prog > 0 ? '<button class="pb small" data-a="turnback">Turn back</button>' : ''}<button class="pb small quiet" data-a="tab" data-t="map">Change plans</button>`;
-  if (st.k === 'blocked')
-    return `<button class="pb small" data-a="tab" data-t="map">${uiIconHTML('map', 16)} Choose another way</button>${r.prog === 0 ? '<button class="pb small quiet" data-a="stay">Stay here</button>' : '<button class="pb small" data-a="turnback">Turn back</button>'}`;
-  return `<button class="pb small" data-a="stoptrip">${r.prog > 0 ? 'Stop walking' : 'Stay here instead'}</button><button class="pb small quiet" data-a="tab" data-t="map">Change plans</button>`;
+  return `<button class="pb small gold" data-a="tab" data-t="map">${uiIconHTML('map', 16)} Choose where to go</button>`;
 }
 function nodeActions(i) {
   const n = LOCATIONS[i],
@@ -886,26 +835,8 @@ function boardNote(i) {
 function hereCard() {
   const node = saveData.trip.node,
     here = LOCATIONS[node],
-    st = tripStatus(),
-    nx = nextTripNode();
-  let prog = '';
-  if (st.k === 'go' || st.k === 'hold') {
-    const c = roadCost(node, nx),
-      f = saveData.trip.prog / c;
-    prog = `<div class="nextstop"><div class="ns-top"><span>${escapeHtml(st.t)}</span><b>${escapeHtml(LOCATIONS[nx].name)}</b></div><div class="trail">${progressBarHTML(f, 'trailbar live')}<span class="walker" style="left:${clamp(f, 0, 1) * 100}%">${playerWalkIconHTML()}</span></div><span class="note tnum">${formatNumber(tripLeft())} steps to go</span></div>`;
-  } else if (st.k === 'blocked') {
-    const bl = blockerAt(node);
-    prog =
-      bl && saveData.trip.prog === 0
-        ? `<div class="event"><b>${escapeHtml(bl.blockTitle || bl.name + ' is blocking the way')}</b><p>${escapeHtml(bl.blockText || 'Beat them to keep walking.')}</p></div>`
-        : `<p class="note gate">${escapeHtml(st.t)}</p>`;
-  } else
     prog = `<p class="note">You’re staying here. Steps still earn money, hatch eggs and bring encounters. Open the map to pick a place to walk to.</p>`;
   return `<section class="here px glass"><div class="route-art"${here.banner ? ` style="background-image:url('${artURL(here.banner)}')"` : ''}><span>${personHTML('me', 64)}</span><button class="route-profile" data-a="customize">${escapeHtml(cleanTrainer(saveData.avatar, saveData.gender).name)} · Edit look</button></div><div class="sec-h"><div><div class="sub">${escapeHtml(locationSubtitle(here))}</div><h2>${here.name}</h2></div><button class="pb small quiet" data-a="tab" data-t="map">Open map</button></div><p class="note">${here.blurb}</p>${boardNote(node)}${prog}<div class="racts">${tripButtons()}</div>${nodeActions(node)}</section>`;
-}
-function playerWalkIconHTML() {
-  const u = personWalkIconURL('me');
-  return `<span class="spr fast ow-mini" style="width:22px;height:40px"><img src="${u}" alt=""></span>`;
 }
 function eggSlots() {
   const slots = Array.from({ length: eggSlotCount() }, (_, i) => i)
@@ -972,14 +903,9 @@ function walkHero() {
   const node = saveData.trip.node,
     here = LOCATIONS[node],
     q = saveData.queue,
-    st = tripStatus(),
-    nx = nextTripNode();
-  let next = '';
-  if (st.k === 'go')
-    next = `<div class="wh-next"><span>${escapeHtml(st.t)}</span><span class="tnum">${formatNumber(st.left)} steps</span>${progressBarHTML(saveData.trip.prog / roadCost(node, nx), 'trailbar live')}</div>`;
-  else next = `<p class="wh-gate">${escapeHtml(st.t)}</p>`;
+    next = `<p class="wh-gate">${escapeHtml(tripStatus().t)}</p>`;
   return `<div class="walk-hero" id="walkHero">${locationCardHTML(escapeHtml(locationSubtitle(here)), escapeHtml(here.name), environmentLine() + next, tripButtons())}
- <div class="wh-foot">${q.length ? `<p class="wh-hint glass">${uiIconHTML('spark', 12)} ${plural(q.length, 'Billie')} hiding nearby. Tap a <b>?</b> to battle.</p>` : saveData.trip.prog === 0 ? `<p class="wh-hint glass">${uiIconHTML('walk', 12)} Tap the ground to walk around. Tap buildings, people and signs.</p>` : ''}
+ <div class="wh-foot">${q.length ? `<p class="wh-hint glass">${uiIconHTML('spark', 12)} ${plural(q.length, 'Billie')} hiding nearby. Tap a <b>?</b> to battle.</p>` : `<p class="wh-hint glass">${uiIconHTML('walk', 12)} Tap the ground to walk around. Tap buildings, people and signs.</p>`}
   <div class="wh-row"><button class="pb small glass fish-btn" data-a="fish" hidden>${uiIconHTML('fish', 14)} Fish</button><button class="pb small glass" data-a="photo" aria-label="Photo mode">${uiIconHTML('camera', 14)}</button><button class="wh-down glass" data-a="walkdown" aria-label="Show actions">${uiIconHTML('chev', 18)}<span>Actions</span></button><span class="wh-steps glass tnum">${uiIconHTML('walk', 14)} ${formatNumber(saveData.day.steps)}</span></div></div></div>`;
 }
 function renderWalk() {
@@ -992,7 +918,7 @@ function renderWalk() {
  <div class="today px glass"><div class="today-top"><div><div class="big tnum" data-count="steps" data-to="${st}">${formatNumber(st)}</div><div class="lbl">steps today</div></div><div class="se"><div class="mid tnum">$<span data-count="se" data-to="${saveData.se}">${formatNumber(saveData.se)}</span></div><div class="lbl">Money</div></div></div>
   <div class="brackets" role="img" aria-label="Earning $${r} per step">${bracketBars(st)}</div><div class="brk-l">${bracketLabels()}</div>
   <p class="note">${bracketNote(st)}</p></div>
- ${walkMode() ? `<section class="walkbtns"><p class="note">Walk with the joystick (drag anywhere on the scene) or tap where you want to go. The arrows at the edges lead on to the next place; the steps you take count here.</p></section>` : ''}
+ <section class="walkbtns"><p class="note">Walk with the joystick (drag anywhere on the scene) or tap where you want to go. The arrows at the edges lead on to the next place; the steps you take count here.</p></section>
  ${typeof challengeCardHTML === 'function' ? challengeCardHTML() : ''}${typeof requestListHTML === 'function' && requestListHTML() ? `<section class="chal px glass"><div class="sec-h"><h2>Requests you’re helping with</h2></div>${requestListHTML()}</section>` : ''}${hereCard()}</div><div class="col">
  <section class="pending"><div class="sec-h"><h2>Encounters</h2><span class="count tnum">${q.length}/${RULES.steps.maxEncounters}</span></div>
   <p class="note">${q.length >= RULES.steps.maxEncounters ? 'Your area is full. Battle or tax a few to make room.' : `Next one in about ${formatNumber(Math.ceil((RULES.steps.encounterEverySE - saveData.meter) / r))} steps.`} You only see their level until the battle starts.</p>
@@ -1337,28 +1263,9 @@ export function walkState() {
       exits: [],
     };
   }
-  const r = saveData.trip,
-    node = r.node,
-    nx = walkMode() ? null : nextTripNode(),
-    c = nx != null ? roadCost(node, nx) : 0,
-    f = nx != null && c ? clamp(r.prog / c, 0, 1) : 0;
+  const node = saveData.trip.node;
   let v; /* alpha 0.4.1: walking yourself, the view is always the place you're in */
-  /* v43: a trip is a walk along the road's ground (seamless-world.js): the scene with the road leaving, the road, the far scene with the road arriving */
-  const tv =
-    nx != null && (r.prog > 0 || !r.hold) && typeof seamlessTripView === 'function'
-      ? seamlessTripView(node, nx, f)
-      : null;
-  if (tv) {
-    const base = tv.sc.baseId === mapIdAt(nx) ? nx : node;
-    v = { id: tv.id, node: base, mode: 'road', pos: tv.pos, roam: true, road: tv.u };
-    if (typeof seamlessPrefetch === 'function') seamlessPrefetch(tv.R, tv.u, tv.fwd, tv);
-  } else if (nx != null && r.prog > 0 && f >= 0.5) {
-    const id = mapIdAt(nx),
-      sc = mapById(id) || {},
-      hub = sc.w ? mapHub(sc) : [0, 0],
-      k = mapExits(nx)[node];
-    v = { id, node: nx, mode: 'path', from: sc.exits && k != null ? sc.exits[k] : hub, to: hub, t: (f - 0.5) / 0.5 };
-  } else {
+  {
     const id = mapIdAt(node),
       sc = mapById(id) || {},
       hub = sc.w ? mapHub(sc) : [0, 0],
@@ -1369,57 +1276,25 @@ export function walkState() {
           : uiState.roam && uiState.roam.node === node && uiState.roam.id === id
             ? [uiState.roam.x, uiState.roam.z]
             : hub;
-    if (nx != null && r.prog > 0) {
-      const k = mapExits(node)[nx];
-      v = { id, node, mode: 'path', from: pos, to: sc.exits && k != null ? sc.exits[k] : hub, t: f / 0.5 };
-    } else {
-      /* v43: near an exit the road leaving it is part of the view (positions are kept in the scene's own metres) */ const wo =
-          walkView.ready && walkView.pl && !walkView.pl.fresh ? mapOffsetInView(id) : null,
-        live = !!wo,
-        lo = wo,
-        wv =
-          typeof seamlessRoamView === 'function'
-            ? seamlessRoamView(node, live ? [walkView.pl.x - lo[0], walkView.pl.z - lo[1]] : pos)
-            : null;
-      if (wv) {
-        const o = wv.sc.baseOff;
-        v = { id: wv.id, node, mode: 'roam', pos: [pos[0] + o[0], pos[1] + o[1]], roam: true };
-      } else v = { id, node, mode: 'roam', pos, roam: true };
-      /* v43: arriving: you stand at the exit the road came in by and walk to the hub; if the road left you outside the scene, you start at that exit */
-      if (live && sc.w && uiState.arrive === node) {
-        const P = walkView.pl,
-          lx = P.x - lo[0],
-          lz = P.z - lo[1],
-          out = lx < 0 || lz < 0 || lx > sc.w || lz > sc.h;
-        uiState.arrive = null;
-        if (out && !(walkView.sc && walkView.sc.parts)) {
-          /* v46: with the road in view you simply walk in from where you are; the snap is only for a scene shown alone */ const ex =
-            (sc.exits || [])
-              .slice()
-              .sort((a, b) => Math.hypot(a[0] - lx, a[1] - lz) - Math.hypot(b[0] - lx, b[1] - lz))[0];
-          if (ex) {
-            const q = walkablePointNear(ex[0] + lo[0], ex[1] + lo[1]);
-            P.x = q[0];
-            P.z = q[1];
-          }
-        }
-        const r = findPath(P.x, P.z, hub[0] + lo[0], hub[1] + lo[1]);
-        if (r) {
-          P.route = r;
-          P.ri = 1;
-          P.goal = null;
-          /* v46: far out on the road: hurry in */ const far = Math.hypot(hub[0] + lo[0] - P.x, hub[1] + lo[1] - P.z);
-          P.rush = far > 14 ? Math.min(3, far / 14) : 1;
-        }
-      }
-    }
+    /* v43: near an exit the road leaving it is part of the view (positions are kept in the scene's own metres) */ const wo =
+        walkView.ready && walkView.pl && !walkView.pl.fresh ? mapOffsetInView(id) : null,
+      live = !!wo,
+      lo = wo,
+      wv =
+        typeof seamlessRoamView === 'function'
+          ? seamlessRoamView(node, live ? [walkView.pl.x - lo[0], walkView.pl.z - lo[1]] : pos)
+          : null;
+    if (wv) {
+      const o = wv.sc.baseOff;
+      v = { id: wv.id, node, mode: 'roam', pos: [pos[0] + o[0], pos[1] + o[1]], roam: true };
+    } else v = { id, node, mode: 'roam', pos, roam: true };
   }
   /* v46: a new view is shown only once its ground is ready on the card; until then you stay in the one on screen (seamless-world.js seamlessGate) */
-  if (typeof seamlessGate === 'function' && v && v.pos && (v.mode === 'road' || v.roam)) v = seamlessGate(v);
+  if (typeof seamlessGate === 'function' && v && v.pos && v.roam) v = seamlessGate(v);
   const sc = mapById(v.id) || {},
     ex = mapExits(v.node),
     bl = blockerAt(v.node),
-    dest = v.node === node ? (walkMode() ? (saveData.trip.plan[0] ?? null) : nextTripNode()) : null;
+    dest = v.node === node ? (saveData.trip.plan[0] ?? null) : null;
   v.exits = ROADS_BY_NODE[v.node]
     .map(e => ({
       i: ex[e.to],
@@ -1539,16 +1414,9 @@ export function walkPick(h) {
       );
   } else if (h.k === 'exit') exitPrompt(h.e);
   else if (h.k === 'ground') {
-    const st = tripStatus();
     if (Date.now() - (uiState.groundTip || 0) > 6000) {
       uiState.groundTip = Date.now();
-      toast(
-        st.k === 'go'
-          ? `You’re on your way to ${LOCATIONS[tripDest()].name}. Tap “Stop walking” to look around.`
-          : st.k === 'hold'
-            ? 'You’re between stops. Keep walking or turn back.'
-            : 'Tap the ground to walk there.'
-      );
+      toast('Tap the ground to walk there.');
     }
   }
 }
@@ -1565,45 +1433,14 @@ function exitPrompt(e) {
     return;
   }
   /* alpha 0.4.1: walking yourself: tapping the way out walks you out of the place and on into the next */
-  if (walkMode()) {
-    const sc = walkView.sc,
-      pt = sc && sc.exits && sc.exits[e.i];
-    if (!pt || !walkView.pl) return;
-    const hub = mapHub(sc),
-      dx = pt[0] - hub[0],
-      dz = pt[1] - hub[1],
-      l = Math.hypot(dx, dz) || 1;
-    walkTo(walkablePointNear(pt[0] + (dx / l) * 3.5, pt[1] + (dz / l) * 3.5));
-    return;
-  }
-  if (tripDest() === to) {
-    toast(`You’re already heading to ${o.name}. Steps will carry you there.`);
-    return;
-  }
-  const t = tripTo(to);
-  if (!t) {
-    toast('There’s no open road there yet.');
-    return;
-  }
-  modal({
-    title: `Walk to ${escapeHtml(o.name)}?`,
-    html: `<p class="note">${escapeHtml(o.blurb || '')}</p><p><b class="tnum">${formatNumber(t.steps)} steps</b> · about ${stepsToKm(t.steps)} km${saveData.visited[to] ? '' : ' · somewhere new'}</p>${poolStrip(o.pool)}<p class="note">Your real steps walk you there. You can stop or change plans any time.</p>`,
-    btns: [
-      {
-        l: `${uiIconHTML('walk', 16)} Start walking`,
-        c: 'gold',
-        f: () => {
-          closeModal();
-          if (setTrip(to)) {
-            const T = tripStatus();
-            toast(T.k === 'go' ? `${T.t}. ${formatNumber(T.left)} steps.` : T.t);
-            render();
-          }
-        },
-      },
-      { l: 'Not now', c: 'quiet', f: closeModal },
-    ],
-  });
+  const sc = walkView.sc,
+    pt = sc && sc.exits && sc.exits[e.i];
+  if (!pt || !walkView.pl) return;
+  const hub = mapHub(sc),
+    dx = pt[0] - hub[0],
+    dz = pt[1] - hub[1],
+    l = Math.hypot(dx, dz) || 1;
+  walkTo(walkablePointNear(pt[0] + (dx / l) * 3.5, pt[1] + (dz / l) * 3.5));
 }
 setInterval(() => {
   try {
@@ -1628,7 +1465,6 @@ function mapOffsetInView(id) {
 }
 export function walkCross() {
   if (
-    !walkMode() ||
     !saveData.started ||
     !walkView.ready ||
     !walkView.sc ||
@@ -1681,7 +1517,6 @@ export function walkCross() {
     saveData.trip = { node: n, prog: 0, plan, hold: false };
     saveData.visited[n] = 1;
     uiState.roam = { id: q.id, node: n, x, z };
-    uiState.arrive = null;
     uiState.backAt = null;
     if (typeof debugLog !== 'undefined') debugLog.add('travel', 'walked into ' + LOCATIONS[n].name);
     save();
@@ -1762,7 +1597,6 @@ function walkMapSync() {
      a jump somewhere else (not where you are walking to) opens it fresh */
     const walking =
       !d ||
-      ws.mode === 'road' ||
       !ws.pos ||
       !walkView.pl ||
       Math.hypot(walkView.pl.x + d[0] - ws.pos[0], walkView.pl.z + d[1] - ws.pos[1]) < 25;
@@ -1863,7 +1697,7 @@ function worldMapCardHTML() {
     status = st.k === 'stay' ? 'You are here.' : st.t + '.';
     btns = st.k === 'stay' ? '' : tripButtons();
   } else if (sel === dest) {
-    status = `${st.t}. ${formatNumber(tripLeft())} steps to go.`;
+    status = `${st.t}. ${formatNumber((tripTo(sel) || { steps: 0 }).steps)} steps to go.`;
     btns = tripButtons();
   } else {
     const t = tripTo(sel),
@@ -2818,54 +2652,16 @@ document.addEventListener('click', ev => {
     case 'travel': {
       const j = +d.n;
       if (setTrip(j)) {
-        const T = tripStatus();
-        toast(
-          walkMode()
-            ? `Follow the gold arrows to ${LOCATIONS[j].name}.`
-            : T.k === 'go'
-              ? `${T.t}. ${formatNumber(T.left)} steps.`
-              : T.t
-        );
+        toast(`Follow the gold arrows to ${LOCATIONS[j].name}.`);
         render();
       } else toast('There’s no open road there yet.');
       break;
     }
     case 'stoptrip':
       stopTrip();
-      toast(
-        saveData.trip.prog > 0
-          ? 'You stopped walking. Steps won’t move you until you carry on.'
-          : `You’re staying in ${LOCATIONS[saveData.trip.node].name}.`
-      );
-      render();
-      break;
-    case 'stay':
-      saveData.trip.plan = [];
-      saveData.trip.prog = 0;
-      saveData.trip.hold = false;
-      save();
       toast(`You’re staying in ${LOCATIONS[saveData.trip.node].name}.`);
       render();
       break;
-    case 'resumetrip':
-      resumeTrip();
-      render();
-      break;
-    case 'turnback': {
-      const r = saveData.trip,
-        nx = nextTripNode();
-      if (nx != null && r.prog > 0) {
-        const c = roadCost(r.node, nx);
-        r.plan = [r.node];
-        r.node = nx;
-        r.prog = c - r.prog;
-        r.hold = false;
-        save();
-        toast(`Heading back to ${LOCATIONS[r.plan[0]].name}.`);
-        render();
-      }
-      break;
-    }
     case 'mzoom':
       worldMapZoom(d.k === 'in' ? 0.8 : 1.25);
       break;

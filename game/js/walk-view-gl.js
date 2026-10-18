@@ -734,7 +734,7 @@ export function mountWalkView(cv, id, opt = {}) {
   if (walkView.id !== id) {
     walkView.id = id;
     walkView.cam = null;
-    Object.assign(walkView.pl, { t: -1, fresh: true, pk: '', route: null, goal: null, line: null, walk: 0 });
+    Object.assign(walkView.pl, { t: -1, fresh: true, route: null, goal: null, walk: 0 });
     walkView.gkey = '';
     walkView.cand = null;
     walkView.nav = null;

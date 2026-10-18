@@ -762,17 +762,6 @@ SECTIONS.rules = () => {
  ${card(
    'Steps and encounters',
    grid(
-     selectField(
-       'How you travel',
-       'rules.travel',
-       [
-         ['walk', 'Walk the world yourself (classic)'],
-         ['steps', 'Real-world steps move you along the route'],
-       ],
-       {
-         help: 'alpha 0.4.1: Walk: you walk through towns and along roads with the joystick or a tap; walked metres count as steps. Steps: the old way, where steps from your phone carry you along the route. Either way the steps earn money and hatch eggs.',
-       }
-     ),
      numberField('Steps per km', `${st}.stepsPerKm`, { min: 500, max: 3000, step: 1 }),
      numberField('New encounter every ($ earned)', `${st}.encounterEverySE`, { min: 50, step: 50 }),
      numberField('Encounter queue size', `${st}.maxEncounters`, { min: 1, max: 30, step: 1 }),

@@ -27,7 +27,6 @@ expose({
   WORLD_MAP_TEXTURE_WIDTH: [() => WORLD_MAP_TEXTURE_WIDTH],
   isBehindSun: [() => isBehindSun, v => (isBehindSun = v)],
   lonLatToUnitVector: [() => lonLatToUnitVector],
-  onStepsAdded: [() => onStepsAdded, v => ((onStepsAdded = v), provide({ onStepsAdded }))],
   roadPosition: [() => roadPosition, v => (roadPosition = v)],
   setWorldMapFit: [() => setWorldMapFit, v => (setWorldMapFit = v)],
   setWorldMapHeight: [() => setWorldMapHeight, v => (setWorldMapHeight = v)],
@@ -61,7 +60,6 @@ expose({
   worldMapZoom: [() => worldMapZoom, v => setWorldMapZoom(v)],
 });
 /* eslint-enable no-func-assign */
-provide({ onStepsAdded });
 /* to-module: end */
 export let worldMapWidth = 176,
   worldMapHeight = 232;
@@ -699,15 +697,6 @@ export function worldMapWalk(from, to) {
     t0: performance.now(),
     dur: reducedMotion ? 1 : clamp(Math.acos(clamp(vector3.dot(from, to), -1, 1)) * 9000, 600, 3200),
   };
-}
-function onStepsAdded() {
-  if (uiState.tab !== 'map' || !worldMap.cv || !worldMap.cv.isConnected || worldMap.fly) return;
-  const to = worldMapPlayerPosition();
-  if (worldMap.me && vector3.dot(worldMap.me, to) < 0.999999) {
-    worldMapWalk(worldMap.me, to);
-    if (uiState.mapSel == null) worldMapFocus(to);
-  }
-  paintWorldMapCard();
 }
 function worldMapLoop(ts) {
   if (!worldMap.cv || !worldMap.cv.isConnected) {

@@ -19,7 +19,6 @@ const SEAMS = new Set([
   'toast',
   'render',
   'showPendingWindows',
-  'onStepsAdded',
   'openBattle',
   'playTurnEvents',
   'jingle',

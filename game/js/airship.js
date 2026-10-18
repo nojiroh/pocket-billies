@@ -93,7 +93,6 @@ function startAirshipFlight(i) {
   uiState.inside = null;
   uiState.goingIn = null;
   uiState.backAt = null;
-  uiState.arrive = null;
   uiState.roam = null;
   uiState.mapSel = null;
   if (typeof storyFlags === 'function') {
@@ -312,7 +311,6 @@ export function rideGlassLift(p) {
       uiState.inside = null;
       uiState.goingIn = null;
       uiState.backAt = null;
-      uiState.arrive = null;
       uiState.mapSel = null;
       const sid = mapIdAt(i),
         sc = typeof mapById === 'function' ? mapById(sid) : null,
