@@ -2,7 +2,7 @@
 // script that runs before the modules) reads and wraps in the game's modules: a getter for each name in its GAME
 // object, and a setter (the module's own) for each function it wraps. The last module of the game's page.
 import { LOCATIONS, gameData } from './game-data.js';
-import { setSetTrip, setTrip } from './logic/rules.js';
+import { encountersHere, setSetTrip, setTrip } from './logic/rules.js';
 import { battleStageKey, newBattle, setNewBattle } from './logic/battle-engine.js';
 import { activeBattle, save, saveData, setSave, uiState } from './game-state.js';
 import { frameScheduler, userFps } from './frame-scheduler.js';
@@ -123,6 +123,7 @@ Object.defineProperties(GAME, {
   drawSprites: { get: () => drawSprites, set: setDrawSprites },
   drawWater: { get: () => drawWater, set: setDrawWater },
   effectsPass: { get: () => effectsPass, set: setEffectsPass },
+  encountersHere: { get: () => encountersHere },
   endBattle: { get: () => endBattle, set: setEndBattle },
   ensurePrograms: { get: () => ensurePrograms, set: setEnsurePrograms },
   environment: { get: () => environment },

@@ -591,11 +591,18 @@ export interface Rules {
     stepsPerKm: number;
     /** what a step earns: rate up to upTo steps a day (0: no limit) */
     brackets: { upTo: number; rate: number }[];
-    encounterEverySE: number;
-    maxEncounters: number;
     goldOdds: number;
     restCost: number;
     alphaOdds: number;
+  };
+  /** phase 08: wild Billies on each place's map (rules.js encountersHere) */
+  encounters: {
+    /** how many a route keeps */
+    route: number;
+    /** how many a town with tall grass keeps (other towns: none) */
+    townGrass: number;
+    /** play time for one more to wander over */
+    refillMs: number;
   };
   progression: {
     xpFactor: number;

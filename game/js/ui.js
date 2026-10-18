@@ -51,6 +51,8 @@ import {
   collectJob,
   eggSlotCount,
   encounterBuild,
+  encounterStock,
+  encountersHere,
   endShift,
   evolutionHint,
   evolutionItemName,
@@ -902,7 +904,7 @@ function walkHero() {
   }
   const node = saveData.trip.node,
     here = LOCATIONS[node],
-    q = saveData.queue,
+    q = encountersHere(),
     next = `<p class="wh-gate">${escapeHtml(tripStatus().t)}</p>`;
   return `<div class="walk-hero" id="walkHero">${locationCardHTML(escapeHtml(locationSubtitle(here)), escapeHtml(here.name), environmentLine() + next, tripButtons())}
  <div class="wh-foot">${q.length ? `<p class="wh-hint glass">${uiIconHTML('spark', 12)} ${plural(q.length, 'Billie')} hiding nearby. Tap a <b>?</b> to battle.</p>` : `<p class="wh-hint glass">${uiIconHTML('walk', 12)} Tap the ground to walk around. Tap buildings, people and signs.</p>`}
@@ -912,7 +914,8 @@ function renderWalk() {
   rollDay();
   const st = saveData.day.steps,
     r = stepRate(st),
-    q = saveData.queue;
+    q = encountersHere(),
+    cap = encounterStock(saveData.trip.node);
   return `${walkHero()}<div class="walk-sheet"><span class="ws-grip" aria-hidden="true"></span>
  <div class="cols"><div class="col">
  <div class="today px glass"><div class="today-top"><div><div class="big tnum" data-count="steps" data-to="${st}">${formatNumber(st)}</div><div class="lbl">steps today</div></div><div class="se"><div class="mid tnum">$<span data-count="se" data-to="${saveData.se}">${formatNumber(saveData.se)}</span></div><div class="lbl">Money</div></div></div>
@@ -920,9 +923,9 @@ function renderWalk() {
   <p class="note">${bracketNote(st)}</p></div>
  <section class="walkbtns"><p class="note">Walk with the joystick (drag anywhere on the scene) or tap where you want to go. The arrows at the edges lead on to the next place; the steps you take count here.</p></section>
  ${typeof challengeCardHTML === 'function' ? challengeCardHTML() : ''}${typeof requestListHTML === 'function' && requestListHTML() ? `<section class="chal px glass"><div class="sec-h"><h2>Requests you’re helping with</h2></div>${requestListHTML()}</section>` : ''}${hereCard()}</div><div class="col">
- <section class="pending"><div class="sec-h"><h2>Encounters</h2><span class="count tnum">${q.length}/${RULES.steps.maxEncounters}</span></div>
-  <p class="note">${q.length >= RULES.steps.maxEncounters ? 'Your area is full. Battle or tax a few to make room.' : `Next one in about ${formatNumber(Math.ceil((RULES.steps.encounterEverySE - saveData.meter) / r))} steps.`} You only see their level until the battle starts.</p>
-  ${q.length ? `<div class="queue">${q.map(encounterCardHTML).join('')}</div>` : `<div class="empty px">No Billies nearby. Walk about ${formatNumber(RULES.steps.encounterEverySE)} steps and one will wander over.</div>`}</section>
+ <section class="pending"><div class="sec-h"><h2>Encounters here</h2><span class="count tnum">${q.length}/${cap}</span></div>
+  <p class="note">${!cap ? 'No wild Billies live here. Try a route or a town with tall grass.' : q.length >= cap ? 'This place is full. Battle or tax a few to make room.' : 'Another one wanders over about every minute.'} You only see their level until the battle starts.</p>
+  ${q.length ? `<div class="queue">${q.map(encounterCardHTML).join('')}</div>` : `<div class="empty px">No Billies nearby.${cap ? ' Give it a minute and one will wander over.' : ''}</div>`}</section>
  ${eggSlots()}${buddyCard()}</div></div></div>`;
 }
 /* ---------- the walk scene behind the Walk tab ---------- */
@@ -1333,7 +1336,7 @@ export function walkState() {
           });
   }
   v.who = 'me';
-  v.enc = saveData.queue.map(q => ({
+  v.enc = encountersHere().map(q => ({
     id: q.id,
     lvl: q.lvl,
     sp: q.sp,
@@ -1357,7 +1360,7 @@ export function walkPick(h) {
     }
   }
   if (h.k === 'enc') {
-    const q = saveData.queue.find(x => x.id === h.e.id);
+    const q = encountersHere().find(x => x.id === h.e.id);
     if (q) {
       uiState.encAt = h.look || null;
       startWild(q);
@@ -2523,7 +2526,7 @@ document.addEventListener('click', ev => {
       render();
       break;
     case 'enc': {
-      const q = saveData.queue.find(x => x.id === d.id);
+      const q = encountersHere().find(x => x.id === d.id);
       if (q) startWild(q);
       break;
     }

@@ -74,8 +74,7 @@ export function newSave() {
     totalSteps: 0,
     trip: { node: START_NODE, plan: [] },
     mapSeen: null,
-    meter: 0,
-    queue: [],
+    wild: {},
     buddy: null,
     buddyRem: 0,
     flags: {},
@@ -145,7 +144,12 @@ export function migrate(o) {
   });
   for (const key of ['seen', 'caught'])
     if (s[key] && typeof s[key] === 'object') for (const id of Object.keys(s[key])) if (!SPECIES[id]) delete s[key][id];
-  s.queue = (s.queue || []).filter(q => SPECIES[q.sp]);
+  /* phase 08: encounters live on each place's map; the one queue they had before is let go */
+  const oldSave = /** @type {any} */ (s);
+  delete oldSave.queue;
+  delete oldSave.meter;
+  if (!s.wild || typeof s.wild !== 'object') s.wild = {};
+  for (const w of Object.values(s.wild)) w.list = (w.list || []).filter(q => SPECIES[q.sp]);
   s.eggs = s.eggs.filter(e => EGGS[e.tier]);
   s.jobs.forEach(j => {
     if (j.job && !JOBS[j.job]) j.job = Object.keys(JOBS)[0] || null;
@@ -222,12 +226,6 @@ export function validSave(o) {
     !num(o.totalSteps, 0, 1e12)
   )
     return false;
-  if (
-    !Array.isArray(o.queue) ||
-    o.queue.length > Math.max(10, RULES.steps.maxEncounters) ||
-    o.queue.some(q => !q || !SPECIES[q.sp] || !num(q.lvl, 1, 100))
-  )
-    return false;
   if (!Array.isArray(o.eggs) || o.eggs.some(e => !e || !num(e.prog, 0, 1e12))) return false;
   if (
     !Array.isArray(o.jobs) ||
@@ -241,6 +239,19 @@ export function validSave(o) {
     if (!o[k] || typeof o[k] !== 'object' || Object.values(o[k]).some(n => !num(n, 0, 1e12))) return false;
   const record = v => v && typeof v === 'object' && !Array.isArray(v) && !Object.hasOwn(v, '__proto__');
   if (
+    !record(o.wild) ||
+    Object.keys(o.wild).length > LOCATIONS.length ||
+    Object.values(o.wild).some(
+      w =>
+        !w ||
+        !num(w.at, 0, 1e13) ||
+        !Array.isArray(w.list) ||
+        w.list.length > 12 ||
+        w.list.some(q => !q || !SPECIES[q.sp] || !num(q.lvl, 1, 100))
+    )
+  )
+    return false;
+  if (
     !record(o.seen) ||
     !record(o.caught) ||
     !record(o.flags) ||
@@ -249,8 +260,7 @@ export function validSave(o) {
     Object.hasOwn(o, '__proto__')
   )
     return false;
-  if (!num(o.meter, 0, 1e9) || !num(o.serial, 0, 1e12) || !num(o.seFrac, 0, 1) || !num(o.buddyRem, 0, 1e12))
-    return false;
+  if (!num(o.serial, 0, 1e12) || !num(o.seFrac, 0, 1) || !num(o.buddyRem, 0, 1e12)) return false;
   for (const m of o.team.concat(o.box))
     if (
       typeof (m.nick || '') !== 'string' ||

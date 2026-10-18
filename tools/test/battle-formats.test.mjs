@@ -48,7 +48,7 @@ test('an Alpha battle: your team against one; below half it raises its shield', 
   const s = teamOfThree();
   const sp = Object.keys(SPECIES).find(k => SPECIES[k].stage === 0 && !RULES.start.starters.includes(SPECIES[k].line));
   const q = { id: 'alpha', sp, lvl: 6, gold: false, no: 1, alpha: true };
-  s.queue.push(q);
+  fn('encountersHere')().push(q);
   fn('startWild')(q);
   const B = hooks.activeBattle,
     a = fighter(1);

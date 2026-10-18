@@ -32,6 +32,8 @@ import {
   addBilly,
   addEgg,
   addSteps,
+  encounterStock,
+  encountersHere,
   gainXp,
   healAll,
   makeBilly,
@@ -114,7 +116,7 @@ function debugHTML() {
     LOCATIONS.map((r, i) => [i, `${i}. ${r.name}`]),
     node
   )}${debugButtonHTML('jump', 'Go there')}</div>
-  <div class="dbg-row">${debugButtonHTML('seats', 'Earn every badge')}${debugButtonHTML('flags', 'Reset trainer wins')}${debugButtonHTML('fillq', 'Fill encounter queue')}${debugButtonHTML('clearq', 'Clear queue')}</div></details>
+  <div class="dbg-row">${debugButtonHTML('seats', 'Earn every badge')}${debugButtonHTML('flags', 'Reset trainer wins')}${debugButtonHTML('fillq', 'Fill encounters here')}${debugButtonHTML('clearq', 'Clear encounters here')}</div></details>
  <details ${uiState.bench && uiState.bench.test ? 'open' : ''}><summary>Test scenes</summary><p class="note">Small places that each show one tricky situation: stairs, ledges at the limits, bridges, water, shadows, every prop, slopes, the camera in tight spots, night lights, a dense forest, tiny and huge maps, traffic, and the light lab (v44: light on the land, in a room, on props, in the air — the places the quick check measures the lighting in). Checks test the walking rules there (what should and shouldn't be reachable).</p>
   <div class="dbg-row">${debugSelectHTML(
     'dbgTest',
@@ -226,13 +228,13 @@ function debugAction(x) {
       return refreshDebugMenu(`${SPECIES[sp].name} joined your ${w === 'team' ? 'team' : 'storage'}.`);
     }
     case 'enc': {
-      saveData.queue.push({ id: newUid(), sp, lvl: lv, gold: $('#dbgGold').checked, no: ++saveData.serial });
+      encountersHere().push({ id: newUid(), sp, lvl: lv, gold: $('#dbgGold').checked, no: ++saveData.serial });
       break;
     }
     case 'alpha': {
       if (activeBattle) return toast('Finish the current battle first.');
       const q = { id: newUid(), sp, lvl: lv, gold: $('#dbgGold').checked, no: ++saveData.serial, alpha: true };
-      saveData.queue.push(q);
+      encountersHere().push(q);
       closeModal();
       startWild(q);
       return;
@@ -240,7 +242,7 @@ function debugAction(x) {
     case 'wild': {
       if (activeBattle) return toast('Finish the current battle first.');
       const q = { id: newUid(), sp, lvl: lv, gold: $('#dbgGold').checked, no: ++saveData.serial };
-      saveData.queue.push(q);
+      encountersHere().push(q);
       closeModal();
       startWild(q);
       return;
@@ -323,11 +325,14 @@ function debugAction(x) {
       saveData.flags = {};
       saveData.seats = [];
       break;
-    case 'fillq':
-      while (saveData.queue.length < RULES.steps.maxEncounters) spawn();
+    case 'fillq': {
+      /* a town without wild Billies gets a route's worth, so there is always something to test with */
+      const q = encountersHere();
+      while (q.length < Math.max(encounterStock(saveData.trip.node), RULES.encounters.route)) spawn();
       break;
+    }
     case 'clearq':
-      saveData.queue = [];
+      encountersHere().length = 0;
       break;
     case 'egg':
       addEgg(+v('dbgEgg'));

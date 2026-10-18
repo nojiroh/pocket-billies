@@ -36,6 +36,7 @@ import {
   JOB_STEPS,
   LINE_BY_ID,
   LOCATIONS,
+  LOCATION_BY_ID,
   MOVES,
   POOLS,
   ROADS_BY_NODE,
@@ -44,6 +45,8 @@ import {
   STAT_IDS,
   STEPS_PER_KM,
   TRAINERS,
+  gameData,
+  isTown,
   trainersAt,
   typeEffectiveness,
 } from '../game-data.js';
@@ -79,6 +82,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   collectJob: [() => collectJob, v => (collectJob = v)],
   // @ts-expect-error -- replaced on purpose
+  dropEncounter: [() => dropEncounter, v => (dropEncounter = v)],
+  // @ts-expect-error -- replaced on purpose
   earningsBetween: [() => earningsBetween, v => (earningsBetween = v)],
   eggSlotCount: [() => eggSlotCount],
   emptyJob: [() => emptyJob],
@@ -86,6 +91,10 @@ expose({
   encounterBuild: [() => encounterBuild, v => (encounterBuild = v)],
   // @ts-expect-error -- replaced on purpose
   encounterPoolHere: [() => encounterPoolHere, v => (encounterPoolHere = v)],
+  // @ts-expect-error -- replaced on purpose
+  encounterStock: [() => encounterStock, v => (encounterStock = v)],
+  // @ts-expect-error -- replaced on purpose
+  encountersHere: [() => encountersHere, v => (encountersHere = v)],
   // @ts-expect-error -- replaced on purpose
   endShift: [() => endShift, v => (endShift = v)],
   // @ts-expect-error -- replaced on purpose
@@ -157,6 +166,8 @@ expose({
   tripTo: [() => tripTo, v => (tripTo = v)],
   // @ts-expect-error -- replaced on purpose
   walkDistances: [() => walkDistances, v => (walkDistances = v)],
+  // @ts-expect-error -- replaced on purpose
+  wildList: [() => wildList, v => (wildList = v)],
   xpFor: [() => xpFor],
 });
 /* eslint-enable no-func-assign */
@@ -530,11 +541,59 @@ export function stopTrip() {
 }
 /* encounters come from where you are */
 export const hereLocation = () => LOCATIONS[saveData.trip.node];
-export function encounterPoolHere() {
-  return POOLS[hereLocation().pool] || POOLS[Object.keys(POOLS)[0]];
+export function encounterPoolHere(node = saveData.trip.node) {
+  return POOLS[LOCATIONS[node].pool] || POOLS[Object.keys(POOLS)[0]];
 }
-export function spawn(gentle, force) {
-  const P = encounterPoolHere();
+/* phase 08: wild Billies live on each place's map (saveData.wild, by location id): a route keeps a few, a town with
+   tall grass fewer, other towns none (rooms are not places). A map is full the first time you come; after that one
+   more wanders over every minute of play, up to its stock */
+export function encounterStock(node) {
+  const L = LOCATIONS[node],
+    R = RULES.encounters;
+  if (!L) return 0;
+  if (!isTown(node)) return R.route;
+  const sc = L.mapId && gameData.maps ? gameData.maps[L.mapId] : null,
+    tiles = sc ? (sc._lite ? sc._lite.tiles : (sc.tiles || []).join('')) : '';
+  return tiles.includes('t') ? R.townGrass : 0;
+}
+/* the list a place's encounters are kept in (made empty if it has none yet) */
+export function wildList(node) {
+  const W = saveData.wild || (saveData.wild = {}),
+    id = LOCATIONS[node].id;
+  return (W[id] || (W[id] = { at: saveData.playMs || 0, list: [] })).list;
+}
+export function encountersHere(node = saveData.trip.node) {
+  const L = LOCATIONS[node];
+  if (!L) return [];
+  const W = saveData.wild || (saveData.wild = {}),
+    now = saveData.playMs || 0,
+    cap = encounterStock(node),
+    w = W[L.id];
+  if (!w) {
+    const list = wildList(node);
+    while (list.length < cap) spawn(false, null, node);
+    return list;
+  }
+  if (w.list.length >= cap) w.at = now;
+  else {
+    const every = Math.max(1000, RULES.encounters.refillMs),
+      n = Math.floor((now - w.at) / every);
+    for (let i = 0; i < n && w.list.length < cap; i++) spawn(false, null, node);
+    w.at = w.list.length >= cap ? now : w.at + Math.max(0, n) * every;
+  }
+  return w.list;
+}
+/* a battled (or fled-from) encounter leaves the map it was on; a map that was full starts its minute from now */
+export function dropEncounter(id) {
+  for (const [k, w] of Object.entries(saveData.wild || {})) {
+    const L = LOCATION_BY_ID[k],
+      full = !!L && w.list.length >= encounterStock(L.node);
+    w.list = w.list.filter(q => q.id !== id);
+    if (full) w.at = saveData.playMs || 0;
+  }
+}
+export function spawn(gentle, force, node = saveData.trip.node) {
+  const P = encounterPoolHere(node);
   let list = typeof environmentOdds === 'function' ? environmentOdds(P.list) : P.list;
   if (gentle) {
     const my = SPECIES[saveData.starter + '0'].types,
@@ -559,7 +618,7 @@ export function spawn(gentle, force) {
     random() < 1 / ((RULES.steps && RULES.steps.alphaOdds) || 45)
   )
     q.alpha = true;
-  saveData.queue.push(q);
+  wildList(node).push(q);
   return q;
 }
 export function addSteps(n, quiet) {
@@ -574,16 +633,6 @@ export function addSteps(n, quiet) {
   saveData.se += gi;
   saveData.day.steps = b;
   saveData.totalSteps += n;
-  const every = Math.max(1, RULES.steps.encounterEverySE);
-  saveData.meter += gi;
-  let sp = 0;
-  while (saveData.meter >= every) {
-    saveData.meter -= every;
-    if (saveData.queue.length < RULES.steps.maxEncounters) {
-      spawn();
-      sp++;
-    }
-  }
   const bud = findBilly(saveData.buddy),
     per = Math.max(1, RULES.progression.buddyStepsPerXp);
   if (bud) bud.bsteps = (bud.bsteps || 0) + n;
@@ -605,8 +654,7 @@ export function addSteps(n, quiet) {
       if (j.pend < RULES.jobs.maxPending) j.pend++;
     }
   });
-  if (!quiet || sp)
-    toast(`+${formatNumber(n)} steps, +$${formatNumber(gi)}${sp ? `, ${plural(sp, 'new encounter')}` : ''}`);
+  if (!quiet) toast(`+${formatNumber(n)} steps, +$${formatNumber(gi)}`);
   notes.forEach(t => toast(t));
   save();
   if (!activeBattle) {

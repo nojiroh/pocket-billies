@@ -39,6 +39,7 @@ import {
   addBilly,
   addEgg,
   billyName,
+  dropEncounter,
   findBilly,
   formatNumber,
   healAll,
@@ -1013,7 +1014,7 @@ export function endBattle() {
     for (const m of saveData.team)
       if (m.hp > 0 && m.job == null) m.wins = (m.wins || 0) + 1; /* v36: the Hype counter */
   if (typeof battleTipHide === 'function') battleTipHide();
-  if (kind === 'wild') saveData.queue = saveData.queue.filter(q => q.id !== activeBattle.qid);
+  if (kind === 'wild') dropEncounter(activeBattle.qid);
   if (lead) {
     if (o === 'win') lead.streak = (lead.streak || 0) + 1;
     else if (o === 'lose') lead.streak = 0;

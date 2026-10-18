@@ -45,10 +45,8 @@ export interface SaveData {
   trip: Trip;
   /** never set any more (always null) */
   mapSeen: null;
-  /** money earned toward the next encounter */
-  meter: number;
-  /** the Billies waiting in the grass */
-  queue: Encounter[];
+  /** phase 08: the wild Billies on each place's map, by location id (rules.js encountersHere) */
+  wild: Record<string, WildStock>;
   /** your buddy's uid */
   buddy: string | null;
   /** steps toward the buddy's next XP */
@@ -169,6 +167,12 @@ export type PartSize = 'S' | 'M' | 'L';
 export type Build = Record<string, PartSize>;
 
 /** a Billie waiting in the grass (game-state.js spawn) */
+/** a place's wild Billies: at is the play time (playMs) its stock last grew or was full */
+export interface WildStock {
+  at: number;
+  list: Encounter[];
+}
+
 export interface Encounter {
   id: string;
   sp: SpeciesId;

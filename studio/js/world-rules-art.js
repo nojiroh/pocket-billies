@@ -763,8 +763,19 @@ SECTIONS.rules = () => {
    'Steps and encounters',
    grid(
      numberField('Steps per km', `${st}.stepsPerKm`, { min: 500, max: 3000, step: 1 }),
-     numberField('New encounter every ($ earned)', `${st}.encounterEverySE`, { min: 50, step: 50 }),
-     numberField('Encounter queue size', `${st}.maxEncounters`, { min: 1, max: 30, step: 1 }),
+     numberField('Wild Billies on a route', `rules.encounters.route`, { min: 0, max: 10, step: 1 }),
+     numberField('Wild Billies in a town with tall grass', `rules.encounters.townGrass`, {
+       min: 0,
+       max: 10,
+       step: 1,
+       help: 'Towns without tall grass and rooms have none.',
+     }),
+     numberField('One more wanders over every', `rules.encounters.refillMs`, {
+       min: 5000,
+       step: 5000,
+       unit: 'ms',
+       help: 'Of play time, until the place is full again.',
+     }),
      numberField('Golden odds: 1 in', `${st}.goldOdds`, { min: 2, step: 1 }),
      numberField('Alpha odds: 1 in', `${st}.alphaOdds`, {
        min: 2,

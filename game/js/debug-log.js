@@ -413,7 +413,7 @@ debugLog.state = () => {
     s.trip = GAME.saveData.trip ? GAME.saveData.trip.plan.slice() : [];
     s.scene = typeof GAME.walkView !== 'undefined' ? GAME.walkView.id : null;
     s.team = GAME.saveData.team ? GAME.saveData.team.length : 0;
-    s.encounters = GAME.saveData.queue ? GAME.saveData.queue.length : 0;
+    s.encounters = GAME.encountersHere ? GAME.encountersHere().length : 0;
     s.badges = (GAME.saveData.seats || []).length;
     s.visited = Object.keys(GAME.saveData.visited || {}).length;
     s.frameHz = GAME.frameScheduler.hz;
