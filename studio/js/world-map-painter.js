@@ -9,7 +9,7 @@ import { provide } from '../../game/js/hooks.js';
 import { $, $$, clamp } from '../../game/js/util.js';
 import { makeCanvas } from '../../game/js/art.js';
 import { esc } from './game-stand-ins.js';
-import { after, ask, card, changed, commit, fmtN, render, studioState, toast } from './studio-app.js';
+import { after, ask, card, changed, commit, formatThousands, render, studioState, toast } from './studio-app.js';
 import { atlasGet, atlasNow, markArt } from './sprites.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -778,7 +778,7 @@ document.addEventListener('click', async ev => {
     mpPush();
     const n = eraseTrailAll();
     mpGlobe();
-    toast(n ? `Removed ${fmtN(n)} trail pixels.` : 'No trail-colored pixels found.');
+    toast(n ? `Removed ${formatThousands(n)} trail pixels.` : 'No trail-colored pixels found.');
   } else if (a === 'addTrailCol') {
     if (!MP.trailCols.includes(MP.color)) MP.trailCols.push(MP.color);
     render();

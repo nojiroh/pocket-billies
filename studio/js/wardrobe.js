@@ -25,7 +25,7 @@ import {
   colorField,
   commit,
   dialog,
-  fmtN,
+  formatThousands,
   grid,
   numberField,
   render,
@@ -33,7 +33,7 @@ import {
   studioState,
   textField,
   toast,
-  uidKey,
+  uniqueKey,
 } from './studio-app.js';
 import { atlasGet, atlasNow, markArt } from './sprites.js';
 /* eslint-disable no-func-assign */
@@ -129,7 +129,7 @@ SECTIONS.wardrobe = () => {
   const rows = list
     .map(
       ([k, it]) =>
-        `<button class="lcard ${WDS.sel === k ? 'on' : ''}" data-act="wdPick" data-k="${esc(k)}"><span class="wd-th" data-th="${esc(k)}"></span><span class="lt"><b>${esc(it.name)}</b><small>${esc((slots.find(s => s.id === it.slot) || {}).name || it.slot)}${it.starter ? ' · everyone has it' : it.price ? ` · $${fmtN(it.price)}${it.shop && studioState.D.shops[it.shop] ? ' · ' + esc(studioState.D.shops[it.shop].name) : ''}` : ''}</small></span></button>`
+        `<button class="lcard ${WDS.sel === k ? 'on' : ''}" data-act="wdPick" data-k="${esc(k)}"><span class="wd-th" data-th="${esc(k)}"></span><span class="lt"><b>${esc(it.name)}</b><small>${esc((slots.find(s => s.id === it.slot) || {}).name || it.slot)}${it.starter ? ' · everyone has it' : it.price ? ` · $${formatThousands(it.price)}${it.shop && studioState.D.shops[it.shop] ? ' · ' + esc(studioState.D.shops[it.shop].name) : ''}` : ''}</small></span></button>`
     )
     .join('');
   return `<div class="split"><aside class="list-col"><div class="list-head"><button class="btn primary" data-act="wdNew">+ New item</button>
@@ -844,7 +844,7 @@ ACTS.wdNew = async () => {
       ]
     );
   if (!r) return;
-  const k = uidKey(r.n, x => !!W.items[x]),
+  const k = uniqueKey(r.n, x => !!W.items[x]),
     img = `trainer/items/${k}.png`,
     mask = `trainer/items/${k}_m.png`,
     base = r.f && W.items[r.f];
@@ -866,7 +866,7 @@ ACTS.wdNew = async () => {
 ACTS.wdDup = async () => {
   const W = wdW(),
     it = W.items[WDS.sel],
-    k = uidKey(it.name + '2', x => !!W.items[x]),
+    k = uniqueKey(it.name + '2', x => !!W.items[x]),
     n = Object.assign(clone(it), {
       name: it.name + ' (copy)',
       img: `trainer/items/${k}.png`,

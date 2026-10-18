@@ -64,7 +64,7 @@ import {
   studioState,
   textField,
   toast,
-  uidKey,
+  uniqueKey,
 } from './studio-app.js';
 import { ATL_VER, atlasGet, atlasNow, fileToCanvas, markArt, pickFile } from './sprites.js';
 /* eslint-disable no-func-assign */
@@ -1684,7 +1684,7 @@ ACTS.scOwnRoom = () => {
     'int_house';
   const from = D.scenes[p.room] || D.scenes[kr];
   if (!from) return;
-  const k = uidKey('int_' + id + '_' + p.k, x => !!D.scenes[x]);
+  const k = uniqueKey('int_' + id + '_' + p.k, x => !!D.scenes[x]);
   D.scenes[k] = { ...clone(from), name: (from.name || k) + ' (' + (sc.name || id) + ')', place: id, vary: 0 };
   p.room = k;
   if (!p.act) p.act = 'house';
@@ -1775,7 +1775,7 @@ ACTS.scNew = async () => {
       ]
     );
   if (!r) return;
-  const id = uidKey(r.n, k => !!(D.scenes || {})[k]);
+  const id = uniqueKey(r.n, k => !!(D.scenes || {})[k]);
   D.scenes = D.scenes || {};
   D.scenes[id] = r.from ? { ...clone(D.scenes[r.from]), name: r.n } : blankScene(r.n);
   D.scenes[id].kind = r.kind || 'route';
@@ -1790,7 +1790,7 @@ ACTS.scNew = async () => {
 ACTS.scDup = () => {
   const D = studioState.D,
     id = scId(),
-    k = uidKey(id + 'b', x => !!D.scenes[x]);
+    k = uniqueKey(id + 'b', x => !!D.scenes[x]);
   D.scenes[k] = { ...clone(D.scenes[id]), name: (D.scenes[id].name || id) + ' (copy)' };
   studioState.sel.scene = k;
   changed();
@@ -1996,7 +1996,7 @@ ACTS.scNewTer = async () => {
   );
   if (!r) return;
   const base = C.terrains[r.from],
-    file = uidKey(r.n, f => Object.values(C.terrains).some(t => t.tile === `scene/tiles/${f}.png`)),
+    file = uniqueKey(r.n, f => Object.values(C.terrains).some(t => t.tile === `scene/tiles/${f}.png`)),
     path = `scene/tiles/${file}.png`;
   const src = await atlasGet('art/' + base.tile).catch(() => null),
     c = makeCanvas(16, 16);
@@ -2047,7 +2047,7 @@ ACTS.scImportProp = async () => {
 };
 function scAddProp(name, c) {
   const C = scD(),
-    k = uidKey(name, x => !!C.props[x]),
+    k = uniqueKey(name, x => !!C.props[x]),
     path = `scene/props/${k}.png`;
   markArt('art/' + path, c);
   C.props[k] = {

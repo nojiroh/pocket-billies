@@ -25,7 +25,7 @@ import {
   setWritePath,
   studioState,
   textField,
-  uidKey,
+  uniqueKey,
   writePath,
 } from './studio-app.js';
 expose({
@@ -258,14 +258,14 @@ ACTS.loreAdd = async d => {
     k = d.k;
   if (k === 'people' || k === 'books') {
     const O = (L[k] = L[k] || {}),
-      id = uidKey(k === 'people' ? 'person' : 'book', x => !!O[x]);
+      id = uniqueKey(k === 'people' ? 'person' : 'book', x => !!O[x]);
     O[id] =
       k === 'people'
         ? { name: 'Someone new', role: '', unlock: 'start', text: '', voice: '' }
         : { title: 'A new book', by: '', pages: ['The first page.'] };
   } else {
     const A = (L[k] = L[k] || []),
-      id = uidKey(k, x => A.some(e => e.id === x));
+      id = uniqueKey(k, x => A.some(e => e.id === x));
     A.push(
       k === 'story'
         ? { id, stage: 0, title: 'A new part', text: '' }

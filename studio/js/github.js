@@ -23,7 +23,7 @@ import {
   setToast,
   studioState,
   toast,
-  updTop,
+  updateTopBar,
 } from './studio-app.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -402,7 +402,7 @@ if (GH.on) {
     }
     if (err) {
       studioState.dirty = true;
-      updTop();
+      updateTopBar();
       return toast('Couldn’t send the changes: ' + err.message, 'err');
     }
     if (pr) {

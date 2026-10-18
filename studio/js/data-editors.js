@@ -20,7 +20,7 @@ import {
   coinOptions,
   colorField,
   dialog,
-  fmtN,
+  formatThousands,
   go,
   grid,
   itemOptions,
@@ -42,8 +42,8 @@ import {
   toast,
   typeChipHTML,
   typeOptions,
-  uidKey,
-  updTop,
+  uniqueKey,
+  updateTopBar,
   writePath,
 } from './studio-app.js';
 import {
@@ -537,7 +537,7 @@ ACTS.stageDel = async () => {
 ACTS.lineDup = async () => {
   const D = studioState.D,
     L = D.lines[curLine()],
-    id = uidKey(L.id, k => D.lines.some(l => l.id === k));
+    id = uniqueKey(L.id, k => D.lines.some(l => l.id === k));
   const N = clone(L);
   N.id = id;
   N.names = N.names.map(n => n + ' II');
@@ -664,7 +664,7 @@ ACTS.newLine = async () => {
           studioState.artDirty.delete(k);
           ATL.delete(k);
         }
-      updTop();
+      updateTopBar();
       return;
     }
     atlasGet(atlasPath(from + '0', 'front', false))
@@ -718,7 +718,7 @@ ACTS.newLine = async () => {
     'wide'
   );
   if (!r) return;
-  const id = uidKey(r.name, k => D.lines.some(l => l.id === k) || !!studioState.rigs[k + '0']);
+  const id = uniqueKey(r.name, k => D.lines.some(l => l.id === k) || !!studioState.rigs[k + '0']);
   let N;
   if (r.from.startsWith('blank:')) {
     const plan = r.from.slice(6),
@@ -866,7 +866,7 @@ ACTS.gotoLine = d => {
 };
 ACTS.moveNew = () => {
   const D = studioState.D,
-    k = uidKey('newmove', x => !!D.moves[x]);
+    k = uniqueKey('newmove', x => !!D.moves[x]);
   D.moves[k] = { n: 'New Move', t: 'None', c: 'H', p: 50, a: 100, d: 'Describe what it does.' };
   studioState.sel.move = k;
   changed();
@@ -874,7 +874,7 @@ ACTS.moveNew = () => {
 };
 ACTS.moveDup = () => {
   const D = studioState.D,
-    k = uidKey(studioState.sel.move, x => !!D.moves[x]);
+    k = uniqueKey(studioState.sel.move, x => !!D.moves[x]);
   D.moves[k] = clone(D.moves[studioState.sel.move]);
   D.moves[k].n += ' II';
   studioState.sel.move = k;
@@ -979,7 +979,7 @@ ACTS.typeFx = d => {
 };
 ACTS.typeNew = () => {
   const D = studioState.D,
-    id = uidKey('New', k => D.types.some(t => t.id.toLowerCase() === k));
+    id = uniqueKey('New', k => D.types.some(t => t.id.toLowerCase() === k));
   D.types.push({
     id: id[0].toUpperCase() + id.slice(1),
     color: '#7A6AB0',
@@ -1086,7 +1086,7 @@ SECTIONS.items = () => {
 };
 ACTS.itemNew = () => {
   const D = studioState.D,
-    k = uidKey('item', x => !!D.items[x]);
+    k = uniqueKey('item', x => !!D.items[x]);
   D.items[k] = { n: 'New Item', price: 200, hp: 30, d: 'Restores 30 HP.', icon: 'taxbreak', mint: true };
   changed();
   render();
@@ -1167,7 +1167,7 @@ SECTIONS.shops = () => {
              .filter(([i, it]) => it.shop === k)
              .map(
                ([i, it]) =>
-                 `<button class="chk-chip" data-act="wdGo" data-k="${esc(i)}">${esc(it.name)} · $${fmtN(it.price || 0)}</button>`
+                 `<button class="chk-chip" data-act="wdGo" data-k="${esc(i)}">${esc(it.name)} · $${formatThousands(it.price || 0)}</button>`
              )
              .join('') || '<span class="help">Nothing yet.</span>'
          }</div>`,
@@ -1255,7 +1255,7 @@ ACTS.stockMove = d => {
 };
 ACTS.boutiqueNew = () => {
   const D = studioState.D,
-    k = uidKey('boutique', x => !!(D.shops || {})[x]);
+    k = uniqueKey('boutique', x => !!(D.shops || {})[x]);
   D.shops = D.shops || {};
   D.shops[k] = {
     name: 'New Boutique',
@@ -1270,7 +1270,7 @@ ACTS.boutiqueNew = () => {
 };
 ACTS.shopNew = () => {
   const D = studioState.D,
-    k = uidKey('shop', x => !!(D.shops || {})[x]);
+    k = uniqueKey('shop', x => !!(D.shops || {})[x]);
   D.shops = D.shops || {};
   D.shops[k] = {
     name: 'New Shop',
@@ -1324,7 +1324,7 @@ SECTIONS.people = () => {
   if (!P.look) {
     personLook(k);
     studioState.dirty = true;
-    updTop();
+    updateTopBar();
   }
   const L = P.look,
     p = `people.${k}.look`;
@@ -1401,7 +1401,7 @@ ACTS.pickPerson = d => {
 };
 ACTS.personNew = () => {
   const D = studioState.D,
-    k = uidKey('npc', x => !!D.people[x]);
+    k = uniqueKey('npc', x => !!D.people[x]);
   D.people[k] = { look: clone(personLook('gini') || cleanLook(null)) };
   studioState.sel.person = k;
   changed();
@@ -1444,7 +1444,7 @@ SECTIONS.jobs = () => {
       )}${textField('What it did (after the Billie’s name)', `${p}.quip`, { help: '“Hoodini made 40 lattes. Most were wrong.”' })}<button class="btn danger subtle" data-act="jobDel" data-k="${k}">Delete job</button></div></div>`;
     })
     .join('');
-  return `<div class="ed-col solo"><div class="ed-head"><h2>Jobs</h2><button class="btn primary" data-act="jobNew">+ New job</button></div>${card('Jobs', rows, { sub: `Pay arrives every ${fmtN(D.rules.jobs.stepsPerPay)} steps (Rules → Jobs).` })}</div>`;
+  return `<div class="ed-col solo"><div class="ed-head"><h2>Jobs</h2><button class="btn primary" data-act="jobNew">+ New job</button></div>${card('Jobs', rows, { sub: `Pay arrives every ${formatThousands(D.rules.jobs.stepsPerPay)} steps (Rules → Jobs).` })}</div>`;
 };
 document.addEventListener('change', ev => {
   const el = ev.target;
@@ -1462,7 +1462,7 @@ document.addEventListener('change', ev => {
 });
 ACTS.jobNew = () => {
   const D = studioState.D,
-    k = uidKey('job', x => !!D.jobs[x]);
+    k = uniqueKey('job', x => !!D.jobs[x]);
   D.jobs[k] = { n: 'New job', where: 'Somewhere', out: ['se', 'se', 100], pay: '$100', quip: 'worked a full shift.' };
   changed();
   render();
@@ -1642,7 +1642,7 @@ ACTS.seatOn = () => {
   const T = studioState.D.trainers[studioState.sel.trainer];
   const n = Object.values(studioState.D.trainers).filter(t => t.seat).length + 1;
   T.seat = {
-    id: uidKey(T.name, k => Object.values(studioState.D.trainers).some(t => t.seat && t.seat.id === k)),
+    id: uniqueKey(T.name, k => Object.values(studioState.D.trainers).some(t => t.seat && t.seat.id === k)),
     title: `Badge ${n} of 8`,
     coin: 'gold',
     coins: { tbtf: 1 },
@@ -1674,7 +1674,7 @@ ACTS.marketOff = () => {
 };
 ACTS.trainerNew = () => {
   const D = studioState.D,
-    k = uidKey('trainer', x => !!D.trainers[x]);
+    k = uniqueKey('trainer', x => !!D.trainers[x]);
   D.trainers[k] = {
     name: 'New Trainer',
     who: Object.keys(D.people).find(p => !['boy', 'girl'].includes(p)) || 'gini',

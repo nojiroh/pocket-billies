@@ -19,7 +19,7 @@ import {
   clone,
   colorField,
   commit,
-  fmtN,
+  formatThousands,
   grid,
   numberField,
   readPath,
@@ -31,7 +31,7 @@ import {
   textField,
   toast,
   typeOptions,
-  uidKey,
+  uniqueKey,
 } from './studio-app.js';
 import { fileToCanvas, loadImage, markArt, mountPreviews, pickFile, prevCanvas } from './sprites.js';
 import { RAR_NAMES } from './data-editors.js';
@@ -206,7 +206,7 @@ function worldRoute() {
         j
       ) => `<tr class="${j === i ? 'on' : ''}"><td>${j + 1}</td><td><button class="linkish" data-act="pickStop" data-i="${j}">${esc(x.name)}</button>${x.town ? ' <small>town</small>' : ''}${x.gate ? ' <small class="warn">gated</small>' : ''}</td><td><small>${
         stopRoads(j)
-          .map(([o, c]) => `${esc(D.route[o].name)} (${fmtN(c)})`)
+          .map(([o, c]) => `${esc(D.route[o].name)} (${formatThousands(c)})`)
           .join(', ') || '<span class="warn">no roads</span>'
       }</small></td><td>${x.shop && D.shops[x.shop] ? esc(D.shops[x.shop].name) : ''}</td><td>${Object.values(
         D.trainers || {}
@@ -529,7 +529,7 @@ ACTS.fishAdd = d => {
 };
 ACTS.poolNew = () => {
   const D = studioState.D,
-    k = uidKey($('#newPool').value || 'pool', x => !!D.pools[x]);
+    k = uniqueKey($('#newPool').value || 'pool', x => !!D.pools[x]);
   D.pools[k] = { lv: [5, 8], list: [[D.lines[0].id + '0', 10]] };
   changed();
   render();
@@ -685,7 +685,7 @@ function worldBackdrops() {
 }
 ACTS.bdDup = d => {
   const D = studioState.D,
-    k = uidKey(d.k + 'b', x => !!D.backdrops[x]);
+    k = uniqueKey(d.k + 'b', x => !!D.backdrops[x]);
   D.backdrops[k] = clone(D.backdrops[d.k]);
   D.backdrops[k].name = (D.backdrops[k].name || d.k) + ' (copy)';
   D.backdrops[k].art = D.backdrops[d.k].art || d.k;
@@ -970,7 +970,7 @@ SECTIONS.rules = () => {
 };
 function xpLine() {
   const f = studioState.D.rules.progression.xpFactor;
-  return [5, 10, 20, 36, 50, 100].map(L => `Lv ${L}: ${fmtN(Math.floor(f * L * L * L))} XP`).join(' · ');
+  return [5, 10, 20, 36, 50, 100].map(L => `Lv ${L}: ${formatThousands(Math.floor(f * L * L * L))} XP`).join(' · ');
 }
 studioState.hooks.rules = path => {
   if (path.includes('xpFactor')) {

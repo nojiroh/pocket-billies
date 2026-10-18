@@ -11,7 +11,7 @@ import { makeCanvas } from '../../game/js/art.js';
 import { animFor } from '../../game/js/body-plan-animation.js';
 import { drawRig, rigPose } from '../../game/js/skeleton-rig.js';
 import { esc } from './game-stand-ins.js';
-import { ask, render, speciesName, studioState, toast, updTop } from './studio-app.js';
+import { ask, render, speciesName, studioState, toast, updateTopBar } from './studio-app.js';
 /* eslint-disable no-func-assign */
 expose({
   ATL: [() => ATL],
@@ -340,7 +340,7 @@ export function markArt(path, c) {
   ATL_VER++;
   studioState.artDirty.set(path, c);
   ATL.set(path, c);
-  updTop();
+  updateTopBar();
   previewsDirty();
 }
 export function downloadCanvas(c, name) {
@@ -807,7 +807,7 @@ function pxBind() {
       ATL.delete(p);
       await atlasGet(p).catch(() => null);
       previewsDirty();
-      updTop();
+      updateTopBar();
       pxLoad();
     } else if (k === 'close') {
       const back = E.back;

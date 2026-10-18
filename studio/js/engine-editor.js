@@ -38,7 +38,7 @@ import {
   render,
   studioState,
   toast,
-  uidKey,
+  uniqueKey,
   writePath,
 } from './studio-app.js';
 import { atlasGet } from './sprites.js';
@@ -330,7 +330,7 @@ ACTS.engPresetSave = async () => {
   );
   if (!name) return;
   const ps = engD().presets || (engD().presets = {}),
-    k = uidKey(name, x => !!ps[x] || !!ENGINE_PRESETS[x]);
+    k = uniqueKey(name, x => !!ps[x] || !!ENGINE_PRESETS[x]);
   ps[k] = { name, v: clone(cur) };
   changed();
   commit(true);

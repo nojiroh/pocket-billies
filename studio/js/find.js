@@ -10,7 +10,7 @@ import { linkNote } from '../../game/js/hooks.js';
 import { $, $$ } from '../../game/js/util.js';
 import { ENGINE_SPEC } from '../../game/js/engine/settings.js';
 import { esc } from './game-stand-ins.js';
-import { ACTS, NAV, SECTIONS, clone, go, studioState, toast } from './studio-app.js';
+import { ACTS, SECTIONS, SECTION_LIST, clone, go, studioState, toast } from './studio-app.js';
 import { ENS, engRefresh } from './engine-editor.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -93,7 +93,7 @@ function findPageFields(sec, add) {
   }
   const div = document.createElement('div');
   div.innerHTML = html;
-  const nav = (NAV.find(n => n[0] === sec) || [])[1] || sec,
+  const nav = (SECTION_LIST.find(n => n[0] === sec) || [])[1] || sec,
     seen = new Set();
   div.querySelectorAll('[data-p]').forEach(el => {
     const p = el.dataset.p;
@@ -123,7 +123,7 @@ function findBuild() {
       if (label)
         E.push({ label: String(label), where, kind, fn, t: findNorm(label), x: findNorm(where + ' ' + extra) });
     };
-  NAV.forEach(([k, n, d]) => add(n, 'Section', 'section', () => go(k), d));
+  SECTION_LIST.forEach(([k, n, d]) => add(n, 'Section', 'section', () => go(k), d));
   if (typeof ENGINE_SPEC !== 'undefined')
     ENGINE_SPEC.forEach(([g, t, F]) =>
       F.forEach(f => {

@@ -14,7 +14,7 @@ import { VP, provide } from '../../game/js/hooks.js';
 import { $ } from '../../game/js/util.js';
 import { walkView } from '../../game/js/walk-view.js';
 import { esc } from './game-stand-ins.js';
-import { ACTS, ask, changed, clone, commit, dialog, render, studioState, toast, uidKey } from './studio-app.js';
+import { ACTS, ask, changed, clone, commit, dialog, render, studioState, toast, uniqueKey } from './studio-app.js';
 import { SCN, scCur, scD, scMapDraw, scPropAt, scSetTile } from './map-editor.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -307,7 +307,7 @@ ACTS.scxSaveBlock = async () => {
   if (!r) return;
   const name = ($('#blkName') || {}).value || 'Block',
     B = scxBlocks(),
-    key = uidKey(
+    key = uniqueKey(
       name
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, '_')

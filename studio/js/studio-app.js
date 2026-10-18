@@ -12,12 +12,12 @@ import { esc } from './game-stand-ins.js';
 /* eslint-disable no-func-assign */
 expose({
   ACTS: [() => ACTS],
-  KEY: [() => KEY],
-  NAV: [() => NAV],
-  NAV_GROUPS: [() => NAV_GROUPS],
+  LIVE_UPDATE_CHANNEL: [() => LIVE_UPDATE_CHANNEL],
   RANGE_FORMATS: [() => RANGE_FORMATS],
   SECTIONS: [() => SECTIONS],
-  SLINK: [() => SLINK],
+  SECTION_GROUPS: [() => SECTION_GROUPS],
+  SECTION_LIST: [() => SECTION_LIST],
+  STUDIO_SERVER_KEY: [() => STUDIO_SERVER_KEY],
   after: [() => after],
   api: [() => api, v => setApi(v)],
   ask: [() => ask],
@@ -32,13 +32,13 @@ expose({
   commit: [() => commit, v => (commit = v)],
   dialog: [() => dialog, v => (dialog = v)],
   fieldOutputId: [() => fieldOutputId],
-  fmtN: [() => fmtN],
+  foldedSectionGroups: [() => foldedSectionGroups],
+  formatThousands: [() => formatThousands],
   go: [() => go, v => (go = v)],
   grid: [() => grid],
   helpHTML: [() => helpHTML],
   itemOptions: [() => itemOptions],
   moveOptions: [() => moveOptions],
-  navFold: [() => navFold],
   numberField: [() => numberField, v => (numberField = v)],
   onField: [() => onField, v => (onField = v)],
   peopleOptions: [() => peopleOptions],
@@ -68,9 +68,9 @@ expose({
   toast: [() => toast, v => setToast(v)],
   typeChipHTML: [() => typeChipHTML],
   typeOptions: [() => typeOptions],
-  uidKey: [() => uidKey],
   undo: [() => undo, v => (undo = v)],
-  updTop: [() => updTop, v => (updTop = v)],
+  uniqueKey: [() => uniqueKey],
+  updateTopBar: [() => updateTopBar, v => (updateTopBar = v)],
   writePath: [() => writePath, v => setWritePath(v)],
 });
 /* eslint-enable no-func-assign */
@@ -92,9 +92,12 @@ export const studioState = {
   after: [],
 };
 provide({ studioState }); /* to-module */
-const KEY = window.STUDIO_KEY;
+const STUDIO_SERVER_KEY = window.STUDIO_KEY;
 export async function api(path, opt = {}) {
-  const r = await fetch('/api/' + path, { ...opt, headers: { 'X-Studio-Key': KEY, ...(opt.headers || {}) } });
+  const r = await fetch('/api/' + path, {
+    ...opt,
+    headers: { 'X-Studio-Key': STUDIO_SERVER_KEY, ...(opt.headers || {}) },
+  });
   let j = null;
   try {
     j = await r.json();
@@ -108,8 +111,8 @@ export function setApi(v) {
   provide({ api });
 }
 export const clone = o => JSON.parse(JSON.stringify(o));
-export const fmtN = n => Number(n).toLocaleString('en-US');
-export const uidKey = (base, taken) => {
+export const formatThousands = n => Number(n).toLocaleString('en-US');
+export const uniqueKey = (base, taken) => {
   let k =
     base
       .toLowerCase()
@@ -172,7 +175,7 @@ export function commit(now) {
     if (studioState.undo.length > 80) studioState.undo.shift();
     studioState.redo = [];
     studioState.last = s;
-    updTop();
+    updateTopBar();
   };
   if (now) go();
   else studioState.snapT = setTimeout(go, 450);
@@ -183,13 +186,13 @@ export function changed(rigs) {
     studioState.rigVer = (studioState.rigVer || 0) + 1;
   } else studioState.dirty = true;
   commit();
-  updTop();
+  updateTopBar();
   scheduleCheck();
   if (!rigs) studioBroadcast();
 }
 /* v29: live update. A game tab open from this Studio (a test run, or the game on the same address) gets your scenes,
    props and engine settings half a second after each change, before you save */
-const SLINK = (() => {
+const LIVE_UPDATE_CHANNEL = (() => {
   try {
     const c = new BroadcastChannel('networth-studio');
     c.onmessage = ev => {
@@ -201,11 +204,11 @@ const SLINK = (() => {
   }
 })();
 function studioBroadcast() {
-  if (!SLINK || !studioState.D) return;
+  if (!LIVE_UPDATE_CHANNEL || !studioState.D) return;
   clearTimeout(studioBroadcast.t);
   studioBroadcast.t = setTimeout(() => {
     try {
-      SLINK.postMessage({
+      LIVE_UPDATE_CHANNEL.postMessage({
         type: 'data',
         D: { scenes: studioState.D.scenes, scenery: studioState.D.scenery, engine: studioState.D.engine },
       });
@@ -242,10 +245,10 @@ function restore(s) {
   window.RIGS = studioState.rigs;
   spriteCacheClear();
   render();
-  updTop();
+  updateTopBar();
   scheduleCheck();
 }
-export function updTop() {
+export function updateTopBar() {
   $('#dirty').hidden = !(studioState.dirty || studioState.rigsDirty || studioState.artDirty.size);
   $('#undoBtn').disabled = !studioState.undo.length && studioState.last === snapshot();
   $('#redoBtn').disabled = !studioState.redo.length;
@@ -294,7 +297,7 @@ export async function saveAll() {
       n++;
     }
     toast(n ? 'Saved to the game. Reload the game tab to see the changes.' : 'Everything was already saved.', 'ok');
-    updTop();
+    updateTopBar();
   } catch (e) {
     toast('Save failed: ' + e.message, 'err');
   } finally {
@@ -422,7 +425,7 @@ function onField(ev) {
 }
 const RANGE_FORMATS = { pct: v => Math.round(v * 100) + '%', x: v => '×' + (+v).toFixed(2), mul: v => (+v).toFixed(2) };
 /* ---------- navigation ---------- */
-export const NAV = [
+export const SECTION_LIST = [
   ['billionaires', 'Billies', 'The creatures: names, stats, moves, evolution, sprite art'],
   ['roster', 'Roster board', 'The 117 new Billies of the big art update and how far each is'],
   ['moves', 'Moves', 'Attacks and their effects'],
@@ -444,14 +447,14 @@ export const NAV = [
 ];
 /* alpha 0.4.1: the sections in five groups that fold away; the one you're in always shows. The descriptions show as
    a tooltip and under the section you're in, so the list is short enough to see at once */
-const NAV_GROUPS = [
+const SECTION_GROUPS = [
   ['Billies & battles', ['billionaires', 'roster', 'moves', 'preview', 'types']],
   ['World & places', ['scenes', 'engine', 'world']],
   ['People & story', ['trainers', 'people', 'wardrobe', 'lore']],
   ['Money', ['items', 'shops', 'jobs']],
   ['Game', ['rules', 'art', 'check']],
 ];
-const navFold = (() => {
+const foldedSectionGroups = (() => {
   try {
     return JSON.parse(localStorage.getItem('studio-fold') || '{}');
   } catch (e) {
@@ -459,13 +462,15 @@ const navFold = (() => {
   }
 })();
 function renderSide() {
-  const N = Object.fromEntries(NAV.map(n => [n[0], n])),
-    used = new Set(NAV_GROUPS.flatMap(g => g[1])),
-    G = NAV_GROUPS.concat([['More', NAV.map(n => n[0]).filter(k => !used.has(k))]]).filter(g => g[1].some(k => N[k]));
+  const N = Object.fromEntries(SECTION_LIST.map(n => [n[0], n])),
+    used = new Set(SECTION_GROUPS.flatMap(g => g[1])),
+    G = SECTION_GROUPS.concat([['More', SECTION_LIST.map(n => n[0]).filter(k => !used.has(k))]]).filter(g =>
+      g[1].some(k => N[k])
+    );
   $('#side').innerHTML =
     G.map(([t, L]) => {
       const has = L.includes(studioState.sec),
-        shut = navFold[t] && !has;
+        shut = foldedSectionGroups[t] && !has;
       return `<div class="nav-g ${shut ? 'shut' : ''}"><button class="nav-gh" data-act="navFold" data-g="${esc(t)}" aria-expanded="${!shut}"><span>${shut ? '▸' : '▾'}</span>${esc(t)}</button>${
         shut
           ? ''
@@ -494,9 +499,9 @@ export function go(s, sel) {
 export const SECTIONS = {};
 export const ACTS = {};
 ACTS.navFold = d => {
-  navFold[d.g] = !navFold[d.g];
+  foldedSectionGroups[d.g] = !foldedSectionGroups[d.g];
   try {
-    localStorage.setItem('studio-fold', JSON.stringify(navFold));
+    localStorage.setItem('studio-fold', JSON.stringify(foldedSectionGroups));
   } catch (e) {}
   renderSide();
 };
@@ -601,10 +606,10 @@ export async function boot() {
     studioState.files = F;
     studioState.last = snapshot();
     const h = location.hash.slice(1);
-    if (NAV.some(n => n[0] === h)) studioState.sec = h;
+    if (SECTION_LIST.some(n => n[0] === h)) studioState.sec = h;
     renderSide();
     render();
-    updTop();
+    updateTopBar();
     scheduleCheck(true);
   } catch (e) {
     $('#main').innerHTML =
