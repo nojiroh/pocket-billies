@@ -20,16 +20,16 @@ expose({
   SILHOUETTE_CACHE: [() => SILHOUETTE_CACHE],
   filteredRoster: [() => filteredRoster, v => (filteredRoster = v)],
   mountSilhouettes: [() => mountSilhouettes, v => (mountSilhouettes = v)],
+  openSilhouetteSheet: [() => openSilhouetteSheet, v => (openSilhouetteSheet = v)],
+  rosterBoard: [() => rosterBoard],
   rosterCardHTML: [() => rosterCardHTML, v => (rosterCardHTML = v)],
-  rosterFilter: [() => rosterFilter],
   rosterSpeciesId: [() => rosterSpeciesId, v => (rosterSpeciesId = v)],
   sheetSilhouette: [() => sheetSilhouette, v => (sheetSilhouette = v)],
   silhouetteOf: [() => silhouetteOf, v => (silhouetteOf = v)],
-  silhouetteSheet: [() => silhouetteSheet, v => (silhouetteSheet = v)],
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
-const rosterFilter = { filter: 'all', q: '', kind: '' };
+const rosterBoard = { filter: 'all', q: '', kind: '' };
 const ROSTER_KINDS = {
   starter: 'Starter',
   legendary: 'Legendary',
@@ -41,14 +41,14 @@ function filteredRoster() {
   const L = studioState.D.roster || [];
   return L.filter(
     e =>
-      (rosterFilter.kind ? e.kind === rosterFilter.kind : true) &&
-      (rosterFilter.filter === 'todo'
+      (rosterBoard.kind ? e.kind === rosterBoard.kind : true) &&
+      (rosterBoard.filter === 'todo'
         ? !Object.values(e.state || {}).every(Boolean)
-        : rosterFilter.filter === 'done'
+        : rosterBoard.filter === 'done'
           ? Object.values(e.state || {}).every(Boolean)
           : true) &&
-      (!rosterFilter.q ||
-        (e.name + ' ' + e.parody + ' ' + e.line + ' ' + e.design).toLowerCase().includes(rosterFilter.q.toLowerCase()))
+      (!rosterBoard.q ||
+        (e.name + ' ' + e.parody + ' ' + e.line + ' ' + e.design).toLowerCase().includes(rosterBoard.q.toLowerCase()))
   );
 }
 function rosterCardHTML(e, i) {
@@ -76,19 +76,19 @@ SECTIONS.roster = () => {
     sil = L.filter(e => e.state && e.state.silhouette).length,
     sheets = L.filter(e => e.state && e.state.sheet).length;
   after(mountSilhouettes);
-  return `<div class="ed-col solo ro"><div class="ed-head"><h2>Roster board</h2><div class="seg-row">${['all', 'todo', 'done'].map(f => `<button class="seg ${rosterFilter.filter === f ? 'on' : ''}" data-act="roFilter" data-f="${f}">${f === 'all' ? 'All' : f === 'todo' ? 'To do' : 'Done'}</button>`).join('')}</div>
+  return `<div class="ed-col solo ro"><div class="ed-head"><h2>Roster board</h2><div class="seg-row">${['all', 'todo', 'done'].map(f => `<button class="seg ${rosterBoard.filter === f ? 'on' : ''}" data-act="roFilter" data-f="${f}">${f === 'all' ? 'All' : f === 'todo' ? 'To do' : 'Done'}</button>`).join('')}</div>
   <select data-act="roKind" id="roKind"><option value="">Every kind</option>${Object.entries(ROSTER_KINDS)
-    .map(([k, n]) => `<option value="${k}" ${rosterFilter.kind === k ? 'selected' : ''}>${n}</option>`)
+    .map(([k, n]) => `<option value="${k}" ${rosterBoard.kind === k ? 'selected' : ''}>${n}</option>`)
     .join('')}</select>
-  <input id="roQ" placeholder="Search name, parody, line…" value="${esc(rosterFilter.q)}"><span class="grow"></span><button class="btn" data-act="roSheet">Silhouette sheet</button><button class="btn" data-act="roExport">Export CSV</button></div>
+  <input id="roQ" placeholder="Search name, parody, line…" value="${esc(rosterBoard.q)}"><span class="grow"></span><button class="btn" data-act="roSheet">Silhouette sheet</button><button class="btn" data-act="roExport">Export CSV</button></div>
   <p class="help">${all} Billies · ${sil} silhouettes approved · ${sheets} piece sheets drawn · ${done} complete. Tick a box when that step is done; the design line is editable. A piece sheet goes in <code>art/next/billionaires/&lt;id&gt;.png</code> with its layout <code>&lt;id&gt;.json</code> (Skeleton builder → Import piece sheet).</p>
   <div class="ro-grid">${filteredRoster().map(rosterCardHTML).join('')}</div></div>`;
 };
 ACTIONS.roFilter = d => {
-  rosterFilter.filter = d.f;
+  rosterBoard.filter = d.f;
   render();
 };
-ACTIONS.roSheet = () => silhouetteSheet();
+ACTIONS.roSheet = () => openSilhouetteSheet();
 ACTIONS.roExport = () => {
   const L = studioState.D.roster || [];
   const csv =
@@ -114,7 +114,7 @@ ACTIONS.roExport = () => {
 document.addEventListener('input', ev => {
   const el = ev.target;
   if (el.id === 'roQ') {
-    rosterFilter.q = el.value;
+    rosterBoard.q = el.value;
     const g = $('.ro-grid');
     if (g) {
       g.innerHTML = filteredRoster().map(rosterCardHTML).join('');
@@ -132,7 +132,7 @@ document.addEventListener('input', ev => {
 });
 document.addEventListener('change', ev => {
   if (ev.target.id === 'roKind') {
-    rosterFilter.kind = ev.target.value;
+    rosterBoard.kind = ev.target.value;
     render();
   }
 });
@@ -245,7 +245,7 @@ function mountSilhouettes() {
     });
   });
 }
-async function silhouetteSheet() {
+async function openSilhouetteSheet() {
   const L = filteredRoster();
   const cols = 12,
     cell = 30,
@@ -272,10 +272,10 @@ async function silhouetteSheet() {
   const cx2 = cv.getContext('2d');
   cx2.imageSmoothingEnabled = false;
   cx2.drawImage(c, 0, 0, cv.width, cv.height);
-  rosterFilter.sheetCanvas = c;
+  rosterBoard.sheetCanvas = c;
 }
 ACTIONS.roSheetSave = () => {
-  if (rosterFilter.sheetCanvas) downloadCanvas(rosterFilter.sheetCanvas, 'silhouettes.png');
+  if (rosterBoard.sheetCanvas) downloadCanvas(rosterBoard.sheetCanvas, 'silhouettes.png');
 };
 ACTIONS.roSheetClose = () => {
   $('#modal').innerHTML = '';

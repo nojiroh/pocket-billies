@@ -45,7 +45,7 @@ import { atlasGet } from './sprites.js';
 import { mapExitNames, sceneryArtPaths, sceneryCatalog } from './map-editor.js';
 /* eslint-disable no-func-assign */
 expose({
-  captureLookPreviews: [() => captureLookPreviews, v => (captureLookPreviews = v)],
+  captureLookPreview: [() => captureLookPreview, v => (captureLookPreview = v)],
   engineData: [() => engineData],
   engineDialHTML: [() => engineDialHTML, v => (engineDialHTML = v)],
   engineEditor: [() => engineEditor],
@@ -360,7 +360,7 @@ ACTIONS.engPresetDel = async d => {
 
 /* v29: look previews. The preview is drawn once with each preset (nothing is changed), then they're shown side by side;
    click one to apply it */
-function captureLookPreviews() {
+function captureLookPreview() {
   return new Promise(res => {
     if (typeof walkRenderer === 'undefined' || !walkRenderer.on) return res(null);
     let done = false;
@@ -399,12 +399,12 @@ ACTIONS.engLookPreviews = async () => {
         for (const [kk, vv] of Object.entries(v))
           if (ENGINE_DEFAULTS[g] && kk in ENGINE_DEFAULTS[g]) writePath(`${engineScopePath()}.${g}.${kk}`, vv);
       await new Promise(r => setTimeout(r, 650));
-      out.push([k, P, o, await captureLookPreviews()]);
+      out.push([k, P, o, await captureLookPreview()]);
     }
   } finally {
     writePath(engineScopePath(), Object.keys(keep).length ? keep : engineEditor.scope === 'game' ? {} : undefined);
   }
-  const cur = await captureLookPreviews();
+  const cur = await captureLookPreview();
   await dialog(
     'Every look on this scene',
     `<div class="eng-looks">${cur ? `<figure><img src="${cur}" alt="As it is now"><figcaption>As it is now</figcaption></figure>` : ''}${out.map(([k, P, o, u]) => `<figure class="eng-look" data-act="engPreset" data-k="${esc(k)}" ${o ? 'data-own="1"' : ''} role="button" tabindex="0">${u ? `<img src="${u}" alt="${esc(P.name || k)}">` : '<div class="help">No picture</div>'}<figcaption>${esc(P.name || k)}</figcaption></figure>`).join('')}</div><p class="help">Click a look to apply it (Undo takes it back).</p>`,

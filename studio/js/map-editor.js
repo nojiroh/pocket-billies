@@ -80,8 +80,8 @@ expose({
   currentMapId: [() => currentMapId],
   drawEditorMap: [() => drawEditorMap, v => (drawEditorMap = v)],
   drawSceneryPixelEditor: [() => drawSceneryPixelEditor, v => (drawSceneryPixelEditor = v)],
+  drawSceneryThumbs: [() => drawSceneryThumbs, v => (drawSceneryThumbs = v)],
   drawStepsOverlay: [() => drawStepsOverlay, v => (drawStepsOverlay = v)],
-  drawTileThumbs: [() => drawTileThumbs, v => (drawTileThumbs = v)],
   drawWatersOverlay: [() => drawWatersOverlay, v => (drawWatersOverlay = v)],
   dropStaleExitJoins: [() => dropStaleExitJoins, v => (dropStaleExitJoins = v)],
   edgeExitId: [() => edgeExitId, v => (edgeExitId = v)],
@@ -711,7 +711,7 @@ async function mountMapEditor() {
   const C = sceneryCatalog();
   const paths = sceneryArtPaths(C);
   await Promise.all(paths.map(p => atlasGet('art/' + p).catch(() => null)));
-  drawTileThumbs();
+  drawSceneryThumbs();
   drawEditorMap();
   bindEditorMap();
   if (mapEditor.ped && sceneryCatalog().props[mapEditor.ped] && typeof mountPropTurntable === 'function') {
@@ -780,7 +780,7 @@ async function mountMapEditor() {
     });
   if (mapEditor.pe) mountSceneryPixelEditor();
 }
-function drawTileThumbs() {
+function drawSceneryThumbs() {
   const C = sceneryCatalog();
   $$('canvas[data-tile]').forEach(c => {
     const T = C.terrains[c.dataset.tile];
@@ -1617,7 +1617,7 @@ studioState.hooks.scenes = path => {
     walkView.cand = null;
     if (/\.(edge|w|h)$/.test(path) || path.startsWith('scenery.terrains')) walkView.gkey = '';
     drawEditorMap();
-    if (path.startsWith('scenery.terrains')) drawTileThumbs();
+    if (path.startsWith('scenery.terrains')) drawSceneryThumbs();
   }
 };
 /* ---------- actions ---------- */
@@ -2255,7 +2255,7 @@ function sceneryPixelsChanged() {
   markArt(mapEditor.pe.path, c);
   if (mapEditor.ped && typeof drawPropEditor === 'function') drawPropEditor();
   if (mapEditor.pe.kind === 'tile') walkView.gkey = '';
-  drawTileThumbs();
+  drawSceneryThumbs();
   drawEditorMap();
   sceneryPixelPalette();
 }
