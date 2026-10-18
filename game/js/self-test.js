@@ -254,13 +254,12 @@ async function runFullTest(mode) {
     while (document.hidden && !selfTest.stop) await selfTestSleep(300);
     await selfTestSleep(800); /* frames start again */
   };
+  /* v44b: selfTest.only=['light'] runs only the steps whose names hold one of those words (for diagnosis); phase 13:
+     the stress test at the end too, as 'Stress test' */
+  const wanted = name => !selfTest.only || selfTest.only.some(w => name.toLowerCase().includes(w.toLowerCase()));
   const phase = async (name, task, fn, sec, maxSec) => {
     if (selfTest.stop) return;
-    /* v44b: selfTest.only=['light'] runs only the steps whose names hold one of those words (for diagnosis) */ if (
-      selfTest.only &&
-      !selfTest.only.some(w => name.toLowerCase().includes(w.toLowerCase()))
-    )
-      return;
+    if (!wanted(name)) return;
     for (let attempt = 0; ; attempt++) {
       await awake();
       if (selfTest.stop) return;
@@ -1304,7 +1303,7 @@ async function runFullTest(mode) {
       1
     );
     /* 7. stress: more and more at once in Sundown, until the device can't keep up (not in the diagnostics test) */
-    if (!diag) {
+    if (!diag && wanted('Stress test')) {
       const sid = gameData.maps.marigold ? 'marigold' : scenes[0],
         sc = mapById(sid),
         folk0 = sc.folk,
