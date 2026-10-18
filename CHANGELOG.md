@@ -19,6 +19,13 @@ kept aside in the browser).
   still counts as before until the step-driven parts (money, encounters, eggs) are replaced.
 - Removed: the single-file Claude-artifact version, the old train station prop, the v45 backup scenes in the game data
   (1.5 MB), importing a legacy Net Worth backup.
+- Smoother towns on phones: props no longer all recheck their height and look in the same frame twice a second, and
+  the props' culling grid is no longer rebuilt every 2 s (both were regular hitches in big towns like Clovercrest).
+- Diagnostics report format 2: a place's fps counts from once it is open, its opening hitch is reported apart
+  (`openHitchMs`, `openHitchCause`), and the first and last second of the other steps are left out (they read low).
+  The debug log now names the opening hitch (setting up the ground, building the ground mesh, the walk grid, reading
+  the picture back) instead of "outside the marked steps".
+- Fix: the full test could let the friends list publish your name and place while the maps loaded at its start.
 - Fixes: with Motion set to reduced, the camera snaps instead of gliding. Puffcap Woods and Russetwood get their own
   flower colours (they had the default ones).
 - Under the hood: the game's and the Studio's code are ES modules, and the published game loads them as one file.
