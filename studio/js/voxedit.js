@@ -30,7 +30,7 @@ import {
   toast,
 } from './studio-app.js';
 import { fileToCanvas, markArt, pickFile } from './sprites.js';
-import { SCN, scD } from './scenes.js';
+import { SCN, scD } from './map-editor.js';
 import { pedM } from './prop-editor.js';
 /* eslint-disable no-func-assign */
 expose({

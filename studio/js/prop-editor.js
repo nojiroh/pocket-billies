@@ -34,7 +34,7 @@ import {
   toast,
 } from './studio-app.js';
 import { atlasGet, fileToCanvas, markArt, pickFile } from './sprites.js';
-import { SCN, scArt, scD, scOpenPe } from './scenes.js';
+import { SCN, scArt, scD, scOpenPe } from './map-editor.js';
 /* eslint-disable no-func-assign */
 expose({
   PED: [() => PED],

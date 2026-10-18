@@ -36,7 +36,7 @@ import {
   uidKey,
 } from './studio-app.js';
 import { atlasGet } from './sprites.js';
-import { scArt, scD, scExitNames } from './scenes.js';
+import { scArt, scD, scExitNames } from './map-editor.js';
 /* eslint-disable no-func-assign */
 expose({
   ENS: [() => ENS],

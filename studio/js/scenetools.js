@@ -7,7 +7,7 @@
    - Scatter brush: drag to sprinkle the chosen prop (or its whole group) at a density you set; Alt-drag clears them.
    - Curved road: click points, double-click (or Enter) to lay the chosen ground along a smooth curve.
    - Smooth the path: turns the walker's path into a gentle curve.
-   Hooks: scenes.js calls scxDown / scxMove / scxUp from the map's pointer events and scxDraw after drawing. */
+   Hooks: map-editor.js calls scxDown / scxMove / scxUp from the map's pointer events and scxDraw after drawing. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
 import { VP, provide } from '../../game/js/hooks.js';
@@ -15,7 +15,7 @@ import { $ } from '../../game/js/util.js';
 import { DIO } from '../../game/js/walk-view.js';
 import { esc } from './game-stand-ins.js';
 import { ACTS, ST, ask, changed, clone, commit, dialog, render, toast, uidKey } from './studio-app.js';
-import { SCN, scCur, scD, scMapDraw, scPropAt, scSetTile } from './scenes.js';
+import { SCN, scCur, scD, scMapDraw, scPropAt, scSetTile } from './map-editor.js';
 /* eslint-disable no-func-assign */
 expose({
   scxBlocks: [() => scxBlocks],

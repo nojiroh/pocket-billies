@@ -1,5 +1,5 @@
 """alpha 0.2: the one-character keys a ground kind may use, in the order new kinds take them (the Studio's SC_TER_KEYS
-in studio/js/scenes.js): letters, digits and a few signs, then 190 accented letters (À to ſ, without × and ÷). A map
+in studio/js/map-editor.js): letters, digits and a few signs, then 190 accented letters (À to ſ, without × and ÷). A map
 row is a string with one character per square, so a kind's key is all a place needs to name it.
 
     from groundkeys import KEYS, free      # free(D['scenery']['terrains'], 3) -> the next three unused keys"""

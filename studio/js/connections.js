@@ -15,7 +15,7 @@ import { ENGINE_DEFAULTS, ENGINE_PRESETS, ENGINE_SPEC } from '../../game/js/engi
 import { esc } from './game-stand-ins.js';
 import { ACTS, ST, go, render, setRender, spName } from './studio-app.js';
 import { curLine } from './data-editors.js';
-import { SCN, scId } from './scenes.js';
+import { SCN, scId } from './map-editor.js';
 import { ENS, engD, engFmt } from './engine-editor.js';
 import { findEngine, findField, findFlash, findSel } from './find.js';
 /* eslint-disable no-func-assign */
