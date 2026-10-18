@@ -58,7 +58,8 @@ with `phase-04-done`.
   - Debug log, headless on ?test=1, against the commit before the change: same sections, state, events and timing
     names; render, dioMount, save, openBattle, mglRender, renderOv and dglGround still wrapped.
   - Without the flag: the title, a walk scene and the Studio load with no errors and no module names on window.
-  - Full quick check: started on f238266, still running when this entry was written (results to follow here).
+  - Full quick check: NOT run end to end; the owner skipped it. Stopped inside Scenes after 16 steps, all passed.
+    The nightly CI run on main covers it once this is merged.
   - In-game diagnostics test without the test globals (headless): not run yet, after the full check.
   - Phone load, emulated (CPU ×4, gzip, 4G 9 Mbit/40 ms), 04c vs 04d: not measured yet, after the full check.
 - Decisions I made (and why): the approved plan (real forward imports) failed: an imported module runs before its
