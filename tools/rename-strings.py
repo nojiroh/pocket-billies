@@ -1,5 +1,6 @@
 """Phase 05: the JavaScript in the Python tools' strings (page.evaluate and the like) names the game's functions and
-globals; tools/rename.mjs renames them there too, through this script. Only strings change, never Python code.
+globals; tools/rename.mjs renames them there too, through this script, and in comments the names that can only be
+code. Only strings and comments change, never Python code.
 
   python3 tools/rename-strings.py apply|dry    stdin {"pairs": {old: new}, "files": [...]} -> stdout {"changed", "review"}
   python3 tools/rename-strings.py verify BASE  stdin {"files": [[old path, new path], ...]}  -> stdout {"strings", "problems"}
@@ -36,8 +37,13 @@ def pattern(old):
     return re.compile(BEFORE + re.escape(old) + after), re.compile(BEFORE + re.escape(old) + r'(?![\w$])')
 
 
+def code_only(n):
+    """a capital, digit, _ or $ in it, and four characters or more (or three, mixed case), as in tools/rename.mjs"""
+    return bool(re.search(r'[A-Z0-9_$]', n)) and (len(n) >= 4 or (len(n) == 3 and bool(re.search(r'[a-z]', n))))
+
+
 def string_spans(src):
-    """(start, end) offsets of every string literal; of an f-string, its text outside the {expressions}"""
+    """(start, end, comment?) of every string literal (of an f-string, its text outside the {expressions}) and comment"""
     lines = src.splitlines(keepends=True)
     starts = [0]
     for ln in lines:
@@ -45,8 +51,9 @@ def string_spans(src):
     off = lambda pos: starts[pos[0] - 1] + pos[1]
     spans = []
     for t in tokenize.generate_tokens(io.StringIO(src).readline):
-        if tokenize.tok_name[t.type] in ('STRING', 'FSTRING_MIDDLE'):
-            spans.append((off(t.start), off(t.end)))
+        kind = tokenize.tok_name[t.type]
+        if kind in ('STRING', 'FSTRING_MIDDLE', 'COMMENT'):
+            spans.append((off(t.start), off(t.end), kind == 'COMMENT'))
     return spans
 
 
@@ -58,9 +65,14 @@ def rename(src, pairs, file):
     """the file with the names renamed in its strings, the lines changed, the hits left for a person"""
     compiled = {o: pattern(o) for o in pairs}
     edits, review = [], []
-    for s, e in string_spans(src):
+    for s, e, comment in string_spans(src):
         text = src[s:e]
         for o, (sure, loose) in compiled.items():
+            if comment:
+                # a comment only gets the names that can only be code (wrGate, DGL_SH), never a review line
+                if code_only(o):
+                    edits += [(s + m.start(), s + m.end(), pairs[o]) for m in loose.finditer(text)]
+                continue
             hit = {m.start() for m in sure.finditer(text)}
             for m in loose.finditer(text):
                 if m.start() in hit:
