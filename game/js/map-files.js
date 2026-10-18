@@ -1,3 +1,4 @@
+// @ts-check
 'use strict';
 /* ================= MAP FILES (phase 04b) =================
    data/gamedata.js has every map without its ground and props (sc._lite says which ground kinds and props it uses);
@@ -9,6 +10,7 @@
    The view a player can walk into next is fetched ahead (loadMapsAhead, on arriving at a place), and prepareMap waits
    for a view's maps, so nothing is drawn from half a map. If anything was put together from a map before its file came
    (the world map's miniatures, say), the views are made again once it has (seamlessWorld.gen). */
+/** @import { LocationNode, MapFileField } from '../types/game-data' */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { provide, saveData, seamlessWorld } from './hooks.js';
@@ -17,22 +19,33 @@ import { LOCATIONS, ROADS, ROADS_BY_NODE, START_NODE, gameData } from './game-da
 expose({
   MAP_FIELDS: [() => MAP_FIELDS],
   isLiteMap: [() => isLiteMap],
+  // @ts-expect-error -- replaced on purpose
   loadAllMaps: [() => loadAllMaps, v => (loadAllMaps = v)],
+  // @ts-expect-error -- replaced on purpose
   loadMapFile: [() => loadMapFile, v => (loadMapFile = v)],
+  // @ts-expect-error -- replaced on purpose
   loadMapsAhead: [() => loadMapsAhead, v => (loadMapsAhead = v)],
   mapFiles: [() => mapFiles],
+  // @ts-expect-error -- replaced on purpose
   mapsAround: [() => mapsAround, v => (mapsAround = v)],
+  // @ts-expect-error -- replaced on purpose
   mapsOfView: [() => mapsOfView, v => ((mapsOfView = v), provide({ mapsOfView }))],
   needMaps: [() => needMaps],
   nodeOfMap: [() => nodeOfMap],
+  // @ts-expect-error -- replaced on purpose
   remakeViewsOfMap: [() => remakeViewsOfMap, v => (remakeViewsOfMap = v)],
+  // @ts-expect-error -- replaced on purpose
   watchMapsAhead: [() => watchMapsAhead, v => (watchMapsAhead = v)],
 });
 /* eslint-enable no-func-assign */
 provide({ mapsOfView });
 /* to-module: end */
+/* busy: the fetches under way or done, by map; touched: maps a view was made from while lite; all: loadAllMaps;
+   ms and n: time spent and maps loaded; failed: maps that did not load */
+/** @type {{ busy: Map<string, Promise<void>>, touched: Set<string>, all: Promise<void> | null, ms: number, n: number, failed: string[] }} */
 const mapFiles = { busy: new Map(), touched: new Set(), all: null, ms: 0, n: 0, failed: [] };
 provide({ mapFiles }); /* to-module */
+/** @type {MapFileField[]} */
 const MAP_FIELDS = ['heights', 'steps', 'stepm', 'tiles', 'props'];
 export const isLiteMap = id => !!(gameData.maps[id] && gameData.maps[id]._lite);
 export function loadMapFile(id) {
@@ -41,6 +54,7 @@ export function loadMapFile(id) {
   const t0 = performance.now(),
     sc = gameData.maps[id];
   const p = (async () => {
+    /** @type {any} what the last try threw */
     let last = null;
     for (let k = 0; k < 3; k++) {
       try {
