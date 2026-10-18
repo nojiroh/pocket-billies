@@ -36,7 +36,6 @@ export interface SaveData {
   /** how many of each coin and item you have (every key of gameData.coins and gameData.items) */
   coins: Record<DataId, number>;
   items: Record<DataId, number>;
-  totalSteps: number;
   /** where you are and where you're going */
   trip: Trip;
   /** never set any more (always null) */
@@ -64,7 +63,7 @@ export interface SaveData {
   playMs?: number;
   /** story flags (story.js, lore.js) */
   story?: Record<string, any>;
-  /** fish caught and the like (fishing.js) */
+  /** fish caught and the like (fishing.js); walked: metres walked outdoors (rules.js addWalked) */
   stats?: Record<string, number>;
   /** things to do: stamps, requests, the home (things-to-do.js) */
   x?: {

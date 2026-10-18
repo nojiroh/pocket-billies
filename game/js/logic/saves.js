@@ -68,7 +68,6 @@ export function newSave() {
     se: R.se,
     coins,
     items,
-    totalSteps: 0,
     trip: { node: START_NODE, plan: [] },
     mapSeen: null,
     wild: {},
@@ -148,6 +147,7 @@ export function migrate(o) {
   delete oldSave.day;
   delete oldSave.seFrac;
   delete oldSave.buddyRem;
+  delete oldSave.totalSteps;
   if (!s.wild || typeof s.wild !== 'object') s.wild = {};
   for (const w of Object.values(s.wild)) w.list = (w.list || []).filter(q => SPECIES[q.sp]);
   s.eggs = s.eggs.filter(e => EGGS[e.tier]);
@@ -213,13 +213,7 @@ export function validSave(o) {
       return false;
     ids.add(m.uid);
   }
-  if (
-    !o.trip ||
-    !Number.isInteger(o.trip.node) ||
-    !num(o.trip.node, 0, LOCATIONS.length - 1) ||
-    !num(o.se, 0, 1e12) ||
-    !num(o.totalSteps, 0, 1e12)
-  )
+  if (!o.trip || !Number.isInteger(o.trip.node) || !num(o.trip.node, 0, LOCATIONS.length - 1) || !num(o.se, 0, 1e12))
     return false;
   if (!Array.isArray(o.eggs) || o.eggs.some(e => !e || !num(e.prog, 0, 1e12))) return false;
   for (const k of ['coins', 'items'])

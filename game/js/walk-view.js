@@ -13,7 +13,6 @@ import {
   ALTERNATE_PROPS,
   ROOM_BY_BUILDING,
   TERRAIN_MATERIALS,
-  addSteps,
   addWalked,
   artCacheVersion,
   buddyTap,
@@ -3483,15 +3482,6 @@ function movePlayer(st, dt) {
     /* phase 08: the metres you walk outdoors hatch your eggs */
     if (P.walk && !jumped && typeof addWalked === 'function' && !uiState.bench && !uiState.inside)
       addWalked(Math.hypot(P.x - ox, P.z - oz));
-    /* alpha 0.4.1: walking yourself, the metres you walk are your steps (14 a metre) */
-    if (P.walk && !jumped && typeof addSteps === 'function' && !(typeof uiState !== 'undefined' && uiState.bench)) {
-      P.stepAcc = (P.stepAcc || 0) + Math.hypot(P.x - ox, P.z - oz) * 14.1;
-      if (P.stepAcc >= 300) {
-        const n = Math.floor(P.stepAcc);
-        P.stepAcc -= n;
-        addSteps(n, true);
-      }
-    }
     if (P.walk && walkView.opt.onMove && walkView.t - P.saved > 400) {
       P.saved = walkView.t;
       walkView.opt.onMove(P.x, P.z);

@@ -55,8 +55,6 @@ expose({
   // @ts-expect-error -- replaced on purpose
   addEgg: [() => addEgg, v => (addEgg = v)],
   // @ts-expect-error -- replaced on purpose
-  addSteps: [() => addSteps, v => ((addSteps = v), provide({ addSteps }))],
-  // @ts-expect-error -- replaced on purpose
   addWalked: [() => addWalked, v => ((addWalked = v), provide({ addWalked }))],
   allBillies: [() => allBillies],
   // @ts-expect-error -- replaced on purpose
@@ -157,7 +155,7 @@ expose({
   xpFor: [() => xpFor],
 });
 /* eslint-enable no-func-assign */
-provide({ addSteps, addWalked, makeBilly, riderOf });
+provide({ addWalked, makeBilly, riderOf });
 export function setSetTrip(v) {
   // @ts-expect-error -- replaced on purpose
   setTrip = v; // eslint-disable-line no-func-assign
@@ -567,17 +565,6 @@ export function spawn(gentle, force, node = saveData.trip.node) {
     q.alpha = true;
   wildList(node).push(q);
   return q;
-}
-export function addSteps(n, quiet) {
-  n = Math.floor(Number(n));
-  if (!saveData.started || !Number.isFinite(n) || n <= 0 || n > 100000) return;
-  saveData.totalSteps += n;
-  if (!quiet) toast(`+${formatNumber(n)} steps`);
-  save();
-  if (!activeBattle) {
-    render();
-    showPendingWindows();
-  }
 }
 
 /* ---------- walking and eggs ---------- */

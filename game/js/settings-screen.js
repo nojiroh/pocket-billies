@@ -23,7 +23,7 @@ import {
   toast,
   walkRenderer,
 } from './hooks.js';
-import { formatNumber, today } from './logic/rules.js';
+import { metresToKm, today } from './logic/rules.js';
 import { SAVE_NEW_MSG, SAVE_OLD_MSG, migrate, saveAge, validSave } from './logic/saves.js';
 import { escapeHtml, reducedMotion, save, saveData, setReducedMotion, setSaveData, uiState } from './game-state.js';
 import { I18N_LANGS, i18nSet } from './i18n.js';
@@ -111,7 +111,7 @@ function importSave() {
       uiState.modal = null;
       modal({
         title: 'Restore this backup?',
-        html: `<p>Restore ${next.team.length} team members, ${next.box.length} in storage and ${formatNumber(next.totalSteps)} steps. This replaces your current progress.</p>`,
+        html: `<p>Restore ${next.team.length} team members, ${next.box.length} in storage and ${metresToKm((next.stats && next.stats.walked) || 0)} km walked. This replaces your current progress.</p>`,
         btns: [
           {
             l: 'Restore backup',
@@ -421,7 +421,7 @@ export function settingsHTML() {
         : '');
   } else if (tab === 'save')
     body =
-      `<div class="settings-profile">${personHTML('me', 52)}<div><b>${escapeHtml(cleanTrainer(saveData.avatar, saveData.gender).name)}</b><p class="note">${formatNumber(saveData.totalSteps)} steps · ${Object.keys(saveData.caught).length} taxed</p></div></div><button class="pb dark wide" data-a="open-customize">Customize trainer</button>` +
+      `<div class="settings-profile">${personHTML('me', 52)}<div><b>${escapeHtml(cleanTrainer(saveData.avatar, saveData.gender).name)}</b><p class="note">${metresToKm((saveData.stats && saveData.stats.walked) || 0)} km walked · ${Object.keys(saveData.caught).length} taxed</p></div></div><button class="pb dark wide" data-a="open-customize">Customize trainer</button>` +
       (typeof accountSettingsHTML === 'function' ? accountSettingsHTML() : '') +
       `<p class="note">${typeof account !== 'undefined' && account.user ? 'Your progress is saved to your account, and in this browser.' : 'Your progress is saved in this browser. Sign in to keep it online, or download a backup before changing device or clearing browser data.'}</p><div class="two"><button class="pb small" data-a="export-save">Export save</button><button class="pb small" data-a="import-save">Import save</button></div>`;
   else

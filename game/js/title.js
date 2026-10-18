@@ -19,8 +19,10 @@ import {
 import { $, clamp } from './util.js';
 import { TEST_BOOT } from './test-boot.js';
 import { LOCATIONS, START_NODE } from './game-data.js';
+import { encountersHere } from './logic/rules.js';
 import { newSaveKeepingPreferences } from './logic/saves.js';
 import {
+  activeBattle,
   escapeHtml,
   flushSave,
   reducedMotion,
@@ -40,6 +42,7 @@ import { music, musicFor } from './sound.js';
 import { cutsceneMapId, cutsceneStart, cutsceneStartName, cutsceneWanted } from './cutscene.js';
 /* eslint-disable no-func-assign */
 expose({
+  playSeenEncounters: [() => playSeenEncounters, v => (playSeenEncounters = v)],
   playTicks: [() => playTicks, v => (playTicks = v)],
   renderTitle: [() => renderTitle, v => (renderTitle = v)],
   titleEnd: [() => titleEnd, v => (titleEnd = v)],
@@ -221,11 +224,16 @@ function titleNew() {
   });
 }
 /* play time: counted while the game is open and in view, and saved every minute (phase 08: walking saved it before) */
-let playTicks = 0;
+let playTicks = 0,
+  playSeenEncounters = 0;
 setInterval(() => {
   if (typeof saveData !== 'undefined' && saveData && saveData.started && !document.hidden && !uiState.title) {
     saveData.playMs = (saveData.playMs || 0) + 15000;
     if (++playTicks % 4 === 0) save();
+    /* a wild Billie wandered over: the walk card shows it (walking redrew the screen every few metres before) */
+    const n = typeof encountersHere === 'function' ? encountersHere().length : 0;
+    if (n !== playSeenEncounters && uiState.tab === 'walk' && !uiState.modal && !activeBattle) render();
+    playSeenEncounters = n;
   }
 }, 15000);
 document.addEventListener(
