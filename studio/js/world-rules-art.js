@@ -37,29 +37,29 @@ import { fileToCanvas, loadImage, markArt, mountPreviews, pickFile, spritePrevie
 import { RARITY_LABELS } from './data-editors.js';
 /* eslint-disable no-func-assign */
 expose({
-  AMBS: [() => AMBS],
+  AMBIENT_PARTICLES: [() => AMBIENT_PARTICLES],
   ART_GROUPS: [() => ART_GROUPS],
-  FISH_KN: [() => FISH_KN],
-  STOP_KINDS: [() => STOP_KINDS],
+  FISHING_WATERS: [() => FISHING_WATERS],
+  LOCATION_KINDS: [() => LOCATION_KINDS],
   WORLD_IMG: [() => WORLD_IMG, v => (WORLD_IMG = v)],
   bindWorldMap: [() => bindWorldMap, v => (bindWorldMap = v)],
   drawWorldMarkers: [() => drawWorldMarkers, v => (drawWorldMarkers = v)],
-  lonlatXY: [() => lonlatXY, v => (lonlatXY = v)],
+  locationRoads: [() => locationRoads, v => (locationRoads = v)],
+  lonLatToMapXY: [() => lonLatToMapXY, v => (lonLatToMapXY = v)],
   roadsHTML: [() => roadsHTML, v => (roadsHTML = v)],
-  stopRoads: [() => stopRoads, v => (stopRoads = v)],
   weightTable: [() => weightTable, v => (weightTable = v)],
   worldBackdrops: [() => worldBackdrops, v => (worldBackdrops = v)],
   worldEggs: [() => worldEggs, v => (worldEggs = v)],
   worldFishing: [() => worldFishing, v => (worldFishing = v)],
+  worldLocations: [() => worldLocations, v => (worldLocations = v)],
   worldMapHTML: [() => worldMapHTML, v => (worldMapHTML = v)],
   worldPools: [() => worldPools, v => (worldPools = v)],
   worldRegions: [() => worldRegions, v => (worldRegions = v)],
-  worldRoute: [() => worldRoute, v => (worldRoute = v)],
   xpLine: [() => xpLine, v => (xpLine = v)],
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
-const STOP_KINDS = [
+const LOCATION_KINDS = [
   'city',
   'town',
   'grass',
@@ -90,7 +90,7 @@ let WORLD_IMG = null;
 function worldMapHTML() {
   return `<div class="wmap" id="wmap"><img src="../game/art/map/world.png?v=${(studioState.D.meta || {}).artVersion || 0}" alt="" draggable="false" id="wmapImg"><svg viewBox="0 0 360 180" preserveAspectRatio="none" id="wmapSvg"></svg></div><p class="help">Drag a marker to move a stop. The painted trail and patches are part of the map art: <button class="linkish" data-act="wtab" data-t="paint">paint them under Map art</button>, where moving a stop can carry its patch along and the trail can be repainted to match.</p>`;
 }
-function lonlatXY(lon, lat) {
+function lonLatToMapXY(lon, lat) {
   return [((lon % 360) + 360) % 360, 90 - lat];
 }
 function drawWorldMarkers() {
@@ -98,14 +98,14 @@ function drawWorldMarkers() {
   if (!svg) return;
   const D = studioState.D;
   let h = '';
-  const pts = D.route.map(r => lonlatXY(r.lon || 0, r.lat || 0));
+  const pts = D.route.map(r => lonLatToMapXY(r.lon || 0, r.lat || 0));
   (D.links || []).forEach(([a, b]) => {
     if (pts[a] && pts[b])
       h += `<line x1="${pts[a][0]}" y1="${pts[a][1]}" x2="${pts[b][0]}" y2="${pts[b][1]}" class="trail"/>`;
   });
   D.regions.forEach((g, i) => {
     if (g.lon == null) return;
-    const [x, y] = lonlatXY(g.lon, g.lat || 0);
+    const [x, y] = lonLatToMapXY(g.lon, g.lat || 0);
     h += `<g class="mk reg ${studioState.sel.stop === 'r' + i ? 'on' : ''}" data-mk="r${i}" transform="translate(${x},${y})"><circle r="3.2"/><text y="-5">${esc(g.name)}</text></g>`;
   });
   D.route.forEach((r, i) => {
@@ -173,7 +173,7 @@ SECTIONS.world = () => {
     ['paint', 'Map art'],
   ];
   const body = {
-    route: worldRoute,
+    route: worldLocations,
     pools: worldPools,
     fishing: worldFishing,
     eggs: worldEggs,
@@ -187,7 +187,7 @@ ACTIONS.wtab = d => {
   studioState.sel.wtab = d.t;
   render();
 };
-function worldRoute() {
+function worldLocations() {
   const D = studioState.D;
   let i = typeof studioState.sel.stop === 'number' ? studioState.sel.stop : 0;
   if (!D.route[i]) i = 0;
@@ -205,7 +205,7 @@ function worldRoute() {
         x,
         j
       ) => `<tr class="${j === i ? 'on' : ''}"><td>${j + 1}</td><td><button class="linkish" data-act="pickStop" data-i="${j}">${esc(x.name)}</button>${x.town ? ' <small>town</small>' : ''}${x.gate ? ' <small class="warn">gated</small>' : ''}</td><td><small>${
-        stopRoads(j)
+        locationRoads(j)
           .map(([o, c]) => `${esc(D.route[o].name)} (${formatThousands(c)})`)
           .join(', ') || '<span class="warn">no roads</span>'
       }</small></td><td>${x.shop && D.shops[x.shop] ? esc(D.shops[x.shop].name) : ''}</td><td>${Object.values(
@@ -281,7 +281,7 @@ function worldRoute() {
       selectField(
         'Map landmarks',
         `${p}.t`,
-        STOP_KINDS.map(k => [k, k])
+        LOCATION_KINDS.map(k => [k, k])
       ),
       textField('Banner picture', `${p}.banner`, {
         opt: 1,
@@ -305,14 +305,14 @@ function worldRoute() {
     card('Map', worldMapHTML())
   );
 }
-function stopRoads(i) {
+function locationRoads(i) {
   return (studioState.D.links || [])
     .map((l, k) => (l[0] === i ? [l[1], l[2], k] : l[1] === i ? [l[0], l[2], k] : null))
     .filter(Boolean);
 }
 function roadsHTML(i) {
   const D = studioState.D,
-    R = stopRoads(i),
+    R = locationRoads(i),
     opts = D.route.map((r, j) => [j, `${j + 1}. ${r.name}`]).filter(([j]) => j !== i);
   return `<table class="tbl"><thead><tr><th>Road to</th><th>Steps</th><th>About</th><th>Leaves by</th><th></th></tr></thead><tbody>${R.map(
     ([o, c, k]) => {
@@ -486,7 +486,7 @@ function worldPools() {
   );
 }
 /* v25: what bites in each kind of water; levels are added to the place's own wild levels */
-const FISH_KN = {
+const FISHING_WATERS = {
   pond: 'Ponds',
   stream: 'Streams',
   lake: 'Lakes',
@@ -502,7 +502,7 @@ function worldFishing() {
   after(() => mountPreviews($('#main')));
   return (
     `<p class="help">Fishing: stand by water on the Walk screen and tap Fish. What bites depends on the kind of water (set in Walk scenes → Kinds of water). Levels are the place’s own wild levels plus these.</p>` +
-    Object.entries(FISH_KN)
+    Object.entries(FISHING_WATERS)
       .map(([k, n]) => {
         const P = D.fishing[k];
         if (!P)
@@ -577,7 +577,7 @@ function worldRegions() {
               selectField(
                 'Look',
                 `regions.${i}.t`,
-                STOP_KINDS.concat(['sun']).map(k => [k, k])
+                LOCATION_KINDS.concat(['sun']).map(k => [k, k])
               ),
               ...(g.t === 'sun'
                 ? []
@@ -602,7 +602,7 @@ function worldRegions() {
     )
   );
 }
-export const AMBS = [
+export const AMBIENT_PARTICLES = [
   ['pollen', 'Pollen'],
   ['spore', 'Spores'],
   ['drip', 'Drips'],
@@ -662,7 +662,7 @@ function worldBackdrops() {
                   fars.map(f => [f, f]),
                   { none: 'None', opt: 1 }
                 ),
-            selectField('In the air', `${p}.amb`, AMBS)
+            selectField('In the air', `${p}.amb`, AMBIENT_PARTICLES)
           ) +
           `<div class="grid colors">${colorField('Sky top', `${p}.sky.0`)}${colorField('Sky middle', `${p}.sky.1`)}${colorField('Sky horizon', `${p}.sky.2`)}${colorField('Haze', `${p}.fog`)}${numberField('Haze distance', `${p}.fogD`, { min: 10, max: 300, step: 5, help: 'Smaller is hazier.' })}</div>`,
         {

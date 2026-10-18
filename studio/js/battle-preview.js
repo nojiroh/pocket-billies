@@ -44,7 +44,7 @@ import {
   studioState,
 } from './studio-app.js';
 import { atlasGet, atlasPath, rigFor } from './sprites.js';
-import { AMBS } from './world-rules-art.js';
+import { AMBIENT_PARTICLES } from './world-rules-art.js';
 /* eslint-disable no-func-assign */
 expose({
   BP: [() => BP],
@@ -192,7 +192,7 @@ SECTIONS.preview = () => {
       Object.entries(D.backdrops).map(([k, v]) => [k, v.name || k]),
       BP.area
     )}</select></label>
-   <div class="grid colors">${colorField('Sky top', `${p}.sky.0`)}${colorField('Sky middle', `${p}.sky.1`)}${colorField('Sky horizon', `${p}.sky.2`)}${colorField('Haze', `${p}.fog`)}</div>${rangeField('Haze distance', `${p}.fogD`, { min: 10, max: 300, step: 5 })}${selectField('In the air', `${p}.amb`, AMBS)}
+   <div class="grid colors">${colorField('Sky top', `${p}.sky.0`)}${colorField('Sky middle', `${p}.sky.1`)}${colorField('Sky horizon', `${p}.sky.2`)}${colorField('Haze', `${p}.fog`)}</div>${rangeField('Haze distance', `${p}.fogD`, { min: 10, max: 300, step: 5 })}${selectField('In the air', `${p}.amb`, AMBIENT_PARTICLES)}
    <p class="help">Changes apply live. Ground, walls and far land are picked under World & encounters → Battle backdrops.</p>`
   )}
  </aside></div></div>`;
