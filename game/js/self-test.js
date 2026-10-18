@@ -996,8 +996,8 @@ async function runFullTest(mode) {
               for (let i = 0; i < 80 && !walkView.ready; i++) await selfTestSleep(100);
               const C0 = walkData().sc.props,
                 vk = (walkView.sc.props || [])
-                  .filter(p => C0[p.k] && typeof C0[p.k].vox === 'string')
-                  .map(p => C0[p.k].vox);
+                  .filter(p => C0[p.k] && typeof C0[p.k].model === 'string')
+                  .map(p => C0[p.k].model);
               for (
                 let i = 0;
                 i < 60 && typeof propModelState !== 'undefined' && vk.some(k => !propModelState.recipes.get(k));
@@ -1028,7 +1028,7 @@ async function runFullTest(mode) {
               };
               const seen = (sc.props || []).filter(inView),
                 wantB = seen.filter(pp => C0[pp.k] && C0[pp.k].build).length,
-                wantV = seen.filter(pp => C0[pp.k] && C0[pp.k].vox && pp.vox !== 'card').length;
+                wantV = seen.filter(pp => C0[pp.k] && C0[pp.k].model && pp.vox !== 'card').length;
               if (id === 'test_light_props' && (b < wantB || v < wantV || !wantB))
                 throw new Error(
                   `props in view: ${b} of ${wantB} buildings and ${v} of ${wantV} voxel props drawn (${p} solid props)`

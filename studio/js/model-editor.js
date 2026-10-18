@@ -56,20 +56,20 @@ const MODEL_LAYER_KINDS = [
   ['raw', 'Imported voxels'],
 ];
 function modelRecipeOf(M) {
-  if (!M || !M.vox) return null;
-  if (typeof M.vox === 'object') return M.vox;
-  const r = typeof loadPropModelRecipe === 'function' ? loadPropModelRecipe(M.vox) : null;
+  if (!M || !M.model) return null;
+  if (typeof M.model === 'object') return M.model;
+  const r = typeof loadPropModelRecipe === 'function' ? loadPropModelRecipe(M.model) : null;
   return r;
 }
 /* the recipe is edited in place: a file-based one is pulled into the catalogue entry first */
 function ownModelRecipe(M) {
-  if (typeof M.vox === 'string') {
+  if (typeof M.model === 'string') {
     const r = modelRecipeOf(M);
     if (!r) return null;
-    M.voxFile = M.vox;
-    M.vox = JSON.parse(JSON.stringify(r));
+    M.voxFile = M.model;
+    M.model = JSON.parse(JSON.stringify(r));
   }
-  return M.vox;
+  return M.model;
 }
 function modelChanged(M) {
   M.voxV = (M.voxV || 0) + 1;
@@ -79,22 +79,22 @@ function modelChanged(M) {
 }
 function modelEditorHTML(k) {
   const M = sceneryCatalog().props[k],
-    b = `scenery.props.${k}.vox`;
+    b = `scenery.props.${k}.model`;
   if (!M || M.build) return '';
   const rec = modelRecipeOf(M);
   const head = `<h4>3D model</h4>`;
-  if (!M.vox)
+  if (!M.model)
     return `${head}<p class="help">Give this prop a real 3D body: shapes you place with sliders (drawn as low-poly painted with the buildings’ 32 px textures, or as voxels one to a pixel of the art with Engine › World › Props as low-poly off), voxels imported from MagicaVoxel, and pictures set in the model. With the Voxel props dial on, the game draws the model instead of the picture, cel-shaded in the scene's light; the picture stays for the map, the Studio lists and the dial off.</p>
   <div class="seg-row"><button class="btn sm" data-act="vxeNew">Start a model from the picture</button><button class="btn sm subtle" data-act="vxeImport">Import a .vox</button></div>`;
   if (!rec) {
     setTimeout(() => {
       if (mapEditor.ped === k && modelRecipeOf(M)) render();
     }, 400);
-    return `${head}<p class="help">Loading ${escapeHtml(String(M.vox))}…</p>`;
+    return `${head}<p class="help">Loading ${escapeHtml(String(M.model))}…</p>`;
   }
   if (rec.kind === 'mesh')
     return `<h4>3D model</h4><p class="help">A low-poly model painted with the buildings’ 32 px textures${rec.about ? ' (' + escapeHtml(rec.about) + ')' : ''}. A tool makes its shape, so it isn’t edited here; the turntable shows it as the game draws it.</p>`;
-  if (typeof M.vox === 'string') ownModelRecipe(M); /* edited in the catalogue entry from here on */
+  if (typeof M.model === 'string') ownModelRecipe(M); /* edited in the catalogue entry from here on */
   const L = rec.layers || [],
     names = Object.fromEntries(MODEL_LAYER_KINDS),
     tex = typeof PROP_MODEL_TEXTURES !== 'undefined' ? PROP_MODEL_TEXTURES : [['plain', 'Plain']];
@@ -164,7 +164,7 @@ ACTIONS.vxeNew = () => {
     ppu = sceneryCatalog().ppu || 34,
     w = im ? (im.naturalWidth || im.width) / ppu : 1,
     h = im ? (im.naturalHeight || im.height) / ppu : 1;
-  M.vox = {
+  M.model = {
     vpm: 32,
     layers: [
       {
@@ -286,7 +286,7 @@ ACTIONS.vxeOff = async () => {
     ))
   )
     return;
-  delete M.vox;
+  delete M.model;
   delete M.voxV;
   modelEditor.sel = null;
   changed();
@@ -362,7 +362,8 @@ ACTIONS.vxeImport = async () => {
     const col = pal[c - 1] || [200, 200, 200];
     s += String.fromCharCode(x, y, z, col[0], col[1], col[2]);
   }
-  const rec = M.vox && typeof M.vox === 'object' ? M.vox : ownModelRecipe(M) || (M.vox = { vpm: 32, layers: [] });
+  const rec =
+    M.model && typeof M.model === 'object' ? M.model : ownModelRecipe(M) || (M.model = { vpm: 32, layers: [] });
   rec.layers.push({
     k: 'raw',
     name: f.name.replace(/\.vox$/i, ''),
@@ -386,7 +387,7 @@ ACTIONS.vxeImport = async () => {
 document.addEventListener('input', ev => {
   const t = ev.target;
   if (!t || !t.dataset || !t.dataset.p || !mapEditor.ped) return;
-  if (!t.dataset.p.startsWith(`scenery.props.${mapEditor.ped}.vox`)) return;
+  if (!t.dataset.p.startsWith(`scenery.props.${mapEditor.ped}.model`)) return;
   const M = editedProp();
   if (!M) return;
   clearTimeout(modelEditor.t);

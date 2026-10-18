@@ -325,7 +325,7 @@ def check_masts():
         n += len(f)
     if 'station' in [p['k'] for sc in D['maps'].values() for p in sc.get('props', [])]: bad.append('an old train station is still standing')
     # alpha 0.4.1: the mast and the airship are two props; every mast has its airship moored at it
-    CP = D['scenery']['props']; M = CP.get('airship_mast') or {}; AS = CP.get('airship') or {}; rp = GAME / 'art' / (M.get('vox') or 'missing'); ra = GAME / 'art' / (AS.get('vox') or 'missing')
+    CP = D['scenery']['props']; M = CP.get('airship_mast') or {}; AS = CP.get('airship') or {}; rp = GAME / 'art' / (M.get('model') or 'missing'); ra = GAME / 'art' / (AS.get('model') or 'missing')
     for sc in D['maps'].values():
         P = sc.get('props') or []
         for m in [q for q in P if q.get('k') in ('airship_mast', 'airship_station')]:
@@ -1322,8 +1322,8 @@ def desktop_steps(b, base, R):
         if abs(w[0] - w[1]) < .005: raise Exception(f'the wind does not move: {w}')
         out.append('every plant sways; the encounter grass takes the wind')
         # voxel props: recipes resolve, meshes build, a few draw
-        vx = json.loads(pg.evaluate("""JSON.stringify((()=>{const C=walkData().sc.props,keys=Object.keys(C).filter(k=>C[k].vox);const out={n:keys.length,built:0,empty:[],drawn:propModelState.drawn};
-         for(const k of keys.slice(0,12)){const spec=C[k].vox,rec=typeof spec==='object'?spec:propModelState.recipes.get(spec);if(!rec){loadPropModelRecipe(spec);continue}const m=greedyVoxelMesh(voxelise(rec),rec.vpm||8);if(m&&m.n>0)out.built++;else out.empty.push(k)}return out})())"""))
+        vx = json.loads(pg.evaluate("""JSON.stringify((()=>{const C=walkData().sc.props,keys=Object.keys(C).filter(k=>C[k].model);const out={n:keys.length,built:0,empty:[],drawn:propModelState.drawn};
+         for(const k of keys.slice(0,12)){const spec=C[k].model,rec=typeof spec==='object'?spec:propModelState.recipes.get(spec);if(!rec){loadPropModelRecipe(spec);continue}const m=greedyVoxelMesh(voxelise(rec),rec.vpm||8);if(m&&m.n>0)out.built++;else out.empty.push(k)}return out})())"""))
         if vx['n'] < 30: raise Exception(f'{vx["n"]} props with a voxel recipe (want 30+)')
         if vx['empty']: raise Exception('empty voxel models: ' + ', '.join(vx['empty']))
         out.append(f'{vx["n"]} props with a voxel recipe, {vx["built"]} of 12 meshed on the spot, {vx["drawn"]} drawn last frame')
@@ -1765,7 +1765,7 @@ def desktop_steps(b, base, R):
         art's scale (32 to the metre) when "Props as low-poly" is off; both within a budget a phone can carry; in the
         every-prop scene they draw as models"""
         if not pg.evaluate("typeof lowPolyFromRecipe==='function'"): return 'not in this build'
-        pg.evaluate("window.__P=Object.entries(gameData.scenery.props).filter(([k,M])=>typeof M.vox==='string').map(([k,M])=>M.vox);__P.forEach(p=>loadPropModelRecipe(p));0")
+        pg.evaluate("window.__P=Object.entries(gameData.scenery.props).filter(([k,M])=>typeof M.model==='string').map(([k,M])=>M.model);__P.forEach(p=>loadPropModelRecipe(p));0")
         until(pg, "__P.every(p=>propModelState.recipes.get(p))", 30)
         r = pg.evaluate("""(()=>{let n=0,lp=0,q=0,bad=[];for(const p of __P){const rec=propModelState.recipes.get(p);if(!rec||rec.kind==='mesh')continue;n++;
           const L=lowPolyFromRecipe(rec),V=greedyVoxelMesh(voxelise(rec,32),32);if(!L||!V){bad.push(p.split('/').pop());continue}lp+=L.tris;q+=V.quads}return {n,lp,q,bad,on:!!engineSetting('world','voxelLowPoly'),res:propModelState.VPM}})()""")

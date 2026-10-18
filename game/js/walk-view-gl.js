@@ -4670,7 +4670,7 @@ export function gatherFrameItems(st, C, PPU, C0) {
       }
     }
     /* v43: a prop with a voxel recipe draws as a solid (prop-models.js); its picture layers come along as sprites */
-    if (!far && M.vox && typeof tagPropModel === 'function') {
+    if (!far && M.model && typeof tagPropModel === 'function') {
       const vi = out[out.length - 1];
       tagPropModel(vi);
       if (vi.vox) propModelImageItems(vi, out);

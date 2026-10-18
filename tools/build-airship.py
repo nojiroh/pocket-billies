@@ -657,21 +657,21 @@ def main():
     CP = D['scenery']['props']; E = CP.get('airship_mast')
     if E is not None:
         foot, base = feet['airship_mast']
-        E['vox'] = MODEL_REL; E['ox'] = -foot; E['oy'] = -base
+        E['model'] = MODEL_REL; E['ox'] = -foot; E['oy'] = -base
         E['fx'] = [{'k': 'glow', 'x': 0, 'y': -int(round((MAST_H + .86) * 34))}]
         E['name'] = 'Airship mast'; E['box'] = [1.8, 1.8]
         # the airship: its own prop, moored at the mast (same base point), no footprint (it flies), bobbing in the wind
         foot, base = feet['airship']
         A = CP.setdefault('airship', {})
         A.update({'name': 'Airship', 'img': 'scene/props/airship.png', 'ox': -foot, 'oy': -base, 'shadow': 1.0, 'sway': 0, 'flat': 0,
-                  'tags': ['town', 'city', 'village'], 'group': 'airship', 'vox': SHIP_REL, 'bob': .09, 'noHit': 1,
+                  'tags': ['town', 'city', 'village'], 'group': 'airship', 'model': SHIP_REL, 'bob': .09, 'noHit': 1,
                   'about': 'Moored at an airship mast: place it on the mast (same spot); it swings round the mast a little and bobs in the wind'})
         # alpha 0.4.1: the airship station (no rooms; tap it to fly) takes every mast's place in the towns, and the old
         # train station in Verdigris City goes (its terminal room with it)
         foot, base = feet['airship_station']
         S_ = CP.setdefault('airship_station', {})
         S_.update({'name': 'Airship station', 'img': 'scene/props/airship_station.png', 'ox': -foot, 'oy': -base, 'shadow': 1.0, 'sway': 0, 'flat': 0,
-                   'tags': ['town', 'city', 'village'], 'group': 'airship_station', 'vox': STATION_REL, 'box': [1.8, 1.8], 'act': 'fly',
+                   'tags': ['town', 'city', 'village'], 'group': 'airship_station', 'model': STATION_REL, 'box': [1.8, 1.8], 'act': 'fly',
                    'fx': [{'k': 'glow', 'x': int(round(x * 34)), 'y': -int(round((y + z * .5) * 34))} for x, y, z in STATION_LAMPS]
                          + [{'k': 'glow', 'x': 0, 'y': -int(round((MAST_H + .86) * 34))}],
                    'about': 'An airship station in the open: the mast with a lift, a canopy, a ticket kiosk. Tap it to fly; the airship moors at its mast (same spot)'})

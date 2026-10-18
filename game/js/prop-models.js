@@ -1140,9 +1140,9 @@ precision highp float;out vec4 o;void main(){o=vec4(1.);}`,
 };
 /* tag an item that draws as voxels (gatherFrameItems calls this): the sprite and the solid-prop body stand aside */
 function tagPropModel(it) {
-  if (!propModelsOn() || it.k !== 'prop' || it.far || it.layer || !it.M || !it.M.vox || (it.p && it.p.vox === 'card'))
+  if (!propModelsOn() || it.k !== 'prop' || it.far || it.layer || !it.M || !it.M.model || (it.p && it.p.vox === 'card'))
     return;
-  const spec = it.M.vox;
+  const spec = it.M.model;
   let rec, path;
   if (typeof spec === 'object') {
     rec = spec;
@@ -1326,9 +1326,9 @@ function propModelArtPaths(sc, C) {
   let any = false;
   for (const p of sc.props || (sc._lite && sc._lite.props) || []) {
     const M = C.props[p.k];
-    if (!M || !M.vox) continue;
+    if (!M || !M.model) continue;
     any = true;
-    const rec = propModelState.recipes.get(M.vox);
+    const rec = propModelState.recipes.get(M.model);
     if (rec) for (const l of rec.layers || []) if (l.k === 'img' && l.img) L.push(l.img);
   }
   /* alpha 0.4: the low-poly props and models are painted from the building sheet */

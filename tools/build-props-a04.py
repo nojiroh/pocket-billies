@@ -646,7 +646,7 @@ def main():
         e['layers'] = (e.get('layers') or []) + [{'img': 'scene/props/layers/tree_giant_swing.png', 'dz': -.25, 'sway': 0, 'shadow': 0, 'swing': .05, 'pivot': 5.5}]
         e['tags'] = sorted(set((e.get('tags') or []) + ['town', 'village'])); cat['tree_giant_swing'] = e; cadd.append('tree_giant_swing')
     # the mast and its airship draw as a low-poly model (tools/build-airship.py makes it and its picture)
-    if 'airship_mast' in cat: cat['airship_mast']['vox'] = 'scene/models/airship_mast.json'
+    if 'airship_mast' in cat: cat['airship_mast']['model'] = 'scene/models/airship_mast.json'
     for k, a in (('airship_mast', 'fly'), ('sky_lift', 'fly')):
         if k in cat: cat[k].setdefault('act', a)
     # colour variants of the cottages (the roofs keep their moss or their solar shingles)

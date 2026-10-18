@@ -372,8 +372,8 @@ def main():
     for key in PROPS:
         for T in (P, cat):
             if key not in T: continue
-            if key in SKIP: T[key].pop('vox', None); T[key].pop('voxV', None)
-            else: T[key]['vox'] = 'scene/vox/%s.json' % key; n += 1
+            if key in SKIP: T[key].pop('model', None); T[key].pop('voxV', None)
+            else: T[key]['model'] = 'scene/vox/%s.json' % key; n += 1
     bsp.write_json(META, P); gamedata.save_js(head + 'window.GAMEDATA=' + json.dumps(D, ensure_ascii=False, indent=1) + ';\n')
     print('%d voxel recipes; written now: %s; %d catalogue entries point at a recipe' % (len(PROPS), ', '.join(made) or 'none (all there)', n // 2))
     if sp:
