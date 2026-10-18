@@ -24,7 +24,7 @@ import { engineSetting } from './engine/settings.js';
 import { currentLocationMap, environment, environmentState } from './environment.js';
 import { standingHeightAt, walkRenderer } from './walk-view-gl.js';
 import { battleSay, endBattle, openBattle, setEndBattle, setOpenBattle } from './battle.js';
-import { sfx } from './sound.js';
+import { soundEffect } from './sound.js';
 import { TALK, setTalkFolk, talk, talkFolk } from './talk.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -112,7 +112,7 @@ function x28Reward(k = 1) {
       R.push((c === 'silver' ? '3 × ' : '') + COINS[c].n);
     }
   }
-  if (typeof sfx === 'function') sfx('buy');
+  if (typeof soundEffect === 'function') soundEffect('buy');
   return R.join(', ');
 }
 
@@ -393,7 +393,7 @@ function stampDraw(quad, glows, t) {
     if (Math.hypot(P.x - p[0], P.z - p[1]) < 0.7) {
       X.stamps[key] = today();
       const n = stampCount();
-      if (typeof sfx === 'function') sfx('coin');
+      if (typeof soundEffect === 'function') soundEffect('coin');
       x28Event('stamp');
       let msg = `Gold stamp found! ${n} of ${stampTotal()}.`;
       if (n % 3 === 0) {
@@ -548,7 +548,7 @@ function photoEnd() {
 }
 function photoShot() {
   if (!uiState.photo || typeof walkRenderer === 'undefined') return;
-  if (typeof sfx === 'function') sfx('pop');
+  if (typeof soundEffect === 'function') soundEffect('pop');
   walkRenderer.photoReq = c => {
     if (!c) {
       toast('The picture couldn’t be taken on this device.');

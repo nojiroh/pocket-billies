@@ -4,7 +4,7 @@
    Each shop has a keeper (drawn by the trainer renderer from PEOPLE), a greeting and a stock list. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { closeModal, modal, provide, renderOverlay, sfx, toast } from './hooks.js';
+import { closeModal, modal, provide, renderOverlay, soundEffect, toast } from './hooks.js';
 import { clamp, random } from './util.js';
 import { COINS, ITEMS, SHOPS } from './game-data.js';
 import { escapeHtml, formatNumber, plural, save, saveData, uiState } from './game-state.js';
@@ -128,7 +128,7 @@ function shopBuy(id, k) {
     return;
   }
   saveData.se -= cost;
-  if (typeof sfx === 'function') sfx('buy');
+  if (typeof soundEffect === 'function') soundEffect('buy');
   if (kind === 'coin') saveData.coins[key] = (saveData.coins[key] || 0) + n;
   else saveData.items[key] = (saveData.items[key] || 0) + n;
   save();

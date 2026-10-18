@@ -13,7 +13,7 @@ import { frameStop, frameTask } from './frame-scheduler.js';
 import { trPortrait, trainerLook } from './person-art.js';
 import { turnToPlayer, walkView } from './walk-view.js';
 import { walkRenderer } from './walk-view-gl.js';
-import { sfx } from './sound.js';
+import { soundEffect } from './sound.js';
 /* eslint-disable no-func-assign */
 expose({
   FOLK_NAMES: [() => FOLK_NAMES],
@@ -125,7 +125,7 @@ export function talkLine(who, text, expr, o = {}) {
       const b = Math.floor(st.n / 3);
       if (b > blipN && st.n < text.length) {
         blipN = b;
-        if (typeof sfx === 'function' && /\w/.test(text[st.n] || '')) sfx('blip', { who });
+        if (typeof soundEffect === 'function' && /\w/.test(text[st.n] || '')) soundEffect('blip', { who });
       }
       if (st.n >= text.length) {
         st.typing = false;
@@ -140,7 +140,7 @@ export function talkLine(who, text, expr, o = {}) {
         st.t0 = -1e9;
         return;
       }
-      if (typeof sfx === 'function') sfx('tick');
+      if (typeof soundEffect === 'function') soundEffect('tick');
       st.done();
     };
     st.done = () => {

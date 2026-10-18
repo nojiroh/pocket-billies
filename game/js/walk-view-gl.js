@@ -53,9 +53,9 @@ import {
   riderOf,
   saveData,
   seamlessLookTick,
-  sfxAt,
   solidPropLevelOfDetail,
   solidPropState,
+  soundEffectAt,
   stampDraw,
   tagPropModel,
   tagSolidProp,
@@ -4822,8 +4822,8 @@ export function gatherFrameItems(st, C, PPU, C0) {
       const dd = Math.min(0.1, (t - (s.lt || t)) / 1000);
       s.lt = t;
       const P = walkView.pl;
-      if (P && typeof sfxAt === 'function' && Math.hypot(P.x - s.x, P.z - s.z) < 4 && Math.random() < dd * 0.25)
-        sfxAt('rustle', s.x, s.z);
+      if (P && typeof soundEffectAt === 'function' && Math.hypot(P.x - s.x, P.z - s.z) < 4 && Math.random() < dd * 0.25)
+        soundEffectAt('rustle', s.x, s.z);
     }
     used.push([s.x, s.z]);
     walkRenderer.encPos.push([s.x, s.z, e.id]);
@@ -6563,7 +6563,7 @@ function waterLife() {
           y: walkRenderer.wlevelR ?? walkRenderer.wlevel ?? 0,
           a: 0,
         });
-        if (typeof sfxAt === 'function') sfxAt('plop', x, z);
+        if (typeof soundEffectAt === 'function') soundEffectAt('plop', x, z);
       }
     });
   if (engineSetting('water', 'rings') && !walkRenderer.bt && !reducedMotion) {

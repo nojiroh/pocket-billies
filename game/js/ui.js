@@ -178,7 +178,7 @@ import {
 } from './world-map.js';
 import { worldMapGlAction, worldMapGlWanted } from './world-map-gl.js';
 import { openShop } from './shop.js';
-import { sfx } from './sound.js';
+import { soundEffect } from './sound.js';
 import { talkHazel } from './talk.js';
 import { cutscene, cutsceneStart, cutsceneWanted } from './cutscene.js';
 import { fallStill } from './opening-fall.js';
@@ -1085,7 +1085,7 @@ function enterRoom(a, p) {
   }
   uiState.inside = info;
   uiState.roam = null;
-  if (typeof sfx === 'function') sfx('door');
+  if (typeof soundEffect === 'function') soundEffect('door');
   if (typeof NWLOG !== 'undefined') NWLOG.add('scene', 'inside ' + id);
   render();
   return true;
@@ -1162,7 +1162,7 @@ function roomStepIn(info, n = 0) {
   uiState.inside = info;
   uiState.roam = null;
   if (typeof walkRenderer !== 'undefined') walkRenderer.prepBoost = 1;
-  if (typeof sfx === 'function') sfx('door');
+  if (typeof soundEffect === 'function') soundEffect('door');
   if (typeof NWLOG !== 'undefined')
     NWLOG.add('scene', 'inside ' + (info.view || info.id) + (n ? ` (waited ${n * 100} ms)` : ''));
   render();
@@ -1191,12 +1191,12 @@ export function leaveRoom() {
       o = (B && B.baseOff) || [0, 0];
     uiState.roam = { id: (B && B.baseId) || I.back.id, node: I.node, x: fr[0] - o[0], z: fr[1] - o[1] };
     uiState.backAt = null;
-    if (typeof sfx === 'function') sfx('door');
+    if (typeof soundEffect === 'function') soundEffect('door');
     render();
     return;
   }
   uiState.roam = uiState.backAt = { id: I.back.id, node: I.node, x: I.back.x, z: I.back.z };
-  if (typeof sfx === 'function') sfx('door');
+  if (typeof soundEffect === 'function') soundEffect('door');
   render();
 }
 function roomAct(h) {

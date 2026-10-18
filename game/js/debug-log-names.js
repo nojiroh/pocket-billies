@@ -92,14 +92,13 @@ import {
 import { setWorldMapMount, worldMapMount } from './world-map.js';
 import { setWorldMapGlRender, setWorldMapMiniBuild, worldMapGlRender, worldMapMiniBuild } from './world-map-gl.js';
 import { openShop, setOpenShop } from './shop.js';
-import { AMB, AUD } from './sound.js';
+import { AMB, soundEngine } from './sound.js';
 import { cutsceneStart, setCutsceneStart } from './cutscene.js';
 import { account } from './account.js';
 import { chalToday, stampCount } from './things-to-do.js';
 import { render, renderOverlay, setRender, setRenderOverlay, toast } from './ui.js';
 Object.defineProperties(GAME, {
   AMB: { get: () => AMB },
-  AUD: { get: () => AUD },
   FRAME: { get: () => FRAME },
   LIFE: { get: () => LIFE },
   LOCATIONS: { get: () => LOCATIONS },
@@ -156,6 +155,7 @@ Object.defineProperties(GAME, {
   setTrip: { get: () => setTrip, set: setSetTrip },
   shadowPass: { get: () => shadowPass, set: setShadowPass },
   solidPropState: { get: () => solidPropState },
+  soundEngine: { get: () => soundEngine },
   stampCount: { get: () => stampCount },
   toast: { get: () => toast },
   uiState: { get: () => uiState },

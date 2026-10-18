@@ -10,7 +10,7 @@
    frame. A species' rig art is loaded the first time it's needed; until then it simply isn't shown. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { battleStageKey, mapIdAt, provide, sfx } from './hooks.js';
+import { battleStageKey, mapIdAt, provide, soundEffect } from './hooks.js';
 import { clamp } from './util.js';
 import { SPECIES, STATUS_NAMES, TRAINERS, rivalSpecies, trainersAt } from './game-data.js';
 import { billyName, findBilly, maxHp, nextTripNode, save, saveData, uiState } from './game-state.js';
@@ -345,7 +345,7 @@ export function buddyTap() {
         max: 1.1 + Math.random() * 0.5,
         c: i % 3 ? [1, 0.45, 0.62] : [1, 0.86, 0.5],
       });
-  if (typeof sfx === 'function') sfx('cry', { sp: m.sp });
+  if (typeof soundEffect === 'function') soundEffect('cry', { sp: m.sp });
   save();
 }
 /* ---------- world trainers' companions ---------- */

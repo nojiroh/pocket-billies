@@ -7,8 +7,7 @@ import {
   account,
   accountSettingsHTML,
   ambApply,
-  audApply,
-  audTest,
+  applyVolumes,
   closeModal,
   engineSetting,
   galleryOpen,
@@ -20,6 +19,7 @@ import {
   renderOverlay,
   runDiagTest,
   runQuickTest,
+  testVolume,
   toast,
   walkRenderer,
 } from './hooks.js';
@@ -522,7 +522,7 @@ function setPref(k, v) {
     v = v === '1';
     saveData.preferences.mute = v;
     save();
-    if (typeof audApply === 'function') audApply();
+    if (typeof applyVolumes === 'function') applyVolumes();
     return;
   }
   if (k === 'expert') {
@@ -540,7 +540,7 @@ function setPref(k, v) {
     saveData.preferences.master = v;
     applyPreferences();
     save();
-    if (typeof audApply === 'function') audApply();
+    if (typeof applyVolumes === 'function') applyVolumes();
     return;
   }
   if (k === 'haptics') v = v !== 'off';
@@ -596,7 +596,7 @@ document.addEventListener('click', ev => {
     return;
   }
   if (d.a === 'aud-test') {
-    if (typeof audTest === 'function') audTest(d.k);
+    if (typeof testVolume === 'function') testVolume(d.k);
     return;
   }
   setPref(d.prefSet, d.v);

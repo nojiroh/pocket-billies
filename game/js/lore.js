@@ -14,7 +14,7 @@ import { escapeHtml, save, saveData, uiState } from './game-state.js';
 import { humanHTML } from './person-art.js';
 import { baseMapId, findPath, mapById, mapHub, walkView, walkablePointNear } from './walk-view.js';
 import { standingHeightAt, walkRenderer } from './walk-view-gl.js';
-import { JINGLES, jingle, sfx } from './sound.js';
+import { JINGLES, jingle, soundEffect } from './sound.js';
 /* eslint-disable no-func-assign */
 expose({
   CLUE_SPOTS: [() => CLUE_SPOTS],
@@ -204,7 +204,7 @@ function clueDraw(quad, glows, t) {
     );
     glows.push([c.x, y + 0.3 + b, c.z, 0.48, [0.6, 0.85, 1], 1.6 + pulse * 1.4]);
     if (P && Math.hypot(P.x - c.x, P.z - c.z) < 0.75) {
-      if (typeof sfx === 'function') sfx('coin');
+      if (typeof soundEffect === 'function') soundEffect('coin');
       loreClue(c.id);
       return;
     }

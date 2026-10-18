@@ -10,7 +10,7 @@
    pigeon, frames 2-3), shore (lives at the water's edge), side (walks sideways). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { provide, sfxAt } from './hooks.js';
+import { provide, soundEffectAt } from './hooks.js';
 import { clamp } from './util.js';
 import { makeCanvas } from './art.js';
 import {
@@ -336,7 +336,7 @@ export function lifeStep(dt) {
         c.st = 'run';
         c.tx = best[0];
         c.tz = best[1];
-        if (typeof sfxAt === 'function' && Math.random() < 0.5) sfxAt('call', c.x, c.z, { k: 'duck' });
+        if (typeof soundEffectAt === 'function' && Math.random() < 0.5) soundEffectAt('call', c.x, c.z, { k: 'duck' });
       }
     }
     if ((c.k === 'pigeon' || c.k === 'crow' || K.fly) && c.st !== 'fly' && c.st !== 'land' && dp < (K.flee || 2.1)) {
@@ -417,7 +417,7 @@ export function lifeStep(dt) {
           c.tz = c.z;
         }
       }
-      if (typeof sfxAt === 'function') sfxAt('scurry', c.x, c.z, { k: c.k });
+      if (typeof soundEffectAt === 'function') soundEffectAt('scurry', c.x, c.z, { k: c.k });
     }
     if (c.st === 'idle') {
       c.wait -= dt;
@@ -431,7 +431,8 @@ export function lifeStep(dt) {
             : LIFE_FRAMES(c.k) > 3 && !K.fly && Math.sin(c.t * 1.3 + c.x) > 0.35
               ? 3
               : 0;
-      if (typeof sfxAt === 'function' && Math.random() < dt * 0.018) sfxAt('call', c.x, c.z, { k: c.k });
+      if (typeof soundEffectAt === 'function' && Math.random() < dt * 0.018)
+        soundEffectAt('call', c.x, c.z, { k: c.k });
       if (c.wait <= 0) {
         lifeTarget(c);
         c.st = 'walk';
@@ -466,7 +467,7 @@ export function lifeStep(dt) {
       c.hide = 4 + Math.random() * 5;
       c.st = 'idle';
       if (typeof addRipple === 'function') addRipple(c.x, c.z, 0.6);
-      if (typeof sfxAt === 'function') sfxAt('plop', c.x, c.z);
+      if (typeof soundEffectAt === 'function') soundEffectAt('plop', c.x, c.z);
       continue;
     }
     if (Math.abs(vx) > 0.02 && !K.side) c.flip = vx > 0 ? -1 : 1;

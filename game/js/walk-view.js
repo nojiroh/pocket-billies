@@ -38,9 +38,9 @@ import {
   reducedMotion,
   seamlessMapById,
   seamlessNearestRoadPoint,
-  sfx,
-  sfxAt,
   smooth01,
+  soundEffect,
+  soundEffectAt,
   standingHeightAt,
   talkFolk,
   uiState,
@@ -3342,7 +3342,7 @@ function stepClimb(dt) {
   }
   const was = Math.floor(P.climbRung || 0);
   P.climbRung = k * 8;
-  if (Math.floor(P.climbRung) !== was && typeof sfx === 'function') sfx('step', { ter: 'b' });
+  if (Math.floor(P.climbRung) !== was && typeof soundEffect === 'function') soundEffect('step', { ter: 'b' });
   P.x = x;
   P.z = z;
   P.yv = y;
@@ -3383,7 +3383,7 @@ function updatePlayerHeight(dt) {
     if (k >= 1) {
       P.hop = null;
       P.yv = gh;
-      if (typeof sfx === 'function') sfx('step', { hard: 1 });
+      if (typeof soundEffect === 'function') soundEffect('step', { hard: 1 });
     }
   } else P.yv += (gh - P.yv) * Math.min(1, dt * 18);
   /* lean into a climb (and back going down), seen as a tilt when you walk across the screen */
@@ -3824,7 +3824,7 @@ function stepFolk(dt) {
           f.x = d[0];
           f.z = d[1];
           f.route = null;
-          if (typeof sfxAt === 'function') sfxAt('door', f.x, f.z);
+          if (typeof soundEffectAt === 'function') soundEffectAt('door', f.x, f.z);
         }
         if (ph === 'in' || ph === 'home') {
           f.route = null;
@@ -3859,7 +3859,7 @@ function stepFolk(dt) {
               f.then = null;
               f.in = true;
               vis = true;
-              if (typeof sfxAt === 'function') sfxAt('door', f.x, f.z);
+              if (typeof soundEffectAt === 'function') soundEffectAt('door', f.x, f.z);
             }
           }
         } else {

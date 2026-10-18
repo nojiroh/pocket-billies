@@ -19,7 +19,7 @@ import { artImage, imageReady, mapById, prepareMap, walkData } from './walk-view
 import { seamlessHubMap } from './seamless-world.js';
 import { LOCATION_VECTORS, RADIANS_PER_DEGREE, slerp, vector3, worldMap } from './world-map.js';
 import { worldMapGl } from './world-map-gl.js';
-import { sfx } from './sound.js';
+import { soundEffect } from './sound.js';
 /* eslint-disable no-func-assign */
 expose({
   airshipFlight: [() => airshipFlight],
@@ -139,7 +139,7 @@ function startAirshipFlight(i) {
     c.innerHTML = `<small>Airship</small><b>${escapeHtml(locationFullName(LOCATIONS[a]))} → ${escapeHtml(locationFullName(LOCATIONS[i]))}</b><span class="note">Tap to skip</span>`;
     host.appendChild(c);
   }
-  if (typeof sfx === 'function') sfx('throw');
+  if (typeof soundEffect === 'function') soundEffect('throw');
 }
 /* the map loops ask this each frame while flying: where the airship is (worldMap.me follows it, so the camera does) */
 function flyTick(ts) {
@@ -250,7 +250,7 @@ function flyLand() {
   save();
   render();
   toast(`Welcome to ${LOCATIONS[b].name}.`);
-  if (typeof sfx === 'function') sfx('pop');
+  if (typeof soundEffect === 'function') soundEffect('pop');
 }
 function flySkip() {
   if (airshipFlight.on) {
@@ -299,7 +299,7 @@ export function rideGlassLift(p) {
   cv.innerHTML = `<div class="lift-cap glass"><small>Glass lift</small><b>${down ? 'Down to' : 'Up to'} ${escapeHtml(LOCATIONS[i].name)}</b><span class="note">${down ? 'Kelp, then dark water, then the lights of the dome.' : 'Up past the kelp, into the light.'}</span></div>`;
   document.body.appendChild(cv);
   requestAnimationFrame(() => requestAnimationFrame(() => cv.classList.add('in')));
-  if (typeof sfx === 'function') sfx('throw');
+  if (typeof soundEffect === 'function') soundEffect('throw');
   const ready =
     typeof loadMapsAhead === 'function' ? loadMapsAhead(i) : null; /* phase 04b: the lift is in the map's file */
   setTimeout(
@@ -338,7 +338,7 @@ export function rideGlassLift(p) {
         glassLift.on = false;
       }, 700);
       toast(`${LOCATIONS[i].name}.`);
-      if (typeof sfx === 'function') sfx('pop');
+      if (typeof soundEffect === 'function') soundEffect('pop');
     },
     reducedMotion ? 500 : 2600
   );

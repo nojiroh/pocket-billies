@@ -11,7 +11,7 @@ import {
   postProcess,
   provide,
   render,
-  sfx,
+  soundEffect,
   toast,
 } from './hooks.js';
 import { random } from './util.js';
@@ -555,7 +555,7 @@ export function evolve(m) {
   return from;
 }
 export function healAll() {
-  if (typeof sfx === 'function') sfx('heal');
+  if (typeof soundEffect === 'function') soundEffect('heal');
   for (const m of allBillies()) {
     m.hp = maxHp(m);
     m.status = null;

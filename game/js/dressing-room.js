@@ -5,7 +5,7 @@
    the same room has a till: try things on and buy what you're wearing. Also the "Create your trainer" step. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { buzz, provide, render, sfx, toast } from './hooks.js';
+import { buzz, provide, render, soundEffect, toast } from './hooks.js';
 import { $, $$, random } from './util.js';
 import { SHOPS } from './game-data.js';
 import { escapeHtml, formatNumber, save, saveData, uiState } from './game-state.js';
@@ -757,7 +757,7 @@ function buyDressingItems() {
     return;
   }
   saveData.se -= cost;
-  if (typeof sfx === 'function') sfx('buy');
+  if (typeof soundEffect === 'function') soundEffect('buy');
   const st = wardrobeState();
   for (const id of mine) st.owned[id] = 1;
   save();

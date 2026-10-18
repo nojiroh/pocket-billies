@@ -8,6 +8,7 @@
 import { expose } from './test-globals.js';
 import {
   JINGLES,
+  battleSoundEffect,
   battleTipHide,
   battleTutor,
   battleWeatherMult,
@@ -17,7 +18,6 @@ import {
   postProcess,
   provide,
   render,
-  sfxBattle,
   statusBadgeHTML,
   storyAfterRival,
   storyAfterWin,
@@ -1434,7 +1434,7 @@ function showEvent() {
   showSpeakerFace(ev.face);
   const tt = ev.t ? typeText(ev.t) : 0,
     r = ev.an ? battleStagePlay(ev.an, ev) : { dur: 0, hit: 0 };
-  if (ev.an && typeof sfxBattle === 'function') sfxBattle(ev.an, r);
+  if (ev.an && typeof battleSoundEffect === 'function') battleSoundEffect(ev.an, r);
   boxAnims(ev);
   const k = 1 / battleStage.speed;
   afterStageTime('hpT', r.hit >= 999 ? 0 : r.hit, 0, () => paintBoxes(ev.s, ev.mk, true));

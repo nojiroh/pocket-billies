@@ -25,7 +25,7 @@ import { canvasForContext, ensureWalkGl, standingHeightAt } from './walk-view-gl
 import { actorTypes, endBattle, fighter, stopTimers } from './battle.js';
 import { LOCATION_VECTORS, WORLD_ART, vector3, worldMap, worldMapHeight, worldMapWidth } from './world-map.js';
 import { WORLD_MAP_GL_SHADERS, worldMapGl, worldMapGlRender, worldMapGlSize } from './world-map-gl.js';
-import { music, sfx } from './sound.js';
+import { music, soundEffect } from './sound.js';
 import { cutscene, cutsceneCaption } from './cutscene.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -731,15 +731,15 @@ async function fallPlay(run) {
     fallStreet(t);
     if (!snd && t > 5) {
       snd = 1;
-      if (typeof sfx === 'function') sfx('rumble');
+      if (typeof soundEffect === 'function') soundEffect('rumble');
     }
     if (snd === 1 && t > 5.6) {
       snd = 2;
-      if (typeof sfx === 'function') sfx('crack');
+      if (typeof soundEffect === 'function') soundEffect('crack');
     }
     if (snd === 2 && t > 6.5) {
       snd = 3;
-      if (typeof sfx === 'function') sfx('whoosh', { dur: 2.4 });
+      if (typeof soundEffect === 'function') soundEffect('whoosh', { dur: 2.4 });
     }
   }, 7600);
   if (alive()) await anim(t => fallCrust(t), 2900);
@@ -755,12 +755,12 @@ async function fallPlay(run) {
     gcv.classList.add('in');
     if (openingFall.cv) openingFall.cv.hidden = true;
     if (fade) fade.classList.remove('on');
-    if (typeof sfx === 'function') sfx('whoosh', { dur: 3 });
+    if (typeof soundEffect === 'function') soundEffect('whoosh', { dur: 3 });
     await fallMap(run, 9000);
   }
   cancelAnimationFrame(openingFall.raf);
   if (fade) fade.classList.add('on');
-  if (typeof sfx === 'function' && alive()) sfx('thud');
+  if (typeof soundEffect === 'function' && alive()) soundEffect('thud');
   await new Promise(r => setTimeout(r, reducedMotion || cutscene.skip ? 0 : 500));
   if (openingFall.cv) {
     openingFall.cv.remove();

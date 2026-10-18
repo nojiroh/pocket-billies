@@ -7,7 +7,7 @@
    the place's own plus the kind's bonus. A catch starts a wild battle like any other encounter. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { sfx, startWild, toast, x28Event } from './hooks.js';
+import { soundEffect, startWild, toast, x28Event } from './hooks.js';
 import { clamp, random } from './util.js';
 import { RULES, SPECIES, gameData } from './game-data.js';
 import { activeBattle, areaPool, newUid, pickWeighted, reducedMotion, save, saveData, uiState } from './game-state.js';
@@ -197,7 +197,7 @@ export function fishStart() {
   };
   addEventListener('keydown', FISH.key);
   addEventListener('keyup', FISH.key);
-  if (typeof sfx === 'function') sfx('step', { hard: 1 });
+  if (typeof soundEffect === 'function') soundEffect('step', { hard: 1 });
   FISH.last = performance.now();
   FISH.raf = requestAnimationFrame(fishLoop);
 }
@@ -251,7 +251,7 @@ function fishLoop(ts) {
       FISH.phase = 'bite';
       FISH.t0 = ts;
       fishMsg('A bite! Tap now!');
-      if (typeof sfx === 'function') sfx('step', { hard: 1 });
+      if (typeof soundEffect === 'function') soundEffect('step', { hard: 1 });
       if (typeof addRipple === 'function') addRipple(FISH.spot.x, FISH.spot.z, 1);
     } else if (random() < dt * 0.6) {
       FISH.nib = 0.18;

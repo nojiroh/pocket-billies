@@ -55,7 +55,7 @@ import {
 import { gpuState, webgl2Supported } from './engine/webgl.js';
 import { mountWalkView, personItem, standingHeightAt, walkRenderer } from './walk-view-gl.js';
 import { seamlessRoamView } from './seamless-world.js';
-import { music, sfx } from './sound.js';
+import { music, soundEffect } from './sound.js';
 import { TALK, talkHide, talkLine } from './talk.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -768,7 +768,7 @@ async function cutsceneScript(run) {
   await cutsceneWait(500);
   cutsceneAct('gini', 'throw', 900);
   await cutsceneWait(380);
-  if (typeof sfx === 'function') sfx('throw');
+  if (typeof soundEffect === 'function') soundEffect('throw');
   cutscene.pickList.forEach((l, i) => {
     const p = A.stars[i],
       s = {
@@ -792,7 +792,7 @@ async function cutsceneScript(run) {
       onLand() {
         const y = standingHeightAt(p[0], p[1]) + 0.3;
         s.popT = cutsceneNow();
-        if (typeof sfx === 'function') sfx('pop');
+        if (typeof soundEffect === 'function') soundEffect('pop');
         s.act = 'enter';
         s.actT = cutsceneNow();
         cutscene.flashes.push({ p: [p[0], y + 0.2, p[1]], t0: cutsceneNow() });

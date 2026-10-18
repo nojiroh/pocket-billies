@@ -11,7 +11,7 @@ import { LOCATIONS, TRAINERS, isTown, trainersAt } from './game-data.js';
 import { activeBattle, escapeHtml, save, saveData, uiState } from './game-state.js';
 import { artURL } from './art.js';
 import { flagPicturePath, mapById, walkView } from './walk-view.js';
-import { sfx } from './sound.js';
+import { soundEffect } from './sound.js';
 import { TALK } from './talk.js';
 import { cutscene } from './cutscene.js';
 import { airshipFlight } from './airship.js';
@@ -142,9 +142,9 @@ function postcardShow(n, first) {
   el.addEventListener('click', close);
   setTimeout(close, first ? 9000 : 5000);
   /* alpha 0.4: the first one too goes by itself (it is kept the moment it comes), so it never rides along on a lift or a flight */ if (
-    typeof sfx === 'function'
+    typeof soundEffect === 'function'
   )
-    sfx('pop');
+    soundEffect('pop');
 }
 /* a town you have the postcard of: its stamp in the corner for a moment */
 function postcardStamp(n) {
