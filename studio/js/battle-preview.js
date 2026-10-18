@@ -21,7 +21,7 @@ import {
   battleStageToCss,
   camAt,
   camHome,
-  fgDraw,
+  drawForegrounds,
   sideTop,
 } from '../../game/js/battle-stage.js';
 import { mapHub, walkView } from '../../game/js/walk-view.js';
@@ -264,7 +264,7 @@ async function bpScene() {
   battleStage.gl = battleGLAttach({ detach: true });
   document.body.classList.toggle('battle-3d', !!battleStage.gl);
   battleStageResize();
-  fgDraw();
+  drawForegrounds();
 }
 function bpApplyBackdrop() {
   if (!battleStage.L || battleStage.area !== BP.area) return;

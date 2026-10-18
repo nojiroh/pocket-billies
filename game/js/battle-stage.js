@@ -44,17 +44,15 @@ expose({
   AREAS: [() => AREAS],
   BSWAY: [() => BSWAY],
   CAMERA_KEYS: [() => CAMERA_KEYS],
-  CANFILTER: [() => CANFILTER],
+  CANVAS_FILTER_WORKS: [() => CANVAS_FILTER_WORKS],
   CLOSE_UP_CAMERAS: [() => CLOSE_UP_CAMERAS],
-  DOFG: [() => DOFG],
-  DOFK: [() => DOFK],
-  DRAWL: [() => DRAWL],
   EASE: [() => EASE],
   FOCAL_LENGTH: [() => FOCAL_LENGTH],
   FOCUS: [() => FOCUS],
   FORMATIONS: [() => FORMATIONS],
   FORMATION_SCALES: [() => FORMATION_SCALES],
   GLOWY: [() => GLOWY],
+  GROUND_BLUR_SCALE: [() => GROUND_BLUR_SCALE],
   GROUND_CENTER_X: [() => GROUND_CENTER_X],
   GROUND_CENTER_Z: [() => GROUND_CENTER_Z],
   GROUND_MAX_DEPTH: [() => GROUND_MAX_DEPTH],
@@ -63,9 +61,9 @@ expose({
   GROUND_TEXTURE_SIZE: [() => GROUND_TEXTURE_SIZE],
   HORIZON_IN_FRAME: [() => HORIZON_IN_FRAME],
   LEAF: [() => LEAF],
-  NIT: [() => NIT, v => (NIT = v)],
   PULL_BACK_CAMERA: [() => PULL_BACK_CAMERA],
-  SOFTPAD: [() => SOFTPAD],
+  SOFT_BLUR_PAD: [() => SOFT_BLUR_PAD],
+  SPRITE_BLUR_SCALE: [() => SPRITE_BLUR_SCALE],
   STAGEART: [() => STAGEART],
   STAGE_FRAME_HEIGHT: [() => STAGE_FRAME_HEIGHT],
   STAGE_FRAME_WIDTH: [() => STAGE_FRAME_WIDTH],
@@ -74,6 +72,7 @@ expose({
   actorMetersPerPixel: [() => actorMetersPerPixel],
   actorPositions: [() => actorPositions],
   actorTeam: [() => actorTeam],
+  addDrawItem: [() => addDrawItem, v => (addDrawItem = v)],
   ambient: [() => ambient, v => (ambient = v)],
   artKey: [() => artKey],
   battleStage: [() => battleStage],
@@ -99,6 +98,9 @@ expose({
   battleStageToCss: [() => battleStageToCss, v => (battleStageToCss = v)],
   blinkSide: [() => blinkSide, v => (blinkSide = v)],
   blurAt: [() => blurAt, v => (blurAt = v)],
+  blurFloorByDepth: [() => blurFloorByDepth, v => (blurFloorByDepth = v)],
+  boxBlurColumns: [() => boxBlurColumns, v => (boxBlurColumns = v)],
+  boxBlurRows: [() => boxBlurRows, v => (boxBlurRows = v)],
   burst: [() => burst, v => (burst = v)],
   buzz: [() => buzz, v => ((buzz = v), provide({ buzz }))],
   camApply: [() => camApply, v => (camApply = v)],
@@ -112,28 +114,28 @@ expose({
   castFloor: [() => castFloor, v => (castFloor = v)],
   cloudShadows: [() => cloudShadows, v => (cloudShadows = v)],
   coinArc: [() => coinArc, v => (coinArc = v)],
-  dofFloor: [() => dofFloor, v => (dofFloor = v)],
-  drawBill: [() => drawBill, v => (drawBill = v)],
+  drawBillboard: [() => drawBillboard, v => (drawBillboard = v)],
+  drawForegrounds: [() => drawForegrounds, v => (drawForegrounds = v)],
+  drawList: [() => drawList],
+  drawListLength: [() => drawListLength, v => (drawListLength = v)],
   drawParts: [() => drawParts, v => (drawParts = v)],
   drawProp: [() => drawProp, v => (drawProp = v)],
+  drawSelectionRing: [() => drawSelectionRing, v => (drawSelectionRing = v)],
   drawShadow: [() => drawShadow, v => (drawShadow = v)],
   drawSide: [() => drawSide, v => (drawSide = v)],
   drawTrainer: [() => drawTrainer, v => (drawTrainer = v)],
   dueEvents: [() => dueEvents],
-  fgDraw: [() => fgDraw, v => (fgDraw = v)],
   floorBuffers: [() => floorBuffers, v => (floorBuffers = v)],
   floorKey: [() => floorKey, v => (floorKey = v)],
   floorLowFrom: [() => floorLowFrom, v => (floorLowFrom = v)],
   floorUpdate: [() => floorUpdate, v => (floorUpdate = v)],
   governor: [() => governor, v => (governor = v)],
   groundRing: [() => groundRing, v => (groundRing = v)],
-  hBox: [() => hBox, v => (hBox = v)],
   handheld: [() => handheld, v => (handheld = v)],
   hitFx: [() => hitFx, v => (hitFx = v)],
   hitStop: [() => hitStop, v => (hitStop = v)],
   hitWeight: [() => hitWeight, v => (hitWeight = v)],
   homeCamera: [() => homeCamera],
-  itemAdd: [() => itemAdd, v => (itemAdd = v)],
   lightShafts: [() => lightShafts, v => (lightShafts = v)],
   newActorState: [() => newActorState],
   part: [() => part, v => (part = v)],
@@ -143,7 +145,6 @@ expose({
   punch: [() => punch, v => (punch = v)],
   ringFx: [() => ringFx, v => (ringFx = v)],
   scheduleAt: [() => scheduleAt, v => (scheduleAt = v)],
-  selRing: [() => selRing, v => (selRing = v)],
   setActorAction: [() => setActorAction, v => (setActorAction = v)],
   sideBuf: [() => sideBuf, v => (sideBuf = v)],
   sideCenter: [() => sideCenter, v => (sideCenter = v)],
@@ -162,7 +163,6 @@ expose({
   trainerMetersPerPixel: [() => trainerMetersPerPixel],
   tspr: [() => tspr],
   tween: [() => tween, v => (tween = v)],
-  vBox: [() => vBox, v => (vBox = v)],
 });
 /* eslint-enable no-func-assign */
 provide({ buzz });
@@ -544,7 +544,7 @@ export function battleStageStart(area) {
   }
   battleStageResize();
   battleStageFocus('wide', true);
-  if (battleStage.gl) fgDraw();
+  if (battleStage.gl) drawForegrounds();
   if (!battleStage.on) {
     battleStage.on = true;
     frameTask('scene', battleStageFrame);
@@ -615,11 +615,11 @@ export function battleStageFocus(f, now) {
   tween(battleStage.dof, 'zf', F.zf, 380, 'io');
   tween(battleStage.dof, 'ap', ap, 380, 'io');
 }
-const DOFK = 4.6;
+const SPRITE_BLUR_SCALE = 4.6;
 function blurAt(z) {
   const d = battleStage.dof;
   if (d.ap <= 0 || battleStage.q.lvl >= 3) return 0;
-  return Math.min(4, d.ap * DOFK * Math.abs(1 / Math.max(0.3, z) - 1 / d.zf));
+  return Math.min(4, d.ap * SPRITE_BLUR_SCALE * Math.abs(1 / Math.max(0.3, z) - 1 / d.zf));
 }
 function battleStageFlash(col, a, dur) {
   const f = $('#flash');
@@ -1263,8 +1263,8 @@ function castFloor() {
    with fractional, per-row radii (box edges are weighted, so the radius grows continuously instead of in whole-pixel steps, which
    is what made bands and blocks). Near rows also get a little extra blur in proportion to how magnified the ground texture is there,
    so its texels don't read as blocks. */
-const DOFG = 0.42;
-function dofFloor() {
+const GROUND_BLUR_SCALE = 0.42;
+function blurFloorByDepth() {
   const F = battleStage.F,
     W = F.W,
     H = F.H,
@@ -1299,7 +1299,7 @@ function dofFloor() {
     const ja = Math.min(H - 1, 2 * j),
       jb = Math.min(H - 1, 2 * j + 1);
     rh[j] = Math.max(rad[ja], rad[jb]);
-    const sg = rh[j] * DOFG * 0.5;
+    const sg = rh[j] * GROUND_BLUR_SCALE * 0.5;
     rr[j] = (Math.sqrt(6 * sg * sg + 1) - 1) / 2;
     for (let i = 0; i < W2; i++) {
       const ia = Math.min(W - 1, 2 * i),
@@ -1314,10 +1314,10 @@ function dofFloor() {
       half[o + 2] = (src[a + 2] + src[b + 2] + src[c + 2] + src[e + 2]) * 0.25;
     }
   }
-  hBox(half, tmp, W2, H2, rr, rp);
-  hBox(tmp, half, W2, H2, rr, rp);
-  vBox(half, tmp, W2, H2, rr, pre);
-  vBox(tmp, half, W2, H2, rr, pre);
+  boxBlurRows(half, tmp, W2, H2, rr, rp);
+  boxBlurRows(tmp, half, W2, H2, rr, rp);
+  boxBlurColumns(half, tmp, W2, H2, rr, pre);
+  boxBlurColumns(tmp, half, W2, H2, rr, pre);
   const soft = F.soft.img.data;
   for (let j = 0; j < H2; j++) {
     const t = clamp((rh[j] - 0.3) / 0.9, 0, 1),
@@ -1335,7 +1335,7 @@ function dofFloor() {
   F.soft.x.putImageData(F.soft.img, 0, 0);
 }
 /* one horizontal box pass with a fractional radius per row (edges clamp to the border pixel) */
-function hBox(S, D, W, H, rr, rp) {
+function boxBlurRows(S, D, W, H, rr, rp) {
   for (let j = 0; j < H; j++) {
     const r = rr[j],
       row = j * W * 3;
@@ -1398,7 +1398,7 @@ function hBox(S, D, W, H, rr, rp) {
   }
 }
 /* one vertical box pass; the radius belongs to the destination row */
-function vBox(S, D, W, H, rr, pre) {
+function boxBlurColumns(S, D, W, H, rr, pre) {
   const RW = W * 3;
   for (let i = 0; i < RW; i++) pre[i] = 0;
   for (let j = 0; j < H; j++) {
@@ -1456,9 +1456,9 @@ function floorUpdate() {
   battleStage.floorKey = k;
   battleStage.lowFrom = floorLowFrom();
   castFloor();
-  if (battleStage.q.lvl < 1) dofFloor();
+  if (battleStage.q.lvl < 1) blurFloorByDepth();
   else battleStage.F.blurred = false;
-  fgDraw();
+  drawForegrounds();
   return true;
 }
 /* ---------- drawing helpers ---------- */
@@ -1483,8 +1483,8 @@ function drawShadow(c, X, Z, r, a) {
 /* draw an image with depth blur: shrink it with smoothing into a scratch canvas that has a transparent margin, then stretch it back
    over a rect grown by the same margin. The margin is what lets the soft edge fall off into transparency (without it the blurred copy
    ends in a hard line at the sprite's box). Static art passes a `slot` that keeps its shrunk copy while size and blur don't change. */
-const SOFTPAD = 3,
-  CANFILTER = (() => {
+const SOFT_BLUR_PAD = 3,
+  CANVAS_FILTER_WORKS = (() => {
     try {
       const x = cnv(1, 1).getContext('2d');
       x.filter = 'blur(1px)';
@@ -1494,7 +1494,7 @@ const SOFTPAD = 3,
     }
   })();
 function softSmall(sm, img, sw, sh) {
-  const P = SOFTPAD,
+  const P = SOFT_BLUR_PAD,
     x = sm.getContext('2d'),
     cw = sw + 2 * P,
     ch = sh + 2 * P;
@@ -1505,9 +1505,9 @@ function softSmall(sm, img, sw, sh) {
   /* a touch of gaussian on the shrunk copy hides the bilinear "mosaic" when it is stretched back up (where the browser can filter) */
   x.imageSmoothingEnabled = true;
   x.imageSmoothingQuality = 'medium';
-  if (CANFILTER) x.filter = 'blur(.7px)';
+  if (CANVAS_FILTER_WORKS) x.filter = 'blur(.7px)';
   x.drawImage(img, P, P, sw, sh);
-  if (CANFILTER) x.filter = 'none';
+  if (CANVAS_FILTER_WORKS) x.filter = 'none';
 }
 function softDraw(c, img, x, y, w, h, blur, slot) {
   if (blur < 0.5 || w < 2 || h < 2) {
@@ -1517,7 +1517,7 @@ function softDraw(c, img, x, y, w, h, blur, slot) {
   const f = 1 / (1 + blur * 0.7),
     sw = Math.max(1, Math.round(w * f)),
     sh = Math.max(1, Math.round(h * f)),
-    P = SOFTPAD;
+    P = SOFT_BLUR_PAD;
   let sm = battleStage.small;
   if (slot) {
     sm = slot.c || (slot.c = cnv(sw + 2 * P + 1, sh + 2 * P + 1));
@@ -1637,7 +1637,7 @@ function drawTrainer(c, i) {
   softDraw(c, f, Math.round(p.x - ax), Math.round(p.y - ay), Math.round(w), Math.round(h), blurAt(p.z));
   c.globalAlpha = 1;
 }
-function drawBill(c, img, X, Y, Z, wk, al, slot) {
+function drawBillboard(c, img, X, Y, Z, wk, al, slot) {
   const p = stageProject(X, Y, Z);
   if (!p) return;
   const sc = (p.s / 30) * wk;
@@ -1811,7 +1811,7 @@ function lightShafts(c) {
   c.restore();
 }
 /* foreground: the area's grass or railings, split to the two edges of the open stage and blurred like a near lens element */
-export function fgDraw() {
+export function drawForegrounds() {
   const c = battleStage.fx,
     L = battleStage.L;
   if (!c) return;
@@ -1864,16 +1864,16 @@ export function fgDraw() {
   softDraw(c, P.a, left, yb, hw, H + ext, bl, P.sa);
   softDraw(c, P.b, right, yb, hw, H + ext, bl, P.sb);
 }
-const DRAWL = [];
-let NIT = 0;
-function itemAdd(z, k, o, i) {
-  let it = DRAWL[NIT];
-  if (!it) it = DRAWL[NIT] = { z: 0, k: 0, o: null, i: 0 };
+const drawList = [];
+let drawListLength = 0;
+function addDrawItem(z, k, o, i) {
+  let it = drawList[drawListLength];
+  if (!it) it = drawList[drawListLength] = { z: 0, k: 0, o: null, i: 0 };
   it.z = z;
   it.k = k;
   it.o = o;
   it.i = i;
-  NIT++;
+  drawListLength++;
 }
 function stageProjectInto(o, C, X, Y, Z) {
   const L = battleStage.L,
@@ -1916,37 +1916,37 @@ function battleStageDraw() {
   cloudShadows(c);
   lightShafts(c);
   /* draw list: pooled records, insertion-sorted far to near (the order barely changes between frames, so this is ~linear) */
-  NIT = 0;
+  drawListLength = 0;
   const V = battleStage.V;
   for (const p of battleStage.props) {
-    if (stageProjectInto(p.q || (p.q = { x: 0, y: 0, z: 0, s: 0 }), V, p.x, 0, p.z)) itemAdd(p.q.z, 0, p, 0);
+    if (stageProjectInto(p.q || (p.q = { x: 0, y: 0, z: 0, s: 0 }), V, p.x, 0, p.z)) addDrawItem(p.q.z, 0, p, 0);
   }
   for (const cl of battleStage.clouds) {
     const q = stageProject(cl.x, cl.y, cl.z);
-    if (q) itemAdd(q.z + 1000, 1, cl, 0);
+    if (q) addDrawItem(q.z + 1000, 1, cl, 0);
   }
   for (let i = battleStage.s.length - 1; i >= 0; i--) {
     const w = sideWorld(i),
       q = stageProject(w.x, 0, w.z);
-    if (q) itemAdd(q.z - 0.01, 2, null, i);
+    if (q) addDrawItem(q.z - 0.01, 2, null, i);
     const T = battleStage.tr[i];
     if (i < 2 && T.show) {
       const q2 = stageProject(actorPositions[i].x, 0, actorPositions[i].z + (i === 0 ? 0.25 : 0.4));
-      if (q2) itemAdd(q2.z + 0.02, 3, null, i);
+      if (q2) addDrawItem(q2.z + 0.02, 3, null, i);
     }
   }
-  for (let i = 1; i < NIT; i++) {
-    const it = DRAWL[i];
+  for (let i = 1; i < drawListLength; i++) {
+    const it = drawList[i];
     let j = i - 1;
-    while (j >= 0 && DRAWL[j].z < it.z) {
-      DRAWL[j + 1] = DRAWL[j];
+    while (j >= 0 && drawList[j].z < it.z) {
+      drawList[j + 1] = drawList[j];
       j--;
     }
-    DRAWL[j + 1] = it;
+    drawList[j + 1] = it;
   }
   let partsDrawn = false;
-  for (let n = 0; n < NIT; n++) {
-    const it = DRAWL[n];
+  for (let n = 0; n < drawListLength; n++) {
+    const it = drawList[n];
     if (!partsDrawn && it.z < actorPositions[1].z + 0.5) {
       drawParts(c, 0);
       partsDrawn = true;
@@ -1954,7 +1954,7 @@ function battleStageDraw() {
     if (it.k === 0) drawProp(c, it.o);
     else if (it.k === 1) {
       const cl = it.o;
-      drawBill(c, cl.img, cl.x, cl.y, cl.z, 2, 0.92, cl.soft);
+      drawBillboard(c, cl.img, cl.x, cl.y, cl.z, 2, 0.92, cl.soft);
     } else if (it.k === 2) drawSide(c, it.i);
     else drawTrainer(c, it.i);
   }
@@ -1968,7 +1968,7 @@ export function battleStageSelect(k) {
 export function battleStageTargets(L) {
   battleStage.tg = L && L.length ? L.slice() : null;
 }
-function selRing(c, i, col, pulse) {
+function drawSelectionRing(c, i, col, pulse) {
   const w = sideWorld(i),
     g = stageProject(w.x, 0, w.z);
   if (!g) return;
@@ -1986,11 +1986,11 @@ function selRing(c, i, col, pulse) {
 function battleStageDrawEffects(c, skip0) {
   if (!skip0) drawParts(c, 0);
   if (battleStage.sel != null && battleStage.s[battleStage.sel] && battleStage.s[battleStage.sel].show)
-    selRing(c, battleStage.sel, '#F4C542', 1);
+    drawSelectionRing(c, battleStage.sel, '#F4C542', 1);
   if (battleStage.tg)
     for (const k of battleStage.tg)
       if (battleStage.s[k] && battleStage.s[k].show) {
-        selRing(c, k, Math.floor(battleStage.t / 220) % 2 ? '#FF6B6B' : '#FFFFFF', 3);
+        drawSelectionRing(c, k, Math.floor(battleStage.t / 220) % 2 ? '#FF6B6B' : '#FFFFFF', 3);
         const T = sideTop(k),
           q = stageProject(T.x, T.y + 0.35 + 0.08 * Math.sin(battleStage.t / 140), T.z);
         if (q) {
