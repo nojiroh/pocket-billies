@@ -2,7 +2,7 @@
 /* ================= POCKET BILLIES STUDIO · editors ================= */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
-import { BODY_TPL, PLAN_INFO, WDS, makeBlankBody, openSkeleton, skNeutral, wdLoad } from '../../game/js/hooks.js';
+import { BODY_TEMPLATES, PLAN_INFO, WDS, makeBlankBody, openSkeleton, skNeutral, wdLoad } from '../../game/js/hooks.js';
 import { $, $$ } from '../../game/js/util.js';
 import { iconURL, makeCanvas } from '../../game/js/art.js';
 import { TR_CACHE, cleanLook, humanSheet, lookFromOld, trColorsOf, trSliders } from '../../game/js/person-art.js';
@@ -607,7 +607,7 @@ ACTIONS.recolor = async d => {
 /* ---------- new billionaire wizard ---------- */
 ACTIONS.newLine = async () => {
   const D = studioState.D;
-  const blanks = Object.keys(BODY_TPL);
+  const blanks = Object.keys(BODY_TEMPLATES);
   const html = `<p class="help">Start from a <b>blank body</b> to design a new shape from scratch, or copy an existing Billie’s skeleton, animations and recolored art. Either way it works in the game right away.</p>
  <label class="fld"><span>Start from</span><select id="nwFrom"><optgroup label="Blank body (new shape)">${blanks.map(k => `<option value="blank:${k}">${k} · ${PLAN_INFO[k]}</option>`).join('')}</optgroup><optgroup label="Copy a Billie">${D.lines.map(l => `<option value="${l.id}">${esc(l.names.join(' → '))}</option>`).join('')}</optgroup></select></label><div class="prev-row"><canvas id="nwPrev" class="spr-prev big"></canvas></div>
  <div class="grid"><label class="fld"><span>Name of the first stage</span><input id="nwName" type="text" maxlength="24" placeholder="Venturo"></label><label class="fld"><span>Type</span><select id="nwType">${typeOptions()

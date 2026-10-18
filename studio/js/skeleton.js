@@ -43,17 +43,17 @@ import {
 } from './sprites.js';
 /* eslint-disable no-func-assign */
 expose({
-  BODY_TPL: [() => BODY_TPL],
+  BODY_TEMPLATES: [() => BODY_TEMPLATES],
   PLAN_INFO: [() => PLAN_INFO],
-  Q_FIELDS: [() => Q_FIELDS],
+  PLAN_MOTION_FIELDS: [() => PLAN_MOTION_FIELDS],
   ROLE_HELP: [() => ROLE_HELP],
   allocRect: [() => allocRect, v => (allocRect = v)],
+  applyLinear2x2: [() => applyLinear2x2],
   blobPart: [() => blobPart, v => (blobPart = v)],
+  bonesUsingImage: [() => bonesUsingImage],
   cutRect: [() => cutRect, v => (cutRect = v)],
   flipped: [() => flipped, v => (flipped = v)],
-  imgUsers: [() => imgUsers],
-  mApplyL: [() => mApplyL],
-  mInv: [() => mInv],
+  invert2x2: [() => invert2x2],
   makeBlankBody: [() => makeBlankBody, v => ((makeBlankBody = v), provide({ makeBlankBody }))],
   openSkeleton: [() => openSkeleton, v => ((openSkeleton = v), provide({ openSkeleton }))],
   planRoles: [() => planRoles, v => (planRoles = v)],
@@ -83,8 +83,8 @@ expose({
   skTopo: [() => skTopo, v => (skTopo = v)],
   skTree: [() => skTree, v => (skTree = v)],
   skeletonEditor: [() => skeletonEditor],
-  swapLR: [() => swapLR],
-  uniqBone: [() => uniqBone],
+  swapLeftRight: [() => swapLeftRight],
+  uniqueBoneName: [() => uniqueBoneName],
 });
 /* eslint-enable no-func-assign */
 provide({ makeBlankBody, openSkeleton, skNeutral });
@@ -123,7 +123,7 @@ const PLAN_INFO = {
   shell: 'A shell with a soft body and little legs',
 };
 provide({ PLAN_INFO }); /* to-module */
-const Q_FIELDS = {
+const PLAN_MOTION_FIELDS = {
   bird: [
     ['per', 'Wing beat (ms)', 60, 900, 10],
     ['hop', 'Hop height', 0, 6, 0.2],
@@ -228,13 +228,13 @@ function skPose(ts, tickOff = 0) {
   if (skeletonEditor.act && !act && !skeletonEditor.paused) skeletonEditor.t0 = ts;
   return rigPose(act, Math.max(0, tau), t2, 1);
 }
-const mInv = m => {
+const invert2x2 = m => {
   const d = m[0] * m[3] - m[1] * m[2];
   return [m[3] / d, -m[1] / d, -m[2] / d, m[0] / d];
 };
-const mApplyL = (inv, x, y) => [inv[0] * x + inv[2] * y, inv[1] * x + inv[3] * y];
-const imgUsers = (meta, i) => meta.bones.filter(b => b.i === i).map(b => b.n);
-const uniqBone = (meta, base) => {
+const applyLinear2x2 = (inv, x, y) => [inv[0] * x + inv[2] * y, inv[1] * x + inv[3] * y];
+const bonesUsingImage = (meta, i) => meta.bones.filter(b => b.i === i).map(b => b.n);
+const uniqueBoneName = (meta, base) => {
   if (!meta.bones.some(b => b.n === base)) return base;
   let n = 2;
   while (meta.bones.some(b => b.n === base + n)) n++;
@@ -573,8 +573,8 @@ function skHit(bx, by) {
   }
   for (let i = list.length - 1; i >= 0; i--) {
     const [z, m, img, v, al, b] = list[i],
-      inv = mInv(m),
-      [lx, ly] = mApplyL(inv, bx - m[4], by - m[5]);
+      inv = invert2x2(m),
+      [lx, ly] = applyLinear2x2(inv, bx - m[4], by - m[5]);
     const c = img.c;
     if (
       lx >= img.ox &&
@@ -610,7 +610,7 @@ function skBindCanvas() {
     skeletonEditor.sel = h.b.n;
     let mode = ev.shiftKey ? 'rotate' : h.mode;
     const meta = skMeta();
-    if (mode === 'pivot' && h.b.i >= 0 && imgUsers(meta, h.b.i).length > 1) {
+    if (mode === 'pivot' && h.b.i >= 0 && bonesUsingImage(meta, h.b.i).length > 1) {
       meta.imgs.push(clone(meta.imgs[h.b.i]));
       h.b.i = meta.imgs.length - 1;
       studioState.rigVer = (studioState.rigVer || 0) + 1;
@@ -635,13 +635,13 @@ function skBindCanvas() {
       R = rigFor(skeletonEditor.sp, skeletonEditor.view, false),
       { W } = rigMatrices(R, skNeutral(), skeletonEditor.view);
     const pm = W[b.par || 'root'] || W.root,
-      pinv = mInv(pm),
-      [pdx, pdy] = mApplyL(pinv, dx, dy);
+      pinv = invert2x2(pm),
+      [pdx, pdy] = applyLinear2x2(pinv, dx, dy);
     if (D.mode === 'part') {
       b.at = [+(b.at[0] + pdx / k).toFixed(3), +(b.at[1] + pdy / k).toFixed(3)];
     } else if (D.mode === 'pivot') {
       const m = W[b.n],
-        [ldx, ldy] = mApplyL(mInv(m), dx, dy);
+        [ldx, ldy] = applyLinear2x2(invert2x2(m), dx, dy);
       b.at = [+(b.at[0] + pdx / k).toFixed(3), +(b.at[1] + pdy / k).toFixed(3)];
       const im = meta.imgs[b.i];
       if (im) {
@@ -737,7 +737,7 @@ function skSide() {
         ...meta.bones.filter(x => x !== b && !desc.has(x.n)).map(x => [x.n, x.n]),
       ],
       img = meta.imgs[b.i],
-      users = b.i >= 0 ? imgUsers(meta, b.i) : [];
+      users = b.i >= 0 ? bonesUsingImage(meta, b.i) : [];
     const variants = img ? Object.keys(img.f) : [];
     h += `<div class="px-sec"><h4>Part “${esc(b.n)}”</h4>
    <label class="fld"><span>Name</span><input type="text" id="skName" value="${esc(b.n)}" maxlength="16"></label>
@@ -788,7 +788,7 @@ function skSide() {
   )
     .map(k => `<option value="${k}" ${meta.plan === k ? 'selected' : ''}>${k} · ${PLAN_INFO[k] || ''}</option>`)
     .join('')}</select></label>
-  ${(Q_FIELDS[meta.plan] || []).map(([k, l, mn, mx, st]) => numberField(l, `${base}.q.${k}`, { min: mn, max: mx, step: st })).join('')}
+  ${(PLAN_MOTION_FIELDS[meta.plan] || []).map(([k, l, mn, mx, st]) => numberField(l, `${base}.q.${k}`, { min: mn, max: mx, step: st })).join('')}
   <p class="help">Parts animate when their name or “Moves like” matches one of: ${roles.map(esc).join(', ')}.</p>
   <button class="btn sm" data-sk="copyView">Copy this layout to the ${skeletonEditor.view === 'front' ? 'back' : 'front'} view</button></div>`;
   side.innerHTML = h;
@@ -884,8 +884,8 @@ function skReparent(p) {
     { W } = rigMatrices(R, skNeutral(), skeletonEditor.view),
     me = W[b.n],
     np = W[p] || W.root;
-  const inv = mInv(np),
-    [lx, ly] = mApplyL(inv, me[4] - np[4], me[5] - np[5]);
+  const inv = invert2x2(np),
+    [lx, ly] = applyLinear2x2(inv, me[4] - np[4], me[5] - np[5]);
   b.par = p === 'root' ? 'root' : p;
   b.at = [+(lx / meta.k).toFixed(3), +(ly / meta.k).toFixed(3)];
   skTopo(meta);
@@ -895,7 +895,7 @@ function skSetPlan(plan) {
   const meta = skMeta();
   meta.plan = plan;
   meta.q = meta.q || {};
-  (Q_FIELDS[plan] || []).forEach(([k, l, mn, mx]) => {
+  (PLAN_MOTION_FIELDS[plan] || []).forEach(([k, l, mn, mx]) => {
     if (meta.q[k] == null) meta.q[k] = k === 'n' ? 3 : k === 'per' ? 300 : k === 'flapMs' ? 300 : mn;
   });
   const other = studioState.rigs[skeletonEditor.sp][skeletonEditor.view === 'front' ? 'back' : 'front'];
@@ -907,18 +907,18 @@ function skSetPlan(plan) {
   toast('Body plan changed for both views. Parts move when their names match the plan’s roles.');
 }
 /* mirror a part and everything hanging from it: left/right names swap, pictures flip, positions and tilts reflect */
-const swapLR = n =>
+const swapLeftRight = n =>
   n
     .replace(/L(\d*)$/, '\u0000$1')
     .replace(/R(\d*)$/, 'L$1')
     .replace('\u0000', 'R');
 function skMirror(meta, b, par, orig) {
   const roles = planRoles(meta.plan, meta.q),
-    sw = swapLR(b.n),
+    sw = swapLeftRight(b.n),
     n = clone(b),
     role0 = b.a || b.n,
-    roleM = roles.includes(swapLR(role0)) ? swapLR(role0) : role0;
-  n.n = uniqBone(meta, sw !== b.n ? sw : b.n + 'M');
+    roleM = roles.includes(swapLeftRight(role0)) ? swapLeftRight(role0) : role0;
+  n.n = uniqueBoneName(meta, sw !== b.n ? sw : b.n + 'M');
   n.par = par;
   delete n.a;
   if (b.a === '-') n.a = '-';
@@ -968,7 +968,7 @@ function skAddPart(src, opts = {}) {
     view = skeletonEditor.view,
     k = meta.k;
   const par = opts.par || skeletonEditor.sel || 'root',
-    name = uniqBone(meta, opts.name || 'part');
+    name = uniqueBoneName(meta, opts.name || 'part');
   const rect = allocRect(sp, view, src.width, src.height);
   putPart(sp, view, rect, src);
   const img = {
@@ -1157,7 +1157,7 @@ function skClick(ev) {
     dup: () => {
       if (!b) return;
       const n = clone(b);
-      n.n = uniqBone(meta, b.n.replace(/\d+$/, ''));
+      n.n = uniqueBoneName(meta, b.n.replace(/\d+$/, ''));
       delete n.a;
       if (planRoles(meta.plan, meta.q).includes(b.a || b.n)) n.a = b.a || b.n;
       n.at = [+(b.at[0] + 3).toFixed(3), b.at[1]];
@@ -1326,7 +1326,7 @@ function skClick(ev) {
   if (f) f();
 }
 /* ================= BLANK BODIES (new billionaires that don’t copy anyone) ================= */
-const BODY_TPL = {
+const BODY_TEMPLATES = {
   biped: {
     q: { lift: 0, flapMs: 300 },
     parts: [
@@ -1393,7 +1393,7 @@ const BODY_TPL = {
     ],
   },
 };
-provide({ BODY_TPL }); /* to-module */
+provide({ BODY_TEMPLATES }); /* to-module */
 function blobPart(w, h, col, face, back) {
   const c = makeCanvas(w, h),
     x = c.getContext('2d'),
@@ -1462,7 +1462,7 @@ function blobPart(w, h, col, face, back) {
 }
 /* build both views and all four sheets for a blank body; scale grows with evolution stage */
 function makeBlankBody(id, plan, col, scale = 1) {
-  const T = BODY_TPL[plan] || BODY_TPL.biped,
+  const T = BODY_TEMPLATES[plan] || BODY_TEMPLATES.biped,
     cols = { main: col, dark: shadeHex(col, 0.6), accent: shadeHex(col, 1.3) },
     gcols = { main: '#D6A23A', dark: '#8E6420', accent: '#F2CE6E' },
     rig = {};
