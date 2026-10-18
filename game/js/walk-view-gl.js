@@ -700,7 +700,7 @@ const _dioStop2D = dioStop,
   _dioProj2D = dioProj,
   _dioUnproject2D = dioUnproject;
 /* 0.1.0 alpha: the walk view is WebGL only (the Lite 2D painter is gone). Without it the game says this device can't
-   run it (boot.js noWebGL); the Studio shows its own message (engine.js) */
+   run it (boot.js noWebGL); the Studio shows its own message (engine-editor.js) */
 export function dioMount(cv, id, opt = {}) {
   const useGL = !EGL.fail && eglOK();
   cv = dglCanvasFor(cv, 'gl');
@@ -763,7 +763,7 @@ export function dioMount(cv, id, opt = {}) {
       console.error(e);
     });
 }
-/* phase 04d: the Studio swaps in its own (studio/js/engine.js and viewport.js) */
+/* phase 04d: the Studio swaps in its own (studio/js/engine-editor.js and viewport.js) */
 export function setDioMount(v) {
   dioMount = v; // eslint-disable-line no-func-assign
   provide({ dioMount });
@@ -4054,7 +4054,7 @@ export function dglAdapt(dtm, work) {
     }
   }
 }
-/* phase 04d: the Studio swaps in its own (studio/js/engine.js and viewport.js) */
+/* phase 04d: the Studio swaps in its own (studio/js/engine-editor.js and viewport.js) */
 export function setDglAdapt(v) {
   dglAdapt = v; // eslint-disable-line no-func-assign
   provide({ dglAdapt });

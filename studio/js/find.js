@@ -11,7 +11,7 @@ import { $, $$ } from '../../game/js/util.js';
 import { ENGINE_SPEC } from '../../game/js/engine/settings.js';
 import { esc } from './game-stand-ins.js';
 import { ACTS, NAV, SECTIONS, ST, clone, go, toast } from './studio-app.js';
-import { ENS, engRefresh } from './engine.js';
+import { ENS, engRefresh } from './engine-editor.js';
 /* eslint-disable no-func-assign */
 expose({
   FIND: [() => FIND],

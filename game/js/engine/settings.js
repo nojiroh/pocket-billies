@@ -774,7 +774,7 @@ function engLook() {
 }
 export let ENG_CTX = { look: null, bypass: false, env: false };
 export let engSource = () => (typeof GD !== 'undefined' ? GD.engine : null);
-/* phase 04d: the Studio points it at its unsaved data (studio/js/engine.js) */
+/* phase 04d: the Studio points it at its unsaved data (studio/js/engine-editor.js) */
 export function setEngSource(v) {
   engSource = v;
   provide({ engSource });

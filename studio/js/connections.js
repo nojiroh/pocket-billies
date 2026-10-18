@@ -16,7 +16,7 @@ import { esc } from './game-stand-ins.js';
 import { ACTS, ST, go, render, setRender, spName } from './studio-app.js';
 import { curLine } from './data-editors.js';
 import { SCN, scId } from './scenes.js';
-import { ENS, engD, engFmt } from './engine.js';
+import { ENS, engD, engFmt } from './engine-editor.js';
 import { findEngine, findField, findFlash, findSel } from './find.js';
 /* eslint-disable no-func-assign */
 expose({
