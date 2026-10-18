@@ -14,8 +14,7 @@
 
 The game's own **full test** (Settings → Help, or the debug menu) runs here one step at a time (smoke and full) and
 whole with --selftest (nightly), stretched for software drawing (phase 13); its frame rates and the stress test only
-mean something on a real phone or computer with a graphics chip, so those come from you as a debug log. `tools/check-game.py` is the long play-test
-at four screen sizes (best run on a real computer too).
+mean something on a real phone or computer with a graphics chip, so those come from you as a debug log.
 
 How it stays quick in software: the frames are drawn at a third of the resolution with a small shadow map, scene
 logic (walkable paths, doors, bridges, stairs) is checked directly from the data without drawing, each scene is drawn
