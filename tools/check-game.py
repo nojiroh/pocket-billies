@@ -101,7 +101,7 @@ def check_game(pw, base, results):
             results.setdefault('opening', {})[name] = opening
             if opening.get('ok'):
                 # the rival's scene at the golf course, then his battle
-                pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();saveData.route={node:2,prog:0,plan:[],hold:false};saveData.visited[2]=1;uiState.roam=null;uiState.tab='walk';render();0")
+                pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();saveData.trip={node:2,prog:0,plan:[],hold:false};saveData.visited[2]=1;uiState.roam=null;uiState.tab='walk';render();0")
                 rival = {'scene': False, 'battle': False}; log(f'{name}: rival scene')
                 for _ in range(40):
                     if pg.evaluate('cutscene.on'): rival['scene'] = True; break
@@ -117,7 +117,7 @@ def check_game(pw, base, results):
         for tab in ['walk', 'map', 'team', 'ledger', 'profile']:
             pg.evaluate(f"uiState.tab='{tab}';render();scrollTo(0,0);0"); time.sleep(1.4 if tab == 'map' else .5)
             pg.screenshot(path=str(OUT / f'{name}-{tab}.png'))
-        pg.evaluate("uiState.tab='walk';saveData.route.node=0;render();openShop('sundown');0"); time.sleep(.5); pg.screenshot(path=str(OUT / f'{name}-shop.png'))
+        pg.evaluate("uiState.tab='walk';saveData.trip.node=0;render();openShop('sundown');0"); time.sleep(.5); pg.screenshot(path=str(OUT / f'{name}-shop.png'))
         pg.evaluate("closeModal();screenWipe=f=>f();0")
         areas = pg.evaluate('Object.keys(BATTLE_STAGES)') if name == 'phone' else ['grass', 'mall']
         pg.evaluate("saveData.preferences.battleStage='classic';0")  # the painted backdrops first
@@ -127,13 +127,13 @@ def check_game(pw, base, results):
             pg.screenshot(path=str(OUT / f'{name}-battle-{area}.png'))
             pg.evaluate("stopTimers();activeBattle=null;battleStageStop();render();0")
         # then a battle on the 3D stage, where you stand in the walk scene
-        pg.evaluate("saveData.preferences.battleStage='scene';uiState.tab='walk';saveData.route={node:0,prog:0,plan:[],hold:false};render();0"); time.sleep(2)
+        pg.evaluate("saveData.preferences.battleStage='scene';uiState.tab='walk';saveData.trip={node:0,prog:0,plan:[],hold:false};render();0"); time.sleep(2)
         pg.evaluate("const q={id:'t3d',sp:'tweet1',lvl:12,gold:false,no:1};saveData.queue=[q];startWild(q);0")
         wait_phase(pg); time.sleep(1)
         pg.screenshot(path=str(OUT / f'{name}-battle-3d.png'))
         results.setdefault('battle3d', {})[name] = pg.evaluate("[!!battleStage.gl,!!walkView.battle,walkView.id]")
         pg.evaluate("stopTimers();activeBattle=null;battleStageStop();render();0")
-        pg.evaluate("saveData.team=[makeBilly('hood2',45),makeBilly('box1',30)];saveData.route.node=4;startTrainer('crude');0")
+        pg.evaluate("saveData.team=[makeBilly('hood2',45),makeBilly('box1',30)];saveData.trip.node=4;startTrainer('crude');0")
         won = False
         for _ in range(60):
             ph = wait_phase(pg, ('choose', 'switch', 'end'))
@@ -147,17 +147,17 @@ def check_game(pw, base, results):
             log(f'{name}: every walk scene')
             pg.evaluate("stopTimers&&stopTimers();activeBattle=null;battleStageStop();saveData.queue=[];uiState.tab='walk';0")
             for i in range(pg.evaluate('LOCATIONS.length')):
-                pg.evaluate(f"saveData.route={{node:{i},prog:0,plan:[],hold:false}};saveData.visited[{i}]=1;uiState.roam=null;render();0"); time.sleep(2.6)
+                pg.evaluate(f"saveData.trip={{node:{i},prog:0,plan:[],hold:false}};saveData.visited[{i}]=1;uiState.roam=null;render();0"); time.sleep(2.6)
                 if name == 'phone' or i in (0, 10, 12): pg.screenshot(path=str(OUT / f'{name}-scene-{pg.evaluate("walkView.id")}.png'))
             if name == 'desktop':
                 # v18: cliffs, stairs, bridges, waterfalls, arches and escalators up close
                 for node, x, z, label in ((0, 23.2, 17.6, 'sundown-stairs'), (12, 32.5, 9.6, 'city-canal'), (12, 32.5, 30.5, 'city-stairs'), (11, 22, 25.6, 'ridge-bridge'),
                                           (9, 27, 21, 'pond-falls'), (8, 31, 18.5, 'mall-escalators'), (4, 11.2, 14.2, 'grotto-cascade'), (5, 19.3, 7.4, 'canyon-arch')):
                     if node >= pg.evaluate('LOCATIONS.length'): continue
-                    pg.evaluate(f"saveData.route={{node:{node},prog:0,plan:[],hold:false}};saveData.visited[{node}]=1;uiState.roam=null;render();0"); time.sleep(2.6)
+                    pg.evaluate(f"saveData.trip={{node:{node},prog:0,plan:[],hold:false}};saveData.visited[{node}]=1;uiState.roam=null;render();0"); time.sleep(2.6)
                     pg.evaluate(f"walkView.pl.x={x};walkView.pl.z={z};walkView.pl.route=null;0"); time.sleep(2.2)
                     pg.screenshot(path=str(OUT / f'desktop-geo-{label}.png'))
-            pg.evaluate("saveData.route={node:0,prog:0,plan:[],hold:false};uiState.roam=null;render();0"); time.sleep(1.5)
+            pg.evaluate("saveData.trip={node:0,prog:0,plan:[],hold:false};uiState.roam=null;render();0"); time.sleep(1.5)
             tgt = pg.evaluate("walkablePointNear(20.5,13.4)")
             pt = pg.evaluate("(([x,z])=>{const q=worldToScreen(walkView.C,x,0,z),r=walkView.cv.getBoundingClientRect();return [r.left+q.x/walkView.cv.width*r.width,r.top+q.y/walkView.cv.height*r.height]})(%s)" % json.dumps(tgt))
             pg.mouse.click(pt[0], pt[1]); time.sleep(.5)
@@ -166,7 +166,7 @@ def check_game(pw, base, results):
                 time.sleep(.25)
             roam = pg.evaluate("[+walkView.pl.x.toFixed(1),+walkView.pl.z.toFixed(1)]")
             pg.evaluate("(()=>{const n=tripTo(9).steps;setTrip(9);addSteps(n,true)})();uiState.toastQ=[];uiState.modal=null;uiState.mq=[];renderOverlay();render();0"); time.sleep(3)
-            trip = pg.evaluate("[saveData.route.node,saveData.route.plan.length,walkView.id,!!saveData.visited[9]]")
+            trip = pg.evaluate("[saveData.trip.node,saveData.trip.plan.length,walkView.id,!!saveData.visited[9]]")
             pg.screenshot(path=str(OUT / f'{name}-arrived.png'))
             results.setdefault('walk', {})[name] = {'walkedTo': roam, 'tripEnd': trip, 'ok': abs(roam[0] - tgt[0]) < .8 and abs(roam[1] - tgt[1]) < .8 and trip[0] == 9 and trip[1] == 0 and trip[2] == 'pond'}
         fps = pg.evaluate('[frameScheduler.meter.fps,frameScheduler.hz,battleStage.q.lvl]')

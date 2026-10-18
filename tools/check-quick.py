@@ -513,7 +513,7 @@ def play(pg):
 def go_scene(pg, node, sec=40):
     # alpha 0.4: a jump, not a walk: a neighbour whose middle is near this view's would otherwise wait for its view to be
     # prepared a few milliseconds a frame (seamless-world.js seamlessGate), which at a frame every few seconds here takes minutes
-    pg.evaluate(f"uiState.inside=null;uiState.tab='walk';saveData.route={{node:{node},prog:0,plan:[],hold:false}};saveData.visited[{node}]=1;uiState.roam=null;if(typeof walkView!=='undefined'&&walkView.pl)walkView.pl.fresh=true;render();0")
+    pg.evaluate(f"uiState.inside=null;uiState.tab='walk';saveData.trip={{node:{node},prog:0,plan:[],hold:false}};saveData.visited[{node}]=1;uiState.roam=null;if(typeof walkView!=='undefined'&&walkView.pl)walkView.pl.fresh=true;render();0")
     if not until(pg, f'!!(walkView.ready&&(walkView.id===LOCATIONS[{node}].mapId||(walkView.sc&&walkView.sc.baseId===LOCATIONS[{node}].mapId)))', sec):   # v43: the hub may sit near an exit, so the view may be the scene with its road
         raise Exception(f'{pg.evaluate(f"LOCATIONS[{node}].mapId")} didn’t open in {sec}s')
     f0 = pg.evaluate("typeof walkRenderer!=='undefined'&&walkRenderer.on?walkRenderer.frames:-1")
@@ -533,7 +533,7 @@ def phone_flow(b, base, R):
         shot(pg, 'phone-opening-pick')
         pg.click('[data-a=cs-next]'); time.sleep(.5); pg.click('[data-a=cs-choose]'); pg.click('[data-a=cs-yes]')
         if not until(pg, 'saveData.started', 40, skip): raise Exception('the game didn’t start after picking a starter')
-        R['opening'] = pg.evaluate('[saveData.starter,saveData.avatar.name,saveData.team.length,LOCATIONS[saveData.route.node].id]')
+        R['opening'] = pg.evaluate('[saveData.starter,saveData.avatar.name,saveData.team.length,LOCATIONS[saveData.trip.node].id]')
         if R['opening'][3] != 'copperleaf': raise Exception(f'the game started at {R["opening"][3]}, not in Copperleaf')
         # v47: Blake battles you on the spot, with Hazel's tips; win or lose, he talks, Hazel heals you, the welcome sheet
         if not until(pg, "!!activeBattle&&activeBattle.phase==='choose'", 120): raise Exception('Blake’s first battle never reached the move menu')
@@ -548,7 +548,7 @@ def phone_flow(b, base, R):
         play(pg)
         for tab in ['walk', 'map', 'team', 'ledger', 'profile']:
             pg.evaluate(f"uiState.tab='{tab}';render();scrollTo(0,0);0"); time.sleep(2.5 if tab in ('walk', 'map') else .6); shot(pg, f'phone-{tab}')
-        pg.evaluate("uiState.tab='walk';saveData.route.node=0;render();openShop('sundown');0"); time.sleep(.6); shot(pg, 'phone-shop')
+        pg.evaluate("uiState.tab='walk';saveData.trip.node=0;render();openShop('sundown');0"); time.sleep(.6); shot(pg, 'phone-shop')
         pg.evaluate("closeModal();screenWipe=f=>f();saveData.preferences.battleStage='classic';activeBattle=null;const q={id:'tq',sp:'knight1',lvl:12,gold:false,no:1};saveData.queue=[q];saveData.team.forEach(m=>{m.hp=maxHp(m)});startWild(q);0")
         if wait_phase(pg) != 'choose': raise Exception('a wild battle never reached the move menu')
         shot(pg, 'phone-battle')
@@ -686,9 +686,9 @@ def desktop_steps(b, base, R):
         until(pg, '!walkView.pl.route', 45)
         roam = pg.evaluate("[+walkView.pl.x.toFixed(1),+walkView.pl.z.toFixed(1)]")
         pg.evaluate("if(typeof talkBox!=='undefined'&&talkBox.on&&typeof talkHide==='function')talkHide();0")
-        if abs(roam[0] - tgt[0]) > .8 or abs(roam[1] - tgt[1]) > .8: raise Exception(f'tapped {tgt}, ended at {roam} ({pg.evaluate("JSON.stringify({mode:walkView.opt.state&&walkView.opt.state().mode,route:saveData.route,battle:!!activeBattle,modal:uiState.modal&&uiState.modal.title,talk:talkBox.on,cs:typeof cutscene!==\"undefined\"&&cutscene.on,climb:!!walkView.pl.climb,keys:Object.keys(walkView.keys||{})})")})')
+        if abs(roam[0] - tgt[0]) > .8 or abs(roam[1] - tgt[1]) > .8: raise Exception(f'tapped {tgt}, ended at {roam} ({pg.evaluate("JSON.stringify({mode:walkView.opt.state&&walkView.opt.state().mode,route:saveData.trip,battle:!!activeBattle,modal:uiState.modal&&uiState.modal.title,talk:talkBox.on,cs:typeof cutscene!==\"undefined\"&&cutscene.on,climb:!!walkView.pl.climb,keys:Object.keys(walkView.keys||{})})")})')
         pg.evaluate("(()=>{const n=tripTo(9).steps;setTrip(9);addSteps(n,true)})();uiState.toastQ=[];uiState.modal=null;uiState.mq=[];renderOverlay();render();0")   # alpha 0.2: the steps a trip costs follow the walk
-        if not until(pg, "saveData.route.node===9&&!saveData.route.plan.length&&(walkView.id==='pond'||(walkView.sc&&walkView.sc.baseId==='pond'))", 30): raise Exception('the trip to Willowmere didn’t arrive (' + pg.evaluate("JSON.stringify([saveData.route,walkView.id])") + ')')   # v43: you arrive at the exit, with the road still in view
+        if not until(pg, "saveData.trip.node===9&&!saveData.trip.plan.length&&(walkView.id==='pond'||(walkView.sc&&walkView.sc.baseId==='pond'))", 30): raise Exception('the trip to Willowmere didn’t arrive (' + pg.evaluate("JSON.stringify([saveData.trip,walkView.id])") + ')')   # v43: you arrive at the exit, with the road still in view
         shot(pg, 'arrived')
         return f'walked to {roam}, arrived at Willowmere'
     walking()
@@ -1214,7 +1214,7 @@ def desktop_steps(b, base, R):
         node = pg.evaluate("LOCATIONS.findIndex(r=>r.mapId==='volcano')")
         if node >= 0:
             pg.evaluate("delete saveData.story['legend_rockefeller0'];delete saveData.caught.rockefeller0;storyState.pending=null;uiState.modal=null;uiState.mq=[];if(talkBox.on&&typeof talkHide==='function')talkHide();renderOverlay();0"); go_scene(pg, node); time.sleep(3)
-            if not until(pg, "!!uiState.modal&&/leaking/.test(uiState.modal.title||'')", 40): raise Exception(f"the legendary at the volcano did not show up ({pg.evaluate('JSON.stringify({ready:walkView.ready,id:walkView.id,tab:uiState.tab,modal:uiState.modal&&uiState.modal.title,talk:talkBox.on,cs:cutscene.on,pend:storyState.pending,flag:saveData.story.legend_rockefeller0,route:saveData.route,b:!!activeBattle})')})")
+            if not until(pg, "!!uiState.modal&&/leaking/.test(uiState.modal.title||'')", 40): raise Exception(f"the legendary at the volcano did not show up ({pg.evaluate('JSON.stringify({ready:walkView.ready,id:walkView.id,tab:uiState.tab,modal:uiState.modal&&uiState.modal.title,talk:talkBox.on,cs:cutscene.on,pend:storyState.pending,flag:saveData.story.legend_rockefeller0,route:saveData.trip,b:!!activeBattle})')})")
             pg.evaluate("uiState.modal.btns[0].f();0"); until(pg, "!!activeBattle", 6); time.sleep(2)
             foe = pg.evaluate("activeBattle&&activeBattle.sides[1].team.map(m=>[m.sp,m.lvl])[0]")
             if foe != ['rockefeller0', 42]: raise Exception(f'legendary battle foe: {foe}')
@@ -1305,7 +1305,7 @@ def desktop_steps(b, base, R):
         for n in range(6):
             pg.evaluate(f"addSteps({per},true);uiState.modal=null;uiState.mq=[];renderOverlay();render();0"); time.sleep(2.5); ids.append(pg.evaluate("walkView.id"))
             if pg.evaluate("!walkView.ready"): raise Exception('the view went unready mid-road (a remount instead of a shift)')
-        if not until(pg, "saveData.route.node===1&&saveData.route.prog===0&&walkView.id.startsWith('w:longgrass')", 20): raise Exception(f'the walk to Tallgrass Meadow did not end on its ground ({ids})')
+        if not until(pg, "saveData.trip.node===1&&saveData.trip.prog===0&&walkView.id.startsWith('w:longgrass')", 20): raise Exception(f'the walk to Tallgrass Meadow did not end on its ground ({ids})')
         shot(pg, 'v43-road')
         views = [i for k, i in enumerate(ids) if k == 0 or ids[k - 1] != i]
         out.append('walked Marigold Town → Tallgrass Meadow on the ground: ' + ' → '.join(views + [pg.evaluate("walkView.id")]))
@@ -1715,10 +1715,10 @@ def desktop_steps(b, base, R):
         pg.evaluate("talkHide&&talkHide();if(uiState.inside)leaveRoom();0"); until(pg, "walkView.ready&&!walkView.sc.roomRect", 30)
         out.append('the lab opens')
         # down Route 1 to Marigold Town, on foot
-        pg.evaluate(f"saveData.route={{node:{node},prog:0,plan:[LOCATION_BY_ID.hedgerow.node,LOCATION_BY_ID.sundown.node],hold:false}};uiState.roam=null;render();0")
+        pg.evaluate(f"saveData.trip={{node:{node},prog:0,plan:[LOCATION_BY_ID.hedgerow.node,LOCATION_BY_ID.sundown.node],hold:false}};uiState.roam=null;render();0")
         cost = pg.evaluate(f"roadCost({node},LOCATION_BY_ID.hedgerow.node)+roadCost(LOCATION_BY_ID.hedgerow.node,LOCATION_BY_ID.sundown.node)")
         pg.evaluate(f"addSteps({cost + 10},true);render();0"); time.sleep(1)
-        at = pg.evaluate("LOCATIONS[saveData.route.node].id")
+        at = pg.evaluate("LOCATIONS[saveData.trip.node].id")
         if at != 'sundown': raise Exception(f'the trip down Route 1 ended at {at}')
         out.append(f'Copperleaf to Marigold Town is {cost} steps on foot')
         pg.evaluate("environment.force=null;uiState.modal=null;uiState.mq=[];renderOverlay();0")
@@ -1748,7 +1748,7 @@ def desktop_steps(b, base, R):
         if not until(pg, "airshipFlight.on&&uiState.tab==='map'", 10): raise Exception('the flight didn’t start')
         time.sleep(2.5); shot(pg, 'a04-airship-flight')
         if not until(pg, "!airshipFlight.on&&uiState.tab==='walk'", 30, "flySkip()"): raise Exception('the flight never landed')
-        r = pg.evaluate("[LOCATIONS[saveData.route.node].id,saveData.se]")
+        r = pg.evaluate("[LOCATIONS[saveData.trip.node].id,saveData.se]")
         if r[0] != 'sundown' or se0 - r[1] != fare: raise Exception(f'landed at {r[0]}, paid {se0 - r[1]} (the fare is {fare})')
         if not until(pg, f"!!(walkView.ready&&(walkView.sc.baseId||walkView.id)===LOCATIONS[{sd}].mapId)", 60): raise Exception('Marigold Town didn’t open after landing')
         time.sleep(1.5); d = pg.evaluate("(()=>{const sc=walkView.sc,o=sc.baseOff||[0,0],p=mapById(baseMapId()).props.find(p=>p.act==='fly');return Math.hypot(walkView.pl.x-p.x-o[0],walkView.pl.z-p.z-o[1])})()")
@@ -1866,7 +1866,7 @@ def desktop_steps(b, base, R):
                 d = ((bb[0] - a[0]) ** 2 + (bb[1] - a[1]) ** 2) ** .5; k = max(1, int(d / .8))
                 for j in range(1, k + 1):
                     x = a[0] + (bb[0] - a[0]) * j / k; z = a[1] + (bb[1] - a[1]) * j / k; walked += d / k
-                    if pg.evaluate(f"(()=>{{walkView.pl.x={x};walkView.pl.z={z};walkView.pl.route=null;walkCross();return saveData.route.node==={n1}}})()"): crossed = True; break
+                    if pg.evaluate(f"(()=>{{walkView.pl.x={x};walkView.pl.z={z};walkView.pl.route=null;walkCross();return saveData.trip.node==={n1}}})()"): crossed = True; break
                 if crossed: break
             if not crossed: raise Exception(f'walked {walked:.0f} m toward Route 1 and never crossed onto it')
             shot(pg, 'a041-walked-to-route1')
@@ -1902,13 +1902,13 @@ def desktop_steps(b, base, R):
 
     @step('Battles: on the 3D stage, and a trainer battle played to the end', 330)
     def battles():
-        pg.evaluate("saveData.preferences.battleStage='scene';screenWipe=f=>f();saveData.route={node:0,prog:0,plan:[],hold:false};uiState.tab='walk';render();0"); time.sleep(2)
+        pg.evaluate("saveData.preferences.battleStage='scene';screenWipe=f=>f();saveData.trip={node:0,prog:0,plan:[],hold:false};uiState.tab='walk';render();0"); time.sleep(2)
         pg.evaluate("const q={id:'t3d',sp:'knight1',lvl:12,gold:false,no:1};saveData.queue=[q];saveData.team.forEach(m=>{m.hp=maxHp(m)});startWild(q);0")
         if wait_phase(pg, sec=60) != 'choose': raise Exception('the 3D-stage battle never reached the move menu')
         shot(pg, 'battle-3d'); stage = pg.evaluate("!!battleStage.gl")
         pg.evaluate("stopTimers();activeBattle=null;battleStageStop();saveData.preferences.battleStage='classic';render();0")
         # battle animations at four times the speed (the Debug panel's speed setting), so the result comes quickly
-        pg.evaluate("battleStage.speed=4;saveData.team=[makeBilly('musk2',45),makeBilly('ek1',30)];saveData.route.node=4;startTrainer('crude');0")
+        pg.evaluate("battleStage.speed=4;saveData.team=[makeBilly('musk2',45),makeBilly('ek1',30)];saveData.trip.node=4;startTrainer('crude');0")
         end = time.time() + 300; won = None
         while time.time() < end:
             ph = wait_phase(pg, ('choose', 'switch', 'end'), 30)

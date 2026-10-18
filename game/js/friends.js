@@ -215,7 +215,7 @@ function friendWatchError(u, e) {
 function publishToFriends(now) {
   if (!friends.on || !saveData.started) return;
   const t = Date.now(),
-    node = saveData.route && saveData.route.node,
+    node = saveData.trip && saveData.trip.node,
     r = LOCATIONS[node] || {},
     sid = typeof mapIdAt === 'function' ? mapIdAt(node) : null;
   let x = null,

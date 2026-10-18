@@ -576,7 +576,7 @@ function topbar() {
   rollDay();
   const shut = !!(saveData.preferences && saveData.preferences.cardClosed),
     walk = uiState.tab === 'walk';
-  return `<div class="topbar glass" role="status">${walk ? `<button class="tb-where ${shut ? 'shut' : ''}" data-a="card-open" aria-expanded="${!shut}" aria-label="${shut ? 'Show' : 'Hide'} the card for ${escapeHtml(LOCATIONS[saveData.route.node].name)}">${escapeHtml(uiState.inside && !uiState.bench && typeof roomState === 'function' && roomState() ? uiState.inside.name || LOCATIONS[saveData.route.node].name : LOCATIONS[saveData.route.node].name)}${uiIconHTML('chev', 12)}</button>` : `<span class="tb-where">${escapeHtml(LOCATIONS[saveData.route.node].name)}</span>`}<span class="tb-chip tnum" title="Money">${coinHTML('penny', 16)}<small>$</small><b data-count="tse" data-to="${saveData.se}">${formatNumber(saveData.se)}</b></span><button class="tb-btn" data-a="settings" aria-label="Settings and help">${uiIconHTML('gear', 18)}</button><button class="tb-me" data-a="tab" data-t="profile" aria-label="Your trainer card" ${uiState.tab === 'profile' ? 'aria-current="page"' : ''}>${typeof portraitHTML === 'function' ? portraitHTML('me', 84) : ''}</button></div>`;
+  return `<div class="topbar glass" role="status">${walk ? `<button class="tb-where ${shut ? 'shut' : ''}" data-a="card-open" aria-expanded="${!shut}" aria-label="${shut ? 'Show' : 'Hide'} the card for ${escapeHtml(LOCATIONS[saveData.trip.node].name)}">${escapeHtml(uiState.inside && !uiState.bench && typeof roomState === 'function' && roomState() ? uiState.inside.name || LOCATIONS[saveData.trip.node].name : LOCATIONS[saveData.trip.node].name)}${uiIconHTML('chev', 12)}</button>` : `<span class="tb-where">${escapeHtml(LOCATIONS[saveData.trip.node].name)}</span>`}<span class="tb-chip tnum" title="Money">${coinHTML('penny', 16)}<small>$</small><b data-count="tse" data-to="${saveData.se}">${formatNumber(saveData.se)}</b></span><button class="tb-btn" data-a="settings" aria-label="Settings and help">${uiIconHTML('gear', 18)}</button><button class="tb-me" data-a="tab" data-t="profile" aria-label="Your trainer card" ${uiState.tab === 'profile' ? 'aria-current="page"' : ''}>${typeof portraitHTML === 'function' ? portraitHTML('me', 84) : ''}</button></div>`;
 }
 export function render() {
   const app = $('#app');
@@ -789,16 +789,16 @@ function stepsTo(j) {
   return t ? t.steps : Infinity;
 }
 function tripLeft() {
-  const r = saveData.route;
+  const r = saveData.trip;
   if (!r.plan.length) return 0;
   let n = roadCost(r.node, r.plan[0]) - r.prog;
   for (let k = 0; k < r.plan.length - 1; k++) n += roadCost(r.plan[k], r.plan[k + 1]);
   return Math.max(0, n);
 }
-const tripDest = () => (saveData.route.plan.length ? saveData.route.plan[saveData.route.plan.length - 1] : null);
+const tripDest = () => (saveData.trip.plan.length ? saveData.trip.plan[saveData.trip.plan.length - 1] : null);
 /* one line about travel: where you're headed, why you're stopped, or that you're staying */
 function tripStatus() {
-  const r = saveData.route,
+  const r = saveData.trip,
     d = tripDest(),
     gm = gateMsg();
   if (d == null)
@@ -816,7 +816,7 @@ function tripStatus() {
   return { k: 'go', t: `Walking to ${LOCATIONS[d].name}${via}`, left: tripLeft() };
 }
 function tripButtons() {
-  const r = saveData.route,
+  const r = saveData.trip,
     st = tripStatus();
   if (st.k === 'guide')
     return `<button class="pb small" data-a="stoptrip">Stop guiding me</button><button class="pb small quiet" data-a="tab" data-t="map">Change plans</button>`;
@@ -830,7 +830,7 @@ function tripButtons() {
 }
 function nodeActions(i) {
   const n = LOCATIONS[i],
-    node = saveData.route.node;
+    node = saveData.trip.node;
   let x = '';
   if (i !== node) return '';
   if (n.shop && SHOPS[n.shop])
@@ -848,26 +848,26 @@ function nodeActions(i) {
   return `<div class="racts">${x}</div>`;
 }
 function boardNote(i) {
-  if (saveData.route.node !== i) return '';
+  if (saveData.trip.node !== i) return '';
   return trainersAt(i)
     .filter(T => T.hint && !saveData.flags[T.id])
     .map(T => `<p class="note">${escapeHtml(T.hint)}</p>`)
     .join('');
 }
 function hereCard() {
-  const node = saveData.route.node,
+  const node = saveData.trip.node,
     here = LOCATIONS[node],
     st = tripStatus(),
     nx = nextTripNode();
   let prog = '';
   if (st.k === 'go' || st.k === 'hold') {
     const c = roadCost(node, nx),
-      f = saveData.route.prog / c;
+      f = saveData.trip.prog / c;
     prog = `<div class="nextstop"><div class="ns-top"><span>${escapeHtml(st.t)}</span><b>${escapeHtml(LOCATIONS[nx].name)}</b></div><div class="trail">${progressBarHTML(f, 'trailbar live')}<span class="walker" style="left:${clamp(f, 0, 1) * 100}%">${playerWalkIconHTML()}</span></div><span class="note tnum">${formatNumber(tripLeft())} steps to go</span></div>`;
   } else if (st.k === 'blocked') {
     const bl = blockerAt(node);
     prog =
-      bl && saveData.route.prog === 0
+      bl && saveData.trip.prog === 0
         ? `<div class="event"><b>${escapeHtml(bl.blockTitle || bl.name + ' is blocking the way')}</b><p>${escapeHtml(bl.blockText || 'Beat them to keep walking.')}</p></div>`
         : `<p class="note gate">${escapeHtml(st.t)}</p>`;
   } else
@@ -906,7 +906,7 @@ function buddyCard() {
 function roomHero() {
   const I = uiState.inside,
     sc = mapById(I.id) || {},
-    here = LOCATIONS[saveData.route.node],
+    here = LOCATIONS[saveData.trip.node],
     what =
       {
         shop: 'Tap the counter to shop.',
@@ -940,17 +940,17 @@ function walkHero() {
     /* v20: a test scene from the debug menu */ const sc = mapById(uiState.bench.id);
     return `<div class="walk-hero" id="walkHero"><div class="wh-card glass">${uiState.bench.id === 'gallery' ? `<div class="sub">Settings</div><h1 class="where">Graphics gallery</h1><p class="wh-gate">Walk to a signpost, then move the dial below and watch what changes.</p>` : `<div class="sub">Test scene</div><h1 class="where">${escapeHtml((sc.name || uiState.bench.id).replace(/^Test: /, ''))}</h1><p class="wh-gate">${(sc.checks || []).length} walking checks. Debug menu → Test scenes runs them.</p>`}<div class="wh-acts"><button class="pb small gold" ${uiState.bench.id === 'gallery' ? 'data-a="gal-leave"' : 'data-a="dbg" data-x="untest"'}>${uiState.bench.id === 'gallery' ? 'Back to Settings' : 'Back to the game'}</button></div></div></div>`;
   }
-  const node = saveData.route.node,
+  const node = saveData.trip.node,
     here = LOCATIONS[node],
     q = saveData.queue,
     st = tripStatus(),
     nx = nextTripNode();
   let next = '';
   if (st.k === 'go')
-    next = `<div class="wh-next"><span>${escapeHtml(st.t)}</span><span class="tnum">${formatNumber(st.left)} steps</span>${progressBarHTML(saveData.route.prog / roadCost(node, nx), 'trailbar live')}</div>`;
+    next = `<div class="wh-next"><span>${escapeHtml(st.t)}</span><span class="tnum">${formatNumber(st.left)} steps</span>${progressBarHTML(saveData.trip.prog / roadCost(node, nx), 'trailbar live')}</div>`;
   else next = `<p class="wh-gate">${escapeHtml(st.t)}</p>`;
   return `<div class="walk-hero" id="walkHero">${locationCardHTML(escapeHtml(locationSubtitle(here)), escapeHtml(here.name), environmentLine() + next, tripButtons())}
- <div class="wh-foot">${q.length ? `<p class="wh-hint glass">${uiIconHTML('spark', 12)} ${plural(q.length, 'Billie')} hiding nearby. Tap a <b>?</b> to battle.</p>` : saveData.route.prog === 0 ? `<p class="wh-hint glass">${uiIconHTML('walk', 12)} Tap the ground to walk around. Tap buildings, people and signs.</p>` : ''}
+ <div class="wh-foot">${q.length ? `<p class="wh-hint glass">${uiIconHTML('spark', 12)} ${plural(q.length, 'Billie')} hiding nearby. Tap a <b>?</b> to battle.</p>` : saveData.trip.prog === 0 ? `<p class="wh-hint glass">${uiIconHTML('walk', 12)} Tap the ground to walk around. Tap buildings, people and signs.</p>` : ''}
   <div class="wh-row"><button class="pb small glass fish-btn" data-a="fish" hidden>${uiIconHTML('fish', 14)} Fish</button><button class="pb small glass" data-a="photo" aria-label="Photo mode">${uiIconHTML('camera', 14)}</button><button class="wh-down glass" data-a="walkdown" aria-label="Show actions">${uiIconHTML('chev', 18)}<span>Actions</span></button><span class="wh-steps glass tnum">${uiIconHTML('walk', 14)} ${formatNumber(saveData.day.steps)}</span></div></div></div>`;
 }
 function renderWalk() {
@@ -1054,11 +1054,11 @@ function roomFor(a, p) {
 function enterRoom(a, p) {
   const id = roomFor(a, p);
   if (!id || !walkView.pl) return false;
-  const here = LOCATIONS[saveData.route.node];
+  const here = LOCATIONS[saveData.trip.node];
   const info = {
     id,
     kind: a,
-    node: saveData.route.node,
+    node: saveData.trip.node,
     shop: a === 'shop' ? p.shop || here.shop || null : null,
     p,
     name: p.label || (a === 'shop' && SHOPS[p.shop || here.shop] ? SHOPS[p.shop || here.shop].name : null),
@@ -1225,7 +1225,7 @@ function roomAct(h) {
     return;
   }
   if (pa === 'shop' && I.kind !== 'shop') {
-    const here = LOCATIONS[saveData.route.node],
+    const here = LOCATIONS[saveData.trip.node],
       id = h.p.shop || here.shop;
     if (id && SHOPS[id]) openShop(id);
     else toast(h.p.say || 'Nothing for sale today.');
@@ -1249,7 +1249,7 @@ function roomAct(h) {
 function roomState() {
   const I = uiState.inside;
   if (!I) return null;
-  if (I.node !== saveData.route.node) {
+  if (I.node !== saveData.trip.node) {
     uiState.inside = null;
     return null;
   }
@@ -1263,7 +1263,7 @@ function roomState() {
       pos = walkView.id === I.view && walkView.pl ? [walkView.pl.x, walkView.pl.z] : [dr[0], dr[1] - 0.45];
     return {
       id: I.view,
-      node: saveData.route.node,
+      node: saveData.trip.node,
       mode: 'roam',
       pos,
       roam: true,
@@ -1281,7 +1281,7 @@ function roomState() {
   const pos = uiState.roam && uiState.roam.id === I.id ? [uiState.roam.x, uiState.roam.z] : mapHub(sc);
   return {
     id: I.id,
-    node: saveData.route.node,
+    node: saveData.trip.node,
     mode: 'roam',
     pos,
     roam: true,
@@ -1298,7 +1298,7 @@ function walkState() {
     const sc = mapById(uiState.bench.id);
     return {
       id: uiState.bench.id,
-      node: saveData.route.node,
+      node: saveData.trip.node,
       mode: 'roam',
       pos: mapHub(sc),
       roam: true,
@@ -1308,7 +1308,7 @@ function walkState() {
       exits: [],
     };
   }
-  const r = saveData.route,
+  const r = saveData.trip,
     node = r.node,
     nx = walkMode() ? null : nextTripNode(),
     c = nx != null ? roadCost(node, nx) : 0,
@@ -1390,7 +1390,7 @@ function walkState() {
   const sc = mapById(v.id) || {},
     ex = mapExits(v.node),
     bl = blockerAt(v.node),
-    dest = v.node === node ? (walkMode() ? (saveData.route.plan[0] ?? null) : nextTripNode()) : null;
+    dest = v.node === node ? (walkMode() ? (saveData.trip.plan[0] ?? null) : nextTripNode()) : null;
   v.exits = ROADS_BY_NODE[v.node]
     .map(e => ({
       i: ex[e.to],
@@ -1433,7 +1433,7 @@ function walkState() {
   return v;
 }
 export function walkPick(h) {
-  const node = saveData.route.node,
+  const node = saveData.trip.node,
     here = LOCATIONS[node];
   if (uiState.inside) {
     if (h.k === 'exit') {
@@ -1524,7 +1524,7 @@ function exitPrompt(e) {
     return;
   }
   if (e.locked) {
-    const bl = blockerAt(saveData.route.node);
+    const bl = blockerAt(saveData.trip.node);
     toast(bl ? `${bl.name} is blocking the way. Beat them first.` : 'That road is closed.');
     return;
   }
@@ -1605,7 +1605,7 @@ function walkCross() {
     return;
   const sc = walkView.sc,
     P = walkView.pl,
-    node = saveData.route.node,
+    node = saveData.trip.node,
     parts = sc.parts;
   if (!parts) return;
   for (const q of parts) {
@@ -1640,9 +1640,9 @@ function walkCross() {
       }
       return;
     }
-    const r = saveData.route,
+    const r = saveData.trip,
       plan = r.plan && r.plan[0] === n ? r.plan.slice(1) : [];
-    saveData.route = { node: n, prog: 0, plan, hold: false };
+    saveData.trip = { node: n, prog: 0, plan, hold: false };
     saveData.visited[n] = 1;
     uiState.roam = { id: q.id, node: n, x, z };
     uiState.arrive = null;
@@ -1691,7 +1691,7 @@ function walkMapSync() {
     if (walkView.cv) stopWalkView();
     return;
   }
-  const on = saveData.started && uiState.tab !== 'map' && !!mapIdAt(saveData.route.node),
+  const on = saveData.started && uiState.tab !== 'map' && !!mapIdAt(saveData.trip.node),
     walk = on && uiState.tab === 'walk';
   let cv = $('#dio');
   document.body.classList.toggle('on-walk', walk);
@@ -1751,7 +1751,7 @@ function walkMapSync() {
           /^int_/.test(walkView.id || '')
         )
           return;
-        const sid = mapIdAt(saveData.route.node),
+        const sid = mapIdAt(saveData.trip.node),
           po = mapOffsetInView(sid),
           o = po || (walkView.sc && walkView.sc.baseOff) || [0, 0],
           bk = uiState.backAt;
@@ -1765,7 +1765,7 @@ function walkMapSync() {
         }
         uiState.roam = {
           id: po ? sid : (walkView.sc && walkView.sc.baseId) || walkView.id,
-          node: saveData.route.node,
+          node: saveData.trip.node,
           x: x - o[0],
           z: z - o[1],
         };
@@ -1811,13 +1811,13 @@ function poolStrip(pool) {
   return `<div class="poolstrip">${P.list.map(([id]) => (saveData.seen[id] ? rigCanvasHTML(id, 36) : rigCanvasHTML(id, 36, { sil: 1, still: 1 }))).join('')}</div>`;
 }
 function worldMapCardHTML() {
-  const sel = uiState.mapSel == null ? saveData.route.node : uiState.mapSel;
+  const sel = uiState.mapSel == null ? saveData.trip.node : uiState.mapSel;
   if (typeof sel === 'string') {
     const f = REGIONS[+sel.slice(1)];
     return `<div class="mc-top"><h2>${escapeHtml(f.name)}</h2><span class="sub">${f.t === 'sun' ? 'Center of the world' : 'Unexplored'}</span></div><p>${escapeHtml(f.blurb || '')}</p><p class="note">${f.t === 'sun' ? 'Visible from everywhere in the Hollow Earth.' : 'No trainer from Marigold Town has walked this far yet. The road opens in a later version.'}</p>`;
   }
   const n = LOCATIONS[sel],
-    node = saveData.route.node,
+    node = saveData.trip.node,
     dest = tripDest(),
     st = tripStatus(),
     here = sel === node;
@@ -2142,7 +2142,7 @@ function renderProfile() {
  <div class="pf-top"><section class="tcard">
   <div class="tc-band"><span>Trainer card</span><span class="tnum">ID No. ${String(saveData.tid || 0).padStart(5, '0')}</span></div>
   <div class="tc-body"><div class="tc-photo"><div class="tc-portrait">${personHTML('me', 92)}</div><button class="pb small" data-a="customize">Edit look</button></div>
-   <div class="tc-info"><h2 class="tc-name">${escapeHtml(name)}</h2><dl class="tc-dl"><div><dt>Money</dt><dd class="tnum">${coinHTML('penny', 16)} $${formatNumber(saveData.se)}</dd></div><div><dt>Now in</dt><dd>${escapeHtml(LOCATIONS[saveData.route.node].name)}</dd></div>${since ? `<div><dt>Started</dt><dd>${escapeHtml(since)}</dd></div>` : ''}<div><dt>Buddy</dt><dd>${bud ? escapeHtml(billyName(bud)) : 'None yet'}</dd></div></dl></div></div>
+   <div class="tc-info"><h2 class="tc-name">${escapeHtml(name)}</h2><dl class="tc-dl"><div><dt>Money</dt><dd class="tnum">${coinHTML('penny', 16)} $${formatNumber(saveData.se)}</dd></div><div><dt>Now in</dt><dd>${escapeHtml(LOCATIONS[saveData.trip.node].name)}</dd></div>${since ? `<div><dt>Started</dt><dd>${escapeHtml(since)}</dd></div>` : ''}<div><dt>Buddy</dt><dd>${bud ? escapeHtml(billyName(bud)) : 'None yet'}</dd></div></dl></div></div>
   <div class="tc-badges"><div class="tc-bh"><span>Badges</span><b class="tnum">${bd.got} of ${bd.tot}</b></div><ol class="bdgs">${bd.html}</ol></div>
  </section>
  <section class="tpanel pf-stats"><div class="sec-h"><h2>Records</h2></div><div class="pf-grid">
@@ -2525,7 +2525,7 @@ export function startGame(l, o = {}) {
   saveData.caught[m.sp] = 1;
   saveData.seen[m.sp] = 1;
   saveData.since = Date.now();
-  saveData.route = { node: START_NODE, prog: 0, plan: [], hold: false };
+  saveData.trip = { node: START_NODE, prog: 0, plan: [], hold: false };
   saveData.visited = { [START_NODE]: 1 };
   saveData.mapSeen = null;
   if (typeof storyFlags === 'function') storyFlags().copperleafNote = 1;
@@ -2797,18 +2797,18 @@ document.addEventListener('click', ev => {
     case 'stoptrip':
       stopTrip();
       toast(
-        saveData.route.prog > 0
+        saveData.trip.prog > 0
           ? 'You stopped walking. Steps won’t move you until you carry on.'
-          : `You’re staying in ${LOCATIONS[saveData.route.node].name}.`
+          : `You’re staying in ${LOCATIONS[saveData.trip.node].name}.`
       );
       render();
       break;
     case 'stay':
-      saveData.route.plan = [];
-      saveData.route.prog = 0;
-      saveData.route.hold = false;
+      saveData.trip.plan = [];
+      saveData.trip.prog = 0;
+      saveData.trip.hold = false;
       save();
-      toast(`You’re staying in ${LOCATIONS[saveData.route.node].name}.`);
+      toast(`You’re staying in ${LOCATIONS[saveData.trip.node].name}.`);
       render();
       break;
     case 'resumetrip':
@@ -2816,7 +2816,7 @@ document.addEventListener('click', ev => {
       render();
       break;
     case 'turnback': {
-      const r = saveData.route,
+      const r = saveData.trip,
         nx = nextTripNode();
       if (nx != null && r.prog > 0) {
         const c = roadCost(r.node, nx);

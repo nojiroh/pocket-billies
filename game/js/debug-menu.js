@@ -94,7 +94,7 @@ function debugSpeciesOptions() {
 }
 function debugHTML() {
   const inB = !!activeBattle,
-    node = saveData.route.node;
+    node = saveData.trip.node;
   return `<div class="dbg">
  <p class="note">Changes apply to this save right away. Export a backup first if you might want to undo.</p>
  <details open><summary>Performance</summary><div class="dbg-row">${debugButtonHTML('fps', debugMenu.fps ? 'Hide FPS meter' : 'Show FPS meter')}<span class="note">Screen ≈ ${frameScheduler.hz} Hz · cap ${userFps()} FPS · battle quality level ${battleStage.q.lvl} (0 is best)</span><button class="pb small" data-a="quicktest">Full test</button><button class="pb small" data-a="dbglog">Export debug log</button></div>
@@ -315,7 +315,7 @@ function debugAction(x) {
     }
     case 'jump': {
       const n = clamp(+v('dbgNode'), 0, LOCATIONS.length - 1);
-      saveData.route = { node: n, prog: 0, plan: [], hold: false };
+      saveData.trip = { node: n, prog: 0, plan: [], hold: false };
       saveData.visited[n] = 1;
       saveData.mapSeen = null;
       break;

@@ -178,7 +178,7 @@ async function runFullTest(mode) {
   selfTest.stop = false;
   await loadAllMaps(); /* phase 04b: every map whole before the test opens them */
   const keep = JSON.stringify(saveData),
-    back = { tab: uiState.tab, roam: uiState.roam, node: saveData.route.node },
+    back = { tab: uiState.tab, roam: uiState.roam, node: saveData.trip.node },
     realSave = save,
     engKeep = gameData.engine ? JSON.stringify(gameData.engine) : null;
   setSave(() => {}); /* nothing the test does reaches your save */
@@ -685,7 +685,7 @@ async function runFullTest(mode) {
     const battle = async classic => {
       uiState.bench = null;
       uiState.tab = 'walk';
-      saveData.route.node = back.node;
+      saveData.trip.node = back.node;
       render();
       await selfTestSleep(600);
       for (let i = 0; i < 40 && !(walkView.ready && walkView.id === mapIdAt(back.node)); i++) await selfTestSleep(200);
@@ -740,7 +740,7 @@ async function runFullTest(mode) {
     const teamBattle = async kind => {
       uiState.bench = null;
       uiState.tab = 'walk';
-      saveData.route.node = back.node;
+      saveData.trip.node = back.node;
       render();
       await selfTestSleep(1200);
       saveData.team.forEach(m => {
@@ -819,7 +819,7 @@ async function runFullTest(mode) {
         async () => {
           uiState.bench = null;
           uiState.tab = 'walk';
-          saveData.route = { node: 0, prog: 0, plan: [], hold: false };
+          saveData.trip = { node: 0, prog: 0, plan: [], hold: false };
           {
             const h = mapHub(gameData.maps.sundown);
             uiState.roam = { id: 'sundown', node: 0, x: h[0], z: h[1] };
@@ -859,11 +859,11 @@ async function runFullTest(mode) {
             const ms = (performance.now() - t0) / Math.max(1, walkRenderer.frames - f0);
             worst = Math.max(worst, ms);
           }
-          for (let i = 0; i < 40 && !(saveData.route.node === 1 && saveData.route.prog === 0); i++)
+          for (let i = 0; i < 40 && !(saveData.trip.node === 1 && saveData.trip.prog === 0); i++)
             await selfTestSleep(100);
           saveData.queue = q0;
-          if (saveData.route.node !== 1)
-            throw new Error('never arrived at Tallgrass Meadow (' + JSON.stringify(saveData.route) + ')');
+          if (saveData.trip.node !== 1)
+            throw new Error('never arrived at Tallgrass Meadow (' + JSON.stringify(saveData.trip) + ')');
           const ev = debugLog.ev.slice(L0),
             builds = ev.filter(e => /seamless to/.test(e.msg || '')).length,
             onSpot = ev.filter(e => /built on the spot/.test(e.msg || '')).length,
@@ -897,7 +897,7 @@ async function runFullTest(mode) {
             uiState.inside = null;
             uiState.goingIn = null;
             uiState.tab = 'walk';
-            saveData.route = { node: 0, prog: 0, plan: [], hold: false };
+            saveData.trip = { node: 0, prog: 0, plan: [], hold: false };
             uiState.roam = null;
             render();
             for (let i = 0; i < 60 && !(walkView.ready && walkView.id === 'w:sundown*'); i++) await selfTestSleep(100);
@@ -1111,7 +1111,7 @@ async function runFullTest(mode) {
           uiState.bench = null;
           uiState.inside = null;
           uiState.tab = 'walk';
-          saveData.route.node = back.node;
+          saveData.trip.node = back.node;
           render();
           await selfTestSleep(1200);
           let od = null;
@@ -1199,7 +1199,7 @@ async function runFullTest(mode) {
           uiState.tab = 'walk';
           uiState.bench = null;
           const node = LOCATIONS.findIndex(r => r.mapId === gid);
-          if (node >= 0) saveData.route.node = node;
+          if (node >= 0) saveData.trip.node = node;
           render();
           for (let i = 0; i < 80 && !(walkView.ready && walkView.id === gid); i++) await selfTestSleep(100);
           await selfTestSleep(1500);

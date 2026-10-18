@@ -212,7 +212,7 @@ const REQUEST_KINDS = {
     `Could you take my letter for a walk? It needs ${formatNumber(q.n)} steps of fresh air. Bring it back to me after.`,
   catch: q => `I’d love to see a ${q.t} Billie. Tax one and come back to show me?`,
 };
-function requestHere(node = saveData.route.node) {
+function requestHere(node = saveData.trip.node) {
   const R = LOCATIONS[node];
   if (!R || !R.town || !saveData.started) return null;
   const X = thingsToDo(),

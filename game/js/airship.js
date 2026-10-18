@@ -40,7 +40,7 @@ provide({ flyDraw, flyTick });
 export const airshipFlight = { on: false, a: -1, b: -1, t0: 0, dur: 0, lastX: null, dir: 1 };
 /* where the airships go from here: the towns you've been to (and may enter), nearest first */
 function flyTowns() {
-  const here = saveData.route.node;
+  const here = saveData.trip.node;
   return LOCATIONS.map((r, i) => i)
     .filter(
       i =>
@@ -61,7 +61,7 @@ function flyFare(a, b) {
 export function flyMenu(p) {
   if (airshipFlight.on || !saveData.started) return;
   const L = flyTowns(),
-    here = saveData.route.node;
+    here = saveData.trip.node;
   const rows = L.map(i => {
     const f = flyFare(here, i),
       ok = saveData.se >= f;
@@ -80,14 +80,14 @@ export function flyMenu(p) {
    show on the way */
 function startAirshipFlight(i) {
   if (airshipFlight.on || !LOCATIONS[i]) return;
-  const a = saveData.route.node,
+  const a = saveData.trip.node,
     f = flyFare(a, i);
   if (saveData.se < f) {
     toast(`A ticket to ${LOCATIONS[i].name} costs $${formatNumber(f)}. You have $${formatNumber(saveData.se)}.`);
     return;
   }
   saveData.se -= f;
-  saveData.route = { node: i, prog: 0, plan: [], hold: false };
+  saveData.trip = { node: i, prog: 0, plan: [], hold: false };
   saveData.visited[i] = 1;
   uiState.inside = null;
   uiState.goingIn = null;
@@ -267,7 +267,7 @@ document.addEventListener(
       ev.stopPropagation();
       ev.preventDefault();
       if (el.getAttribute('aria-disabled'))
-        toast(`You need $${formatNumber(flyFare(saveData.route.node, +el.dataset.n))} for that ticket.`);
+        toast(`You need $${formatNumber(flyFare(saveData.trip.node, +el.dataset.n))} for that ticket.`);
       else startAirshipFlight(+el.dataset.n);
       return;
     }
@@ -292,7 +292,7 @@ export function rideGlassLift(p) {
     return;
   }
   const i = to.node,
-    a = saveData.route.node,
+    a = saveData.trip.node,
     down = !!LOCATIONS[i].noFly;
   glassLift.on = true;
   const cv = document.createElement('div');
@@ -306,7 +306,7 @@ export function rideGlassLift(p) {
   setTimeout(
     async () => {
       await ready;
-      saveData.route = { node: i, prog: 0, plan: [], hold: false };
+      saveData.trip = { node: i, prog: 0, plan: [], hold: false };
       saveData.visited[i] = 1;
       uiState.inside = null;
       uiState.goingIn = null;

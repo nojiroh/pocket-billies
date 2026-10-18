@@ -841,7 +841,7 @@ function worldMapGlOverlay(t) {
   c.setTransform(1, 0, 0, 1, 0, 0);
   c.clearRect(0, 0, cv.width, cv.height);
   c.setTransform(d, 0, 0, d, 0, 0);
-  const r = saveData.route,
+  const r = saveData.trip,
     plan = [r.node, ...r.plan];
   if (plan.length > 1) {
     const pts = worldMapGlPath(plan, r.prog / roadCost(plan[0], plan[1]));
@@ -892,14 +892,14 @@ function worldMapGlOverlay(t) {
 /* ---------- pins and road chips (HTML, so they're crisp and easy to tap) ---------- */
 function worldMapGlPinState(i) {
   const n = LOCATIONS[i],
-    dest = saveData.route.plan.length ? saveData.route.plan[saveData.route.plan.length - 1] : null,
+    dest = saveData.trip.plan.length ? saveData.trip.plan[saveData.trip.plan.length - 1] : null,
     locked = !canEnter(i);
-  const ico = i === saveData.route.node ? 'walk' : locked ? 'lock' : i === dest ? 'flag' : n.town ? 'house' : 'leaf';
+  const ico = i === saveData.trip.node ? 'walk' : locked ? 'lock' : i === dest ? 'flag' : n.town ? 'house' : 'leaf';
   return {
     ico,
     cls:
       'mpin' +
-      (i === saveData.route.node ? ' here' : '') +
+      (i === saveData.trip.node ? ' here' : '') +
       (uiState.mapSel === i ? ' sel' : '') +
       (i === dest ? ' dest' : '') +
       (!saveData.visited[i] && !locked ? ' new' : '') +
@@ -943,19 +943,19 @@ function worldMapGlPins() {
       e.style.transform = tf;
     }
   };
-  const sel = uiState.mapSel == null ? saveData.route.node : uiState.mapSel,
-    dest = saveData.route.plan.length ? saveData.route.plan[saveData.route.plan.length - 1] : null;
+  const sel = uiState.mapSel == null ? saveData.trip.node : uiState.mapSel,
+    dest = saveData.trip.plan.length ? saveData.trip.plan[saveData.trip.plan.length - 1] : null;
   const placed = [],
-    pr = i => (i === saveData.route.node ? 0 : i === uiState.mapSel ? 1 : i === dest ? 2 : saveData.visited[i] ? 3 : 4),
+    pr = i => (i === saveData.trip.node ? 0 : i === uiState.mapSel ? 1 : i === dest ? 2 : saveData.visited[i] ? 3 : 4),
     order = LOCATIONS.map((n, i) => i).sort((a, b) => pr(a) - pr(b));
   for (const i of order) {
     const n = LOCATIONS[i],
       tv = worldMapGlMiniTop(i);
     let q = worldMapGlProject(tv || LOCATION_VECTORS[i]);
-    const far = q && q.z > 0.9 && i !== saveData.route.node && i !== sel && i !== dest && !worldMapGl.flat;
+    const far = q && q.z > 0.9 && i !== saveData.trip.node && i !== sel && i !== dest && !worldMapGl.flat;
     const st = worldMapGlPinState(i);
     if (far) q = null;
-    if (q && i === saveData.route.node) q = { x: q.x, y: q.y - 44, z: q.z }; /* above your character */
+    if (q && i === saveData.trip.node) q = { x: q.x, y: q.y - 44, z: q.z }; /* above your character */
     let mini = false;
     if (q) {
       const w = n.name.length * 7.4 + 40,
@@ -996,7 +996,7 @@ function worldMapGlPins() {
     );
   });
   /* step counts on the roads around the picked place, and along the trip */
-  const plan = [saveData.route.node, ...saveData.route.plan],
+  const plan = [saveData.trip.node, ...saveData.trip.plan],
     onPlan = new Set();
   for (let k = 0; k < plan.length - 1; k++)
     onPlan.add(Math.min(plan[k], plan[k + 1]) + '-' + Math.max(plan[k], plan[k + 1]));
@@ -1133,10 +1133,10 @@ function worldMapGlChrome() {
 function worldMapGlLocationListHTML() {
   const rows = LOCATIONS.map((n, i) => {
     const st = worldMapGlPinState(i),
-      t = i === saveData.route.node ? null : tripTo(i),
+      t = i === saveData.trip.node ? null : tripTo(i),
       locked = st.cls.includes('locked');
     const sub =
-      i === saveData.route.node
+      i === saveData.trip.node
         ? 'You are here'
         : locked
           ? 'Locked'
@@ -1148,7 +1148,7 @@ function worldMapGlLocationListHTML() {
       n,
       st,
       sub,
-      g: i === saveData.route.node ? 0 : locked ? 3 : saveData.visited[i] ? 1 : 2,
+      g: i === saveData.trip.node ? 0 : locked ? 3 : saveData.visited[i] ? 1 : 2,
       steps: t ? t.steps : 1e9,
     };
   });

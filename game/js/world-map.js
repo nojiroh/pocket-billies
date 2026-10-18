@@ -141,7 +141,7 @@ export function roadPosition(a, b, f) {
   return vector3.norm(vector3.add(vector3.mul(p0.p, 1 - u), vector3.mul(p1.p, u)));
 }
 export function worldMapPlayerPosition() {
-  const r = saveData.route,
+  const r = saveData.trip,
     nx = nextTripNode();
   if (nx == null || !r.prog) return LOCATION_VECTORS[r.node];
   return roadPosition(r.node, nx, clamp(r.prog / roadCost(r.node, nx), 0, 1));
@@ -439,14 +439,14 @@ function worldMapRender(t, lo) {
   }
   c.putImageData(worldMap.img, 0, 0);
   /* the planned trip, drawn over the painted trail */
-  const plan = [saveData.route.node, ...saveData.route.plan];
+  const plan = [saveData.trip.node, ...saveData.trip.plan];
   if (plan.length > 1) {
-    c.fillStyle = saveData.route.hold ? 'rgba(255,255,255,.75)' : '#FFE27A';
+    c.fillStyle = saveData.trip.hold ? 'rgba(255,255,255,.75)' : '#FFE27A';
     for (let k = 0; k < plan.length - 1; k++) {
       const a = plan[k],
         b = plan[k + 1];
       for (let f = 0; f <= 1; f += 0.04) {
-        if (k === 0 && f < saveData.route.prog / roadCost(a, b)) continue;
+        if (k === 0 && f < saveData.trip.prog / roadCost(a, b)) continue;
         if (Math.floor(f * 25 + t / 120) % 3 === 0) continue;
         const q = worldMapProject(cam, roadPosition(a, b, f));
         if (q && q.z < 1.4) c.fillRect(Math.round(q.x), Math.round(q.y), 1, 1);
@@ -470,7 +470,7 @@ function worldMapRender(t, lo) {
   });
   worldMap.proj = L;
   L.sort((a, b) => b.q.z - a.q.z);
-  const dest = saveData.route.plan.length ? saveData.route.plan[saveData.route.plan.length - 1] : null;
+  const dest = saveData.trip.plan.length ? saveData.trip.plan[saveData.trip.plan.length - 1] : null;
   L.forEach(({ q, i, kind }) => {
     if (kind === 'sun') return;
     const occ = isBehindSun(cam, kind === 'r' ? LOCATION_VECTORS[i] : REGION_VECTORS[i]);
@@ -481,7 +481,7 @@ function worldMapRender(t, lo) {
         reached = !!saveData.visited[i],
         locked = !canEnter(i),
         col =
-          i === saveData.route.node
+          i === saveData.trip.node
             ? '#F4C542'
             : i === dest
               ? '#FFE27A'
@@ -759,18 +759,18 @@ export function worldMapLabels() {
   const s = cr && cr.width ? cr.width / worldMapWidth : worldMap.s,
     sy = cr && cr.height ? cr.height / worldMapHeight : s;
   let h = '';
-  const dest = saveData.route.plan.length ? saveData.route.plan[saveData.route.plan.length - 1] : null;
+  const dest = saveData.trip.plan.length ? saveData.trip.plan[saveData.trip.plan.length - 1] : null;
   (worldMap.proj || []).forEach(({ q, i, kind }) => {
     if (q.x < -10 || q.x > worldMapWidth + 10 || q.y < 0 || q.y > worldMapHeight) return;
     let name,
       cls = '';
     if (kind === 'r') {
       if (isBehindSun(worldMap.cam, LOCATION_VECTORS[i])) return;
-      const far = q.z > 0.85 && i !== saveData.route.node && uiState.mapSel !== i && i !== dest;
+      const far = q.z > 0.85 && i !== saveData.trip.node && uiState.mapSel !== i && i !== dest;
       if (far) return;
       name = LOCATIONS[i].name;
       cls =
-        (i === saveData.route.node ? ' here' : '') +
+        (i === saveData.trip.node ? ' here' : '') +
         (uiState.mapSel === i ? ' sel' : '') +
         (i === dest ? ' dest' : '') +
         (!saveData.visited[i] ? ' new' : '');

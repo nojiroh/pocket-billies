@@ -409,9 +409,9 @@ debugLog.state = () => {
     s.started = !!GAME.saveData.started;
     s.tab = GAME.uiState.tab;
     s.battle = !!GAME.activeBattle;
-    s.stop = GAME.saveData.route ? GAME.saveData.route.node : null;
-    s.trip = GAME.saveData.route ? GAME.saveData.route.plan.slice() : [];
-    s.tripProgress = GAME.saveData.route ? GAME.saveData.route.prog : 0;
+    s.stop = GAME.saveData.trip ? GAME.saveData.trip.node : null;
+    s.trip = GAME.saveData.trip ? GAME.saveData.trip.plan.slice() : [];
+    s.tripProgress = GAME.saveData.trip ? GAME.saveData.trip.prog : 0;
     s.scene = typeof GAME.walkView !== 'undefined' ? GAME.walkView.id : null;
     s.team = GAME.saveData.team ? GAME.saveData.team.length : 0;
     s.encounters = GAME.saveData.queue ? GAME.saveData.queue.length : 0;

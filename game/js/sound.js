@@ -803,9 +803,9 @@ export function musicFor() {
         : 'trainer'
       : 'wild';
   if (uiState.tab === 'map') return 'map';
-  const id = typeof mapIdAt === 'function' ? mapIdAt(saveData.route.node) : null,
+  const id = typeof mapIdAt === 'function' ? mapIdAt(saveData.trip.node) : null,
     sc = id && mapById(id),
-    r = LOCATIONS[saveData.route.node];
+    r = LOCATIONS[saveData.trip.node];
   if (sc && sc.indoor) return /mall|food/.test(id) ? 'mall' : 'cave';
   if (r && r.music && SONGS[r.music]) return r.music;
   /* v47: a place's own song */ if (/mall|food/.test(id || '')) return 'mall';
@@ -1557,8 +1557,8 @@ function ambienceBeds(sc, E, T, pans, t) {
   /* v47: a room laid into a place hears the place outside, quieter and through the walls (the low-pass in updateAmbience) */
   const thru = !sc.indoor ? 1 : sc.roomRect ? 0.45 : 0;
   const node =
-      typeof LOCATIONS !== 'undefined' && typeof saveData !== 'undefined' && saveData.route
-        ? LOCATIONS[saveData.route.node]
+      typeof LOCATIONS !== 'undefined' && typeof saveData !== 'undefined' && saveData.trip
+        ? LOCATIONS[saveData.trip.node]
         : null,
     town = thru > 0 && !!((node && node.town) || (!sc.indoor && (sc.far === 'town' || sc.far === 'city')));
   if (thru) {

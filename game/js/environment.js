@@ -262,8 +262,8 @@ export function currentLocationMap() {
     return typeof mapIdAt === 'function' &&
       typeof mapById === 'function' &&
       typeof saveData !== 'undefined' &&
-      saveData.route
-      ? mapById(mapIdAt(saveData.route.node))
+      saveData.trip
+      ? mapById(mapIdAt(saveData.trip.node))
       : null;
   } catch (e) {
     return null;

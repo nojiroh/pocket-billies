@@ -493,7 +493,7 @@ function warmWorldBillies() {
       L.push([m.sp, m.gold, RIG_BACK_VIEW]);
     }
     if (typeof trainersAt === 'function')
-      for (const T of trainersAt(saveData.route.node)) {
+      for (const T of trainersAt(saveData.trip.node)) {
         const sp = companionSpecies(T);
         if (sp) L.push([sp, false, 1]);
         for (const e of T.team || []) {
@@ -532,8 +532,8 @@ setInterval(() => {
     if (
       typeof saveData === 'undefined' ||
       !saveData.started ||
-      !saveData.route ||
-      !(saveData.route.prog > 0) ||
+      !saveData.trip ||
+      !(saveData.trip.prog > 0) ||
       typeof nextTripNode !== 'function'
     )
       return;

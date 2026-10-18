@@ -91,7 +91,7 @@ function titlePlayTime() {
 }
 export function renderTitle() {
   const cont = saveData.started && saveData.avatar,
-    place = cont && LOCATIONS[saveData.route.node] ? LOCATIONS[saveData.route.node].name : '',
+    place = cont && LOCATIONS[saveData.trip.node] ? LOCATIONS[saveData.trip.node].name : '',
     nm = cont ? saveData.avatar.name || 'Trainer' : '';
   return `<div class="ttl${cont ? ' can-tap' : ''}" data-a="${cont ? 'ttltap' : ''}"><div class="ttl-bg" aria-hidden="true"></div>
   <div class="ttl-acc">${typeof accountChipHTML === 'function' ? accountChipHTML() : ''}</div><div class="ttl-top"><h1 class="ttl-logo" aria-label="Pocket Billies"><span>POCKET</span><span>BILLIES</span></h1><p class="ttl-tag">Gotta tax 'em all!</p></div><p class="ttl-ver">${escapeHtml(PB_VERSION)}</p>

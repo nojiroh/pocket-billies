@@ -136,10 +136,10 @@ function validSave(o) {
     ids.add(m.uid);
   }
   if (
-    !o.route ||
-    !Number.isInteger(o.route.node) ||
-    !num(o.route.node, 0, LOCATIONS.length - 1) ||
-    !num(o.route.prog, 0, 1e9) ||
+    !o.trip ||
+    !Number.isInteger(o.trip.node) ||
+    !num(o.trip.node, 0, LOCATIONS.length - 1) ||
+    !num(o.trip.prog, 0, 1e9) ||
     !o.day ||
     !num(o.day.steps, 0, 1e9) ||
     !num(o.se, 0, 1e12) ||

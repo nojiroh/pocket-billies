@@ -208,7 +208,7 @@ export function newSave() {
     items,
     day: { date: today(), steps: 0 },
     totalSteps: 0,
-    route: { node: START_NODE, prog: 0, plan: [], hold: false },
+    trip: { node: START_NODE, prog: 0, plan: [], hold: false },
     mapSeen: null,
     meter: 0,
     queue: [],
@@ -283,15 +283,15 @@ export function migrate(o) {
   s.jobs.forEach(j => {
     if (j.job && !JOBS[j.job]) j.job = Object.keys(JOBS)[0] || null;
   });
-  if (!s.route || !LOCATIONS[s.route.node]) s.route = { node: START_NODE, prog: 0, plan: [] };
-  s.route.plan = (Array.isArray(s.route.plan) ? s.route.plan : []).filter(x => LOCATIONS[x]);
-  if (s.route.plan.length && !roadCost(s.route.node, s.route.plan[0])) {
-    s.route.plan = [];
-    s.route.prog = 0;
+  if (!s.trip || !LOCATIONS[s.trip.node]) s.trip = { node: START_NODE, prog: 0, plan: [] };
+  s.trip.plan = (Array.isArray(s.trip.plan) ? s.trip.plan : []).filter(x => LOCATIONS[x]);
+  if (s.trip.plan.length && !roadCost(s.trip.node, s.trip.plan[0])) {
+    s.trip.plan = [];
+    s.trip.prog = 0;
   }
-  s.route.hold = !!s.route.hold;
+  s.trip.hold = !!s.trip.hold;
   if (!s.visited || typeof s.visited !== 'object') s.visited = {};
-  s.visited[s.route.node] = 1;
+  s.visited[s.trip.node] = 1;
   if (s.started && !s.team.length && !s.box.length) return newSave();
   s.v = 4;
   s.saveVersion = SAVE_VERSION;
@@ -458,8 +458,8 @@ export function makeBilly(sp, lvl, o = {}) {
   };
   m.hp = maxHp(m);
   try {
-    if (typeof saveData !== 'undefined' && saveData && saveData.route && LOCATIONS[saveData.route.node])
-      m.met = { n: LOCATIONS[saveData.route.node].id || saveData.route.node, t: Date.now() };
+    if (typeof saveData !== 'undefined' && saveData && saveData.trip && LOCATIONS[saveData.trip.node])
+      m.met = { n: LOCATIONS[saveData.trip.node].id || saveData.trip.node, t: Date.now() };
   } catch (e) {}
   return m;
 }
@@ -647,19 +647,19 @@ export const riderName = () => {
 export const canEnter = n =>
   (!LOCATIONS[n].gate || saveData.seats.includes(LOCATIONS[n].gate)) && (!LOCATIONS[n].ride || canRide());
 const canLeave = (from, to) => !blockerAt(from) || !!saveData.visited[to];
-export const nextTripNode = () => (saveData.route.plan.length ? saveData.route.plan[0] : null);
+export const nextTripNode = () => (saveData.trip.plan.length ? saveData.trip.plan[0] : null);
 /* alpha 0.4.1: how you get about (rules.travel). 'walk': you walk yourself, with the joystick, the d-pad or a tap, from
    place to place across their edges, like a classic RPG; the steps you take in the game count as steps (encounters,
    challenges, your buddy). 'steps': your real steps carry you along the roads (the game until 0.4). */
 export const walkMode = () => ((typeof RULES !== 'undefined' && RULES.travel) || 'walk') === 'walk';
 provide({ walkMode }); /* to-module */
-const traveling = () => !walkMode() && nextTripNode() != null && !saveData.route.hold && !gateMsg();
+const traveling = () => !walkMode() && nextTripNode() != null && !saveData.trip.hold && !gateMsg();
 /* why travel can't continue right now (null when it can, or when you're staying) */
 export function gateMsg() {
-  const node = saveData.route.node,
+  const node = saveData.trip.node,
     nx = nextTripNode();
   if (nx == null) return null;
-  if (saveData.route.prog === 0 && !canLeave(node, nx)) {
+  if (saveData.trip.prog === 0 && !canLeave(node, nx)) {
     const bl = blockerAt(node);
     return bl.blockTitle || `${bl.name} is blocking the way.`;
   }
@@ -697,7 +697,7 @@ const pathFrom = (prev, to) => {
 };
 /* steps from where you stand to stop j, and the plan that gets there (turning back on the current link if shorter) */
 export function tripTo(j) {
-  const r = saveData.route,
+  const r = saveData.trip,
     node = r.node,
     nx = nextTripNode();
   if (nx == null || r.prog === 0) {
@@ -719,7 +719,7 @@ export function tripTo(j) {
 export function setTrip(j) {
   const t = tripTo(j);
   if (!t) return false;
-  const r = saveData.route;
+  const r = saveData.trip;
   if (t.back && nextTripNode() != null) {
     const nx = nextTripNode(),
       c = roadCost(r.node, nx);
@@ -734,7 +734,7 @@ export function setTrip(j) {
   return true;
 }
 export function stopTrip() {
-  const r = saveData.route;
+  const r = saveData.trip;
   if (r.prog > 0) {
     r.hold = true;
   } else {
@@ -744,13 +744,13 @@ export function stopTrip() {
   save();
 }
 export function resumeTrip() {
-  saveData.route.hold = false;
+  saveData.trip.hold = false;
   save();
 }
 /* encounters come from where you're headed while you walk, otherwise from where you are */
 export const hereLocation = () => {
   const nx = nextTripNode();
-  return LOCATIONS[nx != null && saveData.route.prog > 0 && !saveData.route.hold ? nx : saveData.route.node];
+  return LOCATIONS[nx != null && saveData.trip.prog > 0 && !saveData.trip.hold ? nx : saveData.trip.node];
 };
 export function encounterPoolHere() {
   return POOLS[hereLocation().pool] || POOLS[Object.keys(POOLS)[0]];
@@ -791,7 +791,7 @@ export function addSteps(n, quiet) {
   saveData.totalSteps += n;
   const msgs = [];
   if (traveling()) {
-    const r = saveData.route;
+    const r = saveData.trip;
     r.prog += n;
     while (r.plan.length && r.prog >= roadCost(r.node, r.plan[0])) {
       r.prog -= roadCost(r.node, r.plan[0]);

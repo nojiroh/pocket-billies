@@ -199,9 +199,9 @@ export function storyCheck() {
     !storyWorldOK()
   )
     return;
-  if (saveData.route.prog !== 0 || (saveData.route.plan && saveData.route.plan.length)) return;
+  if (saveData.trip.prog !== 0 || (saveData.trip.plan && saveData.trip.plan.length)) return;
   const F = storyFlags();
-  const T = trainersAt(saveData.route.node).find(
+  const T = trainersAt(saveData.trip.node).find(
     T => T.intro && T.intro.length && !saveData.flags[T.id] && !F['met_' + T.id]
   );
   if (!T) return;
@@ -227,7 +227,7 @@ export function legendCheck() {
     uiState.bench
   )
     return;
-  if (saveData.route.prog !== 0 || (saveData.route.plan && saveData.route.plan.length)) return;
+  if (saveData.trip.prog !== 0 || (saveData.trip.plan && saveData.trip.plan.length)) return;
   const F = storyFlags(),
     L = (RULES.legends || []).find(
       l => l.scene === baseMapId() && SPECIES[l.sp] && !saveData.caught[l.sp] && F['legend_' + l.sp] !== today()

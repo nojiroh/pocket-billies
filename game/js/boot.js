@@ -842,7 +842,7 @@ function noWebGL(why) {
 if (!webgl2Supported()) noWebGL();
 else
   /* phase 04b: the maps round where you are come with the art check; the others after the loader (js/map-files.js) */
-  Promise.all([artCacheCheck(), loadMapsAhead(saveData.route ? saveData.route.node : START_NODE)])
+  Promise.all([artCacheCheck(), loadMapsAhead(saveData.trip ? saveData.trip.node : START_NODE)])
     .then(() => bootLoad())
     .then(async () => {
       if (typeof debugLog !== 'undefined') debugLog.hook();

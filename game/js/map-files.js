@@ -120,7 +120,7 @@ export function loadMapsAhead(node) {
 export function watchMapsAhead() {
   let at = null;
   setInterval(() => {
-    const n = typeof saveData !== 'undefined' && saveData && saveData.route ? saveData.route.node : null;
+    const n = typeof saveData !== 'undefined' && saveData && saveData.trip ? saveData.trip.node : null;
     if (n == null || n === at) return;
     at = n;
     loadMapsAhead(n);
@@ -129,7 +129,7 @@ export function watchMapsAhead() {
 export function loadAllMaps() {
   if (mapFiles.all) return mapFiles.all;
   const t0 = performance.now(),
-    here = typeof saveData !== 'undefined' && saveData && saveData.route ? saveData.route.node : START_NODE,
+    here = typeof saveData !== 'undefined' && saveData && saveData.trip ? saveData.trip.node : START_NODE,
     near = mapsAround(here, 3),
     ids = [...new Set([...near, ...Object.keys(gameData.maps)])].filter(isLiteMap);
   mapFiles.all = (async () => {
