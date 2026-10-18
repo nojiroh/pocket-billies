@@ -7,19 +7,19 @@
 import { expose } from '../../game/js/test-globals.js';
 import {
   VP,
+  blocksToolBarHTML,
+  drawExtraTools,
+  extraMapTools,
+  extraToolHint,
+  extraToolPointerDown,
+  extraToolPointerMove,
+  extraToolPointerUp,
+  multiSelectCardHTML,
   pedCard,
   pedDraw,
   pedMount,
   provide,
-  scxBlocksBar,
-  scxDown,
-  scxDraw,
-  scxHint,
-  scxMove,
-  scxMultiCard,
-  scxScatterBar,
-  scxTools,
-  scxUp,
+  scatterToolBarHTML,
 } from '../../game/js/hooks.js';
 import { $, $$, clamp } from '../../game/js/util.js';
 import { ART_CACHE, makeCanvas } from '../../game/js/art.js';
@@ -261,7 +261,7 @@ SECTIONS.scenes = () => {
     ['path', 'Edit the path', 'W'],
     ['water', 'Kinds of water', 'Q'],
     ['erase', 'Remove props', 'E'],
-    ...(typeof scxTools === 'function' ? scxTools() : []),
+    ...(typeof extraMapTools === 'function' ? extraMapTools() : []),
   ]
     .map(
       ([k, n, s]) =>
@@ -387,8 +387,8 @@ SECTIONS.scenes = () => {
     return `<div class="fld sc-var"><span>Colours</span><div class="sc-var-row">${[{ img: P0.img, wallCol: P0.build.wallCol, roofCol: P0.build.roofCol }, ...V].map((v, i) => `<button class="sc-var-b ${(sel.v | 0) === i ? 'on' : ''}" data-act="scVar" data-v="${i}" title="${i ? 'Variant ' + i : 'As drawn'}"><span class="sc-thumb" data-img="${esc(v.img)}"></span><i style="background:${esc(v.roofCol || '#888')}"></i><i style="background:${esc(v.wallCol || '#ccc')}"></i></button>`).join('')}</div><small class="help">The same building in other colours. It keeps its shape, roof and rooms.</small></div>`;
   })()}
   <div class="seg-row">${checkboxField('Mirrored', `${p}.props.${mapEditor.sel}.f`, { num: 1 })}<button class="btn sm" data-act="scDupProp">Duplicate</button><button class="btn sm danger subtle" data-act="scDelProp">Remove</button><button class="btn sm subtle" data-act="scEditProp" data-k="${esc(sel.k)}">Edit this prop’s pixels</button></div></div>`
-    : mapEditor.multi && mapEditor.multi.size > 1 && typeof scxMultiCard === 'function'
-      ? scxMultiCard()
+    : mapEditor.multi && mapEditor.multi.size > 1 && typeof multiSelectCardHTML === 'function'
+      ? multiSelectCardHTML()
       : '<p class="help">Click a prop on the map to select it. Arrow keys nudge it, Delete removes it. Shift-drag a box (or shift-click) to select several.</p>';
   return `<div class="split sc-split"><aside class="list-col"><div class="list-head"><button class="btn primary" data-act="scNew">+ New scene</button></div><div class="llist">${list}</div></aside>
  <div class="ed-col"><div class="ed-head"><div><small class="mono">${esc(id)}</small><h2>${esc(sc.name || id)}</h2></div><div class="seg-row"><button class="btn subtle" data-act="scDup">Duplicate</button><button class="btn danger" data-act="scDel">Delete</button></div></div>
@@ -446,10 +446,10 @@ SECTIONS.scenes = () => {
       ? stepsToolBarHTML()
       : mapEditor.tool === 'water'
         ? waterToolBarHTML(p)
-        : mapEditor.tool === 'scatter' && typeof scxScatterBar === 'function'
-          ? scxScatterBar()
-          : mapEditor.tool === 'stamp' && typeof scxBlocksBar === 'function'
-            ? scxBlocksBar()
+        : mapEditor.tool === 'scatter' && typeof scatterToolBarHTML === 'function'
+          ? scatterToolBarHTML()
+          : mapEditor.tool === 'stamp' && typeof blocksToolBarHTML === 'function'
+            ? blocksToolBarHTML()
             : mapEditor.tool === 'height'
               ? `<div class="sc-hbar">${[
                   ['raise', 'Raise'],
@@ -701,7 +701,7 @@ function mapToolHint() {
       exits:
         'Drag the gold star (where you stand when you stay) or a green exit. Click empty ground to add an exit; right-click (or Alt-click) an exit to remove it. Roads leave through the exit that points their way on the world map.',
       erase: 'Click a prop to remove it.',
-    }[mapEditor.tool] || (typeof scxHint === 'function' ? scxHint(mapEditor.tool) : '')
+    }[mapEditor.tool] || (typeof extraToolHint === 'function' ? extraToolHint(mapEditor.tool) : '')
   );
 }
 /* ---------- mount ---------- */
@@ -1177,7 +1177,7 @@ export function drawEditorMap() {
     x.stroke();
   }
   drawWatersOverlay(x, sc, Z);
-  if (typeof scxDraw === 'function') scxDraw(x, sc, Z);
+  if (typeof drawExtraTools === 'function') drawExtraTools(x, sc, Z);
   const zEl = $('#scZ');
   if (zEl) zEl.textContent = Z + 'px';
 }
@@ -1234,7 +1234,7 @@ function bindEditorMap() {
     const sc = currentMap(),
       m = mapPointer(ev);
     cv.setPointerCapture(ev.pointerId);
-    if (typeof scxDown === 'function' && scxDown(sc, m, ev)) return;
+    if (typeof extraToolPointerDown === 'function' && extraToolPointerDown(sc, m, ev)) return;
     if (mapEditor.tool === 'paint' || mapEditor.tool === 'fill') {
       if (ev.altKey) {
         const ch = (sc.tiles[m.j] || '')[m.i];
@@ -1391,7 +1391,7 @@ function bindEditorMap() {
     const D = mapEditor.drag,
       sc = currentMap(),
       m = mapPointer(ev);
-    if (typeof scxMove === 'function' && scxMove(sc, m, D, ev)) return;
+    if (typeof extraToolPointerMove === 'function' && extraToolPointerMove(sc, m, D, ev)) return;
     if (!D) {
       if (mapEditor.road || mapEditor.tool === 'scatter') drawEditorMap();
       return;
@@ -1443,7 +1443,7 @@ function bindEditorMap() {
     const D = mapEditor.drag;
     mapEditor.drag = null;
     if (!D) return;
-    if (typeof scxUp === 'function' && scxUp(currentMap(), D)) return;
+    if (typeof extraToolPointerUp === 'function' && extraToolPointerUp(currentMap(), D)) return;
     if (D.k === 'steps' || D.k === 'stairs' || D.k === 'bridge') {
       stepsPointerUp(currentMap(), D);
       return;

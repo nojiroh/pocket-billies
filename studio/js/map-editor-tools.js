@@ -7,7 +7,7 @@
    - Scatter brush: drag to sprinkle the chosen prop (or its whole group) at a density you set; Alt-drag clears them.
    - Curved road: click points, double-click (or Enter) to lay the chosen ground along a smooth curve.
    - Smooth the path: turns the walker's path into a gentle curve.
-   Hooks: map-editor.js calls scxDown / scxMove / scxUp from the map's pointer events and scxDraw after drawing. */
+   Hooks: map-editor.js calls extraToolPointerDown / extraToolPointerMove / extraToolPointerUp from the map's pointer events and drawExtraTools after drawing. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
 import { VP, provide } from '../../game/js/hooks.js';
@@ -18,51 +18,67 @@ import { ACTIONS, ask, changed, clone, commit, dialog, render, studioState, toas
 import { currentMap, drawEditorMap, mapEditor, paintMapTile, propAtPointer, sceneryCatalog } from './map-editor.js';
 /* eslint-disable no-func-assign */
 expose({
-  scxBlocks: [() => scxBlocks],
-  scxBlocksBar: [() => scxBlocksBar, v => ((scxBlocksBar = v), provide({ scxBlocksBar }))],
-  scxCopy: [() => scxCopy, v => (scxCopy = v)],
-  scxCurve: [() => scxCurve, v => (scxCurve = v)],
-  scxDeleteMulti: [() => scxDeleteMulti, v => (scxDeleteMulti = v)],
-  scxDown: [() => scxDown, v => ((scxDown = v), provide({ scxDown }))],
-  scxDraw: [() => scxDraw, v => ((scxDraw = v), provide({ scxDraw }))],
-  scxHint: [() => scxHint, v => ((scxHint = v), provide({ scxHint }))],
-  scxMove: [() => scxMove, v => ((scxMove = v), provide({ scxMove }))],
-  scxMultiCard: [() => scxMultiCard, v => ((scxMultiCard = v), provide({ scxMultiCard }))],
-  scxPaste: [() => scxPaste, v => (scxPaste = v)],
-  scxPickKind: [() => scxPickKind, v => (scxPickKind = v)],
-  scxR: [() => scxR],
-  scxRoadLay: [() => scxRoadLay, v => (scxRoadLay = v)],
-  scxScatter: [() => scxScatter, v => (scxScatter = v)],
-  scxScatterBar: [() => scxScatterBar, v => ((scxScatterBar = v), provide({ scxScatterBar }))],
-  scxScatterKinds: [() => scxScatterKinds, v => (scxScatterKinds = v)],
-  scxSelBoxes: [() => scxSelBoxes, v => (scxSelBoxes = v)],
-  scxStampAt: [() => scxStampAt, v => (scxStampAt = v)],
-  scxTools: [() => scxTools, v => ((scxTools = v), provide({ scxTools }))],
-  scxUp: [() => scxUp, v => ((scxUp = v), provide({ scxUp }))],
+  blocksToolBarHTML: [() => blocksToolBarHTML, v => ((blocksToolBarHTML = v), provide({ blocksToolBarHTML }))],
+  boxesInBand: [() => boxesInBand, v => (boxesInBand = v)],
+  copySelectedProps: [() => copySelectedProps, v => (copySelectedProps = v)],
+  deleteSelectedProps: [() => deleteSelectedProps, v => (deleteSelectedProps = v)],
+  drawExtraTools: [() => drawExtraTools, v => ((drawExtraTools = v), provide({ drawExtraTools }))],
+  extraMapTools: [() => extraMapTools, v => ((extraMapTools = v), provide({ extraMapTools }))],
+  extraToolHint: [() => extraToolHint, v => ((extraToolHint = v), provide({ extraToolHint }))],
+  extraToolPointerDown: [
+    () => extraToolPointerDown,
+    v => ((extraToolPointerDown = v), provide({ extraToolPointerDown })),
+  ],
+  extraToolPointerMove: [
+    () => extraToolPointerMove,
+    v => ((extraToolPointerMove = v), provide({ extraToolPointerMove })),
+  ],
+  extraToolPointerUp: [() => extraToolPointerUp, v => ((extraToolPointerUp = v), provide({ extraToolPointerUp }))],
+  layCurvedRoad: [() => layCurvedRoad, v => (layCurvedRoad = v)],
+  multiSelectCardHTML: [() => multiSelectCardHTML, v => ((multiSelectCardHTML = v), provide({ multiSelectCardHTML }))],
+  pasteProps: [() => pasteProps, v => (pasteProps = v)],
+  pickScatterKind: [() => pickScatterKind, v => (pickScatterKind = v)],
+  propRadius: [() => propRadius],
+  scatterKinds: [() => scatterKinds, v => (scatterKinds = v)],
+  scatterProps: [() => scatterProps, v => (scatterProps = v)],
+  scatterToolBarHTML: [() => scatterToolBarHTML, v => ((scatterToolBarHTML = v), provide({ scatterToolBarHTML }))],
+  sceneryBlocks: [() => sceneryBlocks],
+  smoothPolyline: [() => smoothPolyline, v => (smoothPolyline = v)],
+  stampBlockAt: [() => stampBlockAt, v => (stampBlockAt = v)],
 });
 /* eslint-enable no-func-assign */
-provide({ scxBlocksBar, scxDown, scxDraw, scxHint, scxMove, scxMultiCard, scxScatterBar, scxTools, scxUp });
+provide({
+  blocksToolBarHTML,
+  drawExtraTools,
+  extraMapTools,
+  extraToolHint,
+  extraToolPointerDown,
+  extraToolPointerMove,
+  extraToolPointerUp,
+  multiSelectCardHTML,
+  scatterToolBarHTML,
+});
 /* to-module: end */
 mapEditor.multi = mapEditor.multi || new Set();
 mapEditor.scat = mapEditor.scat || { dens: 0.5, mix: true, vary: 0.18 };
 mapEditor.road = null;
-const scxBlocks = () => {
+const sceneryBlocks = () => {
   const C = sceneryCatalog();
   return C.blocks || (C.blocks = {});
 };
-const scxR = (k, s) => {
+const propRadius = (k, s) => {
   const M = sceneryCatalog().props[k] || {};
   if (M.box) return (Math.max(...M.box) / 2) * (s || 1);
   return Math.max(0.25, M.solid || M.shadow * 0.5 || 0.3) * (s || 1);
 };
-function scxTools() {
+function extraMapTools() {
   return [
     ['scatter', 'Scatter brush', 'S'],
     ['stamp', 'Stamp a block', 'K'],
     ['road', 'Curved road', 'R'],
   ];
 }
-function scxHint(t) {
+function extraToolHint(t) {
   return (
     {
       scatter: 'Drag to scatter the chosen prop (or its group). Alt-drag clears them. Brush size and density below.',
@@ -72,14 +88,14 @@ function scxHint(t) {
   );
 }
 /* ---------- several props at once ---------- */
-function scxSelBoxes(a, b) {
+function boxesInBand(a, b) {
   const x0 = Math.min(a[0], b[0]),
     x1 = Math.max(a[0], b[0]),
     y0 = Math.min(a[1], b[1]),
     y1 = Math.max(a[1], b[1]);
   return (mapEditor.boxes || []).filter(B => B.x1 >= x0 && B.x0 <= x1 && B.y1 >= y0 && B.y0 <= y1).map(B => B.i);
 }
-function scxDown(sc, m, ev) {
+function extraToolPointerDown(sc, m, ev) {
   const t = mapEditor.tool;
   if (t === 'props') {
     const hit = propAtPointer(m);
@@ -113,21 +129,21 @@ function scxDown(sc, m, ev) {
   }
   if (t === 'scatter') {
     mapEditor.drag = { k: 'scatter', erase: ev.altKey || ev.button === 2, n: 0 };
-    scxScatter(sc, m, mapEditor.drag);
+    scatterProps(sc, m, mapEditor.drag);
     return true;
   }
   if (t === 'stamp') {
-    const b = scxBlocks()[mapEditor.block];
+    const b = sceneryBlocks()[mapEditor.block];
     if (!b) {
       toast('Pick a block first (save one from a selection of props).');
       return true;
     }
-    scxStampAt(sc, b, m.x, m.z, ev.shiftKey);
+    stampBlockAt(sc, b, m.x, m.z, ev.shiftKey);
     return true;
   }
   if (t === 'road') {
     if (ev.detail >= 2 && mapEditor.road && mapEditor.road.length > 1) {
-      scxRoadLay(sc);
+      layCurvedRoad(sc);
       return true;
     }
     (mapEditor.road = mapEditor.road || []).push([+m.x.toFixed(2), +m.z.toFixed(2)]);
@@ -136,7 +152,7 @@ function scxDown(sc, m, ev) {
   }
   return false;
 }
-function scxMove(sc, m, D, ev) {
+function extraToolPointerMove(sc, m, D, ev) {
   mapEditor.mouse = [m.x, m.z];
   if (!D) return false;
   if (D.k === 'band') {
@@ -163,15 +179,15 @@ function scxMove(sc, m, D, ev) {
     return true;
   }
   if (D.k === 'scatter') {
-    scxScatter(sc, m, D);
+    scatterProps(sc, m, D);
     return true;
   }
   return false;
 }
-function scxUp(sc, D) {
+function extraToolPointerUp(sc, D) {
   if (!D) return false;
   if (D.k === 'band') {
-    for (const i of scxSelBoxes(D.a, D.b)) mapEditor.multi.add(i);
+    for (const i of boxesInBand(D.a, D.b)) mapEditor.multi.add(i);
     mapEditor.sel = null;
     render();
     return true;
@@ -197,7 +213,7 @@ function scxUp(sc, D) {
   }
   return false;
 }
-function scxCopy() {
+function copySelectedProps() {
   const sc = currentMap();
   if (!sc) return;
   const L = [...mapEditor.multi].map(i => sc.props[i]).filter(Boolean);
@@ -208,7 +224,7 @@ function scxCopy() {
   mapEditor.clip = L.map(p => Object.assign(clone(p), { x: +(p.x - cx).toFixed(2), z: +(p.z - cz).toFixed(2) }));
   toast(`Copied ${L.length} prop${L.length > 1 ? 's' : ''}.`);
 }
-function scxPaste() {
+function pasteProps() {
   const sc = currentMap();
   if (!sc || !mapEditor.clip || !mapEditor.clip.length) return;
   const at = mapEditor.mouse || [sc.w / 2, sc.h / 2],
@@ -223,7 +239,7 @@ function scxPaste() {
   commit(true);
   render();
 }
-function scxDeleteMulti() {
+function deleteSelectedProps() {
   const sc = currentMap();
   if (!sc || !mapEditor.multi.size) return;
   const del = mapEditor.multi;
@@ -249,17 +265,17 @@ document.addEventListener(
       return;
     const k = ev.key.toLowerCase();
     if ((ev.ctrlKey || ev.metaKey) && k === 'c') {
-      scxCopy();
+      copySelectedProps();
       ev.preventDefault();
       return;
     }
     if ((ev.ctrlKey || ev.metaKey) && k === 'v') {
-      scxPaste();
+      pasteProps();
       ev.preventDefault();
       return;
     }
     if (mapEditor.multi.size && (k === 'delete' || k === 'backspace')) {
-      scxDeleteMulti();
+      deleteSelectedProps();
       ev.preventDefault();
       ev.stopImmediatePropagation();
       return;
@@ -275,7 +291,7 @@ document.addEventListener(
       }
     }
     if (k === 'enter' && mapEditor.road && mapEditor.road.length > 1) {
-      scxRoadLay(currentMap());
+      layCurvedRoad(currentMap());
       ev.preventDefault();
     }
     if (!ev.ctrlKey && !ev.metaKey && !ev.altKey) {
@@ -288,16 +304,16 @@ document.addEventListener(
   },
   true
 );
-function scxMultiCard() {
+function multiSelectCardHTML() {
   const sc = currentMap(),
     n = [...mapEditor.multi].filter(i => sc.props[i]).length;
   if (n < 2) return '';
   return `<div class="sc-sel"><b>${n} props selected</b><p class="help">Drag one of them to move them all. Ctrl/Cmd+C copies them, Ctrl/Cmd+V pastes where the mouse is, Delete removes them. Escape clears the selection.</p>
   <div class="seg-row"><button class="btn sm" data-act="scxCopy">Copy</button><button class="btn sm" data-act="scxPaste" ${mapEditor.clip ? '' : 'disabled'}>Paste</button><button class="btn sm primary" data-act="scxSaveBlock">Save as a building block</button><button class="btn sm danger subtle" data-act="scxDelMulti">Remove them</button></div></div>`;
 }
-ACTIONS.scxCopy = () => scxCopy();
-ACTIONS.scxPaste = () => scxPaste();
-ACTIONS.scxDelMulti = () => scxDeleteMulti();
+ACTIONS.scxCopy = () => copySelectedProps();
+ACTIONS.scxPaste = () => pasteProps();
+ACTIONS.scxDelMulti = () => deleteSelectedProps();
 /* ---------- building blocks ---------- */
 ACTIONS.scxSaveBlock = async () => {
   const sc = currentMap(),
@@ -310,7 +326,7 @@ ACTIONS.scxSaveBlock = async () => {
   );
   if (!r) return;
   const name = ($('#blkName') || {}).value || 'Block',
-    B = scxBlocks(),
+    B = sceneryBlocks(),
     key = uniqueKey(
       name
         .toLowerCase()
@@ -335,7 +351,7 @@ ACTIONS.scxSaveBlock = async () => {
   toast(`Saved “${name}”.`);
   render();
 };
-function scxStampAt(sc, b, x, z, mirror) {
+function stampBlockAt(sc, b, x, z, mirror) {
   const n0 = sc.props.length;
   for (const p of b.props) {
     const q = clone(p);
@@ -352,8 +368,8 @@ function scxStampAt(sc, b, x, z, mirror) {
   commit(true);
   drawEditorMap();
 }
-function scxBlocksBar() {
-  const B = scxBlocks(),
+function blocksToolBarHTML() {
+  const B = sceneryBlocks(),
     ks = Object.keys(B);
   return `<div class="sc-hbar">${ks.length ? ks.map(k => `<button class="seg ${mapEditor.block === k ? 'on' : ''}" data-act="scxBlock" data-k="${esc(k)}">${esc(B[k].name || k)} <small>(${B[k].props.length})</small></button>`).join('') : '<span class="help">No blocks yet. Select some props (shift-drag with “Place & move props”) and save them as a block.</span>'}${mapEditor.block && B[mapEditor.block] ? `<button class="btn sm danger subtle" data-act="scxBlockDel">Delete “${esc(B[mapEditor.block].name)}”</button>` : ''}</div>`;
 }
@@ -362,7 +378,7 @@ ACTIONS.scxBlock = d => {
   render();
 };
 ACTIONS.scxBlockDel = async () => {
-  const B = scxBlocks();
+  const B = sceneryBlocks();
   if (
     !B[mapEditor.block] ||
     !(await ask(`Delete the block “${B[mapEditor.block].name}”? Scenes that used it keep their props.`, 'Delete'))
@@ -375,7 +391,7 @@ ACTIONS.scxBlockDel = async () => {
   render();
 };
 /* ---------- scatter brush ---------- */
-function scxScatterKinds() {
+function scatterKinds() {
   const C = sceneryCatalog(),
     k = mapEditor.prop;
   if (!k || !C.props[k]) return [];
@@ -388,7 +404,7 @@ function scxScatterKinds() {
   return Object.keys(C.props).filter(q => (C.props[q].group || q) === g);
 }
 /* v42: a nature prop says which ground it grows on ("grow"); the brush only puts it there, weighted by how common it is */
-function scxPickKind(kinds, ch) {
+function pickScatterKind(kinds, ch) {
   const C = sceneryCatalog(),
     ok = kinds.filter(q => {
       const g = C.props[q].grow;
@@ -404,8 +420,8 @@ function scxPickKind(kinds, ch) {
   }
   return ok[ok.length - 1];
 }
-function scxScatter(sc, m, D) {
-  const kinds = scxScatterKinds();
+function scatterProps(sc, m, D) {
+  const kinds = scatterKinds();
   if (!kinds.length) {
     if (!D.warned) {
       D.warned = 1;
@@ -434,11 +450,11 @@ function scxScatter(sc, m, D) {
       z = m.z + Math.sin(a) * r;
     if (x < 0.2 || z < 0.2 || x > sc.w - 0.2 || z > sc.h - 0.2) continue;
     const ch = (sc.tiles[sc.h - 1 - Math.floor(z)] || '')[Math.floor(x)],
-      k = scxPickKind(kinds, ch);
+      k = pickScatterKind(kinds, ch);
     if (!k) continue;
     const s = 1 + (Math.random() * 2 - 1) * mapEditor.scat.vary,
-      rr = scxR(k, s);
-    if (sc.props.some(p => Math.hypot(p.x - x, p.z - z) < rr + scxR(p.k, p.s || 1) * 0.8)) continue;
+      rr = propRadius(k, s);
+    if (sc.props.some(p => Math.hypot(p.x - x, p.z - z) < rr + propRadius(p.k, p.s || 1) * 0.8)) continue;
     const q = { k, x: +x.toFixed(2), z: +z.toFixed(2) };
     if (Math.abs(s - 1) > 0.01) q.s = +s.toFixed(2);
     if (Math.random() < 0.45) q.f = 1;
@@ -450,11 +466,11 @@ function scxScatter(sc, m, D) {
     drawEditorMap();
   }
 }
-function scxScatterBar() {
+function scatterToolBarHTML() {
   const C = sceneryCatalog(),
     k = mapEditor.prop,
     nm = k && C.props[k] ? C.props[k].name || k : null,
-    kinds = scxScatterKinds();
+    kinds = scatterKinds();
   return `<div class="sc-hbar"><span class="help">${nm ? `Scattering <b>${esc(nm)}</b>${(mapEditor.scat.mix || mapEditor.scat.fam) && kinds.length > 1 ? ` and ${kinds.length - 1} more like it` : ''}` : 'Pick a prop in the Props card'}</span><label class="fld chk"><input type="checkbox" id="scxMix" ${mapEditor.scat.mix ? 'checked' : ''}><span>Mix its whole group</span></label>${k && C.props[k] && C.props[k].family ? `<label class="fld chk" title="Every nature prop of this family that grows on the ground under the brush (flowers, ground cover, shrubs, trees, water plants, rocks, seasons)"><input type="checkbox" id="scxFam" ${mapEditor.scat.fam ? 'checked' : ''}><span>Whole ${esc(C.props[k].family)} family, by ground</span></label>` : ''}
   <label class="mp-size"><span>Density</span><input type="range" id="scxDens" min=".1" max="2" step=".1" value="${mapEditor.scat.dens}"></label><label class="mp-size"><span>Size variety</span><input type="range" id="scxVary" min="0" max=".5" step=".02" value="${mapEditor.scat.vary}"></label></div>`;
 }
@@ -475,7 +491,7 @@ document.addEventListener('change', ev => {
   }
 });
 /* ---------- curves: roads and the walker's path ---------- */
-function scxCurve(P, step = 0.25) {
+function smoothPolyline(P, step = 0.25) {
   if (P.length < 3) return P.slice();
   const out = [],
     g = i => P[Math.max(0, Math.min(P.length - 1, i))];
@@ -498,11 +514,11 @@ function scxCurve(P, step = 0.25) {
   out.push(P[P.length - 1].slice());
   return out;
 }
-function scxRoadLay(sc) {
+function layCurvedRoad(sc) {
   const P = mapEditor.road;
   mapEditor.road = null;
   if (!sc || !P || P.length < 2) return;
-  const C = scxCurve(P, 0.2),
+  const C = smoothPolyline(P, 0.2),
     w = Math.max(0.7, mapEditor.brush * 0.6);
   let any = false;
   for (const [x, z] of C)
@@ -526,7 +542,7 @@ function scxRoadLay(sc) {
 ACTIONS.scxSmoothPath = () => {
   const sc = currentMap();
   if (!sc || !sc.path || sc.path.length < 3) return toast('The path needs at least three points to curve.');
-  sc.path = scxCurve(sc.path, 1.2).map(([a, b]) => [+a.toFixed(2), +b.toFixed(2)]);
+  sc.path = smoothPolyline(sc.path, 1.2).map(([a, b]) => [+a.toFixed(2), +b.toFixed(2)]);
   walkView.cand = null;
   walkView.nav = null;
   changed();
@@ -534,7 +550,7 @@ ACTIONS.scxSmoothPath = () => {
   drawEditorMap();
 };
 /* ---------- drawn over the map ---------- */
-function scxDraw(x, sc, Z) {
+function drawExtraTools(x, sc, Z) {
   const H = sc.h;
   if (mapEditor.multi.size) {
     x.strokeStyle = '#E2B92C';
@@ -555,7 +571,7 @@ function scxDraw(x, sc, Z) {
     x.strokeRect(Math.min(a[0], b[0]), Math.min(a[1], b[1]), Math.abs(b[0] - a[0]), Math.abs(b[1] - a[1]));
   }
   if (mapEditor.road && mapEditor.road.length) {
-    const C = scxCurve(mapEditor.road.concat(mapEditor.mouse ? [mapEditor.mouse] : []), 0.3);
+    const C = smoothPolyline(mapEditor.road.concat(mapEditor.mouse ? [mapEditor.mouse] : []), 0.3);
     x.strokeStyle = 'rgba(255,236,170,.9)';
     x.lineWidth = Math.max(2, mapEditor.brush * 0.6 * 2 * Z);
     x.globalAlpha = 0.35;
