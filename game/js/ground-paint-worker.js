@@ -95,14 +95,14 @@ const PAINT_WORKER_MAIN = `var TERRAIN_MATERIALS;let CTX=null;const CTXS=new Map
 /* (stand-ins for walk-view.js's own, from what the main thread handed over) */
 var walkData=()=>({sc:CTX.C}),bigTilesOn=()=>!!CTX.next,worldPatchTilesOn=()=>!!CTX.t47,stepGrid=sc=>CTX.E,mapBridges=()=>null,
  tileSetPixels=(T,TP)=>TILES.get(TP+'|'+T.tile+'|'+(T.vars||[]).join(','))||[null];
-function pwMips(s,W,H,n){const out=[];for(let k=0;k<n&&W>1&&H>1;k++){const w=W>>1,h=H>>1,d=new Uint8Array(w*h*4);
+function mipChain(s,W,H,n){const out=[];for(let k=0;k<n&&W>1&&H>1;k++){const w=W>>1,h=H>>1,d=new Uint8Array(w*h*4);
  for(let y=0;y<h;y++){const r0=(y*2)*W*4,r1=r0+W*4;for(let x=0;x<w;x++){const a=r0+x*8,c=r1+x*8,o=(y*w+x)*4;
   d[o]=(s[a]+s[a+4]+s[c]+s[c+4]+2)>>2;d[o+1]=(s[a+1]+s[a+5]+s[c+1]+s[c+5]+2)>>2;d[o+2]=(s[a+2]+s[a+6]+s[c+2]+s[c+6]+2)>>2;d[o+3]=(s[a+3]+s[a+7]+s[c+3]+s[c+7]+2)>>2}}
  out.push(d);s=d;W=w;H=h}return out}
 function run(){busy=false;if(!Q.length)return;Q.sort((a,b)=>a.pr-b.pr);const m=Q.shift();if(GONE.delete(m.id)){postMessage({id:m.id,gone:1});if(Q.length){busy=true;setTimeout(run,0)}return}
  try{const c=CTXS.get(m.ctx);if(!c){postMessage({id:m.id,miss:1})}else{CTXS.delete(m.ctx);CTXS.set(m.ctx,c);CTX=c;TERRAIN_MATERIALS=c.mat||undefined;const t0=performance.now(),it=paintGroundSteps(c.sc,m.o);let r=it.next();while(!r.done)r=it.next();
   const v=r.value,tr=[v.px.buffer];if(v.nrm)tr.push(v.nrm.buffer);let mips=null,nmips=null;
-  if(m.mips){mips=pwMips(new Uint8Array(v.px.buffer),v.w,v.h,30);for(const L of mips)tr.push(L.buffer);if(v.nrm){nmips=pwMips(v.nrm,v.nw,v.nh,30);for(const L of nmips)tr.push(L.buffer)}}
+  if(m.mips){mips=mipChain(new Uint8Array(v.px.buffer),v.w,v.h,30);for(const L of mips)tr.push(L.buffer);if(v.nrm){nmips=mipChain(v.nrm,v.nw,v.nh,30);for(const L of nmips)tr.push(L.buffer)}}
   postMessage({id:m.id,r:v,mips,nmips,ms:performance.now()-t0},tr)}}
  catch(e){postMessage({id:m.id,err:String(e&&e.stack||e).slice(0,400)})}
  if(Q.length){busy=true;setTimeout(run,0)}}
