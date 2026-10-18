@@ -17,7 +17,9 @@ import {
   setBattleStageStart,
 } from './battle-stage.js';
 import {
+  navGrid,
   prepareMap,
+  setNavGrid,
   setPrepareMap,
   setUpdateFolk,
   setUpdatePlayer,
@@ -37,10 +39,11 @@ import {
   setMakeNormalMap,
   setRunNormalMapJobs,
 } from './engine/webgl.js';
-import { drawPostEffects, setDrawPostEffects } from './engine/post-effects.js';
+import { drawPostEffects, screenSnapshot, setDrawPostEffects, setScreenSnapshot } from './engine/post-effects.js';
 import { environment } from './environment.js';
 import {
   buildGrass,
+  buildGroundMesh,
   drawGrass,
   drawGround,
   drawSprites,
@@ -52,6 +55,7 @@ import {
   mountWalkView,
   reflectionPass,
   setBuildGrass,
+  setBuildGroundMesh,
   setDrawGrass,
   setDrawGround,
   setDrawSprites,
@@ -63,8 +67,10 @@ import {
   setMountWalkView,
   setReflectionPass,
   setShadowPass,
+  setSwapMapCache,
   setUpdateNearRing,
   shadowPass,
+  swapMapCache,
   updateNearRing,
   walkRenderer,
 } from './walk-view-gl.js';
@@ -102,6 +108,7 @@ Object.defineProperties(GAME, {
   battleStageResize: { get: () => battleStageResize, set: setBattleStageResize },
   battleStageStart: { get: () => battleStageStart, set: setBattleStageStart },
   buildGrass: { get: () => buildGrass, set: setBuildGrass },
+  buildGroundMesh: { get: () => buildGroundMesh, set: setBuildGroundMesh },
   buildSolidProp: { get: () => buildSolidProp, set: setBuildSolidProp },
   buildSolidTree: { get: () => buildSolidTree, set: setBuildSolidTree },
   buildingItems: { get: () => buildingItems, set: setBuildingItems },
@@ -129,6 +136,7 @@ Object.defineProperties(GAME, {
   lifeStep: { get: () => lifeStep, set: setLifeStep },
   makeNormalMap: { get: () => makeNormalMap, set: setMakeNormalMap },
   mountWalkView: { get: () => mountWalkView, set: setMountWalkView },
+  navGrid: { get: () => navGrid, set: setNavGrid },
   newBattle: { get: () => newBattle, set: setNewBattle },
   normalMapWorkerState: { get: () => normalMapWorkerState },
   openBattle: { get: () => openBattle, set: setOpenBattle },
@@ -144,11 +152,13 @@ Object.defineProperties(GAME, {
   runNormalMapJobs: { get: () => runNormalMapJobs, set: setRunNormalMapJobs },
   save: { get: () => save, set: setSave },
   saveData: { get: () => saveData },
+  screenSnapshot: { get: () => screenSnapshot, set: setScreenSnapshot },
   setTrip: { get: () => setTrip, set: setSetTrip },
   shadowPass: { get: () => shadowPass, set: setShadowPass },
   solidPropState: { get: () => solidPropState },
   soundEngine: { get: () => soundEngine },
   stampCount: { get: () => stampCount },
+  swapMapCache: { get: () => swapMapCache, set: setSwapMapCache },
   toast: { get: () => toast },
   uiState: { get: () => uiState },
   updateFolk: { get: () => updateFolk, set: setUpdateFolk },

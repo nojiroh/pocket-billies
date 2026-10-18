@@ -227,7 +227,7 @@ debugLog.flush = ts => {
     a.n = a.w = a.max = a.long = a.gapMax = 0;
   }
   if (!Object.keys(tasks).length) return;
-  const s = Object.assign({ t: debugLog.now() }, c, { tasks });
+  const s = Object.assign({ t: debugLog.now(), dt: Math.round(dt) }, c, { tasks });
   const pr = {};
   for (const [k, p] of Object.entries(debugLog.prof)) {
     if (p.n) pr[k] = [Math.round((p.ms / p.n) * 10) / 10, Math.round(p.max)];
@@ -711,6 +711,12 @@ debugLog.hook = () => {
     ['cutsceneStart', 'starting the opening'],
     ['openDressingRoom', 'opening the dressing room'],
     ['artPixels', 'reading a picture'],
+    /* a place's opening hitch was mostly "outside the marked steps": the ground built for the new place, the walkable
+       grid, and the debug log's own screenshot (reading the frame back makes the GPU finish it) */
+    ['swapMapCache', 'setting up the ground'],
+    ['buildGroundMesh', 'building the ground mesh'],
+    ['navGrid', 'working out where you can walk'],
+    ['screenSnapshot', 'reading the picture back'],
   ])
     timed(n, l);
   /* the renderer's own sections, timed every frame */

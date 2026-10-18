@@ -11,6 +11,49 @@ Newest entry on top. Every phase session ends by adding an entry here and taggin
 - Questions waiting for the owner: 
 - Next session starts with: 
 
+### Debug session - the two diagnostics logs of 18 Oct (PC 19:43, phone 19:47) - 2026-10-18
+Not a phase; plan approved at the start. Both runs passed with no errors; the phone (Adreno 750) ran Clovercrest at 24 fps.
+- Changed (6 commits, each passes lint, typecheck, check:modules, unit tests and format on its own):
+  - tools/check-quick.py names current Billies (swift0/swift1) where it named legacy ek1/knight1/kroc0. Smoke had been
+    failing since phase 16 ("reading 'line'").
+  - Diagnostics format 2 (self-test.js, debug-log.js):
+    - A place's fps, worst fps and slow frames count whole seconds from 0.5 s after it opened.
+    - The opening hitch is apart: openHitchMs, openHitchCause.
+    - The other steps drop their first and last second. The old battle "worst 5 fps" was a partial second.
+    - battle and memory also export worstFps and worstFrameMs. Samples carry dt.
+  - walk-view-gl.js: stillPropState and propLook rechecked every prop in the same frame every 500 ms. Each prop now
+    rechecks on its own half-second beat (propCheckedAt).
+    - Measured headless on Clovercrest: 452 props in one frame (+8 ms on this CPU, 3.7 -> 12 ms) became about 15 a frame.
+  - propGrid no longer rebuilds every 2 s. It rebuilds on a prop signature change (now every prop) or on itemGen.
+    - itemGen now also goes up when the ground's height key changes, so Studio height edits still refresh the props.
+  - self-test.js: pauseSaving() before loadAllMaps(), not after. The friends timer could write 'users' while the maps
+    loaded (seen once in 4 smoke runs).
+  - debug-log.js: new marks "setting up the ground", "building the ground mesh", "working out where you can walk" and
+    "reading the picture back"; module glue regenerated.
+    - A headless CPU profile put the per-place opening hitch ("outside the marked steps") in swapMapCache ->
+      buildGroundMesh, about 0.8-1.2 s in software.
+- Risky:
+  - propGrid now trusts its signature. A Studio edit that moves terrain under props without changing the height key
+    (a bridge edit, say) keeps old cell heights. The cull has 8 m of slack.
+  - The 500 ms freshness is unchanged, only spread.
+  - Auto quality was not touched. The phone sat at level 4 and 80% resolution because of these spikes; it should settle
+    lower on its own, which needs a phone log to confirm.
+- Verified: lint, typecheck, check:modules, 32 unit tests and format at every commit; smoke after each code change (the
+  full-test step 4 times after the save fix); headless counts and timings of gatherFrameItems before and after; a CPU
+  profile of a place opening.
+  - The full quick check: 46 of 49 steps passed. The 3 failures are the old roster-count steps (v35, v38, v39/v40 want
+    117 species and the data has 24 after phase 16). They come from phase 16, not from this session, and need
+    replacing.
+  - There is no validation/quick-baseline, so no screenshots were compared.
+- Not verified: real-device frame rates (headless draws in software at 1-3 fps).
+- Next:
+  - The owner re-runs Diagnostics on the phone and the PC and sends both logs. Look at openHitchCause, Clovercrest fps
+    and the auto level.
+  - If the ground build is the hitch, spread buildGroundMesh over frames (it already has a steps version,
+    buildGroundMeshSteps) or prepare it before the door opens (prepareMapGround).
+  - If the phone is still slow, the next renderer work is: reuse per-frame item objects, instance static sprites,
+    group solid props by mesh. That is a phase of its own.
+
 ### Phase 16 prep - Billies rework plan, part kits, test boot - 2026-10-18
 - Changed: docs/phases/16 rewritten (7-line roster, parts, sizes, weight, Prime, decisions and open questions);
   placeholder part kits (beasts, birds, fish; 120 parts) sliced by tools/slice-part-kit.py into game/art/next/parts
