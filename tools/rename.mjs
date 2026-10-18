@@ -14,16 +14,18 @@
 //
 // name and prefix rename a declaration and every reference that resolves to it (a local of the same name is left
 // alone), window. self. globalThis. and GAME. (log.js) members, the debug log's lists of the functions it wraps and
-// times (strings in log.js), comments (names with a capital, digit, _ or $ and at least two characters; plain words
-// like `at` are only listed), and the JavaScript in the Python tools' strings (tools/rename-strings.py). A shorthand
-// property keeps its key ({ dioMount } -> { dioMount: walkViewMount }): changing a key is a separate rename. The tool
-// refuses a new name that a page already declares or uses as a global, a browser global, or one a local would
-// capture. Then it remakes the modules' generated parts (tools/to-module.mjs) and lists every other place that holds
-// an old name (strings, properties, other files) for a person to check.
+// times (strings in log.js), names that can only be code inside strings (dioMount, DGL_SH: the paint worker's source,
+// the self-test's list of passes), comments (names with a capital, digit, _ or $ and at least two characters; plain
+// words like `at` are only listed), and the JavaScript in the Python tools' strings (tools/rename-strings.py). A
+// shorthand property keeps its key ({ dioMount } -> { dioMount: walkViewMount }): changing a key is a separate
+// rename. The tool refuses a new name that a page already declares or uses as a global, a browser global, or one a
+// local would capture. Then it remakes the modules' generated parts (tools/to-module.mjs) and lists every other place
+// that holds an old name (short names in strings, properties, other files) for a person to check.
 //
 // verify parses each changed script before and after (generated parts left out) and passes only when the syntax trees
-// are the same but for renamed identifiers and the log.js strings, each old name renamed the same way everywhere.
-// It prints the renames it found. In the Python tools only strings may differ (tools/rename-strings.py verify).
+// are the same but for renamed identifiers, each old name renamed the same way everywhere, and strings that differ
+// only by those renames. It prints the renames it found. In the Python tools only strings may differ
+// (tools/rename-strings.py verify).
 import * as espree from 'espree';
 import * as eslintScope from 'eslint-scope';
 import globals from 'globals';
@@ -61,6 +63,8 @@ const esc = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 // any of the names as a whole word
 // a plain lowercase word (at, rnd) is only worth a look where code would use it: at( at.x at[
 const codeLike = (text, m) => !/^[a-z]+$/.test(m[0]) || /^[(.[]/.test(text.slice(m.index + m[0].length));
+// a name that can only be code: a capital, digit, _ or $ in it, and four characters or more (or three, mixed case)
+const inStrings = n => /[A-Z0-9_$]/.test(n) && (n.length >= 4 || (n.length === 3 && /[a-z]/.test(n)));
 const words = names =>
   new RegExp(
     `(?<![\\w$])(?:${[...names]
@@ -181,6 +185,7 @@ function plan(all, pairs) {
   }
   const edits = new Map(),
     notes = [],
+    strings = [],
     count = new Map();
   const any = words(pairs.keys());
   for (const u of all) {
@@ -240,9 +245,16 @@ function plan(all, pairs) {
         // the debug log names the functions it wraps and times
         if (u.file === LOG && n.type === 'Literal' && pairs.has(n.value)) {
           put(s + 1, s + t.length - 1, pairs.get(n.value));
+          strings.push(at(s, `${n.value} -> ${pairs.get(n.value)}`));
           continue;
         }
-        for (const m of t.matchAll(any)) if (codeLike(t, m)) notes.push(at(s + m.index, `string holds ${m[0]}`));
+        // a name that can only be code (dioMount, DGL_SH, csStart) is renamed in strings too: the paint worker's
+        // source, the self-test's list of passes; short ones (S, GD, at) are only listed
+        for (const m of t.matchAll(any))
+          if (inStrings(m[0])) {
+            put(s + m.index, s + m.index + m[0].length, pairs.get(m[0]));
+            strings.push(at(s + m.index, `${m[0]} -> ${pairs.get(m[0])}`));
+          } else if (codeLike(t, m)) notes.push(at(s + m.index, `string holds ${m[0]}`));
       }
       // a property of the same name (a plain lowercase word, like .at, is another thing)
       const prop = x => pairs.has(x) && !/^[a-z]+$/.test(x);
@@ -260,7 +272,7 @@ function plan(all, pairs) {
       }
     if (E.size) edits.set(u.file, [...E.values()]);
   }
-  return { edits, notes, problems, count };
+  return { edits, notes, strings, problems, count };
 }
 
 // a classic script as Prettier writes it (the modules are written by tools/to-module.mjs), unless Prettier skips it
@@ -286,7 +298,7 @@ function otherFiles(all) {
 
 async function renameNames(pairs, dry) {
   const all = units();
-  const { edits, notes, problems, count } = plan(all, pairs);
+  const { edits, notes, strings, problems, count } = plan(all, pairs);
   if (problems.length) throw new Error('refused:\n  ' + [...new Set(problems)].join('\n  '));
   for (const [o] of pairs) if (!count.get(o)) notes.push(`${o}: declared but nothing to rename?`);
   const pages = new Map();
@@ -311,15 +323,28 @@ async function renameNames(pairs, dry) {
       maxBuffer: 1 << 26,
     })
   );
-  // everything else that names an old name
-  const any = words(pairs.keys());
+  // everything else that names an old name: the configs, the Node tools and the docs that describe the code as it is
+  // (not CLAUDE.md, the history or the plans) get the names that can only be code; the rest is listed
+  const any = words(pairs.keys()),
+    other = [];
   for (const f of otherFiles(all).filter(f => !f.endsWith('.py'))) {
     const t = read(f);
-    for (const m of t.matchAll(any))
-      if (codeLike(t, m)) notes.push(`${f}:${lineOf(t, m.index)}: holds ${m[0]}: ${snippet(t, m.index)}`);
+    const fix = /\.(m?js|md)$/.test(f) && f !== 'CLAUDE.md' && f !== 'tools/rename.mjs';
+    let out = '',
+      i = 0;
+    for (const m of t.matchAll(any)) {
+      if (fix && inStrings(m[0])) {
+        out += t.slice(i, m.index) + pairs.get(m[0]);
+        i = m.index + m[0].length;
+      } else if (codeLike(t, m)) notes.push(`${f}:${lineOf(t, m.index)}: holds ${m[0]}: ${snippet(t, m.index)}`);
+    }
+    if (i) {
+      other.push(f);
+      if (!dry) writeFileSync(join(ROOT, f), out + t.slice(i));
+    }
   }
   if (!dry) await toModule([]);
-  return { files: edits.size, count, notes: [...notes, ...pyReport.review], python: pyReport.changed };
+  return { files: edits.size, count, strings, other, notes: [...notes, ...pyReport.review], python: pyReport.changed };
 }
 
 async function renameFile(o, n, dry) {
@@ -367,7 +392,7 @@ async function renameFile(o, n, dry) {
 
 const IGNORE = new Set(['range', 'loc', 'start', 'end', 'raw', 'comments', 'tokens', 'parent', 'shorthand']);
 
-// compares two syntax trees; identifiers may differ (recorded in pairs), log.js strings may differ (recorded too)
+// compares two syntax trees; identifiers may differ (recorded in pairs), strings too (recorded, checked after)
 function same(a, b, pairs, strings, where) {
   if (a === b) return;
   if (typeof a !== typeof b || a === null || b === null || typeof a !== 'object')
@@ -384,9 +409,12 @@ function same(a, b, pairs, strings, where) {
     pairs.set(k, (pairs.get(k) || 0) + 1);
     return;
   }
-  if (a.type === 'Literal' && typeof a.value === 'string' && a.value !== b.value && strings) {
-    const k = `${a.value} -> ${b.value}`;
-    pairs.set(k, (pairs.get(k) || 0) + 1);
+  if (a.type === 'Literal' && typeof a.value === 'string' && typeof b.value === 'string' && a.value !== b.value) {
+    strings.push([a.value, b.value, at]);
+    return;
+  }
+  if (a.type === 'TemplateElement' && a.value.cooked !== b.value.cooked) {
+    strings.push([a.value.cooked, b.value.cooked, at]);
     return;
   }
   for (const k of new Set([...Object.keys(a), ...Object.keys(b)])) {
@@ -410,7 +438,7 @@ const inline = html => [...html.matchAll(SCRIPT_TAG)].filter(m => !/\bsrc=/.test
 const withoutScripts = html => html.replace(SCRIPT_TAG, (m, attrs) => (/\bsrc=/.test(attrs) ? m : '<script></script>'));
 
 function verify(base, expect) {
-  const out = { pairs: new Map(), checked: [], python: [], other: [], problems: [] };
+  const out = { pairs: new Map(), strings: [], checked: [], python: [], other: [], problems: [] };
   const rows = git('diff', '--cached', '-M', '--name-status', base)
     .split('\n')
     .filter(Boolean)
@@ -425,12 +453,12 @@ function verify(base, expect) {
       now = git('show', `:${b}`);
     try {
       if (/\.(m?js)$/.test(b)) {
-        same(tree(old, a), tree(now, b), out.pairs, b === LOG, b);
+        same(tree(old, a), tree(now, b), out.pairs, out.strings, b);
         out.checked.push(b);
       } else if (b.endsWith('.html')) {
         const [x, y] = [inline(old), inline(now)];
         if (x.length !== y.length) throw new Error(`${b}: a different number of inline scripts`);
-        x.forEach((s, i) => same(tree(s, b), tree(y[i], b), out.pairs, false, `${b} inline ${i}`));
+        x.forEach((s, i) => same(tree(s, b), tree(y[i], b), out.pairs, out.strings, `${b} inline ${i}`));
         if (withoutScripts(old) !== withoutScripts(now)) out.other.push(`${b} (outside its inline scripts)`);
         out.checked.push(b);
       } else if (b.endsWith('.py')) out.python.push([a, b]);
@@ -449,7 +477,7 @@ function verify(base, expect) {
       })
     );
     out.problems.push(...r.problems);
-    out.strings = r.strings;
+    out.pyStrings = r.strings;
   }
   if (expect) {
     const [rule, o, n] = expect;
@@ -476,6 +504,21 @@ function verify(base, expect) {
     if (to.has(a) && to.get(a) !== b) out.problems.push(`${a} became both ${to.get(a)} and ${b}`);
     to.set(a, b);
   }
+  // a changed string is the old one with some of the renamed names in it renamed, nothing else
+  const re = to.size && words(to.keys());
+  for (const [x, y, where] of out.strings) {
+    let pat = '',
+      i = 0;
+    if (re)
+      for (const m of x.matchAll(re)) {
+        pat += esc(x.slice(i, m.index)) + `(?:${esc(m[0])}|${esc(to.get(m[0]))})`;
+        i = m.index + m[0].length;
+      }
+    pat += esc(x.slice(i));
+    if (!new RegExp(`^${pat}$`, 's').test(y))
+      out.problems.push(`${where}: string ${JSON.stringify(x.slice(0, 80))} -> ${JSON.stringify(y.slice(0, 80))}`);
+  }
+  out.stringCount = out.strings.length;
   return out;
 }
 
@@ -512,7 +555,12 @@ async function main(argv) {
     const r = await renameNames(pairs, dry);
     console.log(`${dry ? 'would rename' : 'renamed'} ${pairs.size} name(s) in ${r.files} script(s):`);
     for (const [o, n] of pairs) console.log(`  ${o} -> ${n} (${r.count.get(o) || 0})`);
+    if (r.strings.length)
+      console.log(
+        `renamed in strings (${r.strings.length}):\n  ${r.strings.slice(0, all ? undefined : 12).join('\n  ')}`
+      );
     if (r.python.length) console.log(`Python tools' strings:\n  ${r.python.join('\n  ')}`);
+    if (r.other.length) console.log(`configs, Node tools and docs:\n  ${r.other.join('\n  ')}`);
     report(r.notes, all);
   } else if (cmd === 'file') {
     if (rest.length !== 2) throw new Error('file takes <old path> <new path>');
@@ -528,8 +576,9 @@ async function main(argv) {
     const r = verify(base, expect);
     console.log(`checked ${r.checked.length} script file(s) and ${r.python.length} Python file(s) against ${base}`);
     for (const [k, c] of [...r.pairs].sort()) console.log(`  ${k} (${c})`);
-    if (r.strings && r.strings.length)
-      console.log(`Python strings changed (${r.strings.length}):\n  ${r.strings.slice(0, 40).join('\n  ')}`);
+    if (r.stringCount) console.log(`strings in scripts changed: ${r.stringCount}, each only by the renames`);
+    if (r.pyStrings && r.pyStrings.length)
+      console.log(`Python strings changed (${r.pyStrings.length}):\n  ${r.pyStrings.slice(0, 40).join('\n  ')}`);
     if (r.other.length) console.log(`not verified, look at the diff: ${r.other.join(', ')}`);
     if (r.problems.length) {
       console.error(`NOT a pure rename:\n  ${r.problems.join('\n  ')}`);
