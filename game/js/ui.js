@@ -37,10 +37,6 @@ import {
 } from './game-data.js';
 import {
   BR,
-  EGG_SLOTS,
-  MAXLV,
-  SLOTS,
-  TEAM_MAX,
   activeBattle,
   addEgg,
   allMons,
@@ -51,6 +47,7 @@ import {
   canRide,
   cleanName,
   collectJob,
+  eggSlotCount,
   endShift,
   escapeHtml,
   evoHint,
@@ -67,6 +64,8 @@ import {
   healAll,
   makeMon,
   maxHp,
+  maxLevel,
+  moveSlotCount,
   newSaveKeepingPreferences,
   nextBracket,
   nextStop,
@@ -85,6 +84,7 @@ import {
   stat,
   stepsToKm,
   stopTrip,
+  teamSize,
   toBox,
   toTeam,
   tripTo,
@@ -438,7 +438,7 @@ function learnModal(m, mv) {
   const M = MOVES[mv];
   modal({
     title: `${escapeHtml(billyName(m))} wants to learn ${M.n}`,
-    html: `<p>${chip(M.t)} ${M.p ? `${M.p} power` : 'Status'}. ${M.d}</p><p class="note">It already knows ${SLOTS()} moves. Pick one to forget, or skip this one.</p>`,
+    html: `<p>${chip(M.t)} ${M.p ? `${M.p} power` : 'Status'}. ${M.d}</p><p class="note">It already knows ${moveSlotCount()} moves. Pick one to forget, or skip this one.</p>`,
     btns: m.moves
       .map(id => ({
         l: `Forget ${MOVES[id].n}`,
@@ -877,7 +877,7 @@ function owHTML() {
   return `<span class="spr fast ow-mini" style="width:22px;height:40px"><img src="${u}" alt=""></span>`;
 }
 function eggSlots() {
-  const slots = Array.from({ length: EGG_SLOTS() }, (_, i) => i)
+  const slots = Array.from({ length: eggSlotCount() }, (_, i) => i)
     .map(sl => {
       const e = saveData.eggs.find(x => x.slot === sl);
       if (!e)
@@ -1855,12 +1855,12 @@ const plateVars = m => {
 };
 const monState = m => (m.hp <= 0 ? '<span class="stb st-down">Fainted</span>' : stBadge(m.status));
 const xpPart = m => {
-  if (m.lvl >= MAXLV()) return 1;
+  if (m.lvl >= maxLevel()) return 1;
   const a = xpFor(m.lvl),
     b = xpFor(m.lvl + 1);
   return clamp((m.xp - a) / (b - a), 0, 1);
 };
-const xpLeft = m => (m.lvl >= MAXLV() ? 'Max level' : `${formatNumber(xpFor(m.lvl + 1) - m.xp)} to Lv ${m.lvl + 1}`);
+const xpLeft = m => (m.lvl >= maxLevel() ? 'Max level' : `${formatNumber(xpFor(m.lvl + 1) - m.xp)} to Lv ${m.lvl + 1}`);
 const needsCare = m => m.hp < maxHp(m) || !!m.status;
 const meter = (k, inner, v) => `<div class="tm-meter"><span>${k}</span>${inner}<b class="tnum">${v}</b></div>`;
 function teamHero(m) {
@@ -1914,7 +1914,7 @@ function boxSection() {
       : so === 'name'
         ? L.slice().sort((a, b) => billyName(a).localeCompare(billyName(b)))
         : L.slice().reverse();
-  const full = saveData.team.length >= TEAM_MAX();
+  const full = saveData.team.length >= teamSize();
   const tools =
     all.length > 3
       ? `<div class="fchips tm-tools" role="group" aria-label="Sort and filter storage">${BOXSORT.map(([k, l]) => `<button class="fchip${so === k ? ' on' : ''}" data-a="boxsort" data-k="${k}" aria-pressed="${so === k}">${l}</button>`).join('')}${types.length > 1 ? `<span class="tm-sep" aria-hidden="true"></span><button class="fchip${f === 'all' ? ' on' : ''}" data-a="boxf" data-f="all" aria-pressed="${f === 'all'}">All types</button>${types.map(t => `<button class="fchip tdot${f === t ? ' on' : ''}" data-a="boxf" data-f="${t}" style="--tc:${TC[t][0]}" aria-pressed="${f === t}"><i></i>${t === 'None' ? 'Normal' : t}</button>`).join('')}` : ''}</div>`
@@ -1930,13 +1930,13 @@ function renderTeam() {
   const lead = saveData.team[0],
     rest = saveData.team.slice(1),
     free = saveData.box.filter(m => m.job == null).length,
-    open = Math.max(0, TEAM_MAX() - saveData.team.length),
+    open = Math.max(0, teamSize() - saveData.team.length),
     work = saveData.jobs.filter(j => j.uid).length;
   const slots = open
     ? `<div class="tm-card empty tm-open"><span class="tm-plus" aria-hidden="true">+</span><span class="tm-ot"><b>${open === 1 ? '1 open spot' : `${open} open spots`}</b><span class="note">${free ? 'Bring someone back from storage.' : 'Tax more in the grass, or hatch an egg.'}</span></span>${free ? '<button class="qk" data-a="tmadd">Add from storage</button>' : ''}</div>`
     : '';
-  return `<header class="bar"><div><div class="sub">${saveData.team.length} of ${TEAM_MAX()} on your team</div><h1 class="where">Your team</h1></div></header>
- <div class="tm-top">${lead ? teamHero(lead) : ''}<section class="tpanel tm-party"><div class="sec-h"><h2>Party</h2><span class="count tnum">${saveData.team.length}/${TEAM_MAX()}</span></div><p class="note">Your lead goes first in battle. Tap a card for details.</p><div class="tm-grid">${rest.map(teamCard).join('')}${slots}</div></section></div>
+  return `<header class="bar"><div><div class="sub">${saveData.team.length} of ${teamSize()} on your team</div><h1 class="where">Your team</h1></div></header>
+ <div class="tm-top">${lead ? teamHero(lead) : ''}<section class="tpanel tm-party"><div class="sec-h"><h2>Party</h2><span class="count tnum">${saveData.team.length}/${teamSize()}</span></div><p class="note">Your lead goes first in battle. Tap a card for details.</p><div class="tm-grid">${rest.map(teamCard).join('')}${slots}</div></section></div>
  <section class="tpanel tm-jobs"><div class="sec-h"><h2>Day jobs</h2><span class="count tnum">${work}/${saveData.jobs.length}</span></div><p class="note">Billies at work leave your team and earn pay while you walk.</p>${jobSlots()}</section>
  ${boxSection()}`;
 }
@@ -2236,7 +2236,7 @@ function monSheet(m) {
     });
   if (!inTeam && m.job == null)
     acts.push(
-      saveData.team.length < TEAM_MAX()
+      saveData.team.length < teamSize()
         ? {
             ic: 'team',
             l: 'Move to team',
@@ -2726,7 +2726,7 @@ document.addEventListener('click', ev => {
     case 'mteam': {
       const m = findMon(d.u);
       if (!m || m.job != null || saveData.team.includes(m)) break;
-      if (saveData.team.length < TEAM_MAX()) {
+      if (saveData.team.length < teamSize()) {
         toTeam(m);
         save();
         render();
@@ -2739,7 +2739,7 @@ document.addEventListener('click', ev => {
       break;
     case 'tmaddon': {
       const m = findMon(d.u);
-      if (m && m.job == null && !saveData.team.includes(m) && saveData.team.length < TEAM_MAX()) {
+      if (m && m.job == null && !saveData.team.includes(m) && saveData.team.length < teamSize()) {
         toTeam(m);
         save();
         closeModal();

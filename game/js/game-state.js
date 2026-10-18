@@ -43,17 +43,12 @@ expose({
   ACCOUNT_ID: [() => ACCOUNT_ID],
   ACCOUNT_KEY: [() => ACCOUNT_KEY],
   BR: [() => BR],
-  EGG_SLOTS: [() => EGG_SLOTS],
-  JOB_SLOTS: [() => JOB_SLOTS],
-  MAXLV: [() => MAXLV],
   SAVE_FOUND: [() => SAVE_FOUND],
   SAVE_KEY: [() => SAVE_KEY],
   SAVE_KEY_BASE: [() => SAVE_KEY_BASE],
   SAVE_NEW_MSG: [() => SAVE_NEW_MSG],
   SAVE_OLD_MSG: [() => SAVE_OLD_MSG],
   SAVE_VERSION: [() => SAVE_VERSION],
-  SLOTS: [() => SLOTS],
-  TEAM_MAX: [() => TEAM_MAX],
   activeBattle: [() => activeBattle, v => setActiveBattle(v)],
   addEgg: [() => addEgg, v => (addEgg = v)],
   addMon: [() => addMon, v => (addMon = v)],
@@ -69,6 +64,7 @@ expose({
   canRide: [() => canRide],
   cleanName: [() => cleanName],
   collectJob: [() => collectJob, v => (collectJob = v)],
+  eggSlotCount: [() => eggSlotCount],
   emptyJob: [() => emptyJob],
   endShift: [() => endShift, v => (endShift = v)],
   escapeHtml: [() => escapeHtml],
@@ -87,10 +83,13 @@ expose({
   hatchable: [() => hatchable],
   healAll: [() => healAll, v => (healAll = v)],
   hereStop: [() => hereStop],
+  jobSlotCount: [() => jobSlotCount],
   loadSave: [() => loadSave, v => (loadSave = v)],
   makeMon: [() => makeMon, v => ((makeMon = v), provide({ makeMon }))],
   maxHp: [() => maxHp],
+  maxLevel: [() => maxLevel],
   migrate: [() => migrate, v => (migrate = v)],
+  moveSlotCount: [() => moveSlotCount],
   movesAt: [() => movesAt, v => (movesAt = v)],
   newSave: [() => newSave, v => (newSave = v)],
   newSaveKeepingPreferences: [() => newSaveKeepingPreferences, v => (newSaveKeepingPreferences = v)],
@@ -126,6 +125,7 @@ expose({
   stepsToKm: [() => stepsToKm],
   stopTrip: [() => stopTrip, v => (stopTrip = v)],
   taxed: [() => taxed, v => (taxed = v)],
+  teamSize: [() => teamSize],
   toBox: [() => toBox, v => (toBox = v)],
   toTeam: [() => toTeam, v => (toTeam = v)],
   today: [() => today],
@@ -176,10 +176,10 @@ export function pickWeighted(list) {
 
 /* ---------- state ---------- */
 export const xpFor = L => Math.floor(RULES.progression.xpFactor * L * L * L);
-export const MAXLV = () => RULES.progression.maxLevel,
-  SLOTS = () => RULES.progression.moveSlots,
-  TEAM_MAX = () => RULES.progression.teamSize;
-const JOB_SLOTS = () => Math.max(1, RULES.jobs.positions || 3);
+export const maxLevel = () => RULES.progression.maxLevel,
+  moveSlotCount = () => RULES.progression.moveSlots,
+  teamSize = () => RULES.progression.teamSize;
+const jobSlotCount = () => Math.max(1, RULES.jobs.positions || 3);
 const emptyJob = () => ({ uid: null, job: null, acc: 0, pend: 0 });
 export function newSave() {
   const R = RULES.start,
@@ -219,7 +219,7 @@ export function newSave() {
     visited: { [START_NODE]: 1 },
     serial: 300,
     eggs: [],
-    jobs: Array.from({ length: JOB_SLOTS() }, emptyJob),
+    jobs: Array.from({ length: jobSlotCount() }, emptyJob),
     savedAt: 0,
     /* trainer card: ID number, start date (0 = unknown, older saves) and eggs hatched */
     tid: 10000 + Math.floor(random() * 90000),
@@ -254,8 +254,8 @@ export function migrate(o) {
   p.fps = +p.fps;
   if (!Array.isArray(s.eggs)) s.eggs = [];
   if (!Array.isArray(s.jobs)) s.jobs = [];
-  while (s.jobs.length < JOB_SLOTS()) s.jobs.push(emptyJob());
-  while (s.jobs.length > JOB_SLOTS()) {
+  while (s.jobs.length < jobSlotCount()) s.jobs.push(emptyJob());
+  while (s.jobs.length > jobSlotCount()) {
     const j = s.jobs.pop();
     const m = [...(s.team || []), ...(s.box || [])].find(x => x.uid === j.uid);
     if (m) {
@@ -439,7 +439,7 @@ provide({ maxHp }); /* to-module */
 function movesAt(lid, lvl) {
   const out = [];
   for (const [lv, mv] of LN[lid].learn) if (lv <= lvl && !out.includes(mv)) out.push(mv);
-  return out.slice(-SLOTS());
+  return out.slice(-moveSlotCount());
 }
 /* alpha 0.5: a Billie remembers where and when it joined you (shown in its details) */
 export function makeMon(sp, lvl, o = {}) {
@@ -466,16 +466,16 @@ export const billyName = m => m.nick || SP[m.sp].name;
 export const allMons = () => saveData.team.concat(saveData.box);
 export const findMon = id => allMons().find(m => m.uid === id);
 export function gainXp(m, amt, say) {
-  if (m.lvl >= MAXLV() || amt <= 0) return;
+  if (m.lvl >= maxLevel() || amt <= 0) return;
   m.xp += amt;
-  while (m.lvl < MAXLV() && m.xp >= xpFor(m.lvl + 1)) {
+  while (m.lvl < maxLevel() && m.xp >= xpFor(m.lvl + 1)) {
     const old = maxHp(m);
     m.lvl++;
     if (m.hp > 0) m.hp = Math.min(maxHp(m), m.hp + maxHp(m) - old);
     say(`${billyName(m)} grew to level ${m.lvl}.`, { k: 'lvl', uid: m.uid });
     for (const [lv, mv] of LN[SP[m.sp].line].learn) {
       if (lv !== m.lvl || m.moves.includes(mv)) continue;
-      if (m.moves.length < SLOTS()) {
+      if (m.moves.length < moveSlotCount()) {
         m.moves.push(mv);
         say(`${billyName(m)} learned ${MOVES[mv].n}.`);
       } else uiState.learnQ.push({ uid: m.uid, mv });
@@ -576,7 +576,7 @@ export function toTeam(m) {
 export function addMon(m) {
   saveData.caught[m.sp] = 1;
   saveData.seen[m.sp] = 1;
-  if (saveData.team.length < TEAM_MAX()) {
+  if (saveData.team.length < teamSize()) {
     saveData.team.push(m);
     return 'team';
   }
@@ -845,9 +845,9 @@ export function addSteps(n, quiet) {
 }
 
 /* ---------- Seed Rounds ---------- */
-export const EGG_SLOTS = () => Math.max(1, RULES.eggs.slots);
+export const eggSlotCount = () => Math.max(1, RULES.eggs.slots);
 function autoSlot() {
-  for (let sl = 0; sl < EGG_SLOTS(); sl++) {
+  for (let sl = 0; sl < eggSlotCount(); sl++) {
     if (saveData.eggs.some(e => e.slot === sl)) continue;
     const e = saveData.eggs.find(e => e.slot == null);
     if (e) e.slot = sl;

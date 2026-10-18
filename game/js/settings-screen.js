@@ -27,7 +27,6 @@ import { JOBS, MOVES, ROUTE, RULES, SP, STATUSN } from './game-data.js';
 import {
   SAVE_NEW_MSG,
   SAVE_OLD_MSG,
-  TEAM_MAX,
   escapeHtml,
   formatNumber,
   migrate,
@@ -37,6 +36,7 @@ import {
   saveData,
   setReducedMotion,
   setSaveData,
+  teamSize,
   today,
   uiState,
 } from './game-state.js';
@@ -112,7 +112,7 @@ function validSave(o) {
     !Array.isArray(o.team) ||
     !Array.isArray(o.box) ||
     !o.team.length ||
-    o.team.length > Math.max(6, TEAM_MAX()) ||
+    o.team.length > Math.max(6, teamSize()) ||
     o.box.length > 5000
   )
     return false;
