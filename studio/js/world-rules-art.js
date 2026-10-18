@@ -801,7 +801,6 @@ SECTIONS.rules = () => {
        help: 'XP to reach level L = factor × L³.',
      }),
      numberField('Highest level', `${pg}.maxLevel`, { min: 5, max: 250, step: 1 }),
-     numberField('Buddy steps per XP', `${pg}.buddyStepsPerXp`, { min: 1, max: 100, step: 1 }),
      numberField('Team size', `${pg}.teamSize`, { min: 1, max: 12, step: 1 }),
      numberField('Move slots', `${pg}.moveSlots`, { min: 1, max: 8, step: 1 }),
      ...R.progression.xpYield.map((v, i) =>

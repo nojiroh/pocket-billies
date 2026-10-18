@@ -12,16 +12,7 @@
  },
  "steps": {"stepsPerKm":1333,"goldOdds":512,"restCost":100,"alphaOdds":45},
  "encounters": {"route":4,"townGrass":2,"refillMs":60000,"prizePerLevel":20},
- "progression": {
-  "xpFactor": 0.8,
-  "maxLevel": 100,
-  "buddyStepsPerXp": 5,
-  "teamSize": 6,
-  "moveSlots": 4,
-  "xpYield": [55,120,190],
-  "trainerXpMult": 1.5,
-  "teamXpShare": 0.5
- },
+ "progression": {"xpFactor":0.8,"maxLevel":100,"teamSize":6,"moveSlots":4,"xpYield":[55,120,190],"trainerXpMult":1.5,"teamXpShare":0.5},
  "eggs": {
   "capacity": 8,
   "slots": 2,

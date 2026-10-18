@@ -74,7 +74,6 @@ export function newSave() {
     mapSeen: null,
     wild: {},
     buddy: null,
-    buddyRem: 0,
     flags: {},
     seats: [],
     visited: { [START_NODE]: 1 },
@@ -149,6 +148,7 @@ export function migrate(o) {
   /* steps no longer earn money */
   delete oldSave.day;
   delete oldSave.seFrac;
+  delete oldSave.buddyRem;
   if (!s.wild || typeof s.wild !== 'object') s.wild = {};
   for (const w of Object.values(s.wild)) w.list = (w.list || []).filter(q => SPECIES[q.sp]);
   s.eggs = s.eggs.filter(e => EGGS[e.tier]);
@@ -259,7 +259,7 @@ export function validSave(o) {
     Object.hasOwn(o, '__proto__')
   )
     return false;
-  if (!num(o.serial, 0, 1e12) || !num(o.buddyRem, 0, 1e12)) return false;
+  if (!num(o.serial, 0, 1e12)) return false;
   for (const m of o.team.concat(o.box))
     if (
       typeof (m.nick || '') !== 'string' ||

@@ -92,3 +92,17 @@ test('partner AI: in a double, two foes pile onto a fighter that is already goin
     without = piles('single');
   assert.ok(withPlan < without, `${withPlan} piles with the partner's plan, ${without} without`);
 });
+
+test('phase 08: your buddy gets the full XP of a win even when it sat out; the rest of the bench gets the share', () => {
+  const s = teamOfThree();
+  s.buddy = s.team[2].uid;
+  const q = { id: 'xp', sp: s.team[0].sp, lvl: 10, gold: false, no: 1 };
+  fn('encountersHere')().push(q);
+  fn('startWild')(q);
+  const xp = s.team.map(m => m.xp);
+  fn('award')(fighter(1));
+  const got = s.team.map((m, i) => m.xp - xp[i]);
+  assert.ok(got[0] > 0, 'the fighter got nothing');
+  assert.equal(got[2], got[0], `the buddy got ${got[2]}, the fighter ${got[0]}`);
+  assert.equal(got[1], Math.floor(got[0] * RULES.progression.teamXpShare));
+});

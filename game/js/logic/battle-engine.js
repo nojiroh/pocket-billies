@@ -600,8 +600,14 @@ export function award(e) {
     battleSay(`${billyName(m)} gained ${formatNumber(amt)} XP.`, { k: 'xp', si: k });
     gainXp(m, amt, battleSay);
   });
+  /* phase 08: your buddy gets the full amount even when it didn't fight (it got its XP from walking before) */
+  const bud = saveData.team.find(m => m.uid === saveData.buddy && !on.includes(m) && m.hp > 0 && m.job == null);
+  if (bud) {
+    battleSay(`${billyName(bud)} gained ${formatNumber(amt)} XP.`);
+    gainXp(bud, amt, battleSay);
+  }
   const share = Math.floor(amt * P.teamXpShare),
-    rest = saveData.team.filter(m => !on.includes(m) && m.hp > 0 && m.job == null);
+    rest = saveData.team.filter(m => !on.includes(m) && m !== bud && m.hp > 0 && m.job == null);
   if (rest.length && share > 0) {
     rest.forEach(m => gainXp(m, share, () => {}));
     battleSay(`The rest of the team gained ${formatNumber(share)} XP.`);

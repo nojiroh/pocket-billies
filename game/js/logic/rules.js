@@ -597,16 +597,10 @@ export function addSteps(n, quiet) {
   n = Math.floor(Number(n));
   if (!saveData.started || !Number.isFinite(n) || n <= 0 || n > 100000) return;
   saveData.totalSteps += n;
-  const bud = findBilly(saveData.buddy),
-    per = Math.max(1, RULES.progression.buddyStepsPerXp);
+  const bud = findBilly(saveData.buddy);
   if (bud) bud.bsteps = (bud.bsteps || 0) + n;
   /* v37: the rest of the party walks too, at half weight (for the Build path of a split evolution) */ for (const m of saveData.team)
     if (m !== bud) m.psteps = (m.psteps || 0) + n;
-  saveData.buddyRem += n;
-  const xp = Math.floor(saveData.buddyRem / per);
-  saveData.buddyRem -= xp * per;
-  const notes = [];
-  if (bud && xp > 0) gainXp(bud, xp, t => notes.push(t));
   saveData.eggs.forEach(e => {
     if (e.slot != null) e.prog = Math.min(EGGS[e.tier].need, e.prog + n);
   });
@@ -619,7 +613,6 @@ export function addSteps(n, quiet) {
     }
   });
   if (!quiet) toast(`+${formatNumber(n)} steps`);
-  notes.forEach(t => toast(t));
   save();
   if (!activeBattle) {
     render();

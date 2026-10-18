@@ -36,7 +36,6 @@ export const FIXTURE = {
     progression: {
       xpFactor: 0.8,
       maxLevel: 100,
-      buddyStepsPerXp: 5,
       teamSize: 6,
       moveSlots: 4,
       xpYield: [55, 120, 190],

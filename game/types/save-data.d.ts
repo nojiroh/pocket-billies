@@ -45,8 +45,6 @@ export interface SaveData {
   wild: Record<string, WildStock>;
   /** your buddy's uid */
   buddy: string | null;
-  /** steps toward the buddy's next XP */
-  buddyRem: number;
   /** trainers beaten (by id) and story flags: 1 */
   flags: Record<string, number>;
   /** badges (seat ids) */

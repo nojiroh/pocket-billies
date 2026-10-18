@@ -607,7 +607,6 @@ export interface Rules {
   progression: {
     xpFactor: number;
     maxLevel: number;
-    buddyStepsPerXp: number;
     teamSize: number;
     moveSlots: number;
     /** XP yield by stage */
