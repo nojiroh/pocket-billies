@@ -30,7 +30,7 @@ import {
   toast,
 } from './studio-app.js';
 import { fileToCanvas, markArt, pickFile } from './sprites.js';
-import { SCN, scD } from './map-editor.js';
+import { mapEditor, scD } from './map-editor.js';
 import { pedM } from './prop-editor.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -73,7 +73,7 @@ function vxeOwn(M) {
 }
 function vxeBump(M) {
   M.voxV = (M.voxV || 0) + 1;
-  if (typeof invalidatePropModel === 'function') invalidatePropModel('inline:' + SCN.ped + '#' + (M.voxV - 1));
+  if (typeof invalidatePropModel === 'function') invalidatePropModel('inline:' + mapEditor.ped + '#' + (M.voxV - 1));
   changed();
   commit(true);
 }
@@ -88,7 +88,7 @@ function pedVoxHTML(k) {
   <div class="seg-row"><button class="btn sm" data-act="vxeNew">Start a model from the picture</button><button class="btn sm subtle" data-act="vxeImport">Import a .vox</button></div>`;
   if (!rec) {
     setTimeout(() => {
-      if (SCN.ped === k && vxeRec(M)) render();
+      if (mapEditor.ped === k && vxeRec(M)) render();
     }, 400);
     return `${head}<p class="help">Loading ${esc(String(M.vox))}…</p>`;
   }
@@ -300,13 +300,13 @@ ACTIONS.vxeExport = () => {
   const b = new Blob([JSON.stringify(rec)], { type: 'application/json' }),
     a = document.createElement('a');
   a.href = URL.createObjectURL(b);
-  a.download = `${SCN.ped}.json`;
+  a.download = `${mapEditor.ped}.json`;
   a.click();
 };
 ACTIONS.vxeImgPick = async d => {
   const M = pedM(),
     rec = vxeOwn(M),
-    k = SCN.ped;
+    k = mapEditor.ped;
   if (!rec) return;
   const f = await pickFile('image/png');
   if (!f) return;
@@ -385,20 +385,20 @@ ACTIONS.vxeImport = async () => {
 /* any slider or field of the model: rebuild the mesh so the turntable follows */
 document.addEventListener('input', ev => {
   const t = ev.target;
-  if (!t || !t.dataset || !t.dataset.p || !SCN.ped) return;
-  if (!t.dataset.p.startsWith(`scenery.props.${SCN.ped}.vox`)) return;
+  if (!t || !t.dataset || !t.dataset.p || !mapEditor.ped) return;
+  if (!t.dataset.p.startsWith(`scenery.props.${mapEditor.ped}.vox`)) return;
   const M = pedM();
   if (!M) return;
   clearTimeout(VXE.t);
   VXE.t = setTimeout(() => {
     M.voxV = (M.voxV || 0) + 1;
-    if (typeof invalidatePropModel === 'function') invalidatePropModel('inline:' + SCN.ped + '#' + (M.voxV - 1));
+    if (typeof invalidatePropModel === 'function') invalidatePropModel('inline:' + mapEditor.ped + '#' + (M.voxV - 1));
   }, 60);
 });
 
 /* alpha 0.4: a layer that turns, or stops turning */
 ACTIONS.vxeSpin = d => {
-  const M = scD().props[SCN.ped],
+  const M = scD().props[mapEditor.ped],
     rec = M && vxeOwn(M);
   if (!rec) return;
   const l = rec.layers[+d.i];

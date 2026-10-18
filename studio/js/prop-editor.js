@@ -34,7 +34,7 @@ import {
   toast,
 } from './studio-app.js';
 import { atlasGet, fileToCanvas, markArt, pickFile } from './sprites.js';
-import { SCN, scArt, scD, scOpenPe } from './map-editor.js';
+import { mapEditor, scArt, scD, scOpenPe } from './map-editor.js';
 /* eslint-disable no-func-assign */
 expose({
   PED: [() => PED],
@@ -69,7 +69,7 @@ const PED_FX = [
   ['spray', 'Water spray', '#62C6F0'],
   ['sparkle', 'Sparkle', '#F6F0FF'],
 ];
-export const pedM = () => (SCN.ped ? scD().props[SCN.ped] : null);
+export const pedM = () => (mapEditor.ped ? scD().props[mapEditor.ped] : null);
 /* the turntable scene: a patch of grass with the prop in the middle */
 function pedScene(k) {
   const C = scD(),
@@ -412,7 +412,7 @@ function pedHit(M, p) {
 /* move the pixels inside a box out of the main picture onto a new layer (same size, so it lines up) */
 async function pedSplit(b) {
   const M = pedM(),
-    k = SCN.ped;
+    k = mapEditor.ped;
   if (!M || !b) return;
   const src = await atlasGet('art/' + M.img).catch(() => null);
   if (!src) return toast('Could not read the picture.', 'err');
@@ -593,7 +593,7 @@ function pedBind() {
   });
 }
 addEventListener('keydown', ev => {
-  if (!SCN.ped || PED.sel == null || ev.target.closest('input,textarea,select')) return;
+  if (!mapEditor.ped || PED.sel == null || ev.target.closest('input,textarea,select')) return;
   if (ev.key === 'Delete' || ev.key === 'Backspace') {
     const M = pedM();
     if (M && M.fx && M.fx[PED.sel]) {
@@ -609,7 +609,7 @@ addEventListener('keydown', ev => {
 /* ---------- turntable ---------- */
 async function pedMount() {
   const cv = $('#pedPv'),
-    k = SCN.ped,
+    k = mapEditor.ped,
     M = pedM();
   if (!cv || !M) return;
   const paths = scArt();
@@ -628,13 +628,13 @@ async function pedMount() {
     keys: () => false,
     onPick: () => {},
     onMove: () => {},
-    cap: () => (studioState.sec === 'scenes' && SCN.ped ? 40 : 0),
+    cap: () => (studioState.sec === 'scenes' && mapEditor.ped ? 40 : 0),
   }).then(() => {
     const l = $('#pedPvLoad');
     if (l) l.hidden = true;
   });
   frameTask('pedSpin', () => {
-    if (!SCN.ped || studioState.sec !== 'scenes') {
+    if (!mapEditor.ped || studioState.sec !== 'scenes') {
       frameStop('pedSpin');
       return;
     }
@@ -644,7 +644,7 @@ async function pedMount() {
 }
 /* ---------- actions ---------- */
 ACTIONS.pedOpen = d => {
-  SCN.ped = d.k;
+  mapEditor.ped = d.k;
   PED.sel = null;
   PED.layer = null;
   PED.zoom = 0;
@@ -656,7 +656,7 @@ ACTIONS.pedOpen = d => {
   }, 60);
 };
 ACTIONS.pedClose = () => {
-  SCN.ped = null;
+  mapEditor.ped = null;
   PED.sel = null;
   if (typeof walkRenderer !== 'undefined') {
     walkRenderer.yawT = 0;
@@ -717,7 +717,7 @@ ACTIONS.scGlowAdd2 = () => {
 };
 ACTIONS.pedLayerAdd = async d => {
   const M = pedM(),
-    k = SCN.ped;
+    k = mapEditor.ped;
   let c;
   if (d.from === 'png') {
     const f = await pickFile('image/png');
@@ -777,7 +777,7 @@ ACTIONS.pedLayerPx = d => {
   const M = pedM(),
     l = M.layers[+d.i];
   PED.layer = +d.i;
-  scOpenPe('art/' + l.img, { kind: 'prop', k: SCN.ped, layer: +d.i });
+  scOpenPe('art/' + l.img, { kind: 'prop', k: mapEditor.ped, layer: +d.i });
 };
 /* pictures made here but not saved yet come from the Studio's own copies, not the server */
 {
@@ -886,7 +886,7 @@ ACTIONS.pedPartsOn = () => {
   const im = artImage(M.img),
     w = im ? im.naturalWidth || im.width : 40,
     h = im ? im.naturalHeight || im.height : 40;
-  M.parts = clone(SOLID_PROP_PARTS[SCN.ped] || [{ r: [0, 0, w, h], k: 'block', d: 0.5 }]);
+  M.parts = clone(SOLID_PROP_PARTS[mapEditor.ped] || [{ r: [0, 0, w, h], k: 'block', d: 0.5 }]);
   changed();
   commit(true);
   render();
@@ -927,7 +927,7 @@ ACTIONS.pedPartDel = d => {
     const M = pedM(),
       cv = $('#pedCv');
     if (!M || !cv || typeof SOLID_PROP_PARTS === 'undefined') return;
-    const P = M.parts || SOLID_PROP_PARTS[SCN.ped];
+    const P = M.parts || SOLID_PROP_PARTS[mapEditor.ped];
     if (!P) return;
     const Bd = pedBounds(M),
       Z = PED.zoom,
