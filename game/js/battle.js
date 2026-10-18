@@ -11,7 +11,7 @@ import {
   battleSoundEffect,
   battleTipHide,
   battleTutor,
-  battleWeatherMult,
+  battleWeatherMultiplier,
   closeModal,
   jingle,
   modal,
@@ -356,7 +356,9 @@ function calcDamage(k, tk, mid, src) {
     }
   }
   const wx =
-    typeof battleWeatherMult === 'function' ? battleWeatherMult(M.t) : 1; /* v28: the weather where you stand */
+    typeof battleWeatherMultiplier === 'function'
+      ? battleWeatherMultiplier(M.t)
+      : 1; /* v28: the weather where you stand */
   return {
     dmg: Math.max(1, Math.floor(base * stab * te * roll * (crit ? BATTLE_RULES.critMult : 1) * mk * eco * wx)),
     te,
@@ -1860,7 +1862,7 @@ export function paintActions() {
           c = TYPE_COLORS[M.t],
           P = M.p ? M.p : M.fx && M.fx.vary ? 'Varies' : 'Status',
           stab = M.t !== 'None' && actorTypes(activeBattle.cur).includes(M.t);
-        return `<button class="mv" style="--tc:${c[0]};--tf:${c[1]}" data-a="bmove" data-m="${id}" data-tip="${escapeHtml(M.d)}"><span class="mv-top"><b>${escapeHtml(M.n)}</b><kbd>${n + 1}</kbd></span><span class="mv-meta"><span class="mv-ty">${M.t === 'None' ? 'Normal' : M.t}${stab ? ' ★' : ''}</span><span class="tnum">${P}${M.p ? ' pow' : ''}${M.p && typeof battleWeatherMult === 'function' ? (battleWeatherMult(M.t) > 1 ? ' ▲' : battleWeatherMult(M.t) < 1 ? ' ▼' : '') : ''}${M.c !== 'X' || M.a < 100 ? ` · ${M.a || 100}%` : ''}</span></span>${effectivenessLabel(id)}</button>`;
+        return `<button class="mv" style="--tc:${c[0]};--tf:${c[1]}" data-a="bmove" data-m="${id}" data-tip="${escapeHtml(M.d)}"><span class="mv-top"><b>${escapeHtml(M.n)}</b><kbd>${n + 1}</kbd></span><span class="mv-meta"><span class="mv-ty">${M.t === 'None' ? 'Normal' : M.t}${stab ? ' ★' : ''}</span><span class="tnum">${P}${M.p ? ' pow' : ''}${M.p && typeof battleWeatherMultiplier === 'function' ? (battleWeatherMultiplier(M.t) > 1 ? ' ▲' : battleWeatherMultiplier(M.t) < 1 ? ' ▼' : '') : ''}${M.c !== 'X' || M.a < 100 ? ` · ${M.a || 100}%` : ''}</span></span>${effectivenessLabel(id)}</button>`;
       })
       .join('')}</div>${backButtonHTML()}`;
   } else if (ph === 'target') {

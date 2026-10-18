@@ -28,17 +28,20 @@ import { soundEffect } from './sound.js';
 import { TALK, setTalkFolk, talk, talkFolk } from './talk.js';
 /* eslint-disable no-func-assign */
 expose({
+  CHALLENGE_KINDS: [() => CHALLENGE_KINDS],
   FURN: [() => FURN],
   HOME_SLOTS: [() => HOME_SLOTS],
   PHOTO_FILTERS: [() => PHOTO_FILTERS],
+  REQUEST_KINDS: [() => REQUEST_KINDS],
   STAMP_SPOTS: [() => STAMP_SPOTS],
-  X28_BWX: [() => X28_BWX],
-  X28_BWX_TEXT: [() => X28_BWX_TEXT],
-  X28_CH: [() => X28_CH],
-  X28_REQ: [() => X28_REQ],
+  WEATHER_BATTLE_NOTES: [() => WEATHER_BATTLE_NOTES],
+  WEATHER_TYPE_BOOSTS: [() => WEATHER_TYPE_BOOSTS],
   _homeApply: [() => _homeApply, v => (_homeApply = v)],
-  battleWeatherMult: [() => battleWeatherMult, v => ((battleWeatherMult = v), provide({ battleWeatherMult }))],
-  battleWx: [() => battleWx, v => (battleWx = v)],
+  battleWeather: [() => battleWeather, v => (battleWeather = v)],
+  battleWeatherMultiplier: [
+    () => battleWeatherMultiplier,
+    v => ((battleWeatherMultiplier = v), provide({ battleWeatherMultiplier })),
+  ],
   chalCard: [() => chalCard, v => (chalCard = v)],
   chalClaim: [() => chalClaim, v => (chalClaim = v)],
   chalHave: [() => chalHave],
@@ -55,23 +58,23 @@ expose({
   reqHere: [() => reqHere, v => (reqHere = v)],
   reqList: [() => reqList, v => (reqList = v)],
   reqTalk: [() => reqTalk, v => (reqTalk = v)],
+  seededRandom: [() => seededRandom, v => (seededRandom = v)],
   stampCount: [() => stampCount],
   stampDraw: [() => stampDraw, v => ((stampDraw = v), provide({ stampDraw }))],
   stampScenes: [() => stampScenes, v => (stampScenes = v)],
   stampSpots: [() => stampSpots, v => (stampSpots = v)],
   stampTile: [() => stampTile, v => (stampTile = v)],
   stampTotal: [() => stampTotal],
-  x28: [() => x28, v => (x28 = v)],
-  x28Event: [() => x28Event, v => ((x28Event = v), provide({ x28Event }))],
-  x28Reward: [() => x28Reward, v => (x28Reward = v)],
-  x28Rnd: [() => x28Rnd, v => (x28Rnd = v)],
-  x28TeamOf: [() => x28TeamOf],
-  x28Types: [() => x28Types],
+  teamBillyOfType: [() => teamBillyOfType],
+  thingsToDo: [() => thingsToDo, v => (thingsToDo = v)],
+  thingsToDoEvent: [() => thingsToDoEvent, v => ((thingsToDoEvent = v), provide({ thingsToDoEvent }))],
+  thingsToDoReward: [() => thingsToDoReward, v => (thingsToDoReward = v)],
+  typeIds: [() => typeIds],
 });
 /* eslint-enable no-func-assign */
-provide({ battleWeatherMult, reqAsker, stampDraw, x28Event });
+provide({ battleWeatherMultiplier, reqAsker, stampDraw, thingsToDoEvent });
 /* to-module: end */
-function x28() {
+function thingsToDo() {
   const X = saveData.x || (saveData.x = {});
   X.stamps = X.stamps || {};
   X.reqs = X.reqs || {};
@@ -79,7 +82,7 @@ function x28() {
   return X;
 }
 /* a seeded random sequence, so today's challenges and requests are the same however often you look */
-function x28Rnd(seed) {
+function seededRandom(seed) {
   let h = 2166136261;
   for (const c of String(seed)) {
     h ^= c.charCodeAt(0);
@@ -91,9 +94,9 @@ function x28Rnd(seed) {
     return ((h ^= h >>> 16) >>> 0) / 4294967296;
   };
 }
-const x28Types = () => (gameData.types || []).map(t => t.id);
+const typeIds = () => (gameData.types || []).map(t => t.id);
 /* money, and an item or some coins */
-function x28Reward(k = 1) {
+function thingsToDoReward(k = 1) {
   const R = [],
     m = Math.round(((150 + Math.random() * 350) * k) / 10) * 10;
   saveData.se += m;
@@ -117,7 +120,7 @@ function x28Reward(k = 1) {
 }
 
 /* ---------- daily challenges ---------- */
-const X28_CH = [
+const CHALLENGE_KINDS = [
   {
     k: 'steps',
     make: r => ({ need: [3000, 5000, 8000][Math.floor(r() * 3)] }),
@@ -127,7 +130,7 @@ const X28_CH = [
   {
     k: 'catchT',
     make: r => {
-      const T = x28Types();
+      const T = typeIds();
       return { need: 1, t: T[Math.floor(r() * T.length)] };
     },
     text: c => `Tax a ${c.t} Billie`,
@@ -137,11 +140,11 @@ const X28_CH = [
   { k: 'stamp', make: () => ({ need: 1 }), text: () => 'Find a gold stamp' },
 ];
 export function chalToday() {
-  const X = x28(),
+  const X = thingsToDo(),
     d = today();
   if (!X.chal || X.chal.date !== d) {
-    const r = x28Rnd('chal' + d),
-      pool = X28_CH.slice(),
+    const r = seededRandom('chal' + d),
+      pool = CHALLENGE_KINDS.slice(),
       list = [];
     while (list.length < 3 && pool.length) {
       const T = pool.splice(Math.floor(r() * pool.length), 1)[0];
@@ -152,9 +155,9 @@ export function chalToday() {
   return X.chal;
 }
 const chalHave = c => (c.k === 'steps' ? saveData.day.steps : c.have);
-const chalText = c => (X28_CH.find(t => t.k === c.k) || { text: () => c.k }).text(c);
+const chalText = c => (CHALLENGE_KINDS.find(t => t.k === c.k) || { text: () => c.k }).text(c);
 /* something happened: a catch (with its types), a win, a fish landed, a stamp found */
-function x28Event(k, o = {}) {
+function thingsToDoEvent(k, o = {}) {
   if (!saveData || !saveData.started) return;
   const C = chalToday();
   let ch = false;
@@ -171,7 +174,7 @@ function x28Event(k, o = {}) {
     }
   }
   if (k === 'catch')
-    for (const q of Object.values(x28().reqs))
+    for (const q of Object.values(thingsToDo().reqs))
       if (q.state === 'accepted' && q.k === 'catch' && (o.types || []).includes(q.t)) {
         q.have = (q.have || 0) + 1;
         ch = true;
@@ -193,14 +196,14 @@ function chalClaim(i) {
   const c = chalToday().list[+i];
   if (!c || c.claimed || chalHave(c) < c.need) return;
   c.claimed = true;
-  const got = x28Reward(1.4);
+  const got = thingsToDoReward(1.4);
   save();
   render();
   toast(`Reward: ${got}.`);
 }
 
 /* ---------- townsfolk with requests ---------- */
-const X28_REQ = {
+const REQUEST_KINDS = {
   show: q => `Do you have a ${q.t} Billie with you? I’ve always wanted to see one up close.`,
   steps: q =>
     `Could you take my letter for a walk? It needs ${formatNumber(q.n)} steps of fresh air. Bring it back to me after.`,
@@ -209,13 +212,13 @@ const X28_REQ = {
 function reqHere(node = saveData.route.node) {
   const R = LOCATIONS[node];
   if (!R || !R.town || !saveData.started) return null;
-  const X = x28(),
+  const X = thingsToDo(),
     d = today();
   let q = X.reqs[node];
   if (!q || (q.date !== d && q.state !== 'accepted')) {
-    const r = x28Rnd('req' + node + d),
-      T = x28Types(),
-      ks = Object.keys(X28_REQ);
+    const r = seededRandom('req' + node + d),
+      T = typeIds(),
+      ks = Object.keys(REQUEST_KINDS);
     q = X.reqs[node] = {
       date: d,
       k: ks[Math.floor(r() * ks.length)],
@@ -234,7 +237,7 @@ function reqAsker() {
   if (!q || q.state === 'done') return null;
   return walkView.folk[0];
 }
-const x28TeamOf = t =>
+const teamBillyOfType = t =>
   saveData.team.find(m => m.hp > 0 && SPECIES[m.sp].types.includes(t)) ||
   saveData.team.find(m => SPECIES[m.sp].types.includes(t));
 async function reqTalk(f) {
@@ -248,7 +251,7 @@ async function reqTalk(f) {
   if (!q) return;
   const finish = async line => {
     q.state = 'done';
-    const got = x28Reward(1.2);
+    const got = thingsToDoReward(1.2);
     save();
     await talk([
       [who, `[happy] ${line}`],
@@ -258,10 +261,10 @@ async function reqTalk(f) {
     render();
   };
   if (q.state === 'open') {
-    await talk([[who, X28_REQ[q.k](q)]]);
+    await talk([[who, REQUEST_KINDS[q.k](q)]]);
     f.wait = 2;
     if (q.k === 'show') {
-      const m = x28TeamOf(q.t);
+      const m = teamBillyOfType(q.t);
       modal({
         title: m ? `Show ${escapeHtml(billyName(m))}?` : `No ${escapeHtml(q.t)} Billie with you`,
         html: m
@@ -313,7 +316,7 @@ async function reqTalk(f) {
       if ((q.have || 0) >= 1) return finish(`You taxed one! A real ${q.t} Billie. I’ll tell everyone.`);
       await talk([[who, `Still hoping you’ll tax a ${q.t} Billie for me.`]]);
     } else if (q.k === 'show') {
-      const m = x28TeamOf(q.t);
+      const m = teamBillyOfType(q.t);
       if (m) return finish(`Wow, ${billyName(m)}! Thank you for showing me.`);
       await talk([[who, `I’d still love to see a ${q.t} Billie.`]]);
     }
@@ -322,7 +325,7 @@ async function reqTalk(f) {
 }
 /* requests you've taken on, wherever you are */
 export function reqList() {
-  const X = x28();
+  const X = thingsToDo();
   return Object.entries(X.reqs)
     .filter(([, q]) => q.state === 'accepted')
     .map(([n, q]) => {
@@ -346,7 +349,7 @@ function stampScenes() {
   return [...new Set(LOCATIONS.map(r => r.scene).filter(id => id && gameData.scenes[id]))];
 }
 const stampTotal = () => stampScenes().length * 2;
-export const stampCount = () => Object.keys(x28().stamps).length;
+export const stampCount = () => Object.keys(thingsToDo().stamps).length;
 /* where they lie: worked out once per place, on open ground you can walk to, away from where you arrive */
 function stampSpots() {
   if (typeof uiState !== 'undefined' && uiState.inside) return [];
@@ -357,7 +360,7 @@ function stampSpots() {
   if (!sc || !id || sc.test || /^int_/.test(id) || !stampScenes().includes(id)) return [];
   if (STAMP_SPOTS[id])
     return o[0] || o[1] ? STAMP_SPOTS[id].map(p => [p[0] + o[0], p[1] + o[1], ...p.slice(2)]) : STAMP_SPOTS[id];
-  const r = x28Rnd('stamp' + id),
+  const r = seededRandom('stamp' + id),
     hub = mapHub(sc),
     out = [];
   for (let k = 0; k < 80 && out.length < 2; k++) {
@@ -380,7 +383,7 @@ function stampSpots() {
 /* drawn by the walk scene's effects pass: a gold glint you pick up by walking over it */
 function stampDraw(quad, glows, t) {
   if (!saveData || !saveData.started || walkRenderer.bt || uiState.bench) return;
-  const X = x28(),
+  const X = thingsToDo(),
     P = walkView.pl,
     sp = stampSpots();
   sp.forEach((p, i) => {
@@ -394,7 +397,7 @@ function stampDraw(quad, glows, t) {
       X.stamps[key] = today();
       const n = stampCount();
       if (typeof soundEffect === 'function') soundEffect('coin');
-      x28Event('stamp');
+      thingsToDoEvent('stamp');
       let msg = `Gold stamp found! ${n} of ${stampTotal()}.`;
       if (n % 3 === 0) {
         const nu = FURN.find(f => !X.home.own.includes(f[0]));
@@ -460,7 +463,7 @@ function _homeApply() {
   const sc = gameData.scenes.int_home;
   if (!sc) return;
   if (!sc.props0) sc.props0 = (sc.props || []).slice();
-  const X = x28();
+  const X = thingsToDo();
   sc.props = sc.props0.concat(
     HOME_SLOTS.map((s, i) => {
       const k = X.home.slots[i];
@@ -469,7 +472,7 @@ function _homeApply() {
   );
 }
 export function homeDecorate() {
-  const X = x28(),
+  const X = thingsToDo(),
     own = X.home.own;
   const row = (s, i) => {
     const opts = own.filter(k => furnFits(k, s));
@@ -493,7 +496,7 @@ export function homeDecorate() {
 document.addEventListener('change', ev => {
   const i = ev.target && ev.target.dataset && ev.target.dataset.home;
   if (i == null) return;
-  const X = x28();
+  const X = thingsToDo();
   if (ev.target.value) X.home.slots[i] = ev.target.value;
   else delete X.home.slots[i];
   homeApply();
@@ -612,7 +615,7 @@ document.addEventListener('click', ev => {
 });
 
 /* ---------- battles feel the weather ---------- */
-const X28_BWX = {
+const WEATHER_TYPE_BOOSTS = {
   rain: { Water: 1.2, Fire: 0.8 },
   storm: { Electric: 1.25, Water: 1.15, Fire: 0.8 },
   snow: { Steel: 1.1, Grass: 0.9 },
@@ -621,7 +624,7 @@ const X28_BWX = {
   sunny: { Fire: 1.15, Grass: 1.1, Water: 0.95 },
   night: { Psychic: 1.15, Dragon: 1.1 },
 };
-const X28_BWX_TEXT = {
+const WEATHER_BATTLE_NOTES = {
   rain: 'It’s raining: Water moves hit harder and Fire moves fizzle.',
   storm: 'A storm is raging: Electric and Water moves are stronger, Fire weaker.',
   snow: 'Snow is falling: Steel moves are a little stronger, Grass a little weaker.',
@@ -630,7 +633,7 @@ const X28_BWX_TEXT = {
   sunny: 'The sun is out: Fire and Grass moves are a little stronger.',
   night: 'It’s night: Psychic and Dragon moves are a little stronger.',
 };
-function battleWx() {
+function battleWeather() {
   if (typeof activeBattle === 'undefined' || !activeBattle) return null;
   if (activeBattle.wx !== undefined) return activeBattle.wx;
   if (typeof environmentState !== 'function' || !environment.on || (RULES.env && RULES.env.battleOff))
@@ -639,11 +642,11 @@ function battleWx() {
   if (!sc || sc.indoor) return (activeBattle.wx = null);
   const st = environmentState(sc),
     k = st.night > 0.5 ? (st.wx === 'clear' ? 'night' : st.wx) : st.wx === 'clear' ? 'sunny' : st.wx,
-    m = Object.assign({}, X28_BWX[k] || {}, ((RULES.env || {}).battle || {})[k] || {});
+    m = Object.assign({}, WEATHER_TYPE_BOOSTS[k] || {}, ((RULES.env || {}).battle || {})[k] || {});
   return (activeBattle.wx = Object.keys(m).length ? { k, m } : null);
 }
-function battleWeatherMult(t) {
-  const w = battleWx();
+function battleWeatherMultiplier(t) {
+  const w = battleWeather();
   return (w && w.m[t]) || 1;
 }
 /* hooks into the rest of the game: a weather line when a battle opens, wins and catches for the challenges, fish landed */
@@ -652,8 +655,8 @@ function battleWeatherMult(t) {
     const ob = openBattle;
     setOpenBattle(function () {
       try {
-        const w = battleWx();
-        if (w && X28_BWX_TEXT[w.k]) battleSay(X28_BWX_TEXT[w.k]);
+        const w = battleWeather();
+        if (w && WEATHER_BATTLE_NOTES[w.k]) battleSay(WEATHER_BATTLE_NOTES[w.k]);
       } catch (e) {}
       return ob.apply(this, arguments);
     });
@@ -667,12 +670,12 @@ function battleWeatherMult(t) {
         o = activeBattle && activeBattle.over;
         const f = activeBattle && activeBattle.sides && activeBattle.sides[1] && activeBattle.sides[1].team[0];
         types = f ? SPECIES[f.sp].types : null;
-        if (activeBattle && activeBattle.fished && o === 'caught') x28Event('fish');
+        if (activeBattle && activeBattle.fished && o === 'caught') thingsToDoEvent('fish');
       } catch (e) {}
       const r = eb.apply(this, arguments);
       try {
-        if (o === 'win') x28Event('win');
-        if (o === 'caught') x28Event('catch', { types: types || [] });
+        if (o === 'win') thingsToDoEvent('win');
+        if (o === 'caught') thingsToDoEvent('catch', { types: types || [] });
       } catch (e) {}
       return r;
     });
@@ -691,7 +694,7 @@ setInterval(() => {
   if (!el) return;
   const w =
       typeof activeBattle !== 'undefined' && activeBattle && !(typeof walkView !== 'undefined' && walkView.battle)
-        ? battleWx()
+        ? battleWeather()
         : null,
     k = w ? w.k : '';
   if (el.dataset.wx !== k) el.dataset.wx = k;

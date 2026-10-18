@@ -793,7 +793,7 @@ def desktop_steps(b, base, R):
         go_scene(pg, home); time.sleep(1.5)
         pg.evaluate("uiState.toastQ=[];(()=>{const p=walkView.sc.props.find(p=>p.act==='home'),C=walkData().sc,g=actionSpot(p,C.props[p.k],C.ppu||34);walkView.pl.route=null;walkView.pl.x=g[0];walkView.pl.z=g[1];walkPick({k:'act',p,act:'home'})})();0")
         if not until(pg, "walkView.ready&&(walkView.id==='int_home'||(walkView.sc&&walkView.sc.roomOf==='int_home'))", 60): raise Exception('your room didn’t open')
-        pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();x28().home.slots[5]='table_round';x28().home.slots[10]='rug_round';homeApply();0"); time.sleep(2.5); shot(pg, 'room-home')
+        pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();thingsToDo().home.slots[5]='table_round';thingsToDo().home.slots[10]='rug_round';homeApply();0"); time.sleep(2.5); shot(pg, 'room-home')
         if pg.evaluate("gameData.scenes.int_home.props.length") < 2: raise Exception('furniture didn’t appear in your room')
         pg.evaluate("leaveRoom();0"); until(pg, f"walkView.ready&&!walkView.sc.roomRect&&(walkView.id===LOCATIONS[{home}].scene||(walkView.sc&&walkView.sc.baseId===LOCATIONS[{home}].scene))", 30); time.sleep(1.5)
         # a photo
@@ -814,7 +814,7 @@ def desktop_steps(b, base, R):
             out.append(f'climbed a {r[3]} m ladder')
         # rain in battle
         go_scene(pg, 0); pg.evaluate("environment.force={time:15,weather:'rain'};saveData.preferences.battleStage='classic';const q={id:'twx',sp:'knight1',lvl:8,gold:false,no:1};saveData.queue=[q];saveData.team.forEach(m=>{m.hp=maxHp(m)});startWild(q);0")
-        wait_phase(pg, sec=60); bw = pg.evaluate("(()=>{const w=battleWx();return w?[w.k,battleWeatherMult('Water'),battleWeatherMult('Fire'),document.getElementById('camWorld')?document.getElementById('camWorld').dataset.wx:''] :null})()")
+        wait_phase(pg, sec=60); bw = pg.evaluate("(()=>{const w=battleWeather();return w?[w.k,battleWeatherMultiplier('Water'),battleWeatherMultiplier('Fire'),document.getElementById('camWorld')?document.getElementById('camWorld').dataset.wx:''] :null})()")
         time.sleep(1); shot(pg, 'battle-rain'); pg.evaluate("stopTimers();activeBattle=null;battleStageStop();saveData.preferences.battleStage='scene';environment.force=null;render();0")
         if not bw or bw[0] != 'rain' or bw[1] <= 1 or bw[2] >= 1: raise Exception(f'rain didn’t change the battle ({bw})')
         out.append(f'rain in battle: Water ×{bw[1]}, Fire ×{bw[2]}')
