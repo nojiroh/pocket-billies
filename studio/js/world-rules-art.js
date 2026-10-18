@@ -34,7 +34,7 @@ import {
   uniqueKey,
 } from './studio-app.js';
 import { fileToCanvas, loadImage, markArt, mountPreviews, pickFile, spritePreviewHTML } from './sprites.js';
-import { RAR_NAMES } from './data-editors.js';
+import { RARITY_LABELS } from './data-editors.js';
 /* eslint-disable no-func-assign */
 expose({
   AMBS: [() => AMBS],
@@ -717,7 +717,7 @@ SECTIONS.rules = () => {
     .map(i => numberField(D.items[i].n, `${s}.items.${i}`, { opt: 1, min: 0, step: 1 }))
     .join('')}</div>`;
   const rar = `<div class="grid">${Object.keys(R.catching.rarity)
-    .map(k => numberField(`${RAR_NAMES[k] || k}`, `${ca}.rarity.${k}`, { min: 0, max: 1, step: 0.01 }))
+    .map(k => numberField(`${RARITY_LABELS[k] || k}`, `${ca}.rarity.${k}`, { min: 0, max: 1, step: 0.01 }))
     .join(
       ''
     )}${R.catching.evolved.map((v, i) => numberField(`Evolved stage ${i + 2}`, `${ca}.evolved.${i}`, { min: 0, max: 1, step: 0.01 })).join('')}</div>`;
@@ -725,7 +725,7 @@ SECTIONS.rules = () => {
     .map(([k, v]) =>
       v.totals
         .map((t, i) =>
-          numberField(`${RAR_NAMES[k] || k} · stage ${i + 1}`, `rarities.${k}.totals.${i}`, {
+          numberField(`${RARITY_LABELS[k] || k} · stage ${i + 1}`, `rarities.${k}.totals.${i}`, {
             min: 50,
             max: 900,
             step: 5,

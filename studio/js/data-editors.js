@@ -63,28 +63,28 @@ import {
 } from './sprites.js';
 /* eslint-disable no-func-assign */
 expose({
-  CAT: [() => CAT],
-  EVO_KINDS: [() => EVO_KINDS],
+  EVOLUTION_KINDS: [() => EVOLUTION_KINDS],
   FX_ICONS: [() => FX_ICONS],
   ITEM_ICONS: [() => ITEM_ICONS],
   LISTS: [() => LISTS],
+  MOVE_CATEGORIES: [() => MOVE_CATEGORIES],
   PASSIVES: [() => PASSIVES],
-  RAR_NAMES: [() => RAR_NAMES],
+  RARITY_LABELS: [() => RARITY_LABELS],
   STAGE_LABEL: [() => STAGE_LABEL],
   baseStats: [() => baseStats, v => (baseStats = v)],
   cloneSpeciesArt: [() => cloneSpeciesArt, v => (cloneSpeciesArt = v)],
-  curLine: [() => curLine],
-  evoRow: [() => evoRow, v => (evoRow = v)],
-  lineIdx: [() => lineIdx],
+  evolutionRowHTML: [() => evolutionRowHTML, v => (evolutionRowHTML = v)],
+  lineIndexOf: [() => lineIndexOf],
   personLook: [() => personLook, v => (personLook = v)],
-  personPrev: [() => personPrev, v => (personPrev = v)],
+  personPreviewHTML: [() => personPreviewHTML, v => (personPreviewHTML = v)],
   poolName: [() => poolName],
-  poolPct: [() => poolPct],
+  poolPercent: [() => poolPercent],
   readPathBeforeShopThanks: [() => readPathBeforeShopThanks],
   readPathBeforeTrainerLines: [() => readPathBeforeTrainerLines],
   refsTo: [() => refsTo, v => (refsTo = v)],
   removeRefs: [() => removeRefs, v => (removeRefs = v)],
   renameType: [() => renameType, v => (renameType = v)],
+  selectedLineIndex: [() => selectedLineIndex],
   statsCard: [() => statsCard, v => (statsCard = v)],
   whereCard: [() => whereCard, v => (whereCard = v)],
   writePathBeforeShopThanks: [() => writePathBeforeShopThanks],
@@ -93,17 +93,17 @@ expose({
 /* eslint-enable no-func-assign */
 /* to-module: end */
 const STAGE_LABEL = ['Stage 1', 'Stage 2', 'Stage 3', 'Stage 4'];
-export const RAR_NAMES = {
+export const RARITY_LABELS = {
   starter: 'Starter',
   common: 'Common',
   uncommon: 'Uncommon',
   rare: 'Rare',
   mythical: 'Mythical',
 };
-const lineIdx = id => studioState.D.lines.findIndex(l => l.id === id);
-export const curLine = () => {
+const lineIndexOf = id => studioState.D.lines.findIndex(l => l.id === id);
+export const selectedLineIndex = () => {
   const D = studioState.D;
-  let i = lineIdx(studioState.sel.line);
+  let i = lineIndexOf(studioState.sel.line);
   if (i < 0) {
     i = 0;
     studioState.sel.line = D.lines[0] && D.lines[0].id;
@@ -153,7 +153,7 @@ LISTS.lq = () => {
 };
 SECTIONS.billionaires = () => {
   const D = studioState.D,
-    li = curLine(),
+    li = selectedLineIndex(),
     L = D.lines[li],
     p = `lines.${li}`,
     st = Math.min(studioState.sel.stage || 0, L.names.length - 1),
@@ -214,11 +214,11 @@ SECTIONS.billionaires = () => {
       ? '<p class="help">A single-stage Billie. Add a stage below to make it evolve.</p>'
       : L.names
           .slice(0, -1)
-          .map((n, i) => evoRow(L, li, i))
+          .map((n, i) => evolutionRowHTML(L, li, i))
           .join('');
   const where = whereCard(L, li);
   return `<div class="split"><aside class="list-col"><div class="list-head"><input type="search" placeholder="Search name, id or type" data-search="lq" data-list="lineList" value="${esc(studioState.sel.lq || '')}"><button class="btn primary" data-act="newLine">+ New Billie</button></div><div class="llist" id="lineList">${LISTS.lq()}</div></aside>
- <div class="ed-col"><div class="ed-head"><div><small class="mono">${esc(L.id)} · ${RAR_NAMES[L.rar] || L.rar}</small><h2>${esc(L.names.join(' → '))}</h2></div><div class="seg-row"><button class="btn subtle" data-act="lineMove" data-d="-1" title="Earlier in the Field Guide">↑</button><button class="btn subtle" data-act="lineMove" data-d="1" title="Later in the Field Guide">↓</button><button class="btn subtle" data-act="lineDup">Duplicate</button><button class="btn danger" data-act="lineDel">Delete</button></div></div>
+ <div class="ed-col"><div class="ed-head"><div><small class="mono">${esc(L.id)} · ${RARITY_LABELS[L.rar] || L.rar}</small><h2>${esc(L.names.join(' → '))}</h2></div><div class="seg-row"><button class="btn subtle" data-act="lineMove" data-d="-1" title="Earlier in the Field Guide">↑</button><button class="btn subtle" data-act="lineMove" data-d="1" title="Later in the Field Guide">↓</button><button class="btn subtle" data-act="lineDup">Duplicate</button><button class="btn danger" data-act="lineDel">Delete</button></div></div>
  <div class="seg-row tabs">${stageTabs}<button class="seg add" data-act="stageAdd" title="Add an evolution stage (copies the last stage’s art)">+ Stage</button>${L.names.length > 1 ? `<button class="seg" data-act="stageDel" title="Remove the last stage">− Last stage</button>` : ''}</div>
  ${card('Sprite', prev, { cls: 'sprite-card' })}${card(`${STAGE_LABEL[st]} details`, ident)}${stats}${card('Moves it learns', learn, { sub: 'Moves unlock when it reaches that level. It keeps the last ' + (D.rules.progression.moveSlots || 4) + ' it learned unless you choose.' })}
  ${card('Evolution', evo)}${where}</div></div>`;
@@ -240,7 +240,7 @@ function statsCard(L, li) {
         selectField(
           'Rarity',
           `${p}.rar`,
-          Object.keys(D.rarities).map(k => [k, RAR_NAMES[k] || k]),
+          Object.keys(D.rarities).map(k => [k, RARITY_LABELS[k] || k]),
           { rr: 1, help: 'Sets the total stat points per stage and the base tax rate.' }
         )
       ) +
@@ -259,7 +259,7 @@ studioState.hooks.billionaires = path => {
     if (!L.types[+m[2]].length) L.types[+m[2]] = ['None'];
   }
   if (/^lines\.\d+\.(prof|rar|base)/.test(path)) {
-    const li = curLine(),
+    const li = selectedLineIndex(),
       L = studioState.D.lines[li],
       t = $('#statTable');
     if (t && !L.base) {
@@ -277,7 +277,7 @@ studioState.hooks.billionaires = path => {
     }
   }
 };
-const EVO_KINDS = [
+const EVOLUTION_KINDS = [
   ['lvl', 'Reaches a level'],
   ['buddy', 'Walk with it as your buddy'],
   ['item', 'Use an item on it'],
@@ -287,7 +287,7 @@ const EVO_KINDS = [
   ['streak', 'Win battles in a row as lead'],
   ['rename', 'New nickname'],
 ];
-function evoRow(L, li, i) {
+function evolutionRowHTML(L, li, i) {
   const p = `lines.${li}.evo.${i}`,
     e = (L.evo || [])[i] || { k: 'lvl', at: 16 },
     k = e.k;
@@ -316,7 +316,7 @@ function evoRow(L, li, i) {
       numberField('Minimum level', `${p}.min`, { min: 1, max: 100, step: 1 }),
     rename: () => numberField('Minimum level', `${p}.min`, { min: 1, max: 100, step: 1 }),
   };
-  return `<div class="evo-row"><span class="evo-a">${esc(L.names[i])} <b>→</b> ${esc(L.names[i + 1])}</span>${grid(selectField('How', `${p}.k`, EVO_KINDS, { rr: 1 }), (f[k] || f.lvl)())}</div>`;
+  return `<div class="evo-row"><span class="evo-a">${esc(L.names[i])} <b>→</b> ${esc(L.names[i + 1])}</span>${grid(selectField('How', `${p}.k`, EVOLUTION_KINDS, { rr: 1 }), (f[k] || f.lvl)())}</div>`;
 }
 function whereCard(L, li) {
   const D = studioState.D,
@@ -326,14 +326,14 @@ function whereCard(L, li) {
     P.list.forEach(([id, w], j) => {
       if (ids.includes(id))
         rows.push(
-          `<tr><td>Wild · ${esc(poolName(pk))}</td><td>${esc(speciesName(id))}</td><td><input type="number" min="1" data-p="pools.${pk}.list.${j}.1" data-k="num" value="${w}"></td><td>${poolPct(P, j)}</td><td><button class="x" data-act="whereDel" data-kind="pools" data-k="${pk}" data-j="${j}">✕</button></td></tr>`
+          `<tr><td>Wild · ${esc(poolName(pk))}</td><td>${esc(speciesName(id))}</td><td><input type="number" min="1" data-p="pools.${pk}.list.${j}.1" data-k="num" value="${w}"></td><td>${poolPercent(P, j)}</td><td><button class="x" data-act="whereDel" data-kind="pools" data-k="${pk}" data-j="${j}">✕</button></td></tr>`
         );
     });
   for (const [ek, E] of Object.entries(D.eggs))
     E.list.forEach(([id, w], j) => {
       if (ids.includes(id))
         rows.push(
-          `<tr><td>Egg · ${ek} km</td><td>${esc(speciesName(id))}</td><td><input type="number" min="1" data-p="eggs.${ek}.list.${j}.1" data-k="num" value="${w}"></td><td>${poolPct(E, j)}</td><td><button class="x" data-act="whereDel" data-kind="eggs" data-k="${ek}" data-j="${j}">✕</button></td></tr>`
+          `<tr><td>Egg · ${ek} km</td><td>${esc(speciesName(id))}</td><td><input type="number" min="1" data-p="eggs.${ek}.list.${j}.1" data-k="num" value="${w}"></td><td>${poolPercent(E, j)}</td><td><button class="x" data-act="whereDel" data-kind="eggs" data-k="${ek}" data-j="${j}">✕</button></td></tr>`
         );
     });
   const add = `<div class="seg-row"><select id="whereTo">${Object.keys(D.pools)
@@ -353,7 +353,7 @@ const poolName = k => {
   const r = studioState.D.route.filter(x => x.pool === k).map(x => x.name);
   return r.length ? `${k} (${r.join(', ')})` : k;
 };
-const poolPct = (P, j) => {
+const poolPercent = (P, j) => {
   const t = P.list.reduce((a, b) => a + (+b[1] || 0), 0);
   return t ? Math.round(((+P.list[j][1] || 0) / t) * 100) + '%' : '—';
 };
@@ -376,26 +376,26 @@ ACTIONS.anim = d => {
 ACTIONS.pixels = d => openPixelEditor(d.sp, 'front', !!studioState.sel.gold);
 ACTIONS.skeleton = d => openSkeleton(d.sp, 'front');
 ACTIONS.learnAdd = () => {
-  const L = studioState.D.lines[curLine()],
+  const L = studioState.D.lines[selectedLineIndex()],
     last = L.learn[L.learn.length - 1];
   L.learn.push([Math.min(100, (last ? last[0] : 1) + 4), Object.keys(studioState.D.moves)[0]]);
   changed();
   render();
 };
 ACTIONS.learnDel = d => {
-  const L = studioState.D.lines[curLine()];
+  const L = studioState.D.lines[selectedLineIndex()];
   L.learn.splice(+d.i, 1);
   changed();
   render();
 };
 ACTIONS.learnSort = () => {
-  const L = studioState.D.lines[curLine()];
+  const L = studioState.D.lines[selectedLineIndex()];
   L.learn.sort((a, b) => a[0] - b[0]);
   changed();
   render();
 };
 ACTIONS.baseOn = () => {
-  const L = studioState.D.lines[curLine()];
+  const L = studioState.D.lines[selectedLineIndex()];
   L.base = L.names.map((n, st) => baseStats(L, st).slice());
   changed();
   render();
@@ -403,7 +403,7 @@ ACTIONS.baseOn = () => {
 ACTIONS.baseOff = async () => {
   if (!(await ask('Switch back to rarity totals and the stat profile? The exact numbers will be lost.', 'Switch back')))
     return;
-  delete studioState.D.lines[curLine()].base;
+  delete studioState.D.lines[selectedLineIndex()].base;
   changed();
   render();
 };
@@ -421,7 +421,7 @@ ACTIONS.whereAdd = () => {
 };
 ACTIONS.lineMove = d => {
   const D = studioState.D,
-    i = curLine(),
+    i = selectedLineIndex(),
     j = i + +d.d;
   if (j < 0 || j >= D.lines.length) return;
   [D.lines[i], D.lines[j]] = [D.lines[j], D.lines[i]];
@@ -430,7 +430,7 @@ ACTIONS.lineMove = d => {
 };
 ACTIONS.lineDel = async () => {
   const D = studioState.D,
-    i = curLine(),
+    i = selectedLineIndex(),
     L = D.lines[i],
     ids = L.names.map((n, k) => L.id + k);
   const refs = refsTo(ids);
@@ -481,7 +481,7 @@ async function cloneSpeciesArt(fromId, toId, hue = 0, sat = 1) {
 }
 ACTIONS.stageAdd = async () => {
   const D = studioState.D,
-    L = D.lines[curLine()],
+    L = D.lines[selectedLineIndex()],
     n = L.names.length;
   if (n >= 4) return toast('Four stages is the most a line can have.');
   const from = L.id + (n - 1),
@@ -512,7 +512,7 @@ ACTIONS.stageAdd = async () => {
 };
 ACTIONS.stageDel = async () => {
   const D = studioState.D,
-    L = D.lines[curLine()],
+    L = D.lines[selectedLineIndex()],
     n = L.names.length - 1,
     id = L.id + n;
   if (
@@ -536,13 +536,13 @@ ACTIONS.stageDel = async () => {
 };
 ACTIONS.lineDup = async () => {
   const D = studioState.D,
-    L = D.lines[curLine()],
+    L = D.lines[selectedLineIndex()],
     id = uniqueKey(L.id, k => D.lines.some(l => l.id === k));
   const N = clone(L);
   N.id = id;
   N.names = N.names.map(n => n + ' II');
   for (let i = 0; i < L.names.length; i++) await cloneSpeciesArt(L.id + i, id + i, 40);
-  D.lines.splice(curLine() + 1, 0, N);
+  D.lines.splice(selectedLineIndex() + 1, 0, N);
   studioState.sel.line = id;
   changed();
   changed(true);
@@ -615,7 +615,7 @@ ACTIONS.newLine = async () => {
    .join('')}</select></label>
  <label class="fld"><span>Rarity</span><select id="nwRar">${Object.keys(D.rarities)
    .filter(k => k !== 'starter')
-   .map(k => `<option value="${k}">${RAR_NAMES[k] || k}</option>`)
+   .map(k => `<option value="${k}">${RARITY_LABELS[k] || k}</option>`)
    .join('')}</select></label>
  <label class="fld nw-copy"><span>Color shift <output id="nwH">60°</output></span><input id="nwHue" type="range" min="-180" max="180" value="60"></label>
  <label class="fld nw-blank"><span>Body color</span><input id="nwCol" type="color" value="#6FA8DC"></label><label class="fld nw-blank"><span>Stages</span><select id="nwStages"><option value="1">1 (doesn’t evolve)</option><option value="2">2</option><option value="3" selected>3</option></select></label></div>`;
@@ -769,7 +769,7 @@ ACTIONS.newLine = async () => {
   if (r.from.startsWith('blank:')) setTimeout(() => openSkeleton(id + '0', 'front'), 300);
 };
 /* ================= MOVES ================= */
-const CAT = [
+const MOVE_CATEGORIES = [
   ['H', 'Physical · Attack vs Defense'],
   ['S', 'Special · Sp. Atk vs Sp. Def'],
   ['X', 'Status · no damage'],
@@ -824,7 +824,7 @@ SECTIONS.moves = () => {
   ${checkboxField('Scatters sharp stones on the other side', `${p}.fx.rent`, { num: 1 })}${checkboxField(`Starts a sandstorm (${esc(D.rules.battle.shockType)} moves hit harder)`, `${p}.fx.market`, { num: 1 })}</div>`;
   return `<div class="split"><aside class="list-col"><div class="list-head"><input type="search" placeholder="Search moves" data-search="mq" data-list="moveList" value="${esc(studioState.sel.mq || '')}"><button class="btn primary" data-act="moveNew">+ New move</button></div><div class="llist" id="moveList">${LISTS.mq()}</div></aside>
  <div class="ed-col"><div class="ed-head"><div><small class="mono">${esc(k)}</small><h2>${esc(M.n)}</h2></div><div class="seg-row"><button class="btn" data-act="bpMove" data-id="${esc(k)}" title="Play this move on the battle stage">▶ Preview animation</button><button class="btn subtle" data-act="moveDup">Duplicate</button><button class="btn danger" data-act="moveDel">Delete</button></div></div>
- ${card('Basics', grid(textField('Name', `${p}.n`, { max: 28 }), selectField('Type', `${p}.t`, typeOptions(true), { rr: 1 }), selectField('Kind', `${p}.c`, CAT, { rr: 1 }), numberField('Power', `${p}.p`, { opt: 1, min: 0, max: 250, step: 5, help: M.c === 'X' ? 'Status moves usually have no power.' : '' }), numberField('Accuracy', `${p}.a`, { unit: '%', min: 0, max: 100, step: 5, help: '0 means it never misses.' }), numberField('Priority', `${p}.pr`, { opt: 1, min: -3, max: 5, step: 1, help: 'Higher goes first. Guard uses 4.' })) + textField('Description', `${p}.d`, { area: 1, rows: 2 }))}
+ ${card('Basics', grid(textField('Name', `${p}.n`, { max: 28 }), selectField('Type', `${p}.t`, typeOptions(true), { rr: 1 }), selectField('Kind', `${p}.c`, MOVE_CATEGORIES, { rr: 1 }), numberField('Power', `${p}.p`, { opt: 1, min: 0, max: 250, step: 5, help: M.c === 'X' ? 'Status moves usually have no power.' : '' }), numberField('Accuracy', `${p}.a`, { unit: '%', min: 0, max: 100, step: 5, help: '0 means it never misses.' }), numberField('Priority', `${p}.pr`, { opt: 1, min: -3, max: 5, step: 1, help: 'Higher goes first. Guard uses 4.' })) + textField('Description', `${p}.d`, { area: 1, rows: 2 }))}
  ${card('Effects', fxB, { sub: 'Leave anything empty to switch it off.' })}
  ${card(
    'Learned by',
@@ -1157,7 +1157,7 @@ SECTIONS.shops = () => {
       .join('');
   return `<div class="split"><aside class="list-col"><div class="list-head"><button class="btn primary" data-act="shopNew">+ New shop</button><button class="btn" data-act="boutiqueNew">+ New boutique</button></div><div class="llist">${list}</div></aside>
  <div class="ed-col"><div class="ed-head"><div><small class="mono">${esc(k)}</small><h2>${esc(sh.name)}</h2></div><button class="btn danger" data-act="shopDel">Delete</button></div>
- ${card('Shop', `<div class="keeper"><div class="person-prev">${personPrev(sh.who)}</div><div>${grid(textField('Shop name', `${p}.name`), textField('Keeper', `${p}.keeper`), selectField('Keeper’s look', `${p}.who`, peopleOptions(), { rr: 1, help: 'Edit looks under People.' }))}${textField('Greeting', `${p}.greeting`, { area: 1, rows: 2 })}${textField('Thank-you lines (one per line)', '@lines.' + k, { area: 1, rows: 3, ph: 'Leave empty for the default lines.' })}</div></div>`)}
+ ${card('Shop', `<div class="keeper"><div class="person-prev">${personPreviewHTML(sh.who)}</div><div>${grid(textField('Shop name', `${p}.name`), textField('Keeper', `${p}.keeper`), selectField('Keeper’s look', `${p}.who`, peopleOptions(), { rr: 1, help: 'Edit looks under People.' }))}${textField('Greeting', `${p}.greeting`, { area: 1, rows: 2 })}${textField('Thank-you lines (one per line)', '@lines.' + k, { area: 1, rows: 3, ph: 'Leave empty for the default lines.' })}</div></div>`)}
  ${
    wardrobe
      ? card(
@@ -1304,7 +1304,7 @@ function personLook(k) {
   if (!P.look) P.look = cleanLook(lookFromOld(P));
   return P.look;
 }
-function personPrev(who) {
+function personPreviewHTML(who) {
   if (!studioState.D.people[who]) return '<p class="help">Unknown look.</p>';
   try {
     const f = humanSheet(who, 'front'),
@@ -1336,7 +1336,7 @@ SECTIONS.people = () => {
       wdLoad().then(() => {
         TR_CACHE.clear();
         const b = $('#personPrev');
-        if (b) b.innerHTML = personPrev(k);
+        if (b) b.innerHTML = personPreviewHTML(k);
       });
   });
   const used = [
@@ -1372,7 +1372,7 @@ SECTIONS.people = () => {
  <div class="ed-col"><div class="ed-head"><div><h2>${esc(k)}</h2><small>${used.length ? 'Used by ' + esc(used.join(', ')) : k === 'boy' || k === 'girl' ? 'Old default player look (players create their own now)' : 'Not used yet'}</small></div>${['boy', 'girl', 'gini'].includes(k) ? '' : '<button class="btn danger" data-act="personDel">Delete</button>'}</div>
  ${card(
    'Look',
-   `<div class="keeper"><div class="person-prev" id="personPrev">${personPrev(k)}</div><div>${grid(colorField('Skin', `${p}.skin`), colorField('Hair', `${p}.hair`), colorField('Eyes', `${p}.eyes`))}
+   `<div class="keeper"><div class="person-prev" id="personPrev">${personPreviewHTML(k)}</div><div>${grid(colorField('Skin', `${p}.skin`), colorField('Hair', `${p}.hair`), colorField('Eyes', `${p}.eyes`))}
    <div class="grid">${trSliders()
      .map(s =>
        rangeField(s.name, `${p}.body.${s.k}`, {
@@ -1392,7 +1392,7 @@ studioState.hooks.people = path => {
   if (/^people\./.test(path)) {
     TR_CACHE.clear();
     const b = $('#personPrev');
-    if (b) b.innerHTML = personPrev(studioState.sel.person);
+    if (b) b.innerHTML = personPreviewHTML(studioState.sel.person);
   }
 };
 ACTIONS.pickPerson = d => {
@@ -1521,7 +1521,7 @@ SECTIONS.trainers = () => {
  <div class="ed-col"><div class="ed-head"><div><small class="mono">${esc(k)}</small><h2>${esc(T.name)}</h2></div><button class="btn danger" data-act="trainerDel">Delete</button></div>
  ${card(
    'Who and where',
-   `<div class="keeper"><div class="person-prev">${personPrev(T.who)}</div><div>${grid(
+   `<div class="keeper"><div class="person-prev">${personPreviewHTML(T.who)}</div><div>${grid(
      textField('Name', `${p}.name`),
      selectField('Look', `${p}.who`, peopleOptions(), { rr: 1 }),
      selectField(

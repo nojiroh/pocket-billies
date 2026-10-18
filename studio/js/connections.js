@@ -14,7 +14,7 @@ import { $ } from '../../game/js/util.js';
 import { ENGINE_DEFAULTS, ENGINE_PRESETS, ENGINE_SPEC } from '../../game/js/engine/settings.js';
 import { esc } from './game-stand-ins.js';
 import { ACTIONS, openSection, render, setRender, speciesName, studioState } from './studio-app.js';
-import { curLine } from './data-editors.js';
+import { selectedLineIndex } from './data-editors.js';
 import { SCN, scId } from './map-editor.js';
 import { ENS, engD, engFmt } from './engine-editor.js';
 import { findEngine, findField, findFlash, findSel } from './find.js';
@@ -121,7 +121,7 @@ function linkCur() {
     if (m) return { kind: 'dial', id: m[1] + '.' + m[2] };
   }
   if (s === 'billionaires') {
-    const i = typeof curLine === 'function' ? curLine() : 0,
+    const i = typeof selectedLineIndex === 'function' ? selectedLineIndex() : 0,
       L = D.lines[i];
     if (L) {
       const st = Math.min(studioState.sel.stage || 0, L.names.length - 1);
