@@ -175,7 +175,7 @@ def battle(pg, base):
         ph = pg.evaluate("activeBattle?activeBattle.phase:'none'")
         if ph in ('end', 'none'): break
         if ph == 'switch': pg.evaluate("document.querySelector('[data-a=bswitch]:not([disabled])').click()")
-        if ph == 'choose': turns += 1; pg.evaluate("document.querySelector('[data-a=bfight]').click();document.querySelector('[data-a=bmove]').click()")
+        if ph == 'choose': turns += 1; pg.evaluate("document.querySelector('[data-a=bfight]')?.click();document.querySelector('[data-a=bmove]').click()")
     over = pg.evaluate('activeBattle&&activeBattle.over')
     if not over: raise Exception('the battle didn’t end in 120 s')
     if over != 'win': raise Exception(f'the battle ended “{over}” (the fixture’s team should win)')
