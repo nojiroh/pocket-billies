@@ -7,19 +7,9 @@
 import { expose } from './test-globals.js';
 import { provide } from './hooks.js';
 import { DATA_WARN, RULES, SPECIES, START_NODE, gameData } from './game-data.js';
+import { SAVE_NEW_MSG, SAVE_OLD_MSG, newSave } from './logic/saves.js';
 import { loadAllMaps, loadMapsAhead, watchMapsAhead } from './map-files.js';
-import {
-  SAVE_FOUND,
-  SAVE_NEW_MSG,
-  SAVE_OLD_MSG,
-  escapeHtml,
-  newSave,
-  reducedMotion,
-  saveData,
-  setNoSaving,
-  setSaveData,
-  uiState,
-} from './game-state.js';
+import { SAVE_FOUND, escapeHtml, reducedMotion, saveData, setNoSaving, setSaveData, uiState } from './game-state.js';
 import { ART_CACHE, COIN_ART, EGG_ART, ICON_ATLAS, MENU_BACKGROUND_ART, artBoot, artImg, uiIconURL } from './art.js';
 import { personArtPaths } from './person-art.js';
 import { rigAtlas } from './skeleton-rig.js';

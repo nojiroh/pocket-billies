@@ -41,11 +41,11 @@ import {
   today,
   xpFor,
 } from './logic/rules.js';
+import { newSaveKeepingPreferences } from './logic/saves.js';
 import {
   activeBattle,
   escapeHtml,
   flushSave,
-  newSaveKeepingPreferences,
   save,
   saveData,
   setActiveBattle,

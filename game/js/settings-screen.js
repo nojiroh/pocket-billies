@@ -25,19 +25,8 @@ import {
 } from './hooks.js';
 import { JOBS, LOCATIONS, MOVES, RULES, SPECIES, STATUS_NAMES } from './game-data.js';
 import { formatNumber, teamSize, today } from './logic/rules.js';
-import {
-  SAVE_NEW_MSG,
-  SAVE_OLD_MSG,
-  escapeHtml,
-  migrate,
-  reducedMotion,
-  save,
-  saveAge,
-  saveData,
-  setReducedMotion,
-  setSaveData,
-  uiState,
-} from './game-state.js';
+import { SAVE_NEW_MSG, SAVE_OLD_MSG, migrate, saveAge } from './logic/saves.js';
+import { escapeHtml, reducedMotion, save, saveData, setReducedMotion, setSaveData, uiState } from './game-state.js';
 import { I18N_LANGS, i18nSet } from './i18n.js';
 import { frameScheduler } from './frame-scheduler.js';
 import { uiIconHTML } from './art.js';
